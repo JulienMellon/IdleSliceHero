@@ -26,7 +26,7 @@ function GameRunner() {
       const dt = Math.min(2, (now - lastTick.current) / 1000);
       lastTick.current = now;
       useGame.getState().tick(dt);
-    }, 100);
+    }, 200);
     const saveTimer = setInterval(() => void useGame.getState().save(), TUNING.saveIntervalSeconds * 1000);
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'background' || state === 'inactive') void useGame.getState().save();

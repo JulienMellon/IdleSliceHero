@@ -8,7 +8,7 @@ export function money(n: number): string {
   if (n < 1000) return `${sign}$${n < 10 && n % 1 !== 0 ? n.toFixed(1) : Math.floor(n)}`;
   const tier = Math.min(SUFFIXES.length - 1, Math.floor(Math.log10(n) / 3));
   const v = n / Math.pow(1000, tier);
-  return `${sign}$${v.toFixed(v < 10 ? 2 : v < 100 ? 1 : 0)}${SUFFIXES[tier]}`;
+  return `${sign}$${parseFloat(v.toFixed(v < 10 ? 2 : v < 100 ? 1 : 0))}${SUFFIXES[tier]}`;
 }
 
 export function count(n: number): string {

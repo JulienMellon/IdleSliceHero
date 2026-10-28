@@ -90,6 +90,12 @@ describe('purchases', () => {
     expect(r.ok && r.state.drivers).toBe(2);
     expect(r.ok && r.state.cash).toBe(1000 - TUNING.drivers.baseCost);
   });
+  test('first driver is affordable within ~15s of tapping', () => {
+    let s = fresh();
+    let t = 0;
+    while (s.cash < G.driverCost(s) && t < 60) { s = G.tick(G.tapOven(s), 0.5); t += 0.5; }
+    expect(t).toBeLessThanOrEqual(15);
+  });
   test('neighborhoods unlock in order and respect vehicle tier', () => {
     const s = { ...fresh(), cash: 1e9 };
     expect(G.unlockNeighborhood(s, 'waterfront').ok).toBe(false);
@@ -121,7 +127,8 @@ describe('format', () => {
     expect(money(7.5)).toBe('$7.5');
     expect(money(999)).toBe('$999');
     expect(money(1234)).toBe('$1.23K');
-    expect(money(9_500_000)).toBe('$9.50M');
+    expect(money(9_500_000)).toBe('$9.5M');
+    expect(money(60_000)).toBe('$60K');
     expect(money(NaN)).toBe('$0');
   });
   test('duration', () => {

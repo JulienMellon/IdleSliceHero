@@ -30,6 +30,7 @@ interface Store {
   finishScene: () => void;
   replayScene: (scene: Scene) => void;
   dismissOffline: () => void;
+  markScrapbookViewed: () => void;
   resetGame: () => Promise<void>;
 }
 
@@ -47,7 +48,11 @@ export const useGame = create<Store>((set, get) => {
 
   const commit = (result: G.BuyResult) => {
     if (!result.ok) {
-      set({ toast: { text: result.reason, at: Date.now() } });
+      const at = Date.now();
+      set({ toast: { text: result.reason, at } });
+      setTimeout(() => {
+        if (get().toast?.at === at) set({ toast: null });
+      }, 1800);
       return false;
     }
     set({ game: result.state });
@@ -74,7 +79,11 @@ export const useGame = create<Store>((set, get) => {
         if (raw) {
           const r = G.applyOffline(G.migrate(JSON.parse(raw), now), now);
           game = r.state;
-          if (r.earned >= 1 && r.seconds >= 60) offline = { seconds: r.seconds, earned: r.earned };
+          if (r.earned >= 1 && r.seconds >= 60) {
+            // Hold the cash back until the player taps Collect.
+            offline = { seconds: r.seconds, earned: r.earned };
+            game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
+          }
         }
       } catch {
         // Corrupt or unreadable save: start fresh rather than crash.
@@ -86,7 +95,9 @@ export const useGame = create<Store>((set, get) => {
     save: async () => {
       const game = { ...get().game, lastSavedAt: Date.now() };
       set({ game });
-      const json = JSON.stringify(game);
+      // Uncollected offline cash is still the player's: include it in the save.
+      const pending = get().offline?.earned ?? 0;
+      const json = JSON.stringify({ ...game, cash: game.cash + pending, totalEarned: game.totalEarned + pending });
       pendingSave = pendingSave
         .then(() => AsyncStorage.setItem(SAVE_KEY, json))
         .catch(() => {
@@ -121,8 +132,20 @@ export const useGame = create<Store>((set, get) => {
     replayScene: (scene) => set({ playing: { scene, replay: true } }),
 
     dismissOffline: () => {
-      set({ offline: null });
+      const o = get().offline;
+      if (!o) return;
+      const g = get().game;
+      set({ offline: null, game: { ...g, cash: g.cash + o.earned, totalEarned: g.totalEarned + o.earned } });
+      void get().save();
       queueScene();
+    },
+
+    markScrapbookViewed: () => {
+      const g = get().game;
+      if (g.scrapbookViewed !== g.seenScenes.length) {
+        set({ game: { ...g, scrapbookViewed: g.seenScenes.length } });
+        void get().save();
+      }
     },
 
     resetGame: async () => {

@@ -28,7 +28,8 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   const p = scene.panels[panel];
   const current = p.lines[line];
   const frameW = Math.min(width - 24, 520);
-  const frameH = Math.min(height * 0.5, frameW * 0.95);
+  // 4:3 frame matches the backdrop art exactly, so nothing gets cropped.
+  const frameH = Math.min(height * 0.48, frameW * 0.75);
 
   // Panel motion: slide in, then slow zoom.
   useEffect(() => {
@@ -68,7 +69,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   }, [panel, line, showReward]);
 
   const speakerIndex = current ? p.cast.findIndex((c) => current.speaker.toLowerCase().includes(c.id.split('-')[0]) || current.speaker.startsWith(nameOf(c.id))) : -1;
-  const portraitSize = Math.min(frameW * 0.42, 190);
+  const portraitSize = Math.min(frameH * 0.62, frameW * 0.4);
 
   return (
     <View style={StyleSheet.absoluteFill}>
@@ -80,6 +81,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
           </Pressable>
         </View>
 
+        <View style={styles.stage}>
         <Animated.View style={[styles.frame, { width: frameW, height: frameH, transform: [{ translateX: slide }] }]}>
           <Animated.View style={{ position: 'absolute', inset: 0, transform: [{ scale: zoom }] } as never}>
             <Backdrop id={p.backdrop} width={frameW} height={frameH} />
@@ -113,6 +115,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
           ) : null}
         </View>
 
+        </View>
         <View style={styles.dots}>
           {scene.panels.map((_, i) => (
             <View key={i} style={[styles.dot, i === panel && styles.dotOn]} />
@@ -132,7 +135,7 @@ function nameOf(id: string) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'rgba(30,14,8,0.94)', alignItems: 'center' },
+  root: { flex: 1, backgroundColor: '#1E0E08', alignItems: 'center' },
   topRow: { width: '100%', maxWidth: 540, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 10 },
   title: { color: C.cheese, fontFamily: F.bold, fontSize: 22 },
   skip: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16 },
@@ -149,7 +152,8 @@ const styles = StyleSheet.create({
   reward: { backgroundColor: C.cheese, borderRadius: 20, borderWidth: 3, borderColor: C.ink, padding: 16, alignItems: 'center' },
   rewardHead: { fontFamily: F.bold, color: C.tomatoDark, fontSize: 20 },
   rewardText: { fontFamily: F.semi, color: C.ink, fontSize: 17, textAlign: 'center', marginTop: 4 },
-  dots: { flexDirection: 'row', gap: 6, marginTop: 'auto' },
+  stage: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  dots: { flexDirection: 'row', gap: 6 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.3)' },
   dotOn: { backgroundColor: C.cheese, width: 20 },
   hint: { color: 'rgba(255,255,255,0.5)', fontFamily: F.regular, fontSize: 13, marginTop: 6 },

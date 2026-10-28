@@ -141,17 +141,52 @@ function Scenery({ id }: { id: BackdropId }) {
   }
 }
 
+function Clouds({ dark }: { dark: boolean }) {
+  const fill = dark ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.85)';
+  return (
+    <G fill={fill}>
+      {[[70, -40, 1], [250, -60, 1.3], [350, -10, 0.8]].map(([x, y, k], i) => (
+        <G key={i}>
+          <Circle cx={x} cy={y} r={14 * k} />
+          <Circle cx={x + 16 * k} cy={y - 6 * k} r={18 * k} />
+          <Circle cx={x + 34 * k} cy={y} r={13 * k} />
+          <Rect x={x} y={y} width={34 * k} height={13 * k} />
+        </G>
+      ))}
+    </G>
+  );
+}
+
+/** Upper wall of the shop interior: shelves of jars and a hanging menu board. */
+function ShopWall() {
+  return (
+    <G>
+      <Rect x={170} y={-80} width={60} height={34} rx={4} fill="#3B1F14" />
+      <Rect x={176} y={-74} width={48} height={4} rx={2} fill="#FFF4E0" />
+      <Rect x={176} y={-64} width={34} height={4} rx={2} fill="#FFF4E0" />
+      <Rect x={176} y={-54} width={40} height={4} rx={2} fill="#FFF4E0" />
+      <Rect x={20} y={-20} width={130} height={6} fill="#8E5A3C" />
+      {[30, 55, 80, 105, 128].map((x, i) => (
+        <Rect key={x} x={x} y={-38} width={14} height={18} rx={3} fill={['#E8432E', '#3FAE5A', '#FFC531', '#E8432E', '#F2994A'][i]} stroke={INK} strokeWidth={1.5} />
+      ))}
+    </G>
+  );
+}
+
 export function Backdrop({ id, width, height }: { id: BackdropId; width: number; height: number }) {
   const [top, bottom] = SKY[id];
   return (
-    <Svg width={width} height={height} viewBox="0 0 400 200" preserveAspectRatio="xMidYMax slice">
+    // Art is composed in a 4:3 box (400×300): scenery sits in the bottom 200, sky above for captions.
+    <Svg width={width} height={height} viewBox="0 -100 400 300" preserveAspectRatio="xMidYMax slice">
       <Defs>
         <LinearGradient id={`sky-${id}`} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={top} />
           <Stop offset="1" stopColor={bottom} />
         </LinearGradient>
       </Defs>
-      <Rect x={0} y={0} width={400} height={200} fill={`url(#sky-${id})`} />
+      <Rect x={-20} y={-120} width={440} height={340} fill={`url(#sky-${id})`} />
+      {id !== 'shop' && id !== 'megaslice-hq' && <Clouds dark={id === 'uptown' || id === 'industrial'} />}
+      {id === 'shop' && <ShopWall />}
       <Scenery id={id} />
     </Svg>
   );

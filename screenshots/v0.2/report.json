@@ -1,0 +1,17 @@
+{
+  "version": "v0.2",
+  "errors": [],
+  "shots": [
+    "/home/claude/idleslicehero/screenshots/v0.2/01-opening-cutscene.png",
+    "/home/claude/idleslicehero/screenshots/v0.2/02-cutscene-dialog.png",
+    "/home/claude/idleslicehero/screenshots/v0.2/03-new-game.png",
+    "/home/claude/idleslicehero/screenshots/v0.2/04-after-20s-play.png",
+    "/home/claude/idleslicehero/screenshots/v0.2/05-mid-game.png",
+    "/home/claude/idleslicehero/screenshots/v0.2/06-scrapbook.png",
+    "/home/claude/idleslicehero/screenshots/v0.2/07-offline-popup.png",
+    "/home/claude/idleslicehero/screenshots/v0.2/08-late-cutscene.png",
+    "/home/claude/idleslicehero/screenshots/v0.2/09-late-game.png"
+  ],
+  "loaded": true,
+  "cash_after_play": "$8.6"
+}

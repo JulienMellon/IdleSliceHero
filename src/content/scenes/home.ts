@@ -890,9 +890,9 @@ export const HOME_SCENES: Scene[] = [
       {
         backdrop: 'uptown',
         cast: [{ id: 'genevieve', mood: 'surprised' }],
-        caption: '*bite*',
+        caption: 'One bite. The critic goes very, very still.',
         lines: [
-          { speaker: 'Genevieve', text: 'Oh. Oh no.' },
+          { speaker: 'Genevieve', text: 'Oh. Oh no. I think I... like it?' },
           { speaker: 'Genevieve', text: 'The crust sings. The sauce has a whisper of... patience?' },
         ],
       },

@@ -23,6 +23,8 @@ export interface GameState {
   dronesUnlocked: boolean;
   cityComplete: boolean;
   seenScenes: string[];
+  /** How many scenes had been seen when the Scrapbook was last opened (drives the badge). */
+  scrapbookViewed: number;
   lastSavedAt: number;
 }
 
@@ -42,6 +44,7 @@ export function newGame(now: number): GameState {
     dronesUnlocked: false,
     cityComplete: false,
     seenScenes: [],
+    scrapbookViewed: 0,
     lastSavedAt: now,
   };
 }
@@ -71,6 +74,7 @@ export function migrate(raw: unknown, now: number): GameState {
     dronesUnlocked: !!r.dronesUnlocked,
     cityComplete: !!r.cityComplete,
     seenScenes: Array.isArray(r.seenScenes) ? r.seenScenes.filter((s) => typeof s === 'string') : [],
+    scrapbookViewed: Math.max(0, Math.floor(num(r.scrapbookViewed, 0))),
     lastSavedAt: num(r.lastSavedAt, now),
   };
 }

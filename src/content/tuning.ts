@@ -23,7 +23,7 @@ export const TUNING = {
   },
 
   drivers: {
-    baseCost: 20,
+    baseCost: 8,
     start: 1,
   },
 } as const;
@@ -57,19 +57,20 @@ export interface NeighborhoodDef {
   unlockCost: number;
   /** Minimum vehicle tier index (into VEHICLES) needed to unlock. */
   minVehicle: number;
-  /** Map position, 0–100 on each axis, shop at (50, 62). */
+  /** Map position in the 100×76 map viewBox (shop at SHOP_POS). */
   x: number;
   y: number;
   color: string;
 }
 
 export const NEIGHBORHOODS: NeighborhoodDef[] = [
-  { id: 'downtown', name: 'Downtown', distance: 2, orderValue: 3, unlockCost: 0, minVehicle: 0, x: 50, y: 40, color: '#F2994A' },
-  { id: 'suburbs', name: 'Suburbs', distance: 4, orderValue: 9, unlockCost: 250, minVehicle: 0, x: 18, y: 70, color: '#6FCF97' },
-  { id: 'waterfront', name: 'Waterfront', distance: 6, orderValue: 24, unlockCost: 4_000, minVehicle: 1, x: 82, y: 78, color: '#56CCF2' },
-  { id: 'university', name: 'University', distance: 8, orderValue: 60, unlockCost: 60_000, minVehicle: 1, x: 20, y: 24, color: '#BB6BD9' },
-  { id: 'industrial', name: 'Industrial', distance: 11, orderValue: 150, unlockCost: 350_000, minVehicle: 2, x: 84, y: 30, color: '#A0826D' },
+  { id: 'downtown', name: 'Downtown', distance: 2, orderValue: 3, unlockCost: 0, minVehicle: 0, x: 22, y: 36, color: '#F2994A' },
+  { id: 'suburbs', name: 'Suburbs', distance: 4, orderValue: 9, unlockCost: 250, minVehicle: 0, x: 24, y: 58, color: '#6FCF97' },
+  { id: 'waterfront', name: 'Waterfront', distance: 6, orderValue: 24, unlockCost: 4_000, minVehicle: 1, x: 76, y: 58, color: '#56CCF2' },
+  { id: 'university', name: 'University', distance: 8, orderValue: 60, unlockCost: 60_000, minVehicle: 1, x: 18, y: 11, color: '#BB6BD9' },
+  { id: 'industrial', name: 'Industrial', distance: 11, orderValue: 150, unlockCost: 350_000, minVehicle: 2, x: 82, y: 11, color: '#A0826D' },
   { id: 'uptown', name: 'Uptown', distance: 15, orderValue: 400, unlockCost: 1_500_000, minVehicle: 3, x: 50, y: 8, color: '#EB5757' },
 ];
 
-export const SHOP_POS = { x: 50, y: 62 };
+export const SHOP_POS = { x: 50, y: 36 };
+export const MAP_VIEWBOX = { w: 100, h: 76 };

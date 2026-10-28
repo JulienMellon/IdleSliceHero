@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,6 +13,10 @@ export default function Scrapbook() {
   const insets = useSafeAreaInsets();
   const seen = useGame((s) => s.game.seenScenes);
   const replay = useGame((s) => s.replayScene);
+  const markViewed = useGame((s) => s.markScrapbookViewed);
+  useEffect(() => {
+    markViewed();
+  }, [markViewed, seen.length]);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
