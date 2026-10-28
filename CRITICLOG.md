@@ -379,3 +379,26 @@ Julien's direction after v0.5: the main screen should be a cutaway of a growing 
 | D51 | Pickup spots spread across the whole counter-to-door span (12–20 units apart) on big shops |
 | D52 | City map: Industrial moved to the top-middle and Uptown to the top-right, so build order reads left to right |
 | D53 | Every $0/s button (managed or not) uses the beige fill; only buys that raise income are bright green |
+
+## v1.2 — critique (round 11)
+
+**VERDICT: NOT SATISFIED** — loads clean; all five round-10 items fixed in code and screenshots; Owner's direction holds. The G39b lane fix made drivers float on the wall.
+
+**Fixed:** G38, G39a, D51 (code), D52, D53 · **Still open:** G39b → G40 · **Blockers:** none
+
+**Bugs**
+- G40 Drivers' back lanes sit 4.5–8 units above the floor — they walk on the wall and leave through the door's window
+
+**Design notes**
+- D54 At Flagship, tables sit under the pickup zone — diners, drivers and walkers merge into one crowd; keep a clear pickup strip by the counter and put tables nearer the door
+- D55 Seated walk-ins teleport back to the door when their loop wraps
+- D56 "Not enough cash" toast covers the shop sign and queue bar (minor)
+
+## v1.3 — build (addresses round 11)
+
+| Note | Fix |
+| --- | --- |
+| G40 | All driver lanes moved onto the floor band: standing drivers at FLOOR_Y+3, arriving lane FLOOR_Y+1.5, leaving lane FLOOR_Y+0.4 (both further back, drawn slightly smaller); drivers leave over the door threshold, not through the window |
+| D54 | Dining room split into a clear **pickup strip** in front of the counter (~42% of the dining width, 14–56 units) where drivers wait, and a **seating block** toward the door where all tables sit |
+| D55 | Walk-ins fade in at the door, walk to their seat, sit, then fade out at the table — no teleport |
+| D56 | Toast moved to the top of the card grid, clear of the shop sign, queue bar and station tags |

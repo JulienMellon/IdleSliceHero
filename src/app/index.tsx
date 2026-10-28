@@ -166,7 +166,7 @@ export default function GameScreen() {
       </ScrollView>
       {offline && <OfflinePopup seconds={offline.seconds} earned={offline.earned} byShop={offline.byShop} onCollect={dismissOffline} />}
       {/* Toast sits over the shop sign at the top of the cutaway, measured, so it never covers stations or tags (critic G32). */}
-      {toast && cutTop > 0 && <Toast text={toast.text} top={cutTop + 4} />}
+      {toast && cutTop > 0 && <Toast text={toast.text} top={cutTop + cutH - 2} />}
     </View>
   );
 }
