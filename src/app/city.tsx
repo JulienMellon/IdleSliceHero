@@ -43,8 +43,28 @@ export default function City() {
       <ScrollView contentContainerStyle={styles.summary}>
         <Text style={styles.big}>{money(G.earningsPerSecond(game))}/sec</Text>
         <Text style={styles.small}>{built}/6 pizzerias built · {NEIGHBORHOODS.filter((n) => game.shops[n.id].managed).length} with managers · tap one to visit</Text>
-        {NEIGHBORHOODS.filter((n) => game.shops[n.id].built).map((n) => {
+        {NEIGHBORHOODS.map((n) => {
           const sh = game.shops[n.id];
+          const isNext = G.nextToBuild(game)?.id === n.id;
+          if (!sh.built) {
+            return (
+              <Pressable
+                key={n.id}
+                testID={`city-row-${n.id}`}
+                disabled={!isNext}
+                onPress={() => {
+                  if (build(n.id)) router.back();
+                }}
+                style={[styles.row, styles.rowLocked, isNext && { borderColor: C.cheeseDark, borderStyle: 'dashed', opacity: 1 }]}>
+                <View style={[styles.dot, { backgroundColor: isNext ? n.color : C.locked }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rowName}>{isNext ? n.name : '???'}</Text>
+                  <Text style={styles.rowSub}>{isNext ? `Pays ${money(n.orderValue)} a pizza · manager ${money(n.managerCost)}` : 'Build the previous pizzeria first'}</Text>
+                </View>
+                <Text style={[styles.rowEps, { color: isNext ? C.tomato : C.inkSoft }]}>{isNext ? `Build ${money(n.buildCost)}` : '🔒'}</Text>
+              </Pressable>
+            );
+          }
           return (
             <Pressable
               key={n.id}
@@ -58,7 +78,7 @@ export default function City() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowName}>{n.name}</Text>
                 <Text style={styles.rowSub}>
-                  {FOOTPRINTS[sh.footprint].name} · {OVEN_GRADES[sh.grade].name} ovens · {sh.drivers} driver{sh.drivers === 1 ? "" : "s"}
+                  {FOOTPRINTS[sh.footprint].name} · {OVEN_GRADES[sh.grade].name} ovens · {sh.drivers} driver{sh.drivers === 1 ? '' : 's'}
                 </Text>
               </View>
               <Text style={[styles.rowEps, !sh.managed && { color: C.tomato }]}>{sh.managed ? `${money(G.shopEarnings(game, n.id))}/s` : 'no manager'}</Text>
@@ -80,6 +100,7 @@ const styles = StyleSheet.create({
   big: { fontFamily: F.bold, fontSize: 28, color: C.basilDark, textAlign: 'center' },
   small: { fontFamily: F.regular, fontSize: 14, color: C.inkSoft, textAlign: 'center', marginBottom: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 14, borderWidth: 2.5, padding: 10 },
+  rowLocked: { borderColor: C.locked, opacity: 0.7 },
   dot: { width: 14, height: 14, borderRadius: 7, borderWidth: 1.5, borderColor: C.ink },
   rowName: { fontFamily: F.bold, fontSize: 16, color: C.ink },
   rowSub: { fontFamily: F.regular, fontSize: 12, color: C.inkSoft },

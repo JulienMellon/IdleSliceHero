@@ -157,6 +157,7 @@ describe('offline and saves', () => {
     expect(r.earned).toBeCloseTo(eps * TUNING.offlineCapSeconds, 0);
     expect(r.state.shops.suburbs.sold).toBe(0);
     expect(r.byShop.map((b) => b.id)).toEqual(['downtown']);
+    expect(r.byShop[0].managed).toBe(true);
     expect(r.byShop[0].earned).toBeCloseTo(r.earned, 0);
   });
   test('clock going backwards earns nothing', () => {

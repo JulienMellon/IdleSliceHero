@@ -163,7 +163,7 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { 
           <Text style={[styles.goalLabel, ready && styles.goalTextReady]} numberOfLines={1}>
             {ready ? `▶ ${goal.label} — tap!` : goal.label}
           </Text>
-          <Text style={[styles.goalAmt, ready && styles.goalTextReady]}>{goal.text ?? `${money(Math.min(goal.current, goal.target))} / ${money(goal.target)}`}</Text>
+          <Text style={[styles.goalAmt, ready && styles.goalTextReady]}>{goal.text ?? `${money(Math.min(goal.current, goal.target), true)} / ${money(goal.target)}`}</Text>
         </Pressable>
       )}
     </View>
@@ -266,7 +266,7 @@ export function UpgradeRow(props: {
   );
 }
 
-export function OfflinePopup({ seconds, earned, byShop, onCollect }: { seconds: number; earned: number; byShop: { name: string; earned: number }[]; onCollect: () => void }) {
+export function OfflinePopup({ seconds, earned, byShop, onCollect }: { seconds: number; earned: number; byShop: { name: string; earned: number; managed: boolean }[]; onCollect: () => void }) {
   const pop = useRef(new Animated.Value(0.7)).current;
   useEffect(() => {
     Animated.spring(pop, { toValue: 1, friction: 5, useNativeDriver: native }).start();
@@ -277,12 +277,17 @@ export function OfflinePopup({ seconds, earned, byShop, onCollect }: { seconds: 
         <Text style={styles.modalHead}>While you were away…</Text>
         <Text style={styles.modalEmoji}>🛵💨🍕</Text>
         <Text style={styles.small}>
-          Your managers kept {byShop.length} pizzeria{byShop.length === 1 ? '' : 's'} running for {duration(seconds)}
+          {byShop.some((b) => b.managed)
+            ? `Your managers kept ${byShop.filter((b) => b.managed).length} pizzeria${byShop.filter((b) => b.managed).length === 1 ? '' : 's'} running for ${duration(seconds)}`
+            : `Your kitchens finished their queued orders while you were away`}
         </Text>
         <View style={{ alignSelf: 'stretch', gap: 2 }}>
           {byShop.map((b) => (
             <View key={b.name} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={styles.small}>{b.name}</Text>
+              <Text style={styles.small}>
+                {b.name}
+                {b.managed ? '' : ' (queued orders)'}
+              </Text>
               <Text style={[styles.small, { color: C.basilDark, fontFamily: F.semi }]}>+{money(b.earned)}</Text>
             </View>
           ))}

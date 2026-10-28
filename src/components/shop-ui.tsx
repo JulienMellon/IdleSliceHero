@@ -47,7 +47,7 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
         }
         const eps = Game.shopEarnings(game, n.id);
         return (
-          <Pressable key={n.id} testID={`tab-${n.id}`} onPress={() => onSelect(n.id)} style={[styles.tab, { borderColor: n.color }, active && { backgroundColor: n.color }]}>
+          <Pressable key={n.id} testID={`tab-${n.id}`} onPress={() => onSelect(n.id)} style={[styles.tab, { borderColor: n.color }, active && [styles.tabActive, { backgroundColor: n.color }]]}>
             <Text style={styles.tabName}>{n.name}</Text>
             <Text style={[styles.tabSub, active && { color: C.ink }, !shop.managed && !active && { color: C.tomato }]}>{shop.managed ? `${money(eps)}/s` : 'tap to run'}</Text>
           </Pressable>
@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
   tabsWrap: { flexGrow: 0, backgroundColor: C.tomatoDark },
   tabs: { paddingHorizontal: 10, paddingVertical: 6, gap: 6 },
   tab: { minWidth: 86, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: '#fff', borderWidth: 2.5, alignItems: 'center' },
+  tabActive: { borderColor: '#FFFFFF', borderWidth: 3, transform: [{ translateY: -1 }] },
   tabName: { fontFamily: F.bold, fontSize: 13, color: C.ink },
   tabSub: { fontFamily: F.semi, fontSize: 11, color: C.basilDark },
   tabLocked: { minWidth: 40, backgroundColor: 'rgba(255,255,255,0.25)', borderColor: 'transparent', justifyContent: 'center' },

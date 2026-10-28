@@ -365,7 +365,7 @@ export interface OfflineResult {
   seconds: number;
   earned: number;
   /** Cash each pizzeria made while away (only those that made any). */
-  byShop: { id: NeighborhoodId; earned: number }[];
+  byShop: { id: NeighborhoodId; earned: number; managed: boolean }[];
 }
 
 /** Catch up after the app was closed: managed shops run; unmanaged ones finish what was queued. */
@@ -373,7 +373,7 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
   const elapsed = Math.max(0, (now - s.lastSavedAt) / 1000);
   const seconds = Math.min(elapsed, TUNING.offlineCapSeconds);
   const next = tick(s, seconds);
-  const byShop = SHOP_IDS.map((id) => ({ id, earned: (next.shops[id].sold - s.shops[id].sold) * valuePerPizza(id, s.shops[id], s.vehicle) })).filter((x) => x.earned > 0);
+  const byShop = SHOP_IDS.map((id) => ({ id, managed: s.shops[id].managed, earned: (next.shops[id].sold - s.shops[id].sold) * valuePerPizza(id, s.shops[id], s.vehicle) })).filter((x) => x.earned > 0);
   return { state: { ...next, lastSavedAt: now }, seconds, earned: next.cash - s.cash, byShop };
 }
 

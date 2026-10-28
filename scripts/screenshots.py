@@ -91,8 +91,15 @@ with sync_playwright() as pw:
     except Exception as e:
         report["errors"].append(f"could not skip cut-scene: {e}")
 
-    # 2. Fresh game screen, then tap the oven and play ~20s
+    # 2. Fresh game screen; fill the tap queue and tap once more (should say "Kitchen full!")
     shot(page, "03-new-game")
+    try:
+        for _ in range(4):
+            tid(page, "shop").click(); time.sleep(0.08)
+        tid(page, "shop").click()
+        shot(page, "03b-full-queue-tap", 0.25)
+    except Exception as e:
+        report["errors"].append(f"full-queue tap failed: {e}")
     try:
         for i in range(40):
             tid(page, "shop").click(); time.sleep(0.25)
@@ -164,6 +171,15 @@ with sync_playwright() as pw:
         shot(page, "12-late-rush-tap", 0.2)
     except Exception as e:
         report["errors"].append(f"late oven tap failed: {e}")
+    # 7. Flagship pizzeria with maxed Expand and Oven Grade
+    flag = dict(late, active="downtown", seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:19] + ["uptown-1"], scrapbookViewed=20,
+                shops=dict(late["shops"], downtown=shop(prep=120, ovens=118, grade=4, counter=119, drivers=60, tables=110, footprint=4, sold=9e5)))
+    page = seeded_page(browser, flag); time.sleep(2.5)
+    if page.locator('[data-testid="skip-scene"]').count():
+        tid(page, "skip-scene").click()
+    shot(page, "13-flagship-max", 1.2)
+    page.mouse.wheel(0, 600)
+    shot(page, "14-flagship-max-cards", 0.6)
     browser.close()
 
 httpd.shutdown()

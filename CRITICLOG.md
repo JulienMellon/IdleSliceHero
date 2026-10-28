@@ -224,3 +224,38 @@ Julien's direction after v0.5: the main screen should be a cutaway of a growing 
 | D29 | Offline popup: "Your managers kept N pizzerias running for 2h 0m" with a per-pizzeria breakdown (engine returns `byShop`; test checks it sums to the total) |
 | Harness | Late save is on-curve (costs ≈ minutes of income) and queues exactly one cut-scene, so the late main screen and its pops are captured |
 | Found by harness | Web taps can arrive without `locationX`; the per-tap pop got a NaN position (console errors). Guarded |
+
+## v0.7 — critique (round 6)
+
+**VERDICT: NOT SATISFIED** — loads clean; most of round 5 fixed. New: unreadable tap pops, dining room crowds as the shop grows, misleading taps on a full queue.
+
+**Fixed:** G18, G19, G20, G21, G22, G23, G24, G25, G26, D25, D27, D29, harness late save · **Partly open:** D24 → G27/G29, D26 → G28, D28 → D32 · **Blockers:** none
+
+**Bugs**
+- G27 Tap/rush pops: stroke drawn over the fill makes a green smear; sits on the chimneys
+- G28 Dining room gets only leftover width — tables overlap at Double storefront and worse at Flagship
+- G29 Full queue: tap does nothing but still says "+4 🍕"; HUD still says tap
+- G30 Offline "managers kept N pizzerias running" counts unmanaged shops that only finished their queue
+
+**Design notes**
+- D30 Toast now sits over the counter/drivers — anchor under the goal bar
+- D31 Four prep cooks clump — stagger in depth
+- D32 City screen bottom still empty — list next build and locked neighborhoods
+- D33 Goal bar "$3.2M" vs HUD "$3.20M"
+- D34 Active Industrial tab looks grey/disabled
+- Harness: add Flagship + MAX shot and full-queue tap shot
+
+## v0.8 — build (addresses round 6)
+
+| Note | Fix |
+| --- | --- |
+| G27 | Tap/rush pops drawn as a stroked copy under a white fill copy (like the cash pop), bigger, placed in the open wall space between the queue meter and the ovens |
+| G28 | Layout reserves ≥30% of the room for the dining room; ovens shrink to share the rest; tables drawn only as many as fit 15 units apart, in two staggered rows. Flagship with 6 golden ovens and Lv 110 seating now reads cleanly (13-flagship-max) |
+| G29 | Tapping a full queue floats "Kitchen full!" in ink; HUD subtitle switches to "Kitchen full — hire more drivers!" (names the actual bottleneck) |
+| G30 | Offline popup counts only managed pizzerias in "Your managers kept N…"; unmanaged shops that finished their queue are listed as "(queued orders)"; engine `byShop` carries `managed`, tested |
+| D30 | Toast anchored at the bottom edge of the cutaway, over the station tags rather than the counter and drivers |
+| D31 | With 3–4 prep cooks they stand in two staggered depth rows, alternating shade and size |
+| D32 | City list shows all six neighborhoods: built ones with stats, the next with "Build $800K" (tappable) plus order value and manager cost, the rest locked |
+| D33 | Goal bar's current amount uses the same 3-significant-figure format as the HUD |
+| D34 | Active tab gets a white outline and a slight lift |
+| Harness | New shots: 03b full-queue tap, 13 Flagship (maxed Expand/Grade → MAX), 14 its cards |

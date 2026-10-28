@@ -7,7 +7,7 @@ import { DriverIcon } from '@/components/icons';
 import { emitPayout } from '@/components/pulse-bus';
 import { CUTAWAY_SKY, ShopCutaway } from '@/components/shop-cutaway';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
-import { CITY_NAME, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, VEHICLES } from '@/content/tuning';
+import { CITY_NAME, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, TUNING, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
 import { money } from '@/engine/format';
 import * as G from '@/engine/game';
@@ -59,10 +59,14 @@ export default function GameScreen() {
     goal = { label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : `Story ${game.seenScenes.length}/24`, current: 1, target: 1, text: '🏆' };
   }
 
+  const queueFull = !shop.managed && shop.queued > TUNING.tapQueueMax - 1;
+  const neckUpgrade = neck === 'customers' ? 'drivers' : neck === 'ovens' ? 'oven power' : neck === 'prep' ? 'prep cooks' : 'counter staff';
   const subtitle = !shop.managed
-    ? id === 'downtown'
-      ? 'Tap the kitchen to bake each batch!'
-      : 'Tap to bake here · or hire a manager'
+    ? queueFull
+      ? `Kitchen full — hire more ${neckUpgrade}!`
+      : id === 'downtown'
+        ? 'Tap the kitchen to bake each batch!'
+        : 'Tap to bake here · or hire a manager'
     : `${money(eps)}/sec across the city`;
 
   const card = (what: G.Upgrade, props: { icon: React.ReactNode; title: string; level?: string; detail: string; hot?: boolean; wide?: boolean; costLabel?: string }) => {
@@ -144,7 +148,7 @@ export default function GameScreen() {
         </Text>
       </ScrollView>
       {offline && <OfflinePopup seconds={offline.seconds} earned={offline.earned} byShop={offline.byShop} onCollect={dismissOffline} />}
-      {toast && <Toast text={toast.text} top={insets.top + 130 + cutH * 0.55} />}
+      {toast && <Toast text={toast.text} top={insets.top + 136 + cutH - 44} />}
     </View>
   );
 }
