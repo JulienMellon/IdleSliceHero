@@ -7,6 +7,8 @@ export const TUNING = {
   costGrowth: 1.15,
   /** Levels at which a station's output doubles. */
   milestones: [25, 50, 100] as const,
+  /** Each footprint tier above the first speeds up prep and the counter by this factor (more room to work, bigger counter). */
+  footprintBoost: 1.5,
   /** Each footprint tier lets prep, ovens and counter level up this much further. */
   levelsPerFootprint: 25,
   offlineCapSeconds: 4 * 60 * 60,
@@ -62,10 +64,10 @@ export interface FootprintTier {
 
 export const FOOTPRINTS: FootprintTier[] = [
   { name: 'Hole-in-the-wall', cost: 0, maxTables: 2, ovenSlots: 2 },
-  { name: 'Corner shop', cost: 250, maxTables: 3, ovenSlots: 3 },
-  { name: 'Double storefront', cost: 6_000, maxTables: 4, ovenSlots: 4 },
-  { name: 'Restaurant', cost: 150_000, maxTables: 5, ovenSlots: 5 },
-  { name: 'Flagship', cost: 4_000_000, maxTables: 6, ovenSlots: 6 },
+  { name: 'Corner shop', cost: 500, maxTables: 3, ovenSlots: 3 },
+  { name: 'Double storefront', cost: 15_000, maxTables: 4, ovenSlots: 4 },
+  { name: 'Restaurant', cost: 500_000, maxTables: 5, ovenSlots: 5 },
+  { name: 'Flagship', cost: 15_000_000, maxTables: 6, ovenSlots: 6 },
 ];
 
 export interface VehicleDef {
@@ -110,9 +112,9 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
   { id: 'downtown', name: 'Downtown', orderValue: 3, buildCost: 0, costMult: 1, managerCost: 0, x: 22, y: 35, color: '#F2994A', wall: '#F7D9A8' },
   { id: 'suburbs', name: 'Suburbs', orderValue: 10, buildCost: 300, costMult: 3, managerCost: 600, x: 30, y: 59, color: '#6FCF97', wall: '#DDF2D2' },
   { id: 'waterfront', name: 'Waterfront', orderValue: 32, buildCost: 20_000, costMult: 10, managerCost: 30_000, x: 76, y: 59, color: '#56CCF2', wall: '#D6EEF8' },
-  { id: 'university', name: 'University', orderValue: 100, buildCost: 800_000, costMult: 30, managerCost: 1_200_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
-  { id: 'industrial', name: 'Industrial', orderValue: 320, buildCost: 8_000_000, costMult: 100, managerCost: 12_000_000, x: 82, y: 9, color: '#A0826D', wall: '#E5DCD3' },
-  { id: 'uptown', name: 'Uptown', orderValue: 1_000, buildCost: 60_000_000, costMult: 300, managerCost: 90_000_000, x: 50, y: 9, color: '#EB5757', wall: '#F6D6D6' },
+  { id: 'university', name: 'University', orderValue: 100, buildCost: 1_200_000, costMult: 30, managerCost: 1_800_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
+  { id: 'industrial', name: 'Industrial', orderValue: 320, buildCost: 20_000_000, costMult: 100, managerCost: 30_000_000, x: 82, y: 9, color: '#A0826D', wall: '#E5DCD3' },
+  { id: 'uptown', name: 'Uptown', orderValue: 1_000, buildCost: 200_000_000, costMult: 300, managerCost: 300_000_000, x: 50, y: 9, color: '#EB5757', wall: '#F6D6D6' },
 ];
 
 export const SHOP_POS = { x: 50, y: 36 };

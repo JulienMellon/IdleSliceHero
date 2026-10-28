@@ -86,6 +86,7 @@ export default function GameScreen() {
         detail={lock && what !== 'manager' ? lock : muted ? `Only while tapping · ${props.detail}` : props.detail}
         hot={muted ? false : props.hot}
         muted={muted}
+        useless={(G.upgradeGain(game, id, what) ?? 0) <= 1e-9 && what !== 'manager' && what !== 'expand'}
         cost={lock ? null : cost}
         costLabel={props.costLabel ?? (lock && !/Finest|Biggest|Max/.test(lock) ? 'Locked' : 'MAX')}
         canBuy={!lock && cost !== null && game.cash >= cost}
@@ -139,7 +140,7 @@ export default function GameScreen() {
         {card('counter', { icon: '🧾', title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rates.counter.toFixed(1)}/s`), hot: tied('counter') })}
         {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${G.deliveryRate(shop, v).toFixed(1)}/s`), hot: tied('customers') })}
         {card('tables', { icon: '🪑', title: 'Seating', level: `Lv ${shop.tables}`, detail: stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)} walk-ins/s`), hot: false })}
-        {card('grade', { icon: '✨', title: 'Oven Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? `→ ${gradeNext.name}: ×2 bake speed` : 'Finest ovens in town' })}
+        {card('grade', { icon: '✨', title: 'Oven Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name}: ×2 bake · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} · +$0/s now`) : 'Finest ovens in town' })}
         {card('expand', { icon: '🏗️', title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `→ ${fpNext.name}: max Lv ${G.levelCap(shop) + 25}, more room` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
         <StationCard
           testID="buy-fleet"
@@ -149,6 +150,7 @@ export default function GameScreen() {
           cost={nextVeh && !fleetLock ? nextVeh.cost : null}
           costLabel={nextVeh ? 'Locked' : 'MAX'}
           canBuy={!!nextVeh && !fleetLock && game.cash >= nextVeh.cost}
+          useless={!vg || vg <= 1e-9}
           onBuy={buyFleet}
         />
         <Text style={styles.footer}>

@@ -29,7 +29,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   const current = p.lines[line];
   const frameW = Math.min(width - 24, 520);
   // Tall panel (~55% of the screen); the backdrop grows its sky to fill it, so nothing is cropped.
-  const frameH = Math.max(frameW * 0.75, Math.min(height * 0.55 - insets.top, frameW * 1.3));
+  const frameH = Math.max(frameW * 0.75, Math.min(height * 0.55 - insets.top, frameW * 1.05));
 
   // Panel motion: slide in, then slow zoom.
   useEffect(() => {
@@ -84,7 +84,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
         <View style={styles.stage}>
         <Animated.View style={[styles.frame, { width: frameW, height: frameH, transform: [{ translateX: slide }] }]}>
           <Animated.View style={{ position: 'absolute', inset: 0, transform: [{ scale: zoom }] } as never}>
-            <Backdrop id={p.backdrop} width={frameW} height={frameH} />
+            <Backdrop id={p.backdrop} width={frameW} height={frameH} prop={p.prop} />
           </Animated.View>
           <View style={styles.castRow}>
             {p.cast.map((c, i) => (

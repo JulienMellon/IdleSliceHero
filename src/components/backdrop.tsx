@@ -220,7 +220,38 @@ function ShopWall() {
   );
 }
 
-export function Backdrop({ id, width, height }: { id: BackdropId; width: number; height: number }) {
+/** Distant city silhouette that fills the upper part of tall panels so they aren't empty sky (critic D44). */
+function Skyline({ top, dark }: { top: number; dark: boolean }) {
+  const fill = dark ? 'rgba(20,16,40,0.35)' : 'rgba(110,130,170,0.28)';
+  const base = 120;
+  const towers = [[0, 70], [34, 95], [62, 60], [96, 120], [130, 80], [168, 105], [210, 70], [246, 130], [282, 85], [318, 110], [356, 75]];
+  if (base - 130 < top) return null;
+  return (
+    <G fill={fill}>
+      {towers.map(([x, h], i) => (
+        <Rect key={i} x={x} y={base - h} width={30} height={h} />
+      ))}
+    </G>
+  );
+}
+
+function VendingMachine() {
+  return (
+    <G transform="translate(-128 0)">
+      <Rect x={300} y={92} width={56} height={104} rx={4} fill="#7B2CBF" stroke={INK} strokeWidth={3} />
+      <Rect x={308} y={102} width={30} height={60} fill="#C9B6E4" stroke={INK} strokeWidth={2} />
+      {[0, 1, 2].map((r) => [0, 1].map((c) => <Rect key={`${r}${c}`} x={311 + c * 14} y={106 + r * 19} width={10} height={14} rx={2} fill="#FFC531" stroke={INK} strokeWidth={1} />))}
+      <Rect x={342} y={106} width={8} height={30} rx={2} fill="#3A1450" />
+      <Rect x={308} y={170} width={30} height={14} fill="#2A0A3A" />
+      <Rect x={300} y={78} width={56} height={14} rx={3} fill={'#E8432E'} stroke={INK} strokeWidth={2} />
+      <Text x={328} y={89} fontSize={10} fontFamily={F.bold} fill="#FFFFFF" textAnchor="middle">
+        MEGA
+      </Text>
+    </G>
+  );
+}
+
+export function Backdrop({ id, width, height, prop }: { id: BackdropId; width: number; height: number; prop?: 'vending-machine' }) {
   const [top, bottom] = SKY[id];
   const vbH = Math.max(200, (400 * height) / width);
   return (
@@ -235,7 +266,9 @@ export function Backdrop({ id, width, height }: { id: BackdropId; width: number;
       <Rect x={-20} y={180 - vbH} width={440} height={vbH + 40} fill={`url(#sky-${id})`} />
       {id !== 'shop' && id !== 'megaslice-hq' && id !== 'downtown-rain' && <Clouds dark={id === 'uptown' || id === 'industrial'} />}
       {id === 'shop' && <ShopWall />}
+      {id !== 'shop' && id !== 'megaslice-hq' && vbH > 260 && <Skyline top={200 - vbH} dark={id === 'uptown' || id === 'industrial' || id === 'downtown-rain'} />}
       <Scenery id={id} />
+      {prop === 'vending-machine' && <VendingMachine />}
     </Svg>
   );
 }

@@ -146,9 +146,11 @@ export const levelCap = (shop: Shop) => TUNING.levelsPerFootprint * (shop.footpr
 
 const levelSpeed = (base: number, level: number) => base * (1 + TUNING.speedPerLevel * (level - 1)) * milestoneMultiplier(level);
 
-export const prepRate = (shop: Shop) => levelSpeed(STATIONS.prep.speed, shop.prep);
+/** Room to work: each expansion speeds up prep and the counter (critic D41). */
+export const footprintMult = (shop: Shop) => Math.pow(TUNING.footprintBoost, shop.footprint);
+export const prepRate = (shop: Shop) => levelSpeed(STATIONS.prep.speed, shop.prep) * footprintMult(shop);
 export const ovenRate = (shop: Shop) => levelSpeed(STATIONS.ovens.speed, shop.ovens) * OVEN_GRADES[shop.grade].mult;
-export const counterRate = (shop: Shop) => levelSpeed(STATIONS.counter.speed, shop.counter);
+export const counterRate = (shop: Shop) => levelSpeed(STATIONS.counter.speed, shop.counter) * footprintMult(shop);
 export const tripSeconds = (vehicle: number) => TUNING.deliveryRoundTrip / VEHICLES[vehicle].speed;
 export const tripCapacity = (shop: Shop, vehicle: number) => VEHICLES[vehicle].capacity * milestoneMultiplier(shop.drivers);
 export const deliveryRate = (shop: Shop, vehicle: number) => (shop.drivers * tripCapacity(shop, vehicle)) / tripSeconds(vehicle);

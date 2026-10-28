@@ -37,6 +37,13 @@ describe('formulas', () => {
       }
     }
   });
+  test('expanding speeds up prep and the counter (critic D41)', () => {
+    const shop = G.newShop(true);
+    const big = { ...shop, footprint: 2 };
+    expect(G.prepRate(big) / G.prepRate(shop)).toBeCloseTo(TUNING.footprintBoost ** 2);
+    expect(G.counterRate(big) / G.counterRate(shop)).toBeCloseTo(TUNING.footprintBoost ** 2);
+    expect(G.ovenRate(big)).toBeCloseTo(G.ovenRate(shop));
+  });
   test('oven grades multiply bake speed', () => {
     const shop = G.newShop(true);
     expect(G.ovenRate({ ...shop, grade: 2 }) / G.ovenRate(shop)).toBeCloseTo(4);

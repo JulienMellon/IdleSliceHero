@@ -37,6 +37,8 @@ export interface ScenePanel {
   cast: { id: CharacterId; mood: Mood }[];
   /** Optional narration box at the top of the panel. */
   caption?: string;
+  /** Optional foreground prop drawn into the scene. */
+  prop?: 'vending-machine';
   /** 0–3 speech bubbles, shown in order. */
   lines: SceneLine[];
 }

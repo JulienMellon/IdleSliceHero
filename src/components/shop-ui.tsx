@@ -70,6 +70,8 @@ export function StationCard(props: {
   testID?: string;
   wide?: boolean;
   muted?: boolean;
+  /** Affordable but adds $0/s right now: soften the button so the useful buy stands out. */
+  useless?: boolean;
 }) {
   return (
     <View style={[styles.card, props.wide && styles.cardWide, props.hot && styles.cardHot, props.muted && styles.cardMuted]}>
@@ -86,7 +88,7 @@ export function StationCard(props: {
         </View>
       </View>
       <View style={props.wide ? { width: 96 } : undefined}>
-        <BuyButton compact testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : money(props.cost)} enabled={props.canBuy} onPress={props.onBuy} />
+        <BuyButton compact tone={props.muted ? 'neutral' : props.useless ? 'soft' : 'normal'} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : money(props.cost)} enabled={props.canBuy} onPress={props.onBuy} />
       </View>
     </View>
   );
@@ -111,7 +113,7 @@ const styles = StyleSheet.create({
 
   card: { width: '48.5%', backgroundColor: C.panel, borderRadius: 16, padding: 7, gap: 5, borderWidth: 2.5, borderColor: C.ink, ...shadow },
   cardWide: { width: '100%', flexDirection: 'row', alignItems: 'center' },
-  cardMuted: { opacity: 0.55 },
+  cardMuted: { opacity: 0.6 },
   cardHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
   cardHead: { flexDirection: 'row', gap: 6, alignItems: 'center', flex: 1 },
   icon: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FFE9C7', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: C.cheeseDark },

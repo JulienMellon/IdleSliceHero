@@ -296,3 +296,34 @@ Julien's direction after v0.5: the main screen should be a cutaway of a growing 
 | D39 | Nonna's manager card uses her portrait |
 | D40 | On an unmanaged pizzeria, station cards are muted and read "Only while tapping · …"; the manager card stays bright and red-outlined |
 | Harness | Flagship shot now uses Industrial (high-value shop) |
+
+## v0.9 — critique (round 8)
+
+**VERDICT: NOT SATISFIED** — loads clean and holds to Julien's direction. Drivers still merge; Oven Grade advertises a gain that isn't there.
+
+**Fixed:** G31, G32, G34, D35, D36, D37, D38, D39, D40, harness Flagship shot · **Partly open:** G33 → G35 · **Blockers:** none
+
+**Bugs**
+- G35 Driver spots 7 apart but a driver is ~11 wide — still a many-legged clump; walk-ins pass through drivers
+- G36 Oven Grade card always says "×2 bake speed", even when it adds $0/s (oven isn't the limit)
+
+**Design notes**
+- D41 Grade multiplies only ovens and Prep/Counter cap out — late game ovens run 12× faster than prep; Prep becomes a permanent wall
+- D42 Buttons turn green whenever affordable, even for $0/s upgrades; the one useful buy can look grey
+- D43 Rush pop sits on the chimney tops in tall-oven layouts
+- D44 Late cut-scene backdrop ~60% empty sky; "Vending Machine War" shows no vending machine
+- D45 Muted cards on unmanaged shops still have pale-green buy buttons
+- Harness: shot 14 duplicates 13
+
+## v1.0 — build (addresses round 8)
+
+| Note | Fix |
+| --- | --- |
+| G35 | Driver pickup spots 12 units apart; only as many drivers shown as fit between counter and door; alternate drivers stand a step deeper; walk-ins queue at the near end of the counter on their own front lane |
+| G36 | Oven Grade shows its real gain ("→ Golden: ×2 bake · +$X/s", or "→ Golden · +$0/s now") |
+| D41 | **Economy:** each Expand tier now speeds up Prep and Counter ×1.5 ("more room to work, bigger counter"), so the late-game Prep wall lifts as the shop grows; test added. Rebalanced to keep pacing: expansions cost 2–4× more; University/Industrial/Uptown build + manager costs and late story triggers raised. Sim: city in ~3.8h, longest story gap 35 min |
+| D42 | Affordable upgrades that add $0/s right now get a soft (pale) button; only buys that actually raise income are bright green |
+| D43 | Rush pops on managed shops float above the chimney line |
+| D44 | New vending-machine prop drawn into "Vending Machine War"; tall panels get a distant skyline; panel height capped near square so there's less empty sky |
+| D45 | Station buttons on unmanaged shops use a neutral beige fill, so the red-outlined manager card is the clear next step |
+| Harness | Duplicate shot 14 dropped; late save crosses the new Industrial trigger so the late cut-scene is captured |

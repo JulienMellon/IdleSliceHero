@@ -154,7 +154,7 @@ with sync_playwright() as pw:
                     "suburbs": shop(prep=75, ovens=70, grade=3, counter=72, drivers=34, tables=50, footprint=3, sold=6e5),
                     "waterfront": shop(prep=66, ovens=60, grade=3, counter=62, drivers=30, tables=45, footprint=2, sold=4e5),
                     "university": shop(prep=58, ovens=52, grade=3, counter=55, drivers=26, tables=38, footprint=2, sold=3e5),
-                    "industrial": shop(prep=52, ovens=48, grade=3, counter=50, drivers=22, tables=34, footprint=2, sold=180500),
+                    "industrial": shop(prep=52, ovens=48, grade=3, counter=50, drivers=22, tables=34, footprint=2, sold=360500),
                     "uptown": shop(managed=False, sold=0),
                 },
                 seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:18] + ["uptown-1"], scrapbookViewed=19)
@@ -178,8 +178,6 @@ with sync_playwright() as pw:
     if page.locator('[data-testid="skip-scene"]').count():
         tid(page, "skip-scene").click()
     shot(page, "13-flagship-max", 1.2)
-    page.mouse.wheel(0, 600)
-    shot(page, "14-flagship-max-cards", 0.6)
     browser.close()
 
 httpd.shutdown()

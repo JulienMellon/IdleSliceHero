@@ -542,7 +542,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'university',
     beat: 2,
     title: 'Debugging Dinner',
-    trigger: { kind: 'deliveries', neighborhood: 'university', count: 20000 },
+    trigger: { kind: 'deliveries', neighborhood: 'university', count: 30000 },
     panels: [
       {
         backdrop: 'university',
@@ -578,7 +578,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'university',
     beat: 3,
     title: 'Poached',
-    trigger: { kind: 'deliveries', neighborhood: 'university', count: 90000 },
+    trigger: { kind: 'deliveries', neighborhood: 'university', count: 135000 },
     panels: [
       {
         backdrop: 'university',
@@ -622,7 +622,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'university',
     beat: 4,
     title: 'Drone Launch',
-    trigger: { kind: 'deliveries', neighborhood: 'university', count: 300000 },
+    trigger: { kind: 'deliveries', neighborhood: 'university', count: 450000 },
     reward: 'drones',
     panels: [
       {
@@ -704,7 +704,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'industrial',
     beat: 2,
     title: 'Almost a Smile',
-    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 50000 },
+    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 100000 },
     panels: [
       {
         backdrop: 'industrial',
@@ -738,10 +738,11 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'industrial',
     beat: 3,
     title: 'Vending Machine War',
-    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 180000 },
+    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 360000 },
     panels: [
       {
         backdrop: 'industrial',
+        prop: 'vending-machine',
         cast: [{ id: 'megaslice-rep', mood: 'happy' }],
         caption: 'Overnight, MegaSlice vending machines appear in every break room.',
         lines: [
@@ -750,6 +751,7 @@ export const HOME_SCENES: Scene[] = [
       },
       {
         backdrop: 'industrial',
+        prop: 'vending-machine',
         cast: [
           { id: 'big-sal', mood: 'angry' },
           { id: 'megaslice-rep', mood: 'surprised' },
@@ -782,7 +784,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'industrial',
     beat: 4,
     title: 'Brother Sal',
-    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 500000 },
+    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 1000000 },
     panels: [
       {
         backdrop: 'industrial',
@@ -879,7 +881,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'uptown',
     beat: 2,
     title: 'Second Bite',
-    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 80000 },
+    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 200000 },
     panels: [
       {
         backdrop: 'uptown',
@@ -915,7 +917,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'uptown',
     beat: 3,
     title: 'A Bribe on Toast',
-    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 250000 },
+    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 625000 },
     panels: [
       {
         backdrop: 'megaslice-hq',
@@ -959,7 +961,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'uptown',
     beat: 4,
     title: 'Five Stars',
-    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 500000 },
+    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 1250000 },
     reward: 'city-complete',
     panels: [
       {

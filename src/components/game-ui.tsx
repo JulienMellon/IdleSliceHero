@@ -47,7 +47,14 @@ export function useCountUp(target: number) {
 const BURST = ['✨', '💰', '🍕', '✨', '⭐', '💰'];
 
 /** 3D "candy" button. onPress returns true on a successful purchase (burst) or false (shake). */
-export function BuyButton({ label, sub, enabled, onPress, testID, compact }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean }) {
+/**
+ * tone: 'normal' = bright green when affordable; 'soft' = affordable but adds nothing right now;
+ * 'neutral' = affordable but deliberately de-emphasised (e.g. before a shop has a manager).
+ */
+export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone = 'normal' }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; tone?: 'normal' | 'soft' | 'neutral' }) {
+  const outerBg = !enabled ? C.lockedDark : tone === 'soft' ? '#A9CFB1' : tone === 'neutral' ? '#CDBFAE' : C.basilDark;
+  const innerBg = !enabled ? C.locked : tone === 'soft' ? '#E3F2E6' : tone === 'neutral' ? '#F3ECE2' : C.basil;
+  const labelColor = enabled && tone === 'soft' ? C.basilDark : enabled && tone === 'neutral' ? C.inkSoft : '#fff';
   const burst = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
   const [bursting, setBursting] = useState(false);
@@ -68,10 +75,10 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact }: { l
   };
   return (
     <Animated.View style={{ transform: [{ translateX: shake }] }}>
-      <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, { backgroundColor: enabled ? C.basilDark : C.lockedDark }, pressed && { transform: [{ translateY: 3 }] }]}>
-        <View style={[styles.buyInner, compact && styles.buyCompact, { backgroundColor: enabled ? C.basil : C.locked }]}>
+      <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
+        <View style={[styles.buyInner, compact && styles.buyCompact, { backgroundColor: innerBg }]}>
           {sub ? <Text style={styles.buySub}>{sub}</Text> : null}
-          <Text style={[styles.buyLabel, compact && { fontSize: 15 }]} numberOfLines={1} adjustsFontSizeToFit>
+          <Text style={[styles.buyLabel, compact && { fontSize: 15 }, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit>
             {label}
           </Text>
         </View>

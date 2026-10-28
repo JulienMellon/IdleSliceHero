@@ -275,29 +275,33 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
   const counterFront = lay.counter.x1 + 3;
 
   // Drivers: in through the door, to the counter, grab a box, back out. Each exit pays out.
-  const driverCount = Math.min(4, shop.drivers);
+  const counterFront0 = lay.counter.x1 + 3;
+  // As many drivers as fit 12 units apart between the counter and the door (critic G35).
+  const driverCount = Math.max(1, Math.min(4, shop.drivers, Math.floor((lay.door - 4 - (counterFront0 + 3)) / 12) + 1));
   let payout = false;
   const walkers: { key: string; x: number; y: number; kind: 'driver' | 'guest'; shirt: string; flip: boolean; step: number; carry: boolean }[] = [];
   for (let i = 0; i < driverCount; i++) {
     const p = ((t + i * 1.25) % 5) / 5;
     const out = lay.door + 5;
     // Each driver has their own pickup spot, 6 apart, so bodies never merge (critic G33).
-    const at = Math.min(lay.door - 4, counterFront + 3 + i * 7);
+    const at = Math.min(lay.door - 4, counterFront + 3 + i * 12);
     const x = p < 0.4 ? out + (at - out) * (p / 0.4) : p < 0.55 ? at : at + (out - at) * ((p - 0.55) / 0.45);
     const prev = mem.current.phase[`d${i}`];
     if (running && prev !== undefined && prev < 0.55 && p >= 0.55) payout = true;
     mem.current.phase[`d${i}`] = p;
-    walkers.push({ key: `d${i}`, x, y: FLOOR_Y - 0.5, kind: 'driver', shirt: '#2F80ED', flip: p < 0.4, step: p < 0.4 || p > 0.55 ? clock * 12 : 0, carry: p >= 0.55 });
+    walkers.push({ key: `d${i}`, x, y: FLOOR_Y - 0.5 - (i % 2) * 3, kind: 'driver', shirt: '#2F80ED', flip: p < 0.4, step: p < 0.4 || p > 0.55 ? clock * 12 : 0, carry: p >= 0.55 });
   }
   // Walk-ins: in through the door, order at the counter, then sit at a table.
   const guestCount = Math.min(2, lay.tables.length);
   for (let i = 0; i < guestCount; i++) {
     const p = ((t + 2.3 + i * 3.1) % 7) / 7;
     const door = lay.door + 5;
-    const at = Math.min(lay.door - 6, counterFront + 3 + driverCount * 7);
+    // Walk-ins queue at the near end of the counter, on the front lane, away from the drivers' spots.
+    const at = counterFront - 1;
     const seat = lay.tables[i % lay.tables.length];
     const x = p < 0.35 ? door + (at - door) * (p / 0.35) : p < 0.5 ? at : at + (seat.x - 6 - at) * ((p - 0.5) / 0.5);
-    const y = p < 0.5 ? FLOOR_Y + 1 : FLOOR_Y + 1 + (seat.y + 4 - (FLOOR_Y + 1)) * ((p - 0.5) / 0.5);
+    const lane = FLOOR_Y + 8;
+    const y = p < 0.5 ? lane : lane + (seat.y + 4 - lane) * ((p - 0.5) / 0.5);
     walkers.push({ key: `g${i}`, x, y, kind: 'guest', shirt: ['#9B51E0', '#27AE60'][i], flip: p < 0.5, step: p < 0.35 || p > 0.5 ? clock * 12 : 0, carry: false });
   }
 
@@ -417,7 +421,7 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
         {taps.map((tp) => {
           const k = (clock - tp.at) / 0.9;
           const label = tp.count > 1 ? `${tp.text} ×${tp.count}` : tp.text;
-          const y = 40 + tp.slot * 10 - k * 6;
+          const y = (shop.managed ? 25 : 40) + tp.slot * 10 - k * 6;
           const w = label.length * 3.5 + 6;
           return (
             <G key={`${tp.slot}-${tp.text}`} opacity={k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3}>
