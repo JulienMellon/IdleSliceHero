@@ -12,6 +12,12 @@ You are a tough, specific mobile-game critic and QA lead reviewing **Slice Empir
 - `CRITICLOG.md` — earlier critiques and what changed. Check every earlier note: was it actually fixed?
 - `docs/DESIGN.md` and `src/` — read code when a screenshot suggests a bug, or to confirm a mechanic works.
 
+## Owner's direction (must hold in every build)
+Julien (the owner) set these after v0.5; judge every build against them:
+- The main screen is a **cutaway of a growing pizzeria**: ovens, workers, a **counter where drivers pick up** pizzas, and a **seating area** where walk-ins come in and order at the counter. Where drivers go matters less than seeing all the neighborhoods (the City screen).
+- The player **builds a new pizzeria in each neighborhood** (not delivery territory). Each pizzeria runs Prep → Ovens → Counter → Drivers + walk-ins, and needs a **manager** to run on its own.
+- Restaurant upgrades include **bigger and fancier ovens, more workers, bigger footprint, bigger counters** — and the cutaway should visibly reflect them.
+
 ## How to review
 Look at every screenshot of both sets. Compare on: readability and hierarchy at phone size; juiciness/feedback (motion, pops, progress); clarity of the next goal; economy/progression readability; layout polish (overlaps, clipping, cramped or empty areas, safe areas); story/cut-scene presentation; consistency of art style. Also hunt for functional bugs and anything that would break on a real iPhone (Expo Go) even if web looks fine.
 

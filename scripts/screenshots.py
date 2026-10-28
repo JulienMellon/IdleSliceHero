@@ -28,13 +28,23 @@ URL = f"http://127.0.0.1:{port}/"
 
 now_ms = int(time.time() * 1000)
 seen_all_but = lambda ids: ids
+def shop(built=True, managed=True, **kw):
+    base = {"built": built, "managed": managed, "prep": 1, "ovens": 1, "grade": 0, "counter": 1, "drivers": 1, "tables": 1, "footprint": 0, "queued": 0, "sold": 0}
+    base.update(kw)
+    return base
+
+IDS = ["downtown", "suburbs", "waterfront", "university", "industrial", "uptown"]
 MID_SAVE = {
-    "saveVersion": 1, "cash": 3120, "totalEarned": 15000, "ovenLevel": 18, "drivers": 9, "vehicle": 1,
-    "unlocked": ["downtown", "suburbs", "waterfront"],
-    "delivered": {"downtown": 900, "suburbs": 620, "waterfront": 120, "university": 0, "industrial": 0, "uptown": 0},
-    "stock": 6, "batchProgress": 0.5, "autoBake": True, "dronesUnlocked": False, "cityComplete": False,
+    "saveVersion": 2, "cash": 3120, "totalEarned": 15000, "vehicle": 1, "active": "suburbs",
+    "shops": {
+        "downtown": shop(prep=22, ovens=20, grade=1, counter=18, drivers=14, tables=8, footprint=1, sold=4000),
+        "suburbs": shop(prep=12, ovens=10, grade=1, counter=9, drivers=6, tables=7, footprint=1, sold=700),
+        "waterfront": shop(managed=False, sold=10),
+        "university": shop(built=False, managed=False), "industrial": shop(built=False, managed=False), "uptown": shop(built=False, managed=False),
+    },
+    "dronesUnlocked": False, "cityComplete": False,
     "seenScenes": ["downtown-1", "downtown-2", "downtown-3", "downtown-4", "suburbs-1", "suburbs-2", "suburbs-3", "waterfront-1"],
-    "lastSavedAt": now_ms,
+    "scrapbookViewed": 7, "lastSavedAt": now_ms,
 }
 report = {"version": VERSION, "errors": [], "shots": [], "loaded": False}
 
@@ -85,9 +95,9 @@ with sync_playwright() as pw:
     shot(page, "03-new-game")
     try:
         for i in range(40):
-            tid(page, "oven").click(); time.sleep(0.25)
-            if i % 8 == 7:
-                for b in ["buy-driver", "buy-oven"]:
+            tid(page, "shop").click(); time.sleep(0.25)
+            if i % 4 == 3:
+                for b in ["buy-drivers", "buy-tables"]:
                     tid(page, b).click()
             if page.locator('[data-testid="skip-scene"]').count():
                 tid(page, "skip-scene").click()
@@ -104,6 +114,14 @@ with sync_playwright() as pw:
     if page.locator('[data-testid="skip-scene"]').count():
         tid(page, "skip-scene").click()
     shot(page, "05-mid-game", 1.2)
+
+    # 3b. An unmanaged pizzeria (Waterfront) via its tab, then the City overview
+    try:
+        tid(page, "tab-waterfront").click(); shot(page, "05b-unmanaged-shop", 0.8)
+        tid(page, "open-city").click(); shot(page, "05c-city", 0.8)
+        tid(page, "back").click()
+    except Exception as e:
+        report["errors"].append(f"tab/city navigation failed: {e}")
 
     # 4. Scrapbook
     try:
@@ -122,10 +140,16 @@ with sync_playwright() as pw:
     shot(page, "07-offline-popup", 0.8)
 
     # 6. Late game: every neighborhood, van fleet
-    late = dict(MID_SAVE, cash=8.5e6, ovenLevel=72, drivers=41, vehicle=3,
-                unlocked=["downtown", "suburbs", "waterfront", "university", "industrial", "uptown"],
-                seenScenes=[f"{n}-{b}" for n in ["downtown","suburbs","waterfront","university","industrial","uptown"] for b in range(1,5)][:21],
-                delivered={"downtown": 2e5, "suburbs": 1.6e5, "waterfront": 1.2e5, "university": 9e4, "industrial": 6e4, "uptown": 40500}, dronesUnlocked=True)
+    late = dict(MID_SAVE, cash=4.2e7, vehicle=3, active="industrial", dronesUnlocked=True,
+                shops={
+                    "downtown": shop(prep=90, ovens=80, grade=3, counter=85, drivers=40, tables=60, footprint=4, sold=7e5),
+                    "suburbs": shop(prep=80, ovens=70, grade=3, counter=75, drivers=35, tables=50, footprint=3, sold=6e5),
+                    "waterfront": shop(prep=70, ovens=60, grade=3, counter=65, drivers=30, tables=45, footprint=3, sold=4e5),
+                    "university": shop(prep=60, ovens=55, grade=3, counter=58, drivers=26, tables=40, footprint=3, sold=3e5),
+                    "industrial": shop(prep=104, ovens=98, grade=4, counter=101, drivers=44, tables=70, footprint=4, sold=180500),
+                    "uptown": shop(managed=False, sold=0),
+                },
+                seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:18], scrapbookViewed=18)
     page = seeded_page(browser, late); time.sleep(2.5)
     if page.locator('[data-testid="skip-scene"]').count():
         tid(page, "cutscene").click(); shot(page, "08-late-cutscene", 0.8)
@@ -135,7 +159,7 @@ with sync_playwright() as pw:
     shot(page, "11-late-game-pops-b", 0.9)
     try:
         for _ in range(3):
-            tid(page, "oven").click(); time.sleep(0.15)
+            tid(page, "shop").click(); time.sleep(0.15)
         shot(page, "12-late-rush-tap", 0.2)
     except Exception as e:
         report["errors"].append(f"late oven tap failed: {e}")

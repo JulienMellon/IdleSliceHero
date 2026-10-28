@@ -41,8 +41,8 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'shop',
         cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
         lines: [
-          { speaker: 'Nonna Rosa', text: 'Fine. First you bake. Tap the oven. Tap, tap, tap! Like you mean it.' },
-          { speaker: 'Nonna Rosa', text: 'Then hire drivers. A pizza in the shop feeds nobody. Deliver it!' },
+          { speaker: 'Nonna Rosa', text: 'Fine. First you bake. Tap the kitchen, one batch each tap. Tap, tap, tap!' },
+          { speaker: 'Nonna Rosa', text: 'Then hire workers. Drivers to deliver, more cooks for the kitchen. Capisce?' },
         ],
       },
       {
@@ -172,8 +172,8 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'shop',
         cast: [{ id: 'nonna-rosa', mood: 'happy' }],
         lines: [
-          { speaker: 'Nonna Rosa', text: 'From now on, I keep the oven going myself. You rest your tapping finger.' },
-          { speaker: 'Nonna Rosa', text: 'You go win the rest of the city. Go! Before I get sentimental.' },
+          { speaker: 'Nonna Rosa', text: 'From now on, I run the Downtown kitchen myself. You rest your tapping finger.' },
+          { speaker: 'Nonna Rosa', text: 'You go open shops in the other neighborhoods. Go! Before I get sentimental.' },
         ],
       },
     ],
@@ -192,9 +192,9 @@ export const HOME_SCENES: Scene[] = [
       {
         backdrop: 'suburbs',
         cast: [{ id: 'dale', mood: 'happy' }],
-        caption: 'The Suburbs. Lawns. Minivans. A whistle, blowing constantly.',
+        caption: 'Snip! Your Suburbs pizzeria opens. Lawns, minivans, a loud whistle.',
         lines: [
-          { speaker: 'Dale', text: 'Hey there, pal! Dale Hoffman. Coach of the Port Marinara Mudhens!' },
+          { speaker: 'Dale', text: 'Hey there, pal! Dale Hoffman, Mudhens coach. Welcome to the neighborhood!' },
           { speaker: 'Dale', text: 'We\'re oh-and-fourteen this season. Which means we can only go up!' },
         ],
       },
@@ -211,14 +211,15 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'dale', mood: 'surprised' }],
         lines: [
           { speaker: 'Dale', text: 'PIZZA?! Pal, these families have big orders and bigger wallets.' },
-          { speaker: 'Dale', text: 'Longer drive out here, sure, but every pizza pays way more than Downtown.' },
+          { speaker: 'Dale', text: 'Every pizza out here pays way more than Downtown. You picked a good spot!' },
         ],
       },
       {
         backdrop: 'suburbs',
         cast: [{ id: 'dale', mood: 'happy' }],
         lines: [
-          { speaker: 'Dale', text: 'Send those drivers! Go, Mudhens! ...That\'s our chant. It\'s a work in progress.' },
+          { speaker: 'Dale', text: 'Who runs this shop when you\'re gone? Hire a manager, pal. Trust a coach.' },
+          { speaker: 'Dale', text: 'Go, Mudhens! ...That\'s our chant. It\'s a work in progress.' },
         ],
       },
     ],
@@ -230,7 +231,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'suburbs',
     beat: 2,
     title: 'A Real Goal',
-    trigger: { kind: 'deliveries', neighborhood: 'suburbs', count: 150 },
+    trigger: { kind: 'deliveries', neighborhood: 'suburbs', count: 300 },
     panels: [
       {
         backdrop: 'suburbs',
@@ -263,7 +264,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'suburbs',
     beat: 3,
     title: 'Sponsored by Sadness',
-    trigger: { kind: 'deliveries', neighborhood: 'suburbs', count: 600 },
+    trigger: { kind: 'deliveries', neighborhood: 'suburbs', count: 2000 },
     panels: [
       {
         backdrop: 'suburbs',
@@ -307,7 +308,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'suburbs',
     beat: 4,
     title: 'Mudhens Rise',
-    trigger: { kind: 'deliveries', neighborhood: 'suburbs', count: 1500 },
+    trigger: { kind: 'deliveries', neighborhood: 'suburbs', count: 8000 },
     panels: [
       {
         backdrop: 'suburbs',
@@ -331,7 +332,7 @@ export const HOME_SCENES: Scene[] = [
         caption: 'MUDHENS WIN. Somebody\'s mom faints.',
         lines: [
           { speaker: 'Dale', text: 'Champions! The Mudhens are champions! I\'m gonna cry. I\'m crying.' },
-          { speaker: 'Dale', text: 'Whole Suburbs is ordering from you now, pal. You\'re family.' },
+          { speaker: 'Dale', text: 'Whole Suburbs is eating at your shop now, pal. You\'re family.' },
         ],
       },
     ],
@@ -350,14 +351,14 @@ export const HOME_SCENES: Scene[] = [
       {
         backdrop: 'waterfront',
         cast: [],
-        caption: 'The Waterfront. Gulls, fog, and boats older than your car.',
+        caption: 'Your new place on the Waterfront opens. Gulls, fog, and old boats.',
         lines: [],
       },
       {
-        backdrop: 'waterfront',
+        backdrop: 'shop',
         cast: [{ id: 'marisol', mood: 'neutral' }],
         lines: [
-          { speaker: 'Captain Marisol', text: 'Ahoy, landlubber. Captain Marisol. Retired. Mostly.' },
+          { speaker: 'Captain Marisol', text: 'Ahoy, landlubber. Captain Marisol. Retired. Mostly. Your first customer.' },
           { speaker: 'Captain Marisol', text: 'Forty years I fished these waters. Now I just feed the gulls and complain.' },
         ],
       },
@@ -366,7 +367,7 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'marisol', mood: 'happy' }],
         lines: [
           { speaker: 'Captain Marisol', text: 'Dock crews work all hours and tip like sailors. Generously, I mean.' },
-          { speaker: 'Captain Marisol', text: 'Pizza out here fetches a fine price. Worth the extra miles, I promise.' },
+          { speaker: 'Captain Marisol', text: 'Pizza out here fetches a fine price. You dropped anchor in the right spot.' },
         ],
       },
       {
@@ -385,7 +386,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'waterfront',
     beat: 2,
     title: 'Pizza Night Dockside',
-    trigger: { kind: 'deliveries', neighborhood: 'waterfront', count: 800 },
+    trigger: { kind: 'deliveries', neighborhood: 'waterfront', count: 3000 },
     panels: [
       {
         backdrop: 'waterfront',
@@ -419,7 +420,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'waterfront',
     beat: 3,
     title: 'For Sale',
-    trigger: { kind: 'deliveries', neighborhood: 'waterfront', count: 3000 },
+    trigger: { kind: 'deliveries', neighborhood: 'waterfront', count: 15000 },
     panels: [
       {
         backdrop: 'waterfront',
@@ -464,7 +465,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'waterfront',
     beat: 4,
     title: 'Dock Saved',
-    trigger: { kind: 'deliveries', neighborhood: 'waterfront', count: 8000 },
+    trigger: { kind: 'deliveries', neighborhood: 'waterfront', count: 50000 },
     panels: [
       {
         backdrop: 'waterfront',
@@ -506,11 +507,11 @@ export const HOME_SCENES: Scene[] = [
       {
         backdrop: 'university',
         cast: [],
-        caption: 'University District. 2 AM. Every window still lit.',
+        caption: 'University District, 2 AM. Your new shop opens. Students pour in.',
         lines: [],
       },
       {
-        backdrop: 'university',
+        backdrop: 'shop',
         cast: [{ id: 'priya', mood: 'neutral' }],
         lines: [
           { speaker: 'Priya', text: 'Hi. One plain cheese slice. Your cheapest one. I\'m paying in quarters.' },
@@ -522,7 +523,7 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'priya', mood: 'happy' }],
         lines: [
           { speaker: 'Priya', text: 'Priya. Computer science, year three. Sleep, year zero.' },
-          { speaker: 'Priya', text: 'Students order nonstop, all night. Tons of orders. Your drivers will be busy.' },
+          { speaker: 'Priya', text: 'Students order nonstop, all night. Your new place will never be empty.' },
         ],
       },
       {
@@ -541,7 +542,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'university',
     beat: 2,
     title: 'Debugging Dinner',
-    trigger: { kind: 'deliveries', neighborhood: 'university', count: 6000 },
+    trigger: { kind: 'deliveries', neighborhood: 'university', count: 20000 },
     panels: [
       {
         backdrop: 'university',
@@ -577,7 +578,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'university',
     beat: 3,
     title: 'Poached',
-    trigger: { kind: 'deliveries', neighborhood: 'university', count: 25000 },
+    trigger: { kind: 'deliveries', neighborhood: 'university', count: 90000 },
     panels: [
       {
         backdrop: 'university',
@@ -621,7 +622,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'university',
     beat: 4,
     title: 'Drone Launch',
-    trigger: { kind: 'deliveries', neighborhood: 'university', count: 60000 },
+    trigger: { kind: 'deliveries', neighborhood: 'university', count: 300000 },
     reward: 'drones',
     panels: [
       {
@@ -666,7 +667,7 @@ export const HOME_SCENES: Scene[] = [
       {
         backdrop: 'industrial',
         cast: [],
-        caption: 'The Industrial Zone. Smokestacks, sparks, and a very large man.',
+        caption: 'Opening day in the Industrial Zone. Sparks, smoke, one very large man.',
         lines: [],
       },
       {
@@ -690,7 +691,8 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'industrial',
         cast: [{ id: 'big-sal', mood: 'neutral' }],
         lines: [
-          { speaker: 'Big Sal', text: 'Hot by midnight. Cold pizza, you\'re done. Got it? Good. Go.' },
+          { speaker: 'Big Sal', text: 'Hot by midnight. Cold pizza, you\'re done. Got it? Good.' },
+          { speaker: 'Big Sal', text: 'And get a manager. A shop that stops when you leave ain\'t a shop.' },
         ],
       },
     ],
@@ -702,7 +704,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'industrial',
     beat: 2,
     title: 'Almost a Smile',
-    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 20000 },
+    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 50000 },
     panels: [
       {
         backdrop: 'industrial',
@@ -736,7 +738,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'industrial',
     beat: 3,
     title: 'Vending Machine War',
-    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 50000 },
+    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 180000 },
     panels: [
       {
         backdrop: 'industrial',
@@ -780,7 +782,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'industrial',
     beat: 4,
     title: 'Brother Sal',
-    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 110000 },
+    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 500000 },
     panels: [
       {
         backdrop: 'industrial',
@@ -796,7 +798,7 @@ export const HOME_SCENES: Scene[] = [
           { id: 'big-sal', mood: 'neutral' },
           { id: 'nonna-rosa', mood: 'surprised' },
         ],
-        caption: 'Big Sal visits the shop for the first time.',
+        caption: 'Big Sal visits Rosa\'s Downtown shop for the first time.',
         lines: [
           { speaker: 'Nonna Rosa', text: '...Salvatore?' },
           { speaker: 'Big Sal', text: 'Hi, Rosie. Forty years. I knew that sauce the second I tasted it.' },
@@ -841,15 +843,15 @@ export const HOME_SCENES: Scene[] = [
       {
         backdrop: 'uptown',
         cast: [],
-        caption: 'Uptown. Doormen. Tiny dogs in tiny coats. Big tips.',
+        caption: 'Uptown. Tiny dogs in tiny coats. Your newest pizzeria opens.',
         lines: [],
       },
       {
-        backdrop: 'uptown',
+        backdrop: 'shop',
         cast: [{ id: 'genevieve', mood: 'neutral' }],
         lines: [
           { speaker: 'Genevieve', text: 'Genevieve Laurent. Food critic. You may have heard of me. Everyone has.' },
-          { speaker: 'Genevieve', text: 'Your first delivery to Uptown. Let us see. *one dainty bite*' },
+          { speaker: 'Genevieve', text: 'A grand opening. How quaint. Let us see. *one dainty bite*' },
         ],
       },
       {
@@ -877,7 +879,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'uptown',
     beat: 2,
     title: 'Second Bite',
-    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 40000 },
+    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 80000 },
     panels: [
       {
         backdrop: 'uptown',
@@ -913,7 +915,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'uptown',
     beat: 3,
     title: 'A Bribe on Toast',
-    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 90000 },
+    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 250000 },
     panels: [
       {
         backdrop: 'megaslice-hq',
@@ -957,7 +959,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'uptown',
     beat: 4,
     title: 'Five Stars',
-    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 200000 },
+    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 500000 },
     reward: 'city-complete',
     panels: [
       {

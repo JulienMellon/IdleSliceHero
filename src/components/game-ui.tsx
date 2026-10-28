@@ -47,7 +47,7 @@ export function useCountUp(target: number) {
 const BURST = ['✨', '💰', '🍕', '✨', '⭐', '💰'];
 
 /** 3D "candy" button. onPress returns true on a successful purchase (burst) or false (shake). */
-export function BuyButton({ label, sub, enabled, onPress, testID }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string }) {
+export function BuyButton({ label, sub, enabled, onPress, testID, compact }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean }) {
   const burst = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
   const [bursting, setBursting] = useState(false);
@@ -69,9 +69,9 @@ export function BuyButton({ label, sub, enabled, onPress, testID }: { label: str
   return (
     <Animated.View style={{ transform: [{ translateX: shake }] }}>
       <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, { backgroundColor: enabled ? C.basilDark : C.lockedDark }, pressed && { transform: [{ translateY: 3 }] }]}>
-        <View style={[styles.buyInner, { backgroundColor: enabled ? C.basil : C.locked }]}>
+        <View style={[styles.buyInner, compact && styles.buyCompact, { backgroundColor: enabled ? C.basil : C.locked }]}>
           {sub ? <Text style={styles.buySub}>{sub}</Text> : null}
-          <Text style={styles.buyLabel} numberOfLines={1} adjustsFontSizeToFit>
+          <Text style={[styles.buyLabel, compact && { fontSize: 15 }]} numberOfLines={1} adjustsFontSizeToFit>
             {label}
           </Text>
         </View>
@@ -111,7 +111,7 @@ export interface Goal {
   onPress?: () => boolean;
 }
 
-export function Hud({ cash, subtitle, goal, onScrapbook, onSettings, newScenes }: { cash: number; subtitle: string; goal: Goal | null; onScrapbook: () => void; onSettings: () => void; newScenes: number }) {
+export function Hud({ cash, subtitle, goal, onScrapbook, onSettings, onCity, newScenes }: { cash: number; subtitle: string; goal: Goal | null; onScrapbook: () => void; onSettings: () => void; onCity: () => void; newScenes: number }) {
   const shown = useCountUp(cash);
   const flash = useRef(new Animated.Value(1)).current;
   const counting = shown < cash - 0.5;
@@ -145,8 +145,13 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onSettings, newScenes }
             {subtitle}
           </Text>
         </View>
-        <Pressable onPress={onSettings} style={styles.hudIcon} testID="open-settings" hitSlop={8}>
-          <Text style={styles.hudEmoji}>⚙️</Text>
+        <View style={{ gap: 6 }}>
+          <Pressable onPress={onCity} style={styles.hudIcon} testID="open-city" hitSlop={8}>
+            <Text style={styles.hudEmoji}>🗺️</Text>
+          </Pressable>
+        </View>
+        <Pressable onPress={onSettings} style={styles.hudIconSmall} testID="open-settings" hitSlop={8}>
+          <Text style={{ fontSize: 15 }}>⚙️</Text>
         </Pressable>
       </View>
       {goal && (
@@ -310,6 +315,7 @@ const styles = StyleSheet.create({
   buyOuter: { borderRadius: 14, paddingBottom: 4, minWidth: 88 },
   buyInner: { borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10, alignItems: 'center', borderWidth: 2, borderColor: 'rgba(0,0,0,0.12)' },
   buyLabel: { fontFamily: F.bold, color: '#fff', fontSize: 17 },
+  buyCompact: { paddingVertical: 2 },
   buySub: { fontFamily: F.semi, color: 'rgba(255,255,255,0.85)', fontSize: 10, letterSpacing: 1 },
   burst: { position: 'absolute', alignSelf: 'center', top: 8, fontSize: 18 },
 
@@ -317,6 +323,7 @@ const styles = StyleSheet.create({
   hudTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   hudIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
   hudEmoji: { fontSize: 22 },
+  hudIconSmall: { position: 'absolute', right: -4, top: -4, width: 26, height: 26, borderRadius: 13, backgroundColor: C.tomatoDark, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   badgeText: { fontFamily: F.bold, fontSize: 10, color: C.ink },
   cashPill: { flex: 1, alignItems: 'center' },

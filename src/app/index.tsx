@@ -1,21 +1,20 @@
 import { router } from 'expo-router';
-import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CityMap } from '@/components/city-map';
+import { type Goal, Hud, OfflinePopup, Toast } from '@/components/game-ui';
 import { DriverIcon } from '@/components/icons';
-import { type Goal, Hud, OfflinePopup, OvenCard, Toast, UpgradeRow } from '@/components/game-ui';
-import { HOME_SCENES } from '@/content/scenes/home';
-import { CITY_NAME, MAP_VIEWBOX, NEIGHBORHOODS, VEHICLES } from '@/content/tuning';
-import type { NeighborhoodId } from '@/content/types';
-import { count, money } from '@/engine/format';
-import * as G from '@/engine/game';
+import { emitPayout } from '@/components/pulse-bus';
+import { ShopCutaway } from '@/components/shop-cutaway';
+import { ShopTabs, StationCard } from '@/components/shop-ui';
+import { CITY_NAME, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
+import { money } from '@/engine/format';
+import * as G from '@/engine/game';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
 
-
+const STAGE_NAME: Record<G.Stage, string> = { prep: 'prep', ovens: 'ovens', counter: 'counter', customers: 'drivers & seats' };
 
 export default function GameScreen() {
   const { width, height } = useWindowDimensions();
@@ -24,138 +23,135 @@ export default function GameScreen() {
   const offline = useGame((s) => s.offline);
   const toast = useGame((s) => s.toast);
   const covered = useGame((s) => !!s.playing || !!s.offline);
-  const { tapOven, buy, unlock, dismissOffline } = useGame.getState();
+  const { tapShop, buy, buyFleet, build, setActive, dismissOffline } = useGame.getState();
 
-  const bakeT = G.bakeSeconds(game.ovenLevel);
-  const shelf = G.shelfCapacity();
-  // Never nag to tap once Nonna runs the oven (G15).
-  const idle = !game.autoBake && game.batchProgress < 0 && G.canStartBatch(game);
-  const shelfFull = G.shelfFull(game);
-  const onPressHood = useCallback((id: NeighborhoodId) => unlock(id), [unlock]);
-  const delivering = game.stock > 0.01 || game.batchProgress >= 0 || game.autoBake;
-  const eps = G.earningsPerSecond(game);
-  const neck = G.bottleneck(game);
-  const veh = VEHICLES[game.vehicle];
-  const nextVeh = VEHICLES[game.vehicle + 1];
-  const vehLock = G.nextVehicleLock(game);
-  const nextHood = NEIGHBORHOODS.find((n) => !game.unlocked.includes(n.id));
-  const hoodLock = nextHood ? G.neighborhoodLock(game, nextHood.id) : null;
+  const id = game.active;
+  const shop = game.shops[id];
+  const nd = G.def(id);
+  const v = game.vehicle;
+  const neck = G.bottleneck(shop, v);
+  const rates: Record<G.Stage, number> = { prep: G.prepRate(shop), ovens: G.ovenRate(shop), counter: G.counterRate(shop), customers: G.demandRate(shop, v) };
+  const minRate = Math.min(...Object.values(rates));
+  const tied = (st: G.Stage) => rates[st] <= minRate * (1 + 1e-9);
+  const plus = (x: number) => `+${money(x)}/s`;
+  const cutH = Math.min(height * 0.34, width * 0.62);
   const newScenes = Math.max(0, game.seenScenes.length - game.scrapbookViewed);
-  const mapH = Math.min(height * 0.36, (width * MAP_VIEWBOX.h) / MAP_VIEWBOX.w);
+  const eps = G.earningsPerSecond(game);
 
-  // One always-visible next goal: the purchase worth saving for, picked by cash/sec per dollar.
-  const gain = (what: G.Purchase) => G.gainOf(game, what) ?? 0;
-  const plus = (v: number) => `+${money(v)}/sec`;
-  const big = G.bestBigPurchase(game);
-  let goal: Goal | null = null;
-  if (nextHood && hoodLock && nextVeh && game.vehicle < nextHood.minVehicle && !vehLock) {
-    goal = { label: `Get ${nextVeh.name}s → reach ${nextHood.name}`, current: game.cash, target: nextVeh.cost, onPress: () => buy('vehicle') };
-  } else if (big === 'vehicle' && nextVeh) {
-    goal = { label: `Get ${nextVeh.name}s · ${plus(gain('vehicle'))}`, current: game.cash, target: nextVeh.cost, onPress: () => buy('vehicle') };
-  } else if (big === 'unlock' && nextHood) {
-    goal = { label: `Open ${nextHood.name} · ${plus(gain('unlock'))}`, current: game.cash, target: nextHood.unlockCost, onPress: () => unlock(nextHood.id) };
-  } else if ((nextHood || (nextVeh && !vehLock)) && neck === 'oven') {
-    goal = { label: 'Oven is the limit — upgrade it', current: game.cash, target: G.ovenCost(game), onPress: () => buy('oven') };
-  } else {
-    // Next story beat that's waiting on deliveries: say exactly where to deliver.
-    const pending = HOME_SCENES.find((sc) => !game.seenScenes.includes(sc.id) && sc.trigger.kind === 'deliveries' && game.unlocked.includes(sc.trigger.neighborhood));
-    if (pending && pending.trigger.kind === 'deliveries') {
-      const hood = NEIGHBORHOODS.find((n) => n.id === pending.trigger.neighborhood)!;
-      goal = {
-        label: `Deliver to ${hood.name} for the next story`,
-        current: game.delivered[hood.id],
-        target: pending.trigger.count,
-        text: `${count(game.delivered[hood.id])} / ${count(pending.trigger.count)} 🍕`,
-      };
-    } else {
-      goal = { label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : `Story ${game.seenScenes.length}/${HOME_SCENES.length}`, current: 1, target: 1, text: '🏆' };
+  // Goal bar: the big purchase worth saving for, by cash/sec per dollar.
+  const candidates: (Goal & { ratio: number })[] = [];
+  for (const n of NEIGHBORHOODS) {
+    const sh = game.shops[n.id];
+    if (sh.built && !sh.managed && n.id !== 'downtown') {
+      candidates.push({ label: `Hire a manager for ${n.name}`, current: game.cash, target: n.managerCost, ratio: (G.shopEarnings(game, n.id) / n.managerCost) * 3, onPress: () => {
+        if (game.active !== n.id) setActive(n.id);
+        return useGame.getState().buy('manager');
+      } });
     }
   }
+  const next = G.nextToBuild(game);
+  if (next) candidates.push({ label: `Build a pizzeria in ${next.name}`, current: game.cash, target: next.buildCost, ratio: G.buildGain(game, next.id) / (next.buildCost + next.managerCost), onPress: () => build(next.id) });
+  const vg = G.vehicleGain(game);
+  if (vg && vg > 0) candidates.push({ label: `Upgrade fleet to ${VEHICLES[v + 1].name}s · ${plus(vg)}`, current: game.cash, target: VEHICLES[v + 1].cost, ratio: vg / VEHICLES[v + 1].cost, onPress: buyFleet });
+  candidates.sort((a, b) => b.ratio - a.ratio);
+  let goal: Goal | null = candidates[0] ?? null;
+  if (!goal) {
+    goal = { label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : `Story ${game.seenScenes.length}/24`, current: 1, target: 1, text: '🏆' };
+  }
 
-  // HUD hint (G4): tell the player what actually helps right now.
-  const subtitle = game.autoBake
-    ? `${money(eps)}/sec`
-    : neck === 'drivers'
-      ? game.cash >= G.driverCost(game)
-        ? 'Hire a driver to deliver faster!'
-        : shelfFull
-          ? `Shelf full — saving for a driver: ${money(game.cash)} / ${money(G.driverCost(game))}`
-          : idle && game.stock < 1
-            ? 'Tap the oven to bake!'
-            : `Saving for a driver: ${money(game.cash)} / ${money(G.driverCost(game))}`
-      : 'Tap the oven to bake faster!';
+  const subtitle = !shop.managed
+    ? id === 'downtown'
+      ? 'Tap the kitchen to bake each batch!'
+      : 'Tap to bake here · or hire a manager'
+    : `${money(eps)}/sec across the city`;
+
+  const card = (what: G.Upgrade, props: { icon: React.ReactNode; title: string; level?: string; detail: string; hot?: boolean; wide?: boolean; costLabel?: string }) => {
+    const cost = G.upgradeCostOf(game, id, what);
+    const lock = G.upgradeLock(game, id, what);
+    return (
+      <StationCard
+        key={what}
+        testID={`buy-${what}`}
+        {...props}
+        detail={lock && what !== 'manager' ? lock : props.detail}
+        cost={lock ? null : cost}
+        costLabel={props.costLabel ?? (lock ? 'Locked' : 'MAX')}
+        canBuy={!lock && cost !== null && game.cash >= cost}
+        onBuy={() => buy(what)}
+      />
+    );
+  };
+  const stationDetail = (st: G.Stage, what: G.Upgrade, rateText: string) => {
+    const g = G.upgradeGain(game, id, what) ?? 0;
+    if (g > 1e-9) return `${rateText} · ${plus(g)}`;
+    if (tied(st)) {
+      const others = (Object.keys(rates) as G.Stage[]).filter((x) => x !== st && tied(x)).map((x) => STAGE_NAME[x]);
+      return `${rateText} · tied with ${others.join(' & ')}`;
+    }
+    return `${rateText} · waiting on ${STAGE_NAME[neck]}`;
+  };
+  const gradeNext = OVEN_GRADES[shop.grade + 1];
+  const fpNext = FOOTPRINTS[shop.footprint + 1];
+  const fleetLock = G.nextVehicleLock(game);
+  const nextVeh = VEHICLES[v + 1];
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Hud
-        cash={game.cash}
-        subtitle={subtitle}
-        goal={goal}
-        newScenes={newScenes}
-        onScrapbook={() => router.push('/scrapbook')}
-        onSettings={() => router.push('/settings')}
-      />
-      <View style={{ height: mapH, backgroundColor: C.map }}>
-        <CityMap game={game} width={width} height={mapH} active={delivering} paused={covered} onPressHood={onPressHood} />
+      <Hud cash={game.cash} subtitle={subtitle} goal={goal} newScenes={newScenes} onScrapbook={() => router.push('/scrapbook')} onSettings={() => router.push('/settings')} onCity={() => router.push('/city')} />
+      <ShopTabs game={game} onSelect={setActive} onBuild={build} />
+      <View style={{ height: cutH, backgroundColor: nd.wall, overflow: 'hidden' }}>
+        <ShopCutaway
+          game={game}
+          id={id}
+          width={width}
+          height={cutH}
+          paused={covered}
+          onTap={() => {
+            tapShop();
+            if (shop.managed) emitPayout();
+          }}
+        />
       </View>
-      <ScrollView style={styles.sheet} contentContainerStyle={[styles.sheetInner, { paddingBottom: insets.bottom + 20 }]}>
-        <OvenCard progress={game.batchProgress < 0 ? 0 : Math.min(1, game.batchProgress / bakeT)} stock={game.stock} shelf={shelf} auto={game.autoBake} idle={idle} full={shelfFull} fast={G.ovenIsFast(game)} rate={G.bakeRate(game)} onTap={tapOven} />
-        <UpgradeRow
-          testID="buy-driver"
-          icon={<DriverIcon />}
-          title="Drivers"
-          level={`× ${game.drivers}`}
-          detail={neck === 'drivers' ? `${G.deliveryRate(game).toFixed(1)} pizzas/sec · ${plus(gain('driver'))}` : `${G.deliveryRate(game).toFixed(1)} pizzas/sec · waiting on oven`}
-          milestone={milestoneFor(game.drivers)}
-          cost={G.driverCost(game)}
-          canBuy={game.cash >= G.driverCost(game)}
-          highlight={neck === 'drivers' && game.cash >= G.driverCost(game)}
-          onBuy={() => buy('driver')}
-        />
-        <UpgradeRow
-          testID="buy-oven"
-          icon="🔥"
-          title="Oven Speed"
-          level={`Lv ${game.ovenLevel}`}
-          detail={neck === 'oven' ? `${G.bakeRate(game).toFixed(1)} pizzas/sec · ${plus(gain('oven'))}` : `${G.bakeRate(game).toFixed(1)} pizzas/sec · waiting on drivers`}
-          milestone={milestoneFor(game.ovenLevel)}
-          cost={G.ovenCost(game)}
-          canBuy={game.cash >= G.ovenCost(game)}
-          highlight={neck === 'oven' && game.cash >= G.ovenCost(game)}
-          onBuy={() => buy('oven')}
-        />
-        <UpgradeRow
-          testID="buy-vehicle"
-          icon={nextVeh ? nextVeh.emoji : veh.emoji}
-          title={nextVeh ? `${nextVeh.name}s` : `${veh.name}s`}
-          level={nextVeh ? `(now: ${veh.name})` : ''}
-          detail={nextVeh ? (vehLock ?? (gain('vehicle') > 0.005 ? `+${Math.round(((nextVeh.capacity * nextVeh.speed) / (veh.capacity * veh.speed) - 1) * 100)}% deliveries · ${plus(gain('vehicle'))}` : '+$0/sec now · oven is the limit')) : 'Fastest fleet in town'}
-          cost={nextVeh && !vehLock ? nextVeh.cost : null}
+      <ScrollView style={styles.sheet} contentContainerStyle={[styles.grid, { paddingBottom: insets.bottom + 20 }]}>
+        {!shop.managed &&
+          card('manager', {
+            icon: '🧑‍💼',
+            title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire a ${nd.name} manager`,
+            detail: id === 'downtown' ? 'Keep baking — Nonna will take over the kitchen soon' : `Runs this pizzeria on its own and earns while you're away (${plus(G.shopEarnings(game, id))})`,
+            hot: id !== 'downtown',
+            wide: true,
+            costLabel: id === 'downtown' ? 'Soon' : undefined,
+          })}
+        {card('prep', { icon: '🧑‍🍳', title: 'Prep Cooks', level: `Lv ${shop.prep}`, detail: stationDetail('prep', 'prep', `${rates.prep.toFixed(1)}/s`), hot: tied('prep') })}
+        {card('ovens', { icon: '🔥', title: 'Ovens', level: `Lv ${shop.ovens}`, detail: stationDetail('ovens', 'ovens', `${rates.ovens.toFixed(1)}/s`), hot: tied('ovens') })}
+        {card('counter', { icon: '🧾', title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rates.counter.toFixed(1)}/s`), hot: tied('counter') })}
+        {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${G.deliveryRate(shop, v).toFixed(1)}/s`), hot: tied('customers') })}
+        {card('tables', { icon: '🪑', title: 'Seating', level: `Lv ${shop.tables}`, detail: stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)} walk-ins/s`), hot: false })}
+        {card('grade', { icon: '✨', title: 'Oven Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? `→ ${gradeNext.name}: ×2 bake speed` : 'Finest ovens in town' })}
+        {card('expand', { icon: '🏗️', title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `→ ${fpNext.name}: max Lv ${G.levelCap(shop) + 25}, more room` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
+        <StationCard
+          testID="buy-fleet"
+          icon={nextVeh ? nextVeh.emoji : VEHICLES[v].emoji}
+          title="Fleet"
+          detail={nextVeh ? fleetLock ?? `→ ${nextVeh.name}s, all shops · ${vg && vg > 0 ? plus(vg) : '+$0/s now'}` : `${VEHICLES[v].name}s — top tier`}
+          cost={nextVeh && !fleetLock ? nextVeh.cost : null}
           costLabel={nextVeh ? 'Locked' : 'MAX'}
-          canBuy={!!nextVeh && !vehLock && game.cash >= nextVeh.cost}
-          highlight={big === 'vehicle' && !!nextVeh && game.cash >= nextVeh.cost}
-          onBuy={() => buy('vehicle')}
+          canBuy={!!nextVeh && !fleetLock && game.cash >= nextVeh.cost}
+          onBuy={buyFleet}
         />
         <Text style={styles.footer}>
-          {CITY_NAME} · {game.unlocked.length}/6 neighborhoods · v{APP_VERSION}
+          {CITY_NAME} · {NEIGHBORHOODS.filter((n) => game.shops[n.id].built).length}/6 pizzerias · v{APP_VERSION}
         </Text>
       </ScrollView>
       {offline && <OfflinePopup seconds={offline.seconds} earned={offline.earned} onCollect={dismissOffline} />}
-      {toast && <Toast text={toast.text} top={insets.top + 96} />}
+      {toast && <Toast text={toast.text} top={insets.top + 140} />}
     </View>
   );
 }
 
-function milestoneFor(level: number) {
-  const to = G.nextMilestone(level);
-  if (!to) return null;
-  const from = to === 25 ? 0 : to === 50 ? 25 : 50;
-  return { from, to, level };
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
-  sheet: { flex: 1, backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, marginTop: -14 },
-  sheetInner: { padding: 12, gap: 9 },
-  footer: { textAlign: 'center', fontFamily: F.regular, color: C.inkSoft, fontSize: 12, marginTop: 4 },
+  sheet: { flex: 1, backgroundColor: C.bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, marginTop: -10 },
+  grid: { padding: 10, gap: 8, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  footer: { width: '100%', textAlign: 'center', fontFamily: F.regular, color: C.inkSoft, fontSize: 12, marginTop: 4 },
 });

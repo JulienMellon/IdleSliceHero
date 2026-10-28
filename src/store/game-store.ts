@@ -24,9 +24,12 @@ interface Store {
   load: () => Promise<void>;
   save: () => Promise<void>;
   tick: (dt: number) => void;
-  tapOven: () => void;
-  buy: (what: 'oven' | 'driver' | 'vehicle') => boolean;
-  unlock: (id: NeighborhoodId) => boolean;
+  /** Tap the active pizzeria: queue a batch (no manager) or fill a rush order (managed). */
+  tapShop: () => void;
+  buy: (what: G.Upgrade) => boolean;
+  buyFleet: () => boolean;
+  build: (id: NeighborhoodId) => boolean;
+  setActive: (id: NeighborhoodId) => void;
   finishScene: () => void;
   replayScene: (scene: Scene) => void;
   dismissOffline: () => void;
@@ -112,14 +115,21 @@ export const useGame = create<Store>((set, get) => {
       queueScene();
     },
 
-    tapOven: () => set({ game: G.tapOven(get().game) }),
-
-    buy: (what) => {
+    tapShop: () => {
       const g = get().game;
-      return commit(what === 'oven' ? G.buyOven(g) : what === 'driver' ? G.buyDriver(g) : G.buyVehicle(g));
+      set({ game: G.tapShop(g, g.active) });
     },
 
-    unlock: (id) => commit(G.unlockNeighborhood(get().game, id)),
+    buy: (what) => commit(G.buyUpgrade(get().game, get().game.active, what)),
+
+    buyFleet: () => commit(G.buyVehicle(get().game)),
+
+    build: (id) => commit(G.buildShop(get().game, id)),
+
+    setActive: (id) => {
+      const g = get().game;
+      if (g.shops[id].built && g.active !== id) set({ game: { ...g, active: id } });
+    },
 
     finishScene: () => {
       const p = get().playing;

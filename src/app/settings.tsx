@@ -28,7 +28,7 @@ export default function Settings() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Stats</Text>
           <Text style={styles.stat}>Lifetime earnings: {money(game.totalEarned)}</Text>
-          <Text style={styles.stat}>Pizzas delivered: {Math.floor(Object.values(game.delivered).reduce((a, b) => a + b, 0)).toLocaleString()}</Text>
+          <Text style={styles.stat}>Pizzas sold: {Math.floor(Object.values(game.shops).reduce((a, s) => a + s.sold, 0)).toLocaleString()}</Text>
           <Text style={styles.stat}>Story scenes seen: {game.seenScenes.length}/24</Text>
         </View>
         <View style={styles.card}>

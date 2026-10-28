@@ -19,20 +19,36 @@ Slice Empire is a mobile idle game: the player grows one failing pizza shop into
 
 ## Core loop
 
-Shops bake pizzas, drivers deliver them to unlocked neighborhoods, each delivery pays cash, and cash buys upgrades that speed up the loop.
+Every neighborhood gets its own pizzeria. Each pizzeria runs a pipeline of stations, and the slowest station sets how fast it earns. Cash buys upgrades and new pizzerias.
 
-1. **Bake:** each shop produces pizzas at its oven speed.
-2. **Deliver:** drivers carry pizzas to neighborhoods. Trip time depends on distance and vehicle.
-3. **Earn:** each completed delivery pays that neighborhood's order value.
-4. **Upgrade:** spend cash on oven speed, drivers, vehicles, new neighborhoods, new shops and managers.
-5. **Repeat faster.** Story milestones trigger cut-scenes along the way.
+1. **Prep:** prep cooks stretch dough and add toppings.
+2. **Ovens:** ovens bake the prepped pizzas.
+3. **Counter:** counter staff box pizzas and hand them over.
+4. **Customers:** two kinds of demand pull from the counter:
+   - **Drivers** pick up boxes at the counter and deliver around the neighborhood (full order value).
+   - **Walk-ins** come through the door, order at the counter and eat in the **seating area** (70% of order value, no driver needed).
+5. **Earn:** each pizza sold pays that neighborhood's order value. City income is the sum of all pizzerias.
+6. **Upgrade and expand,** then repeat faster. Story milestones trigger cut-scenes along the way.
+
+**Restaurant upgrades (per pizzeria)**
+
+| Upgrade | What it does |
+| --- | --- |
+| Prep cooks | More and faster prep workers |
+| Ovens | More, bigger ovens (up to the footprint's oven slots) |
+| Oven grade | Fancier ovens: Brick → Stone → Wood-fired → Copper → Golden, each ×2 bake speed |
+| Counter | Bigger counter with more staff, faster hand-off |
+| Drivers | More delivery drivers |
+| Tables | More seats for walk-ins (limited by footprint) |
+| Expand | Bigger footprint: raises the level cap of prep, ovens and counter (25 per tier) and the table limit, and visibly widens the shop |
+| Manager | Runs the shop on its own; without one, each batch needs a tap |
 
 **Idle rules**
 
-- Earnings continue while the app is closed.
-- Offline earnings are capped at 4 hours at the start; upgrades extend the cap.
+- Pizzerias with a manager keep earning while the app is closed; offline earnings are capped at 4 hours at the start.
 - On return, a "While you were away" popup shows the total collected.
-- Before managers are unlocked, a shop needs a tap to start each batch. Managers automate it.
+- Without a manager, a pizzeria only works while you tap it (one tap = one batch). Nonna Rosa becomes Downtown's manager at the end of the tutorial; every other pizzeria needs one hired.
+- The city-wide **Fleet** upgrade (bike → scooter → car → van → drone) speeds up every pizzeria's drivers.
 
 ## Progression
 
@@ -40,27 +56,18 @@ A city runs through four stages; finishing the city lets the player franchise in
 
 | Stage | What the player does | Unlocks |
 | --- | --- | --- |
-| 1. One shop | Bake and deliver to Downtown by bike | Oven speed, drivers |
-| 2. Cover the city | Unlock neighborhoods farther out that pay more per order | Neighborhoods, vehicles |
-| 3. More shops | Open extra locations to cut delivery distance | Shops, managers (automation) |
+| 1. Nonna's shop | Tap to bake, hire the first workers in Downtown | Prep, ovens, counter, drivers, tables |
+| 2. Second pizzeria | Build in the Suburbs, hire a manager | Managers, expansions, fleet |
+| 3. Cover the city | Build a pizzeria in every neighborhood | Oven grades, drones (Priya) |
 | 4. Franchise | Sell the city to move to the next one | Franchise Stars, next city |
 
-**City 1 neighborhoods (in unlock order)**
+**City 1 neighborhoods (in build order):** Downtown → Suburbs → Waterfront → University → Industrial → Uptown. Each costs more to build and upgrade, and pays more per pizza.
 
-| Neighborhood | Distance | Order value |
-| --- | --- | --- |
-| Downtown | Nearest | Lowest |
-| Suburbs |  |  |
-| Waterfront |  |  |
-| University |  |  |
-| Industrial |  |  |
-| Uptown | Farthest | Highest |
-
-**Vehicles:** bike → scooter → car → van → drone. Each tier shortens trip time. Drones unlock through Priya's University storyline.
+**Fleet:** bike → scooter → car → van → drone, city-wide. Drones unlock through Priya's University storyline.
 
 **Prestige (franchising)**
 
-- Franchising resets cash, shops and upgrades in the current city.
+- Franchising resets cash, pizzerias and upgrades in the current city.
 - The player earns Franchise Stars, each adding a permanent earnings multiplier.
 - Each new city has bigger numbers and one new twist, such as traffic or weather.
 - City order after the home city: Boston → Chicago → New York → Los Angeles.
@@ -74,8 +81,9 @@ Upgrade costs grow 15% per level, and milestone levels double an upgrade's outpu
 ```
 
 - Milestones at levels 25, 50 and 100 double that upgrade's speed or output.
-- Neighborhood order value and distance both rise with unlock order, so farther neighborhoods pay more but need faster vehicles.
-- Earnings per second = deliveries per second × order value × Franchise Star multiplier × any active boost.
+- Each pizzeria's order value and upgrade costs both rise with build order.
+- A pizzeria's pizzas per second = min(prep, ovens, counter, drivers + walk-ins). Earnings per second = Σ over pizzerias of (delivered × order value + walk-ins × 0.7 × order value) × Franchise Star multiplier × any active boost.
+- Without a manager, a pizzeria only produces the batches the player taps for.
 - Rewarded-ad boost (post-MVP): 2× earnings for a fixed time.
 
 All base costs, base values and growth rates live in one tuning file so balancing never touches game logic. Starting numbers are an open decision (see below).
@@ -181,8 +189,8 @@ assets/         art, character portraits, sounds
 
 Flat, cartoony 2D throughout, chosen so a solo developer can produce it.
 
-- **Main screen:** top-down city map. Locked neighborhoods are gray; unlocked ones light up in color.
-- **Drivers:** small icons moving along routes from shops to neighborhoods, changing with vehicle tier.
+- **Main screen:** side-view cutaway of the selected pizzeria: prep table, ovens on the back wall, counter, seating area and the front door, with animated cooks, staff, walk-ins and drivers picking up at the counter. The shop visibly grows with upgrades (more ovens, fancier oven grades, a longer counter, more tables, a wider footprint and nicer decor).
+- **Neighborhood tabs** switch between pizzerias; a **City** screen shows all six neighborhoods and their pizzerias.
 - **Cut-scenes:** comic panels with speech bubbles, in the same flat style.
 - **MVP:** placeholder art (simple shapes, character portraits, text boxes), replaced with real illustrations later.
 
@@ -192,8 +200,8 @@ v0.1 is the home city playable end to end with placeholder art, no accounts, ads
 
 **v0.1 (MVP)**
 
-- [ ] One city, one shop, 6 neighborhoods
-- [ ] 3 upgrades: oven speed, number of drivers, vehicle type
+- [x] One city, 6 neighborhoods, a pizzeria in each
+- [x] Restaurant upgrades: prep cooks, ovens, oven grade, counter, drivers, tables, expand, manager; city-wide fleet
 - [ ] Offline earnings with the 4-hour cap
 - [ ] Local save and load
 - [ ] Cut-scene player and Scrapbook
@@ -201,7 +209,6 @@ v0.1 is the home city playable end to end with placeholder art, no accounts, ads
 
 **Later versions**
 
-1. Extra shops and managers
 2. Rush-hour events (Friday night, big game day)
 3. Franchising and City 2 (Boston)
 4. Real illustrations and sound

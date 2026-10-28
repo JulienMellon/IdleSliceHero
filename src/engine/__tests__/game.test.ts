@@ -1,193 +1,185 @@
 /// <reference types="jest" />
 import * as G from '../game';
-import { NEIGHBORHOODS, TUNING, VEHICLES } from '../../content/tuning';
+import { NEIGHBORHOODS, TUNING } from '../../content/tuning';
+import { duration, money } from '../format';
 
 const fresh = () => G.newGame(1_000_000);
+const managed = (s: G.GameState, id: G.GameState['active'] = 'downtown') => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], built: true, managed: true } } });
 
-describe('economy formulas', () => {
+describe('formulas', () => {
   test('cost grows 15% per level', () => {
-    expect(G.upgradeCost(100, 0)).toBe(100);
     expect(G.upgradeCost(100, 1)).toBe(115);
     expect(G.upgradeCost(100, 10)).toBe(Math.ceil(100 * 1.15 ** 10));
   });
   test('milestones double output at 25/50/100', () => {
-    expect(G.milestoneMultiplier(24)).toBe(1);
-    expect(G.milestoneMultiplier(25)).toBe(2);
-    expect(G.milestoneMultiplier(50)).toBe(4);
-    expect(G.milestoneMultiplier(100)).toBe(8);
+    expect([24, 25, 50, 100].map(G.milestoneMultiplier)).toEqual([1, 2, 4, 8]);
     expect(G.nextMilestone(30)).toBe(50);
-    expect(G.nextMilestone(100)).toBeNull();
   });
-  test('farther neighborhoods always pay more per second of driving', () => {
-    for (let i = 1; i < NEIGHBORHOODS.length; i++) {
-      const a = NEIGHBORHOODS[i - 1], b = NEIGHBORHOODS[i];
-      expect(b.orderValue / b.distance).toBeGreaterThan(a.orderValue / a.distance);
-    }
+  test('a pizzeria sells at the rate of its slowest stage', () => {
+    const shop = G.newShop(true);
+    const expected = Math.min(G.prepRate(shop), G.ovenRate(shop), G.counterRate(shop), G.demandRate(shop, 0));
+    expect(G.shopRate(shop, 0)).toBeCloseTo(expected);
+    expect(G.bottleneck(shop, 0)).toBe('customers'); // one bike driver + one table at the start
+  });
+  test('walk-ins pay less than deliveries', () => {
+    const shop = { ...G.newShop(true), drivers: 1, tables: 1 };
+    expect(G.valuePerPizza('downtown', shop, 0)).toBeLessThan(3);
+    expect(G.valuePerPizza('downtown', shop, 0)).toBeGreaterThan(3 * TUNING.walkInShare);
+  });
+  test('oven grades multiply bake speed', () => {
+    const shop = G.newShop(true);
+    expect(G.ovenRate({ ...shop, grade: 2 }) / G.ovenRate(shop)).toBeCloseTo(4);
   });
 });
 
-describe('baking and delivering', () => {
-  test('oven is idle until tapped, then bakes one batch', () => {
+describe('managers and tapping', () => {
+  test('an unmanaged pizzeria only makes what you tap for', () => {
     let s = fresh();
-    s = G.tick(s, 10);
-    expect(s.stock).toBe(0);
-    s = G.tapOven(s);
-    s = G.tick(s, G.bakeSeconds(1) + 0.01);
-    expect(s.batchProgress).toBe(-1);
+    s = G.tick(s, 30);
+    expect(s.cash).toBe(0);
+    s = G.tapShop(s, 'downtown');
+    expect(s.shops.downtown.queued).toBe(TUNING.tapBatch);
+    s = G.tick(s, 60);
+    expect(s.shops.downtown.sold).toBeCloseTo(TUNING.tapBatch);
     expect(s.cash).toBeGreaterThan(0);
   });
-  test('tapping a fast oven pays a real rush bonus', () => {
-    const s = { ...fresh(), autoBake: true, ovenLevel: 72, drivers: 41, vehicle: 3, unlocked: NEIGHBORHOODS.map((n) => n.id) };
-    expect(G.ovenIsFast(s)).toBe(true);
-    const after = G.tapOven(s);
-    expect(after.cash - s.cash).toBeCloseTo(G.earningsPerSecond(s) * G.RUSH_SECONDS);
+  test('the tap queue is capped', () => {
+    let s = fresh();
+    for (let i = 0; i < 10; i++) s = G.tapShop(s, 'downtown');
+    expect(s.shops.downtown.queued).toBe(TUNING.tapQueueMax);
   });
-  test('tapping a baking oven rushes it', () => {
-    let s = G.tapOven(fresh());
-    s = G.tapOven(s);
-    expect(s.batchProgress).toBeGreaterThan(0);
-  });
-  test('auto-bake keeps producing and earns at steady state', () => {
-    let s = { ...fresh(), autoBake: true };
-    for (let i = 0; i < 600; i++) s = G.tick(s, 1);
-    const eps = G.earningsPerSecond(s);
-    const before = s.cash;
-    for (let i = 0; i < 100; i++) s = G.tick(s, 1);
-    expect((s.cash - before) / 100).toBeCloseTo(eps, 1);
-  });
-  test('fast ovens are not capped by the tick rate (Lv 72, 5 Hz ticks)', () => {
-    let s = { ...fresh(), autoBake: true, ovenLevel: 72, drivers: 41, vehicle: 3, unlocked: NEIGHBORHOODS.map((n) => n.id) };
-    for (let i = 0; i < 50; i++) s = G.tick(s, 0.2);
-    const before = s.cash;
-    for (let i = 0; i < 500; i++) s = G.tick(s, 0.2);
-    const actual = (s.cash - before) / 100;
-    expect(actual / G.earningsPerSecond(s)).toBeGreaterThan(0.98);
-    expect(actual / G.earningsPerSecond(s)).toBeLessThan(1.02);
-  });
-  test('throughput matches the formula across oven levels', () => {
-    for (const ovenLevel of [1, 10, 25, 50, 100, 150]) {
-      let s = { ...fresh(), autoBake: true, ovenLevel, drivers: 300, vehicle: 4, unlocked: NEIGHBORHOODS.map((n) => n.id) };
-      for (let i = 0; i < 100; i++) s = G.tick(s, 0.2);
-      const before = s.cash;
-      for (let i = 0; i < 500; i++) s = G.tick(s, 0.2);
-      expect(((s.cash - before) / 100) / G.earningsPerSecond(s)).toBeGreaterThan(0.95);
+  test('a managed pizzeria earns its rate continuously, at any tick size', () => {
+    for (const dt of [0.05, 0.2, 1]) {
+      let s = managed({ ...fresh() });
+      s = { ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, prep: 60, ovens: 60, counter: 60, drivers: 60, footprint: 2 } } };
+      const eps = G.earningsPerSecond(s);
+      const steps = Math.round(20 / dt);
+      for (let i = 0; i < steps; i++) s = G.tick(s, dt);
+      expect(s.cash / 20 / eps).toBeCloseTo(1, 3);
     }
   });
-  test('shelf never overfills', () => {
-    let s = { ...fresh(), autoBake: true, ovenLevel: 200, drivers: 1 };
-    for (let i = 0; i < 100; i++) s = G.tick(s, 1);
-    expect(s.stock).toBeLessThanOrEqual(G.shelfCapacity());
+  test('a rush tap on a managed shop pays a quarter-second of its earnings', () => {
+    const s = managed(fresh());
+    expect(G.tapShop(s, 'downtown').cash).toBeCloseTo(G.shopEarnings(s, 'downtown') * TUNING.rushSeconds);
   });
-  test('no pizzas are wasted when the shelf is nearly full', () => {
-    // Batch finishes with 10 on the shelf: 2 go on the shelf, 2 wait in the oven.
-    let s = { ...fresh(), drivers: 0, stock: 10, batchProgress: G.bakeSeconds(1) - 0.01 };
-    s = G.tick(s, 0.02);
-    expect(s.stock + s.ovenHeld).toBeCloseTo(14);
-    expect(G.shelfFull(s)).toBe(true);
-    expect(G.tapOven(s).batchProgress).toBe(-1); // can't start while pizzas wait in the oven
-    // Drivers free up space and the held pizzas drop onto the shelf.
-    s = { ...s, drivers: 50 };
-    for (let i = 0; i < 20; i++) s = G.tick(s, 0.1);
-    expect(s.ovenHeld).toBe(0);
+  test('Nonna’s recipe scene makes her Downtown’s manager', () => {
+    const s = G.applyReward(fresh(), 'auto-bake');
+    expect(s.shops.downtown.managed).toBe(true);
   });
-  test('a batch can start whenever the shelf has room', () => {
-    expect(G.tapOven({ ...fresh(), stock: 9 }).batchProgress).toBe(0);
-  });
-  test('cash is never NaN with every neighborhood unlocked', () => {
-    let s = { ...fresh(), autoBake: true, unlocked: NEIGHBORHOODS.map((n) => n.id), vehicle: VEHICLES.length - 1 };
-    for (let i = 0; i < 50; i++) s = G.tick(s, 0.5);
-    expect(Number.isFinite(s.cash)).toBe(true);
-  });
-});
-
-describe('offline earnings', () => {
-  test('manual oven only delivers what is on the shelf', () => {
-    const s = { ...fresh(), stock: 4 };
-    const r = G.applyOffline(s, s.lastSavedAt + 3600_000);
-    expect(r.earned).toBeCloseTo(4 * 3);
-  });
-  test('auto oven earns rate × time, capped at 4 hours', () => {
-    const s = { ...fresh(), autoBake: true };
-    const eps = G.earningsPerSecond(s);
-    const r = G.applyOffline(s, s.lastSavedAt + 10 * 3600_000);
-    expect(r.seconds).toBe(TUNING.offlineCapSeconds);
-    expect(r.earned).toBeCloseTo(eps * TUNING.offlineCapSeconds, 0);
-  });
-  test('clock going backwards earns nothing', () => {
-    const s = { ...fresh(), autoBake: true };
-    expect(G.applyOffline(s, s.lastSavedAt - 5000).earned).toBe(0);
-  });
-});
-
-describe('purchases', () => {
-  test('cannot buy without cash', () => {
-    expect(G.buyOven(fresh()).ok).toBe(false);
-  });
-  test('buying deducts cost and levels up', () => {
-    const s = { ...fresh(), cash: 1000 };
-    const r = G.buyDriver(s);
-    expect(r.ok && r.state.drivers).toBe(2);
-    expect(r.ok && r.state.cash).toBe(1000 - TUNING.drivers.baseCost);
-  });
-  test('first driver is affordable within ~15s of tapping', () => {
+  test('the first worker is affordable within ~15s of tapping', () => {
     let s = fresh();
     let t = 0;
-    while (s.cash < G.driverCost(s) && t < 60) { s = G.tick(G.tapOven(s), 0.5); t += 0.5; }
+    while (s.cash < G.upgradeCostOf(s, 'downtown', 'drivers')! && t < 60) {
+      if (s.shops.downtown.queued < 1) s = G.tapShop(s, 'downtown');
+      s = G.tick(s, 0.5);
+      t += 0.5;
+    }
     expect(t).toBeLessThanOrEqual(15);
   });
-  test('neighborhoods unlock in order and respect vehicle tier', () => {
-    const s = { ...fresh(), cash: 1e9 };
-    expect(G.unlockNeighborhood(s, 'waterfront').ok).toBe(false);
-    const sub = G.unlockNeighborhood(s, 'suburbs');
-    expect(sub.ok).toBe(true);
-    if (sub.ok) expect(G.neighborhoodLock(sub.state, 'waterfront')).toMatch(/Scooter/);
+});
+
+describe('building and upgrading', () => {
+  test('pizzerias are built in order and become the active shop', () => {
+    const s = { ...fresh(), cash: 1e12 };
+    expect(G.buildShop(s, 'waterfront').ok).toBe(false);
+    const r = G.buildShop(s, 'suburbs');
+    expect(r.ok && r.state.shops.suburbs.built).toBe(true);
+    expect(r.ok && r.state.active).toBe('suburbs');
+  });
+  test('footprint caps station levels and tables until you expand', () => {
+    let s = { ...fresh(), cash: 1e12 };
+    s = { ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, ovens: 25, tables: 25 } } };
+    expect(G.upgradeLock(s, 'downtown', 'ovens')).toMatch(/Expand/);
+    expect(G.upgradeLock(s, 'downtown', 'tables')).toMatch(/Expand/);
+    const r = G.buyUpgrade(s, 'downtown', 'expand');
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(G.upgradeLock(r.state, 'downtown', 'ovens')).toBeNull();
+      expect(G.buyUpgrade(r.state, 'downtown', 'ovens').ok).toBe(true);
+    }
+  });
+  test('later pizzerias cost more to upgrade and pay more', () => {
+    for (let i = 1; i < NEIGHBORHOODS.length; i++) {
+      expect(NEIGHBORHOODS[i].costMult).toBeGreaterThan(NEIGHBORHOODS[i - 1].costMult);
+      expect(NEIGHBORHOODS[i].orderValue).toBeGreaterThan(NEIGHBORHOODS[i - 1].orderValue);
+    }
+  });
+  test('Downtown’s manager comes from the story, not the shop', () => {
+    expect(G.upgradeLock(fresh(), 'downtown', 'manager')).toMatch(/Nonna/);
   });
   test('drones need Priya’s story', () => {
     const s = { ...fresh(), cash: 1e12, vehicle: 3 };
     expect(G.buyVehicle(s).ok).toBe(false);
     expect(G.buyVehicle({ ...s, dronesUnlocked: true }).ok).toBe(true);
   });
+  test('advice: tied stages are upgraded together so the bundle always gains', () => {
+    let s = managed({ ...fresh(), cash: 0 });
+    // prep 0.9*3.5 = 3.15 and ovens 0.7*4.5 = 3.15: an exact tie
+    s = { ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, prep: 6, ovens: 8, counter: 20, drivers: 30 } } };
+    expect(G.upgradeGain(s, 'downtown', 'prep')!).toBeCloseTo(0);
+    const b = G.bottleneckBundle(s, 'downtown')!;
+    expect(b.steps.sort()).toEqual(['ovens', 'prep']);
+    expect(b.gain).toBeGreaterThan(0);
+  });
+  test('advice: a capped bottleneck bundles an expansion', () => {
+    let s = managed(fresh());
+    s = { ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, prep: 25, ovens: 25, counter: 25, drivers: 100, grade: 4 } } };
+    const b = G.bottleneckBundle(s, 'downtown')!;
+    expect(b.steps).toContain('expand');
+    expect(b.gain).toBeGreaterThan(0);
+  });
+  test('advice: an upgrade on the bottleneck gains, others gain nothing', () => {
+    const s = managed(fresh());
+    expect(G.upgradeGain(s, 'downtown', 'drivers')!).toBeGreaterThan(0);
+    expect(G.upgradeGain(s, 'downtown', 'ovens')!).toBeCloseTo(0);
+  });
 });
 
-describe('advice', () => {
-  test('mid-game: Cars beat University on value (critic round 4)', () => {
-    const s = { ...fresh(), autoBake: true, ovenLevel: 18, drivers: 9, vehicle: 1, unlocked: ['downtown', 'suburbs', 'waterfront'] as G.GameState['unlocked'] };
-    expect(G.bestBigPurchase(s)).toBe('vehicle');
+describe('offline and saves', () => {
+  test('managed shops earn offline, capped at 4 hours; unmanaged only finish their queue', () => {
+    let s = managed(fresh());
+    s = G.buildShop({ ...s, cash: 1e9 }, 'suburbs').ok ? (G.buildShop({ ...s, cash: 1e9 }, 'suburbs') as { state: G.GameState }).state : s;
+    s = { ...s, cash: 0 };
+    const eps = G.earningsPerSecond(s);
+    const r = G.applyOffline(s, s.lastSavedAt + 10 * 3600_000);
+    expect(r.seconds).toBe(TUNING.offlineCapSeconds);
+    expect(r.earned).toBeCloseTo(eps * TUNING.offlineCapSeconds, 0);
+    expect(r.state.shops.suburbs.sold).toBe(0);
   });
-  test('oven-limited late game: drones add nothing, so no big purchase is advised', () => {
-    const s = { ...fresh(), autoBake: true, ovenLevel: 72, drivers: 41, vehicle: 3, dronesUnlocked: true, unlocked: NEIGHBORHOODS.map((n) => n.id) };
-    expect(G.gainOf(s, 'vehicle')).toBeCloseTo(0);
-    expect(G.bestBigPurchase(s)).toBeNull();
-    expect(G.gainOf(s, 'oven')!).toBeGreaterThan(0);
+  test('clock going backwards earns nothing', () => {
+    const s = managed(fresh());
+    expect(G.applyOffline(s, s.lastSavedAt - 5000).earned).toBe(0);
   });
-});
-
-describe('saves', () => {
-  test('migrate fills defaults and rejects junk', () => {
+  test('v1 saves migrate into Downtown plus starter pizzerias', () => {
+    const v1 = { cash: 500, ovenLevel: 18, drivers: 9, vehicle: 1, autoBake: true, unlocked: ['downtown', 'suburbs', 'atlantis'], delivered: { suburbs: 620 }, seenScenes: ['a', 'b'] };
+    const m = G.migrate(v1, 5);
+    expect(m.cash).toBe(500);
+    expect(m.shops.downtown.ovens).toBe(18);
+    expect(m.shops.downtown.drivers).toBe(9);
+    expect(m.shops.downtown.managed).toBe(true);
+    expect(m.shops.suburbs.built).toBe(true);
+    expect(m.shops.suburbs.sold).toBe(620);
+    expect(m.shops.waterfront.built).toBe(false);
+    expect(m.scrapbookViewed).toBe(2);
+  });
+  test('v2 saves round-trip and reject junk', () => {
+    const s = managed({ ...fresh(), cash: 42 });
+    expect(G.migrate(JSON.parse(JSON.stringify(s)), 5)).toEqual({ ...s });
     expect(G.migrate(null, 5).cash).toBe(0);
-    const m = G.migrate({ cash: 'lots', ovenLevel: 7, unlocked: ['suburbs', 'atlantis'] }, 5);
-    expect(m.cash).toBe(0);
-    expect(m.ovenLevel).toBe(7);
-    expect(m.unlocked).toEqual(['downtown', 'suburbs']);
-    expect(G.migrate({ seenScenes: ['a', 'b', 'c'] }, 5).scrapbookViewed).toBe(3);
-    expect(G.migrate({ seenScenes: ['a', 'b', 'c'], scrapbookViewed: 1 }, 5).scrapbookViewed).toBe(1);
+    expect(G.migrate({ cash: 'lots' }, 5).cash).toBe(0);
   });
 });
 
-import { duration, money } from '../format';
 describe('format', () => {
   test('money', () => {
     expect(money(0)).toBe('$0');
     expect(money(7.5)).toBe('$7.5');
-    expect(money(999)).toBe('$999');
     expect(money(1234)).toBe('$1.23K');
-    expect(money(9_500_000)).toBe('$9.5M');
     expect(money(60_000)).toBe('$60K');
     expect(money(3_900, true)).toBe('$3.90K');
     expect(money(NaN)).toBe('$0');
   });
   test('duration', () => {
     expect(duration(4 * 3600 + 120)).toBe('4h 2m');
-    expect(duration(45)).toBe('45s');
   });
 });

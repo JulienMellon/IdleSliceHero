@@ -5,28 +5,68 @@ export const CITY_NAME = 'Port Marinara';
 
 export const TUNING = {
   costGrowth: 1.15,
-  /** Levels at which an upgrade's output doubles. */
+  /** Levels at which a station's output doubles. */
   milestones: [25, 50, 100] as const,
+  /** Each footprint tier lets prep, ovens and counter level up this much further. */
+  levelsPerFootprint: 25,
   offlineCapSeconds: 4 * 60 * 60,
   saveIntervalSeconds: 30,
-
-  oven: {
-    baseCost: 10,
-    /** Pizzas per batch at level 1. */
-    batchSize: 4,
-    /** Seconds per batch at level 1. */
-    bakeSeconds: 6,
-    /** Each level after 1 adds this fraction of base speed. */
-    speedPerLevel: 0.5,
-    /** Finished pizzas the shelf can hold, in batches. */
-    shelfBatches: 3,
-  },
-
-  drivers: {
-    baseCost: 8,
-    start: 1,
-  },
+  /** Each level after 1 adds this fraction of a station's base speed. */
+  speedPerLevel: 0.5,
+  /** Walk-ins pay this share of the order value (no delivery). */
+  walkInShare: 0.7,
+  /** Pizzas added per tap when a pizzeria has no manager, and how many can be queued. */
+  tapBatch: 4,
+  tapQueueMax: 12,
+  /** Round-trip blocks for a local delivery. */
+  deliveryRoundTrip: 4,
+  /** Rush tap on a managed pizzeria: this many seconds of that shop's earnings. */
+  rushSeconds: 0.25,
 } as const;
+
+/** Per-station base speed (pizzas/sec at level 1) and base cost (× the shop's cost multiplier). */
+export const STATIONS = {
+  prep: { name: 'Prep Cooks', speed: 0.9, cost: 6 },
+  ovens: { name: 'Ovens', speed: 0.7, cost: 8 },
+  counter: { name: 'Counter', speed: 1.1, cost: 7 },
+  drivers: { name: 'Drivers', cost: 8 },
+  tables: { name: 'Seating', speed: 0.15, cost: 12 },
+} as const;
+
+export interface OvenGrade {
+  name: string;
+  /** Bake speed multiplier. */
+  mult: number;
+  /** Cost × the shop's cost multiplier. */
+  cost: number;
+  color: string;
+}
+
+export const OVEN_GRADES: OvenGrade[] = [
+  { name: 'Brick', mult: 1, cost: 0, color: '#B85C38' },
+  { name: 'Stone', mult: 2, cost: 400, color: '#8A8A8A' },
+  { name: 'Wood-fired', mult: 4, cost: 12_000, color: '#7A4A26' },
+  { name: 'Copper', mult: 8, cost: 400_000, color: '#C8763A' },
+  { name: 'Golden', mult: 16, cost: 12_000_000, color: '#E0B000' },
+];
+
+export interface FootprintTier {
+  name: string;
+  /** Cost × the shop's cost multiplier. */
+  cost: number;
+  /** Tables drawn in the cutaway. */
+  maxTables: number;
+  /** Oven slots drawn in the cutaway. */
+  ovenSlots: number;
+}
+
+export const FOOTPRINTS: FootprintTier[] = [
+  { name: 'Hole-in-the-wall', cost: 0, maxTables: 2, ovenSlots: 2 },
+  { name: 'Corner shop', cost: 250, maxTables: 4, ovenSlots: 3 },
+  { name: 'Double storefront', cost: 6_000, maxTables: 6, ovenSlots: 4 },
+  { name: 'Restaurant', cost: 150_000, maxTables: 8, ovenSlots: 5 },
+  { name: 'Flagship', cost: 4_000_000, maxTables: 10, ovenSlots: 6 },
+];
 
 export interface VehicleDef {
   id: VehicleId;
@@ -50,26 +90,29 @@ export const VEHICLES: VehicleDef[] = [
 export interface NeighborhoodDef {
   id: NeighborhoodId;
   name: string;
-  /** Blocks from the shop, one way. */
-  distance: number;
   /** Cash per pizza delivered. */
   orderValue: number;
-  unlockCost: number;
-  /** Minimum vehicle tier index (into VEHICLES) needed to unlock. */
-  minVehicle: number;
-  /** Map position in the 100×76 map viewBox (shop at SHOP_POS). */
+  /** Cost to build this neighborhood's pizzeria. */
+  buildCost: number;
+  /** Multiplies every upgrade cost in this pizzeria. */
+  costMult: number;
+  /** Cost to hire this pizzeria's manager (Downtown's is Nonna, via the story). */
+  managerCost: number;
+  /** Map position in the 100×76 City viewBox. */
   x: number;
   y: number;
   color: string;
+  /** Cutaway wall color. */
+  wall: string;
 }
 
 export const NEIGHBORHOODS: NeighborhoodDef[] = [
-  { id: 'downtown', name: 'Downtown', distance: 2, orderValue: 3, unlockCost: 0, minVehicle: 0, x: 22, y: 36, color: '#F2994A' },
-  { id: 'suburbs', name: 'Suburbs', distance: 4, orderValue: 9, unlockCost: 250, minVehicle: 0, x: 24, y: 56, color: '#6FCF97' },
-  { id: 'waterfront', name: 'Waterfront', distance: 6, orderValue: 24, unlockCost: 4_000, minVehicle: 1, x: 76, y: 56, color: '#56CCF2' },
-  { id: 'university', name: 'University', distance: 8, orderValue: 60, unlockCost: 200_000, minVehicle: 1, x: 18, y: 11, color: '#BB6BD9' },
-  { id: 'industrial', name: 'Industrial', distance: 11, orderValue: 150, unlockCost: 1_200_000, minVehicle: 2, x: 82, y: 11, color: '#A0826D' },
-  { id: 'uptown', name: 'Uptown', distance: 15, orderValue: 400, unlockCost: 5_000_000, minVehicle: 3, x: 50, y: 8, color: '#EB5757' },
+  { id: 'downtown', name: 'Downtown', orderValue: 3, buildCost: 0, costMult: 1, managerCost: 0, x: 22, y: 35, color: '#F2994A', wall: '#F7D9A8' },
+  { id: 'suburbs', name: 'Suburbs', orderValue: 10, buildCost: 300, costMult: 3, managerCost: 600, x: 30, y: 59, color: '#6FCF97', wall: '#DDF2D2' },
+  { id: 'waterfront', name: 'Waterfront', orderValue: 32, buildCost: 20_000, costMult: 10, managerCost: 30_000, x: 76, y: 59, color: '#56CCF2', wall: '#D6EEF8' },
+  { id: 'university', name: 'University', orderValue: 100, buildCost: 800_000, costMult: 30, managerCost: 1_200_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
+  { id: 'industrial', name: 'Industrial', orderValue: 320, buildCost: 8_000_000, costMult: 100, managerCost: 12_000_000, x: 82, y: 9, color: '#A0826D', wall: '#E5DCD3' },
+  { id: 'uptown', name: 'Uptown', orderValue: 1_000, buildCost: 60_000_000, costMult: 300, managerCost: 90_000_000, x: 50, y: 9, color: '#EB5757', wall: '#F6D6D6' },
 ];
 
 export const SHOP_POS = { x: 50, y: 36 };
