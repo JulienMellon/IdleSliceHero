@@ -43,3 +43,6 @@ example
 /android
 
 # local screenshot runs are regenerated each version; keep them out of git history except reviewed ones
+
+# App Store reference screenshots are third-party marketing art: local-only, never commit
+screenshots/reference/
