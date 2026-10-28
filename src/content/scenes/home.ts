@@ -736,7 +736,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'industrial',
     beat: 3,
     title: 'Vending Machine War',
-    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 60000 },
+    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 50000 },
     panels: [
       {
         backdrop: 'industrial',
@@ -780,7 +780,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'industrial',
     beat: 4,
     title: 'Brother Sal',
-    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 150000 },
+    trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 110000 },
     panels: [
       {
         backdrop: 'industrial',
@@ -913,7 +913,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'uptown',
     beat: 3,
     title: 'A Bribe on Toast',
-    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 120000 },
+    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 90000 },
     panels: [
       {
         backdrop: 'megaslice-hq',
@@ -957,7 +957,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'uptown',
     beat: 4,
     title: 'Five Stars',
-    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 300000 },
+    trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 200000 },
     reward: 'city-complete',
     panels: [
       {

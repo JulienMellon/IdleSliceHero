@@ -160,8 +160,23 @@ export function bottleneck(s: GameState): 'oven' | 'drivers' {
 
 // ---------- Actions ----------
 
-/** Tap the oven: starts a batch when idle, otherwise rushes the current one. */
+/** True once batches finish faster than the game ticks: the oven runs as a continuous flow. */
+export function ovenIsFast(s: GameState, tickSeconds = 0.2): boolean {
+  return s.autoBake && bakeSeconds(s.ovenLevel) < tickSeconds * 2;
+}
+
+/** Cash from one "rush order" tap on a fast oven: a quarter-second of full earnings. */
+export const RUSH_SECONDS = 0.25;
+
+/**
+ * Tap the oven: starts a batch when idle, otherwise rushes the current one.
+ * On a fast (continuous) oven a tap fills a rush order instead, paying RUSH_SECONDS of earnings.
+ */
 export function tapOven(s: GameState): GameState {
+  if (ovenIsFast(s)) {
+    const bonus = earningsPerSecond(s) * RUSH_SECONDS;
+    return { ...s, cash: s.cash + bonus, totalEarned: s.totalEarned + bonus };
+  }
   if (s.batchProgress < 0) {
     if (!canStartBatch(s)) return s;
     return { ...s, batchProgress: 0 };
@@ -188,7 +203,7 @@ export function tick(s: GameState, dt: number): GameState {
 
   // Fast automated oven (batches quicker than the tick): model baking and delivering as continuous
   // flows so output isn't capped at one shelf per tick.
-  if (next.autoBake && t < dt * 2) {
+  if (next.autoBake && t < Math.max(dt, 0.2) * 2) {
     const available = next.stock + next.ovenHeld + bakeRate(next) * dt;
     const out = Math.min(available, deliveryRate(next) * dt);
     next.stock = Math.min(shelf, available - out);
@@ -336,4 +351,52 @@ export function applyReward(s: GameState, reward: SceneReward | undefined): Game
 export function markSceneSeen(s: GameState, scene: Scene): GameState {
   if (s.seenScenes.includes(scene.id)) return s;
   return applyReward({ ...s, seenScenes: [...s.seenScenes, scene.id] }, scene.reward);
+}
+
+// ---------- Advice ----------
+
+export type Purchase = 'oven' | 'driver' | 'vehicle' | 'unlock';
+
+/** Cash/sec gained right now by a purchase (ignores affordability; null if it can't be bought at all). */
+export function gainOf(s: GameState, what: Purchase): number | null {
+  const rich = { ...s, cash: Number.MAX_SAFE_INTEGER };
+  let r: BuyResult;
+  if (what === 'oven') r = buyOven(rich);
+  else if (what === 'driver') r = buyDriver(rich);
+  else if (what === 'vehicle') r = buyVehicle(rich);
+  else {
+    const next = NEIGHBORHOODS.find((n) => !s.unlocked.includes(n.id));
+    if (!next) return null;
+    r = unlockNeighborhood(rich, next.id);
+  }
+  if (!r.ok) return null;
+  return earningsPerSecond(r.state) - earningsPerSecond(s);
+}
+
+export function costOf(s: GameState, what: Purchase): number | null {
+  if (what === 'oven') return ovenCost(s);
+  if (what === 'driver') return driverCost(s);
+  if (what === 'vehicle') return nextVehicleLock(s) ? null : VEHICLES[s.vehicle + 1].cost;
+  const next = NEIGHBORHOODS.find((n) => !s.unlocked.includes(n.id));
+  return next && !neighborhoodLock(s, next.id) ? next.unlockCost : null;
+}
+
+/**
+ * The big-ticket purchase worth saving for: whichever of the next neighborhood or the next vehicle
+ * gives more cash/sec per dollar. Returns null when neither helps right now (e.g. the oven is the limit).
+ */
+export function bestBigPurchase(s: GameState): 'unlock' | 'vehicle' | null {
+  let best: 'unlock' | 'vehicle' | null = null;
+  let bestRatio = 0;
+  for (const what of ['unlock', 'vehicle'] as const) {
+    const gain = gainOf(s, what);
+    const cost = costOf(s, what);
+    if (gain === null || cost === null || gain <= 1e-9) continue;
+    const ratio = gain / Math.max(1, cost);
+    if (ratio > bestRatio) {
+      bestRatio = ratio;
+      best = what;
+    }
+  }
+  return best;
 }

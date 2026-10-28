@@ -122,15 +122,23 @@ with sync_playwright() as pw:
     shot(page, "07-offline-popup", 0.8)
 
     # 6. Late game: every neighborhood, van fleet
-    late = dict(MID_SAVE, cash=2.4e6, ovenLevel=72, drivers=41, vehicle=3,
+    late = dict(MID_SAVE, cash=8.5e6, ovenLevel=72, drivers=41, vehicle=3,
                 unlocked=["downtown", "suburbs", "waterfront", "university", "industrial", "uptown"],
                 seenScenes=[f"{n}-{b}" for n in ["downtown","suburbs","waterfront","university","industrial","uptown"] for b in range(1,5)][:21],
-                delivered={"downtown": 1e5, "suburbs": 8e4, "waterfront": 6e4, "university": 3e4, "industrial": 2e4, "uptown": 7000}, dronesUnlocked=True)
+                delivered={"downtown": 2e5, "suburbs": 1.6e5, "waterfront": 1.2e5, "university": 9e4, "industrial": 6e4, "uptown": 40500}, dronesUnlocked=True)
     page = seeded_page(browser, late); time.sleep(2.5)
     if page.locator('[data-testid="skip-scene"]').count():
         tid(page, "cutscene").click(); shot(page, "08-late-cutscene", 0.8)
         tid(page, "skip-scene").click()
     shot(page, "09-late-game", 1.2)
+    shot(page, "10-late-game-pops-a", 0.7)
+    shot(page, "11-late-game-pops-b", 0.9)
+    try:
+        for _ in range(3):
+            tid(page, "oven").click(); time.sleep(0.15)
+        shot(page, "12-late-rush-tap", 0.2)
+    except Exception as e:
+        report["errors"].append(f"late oven tap failed: {e}")
     browser.close()
 
 httpd.shutdown()

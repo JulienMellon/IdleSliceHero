@@ -69,7 +69,7 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
   { id: 'waterfront', name: 'Waterfront', distance: 6, orderValue: 24, unlockCost: 4_000, minVehicle: 1, x: 76, y: 56, color: '#56CCF2' },
   { id: 'university', name: 'University', distance: 8, orderValue: 60, unlockCost: 200_000, minVehicle: 1, x: 18, y: 11, color: '#BB6BD9' },
   { id: 'industrial', name: 'Industrial', distance: 11, orderValue: 150, unlockCost: 1_200_000, minVehicle: 2, x: 82, y: 11, color: '#A0826D' },
-  { id: 'uptown', name: 'Uptown', distance: 15, orderValue: 400, unlockCost: 10_000_000, minVehicle: 3, x: 50, y: 8, color: '#EB5757' },
+  { id: 'uptown', name: 'Uptown', distance: 15, orderValue: 400, unlockCost: 5_000_000, minVehicle: 3, x: 50, y: 8, color: '#EB5757' },
 ];
 
 export const SHOP_POS = { x: 50, y: 36 };

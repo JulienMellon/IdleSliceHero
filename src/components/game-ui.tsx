@@ -6,7 +6,7 @@ import Svg, { Circle } from 'react-native-svg';
 
 import { duration, money } from '../engine/format';
 import { C, F } from '../theme';
-import { onPayout } from './pulse-bus';
+import { emitPayout, onPayout } from './pulse-bus';
 
 const native = Platform.OS !== 'web';
 
@@ -169,7 +169,7 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onSettings, newScenes }
   );
 }
 
-export function OvenCard({ progress, stock, shelf, auto, idle, full, onTap }: { progress: number; stock: number; shelf: number; auto: boolean; idle: boolean; full: boolean; onTap: () => void }) {
+export function OvenCard({ progress, stock, shelf, auto, idle, full, fast, rate, onTap }: { progress: number; stock: number; shelf: number; auto: boolean; idle: boolean; full: boolean; fast: boolean; rate: number; onTap: () => void }) {
   const bounce = useRef(new Animated.Value(1)).current;
   const pulse = useRef(new Animated.Value(1)).current;
 
@@ -193,6 +193,7 @@ export function OvenCard({ progress, stock, shelf, auto, idle, full, onTap }: { 
     bounce.setValue(0.86);
     Animated.spring(bounce, { toValue: 1, friction: 3, useNativeDriver: native }).start();
     onTap();
+    if (fast) emitPayout(); // rush orders pay instantly: kick the cash total
   };
   const R = 30;
   const circ = 2 * Math.PI * R;
@@ -209,16 +210,14 @@ export function OvenCard({ progress, stock, shelf, auto, idle, full, onTap }: { 
       <View style={styles.ovenInfo}>
         <View style={styles.ovenHead}>
           <Text style={styles.cardTitle}>Nonna’s Oven</Text>
-          <Text style={styles.small}>
-            {Math.floor(stock)}/{shelf} ready
-          </Text>
+          <Text style={styles.small}>{fast ? `${rate.toFixed(0)} pizzas/sec` : `${Math.floor(stock)}/${shelf} ready`}</Text>
         </View>
         <Text style={[styles.ovenStatus, full && { color: C.basilDark }]} numberOfLines={1}>
-          {full ? 'Shelf full — hire drivers!' : idle ? 'TAP TO BAKE!' : auto ? 'Auto-baking · tap to rush' : 'Baking… tap to rush'}
+          {fast ? 'Auto-baking · tap for rush orders' : full ? 'Shelf full — hire drivers!' : idle ? 'TAP TO BAKE!' : auto ? 'Auto-baking · tap to rush' : 'Baking… tap to rush'}
         </Text>
         <View style={styles.shelf}>
           {Array.from({ length: shelf }).map((_, i) => (
-            <View key={i} style={[styles.slot, i < Math.floor(stock) && styles.slotFull]} />
+            <View key={i} style={[styles.slot, (fast || i < Math.floor(stock)) && styles.slotFull]} />
           ))}
         </View>
       </View>

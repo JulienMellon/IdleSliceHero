@@ -142,3 +142,25 @@ First playable, matching the design doc's v0.1 scope with placeholder art.
 | D17 | Vehicle row shows the net gain: "+37% deliveries per driver" |
 | D18 | Each neighborhood's pop has its own open spot beside it (no two collide) and rises less |
 | D19 | New custom SVG icon for Drivers: courier in a red cap holding a pizza box |
+
+## v0.4 — critique (round 4)
+
+**VERDICT: NOT SATISFIED** — loads clean; all round-3 items fixed, no regressions. One small bug; the retune makes the goal bar point at the weaker upgrade.
+
+**Fixed:** G14, G15, G16, D17, D18, D19 · **Blockers:** none
+
+**Bugs**
+- G17 In late game (continuous oven), "tap to rush" does nothing but still says it does and still bounces
+
+**Design notes**
+- D20 Goal bar says "Open University $200K" when Cars ($80K) is the better buy (+110% vs +62%)
+- D21 Drones row/goal promise "+37% deliveries" while the oven is the limit — real gain $0/sec
+- D22 Uptown pop rises into the Uptown label; late pops (6–7 chars) may clip buildings
+- D23 Longest late-game gap ~70 min; keep under ~40
+- Harness: late save no longer triggers a late cut-scene; late save prices outdated
+
+## v0.5 — build (addresses round 4; checkpoint, not reviewed)
+
+G17 rush-order taps pay 0.25s of earnings on a fast oven · D20/D21 goal bar and rows driven by real cash/sec-per-dollar (`gainOf`, `bestBigPurchase`), "+$0/sec now · oven is the limit" when true · D22 smaller late pops, Uptown pop clear of its label · D23 longest gap ≤40 min (Uptown $5M; ~4.7h active play) · harness late save updated, extra late shots.
+
+**Loop paused:** Julien asked for a redesign of the main screen (pizzeria cutaway with ovens, workers and a pickup counter) and of the core loop (build a new pizzeria in each neighborhood instead of adding delivery territory). v0.5 was not sent to the critic; the loop resumes on the redesigned build.

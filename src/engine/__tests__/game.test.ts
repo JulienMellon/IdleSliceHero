@@ -36,6 +36,12 @@ describe('baking and delivering', () => {
     expect(s.batchProgress).toBe(-1);
     expect(s.cash).toBeGreaterThan(0);
   });
+  test('tapping a fast oven pays a real rush bonus', () => {
+    const s = { ...fresh(), autoBake: true, ovenLevel: 72, drivers: 41, vehicle: 3, unlocked: NEIGHBORHOODS.map((n) => n.id) };
+    expect(G.ovenIsFast(s)).toBe(true);
+    const after = G.tapOven(s);
+    expect(after.cash - s.cash).toBeCloseTo(G.earningsPerSecond(s) * G.RUSH_SECONDS);
+  });
   test('tapping a baking oven rushes it', () => {
     let s = G.tapOven(fresh());
     s = G.tapOven(s);
@@ -140,6 +146,19 @@ describe('purchases', () => {
     const s = { ...fresh(), cash: 1e12, vehicle: 3 };
     expect(G.buyVehicle(s).ok).toBe(false);
     expect(G.buyVehicle({ ...s, dronesUnlocked: true }).ok).toBe(true);
+  });
+});
+
+describe('advice', () => {
+  test('mid-game: Cars beat University on value (critic round 4)', () => {
+    const s = { ...fresh(), autoBake: true, ovenLevel: 18, drivers: 9, vehicle: 1, unlocked: ['downtown', 'suburbs', 'waterfront'] as G.GameState['unlocked'] };
+    expect(G.bestBigPurchase(s)).toBe('vehicle');
+  });
+  test('oven-limited late game: drones add nothing, so no big purchase is advised', () => {
+    const s = { ...fresh(), autoBake: true, ovenLevel: 72, drivers: 41, vehicle: 3, dronesUnlocked: true, unlocked: NEIGHBORHOODS.map((n) => n.id) };
+    expect(G.gainOf(s, 'vehicle')).toBeCloseTo(0);
+    expect(G.bestBigPurchase(s)).toBeNull();
+    expect(G.gainOf(s, 'oven')!).toBeGreaterThan(0);
   });
 });
 

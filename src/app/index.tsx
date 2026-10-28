@@ -43,14 +43,19 @@ export default function GameScreen() {
   const newScenes = Math.max(0, game.seenScenes.length - game.scrapbookViewed);
   const mapH = Math.min(height * 0.36, (width * MAP_VIEWBOX.h) / MAP_VIEWBOX.w);
 
-  // One always-visible next goal (D2): the next neighborhood, or the vehicle it needs, or the story.
+  // One always-visible next goal: the purchase worth saving for, picked by cash/sec per dollar.
+  const gain = (what: G.Purchase) => G.gainOf(game, what) ?? 0;
+  const plus = (v: number) => `+${money(v)}/sec`;
+  const big = G.bestBigPurchase(game);
   let goal: Goal | null = null;
   if (nextHood && hoodLock && nextVeh && game.vehicle < nextHood.minVehicle && !vehLock) {
-    goal = { label: `Get a ${nextVeh.name} → ${nextHood.name}`, current: game.cash, target: nextVeh.cost, onPress: () => buy('vehicle') };
-  } else if (nextHood && !hoodLock) {
-    goal = { label: `Open ${nextHood.name}`, current: game.cash, target: nextHood.unlockCost, onPress: () => unlock(nextHood.id) };
-  } else if (!nextHood && nextVeh && !vehLock) {
-    goal = { label: `Upgrade to ${nextVeh.name}s`, current: game.cash, target: nextVeh.cost, onPress: () => buy('vehicle') };
+    goal = { label: `Get ${nextVeh.name}s → reach ${nextHood.name}`, current: game.cash, target: nextVeh.cost, onPress: () => buy('vehicle') };
+  } else if (big === 'vehicle' && nextVeh) {
+    goal = { label: `Get ${nextVeh.name}s · ${plus(gain('vehicle'))}`, current: game.cash, target: nextVeh.cost, onPress: () => buy('vehicle') };
+  } else if (big === 'unlock' && nextHood) {
+    goal = { label: `Open ${nextHood.name} · ${plus(gain('unlock'))}`, current: game.cash, target: nextHood.unlockCost, onPress: () => unlock(nextHood.id) };
+  } else if ((nextHood || (nextVeh && !vehLock)) && neck === 'oven') {
+    goal = { label: 'Oven is the limit — upgrade it', current: game.cash, target: G.ovenCost(game), onPress: () => buy('oven') };
   } else {
     // Next story beat that's waiting on deliveries: say exactly where to deliver.
     const pending = HOME_SCENES.find((sc) => !game.seenScenes.includes(sc.id) && sc.trigger.kind === 'deliveries' && game.unlocked.includes(sc.trigger.neighborhood));
@@ -94,13 +99,13 @@ export default function GameScreen() {
         <CityMap game={game} width={width} height={mapH} active={delivering} paused={covered} onPressHood={onPressHood} />
       </View>
       <ScrollView style={styles.sheet} contentContainerStyle={[styles.sheetInner, { paddingBottom: insets.bottom + 20 }]}>
-        <OvenCard progress={game.batchProgress < 0 ? 0 : Math.min(1, game.batchProgress / bakeT)} stock={game.stock} shelf={shelf} auto={game.autoBake} idle={idle} full={shelfFull} onTap={tapOven} />
+        <OvenCard progress={game.batchProgress < 0 ? 0 : Math.min(1, game.batchProgress / bakeT)} stock={game.stock} shelf={shelf} auto={game.autoBake} idle={idle} full={shelfFull} fast={G.ovenIsFast(game)} rate={G.bakeRate(game)} onTap={tapOven} />
         <UpgradeRow
           testID="buy-driver"
           icon={<DriverIcon />}
           title="Drivers"
           level={`× ${game.drivers}`}
-          detail={`${G.deliveryRate(game).toFixed(1)} pizzas/sec${neck === 'drivers' ? ' · bottleneck!' : ''}`}
+          detail={neck === 'drivers' ? `${G.deliveryRate(game).toFixed(1)} pizzas/sec · ${plus(gain('driver'))}` : `${G.deliveryRate(game).toFixed(1)} pizzas/sec · waiting on oven`}
           milestone={milestoneFor(game.drivers)}
           cost={G.driverCost(game)}
           canBuy={game.cash >= G.driverCost(game)}
@@ -112,7 +117,7 @@ export default function GameScreen() {
           icon="🔥"
           title="Oven Speed"
           level={`Lv ${game.ovenLevel}`}
-          detail={`${G.bakeRate(game).toFixed(1)} pizzas/sec${neck === 'oven' ? ' · bottleneck!' : ''}`}
+          detail={neck === 'oven' ? `${G.bakeRate(game).toFixed(1)} pizzas/sec · ${plus(gain('oven'))}` : `${G.bakeRate(game).toFixed(1)} pizzas/sec · waiting on drivers`}
           milestone={milestoneFor(game.ovenLevel)}
           cost={G.ovenCost(game)}
           canBuy={game.cash >= G.ovenCost(game)}
@@ -124,11 +129,11 @@ export default function GameScreen() {
           icon={nextVeh ? nextVeh.emoji : veh.emoji}
           title={nextVeh ? `${nextVeh.name}s` : `${veh.name}s`}
           level={nextVeh ? `(now: ${veh.name})` : ''}
-          detail={nextVeh ? (vehLock ?? `+${Math.round(((nextVeh.capacity * nextVeh.speed) / (veh.capacity * veh.speed) - 1) * 100)}% deliveries per driver`) : 'Fastest fleet in town'}
+          detail={nextVeh ? (vehLock ?? (gain('vehicle') > 0.005 ? `+${Math.round(((nextVeh.capacity * nextVeh.speed) / (veh.capacity * veh.speed) - 1) * 100)}% deliveries · ${plus(gain('vehicle'))}` : '+$0/sec now · oven is the limit')) : 'Fastest fleet in town'}
           cost={nextVeh && !vehLock ? nextVeh.cost : null}
           costLabel={nextVeh ? 'Locked' : 'MAX'}
           canBuy={!!nextVeh && !vehLock && game.cash >= nextVeh.cost}
-          highlight={!!nextHood && game.vehicle < nextHood.minVehicle && !vehLock && !!nextVeh && game.cash >= nextVeh.cost}
+          highlight={big === 'vehicle' && !!nextVeh && game.cash >= nextVeh.cost}
           onBuy={() => buy('vehicle')}
         />
         <Text style={styles.footer}>

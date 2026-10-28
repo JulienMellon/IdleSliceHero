@@ -149,7 +149,7 @@ const POP_OFFSET: Record<NeighborhoodId, [number, number]> = {
   waterfront: [15, -1],
   university: [15, 1],
   industrial: [-15, 1],
-  uptown: [0, 15],
+  uptown: [0, 18],
 };
 function popAnchor(id: NeighborhoodId, x: number, y: number) {
   const [dx, dy] = POP_OFFSET[id];
@@ -222,10 +222,10 @@ export function CityMap({ game, width, height, active, paused, onPressHood }: Pr
       {/* Pops sit above every driver and label so nothing covers them. */}
       {pops.map((p, i) => (
         <G key={`p${i}`} opacity={1 - p.t * p.t}>
-          <SvgText x={p.x} y={p.y - p.t * 3.5} fontSize={5.2} fontFamily={F.bold} fill="#FFFFFF" stroke={C.basilDark} strokeWidth={1.4} textAnchor="middle">
+          <SvgText x={p.x} y={p.y - p.t * 2.5} fontSize={p.text.length > 5 ? 4.2 : 5.2} fontFamily={F.bold} fill="#FFFFFF" stroke={C.basilDark} strokeWidth={1.4} textAnchor="middle">
             {p.text}
           </SvgText>
-          <SvgText x={p.x} y={p.y - p.t * 3.5} fontSize={5.2} fontFamily={F.bold} fill="#FFFFFF" textAnchor="middle">
+          <SvgText x={p.x} y={p.y - p.t * 2.5} fontSize={p.text.length > 5 ? 4.2 : 5.2} fontFamily={F.bold} fill="#FFFFFF" textAnchor="middle">
             {p.text}
           </SvgText>
         </G>
