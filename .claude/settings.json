@@ -1,0 +1,15 @@
+{
+  "model": "opusplan",
+  "effortLevel": "high",
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(npm test *)",
+      "Bash(npx jest *)",
+      "WebSearch",
+      "WebFetch(domain:docs.expo.dev)",
+      "WebFetch(domain:reactnative.dev)",
+      "WebFetch(domain:docs.swmansion.com)"
+    ]
+  }
+}
