@@ -74,6 +74,8 @@ export default function GameScreen() {
 
   // Until a manager is hired, upgrades here only pay while you tap: mute them so the manager stands out (critic D40).
   const idleShop = !shop.managed && id !== 'downtown';
+  // Expand is still worth it when a station is stuck at its level cap.
+  const atCap = (['prep', 'ovens', 'counter', 'tables'] as const).some((w) => shop[w] >= G.levelCap(shop));
   const card = (what: G.Upgrade, props: { icon: React.ReactNode; title: string; level?: string; detail: string; hot?: boolean; wide?: boolean; costLabel?: string }) => {
     const cost = G.upgradeCostOf(game, id, what);
     const lock = G.upgradeLock(game, id, what);
@@ -83,10 +85,10 @@ export default function GameScreen() {
         key={what}
         testID={`buy-${what}`}
         {...props}
-        detail={lock && what !== 'manager' ? lock : muted ? `Only while tapping · ${props.detail}` : props.detail}
+        detail={lock && what !== 'manager' ? lock : props.detail}
         hot={muted ? false : props.hot}
         muted={muted}
-        useless={(G.upgradeGain(game, id, what) ?? 0) <= 1e-9 && what !== 'manager' && what !== 'expand'}
+        useless={(G.upgradeGain(game, id, what) ?? 0) <= 1e-9 && what !== 'manager' && !(what === 'expand' && atCap)}
         cost={lock ? null : cost}
         costLabel={props.costLabel ?? (lock && !/Finest|Biggest|Max/.test(lock) ? 'Locked' : 'MAX')}
         canBuy={!lock && cost !== null && game.cash >= cost}
@@ -126,6 +128,11 @@ export default function GameScreen() {
         />
       </View>
       <ScrollView style={styles.sheet} contentContainerStyle={[styles.grid, { paddingBottom: insets.bottom + 20 }]}>
+        {idleShop && (
+          <View style={styles.banner}>
+            <Text style={styles.bannerText}>Without a manager, upgrades here only pay while you tap.</Text>
+          </View>
+        )}
         {!shop.managed &&
           card('manager', {
             icon: id === 'downtown' ? <Portrait id="nonna-rosa" mood="happy" size={32} /> : '🧑‍💼',
@@ -141,7 +148,7 @@ export default function GameScreen() {
         {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${G.deliveryRate(shop, v).toFixed(1)}/s`), hot: tied('customers') })}
         {card('tables', { icon: '🪑', title: 'Seating', level: `Lv ${shop.tables}`, detail: stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)} walk-ins/s`), hot: false })}
         {card('grade', { icon: '✨', title: 'Oven Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name}: ×2 bake · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} · +$0/s now`) : 'Finest ovens in town' })}
-        {card('expand', { icon: '🏗️', title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `→ ${fpNext.name}: max Lv ${G.levelCap(shop) + 25}, more room` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
+        {card('expand', { icon: '🏗️', title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : '+$0/s now'}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
         <StationCard
           testID="buy-fleet"
           icon={nextVeh ? nextVeh.emoji : VEHICLES[v].emoji}
@@ -168,5 +175,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
   sheet: { flex: 1, backgroundColor: C.bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, marginTop: -10 },
   grid: { padding: 10, gap: 8, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  banner: { width: '100%', backgroundColor: '#FFE7C2', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10, borderWidth: 1.5, borderColor: C.cheeseDark },
+  bannerText: { fontFamily: F.semi, fontSize: 12.5, color: C.ink, textAlign: 'center' },
   footer: { width: '100%', textAlign: 'center', fontFamily: F.regular, color: C.inkSoft, fontSize: 12, marginTop: 4 },
 });

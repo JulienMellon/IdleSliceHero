@@ -327,3 +327,30 @@ Julien's direction after v0.5: the main screen should be a cutaway of a growing 
 | D44 | New vending-machine prop drawn into "Vending Machine War"; tall panels get a distant skyline; panel height capped near square so there's less empty sky |
 | D45 | Station buttons on unmanaged shops use a neutral beige fill, so the red-outlined manager card is the clear next step |
 | Harness | Duplicate shot 14 dropped; late save crosses the new Industrial trigger so the late cut-scene is captured |
+
+## v1.0 — critique (round 9)
+
+**VERDICT: NOT SATISFIED** — loads clean; Owner's direction holds; best Flagship cutaway so far. Drivers still clump while walking; Expand skips the honest-button rule.
+
+**Fixed:** G36, D41, D42 (except Expand), D43, D44, D45, harness · **Still open:** G35 → G37 · **Blockers:** none
+
+**Bugs**
+- G37 Drivers stand still only 15% of their loop; walkers pass through standers in the same lane — blobs near the door
+
+**Design notes**
+- D46 Expand card always bright green and never mentions its ×1.5 prep/counter boost or real +$/s
+- D47 Late managers are walls for non-tappers (Uptown $300M ≈ 48 min); re-run the sim without tapping, keep gaps ≤45 min
+- D48 "Only while tapping ·" prefix truncates card text — use one banner
+- D49 Idle shop shows no driver even though the card says Drivers × 1
+- D50 Top of the late cut-scene panel still flat grey (minor)
+
+## v1.1 — build (addresses round 9)
+
+| Note | Fix |
+| --- | --- |
+| G37 | Drivers now stand at their own spot for 60% of the loop (was 15%); arriving and leaving they use a back lane, drawn smaller and behind, and everyone is drawn in depth order — walkers never pass through standers. Mid-game shows a clean line of drivers at the counter (05) |
+| D46 | Expand card: "×1.5 prep & counter · +$X/s" (or "Lv cap → 75" when a station is capped, else "+$0/s now"); soft button unless it actually helps |
+| D47 | Industrial manager $30M → $12M, Uptown $100M (was $300M). Pacing sim gained `NOTAP=1` (casual player who never taps after Nonna): longest story gap 21 min, city in ~3.4h |
+| D48 | One banner above the grid on unmanaged shops ("Without a manager, upgrades here only pay while you tap.") instead of a prefix on every card |
+| D49 | An idle shop shows one driver waiting at the counter |
+| D50 | Tall panels get a MegaSlice rooftop billboard high in the skyline |

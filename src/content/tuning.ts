@@ -113,8 +113,8 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
   { id: 'suburbs', name: 'Suburbs', orderValue: 10, buildCost: 300, costMult: 3, managerCost: 600, x: 30, y: 59, color: '#6FCF97', wall: '#DDF2D2' },
   { id: 'waterfront', name: 'Waterfront', orderValue: 32, buildCost: 20_000, costMult: 10, managerCost: 30_000, x: 76, y: 59, color: '#56CCF2', wall: '#D6EEF8' },
   { id: 'university', name: 'University', orderValue: 100, buildCost: 1_200_000, costMult: 30, managerCost: 1_800_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
-  { id: 'industrial', name: 'Industrial', orderValue: 320, buildCost: 20_000_000, costMult: 100, managerCost: 30_000_000, x: 82, y: 9, color: '#A0826D', wall: '#E5DCD3' },
-  { id: 'uptown', name: 'Uptown', orderValue: 1_000, buildCost: 200_000_000, costMult: 300, managerCost: 300_000_000, x: 50, y: 9, color: '#EB5757', wall: '#F6D6D6' },
+  { id: 'industrial', name: 'Industrial', orderValue: 320, buildCost: 20_000_000, costMult: 100, managerCost: 12_000_000, x: 82, y: 9, color: '#A0826D', wall: '#E5DCD3' },
+  { id: 'uptown', name: 'Uptown', orderValue: 1_000, buildCost: 200_000_000, costMult: 300, managerCost: 100_000_000, x: 50, y: 9, color: '#EB5757', wall: '#F6D6D6' },
 ];
 
 export const SHOP_POS = { x: 50, y: 36 };

@@ -228,6 +228,17 @@ function Skyline({ top, dark }: { top: number; dark: boolean }) {
   if (base - 130 < top) return null;
   return (
     <G fill={fill}>
+      {/* rooftop billboard high in the sky area */}
+      {top < -60 && (
+        <G>
+          <Rect x={150} y={top + 40} width={4} height={base - 130 - top - 40} fill={fill} />
+          <Rect x={246} y={top + 40} width={4} height={base - 130 - top - 40} fill={fill} />
+          <Rect x={130} y={top + 18} width={140} height={30} rx={4} fill={dark ? '#3A1450' : '#7B2CBF'} stroke="#000" strokeWidth={2} opacity={0.85} />
+          <Text x={200} y={top + 39} fontSize={17} fontFamily={F.bold} fill="#FFC531" textAnchor="middle">
+            MEGASLICE
+          </Text>
+        </G>
+      )}
       {towers.map(([x, h], i) => (
         <Rect key={i} x={x} y={base - h} width={30} height={h} />
       ))}

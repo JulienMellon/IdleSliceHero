@@ -279,17 +279,26 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
   // As many drivers as fit 12 units apart between the counter and the door (critic G35).
   const driverCount = Math.max(1, Math.min(4, shop.drivers, Math.floor((lay.door - 4 - (counterFront0 + 3)) / 12) + 1));
   let payout = false;
-  const walkers: { key: string; x: number; y: number; kind: 'driver' | 'guest'; shirt: string; flip: boolean; step: number; carry: boolean }[] = [];
+  const walkers: { key: string; x: number; y: number; kind: 'driver' | 'guest'; shirt: string; flip: boolean; step: number; carry: boolean; s: number }[] = [];
+  // Drivers wait at their own spot most of the loop (0.15–0.75); arriving and leaving they use a
+  // back lane, drawn smaller and behind, so a walking driver never passes through a standing one (critic G37).
+  const STAND_Y = FLOOR_Y - 0.5;
+  const LANE_Y = FLOOR_Y - 5;
   for (let i = 0; i < driverCount; i++) {
-    const p = ((t + i * 1.25) % 5) / 5;
+    const p = ((t / 5 + i / driverCount) % 1 + 1) % 1;
     const out = lay.door + 5;
-    // Each driver has their own pickup spot, 6 apart, so bodies never merge (critic G33).
+    // Each driver has their own pickup spot, 12 apart.
     const at = Math.min(lay.door - 4, counterFront + 3 + i * 12);
-    const x = p < 0.4 ? out + (at - out) * (p / 0.4) : p < 0.55 ? at : at + (out - at) * ((p - 0.55) / 0.45);
+    const walking = p < 0.15 || p >= 0.75;
+    const k = p < 0.15 ? p / 0.15 : p >= 0.75 ? (p - 0.75) / 0.25 : 1;
+    const x = p < 0.15 ? out + (at - out) * k : p < 0.75 ? at : at + (out - at) * k;
+    // Step between the lane and the spot at each end so the switch isn't a jump.
+    const edge = p < 0.15 ? Math.max(0, (k - 0.8) / 0.2) : p >= 0.75 ? Math.max(0, 1 - k / 0.2) : 1;
+    const y = LANE_Y + (STAND_Y - LANE_Y) * edge;
     const prev = mem.current.phase[`d${i}`];
-    if (running && prev !== undefined && prev < 0.55 && p >= 0.55) payout = true;
+    if (running && prev !== undefined && prev < 0.75 && p >= 0.75) payout = true;
     mem.current.phase[`d${i}`] = p;
-    walkers.push({ key: `d${i}`, x, y: FLOOR_Y - 0.5 - (i % 2) * 3, kind: 'driver', shirt: '#2F80ED', flip: p < 0.4, step: p < 0.4 || p > 0.55 ? clock * 12 : 0, carry: p >= 0.55 });
+    walkers.push({ key: `d${i}`, x, y, kind: 'driver', shirt: '#2F80ED', flip: p < 0.15, step: walking ? clock * 12 : 0, carry: p >= 0.75, s: 0.72 + 0.13 * edge });
   }
   // Walk-ins: in through the door, order at the counter, then sit at a table.
   const guestCount = Math.min(2, lay.tables.length);
@@ -302,7 +311,7 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
     const x = p < 0.35 ? door + (at - door) * (p / 0.35) : p < 0.5 ? at : at + (seat.x - 6 - at) * ((p - 0.5) / 0.5);
     const lane = FLOOR_Y + 8;
     const y = p < 0.5 ? lane : lane + (seat.y + 4 - lane) * ((p - 0.5) / 0.5);
-    walkers.push({ key: `g${i}`, x, y, kind: 'guest', shirt: ['#9B51E0', '#27AE60'][i], flip: p < 0.5, step: p < 0.35 || p > 0.5 ? clock * 12 : 0, carry: false });
+    walkers.push({ key: `g${i}`, x, y, kind: 'guest', shirt: ['#9B51E0', '#27AE60'][i], flip: p < 0.5, step: p < 0.35 || p > 0.5 ? clock * 12 : 0, carry: false, s: 0.85 });
   }
 
   // Cash pop shows what the shop actually earned since the last pop (critic G19).
@@ -392,7 +401,10 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
           lay.tables.slice(guestCount).map((tb, i) => (
             <Person key={`sg${i}`} x={tb.x + 6} y={tb.y + 4} kind="guest" shirt={['#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97'][i % 4]} s={0.7} arm={Math.abs(Math.sin(clock * 2 + i)) * 2} flip />
           ))}
-        {running && walkers.map((wk) => <Person key={wk.key} x={wk.x} y={wk.y} kind={wk.kind} shirt={wk.shirt} step={wk.step} carry={wk.carry} flip={wk.flip} s={0.85} />)}
+        {running &&
+          [...walkers].sort((a, b) => a.y - b.y).map((wk) => <Person key={wk.key} x={wk.x} y={wk.y} kind={wk.kind} shirt={wk.shirt} step={wk.step} carry={wk.carry} flip={wk.flip} s={wk.s} />)}
+        {/* idle shop: one driver waits at the counter (critic D49) */}
+        {!running && <Person x={counterFront + 3} y={FLOOR_Y - 0.5} kind="driver" shirt="#2F80ED" s={0.85} />}
         {/* station tags: the bottleneck lights up red */}
         {tag(tagXs[0], `PREP ${shop.prep}`, neck === 'prep')}
         {tag(tagXs[1], `OVENS ${shop.ovens}`, neck === 'ovens')}

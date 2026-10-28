@@ -65,7 +65,9 @@ const LIMIT = 60 * 60 * 30;
 for (let t = 0; t < LIMIT; t += dt) {
   // Tap every unmanaged pizzeria the player is "looking at": the newest one.
   const newest = [...NEIGHBORHOODS].reverse().find((n) => s.shops[n.id].built)!.id as NeighborhoodId;
-  for (const id of [newest, 'downtown'] as NeighborhoodId[]) if (!s.shops[id].managed && s.shops[id].queued < 4) s = G.tapShop(s, id);
+  // NOTAP=1: a casual player who only taps Downtown until Nonna takes over, then never taps again.
+  const tappers = (process.env.NOTAP ? ['downtown'] : [newest, 'downtown']) as NeighborhoodId[];
+  for (const id of tappers) if (!s.shops[id].managed && s.shops[id].queued < 4) s = G.tapShop(s, id);
   s = G.tick(s, dt);
   for (const sc of G.pendingScenes(s, HOME_SCENES)) {
     s = G.markSceneSeen(s, sc);
