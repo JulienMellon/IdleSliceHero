@@ -95,15 +95,6 @@ const StaticLayer = memo(function StaticLayer({ unlockedKey, nextLockedIdx, next
                 <Path d={`M${n.x - 1} ${n.y - 0.3} v-0.9 a1 1 0 0 1 2 0 v0.9`} stroke={INK} strokeWidth={0.6} fill="none" />
               </G>
             )}
-            <Rect x={n.x - 10} y={n.y + HH + 0.6} width={20} height={open ? 4.6 : 8.4} rx={2.1} fill="#FFFFFF" stroke={INK} strokeWidth={0.45} />
-            <SvgText x={n.x} y={n.y + HH + 3.9} fontSize={3} fontFamily={F.bold} fill={INK} textAnchor="middle">
-              {n.name}
-            </SvgText>
-            {!open && (
-              <SvgText x={n.x} y={n.y + HH + 7.6} fontSize={2.8} fontFamily={F.bold} fill={isNext ? nextColor : C.inkSoft} textAnchor="middle">
-                {isNext ? nextLabel : '???'}
-              </SvgText>
-            )}
           </G>
         );
       })}
@@ -124,6 +115,46 @@ const StaticLayer = memo(function StaticLayer({ unlockedKey, nextLockedIdx, next
     </G>
   );
 });
+
+/** Neighborhood name tags, drawn above the drivers so vans never cover them. */
+const LabelLayer = memo(function LabelLayer({ unlockedKey, nextLockedIdx, nextLabel, nextColor, onPressHood }: StaticProps) {
+  const unlocked = unlockedKey.split(',');
+  return (
+    <G>
+      {NEIGHBORHOODS.map((n, i) => {
+        const open = unlocked.includes(n.id);
+        const isNext = i === nextLockedIdx;
+        return (
+          <G key={n.id} onPress={() => onPressHood(n.id)}>
+            <Rect x={n.x - 10} y={n.y + HH + 0.6} width={20} height={open ? 4.6 : 8.4} rx={2.1} fill="#FFFFFF" stroke={INK} strokeWidth={0.45} />
+            <SvgText x={n.x} y={n.y + HH + 3.9} fontSize={3} fontFamily={F.bold} fill={INK} textAnchor="middle">
+              {n.name}
+            </SvgText>
+            {!open && (
+              <SvgText x={n.x} y={n.y + HH + 7.6} fontSize={2.8} fontFamily={F.bold} fill={isNext ? nextColor : C.inkSoft} textAnchor="middle">
+                {isNext ? nextLabel : '???'}
+              </SvgText>
+            )}
+          </G>
+        );
+      })}
+    </G>
+  );
+});
+
+/** Where each neighborhood's "+$" pop floats: an open patch beside it, clear of labels and other pops. */
+const POP_OFFSET: Record<NeighborhoodId, [number, number]> = {
+  downtown: [-14, 0],
+  suburbs: [-14, -1],
+  waterfront: [15, -1],
+  university: [15, 1],
+  industrial: [-15, 1],
+  uptown: [0, 15],
+};
+function popAnchor(id: NeighborhoodId, x: number, y: number) {
+  const [dx, dy] = POP_OFFSET[id];
+  return { x: x + dx, y: y + dy };
+}
 
 export function CityMap({ game, width, height, active, paused, onPressHood }: Props) {
   const clock = useClock(16, paused);
@@ -153,7 +184,7 @@ export function CityMap({ game, width, height, active, paused, onPressHood }: Pr
     drivers.push({ x: SHOP_POS.x + (hood.x - SHOP_POS.x) * k, y: SHOP_POS.y + (hood.y - SHOP_POS.y) * k });
     // One cash pop per neighborhood: only the first driver on each route shows it.
     if (i < hoods.length) {
-      if (phase >= 0.5 && phase < 0.72) pops.push({ x: hood.x, y: Math.max(12, hood.y - 1), t: (phase - 0.5) / 0.22, text: `+${money(capacity * hood.orderValue)}` });
+      if (phase >= 0.5 && phase < 0.72) pops.push({ ...popAnchor(hood.id, hood.x, hood.y), t: (phase - 0.5) / 0.22, text: `+${money(capacity * hood.orderValue)}` });
       const prev = lastPhase.current[i];
       if (prev !== undefined && prev < 0.5 && phase >= 0.5) payout = true;
       lastPhase.current[i] = phase;
@@ -181,13 +212,20 @@ export function CityMap({ game, width, height, active, paused, onPressHood }: Pr
           </SvgText>
         </G>
       ))}
-      {/* Pops sit above every driver so nothing covers them. */}
+      <LabelLayer
+        unlockedKey={game.unlocked.join(',')}
+        nextLockedIdx={nextLockedIdx}
+        nextLabel={nextLabel}
+        nextColor={affordable ? C.basilDark : C.tomato}
+        onPressHood={onPressHood}
+      />
+      {/* Pops sit above every driver and label so nothing covers them. */}
       {pops.map((p, i) => (
         <G key={`p${i}`} opacity={1 - p.t * p.t}>
-          <SvgText x={p.x} y={p.y - p.t * 6} fontSize={5.2} fontFamily={F.bold} fill="#FFFFFF" stroke={C.basilDark} strokeWidth={1.4} textAnchor="middle">
+          <SvgText x={p.x} y={p.y - p.t * 3.5} fontSize={5.2} fontFamily={F.bold} fill="#FFFFFF" stroke={C.basilDark} strokeWidth={1.4} textAnchor="middle">
             {p.text}
           </SvgText>
-          <SvgText x={p.x} y={p.y - p.t * 6} fontSize={5.2} fontFamily={F.bold} fill="#FFFFFF" textAnchor="middle">
+          <SvgText x={p.x} y={p.y - p.t * 3.5} fontSize={5.2} fontFamily={F.bold} fill="#FFFFFF" textAnchor="middle">
             {p.text}
           </SvgText>
         </G>

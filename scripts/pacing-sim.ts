@@ -2,10 +2,9 @@
 import * as G from '../src/engine/game';
 import { NEIGHBORHOODS, VEHICLES } from '../src/content/tuning';
 
-const thresholds: Record<string, number[]> = {
-  downtown: [12, 60, 150], suburbs: [150, 600, 1500], waterfront: [800, 3000, 8000],
-  university: [3000, 10000, 25000], industrial: [5000, 15000, 35000], uptown: [6000, 20000, 50000],
-};
+import { HOME_SCENES } from '../src/content/scenes/home';
+const thresholds: Record<string, number[]> = {};
+for (const sc of HOME_SCENES) if (sc.trigger.kind === 'deliveries') (thresholds[sc.neighborhood] ??= []).push(sc.trigger.count);
 let s = G.newGame(0);
 const events: [number, string][] = [];
 const hit = new Set<string>();

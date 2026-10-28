@@ -42,9 +42,9 @@ export interface VehicleDef {
 export const VEHICLES: VehicleDef[] = [
   { id: 'bike', name: 'Bike', emoji: '🚲', speed: 0.5, capacity: 2, cost: 0 },
   { id: 'scooter', name: 'Scooter', emoji: '🛵', speed: 0.9, capacity: 3, cost: 1_500 },
-  { id: 'car', name: 'Car', emoji: '🚗', speed: 1.6, capacity: 6, cost: 40_000 },
-  { id: 'van', name: 'Van', emoji: '🚐', speed: 2.6, capacity: 14, cost: 250_000 },
-  { id: 'drone', name: 'Drone', emoji: '🛸', speed: 5, capacity: 10, cost: 3_000_000 },
+  { id: 'car', name: 'Car', emoji: '🚗', speed: 1.6, capacity: 6, cost: 80_000 },
+  { id: 'van', name: 'Van', emoji: '🚐', speed: 2.6, capacity: 14, cost: 600_000 },
+  { id: 'drone', name: 'Drone', emoji: '🛸', speed: 5, capacity: 10, cost: 25_000_000 },
 ];
 
 export interface NeighborhoodDef {
@@ -67,9 +67,9 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
   { id: 'downtown', name: 'Downtown', distance: 2, orderValue: 3, unlockCost: 0, minVehicle: 0, x: 22, y: 36, color: '#F2994A' },
   { id: 'suburbs', name: 'Suburbs', distance: 4, orderValue: 9, unlockCost: 250, minVehicle: 0, x: 24, y: 56, color: '#6FCF97' },
   { id: 'waterfront', name: 'Waterfront', distance: 6, orderValue: 24, unlockCost: 4_000, minVehicle: 1, x: 76, y: 56, color: '#56CCF2' },
-  { id: 'university', name: 'University', distance: 8, orderValue: 60, unlockCost: 60_000, minVehicle: 1, x: 18, y: 11, color: '#BB6BD9' },
-  { id: 'industrial', name: 'Industrial', distance: 11, orderValue: 150, unlockCost: 350_000, minVehicle: 2, x: 82, y: 11, color: '#A0826D' },
-  { id: 'uptown', name: 'Uptown', distance: 15, orderValue: 400, unlockCost: 1_500_000, minVehicle: 3, x: 50, y: 8, color: '#EB5757' },
+  { id: 'university', name: 'University', distance: 8, orderValue: 60, unlockCost: 200_000, minVehicle: 1, x: 18, y: 11, color: '#BB6BD9' },
+  { id: 'industrial', name: 'Industrial', distance: 11, orderValue: 150, unlockCost: 1_200_000, minVehicle: 2, x: 82, y: 11, color: '#A0826D' },
+  { id: 'uptown', name: 'Uptown', distance: 15, orderValue: 400, unlockCost: 10_000_000, minVehicle: 3, x: 50, y: 8, color: '#EB5757' },
 ];
 
 export const SHOP_POS = { x: 50, y: 36 };

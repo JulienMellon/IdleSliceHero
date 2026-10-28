@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityMap } from '@/components/city-map';
+import { DriverIcon } from '@/components/icons';
 import { type Goal, Hud, OfflinePopup, OvenCard, Toast, UpgradeRow } from '@/components/game-ui';
 import { HOME_SCENES } from '@/content/scenes/home';
 import { CITY_NAME, MAP_VIEWBOX, NEIGHBORHOODS, VEHICLES } from '@/content/tuning';
@@ -27,7 +28,8 @@ export default function GameScreen() {
 
   const bakeT = G.bakeSeconds(game.ovenLevel);
   const shelf = G.shelfCapacity();
-  const idle = game.batchProgress < 0 && G.canStartBatch(game);
+  // Never nag to tap once Nonna runs the oven (G15).
+  const idle = !game.autoBake && game.batchProgress < 0 && G.canStartBatch(game);
   const shelfFull = G.shelfFull(game);
   const onPressHood = useCallback((id: NeighborhoodId) => unlock(id), [unlock]);
   const delivering = game.stock > 0.01 || game.batchProgress >= 0 || game.autoBake;
@@ -95,7 +97,7 @@ export default function GameScreen() {
         <OvenCard progress={game.batchProgress < 0 ? 0 : Math.min(1, game.batchProgress / bakeT)} stock={game.stock} shelf={shelf} auto={game.autoBake} idle={idle} full={shelfFull} onTap={tapOven} />
         <UpgradeRow
           testID="buy-driver"
-          icon="🧑‍🍳"
+          icon={<DriverIcon />}
           title="Drivers"
           level={`× ${game.drivers}`}
           detail={`${G.deliveryRate(game).toFixed(1)} pizzas/sec${neck === 'drivers' ? ' · bottleneck!' : ''}`}
@@ -122,7 +124,7 @@ export default function GameScreen() {
           icon={nextVeh ? nextVeh.emoji : veh.emoji}
           title={nextVeh ? `${nextVeh.name}s` : `${veh.name}s`}
           level={nextVeh ? `(now: ${veh.name})` : ''}
-          detail={nextVeh ? (vehLock ?? `${nextVeh.capacity} pizzas/trip · ${(nextVeh.speed / veh.speed).toFixed(1)}× faster`) : 'Fastest fleet in town'}
+          detail={nextVeh ? (vehLock ?? `+${Math.round(((nextVeh.capacity * nextVeh.speed) / (veh.capacity * veh.speed) - 1) * 100)}% deliveries per driver`) : 'Fastest fleet in town'}
           cost={nextVeh && !vehLock ? nextVeh.cost : null}
           costLabel={nextVeh ? 'Locked' : 'MAX'}
           canBuy={!!nextVeh && !vehLock && game.cash >= nextVeh.cost}

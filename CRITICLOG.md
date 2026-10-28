@@ -114,3 +114,31 @@ First playable, matching the design doc's v0.1 scope with placeholder art.
 | D14 | New rainy-dusk opening backdrop with Rosa's storefront and a half-dark flickering neon sign; shop interior gained string lights and an "EST. 1974" photo |
 | D15 | HUD cash always shows 3 significant figures ("$3.90K") so it doesn't change width |
 | D16 | Suburbs/Waterfront moved up 2 units; locked labels clear the sheet |
+
+## v0.3 — critique (round 3)
+
+**VERDICT: NOT SATISFIED** — loads clean; every round-2 item fixed, no regressions. New late-game economy bug: oven output is capped by the tick rate.
+
+**Fixed:** G9, G10, G11, G12, G13, D9, D10, D11, D12, D13, D14, D15, D16 · **Blockers:** none
+
+**Bugs**
+- G14 Oven can add at most one shelf (12 pizzas) per 0.2s tick → real output capped at 60/sec; oven upgrades past Lv 50 wasted; HUD shows $10.5K/sec vs ~$6.5K/sec actual; offline pays more than online
+- G15 Same bug leaves the late-game oven card at "0/12 · TAP TO BAKE!" with auto-bake on
+- G16 Uptown road runs through its label (vans cover it); Uptown pop clamped onto the building
+
+**Design notes**
+- D17 Drones row reads like a downgrade ("10 pizzas/trip" vs Van's 14); show net gain (+37%)
+- D18 Downtown's pop rises into the University label
+- D19 Drivers icon is a cook, not a delivery driver
+
+## v0.4 — build (addresses round 3)
+
+| Note | Fix |
+| --- | --- |
+| G14 | When batches are faster than a tick, baking and delivering run as continuous flows — no per-tick shelf cap. New tests check real tick throughput against `earningsPerSecond` at Oven Lv 72 (±2%) and at Lv 1–150. HUD $/sec, online and offline earnings now agree |
+| G14 (knock-on) | The old tuning was unknowingly balanced around the cap, so with it gone the city finished in ~2h. Retuned: University $200K, Industrial $1.2M, Uptown $10M, Car $80K, Van $600K, Drone $25M; late scene triggers raised (University 6K/25K/60K, Industrial 20K/60K/150K, Uptown 40K/120K/300K). Pacing sim now reads triggers from the scene data: ~6.3h active play for the city; first 12 scenes in ~18 min, late scenes 15–70 min apart |
+| G15 | Oven never shows "TAP TO BAKE" or pulses once auto-bake is on |
+| G16 | Neighborhood name tags moved to a layer above the drivers; Uptown's pop floats below it in open space |
+| D17 | Vehicle row shows the net gain: "+37% deliveries per driver" |
+| D18 | Each neighborhood's pop has its own open spot beside it (no two collide) and rises less |
+| D19 | New custom SVG icon for Drivers: courier in a red cap holding a pizza box |

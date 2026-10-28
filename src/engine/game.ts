@@ -186,6 +186,17 @@ export function tick(s: GameState, dt: number): GameState {
   const shelf = shelfCapacity();
   const t = bakeSeconds(next.ovenLevel);
 
+  // Fast automated oven (batches quicker than the tick): model baking and delivering as continuous
+  // flows so output isn't capped at one shelf per tick.
+  if (next.autoBake && t < dt * 2) {
+    const available = next.stock + next.ovenHeld + bakeRate(next) * dt;
+    const out = Math.min(available, deliveryRate(next) * dt);
+    next.stock = Math.min(shelf, available - out);
+    next.ovenHeld = 0;
+    next.batchProgress = ((Math.max(0, next.batchProgress) + dt) % t + t) % t; // keeps the ring spinning
+    return credit(next, out, true);
+  }
+
   const settle = () => {
     // Move held pizzas from the oven onto the shelf as space frees up.
     const room = Math.max(0, shelf - next.stock);

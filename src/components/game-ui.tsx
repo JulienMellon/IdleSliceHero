@@ -1,6 +1,6 @@
 // Game-screen building blocks: chunky buttons, the HUD + goal bar, the oven, upgrade rows, popups.
 import * as Haptics from 'expo-haptics';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -227,7 +227,7 @@ export function OvenCard({ progress, stock, shelf, auto, idle, full, onTap }: { 
 }
 
 export function UpgradeRow(props: {
-  icon: string;
+  icon: string | React.ReactNode;
   title: string;
   level: string;
   detail: string;
@@ -243,7 +243,7 @@ export function UpgradeRow(props: {
   return (
     <View style={[styles.row, props.highlight && styles.rowHighlight]}>
       <View style={styles.iconTile}>
-        <Text style={styles.iconText}>{props.icon}</Text>
+        {typeof props.icon === 'string' ? <Text style={styles.iconText}>{props.icon}</Text> : props.icon}
       </View>
       <View style={styles.rowMid}>
         <Text style={styles.cardTitle} numberOfLines={1}>

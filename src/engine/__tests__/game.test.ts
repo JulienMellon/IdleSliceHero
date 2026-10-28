@@ -49,6 +49,24 @@ describe('baking and delivering', () => {
     for (let i = 0; i < 100; i++) s = G.tick(s, 1);
     expect((s.cash - before) / 100).toBeCloseTo(eps, 1);
   });
+  test('fast ovens are not capped by the tick rate (Lv 72, 5 Hz ticks)', () => {
+    let s = { ...fresh(), autoBake: true, ovenLevel: 72, drivers: 41, vehicle: 3, unlocked: NEIGHBORHOODS.map((n) => n.id) };
+    for (let i = 0; i < 50; i++) s = G.tick(s, 0.2);
+    const before = s.cash;
+    for (let i = 0; i < 500; i++) s = G.tick(s, 0.2);
+    const actual = (s.cash - before) / 100;
+    expect(actual / G.earningsPerSecond(s)).toBeGreaterThan(0.98);
+    expect(actual / G.earningsPerSecond(s)).toBeLessThan(1.02);
+  });
+  test('throughput matches the formula across oven levels', () => {
+    for (const ovenLevel of [1, 10, 25, 50, 100, 150]) {
+      let s = { ...fresh(), autoBake: true, ovenLevel, drivers: 300, vehicle: 4, unlocked: NEIGHBORHOODS.map((n) => n.id) };
+      for (let i = 0; i < 100; i++) s = G.tick(s, 0.2);
+      const before = s.cash;
+      for (let i = 0; i < 500; i++) s = G.tick(s, 0.2);
+      expect(((s.cash - before) / 100) / G.earningsPerSecond(s)).toBeGreaterThan(0.95);
+    }
+  });
   test('shelf never overfills', () => {
     let s = { ...fresh(), autoBake: true, ovenLevel: 200, drivers: 1 };
     for (let i = 0; i < 100; i++) s = G.tick(s, 1);
