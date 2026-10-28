@@ -1,0 +1,75 @@
+// All balancing numbers live here so tuning never touches game logic.
+import type { NeighborhoodId, VehicleId } from './types';
+
+export const CITY_NAME = 'Port Marinara';
+
+export const TUNING = {
+  costGrowth: 1.15,
+  /** Levels at which an upgrade's output doubles. */
+  milestones: [25, 50, 100] as const,
+  offlineCapSeconds: 4 * 60 * 60,
+  saveIntervalSeconds: 30,
+
+  oven: {
+    baseCost: 10,
+    /** Pizzas per batch at level 1. */
+    batchSize: 4,
+    /** Seconds per batch at level 1. */
+    bakeSeconds: 6,
+    /** Each level after 1 adds this fraction of base speed. */
+    speedPerLevel: 0.5,
+    /** Finished pizzas the shelf can hold, in batches. */
+    shelfBatches: 3,
+  },
+
+  drivers: {
+    baseCost: 20,
+    start: 1,
+  },
+} as const;
+
+export interface VehicleDef {
+  id: VehicleId;
+  name: string;
+  emoji: string;
+  /** Blocks per second. */
+  speed: number;
+  /** Pizzas per trip. */
+  capacity: number;
+  cost: number;
+}
+
+export const VEHICLES: VehicleDef[] = [
+  { id: 'bike', name: 'Bike', emoji: '🚲', speed: 0.5, capacity: 2, cost: 0 },
+  { id: 'scooter', name: 'Scooter', emoji: '🛵', speed: 0.9, capacity: 3, cost: 1_500 },
+  { id: 'car', name: 'Car', emoji: '🚗', speed: 1.6, capacity: 6, cost: 40_000 },
+  { id: 'van', name: 'Van', emoji: '🚐', speed: 2.6, capacity: 14, cost: 250_000 },
+  { id: 'drone', name: 'Drone', emoji: '🛸', speed: 5, capacity: 10, cost: 3_000_000 },
+];
+
+export interface NeighborhoodDef {
+  id: NeighborhoodId;
+  name: string;
+  /** Blocks from the shop, one way. */
+  distance: number;
+  /** Cash per pizza delivered. */
+  orderValue: number;
+  unlockCost: number;
+  /** Minimum vehicle tier index (into VEHICLES) needed to unlock. */
+  minVehicle: number;
+  /** Map position, 0–100 on each axis, shop at (50, 62). */
+  x: number;
+  y: number;
+  color: string;
+}
+
+export const NEIGHBORHOODS: NeighborhoodDef[] = [
+  { id: 'downtown', name: 'Downtown', distance: 2, orderValue: 3, unlockCost: 0, minVehicle: 0, x: 50, y: 40, color: '#F2994A' },
+  { id: 'suburbs', name: 'Suburbs', distance: 4, orderValue: 9, unlockCost: 250, minVehicle: 0, x: 18, y: 70, color: '#6FCF97' },
+  { id: 'waterfront', name: 'Waterfront', distance: 6, orderValue: 24, unlockCost: 4_000, minVehicle: 1, x: 82, y: 78, color: '#56CCF2' },
+  { id: 'university', name: 'University', distance: 8, orderValue: 60, unlockCost: 60_000, minVehicle: 1, x: 20, y: 24, color: '#BB6BD9' },
+  { id: 'industrial', name: 'Industrial', distance: 11, orderValue: 150, unlockCost: 350_000, minVehicle: 2, x: 84, y: 30, color: '#A0826D' },
+  { id: 'uptown', name: 'Uptown', distance: 15, orderValue: 400, unlockCost: 1_500_000, minVehicle: 3, x: 50, y: 8, color: '#EB5757' },
+];
+
+export const SHOP_POS = { x: 50, y: 62 };
