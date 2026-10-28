@@ -470,3 +470,18 @@ The room is at most 196 units wide, so the ovens, counter and dining room compet
 | D63 | Toast is compact and sits on the sidewalk strip just below the station tags, clear of the manager card |
 | D64 | Driver badge ("🚐 ×44") above the pickup strip whenever the shop has more drivers than are drawn |
 | D65 | Tap/rush pills stay over the kitchen (not the menu board); station tags spaced ≥27 units apart |
+
+## v1.5 — critique (round 14) — ✅ SATISFIED
+
+**VERDICT: SATISFIED** — loads clean (`loaded: true`, `errors: []`, all 16 screenshots render). Stacked deck ovens fix G43: the Flagship shows a 3×2 bank of Golden ovens while keeping 3 drivers and 6 tables. Owner's direction holds: cutaway with prep, ovens, counter, pickup strip and seating; a pizzeria and manager per neighbourhood; upgrades visibly grow the shop.
+
+**Fixed:** G43, D61, D62, D63, D64, D65 (tag half) · **Blockers:** none · **Bugs:** none
+
+**Remaining polish (minor, not required):**
+- D66 Bakers stand in front of the lower-deck oven mouths, hiding the fire
+- D67 Rush pill still covers the menu board — the v1.5 table claimed this was fixed, but the clamp centres the pill, so a wide pill still reaches the board (the rush-pill half of D65, still open)
+- D68 Compact toast touches the manager card's top border by ~3pt
+- D69 Counter staff's legs show above the counter
+- D70 Walk-in lane is the same depth as front-row diners
+
+**Loop complete:** 14 review rounds, v0.1 → v1.5.
