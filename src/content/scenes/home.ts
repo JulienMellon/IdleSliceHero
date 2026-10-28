@@ -15,7 +15,7 @@ export const HOME_SCENES: Scene[] = [
     trigger: { kind: 'unlock', neighborhood: 'downtown' },
     panels: [
       {
-        backdrop: 'downtown',
+        backdrop: 'downtown-rain',
         cast: [],
         caption: 'Port Marinara. Rain. One flickering sign: "Rosa\'s Pizza."',
         lines: [],

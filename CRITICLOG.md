@@ -71,3 +71,46 @@ First playable, matching the design doc's v0.1 scope with placeholder art.
 | D6 | "*bite*" caption rewritten as narration + stronger line |
 | D7 | Scrapbook badge counts scenes seen since the Scrapbook was last opened |
 | D8 | Oven status shortened to "Auto-baking · tap to rush" (single line) |
+
+## v0.2 — critique (round 2)
+
+**VERDICT: NOT SATISFIED** — loads clean; most of round 1 fixed. New small bugs; G4, D4, D5 only partly fixed.
+
+**Fixed:** G1, G2, G3, G5, G6, G7, G8, D1, D2, D3, D6, D7, D8 · **Partly open:** G4 → G10, D4 → D9, D5 → D10
+
+**Blockers:** none
+
+**Bugs**
+- G9 Speech-bubble tail fixed at 18% — points at empty space when one character is centered
+- G10 "Tap the oven to bake!" shown while drivers are the bottleneck but unaffordable (first ~10s)
+- G11 "+$" pops drawn inside each driver group, so later drivers cover them
+- G12 Starting a batch with the shelf at 9–11 throws away up to 3 pizzas
+- G13 Old saves without `scrapbookViewed` show a badge counting every scene ever seen
+
+**Design notes**
+- D9 Cash never actually pulses on payouts (count-up threshold never hit in normal play)
+- D10 Whole screen re-renders 5×/s and the full SVG ~21×/s including static layers; map clock runs under cut-scenes
+- D11 White goal-bar text unreadable on the yellow fill
+- D12 Late-game goal "Finish the story" isn't actionable; Drones purchase not surfaced
+- D13 Cut-scene panel uses only ~32% of screen height
+- D14 Opening art (sunny skyline, no sign) contradicts "Rain. One flickering sign"
+- D15 HUD cash jitters in width from dropped trailing zeros
+- D16 Locked Suburbs/Waterfront label borders tucked ~2pt under the sheet
+
+## v0.3 — build (addresses round 2)
+
+| Note | Fix |
+| --- | --- |
+| G9 | Speech tail centered when one character is on screen; hidden for empty panels |
+| G10 | Hint follows the real bottleneck: "Saving for a driver: $5 / $8", "Shelf full — saving…", "Hire a driver…" |
+| G11 | All "+$" pops drawn in their own layer above every driver; clamped so Uptown's pop stays on screen |
+| G12 | No pizza is ever thrown away: overflow waits in the oven (`ovenHeld`) and drops onto the shelf as space frees; a batch can start whenever the shelf has room; 2 tests |
+| G13 | Saves without `scrapbookViewed` count every already-seen scene as viewed; test |
+| D9 | Each delivery landing on the map emits a payout event; the HUD cash gives a small kick on every one |
+| D10 | Static map layers (ground, roads, neighborhoods, shop) in a memoized layer; only drivers/pops/pulse animate; map clock pauses under cut-scenes and popups |
+| D11 | Goal bar: dark ink on a light track with yellow fill; white-on-green only when ready to tap |
+| D12 | Late goals are actionable: next vehicle (e.g. "Upgrade to Drones $2.7M / $3M"), then "Deliver to Uptown for the next story 7K / 20K 🍕" |
+| D13 | Cut-scene panel ~55% of screen height; backdrops grow their sky to fit any frame (no cropping); bigger portraits |
+| D14 | New rainy-dusk opening backdrop with Rosa's storefront and a half-dark flickering neon sign; shop interior gained string lights and an "EST. 1974" photo |
+| D15 | HUD cash always shows 3 significant figures ("$3.90K") so it doesn't change width |
+| D16 | Suburbs/Waterfront moved up 2 units; locked labels clear the sheet |

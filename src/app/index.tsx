@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -6,7 +7,8 @@ import { CityMap } from '@/components/city-map';
 import { type Goal, Hud, OfflinePopup, OvenCard, Toast, UpgradeRow } from '@/components/game-ui';
 import { HOME_SCENES } from '@/content/scenes/home';
 import { CITY_NAME, MAP_VIEWBOX, NEIGHBORHOODS, VEHICLES } from '@/content/tuning';
-import { money } from '@/engine/format';
+import type { NeighborhoodId } from '@/content/types';
+import { count, money } from '@/engine/format';
 import * as G from '@/engine/game';
 import { APP_VERSION } from '@/content/version';
 import { useGame } from '@/store/game-store';
@@ -20,11 +22,14 @@ export default function GameScreen() {
   const game = useGame((s) => s.game);
   const offline = useGame((s) => s.offline);
   const toast = useGame((s) => s.toast);
+  const covered = useGame((s) => !!s.playing || !!s.offline);
   const { tapOven, buy, unlock, dismissOffline } = useGame.getState();
 
   const bakeT = G.bakeSeconds(game.ovenLevel);
   const shelf = G.shelfCapacity();
-  const idle = game.batchProgress < 0 && game.stock < shelf;
+  const idle = game.batchProgress < 0 && G.canStartBatch(game);
+  const shelfFull = G.shelfFull(game);
+  const onPressHood = useCallback((id: NeighborhoodId) => unlock(id), [unlock]);
   const delivering = game.stock > 0.01 || game.batchProgress >= 0 || game.autoBake;
   const eps = G.earningsPerSecond(game);
   const neck = G.bottleneck(game);
@@ -42,23 +47,36 @@ export default function GameScreen() {
     goal = { label: `Get a ${nextVeh.name} → ${nextHood.name}`, current: game.cash, target: nextVeh.cost, onPress: () => buy('vehicle') };
   } else if (nextHood && !hoodLock) {
     goal = { label: `Open ${nextHood.name}`, current: game.cash, target: nextHood.unlockCost, onPress: () => unlock(nextHood.id) };
+  } else if (!nextHood && nextVeh && !vehLock) {
+    goal = { label: `Upgrade to ${nextVeh.name}s`, current: game.cash, target: nextVeh.cost, onPress: () => buy('vehicle') };
   } else {
-    goal = {
-      label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : 'Finish the Port Marinara story',
-      current: game.seenScenes.length,
-      target: HOME_SCENES.length,
-      text: `${game.seenScenes.length}/${HOME_SCENES.length}`,
-    };
+    // Next story beat that's waiting on deliveries: say exactly where to deliver.
+    const pending = HOME_SCENES.find((sc) => !game.seenScenes.includes(sc.id) && sc.trigger.kind === 'deliveries' && game.unlocked.includes(sc.trigger.neighborhood));
+    if (pending && pending.trigger.kind === 'deliveries') {
+      const hood = NEIGHBORHOODS.find((n) => n.id === pending.trigger.neighborhood)!;
+      goal = {
+        label: `Deliver to ${hood.name} for the next story`,
+        current: game.delivered[hood.id],
+        target: pending.trigger.count,
+        text: `${count(game.delivered[hood.id])} / ${count(pending.trigger.count)} 🍕`,
+      };
+    } else {
+      goal = { label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : `Story ${game.seenScenes.length}/${HOME_SCENES.length}`, current: 1, target: 1, text: '🏆' };
+    }
   }
 
   // HUD hint (G4): tell the player what actually helps right now.
   const subtitle = game.autoBake
     ? `${money(eps)}/sec`
-    : game.stock >= shelf && neck === 'drivers'
-      ? 'Shelf full — hire a driver!'
-      : neck === 'drivers' && game.cash >= G.driverCost(game)
+    : neck === 'drivers'
+      ? game.cash >= G.driverCost(game)
         ? 'Hire a driver to deliver faster!'
-        : 'Tap the oven to bake!';
+        : shelfFull
+          ? `Shelf full — saving for a driver: ${money(game.cash)} / ${money(G.driverCost(game))}`
+          : idle && game.stock < 1
+            ? 'Tap the oven to bake!'
+            : `Saving for a driver: ${money(game.cash)} / ${money(G.driverCost(game))}`
+      : 'Tap the oven to bake faster!';
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -71,10 +89,10 @@ export default function GameScreen() {
         onSettings={() => router.push('/settings')}
       />
       <View style={{ height: mapH, backgroundColor: C.map }}>
-        <CityMap game={game} width={width} height={mapH} active={delivering} onPressHood={(id) => unlock(id)} />
+        <CityMap game={game} width={width} height={mapH} active={delivering} paused={covered} onPressHood={onPressHood} />
       </View>
       <ScrollView style={styles.sheet} contentContainerStyle={[styles.sheetInner, { paddingBottom: insets.bottom + 20 }]}>
-        <OvenCard progress={game.batchProgress < 0 ? 0 : Math.min(1, game.batchProgress / bakeT)} stock={game.stock} shelf={shelf} auto={game.autoBake} idle={idle} onTap={tapOven} />
+        <OvenCard progress={game.batchProgress < 0 ? 0 : Math.min(1, game.batchProgress / bakeT)} stock={game.stock} shelf={shelf} auto={game.autoBake} idle={idle} full={shelfFull} onTap={tapOven} />
         <UpgradeRow
           testID="buy-driver"
           icon="🧑‍🍳"

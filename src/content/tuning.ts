@@ -65,8 +65,8 @@ export interface NeighborhoodDef {
 
 export const NEIGHBORHOODS: NeighborhoodDef[] = [
   { id: 'downtown', name: 'Downtown', distance: 2, orderValue: 3, unlockCost: 0, minVehicle: 0, x: 22, y: 36, color: '#F2994A' },
-  { id: 'suburbs', name: 'Suburbs', distance: 4, orderValue: 9, unlockCost: 250, minVehicle: 0, x: 24, y: 58, color: '#6FCF97' },
-  { id: 'waterfront', name: 'Waterfront', distance: 6, orderValue: 24, unlockCost: 4_000, minVehicle: 1, x: 76, y: 58, color: '#56CCF2' },
+  { id: 'suburbs', name: 'Suburbs', distance: 4, orderValue: 9, unlockCost: 250, minVehicle: 0, x: 24, y: 56, color: '#6FCF97' },
+  { id: 'waterfront', name: 'Waterfront', distance: 6, orderValue: 24, unlockCost: 4_000, minVehicle: 1, x: 76, y: 56, color: '#56CCF2' },
   { id: 'university', name: 'University', distance: 8, orderValue: 60, unlockCost: 60_000, minVehicle: 1, x: 18, y: 11, color: '#BB6BD9' },
   { id: 'industrial', name: 'Industrial', distance: 11, orderValue: 150, unlockCost: 350_000, minVehicle: 2, x: 82, y: 11, color: '#A0826D' },
   { id: 'uptown', name: 'Uptown', distance: 15, orderValue: 400, unlockCost: 1_500_000, minVehicle: 3, x: 50, y: 8, color: '#EB5757' },

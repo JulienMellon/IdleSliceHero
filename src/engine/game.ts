@@ -17,6 +17,8 @@ export interface GameState {
   delivered: Record<NeighborhoodId, number>;
   /** Finished pizzas waiting on the shelf. */
   stock: number;
+  /** Finished pizzas still in the oven because the shelf had no room (moved over as space frees up). */
+  ovenHeld: number;
   /** Seconds into the current batch; -1 when the oven is idle. */
   batchProgress: number;
   autoBake: boolean;
@@ -39,6 +41,7 @@ export function newGame(now: number): GameState {
     unlocked: ['downtown'],
     delivered: { downtown: 0, suburbs: 0, waterfront: 0, university: 0, industrial: 0, uptown: 0 },
     stock: 0,
+    ovenHeld: 0,
     batchProgress: -1,
     autoBake: false,
     dronesUnlocked: false,
@@ -69,12 +72,14 @@ export function migrate(raw: unknown, now: number): GameState {
     unlocked: unlocked.includes('downtown') ? unlocked : ['downtown', ...unlocked],
     delivered: { ...base.delivered, ...(r.delivered ?? {}) },
     stock: Math.max(0, num(r.stock, 0)),
+    ovenHeld: Math.max(0, num(r.ovenHeld, 0)),
     batchProgress: num(r.batchProgress, -1),
     autoBake: !!r.autoBake,
     dronesUnlocked: !!r.dronesUnlocked,
     cityComplete: !!r.cityComplete,
     seenScenes: Array.isArray(r.seenScenes) ? r.seenScenes.filter((s) => typeof s === 'string') : [],
-    scrapbookViewed: Math.max(0, Math.floor(num(r.scrapbookViewed, 0))),
+    // Saves from before the badge existed: treat everything already seen as viewed.
+    scrapbookViewed: Math.max(0, Math.floor(num(r.scrapbookViewed, Array.isArray(r.seenScenes) ? r.seenScenes.length : 0))),
     lastSavedAt: num(r.lastSavedAt, now),
   };
 }
@@ -104,6 +109,10 @@ export function bakeSeconds(ovenLevel: number): number {
 
 export const batchSize = () => TUNING.oven.batchSize;
 export const shelfCapacity = () => TUNING.oven.batchSize * TUNING.oven.shelfBatches;
+/** A new batch can start once the oven is empty and the shelf has any room. Nothing is ever thrown away. */
+export const canStartBatch = (s: GameState) => s.ovenHeld <= 1e-9 && s.stock < shelfCapacity() - 1e-9;
+/** Shelf (and oven) can't take more pizzas right now. */
+export const shelfFull = (s: GameState) => s.stock >= shelfCapacity() - 1e-9 || s.ovenHeld > 1e-9;
 
 /** Pizzas per second the oven makes while baking continuously. */
 export function bakeRate(s: GameState): number {
@@ -154,7 +163,7 @@ export function bottleneck(s: GameState): 'oven' | 'drivers' {
 /** Tap the oven: starts a batch when idle, otherwise rushes the current one. */
 export function tapOven(s: GameState): GameState {
   if (s.batchProgress < 0) {
-    if (s.stock >= shelfCapacity()) return s;
+    if (!canStartBatch(s)) return s;
     return { ...s, batchProgress: 0 };
   }
   const t = bakeSeconds(s.ovenLevel);
@@ -177,19 +186,32 @@ export function tick(s: GameState, dt: number): GameState {
   const shelf = shelfCapacity();
   const t = bakeSeconds(next.ovenLevel);
 
-  if (next.autoBake && next.batchProgress < 0 && next.stock < shelf) next.batchProgress = 0;
+  const settle = () => {
+    // Move held pizzas from the oven onto the shelf as space frees up.
+    const room = Math.max(0, shelf - next.stock);
+    const move = Math.min(room, next.ovenHeld);
+    next.stock += move;
+    next.ovenHeld -= move;
+  };
+  settle();
+  if (next.autoBake && next.batchProgress < 0 && canStartBatch(next)) next.batchProgress = 0;
 
   if (next.batchProgress >= 0) {
     next.batchProgress += dt;
     while (next.batchProgress >= t) {
-      if (next.stock >= shelf) {
-        next.batchProgress = t; // shelf full: hold the finished batch
+      if (next.ovenHeld > 1e-9) {
+        next.batchProgress = t; // previous batch still waiting for shelf space
         break;
       }
-      next.stock = Math.min(shelf, next.stock + batchSize());
+      next.ovenHeld += batchSize();
+      settle();
       next.batchProgress -= t;
       if (!next.autoBake) {
         next.batchProgress = -1;
+        break;
+      }
+      if (!canStartBatch(next)) {
+        next.batchProgress = -1; // wait for room, restart next tick
         break;
       }
     }
@@ -197,6 +219,7 @@ export function tick(s: GameState, dt: number): GameState {
 
   const out = Math.min(next.stock, deliveryRate(next) * dt);
   next.stock -= out;
+  settle();
   next = credit(next, out, true);
   return next;
 }
@@ -212,7 +235,7 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
   const elapsed = Math.max(0, (now - s.lastSavedAt) / 1000);
   const seconds = Math.min(elapsed, TUNING.offlineCapSeconds);
   const before = s.cash;
-  let next = { ...s, lastSavedAt: now };
+  let next = { ...s, lastSavedAt: now, stock: s.stock + s.ovenHeld, ovenHeld: 0 };
   const fromStock = Math.min(next.stock, deliveryRate(next) * seconds);
   next.stock -= fromStock;
   let pizzas = fromStock;

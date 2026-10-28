@@ -28,8 +28,8 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   const p = scene.panels[panel];
   const current = p.lines[line];
   const frameW = Math.min(width - 24, 520);
-  // 4:3 frame matches the backdrop art exactly, so nothing gets cropped.
-  const frameH = Math.min(height * 0.48, frameW * 0.75);
+  // Tall panel (~55% of the screen); the backdrop grows its sky to fill it, so nothing is cropped.
+  const frameH = Math.max(frameW * 0.75, Math.min(height * 0.55 - insets.top, frameW * 1.3));
 
   // Panel motion: slide in, then slow zoom.
   useEffect(() => {
@@ -69,7 +69,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   }, [panel, line, showReward]);
 
   const speakerIndex = current ? p.cast.findIndex((c) => current.speaker.toLowerCase().includes(c.id.split('-')[0]) || current.speaker.startsWith(nameOf(c.id))) : -1;
-  const portraitSize = Math.min(frameH * 0.62, frameW * 0.4);
+  const portraitSize = Math.min(frameH * 0.5, p.cast.length > 1 ? frameW * 0.46 : frameW * 0.6);
 
   return (
     <View style={StyleSheet.absoluteFill}>
@@ -108,7 +108,9 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
             </Animated.View>
           ) : current ? (
             <Animated.View style={[styles.bubble, { transform: [{ scale: bubble }] }]}>
-              <View style={[styles.tail, { left: speakerIndex === 1 ? '70%' : '18%' }]} />
+              {p.cast.length > 0 && (
+                <View style={[styles.tail, { left: p.cast.length === 1 ? '47%' : speakerIndex === 1 ? '70%' : '22%' }]} />
+              )}
               <Text style={styles.speaker}>{current.speaker}</Text>
               <Text style={styles.line}>{current.text}</Text>
             </Animated.View>

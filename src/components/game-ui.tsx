@@ -6,6 +6,7 @@ import Svg, { Circle } from 'react-native-svg';
 
 import { duration, money } from '../engine/format';
 import { C, F } from '../theme';
+import { onPayout } from './pulse-bus';
 
 const native = Platform.OS !== 'web';
 
@@ -115,9 +116,13 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onSettings, newScenes }
   const flash = useRef(new Animated.Value(1)).current;
   const counting = shown < cash - 0.5;
   useEffect(() => {
-    if (!counting) return;
-    flash.setValue(1.15);
-    Animated.spring(flash, { toValue: 1, friction: 4, useNativeDriver: native }).start();
+    const bump = (to: number) => {
+      flash.setValue(to);
+      Animated.spring(flash, { toValue: 1, friction: 4, useNativeDriver: native }).start();
+    };
+    if (counting) bump(1.15);
+    // Every delivery that lands on the map gives the cash total a little kick.
+    return onPayout(() => bump(1.08));
   }, [counting, flash]);
   const pct = goal ? Math.max(0, Math.min(1, goal.current / goal.target)) : 0;
   const ready = !!goal?.onPress && pct >= 1;
@@ -134,7 +139,7 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onSettings, newScenes }
         </Pressable>
         <View style={styles.cashPill}>
           <Animated.Text style={[styles.cash, { transform: [{ scale: flash }] }]} numberOfLines={1} adjustsFontSizeToFit testID="cash">
-            {money(shown)}
+            {money(shown, true)}
           </Animated.Text>
           <Text style={styles.perSec} numberOfLines={1}>
             {subtitle}
@@ -154,17 +159,17 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onSettings, newScenes }
           }}
           style={[styles.goal, ready && styles.goalReady]}>
           <View style={[styles.goalFill, { width: `${pct * 100}%` }, ready && { backgroundColor: C.basil }]} />
-          <Text style={styles.goalLabel} numberOfLines={1}>
+          <Text style={[styles.goalLabel, ready && styles.goalTextReady]} numberOfLines={1}>
             {ready ? `▶ ${goal.label} — tap!` : goal.label}
           </Text>
-          <Text style={styles.goalAmt}>{goal.text ?? `${money(Math.min(goal.current, goal.target))} / ${money(goal.target)}`}</Text>
+          <Text style={[styles.goalAmt, ready && styles.goalTextReady]}>{goal.text ?? `${money(Math.min(goal.current, goal.target))} / ${money(goal.target)}`}</Text>
         </Pressable>
       )}
     </View>
   );
 }
 
-export function OvenCard({ progress, stock, shelf, auto, idle, onTap }: { progress: number; stock: number; shelf: number; auto: boolean; idle: boolean; onTap: () => void }) {
+export function OvenCard({ progress, stock, shelf, auto, idle, full, onTap }: { progress: number; stock: number; shelf: number; auto: boolean; idle: boolean; full: boolean; onTap: () => void }) {
   const bounce = useRef(new Animated.Value(1)).current;
   const pulse = useRef(new Animated.Value(1)).current;
 
@@ -191,7 +196,6 @@ export function OvenCard({ progress, stock, shelf, auto, idle, onTap }: { progre
   };
   const R = 30;
   const circ = 2 * Math.PI * R;
-  const full = stock >= shelf;
   return (
     <Pressable onPress={tap} testID="oven" style={[styles.ovenCard, idle && styles.ovenIdle]}>
       <Animated.View style={{ transform: [{ scale: Animated.multiply(bounce, pulse) }] }}>
@@ -319,11 +323,13 @@ const styles = StyleSheet.create({
   cashPill: { flex: 1, alignItems: 'center' },
   cash: { fontFamily: F.bold, fontSize: 34, color: '#fff', textShadowColor: C.tomatoDark, textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 },
   perSec: { fontFamily: F.semi, fontSize: 13, color: '#FFE7C2' },
-  goal: { height: 30, borderRadius: 15, backgroundColor: C.tomatoDark, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderWidth: 2, borderColor: 'rgba(0,0,0,0.15)' },
-  goalReady: { borderColor: '#fff' },
+  goal: { height: 30, borderRadius: 15, backgroundColor: '#FFE7C2', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderWidth: 2, borderColor: 'rgba(0,0,0,0.15)' },
+  goalReady: { borderColor: '#fff', backgroundColor: C.basil },
   goalFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: C.cheese },
-  goalLabel: { flex: 1, fontFamily: F.bold, fontSize: 14, color: '#fff', textShadowColor: 'rgba(0,0,0,0.35)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 0 },
-  goalAmt: { fontFamily: F.bold, fontSize: 13, color: '#fff', textShadowColor: 'rgba(0,0,0,0.35)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 0 },
+  // Dark ink on a light track + yellow fill: readable at every fill level.
+  goalLabel: { flex: 1, fontFamily: F.bold, fontSize: 14, color: C.ink },
+  goalAmt: { fontFamily: F.bold, fontSize: 13, color: C.ink },
+  goalTextReady: { color: '#fff' },
 
   ovenCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.panel, borderRadius: 20, padding: 10, gap: 12, borderWidth: 3, borderColor: C.ink, ...shadow },
   ovenIdle: { borderColor: C.tomato, backgroundColor: '#FFF7F2' },

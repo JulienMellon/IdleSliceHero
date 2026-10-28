@@ -1,7 +1,8 @@
 // Placeholder scene backdrops: one flat SVG vignette per location.
-import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop, Text } from 'react-native-svg';
 
 import type { Backdrop as BackdropId } from '../content/types';
+import { F } from '../theme';
 
 const INK = '#3B1F14';
 
@@ -14,6 +15,7 @@ const SKY: Record<BackdropId, [string, string]> = {
   industrial: ['#7C8597', '#C3C8D2'],
   uptown: ['#2E3A6B', '#6A5ACD'],
   'megaslice-hq': ['#3A1450', '#7B2CBF'],
+  'downtown-rain': ['#2B2D52', '#5C5470'],
 };
 
 function Building({ x, w, h, color }: { x: number; w: number; h: number; color: string }) {
@@ -126,6 +128,35 @@ function Scenery({ id }: { id: BackdropId }) {
           <Circle cx={355} cy={30} r={14} fill="#FFF3B0" />
         </G>
       );
+    case 'downtown-rain':
+      return (
+        <G>
+          {[[0, 60, 150, '#3E3A5C'], [64, 50, 175, '#4A4468'], [282, 52, 165, '#3E3A5C'], [340, 60, 140, '#4A4468']].map(([x, w, h, c], i) => (
+            <Building key={i} x={x as number} w={w as number} h={h as number} color={c as string} />
+          ))}
+          {/* Rosa's storefront */}
+          <Rect x={120} y={88} width={160} height={112} fill="#8E3B2E" stroke={INK} strokeWidth={3} />
+          <Path d="M112 96 L288 96 L276 118 L124 118 Z" fill="#E8432E" stroke={INK} strokeWidth={2.5} />
+          {[136, 168, 200, 232, 264].map((x) => (
+            <Path key={x} d={`M${x - 12} 118 q12 12 24 0`} fill="#FFFFFF" stroke={INK} strokeWidth={1.5} />
+          ))}
+          <Rect x={142} y={134} width={56} height={50} fill="#F7C873" stroke={INK} strokeWidth={2.5} />
+          <Rect x={214} y={134} width={44} height={66} fill="#5A2A1F" stroke={INK} strokeWidth={2.5} />
+          {/* flickering neon sign: half the letters dark */}
+          <Rect x={136} y={44} width={128} height={38} rx={8} fill="#1E1630" stroke="#FF5E7E" strokeWidth={3} />
+          <Text x={200} y={71} fontSize={24} fontFamily={F.bold} fill="#FF8FA3" textAnchor="middle" opacity={0.95}>
+            ROSA’S
+          </Text>
+          <Rect x={213} y={50} width={46} height={27} fill="#1E1630" opacity={0.75} />
+          {/* rain */}
+          {Array.from({ length: 46 }).map((_, i) => {
+            const x = (i * 53) % 410;
+            const y = -280 + ((i * 97) % 470);
+            return <Path key={i} d={`M${x} ${y} l-6 18`} stroke="#B9C6FF" strokeWidth={2} opacity={0.55} strokeLinecap="round" />;
+          })}
+          <Rect x={0} y={192} width={400} height={8} fill="#2A2840" />
+        </G>
+      );
     case 'megaslice-hq':
       return (
         <G>
@@ -161,6 +192,22 @@ function Clouds({ dark }: { dark: boolean }) {
 function ShopWall() {
   return (
     <G>
+      {/* string lights */}
+      <Path d="M-10 -190 Q100 -150 200 -185 Q300 -150 410 -190" stroke={INK} strokeWidth={2} fill="none" />
+      {Array.from({ length: 11 }).map((_, i) => {
+        const x = -10 + i * 42;
+        const y = -190 + (i % 5 === 0 ? 2 : 22) + (i % 2) * 6;
+        return <Circle key={i} cx={x} cy={y} r={6} fill={['#FFC531', '#E8432E', '#3FAE5A'][i % 3]} stroke={INK} strokeWidth={1.5} />;
+      })}
+      {/* framed photo: young Rosa at the oven, est. 1974 */}
+      <Rect x={262} y={-150} width={96} height={78} rx={4} fill="#C98F63" stroke={INK} strokeWidth={3} />
+      <Rect x={272} y={-140} width={76} height={50} fill="#F6E7C1" />
+      <Circle cx={298} cy={-118} r={10} fill="#F2C9A0" stroke={INK} strokeWidth={1.5} />
+      <Path d="M286 -90 Q298 -104 310 -90 Z" fill="#B23A48" />
+      <Path d="M318 -90 L318 -112 Q330 -128 342 -112 L342 -90 Z" fill="#B85C38" />
+      <Text x={310} y={-78} fontSize={10} fontFamily={F.bold} fill="#FFF4E0" textAnchor="middle">
+        EST. 1974
+      </Text>
       <Rect x={170} y={-80} width={60} height={34} rx={4} fill="#3B1F14" />
       <Rect x={176} y={-74} width={48} height={4} rx={2} fill="#FFF4E0" />
       <Rect x={176} y={-64} width={34} height={4} rx={2} fill="#FFF4E0" />
@@ -175,17 +222,18 @@ function ShopWall() {
 
 export function Backdrop({ id, width, height }: { id: BackdropId; width: number; height: number }) {
   const [top, bottom] = SKY[id];
+  const vbH = Math.max(200, (400 * height) / width);
   return (
-    // Art is composed in a 4:3 box (400×300): scenery sits in the bottom 200, sky above for captions.
-    <Svg width={width} height={height} viewBox="0 -100 400 300" preserveAspectRatio="xMidYMax slice">
+    // Art is 400 wide with scenery in the bottom 200 units; any extra frame height becomes sky.
+    <Svg width={width} height={height} viewBox={`0 ${200 - vbH} 400 ${vbH}`} preserveAspectRatio="xMidYMax meet">
       <Defs>
         <LinearGradient id={`sky-${id}`} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={top} />
           <Stop offset="1" stopColor={bottom} />
         </LinearGradient>
       </Defs>
-      <Rect x={-20} y={-120} width={440} height={340} fill={`url(#sky-${id})`} />
-      {id !== 'shop' && id !== 'megaslice-hq' && <Clouds dark={id === 'uptown' || id === 'industrial'} />}
+      <Rect x={-20} y={180 - vbH} width={440} height={vbH + 40} fill={`url(#sky-${id})`} />
+      {id !== 'shop' && id !== 'megaslice-hq' && id !== 'downtown-rain' && <Clouds dark={id === 'uptown' || id === 'industrial'} />}
       {id === 'shop' && <ShopWall />}
       <Scenery id={id} />
     </Svg>

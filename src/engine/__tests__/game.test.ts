@@ -54,6 +54,21 @@ describe('baking and delivering', () => {
     for (let i = 0; i < 100; i++) s = G.tick(s, 1);
     expect(s.stock).toBeLessThanOrEqual(G.shelfCapacity());
   });
+  test('no pizzas are wasted when the shelf is nearly full', () => {
+    // Batch finishes with 10 on the shelf: 2 go on the shelf, 2 wait in the oven.
+    let s = { ...fresh(), drivers: 0, stock: 10, batchProgress: G.bakeSeconds(1) - 0.01 };
+    s = G.tick(s, 0.02);
+    expect(s.stock + s.ovenHeld).toBeCloseTo(14);
+    expect(G.shelfFull(s)).toBe(true);
+    expect(G.tapOven(s).batchProgress).toBe(-1); // can't start while pizzas wait in the oven
+    // Drivers free up space and the held pizzas drop onto the shelf.
+    s = { ...s, drivers: 50 };
+    for (let i = 0; i < 20; i++) s = G.tick(s, 0.1);
+    expect(s.ovenHeld).toBe(0);
+  });
+  test('a batch can start whenever the shelf has room', () => {
+    expect(G.tapOven({ ...fresh(), stock: 9 }).batchProgress).toBe(0);
+  });
   test('cash is never NaN with every neighborhood unlocked', () => {
     let s = { ...fresh(), autoBake: true, unlocked: NEIGHBORHOODS.map((n) => n.id), vehicle: VEHICLES.length - 1 };
     for (let i = 0; i < 50; i++) s = G.tick(s, 0.5);
@@ -117,6 +132,8 @@ describe('saves', () => {
     expect(m.cash).toBe(0);
     expect(m.ovenLevel).toBe(7);
     expect(m.unlocked).toEqual(['downtown', 'suburbs']);
+    expect(G.migrate({ seenScenes: ['a', 'b', 'c'] }, 5).scrapbookViewed).toBe(3);
+    expect(G.migrate({ seenScenes: ['a', 'b', 'c'], scrapbookViewed: 1 }, 5).scrapbookViewed).toBe(1);
   });
 });
 
@@ -129,6 +146,7 @@ describe('format', () => {
     expect(money(1234)).toBe('$1.23K');
     expect(money(9_500_000)).toBe('$9.5M');
     expect(money(60_000)).toBe('$60K');
+    expect(money(3_900, true)).toBe('$3.90K');
     expect(money(NaN)).toBe('$0');
   });
   test('duration', () => {

@@ -23,7 +23,7 @@ export type CharacterId =
 export type Mood = 'neutral' | 'happy' | 'sad' | 'angry' | 'surprised';
 
 /** Backdrop for a panel: a neighborhood, the player's shop, or MegaSlice HQ. */
-export type Backdrop = NeighborhoodId | 'shop' | 'megaslice-hq';
+export type Backdrop = NeighborhoodId | 'shop' | 'megaslice-hq' | 'downtown-rain';
 
 export interface SceneLine {
   /** Display name shown on the speech bubble, e.g. "Nonna Rosa". Use "You" for the player. */
