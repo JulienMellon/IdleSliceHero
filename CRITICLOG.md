@@ -354,3 +354,28 @@ Julien's direction after v0.5: the main screen should be a cutaway of a growing 
 | D48 | One banner above the grid on unmanaged shops ("Without a manager, upgrades here only pay while you tap.") instead of a prefix on every card |
 | D49 | An idle shop shows one driver waiting at the counter |
 | D50 | Tall panels get a MegaSlice rooftop billboard high in the skyline |
+
+## v1.1 — critique (round 10)
+
+**VERDICT: NOT SATISFIED** — loads clean; Owner's direction holds. The billboard fix regressed the opening panel, and two cutaway overlaps remain. "With those done, this build would be at SATISFIED."
+
+**Fixed:** D46, D47 (sim not re-run by critic), D48, D49, G37 (mostly) · **Reworked into a regression:** D50 → G38 · **Blockers:** none
+
+**Bugs**
+- G38 Billboard drawn on every tall panel, including the rainy opener — poles dangle from the caption; MegaSlice branding before the story introduces it; poles float above the roofs
+- G39 (a) Walk-in waits 4 units from driver 0 — they overlap in the first 30s; (b) arriving and leaving drivers share one back lane and stack at the door
+
+**Design notes**
+- D51 At Flagship, drivers bunch in the right third; spread pickup spots across the counter-to-door span
+- D52 City map order doesn't match unlock order (Uptown before Industrial visually)
+- D53 $0/s station buttons on managed shops could use the beige fill too (minor)
+
+## v1.2 — build (addresses round 10)
+
+| Note | Fix |
+| --- | --- |
+| G38 | Billboard only on Industrial/Uptown panels (after MegaSlice enters the story) — the rainy opener is clean again. It sits just above the skyline, below the caption area, and both poles end on tower roofs |
+| G39 | (a) Walk-ins wait in front of the counter's near edge, 11+ units from the first driver; (b) arriving drivers use one back lane, leaving drivers a deeper one, so they never stack at the door |
+| D51 | Pickup spots spread across the whole counter-to-door span (12–20 units apart) on big shops |
+| D52 | City map: Industrial moved to the top-middle and Uptown to the top-right, so build order reads left to right |
+| D53 | Every $0/s button (managed or not) uses the beige fill; only buys that raise income are bright green |

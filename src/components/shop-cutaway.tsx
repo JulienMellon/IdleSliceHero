@@ -283,22 +283,27 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
   // Drivers wait at their own spot most of the loop (0.15–0.75); arriving and leaving they use a
   // back lane, drawn smaller and behind, so a walking driver never passes through a standing one (critic G37).
   const STAND_Y = FLOOR_Y - 0.5;
-  const LANE_Y = FLOOR_Y - 5;
+  // Arriving drivers use the back lane; leaving drivers a lane deeper still, so they never stack (critic G39b).
+  const LANE_IN = FLOOR_Y - 5;
+  const LANE_OUT = FLOOR_Y - 8.5;
+  // Spread pickup spots over the whole counter-to-door span on big shops (critic D51).
+  const spotStep = Math.max(12, Math.min(20, (lay.door - 6 - (counterFront + 3)) / Math.max(1, driverCount - 1)));
   for (let i = 0; i < driverCount; i++) {
     const p = ((t / 5 + i / driverCount) % 1 + 1) % 1;
     const out = lay.door + 5;
     // Each driver has their own pickup spot, 12 apart.
-    const at = Math.min(lay.door - 4, counterFront + 3 + i * 12);
+    const at = Math.min(lay.door - 4, counterFront + 3 + i * spotStep);
     const walking = p < 0.15 || p >= 0.75;
     const k = p < 0.15 ? p / 0.15 : p >= 0.75 ? (p - 0.75) / 0.25 : 1;
     const x = p < 0.15 ? out + (at - out) * k : p < 0.75 ? at : at + (out - at) * k;
     // Step between the lane and the spot at each end so the switch isn't a jump.
     const edge = p < 0.15 ? Math.max(0, (k - 0.8) / 0.2) : p >= 0.75 ? Math.max(0, 1 - k / 0.2) : 1;
-    const y = LANE_Y + (STAND_Y - LANE_Y) * edge;
+    const lane = p >= 0.75 ? LANE_OUT : LANE_IN;
+    const y = lane + (STAND_Y - lane) * edge;
     const prev = mem.current.phase[`d${i}`];
     if (running && prev !== undefined && prev < 0.75 && p >= 0.75) payout = true;
     mem.current.phase[`d${i}`] = p;
-    walkers.push({ key: `d${i}`, x, y, kind: 'driver', shirt: '#2F80ED', flip: p < 0.15, step: walking ? clock * 12 : 0, carry: p >= 0.75, s: 0.72 + 0.13 * edge });
+    walkers.push({ key: `d${i}`, x, y, kind: 'driver', shirt: '#2F80ED', flip: p < 0.15, step: walking ? clock * 12 : 0, carry: p >= 0.75, s: (p >= 0.75 ? 0.66 : 0.72) + (p >= 0.75 ? 0.19 : 0.13) * edge });
   }
   // Walk-ins: in through the door, order at the counter, then sit at a table.
   const guestCount = Math.min(2, lay.tables.length);
@@ -306,7 +311,7 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
     const p = ((t + 2.3 + i * 3.1) % 7) / 7;
     const door = lay.door + 5;
     // Walk-ins queue at the near end of the counter, on the front lane, away from the drivers' spots.
-    const at = counterFront - 1;
+    const at = counterFront - 8;
     const seat = lay.tables[i % lay.tables.length];
     const x = p < 0.35 ? door + (at - door) * (p / 0.35) : p < 0.5 ? at : at + (seat.x - 6 - at) * ((p - 0.5) / 0.5);
     const lane = FLOOR_Y + 8;
