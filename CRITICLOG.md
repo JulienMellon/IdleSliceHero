@@ -436,3 +436,37 @@ The floor band is 16 units deep (FLOOR_Y..+16); a figure is ~15 tall, so lanes m
 | D58 | Walk-ins appear 4 units inside the door, phase-offset from drivers' exits |
 | D59 | Walk-ins are seated for ~40% of their loop (was ~15%), fading out only in the last 10% |
 | D60 | Stale toast comment fixed |
+
+## v1.4 — critique (round 13)
+
+**VERDICT: NOT SATISFIED** — loads clean; the depth lanes finally fix drivers walking through each other; drivers and tables grow with the shop. But the bigger dining room took width from the ovens.
+
+**Fixed:** G41, G42, D57, D58, D59 · **Still open:** D60 → D63 · **Blockers:** none
+
+**Bugs**
+- G43 From Expand 3/5 the ovens shrink to ~2.5–3-unit sticks (Golden Flagship ovens look like spikes) — upgrades look worse than before, breaking the owner's "bigger, fancier ovens" rule
+
+**Design notes**
+- D61 Seated guests in a table column overlap each other
+- D62 Walk-ins cut diagonally through the standing driver rows to reach their seat
+- D63 Toast still covers the manager card title
+- D64 22 and 44 drivers look the same — add a "×44" badge or parked scooters
+- D65 Rush pill covers the menu board; OVENS/COUNTER tags touch at Flagship (minor)
+
+### Plan for v1.5
+The room is at most 196 units wide, so the ovens, counter and dining room compete for width. Real pizzerias stack deck ovens, and that's the fix:
+- **Stacked deck ovens:** when a single row would make ovens narrower than 9 units, ovens go into two tiers (a lower and an upper deck). 6 ovens = 3 columns × 2 decks at ≥12 units each. Chimneys sit on the upper deck; one baker per column.
+- **Width budget:** dining 34% (footprint 2) / 38% (footprint 3+); pickup strip 18–26; table columns 14 wide → Flagship keeps 3 drivers and 6 tables while ovens stay ≥12 wide.
+- Guests: back-row diners sit on the left chair and front-row diners on the right; walk-ins stay on the front lane until they reach their table's x, then step back to the seat.
+- Toast in the gap above the card grid; driver count badge "×44" by the pickup strip; rush pill below the menu board; tags spaced ≥25 units apart.
+
+## v1.5 — build (addresses round 13, per the plan above)
+
+| Note | Fix |
+| --- | --- |
+| G43 | **Stacked deck ovens:** when a single row would make ovens narrower than 9 units, they stack in two decks (lower + upper, chimney on top). Flagship: 6 Golden ovens as 3 columns × 2 decks, each ~16 wide; Expand 3/5: 4 Copper ovens as 2 × 2. Width budget rebalanced (dining 34% / 38%, pickup strip 18–26, 14-unit table columns) — Flagship keeps 3 drivers and 6 tables. One baker per oven column |
+| D61 | Back-row diners sit on the left chair, front-row diners on the right chair facing left — no more stacking |
+| D62 | Walk-ins walk back along the front lane until they reach their table's x, then step to their seat — never through the driver rows |
+| D63 | Toast is compact and sits on the sidewalk strip just below the station tags, clear of the manager card |
+| D64 | Driver badge ("🚐 ×44") above the pickup strip whenever the shop has more drivers than are drawn |
+| D65 | Tap/rush pills stay over the kitchen (not the menu board); station tags spaced ≥27 units apart |

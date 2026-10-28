@@ -316,10 +316,10 @@ export function OfflinePopup({ seconds, earned, byShop, onCollect }: { seconds: 
   );
 }
 
-export function Toast({ text, top }: { text: string; top: number }) {
+export function Toast({ text, top, compact }: { text: string; top: number; compact?: boolean }) {
   return (
-    <View style={[styles.toast, { top }]} pointerEvents="none">
-      <Text style={styles.toastText}>{text}</Text>
+    <View style={[styles.toast, compact && styles.toastCompact, { top }]} pointerEvents="none">
+      <Text style={[styles.toastText, compact && { fontSize: 13 }]}>{text}</Text>
     </View>
   );
 }
@@ -385,5 +385,6 @@ const styles = StyleSheet.create({
   modalCash: { fontFamily: F.bold, fontSize: 40, color: C.basilDark, marginBottom: 6 },
 
   toast: { position: 'absolute', alignSelf: 'center', backgroundColor: C.ink, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, borderWidth: 2, borderColor: '#fff' },
+  toastCompact: { paddingVertical: 4, paddingHorizontal: 14, borderRadius: 14 },
   toastText: { fontFamily: F.semi, color: '#fff', fontSize: 15 },
 });

@@ -23,18 +23,34 @@ const OVEN_GAP = 2;
 
 export const CUTAWAY_SKY = '#CFE6F7';
 
+/** One oven on the back wall. Two decks are stacked when a single row would be too narrow (critic G43). */
+interface OvenSlot {
+  x: number;
+  w: number;
+  /** y of the oven's floor. */
+  base: number;
+  h: number;
+  chimney: boolean;
+}
+
+const MIN_OVEN_W = 9;
+const DECK_H = 14;
+
 interface Layout {
   L: number;
   R: number;
   prep: { x0: number; x1: number };
-  ovens: number[];
+  ovens: OvenSlot[];
+  /** Width of one oven column. */
   ovenW: number;
+  /** x of each oven column (one baker per column). */
+  ovenCols: number[];
   counter: { x0: number; x1: number };
   dining: { x0: number; x1: number };
   pickup: { x0: number; x1: number };
   seating: { x0: number; x1: number };
   door: number;
-  tables: { x: number; y: number }[];
+  tables: { x: number; y: number; row: number }[];
 }
 
 /**
@@ -48,33 +64,48 @@ function layout(footprint: number, ovens: number, tablesWanted: number, cooks = 
   // Each prep cook gets a clear spot of their own (critic D35).
   const prep = { x0: L + 3, x1: L + 3 + Math.max(20, 8 + cooks * 7) };
   const door = R - 12;
-  // The dining room grows with the shop so bigger shops visibly fit more drivers and tables (critic G42).
-  const diningW = Math.max(30, w * (footprint >= 3 ? 0.44 : footprint >= 2 ? 0.38 : 0.3));
+  // The dining room grows with the shop (critic G42), but never squeezes the ovens below MIN_OVEN_W:
+  // extra ovens are stacked as a second deck instead (critic G43; see the v1.5 plan in CRITICLOG.md).
+  const diningW = Math.max(30, w * (footprint >= 3 ? 0.38 : footprint >= 2 ? 0.34 : 0.3));
   const counterW = 21;
   const ovenStart = prep.x1 + 3;
   const ovenZone = door - 2 - diningW - 3 - counterW - 2 - ovenStart;
-  const ovenW = Math.min(OVEN_W, (ovenZone - (ovens - 1) * OVEN_GAP) / Math.max(1, ovens));
-  const ovensX = Array.from({ length: ovens }, (_, i) => ovenStart + i * (ovenW + OVEN_GAP));
-  const ovenEnd = ovenStart + ovens * (ovenW + OVEN_GAP) - OVEN_GAP;
+  const singleW = (ovenZone - (ovens - 1) * OVEN_GAP) / Math.max(1, ovens);
+  const decks = singleW >= MIN_OVEN_W || ovens < 2 ? 1 : 2;
+  const cols = Math.ceil(ovens / decks);
+  const ovenW = Math.min(OVEN_W + 2, (ovenZone - (cols - 1) * OVEN_GAP) / Math.max(1, cols));
+  const ovenCols = Array.from({ length: cols }, (_, c) => ovenStart + c * (ovenW + OVEN_GAP));
+  const ovenSlots: OvenSlot[] = [];
+  for (let i = 0; i < ovens; i++) {
+    const c = i % cols;
+    const deck = Math.floor(i / cols);
+    if (decks === 1) {
+      ovenSlots.push({ x: ovenCols[c], w: ovenW, base: FLOOR_Y - 8, h: 0, chimney: true });
+    } else {
+      const base = FLOOR_Y - 8 - deck * (DECK_H + 1.5);
+      ovenSlots.push({ x: ovenCols[c], w: ovenW, base, h: DECK_H, chimney: deck === 1 || i + cols >= ovens });
+    }
+  }
+  const ovenEnd = ovenStart + cols * (ovenW + OVEN_GAP) - OVEN_GAP;
   const counter = { x0: ovenEnd + 2, x1: ovenEnd + 2 + counterW };
   const dining = { x0: counter.x1 + 3, x1: door - 2 };
   // A clear pickup strip in front of the counter; tables sit in their own block toward the door (critic D54).
   const diningSpan = dining.x1 - dining.x0;
-  const pickupW = Math.max(18, Math.min(diningSpan * 0.4, 34));
+  const pickupW = Math.max(18, Math.min(diningSpan * 0.36, 26));
   const pickup = { x0: dining.x0, x1: dining.x0 + pickupW };
   // Seating stops short of the door so arrivals and diners don't pile up there (critic D57).
   const seating = { x0: pickup.x1 + 1, x1: dining.x1 - 5 };
   const span = seating.x1 - seating.x0;
-  const cols = Math.max(1, Math.floor(span / 15));
-  const tables = Math.min(tablesWanted, cols * 2);
+  const tableCols = Math.max(1, Math.floor(span / 14));
+  const tables = Math.min(tablesWanted, tableCols * 2);
   const used = Math.ceil(tables / 2);
   const step = span / Math.max(1, used);
   const tablesXY = Array.from({ length: tables }, (_, i) => {
     const col = Math.floor(i / 2);
     const row = i % 2;
-    return { x: seating.x0 + step * (col + 0.5) + (row ? Math.min(3, step * 0.15) : 0), y: row === 0 ? FLOOR_Y + 4 : FLOOR_Y + 11 };
+    return { x: seating.x0 + step * (col + 0.5) + (row ? Math.min(3, step * 0.15) : 0), y: row === 0 ? FLOOR_Y + 4 : FLOOR_Y + 11, row };
   });
-  return { L, R, prep, ovens: ovensX, ovenW, counter, dining, pickup, seating, door, tables: tablesXY };
+  return { L, R, prep, ovens: ovenSlots, ovenW, ovenCols, counter, dining, pickup, seating, door, tables: tablesXY };
 }
 
 function useClock(fps: number, paused: boolean) {
@@ -112,20 +143,33 @@ function Person({ x, y, kind, shirt, step = 0, arm = 0, flip = false, s = 1, car
   );
 }
 
-function Oven({ x, w, grade, lit, flicker }: { x: number; w: number; grade: number; lit: boolean; flicker: number }) {
+/**
+ * One oven. Single-row ovens are tall domes (taller for fancier grades); stacked decks are shorter
+ * arches. Chimneys only on the top oven of a column.
+ */
+function Oven({ slot, grade, lit, flicker }: { slot: OvenSlot; grade: number; lit: boolean; flicker: number }) {
   const g = OVEN_GRADES[grade];
-  const top = 48 - grade * 1.5; // fancier ovens are taller
+  const { x, w, base, chimney } = slot;
+  const h = slot.h || 30 + grade * 1.5; // fancier single-row ovens are taller
+  const top = base - h;
+  const arch = Math.min(7, w * 0.45);
   const mouth = w * 0.55;
+  const mouthH = Math.min(12, h * 0.55);
   const cx = x + w / 2;
   return (
     <G>
-      <Rect x={x + w * 0.36} y={top - 12} width={w * 0.28} height={14} fill={grade >= 3 ? g.color : '#9C8B7A'} stroke={INK} strokeWidth={0.5} />
-      <Path d={`M${x} ${FLOOR_Y - 8} L${x} ${top + 9} Q${cx} ${top - 6} ${x + w} ${top + 9} L${x + w} ${FLOOR_Y - 8} Z`} fill={g.color} stroke={INK} strokeWidth={0.8} />
-      {grade === 2 && [0, 1, 2].map((i) => <Rect key={i} x={x + w * 0.1 + i * w * 0.29} y={FLOOR_Y - 8} width={w * 0.22} height={2.4} fill="#5A3A1E" />)}
-      {grade >= 4 && <Path d={`M${x + 2} ${top + 8} Q${cx} ${top - 3} ${x + w - 2} ${top + 8}`} stroke="#FFF3B0" strokeWidth={0.9} fill="none" />}
-      <Path d={`M${cx - mouth / 2} ${FLOOR_Y - 9} L${cx - mouth / 2} ${FLOOR_Y - 16} Q${cx} ${FLOOR_Y - 22} ${cx + mouth / 2} ${FLOOR_Y - 16} L${cx + mouth / 2} ${FLOOR_Y - 9} Z`} fill="#2B1A12" />
-      {lit && <Path d={`M${cx - mouth * 0.45} ${FLOOR_Y - 9} L${cx - mouth * 0.3} ${FLOOR_Y - 13 - flicker} L${cx - mouth * 0.1} ${FLOOR_Y - 11} L${cx + mouth * 0.08} ${FLOOR_Y - 15 + flicker} L${cx + mouth * 0.25} ${FLOOR_Y - 11} L${cx + mouth * 0.38} ${FLOOR_Y - 13} L${cx + mouth * 0.45} ${FLOOR_Y - 9} Z`} fill="#FF9F1C" />}
-      <Rect x={x - 0.5} y={FLOOR_Y - 9} width={w + 1} height={2.5} fill="#6B4A3A" stroke={INK} strokeWidth={0.4} />
+      {chimney && <Rect x={x + w * 0.36} y={top - 10} width={w * 0.28} height={12} fill={grade >= 3 ? g.color : '#9C8B7A'} stroke={INK} strokeWidth={0.5} />}
+      <Path d={`M${x} ${base} L${x} ${top + arch} Q${cx} ${top - arch * 0.7} ${x + w} ${top + arch} L${x + w} ${base} Z`} fill={g.color} stroke={INK} strokeWidth={0.8} />
+      {grade === 2 && [0, 1, 2].map((i) => <Rect key={i} x={x + w * 0.1 + i * w * 0.29} y={base} width={w * 0.22} height={2.2} fill="#5A3A1E" />)}
+      {grade >= 4 && <Path d={`M${x + 2} ${top + arch} Q${cx} ${top - arch * 0.2} ${x + w - 2} ${top + arch}`} stroke="#FFF3B0" strokeWidth={0.9} fill="none" />}
+      <Path d={`M${cx - mouth / 2} ${base - 1} L${cx - mouth / 2} ${base - mouthH * 0.6} Q${cx} ${base - mouthH * 1.1} ${cx + mouth / 2} ${base - mouthH * 0.6} L${cx + mouth / 2} ${base - 1} Z`} fill="#2B1A12" />
+      {lit && (
+        <Path
+          d={`M${cx - mouth * 0.45} ${base - 1} L${cx - mouth * 0.3} ${base - mouthH * 0.35 - flicker} L${cx - mouth * 0.1} ${base - mouthH * 0.2} L${cx + mouth * 0.08} ${base - mouthH * 0.5 + flicker} L${cx + mouth * 0.25} ${base - mouthH * 0.2} L${cx + mouth * 0.38} ${base - mouthH * 0.35} L${cx + mouth * 0.45} ${base - 1} Z`}
+          fill="#FF9F1C"
+        />
+      )}
+      <Rect x={x - 0.5} y={base - 1} width={w + 1} height={2.5} fill="#6B4A3A" stroke={INK} strokeWidth={0.4} />
     </G>
   );
 }
@@ -216,7 +260,7 @@ const Room = memo(function Room({ cooks, footprint, wall, grade, ovens, counterS
       <Rect x={lay.prep.x0 + 2} y={FLOOR_Y - 11} width={2} height={11} fill="#8E5A3C" />
       <Rect x={lay.prep.x1 - 4} y={FLOOR_Y - 11} width={2} height={11} fill="#8E5A3C" />
       {/* ovens (unlit; fire is drawn on top when running) */}
-      {lay.ovens.map((x, i) => <Oven key={i} x={x} w={lay.ovenW} grade={grade} lit={false} flicker={0} />)}
+      {lay.ovens.map((slot, i) => <Oven key={i} slot={slot} grade={grade} lit={false} flicker={0} />)}
       {/* counter: grows longer with more staff */}
       <Rect x={lay.counter.x0} y={FLOOR_Y - 14} width={lay.counter.x1 - lay.counter.x0} height={14} fill="#B0653A" stroke={INK} strokeWidth={0.8} />
       <Rect x={lay.counter.x0 - 1} y={FLOOR_Y - 16} width={lay.counter.x1 - lay.counter.x0 + 2} height={3} rx={1} fill="#E9DCC8" stroke={INK} strokeWidth={0.6} />
@@ -336,7 +380,7 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
     const start = lay.door - 4;
     const at = counterFront - 8;
     const seat = lay.tables[i % lay.tables.length];
-    const seatX = seat.x - 6;
+    const seatX = seat.row ? seat.x + 6 : seat.x - 6;
     const seatY = seat.y + 4;
     let x: number;
     let y: number;
@@ -348,17 +392,20 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
       x = at;
       y = WALKIN_LANE;
       walking = false;
+    } else if (p < 0.43) {
+      // back along the front lane, in front of the waiting drivers (critic D62)
+      x = at + (seatX - at) * ((p - 0.33) / 0.1);
+      y = WALKIN_LANE;
     } else if (p < 0.5) {
-      const k = (p - 0.33) / 0.17;
-      x = at + (seatX - at) * k;
-      y = WALKIN_LANE + (seatY - WALKIN_LANE) * k;
+      x = seatX;
+      y = WALKIN_LANE + (seatY - WALKIN_LANE) * ((p - 0.43) / 0.07);
     } else {
       x = seatX;
       y = seatY;
       walking = false;
     }
     const o = p < 0.04 ? p / 0.04 : p > 0.9 ? (1 - p) / 0.1 : 1;
-    walkers.push({ key: `g${i}`, x, y, kind: 'guest', shirt: ['#9B51E0', '#27AE60'][i], flip: p < 0.25, step: walking ? clock * 12 : 0, carry: false, s: 0.85, o });
+    walkers.push({ key: `g${i}`, x, y, kind: 'guest', shirt: ['#9B51E0', '#27AE60'][i], flip: p < 0.25 || (p >= 0.5 && !!seat.row), step: walking ? clock * 12 : 0, carry: false, s: 0.85, o });
   }
 
   // Cash pop shows what the shop actually earned since the last pop (critic G19).
@@ -390,10 +437,10 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
       </SvgText>
     </G>
   );
-  const ovenMid = (lay.ovens[0] + lay.ovens[lay.ovens.length - 1] + lay.ovenW) / 2;
+  const ovenMid = (lay.ovenCols[0] + lay.ovenCols[lay.ovenCols.length - 1] + lay.ovenW) / 2;
   const tagXs = [(lay.prep.x0 + lay.prep.x1) / 2, Math.max(ovenMid, lay.prep.x1 + 13), (lay.counter.x0 + lay.counter.x1) / 2 + 2, (lay.dining.x0 + lay.door) / 2 + 4];
   // keep tags from colliding on the smallest shop
-  for (let i = 1; i < tagXs.length; i++) tagXs[i] = Math.max(tagXs[i], tagXs[i - 1] + 25);
+  for (let i = 1; i < tagXs.length; i++) tagXs[i] = Math.max(tagXs[i], tagXs[i - 1] + 27);
 
   return (
     <Pressable
@@ -414,7 +461,7 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
           mem.current.taps = live;
         } else {
           const slot = last ? (last.slot + 1) % 2 : 0;
-          mem.current.taps = [...live.slice(-1), { at: clock, x: Math.max(30, Math.min(VW - 30, x)), text, color, slot, count: 1 }];
+          mem.current.taps = [...live.slice(-1), { at: clock, x: Math.max(lay.prep.x0 + 18, Math.min(lay.counter.x1, x)), text, color, slot, count: 1 }];
         }
         onTap();
       }}
@@ -422,7 +469,7 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
       style={{ width, height, backgroundColor: CUTAWAY_SKY }}>
       <Svg width={width} height={height} viewBox={`0 0 ${VW} ${VH}`} preserveAspectRatio="xMidYMid meet">
         <Room cooks={prepCooks} footprint={fp} wall={nd.wall} grade={shop.grade} ovens={ovens} counterStaff={counterStaff} tables={tables} vehicle={game.vehicle} name={nd.name} />
-        {running && lay.ovens.map((x, i) => <Oven key={i} x={x} w={lay.ovenW} grade={shop.grade} lit flicker={flicker * (i % 2 ? -1 : 1)} />)}
+        {running && lay.ovens.map((slot, i) => <Oven key={i} slot={slot} grade={shop.grade} lit flicker={flicker * (i % 2 ? -1 : 1)} />)}
         {/* dough waiting on the prep table: the tap queue for unmanaged shops, a steady pile when managed */}
         {Array.from({ length: shop.managed ? 3 : queueBalls }).map((_, i) => (
           <Ellipse key={`q${i}`} cx={lay.prep.x0 + 4 + (i % 6) * 3.6} cy={FLOOR_Y - 16 - Math.floor(i / 6) * 1.6} rx={1.9} ry={1.1} fill="#F7E3C0" stroke={INK} strokeWidth={0.35} />
@@ -432,7 +479,7 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
           <Person key={`c${i}`} x={lay.prep.x0 + 4.5 + (prepCooks > 1 ? (i * (lay.prep.x1 - lay.prep.x0 - 9)) / (prepCooks - 1) : 4)} y={FLOOR_Y - 1 + (i % 2 === 1 ? 2.5 : 0)} kind="cook" shirt={i % 2 ? '#D9534F' : '#E8432E'} s={i % 2 ? 0.9 : 0.82} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} />
         ))}
         {/* one baker per oven */}
-        {lay.ovens.map((x, i) => (
+        {lay.ovenCols.map((x, i) => (
           <Person key={`b${i}`} x={x + lay.ovenW / 2 + 2} y={FLOOR_Y + 3} kind="cook" shirt="#B23A48" s={0.8} arm={running ? Math.abs(Math.sin(t * 3 + i)) * 2.5 : 0} flip={i % 2 === 1} />
         ))}
         {/* counter staff */}
@@ -446,7 +493,7 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
         {/* seated guests */}
         {running &&
           lay.tables.slice(guestCount).map((tb, i) => (
-            <Person key={`sg${i}`} x={tb.x - 6} y={tb.y + 4} kind="guest" shirt={['#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97'][i % 4]} s={0.7} arm={Math.abs(Math.sin(clock * 2 + i)) * 2} />
+            <Person key={`sg${i}`} x={tb.row ? tb.x + 6 : tb.x - 6} y={tb.y + 4} kind="guest" shirt={['#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97'][i % 4]} s={0.7} arm={Math.abs(Math.sin(clock * 2 + i)) * 2} flip={!!tb.row} />
           ))}
         {running &&
           [...walkers].sort((a, b) => a.y - b.y).map((wk) => (
@@ -456,6 +503,15 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
           ))}
         {/* idle shop: one driver waits at the counter (critic D49) */}
         {!running && <Person x={lay.pickup.x0 + 4} y={FLOOR_Y + 6} kind="driver" shirt="#2F80ED" s={0.8} />}
+        {/* how many drivers this shop really has, when more than we can draw (critic D64) */}
+        {shop.drivers > driverCount && (
+          <G>
+            <Rect x={(lay.pickup.x0 + lay.pickup.x1) / 2 - 11} y={FLOOR_Y - 34} width={22} height={7} rx={3.5} fill="#2F80ED" stroke="#FFFFFF" strokeWidth={0.7} />
+            <SvgText x={(lay.pickup.x0 + lay.pickup.x1) / 2} y={FLOOR_Y - 29} fontSize={4} fontFamily={F.bold} fill="#FFFFFF" textAnchor="middle">
+              {`${VEHICLES[game.vehicle].emoji} ×${shop.drivers}`}
+            </SvgText>
+          </G>
+        )}
         {/* station tags: the bottleneck lights up red */}
         {tag(tagXs[0], `PREP ${shop.prep}`, neck === 'prep')}
         {tag(tagXs[1], `OVENS ${shop.ovens}`, neck === 'ovens')}

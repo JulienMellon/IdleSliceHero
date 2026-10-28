@@ -1,0 +1,24 @@
+{
+  "version": "v1.5",
+  "errors": [],
+  "shots": [
+    "/home/claude/idleslicehero/screenshots/v1.5/01-opening-cutscene.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/02-cutscene-dialog.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/03-new-game.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/03b-full-queue-tap.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/04-after-20s-play.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/05-mid-game.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/05b-unmanaged-shop.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/05c-city.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/06-scrapbook.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/07-offline-popup.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/08-late-cutscene.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/09-late-game.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/10-late-game-pops-a.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/11-late-game-pops-b.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/12-late-rush-tap.png",
+    "/home/claude/idleslicehero/screenshots/v1.5/13-flagship-max.png"
+  ],
+  "loaded": true,
+  "cash_after_play": "$6.5"
+}
