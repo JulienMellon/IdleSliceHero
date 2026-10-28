@@ -140,16 +140,17 @@ with sync_playwright() as pw:
     shot(page, "07-offline-popup", 0.8)
 
     # 6. Late game: every neighborhood, van fleet
-    late = dict(MID_SAVE, cash=4.2e7, vehicle=3, active="industrial", dronesUnlocked=True,
+    # On-curve late state (costs ~ a few minutes of income); exactly one cut-scene (industrial-3) is due.
+    late = dict(MID_SAVE, cash=1.5e6, vehicle=3, active="industrial", dronesUnlocked=False,
                 shops={
-                    "downtown": shop(prep=90, ovens=80, grade=3, counter=85, drivers=40, tables=60, footprint=4, sold=7e5),
-                    "suburbs": shop(prep=80, ovens=70, grade=3, counter=75, drivers=35, tables=50, footprint=3, sold=6e5),
-                    "waterfront": shop(prep=70, ovens=60, grade=3, counter=65, drivers=30, tables=45, footprint=3, sold=4e5),
-                    "university": shop(prep=60, ovens=55, grade=3, counter=58, drivers=26, tables=40, footprint=3, sold=3e5),
-                    "industrial": shop(prep=104, ovens=98, grade=4, counter=101, drivers=44, tables=70, footprint=4, sold=180500),
+                    "downtown": shop(prep=85, ovens=80, grade=3, counter=82, drivers=40, tables=60, footprint=3, sold=7e5),
+                    "suburbs": shop(prep=75, ovens=70, grade=3, counter=72, drivers=34, tables=50, footprint=3, sold=6e5),
+                    "waterfront": shop(prep=66, ovens=60, grade=3, counter=62, drivers=30, tables=45, footprint=2, sold=4e5),
+                    "university": shop(prep=58, ovens=52, grade=3, counter=55, drivers=26, tables=38, footprint=2, sold=3e5),
+                    "industrial": shop(prep=52, ovens=48, grade=3, counter=50, drivers=22, tables=34, footprint=2, sold=180500),
                     "uptown": shop(managed=False, sold=0),
                 },
-                seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:18], scrapbookViewed=18)
+                seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:18] + ["uptown-1"], scrapbookViewed=19)
     page = seeded_page(browser, late); time.sleep(2.5)
     if page.locator('[data-testid="skip-scene"]').count():
         tid(page, "cutscene").click(); shot(page, "08-late-cutscene", 0.8)

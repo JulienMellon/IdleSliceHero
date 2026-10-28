@@ -111,7 +111,7 @@ export interface Goal {
   onPress?: () => boolean;
 }
 
-export function Hud({ cash, subtitle, goal, onScrapbook, onSettings, onCity, newScenes }: { cash: number; subtitle: string; goal: Goal | null; onScrapbook: () => void; onSettings: () => void; onCity: () => void; newScenes: number }) {
+export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { cash: number; subtitle: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number }) {
   const shown = useCountUp(cash);
   const flash = useRef(new Animated.Value(1)).current;
   const counting = shown < cash - 0.5;
@@ -145,14 +145,10 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onSettings, onCity, new
             {subtitle}
           </Text>
         </View>
-        <View style={{ gap: 6 }}>
-          <Pressable onPress={onCity} style={styles.hudIcon} testID="open-city" hitSlop={8}>
-            <Text style={styles.hudEmoji}>🗺️</Text>
-          </Pressable>
-        </View>
-        <Pressable onPress={onSettings} style={styles.hudIconSmall} testID="open-settings" hitSlop={8}>
-          <Text style={{ fontSize: 15 }}>⚙️</Text>
+        <Pressable onPress={onCity} style={styles.hudIcon} testID="open-city" hitSlop={8}>
+          <Text style={styles.hudEmoji}>🗺️</Text>
         </Pressable>
+
       </View>
       {goal && (
         <Pressable
@@ -270,7 +266,7 @@ export function UpgradeRow(props: {
   );
 }
 
-export function OfflinePopup({ seconds, earned, onCollect }: { seconds: number; earned: number; onCollect: () => void }) {
+export function OfflinePopup({ seconds, earned, byShop, onCollect }: { seconds: number; earned: number; byShop: { name: string; earned: number }[]; onCollect: () => void }) {
   const pop = useRef(new Animated.Value(0.7)).current;
   useEffect(() => {
     Animated.spring(pop, { toValue: 1, friction: 5, useNativeDriver: native }).start();
@@ -280,7 +276,17 @@ export function OfflinePopup({ seconds, earned, onCollect }: { seconds: number; 
       <Animated.View style={[styles.modal, { transform: [{ scale: pop }] }]}>
         <Text style={styles.modalHead}>While you were away…</Text>
         <Text style={styles.modalEmoji}>🛵💨🍕</Text>
-        <Text style={styles.small}>Nonna kept the oven going for {duration(seconds)}</Text>
+        <Text style={styles.small}>
+          Your managers kept {byShop.length} pizzeria{byShop.length === 1 ? '' : 's'} running for {duration(seconds)}
+        </Text>
+        <View style={{ alignSelf: 'stretch', gap: 2 }}>
+          {byShop.map((b) => (
+            <View key={b.name} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={styles.small}>{b.name}</Text>
+              <Text style={[styles.small, { color: C.basilDark, fontFamily: F.semi }]}>+{money(b.earned)}</Text>
+            </View>
+          ))}
+        </View>
         <Text style={styles.modalCash}>+{money(earned)}</Text>
         <View style={{ alignSelf: 'stretch' }}>
           <BuyButton

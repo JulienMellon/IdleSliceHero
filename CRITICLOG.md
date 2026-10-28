@@ -176,3 +176,51 @@ Julien's direction after v0.5: the main screen should be a cutaway of a growing 
 - **Station cards:** 2-column compact grid (Prep, Ovens, Counter, Drivers, Seating, Oven Grade, Expand, Fleet) with live rate and real +$/s; a wide manager card on top for unmanaged shops.
 - **City screen** (🗺️ in the HUD): every neighborhood with its pizzeria, $/s or "needs manager", build cost on the next; a list of pizzerias (footprint, oven grade, drivers, $/s); tap to visit.
 - **Story:** 9 scenes revised so each neighborhood's beat 1 is the grand opening of your new pizzeria there; two characters nudge you to hire a manager; Nonna takes over Downtown's kitchen in her finale.
+
+## v0.6 — critique (round 5, first review of the redesign)
+
+**VERDICT: NOT SATISFIED** — the redesign loads cleanly and meets most of Julien's direction (cutaway, pizzeria per neighborhood, managers, City screen, visible oven/counter/footprint growth). Economy and polish bugs remain.
+
+**Fixed (carried over):** G17, D20, D21, D23 · **Blockers:** none
+
+**Bugs**
+- G18 Seating lowers income when a shop is supply-limited (walk-ins dilute the price mix); still shown as a green buy
+- G19 Cutaway cash pops show one trip's value, not real income
+- G20 No DRIVERS/SEATS tag, so the most common bottleneck never lights red
+- G21 Flagship footprint is cropped at the edges (PREP tag cut off)
+- G22 Light text on light active-tab fills (<2.5:1)
+- G23 TAP TO BAKE pill at 0.6 opacity — chimney shows through
+- G24 ⚙️ overlaps 🗺️; tapping the map corner opens Settings
+- G25 Maxed Expand / Oven Grade say "Locked" instead of "MAX"
+- G26 Non-speaking cut-scene characters dimmed by opacity — backdrop shows through faces
+
+**Design notes**
+- D24 Early taps feel like nothing: no per-tap feedback, no queue meter, output demand-limited
+- D25 Worker counts don't grow (2 cooks, 1 baker at Lv 104 with 6 golden ovens)
+- D26 Seating crowds in front of ovens/prep — needs its own zone
+- D27 Active tab can be scrolled off-screen
+- D28 City screen: empty bottom, trees under Uptown label
+- D29 Offline popup still credits only Nonna; should list managers/pizzerias
+- Harness: late shots all caught a cut-scene; late save off-curve
+
+## v0.7 — build (addresses round 5)
+
+| Note | Fix |
+| --- | --- |
+| G18 | Drivers get first pick of what the kitchen makes (full price), walk-ins buy what's left. Seating can only add sales; new test sweeps prep/drivers/tables combos and asserts Seating's gain is never negative |
+| G19 | Cash pops show actual earnings since the last pop (pizzas sold × price), reset per shop |
+| G20 | Fourth station tag "DRIVERS n" by the dining room; lights red when customers are the bottleneck |
+| G21 | Cutaway drawn with `meet` on a sky-colored backing; Flagship room narrowed to 196 so nothing is cropped |
+| G22 | Active tab text in dark ink on every color |
+| G23 | TAP TO BAKE pill fully opaque; pulses in size instead of opacity |
+| G24 | ⚙️ removed from the HUD (moved to the City screen header); 🗺️ stands alone |
+| G25 | Maxed Expand / Oven Grade say "MAX" |
+| G26 | Non-speaking cut-scene characters shrink slightly instead of going translucent |
+| D24 | Every tap floats "+4 🍕" (or "+$X rush!" when managed); a queue meter shows "8 / 12 queued"; dough balls on the prep table show the queue; walk-in base rate doubled so taps turn into sales faster |
+| D25 | Workers grow with levels: up to 4 prep cooks, one baker per oven, up to 3 counter staff (and registers), up to 4 drivers walking |
+| D26 | New left-to-right layout: Prep \| Ovens \| Counter \| Dining room \| Door. Tiled kitchen floor vs wood dining floor; tables in two staggered rows in their own room; walk-ins order at the counter then sit down |
+| D27 | Tabs auto-scroll to keep the active pizzeria in view |
+| D28 | City screen: trees moved off labels; summary line shows built/managed counts; pizzeria list fills the lower half |
+| D29 | Offline popup: "Your managers kept N pizzerias running for 2h 0m" with a per-pizzeria breakdown (engine returns `byShop`; test checks it sums to the total) |
+| Harness | Late save is on-curve (costs ≈ minutes of income) and queues exactly one cut-scene, so the late main screen and its pops are captured |
+| Found by harness | Web taps can arrive without `locationX`; the per-tap pop got a NaN position (console errors). Guarded |

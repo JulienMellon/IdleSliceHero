@@ -88,7 +88,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
           </Animated.View>
           <View style={styles.castRow}>
             {p.cast.map((c, i) => (
-              <View key={c.id} style={{ opacity: speakerIndex === -1 || speakerIndex === i ? 1 : 0.75 }}>
+              <View key={c.id} style={{ transform: [{ scale: speakerIndex === -1 || speakerIndex === i ? 1 : 0.9 }], transformOrigin: 'bottom' } as never}>
                 <Portrait id={c.id} mood={c.mood} size={portraitSize} flip={p.cast.length === 2 && i === 1} />
               </View>
             ))}

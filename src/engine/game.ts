@@ -162,18 +162,29 @@ export function shopRate(shop: Shop, vehicle: number): number {
   return Math.min(prepRate(shop), ovenRate(shop), counterRate(shop), demandRate(shop, vehicle));
 }
 
-/** Average cash per pizza: delivered orders pay full price, walk-ins pay `walkInShare`. */
+/**
+ * Cash per second a running pizzeria makes. Drivers get first pick of what the kitchen makes
+ * (full price); walk-ins buy whatever is left (walkInShare of the price). So adding seats can only
+ * ever add sales, never dilute them.
+ */
+export function shopRevenue(id: NeighborhoodId, shop: Shop, vehicle: number): number {
+  const sold = shopRate(shop, vehicle);
+  const delivered = Math.min(sold, deliveryRate(shop, vehicle));
+  const walkIns = sold - delivered;
+  return def(id).orderValue * (delivered + walkIns * TUNING.walkInShare);
+}
+
+/** Average cash per pizza sold right now. */
 export function valuePerPizza(id: NeighborhoodId, shop: Shop, vehicle: number): number {
-  const d = deliveryRate(shop, vehicle);
-  const w = walkInRate(shop);
-  return (def(id).orderValue * (d + w * TUNING.walkInShare)) / (d + w);
+  const sold = shopRate(shop, vehicle);
+  return sold > 0 ? shopRevenue(id, shop, vehicle) / sold : def(id).orderValue;
 }
 
 /** Cash per second this pizzeria makes while running (managed, or while you keep tapping). */
 export function shopEarnings(s: GameState, id: NeighborhoodId): number {
   const shop = s.shops[id];
   if (!shop.built) return 0;
-  return shopRate(shop, s.vehicle) * valuePerPizza(id, shop, s.vehicle);
+  return shopRevenue(id, shop, s.vehicle);
 }
 
 /** Cash per second the city earns on its own (managed pizzerias only). */
@@ -353,6 +364,8 @@ export interface OfflineResult {
   state: GameState;
   seconds: number;
   earned: number;
+  /** Cash each pizzeria made while away (only those that made any). */
+  byShop: { id: NeighborhoodId; earned: number }[];
 }
 
 /** Catch up after the app was closed: managed shops run; unmanaged ones finish what was queued. */
@@ -360,7 +373,8 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
   const elapsed = Math.max(0, (now - s.lastSavedAt) / 1000);
   const seconds = Math.min(elapsed, TUNING.offlineCapSeconds);
   const next = tick(s, seconds);
-  return { state: { ...next, lastSavedAt: now }, seconds, earned: next.cash - s.cash };
+  const byShop = SHOP_IDS.map((id) => ({ id, earned: (next.shops[id].sold - s.shops[id].sold) * valuePerPizza(id, s.shops[id], s.vehicle) })).filter((x) => x.earned > 0);
+  return { state: { ...next, lastSavedAt: now }, seconds, earned: next.cash - s.cash, byShop };
 }
 
 // ---------- Story ----------

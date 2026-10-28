@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type Goal, Hud, OfflinePopup, Toast } from '@/components/game-ui';
 import { DriverIcon } from '@/components/icons';
 import { emitPayout } from '@/components/pulse-bus';
-import { ShopCutaway } from '@/components/shop-cutaway';
+import { CUTAWAY_SKY, ShopCutaway } from '@/components/shop-cutaway';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
 import { CITY_NAME, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
@@ -75,7 +75,7 @@ export default function GameScreen() {
         {...props}
         detail={lock && what !== 'manager' ? lock : props.detail}
         cost={lock ? null : cost}
-        costLabel={props.costLabel ?? (lock ? 'Locked' : 'MAX')}
+        costLabel={props.costLabel ?? (lock && !/Finest|Biggest|Max/.test(lock) ? 'Locked' : 'MAX')}
         canBuy={!lock && cost !== null && game.cash >= cost}
         onBuy={() => buy(what)}
       />
@@ -97,9 +97,9 @@ export default function GameScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Hud cash={game.cash} subtitle={subtitle} goal={goal} newScenes={newScenes} onScrapbook={() => router.push('/scrapbook')} onSettings={() => router.push('/settings')} onCity={() => router.push('/city')} />
+      <Hud cash={game.cash} subtitle={subtitle} goal={goal} newScenes={newScenes} onScrapbook={() => router.push('/scrapbook')} onCity={() => router.push('/city')} />
       <ShopTabs game={game} onSelect={setActive} onBuild={build} />
-      <View style={{ height: cutH, backgroundColor: nd.wall, overflow: 'hidden' }}>
+      <View style={{ height: cutH, backgroundColor: CUTAWAY_SKY, overflow: 'hidden' }}>
         <ShopCutaway
           game={game}
           id={id}
@@ -143,8 +143,8 @@ export default function GameScreen() {
           {CITY_NAME} · {NEIGHBORHOODS.filter((n) => game.shops[n.id].built).length}/6 pizzerias · v{APP_VERSION}
         </Text>
       </ScrollView>
-      {offline && <OfflinePopup seconds={offline.seconds} earned={offline.earned} onCollect={dismissOffline} />}
-      {toast && <Toast text={toast.text} top={insets.top + 140} />}
+      {offline && <OfflinePopup seconds={offline.seconds} earned={offline.earned} byShop={offline.byShop} onCollect={dismissOffline} />}
+      {toast && <Toast text={toast.text} top={insets.top + 130 + cutH * 0.55} />}
     </View>
   );
 }

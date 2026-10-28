@@ -9,7 +9,7 @@ import { C, F } from '../theme';
 
 const INK = '#3B1F14';
 const TREES = [
-  [6, 26], [34, 24], [66, 24], [94, 30], [6, 70], [52, 70], [92, 44], [40, 44], [8, 48], [60, 26], [96, 22], [62, 46],
+  [6, 30], [34, 30], [66, 30], [94, 32], [6, 70], [52, 70], [92, 44], [40, 44], [8, 50], [96, 24], [62, 50], [46, 58],
 ];
 
 export function CityMap({ game, width, height, onPress }: { game: Game.GameState; width: number; height: number; onPress: (id: NeighborhoodId) => void }) {

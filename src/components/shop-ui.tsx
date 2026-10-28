@@ -1,5 +1,5 @@
 // Neighborhood tabs and the compact upgrade cards under the pizzeria cutaway.
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { NEIGHBORHOODS } from '../content/tuning';
@@ -11,8 +11,14 @@ import { BuyButton, haptic } from './game-ui';
 
 export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; onSelect: (id: NeighborhoodId) => void; onBuild: (id: NeighborhoodId) => boolean }) {
   const next = Game.nextToBuild(game);
+  const scroller = useRef<{ scrollTo: (o: { x: number; animated: boolean }) => void } | null>(null);
+  const activeIdx = NEIGHBORHOODS.findIndex((n) => n.id === game.active);
+  // Keep the active pizzeria's tab in view (critic D27).
+  useEffect(() => {
+    scroller.current?.scrollTo({ x: Math.max(0, activeIdx * 92 - 120), animated: true });
+  }, [activeIdx]);
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsWrap} contentContainerStyle={styles.tabs}>
+    <ScrollView ref={scroller as never} horizontal showsHorizontalScrollIndicator={false} style={styles.tabsWrap} contentContainerStyle={styles.tabs}>
       {NEIGHBORHOODS.map((n) => {
         const shop = game.shops[n.id];
         const active = game.active === n.id;
@@ -43,7 +49,7 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
         return (
           <Pressable key={n.id} testID={`tab-${n.id}`} onPress={() => onSelect(n.id)} style={[styles.tab, { borderColor: n.color }, active && { backgroundColor: n.color }]}>
             <Text style={styles.tabName}>{n.name}</Text>
-            <Text style={[styles.tabSub, !shop.managed && { color: active ? '#fff' : C.tomato }]}>{shop.managed ? `${money(eps)}/s` : 'tap to run'}</Text>
+            <Text style={[styles.tabSub, active && { color: C.ink }, !shop.managed && !active && { color: C.tomato }]}>{shop.managed ? `${money(eps)}/s` : 'tap to run'}</Text>
           </Pressable>
         );
       })}

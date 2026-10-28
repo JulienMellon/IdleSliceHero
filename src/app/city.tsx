@@ -23,7 +23,9 @@ export default function City() {
           <Text style={styles.backText}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>{CITY_NAME}</Text>
-        <Text style={styles.count}>{built}/6</Text>
+        <Pressable onPress={() => router.push('/settings')} hitSlop={12} style={{ width: 70, alignItems: 'flex-end' }} testID="open-settings">
+          <Text style={{ fontSize: 20 }}>⚙️</Text>
+        </Pressable>
       </View>
       <View style={{ height: mapH, backgroundColor: C.map }}>
         <CityMap
@@ -40,7 +42,7 @@ export default function City() {
       </View>
       <ScrollView contentContainerStyle={styles.summary}>
         <Text style={styles.big}>{money(G.earningsPerSecond(game))}/sec</Text>
-        <Text style={styles.small}>from {NEIGHBORHOODS.filter((n) => game.shops[n.id].managed).length} managed pizzerias · tap one to visit</Text>
+        <Text style={styles.small}>{built}/6 pizzerias built · {NEIGHBORHOODS.filter((n) => game.shops[n.id].managed).length} with managers · tap one to visit</Text>
         {NEIGHBORHOODS.filter((n) => game.shops[n.id].built).map((n) => {
           const sh = game.shops[n.id];
           return (

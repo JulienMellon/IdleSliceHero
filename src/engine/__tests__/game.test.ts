@@ -26,6 +26,17 @@ describe('formulas', () => {
     expect(G.valuePerPizza('downtown', shop, 0)).toBeLessThan(3);
     expect(G.valuePerPizza('downtown', shop, 0)).toBeGreaterThan(3 * TUNING.walkInShare);
   });
+  test('seating never lowers income, even when the kitchen is the limit (critic G18)', () => {
+    for (const prep of [1, 10, 40, 104]) {
+      for (const drivers of [1, 5, 30]) {
+        for (const tables of [1, 20, 70]) {
+          let s = managed(fresh());
+          s = { ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, prep, ovens: 100, counter: 100, drivers, tables, footprint: 4, grade: 4 } } };
+          expect(G.upgradeGain(s, 'downtown', 'tables') ?? 0).toBeGreaterThanOrEqual(-1e-9);
+        }
+      }
+    }
+  });
   test('oven grades multiply bake speed', () => {
     const shop = G.newShop(true);
     expect(G.ovenRate({ ...shop, grade: 2 }) / G.ovenRate(shop)).toBeCloseTo(4);
@@ -145,6 +156,8 @@ describe('offline and saves', () => {
     expect(r.seconds).toBe(TUNING.offlineCapSeconds);
     expect(r.earned).toBeCloseTo(eps * TUNING.offlineCapSeconds, 0);
     expect(r.state.shops.suburbs.sold).toBe(0);
+    expect(r.byShop.map((b) => b.id)).toEqual(['downtown']);
+    expect(r.byShop[0].earned).toBeCloseTo(r.earned, 0);
   });
   test('clock going backwards earns nothing', () => {
     const s = managed(fresh());

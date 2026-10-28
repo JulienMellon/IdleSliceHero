@@ -1,0 +1,22 @@
+{
+  "version": "v0.7",
+  "errors": [],
+  "shots": [
+    "/home/claude/idleslicehero/screenshots/v0.7/01-opening-cutscene.png",
+    "/home/claude/idleslicehero/screenshots/v0.7/02-cutscene-dialog.png",
+    "/home/claude/idleslicehero/screenshots/v0.7/03-new-game.png",
+    "/home/claude/idleslicehero/screenshots/v0.7/04-after-20s-play.png",
+    "/home/claude/idleslicehero/screenshots/v0.7/05-mid-game.png",
+    "/home/claude/idleslicehero/screenshots/v0.7/05b-unmanaged-shop.png",
+    "/home/claude/idleslicehero/screenshots/v0.7/05c-city.png",
+    "/home/claude/idleslicehero/screenshots/v0.7/06-scrapbook.png",
+    "/home/claude/idleslicehero/screenshots/v0.7/07-offline-popup.png",
+    "/home/claude/idleslicehero/screenshots/v0.7/08-late-cutscene.png",
+    "/home/claude/idleslicehero/screenshots/v0.7/09-late-game.png",
+    "/home/claude/idleslicehero/screenshots/v0.7/10-late-game-pops-a.png",
+    "/home/claude/idleslicehero/screenshots/v0.7/11-late-game-pops-b.png",
+    "/home/claude/idleslicehero/screenshots/v0.7/12-late-rush-tap.png"
+  ],
+  "loaded": true,
+  "cash_after_play": "$5.0"
+}

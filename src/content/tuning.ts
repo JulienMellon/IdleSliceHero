@@ -30,7 +30,7 @@ export const STATIONS = {
   ovens: { name: 'Ovens', speed: 0.7, cost: 8 },
   counter: { name: 'Counter', speed: 1.1, cost: 7 },
   drivers: { name: 'Drivers', cost: 8 },
-  tables: { name: 'Seating', speed: 0.15, cost: 12 },
+  tables: { name: 'Seating', speed: 0.3, cost: 12 },
 } as const;
 
 export interface OvenGrade {
@@ -62,10 +62,10 @@ export interface FootprintTier {
 
 export const FOOTPRINTS: FootprintTier[] = [
   { name: 'Hole-in-the-wall', cost: 0, maxTables: 2, ovenSlots: 2 },
-  { name: 'Corner shop', cost: 250, maxTables: 4, ovenSlots: 3 },
-  { name: 'Double storefront', cost: 6_000, maxTables: 6, ovenSlots: 4 },
-  { name: 'Restaurant', cost: 150_000, maxTables: 8, ovenSlots: 5 },
-  { name: 'Flagship', cost: 4_000_000, maxTables: 10, ovenSlots: 6 },
+  { name: 'Corner shop', cost: 250, maxTables: 3, ovenSlots: 3 },
+  { name: 'Double storefront', cost: 6_000, maxTables: 4, ovenSlots: 4 },
+  { name: 'Restaurant', cost: 150_000, maxTables: 5, ovenSlots: 5 },
+  { name: 'Flagship', cost: 4_000_000, maxTables: 6, ovenSlots: 6 },
 ];
 
 export interface VehicleDef {
