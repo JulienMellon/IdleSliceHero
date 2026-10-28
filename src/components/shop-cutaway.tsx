@@ -48,7 +48,8 @@ function layout(footprint: number, ovens: number, tablesWanted: number, cooks = 
   // Each prep cook gets a clear spot of their own (critic D35).
   const prep = { x0: L + 3, x1: L + 3 + Math.max(20, 8 + cooks * 7) };
   const door = R - 12;
-  const diningW = Math.max(30, w * 0.3);
+  // The dining room grows with the shop so bigger shops visibly fit more drivers and tables (critic G42).
+  const diningW = Math.max(30, w * (footprint >= 3 ? 0.44 : footprint >= 2 ? 0.38 : 0.3));
   const counterW = 21;
   const ovenStart = prep.x1 + 3;
   const ovenZone = door - 2 - diningW - 3 - counterW - 2 - ovenStart;
@@ -59,9 +60,10 @@ function layout(footprint: number, ovens: number, tablesWanted: number, cooks = 
   const dining = { x0: counter.x1 + 3, x1: door - 2 };
   // A clear pickup strip in front of the counter; tables sit in their own block toward the door (critic D54).
   const diningSpan = dining.x1 - dining.x0;
-  const pickupW = Math.max(14, Math.min(diningSpan * 0.42, 56));
+  const pickupW = Math.max(18, Math.min(diningSpan * 0.4, 34));
   const pickup = { x0: dining.x0, x1: dining.x0 + pickupW };
-  const seating = { x0: pickup.x1 + 1, x1: dining.x1 };
+  // Seating stops short of the door so arrivals and diners don't pile up there (critic D57).
+  const seating = { x0: pickup.x1 + 1, x1: dining.x1 - 5 };
   const span = seating.x1 - seating.x0;
   const cols = Math.max(1, Math.floor(span / 15));
   const tables = Math.min(tablesWanted, cols * 2);
@@ -281,52 +283,82 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
   const t = clock * pace;
   const counterFront = lay.counter.x1 + 3;
 
-  // Drivers: in through the door, to the counter, grab a box, back out. Each exit pays out.
-  const counterFront0 = lay.counter.x1 + 3;
-  // As many drivers as fit 12 units apart between the counter and the door (critic G35).
-  const driverCount = Math.max(1, Math.min(4, shop.drivers, Math.floor((lay.pickup.x1 - lay.pickup.x0 - 4) / 12) + 1));
+  // Depth lanes on the 16-unit floor band, each ≥4 units from its neighbour so figures read as in
+  // front of / behind each other (critic G37/G40/G41; see the v1.4 plan in CRITICLOG.md):
+  //   back lane +1 (drivers walking in and out) · standing rows +6 / +10 · walk-in lane +15 (front)
+  const BACK_LANE = FLOOR_Y + 1;
+  const ROW_Y = [FLOOR_Y + 6, FLOOR_Y + 10];
+  const WALKIN_LANE = FLOOR_Y + 15;
+  // Drivers stand in two staggered rows 9 units apart in x, so the pickup strip shows up to 4 (critic G42).
+  const driverCount = Math.max(1, Math.min(4, shop.drivers, Math.floor((lay.pickup.x1 - lay.pickup.x0 - 7) / 9) + 1));
   let payout = false;
   const walkers: { key: string; x: number; y: number; kind: 'driver' | 'guest'; shirt: string; flip: boolean; step: number; carry: boolean; s: number; o: number }[] = [];
-  // Drivers wait at their own spot most of the loop (0.15–0.75); arriving and leaving they use a
-  // back lane, drawn smaller and behind, so a walking driver never passes through a standing one (critic G37).
-  // All lanes are on the floor band (FLOOR_Y..FLOOR_Y+16): back lanes are further from the viewer, drawn smaller (critic G40).
-  const STAND_Y = FLOOR_Y + 3;
-  // Arriving drivers use the back lane; leaving drivers a lane deeper still, so they never stack (critic G39b).
-  const LANE_IN = FLOOR_Y + 1.5;
-  const LANE_OUT = FLOOR_Y + 0.4;
-  // Spread pickup spots over the whole counter-to-door span on big shops (critic D51).
-  const spotStep = driverCount > 1 ? Math.max(12, Math.min(20, (lay.pickup.x1 - 3 - (lay.pickup.x0 + 4)) / (driverCount - 1))) : 0;
   for (let i = 0; i < driverCount; i++) {
+    // Evenly phased, so drivers reach the door at different moments.
     const p = ((t / 5 + i / driverCount) % 1 + 1) % 1;
     const out = lay.door + 5;
-    // Each driver has their own pickup spot, 12 apart.
-    const at = Math.min(lay.pickup.x1 - 3, lay.pickup.x0 + 4 + i * spotStep);
-    const walking = p < 0.15 || p >= 0.75;
-    const k = p < 0.15 ? p / 0.15 : p >= 0.75 ? (p - 0.75) / 0.25 : 1;
-    const x = p < 0.15 ? out + (at - out) * k : p < 0.75 ? at : at + (out - at) * k;
-    // Step between the lane and the spot at each end so the switch isn't a jump.
-    const edge = p < 0.15 ? Math.max(0, (k - 0.8) / 0.2) : p >= 0.75 ? Math.max(0, 1 - k / 0.2) : 1;
-    const lane = p >= 0.75 ? LANE_OUT : LANE_IN;
-    const y = lane + (STAND_Y - lane) * edge;
+    const at = lay.pickup.x0 + 4 + i * 9;
+    const standY = ROW_Y[i % 2];
+    // 0–0.12 walk in on the back lane · 0.12–0.2 step forward to the spot · 0.2–0.72 wait ·
+    // 0.72–0.8 step back to the lane with a box · 0.8–1 walk out on the back lane
+    let x: number;
+    let y: number;
+    let walking = true;
+    if (p < 0.12) {
+      x = out + (at - out) * (p / 0.12);
+      y = BACK_LANE;
+    } else if (p < 0.2) {
+      x = at;
+      y = BACK_LANE + (standY - BACK_LANE) * ((p - 0.12) / 0.08);
+    } else if (p < 0.72) {
+      x = at;
+      y = standY;
+      walking = false;
+    } else if (p < 0.8) {
+      x = at;
+      y = standY + (BACK_LANE - standY) * ((p - 0.72) / 0.08);
+    } else {
+      x = at + (out - at) * ((p - 0.8) / 0.2);
+      y = BACK_LANE;
+    }
     const prev = mem.current.phase[`d${i}`];
-    if (running && prev !== undefined && prev < 0.75 && p >= 0.75) payout = true;
+    if (running && prev !== undefined && prev < 0.8 && p >= 0.8) payout = true;
     mem.current.phase[`d${i}`] = p;
-    walkers.push({ key: `d${i}`, x, y, kind: 'driver', shirt: '#2F80ED', flip: p < 0.15, step: walking ? clock * 12 : 0, carry: p >= 0.75, s: (p >= 0.75 ? 0.74 : 0.78) + (p >= 0.75 ? 0.11 : 0.07) * edge, o: 1 });
+    // Further back = slightly smaller.
+    const depth = (y - BACK_LANE) / (ROW_Y[1] - BACK_LANE);
+    walkers.push({ key: `d${i}`, x, y, kind: 'driver', shirt: '#2F80ED', flip: p < 0.12, step: walking ? clock * 12 : 0, carry: p >= 0.72, s: 0.74 + 0.12 * depth, o: 1 });
   }
-  // Walk-ins: in through the door, order at the counter, then sit at a table.
+  // Walk-ins: appear just inside the door, walk the front lane to order at the counter, sit at a
+  // table for ~40% of the loop, then fade out at the table (critic D55/D58/D59).
   const guestCount = Math.min(2, lay.tables.length);
   for (let i = 0; i < guestCount; i++) {
-    const p = ((t + 2.3 + i * 3.1) % 7) / 7;
-    const door = lay.door + 5;
-    // Walk-ins queue at the near end of the counter, on the front lane, away from the drivers' spots.
+    const p = ((t / 7 + 0.37 + i * 0.5) % 1 + 1) % 1;
+    const start = lay.door - 4;
     const at = counterFront - 8;
     const seat = lay.tables[i % lay.tables.length];
-    const x = p < 0.35 ? door + (at - door) * (p / 0.35) : p < 0.5 ? at : at + (seat.x - 6 - at) * Math.min(1, (p - 0.5) / 0.35);
-    // fade in at the door, sit for a while, then fade out at the table instead of jumping back
-    const o = p < 0.05 ? p / 0.05 : p > 0.9 ? (1 - p) / 0.1 : 1;
-    const lane = FLOOR_Y + 14;
-    const y = p < 0.5 ? lane : lane + (seat.y + 4 - lane) * Math.min(1, (p - 0.5) / 0.35);
-    walkers.push({ key: `g${i}`, x, y, kind: 'guest', shirt: ['#9B51E0', '#27AE60'][i], flip: p < 0.5, step: p < 0.35 || (p > 0.5 && p < 0.85) ? clock * 12 : 0, carry: false, s: 0.85, o });
+    const seatX = seat.x - 6;
+    const seatY = seat.y + 4;
+    let x: number;
+    let y: number;
+    let walking = true;
+    if (p < 0.25) {
+      x = start + (at - start) * (p / 0.25);
+      y = WALKIN_LANE;
+    } else if (p < 0.33) {
+      x = at;
+      y = WALKIN_LANE;
+      walking = false;
+    } else if (p < 0.5) {
+      const k = (p - 0.33) / 0.17;
+      x = at + (seatX - at) * k;
+      y = WALKIN_LANE + (seatY - WALKIN_LANE) * k;
+    } else {
+      x = seatX;
+      y = seatY;
+      walking = false;
+    }
+    const o = p < 0.04 ? p / 0.04 : p > 0.9 ? (1 - p) / 0.1 : 1;
+    walkers.push({ key: `g${i}`, x, y, kind: 'guest', shirt: ['#9B51E0', '#27AE60'][i], flip: p < 0.25, step: walking ? clock * 12 : 0, carry: false, s: 0.85, o });
   }
 
   // Cash pop shows what the shop actually earned since the last pop (critic G19).
@@ -414,7 +446,7 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
         {/* seated guests */}
         {running &&
           lay.tables.slice(guestCount).map((tb, i) => (
-            <Person key={`sg${i}`} x={tb.x + 6} y={tb.y + 4} kind="guest" shirt={['#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97'][i % 4]} s={0.7} arm={Math.abs(Math.sin(clock * 2 + i)) * 2} flip />
+            <Person key={`sg${i}`} x={tb.x - 6} y={tb.y + 4} kind="guest" shirt={['#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97'][i % 4]} s={0.7} arm={Math.abs(Math.sin(clock * 2 + i)) * 2} />
           ))}
         {running &&
           [...walkers].sort((a, b) => a.y - b.y).map((wk) => (
@@ -423,7 +455,7 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
             </G>
           ))}
         {/* idle shop: one driver waits at the counter (critic D49) */}
-        {!running && <Person x={lay.pickup.x0 + 4} y={FLOOR_Y + 3} kind="driver" shirt="#2F80ED" s={0.85} />}
+        {!running && <Person x={lay.pickup.x0 + 4} y={FLOOR_Y + 6} kind="driver" shirt="#2F80ED" s={0.8} />}
         {/* station tags: the bottleneck lights up red */}
         {tag(tagXs[0], `PREP ${shop.prep}`, neck === 'prep')}
         {tag(tagXs[1], `OVENS ${shop.ovens}`, neck === 'ovens')}

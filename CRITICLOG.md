@@ -402,3 +402,37 @@ Julien's direction after v0.5: the main screen should be a cutaway of a growing 
 | D54 | Dining room split into a clear **pickup strip** in front of the counter (~42% of the dining width, 14–56 units) where drivers wait, and a **seating block** toward the door where all tables sit |
 | D55 | Walk-ins fade in at the door, walk to their seat, sit, then fade out at the table — no teleport |
 | D56 | Toast moved to the top of the card grid, clear of the shop sign, queue bar and station tags |
+
+## v1.3 — critique (round 12)
+
+**VERDICT: NOT SATISFIED** — loads clean; Owner's direction holds except visible driver/table counts. The pickup strip squeezed the dining room, and the floor lanes are too close.
+
+**Fixed:** G40, D54 (with side effects), D55, D56 · **Regressions:** G37 → G41, D54 → G42 · **Blockers:** none
+
+**Bugs**
+- G41 Back lanes only 1.5–2.6 units behind standing drivers (figures are ~15 tall) — walkers pass through standers again
+- G42 Every shop size shows at most 2 drivers, and the biggest shop dropped from 8 tables to 4 — upgrades no longer visibly show
+
+**Design notes**
+- D57 Seated guests sit on the door side of tables; seating block runs into the door
+- D58 Walk-ins fade in on top of drivers leaving through the door
+- D59 Walk-ins sit for only ~15% of their loop — the seating looks empty
+- D60 Toast now covers the manager card; stale code comment (minor)
+
+### Plan for v1.3 → v1.4 (driver overlap has survived several fixes; planned from the floor geometry)
+The floor band is 16 units deep (FLOOR_Y..+16); a figure is ~15 tall, so lanes must be ≥5 units of depth apart to read as in front/behind.
+- **Depth lanes in the pickup strip:** back lane +1 (drivers arriving and leaving), standing rows +6 and +10 (alternating), walk-in lane +15 (front). Every neighbouring pair is 4–5 units apart.
+- **Two staggered standing rows** let drivers sit 9 units apart in x, so the strip holds 4 drivers in ~34 units.
+- **Give the dining room room to grow:** 38% at footprint 2, 44% from footprint 3 up (was 30%); pickup strip 18–34 units; tables use the rest at 15 units per column. Visible drivers 2 → 4 and tables 2 → 6 as the shop grows.
+- **Seating:** guests sit on the counter side of their table; the seating block stops 6 units short of the door; walk-ins appear 4 units inside the door; seated for ~40% of their loop.
+
+## v1.4 — build (addresses round 12, per the plan above)
+
+| Note | Fix |
+| --- | --- |
+| G41 | Depth lanes on the 16-unit floor: drivers walk in and out on the back lane (+1), step forward to stand in one of two rows (+6 / +10), step back with a box and walk out; walk-ins use the front lane (+15). Every neighbouring lane is 4–5 units apart, and everyone is drawn back-to-front |
+| G42 | Dining room grows with the shop (30% → 38% at footprint 2 → 44% from footprint 3); pickup strip 18–34 units; drivers stand in two staggered rows 9 units apart. Visible drivers grow 1 → 2 → 3–4 and tables 2 → 4 → 6 as the shop expands (13: 3 drivers, 6 tables) |
+| D57 | Seated guests sit on the counter side of their tables, facing them; seating block stops 5 units short of the door |
+| D58 | Walk-ins appear 4 units inside the door, phase-offset from drivers' exits |
+| D59 | Walk-ins are seated for ~40% of their loop (was ~15%), fading out only in the last 10% |
+| D60 | Stale toast comment fixed |
