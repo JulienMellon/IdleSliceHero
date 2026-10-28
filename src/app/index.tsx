@@ -1,9 +1,11 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Goal, Hud, OfflinePopup, Toast } from '@/components/game-ui';
 import { DriverIcon } from '@/components/icons';
+import { Portrait } from '@/components/portrait';
 import { emitPayout } from '@/components/pulse-bus';
 import { CUTAWAY_SKY, ShopCutaway } from '@/components/shop-cutaway';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
@@ -24,6 +26,7 @@ export default function GameScreen() {
   const toast = useGame((s) => s.toast);
   const covered = useGame((s) => !!s.playing || !!s.offline);
   const { tapShop, buy, buyFleet, build, setActive, dismissOffline } = useGame.getState();
+  const [cutTop, setCutTop] = useState(0);
 
   const id = game.active;
   const shop = game.shops[id];
@@ -60,24 +63,29 @@ export default function GameScreen() {
   }
 
   const queueFull = !shop.managed && shop.queued > TUNING.tapQueueMax - 1;
-  const neckUpgrade = neck === 'customers' ? 'drivers' : neck === 'ovens' ? 'oven power' : neck === 'prep' ? 'prep cooks' : 'counter staff';
+  const neckUpgrade = neck === 'customers' ? 'drivers' : neck === 'ovens' ? 'oven' : neck === 'prep' ? 'prep cooks' : 'counter staff';
   const subtitle = !shop.managed
     ? queueFull
-      ? `Kitchen full — hire more ${neckUpgrade}!`
+      ? neck === 'ovens' ? 'Kitchen full — upgrade your ovens!' : `Kitchen full — hire more ${neckUpgrade}!`
       : id === 'downtown'
         ? 'Tap the kitchen to bake each batch!'
         : 'Tap to bake here · or hire a manager'
     : `${money(eps)}/sec across the city`;
 
+  // Until a manager is hired, upgrades here only pay while you tap: mute them so the manager stands out (critic D40).
+  const idleShop = !shop.managed && id !== 'downtown';
   const card = (what: G.Upgrade, props: { icon: React.ReactNode; title: string; level?: string; detail: string; hot?: boolean; wide?: boolean; costLabel?: string }) => {
     const cost = G.upgradeCostOf(game, id, what);
     const lock = G.upgradeLock(game, id, what);
+    const muted = idleShop && what !== 'manager';
     return (
       <StationCard
         key={what}
         testID={`buy-${what}`}
         {...props}
-        detail={lock && what !== 'manager' ? lock : props.detail}
+        detail={lock && what !== 'manager' ? lock : muted ? `Only while tapping · ${props.detail}` : props.detail}
+        hot={muted ? false : props.hot}
+        muted={muted}
         cost={lock ? null : cost}
         costLabel={props.costLabel ?? (lock && !/Finest|Biggest|Max/.test(lock) ? 'Locked' : 'MAX')}
         canBuy={!lock && cost !== null && game.cash >= cost}
@@ -103,7 +111,7 @@ export default function GameScreen() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <Hud cash={game.cash} subtitle={subtitle} goal={goal} newScenes={newScenes} onScrapbook={() => router.push('/scrapbook')} onCity={() => router.push('/city')} />
       <ShopTabs game={game} onSelect={setActive} onBuild={build} />
-      <View style={{ height: cutH, backgroundColor: CUTAWAY_SKY, overflow: 'hidden' }}>
+      <View style={{ height: cutH, backgroundColor: CUTAWAY_SKY, overflow: 'hidden' }} onLayout={(e) => setCutTop(e.nativeEvent.layout.y)}>
         <ShopCutaway
           game={game}
           id={id}
@@ -119,7 +127,7 @@ export default function GameScreen() {
       <ScrollView style={styles.sheet} contentContainerStyle={[styles.grid, { paddingBottom: insets.bottom + 20 }]}>
         {!shop.managed &&
           card('manager', {
-            icon: '🧑‍💼',
+            icon: id === 'downtown' ? <Portrait id="nonna-rosa" mood="happy" size={32} /> : '🧑‍💼',
             title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire a ${nd.name} manager`,
             detail: id === 'downtown' ? 'Keep baking — Nonna will take over the kitchen soon' : `Runs this pizzeria on its own and earns while you're away (${plus(G.shopEarnings(game, id))})`,
             hot: id !== 'downtown',
@@ -148,7 +156,8 @@ export default function GameScreen() {
         </Text>
       </ScrollView>
       {offline && <OfflinePopup seconds={offline.seconds} earned={offline.earned} byShop={offline.byShop} onCollect={dismissOffline} />}
-      {toast && <Toast text={toast.text} top={insets.top + 136 + cutH - 44} />}
+      {/* Toast sits over the shop sign at the top of the cutaway, measured, so it never covers stations or tags (critic G32). */}
+      {toast && cutTop > 0 && <Toast text={toast.text} top={cutTop + 4} />}
     </View>
   );
 }

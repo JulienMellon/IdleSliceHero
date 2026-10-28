@@ -172,8 +172,8 @@ with sync_playwright() as pw:
     except Exception as e:
         report["errors"].append(f"late oven tap failed: {e}")
     # 7. Flagship pizzeria with maxed Expand and Oven Grade
-    flag = dict(late, active="downtown", seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:19] + ["uptown-1"], scrapbookViewed=20,
-                shops=dict(late["shops"], downtown=shop(prep=120, ovens=118, grade=4, counter=119, drivers=60, tables=110, footprint=4, sold=9e5)))
+    flag = dict(late, active="industrial", cash=2.0e8, seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:19] + ["uptown-1"], scrapbookViewed=20,
+                shops=dict(late["shops"], industrial=shop(prep=104, ovens=100, grade=4, counter=104, drivers=44, tables=90, footprint=4, sold=450000)))
     page = seeded_page(browser, flag); time.sleep(2.5)
     if page.locator('[data-testid="skip-scene"]').count():
         tid(page, "skip-scene").click()

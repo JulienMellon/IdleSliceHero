@@ -259,3 +259,40 @@ Julien's direction after v0.5: the main screen should be a cutaway of a growing 
 | D33 | Goal bar's current amount uses the same 3-significant-figure format as the HUD |
 | D34 | Active tab gets a white outline and a slight lift |
 | Harness | New shots: 03b full-queue tap, 13 Flagship (maxed Expand/Grade → MAX), 14 its cards |
+
+## v0.8 — critique (round 7)
+
+**VERDICT: NOT SATISFIED** — loads clean and holds to Julien's direction (cutaway, pizzeria per neighborhood, managers, visible growth at Flagship). Remaining bugs are cutaway polish.
+
+**Fixed:** G28, G29, G30, D32, D33, D34, harness shots · **Partly open:** G27 → G31, D30 → G32, D31 → D35 · **Blockers:** none
+
+**Bugs**
+- G31 Fast taps stack pops ~1 unit apart into a smear; the 🍕 emoji gets stroked into a blob
+- G32 Toast uses a hard-coded offset and lands 30pt high, covering the bottleneck tag
+- G33 Drivers bunch into one many-legged body at the counter and the door
+- G34 City map names Uptown/Industrial while the list shows "???"
+
+**Design notes**
+- D35 Prep cooks still clump (offsets 0/6/9/15); prep zone squeezed at Flagship
+- D36 Late cash pop runs into the right wall
+- D37 "hire more oven power" → "upgrade your ovens"
+- D38 Active Industrial tab still a dull taupe
+- D39 Manager card should use Nonna's portrait
+- D40 Unmanaged shops show every upgrade green, pulling cash away from the manager
+- Harness: Flagship shot should use a high-value shop
+
+## v0.9 — build (addresses round 7)
+
+| Note | Fix |
+| --- | --- |
+| G31 | Tap pops are solid pills (no stroke over the emoji). A repeat of the newest message refreshes it with a counter ("Kitchen full! ×2", "+$7.63K rush! ×3") instead of stacking; a different message takes a second slot 10 units lower; at most 2 on screen |
+| G32 | Toast position comes from the cutaway's measured `onLayout` and sits over the shop sign, clear of stations and tags |
+| G33 | Each driver has their own pickup spot 7 units apart; drivers walk the back lane behind the tables; walk-ins order beyond the drivers' spots; phases spread so drivers rarely meet at the door |
+| G34 | City list names every neighborhood (locked rows say "Build the previous pizzeria first"), matching the map |
+| D35 | Prep zone widens with the number of cooks (7 units each) and cooks are spaced evenly, alternating depth |
+| D36 | Cash pop clamped by its text width so it stays inside the room |
+| D37 | "Kitchen full — upgrade your ovens!" |
+| D38 | Active tab is cheese-yellow with a white outline for every neighborhood |
+| D39 | Nonna's manager card uses her portrait |
+| D40 | On an unmanaged pizzeria, station cards are muted and read "Only while tapping · …"; the manager card stays bright and red-outlined |
+| Harness | Flagship shot now uses Industrial (high-value shop) |

@@ -39,11 +39,12 @@ interface Layout {
  * Where everything sits. The dining room always gets at least 30% of the room (critic G28);
  * ovens shrink to share what's left, and only as many tables are drawn as fit 15 units apart.
  */
-function layout(footprint: number, ovens: number, tablesWanted: number): Layout {
+function layout(footprint: number, ovens: number, tablesWanted: number, cooks = 2): Layout {
   const w = ROOM_W[footprint];
   const L = (VW - w) / 2;
   const R = L + w;
-  const prep = { x0: L + 3, x1: L + 23 };
+  // Each prep cook gets a clear spot of their own (critic D35).
+  const prep = { x0: L + 3, x1: L + 3 + Math.max(20, 8 + cooks * 7) };
   const door = R - 12;
   const diningW = Math.max(30, w * 0.3);
   const counterW = 21;
@@ -121,6 +122,7 @@ function Oven({ x, w, grade, lit, flicker }: { x: number; w: number; grade: numb
 }
 
 interface RoomProps {
+  cooks: number;
   footprint: number;
   wall: string;
   grade: number;
@@ -132,8 +134,8 @@ interface RoomProps {
 }
 
 /** Everything that doesn't move: outside, walls, decor, ovens (unlit), counter, tables, door. */
-const Room = memo(function Room({ footprint, wall, grade, ovens, counterStaff, tables, vehicle, name }: RoomProps) {
-  const lay = layout(footprint, ovens, tables);
+const Room = memo(function Room({ cooks, footprint, wall, grade, ovens, counterStaff, tables, vehicle, name }: RoomProps) {
+  const lay = layout(footprint, ovens, tables, cooks);
   const { L, R } = lay;
   const w = R - L;
   return (
@@ -249,20 +251,21 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
   const clock = useClock(12, paused);
   const shop = game.shops[id];
   const nd = Game.def(id);
-  const mem = useRef<{ phase: Record<string, number>; lastPopAt: number; lastPopSold: number; shopId: string; pop: { at: number; text: string } | null; taps: { at: number; x: number; text: string; color: string }[] }>({
+  const mem = useRef<{ phase: Record<string, number>; lastPopAt: number; lastPopSold: number; shopId: string; pop: { at: number; text: string } | null; taps: { at: number; x: number; text: string; color: string; slot: number; count: number }[]; tapCount: number }>({
     phase: {},
     lastPopAt: 0,
     lastPopSold: -1,
     shopId: '',
     pop: null,
     taps: [],
+    tapCount: 0,
   });
   const fp = shop.footprint;
   const ovens = Math.min(FOOTPRINTS[fp].ovenSlots, 1 + Math.floor((shop.ovens - 1) / 8));
   const counterStaff = Math.min(3, 1 + Math.floor((shop.counter - 1) / 15));
   const prepCooks = Math.min(4, 1 + Math.floor((shop.prep - 1) / 15));
   const tables = Game.tablesShown(shop);
-  const lay = layout(fp, ovens, tables);
+  const lay = layout(fp, ovens, tables, prepCooks);
   const running = shop.managed || shop.queued > 0.01;
   const rate = Game.shopRate(shop, game.vehicle);
   const revenue = Game.shopEarnings(game, id);
@@ -276,21 +279,22 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
   let payout = false;
   const walkers: { key: string; x: number; y: number; kind: 'driver' | 'guest'; shirt: string; flip: boolean; step: number; carry: boolean }[] = [];
   for (let i = 0; i < driverCount; i++) {
-    const p = ((t + i * 1.6) % 5) / 5;
+    const p = ((t + i * 1.25) % 5) / 5;
     const out = lay.door + 5;
-    const at = counterFront + 2 + i * 1.5;
+    // Each driver has their own pickup spot, 6 apart, so bodies never merge (critic G33).
+    const at = Math.min(lay.door - 4, counterFront + 3 + i * 7);
     const x = p < 0.4 ? out + (at - out) * (p / 0.4) : p < 0.55 ? at : at + (out - at) * ((p - 0.55) / 0.45);
     const prev = mem.current.phase[`d${i}`];
     if (running && prev !== undefined && prev < 0.55 && p >= 0.55) payout = true;
     mem.current.phase[`d${i}`] = p;
-    walkers.push({ key: `d${i}`, x, y: FLOOR_Y + 1, kind: 'driver', shirt: '#2F80ED', flip: p < 0.4, step: p < 0.4 || p > 0.55 ? clock * 12 : 0, carry: p >= 0.55 });
+    walkers.push({ key: `d${i}`, x, y: FLOOR_Y - 0.5, kind: 'driver', shirt: '#2F80ED', flip: p < 0.4, step: p < 0.4 || p > 0.55 ? clock * 12 : 0, carry: p >= 0.55 });
   }
   // Walk-ins: in through the door, order at the counter, then sit at a table.
   const guestCount = Math.min(2, lay.tables.length);
   for (let i = 0; i < guestCount; i++) {
     const p = ((t + 2.3 + i * 3.1) % 7) / 7;
     const door = lay.door + 5;
-    const at = counterFront + 1;
+    const at = Math.min(lay.door - 6, counterFront + 3 + driverCount * 7);
     const seat = lay.tables[i % lay.tables.length];
     const x = p < 0.35 ? door + (at - door) * (p / 0.35) : p < 0.5 ? at : at + (seat.x - 6 - at) * ((p - 0.5) / 0.5);
     const y = p < 0.5 ? FLOOR_Y + 1 : FLOOR_Y + 1 + (seat.y + 4 - (FLOOR_Y + 1)) * ((p - 0.5) / 0.5);
@@ -313,7 +317,7 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
     if (payout && !paused) emitPayout();
   });
   const pop = mem.current.pop && clock - mem.current.pop.at < 1.2 ? { t: (clock - mem.current.pop.at) / 1.2, text: mem.current.pop.text } : null;
-  const taps = mem.current.taps.filter((tp) => clock - tp.at < 1);
+  const taps = mem.current.taps.filter((tp) => clock - tp.at < 0.9);
 
   const flicker = running ? Math.sin(clock * 9) * 1.4 : 0;
   const boxes = running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0;
@@ -340,13 +344,24 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
         const full = !shop.managed && shop.queued > TUNING.tapQueueMax - 1;
         const text = shop.managed ? `+${money(revenue * TUNING.rushSeconds)} rush!` : full ? 'Kitchen full!' : `+${TUNING.tapBatch} 🍕`;
         const color = shop.managed ? C.basilDark : full ? INK : C.tomatoDark;
-        mem.current.taps = [...mem.current.taps.filter((tp) => clock - tp.at < 1), { at: clock, x: Math.max(24, Math.min(VW - 24, x)), text, color }];
+        // Fast taps don't stack: a repeat of the newest pop refreshes it with a ×N counter;
+        // a different message takes the next slot down, at most 2 on screen (critic G31).
+        const live = mem.current.taps.filter((tp) => clock - tp.at < 0.9);
+        const last = live[live.length - 1];
+        if (last && last.text === text) {
+          last.count += 1;
+          last.at = clock;
+          mem.current.taps = live;
+        } else {
+          const slot = last ? (last.slot + 1) % 2 : 0;
+          mem.current.taps = [...live.slice(-1), { at: clock, x: Math.max(30, Math.min(VW - 30, x)), text, color, slot, count: 1 }];
+        }
         onTap();
       }}
       testID="shop"
       style={{ width, height, backgroundColor: CUTAWAY_SKY }}>
       <Svg width={width} height={height} viewBox={`0 0 ${VW} ${VH}`} preserveAspectRatio="xMidYMid meet">
-        <Room footprint={fp} wall={nd.wall} grade={shop.grade} ovens={ovens} counterStaff={counterStaff} tables={tables} vehicle={game.vehicle} name={nd.name} />
+        <Room cooks={prepCooks} footprint={fp} wall={nd.wall} grade={shop.grade} ovens={ovens} counterStaff={counterStaff} tables={tables} vehicle={game.vehicle} name={nd.name} />
         {running && lay.ovens.map((x, i) => <Oven key={i} x={x} w={lay.ovenW} grade={shop.grade} lit flicker={flicker * (i % 2 ? -1 : 1)} />)}
         {/* dough waiting on the prep table: the tap queue for unmanaged shops, a steady pile when managed */}
         {Array.from({ length: shop.managed ? 3 : queueBalls }).map((_, i) => (
@@ -354,7 +369,7 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
         ))}
         {/* prep cooks */}
         {Array.from({ length: prepCooks }).map((_, i) => (
-          <Person key={`c${i}`} x={lay.prep.x0 + 4 + (prepCooks > 2 ? (i % 2) * 6 + Math.floor(i / 2) * 9 : i * 10)} y={FLOOR_Y - 1 + (prepCooks > 2 && i % 2 === 1 ? 3 : 0)} kind="cook" shirt={i % 2 ? '#D9534F' : '#E8432E'} s={prepCooks > 2 ? (i % 2 ? 0.92 : 0.8) : 1} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} />
+          <Person key={`c${i}`} x={lay.prep.x0 + 4.5 + (prepCooks > 1 ? (i * (lay.prep.x1 - lay.prep.x0 - 9)) / (prepCooks - 1) : 4)} y={FLOOR_Y - 1 + (i % 2 === 1 ? 2.5 : 0)} kind="cook" shirt={i % 2 ? '#D9534F' : '#E8432E'} s={i % 2 ? 0.9 : 0.82} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} />
         ))}
         {/* one baker per oven */}
         {lay.ovens.map((x, i) => (
@@ -398,24 +413,24 @@ export function ShopCutaway({ game, id, width, height, paused, onTap }: Props) {
             </SvgText>
           </G>
         )}
-        {/* per-tap feedback: stroked copy underneath, fill on top, up in the open wall space */}
-        {taps.map((tp, i) => {
-          const k = clock - tp.at;
-          const y = 46 - k * 8;
+        {/* per-tap feedback: a solid pill per tap, in its own slot, so fast taps stay readable */}
+        {taps.map((tp) => {
+          const k = (clock - tp.at) / 0.9;
+          const label = tp.count > 1 ? `${tp.text} ×${tp.count}` : tp.text;
+          const y = 40 + tp.slot * 10 - k * 6;
+          const w = label.length * 3.5 + 6;
           return (
-            <G key={i} opacity={1 - k * k}>
-              <SvgText x={tp.x} y={y} fontSize={6.5} fontFamily={F.bold} fill={tp.color} stroke={tp.color} strokeWidth={1.8} textAnchor="middle">
-                {tp.text}
-              </SvgText>
-              <SvgText x={tp.x} y={y} fontSize={6.5} fontFamily={F.bold} fill="#FFFFFF" textAnchor="middle">
-                {tp.text}
+            <G key={`${tp.slot}-${tp.text}`} opacity={k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3}>
+              <Rect x={tp.x - w / 2} y={y - 5.5} width={w} height={8} rx={4} fill={tp.color} stroke="#FFFFFF" strokeWidth={0.8} />
+              <SvgText x={tp.x} y={y + 0.6} fontSize={5.6} fontFamily={F.bold} fill="#FFFFFF" textAnchor="middle">
+                {label}
               </SvgText>
             </G>
           );
         })}
         {/* cash pop at the door */}
         {pop && (
-          <G opacity={1 - pop.t * pop.t}>
+          <G opacity={1 - pop.t * pop.t} transform={`translate(${Math.min(lay.door, lay.R - pop.text.length * 2.1 - 2) - Math.min(lay.door, VW - 22)} 0)`}>
             <SvgText x={Math.min(lay.door, VW - 22)} y={FLOOR_Y - 38 - pop.t * 8} fontSize={7} fontFamily={F.bold} fill="#FFFFFF" stroke={C.basilDark} strokeWidth={1.6} textAnchor="middle">
               {pop.text}
             </SvgText>

@@ -58,7 +58,7 @@ export default function City() {
                 style={[styles.row, styles.rowLocked, isNext && { borderColor: C.cheeseDark, borderStyle: 'dashed', opacity: 1 }]}>
                 <View style={[styles.dot, { backgroundColor: isNext ? n.color : C.locked }]} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.rowName}>{isNext ? n.name : '???'}</Text>
+                  <Text style={styles.rowName}>{n.name}</Text>
                   <Text style={styles.rowSub}>{isNext ? `Pays ${money(n.orderValue)} a pizza · manager ${money(n.managerCost)}` : 'Build the previous pizzeria first'}</Text>
                 </View>
                 <Text style={[styles.rowEps, { color: isNext ? C.tomato : C.inkSoft }]}>{isNext ? `Build ${money(n.buildCost)}` : '🔒'}</Text>

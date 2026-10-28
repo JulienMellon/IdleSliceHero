@@ -47,7 +47,7 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
         }
         const eps = Game.shopEarnings(game, n.id);
         return (
-          <Pressable key={n.id} testID={`tab-${n.id}`} onPress={() => onSelect(n.id)} style={[styles.tab, { borderColor: n.color }, active && [styles.tabActive, { backgroundColor: n.color }]]}>
+          <Pressable key={n.id} testID={`tab-${n.id}`} onPress={() => onSelect(n.id)} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
             <Text style={styles.tabName}>{n.name}</Text>
             <Text style={[styles.tabSub, active && { color: C.ink }, !shop.managed && !active && { color: C.tomato }]}>{shop.managed ? `${money(eps)}/s` : 'tap to run'}</Text>
           </Pressable>
@@ -69,9 +69,10 @@ export function StationCard(props: {
   onBuy: () => boolean | void;
   testID?: string;
   wide?: boolean;
+  muted?: boolean;
 }) {
   return (
-    <View style={[styles.card, props.wide && styles.cardWide, props.hot && styles.cardHot]}>
+    <View style={[styles.card, props.wide && styles.cardWide, props.hot && styles.cardHot, props.muted && styles.cardMuted]}>
       <View style={styles.cardHead}>
         <View style={styles.icon}>{typeof props.icon === 'string' ? <Text style={styles.iconText}>{props.icon}</Text> : props.icon}</View>
         <View style={{ flex: 1 }}>
@@ -100,7 +101,7 @@ const styles = StyleSheet.create({
   tabsWrap: { flexGrow: 0, backgroundColor: C.tomatoDark },
   tabs: { paddingHorizontal: 10, paddingVertical: 6, gap: 6 },
   tab: { minWidth: 86, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: '#fff', borderWidth: 2.5, alignItems: 'center' },
-  tabActive: { borderColor: '#FFFFFF', borderWidth: 3, transform: [{ translateY: -1 }] },
+  tabActive: { backgroundColor: C.cheese, borderColor: '#FFFFFF', borderWidth: 3, transform: [{ translateY: -1 }] },
   tabName: { fontFamily: F.bold, fontSize: 13, color: C.ink },
   tabSub: { fontFamily: F.semi, fontSize: 11, color: C.basilDark },
   tabLocked: { minWidth: 40, backgroundColor: 'rgba(255,255,255,0.25)', borderColor: 'transparent', justifyContent: 'center' },
@@ -110,6 +111,7 @@ const styles = StyleSheet.create({
 
   card: { width: '48.5%', backgroundColor: C.panel, borderRadius: 16, padding: 7, gap: 5, borderWidth: 2.5, borderColor: C.ink, ...shadow },
   cardWide: { width: '100%', flexDirection: 'row', alignItems: 'center' },
+  cardMuted: { opacity: 0.55 },
   cardHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
   cardHead: { flexDirection: 'row', gap: 6, alignItems: 'center', flex: 1 },
   icon: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FFE9C7', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: C.cheeseDark },
