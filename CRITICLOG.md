@@ -610,3 +610,22 @@ Typecheck clean, 30 engine tests pass, `report.json` errors: [].
 | D99 | Mural inset 26 from the left wall; ferns at 4% / 96% |
 | D100 | Drawer icons are SVG: chef hat, flame, register, driver, chair, sparkle, brick-expand, scooter, manager, and five decor icons |
 | D82 | Dining rows at depth 12 / 44 (32 apart) so back-row diners clear the front-row chairs |
+
+## v2.2 — critique (round 17) — ✅ SATISFIED
+
+**VERDICT: SATISFIED** — loads clean (`loaded: true`, `errors: []`); every round-16 fix verified in the screenshots and code. The door sits in a brick bay and swings inward with a readable OPEN sign, the player's van is ROSA'S, and the widest shop stays on screen.
+
+**Fixed:** G47–G50, D90–D95, D97–D101, D82 · **Still open:** D96 (partly → D106) · **Blockers:** none · **Bugs:** none
+
+**Remaining polish (minor, not required):**
+- D102 Emoji still mixed with the SVG style (HUD 📖/🗺️, 🔒 tabs, offline-popup row, 🏆, BuyButton burst, 🍕 tap pill — colour emoji in SVG text may render blank on iOS) → SVG book, map, padlock, trophy and slice icons
+- D103 The "affordable but adds nothing now" pill looks almost the same as a locked one → white pill with INK text and a basil border; grey only for can't-afford
+- D104 The oven-hood flue cuts through the tier-3 mural
+- D105 The glass above the entrance reads as a thin pole → tint, wood frame and transom; move the back-wall window left
+- D106 The sidewalk fern's leaves rise over the front-row diners
+- D107 The cash pop loses contrast on a busy sky → basilDark pill
+- D108 The late cut-scene panel is ~55% empty sky
+- D109 City-map cranes touch the header → top padding
+- D110 Pantry shelf shows only one bracket
+
+**Loop complete (visual-polish pass):** rounds 15–17, v2.0 → v2.2.

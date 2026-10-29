@@ -10,7 +10,7 @@ Working title: **Slice Empire**.
 
 ## Status
 
-v1.5 — playable home city (Port Marinara): a pizzeria in each of six neighbourhoods, an animated pizzeria cutaway, per-shop upgrades and managers, offline earnings, 24 story cut-scenes and a Scrapbook. Placeholder art throughout.
+v2.2 — playable home city (Port Marinara): a pizzeria in each of six neighbourhoods, drawn as a perspective storefront with a brick street face, awning and sign tiers, domed and deck ovens, decor upgrades, and a distinct backdrop per neighbourhood; sidewalk upgrade buttons with a tap-only drawer; per-shop managers, offline earnings, 24 story cut-scenes, a Scrapbook and a City map. Code-drawn SVG art throughout.
 
 - Run: `npm install`, then `npx expo start` (Expo Go) or `npx expo export --platform web`
 - Tests: `npm test` (engine) · pacing: `npx tsx scripts/pacing-sim.ts` (`NOTAP=1` for a casual player)
