@@ -281,7 +281,7 @@ export default function GameScreen() {
                   testID="buy-fleet"
                   icon={<ScooterIcon size={26} />}
                   title="Fleet"
-                  detail={nextVeh ? fleetLock ?? `→ ${nextVeh.name}s, all shops · ${vg && vg > 0 ? plus(vg) : '+$0/s now'}` : `${VEHICLES[v].name}s — top tier`}
+                  detail={nextVeh ? (fleetLock ? `→ ${nextVeh.name}s · ${fleetLock.charAt(0).toLowerCase()}${fleetLock.slice(1)}` : `→ ${nextVeh.name}s, all shops · ${vg && vg > 0 ? plus(vg) : '+$0/s now'}`) : `${VEHICLES[v].name}s — top tier`}
                   cost={nextVeh && !fleetLock ? nextVeh.cost : null}
                   costLabel={nextVeh ? 'Locked' : 'MAX'}
                   canBuy={!!nextVeh && !fleetLock && game.cash >= nextVeh.cost}

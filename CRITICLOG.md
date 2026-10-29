@@ -1086,3 +1086,37 @@ Typecheck clean, 30 tests pass, `report.json` errors: [].
 | D236 | City-map trees kept ≥ 8 units clear of every label card |
 
 Typecheck clean, 30 tests pass, `report.json` errors: [].
+
+## v2.14 — critique (round 29) — ❌ NOT SATISFIED (no bugs, no [major] notes)
+
+**VERDICT: NOT SATISFIED** — loads clean; the starter window bar, alternating seats, fanned-out queue, hazard tape, consistent drawer buttons and Seating card all show in the pixels. No [major] notes, but seven [minor] ones (over the limit of three), mostly crowding and overlaps as shops fill up.
+
+**Fixed:** G70, D225, D226, D227, D228, D229, D231, D232, D233, D234, D235, D236 · **Still open:** D230 (→ D240)
+
+**Visual design (all [minor])**
+- D237 Walk-ins and drivers still overlap in the doorway; drivers on the mat hide WELCOME
+- D238 Flagship middle floor: a baker's peel crosses the counter driver; a back-row diner overlaps the baker's legs
+- D239 Back-row diners' heads poke into the prep bench frame
+- D240 Unmanaged sidewalk: the tree covers the crate prop and pier; the scooter's wheel is under the chip strip
+- D241 Uptown interior is a copy of Industrial with a pink wall
+- D242 Waterfront fishing net doesn't read; a leftover wall crack sits beside the porthole
+- D243 Mid-tier shops' bottom-right floor still empty
+
+**Design notes**
+- D244 Fleet card's lock text doesn't name the next vehicle · D245 Cut-scene 01 still ~30% sky
+
+## v2.15 — build (addresses round 29)
+
+| Note | Fix |
+| --- | --- |
+| D237 | Drivers use a lane hugging the right side of the doorway (`door.x1 − 6`) with their inside waypoint at `x1 − 8`; walk-ins stay at `door.x0 + 16` — 24 apart |
+| D238 | The baker nearest the counter holds a 70% peel, clear of the driver at the first pickup spot |
+| D239 | The back table row starts right of the prep bench (`prep.x1 + 12 + SEAT`), so back-row heads never poke into it |
+| D240 | Unmanaged shops: the potted tree steps out past the left pilaster (`L − 18`) and the parked vehicle stays off the kerb while the chip strip is up |
+| D241 | Uptown gets its own interior: a burgundy #7B1E3A wainscot with panel mouldings and a gold #D4A84A cap, a brass picture rail, and an arched back window (gold frame, sunset skyline view) |
+| D242 | Waterfront net: a #B48E5E diamond mesh (0.8 stroke) draped from a peg with a soft fill and outline, beside the porthole on the open wall, with an 8-unit red/white float outlined in ink; the leftover crack is gone from the Waterfront |
+| D243 | The window bar and stools appear in any shop whose front row of tables leaves room before the door (not just the starter) |
+| D244 | Fleet card: "→ Drones · unlocks in Priya's story" |
+| D245 | Opening cut-scene: Rosa's rainy front zoomed 1.15× from the kerb |
+
+Typecheck clean, 30 tests pass, `report.json` errors: [].

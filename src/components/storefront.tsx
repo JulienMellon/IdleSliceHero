@@ -108,11 +108,13 @@ function layout(fp: number, ovenCount: number, cookCount: number, staffCount: nu
   const t0 = L + 44 + (plants >= 1 ? 10 : 0);
   // 78-unit pitch; the back row sits half a pitch over, and the front row runs on toward the counter (critic D188)
   const frontCols = Math.max(1, Math.floor((counter.x1 - 30 - SEAT - t0) / 78) + 1);
-  const backCols = Math.max(0, Math.floor((counter.x0 - 40 - SEAT - (t0 + 19.5)) / 78) + 1);
+  // the back row starts right of the prep bench, so diners' heads never poke into it (critic D239)
+  const b0 = Math.max(t0 + 19.5, prep.x1 + 12 + SEAT);
+  const backCols = Math.max(0, Math.floor((counter.x0 - 40 - SEAT - b0) / 78) + 1);
   const tables: Layout['tables'] = [];
   // fill the front row first, so a small dining room spreads out instead of stacking (critic D199)
   for (let f = 0; f < frontCols && tables.length < tableCount; f++) tables.push({ x: t0 + 78 * f, y: 6 });
-  for (let b = 0; b < backCols && tables.length < tableCount; b++) tables.push({ x: t0 + 19.5 + 78 * b, y: 40 });
+  for (let b = 0; b < backCols && tables.length < tableCount; b++) tables.push({ x: b0 + 78 * b, y: 40 });
   // a single starter table sits mid-floor so its diner fills the empty middle (critic D180)
   if (tables.length === 1) tables[0] = { x: (L + counter.x0) / 2, y: 20 };
   return { L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, tables, scooter: { x: door.x0 - 30, y: -30 } };
@@ -267,7 +269,7 @@ type Mood = 'smile' | 'focus' | 'happy' | 'o' | 'chew';
 /** What a worker's hands are doing (critic D138): cooks roll / toss / ladle; bakers hold an empty peel, a pizza, or slide one in. */
 type Act = 'none' | 'pin' | 'toss' | 'ladle' | 'peel' | 'pizza' | 'slide' | 'slice' | 'cup' | 'lean';
 
-function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false, hair }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number; front?: boolean; blink?: boolean; talk?: boolean; act?: Act; mood?: Mood; alt?: boolean; dot?: string; cap?: string; gold?: boolean; hair?: string }) {
+function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false, hair, peelK = 1 }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number; front?: boolean; blink?: boolean; talk?: boolean; act?: Act; mood?: Mood; alt?: boolean; dot?: string; cap?: string; gold?: boolean; hair?: string; peelK?: number }) {
   const pin = act === 'pin';
   const [sx, sy] = P(x, y);
   const k = kAt(y) * 1.14;
@@ -485,7 +487,7 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
       {worker && look.trait === 4 && <Path d={`M${front ? -1 : 3} ${hy - 6.5} q-2.5 2.6 -0.4 4 q0.6 -2 2.6 -2.2 q-0.2 2 1.6 2.6 q0.8 -2.4 -1 -4.4 Z`} fill={hairC} stroke={INK} strokeWidth={0.6} />}
       {/* front arm + props */}
       {peel && (
-        <G transform={act === 'slide' ? `rotate(62 ${hand[0]} ${hand[1]})` : `rotate(-8 ${hand[0]} ${hand[1]})`}>
+        <G transform={`${act === 'slide' ? `rotate(62 ${hand[0]} ${hand[1]})` : `rotate(-8 ${hand[0]} ${hand[1]})`} translate(${hand[0]} ${hand[1]}) scale(${peelK}) translate(${-hand[0]} ${-hand[1]})`}>
           <Path d={`M${hand[0] + 1} ${hand[1] + 9} L${hand[0] + 2.5} ${hand[1] - 18}`} stroke={INK} strokeWidth={3.4} strokeLinecap="round" />
           <Path d={`M${hand[0] + 1} ${hand[1] + 9} L${hand[0] + 2.5} ${hand[1] - 18}`} stroke="#C99A6B" strokeWidth={1.8} strokeLinecap="round" />
           <Path d={`M${hand[0] - 1.5} ${hand[1] - 17} Q${hand[0] - 2} ${hand[1] - 29} ${hand[0] + 3} ${hand[1] - 29} Q${hand[0] + 8} ${hand[1] - 29} ${hand[0] + 7} ${hand[1] - 17} Z`} fill="#D9B48A" {...OUT} strokeWidth={0.9} />
@@ -1279,6 +1281,20 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
       {/* a soft strip marks where the kitchen floor starts (critic D168) */}
       <Polygon points={pts([P(L, 57), P(lay.counter.x0 - 4, 57), P(lay.counter.x0 - 4, 60), P(L, 60)])} fill="#000" opacity={0.14} />
       <Path d={`M${P(L, 56.6).join(' ')} L${P(lay.counter.x0 - 4, 56.6).join(' ')}`} stroke="#FFFFFF" strokeWidth={1} opacity={0.3} />
+      {/* Uptown: burgundy wainscot with a gold cap and a brass picture rail (critic D241) */}
+      {id === 'uptown' && (
+        <G>
+          <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 60), P(L, D, 60)])} fill="#7B1E3A" />
+          {Array.from({ length: Math.floor((R - L) / 26) }).map((_, i) => {
+            const xa = L + 6 + i * 26;
+            return <Polygon key={`up${i}`} points={pts([P(xa, D, 10), P(xa + 18, D, 10), P(xa + 18, D, 50), P(xa, D, 50)])} fill="none" stroke="#5A1229" strokeWidth={1.2} />;
+          })}
+          <Polygon points={pts([P(L, D, 58), P(R, D, 58), P(R, D, 63), P(L, D, 63)])} fill="#D4A84A" />
+          <Path d={`M${P(L, D, 63).join(' ')} L${P(R, D, 63).join(' ')}`} stroke="#9C7A2E" strokeWidth={0.8} />
+          <Path d={`M${P(L, D, 236).join(' ')} L${P(R, D, 236).join(' ')}`} stroke="#C9A04A" strokeWidth={2.4} />
+          <Path d={`M${P(L, D, 234.6).join(' ')} L${P(R, D, 234.6).join(' ')}`} stroke="#FFF3B0" strokeWidth={0.7} opacity={0.7} />
+        </G>
+      )}
       {id === 'industrial' && (
         <G>
           <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 60), P(L, D, 60)])} fill="#9AA1A8" />
@@ -1308,8 +1324,8 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
       <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 10), P(L, D, 10)])} fill="rgba(59,31,20,0.12)" />
       <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 24), P(L, D, 24)])} fill="url(#wainscot)" />
       {/* decor grows with the shop */}
-      {/* a hole-in-the-wall: branching crack and a chipped patch showing bricks (critic D121) */}
-      {fp === 0 && (
+      {/* a hole-in-the-wall: branching crack and a chipped patch showing bricks (critic D121); not beside the porthole */}
+      {fp === 0 && id !== 'waterfront' && (
         <G>
           <Path d={`M${mx - 26} ${my + 18} l5 9 l-3 7 l6 9 M${mx - 24} ${my + 32} l-6 5 M${mx - 18} ${my + 43} l5 4`} stroke={shade(wall, -0.35)} strokeWidth={1.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
           {(() => {
@@ -1466,17 +1482,32 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
         return <LocalProp id={id} x={px} y={py} />;
       })()}
       {/* back window: a brass porthole + fishing net at the Waterfront (critic D225), trees elsewhere */}
-      {id === 'waterfront' ? (
+      {id === 'uptown' ? (
+        <G>
+          <Path d={`M${wx} ${wy + 38} L${wx} ${wy + 14} A20 20 0 0 1 ${wx + 40} ${wy + 14} L${wx + 40} ${wy + 38} Z`} fill="#FBD3AE" stroke="#C9A04A" strokeWidth={2.4} />
+          <Path d={`M${wx + 6} ${wy + 38} L${wx + 6} ${wy + 30} L${wx + 12} ${wy + 18} L${wx + 20} ${wy + 26} L${wx + 28} ${wy + 12} L${wx + 34} ${wy + 24} L${wx + 34} ${wy + 38} Z`} fill="#6E6FA0" />
+          <Path d={`M${wx + 20} ${wy - 6} V${wy + 38} M${wx} ${wy + 20} H${wx + 40}`} stroke="#C9A04A" strokeWidth={1.6} />
+          <Rect x={wx - 3} y={wy + 37} width={46} height={4} fill="#7B1E3A" stroke={INK} strokeWidth={0.8} />
+        </G>
+      ) : id === 'waterfront' ? (
         <G>
           <Circle cx={wx + 20} cy={wy + 18} r={19} fill="#C9A04A" stroke={INK} strokeWidth={1.2} />
           <Circle cx={wx + 20} cy={wy + 18} r={14} fill="#7CC8EE" stroke={INK} strokeWidth={1} />
           <Path d={`M${wx + 6} ${wy + 22} q7 -3 14 0 t14 0`} stroke="#D6F0FB" strokeWidth={1.6} fill="none" />
           <Path d={`M${wx + 12} ${wy + 9} A10 10 0 0 1 ${wx + 24} ${wy + 6}`} stroke="#fff" strokeWidth={1.6} opacity={0.6} fill="none" strokeLinecap="round" />
           {[0, 90, 180, 270].map((a) => <Circle key={a} cx={wx + 20 + Math.cos((a * Math.PI) / 180) * 16.5} cy={wy + 18 + Math.sin((a * Math.PI) / 180) * 16.5} r={1.2} fill="#8C6A20" />)}
-          {/* fishing net draped to the right */}
-          <Path d={`M${wx + 42} ${wy - 4} Q${wx + 52} ${wy + 18} ${wx + 46} ${wy + 40} M${wx + 42} ${wy - 4} Q${wx + 62} ${wy + 14} ${wx + 60} ${wy + 38}`} stroke="#8E5A3C" strokeWidth={1} fill="none" />
-          {Array.from({ length: 5 }).map((_, i) => <Path key={i} d={`M${wx + 44 + i * 0.6} ${wy + 4 + i * 7} L${wx + 54 + i * 1.2} ${wy + 2 + i * 7.5}`} stroke="#8E5A3C" strokeWidth={0.8} />)}
-          <Circle cx={wx + 52} cy={wy + 30} r={2.4} fill="#F2994A" stroke={INK} strokeWidth={0.6} />
+          {/* fishing net with a diamond mesh, draped from a peg, and a red-and-white float (critic D242) */}
+          <Circle cx={wx - 11} cy={wy - 4} r={1.6} fill="#5E3A26" />
+          <Path d={`M${wx - 18} ${wy - 2} Q${wx - 11} ${wy + 30} ${wx - 17} ${wy + 40} L${wx - 3} ${wy + 40} Q${wx - 7} ${wy + 18} ${wx - 4} ${wy - 2} Z`} fill="#B48E5E" opacity={0.18} />
+          {Array.from({ length: 10 }).map((_, i) => (
+            <G key={i}>
+              <Path d={`M${wx - 18} ${wy - 2 + i * 4.2} L${wx - 3} ${wy + 2 + i * 4.2}`} stroke="#B48E5E" strokeWidth={0.8} />
+              <Path d={`M${wx - 3} ${wy - 2 + i * 4.2} L${wx - 18} ${wy + 2 + i * 4.2}`} stroke="#B48E5E" strokeWidth={0.8} />
+            </G>
+          ))}
+          <Path d={`M${wx - 18} ${wy - 2} Q${wx - 11} ${wy + 30} ${wx - 17} ${wy + 40} M${wx - 4} ${wy - 2} Q${wx - 7} ${wy + 18} ${wx - 3} ${wy + 40}`} stroke="#8E5A3C" strokeWidth={1.2} fill="none" />
+          <Circle cx={wx - 10} cy={wy + 30} r={4.2} fill="#E8432E" stroke={INK} strokeWidth={0.9} />
+          <Path d={`M${wx - 14.2} ${wy + 30} H${wx - 5.8}`} stroke="#fff" strokeWidth={2.2} />
         </G>
       ) : (
         <G>
@@ -2026,9 +2057,9 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     // inside they route past the swung-in door leaf (critic G53)
     const offStreet: [number, number] = [SCENE_W + 50 + (i % 3) * 18, -30 - lane];
     // drivers use the right half of the doorway, walk-ins the left (critic D179)
-    const outsideDoor: [number, number] = [lay.door.x1 - 11, -24 - lane];
-    const insideDoor: [number, number] = [lay.door.x1 - 11, 8];
-    const via: [number, number] = [lay.door.x1 - 14, 44];
+    const outsideDoor: [number, number] = [lay.door.x1 - 6, -24 - lane];
+    const insideDoor: [number, number] = [lay.door.x1 - 6, 8];
+    const via: [number, number] = [lay.door.x1 - 8, 44];
     let pos: [number, number];
     let walking = true;
     let face = false;
@@ -2238,7 +2269,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       const by = i % 2 ? 60 : 72;
       const sd = shopSeed + i * 3 + 31 + nIdx * 7;
       const ci = (bBase + i) % 3;
-      items.push({ y: by, el: <Person key={`b${i}`} x={bx} y={by} shirt={['#B23A48', '#7E3A8E', '#2E6E8E'][ci]} kind="baker" seed={sd} blink={blinkAt(sd)} arm={running ? Math.abs(Math.sin(t * 3 + i)) * 2.5 : 0} act={(['pizza', 'peel', 'slide'] as const)[(i + bBase) % 3]} dot={['#D9443A', '#3FAE5A', '#2D9CDB'][(ci + 1) % 3]} /> });
+      items.push({ y: by, el: <Person key={`b${i}`} x={bx} y={by} shirt={['#B23A48', '#7E3A8E', '#2E6E8E'][ci]} kind="baker" seed={sd} blink={blinkAt(sd)} arm={running ? Math.abs(Math.sin(t * 3 + i)) * 2.5 : 0} peelK={i === nb - 1 && nb > 1 ? 0.7 : 1} act={(['pizza', 'peel', 'slide'] as const)[(i + bBase) % 3]} dot={['#D9443A', '#3FAE5A', '#2D9CDB'][(ci + 1) % 3]} /> });
     }
   }
   lay.staff.forEach((x, i) => items.push({ y: 92, el: <Person key={`st${i}`} x={x} y={92} kind="staff" front alt={i === 1} cap={['#F5C33B', '#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97', '#EB6F92'][nIdx]} seed={shopSeed + i * 5 + 41} blink={blinkAt(shopSeed + i * 5 + 41)} arm={running ? Math.abs(Math.sin(t * 5 + i * 2)) * 2 : 0} /> }));
@@ -2267,21 +2298,24 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   // front of the shop + sidewalk props
   items.push({ y: 0, el: <FrontWall key="front" lay={lay} name={nd.name} signage={shop.decor.signage} plants={shop.decor.plants} /> });
   items.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
-  if (fp === 0) {
-    const lx0 = lay.counter.x0 + 4;
+  {
+    // window bar + stools fill the front-right floor until the front row of tables reaches it (critic D243)
+    const frontRight = Math.max(-1e9, ...lay.tables.filter((tb) => tb.y < 20).map((tb) => tb.x + SEAT + 14));
+    const lx0 = Math.max(lay.counter.x0 + 4, frontRight);
     const lx1 = lay.door.x0 - 12;
-    if (lx1 - lx0 > 24) {
+    if (lx1 - lx0 > 30) {
       items.push({ y: 13, el: <Stools key="stools" x0={lx0} x1={lx1} /> });
       items.push({ y: 5, el: <LedgeBar key="ledge" x0={lx0} x1={lx1} /> });
     }
-    items.push({ y: 8, el: <FloorProp key="fprop" id={id} x={lay.L + 22} y={8} /> });
   }
   const idleShop = !shop.managed && id !== 'downtown';
+  if (fp === 0) items.push({ y: 8, el: <FloorProp key="fprop" id={id} x={lay.L + 22} y={8} /> });
   items.push({ y: idleShop ? -18 : -34, el: <ChalkSign key="sign" x={lay.door.x0 - 75} y={idleShop ? -18 : -34} /> });
   items.push({ y: 16, el: <DoorLeaf key="leaf" lay={lay} /> });
-  items.push({ y: idleShop ? -22 : -40, el: <Planter key="pl" x={lay.L + 8} y={idleShop ? -22 : -40} /> });
+  items.push({ y: idleShop ? -22 : -40, el: <Planter key="pl" x={idleShop ? lay.L - 18 : lay.L + 8} y={idleShop ? -22 : -40} /> });
   const [scx, scy] = P(lay.scooter.x, lay.scooter.y);
-  items.push({
+  // the parked vehicle stays home while the unmanaged chip strip covers the kerb (critic D240)
+  if (!idleShop) items.push({
     y: lay.scooter.y,
     el: (
       <G key="scooter">

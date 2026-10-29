@@ -330,7 +330,14 @@ export function Backdrop({ id, width, height, prop }: { id: BackdropId; width: n
         </G>
       )}
       {id !== 'shop' && id !== 'megaslice-hq' && vbH > 260 && <Skyline top={200 - vbH} dark={id === 'uptown' || id === 'industrial' || id === 'downtown-rain'} billboard={id === 'industrial' || id === 'uptown'} />}
-      <Scenery id={id} />
+      {/* the rainy opening shot zooms 1.15× on Rosa's front, anchored at the kerb (critic D245) */}
+      {id === 'downtown-rain' ? (
+        <G transform="translate(200 200) scale(1.15) translate(-200 -200)">
+          <Scenery id={id} />
+        </G>
+      ) : (
+        <Scenery id={id} />
+      )}
       {prop === 'vending-machine' && <VendingMachine />}
     </Svg>
   );
