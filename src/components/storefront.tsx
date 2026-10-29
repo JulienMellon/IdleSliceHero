@@ -11,7 +11,7 @@ import { memo, useEffect, useRef, useState, type ReactElement } from 'react';
 import { Pressable, View } from 'react-native';
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, Polygon, Rect, Stop, Text as SvgText } from 'react-native-svg';
 
-import { FOOTPRINTS, OVEN_GRADES, TUNING, VEHICLES } from '../content/tuning';
+import { FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, TUNING, VEHICLES } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
 import * as Game from '../engine/game';
@@ -98,25 +98,22 @@ function layout(fp: number, ovenCount: number, cookCount: number, staffCount: nu
     else ovens.push({ ...ovenCols[c], z: deck * 64, h: 60, chimney: deck === 1 || i + cols >= ovenCount });
   }
   const door = { x0: R - 46, x1: R - 12, cx: R - 29 };
-  // Pickup spots in front of the counter, two staggered depth rows 12 apart.
-  // Pickup spots in front of the counter, never past the door leaf (critic G52); extra drivers queue a row back.
-  const sx0 = counter.x0 + cw * 0.3;
-  const spotCols = Math.max(1, Math.floor((counter.x1 - 30 - sx0) / 26) + 1);
-  const spots = Array.from({ length: Math.min(driverSlots, spotCols * 2) }, (_, i) => {
-    const col = i % spotCols;
-    const row = Math.floor(i / spotCols);
-    return { x: sx0 + col * 26 + row * 13, y: (col % 2 ? 40 : 48) - row * 22 };
-  });
-  // Dining: tables in front of the prep/oven area, two rows, 52 apart.
-  const t0 = L + 32;
+  // Counter front (critic G61/D179): drivers pick up on the left, walk-ins queue on the right, clear of the
+  // door leaf. Pickup spots are ≥28 apart; drivers take turns at them rather than crowding.
+  const spotCols = Math.max(1, Math.floor((counter.x1 - 46 - (counter.x0 + 12)) / 28) + 1);
+  const spots = Array.from({ length: Math.min(driverSlots, spotCols) }, (_, i) => ({ x: counter.x0 + 12 + i * 28, y: 46 }));
+  // Dining: tables in front of the prep/oven area, two rows, clear of the left pilaster (critic D180).
+  const t0 = L + 44;
   const t1 = counter.x0 - 10;
   const perRow = Math.max(1, Math.floor((t1 - 30 - t0) / 60) + 1);
   const tables: Layout['tables'] = [];
   for (let i = 0; i < Math.min(tableCount, perRow * 2); i++) {
     const row = i % 2;
     const col = Math.floor(i / 2);
-    tables.push({ x: t0 + col * 60 + (row ? 30 : 0), y: row ? 40 : 6 });
+    tables.push({ x: t0 + col * 60 + (row ? 30 : 0), y: row ? 34 : 6 });
   }
+  // a single starter table sits mid-floor so its diner fills the empty middle (critic D180)
+  if (tables.length === 1) tables[0] = { x: (L + counter.x0) / 2, y: 20 };
   return { L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, tables, scooter: { x: door.x0 - 30, y: -22 } };
 }
 
@@ -217,7 +214,7 @@ function Hair({ style, color, hy, part }: { style: number; color: string; hy: nu
 }
 
 /** Hats and headwear that make each job readable at a glance. */
-function Headwear({ kind, hy, front = false, alt = false, dot = '#D9443A' }: { kind: Kind; hy: number; front?: boolean; alt?: boolean; dot?: string }) {
+function Headwear({ kind, hy, front = false, alt = false, dot = '#D9443A', cap }: { kind: Kind; hy: number; front?: boolean; alt?: boolean; dot?: string; cap?: string }) {
   if (kind === 'cook') {
     return (
       <G>
@@ -247,7 +244,7 @@ function Headwear({ kind, hy, front = false, alt = false, dot = '#D9443A' }: { k
     );
   }
   if (kind === 'staff' || kind === 'driver') {
-    const c = kind === 'staff' ? '#F5C33B' : '#D9443A';
+    const c = kind === 'staff' ? cap ?? '#F5C33B' : '#D9443A';
     return (
       <G>
         <Path d={`M-9.2 ${hy - 3} Q-9.2 ${hy - 12.6} 0.5 ${hy - 12.6} Q10 ${hy - 12.6} 10 ${hy - 4} Z`} fill={c} {...OUT} />
@@ -267,9 +264,9 @@ function Headwear({ kind, hy, front = false, alt = false, dot = '#D9443A' }: { k
 /** A polished chibi worker or customer with a contact shadow, feet at room point (x, y). */
 type Mood = 'smile' | 'focus' | 'happy' | 'o' | 'chew';
 /** What a worker's hands are doing (critic D138): cooks roll / toss / ladle; bakers hold an empty peel, a pizza, or slide one in. */
-type Act = 'none' | 'pin' | 'toss' | 'ladle' | 'peel' | 'pizza' | 'slide';
+type Act = 'none' | 'pin' | 'toss' | 'ladle' | 'peel' | 'pizza' | 'slide' | 'slice' | 'cup' | 'lean';
 
-function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A' }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number; front?: boolean; blink?: boolean; talk?: boolean; act?: Act; mood?: Mood; alt?: boolean; dot?: string }) {
+function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number; front?: boolean; blink?: boolean; talk?: boolean; act?: Act; mood?: Mood; alt?: boolean; dot?: string; cap?: string }) {
   const pin = act === 'pin';
   const [sx, sy] = P(x, y);
   const k = kAt(y) * 1.14;
@@ -297,7 +294,11 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
   const hand: [number, number] = carry
     ? [12, by + 8]
     : sitting
-      ? [12 + arm, by + 9 - arm]
+      ? act === 'slice'
+        ? [7.5, hy + 5.5]
+        : act === 'cup'
+          ? [10.5, by + 6.5]
+          : [12 + arm, by + 9 - arm]
       : act === 'toss'
         ? [5, hy - 4 - arm]
         : act === 'ladle'
@@ -307,7 +308,7 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
             : worker && arm > 0
               ? [10 + arm, by + 13 - arm * 2]
               : [9 + sw * 2.5, by + 16];
-  const backHand: [number, number] = pin ? [hand[0] - 9, hand[1]] : sitting ? [-7, by + 15] : [-8.5 - sw * 2.5, by + 15.5];
+  const backHand: [number, number] = pin ? [hand[0] - 9, hand[1]] : sitting ? (act === 'lean' ? [-12, by + 3] : [-7, by + 15]) : [-8.5 - sw * 2.5, by + 15.5];
   const peel = kind === 'baker';
   return (
     <G opacity={o} transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${(flip ? -k : k).toFixed(3)} ${k.toFixed(3)})`}>
@@ -336,7 +337,7 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
       <Limb d={`M-6 ${by + 4} Q${-8.5} ${by + 10} ${backHand[0]} ${backHand[1]}`} color={shade(sleeve, -0.18)} />
       <Circle cx={backHand[0]} cy={backHand[1]} r={2.3} fill={shade(skin, -0.12)} {...OUT} strokeWidth={0.8} />
       {/* back hair (behind the head) */}
-      <Hair style={worker ? (look.style === 1 || look.style === 4 ? look.style : 0) : look.style} color={look.hair} hy={hy} part="back" />
+      <Hair style={look.style === 5 ? 0 : look.style} color={look.hair} hy={hy} part="back" />
       {/* torso with shadow side and highlight */}
       <Path d={torso} fill={top} {...OUT} />
       <G transform={unflipBody}>
@@ -455,7 +456,7 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
         />
       )}
       {kind === 'baker' && <Circle cx={-9.5} cy={hy + 4.5} r={3.6} fill={look.hair} {...OUT} strokeWidth={0.8} />}
-      <Headwear kind={kind} hy={hy} front={front} alt={alt} dot={dot} />
+      <Headwear kind={kind} hy={hy} front={front} alt={alt} dot={dot} cap={cap} />
       {worker && look.trait === 4 && <Path d={`M${front ? -1 : 3} ${hy - 6.5} q-2.5 2.6 -0.4 4 q0.6 -2 2.6 -2.2 q-0.2 2 1.6 2.6 q0.8 -2.4 -1 -4.4 Z`} fill={look.hair} stroke={INK} strokeWidth={0.6} />}
       {/* front arm + props */}
       {peel && (
@@ -495,6 +496,20 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
       )}
       <Circle cx={hand[0]} cy={hand[1]} r={2.4} fill={skin} {...OUT} strokeWidth={0.8} />
       {pin && <Circle cx={hand[0] - 9} cy={hand[1]} r={2.1} fill={shade(skin, -0.08)} {...OUT} strokeWidth={0.7} />}
+      {/* seated poses (critic D181): a slice raised to the mouth, or a mug */}
+      {act === 'slice' && (
+        <G>
+          <Path d={`M${hand[0] - 1} ${hand[1] - 1} L${hand[0] + 6} ${hand[1] - 5} L${hand[0] + 4} ${hand[1] + 3} Z`} fill="#FFC531" stroke={INK} strokeWidth={0.7} strokeLinejoin="round" />
+          <Circle cx={hand[0] + 3.4} cy={hand[1] - 1.4} r={0.8} fill="#E8432E" />
+        </G>
+      )}
+      {act === 'cup' && (
+        <G>
+          <Rect x={hand[0] - 1} y={hand[1] - 5.5} width={4.5} height={5.5} rx={0.8} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
+          <Path d={`M${hand[0] + 3.5} ${hand[1] - 4.5} q2 0.5 0 3`} stroke={INK} strokeWidth={0.8} fill="none" />
+          <Path d={`M${hand[0]} ${hand[1] - 7.5} q1 -1.5 0 -3 M${hand[0] + 2.2} ${hand[1] - 7.5} q1 -1.5 0 -3`} stroke="#C9C3BA" strokeWidth={0.6} fill="none" />
+        </G>
+      )}
       {carry && (
         <G>
           <Rect x={hand[0] - 3} y={hand[1] - 6.5} width={17} height={6} rx={1.2} fill="#F6E7C1" {...OUT} strokeWidth={0.9} />
@@ -1060,7 +1075,8 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
           <Path key={`h${j}`} d={`M${P(L, j * 18.3).join(' ')} L${P(R, j * 18.3).join(' ')}`} stroke={flooring === 1 ? '#B53A30' : flooring === 3 ? '#DCD6CE' : '#D4C1A3'} strokeWidth={flooring === 1 ? 0.5 : 1} />
         ))}
       {/* a soft strip marks where the kitchen floor starts (critic D168) */}
-      <Polygon points={pts([P(L, 58), P(lay.counter.x0 - 4, 58), P(lay.counter.x0 - 4, 60), P(L, 60)])} fill="#000" opacity={0.08} />
+      <Polygon points={pts([P(L, 57), P(lay.counter.x0 - 4, 57), P(lay.counter.x0 - 4, 60), P(L, 60)])} fill="#000" opacity={0.14} />
+      <Path d={`M${P(L, 56.6).join(' ')} L${P(lay.counter.x0 - 4, 56.6).join(' ')}`} stroke="#FFFFFF" strokeWidth={1} opacity={0.3} />
       {/* ambient occlusion where the walls meet the floor (critic D73) */}
       <Polygon points={pts([P(L, D - 10), P(R, D - 10), P(R, D), P(L, D)])} fill="rgba(59,31,20,0.16)" />
       <Polygon points={pts([P(L, 0), P(L + 10, 0), P(L + 10, D), P(L, D)])} fill="rgba(59,31,20,0.14)" />
@@ -1112,7 +1128,8 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
       {walls >= 3 &&
         (() => {
           const x0 = L + 26;
-          const x1 = lay.counter.x0 - 10;
+          const duct = (lay.ovenCols[0].x0 + lay.ovenCols[lay.ovenCols.length - 1].x1) / 2;
+          const x1 = Math.min(lay.counter.x0 - 10, duct - 22, x0 + (lay.counter.x0 - 10 - x0) * 0.6);
           const [ax, ay] = P(x0, D, 204);
           const [bx, by] = P(x1, D, 154);
           const w = bx - ax;
@@ -1738,6 +1755,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   const frontY = P(0, 0)[1];
   // per-shop character seeds, and a short blink every few seconds per person (critic D112/D113)
   const shopSeed = Array.from(id).reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 997, 7) * 97;
+  const nIdx = Math.max(0, NEIGHBORHOODS.findIndex((n) => n.id === id));
   const blinkAt = (sd: number) => ((clock + (sd % 37) * 0.31) % 3.7) < 0.13;
 
   // ---- people
@@ -1745,43 +1763,46 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   const items: Item[] = [];
   const insideDoor: [number, number] = [lay.door.cx, 8];
   const outsideDoor: [number, number] = [lay.door.cx, -24];
-  const driverCount = Math.min(lay.spots.length, shop.drivers);
+  const driverCount = Math.min(shop.drivers, lay.spots.length * 3, 2 + fp);
   let payout = false;
   for (let i = 0; i < driverCount; i++) {
-    const spot = lay.spots[i];
-    const jitter = (hash32(shopSeed + i * 17) % 100) / 500;
+    const spot = lay.spots[i % lay.spots.length];
+    const jitter = (hash32(shopSeed + i * 17) % 100) / 2500;
     const p = ((t / 6 + i / driverCount + jitter) % 1 + 1) % 1;
     const lane = (i % 3) * 6;
     // drivers walk in from up the street, pick up, and hurry off with the box: never fading (critic G55);
     // inside they route past the swung-in door leaf (critic G53)
     const offStreet: [number, number] = [SCENE_W + 50, -30 - lane];
-    const outsideDoor: [number, number] = [lay.door.cx + (i % 2 ? 3 : -3), -24 - lane];
+    // drivers use the right half of the doorway, walk-ins the left (critic D179)
+    const outsideDoor: [number, number] = [lay.door.cx + 6, -24 - lane];
+    const insideDoor: [number, number] = [lay.door.cx + 6, 8];
     const via: [number, number] = [lay.door.x0 + 4, 30];
     let pos: [number, number];
     let walking = true;
     let face = false;
-    if (p < 0.1) {
-      pos = along([offStreet, outsideDoor], p / 0.1);
+    // a short wait at the spot (0.26–0.46) so drivers sharing a spot never overlap (critic D179)
+    if (p < 0.12) {
+      pos = along([offStreet, outsideDoor], p / 0.12);
       face = true;
-    } else if (p < 0.16) pos = along([outsideDoor, insideDoor], (p - 0.1) / 0.06);
+    } else if (p < 0.18) pos = along([outsideDoor, insideDoor], (p - 0.12) / 0.06);
     else if (p < 0.26) {
-      pos = along([insideDoor, via, [spot.x, spot.y]], (p - 0.16) / 0.1);
+      pos = along([insideDoor, via, [spot.x, spot.y]], (p - 0.18) / 0.08);
       face = true;
-    } else if (p < 0.62) {
+    } else if (p < 0.46) {
       pos = [spot.x, spot.y];
       walking = false;
-    } else if (p < 0.72) pos = along([[spot.x, spot.y], via, insideDoor], (p - 0.62) / 0.1);
-    else if (p < 0.78) pos = along([insideDoor, outsideDoor], (p - 0.72) / 0.06);
-    else pos = along([outsideDoor, offStreet], (p - 0.78) / 0.22);
+    } else if (p < 0.54) pos = along([[spot.x, spot.y], via, insideDoor], (p - 0.46) / 0.08);
+    else if (p < 0.6) pos = along([insideDoor, outsideDoor], (p - 0.54) / 0.06);
+    else pos = along([outsideDoor, offStreet], (p - 0.6) / 0.4);
     const o = 1;
     const prev = mem.current.phase[`d${i}`];
-    if (running && prev !== undefined && prev < 0.72 && p >= 0.72) payout = true;
+    if (running && prev !== undefined && prev < 0.54 && p >= 0.54) payout = true;
     mem.current.phase[`d${i}`] = p;
     if (running || i === 0) {
       const standing = !running ? true : !walking;
       items.push({
         y: running ? pos[1] : spot.y,
-        el: <Person key={`d${i}`} x={running ? pos[0] : spot.x} y={running ? pos[1] : spot.y} kind="driver" seed={shopSeed + i + 10} blink={blinkAt(shopSeed + i + 10)} carry={running && p >= 0.62} step={standing ? 0 : clock * 12} arm={0} flip={running && face} o={o} mood={running && p >= 0.72 ? 'o' : 'smile'} />,
+        el: <Person key={`d${i}`} x={running ? pos[0] : spot.x} y={running ? pos[1] : spot.y} kind="driver" seed={shopSeed + i + 10} blink={blinkAt(shopSeed + i + 10)} carry={running && p >= 0.46} step={standing ? 0 : clock * 12} arm={0} flip={running && face} o={o} mood={running && p >= 0.54 ? 'o' : 'smile'} />,
       });
     }
   }
@@ -1790,7 +1811,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   // concurrent people never share a shirt colour (critic D156)
   const shirtBase = hash32(shopSeed) % GUEST_SHIRTS.length;
   // walk-ins order at the front-right of the counter, a second one queues toward the door (critic D166)
-  const orderSpot = (i: number): [number, number] => [lay.counter.x1 - 14 + (i % 2) * 18, 34 - (i % 2) * 8];
+  const orderSpot = (i: number): [number, number] => [lay.counter.x1 - 18, i % 2 ? 32 : 48];
   for (let i = 0; i < guestCount; i++) {
     const cyc = t / 9 + 0.3 + i / Math.max(2, guestCount);
     const p = ((cyc % 1) + 1) % 1;
@@ -1807,11 +1828,13 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     let talking = false;
     const via: [number, number] = [lay.door.x0 + 4, 30];
     const orderAt = orderSpot(i);
+    const gIn: [number, number] = [lay.door.cx - 6, 8];
+    const gOut: [number, number] = [lay.door.cx - 6, -24];
     let mood: Mood = 'smile';
-    if (p < 0.18) pos = along([start, [outsideDoor[0], -44], outsideDoor], p / 0.18);
-    else if (p < 0.24) pos = along([outsideDoor, insideDoor], (p - 0.18) / 0.06);
+    if (p < 0.18) pos = along([start, [gOut[0], -44], gOut], p / 0.18);
+    else if (p < 0.24) pos = along([gOut, gIn], (p - 0.18) / 0.06);
     else if (p < 0.34) {
-      pos = along([insideDoor, orderAt], (p - 0.24) / 0.1);
+      pos = along([gIn, orderAt], (p - 0.24) / 0.1);
       face = true;
     } else if (p < 0.42) {
       pos = orderAt;
@@ -1828,9 +1851,9 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       face = true;
       const bite = Math.abs(Math.sin(clock * 2 + i));
       mood = bite > 1.4 / 2 ? 'chew' : bite < 0.3 ? 'happy' : 'smile';
-    } else if (p < 0.88) pos = along([seat, via, insideDoor], (p - 0.8) / 0.08);
-    else if (p < 0.92) pos = along([insideDoor, outsideDoor], (p - 0.88) / 0.04);
-    else pos = along([outsideDoor, [SCENE_W + 50, -44]], (p - 0.92) / 0.08);
+    } else if (p < 0.88) pos = along([seat, via, gIn], (p - 0.8) / 0.08);
+    else if (p < 0.92) pos = along([gIn, gOut], (p - 0.88) / 0.04);
+    else pos = along([gOut, [SCENE_W + 50, -44]], (p - 0.92) / 0.08);
     o = 1;
     items.push({ y: pos[1] - 0.3, el: <Person key={`g${i}`} x={pos[0]} y={pos[1]} kind={kind} seed={gSeed} shirt={GUEST_SHIRTS[(shirtBase + i + Math.floor(cyc)) % GUEST_SHIRTS.length]} flip={face} step={walking ? clock * 12 : 0} o={o} talk={talking} mood={mood} blink={blinkAt(gSeed)} arm={kind === 'sit' ? Math.abs(Math.sin(clock * 2 + i)) * 2 : 0} /> });
   }
@@ -1843,7 +1866,15 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     if (fixedIdx < (running ? Math.max(1, Math.round(lay.tables.length * fixedFill)) : 1)) {
       const dSeed = shopSeed + i * 3 + 7 + Math.floor(t / 14 + i * 0.37) * 29;
       const bite = Math.abs(Math.sin(clock * 2 + i));
-      items.push({ y: tb.y, el: <Person key={`s${i}`} x={tb.x - 17} y={tb.y} kind="sit" seed={dSeed} shirt={GUEST_SHIRTS[(shirtBase + guestCount + fixedIdx * 3 + 1) % GUEST_SHIRTS.length]} blink={blinkAt(dSeed)} arm={bite * 2} mood={bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile'} /> });
+      const pose = (['none', 'slice', 'cup', 'lean'] as const)[(hash32(dSeed) >>> 3) % 4];
+      items.push({ y: tb.y, el: <Person key={`s${i}`} x={tb.x - 17} y={tb.y} kind="sit" seed={dSeed} act={pose} shirt={GUEST_SHIRTS[(shirtBase + guestCount + fixedIdx * 3 + 1) % GUEST_SHIRTS.length]} blink={blinkAt(dSeed)} arm={bite * 2} mood={pose === 'slice' ? 'chew' : bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile'} /> });
+      // a busy room seats a companion opposite, on tables no walk-in is heading for
+      if (running && fixedFill >= 0.6 && i >= guestCount && (hash32(dSeed + 1) % 3) !== 0) {
+        const cSeed = dSeed + 501;
+        const cPose = (['cup', 'none', 'slice', 'lean'] as const)[(hash32(cSeed) >>> 3) % 4];
+        const cb = Math.abs(Math.sin(clock * 2 + i + 1.7));
+        items.push({ y: tb.y - 0.1, el: <Person key={`s2${i}`} x={tb.x + 17} y={tb.y} kind="sit" flip seed={cSeed} act={cPose} shirt={GUEST_SHIRTS[(shirtBase + guestCount + fixedIdx * 3 + 5) % GUEST_SHIRTS.length]} blink={blinkAt(cSeed)} arm={cb * 2} mood={cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile'} /> });
+      }
     }
   });
   // potted plants (plants decor)
@@ -1868,9 +1899,9 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
             <G>
               {[x0 + 1, x1 - 4].map((lx) => <Box key={`bl${lx}`} x0={lx} x1={lx + 3} y0={81} y1={84} h={18} color="#6B4330" />)}
               <Box x0={x0 + 2} x1={x1 - 2} y0={68} y1={82} h={2} z={4} color="#8E5A3C" />
-              {[0.25, 0.6].map((f, i) => {
+              {[0.12, 0.88].map((f, i) => {
                 const [sx, sy] = P(x0 + (x1 - x0) * f, 74, 6);
-                const kk = kAt(74);
+                const kk = kAt(74) * 1.4;
                 return (
                   <G key={`sk${i}`} transform={`translate(${sx} ${sy}) scale(${kk})`}>
                     <Ellipse cx={0} cy={0.5} rx={8} ry={1.8} fill="#000" opacity={0.18} />
@@ -1929,16 +1960,16 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     const b0 = lay.ovenCols[0].x0;
     const b1 = lay.ovenCols[lay.ovenCols.length - 1].x1;
     const nb = Math.max(1, Math.min(3, Math.floor((b1 - b0) / 40)));
-    const bBase = hash32(shopSeed + 5) % 3;
+    const bBase = nIdx % 3;
     for (let i = 0; i < nb; i++) {
       const bx = b0 + ((b1 - b0) * (i + 0.5)) / nb;
       const by = i % 2 ? 60 : 72;
-      const sd = shopSeed + i * 3 + 31;
+      const sd = shopSeed + i * 3 + 31 + nIdx * 7;
       const ci = (bBase + i) % 3;
       items.push({ y: by, el: <Person key={`b${i}`} x={bx} y={by} shirt={['#B23A48', '#7E3A8E', '#2E6E8E'][ci]} kind="baker" seed={sd} blink={blinkAt(sd)} arm={running ? Math.abs(Math.sin(t * 3 + i)) * 2.5 : 0} act={(['pizza', 'peel', 'slide'] as const)[(i + bBase) % 3]} dot={['#D9443A', '#3FAE5A', '#2D9CDB'][(ci + 1) % 3]} /> });
     }
   }
-  lay.staff.forEach((x, i) => items.push({ y: 92, el: <Person key={`st${i}`} x={x} y={92} kind="staff" front alt={i === 1} seed={shopSeed + i * 5 + 41} blink={blinkAt(shopSeed + i * 5 + 41)} arm={running ? Math.abs(Math.sin(t * 5 + i * 2)) * 2 : 0} /> }));
+  lay.staff.forEach((x, i) => items.push({ y: 92, el: <Person key={`st${i}`} x={x} y={92} kind="staff" front alt={i === 1} cap={['#F5C33B', '#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97', '#EB6F92'][nIdx]} seed={shopSeed + i * 5 + 41} blink={blinkAt(shopSeed + i * 5 + 41)} arm={running ? Math.abs(Math.sin(t * 5 + i * 2)) * 2 : 0} /> }));
   const boxes = running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0;
   items.push({
     y: 64,

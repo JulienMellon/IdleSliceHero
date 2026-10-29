@@ -93,7 +93,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
               </View>
             ))}
           </View>
-          {p.caption ? (
+          {p.caption && p.lines.length > 0 ? (
             <View style={styles.caption}>
               <Text style={styles.captionText}>{p.caption}</Text>
             </View>
@@ -105,6 +105,11 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
             <Animated.View style={[styles.reward, { transform: [{ scale: bubble }] }]}>
               <Text style={styles.rewardHead}>★ UNLOCKED ★</Text>
               <Text style={styles.rewardText}>{REWARD_TEXT[scene.reward]}</Text>
+            </Animated.View>
+          ) : p.lines.length === 0 && p.caption ? (
+            // narration-only panel: the caption reads below the art like a storybook line (critic D186)
+            <Animated.View style={[styles.narration, { transform: [{ scale: bubble }] }]}>
+              <Text style={styles.narrationText}>{p.caption}</Text>
             </Animated.View>
           ) : current ? (
             <Animated.View style={[styles.bubble, { transform: [{ scale: bubble }] }]}>
@@ -146,6 +151,8 @@ const styles = StyleSheet.create({
   castRow: { position: 'absolute', bottom: -6, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end' },
   caption: { position: 'absolute', top: 10, left: 10, right: 10, backgroundColor: C.cheese, borderWidth: 2.5, borderColor: C.ink, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
   captionText: { fontFamily: F.semi, color: C.ink, fontSize: 15 },
+  narration: { backgroundColor: C.cheese, borderWidth: 3, borderColor: C.ink, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14 },
+  narrationText: { fontFamily: F.bold, fontSize: 18, lineHeight: 24, color: C.ink, textAlign: 'center' },
   bubbleArea: { minHeight: 130, marginTop: 18, justifyContent: 'flex-start' },
   bubble: { backgroundColor: '#fff', borderRadius: 20, borderWidth: 3, borderColor: C.ink, padding: 14 },
   tail: { position: 'absolute', top: -13, width: 22, height: 22, backgroundColor: '#fff', borderLeftWidth: 3, borderTopWidth: 3, borderColor: C.ink, transform: [{ rotate: '45deg' }] },

@@ -861,3 +861,38 @@ Typecheck clean, 30 tests pass, `report.json` errors: [].
 | D178 | Cash pop shifted 30 left, over the awning, clear of the attic window and fern |
 
 Typecheck clean, 30 tests pass, `report.json` errors: [].
+
+## v2.8 — critique (round 23) — ❌ NOT SATISFIED
+
+**VERDICT: NOT SATISFIED** — loads clean; most round-22 fixes show (bakers spaced and staggered, cooks spaced, hoodies and stripes, OPEN sign raised, darker marble, cash pop moved). Still failing on people placement: walk-ins order behind the open door leaf, drivers still overlap at pickup, the first-screen diner is clipped by the left pilaster, and late-game tables are one copied "solo diner + empty chair" layout.
+
+**Fixed:** D167, D170, D172, D173, D175, D176, D178, D171 (partly) · **Still open:** D166 (→ G61, D179), D168 (→ D183), D169 (→ D185), D171 duct (→ D182), D174 (→ D184), D177 (→ D180)
+
+**Bugs**
+- G61 Order spots at `counter.x1 − 14 / +18` fall under the open door leaf, which slices the ordering walk-in
+
+**Visual design**
+- D179 [major] Counter front still a pile-up (drivers overlap; driver + walk-in on top of each other in the doorway) → one row of drivers unless a 2nd row is ≥30 offset; separate door lanes
+- D180 [major] The first screen's only diner is half-hidden by the left pilaster; floor ~60% empty → tables start at L + 44; at Seating Lv 1 the table sits mid-floor
+- D181 [major] Late-game dining stamped (every table "diner left, empty chair right") → second fixed diner in the right chair from fill ≥ 0.6; three seated poses (slice to mouth, cup, leaning back)
+- D182–D185 [minor] Mural covers the hood duct; kitchen/dining strip invisible and back-row heads under the bench → back row at 34 + stronger strip; first baker still the same in Downtown and Waterfront; flour sacks still unreadable
+
+**Design notes**
+- D186 Opening cut-scene: dead black band under the card when there's no dialog · D187 Workers limited to 3 hair styles and identical uniforms
+
+## v2.9 — build (addresses round 23)
+
+| Note | Fix |
+| --- | --- |
+| G61 | Walk-ins order at `counter.x1 − 18` (depth 48) with the next one queuing behind at depth 32, clear of the door leaf (which starts at `counter.x1 − 10`) |
+| D179 | Pickup spots are one row on the counter's left, ≥28 apart, ending 46 before the counter's right end. Drivers take turns at them (up to 3 per spot, 2 + footprint total) with a short wait window, so two never stand on one spot. Drivers use the right half of the doorway, walk-ins the left |
+| D180 | Tables start at L + 44, clear of the pilaster; a lone starter table sits mid-floor at depth 20, so its diner is fully visible |
+| D181 | Fixed diners get one of four seated poses (eating, a slice raised to the mouth while chewing, a steaming mug, leaning back with an arm over the chair). From fill ≥ 0.6, about two-thirds of the tables no walk-in is heading for seat a companion opposite, flipped to face the table |
+| D182 | Mural ends 22 units left of the hood duct (and at most 60% of the wall) |
+| D183 | Back table row at depth 34; the kitchen floor edge is a 3-unit #000 0.14 band with a white 0.3 highlight line |
+| D184 | First baker's shirt, dot and job come from the neighbourhood index, and baker seeds include it, so Downtown and Waterfront differ |
+| D185 | Flour sacks ×1.4 at the bench's open ends (12% / 88%) |
+| D186 | Narration-only cut-scene panels show the caption as a storybook card under the art instead of over it, so there's no dead band |
+| D187 | Workers keep any back hairstyle under their hats (bob, bun, curls, ponytail); cashier caps take a per-neighbourhood colour |
+
+Typecheck clean, 30 tests pass, `report.json` errors: [].
