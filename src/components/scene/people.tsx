@@ -1,6 +1,6 @@
-import { memo, type ReactElement } from 'react';
+import { memo } from 'react';
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
-import { Lru, quantArm, quantStep } from './cache';
+import { quantArm, quantStep } from './quantise';
 import { INK, P, kAt, shade } from './projection';
 
 export type Kind = 'cook' | 'baker' | 'staff' | 'driver' | 'guest' | 'sit';
@@ -165,34 +165,27 @@ export interface PersonProps {
 /** The figure's look and discrete pose — everything except where it stands. */
 type FigureProps = Omit<PersonProps, 'x' | 'y' | 'o'>;
 
-// Figures are drawn at the origin and cached as elements keyed on look + quantised pose, so a person whose
-// pose hasn't changed since an earlier frame reuses that element and React skips the whole subtree.
-const figures = new Lru<ReactElement>(768);
-
-function figureKey(p: FigureProps) {
-  return `${p.kind}|${p.seed ?? 0}|${p.shirt ?? ''}|${p.hair ?? ''}|${p.cap ?? ''}|${p.dot ?? ''}|${p.gold ? 1 : 0}${p.alt ? 1 : 0}${p.flip ? 1 : 0}${p.front ? 1 : 0}${p.blink ? 1 : 0}${p.talk ? 1 : 0}${p.carry ? 1 : 0}${p.carryWalk ? 1 : 0}|${p.act ?? 'none'}|${p.mood ?? 'smile'}|${p.arm ?? 0}|${(p.step ?? 0).toFixed(2)}|${p.peelK ?? 1}`;
-}
-
-/** One chibi figure in the scene. Placement (translate, depth scale, fade) is cheap; the body is cached. */
-export function Person({ x, y, o = 1, arm = 0, step = 0, flip = false, ...rest }: PersonProps) {
+/** One chibi figure in the scene: placement here, then a memoised body and light per-frame limbs. */
+export function Person({ x, y, o = 1, ...p }: PersonProps) {
   if (o <= 0) return null;
   const [sx, sy] = P(x, y);
   const k = kAt(y) * 1.14;
-  const fp: FigureProps = { ...rest, arm: quantArm(arm), step: quantStep(step), flip };
-  const key = figureKey(fp);
-  let el = figures.get(key);
-  if (!el) {
-    el = <Figure {...fp} />;
-    figures.set(key, el);
-  }
+  const fp: FigureProps = { ...p, arm: quantArm(p.arm ?? 0), step: quantStep(p.step ?? 0) };
+  const walking = fp.step !== 0 && p.kind !== 'sit';
+  const bob = walking ? Math.abs(Math.cos(fp.step!)) * 1.2 : 0;
   return (
-    <G opacity={o} transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${(flip ? -k : k).toFixed(3)} ${k.toFixed(3)})`}>
-      {el}
+    <G opacity={o} transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${(p.flip ? -k : k).toFixed(3)} ${k.toFixed(3)})`}>
+      <Limbs {...fp} part="back" />
+      <G transform={bob ? `translate(0 ${(-bob).toFixed(2)})` : undefined}>
+        <FigureBody kind={p.kind} seed={p.seed} shirt={p.shirt} hair={p.hair} cap={p.cap} dot={p.dot} gold={p.gold} alt={p.alt} front={p.front} flip={p.flip} blink={p.blink} talk={p.talk} mood={p.mood} />
+      </G>
+      <Limbs {...fp} part="front" />
     </G>
   );
 }
 
-const Figure = memo(function Figure({ kind, shirt, arm = 0, flip = false, carry = false, carryWalk = false, step = 0, seed = 0, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false, hair, peelK = 1 }: FigureProps) {
+/** Shared figure geometry: body measurements from the look, limb positions from the pose. */
+function geom({ kind, shirt, arm = 0, flip = false, carry = false, carryWalk = false, step = 0, seed = 0, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false, hair, peelK = 1 }: FigureProps) {
   const pin = act === 'pin';
   const sitting = kind === 'sit';
   const worker = kind === 'cook' || kind === 'baker' || kind === 'staff' || kind === 'driver';
@@ -239,32 +232,18 @@ const Figure = memo(function Figure({ kind, shirt, arm = 0, flip = false, carry 
   const bx = carryWalk ? 10 : 3;
   const backHand: [number, number] = carry && carryWalk ? [-4, by + 10] : pin ? [hand[0] - 9, hand[1]] : sitting ? (act === 'lean' ? [-12, by + 3] : [-7, by + 15]) : [-8.5 - sw * 2.5, by + 15.5];
   const peel = kind === 'baker';
+  return { pin, sitting, worker, look, hairC, unflipBody, unflipHead, top, sleeve, pants, skin, walking, sw, bob, by, hy, ww, eyeX, fx, torso, hand, bx, backHand, peel };
+}
+
+/**
+ * Head, hair, torso and outfit. Drawn standing still (walk bob is a translate around it), so it only
+ * re-renders when the look, expression or blink changes — not with the arm swing or walk cycle.
+ */
+const FigureBody = memo(function FigureBody(p: FigureProps) {
+  const { worker, look, hairC, unflipBody, unflipHead, top, skin, by, hy, ww, eyeX, fx, torso } = geom(p);
+  const { kind, shirt, front, blink = false, talk = false, mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false } = p;
   return (
     <G>
-      {!sitting && <Ellipse cx={0.5} cy={0} rx={11.5} ry={3.4} fill="rgba(59,31,20,0.26)" />}
-      {/* legs */}
-      {sitting ? (
-        <G>
-          <Limb d={`M-2 ${by + 16} L8 ${by + 17}`} color={pants} w={6} />
-          <Limb d={`M8.5 ${by + 17} L9.5 -2`} color={pants} w={5} />
-          <Ellipse cx={11.4} cy={-1.6} rx={3.8} ry={2} fill="#3A2A24" {...OUT} strokeWidth={0.8} />
-        </G>
-      ) : (
-        [-1, 1].map((side) => {
-          const lx = side * 3.2 + (walking ? -side * sw * 2.8 : 0);
-          const lift = walking ? Math.max(0, side * sw) * 1.6 : 0;
-          return (
-            <G key={side}>
-              <Limb d={`M${side * 3} ${by + 17} L${lx} ${-2.5 - lift}`} color={side < 0 ? shade(pants, -0.12) : pants} w={4.8} />
-              <Ellipse cx={lx + 1.6} cy={-1.4 - lift} rx={3.7} ry={2.1} fill="#3A2A24" {...OUT} strokeWidth={0.8} />
-              <Ellipse cx={lx + 0.6} cy={-2.2 - lift} rx={1.4} ry={0.6} fill="#fff" opacity={0.3} />
-            </G>
-          );
-        })
-      )}
-      {/* back arm */}
-      <Limb d={`M-6 ${by + 4} Q${-8.5} ${by + 10} ${backHand[0]} ${backHand[1]}`} color={shade(sleeve, -0.18)} />
-      <Circle cx={backHand[0]} cy={backHand[1]} r={2.3} fill={shade(skin, -0.12)} {...OUT} strokeWidth={0.8} />
       {/* back hair (behind the head) */}
       <Hair style={look.style === 5 ? 0 : look.style} color={hairC} hy={hy} part="back" />
       {/* torso with shadow side and highlight */}
@@ -410,6 +389,45 @@ const Figure = memo(function Figure({ kind, shirt, arm = 0, flip = false, carry 
       <Headwear kind={kind} hy={hy} front={front} alt={alt} dot={dot} cap={cap} />
       {gold && kind === 'cook' && <Rect x={-6.2} y={hy - 11.6} width={13.6} height={2.2} rx={1} fill="#E0B000" stroke={INK} strokeWidth={0.5} />}
       {worker && look.trait === 4 && <Path d={`M${front ? -1 : 3} ${hy - 6.5} q-2.5 2.6 -0.4 4 q0.6 -2 2.6 -2.2 q-0.2 2 1.6 2.6 q0.8 -2.4 -1 -4.4 Z`} fill={hairC} stroke={INK} strokeWidth={0.6} />}
+    </G>
+  );
+});
+
+/** Legs and back arm (part "back") or front arm and held prop (part "front"): the parts that move per frame. */
+const Limbs = memo(function Limbs({ part, ...p }: FigureProps & { part: 'back' | 'front' }) {
+  const { pin, sitting, sleeve, pants, skin, walking, sw, by, hand, bx, backHand, peel } = geom(p);
+  const { kind, arm = 0, carry = false, front, act = 'none', peelK = 1 } = p;
+  if (part === 'back')
+    return (
+      <G>
+      {!sitting && <Ellipse cx={0.5} cy={0} rx={11.5} ry={3.4} fill="rgba(59,31,20,0.26)" />}
+      {/* legs */}
+      {sitting ? (
+        <G>
+          <Limb d={`M-2 ${by + 16} L8 ${by + 17}`} color={pants} w={6} />
+          <Limb d={`M8.5 ${by + 17} L9.5 -2`} color={pants} w={5} />
+          <Ellipse cx={11.4} cy={-1.6} rx={3.8} ry={2} fill="#3A2A24" {...OUT} strokeWidth={0.8} />
+        </G>
+      ) : (
+        [-1, 1].map((side) => {
+          const lx = side * 3.2 + (walking ? -side * sw * 2.8 : 0);
+          const lift = walking ? Math.max(0, side * sw) * 1.6 : 0;
+          return (
+            <G key={side}>
+              <Limb d={`M${side * 3} ${by + 17} L${lx} ${-2.5 - lift}`} color={side < 0 ? shade(pants, -0.12) : pants} w={4.8} />
+              <Ellipse cx={lx + 1.6} cy={-1.4 - lift} rx={3.7} ry={2.1} fill="#3A2A24" {...OUT} strokeWidth={0.8} />
+              <Ellipse cx={lx + 0.6} cy={-2.2 - lift} rx={1.4} ry={0.6} fill="#fff" opacity={0.3} />
+            </G>
+          );
+        })
+      )}
+      {/* back arm */}
+      <Limb d={`M-6 ${by + 4} Q${-8.5} ${by + 10} ${backHand[0]} ${backHand[1]}`} color={shade(sleeve, -0.18)} />
+      <Circle cx={backHand[0]} cy={backHand[1]} r={2.3} fill={shade(skin, -0.12)} {...OUT} strokeWidth={0.8} />
+      </G>
+    );
+  return (
+    <G>
       {/* front arm + props */}
       {peel && (
         <G transform={`${act === 'slide' ? `rotate(62 ${hand[0]} ${hand[1]})` : `rotate(-8 ${hand[0]} ${hand[1]})`} translate(${hand[0]} ${hand[1]}) scale(${peelK}) translate(${-hand[0]} ${-hand[1]})`}>

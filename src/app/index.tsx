@@ -142,7 +142,7 @@ export default function GameScreen() {
       return `${rateText} · tied with ${others.join(' & ')}`;
     }
     // the shared reason ("waiting on …") is shown once in the drawer header
-    return `${rateText} · +$0/s now`;
+    return `${rateText} · +$0/s\u00A0now`;
   };
   const gradeNext = OVEN_GRADES[shop.grade + 1];
   const fpNext = FOOTPRINTS[shop.footprint + 1];
@@ -204,6 +204,8 @@ export default function GameScreen() {
       <View style={styles.sceneArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
         {area.w > 0 && (
           <Storefront
+            // a new shop gets a fresh scene: clock, tap pills, rush burst and cash pop all reset
+            key={id}
             id={id}
             width={area.w}
             height={area.h}
@@ -280,14 +282,14 @@ export default function GameScreen() {
                 {card('ovens', { icon: <FlameIcon size={26} />, title: 'Ovens', level: `Lv ${shop.ovens}`, detail: stationDetail('ovens', 'ovens', `${rates.ovens.toFixed(1)}/s`), hot: tied('ovens') })}
                 {card('counter', { icon: <RegisterIcon size={26} />, title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rates.counter.toFixed(1)}/s`), hot: tied('counter') })}
                 {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${G.deliveryRate(shop, v).toFixed(1)}/s`), hot: tied('customers') })}
-                {card('tables', { icon: <SeatIcon size={26} />, title: 'Seating', level: `Lv ${shop.tables}`, detail: nextTableHint === 'dining room full' ? `Dining room full · ${G.walkInRate(shop).toFixed(1)} walk-ins/s` : `${stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)} walk-ins/s`)} · ${nextTableHint}`, hot: tied('customers') })}
-                {card('grade', { icon: <SparkleIcon size={26} />, title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name} ×2 · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} ×2 · +$0/s now`) : 'Finest ovens in town' })}
-                {card('expand', { icon: <ExpandIcon size={26} />, title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : '+$0/s now'}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
+                {card('tables', { icon: <SeatIcon size={26} />, title: 'Seating', level: `Lv ${shop.tables}`, detail: nextTableHint === 'dining room full' ? `Dining room full · ${G.walkInRate(shop).toFixed(1)}\u00A0walk‑ins/s` : `${stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)}\u00A0walk‑ins/s`)} · ${nextTableHint}`, hot: tied('customers') })}
+                {card('grade', { icon: <SparkleIcon size={26} />, title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name} ×2 · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} ×2`) : 'Finest ovens in town' })}
+                {card('expand', { icon: <ExpandIcon size={26} />, title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : '+$0/s\u00A0now'}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
                 <StationCard
                   testID="buy-fleet"
                   icon={<ScooterIcon size={26} />}
                   title="Fleet"
-                  detail={nextVeh ? (fleetLock ? `→ ${nextVeh.name}s · ${fleetLock.charAt(0).toLowerCase()}${fleetLock.slice(1)}` : `→ ${nextVeh.name}s, all shops · ${vg && vg > 0 ? plus(vg) : '+$0/s now'}`) : `${VEHICLES[v].name}s — top tier`}
+                  detail={nextVeh ? (fleetLock ? `→ ${nextVeh.name}s · ${fleetLock.charAt(0).toLowerCase()}${fleetLock.slice(1)}` : `→ ${nextVeh.name}s, all shops · ${vg && vg > 0 ? plus(vg) : '+$0/s\u00A0now'}`) : `${VEHICLES[v].name}s — top tier`}
                   cost={nextVeh && !fleetLock ? nextVeh.cost : null}
                   costLabel={nextVeh ? 'Locked' : 'MAX'}
                   canBuy={!!nextVeh && !fleetLock && game.cash >= nextVeh.cost}

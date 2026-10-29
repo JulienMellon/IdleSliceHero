@@ -22,7 +22,8 @@ interface Store {
   /** Scene currently playing (or replaying from the Scrapbook). */
   playing: { scene: Scene; replay: boolean } | null;
   /** Short-lived message, e.g. "Not enough cash". */
-  toast: { text: string; at: number } | null;
+  /** `need`: a need-cash toast clears itself once the player can afford it. */
+  toast: { text: string; at: number; need?: number } | null;
 
   load: () => Promise<void>;
   save: () => Promise<void>;
@@ -57,8 +58,9 @@ export const useGame = create<Store>((set, get) => {
     if (!result.ok) {
       const at = Date.now();
       // name what the player tapped
-      const text = result.reason === 'Not enough cash' && item && item.cost !== null ? `${item.name}: need ${money(item.cost)}` : result.reason;
-      set({ toast: { text, at } });
+      const needCash = result.reason === 'Not enough cash' && item && item.cost !== null ? item.cost : undefined;
+      const text = needCash !== undefined && item ? `${item.name}: need ${money(needCash)}` : result.reason;
+      set({ toast: { text, at, need: needCash } });
       setTimeout(() => {
         if (get().toast?.at === at) set({ toast: null });
       }, 1800);
@@ -117,7 +119,9 @@ export const useGame = create<Store>((set, get) => {
 
     tick: (dt) => {
       if (!get().loaded) return;
-      set({ game: G.tick(get().game, dt) });
+      const game = G.tick(get().game, dt);
+      const toast = get().toast;
+      set(toast?.need !== undefined && game.cash >= toast.need ? { game, toast: null } : { game });
       queueScene();
     },
 

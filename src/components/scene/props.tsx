@@ -1,5 +1,4 @@
-import { memo, type ReactElement } from 'react';
-import { Lru } from './cache';
+import { memo, useMemo } from 'react';
 import { OVEN_GRADES } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
@@ -14,22 +13,50 @@ import { Box, FloorShadow } from './primitives';
  */
 type OvenSpec = Layout['ovens'][number];
 
-// An oven only changes with its flame, so whole ovens are cached per flame level (5 levels × lit) and reused.
-const ovens = new Lru<ReactElement>(96);
-
-/** One oven; `flicker` (−1.4..1.4) is snapped to 5 flame heights so frames reuse cached elements. */
-export function Oven({ o, grade, lit, flicker }: { o: OvenSpec; grade: number; lit: boolean; flicker: number }) {
-  const fq = lit ? Math.round(flicker / 0.7) * 0.7 : 0;
-  const key = `${o.x0},${o.x1},${o.z},${o.h},${o.chimney ? 1 : 0}|${grade}|${lit ? 1 : 0}|${fq.toFixed(1)}`;
-  let el = ovens.get(key);
-  if (!el) {
-    el = <OvenBody o={o} grade={grade} lit={lit} flicker={fq} />;
-    ovens.set(key, el);
+/** Where an oven's flame sits (screen units): box ovens show it in the door window, domes in the mouth. */
+function flameBox(o: OvenSpec, grade: number) {
+  const y = D - 6;
+  const [ax, ay] = P(o.x0, y, o.z);
+  const [bx] = P(o.x1, y, o.z);
+  const w = bx - ax;
+  const cx = (ax + bx) / 2;
+  const k = kAt(y);
+  const top = ay - o.h * k;
+  if (o.h < 70 || grade === 1) {
+    const legs = o.z === 0 ? 10 * k : 0;
+    const bh = ay - legs - top;
+    const dw = w * 0.74;
+    const dh = bh * 0.42;
+    const dy = top + bh * 0.4;
+    return { mx: cx, my: dy + dh - 3, mw: dw - 6, mh: dh - 6 };
   }
-  return el;
+  const pTop = ay - 12 * k;
+  const mw = w * 0.56;
+  return { mx: cx, my: pTop - 1, mw, mh: Math.min((pTop - top) * 0.5, mw * 0.9) };
 }
 
-const OvenBody = memo(function OvenBody({ o, grade, lit, flicker }: { o: OvenSpec; grade: number; lit: boolean; flicker: number }) {
+/** A flickering flame: the only part of an oven that changes from frame to frame. */
+function Flame({ mx, my, mw, mh, flicker }: { mx: number; my: number; mw: number; mh: number; flicker: number }) {
+  return (
+    <G>
+      <Ellipse cx={mx} cy={my - mh * 0.35} rx={mw * 0.5} ry={mh * 0.5} fill="#FFD166" opacity={0.35} />
+      <Path d={`M${mx - mw * 0.38} ${my} L${mx - mw * 0.22} ${my - mh * 0.55 - flicker} L${mx - mw * 0.06} ${my - mh * 0.3} L${mx + mw * 0.06} ${my - mh * 0.78 + flicker} L${mx + mw * 0.2} ${my - mh * 0.32} L${mx + mw * 0.32} ${my - mh * 0.55} L${mx + mw * 0.38} ${my} Z`} fill="#FFE08A" opacity={0.9} />
+    </G>
+  );
+}
+
+/** One oven: a memoised body (re-rendered only on upgrades) plus a per-frame flame. */
+export function Oven({ o, grade, lit, flicker }: { o: OvenSpec; grade: number; lit: boolean; flicker: number }) {
+  const fb = useMemo(() => flameBox(o, grade), [o, grade]);
+  return (
+    <G>
+      <OvenBody o={o} grade={grade} lit={lit} />
+      {lit && <Flame {...fb} flicker={flicker} />}
+    </G>
+  );
+}
+
+const OvenBody = memo(function OvenBody({ o, grade, lit }: { o: OvenSpec; grade: number; lit: boolean }) {
   const y = D - 6;
   const [ax, ay] = P(o.x0, y, o.z);
   const [bx] = P(o.x1, y, o.z);
@@ -41,13 +68,6 @@ const OvenBody = memo(function OvenBody({ o, grade, lit, flicker }: { o: OvenSpe
   const base = OVEN_GRADES[grade].color;
   const dark = shade(base, -0.4);
   const fire = lit ? 'url(#ember)' : '#24120A';
-  const flame = (mx: number, my: number, mw: number, mh: number) =>
-    lit ? (
-      <G>
-        <Ellipse cx={mx} cy={my - mh * 0.35} rx={mw * 0.5} ry={mh * 0.5} fill="#FFD166" opacity={0.35} />
-        <Path d={`M${mx - mw * 0.38} ${my} L${mx - mw * 0.22} ${my - mh * 0.55 - flicker} L${mx - mw * 0.06} ${my - mh * 0.3} L${mx + mw * 0.06} ${my - mh * 0.78 + flicker} L${mx + mw * 0.2} ${my - mh * 0.32} L${mx + mw * 0.32} ${my - mh * 0.55} L${mx + mw * 0.38} ${my} Z`} fill="#FFE08A" opacity={0.9} />
-      </G>
-    ) : null;
   const box = o.h < 70 || grade === 1;
   if (box) {
     const legs = o.z === 0 ? 10 * k : 0;
@@ -66,7 +86,6 @@ const OvenBody = memo(function OvenBody({ o, grade, lit, flicker }: { o: OvenSpe
         {/* door with a glowing window and a handle bar */}
         <Rect x={cx - dw / 2} y={dy} width={dw} height={dh} rx={3} fill={shade(base, -0.25)} stroke={INK} strokeWidth={1} />
         <Rect x={cx - dw / 2 + 3} y={dy + 3} width={dw - 6} height={dh - 6} rx={2} fill={fire} />
-        {flame(cx, dy + dh - 3, dw - 6, dh - 6)}
         <Rect x={cx - dw * 0.3} y={dy - 5} width={dw * 0.6} height={3.4} rx={1.7} fill="#E9E4DC" stroke={INK} strokeWidth={0.8} />
         <Circle cx={ax + w - 6} cy={bTop + bh * 0.22} r={2.2} fill={lit ? '#7FE0A0' : '#9A958E'} stroke={INK} strokeWidth={0.6} />
         {grade >= 4 && <Path d={`M${ax + 4} ${bTop + 2} H${bx - 4}`} stroke="#FFF3B0" strokeWidth={1.6} />}
@@ -105,7 +124,6 @@ const OvenBody = memo(function OvenBody({ o, grade, lit, flicker }: { o: OvenSpe
       {/* arched mouth with a brick ring and keystone */}
       <Path d={`M${cx - mw / 2 - 3} ${pTop} L${cx - mw / 2 - 3} ${mTop + mw * 0.3} A${mw / 2 + 3} ${mw * 0.34} 0 0 1 ${cx + mw / 2 + 3} ${mTop + mw * 0.3} L${cx + mw / 2 + 3} ${pTop} Z`} fill={shade(base, -0.3)} stroke={INK} strokeWidth={1} />
       <Path d={`M${cx - mw / 2} ${pTop} L${cx - mw / 2} ${mTop + mw * 0.3} A${mw / 2} ${mw * 0.3} 0 0 1 ${cx + mw / 2} ${mTop + mw * 0.3} L${cx + mw / 2} ${pTop} Z`} fill={fire} />
-      {flame(cx, pTop - 1, mw, mh)}
       <Path d={`M${cx - 3.5} ${mTop - 2} L${cx + 3.5} ${mTop - 2} L${cx + 2.5} ${mTop + 5} L${cx - 2.5} ${mTop + 5} Z`} fill={grade >= 3 ? '#FFF3B0' : '#E9C9A0'} stroke={INK} strokeWidth={0.8} />
       {/* plinth */}
       <Rect x={ax - 3} y={pTop} width={w + 6} height={plinth} rx={1.5} fill="#A24B2C" stroke={INK} strokeWidth={1.1} />

@@ -197,16 +197,16 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
               <G key={`up${i}`}>
                 <Polygon points={pts([P(xa, D, 10), P(xa + 18, D, 10), P(xa + 18, D, 50), P(xa, D, 50)])} fill="none" stroke="#5A1229" strokeWidth={1.2} />
                 {/* lit top and left edges give the mouldings relief */}
-                <Path d={`M${P(xa + 0.8, D, 11).join(' ')} L${P(xa + 0.8, D, 49).join(' ')} L${P(xa + 17.2, D, 49).join(' ')}`} stroke="#B04A68" strokeWidth={1.2} fill="none" />
-                <Path d={`M${P(xa + 17.2, D, 49).join(' ')} L${P(xa + 17.2, D, 11).join(' ')} L${P(xa + 0.8, D, 11).join(' ')}`} stroke="#5A1228" strokeWidth={1.2} fill="none" />
+                <Path d={`M${P(xa + 0.8, D, 11).join(' ')} L${P(xa + 0.8, D, 49).join(' ')} L${P(xa + 17.2, D, 49).join(' ')}`} stroke="#B04A68" strokeWidth={1.6} opacity={0.9} fill="none" />
+                <Path d={`M${P(xa + 17.2, D, 49).join(' ')} L${P(xa + 17.2, D, 11).join(' ')} L${P(xa + 0.8, D, 11).join(' ')}`} stroke="#5A1228" strokeWidth={1.6} opacity={0.9} fill="none" />
               </G>
             );
           })}
           <Polygon points={pts([P(L, D, 58), P(R, D, 58), P(R, D, 63), P(L, D, 63)])} fill="#D4A84A" />
           <Path d={`M${P(L, D, 63).join(' ')} L${P(R, D, 63).join(' ')}`} stroke="#9C7A2E" strokeWidth={0.8} />
           {/* brass picture rail: a 2-unit band with a dark underside */}
-          <Polygon points={pts([P(L, D, 149), P(R, D, 149), P(R, D, 151), P(L, D, 151)])} fill="#D4A84A" />
-          <Path d={`M${P(L, D, 148.6).join(' ')} L${P(R, D, 148.6).join(' ')}`} stroke="#8A6A2A" strokeWidth={0.9} />
+          <Polygon points={pts([P(L, D, 148), P(R, D, 148), P(R, D, 151), P(L, D, 151)])} fill="#D4A84A" stroke="#8A6A2A" strokeWidth={0.6} />
+          <Path d={`M${P(L, D, 150.6).join(' ')} L${P(R, D, 150.6).join(' ')}`} stroke="#FFE08A" strokeWidth={0.9} />
         </G>
       )}
       {id === 'industrial' && (

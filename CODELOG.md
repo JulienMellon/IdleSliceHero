@@ -91,3 +91,32 @@ ID prefixes: K = blocker, C = issue, A = architecture, T = test.
 | T10 | Cached `shade` equals `shadeRaw` for every pair; tests for the LRU bound and the quantisers (`scene/__tests__/cache.test.ts`) |
 | T7/T8 | Deferred. The Jest setup is ts-jest/node for pure `.ts` only; render tests need a `jest-expo` preset and react-test-renderer, which is a separate step |
 | M6 | Not changed: the `items` list (~45 entries) is still rebuilt per frame, now with mostly cached elements |
+
+## Code review round 3 — v3.0 → v3.1 — ❌ CHANGES REQUESTED
+
+**Summary:** The static layers really skip now and Storefront is off the 200 ms tick. But the element LRU doesn't do what it claims: React skips only against the props from the previous frame. About 80% of figures still re-render every frame.
+
+- C12 [medium] The element LRU saves only 2 allocations per hit; the comments and CODELOG overclaim it. Fix: remove it.
+- C13 [medium] React Compiler is enabled. A render-time `useGame.getState()` could be auto-memoised. Fix: select the fields, or opt out with `'use no memo'`.
+- C14 [low] The C10 fix writes to the ref during render. Fix: use `key={id}`.
+- C15 [low] The hand-kept `figureKey` list. Removing the cache removes it.
+- A6 [high] Split the figure into a memoised body and small limbs.
+- A7 [medium] Add a pure `buildCast()` so pose churn can be tested in node.
+- M1 [high] Value quantisation is coarser than the per-frame motion: about 18 of 23 figures still re-render, roughly 1,080 nodes and 6.8k allocations per frame. Fix: A6, plus a time-quantised pose clock.
+- M3 [medium] The flame level changes on about 65% of frames. Fix: a memoised body plus a separate Flame.
+- M7 [medium] Building the cache key and doing the LRU bookkeeping cost about 450 allocations per frame. In dev, retained elements pin fibers.
+- M6 [low] Still open.
+- T11–T13: key parity, a pose-churn budget, and a flame-only oven change.
+- Per frame: about 1,850 nodes and 11.5k allocations in round 2 → about 1,300 and 8k now.
+
+## v3.2 — build (addresses code review round 3)
+
+| ID | Change |
+| --- | --- |
+| C12 / C15 / M7 | Both element LRUs (figures, ovens) and `figureKey` are removed. Quantisers live in `scene/quantise.ts` |
+| A6 / M1 | `Person` is placement only (translate, scale, fade). Under it, three memoised parts: `Limbs part="back"` (legs, back arm), `FigureBody` (back hair, torso, outfit, head, face, headwear; drawn at rest, with walk bob applied as a translate around it) and `Limbs part="front"` (front arm, held prop). `FigureBody` takes only look and expression props, so it re-renders on a blink or mood change, not on arm or step. A shared pure `geom()` computes the measurements for each part |
+| M1 (timing) | Worker arm work and diners' eating run on a 7.5 Hz `poseClock` (every second frame), so limbs keep identical props across two frames. Walking stays at 15 fps |
+| M3 | `OvenBody` (memoised, no flame) plus a small `Flame`. `flameBox()` places it, memoised per oven spec |
+| C13 | `'use no memo'` in Storefront, with a comment: it deliberately reads the live store each clock frame |
+| C14 | `key={id}` on Storefront, so a shop switch remounts it (clock, taps, rush, pop) and nothing is written during render |
+| A7 / T12 / T13 | Deferred: the cast builder still lives in Storefront |

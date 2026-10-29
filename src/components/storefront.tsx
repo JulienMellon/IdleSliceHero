@@ -23,7 +23,7 @@ import { SceneDefs } from './scene/defs';
 import { FRONT_ROW_Y, LEDGE_Y, SEAT, STOOL_Y, layout } from './scene/layout';
 import { seatPalette } from './scene/palette';
 import { GUEST_SHIRTS, HAIR_COLORS, hash32, type Mood, Person } from './scene/people';
-import { CURB_Y, D, FRONT_TOP, INK, P, SCENE_W, sceneFit } from './scene/projection';
+import { CURB_Y, D, FRONT_TOP, INK, P, SCENE_W, sceneFit, unprojectX } from './scene/projection';
 import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Rug, Stools, Table, WallPlanter } from './scene/props';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell } from './scene/room';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, Street } from './scene/street';
@@ -79,6 +79,9 @@ const seedFor = (id: string) => Array.from(id).reduce((h, ch) => (h * 31 + ch.ch
  * upgrades change. The parent's 200 ms game ticks don't re-render it, and a paused scene stays still.
  */
 export const Storefront = memo(function Storefront({ id, width, height, paused, onTap }: Props) {
+  // Opt out of React Compiler memoisation: this component deliberately reads the live store
+  // (useGame.getState()) on every clock frame, which auto-memoisation could otherwise cache.
+  'use no memo';
   const clock = useClock(15, paused);
   useGame((s) => sceneKey(s.game, id));
   const game = useGame.getState().game;
@@ -102,6 +105,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const rate = Game.shopRate(shop, game.vehicle);
   const pace = running ? Math.min(2.6, 0.8 + Math.log10(1 + rate)) : 0;
   const t = clock * pace;
+  // Arm work and eating run on a 7.5 Hz pose clock (every other frame), so a figure's limbs keep the same
+  // props across two frames and their memo holds; placement and walking still move at the full 15 fps.
+  const poseClock = Math.floor(clock * 7.5) / 7.5;
+  const pt = poseClock * pace;
   const fit = sceneFit(width, height);
   const frontY = P(0, 0)[1];
   const shopSeed = seedFor(id);
@@ -144,7 +151,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     // a different customer every visit, and different crowds in every shop
     const gSeed = shopSeed + i * 2 + 3 + lap * 13;
     const seated = g.stage === 'seated';
-    const bite = Math.abs(Math.sin(clock * 2 + i));
+    const bite = Math.abs(Math.sin(poseClock * 2 + i));
     const mood: Mood = seated ? (bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile') : 'smile';
     const go = edgeFade(P(g.pos[0], g.pos[1])[0]);
     if (go <= 0) continue;
@@ -161,7 +168,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     items.push({ y: tb.y - 0.6, el: <Table key={`tf${i}`} x={tb.x} y={tb.y} tier={shop.decor.tables} part="front" /> });
     if (i >= regulars) return;
     const dSeed = shopSeed + i * 3 + 7 + Math.floor(t / 14 + i * 0.37) * 29;
-    const bite = Math.abs(Math.sin(clock * 2 + i));
+    const bite = Math.abs(Math.sin(poseClock * 2 + i));
     const act = SEATED_ACTS[(hash32(dSeed) >>> 3) % 4];
     const side = i % 2 ? SEAT : -SEAT;
     items.push({ y: tb.y, el: <Person key={`s${i}`} x={tb.x + side} y={tb.y} kind="sit" flip={i % 2 === 1} seed={dSeed} act={act} shirt={GUEST_SHIRTS[pal.shirt(i)]} hair={HAIR_COLORS[pal.hair(i)]} blink={blinkAt(dSeed)} arm={bite * 2} mood={act === 'slice' || bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile'} /> });
@@ -170,7 +177,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     const crowded = lay.tables.some((o) => o !== tb && Math.abs(o.y - tb.y) < 32 && (Math.abs(o.x - SEAT - cx) < 18 || Math.abs(o.x + SEAT - cx) < 18));
     if (running && i >= guestCount && !crowded && (shop.tables >= 13 ? i % 2 === 0 : fixedFill >= 0.6 && hash32(dSeed + 1) % 3 !== 0)) {
       const cSeed = dSeed + 501;
-      const cb = Math.abs(Math.sin(clock * 2 + i + 1.7));
+      const cb = Math.abs(Math.sin(poseClock * 2 + i + 1.7));
       items.push({ y: tb.y - 0.1, el: <Person key={`s2${i}`} x={cx} y={tb.y} kind="sit" flip={i % 2 === 0} seed={cSeed} act={COMPANION_ACTS[(hash32(cSeed) >>> 3) % 4]} shirt={GUEST_SHIRTS[pal.companionShirt(i)]} hair={HAIR_COLORS[pal.companionHair(i)]} blink={blinkAt(cSeed)} arm={cb * 2} mood={cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile'} /> });
     }
   });
@@ -181,7 +188,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const cookY = lay.cooks.length === 1 ? 74 : 92;
   lay.cooks.forEach((x, i) => {
     const sd = shopSeed + i * 4 + 20;
-    items.push({ y: cookY + (i % 2) * 8, el: <Person key={`c${i}`} x={x} y={cookY + (i % 2) * 8} kind="cook" gold={shop.prep >= 100} front act={COOK_ACTS[i % 3]} mood={running && Math.sin(t * 4 + i) > 0.3 ? 'focus' : 'smile'} seed={sd} blink={blinkAt(sd)} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} /> });
+    items.push({ y: cookY + (i % 2) * 8, el: <Person key={`c${i}`} x={x} y={cookY + (i % 2) * 8} kind="cook" gold={shop.prep >= 100} front act={COOK_ACTS[i % 3]} mood={running && Math.sin(pt * 4 + i) > 0.3 ? 'focus' : 'smile'} seed={sd} blink={blinkAt(sd)} arm={running ? Math.abs(Math.sin(pt * 4 + i)) * 3 : 0} /> });
   });
   items.push({ y: 66, el: <PrepBench key="prep" lay={lay} prep={shop.prep} dough={shop.managed ? 3 : Math.max(2, Math.min(8, Math.ceil(shop.queued / 1.5)))} /> });
   // bakers in front of the oven bank; the one by the counter holds the peel upright so it clears the counter
@@ -189,11 +196,11 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   lay.bakers.forEach((b, i) => {
     const sd = shopSeed + i * 3 + 31 + nIdx * 7;
     const ci = (bBase + i) % 3;
-    items.push({ y: b.y, el: <Person key={`b${i}`} x={b.x} y={b.y} shirt={BAKER_SHIRTS[ci]} kind="baker" seed={sd} blink={blinkAt(sd)} arm={running ? Math.abs(Math.sin(t * 3 + i)) * 2.5 : 0} peelK={b.nearCounter ? 0.7 : 1} act={b.nearCounter ? 'peel' : BAKER_ACTS[(i + bBase) % 3]} dot={BAKER_DOTS[(ci + 1) % 3]} /> });
+    items.push({ y: b.y, el: <Person key={`b${i}`} x={b.x} y={b.y} shirt={BAKER_SHIRTS[ci]} kind="baker" seed={sd} blink={blinkAt(sd)} arm={running ? Math.abs(Math.sin(pt * 3 + i)) * 2.5 : 0} peelK={b.nearCounter ? 0.7 : 1} act={b.nearCounter ? 'peel' : BAKER_ACTS[(i + bBase) % 3]} dot={BAKER_DOTS[(ci + 1) % 3]} /> });
   });
   lay.staff.forEach((x, i) => {
     const sd = shopSeed + i * 5 + 41;
-    items.push({ y: 92, el: <Person key={`st${i}`} x={x} y={92} kind="staff" front alt={i === 1} cap={STAFF_CAPS[nIdx]} seed={sd} blink={blinkAt(sd)} arm={running ? Math.abs(Math.sin(t * 5 + i * 2)) * 2 : 0} /> });
+    items.push({ y: 92, el: <Person key={`st${i}`} x={x} y={92} kind="staff" front alt={i === 1} cap={STAFF_CAPS[nIdx]} seed={sd} blink={blinkAt(sd)} arm={running ? Math.abs(Math.sin(pt * 5 + i * 2)) * 2 : 0} /> });
   });
   items.push({ y: 64, el: <Counter key="counter" lay={lay} boxes={running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0} /> });
   // front of the shop + sidewalk props
@@ -208,7 +215,12 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   if (fp === 0) items.push({ y: 8, el: <FloorProp key="fprop" id={id} x={lay.L + 22} y={8} /> });
   items.push({ y: idleShop ? -18 : -34, el: <ChalkSign key="sign" x={lay.door.x0 - 75} y={idleShop ? -18 : -34} /> });
   items.push({ y: 16, el: <DoorLeaf key="leaf" lay={lay} /> });
-  items.push({ y: idleShop ? -22 : -40, el: <Planter key="pl" x={idleShop ? lay.L - 18 : lay.L + 8} y={idleShop ? -22 : -40} /> });
+  {
+    // the potted tree stays fully on screen (its pot is ~14 wide) in the widest rooms
+    const py = idleShop ? -22 : -40;
+    const px = Math.max(idleShop ? lay.L - 18 : lay.L + 8, unprojectX(20, py));
+    items.push({ y: py, el: <Planter key="pl" x={px} y={py} /> });
+  }
   if (!idleShop) {
     const [scx, scy] = P(lay.scooter.x, lay.scooter.y);
     items.push({ y: lay.scooter.y, el: <ParkedVehicle key="scooter" x={scx} y={scy} v={game.vehicle} /> });
@@ -238,11 +250,6 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     }
   });
   const m = mem.current;
-  if (m.shopId !== id) {
-    // a different shop: last shop's pills and coin burst don't carry over (the effect resets the rest)
-    m.taps = [];
-    m.rushAt = -9;
-  }
   const pop = m.pop && clock - m.pop.at < 1.2 ? { k: (clock - m.pop.at) / 1.2, text: m.pop.text } : null;
   const taps = m.taps.filter((tp) => clock - tp.at < 0.9);
   const flicker = running ? Math.sin(clock * 9) * 1.4 : 0;
@@ -279,7 +286,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         }}>
         <Svg width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
           <SceneDefs />
-          <Backdrop id={id} />
+          <Backdrop id={id} wide={lay.L < 30} />
           {CLOUDS.map((c, i) => (
             <Cloud key={i} x={((c.x0 + clock * c.v) % DRIFT_SPAN) - 100} y={c.y} k={c.k} dusk={id === 'uptown'} />
           ))}
@@ -319,7 +326,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             const raw = (c.offset + clock * c.speed) % DRIFT_SPAN;
             const x = dir === 1 ? raw - 100 : SCENE_W + 100 - raw;
             return (
-              <G key={i} transform={`translate(${x} ${c.lane === 0 ? CURB_Y + 30 : CURB_Y + 62}) scale(0.86)`}>
+              <G key={i} transform={`translate(${x} ${c.lane === 0 ? CURB_Y + 30 : CURB_Y + 70}) scale(0.86)`}>
                 <Car x={0} y={0} color={c.color} kind={c.kind} dir={dir as 1 | -1} />
               </G>
             );

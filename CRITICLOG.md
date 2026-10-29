@@ -1219,3 +1219,19 @@ Typecheck clean, 50 tests pass, `report.json` errors: [].
 **Design notes**
 - D271: a need-cash toast stays up after the player can afford the upgrade.
 - D272: soft $0/s buttons need a small "no gain now" label.
+
+## v3.2 — build (addresses round 32)
+
+| Note | Fix |
+| --- | --- |
+| D264 | The walk-in counter lane moves to y 52 (in front of the bakers' line, behind the pickup spots). Walk-ins now turn toward the tables right at the counter's end (`counter.x0 − 4`), not past the bakers |
+| D265 | Walk-ins walk the sidewalk on the curb side (y −52); drivers keep −30…−42, so the two don't stack |
+| D266 | The back table row moves to y 42 |
+| D267 | The Uptown rail is now 3 units of #D4A84A with an #8A6A2A edge and a #FFE08A top highlight. Panel highlights and shadows are 1.6 wide at 0.9 opacity |
+| D268 | The second street lane moves 8 down (CURB_Y + 70) |
+| D269 | Backdrop edge props (the Industrial crates) are left out when the room fills the frame (`L < 30`). The potted tree is kept ≥ 20 units inside the left edge |
+| D270 | "+$0/s now" and "N walk‑ins/s" use non-breaking spaces and hyphens. The Grade line is "→ Copper ×2" |
+| D271 | A "need $X" toast clears itself on the tick when cash reaches X |
+| D272 | Soft $0/s buttons say "no gain now" under the price |
+
+Typecheck clean, 49 tests pass, `report.json` errors: [].

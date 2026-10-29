@@ -1,5 +1,8 @@
 import { COUNTER_LANE_Y, DOOR_IN_Y, DOOR_OUT_Y, SEAT, type Layout } from './layout';
 
+/** Walk-ins walk the sidewalk on the curb side (drivers use −30…−42), so the two never stack. */
+const GUEST_WALK_Y = -52;
+
 /** Linear interpolation along a polyline at fraction k (0..1) of its length. */
 export function along(path: [number, number][], k: number): [number, number] {
   const segs = path.slice(1).map((p, i) => Math.hypot(p[0] - path[i][0], p[1] - path[i][1]));
@@ -99,7 +102,7 @@ export function guestPose(lay: Layout, i: number, p: number, sceneW: number): Gu
   const aisle: Pt = [seat[0], table.y + 14];
   // Between the counter and the order spot people walk the lane just in front of the counter (behind the
   // drivers' pickup line), and only step forward to the tables once they're left of the pickup spots.
-  const turnX = Math.min(seat[0], lay.counter.x0 - 16);
+  const turnX = Math.min(seat[0], lay.counter.x0 - 4);
   const behindPickup: Pt[] = [
     [lay.counter.x1 + 2, COUNTER_LANE_Y],
     [turnX, COUNTER_LANE_Y],
@@ -109,8 +112,8 @@ export function guestPose(lay: Layout, i: number, p: number, sceneW: number): Gu
   const gIn: Pt = [guestX, DOOR_IN_Y];
   const gOut: Pt = [guestX, DOOR_OUT_Y];
   const orderAt = lay.orderSpots[i % 2];
-  const start: Pt = [-30, -46];
-  if (p < 0.18) return { p, pos: along([start, [gOut[0], -46], gOut], p / 0.18), stage: 'arrive', walking: true, face: false };
+  const start: Pt = [-30, GUEST_WALK_Y];
+  if (p < 0.18) return { p, pos: along([start, [gOut[0], GUEST_WALK_Y], gOut], p / 0.18), stage: 'arrive', walking: true, face: false };
   if (p < 0.24) return { p, pos: along([gOut, gIn], (p - 0.18) / 0.06), stage: 'arrive', walking: true, face: false };
   if (p < 0.34) return { p, pos: along([gIn, guestVia, orderAt], (p - 0.24) / 0.1), stage: 'arrive', walking: true, face: false };
   if (p < 0.42) return { p, pos: orderAt, stage: 'order', walking: false, face: true };
@@ -118,5 +121,5 @@ export function guestPose(lay: Layout, i: number, p: number, sceneW: number): Gu
   if (p < 0.8) return { p, pos: seat, stage: 'seated', walking: false, face: side < 0 };
   if (p < 0.88) return { p, pos: along([seat, aisle, ...behindPickup.slice().reverse(), guestVia, gIn], (p - 0.8) / 0.08), stage: 'leave', walking: true, face: false };
   if (p < 0.92) return { p, pos: along([gIn, gOut], (p - 0.88) / 0.04), stage: 'leave', walking: true, face: false };
-  return { p, pos: along([gOut, [sceneW + 50, -44]], (p - 0.92) / 0.08), stage: 'leave', walking: true, face: false };
+  return { p, pos: along([gOut, [gOut[0], GUEST_WALK_Y], [sceneW + 50, GUEST_WALK_Y]], (p - 0.92) / 0.08), stage: 'leave', walking: true, face: false };
 }

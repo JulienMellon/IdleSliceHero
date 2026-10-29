@@ -80,10 +80,12 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone 
     <Animated.View style={{ transform: [{ translateX: shake }] }}>
       <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, compact && { minWidth: 0, alignSelf: 'stretch' }, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
         <View style={[styles.buyInner, compact && styles.buyCompact, { backgroundColor: innerBg }, innerBorder]}>
-          {sub ? <Text style={styles.buySub}>{sub}</Text> : null}
+          {sub && tone !== 'soft' ? <Text style={styles.buySub}>{sub}</Text> : null}
           <Text style={[styles.buyLabel, compact && { fontSize: 15 }, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit>
             {label}
           </Text>
+          {/* a soft button explains itself under the price */}
+          {sub && tone === 'soft' ? <Text style={[styles.buySub, { color: C.basilDark, letterSpacing: 0.3 }]}>{sub}</Text> : null}
         </View>
       </Pressable>
       {bursting &&

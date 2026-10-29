@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import { Lru, quantArm, quantStep, STEP_FRAMES } from '../cache';
+import { quantArm, quantStep, STEP_FRAMES } from '../quantise';
 import { shade, shadeRaw } from '../projection';
 
 describe('scene caches (T10)', () => {
@@ -10,19 +10,6 @@ describe('scene caches (T10)', () => {
         expect(shade(h, k)).toBe(shadeRaw(h, k));
         expect(shade(h, k)).toBe(shadeRaw(h, k)); // second call hits the cache
       }
-  });
-  test('the LRU keeps at most max entries and evicts the least recently used', () => {
-    const c = new Lru<number>(3);
-    c.set('a', 1);
-    c.set('b', 2);
-    c.set('c', 3);
-    expect(c.get('a')).toBe(1); // a is now most recent
-    c.set('d', 4);
-    expect(c.size).toBe(3);
-    expect(c.get('b')).toBeUndefined();
-    expect(c.get('a')).toBe(1);
-    for (let i = 0; i < 1000; i++) c.set(`k${i}`, i);
-    expect(c.size).toBe(3);
   });
   test('quantised walk phases never read as standing and take at most STEP_FRAMES values', () => {
     const seen = new Set<number>();
