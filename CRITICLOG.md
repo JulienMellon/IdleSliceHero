@@ -1120,3 +1120,24 @@ Typecheck clean, 30 tests pass, `report.json` errors: [].
 | D245 | Opening cut-scene: Rosa's rainy front zoomed 1.15× from the kerb |
 
 Typecheck clean, 30 tests pass, `report.json` errors: [].
+
+## v2.15 — critique (round 30) — ❌ NOT SATISFIED (no [major] notes)
+
+**VERDICT: NOT SATISFIED** — loads clean; Uptown has its own interior, the bar and stools fill the mid-tier floor, the unmanaged sidewalk is clear, the Fleet card names Drones, the door lanes are separated. The characters are no longer the weak spot; what's left is crowding when the shop is full, plus one regression.
+
+**Fixed:** D237, D239, D240, D241 (→ G71), D243, D244 · **Still open:** D238 (→ D247), D242 (→ D246), D245 (→ D252)
+
+**Bugs**
+- G71 Uptown's arched window covers the menu board's bottom row
+
+**Visual design (all [minor])**
+- D246 Waterfront net reads as a rope ladder → gathered triangle, sagging hem, varied mesh, cork floats
+- D247 Flagship centre clump: peel still touches the driver's cap; back-row diner touches a baker's feet
+- D248 Drivers cut by the right screen edge; the box crosses the right pier → carry centred, fade earlier
+- D249 Walk-ins cut through chairs on their way to a seat → aisle waypoint
+- D250 Front-left fern reads as a fragment
+- D251 Uptown wainscot mouldings have no contrast; the picture rail is hidden behind the awning
+- D252 Cut-scene 01: still ~30% flat sky; stray edge posts above the roofline
+
+**Design notes**
+- D253 Drawer cards repeat the shared bottleneck reason · D254 Starter: walk-in crosses behind the driver
