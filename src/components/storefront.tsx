@@ -76,7 +76,7 @@ function layout(fp: number, ovenCount: number, cookCount: number, staffCount: nu
   const RW = ROOM_W[fp];
   const L = 196.5 - RW / 2;
   const R = L + RW;
-  const prep = { x0: L + 6, x1: L + 6 + 30 + cookCount * 20 };
+  const prep = { x0: L + 6, x1: L + 6 + 30 + cookCount * 24 };
   const cooks = Array.from({ length: cookCount }, (_, i) => prep.x0 + 10 + (i * (prep.x1 - prep.x0 - 20)) / Math.max(1, cookCount - 1) + (cookCount === 1 ? (prep.x1 - prep.x0 - 20) / 2 : 0));
   const cw = 56 + 26 * (staffCount - 1);
   const counter = { x0: R - 60 - cw, x1: R - 60 };
@@ -101,7 +101,7 @@ function layout(fp: number, ovenCount: number, cookCount: number, staffCount: nu
   // Pickup spots in front of the counter, two staggered depth rows 12 apart.
   // Pickup spots in front of the counter, never past the door leaf (critic G52); extra drivers queue a row back.
   const sx0 = counter.x0 + cw * 0.3;
-  const spotCols = Math.max(1, Math.floor((door.x0 - 30 - sx0) / 26) + 1);
+  const spotCols = Math.max(1, Math.floor((counter.x1 - 30 - sx0) / 26) + 1);
   const spots = Array.from({ length: Math.min(driverSlots, spotCols * 2) }, (_, i) => {
     const col = i % spotCols;
     const row = Math.floor(i / spotCols);
@@ -115,7 +115,7 @@ function layout(fp: number, ovenCount: number, cookCount: number, staffCount: nu
   for (let i = 0; i < Math.min(tableCount, perRow * 2); i++) {
     const row = i % 2;
     const col = Math.floor(i / 2);
-    tables.push({ x: t0 + col * 60 + (row ? 30 : 0), y: row ? 52 : 14 });
+    tables.push({ x: t0 + col * 60 + (row ? 30 : 0), y: row ? 40 : 6 });
   }
   return { L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, tables, scooter: { x: door.x0 - 30, y: -22 } };
 }
@@ -147,9 +147,9 @@ type Kind = 'cook' | 'baker' | 'staff' | 'driver' | 'guest' | 'sit';
 const SKINS = ['#F6D3B3', '#EDB98A', '#D69A6A', '#B07446', '#7E4F30'];
 const HAIR_COLORS = ['#2B1A12', '#4A2C1D', '#8E5A3C', '#E3C16F', '#B5462E', '#8F8A86'];
 const PANTS = ['#3B4A6B', '#5C4033', '#2F3140', '#6B7A8F', '#7A5C8E'];
-const GUEST_SHIRTS = ['#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97', '#F2C94C', '#EB6F92', '#3D9970', '#E07A5F'];
+const GUEST_SHIRTS = ['#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97', '#F2C94C', '#EB6F92', '#3D9970', '#5C6BC0'];
 
-interface Look { skin: string; hair: string; style: number; trait: number; wide: number; pants: string; shirt: string; tall: number }
+interface Look { skin: string; hair: string; style: number; trait: number; wide: number; pants: string; shirt: string; tall: number; outfit: number }
 /** Integer hash (mulberry32 step) so every look field is independent of the others (critic G57). */
 function hash32(n: number) {
   let t = (n + 0x6d2b79f5) | 0;
@@ -170,6 +170,7 @@ function lookFor(seed: number, worker = false): Look {
     pants: PANTS[pick(6, PANTS.length)],
     shirt: GUEST_SHIRTS[pick(7, GUEST_SHIRTS.length)],
     tall: pick(8, 5) - 2,
+    outfit: pick(9, 3),
   };
 }
 
@@ -374,7 +375,16 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
           <Path d={`M-8 ${by + 14} H${8.5}`} stroke="#1F5FB8" strokeWidth={1.4} opacity={0.7} />
         </G>
       )}
-      {!worker && <Path d={`M-2.6 ${by} Q0.5 ${by + 3.4} 3.6 ${by}`} fill={skin} stroke={INK} strokeWidth={0.7} />}
+      {/* guest outfits: tee, striped tee, or hoodie with a pocket (critic D172) */}
+      {!worker && look.outfit === 1 && [6, 10.5, 15].map((d) => <Path key={d} d={`M${-7.6 - ww} ${by + d} H${8 + ww}`} stroke="#fff" strokeWidth={1.6} opacity={0.55} />)}
+      {!worker && look.outfit === 2 && (
+        <G>
+          <Path d={`M-6 ${by + 1} Q0.5 ${by + 7} 7 ${by + 1}`} fill={shade(top, -0.15)} stroke={INK} strokeWidth={0.8} />
+          <Rect x={-4.5 - ww * 0.5} y={by + 11} width={10 + ww} height={5} rx={1.6} fill={shade(top, -0.12)} stroke={INK} strokeWidth={0.6} />
+          <Path d={`M-1 ${by + 4} v4 M2 ${by + 4} v4`} stroke="#fff" strokeWidth={0.8} />
+        </G>
+      )}
+      {!worker && look.outfit !== 2 && <Path d={`M-2.6 ${by} Q0.5 ${by + 3.4} 3.6 ${by}`} fill={skin} stroke={INK} strokeWidth={0.7} />}
       {/* head */}
       <Circle cx={0.5} cy={hy} r={9.6} fill={skin} {...OUT} />
       <G transform={unflipHead}>
@@ -983,7 +993,7 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
       <Path d={`M${P(L, 0, sideTop).join(' ')} L${P(L, D, WH).join(' ')} L${P(R, D, WH).join(' ')} L${P(R, 0, sideTop).join(' ')}`} stroke="#5E3A26" strokeWidth={4.5} strokeLinejoin="round" fill="none" />
       <Path d={`M${P(L, 0, sideTop).join(' ')} L${P(L, D, WH).join(' ')} L${P(R, D, WH).join(' ')} L${P(R, 0, sideTop).join(' ')}`} stroke="#8E5A3C" strokeWidth={1.4} strokeLinejoin="round" fill="none" />
       {/* floor: plain tile → checkerboard → wood parquet → marble (decor) */}
-      <Polygon points={pts([P(L, 0), P(R, 0), P(R, D), P(L, D)])} fill={['#E7D7BE', '#F4EFE6', '#C99A6B', '#E8DFD2'][flooring]} stroke={INK} strokeWidth={1.4} />
+      <Polygon points={pts([P(L, 0), P(R, 0), P(R, D), P(L, D)])} fill={['#E7D7BE', '#F4EFE6', '#C99A6B', '#E2D6C4'][flooring]} stroke={INK} strokeWidth={1.4} />
       {flooring === 1 &&
         Array.from({ length: 20 * 6 }).map((_, i) => {
           const c = i % 20;
@@ -1012,7 +1022,7 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
             if ((c + r) % 2) return null;
             const xa = L + ((R - L) * c) / 8;
             const xb = L + ((R - L) * (c + 1)) / 8;
-            return <Polygon key={`mt${i}`} points={pts([P(xa, r * 18.3), P(xb, r * 18.3), P(xb, (r + 1) * 18.3), P(xa, (r + 1) * 18.3)])} fill="#CFC3B2" />;
+            return <Polygon key={`mt${i}`} points={pts([P(xa, r * 18.3), P(xb, r * 18.3), P(xb, (r + 1) * 18.3), P(xa, (r + 1) * 18.3)])} fill="#C9BBA6" />;
           })}
           {Array.from({ length: 9 }).map((_, i) => {
             const x = L + ((R - L) * i) / 8;
@@ -1025,12 +1035,12 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
             const c = i % 8;
             const r = Math.floor(i / 8);
             const h = hash32(i * 7 + 3);
-            if (h % 3) return null;
+            if (h % 2 === 0 && h % 3 === 0) return null;
             const xa = L + ((R - L) * (c + 0.2 + (h % 5) * 0.08)) / 8;
             const ya = r * 18.3 + 4 + (h % 7);
             const xb = xa + (R - L) / 8 * 0.45;
             const yb = ya + 5 + (h % 4);
-            return <Path key={`vein${i}`} d={`M${P(xa, ya).join(' ')} L${P((xa + xb) / 2, ya + 4).join(' ')} L${P(xb, yb).join(' ')}`} stroke="#A79E92" strokeWidth={1} fill="none" opacity={0.6} strokeLinejoin="round" />;
+            return <Path key={`vein${i}`} d={`M${P(xa, ya).join(' ')} L${P((xa + xb) / 2, ya + 4).join(' ')} L${P(xb, yb).join(' ')}`} stroke="#8F8577" strokeWidth={1.1} fill="none" opacity={1} strokeLinejoin="round" />;
           })}
           <Polygon points={pts([P(L, 0), P(R, 0), P(R, D), P(L, D)])} fill="url(#sheen)" />
           <Polygon points={pts([P(L, D - 5), P(R, D - 5), P(R, D), P(L, D)])} fill="#C9A04A" stroke="#9C7A2E" strokeWidth={0.6} />
@@ -1049,6 +1059,8 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
         Array.from({ length: 7 }).map((_, j) => (
           <Path key={`h${j}`} d={`M${P(L, j * 18.3).join(' ')} L${P(R, j * 18.3).join(' ')}`} stroke={flooring === 1 ? '#B53A30' : flooring === 3 ? '#DCD6CE' : '#D4C1A3'} strokeWidth={flooring === 1 ? 0.5 : 1} />
         ))}
+      {/* a soft strip marks where the kitchen floor starts (critic D168) */}
+      <Polygon points={pts([P(L, 58), P(lay.counter.x0 - 4, 58), P(lay.counter.x0 - 4, 60), P(L, 60)])} fill="#000" opacity={0.08} />
       {/* ambient occlusion where the walls meet the floor (critic D73) */}
       <Polygon points={pts([P(L, D - 10), P(R, D - 10), P(R, D), P(L, D)])} fill="rgba(59,31,20,0.16)" />
       <Polygon points={pts([P(L, 0), P(L + 10, 0), P(L + 10, D), P(L, D)])} fill="rgba(59,31,20,0.14)" />
@@ -1101,8 +1113,8 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
         (() => {
           const x0 = L + 26;
           const x1 = lay.counter.x0 - 10;
-          const [ax, ay] = P(x0, D, 212);
-          const [bx, by] = P(x1, D, 136);
+          const [ax, ay] = P(x0, D, 204);
+          const [bx, by] = P(x1, D, 154);
           const w = bx - ax;
           const h = by - ay;
           return (
@@ -1410,9 +1422,11 @@ function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: string; 
             <G key={f}>
               <Path d={`M${hx} ${fBot + 13} V${hy - 8}`} stroke={INK} strokeWidth={0.8} />
               <Path d={`M${hx - 8} ${hy - 8} L${hx + 8} ${hy - 8} L${hx + 5} ${hy} L${hx - 5} ${hy} Z`} fill="#C2693E" stroke={INK} strokeWidth={0.9} />
-              {[-1, -0.5, 0, 0.5, 1].map((d) => (
-                <Path key={d} d={`M${hx + d * 6} ${hy - 2} q${d * 8} 10 ${d * 6} 22`} stroke={d === 0 ? '#3F9A48' : '#4FA048'} strokeWidth={3} fill="none" strokeLinecap="round" />
-              ))}
+              {[-1, -0.5, 0, 0.5, 1].map((d) => {
+                const tx = hx + d * 12;
+                const ty = hy + 22 - Math.abs(d) * 5;
+                return <Path key={d} d={`M${hx + d * 3} ${hy - 1} Q${tx + d * 4 - 4} ${(hy + ty) / 2} ${tx} ${ty} Q${tx + d * 4 + 4} ${(hy + ty) / 2} ${hx + d * 3 + 1.5} ${hy - 1} Z`} fill={Math.abs(d) === 0.5 ? '#3F8A3E' : '#4FA048'} stroke={INK} strokeWidth={0.7} />;
+              })}
             </G>
           );
         })}
@@ -1460,7 +1474,7 @@ function DoorLeaf({ lay }: { lay: Layout }) {
   const g1 = P(door.x0 - 21, 19.5, 8);
   const g2 = P(door.x0 - 21, 19.5, 94);
   const g3 = P(door.x0 - 10, 9, 94);
-  const [ox, oy] = P(door.x0 - 16, 15, 60);
+  const [ox, oy] = P(door.x0 - 16, 15, 86);
   return (
     <G>
       <Polygon points={pts([hinge0, tip0, tip1, hinge1])} fill="#7E5038" stroke={INK} strokeWidth={1.2} />
@@ -1775,7 +1789,8 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   const fixedFill = Math.min(1, 0.4 + shop.tables / 40);
   // concurrent people never share a shirt colour (critic D156)
   const shirtBase = hash32(shopSeed) % GUEST_SHIRTS.length;
-  const orderAt: [number, number] = [lay.counter.x0 + 12, 54];
+  // walk-ins order at the front-right of the counter, a second one queues toward the door (critic D166)
+  const orderSpot = (i: number): [number, number] => [lay.counter.x1 - 14 + (i % 2) * 18, 34 - (i % 2) * 8];
   for (let i = 0; i < guestCount; i++) {
     const cyc = t / 9 + 0.3 + i / Math.max(2, guestCount);
     const p = ((cyc % 1) + 1) % 1;
@@ -1791,11 +1806,12 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     let face = false;
     let talking = false;
     const via: [number, number] = [lay.door.x0 + 4, 30];
+    const orderAt = orderSpot(i);
     let mood: Mood = 'smile';
     if (p < 0.18) pos = along([start, [outsideDoor[0], -44], outsideDoor], p / 0.18);
     else if (p < 0.24) pos = along([outsideDoor, insideDoor], (p - 0.18) / 0.06);
     else if (p < 0.34) {
-      pos = along([insideDoor, [insideDoor[0] - 20, 60], orderAt], (p - 0.24) / 0.1);
+      pos = along([insideDoor, orderAt], (p - 0.24) / 0.1);
       face = true;
     } else if (p < 0.42) {
       pos = orderAt;
@@ -1822,8 +1838,9 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   lay.tables.forEach((tb, i) => {
     items.push({ y: tb.y + 0.6, el: <Table key={`tb${i}`} x={tb.x} y={tb.y} tier={shop.decor.tables} part="back" /> });
     items.push({ y: tb.y - 0.6, el: <Table key={`tf${i}`} x={tb.x} y={tb.y} tier={shop.decor.tables} part="front" /> });
-    const fixedIdx = i - guestCount;
-    if (running && i >= guestCount && fixedIdx < Math.round((lay.tables.length - guestCount) * fixedFill)) {
+    const fixedIdx = i;
+    // at least one customer is always eating, even on the very first screen (critic D177)
+    if (fixedIdx < (running ? Math.max(1, Math.round(lay.tables.length * fixedFill)) : 1)) {
       const dSeed = shopSeed + i * 3 + 7 + Math.floor(t / 14 + i * 0.37) * 29;
       const bite = Math.abs(Math.sin(clock * 2 + i));
       items.push({ y: tb.y, el: <Person key={`s${i}`} x={tb.x - 17} y={tb.y} kind="sit" seed={dSeed} shirt={GUEST_SHIRTS[(shirtBase + guestCount + fixedIdx * 3 + 1) % GUEST_SHIRTS.length]} blink={blinkAt(dSeed)} arm={bite * 2} mood={bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile'} /> });
@@ -1832,7 +1849,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   // potted plants (plants decor)
   if (shop.decor.plants >= 1) {
     items.push({ y: 30, el: <FloorPlant key="pp1" x={lay.L + 12} y={30} /> });
-    items.push({ y: 98, el: <FloorPlant key="pp2" x={lay.R - 14} y={98} /> });
+    items.push({ y: 100, el: <FloorPlant key="pp2" x={lay.R - 54} y={100} /> });
   }
   if (shop.decor.plants >= 3) items.push({ y: 100, el: <FloorPlant key="pp4" x={lay.L + 14} y={100} big /> });
   // kitchen crew + furniture
@@ -1856,7 +1873,9 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
                 const kk = kAt(74);
                 return (
                   <G key={`sk${i}`} transform={`translate(${sx} ${sy}) scale(${kk})`}>
-                    <Path d="M-7 0 Q-8 -9 -4 -11 L4 -11 Q8 -9 7 0 Z" fill="#F3ECE2" stroke={INK} strokeWidth={0.9} />
+                    <Ellipse cx={0} cy={0.5} rx={8} ry={1.8} fill="#000" opacity={0.18} />
+                    <Path d="M-7 0 Q-8 -9 -4 -11 L4 -11 Q8 -9 7 0 Z" fill="#E3C89A" stroke={INK} strokeWidth={0.9} />
+                    <Path d="M2.5 -11 L4 -11 Q8 -9 7 0 L2 0 Q4.5 -5 2.5 -11 Z" fill="#B48E5E" />
                     <Path d="M-4 -11 q4 -2.5 8 0" stroke={INK} strokeWidth={0.8} fill="none" />
                     <Rect x={-4} y={-6.5} width={8} height={2.6} fill="#C8463A" opacity={0.8} />
                   </G>
@@ -1905,7 +1924,20 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       </G>
     ),
   });
-  lay.ovenCols.forEach((c, i) => items.push({ y: 76 - (i % 2) * 12, el: <Person key={`b${i}`} x={Math.min(c.x1 + 2, lay.counter.x0 - 12)} y={76 - (i % 2) * 12} shirt={['#B23A48', '#7E3A8E', '#2E6E8E'][i % 3]} kind="baker" seed={shopSeed + i * 3 + 31} blink={blinkAt(shopSeed + i * 3 + 31)} arm={running ? Math.abs(Math.sin(t * 3 + i)) * 2.5 : 0} act={(['pizza', 'peel', 'slide'] as const)[i % 3]} dot={['#D9443A', '#3FAE5A', '#2D9CDB'][i % 3]} /> }));
+  // bakers stand centred in front of the oven bank, one per ~40 units, alternating depth (critic D167)
+  {
+    const b0 = lay.ovenCols[0].x0;
+    const b1 = lay.ovenCols[lay.ovenCols.length - 1].x1;
+    const nb = Math.max(1, Math.min(3, Math.floor((b1 - b0) / 40)));
+    const bBase = hash32(shopSeed + 5) % 3;
+    for (let i = 0; i < nb; i++) {
+      const bx = b0 + ((b1 - b0) * (i + 0.5)) / nb;
+      const by = i % 2 ? 60 : 72;
+      const sd = shopSeed + i * 3 + 31;
+      const ci = (bBase + i) % 3;
+      items.push({ y: by, el: <Person key={`b${i}`} x={bx} y={by} shirt={['#B23A48', '#7E3A8E', '#2E6E8E'][ci]} kind="baker" seed={sd} blink={blinkAt(sd)} arm={running ? Math.abs(Math.sin(t * 3 + i)) * 2.5 : 0} act={(['pizza', 'peel', 'slide'] as const)[(i + bBase) % 3]} dot={['#D9443A', '#3FAE5A', '#2D9CDB'][(ci + 1) % 3]} /> });
+    }
+  }
   lay.staff.forEach((x, i) => items.push({ y: 92, el: <Person key={`st${i}`} x={x} y={92} kind="staff" front alt={i === 1} seed={shopSeed + i * 5 + 41} blink={blinkAt(shopSeed + i * 5 + 41)} arm={running ? Math.abs(Math.sin(t * 5 + i * 2)) * 2 : 0} /> }));
   const boxes = running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0;
   items.push({
@@ -2130,7 +2162,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
           {/* cash pop in the sky band, on a basil pill so it reads over any backdrop (critic D107) */}
           {pop && (() => {
             const w = pop.text.length * 10 + 18;
-            const x = Math.min(SCENE_W - 6 - w / 2, P(lay.door.cx, 0)[0]);
+            const x = Math.min(SCENE_W - 6 - w / 2, P(lay.door.cx, 0)[0]) - 30;
             const y = P(0, 0, FRONT_TOP - 62)[1] - pop.k * 20;
             return (
               <G opacity={pop.k > 0.87 ? (1 - pop.k) / 0.13 : 1}>

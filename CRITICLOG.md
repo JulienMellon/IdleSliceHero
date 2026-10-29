@@ -826,3 +826,38 @@ Typecheck clean, 30 tests pass, `report.json` errors: [].
 | D164 | A full kitchen whose bottleneck upgrade is unaffordable says "Kitchen full — save $X for more drivers" |
 
 Typecheck clean, 30 tests pass, `report.json` errors: [].
+
+## v2.7 — critique (round 22) — ❌ NOT SATISFIED
+
+**VERDICT: NOT SATISFIED** — loads clean; the doorway, tab fade, rush coins, entrance glass, blade sign and dining fill all show in the pixels. Still failing on people: bakers, walk-ins and drivers pile up at the counter's left corner, the bakers are still a fused row, and the kitchen and dining room run together.
+
+**Fixed:** G59, G60, D152, D154, D158, D159, D160, D162, D163, D164, D165 · **Still open:** D153 (→ D167), D155 (→ D169), D156 (→ D172), D157 (→ D170), D161 (→ D171) · **Bugs:** none
+
+**Visual design**
+- D166 [major] People pile up at the counter's left corner → order point at the counter's front-right with a queue toward the door; first pickup spot ≥30 right of the last baker
+- D167 [major] Bakers still fused → centred in front of the oven columns, alternating depth
+- D168 [major] No gap between kitchen and dining → back table row at depth 40, a floor strip in front of the bench
+- D169–D176 [minor] Flour sacks invisible; marble still pale; hood duct cuts the mural, the right fern sits behind the cash pop, the ferns look like combs, the right plant is hidden by the entrance glass; two near-identical orange shirts and one tee shape; drivers' faces behind the OPEN sign; the first baker identical in every shop; cooks 2 and 3 still touch; upgrade cards aligned inconsistently
+
+**Design notes**
+- D177 The opening shop looks sparse → a fixed diner from Seating Lv 1 · D178 Cash pop hides decor → move it left over the awning
+
+## v2.8 — build (addresses round 22)
+
+| Note | Fix |
+| --- | --- |
+| D166 | Walk-ins order at the counter's front-right (`counter.x1 − 14`, depth 34), with a second queuing toward the door; pickup spots stay on the counter's left two-thirds (≤ `counter.x1 − 30`), well right of the bakers; walk-ins go straight from the door to the order point |
+| D167 | Bakers are centred across the oven bank (one per ~40 units, max 3) at alternating depth 72 / 60, never clamped against the counter |
+| D168 | Dining rows at depth 6 / 40, leaving a clear aisle before the prep bench (front at 66); a soft floor strip at depth 58–60 marks where the kitchen floor starts |
+| D169 | Flour sacks are #E3C89A with a #B48E5E shadow side and a contact shadow |
+| D170 | Marble #E2D6C4 / #C9BBA6 with one #8F8577 vein (opacity 1) on most tiles |
+| D171 | Mural spans z 154–204, clear of the hood duct and the awning; hanging ferns are filled teardrop fronds (#4FA048 / #3F8A3E); the right floor plant sits beside the counter end, left of the entrance glass |
+| D172 | #5C6BC0 replaces #E07A5F (no orange pair); guests wear a plain tee, a striped tee, or a hoodie with hood, pocket and drawstrings |
+| D173 | OPEN sign moved to the door leaf's top pane, above walkers' faces |
+| D174 | Baker shirt, dot colour and job start from a per-shop index, so the first baker differs between shops |
+| D175 | Cooks ~41 apart (prep bench 30 + 24 per cook) |
+| D176 | Upgrade cards top-aligned (normal and wide) |
+| D177 | At least one diner is always seated and eating, including on the first screen; fixed diners take the left chair of any table, walk-ins the right |
+| D178 | Cash pop shifted 30 left, over the awning, clear of the attic window and fern |
+
+Typecheck clean, 30 tests pass, `report.json` errors: [].
