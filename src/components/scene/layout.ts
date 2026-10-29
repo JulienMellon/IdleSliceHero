@@ -19,6 +19,8 @@ export const DOOR_OUT_Y = -30;
 export const COUNTER_AISLE_Y = 44;
 /** The lane just in front of the counter, behind the drivers' pickup spots (y 46). */
 export const COUNTER_LANE_Y = 52;
+/** The aisle between the two table rows; walk-ins reach every chair from here. */
+export const DINING_AISLE_Y = 24;
 /** Window bar and its stools sit along the front glass. */
 export const LEDGE_Y = 5;
 export const STOOL_Y = 13;
@@ -29,6 +31,9 @@ export const MIN_OVEN_ZONE = 36;
 type Pt = [number, number];
 
 export interface DoorLanes {
+  /** Outside, walk-ins pause left of the door and drivers right of it, so nobody stands on the mat. */
+  guestPauseX: number;
+  driverPauseX: number;
   /** Walk-ins use the left half of the doorway… */
   guestX: number;
   guestVia: Pt;
@@ -38,6 +43,8 @@ export interface DoorLanes {
 }
 
 export interface Layout {
+  /** footprint index (0 = starter … 4 = flagship) */
+  fp: number;
   L: number;
   R: number;
   prep: { x0: number; x1: number };
@@ -94,7 +101,7 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
     x0: d0,
     x1: d1,
     cx: (d0 + d1) / 2,
-    lanes: { guestX: d0 + 13, guestVia: [d0 + 16, COUNTER_AISLE_Y] as Pt, driverX: d1 - 6, driverVia: [d1 - 8, COUNTER_AISLE_Y] as Pt },
+    lanes: { guestPauseX: d0 - 6, driverPauseX: d1 + 4, guestX: d0 + 13, guestVia: [d0 + 16, COUNTER_AISLE_Y] as Pt, driverX: d1 - 6, driverVia: [d1 - 8, COUNTER_AISLE_Y] as Pt },
   };
   // Drivers pick up along the counter's left; walk-ins order at its right end, away from the pickup line.
   const spotCols = Math.max(1, Math.floor((counter.x1 - 46 - (counter.x0 + 12)) / 28) + 1);
@@ -107,7 +114,9 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   const t0 = L + 44 + (plants >= 1 ? 10 : 0);
   const frontCols = Math.max(1, Math.floor((counter.x1 - 30 - SEAT - t0) / TABLE_PITCH) + 1);
   // the back row starts right of the prep bench, so diners' heads never poke into it
-  const b0 = Math.max(t0 + SEAT, prep.x1 + 4 + SEAT);
+  // …and its seats interleave with the front row's: each back seat falls midway between two front seats
+  const b0raw = Math.max(t0 + SEAT, prep.x1 + 4 + SEAT);
+  const b0 = t0 + SEAT + Math.ceil((b0raw - t0 - SEAT) / (2 * SEAT)) * (2 * SEAT);
   const backCols = Math.max(0, Math.floor((counter.x0 - 40 - SEAT - b0) / TABLE_PITCH) + 1);
   const tables: Layout['tables'] = [];
   // fill the front row first, so a small dining room spreads out instead of stacking
@@ -128,5 +137,5 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   const lx0 = Math.max(counter.x0 + 4, frontRowRight);
   const lx1 = d0 - 12;
   const ledge = lx1 - lx0 > 30 ? { x0: lx0, x1: lx1 } : null;
-  return { L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, orderSpots, tables, bakers, ledge, scooter: { x: d0 - 30, y: -30 } };
+  return { fp, L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, orderSpots, tables, bakers, ledge, scooter: { x: d0 - 30, y: -30 } };
 }

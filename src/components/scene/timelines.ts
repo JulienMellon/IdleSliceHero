@@ -1,7 +1,7 @@
-import { COUNTER_LANE_Y, DOOR_IN_Y, DOOR_OUT_Y, SEAT, type Layout } from './layout';
+import { COUNTER_LANE_Y, DINING_AISLE_Y, DOOR_IN_Y, DOOR_OUT_Y, SEAT, type Layout } from './layout';
 
 /** Walk-ins walk the sidewalk on the curb side (drivers use −30…−42), so the two never stack. */
-const GUEST_WALK_Y = -52;
+const GUEST_WALK_Y = -48;
 
 /** Linear interpolation along a polyline at fraction k (0..1) of its length. */
 export function along(path: [number, number][], k: number): [number, number] {
@@ -48,7 +48,7 @@ export function driverPose(lay: Layout, i: number, p: number, sceneW: number): D
   const lane = (i % 3) * 6;
   const { driverX, driverVia } = lay.door.lanes;
   const offStreet: Pt = [sceneW + 50 + (i % 3) * 18, -30 - lane];
-  const outside: Pt = [driverX, DOOR_OUT_Y - lane];
+  const outside: Pt = [lay.door.lanes.driverPauseX, DOOR_OUT_Y - lane];
   const inside: Pt = [driverX, DOOR_IN_Y];
   const at: Pt = [spot.x, spot.y];
   let pos: Pt;
@@ -96,13 +96,15 @@ export interface GuestPose {
 /** Walk-in i's lap: in by the door's left lane, order at the counter, sit opposite the table's regular, leave. */
 export function guestPose(lay: Layout, i: number, p: number, sceneW: number): GuestPose {
   const table = lay.tables[i];
-  const side = i % 2 ? 1 : -1; // the regular diner's side at this table
-  const seat: Pt = [table.x - side * SEAT, table.y];
+  // walk-ins come from the counter (right), so they take the right-hand chair and never pass the table;
+  // the table's regular sits on the left
+  const seat: Pt = [table.x + SEAT, table.y];
   // the aisle behind the table, so walkers turn into the chair instead of cutting through the table
-  const aisle: Pt = [seat[0], table.y + 14];
+  const aisle: Pt = [seat[0], DINING_AISLE_Y];
   // Between the counter and the order spot people walk the lane just in front of the counter (behind the
   // drivers' pickup line), and only step forward to the tables once they're left of the pickup spots.
-  const turnX = Math.min(seat[0], lay.counter.x0 - 4);
+  // turn down right beside the counter, before the bakers, and walk the dining aisle from there
+  const turnX = Math.min(seat[0], lay.counter.x0);
   const behindPickup: Pt[] = [
     [lay.counter.x1 + 2, COUNTER_LANE_Y],
     [turnX, COUNTER_LANE_Y],
@@ -110,7 +112,7 @@ export function guestPose(lay: Layout, i: number, p: number, sceneW: number): Gu
   ];
   const { guestX, guestVia } = lay.door.lanes;
   const gIn: Pt = [guestX, DOOR_IN_Y];
-  const gOut: Pt = [guestX, DOOR_OUT_Y];
+  const gOut: Pt = [lay.door.lanes.guestPauseX, DOOR_OUT_Y];
   const orderAt = lay.orderSpots[i % 2];
   const start: Pt = [-30, GUEST_WALK_Y];
   if (p < 0.18) return { p, pos: along([start, [gOut[0], GUEST_WALK_Y], gOut], p / 0.18), stage: 'arrive', walking: true, face: false };
@@ -118,7 +120,7 @@ export function guestPose(lay: Layout, i: number, p: number, sceneW: number): Gu
   if (p < 0.34) return { p, pos: along([gIn, guestVia, orderAt], (p - 0.24) / 0.1), stage: 'arrive', walking: true, face: false };
   if (p < 0.42) return { p, pos: orderAt, stage: 'order', walking: false, face: true };
   if (p < 0.5) return { p, pos: along([orderAt, ...behindPickup, aisle, seat], (p - 0.42) / 0.08), stage: 'toSeat', walking: true, face: true };
-  if (p < 0.8) return { p, pos: seat, stage: 'seated', walking: false, face: side < 0 };
+  if (p < 0.8) return { p, pos: seat, stage: 'seated', walking: false, face: true };
   if (p < 0.88) return { p, pos: along([seat, aisle, ...behindPickup.slice().reverse(), guestVia, gIn], (p - 0.8) / 0.08), stage: 'leave', walking: true, face: false };
   if (p < 0.92) return { p, pos: along([gIn, gOut], (p - 0.88) / 0.04), stage: 'leave', walking: true, face: false };
   return { p, pos: along([gOut, [gOut[0], GUEST_WALK_Y], [sceneW + 50, GUEST_WALK_Y]], (p - 0.92) / 0.08), stage: 'leave', walking: true, face: false };

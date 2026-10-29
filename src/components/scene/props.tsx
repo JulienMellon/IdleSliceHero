@@ -13,6 +13,9 @@ import { Box, FloorShadow } from './primitives';
  */
 type OvenSpec = Layout['ovens'][number];
 
+/** Stacked decks and the Stone grade are box ovens; single decks are domes. */
+const isBoxOven = (o: OvenSpec, grade: number) => o.h < 70 || grade === 1;
+
 /** Where an oven's flame sits (screen units): box ovens show it in the door window, domes in the mouth. */
 function flameBox(o: OvenSpec, grade: number) {
   const y = D - 6;
@@ -22,7 +25,7 @@ function flameBox(o: OvenSpec, grade: number) {
   const cx = (ax + bx) / 2;
   const k = kAt(y);
   const top = ay - o.h * k;
-  if (o.h < 70 || grade === 1) {
+  if (isBoxOven(o, grade)) {
     const legs = o.z === 0 ? 10 * k : 0;
     const bh = ay - legs - top;
     const dw = w * 0.74;
@@ -52,6 +55,7 @@ export function Oven({ o, grade, lit, flicker }: { o: OvenSpec; grade: number; l
     <G>
       <OvenBody o={o} grade={grade} lit={lit} />
       {lit && <Flame {...fb} flicker={flicker} />}
+      {!isBoxOven(o, grade) && <DomeFront o={o} gold={grade >= 3} />}
     </G>
   );
 }
@@ -124,13 +128,6 @@ const OvenBody = memo(function OvenBody({ o, grade, lit }: { o: OvenSpec; grade:
       {/* arched mouth with a brick ring and keystone */}
       <Path d={`M${cx - mw / 2 - 3} ${pTop} L${cx - mw / 2 - 3} ${mTop + mw * 0.3} A${mw / 2 + 3} ${mw * 0.34} 0 0 1 ${cx + mw / 2 + 3} ${mTop + mw * 0.3} L${cx + mw / 2 + 3} ${pTop} Z`} fill={shade(base, -0.3)} stroke={INK} strokeWidth={1} />
       <Path d={`M${cx - mw / 2} ${pTop} L${cx - mw / 2} ${mTop + mw * 0.3} A${mw / 2} ${mw * 0.3} 0 0 1 ${cx + mw / 2} ${mTop + mw * 0.3} L${cx + mw / 2} ${pTop} Z`} fill={fire} />
-      <Path d={`M${cx - 3.5} ${mTop - 2} L${cx + 3.5} ${mTop - 2} L${cx + 2.5} ${mTop + 5} L${cx - 2.5} ${mTop + 5} Z`} fill={grade >= 3 ? '#FFF3B0' : '#E9C9A0'} stroke={INK} strokeWidth={0.8} />
-      {/* plinth */}
-      <Rect x={ax - 3} y={pTop} width={w + 6} height={plinth} rx={1.5} fill="#A24B2C" stroke={INK} strokeWidth={1.1} />
-      <Path d={`M${ax - 3} ${pTop + plinth / 2} H${bx + 3}`} stroke="#7A3520" strokeWidth={0.8} />
-      {Array.from({ length: Math.max(2, Math.floor((w + 6) / 12)) }).map((_, i) => (
-        <Path key={i} d={`M${ax + 3 + i * 12 + (i % 2) * 6} ${pTop} v${plinth / 2} M${ax + 9 + i * 12} ${pTop + plinth / 2} v${plinth / 2}`} stroke="#7A3520" strokeWidth={0.8} />
-      ))}
       {grade === 2 && (
         <G>
           {[0, 1, 2].map((i) => <Circle key={i} cx={bx + 4 + (i % 2) * 5} cy={ay - 3 - Math.floor(i / 2) * 5} r={2.8} fill="#9C6B3F" stroke={INK} strokeWidth={0.7} />)}
@@ -142,6 +139,33 @@ const OvenBody = memo(function OvenBody({ o, grade, lit }: { o: OvenSpec; grade:
           <Path d={`M${cx + w * 0.3} ${top + ry * 0.4} l2 -5 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2 Z`} fill="#FFFBE0" />
         </G>
       )}
+    </G>
+  );
+});
+
+/** A dome's keystone and brick plinth, drawn over its flame so the glow stays inside the mouth. */
+const DomeFront = memo(function DomeFront({ o, gold }: { o: OvenSpec; gold: boolean }) {
+  const y = D - 6;
+  const [ax, ay] = P(o.x0, y, o.z);
+  const [bx] = P(o.x1, y, o.z);
+  const w = bx - ax;
+  const cx = (ax + bx) / 2;
+  const k = kAt(y);
+  const top = ay - o.h * k;
+  const plinth = 12 * k;
+  const pTop = ay - plinth;
+  const mw = w * 0.56;
+  const mh = Math.min((pTop - top) * 0.5, mw * 0.9);
+  const mTop = pTop - mh;
+  return (
+    <G>
+      <Path d={`M${cx - 3.5} ${mTop - 2} L${cx + 3.5} ${mTop - 2} L${cx + 2.5} ${mTop + 5} L${cx - 2.5} ${mTop + 5} Z`} fill={gold ? '#FFF3B0' : '#E9C9A0'} stroke={INK} strokeWidth={0.8} />
+      {/* plinth */}
+      <Rect x={ax - 3} y={pTop} width={w + 6} height={plinth} rx={1.5} fill="#A24B2C" stroke={INK} strokeWidth={1.1} />
+      <Path d={`M${ax - 3} ${pTop + plinth / 2} H${bx + 3}`} stroke="#7A3520" strokeWidth={0.8} />
+      {Array.from({ length: Math.max(2, Math.floor((w + 6) / 12)) }).map((_, i) => (
+        <Path key={i} d={`M${ax + 3 + i * 12 + (i % 2) * 6} ${pTop} v${plinth / 2} M${ax + 9 + i * 12} ${pTop + plinth / 2} v${plinth / 2}`} stroke="#7A3520" strokeWidth={0.8} />
+      ))}
     </G>
   );
 });

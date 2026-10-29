@@ -54,12 +54,12 @@ export const useGame = create<Store>((set, get) => {
     if (next) set({ playing: { scene: next, replay: false } });
   };
 
-  const commit = (result: G.BuyResult, item?: { name: string; cost: number | null }) => {
+  const commit = (result: G.BuyResult, item?: { name: string; cost: number | null; hint?: string }) => {
     if (!result.ok) {
       const at = Date.now();
       // name what the player tapped
       const needCash = result.reason === 'Not enough cash' && item && item.cost !== null ? item.cost : undefined;
-      const text = needCash !== undefined && item ? `${item.name}: need ${money(needCash)}` : result.reason;
+      const text = needCash !== undefined && item ? `${item.name}: need ${money(needCash)}${item.hint ?? ''}` : result.reason;
       set({ toast: { text, at, need: needCash } });
       setTimeout(() => {
         if (get().toast?.at === at) set({ toast: null });
@@ -133,7 +133,12 @@ export const useGame = create<Store>((set, get) => {
     buy: (what) => {
       const g = get().game;
       const NAMES: Record<string, string> = { prep: 'Prep', ovens: 'Ovens', counter: 'Counter', drivers: 'Drivers', tables: 'Seating', grade: 'Oven grade', expand: 'Expand', manager: 'Manager' };
-      return commit(G.buyUpgrade(g, g.active, what), { name: NAMES[what] ?? what, cost: G.upgradeCostOf(g, g.active, what) });
+      // when the tapped station isn't what's holding the shop back, the toast says so
+      const STAGE_UPGRADE: Record<G.Stage, string> = { prep: 'prep', ovens: 'ovens', counter: 'counter', customers: 'drivers' };
+      const shop = g.shops[g.active];
+      const neck = STAGE_UPGRADE[G.bottleneck(shop, g.vehicle)];
+      const hint = ['prep', 'ovens', 'counter', 'drivers'].includes(what) && what !== neck ? ` · ${NAMES[neck]} is the bottleneck` : '';
+      return commit(G.buyUpgrade(g, g.active, what), { name: NAMES[what] ?? what, cost: G.upgradeCostOf(g, g.active, what), hint });
     },
 
     buyFleet: () => commit(G.buyVehicle(get().game)),

@@ -135,3 +135,17 @@ ID prefixes: K = blocker, C = issue, A = architecture, T = test.
 - M6 [low] The `items` list is still rebuilt per frame.
 - T14 `flameBox` sits inside the window or mouth · T15 hip y vs body `by` per bucket · T12 pose-churn budget (needs A7).
 - Fixed: C12, C13, C14, C15, A6, M1, M3, M7, T11 · Still open: A7, M6, T12.
+
+## v3.3 — build (addresses code review round 4)
+
+| ID | Change |
+| --- | --- |
+| A7 | Pure `buildCast()` in scene/cast.ts returns cast records and driver phases. Storefront maps them to `<Person/>`. The look data and types moved to the pure scene/looks.ts (people.tsx re-exports them) |
+| A8 / M8 | `geom()` is split into `bodyGeom()` (FigureBody only) and `limbGeom()` (hip height, hands and stride only, with no `lookFor` or torso path) |
+| M9 | `Limbs` take explicit primitive `LimbProps` (kind, act, front, carry, carryWalk, peelK, step, arm, sleeve, pants, skin, tall). `Person` memoises the look per seed (`useMemo`). Back limbs get `arm` only for `pin` |
+| M10 | The walk cycle steps one of 8 phases per frame from an integer frame counter (`floor(clock·15)`), so there are no skipped buckets and no gait jitter. Walker limbs still change every frame (accepted) |
+| C16 | Dome ovens draw a memoised `DomeFront` (keystone and plinth) after the flame, so the glow stays in the mouth |
+| C17 | `bobFor(kind, step)` in quantise.ts is used by both the body translate and `limbGeom` |
+| C18 | `mem.shopId` removed |
+| T12 | `crowd.test.ts`: worker limb props change on ≤ 55% of consecutive frames at pace 2.6, plus crowd-overlap budgets in screen space |
+| T14 / T15 | Deferred: `flameBox` and `limbGeom` live in .tsx files that the node Jest setup can't import |

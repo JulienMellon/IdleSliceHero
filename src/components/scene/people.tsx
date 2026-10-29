@@ -1,42 +1,13 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
-import { quantArm, quantStep } from './quantise';
+import { bobFor, quantArm, quantStep } from './quantise';
 import { INK, P, kAt, shade } from './projection';
+import { HAIR_COLORS, type Act, type Kind, type Look, type Mood, type PersonProps, lookFor } from './looks';
 
-export type Kind = 'cook' | 'baker' | 'staff' | 'driver' | 'guest' | 'sit';
+export { GUEST_SHIRTS, HAIR_COLORS, PANTS, SKINS, hash32, lookFor, type Act, type Kind, type Look, type Mood, type PersonProps } from './looks';
 
-// ---------- characters ----------
-// Light comes from the upper left: every figure has a shadow side on the right, a highlight on the left,
-// and the same 1.1 ink outline as the furniture. Figures face +x (flip mirrors them).
-export const SKINS = ['#F6D3B3', '#EDB98A', '#D69A6A', '#B07446', '#7E4F30'];
-export const HAIR_COLORS = ['#2B1A12', '#4A2C1D', '#8E5A3C', '#E3C16F', '#B5462E', '#8F8A86'];
-export const PANTS = ['#3B4A6B', '#5C4033', '#2F3140', '#6B7A8F', '#7A5C8E'];
-export const GUEST_SHIRTS = ['#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97', '#F2C94C', '#EB6F92', '#3D9970', '#5C6BC0'];
+/** A polished chibi worker or customer with a contact shadow, feet at room point (x, y). */
 
-export interface Look { skin: string; hair: string; style: number; trait: number; wide: number; pants: string; shirt: string; tall: number; outfit: number }
-/** Integer hash (mulberry32 step) so every look field is independent of the others. */
-export function hash32(n: number) {
-  let t = (n + 0x6d2b79f5) | 0;
-  t = Math.imul(t ^ (t >>> 15), t | 1);
-  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-  return (t ^ (t >>> 14)) >>> 0;
-}
-/** Traits: 0 none · 1 glasses · 2 moustache · 3 freckles · 4 hair tuft. Workers always get one. */
-export function lookFor(seed: number, worker = false): Look {
-  const n = Math.abs(Math.floor(seed));
-  const pick = (field: number, m: number) => hash32(n * 131 + field * 7919) % m;
-  return {
-    skin: SKINS[pick(1, SKINS.length)],
-    hair: HAIR_COLORS[pick(2, HAIR_COLORS.length)],
-    style: pick(3, 6),
-    trait: worker ? 1 + pick(4, 4) : [0, 0, 1, 2, 3][pick(4, 5)],
-    wide: pick(5, 3) - 1,
-    pants: PANTS[pick(6, PANTS.length)],
-    shirt: GUEST_SHIRTS[pick(7, GUEST_SHIRTS.length)],
-    tall: pick(8, 5) - 2,
-    outfit: pick(9, 6),
-  };
-}
 
 export const OUT = { stroke: INK, strokeWidth: 1.1, strokeLinejoin: 'round' as const };
 
@@ -128,86 +99,93 @@ export function Headwear({ kind, hy, front = false, alt = false, dot = '#D9443A'
   return null;
 }
 
-/** A polished chibi worker or customer with a contact shadow, feet at room point (x, y). */
-export type Mood = 'smile' | 'focus' | 'happy' | 'o' | 'chew';
-/** What a worker's hands are doing: cooks roll / toss / ladle; bakers hold an empty peel, a pizza, or slide one in. */
-export type Act = 'none' | 'pin' | 'toss' | 'ladle' | 'peel' | 'pizza' | 'slide' | 'slice' | 'cup' | 'lean';
-
-/** Props for one chibi figure. Role (`kind`) picks the uniform; look comes from `seed` unless overridden. */
-export interface PersonProps {
-  x: number;
-  y: number;
-  kind: Kind;
-  seed?: number;
-  // look overrides
-  shirt?: string;
-  hair?: string;
-  cap?: string;
-  dot?: string;
-  gold?: boolean;
-  alt?: boolean;
-  // pose
-  act?: Act;
-  mood?: Mood;
-  arm?: number;
-  step?: number;
-  flip?: boolean;
-  front?: boolean;
-  blink?: boolean;
-  talk?: boolean;
-  /** holding a pizza box; `carryWalk` holds it centred in both hands while walking */
-  carry?: boolean;
-  carryWalk?: boolean;
-  peelK?: number;
-  o?: number;
-}
 
 /** The figure's look and discrete pose — everything except where it stands. */
 type FigureProps = Omit<PersonProps, 'x' | 'y' | 'o'>;
 
+const isWorker = (kind: Kind) => kind === 'cook' || kind === 'baker' || kind === 'staff' || kind === 'driver';
+
+/** Shirt and trouser colours: uniforms for staff, the look (or an override) for guests. */
+function outfitColors(kind: Kind, shirt: string | undefined, look: Look) {
+  const top = kind === 'cook' ? '#FBF8F3' : kind === 'baker' ? shirt ?? '#B23A48' : kind === 'staff' ? '#3FAE5A' : kind === 'driver' ? '#2F80ED' : shirt ?? look.shirt;
+  const pants = kind === 'cook' ? '#4A4A6E' : kind === 'baker' ? '#3B3B5C' : kind === 'staff' ? '#8C7356' : kind === 'driver' ? '#2E3A59' : look.pants;
+  return { top, pants };
+}
+
+/** Everything the moving parts need, as primitives so their memo holds. */
+interface LimbProps {
+  kind: Kind;
+  act: Act;
+  front: boolean;
+  carry: boolean;
+  carryWalk: boolean;
+  peelK: number;
+  /** quantised walk phase (0 = standing) */
+  step: number;
+  /** quantised arm swing */
+  arm: number;
+  sleeve: string;
+  pants: string;
+  skin: string;
+  tall: number;
+}
+
 /** One chibi figure in the scene: placement here, then a memoised body and light per-frame limbs. */
 export function Person({ x, y, o = 1, ...p }: PersonProps) {
+  const worker = isWorker(p.kind);
+  const seed = p.seed ?? 0;
+  // the look only changes with the seed (a new customer), not per frame
+  const look = useMemo(() => lookFor(seed, worker), [seed, worker]);
   if (o <= 0) return null;
   const [sx, sy] = P(x, y);
   const k = kAt(y) * 1.14;
-  const fp: FigureProps = { ...p, arm: quantArm(p.arm ?? 0), step: quantStep(p.step ?? 0) };
-  const walking = fp.step !== 0 && p.kind !== 'sit';
-  const bob = walking ? Math.abs(Math.cos(fp.step!)) * 1.2 : 0;
+  const step = quantStep(p.step ?? 0);
+  const act = p.act ?? 'none';
+  const { top, pants } = outfitColors(p.kind, p.shirt, look);
+  const limbs: LimbProps = { kind: p.kind, act, front: !!p.front, carry: !!p.carry, carryWalk: !!p.carryWalk, peelK: p.peelK ?? 1, step, arm: quantArm(p.arm ?? 0), sleeve: top, pants, skin: look.skin, tall: look.tall };
+  const bob = bobFor(p.kind, step);
   return (
     <G opacity={o} transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${(p.flip ? -k : k).toFixed(3)} ${k.toFixed(3)})`}>
-      <Limbs {...fp} part="back" />
+      {/* the back limbs only use the arm swing when rolling dough with both hands */}
+      <Limbs {...limbs} arm={act === 'pin' ? limbs.arm : 0} part="back" />
       <G transform={bob ? `translate(0 ${(-bob).toFixed(2)})` : undefined}>
-        <FigureBody kind={p.kind} seed={p.seed} shirt={p.shirt} hair={p.hair} cap={p.cap} dot={p.dot} gold={p.gold} alt={p.alt} front={p.front} flip={p.flip} blink={p.blink} talk={p.talk} mood={p.mood} />
+        <FigureBody kind={p.kind} seed={seed} shirt={p.shirt} hair={p.hair} cap={p.cap} dot={p.dot} gold={p.gold} alt={p.alt} front={p.front} flip={p.flip} blink={p.blink} talk={p.talk} mood={p.mood} />
       </G>
-      <Limbs {...fp} part="front" />
+      <Limbs {...limbs} part="front" />
     </G>
   );
 }
 
-/** Shared figure geometry: body measurements from the look, limb positions from the pose. */
-function geom({ kind, shirt, arm = 0, flip = false, carry = false, carryWalk = false, step = 0, seed = 0, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false, hair, peelK = 1 }: FigureProps) {
-  const pin = act === 'pin';
+/** Body measurements and colours for the head, torso and outfit, drawn at rest. */
+function bodyGeom({ kind, shirt, flip = false, seed = 0, front = false, hair }: FigureProps) {
   const sitting = kind === 'sit';
-  const worker = kind === 'cook' || kind === 'baker' || kind === 'staff' || kind === 'driver';
+  const worker = isWorker(kind);
   const look = lookFor(seed, worker);
   const hairC = hair ?? look.hair;
   // keep the light coming from the upper left on mirrored figures
   const unflipBody = flip ? 'translate(0.5 0) scale(-1 1)' : undefined;
   const unflipHead = flip ? 'translate(1 0) scale(-1 1)' : undefined;
-  const top = kind === 'cook' ? '#FBF8F3' : kind === 'baker' ? shirt ?? '#B23A48' : kind === 'staff' ? '#3FAE5A' : kind === 'driver' ? '#2F80ED' : shirt ?? look.shirt;
-  const sleeve = top;
-  const pants = kind === 'cook' ? '#4A4A6E' : kind === 'baker' ? '#3B3B5C' : kind === 'staff' ? '#8C7356' : kind === 'driver' ? '#2E3A59' : look.pants;
+  const { top } = outfitColors(kind, shirt, look);
   const skin = look.skin;
-  const walking = step !== 0 && !sitting;
-  const sw = walking ? Math.sin(step) : 0;
-  const bob = walking ? Math.abs(Math.cos(step)) * 1.2 : 0;
-  const by = (sitting ? -21 : -30) - bob - (sitting ? 0 : look.tall);
+  const by = (sitting ? -21 : -30) - (sitting ? 0 : look.tall);
   const hy = by - 9;
   const ww = worker ? (look.wide > 0 ? 0.9 : 0) : look.wide * 1.1;
   // face layout: three-quarter (features toward +x) or front-facing (centred, ears both sides)
   const eyeX = front ? [-1.9, 2.9] : [2.4, 6.9];
   const fx = front ? 0.5 : 4.65;
   const torso = `M${-8 - ww} ${by + 3.5} Q${-8 - ww} ${by} ${-4.5} ${by} L5 ${by} Q${8.5 + ww} ${by} ${8.5 + ww} ${by + 3.5} L${8 + ww} ${by + 16.5} Q${8 + ww} ${by + 19} ${5.5 + ww} ${by + 19} L${-5.5 - ww} ${by + 19} Q${-7.6 - ww} ${by + 19} ${-7.6 - ww} ${by + 16.5} Z`;
+  return { worker, look, hairC, unflipBody, unflipHead, top, skin, by, hy, ww, eyeX, fx, torso };
+}
+
+/** Limb geometry from the pose: hip/shoulder height (with walk bob), hand positions and stride. */
+export function limbGeom({ kind, act, carry, carryWalk, step, arm, tall }: Pick<LimbProps, 'kind' | 'act' | 'carry' | 'carryWalk' | 'step' | 'arm' | 'tall'>) {
+  const pin = act === 'pin';
+  const sitting = kind === 'sit';
+  const worker = isWorker(kind);
+  const walking = step !== 0 && !sitting;
+  const sw = walking ? Math.sin(step) : 0;
+  const by = (sitting ? -21 : -30) - bobFor(kind, step) - (sitting ? 0 : tall);
+  const hy = by - 9;
   // front-arm hand position: working (arm), carrying, eating, or swinging
   const hand: [number, number] = carry
     ? carryWalk
@@ -231,8 +209,7 @@ function geom({ kind, shirt, arm = 0, flip = false, carry = false, carryWalk = f
   // a walking carrier holds the box centred in front, both hands on it
   const bx = carryWalk ? 10 : 3;
   const backHand: [number, number] = carry && carryWalk ? [-4, by + 10] : pin ? [hand[0] - 9, hand[1]] : sitting ? (act === 'lean' ? [-12, by + 3] : [-7, by + 15]) : [-8.5 - sw * 2.5, by + 15.5];
-  const peel = kind === 'baker';
-  return { pin, sitting, worker, look, hairC, unflipBody, unflipHead, top, sleeve, pants, skin, walking, sw, bob, by, hy, ww, eyeX, fx, torso, hand, bx, backHand, peel };
+  return { pin, sitting, walking, sw, by, hand, bx, backHand, peel: kind === 'baker' };
 }
 
 /**
@@ -240,7 +217,7 @@ function geom({ kind, shirt, arm = 0, flip = false, carry = false, carryWalk = f
  * re-renders when the look, expression or blink changes — not with the arm swing or walk cycle.
  */
 const FigureBody = memo(function FigureBody(p: FigureProps) {
-  const { worker, look, hairC, unflipBody, unflipHead, top, skin, by, hy, ww, eyeX, fx, torso } = geom(p);
+  const { worker, look, hairC, unflipBody, unflipHead, top, skin, by, hy, ww, eyeX, fx, torso } = bodyGeom(p);
   const { kind, shirt, front, blink = false, talk = false, mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false } = p;
   return (
     <G>
@@ -394,9 +371,9 @@ const FigureBody = memo(function FigureBody(p: FigureProps) {
 });
 
 /** Legs and back arm (part "back") or front arm and held prop (part "front"): the parts that move per frame. */
-const Limbs = memo(function Limbs({ part, ...p }: FigureProps & { part: 'back' | 'front' }) {
-  const { pin, sitting, sleeve, pants, skin, walking, sw, by, hand, bx, backHand, peel } = geom(p);
-  const { kind, arm = 0, carry = false, front, act = 'none', peelK = 1 } = p;
+const Limbs = memo(function Limbs({ part, ...p }: LimbProps & { part: 'back' | 'front' }) {
+  const { pin, sitting, walking, sw, by, hand, bx, backHand, peel } = limbGeom(p);
+  const { kind, arm, carry, front, act, peelK, sleeve, pants, skin } = p;
   if (part === 'back')
     return (
       <G>
@@ -430,7 +407,7 @@ const Limbs = memo(function Limbs({ part, ...p }: FigureProps & { part: 'back' |
     <G>
       {/* front arm + props */}
       {peel && (
-        <G transform={`${act === 'slide' ? `rotate(62 ${hand[0]} ${hand[1]})` : `rotate(-8 ${hand[0]} ${hand[1]})`} translate(${hand[0]} ${hand[1]}) scale(${peelK}) translate(${-hand[0]} ${-hand[1]})`}>
+        <G transform={`${act === 'slide' ? `rotate(-48 ${hand[0]} ${hand[1]})` : `rotate(-8 ${hand[0]} ${hand[1]})`} translate(${hand[0]} ${hand[1]}) scale(${peelK}) translate(${-hand[0]} ${-hand[1]})`}>
           <Path d={`M${hand[0] + 1} ${hand[1] + 9} L${hand[0] + 2.5} ${hand[1] - 18}`} stroke={INK} strokeWidth={3.4} strokeLinecap="round" />
           <Path d={`M${hand[0] + 1} ${hand[1] + 9} L${hand[0] + 2.5} ${hand[1] - 18}`} stroke="#C99A6B" strokeWidth={1.8} strokeLinecap="round" />
           <Path d={`M${hand[0] - 1.5} ${hand[1] - 17} Q${hand[0] - 2} ${hand[1] - 29} ${hand[0] + 3} ${hand[1] - 29} Q${hand[0] + 8} ${hand[1] - 29} ${hand[0] + 7} ${hand[1] - 17} Z`} fill="#D9B48A" {...OUT} strokeWidth={0.9} />

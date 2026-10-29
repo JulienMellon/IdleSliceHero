@@ -122,7 +122,8 @@ export function StationCard(props: {
             </View>
           ) : null}
           <Text style={styles.detail} numberOfLines={3}>
-            {props.detail}
+            {/* a line may break before a "·", never after it */}
+            {props.detail.replace(/ · /g, ' ·\u00A0')}
           </Text>
         </View>
       </View>

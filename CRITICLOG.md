@@ -1254,3 +1254,27 @@ Typecheck clean, 49 tests pass, `report.json` errors: [].
 
 **Design notes**
 - D281: the "need $X" toast and the bottleneck hint disagree. When the tapped card isn't the bottleneck, point to the bottleneck.
+
+## v3.3 — build (addresses round 33)
+
+The crowd is now built by a pure `buildCast()` (scene/cast.ts). `crowd.test.ts` simulates 40 s of busy shops at every footprint and checks four things in screen space:
+- walkers cover the kitchen crew in < 6% of frames
+- nobody stands still on the doormat
+- people standing still never cover each other
+- passing traffic overlaps in < 15% of frames
+
+Overlaps no longer get pushed from one place to another.
+
+| Note | Fix |
+| --- | --- |
+| D273 | The baker's "slide" peel tips back toward the oven (−48°) instead of out toward the counter |
+| D274 | Walk-ins turn toward the tables at the counter's end (before the bakers) and walk the dining aisle between the two rows (y 24). On tables walk-ins use, they take the right-hand chair (the regular sits left), so they never pass their own table |
+| D275 | The back row's seats fall midway between the front row's (b0 snapped to `t0 + SEAT + n·2·SEAT`) |
+| D276 | Outside, walk-ins pause left of the door and drivers right of it, so nobody stands on WELCOME (tested) |
+| D277 | The Uptown cap gets a 1.2 #FFE08A top line; the picture rail moves to height 132, below the wall art |
+| D278 | Backdrop edge props (the Industrial barrels at x 30 and 352) are drawn only where they show whole beside the shop's walls |
+| D279 | The curb-side walk-in line moves to y −48 |
+| D280 | Drawer details join " ·" to the next word with a non-breaking space, so a line never ends in "·" |
+| D281 | When the tapped station isn't the bottleneck, the need-cash toast adds "· Drivers is the bottleneck" |
+
+Typecheck clean, 54 tests pass, `report.json` errors: [].

@@ -158,8 +158,8 @@ export function Fence({ x0, x1, y }: { x0: number; x1: number; y: number }) {
   );
 }
 
-/** `wide`: the shop fills the frame, so edge props that would show only as slivers are left out. */
-export const Backdrop = memo(function Backdrop({ id, wide = false }: { id: NeighborhoodId; wide?: boolean }) {
+/** `L`/`R`: the room's side walls; edge props only appear where they show whole beside the shop. */
+export const Backdrop = memo(function Backdrop({ id, L = 0, R = SCENE_W }: { id: NeighborhoodId; L?: number; R?: number }) {
   const look = LOOK[id];
   const palm = id === 'waterfront';
   const treeC = id === 'uptown' ? '#3F8F4A' : '#4FA048';
@@ -190,7 +190,7 @@ export const Backdrop = memo(function Backdrop({ id, wide = false }: { id: Neigh
         <G>
           <Fence x0={-10} x1={70} y={330} />
           <Fence x0={326} x1={404} y={330} />
-          {(wide ? [] : [[20, 380], [360, 370]]).map(([x, y]) => (
+          {[[30, 380], [352, 370]].filter(([x]) => (x < 196 ? x + 14 < L - 6 : x - 14 > R + 6)).map(([x, y]) => (
             <G key={x}>
               <Rect x={x - 12} y={y - 22} width={24} height={22} rx={2} fill="#3F7FB0" stroke={INK} strokeWidth={1} />
               {[0, 7, 14].map((d) => <Path key={d} d={`M${x - 12} ${y - 18 + d} H${x + 12}`} stroke="#2E6690" strokeWidth={1.4} />)}

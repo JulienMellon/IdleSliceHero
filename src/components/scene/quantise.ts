@@ -12,3 +12,8 @@ export function quantStep(step: number) {
   const f = Math.floor((((step % tau) + tau) % tau) / (tau / STEP_FRAMES));
   return (f + 0.5) * (tau / STEP_FRAMES);
 }
+
+/** Vertical walk bob for a figure at (quantised) walk phase `step`; shared by the body translate and the limbs. */
+export function bobFor(kind: string, step: number) {
+  return step !== 0 && kind !== 'sit' ? Math.abs(Math.cos(step)) * 1.2 : 0;
+}

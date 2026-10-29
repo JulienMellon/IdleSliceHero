@@ -27,7 +27,8 @@ import { CURB_Y, D, FRONT_TOP, INK, P, SCENE_W, sceneFit, unprojectX } from './s
 import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Rug, Stools, Table, WallPlanter } from './scene/props';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell } from './scene/room';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, Street } from './scene/street';
-import { driverPhase, driverPose, guestPose, payoutCrossed } from './scene/timelines';
+import { buildCast } from './scene/cast';
+import { payoutCrossed } from './scene/timelines';
 
 export { CURB_Y, SCENE_H, SCENE_W, sceneFit } from './scene/projection';
 
@@ -57,19 +58,10 @@ const CLOUDS = [
   { x0: 360, y: 70, k: 0.6, v: 5 },
 ] as const;
 const DRIFT_SPAN = SCENE_W + 200;
-const BAKER_SHIRTS = ['#B23A48', '#7E3A8E', '#2E6E8E'];
-const BAKER_DOTS = ['#D9443A', '#3FAE5A', '#2D9CDB'];
-const STAFF_CAPS = ['#F5C33B', '#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97', '#EB6F92'];
-const SEATED_ACTS = ['none', 'slice', 'cup', 'lean'] as const;
-const COMPANION_ACTS = ['cup', 'none', 'slice', 'lean'] as const;
-const COOK_ACTS = ['pin', 'toss', 'ladle'] as const;
-const BAKER_ACTS = ['pizza', 'peel', 'slide'] as const;
 
 type Tap = { at: number; x: number; y: number; text: string; color: string; count: number };
 
 
-/** Opacity for a figure at screen x: fades over 30 units at both screen edges, starting 30 inside. */
-const edgeFade = (sx: number) => Math.max(0, Math.min(1, (SCENE_W - sx) / 30, (sx + 0) / 30));
 
 /** Per-shop character seed (stable crowd per neighbourhood). */
 const seedFor = (id: string) => Array.from(id).reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 997, 7) * 97;
@@ -90,7 +82,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const fp = shop.footprint;
   // Mutable per-mount scratch that does not drive rendering on its own: tap pills and the rush burst
   // (written in the tap handler) and the cash pop (written in the payout effect below).
-  const mem = useRef({ phases: [] as number[], lastPopAt: 0, lastSold: -1, shopId: '', pop: null as null | { at: number; text: string }, taps: [] as Tap[], rushAt: -9 });
+  const mem = useRef({ phases: [] as number[], lastPopAt: 0, lastSold: -1, pop: null as null | { at: number; text: string }, taps: [] as Tap[], rushAt: -9 });
 
   const ovenCount = Math.min(FOOTPRINTS[fp].ovenSlots, 1 + Math.floor((shop.ovens - 1) / 8));
   const cookCount = Math.min(3, 1 + Math.floor((shop.prep - 1) / 15));
@@ -104,104 +96,29 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const running = shop.managed || shop.queued > 0.01;
   const rate = Game.shopRate(shop, game.vehicle);
   const pace = running ? Math.min(2.6, 0.8 + Math.log10(1 + rate)) : 0;
-  const t = clock * pace;
-  // Arm work and eating run on a 7.5 Hz pose clock (every other frame), so a figure's limbs keep the same
-  // props across two frames and their memo holds; placement and walking still move at the full 15 fps.
-  const poseClock = Math.floor(clock * 7.5) / 7.5;
-  const pt = poseClock * pace;
   const fit = sceneFit(width, height);
   const frontY = P(0, 0)[1];
   const shopSeed = seedFor(id);
   const nIdx = Math.max(0, NEIGHBORHOODS.findIndex((n) => n.id === id));
-  // a short blink every few seconds per person
-  const blinkAt = (sd: number) => (clock + (sd % 37) * 0.31) % 3.7 < 0.13;
   const pal = useMemo(
     () => seatPalette(hash32(shopSeed) % GUEST_SHIRTS.length, hash32(shopSeed + 9) % HAIR_COLORS.length, GUEST_SHIRTS.length, HAIR_COLORS.length, lay.tables.length),
     [shopSeed, lay.tables.length],
   );
 
-  // ---- people
+  // ---- people (pure cast builder) + furniture, painter-sorted by depth
   type Item = { y: number; el: ReactElement };
-  const items: Item[] = [];
-  const driverCount = Math.min(shop.drivers, lay.spots.length * 3, 2 + fp);
-  const phases: number[] = [];
-  for (let i = 0; i < driverCount; i++) {
-    const jitter = (hash32(shopSeed + i * 17) % 100) / 2500;
-    const p = driverPhase(i, driverCount, t, jitter);
-    phases.push(p);
-    if (!running && i > 0) continue;
-    const spot = lay.spots[i % lay.spots.length];
-    const dp = running ? driverPose(lay, i, p, SCENE_W) : null;
-    const [x, y] = dp ? dp.pos : [spot.x, spot.y];
-    // fade out across the right edge of the screen instead of piling up there
-    const o = edgeFade(P(x, y)[0]);
-    if (o <= 0) continue; // off-screen: don't keep an invisible figure mounted
-    const sd = shopSeed + i + 10;
-    items.push({
-      y,
-      el: <Person key={`d${i}`} x={x} y={y} kind="driver" seed={sd} blink={blinkAt(sd)} carry={!!dp?.carry} carryWalk={!!dp && dp.carry && dp.walking} step={dp?.walking ? clock * 12 : 0} arm={0} flip={!!dp?.face} o={o} mood={dp?.leaving ? 'o' : 'smile'} />,
-    });
-  }
-  const guestCount = running ? Math.min(4, Math.ceil(lay.tables.length / 2)) : 0;
-  const fixedFill = Math.min(1, 0.4 + shop.tables / 40);
-  for (let i = 0; i < guestCount; i++) {
-    const cyc = t / 9 + 0.3 + i / Math.max(2, guestCount);
-    const lap = Math.floor(cyc);
-    const g = guestPose(lay, i, ((cyc % 1) + 1) % 1, SCENE_W);
-    // a different customer every visit, and different crowds in every shop
-    const gSeed = shopSeed + i * 2 + 3 + lap * 13;
-    const seated = g.stage === 'seated';
-    const bite = Math.abs(Math.sin(poseClock * 2 + i));
-    const mood: Mood = seated ? (bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile') : 'smile';
-    const go = edgeFade(P(g.pos[0], g.pos[1])[0]);
-    if (go <= 0) continue;
-    items.push({
-      y: g.pos[1] - 0.3,
-      el: <Person key={`g${i}`} x={g.pos[0]} y={g.pos[1]} kind={seated ? 'sit' : 'guest'} seed={gSeed} shirt={GUEST_SHIRTS[pal.walkShirt(i, lap)]} hair={HAIR_COLORS[pal.walkHair(i, lap)]} o={go} flip={g.face} step={g.walking ? clock * 12 : 0} talk={g.stage === 'order' && Math.sin(clock * 9) > -0.2} mood={mood} blink={blinkAt(gSeed)} arm={seated ? bite * 2 : 0} />,
-    });
-  }
+  const { cast, phases } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal });
+  const items: Item[] = cast.map((c) => ({ y: c.sortY, el: <Person key={c.key} {...c.props} /> }));
   // tables + seated diners: chairs, then the diner, then the table over their lap
-  const regulars = running ? Math.max(1, Math.round(lay.tables.length * fixedFill)) : 1; // someone is always eating
   lay.tables.forEach((tb, i) => {
     if (lay.tables.length === 1) items.push({ y: tb.y + 12, el: <Rug key="rug" x={tb.x} y={tb.y} /> });
     items.push({ y: tb.y + 0.6, el: <Table key={`tb${i}`} x={tb.x} y={tb.y} tier={shop.decor.tables} part="back" /> });
     items.push({ y: tb.y - 0.6, el: <Table key={`tf${i}`} x={tb.x} y={tb.y} tier={shop.decor.tables} part="front" /> });
-    if (i >= regulars) return;
-    const dSeed = shopSeed + i * 3 + 7 + Math.floor(t / 14 + i * 0.37) * 29;
-    const bite = Math.abs(Math.sin(poseClock * 2 + i));
-    const act = SEATED_ACTS[(hash32(dSeed) >>> 3) % 4];
-    const side = i % 2 ? SEAT : -SEAT;
-    items.push({ y: tb.y, el: <Person key={`s${i}`} x={tb.x + side} y={tb.y} kind="sit" flip={i % 2 === 1} seed={dSeed} act={act} shirt={GUEST_SHIRTS[pal.shirt(i)]} hair={HAIR_COLORS[pal.hair(i)]} blink={blinkAt(dSeed)} arm={bite * 2} mood={act === 'slice' || bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile'} /> });
-    // a busy room seats a companion opposite, on tables no walk-in is heading for
-    const cx = tb.x - side;
-    const crowded = lay.tables.some((o) => o !== tb && Math.abs(o.y - tb.y) < 32 && (Math.abs(o.x - SEAT - cx) < 18 || Math.abs(o.x + SEAT - cx) < 18));
-    if (running && i >= guestCount && !crowded && (shop.tables >= 13 ? i % 2 === 0 : fixedFill >= 0.6 && hash32(dSeed + 1) % 3 !== 0)) {
-      const cSeed = dSeed + 501;
-      const cb = Math.abs(Math.sin(poseClock * 2 + i + 1.7));
-      items.push({ y: tb.y - 0.1, el: <Person key={`s2${i}`} x={cx} y={tb.y} kind="sit" flip={i % 2 === 0} seed={cSeed} act={COMPANION_ACTS[(hash32(cSeed) >>> 3) % 4]} shirt={GUEST_SHIRTS[pal.companionShirt(i)]} hair={HAIR_COLORS[pal.companionHair(i)]} blink={blinkAt(cSeed)} arm={cb * 2} mood={cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile'} /> });
-    }
   });
   // potted plants (plants decor); the corner fern only stands in a starter room, before a front row of tables
   if (plants >= 1 && !lay.tables.some((tb) => tb.y === FRONT_ROW_Y)) items.push({ y: 2, el: <FloorPlant key="pp1" x={lay.L + 4} y={2} k={0.8} /> });
   if (plants >= 3) items.push({ y: 112, el: <WallPlanter key="pp4" lay={lay} /> });
-  // kitchen crew + furniture
-  const cookY = lay.cooks.length === 1 ? 74 : 92;
-  lay.cooks.forEach((x, i) => {
-    const sd = shopSeed + i * 4 + 20;
-    items.push({ y: cookY + (i % 2) * 8, el: <Person key={`c${i}`} x={x} y={cookY + (i % 2) * 8} kind="cook" gold={shop.prep >= 100} front act={COOK_ACTS[i % 3]} mood={running && Math.sin(pt * 4 + i) > 0.3 ? 'focus' : 'smile'} seed={sd} blink={blinkAt(sd)} arm={running ? Math.abs(Math.sin(pt * 4 + i)) * 3 : 0} /> });
-  });
   items.push({ y: 66, el: <PrepBench key="prep" lay={lay} prep={shop.prep} dough={shop.managed ? 3 : Math.max(2, Math.min(8, Math.ceil(shop.queued / 1.5)))} /> });
-  // bakers in front of the oven bank; the one by the counter holds the peel upright so it clears the counter
-  const bBase = nIdx % 3;
-  lay.bakers.forEach((b, i) => {
-    const sd = shopSeed + i * 3 + 31 + nIdx * 7;
-    const ci = (bBase + i) % 3;
-    items.push({ y: b.y, el: <Person key={`b${i}`} x={b.x} y={b.y} shirt={BAKER_SHIRTS[ci]} kind="baker" seed={sd} blink={blinkAt(sd)} arm={running ? Math.abs(Math.sin(pt * 3 + i)) * 2.5 : 0} peelK={b.nearCounter ? 0.7 : 1} act={b.nearCounter ? 'peel' : BAKER_ACTS[(i + bBase) % 3]} dot={BAKER_DOTS[(ci + 1) % 3]} /> });
-  });
-  lay.staff.forEach((x, i) => {
-    const sd = shopSeed + i * 5 + 41;
-    items.push({ y: 92, el: <Person key={`st${i}`} x={x} y={92} kind="staff" front alt={i === 1} cap={STAFF_CAPS[nIdx]} seed={sd} blink={blinkAt(sd)} arm={running ? Math.abs(Math.sin(pt * 5 + i * 2)) * 2 : 0} /> });
-  });
   items.push({ y: 64, el: <Counter key="counter" lay={lay} boxes={running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0} /> });
   // front of the shop + sidewalk props
   items.push({ y: 0, el: <FrontWall key="front" lay={lay} name={nd.name} signage={shop.decor.signage} plants={plants} /> });
@@ -231,8 +148,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const valuePer = Game.valuePerPizza(id, shop, game.vehicle);
   useEffect(() => {
     const m = mem.current;
-    if (m.shopId !== id || m.lastSold > shop.sold || m.lastSold < 0) {
-      m.shopId = id;
+    if (m.lastSold > shop.sold || m.lastSold < 0) {
       m.lastSold = shop.sold;
       m.pop = null;
       m.phases = phases;
@@ -286,7 +202,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         }}>
         <Svg width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
           <SceneDefs />
-          <Backdrop id={id} wide={lay.L < 30} />
+          <Backdrop id={id} L={lay.L} R={lay.R} />
           {CLOUDS.map((c, i) => (
             <Cloud key={i} x={((c.x0 + clock * c.v) % DRIFT_SPAN) - 100} y={c.y} k={c.k} dusk={id === 'uptown'} />
           ))}

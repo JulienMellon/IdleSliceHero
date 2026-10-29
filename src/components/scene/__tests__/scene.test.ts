@@ -169,16 +169,18 @@ describe('driver and walk-in timelines (T6)', () => {
       }
     }
   });
-  test('walk-ins reach their chair from the aisle behind the table, not through it', () => {
-    for (let i = 0; i < 4; i++) {
-      const table = lay.tables[i];
-      for (let k = 0; k <= 40; k++) {
-        const g = guestPose(lay, i, 0.42 + (0.08 * k) / 40, SCENE_W);
-        // while walking to the seat, a guest is never in front of the table's depth within its width
-        const overTable = Math.abs(g.pos[0] - table.x) < SEAT - 6 && g.pos[1] < table.y + 6;
-        expect(overTable).toBe(false);
+  test('walk-ins reach their chair without walking through their table', () => {
+    for (const [name, l] of allLayouts()) {
+      const n = Math.min(4, Math.ceil(l.tables.length / 2));
+      for (let i = 0; i < n; i++) {
+        const table = l.tables[i];
+        for (let k = 0; k <= 40; k++) {
+          const g = guestPose(l, i, 0.42 + (0.08 * k) / 40, SCENE_W);
+          const throughTable = Math.abs(g.pos[0] - table.x) < SEAT - 6 && Math.abs(g.pos[1] - table.y) < 14;
+          expect([name, i, throughTable]).toEqual([name, i, false]);
+        }
+        expect(guestPose(l, i, 0.6, SCENE_W).stage).toBe('seated');
       }
-      expect(guestPose(lay, i, 0.6, SCENE_W).stage).toBe('seated');
     }
   });
 });
