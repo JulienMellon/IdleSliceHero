@@ -116,10 +116,8 @@ function Scenery({ id }: { id: BackdropId }) {
           <Path d="M30 175 L30 110 L80 130 L80 110 L130 130 L130 110 L180 130 L180 175 Z" fill="#9C8B7A" stroke={INK} strokeWidth={3} />
           <Rect x={210} y={60} width={24} height={115} fill="#8B5A3C" stroke={INK} strokeWidth={2.5} />
           <Rect x={250} y={80} width={24} height={95} fill="#8B5A3C" stroke={INK} strokeWidth={2.5} />
-          <G opacity={0.75}>
-            <Circle cx={222} cy={45} r={14} fill="#DADADA" />
-            <Circle cx={240} cy={30} r={18} fill="#DADADA" />
-          </G>
+          {/* one path, one fill: no overlap seam (critic D162) */}
+          <Path d="M208 45 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z M222 30 a18 18 0 1 0 36 0 a18 18 0 1 0 -36 0 Z" fill="#DADADA" opacity={0.75} />
           <Rect x={300} y={120} width={80} height={55} fill="#E67E22" stroke={INK} strokeWidth={2.5} />
         </G>
       );
@@ -178,7 +176,10 @@ function Scenery({ id }: { id: BackdropId }) {
             const y = -280 + ((i * 97) % 470);
             return <Path key={i} d={`M${x} ${y} l-6 18`} stroke="#B9C6FF" strokeWidth={2} opacity={0.55} strokeLinecap="round" />;
           })}
-          <Rect x={0} y={192} width={400} height={8} fill="#2A2840" />
+          {/* wet sidewalk and kerb under the shop (critic D162) */}
+          <Rect x={0} y={186} width={400} height={14} fill="#4A4566" />
+          <Rect x={0} y={186} width={400} height={3} fill="#3A3550" />
+          <Path d="M150 194 q10 -2 20 0 M232 196 q12 -2 24 0" stroke="#8D86B8" strokeWidth={1.4} opacity={0.6} fill="none" />
         </G>
       );
     case 'megaslice-hq':

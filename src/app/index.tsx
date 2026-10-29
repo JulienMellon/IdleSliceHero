@@ -82,10 +82,13 @@ export default function GameScreen() {
   }
 
   const queueFull = !shop.managed && shop.queued > TUNING.tapQueueMax - 1;
+  const neckCost = G.upgradeCostOf(game, id, neck === 'customers' ? 'drivers' : neck);
   const neckUpgrade = neck === 'customers' ? 'drivers' : neck === 'ovens' ? 'oven' : neck === 'prep' ? 'prep cooks' : 'counter staff';
   const subtitle = !shop.managed
     ? queueFull
-      ? neck === 'ovens' ? 'Kitchen full — upgrade your ovens!' : `Kitchen full — hire more ${neckUpgrade}!`
+      ? neckCost !== null && game.cash < neckCost
+        ? `Kitchen full — save ${money(neckCost)} for more ${neck === 'ovens' ? 'ovens' : neckUpgrade}`
+        : neck === 'ovens' ? 'Kitchen full — upgrade your ovens!' : `Kitchen full — hire more ${neckUpgrade}!`
       : id === 'downtown'
         ? 'Tap the kitchen to bake each batch!'
         : 'Tap to bake here · or hire a manager'

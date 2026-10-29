@@ -17,7 +17,7 @@ export const LOOKS: Record<CharacterId, Look> = {
   dale: { skin: '#F5D0B0', hair: '#7A4A26', shirt: '#2F80ED', hairStyle: 'short', hat: 'cap', extra: 'whistle' },
   marisol: { skin: '#C98F63', hair: '#F4F1EC', shirt: '#1F4E79', hairStyle: 'long', hat: 'captain' },
   priya: { skin: '#B07A52', hair: '#1E1414', shirt: '#9B51E0', hairStyle: 'long', extra: 'glasses' },
-  'big-sal': { skin: '#E8B88E', hair: '#5A5A5A', shirt: '#E67E22', hairStyle: 'bald', hat: 'hardhat', extra: 'mustache' },
+  'big-sal': { skin: '#E8B88E', hair: '#4A3A33', shirt: '#E67E22', hairStyle: 'bald', hat: 'hardhat', extra: 'mustache' },
   genevieve: { skin: '#F6DCC8', hair: '#222222', shirt: '#111111', hairStyle: 'bob', hat: 'beret', extra: 'pearls' },
   'victor-crust': { skin: '#E9C4A6', hair: '#1A1A1A', shirt: '#2C2C3A', hairStyle: 'slick', extra: 'tie' },
   'megaslice-rep': { skin: '#F0C8A8', hair: '#C2A15A', shirt: '#7B2CBF', hairStyle: 'slick', extra: 'tie' },
@@ -149,9 +149,9 @@ export function Portrait({ id, mood = 'neutral', size = 120, flip = false }: { i
       {L.hairStyle === 'slick' && <Path d="M27 42 Q28 22 52 23 Q74 24 73 42 Q66 30 40 32 Z" fill={L.hair} stroke={INK} strokeWidth={2} />}
       {/* tapered sideburns (critic D148) */}
       {L.hairStyle === 'bald' && (
-        <G fill={L.hair}>
-          <Path d="M26.5 39 Q29.5 38 30 41 L29 52 Q27 51 26.5 48 Z" />
-          <Path d="M73.5 39 Q70.5 38 70 41 L71 52 Q73 51 73.5 48 Z" />
+        <G fill={L.hair} stroke={INK} strokeWidth={1}>
+          <Path d="M26.5 40 Q29.5 38.5 30.5 42 L33 53 Q36 55.5 39 56 Q32 58.5 28.5 54 Q26.5 49 26.5 40 Z" />
+          <Path d="M73.5 40 Q70.5 38.5 69.5 42 L67 53 Q64 55.5 61 56 Q68 58.5 71.5 54 Q73.5 49 73.5 40 Z" />
         </G>
       )}
       <Face mood={mood} />
@@ -162,7 +162,7 @@ export function Portrait({ id, mood = 'neutral', size = 120, flip = false }: { i
           <Path d="M49 47 L51 47" />
         </G>
       )}
-      {L.extra === 'mustache' && <Path d="M38 56 Q44 52 50 56 Q56 52 62 56 Q56 60 50 57 Q44 60 38 56 Z" fill="#5A5A5A" stroke={INK} strokeWidth={1.6} />}
+      {L.extra === 'mustache' && <Path d="M38 56 Q44 52 50 56 Q56 52 62 56 Q56 60 50 57 Q44 60 38 56 Z" fill={L.hair} stroke={INK} strokeWidth={1.4} />}
       {/* hats */}
       {L.hat === 'captain' && (
         <G stroke={INK} strokeWidth={2}>

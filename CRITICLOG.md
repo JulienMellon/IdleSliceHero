@@ -783,3 +783,46 @@ Typecheck clean, 30 tests pass, `report.json` errors: [].
 | D150 | Up to 4 walk-ins animate per shop, phased evenly; the fixed diners re-roll their look every ~14 s |
 
 Typecheck clean, 30 tests pass, `report.json` errors: [].
+
+## v2.6 — critique (round 21) — ❌ NOT SATISFIED
+
+**VERDICT: NOT SATISFIED** — loads clean; most round-20 fixes show in the pixels (cook spacing and jobs, readable traits, wood chairs, entrance brickwork, flat mat, billboard, late-game goals). Still failing the stricter bar: the door lintel slices walkers, drivers stack at the counter, bakers are a fused row in identical uniforms, the 4-table dining room is mostly empty, and Prep is a bare box.
+
+**Fixed:** G58, D151, D139, D140, D141, D143, D145, D146, D149, D150 (regression → D154), D144 · **Still open:** D138 (bakers → D153), D142 (→ D157), D147 (→ G60), D148 (→ D162)
+
+**Bugs**
+- G59 Walkers just inside the door pass behind the lintel and PIZZERIA band (headless figures)
+- G60 Tab fade has no height (renders as a wedge); the end-of-list scroll clamp leaves a sliver
+
+**Visual design**
+- D152 [major] Drivers stack at pickup (17-unit spots, ~22-wide bodies) → 26 spacing, half-spot row offset, cap to what fits
+- D153 [major] Bakers a fused row in one shirt → ≥36 apart or staggered in depth, three shirt colours, peels angled apart
+- D154 [major] Dining room reads empty (every table animated, no fixed diners) → animate ceil(tables/2), fixed diners elsewhere
+- D155 [major] Prep is a plain box at every level → steel-topped wooden bench with legs, plank front, undershelf of flour sacks; tools appear at Lv 25 / 50
+- D156 [major] Clone diners (near-duplicate shirt colours) → distinct palette, concurrent guests never share a shirt
+- D157–D163 [minor] Marble veins read as noodles; entrance glass clutter; blade sign hangs inside the room; front-left chair clipped by the pilaster; right floor plant sits in the door jamb; cut-scene kerb, Big Sal's sideburns, smoke seam; the rush tap needs a coin burst + oven pulse
+
+**Design notes**
+- D164 "Kitchen full — hire more drivers!" when drivers are unaffordable → "save $X" · D165 Seating level barely changes how full the room looks
+
+## v2.7 — build (addresses round 21)
+
+| Note | Fix |
+| --- | --- |
+| G59 | Door opening raised: lintel at z 108–122 and the leaf 104 tall, so a figure just inside the door fits under it |
+| G60 | Tab fades are full height (`height="100%"` + stretched viewBox); snap offsets are limited to what the strip can reach, and the active-tab scroll picks the last reachable tab edge, so the end clamp leaves no sliver |
+| D152 | Pickup spots 26 apart, second row offset half a spot (13) and 22 nearer the street; visible waiting drivers capped at what fits |
+| D153 | Bakers alternate depth by 12 and wear three shirt colours (#B23A48 / #7E3A8E / #2E6E8E); peels tilt back toward their own baker |
+| D154 / D165 | Walk-ins animate at ceil(tables / 2) (max 4); the other tables keep fixed diners, filled at 40% + Seating level / 40 (full by ~Lv 24) |
+| D155 | Prep is a steel-topped wooden bench: a #AEB4BB/#DDE2E7 steel top with a white lip, a #9A6A44 plank skirt, four legs, and an undershelf of two FLOUR sacks. A rolling pin appears at Prep Lv 25 and a sauce pot at Lv 50 |
+| D156 | Guest palette has no near-duplicates (#3D9970, #E07A5F replace two); walk-ins and fixed diners take shirts by offset from a per-shop base, so concurrent people never match |
+| D157 | Marble veins are short two-segment strokes (#A79E92, 0.6 opacity) scattered per tile; white companion line dropped |
+| D158 | Display stand drawn over the glass at 0.85; EST line removed; one glint; decal raised clear of the stand |
+| D159 | PIZZA blade sign hangs off the right pilaster over the sidewalk (flat on the brick header on the widest shop, where there's no room) |
+| D160 | Tables start at L + 32, clear of the left pilaster |
+| D161 | Right floor plant moved to the back-right corner, out of the door path |
+| D162 | Opening cut-scene: wet sidewalk + #3A3550 kerb under the shop. Big Sal's sideburns are outlined #4A3A33 wedges joined to a moustache of the same colour. Industrial smoke is one path with one fill |
+| D163 | Rush tap: the oven bank pulses (0.15 s) and throws 6 coins that arc out and fall, drawn above everyone |
+| D164 | A full kitchen whose bottleneck upgrade is unaffordable says "Kitchen full — save $X for more drivers" |
+
+Typecheck clean, 30 tests pass, `report.json` errors: [].

@@ -22,13 +22,18 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
     xs.current[i] = e.nativeEvent.layout.x;
     if (xs.current.filter((v) => v !== undefined).length === NEIGHBORHOODS.length) setOffsets(xs.current.map((x, i) => (i === 0 ? 0 : x - 6)));
   };
+  const [dims, setDims] = useState({ content: 0, view: 0 });
+  const maxScroll = Math.max(0, dims.content - dims.view);
+  // only snap to offsets the strip can actually reach, so the end clamp never leaves a sliver (critic G60)
+  const reachable = offsets.filter((o) => o <= maxScroll + 0.5);
   useEffect(() => {
-    const x = offsets[Math.max(0, activeIdx - 1)] ?? 0;
+    const want = offsets[Math.max(0, activeIdx - 1)] ?? 0;
+    const x = reachable.filter((o) => o <= want).pop() ?? 0;
     scroller.current?.scrollTo({ x, animated: true });
-  }, [activeIdx, offsets]);
+  }, [activeIdx, offsets, maxScroll]);
   return (
     <View style={styles.tabsWrap}>
-      <ScrollView ref={scroller as never} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} snapToOffsets={offsets.length ? offsets : undefined} decelerationRate="fast">
+      <ScrollView ref={scroller as never} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} snapToOffsets={reachable.length ? reachable : undefined} decelerationRate="fast" onLayout={(e) => setDims((d) => ({ ...d, view: e.nativeEvent.layout.width }))} onContentSizeChange={(w) => setDims((d) => ({ ...d, content: w }))}>
         {NEIGHBORHOODS.map((n, i) => {
           const shop = game.shops[n.id];
           const active = game.active === n.id;
@@ -67,7 +72,7 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
       </ScrollView>
       {/* edge fades so a clipped tab reads as "scroll for more" (critic D122) */}
       {(['l', 'r'] as const).map((side) => (
-        <Svg key={side} width={30} style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]} viewBox="0 0 30 10" preserveAspectRatio="none" pointerEvents="none">
+        <Svg key={side} width={30} height="100%" style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]} viewBox="0 0 30 10" preserveAspectRatio="none" pointerEvents="none">
           <Defs>
             <LinearGradient id={`tf-${side}`} x1={side === 'l' ? '0' : '1'} y1="0" x2={side === 'l' ? '1' : '0'} y2="0">
               <Stop offset="0" stopColor="#B52C1C" stopOpacity={1} />
