@@ -1200,3 +1200,22 @@ Typecheck clean, 44 tests pass (14 new scene tests), `report.json` errors: [].
 | D263 | Affordable buttons that add $0/s now use the soft tone (the `useless` prop was declared but never used) |
 
 Typecheck clean, 50 tests pass, `report.json` errors: [].
+
+## v3.1 — critique (round 32) — ❌ NOT SATISFIED (no bugs, no [major] notes, 7 [minor])
+
+**VERDICT: NOT SATISFIED.** v3.1 loads clean and the caching left no visible artefacts. The counter lane moved the walk-in overlap instead of removing it. The Flagship back row and the Uptown rail still look unchanged.
+
+**Fixed:** D256, D257, D260, D261, D262, D263 · **Still open:** D255 (→ D264), D258 (→ D266), D259 (→ D267)
+
+**Visual design (all [minor])**
+- D264: the y 57 lane crosses the baker, and the pickup driver covers walk-ins as they order. Use a y 52 lane, or have walk-ins wait at `counter.x1 + 10` until the spot is clear.
+- D265: walk-ins and drivers stack at the −30 outside pause. Offset the guest pause 14 left, or stagger it by index.
+- D266: the Flagship back row still sits on the front-row heads. Move it to y 42, or drop the back-row seats that sit within 10 of a front-row head.
+- D267: the Uptown rail and panels are still flat. Use a 3-unit rail with a #FFE08A top highlight and raise the highlight opacity.
+- D268: cars in the two street lanes overlap. Move lane 1 down 8, or shrink the vehicles by 10%.
+- D269: the Flagship shows a blue-barrel sliver and an edge-cut tree. Hide the barrel when `L < 30`, and pin the pot at x ≥ 6.
+- D270: drawer lines wrap badly ("now" orphaned, "9.3 / walk-ins/s"). Use non-breaking spaces, or shorten the lines.
+
+**Design notes**
+- D271: a need-cash toast stays up after the player can afford the upgrade.
+- D272: soft $0/s buttons need a small "no gain now" label.
