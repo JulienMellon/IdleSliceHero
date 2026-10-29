@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 440" role="img" aria-label="Every ad and purchase passes through two managers" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13">
+  <defs>
+    <marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#6b7280"/>
+    </marker>
+  </defs>
+  <text x="24" y="34" font-size="15" font-weight="600" fill="#111827">Every ad and purchase passes through two managers</text>
+
+  <g fill="none" stroke="#6b7280" stroke-width="1.25">
+    <path d="M214 92H290" marker-end="url(#arch-arrow)"/>
+    <path d="M214 188H252V116H290" marker-end="url(#arch-arrow)"/>
+    <path d="M490 92H548" marker-end="url(#arch-arrow)"/>
+    <path d="M390 128V168" marker-end="url(#arch-arrow)"/>
+    <path d="M390 256V224" marker-end="url(#arch-arrow)"/>
+    <path d="M214 284H290" marker-end="url(#arch-arrow)"/>
+    <path d="M490 284H548" marker-end="url(#arch-arrow)"/>
+    <path d="M390 312V344" marker-end="url(#arch-arrow)"/>
+    <path d="M642 312V344" marker-end="url(#arch-arrow)"/>
+  </g>
+
+  <!-- Left column: what triggers ads and purchases -->
+  <g>
+    <rect x="24" y="56" width="190" height="72" rx="8" fill="none" stroke="#6b7280" stroke-width="1.25"/>
+    <text x="40" y="80" font-weight="600" fill="#111827">Rewarded placements</text>
+    <text x="40" y="96" font-size="11.5" fill="#4b5563">offline 2x, golden box,</text>
+    <text x="40" y="112" font-size="11.5" fill="#4b5563">boosters, ad sequence</text>
+  </g>
+  <g>
+    <rect x="24" y="152" width="190" height="72" rx="8" fill="none" stroke="#6b7280" stroke-width="1.25"/>
+    <text x="40" y="176" font-weight="600" fill="#111827">Break triggers</text>
+    <text x="40" y="192" font-size="11.5" fill="#4b5563">drawer close, tab switch,</text>
+    <text x="40" y="208" font-size="11.5" fill="#4b5563">cut-scene end</text>
+  </g>
+  <g>
+    <rect x="24" y="256" width="190" height="56" rx="8" fill="none" stroke="#6b7280" stroke-width="1.25"/>
+    <text x="40" y="280" font-weight="600" fill="#111827">Store and Punch Card</text>
+    <text x="40" y="296" font-size="11.5" fill="#4b5563">diamonds, cash, Remove Ads</text>
+  </g>
+
+  <!-- Middle column: the two managers (highlighted) and shared cache -->
+  <g>
+    <rect x="290" y="56" width="200" height="72" rx="8" fill="#2563eb" fill-opacity="0.12" stroke="#2563eb" stroke-width="2"/>
+    <text x="306" y="80" font-weight="600" fill="#111827">AdManager</text>
+    <text x="306" y="96" font-size="11.5" fill="#111827">showRewarded()</text>
+    <text x="306" y="112" font-size="11.5" fill="#111827">maybeShowInterstitial()</text>
+  </g>
+  <g>
+    <rect x="290" y="168" width="200" height="56" rx="8" fill="none" stroke="#6b7280" stroke-width="1.25"/>
+    <text x="306" y="192" font-weight="600" fill="#111827">Entitlements</text>
+    <text x="306" y="208" font-size="11.5" fill="#4b5563">no_ads and stamps, cached</text>
+  </g>
+  <g>
+    <rect x="290" y="256" width="200" height="56" rx="8" fill="#2563eb" fill-opacity="0.12" stroke="#2563eb" stroke-width="2"/>
+    <text x="306" y="280" font-weight="600" fill="#111827">PurchaseManager</text>
+    <text x="306" y="296" font-size="11.5" fill="#111827">buy, restore, refund events</text>
+  </g>
+
+  <!-- Right column: third-party SDKs -->
+  <g>
+    <rect x="548" y="56" width="188" height="72" rx="8" fill="none" stroke="#6b7280" stroke-width="1.25"/>
+    <text x="564" y="80" font-weight="600" fill="#111827">AdMob</text>
+    <text x="564" y="96" font-size="11.5" fill="#4b5563">Rewarded and interstitial</text>
+    <text x="564" y="112" font-size="11.5" fill="#4b5563">needs a development build</text>
+  </g>
+  <g>
+    <rect x="548" y="256" width="188" height="56" rx="8" fill="none" stroke="#6b7280" stroke-width="1.25"/>
+    <text x="564" y="280" font-weight="600" fill="#111827">RevenueCat</text>
+    <text x="564" y="296" font-size="11.5" fill="#4b5563">purchases and entitlements</text>
+  </g>
+
+  <!-- Bottom: Supabase edge functions -->
+  <g>
+    <rect x="290" y="344" width="446" height="72" rx="8" fill="none" stroke="#6b7280" stroke-width="1.25"/>
+    <text x="306" y="368" font-weight="600" fill="#111827">Supabase edge functions</text>
+    <text x="306" y="384" font-size="11.5" fill="#4b5563">rc-webhook, sync-state, restore-state</text>
+    <text x="306" y="400" font-size="11.5" fill="#4b5563">paid players only: one row per customer</text>
+  </g>
+
+  <!-- Connector labels -->
+  <text x="400" y="152" font-size="11.5" fill="#4b5563">checks no_ads first</text>
+  <text x="400" y="244" font-size="11.5" fill="#4b5563">updates stamps</text>
+  <text x="400" y="334" font-size="11.5" fill="#4b5563">state sync</text>
+  <text x="652" y="334" font-size="11.5" fill="#4b5563">webhook</text>
+</svg>
