@@ -30,7 +30,20 @@ export function P(x: number, y: number, z = 0): [number, number] {
 export const kAt = (y: number) => (1 - y / 520) * SC;
 export const pts = (list: [number, number][]) => list.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
 
+/** Lighten (k > 0) or darken (k < 0) a #rrggbb colour. Cached: the scene asks for a small fixed set every frame. */
 export function shade(hex: string, k: number) {
+  const key = hex + k;
+  let v = shadeCache.get(key);
+  if (v === undefined) {
+    v = shadeRaw(hex, k);
+    if (shadeCache.size >= 512) shadeCache.clear(); // bounded; real use stays well under this
+    shadeCache.set(key, v);
+  }
+  return v;
+}
+const shadeCache = new Map<string, string>();
+
+export function shadeRaw(hex: string, k: number) {
   const n = parseInt(hex.slice(1), 16);
   const ch = [n >> 16, (n >> 8) & 255, n & 255].map((c) => Math.max(0, Math.min(255, Math.round(k > 0 ? c + (255 - c) * k : c * (1 + k)))));
   return '#' + ch.map((c) => c.toString(16).padStart(2, '0')).join('');

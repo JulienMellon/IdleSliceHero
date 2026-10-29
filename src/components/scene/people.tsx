@@ -1,4 +1,6 @@
+import { memo, type ReactElement } from 'react';
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
+import { Lru, quantArm, quantStep } from './cache';
 import { INK, P, kAt, shade } from './projection';
 
 export type Kind = 'cook' | 'baker' | 'staff' | 'driver' | 'guest' | 'sit';
@@ -160,10 +162,38 @@ export interface PersonProps {
   o?: number;
 }
 
-export function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, carryWalk = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false, hair, peelK = 1 }: PersonProps) {
-  const pin = act === 'pin';
+/** The figure's look and discrete pose — everything except where it stands. */
+type FigureProps = Omit<PersonProps, 'x' | 'y' | 'o'>;
+
+// Figures are drawn at the origin and cached as elements keyed on look + quantised pose, so a person whose
+// pose hasn't changed since an earlier frame reuses that element and React skips the whole subtree.
+const figures = new Lru<ReactElement>(768);
+
+function figureKey(p: FigureProps) {
+  return `${p.kind}|${p.seed ?? 0}|${p.shirt ?? ''}|${p.hair ?? ''}|${p.cap ?? ''}|${p.dot ?? ''}|${p.gold ? 1 : 0}${p.alt ? 1 : 0}${p.flip ? 1 : 0}${p.front ? 1 : 0}${p.blink ? 1 : 0}${p.talk ? 1 : 0}${p.carry ? 1 : 0}${p.carryWalk ? 1 : 0}|${p.act ?? 'none'}|${p.mood ?? 'smile'}|${p.arm ?? 0}|${(p.step ?? 0).toFixed(2)}|${p.peelK ?? 1}`;
+}
+
+/** One chibi figure in the scene. Placement (translate, depth scale, fade) is cheap; the body is cached. */
+export function Person({ x, y, o = 1, arm = 0, step = 0, flip = false, ...rest }: PersonProps) {
+  if (o <= 0) return null;
   const [sx, sy] = P(x, y);
   const k = kAt(y) * 1.14;
+  const fp: FigureProps = { ...rest, arm: quantArm(arm), step: quantStep(step), flip };
+  const key = figureKey(fp);
+  let el = figures.get(key);
+  if (!el) {
+    el = <Figure {...fp} />;
+    figures.set(key, el);
+  }
+  return (
+    <G opacity={o} transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${(flip ? -k : k).toFixed(3)} ${k.toFixed(3)})`}>
+      {el}
+    </G>
+  );
+}
+
+const Figure = memo(function Figure({ kind, shirt, arm = 0, flip = false, carry = false, carryWalk = false, step = 0, seed = 0, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false, hair, peelK = 1 }: FigureProps) {
+  const pin = act === 'pin';
   const sitting = kind === 'sit';
   const worker = kind === 'cook' || kind === 'baker' || kind === 'staff' || kind === 'driver';
   const look = lookFor(seed, worker);
@@ -210,7 +240,7 @@ export function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false
   const backHand: [number, number] = carry && carryWalk ? [-4, by + 10] : pin ? [hand[0] - 9, hand[1]] : sitting ? (act === 'lean' ? [-12, by + 3] : [-7, by + 15]) : [-8.5 - sw * 2.5, by + 15.5];
   const peel = kind === 'baker';
   return (
-    <G opacity={o} transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${(flip ? -k : k).toFixed(3)} ${k.toFixed(3)})`}>
+    <G>
       {!sitting && <Ellipse cx={0.5} cy={0} rx={11.5} ry={3.4} fill="rgba(59,31,20,0.26)" />}
       {/* legs */}
       {sitting ? (
@@ -442,4 +472,4 @@ export function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false
       )}
     </G>
   );
-}
+});

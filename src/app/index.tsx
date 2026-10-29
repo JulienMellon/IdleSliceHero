@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -25,6 +25,12 @@ export default function GameScreen() {
   const toast = useGame((s) => s.toast);
   const covered = useGame((s) => !!s.playing || !!s.offline);
   const { tapShop, buy, buyFleet, buyDecor, build, setActive, dismissOffline } = useGame.getState();
+  // stable, so the memoised scene isn't re-rendered by every 200 ms game tick
+  const onShopTap = useCallback(() => {
+    tapShop();
+    const g = useGame.getState().game;
+    if (g.shops[g.active].managed) emitPayout();
+  }, [tapShop]);
   const [area, setArea] = useState({ w: 0, h: 0 });
   // The full upgrade list opens over the shop on a tap (no gestures); a station tag can focus one card.
   const [drawer, setDrawer] = useState<{ open: boolean; focus: G.Upgrade | null }>({ open: false, focus: null });
@@ -198,16 +204,11 @@ export default function GameScreen() {
       <View style={styles.sceneArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
         {area.w > 0 && (
           <Storefront
-            game={game}
             id={id}
             width={area.w}
             height={area.h}
             paused={covered || drawer.open}
-            onTap={() => {
-              tapShop();
-              if (shop.managed) emitPayout();
-            }}
-            onStation={(k: StationKey) => openDrawer(STATION[k].what)}
+            onTap={onShopTap}
           />
         )}
         {/* upgrade row standing on the sidewalk */}
@@ -279,7 +280,7 @@ export default function GameScreen() {
                 {card('ovens', { icon: <FlameIcon size={26} />, title: 'Ovens', level: `Lv ${shop.ovens}`, detail: stationDetail('ovens', 'ovens', `${rates.ovens.toFixed(1)}/s`), hot: tied('ovens') })}
                 {card('counter', { icon: <RegisterIcon size={26} />, title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rates.counter.toFixed(1)}/s`), hot: tied('counter') })}
                 {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${G.deliveryRate(shop, v).toFixed(1)}/s`), hot: tied('customers') })}
-                {card('tables', { icon: <SeatIcon size={26} />, title: 'Seating', level: `Lv ${shop.tables}`, detail: nextTableHint === 'dining room full' ? `Dining room full · ${G.walkInRate(shop).toFixed(1)} walk-ins/s` : `${stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)} walk-ins/s`)} · ${nextTableHint}`, hot: false })}
+                {card('tables', { icon: <SeatIcon size={26} />, title: 'Seating', level: `Lv ${shop.tables}`, detail: nextTableHint === 'dining room full' ? `Dining room full · ${G.walkInRate(shop).toFixed(1)} walk-ins/s` : `${stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)} walk-ins/s`)} · ${nextTableHint}`, hot: tied('customers') })}
                 {card('grade', { icon: <SparkleIcon size={26} />, title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name} ×2 · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} ×2 · +$0/s now`) : 'Finest ovens in town' })}
                 {card('expand', { icon: <ExpandIcon size={26} />, title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : '+$0/s now'}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
                 <StationCard

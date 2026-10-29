@@ -1184,3 +1184,19 @@ Typecheck clean, 44 tests pass (14 new scene tests), `report.json` errors: [].
 **Design notes**
 - D262 The header names "drivers & seats", but only Drivers is tagged. Tag Seating too, or name a single bottleneck.
 - D263 Affordable green buttons appear next to "+$0/s now". Soften those buttons, or reword the line.
+
+## v3.1 — build (addresses round 31)
+
+| Note | Fix |
+| --- | --- |
+| D255 | Walk-ins walk to their seat (and back) along a lane in front of the counter (y 57), behind the drivers' pickup line (y 46), and only step forward once they're left of the pickup spots. A new test checks every layout so no walk-in passes in front of a pickup spot |
+| D256 | The corner fern only stands in a starter room, before there's a front row of tables |
+| D257 | Cut-scene 01 changes: <ul><li>The moon (r22, plus a soft halo) moves to (248, −26), inside the frame.</li><li>Windows are #FFD27A at 0.9, each with a 0.25 halo.</li><li>The neighbours are 60-wide towers that rise behind Rosa's roofline, with cornices, so a good width of each shows.</li></ul> |
+| D258 | The back table row moves to y 36 |
+| D259 | Uptown panels get a #B04A68 highlight (top and left) and a #5A1228 shadow (bottom and right). The picture rail is a 2-unit #D4A84A band with a #8A6A2A underside at height 150 |
+| D260 | People pause outside at y −30, past the mat. The mat now sits from −8 to −22 with WELCOME on its curb half |
+| D261 | Figures fade over 30 units at both screen edges; arriving walk-ins now fade in on the left |
+| D262 | The Seating card is tagged BOTTLENECK alongside Drivers when the shared stage is "drivers & seats" |
+| D263 | Affordable buttons that add $0/s now use the soft tone (the `useless` prop was declared but never used) |
+
+Typecheck clean, 50 tests pass, `report.json` errors: [].

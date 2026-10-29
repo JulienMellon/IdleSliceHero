@@ -9,135 +9,46 @@
 // anchored to the bottom so the sidewalk and street are always visible (taller screens show more sky).
 import { memo, useEffect, useMemo, useRef, type ReactElement } from 'react';
 import { Pressable, View } from 'react-native';
-import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
-import { FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, TUNING } from '../content/tuning';
+import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
+import { FOOTPRINTS, NEIGHBORHOODS, TUNING } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
 import * as Game from '../engine/game';
+import { useGame } from '../store/game-store';
 import { C, F } from '../theme';
 import { emitPayout } from './pulse-bus';
+import { Backdrop } from './scene/background';
 import { useClock } from './scene/clock';
-import { FRONT_ROW_Y, LEDGE_Y, SEAT, STOOL_Y, layout, type Layout } from './scene/layout';
+import { SceneDefs } from './scene/defs';
+import { FRONT_ROW_Y, LEDGE_Y, SEAT, STOOL_Y, layout } from './scene/layout';
 import { seatPalette } from './scene/palette';
 import { GUEST_SHIRTS, HAIR_COLORS, hash32, type Mood, Person } from './scene/people';
-import { Box, FloorShadow } from './scene/primitives';
-import { CURB_Y, D, FRONT_TOP, INK, P, SCENE_W, kAt, sceneFit, shade } from './scene/projection';
-import { FloorPlant, FloorProp, LedgeBar, Oven, Register, Rug, Stools, Table, WallPlanter } from './scene/props';
+import { CURB_Y, D, FRONT_TOP, INK, P, SCENE_W, sceneFit } from './scene/projection';
+import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Rug, Stools, Table, WallPlanter } from './scene/props';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell } from './scene/room';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, Street } from './scene/street';
 import { driverPhase, driverPose, guestPose, payoutCrossed } from './scene/timelines';
-import { OvenHood } from './scene/props';
-import { Backdrop } from './scene/background';
 
 export { CURB_Y, SCENE_H, SCENE_W, sceneFit } from './scene/projection';
 
 export type StationKey = 'prep' | 'ovens' | 'counter' | 'drivers';
 
 interface Props {
-  game: Game.GameState;
   id: NeighborhoodId;
   width: number;
   height: number;
   paused: boolean;
   onTap: () => void;
-  /** Tapping a station's tag opens its upgrade. */
-  onStation: (s: StationKey) => void;
 }
 
-/** Steel-topped wooden prep bench with legs, an undershelf, tools that unlock with prep level, and dough balls. */
-const PrepBench = memo(function PrepBench({ lay, prep, dough }: { lay: Layout; prep: number; dough: number }) {
-  return (
-      <G>
-        <FloorShadow x={(lay.prep.x0 + lay.prep.x1) / 2} y={64} r={(lay.prep.x1 - lay.prep.x0) * 0.6} />
-        {/* steel-topped wooden prep bench with legs and an undershelf of flour sacks */}
-        {(() => {
-          const { x0, x1 } = lay.prep;
-          const [fa, fb] = [P(x0, 66, 18), P(x1, 66, 25)];
-          const planks = Math.max(2, Math.floor((x1 - x0) / 14));
-          return (
-            <G>
-              {[x0 + 1, x1 - 4].map((lx) => <Box key={`bl${lx}`} x0={lx} x1={lx + 3} y0={81} y1={84} h={18} color="#6B4330" />)}
-              <Box x0={x0 + 2} x1={x1 - 2} y0={68} y1={82} h={2} z={4} color="#8E5A3C" />
-              {[x0 + 1, x1 - 4].map((lx) => <Box key={`fl${lx}`} x0={lx} x1={lx + 3} y0={66} y1={69} h={18} color="#7A4A26" />)}
-              <Box x0={x0} x1={x1} y0={66} y1={84} h={7} z={18} color="#9A6A44" top="#B07A50" />
-              {Array.from({ length: planks - 1 }).map((_, i) => {
-                const x = x0 + ((x1 - x0) * (i + 1)) / planks;
-                const [px, py0] = P(x, 66, 18);
-                const [, py1] = P(x, 66, 25);
-                return <Path key={`pl${i}`} d={`M${px} ${py0} V${py1}`} stroke="#6B4330" strokeWidth={0.8} />;
-              })}
-              <Path d={`M${fa[0]} ${fa[1] - 3.4} H${fb[0]}`} stroke="#7A4A26" strokeWidth={0.6} opacity={0.6} />
-              <Box x0={x0 - 1} x1={x1 + 1} y0={65} y1={85} h={3} z={25} color="#AEB4BB" top="#DDE2E7" />
-              <Path d={`M${P(x0, 65, 28).join(' ')} L${P(x1, 65, 28).join(' ')}`} stroke="#fff" strokeWidth={1.4} opacity={0.8} />
-              {(prep >= 25 || lay.cooks.length === 1) && (() => {
-                const [rx, ry] = P(x1 - 14, 70, 28);
-                const kk = kAt(70);
-                return (
-                  <G transform={`translate(${rx} ${ry}) scale(${kk})`}>
-                    <Rect x={-9} y={-3.4} width={18} height={3.4} rx={1.7} fill="#E2B985" stroke={INK} strokeWidth={0.8} />
-                    <Rect x={-12} y={-2.6} width={3.4} height={1.8} rx={0.9} fill="#B07A50" stroke={INK} strokeWidth={0.6} />
-                    <Rect x={8.6} y={-2.6} width={3.4} height={1.8} rx={0.9} fill="#B07A50" stroke={INK} strokeWidth={0.6} />
-                  </G>
-                );
-              })()}
-              {prep >= 75 && (() => {
-                const [rx, ry] = P(x0 + (x1 - x0) * 0.72, 80, 28);
-                const kk = kAt(80) * 1.1;
-                return (
-                  <G transform={`translate(${rx} ${ry}) scale(${kk})`}>
-                    {/* solid stand mixer: base, column, head, steel bowl */}
-                    <Rect x={-7} y={-3.5} width={14} height={3.5} rx={1.2} fill="#D9443A" stroke={INK} strokeWidth={0.8} />
-                    <Path d="M-6 -3.5 L-6 -17 Q-6 -21 -2 -21 L8 -21 Q10 -21 10 -18.5 L10 -15 L-1 -15 L-1 -3.5 Z" fill="#D9443A" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
-                    <Path d="M-4.6 -5 L-4.6 -17 Q-4.6 -19.4 -2.4 -19.6" stroke="#F26B5E" strokeWidth={1.4} fill="none" strokeLinecap="round" />
-                    <Path d="M1 -3.5 Q1 -11 5.5 -11 Q10 -11 10 -3.5 Z" fill="#AEB6BE" stroke="#7C858E" strokeWidth={1} />
-                    <Path d="M2.5 -5 Q3 -9 5.5 -9.4" stroke="#fff" strokeWidth={0.9} fill="none" strokeLinecap="round" />
-                    <Path d="M5.5 -15 V-11" stroke="#7C858E" strokeWidth={1.2} />
-                  </G>
-                );
-              })()}
-              {prep >= 50 && (() => {
-                const [rx, ry] = P(x0 + 9, 80, 28);
-                const kk = kAt(80);
-                return (
-                  <G transform={`translate(${rx} ${ry}) scale(${kk})`}>
-                    <Path d="M-7 0 L-7.5 -9 L7.5 -9 L7 0 Z" fill="#9AA1A8" stroke={INK} strokeWidth={0.9} />
-                    <Ellipse cx={0} cy={-9} rx={7.5} ry={2} fill="#C8463A" stroke={INK} strokeWidth={0.8} />
-                    <Path d="M-7.5 -7 h-2.5 M7.5 -7 h2.5" stroke={INK} strokeWidth={1.2} />
-                  </G>
-                );
-              })()}
-            </G>
-          );
-        })()}
-        {Array.from({ length: dough }).map((_, i) => {
-          const [px, py] = P(lay.prep.x0 + 10 + (i % 4) * ((lay.prep.x1 - lay.prep.x0 - 20) / 3), 72 + Math.floor(i / 4) * 8, 28);
-          return <Ellipse key={i} cx={px} cy={py} rx={7} ry={2.8} fill="#FBEFD6" stroke={INK} strokeWidth={0.8} />;
-        })}
-      </G>
-  );
-});
+/** Everything the still picture depends on: when this changes, the scene re-renders even while paused. */
+function sceneKey(g: Game.GameState, id: NeighborhoodId) {
+  const s = g.shops[id];
+  const d = s.decor;
+  return `${s.footprint}|${s.prep}|${s.ovens}|${s.counter}|${s.drivers}|${s.tables}|${s.grade}|${s.managed ? 1 : 0}|${d.tables}${d.plants}${d.flooring}${d.walls}${d.signage}|${g.vehicle}`;
+}
 
-/** Service counter with its register and a stack of boxes that grows with throughput. */
-const Counter = memo(function Counter({ lay, boxes }: { lay: Layout; boxes: number }) {
-  return (
-      <G>
-        <FloorShadow x={(lay.counter.x0 + lay.counter.x1) / 2} y={62} r={(lay.counter.x1 - lay.counter.x0) * 0.6} />
-        <Box x0={lay.counter.x0} x1={lay.counter.x1} y0={64} y1={84} h={38} color="#B0653A" top="#E9DCC8" />
-        {/* front panel trim */}
-        {(() => {
-          const [ax, ay] = P(lay.counter.x0 + 3, 64, 6);
-          const [bx, by] = P(lay.counter.x1 - 3, 64, 32);
-          return <Rect x={ax} y={by} width={bx - ax} height={ay - by} rx={3} fill="none" stroke="#8C4A26" strokeWidth={1.2} />;
-        })()}
-        {lay.staff.slice(0, 1).map((x, i) => (
-          <Register key={i} x={x + 12} y={70} z={38} />
-        ))}
-        {Array.from({ length: boxes }).map((_, i) => (
-          <Box key={`bx${i}`} x0={lay.counter.x1 - 24} x1={lay.counter.x1 - 6} y0={68} y1={80} h={5} z={38 + i * 6} color="#F6E7C1" top="#FFF6E5" />
-        ))}
-      </G>
-  );
-});
+
 
 /** Sky drift: three clouds that loop across the scene on the clock. */
 const CLOUDS = [
@@ -156,40 +67,21 @@ const BAKER_ACTS = ['pizza', 'peel', 'slide'] as const;
 
 type Tap = { at: number; x: number; y: number; text: string; color: string; count: number };
 
-/** Gradients shared by the scene; static, so mounted once rather than rebuilt every frame. */
-const SceneDefs = memo(function SceneDefs() {
-  return (
-    <Defs>
-      <LinearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
-        <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0} />
-        <Stop offset="0.45" stopColor="#FFFFFF" stopOpacity={0.35} />
-        <Stop offset="0.6" stopColor="#FFFFFF" stopOpacity={0} />
-      </LinearGradient>
-      <LinearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0" stopColor="#A9D4EC" stopOpacity={0.6} />
-        <Stop offset="1" stopColor="#A9D4EC" stopOpacity={0.4} />
-      </LinearGradient>
-      <LinearGradient id="ember" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0" stopColor="#5A1A0A" />
-        <Stop offset="0.45" stopColor="#E8432E" />
-        <Stop offset="1" stopColor="#FFB23A" />
-      </LinearGradient>
-      {OVEN_GRADES.map((g, i) => (
-        <LinearGradient key={i} id={`oven${i}`} x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0" stopColor={shade(g.color, 0.3)} />
-          <Stop offset="0.5" stopColor={g.color} />
-          <Stop offset="1" stopColor={shade(g.color, -0.35)} />
-        </LinearGradient>
-      ))}
-    </Defs>
-  );
-});
+
+/** Opacity for a figure at screen x: fades over 30 units at both screen edges, starting 30 inside. */
+const edgeFade = (sx: number) => Math.max(0, Math.min(1, (SCENE_W - sx) / 30, (sx + 0) / 30));
 
 /** Per-shop character seed (stable crowd per neighbourhood). */
 const seedFor = (id: string) => Array.from(id).reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 997, 7) * 97;
 
-export function Storefront({ game, id, width, height, paused, onTap, onStation }: Props) {
+/**
+ * Re-renders on its own 15 fps clock (reading the latest game state each frame) and when the shop's
+ * upgrades change. The parent's 200 ms game ticks don't re-render it, and a paused scene stays still.
+ */
+export const Storefront = memo(function Storefront({ id, width, height, paused, onTap }: Props) {
   const clock = useClock(15, paused);
+  useGame((s) => sceneKey(s.game, id));
+  const game = useGame.getState().game;
   const shop = game.shops[id];
   const nd = Game.def(id);
   const fp = shop.footprint;
@@ -235,7 +127,8 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     const dp = running ? driverPose(lay, i, p, SCENE_W) : null;
     const [x, y] = dp ? dp.pos : [spot.x, spot.y];
     // fade out across the right edge of the screen instead of piling up there
-    const o = Math.max(0, Math.min(1, (SCENE_W + 10 - P(x, y)[0]) / 30));
+    const o = edgeFade(P(x, y)[0]);
+    if (o <= 0) continue; // off-screen: don't keep an invisible figure mounted
     const sd = shopSeed + i + 10;
     items.push({
       y,
@@ -253,9 +146,11 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     const seated = g.stage === 'seated';
     const bite = Math.abs(Math.sin(clock * 2 + i));
     const mood: Mood = seated ? (bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile') : 'smile';
+    const go = edgeFade(P(g.pos[0], g.pos[1])[0]);
+    if (go <= 0) continue;
     items.push({
       y: g.pos[1] - 0.3,
-      el: <Person key={`g${i}`} x={g.pos[0]} y={g.pos[1]} kind={seated ? 'sit' : 'guest'} seed={gSeed} shirt={GUEST_SHIRTS[pal.walkShirt(i, lap)]} hair={HAIR_COLORS[pal.walkHair(i, lap)]} flip={g.face} step={g.walking ? clock * 12 : 0} talk={g.stage === 'order' && Math.sin(clock * 9) > -0.2} mood={mood} blink={blinkAt(gSeed)} arm={seated ? bite * 2 : 0} />,
+      el: <Person key={`g${i}`} x={g.pos[0]} y={g.pos[1]} kind={seated ? 'sit' : 'guest'} seed={gSeed} shirt={GUEST_SHIRTS[pal.walkShirt(i, lap)]} hair={HAIR_COLORS[pal.walkHair(i, lap)]} o={go} flip={g.face} step={g.walking ? clock * 12 : 0} talk={g.stage === 'order' && Math.sin(clock * 9) > -0.2} mood={mood} blink={blinkAt(gSeed)} arm={seated ? bite * 2 : 0} />,
     });
   }
   // tables + seated diners: chairs, then the diner, then the table over their lap
@@ -279,8 +174,8 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       items.push({ y: tb.y - 0.1, el: <Person key={`s2${i}`} x={cx} y={tb.y} kind="sit" flip={i % 2 === 0} seed={cSeed} act={COMPANION_ACTS[(hash32(cSeed) >>> 3) % 4]} shirt={GUEST_SHIRTS[pal.companionShirt(i)]} hair={HAIR_COLORS[pal.companionHair(i)]} blink={blinkAt(cSeed)} arm={cb * 2} mood={cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile'} /> });
     }
   });
-  // potted plants (plants decor); the fern steps aside once the front row of tables reaches it
-  if (plants >= 1 && !lay.tables.some((tb) => tb.y === FRONT_ROW_Y && tb.x - SEAT < lay.L + 30)) items.push({ y: 2, el: <FloorPlant key="pp1" x={lay.L + 4} y={2} k={0.8} /> });
+  // potted plants (plants decor); the corner fern only stands in a starter room, before a front row of tables
+  if (plants >= 1 && !lay.tables.some((tb) => tb.y === FRONT_ROW_Y)) items.push({ y: 2, el: <FloorPlant key="pp1" x={lay.L + 4} y={2} k={0.8} /> });
   if (plants >= 3) items.push({ y: 112, el: <WallPlanter key="pp4" lay={lay} /> });
   // kitchen crew + furniture
   const cookY = lay.cooks.length === 1 ? 74 : 92;
@@ -343,6 +238,11 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     }
   });
   const m = mem.current;
+  if (m.shopId !== id) {
+    // a different shop: last shop's pills and coin burst don't carry over (the effect resets the rest)
+    m.taps = [];
+    m.rushAt = -9;
+  }
   const pop = m.pop && clock - m.pop.at < 1.2 ? { k: (clock - m.pop.at) / 1.2, text: m.pop.text } : null;
   const taps = m.taps.filter((tp) => clock - tp.at < 0.9);
   const flicker = running ? Math.sin(clock * 9) * 1.4 : 0;
@@ -490,4 +390,4 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       </Pressable>
     </View>
   );
-}
+});

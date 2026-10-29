@@ -1,3 +1,5 @@
+import { memo, type ReactElement } from 'react';
+import { Lru } from './cache';
 import { OVEN_GRADES } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
@@ -10,7 +12,24 @@ import { Box, FloorShadow } from './primitives';
  * with an arched mouth and keystone; stacked decks and the Stone grade are box deck ovens, so grades
  * differ in silhouette as well as finish.
  */
-export function Oven({ o, grade, lit, flicker }: { o: Layout['ovens'][number]; grade: number; lit: boolean; flicker: number }) {
+type OvenSpec = Layout['ovens'][number];
+
+// An oven only changes with its flame, so whole ovens are cached per flame level (5 levels × lit) and reused.
+const ovens = new Lru<ReactElement>(96);
+
+/** One oven; `flicker` (−1.4..1.4) is snapped to 5 flame heights so frames reuse cached elements. */
+export function Oven({ o, grade, lit, flicker }: { o: OvenSpec; grade: number; lit: boolean; flicker: number }) {
+  const fq = lit ? Math.round(flicker / 0.7) * 0.7 : 0;
+  const key = `${o.x0},${o.x1},${o.z},${o.h},${o.chimney ? 1 : 0}|${grade}|${lit ? 1 : 0}|${fq.toFixed(1)}`;
+  let el = ovens.get(key);
+  if (!el) {
+    el = <OvenBody o={o} grade={grade} lit={lit} flicker={fq} />;
+    ovens.set(key, el);
+  }
+  return el;
+}
+
+const OvenBody = memo(function OvenBody({ o, grade, lit, flicker }: { o: OvenSpec; grade: number; lit: boolean; flicker: number }) {
   const y = D - 6;
   const [ax, ay] = P(o.x0, y, o.z);
   const [bx] = P(o.x1, y, o.z);
@@ -107,10 +126,10 @@ export function Oven({ o, grade, lit, flicker }: { o: Layout['ovens'][number]; g
       )}
     </G>
   );
-}
+});
 
 /** One stainless hood + flue over a bank of box deck ovens. */
-export function OvenHood({ lay, grade, mural }: { lay: Layout; grade: number; mural: boolean }) {
+export const OvenHood = memo(function OvenHood({ lay, grade, mural }: { lay: Layout; grade: number; mural: boolean }) {
   const boxes = lay.ovens.filter((o) => o.h < 70 || grade === 1);
   if (!boxes.length) return null;
   const top = Math.max(...boxes.map((o) => o.z + o.h));
@@ -133,7 +152,7 @@ export function OvenHood({ lay, grade, mural }: { lay: Layout; grade: number; mu
       <Rect x={ax - 1} y={ay - 2} width={bx - ax + 2} height={4} rx={1.5} fill="#9AA1A8" stroke={INK} strokeWidth={0.8} />
     </G>
   );
-}
+});
 
 
 export const TABLE_STYLE = [
@@ -147,7 +166,7 @@ export const TABLE_STYLE = [
  * A dining table in two layers so diners really sit: `back` is the floor shadow and both
  * chairs (back rest on the outer side + seat); `front` is the table itself, drawn over the diners' laps.
  */
-export function Table({ x, y, tier, part }: { x: number; y: number; tier: number; part: 'back' | 'front' }) {
+export const Table = memo(function Table({ x, y, tier, part }: { x: number; y: number; tier: number; part: 'back' | 'front' }) {
   const st = TABLE_STYLE[tier];
   const [cx, cy] = P(x, y);
   const k = kAt(y) * 1.1;
@@ -210,10 +229,10 @@ export function Table({ x, y, tier, part }: { x: number; y: number; tier: number
       </G>
     </G>
   );
-}
+});
 
 /** A round woven rug under the starter table. */
-export function Rug({ x, y }: { x: number; y: number }) {
+export const Rug = memo(function Rug({ x, y }: { x: number; y: number }) {
   const [cx, cy] = P(x, y);
   const k = kAt(y);
   return (
@@ -223,10 +242,10 @@ export function Rug({ x, y }: { x: number; y: number }) {
       <Ellipse cx={cx} cy={cy} rx={26 * k} ry={7.4 * k} fill="#E9A64B" opacity={0.6} />
     </G>
   );
-}
+});
 
 /** Tier-3 plants: a trailing planter on the left side wall, up out of the diners' way. */
-export function WallPlanter({ lay }: { lay: Layout }) {
+export const WallPlanter = memo(function WallPlanter({ lay }: { lay: Layout }) {
   const [bx, by] = P(lay.L, 70, 150);
   const k = kAt(70);
   return (
@@ -241,10 +260,10 @@ export function WallPlanter({ lay }: { lay: Layout }) {
       ))}
     </G>
   );
-}
+});
 
 /** A small floor prop that makes each starter shop its own place. */
-export function FloorProp({ id, x, y }: { id: NeighborhoodId; x: number; y: number }) {
+export const FloorProp = memo(function FloorProp({ id, x, y }: { id: NeighborhoodId; x: number; y: number }) {
   const [px, py] = P(x, y);
   const k = kAt(y) * 1.4;
   return (
@@ -292,10 +311,10 @@ export function FloorProp({ id, x, y }: { id: NeighborhoodId; x: number; y: numb
       )}
     </G>
   );
-}
+});
 
 /** A window bar along the inside of the front sill, by the door, for the starter shop. */
-export function LedgeBar({ x0, x1 }: { x0: number; x1: number }) {
+export const LedgeBar = memo(function LedgeBar({ x0, x1 }: { x0: number; x1: number }) {
   return (
     <G>
       {[x0 + 3, x1 - 5].map((lx) => <Box key={lx} x0={lx} x1={lx + 2} y0={4} y1={6} h={20} color="#5E3A26" />)}
@@ -303,8 +322,8 @@ export function LedgeBar({ x0, x1 }: { x0: number; x1: number }) {
       <Path d={`M${P(x0, 2, 24).join(' ')} L${P(x1, 2, 24).join(' ')}`} stroke="#B07A50" strokeWidth={1} />
     </G>
   );
-}
-export function Stools({ x0, x1 }: { x0: number; x1: number }) {
+});
+export const Stools = memo(function Stools({ x0, x1 }: { x0: number; x1: number }) {
   return (
     <G>
       {[x0 + (x1 - x0) * 0.3, x0 + (x1 - x0) * 0.72].map((sx) => {
@@ -321,10 +340,10 @@ export function Stools({ x0, x1 }: { x0: number; x1: number }) {
       })}
     </G>
   );
-}
+});
 
 /** A potted plant standing on the floor at room point (x, y). */
-export function FloorPlant({ x, y, big = false, k: kk = 1 }: { x: number; y: number; big?: boolean; k?: number }) {
+export const FloorPlant = memo(function FloorPlant({ x, y, big = false, k: kk = 1 }: { x: number; y: number; big?: boolean; k?: number }) {
   const [px, py] = P(x, y);
   const k = kAt(y) * (big ? 1.25 : 1) * kk;
   return (
@@ -337,10 +356,10 @@ export function FloorPlant({ x, y, big = false, k: kk = 1 }: { x: number; y: num
       ))}
     </G>
   );
-}
+});
 
 /** A proper cash register on the counter top. */
-export function Register({ x, y, z }: { x: number; y: number; z: number }) {
+export const Register = memo(function Register({ x, y, z }: { x: number; y: number; z: number }) {
   const [rx, ry] = P(x, y, z);
   const k = kAt(y) * 1.1;
   return (
@@ -355,4 +374,99 @@ export function Register({ x, y, z }: { x: number; y: number; z: number }) {
       <Path d="M-4.5 -18 h4 M1 -18 h3" stroke="#1E6B3A" strokeWidth={1} />
     </G>
   );
-}
+});
+
+/** Steel-topped wooden prep bench with legs, an undershelf, tools that unlock with prep level, and dough balls. */
+export const PrepBench = memo(function PrepBench({ lay, prep, dough }: { lay: Layout; prep: number; dough: number }) {
+  return (
+      <G>
+        <FloorShadow x={(lay.prep.x0 + lay.prep.x1) / 2} y={64} r={(lay.prep.x1 - lay.prep.x0) * 0.6} />
+        {/* steel-topped wooden prep bench with legs and an undershelf of flour sacks */}
+        {(() => {
+          const { x0, x1 } = lay.prep;
+          const [fa, fb] = [P(x0, 66, 18), P(x1, 66, 25)];
+          const planks = Math.max(2, Math.floor((x1 - x0) / 14));
+          return (
+            <G>
+              {[x0 + 1, x1 - 4].map((lx) => <Box key={`bl${lx}`} x0={lx} x1={lx + 3} y0={81} y1={84} h={18} color="#6B4330" />)}
+              <Box x0={x0 + 2} x1={x1 - 2} y0={68} y1={82} h={2} z={4} color="#8E5A3C" />
+              {[x0 + 1, x1 - 4].map((lx) => <Box key={`fl${lx}`} x0={lx} x1={lx + 3} y0={66} y1={69} h={18} color="#7A4A26" />)}
+              <Box x0={x0} x1={x1} y0={66} y1={84} h={7} z={18} color="#9A6A44" top="#B07A50" />
+              {Array.from({ length: planks - 1 }).map((_, i) => {
+                const x = x0 + ((x1 - x0) * (i + 1)) / planks;
+                const [px, py0] = P(x, 66, 18);
+                const [, py1] = P(x, 66, 25);
+                return <Path key={`pl${i}`} d={`M${px} ${py0} V${py1}`} stroke="#6B4330" strokeWidth={0.8} />;
+              })}
+              <Path d={`M${fa[0]} ${fa[1] - 3.4} H${fb[0]}`} stroke="#7A4A26" strokeWidth={0.6} opacity={0.6} />
+              <Box x0={x0 - 1} x1={x1 + 1} y0={65} y1={85} h={3} z={25} color="#AEB4BB" top="#DDE2E7" />
+              <Path d={`M${P(x0, 65, 28).join(' ')} L${P(x1, 65, 28).join(' ')}`} stroke="#fff" strokeWidth={1.4} opacity={0.8} />
+              {(prep >= 25 || lay.cooks.length === 1) && (() => {
+                const [rx, ry] = P(x1 - 14, 70, 28);
+                const kk = kAt(70);
+                return (
+                  <G transform={`translate(${rx} ${ry}) scale(${kk})`}>
+                    <Rect x={-9} y={-3.4} width={18} height={3.4} rx={1.7} fill="#E2B985" stroke={INK} strokeWidth={0.8} />
+                    <Rect x={-12} y={-2.6} width={3.4} height={1.8} rx={0.9} fill="#B07A50" stroke={INK} strokeWidth={0.6} />
+                    <Rect x={8.6} y={-2.6} width={3.4} height={1.8} rx={0.9} fill="#B07A50" stroke={INK} strokeWidth={0.6} />
+                  </G>
+                );
+              })()}
+              {prep >= 75 && (() => {
+                const [rx, ry] = P(x0 + (x1 - x0) * 0.72, 80, 28);
+                const kk = kAt(80) * 1.1;
+                return (
+                  <G transform={`translate(${rx} ${ry}) scale(${kk})`}>
+                    {/* solid stand mixer: base, column, head, steel bowl */}
+                    <Rect x={-7} y={-3.5} width={14} height={3.5} rx={1.2} fill="#D9443A" stroke={INK} strokeWidth={0.8} />
+                    <Path d="M-6 -3.5 L-6 -17 Q-6 -21 -2 -21 L8 -21 Q10 -21 10 -18.5 L10 -15 L-1 -15 L-1 -3.5 Z" fill="#D9443A" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+                    <Path d="M-4.6 -5 L-4.6 -17 Q-4.6 -19.4 -2.4 -19.6" stroke="#F26B5E" strokeWidth={1.4} fill="none" strokeLinecap="round" />
+                    <Path d="M1 -3.5 Q1 -11 5.5 -11 Q10 -11 10 -3.5 Z" fill="#AEB6BE" stroke="#7C858E" strokeWidth={1} />
+                    <Path d="M2.5 -5 Q3 -9 5.5 -9.4" stroke="#fff" strokeWidth={0.9} fill="none" strokeLinecap="round" />
+                    <Path d="M5.5 -15 V-11" stroke="#7C858E" strokeWidth={1.2} />
+                  </G>
+                );
+              })()}
+              {prep >= 50 && (() => {
+                const [rx, ry] = P(x0 + 9, 80, 28);
+                const kk = kAt(80);
+                return (
+                  <G transform={`translate(${rx} ${ry}) scale(${kk})`}>
+                    <Path d="M-7 0 L-7.5 -9 L7.5 -9 L7 0 Z" fill="#9AA1A8" stroke={INK} strokeWidth={0.9} />
+                    <Ellipse cx={0} cy={-9} rx={7.5} ry={2} fill="#C8463A" stroke={INK} strokeWidth={0.8} />
+                    <Path d="M-7.5 -7 h-2.5 M7.5 -7 h2.5" stroke={INK} strokeWidth={1.2} />
+                  </G>
+                );
+              })()}
+            </G>
+          );
+        })()}
+        {Array.from({ length: dough }).map((_, i) => {
+          const [px, py] = P(lay.prep.x0 + 10 + (i % 4) * ((lay.prep.x1 - lay.prep.x0 - 20) / 3), 72 + Math.floor(i / 4) * 8, 28);
+          return <Ellipse key={i} cx={px} cy={py} rx={7} ry={2.8} fill="#FBEFD6" stroke={INK} strokeWidth={0.8} />;
+        })}
+      </G>
+  );
+});
+
+/** Service counter with its register and a stack of boxes that grows with throughput. */
+export const Counter = memo(function Counter({ lay, boxes }: { lay: Layout; boxes: number }) {
+  return (
+      <G>
+        <FloorShadow x={(lay.counter.x0 + lay.counter.x1) / 2} y={62} r={(lay.counter.x1 - lay.counter.x0) * 0.6} />
+        <Box x0={lay.counter.x0} x1={lay.counter.x1} y0={64} y1={84} h={38} color="#B0653A" top="#E9DCC8" />
+        {/* front panel trim */}
+        {(() => {
+          const [ax, ay] = P(lay.counter.x0 + 3, 64, 6);
+          const [bx, by] = P(lay.counter.x1 - 3, 64, 32);
+          return <Rect x={ax} y={by} width={bx - ax} height={ay - by} rx={3} fill="none" stroke="#8C4A26" strokeWidth={1.2} />;
+        })()}
+        {lay.staff.slice(0, 1).map((x, i) => (
+          <Register key={i} x={x + 12} y={70} z={38} />
+        ))}
+        {Array.from({ length: boxes }).map((_, i) => (
+          <Box key={`bx${i}`} x0={lay.counter.x1 - 24} x1={lay.counter.x1 - 6} y0={68} y1={80} h={5} z={38 + i * 6} color="#F6E7C1" top="#FFF6E5" />
+        ))}
+      </G>
+  );
+});

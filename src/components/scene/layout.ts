@@ -1,5 +1,5 @@
 // Pure scene geometry: where every station, table, lane and person stands for a given shop size.
-// No React here, so it is unit-tested directly (src/components/scene/__tests__/layout.test.ts).
+// No React here, so it is unit-tested directly (src/components/scene/__tests__/scene.test.ts).
 
 export const ROOM_W = [270, 295, 320, 340, 358];
 
@@ -9,14 +9,16 @@ export const SEAT = 19.5;
 export const TABLE_PITCH = 78;
 /** Depths (room y) of the dining rows. */
 export const FRONT_ROW_Y = 6;
-export const BACK_ROW_Y = 32;
+export const BACK_ROW_Y = 36;
 /** A lone starter table sits mid-floor at this depth. */
 export const STARTER_Y = 20;
 /** Depths of the door threshold just inside and just outside the shop. */
 export const DOOR_IN_Y = 8;
-export const DOOR_OUT_Y = -24;
+export const DOOR_OUT_Y = -30;
 /** Depth of the walkway in front of the counter that people route through. */
 export const COUNTER_AISLE_Y = 44;
+/** The lane just in front of the counter, behind the drivers' pickup spots (y 46). */
+export const COUNTER_LANE_Y = 57;
 /** Window bar and its stools sit along the front glass. */
 export const LEDGE_Y = 5;
 export const STOOL_Y = 13;

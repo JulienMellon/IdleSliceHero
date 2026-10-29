@@ -197,14 +197,16 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
               <G key={`up${i}`}>
                 <Polygon points={pts([P(xa, D, 10), P(xa + 18, D, 10), P(xa + 18, D, 50), P(xa, D, 50)])} fill="none" stroke="#5A1229" strokeWidth={1.2} />
                 {/* lit top and left edges give the mouldings relief */}
-                <Path d={`M${P(xa + 0.8, D, 11).join(' ')} L${P(xa + 0.8, D, 49).join(' ')} L${P(xa + 17.2, D, 49).join(' ')}`} stroke="#9A3452" strokeWidth={1} fill="none" />
+                <Path d={`M${P(xa + 0.8, D, 11).join(' ')} L${P(xa + 0.8, D, 49).join(' ')} L${P(xa + 17.2, D, 49).join(' ')}`} stroke="#B04A68" strokeWidth={1.2} fill="none" />
+                <Path d={`M${P(xa + 17.2, D, 49).join(' ')} L${P(xa + 17.2, D, 11).join(' ')} L${P(xa + 0.8, D, 11).join(' ')}`} stroke="#5A1228" strokeWidth={1.2} fill="none" />
               </G>
             );
           })}
           <Polygon points={pts([P(L, D, 58), P(R, D, 58), P(R, D, 63), P(L, D, 63)])} fill="#D4A84A" />
           <Path d={`M${P(L, D, 63).join(' ')} L${P(R, D, 63).join(' ')}`} stroke="#9C7A2E" strokeWidth={0.8} />
-          <Path d={`M${P(L, D, 150).join(' ')} L${P(R, D, 150).join(' ')}`} stroke="#C9A04A" strokeWidth={2.4} />
-          <Path d={`M${P(L, D, 148.6).join(' ')} L${P(R, D, 148.6).join(' ')}`} stroke="#FFF3B0" strokeWidth={0.7} opacity={0.7} />
+          {/* brass picture rail: a 2-unit band with a dark underside */}
+          <Polygon points={pts([P(L, D, 149), P(R, D, 149), P(R, D, 151), P(L, D, 151)])} fill="#D4A84A" />
+          <Path d={`M${P(L, D, 148.6).join(' ')} L${P(R, D, 148.6).join(' ')}`} stroke="#8A6A2A" strokeWidth={0.9} />
         </G>
       )}
       {id === 'industrial' && (
@@ -460,7 +462,7 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
  * The street face of the shop: brick pilasters at both corners, a fascia beam across the top
  * carrying the sign, a full-width scalloped awning, the brick sill and the entrance on the right.
  */
-export function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: string; signage: number; plants: number }) {
+export const FrontWall = memo(function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: string; signage: number; plants: number }) {
   const { L, R, door } = lay;
   const sill = (x0: number, x1: number) => {
     const [ax, ay] = P(x0, 0);
@@ -704,10 +706,10 @@ export function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: s
       </SvgText>
     </G>
   );
-}
+});
 
 /** The glazed door leaf, swung ~60° into the room; depth-sorted on its own so walkers pass it correctly. */
-export function DoorLeaf({ lay }: { lay: Layout }) {
+export const DoorLeaf = memo(function DoorLeaf({ lay }: { lay: Layout }) {
   // folded right back against the right wall, so it never hides anyone in the room
   const x = lay.door.x1 - 1.5;
   const q = (y: number, z: number) => P(x, y, z);
@@ -718,10 +720,10 @@ export function DoorLeaf({ lay }: { lay: Layout }) {
       <Path d={`M${q(8, 80).join(' ')} L${q(22, 40).join(' ')}`} stroke="#fff" strokeWidth={1.4} opacity={0.6} strokeLinecap="round" />
     </G>
   );
-}
+});
 
 /** Sidewalk A-frame chalkboard (replaces the doormat walkers kept covering). */
-export function ChalkSign({ x, y }: { x: number; y: number }) {
+export const ChalkSign = memo(function ChalkSign({ x, y }: { x: number; y: number }) {
   const [px, py] = P(x, y);
   return (
     <G transform={`translate(${px} ${py})`}>
@@ -741,20 +743,21 @@ export function ChalkSign({ x, y }: { x: number; y: number }) {
       <Path d="M-4.5 -7 q4.5 2 9 0" stroke="#F28B82" strokeWidth={0.8} fill="none" />
     </G>
   );
-}
+});
 
-export function Doormat({ lay }: { lay: Layout }) {
+export const Doormat = memo(function Doormat({ lay }: { lay: Layout }) {
   // lying flat on the sidewalk at the threshold: a perspective trapezoid with fringe
-  const a0 = P(lay.door.x0 + 2, -2);
-  const a1 = P(lay.door.x1 - 2, -2);
-  const b1 = P(lay.door.x1 + 1, -14);
-  const b0 = P(lay.door.x0 - 1, -14);
+  // people pause outside at DOOR_OUT_Y (−30), beyond the mat, so nobody stands on the lettering
+  const a0 = P(lay.door.x0 + 2, -8);
+  const a1 = P(lay.door.x1 - 2, -8);
+  const b1 = P(lay.door.x1 + 1, -22);
+  const b0 = P(lay.door.x0 - 1, -22);
   const cx = (a0[0] + a1[0] + b0[0] + b1[0]) / 4;
-  const cy = (a0[1] + b0[1]) / 2;
+  const cy = a0[1] + (b0[1] - a0[1]) * 0.6;
   return (
     <G>
       <Polygon points={pts([a0, a1, b1, b0])} fill="#7A3520" stroke={INK} strokeWidth={0.9} />
-      <Polygon points={pts([P(lay.door.x0 + 4, -4), P(lay.door.x1 - 4, -4), P(lay.door.x1 - 1, -12), P(lay.door.x0 + 1, -12)])} fill="none" stroke="#C8643E" strokeWidth={0.8} />
+      <Polygon points={pts([P(lay.door.x0 + 4, -10), P(lay.door.x1 - 4, -10), P(lay.door.x1 - 1, -20), P(lay.door.x0 + 1, -20)])} fill="none" stroke="#C8643E" strokeWidth={0.8} />
       {[a0, a1].map((pt, i) => <Path key={`f${i}`} d={`M${pt[0] + (i ? 1 : -1)} ${pt[1]} L${pt[0] + (i ? 2.2 : -2.2)} ${pt[1] + 1} M${pt[0] + (i ? 1.4 : -1.4)} ${pt[1] + 3} L${pt[0] + (i ? 2.8 : -2.8)} ${pt[1] + 4}`} stroke="#C8643E" strokeWidth={0.8} />)}
       {[b0, b1].map((pt, i) => <Path key={`g${i}`} d={`M${pt[0] + (i ? 1 : -1)} ${pt[1] - 2} L${pt[0] + (i ? 2.6 : -2.6)} ${pt[1] - 1} M${pt[0] + (i ? 1 : -1)} ${pt[1] - 5} L${pt[0] + (i ? 2.6 : -2.6)} ${pt[1] - 4}`} stroke="#C8643E" strokeWidth={0.8} />)}
       <G transform={`translate(${cx} ${cy + 1.6}) skewX(-18) scale(1 0.62)`}>
@@ -764,9 +767,9 @@ export function Doormat({ lay }: { lay: Layout }) {
       </G>
     </G>
   );
-}
+});
 
-export function Planter({ x, y }: { x: number; y: number }) {
+export const Planter = memo(function Planter({ x, y }: { x: number; y: number }) {
   const [px, py] = P(x, y);
   return (
     <G transform={`translate(${px} ${py})`}>
@@ -778,4 +781,4 @@ export function Planter({ x, y }: { x: number; y: number }) {
       <Circle cx={-4} cy={-46} r={5} fill="#7FD06A" />
     </G>
   );
-}
+});

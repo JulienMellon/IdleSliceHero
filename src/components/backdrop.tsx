@@ -3,6 +3,7 @@ import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop, Text } from 're
 
 import type { Backdrop as BackdropId } from '../content/types';
 import { F } from '../theme';
+import { shade } from './scene/projection';
 
 const INK = '#3B1F14';
 
@@ -18,15 +19,19 @@ const SKY: Record<BackdropId, [string, string]> = {
   'downtown-rain': ['#2B2D52', '#5C5470'],
 };
 
-function Building({ x, w, h, color, win = '#FFF3B0', winO = 0.85 }: { x: number; w: number; h: number; color: string; win?: string; winO?: number }) {
+function Building({ x, w, h, color, win = '#FFF3B0', winO = 0.85, glow = false, cornice = false }: { x: number; w: number; h: number; color: string; win?: string; winO?: number; glow?: boolean; cornice?: boolean }) {
   const rows = Math.floor((h - 10) / 14);
   const cols = Math.max(1, Math.floor((w - 6) / 12));
   return (
     <G>
       <Rect x={x} y={200 - h} width={w} height={h} fill={color} stroke={INK} strokeWidth={2} />
+      {cornice && <Rect x={x - 3} y={200 - h - 4} width={w + 6} height={6} rx={1} fill={shade(color, -0.3)} stroke={INK} strokeWidth={1.5} />}
       {Array.from({ length: rows }).map((_, r) =>
         Array.from({ length: cols }).map((__, c) => (
-          <Rect key={`${r}-${c}`} x={x + 6 + c * 12} y={200 - h + 8 + r * 14} width={6} height={8} fill={win} opacity={winO} />
+          <G key={`${r}-${c}`}>
+            {glow && <Rect x={x + 4 + c * 12} y={200 - h + 6 + r * 14} width={10} height={12} rx={2} fill={win} opacity={0.25} />}
+            <Rect x={x + 6 + c * 12} y={200 - h + 8 + r * 14} width={6} height={8} fill={win} opacity={winO} />
+          </G>
         )),
       )}
     </G>
@@ -137,11 +142,13 @@ function Scenery({ id }: { id: BackdropId }) {
       return (
         <G>
           {/* a pale moon behind the rain, and the neighbours' lit windows either side of Rosa's */}
-          <Circle cx={262} cy={-38} r={22} fill="#E8E4FF" opacity={0.9} />
-          <Circle cx={254} cy={-44} r={5} fill="#D2CCF2" opacity={0.7} />
-          <Circle cx={270} cy={-30} r={3.4} fill="#D2CCF2" opacity={0.7} />
-          {([[84, 36, 128, '#4A4468'], [280, 36, 120, '#3E3A5C']] as const).map(([x, w, h, c], i) => (
-            <Building key={i} x={x} w={w} h={h} color={c} win="#F6C35A" winO={0.5} />
+          <Circle cx={248} cy={-26} r={30} fill="#E8E4FF" opacity={0.12} />
+          <Circle cx={248} cy={-26} r={22} fill="#E8E4FF" opacity={0.92} />
+          <Circle cx={240} cy={-32} r={5} fill="#D2CCF2" opacity={0.7} />
+          <Circle cx={256} cy={-18} r={3.4} fill="#D2CCF2" opacity={0.7} />
+          {/* taller neighbours rise behind Rosa's roofline, so a good width of each shows above it */}
+          {([[98, 60, 172, '#4A4468'], [242, 60, 162, '#3E3A5C']] as const).map(([x, w, h, c], i) => (
+            <Building key={i} x={x} w={w} h={h} color={c} win="#FFD27A" winO={0.9} glow cornice />
           ))}
           {/* Rosa's storefront */}
           <Rect x={120} y={88} width={160} height={112} fill="#8E3B2E" stroke={INK} strokeWidth={2.4} />
@@ -284,9 +291,16 @@ function Skyline({ top, dark, billboard, lit = false }: { top: number; dark: boo
         ))}
       </G>
       {lit && (
-        <G fill="#F6C35A" opacity={0.5}>
+        <G fill="#FFD27A">
           {towers.flatMap(([x, h], i) =>
-            Array.from({ length: Math.floor((h - 12) / 16) }, (_, r) => (r + i) % 3 === 1 ? null : <Rect key={`${i}-${r}`} x={x + 6 + ((r + i) % 2) * 12} y={base - h + 8 + r * 16} width={6} height={7} />),
+            Array.from({ length: Math.floor((h - 12) / 16) }, (_, r) =>
+              (r + i) % 3 === 1 ? null : (
+                <G key={`${i}-${r}`}>
+                  <Rect x={x + 4 + ((r + i) % 2) * 12} y={base - h + 6 + r * 16} width={10} height={11} rx={2} opacity={0.25} />
+                  <Rect x={x + 6 + ((r + i) % 2) * 12} y={base - h + 8 + r * 16} width={6} height={7} opacity={0.9} />
+                </G>
+              ),
+            ),
           )}
         </G>
       )}

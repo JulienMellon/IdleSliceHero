@@ -182,3 +182,29 @@ describe('driver and walk-in timelines (T6)', () => {
     }
   });
 });
+
+describe('walk-ins keep clear of the pickup line (D255)', () => {
+  test('a walk-in never passes in front of a standing driver', () => {
+    for (const [name, lay] of allLayouts()) {
+      const n = Math.min(4, Math.ceil(lay.tables.length / 2));
+      for (let i = 0; i < n; i++)
+        for (let k = 0; k <= 100; k++) {
+          const g = guestPose(lay, i, 0.42 + (0.08 * k) / 100, SCENE_W);
+          const h = guestPose(lay, i, 0.8 + (0.08 * k) / 100, SCENE_W);
+          for (const pos of [g.pos, h.pos])
+            for (const sp of lay.spots) {
+              const inFront = Math.abs(pos[0] - sp.x) < 12 && pos[1] < sp.y && pos[1] > sp.y - 24;
+              expect([name, i, inFront]).toEqual([name, i, false]);
+            }
+        }
+    }
+  });
+});
+
+describe('payout edge with changing driver counts (T9)', () => {
+  test('no payout when the number of drivers changes between frames', () => {
+    expect(payoutCrossed([0.5, 0.1], [0.56, 0.2, 0.9])).toBe(false);
+    expect(payoutCrossed([], [0.6])).toBe(false);
+    expect(payoutCrossed([0.5, 0.53], [0.52, 0.55])).toBe(true);
+  });
+});

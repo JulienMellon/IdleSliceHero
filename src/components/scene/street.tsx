@@ -11,7 +11,7 @@ export const CARS = [
   { lane: 1, speed: 62, offset: 420, color: '#E8432E', kind: 'car' as const },
 ];
 
-export function Car({ x, y, color, kind, dir, label = 'MEGASLICE', labelColor = '#FFC531' }: { x: number; y: number; color: string; kind: 'car' | 'van' | 'taxi'; dir: 1 | -1; label?: string; labelColor?: string }) {
+export const Car = memo(function Car({ x, y, color, kind, dir, label = 'MEGASLICE', labelColor = '#FFC531' }: { x: number; y: number; color: string; kind: 'car' | 'van' | 'taxi'; dir: 1 | -1; label?: string; labelColor?: string }) {
   const len = kind === 'van' ? 74 : 56;
   const h = kind === 'van' ? 30 : 22;
   return (
@@ -45,10 +45,10 @@ export function Car({ x, y, color, kind, dir, label = 'MEGASLICE', labelColor = 
       <Rect x={len - 4} y={-h + 2} width={4} height={5} rx={1} fill="#FFF3B0" />
     </G>
   );
-}
+});
 
 /** The shop's delivery vehicle parked by the door, drawn in the scene's outlined style. */
-export function ParkedVehicle({ x, y, v }: { x: number; y: number; v: number }) {
+export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v }: { x: number; y: number; v: number }) {
   if (v >= 2 && v <= 3) {
     return (
       <G transform={`translate(${x} ${y + 2}) scale(0.62)`}>
@@ -89,7 +89,7 @@ export function ParkedVehicle({ x, y, v }: { x: number; y: number; v: number }) 
       )}
     </G>
   );
-}
+});
 
 export const Street = memo(function Street() {
   return (
@@ -117,10 +117,19 @@ export const Sidewalk = memo(function Sidewalk({ frontY }: { frontY: number }) {
   );
 });
 
+/** A drifting cloud: the shape is memoised at the origin and only the translate changes per frame. */
 export function Cloud({ x, y, k, dusk = false }: { x: number; y: number; k: number; dusk?: boolean }) {
+  return (
+    <G transform={`translate(${x.toFixed(1)} ${y})`}>
+      <CloudShape k={k} dusk={dusk} />
+    </G>
+  );
+}
+
+const CloudShape = memo(function CloudShape({ k, dusk }: { k: number; dusk: boolean }) {
   const c = dusk ? '#F6C6A8' : '#fff';
   return (
-    <G transform={`translate(${x} ${y}) scale(${k})`}>
+    <G transform={`scale(${k})`}>
       <Ellipse cx={0} cy={8} rx={34} ry={12} fill={c} />
       <Circle cx={-14} cy={0} r={14} fill={c} />
       <Circle cx={6} cy={-6} r={19} fill={c} />
@@ -128,4 +137,4 @@ export function Cloud({ x, y, k, dusk = false }: { x: number; y: number; k: numb
       <Ellipse cx={0} cy={13} rx={30} ry={5} fill={dusk ? '#B9A3C9' : '#DCEBF7'} />
     </G>
   );
-}
+});
