@@ -47,12 +47,12 @@ function Scenery({ id }: { id: BackdropId }) {
             <Path d="M272 150 L272 105 Q300 85 328 105 L328 150 Z" fill="#2B1A12" />
             <Path d="M280 150 L285 125 L292 140 L300 118 L308 140 L315 125 L320 150 Z" fill="#FF9F1C" />
           </G>
-          <Rect x={72} y={40} width={110} height={60} rx={8} fill="#FFFFFF" stroke={INK} strokeWidth={2.4} />
-          <Circle cx={104} cy={70} r={20} fill="#FFC531" stroke={INK} strokeWidth={2} />
-          {[[96, 62], [112, 66], [102, 80], [114, 77]].map(([cx, cy], i) => (
+          <Rect x={88} y={40} width={104} height={60} rx={8} fill="#FFFFFF" stroke={INK} strokeWidth={2.4} />
+          <Circle cx={118} cy={70} r={20} fill="#FFC531" stroke={INK} strokeWidth={2} />
+          {[[110, 62], [126, 66], [116, 80], [128, 77]].map(([cx, cy], i) => (
             <Circle key={i} cx={cx} cy={cy} r={4} fill="#E8432E" />
           ))}
-          <Text x={150} y={76} fontSize={13} fontFamily={F.bold} fill="#D9443A" textAnchor="middle">
+          <Text x={162} y={76} fontSize={13} fontFamily={F.bold} fill="#D9443A" textAnchor="middle">
             PIZZA
           </Text>
         </G>
@@ -117,7 +117,7 @@ function Scenery({ id }: { id: BackdropId }) {
           <Rect x={210} y={60} width={24} height={115} fill="#8B5A3C" stroke={INK} strokeWidth={2.5} />
           <Rect x={250} y={80} width={24} height={95} fill="#8B5A3C" stroke={INK} strokeWidth={2.5} />
           {/* one path, one fill: no overlap seam (critic D162) */}
-          <Path d="M208 45 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z M222 30 a18 18 0 1 0 36 0 a18 18 0 1 0 -36 0 Z" fill="#DADADA" opacity={0.75} />
+          <Path d="M208 45 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z M222 30 a18 18 0 1 0 36 0 a18 18 0 1 0 -36 0 Z" fill="#D9D9D9" />
           <Rect x={300} y={120} width={80} height={55} fill="#E67E22" stroke={INK} strokeWidth={2.5} />
         </G>
       );
@@ -225,12 +225,12 @@ function ShopWall() {
         return <Circle key={i} cx={x} cy={y} r={6} fill={['#FFC531', '#E8432E', '#3FAE5A'][i % 3]} stroke={INK} strokeWidth={1.5} />;
       })}
       {/* framed photo: young Rosa at the oven, est. 1974 */}
-      <Rect x={232} y={-150} width={92} height={76} rx={4} fill="#C98F63" stroke={INK} strokeWidth={2.4} />
-      <Rect x={242} y={-140} width={72} height={48} fill="#F6E7C1" />
-      <Circle cx={266} cy={-118} r={10} fill="#F2C9A0" stroke={INK} strokeWidth={1.5} />
-      <Path d="M254 -92 Q266 -106 278 -92 Z" fill="#B23A48" />
-      <Path d="M286 -92 L286 -112 Q298 -128 310 -112 L310 -92 Z" fill="#B85C38" />
-      <Text x={278} y={-79} fontSize={10} fontFamily={F.bold} fill="#FFF4E0" textAnchor="middle">
+      <Rect x={214} y={-150} width={92} height={76} rx={4} fill="#C98F63" stroke={INK} strokeWidth={2.4} />
+      <Rect x={224} y={-140} width={72} height={48} fill="#F6E7C1" />
+      <Circle cx={248} cy={-118} r={10} fill="#F2C9A0" stroke={INK} strokeWidth={1.5} />
+      <Path d="M236 -92 Q248 -106 260 -92 Z" fill="#B23A48" />
+      <Path d="M268 -92 L268 -112 Q280 -128 292 -112 L292 -92 Z" fill="#B85C38" />
+      <Text x={260} y={-79} fontSize={10} fontFamily={F.bold} fill="#FFF4E0" textAnchor="middle">
         EST. 1974
       </Text>
       <Rect x={150} y={-90} width={70} height={46} rx={4} fill="#2F3B33" stroke="#8E5A3C" strokeWidth={3} />
@@ -247,9 +247,9 @@ function ShopWall() {
         </G>
       ))}
       {/* tins on a shelf under the photo, clear of the PIZZA sign (critic D146) */}
-      <Rect x={236} y={-48} width={88} height={6} fill="#8E5A3C" stroke={INK} strokeWidth={1.2} />
-      <Path d="M246 -42 l4 8 M314 -42 l-4 8" stroke="#5E3A26" strokeWidth={2} strokeLinecap="round" />
-      {[242, 260, 278, 296, 312].map((x, i) => (
+      <Rect x={218} y={-48} width={88} height={6} fill="#8E5A3C" stroke={INK} strokeWidth={1.2} />
+      <Path d="M228 -42 l4 8 M296 -42 l-4 8" stroke="#5E3A26" strokeWidth={2} strokeLinecap="round" />
+      {[224, 242, 260, 278, 294].map((x, i) => (
         <Rect key={x} x={x} y={-64} width={12} height={16} rx={3} fill={['#E8432E', '#3FAE5A', '#FFC531', '#E8432E', '#F2994A'][i]} stroke={INK} strokeWidth={1.4} />
       ))}
     </G>
@@ -265,13 +265,14 @@ function Skyline({ top, dark, billboard }: { top: number; dark: boolean; billboa
   const towers = [[0, 70], [34, 95], [62, 60], [96, 120], [130, 80], [168, 105], [210, 70], [246, 130], [282, 85], [318, 110], [356, 75]];
   if (base - 130 < top) return null;
   const board = billboard && base - 130 - 46 > top + 70;
+  const bb = 40; // billboard sits lower, just behind the cast (critic D191)
   return (
     <G>
       <G fill={fill} opacity={alpha}>
         {board && (
           <G>
-            <Rect x={109} y={base - 130 - 16} width={4} height={16 + 10} />
-            <Rect x={259} y={base - 130 - 16} width={4} height={16} />
+            <Rect x={109} y={base - 130 - 16 + bb} width={4} height={16 + 10} />
+            <Rect x={259} y={base - 130 - 16 + bb} width={4} height={16} />
           </G>
         )}
         {towers.map(([x, h], i) => (
@@ -281,9 +282,9 @@ function Skyline({ top, dark, billboard }: { top: number; dark: boolean; billboa
       {/* MegaSlice billboard at full strength, on top of the hazy skyline (critic D145) */}
       {board && (
         <G>
-          <Rect x={100} y={base - 130 - 46} width={172} height={30} rx={4} fill="#7B2CBF" stroke={INK} strokeWidth={2} />
-          <Rect x={104} y={base - 130 - 43} width={164} height={6} rx={3} fill="#fff" opacity={0.18} />
-          <Text x={186} y={base - 130 - 25} fontSize={17} fontFamily={F.bold} fill="#FFC531" stroke={INK} strokeWidth={1} textAnchor="middle">
+          <Rect x={100} y={base - 130 - 46 + bb} width={172} height={30} rx={4} fill="#7B2CBF" stroke={INK} strokeWidth={2} />
+          <Rect x={104} y={base - 130 - 43 + bb} width={164} height={6} rx={3} fill="#fff" opacity={0.18} />
+          <Text x={186} y={base - 130 - 25 + bb} fontSize={17} fontFamily={F.bold} fill="#FFC531" stroke={INK} strokeWidth={1} textAnchor="middle">
             MEGASLICE
           </Text>
         </G>

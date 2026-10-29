@@ -97,20 +97,22 @@ function layout(fp: number, ovenCount: number, cookCount: number, staffCount: nu
     if (decks === 1) ovens.push({ ...ovenCols[c], z: 0, h: 84, chimney: true });
     else ovens.push({ ...ovenCols[c], z: deck * 64, h: 60, chimney: deck === 1 || i + cols >= ovenCount });
   }
-  const door = { x0: R - 46, x1: R - 12, cx: R - 29 };
+  // a 46-wide entrance: walk-ins use the left lane (x0 + 13), drivers the right (x1 − 11) (critic G62/D189)
+  const door = { x0: R - 58, x1: R - 12, cx: R - 35 };
   // Counter front (critic G61/D179): drivers pick up on the left, walk-ins queue on the right, clear of the
   // door leaf. Pickup spots are ≥28 apart; drivers take turns at them rather than crowding.
   const spotCols = Math.max(1, Math.floor((counter.x1 - 46 - (counter.x0 + 12)) / 28) + 1);
   const spots = Array.from({ length: Math.min(driverSlots, spotCols) }, (_, i) => ({ x: counter.x0 + 12 + i * 28, y: 46 }));
   // Dining: tables in front of the prep/oven area, two rows, clear of the left pilaster (critic D180).
   const t0 = L + 44;
-  const t1 = counter.x0 - 10;
-  const perRow = Math.max(1, Math.floor((t1 - 30 - t0) / 60) + 1);
+  // 78-unit pitch; the back row sits half a pitch over, and the front row runs on toward the counter (critic D188)
+  const frontCols = Math.max(1, Math.floor((counter.x0 + 20 - t0) / 78) + 1);
+  const backCols = Math.max(0, Math.floor((counter.x0 - 10 - (t0 + 19.5)) / 78) + 1);
   const tables: Layout['tables'] = [];
-  for (let i = 0; i < Math.min(tableCount, perRow * 2); i++) {
-    const row = i % 2;
-    const col = Math.floor(i / 2);
-    tables.push({ x: t0 + col * 60 + (row ? 30 : 0), y: row ? 34 : 6 });
+  for (let i = 0, f = 0, b = 0; tables.length < Math.min(tableCount, frontCols + backCols) && i < 40; i++) {
+    if (i % 2 === 0 && f < frontCols) tables.push({ x: t0 + 78 * f++, y: 6 });
+    else if (b < backCols) tables.push({ x: t0 + 19.5 + 78 * b++, y: 34 });
+    else if (f < frontCols) tables.push({ x: t0 + 78 * f++, y: 6 });
   }
   // a single starter table sits mid-floor so its diner fills the empty middle (critic D180)
   if (tables.length === 1) tables[0] = { x: (L + counter.x0) / 2, y: 20 };
@@ -266,7 +268,7 @@ type Mood = 'smile' | 'focus' | 'happy' | 'o' | 'chew';
 /** What a worker's hands are doing (critic D138): cooks roll / toss / ladle; bakers hold an empty peel, a pizza, or slide one in. */
 type Act = 'none' | 'pin' | 'toss' | 'ladle' | 'peel' | 'pizza' | 'slide' | 'slice' | 'cup' | 'lean';
 
-function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number; front?: boolean; blink?: boolean; talk?: boolean; act?: Act; mood?: Mood; alt?: boolean; dot?: string; cap?: string }) {
+function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number; front?: boolean; blink?: boolean; talk?: boolean; act?: Act; mood?: Mood; alt?: boolean; dot?: string; cap?: string; gold?: boolean }) {
   const pin = act === 'pin';
   const [sx, sy] = P(x, y);
   const k = kAt(y) * 1.14;
@@ -457,6 +459,7 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
       )}
       {kind === 'baker' && <Circle cx={-9.5} cy={hy + 4.5} r={3.6} fill={look.hair} {...OUT} strokeWidth={0.8} />}
       <Headwear kind={kind} hy={hy} front={front} alt={alt} dot={dot} cap={cap} />
+      {gold && kind === 'cook' && <Rect x={-6.2} y={hy - 11.6} width={13.6} height={2.2} rx={1} fill="#E0B000" stroke={INK} strokeWidth={0.5} />}
       {worker && look.trait === 4 && <Path d={`M${front ? -1 : 3} ${hy - 6.5} q-2.5 2.6 -0.4 4 q0.6 -2 2.6 -2.2 q-0.2 2 1.6 2.6 q0.8 -2.4 -1 -4.4 Z`} fill={look.hair} stroke={INK} strokeWidth={0.6} />}
       {/* front arm + props */}
       {peel && (
@@ -651,6 +654,9 @@ function OvenHood({ lay, grade, mural }: { lay: Layout; grade: number; mural: bo
   );
 }
 
+/** Chairs sit ±SEAT from a table's centre; with a 78 pitch and a quarter-pitch back-row offset every seat interleaves (critic D188). */
+const SEAT = 19.5;
+
 const TABLE_STYLE = [
   { top: '#FFFFFF', rim: '#E0DAD2', chair: '#C89B6D', chairDark: '#8E5A3C', leg: '#9A958E' }, // plain wood
   { top: '#FFFFFF', rim: '#D9443A', chair: '#D9443A', chairDark: '#B23A30', leg: INK }, // checked tablecloth
@@ -697,8 +703,8 @@ function Table({ x, y, tier, part }: { x: number; y: number; tier: number; part:
     return (
       <G>
         <FloorShadow x={x} y={y} r={18} />
-        {chair(-17)}
-        {chair(17)}
+        {chair(-SEAT)}
+        {chair(SEAT)}
       </G>
     );
   }
@@ -960,7 +966,59 @@ const Backdrop = memo(function Backdrop({ id }: { id: NeighborhoodId }) {
 });
 
 // ---------- the room shell (static per layout) ----------
-const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, signage, plants }: { lay: Layout; wall: string; fp: number; flooring: number; walls: number; signage: number; plants: number }) {
+/** A small back-wall prop that tells neighbourhoods apart before any wall decor is bought (critic D194). */
+function LocalProp({ id, x, y }: { id: NeighborhoodId; x: number; y: number }) {
+  return (
+    <G transform={`translate(${x} ${y})`}>
+      {id === 'downtown' && (
+        <G>
+          <Rect x={-16} y={-12} width={32} height={22} rx={2} fill="#FFF4E0" stroke={INK} strokeWidth={1.1} />
+          {[[-12, 8, 9], [-4, 8, 15], [4, 8, 11], [10, 8, 17]].map(([bx, by, h], i) => <Rect key={i} x={bx} y={by - h} width={5} height={h} fill={['#A9B8D0', '#93A6C4', '#A9B8D0', '#7F92B0'][i]} />)}
+          <SvgText x={0} y={-4} fontFamily={F.bold} fontSize={4.5} fill="#D9443A" textAnchor="middle">I ♥ PORT M.</SvgText>
+        </G>
+      )}
+      {id === 'suburbs' && (
+        <G>
+          <Rect x={-14} y={-12} width={28} height={22} rx={2} fill="#C98F63" stroke={INK} strokeWidth={1.1} />
+          <Rect x={-11} y={-9} width={22} height={16} fill="#D6EAF8" />
+          {[-6, 0, 6].map((dx, i) => <Circle key={i} cx={dx} cy={-1} r={2.6} fill={['#F2C9A0', '#C98F63', '#F2C9A0'][i]} stroke={INK} strokeWidth={0.5} />)}
+          <Path d="M-9 7 Q0 1 9 7" fill="#6FCF97" />
+        </G>
+      )}
+      {id === 'waterfront' && (
+        <G>
+          <Circle cx={0} cy={0} r={11} fill="#fff" stroke={INK} strokeWidth={1.1} />
+          <Circle cx={0} cy={0} r={6} fill={'#D6EEF8'} stroke={INK} strokeWidth={1} />
+          {[0, 90, 180, 270].map((a) => <Path key={a} d={`M${Math.cos((a * Math.PI) / 180) * 6} ${Math.sin((a * Math.PI) / 180) * 6} L${Math.cos((a * Math.PI) / 180) * 11} ${Math.sin((a * Math.PI) / 180) * 11}`} stroke="#E8432E" strokeWidth={4} />)}
+          <Path d="M-14 12 q4 -4 8 0 t8 0 t8 0" stroke="#C99A6B" strokeWidth={1.6} fill="none" />
+        </G>
+      )}
+      {id === 'university' && (
+        <G>
+          <Path d="M-18 -10 L16 -4 L-18 2 Z" fill="#7B2CBF" stroke={INK} strokeWidth={1} />
+          <SvgText x={-7} y={-2.4} fontFamily={F.bold} fontSize={5} fill="#FFC531" textAnchor="middle">U.P.M.</SvgText>
+          <Path d="M-18 -11 V6" stroke="#8E5A3C" strokeWidth={1.6} />
+        </G>
+      )}
+      {id === 'industrial' && (
+        <G>
+          <Rect x={-14} y={-10} width={28} height={18} rx={2} fill="#F2C94C" stroke={INK} strokeWidth={1.1} />
+          {[-10, -4, 2, 8].map((dx) => <Path key={dx} d={`M${dx} 8 l4 -18`} stroke={INK} strokeWidth={1.6} opacity={0.7} />)}
+          <Rect x={-10} y={-6} width={20} height={10} rx={1} fill="#fff" stroke={INK} strokeWidth={0.6} />
+          <SvgText x={0} y={1} fontFamily={F.bold} fontSize={4.4} fill={INK} textAnchor="middle">SAFETY 1ST</SvgText>
+        </G>
+      )}
+      {id === 'uptown' && (
+        <G>
+          <Rect x={-16} y={-10} width={32} height={20} rx={1.5} fill="#7A4A26" stroke={INK} strokeWidth={1.1} />
+          {[0, 1, 2, 3].map((c) => [0, 1].map((r) => <Circle key={`${c}${r}`} cx={-11 + c * 7.3} cy={-4 + r * 8} r={2.6} fill={c % 2 ? '#7B1E3A' : '#2F5D3A'} stroke={INK} strokeWidth={0.5} />))}
+        </G>
+      )}
+    </G>
+  );
+}
+
+const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, signage, plants, id }: { lay: Layout; wall: string; fp: number; flooring: number; walls: number; signage: number; plants: number; id: NeighborhoodId }) {
   const { L, R } = lay;
   const sideTop = FRONT_TOP;
   const lights: ReactElement[] = [];
@@ -977,6 +1035,10 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
   return (
     <G>
       <Defs>
+        <LinearGradient id="wainscot" x1="0" y1="1" x2="0" y2="0">
+          <Stop offset="0" stopColor="#000" stopOpacity={0.1} />
+          <Stop offset="1" stopColor="#000" stopOpacity={0} />
+        </LinearGradient>
         <LinearGradient id="bw" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={shade(wall, -0.1)} />
           <Stop offset="1" stopColor={shade(wall, 0.06)} />
@@ -1082,6 +1144,7 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
       <Polygon points={pts([P(L, 0), P(L + 10, 0), P(L + 10, D), P(L, D)])} fill="rgba(59,31,20,0.14)" />
       <Polygon points={pts([P(R - 10, 0), P(R, 0), P(R, D), P(R - 10, D)])} fill="rgba(59,31,20,0.1)" />
       <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 10), P(L, D, 10)])} fill="rgba(59,31,20,0.12)" />
+      <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 24), P(L, D, 24)])} fill="url(#wainscot)" />
       {/* decor grows with the shop */}
       {/* a hole-in-the-wall: branching crack and a chipped patch showing bricks (critic D121) */}
       {fp === 0 && (
@@ -1204,8 +1267,8 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
           )}
         </G>
       )}
-      {/* pantry shelf: flour sacks and tins (critic D95) */}
-      {walls < 3 &&
+      {/* pantry shelf: flour sacks and tins (critic D95), kept under the mural too (critic D190) */}
+      {true &&
         (() => {
           const sx0 = L + 14;
           const sx1 = L + 104;
@@ -1234,6 +1297,10 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
             </G>
           );
         })()}
+      {walls === 0 && (() => {
+        const [px, py] = P(L + 64, D, 176);
+        return <LocalProp id={id} x={px} y={py} />;
+      })()}
       {/* back window with trees outside */}
       <Rect x={wx} y={wy} width={40} height={36} rx={3} fill="#BFE3F5" stroke={INK} strokeWidth={1.2} />
       <Circle cx={wx + 14} cy={wy + 26} r={8} fill="#5DAE4B" />
@@ -1485,13 +1552,13 @@ function DoorLeaf({ lay }: { lay: Layout }) {
   const { door } = lay;
   const hinge0 = P(door.x0, 0, 0);
   const hinge1 = P(door.x0, 0, 104);
-  const tip0 = P(door.x0 - 24, 22, 0);
-  const tip1 = P(door.x0 - 24, 22, 104);
-  const g0 = P(door.x0 - 10, 9, 8);
-  const g1 = P(door.x0 - 21, 19.5, 8);
-  const g2 = P(door.x0 - 21, 19.5, 94);
-  const g3 = P(door.x0 - 10, 9, 94);
-  const [ox, oy] = P(door.x0 - 16, 15, 86);
+  const tip0 = P(door.x0 - 16, 18, 0);
+  const tip1 = P(door.x0 - 16, 18, 104);
+  const g0 = P(door.x0 - 6.5, 7.3, 8);
+  const g1 = P(door.x0 - 14, 15.8, 8);
+  const g2 = P(door.x0 - 14, 15.8, 94);
+  const g3 = P(door.x0 - 6.5, 7.3, 94);
+  const [ox, oy] = P(door.x0 - 10, 11.3, 86);
   return (
     <G>
       <Polygon points={pts([hinge0, tip0, tip1, hinge1])} fill="#7E5038" stroke={INK} strokeWidth={1.2} />
@@ -1772,10 +1839,10 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     const lane = (i % 3) * 6;
     // drivers walk in from up the street, pick up, and hurry off with the box: never fading (critic G55);
     // inside they route past the swung-in door leaf (critic G53)
-    const offStreet: [number, number] = [SCENE_W + 50, -30 - lane];
+    const offStreet: [number, number] = [SCENE_W + 50 + (i % 3) * 18, -30 - lane];
     // drivers use the right half of the doorway, walk-ins the left (critic D179)
-    const outsideDoor: [number, number] = [lay.door.cx + 6, -24 - lane];
-    const insideDoor: [number, number] = [lay.door.cx + 6, 8];
+    const outsideDoor: [number, number] = [lay.door.x1 - 11, -24 - lane];
+    const insideDoor: [number, number] = [lay.door.x1 - 11, 8];
     const via: [number, number] = [lay.door.x0 + 4, 30];
     let pos: [number, number];
     let walking = true;
@@ -1794,7 +1861,9 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     } else if (p < 0.54) pos = along([[spot.x, spot.y], via, insideDoor], (p - 0.46) / 0.08);
     else if (p < 0.6) pos = along([insideDoor, outsideDoor], (p - 0.54) / 0.06);
     else pos = along([outsideDoor, offStreet], (p - 0.6) / 0.4);
-    const o = 1;
+    // fade out past the right edge of the screen instead of piling up there (critic D192)
+    const sxNow = P(pos[0], pos[1])[0];
+    const o = Math.max(0, Math.min(1, (SCENE_W - 10 + 30 - sxNow) / 30));
     const prev = mem.current.phase[`d${i}`];
     if (running && prev !== undefined && prev < 0.54 && p >= 0.54) payout = true;
     mem.current.phase[`d${i}`] = p;
@@ -1811,14 +1880,15 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   // concurrent people never share a shirt colour (critic D156)
   const shirtBase = hash32(shopSeed) % GUEST_SHIRTS.length;
   // walk-ins order at the front-right of the counter, a second one queues toward the door (critic D166)
-  const orderSpot = (i: number): [number, number] => [lay.counter.x1 - 18, i % 2 ? 32 : 48];
+  // walk-ins order at the counter's right end, away from the door lanes and the pickup line (critic D189)
+  const orderSpot = (i: number): [number, number] => [lay.counter.x1 + 14, i % 2 ? 56 : 76];
   for (let i = 0; i < guestCount; i++) {
     const cyc = t / 9 + 0.3 + i / Math.max(2, guestCount);
     const p = ((cyc % 1) + 1) % 1;
     // a different customer every visit, and different crowds in every shop (critic D112)
     const gSeed = shopSeed + i * 2 + 3 + Math.floor(cyc) * 13;
     const table = lay.tables[i];
-    const seat: [number, number] = [table.x + 17, table.y];
+    const seat: [number, number] = [table.x + SEAT, table.y];
     const start: [number, number] = [-30, -44];
     let pos: [number, number];
     let kind: Kind = 'guest';
@@ -1826,22 +1896,22 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     let o = 1;
     let face = false;
     let talking = false;
-    const via: [number, number] = [lay.door.x0 + 4, 30];
+    const via: [number, number] = [lay.door.x0 + 13, 30];
     const orderAt = orderSpot(i);
-    const gIn: [number, number] = [lay.door.cx - 6, 8];
-    const gOut: [number, number] = [lay.door.cx - 6, -24];
+    const gIn: [number, number] = [lay.door.x0 + 13, 8];
+    const gOut: [number, number] = [lay.door.x0 + 13, -24];
     let mood: Mood = 'smile';
     if (p < 0.18) pos = along([start, [gOut[0], -44], gOut], p / 0.18);
     else if (p < 0.24) pos = along([gOut, gIn], (p - 0.18) / 0.06);
     else if (p < 0.34) {
       pos = along([gIn, orderAt], (p - 0.24) / 0.1);
-      face = true;
     } else if (p < 0.42) {
       pos = orderAt;
       walking = false;
+      face = true;
       talking = Math.sin(clock * 9) > -0.2;
     } else if (p < 0.5) {
-      pos = along([orderAt, [seat[0] + 10, seat[1] + 8], seat], (p - 0.42) / 0.08);
+      pos = along([orderAt, [lay.counter.x1 + 10, 36], [seat[0] + 10, seat[1] + 8], seat], (p - 0.42) / 0.08);
       face = true;
     } else if (p < 0.8) {
       // seated on the right-hand chair, facing the table (critic G51)
@@ -1867,24 +1937,25 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       const dSeed = shopSeed + i * 3 + 7 + Math.floor(t / 14 + i * 0.37) * 29;
       const bite = Math.abs(Math.sin(clock * 2 + i));
       const pose = (['none', 'slice', 'cup', 'lean'] as const)[(hash32(dSeed) >>> 3) % 4];
-      items.push({ y: tb.y, el: <Person key={`s${i}`} x={tb.x - 17} y={tb.y} kind="sit" seed={dSeed} act={pose} shirt={GUEST_SHIRTS[(shirtBase + guestCount + fixedIdx * 3 + 1) % GUEST_SHIRTS.length]} blink={blinkAt(dSeed)} arm={bite * 2} mood={pose === 'slice' ? 'chew' : bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile'} /> });
+      items.push({ y: tb.y, el: <Person key={`s${i}`} x={tb.x - SEAT} y={tb.y} kind="sit" seed={dSeed} act={pose} shirt={GUEST_SHIRTS[(shirtBase + guestCount + fixedIdx * 3 + 1) % GUEST_SHIRTS.length]} blink={blinkAt(dSeed)} arm={bite * 2} mood={pose === 'slice' ? 'chew' : bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile'} /> });
       // a busy room seats a companion opposite, on tables no walk-in is heading for
-      if (running && fixedFill >= 0.6 && i >= guestCount && (hash32(dSeed + 1) % 3) !== 0) {
+      const cx = tb.x + SEAT;
+      const crowded = lay.tables.some((o) => o !== tb && [o.x - SEAT, o.x + SEAT].some((sx) => Math.abs(sx - cx) < 18 && Math.abs(o.y - tb.y) < 32));
+      if (running && fixedFill >= 0.6 && i >= guestCount && !crowded && (hash32(dSeed + 1) % 3) !== 0) {
         const cSeed = dSeed + 501;
         const cPose = (['cup', 'none', 'slice', 'lean'] as const)[(hash32(cSeed) >>> 3) % 4];
         const cb = Math.abs(Math.sin(clock * 2 + i + 1.7));
-        items.push({ y: tb.y - 0.1, el: <Person key={`s2${i}`} x={tb.x + 17} y={tb.y} kind="sit" flip seed={cSeed} act={cPose} shirt={GUEST_SHIRTS[(shirtBase + guestCount + fixedIdx * 3 + 5) % GUEST_SHIRTS.length]} blink={blinkAt(cSeed)} arm={cb * 2} mood={cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile'} /> });
+        items.push({ y: tb.y - 0.1, el: <Person key={`s2${i}`} x={tb.x + SEAT} y={tb.y} kind="sit" flip seed={cSeed} act={cPose} shirt={GUEST_SHIRTS[(shirtBase + guestCount + fixedIdx * 3 + 5) % GUEST_SHIRTS.length]} blink={blinkAt(cSeed)} arm={cb * 2} mood={cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile'} /> });
       }
     }
   });
   // potted plants (plants decor)
   if (shop.decor.plants >= 1) {
     items.push({ y: 30, el: <FloorPlant key="pp1" x={lay.L + 12} y={30} /> });
-    items.push({ y: 100, el: <FloorPlant key="pp2" x={lay.R - 54} y={100} /> });
   }
   if (shop.decor.plants >= 3) items.push({ y: 100, el: <FloorPlant key="pp4" x={lay.L + 14} y={100} big /> });
   // kitchen crew + furniture
-  lay.cooks.forEach((x, i) => items.push({ y: 92 + (i % 2) * 8, el: <Person key={`c${i}`} x={x} y={92 + (i % 2) * 8} kind="cook" front act={(['pin', 'toss', 'ladle'] as const)[i % 3]} mood={running && Math.sin(t * 4 + i) > 0.3 ? 'focus' : 'smile'} seed={shopSeed + i * 4 + 20} blink={blinkAt(shopSeed + i * 4 + 20)} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} /> }));
+  lay.cooks.forEach((x, i) => items.push({ y: 92 + (i % 2) * 8, el: <Person key={`c${i}`} x={x} y={92 + (i % 2) * 8} kind="cook" gold={shop.prep >= 100} front act={(['pin', 'toss', 'ladle'] as const)[i % 3]} mood={running && Math.sin(t * 4 + i) > 0.3 ? 'focus' : 'smile'} seed={shopSeed + i * 4 + 20} blink={blinkAt(shopSeed + i * 4 + 20)} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} /> }));
   items.push({
     y: 66,
     el: (
@@ -1899,19 +1970,6 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
             <G>
               {[x0 + 1, x1 - 4].map((lx) => <Box key={`bl${lx}`} x0={lx} x1={lx + 3} y0={81} y1={84} h={18} color="#6B4330" />)}
               <Box x0={x0 + 2} x1={x1 - 2} y0={68} y1={82} h={2} z={4} color="#8E5A3C" />
-              {[0.12, 0.88].map((f, i) => {
-                const [sx, sy] = P(x0 + (x1 - x0) * f, 74, 6);
-                const kk = kAt(74) * 1.4;
-                return (
-                  <G key={`sk${i}`} transform={`translate(${sx} ${sy}) scale(${kk})`}>
-                    <Ellipse cx={0} cy={0.5} rx={8} ry={1.8} fill="#000" opacity={0.18} />
-                    <Path d="M-7 0 Q-8 -9 -4 -11 L4 -11 Q8 -9 7 0 Z" fill="#E3C89A" stroke={INK} strokeWidth={0.9} />
-                    <Path d="M2.5 -11 L4 -11 Q8 -9 7 0 L2 0 Q4.5 -5 2.5 -11 Z" fill="#B48E5E" />
-                    <Path d="M-4 -11 q4 -2.5 8 0" stroke={INK} strokeWidth={0.8} fill="none" />
-                    <Rect x={-4} y={-6.5} width={8} height={2.6} fill="#C8463A" opacity={0.8} />
-                  </G>
-                );
-              })}
               {[x0 + 1, x1 - 4].map((lx) => <Box key={`fl${lx}`} x0={lx} x1={lx + 3} y0={66} y1={69} h={18} color="#7A4A26" />)}
               <Box x0={x0} x1={x1} y0={66} y1={84} h={7} z={18} color="#9A6A44" top="#B07A50" />
               {Array.from({ length: planks - 1 }).map((_, i) => {
@@ -1931,6 +1989,18 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
                     <Rect x={-9} y={-3.4} width={18} height={3.4} rx={1.7} fill="#E2B985" stroke={INK} strokeWidth={0.8} />
                     <Rect x={-12} y={-2.6} width={3.4} height={1.8} rx={0.9} fill="#B07A50" stroke={INK} strokeWidth={0.6} />
                     <Rect x={8.6} y={-2.6} width={3.4} height={1.8} rx={0.9} fill="#B07A50" stroke={INK} strokeWidth={0.6} />
+                  </G>
+                );
+              })()}
+              {shop.prep >= 75 && (() => {
+                const [rx, ry] = P(x0 + (x1 - x0) * 0.5, 80, 28);
+                const kk = kAt(80);
+                return (
+                  <G transform={`translate(${rx} ${ry}) scale(${kk})`}>
+                    <Rect x={-6} y={-4} width={12} height={4} rx={1} fill="#D9443A" stroke={INK} strokeWidth={0.8} />
+                    <Path d="M-4 -4 L-4 -16 Q-4 -20 2 -20 L6 -20 L6 -15 L2 -15 L2 -11" fill="none" stroke={INK} strokeWidth={4.6} strokeLinejoin="round" />
+                    <Path d="M-4 -4 L-4 -16 Q-4 -20 2 -20 L6 -20 L6 -15 L2 -15 L2 -11" fill="none" stroke="#D9443A" strokeWidth={3} strokeLinejoin="round" />
+                    <Path d="M-1 -4 L-1 -9 Q3 -12 7 -9 L7 -4 Z" fill="#BFC4CA" stroke={INK} strokeWidth={0.8} />
                   </G>
                 );
               })()}
@@ -1962,7 +2032,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     const nb = Math.max(1, Math.min(3, Math.floor((b1 - b0) / 40)));
     const bBase = nIdx % 3;
     for (let i = 0; i < nb; i++) {
-      const bx = b0 + ((b1 - b0) * (i + 0.5)) / nb;
+      const bx = Math.min(b0 + ((b1 - b0) * (i + 0.5)) / nb, lay.counter.x0 - 26);
       const by = i % 2 ? 60 : 72;
       const sd = shopSeed + i * 3 + 31 + nIdx * 7;
       const ci = (bBase + i) % 3;
@@ -2099,7 +2169,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
           ))}
           <Sidewalk frontY={frontY} />
           <Street />
-          <RoomShell lay={lay} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
+          <RoomShell id={id} lay={lay} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
           <OvenHood lay={lay} grade={shop.grade} mural={shop.decor.walls >= 3} />
           {/* rush tap: the oven bank pulses and throws a burst of coins (critic D163) */}
           {(() => {

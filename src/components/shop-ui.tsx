@@ -65,7 +65,7 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
           return (
             <Pressable key={n.id} onLayout={onTab(i)} testID={`tab-${n.id}`} onPress={() => onSelect(n.id)} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
               <Text style={styles.tabName}>{n.name}</Text>
-              <Text style={[styles.tabSub, active && { color: C.ink }, !shop.managed && !active && { color: C.tomato }]}>{shop.managed ? `${money(eps)}/s` : 'tap to run'}</Text>
+              <Text style={[styles.tabSub, active && { color: C.ink }, !shop.managed && !active && { color: C.tomato }]}>{shop.managed ? `${money(eps)}/s` : 'you run it'}</Text>
             </Pressable>
           );
         })}
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   tabBuild: { borderStyle: 'dashed', borderColor: C.cheese, backgroundColor: '#FFF4E0' },
   tabBuildReady: { backgroundColor: C.basil, borderColor: '#fff', borderStyle: 'solid' },
 
-  card: { width: '48.5%', backgroundColor: C.panel, borderRadius: 16, padding: 7, gap: 5, borderWidth: 2.5, borderColor: C.ink, ...shadow },
+  card: { justifyContent: 'space-between', width: '48.5%', backgroundColor: C.panel, borderRadius: 16, padding: 7, gap: 5, borderWidth: 2.5, borderColor: C.ink, ...shadow },
   cardWide: { width: '100%', flexDirection: 'row', alignItems: 'flex-start' },
   cardMuted: { opacity: 0.6 },
   cardHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },

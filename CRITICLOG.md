@@ -896,3 +896,39 @@ Typecheck clean, 30 tests pass, `report.json` errors: [].
 | D187 | Workers keep any back hairstyle under their hats (bob, bun, curls, ponytail); cashier caps take a per-neighbourhood colour |
 
 Typecheck clean, 30 tests pass, `report.json` errors: [].
+
+## v2.9 — critique (round 24) — ❌ NOT SATISFIED
+
+**VERDICT: NOT SATISFIED** — loads clean; G61, D180, D182, D184, D186 and D187 show in the pixels. People still pile up: late-game companions stack behind the next row's diners, and drivers and walk-ins still overlap in the doorway.
+
+**Fixed:** G61, D180, D182, D183, D184, D186, D187, D179 (pickup half) · **Still open:** D179 door lanes (→ D189, G62), D181 (→ D188), D185 (→ D193)
+
+**Bugs**
+- G62 The walk-in lane (`door.cx − 6`) lets the left brick jamb slice entering guests
+
+**Visual design**
+- D188 [major] Late-game diners stacked (companions 4 units from back-row diners; shoulders touching in a row; empty floor to the right) → 78-unit pitch, 39 row offset, front row runs further right, skip companions with a seat closer than 30
+- D189 [major] Doorway pile-up (lanes only 12 apart) → hold walk-ins or widen the door with lanes ±11
+- D190–D195 [minor] Bare back wall behind the painting; cut-scene 08 cast too small and 02 props cut by the edges; sidewalk drivers clump at the right edge; flour sacks still unreadable; starter interiors are clones across neighbourhoods; a baker's peel pokes a driver's head
+
+**Design notes**
+- D196 Worker count stops growing after Prep ~Lv 31 → visible tiers (mixer, golden toque) · D197 Seating card has dead space above its button · D198 "tap to run" tab label reads like a button
+
+## v2.10 — build (addresses round 24)
+
+| Note | Fix |
+| --- | --- |
+| G62 / D189 | Entrance widened to 46 with a shallower leaf swing; walk-ins use the left lane (`door.x0 + 13`, clear of the jamb), drivers the right (`door.x1 − 11`), 22 apart. Walk-ins now order at the counter's right **end** (beside it, depth 76, a second one queuing at 56) — out of both the door lanes and the pickup line — and walk round the counter end to their table |
+| D188 | Tables on a 78-unit pitch with chairs at ±19.5 and the back row a quarter-pitch over, so every seat interleaves ~19.5 from its neighbours (no stacked heads). The front row runs on toward the counter, filling the empty right side. Companions are skipped wherever any other seat is within 18 at a similar depth |
+| D190 | Pantry shelf kept under the painting; a 24-unit wainscot shading gradient along the back wall's base |
+| D191 | Cut-scene cast ~20% larger (two-person panels at 49% of the width each, inside the frame); the MEGASLICE billboard sits 40 lower behind them; Nonna's PIZZA board, photo and shelf inset from the cropped edges |
+| D192 | Departing drivers walk off on staggered lanes (x +18 per lane) and fade out past the right screen edge |
+| D193 | Bench undershelf sacks removed (unreadable there); the flour lives on the pantry shelf in every shop |
+| D194 | Bare (tier-0) back walls get one neighbourhood prop: an I ♥ PORT M. skyline poster (Downtown), a family photo (Suburbs), a life ring and rope (Waterfront), a U.P.M. pennant (University), a SAFETY 1ST sign (Industrial), a wine rack (Uptown) |
+| D195 | Bakers clamp to `counter.x0 − 26`, so peels stay clear of the first pickup spot |
+| D196 | Visible staff tiers past the 3-cook cap: a dough mixer appears on the bench at Prep Lv 75, and cooks earn a gold toque band at Lv 100 |
+| D197 | Upgrade cards distribute their content, so buttons bottom-align across a row |
+| D198 | Unmanaged tab reads "you run it" |
+| (08 smoke) | Smoke is an opaque single fill (no see-through tower edges) |
+
+Typecheck clean, 30 tests pass, `report.json` errors: [].
