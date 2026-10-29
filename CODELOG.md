@@ -120,3 +120,18 @@ ID prefixes: K = blocker, C = issue, A = architecture, T = test.
 | C13 | `'use no memo'` in Storefront, with a comment: it deliberately reads the live store each clock frame |
 | C14 | `key={id}` on Storefront, so a shop switch remounts it (clock, taps, rush, pop) and nothing is written during render |
 | A7 / T12 / T13 | Deferred: the cast builder still lives in Storefront |
+
+## Code review round 4 — v3.1 → v3.2 — ✅ APPROVED
+
+**Summary:** The structure is right. `FigureBody` holds its memo frame to frame, the bob translate is correct, the flame is isolated, and Storefront is safely opted out of the compiler. A maxed shop is now about 700 nodes and 5.5k allocations per frame, down from about 1,300 and 8k. What's left is waste inside the split.
+
+- C16 [low] Dome ovens: the flame glow now paints over the keystone and plinth. Fix: draw an `OvenFront` after the flame.
+- C17 [low] The bob/walking rule is duplicated in `Person` and `geom`. Fix: `bobFor()`.
+- C18 [low] `mem.shopId` is redundant since `key={id}`.
+- A8 [low] Split `geom()` into `bodyGeom` and `limbGeom`.
+- M8 [medium] `Limbs` call `geom()`, which also builds the torso path and the `lookFor` object: about 1,000 allocations per frame. Fix: A8.
+- M9 [medium] `Limbs` take the full prop bag (blink, mood, cap…), and back limbs take `arm`. That costs about 120 nodes and 700 allocations per frame. Fix: pass explicit limb props, and give back limbs `arm` only for `pin`.
+- M10 [low] Walkers advance about one `quantStep` bucket per frame, so their memo never hits, and wall-clock jitter makes the gait uneven. Fix: accept it, or step an integer frame counter over 6 phases.
+- M6 [low] The `items` list is still rebuilt per frame.
+- T14 `flameBox` sits inside the window or mouth · T15 hip y vs body `by` per bucket · T12 pose-churn budget (needs A7).
+- Fixed: C12, C13, C14, C15, A6, M1, M3, M7, T11 · Still open: A7, M6, T12.
