@@ -1162,3 +1162,25 @@ v3.0 is the first build that also passed through the `codecritic`, so the scene 
 Found by the new tests: in a starter room with 3 cooks and 2 counter staff, the ovens overlapped the counter. The prep bench now caps itself so the oven bank always keeps 36 units.
 
 Typecheck clean, 44 tests pass (14 new scene tests), `report.json` errors: [].
+
+## v3.0 — critique (round 31) — ❌ NOT SATISFIED (no bugs, no [major] notes, 7 [minor])
+
+**VERDICT: NOT SATISFIED.** v3.0 loads clean and the scene refactor shows no visible regressions. Most of the round-30 notes are fixed. Seven [minor] notes remain (the limit is ≤3), and four of them carry over from round 30.
+
+**Fixed:** G71, D246, D247, D248, D249, D253 · **Still open:** D250 (→ D256), D251 (→ D259), D252 (→ D257), D254 (→ D255)
+
+**Visual design (all [minor])**
+- D255 Starter: the walk-in's aisle (y 34) crosses the driver's pickup spot and covers him. Route starter walk-ins behind the pickup line, or keep the path clear of `spots[0].x ± 14`.
+- D256 The front-left fern sliver persists because the drop rule never fires (`t0 = L + 54` when plants ≥ 1). Drop the fern whenever there is a front row.
+- D257 Cut-scene 01 has three problems:
+  - The moon is clipped. Move it to (248, −26).
+  - The windows look muddy tan. Use #FFD27A at 0.9 with a halo.
+  - The neighbours still read as slivers. Show at least 45pt of each, with a lit window and a cornice.
+- D258 Flagship: the back-row table and chair pile onto the heads of the front-row diners. Move the back row to y 38 when the front row is full, or drop the chair that sits behind a head.
+- D259 Uptown mouldings are still faint and the picture rail is not visible. Use a #B04A68 highlight and a #5A1228 shadow, and draw the rail as a 2-unit #D4A84A line with a #8A6A2A underside at 150.
+- D260 People standing on the doormat hide its lettering. Move the mat 10 units toward the curb, or put the wording on its outer half.
+- D261 People are clipped at both screen edges. Add a left-edge fade for arriving walk-ins, and start the right-edge fade at 30 units.
+
+**Design notes**
+- D262 The header names "drivers & seats", but only Drivers is tagged. Tag Seating too, or name a single bottleneck.
+- D263 Affordable green buttons appear next to "+$0/s now". Soften those buttons, or reword the line.
