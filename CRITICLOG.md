@@ -1044,3 +1044,45 @@ Typecheck clean, 30 tests pass, `report.json` errors: [].
 | D224 | Unmanaged shops keep a slim Prep / Ovens / Counter / Drivers chip strip above the hire button |
 
 Typecheck clean, 30 tests pass, `report.json` errors: [].
+
+## v2.13 — critique (round 28) — ❌ NOT SATISFIED (no [major] notes)
+
+**VERDICT: NOT SATISFIED** — loads clean; most round-27 fixes show (menu between hood and pier, nobody sliced at the door, OPEN plate clears heads, offline total adds up, unmanaged chip strip). But the build log's "window ledge" is only two stools on bare floor, and the run of [minor] polish notes is too long for the stricter bar.
+
+**Fixed:** G68, G69, D217, D218, D219, D220, D221, D223, D224 · **Still open:** D216 (→ G70, D225), D222 (→ D226)
+
+**Bugs**
+- G70 `Ledge` draws no ledge, just two stools mid-floor
+
+**Visual design (all [minor])**
+- D225 Starter's bottom-right floor still empty; Waterfront still a copy of Downtown; floor props too small to read
+- D226 Stand mixer still a red hook; its bowl vanishes; it sits in front of the toss cook
+- D227 Walk-in queue stacks in one depth column
+- D228 Every table has its diner on the left and an empty chair on the right
+- D229 Toss arm is a straight stick (no elbow)
+- D230 The unmanaged chip strip cuts the A-frame and potted tree
+- D231 Industrial hazard stripe reads as a dotted line
+- D232 Mat text hidden by walkers; the walk-in lane crosses the parked van
+- D233 Cut-scenes 01/08 ~40% empty sky; 02 menu board overlaps the photo
+
+**Design notes**
+- D234 Seating card wraps to three lines · D235 Drawer buttons mix filled and outlined styles · D236 City-map tree on the Suburbs label
+
+## v2.14 — build (addresses round 28)
+
+| Note | Fix |
+| --- | --- |
+| G70 / D225 | Starter shops get a real window bar: a wooden bar with a light edge, on two legs, along the inside of the front sill between the counter and the door, with two red-topped stools tucked behind it (seats show above the bar). Floor props are drawn 1.4× larger. The Waterfront starter swaps the square back window for a brass porthole (sea view, rivets) with a fishing net and float draped beside it |
+| D226 | Stand mixer is a solid filled #D9443A body with a #F26B5E highlight, a steel #AEB6BE bowl with a #7C858E rim and highlight; moved to 72% along the bench, clear of the toss cook |
+| D227 | The walk-in queue fans out diagonally toward the door (+8 x, −10 depth per slot) |
+| D228 | Each table's regular sits on alternating sides (left on even tables, right on odd); the walk-in takes the opposite chair. From Seating Lv 13 every other free table seats a pair facing each other |
+| D229 | The toss arm bends at the elbow (two segments); the dough disc tilts 15° along the motion arcs |
+| D230 | On unmanaged shops the A-frame and potted tree step back toward the shop, clear of the chip strip |
+| D231 | Industrial hazard band: a 5-unit band of alternating #1F1A17 / #E8B23A chevrons with an #8C8478 edge |
+| D232 | WELCOME lettering skewed and flattened onto the mat's floor plane; parked vehicle moved to depth −30 |
+| D233 | Cut-scene art caps the sky at 100 units (stronger fill-zoom), so 01/08 lose the empty sky band; Nonna's menu board moved 24 left of the photo, the PIZZA board inset 12 |
+| D234 | Seating card shows one status ("Dining room full · N walk-ins/s", or "rate · next level: +1 table") |
+| D235 | Every affordable drawer button is filled green; the bottleneck is marked only by the red card border and BOTTLENECK chip |
+| D236 | City-map trees kept ≥ 8 units clear of every label card |
+
+Typecheck clean, 30 tests pass, `report.json` errors: [].

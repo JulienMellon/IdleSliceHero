@@ -9,7 +9,8 @@ import { C, F } from '../theme';
 
 const INK = '#3B1F14';
 const TREES = [
-  [4, 46], [42, 34], [60, 33], [44, 50], [58, 50], [93, 34], [95, 21], [4, 78], [12, 79], [42, 74], [58, 78], [38, 4], [6, 62],
+  // kept ≥ 8 units clear of every label card (critic D236)
+  [2, 40], [42, 34], [60, 33], [44, 48], [58, 48], [93, 36], [96, 44], [3, 70], [9, 82], [48, 72], [57, 80], [38, 4], [6, 60],
 ];
 const ROAD = '#D8CFC0';
 // avenues between the rows of lots, and cross streets that stay clear of them

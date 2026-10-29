@@ -47,12 +47,12 @@ function Scenery({ id }: { id: BackdropId }) {
             <Path d="M272 150 L272 105 Q300 85 328 105 L328 150 Z" fill="#2B1A12" />
             <Path d="M280 150 L285 125 L292 140 L300 118 L308 140 L315 125 L320 150 Z" fill="#FF9F1C" />
           </G>
-          <Rect x={86} y={44} width={82} height={52} rx={8} fill="#FFFFFF" stroke={INK} strokeWidth={2.4} />
-          <Circle cx={108} cy={70} r={16} fill="#FFC531" stroke={INK} strokeWidth={2} />
-          {[[102, 64], [114, 67], [106, 78], [115, 76]].map(([cx, cy], i) => (
+          <Rect x={98} y={44} width={82} height={52} rx={8} fill="#FFFFFF" stroke={INK} strokeWidth={2.4} />
+          <Circle cx={120} cy={70} r={16} fill="#FFC531" stroke={INK} strokeWidth={2} />
+          {[[114, 64], [126, 67], [118, 78], [127, 76]].map(([cx, cy], i) => (
             <Circle key={i} cx={cx} cy={cy} r={4} fill="#E8432E" />
           ))}
-          <Text x={145} y={75} fontSize={11} fontFamily={F.bold} fill="#D9443A" textAnchor="middle">
+          <Text x={157} y={75} fontSize={11} fontFamily={F.bold} fill="#D9443A" textAnchor="middle">
             PIZZA
           </Text>
         </G>
@@ -233,15 +233,15 @@ function ShopWall() {
       <Text x={260} y={-79} fontSize={10} fontFamily={F.bold} fill="#FFF4E0" textAnchor="middle">
         EST. 1974
       </Text>
-      <Rect x={150} y={-90} width={70} height={46} rx={4} fill="#2F3B33" stroke="#8E5A3C" strokeWidth={3} />
-      <Text x={185} y={-77} fontSize={9} fontFamily={F.bold} fill="#FFC531" textAnchor="middle">
+      <Rect x={126} y={-90} width={70} height={46} rx={4} fill="#2F3B33" stroke="#8E5A3C" strokeWidth={3} />
+      <Text x={161} y={-77} fontSize={9} fontFamily={F.bold} fill="#FFC531" textAnchor="middle">
         MENU
       </Text>
       {[0, 1, 2].map((i) => (
         <G key={i}>
-          <Path d={`M157 ${-70 + i * 8} l6 0 l-3 6 Z`} fill="#FFC531" />
-          <Rect x={166} y={-69 + i * 8} width={[30, 26, 22][i]} height={3} rx={1.5} fill="#FFF4E0" />
-          <Text x={214} y={-65 + i * 8} fontSize={6} fontFamily={F.bold} fill="#FFC531" textAnchor="end">
+          <Path d={`M133 ${-70 + i * 8} l6 0 l-3 6 Z`} fill="#FFC531" />
+          <Rect x={142} y={-69 + i * 8} width={[30, 26, 22][i]} height={3} rx={1.5} fill="#FFF4E0" />
+          <Text x={190} y={-65 + i * 8} fontSize={6} fontFamily={F.bold} fill="#FFC531" textAnchor="end">
             {`$${[3, 4, 4][i]}`}
           </Text>
         </G>
@@ -313,7 +313,7 @@ export function Backdrop({ id, width, height, prop }: { id: BackdropId; width: n
   const [top, bottom] = SKY[id];
   // Art is 400 wide with scenery in the bottom 200 units. Up to 120 units of sky; a taller frame scales the
   // art up and crops the sides instead of showing more empty sky (critic D108).
-  const vbH = Math.max(200, Math.min(340, (400 * height) / width));
+  const vbH = Math.max(200, Math.min(300, (400 * height) / width));
   return (
     <Svg width={width} height={height} viewBox={`0 ${200 - vbH} 400 ${vbH}`} preserveAspectRatio="xMidYMax slice">
       <Defs>

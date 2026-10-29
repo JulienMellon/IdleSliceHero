@@ -115,7 +115,7 @@ function layout(fp: number, ovenCount: number, cookCount: number, staffCount: nu
   for (let b = 0; b < backCols && tables.length < tableCount; b++) tables.push({ x: t0 + 19.5 + 78 * b, y: 40 });
   // a single starter table sits mid-floor so its diner fills the empty middle (critic D180)
   if (tables.length === 1) tables[0] = { x: (L + counter.x0) / 2, y: 20 };
-  return { L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, tables, scooter: { x: door.x0 - 30, y: -22 } };
+  return { L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, tables, scooter: { x: door.x0 - 30, y: -30 } };
 }
 
 // ---------- drawing primitives ----------
@@ -498,7 +498,7 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
           )}
         </G>
       )}
-      <Limb d={`M6.5 ${by + 4} Q${9.5} ${by + 9} ${hand[0]} ${hand[1]}`} color={sleeve} />
+      <Limb d={act === 'toss' ? `M6.5 ${by + 4} L${10.5} ${by - 3} L${hand[0]} ${hand[1]}` : `M6.5 ${by + 4} Q${9.5} ${by + 9} ${hand[0]} ${hand[1]}`} color={sleeve} />
       {kind === 'cook' || kind === 'baker' ? <Path d={`M${hand[0] - 2.4} ${hand[1] - 2.2} l2.8 -1`} stroke={kind === 'cook' ? '#E1DAD0' : '#7E2A35'} strokeWidth={1.2} /> : null}
       {pin && (
         <G>
@@ -508,7 +508,7 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
       )}
       {act === 'toss' && (
         <G>
-          <Ellipse cx={hand[0] + 0.5} cy={hand[1] - 5 - arm * 2} rx={6.5} ry={1.9} fill="#F0C98A" stroke="#C98A4B" strokeWidth={1.1} />
+          <Ellipse cx={hand[0] + 0.5} cy={hand[1] - 5 - arm * 2} rx={6.5} ry={1.9} fill="#F0C98A" stroke="#C98A4B" strokeWidth={1.1} transform={`rotate(-15 ${hand[0] + 0.5} ${hand[1] - 5 - arm * 2})`} />
           <Ellipse cx={hand[0] - 0.8} cy={hand[1] - 5.5 - arm * 2} rx={3} ry={0.7} fill="#FFF1D6" opacity={0.8} />
           <Path d={`M${hand[0] - 7} ${hand[1] - 9 - arm * 2} q-2 3 0 6 M${hand[0] + 8} ${hand[1] - 9 - arm * 2} q2 3 0 6`} stroke={INK} strokeWidth={0.7} fill="none" opacity={0.6} strokeLinecap="round" />
         </G>
@@ -790,7 +790,7 @@ function WallPlanter({ lay }: { lay: Layout }) {
 /** A small floor prop that makes each starter shop its own place (critic D216). */
 function FloorProp({ id, x, y }: { id: NeighborhoodId; x: number; y: number }) {
   const [px, py] = P(x, y);
-  const k = kAt(y);
+  const k = kAt(y) * 1.4;
   return (
     <G transform={`translate(${px} ${py}) scale(${k})`}>
       <Ellipse cx={0} cy={0} rx={12} ry={3} fill="rgba(59,31,20,0.22)" />
@@ -838,18 +838,28 @@ function FloorProp({ id, x, y }: { id: NeighborhoodId; x: number; y: number }) {
   );
 }
 
-/** A window ledge with two stools by the door, for the starter shop (critic D216). */
-function Ledge({ x, y }: { x: number; y: number }) {
+/** A window bar along the inside of the front sill, by the door, for the starter shop (critic G70/D225). */
+function LedgeBar({ x0, x1 }: { x0: number; x1: number }) {
   return (
     <G>
-      {[0, 18].map((dx) => {
-        const [px, py] = P(x - dx, y);
-        const k = kAt(y);
+      {[x0 + 3, x1 - 5].map((lx) => <Box key={lx} x0={lx} x1={lx + 2} y0={4} y1={6} h={20} color="#5E3A26" />)}
+      <Box x0={x0} x1={x1} y0={2} y1={9} h={4} z={20} color="#5E3A26" top="#8E5A3C" />
+      <Path d={`M${P(x0, 2, 24).join(' ')} L${P(x1, 2, 24).join(' ')}`} stroke="#B07A50" strokeWidth={1} />
+    </G>
+  );
+}
+function Stools({ x0, x1 }: { x0: number; x1: number }) {
+  return (
+    <G>
+      {[x0 + (x1 - x0) * 0.3, x0 + (x1 - x0) * 0.72].map((sx) => {
+        const [px, py] = P(sx, 13);
+        const k = kAt(13) * 1.1;
         return (
-          <G key={dx} transform={`translate(${px} ${py}) scale(${k})`}>
+          <G key={sx} transform={`translate(${px} ${py}) scale(${k})`}>
             <Ellipse cx={0} cy={0} rx={6} ry={1.8} fill="rgba(59,31,20,0.22)" />
-            <Path d="M-3 0 L-2 -10 M3 0 L2 -10" stroke="#5E3A26" strokeWidth={1.4} />
-            <Ellipse cx={0} cy={-10.5} rx={5} ry={1.8} fill="#D9443A" stroke={INK} strokeWidth={0.8} />
+            <Path d="M-3 0 L-2 -21 M3 0 L2 -21 M-2.6 -8 H2.6" stroke="#5E3A26" strokeWidth={1.4} />
+            <Ellipse cx={0} cy={-21.5} rx={5.4} ry={2} fill="#D9443A" stroke={INK} strokeWidth={0.8} />
+            <Ellipse cx={-1.4} cy={-22} rx={2} ry={0.6} fill="#fff" opacity={0.4} />
           </G>
         );
       })}
@@ -1273,7 +1283,12 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
         <G>
           <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 60), P(L, D, 60)])} fill="#9AA1A8" />
           <Path d={`M${P(L, D, 60).join(' ')} L${P(R, D, 60).join(' ')}`} stroke="#6E757B" strokeWidth={2} />
-          <Path d={`M${P(L, D, 62).join(' ')} L${P(R, D, 62).join(' ')}`} stroke="#E8B23A" strokeWidth={2.2} strokeDasharray="5 4" />
+          {/* hazard band: alternating dark / yellow chevrons (critic D231) */}
+          <Polygon points={pts([P(L, D, 60), P(R, D, 60), P(R, D, 65), P(L, D, 65)])} fill="#E8B23A" />
+          {Array.from({ length: Math.ceil((R - L) / 8) }).map((_, i) => (
+            <Polygon key={`hz${i}`} points={pts([P(L + i * 8, D, 60), P(L + i * 8 + 4, D, 60), P(L + i * 8 + 7, D, 65), P(L + i * 8 + 3, D, 65)])} fill="#1F1A17" />
+          ))}
+          <Path d={`M${P(L, D, 60).join(' ')} L${P(R, D, 60).join(' ')}`} stroke="#8C8478" strokeWidth={1.2} />
           {Array.from({ length: Math.floor((R - L) / 14) }).map((_, i) => {
             const [rx, ry] = P(L + 7 + i * 14, D, 54);
             const [, ry2] = P(0, D, 8);
@@ -1450,12 +1465,28 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
         const [px, py] = P(L + 22, D, 168);
         return <LocalProp id={id} x={px} y={py} />;
       })()}
-      {/* back window with trees outside */}
-      <Rect x={wx} y={wy} width={40} height={36} rx={3} fill="#BFE3F5" stroke={INK} strokeWidth={1.2} />
-      <Circle cx={wx + 14} cy={wy + 26} r={8} fill="#5DAE4B" />
-      <Circle cx={wx + 27} cy={wy + 28} r={6} fill="#4FA048" />
-      <Path d={`M${wx + 20} ${wy} V${wy + 36} M${wx} ${wy + 18} H${wx + 40}`} stroke="#fff" strokeWidth={2} />
-      <Rect x={wx - 2} y={wy + 34} width={44} height={4} fill="#8E5A3C" stroke={INK} strokeWidth={0.8} />
+      {/* back window: a brass porthole + fishing net at the Waterfront (critic D225), trees elsewhere */}
+      {id === 'waterfront' ? (
+        <G>
+          <Circle cx={wx + 20} cy={wy + 18} r={19} fill="#C9A04A" stroke={INK} strokeWidth={1.2} />
+          <Circle cx={wx + 20} cy={wy + 18} r={14} fill="#7CC8EE" stroke={INK} strokeWidth={1} />
+          <Path d={`M${wx + 6} ${wy + 22} q7 -3 14 0 t14 0`} stroke="#D6F0FB" strokeWidth={1.6} fill="none" />
+          <Path d={`M${wx + 12} ${wy + 9} A10 10 0 0 1 ${wx + 24} ${wy + 6}`} stroke="#fff" strokeWidth={1.6} opacity={0.6} fill="none" strokeLinecap="round" />
+          {[0, 90, 180, 270].map((a) => <Circle key={a} cx={wx + 20 + Math.cos((a * Math.PI) / 180) * 16.5} cy={wy + 18 + Math.sin((a * Math.PI) / 180) * 16.5} r={1.2} fill="#8C6A20" />)}
+          {/* fishing net draped to the right */}
+          <Path d={`M${wx + 42} ${wy - 4} Q${wx + 52} ${wy + 18} ${wx + 46} ${wy + 40} M${wx + 42} ${wy - 4} Q${wx + 62} ${wy + 14} ${wx + 60} ${wy + 38}`} stroke="#8E5A3C" strokeWidth={1} fill="none" />
+          {Array.from({ length: 5 }).map((_, i) => <Path key={i} d={`M${wx + 44 + i * 0.6} ${wy + 4 + i * 7} L${wx + 54 + i * 1.2} ${wy + 2 + i * 7.5}`} stroke="#8E5A3C" strokeWidth={0.8} />)}
+          <Circle cx={wx + 52} cy={wy + 30} r={2.4} fill="#F2994A" stroke={INK} strokeWidth={0.6} />
+        </G>
+      ) : (
+        <G>
+          <Rect x={wx} y={wy} width={40} height={36} rx={3} fill="#BFE3F5" stroke={INK} strokeWidth={1.2} />
+          <Circle cx={wx + 14} cy={wy + 26} r={8} fill="#5DAE4B" />
+          <Circle cx={wx + 27} cy={wy + 28} r={6} fill="#4FA048" />
+          <Path d={`M${wx + 20} ${wy} V${wy + 36} M${wx} ${wy + 18} H${wx + 40}`} stroke="#fff" strokeWidth={2} />
+          <Rect x={wx - 2} y={wy + 34} width={44} height={4} fill="#8E5A3C" stroke={INK} strokeWidth={0.8} />
+        </G>
+      )}
     </G>
   );
 });
@@ -1761,9 +1792,11 @@ function Doormat({ lay }: { lay: Layout }) {
       <Polygon points={pts([P(lay.door.x0 + 4, -4), P(lay.door.x1 - 4, -4), P(lay.door.x1 - 1, -12), P(lay.door.x0 + 1, -12)])} fill="none" stroke="#C8643E" strokeWidth={0.8} />
       {[a0, a1].map((pt, i) => <Path key={`f${i}`} d={`M${pt[0] + (i ? 1 : -1)} ${pt[1]} L${pt[0] + (i ? 2.2 : -2.2)} ${pt[1] + 1} M${pt[0] + (i ? 1.4 : -1.4)} ${pt[1] + 3} L${pt[0] + (i ? 2.8 : -2.8)} ${pt[1] + 4}`} stroke="#C8643E" strokeWidth={0.8} />)}
       {[b0, b1].map((pt, i) => <Path key={`g${i}`} d={`M${pt[0] + (i ? 1 : -1)} ${pt[1] - 2} L${pt[0] + (i ? 2.6 : -2.6)} ${pt[1] - 1} M${pt[0] + (i ? 1 : -1)} ${pt[1] - 5} L${pt[0] + (i ? 2.6 : -2.6)} ${pt[1] - 4}`} stroke="#C8643E" strokeWidth={0.8} />)}
-      <SvgText x={cx} y={cy + 2.2} fontFamily={F.bold} fontSize={6} fill="#FFC531" textAnchor="middle">
-        WELCOME
-      </SvgText>
+      <G transform={`translate(${cx} ${cy + 1.6}) skewX(-18) scale(1 0.62)`}>
+        <SvgText x={0} y={2.4} fontFamily={F.bold} fontSize={8} fill="#FFC531" textAnchor="middle">
+          WELCOME
+        </SvgText>
+      </G>
     </G>
   );
 }
@@ -2045,14 +2078,15 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   const walkHair = (i: number, cy: number) => pickAvoid(hairBase + i * 2 + cy * 5, HAIR_COLORS.length, near(i).flatMap((j) => [seatHair(j)]));
   // walk-ins order at the front-right of the counter, a second one queues toward the door (critic D166)
   // walk-ins order at the counter's right end, away from the door lanes and the pickup line (critic D189)
-  const orderSpot = (i: number): [number, number] => [lay.counter.x1 - 4 + (i % 2) * 14, 58];
+  const orderSpot = (i: number): [number, number] => [lay.counter.x1 - 4 + (i % 2) * 8, 58 - (i % 2) * 10];
   for (let i = 0; i < guestCount; i++) {
     const cyc = t / 9 + 0.3 + i / Math.max(2, guestCount);
     const p = ((cyc % 1) + 1) % 1;
     // a different customer every visit, and different crowds in every shop (critic D112)
     const gSeed = shopSeed + i * 2 + 3 + Math.floor(cyc) * 13;
     const table = lay.tables[i];
-    const seat: [number, number] = [table.x + SEAT, table.y];
+    const side = i % 2 ? 1 : -1; // the fixed diner's side at this table (critic D228)
+    const seat: [number, number] = [table.x - side * SEAT, table.y];
     const start: [number, number] = [-30, -46];
     let pos: [number, number];
     let kind: Kind = 'guest';
@@ -2078,11 +2112,11 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       pos = along([orderAt, [seat[0] + 10, seat[1] + 8], seat], (p - 0.42) / 0.08);
       face = true;
     } else if (p < 0.8) {
-      // seated on the right-hand chair, facing the table (critic G51)
+      // seated on the chair opposite the table's regular, facing the table (critic G51/D228)
       pos = seat;
       kind = 'sit';
       walking = false;
-      face = true;
+      face = side < 0;
       const bite = Math.abs(Math.sin(clock * 2 + i));
       mood = bite > 1.4 / 2 ? 'chew' : bite < 0.3 ? 'happy' : 'smile';
     } else if (p < 0.88) pos = along([seat, via, gIn], (p - 0.8) / 0.08);
@@ -2102,15 +2136,15 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       const dSeed = shopSeed + i * 3 + 7 + Math.floor(t / 14 + i * 0.37) * 29;
       const bite = Math.abs(Math.sin(clock * 2 + i));
       const pose = (['none', 'slice', 'cup', 'lean'] as const)[(hash32(dSeed) >>> 3) % 4];
-      items.push({ y: tb.y, el: <Person key={`s${i}`} x={tb.x - SEAT} y={tb.y} kind="sit" seed={dSeed} act={pose} shirt={GUEST_SHIRTS[seatShirt(i)]} hair={HAIR_COLORS[seatHair(i)]} blink={blinkAt(dSeed)} arm={bite * 2} mood={pose === 'slice' ? 'chew' : bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile'} /> });
+      items.push({ y: tb.y, el: <Person key={`s${i}`} x={tb.x + (i % 2 ? SEAT : -SEAT)} y={tb.y} kind="sit" flip={i % 2 === 1} seed={dSeed} act={pose} shirt={GUEST_SHIRTS[seatShirt(i)]} hair={HAIR_COLORS[seatHair(i)]} blink={blinkAt(dSeed)} arm={bite * 2} mood={pose === 'slice' ? 'chew' : bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile'} /> });
       // a busy room seats a companion opposite, on tables no walk-in is heading for
-      const cx = tb.x + SEAT;
+      const cx = tb.x - (i % 2 ? SEAT : -SEAT);
       const crowded = lay.tables.some((o) => o !== tb && [o.x - SEAT, o.x + SEAT].some((sx) => Math.abs(sx - cx) < 18 && Math.abs(o.y - tb.y) < 32));
-      if (running && fixedFill >= 0.6 && i >= guestCount && !crowded && (hash32(dSeed + 1) % 3) !== 0) {
+      if (running && i >= guestCount && !crowded && (shop.tables >= 13 ? i % 2 === 0 : fixedFill >= 0.6 && hash32(dSeed + 1) % 3 !== 0)) {
         const cSeed = dSeed + 501;
         const cPose = (['cup', 'none', 'slice', 'lean'] as const)[(hash32(cSeed) >>> 3) % 4];
         const cb = Math.abs(Math.sin(clock * 2 + i + 1.7));
-        items.push({ y: tb.y - 0.1, el: <Person key={`s2${i}`} x={tb.x + SEAT} y={tb.y} kind="sit" flip seed={cSeed} act={cPose} shirt={GUEST_SHIRTS[(seatShirt(i) + 4) % GUEST_SHIRTS.length]} hair={HAIR_COLORS[(seatHair(i) + 3) % HAIR_COLORS.length]} blink={blinkAt(cSeed)} arm={cb * 2} mood={cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile'} /> });
+        items.push({ y: tb.y - 0.1, el: <Person key={`s2${i}`} x={cx} y={tb.y} kind="sit" flip={i % 2 === 0} seed={cSeed} act={cPose} shirt={GUEST_SHIRTS[(seatShirt(i) + 4) % GUEST_SHIRTS.length]} hair={HAIR_COLORS[(seatHair(i) + 3) % HAIR_COLORS.length]} blink={blinkAt(cSeed)} arm={cb * 2} mood={cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile'} /> });
       }
     }
   });
@@ -2158,15 +2192,17 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
                 );
               })()}
               {shop.prep >= 75 && (() => {
-                const [rx, ry] = P(x0 + (x1 - x0) * 0.5, 80, 28);
-                const kk = kAt(80);
+                const [rx, ry] = P(x0 + (x1 - x0) * 0.72, 80, 28);
+                const kk = kAt(80) * 1.1;
                 return (
                   <G transform={`translate(${rx} ${ry}) scale(${kk})`}>
-                    <Rect x={-6} y={-4} width={12} height={4} rx={1} fill="#D9443A" stroke={INK} strokeWidth={0.8} />
-                    <Path d="M-4 -4 L-4 -19 Q-4 -23 2 -23 L7 -23 L7 -18 L3 -18 L3 -14" fill="none" stroke={INK} strokeWidth={4.6} strokeLinejoin="round" />
-                    <Path d="M-4 -4 L-4 -19 Q-4 -23 2 -23 L7 -23 L7 -18 L3 -18 L3 -14" fill="none" stroke="#D9443A" strokeWidth={3} strokeLinejoin="round" />
-                    <Path d="M-2 -4 Q-2 -12 3.5 -12 Q9 -12 9 -4 Z" fill="#E8E2D8" stroke={INK} strokeWidth={0.8} />
-                    <Path d="M-0.5 -6 Q0 -10 3 -10.6" stroke="#fff" strokeWidth={1} fill="none" strokeLinecap="round" />
+                    {/* solid stand mixer: base, column, head, steel bowl (critic D226) */}
+                    <Rect x={-7} y={-3.5} width={14} height={3.5} rx={1.2} fill="#D9443A" stroke={INK} strokeWidth={0.8} />
+                    <Path d="M-6 -3.5 L-6 -17 Q-6 -21 -2 -21 L8 -21 Q10 -21 10 -18.5 L10 -15 L-1 -15 L-1 -3.5 Z" fill="#D9443A" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+                    <Path d="M-4.6 -5 L-4.6 -17 Q-4.6 -19.4 -2.4 -19.6" stroke="#F26B5E" strokeWidth={1.4} fill="none" strokeLinecap="round" />
+                    <Path d="M1 -3.5 Q1 -11 5.5 -11 Q10 -11 10 -3.5 Z" fill="#AEB6BE" stroke="#7C858E" strokeWidth={1} />
+                    <Path d="M2.5 -5 Q3 -9 5.5 -9.4" stroke="#fff" strokeWidth={0.9} fill="none" strokeLinecap="round" />
+                    <Path d="M5.5 -15 V-11" stroke="#7C858E" strokeWidth={1.2} />
                   </G>
                 );
               })()}
@@ -2232,12 +2268,18 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   items.push({ y: 0, el: <FrontWall key="front" lay={lay} name={nd.name} signage={shop.decor.signage} plants={shop.decor.plants} /> });
   items.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
   if (fp === 0) {
-    items.push({ y: 30, el: <Ledge key="ledge" x={lay.door.x0 - 22} y={30} /> });
+    const lx0 = lay.counter.x0 + 4;
+    const lx1 = lay.door.x0 - 12;
+    if (lx1 - lx0 > 24) {
+      items.push({ y: 13, el: <Stools key="stools" x0={lx0} x1={lx1} /> });
+      items.push({ y: 5, el: <LedgeBar key="ledge" x0={lx0} x1={lx1} /> });
+    }
     items.push({ y: 8, el: <FloorProp key="fprop" id={id} x={lay.L + 22} y={8} /> });
   }
-  items.push({ y: -34, el: <ChalkSign key="sign" x={lay.door.x0 - 75} y={-34} /> });
+  const idleShop = !shop.managed && id !== 'downtown';
+  items.push({ y: idleShop ? -18 : -34, el: <ChalkSign key="sign" x={lay.door.x0 - 75} y={idleShop ? -18 : -34} /> });
   items.push({ y: 16, el: <DoorLeaf key="leaf" lay={lay} /> });
-  items.push({ y: -40, el: <Planter key="pl" x={lay.L + 8} y={-40} /> });
+  items.push({ y: idleShop ? -22 : -40, el: <Planter key="pl" x={lay.L + 8} y={idleShop ? -22 : -40} /> });
   const [scx, scy] = P(lay.scooter.x, lay.scooter.y);
   items.push({
     y: lay.scooter.y,
