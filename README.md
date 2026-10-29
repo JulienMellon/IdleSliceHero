@@ -14,4 +14,4 @@ v2.2 — playable home city (Port Marinara): a pizzeria in each of six neighbour
 
 - Run: `npm install`, then `npx expo start` (Expo Go) or `npx expo export --platform web`
 - Tests: `npm test` (engine) · pacing: `npx tsx scripts/pacing-sim.ts` (`NOTAP=1` for a casual player)
-- Review loop: `CRITICLOG.md` (critic agent in `.claude/agents/critic.md`; screenshots via `scripts/screenshots.py`)
+- Review loop: each build step is reviewed by two agents — the visual `critic` (`.claude/agents/critic.md`, log in `CRITICLOG.md`, screenshots via `scripts/screenshots.py`) and the `codecritic` (`.claude/agents/codecritic.md`, log in `CODELOG.md`), which reviews the step's diff for code quality and architecture. Both sets of notes feed the next build; a step is done when the critic is SATISFIED and the codecritic APPROVES.
