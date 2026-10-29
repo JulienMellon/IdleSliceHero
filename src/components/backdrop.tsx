@@ -18,7 +18,7 @@ const SKY: Record<BackdropId, [string, string]> = {
   'downtown-rain': ['#2B2D52', '#5C5470'],
 };
 
-function Building({ x, w, h, color }: { x: number; w: number; h: number; color: string }) {
+function Building({ x, w, h, color, win = '#FFF3B0', winO = 0.85 }: { x: number; w: number; h: number; color: string; win?: string; winO?: number }) {
   const rows = Math.floor((h - 10) / 14);
   const cols = Math.max(1, Math.floor((w - 6) / 12));
   return (
@@ -26,7 +26,7 @@ function Building({ x, w, h, color }: { x: number; w: number; h: number; color: 
       <Rect x={x} y={200 - h} width={w} height={h} fill={color} stroke={INK} strokeWidth={2} />
       {Array.from({ length: rows }).map((_, r) =>
         Array.from({ length: cols }).map((__, c) => (
-          <Rect key={`${r}-${c}`} x={x + 6 + c * 12} y={200 - h + 8 + r * 14} width={6} height={8} fill="#FFF3B0" opacity={0.85} />
+          <Rect key={`${r}-${c}`} x={x + 6 + c * 12} y={200 - h + 8 + r * 14} width={6} height={8} fill={win} opacity={winO} />
         )),
       )}
     </G>
@@ -116,7 +116,7 @@ function Scenery({ id }: { id: BackdropId }) {
           <Path d="M30 175 L30 110 L80 130 L80 110 L130 130 L130 110 L180 130 L180 175 Z" fill="#9C8B7A" stroke={INK} strokeWidth={3} />
           <Rect x={210} y={60} width={24} height={115} fill="#8B5A3C" stroke={INK} strokeWidth={2.5} />
           <Rect x={250} y={80} width={24} height={95} fill="#8B5A3C" stroke={INK} strokeWidth={2.5} />
-          {/* one path, one fill: no overlap seam (critic D162) */}
+          {/* one path, one fill: no overlap seam */}
           <Path d="M208 45 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z M222 30 a18 18 0 1 0 36 0 a18 18 0 1 0 -36 0 Z" fill="#D9D9D9" />
           <Rect x={300} y={120} width={80} height={55} fill="#E67E22" stroke={INK} strokeWidth={2.5} />
         </G>
@@ -136,8 +136,12 @@ function Scenery({ id }: { id: BackdropId }) {
     case 'downtown-rain':
       return (
         <G>
-          {[[0, 60, 150, '#3E3A5C'], [64, 50, 175, '#4A4468'], [282, 52, 165, '#3E3A5C'], [340, 60, 140, '#4A4468']].map(([x, w, h, c], i) => (
-            <Building key={i} x={x as number} w={w as number} h={h as number} color={c as string} />
+          {/* a pale moon behind the rain, and the neighbours' lit windows either side of Rosa's */}
+          <Circle cx={262} cy={-38} r={22} fill="#E8E4FF" opacity={0.9} />
+          <Circle cx={254} cy={-44} r={5} fill="#D2CCF2" opacity={0.7} />
+          <Circle cx={270} cy={-30} r={3.4} fill="#D2CCF2" opacity={0.7} />
+          {([[84, 36, 128, '#4A4468'], [280, 36, 120, '#3E3A5C']] as const).map(([x, w, h, c], i) => (
+            <Building key={i} x={x} w={w} h={h} color={c} win="#F6C35A" winO={0.5} />
           ))}
           {/* Rosa's storefront */}
           <Rect x={120} y={88} width={160} height={112} fill="#8E3B2E" stroke={INK} strokeWidth={2.4} />
@@ -176,7 +180,7 @@ function Scenery({ id }: { id: BackdropId }) {
             const y = -280 + ((i * 97) % 470);
             return <Path key={i} d={`M${x} ${y} l-6 18`} stroke="#B9C6FF" strokeWidth={2} opacity={0.55} strokeLinecap="round" />;
           })}
-          {/* wet sidewalk and kerb under the shop (critic D162) */}
+          {/* wet sidewalk and kerb under the shop */}
           <Rect x={0} y={186} width={400} height={14} fill="#4A4566" />
           <Rect x={0} y={186} width={400} height={3} fill="#3A3550" />
           <Path d="M150 194 q10 -2 20 0 M232 196 q12 -2 24 0" stroke="#8D86B8" strokeWidth={1.4} opacity={0.6} fill="none" />
@@ -198,7 +202,7 @@ function Scenery({ id }: { id: BackdropId }) {
 }
 
 function Clouds({ dark }: { dark: boolean }) {
-  // solid fill with the opacity on the group, so overlapping puffs don't show seams (critic D120)
+  // solid fill with the opacity on the group, so overlapping puffs don't show seams
   return (
     <G fill="#FFFFFF" opacity={dark ? 0.18 : 0.85}>
       {[[70, -40, 1], [250, -60, 1.3], [350, -10, 0.8]].map(([x, y, k], i) => (
@@ -246,7 +250,7 @@ function ShopWall() {
           </Text>
         </G>
       ))}
-      {/* tins on a shelf under the photo, clear of the PIZZA sign (critic D146) */}
+      {/* tins on a shelf under the photo, clear of the PIZZA sign */}
       <Rect x={218} y={-48} width={88} height={6} fill="#8E5A3C" stroke={INK} strokeWidth={1.2} />
       <Path d="M228 -42 l4 8 M296 -42 l-4 8" stroke="#5E3A26" strokeWidth={2} strokeLinecap="round" />
       {[224, 242, 260, 278, 294].map((x, i) => (
@@ -256,16 +260,16 @@ function ShopWall() {
   );
 }
 
-/** Distant city silhouette that fills the upper part of tall panels so they aren't empty sky (critic D44). */
-function Skyline({ top, dark, billboard }: { top: number; dark: boolean; billboard: boolean }) {
-  // solid fill + group opacity so overlapping towers and puffs show no seams (critic D135)
+/** Distant city silhouette that fills the upper part of tall panels so they aren't empty sky. */
+function Skyline({ top, dark, billboard, lit = false }: { top: number; dark: boolean; billboard: boolean; lit?: boolean }) {
+  // solid fill + group opacity so overlapping towers and puffs show no seams
   const fill = dark ? '#141028' : '#6E82AA';
   const alpha = dark ? 0.35 : 0.28;
   const base = 120;
   const towers = [[0, 70], [34, 95], [62, 60], [96, 120], [130, 80], [168, 105], [210, 70], [246, 130], [282, 85], [318, 110], [356, 75]];
   if (base - 130 < top) return null;
   const board = billboard && base - 130 - 46 > top + 70;
-  const bb = 40; // billboard sits lower, just behind the cast (critic D191)
+  const bb = 40; // billboard sits lower, just behind the cast
   return (
     <G>
       <G fill={fill} opacity={alpha}>
@@ -279,7 +283,14 @@ function Skyline({ top, dark, billboard }: { top: number; dark: boolean; billboa
           <Rect key={i} x={x} y={base - h} width={30} height={h} />
         ))}
       </G>
-      {/* MegaSlice billboard at full strength, on top of the hazy skyline (critic D145) */}
+      {lit && (
+        <G fill="#F6C35A" opacity={0.5}>
+          {towers.flatMap(([x, h], i) =>
+            Array.from({ length: Math.floor((h - 12) / 16) }, (_, r) => (r + i) % 3 === 1 ? null : <Rect key={`${i}-${r}`} x={x + 6 + ((r + i) % 2) * 12} y={base - h + 8 + r * 16} width={6} height={7} />),
+          )}
+        </G>
+      )}
+      {/* MegaSlice billboard at full strength, on top of the hazy skyline */}
       {board && (
         <G>
           <Rect x={100} y={base - 130 - 46 + bb} width={172} height={30} rx={4} fill="#7B2CBF" stroke={INK} strokeWidth={2} />
@@ -309,10 +320,13 @@ function VendingMachine() {
   );
 }
 
+/** Per-scene zoom on the scenery, anchored at the kerb (the rainy opening shot frames Rosa's front). */
+const SCENE_ZOOM: Partial<Record<BackdropId, number>> = { 'downtown-rain': 1.15 };
+
 export function Backdrop({ id, width, height, prop }: { id: BackdropId; width: number; height: number; prop?: 'vending-machine' }) {
   const [top, bottom] = SKY[id];
   // Art is 400 wide with scenery in the bottom 200 units. Up to 120 units of sky; a taller frame scales the
-  // art up and crops the sides instead of showing more empty sky (critic D108).
+  // art up and crops the sides instead of showing more empty sky.
   const vbH = Math.max(200, Math.min(300, (400 * height) / width));
   return (
     <Svg width={width} height={height} viewBox={`0 ${200 - vbH} 400 ${vbH}`} preserveAspectRatio="xMidYMax slice">
@@ -329,10 +343,9 @@ export function Backdrop({ id, width, height, prop }: { id: BackdropId; width: n
           <ShopWall />
         </G>
       )}
-      {id !== 'shop' && id !== 'megaslice-hq' && vbH > 260 && <Skyline top={200 - vbH} dark={id === 'uptown' || id === 'industrial' || id === 'downtown-rain'} billboard={id === 'industrial' || id === 'uptown'} />}
-      {/* the rainy opening shot zooms 1.15× on Rosa's front, anchored at the kerb (critic D245) */}
-      {id === 'downtown-rain' ? (
-        <G transform="translate(200 200) scale(1.15) translate(-200 -200)">
+      {id !== 'shop' && id !== 'megaslice-hq' && vbH > 260 && <Skyline top={200 - vbH} dark={id === 'uptown' || id === 'industrial' || id === 'downtown-rain'} billboard={id === 'industrial' || id === 'uptown'} lit={id === 'downtown-rain'} />}
+      {SCENE_ZOOM[id] ? (
+        <G transform={`translate(200 200) scale(${SCENE_ZOOM[id]}) translate(-200 -200)`}>
           <Scenery id={id} />
         </G>
       ) : (

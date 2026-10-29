@@ -26,7 +26,7 @@ describe('formulas', () => {
     expect(G.valuePerPizza('downtown', shop, 0)).toBeLessThan(3);
     expect(G.valuePerPizza('downtown', shop, 0)).toBeGreaterThan(3 * TUNING.walkInShare);
   });
-  test('seating never lowers income, even when the kitchen is the limit (critic G18)', () => {
+  test('seating never lowers income, even when the kitchen is the limit', () => {
     for (const prep of [1, 10, 40, 104]) {
       for (const drivers of [1, 5, 30]) {
         for (const tables of [1, 20, 70]) {
@@ -37,7 +37,7 @@ describe('formulas', () => {
       }
     }
   });
-  test('expanding speeds up prep and the counter (critic D41)', () => {
+  test('expanding speeds up prep and the counter', () => {
     const shop = G.newShop(true);
     const big = { ...shop, footprint: 2 };
     expect(G.prepRate(big) / G.prepRate(shop)).toBeCloseTo(TUNING.footprintBoost ** 2);

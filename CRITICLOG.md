@@ -1141,3 +1141,24 @@ Typecheck clean, 30 tests pass, `report.json` errors: [].
 
 **Design notes**
 - D253 Drawer cards repeat the shared bottleneck reason · D254 Starter: walk-in crosses behind the driver
+
+## v3.0 — build (addresses round 30 + code review round 1)
+
+v3.0 is the first build that also passed through the `codecritic`, so the scene was restructured: `storefront.tsx` (2,527 lines) is now `src/components/scene/*` and has a geometry test suite.
+
+| Note | Fix |
+| --- | --- |
+| G71 | Uptown's arched back window sits 20 units lower, so the arch clears the menu board |
+| D246 | Waterfront net is gathered on a peg and fans to a ~25-unit sagging hem: six strands, uneven cross-knots, two #D9A35B cork floats |
+| D247 | The counter-side baker always holds the peel upright (70%); the back table row moved 8 forward (y 40→32) and starts 8 further left |
+| D248 | A walking driver holds the box centred in both hands; the edge fade starts 20 units before the screen edge |
+| D249/D254 | Walk-ins route through an aisle behind their table (`table.y + 14`) and turn into the chair; they leave the same way |
+| D250 | The front-left fern is dropped once the front table row reaches `L + 30` |
+| D251 | Uptown mouldings get a #9A3452 highlight on their top and left edges; the picture rail is lowered to height 150, under the awning line |
+| D252 | Cut-scene 01: a pale #E8E4FF moon (r22) and lit skyline windows (#F6C35A at 0.5); the cropped edge buildings that showed as posts are replaced by two neighbours flanking Rosa's |
+| D253 | The drawer header shows "Bottleneck: …" once; the cards no longer each repeat "waiting on …" |
+| (C7) | Note for D240: on unmanaged shops the parked vehicle is not drawn at all (it doesn't move) |
+
+Found by the new tests: in a starter room with 3 cooks and 2 counter staff, the ovens overlapped the counter. The prep bench now caps itself so the oven bank always keeps 36 units.
+
+Typecheck clean, 44 tests pass (14 new scene tests), `report.json` errors: [].

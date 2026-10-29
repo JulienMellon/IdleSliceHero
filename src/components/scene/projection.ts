@@ -17,7 +17,7 @@ export function sceneFit(w: number, h: number) {
 // negative = out on the sidewalk), z = height. One-point perspective, then a fixed fit into the scene.
 export const D = 110;
 export const WH = 300;
-// v2.1 (critic D71): the shop fills the screen — sky band above the back wall is ~95 units.
+// v2.1: the shop fills the screen — sky band above the back wall is ~95 units.
 export const SC = 0.98;
 export const TX = 196.5 * (1 - SC);
 export const TY = -20;

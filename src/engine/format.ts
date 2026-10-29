@@ -15,7 +15,7 @@ export function money(n: number, fixed = false): string {
   return `${sign}$${fixed ? digits : parseFloat(digits)}${SUFFIXES[tier]}`;
 }
 
-/** The value `money(n)` displays, so totals can be summed from the same rounded lines (critic D223). */
+/** The value `money(n)` displays, so totals can be summed from the same rounded lines. */
 export function shownValue(n: number): number {
   if (!Number.isFinite(n)) return 0;
   const a = Math.abs(n);

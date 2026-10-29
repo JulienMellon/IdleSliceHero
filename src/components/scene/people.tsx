@@ -1,10 +1,9 @@
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { INK, P, kAt, shade } from './projection';
-import { layout } from './layout';
 
 export type Kind = 'cook' | 'baker' | 'staff' | 'driver' | 'guest' | 'sit';
 
-// ---------- characters (critic round 18: polished chibi figures) ----------
+// ---------- characters ----------
 // Light comes from the upper left: every figure has a shadow side on the right, a highlight on the left,
 // and the same 1.1 ink outline as the furniture. Figures face +x (flip mirrors them).
 export const SKINS = ['#F6D3B3', '#EDB98A', '#D69A6A', '#B07446', '#7E4F30'];
@@ -13,14 +12,14 @@ export const PANTS = ['#3B4A6B', '#5C4033', '#2F3140', '#6B7A8F', '#7A5C8E'];
 export const GUEST_SHIRTS = ['#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97', '#F2C94C', '#EB6F92', '#3D9970', '#5C6BC0'];
 
 export interface Look { skin: string; hair: string; style: number; trait: number; wide: number; pants: string; shirt: string; tall: number; outfit: number }
-/** Integer hash (mulberry32 step) so every look field is independent of the others (critic G57). */
+/** Integer hash (mulberry32 step) so every look field is independent of the others. */
 export function hash32(n: number) {
   let t = (n + 0x6d2b79f5) | 0;
   t = Math.imul(t ^ (t >>> 15), t | 1);
   t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
   return (t ^ (t >>> 14)) >>> 0;
 }
-/** Traits: 0 none · 1 glasses · 2 moustache · 3 freckles · 4 hair tuft. Workers always get one (critic D125). */
+/** Traits: 0 none · 1 glasses · 2 moustache · 3 freckles · 4 hair tuft. Workers always get one. */
 export function lookFor(seed: number, worker = false): Look {
   const n = Math.abs(Math.floor(seed));
   const pick = (field: number, m: number) => hash32(n * 131 + field * 7919) % m;
@@ -129,10 +128,39 @@ export function Headwear({ kind, hy, front = false, alt = false, dot = '#D9443A'
 
 /** A polished chibi worker or customer with a contact shadow, feet at room point (x, y). */
 export type Mood = 'smile' | 'focus' | 'happy' | 'o' | 'chew';
-/** What a worker's hands are doing (critic D138): cooks roll / toss / ladle; bakers hold an empty peel, a pizza, or slide one in. */
+/** What a worker's hands are doing: cooks roll / toss / ladle; bakers hold an empty peel, a pizza, or slide one in. */
 export type Act = 'none' | 'pin' | 'toss' | 'ladle' | 'peel' | 'pizza' | 'slide' | 'slice' | 'cup' | 'lean';
 
-export function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false, hair, peelK = 1 }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number; front?: boolean; blink?: boolean; talk?: boolean; act?: Act; mood?: Mood; alt?: boolean; dot?: string; cap?: string; gold?: boolean; hair?: string; peelK?: number }) {
+/** Props for one chibi figure. Role (`kind`) picks the uniform; look comes from `seed` unless overridden. */
+export interface PersonProps {
+  x: number;
+  y: number;
+  kind: Kind;
+  seed?: number;
+  // look overrides
+  shirt?: string;
+  hair?: string;
+  cap?: string;
+  dot?: string;
+  gold?: boolean;
+  alt?: boolean;
+  // pose
+  act?: Act;
+  mood?: Mood;
+  arm?: number;
+  step?: number;
+  flip?: boolean;
+  front?: boolean;
+  blink?: boolean;
+  talk?: boolean;
+  /** holding a pizza box; `carryWalk` holds it centred in both hands while walking */
+  carry?: boolean;
+  carryWalk?: boolean;
+  peelK?: number;
+  o?: number;
+}
+
+export function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, carryWalk = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false, hair, peelK = 1 }: PersonProps) {
   const pin = act === 'pin';
   const [sx, sy] = P(x, y);
   const k = kAt(y) * 1.14;
@@ -140,7 +168,7 @@ export function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false
   const worker = kind === 'cook' || kind === 'baker' || kind === 'staff' || kind === 'driver';
   const look = lookFor(seed, worker);
   const hairC = hair ?? look.hair;
-  // keep the light coming from the upper left on mirrored figures (critic D130)
+  // keep the light coming from the upper left on mirrored figures
   const unflipBody = flip ? 'translate(0.5 0) scale(-1 1)' : undefined;
   const unflipHead = flip ? 'translate(1 0) scale(-1 1)' : undefined;
   const top = kind === 'cook' ? '#FBF8F3' : kind === 'baker' ? shirt ?? '#B23A48' : kind === 'staff' ? '#3FAE5A' : kind === 'driver' ? '#2F80ED' : shirt ?? look.shirt;
@@ -159,7 +187,9 @@ export function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false
   const torso = `M${-8 - ww} ${by + 3.5} Q${-8 - ww} ${by} ${-4.5} ${by} L5 ${by} Q${8.5 + ww} ${by} ${8.5 + ww} ${by + 3.5} L${8 + ww} ${by + 16.5} Q${8 + ww} ${by + 19} ${5.5 + ww} ${by + 19} L${-5.5 - ww} ${by + 19} Q${-7.6 - ww} ${by + 19} ${-7.6 - ww} ${by + 16.5} Z`;
   // front-arm hand position: working (arm), carrying, eating, or swinging
   const hand: [number, number] = carry
-    ? [12, by + 8]
+    ? carryWalk
+      ? [5, by + 10]
+      : [12, by + 8]
     : sitting
       ? act === 'slice'
         ? [7.5, hy + 5.5]
@@ -175,7 +205,9 @@ export function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false
             : worker && arm > 0
               ? [10 + arm, by + 13 - arm * 2]
               : [9 + sw * 2.5, by + 16];
-  const backHand: [number, number] = pin ? [hand[0] - 9, hand[1]] : sitting ? (act === 'lean' ? [-12, by + 3] : [-7, by + 15]) : [-8.5 - sw * 2.5, by + 15.5];
+  // a walking carrier holds the box centred in front, both hands on it
+  const bx = carryWalk ? 10 : 3;
+  const backHand: [number, number] = carry && carryWalk ? [-4, by + 10] : pin ? [hand[0] - 9, hand[1]] : sitting ? (act === 'lean' ? [-12, by + 3] : [-7, by + 15]) : [-8.5 - sw * 2.5, by + 15.5];
   const peel = kind === 'baker';
   return (
     <G opacity={o} transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${(flip ? -k : k).toFixed(3)} ${k.toFixed(3)})`}>
@@ -243,7 +275,7 @@ export function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false
           <Path d={`M-8 ${by + 14} H${8.5}`} stroke="#1F5FB8" strokeWidth={1.4} opacity={0.7} />
         </G>
       )}
-      {/* guest outfits (critic D172/D208): 0 tee · 1 striped tee · 2 hoodie · 3 collared shirt · 4 cardigan · 5 overalls */}
+      {/* guest outfits: 0 tee · 1 striped tee · 2 hoodie · 3 collared shirt · 4 cardigan · 5 overalls */}
       {!worker && look.outfit === 3 && (
         <G>
           <Path d={`M-3.6 ${by} L0.5 ${by + 3.4} L-1 ${by + 5.2} Z M4.6 ${by} L0.5 ${by + 3.4} L2 ${by + 5.2} Z`} fill="#fff" stroke={INK} strokeWidth={0.6} />
@@ -335,7 +367,7 @@ export function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false
         ))}
       {/* hair + headwear */}
       {worker ? <Path d={`M-9.4 ${hy + 0.5} Q-9.8 ${hy - 4} -7.5 ${hy - 5} L-6 ${hy + 0.5} Z`} fill={hairC} /> : <Hair style={look.style} color={hairC} hy={hy} part="front" />}
-      {/* hair shows under every hat (critic D139) */}
+      {/* hair shows under every hat */}
       {worker && kind !== 'baker' && (
         <Path
           d={front ? `M-7 ${hy - 6.4} Q-6 ${hy - 3} -3.5 ${hy - 4.4} Q-1.5 ${hy - 2.6} 0.8 ${hy - 4.3} Q3 ${hy - 2.6} 5.2 ${hy - 4.4} Q7.5 ${hy - 3} 8.2 ${hy - 6.4} Z` : `M-2 ${hy - 6.6} Q1 ${hy - 3.2} 4 ${hy - 4.8} Q6.5 ${hy - 3} 9.2 ${hy - 5.4} L9 ${hy - 7} Z`}
@@ -387,7 +419,7 @@ export function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false
       )}
       <Circle cx={hand[0]} cy={hand[1]} r={2.4} fill={skin} {...OUT} strokeWidth={0.8} />
       {pin && <Circle cx={hand[0] - 9} cy={hand[1]} r={2.1} fill={shade(skin, -0.08)} {...OUT} strokeWidth={0.7} />}
-      {/* seated poses (critic D181): a slice raised to the mouth, or a mug */}
+      {/* seated poses: a slice raised to the mouth, or a mug */}
       {act === 'slice' && (
         <G>
           <Path d={`M${hand[0] - 1} ${hand[1] - 1} L${hand[0] + 6} ${hand[1] - 5} L${hand[0] + 4} ${hand[1] + 3} Z`} fill="#FFC531" stroke={INK} strokeWidth={0.7} strokeLinejoin="round" />
@@ -403,9 +435,9 @@ export function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false
       )}
       {carry && (
         <G>
-          <Rect x={hand[0] - 3} y={hand[1] - 6.5} width={17} height={6} rx={1.2} fill="#F6E7C1" {...OUT} strokeWidth={0.9} />
-          <Rect x={hand[0] - 3} y={hand[1] - 6.5} width={17} height={1.8} rx={0.9} fill="#fff" opacity={0.5} />
-          <Circle cx={hand[0] + 5.5} cy={hand[1] - 3.5} r={1.7} fill="#E8432E" />
+          <Rect x={hand[0] - bx} y={hand[1] - 6.5} width={17} height={6} rx={1.2} fill="#F6E7C1" {...OUT} strokeWidth={0.9} />
+          <Rect x={hand[0] - bx} y={hand[1] - 6.5} width={17} height={1.8} rx={0.9} fill="#fff" opacity={0.5} />
+          <Circle cx={hand[0] - bx + 8.5} cy={hand[1] - 3.5} r={1.7} fill="#E8432E" />
         </G>
       )}
     </G>

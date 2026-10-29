@@ -3,13 +3,12 @@ import type { NeighborhoodId } from '../../content/types';
 import { F } from '../../theme';
 import { Circle, Defs, Ellipse, G, LinearGradient, Path, Polygon, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { INK, SCENE_W, D, WH, FRONT_TOP, P, pts, shade } from './projection';
-import { Layout, layout } from './layout';
+import type { Layout } from './layout';
 import { hash32 } from './people';
 import { Sidewalk } from './street';
-import { along } from './timelines';
 
 // ---------- the room shell (static per layout) ----------
-/** A small back-wall prop that tells neighbourhoods apart before any wall decor is bought (critic D194). */
+/** A small back-wall prop that tells neighbourhoods apart before any wall decor is bought. */
 export function LocalProp({ id, x, y }: { id: NeighborhoodId; x: number; y: number }) {
   return (
     <G transform={`translate(${x} ${y})`}>
@@ -76,7 +75,7 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
   const [wx, wy] = P(lay.counter.x1 - 50, D, 132);
   const [mx0, my] = P(lay.counter.x0 + 4, D, 180);
   const hoodRight = P(lay.ovenCols[lay.ovenCols.length - 1].x1 + 6, D - 6)[0];
-  // clamp the menu board between the oven hood and the brick pier; shrink it if the gap is tight (critic G65/G68)
+  // clamp the menu board between the oven hood and the brick pier; shrink it if the gap is tight
   const pierLeft = P(lay.door.x0 - 8, 0)[0];
   const gap = pierLeft - 6 - (hoodRight + 6);
   const mw = Math.max(40, Math.min(56, gap));
@@ -139,7 +138,7 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
             })}
           </G>
         ))}
-      {/* marble (critic D128): two-tone tiles with grout, real veins, a brass border and a soft sheen */}
+      {/* marble: two-tone tiles with grout, real veins, a brass border and a soft sheen */}
       {flooring === 3 && (
         <G>
           {Array.from({ length: 8 * 6 }).map((_, i) => {
@@ -185,28 +184,34 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
         Array.from({ length: 7 }).map((_, j) => (
           <Path key={`h${j}`} d={`M${P(L, j * 18.3).join(' ')} L${P(R, j * 18.3).join(' ')}`} stroke={flooring === 1 ? '#B53A30' : flooring === 3 ? '#DCD6CE' : '#D4C1A3'} strokeWidth={flooring === 1 ? 0.5 : 1} />
         ))}
-      {/* a soft strip marks where the kitchen floor starts (critic D168) */}
+      {/* a soft strip marks where the kitchen floor starts */}
       <Polygon points={pts([P(L, 57), P(lay.counter.x0 - 4, 57), P(lay.counter.x0 - 4, 60), P(L, 60)])} fill="#000" opacity={0.14} />
       <Path d={`M${P(L, 56.6).join(' ')} L${P(lay.counter.x0 - 4, 56.6).join(' ')}`} stroke="#FFFFFF" strokeWidth={1} opacity={0.3} />
-      {/* Uptown: burgundy wainscot with a gold cap and a brass picture rail (critic D241) */}
+      {/* Uptown: burgundy wainscot with a gold cap and a brass picture rail */}
       {id === 'uptown' && (
         <G>
           <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 60), P(L, D, 60)])} fill="#7B1E3A" />
           {Array.from({ length: Math.floor((R - L) / 26) }).map((_, i) => {
             const xa = L + 6 + i * 26;
-            return <Polygon key={`up${i}`} points={pts([P(xa, D, 10), P(xa + 18, D, 10), P(xa + 18, D, 50), P(xa, D, 50)])} fill="none" stroke="#5A1229" strokeWidth={1.2} />;
+            return (
+              <G key={`up${i}`}>
+                <Polygon points={pts([P(xa, D, 10), P(xa + 18, D, 10), P(xa + 18, D, 50), P(xa, D, 50)])} fill="none" stroke="#5A1229" strokeWidth={1.2} />
+                {/* lit top and left edges give the mouldings relief */}
+                <Path d={`M${P(xa + 0.8, D, 11).join(' ')} L${P(xa + 0.8, D, 49).join(' ')} L${P(xa + 17.2, D, 49).join(' ')}`} stroke="#9A3452" strokeWidth={1} fill="none" />
+              </G>
+            );
           })}
           <Polygon points={pts([P(L, D, 58), P(R, D, 58), P(R, D, 63), P(L, D, 63)])} fill="#D4A84A" />
           <Path d={`M${P(L, D, 63).join(' ')} L${P(R, D, 63).join(' ')}`} stroke="#9C7A2E" strokeWidth={0.8} />
-          <Path d={`M${P(L, D, 236).join(' ')} L${P(R, D, 236).join(' ')}`} stroke="#C9A04A" strokeWidth={2.4} />
-          <Path d={`M${P(L, D, 234.6).join(' ')} L${P(R, D, 234.6).join(' ')}`} stroke="#FFF3B0" strokeWidth={0.7} opacity={0.7} />
+          <Path d={`M${P(L, D, 150).join(' ')} L${P(R, D, 150).join(' ')}`} stroke="#C9A04A" strokeWidth={2.4} />
+          <Path d={`M${P(L, D, 148.6).join(' ')} L${P(R, D, 148.6).join(' ')}`} stroke="#FFF3B0" strokeWidth={0.7} opacity={0.7} />
         </G>
       )}
       {id === 'industrial' && (
         <G>
           <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 60), P(L, D, 60)])} fill="#9AA1A8" />
           <Path d={`M${P(L, D, 60).join(' ')} L${P(R, D, 60).join(' ')}`} stroke="#6E757B" strokeWidth={2} />
-          {/* hazard band: alternating dark / yellow chevrons (critic D231) */}
+          {/* hazard band: alternating dark / yellow chevrons */}
           <Polygon points={pts([P(L, D, 60), P(R, D, 60), P(R, D, 65), P(L, D, 65)])} fill="#E8B23A" />
           {Array.from({ length: Math.ceil((R - L) / 8) }).map((_, i) => (
             <Polygon key={`hz${i}`} points={pts([P(L + i * 8, D, 60), P(L + i * 8 + 4, D, 60), P(L + i * 8 + 7, D, 65), P(L + i * 8 + 3, D, 65)])} fill="#1F1A17" />
@@ -224,14 +229,14 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
           })}
         </G>
       )}
-      {/* ambient occlusion where the walls meet the floor (critic D73) */}
+      {/* ambient occlusion where the walls meet the floor */}
       <Polygon points={pts([P(L, D - 10), P(R, D - 10), P(R, D), P(L, D)])} fill="rgba(59,31,20,0.16)" />
       <Polygon points={pts([P(L, 0), P(L + 10, 0), P(L + 10, D), P(L, D)])} fill="rgba(59,31,20,0.14)" />
       <Polygon points={pts([P(R - 10, 0), P(R, 0), P(R, D), P(R - 10, D)])} fill="rgba(59,31,20,0.1)" />
       <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 10), P(L, D, 10)])} fill="rgba(59,31,20,0.12)" />
       <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 24), P(L, D, 24)])} fill="url(#wainscot)" />
       {/* decor grows with the shop */}
-      {/* a hole-in-the-wall: branching crack and a chipped patch showing bricks (critic D121); not beside the porthole */}
+      {/* a hole-in-the-wall: branching crack and a chipped patch showing bricks; not beside the porthole */}
       {fp === 0 && id !== 'waterfront' && (
         <G>
           <Path d={`M${mx - 26} ${my + 18} l5 9 l-3 7 l6 9 M${mx - 24} ${my + 32} l-6 5 M${mx - 18} ${my + 43} l5 4`} stroke={shade(wall, -0.35)} strokeWidth={1.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
@@ -246,7 +251,7 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
           })()}
         </G>
       )}
-      {/* menu board: header, slices and prices (critic D116) */}
+      {/* menu board: header, slices and prices */}
       {fp >= 1 && (
         <G>
           <G transform={`translate(${mx} ${my}) scale(${mw / 56})`}>
@@ -354,7 +359,7 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
           )}
         </G>
       )}
-      {/* pantry shelf: flour sacks and tins (critic D95), kept under the mural too (critic D190) */}
+      {/* pantry shelf: flour sacks and tins, kept under the mural too */}
       {true &&
         (() => {
           const sx0 = L + 14;
@@ -388,9 +393,10 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
         const [px, py] = P(L + 22, D, 168);
         return <LocalProp id={id} x={px} y={py} />;
       })()}
-      {/* back window: a brass porthole + fishing net at the Waterfront (critic D225), trees elsewhere */}
+      {/* back window: a brass porthole + fishing net at the Waterfront, trees elsewhere */}
       {id === 'uptown' ? (
-        <G>
+        // the arched window sits 20 lower than the plain one so its arch clears the menu board
+        <G transform="translate(0 20)">
           <Path d={`M${wx} ${wy + 38} L${wx} ${wy + 14} A20 20 0 0 1 ${wx + 40} ${wy + 14} L${wx + 40} ${wy + 38} Z`} fill="#FBD3AE" stroke="#C9A04A" strokeWidth={2.4} />
           <Path d={`M${wx + 6} ${wy + 38} L${wx + 6} ${wy + 30} L${wx + 12} ${wy + 18} L${wx + 20} ${wy + 26} L${wx + 28} ${wy + 12} L${wx + 34} ${wy + 24} L${wx + 34} ${wy + 38} Z`} fill="#6E6FA0" />
           <Path d={`M${wx + 20} ${wy - 6} V${wy + 38} M${wx} ${wy + 20} H${wx + 40}`} stroke="#C9A04A" strokeWidth={1.6} />
@@ -403,18 +409,39 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
           <Path d={`M${wx + 6} ${wy + 22} q7 -3 14 0 t14 0`} stroke="#D6F0FB" strokeWidth={1.6} fill="none" />
           <Path d={`M${wx + 12} ${wy + 9} A10 10 0 0 1 ${wx + 24} ${wy + 6}`} stroke="#fff" strokeWidth={1.6} opacity={0.6} fill="none" strokeLinecap="round" />
           {[0, 90, 180, 270].map((a) => <Circle key={a} cx={wx + 20 + Math.cos((a * Math.PI) / 180) * 16.5} cy={wy + 18 + Math.sin((a * Math.PI) / 180) * 16.5} r={1.2} fill="#8C6A20" />)}
-          {/* fishing net with a diamond mesh, draped from a peg, and a red-and-white float (critic D242) */}
-          <Circle cx={wx - 11} cy={wy - 4} r={1.6} fill="#5E3A26" />
-          <Path d={`M${wx - 18} ${wy - 2} Q${wx - 11} ${wy + 30} ${wx - 17} ${wy + 40} L${wx - 3} ${wy + 40} Q${wx - 7} ${wy + 18} ${wx - 4} ${wy - 2} Z`} fill="#B48E5E" opacity={0.18} />
-          {Array.from({ length: 10 }).map((_, i) => (
-            <G key={i}>
-              <Path d={`M${wx - 18} ${wy - 2 + i * 4.2} L${wx - 3} ${wy + 2 + i * 4.2}`} stroke="#B48E5E" strokeWidth={0.8} />
-              <Path d={`M${wx - 3} ${wy - 2 + i * 4.2} L${wx - 18} ${wy + 2 + i * 4.2}`} stroke="#B48E5E" strokeWidth={0.8} />
-            </G>
-          ))}
-          <Path d={`M${wx - 18} ${wy - 2} Q${wx - 11} ${wy + 30} ${wx - 17} ${wy + 40} M${wx - 4} ${wy - 2} Q${wx - 7} ${wy + 18} ${wx - 3} ${wy + 40}`} stroke="#8E5A3C" strokeWidth={1.2} fill="none" />
-          <Circle cx={wx - 10} cy={wy + 30} r={4.2} fill="#E8432E" stroke={INK} strokeWidth={0.9} />
-          <Path d={`M${wx - 14.2} ${wy + 30} H${wx - 5.8}`} stroke="#fff" strokeWidth={2.2} />
+          {/* fishing net gathered on a peg: fans to a sagging hem, uneven mesh, two cork floats */}
+          {(() => {
+            const ax = wx - 12;
+            const ay = wy - 4;
+            const hl = wx - 26;
+            const hr = wx - 1;
+            const hy = wy + 38;
+            const sag = 6;
+            const hem = (f: number) => [hl + (hr - hl) * f, hy + sag * 4 * f * (1 - f)] as const;
+            const strands = [0, 0.18, 0.37, 0.55, 0.78, 1];
+            const knots = [0.3, 0.52, 0.71, 0.88];
+            return (
+              <G>
+                <Path d={`M${ax} ${ay} L${hl} ${hy} Q${(hl + hr) / 2} ${hy + sag * 2} ${hr} ${hy} Z`} fill="#B48E5E" opacity={0.16} />
+                {strands.map((f) => {
+                  const [ex, ey] = hem(f);
+                  return <Path key={`ns${f}`} d={`M${ax} ${ay} Q${(ax + ex) / 2 + (f - 0.5) * 3} ${(ay + ey) / 2 + 2} ${ex} ${ey}`} stroke="#B48E5E" strokeWidth={0.8} fill="none" />;
+                })}
+                {knots.map((k, j) => {
+                  const y = ay + (hy - ay) * k;
+                  const x0 = ax + (hl - ax) * k;
+                  const x1 = ax + (hr - ax) * k;
+                  return <Path key={`nk${j}`} d={`M${x0} ${y} Q${(x0 + x1) / 2} ${y + 2 + j * 0.6} ${x1} ${y}`} stroke="#A57E50" strokeWidth={0.7} fill="none" />;
+                })}
+                <Path d={`M${hl} ${hy} Q${(hl + hr) / 2} ${hy + sag * 2} ${hr} ${hy}`} stroke="#8E5A3C" strokeWidth={1.3} fill="none" />
+                <Circle cx={ax} cy={ay} r={1.8} fill="#5E3A26" />
+                {[0.28, 0.72].map((f) => {
+                  const [fx, fy] = hem(f);
+                  return <Ellipse key={`cf${f}`} cx={fx} cy={fy + 1.5} rx={3.4} ry={2.4} fill="#D9A35B" stroke={INK} strokeWidth={0.8} />;
+                })}
+              </G>
+            );
+          })()}
         </G>
       ) : (
         <G>
@@ -430,7 +457,7 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
 });
 
 /**
- * The street face of the shop (critic D72): brick pilasters at both corners, a fascia beam across the top
+ * The street face of the shop: brick pilasters at both corners, a fascia beam across the top
  * carrying the sign, a full-width scalloped awning, the brick sill and the entrance on the right.
  */
 export function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: string; signage: number; plants: number }) {
@@ -482,7 +509,7 @@ export function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: s
     <G>
       {sill(L - 4, door.x0)}
       {sill(door.x1, R + 4)}
-      {/* entrance set in the front plane (critic D90): brick jambs + lintel, glazed leaf swung inward,
+      {/* entrance set in the front plane: brick jambs + lintel, glazed leaf swung inward,
           and a see-through shop window above it up to the fascia */}
       {(() => {
         const jx0 = door.x0 - 8;
@@ -507,7 +534,7 @@ export function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: s
             {/* shop window above the entrance */}
             <Rect x={jax} y={gTop} width={kbx - jax} height={lTop - gTop} fill="url(#glass)" />
             <G opacity={0.85}>
-            {/* two-tier pizza stand on display in the window (critic D141/D158) */}
+            {/* two-tier pizza stand on display in the window */}
             {(() => {
               const cx = (jax + kbx) / 2;
               const by = lTop - 13;
@@ -587,14 +614,14 @@ export function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: s
               PIZZERIA
             </SvgText>
             {/* jambs + lintel */}
-            {/* the doorway's left side is a slim wooden post, so people walking in aren't hidden behind brick (critic G69) */}
+            {/* the doorway's left side is a slim wooden post, so people walking in aren't hidden behind brick */}
             <Rect x={jbx - 3.2} y={lTop} width={3.2} height={jay + 6 - lTop} fill="#6B4330" stroke={INK} strokeWidth={0.9} />
             <Rect x={jax} y={jay - 2} width={jbx - 3.2 - jax} height={8} fill="#A24B2C" stroke={INK} strokeWidth={0.9} />
             {brick(P(door.x1, 0)[0], kbx, lTop, jay + 6)}
             {brick(jax, kbx, lTop, lBot)}
             <Rect x={jax - 1} y={lTop - 3} width={kbx - jax + 2} height={4} rx={1} fill="#7A3520" stroke={INK} strokeWidth={0.9} />
             <Path d={`M${jbx} ${lBot} V${jay + 4} M${P(door.x1, 0)[0]} ${lBot} V${jay + 4}`} stroke="#5E3A26" strokeWidth={2.4} />
-            {/* OPEN plate hanging from the lintel, centred in the doorway, above head height (critic G64) */}
+            {/* OPEN plate hanging from the lintel, centred in the doorway, above head height */}
             {(() => {
               const [cx] = P(door.cx, 0);
               return (
@@ -679,9 +706,9 @@ export function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: s
   );
 }
 
-/** The glazed door leaf, swung ~60° into the room; depth-sorted on its own so walkers pass it correctly (critic G53). */
+/** The glazed door leaf, swung ~60° into the room; depth-sorted on its own so walkers pass it correctly. */
 export function DoorLeaf({ lay }: { lay: Layout }) {
-  // folded right back against the right wall, so it never hides anyone in the room (critic G63)
+  // folded right back against the right wall, so it never hides anyone in the room
   const x = lay.door.x1 - 1.5;
   const q = (y: number, z: number) => P(x, y, z);
   return (
@@ -693,7 +720,7 @@ export function DoorLeaf({ lay }: { lay: Layout }) {
   );
 }
 
-/** Sidewalk A-frame chalkboard (replaces the doormat walkers kept covering, critic D118). */
+/** Sidewalk A-frame chalkboard (replaces the doormat walkers kept covering). */
 export function ChalkSign({ x, y }: { x: number; y: number }) {
   const [px, py] = P(x, y);
   return (
@@ -717,7 +744,7 @@ export function ChalkSign({ x, y }: { x: number; y: number }) {
 }
 
 export function Doormat({ lay }: { lay: Layout }) {
-  // lying flat on the sidewalk at the threshold: a perspective trapezoid with fringe (critic D143)
+  // lying flat on the sidewalk at the threshold: a perspective trapezoid with fringe
   const a0 = P(lay.door.x0 + 2, -2);
   const a1 = P(lay.door.x1 - 2, -2);
   const b1 = P(lay.door.x1 + 1, -14);

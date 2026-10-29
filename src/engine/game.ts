@@ -151,7 +151,7 @@ export const levelCap = (shop: Shop) => TUNING.levelsPerFootprint * (shop.footpr
 
 const levelSpeed = (base: number, level: number) => base * (1 + TUNING.speedPerLevel * (level - 1)) * milestoneMultiplier(level);
 
-/** Room to work: each expansion speeds up prep and the counter (critic D41). */
+/** Room to work: each expansion speeds up prep and the counter. */
 export const footprintMult = (shop: Shop) => Math.pow(TUNING.footprintBoost, shop.footprint);
 export const prepRate = (shop: Shop) => levelSpeed(STATIONS.prep.speed, shop.prep) * footprintMult(shop);
 export const ovenRate = (shop: Shop) => levelSpeed(STATIONS.ovens.speed, shop.ovens) * OVEN_GRADES[shop.grade].mult;
@@ -315,16 +315,24 @@ export function buildShop(s: GameState, id: NeighborhoodId): BuyResult {
   return { ok: true, state: { ...withShop(r.state, id, { built: true }), active: id } };
 }
 
-export function nextVehicleLock(s: GameState): string | null {
+/** Why the next delivery vehicle can't be bought yet (other than cash), or null when it can. */
+export type VehicleLock = { kind: 'maxed' } | { kind: 'story'; storyOf: 'priya' };
+
+export function nextVehicleLock(s: GameState): VehicleLock | null {
   const next = s.vehicle + 1;
-  if (next >= VEHICLES.length) return 'Top tier';
-  if (VEHICLES[next].id === 'drone' && !s.dronesUnlocked) return 'Unlocks in Priya’s story';
+  if (next >= VEHICLES.length) return { kind: 'maxed' };
+  if (VEHICLES[next].id === 'drone' && !s.dronesUnlocked) return { kind: 'story', storyOf: 'priya' };
   return null;
+}
+
+/** Player-facing text for a vehicle lock. */
+export function vehicleLockLabel(lock: VehicleLock) {
+  return lock.kind === 'maxed' ? 'Top tier' : 'Unlocks in Priya’s story';
 }
 
 export function buyVehicle(s: GameState): BuyResult {
   const lock = nextVehicleLock(s);
-  if (lock) return { ok: false, reason: lock };
+  if (lock) return { ok: false, reason: vehicleLockLabel(lock) };
   const r = spend(s, VEHICLES[s.vehicle + 1].cost);
   return r.ok ? { ok: true, state: { ...r.state, vehicle: s.vehicle + 1 } } : r;
 }

@@ -56,7 +56,7 @@ export const useGame = create<Store>((set, get) => {
   const commit = (result: G.BuyResult, item?: { name: string; cost: number | null }) => {
     if (!result.ok) {
       const at = Date.now();
-      // name what the player tapped (critic D215)
+      // name what the player tapped
       const text = result.reason === 'Not enough cash' && item && item.cost !== null ? `${item.name}: need ${money(item.cost)}` : result.reason;
       set({ toast: { text, at } });
       setTimeout(() => {

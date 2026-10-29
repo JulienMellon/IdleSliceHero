@@ -107,7 +107,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
               <Text style={styles.rewardText}>{REWARD_TEXT[scene.reward]}</Text>
             </Animated.View>
           ) : p.lines.length === 0 && p.caption ? (
-            // narration-only panel: the caption reads below the art like a storybook line (critic D186)
+            // narration-only panel: the caption reads below the art like a storybook line
             <Animated.View style={[styles.narration, { transform: [{ scale: bubble }] }]}>
               <Text style={styles.narrationText}>{p.caption}</Text>
             </Animated.View>

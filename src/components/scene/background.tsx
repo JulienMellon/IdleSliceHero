@@ -27,7 +27,7 @@ export function Tree({ x, y, k, c = '#4FA048', palm = false }: { x: number; y: n
   );
 }
 
-// Each neighbourhood gets its own sky, ground, skyline and side props (critic D75).
+// Each neighbourhood gets its own sky, ground, skyline and side props.
 export const LOOK: Record<NeighborhoodId, { sky: [string, string, string]; ground: string; ground2: string }> = {
   downtown: { sky: ['#5FA8E8', '#B9DEF8', '#EAF6FF'], ground: '#9CCB86', ground2: '#86BA72' },
   suburbs: { sky: ['#72BDF0', '#CDE9FA', '#FFF3DC'], ground: '#A6D48A', ground2: '#8FC475' },

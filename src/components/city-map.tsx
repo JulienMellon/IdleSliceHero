@@ -9,7 +9,7 @@ import { C, F } from '../theme';
 
 const INK = '#3B1F14';
 const TREES = [
-  // kept ≥ 8 units clear of every label card (critic D236)
+  // kept ≥ 8 units clear of every label card
   [2, 40], [42, 34], [60, 33], [44, 48], [58, 48], [93, 36], [96, 44], [3, 70], [9, 82], [48, 72], [57, 80], [38, 4], [6, 60],
 ];
 const ROAD = '#D8CFC0';

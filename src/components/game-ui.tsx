@@ -53,7 +53,7 @@ const BURST = ['star', 'coin', 'slice', 'star', 'coin', 'slice'] as const;
  * 'neutral' = affordable but deliberately de-emphasised (e.g. before a shop has a manager).
  */
 export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone = 'normal' }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; tone?: 'normal' | 'soft' | 'neutral' }) {
-  // can't afford = flat grey; affordable-but-no-gain-now = white with a basil border and ink text (critic D103)
+  // can't afford = flat grey; affordable-but-no-gain-now = white with a basil border and ink text
   const outerBg = !enabled ? '#C9BCAD' : tone === 'soft' ? '#A9CFB1' : tone === 'neutral' ? C.basilDark : C.basilDark;
   const innerBg = !enabled ? '#E2D9CE' : tone === 'soft' ? '#E3F2E6' : tone === 'neutral' ? '#FFFFFF' : C.basil;
   const labelColor = !enabled ? '#8A7B6E' : tone === 'soft' ? C.basilDark : tone === 'neutral' ? C.ink : '#fff';

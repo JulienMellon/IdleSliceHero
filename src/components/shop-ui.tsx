@@ -15,7 +15,7 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
   const next = Game.nextToBuild(game);
   const scroller = useRef<{ scrollTo: (o: { x: number; animated: boolean }) => void } | null>(null);
   const activeIdx = NEIGHBORHOODS.findIndex((n) => n.id === game.active);
-  // Keep the active pizzeria's tab in view, snapped so the strip always starts on a tab edge (critic D27/D134).
+  // Keep the active pizzeria's tab in view, snapped so the strip always starts on a tab edge.
   const xs = useRef<number[]>([]);
   const [offsets, setOffsets] = useState<number[]>([]);
   const onTab = (i: number) => (e: { nativeEvent: { layout: { x: number } } }) => {
@@ -25,7 +25,7 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
   const [dims, setDims] = useState({ content: 0, view: 0 });
   const [sx, setSx] = useState(0);
   const maxScroll = Math.max(0, dims.content - dims.view);
-  // only snap to offsets the strip can actually reach, so the end clamp never leaves a sliver (critic G60)
+  // only snap to offsets the strip can actually reach, so the end clamp never leaves a sliver
   const reachable = offsets.filter((o) => o <= maxScroll + 0.5);
   useEffect(() => {
     const want = offsets[Math.max(0, activeIdx - 1)] ?? 0;
@@ -71,8 +71,8 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
           );
         })}
       </ScrollView>
-      {/* edge fades so a clipped tab reads as "scroll for more" (critic D122) */}
-      {/* hide each fade when the strip is already at that end (critic D203) */}
+      {/* edge fades so a clipped tab reads as "scroll for more" */}
+      {/* hide each fade when the strip is already at that end */}
       {(['l', 'r'] as const).filter((side) => (side === 'l' ? sx > 2 : sx < maxScroll - 2)).map((side) => (
         <Svg key={side} width={30} height="100%" style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]} viewBox="0 0 30 10" preserveAspectRatio="none" pointerEvents="none">
           <Defs>

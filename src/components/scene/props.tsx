@@ -2,12 +2,11 @@ import { OVEN_GRADES } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { INK, D, WH, P, kAt, shade } from './projection';
-import { Layout, SEAT } from './layout';
+import { type Layout, SEAT } from './layout';
 import { Box, FloorShadow } from './primitives';
-import { along } from './timelines';
 
 /**
- * An oven against the back wall (critic D74). Single-deck ovens are domed pizza ovens on a brick plinth
+ * An oven against the back wall. Single-deck ovens are domed pizza ovens on a brick plinth
  * with an arched mouth and keystone; stacked decks and the Stone grade are box deck ovens, so grades
  * differ in silhouette as well as finish.
  */
@@ -110,7 +109,7 @@ export function Oven({ o, grade, lit, flicker }: { o: Layout['ovens'][number]; g
   );
 }
 
-/** One stainless hood + flue over a bank of box deck ovens (critic D94). */
+/** One stainless hood + flue over a bank of box deck ovens. */
 export function OvenHood({ lay, grade, mural }: { lay: Layout; grade: number; mural: boolean }) {
   const boxes = lay.ovens.filter((o) => o.h < 70 || grade === 1);
   if (!boxes.length) return null;
@@ -145,7 +144,7 @@ export const TABLE_STYLE = [
 ];
 
 /**
- * A dining table in two layers so diners really sit (critic D114): `back` is the floor shadow and both
+ * A dining table in two layers so diners really sit: `back` is the floor shadow and both
  * chairs (back rest on the outer side + seat); `front` is the table itself, drawn over the diners' laps.
  */
 export function Table({ x, y, tier, part }: { x: number; y: number; tier: number; part: 'back' | 'front' }) {
@@ -213,7 +212,7 @@ export function Table({ x, y, tier, part }: { x: number; y: number; tier: number
   );
 }
 
-/** A round woven rug under the starter table (critic D210). */
+/** A round woven rug under the starter table. */
 export function Rug({ x, y }: { x: number; y: number }) {
   const [cx, cy] = P(x, y);
   const k = kAt(y);
@@ -226,7 +225,7 @@ export function Rug({ x, y }: { x: number; y: number }) {
   );
 }
 
-/** Tier-3 plants: a trailing planter on the left side wall, up out of the diners' way (critic D217). */
+/** Tier-3 plants: a trailing planter on the left side wall, up out of the diners' way. */
 export function WallPlanter({ lay }: { lay: Layout }) {
   const [bx, by] = P(lay.L, 70, 150);
   const k = kAt(70);
@@ -244,7 +243,7 @@ export function WallPlanter({ lay }: { lay: Layout }) {
   );
 }
 
-/** A small floor prop that makes each starter shop its own place (critic D216). */
+/** A small floor prop that makes each starter shop its own place. */
 export function FloorProp({ id, x, y }: { id: NeighborhoodId; x: number; y: number }) {
   const [px, py] = P(x, y);
   const k = kAt(y) * 1.4;
@@ -295,7 +294,7 @@ export function FloorProp({ id, x, y }: { id: NeighborhoodId; x: number; y: numb
   );
 }
 
-/** A window bar along the inside of the front sill, by the door, for the starter shop (critic G70/D225). */
+/** A window bar along the inside of the front sill, by the door, for the starter shop. */
 export function LedgeBar({ x0, x1 }: { x0: number; x1: number }) {
   return (
     <G>

@@ -57,11 +57,11 @@ export default function GameScreen() {
   const vg = G.vehicleGain(game);
   if (vg && vg > 0) candidates.push({ label: `Upgrade fleet to ${VEHICLES[v + 1].name}s · ${plus(vg)}`, current: game.cash, target: VEHICLES[v + 1].cost, ratio: vg / VEHICLES[v + 1].cost, onPress: buyFleet });
   candidates.sort((a, b) => b.ratio - a.ratio);
-  // On an unmanaged shop the sidewalk already offers "Hire a manager" here: show the next goal instead (critic D137).
-  // viewing an unmanaged shop: its manager is the goal (critic D214)
+  // On an unmanaged shop the sidewalk already offers "Hire a manager" here: show the next goal instead.
+  // viewing an unmanaged shop: its manager is the goal
   const shown = !shop.managed && id !== 'downtown' ? [...candidates.filter((c) => c.label === `Hire a manager for ${nd.name}`), ...candidates.filter((c) => c.label !== `Hire a manager for ${nd.name}`)] : candidates;
   let goal: Goal | null = shown[0] ?? null;
-  // Late game: fall back to the best big buy in this shop (Expand, Grade or a Decor tier) before the story count (critic G58/D151).
+  // Late game: fall back to the best big buy in this shop (Expand, Grade or a Decor tier) before the story count.
   if (!goal) {
     const big: (Goal & { ratio: number })[] = [];
     for (const what of ['expand', 'grade'] as const) {
@@ -95,7 +95,7 @@ export default function GameScreen() {
         : 'Tap to bake here · or hire a manager'
     : `${money(eps)}/sec across the city`;
 
-  // Until a manager is hired, upgrades here only pay while you tap: mute them so the manager stands out (critic D40).
+  // Until a manager is hired, upgrades here only pay while you tap: mute them so the manager stands out.
   const idleShop = !shop.managed && id !== 'downtown';
   // Expand is still worth it when a station is stuck at its level cap.
   const atCap = (['prep', 'ovens', 'counter', 'tables'] as const).some((w) => shop[w] >= G.levelCap(shop));
@@ -120,7 +120,7 @@ export default function GameScreen() {
       />
     );
   };
-  // Seating card: when the next visible table arrives (critic D206)
+  // Seating card: when the next visible table arrives
   const nextTableHint = (() => {
     const now = G.tablesShown(shop);
     for (let l = shop.tables + 1; l <= shop.tables + 400; l++) {
@@ -135,11 +135,13 @@ export default function GameScreen() {
       const others = (Object.keys(rates) as G.Stage[]).filter((x) => x !== st && tied(x)).map((x) => STAGE_NAME[x]);
       return `${rateText} · tied with ${others.join(' & ')}`;
     }
-    return `${rateText} · waiting on ${STAGE_NAME[neck]}`;
+    // the shared reason ("waiting on …") is shown once in the drawer header
+    return `${rateText} · +$0/s now`;
   };
   const gradeNext = OVEN_GRADES[shop.grade + 1];
   const fpNext = FOOTPRINTS[shop.footprint + 1];
-  const fleetLock = G.nextVehicleLock(game);
+  const lock = G.nextVehicleLock(game);
+  const fleetLock = lock ? G.vehicleLockLabel(lock) : null;
   const nextVeh = VEHICLES[v + 1];
 
   // ---- sidewalk row: the four stations (or the manager, on a shop that needs one) + "All"
@@ -160,7 +162,7 @@ export default function GameScreen() {
     const best = tied(stage) && gain > 1e-9;
     return (
       <View key={k} style={[styles.walkBtn, best && styles.walkBtnHot]}>
-        {/* tapping the card head opens the drawer on that station (replaces the in-scene tags, critic D77) */}
+        {/* tapping the card head opens the drawer on that station (replaces the in-scene tags) */}
         <Pressable testID={`tag-${k}`} onPress={() => openDrawer(what)} style={styles.walkTop} hitSlop={4}>
           {icon}
           <Text style={styles.walkName} numberOfLines={1}>
@@ -212,7 +214,7 @@ export default function GameScreen() {
         <View style={[styles.walkRow, { bottom: rowBottom }]} pointerEvents="box-none">
           {idleShop ? (
             <View style={{ flex: 4, gap: 5 }}>
-              {/* a slim station strip stays available on unmanaged shops (critic D224) */}
+              {/* a slim station strip stays available on unmanaged shops */}
               <View style={styles.miniRow}>
                 {(['prep', 'ovens', 'counter', 'drivers'] as StationKey[]).map((k) => {
                   const what = STATION[k].what;
@@ -250,7 +252,10 @@ export default function GameScreen() {
             <Pressable testID="close-upgrades-dim" style={styles.dim} onPress={() => setDrawer({ open: false, focus: null })} />
             <View style={styles.drawer}>
               <View style={styles.drawerHead}>
-                <Text style={styles.drawerTitle}>{`Rosa’s · ${nd.name}`}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.drawerTitle}>{`Rosa’s · ${nd.name}`}</Text>
+                  <Text style={styles.drawerSub} numberOfLines={1}>{`Bottleneck: ${STAGE_NAME[neck]}`}</Text>
+                </View>
                 <Pressable testID="close-upgrades" onPress={() => setDrawer({ open: false, focus: null })} style={styles.closeBtn} hitSlop={10}>
                   <Text style={styles.closeText}>Close ▼</Text>
                 </Pressable>
@@ -275,8 +280,8 @@ export default function GameScreen() {
                 {card('counter', { icon: <RegisterIcon size={26} />, title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rates.counter.toFixed(1)}/s`), hot: tied('counter') })}
                 {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${G.deliveryRate(shop, v).toFixed(1)}/s`), hot: tied('customers') })}
                 {card('tables', { icon: <SeatIcon size={26} />, title: 'Seating', level: `Lv ${shop.tables}`, detail: nextTableHint === 'dining room full' ? `Dining room full · ${G.walkInRate(shop).toFixed(1)} walk-ins/s` : `${stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)} walk-ins/s`)} · ${nextTableHint}`, hot: false })}
-                {card('grade', { icon: <SparkleIcon size={26} />, title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name} ×2 · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} ×2 · waits on ${STAGE_NAME[neck]}`) : 'Finest ovens in town' })}
-                {card('expand', { icon: <ExpandIcon size={26} />, title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : `waits on ${STAGE_NAME[neck]}`}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
+                {card('grade', { icon: <SparkleIcon size={26} />, title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name} ×2 · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} ×2 · +$0/s now`) : 'Finest ovens in town' })}
+                {card('expand', { icon: <ExpandIcon size={26} />, title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : '+$0/s now'}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
                 <StationCard
                   testID="buy-fleet"
                   icon={<ScooterIcon size={26} />}
@@ -348,6 +353,7 @@ const styles = StyleSheet.create({
   drawer: { position: 'absolute', left: 0, right: 0, bottom: 0, top: '30%', backgroundColor: C.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderTopWidth: 3, borderColor: C.ink },
   drawerHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 10, paddingBottom: 4 },
   drawerTitle: { fontFamily: F.bold, fontSize: 17, color: C.ink },
+  drawerSub: { fontFamily: F.semi, fontSize: 12, color: C.tomatoDark },
   closeBtn: { backgroundColor: '#fff', borderWidth: 2, borderColor: C.ink, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 2 },
   closeText: { fontFamily: F.bold, fontSize: 13, color: C.ink },
   grid: { padding: 10, gap: 8, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
