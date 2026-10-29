@@ -1235,3 +1235,22 @@ Typecheck clean, 50 tests pass, `report.json` errors: [].
 | D272 | Soft $0/s buttons say "no gain now" under the price |
 
 Typecheck clean, 49 tests pass, `report.json` errors: [].
+
+## v3.2 — critique (round 33) — ❌ NOT SATISFIED (no bugs, no [major] notes, 8 [minor])
+
+**VERDICT: NOT SATISFIED.** v3.2 loads clean. The new figure layering holds: there are no misaligned heads, hats, limbs or props. Six of the round-32 notes are fixed. The crowd-overlap fixes keep moving the overlap somewhere else instead of removing it.
+
+**Fixed:** D265, D268, D269, D270, D271, D272 · **Still open:** D264 (→ D274), D266 (→ D275), D267 (→ D277), D260 regressed (→ D276)
+
+**Visual design (all [minor])**
+- D273: the peel "slide" swings toward the counter and into the pickup driver's cap. Rotate it back toward the oven.
+- D274: walk-ins still cut diagonally across the bakers. Stay on the counter lane until left of the bakers.
+- D275: the back-row diner stacks above a front-row diner. Shift the back row half a pitch so seats interleave.
+- D276: people pausing outside cover WELCOME. Move the pause sideways off the mat.
+- D277: the Uptown rail is still a hairline hidden behind the wall art. Make the cap 5 units, and move the rail to 132 so it runs unbroken.
+- D278: Industrial barrels still show as edge slivers at the default footprint. Drop edge props that are less than 60% visible.
+- D279: curb-side walk-ins' feet touch the Prep card. Leave a 4pt gap and give them a contact shadow.
+- D280: drawer lines end in a dangling "·". Put the break at the separator.
+
+**Design notes**
+- D281: the "need $X" toast and the bottleneck hint disagree. When the tapped card isn't the bottleneck, point to the bottleneck.
