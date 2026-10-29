@@ -3,7 +3,7 @@
 // Every neighborhood has its own pizzeria. Each pizzeria is a pipeline:
 //   Prep → Ovens → Counter → customers (delivery drivers + walk-ins at the tables)
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
-import { FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, STATIONS, TUNING, VEHICLES, type NeighborhoodDef } from '../content/tuning';
+import { DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, STATIONS, TUNING, VEHICLES, type DecorKind, type NeighborhoodDef } from '../content/tuning';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 
 export const SAVE_VERSION = 2;
@@ -26,6 +26,8 @@ export interface Shop {
   queued: number;
   /** Lifetime pizzas sold here (drives story triggers). */
   sold: number;
+  /** Decor tier (0–3) per category; each tier owned adds DECOR_BOOST to prices here. */
+  decor: Record<DecorKind, number>;
 }
 
 export interface GameState {
@@ -45,8 +47,10 @@ export interface GameState {
   lastSavedAt: number;
 }
 
+export const newDecor = (): Record<DecorKind, number> => ({ plants: 0, flooring: 0, tables: 0, walls: 0, signage: 0 });
+
 export function newShop(built = false): Shop {
-  return { built, managed: false, prep: 1, ovens: 1, grade: 0, counter: 1, drivers: 1, tables: 1, footprint: 0, queued: 0, sold: 0 };
+  return { built, managed: false, prep: 1, ovens: 1, grade: 0, counter: 1, drivers: 1, tables: 1, footprint: 0, queued: 0, sold: 0, decor: newDecor() };
 }
 
 export function newGame(now: number): GameState {
@@ -103,6 +107,7 @@ export function migrate(raw: unknown, now: number): GameState {
         tables: int(s.tables, 1, 1),
         footprint: int(s.footprint, 0, 0, FOOTPRINTS.length - 1),
         queued: Math.max(0, num(s.queued, 0)),
+        decor: Object.fromEntries(DECOR_KINDS.map((k) => [k, int((s.decor as Record<string, unknown> | undefined)?.[k], 0, 0, 3)])) as Record<DecorKind, number>,
         sold: Math.max(0, num(s.sold, 0)),
       };
     }
@@ -173,13 +178,16 @@ export function shopRevenue(id: NeighborhoodId, shop: Shop, vehicle: number): nu
   const sold = shopRate(shop, vehicle);
   const delivered = Math.min(sold, deliveryRate(shop, vehicle));
   const walkIns = sold - delivered;
-  return def(id).orderValue * (delivered + walkIns * TUNING.walkInShare);
+  return def(id).orderValue * decorMult(shop) * (delivered + walkIns * TUNING.walkInShare);
 }
+
+/** Nicer places charge more: +DECOR_BOOST per decor tier owned. */
+export const decorMult = (shop: Shop) => 1 + DECOR_BOOST * DECOR_KINDS.reduce((t, k) => t + (shop.decor?.[k] ?? 0), 0);
 
 /** Average cash per pizza sold right now. */
 export function valuePerPizza(id: NeighborhoodId, shop: Shop, vehicle: number): number {
   const sold = shopRate(shop, vehicle);
-  return sold > 0 ? shopRevenue(id, shop, vehicle) / sold : def(id).orderValue;
+  return sold > 0 ? shopRevenue(id, shop, vehicle) / sold : def(id).orderValue * decorMult(shop);
 }
 
 /** Cash per second this pizzeria makes while running (managed, or while you keep tapping). */
@@ -491,4 +499,27 @@ export function bottleneckBundle(s: GameState, id: NeighborhoodId, maxSteps = 8)
     if (gain > start * 1e-9 + 1e-12) return { steps, cost, gain };
   }
   return null;
+}
+
+// ---------- Decor ----------
+
+export function decorCost(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null {
+  const tier = s.shops[id].decor[kind];
+  return tier >= 3 ? null : Math.ceil(DECOR_TIER_COST[tier] * def(id).costMult);
+}
+
+export function buyDecor(s: GameState, id: NeighborhoodId, kind: DecorKind): BuyResult {
+  const shop = s.shops[id];
+  if (!shop.built) return { ok: false, reason: 'Build this pizzeria first' };
+  const cost = decorCost(s, id, kind);
+  if (cost === null) return { ok: false, reason: 'Fully decorated' };
+  const r = spend(s, cost);
+  if (!r.ok) return r;
+  return { ok: true, state: withShop(r.state, id, { decor: { ...shop.decor, [kind]: shop.decor[kind] + 1 } }) };
+}
+
+/** Cash/sec this pizzeria gains from the next decor tier (counting it as running). */
+export function decorGain(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null {
+  const r = buyDecor({ ...s, cash: Number.MAX_SAFE_INTEGER }, id, kind);
+  return r.ok ? shopEarnings(r.state, id) - shopEarnings(s, id) : null;
 }

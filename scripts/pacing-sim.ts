@@ -2,7 +2,7 @@
 // The player always saves for the purchase with the best cash/sec gained per dollar, across every
 // pizzeria, and keeps tapping the newest pizzerias until it has a manager.
 import { HOME_SCENES } from '../src/content/scenes/home';
-import { NEIGHBORHOODS, VEHICLES } from '../src/content/tuning';
+import { DECOR_KINDS, NEIGHBORHOODS, VEHICLES } from '../src/content/tuning';
 import type { NeighborhoodId } from '../src/content/types';
 import * as G from '../src/engine/game';
 
@@ -20,6 +20,11 @@ function options(s: G.GameState): Option[] {
       // An unmanaged shop only earns while tapped; treat its upgrades as worth a third.
       const g = what === 'manager' ? gain : shop.managed ? gain : gain / 3;
       out.push({ label: `${n.id}:${what}`, cost, gain: g, buy: (st) => G.buyUpgrade(st, n.id, what) });
+    }
+    for (const kind of DECOR_KINDS) {
+      const gain = G.decorGain(s, n.id, kind);
+      const cost = G.decorCost(s, n.id, kind);
+      if (gain !== null && cost !== null && shop.managed) out.push({ label: `${n.id}:decor-${kind}`, cost, gain, buy: (st) => G.buyDecor(st, n.id, kind) });
     }
     const b = G.bottleneckBundle(s, n.id);
     if (b && shop.managed) {

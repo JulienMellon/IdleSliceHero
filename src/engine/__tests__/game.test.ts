@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 import * as G from '../game';
-import { NEIGHBORHOODS, TUNING } from '../../content/tuning';
+import { DECOR_BOOST, DECOR_TIER_COST, NEIGHBORHOODS, TUNING } from '../../content/tuning';
 import { duration, money } from '../format';
 
 const fresh = () => G.newGame(1_000_000);
@@ -150,6 +150,30 @@ describe('building and upgrading', () => {
     const s = managed(fresh());
     expect(G.upgradeGain(s, 'downtown', 'drivers')!).toBeGreaterThan(0);
     expect(G.upgradeGain(s, 'downtown', 'ovens')!).toBeCloseTo(0);
+  });
+});
+
+describe('decor', () => {
+  test('each decor tier raises prices by DECOR_BOOST and is bought in order', () => {
+    let s = managed({ ...fresh(), cash: 1e9 });
+    const base = G.shopEarnings(s, 'downtown');
+    for (let i = 0; i < 3; i++) {
+      const r = G.buyDecor(s, 'downtown', 'plants');
+      expect(r.ok).toBe(true);
+      if (r.ok) s = r.state;
+    }
+    expect(G.buyDecor(s, 'downtown', 'plants').ok).toBe(false);
+    expect(s.shops.downtown.decor.plants).toBe(3);
+    expect(G.shopEarnings(s, 'downtown') / base).toBeCloseTo(1 + 3 * DECOR_BOOST);
+  });
+  test('decor costs scale with the neighborhood', () => {
+    const s = fresh();
+    expect(G.decorCost(s, 'downtown', 'walls')).toBe(DECOR_TIER_COST[0]);
+    expect(G.decorCost(s, 'suburbs', 'walls')).toBe(DECOR_TIER_COST[0] * NEIGHBORHOODS[1].costMult);
+  });
+  test('saves without decor load with bare decor', () => {
+    const m = G.migrate({ shops: { downtown: { built: true, prep: 3 } } }, 5);
+    expect(m.shops.downtown.decor).toEqual(G.newDecor());
   });
 });
 

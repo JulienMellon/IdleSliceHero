@@ -29,7 +29,7 @@ URL = f"http://127.0.0.1:{port}/"
 now_ms = int(time.time() * 1000)
 seen_all_but = lambda ids: ids
 def shop(built=True, managed=True, **kw):
-    base = {"built": built, "managed": managed, "prep": 1, "ovens": 1, "grade": 0, "counter": 1, "drivers": 1, "tables": 1, "footprint": 0, "queued": 0, "sold": 0}
+    base = {"decor": {"plants": 0, "flooring": 0, "tables": 0, "walls": 0, "signage": 0}, "built": built, "managed": managed, "prep": 1, "ovens": 1, "grade": 0, "counter": 1, "drivers": 1, "tables": 1, "footprint": 0, "queued": 0, "sold": 0}
     base.update(kw)
     return base
 
@@ -38,7 +38,8 @@ MID_SAVE = {
     "saveVersion": 2, "cash": 3120, "totalEarned": 15000, "vehicle": 1, "active": "suburbs",
     "shops": {
         "downtown": shop(prep=22, ovens=20, grade=1, counter=18, drivers=14, tables=8, footprint=1, sold=4000),
-        "suburbs": shop(prep=12, ovens=10, grade=1, counter=9, drivers=6, tables=7, footprint=1, sold=700),
+        "suburbs": shop(prep=12, ovens=10, grade=1, counter=9, drivers=6, tables=7, footprint=1, sold=700,
+                        decor={"plants": 1, "flooring": 1, "tables": 1, "walls": 1, "signage": 1}),
         "waterfront": shop(managed=False, sold=10),
         "university": shop(built=False, managed=False), "industrial": shop(built=False, managed=False), "uptown": shop(built=False, managed=False),
     },
@@ -104,7 +105,7 @@ with sync_playwright() as pw:
         for i in range(40):
             tid(page, "shop").click(); time.sleep(0.25)
             if i % 4 == 3:
-                for b in ["buy-drivers", "buy-tables"]:
+                for b in ["walk-drivers", "walk-ovens"]:
                     tid(page, b).click()
             if page.locator('[data-testid="skip-scene"]').count():
                 tid(page, "skip-scene").click()
@@ -121,6 +122,16 @@ with sync_playwright() as pw:
     if page.locator('[data-testid="skip-scene"]').count():
         tid(page, "skip-scene").click()
     shot(page, "05-mid-game", 1.2)
+
+    # 3a. The full upgrades sheet (tap "All")
+    try:
+        tid(page, "open-upgrades").click(); shot(page, "05a-upgrades-sheet", 0.6)
+        page.mouse.wheel(0, 900); time.sleep(0.4)
+        page.locator('[data-testid="decor-plants"]').first.scroll_into_view_if_needed()
+        shot(page, "05a2-decor-section", 0.4)
+        tid(page, "close-upgrades").click()
+    except Exception as e:
+        report["errors"].append(f"upgrades sheet failed: {e}")
 
     # 3b. An unmanaged pizzeria (Waterfront) via its tab, then the City overview
     try:
@@ -173,7 +184,8 @@ with sync_playwright() as pw:
         report["errors"].append(f"late oven tap failed: {e}")
     # 7. Flagship pizzeria with maxed Expand and Oven Grade
     flag = dict(late, active="industrial", cash=2.0e8, seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:19] + ["uptown-1"], scrapbookViewed=20,
-                shops=dict(late["shops"], industrial=shop(prep=104, ovens=100, grade=4, counter=104, drivers=44, tables=90, footprint=4, sold=450000)))
+                shops=dict(late["shops"], industrial=shop(prep=104, ovens=100, grade=4, counter=104, drivers=44, tables=90, footprint=4, sold=450000,
+                           decor={"plants": 3, "flooring": 3, "tables": 3, "walls": 3, "signage": 3})))
     page = seeded_page(browser, flag); time.sleep(2.5)
     if page.locator('[data-testid="skip-scene"]').count():
         tid(page, "skip-scene").click()

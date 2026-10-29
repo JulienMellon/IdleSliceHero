@@ -1,15 +1,15 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { type Goal, Hud, OfflinePopup, Toast } from '@/components/game-ui';
+import { BuyButton, type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
 import { DriverIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait';
 import { emitPayout } from '@/components/pulse-bus';
-import { CUTAWAY_SKY, ShopCutaway } from '@/components/shop-cutaway';
+import { CURB_Y, SCENE_H, sceneFit, type StationKey, Storefront } from '@/components/storefront';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
-import { CITY_NAME, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, TUNING, VEHICLES } from '@/content/tuning';
+import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, TUNING, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
 import { money } from '@/engine/format';
 import * as G from '@/engine/game';
@@ -19,14 +19,15 @@ import { C, F } from '@/theme';
 const STAGE_NAME: Record<G.Stage, string> = { prep: 'prep', ovens: 'ovens', counter: 'counter', customers: 'drivers & seats' };
 
 export default function GameScreen() {
-  const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const game = useGame((s) => s.game);
   const offline = useGame((s) => s.offline);
   const toast = useGame((s) => s.toast);
   const covered = useGame((s) => !!s.playing || !!s.offline);
-  const { tapShop, buy, buyFleet, build, setActive, dismissOffline } = useGame.getState();
-  const [cutTop, setCutTop] = useState(0);
+  const { tapShop, buy, buyFleet, buyDecor, build, setActive, dismissOffline } = useGame.getState();
+  const [area, setArea] = useState({ w: 0, h: 0 });
+  // The full upgrade list opens over the shop on a tap (no gestures); a station tag can focus one card.
+  const [drawer, setDrawer] = useState<{ open: boolean; focus: G.Upgrade | null }>({ open: false, focus: null });
 
   const id = game.active;
   const shop = game.shops[id];
@@ -37,7 +38,6 @@ export default function GameScreen() {
   const minRate = Math.min(...Object.values(rates));
   const tied = (st: G.Stage) => rates[st] <= minRate * (1 + 1e-9);
   const plus = (x: number) => `+${money(x)}/s`;
-  const cutH = Math.min(height * 0.34, width * 0.62);
   const newScenes = Math.max(0, game.seenScenes.length - game.scrapbookViewed);
   const eps = G.earningsPerSecond(game);
 
@@ -86,7 +86,7 @@ export default function GameScreen() {
         testID={`buy-${what}`}
         {...props}
         detail={lock && what !== 'manager' ? lock : props.detail}
-        hot={muted ? false : props.hot}
+        hot={drawer.focus === what || (muted ? false : props.hot)}
         muted={muted}
         useless={(G.upgradeGain(game, id, what) ?? 0) <= 1e-9 && what !== 'manager' && !(what === 'expand' && atCap)}
         cost={lock ? null : cost}
@@ -110,72 +110,188 @@ export default function GameScreen() {
   const fleetLock = G.nextVehicleLock(game);
   const nextVeh = VEHICLES[v + 1];
 
+  // ---- sidewalk row: the four stations (or the manager, on a shop that needs one) + "All"
+  const fit = sceneFit(area.w || 1, area.h || 1);
+  const rowBottom = (SCENE_H - CURB_Y) * fit.s + 6;
+  const STATION: Record<StationKey, { what: G.Upgrade; icon: React.ReactNode; name: string }> = {
+    prep: { what: 'prep', icon: '🧑‍🍳', name: 'Prep' },
+    ovens: { what: 'ovens', icon: '🔥', name: 'Ovens' },
+    counter: { what: 'counter', icon: '🧾', name: 'Counter' },
+    drivers: { what: 'drivers', icon: <DriverIcon size={18} />, name: 'Drivers' },
+  };
+  const walkButton = (k: StationKey) => {
+    const { what, icon, name } = STATION[k];
+    const cost = G.upgradeCostOf(game, id, what);
+    const lock = G.upgradeLock(game, id, what);
+    const gain = G.upgradeGain(game, id, what) ?? 0;
+    const stage: G.Stage = k === 'drivers' ? 'customers' : k;
+    const best = tied(stage) && gain > 1e-9;
+    return (
+      <View key={k} style={[styles.walkBtn, best && styles.walkBtnHot]}>
+        <View style={styles.walkTop}>
+          {typeof icon === 'string' ? <Text style={styles.walkIcon}>{icon}</Text> : icon}
+          <Text style={styles.walkName} numberOfLines={1}>
+            {name}
+          </Text>
+        </View>
+        <BuyButton
+          compact
+          testID={`walk-${k}`}
+          tone={gain > 1e-9 ? 'normal' : 'neutral'}
+          label={lock ? 'MAX' : money(cost ?? 0)}
+          enabled={!lock && cost !== null && game.cash >= cost}
+          onPress={() => buy(what)}
+        />
+      </View>
+    );
+  };
+  const openDrawer = (focus: G.Upgrade | null) => {
+    haptic();
+    setDrawer({ open: true, focus });
+  };
+  const managerCost = G.upgradeCostOf(game, id, 'manager');
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <Hud cash={game.cash} subtitle={subtitle} goal={goal} newScenes={newScenes} onScrapbook={() => router.push('/scrapbook')} onCity={() => router.push('/city')} />
       <ShopTabs game={game} onSelect={setActive} onBuild={build} />
-      <View style={{ height: cutH, backgroundColor: CUTAWAY_SKY, overflow: 'hidden' }} onLayout={(e) => setCutTop(e.nativeEvent.layout.y)}>
-        <ShopCutaway
-          game={game}
-          id={id}
-          width={width}
-          height={cutH}
-          paused={covered}
-          onTap={() => {
-            tapShop();
-            if (shop.managed) emitPayout();
-          }}
-        />
-      </View>
-      <ScrollView style={styles.sheet} contentContainerStyle={[styles.grid, { paddingBottom: insets.bottom + 20 }]}>
-        {idleShop && (
-          <View style={styles.banner}>
-            <Text style={styles.bannerText}>Without a manager, upgrades here only pay while you tap.</Text>
+      <View style={styles.sceneArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+        {area.w > 0 && (
+          <Storefront
+            game={game}
+            id={id}
+            width={area.w}
+            height={area.h}
+            paused={covered || drawer.open}
+            onTap={() => {
+              tapShop();
+              if (shop.managed) emitPayout();
+            }}
+            onStation={(k) => openDrawer(STATION[k].what)}
+          />
+        )}
+        {/* upgrade row standing on the sidewalk */}
+        <View style={[styles.walkRow, { bottom: rowBottom }]} pointerEvents="box-none">
+          {idleShop ? (
+            <View style={[styles.walkBtn, styles.walkBtnHot, { flex: 4 }]}>
+              <View style={styles.walkTop}>
+                <Text style={styles.walkIcon}>🧑‍💼</Text>
+                <Text style={styles.walkName} numberOfLines={1}>
+                  Hire a {nd.name} manager · {plus(G.shopEarnings(game, id))}
+                </Text>
+              </View>
+              <BuyButton compact testID="walk-manager" label={money(managerCost ?? 0)} enabled={managerCost !== null && game.cash >= managerCost} onPress={() => buy('manager')} />
+            </View>
+          ) : (
+            (['prep', 'ovens', 'counter', 'drivers'] as StationKey[]).map(walkButton)
+          )}
+          <Pressable testID="open-upgrades" onPress={() => openDrawer(null)} style={styles.allBtn}>
+            <Text style={styles.allIcon}>☰</Text>
+            <Text style={styles.allText}>All</Text>
+          </Pressable>
+        </View>
+        {drawer.open && (
+          <View style={StyleSheet.absoluteFill}>
+            <Pressable testID="close-upgrades-dim" style={styles.dim} onPress={() => setDrawer({ open: false, focus: null })} />
+            <View style={styles.drawer}>
+              <View style={styles.drawerHead}>
+                <Text style={styles.drawerTitle}>{`Rosa’s · ${nd.name}`}</Text>
+                <Pressable testID="close-upgrades" onPress={() => setDrawer({ open: false, focus: null })} style={styles.closeBtn} hitSlop={10}>
+                  <Text style={styles.closeText}>Close ▼</Text>
+                </Pressable>
+              </View>
+              <ScrollView contentContainerStyle={[styles.grid, { paddingBottom: insets.bottom + 20 }]}>
+                {idleShop && (
+                  <View style={styles.banner}>
+                    <Text style={styles.bannerText}>Without a manager, upgrades here only pay while you tap.</Text>
+                  </View>
+                )}
+                {!shop.managed &&
+                  card('manager', {
+                    icon: id === 'downtown' ? <Portrait id="nonna-rosa" mood="happy" size={32} /> : '🧑‍💼',
+                    title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire a ${nd.name} manager`,
+                    detail: id === 'downtown' ? 'Keep baking — Nonna will take over the kitchen soon' : `Runs this pizzeria on its own and earns while you're away (${plus(G.shopEarnings(game, id))})`,
+                    hot: id !== 'downtown',
+                    wide: true,
+                    costLabel: id === 'downtown' ? 'Soon' : undefined,
+                  })}
+                {card('prep', { icon: '🧑‍🍳', title: 'Prep Cooks', level: `Lv ${shop.prep}`, detail: stationDetail('prep', 'prep', `${rates.prep.toFixed(1)}/s`), hot: tied('prep') })}
+                {card('ovens', { icon: '🔥', title: 'Ovens', level: `Lv ${shop.ovens}`, detail: stationDetail('ovens', 'ovens', `${rates.ovens.toFixed(1)}/s`), hot: tied('ovens') })}
+                {card('counter', { icon: '🧾', title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rates.counter.toFixed(1)}/s`), hot: tied('counter') })}
+                {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${G.deliveryRate(shop, v).toFixed(1)}/s`), hot: tied('customers') })}
+                {card('tables', { icon: '🪑', title: 'Seating', level: `Lv ${shop.tables}`, detail: stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)} walk-ins/s`), hot: false })}
+                {card('grade', { icon: '✨', title: 'Oven Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name}: ×2 bake · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} · +$0/s now`) : 'Finest ovens in town' })}
+                {card('expand', { icon: '🏗️', title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : '+$0/s now'}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
+                <StationCard
+                  testID="buy-fleet"
+                  icon={nextVeh ? nextVeh.emoji : VEHICLES[v].emoji}
+                  title="Fleet"
+                  detail={nextVeh ? fleetLock ?? `→ ${nextVeh.name}s, all shops · ${vg && vg > 0 ? plus(vg) : '+$0/s now'}` : `${VEHICLES[v].name}s — top tier`}
+                  cost={nextVeh && !fleetLock ? nextVeh.cost : null}
+                  costLabel={nextVeh ? 'Locked' : 'MAX'}
+                  canBuy={!!nextVeh && !fleetLock && game.cash >= nextVeh.cost}
+                  useless={!vg || vg <= 1e-9}
+                  onBuy={buyFleet}
+                />
+                <Text style={styles.section}>{`Decor · each tier +${Math.round(DECOR_BOOST * 100)}% prices here`}</Text>
+                {DECOR_KINDS.map((kind) => {
+                  const d = DECOR[kind];
+                  const tier = shop.decor[kind];
+                  const cost = G.decorCost(game, id, kind);
+                  const gain = G.decorGain(game, id, kind) ?? 0;
+                  return (
+                    <StationCard
+                      key={kind}
+                      testID={`decor-${kind}`}
+                      icon={d.icon}
+                      title={d.name}
+                      level={`${tier}/3`}
+                      detail={cost === null ? d.tiers[3] : `→ ${d.tiers[tier + 1]} · ${plus(gain)}`}
+                      cost={cost}
+                      costLabel="MAX"
+                      canBuy={cost !== null && game.cash >= cost}
+                      muted={idleShop}
+                      onBuy={() => buyDecor(kind)}
+                    />
+                  );
+                })}
+                <Text style={styles.footer}>
+                  {CITY_NAME} · {NEIGHBORHOODS.filter((n) => game.shops[n.id].built).length}/6 pizzerias · v{APP_VERSION}
+                </Text>
+              </ScrollView>
+            </View>
           </View>
         )}
-        {!shop.managed &&
-          card('manager', {
-            icon: id === 'downtown' ? <Portrait id="nonna-rosa" mood="happy" size={32} /> : '🧑‍💼',
-            title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire a ${nd.name} manager`,
-            detail: id === 'downtown' ? 'Keep baking — Nonna will take over the kitchen soon' : `Runs this pizzeria on its own and earns while you're away (${plus(G.shopEarnings(game, id))})`,
-            hot: id !== 'downtown',
-            wide: true,
-            costLabel: id === 'downtown' ? 'Soon' : undefined,
-          })}
-        {card('prep', { icon: '🧑‍🍳', title: 'Prep Cooks', level: `Lv ${shop.prep}`, detail: stationDetail('prep', 'prep', `${rates.prep.toFixed(1)}/s`), hot: tied('prep') })}
-        {card('ovens', { icon: '🔥', title: 'Ovens', level: `Lv ${shop.ovens}`, detail: stationDetail('ovens', 'ovens', `${rates.ovens.toFixed(1)}/s`), hot: tied('ovens') })}
-        {card('counter', { icon: '🧾', title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rates.counter.toFixed(1)}/s`), hot: tied('counter') })}
-        {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${G.deliveryRate(shop, v).toFixed(1)}/s`), hot: tied('customers') })}
-        {card('tables', { icon: '🪑', title: 'Seating', level: `Lv ${shop.tables}`, detail: stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)} walk-ins/s`), hot: false })}
-        {card('grade', { icon: '✨', title: 'Oven Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name}: ×2 bake · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} · +$0/s now`) : 'Finest ovens in town' })}
-        {card('expand', { icon: '🏗️', title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : '+$0/s now'}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
-        <StationCard
-          testID="buy-fleet"
-          icon={nextVeh ? nextVeh.emoji : VEHICLES[v].emoji}
-          title="Fleet"
-          detail={nextVeh ? fleetLock ?? `→ ${nextVeh.name}s, all shops · ${vg && vg > 0 ? plus(vg) : '+$0/s now'}` : `${VEHICLES[v].name}s — top tier`}
-          cost={nextVeh && !fleetLock ? nextVeh.cost : null}
-          costLabel={nextVeh ? 'Locked' : 'MAX'}
-          canBuy={!!nextVeh && !fleetLock && game.cash >= nextVeh.cost}
-          useless={!vg || vg <= 1e-9}
-          onBuy={buyFleet}
-        />
-        <Text style={styles.footer}>
-          {CITY_NAME} · {NEIGHBORHOODS.filter((n) => game.shops[n.id].built).length}/6 pizzerias · v{APP_VERSION}
-        </Text>
-      </ScrollView>
+        {/* Toast floats in the open sky at the top of the scene, clear of the shop, the row and the cards. */}
+        {toast && <Toast compact text={toast.text} top={10} />}
+      </View>
       {offline && <OfflinePopup seconds={offline.seconds} earned={offline.earned} byShop={offline.byShop} onCollect={dismissOffline} />}
-      {/* Compact toast on the sidewalk strip just under the station tags (measured from the cutaway), clear of the sign, tags and cards. */}
-      {toast && cutTop > 0 && <Toast compact text={toast.text} top={cutTop + cutH - 22} />}
     </View>
   );
 }
 
+const shadow = { boxShadow: '0 4px 0 rgba(59,31,20,0.25)' } as object;
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
-  sheet: { flex: 1, backgroundColor: C.bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, marginTop: -10 },
+  sceneArea: { flex: 1, overflow: 'hidden', backgroundColor: '#BFE0F7' },
+  walkRow: { position: 'absolute', left: 8, right: 8, flexDirection: 'row', gap: 5 },
+  walkBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 12, borderWidth: 2.5, borderColor: C.ink, paddingHorizontal: 3, paddingTop: 2, paddingBottom: 4, gap: 2, ...shadow },
+  walkBtnHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
+  walkTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2, height: 20 },
+  walkIcon: { fontSize: 14 },
+  walkName: { fontFamily: F.bold, fontSize: 12, color: C.ink, flexShrink: 1 },
+  allBtn: { width: 46, backgroundColor: C.ink, borderRadius: 12, alignItems: 'center', justifyContent: 'center', ...shadow },
+  allIcon: { color: '#fff', fontSize: 16, lineHeight: 18 },
+  allText: { color: '#fff', fontFamily: F.bold, fontSize: 12 },
+  dim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.4)' },
+  drawer: { position: 'absolute', left: 0, right: 0, bottom: 0, top: '30%', backgroundColor: C.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderTopWidth: 3, borderColor: C.ink },
+  drawerHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 10, paddingBottom: 4 },
+  drawerTitle: { fontFamily: F.bold, fontSize: 17, color: C.ink },
+  closeBtn: { backgroundColor: '#fff', borderWidth: 2, borderColor: C.ink, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 2 },
+  closeText: { fontFamily: F.bold, fontSize: 13, color: C.ink },
   grid: { padding: 10, gap: 8, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   banner: { width: '100%', backgroundColor: '#FFE7C2', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10, borderWidth: 1.5, borderColor: C.cheeseDark },
   bannerText: { fontFamily: F.semi, fontSize: 12.5, color: C.ink, textAlign: 'center' },
+  section: { width: '100%', fontFamily: F.bold, fontSize: 14, color: C.ink, marginTop: 6 },
   footer: { width: '100%', textAlign: 'center', fontFamily: F.regular, color: C.inkSoft, fontSize: 12, marginTop: 4 },
 });

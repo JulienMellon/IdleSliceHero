@@ -119,3 +119,26 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
 
 export const SHOP_POS = { x: 50, y: 36 };
 export const MAP_VIEWBOX = { w: 100, h: 76 };
+
+// ---------- Decor (per pizzeria) ----------
+// Each tier owned makes the place nicer, so customers pay a little more: +decorBoost per tier.
+export type DecorKind = 'plants' | 'flooring' | 'tables' | 'walls' | 'signage';
+export const DECOR_KINDS: DecorKind[] = ['plants', 'flooring', 'tables', 'walls', 'signage'];
+export const DECOR_BOOST = 0.04;
+/** Base cost of tiers 1–3, × the pizzeria's cost multiplier. */
+export const DECOR_TIER_COST = [150, 8_000, 400_000];
+
+export interface DecorDef {
+  name: string;
+  icon: string;
+  /** Names for tier 0 (starting look) through tier 3. */
+  tiers: [string, string, string, string];
+}
+
+export const DECOR: Record<DecorKind, DecorDef> = {
+  plants: { name: 'Plants', icon: '🪴', tiers: ['No plants', 'Potted plants', 'Hanging ferns', 'Indoor garden'] },
+  flooring: { name: 'Flooring', icon: '🟫', tiers: ['Plain tile', 'Checkerboard', 'Wood parquet', 'Marble'] },
+  tables: { name: 'Tables', icon: '🍽️', tiers: ['Plastic tables', 'Checked tablecloths', 'Wooden bistro', 'Marble & candles'] },
+  walls: { name: 'Wall Decor', icon: '🖼️', tiers: ['Bare walls', 'Posters', 'Framed photos', 'Hand-painted mural'] },
+  signage: { name: 'Signage', icon: '🪧', tiers: ['Painted board', 'Neon sign', 'Marquee bulbs', 'Giant rooftop pizza'] },
+};

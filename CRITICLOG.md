@@ -485,3 +485,37 @@ The room is at most 196 units wide, so the ovens, counter and dining room compet
 - D70 Walk-in lane is the same depth as front-row diners
 
 **Loop complete:** 14 review rounds, v0.1 → v1.5.
+
+## v2.0 — WIP handoff (storefront redesign, not yet critiqued)
+
+**Status:** code is in place and typechecks/exports (`npx expo export --platform web` → `dist`). The new storefront has **not** passed the critic. Nothing is committed yet (working tree has the v2.0 changes, `shop-cutaway.tsx` deleted, `storefront.tsx` new). The repo stop-hook asks for commit + push; do that once the first screenshot pass is clean.
+
+**What v2.0 adds (owner direction, rounds after v1.5):**
+- Pizzeria takes most of the screen; menus are pulled into a tap-only drawer (`All` button). No gestures other than taps.
+- One-point perspective storefront (`storefront.tsx`): back wall, side walls, floor by flooring tier, front wall with brick sill, awning, open door with OPEN sign and WELCOME mat, planters.
+- Sidewalk in front of the shop carrying the Prep / Ovens / Counter / Drivers buttons plus `All`.
+- Street with lanes and traffic (MEGASLICE van, taxi, car) below the sidewalk; clouds drift and trees sit at the sides of the background.
+- Visible cash register on each counter, staff at stations, drivers walk in via the door, walk-ins enter, order, and sit.
+- Decor upgrades (5 kinds × 3 tiers, +4% prices per tier per shop, costs 150 / 8K / 400K ×cost multiplier): plants, flooring, tables, wall decor, signage (rooftop giant pizza at tier 3). Stored as `shop.decor` (save migrates to 0 defaults).
+- Engine: 30 tests passing. Pacing sim with decor prices at 150/8K/400K gives city completion ≈3.7h and a longest story gap ≈37 min.
+
+**Screenshots of this pass** (`screenshots/v2.0/`):
+- Mid-game, offline popup covering the scene: `screenshots/v2.0/05-mid-game.png`
+- Late game, offline popup covering the scene: `screenshots/v2.0/09-late-game.png`
+- Opening / new game / flagship shots also in `screenshots/v2.0/`
+
+**Problems seen in this pass (to fix before the critic runs):**
+1. **Harness blocked by the offline popup.** Every later interaction (tags, `open-upgrades`, tab navigation, scrapbook, late oven tap) failed because the OfflinePopup stayed over the scene. Fix the harness to dismiss it (find the Collect/dismiss testID in `game-ui.tsx` `OfflinePopup`), or seed a save with `lastSeen` close to now.
+2. **Invisible station tags intercept taps on the shop.** `storefront.tsx` line ~1133 renders `tag-<station>` Pressables over the scene at `fit.oy + (y-16)*fit.s`. Playwright shows `tag-drivers` intercepting clicks aimed at the shop (`data-testid="shop"`), and a `+$17M` pop intercepting too. Make tags small, make pops `pointerEvents="none"`, and keep only the tag itself tappable.
+3. **Sidewalk button price pills overflow their cards.** In `09-late-game.png` the Drivers `$15.1K` pill runs past the card's right border, and the Prep/Ovens/Counter pills sit off-centre against the card edge. Fit the pill inside `BuyButton compact` (`game-ui.tsx`) with the card width.
+4. **Decor and registers not verified yet.** The shots above are mostly low-tier decor. Need a fully decorated Flagship and an Uptown shot to confirm tier-3 signage, marble tables, mural walls, and register visibility.
+5. **Pop/toast overlap with the door.** Cash pop sits over the door in the late shot; check it stays readable.
+
+**Next steps (fresh session):**
+1. Fix the harness (offline popup dismissal) and the tag/pop hit areas (item 2) and the pill overflow (item 3).
+2. Run `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers python3 scripts/screenshots.py v2.0`; confirm `errors: []`. Check `05a-upgrades-sheet` and `05a2-decor-section` exist.
+3. Inspect the storefront at phone width: pizzeria dominates (≥ half the scene height), door reachable, sidewalk row clear of the street, decor tiers and registers visible.
+4. Commit and push (git identity and attribution per the session instructions), log the v2.0 build entry here, and display it in chat.
+5. Launch the `critic` agent on v2.0 as round 15 (new IDs start at **G44** and **D71**). Update `.claude/agents/critic.md` "Owner's direction" with the new requirements (perspective storefront, sidewalk button row, street/traffic, clouds/trees, front door, tap-only drawer, decor, cash register). Loop log → fix → bump version → re-review until SATISFIED.
+
+**Open minor items carried from round 14:** D66 bakers hide lower oven fires, D67 rush pill covers menu board, D68 toast touches manager card border, D69 counter staff legs show above counter, D70 walk-in lane depth. Several may be superseded by the new scene; re-check each.

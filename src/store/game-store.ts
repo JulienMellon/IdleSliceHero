@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
 import { HOME_SCENES } from '../content/scenes/home';
+import type { DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import * as G from '../engine/game';
 
@@ -29,6 +30,7 @@ interface Store {
   tapShop: () => void;
   buy: (what: G.Upgrade) => boolean;
   buyFleet: () => boolean;
+  buyDecor: (kind: DecorKind) => boolean;
   build: (id: NeighborhoodId) => boolean;
   setActive: (id: NeighborhoodId) => void;
   finishScene: () => void;
@@ -124,6 +126,8 @@ export const useGame = create<Store>((set, get) => {
     buy: (what) => commit(G.buyUpgrade(get().game, get().game.active, what)),
 
     buyFleet: () => commit(G.buyVehicle(get().game)),
+
+    buyDecor: (kind) => commit(G.buyDecor(get().game, get().game.active, kind)),
 
     build: (id) => commit(G.buildShop(get().game, id)),
 
