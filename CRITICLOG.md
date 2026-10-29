@@ -966,3 +966,41 @@ Typecheck clean, 30 tests pass, `report.json` errors: [].
 | D206 | Seating card adds "next level: +1 table" / "+1 table at Lv N" / "dining room full" |
 
 Typecheck clean, 30 tests pass, `report.json` errors: [].
+
+## v2.11 — critique (round 26) — ❌ NOT SATISFIED
+
+**VERDICT: NOT SATISFIED** — loads clean; most round-25 fixes show (folded door leaf, full OPEN plate, props moved, arrivals in front of the sign/van, Seating hint). But the seat colour fix doesn't work, the Uptown counter front is still a pile-up, and two regressions appeared.
+
+**Fixed:** G63, G64, D200, D202 (→ regression G65), D203, D205, D206, D201 (→ D209) · **Still open:** D199 (→ D207), D204 (→ G67, D208)
+
+**Bugs**
+- G65 The oven hood covers the menu board's lower-left corner ("/eggie")
+- G66 Drivers and walk-ins share one inside waypoint behind the left jamb (lanes merge, the jamb slices people)
+- G67 Seat colours step by 2, so only 4 shirts / 3 hair colours appear; walk-ins can repeat them (twin diners)
+
+**Visual design**
+- D207 [major] Uptown counter front still a pile-up; the floor in front of the baker is bare → back row ends at `counter.x0 − 40`; order spot at `counter.x1 − 4`, depth 58, the queue steps right
+- D208 [major] Cloned crowds: most diners wear the same striped shirt → stripes ≤1 in 3; add solid tees, collared shirts, cardigans, overalls
+- D209–D213 [minor] Tier-3 big plant covers the front-left diner; starter shop looks bare (empty bench, hidden cook, empty floor); cut-scene PIZZA board cut by Nonna's bun; Industrial interior washed out; "I ♥ PORT M" text hits the frame
+
+**Design notes**
+- D214 On an unmanaged shop the goal bar should be that shop's manager · D215 "Not enough cash" toast should name the item
+
+## v2.12 — build (addresses round 26)
+
+| Note | Fix |
+| --- | --- |
+| G65 | Menu board's left edge is clamped to the oven bank's right edge + 6, so the hood never covers it |
+| G66 | Each door lane has its own inside waypoint: walk-ins `[door.x0 + 16, 34]`, drivers `[door.x1 − 14, 34]` — both clear of the left jamb |
+| G67 | Seat i takes shirt `base + i` and hair `base + i`; its companion +4 / +3. A walk-in's colours are picked to avoid every diner and companion at its table and the two beside it |
+| D207 | Back row ends 40 + SEAT before the counter; walk-ins order at `counter.x1 − 4`, depth 58, with the next one queuing 14 to the right (not stacked in front) |
+| D208 | Six guest outfits drawn per seed (plain tee, striped tee, hoodie, collared shirt with buttons, open cardigan over a light shirt with buttons, denim overalls with brass clips), so stripes appear on about 1 in 6 |
+| D209 | Tier-3 big plant moved back beside the bench end (L + 8, depth 58); the small fern takes the front-left corner |
+| D210 | Starter shop: the bench always shows at least 2 dough balls and the rolling pin; a lone cook stands further forward (depth 88); the starter table sits on a round woven rug |
+| D211 | Cut-scene PIZZA board narrowed (86–168) with smaller lettering, clear of Nonna's bun |
+| D212 | Industrial: back wall #D9D3C8, a riveted #9AA1A8 steel wainscot with a rail, darker #CFC6B8 concrete floor |
+| D213 | "I ♥ PORT M." at 3.8, inset from the frame |
+| D214 | On an unmanaged shop the goal bar shows that shop's manager first |
+| D215 | A failed buy names the item and its cost ("Drivers: need $10") |
+
+Typecheck clean, 30 tests pass, `report.json` errors: [].

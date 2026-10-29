@@ -58,7 +58,8 @@ export default function GameScreen() {
   if (vg && vg > 0) candidates.push({ label: `Upgrade fleet to ${VEHICLES[v + 1].name}s · ${plus(vg)}`, current: game.cash, target: VEHICLES[v + 1].cost, ratio: vg / VEHICLES[v + 1].cost, onPress: buyFleet });
   candidates.sort((a, b) => b.ratio - a.ratio);
   // On an unmanaged shop the sidewalk already offers "Hire a manager" here: show the next goal instead (critic D137).
-  const shown = !shop.managed && id !== 'downtown' ? candidates.filter((c) => c.label !== `Hire a manager for ${nd.name}`) : candidates;
+  // viewing an unmanaged shop: its manager is the goal (critic D214)
+  const shown = !shop.managed && id !== 'downtown' ? [...candidates.filter((c) => c.label === `Hire a manager for ${nd.name}`), ...candidates.filter((c) => c.label !== `Hire a manager for ${nd.name}`)] : candidates;
   let goal: Goal | null = shown[0] ?? null;
   // Late game: fall back to the best big buy in this shop (Expand, Grade or a Decor tier) before the story count (critic G58/D151).
   if (!goal) {

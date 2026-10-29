@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { HOME_SCENES } from '../content/scenes/home';
 import type { DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
+import { money } from '../engine/format';
 import * as G from '../engine/game';
 
 const SAVE_KEY = 'slice-empire/save/v1';
@@ -52,10 +53,12 @@ export const useGame = create<Store>((set, get) => {
     if (next) set({ playing: { scene: next, replay: false } });
   };
 
-  const commit = (result: G.BuyResult) => {
+  const commit = (result: G.BuyResult, item?: { name: string; cost: number | null }) => {
     if (!result.ok) {
       const at = Date.now();
-      set({ toast: { text: result.reason, at } });
+      // name what the player tapped (critic D215)
+      const text = result.reason === 'Not enough cash' && item && item.cost !== null ? `${item.name}: need ${money(item.cost)}` : result.reason;
+      set({ toast: { text, at } });
       setTimeout(() => {
         if (get().toast?.at === at) set({ toast: null });
       }, 1800);
@@ -123,11 +126,15 @@ export const useGame = create<Store>((set, get) => {
       set({ game: G.tapShop(g, g.active) });
     },
 
-    buy: (what) => commit(G.buyUpgrade(get().game, get().game.active, what)),
+    buy: (what) => {
+      const g = get().game;
+      const NAMES: Record<string, string> = { prep: 'Prep', ovens: 'Ovens', counter: 'Counter', drivers: 'Drivers', tables: 'Seating', grade: 'Oven grade', expand: 'Expand', manager: 'Manager' };
+      return commit(G.buyUpgrade(g, g.active, what), { name: NAMES[what] ?? what, cost: G.upgradeCostOf(g, g.active, what) });
+    },
 
     buyFleet: () => commit(G.buyVehicle(get().game)),
 
-    buyDecor: (kind) => commit(G.buyDecor(get().game, get().game.active, kind)),
+    buyDecor: (kind) => commit(G.buyDecor(get().game, get().game.active, kind), { name: kind[0].toUpperCase() + kind.slice(1), cost: G.decorCost(get().game, get().game.active, kind) }),
 
     build: (id) => commit(G.buildShop(get().game, id)),
 

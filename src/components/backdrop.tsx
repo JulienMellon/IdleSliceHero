@@ -47,12 +47,12 @@ function Scenery({ id }: { id: BackdropId }) {
             <Path d="M272 150 L272 105 Q300 85 328 105 L328 150 Z" fill="#2B1A12" />
             <Path d="M280 150 L285 125 L292 140 L300 118 L308 140 L315 125 L320 150 Z" fill="#FF9F1C" />
           </G>
-          <Rect x={88} y={40} width={104} height={60} rx={8} fill="#FFFFFF" stroke={INK} strokeWidth={2.4} />
-          <Circle cx={118} cy={70} r={20} fill="#FFC531" stroke={INK} strokeWidth={2} />
-          {[[110, 62], [126, 66], [116, 80], [128, 77]].map(([cx, cy], i) => (
+          <Rect x={86} y={44} width={82} height={52} rx={8} fill="#FFFFFF" stroke={INK} strokeWidth={2.4} />
+          <Circle cx={108} cy={70} r={16} fill="#FFC531" stroke={INK} strokeWidth={2} />
+          {[[102, 64], [114, 67], [106, 78], [115, 76]].map(([cx, cy], i) => (
             <Circle key={i} cx={cx} cy={cy} r={4} fill="#E8432E" />
           ))}
-          <Text x={162} y={76} fontSize={13} fontFamily={F.bold} fill="#D9443A" textAnchor="middle">
+          <Text x={145} y={75} fontSize={11} fontFamily={F.bold} fill="#D9443A" textAnchor="middle">
             PIZZA
           </Text>
         </G>
