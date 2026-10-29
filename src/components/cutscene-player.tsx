@@ -69,7 +69,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   }, [panel, line, showReward]);
 
   const speakerIndex = current ? p.cast.findIndex((c) => current.speaker.toLowerCase().includes(c.id.split('-')[0]) || current.speaker.startsWith(nameOf(c.id))) : -1;
-  const portraitSize = Math.min(frameH * 0.5, p.cast.length > 1 ? frameW * 0.46 : frameW * 0.6);
+  const portraitSize = Math.min(frameH * 0.58, p.cast.length > 1 ? frameW * 0.52 : frameW * 0.68);
 
   return (
     <View style={StyleSheet.absoluteFill}>

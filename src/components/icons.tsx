@@ -155,3 +155,97 @@ export function DecorIcon({ kind, size = 20 }: { kind: 'plants' | 'flooring' | '
     </Svg>
   );
 }
+
+/** Storybook (Scrapbook button). */
+export function BookIcon({ size = 30 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 30 30">
+      <Path d="M3 7 Q9 4.5 15 7.5 Q21 4.5 27 7 V24 Q21 21.5 15 24.5 Q9 21.5 3 24 Z" fill="#FFF4E0" stroke={INK} strokeWidth={1.8} strokeLinejoin="round" />
+      <Path d="M15 7.5 V24.5" stroke={INK} strokeWidth={1.6} />
+      <Path d="M6 10.5 Q9.5 9 12.5 10.5 M6 14 Q9.5 12.5 12.5 14 M17.5 10.5 Q20.5 9 24 10.5 M17.5 14 Q20.5 12.5 24 14" stroke="#C9B79E" strokeWidth={1.4} fill="none" strokeLinecap="round" />
+      <Path d="M20 17 L22 21 L24 17 Z" fill="#E8432E" />
+      <Path d="M3 24 Q9 21.5 15 24.5 Q21 21.5 27 24 V26 Q21 23.5 15 26.5 Q9 23.5 3 26 Z" fill="#E8432E" stroke={INK} strokeWidth={1.4} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+/** Folded city map (City button). */
+export function MapIcon({ size = 30 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 30 30">
+      <Path d="M3 7 L10 4.5 L20 7.5 L27 5 V23 L20 25.5 L10 22.5 L3 25 Z" fill="#BFE3A6" stroke={INK} strokeWidth={1.8} strokeLinejoin="round" />
+      <Path d="M10 4.5 V22.5 M20 7.5 V25.5" stroke={INK} strokeWidth={1.2} />
+      <Path d="M20 7.5 L27 5 V23 L20 25.5 Z" fill="#7CC8EE" opacity={0.85} />
+      <Path d="M3 15 Q8 13 12 16 T20 15" stroke="#FFF4E0" strokeWidth={1.8} fill="none" strokeLinecap="round" strokeDasharray="2 1.6" />
+      <Path d="M15 9 Q12 9 12 12 Q12 14 15 17.5 Q18 14 18 12 Q18 9 15 9 Z" fill="#E8432E" stroke={INK} strokeWidth={1.1} />
+      <Circle cx={15} cy={12} r={1.2} fill="#fff" />
+    </Svg>
+  );
+}
+
+/** Padlock. */
+export function LockIcon({ size = 16, color = '#FFF4E0' }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 16 16">
+      <Path d="M4.5 7 V5 Q4.5 1.5 8 1.5 Q11.5 1.5 11.5 5 V7" stroke={INK} strokeWidth={1.6} fill="none" />
+      <Rect x={2.5} y={6.5} width={11} height={8} rx={2} fill={color} stroke={INK} strokeWidth={1.3} />
+      <Circle cx={8} cy={10} r={1.3} fill={INK} />
+      <Path d="M8 10 V12.5" stroke={INK} strokeWidth={1.2} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+/** Trophy. */
+export function TrophyIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Path d="M5 4 Q1.5 4 2 7.5 Q2.5 10 6 10.5 M15 4 Q18.5 4 18 7.5 Q17.5 10 14 10.5" stroke={INK} strokeWidth={1.3} fill="none" />
+      <Path d="M5 2.5 H15 V7 Q15 12 10 12.5 Q5 12 5 7 Z" fill="#FFC531" stroke={INK} strokeWidth={1.3} strokeLinejoin="round" />
+      <Path d="M7.2 4.5 V7.5" stroke="#fff" strokeWidth={1.3} strokeLinecap="round" opacity={0.7} />
+      <Rect x={8.6} y={12.5} width={2.8} height={2.8} fill="#E0A100" stroke={INK} strokeWidth={0.9} />
+      <Rect x={5.5} y={15.3} width={9} height={3} rx={0.8} fill="#8E5A3C" stroke={INK} strokeWidth={1.1} />
+    </Svg>
+  );
+}
+
+/** Pizza slice. */
+export function SliceIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Path d="M2.5 4 Q10 0.5 17.5 4 L10 18.5 Z" fill="#FFC531" stroke={INK} strokeWidth={1.3} strokeLinejoin="round" />
+      <Path d="M2.5 4 Q10 0.5 17.5 4 L16.6 5.8 Q10 2.6 3.4 5.8 Z" fill="#E9A64B" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+      <Circle cx={8} cy={8} r={1.6} fill="#E8432E" />
+      <Circle cx={12.5} cy={8.6} r={1.5} fill="#E8432E" />
+      <Circle cx={10.2} cy={12.5} r={1.4} fill="#E8432E" />
+    </Svg>
+  );
+}
+
+/** Gold coin. */
+export function CoinIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Circle cx={10} cy={10} r={8} fill="#FFC531" stroke={INK} strokeWidth={1.3} />
+      <Circle cx={10} cy={10} r={5.5} fill="none" stroke="#E0A100" strokeWidth={1.2} />
+      <Path d="M10 6.5 V13.5 M12 8 Q10 6.8 8.4 8 Q7.6 9.5 10 10 Q12.4 10.5 11.6 12 Q10 13.2 8 12" stroke="#B57E00" strokeWidth={1.2} fill="none" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+/** Star. */
+export function StarIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Path d="M10 1.8 L12.4 7 L18 7.6 L13.8 11.4 L15 17 L10 14.1 L5 17 L6.2 11.4 L2 7.6 L7.6 7 Z" fill="#FFE08A" stroke={INK} strokeWidth={1.2} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+/** Speed lines (offline popup). */
+export function WhooshIcon({ size = 30 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 30 30">
+      <Path d="M4 10 H22 M2 15 H26 M6 20 H20" stroke="#9BC8E6" strokeWidth={3} strokeLinecap="round" />
+    </Svg>
+  );
+}

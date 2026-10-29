@@ -133,47 +133,238 @@ function FloorShadow({ x, y, r }: { x: number; y: number; r: number }) {
 }
 
 type Kind = 'cook' | 'baker' | 'staff' | 'driver' | 'guest' | 'sit';
-const SHIRT: Record<string, string> = { cook: '#E8432E', baker: '#B23A48', staff: '#3FAE5A', driver: '#2F80ED' };
 
-/** A shaded, rounded worker or customer with a floor shadow, feet at room point (x, y). */
-function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, hair = '#4A2C1D', skin, o = 1 }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; hair?: string; skin?: string; o?: number }) {
+// ---------- characters (critic round 18: polished chibi figures) ----------
+// Light comes from the upper left: every figure has a shadow side on the right, a highlight on the left,
+// and the same 1.1 ink outline as the furniture. Figures face +x (flip mirrors them).
+const SKINS = ['#F6D3B3', '#EDB98A', '#D69A6A', '#B07446', '#7E4F30'];
+const HAIR_COLORS = ['#2B1A12', '#4A2C1D', '#8E5A3C', '#E3C16F', '#B5462E', '#8F8A86'];
+const PANTS = ['#3B4A6B', '#5C4033', '#2F3140', '#6B7A8F', '#7A5C8E'];
+const GUEST_SHIRTS = ['#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97', '#F2C94C', '#EB6F92', '#2D9CDB', '#9B51E0'];
+
+interface Look { skin: string; hair: string; style: number; glasses: boolean; wide: number; pants: string; shirt: string }
+function lookFor(seed: number): Look {
+  const n = Math.abs(Math.floor(seed));
+  return {
+    skin: SKINS[(n * 7 + 3) % SKINS.length],
+    hair: HAIR_COLORS[(n * 5 + 1) % HAIR_COLORS.length],
+    style: (n * 7 + 3) % 6,
+    glasses: n % 5 === 2,
+    wide: ((n * 11) % 3) - 1,
+    pants: PANTS[(n * 3) % PANTS.length],
+    shirt: GUEST_SHIRTS[(n * 5 + 2) % GUEST_SHIRTS.length],
+  };
+}
+
+const OUT = { stroke: INK, strokeWidth: 1.1, strokeLinejoin: 'round' as const };
+
+/** An outlined limb: ink stroke under a coloured stroke, ending in a hand or shoe. */
+function Limb({ d, color, w = 4.4 }: { d: string; color: string; w?: number }) {
+  return (
+    <G>
+      <Path d={d} stroke={INK} strokeWidth={w + 2.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d={d} stroke={color} strokeWidth={w} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </G>
+  );
+}
+
+function Hair({ style, color, hy, part }: { style: number; color: string; hy: number; part: 'back' | 'front' }) {
+  if (part === 'back') {
+    if (style === 1) return <Path d={`M-9.6 ${hy - 2} Q-11.2 ${hy + 9} -5 ${hy + 9.5} L-1 ${hy + 9} Q-4 ${hy + 3} -3 ${hy - 4} Z`} fill={color} {...OUT} />;
+    if (style === 3) return <G>{[[-6, -6, 6], [-9, 0, 5.5], [-7, 6, 5], [0, -9, 6.5], [6, -7, 6]].map(([dx, dy, r], i) => <Circle key={i} cx={dx} cy={hy + dy} r={r} fill={color} {...OUT} />)}</G>;
+    if (style === 4) return <Path d={`M-8 ${hy - 4} Q-15 ${hy - 2} -13 ${hy + 8} Q-11 ${hy + 4} -7.5 ${hy + 1} Z`} fill={color} {...OUT} />;
+    return null;
+  }
+  if (style === 5) {
+    // bald on top, trimmed sides and a beard
+    return (
+      <G>
+        <Path d={`M-9.3 ${hy - 1} Q-9.8 ${hy + 4} -7 ${hy + 6} L-6 ${hy} Z`} fill={color} />
+        <Path d={`M1.5 ${hy + 5.5} Q4.5 ${hy + 10.6} 8.5 ${hy + 8} Q10 ${hy + 6.5} 9.8 ${hy + 4} Q8 ${hy + 7.4} 5 ${hy + 7.4} Q3 ${hy + 7.2} 1.5 ${hy + 5.5} Z`} fill={color} {...OUT} strokeWidth={0.7} />
+        <Path d={`M-3 ${hy - 7.5} Q1 ${hy - 9.5} 5 ${hy - 7.5}`} stroke="#fff" strokeWidth={1.6} opacity={0.35} fill="none" strokeLinecap="round" />
+      </G>
+    );
+  }
+  if (style === 3) {
+    return <G>{[[-5, -8.5, 3.6], [-0.5, -10, 3.8], [4, -9, 3.6], [7.5, -6, 3.2]].map(([dx, dy, r], i) => <Circle key={i} cx={dx + 0.5} cy={hy + dy} r={r} fill={color} {...OUT} strokeWidth={0.9} />)}</G>;
+  }
+  // short / bob / bun / ponytail share a cap with a side-swept fringe
+  return (
+    <G>
+      <Path d={`M-9.2 ${hy + 1} Q-10.4 ${hy - 11.5} 1 ${hy - 10.6} Q10.6 ${hy - 10.2} 10 ${hy - 2} Q7.5 ${hy - 6.8} 2.5 ${hy - 6.4} Q-1.5 ${hy - 6} -4 ${hy - 3} Q-5.5 ${hy - 1} -6.2 ${hy + 2} Z`} fill={color} {...OUT} />
+      <Path d={`M-5 ${hy - 8} Q0 ${hy - 10.5} 5 ${hy - 8.5}`} stroke="#fff" strokeWidth={1.4} opacity={0.25} fill="none" strokeLinecap="round" />
+      {style === 2 && <Circle cx={-3} cy={hy - 11} r={3.8} fill={color} {...OUT} />}
+    </G>
+  );
+}
+
+/** Hats and headwear that make each job readable at a glance. */
+function Headwear({ kind, hy }: { kind: Kind; hy: number }) {
+  if (kind === 'cook') {
+    return (
+      <G>
+        {[[-4.5, -16.5, 5], [1, -19.5, 5.8], [6.2, -16.2, 4.8]].map(([dx, dy, r], i) => <Circle key={i} cx={dx} cy={hy + dy} r={r} fill="#FBF8F3" {...OUT} />)}
+        <Circle cx={-1.5} cy={hy - 20.5} r={2} fill="#fff" />
+        <Rect x={-7.6} y={hy - 13.2} width={16.4} height={5.4} rx={1.6} fill="#F1ECE4" {...OUT} />
+        <Rect x={3} y={hy - 12.6} width={5} height={4.2} fill="#000" opacity={0.08} />
+      </G>
+    );
+  }
+  if (kind === 'baker') {
+    return (
+      <G>
+        <Path d={`M-10 ${hy - 1} Q-9.4 ${hy - 12.2} 1 ${hy - 11.6} Q10.4 ${hy - 11} 10.2 ${hy - 2.2} Q1.5 ${hy - 6.5} -10 ${hy - 1} Z`} fill="#D9443A" {...OUT} />
+        {[[-4, -8], [1, -9.5], [6, -7.5], [-7, -4]].map(([dx, dy], i) => <Circle key={i} cx={dx} cy={hy + dy} r={0.9} fill="#FFF4E0" />)}
+        <Path d={`M-9.8 ${hy - 2} l-4 -2.5 l0.8 4.2 Z M-9.8 ${hy - 1.5} l-3.2 3.4 l3.8 0.4 Z`} fill="#B23A30" {...OUT} strokeWidth={0.8} />
+      </G>
+    );
+  }
+  if (kind === 'staff' || kind === 'driver') {
+    const c = kind === 'staff' ? '#F5C33B' : '#D9443A';
+    return (
+      <G>
+        <Path d={`M-9.2 ${hy - 3} Q-9.2 ${hy - 12.6} 0.5 ${hy - 12.6} Q10 ${hy - 12.6} 10 ${hy - 4} Z`} fill={c} {...OUT} />
+        <Path d={`M7 ${hy - 4.4} Q14 ${hy - 4.6} 15.5 ${hy - 2.6} Q11 ${hy - 1.6} 6.5 ${hy - 2.6} Z`} fill={shade(c, -0.18)} {...OUT} strokeWidth={0.9} />
+        <Path d={`M-5.5 ${hy - 9.5} Q0 ${hy - 12} 5 ${hy - 10}`} stroke="#fff" strokeWidth={1.4} opacity={0.35} fill="none" strokeLinecap="round" />
+        <Circle cx={1.5} cy={hy - 8} r={2} fill={kind === 'staff' ? '#3FAE5A' : '#FFF4E0'} stroke={INK} strokeWidth={0.6} />
+      </G>
+    );
+  }
+  return null;
+}
+
+/** A polished chibi worker or customer with a contact shadow, feet at room point (x, y). */
+function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1 }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number }) {
   const [sx, sy] = P(x, y);
-  const k = kAt(y) * 1.12;
-  const sh = shirt ?? SHIRT[kind] ?? '#9B51E0';
-  const sk = skin ?? (kind === 'guest' || kind === 'sit' ? '#C98F63' : '#F2C9A0');
+  const k = kAt(y) * 1.14;
+  const look = lookFor(seed);
   const sitting = kind === 'sit';
-  const by = sitting ? -20 : -30;
-  const leg = Math.sin(step) * 3;
+  const worker = kind === 'cook' || kind === 'baker' || kind === 'staff' || kind === 'driver';
+  const top = kind === 'cook' ? '#FBF8F3' : kind === 'baker' ? '#B23A48' : kind === 'staff' ? '#3FAE5A' : kind === 'driver' ? '#2F80ED' : shirt ?? look.shirt;
+  const sleeve = top;
+  const pants = kind === 'cook' ? '#4A4A6E' : kind === 'baker' ? '#3B3B5C' : kind === 'staff' ? '#8C7356' : kind === 'driver' ? '#2E3A59' : look.pants;
+  const skin = look.skin;
+  const walking = step !== 0 && !sitting;
+  const sw = walking ? Math.sin(step) : 0;
+  const bob = walking ? Math.abs(Math.cos(step)) * 1.2 : 0;
+  const by = (sitting ? -21 : -30) - bob;
+  const hy = by - 9;
+  const ww = worker ? 0 : look.wide * 1.1;
+  const torso = `M${-8 - ww} ${by + 3.5} Q${-8 - ww} ${by} ${-4.5} ${by} L5 ${by} Q${8.5 + ww} ${by} ${8.5 + ww} ${by + 3.5} L${8 + ww} ${by + 16.5} Q${8 + ww} ${by + 19} ${5.5 + ww} ${by + 19} L${-5.5 - ww} ${by + 19} Q${-7.6 - ww} ${by + 19} ${-7.6 - ww} ${by + 16.5} Z`;
+  // front-arm hand position: working (arm), carrying, eating, or swinging
+  const hand: [number, number] = carry ? [12, by + 8] : sitting ? [12 + arm, by + 9 - arm] : worker && arm > 0 ? [10 + arm, by + 13 - arm * 2] : [9 + sw * 2.5, by + 16];
+  const backHand: [number, number] = sitting ? [-7, by + 15] : [-8.5 - sw * 2.5, by + 15.5];
+  const peel = kind === 'baker';
   return (
     <G opacity={o} transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${(flip ? -k : k).toFixed(3)} ${k.toFixed(3)})`}>
-      {!sitting && <Ellipse cx={0} cy={0} rx={11} ry={3.6} fill="rgba(59,31,20,0.25)" />}
-      {!sitting && (
+      {!sitting && <Ellipse cx={0.5} cy={0} rx={11.5} ry={3.4} fill="rgba(59,31,20,0.26)" />}
+      {/* legs */}
+      {sitting ? (
         <G>
-          <Rect x={-5.5 + leg * 0.4} y={-12} width={4.6} height={12} rx={2.2} fill="#4A4A6E" stroke={INK} strokeWidth={0.8} />
-          <Rect x={0.9 - leg * 0.4} y={-12} width={4.6} height={12} rx={2.2} fill="#3B3B5C" stroke={INK} strokeWidth={0.8} />
+          <Limb d={`M-2 ${by + 16} L8 ${by + 17}`} color={pants} w={6} />
+          <Limb d={`M8.5 ${by + 17} L9.5 -2`} color={pants} w={5} />
+          <Ellipse cx={11.4} cy={-1.6} rx={3.8} ry={2} fill="#3A2A24" {...OUT} strokeWidth={0.8} />
+        </G>
+      ) : (
+        [-1, 1].map((side) => {
+          const lx = side * 3.2 + (walking ? -side * sw * 2.8 : 0);
+          const lift = walking ? Math.max(0, side * sw) * 1.6 : 0;
+          return (
+            <G key={side}>
+              <Limb d={`M${side * 3} ${by + 17} L${lx} ${-2.5 - lift}`} color={side < 0 ? shade(pants, -0.12) : pants} w={4.8} />
+              <Ellipse cx={lx + 1.6} cy={-1.4 - lift} rx={3.7} ry={2.1} fill="#3A2A24" {...OUT} strokeWidth={0.8} />
+              <Ellipse cx={lx + 0.6} cy={-2.2 - lift} rx={1.4} ry={0.6} fill="#fff" opacity={0.3} />
+            </G>
+          );
+        })
+      )}
+      {/* back arm */}
+      <Limb d={`M-6 ${by + 4} Q${-8.5} ${by + 10} ${backHand[0]} ${backHand[1]}`} color={shade(sleeve, -0.18)} />
+      <Circle cx={backHand[0]} cy={backHand[1]} r={2.3} fill={shade(skin, -0.12)} {...OUT} strokeWidth={0.8} />
+      {/* back hair (behind the head) */}
+      <Hair style={worker ? 0 : look.style} color={worker ? look.hair : look.hair} hy={hy} part="back" />
+      {/* torso with shadow side and highlight */}
+      <Path d={torso} fill={top} {...OUT} />
+      <Path d={`M3.5 ${by} L5 ${by} Q${8.5 + ww} ${by} ${8.5 + ww} ${by + 3.5} L${8 + ww} ${by + 16.5} Q${8 + ww} ${by + 19} ${5.5 + ww} ${by + 19} L3.5 ${by + 19} Z`} fill="#000" opacity={0.13} />
+      <Rect x={-6.2 - ww} y={by + 2.5} width={2.4} height={9} rx={1.2} fill="#fff" opacity={0.25} />
+      {/* outfit details */}
+      {kind === 'cook' && (
+        <G>
+          <Path d={`M-4 ${by} L4.5 ${by} L0.3 ${by + 5} Z`} fill="#E8432E" {...OUT} strokeWidth={0.8} />
+          {[[-2.2, 7], [-2.2, 12], [3, 7], [3, 12]].map(([dx, dy], i) => <Circle key={i} cx={dx} cy={by + dy} r={0.9} fill="#C9C3BA" />)}
+          <Path d={`M0.4 ${by + 5} V${by + 19}`} stroke="#E1DAD0" strokeWidth={0.8} />
         </G>
       )}
-      <Rect x={-8.5} y={by} width={17} height={20} rx={7} fill={sh} stroke={INK} strokeWidth={1.1} />
-      <Rect x={2} y={by + 2} width={6} height={16} rx={3} fill="#000" opacity={0.14} />
-      <Rect x={-7} y={by + 2} width={3} height={10} rx={1.5} fill="#fff" opacity={0.22} />
-      {(kind === 'cook' || kind === 'baker' || kind === 'staff') && <Rect x={-6} y={by + 6} width={12} height={13} rx={3} fill="#fff" stroke={INK} strokeWidth={0.7} opacity={0.95} />}
-      <Path d={`M6 ${by + 6} Q12 ${by + 10 - arm} ${13 + arm} ${by + 14 - arm * 2}`} stroke={sk} strokeWidth={4} fill="none" strokeLinecap="round" />
+      {kind === 'baker' && (
+        <G>
+          <Path d={`M-5.5 ${by + 4} L6 ${by + 4} L6.8 ${by + 19} L-6.2 ${by + 19} Z`} fill="#8C5A3C" {...OUT} strokeWidth={0.9} />
+          <Path d={`M-5 ${by + 4} L-3 ${by} M5.5 ${by + 4} L3.6 ${by}`} stroke="#8C5A3C" strokeWidth={1.4} />
+          <Rect x={-3} y={by + 9} width={6.5} height={4} rx={1} fill="#A8714B" stroke={INK} strokeWidth={0.6} />
+          <Path d={`M-2.5 ${by} Q0.5 ${by + 2.5} 3.5 ${by}`} fill={skin} />
+        </G>
+      )}
+      {kind === 'staff' && (
+        <G>
+          <Path d={`M-4 ${by} L0.5 ${by + 4} L5 ${by} L3 ${by - 0.5} L0.5 ${by + 2} L-2 ${by - 0.5} Z`} fill="#fff" {...OUT} strokeWidth={0.7} />
+          <Rect x={-6} y={by + 6} width={5} height={3.2} rx={0.8} fill="#fff" stroke={INK} strokeWidth={0.6} />
+          <Path d={`M-5 ${by + 7.6} h3`} stroke="#3FAE5A" strokeWidth={0.8} />
+        </G>
+      )}
+      {kind === 'driver' && (
+        <G>
+          <Path d={`M0.5 ${by + 1} V${by + 19}`} stroke="#1F5FB8" strokeWidth={1.2} />
+          <Path d={`M-3.5 ${by} L0.5 ${by + 3} L4.5 ${by}`} fill="none" stroke="#fff" strokeWidth={1.2} />
+          <Circle cx={-4} cy={by + 8} r={2.4} fill="#D9443A" stroke="#fff" strokeWidth={0.7} />
+          <Path d={`M-8 ${by + 14} H${8.5}`} stroke="#1F5FB8" strokeWidth={1.4} opacity={0.7} />
+        </G>
+      )}
+      {!worker && <Path d={`M-2.6 ${by} Q0.5 ${by + 3.4} 3.6 ${by}`} fill={skin} stroke={INK} strokeWidth={0.7} />}
+      {/* head */}
+      <Circle cx={0.5} cy={hy} r={9.6} fill={skin} {...OUT} />
+      <Path d={`M5.3 ${hy - 8.3} A9.6 9.6 0 0 1 3.8 ${hy + 9} Q8 ${hy} 5.3 ${hy - 8.3} Z`} fill="#000" opacity={0.09} />
+      <Circle cx={-2.8} cy={hy - 4.2} r={2.6} fill="#fff" opacity={0.28} />
+      <Circle cx={-6} cy={hy + 1.2} r={2.3} fill={skin} {...OUT} strokeWidth={0.9} />
+      <Path d={`M-6.6 ${hy + 0.4} q0.8 0.9 0 1.8`} stroke={shade(skin, -0.25)} strokeWidth={0.7} fill="none" />
+      {/* face */}
+      {[2.4, 6.9].map((ex) => (
+        <G key={ex}>
+          <Ellipse cx={ex} cy={hy - 0.4} rx={1.25} ry={1.65} fill={INK} />
+          <Circle cx={ex + 0.4} cy={hy - 1} r={0.5} fill="#fff" />
+          <Path d={`M${ex - 1.4} ${hy - 3.6} q1.4 -0.9 2.8 0`} stroke={worker ? INK : look.hair} strokeWidth={0.9} fill="none" strokeLinecap="round" />
+        </G>
+      ))}
+      {look.glasses && !worker && (
+        <G>
+          <Circle cx={2.4} cy={hy - 0.4} r={2.3} fill="none" stroke={INK} strokeWidth={0.7} />
+          <Circle cx={6.9} cy={hy - 0.4} r={2.3} fill="none" stroke={INK} strokeWidth={0.7} />
+          <Path d={`M4.7 ${hy - 0.6} h-0.1`} stroke={INK} strokeWidth={0.7} />
+        </G>
+      )}
+      <Ellipse cx={8.6} cy={hy + 1.6} rx={0.9} ry={0.75} fill={shade(skin, -0.2)} />
+      <Path d={`M3 ${hy + 3.6} q1.9 1.9 3.8 0`} stroke={INK} strokeWidth={0.95} fill={kind === 'sit' || arm > 1.5 ? '#B5462E' : 'none'} strokeLinecap="round" />
+      <Ellipse cx={0.8} cy={hy + 2.6} rx={1.6} ry={0.95} fill="#F28B82" opacity={0.55} />
+      <Ellipse cx={9.2} cy={hy + 2.4} rx={1.1} ry={0.85} fill="#F28B82" opacity={0.5} />
+      {/* hair + headwear */}
+      {worker ? <Path d={`M-9.4 ${hy + 0.5} Q-9.8 ${hy - 4} -7.5 ${hy - 5} L-6 ${hy + 0.5} Z`} fill={look.hair} /> : <Hair style={look.style} color={look.hair} hy={hy} part="front" />}
+      <Headwear kind={kind} hy={hy} />
+      {/* front arm + props */}
+      {peel && (
+        <G>
+          <Path d={`M${hand[0] + 1} ${hand[1] + 9} L${hand[0] + 2.5} ${hand[1] - 18}`} stroke={INK} strokeWidth={3.4} strokeLinecap="round" />
+          <Path d={`M${hand[0] + 1} ${hand[1] + 9} L${hand[0] + 2.5} ${hand[1] - 18}`} stroke="#C99A6B" strokeWidth={1.8} strokeLinecap="round" />
+          <Path d={`M${hand[0] - 1.5} ${hand[1] - 17} Q${hand[0] - 2} ${hand[1] - 29} ${hand[0] + 3} ${hand[1] - 29} Q${hand[0] + 8} ${hand[1] - 29} ${hand[0] + 7} ${hand[1] - 17} Z`} fill="#D9B48A" {...OUT} strokeWidth={0.9} />
+        </G>
+      )}
+      <Limb d={`M6.5 ${by + 4} Q${9.5} ${by + 9} ${hand[0]} ${hand[1]}`} color={sleeve} />
+      {kind === 'cook' || kind === 'baker' ? <Path d={`M${hand[0] - 2.4} ${hand[1] - 2.2} l2.8 -1`} stroke={kind === 'cook' ? '#E1DAD0' : '#7E2A35'} strokeWidth={1.2} /> : null}
+      <Circle cx={hand[0]} cy={hand[1]} r={2.4} fill={skin} {...OUT} strokeWidth={0.8} />
       {carry && (
         <G>
-          <Rect x={9} y={by + 6} width={16} height={6} rx={1.2} fill="#F6E7C1" stroke={INK} strokeWidth={0.9} />
-          <Circle cx={17} cy={by + 9} r={1.6} fill="#E8432E" />
+          <Rect x={hand[0] - 3} y={hand[1] - 6.5} width={17} height={6} rx={1.2} fill="#F6E7C1" {...OUT} strokeWidth={0.9} />
+          <Rect x={hand[0] - 3} y={hand[1] - 6.5} width={17} height={1.8} rx={0.9} fill="#fff" opacity={0.5} />
+          <Circle cx={hand[0] + 5.5} cy={hand[1] - 3.5} r={1.7} fill="#E8432E" />
         </G>
       )}
-      <Circle cx={0} cy={by - 8} r={8.5} fill={sk} stroke={INK} strokeWidth={1.1} />
-      <Path d={`M4 ${by - 14} A8.5 8.5 0 0 1 4 ${by - 2}`} fill="none" stroke="#000" strokeWidth={3} opacity={0.08} />
-      <Circle cx={-3} cy={by - 11} r={2.6} fill="#fff" opacity={0.3} />
-      <Circle cx={3} cy={by - 9} r={1.1} fill={INK} />
-      <Path d={`M2 ${by - 4.5} q2.5 1.6 5 0`} stroke={INK} strokeWidth={0.9} fill="none" strokeLinecap="round" />
-      <Ellipse cx={5.6} cy={by - 6} rx={1.6} ry={1} fill="#F28B82" opacity={0.6} />
-      {(kind === 'cook' || kind === 'baker') && <Path d={`M-7 ${by - 12} Q-9 ${by - 24} -3 ${by - 22} Q0 ${by - 28} 3 ${by - 22} Q9 ${by - 24} 7 ${by - 12} Z`} fill="#FBF8F3" stroke={INK} strokeWidth={1} />}
-      {kind === 'driver' && <Path d={`M-8.5 ${by - 10} Q-8.5 ${by - 19} 0 ${by - 19} Q8.5 ${by - 19} 8.5 ${by - 10} L15 ${by - 10} L15 ${by - 7.8} L-8.5 ${by - 7.8} Z`} fill="#D9443A" stroke={INK} strokeWidth={1} />}
-      {kind === 'staff' && <Path d={`M-8.5 ${by - 10} Q-8.5 ${by - 18} 0 ${by - 18} Q8.5 ${by - 18} 8.5 ${by - 10} Z`} fill="#F5C33B" stroke={INK} strokeWidth={1} />}
-      {(kind === 'guest' || kind === 'sit') && <Path d={`M-8.5 ${by - 9} Q-9 ${by - 18} 0 ${by - 18} Q8 ${by - 18} 8.5 ${by - 12} Q2 ${by - 15} -8.5 ${by - 9} Z`} fill={hair} />}
     </G>
   );
 }
@@ -283,7 +474,7 @@ function Oven({ o, grade, lit, flicker }: { o: Layout['ovens'][number]; grade: n
 }
 
 /** One stainless hood + flue over a bank of box deck ovens (critic D94). */
-function OvenHood({ lay, grade }: { lay: Layout; grade: number }) {
+function OvenHood({ lay, grade, mural }: { lay: Layout; grade: number; mural: boolean }) {
   const boxes = lay.ovens.filter((o) => o.h < 70 || grade === 1);
   if (!boxes.length) return null;
   const top = Math.max(...boxes.map((o) => o.z + o.h));
@@ -293,12 +484,14 @@ function OvenHood({ lay, grade }: { lay: Layout; grade: number }) {
   const [ax, ay] = P(x0, y, top + 6);
   const [bx, by] = P(x1, y, top + 22);
   const [cx] = P((x0 + x1) / 2, y);
-  const [, fy] = P(0, D, WH - 24);
+  const [, fyFull] = P(0, D, WH - 24);
+  const fy = mural ? by - 12 : fyFull;
   const fw = Math.min(26, (bx - ax) * 0.22);
   return (
     <G>
       <Rect x={cx - fw / 2} y={fy} width={fw} height={by - fy} fill="#BFC4CA" stroke={INK} strokeWidth={1} />
       <Rect x={cx - fw / 2 + 2} y={fy} width={fw * 0.3} height={by - fy} fill="#fff" opacity={0.35} />
+      {mural && <Rect x={cx - fw / 2 - 3} y={fy - 4} width={fw + 6} height={5} rx={1.5} fill="#9AA1A8" stroke={INK} strokeWidth={0.9} />}
       <Path d={`M${ax + 8} ${by} L${bx - 8} ${by} L${bx} ${ay} L${ax} ${ay} Z`} fill="#C9CED4" stroke={INK} strokeWidth={1.2} strokeLinejoin="round" />
       <Path d={`M${ax + 10} ${by + 3} L${bx - 10} ${by + 3}`} stroke="#fff" strokeWidth={2} opacity={0.6} />
       <Rect x={ax - 1} y={ay - 2} width={bx - ax + 2} height={4} rx={1.5} fill="#9AA1A8" stroke={INK} strokeWidth={0.8} />
@@ -599,7 +792,7 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
       lights.push(<Circle key={i} cx={lx} cy={ly} r={3.2} fill={['#FFC531', '#E8432E', '#3FAE5A'][i % 3]} stroke={INK} strokeWidth={0.7} />);
     }
   }
-  const [wx, wy] = P(lay.counter.x1 - 8, D, 150);
+  const [wx, wy] = P(lay.counter.x1 - 50, D, 132);
   const [mx, my] = P(lay.counter.x0 + 4, D, 180);
   return (
     <G>
@@ -785,7 +978,7 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
           return (
             <G>
               <Rect x={ax} y={ay} width={w} height={4} rx={1} fill="#8E5A3C" stroke={INK} strokeWidth={0.9} />
-              {[0.15, 0.85].map((f) => <Path key={f} d={`M${ax + w * f} ${ay + 4} l-3 8`} stroke="#5E3A26" strokeWidth={1.4} />)}
+              {[0.08, 0.5].map((f) => <Path key={f} d={`M${ax + w * f} ${ay + 4} l4 7 M${ax + w * f} ${ay + 4} v8`} stroke="#5E3A26" strokeWidth={1.4} strokeLinecap="round" />)}
               {[0.14, 0.38].map((f, i) => (
                 <G key={i}>
                   <Path d={`M${ax + w * f - 8} ${ay} Q${ax + w * f - 9} ${ay - 16} ${ax + w * f - 4} ${ay - 19} L${ax + w * f + 4} ${ay - 19} Q${ax + w * f + 9} ${ay - 16} ${ax + w * f + 8} ${ay} Z`} fill="#F3ECE2" stroke={INK} strokeWidth={0.9} />
@@ -899,10 +1092,12 @@ function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: string; 
         return (
           <G>
             {/* shop window above the entrance */}
-            <Rect x={jax} y={gTop} width={kbx - jax} height={lTop - gTop} fill="#DDF1FB" opacity={0.18} />
-            <Path d={`M${jax + 8} ${lTop} L${jax + 30} ${gTop} M${jax + 20} ${lTop} L${jax + 38} ${gTop}`} stroke="#fff" strokeWidth={3} opacity={0.35} />
-            <Rect x={jax} y={gTop} width={kbx - jax} height={lTop - gTop} fill="none" stroke="#5E3A26" strokeWidth={3} />
-            <Path d={`M${(jax + kbx) / 2} ${gTop} V${lTop}`} stroke="#5E3A26" strokeWidth={2} />
+            <Rect x={jax} y={gTop} width={kbx - jax} height={lTop - gTop} fill="#CFE8F5" opacity={0.18} />
+            <Path d={`M${jax + 8} ${lTop - 4} L${jax + 26} ${gTop + 6} M${jax + 18} ${lTop - 4} L${jax + 34} ${gTop + 6}`} stroke="#fff" strokeWidth={3} opacity={0.4} strokeLinecap="round" />
+            <Rect x={jax + 2} y={gTop + 2} width={kbx - jax - 4} height={lTop - gTop - 2} fill="none" stroke="#6B4330" strokeWidth={4.5} />
+            <Rect x={jax + 2} y={gTop + 2} width={kbx - jax - 4} height={lTop - gTop - 2} fill="none" stroke={INK} strokeWidth={0.8} />
+            <Path d={`M${(jax + kbx) / 2} ${gTop} V${lTop}`} stroke="#6B4330" strokeWidth={3} />
+            <Rect x={jax} y={lTop - 14} width={kbx - jax} height={5} fill="#6B4330" stroke={INK} strokeWidth={0.8} />
             {/* glazed door leaf */}
             <Polygon points={pts([hinge0, tip0, tip1, hinge1])} fill="#7E5038" stroke={INK} strokeWidth={1.2} />
             <Polygon points={pts([g0, g1, g2, g3])} fill="#BFE3F5" stroke={INK} strokeWidth={0.8} />
@@ -1237,13 +1432,11 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       const standing = !running ? true : !walking;
       items.push({
         y: running ? pos[1] : spot.y,
-        el: <Person key={`d${i}`} x={running ? pos[0] : spot.x} y={running ? pos[1] : spot.y} kind="driver" carry={running && p >= 0.62} step={standing ? 0 : clock * 12} arm={running ? 1.5 : 0} flip={running && p < 0.14} o={running ? o : 1} />,
+        el: <Person key={`d${i}`} x={running ? pos[0] : spot.x} y={running ? pos[1] : spot.y} kind="driver" seed={i + 10} carry={running && p >= 0.62} step={standing ? 0 : clock * 12} arm={0} flip={running && p < 0.14} o={running ? o : 1} />,
       });
     }
   }
   const guestCount = running ? Math.min(2, lay.tables.length) : 0;
-  const HAIR = ['#2B1A12', '#8E5A3C', '#E3C16F', '#4A2C1D'];
-  const SHIRTS = ['#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97', '#9B51E0', '#27AE60'];
   const orderAt: [number, number] = [lay.counter.x0 + 12, 54];
   for (let i = 0; i < guestCount; i++) {
     const p = ((t / 9 + 0.3 + i * 0.5) % 1 + 1) % 1;
@@ -1269,22 +1462,22 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       walking = false;
       o = p > 0.92 ? (1 - p) / 0.08 : 1;
     }
-    items.push({ y: pos[1] - 0.5, el: <Person key={`g${i}`} x={pos[0]} y={pos[1]} kind={kind} shirt={SHIRTS[i]} hair={HAIR[i]} flip={kind === 'sit' || p < 0.3} step={walking ? clock * 12 : 0} o={o} /> });
+    items.push({ y: pos[1] - 0.5, el: <Person key={`g${i}`} x={pos[0]} y={pos[1]} kind={kind} seed={i * 2 + 3} flip={kind === 'sit' ? false : p < 0.3} step={walking ? clock * 12 : 0} o={o} /> });
   }
   // tables + seated diners
   lay.tables.forEach((tb, i) => {
     items.push({ y: tb.y, el: <Table key={`t${i}`} x={tb.x} y={tb.y} tier={shop.decor.tables} /> });
-    if (running && i >= guestCount) items.push({ y: tb.y - 1, el: <Person key={`s${i}`} x={tb.x - 17} y={tb.y + 1} kind="sit" shirt={SHIRTS[(i + 2) % SHIRTS.length]} hair={HAIR[i % HAIR.length]} arm={Math.abs(Math.sin(clock * 2 + i)) * 2} /> });
+    if (running && i >= guestCount) items.push({ y: tb.y - 1, el: <Person key={`s${i}`} x={tb.x - 17} y={tb.y + 1} kind="sit" seed={i * 3 + 7} arm={Math.abs(Math.sin(clock * 2 + i)) * 2} /> });
   });
   // potted plants (plants decor)
   if (shop.decor.plants >= 1) {
     items.push({ y: 16, el: <FloorPlant key="pp1" x={lay.L + 16} y={16} /> });
     items.push({ y: 20, el: <FloorPlant key="pp2" x={lay.R - 8} y={20} /> });
-    items.push({ y: -20, el: <FloorPlant key="pp3" x={lay.L + 40} y={-20} big /> });
+    items.push({ y: -20, el: <FloorPlant key="pp3" x={lay.L + 40} y={-20} /> });
   }
   if (shop.decor.plants >= 3) items.push({ y: 100, el: <FloorPlant key="pp4" x={lay.L + 14} y={100} big /> });
   // kitchen crew + furniture
-  lay.cooks.forEach((x, i) => items.push({ y: 92 + (i % 2) * 3, el: <Person key={`c${i}`} x={x} y={92 + (i % 2) * 3} kind="cook" shirt={i % 2 ? '#D9534F' : '#E8432E'} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} /> }));
+  lay.cooks.forEach((x, i) => items.push({ y: 92 + (i % 2) * 3, el: <Person key={`c${i}`} x={x} y={92 + (i % 2) * 3} kind="cook" seed={i * 4 + 20} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} /> }));
   items.push({
     y: 66,
     el: (
@@ -1298,8 +1491,8 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       </G>
     ),
   });
-  lay.ovenCols.forEach((c, i) => items.push({ y: 76, el: <Person key={`b${i}`} x={c.x1 + 2} y={76} kind="baker" arm={running ? Math.abs(Math.sin(t * 3 + i)) * 2.5 : 0} flip={i % 2 === 1} /> }));
-  lay.staff.forEach((x, i) => items.push({ y: 92, el: <Person key={`st${i}`} x={x} y={92} kind="staff" arm={running ? Math.abs(Math.sin(t * 5 + i * 2)) * 2 : 0} /> }));
+  lay.ovenCols.forEach((c, i) => items.push({ y: 76, el: <Person key={`b${i}`} x={c.x1 + 2} y={76} kind="baker" seed={i * 3 + 31} arm={running ? Math.abs(Math.sin(t * 3 + i)) * 2.5 : 0} flip={i % 2 === 1} /> }));
+  lay.staff.forEach((x, i) => items.push({ y: 92, el: <Person key={`st${i}`} x={x} y={92} kind="staff" seed={i * 5 + 41} arm={running ? Math.abs(Math.sin(t * 5 + i * 2)) * 2 : 0} /> }));
   const boxes = running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0;
   items.push({
     y: 64,
@@ -1381,7 +1574,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
           const x = typeof lx === 'number' && Number.isFinite(lx) ? (lx - fit.ox) / fit.s : SCENE_W / 2;
           const y = typeof ly === 'number' && Number.isFinite(ly) ? (ly - fit.oy) / fit.s : 300;
           const full = !shop.managed && shop.queued > TUNING.tapQueueMax - 1;
-          const text = shop.managed ? `+${money(Game.shopEarnings(game, id) * TUNING.rushSeconds)} rush!` : full ? 'Kitchen full!' : `+${TUNING.tapBatch} 🍕`;
+          const text = shop.managed ? `+${money(Game.shopEarnings(game, id) * TUNING.rushSeconds)} rush!` : full ? 'Kitchen full!' : `+${TUNING.tapBatch}`;
           const color = shop.managed ? C.basilDark : full ? INK : C.tomatoDark;
           const live = m.taps.filter((tp) => clock - tp.at < 0.9);
           const last = live[live.length - 1];
@@ -1416,7 +1609,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
           <Sidewalk frontY={frontY} />
           <Street />
           <RoomShell lay={lay} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
-          <OvenHood lay={lay} grade={shop.grade} />
+          <OvenHood lay={lay} grade={shop.grade} mural={shop.decor.walls >= 3} />
           {lay.ovens.map((o, i) => (
             <Oven key={i} o={o} grade={shop.grade} lit={running} flicker={flicker * (i % 2 ? -1 : 1)} />
           ))}
@@ -1460,27 +1653,39 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
           {taps.map((tp) => {
             const k = (clock - tp.at) / 0.9;
             const label = tp.count > 1 ? `${tp.text} ×${tp.count}` : tp.text;
-            const w = label.length * 6.4 + 14;
+            const slice = /^\+\d+$/.test(tp.text);
+            const w = label.length * 6.4 + 14 + (slice ? 14 : 0);
             return (
               <G key={`${tp.text}`} opacity={k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3}>
                 <Rect x={tp.x - w / 2} y={tp.y - 12 - k * 14} width={w} height={18} rx={9} fill={tp.color} stroke="#fff" strokeWidth={1.4} />
-                <SvgText x={tp.x} y={tp.y + 1.5 - k * 14} fontFamily={F.bold} fontSize={11} fill="#fff" textAnchor="middle">
+                <SvgText x={tp.x - (slice ? 7 : 0)} y={tp.y + 1.5 - k * 14} fontFamily={F.bold} fontSize={11} fill="#fff" textAnchor="middle">
                   {label}
                 </SvgText>
+                {slice && (
+                  <G transform={`translate(${tp.x - 7 + label.length * 3.3 + 3} ${tp.y - 9 - k * 14})`}>
+                    <Path d="M0 1.5 Q6 -1 12 1.5 L6 13 Z" fill="#FFC531" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+                    <Path d="M0 1.5 Q6 -1 12 1.5 L11.3 3 Q6 0.8 0.7 3 Z" fill="#E9A64B" />
+                    <Circle cx={4.5} cy={4.5} r={1.2} fill="#E8432E" />
+                    <Circle cx={7.6} cy={7.2} r={1.1} fill="#E8432E" />
+                  </G>
+                )}
               </G>
             );
           })}
-          {/* cash pop above the door */}
-          {pop && (
-            <G opacity={1 - pop.k * pop.k}>
-              <SvgText x={SCENE_W - 18 - pop.text.length * 5} y={88 - pop.k * 16} fontFamily={F.bold} fontSize={18} fill="#fff" stroke={C.basilDark} strokeWidth={4} textAnchor="middle">
-                {pop.text}
-              </SvgText>
-              <SvgText x={SCENE_W - 18 - pop.text.length * 5} y={88 - pop.k * 16} fontFamily={F.bold} fontSize={18} fill="#fff" textAnchor="middle">
-                {pop.text}
-              </SvgText>
-            </G>
-          )}
+          {/* cash pop in the sky band, on a basil pill so it reads over any backdrop (critic D107) */}
+          {pop && (() => {
+            const w = pop.text.length * 10 + 18;
+            const x = SCENE_W - 14 - w / 2;
+            const y = 84 - pop.k * 16;
+            return (
+              <G opacity={1 - pop.k * pop.k}>
+                <Rect x={x - w / 2} y={y - 15} width={w} height={22} rx={11} fill={C.basilDark} stroke="#fff" strokeWidth={1.8} />
+                <SvgText x={x} y={y + 1.5} fontFamily={F.bold} fontSize={15} fill="#fff" textAnchor="middle">
+                  {pop.text}
+                </SvgText>
+              </G>
+            );
+          })()}
         </Svg>
       </Pressable>
     </View>

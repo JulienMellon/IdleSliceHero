@@ -629,3 +629,23 @@ Typecheck clean, 30 engine tests pass, `report.json` errors: [].
 - D110 Pantry shelf shows only one bracket
 
 **Loop complete (visual-polish pass):** rounds 15–17, v2.0 → v2.2.
+
+## Round 18 setup — owner direction
+Julien: make the **on-screen characters look more polished**; have the critic be **even more critical** of the visual design; fold every open CRITICLOG note into the next build. Critic brief gains a "Stricter bar + character focus" section (characters are a primary review area; clones, stiff primitive bodies, or unreadable faces are [major]; SATISFIED now also requires ≤3 [minor] visual notes).
+
+## v2.3 — build (character redesign + every open note, D102–D110)
+
+| Note | Fix |
+| --- | --- |
+| Characters (owner) | `Person` redrawn as polished chibi figures. Big round head with an ear, shadow crescent and highlight; oval eyes with catchlights, brows, a nose dot, a smile, and blush. Two outlined arms with hands; outlined legs with shoes and a walk cycle (alternating stride, foot lift, body bob); a shaped torso with a shadow side and highlight; a seated pose with thighs, shins and shoes. Each role reads at a glance: **cooks** wear white double-breasted jackets, red neckerchiefs and puffy toques; **bakers** wear burgundy shirts, leather aprons and polka-dot bandanas and hold a wooden pizza peel; **counter staff** wear green polos with a white collar, a name badge and a yellow cap; **drivers** wear blue zip jackets with a Rosa's patch and a red cap. Guests get seeded variety: 5 skin tones, 6 hair colours, 6 hair styles (short, bob, bun, curls, ponytail, bald + beard), glasses, body width, 8 shirt colours and 5 trouser colours. Same 1.1 ink outline and upper-left light as the furniture |
+| D102 | Remaining emoji replaced with SVG: storybook and folded-map HUD buttons, padlock (tabs + City list), trophy (goal bar), scooter + whoosh + slice (offline popup), star/coin/slice (BuyButton burst), and a slice glyph in the "+4" tap pill |
+| D103 | "Affordable but adds nothing now" pill is white with a 1.5px basil border and ink text; grey is only for can't-afford |
+| D104 | With the tier-3 mural the hood flue stops just above the hood under a vent cap |
+| D105 | The window above the entrance is tinted #CFE8F5, framed in door-post wood with a mullion and a transom bar at the lintel; the back-wall window moves left, clear of the frame |
+| D106 | Sidewalk fern pot drawn at normal size, so its leaves no longer rise over the diners |
+| D107 | Cash pop on a basilDark pill with a white rim |
+| D108 | Cut-scene art caps the sky at 120 units and scales up to fill the frame (`slice`); cast portraits ~15% larger |
+| D109 | City map gets 14pt of top padding, so the cranes clear the header |
+| D110 | Pantry shelf brackets at 8% and 50% of the shelf, both visible |
+
+Typecheck clean, 30 tests pass, `report.json` errors: [].

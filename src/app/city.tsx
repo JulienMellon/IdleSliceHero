@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityMap } from '@/components/city-map';
+import { LockIcon } from '@/components/icons';
 import { CITY_NAME, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES } from '@/content/tuning';
 import { money } from '@/engine/format';
 import * as G from '@/engine/game';
@@ -27,7 +28,7 @@ export default function City() {
           <Text style={{ fontSize: 24, color: '#FFF4E0', fontFamily: F.bold }}>⚙︎</Text>
         </Pressable>
       </View>
-      <View style={{ height: mapH, backgroundColor: C.map }}>
+      <View style={{ height: mapH + 14, paddingTop: 14, backgroundColor: C.map }}>
         <CityMap
           game={game}
           width={width}
@@ -61,7 +62,7 @@ export default function City() {
                   <Text style={styles.rowName}>{n.name}</Text>
                   <Text style={styles.rowSub}>{isNext ? `Pays ${money(n.orderValue)} a pizza · manager ${money(n.managerCost)}` : 'Build the previous pizzeria first'}</Text>
                 </View>
-                <Text style={[styles.rowEps, { color: isNext ? C.tomato : C.inkSoft }]}>{isNext ? `Build ${money(n.buildCost)}` : '🔒'}</Text>
+                {isNext ? <Text style={[styles.rowEps, { color: C.tomato }]}>{`Build ${money(n.buildCost)}`}</Text> : <LockIcon size={18} color="#E2D9CE" />}
               </Pressable>
             );
           }

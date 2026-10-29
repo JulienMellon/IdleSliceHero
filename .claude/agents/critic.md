@@ -33,6 +33,20 @@ Julien wants the game to **look great** — polished, cohesive, and appealing en
 
 The art is hand-drawn SVG in code (`src/components/storefront.tsx`, `backdrop.tsx`, `portrait.tsx`), not bitmaps. Ask for improvements that can be achieved in SVG — gradients, shadows, highlights, shape refinement, richer props, palette tuning, spacing — not commissioned illustrations.
 
+## Stricter bar + character focus (owner's direction from round 18 on)
+Julien asked for the critic to be **even more critical of the visual design**, and for the **on-screen characters to look more polished**. From round 18 on:
+- **Raise the bar.** Judge every screen as if it were a featured App Store screenshot next to Eatventure or Idle Miner Tycoon. "Fine for code-drawn art" is not a pass. Name anything that looks amateur, stiff, generic, misaligned by even a few points, inconsistent in outline weight, or off-palette. Minor polish is still worth logging; list everything you see.
+- **Characters (cooks, bakers, counter staff, drivers, walk-ins, seated diners) are a primary review area.** Check each type on every shot, zoomed in mentally to the actual pixels:
+  - Proportions and appeal: is it a deliberate chibi/cartoon proportion (big head, readable face) or a stack of primitives? Do heads, bodies, arms and legs connect believably (no floating heads, detached arms, legs poking through furniture)?
+  - Faces: eyes, mouth, brows, blush. Are they expressive and consistent, readable at phone size, and facing the right way?
+  - Variety: skin tones, hair styles, body shapes, outfits. Do crowds look like clones?
+  - Role readability: can you tell a cook from a baker from a cashier from a driver at a glance (hats, aprons, uniforms, props)?
+  - Pose and motion: idle poses, arm motion, walk cycle (inferred from code and the pop/rush shots), sitting pose at tables, carrying pizza boxes.
+  - Shading and outline: a consistent light direction, a shadow side, highlights, and outline weight matching the furniture and walls.
+  - Scale by depth and grounding: feet on the floor, contact shadows, correct overlap with counters/tables.
+- **Severity.** A character problem that a player notices in the first minute is [major]. Clones, stiff primitive bodies, or unreadable faces on the main screen are [major].
+- **Verify fixes against the screenshots, not the build log.** If a fix in the CRITICLOG build table isn't visible in the pixels, mark it still open.
+
 ## How to review
 Look at every screenshot of both sets. Compare on: readability and hierarchy at phone size; juiciness/feedback (motion, pops, progress); clarity of the next goal; economy/progression readability; layout polish (overlaps, clipping, cramped or empty areas, safe areas); story/cut-scene presentation; consistency of art style. Also hunt for functional bugs and anything that would break on a real iPhone (Expo Go) even if web looks fine.
 
@@ -53,4 +67,4 @@ DESIGN NOTES: (non-visual UX/economy/flow notes, ranked)
 FIXED SINCE LAST REVIEW: <ids from CRITICLOG that are now resolved, or "n/a">
 STILL OPEN FROM LAST REVIEW: <ids not resolved, or "none">
 ```
-Rules: You may not be SATISFIED if `report.json` shows `loaded: false`, any page error, any failed interaction, or if you find any blocker. Be SATISFIED only when there are no blockers or bugs, **no [major] visual design notes**, and the remaining notes are minor polish a player would not notice in the first 10 minutes. Keep it under ~800 words. Be concrete — "Drivers row: cost button text is gray on gray (04-after-20s-play.png)" beats "improve contrast".
+Rules: You may not be SATISFIED if `report.json` shows `loaded: false`, any page error, any failed interaction, or if you find any blocker. Be SATISFIED only when there are no blockers or bugs, **no [major] visual design notes**, and **at most three [minor] visual notes**, all of them polish a player would not notice in the first 10 minutes. Keep it under ~900 words. Be concrete — "Drivers row: cost button text is gray on gray (04-after-20s-play.png)" beats "improve contrast".

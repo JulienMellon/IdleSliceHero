@@ -264,10 +264,11 @@ function VendingMachine() {
 
 export function Backdrop({ id, width, height, prop }: { id: BackdropId; width: number; height: number; prop?: 'vending-machine' }) {
   const [top, bottom] = SKY[id];
-  const vbH = Math.max(200, (400 * height) / width);
+  // Art is 400 wide with scenery in the bottom 200 units. Up to 120 units of sky; a taller frame scales the
+  // art up and crops the sides instead of showing more empty sky (critic D108).
+  const vbH = Math.max(200, Math.min(320, (400 * height) / width));
   return (
-    // Art is 400 wide with scenery in the bottom 200 units; any extra frame height becomes sky.
-    <Svg width={width} height={height} viewBox={`0 ${200 - vbH} 400 ${vbH}`} preserveAspectRatio="xMidYMax meet">
+    <Svg width={width} height={height} viewBox={`0 ${200 - vbH} 400 ${vbH}`} preserveAspectRatio="xMidYMax slice">
       <Defs>
         <LinearGradient id={`sky-${id}`} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={top} />

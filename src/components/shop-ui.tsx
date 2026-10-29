@@ -7,6 +7,7 @@ import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
 import * as Game from '../engine/game';
 import { C, F } from '../theme';
+import { LockIcon } from './icons';
 import { BuyButton, haptic } from './game-ui';
 
 export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; onSelect: (id: NeighborhoodId) => void; onBuild: (id: NeighborhoodId) => boolean }) {
@@ -25,7 +26,7 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
         if (!shop.built && next?.id !== n.id) {
           return (
             <View key={n.id} style={[styles.tab, styles.tabLocked]}>
-              <Text style={styles.tabLockedText}>🔒</Text>
+              <LockIcon size={16} />
             </View>
           );
         }

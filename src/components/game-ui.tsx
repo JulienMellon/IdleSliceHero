@@ -6,6 +6,7 @@ import Svg, { Circle } from 'react-native-svg';
 
 import { duration, money } from '../engine/format';
 import { C, F } from '../theme';
+import { BookIcon, CoinIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
 import { emitPayout, onPayout } from './pulse-bus';
 
 const native = Platform.OS !== 'web';
@@ -44,7 +45,7 @@ export function useCountUp(target: number) {
   return shown;
 }
 
-const BURST = ['✨', '💰', '🍕', '✨', '⭐', '💰'];
+const BURST = ['star', 'coin', 'slice', 'star', 'coin', 'slice'] as const;
 
 /** 3D "candy" button. onPress returns true on a successful purchase (burst) or false (shake). */
 /**
@@ -52,9 +53,11 @@ const BURST = ['✨', '💰', '🍕', '✨', '⭐', '💰'];
  * 'neutral' = affordable but deliberately de-emphasised (e.g. before a shop has a manager).
  */
 export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone = 'normal' }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; tone?: 'normal' | 'soft' | 'neutral' }) {
-  const outerBg = !enabled ? '#C9BCAD' : tone === 'soft' ? '#A9CFB1' : tone === 'neutral' ? '#CDBFAE' : C.basilDark;
-  const innerBg = !enabled ? '#E2D9CE' : tone === 'soft' ? '#E3F2E6' : tone === 'neutral' ? '#F3ECE2' : C.basil;
-  const labelColor = !enabled ? '#8A7B6E' : tone === 'soft' ? C.basilDark : tone === 'neutral' ? C.inkSoft : '#fff';
+  // can't afford = flat grey; affordable-but-no-gain-now = white with a basil border and ink text (critic D103)
+  const outerBg = !enabled ? '#C9BCAD' : tone === 'soft' ? '#A9CFB1' : tone === 'neutral' ? C.basilDark : C.basilDark;
+  const innerBg = !enabled ? '#E2D9CE' : tone === 'soft' ? '#E3F2E6' : tone === 'neutral' ? '#FFFFFF' : C.basil;
+  const labelColor = !enabled ? '#8A7B6E' : tone === 'soft' ? C.basilDark : tone === 'neutral' ? C.ink : '#fff';
+  const innerBorder = enabled && tone === 'neutral' ? { borderColor: C.basil, borderWidth: 1.5 } : null;
   const burst = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
   const [bursting, setBursting] = useState(false);
@@ -76,7 +79,7 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone 
   return (
     <Animated.View style={{ transform: [{ translateX: shake }] }}>
       <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, compact && { minWidth: 0, alignSelf: 'stretch' }, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
-        <View style={[styles.buyInner, compact && styles.buyCompact, { backgroundColor: innerBg }]}>
+        <View style={[styles.buyInner, compact && styles.buyCompact, { backgroundColor: innerBg }, innerBorder]}>
           {sub ? <Text style={styles.buySub}>{sub}</Text> : null}
           <Text style={[styles.buyLabel, compact && { fontSize: 15 }, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit>
             {label}
@@ -87,7 +90,7 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone 
         BURST.map((e, i) => {
           const a = (i / BURST.length) * Math.PI * 2;
           return (
-            <Animated.Text
+            <Animated.View
               key={i}
               pointerEvents="none"
               style={[
@@ -101,8 +104,8 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone 
                   ],
                 },
               ]}>
-              {e}
-            </Animated.Text>
+              {e === 'star' ? <StarIcon size={18} /> : e === 'coin' ? <CoinIcon size={18} /> : <SliceIcon size={18} />}
+            </Animated.View>
           );
         })}
     </Animated.View>
@@ -115,6 +118,8 @@ export interface Goal {
   target: number;
   /** Shown instead of a money amount, e.g. "9/24". */
   text?: string;
+  /** Shown instead of the amount, e.g. a trophy. */
+  icon?: React.ReactNode;
   onPress?: () => boolean;
 }
 
@@ -137,7 +142,7 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { 
     <View style={styles.hud}>
       <View style={styles.hudTop}>
         <Pressable onPress={onScrapbook} style={styles.hudIcon} testID="open-scrapbook" hitSlop={8}>
-          <Text style={styles.hudEmoji}>📖</Text>
+          <BookIcon size={32} />
           {newScenes > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{newScenes}</Text>
@@ -153,7 +158,7 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { 
           </Text>
         </View>
         <Pressable onPress={onCity} style={styles.hudIcon} testID="open-city" hitSlop={8}>
-          <Text style={styles.hudEmoji}>🗺️</Text>
+          <MapIcon size={32} />
         </Pressable>
 
       </View>
@@ -170,7 +175,7 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { 
           <Text style={[styles.goalLabel, ready && styles.goalTextReady]} numberOfLines={1}>
             {ready ? `▶ ${goal.label} — tap!` : goal.label}
           </Text>
-          <Text style={[styles.goalAmt, ready && styles.goalTextReady]}>{goal.text ?? `${money(Math.min(goal.current, goal.target), true)} / ${money(goal.target)}`}</Text>
+          {goal.icon ?? <Text style={[styles.goalAmt, ready && styles.goalTextReady]}>{goal.text ?? `${money(Math.min(goal.current, goal.target), true)} / ${money(goal.target)}`}</Text>}
         </Pressable>
       )}
     </View>
@@ -282,7 +287,11 @@ export function OfflinePopup({ seconds, earned, byShop, onCollect }: { seconds: 
     <View style={styles.overlay}>
       <Animated.View style={[styles.modal, { transform: [{ scale: pop }] }]}>
         <Text style={styles.modalHead}>While you were away…</Text>
-        <Text style={styles.modalEmoji}>🛵💨🍕</Text>
+        <View style={styles.modalIcons}>
+          <ScooterIcon size={46} />
+          <WhooshIcon size={34} />
+          <SliceIcon size={40} />
+        </View>
         <Text style={styles.small}>
           {byShop.some((b) => b.managed)
             ? `Your managers kept ${byShop.filter((b) => b.managed).length} pizzeria${byShop.filter((b) => b.managed).length === 1 ? '' : 's'} running for ${duration(seconds)}`
@@ -335,7 +344,8 @@ const styles = StyleSheet.create({
   buyLabel: { fontFamily: F.bold, color: '#fff', fontSize: 17 },
   buyCompact: { paddingVertical: 2, paddingHorizontal: 4 },
   buySub: { fontFamily: F.semi, color: 'rgba(255,255,255,0.85)', fontSize: 10, letterSpacing: 1 },
-  burst: { position: 'absolute', alignSelf: 'center', top: 8, fontSize: 18 },
+  burst: { position: 'absolute', alignSelf: 'center', top: 8 },
+  modalIcons: { flexDirection: 'row', alignItems: 'center', gap: 2, marginVertical: 4 },
 
   hud: { backgroundColor: C.tomato, paddingHorizontal: 12, paddingBottom: 10, paddingTop: 6, gap: 8 },
   hudTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
