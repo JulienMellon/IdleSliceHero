@@ -1004,3 +1004,43 @@ Typecheck clean, 30 tests pass, `report.json` errors: [].
 | D215 | A failed buy names the item and its cost ("Drivers: need $10") |
 
 Typecheck clean, 30 tests pass, `report.json` errors: [].
+
+## v2.12 — critique (round 27) — ❌ NOT SATISFIED (no [major] notes)
+
+**VERDICT: NOT SATISFIED** — loads clean; most round-26 fixes show (menu clear of the hood, Uptown order spot and queue, varied outfits, cut-scene board, poster text, goal bar, named toast). No [major] visual notes remain, but the menu fix pushes the Suburbs board under the brick pier, people are still cut by the door jamb, and the plant move just shifted the overlap.
+
+**Fixed:** G65 (→ G68), G67, D207, D208, D211, D213, D214, D215 · **Still open:** G66 (→ G69), D209 (→ D217), D210 (→ D216), D212 (→ D219)
+
+**Bugs**
+- G68 Menu board's right edge runs under the brick pier (Suburbs) — only the left side is clamped
+- G69 Door jamb still slices people crossing its screen strip at depth 8–34 (open since G63)
+
+**Visual design (all [minor])**
+- D216 Starter shop still bare (cook only a head, empty floor, Waterfront a copy of Downtown)
+- D217 Plants sit on diners (front-left fern, tier-3 plant)
+- D218 OPEN plate at driver-cap height
+- D219 Industrial still washed out
+- D220 The "toss" cook reads as a hand to the forehead; dough invisible against the toque
+- D221 Arrival lane passes over the potted tree and under the Prep card
+- D222 Stand mixer reads as a red "E"
+
+**Design notes**
+- D223 Offline lines and total round differently · D224 Unmanaged shops hide the station buttons behind All
+
+## v2.13 — build (addresses round 27)
+
+| Note | Fix |
+| --- | --- |
+| G68 | Menu board clamped on both sides (hood + 6 ≤ left, right ≤ brick pier − 6); it scales down to 40–56 wide when the gap is tight |
+| G69 | The doorway's inside edge is a slim 3-unit wooden post instead of an 8-unit brick jamb (a low brick plinth stays at its foot). Walkers stay in their door column until depth 44 (new waypoints `[door.x0 + 16, 44]` for walk-ins, `[door.x1 − 14, 44]` for drivers) before turning toward the counter |
+| D216 | Starter: the lone cook stands beside the bench's left end (fully visible, depth 74); a window ledge with two red stools by the door; a floor prop per neighbourhood (Downtown newspapers, Suburbs umbrella stand, Waterfront crate + rope coil, University books, Industrial toolbox, Uptown coat stand) |
+| D217 | Front-left fern at L + 4, scaled 0.8, with the front row shifted 10 right while it's there; the tier-3 plant is a trailing wall planter on the left side wall, clear of every diner |
+| D218 | OPEN plate mounted on the lintel face, above everyone's head |
+| D219 | Industrial wall #C4BCAE; dashed #E8B23A hazard stripe on top of the riveted steel wainscot |
+| D220 | Toss: hand raised to hy − 14, dough #F0C98A with a #C98A4B rim, two motion arcs |
+| D221 | Arrival lane at depth −46, clear of the potted tree and the button row |
+| D222 | Stand mixer: #E8E2D8 bowl with a highlight, head lifted 3 |
+| D223 | Offline total is the sum of the shown (rounded) per-shop lines |
+| D224 | Unmanaged shops keep a slim Prep / Ovens / Counter / Drivers chip strip above the hire button |
+
+Typecheck clean, 30 tests pass, `report.json` errors: [].

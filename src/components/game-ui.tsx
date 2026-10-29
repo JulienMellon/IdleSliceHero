@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
-import { duration, money } from '../engine/format';
+import { duration, money, shownValue } from '../engine/format';
 import { C, F } from '../theme';
 import { BookIcon, CoinIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
 import { emitPayout, onPayout } from './pulse-bus';
@@ -252,7 +252,7 @@ export function OfflinePopup({ seconds, earned, byShop, onCollect }: { seconds: 
             </View>
           ))}
         </View>
-        <Text style={styles.modalCash}>+{money(earned)}</Text>
+        <Text style={styles.modalCash}>+{money(byShop.length ? byShop.reduce((t, b) => t + shownValue(b.earned), 0) : earned)}</Text>
         <View style={{ alignSelf: 'stretch' }}>
           <BuyButton
             label="Collect"

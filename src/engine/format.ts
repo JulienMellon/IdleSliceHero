@@ -15,6 +15,16 @@ export function money(n: number, fixed = false): string {
   return `${sign}$${fixed ? digits : parseFloat(digits)}${SUFFIXES[tier]}`;
 }
 
+/** The value `money(n)` displays, so totals can be summed from the same rounded lines (critic D223). */
+export function shownValue(n: number): number {
+  if (!Number.isFinite(n)) return 0;
+  const a = Math.abs(n);
+  if (a < 1000) return Math.sign(n) * (a < 10 && a % 1 !== 0 ? Math.round(a * 10) / 10 : Math.floor(a));
+  const tier = Math.min(SUFFIXES.length - 1, Math.floor(Math.log10(a) / 3));
+  const v = a / Math.pow(1000, tier);
+  return Math.sign(n) * parseFloat(v.toFixed(v < 10 ? 2 : v < 100 ? 1 : 0)) * Math.pow(1000, tier);
+}
+
 export function count(n: number): string {
   return money(n).replace('$', '');
 }

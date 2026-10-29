@@ -211,7 +211,23 @@ export default function GameScreen() {
         {/* upgrade row standing on the sidewalk */}
         <View style={[styles.walkRow, { bottom: rowBottom }]} pointerEvents="box-none">
           {idleShop ? (
-            <View style={[styles.walkBtn, styles.walkBtnHot, { flex: 4 }]}>
+            <View style={{ flex: 4, gap: 5 }}>
+              {/* a slim station strip stays available on unmanaged shops (critic D224) */}
+              <View style={styles.miniRow}>
+                {(['prep', 'ovens', 'counter', 'drivers'] as StationKey[]).map((k) => {
+                  const what = STATION[k].what;
+                  const cost = G.upgradeCostOf(game, id, what);
+                  const can = cost !== null && game.cash >= cost;
+                  return (
+                    <Pressable key={k} testID={`mini-${k}`} onPress={() => buy(what)} style={[styles.miniChip, can && styles.miniChipOn]}>
+                      <Text style={[styles.miniText, can && { color: '#fff' }]} numberOfLines={1}>
+                        {`${STATION[k].name} ${money(cost ?? 0)}`}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            <View style={[styles.walkBtn, styles.walkBtnHot]}>
               <View style={styles.walkTop}>
                 <ManagerIcon size={18} />
                 <Text style={styles.walkName} numberOfLines={1}>
@@ -219,6 +235,7 @@ export default function GameScreen() {
                 </Text>
               </View>
               <BuyButton compact testID="walk-manager" label={money(managerCost ?? 0)} enabled={managerCost !== null && game.cash >= managerCost} onPress={() => buy('manager')} />
+            </View>
             </View>
           ) : (
             (['prep', 'ovens', 'counter', 'drivers'] as StationKey[]).map(walkButton)
@@ -318,6 +335,10 @@ const styles = StyleSheet.create({
   walkTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, height: 20 },
   walkIcon: { fontSize: 14 },
   walkName: { fontFamily: F.bold, fontSize: 12, color: C.ink, flexShrink: 1 },
+  miniRow: { flexDirection: 'row', gap: 4 },
+  miniChip: { flex: 1, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 9, borderWidth: 2, borderColor: C.ink, paddingVertical: 3, alignItems: 'center' },
+  miniChipOn: { backgroundColor: C.basil, borderColor: C.basilDark },
+  miniText: { fontFamily: F.bold, fontSize: 10.5, color: C.inkSoft },
   walkLevel: { position: 'absolute', top: -9, right: -4, minWidth: 22, paddingHorizontal: 5, height: 17, borderRadius: 9, backgroundColor: C.ink, borderWidth: 1.5, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   walkLevelText: { fontFamily: F.bold, fontSize: 10, color: '#fff' },
   allBtn: { width: 46, backgroundColor: C.ink, borderRadius: 12, alignItems: 'center', justifyContent: 'center', ...shadow },
