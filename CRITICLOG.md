@@ -519,3 +519,58 @@ The room is at most 196 units wide, so the ovens, counter and dining room compet
 5. Launch the `critic` agent on v2.0 as round 15 (new IDs start at **G44** and **D71**). Update `.claude/agents/critic.md` "Owner's direction" with the new requirements (perspective storefront, sidewalk button row, street/traffic, clouds/trees, front door, tap-only drawer, decor, cash register). Loop log → fix → bump version → re-review until SATISFIED.
 
 **Open minor items carried from round 14:** D66 bakers hide lower oven fires, D67 rush pill covers menu board, D68 toast touches manager card border, D69 counter staff legs show above counter, D70 walk-in lane depth. Several may be superseded by the new scene; re-check each.
+
+## v2.0 — build (pre-critic fixes)
+Harness dismisses the offline popup and taps the back wall clear of the station tags; compact buy pills drop `minWidth: 88` so prices fit the sidewalk cards; MEGASLICE van lettering no longer mirrored when driving left; new shots 14-uptown-decorated and 15-tag-ovens-drawer. Critic brief gains the v2.0 owner direction and a **Visual design focus** section (owner's priority from round 15 on: polish the overall design and visual appeal; [major] visual notes block SATISFIED).
+
+## v2.0 — critique (round 15) — ❌ NOT SATISFIED
+
+**VERDICT: NOT SATISFIED** — loads clean (`errors: []`); the storefront meets the owner's direction (sidewalk buttons, tap-only drawer, street traffic, register, door path, decor up to the rooftop pizza). But the shop is undersized against a big empty sky, the box doesn't read as a storefront, the lighting is flat, the ovens are bullet-shaped, and the neighbourhoods look alike.
+
+**Fixed:** D66, D67, D68, D70, WIP handoff items 1–3 · **Still open:** D69 (now D78) · **Blockers:** none
+
+**Bugs**
+- G44 The invisible `tag-ovens` hit box covers the lower part of the TAP TO BAKE pill, so tapping it opens the drawer instead of baking
+- G45 Tier-2 framed photos are drawn over the tier-3 mural (`walls >= 2` should be `=== 2`)
+- G46 The parked scooter/van sits under the sidewalk button row
+
+**Visual design**
+- D71 [major] Shop too small for the screen; ~137pt of empty sky → SC ~0.98, lift TY, sky band ≤60pt
+- D72 [major] No front wall: door and awning float on the floor edge, raw side-wall edges → brick pilasters, fascia, full-width scalloped awning, wall caps
+- D73 [major] Flat lighting → side/back wall gradients, ambient-occlusion bands at the seams
+- D74 [major] Ovens look like missiles/torpedoes → domed brick ovens on a plinth, ember mouth; steel grade as a box deck oven
+- D75 [major] Neighbourhoods look alike → per-neighbourhood sky, raised skyline, Waterfront water band and piers, Industrial smokestacks and fence
+- D76 [major] City screen looks unfinished → road grid, mini storefront lots, fenced construction sites, shadows
+- D77 [major] Labels and pills sit over the action → tag rail along the front sill, feedback pills in the sky band
+- D78–D85 [minor] Cashier hidden behind the register; tier-3 top band cluttered; emoji icons clash with the SVG style; locked pill contrast; diners overlap; small cut-scene panel; street under the home indicator; 8pt queue text
+
+**Design notes**
+- D86 Oven Grade/Expand show "+$0/s now" · D87 focused card same red as the bottleneck card · D88 "Oven Grade" title truncated · D89 add an "×48" ovens badge
+
+## v2.1 — build (addresses round 15)
+
+| Note | Fix |
+| --- | --- |
+| D71 | Scene scale 0.86 → 0.98 and lifted; the shop fills ~94% of the width at Flagship. The sky band above the back wall is ~95 units and carries the feedback pills; base room widths raised (270 → 377) |
+| D72 | Real street face: brick pilasters at both front corners up to a 340-unit front top, a dark fascia beam across the top carrying the sign plate, a full-width 12-scallop red/cream awning, and #5E3A26 wall caps along the cut tops. The door's separate canopy is gone; the door frame gets a header |
+| D73 | Gradient side walls (left −0.26→−0.10, right −0.04→−0.18) and back wall (−0.10 top → +0.06 bottom); ambient-occlusion bands along every wall/floor seam; shadow band and crown rail under the back-wall top |
+| D74 | Ovens redrawn: single-deck ovens are domes on a brick plinth with an arched mouth, a brick ring, a keystone and an ember gradient. Stacked decks and the Stone grade are box deck ovens with a glowing window door, handle bar, status lamp and legs. Wood-fired adds a log pile; Copper/Golden get rivet bands; Golden gets a sparkle |
+| D75 | Per-neighbourhood sky (userSpace gradient), ground and skyline, raised so it shows beside and above the shop: windowed towers Downtown and Uptown (Uptown at sunset with lit windows), houses in Suburbs, sea, sailboat, piers and palms on a sandy Waterfront, a lavender University, and a haze sky, smokestacks, chain-link fences and drums in Industrial |
+| D76 | City map: avenues and cross streets with dashed lines, built lots as mini Rosa's storefronts (awning, window, door), locked lots as fenced sites with a crane, drop shadows on lots and labels, lollipop trees. The map is re-spaced so the lots clear the roads; the gear is cream |
+| D77 / G44 | In-scene station tags removed. Each sidewalk card's head is now the tap target (opens the drawer on that station, `tag-<station>`), with the level as a corner badge (red on the bottleneck). Queue bar and TAP TO BAKE sit under the awning; tap pills and the cash pop sit in the sky band |
+| G45 | Framed photos only at walls tier 2 (`=== 2`) |
+| G46 | Delivery vehicle parked on the sidewalk left of the door, clear of the button row |
+| D78 | Counter lowered (52 → 38) with a trim panel; one register offset to the side so the cashier's face shows |
+| D79 | Ferns hang from the fascia at 7%/93%; string lights only when signage < 2; back-corner plant at (L+14, 100); centre tree removed; the rooftop pizza sits on the fascia with a glow ring and highlight |
+| D80 | Sidewalk cards use SVG chef-hat / flame / register / driver icons. The parked vehicle is drawn in SVG (bike, scooter with pizza box, car, van, drone); the ×N badge is text only |
+| D81 | Locked price pills #E2D9CE with #8A7B6E text |
+| D82 | Table pitch 60, back row offset 20 |
+| D83 | Cut-scene panel up to 62% of the screen height (cap 1.3× width) |
+| D84 | Street lanes raised (lanes at +38 / +66) clear of the home indicator |
+| D85 | Queue text 10pt in a taller bar |
+| D86 | Grade/Expand read "pays once <bottleneck> catch up" instead of "+$0/s now" |
+| D87 | A card opened from the sidewalk gets a cheese-yellow focus ring, distinct from the red bottleneck |
+| D88 | "Oven Grade" → "Grade" (no truncation) |
+| D89 | Superseded: levels now show on the sidewalk badges |
+
+Typecheck clean, 30 engine tests pass, `report.json` errors: [].

@@ -19,3 +19,37 @@ export function DriverIcon({ size = 40 }: { size?: number }) {
     </Svg>
   );
 }
+
+/** Chef hat (Prep). */
+export function PrepIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Path d="M5 12 Q1.5 11 2.5 7.5 Q3.5 4.5 6.5 5.5 Q7.5 2 10 2 Q12.5 2 13.5 5.5 Q16.5 4.5 17.5 7.5 Q18.5 11 15 12 Z" fill="#FFFFFF" stroke={INK} strokeWidth={1.2} strokeLinejoin="round" />
+      <Rect x={5} y={12} width={10} height={5} rx={1} fill="#F3ECE2" stroke={INK} strokeWidth={1.2} />
+      <Path d="M8 12 V16 M12 12 V16" stroke={INK} strokeWidth={0.7} opacity={0.5} />
+    </Svg>
+  );
+}
+
+/** Flame (Ovens). */
+export function FlameIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Path d="M10 1.5 Q15 6 15.5 10.5 Q16 17.5 10 18.5 Q4 17.5 4.5 11 Q5 7.5 7.5 6 Q7.5 9 9 10 Q8 5 10 1.5 Z" fill="#F2994A" stroke={INK} strokeWidth={1.2} strokeLinejoin="round" />
+      <Path d="M10 9.5 Q13 12 12.6 14.6 Q12.2 17 10 17.2 Q7.8 17 7.6 14.8 Q7.6 12.6 10 9.5 Z" fill="#FFD166" />
+    </Svg>
+  );
+}
+
+/** Cash register (Counter). */
+export function RegisterIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Rect x={5} y={2.5} width={10} height={5} rx={1} fill="#2B2F35" stroke={INK} strokeWidth={1.1} />
+      <Rect x={6.5} y={3.8} width={7} height={2.4} rx={0.5} fill="#7FE0A0" />
+      <Path d="M3 17.5 L4.5 9 L15.5 9 L17 17.5 Z" fill="#5C6470" stroke={INK} strokeWidth={1.2} strokeLinejoin="round" />
+      <Path d="M6.5 11.5 H8 M9.3 11.5 H10.8 M12 11.5 H13.5 M6.2 13.8 H7.7 M9.3 13.8 H10.8 M12.3 13.8 H13.8" stroke="#E9E4DC" strokeWidth={1.3} strokeLinecap="round" />
+      <Rect x={2.5} y={16} width={15} height={2.5} rx={0.8} fill="#3A3F46" stroke={INK} strokeWidth={1} />
+    </Svg>
+  );
+}

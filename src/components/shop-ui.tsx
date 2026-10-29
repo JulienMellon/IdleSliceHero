@@ -66,6 +66,8 @@ export function StationCard(props: {
   costLabel?: string;
   canBuy: boolean;
   hot?: boolean;
+  /** Opened from its sidewalk card: highlight in cheese yellow (distinct from the red bottleneck). */
+  focus?: boolean;
   onBuy: () => boolean | void;
   testID?: string;
   wide?: boolean;
@@ -74,7 +76,7 @@ export function StationCard(props: {
   useless?: boolean;
 }) {
   return (
-    <View style={[styles.card, props.wide && styles.cardWide, props.hot && styles.cardHot, props.muted && styles.cardMuted]}>
+    <View style={[styles.card, props.wide && styles.cardWide, props.hot && styles.cardHot, props.focus && styles.cardFocus, props.muted && styles.cardMuted]}>
       <View style={styles.cardHead}>
         <View style={styles.icon}>{typeof props.icon === 'string' ? <Text style={styles.iconText}>{props.icon}</Text> : props.icon}</View>
         <View style={{ flex: 1 }}>
@@ -115,6 +117,7 @@ const styles = StyleSheet.create({
   cardWide: { width: '100%', flexDirection: 'row', alignItems: 'center' },
   cardMuted: { opacity: 0.6 },
   cardHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
+  cardFocus: { borderColor: C.cheeseDark, backgroundColor: '#FFF8DC', borderWidth: 3.5 },
   cardHead: { flexDirection: 'row', gap: 6, alignItems: 'center', flex: 1 },
   icon: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FFE9C7', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: C.cheeseDark },
   iconText: { fontSize: 19 },

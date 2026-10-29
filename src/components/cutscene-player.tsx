@@ -29,7 +29,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   const current = p.lines[line];
   const frameW = Math.min(width - 24, 520);
   // Tall panel (~55% of the screen); the backdrop grows its sky to fill it, so nothing is cropped.
-  const frameH = Math.max(frameW * 0.75, Math.min(height * 0.55 - insets.top, frameW * 1.05));
+  const frameH = Math.max(frameW * 0.75, Math.min(height * 0.62 - insets.top, frameW * 1.3));
 
   // Panel motion: slide in, then slow zoom.
   useEffect(() => {

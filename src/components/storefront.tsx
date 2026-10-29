@@ -35,9 +35,12 @@ export function sceneFit(w: number, h: number) {
 // negative = out on the sidewalk), z = height. One-point perspective, then a fixed fit into the scene.
 const D = 110;
 const WH = 300;
-const SC = 0.86;
-const TX = 27.5;
-const TY = 37;
+// v2.1 (critic D71): the shop fills the screen — sky band above the back wall is ~95 units.
+const SC = 0.98;
+const TX = 196.5 * (1 - SC);
+const TY = -20;
+/** Height of the side walls / front fascia at the street edge. */
+const FRONT_TOP = WH + 40;
 function P(x: number, y: number, z = 0): [number, number] {
   const f = 1 - y / 520;
   return [TX + (196.5 + (x - 196.5) * f) * SC, TY + (492 - y * 1.25 - z * f) * SC];
@@ -52,7 +55,7 @@ function shade(hex: string, k: number) {
 }
 
 // ---------- layout ----------
-const ROOM_W = [250, 285, 320, 350, 377];
+const ROOM_W = [270, 300, 330, 355, 377];
 
 interface Layout {
   L: number;
@@ -83,16 +86,16 @@ function layout(fp: number, ovenCount: number, cookCount: number, staffCount: nu
   const zone1 = counter.x0 - 8;
   const zone = Math.max(30, zone1 - zone0);
   const singleW = (zone - (ovenCount - 1) * 6) / ovenCount;
-  const decks = singleW >= 30 || ovenCount < 2 ? 1 : 2;
+  const decks = singleW >= 40 || ovenCount < 2 ? 1 : 2;
   const cols = Math.ceil(ovenCount / decks);
-  const ow = Math.min(42, (zone - (cols - 1) * 6) / cols);
+  const ow = Math.min(60, (zone - (cols - 1) * 6) / cols);
   const ovenCols = Array.from({ length: cols }, (_, c) => ({ x0: zone0 + c * (ow + 6), x1: zone0 + c * (ow + 6) + ow }));
   const ovens: Layout['ovens'] = [];
   for (let i = 0; i < ovenCount; i++) {
     const c = i % cols;
     const deck = Math.floor(i / cols);
-    if (decks === 1) ovens.push({ ...ovenCols[c], z: 0, h: 118, chimney: true });
-    else ovens.push({ ...ovenCols[c], z: deck * 62, h: 58, chimney: deck === 1 || i + cols >= ovenCount });
+    if (decks === 1) ovens.push({ ...ovenCols[c], z: 0, h: 84, chimney: true });
+    else ovens.push({ ...ovenCols[c], z: deck * 64, h: 60, chimney: deck === 1 || i + cols >= ovenCount });
   }
   const door = { x0: R - 46, x1: R - 12, cx: R - 29 };
   // Pickup spots in front of the counter, two staggered depth rows 12 apart.
@@ -100,14 +103,14 @@ function layout(fp: number, ovenCount: number, cookCount: number, staffCount: nu
   // Dining: tables in front of the prep/oven area, two rows, 52 apart.
   const t0 = L + 26;
   const t1 = counter.x0 - 10;
-  const perRow = Math.max(1, Math.floor((t1 - t0) / 52) + 1);
+  const perRow = Math.max(1, Math.floor((t1 - 20 - t0) / 60) + 1);
   const tables: Layout['tables'] = [];
   for (let i = 0; i < Math.min(tableCount, perRow * 2); i++) {
     const row = i % 2;
     const col = Math.floor(i / 2);
-    tables.push({ x: t0 + col * 52 + (row ? 14 : 0), y: row ? 40 : 14 });
+    tables.push({ x: t0 + col * 60 + (row ? 20 : 0), y: row ? 40 : 14 });
   }
-  return { L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, tables, scooter: { x: R - 92, y: -52 } };
+  return { L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, tables, scooter: { x: door.x0 - 30, y: -22 } };
 }
 
 // ---------- drawing primitives ----------
@@ -175,6 +178,11 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
   );
 }
 
+/**
+ * An oven against the back wall (critic D74). Single-deck ovens are domed pizza ovens on a brick plinth
+ * with an arched mouth and keystone; stacked decks and the Stone grade are box deck ovens, so grades
+ * differ in silhouette as well as finish.
+ */
 function Oven({ o, grade, lit, flicker }: { o: Layout['ovens'][number]; grade: number; lit: boolean; flicker: number }) {
   const y = D - 6;
   const [ax, ay] = P(o.x0, y, o.z);
@@ -182,30 +190,95 @@ function Oven({ o, grade, lit, flicker }: { o: Layout['ovens'][number]; grade: n
   const w = bx - ax;
   const cx = (ax + bx) / 2;
   const k = kAt(y);
-  const h = o.h * k + (o.h > 100 ? grade * 3 : 0);
+  const h = o.h * k;
   const top = ay - h;
-  const arch = Math.min(w * 0.32, h * 0.4);
   const base = OVEN_GRADES[grade].color;
-  const mw = w * 0.52;
-  const mh = h * 0.42;
+  const dark = shade(base, -0.4);
+  const fire = lit ? 'url(#ember)' : '#24120A';
+  const flame = (mx: number, my: number, mw: number, mh: number) =>
+    lit ? (
+      <G>
+        <Ellipse cx={mx} cy={my - mh * 0.35} rx={mw * 0.5} ry={mh * 0.5} fill="#FFD166" opacity={0.35} />
+        <Path d={`M${mx - mw * 0.38} ${my} L${mx - mw * 0.22} ${my - mh * 0.55 - flicker} L${mx - mw * 0.06} ${my - mh * 0.3} L${mx + mw * 0.06} ${my - mh * 0.78 + flicker} L${mx + mw * 0.2} ${my - mh * 0.32} L${mx + mw * 0.32} ${my - mh * 0.55} L${mx + mw * 0.38} ${my} Z`} fill="#FFE08A" opacity={0.9} />
+      </G>
+    ) : null;
+  const box = o.h < 70 || grade === 1;
+  if (box) {
+    const legs = o.z === 0 ? 10 * k : 0;
+    const bTop = top;
+    const bBot = ay - legs;
+    const bh = bBot - bTop;
+    const dw = w * 0.74;
+    const dh = bh * 0.42;
+    const dy = bTop + bh * 0.4;
+    return (
+      <G>
+        {o.chimney && <Path d={`M${cx - w * 0.3} ${bTop} L${cx - w * 0.18} ${bTop - 10 * k} L${cx + w * 0.18} ${bTop - 10 * k} L${cx + w * 0.3} ${bTop} Z`} fill={shade(base, -0.2)} stroke={INK} strokeWidth={1} />}
+        {legs > 0 && [0.12, 0.88].map((f) => <Rect key={f} x={ax + w * f - 2} y={bBot - 1} width={4} height={legs + 1} fill="#4A4F57" stroke={INK} strokeWidth={0.8} />)}
+        <Rect x={ax + 3} y={bTop + 3} width={w} height={bh} rx={5} fill={dark} />
+        <Rect x={ax} y={bTop} width={w} height={bh} rx={5} fill={`url(#oven${grade})`} stroke={INK} strokeWidth={1.3} />
+        <Rect x={ax + 3} y={bTop + 3} width={w - 6} height={bh * 0.18} rx={3} fill="#fff" opacity={0.22} />
+        {/* door with a glowing window and a handle bar */}
+        <Rect x={cx - dw / 2} y={dy} width={dw} height={dh} rx={3} fill={shade(base, -0.25)} stroke={INK} strokeWidth={1} />
+        <Rect x={cx - dw / 2 + 3} y={dy + 3} width={dw - 6} height={dh - 6} rx={2} fill={fire} />
+        {flame(cx, dy + dh - 3, dw - 6, dh - 6)}
+        <Rect x={cx - dw * 0.3} y={dy - 5} width={dw * 0.6} height={3.4} rx={1.7} fill="#E9E4DC" stroke={INK} strokeWidth={0.8} />
+        <Circle cx={ax + w - 6} cy={bTop + bh * 0.22} r={2.2} fill={lit ? '#7FE0A0' : '#9A958E'} stroke={INK} strokeWidth={0.6} />
+        {grade >= 4 && <Path d={`M${ax + 4} ${bTop + 2} H${bx - 4}`} stroke="#FFF3B0" strokeWidth={1.6} />}
+      </G>
+    );
+  }
+  // domed oven on a brick plinth
+  const plinth = 12 * k;
+  const pTop = ay - plinth;
+  const ry = Math.min(w * 0.5, (pTop - top) * 0.78);
+  const shoulder = top + ry;
+  const mw = w * 0.56;
+  const mh = Math.min((pTop - top) * 0.5, mw * 0.9);
+  const mTop = pTop - mh;
+  const dome = (dx: number) => `M${ax + dx} ${pTop} L${ax + dx} ${shoulder} A${w / 2} ${ry} 0 0 1 ${bx + dx} ${shoulder} L${bx + dx} ${pTop} Z`;
   return (
     <G>
-      {o.chimney && <Rect x={cx - w * 0.12 + 2} y={top - 20 * k} width={w * 0.24} height={24 * k} fill={grade >= 3 ? shade(base, -0.1) : '#9C8B7A'} stroke={INK} strokeWidth={1} />}
-      <Path d={`M${ax + 3} ${ay} L${ax + 3} ${top + arch} Q${cx + 3} ${top - arch} ${bx + 3} ${top + arch} L${bx + 3} ${ay} Z`} fill={shade(base, -0.45)} stroke={INK} strokeWidth={1} />
-      <Path d={`M${ax} ${ay} L${ax} ${top + arch} Q${cx} ${top - arch} ${bx} ${top + arch} L${bx} ${ay} Z`} fill={`url(#oven${grade})`} stroke={INK} strokeWidth={1.3} />
-      {[1, 2, 3].map((r) => (
-        <Path key={r} d={`M${ax + 2} ${ay - r * h * 0.2} H${bx - 2}`} stroke={shade(base, -0.35)} strokeWidth={0.8} opacity={0.45} />
-      ))}
-      <Path d={`M${ax + w * 0.2} ${top + arch} Q${cx - w * 0.05} ${top - arch * 0.3} ${cx + w * 0.12} ${top - arch * 0.1}`} stroke="#fff" strokeWidth={2} fill="none" opacity={0.35} strokeLinecap="round" />
-      {grade >= 4 && <Path d={`M${ax + 3} ${top + arch + 4} Q${cx} ${top - arch * 0.4} ${bx - 3} ${top + arch + 4}`} stroke="#FFF3B0" strokeWidth={1.4} fill="none" />}
-      <Path d={`M${cx - mw / 2} ${ay - 2} L${cx - mw / 2} ${ay - mh * 0.6} Q${cx} ${ay - mh * 1.2} ${cx + mw / 2} ${ay - mh * 0.6} L${cx + mw / 2} ${ay - 2} Z`} fill="#24120A" />
-      {lit && (
+      {o.chimney && (
         <G>
-          <Ellipse cx={cx} cy={ay - mh * 0.3} rx={mw * 0.45} ry={mh * 0.45} fill="#FF9F1C" opacity={0.35} />
-          <Path d={`M${cx - mw * 0.4} ${ay - 2} L${cx - mw * 0.25} ${ay - mh * 0.5 - flicker} L${cx - mw * 0.08} ${ay - mh * 0.28} L${cx + mw * 0.05} ${ay - mh * 0.72 + flicker} L${cx + mw * 0.2} ${ay - mh * 0.3} L${cx + mw * 0.33} ${ay - mh * 0.5} L${cx + mw * 0.4} ${ay - 2} Z`} fill="#FFB23A" />
+          <Rect x={cx - w * 0.09} y={top - 16 * k} width={w * 0.18} height={20 * k} fill={grade >= 3 ? shade(base, -0.1) : '#8C7B6A'} stroke={INK} strokeWidth={1} />
+          <Rect x={cx - w * 0.12} y={top - 19 * k} width={w * 0.24} height={4 * k} rx={1} fill={grade >= 3 ? shade(base, -0.25) : '#6E5F51'} stroke={INK} strokeWidth={0.8} />
         </G>
       )}
-      <Rect x={ax - 3} y={ay - 3} width={w + 6} height={6} rx={2} fill="#6B4A3A" stroke={INK} strokeWidth={1} />
+      <Path d={dome(3)} fill={dark} />
+      <Path d={dome(0)} fill={`url(#oven${grade})`} stroke={INK} strokeWidth={1.3} />
+      {/* brick courses on brick/wood-fired domes, rivet band on copper/gold */}
+      {grade === 0 || grade === 2
+        ? [0.3, 0.55].map((f) => <Path key={f} d={`M${ax + 2} ${pTop - (pTop - top) * f} Q${cx} ${pTop - (pTop - top) * f - 4} ${bx - 2} ${pTop - (pTop - top) * f}`} stroke={dark} strokeWidth={0.9} fill="none" opacity={0.55} />)
+        : (
+          <G>
+            <Path d={`M${ax + 1} ${shoulder + 4} H${bx - 1}`} stroke={shade(base, -0.3)} strokeWidth={3} />
+            {Array.from({ length: 5 }).map((_, i) => <Circle key={i} cx={ax + w * (0.14 + i * 0.18)} cy={shoulder + 4} r={1.1} fill={shade(base, 0.5)} />)}
+          </G>
+        )}
+      <Path d={`M${ax + w * 0.18} ${shoulder} A${w * 0.34} ${ry * 0.72} 0 0 1 ${cx + w * 0.06} ${top + ry * 0.22}`} stroke="#fff" strokeWidth={2.4} fill="none" opacity={0.4} strokeLinecap="round" />
+      {/* arched mouth with a brick ring and keystone */}
+      <Path d={`M${cx - mw / 2 - 3} ${pTop} L${cx - mw / 2 - 3} ${mTop + mw * 0.3} A${mw / 2 + 3} ${mw * 0.34} 0 0 1 ${cx + mw / 2 + 3} ${mTop + mw * 0.3} L${cx + mw / 2 + 3} ${pTop} Z`} fill={shade(base, -0.3)} stroke={INK} strokeWidth={1} />
+      <Path d={`M${cx - mw / 2} ${pTop} L${cx - mw / 2} ${mTop + mw * 0.3} A${mw / 2} ${mw * 0.3} 0 0 1 ${cx + mw / 2} ${mTop + mw * 0.3} L${cx + mw / 2} ${pTop} Z`} fill={fire} />
+      {flame(cx, pTop - 1, mw, mh)}
+      <Path d={`M${cx - 3.5} ${mTop - 2} L${cx + 3.5} ${mTop - 2} L${cx + 2.5} ${mTop + 5} L${cx - 2.5} ${mTop + 5} Z`} fill={grade >= 3 ? '#FFF3B0' : '#E9C9A0'} stroke={INK} strokeWidth={0.8} />
+      {/* plinth */}
+      <Rect x={ax - 3} y={pTop} width={w + 6} height={plinth} rx={1.5} fill="#A24B2C" stroke={INK} strokeWidth={1.1} />
+      <Path d={`M${ax - 3} ${pTop + plinth / 2} H${bx + 3}`} stroke="#7A3520" strokeWidth={0.8} />
+      {Array.from({ length: Math.max(2, Math.floor((w + 6) / 12)) }).map((_, i) => (
+        <Path key={i} d={`M${ax + 3 + i * 12 + (i % 2) * 6} ${pTop} v${plinth / 2} M${ax + 9 + i * 12} ${pTop + plinth / 2} v${plinth / 2}`} stroke="#7A3520" strokeWidth={0.8} />
+      ))}
+      {grade === 2 && (
+        <G>
+          {[0, 1, 2].map((i) => <Circle key={i} cx={bx + 4 + (i % 2) * 5} cy={ay - 3 - Math.floor(i / 2) * 5} r={2.8} fill="#9C6B3F" stroke={INK} strokeWidth={0.7} />)}
+        </G>
+      )}
+      {grade >= 4 && (
+        <G>
+          <Path d={`M${ax + 4} ${shoulder - 2} A${w / 2 - 4} ${ry - 4} 0 0 1 ${bx - 4} ${shoulder - 2}`} stroke="#FFF3B0" strokeWidth={1.4} fill="none" />
+          <Path d={`M${cx + w * 0.3} ${top + ry * 0.4} l2 -5 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2 Z`} fill="#FFFBE0" />
+        </G>
+      )}
     </G>
   );
 }
@@ -316,86 +389,174 @@ function Tree({ x, y, k, c = '#4FA048', palm = false }: { x: number; y: number; 
   );
 }
 
-const SKYLINE: Record<NeighborhoodId, (L: number, R: number) => ReactElement> = {
+// Each neighbourhood gets its own sky, ground, skyline and side props (critic D75).
+const LOOK: Record<NeighborhoodId, { sky: [string, string, string]; ground: string; ground2: string }> = {
+  downtown: { sky: ['#5FA8E8', '#B9DEF8', '#EAF6FF'], ground: '#9CCB86', ground2: '#86BA72' },
+  suburbs: { sky: ['#72BDF0', '#CDE9FA', '#FFF3DC'], ground: '#A6D48A', ground2: '#8FC475' },
+  waterfront: { sky: ['#4FB3EA', '#BDE7FA', '#E9FAFF'], ground: '#E8D7A8', ground2: '#D9C48E' },
+  university: { sky: ['#8A86DE', '#C9C2F2', '#F6EEFF'], ground: '#97C786', ground2: '#7FB471' },
+  industrial: { sky: ['#8E9DAA', '#B8C2C9', '#DDE2E5'], ground: '#A8A497', ground2: '#949082' },
+  uptown: { sky: ['#3E4A8C', '#C98BA8', '#FBD3AE'], ground: '#8FBF7E', ground2: '#78AA6B' },
+};
+
+function Windows({ x, y, w, h, c }: { x: number; y: number; w: number; h: number; c: string }) {
+  const cols = Math.max(1, Math.floor((w - 6) / 9));
+  const rows = Math.max(1, Math.floor((h - 8) / 12));
+  return (
+    <G>
+      {Array.from({ length: cols * rows }).map((_, i) => (
+        <Rect key={i} x={x + 5 + (i % cols) * 9} y={y + 6 + Math.floor(i / cols) * 12} width={4.5} height={6} rx={0.8} fill={c} />
+      ))}
+    </G>
+  );
+}
+
+const SKYLINE: Record<NeighborhoodId, () => ReactElement> = {
   downtown: () => (
-    <G fill="#A9B8D0">
-      {[[10, 90], [46, 130], [92, 70], [300, 120], [340, 85]].map(([x, h], i) => (
-        <Rect key={i} x={x} y={230 - h} width={34} height={h} />
+    <G>
+      {[[-6, 150, 40], [36, 186, 34], [72, 120, 30], [292, 170, 36], [330, 130, 30], [362, 196, 40]].map(([x, h, w], i) => (
+        <G key={i}>
+          <Rect x={x} y={200 - h} width={w} height={h} fill={i % 2 ? '#93A6C4' : '#A9B8D0'} stroke="#7F92B0" strokeWidth={0.8} />
+          <Windows x={x} y={200 - h} w={w} h={h} c="#D8E3F2" />
+        </G>
       ))}
     </G>
   ),
   suburbs: () => (
     <G>
-      {[20, 110, 300].map((x, i) => (
-        <G key={x}>
-          <Rect x={x} y={196} width={50} height={34} fill={['#F6E7C1', '#FADADD', '#D6EAF8'][i]} opacity={0.85} />
-          <Path d={`M${x - 6} 198 L${x + 25} 176 L${x + 56} 198 Z`} fill="#C9775F" opacity={0.85} />
+      {[[4, '#F6E7C1'], [300, '#FADADD'], [346, '#D6EAF8']].map(([x, c], i) => (
+        <G key={i}>
+          <Rect x={x as number} y={170} width={42} height={34} fill={c as string} stroke="#B9A78E" strokeWidth={0.8} />
+          <Path d={`M${(x as number) - 5} 172 L${(x as number) + 21} 150 L${(x as number) + 47} 172 Z`} fill="#C9775F" stroke="#A85E49" strokeWidth={0.8} />
+          <Rect x={(x as number) + 8} y={180} width={9} height={9} fill="#BFE3F5" />
+          <Rect x={(x as number) + 25} y={186} width={9} height={18} fill="#A8714B" />
         </G>
       ))}
     </G>
   ),
   waterfront: () => (
     <G>
-      <Rect x={-10} y={196} width={420} height={40} fill="#7CC8EE" />
-      <Path d="M0 206 q20 -5 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" stroke="#D6F0FB" strokeWidth={2} fill="none" />
-      <Path d="M300 196 L350 196 L344 186 L306 186 Z M322 186 L322 150 L344 182 Z" fill="#fff" stroke="#9BBAD0" strokeWidth={1} />
+      <Rect x={-20} y={176} width={440} height={60} fill="#5BB8E8" />
+      <Rect x={-20} y={176} width={440} height={8} fill="#8FD3F4" />
+      {[192, 210, 226].map((yy, j) => (
+        <Path key={yy} d={`M${-10 + j * 14} ${yy} ${Array.from({ length: 12 }).map((_, i) => `q10 -4 20 0 t20 0`).join(' ')}`} stroke="#D6F0FB" strokeWidth={1.6} fill="none" opacity={0.8} />
+      ))}
+      {/* sailboat and pier at the sides */}
+      <Path d="M8 176 L48 176 L42 186 L14 186 Z M28 174 L28 136 L50 172 Z" fill="#fff" stroke="#7FA6C0" strokeWidth={1} />
+      <Rect x={330} y={226} width={80} height={6} fill="#A8714B" stroke={INK} strokeWidth={0.8} />
+      {[336, 356, 376, 396].map((px) => <Rect key={px} x={px} y={230} width={4} height={18} fill="#7A4A26" />)}
+      <Rect x={-20} y={226} width={70} height={6} fill="#A8714B" stroke={INK} strokeWidth={0.8} />
+      {[-4, 16, 36].map((px) => <Rect key={px} x={px} y={230} width={4} height={18} fill="#7A4A26" />)}
     </G>
   ),
   university: () => (
-    <G fill="#C9B6E4">
-      <Rect x={20} y={150} width={90} height={80} />
-      <Path d="M14 152 L65 120 L116 152 Z" />
-      <Rect x={300} y={110} width={26} height={120} />
-      <Path d="M296 112 L313 86 L330 112 Z" />
-      <Circle cx={313} cy={130} r={7} fill="#fff" />
+    <G fill="#B9A6DE" stroke="#9A86C4" strokeWidth={0.8}>
+      <Rect x={-10} y={120} width={84} height={84} />
+      <Path d="M-16 122 L32 92 L80 122 Z" />
+      <Windows x={-10} y={126} w={84} h={70} c="#EDE4FF" />
+      <Rect x={310} y={76} width={26} height={128} />
+      <Path d="M306 78 L323 50 L340 78 Z" />
+      <Circle cx={323} cy={96} r={7} fill="#fff" />
+      <Rect x={346} y={140} width={60} height={64} />
+      <Windows x={346} y={140} w={60} h={60} c="#EDE4FF" />
     </G>
   ),
   industrial: () => (
-    <G fill="#A7A39C">
-      <Path d="M0 230 L0 180 L40 196 L40 180 L80 196 L80 180 L120 196 L120 230 Z" />
-      <Rect x={300} y={100} width={18} height={130} />
-      <Rect x={334} y={124} width={18} height={106} />
-      <Circle cx={312} cy={88} r={12} fill="#E5E2DD" opacity={0.8} />
-      <Circle cx={326} cy={70} r={16} fill="#E5E2DD" opacity={0.6} />
+    <G>
+      <Path d="M-10 204 L-10 150 L26 166 L26 150 L62 166 L62 150 L98 166 L98 204 Z" fill="#9A968E" stroke="#827E76" strokeWidth={0.8} />
+      {[[300, 40], [330, 70], [362, 30]].map(([x, top], i) => (
+        <G key={i}>
+          <Rect x={x} y={top} width={16} height={204 - top} fill="#8E8A83" stroke="#76726B" strokeWidth={0.8} />
+          <Rect x={x} y={top + 10} width={16} height={6} fill="#C8463A" />
+          <Circle cx={x + 8} cy={top - 10} r={10} fill="#ECEAE6" opacity={0.75} />
+          <Circle cx={x + 18} cy={top - 26} r={14} fill="#ECEAE6" opacity={0.5} />
+        </G>
+      ))}
+      <Rect x={10} y={120} width={14} height={84} fill="#8E8A83" stroke="#76726B" strokeWidth={0.8} />
+      <Circle cx={17} cy={108} r={11} fill="#ECEAE6" opacity={0.7} />
     </G>
   ),
   uptown: () => (
-    <G fill="#8C8FB8">
-      {[[0, 170], [36, 210], [80, 150], [290, 190], [330, 230], [366, 160]].map(([x, h], i) => (
-        <Rect key={i} x={x} y={230 - h} width={32} height={h} />
+    <G>
+      {[[-6, 190, 36], [30, 230, 34], [64, 160, 30], [288, 210, 34], [322, 250, 36], [358, 180, 40]].map(([x, h, w], i) => (
+        <G key={i}>
+          <Rect x={x} y={204 - h} width={w} height={h} fill={i % 2 ? '#6E6FA0' : '#8487B5'} stroke="#5B5C8C" strokeWidth={0.8} />
+          <Windows x={x} y={204 - h} w={w} h={h} c="#FFE7A0" />
+        </G>
       ))}
     </G>
   ),
 };
 
-const Backdrop = memo(function Backdrop({ id, L, R }: { id: NeighborhoodId; L: number; R: number }) {
-  const palm = id === 'waterfront';
-  const treeC = id === 'industrial' ? '#6F9E58' : '#4FA048';
+/** Chain-link fence segment (Industrial). */
+function Fence({ x0, x1, y }: { x0: number; x1: number; y: number }) {
   return (
     <G>
+      <Rect x={x0} y={y - 34} width={x1 - x0} height={34} fill="none" />
+      {Array.from({ length: Math.ceil((x1 - x0) / 8) }).map((_, i) => (
+        <Path key={i} d={`M${x0 + i * 8} ${y} l8 -34 M${x0 + i * 8 + 8} ${y} l-8 -34`} stroke="#8E959B" strokeWidth={0.7} />
+      ))}
+      {Array.from({ length: Math.ceil((x1 - x0) / 32) + 1 }).map((_, i) => (
+        <Rect key={i} x={x0 + i * 32 - 1.5} y={y - 36} width={3} height={36} fill="#6E757B" />
+      ))}
+      <Path d={`M${x0} ${y - 34} H${x1}`} stroke="#6E757B" strokeWidth={2} />
+    </G>
+  );
+}
+
+const Backdrop = memo(function Backdrop({ id }: { id: NeighborhoodId }) {
+  const look = LOOK[id];
+  const palm = id === 'waterfront';
+  const treeC = id === 'uptown' ? '#3F8F4A' : '#4FA048';
+  const trees = id !== 'industrial';
+  return (
+    <G>
+      <Defs>
+        <LinearGradient id="sky" x1="0" y1="-40" x2="0" y2="300" gradientUnits="userSpaceOnUse">
+          <Stop offset="0" stopColor={look.sky[0]} />
+          <Stop offset="0.55" stopColor={look.sky[1]} />
+          <Stop offset="1" stopColor={look.sky[2]} />
+        </LinearGradient>
+      </Defs>
       <Rect x={-20} y={-400} width={SCENE_W + 40} height={1100} fill="url(#sky)" />
-      {SKYLINE[id](L, R)}
-      <Path d={`M-10 220 Q60 150 130 196 Q200 140 270 190 Q330 150 403 186 L403 700 L-10 700 Z`} fill={id === 'industrial' ? '#A9B58F' : '#9CCB86'} />
-      <Tree x={12} y={214} k={1.1} c={treeC} palm={palm} />
-      <Tree x={66} y={150} k={0.85} c={shade(treeC, 0.1)} palm={palm} />
-      <Tree x={322} y={142} k={0.95} c={shade(treeC, 0.1)} palm={palm} />
-      <Tree x={384} y={210} k={1.15} c={treeC} palm={palm} />
-      <Tree x={196} y={132} k={0.7} c={shade(treeC, 0.2)} />
+      {id === 'uptown' && <Circle cx={60} cy={150} r={26} fill="#FFD8A0" opacity={0.85} />}
+      {SKYLINE[id]()}
+      <Path d={`M-10 214 Q60 186 130 206 Q200 180 270 204 Q330 184 403 202 L403 700 L-10 700 Z`} fill={look.ground} />
+      <Path d={`M-10 262 Q90 246 196 258 Q300 246 403 260 L403 700 L-10 700 Z`} fill={look.ground2} />
+      {trees && (
+        <G>
+          <Tree x={14} y={262} k={1.15} c={treeC} palm={palm} />
+          <Tree x={46} y={330} k={0.9} c={shade(treeC, 0.1)} palm={palm} />
+          <Tree x={352} y={252} k={1.0} c={shade(treeC, 0.1)} palm={palm} />
+          <Tree x={382} y={330} k={1.2} c={treeC} palm={palm} />
+        </G>
+      )}
+      {id === 'industrial' && (
+        <G>
+          <Fence x0={-10} x1={70} y={330} />
+          <Fence x0={326} x1={404} y={330} />
+          {[[20, 380], [360, 370]].map(([x, y]) => (
+            <G key={x}>
+              <Rect x={x - 12} y={y - 22} width={24} height={22} rx={2} fill="#3F7FB0" stroke={INK} strokeWidth={1} />
+              {[0, 7, 14].map((d) => <Path key={d} d={`M${x - 12} ${y - 18 + d} H${x + 12}`} stroke="#2E6690" strokeWidth={1.4} />)}
+            </G>
+          ))}
+        </G>
+      )}
     </G>
   );
 });
 
 // ---------- the room shell (static per layout) ----------
-const RoomShell = memo(function RoomShell({ lay, wall, fp, name, flooring, walls, signage, plants }: { lay: Layout; wall: string; fp: number; name: string; flooring: number; walls: number; signage: number; plants: number }) {
+const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, signage, plants }: { lay: Layout; wall: string; fp: number; flooring: number; walls: number; signage: number; plants: number }) {
   const { L, R } = lay;
-  const sideTop = WH + 30;
-  const [sx, sy] = P(196.5, D, WH);
+  const sideTop = FRONT_TOP;
   const lights: ReactElement[] = [];
-  if (fp >= 2) {
+  if (fp >= 2 && signage < 2) {
     const n = 12;
     for (let i = 0; i <= n; i++) {
       const x = L + 10 + ((R - L - 20) * i) / n;
-      const [lx, ly] = P(x, D, WH - 46 - Math.sin((i / n) * Math.PI) * 8);
+      const [lx, ly] = P(x, D, WH - 18 - Math.sin((i / n) * Math.PI) * 8);
       lights.push(<Circle key={i} cx={lx} cy={ly} r={3.2} fill={['#FFC531', '#E8432E', '#3FAE5A'][i % 3]} stroke={INK} strokeWidth={0.7} />);
     }
   }
@@ -403,8 +564,24 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, name, flooring, walls
   const [mx, my] = P(lay.counter.x0 + 4, D, 180);
   return (
     <G>
+      <Defs>
+        <LinearGradient id="bw" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={shade(wall, -0.1)} />
+          <Stop offset="1" stopColor={shade(wall, 0.06)} />
+        </LinearGradient>
+        <LinearGradient id="lw" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor={shade(wall, -0.26)} />
+          <Stop offset="1" stopColor={shade(wall, -0.1)} />
+        </LinearGradient>
+        <LinearGradient id="rw" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor={shade(wall, -0.04)} />
+          <Stop offset="1" stopColor={shade(wall, -0.18)} />
+        </LinearGradient>
+      </Defs>
       {/* back wall with kitchen tiles below a rail */}
-      <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, WH), P(L, D, WH)])} fill={wall} stroke={INK} strokeWidth={1.4} />
+      <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, WH), P(L, D, WH)])} fill="url(#bw)" stroke={INK} strokeWidth={1.4} />
+      <Polygon points={pts([P(L, D, WH - 22), P(R, D, WH - 22), P(R, D, WH), P(L, D, WH)])} fill="rgba(59,31,20,0.12)" />
+      <Path d={`M${P(L, D, WH - 22).join(' ')} L${P(R, D, WH - 22).join(' ')}`} stroke={shade(wall, -0.3)} strokeWidth={2.2} />
       <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 60), P(L, D, 60)])} fill="#fff" opacity={0.35} />
       {Array.from({ length: Math.floor((R - L) / 12) }).map((_, i) => {
         const [x0, y0] = P(L + 6 + i * 12, D, 0);
@@ -413,8 +590,11 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, name, flooring, walls
       })}
       <Path d={`M${P(L, D, 60).join(' ')} L${P(R, D, 60).join(' ')}`} stroke={shade(wall, -0.3)} strokeWidth={2} />
       {/* side walls */}
-      <Polygon points={pts([P(L, 0, 0), P(L, D, 0), P(L, D, WH), P(L, 0, sideTop)])} fill={shade(wall, -0.12)} stroke={INK} strokeWidth={1.4} />
-      <Polygon points={pts([P(R, 0, 0), P(R, D, 0), P(R, D, WH), P(R, 0, sideTop)])} fill={shade(wall, -0.06)} stroke={INK} strokeWidth={1.4} />
+      <Polygon points={pts([P(L, 0, 0), P(L, D, 0), P(L, D, WH), P(L, 0, sideTop)])} fill="url(#lw)" stroke={INK} strokeWidth={1.4} />
+      <Polygon points={pts([P(R, 0, 0), P(R, D, 0), P(R, D, WH), P(R, 0, sideTop)])} fill="url(#rw)" stroke={INK} strokeWidth={1.4} />
+      {/* wall caps along the cut tops */}
+      <Path d={`M${P(L, 0, sideTop).join(' ')} L${P(L, D, WH).join(' ')} L${P(R, D, WH).join(' ')} L${P(R, 0, sideTop).join(' ')}`} stroke="#5E3A26" strokeWidth={4.5} strokeLinejoin="round" fill="none" />
+      <Path d={`M${P(L, 0, sideTop).join(' ')} L${P(L, D, WH).join(' ')} L${P(R, D, WH).join(' ')} L${P(R, 0, sideTop).join(' ')}`} stroke="#8E5A3C" strokeWidth={1.4} strokeLinejoin="round" fill="none" />
       {/* floor: plain tile → checkerboard → wood parquet → marble (decor) */}
       <Polygon points={pts([P(L, 0), P(R, 0), P(R, D), P(L, D)])} fill={['#E7D7BE', '#F4EFE6', '#C99A6B', '#F1EEEA'][flooring]} stroke={INK} strokeWidth={1.4} />
       {flooring === 1 &&
@@ -457,6 +637,11 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, name, flooring, walls
         Array.from({ length: 7 }).map((_, j) => (
           <Path key={`h${j}`} d={`M${P(L, j * 18.3).join(' ')} L${P(R, j * 18.3).join(' ')}`} stroke={flooring === 1 ? '#B53A30' : flooring === 3 ? '#DCD6CE' : '#D4C1A3'} strokeWidth={flooring === 1 ? 0.5 : 1} />
         ))}
+      {/* ambient occlusion where the walls meet the floor (critic D73) */}
+      <Polygon points={pts([P(L, D - 10), P(R, D - 10), P(R, D), P(L, D)])} fill="rgba(59,31,20,0.16)" />
+      <Polygon points={pts([P(L, 0), P(L + 10, 0), P(L + 10, D), P(L, D)])} fill="rgba(59,31,20,0.14)" />
+      <Polygon points={pts([P(R - 10, 0), P(R, 0), P(R, D), P(R - 10, D)])} fill="rgba(59,31,20,0.1)" />
+      <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 10), P(L, D, 10)])} fill="rgba(59,31,20,0.12)" />
       {/* decor grows with the shop */}
       {fp === 0 && <Path d={`M${mx - 30} ${my + 30} l6 12 l-4 8 l6 10`} stroke={shade(wall, -0.3)} strokeWidth={1.2} fill="none" />}
       {fp >= 1 && (
@@ -468,7 +653,7 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, name, flooring, walls
         </G>
       )}
       {lights.length > 0 && (
-        <Path d={`M${P(L + 10, D, WH - 46).join(' ')} Q${P(196.5, D, WH - 66).join(' ')} ${P(R - 10, D, WH - 46).join(' ')}`} stroke={INK} strokeWidth={1} fill="none" />
+        <Path d={`M${P(L + 10, D, WH - 18).join(' ')} Q${P(196.5, D, WH - 38).join(' ')} ${P(R - 10, D, WH - 18).join(' ')}`} stroke={INK} strokeWidth={1} fill="none" />
       )}
       {lights}
       {/* wall decor (decor): posters → framed photos → hand-painted mural */}
@@ -476,8 +661,8 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, name, flooring, walls
         (() => {
           const x0 = L + 6;
           const x1 = lay.counter.x0 - 6;
-          const [ax, ay] = P(x0, D, 238);
-          const [bx, by] = P(x1, D, 150);
+          const [ax, ay] = P(x0, D, 212);
+          const [bx, by] = P(x1, D, 136);
           const w = bx - ax;
           const h = by - ay;
           return (
@@ -500,8 +685,8 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, name, flooring, walls
       {walls >= 1 &&
         walls < 3 &&
         (() => {
-          const [ax, ay] = P(L + 10, D, 228);
-          const [bx, by] = P(Math.min(lay.prep.x1 + 6, lay.counter.x0 - 40), D, 160);
+          const [ax, ay] = P(L + 10, D, 206);
+          const [bx, by] = P(Math.min(lay.prep.x1 + 6, lay.counter.x0 - 40), D, 140);
           const w = Math.min(46, bx - ax);
           return (
             <G>
@@ -516,14 +701,14 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, name, flooring, walls
             </G>
           );
         })()}
-      {walls >= 2 &&
+      {walls === 2 &&
         lay.ovenCols.length > 0 &&
         (() => {
           const xs = [0.2, 0.5, 0.8].map((f) => lay.ovenCols[0].x0 + (lay.ovenCols[lay.ovenCols.length - 1].x1 - lay.ovenCols[0].x0) * f);
           return (
             <G>
               {xs.map((x, i) => {
-                const [fx, fy] = P(x, D, 236);
+                const [fx, fy] = P(x, D, 196);
                 return (
                   <G key={i}>
                     <Rect x={fx - 10} y={fy} width={20} height={16} fill="#C98F63" stroke={INK} strokeWidth={1} />
@@ -535,41 +720,19 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, name, flooring, walls
             </G>
           );
         })()}
-      {/* hanging ferns and an ivy rail (plants decor) */}
-      {plants >= 2 &&
-        [0.2, 0.5, 0.8].map((f, i) => {
-          const x = L + (R - L) * f;
-          const [hx, hy] = P(x, 70, 250);
-          const [, ty] = P(x, 70, WH + 20);
-          return (
-            <G key={`fern${i}`}>
-              <Path d={`M${hx} ${ty} V${hy - 8}`} stroke={INK} strokeWidth={0.8} />
-              <Path d={`M${hx - 8} ${hy - 8} L${hx + 8} ${hy - 8} L${hx + 5} ${hy} L${hx - 5} ${hy} Z`} fill="#C2693E" stroke={INK} strokeWidth={0.9} />
-              {[-1, -0.5, 0, 0.5, 1].map((d) => (
-                <Path key={d} d={`M${hx + d * 6} ${hy - 2} q${d * 8} 10 ${d * 6} 22`} stroke="#4FA048" strokeWidth={3} fill="none" strokeLinecap="round" />
-              ))}
-            </G>
-          );
-        })}
       {plants >= 3 && (
         <G>
-          <Path d={`M${P(L, D, WH - 20).join(' ')} L${P(R, D, WH - 20).join(' ')}`} stroke="#3F8F3A" strokeWidth={3} />
+          <Path d={`M${P(L, D, WH - 8).join(' ')} L${P(R, D, WH - 8).join(' ')}`} stroke="#3F8F3A" strokeWidth={3} />
           {Array.from({ length: 22 }).map((_, i) => {
-            const [vx, vy] = P(L + ((R - L) * (i + 0.5)) / 22, D, WH - 20);
+            const [vx, vy] = P(L + ((R - L) * (i + 0.5)) / 22, D, WH - 8);
             return <Ellipse key={i} cx={vx} cy={vy + (i % 3) * 3} rx={4} ry={2.6} fill={i % 2 ? '#5DBB5A' : '#3F9A48'} stroke={INK} strokeWidth={0.5} transform={`rotate(${(i % 2 ? 1 : -1) * 30} ${vx} ${vy})`} />;
           })}
           {[0.08, 0.92].map((f) =>
             Array.from({ length: 6 }).map((_, i) => {
-              const [vx, vy] = P(L + (R - L) * f, D, WH - 26 - i * 14);
+              const [vx, vy] = P(L + (R - L) * f, D, WH - 14 - i * 14);
               return <Ellipse key={`${f}${i}`} cx={vx + (i % 2 ? 3 : -3)} cy={vy} rx={4} ry={2.6} fill={i % 2 ? '#5DBB5A' : '#3F9A48'} stroke={INK} strokeWidth={0.5} />;
             }),
           )}
-        </G>
-      )}
-      {fp >= 4 && (
-        <G>
-          <Path d={`M${sx} ${sy + 40} v14`} stroke={INK} strokeWidth={1} />
-          <Path d={`M${sx - 16} ${sy + 56} Q${sx} ${sy + 68} ${sx + 16} ${sy + 56} Z`} fill="#E0B000" stroke={INK} strokeWidth={1} />
         </G>
       )}
       {/* back window with trees outside */}
@@ -578,38 +741,15 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, name, flooring, walls
       <Circle cx={wx + 27} cy={wy + 28} r={6} fill="#4FA048" />
       <Path d={`M${wx + 20} ${wy} V${wy + 36} M${wx} ${wy + 18} H${wx + 40}`} stroke="#fff" strokeWidth={2} />
       <Rect x={wx - 2} y={wy + 34} width={44} height={4} fill="#8E5A3C" stroke={INK} strokeWidth={0.8} />
-      {/* sign (decor): painted board → neon → marquee bulbs → giant rooftop pizza */}
-      {signage >= 3 && (
-        <G>
-          <Rect x={sx - 3} y={sy - 52} width={6} height={52} fill="#6B6B6B" stroke={INK} strokeWidth={1} />
-          <Circle cx={sx} cy={sy - 70} r={34} fill="#E9A64B" stroke={INK} strokeWidth={1.6} />
-          <Circle cx={sx} cy={sy - 70} r={28} fill="#FFC531" />
-          {[[-12, -8], [10, -14], [2, 6], [-8, 12], [14, 8], [-16, -22]].map(([dx, dy], i) => (
-            <Circle key={i} cx={sx + dx} cy={sy - 70 + dy} r={4} fill="#E8432E" stroke={INK} strokeWidth={0.6} />
-          ))}
-          {[0, 60, 120].map((a) => (
-            <Path key={a} d={`M${sx - 28 * Math.cos((a * Math.PI) / 180)} ${sy - 70 - 28 * Math.sin((a * Math.PI) / 180)} L${sx + 28 * Math.cos((a * Math.PI) / 180)} ${sy - 70 + 28 * Math.sin((a * Math.PI) / 180)}`} stroke="#E9A64B" strokeWidth={1.4} />
-          ))}
-        </G>
-      )}
-      {signage === 1 && <Rect x={sx - 80} y={sy} width={160} height={36} rx={10} fill="#FF5E9A" opacity={0.25} />}
-      <Rect x={sx - 74} y={sy + 6} width={148} height={24} rx={6} fill={signage === 0 ? '#8E5A3C' : signage === 1 ? '#1E1630' : '#D9443A'} stroke={signage === 1 ? '#FF5E9A' : INK} strokeWidth={signage === 1 ? 2 : 1.4} />
-      {signage !== 1 && <Rect x={sx - 72} y={sy + 7} width={144} height={8} rx={4} fill="#fff" opacity={0.18} />}
-      {signage >= 2 &&
-        Array.from({ length: 16 }).map((_, i) => {
-          const top = i < 8;
-          const x = sx - 68 + (i % 8) * (136 / 7);
-          return <Circle key={i} cx={x} cy={top ? sy + 5 : sy + 31} r={2.2} fill="#FFF3B0" stroke="#E0B000" strokeWidth={0.6} />;
-        })}
-      <SvgText x={sx} y={sy + 23} fontFamily={F.bold} fontSize={14} fill={signage === 0 ? '#FFF4E0' : signage === 1 ? '#FF8FB8' : '#fff'} textAnchor="middle">
-        {`Rosa’s · ${name}`}
-      </SvgText>
     </G>
   );
 });
 
-/** Brick sill along the cut front wall, with the entrance on the right. */
-function FrontWall({ lay }: { lay: Layout }) {
+/**
+ * The street face of the shop (critic D72): brick pilasters at both corners, a fascia beam across the top
+ * carrying the sign, a full-width scalloped awning, the brick sill and the entrance on the right.
+ */
+function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: string; signage: number; plants: number }) {
   const { L, R, door } = lay;
   const sill = (x0: number, x1: number) => {
     const [ax, ay] = P(x0, 0);
@@ -624,32 +764,122 @@ function FrontWall({ lay }: { lay: Layout }) {
       </G>
     );
   };
+  const pilaster = (x0: number, x1: number, inner: 'l' | 'r') => {
+    const [ax, ay] = P(x0, 0, 0);
+    const [bx, ty] = P(x1, 0, FRONT_TOP);
+    const w = bx - ax;
+    const rows = Math.floor((ay - ty) / 9);
+    return (
+      <G key={x0}>
+        <Rect x={ax} y={ty} width={w} height={ay - ty + 6} fill="#A24B2C" stroke={INK} strokeWidth={1.3} />
+        {Array.from({ length: rows }).map((_, i) => (
+          <G key={i}>
+            <Path d={`M${ax} ${ty + 9 * (i + 1)} H${bx}`} stroke="#7A3520" strokeWidth={0.8} />
+            <Path d={`M${ax + w * (i % 2 ? 0.33 : 0.66)} ${ty + 9 * i} v9`} stroke="#7A3520" strokeWidth={0.8} />
+          </G>
+        ))}
+        <Rect x={inner === 'l' ? bx - 3.5 : ax} y={ty} width={3.5} height={ay - ty + 6} fill="#000" opacity={0.18} />
+        <Rect x={inner === 'l' ? ax + 1.5 : bx - 4} y={ty} width={2.5} height={ay - ty + 6} fill="#fff" opacity={0.16} />
+        <Rect x={ax - 2} y={ay - 2} width={w + 4} height={8} rx={1.5} fill="#7A3520" stroke={INK} strokeWidth={1} />
+      </G>
+    );
+  };
   const [d0x, d0y] = P(door.x0, 0, 0);
   const [d1x] = P(door.x1, 0, 0);
   const [, topY] = P(door.x0, 0, 78);
+  // fascia beam + sign
+  const [fx0, fTop] = P(L - 6, 0, FRONT_TOP);
+  const [fx1, fBot] = P(R + 6, 0, FRONT_TOP - 20);
+  const fcx = (fx0 + fx1) / 2;
+  const signW = Math.min(fx1 - fx0 - 40, 34 + name.length * 9.6 + 54);
+  const board = signage === 0 ? '#8E5A3C' : signage === 1 ? '#1E1630' : '#D9443A';
+  const text = signage === 0 ? '#FFF4E0' : signage === 1 ? '#FF8FB8' : '#fff';
+  // awning valance under the fascia
+  const n = 12;
+  const aw = (fx1 - fx0 + 12) / n;
   return (
     <G>
       {sill(L - 4, door.x0)}
       {sill(door.x1, R + 4)}
-      {/* door frame + awning */}
+      {/* door frame (no separate canopy; the full-width awning covers it) */}
       <Rect x={d0x - 4} y={topY} width={7} height={d0y - topY + 6} fill="#6B4330" stroke={INK} strokeWidth={1.1} />
       <Rect x={d1x - 3} y={topY} width={7} height={d0y - topY + 6} fill="#6B4330" stroke={INK} strokeWidth={1.1} />
-      <Rect x={d0x - 6} y={topY - 5} width={d1x - d0x + 12} height={7} rx={2} fill="#5E3A26" stroke={INK} strokeWidth={1.1} />
-      <Path d={`M${d0x - 12} ${topY - 10} L${d1x + 12} ${topY - 10} L${d1x + 18} ${topY + 2} L${d0x - 18} ${topY + 2} Z`} fill="#D9443A" stroke={INK} strokeWidth={1.1} />
-      {Array.from({ length: 5 }).map((_, i) => {
-        const w = (d1x - d0x + 36) / 5;
-        const x = d0x - 18 + i * w;
-        return <Path key={i} d={`M${x} ${topY + 2} q${w / 2} ${w * 0.5} ${w} 0`} fill={i % 2 ? '#D9443A' : '#fff'} stroke={INK} strokeWidth={0.9} />;
-      })}
+      <Rect x={d0x - 6} y={topY - 7} width={d1x - d0x + 12} height={9} rx={2} fill="#5E3A26" stroke={INK} strokeWidth={1.1} />
+      <Rect x={d0x - 2} y={topY - 5} width={d1x - d0x + 4} height={2.5} rx={1} fill="#fff" opacity={0.18} />
       {/* door swung open onto the sidewalk, with an OPEN sign */}
       <Path d={`M${d1x + 4} ${d0y + 4} L${d1x + 30} ${d0y + 18} L${d1x + 30} ${topY + 16} L${d1x + 4} ${topY + 6} Z`} fill="#7E5038" stroke={INK} strokeWidth={1.2} />
       <Path d={`M${d1x + 9} ${d0y + 4} L${d1x + 26} ${d0y + 12} L${d1x + 26} ${topY + 24} L${d1x + 9} ${topY + 16} Z`} fill="#BFE3F5" stroke={INK} strokeWidth={1} />
+      <Path d={`M${d1x + 11} ${topY + 20} L${d1x + 18} ${topY + 24}`} stroke="#fff" strokeWidth={1.6} opacity={0.7} strokeLinecap="round" />
       <G transform={`translate(${d1x + 18} ${topY + 34}) skewY(26)`}>
         <Rect x={-10} y={-5} width={20} height={10} rx={2} fill="#E8432E" stroke="#fff" strokeWidth={0.8} />
         <SvgText x={0} y={2.5} fontFamily={F.bold} fontSize={6} fill="#fff" textAnchor="middle">
           OPEN
         </SvgText>
       </G>
+      {pilaster(L - 6, L + 8, 'l')}
+      {pilaster(R - 8, R + 6, 'r')}
+      {/* awning: alternating stripes with scalloped edge, under the fascia */}
+      <Path d={`M${fx0} ${fBot} L${fx1} ${fBot} L${fx1 + 6} ${fBot + 13} L${fx0 - 6} ${fBot + 13} Z`} fill="#FFF4E0" stroke={INK} strokeWidth={1.1} />
+      {Array.from({ length: n }).map((_, i) => {
+        const xa = fx0 - 6 + i * aw;
+        const ta = fx0 + (i * (fx1 - fx0)) / n;
+        const tb = fx0 + ((i + 1) * (fx1 - fx0)) / n;
+        return (
+          <G key={i}>
+            {i % 2 === 0 && <Path d={`M${ta} ${fBot} L${tb} ${fBot} L${xa + aw} ${fBot + 13} L${xa} ${fBot + 13} Z`} fill="#D9443A" />}
+            <Path d={`M${xa} ${fBot + 13} q${aw / 2} ${aw * 0.5} ${aw} 0`} fill={i % 2 === 0 ? '#D9443A' : '#FFF4E0'} stroke={INK} strokeWidth={1} />
+          </G>
+        );
+      })}
+      <Path d={`M${fx0 - 6} ${fBot + 13} H${fx1 + 6}`} stroke={INK} strokeWidth={1.1} />
+      <Rect x={fx0} y={fBot} width={fx1 - fx0} height={3} fill="#000" opacity={0.15} />
+      {/* fascia beam */}
+      <Rect x={fx0} y={fTop} width={fx1 - fx0} height={fBot - fTop} fill="#5E3A26" stroke={INK} strokeWidth={1.4} />
+      <Rect x={fx0 + 1} y={fTop + 1} width={fx1 - fx0 - 2} height={4} fill="#fff" opacity={0.14} />
+      {/* hanging ferns from the fascia (plants decor) */}
+      {plants >= 2 &&
+        [0.07, 0.93].map((f) => {
+          const hx = fx0 + (fx1 - fx0) * f;
+          const hy = fBot + 30;
+          return (
+            <G key={f}>
+              <Path d={`M${hx} ${fBot + 13} V${hy - 8}`} stroke={INK} strokeWidth={0.8} />
+              <Path d={`M${hx - 8} ${hy - 8} L${hx + 8} ${hy - 8} L${hx + 5} ${hy} L${hx - 5} ${hy} Z`} fill="#C2693E" stroke={INK} strokeWidth={0.9} />
+              {[-1, -0.5, 0, 0.5, 1].map((d) => (
+                <Path key={d} d={`M${hx + d * 6} ${hy - 2} q${d * 8} 10 ${d * 6} 22`} stroke={d === 0 ? '#3F9A48' : '#4FA048'} strokeWidth={3} fill="none" strokeLinecap="round" />
+              ))}
+            </G>
+          );
+        })}
+      {/* rooftop giant pizza (signage 3) */}
+      {signage >= 3 && (
+        <G>
+          <Rect x={fcx - 3} y={fTop - 26} width={6} height={26} fill="#6B6B6B" stroke={INK} strokeWidth={1} />
+          <Circle cx={fcx} cy={fTop - 56} r={40} fill="#FFE7A0" opacity={0.35} />
+          <Circle cx={fcx} cy={fTop - 56} r={32} fill="#E9A64B" stroke={INK} strokeWidth={1.6} />
+          <Circle cx={fcx} cy={fTop - 56} r={26} fill="#FFC531" />
+          {[0, 60, 120].map((a) => (
+            <Path key={a} d={`M${fcx - 26 * Math.cos((a * Math.PI) / 180)} ${fTop - 56 - 26 * Math.sin((a * Math.PI) / 180)} L${fcx + 26 * Math.cos((a * Math.PI) / 180)} ${fTop - 56 + 26 * Math.sin((a * Math.PI) / 180)}`} stroke="#E9A64B" strokeWidth={1.4} />
+          ))}
+          {[[-12, -8], [10, -14], [2, 6], [-8, 12], [14, 8], [-14, -20]].map(([dx, dy], i) => (
+            <Circle key={i} cx={fcx + dx} cy={fTop - 56 + dy} r={4} fill="#E8432E" stroke={INK} strokeWidth={0.6} />
+          ))}
+          <Path d={`M${fcx - 20} ${fTop - 74} A26 26 0 0 1 ${fcx + 4} ${fTop - 82}`} stroke="#fff" strokeWidth={2.4} opacity={0.5} fill="none" strokeLinecap="round" />
+        </G>
+      )}
+      {/* sign plate: painted board → neon → marquee bulbs */}
+      {signage === 1 && <Rect x={fcx - signW / 2 - 6} y={fTop - 8} width={signW + 12} height={fBot - fTop + 16} rx={12} fill="#FF5E9A" opacity={0.28} />}
+      <Rect x={fcx - signW / 2} y={fTop - 5} width={signW} height={fBot - fTop + 10} rx={6} fill={board} stroke={signage === 1 ? '#FF5E9A' : INK} strokeWidth={signage === 1 ? 2 : 1.4} />
+      {signage !== 1 && <Rect x={fcx - signW / 2 + 3} y={fTop - 3} width={signW - 6} height={6} rx={3} fill="#fff" opacity={0.2} />}
+      {signage >= 2 &&
+        Array.from({ length: 18 }).map((_, i) => {
+          const top = i < 9;
+          const x = fcx - signW / 2 + 8 + (i % 9) * ((signW - 16) / 8);
+          return <Circle key={i} cx={x} cy={top ? fTop - 5 : fBot + 5} r={2.2} fill="#FFF3B0" stroke="#E0B000" strokeWidth={0.6} />;
+        })}
+      <SvgText x={fcx} y={(fTop + fBot) / 2 + 5.5} fontFamily={F.bold} fontSize={16} fill={text} stroke={signage === 0 ? '#3B1F14' : undefined} strokeWidth={signage === 0 ? 0.4 : 0} textAnchor="middle">
+        {`Rosa’s · ${name}`}
+      </SvgText>
     </G>
   );
 }
@@ -725,6 +955,50 @@ function Car({ x, y, color, kind, dir }: { x: number; y: number; color: string; 
   );
 }
 
+/** The shop's delivery vehicle parked by the door, drawn in the scene's outlined style. */
+function ParkedVehicle({ x, y, v }: { x: number; y: number; v: number }) {
+  if (v >= 2 && v <= 3) {
+    return (
+      <G transform={`translate(${x} ${y + 2}) scale(0.62)`}>
+        <Car x={0} y={0} color={v === 3 ? '#7B2CBF' : '#E8432E'} kind={v === 3 ? 'van' : 'car'} dir={1} />
+      </G>
+    );
+  }
+  if (v === 4) {
+    return (
+      <G transform={`translate(${x} ${y - 18})`}>
+        <Ellipse cx={0} cy={20} rx={14} ry={3} fill="rgba(59,31,20,0.2)" />
+        <Path d="M-18 -4 H18" stroke={INK} strokeWidth={2} />
+        {[-18, 18].map((dx) => <Ellipse key={dx} cx={dx} cy={-6} rx={9} ry={2} fill="#BFE3F5" stroke={INK} strokeWidth={0.8} />)}
+        <Rect x={-10} y={-4} width={20} height={10} rx={4} fill="#9B51E0" stroke={INK} strokeWidth={1} />
+        <Rect x={-6} y={6} width={12} height={8} rx={1} fill="#F6E7C1" stroke={INK} strokeWidth={0.8} />
+      </G>
+    );
+  }
+  const bike = v === 0;
+  return (
+    <G transform={`translate(${x} ${y})`}>
+      <Ellipse cx={0} cy={1} rx={20} ry={3.5} fill="rgba(59,31,20,0.25)" />
+      {[-12, 12].map((dx) => (
+        <G key={dx}>
+          <Circle cx={dx} cy={-7} r={bike ? 8 : 6.5} fill={bike ? 'none' : '#222'} stroke={INK} strokeWidth={bike ? 2 : 1} />
+          <Circle cx={dx} cy={-7} r={2} fill="#bbb" />
+        </G>
+      ))}
+      {bike ? (
+        <Path d="M-12 -7 L-2 -18 L8 -18 L12 -7 M-2 -18 L2 -7 L8 -18 M8 -18 L6 -24 M-4 -20 H2" stroke="#E8432E" strokeWidth={2.2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+      ) : (
+        <G>
+          <Path d="M-16 -9 Q-16 -20 -4 -20 L6 -20 L10 -10 L14 -10 L12 -5 L-16 -5 Z" fill="#FFC531" stroke={INK} strokeWidth={1.1} />
+          <Path d="M8 -20 L12 -30 M9 -30 H16" stroke={INK} strokeWidth={1.8} strokeLinecap="round" />
+          <Rect x={-18} y={-30} width={14} height={10} rx={1.5} fill="#E8432E" stroke={INK} strokeWidth={1} />
+          <Rect x={-14} y={-27} width={6} height={3} rx={1} fill="#fff" opacity={0.8} />
+        </G>
+      )}
+    </G>
+  );
+}
+
 const Street = memo(function Street() {
   return (
     <G>
@@ -732,7 +1006,7 @@ const Street = memo(function Street() {
       <Rect x={-20} y={CURB_Y + 8} width={SCENE_W + 40} height={120} fill="#4C5056" />
       <Rect x={-20} y={CURB_Y + 8} width={SCENE_W + 40} height={10} fill="#000" opacity={0.15} />
       {Array.from({ length: 10 }).map((_, i) => (
-        <Rect key={i} x={i * 48 - 20} y={CURB_Y + 47} width={26} height={3.5} rx={1.5} fill="#F2D15C" />
+        <Rect key={i} x={i * 48 - 20} y={CURB_Y + 45} width={26} height={3.5} rx={1.5} fill="#F2D15C" />
       ))}
     </G>
   );
@@ -902,9 +1176,9 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   if (shop.decor.plants >= 1) {
     items.push({ y: 6, el: <FloorPlant key="pp1" x={lay.L + 10} y={6} /> });
     items.push({ y: 20, el: <FloorPlant key="pp2" x={lay.R - 8} y={20} /> });
-    items.push({ y: -30, el: <FloorPlant key="pp3" x={lay.door.x0 - 14} y={-30} big /> });
+    items.push({ y: -30, el: <FloorPlant key="pp3" x={lay.L + 36} y={-30} big /> });
   }
-  if (shop.decor.plants >= 3) items.push({ y: 58, el: <FloorPlant key="pp4" x={lay.counter.x0 - 10} y={58} big /> });
+  if (shop.decor.plants >= 3) items.push({ y: 100, el: <FloorPlant key="pp4" x={lay.L + 14} y={100} big /> });
   // kitchen crew + furniture
   lay.cooks.forEach((x, i) => items.push({ y: 92 + (i % 2) * 3, el: <Person key={`c${i}`} x={x} y={92 + (i % 2) * 3} kind="cook" shirt={i % 2 ? '#D9534F' : '#E8432E'} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} /> }));
   items.push({
@@ -928,18 +1202,24 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     el: (
       <G key="counter">
         <FloorShadow x={(lay.counter.x0 + lay.counter.x1) / 2} y={62} r={(lay.counter.x1 - lay.counter.x0) * 0.6} />
-        <Box x0={lay.counter.x0} x1={lay.counter.x1} y0={64} y1={84} h={52} color="#B0653A" top="#E9DCC8" />
-        {lay.staff.map((x, i) => (
-          <Register key={i} x={x} y={70} z={52} />
+        <Box x0={lay.counter.x0} x1={lay.counter.x1} y0={64} y1={84} h={38} color="#B0653A" top="#E9DCC8" />
+        {/* front panel trim */}
+        {(() => {
+          const [ax, ay] = P(lay.counter.x0 + 3, 64, 6);
+          const [bx, by] = P(lay.counter.x1 - 3, 64, 32);
+          return <Rect x={ax} y={by} width={bx - ax} height={ay - by} rx={3} fill="none" stroke="#8C4A26" strokeWidth={1.2} />;
+        })()}
+        {lay.staff.slice(0, 1).map((x, i) => (
+          <Register key={i} x={x + 12} y={70} z={38} />
         ))}
         {Array.from({ length: boxes }).map((_, i) => (
-          <Box key={`bx${i}`} x0={lay.counter.x1 - 24} x1={lay.counter.x1 - 6} y0={68} y1={80} h={5} z={52 + i * 6} color="#F6E7C1" top="#FFF6E5" />
+          <Box key={`bx${i}`} x0={lay.counter.x1 - 24} x1={lay.counter.x1 - 6} y0={68} y1={80} h={5} z={38 + i * 6} color="#F6E7C1" top="#FFF6E5" />
         ))}
       </G>
     ),
   });
   // front of the shop + sidewalk props
-  items.push({ y: 0, el: <FrontWall key="front" lay={lay} /> });
+  items.push({ y: 0, el: <FrontWall key="front" lay={lay} name={nd.name} signage={shop.decor.signage} plants={shop.decor.plants} /> });
   items.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
   items.push({ y: -40, el: <Planter key="pl" x={lay.L + 8} y={-40} /> });
   const [scx, scy] = P(lay.scooter.x, lay.scooter.y);
@@ -947,10 +1227,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     y: lay.scooter.y,
     el: (
       <G key="scooter">
-        <Ellipse cx={scx} cy={scy + 2} rx={18} ry={4} fill="rgba(59,31,20,0.25)" />
-        <SvgText x={scx} y={scy} fontSize={32} textAnchor="middle">
-          {VEHICLES[game.vehicle].emoji}
-        </SvgText>
+        <ParkedVehicle x={scx} y={scy} v={game.vehicle} />
       </G>
     ),
   });
@@ -976,24 +1253,17 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   const taps = m.taps.filter((tp) => clock - tp.at < 0.9);
   const flicker = running ? Math.sin(clock * 9) * 1.4 : 0;
 
-  // ---- tags (screen positions also used for the tap targets)
-  const ovenMid = (lay.ovenCols[0].x0 + lay.ovenCols[lay.ovenCols.length - 1].x1) / 2;
-  const ovenTopZ = Math.max(...lay.ovens.map((o) => o.z + o.h)) + 34;
-  const tagPos: Record<StationKey, [number, number]> = {
-    prep: P((lay.prep.x0 + lay.prep.x1) / 2, 84, 84),
-    ovens: P(ovenMid, D - 6, ovenTopZ),
-    counter: P((lay.counter.x0 + lay.counter.x1) / 2, 76, 100),
-    drivers: P(lay.spots[0].x + 10, 40, 80),
-  };
-  const tagLabel: Record<StationKey, string> = { prep: `PREP ${shop.prep}`, ovens: `OVENS ${shop.ovens}`, counter: `COUNTER ${shop.counter}`, drivers: `DRIVERS ${shop.drivers}` };
-  const hot: Record<StationKey, boolean> = { prep: neck === 'prep', ovens: neck === 'ovens', counter: neck === 'counter', drivers: neck === 'customers' };
+  // ---- driver-count badge above the pickup strip
+  const badge = P(lay.spots[0].x + 8, 34, 76);
+  // ---- the sky band above the shop carries the feedback pills (critic D77)
+  const [, fasciaBottom] = P(0, 0, FRONT_TOP - 20);
+  const qy = fasciaBottom + 26;
 
   // Clouds and cars move on the clock even when the shop is idle.
   const cloudXs = [
-    { x0: 60, y: 60, k: 0.9, v: 4 },
-    { x0: 260, y: 40, k: 1.1, v: 3 },
-    { x0: 360, y: 100, k: 0.7, v: 5 },
-    { x0: 160, y: 108, k: 0.55, v: 6 },
+    { x0: 60, y: 34, k: 0.8, v: 4 },
+    { x0: 260, y: 20, k: 1.0, v: 3 },
+    { x0: 360, y: 70, k: 0.6, v: 5 },
   ];
   const span = SCENE_W + 200;
 
@@ -1017,16 +1287,16 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
             last.at = clock;
             m.taps = live;
           } else {
-            m.taps = [...live.slice(-1), { at: clock, x: Math.max(60, Math.min(SCENE_W - 60, x)), y: Math.max(140, Math.min(frontY - 60, y)), text, color, count: 1 }];
+            m.taps = [...live.slice(-1), { at: clock, x: Math.max(70, Math.min(SCENE_W - 70, x)), y: 52, text, color, count: 1 }];
           }
           onTap();
         }}>
         <Svg width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
           <Defs>
-            <LinearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#6AAEE6" />
-              <Stop offset="0.55" stopColor="#BFE0F7" />
-              <Stop offset="1" stopColor="#E6F4FE" />
+            <LinearGradient id="ember" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#5A1A0A" />
+              <Stop offset="0.45" stopColor="#E8432E" />
+              <Stop offset="1" stopColor="#FFB23A" />
             </LinearGradient>
             {OVEN_GRADES.map((g, i) => (
               <LinearGradient key={i} id={`oven${i}`} x1="0" y1="0" x2="1" y2="0">
@@ -1036,13 +1306,13 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
               </LinearGradient>
             ))}
           </Defs>
-          <Backdrop id={id} L={lay.L} R={lay.R} />
+          <Backdrop id={id} />
           {cloudXs.map((c, i) => (
             <Cloud key={i} x={((c.x0 + clock * c.v) % span) - 100} y={c.y} k={c.k} />
           ))}
           <Sidewalk frontY={frontY} />
           <Street />
-          <RoomShell lay={lay} wall={nd.wall} fp={fp} name={nd.name} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
+          <RoomShell lay={lay} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
           {lay.ovens.map((o, i) => (
             <Oven key={i} o={o} grade={shop.grade} lit={running} flicker={flicker * (i % 2 ? -1 : 1)} />
           ))}
@@ -1051,28 +1321,14 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
             const dir = c.lane === 0 ? -1 : 1;
             const raw = (c.offset + clock * c.speed) % span;
             const x = dir === 1 ? raw - 100 : SCENE_W + 100 - raw;
-            return <Car key={i} x={x} y={c.lane === 0 ? CURB_Y + 42 : CURB_Y + 86} color={c.color} kind={c.kind} dir={dir as 1 | -1} />;
-          })}
-          {/* station tags: the bottleneck lights up red */}
-          {(Object.keys(tagPos) as StationKey[]).map((k) => {
-            const [x, y] = tagPos[k];
-            const label = tagLabel[k];
-            const w = label.length * 6.2 + 14;
-            return (
-              <G key={k}>
-                <Rect x={x - w / 2} y={y - 11} width={w} height={16} rx={8} fill={hot[k] ? '#E8432E' : 'rgba(255,255,255,0.95)'} stroke={INK} strokeWidth={1.1} />
-                <SvgText x={x} y={y + 1.5} fontFamily={F.bold} fontSize={10} fill={hot[k] ? '#fff' : INK} textAnchor="middle">
-                  {label}
-                </SvgText>
-              </G>
-            );
+            return <Car key={i} x={x} y={c.lane === 0 ? CURB_Y + 38 : CURB_Y + 66} color={c.color} kind={c.kind} dir={dir as 1 | -1} />;
           })}
           {/* the real number of drivers when there are more than we can draw */}
           {shop.drivers > driverCount && (
             <G>
-              <Rect x={tagPos.drivers[0] - 26} y={tagPos.drivers[1] - 32} width={52} height={17} rx={8.5} fill="#2F80ED" stroke="#fff" strokeWidth={1.4} />
-              <SvgText x={tagPos.drivers[0]} y={tagPos.drivers[1] - 19.5} fontFamily={F.bold} fontSize={10.5} fill="#fff" textAnchor="middle">
-                {`${VEHICLES[game.vehicle].emoji} ×${shop.drivers}`}
+              <Rect x={badge[0] - 22} y={badge[1] - 9} width={44} height={17} rx={8.5} fill="#2F80ED" stroke="#fff" strokeWidth={1.4} />
+              <SvgText x={badge[0]} y={badge[1] + 3.5} fontFamily={F.bold} fontSize={10.5} fill="#fff" textAnchor="middle">
+                {`×${shop.drivers}`}
               </SvgText>
             </G>
           )}
@@ -1080,12 +1336,12 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
           {!shop.managed && (
             <G>
               {(() => {
-                const [qx, qy] = P(196.5, D, 232);
+                const qx = SCENE_W / 2;
                 return (
                   <G>
-                    <Rect x={qx - 52} y={qy} width={104} height={12} rx={6} fill="#fff" stroke={INK} strokeWidth={1} />
-                    <Rect x={qx - 51} y={qy + 1} width={102 * Math.min(1, shop.queued / TUNING.tapQueueMax)} height={10} rx={5} fill={C.cheese} />
-                    <SvgText x={qx} y={qy + 9} fontFamily={F.bold} fontSize={8} fill={INK} textAnchor="middle">
+                    <Rect x={qx - 56} y={qy - 1} width={112} height={14} rx={7} fill="#fff" stroke={INK} strokeWidth={1} />
+                    <Rect x={qx - 55} y={qy} width={110 * Math.min(1, shop.queued / TUNING.tapQueueMax)} height={12} rx={6} fill={C.cheese} />
+                    <SvgText x={qx} y={qy + 9.5} fontFamily={F.bold} fontSize={10} fill={INK} textAnchor="middle">
                       {`${Math.ceil(shop.queued)} / ${TUNING.tapQueueMax} queued`}
                     </SvgText>
                     {!running && (
@@ -1118,22 +1374,16 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
           {/* cash pop above the door */}
           {pop && (
             <G opacity={1 - pop.k * pop.k}>
-              <SvgText x={Math.min(P(lay.door.cx, 0)[0], SCENE_W - pop.text.length * 5)} y={P(lay.door.cx, 0, 110)[1] - pop.k * 14} fontFamily={F.bold} fontSize={17} fill="#fff" stroke={C.basilDark} strokeWidth={4} textAnchor="middle">
+              <SvgText x={SCENE_W - 18 - pop.text.length * 5} y={88 - pop.k * 16} fontFamily={F.bold} fontSize={18} fill="#fff" stroke={C.basilDark} strokeWidth={4} textAnchor="middle">
                 {pop.text}
               </SvgText>
-              <SvgText x={Math.min(P(lay.door.cx, 0)[0], SCENE_W - pop.text.length * 5)} y={P(lay.door.cx, 0, 110)[1] - pop.k * 14} fontFamily={F.bold} fontSize={17} fill="#fff" textAnchor="middle">
+              <SvgText x={SCENE_W - 18 - pop.text.length * 5} y={88 - pop.k * 16} fontFamily={F.bold} fontSize={18} fill="#fff" textAnchor="middle">
                 {pop.text}
               </SvgText>
             </G>
           )}
         </Svg>
       </Pressable>
-      {/* tap targets over the station tags: open that station's upgrade */}
-      {(Object.keys(tagPos) as StationKey[]).map((k) => {
-        const [x, y] = tagPos[k];
-        const w = (tagLabel[k].length * 6.2 + 26) * fit.s;
-        return <Pressable key={k} testID={`tag-${k}`} onPress={() => onStation(k)} style={{ position: 'absolute', left: fit.ox + x * fit.s - w / 2, top: fit.oy + (y - 16) * fit.s, width: w, height: 26 * fit.s }} />;
-      })}
     </View>
   );
 }

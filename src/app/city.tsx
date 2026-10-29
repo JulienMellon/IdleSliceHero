@@ -15,7 +15,7 @@ export default function City() {
   const game = useGame((s) => s.game);
   const { setActive, build } = useGame.getState();
   const built = NEIGHBORHOODS.filter((n) => game.shops[n.id].built).length;
-  const mapH = Math.min(height * 0.6, width * 0.76);
+  const mapH = Math.min(height * 0.6, width * 0.84);
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -24,7 +24,7 @@ export default function City() {
         </Pressable>
         <Text style={styles.title}>{CITY_NAME}</Text>
         <Pressable onPress={() => router.push('/settings')} hitSlop={12} style={{ width: 70, alignItems: 'flex-end' }} testID="open-settings">
-          <Text style={{ fontSize: 20 }}>⚙️</Text>
+          <Text style={{ fontSize: 24, color: '#FFF4E0', fontFamily: F.bold }}>⚙︎</Text>
         </Pressable>
       </View>
       <View style={{ height: mapH, backgroundColor: C.map }}>

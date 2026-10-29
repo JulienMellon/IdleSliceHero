@@ -1,0 +1,28 @@
+{
+  "version": "v2.1",
+  "errors": [],
+  "shots": [
+    "/home/claude/idleslicehero/screenshots/v2.1/01-opening-cutscene.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/02-cutscene-dialog.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/03-new-game.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/03b-full-queue-tap.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/04-after-20s-play.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/05-mid-game.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/05a-upgrades-sheet.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/05a2-decor-section.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/05b-unmanaged-shop.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/05c-city.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/06-scrapbook.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/07-offline-popup.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/08-late-cutscene.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/09-late-game.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/10-late-game-pops-a.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/11-late-game-pops-b.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/12-late-rush-tap.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/13-flagship-max.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/14-uptown-decorated.png",
+    "/home/claude/idleslicehero/screenshots/v2.1/15-tag-ovens-drawer.png"
+  ],
+  "loaded": true,
+  "cash_after_play": "$6.4"
+}

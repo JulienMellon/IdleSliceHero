@@ -52,9 +52,9 @@ const BURST = ['✨', '💰', '🍕', '✨', '⭐', '💰'];
  * 'neutral' = affordable but deliberately de-emphasised (e.g. before a shop has a manager).
  */
 export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone = 'normal' }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; tone?: 'normal' | 'soft' | 'neutral' }) {
-  const outerBg = !enabled ? C.lockedDark : tone === 'soft' ? '#A9CFB1' : tone === 'neutral' ? '#CDBFAE' : C.basilDark;
-  const innerBg = !enabled ? C.locked : tone === 'soft' ? '#E3F2E6' : tone === 'neutral' ? '#F3ECE2' : C.basil;
-  const labelColor = enabled && tone === 'soft' ? C.basilDark : enabled && tone === 'neutral' ? C.inkSoft : '#fff';
+  const outerBg = !enabled ? '#C9BCAD' : tone === 'soft' ? '#A9CFB1' : tone === 'neutral' ? '#CDBFAE' : C.basilDark;
+  const innerBg = !enabled ? '#E2D9CE' : tone === 'soft' ? '#E3F2E6' : tone === 'neutral' ? '#F3ECE2' : C.basil;
+  const labelColor = !enabled ? '#8A7B6E' : tone === 'soft' ? C.basilDark : tone === 'neutral' ? C.inkSoft : '#fff';
   const burst = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
   const [bursting, setBursting] = useState(false);

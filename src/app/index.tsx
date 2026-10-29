@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BuyButton, type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
-import { DriverIcon } from '@/components/icons';
+import { DriverIcon, FlameIcon, PrepIcon, RegisterIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait';
 import { emitPayout } from '@/components/pulse-bus';
 import { CURB_Y, SCENE_H, sceneFit, type StationKey, Storefront } from '@/components/storefront';
@@ -86,7 +86,8 @@ export default function GameScreen() {
         testID={`buy-${what}`}
         {...props}
         detail={lock && what !== 'manager' ? lock : props.detail}
-        hot={drawer.focus === what || (muted ? false : props.hot)}
+        hot={muted ? false : props.hot}
+        focus={drawer.focus === what}
         muted={muted}
         useless={(G.upgradeGain(game, id, what) ?? 0) <= 1e-9 && what !== 'manager' && !(what === 'expand' && atCap)}
         cost={lock ? null : cost}
@@ -113,14 +114,14 @@ export default function GameScreen() {
   // ---- sidewalk row: the four stations (or the manager, on a shop that needs one) + "All"
   const fit = sceneFit(area.w || 1, area.h || 1);
   const rowBottom = (SCENE_H - CURB_Y) * fit.s + 6;
-  const STATION: Record<StationKey, { what: G.Upgrade; icon: React.ReactNode; name: string }> = {
-    prep: { what: 'prep', icon: '🧑‍🍳', name: 'Prep' },
-    ovens: { what: 'ovens', icon: '🔥', name: 'Ovens' },
-    counter: { what: 'counter', icon: '🧾', name: 'Counter' },
-    drivers: { what: 'drivers', icon: <DriverIcon size={18} />, name: 'Drivers' },
+  const STATION: Record<StationKey, { what: G.Upgrade; icon: React.ReactNode; name: string; level: string }> = {
+    prep: { what: 'prep', icon: <PrepIcon size={18} />, name: 'Prep', level: `${shop.prep}` },
+    ovens: { what: 'ovens', icon: <FlameIcon size={18} />, name: 'Ovens', level: `${shop.ovens}` },
+    counter: { what: 'counter', icon: <RegisterIcon size={18} />, name: 'Counter', level: `${shop.counter}` },
+    drivers: { what: 'drivers', icon: <DriverIcon size={18} />, name: 'Drivers', level: `×${shop.drivers}` },
   };
   const walkButton = (k: StationKey) => {
-    const { what, icon, name } = STATION[k];
+    const { what, icon, name, level } = STATION[k];
     const cost = G.upgradeCostOf(game, id, what);
     const lock = G.upgradeLock(game, id, what);
     const gain = G.upgradeGain(game, id, what) ?? 0;
@@ -128,10 +129,16 @@ export default function GameScreen() {
     const best = tied(stage) && gain > 1e-9;
     return (
       <View key={k} style={[styles.walkBtn, best && styles.walkBtnHot]}>
-        <View style={styles.walkTop}>
-          {typeof icon === 'string' ? <Text style={styles.walkIcon}>{icon}</Text> : icon}
+        {/* tapping the card head opens the drawer on that station (replaces the in-scene tags, critic D77) */}
+        <Pressable testID={`tag-${k}`} onPress={() => openDrawer(what)} style={styles.walkTop} hitSlop={4}>
+          {icon}
           <Text style={styles.walkName} numberOfLines={1}>
             {name}
+          </Text>
+        </Pressable>
+        <View style={[styles.walkLevel, best && { backgroundColor: C.tomato }]} pointerEvents="none">
+          <Text style={styles.walkLevelText} numberOfLines={1}>
+            {level}
           </Text>
         </View>
         <BuyButton
@@ -167,7 +174,7 @@ export default function GameScreen() {
               tapShop();
               if (shop.managed) emitPayout();
             }}
-            onStation={(k) => openDrawer(STATION[k].what)}
+            onStation={(k: StationKey) => openDrawer(STATION[k].what)}
           />
         )}
         {/* upgrade row standing on the sidewalk */}
@@ -220,8 +227,8 @@ export default function GameScreen() {
                 {card('counter', { icon: '🧾', title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rates.counter.toFixed(1)}/s`), hot: tied('counter') })}
                 {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${G.deliveryRate(shop, v).toFixed(1)}/s`), hot: tied('customers') })}
                 {card('tables', { icon: '🪑', title: 'Seating', level: `Lv ${shop.tables}`, detail: stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)} walk-ins/s`), hot: false })}
-                {card('grade', { icon: '✨', title: 'Oven Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name}: ×2 bake · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} · +$0/s now`) : 'Finest ovens in town' })}
-                {card('expand', { icon: '🏗️', title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : '+$0/s now'}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
+                {card('grade', { icon: '✨', title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name}: ×2 bake · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name}: ×2 bake · pays once ${STAGE_NAME[neck]} catch up`) : 'Finest ovens in town' })}
+                {card('expand', { icon: '🏗️', title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : `pays once ${STAGE_NAME[neck]} catch up`}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
                 <StationCard
                   testID="buy-fleet"
                   icon={nextVeh ? nextVeh.emoji : VEHICLES[v].emoji}
@@ -277,9 +284,11 @@ const styles = StyleSheet.create({
   walkRow: { position: 'absolute', left: 8, right: 8, flexDirection: 'row', gap: 5 },
   walkBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 12, borderWidth: 2.5, borderColor: C.ink, paddingHorizontal: 3, paddingTop: 2, paddingBottom: 4, gap: 2, ...shadow },
   walkBtnHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
-  walkTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2, height: 20 },
+  walkTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, height: 20 },
   walkIcon: { fontSize: 14 },
   walkName: { fontFamily: F.bold, fontSize: 12, color: C.ink, flexShrink: 1 },
+  walkLevel: { position: 'absolute', top: -9, right: -4, minWidth: 22, paddingHorizontal: 5, height: 17, borderRadius: 9, backgroundColor: C.ink, borderWidth: 1.5, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  walkLevelText: { fontFamily: F.bold, fontSize: 10, color: '#fff' },
   allBtn: { width: 46, backgroundColor: C.ink, borderRadius: 12, alignItems: 'center', justifyContent: 'center', ...shadow },
   allIcon: { color: '#fff', fontSize: 16, lineHeight: 18 },
   allText: { color: '#fff', fontFamily: F.bold, fontSize: 12 },
