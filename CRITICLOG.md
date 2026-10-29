@@ -649,3 +649,49 @@ Julien: make the **on-screen characters look more polished**; have the critic be
 | D110 | Pantry shelf brackets at 8% and 50% of the shelf, both visible |
 
 Typecheck clean, 30 tests pass, `report.json` errors: [].
+
+## v2.3 — critique (round 18, stricter bar) — ❌ NOT SATISFIED
+
+**VERDICT: NOT SATISFIED** — loads clean. Most of the round-17 polish shows in the pixels, but up close the new characters fall short: cooks and cashiers show up as rows of overlapping heads, every shop has the same crowd, everyone faces right, walk-ins sit with their backs to their tables, and drivers stand inside the door leaf.
+
+**Fixed:** D102, D103, D104, D107, D108, D109, D110 · **Still open:** D105 (window glass still invisible; transom bar reads as a crate), D106 (sidewalk fern leaves still cover a diner)
+
+**Bugs**
+- G51 Seated walk-ins at `table.x + 17` face away from their table
+- G52 With 3+ counter staff the pickup spots reach the door leaf, which slices through a driver
+
+**Visual design**
+- D111 [major] Cooks and counter staff are floating heads in fused rows → lower prep table, show torsos with dough/rolling pins, space staff ≥26
+- D112 [major] The same people in every shop (seeds are slot-index only) → seed by shop, re-roll walk-ins each loop, hair and body variety for workers
+- D113 [major] Every figure faces +x with the same smile → front-facing variant, cooks face their table, open mouth while ordering, blinks
+- D114 [major] Diners don't sit in chairs and back-row diners overlap front-row → chair back / person / seat + table layering, rows ≥40 apart
+- D115 [major] Cut-scene portraits use a different, flatter style; Nonna's shop wall is bare → reuse the head treatment, dress the wall
+- D116–D122 [minor] Bare menu board; baker bandana reads as a driver cap; walk-ins fade in through the topiary and hide the WELCOME mat; cash pop fades too early; cut-scene cloud seams; footprint-0 crack reads as a glitch; tab strip cuts tabs mid-word
+
+**Design notes**
+- D123 Decor header copy is ambiguous · D124 Dead `OvenCard` still holds emoji
+
+## v2.4 — build (addresses round 18)
+
+| Note | Fix |
+| --- | --- |
+| G51 | Walk-ins sit on the right-hand chair and are flipped to face the table; their eating arm reaches the plate |
+| G52 | Pickup spots stop 30 units before the door leaf; extra drivers queue a row closer to the street |
+| D111 | Prep table lowered (44 → 28) and widened (17 per cook), so cooks show to the waist. Cooks face front and roll dough with two-handed rolling pins. At most 2 counter staff, spaced 28 apart on a wider counter |
+| D112 | Character seeds mix a per-shop hash, so each pizzeria has its own crew and diners; walk-ins re-roll a new look on every visit. Workers keep bob/ponytail back-hair under their hats and come in two body widths |
+| D113 | Front-facing variant (centred eyes and nose, ears on both sides, a forward cap brim) for cooks and counter staff. Everyone blinks every ~3.7 s at a per-person offset; walk-ins talk with an open mouth while ordering; diners chew with an open smile |
+| D114 | Tables are drawn in layers: chair (outer back rest + seat + legs) → diner → table top. Rows 42 apart (depth 8 / 50), back row offset 30 |
+| D115 | Portraits share the in-scene head treatment: shadow crescent, head highlight, eye catchlights, always-on blush, nose shading, shirt shading; outlines 2.4 → 1.8. Nonna's shop wall moves into the visible band (string lights, EST. 1974 photo, menu board with header and prices, shelf of tins); the PIZZA sign and oven are pulled in from the cropped edges |
+| D116 | Menu board: green chalkboard in a wood frame with a cheese-yellow MENU header and three rows (slice icon, name, price) |
+| D117 | Baker bandana is cream with red polka dots and a visible knot |
+| D118 | Walk-ins enter from off-screen at full opacity (no ghost fade by the topiary); the doormat is replaced by a sidewalk A-frame "PIZZA BY THE SLICE" chalkboard that nobody stands on |
+| D119 | Cash pop stays fully opaque while rising 20 units, fading only in its last ~150 ms |
+| D120 | Cut-scene clouds and smoke use solid fills with group opacity, so overlaps show no seams |
+| D121 | Footprint-0 wall: a branching crack plus a chipped patch showing bricks |
+| D122 | Tab strip has edge fades on both sides |
+| D123 | "Decor · each tier: +4% pizza price in this shop" |
+| D124 | Dead `OvenCard` deleted |
+| D105 | Shop-window glass uses a #CFE8F5 gradient (0.6 → 0.25); the transom is a thin 2.4 wood bar |
+| D106 | Sidewalk fern pot removed; the inside potted plant sits between the dining rows |
+
+Typecheck clean, 30 tests pass, `report.json` errors: [].

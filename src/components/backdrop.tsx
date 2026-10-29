@@ -42,14 +42,19 @@ function Scenery({ id }: { id: BackdropId }) {
           {Array.from({ length: 10 }).map((_, i) => (
             <Rect key={i} x={i * 40} y={150} width={20} height={50} fill="#B0653A" />
           ))}
-          <Path d="M250 150 L250 70 Q300 30 350 70 L350 150 Z" fill="#B85C38" stroke={INK} strokeWidth={3} />
-          <Path d="M272 150 L272 105 Q300 85 328 105 L328 150 Z" fill="#2B1A12" />
-          <Path d="M280 150 L285 125 L292 140 L300 118 L308 140 L315 125 L320 150 Z" fill="#FF9F1C" />
-          <Rect x={20} y={40} width={120} height={60} rx={8} fill="#FFFFFF" stroke={INK} strokeWidth={3} />
-          <Circle cx={80} cy={70} r={22} fill="#FFC531" stroke={INK} strokeWidth={2} />
-          {[[72, 62], [88, 66], [78, 80], [92, 78]].map(([cx, cy], i) => (
+          <G transform="translate(-22 0)">
+            <Path d="M250 150 L250 70 Q300 30 350 70 L350 150 Z" fill="#B85C38" stroke={INK} strokeWidth={2.4} />
+            <Path d="M272 150 L272 105 Q300 85 328 105 L328 150 Z" fill="#2B1A12" />
+            <Path d="M280 150 L285 125 L292 140 L300 118 L308 140 L315 125 L320 150 Z" fill="#FF9F1C" />
+          </G>
+          <Rect x={72} y={40} width={110} height={60} rx={8} fill="#FFFFFF" stroke={INK} strokeWidth={2.4} />
+          <Circle cx={104} cy={70} r={20} fill="#FFC531" stroke={INK} strokeWidth={2} />
+          {[[96, 62], [112, 66], [102, 80], [114, 77]].map(([cx, cy], i) => (
             <Circle key={i} cx={cx} cy={cy} r={4} fill="#E8432E" />
           ))}
+          <Text x={150} y={76} fontSize={13} fontFamily={F.bold} fill="#D9443A" textAnchor="middle">
+            PIZZA
+          </Text>
         </G>
       );
     case 'downtown':
@@ -111,8 +116,10 @@ function Scenery({ id }: { id: BackdropId }) {
           <Path d="M30 175 L30 110 L80 130 L80 110 L130 130 L130 110 L180 130 L180 175 Z" fill="#9C8B7A" stroke={INK} strokeWidth={3} />
           <Rect x={210} y={60} width={24} height={115} fill="#8B5A3C" stroke={INK} strokeWidth={2.5} />
           <Rect x={250} y={80} width={24} height={95} fill="#8B5A3C" stroke={INK} strokeWidth={2.5} />
-          <Circle cx={222} cy={45} r={14} fill="#DADADA" opacity={0.8} />
-          <Circle cx={240} cy={30} r={18} fill="#DADADA" opacity={0.6} />
+          <G opacity={0.75}>
+            <Circle cx={222} cy={45} r={14} fill="#DADADA" />
+            <Circle cx={240} cy={30} r={18} fill="#DADADA" />
+          </G>
           <Rect x={300} y={120} width={80} height={55} fill="#E67E22" stroke={INK} strokeWidth={2.5} />
         </G>
       );
@@ -173,9 +180,9 @@ function Scenery({ id }: { id: BackdropId }) {
 }
 
 function Clouds({ dark }: { dark: boolean }) {
-  const fill = dark ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.85)';
+  // solid fill with the opacity on the group, so overlapping puffs don't show seams (critic D120)
   return (
-    <G fill={fill}>
+    <G fill="#FFFFFF" opacity={dark ? 0.18 : 0.85}>
       {[[70, -40, 1], [250, -60, 1.3], [350, -10, 0.8]].map(([x, y, k], i) => (
         <G key={i}>
           <Circle cx={x} cy={y} r={14 * k} />
@@ -200,20 +207,29 @@ function ShopWall() {
         return <Circle key={i} cx={x} cy={y} r={6} fill={['#FFC531', '#E8432E', '#3FAE5A'][i % 3]} stroke={INK} strokeWidth={1.5} />;
       })}
       {/* framed photo: young Rosa at the oven, est. 1974 */}
-      <Rect x={262} y={-150} width={96} height={78} rx={4} fill="#C98F63" stroke={INK} strokeWidth={3} />
-      <Rect x={272} y={-140} width={76} height={50} fill="#F6E7C1" />
-      <Circle cx={298} cy={-118} r={10} fill="#F2C9A0" stroke={INK} strokeWidth={1.5} />
-      <Path d="M286 -90 Q298 -104 310 -90 Z" fill="#B23A48" />
-      <Path d="M318 -90 L318 -112 Q330 -128 342 -112 L342 -90 Z" fill="#B85C38" />
-      <Text x={310} y={-78} fontSize={10} fontFamily={F.bold} fill="#FFF4E0" textAnchor="middle">
+      <Rect x={232} y={-150} width={92} height={76} rx={4} fill="#C98F63" stroke={INK} strokeWidth={2.4} />
+      <Rect x={242} y={-140} width={72} height={48} fill="#F6E7C1" />
+      <Circle cx={266} cy={-118} r={10} fill="#F2C9A0" stroke={INK} strokeWidth={1.5} />
+      <Path d="M254 -92 Q266 -106 278 -92 Z" fill="#B23A48" />
+      <Path d="M286 -92 L286 -112 Q298 -128 310 -112 L310 -92 Z" fill="#B85C38" />
+      <Text x={278} y={-79} fontSize={10} fontFamily={F.bold} fill="#FFF4E0" textAnchor="middle">
         EST. 1974
       </Text>
-      <Rect x={170} y={-80} width={60} height={34} rx={4} fill="#3B1F14" />
-      <Rect x={176} y={-74} width={48} height={4} rx={2} fill="#FFF4E0" />
-      <Rect x={176} y={-64} width={34} height={4} rx={2} fill="#FFF4E0" />
-      <Rect x={176} y={-54} width={40} height={4} rx={2} fill="#FFF4E0" />
-      <Rect x={20} y={-20} width={130} height={6} fill="#8E5A3C" />
-      {[30, 55, 80, 105, 128].map((x, i) => (
+      <Rect x={150} y={-90} width={70} height={46} rx={4} fill="#2F3B33" stroke="#8E5A3C" strokeWidth={3} />
+      <Text x={185} y={-77} fontSize={9} fontFamily={F.bold} fill="#FFC531" textAnchor="middle">
+        MENU
+      </Text>
+      {[0, 1, 2].map((i) => (
+        <G key={i}>
+          <Path d={`M157 ${-70 + i * 8} l6 0 l-3 6 Z`} fill="#FFC531" />
+          <Rect x={166} y={-69 + i * 8} width={[30, 26, 22][i]} height={3} rx={1.5} fill="#FFF4E0" />
+          <Text x={214} y={-65 + i * 8} fontSize={6} fontFamily={F.bold} fill="#FFC531" textAnchor="end">
+            {`$${[3, 4, 4][i]}`}
+          </Text>
+        </G>
+      ))}
+      <Rect x={84} y={-20} width={120} height={6} fill="#8E5A3C" />
+      {[92, 116, 140, 164, 186].map((x, i) => (
         <Rect key={x} x={x} y={-38} width={14} height={18} rx={3} fill={['#E8432E', '#3FAE5A', '#FFC531', '#E8432E', '#F2994A'][i]} stroke={INK} strokeWidth={1.5} />
       ))}
     </G>
@@ -266,7 +282,7 @@ export function Backdrop({ id, width, height, prop }: { id: BackdropId; width: n
   const [top, bottom] = SKY[id];
   // Art is 400 wide with scenery in the bottom 200 units. Up to 120 units of sky; a taller frame scales the
   // art up and crops the sides instead of showing more empty sky (critic D108).
-  const vbH = Math.max(200, Math.min(320, (400 * height) / width));
+  const vbH = Math.max(200, Math.min(340, (400 * height) / width));
   return (
     <Svg width={width} height={height} viewBox={`0 ${200 - vbH} 400 ${vbH}`} preserveAspectRatio="xMidYMax slice">
       <Defs>
@@ -277,7 +293,11 @@ export function Backdrop({ id, width, height, prop }: { id: BackdropId; width: n
       </Defs>
       <Rect x={-20} y={180 - vbH} width={440} height={vbH + 40} fill={`url(#sky-${id})`} />
       {id !== 'shop' && id !== 'megaslice-hq' && id !== 'downtown-rain' && <Clouds dark={id === 'uptown' || id === 'industrial'} />}
-      {id === 'shop' && <ShopWall />}
+      {id === 'shop' && (
+        <G transform="translate(0 70)">
+          <ShopWall />
+        </G>
+      )}
       {id !== 'shop' && id !== 'megaslice-hq' && vbH > 260 && <Skyline top={200 - vbH} dark={id === 'uptown' || id === 'industrial' || id === 'downtown-rain'} billboard={id === 'industrial' || id === 'uptown'} />}
       <Scenery id={id} />
       {prop === 'vending-machine' && <VendingMachine />}

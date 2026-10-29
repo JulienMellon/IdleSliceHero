@@ -45,14 +45,18 @@ function Face({ mood }: { mood: Mood }) {
         <Path d="M54 47 q4 -5 8 0" />
       </G>
     ) : mood === 'surprised' ? (
-      <G fill={INK}>
-        <Circle cx={42} cy={46} r={3.6} />
-        <Circle cx={58} cy={46} r={3.6} />
+      <G>
+        <Circle cx={42} cy={46} r={3.8} fill={INK} />
+        <Circle cx={58} cy={46} r={3.8} fill={INK} />
+        <Circle cx={43.3} cy={44.6} r={1.3} fill="#fff" />
+        <Circle cx={59.3} cy={44.6} r={1.3} fill="#fff" />
       </G>
     ) : (
-      <G fill={INK}>
-        <Ellipse cx={42} cy={47} rx={2.6} ry={3.2} />
-        <Ellipse cx={58} cy={47} rx={2.6} ry={3.2} />
+      <G>
+        <Ellipse cx={42} cy={47} rx={2.8} ry={3.5} fill={INK} />
+        <Ellipse cx={58} cy={47} rx={2.8} ry={3.5} fill={INK} />
+        <Circle cx={43} cy={45.6} r={1.1} fill="#fff" />
+        <Circle cx={59} cy={45.6} r={1.1} fill="#fff" />
       </G>
     );
   const brows =
@@ -88,12 +92,11 @@ function Face({ mood }: { mood: Mood }) {
     <G>
       {brows}
       {eyes}
-      {mood === 'happy' || mood === 'angry' ? (
-        <G fill="#F28B82" opacity={0.55}>
-          <Circle cx={36} cy={55} r={4} />
-          <Circle cx={64} cy={55} r={4} />
-        </G>
-      ) : null}
+      <G fill="#F28B82" opacity={mood === 'happy' || mood === 'angry' ? 0.6 : 0.35}>
+        <Ellipse cx={35.5} cy={55} rx={4.4} ry={3} />
+        <Ellipse cx={64.5} cy={55} rx={4.4} ry={3} />
+      </G>
+      <Ellipse cx={50} cy={53} rx={1.6} ry={1.2} fill="#000" opacity={0.1} />
       {mouth}
     </G>
   );
@@ -107,7 +110,9 @@ export function Portrait({ id, mood = 'neutral', size = 120, flip = false }: { i
       {L.hairStyle === 'long' && <Path d="M24 44 Q22 82 34 90 L66 90 Q78 82 76 44 Z" fill={L.hair} />}
       {L.hairStyle === 'bob' && <Path d="M26 42 Q24 70 32 72 L68 72 Q76 70 74 42 Z" fill={L.hair} />}
       {/* body */}
-      <Path d="M18 100 Q20 74 50 72 Q80 74 82 100 Z" fill={L.shirt} stroke={INK} strokeWidth={2.4} />
+      <Path d="M18 100 Q20 74 50 72 Q80 74 82 100 Z" fill={L.shirt} stroke={INK} strokeWidth={1.8} />
+      <Path d="M62 74 Q80 76 82 100 L64 100 Q66 84 62 74 Z" fill="#000" opacity={0.14} />
+      <Path d="M26 86 Q30 78 40 75" stroke="#fff" strokeWidth={3} opacity={0.22} fill="none" strokeLinecap="round" />
       {L.extra === 'apron' && <Path d="M36 100 L38 80 L62 80 L64 100 Z" fill="#FFFFFF" stroke={INK} strokeWidth={2} />}
       {L.extra === 'tie' && <Path d="M47 74 L53 74 L55 96 L50 100 L45 96 Z" fill="#E8432E" stroke={INK} strokeWidth={1.6} />}
       {L.extra === 'pearls' && (
@@ -125,7 +130,9 @@ export function Portrait({ id, mood = 'neutral', size = 120, flip = false }: { i
       )}
       {/* neck + head */}
       <Rect x={43} y={64} width={14} height={12} fill={L.skin} />
-      <Ellipse cx={50} cy={50} rx={24} ry={25} fill={L.skin} stroke={INK} strokeWidth={2.4} />
+      <Ellipse cx={50} cy={50} rx={24} ry={25} fill={L.skin} stroke={INK} strokeWidth={1.8} />
+      <Path d="M62 29 A24 25 0 0 1 60 72.5 Q71 52 62 29 Z" fill="#000" opacity={0.08} />
+      <Ellipse cx={40} cy={36} rx={7} ry={4.5} fill="#fff" opacity={0.22} transform="rotate(-20 40 36)" />
       <Ellipse cx={26.5} cy={52} rx={4} ry={6} fill={L.skin} stroke={INK} strokeWidth={2} />
       <Ellipse cx={73.5} cy={52} rx={4} ry={6} fill={L.skin} stroke={INK} strokeWidth={2} />
       {/* front hair */}

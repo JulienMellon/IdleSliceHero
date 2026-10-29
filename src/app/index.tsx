@@ -240,7 +240,7 @@ export default function GameScreen() {
                   useless={!vg || vg <= 1e-9}
                   onBuy={buyFleet}
                 />
-                <Text style={styles.section}>{`Decor · each tier +${Math.round(DECOR_BOOST * 100)}% prices here`}</Text>
+                <Text style={styles.section}>{`Decor · each tier: +${Math.round(DECOR_BOOST * 100)}% pizza price in this shop`}</Text>
                 {DECOR_KINDS.map((kind) => {
                   const d = DECOR[kind];
                   const tier = shop.decor[kind];

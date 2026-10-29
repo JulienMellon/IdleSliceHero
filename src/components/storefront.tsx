@@ -76,11 +76,11 @@ function layout(fp: number, ovenCount: number, cookCount: number, staffCount: nu
   const RW = ROOM_W[fp];
   const L = 196.5 - RW / 2;
   const R = L + RW;
-  const prep = { x0: L + 6, x1: L + 6 + 30 + cookCount * 14 };
+  const prep = { x0: L + 6, x1: L + 6 + 30 + cookCount * 17 };
   const cooks = Array.from({ length: cookCount }, (_, i) => prep.x0 + 10 + (i * (prep.x1 - prep.x0 - 20)) / Math.max(1, cookCount - 1) + (cookCount === 1 ? (prep.x1 - prep.x0 - 20) / 2 : 0));
-  const cw = 56 + 12 * (staffCount - 1);
+  const cw = 56 + 26 * (staffCount - 1);
   const counter = { x0: R - 60 - cw, x1: R - 60 };
-  const staff = Array.from({ length: staffCount }, (_, i) => counter.x0 + 14 + i * 20);
+  const staff = Array.from({ length: staffCount }, (_, i) => counter.x0 + 16 + i * 28);
   // Ovens along the back wall between prep and counter; stack two decks rather than squeeze (critic G43).
   const zone0 = prep.x1 + 8;
   const zone1 = counter.x0 - 8;
@@ -99,16 +99,23 @@ function layout(fp: number, ovenCount: number, cookCount: number, staffCount: nu
   }
   const door = { x0: R - 46, x1: R - 12, cx: R - 29 };
   // Pickup spots in front of the counter, two staggered depth rows 12 apart.
-  const spots = Array.from({ length: driverSlots }, (_, i) => ({ x: counter.x0 + cw * 0.45 + i * 17, y: i % 2 ? 34 : 46 }));
+  // Pickup spots in front of the counter, never past the door leaf (critic G52); extra drivers queue a row back.
+  const sx0 = counter.x0 + cw * 0.3;
+  const spotCols = Math.max(1, Math.floor((door.x0 - 30 - sx0) / 17) + 1);
+  const spots = Array.from({ length: driverSlots }, (_, i) => {
+    const col = i % spotCols;
+    const row = Math.floor(i / spotCols);
+    return { x: sx0 + col * 17 + row * 8, y: (col % 2 ? 36 : 48) - row * 22 };
+  });
   // Dining: tables in front of the prep/oven area, two rows, 52 apart.
   const t0 = L + 26;
   const t1 = counter.x0 - 10;
-  const perRow = Math.max(1, Math.floor((t1 - 20 - t0) / 60) + 1);
+  const perRow = Math.max(1, Math.floor((t1 - 30 - t0) / 60) + 1);
   const tables: Layout['tables'] = [];
   for (let i = 0; i < Math.min(tableCount, perRow * 2); i++) {
     const row = i % 2;
     const col = Math.floor(i / 2);
-    tables.push({ x: t0 + col * 60 + (row ? 20 : 0), y: row ? 44 : 12 });
+    tables.push({ x: t0 + col * 60 + (row ? 30 : 0), y: row ? 50 : 8 });
   }
   return { L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, tables, scooter: { x: door.x0 - 30, y: -22 } };
 }
@@ -199,7 +206,7 @@ function Hair({ style, color, hy, part }: { style: number; color: string; hy: nu
 }
 
 /** Hats and headwear that make each job readable at a glance. */
-function Headwear({ kind, hy }: { kind: Kind; hy: number }) {
+function Headwear({ kind, hy, front = false }: { kind: Kind; hy: number; front?: boolean }) {
   if (kind === 'cook') {
     return (
       <G>
@@ -213,9 +220,10 @@ function Headwear({ kind, hy }: { kind: Kind; hy: number }) {
   if (kind === 'baker') {
     return (
       <G>
-        <Path d={`M-10 ${hy - 1} Q-9.4 ${hy - 12.2} 1 ${hy - 11.6} Q10.4 ${hy - 11} 10.2 ${hy - 2.2} Q1.5 ${hy - 6.5} -10 ${hy - 1} Z`} fill="#D9443A" {...OUT} />
-        {[[-4, -8], [1, -9.5], [6, -7.5], [-7, -4]].map(([dx, dy], i) => <Circle key={i} cx={dx} cy={hy + dy} r={0.9} fill="#FFF4E0" />)}
-        <Path d={`M-9.8 ${hy - 2} l-4 -2.5 l0.8 4.2 Z M-9.8 ${hy - 1.5} l-3.2 3.4 l3.8 0.4 Z`} fill="#B23A30" {...OUT} strokeWidth={0.8} />
+        <Path d={`M-10 ${hy - 1} Q-9.4 ${hy - 12.2} 1 ${hy - 11.6} Q10.4 ${hy - 11} 10.2 ${hy - 2.2} Q1.5 ${hy - 6.5} -10 ${hy - 1} Z`} fill="#F3ECE2" {...OUT} />
+        {[[-4, -8], [1, -9.5], [6, -7.5], [-7, -4], [3.5, -5.6]].map(([dx, dy], i) => <Circle key={i} cx={dx} cy={hy + dy} r={1.1} fill="#D9443A" />)}
+        <Circle cx={-10.4} cy={hy - 2} r={2} fill="#F3ECE2" {...OUT} strokeWidth={0.8} />
+        <Path d={`M-11.5 ${hy - 1.5} l-3.6 -3.4 l-0.6 4.6 Z M-11.4 ${hy - 1} l-2.6 4.4 l3.8 -0.2 Z`} fill="#F3ECE2" {...OUT} strokeWidth={0.8} />
       </G>
     );
   }
@@ -224,7 +232,11 @@ function Headwear({ kind, hy }: { kind: Kind; hy: number }) {
     return (
       <G>
         <Path d={`M-9.2 ${hy - 3} Q-9.2 ${hy - 12.6} 0.5 ${hy - 12.6} Q10 ${hy - 12.6} 10 ${hy - 4} Z`} fill={c} {...OUT} />
-        <Path d={`M7 ${hy - 4.4} Q14 ${hy - 4.6} 15.5 ${hy - 2.6} Q11 ${hy - 1.6} 6.5 ${hy - 2.6} Z`} fill={shade(c, -0.18)} {...OUT} strokeWidth={0.9} />
+        {front ? (
+          <Path d={`M-8 ${hy - 4} Q0.5 ${hy - 6} 9 ${hy - 4} Q9 ${hy - 1.6} 0.5 ${hy - 1.8} Q-8 ${hy - 1.6} -8 ${hy - 4} Z`} fill={shade(c, -0.18)} {...OUT} strokeWidth={0.9} />
+        ) : (
+          <Path d={`M7 ${hy - 4.4} Q14 ${hy - 4.6} 15.5 ${hy - 2.6} Q11 ${hy - 1.6} 6.5 ${hy - 2.6} Z`} fill={shade(c, -0.18)} {...OUT} strokeWidth={0.9} />
+        )}
         <Path d={`M-5.5 ${hy - 9.5} Q0 ${hy - 12} 5 ${hy - 10}`} stroke="#fff" strokeWidth={1.4} opacity={0.35} fill="none" strokeLinecap="round" />
         <Circle cx={1.5} cy={hy - 8} r={2} fill={kind === 'staff' ? '#3FAE5A' : '#FFF4E0'} stroke={INK} strokeWidth={0.6} />
       </G>
@@ -234,7 +246,7 @@ function Headwear({ kind, hy }: { kind: Kind; hy: number }) {
 }
 
 /** A polished chibi worker or customer with a contact shadow, feet at room point (x, y). */
-function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1 }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number }) {
+function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, pin = false }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number; front?: boolean; blink?: boolean; talk?: boolean; pin?: boolean }) {
   const [sx, sy] = P(x, y);
   const k = kAt(y) * 1.14;
   const look = lookFor(seed);
@@ -249,11 +261,14 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
   const bob = walking ? Math.abs(Math.cos(step)) * 1.2 : 0;
   const by = (sitting ? -21 : -30) - bob;
   const hy = by - 9;
-  const ww = worker ? 0 : look.wide * 1.1;
+  const ww = worker ? (look.wide > 0 ? 0.9 : 0) : look.wide * 1.1;
+  // face layout: three-quarter (features toward +x) or front-facing (centred, ears both sides)
+  const eyeX = front ? [-1.9, 2.9] : [2.4, 6.9];
+  const fx = front ? 0.5 : 4.65;
   const torso = `M${-8 - ww} ${by + 3.5} Q${-8 - ww} ${by} ${-4.5} ${by} L5 ${by} Q${8.5 + ww} ${by} ${8.5 + ww} ${by + 3.5} L${8 + ww} ${by + 16.5} Q${8 + ww} ${by + 19} ${5.5 + ww} ${by + 19} L${-5.5 - ww} ${by + 19} Q${-7.6 - ww} ${by + 19} ${-7.6 - ww} ${by + 16.5} Z`;
   // front-arm hand position: working (arm), carrying, eating, or swinging
   const hand: [number, number] = carry ? [12, by + 8] : sitting ? [12 + arm, by + 9 - arm] : worker && arm > 0 ? [10 + arm, by + 13 - arm * 2] : [9 + sw * 2.5, by + 16];
-  const backHand: [number, number] = sitting ? [-7, by + 15] : [-8.5 - sw * 2.5, by + 15.5];
+  const backHand: [number, number] = pin ? [hand[0] - 12, hand[1]] : sitting ? [-7, by + 15] : [-8.5 - sw * 2.5, by + 15.5];
   const peel = kind === 'baker';
   return (
     <G opacity={o} transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${(flip ? -k : k).toFixed(3)} ${k.toFixed(3)})`}>
@@ -282,7 +297,7 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
       <Limb d={`M-6 ${by + 4} Q${-8.5} ${by + 10} ${backHand[0]} ${backHand[1]}`} color={shade(sleeve, -0.18)} />
       <Circle cx={backHand[0]} cy={backHand[1]} r={2.3} fill={shade(skin, -0.12)} {...OUT} strokeWidth={0.8} />
       {/* back hair (behind the head) */}
-      <Hair style={worker ? 0 : look.style} color={worker ? look.hair : look.hair} hy={hy} part="back" />
+      <Hair style={worker ? (look.style === 1 || look.style === 4 ? look.style : 0) : look.style} color={look.hair} hy={hy} part="back" />
       {/* torso with shadow side and highlight */}
       <Path d={torso} fill={top} {...OUT} />
       <Path d={`M3.5 ${by} L5 ${by} Q${8.5 + ww} ${by} ${8.5 + ww} ${by + 3.5} L${8 + ww} ${by + 16.5} Q${8 + ww} ${by + 19} ${5.5 + ww} ${by + 19} L3.5 ${by + 19} Z`} fill="#000" opacity={0.13} />
@@ -323,30 +338,44 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
       <Circle cx={0.5} cy={hy} r={9.6} fill={skin} {...OUT} />
       <Path d={`M5.3 ${hy - 8.3} A9.6 9.6 0 0 1 3.8 ${hy + 9} Q8 ${hy} 5.3 ${hy - 8.3} Z`} fill="#000" opacity={0.09} />
       <Circle cx={-2.8} cy={hy - 4.2} r={2.6} fill="#fff" opacity={0.28} />
-      <Circle cx={-6} cy={hy + 1.2} r={2.3} fill={skin} {...OUT} strokeWidth={0.9} />
-      <Path d={`M-6.6 ${hy + 0.4} q0.8 0.9 0 1.8`} stroke={shade(skin, -0.25)} strokeWidth={0.7} fill="none" />
-      {/* face */}
-      {[2.4, 6.9].map((ex) => (
+      {(front ? [-9, 10] : [-6]).map((ex) => (
         <G key={ex}>
-          <Ellipse cx={ex} cy={hy - 0.4} rx={1.25} ry={1.65} fill={INK} />
-          <Circle cx={ex + 0.4} cy={hy - 1} r={0.5} fill="#fff" />
+          <Circle cx={ex} cy={hy + 1.2} r={2.3} fill={skin} {...OUT} strokeWidth={0.9} />
+          <Path d={`M${ex - 0.6} ${hy + 0.4} q0.8 0.9 0 1.8`} stroke={shade(skin, -0.25)} strokeWidth={0.7} fill="none" />
+        </G>
+      ))}
+      {/* face: eyes with catchlights (or a blink), brows, nose, mouth, blush */}
+      {eyeX.map((ex) => (
+        <G key={ex}>
+          {blink ? (
+            <Path d={`M${ex - 1.3} ${hy - 0.2} q1.3 0.9 2.6 0`} stroke={INK} strokeWidth={0.9} fill="none" strokeLinecap="round" />
+          ) : (
+            <G>
+              <Ellipse cx={ex} cy={hy - 0.4} rx={1.25} ry={1.65} fill={INK} />
+              <Circle cx={ex + 0.4} cy={hy - 1} r={0.5} fill="#fff" />
+            </G>
+          )}
           <Path d={`M${ex - 1.4} ${hy - 3.6} q1.4 -0.9 2.8 0`} stroke={worker ? INK : look.hair} strokeWidth={0.9} fill="none" strokeLinecap="round" />
         </G>
       ))}
       {look.glasses && !worker && (
         <G>
-          <Circle cx={2.4} cy={hy - 0.4} r={2.3} fill="none" stroke={INK} strokeWidth={0.7} />
-          <Circle cx={6.9} cy={hy - 0.4} r={2.3} fill="none" stroke={INK} strokeWidth={0.7} />
-          <Path d={`M4.7 ${hy - 0.6} h-0.1`} stroke={INK} strokeWidth={0.7} />
+          <Circle cx={eyeX[0]} cy={hy - 0.4} r={2.3} fill="none" stroke={INK} strokeWidth={0.7} />
+          <Circle cx={eyeX[1]} cy={hy - 0.4} r={2.3} fill="none" stroke={INK} strokeWidth={0.7} />
+          <Path d={`M${eyeX[0] + 2.3} ${hy - 0.6} L${eyeX[1] - 2.3} ${hy - 0.6}`} stroke={INK} strokeWidth={0.7} />
         </G>
       )}
-      <Ellipse cx={8.6} cy={hy + 1.6} rx={0.9} ry={0.75} fill={shade(skin, -0.2)} />
-      <Path d={`M3 ${hy + 3.6} q1.9 1.9 3.8 0`} stroke={INK} strokeWidth={0.95} fill={kind === 'sit' || arm > 1.5 ? '#B5462E' : 'none'} strokeLinecap="round" />
-      <Ellipse cx={0.8} cy={hy + 2.6} rx={1.6} ry={0.95} fill="#F28B82" opacity={0.55} />
-      <Ellipse cx={9.2} cy={hy + 2.4} rx={1.1} ry={0.85} fill="#F28B82" opacity={0.5} />
+      <Ellipse cx={front ? 0.5 : 8.6} cy={hy + 1.6} rx={0.9} ry={0.75} fill={shade(skin, -0.2)} />
+      {talk ? (
+        <Ellipse cx={fx} cy={hy + 4.4} rx={1.3} ry={1.6} fill="#B5462E" stroke={INK} strokeWidth={0.8} />
+      ) : (
+        <Path d={`M${fx - 1.9} ${hy + 3.6} q1.9 1.9 3.8 0`} stroke={INK} strokeWidth={0.95} fill={kind === 'sit' ? '#B5462E' : 'none'} strokeLinecap="round" />
+      )}
+      <Ellipse cx={front ? -3.6 : 0.8} cy={hy + 2.6} rx={1.5} ry={0.95} fill="#F28B82" opacity={0.55} />
+      <Ellipse cx={front ? 4.6 : 9.2} cy={hy + 2.4} rx={front ? 1.5 : 1.1} ry={0.9} fill="#F28B82" opacity={0.5} />
       {/* hair + headwear */}
       {worker ? <Path d={`M-9.4 ${hy + 0.5} Q-9.8 ${hy - 4} -7.5 ${hy - 5} L-6 ${hy + 0.5} Z`} fill={look.hair} /> : <Hair style={look.style} color={look.hair} hy={hy} part="front" />}
-      <Headwear kind={kind} hy={hy} />
+      <Headwear kind={kind} hy={hy} front={front} />
       {/* front arm + props */}
       {peel && (
         <G>
@@ -357,7 +386,14 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
       )}
       <Limb d={`M6.5 ${by + 4} Q${9.5} ${by + 9} ${hand[0]} ${hand[1]}`} color={sleeve} />
       {kind === 'cook' || kind === 'baker' ? <Path d={`M${hand[0] - 2.4} ${hand[1] - 2.2} l2.8 -1`} stroke={kind === 'cook' ? '#E1DAD0' : '#7E2A35'} strokeWidth={1.2} /> : null}
+      {pin && (
+        <G>
+          <Rect x={hand[0] - 13} y={hand[1] - 1.8} width={20} height={3.6} rx={1.8} fill="#E2B985" {...OUT} strokeWidth={0.8} />
+          <Rect x={hand[0] - 12} y={hand[1] - 1.4} width={18} height={1.1} rx={0.5} fill="#fff" opacity={0.4} />
+        </G>
+      )}
       <Circle cx={hand[0]} cy={hand[1]} r={2.4} fill={skin} {...OUT} strokeWidth={0.8} />
+      {pin && <Circle cx={hand[0] - 12} cy={hand[1]} r={2.1} fill={shade(skin, -0.08)} {...OUT} strokeWidth={0.7} />}
       {carry && (
         <G>
           <Rect x={hand[0] - 3} y={hand[1] - 6.5} width={17} height={6} rx={1.2} fill="#F6E7C1" {...OUT} strokeWidth={0.9} />
@@ -506,23 +542,38 @@ const TABLE_STYLE = [
   { top: '#F4F1EC', rim: '#D4AF37', chair: '#7B1E3A', chairDark: '#5A1229', leg: '#D4AF37' }, // marble & candles
 ];
 
-function Table({ x, y, tier }: { x: number; y: number; tier: number }) {
+/**
+ * A dining table in two layers so diners really sit (critic D114): `back` is the floor shadow and both
+ * chairs (back rest on the outer side + seat); `front` is the table itself, drawn over the diners' laps.
+ */
+function Table({ x, y, tier, part }: { x: number; y: number; tier: number; part: 'back' | 'front' }) {
   const st = TABLE_STYLE[tier];
   const [cx, cy] = P(x, y);
   const k = kAt(y) * 1.1;
   const chair = (dx: number) => {
     const [px, py] = P(x + dx, y);
+    const out = dx < 0 ? -1 : 1;
     return (
       <G key={dx} transform={`translate(${px} ${py}) scale(${k})`}>
-        <Rect x={-5} y={-16} width={10} height={16} rx={2.5} fill={st.chair} stroke={INK} strokeWidth={1} />
-        <Rect x={-6} y={-9} width={12} height={3.5} rx={1.5} fill={st.chairDark} stroke={INK} strokeWidth={0.8} />
+        <Ellipse cx={0} cy={0} rx={8} ry={2.2} fill="rgba(59,31,20,0.18)" />
+        {[-5, 5].map((lx) => <Rect key={lx} x={lx - 0.9} y={-4} width={1.8} height={4} fill={st.chairDark} />)}
+        <Rect x={out < 0 ? -9.5 : 5.5} y={-25} width={4} height={23} rx={1.8} fill={st.chair} stroke={INK} strokeWidth={1} />
+        <Rect x={out < 0 ? -8.8 : 6.2} y={-24} width={1.2} height={18} rx={0.6} fill="#fff" opacity={0.3} />
+        <Rect x={-7} y={-6} width={14} height={3.6} rx={1.5} fill={st.chairDark} stroke={INK} strokeWidth={0.9} />
       </G>
     );
   };
+  if (part === 'back') {
+    return (
+      <G>
+        <FloorShadow x={x} y={y} r={18} />
+        {chair(-17)}
+        {chair(17)}
+      </G>
+    );
+  }
   return (
     <G>
-      <FloorShadow x={x} y={y} r={18} />
-      {chair(-17)}
       <G transform={`translate(${cx} ${cy}) scale(${k})`}>
         <Rect x={-1.6} y={-14} width={3.2} height={14} fill={st.leg} />
         <Ellipse cx={0} cy={-1} rx={6} ry={2} fill={st.leg} />
@@ -542,7 +593,6 @@ function Table({ x, y, tier }: { x: number; y: number; tier: number }) {
           </G>
         )}
       </G>
-      {chair(17)}
     </G>
   );
 }
@@ -875,12 +925,33 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
       <Polygon points={pts([P(R - 10, 0), P(R, 0), P(R, D), P(R - 10, D)])} fill="rgba(59,31,20,0.1)" />
       <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, 10), P(L, D, 10)])} fill="rgba(59,31,20,0.12)" />
       {/* decor grows with the shop */}
-      {fp === 0 && <Path d={`M${mx - 30} ${my + 30} l6 12 l-4 8 l6 10`} stroke={shade(wall, -0.3)} strokeWidth={1.2} fill="none" />}
+      {/* a hole-in-the-wall: branching crack and a chipped patch showing bricks (critic D121) */}
+      {fp === 0 && (
+        <G>
+          <Path d={`M${mx - 26} ${my + 18} l5 9 l-3 7 l6 9 M${mx - 24} ${my + 32} l-6 5 M${mx - 18} ${my + 43} l5 4`} stroke={shade(wall, -0.35)} strokeWidth={1.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <Path d={`M${mx + 8} ${my + 4} q9 -4 18 1 q3 7 -2 13 q-9 4 -16 -1 q-4 -6 0 -13 Z`} fill="#C8643E" stroke={shade(wall, -0.35)} strokeWidth={1} />
+          <Path d={`M${mx + 9} ${my + 10} H${mx + 26} M${mx + 16} ${my + 4} V${my + 10} M${mx + 12} ${my + 10} V${my + 16} M${mx + 21} ${my + 10} V${my + 17}`} stroke="#8C3F22" strokeWidth={0.8} />
+        </G>
+      )}
+      {/* menu board: header, slices and prices (critic D116) */}
       {fp >= 1 && (
         <G>
-          <Rect x={mx} y={my} width={52} height={34} rx={4} fill={INK} />
-          {[7, 15, 23].map((d, i) => (
-            <Rect key={d} x={mx + 6} y={my + d} width={[38, 28, 33][i]} height={3} rx={1.5} fill="#FFF4E0" />
+          <Rect x={mx + 2} y={my + 2} width={56} height={40} rx={4} fill="rgba(59,31,20,0.25)" />
+          <Rect x={mx} y={my} width={56} height={40} rx={4} fill="#2F3B33" stroke="#8E5A3C" strokeWidth={2.4} />
+          <SvgText x={mx + 28} y={my + 10} fontFamily={F.bold} fontSize={7.5} fill="#FFC531" textAnchor="middle">
+            MENU
+          </SvgText>
+          {['Margherita', 'Pepperoni', 'Veggie'].map((name, i) => (
+            <G key={name}>
+              <Path d={`M${mx + 5} ${my + 15 + i * 8} l5 0 l-2.5 5 Z`} fill="#FFC531" />
+              <Circle cx={mx + 7.5} cy={my + 16.6 + i * 8} r={0.8} fill="#E8432E" />
+              <SvgText x={mx + 12} y={my + 19.6 + i * 8} fontFamily={F.bold} fontSize={5} fill="#FFF4E0">
+                {name}
+              </SvgText>
+              <SvgText x={mx + 52} y={my + 19.6 + i * 8} fontFamily={F.bold} fontSize={5} fill="#FFC531" textAnchor="end">
+                {`$${[3, 4, 4][i]}`}
+              </SvgText>
+            </G>
           ))}
         </G>
       )}
@@ -1092,12 +1163,12 @@ function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: string; 
         return (
           <G>
             {/* shop window above the entrance */}
-            <Rect x={jax} y={gTop} width={kbx - jax} height={lTop - gTop} fill="#CFE8F5" opacity={0.18} />
+            <Rect x={jax} y={gTop} width={kbx - jax} height={lTop - gTop} fill="url(#glass)" />
             <Path d={`M${jax + 8} ${lTop - 4} L${jax + 26} ${gTop + 6} M${jax + 18} ${lTop - 4} L${jax + 34} ${gTop + 6}`} stroke="#fff" strokeWidth={3} opacity={0.4} strokeLinecap="round" />
             <Rect x={jax + 2} y={gTop + 2} width={kbx - jax - 4} height={lTop - gTop - 2} fill="none" stroke="#6B4330" strokeWidth={4.5} />
             <Rect x={jax + 2} y={gTop + 2} width={kbx - jax - 4} height={lTop - gTop - 2} fill="none" stroke={INK} strokeWidth={0.8} />
             <Path d={`M${(jax + kbx) / 2} ${gTop} V${lTop}`} stroke="#6B4330" strokeWidth={3} />
-            <Rect x={jax} y={lTop - 14} width={kbx - jax} height={5} fill="#6B4330" stroke={INK} strokeWidth={0.8} />
+            <Path d={`M${jax} ${lTop - 12} H${kbx}`} stroke="#6B4330" strokeWidth={2.4} />
             {/* glazed door leaf */}
             <Polygon points={pts([hinge0, tip0, tip1, hinge1])} fill="#7E5038" stroke={INK} strokeWidth={1.2} />
             <Polygon points={pts([g0, g1, g2, g3])} fill="#BFE3F5" stroke={INK} strokeWidth={0.8} />
@@ -1178,6 +1249,29 @@ function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: string; 
       <SvgText x={fcx} y={(fTop + fBot) / 2 + 5.5} fontFamily={F.bold} fontSize={16} fill={text} stroke={signage === 0 ? '#3B1F14' : undefined} strokeWidth={signage === 0 ? 0.4 : 0} textAnchor="middle">
         {`Rosa’s · ${name}`}
       </SvgText>
+    </G>
+  );
+}
+
+/** Sidewalk A-frame chalkboard (replaces the doormat walkers kept covering, critic D118). */
+function ChalkSign({ x, y }: { x: number; y: number }) {
+  const [px, py] = P(x, y);
+  return (
+    <G transform={`translate(${px} ${py})`}>
+      <Ellipse cx={0} cy={0} rx={15} ry={3.4} fill="rgba(59,31,20,0.25)" />
+      <Path d="M-11 0 L-7 -36 L7 -36 L11 0" fill="none" stroke="#8E5A3C" strokeWidth={3} strokeLinejoin="round" />
+      <Path d="M-10 -1 L-6.6 -35 L6.6 -35 L10 -1 Z" fill="#8E5A3C" stroke={INK} strokeWidth={1.1} />
+      <Path d="M-7.6 -4 L-5 -32 L5 -32 L7.6 -4 Z" fill="#2F3B33" />
+      <SvgText x={0} y={-23} fontFamily={F.bold} fontSize={6} fill="#FFF4E0" textAnchor="middle">
+        PIZZA
+      </SvgText>
+      <SvgText x={0} y={-16} fontFamily={F.bold} fontSize={4.6} fill="#FFC531" textAnchor="middle">
+        BY THE
+      </SvgText>
+      <SvgText x={0} y={-10} fontFamily={F.bold} fontSize={6} fill="#FFF4E0" textAnchor="middle">
+        SLICE
+      </SvgText>
+      <Path d="M-4.5 -7 q4.5 2 9 0" stroke="#F28B82" strokeWidth={0.8} fill="none" />
     </G>
   );
 }
@@ -1389,7 +1483,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
 
   const ovenCount = Math.min(FOOTPRINTS[fp].ovenSlots, 1 + Math.floor((shop.ovens - 1) / 8));
   const cookCount = Math.min(4, 1 + Math.floor((shop.prep - 1) / 15));
-  const staffCount = Math.min(3, 1 + Math.floor((shop.counter - 1) / 15));
+  const staffCount = Math.min(2, 1 + Math.floor((shop.counter - 1) / 15));
   const driverSlots = [2, 2, 3, 3, 4][fp];
   const lay = layout(fp, ovenCount, cookCount, staffCount, Game.tablesShown(shop), driverSlots);
   const running = shop.managed || shop.queued > 0.01;
@@ -1399,6 +1493,9 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   const t = clock * pace;
   const fit = sceneFit(width, height);
   const frontY = P(0, 0)[1];
+  // per-shop character seeds, and a short blink every few seconds per person (critic D112/D113)
+  const shopSeed = Array.from(id).reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 997, 7) * 97;
+  const blinkAt = (sd: number) => ((clock + (sd % 37) * 0.31) % 3.7) < 0.13;
 
   // ---- people
   type Item = { y: number; el: ReactElement };
@@ -1432,67 +1529,80 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       const standing = !running ? true : !walking;
       items.push({
         y: running ? pos[1] : spot.y,
-        el: <Person key={`d${i}`} x={running ? pos[0] : spot.x} y={running ? pos[1] : spot.y} kind="driver" seed={i + 10} carry={running && p >= 0.62} step={standing ? 0 : clock * 12} arm={0} flip={running && p < 0.14} o={running ? o : 1} />,
+        el: <Person key={`d${i}`} x={running ? pos[0] : spot.x} y={running ? pos[1] : spot.y} kind="driver" seed={shopSeed + i + 10} blink={blinkAt(shopSeed + i + 10)} carry={running && p >= 0.62} step={standing ? 0 : clock * 12} arm={0} flip={running && p < 0.14} o={running ? o : 1} />,
       });
     }
   }
   const guestCount = running ? Math.min(2, lay.tables.length) : 0;
   const orderAt: [number, number] = [lay.counter.x0 + 12, 54];
   for (let i = 0; i < guestCount; i++) {
-    const p = ((t / 9 + 0.3 + i * 0.5) % 1 + 1) % 1;
+    const cyc = t / 9 + 0.3 + i * 0.5;
+    const p = ((cyc % 1) + 1) % 1;
+    // a different customer every visit, and different crowds in every shop (critic D112)
+    const gSeed = shopSeed + i * 2 + 3 + Math.floor(cyc) * 13;
     const table = lay.tables[i];
-    const seat: [number, number] = [table.x + 17, table.y + 1];
-    const start: [number, number] = [lay.L + 40, -44];
+    const seat: [number, number] = [table.x + 17, table.y];
+    const start: [number, number] = [-30, -44];
     let pos: [number, number];
     let kind: Kind = 'guest';
     let walking = true;
     let o = 1;
-    if (p < 0.22) {
-      pos = along([start, [outsideDoor[0], -44], outsideDoor], p / 0.22);
-      o = Math.min(1, p / 0.04);
-    } else if (p < 0.3) pos = along([outsideDoor, insideDoor], (p - 0.22) / 0.08);
-    else if (p < 0.42) pos = along([insideDoor, [insideDoor[0] - 20, 60], orderAt], (p - 0.3) / 0.12);
-    else if (p < 0.5) {
+    let face = false;
+    let talking = false;
+    if (p < 0.22) pos = along([start, [outsideDoor[0], -44], outsideDoor], p / 0.22);
+    else if (p < 0.3) pos = along([outsideDoor, insideDoor], (p - 0.22) / 0.08);
+    else if (p < 0.42) {
+      pos = along([insideDoor, [insideDoor[0] - 20, 60], orderAt], (p - 0.3) / 0.12);
+      face = true;
+    } else if (p < 0.5) {
       pos = orderAt;
       walking = false;
-    } else if (p < 0.6) pos = along([orderAt, [seat[0] + 10, seat[1] + 8], seat], (p - 0.5) / 0.1);
-    else {
+      talking = Math.sin(clock * 9) > -0.2;
+    } else if (p < 0.6) {
+      pos = along([orderAt, [seat[0] + 10, seat[1] + 8], seat], (p - 0.5) / 0.1);
+      face = true;
+    } else {
+      // seated on the right-hand chair, facing the table (critic G51)
       pos = seat;
       kind = 'sit';
       walking = false;
+      face = true;
       o = p > 0.92 ? (1 - p) / 0.08 : 1;
     }
-    items.push({ y: pos[1] - 0.5, el: <Person key={`g${i}`} x={pos[0]} y={pos[1]} kind={kind} seed={i * 2 + 3} flip={kind === 'sit' ? false : p < 0.3} step={walking ? clock * 12 : 0} o={o} /> });
+    items.push({ y: pos[1] - 0.3, el: <Person key={`g${i}`} x={pos[0]} y={pos[1]} kind={kind} seed={gSeed} flip={face} step={walking ? clock * 12 : 0} o={o} talk={talking} blink={blinkAt(gSeed)} arm={kind === 'sit' ? Math.abs(Math.sin(clock * 2 + i)) * 2 : 0} /> });
   }
-  // tables + seated diners
+  // tables + seated diners: chairs, then the diner, then the table over their lap (critic D114)
   lay.tables.forEach((tb, i) => {
-    items.push({ y: tb.y, el: <Table key={`t${i}`} x={tb.x} y={tb.y} tier={shop.decor.tables} /> });
-    if (running && i >= guestCount) items.push({ y: tb.y - 1, el: <Person key={`s${i}`} x={tb.x - 17} y={tb.y + 1} kind="sit" seed={i * 3 + 7} arm={Math.abs(Math.sin(clock * 2 + i)) * 2} /> });
+    items.push({ y: tb.y + 0.6, el: <Table key={`tb${i}`} x={tb.x} y={tb.y} tier={shop.decor.tables} part="back" /> });
+    items.push({ y: tb.y - 0.6, el: <Table key={`tf${i}`} x={tb.x} y={tb.y} tier={shop.decor.tables} part="front" /> });
+    if (running && i >= guestCount) {
+      const dSeed = shopSeed + i * 3 + 7;
+      items.push({ y: tb.y, el: <Person key={`s${i}`} x={tb.x - 17} y={tb.y} kind="sit" seed={dSeed} blink={blinkAt(dSeed)} arm={Math.abs(Math.sin(clock * 2 + i)) * 2} /> });
+    }
   });
   // potted plants (plants decor)
   if (shop.decor.plants >= 1) {
-    items.push({ y: 16, el: <FloorPlant key="pp1" x={lay.L + 16} y={16} /> });
+    items.push({ y: 30, el: <FloorPlant key="pp1" x={lay.L + 12} y={30} /> });
     items.push({ y: 20, el: <FloorPlant key="pp2" x={lay.R - 8} y={20} /> });
-    items.push({ y: -20, el: <FloorPlant key="pp3" x={lay.L + 40} y={-20} /> });
   }
   if (shop.decor.plants >= 3) items.push({ y: 100, el: <FloorPlant key="pp4" x={lay.L + 14} y={100} big /> });
   // kitchen crew + furniture
-  lay.cooks.forEach((x, i) => items.push({ y: 92 + (i % 2) * 3, el: <Person key={`c${i}`} x={x} y={92 + (i % 2) * 3} kind="cook" seed={i * 4 + 20} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} /> }));
+  lay.cooks.forEach((x, i) => items.push({ y: 92 + (i % 2) * 3, el: <Person key={`c${i}`} x={x} y={92 + (i % 2) * 3} kind="cook" front pin seed={shopSeed + i * 4 + 20} blink={blinkAt(shopSeed + i * 4 + 20)} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} /> }));
   items.push({
     y: 66,
     el: (
       <G key="prep">
         <FloorShadow x={(lay.prep.x0 + lay.prep.x1) / 2} y={64} r={(lay.prep.x1 - lay.prep.x0) * 0.6} />
-        <Box x0={lay.prep.x0} x1={lay.prep.x1} y0={66} y1={84} h={44} color="#D9B48A" top="#EED3AE" />
+        <Box x0={lay.prep.x0} x1={lay.prep.x1} y0={66} y1={84} h={28} color="#D9B48A" top="#EED3AE" />
         {Array.from({ length: shop.managed ? 3 : Math.min(8, Math.ceil(shop.queued / 1.5)) }).map((_, i) => {
-          const [px, py] = P(lay.prep.x0 + 10 + (i % 4) * ((lay.prep.x1 - lay.prep.x0 - 20) / 3), 72 + Math.floor(i / 4) * 8, 44);
+          const [px, py] = P(lay.prep.x0 + 10 + (i % 4) * ((lay.prep.x1 - lay.prep.x0 - 20) / 3), 72 + Math.floor(i / 4) * 8, 28);
           return <Ellipse key={i} cx={px} cy={py} rx={7} ry={2.8} fill="#FBEFD6" stroke={INK} strokeWidth={0.8} />;
         })}
       </G>
     ),
   });
-  lay.ovenCols.forEach((c, i) => items.push({ y: 76, el: <Person key={`b${i}`} x={c.x1 + 2} y={76} kind="baker" seed={i * 3 + 31} arm={running ? Math.abs(Math.sin(t * 3 + i)) * 2.5 : 0} flip={i % 2 === 1} /> }));
-  lay.staff.forEach((x, i) => items.push({ y: 92, el: <Person key={`st${i}`} x={x} y={92} kind="staff" seed={i * 5 + 41} arm={running ? Math.abs(Math.sin(t * 5 + i * 2)) * 2 : 0} /> }));
+  lay.ovenCols.forEach((c, i) => items.push({ y: 76, el: <Person key={`b${i}`} x={c.x1 + 2} y={76} kind="baker" seed={shopSeed + i * 3 + 31} blink={blinkAt(shopSeed + i * 3 + 31)} arm={running ? Math.abs(Math.sin(t * 3 + i)) * 2.5 : 0} flip={i % 2 === 1} /> }));
+  lay.staff.forEach((x, i) => items.push({ y: 92, el: <Person key={`st${i}`} x={x} y={92} kind="staff" front seed={shopSeed + i * 5 + 41} blink={blinkAt(shopSeed + i * 5 + 41)} arm={running ? Math.abs(Math.sin(t * 5 + i * 2)) * 2 : 0} /> }));
   const boxes = running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0;
   items.push({
     y: 64,
@@ -1517,7 +1627,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   });
   // front of the shop + sidewalk props
   items.push({ y: 0, el: <FrontWall key="front" lay={lay} name={nd.name} signage={shop.decor.signage} plants={shop.decor.plants} /> });
-  items.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
+  items.push({ y: -16, el: <ChalkSign key="sign" x={lay.L + 40} y={-16} /> });
   items.push({ y: -40, el: <Planter key="pl" x={lay.L + 8} y={-40} /> });
   const [scx, scy] = P(lay.scooter.x, lay.scooter.y);
   items.push({
@@ -1589,6 +1699,10 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
         }}>
         <Svg width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
           <Defs>
+            <LinearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#CFE8F5" stopOpacity={0.6} />
+              <Stop offset="1" stopColor="#CFE8F5" stopOpacity={0.25} />
+            </LinearGradient>
             <LinearGradient id="ember" x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0" stopColor="#5A1A0A" />
               <Stop offset="0.45" stopColor="#E8432E" />
@@ -1676,9 +1790,9 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
           {pop && (() => {
             const w = pop.text.length * 10 + 18;
             const x = SCENE_W - 14 - w / 2;
-            const y = 84 - pop.k * 16;
+            const y = 86 - pop.k * 20;
             return (
-              <G opacity={1 - pop.k * pop.k}>
+              <G opacity={pop.k > 0.87 ? (1 - pop.k) / 0.13 : 1}>
                 <Rect x={x - w / 2} y={y - 15} width={w} height={22} rx={11} fill={C.basilDark} stroke="#fff" strokeWidth={1.8} />
                 <SvgText x={x} y={y + 1.5} fontFamily={F.bold} fontSize={15} fill="#fff" textAnchor="middle">
                   {pop.text}

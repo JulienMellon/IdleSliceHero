@@ -8,6 +8,7 @@ import { money } from '../engine/format';
 import * as Game from '../engine/game';
 import { C, F } from '../theme';
 import { LockIcon } from './icons';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BuyButton, haptic } from './game-ui';
 
 export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; onSelect: (id: NeighborhoodId) => void; onBuild: (id: NeighborhoodId) => boolean }) {
@@ -19,42 +20,56 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
     scroller.current?.scrollTo({ x: Math.max(0, activeIdx * 92 - 120), animated: true });
   }, [activeIdx]);
   return (
-    <ScrollView ref={scroller as never} horizontal showsHorizontalScrollIndicator={false} style={styles.tabsWrap} contentContainerStyle={styles.tabs}>
-      {NEIGHBORHOODS.map((n) => {
-        const shop = game.shops[n.id];
-        const active = game.active === n.id;
-        if (!shop.built && next?.id !== n.id) {
+    <View style={styles.tabsWrap}>
+      <ScrollView ref={scroller as never} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
+        {NEIGHBORHOODS.map((n) => {
+          const shop = game.shops[n.id];
+          const active = game.active === n.id;
+          if (!shop.built && next?.id !== n.id) {
+            return (
+              <View key={n.id} style={[styles.tab, styles.tabLocked]}>
+                <LockIcon size={16} />
+              </View>
+            );
+          }
+          if (!shop.built) {
+            const can = game.cash >= n.buildCost;
+            return (
+              <Pressable
+                key={n.id}
+                testID={`build-${n.id}`}
+                onPress={() => {
+                  const ok = onBuild(n.id);
+                  haptic(ok ? 'success' : 'error');
+                }}
+                style={[styles.tab, styles.tabBuild, can && styles.tabBuildReady]}>
+                <Text style={[styles.tabName, { color: can ? '#fff' : C.ink }]}>+ {n.name}</Text>
+                <Text style={[styles.tabSub, { color: can ? '#fff' : C.tomato }]}>Build {money(n.buildCost)}</Text>
+              </Pressable>
+            );
+          }
+          const eps = Game.shopEarnings(game, n.id);
           return (
-            <View key={n.id} style={[styles.tab, styles.tabLocked]}>
-              <LockIcon size={16} />
-            </View>
-          );
-        }
-        if (!shop.built) {
-          const can = game.cash >= n.buildCost;
-          return (
-            <Pressable
-              key={n.id}
-              testID={`build-${n.id}`}
-              onPress={() => {
-                const ok = onBuild(n.id);
-                haptic(ok ? 'success' : 'error');
-              }}
-              style={[styles.tab, styles.tabBuild, can && styles.tabBuildReady]}>
-              <Text style={[styles.tabName, { color: can ? '#fff' : C.ink }]}>+ {n.name}</Text>
-              <Text style={[styles.tabSub, { color: can ? '#fff' : C.tomato }]}>Build {money(n.buildCost)}</Text>
+            <Pressable key={n.id} testID={`tab-${n.id}`} onPress={() => onSelect(n.id)} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
+              <Text style={styles.tabName}>{n.name}</Text>
+              <Text style={[styles.tabSub, active && { color: C.ink }, !shop.managed && !active && { color: C.tomato }]}>{shop.managed ? `${money(eps)}/s` : 'tap to run'}</Text>
             </Pressable>
           );
-        }
-        const eps = Game.shopEarnings(game, n.id);
-        return (
-          <Pressable key={n.id} testID={`tab-${n.id}`} onPress={() => onSelect(n.id)} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
-            <Text style={styles.tabName}>{n.name}</Text>
-            <Text style={[styles.tabSub, active && { color: C.ink }, !shop.managed && !active && { color: C.tomato }]}>{shop.managed ? `${money(eps)}/s` : 'tap to run'}</Text>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
+        })}
+      </ScrollView>
+      {/* edge fades so a clipped tab reads as "scroll for more" (critic D122) */}
+      {(['l', 'r'] as const).map((side) => (
+        <Svg key={side} width={22} height="100%" style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]} pointerEvents="none">
+          <Defs>
+            <LinearGradient id={`tf-${side}`} x1={side === 'l' ? '0' : '1'} y1="0" x2={side === 'l' ? '1' : '0'} y2="0">
+              <Stop offset="0" stopColor={C.tomatoDark} stopOpacity={1} />
+              <Stop offset="1" stopColor={C.tomatoDark} stopOpacity={0} />
+            </LinearGradient>
+          </Defs>
+          <Rect x={0} y={0} width={22} height="100%" fill={`url(#tf-${side})`} />
+        </Svg>
+      ))}
+    </View>
   );
 }
 
@@ -104,6 +119,7 @@ const shadow = Platform.select({
 
 const styles = StyleSheet.create({
   tabsWrap: { flexGrow: 0, backgroundColor: C.tomatoDark },
+  tabFade: { position: 'absolute', top: 0, bottom: 0 },
   tabs: { paddingHorizontal: 10, paddingVertical: 6, gap: 6 },
   tab: { minWidth: 86, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: '#fff', borderWidth: 2.5, alignItems: 'center' },
   tabActive: { backgroundColor: C.cheese, borderColor: '#FFFFFF', borderWidth: 3, transform: [{ translateY: -1 }] },

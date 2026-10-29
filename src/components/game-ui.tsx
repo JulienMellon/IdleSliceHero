@@ -182,62 +182,6 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { 
   );
 }
 
-export function OvenCard({ progress, stock, shelf, auto, idle, full, fast, rate, onTap }: { progress: number; stock: number; shelf: number; auto: boolean; idle: boolean; full: boolean; fast: boolean; rate: number; onTap: () => void }) {
-  const bounce = useRef(new Animated.Value(1)).current;
-  const pulse = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    if (!idle) return;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.1, duration: 420, useNativeDriver: native }),
-        Animated.timing(pulse, { toValue: 1, duration: 420, useNativeDriver: native }),
-      ]),
-    );
-    loop.start();
-    return () => {
-      loop.stop();
-      pulse.setValue(1);
-    };
-  }, [idle, pulse]);
-
-  const tap = () => {
-    haptic();
-    bounce.setValue(0.86);
-    Animated.spring(bounce, { toValue: 1, friction: 3, useNativeDriver: native }).start();
-    onTap();
-    if (fast) emitPayout(); // rush orders pay instantly: kick the cash total
-  };
-  const R = 30;
-  const circ = 2 * Math.PI * R;
-  return (
-    <Pressable onPress={tap} testID="oven" style={[styles.ovenCard, idle && styles.ovenIdle]}>
-      <Animated.View style={{ transform: [{ scale: Animated.multiply(bounce, pulse) }] }}>
-        <Svg width={76} height={76} viewBox="0 0 76 76">
-          <Circle cx={38} cy={38} r={R + 6} fill={C.tomatoDark} />
-          <Circle cx={38} cy={38} r={R} fill="#3B1F14" />
-          <Circle cx={38} cy={38} r={R} stroke={C.cheese} strokeWidth={6} fill="none" strokeDasharray={`${circ}`} strokeDashoffset={circ * (1 - progress)} strokeLinecap="round" transform="rotate(-90 38 38)" />
-        </Svg>
-        <Text style={styles.ovenEmoji}>{full ? '✅' : '🍕'}</Text>
-      </Animated.View>
-      <View style={styles.ovenInfo}>
-        <View style={styles.ovenHead}>
-          <Text style={styles.cardTitle}>Nonna’s Oven</Text>
-          <Text style={styles.small}>{fast ? `${rate.toFixed(0)} pizzas/sec` : `${Math.floor(stock)}/${shelf} ready`}</Text>
-        </View>
-        <Text style={[styles.ovenStatus, full && { color: C.basilDark }]} numberOfLines={1}>
-          {fast ? 'Auto-baking · tap for rush orders' : full ? 'Shelf full — hire drivers!' : idle ? 'TAP TO BAKE!' : auto ? 'Auto-baking · tap to rush' : 'Baking… tap to rush'}
-        </Text>
-        <View style={styles.shelf}>
-          {Array.from({ length: shelf }).map((_, i) => (
-            <View key={i} style={[styles.slot, (fast || i < Math.floor(stock)) && styles.slotFull]} />
-          ))}
-        </View>
-      </View>
-    </Pressable>
-  );
-}
-
 export function UpgradeRow(props: {
   icon: string | React.ReactNode;
   title: string;
