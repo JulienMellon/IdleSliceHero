@@ -213,6 +213,7 @@ v0.1 is the home city playable end to end with placeholder art, no accounts, ads
 3. Franchising and City 2 (Boston)
 4. Real illustrations and sound
 5. Rewarded ads (2× earnings)
+5a. Daily tasks, weekly tasks and the 30-day daily gift (see [REWARDS.md](REWARDS.md))
 6. TestFlight beta, then App Store release
 
 ## Open decisions
