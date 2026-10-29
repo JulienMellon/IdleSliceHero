@@ -67,6 +67,22 @@ def seeded_page(browser, save):
     pg.goto(URL)
     return pg
 
+def settle(page, wait=2.5):
+    """Dismiss the offline popup and any due cut-scene so the scene is interactive."""
+    time.sleep(wait)
+    for _ in range(3):
+        if page.locator('[data-testid="collect-offline"]').count():
+            tid(page, "collect-offline").click(); time.sleep(0.6)
+        elif page.locator('[data-testid="skip-scene"]').count():
+            tid(page, "skip-scene").click(); time.sleep(0.6)
+        else:
+            break
+
+def tap_shop(page):
+    """Tap the back wall of the pizzeria (clear of the station tags)."""
+    box = tid(page, "shop").bounding_box()
+    page.mouse.click(box["x"] + box["width"] * 0.5, box["y"] + box["height"] * 0.22)
+
 def tid(page, t):
     return page.locator(f'[data-testid="{t}"]').first
 
@@ -96,14 +112,14 @@ with sync_playwright() as pw:
     shot(page, "03-new-game")
     try:
         for _ in range(4):
-            tid(page, "shop").click(); time.sleep(0.08)
-        tid(page, "shop").click()
+            tap_shop(page); time.sleep(0.08)
+        tap_shop(page)
         shot(page, "03b-full-queue-tap", 0.25)
     except Exception as e:
         report["errors"].append(f"full-queue tap failed: {e}")
     try:
         for i in range(40):
-            tid(page, "shop").click(); time.sleep(0.25)
+            tap_shop(page); time.sleep(0.25)
             if i % 4 == 3:
                 for b in ["walk-drivers", "walk-ovens"]:
                     tid(page, b).click()
@@ -118,9 +134,7 @@ with sync_playwright() as pw:
         report["errors"].append(f"core loop interaction failed: {e}")
 
     # 3. Mid-game save → main screen with drivers on routes
-    page = seeded_page(browser, MID_SAVE); time.sleep(2.5)
-    if page.locator('[data-testid="skip-scene"]').count():
-        tid(page, "skip-scene").click()
+    page = seeded_page(browser, MID_SAVE); settle(page)
     shot(page, "05-mid-game", 1.2)
 
     # 3a. The full upgrades sheet (tap "All")
@@ -170,15 +184,18 @@ with sync_playwright() as pw:
                 },
                 seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:18] + ["uptown-1"], scrapbookViewed=19)
     page = seeded_page(browser, late); time.sleep(2.5)
+    if page.locator('[data-testid="collect-offline"]').count():
+        tid(page, "collect-offline").click(); time.sleep(0.8)
     if page.locator('[data-testid="skip-scene"]').count():
         tid(page, "cutscene").click(); shot(page, "08-late-cutscene", 0.8)
         tid(page, "skip-scene").click()
+    settle(page, 0.3)
     shot(page, "09-late-game", 1.2)
     shot(page, "10-late-game-pops-a", 0.7)
     shot(page, "11-late-game-pops-b", 0.9)
     try:
         for _ in range(3):
-            tid(page, "shop").click(); time.sleep(0.15)
+            tap_shop(page); time.sleep(0.15)
         shot(page, "12-late-rush-tap", 0.2)
     except Exception as e:
         report["errors"].append(f"late oven tap failed: {e}")
@@ -186,10 +203,18 @@ with sync_playwright() as pw:
     flag = dict(late, active="industrial", cash=2.0e8, seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:19] + ["uptown-1"], scrapbookViewed=20,
                 shops=dict(late["shops"], industrial=shop(prep=104, ovens=100, grade=4, counter=104, drivers=44, tables=90, footprint=4, sold=450000,
                            decor={"plants": 3, "flooring": 3, "tables": 3, "walls": 3, "signage": 3})))
-    page = seeded_page(browser, flag); time.sleep(2.5)
-    if page.locator('[data-testid="skip-scene"]').count():
-        tid(page, "skip-scene").click()
+    page = seeded_page(browser, flag); settle(page)
     shot(page, "13-flagship-max", 1.2)
+    # 8. Uptown, fully decorated, with tier-3 signage
+    up = dict(flag, active="uptown", shops=dict(flag["shops"], uptown=shop(prep=40, ovens=36, grade=2, counter=38, drivers=18, tables=30, footprint=2, sold=9e4,
+              decor={"plants": 3, "flooring": 3, "tables": 3, "walls": 3, "signage": 3})))
+    page = seeded_page(browser, up); settle(page)
+    shot(page, "14-uptown-decorated", 1.2)
+    # 9. A station tag opens the drawer focused on that station
+    try:
+        tid(page, "tag-ovens").click(); shot(page, "15-tag-ovens-drawer", 0.6)
+    except Exception as e:
+        report["errors"].append(f"station tag tap failed: {e}")
     browser.close()
 
 httpd.shutdown()

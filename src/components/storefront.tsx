@@ -706,9 +706,11 @@ function Car({ x, y, color, kind, dir }: { x: number; y: number; color: string; 
       ) : (
         <G>
           <Rect x={len * 0.68} y={-h} width={len * 0.26} height={h * 0.45} rx={3} fill="#BFE3F5" stroke={INK} strokeWidth={0.8} />
-          <SvgText x={len * 0.34} y={-h * 0.42} fontFamily={F.bold} fontSize={9} fill="#FFC531" textAnchor="middle">
-            MEGASLICE
-          </SvgText>
+          <G transform={dir === -1 ? `translate(${len * 0.68} 0) scale(-1 1)` : undefined}>
+            <SvgText x={len * 0.34} y={-h * 0.42} fontFamily={F.bold} fontSize={9} fill="#FFC531" textAnchor="middle">
+              MEGASLICE
+            </SvgText>
+          </G>
         </G>
       )}
       {kind === 'taxi' && <Rect x={len * 0.4} y={-h - 21} width={len * 0.2} height={6} rx={2} fill="#fff" stroke={INK} strokeWidth={0.8} />}

@@ -75,7 +75,7 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone 
   };
   return (
     <Animated.View style={{ transform: [{ translateX: shake }] }}>
-      <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
+      <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, compact && { minWidth: 0, alignSelf: 'stretch' }, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
         <View style={[styles.buyInner, compact && styles.buyCompact, { backgroundColor: innerBg }]}>
           {sub ? <Text style={styles.buySub}>{sub}</Text> : null}
           <Text style={[styles.buyLabel, compact && { fontSize: 15 }, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit>
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   buyOuter: { borderRadius: 14, paddingBottom: 4, minWidth: 88 },
   buyInner: { borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10, alignItems: 'center', borderWidth: 2, borderColor: 'rgba(0,0,0,0.12)' },
   buyLabel: { fontFamily: F.bold, color: '#fff', fontSize: 17 },
-  buyCompact: { paddingVertical: 2 },
+  buyCompact: { paddingVertical: 2, paddingHorizontal: 4 },
   buySub: { fontFamily: F.semi, color: 'rgba(255,255,255,0.85)', fontSize: 10, letterSpacing: 1 },
   burst: { position: 'absolute', alignSelf: 'center', top: 8, fontSize: 18 },
 
