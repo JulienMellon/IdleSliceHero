@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
-import { duration, money, shownValue } from '../engine/format';
+import { duration, goalAmount, money, shownValue } from '../engine/format';
 import { C, F } from '../theme';
 import { BookIcon, CoinIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
 import { emitPayout, onPayout } from './pulse-bus';
@@ -177,7 +177,7 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { 
           <Text style={[styles.goalLabel, ready && styles.goalTextReady]} numberOfLines={1}>
             {ready ? `▶ ${goal.label} — tap!` : goal.label}
           </Text>
-          {goal.icon ? <View style={{ zIndex: 1, marginLeft: 6 }}>{goal.icon}</View> : <Text style={[styles.goalAmt, ready && styles.goalTextReady]}>{goal.text ?? `${money(Math.min(goal.current, goal.target), true)} / ${money(goal.target)}`}</Text>}
+          {goal.icon ? <View style={{ zIndex: 1, marginLeft: 6 }}>{goal.icon}</View> : <Text style={[styles.goalAmt, ready && styles.goalTextReady]}>{goal.text ?? goalAmount(goal.current, goal.target)}</Text>}
         </Pressable>
       )}
     </View>
@@ -224,7 +224,7 @@ export function UpgradeRow(props: {
   );
 }
 
-export function OfflinePopup({ seconds, earned, byShop, onCollect }: { seconds: number; earned: number; byShop: { name: string; earned: number; managed: boolean }[]; onCollect: () => void }) {
+export function OfflinePopup({ seconds, capped, awaySeconds, earned, byShop, onCollect }: { seconds: number; capped?: boolean; awaySeconds?: number; earned: number; byShop: { name: string; earned: number; managed: boolean }[]; onCollect: () => void }) {
   const pop = useRef(new Animated.Value(0.7)).current;
   useEffect(() => {
     Animated.spring(pop, { toValue: 1, friction: 5, useNativeDriver: native }).start();
@@ -243,6 +243,7 @@ export function OfflinePopup({ seconds, earned, byShop, onCollect }: { seconds: 
             ? `Your managers kept ${byShop.filter((b) => b.managed).length} pizzeria${byShop.filter((b) => b.managed).length === 1 ? '' : 's'} running for ${duration(seconds)}`
             : `Your kitchens finished their queued orders while you were away`}
         </Text>
+        {capped && awaySeconds ? <Text style={[styles.small, { fontFamily: F.semi }]}>{`Earnings are capped at ${duration(seconds)} (you were away ${duration(awaySeconds)})`}</Text> : null}
         <View style={{ alignSelf: 'stretch', gap: 2 }}>
           {byShop.map((b) => (
             <View key={b.name} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

@@ -29,6 +29,17 @@ export function count(n: number): string {
   return money(n).replace('$', '');
 }
 
+/** A per-second rate: one decimal under 10, then K/M suffixes (never "20000.0"). */
+export function rate(n: number): string {
+  if (!Number.isFinite(n)) return '0.0';
+  return Math.abs(n) < 10 ? n.toFixed(1) : count(n);
+}
+
+/** "$1.50K / $1.50K": both sides of the goal bar use the same precision so they never disagree. */
+export function goalAmount(current: number, target: number): string {
+  return `${money(Math.min(current, target), true)} / ${money(target, true)}`;
+}
+
 export function duration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);

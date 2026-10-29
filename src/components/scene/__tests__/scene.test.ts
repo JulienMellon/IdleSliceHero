@@ -1,7 +1,7 @@
 /// <reference types="jest" />
-import { BACK_ROW_Y, FRONT_ROW_Y, LEDGE_Y, ROOM_W, SEAT, STOOL_Y, layout, type Layout } from '../layout';
+import { BACK_ROW_Y, COUNTER_LANE_Y, FRONT_ROW_Y, LEDGE_Y, ROOM_W, SEAT, STOOL_Y, SIGN_HALF_W, TABLE_PITCH, VEHICLE_HALF_W, layout, type Layout } from '../layout';
 import { pickAvoid, seatPalette } from '../palette';
-import { DRIVER_PAYOUT, along, driverPhase, driverPose, guestPose, payoutCrossed } from '../timelines';
+import { DRIVER_PAYOUT, GUEST_WALK_Y, along, driverPhase, driverPose, guestPose, payoutCrossed } from '../timelines';
 
 const SCENE_W = 393;
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
@@ -210,3 +210,71 @@ describe('payout edge with changing driver counts (T9)', () => {
     expect(payoutCrossed([0.5, 0.53], [0.52, 0.55])).toBe(true);
   });
 });
+
+describe('walk-ins stay out of the kitchen (G72)', () => {
+  test('on the way to a chair and back, nobody walks the counter lane left of the counter, in front of the bakers', () => {
+    let c = 0;
+    for (const [name, lay] of allLayouts()) {
+      if (c++ % 7 !== 0) continue; // every 7th layout keeps the test fast (the full sweep took ~100 s); the old bug hit them all
+      const n = Math.min(4, Math.ceil(lay.tables.length / 2));
+      for (let i = 0; i < n; i++)
+        for (let k = 0; k <= 24; k++) {
+          const q = 0.42 + (0.08 * k) / 24;
+          const g = [guestPose(lay, i, q, SCENE_W), guestPose(lay, i, q + 0.38, SCENE_W)];
+          for (const w of g) {
+            // deeper than the dining aisle (y 24) = the oven side; only the stretch right of the counter's left end is allowed there
+            const inOvenZone = w.pos[1] > 40 && w.pos[0] < lay.counter.x0 - 1;
+            expect([name, i, k, inOvenZone]).toEqual([name, i, k, false]);
+          }
+        }
+    }
+  });
+  test('the lane constant is still the counter lane', () => {
+    expect(COUNTER_LANE_Y).toBe(52);
+  });
+});
+
+describe('back row keeps its columns (C19 / T16)', () => {
+  /** What the dining room can hold when the back row starts at the unsnapped x (mirrors layout()'s arithmetic). */
+  function capacity(lay: Layout, plants: number) {
+    const t0 = lay.L + 44 + (plants >= 1 ? 10 : 0);
+    const frontCols = Math.max(1, Math.floor((lay.counter.x1 - 30 - SEAT - t0) / TABLE_PITCH) + 1);
+    const b0raw = Math.max(t0 + SEAT, lay.prep.x1 + 4 + SEAT);
+    const backCols = Math.max(0, Math.floor((lay.counter.x0 - 40 - SEAT - b0raw) / TABLE_PITCH) + 1);
+    return frontCols + backCols;
+  }
+  test('snapping the back row to the seat grid never drops a table the unsnapped row would fit', () => {
+    const lost: string[] = [];
+    for (let fp = 0; fp < ROOM_W.length; fp++)
+      for (const cooks of [1, 2, 3])
+        for (const staff of [1, 2])
+          for (const ovens of [1, 2, 3, 4, 6])
+            for (const plants of [0, 1, 3]) {
+              const lay = layout(fp, ovens, cooks, staff, 8, DRIVER_SLOTS[fp], plants);
+              const cap = Math.min(8, capacity(lay, plants));
+              if (lay.tables.length < cap) lost.push(`fp${fp} o${ovens} c${cooks} s${staff} p${plants}: ${lay.tables.length} < ${cap}`);
+            }
+    expect(lost.slice(0, 6)).toEqual([]);
+  });
+});
+
+describe('parked vehicle and curb lane (D282 / D285)', () => {
+  test('the parked vehicle clears the spot where walk-ins turn in at the door', () => {
+    for (const [name, lay] of allLayouts()) {
+      const gap = lay.door.lanes.guestPauseX - (lay.scooter.x + VEHICLE_HALF_W);
+      expect([name, gap >= 14]).toEqual([name, true]); // 14 ≈ a walk-in's half width plus a little air
+      expect([name, lay.scooter.x - VEHICLE_HALF_W > lay.L]).toEqual([name, true]);
+    }
+  });
+  test('the chalkboard stands clear of the parked vehicle', () => {
+    for (const [name, lay] of allLayouts()) {
+      const gap = lay.scooter.x - VEHICLE_HALF_W - (lay.sign.x + SIGN_HALF_W);
+      expect([name, gap >= 6]).toEqual([name, true]);
+      expect([name, lay.sign.x - SIGN_HALF_W > lay.L + 24]).toEqual([name, true]); // clear of the planter at the left
+    }
+  });
+  test('the curb lane sits at y −44, so walk-ins’ feet clear the Prep card (drivers use −30 … −42)', () => {
+    expect(GUEST_WALK_Y).toBe(-44);
+  });
+});
+

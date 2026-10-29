@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityMap } from '@/components/city-map';
+import { Toast } from '@/components/game-ui';
 import { LockIcon } from '@/components/icons';
 import { CITY_NAME, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES } from '@/content/tuning';
 import { money } from '@/engine/format';
@@ -14,6 +15,7 @@ export default function City() {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const game = useGame((s) => s.game);
+  const toast = useGame((s) => s.toast);
   const { setActive, build } = useGame.getState();
   const built = NEIGHBORHOODS.filter((n) => game.shops[n.id].built).length;
   const mapH = Math.min(height * 0.6, width * 0.84);
@@ -87,6 +89,8 @@ export default function City() {
           );
         })}
       </ScrollView>
+      {/* build failures ("Build Suburbs: need $300") show here, where the tap happened */}
+      {toast && <Toast compact text={toast.text} top={insets.top + 56} />}
     </View>
   );
 }

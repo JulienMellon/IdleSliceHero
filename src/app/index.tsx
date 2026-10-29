@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,7 +11,7 @@ import { CURB_Y, SCENE_H, sceneFit, type StationKey, Storefront } from '@/compon
 import { ShopTabs, StationCard } from '@/components/shop-ui';
 import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, TUNING, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
-import { money } from '@/engine/format';
+import { money, rate } from '@/engine/format';
 import * as G from '@/engine/game';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
@@ -46,6 +46,11 @@ export default function GameScreen() {
   const plus = (x: number) => `+${money(x)}/s`;
   const newScenes = Math.max(0, game.seenScenes.length - game.scrapbookViewed);
   const eps = G.earningsPerSecond(game);
+  // Tied stations: one upgrade alone adds $0/s, so say what to buy together. Keyed on levels, not cash or sales.
+  const tiedCount = (['prep', 'ovens', 'counter', 'customers'] as const).filter(tied).length;
+  const bundleKey = `${id}.${shop.prep}.${shop.ovens}.${shop.counter}.${shop.drivers}.${shop.grade}.${shop.footprint}.${v}`;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const bundle = useMemo(() => (tiedCount >= 2 ? G.bundleHint(game, id) : null), [bundleKey, tiedCount]);
 
   // Goal bar: the big purchase worth saving for, by cash/sec per dollar.
   const candidates: (Goal & { ratio: number })[] = [];
@@ -269,20 +274,24 @@ export default function GameScreen() {
                     <Text style={styles.bannerText}>Without a manager, upgrades here only pay while you tap.</Text>
                   </View>
                 )}
+                {bundle && (
+                  <View style={styles.banner}>
+                    <Text style={styles.bannerText}>{`${bundle.label} · ${money(bundle.cost)} (one alone adds $0/s)`}</Text>
+                  </View>
+                )}
                 {!shop.managed &&
                   card('manager', {
                     icon: id === 'downtown' ? <Portrait id="nonna-rosa" mood="happy" size={32} /> : <ManagerIcon size={26} />,
                     title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire a ${nd.name} manager`,
-                    detail: id === 'downtown' ? 'Keep baking — Nonna will take over the kitchen soon' : `Runs this pizzeria on its own and earns while you're away (${plus(G.shopEarnings(game, id))})`,
-                    hot: id !== 'downtown',
+                    detail: id === 'downtown' ? `Keep baking — ${G.nonnaCountdownText(game)}` : `Runs this pizzeria on its own and earns while you're away (${plus(G.shopEarnings(game, id))})`,
                     wide: true,
                     costLabel: id === 'downtown' ? 'Soon' : undefined,
                   })}
-                {card('prep', { icon: <PrepIcon size={26} />, title: 'Prep Cooks', level: `Lv ${shop.prep}`, detail: stationDetail('prep', 'prep', `${rates.prep.toFixed(1)}/s`), hot: tied('prep') })}
-                {card('ovens', { icon: <FlameIcon size={26} />, title: 'Ovens', level: `Lv ${shop.ovens}`, detail: stationDetail('ovens', 'ovens', `${rates.ovens.toFixed(1)}/s`), hot: tied('ovens') })}
-                {card('counter', { icon: <RegisterIcon size={26} />, title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rates.counter.toFixed(1)}/s`), hot: tied('counter') })}
-                {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${G.deliveryRate(shop, v).toFixed(1)}/s`), hot: tied('customers') })}
-                {card('tables', { icon: <SeatIcon size={26} />, title: 'Seating', level: `Lv ${shop.tables}`, detail: nextTableHint === 'dining room full' ? `Dining room full · ${G.walkInRate(shop).toFixed(1)}\u00A0walk‑ins/s` : `${stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)}\u00A0walk‑ins/s`)} · ${nextTableHint}`, hot: tied('customers') })}
+                {card('prep', { icon: <PrepIcon size={26} />, title: 'Prep Cooks', level: `Lv ${shop.prep}`, detail: stationDetail('prep', 'prep', `${rate(rates.prep)}/s`), hot: tied('prep') })}
+                {card('ovens', { icon: <FlameIcon size={26} />, title: 'Ovens', level: `Lv ${shop.ovens}`, detail: stationDetail('ovens', 'ovens', `${rate(rates.ovens)}/s`), hot: tied('ovens') })}
+                {card('counter', { icon: <RegisterIcon size={26} />, title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rate(rates.counter)}/s`), hot: tied('counter') })}
+                {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${rate(G.deliveryRate(shop, v))}/s`), hot: tied('customers') })}
+                {card('tables', { icon: <SeatIcon size={26} />, title: 'Seating', level: `Lv ${shop.tables}`, detail: nextTableHint === 'dining room full' ? `Dining room full · ${rate(G.walkInRate(shop))}\u00A0walk‑ins/s` : `${stationDetail('customers', 'tables', `${rate(G.walkInRate(shop))}\u00A0walk‑ins/s`)} · ${nextTableHint}`, hot: tied('customers') })}
                 {card('grade', { icon: <SparkleIcon size={26} />, title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name} ×2 · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} ×2`) : 'Finest ovens in town' })}
                 {card('expand', { icon: <ExpandIcon size={26} />, title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : '+$0/s\u00A0now'}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
                 <StationCard
@@ -328,7 +337,7 @@ export default function GameScreen() {
         {/* Toast floats in the open sky at the top of the scene, clear of the shop, the row and the cards. */}
         {toast && <Toast compact text={toast.text} top={10} />}
       </View>
-      {offline && <OfflinePopup seconds={offline.seconds} earned={offline.earned} byShop={offline.byShop} onCollect={dismissOffline} />}
+      {offline && <OfflinePopup seconds={offline.seconds} capped={offline.capped} awaySeconds={offline.awaySeconds} earned={offline.earned} byShop={offline.byShop} onCollect={dismissOffline} />}
     </View>
   );
 }

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Scene } from '../content/types';
 import { C, F } from '../theme';
 import { Backdrop } from './backdrop';
+import { canAdvance, sceneHeading } from './cutscene-input';
 import { Portrait } from './portrait';
 
 const native = Platform.OS !== 'web';
@@ -24,6 +25,9 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   const zoom = useRef(new Animated.Value(1)).current;
   const slide = useRef(new Animated.Value(0)).current;
   const bubble = useRef(new Animated.Value(0)).current;
+  // Input lockout: a tapping player must not blow past a line or the whole scene (see cutscene-input.ts).
+  const openedAt = useRef(Date.now());
+  const lineShownAt = useRef(Date.now());
 
   const p = scene.panels[panel];
   const current = p.lines[line];
@@ -43,6 +47,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
 
   // Speech bubble pop for each line.
   useEffect(() => {
+    lineShownAt.current = Date.now();
     bubble.setValue(0.6);
     Animated.spring(bubble, { toValue: 1, friction: 5, useNativeDriver: native }).start();
   }, [panel, line, bubble]);
@@ -59,6 +64,11 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
     onDone();
   };
 
+  const onTap = () => {
+    const now = Date.now();
+    if (canAdvance(now - lineShownAt.current, now - openedAt.current)) advance();
+  };
+
   // Auto-advance after a reading pause scaled to text length.
   useEffect(() => {
     const text = showReward ? 'x'.repeat(60) : (current?.text ?? p.caption ?? '');
@@ -73,9 +83,9 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
 
   return (
     <View style={StyleSheet.absoluteFill}>
-      <Pressable style={[styles.root, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]} onPress={advance} testID="cutscene">
+      <Pressable style={[styles.root, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]} onPress={onTap} testID="cutscene">
         <View style={styles.topRow}>
-          <Text style={styles.title}>{scene.title}</Text>
+          <Text style={styles.title}>{sceneHeading(scene, panel, showReward)}</Text>
           <Pressable onPress={onDone} hitSlop={12} style={styles.skip} testID="skip-scene">
             <Text style={styles.skipText}>Skip ▸▸</Text>
           </Pressable>
@@ -113,7 +123,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
             </Animated.View>
           ) : current ? (
             <Animated.View style={[styles.bubble, { transform: [{ scale: bubble }] }]}>
-              {p.cast.length > 0 && (
+              {p.cast.length > 0 && current.speaker !== 'You' && (
                 <View style={[styles.tail, { left: p.cast.length === 1 ? '47%' : speakerIndex === 1 ? '70%' : '22%' }]} />
               )}
               <Text style={styles.speaker}>{current.speaker}</Text>

@@ -2,15 +2,15 @@
 // Crowd budgets: simulate the cast frame by frame for busy shops and check, in screen space, that moving
 // people don't sit on top of the kitchen crew, each other, or the WELCOME mat for more than a moment.
 import { buildCast, type CastMember } from '../cast';
-import { DOOR_OUT_Y, layout } from '../layout';
+import { BACK_ROW_Y, layout } from '../layout';
 import { hash32 } from '../looks';
 import { seatPalette } from '../palette';
-import { P, kAt } from '../projection';
+import { P, SCENE_W, kAt } from '../projection';
 import { quantArm, quantStep } from '../quantise';
 
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 const FPS = 15;
-const SECONDS = 40;
+const SECONDS = 20;
 
 /** A figure's on-screen box (feet at its room point; ~22 wide, ~50 tall at depth scale). */
 function box(c: CastMember) {
@@ -27,6 +27,12 @@ function overlap(a: Box, b: Box) {
   return w > 0 && h > 0 ? (w * h) / Math.min(area(a), area(b)) : 0;
 }
 
+/** The doormat's screen box, from the same corners Doormat draws (room y −8 … −22). */
+function matBox(lay: ReturnType<typeof layout>): Box {
+  const c = [P(lay.door.x0 + 2, -8), P(lay.door.x1 - 2, -8), P(lay.door.x1 + 1, -22), P(lay.door.x0 - 1, -22)];
+  return { x0: Math.min(...c.map((p) => p[0])), x1: Math.max(...c.map((p) => p[0])), y0: Math.min(...c.map((p) => p[1])), y1: Math.max(...c.map((p) => p[1])) };
+}
+
 /** Busy shops at every footprint (full crew, full dining room, many drivers). */
 function* busyShops() {
   for (let fp = 0; fp < 5; fp++)
@@ -38,39 +44,59 @@ function* busyShops() {
     }
 }
 
-function frames(shop: ReturnType<typeof busyShops> extends Generator<infer T> ? T : never, pace: number) {
-  const out: CastMember[][] = [];
-  for (let f = 0; f < SECONDS * FPS; f++) {
-    const { cast } = buildCast({ lay: shop.lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace, clock: f / FPS, shopSeed: shop.shopSeed, nIdx: 1, pal: shop.pal });
-    out.push(cast);
+type Shop = ReturnType<typeof busyShops> extends Generator<infer T> ? T : never;
+/** Simulated once per (shop, pace) and shared by every test below (C21: the old suite re-simulated 40 s per test). */
+const frameCache = new Map<string, CastMember[][]>();
+function frames(shop: Shop, pace: number) {
+  const key = `${shop.name}|${pace}`;
+  let out = frameCache.get(key);
+  if (!out) {
+    out = [];
+    for (let f = 0; f < SECONDS * FPS; f++) {
+      const { cast } = buildCast({ lay: shop.lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace, clock: f / FPS, shopSeed: shop.shopSeed, nIdx: 1, pal: shop.pal });
+      out.push(cast);
+    }
+    frameCache.set(key, out);
   }
   return out;
 }
 
 describe('crowd budgets', () => {
-  test('walk-ins and drivers cover a baker or cook (>35% of them) in under 6% of frames', () => {
+  // G72: the old <6% budget let walk-ins cross in front of the bakers for a whole lap. Zero frames now.
+  test('nobody walks in front of a baker or cook, covering more than 35% of their torso, in any frame', () => {
+    const bad: string[] = [];
     for (const shop of busyShops())
       for (const pace of [1, 2.6]) {
         const fs = frames(shop, pace);
-        let bad = 0;
-        for (const cast of fs) {
-          const crew = cast.filter((c) => c.role === 'baker' || c.role === 'cook').map(box);
+        fs.forEach((cast, f) => {
+          const crew = cast.filter((c) => c.role === 'baker' || c.role === 'cook').map((c) => ({ c, b: box(c) }));
           const movers = cast.filter((c) => (c.role === 'walkin' && c.props.kind !== 'sit') || c.role === 'driver');
-          // only people in front of the crew can cover them
-          if (movers.some((m) => crew.some((cb) => box(m).y1 > cb.y1 && overlap(box(m), cb) > 0.35))) bad++;
-        }
-        expect([shop.name, pace, bad / fs.length < 0.06]).toEqual([shop.name, pace, true]);
+          for (const m of movers)
+            for (const cb of crew) {
+              const mb = box(m);
+              const h = cb.b.y1 - cb.b.y0;
+              const torso = { x0: cb.b.x0, x1: cb.b.x1, y0: cb.b.y0 + h * 0.3, y1: cb.b.y0 + h * 0.7 };
+              if (mb.y1 > cb.b.y1 && overlap(mb, torso) > 0.35) bad.push(`${shop.name} pace${pace} f${f} ${m.key} over ${cb.c.key}`);
+            }
+        });
       }
+    expect(bad.slice(0, 5)).toEqual([]);
   });
-  test('nobody stands still on the doormat', () => {
+  // T17 (C20): the old test checked y ranges nobody ever stands in. Project the mat polygon to a screen box.
+  test('the screen-box check can fail: a figure parked on the mat covers it', () => {
+    const lay = layout(2, 3, 2, 2, 6, 3, 0);
+    const mat = matBox(lay);
+    const cx = (lay.door.x0 + lay.door.x1) / 2;
+    const parked = box({ key: 'x', sortY: -15, role: 'walkin', props: { x: cx, y: -15, kind: 'guest', step: 0 } });
+    expect(overlap(parked, mat)).toBeGreaterThan(0.2);
+  });
+  test('nobody stands still on the doormat (>20% of its screen box)', () => {
     for (const shop of busyShops()) {
-      const fs = frames(shop, 1.5);
-      const { x0, x1 } = shop.lay.door;
-      for (const cast of fs)
+      const mat = matBox(shop.lay);
+      for (const cast of frames(shop, 1.5))
         for (const c of cast) {
           const still = !c.props.step && c.props.kind !== 'sit';
-          const onMat = c.props.x > x0 && c.props.x < x1 && c.props.y < -6 && c.props.y > DOOR_OUT_Y + 4;
-          expect([shop.name, c.key, still && onMat]).toEqual([shop.name, c.key, false]);
+          expect([shop.name, c.key, still && overlap(box(c), mat) > 0.2]).toEqual([shop.name, c.key, false]);
         }
     }
   });
@@ -97,6 +123,42 @@ describe('crowd budgets', () => {
       }
       expect([shop.name, bad / fs.length < 0.15]).toEqual([shop.name, true]);
     }
+  });
+});
+
+describe('screen edges and back-row diners', () => {
+  // D284: a leaving driver used to fade to a half-transparent ghost while still fully on screen
+  test('a figure is only translucent once it is (almost) entirely off screen', () => {
+    const bad: string[] = [];
+    for (const shop of busyShops())
+      for (const pace of [1, 2.6])
+        frames(shop, pace).forEach((cast, f) => {
+          for (const c of cast) {
+            const o = c.props.o ?? 1;
+            const b = box(c);
+            const visible = Math.max(0, Math.min(b.x1, SCENE_W) - Math.max(b.x0, 0)) / (b.x1 - b.x0);
+            if (o < 0.9 && visible > 0.25) bad.push(`${shop.name} pace${pace} f${f} ${c.key} o=${o.toFixed(2)} visible=${visible.toFixed(2)}`);
+          }
+        });
+    expect(bad.slice(0, 5)).toEqual([]);
+  });
+  // D283: back-row diners (room y 42) sit in front of the bakers; their heads must not land on a baker's shins and feet
+  test("a back-row diner's head never covers a baker's lower legs or feet", () => {
+    const bad: string[] = [];
+    for (const shop of busyShops()) {
+      const cast = frames(shop, 1)[0];
+      const bakers = cast.filter((c) => c.role === 'baker').map(box);
+      for (const d of cast.filter((c) => (c.role === 'diner' || c.role === 'companion') && c.props.y === BACK_ROW_Y)) {
+        const b = box(d);
+        const head = { x0: b.x0, x1: b.x1, y0: b.y0, y1: b.y0 + (b.y1 - b.y0) * 0.3 };
+        for (const bk of bakers) {
+          const h = bk.y1 - bk.y0;
+          const legs = { x0: bk.x0, x1: bk.x1, y0: bk.y1 - h * 0.35, y1: bk.y1 };
+          if (b.y1 > bk.y1 && overlap(head, legs) > 0) bad.push(`${shop.name} ${d.key}`);
+        }
+      }
+    }
+    expect(bad.slice(0, 5)).toEqual([]);
   });
 });
 

@@ -1,10 +1,10 @@
-import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BuyButton } from '@/components/game-ui';
+import { APP_VERSION } from '@/content/version';
 import { money } from '@/engine/format';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
@@ -57,7 +57,7 @@ export default function Settings() {
             )}
           </View>
         </View>
-        <Text style={styles.version}>Slice Empire v{Constants.expoConfig?.version ?? '0.1.0'}</Text>
+        <Text style={styles.version}>Slice Empire v{APP_VERSION}</Text>
       </View>
     </View>
   );

@@ -1,7 +1,7 @@
 import { COUNTER_LANE_Y, DINING_AISLE_Y, DOOR_IN_Y, DOOR_OUT_Y, SEAT, type Layout } from './layout';
 
 /** Walk-ins walk the sidewalk on the curb side (drivers use −30…−42), so the two never stack. */
-const GUEST_WALK_Y = -48;
+export const GUEST_WALK_Y = -44;
 
 /** Linear interpolation along a polyline at fraction k (0..1) of its length. */
 export function along(path: [number, number][], k: number): [number, number] {
@@ -103,8 +103,9 @@ export function guestPose(lay: Layout, i: number, p: number, sceneW: number): Gu
   const aisle: Pt = [seat[0], DINING_AISLE_Y];
   // Between the counter and the order spot people walk the lane just in front of the counter (behind the
   // drivers' pickup line), and only step forward to the tables once they're left of the pickup spots.
-  // turn down right beside the counter, before the bakers, and walk the dining aisle from there
-  const turnX = Math.min(seat[0], lay.counter.x0);
+  // turn down right beside the counter, before the bakers, and walk the dining aisle from there. G72: this
+  // was Math.min, which is always the (left) seat x, so walkers crossed in front of the bakers on the way.
+  const turnX = Math.max(seat[0], lay.counter.x0);
   const behindPickup: Pt[] = [
     [lay.counter.x1 + 2, COUNTER_LANE_Y],
     [turnX, COUNTER_LANE_Y],

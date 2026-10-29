@@ -38,7 +38,7 @@ export interface ScenePanel {
   /** Optional narration box at the top of the panel. */
   caption?: string;
   /** Optional foreground prop drawn into the scene. */
-  prop?: 'vending-machine';
+  prop?: 'vending-machine' | 'sold-sign' | 'recipe-card';
   /** 0–3 speech bubbles, shown in order. */
   lines: SceneLine[];
 }

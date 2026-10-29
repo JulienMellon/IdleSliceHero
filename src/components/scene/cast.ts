@@ -39,8 +39,12 @@ export interface CastInput {
   pal: SeatPalette;
 }
 
-/** Opacity for a figure at screen x: fades over 30 units at both screen edges. */
-export const edgeFade = (sx: number) => Math.max(0, Math.min(1, (SCENE_W - sx) / 30, sx / 30));
+/** A figure stays opaque until its centre is this far past the screen edge, so it has fully left before it fades. */
+const EDGE_HOLD = 14;
+/** …then fades out over this many units (D284: it used to fade over the last 30 on screen and read as a ghost). */
+const EDGE_FADE = 8;
+/** Opacity for a figure at screen x. */
+export const edgeFade = (sx: number) => Math.max(0, Math.min(1, (SCENE_W + EDGE_HOLD - sx) / EDGE_FADE, (sx + EDGE_HOLD) / EDGE_FADE));
 
 /**
  * Builds this frame's cast. Two clocks drive it:
@@ -140,7 +144,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `c${i}`,
       sortY: y,
       role: 'cook',
-      props: { x, y, kind: 'cook', gold: shop.prep >= 100, front: true, act: COOK_ACTS[i % 3], mood: running && Math.sin(pt * 4 + i) > 0.3 ? 'focus' : 'smile', seed: sd, blink: blinkAt(sd), arm: running ? Math.abs(Math.sin(pt * 4 + i)) * 3 : 0 },
+      props: { x, y, kind: 'cook', gold: shop.prep >= 100, front: true, act: COOK_ACTS[i % 3], mood: running && Math.floor(poseClock / 1.5 + i) % 2 === 0 ? 'focus' : 'smile', seed: sd, blink: blinkAt(sd), arm: running ? Math.abs(Math.sin(pt * 4 + i)) * 3 : 0 },
     });
   });
   // bakers in front of the oven bank; the one by the counter holds the peel upright so it clears the counter

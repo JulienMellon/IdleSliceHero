@@ -200,9 +200,10 @@ function Scenery({ id }: { id: BackdropId }) {
           {Array.from({ length: 6 }).map((_, r) =>
             Array.from({ length: 6 }).map((__, c) => <Rect key={`${r}${c}`} x={125 + c * 27} y={35 + r * 26} width={16} height={14} fill="#C77DFF" opacity={0.5} />),
           )}
-          <Path d="M200 40 L240 110 L160 110 Z" fill="#FFC531" stroke="#000" strokeWidth={3} />
-          <Circle cx={190} cy={85} r={6} fill="#E8432E" />
-          <Circle cx={210} cy={95} r={5} fill="#E8432E" />
+          {/* logo kept left of centre so it never sits on the speaker's head */}
+          <Path d="M148 48 L176 100 L120 100 Z" fill="#FFC531" stroke="#000" strokeWidth={3} />
+          <Circle cx={142} cy={80} r={4.5} fill="#E8432E" />
+          <Circle cx={156} cy={88} r={4} fill="#E8432E" />
         </G>
       );
   }
@@ -318,6 +319,35 @@ function Skyline({ top, dark, billboard, lit = false }: { top: number; dark: boo
   );
 }
 
+function SoldSign() {
+  return (
+    <G>
+      <Rect x={62} y={112} width={6} height={64} fill="#6B4423" stroke={INK} strokeWidth={2} />
+      <Rect x={22} y={84} width={102} height={42} rx={4} fill="#F2E2B8" stroke={INK} strokeWidth={3} />
+      <Text x={73} y={102} fontSize={13} fontFamily={F.bold} fill="#E8432E" textAnchor="middle">
+        SOLD SOON
+      </Text>
+      <Text x={73} y={118} fontSize={8} fontFamily={F.bold} fill={INK} textAnchor="middle">
+        FUTURE MEGASTORE
+      </Text>
+    </G>
+  );
+}
+
+function RecipeCard() {
+  return (
+    <G transform="rotate(-6 300 120)">
+      <Rect x={252} y={84} width={92} height={64} rx={4} fill="#FFF4D6" stroke={INK} strokeWidth={3} />
+      <Text x={298} y={102} fontSize={11} fontFamily={F.bold} fill="#E8432E" textAnchor="middle">
+        ROSA’S SAUCE
+      </Text>
+      {[0, 1, 2].map((i) => (
+        <Rect key={i} x={262} y={110 + i * 10} width={72 - i * 12} height={3} rx={1.5} fill={INK} opacity={0.55} />
+      ))}
+    </G>
+  );
+}
+
 function VendingMachine() {
   return (
     <G transform="translate(-128 0)">
@@ -337,7 +367,7 @@ function VendingMachine() {
 /** Per-scene zoom on the scenery, anchored at the kerb (the rainy opening shot frames Rosa's front). */
 const SCENE_ZOOM: Partial<Record<BackdropId, number>> = { 'downtown-rain': 1.15 };
 
-export function Backdrop({ id, width, height, prop }: { id: BackdropId; width: number; height: number; prop?: 'vending-machine' }) {
+export function Backdrop({ id, width, height, prop }: { id: BackdropId; width: number; height: number; prop?: 'vending-machine' | 'sold-sign' | 'recipe-card' }) {
   const [top, bottom] = SKY[id];
   // Art is 400 wide with scenery in the bottom 200 units. Up to 120 units of sky; a taller frame scales the
   // art up and crops the sides instead of showing more empty sky.
@@ -366,6 +396,8 @@ export function Backdrop({ id, width, height, prop }: { id: BackdropId; width: n
         <Scenery id={id} />
       )}
       {prop === 'vending-machine' && <VendingMachine />}
+      {prop === 'sold-sign' && <SoldSign />}
+      {prop === 'recipe-card' && <RecipeCard />}
     </Svg>
   );
 }

@@ -161,6 +161,7 @@ export const HOME_SCENES: Scene[] = [
       },
       {
         backdrop: 'shop',
+        prop: 'recipe-card',
         cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
         caption: 'The secret sauce recipe. It is mostly love. And garlic.',
         lines: [
@@ -424,6 +425,7 @@ export const HOME_SCENES: Scene[] = [
     panels: [
       {
         backdrop: 'waterfront',
+        prop: 'sold-sign',
         cast: [{ id: 'marisol', mood: 'sad' }],
         caption: 'A sign appears on Pier 9: "SOLD SOON — FUTURE MEGASLICE MEGASTORE."',
         lines: [
@@ -507,7 +509,7 @@ export const HOME_SCENES: Scene[] = [
       {
         backdrop: 'university',
         cast: [],
-        caption: 'University District, 2 AM. Your new shop opens. Students pour in.',
+        caption: 'University District, finals week. Your new shop opens. Students pour in.',
         lines: [],
       },
       {
@@ -709,7 +711,7 @@ export const HOME_SCENES: Scene[] = [
       {
         backdrop: 'industrial',
         cast: [{ id: 'big-sal', mood: 'neutral' }],
-        caption: 'Midnight. Ten thousand pies in. Not one cold.',
+        caption: 'Midnight. A hundred thousand pies in. Not one cold.',
         lines: [
           { speaker: 'Big Sal', text: 'Pizza\'s... fine. Crust\'s fine. Sauce is...' },
         ],
@@ -969,7 +971,7 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'genevieve', mood: 'happy' }],
         caption: 'The Port Marinara Times. Front page. Five stars.',
         lines: [
-          { speaker: 'Genevieve', text: '"The best pizza in Port Marinara is not on a yacht. It is on a bike."' },
+          { speaker: 'Genevieve', text: '"The best pizza in Port Marinara is not on a yacht. It is on a bike. Lately, a drone."' },
           { speaker: 'Genevieve', text: 'I returned the yacht. Croissant was seasick anyway.' },
         ],
       },

@@ -4,6 +4,7 @@ import type { NeighborhoodId } from '../../content/types';
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { INK, D, WH, P, kAt, shade } from './projection';
 import { type Layout, SEAT } from './layout';
+import { boxOvenGeom, domeGeom, flameBox, isBoxOven, ovenFrame, type OvenSpec } from './geometry';
 import { Box, FloorShadow } from './primitives';
 
 /**
@@ -11,33 +12,6 @@ import { Box, FloorShadow } from './primitives';
  * with an arched mouth and keystone; stacked decks and the Stone grade are box deck ovens, so grades
  * differ in silhouette as well as finish.
  */
-type OvenSpec = Layout['ovens'][number];
-
-/** Stacked decks and the Stone grade are box ovens; single decks are domes. */
-const isBoxOven = (o: OvenSpec, grade: number) => o.h < 70 || grade === 1;
-
-/** Where an oven's flame sits (screen units): box ovens show it in the door window, domes in the mouth. */
-function flameBox(o: OvenSpec, grade: number) {
-  const y = D - 6;
-  const [ax, ay] = P(o.x0, y, o.z);
-  const [bx] = P(o.x1, y, o.z);
-  const w = bx - ax;
-  const cx = (ax + bx) / 2;
-  const k = kAt(y);
-  const top = ay - o.h * k;
-  if (isBoxOven(o, grade)) {
-    const legs = o.z === 0 ? 10 * k : 0;
-    const bh = ay - legs - top;
-    const dw = w * 0.74;
-    const dh = bh * 0.42;
-    const dy = top + bh * 0.4;
-    return { mx: cx, my: dy + dh - 3, mw: dw - 6, mh: dh - 6 };
-  }
-  const pTop = ay - 12 * k;
-  const mw = w * 0.56;
-  return { mx: cx, my: pTop - 1, mw, mh: Math.min((pTop - top) * 0.5, mw * 0.9) };
-}
-
 /** A flickering flame: the only part of an oven that changes from frame to frame. */
 function Flame({ mx, my, mw, mh, flicker }: { mx: number; my: number; mw: number; mh: number; flicker: number }) {
   return (
@@ -55,32 +29,19 @@ export function Oven({ o, grade, lit, flicker }: { o: OvenSpec; grade: number; l
     <G>
       <OvenBody o={o} grade={grade} lit={lit} />
       {lit && <Flame {...fb} flicker={flicker} />}
-      {!isBoxOven(o, grade) && <DomeFront o={o} gold={grade >= 3} />}
+      {!isBoxOven(o, grade) && <DomeFront o={o} gold={grade >= 3} wood={grade === 2} />}
     </G>
   );
 }
 
 const OvenBody = memo(function OvenBody({ o, grade, lit }: { o: OvenSpec; grade: number; lit: boolean }) {
-  const y = D - 6;
-  const [ax, ay] = P(o.x0, y, o.z);
-  const [bx] = P(o.x1, y, o.z);
-  const w = bx - ax;
-  const cx = (ax + bx) / 2;
-  const k = kAt(y);
-  const h = o.h * k;
-  const top = ay - h;
+  const { ax, ay, bx, w, cx, k, top } = ovenFrame(o);
   const base = OVEN_GRADES[grade].color;
   const dark = shade(base, -0.4);
   const fire = lit ? 'url(#ember)' : '#24120A';
-  const box = o.h < 70 || grade === 1;
+  const box = isBoxOven(o, grade);
   if (box) {
-    const legs = o.z === 0 ? 10 * k : 0;
-    const bTop = top;
-    const bBot = ay - legs;
-    const bh = bBot - bTop;
-    const dw = w * 0.74;
-    const dh = bh * 0.42;
-    const dy = bTop + bh * 0.4;
+    const { legs, bTop, bBot, bh, dw, dh, dy } = boxOvenGeom(o);
     return (
       <G>
         {legs > 0 && [0.12, 0.88].map((f) => <Rect key={f} x={ax + w * f - 2} y={bBot - 1} width={4} height={legs + 1} fill="#4A4F57" stroke={INK} strokeWidth={0.8} />)}
@@ -97,13 +58,7 @@ const OvenBody = memo(function OvenBody({ o, grade, lit }: { o: OvenSpec; grade:
     );
   }
   // domed oven on a brick plinth
-  const plinth = 12 * k;
-  const pTop = ay - plinth;
-  const ry = Math.min(w * 0.5, (pTop - top) * 0.78);
-  const shoulder = top + ry;
-  const mw = w * 0.56;
-  const mh = Math.min((pTop - top) * 0.5, mw * 0.9);
-  const mTop = pTop - mh;
+  const { pTop, ry, shoulder, mw, mh, mTop } = domeGeom(o);
   const dome = (dx: number) => `M${ax + dx} ${pTop} L${ax + dx} ${shoulder} A${w / 2} ${ry} 0 0 1 ${bx + dx} ${shoulder} L${bx + dx} ${pTop} Z`;
   return (
     <G>
@@ -128,11 +83,6 @@ const OvenBody = memo(function OvenBody({ o, grade, lit }: { o: OvenSpec; grade:
       {/* arched mouth with a brick ring and keystone */}
       <Path d={`M${cx - mw / 2 - 3} ${pTop} L${cx - mw / 2 - 3} ${mTop + mw * 0.3} A${mw / 2 + 3} ${mw * 0.34} 0 0 1 ${cx + mw / 2 + 3} ${mTop + mw * 0.3} L${cx + mw / 2 + 3} ${pTop} Z`} fill={shade(base, -0.3)} stroke={INK} strokeWidth={1} />
       <Path d={`M${cx - mw / 2} ${pTop} L${cx - mw / 2} ${mTop + mw * 0.3} A${mw / 2} ${mw * 0.3} 0 0 1 ${cx + mw / 2} ${mTop + mw * 0.3} L${cx + mw / 2} ${pTop} Z`} fill={fire} />
-      {grade === 2 && (
-        <G>
-          {[0, 1, 2].map((i) => <Circle key={i} cx={bx + 4 + (i % 2) * 5} cy={ay - 3 - Math.floor(i / 2) * 5} r={2.8} fill="#9C6B3F" stroke={INK} strokeWidth={0.7} />)}
-        </G>
-      )}
       {grade >= 4 && (
         <G>
           <Path d={`M${ax + 4} ${shoulder - 2} A${w / 2 - 4} ${ry - 4} 0 0 1 ${bx - 4} ${shoulder - 2}`} stroke="#FFF3B0" strokeWidth={1.4} fill="none" />
@@ -144,19 +94,9 @@ const OvenBody = memo(function OvenBody({ o, grade, lit }: { o: OvenSpec; grade:
 });
 
 /** A dome's keystone and brick plinth, drawn over its flame so the glow stays inside the mouth. */
-const DomeFront = memo(function DomeFront({ o, gold }: { o: OvenSpec; gold: boolean }) {
-  const y = D - 6;
-  const [ax, ay] = P(o.x0, y, o.z);
-  const [bx] = P(o.x1, y, o.z);
-  const w = bx - ax;
-  const cx = (ax + bx) / 2;
-  const k = kAt(y);
-  const top = ay - o.h * k;
-  const plinth = 12 * k;
-  const pTop = ay - plinth;
-  const mw = w * 0.56;
-  const mh = Math.min((pTop - top) * 0.5, mw * 0.9);
-  const mTop = pTop - mh;
+const DomeFront = memo(function DomeFront({ o, gold, wood }: { o: OvenSpec; gold: boolean; wood: boolean }) {
+  const { ax, ay, bx, w, cx } = ovenFrame(o);
+  const { plinth, pTop, mTop } = domeGeom(o);
   return (
     <G>
       <Path d={`M${cx - 3.5} ${mTop - 2} L${cx + 3.5} ${mTop - 2} L${cx + 2.5} ${mTop + 5} L${cx - 2.5} ${mTop + 5} Z`} fill={gold ? '#FFF3B0' : '#E9C9A0'} stroke={INK} strokeWidth={0.8} />
@@ -166,13 +106,15 @@ const DomeFront = memo(function DomeFront({ o, gold }: { o: OvenSpec; gold: bool
       {Array.from({ length: Math.max(2, Math.floor((w + 6) / 12)) }).map((_, i) => (
         <Path key={i} d={`M${ax + 3 + i * 12 + (i % 2) * 6} ${pTop} v${plinth / 2} M${ax + 9 + i * 12} ${pTop + plinth / 2} v${plinth / 2}`} stroke="#7A3520" strokeWidth={0.8} />
       ))}
+      {/* the wood-fired grade's log pile stands beside the plinth, so it is drawn after (over) it */}
+      {wood && [0, 1, 2].map((i) => <Circle key={`w${i}`} cx={bx + 4 + (i % 2) * 5} cy={ay - 3 - Math.floor(i / 2) * 5} r={2.8} fill="#9C6B3F" stroke={INK} strokeWidth={0.7} />)}
     </G>
   );
 });
 
 /** One stainless hood + flue over a bank of box deck ovens. */
 export const OvenHood = memo(function OvenHood({ lay, grade, mural }: { lay: Layout; grade: number; mural: boolean }) {
-  const boxes = lay.ovens.filter((o) => o.h < 70 || grade === 1);
+  const boxes = lay.ovens.filter((o) => isBoxOven(o, grade));
   if (!boxes.length) return null;
   const top = Math.max(...boxes.map((o) => o.z + o.h));
   const x0 = lay.ovenCols[0].x0 - 6;

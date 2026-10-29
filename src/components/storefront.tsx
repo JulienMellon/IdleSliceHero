@@ -20,9 +20,9 @@ import { emitPayout } from './pulse-bus';
 import { Backdrop } from './scene/background';
 import { useClock } from './scene/clock';
 import { SceneDefs } from './scene/defs';
-import { FRONT_ROW_Y, LEDGE_Y, SEAT, STOOL_Y, layout } from './scene/layout';
+import { FRONT_ROW_Y, LEDGE_Y, STOOL_Y, layout } from './scene/layout';
 import { seatPalette } from './scene/palette';
-import { GUEST_SHIRTS, HAIR_COLORS, hash32, type Mood, Person } from './scene/people';
+import { GUEST_SHIRTS, HAIR_COLORS, hash32, Person } from './scene/people';
 import { CURB_Y, D, FRONT_TOP, INK, P, SCENE_W, sceneFit, unprojectX } from './scene/projection';
 import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Rug, Stools, Table, WallPlanter } from './scene/props';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell } from './scene/room';
@@ -130,7 +130,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // an unmanaged shop's chip strip covers the kerb, so its sidewalk props move up and the vehicle stays home
   const idleShop = !shop.managed && id !== 'downtown';
   if (fp === 0) items.push({ y: 8, el: <FloorProp key="fprop" id={id} x={lay.L + 22} y={8} /> });
-  items.push({ y: idleShop ? -18 : -34, el: <ChalkSign key="sign" x={lay.door.x0 - 75} y={idleShop ? -18 : -34} /> });
+  items.push({ y: idleShop ? -18 : -34, el: <ChalkSign key="sign" x={lay.sign.x} y={idleShop ? -18 : -34} /> });
   items.push({ y: 16, el: <DoorLeaf key="leaf" lay={lay} /> });
   {
     // the potted tree stays fully on screen (its pot is ~14 wide) in the widest rooms

@@ -98,7 +98,8 @@ describe('managers and tapping', () => {
 
 describe('building and upgrading', () => {
   test('pizzerias are built in order and become the active shop', () => {
-    const s = { ...fresh(), cash: 1e12 };
+    // Suburbs opens once Nonna has taken over Downtown (the frugal-path lock)
+    const s = { ...fresh(), cash: 1e12, seenScenes: ['downtown-4'] };
     expect(G.buildShop(s, 'waterfront').ok).toBe(false);
     const r = G.buildShop(s, 'suburbs');
     expect(r.ok && r.state.shops.suburbs.built).toBe(true);

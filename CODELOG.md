@@ -48,3 +48,16 @@ It runs alongside the visual critic (`CRITICLOG.md`). A step is done only when t
 | M10 | low | `scene/cast.ts` walk cycle | The frame index comes from the wall clock, so frames still duplicate or skip | Have `useClock` return an integer tick, or correct the comment |
 | M11 | low | `cast.ts` cook mood | `focus` toggles ~3×/s and re-renders `FigureBody` | Drive it from `floor(t / 1.5)` |
 | M6 | low | `storefront.tsx` items | Static furniture entries are rebuilt every frame | `useMemo` them on `[lay, decor, prep, boxes, idleShop]`, then concat with the cast |
+
+## v3.4 — build
+
+| Item | Fix |
+| --- | --- |
+| C19 + T16 | `layout()` snaps the back row only when no column is lost; test sweeps footprints, cooks, staff, ovens and plants. |
+| C20 + T17 | The doormat test projects the mat polygon to a screen box and fails if a still figure covers more than 20%; it includes a "can fail" check. |
+| C21 | Crowd frames are computed once per (shop, pace) and shared; the full suite runs in about 100 s. The G72 scene test samples every 7th layout (it took 107 s as a full sweep). |
+| C23 | Unused `SEAT` and `Mood` imports removed from `storefront.tsx`. |
+| A9 + T14/T15 | `scene/geometry.ts` holds `limbGeom`, `bodyBy`, `domeGeom`, `flameBox` and the oven geometry; `geometry.test.ts` checks the flame sits inside its window or mouth and limb hip equals body height minus bob. |
+| M11 | Cook `focus` mood is driven by `floor(poseClock / 1.5 + i)`, not a sine at 15 fps. |
+| Playtest | New pure modules: `components/cutscene-input.ts` (`canAdvance`, `sceneMayOpen`, `sceneHeading`) and `rate` / `goalAmount` in `engine/format.ts`. Engine: `upgradeLock` drivers, `buildLock` Suburbs + `nonnaPizzasLeft` / `nonnaCountdownText`, `applyOffline` returns `capped` and `awaySeconds`, `bundleHint`. New tests: `components/__tests__/cutscene-input.test.ts`, `engine/__tests__/playtest.test.ts` (existing build test now sets `seenScenes` for the Suburbs lock). |
+| Not done (planned) | C22, M6, M10; tap-target resize (v3.6); 90 s story pacing and perks (v3.5). No `SAVE_VERSION` bump this step (no new saved fields). |

@@ -5,6 +5,7 @@
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
 import { DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, STATIONS, TUNING, VEHICLES, type DecorKind, type NeighborhoodDef } from '../content/tuning';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
+import { HOME_SCENES } from '../content/scenes/home';
 
 export const SAVE_VERSION = 2;
 export const SHOP_IDS = NEIGHBORHOODS.map((n) => n.id);
@@ -261,10 +262,10 @@ export function upgradeLock(s: GameState, id: NeighborhoodId, what: Upgrade): st
       return shop.footprint + 1 >= FOOTPRINTS.length ? 'Biggest it gets' : null;
     case 'manager':
       if (shop.managed) return 'Hired';
-      if (id === 'downtown') return 'Nonna will take over soon';
+      if (id === 'downtown') return nonnaCountdownText(s);
       return null;
     case 'drivers':
-      return null;
+      return shop.drivers >= cap ? (shop.footprint + 1 < FOOTPRINTS.length ? `Expand to go past Lv ${cap}` : 'Max drivers') : null;
   }
 }
 
@@ -304,7 +305,23 @@ export function buildLock(s: GameState, id: NeighborhoodId): string | null {
   const idx = NEIGHBORHOODS.findIndex((n) => n.id === id);
   if (s.shops[id].built) return 'Built';
   if (idx > 0 && !s.shops[NEIGHBORHOODS[idx - 1].id].built) return `Build in ${NEIGHBORHOODS[idx - 1].name} first`;
+  // Downtown stops earning once Nonna's tutorial is skipped past; keep the player here until she takes over.
+  if (id === 'suburbs' && !s.seenScenes.includes(NONNA_SCENE_ID)) return nonnaCountdownText(s);
   return null;
+}
+
+const NONNA_SCENE_ID = 'downtown-4';
+
+/** Pizzas Downtown still has to deliver before Nonna takes over the kitchen (0 once it's due or seen). */
+export function nonnaPizzasLeft(s: GameState): number {
+  const sc = HOME_SCENES.find((x) => x.id === NONNA_SCENE_ID);
+  if (!sc || sc.trigger.kind !== 'deliveries' || s.seenScenes.includes(NONNA_SCENE_ID)) return 0;
+  return Math.max(0, sc.trigger.count - s.shops[sc.trigger.neighborhood].sold);
+}
+
+export function nonnaCountdownText(s: GameState): string {
+  const n = nonnaPizzasLeft(s);
+  return n > 0 ? `Nonna takes over in ${n} more pizza${n === 1 ? '' : 's'}` : 'Nonna is about to take over';
 }
 
 export function buildShop(s: GameState, id: NeighborhoodId): BuyResult {
@@ -381,6 +398,10 @@ export function tick(s: GameState, dt: number): GameState {
 export interface OfflineResult {
   state: GameState;
   seconds: number;
+  /** True when the player was away longer than the offline cap. */
+  capped: boolean;
+  /** Real time away, before the cap. */
+  awaySeconds: number;
   earned: number;
   /** Cash each pizzeria made while away (only those that made any). */
   byShop: { id: NeighborhoodId; earned: number; managed: boolean }[];
@@ -392,7 +413,7 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
   const seconds = Math.min(elapsed, TUNING.offlineCapSeconds);
   const next = tick(s, seconds);
   const byShop = SHOP_IDS.map((id) => ({ id, managed: s.shops[id].managed, earned: (next.shops[id].sold - s.shops[id].sold) * valuePerPizza(id, s.shops[id], s.vehicle) })).filter((x) => x.earned > 0);
-  return { state: { ...next, lastSavedAt: now }, seconds, earned: next.cash - s.cash, byShop };
+  return { state: { ...next, lastSavedAt: now }, seconds, capped: elapsed > TUNING.offlineCapSeconds, awaySeconds: elapsed, earned: next.cash - s.cash, byShop };
 }
 
 // ---------- Story ----------
@@ -507,6 +528,23 @@ export function bottleneckBundle(s: GameState, id: NeighborhoodId, maxSteps = 8)
     if (gain > start * 1e-9 + 1e-12) return { steps, cost, gain };
   }
   return null;
+}
+
+const STEP_LABEL: Record<string, string> = { prep: 'prep', ovens: 'ovens', grade: 'oven grade', counter: 'counter', drivers: 'drivers', expand: 'expansion' };
+
+export interface BundleHint {
+  label: string;
+  cost: number;
+  gain: number;
+  affordable: boolean;
+}
+
+/** "Upgrade prep + ovens · $X": the tied-station bundle, ready to show in the UI. */
+export function bundleHint(s: GameState, id: NeighborhoodId): BundleHint | null {
+  const b = bottleneckBundle(s, id);
+  if (!b) return null;
+  const names = [...new Set(b.steps.map((w) => STEP_LABEL[w] ?? w))];
+  return { label: `Upgrade ${names.join(' + ')}`, cost: b.cost, gain: b.gain, affordable: s.cash >= b.cost };
 }
 
 // ---------- Decor ----------

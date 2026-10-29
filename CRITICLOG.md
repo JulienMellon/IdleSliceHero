@@ -31,3 +31,19 @@ v3.3 loads clean. Seven of the round-33 notes are confirmed fixed: D273 (peel), 
 | D285 | minor | Curb-side walk-ins' feet sit about 2pt above the Prep card, with no visible contact shadow (carried over from D279) | `GUEST_WALK_Y = −44`; give walking guests a 10×3 `#000` 0.18 shadow |
 | D286 | note | Tapping the Ovens tag opens the drawer on a "no gain now" Ovens card while Prep is the BOTTLENECK | When the tagged station isn't the bottleneck, highlight the bottleneck card (or pulse both) |
 | D287 | note | The first-minute hint flips between "more ovens" and "more drivers" when the two are tied | Lock the bottleneck for ~3 s, or use a fixed tie-break order (same as D281) |
+
+## v3.4 — build (addresses round 34 and the one-time playtest; tap-target resize is planned for v3.6)
+
+| Note | Fix |
+| --- | --- |
+| G72 | `timelines.ts` `guestPose`: `turnX = Math.max(seat[0], lay.counter.x0)`. Walk-ins leave the counter lane at the counter's end and use the aisle. `crowd.test.ts` now allows **0** frames of a walker covering a baker's torso; the new test fails on v3.3. |
+| D282 | The parked vehicle moved to `d0 − 60` and the chalkboard to `d0 − 115`; geometry test checks the clearance to `guestPauseX`. |
+| D283 | Bakers behind a back-row diner stand 17 deeper (`BACKROW_BAKER_SHIFT`); a crowd test checks heads never cover a baker's shins or feet. |
+| D284 | `edgeFade` holds opacity 1 until a figure is 14 past the edge, then fades over 8. |
+| D285 | `GUEST_WALK_Y = −44`. |
+| D286, D287 | The drawer shows "Upgrade prep + ovens · $X (one alone adds $0/s)" when stations are tied, so the tied cards are explained. |
+| Playtest 1 | Cut-scene taps are ignored for 450 ms after each line and 700 ms after a scene opens; a new scene waits 1.5 s after the last kitchen tap. |
+| Playtest 3 | The heading reads "Industrial · Part 4" until the last panel, then shows the title. |
+| Playtest 4–8 | No BOTTLENECK badge on the manager card; Settings shows `APP_VERSION`; rates use `rate()`; goal bar uses `goalAmount()` ("$1.50K / $1.50K"); Drivers capped at `levelCap`; the Build toast names the cost and shows on the City screen; the offline popup says when earnings are capped. |
+| Playtest, frugal path | Suburbs is locked until downtown-4 plays and shows "Nonna takes over in N more pizzas" on the Downtown manager card. |
+| Playtest, story | The speech tail is hidden on "You" lines; the MegaSlice HQ logo moved off Victor's head; "Ten thousand pies" → "A hundred thousand"; "…on a bike. Lately, a drone."; "2 AM" → "finals week"; `sold-sign` and `recipe-card` props are drawn. |

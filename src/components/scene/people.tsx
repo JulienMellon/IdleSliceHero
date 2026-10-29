@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react';
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
+import { bodyBy, isWorker, limbGeom } from './geometry';
 import { bobFor, quantArm, quantStep } from './quantise';
 import { INK, P, kAt, shade } from './projection';
 import { HAIR_COLORS, type Act, type Kind, type Look, type Mood, type PersonProps, lookFor } from './looks';
@@ -103,8 +104,6 @@ export function Headwear({ kind, hy, front = false, alt = false, dot = '#D9443A'
 /** The figure's look and discrete pose — everything except where it stands. */
 type FigureProps = Omit<PersonProps, 'x' | 'y' | 'o'>;
 
-const isWorker = (kind: Kind) => kind === 'cook' || kind === 'baker' || kind === 'staff' || kind === 'driver';
-
 /** Shirt and trouser colours: uniforms for staff, the look (or an override) for guests. */
 function outfitColors(kind: Kind, shirt: string | undefined, look: Look) {
   const top = kind === 'cook' ? '#FBF8F3' : kind === 'baker' ? shirt ?? '#B23A48' : kind === 'staff' ? '#3FAE5A' : kind === 'driver' ? '#2F80ED' : shirt ?? look.shirt;
@@ -167,7 +166,7 @@ function bodyGeom({ kind, shirt, flip = false, seed = 0, front = false, hair }: 
   const unflipHead = flip ? 'translate(1 0) scale(-1 1)' : undefined;
   const { top } = outfitColors(kind, shirt, look);
   const skin = look.skin;
-  const by = (sitting ? -21 : -30) - (sitting ? 0 : look.tall);
+  const by = bodyBy(kind, look.tall);
   const hy = by - 9;
   const ww = worker ? (look.wide > 0 ? 0.9 : 0) : look.wide * 1.1;
   // face layout: three-quarter (features toward +x) or front-facing (centred, ears both sides)
@@ -175,41 +174,6 @@ function bodyGeom({ kind, shirt, flip = false, seed = 0, front = false, hair }: 
   const fx = front ? 0.5 : 4.65;
   const torso = `M${-8 - ww} ${by + 3.5} Q${-8 - ww} ${by} ${-4.5} ${by} L5 ${by} Q${8.5 + ww} ${by} ${8.5 + ww} ${by + 3.5} L${8 + ww} ${by + 16.5} Q${8 + ww} ${by + 19} ${5.5 + ww} ${by + 19} L${-5.5 - ww} ${by + 19} Q${-7.6 - ww} ${by + 19} ${-7.6 - ww} ${by + 16.5} Z`;
   return { worker, look, hairC, unflipBody, unflipHead, top, skin, by, hy, ww, eyeX, fx, torso };
-}
-
-/** Limb geometry from the pose: hip/shoulder height (with walk bob), hand positions and stride. */
-export function limbGeom({ kind, act, carry, carryWalk, step, arm, tall }: Pick<LimbProps, 'kind' | 'act' | 'carry' | 'carryWalk' | 'step' | 'arm' | 'tall'>) {
-  const pin = act === 'pin';
-  const sitting = kind === 'sit';
-  const worker = isWorker(kind);
-  const walking = step !== 0 && !sitting;
-  const sw = walking ? Math.sin(step) : 0;
-  const by = (sitting ? -21 : -30) - bobFor(kind, step) - (sitting ? 0 : tall);
-  const hy = by - 9;
-  // front-arm hand position: working (arm), carrying, eating, or swinging
-  const hand: [number, number] = carry
-    ? carryWalk
-      ? [5, by + 10]
-      : [12, by + 8]
-    : sitting
-      ? act === 'slice'
-        ? [7.5, hy + 5.5]
-        : act === 'cup'
-          ? [10.5, by + 6.5]
-          : [12 + arm, by + 9 - arm]
-      : act === 'toss'
-        ? [5, hy - 14 - arm]
-        : act === 'ladle'
-          ? [10, by + 11 - arm]
-          : pin
-            ? [6 + arm, by + 13 - arm * 1.2]
-            : worker && arm > 0
-              ? [10 + arm, by + 13 - arm * 2]
-              : [9 + sw * 2.5, by + 16];
-  // a walking carrier holds the box centred in front, both hands on it
-  const bx = carryWalk ? 10 : 3;
-  const backHand: [number, number] = carry && carryWalk ? [-4, by + 10] : pin ? [hand[0] - 9, hand[1]] : sitting ? (act === 'lean' ? [-12, by + 3] : [-7, by + 15]) : [-8.5 - sw * 2.5, by + 15.5];
-  return { pin, sitting, walking, sw, by, hand, bx, backHand, peel: kind === 'baker' };
 }
 
 /**

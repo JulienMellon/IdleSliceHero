@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
+import { sceneMayOpen } from '../components/cutscene-input';
 import { HOME_SCENES } from '../content/scenes/home';
 import type { DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
@@ -11,6 +12,9 @@ const SAVE_KEY = 'slice-empire/save/v1';
 
 export interface OfflineSummary {
   seconds: number;
+  /** Time away exceeded the offline cap. */
+  capped: boolean;
+  awaySeconds: number;
   earned: number;
   byShop: { name: string; earned: number; managed: boolean }[];
 }
@@ -44,12 +48,14 @@ interface Store {
 
 /** Serialises saves so a resume never reads a save that is still being written. */
 let pendingSave: Promise<void> = Promise.resolve();
+/** When the player last tapped the kitchen: a scene never opens mid-tap (it would eat the taps). */
+let lastKitchenTap = 0;
 
 export const useGame = create<Store>((set, get) => {
   /** After any state change, queue the next story scene if one has triggered. */
   const queueScene = () => {
     const { game, playing } = get();
-    if (playing) return;
+    if (playing || !sceneMayOpen(Date.now(), lastKitchenTap)) return;
     const next = G.pendingScenes(game, HOME_SCENES)[0];
     if (next) set({ playing: { scene: next, replay: false } });
   };
@@ -92,7 +98,7 @@ export const useGame = create<Store>((set, get) => {
           game = r.state;
           if (r.earned >= 1 && r.seconds >= 60) {
             // Hold the cash back until the player taps Collect.
-            offline = { seconds: r.seconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed })) };
+            offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed })) };
             game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
           }
         }
@@ -127,6 +133,7 @@ export const useGame = create<Store>((set, get) => {
 
     tapShop: () => {
       const g = get().game;
+      lastKitchenTap = Date.now();
       set({ game: G.tapShop(g, g.active) });
     },
 
@@ -145,7 +152,7 @@ export const useGame = create<Store>((set, get) => {
 
     buyDecor: (kind) => commit(G.buyDecor(get().game, get().game.active, kind), { name: kind[0].toUpperCase() + kind.slice(1), cost: G.decorCost(get().game, get().game.active, kind) }),
 
-    build: (id) => commit(G.buildShop(get().game, id)),
+    build: (id) => commit(G.buildShop(get().game, id), { name: `Build ${G.def(id).name}`, cost: G.def(id).buildCost }),
 
     setActive: (id) => {
       const g = get().game;

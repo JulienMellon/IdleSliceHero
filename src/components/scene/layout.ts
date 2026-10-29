@@ -25,6 +25,13 @@ export const DINING_AISLE_Y = 24;
 export const LEDGE_Y = 5;
 export const STOOL_Y = 13;
 
+/** Bakers standing behind a back-row diner step this far deeper so the diner's head clears their legs (D283). */
+const BACKROW_BAKER_SHIFT = 17;
+/** Half the parked vehicle's width in room units (it is drawn ~45 screen units wide at the door). */
+export const VEHICLE_HALF_W = 24;
+/** Half the sidewalk chalkboard's width (room units). */
+export const SIGN_HALF_W = 15;
+
 /** Narrowest oven bank (one column) the back wall must keep between the prep bench and the counter. */
 export const MIN_OVEN_ZONE = 36;
 
@@ -64,6 +71,8 @@ export interface Layout {
   /** Window bar along the front glass, when the front row leaves room for it. */
   ledge: { x0: number; x1: number } | null;
   scooter: { x: number; y: number };
+  /** The sidewalk chalkboard stands left of the parked vehicle. */
+  sign: { x: number };
 }
 
 export function layout(fp: number, ovenCount: number, cookCount: number, staffCount: number, tableCount: number, driverSlots: number, plants = 0): Layout {
@@ -116,8 +125,11 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   // the back row starts right of the prep bench, so diners' heads never poke into it
   // …and its seats interleave with the front row's: each back seat falls midway between two front seats
   const b0raw = Math.max(t0 + SEAT, prep.x1 + 4 + SEAT);
-  const b0 = t0 + SEAT + Math.ceil((b0raw - t0 - SEAT) / (2 * SEAT)) * (2 * SEAT);
-  const backCols = Math.max(0, Math.floor((counter.x0 - 40 - SEAT - b0) / TABLE_PITCH) + 1);
+  const backColsAt = (b: number) => Math.max(0, Math.floor((counter.x0 - 40 - SEAT - b) / TABLE_PITCH) + 1);
+  const b0snap = t0 + SEAT + Math.ceil((b0raw - t0 - SEAT) / (2 * SEAT)) * (2 * SEAT);
+  // C19: snap to the interleave grid only when no column is lost; otherwise keep the unsnapped start
+  const b0 = backColsAt(b0snap) >= backColsAt(b0raw) ? b0snap : b0raw;
+  const backCols = backColsAt(b0);
   const tables: Layout['tables'] = [];
   // fill the front row first, so a small dining room spreads out instead of stacking
   for (let f = 0; f < frontCols && tables.length < tableCount; f++) tables.push({ x: t0 + TABLE_PITCH * f, y: FRONT_ROW_Y });
@@ -127,15 +139,18 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   const bk0 = ovenCols[0].x0;
   const bk1 = ovenCols[ovenCols.length - 1].x1;
   const nb = Math.max(1, Math.min(3, Math.floor((bk1 - bk0) / 40)));
-  const bakers = Array.from({ length: nb }, (_, i) => ({
-    x: Math.min(bk0 + ((bk1 - bk0) * (i + 0.5)) / nb, counter.x0 - 26),
-    y: i % 2 ? 60 : 72,
-    nearCounter: nb > 1 && i === nb - 1,
-  }));
+  const backRow = tables.filter((tb) => tb.y === BACK_ROW_Y);
+  const bakers = Array.from({ length: nb }, (_, i) => {
+    const x = Math.min(bk0 + ((bk1 - bk0) * (i + 0.5)) / nb, counter.x0 - 26);
+    // D283: a back-row diner's head would cover this baker's shins and feet, so stand them deeper (feet above the head)
+    const crowded = backRow.some((tb) => Math.abs(tb.x - x) < SEAT + 16);
+    return { x, y: (i % 2 ? 60 : 72) + (crowded ? BACKROW_BAKER_SHIFT : 0), nearCounter: nb > 1 && i === nb - 1 };
+  });
   // The window bar fills the front-right floor up to the door, until the front row of tables reaches it.
   const frontRowRight = Math.max(-Infinity, ...tables.filter((tb) => tb.y < STARTER_Y).map((tb) => tb.x + SEAT + 14));
   const lx0 = Math.max(counter.x0 + 4, frontRowRight);
   const lx1 = d0 - 12;
   const ledge = lx1 - lx0 > 30 ? { x0: lx0, x1: lx1 } : null;
-  return { fp, L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, orderSpots, tables, bakers, ledge, scooter: { x: d0 - 30, y: -30 } };
+  return { fp, L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, orderSpots, tables, bakers, ledge, // D282: the vehicle parks well left of the walk-ins' turn-in (guestPauseX = d0 − 6), the chalkboard left of it
+    scooter: { x: d0 - 60, y: -30 }, sign: { x: d0 - 115 } };
 }
