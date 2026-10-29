@@ -53,3 +53,105 @@ export function RegisterIcon({ size = 20 }: { size?: number }) {
     </Svg>
   );
 }
+
+/** Chair (Seating). */
+export function SeatIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Rect x={5} y={2} width={10} height={9} rx={2} fill="#D9443A" stroke={INK} strokeWidth={1.2} />
+      <Rect x={4} y={10} width={12} height={3.5} rx={1.2} fill="#B23A30" stroke={INK} strokeWidth={1.2} />
+      <Path d="M5.5 13.5 L5 18.5 M14.5 13.5 L15 18.5" stroke={INK} strokeWidth={1.6} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+/** Sparkle (oven Grade). */
+export function SparkleIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Path d="M9 1.5 L10.8 7.2 L16.5 9 L10.8 10.8 L9 16.5 L7.2 10.8 L1.5 9 L7.2 7.2 Z" fill="#FFC531" stroke={INK} strokeWidth={1.1} strokeLinejoin="round" />
+      <Path d="M15.5 13 L16.3 15.2 L18.5 16 L16.3 16.8 L15.5 19 L14.7 16.8 L12.5 16 L14.7 15.2 Z" fill="#FFE08A" stroke={INK} strokeWidth={0.8} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+/** Brick wall with an arrow (Expand). */
+export function ExpandIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Rect x={2} y={8} width={16} height={10} rx={1} fill="#C8643E" stroke={INK} strokeWidth={1.2} />
+      <Path d="M2 13 H18 M7 8 V13 M13 8 V13 M10 13 V18" stroke="#7A3520" strokeWidth={0.9} />
+      <Path d="M5 5 H15 M12.5 2.5 L15 5 L12.5 7.5 M7.5 2.5 L5 5 L7.5 7.5" stroke={INK} strokeWidth={1.4} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+/** Scooter with a pizza box (Fleet). */
+export function ScooterIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Circle cx={4.5} cy={15} r={2.8} fill="#333" stroke={INK} strokeWidth={1} />
+      <Circle cx={15.5} cy={15} r={2.8} fill="#333" stroke={INK} strokeWidth={1} />
+      <Path d="M3 13 Q3 9 7 9 L11 9 L13 13 Z" fill="#FFC531" stroke={INK} strokeWidth={1.1} strokeLinejoin="round" />
+      <Path d="M12 9 L14.5 4 M13 4 H16.5 M13 13 L15.5 15" stroke={INK} strokeWidth={1.4} strokeLinecap="round" />
+      <Rect x={2} y={4} width={7} height={5} rx={0.8} fill="#E8432E" stroke={INK} strokeWidth={1} />
+    </Svg>
+  );
+}
+
+/** Manager with a clipboard. */
+export function ManagerIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Path d="M3 19 Q3.5 12.5 10 12.5 Q16.5 12.5 17 19 Z" fill="#3F7FB0" stroke={INK} strokeWidth={1.1} />
+      <Path d="M8.5 12.7 L10 16 L11.5 12.7" fill="#fff" stroke={INK} strokeWidth={0.7} />
+      <Circle cx={10} cy={7.5} r={4.5} fill="#F2C9A0" stroke={INK} strokeWidth={1.1} />
+      <Path d="M5.5 7 Q5.5 2.5 10 2.5 Q14.5 2.5 14.5 7 Q12 5 7 6 Z" fill="#4A2C1D" />
+      <Rect x={12.5} y={13} width={5} height={6} rx={0.8} fill="#F6E7C1" stroke={INK} strokeWidth={0.9} />
+    </Svg>
+  );
+}
+
+/** Decor icons. */
+export function DecorIcon({ kind, size = 20 }: { kind: 'plants' | 'flooring' | 'tables' | 'walls' | 'signage'; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      {kind === 'plants' && (
+        <>
+          <Path d="M10 11 Q4 10 3.5 4 Q9 4.5 10 11 Z M10 11 Q16 10 16.5 4 Q11 4.5 10 11 Z M10 11 Q8.5 5 10 1.5 Q11.5 5 10 11 Z" fill="#4FA048" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+          <Path d="M5.5 11 H14.5 L13 18.5 H7 Z" fill="#C2693E" stroke={INK} strokeWidth={1.1} strokeLinejoin="round" />
+        </>
+      )}
+      {kind === 'flooring' && (
+        <>
+          <Path d="M1.5 17.5 L5 6 H15 L18.5 17.5 Z" fill="#F4EFE6" stroke={INK} strokeWidth={1.1} strokeLinejoin="round" />
+          <Path d="M5 6 L6.8 11.8 H10 L10 6 Z M10 11.8 L13.2 11.8 L15 17.5 L10 17.5 Z M1.5 17.5 L3.3 11.8 L6.8 11.8 L6 17.5" fill="#C8463A" />
+        </>
+      )}
+      {kind === 'tables' && (
+        <>
+          <Path d="M10 9 V17.5 M6 18 H14" stroke={INK} strokeWidth={1.6} strokeLinecap="round" />
+          <Path d="M2 7.5 Q10 11 18 7.5 Q10 4.5 2 7.5 Z" fill="#fff" stroke={INK} strokeWidth={1.1} />
+          <Path d="M7.5 7.2 Q10 8.6 12.5 7.2 Q10 6 7.5 7.2 Z" fill="#FFC531" />
+          <Rect x={13.5} y={2} width={1.6} height={4} fill="#FFF8E7" stroke={INK} strokeWidth={0.5} />
+        </>
+      )}
+      {kind === 'walls' && (
+        <>
+          <Rect x={2} y={3} width={16} height={14} rx={1} fill="#C98F63" stroke={INK} strokeWidth={1.1} />
+          <Rect x={4} y={5} width={12} height={10} fill="#9ED2F0" />
+          <Path d="M4 12 Q8 8 11 11.5 Q13.5 9.5 16 11 V15 H4 Z" fill="#7DBB5E" />
+          <Circle cx={13} cy={7.5} r={1.5} fill="#FFD866" />
+        </>
+      )}
+      {kind === 'signage' && (
+        <>
+          <Path d="M7 2 L10 5 L13 2" stroke={INK} strokeWidth={1.1} fill="none" />
+          <Rect x={1.5} y={5} width={17} height={9} rx={2} fill="#D9443A" stroke={INK} strokeWidth={1.2} />
+          {[4.5, 8.2, 11.8, 15.5].map((x) => <Circle key={x} cx={x} cy={9.5} r={1.3} fill="#FFF3B0" />)}
+          <Path d="M5 14 V18.5 M15 14 V18.5" stroke={INK} strokeWidth={1.4} />
+        </>
+      )}
+    </Svg>
+  );
+}

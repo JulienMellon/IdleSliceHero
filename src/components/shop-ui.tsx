@@ -84,7 +84,7 @@ export function StationCard(props: {
             {props.title}
             {props.level ? <Text style={styles.level}> {props.level}</Text> : null}
           </Text>
-          <Text style={[styles.detail, props.hot && { color: C.tomatoDark }]} numberOfLines={2}>
+          <Text style={[styles.detail, props.hot && { color: C.tomatoDark }]} numberOfLines={3}>
             {props.detail}
           </Text>
         </View>

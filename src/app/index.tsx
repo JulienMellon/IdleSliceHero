@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BuyButton, type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
-import { DriverIcon, FlameIcon, PrepIcon, RegisterIcon } from '@/components/icons';
+import { DecorIcon, DriverIcon, ExpandIcon, FlameIcon, ManagerIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait';
 import { emitPayout } from '@/components/pulse-bus';
 import { CURB_Y, SCENE_H, sceneFit, type StationKey, Storefront } from '@/components/storefront';
@@ -182,7 +182,7 @@ export default function GameScreen() {
           {idleShop ? (
             <View style={[styles.walkBtn, styles.walkBtnHot, { flex: 4 }]}>
               <View style={styles.walkTop}>
-                <Text style={styles.walkIcon}>🧑‍💼</Text>
+                <ManagerIcon size={18} />
                 <Text style={styles.walkName} numberOfLines={1}>
                   Hire a {nd.name} manager · {plus(G.shopEarnings(game, id))}
                 </Text>
@@ -215,23 +215,23 @@ export default function GameScreen() {
                 )}
                 {!shop.managed &&
                   card('manager', {
-                    icon: id === 'downtown' ? <Portrait id="nonna-rosa" mood="happy" size={32} /> : '🧑‍💼',
+                    icon: id === 'downtown' ? <Portrait id="nonna-rosa" mood="happy" size={32} /> : <ManagerIcon size={26} />,
                     title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire a ${nd.name} manager`,
                     detail: id === 'downtown' ? 'Keep baking — Nonna will take over the kitchen soon' : `Runs this pizzeria on its own and earns while you're away (${plus(G.shopEarnings(game, id))})`,
                     hot: id !== 'downtown',
                     wide: true,
                     costLabel: id === 'downtown' ? 'Soon' : undefined,
                   })}
-                {card('prep', { icon: '🧑‍🍳', title: 'Prep Cooks', level: `Lv ${shop.prep}`, detail: stationDetail('prep', 'prep', `${rates.prep.toFixed(1)}/s`), hot: tied('prep') })}
-                {card('ovens', { icon: '🔥', title: 'Ovens', level: `Lv ${shop.ovens}`, detail: stationDetail('ovens', 'ovens', `${rates.ovens.toFixed(1)}/s`), hot: tied('ovens') })}
-                {card('counter', { icon: '🧾', title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rates.counter.toFixed(1)}/s`), hot: tied('counter') })}
+                {card('prep', { icon: <PrepIcon size={26} />, title: 'Prep Cooks', level: `Lv ${shop.prep}`, detail: stationDetail('prep', 'prep', `${rates.prep.toFixed(1)}/s`), hot: tied('prep') })}
+                {card('ovens', { icon: <FlameIcon size={26} />, title: 'Ovens', level: `Lv ${shop.ovens}`, detail: stationDetail('ovens', 'ovens', `${rates.ovens.toFixed(1)}/s`), hot: tied('ovens') })}
+                {card('counter', { icon: <RegisterIcon size={26} />, title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rates.counter.toFixed(1)}/s`), hot: tied('counter') })}
                 {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${G.deliveryRate(shop, v).toFixed(1)}/s`), hot: tied('customers') })}
-                {card('tables', { icon: '🪑', title: 'Seating', level: `Lv ${shop.tables}`, detail: stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)} walk-ins/s`), hot: false })}
-                {card('grade', { icon: '✨', title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name}: ×2 bake · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name}: ×2 bake · pays once ${STAGE_NAME[neck]} catch up`) : 'Finest ovens in town' })}
-                {card('expand', { icon: '🏗️', title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : `pays once ${STAGE_NAME[neck]} catch up`}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
+                {card('tables', { icon: <SeatIcon size={26} />, title: 'Seating', level: `Lv ${shop.tables}`, detail: stationDetail('customers', 'tables', `${G.walkInRate(shop).toFixed(1)} walk-ins/s`), hot: false })}
+                {card('grade', { icon: <SparkleIcon size={26} />, title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name} ×2 · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} ×2 · waits on ${STAGE_NAME[neck]}`) : 'Finest ovens in town' })}
+                {card('expand', { icon: <ExpandIcon size={26} />, title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : `waits on ${STAGE_NAME[neck]}`}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
                 <StationCard
                   testID="buy-fleet"
-                  icon={nextVeh ? nextVeh.emoji : VEHICLES[v].emoji}
+                  icon={<ScooterIcon size={26} />}
                   title="Fleet"
                   detail={nextVeh ? fleetLock ?? `→ ${nextVeh.name}s, all shops · ${vg && vg > 0 ? plus(vg) : '+$0/s now'}` : `${VEHICLES[v].name}s — top tier`}
                   cost={nextVeh && !fleetLock ? nextVeh.cost : null}
@@ -250,7 +250,7 @@ export default function GameScreen() {
                     <StationCard
                       key={kind}
                       testID={`decor-${kind}`}
-                      icon={d.icon}
+                      icon={<DecorIcon kind={kind} size={26} />}
                       title={d.name}
                       level={`${tier}/3`}
                       detail={cost === null ? d.tiers[3] : `→ ${d.tiers[tier + 1]} · ${plus(gain)}`}

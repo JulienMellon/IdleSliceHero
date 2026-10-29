@@ -574,3 +574,39 @@ Harness dismisses the offline popup and taps the back wall clear of the station 
 | D89 | Superseded: levels now show on the sidewalk badges |
 
 Typecheck clean, 30 engine tests pass, `report.json` errors: [].
+
+## v2.1 — critique (round 16) — ❌ NOT SATISFIED
+
+**VERDICT: NOT SATISFIED** — a big visual step up: the shop fills the screen and reads as a street front, the ovens are proper domes and decks, and the City map looks finished. But the door is broken, the player's van carries the rival's MEGASLICE logo, and the Flagship spills off the screen.
+
+**Fixed:** D71–D74, D76–D79, D81, D83, D85–D89, G44–G46 · **Still open:** D75 (→ D92/D93), D80 (→ D100), D82, D84 (→ D101) · **Blockers:** none
+
+**Bugs**
+- G47 Parked van tier reuses the purple MEGASLICE van → red ROSA'S van
+- G48 Door leaf swings out through the right pilaster (OPEN reads "EN"); Flagship (R=385) runs off-screen → hinge inward, cap the widest footprint at ~360
+- G49 Grade/Expand drawer detail truncated with "…"
+- G50 A new tap pill with different text spawns behind the live one
+
+**Design notes**
+- D90 [major] The door reads as a freestanding frame; walkers pass its post → set it in the front plane with a brick jamb and glazed leaf
+- D91–D101 [minor] Drop the in-scene ×N badge; peach dusk clouds in Uptown; stronger Suburbs (gables, picket fence, mailbox); a single hood over stacked deck ovens instead of birdhouse caps; a shelf with flour sacks and tins on the bare back wall; fern/plant pots fully on one side of the sill; wider lane spacing; walk-ins in front of the parked vehicle; inset the mural from the ferns; SVG icons in the drawer; street clear of the home indicator
+
+## v2.2 — build (addresses round 16)
+
+| Note | Fix |
+| --- | --- |
+| G47 | `Car` takes a `label`; the parked van tier is a red ROSA'S van (MEGASLICE stays on the rival's street traffic) |
+| G48 / D90 | Entrance rebuilt in the front plane: brick jambs either side of the door, a brick lintel, wood frame posts, a glazed door leaf swung ~60° **into** the room (OPEN sign on its glass), and a see-through shop window with mullion and reflections above the entrance up to the fascia. Widest footprint capped at 358 so the Flagship's pilasters, awning ends and planter stay on screen |
+| G49 | Drawer card details allow 3 lines; Grade/Expand copy shortened ("→ Wood-fired ×2 · waits on drivers & seats") |
+| G50 | A new tap pill replaces the live one instead of stacking behind it |
+| D91 | In-scene ×N driver badge removed (shown on the sidewalk Drivers card) |
+| D92 | Uptown clouds are peach (#F6C6A8) with lavender undersides |
+| D93 | Suburbs: taller houses whose gables rise above the awning line, chimneys, 4-pane windows, white picket fences in both yards, and a blue mailbox |
+| D94 | Box deck ovens lose their per-oven caps; one stainless hood spans the bank with a flue up to the crown rail |
+| D95 | Pantry shelf on the upper-left back wall (two FLOUR sacks + three tins) until the mural replaces it |
+| D96 | Potted plants sit fully inside (y 16) or fully on the sidewalk (y −20), never on the sill |
+| D97 / D101 | Traffic scaled 0.86 on lanes 32 apart (+30 / +62), clear of the home indicator |
+| D98 | Walk-ins walk the sidewalk at y −44, in front of the parked vehicle |
+| D99 | Mural inset 26 from the left wall; ferns at 4% / 96% |
+| D100 | Drawer icons are SVG: chef hat, flame, register, driver, chair, sparkle, brick-expand, scooter, manager, and five decor icons |
+| D82 | Dining rows at depth 12 / 44 (32 apart) so back-row diners clear the front-row chairs |
