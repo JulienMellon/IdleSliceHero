@@ -106,14 +106,12 @@ function layout(fp: number, ovenCount: number, cookCount: number, staffCount: nu
   // Dining: tables in front of the prep/oven area, two rows, clear of the left pilaster (critic D180).
   const t0 = L + 44;
   // 78-unit pitch; the back row sits half a pitch over, and the front row runs on toward the counter (critic D188)
-  const frontCols = Math.max(1, Math.floor((counter.x0 + 20 - t0) / 78) + 1);
+  const frontCols = Math.max(1, Math.floor((counter.x1 - 30 - SEAT - t0) / 78) + 1);
   const backCols = Math.max(0, Math.floor((counter.x0 - 10 - (t0 + 19.5)) / 78) + 1);
   const tables: Layout['tables'] = [];
-  for (let i = 0, f = 0, b = 0; tables.length < Math.min(tableCount, frontCols + backCols) && i < 40; i++) {
-    if (i % 2 === 0 && f < frontCols) tables.push({ x: t0 + 78 * f++, y: 6 });
-    else if (b < backCols) tables.push({ x: t0 + 19.5 + 78 * b++, y: 34 });
-    else if (f < frontCols) tables.push({ x: t0 + 78 * f++, y: 6 });
-  }
+  // fill the front row first, so a small dining room spreads out instead of stacking (critic D199)
+  for (let f = 0; f < frontCols && tables.length < tableCount; f++) tables.push({ x: t0 + 78 * f, y: 6 });
+  for (let b = 0; b < backCols && tables.length < tableCount; b++) tables.push({ x: t0 + 19.5 + 78 * b, y: 40 });
   // a single starter table sits mid-floor so its diner fills the empty middle (critic D180)
   if (tables.length === 1) tables[0] = { x: (L + counter.x0) / 2, y: 20 };
   return { L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, tables, scooter: { x: door.x0 - 30, y: -22 } };
@@ -268,13 +266,14 @@ type Mood = 'smile' | 'focus' | 'happy' | 'o' | 'chew';
 /** What a worker's hands are doing (critic D138): cooks roll / toss / ladle; bakers hold an empty peel, a pizza, or slide one in. */
 type Act = 'none' | 'pin' | 'toss' | 'ladle' | 'peel' | 'pizza' | 'slide' | 'slice' | 'cup' | 'lean';
 
-function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number; front?: boolean; blink?: boolean; talk?: boolean; act?: Act; mood?: Mood; alt?: boolean; dot?: string; cap?: string; gold?: boolean }) {
+function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false, hair }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number; front?: boolean; blink?: boolean; talk?: boolean; act?: Act; mood?: Mood; alt?: boolean; dot?: string; cap?: string; gold?: boolean; hair?: string }) {
   const pin = act === 'pin';
   const [sx, sy] = P(x, y);
   const k = kAt(y) * 1.14;
   const sitting = kind === 'sit';
   const worker = kind === 'cook' || kind === 'baker' || kind === 'staff' || kind === 'driver';
   const look = lookFor(seed, worker);
+  const hairC = hair ?? look.hair;
   // keep the light coming from the upper left on mirrored figures (critic D130)
   const unflipBody = flip ? 'translate(0.5 0) scale(-1 1)' : undefined;
   const unflipHead = flip ? 'translate(1 0) scale(-1 1)' : undefined;
@@ -339,7 +338,7 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
       <Limb d={`M-6 ${by + 4} Q${-8.5} ${by + 10} ${backHand[0]} ${backHand[1]}`} color={shade(sleeve, -0.18)} />
       <Circle cx={backHand[0]} cy={backHand[1]} r={2.3} fill={shade(skin, -0.12)} {...OUT} strokeWidth={0.8} />
       {/* back hair (behind the head) */}
-      <Hair style={look.style === 5 ? 0 : look.style} color={look.hair} hy={hy} part="back" />
+      <Hair style={look.style === 5 ? 0 : look.style} color={hairC} hy={hy} part="back" />
       {/* torso with shadow side and highlight */}
       <Path d={torso} fill={top} {...OUT} />
       <G transform={unflipBody}>
@@ -413,7 +412,7 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
               <Circle cx={ex + 0.4} cy={hy - 1} r={0.5} fill="#fff" />
             </G>
           )}
-          <Path d={mood === 'focus' ? (ex === eyeX[0] ? `M${ex - 1.4} ${hy - 4.2} l2.8 0.9` : `M${ex - 1.4} ${hy - 3.3} l2.8 -0.9`) : `M${ex - 1.4} ${hy - 3.6} q1.4 -0.9 2.8 0`} stroke={worker ? INK : look.hair} strokeWidth={0.9} fill="none" strokeLinecap="round" />
+          <Path d={mood === 'focus' ? (ex === eyeX[0] ? `M${ex - 1.4} ${hy - 4.2} l2.8 0.9` : `M${ex - 1.4} ${hy - 3.3} l2.8 -0.9`) : `M${ex - 1.4} ${hy - 3.6} q1.4 -0.9 2.8 0`} stroke={worker ? INK : hairC} strokeWidth={0.9} fill="none" strokeLinecap="round" />
         </G>
       ))}
       {look.trait === 1 && (
@@ -441,26 +440,26 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
       )}
       <Ellipse cx={front ? -3.6 : 0.8} cy={hy + 2.6} rx={1.5} ry={0.95} fill="#F28B82" opacity={0.55} />
       <Ellipse cx={front ? 4.6 : 9.2} cy={hy + 2.4} rx={front ? 1.5 : 1.1} ry={0.9} fill="#F28B82" opacity={0.5} />
-      {look.trait === 2 && <Path d={`M${fx - 4.2} ${hy + 3.2} q2.1 -2.3 4.2 -0.5 q2.1 -1.8 4.2 0.5 q-2.1 1.5 -4.2 0.3 q-2.1 1.2 -4.2 -0.3 Z`} fill={look.hair} stroke={INK} strokeWidth={0.9} />}
+      {look.trait === 2 && <Path d={`M${fx - 4.2} ${hy + 3.2} q2.1 -2.3 4.2 -0.5 q2.1 -1.8 4.2 0.5 q-2.1 1.5 -4.2 0.3 q-2.1 1.2 -4.2 -0.3 Z`} fill={hairC} stroke={INK} strokeWidth={0.9} />}
       {look.trait === 3 &&
         [[-1.4, 1.6], [-0.4, 2.4], [0.6, 1.5], [1.6, 2.3]].map(([dx, dy], i) => (
           <Circle key={i} cx={(front ? -3.6 : 0.8) + dx * 1.2} cy={hy + dy} r={0.7} fill="#A8552F" opacity={0.85} />
         ))}
       {/* hair + headwear */}
-      {worker ? <Path d={`M-9.4 ${hy + 0.5} Q-9.8 ${hy - 4} -7.5 ${hy - 5} L-6 ${hy + 0.5} Z`} fill={look.hair} /> : <Hair style={look.style} color={look.hair} hy={hy} part="front" />}
+      {worker ? <Path d={`M-9.4 ${hy + 0.5} Q-9.8 ${hy - 4} -7.5 ${hy - 5} L-6 ${hy + 0.5} Z`} fill={hairC} /> : <Hair style={look.style} color={hairC} hy={hy} part="front" />}
       {/* hair shows under every hat (critic D139) */}
       {worker && kind !== 'baker' && (
         <Path
           d={front ? `M-7 ${hy - 6.4} Q-6 ${hy - 3} -3.5 ${hy - 4.4} Q-1.5 ${hy - 2.6} 0.8 ${hy - 4.3} Q3 ${hy - 2.6} 5.2 ${hy - 4.4} Q7.5 ${hy - 3} 8.2 ${hy - 6.4} Z` : `M-2 ${hy - 6.6} Q1 ${hy - 3.2} 4 ${hy - 4.8} Q6.5 ${hy - 3} 9.2 ${hy - 5.4} L9 ${hy - 7} Z`}
-          fill={look.hair}
+          fill={hairC}
           stroke={INK}
           strokeWidth={0.6}
         />
       )}
-      {kind === 'baker' && <Circle cx={-9.5} cy={hy + 4.5} r={3.6} fill={look.hair} {...OUT} strokeWidth={0.8} />}
+      {kind === 'baker' && <Circle cx={-9.5} cy={hy + 4.5} r={3.6} fill={hairC} {...OUT} strokeWidth={0.8} />}
       <Headwear kind={kind} hy={hy} front={front} alt={alt} dot={dot} cap={cap} />
       {gold && kind === 'cook' && <Rect x={-6.2} y={hy - 11.6} width={13.6} height={2.2} rx={1} fill="#E0B000" stroke={INK} strokeWidth={0.5} />}
-      {worker && look.trait === 4 && <Path d={`M${front ? -1 : 3} ${hy - 6.5} q-2.5 2.6 -0.4 4 q0.6 -2 2.6 -2.2 q-0.2 2 1.6 2.6 q0.8 -2.4 -1 -4.4 Z`} fill={look.hair} stroke={INK} strokeWidth={0.6} />}
+      {worker && look.trait === 4 && <Path d={`M${front ? -1 : 3} ${hy - 6.5} q-2.5 2.6 -0.4 4 q0.6 -2 2.6 -2.2 q-0.2 2 1.6 2.6 q0.8 -2.4 -1 -4.4 Z`} fill={hairC} stroke={INK} strokeWidth={0.6} />}
       {/* front arm + props */}
       {peel && (
         <G transform={act === 'slide' ? `rotate(62 ${hand[0]} ${hand[1]})` : `rotate(-8 ${hand[0]} ${hand[1]})`}>
@@ -1002,10 +1001,10 @@ function LocalProp({ id, x, y }: { id: NeighborhoodId; x: number; y: number }) {
       )}
       {id === 'industrial' && (
         <G>
-          <Rect x={-14} y={-10} width={28} height={18} rx={2} fill="#F2C94C" stroke={INK} strokeWidth={1.1} />
+          <Rect x={-17} y={-10} width={34} height={18} rx={2} fill="#F2C94C" stroke={INK} strokeWidth={1.1} />
           {[-10, -4, 2, 8].map((dx) => <Path key={dx} d={`M${dx} 8 l4 -18`} stroke={INK} strokeWidth={1.6} opacity={0.7} />)}
-          <Rect x={-10} y={-6} width={20} height={10} rx={1} fill="#fff" stroke={INK} strokeWidth={0.6} />
-          <SvgText x={0} y={1} fontFamily={F.bold} fontSize={4.4} fill={INK} textAnchor="middle">SAFETY 1ST</SvgText>
+          <Rect x={-14} y={-6} width={28} height={10} rx={1} fill="#fff" stroke={INK} strokeWidth={0.6} />
+          <SvgText x={0} y={1} fontFamily={F.bold} fontSize={4.2} fill={INK} textAnchor="middle">SAFETY 1ST</SvgText>
         </G>
       )}
       {id === 'uptown' && (
@@ -1031,7 +1030,8 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
     }
   }
   const [wx, wy] = P(lay.counter.x1 - 50, D, 132);
-  const [mx, my] = P(lay.counter.x0 + 4, D, 180);
+  const [mx0, my] = P(lay.counter.x0 + 4, D, 180);
+  const mx = mx0 - 24;
   return (
     <G>
       <Defs>
@@ -1298,7 +1298,7 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
           );
         })()}
       {walls === 0 && (() => {
-        const [px, py] = P(L + 64, D, 176);
+        const [px, py] = P(L + 22, D, 168);
         return <LocalProp id={id} x={px} y={py} />;
       })()}
       {/* back window with trees outside */}
@@ -1474,6 +1474,19 @@ function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: string; 
             {brick(jax, kbx, lTop, lBot)}
             <Rect x={jax - 1} y={lTop - 3} width={kbx - jax + 2} height={4} rx={1} fill="#7A3520" stroke={INK} strokeWidth={0.9} />
             <Path d={`M${jbx} ${lBot} V${jay + 4} M${P(door.x1, 0)[0]} ${lBot} V${jay + 4}`} stroke="#5E3A26" strokeWidth={2.4} />
+            {/* OPEN plate hanging from the lintel, centred in the doorway, above head height (critic G64) */}
+            {(() => {
+              const [cx] = P(door.cx, 0);
+              return (
+                <G>
+                  <Path d={`M${cx - 7} ${lBot} L${cx - 7} ${lBot + 4} M${cx + 7} ${lBot} L${cx + 7} ${lBot + 4}`} stroke={INK} strokeWidth={0.8} />
+                  <Rect x={cx - 11} y={lBot + 4} width={22} height={9} rx={2.2} fill="#E8432E" stroke="#fff" strokeWidth={0.9} />
+                  <SvgText x={cx} y={lBot + 11} fontFamily={F.bold} fontSize={6.4} fill="#fff" textAnchor="middle">
+                    OPEN
+                  </SvgText>
+                </G>
+              );
+            })()}
           </G>
         );
       })()}
@@ -1549,25 +1562,14 @@ function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: string; 
 
 /** The glazed door leaf, swung ~60° into the room; depth-sorted on its own so walkers pass it correctly (critic G53). */
 function DoorLeaf({ lay }: { lay: Layout }) {
-  const { door } = lay;
-  const hinge0 = P(door.x0, 0, 0);
-  const hinge1 = P(door.x0, 0, 104);
-  const tip0 = P(door.x0 - 16, 18, 0);
-  const tip1 = P(door.x0 - 16, 18, 104);
-  const g0 = P(door.x0 - 6.5, 7.3, 8);
-  const g1 = P(door.x0 - 14, 15.8, 8);
-  const g2 = P(door.x0 - 14, 15.8, 94);
-  const g3 = P(door.x0 - 6.5, 7.3, 94);
-  const [ox, oy] = P(door.x0 - 10, 11.3, 86);
+  // folded right back against the right wall, so it never hides anyone in the room (critic G63)
+  const x = lay.door.x1 - 1.5;
+  const q = (y: number, z: number) => P(x, y, z);
   return (
     <G>
-      <Polygon points={pts([hinge0, tip0, tip1, hinge1])} fill="#7E5038" stroke={INK} strokeWidth={1.2} />
-      <Polygon points={pts([g0, g1, g2, g3])} fill="rgba(191,227,245,0.45)" stroke={INK} strokeWidth={0.8} />
-      <Path d={`M${g0[0] - 2} ${g3[1] + 10} L${g1[0] + 3} ${g2[1] + 4}`} stroke="#fff" strokeWidth={1.6} opacity={0.6} strokeLinecap="round" />
-      <Rect x={ox - 9} y={oy - 4.5} width={18} height={9} rx={2} fill="#E8432E" stroke="#fff" strokeWidth={0.8} />
-      <SvgText x={ox} y={oy + 2.3} fontFamily={F.bold} fontSize={6} fill="#fff" textAnchor="middle">
-        OPEN
-      </SvgText>
+      <Polygon points={pts([q(1, 0), q(30, 0), q(30, 104), q(1, 104)])} fill="#7E5038" stroke={INK} strokeWidth={1.2} />
+      <Polygon points={pts([q(5, 10), q(26, 10), q(26, 94), q(5, 94)])} fill="rgba(191,227,245,0.5)" stroke={INK} strokeWidth={0.8} />
+      <Path d={`M${q(8, 80).join(' ')} L${q(22, 40).join(' ')}`} stroke="#fff" strokeWidth={1.4} opacity={0.6} strokeLinecap="round" />
     </G>
   );
 }
@@ -1843,7 +1845,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     // drivers use the right half of the doorway, walk-ins the left (critic D179)
     const outsideDoor: [number, number] = [lay.door.x1 - 11, -24 - lane];
     const insideDoor: [number, number] = [lay.door.x1 - 11, 8];
-    const via: [number, number] = [lay.door.x0 + 4, 30];
+    const via: [number, number] = [lay.door.x0 + 6, 24];
     let pos: [number, number];
     let walking = true;
     let face = false;
@@ -1879,9 +1881,10 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   const fixedFill = Math.min(1, 0.4 + shop.tables / 40);
   // concurrent people never share a shirt colour (critic D156)
   const shirtBase = hash32(shopSeed) % GUEST_SHIRTS.length;
+  const hairBase = hash32(shopSeed + 9) % HAIR_COLORS.length;
   // walk-ins order at the front-right of the counter, a second one queues toward the door (critic D166)
   // walk-ins order at the counter's right end, away from the door lanes and the pickup line (critic D189)
-  const orderSpot = (i: number): [number, number] => [lay.counter.x1 + 14, i % 2 ? 56 : 76];
+  const orderSpot = (i: number): [number, number] => [lay.counter.x1 - 20, i % 2 ? 34 : 50];
   for (let i = 0; i < guestCount; i++) {
     const cyc = t / 9 + 0.3 + i / Math.max(2, guestCount);
     const p = ((cyc % 1) + 1) % 1;
@@ -1889,19 +1892,19 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     const gSeed = shopSeed + i * 2 + 3 + Math.floor(cyc) * 13;
     const table = lay.tables[i];
     const seat: [number, number] = [table.x + SEAT, table.y];
-    const start: [number, number] = [-30, -44];
+    const start: [number, number] = [-30, -52];
     let pos: [number, number];
     let kind: Kind = 'guest';
     let walking = true;
     let o = 1;
     let face = false;
     let talking = false;
-    const via: [number, number] = [lay.door.x0 + 13, 30];
+    const via: [number, number] = [lay.door.x0 + 6, 26];
     const orderAt = orderSpot(i);
     const gIn: [number, number] = [lay.door.x0 + 13, 8];
     const gOut: [number, number] = [lay.door.x0 + 13, -24];
     let mood: Mood = 'smile';
-    if (p < 0.18) pos = along([start, [gOut[0], -44], gOut], p / 0.18);
+    if (p < 0.18) pos = along([start, [gOut[0], -52], gOut], p / 0.18);
     else if (p < 0.24) pos = along([gOut, gIn], (p - 0.18) / 0.06);
     else if (p < 0.34) {
       pos = along([gIn, orderAt], (p - 0.24) / 0.1);
@@ -1911,7 +1914,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       face = true;
       talking = Math.sin(clock * 9) > -0.2;
     } else if (p < 0.5) {
-      pos = along([orderAt, [lay.counter.x1 + 10, 36], [seat[0] + 10, seat[1] + 8], seat], (p - 0.42) / 0.08);
+      pos = along([orderAt, [seat[0] + 10, seat[1] + 8], seat], (p - 0.42) / 0.08);
       face = true;
     } else if (p < 0.8) {
       // seated on the right-hand chair, facing the table (critic G51)
@@ -1925,7 +1928,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     else if (p < 0.92) pos = along([gIn, gOut], (p - 0.88) / 0.04);
     else pos = along([gOut, [SCENE_W + 50, -44]], (p - 0.92) / 0.08);
     o = 1;
-    items.push({ y: pos[1] - 0.3, el: <Person key={`g${i}`} x={pos[0]} y={pos[1]} kind={kind} seed={gSeed} shirt={GUEST_SHIRTS[(shirtBase + i + Math.floor(cyc)) % GUEST_SHIRTS.length]} flip={face} step={walking ? clock * 12 : 0} o={o} talk={talking} mood={mood} blink={blinkAt(gSeed)} arm={kind === 'sit' ? Math.abs(Math.sin(clock * 2 + i)) * 2 : 0} /> });
+    items.push({ y: pos[1] - 0.3, el: <Person key={`g${i}`} x={pos[0]} y={pos[1]} kind={kind} seed={gSeed} shirt={GUEST_SHIRTS[(shirtBase + 2 * lay.tables.length + i + Math.floor(cyc) * 3) % GUEST_SHIRTS.length]} hair={HAIR_COLORS[(hairBase + 2 * lay.tables.length + i + Math.floor(cyc)) % HAIR_COLORS.length]} flip={face} step={walking ? clock * 12 : 0} o={o} talk={talking} mood={mood} blink={blinkAt(gSeed)} arm={kind === 'sit' ? Math.abs(Math.sin(clock * 2 + i)) * 2 : 0} /> });
   }
   // tables + seated diners: chairs, then the diner, then the table over their lap (critic D114)
   lay.tables.forEach((tb, i) => {
@@ -1937,7 +1940,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       const dSeed = shopSeed + i * 3 + 7 + Math.floor(t / 14 + i * 0.37) * 29;
       const bite = Math.abs(Math.sin(clock * 2 + i));
       const pose = (['none', 'slice', 'cup', 'lean'] as const)[(hash32(dSeed) >>> 3) % 4];
-      items.push({ y: tb.y, el: <Person key={`s${i}`} x={tb.x - SEAT} y={tb.y} kind="sit" seed={dSeed} act={pose} shirt={GUEST_SHIRTS[(shirtBase + guestCount + fixedIdx * 3 + 1) % GUEST_SHIRTS.length]} blink={blinkAt(dSeed)} arm={bite * 2} mood={pose === 'slice' ? 'chew' : bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile'} /> });
+      items.push({ y: tb.y, el: <Person key={`s${i}`} x={tb.x - SEAT} y={tb.y} kind="sit" seed={dSeed} act={pose} shirt={GUEST_SHIRTS[(shirtBase + 2 * i) % GUEST_SHIRTS.length]} hair={HAIR_COLORS[(hairBase + 2 * i) % HAIR_COLORS.length]} blink={blinkAt(dSeed)} arm={bite * 2} mood={pose === 'slice' ? 'chew' : bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile'} /> });
       // a busy room seats a companion opposite, on tables no walk-in is heading for
       const cx = tb.x + SEAT;
       const crowded = lay.tables.some((o) => o !== tb && [o.x - SEAT, o.x + SEAT].some((sx) => Math.abs(sx - cx) < 18 && Math.abs(o.y - tb.y) < 32));
@@ -1945,15 +1948,15 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
         const cSeed = dSeed + 501;
         const cPose = (['cup', 'none', 'slice', 'lean'] as const)[(hash32(cSeed) >>> 3) % 4];
         const cb = Math.abs(Math.sin(clock * 2 + i + 1.7));
-        items.push({ y: tb.y - 0.1, el: <Person key={`s2${i}`} x={tb.x + SEAT} y={tb.y} kind="sit" flip seed={cSeed} act={cPose} shirt={GUEST_SHIRTS[(shirtBase + guestCount + fixedIdx * 3 + 5) % GUEST_SHIRTS.length]} blink={blinkAt(cSeed)} arm={cb * 2} mood={cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile'} /> });
+        items.push({ y: tb.y - 0.1, el: <Person key={`s2${i}`} x={tb.x + SEAT} y={tb.y} kind="sit" flip seed={cSeed} act={cPose} shirt={GUEST_SHIRTS[(shirtBase + 2 * i + 1) % GUEST_SHIRTS.length]} hair={HAIR_COLORS[(hairBase + 2 * i + 1) % HAIR_COLORS.length]} blink={blinkAt(cSeed)} arm={cb * 2} mood={cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile'} /> });
       }
     }
   });
   // potted plants (plants decor)
   if (shop.decor.plants >= 1) {
-    items.push({ y: 30, el: <FloorPlant key="pp1" x={lay.L + 12} y={30} /> });
+    items.push({ y: 54, el: <FloorPlant key="pp1" x={lay.L + 8} y={54} /> });
   }
-  if (shop.decor.plants >= 3) items.push({ y: 100, el: <FloorPlant key="pp4" x={lay.L + 14} y={100} big /> });
+  if (shop.decor.plants >= 3) items.push({ y: 2, el: <FloorPlant key="pp4" x={lay.L + 10} y={2} big /> });
   // kitchen crew + furniture
   lay.cooks.forEach((x, i) => items.push({ y: 92 + (i % 2) * 8, el: <Person key={`c${i}`} x={x} y={92 + (i % 2) * 8} kind="cook" gold={shop.prep >= 100} front act={(['pin', 'toss', 'ladle'] as const)[i % 3]} mood={running && Math.sin(t * 4 + i) > 0.3 ? 'focus' : 'smile'} seed={shopSeed + i * 4 + 20} blink={blinkAt(shopSeed + i * 4 + 20)} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} /> }));
   items.push({
@@ -2066,7 +2069,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   items.push({ y: 0, el: <FrontWall key="front" lay={lay} name={nd.name} signage={shop.decor.signage} plants={shop.decor.plants} /> });
   items.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
   items.push({ y: -34, el: <ChalkSign key="sign" x={lay.door.x0 - 75} y={-34} /> });
-  items.push({ y: 11, el: <DoorLeaf key="leaf" lay={lay} /> });
+  items.push({ y: 16, el: <DoorLeaf key="leaf" lay={lay} /> });
   items.push({ y: -40, el: <Planter key="pl" x={lay.L + 8} y={-40} /> });
   const [scx, scy] = P(lay.scooter.x, lay.scooter.y);
   items.push({

@@ -932,3 +932,37 @@ Typecheck clean, 30 tests pass, `report.json` errors: [].
 | (08 smoke) | Smoke is an opaque single fill (no see-through tower edges) |
 
 Typecheck clean, 30 tests pass, `report.json` errors: [].
+
+## v2.10 — critique (round 25) — ❌ NOT SATISFIED
+
+**VERDICT: NOT SATISFIED** — loads clean; most round-24 fixes show (separate door lanes, pantry flour, mixer, bottom-aligned cards, "you run it"). But the new walk-in order spot hides customers behind the front wall, the OPEN plate reads "OPE" on every shot, and the Uptown dining room is still a pile of heads.
+
+**Fixed:** G62, D189, D190, D191, D192, D193, D195, D196, D197, D198, D188 (partly) · **Still open:** D188 (→ D199), D194 (→ D200)
+
+**Bugs**
+- G63 The order spot at the counter's right end sits inside the doorway column, behind the lintel/window; the driver `via` point falls behind the door leaf
+- G64 The OPEN plate is half under the left jamb ("OPE")
+
+**Visual design**
+- D199 [major] Uptown dining still a pile of heads; floor to the right empty → front row runs to `counter.x1 − 30`, back row at depth 40
+- D200–D204 [minor] Neighbourhood props hidden behind the queue/TAP pills; big floor plant grows out of a cook's toque, small fern clutters chairs; Suburbs menu board clipped by the brick header; left tab fade over the selected tab at scroll 0; seated crowds repeat shirts and hair
+
+**Design notes**
+- D205 Arrivals cut across the A-frame and van → arrive at depth −52 · D206 Seating card dead band → "next: +1 table" hint
+
+## v2.11 — build (addresses round 25)
+
+| Note | Fix |
+| --- | --- |
+| G63 | The door leaf is folded flat against the right wall (a plane at `door.x1 − 1.5`, depth 1–30), so it can't hide anyone. Walk-ins order in front of the counter's right third (`counter.x1 − 20`, depth 50) with the next one queuing at 34, clear of the doorway column. Drivers' and walk-ins' inside waypoints sit at `door.x0 + 6`, depth 24–26 |
+| G64 | The OPEN plate hangs from the lintel on two cords, centred in the doorway above head height |
+| D199 | Front row of tables runs to `counter.x1 − 30` and fills first; back row at depth 40 (34-unit gap) takes only what's left |
+| D200 | Neighbourhood props sit on the left of the back wall (L + 22, z 168), clear of the queue/TAP pills; the SAFETY 1ST plate is 34 wide |
+| D201 | Big floor plant in the front-left corner (L + 10, depth 2); small fern beside the bench end (L + 8, depth 54) |
+| D202 | Menu board shifted 24 left, clear of the brick header |
+| D203 | Tab fades only show on a side that can still scroll (left hidden at offset 0) |
+| D204 | Seated people draw shirts and hair colours sequentially by seat (8 shirts, 6 hair colours), so neighbours never match |
+| D205 | Arriving walk-ins use the sidewalk lane at depth −52, in front of the A-frame and the van; −44 stays for departures |
+| D206 | Seating card adds "next level: +1 table" / "+1 table at Lv N" / "dining room full" |
+
+Typecheck clean, 30 tests pass, `report.json` errors: [].
