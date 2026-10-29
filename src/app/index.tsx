@@ -57,7 +57,9 @@ export default function GameScreen() {
   const vg = G.vehicleGain(game);
   if (vg && vg > 0) candidates.push({ label: `Upgrade fleet to ${VEHICLES[v + 1].name}s · ${plus(vg)}`, current: game.cash, target: VEHICLES[v + 1].cost, ratio: vg / VEHICLES[v + 1].cost, onPress: buyFleet });
   candidates.sort((a, b) => b.ratio - a.ratio);
-  let goal: Goal | null = candidates[0] ?? null;
+  // On an unmanaged shop the sidewalk already offers "Hire a manager" here: show the next goal instead (critic D137).
+  const shown = !shop.managed && id !== 'downtown' ? candidates.filter((c) => c.label !== `Hire a manager for ${nd.name}`) : candidates;
+  let goal: Goal | null = shown[0] ?? null;
   if (!goal) {
     goal = { label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : `Story ${game.seenScenes.length}/24`, current: 1, target: 1, icon: <TrophyIcon size={22} /> };
   }

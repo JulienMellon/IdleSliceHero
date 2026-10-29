@@ -142,13 +142,30 @@ function Scenery({ id }: { id: BackdropId }) {
             <Building key={i} x={x as number} w={w as number} h={h as number} color={c as string} />
           ))}
           {/* Rosa's storefront */}
-          <Rect x={120} y={88} width={160} height={112} fill="#8E3B2E" stroke={INK} strokeWidth={3} />
-          <Path d="M112 96 L288 96 L276 118 L124 118 Z" fill="#E8432E" stroke={INK} strokeWidth={2.5} />
-          {[136, 168, 200, 232, 264].map((x) => (
-            <Path key={x} d={`M${x - 12} 118 q12 12 24 0`} fill="#FFFFFF" stroke={INK} strokeWidth={1.5} />
+          <Rect x={120} y={88} width={160} height={112} fill="#8E3B2E" stroke={INK} strokeWidth={2.4} />
+          {Array.from({ length: 9 }).map((_, r) => (
+            <G key={r}>
+              <Path d={`M121 ${124 + r * 9} H279`} stroke="#6E2A20" strokeWidth={1} />
+              {Array.from({ length: 8 }).map((__, c) => <Path key={c} d={`M${128 + c * 20 + (r % 2) * 10} ${115 + r * 9} v9`} stroke="#6E2A20" strokeWidth={1} />)}
+            </G>
           ))}
-          <Rect x={142} y={134} width={56} height={50} fill="#F7C873" stroke={INK} strokeWidth={2.5} />
-          <Rect x={214} y={134} width={44} height={66} fill="#5A2A1F" stroke={INK} strokeWidth={2.5} />
+          <Rect x={250} y={89} width={29} height={110} fill="#000" opacity={0.18} />
+          <Rect x={121} y={89} width={8} height={110} fill="#fff" opacity={0.1} />
+          <Path d="M112 96 L288 96 L276 118 L124 118 Z" fill="#E8432E" stroke={INK} strokeWidth={2} />
+          <Path d="M118 99 L282 99" stroke="#fff" strokeWidth={2} opacity={0.3} />
+          {[136, 168, 200, 232, 264].map((x) => (
+            <Path key={x} d={`M${x - 12} 118 q12 12 24 0`} fill="#FFFFFF" stroke={INK} strokeWidth={1.4} />
+          ))}
+          <Rect x={124} y={126} width={152} height={8} fill="#000" opacity={0.22} />
+          <Rect x={138} y={131} width={64} height={57} rx={2} fill="#5A2A1F" stroke={INK} strokeWidth={2} />
+          <Rect x={142} y={134} width={56} height={50} fill="#F7C873" stroke={INK} strokeWidth={1.6} />
+          <Path d="M170 134 V184 M142 158 H198" stroke="#5A2A1F" strokeWidth={2.4} />
+          <Path d="M148 180 L162 138 M156 180 L168 146" stroke="#fff" strokeWidth={2.4} opacity={0.4} strokeLinecap="round" />
+          <Rect x={136} y={186} width={68} height={5} rx={1.5} fill="#5A2A1F" stroke={INK} strokeWidth={1.2} />
+          <Rect x={214} y={134} width={44} height={66} fill="#5A2A1F" stroke={INK} strokeWidth={2} />
+          <Rect x={219} y={139} width={34} height={24} rx={2} fill="#7A3A2A" stroke={INK} strokeWidth={1} />
+          <Rect x={219} y={168} width={34} height={26} rx={2} fill="#7A3A2A" stroke={INK} strokeWidth={1} />
+          <Circle cx={250} cy={168} r={2.2} fill="#E0B000" stroke={INK} strokeWidth={0.8} />
           {/* flickering neon sign: half the letters dark */}
           <Rect x={136} y={44} width={128} height={38} rx={8} fill="#1E1630" stroke="#FF5E7E" strokeWidth={3} />
           <Text x={200} y={71} fontSize={24} fontFamily={F.bold} fill="#FF8FA3" textAnchor="middle" opacity={0.95}>
@@ -238,12 +255,14 @@ function ShopWall() {
 
 /** Distant city silhouette that fills the upper part of tall panels so they aren't empty sky (critic D44). */
 function Skyline({ top, dark, billboard }: { top: number; dark: boolean; billboard: boolean }) {
-  const fill = dark ? 'rgba(20,16,40,0.35)' : 'rgba(110,130,170,0.28)';
+  // solid fill + group opacity so overlapping towers and puffs show no seams (critic D135)
+  const fill = dark ? '#141028' : '#6E82AA';
+  const alpha = dark ? 0.35 : 0.28;
   const base = 120;
   const towers = [[0, 70], [34, 95], [62, 60], [96, 120], [130, 80], [168, 105], [210, 70], [246, 130], [282, 85], [318, 110], [356, 75]];
   if (base - 130 < top) return null;
   return (
-    <G fill={fill}>
+    <G fill={fill} opacity={alpha}>
       {/* MegaSlice billboard standing on two towers; only where the story has introduced MegaSlice (critic G38) */}
       {billboard && base - 130 - 46 > top + 70 && (
         <G>

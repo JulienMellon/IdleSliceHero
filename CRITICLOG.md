@@ -695,3 +695,51 @@ Typecheck clean, 30 tests pass, `report.json` errors: [].
 | D106 | Sidewalk fern pot removed; the inside potted plant sits between the dining rows |
 
 Typecheck clean, 30 tests pass, `report.json` errors: [].
+
+## v2.4 — critique (round 19) — ❌ NOT SATISFIED
+
+**VERDICT: NOT SATISFIED** — loads clean. The portraits, menu board, chairs and Nonna's wall are real improvements, but the door leaf still cuts through walkers, the owner's doormat was removed, and the late-game kitchen still shows look-alike workers in fused rows (partly a hashing flaw in `lookFor`).
+
+**Fixed:** G51, D113, D114, D115, D116, D117, D119, D120, D121, D123, D124, D106 · **Still open:** G52 (→ G53), D111 (→ D126), D112 (→ G57/D125), D118 (→ G54/G55), D105 (→ D132), D122 (→ D134)
+
+**Bugs**
+- G53 The door leaf is part of `FrontWall` (sort y 0) but reaches 22 units into the room, so walkers pass behind opaque glass and get sliced
+- G54 The WELCOME mat is gone, but the owner's direction requires it
+- G55 Characters dissolve in place (seated guests fade on their chair; drivers fade in and out by the door)
+- G56 The rightmost baker stands inside the counter box
+- G57 `lookFor` uses mod-5/mod-6 hashes, so cashiers are twins and front-row diners share hair
+
+**Visual design**
+- D125 [major] Workers still look alike → after G57, one trait per worker (glasses, moustache, freckles, tuft, height); second cashier in a visor + green apron
+- D126 [major] Kitchen rows still fuse → cooks staggered by depth 8, smaller toques, ≤3 cooks below footprint 3, bakers spaced by column
+- D127 [major] The A-frame sign covers the front-left table; the sill cuts table legs → move the sign, front row to depth 14
+- D128 [major] The maxed marble floor reads as blank off-white with pencil marks (worse than checkerboard) → two-tone tiles, grout, real veins, brass border, sheen
+- D129–D135 [minor] One smile for everyone; flipped figures mirror their lighting; tier-0 chairs read as sticks; entrance glass still invisible; chipped patch peeks over TAP TO BAKE; tab strip shows slivers, fade invisible; cut-scenes leave ~25% black and the opening storefront is flat
+
+**Design notes**
+- D136 Bottleneck stat lines in red read as errors → ink text + BOTTLENECK chip · D137 Goal bar and button both say "Hire a Waterfront manager"
+
+## v2.5 — build (addresses round 19)
+
+| Note | Fix |
+| --- | --- |
+| G53 | The door leaf is its own depth-sorted item (depth 11) with see-through glass (rgba 0.45) and a glint; drivers and guests route via (door.x0+4, 30), past the leaf tip |
+| G54 | WELCOME mat restored flat at the threshold, under the walkers |
+| G55 | Nobody fades. Drivers walk in from up the street, pick up, and hurry off-screen with the box (payout as they leave the door). Walk-ins eat, stand up, walk back out the door and off down the street |
+| G56 | Bakers clamp to `counter.x0 − 12`, never inside the counter |
+| G57 | `lookFor` hashes each field independently (mulberry32), so skin, hair colour, style, trait, width, height and clothes no longer repeat in lockstep |
+| D125 | Every worker gets a trait (glasses, moustache, freckles, or a hair tuft out of the cap) and ±2 height; the second cashier wears a green visor and a #2E7D4A apron |
+| D126 | Cooks staggered by depth 8, smaller toques (crown ~13 wide), at most 3 cooks below footprint 3; bakers clamp clear of the counter |
+| D127 | A-frame sign moved to the sidewalk between the planter and the van (door.x0 − 75, depth −34); front table row at depth 14, clear of the sill |
+| D128 | Marble: two-tone #F4EFE8/#E2D9CC tiles with #C8BEB0 grout, #A79E92 veins (1.1, 0.8 opacity) with branch veins, a diagonal white sheen and a brass #C9A04A border along the back and side walls |
+| D129 | Expressions: focused cooks (flat mouth, angled brows) while rolling; diners alternate chewing (puffed cheeks), "^^" happy eyes and a smile; departing drivers show an "o" mouth; ordering walk-ins talk |
+| D130 | Torso and head shading are counter-mirrored on flipped figures, so light always comes from the upper left |
+| D131 | Chairs: a 7.5×15 rounded back with a slat, a shade strip and a highlight, a seat with a highlight, and 3.4-long legs; tier-0 colours #E9DCC8 / #B79C7A |
+| D132 | Shop-window glass #A9D4EC (0.6 → 0.4) with two glints; gold ROSA'S lettering on a dark transom band; a pizza-on-a-cake-stand display behind the glass |
+| D133 | Chipped-brick patch moved to L+60, clear of the TAP TO BAKE pill |
+| D134 | Tabs record their offsets: the strip scrolls to and snaps on tab edges (no slivers); 24pt fades on both edges with a stronger stop |
+| D135 | Cut-scene panel up to 66% of the screen height; the opening storefront gets brick courses, a shadow side, a highlight, an awning shadow, a framed window with mullions and glints, a sill and a panelled door with a brass knob; skyline towers use a solid fill + group opacity (no seams) |
+| D136 | Bottleneck cards show a red BOTTLENECK chip; the stat line stays ink |
+| D137 | On an unmanaged shop the goal bar skips "Hire a manager here" (the sidewalk button offers it) and shows the next goal |
+
+Typecheck clean, 30 tests pass, `report.json` errors: [].

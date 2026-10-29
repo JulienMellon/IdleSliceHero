@@ -1,5 +1,5 @@
 // Neighborhood tabs and the compact upgrade cards under the pizzeria cutaway.
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { NEIGHBORHOODS } from '../content/tuning';
@@ -15,19 +15,26 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
   const next = Game.nextToBuild(game);
   const scroller = useRef<{ scrollTo: (o: { x: number; animated: boolean }) => void } | null>(null);
   const activeIdx = NEIGHBORHOODS.findIndex((n) => n.id === game.active);
-  // Keep the active pizzeria's tab in view (critic D27).
+  // Keep the active pizzeria's tab in view, snapped so the strip always starts on a tab edge (critic D27/D134).
+  const xs = useRef<number[]>([]);
+  const [offsets, setOffsets] = useState<number[]>([]);
+  const onTab = (i: number) => (e: { nativeEvent: { layout: { x: number } } }) => {
+    xs.current[i] = e.nativeEvent.layout.x;
+    if (xs.current.filter((v) => v !== undefined).length === NEIGHBORHOODS.length) setOffsets(xs.current.map((x) => Math.max(0, x - 10)));
+  };
   useEffect(() => {
-    scroller.current?.scrollTo({ x: Math.max(0, activeIdx * 92 - 120), animated: true });
-  }, [activeIdx]);
+    const x = offsets[Math.max(0, activeIdx - 1)] ?? 0;
+    scroller.current?.scrollTo({ x, animated: true });
+  }, [activeIdx, offsets]);
   return (
     <View style={styles.tabsWrap}>
-      <ScrollView ref={scroller as never} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-        {NEIGHBORHOODS.map((n) => {
+      <ScrollView ref={scroller as never} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} snapToOffsets={offsets.length ? offsets : undefined} decelerationRate="fast">
+        {NEIGHBORHOODS.map((n, i) => {
           const shop = game.shops[n.id];
           const active = game.active === n.id;
           if (!shop.built && next?.id !== n.id) {
             return (
-              <View key={n.id} style={[styles.tab, styles.tabLocked]}>
+              <View key={n.id} onLayout={onTab(i)} style={[styles.tab, styles.tabLocked]}>
                 <LockIcon size={16} />
               </View>
             );
@@ -37,6 +44,7 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
             return (
               <Pressable
                 key={n.id}
+                onLayout={onTab(i)}
                 testID={`build-${n.id}`}
                 onPress={() => {
                   const ok = onBuild(n.id);
@@ -50,7 +58,7 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
           }
           const eps = Game.shopEarnings(game, n.id);
           return (
-            <Pressable key={n.id} testID={`tab-${n.id}`} onPress={() => onSelect(n.id)} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
+            <Pressable key={n.id} onLayout={onTab(i)} testID={`tab-${n.id}`} onPress={() => onSelect(n.id)} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
               <Text style={styles.tabName}>{n.name}</Text>
               <Text style={[styles.tabSub, active && { color: C.ink }, !shop.managed && !active && { color: C.tomato }]}>{shop.managed ? `${money(eps)}/s` : 'tap to run'}</Text>
             </Pressable>
@@ -59,14 +67,15 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
       </ScrollView>
       {/* edge fades so a clipped tab reads as "scroll for more" (critic D122) */}
       {(['l', 'r'] as const).map((side) => (
-        <Svg key={side} width={22} height="100%" style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]} pointerEvents="none">
+        <Svg key={side} width={24} style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]} viewBox="0 0 24 10" preserveAspectRatio="none" pointerEvents="none">
           <Defs>
             <LinearGradient id={`tf-${side}`} x1={side === 'l' ? '0' : '1'} y1="0" x2={side === 'l' ? '1' : '0'} y2="0">
-              <Stop offset="0" stopColor={C.tomatoDark} stopOpacity={1} />
-              <Stop offset="1" stopColor={C.tomatoDark} stopOpacity={0} />
+              <Stop offset="0" stopColor="#B52C1C" stopOpacity={1} />
+              <Stop offset="0.35" stopColor="#B52C1C" stopOpacity={0.85} />
+              <Stop offset="1" stopColor="#B52C1C" stopOpacity={0} />
             </LinearGradient>
           </Defs>
-          <Rect x={0} y={0} width={22} height="100%" fill={`url(#tf-${side})`} />
+          <Rect x={0} y={0} width={24} height={10} fill={`url(#tf-${side})`} />
         </Svg>
       ))}
     </View>
@@ -100,7 +109,12 @@ export function StationCard(props: {
             {props.title}
             {props.level ? <Text style={styles.level}> {props.level}</Text> : null}
           </Text>
-          <Text style={[styles.detail, props.hot && { color: C.tomatoDark }]} numberOfLines={3}>
+          {props.hot && !props.muted ? (
+            <View style={styles.neckChip}>
+              <Text style={styles.neckText}>BOTTLENECK</Text>
+            </View>
+          ) : null}
+          <Text style={styles.detail} numberOfLines={3}>
             {props.detail}
           </Text>
         </View>
@@ -134,6 +148,8 @@ const styles = StyleSheet.create({
   cardWide: { width: '100%', flexDirection: 'row', alignItems: 'center' },
   cardMuted: { opacity: 0.6 },
   cardHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
+  neckChip: { alignSelf: 'flex-start', backgroundColor: C.tomato, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1, marginVertical: 1 },
+  neckText: { fontFamily: F.bold, fontSize: 8.5, letterSpacing: 0.6, color: '#fff' },
   cardFocus: { borderColor: C.cheeseDark, backgroundColor: '#FFF8DC', borderWidth: 3.5 },
   cardHead: { flexDirection: 'row', gap: 6, alignItems: 'center', flex: 1 },
   icon: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FFE9C7', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: C.cheeseDark },
