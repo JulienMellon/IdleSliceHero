@@ -1278,3 +1278,20 @@ Overlaps no longer get pushed from one place to another.
 | D281 | When the tapped station isn't the bottleneck, the need-cash toast adds "· Drivers is the bottleneck" |
 
 Typecheck clean, 54 tests pass, `report.json` errors: [].
+
+## v3.3 — critique (round 34) — ❌ NOT SATISFIED (1 bug, no [major], 4 [minor])
+
+**Fixed:** D273, D275, D276, D277, D278, D280, D281 · **Still open:** D274 (→ G72), D279 (→ D285)
+
+**Bugs**
+- G72 `timelines.ts`: `turnX = Math.min(seat[0], counter.x0)` is always the seat x. Walk-ins stay on the y 52 lane in front of the bakers. Fix: `Math.max(...)` (turn at the counter's end). Tighten the crowd test to 0 frames of a walker covering a baker's torso.
+
+**Visual design (all [minor])**
+- D282 The guest pause (d0 − 6) covers the parked van (d0 − 30). Move the van to d0 − 70, or pin it left of the pause, and add props to the stand-still test.
+- D283 Back-row diners' heads cover the bakers' feet. Raise the bakers by 6 at footprints that have a back row, or fix the draw order.
+- D284 A leaving driver fades to a half-transparent ghost at the right edge. Keep o = 1 until x passes SCENE_W + 10, or fade over the last 8 units only.
+- D285 Curb-side walkers' feet sit about 2pt above the Prep card. Use GUEST_WALK_Y −44, and give walkers a contact shadow.
+
+**Design notes**
+- D286 The Ovens tag opens the drawer focused on a "no gain now" card while Prep is the bottleneck. Highlight the bottleneck instead.
+- D287 The bottleneck hint flips between two tied stations. Lock it for 3 s, or use a fixed tie-break order.
