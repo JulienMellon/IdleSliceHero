@@ -76,7 +76,7 @@ function layout(fp: number, ovenCount: number, cookCount: number, staffCount: nu
   const RW = ROOM_W[fp];
   const L = 196.5 - RW / 2;
   const R = L + RW;
-  const prep = { x0: L + 6, x1: L + 6 + 30 + cookCount * 17 };
+  const prep = { x0: L + 6, x1: L + 6 + 30 + cookCount * 20 };
   const cooks = Array.from({ length: cookCount }, (_, i) => prep.x0 + 10 + (i * (prep.x1 - prep.x0 - 20)) / Math.max(1, cookCount - 1) + (cookCount === 1 ? (prep.x1 - prep.x0 - 20) / 2 : 0));
   const cw = 56 + 26 * (staffCount - 1);
   const counter = { x0: R - 60 - cw, x1: R - 60 };
@@ -216,7 +216,7 @@ function Hair({ style, color, hy, part }: { style: number; color: string; hy: nu
 }
 
 /** Hats and headwear that make each job readable at a glance. */
-function Headwear({ kind, hy, front = false, alt = false }: { kind: Kind; hy: number; front?: boolean; alt?: boolean }) {
+function Headwear({ kind, hy, front = false, alt = false, dot = '#D9443A' }: { kind: Kind; hy: number; front?: boolean; alt?: boolean; dot?: string }) {
   if (kind === 'cook') {
     return (
       <G>
@@ -231,7 +231,7 @@ function Headwear({ kind, hy, front = false, alt = false }: { kind: Kind; hy: nu
     return (
       <G>
         <Path d={`M-10 ${hy - 1} Q-9.4 ${hy - 12.2} 1 ${hy - 11.6} Q10.4 ${hy - 11} 10.2 ${hy - 2.2} Q1.5 ${hy - 6.5} -10 ${hy - 1} Z`} fill="#F3ECE2" {...OUT} />
-        {[[-4, -8], [1, -9.5], [6, -7.5], [-7, -4], [3.5, -5.6]].map(([dx, dy], i) => <Circle key={i} cx={dx} cy={hy + dy} r={1.1} fill="#D9443A" />)}
+        {[[-4, -8], [1, -9.5], [6, -7.5], [-7, -4], [3.5, -5.6]].map(([dx, dy], i) => <Circle key={i} cx={dx} cy={hy + dy} r={1.1} fill={dot} />)}
         <Circle cx={-10.4} cy={hy - 2} r={2} fill="#F3ECE2" {...OUT} strokeWidth={0.8} />
         <Path d={`M-11.5 ${hy - 1.5} l-3.6 -3.4 l-0.6 4.6 Z M-11.4 ${hy - 1} l-2.6 4.4 l3.8 -0.2 Z`} fill="#F3ECE2" {...OUT} strokeWidth={0.8} />
       </G>
@@ -265,8 +265,11 @@ function Headwear({ kind, hy, front = false, alt = false }: { kind: Kind; hy: nu
 
 /** A polished chibi worker or customer with a contact shadow, feet at room point (x, y). */
 type Mood = 'smile' | 'focus' | 'happy' | 'o' | 'chew';
+/** What a worker's hands are doing (critic D138): cooks roll / toss / ladle; bakers hold an empty peel, a pizza, or slide one in. */
+type Act = 'none' | 'pin' | 'toss' | 'ladle' | 'peel' | 'pizza' | 'slide';
 
-function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, pin = false, mood = 'smile', alt = false }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number; front?: boolean; blink?: boolean; talk?: boolean; pin?: boolean; mood?: Mood; alt?: boolean }) {
+function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step = 0, seed = 0, o = 1, front = false, blink = false, talk = false, act = 'none', mood = 'smile', alt = false, dot = '#D9443A' }: { x: number; y: number; kind: Kind; shirt?: string; arm?: number; flip?: boolean; carry?: boolean; step?: number; seed?: number; o?: number; front?: boolean; blink?: boolean; talk?: boolean; act?: Act; mood?: Mood; alt?: boolean; dot?: string }) {
+  const pin = act === 'pin';
   const [sx, sy] = P(x, y);
   const k = kAt(y) * 1.14;
   const sitting = kind === 'sit';
@@ -290,8 +293,20 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
   const fx = front ? 0.5 : 4.65;
   const torso = `M${-8 - ww} ${by + 3.5} Q${-8 - ww} ${by} ${-4.5} ${by} L5 ${by} Q${8.5 + ww} ${by} ${8.5 + ww} ${by + 3.5} L${8 + ww} ${by + 16.5} Q${8 + ww} ${by + 19} ${5.5 + ww} ${by + 19} L${-5.5 - ww} ${by + 19} Q${-7.6 - ww} ${by + 19} ${-7.6 - ww} ${by + 16.5} Z`;
   // front-arm hand position: working (arm), carrying, eating, or swinging
-  const hand: [number, number] = carry ? [12, by + 8] : sitting ? [12 + arm, by + 9 - arm] : worker && arm > 0 ? [10 + arm, by + 13 - arm * 2] : [9 + sw * 2.5, by + 16];
-  const backHand: [number, number] = pin ? [hand[0] - 12, hand[1]] : sitting ? [-7, by + 15] : [-8.5 - sw * 2.5, by + 15.5];
+  const hand: [number, number] = carry
+    ? [12, by + 8]
+    : sitting
+      ? [12 + arm, by + 9 - arm]
+      : act === 'toss'
+        ? [5, hy - 4 - arm]
+        : act === 'ladle'
+          ? [10, by + 11 - arm]
+          : pin
+            ? [6 + arm, by + 13 - arm * 1.2]
+            : worker && arm > 0
+              ? [10 + arm, by + 13 - arm * 2]
+              : [9 + sw * 2.5, by + 16];
+  const backHand: [number, number] = pin ? [hand[0] - 9, hand[1]] : sitting ? [-7, by + 15] : [-8.5 - sw * 2.5, by + 15.5];
   const peel = kind === 'baker';
   return (
     <G opacity={o} transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${(flip ? -k : k).toFixed(3)} ${k.toFixed(3)})`}>
@@ -390,9 +405,9 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
       ))}
       {look.trait === 1 && (
         <G>
-          <Circle cx={eyeX[0]} cy={hy - 0.4} r={2.3} fill="none" stroke={INK} strokeWidth={0.7} />
-          <Circle cx={eyeX[1]} cy={hy - 0.4} r={2.3} fill="none" stroke={INK} strokeWidth={0.7} />
-          <Path d={`M${eyeX[0] + 2.3} ${hy - 0.6} L${eyeX[1] - 2.3} ${hy - 0.6}`} stroke={INK} strokeWidth={0.7} />
+          <Circle cx={eyeX[0]} cy={hy - 0.4} r={2.5} fill="rgba(255,255,255,0.35)" stroke={INK} strokeWidth={1.1} />
+          <Circle cx={eyeX[1]} cy={hy - 0.4} r={2.5} fill="rgba(255,255,255,0.35)" stroke={INK} strokeWidth={1.1} />
+          <Path d={`M${eyeX[0] + 2.5} ${hy - 0.7} L${eyeX[1] - 2.5} ${hy - 0.7}`} stroke={INK} strokeWidth={1.1} />
         </G>
       )}
       <Ellipse cx={front ? 0.5 : 8.6} cy={hy + 1.6} rx={0.9} ry={0.75} fill={shade(skin, -0.2)} />
@@ -413,33 +428,63 @@ function Person({ x, y, kind, shirt, arm = 0, flip = false, carry = false, step 
       )}
       <Ellipse cx={front ? -3.6 : 0.8} cy={hy + 2.6} rx={1.5} ry={0.95} fill="#F28B82" opacity={0.55} />
       <Ellipse cx={front ? 4.6 : 9.2} cy={hy + 2.4} rx={front ? 1.5 : 1.1} ry={0.9} fill="#F28B82" opacity={0.5} />
-      {look.trait === 2 && <Path d={`M${fx - 2.6} ${hy + 2.9} q1.3 -1.4 2.6 -0.3 q1.3 -1.1 2.6 0.3 q-1.3 0.9 -2.6 0.2 q-1.3 0.7 -2.6 -0.2 Z`} fill={look.hair} stroke={INK} strokeWidth={0.5} />}
+      {look.trait === 2 && <Path d={`M${fx - 4.2} ${hy + 3.2} q2.1 -2.3 4.2 -0.5 q2.1 -1.8 4.2 0.5 q-2.1 1.5 -4.2 0.3 q-2.1 1.2 -4.2 -0.3 Z`} fill={look.hair} stroke={INK} strokeWidth={0.9} />}
       {look.trait === 3 &&
         [[-1.4, 1.6], [-0.4, 2.4], [0.6, 1.5], [1.6, 2.3]].map(([dx, dy], i) => (
-          <Circle key={i} cx={(front ? -3.6 : 0.8) + dx} cy={hy + dy} r={0.4} fill="#B0653A" opacity={0.8} />
+          <Circle key={i} cx={(front ? -3.6 : 0.8) + dx * 1.2} cy={hy + dy} r={0.7} fill="#A8552F" opacity={0.85} />
         ))}
       {/* hair + headwear */}
       {worker ? <Path d={`M-9.4 ${hy + 0.5} Q-9.8 ${hy - 4} -7.5 ${hy - 5} L-6 ${hy + 0.5} Z`} fill={look.hair} /> : <Hair style={look.style} color={look.hair} hy={hy} part="front" />}
-      <Headwear kind={kind} hy={hy} front={front} alt={alt} />
+      {/* hair shows under every hat (critic D139) */}
+      {worker && kind !== 'baker' && (
+        <Path
+          d={front ? `M-7 ${hy - 6.4} Q-6 ${hy - 3} -3.5 ${hy - 4.4} Q-1.5 ${hy - 2.6} 0.8 ${hy - 4.3} Q3 ${hy - 2.6} 5.2 ${hy - 4.4} Q7.5 ${hy - 3} 8.2 ${hy - 6.4} Z` : `M-2 ${hy - 6.6} Q1 ${hy - 3.2} 4 ${hy - 4.8} Q6.5 ${hy - 3} 9.2 ${hy - 5.4} L9 ${hy - 7} Z`}
+          fill={look.hair}
+          stroke={INK}
+          strokeWidth={0.6}
+        />
+      )}
+      {kind === 'baker' && <Circle cx={-9.5} cy={hy + 4.5} r={3.6} fill={look.hair} {...OUT} strokeWidth={0.8} />}
+      <Headwear kind={kind} hy={hy} front={front} alt={alt} dot={dot} />
       {worker && look.trait === 4 && <Path d={`M${front ? -1 : 3} ${hy - 6.5} q-2.5 2.6 -0.4 4 q0.6 -2 2.6 -2.2 q-0.2 2 1.6 2.6 q0.8 -2.4 -1 -4.4 Z`} fill={look.hair} stroke={INK} strokeWidth={0.6} />}
       {/* front arm + props */}
       {peel && (
-        <G>
+        <G transform={act === 'slide' ? `rotate(62 ${hand[0]} ${hand[1]})` : undefined}>
           <Path d={`M${hand[0] + 1} ${hand[1] + 9} L${hand[0] + 2.5} ${hand[1] - 18}`} stroke={INK} strokeWidth={3.4} strokeLinecap="round" />
           <Path d={`M${hand[0] + 1} ${hand[1] + 9} L${hand[0] + 2.5} ${hand[1] - 18}`} stroke="#C99A6B" strokeWidth={1.8} strokeLinecap="round" />
           <Path d={`M${hand[0] - 1.5} ${hand[1] - 17} Q${hand[0] - 2} ${hand[1] - 29} ${hand[0] + 3} ${hand[1] - 29} Q${hand[0] + 8} ${hand[1] - 29} ${hand[0] + 7} ${hand[1] - 17} Z`} fill="#D9B48A" {...OUT} strokeWidth={0.9} />
+          {act !== 'peel' && (
+            <G>
+              <Ellipse cx={hand[0] + 2.7} cy={hand[1] - 23} rx={4.6} ry={4.4} fill="#E9A64B" {...OUT} strokeWidth={0.7} />
+              <Ellipse cx={hand[0] + 2.7} cy={hand[1] - 23} rx={3.5} ry={3.3} fill="#FFC531" />
+              {[[-1.2, -1], [1.4, 0.4], [-0.4, 1.6]].map(([dx, dy], i) => <Circle key={i} cx={hand[0] + 2.7 + dx} cy={hand[1] - 23 + dy} r={0.8} fill="#E8432E" />)}
+            </G>
+          )}
         </G>
       )}
       <Limb d={`M6.5 ${by + 4} Q${9.5} ${by + 9} ${hand[0]} ${hand[1]}`} color={sleeve} />
       {kind === 'cook' || kind === 'baker' ? <Path d={`M${hand[0] - 2.4} ${hand[1] - 2.2} l2.8 -1`} stroke={kind === 'cook' ? '#E1DAD0' : '#7E2A35'} strokeWidth={1.2} /> : null}
       {pin && (
         <G>
-          <Rect x={hand[0] - 13} y={hand[1] - 1.8} width={20} height={3.6} rx={1.8} fill="#E2B985" {...OUT} strokeWidth={0.8} />
-          <Rect x={hand[0] - 12} y={hand[1] - 1.4} width={18} height={1.1} rx={0.5} fill="#fff" opacity={0.4} />
+          <Rect x={hand[0] - 10.5} y={hand[1] - 1.8} width={14} height={3.6} rx={1.8} fill="#E2B985" {...OUT} strokeWidth={0.8} />
+          <Rect x={hand[0] - 9.5} y={hand[1] - 1.4} width={12} height={1.1} rx={0.5} fill="#fff" opacity={0.4} />
+        </G>
+      )}
+      {act === 'toss' && (
+        <G>
+          <Ellipse cx={hand[0] + 0.5} cy={hand[1] - 5 - arm * 2} rx={6.5} ry={1.9} fill="#FBEFD6" {...OUT} strokeWidth={0.8} />
+          <Ellipse cx={hand[0] - 0.8} cy={hand[1] - 5.5 - arm * 2} rx={3} ry={0.7} fill="#fff" opacity={0.6} />
+        </G>
+      )}
+      {act === 'ladle' && (
+        <G>
+          <Path d={`M${hand[0]} ${hand[1]} L${hand[0] + 4} ${hand[1] + 8}`} stroke={INK} strokeWidth={2.2} strokeLinecap="round" />
+          <Path d={`M${hand[0]} ${hand[1]} L${hand[0] + 4} ${hand[1] + 8}`} stroke="#BFC4CA" strokeWidth={1} strokeLinecap="round" />
+          <Path d={`M${hand[0] + 1} ${hand[1] + 8} Q${hand[0] + 4} ${hand[1] + 13} ${hand[0] + 7.5} ${hand[1] + 8} Z`} fill="#D9443A" {...OUT} strokeWidth={0.8} />
         </G>
       )}
       <Circle cx={hand[0]} cy={hand[1]} r={2.4} fill={skin} {...OUT} strokeWidth={0.8} />
-      {pin && <Circle cx={hand[0] - 12} cy={hand[1]} r={2.1} fill={shade(skin, -0.08)} {...OUT} strokeWidth={0.7} />}
+      {pin && <Circle cx={hand[0] - 9} cy={hand[1]} r={2.1} fill={shade(skin, -0.08)} {...OUT} strokeWidth={0.7} />}
       {carry && (
         <G>
           <Rect x={hand[0] - 3} y={hand[1] - 6.5} width={17} height={6} rx={1.2} fill="#F6E7C1" {...OUT} strokeWidth={0.9} />
@@ -582,7 +627,7 @@ function OvenHood({ lay, grade, mural }: { lay: Layout; grade: number; mural: bo
 }
 
 const TABLE_STYLE = [
-  { top: '#FFFFFF', rim: '#E0DAD2', chair: '#E9DCC8', chairDark: '#B79C7A', leg: '#9A958E' }, // plain
+  { top: '#FFFFFF', rim: '#E0DAD2', chair: '#C89B6D', chairDark: '#8E5A3C', leg: '#9A958E' }, // plain wood
   { top: '#FFFFFF', rim: '#D9443A', chair: '#D9443A', chairDark: '#B23A30', leg: INK }, // checked tablecloth
   { top: '#C99A6B', rim: '#8E5A3C', chair: '#7A4A26', chairDark: '#5E3A26', leg: '#5E3A26' }, // wooden bistro
   { top: '#F4F1EC', rim: '#D4AF37', chair: '#7B1E3A', chairDark: '#5A1229', leg: '#D4AF37' }, // marble & candles
@@ -602,14 +647,24 @@ function Table({ x, y, tier, part }: { x: number; y: number; tier: number; part:
     return (
       <G key={dx} transform={`translate(${px} ${py}) scale(${k})`}>
         <Ellipse cx={0} cy={0} rx={8} ry={2.2} fill="rgba(59,31,20,0.18)" />
-        {[-5.5, 5.5].map((lx) => <Rect key={lx} x={lx - 1} y={-3.4} width={2} height={3.4} rx={0.6} fill={st.chairDark} stroke={INK} strokeWidth={0.5} />)}
-        <Rect x={out < 0 ? -11 : 3.5} y={-24} width={7.5} height={15} rx={3} fill={st.chair} stroke={INK} strokeWidth={1} />
-        <Rect x={out < 0 ? -11 : 3.5} y={-24} width={7.5} height={15} rx={3} fill="none" />
-        <Path d={`M${out < 0 ? -9.2 : 5.3} ${-17.5} h4`} stroke={st.chairDark} strokeWidth={1.4} strokeLinecap="round" />
-        <Rect x={out < 0 ? (-11 + 5.5) : 3.5} y={-24} width={2} height={15} rx={1} fill={st.chairDark} opacity={0.6} />
-        <Rect x={out < 0 ? -10.2 : 4.3} y={-23} width={1.4} height={12} rx={0.7} fill="#fff" opacity={0.3} />
-        <Rect x={-7.5} y={-6.4} width={15} height={3.8} rx={1.6} fill={st.chairDark} stroke={INK} strokeWidth={0.9} />
-        <Rect x={-6.5} y={-6} width={13} height={1.2} rx={0.6} fill="#fff" opacity={0.3} />
+        {/* legs: two front, two back (the back pair under the backrest) */}
+        {[-6, 6].map((lx) => <Rect key={lx} x={lx - 1} y={-4} width={2} height={4} rx={0.6} fill={st.chairDark} stroke={INK} strokeWidth={0.6} />)}
+        {/* backrest rising from the seat's rear edge: two posts, top rail and a slat */}
+        {(() => {
+          const x0 = out < 0 ? -7.5 : 1.5;
+          return (
+            <G>
+              <Rect x={x0} y={-25} width={1.8} height={19} rx={0.8} fill={st.chairDark} stroke={INK} strokeWidth={0.7} />
+              <Rect x={x0 + 4.2} y={-25} width={1.8} height={19} rx={0.8} fill={st.chairDark} stroke={INK} strokeWidth={0.7} />
+              <Rect x={x0 - 0.4} y={-26} width={6.8} height={5} rx={1.8} fill={st.chair} stroke={INK} strokeWidth={1.1} />
+              <Rect x={x0 + 0.3} y={-25.4} width={5.4} height={1.3} rx={0.6} fill="#fff" opacity={0.3} />
+              <Rect x={x0 + 0.2} y={-17} width={5.6} height={2.4} rx={1} fill={st.chair} stroke={INK} strokeWidth={0.8} />
+            </G>
+          );
+        })()}
+        <Rect x={-7.5} y={-6.4} width={15} height={3.8} rx={1.6} fill={st.chair} stroke={INK} strokeWidth={1.2} />
+        <Rect x={-7.5} y={-3.8} width={15} height={1.2} rx={0.6} fill={st.chairDark} />
+        <Rect x={-6.5} y={-6} width={13} height={1.1} rx={0.5} fill="#fff" opacity={0.3} />
       </G>
     );
   };
@@ -928,7 +983,7 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
       <Path d={`M${P(L, 0, sideTop).join(' ')} L${P(L, D, WH).join(' ')} L${P(R, D, WH).join(' ')} L${P(R, 0, sideTop).join(' ')}`} stroke="#5E3A26" strokeWidth={4.5} strokeLinejoin="round" fill="none" />
       <Path d={`M${P(L, 0, sideTop).join(' ')} L${P(L, D, WH).join(' ')} L${P(R, D, WH).join(' ')} L${P(R, 0, sideTop).join(' ')}`} stroke="#8E5A3C" strokeWidth={1.4} strokeLinejoin="round" fill="none" />
       {/* floor: plain tile → checkerboard → wood parquet → marble (decor) */}
-      <Polygon points={pts([P(L, 0), P(R, 0), P(R, D), P(L, D)])} fill={['#E7D7BE', '#F4EFE6', '#C99A6B', '#F4EFE8'][flooring]} stroke={INK} strokeWidth={1.4} />
+      <Polygon points={pts([P(L, 0), P(R, 0), P(R, D), P(L, D)])} fill={['#E7D7BE', '#F4EFE6', '#C99A6B', '#E8DFD2'][flooring]} stroke={INK} strokeWidth={1.4} />
       {flooring === 1 &&
         Array.from({ length: 20 * 6 }).map((_, i) => {
           const c = i % 20;
@@ -957,7 +1012,7 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
             if ((c + r) % 2) return null;
             const xa = L + ((R - L) * c) / 8;
             const xb = L + ((R - L) * (c + 1)) / 8;
-            return <Polygon key={`mt${i}`} points={pts([P(xa, r * 18.3), P(xb, r * 18.3), P(xb, (r + 1) * 18.3), P(xa, (r + 1) * 18.3)])} fill="#E2D9CC" />;
+            return <Polygon key={`mt${i}`} points={pts([P(xa, r * 18.3), P(xb, r * 18.3), P(xb, (r + 1) * 18.3), P(xa, (r + 1) * 18.3)])} fill="#CFC3B2" />;
           })}
           {Array.from({ length: 9 }).map((_, i) => {
             const x = L + ((R - L) * i) / 8;
@@ -970,13 +1025,16 @@ const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, walls, sign
             const x = L + (R - L) * fx;
             return (
               <G key={`vein${i}`}>
-                <Path d={`M${P(x, fy).join(' ')} Q${P(x + 14, fy + 7).join(' ')} ${P(x + 26, fy + 2).join(' ')} T${P(x + 44, fy + 6).join(' ')}`} stroke="#A79E92" strokeWidth={1.1} fill="none" opacity={0.8} />
+                <Path d={`M${P(x, fy).join(' ')} Q${P(x + 14, fy + 7).join(' ')} ${P(x + 26, fy + 2).join(' ')} T${P(x + 44, fy + 6).join(' ')}`} stroke="#9A8F82" strokeWidth={1.4} fill="none" opacity={0.85} />
+                <Path d={`M${P(x + 1, fy + 1.2).join(' ')} Q${P(x + 15, fy + 8.2).join(' ')} ${P(x + 27, fy + 3.2).join(' ')} T${P(x + 45, fy + 7.2).join(' ')}`} stroke="#fff" strokeWidth={0.9} fill="none" opacity={0.7} />
                 <Path d={`M${P(x + 14, fy + 5).join(' ')} L${P(x + 20, fy + 12).join(' ')}`} stroke="#A79E92" strokeWidth={0.7} opacity={0.6} />
               </G>
             );
           })}
           <Polygon points={pts([P(L, 0), P(R, 0), P(R, D), P(L, D)])} fill="url(#sheen)" />
           <Polygon points={pts([P(L, D - 5), P(R, D - 5), P(R, D), P(L, D)])} fill="#C9A04A" stroke="#9C7A2E" strokeWidth={0.6} />
+          <Polygon points={pts([P(L, 2), P(R, 2), P(R, 6), P(L, 6)])} fill="#C9A04A" stroke="#9C7A2E" strokeWidth={0.6} />
+          <Path d={`M${P(L, 4).join(' ')} L${P(R, 4).join(' ')}`} stroke="#FFF3B0" strokeWidth={0.8} opacity={0.7} />
           <Polygon points={pts([P(L, 0), P(L + 5, 0), P(L + 5, D - 5), P(L, D)])} fill="#C9A04A" stroke="#9C7A2E" strokeWidth={0.6} />
           <Polygon points={pts([P(R - 5, 0), P(R, 0), P(R, D), P(R - 5, D - 5)])} fill="#C9A04A" stroke="#9C7A2E" strokeWidth={0.6} />
         </G>
@@ -1219,7 +1277,8 @@ function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: string; 
         const [kbx] = P(jx1, 0, 0);
         const [, lTop] = P(0, 0, 94);
         const [, lBot] = P(0, 0, 80);
-        const [, gTop] = P(0, 0, FRONT_TOP - 22);
+        const [, gTop] = P(0, 0, 196);
+        const [, bTop] = P(0, 0, FRONT_TOP - 20);
         const brick = (x0: number, x1: number, top: number, bot: number) => (
           <G>
             <Rect x={x0} y={top} width={x1 - x0} height={bot - top} fill="#A24B2C" stroke={INK} strokeWidth={1.1} />
@@ -1231,29 +1290,81 @@ function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: string; 
         return (
           <G>
             {/* shop window above the entrance */}
-            {/* pizza-on-a-stand display behind the glass */}
+            {/* two-tier pizza stand on display behind the glass (critic D141) */}
             {(() => {
-              const cx = (jax + kbx) / 2 - (kbx - jax) * 0.22;
+              const cx = (jax + kbx) / 2;
               const by = lTop - 13;
+              const tier = (y: number, rx: number) => (
+                <G>
+                  <Ellipse cx={cx} cy={y} rx={rx} ry={rx * 0.24} fill="#E9E4DC" stroke={INK} strokeWidth={0.8} />
+                  <Ellipse cx={cx} cy={y - 1.6} rx={rx * 0.86} ry={rx * 0.21} fill="#E9A64B" stroke={INK} strokeWidth={0.7} />
+                  <Ellipse cx={cx} cy={y - 2} rx={rx * 0.7} ry={rx * 0.16} fill="#FFC531" />
+                  {[-0.45, 0, 0.45].map((d) => <Circle key={d} cx={cx + d * rx} cy={y - 2 + (d === 0 ? 0.6 : -0.3)} r={1.1} fill="#E8432E" />)}
+                </G>
+              );
               return (
                 <G>
-                  <Path d={`M${cx - 2} ${by} L${cx + 2} ${by} L${cx + 1} ${by - 9} L${cx - 1} ${by - 9} Z`} fill="#C9A04A" stroke={INK} strokeWidth={0.7} />
-                  <Ellipse cx={cx} cy={by - 9} rx={11} ry={2.6} fill="#E9E4DC" stroke={INK} strokeWidth={0.8} />
-                  <Ellipse cx={cx} cy={by - 10.4} rx={9.5} ry={2.4} fill="#E9A64B" stroke={INK} strokeWidth={0.7} />
-                  <Ellipse cx={cx} cy={by - 10.8} rx={7.8} ry={1.8} fill="#FFC531" />
-                  {[-4, 0, 4].map((d) => <Circle key={d} cx={cx + d} cy={by - 10.8 + (d === 0 ? 0.6 : -0.3)} r={1} fill="#E8432E" />)}
+                  <Path d={`M${cx - 3} ${by} L${cx + 3} ${by} L${cx + 1.2} ${by - 22} L${cx - 1.2} ${by - 22} Z`} fill="#C9A04A" stroke={INK} strokeWidth={0.7} />
+                  <Ellipse cx={cx} cy={by} rx={7} ry={1.8} fill="#C9A04A" stroke={INK} strokeWidth={0.7} />
+                  {tier(by - 8, 17)}
+                  {tier(by - 22, 11)}
                 </G>
               );
             })()}
             <Rect x={jax} y={gTop} width={kbx - jax} height={lTop - gTop} fill="url(#glass)" />
             <Path d={`M${jax + 7} ${lTop - 16} L${jax + 22} ${gTop + 8} M${jax + 15} ${lTop - 16} L${jax + 27} ${gTop + 14}`} stroke="#fff" strokeWidth={2.6} opacity={0.6} strokeLinecap="round" />
+            {/* gold arched decal on the glass */}
+            {(() => {
+              const cx = (jax + kbx) / 2;
+              const cy = gTop + (lTop - gTop) * 0.62;
+              const r = (kbx - jax) * 0.55;
+              const word = 'ROSA’S';
+              return (
+                <G>
+                  {word.split('').map((ch, i) => {
+                    const ang = (-26 + (52 * i) / (word.length - 1)) * (Math.PI / 180);
+                    const x = cx + Math.sin(ang) * r;
+                    const y = cy - Math.cos(ang) * r * 0.5;
+                    return (
+                      <SvgText key={i} x={x} y={y} fontFamily={F.bold} fontSize={8} fill="#E0B000" stroke="#7A5A00" strokeWidth={0.3} textAnchor="middle" rotation={(ang * 180) / Math.PI} origin={`${x}, ${y}`}>
+                        {ch}
+                      </SvgText>
+                    );
+                  })}
+                  <SvgText x={cx} y={cy + 6} fontFamily={F.bold} fontSize={4.6} fill="#E0B000" textAnchor="middle" letterSpacing={0.6}>
+                    EST. 1974
+                  </SvgText>
+                </G>
+              );
+            })()}
             <Rect x={jax + 2} y={gTop + 2} width={kbx - jax - 4} height={lTop - gTop - 2} fill="none" stroke="#6B4330" strokeWidth={4.5} />
             <Rect x={jax + 2} y={gTop + 2} width={kbx - jax - 4} height={lTop - gTop - 2} fill="none" stroke={INK} strokeWidth={0.8} />
-            <Path d={`M${(jax + kbx) / 2} ${gTop} V${lTop}`} stroke="#6B4330" strokeWidth={3} />
+            <Path d={`M${(jax + kbx) / 2} ${gTop} V${(gTop + lTop) / 2 - 14}`} stroke="#6B4330" strokeWidth={3} />
+            {brick(jax, kbx, bTop, gTop + 2)}
+            <Rect x={jax - 1} y={gTop - 1} width={kbx - jax + 2} height={4} rx={1} fill="#7A3520" stroke={INK} strokeWidth={0.9} />
+            <Circle cx={(jax + kbx) / 2 + 4} cy={(bTop + gTop) / 2 - 6} r={8} fill="#FFE7A0" stroke="#6B4330" strokeWidth={2.6} />
+            <Path d={`M${(jax + kbx) / 2 + 4} ${(bTop + gTop) / 2 - 14} V${(bTop + gTop) / 2 + 2} M${(jax + kbx) / 2 - 4} ${(bTop + gTop) / 2 - 6} H${(jax + kbx) / 2 + 12}`} stroke="#6B4330" strokeWidth={1.4} />
+            {(() => {
+              const sx = jax + 4;
+              const sy = gTop - 22;
+              return (
+                <G>
+                  <Path d={`M${sx} ${sy - 16} H${sx - 26}`} stroke={INK} strokeWidth={2.4} fill="none" strokeLinecap="round" />
+                  <Path d={`M${sx} ${sy - 16} H${sx - 26}`} stroke="#4A4F57" strokeWidth={1.2} fill="none" strokeLinecap="round" />
+                  <Path d={`M${sx - 22} ${sy - 16} v6 M${sx - 6} ${sy - 16} v6`} stroke={INK} strokeWidth={0.8} />
+                  <Circle cx={sx - 14} cy={sy} r={10.5} fill="#D9443A" stroke={INK} strokeWidth={1.2} />
+                  <Circle cx={sx - 14} cy={sy} r={8.4} fill="none" stroke="#FFF4E0" strokeWidth={0.8} />
+                  <SvgText x={sx - 14} y={sy + 2} fontFamily={F.bold} fontSize={5.6} fill="#FFF4E0" textAnchor="middle">
+                    PIZZA
+                  </SvgText>
+                  <Path d={`M${sx - 21} ${sy - 4} A8 8 0 0 1 ${sx - 10} ${sy - 7.5}`} stroke="#fff" strokeWidth={1.2} opacity={0.5} fill="none" strokeLinecap="round" />
+                </G>
+              );
+            })()}
             <Path d={`M${jax} ${lTop - 12} H${kbx}`} stroke="#6B4330" strokeWidth={2.4} />
             <Rect x={jax + 2} y={lTop - 11} width={kbx - jax - 4} height={10} fill="#3B1F14" opacity={0.85} />
-            <SvgText x={(jax + kbx) / 2} y={lTop - 3.4} fontFamily={F.bold} fontSize={7.5} fill="#E0B000" textAnchor="middle" letterSpacing={1}>
-              ROSA’S
+            <SvgText x={(jax + kbx) / 2} y={lTop - 3.4} fontFamily={F.bold} fontSize={6.5} fill="#E0B000" textAnchor="middle" letterSpacing={1}>
+              PIZZERIA
             </SvgText>
             {/* jambs + lintel */}
             {brick(jax, jbx, lTop, jay + 6)}
@@ -1381,12 +1492,20 @@ function ChalkSign({ x, y }: { x: number; y: number }) {
 }
 
 function Doormat({ lay }: { lay: Layout }) {
-  const [d0x, d0y] = P(lay.door.x0 + 2, -1);
-  const [d1x] = P(lay.door.x1 - 2, -1);
+  // lying flat on the sidewalk at the threshold: a perspective trapezoid with fringe (critic D143)
+  const a0 = P(lay.door.x0 + 2, -2);
+  const a1 = P(lay.door.x1 - 2, -2);
+  const b1 = P(lay.door.x1 + 1, -14);
+  const b0 = P(lay.door.x0 - 1, -14);
+  const cx = (a0[0] + a1[0] + b0[0] + b1[0]) / 4;
+  const cy = (a0[1] + b0[1]) / 2;
   return (
     <G>
-      <Rect x={d0x} y={d0y + 4} width={d1x - d0x} height={9} rx={2} fill="#7A3520" stroke={INK} strokeWidth={0.9} />
-      <SvgText x={(d0x + d1x) / 2} y={d0y + 11} fontFamily={F.bold} fontSize={6} fill="#FFC531" textAnchor="middle">
+      <Polygon points={pts([a0, a1, b1, b0])} fill="#7A3520" stroke={INK} strokeWidth={0.9} />
+      <Polygon points={pts([P(lay.door.x0 + 4, -4), P(lay.door.x1 - 4, -4), P(lay.door.x1 - 1, -12), P(lay.door.x0 + 1, -12)])} fill="none" stroke="#C8643E" strokeWidth={0.8} />
+      {[a0, a1].map((pt, i) => <Path key={`f${i}`} d={`M${pt[0] + (i ? 1 : -1)} ${pt[1]} L${pt[0] + (i ? 2.2 : -2.2)} ${pt[1] + 1} M${pt[0] + (i ? 1.4 : -1.4)} ${pt[1] + 3} L${pt[0] + (i ? 2.8 : -2.8)} ${pt[1] + 4}`} stroke="#C8643E" strokeWidth={0.8} />)}
+      {[b0, b1].map((pt, i) => <Path key={`g${i}`} d={`M${pt[0] + (i ? 1 : -1)} ${pt[1] - 2} L${pt[0] + (i ? 2.6 : -2.6)} ${pt[1] - 1} M${pt[0] + (i ? 1 : -1)} ${pt[1] - 5} L${pt[0] + (i ? 2.6 : -2.6)} ${pt[1] - 4}`} stroke="#C8643E" strokeWidth={0.8} />)}
+      <SvgText x={cx} y={cy + 2.2} fontFamily={F.bold} fontSize={6} fill="#FFC531" textAnchor="middle">
         WELCOME
       </SvgText>
     </G>
@@ -1586,7 +1705,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   const mem = useRef({ phase: {} as Record<string, number>, lastPopAt: 0, lastSold: -1, shopId: '', pop: null as null | { at: number; text: string }, taps: [] as { at: number; x: number; y: number; text: string; color: string; count: number }[] });
 
   const ovenCount = Math.min(FOOTPRINTS[fp].ovenSlots, 1 + Math.floor((shop.ovens - 1) / 8));
-  const cookCount = Math.min(fp >= 3 ? 4 : 3, 1 + Math.floor((shop.prep - 1) / 15));
+  const cookCount = Math.min(3, 1 + Math.floor((shop.prep - 1) / 15));
   const staffCount = Math.min(2, 1 + Math.floor((shop.counter - 1) / 15));
   const driverSlots = [2, 2, 3, 3, 4][fp];
   const lay = layout(fp, ovenCount, cookCount, staffCount, Game.tablesShown(shop), driverSlots);
@@ -1610,10 +1729,13 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   let payout = false;
   for (let i = 0; i < driverCount; i++) {
     const spot = lay.spots[i];
-    const p = ((t / 6 + i / driverCount) % 1 + 1) % 1;
+    const jitter = (hash32(shopSeed + i * 17) % 100) / 500;
+    const p = ((t / 6 + i / driverCount + jitter) % 1 + 1) % 1;
+    const lane = (i % 3) * 6;
     // drivers walk in from up the street, pick up, and hurry off with the box: never fading (critic G55);
     // inside they route past the swung-in door leaf (critic G53)
-    const offStreet: [number, number] = [SCENE_W + 50, -30];
+    const offStreet: [number, number] = [SCENE_W + 50, -30 - lane];
+    const outsideDoor: [number, number] = [lay.door.cx + (i % 2 ? 3 : -3), -24 - lane];
     const via: [number, number] = [lay.door.x0 + 4, 30];
     let pos: [number, number];
     let walking = true;
@@ -1643,10 +1765,10 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       });
     }
   }
-  const guestCount = running ? Math.min(2, lay.tables.length) : 0;
+  const guestCount = running ? Math.min(4, lay.tables.length) : 0;
   const orderAt: [number, number] = [lay.counter.x0 + 12, 54];
   for (let i = 0; i < guestCount; i++) {
-    const cyc = t / 9 + 0.3 + i * 0.5;
+    const cyc = t / 9 + 0.3 + i / Math.max(2, guestCount);
     const p = ((cyc % 1) + 1) % 1;
     // a different customer every visit, and different crowds in every shop (critic D112)
     const gSeed = shopSeed + i * 2 + 3 + Math.floor(cyc) * 13;
@@ -1692,7 +1814,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
     items.push({ y: tb.y + 0.6, el: <Table key={`tb${i}`} x={tb.x} y={tb.y} tier={shop.decor.tables} part="back" /> });
     items.push({ y: tb.y - 0.6, el: <Table key={`tf${i}`} x={tb.x} y={tb.y} tier={shop.decor.tables} part="front" /> });
     if (running && i >= guestCount) {
-      const dSeed = shopSeed + i * 3 + 7;
+      const dSeed = shopSeed + i * 3 + 7 + Math.floor(t / 14 + i * 0.37) * 29;
       const bite = Math.abs(Math.sin(clock * 2 + i));
       items.push({ y: tb.y, el: <Person key={`s${i}`} x={tb.x - 17} y={tb.y} kind="sit" seed={dSeed} blink={blinkAt(dSeed)} arm={bite * 2} mood={bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile'} /> });
     }
@@ -1704,7 +1826,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
   }
   if (shop.decor.plants >= 3) items.push({ y: 100, el: <FloorPlant key="pp4" x={lay.L + 14} y={100} big /> });
   // kitchen crew + furniture
-  lay.cooks.forEach((x, i) => items.push({ y: 92 + (i % 2) * 8, el: <Person key={`c${i}`} x={x} y={92 + (i % 2) * 8} kind="cook" front pin mood={running && Math.sin(t * 4 + i) > 0.3 ? 'focus' : 'smile'} seed={shopSeed + i * 4 + 20} blink={blinkAt(shopSeed + i * 4 + 20)} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} /> }));
+  lay.cooks.forEach((x, i) => items.push({ y: 92 + (i % 2) * 8, el: <Person key={`c${i}`} x={x} y={92 + (i % 2) * 8} kind="cook" front act={(['pin', 'toss', 'ladle'] as const)[i % 3]} mood={running && Math.sin(t * 4 + i) > 0.3 ? 'focus' : 'smile'} seed={shopSeed + i * 4 + 20} blink={blinkAt(shopSeed + i * 4 + 20)} arm={running ? Math.abs(Math.sin(t * 4 + i)) * 3 : 0} /> }));
   items.push({
     y: 66,
     el: (
@@ -1718,7 +1840,7 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
       </G>
     ),
   });
-  lay.ovenCols.forEach((c, i) => items.push({ y: 76, el: <Person key={`b${i}`} x={Math.min(c.x1 + 2, lay.counter.x0 - 12)} y={76} kind="baker" seed={shopSeed + i * 3 + 31} blink={blinkAt(shopSeed + i * 3 + 31)} arm={running ? Math.abs(Math.sin(t * 3 + i)) * 2.5 : 0} flip={i % 2 === 1} /> }));
+  lay.ovenCols.forEach((c, i) => items.push({ y: 76, el: <Person key={`b${i}`} x={Math.min(c.x1 + 2, lay.counter.x0 - 12)} y={76} kind="baker" seed={shopSeed + i * 3 + 31} blink={blinkAt(shopSeed + i * 3 + 31)} arm={running ? Math.abs(Math.sin(t * 3 + i)) * 2.5 : 0} act={(['pizza', 'peel', 'slide'] as const)[i % 3]} dot={['#D9443A', '#3FAE5A', '#2D9CDB'][i % 3]} /> }));
   lay.staff.forEach((x, i) => items.push({ y: 92, el: <Person key={`st${i}`} x={x} y={92} kind="staff" front alt={i === 1} seed={shopSeed + i * 5 + 41} blink={blinkAt(shopSeed + i * 5 + 41)} arm={running ? Math.abs(Math.sin(t * 5 + i * 2)) * 2 : 0} /> }));
   const boxes = running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0;
   items.push({
@@ -1913,8 +2035,8 @@ export function Storefront({ game, id, width, height, paused, onTap, onStation }
           {/* cash pop in the sky band, on a basil pill so it reads over any backdrop (critic D107) */}
           {pop && (() => {
             const w = pop.text.length * 10 + 18;
-            const x = SCENE_W - 14 - w / 2;
-            const y = 86 - pop.k * 20;
+            const x = Math.min(SCENE_W - 6 - w / 2, P(lay.door.cx, 0)[0]);
+            const y = P(0, 0, FRONT_TOP - 62)[1] - pop.k * 20;
             return (
               <G opacity={pop.k > 0.87 ? (1 - pop.k) / 0.13 : 1}>
                 <Rect x={x - w / 2} y={y - 15} width={w} height={22} rx={11} fill={C.basilDark} stroke="#fff" strokeWidth={1.8} />

@@ -743,3 +743,43 @@ Typecheck clean, 30 tests pass, `report.json` errors: [].
 | D137 | On an unmanaged shop the goal bar skips "Hire a manager here" (the sidewalk button offers it) and shows the next goal |
 
 Typecheck clean, 30 tests pass, `report.json` errors: [].
+
+## v2.5 — critique (round 20) — ❌ NOT SATISFIED
+
+**VERDICT: NOT SATISFIED** — loads clean; most round-19 fixes show in the pixels (door leaf, no fading, WELCOME mat, BOTTLENECK chip, cut-scene panel, A-frame sign). The kitchen crew still reads as near-identical figures, the per-worker traits are too small to see on a phone, the starting dining set looks unfinished, and an empty glass column sits beside the focal point.
+
+**Fixed:** G53–G57, D127, D129, D130, D132, D133, D135, D136, D137 · **Still open:** D125 (→ D139), D126 (→ D138), D128 (→ D142), D131 (→ D140), D134 (→ D147)
+
+**Bugs**
+- G58 Late game, the goal bar shows a full "Story 20/24" with no trophy while big in-shop buys are affordable
+
+**Visual design**
+- D138 [major] Kitchen crew still near-twins: bakers share everything and their peels cross; cooks' pins run through neighbours and toques touch → no paired flip, per-baker action and dot colour, hair below the bandana; cooks ≥30 apart, 14-wide pins, alternating actions (rolling / tossing / ladling)
+- D139 [major] Worker traits invisible at phone size → thicker glasses, bigger moustache, bigger freckles, hair under every hat
+- D140 [major] Tier-0 dining set reads as a stool + capsule → back rising from the seat's rear edge, wood colours, ink outline
+- D141 [major] The entrance column is a blank glass slab → shorter glass, brick above with a round PIZZA blade sign, gold arched decal, bigger display stand with two pizzas
+- D142–D149 [minor] Marble still pale; WELCOME mat reads as a plank; walking drivers stack exactly; ghosted MEGASLICE billboard; tins appear to sit on the PIZZA sign (02); tab sliver remains, fade too faint; Big Sal's sideburns read as headphones; cash pop far from the door
+
+**Design notes**
+- D150 At most two walk-ins animate; other diners never leave · D151 Late game runs out of goals (see G58)
+
+## v2.6 — build (addresses round 20)
+
+| Note | Fix |
+| --- | --- |
+| G58 / D151 | When nothing city-wide is left, the goal bar shows the best Expand / Grade / Decor buy in the current shop (by gain per $). The story fallback fills to seen/24, and the trophy sits above the fill |
+| D138 | Bakers: no paired flip (peels stay on the outer side); each one has a job (a pizza on the peel, an empty peel, or sliding one in at a tilt) and its own bandana dot colour (red / green / blue), with a low bun showing under the bandana. Cooks: at most 3, ~35 apart, 14-wide pins, and alternating jobs (rolling, tossing dough at head height, ladling sauce) |
+| D139 | Glasses 1.1 stroke with tinted lenses; moustache 1.6× with a 0.9 outline; freckles r 0.7; a fringe of hair shows under every cap and toque |
+| D140 | Chairs: the backrest rises from the seat's rear edge on two posts with a top rail and slat; four legs; tier-0 chairs are wood #C89B6D / #8E5A3C with a 1.2 outline |
+| D141 | Entrance: the glass stops at ~window height (z 196). Above it: brick with a lintel, a round attic window, and a round PIZZA blade sign on an iron bracket. Gold arched ROSA'S · EST. 1974 decal mid-glass; a two-tier stand with two pizzas behind the glass; transom reads PIZZERIA |
+| D142 | Marble tiles #E8DFD2 / #CFC3B2, veins 1.4 with a white companion line, and a brass inlay along the front sill |
+| D143 | WELCOME mat lies flat: a perspective trapezoid with an inner border and fringe ticks |
+| D144 | Drivers get their own sidewalk lane (`(i % 3) * 6` depth) and a seeded phase jitter, so walkers no longer stack |
+| D145 | MEGASLICE billboard drawn outside the skyline's alpha group: full-strength #7B2CBF board, #FFC531 text with an ink stroke and a highlight |
+| D146 | Nonna's tins sit on a bracketed shelf under the photo, clear of the PIZZA sign |
+| D147 | Tab snap offsets end exactly at the gap (x − 6), so no sliver of the previous tab; 30pt fades with a stronger stop |
+| D148 | Big Sal's sideburns are tapered shapes in his hair colour |
+| D149 | Cash pop rises from beside the entrance header (door x, z FRONT_TOP − 62) |
+| D150 | Up to 4 walk-ins animate per shop, phased evenly; the fixed diners re-roll their look every ~14 s |
+
+Typecheck clean, 30 tests pass, `report.json` errors: [].

@@ -60,8 +60,25 @@ export default function GameScreen() {
   // On an unmanaged shop the sidewalk already offers "Hire a manager" here: show the next goal instead (critic D137).
   const shown = !shop.managed && id !== 'downtown' ? candidates.filter((c) => c.label !== `Hire a manager for ${nd.name}`) : candidates;
   let goal: Goal | null = shown[0] ?? null;
+  // Late game: fall back to the best big buy in this shop (Expand, Grade or a Decor tier) before the story count (critic G58/D151).
   if (!goal) {
-    goal = { label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : `Story ${game.seenScenes.length}/24`, current: 1, target: 1, icon: <TrophyIcon size={22} /> };
+    const big: (Goal & { ratio: number })[] = [];
+    for (const what of ['expand', 'grade'] as const) {
+      const cost = G.upgradeCostOf(game, id, what);
+      if (cost !== null && !G.upgradeLock(game, id, what)) {
+        const gain = G.upgradeGain(game, id, what) ?? 0;
+        big.push({ label: what === 'expand' ? `Expand ${nd.name} · ${FOOTPRINTS[shop.footprint + 1]?.name ?? ''}` : `${OVEN_GRADES[shop.grade + 1]?.name ?? ''} ovens in ${nd.name}`, current: game.cash, target: cost, ratio: (gain + 1e-6) / cost, onPress: () => buy(what) });
+      }
+    }
+    for (const kind of DECOR_KINDS) {
+      const cost = G.decorCost(game, id, kind);
+      if (cost !== null) big.push({ label: `${DECOR[kind].tiers[shop.decor[kind] + 1]} in ${nd.name}`, current: game.cash, target: cost, ratio: ((G.decorGain(game, id, kind) ?? 0) + 1e-6) / cost, onPress: () => buyDecor(kind) });
+    }
+    big.sort((a, b) => b.ratio - a.ratio);
+    goal = big[0] ?? null;
+  }
+  if (!goal) {
+    goal = { label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : `Story ${game.seenScenes.length}/24`, current: game.seenScenes.length, target: 24, icon: <TrophyIcon size={22} /> };
   }
 
   const queueFull = !shop.managed && shop.queued > TUNING.tapQueueMax - 1;

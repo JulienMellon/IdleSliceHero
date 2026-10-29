@@ -20,7 +20,7 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
   const [offsets, setOffsets] = useState<number[]>([]);
   const onTab = (i: number) => (e: { nativeEvent: { layout: { x: number } } }) => {
     xs.current[i] = e.nativeEvent.layout.x;
-    if (xs.current.filter((v) => v !== undefined).length === NEIGHBORHOODS.length) setOffsets(xs.current.map((x) => Math.max(0, x - 10)));
+    if (xs.current.filter((v) => v !== undefined).length === NEIGHBORHOODS.length) setOffsets(xs.current.map((x, i) => (i === 0 ? 0 : x - 6)));
   };
   useEffect(() => {
     const x = offsets[Math.max(0, activeIdx - 1)] ?? 0;
@@ -67,15 +67,15 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
       </ScrollView>
       {/* edge fades so a clipped tab reads as "scroll for more" (critic D122) */}
       {(['l', 'r'] as const).map((side) => (
-        <Svg key={side} width={24} style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]} viewBox="0 0 24 10" preserveAspectRatio="none" pointerEvents="none">
+        <Svg key={side} width={30} style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]} viewBox="0 0 30 10" preserveAspectRatio="none" pointerEvents="none">
           <Defs>
             <LinearGradient id={`tf-${side}`} x1={side === 'l' ? '0' : '1'} y1="0" x2={side === 'l' ? '1' : '0'} y2="0">
               <Stop offset="0" stopColor="#B52C1C" stopOpacity={1} />
-              <Stop offset="0.35" stopColor="#B52C1C" stopOpacity={0.85} />
+              <Stop offset="0.3" stopColor="#B52C1C" stopOpacity={0.95} />
               <Stop offset="1" stopColor="#B52C1C" stopOpacity={0} />
             </LinearGradient>
           </Defs>
-          <Rect x={0} y={0} width={24} height={10} fill={`url(#tf-${side})`} />
+          <Rect x={0} y={0} width={30} height={10} fill={`url(#tf-${side})`} />
         </Svg>
       ))}
     </View>

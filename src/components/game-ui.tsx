@@ -175,7 +175,7 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { 
           <Text style={[styles.goalLabel, ready && styles.goalTextReady]} numberOfLines={1}>
             {ready ? `▶ ${goal.label} — tap!` : goal.label}
           </Text>
-          {goal.icon ?? <Text style={[styles.goalAmt, ready && styles.goalTextReady]}>{goal.text ?? `${money(Math.min(goal.current, goal.target), true)} / ${money(goal.target)}`}</Text>}
+          {goal.icon ? <View style={{ zIndex: 1, marginLeft: 6 }}>{goal.icon}</View> : <Text style={[styles.goalAmt, ready && styles.goalTextReady]}>{goal.text ?? `${money(Math.min(goal.current, goal.target), true)} / ${money(goal.target)}`}</Text>}
         </Pressable>
       )}
     </View>

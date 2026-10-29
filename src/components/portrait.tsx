@@ -147,7 +147,13 @@ export function Portrait({ id, mood = 'neutral', size = 120, flip = false }: { i
       )}
       {L.hairStyle === 'bob' && <Path d="M25 48 Q24 22 50 22 Q76 22 75 48 L70 40 Q50 30 30 40 Z" fill={L.hair} stroke={INK} strokeWidth={2} />}
       {L.hairStyle === 'slick' && <Path d="M27 42 Q28 22 52 23 Q74 24 73 42 Q66 30 40 32 Z" fill={L.hair} stroke={INK} strokeWidth={2} />}
-      {L.hairStyle === 'bald' && <Path d="M26 50 Q25 44 28 42 M74 50 Q75 44 72 42" stroke={L.hair} strokeWidth={4} fill="none" />}
+      {/* tapered sideburns (critic D148) */}
+      {L.hairStyle === 'bald' && (
+        <G fill={L.hair}>
+          <Path d="M26.5 39 Q29.5 38 30 41 L29 52 Q27 51 26.5 48 Z" />
+          <Path d="M73.5 39 Q70.5 38 70 41 L71 52 Q73 51 73.5 48 Z" />
+        </G>
+      )}
       <Face mood={mood} />
       {L.extra === 'glasses' && (
         <G stroke={INK} strokeWidth={2.2} fill="rgba(255,255,255,0.25)">

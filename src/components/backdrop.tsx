@@ -245,9 +245,11 @@ function ShopWall() {
           </Text>
         </G>
       ))}
-      <Rect x={84} y={-20} width={120} height={6} fill="#8E5A3C" />
-      {[92, 116, 140, 164, 186].map((x, i) => (
-        <Rect key={x} x={x} y={-38} width={14} height={18} rx={3} fill={['#E8432E', '#3FAE5A', '#FFC531', '#E8432E', '#F2994A'][i]} stroke={INK} strokeWidth={1.5} />
+      {/* tins on a shelf under the photo, clear of the PIZZA sign (critic D146) */}
+      <Rect x={236} y={-48} width={88} height={6} fill="#8E5A3C" stroke={INK} strokeWidth={1.2} />
+      <Path d="M246 -42 l4 8 M314 -42 l-4 8" stroke="#5E3A26" strokeWidth={2} strokeLinecap="round" />
+      {[242, 260, 278, 296, 312].map((x, i) => (
+        <Rect key={x} x={x} y={-64} width={12} height={16} rx={3} fill={['#E8432E', '#3FAE5A', '#FFC531', '#E8432E', '#F2994A'][i]} stroke={INK} strokeWidth={1.4} />
       ))}
     </G>
   );
@@ -261,22 +263,30 @@ function Skyline({ top, dark, billboard }: { top: number; dark: boolean; billboa
   const base = 120;
   const towers = [[0, 70], [34, 95], [62, 60], [96, 120], [130, 80], [168, 105], [210, 70], [246, 130], [282, 85], [318, 110], [356, 75]];
   if (base - 130 < top) return null;
+  const board = billboard && base - 130 - 46 > top + 70;
   return (
-    <G fill={fill} opacity={alpha}>
-      {/* MegaSlice billboard standing on two towers; only where the story has introduced MegaSlice (critic G38) */}
-      {billboard && base - 130 - 46 > top + 70 && (
+    <G>
+      <G fill={fill} opacity={alpha}>
+        {board && (
+          <G>
+            <Rect x={109} y={base - 130 - 16} width={4} height={16 + 10} />
+            <Rect x={259} y={base - 130 - 16} width={4} height={16} />
+          </G>
+        )}
+        {towers.map(([x, h], i) => (
+          <Rect key={i} x={x} y={base - h} width={30} height={h} />
+        ))}
+      </G>
+      {/* MegaSlice billboard at full strength, on top of the hazy skyline (critic D145) */}
+      {board && (
         <G>
-          <Rect x={109} y={base - 130 - 16} width={4} height={16 + 10} fill={fill} />
-          <Rect x={259} y={base - 130 - 16} width={4} height={16} fill={fill} />
-          <Rect x={100} y={base - 130 - 46} width={172} height={30} rx={4} fill={dark ? '#3A1450' : '#7B2CBF'} stroke="#000" strokeWidth={2} opacity={0.85} />
-          <Text x={186} y={base - 130 - 25} fontSize={17} fontFamily={F.bold} fill="#FFC531" textAnchor="middle">
+          <Rect x={100} y={base - 130 - 46} width={172} height={30} rx={4} fill="#7B2CBF" stroke={INK} strokeWidth={2} />
+          <Rect x={104} y={base - 130 - 43} width={164} height={6} rx={3} fill="#fff" opacity={0.18} />
+          <Text x={186} y={base - 130 - 25} fontSize={17} fontFamily={F.bold} fill="#FFC531" stroke={INK} strokeWidth={1} textAnchor="middle">
             MEGASLICE
           </Text>
         </G>
       )}
-      {towers.map(([x, h], i) => (
-        <Rect key={i} x={x} y={base - h} width={30} height={h} />
-      ))}
     </G>
   );
 }
