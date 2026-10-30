@@ -9,7 +9,7 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
 ## What this is
 - **Game:** an idle pizza-tycoon game for the iOS App Store. Working title **Slice Empire**; repo `JulienMellon/IdleSliceHero`. Design: `docs/DESIGN.md`; retention features: `docs/REWARDS.md`; prestige design: Claude Doc "Franchise to Boston — Prestige Design".
 - **Stack:** Expo SDK 58, Expo Router, React 19.3 with React Compiler on (`app.json`), react-native-svg, zustand 5 (`src/store/game-store.ts`), a pure-TS engine (`src/engine/`). Content and tuning in `src/content/`.
-- **Version:** `src/content/version.ts` (drawer footer and Settings). Current build **4.3**; builds go up by 0.1 (3.9 → 4.0 → … → 4.3; next 4.4). `app.json` (2.0.0) stays the App Store marketing version.
+- **Version:** `src/content/version.ts` (drawer footer and Settings). Current build **4.6**; builds go up by 0.1 (3.9 → 4.0 → … → 4.6; next 4.7). `app.json` (2.0.0) stays the App Store marketing version.
 - **Owner:** Julien (mellon.julien@gmail.com). He likes concrete proposals he can correct over open questions, and evidence over superlatives.
 
 ## Reviewers (agent types; briefs in `.claude/agents/`)
@@ -24,7 +24,7 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
 
 ## The loop (when Julien restarts it)
 1. **Build v4.(n+1)**: fix the open notes in the logs. `sed -i "s/export const APP_VERSION = .*/export const APP_VERSION = '4.4';/" src/content/version.ts`.
-2. **Verify:** `npx tsc --noEmit` clean; `npm test` passes (134 tests, ~110 s); `npx expo export --platform web` then `python3 scripts/screenshots.py v4.4` → `screenshots/v4.4/report.json` shows `"errors": []` and `"loaded": true`. Look at the PNGs yourself (03, 05, 05a, 05b, 13, 16, 21 at least). Shot 22 (perk card) timed out once and passed on a re-run: re-run once before investigating.
+2. **Verify:** `npx tsc --noEmit` clean; `npm test` passes (155 tests, ~110 s); `npx expo export --platform web` then `python3 scripts/screenshots.py v4.4` → `screenshots/v4.4/report.json` shows `"errors": []` and `"loaded": true`. Look at the PNGs yourself (03, 05, 05a, 05b, 13, 16, 21 at least). Shot 22 (perk card) timed out once and passed on a re-run: re-run once before investigating.
 3. **Log:** append a `## v4.4 — build` table to `CRITICLOG.md` and `CODELOG.md`.
 4. **Commit and push to `main`:** `git -c user.name="Julien Mellon" -c user.email="mellon.julien@gmail.com" commit …`, then `git fetch -q origin main && git rebase origin/main && git push -q origin main` (Julien pushes too). End commit messages with the attribution lines the session gives you.
 5. **Review in parallel, in the background:** `critic` (version, new and previous screenshot folders, next IDs) and, unless paused, `codecritic` (git range, next IDs, the memory focus; read-only; never `npx expo lint`). **Don't edit the working tree while the codecritic runs**: it runs `npm test` on it, and a half-made edit once produced a false blocker.
@@ -34,14 +34,20 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
 ## Where things stand at v4.3
 - **Critic, round 44 (v4.3): NOT SATISFIED.** One [major], D336 (walk-ins on top of the pickup driver at the counter), plus D302 (empty sky) and D337 (neckerchiefs too small). v4.3 changed no crowd code, so D336 is likely intermittent crowding caught on a different frame: reproduce it in `crowd.test.ts` first (lesson below).
 - **Codecritic, round 14 (v4.2): CHANGES REQUESTED.** Its blockers (C63 [high], C64) are fixed in v4.3 but **not re-reviewed** (paused): when it resumes, review d25b801..HEAD first.
-- **Story and audio (advisory, low effort, v4.3):** see `STORYLOG.md` (2 [major]: the loop-closing waterfront-4 ending right before the long dead zone, and university-1's flat ending) and `AUDIOLOG.md` (no audio yet; a cue plan with the first 10 cues to build).
+- **Story (advisory, low effort, v4.3):** see `STORYLOG.md` (2 [major]: the loop-closing waterfront-4 ending right before the long dead zone, and university-1's flat ending).
+- **Audio (2026-10-30, v4.4 → v4.6, three compose/review loops at Julien's request):**
+  - **What exists.** A MIDI score written as code in `tools/audio/` (`compose.py` → spessasynth + GM soundfont → AAC; `python3 build.py` rebuilds everything plus `src/audio/manifest.ts`). It has six neighbourhood style blends on one city motif, gameplay stingers in every key, story cues and 15 synthesised SFX. The runtime is `src/audio/` (director over expo-audio, pure rules in `logic.ts` with tests). Music and Sound toggles are in Settings.
+  - **Where to look.** `docs/AUDIO.md` is the cue sheet; `AUDIOLOG.md` holds the round-5 verdict (AU57 fixed after it; AU58–AU61 minors open) and the iPhone device checks.
+  - **Note.** Screenshots now log every audio `play()` under `audio` in `report.json`.
+  - **Open for Julien.** The device checks, and whether to move SFX and stingers to `react-native-audio-api` if latency or memory fails.
 - **Done since the v3.3 handoff** (v3.4 → v4.3): the one-time playtest fixes; crowd fixes; save v3 with story pacing (one beat on return, then 90 s of play between beats from the very start; finales 300 s after beat 3, Downtown 120 s; short iOS interruptions keep the gap); neighbourhood perks (Dale walk-ins 85%, Marisol +10% via the $2.0M Pier 9 bid, Priya University driver upgrades −10%, Big Sal +25% offline, Genevieve 6%/decor tier); 44 pt tap targets, all **drawn** (iOS doesn't deliver hitSlop outside a parent; web ignores hitSlop); the sidewalk row as `components/sidewalk-row.tsx` over a cached, tested `components/sidewalk-model.ts`; one `buttonTone` rule for every purchase button (locked/maxed → normal, muted → neutral, gain ≤ 0 → nogain with a struck price); the "saving for" bottleneck (basil face, dashed basil outline, progress line).
 - **Pacing sim (v3.7, greedy buyer):** Nonna takes over at 5.0 min (was 1.4: Julien was told; he may want Downtown's finale on the normal 90 s gap, ~4.5 min, or the tutorial exempt), Pier 9 bid won at 35.9 min, University opens at 70.4 min (the deferred dead zone), the city completes at ~227 min.
 
 ## Agreed next work (pick up only when Julien says)
 1. Remaining critic and code notes in the logs (codecritic's A17, a cached drawer-card model, is the big one; C66 strike bar on a shrunk iOS label needs a device check).
 2. Daily and weekly tasks (`docs/REWARDS.md`).
-3. Deferred: the dead zone (design discussion first), sound (see `AUDIOLOG.md` for the plan), franchise-to-Boston (Claude Doc).
+3. Audio: the device checks in `AUDIOLOG.md`, then AU58–AU61.
+4. Deferred: the dead zone (design discussion first), franchise-to-Boston (Claude Doc).
 
 ## Lessons learned (avoid repeating them)
 - **Crowd overlaps:** fix them in the pure modules (`scene/cast.ts`, `timelines.ts`, `layout.ts`) and prove the fix with a budget in `scene/__tests__/crowd.test.ts` that fails on the old code.
