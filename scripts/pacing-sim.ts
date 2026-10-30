@@ -14,7 +14,7 @@ function options(s: G.GameState): Option[] {
   for (const n of NEIGHBORHOODS) {
     const shop = s.shops[n.id];
     if (!shop.built) continue;
-    for (const what of ['prep', 'ovens', 'counter', 'drivers', 'tables', 'grade', 'manager'] as G.Upgrade[]) {
+    for (const what of ['prep', 'ovens', 'counter', 'drivers', 'tables', 'grade', 'headPrep', 'headOven', 'headCounter', 'manager'] as G.Upgrade[]) {
       const gain = G.upgradeGain(s, n.id, what);
       const cost = G.upgradeCostOf(s, n.id, what);
       if (gain === null || cost === null) continue;
@@ -69,6 +69,7 @@ const events: [number, string][] = [];
 // v3.7 story pacing: one waiting beat may play at once after launch, then 90 s of play between beats.
 // The sim plays in one sitting and never taps during a scene, so the tap gate is always open.
 let lastSceneEnd: number | null = null;
+let downtownTaps = 0;
 const dt = 1;
 const LIMIT = 60 * 60 * 30;
 for (let t = 0; t < LIMIT; t += dt) {
@@ -76,12 +77,22 @@ for (let t = 0; t < LIMIT; t += dt) {
   const newest = [...NEIGHBORHOODS].reverse().find((n) => s.shops[n.id].built)!.id as NeighborhoodId;
   // NOTAP=1: a casual player who only taps Downtown until Nonna takes over, then never taps again.
   const tappers = (process.env.NOTAP ? ['downtown'] : [newest, 'downtown']) as NeighborhoodId[];
-  for (const id of tappers) if (!s.shops[id].managed && s.shops[id].queued < 4) s = G.tapShop(s, id);
+  // a tapping player taps every station that can start (prep → oven → counter), once a second
+  for (const id of tappers) {
+    for (let k = 0; k < 3 && !s.shops[id].managed; k++) {
+      const st = G.nextStation(s.shops[id]);
+      if (!st) break;
+      const r = G.tapStation(s, id, st);
+      if (!r.ok) break;
+      s = r.state;
+      if (id === 'downtown' && !s.seenScenes.includes('downtown-4')) downtownTaps++;
+    }
+  }
   s = G.playTick(s, dt);
   for (let sc = pickScene(s, HOME_SCENES, 1e15, 0, false, lastSceneEnd); sc; sc = pickScene(s, HOME_SCENES, 1e15, 0, false, lastSceneEnd)) {
     s = G.markSceneSeen(s, sc);
     lastSceneEnd = s.playSeconds;
-    events.push([t, `${sc.id}`]);
+    events.push([t, sc.id === 'downtown-4' ? `${sc.id}  (${downtownTaps} kitchen taps)` : sc.id]);
   }
   // Waterfront's finale is a purchase: the player bids on Pier 9 as soon as they can afford it
   if (G.pier9Available(s) && s.cash >= PIER9_BID.cost) {
@@ -91,6 +102,7 @@ for (let t = 0; t < LIMIT; t += dt) {
       events.push([t, '  buy pier9-bid']);
     }
   }
+  if (process.env.TRACE && t % 600 === 0) console.log(`  t=${t / 60}m cash=${s.cash.toExponential(2)} eps=${G.earningsPerSecond(s).toExponential(2)} actual=${((s.totalEarned - (globalThis as any).__te) / 600).toExponential(2)}`), ((globalThis as any).__te = s.totalEarned);
   if (s.cityComplete) break;
   // the goal bar puts the bid first, so the player saves for it instead of buying anything else
   for (let k = 0; k < 30 && !G.pier9Available(s); k++) {
@@ -98,7 +110,7 @@ for (let t = 0; t < LIMIT; t += dt) {
     if (!opts.length) break;
     const r = opts[0].buy(s);
     if (!r.ok) break;
-    if (opts[0].label.startsWith('build') || opts[0].label.endsWith('manager') || opts[0].label === 'fleet' || opts[0].label.includes('expand') || opts[0].label.includes('grade'))
+    if (opts[0].label.startsWith('build') || opts[0].label.endsWith('manager') || opts[0].label.includes(':head') || opts[0].label === 'fleet' || opts[0].label.includes('expand') || opts[0].label.includes('grade'))
       events.push([t, `  buy ${opts[0].label}`]);
     s = r.state;
   }
@@ -115,7 +127,7 @@ console.log(`scenes ${s.seenScenes.length}/24 · longest scene gap ${(maxGap / 6
 if (process.env.DEBUG) {
   for (const n of NEIGHBORHOODS) {
     const sh = s.shops[n.id];
-    console.log(n.id, JSON.stringify({ ...sh, sold: Math.round(sh.sold), queued: undefined }), 'bottleneck', G.bottleneck(sh, s.vehicle),
+    console.log(n.id, JSON.stringify({ ...sh, line: undefined }), 'bottleneck', G.bottleneck(sh, s.vehicle),
       'rates', [G.prepRate(sh), G.ovenRate(sh), G.counterRate(sh), G.deliveryRate(sh, s.vehicle), G.walkInRate(sh)].map((x) => x.toFixed(1)).join('/'));
   }
   console.log(options(s).sort((a, b) => b.gain / b.cost - a.gain / a.cost).slice(0, 6).map((o) => `${o.label} cost ${o.cost.toExponential(1)} gain ${o.gain.toFixed(1)}`).join('\n'));

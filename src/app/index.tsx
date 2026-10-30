@@ -12,9 +12,9 @@ import { Portrait } from '@/components/portrait';
 import { emitPayout } from '@/components/pulse-bus';
 import { CURB_Y, SCENE_H, sceneFit, Storefront } from '@/components/storefront';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
-import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, TUNING, VEHICLES } from '@/content/tuning';
+import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEAD_TITLE, HEADS, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
-import { money, rate } from '@/engine/format';
+import { money, pizzas, rate } from '@/engine/format';
 import * as G from '@/engine/game';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
@@ -58,15 +58,19 @@ export default function GameScreen() {
   const candidates: (Goal & { ratio: number })[] = [];
   for (const n of NEIGHBORHOODS) {
     const sh = game.shops[n.id];
-    if (sh.built && !sh.managed && n.id !== 'downtown') {
-      candidates.push({ label: `Hire a manager for ${n.name}`, current: game.cash, target: n.managerCost, ratio: (G.shopEarnings(game, n.id) / n.managerCost) * 3, onPress: () => {
+    // the next hire in a shop without a GM: each head, then the GM (Downtown's GM is Nonna, via the story)
+    const hire = sh.built ? G.nextHire(sh) : null;
+    if (hire && !(hire === 'manager' && n.id === 'downtown')) {
+      const cost = G.upgradeCostOf(game, n.id, hire) ?? 0;
+      const label = G.isHeadUpgrade(hire) ? `Hire ${HEADS[n.id][G.headOf(hire)]}, ${n.name}’s ${HEAD_TITLE[G.headOf(hire)]}` : `Hire a General Manager for ${n.name}`;
+      candidates.push({ label, current: game.cash, target: cost, ratio: (G.shopEarnings(game, n.id) / Math.max(1, cost)) * 3, onPress: () => {
         if (game.active !== n.id) setActive(n.id);
-        return useGame.getState().buy('manager');
+        return useGame.getState().buy(hire);
       } });
     }
   }
   const next = G.nextToBuild(game);
-  if (next) candidates.push({ label: `Build a pizzeria in ${next.name}`, current: game.cash, target: next.buildCost, ratio: G.buildGain(game, next.id) / (next.buildCost + next.managerCost), onPress: () => build(next.id) });
+  if (next) candidates.push({ label: `Build a pizzeria in ${next.name}`, current: game.cash, target: next.buildCost, ratio: G.buildGain(game, next.id) / G.buildAllIn(next.id), onPress: () => build(next.id) });
   const vg = G.vehicleGain(game);
   if (vg && vg > 0) candidates.push({ label: `Upgrade fleet to ${VEHICLES[v + 1].name}s · ${plus(vg)}`, current: game.cash, target: VEHICLES[v + 1].cost, ratio: vg / VEHICLES[v + 1].cost, onPress: buyFleet });
   candidates.sort((a, b) => b.ratio - a.ratio);
@@ -74,7 +78,8 @@ export default function GameScreen() {
   if (G.pier9Available(game)) candidates.unshift({ label: 'Bid on Pier 9 to save Marisol’s dock', current: game.cash, target: PIER9_BID.cost, ratio: Number.MAX_VALUE, onPress: bidPier9 });
   // On an unmanaged shop the sidewalk already offers "Hire a manager" here: show the next goal instead.
   // viewing an unmanaged shop: its manager is the goal
-  const shown = !shop.managed && id !== 'downtown' ? [...candidates.filter((c) => c.label === `Hire a manager for ${nd.name}`), ...candidates.filter((c) => c.label !== `Hire a manager for ${nd.name}`)] : candidates;
+  const mine = (c: Goal) => c.label.startsWith('Hire') && c.label.includes(nd.name);
+  const shown = !shop.managed ? [...candidates.filter(mine), ...candidates.filter((c) => !mine(c))] : candidates;
   let goal: Goal | null = shown[0] ?? null;
   // Late game: fall back to the best big buy in this shop (Expand, Grade or a Decor tier) before the story count.
   if (!goal) {
@@ -97,18 +102,24 @@ export default function GameScreen() {
     goal = { label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : `Story ${game.seenScenes.length}/24`, current: game.seenScenes.length, target: 24, icon: <TrophyIcon size={22} /> };
   }
 
-  const queueFull = !shop.managed && shop.queued > TUNING.tapQueueMax - 1;
-  const neckCost = G.upgradeCostOf(game, id, neck === 'customers' ? 'drivers' : neck);
-  const neckUpgrade = neck === 'customers' ? 'drivers' : neck === 'ovens' ? 'oven' : neck === 'prep' ? 'prep cooks' : 'counter staff';
-  const subtitle = !shop.managed
-    ? queueFull
-      ? neckCost !== null && game.cash < neckCost
-        ? `Kitchen full — save ${money(neckCost)} for more ${neck === 'ovens' ? 'ovens' : neckUpgrade}`
-        : neck === 'ovens' ? 'Kitchen full — upgrade your ovens!' : `Kitchen full — hire more ${neckUpgrade}!`
-      : id === 'downtown'
-        ? 'Tap the kitchen to bake each batch!'
-        : 'Tap to bake here · or hire a manager'
-    : `${money(eps)}/sec across the city`;
+  // the HUD names the next station to tap (prep → oven → counter) until a GM runs the shop
+  const nextSt = shop.managed ? null : G.nextStation(shop);
+  const line = shop.line;
+  const subtitle = shop.managed
+    ? `${money(eps)}/sec across the city`
+    : nextSt === 'counter'
+      ? `Tap to serve · ${pizzas(line.baked)} baked`
+      : nextSt === 'oven'
+        ? `Tap to bake · ${pizzas(line.prepped)} prepped`
+        : nextSt === 'prep'
+          ? 'Tap to prep a batch of pizzas!'
+          : line.oven
+            ? 'Baking…'
+            : line.prep
+              ? 'Prepping…'
+              : line.counter
+                ? 'Serving…'
+                : 'Your heads are on it';
 
   // Until a manager is hired, upgrades here only pay while you tap: mute them so the manager stands out.
   const idleShop = !shop.managed && id !== 'downtown';
@@ -117,9 +128,9 @@ export default function GameScreen() {
   const card = (what: G.Upgrade, props: { icon: React.ReactNode; title: string; level?: string; detail: string; hot?: boolean; wide?: boolean; costLabel?: string }) => {
     const cost = G.upgradeCostOf(game, id, what);
     const lock = G.upgradeLock(game, id, what);
-    const muted = idleShop && what !== 'manager';
+    const muted = idleShop && what !== 'manager' && !G.isHeadUpgrade(what);
     // Expand is still worth buying when a station is stuck at its level cap, even though it adds $0/s by itself
-    const gain = what === 'manager' || (what === 'expand' && atCap) ? 1 : G.upgradeGain(game, id, what);
+    const gain = what === 'manager' || G.isHeadUpgrade(what) || (what === 'expand' && atCap) ? 1 : G.upgradeGain(game, id, what);
     return (
       <StationCard
         key={what}
@@ -220,10 +231,20 @@ export default function GameScreen() {
                   </View>
                 )}
                 {!shop.managed &&
+                  HEAD_KINDS.map((k) =>
+                    card(G.HEAD_UPGRADE[k], {
+                      icon: <ManagerIcon size={26} />,
+                      title: `${HEAD_TITLE[k]}: ${HEADS[id][k]}`,
+                      detail: shop.heads[k] ? `Runs your ${k === 'oven' ? 'ovens' : k} for you` : `Runs the ${k === 'prep' ? 'prep table' : k === 'oven' ? 'ovens' : 'counter'} so you don't have to tap it`,
+                      wide: true,
+                      costLabel: 'Hired',
+                    }),
+                  )}
+                {!shop.managed &&
                   card('manager', {
                     icon: id === 'downtown' ? <Portrait id="nonna-rosa" mood="happy" size={32} /> : <ManagerIcon size={26} />,
                     title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire a ${nd.name} manager`,
-                    detail: id === 'downtown' ? `Keep baking — ${G.nonnaCountdownText(game)}` : `Runs this pizzeria on its own and earns while you're away (${plus(G.shopEarnings(game, id))})`,
+                    detail: id === 'downtown' ? `Keep baking — ${G.nonnaCountdownText(game)}` : `General Manager: ×2 income here, and it earns while you're away (${plus(G.shopEarnings(game, id))})`,
                     wide: true,
                     costLabel: id === 'downtown' ? 'Soon' : undefined,
                   })}

@@ -139,8 +139,9 @@ with sync_playwright() as pw:
     except Exception as e:
         report["errors"].append(f"full-queue tap failed: {e}")
     try:
-        for i in range(40):
-            tap_shop(page); time.sleep(0.25)
+        # v4.7: three taps per batch (prep → oven → counter), each stage takes a few seconds
+        for i in range(70):
+            tap_shop(page); time.sleep(0.3)
             if i % 4 == 3:
                 for b in ["walk-drivers", "walk-ovens"]:
                     tid(page, b).click()

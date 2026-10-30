@@ -47,3 +47,17 @@ export function duration(seconds: number): string {
   if (m > 0) return `${m}m`;
   return `${Math.floor(seconds)}s`;
 }
+
+/** A count of pizzas done: always a whole number ("70", "1.2K"); never "70.0002". */
+export function pizzas(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return '0';
+  const w = Math.floor(n);
+  return w < 1000 ? String(w) : count(w);
+}
+
+/** A count of pizzas still to go: rounded up, so "1 more" never shows as "0 more". */
+export function pizzasLeft(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return '0';
+  const w = Math.ceil(n - 1e-9);
+  return w < 1000 ? String(w) : count(w);
+}

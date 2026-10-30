@@ -33,3 +33,19 @@ v4.3 loads clean (`errors: []`, `loaded: true`); the critic checked all 29 shots
 | D305 | note | Suburbs shows a live "Build $300" on the City map and list while locked; the Nonna countdown toast covers the top lock tiles (17) | Padlock and the countdown on the row and pin; the toast under the map |
 | — | note | During the Pier 9 bid, the University chip is solid green "Build $1.2M" (21) | A one-line "Pier 9 bid in progress" hint on the chip |
 | D297 | note | Goal-bar fill runs through the label on an unmanaged shop ("ma\|nager") | Darker label over the fill |
+
+---
+
+## v4.7 — build (playtest 2, step 1 of 6: the engine). Plan: `docs/PLAN-v4.7-playtest2.md`
+Owner's playtest notes P1–P8 (2026-10-30) plus his decisions (station heads, GM ×2, 3 taps with no tap-ahead, cash only when pizza leaves, neighbourhood identity). Audio builds v4.4–v4.6 changed no visuals.
+
+| Change | Where | Shots |
+| --- | --- | --- |
+| Kitchen line: prep → oven → counter jobs with real durations; cash is paid only when a departure reaches the door (driver, 1.2 s) or the register (walk-in, 0.5 s) | `engine/pipeline.ts`, `game.ts` | 04, 09 |
+| Station heads (Head Prep Cook / Baker / Cashier, named per neighbourhood) automate one station each; the General Manager needs all three, gives ×2 income and offline earnings; Nonna brings Downtown's heads | `tuning.ts` HEADS, `game.ts` | 05b, 05a |
+| Goal bar and the idle shop's sidewalk button name the next hire ("Hire Finn, Waterfront's Head Prep Cook") | `app/index.tsx`, `sidewalk-row.tsx` | 05b |
+| HUD subtitle names the next station ("Tap to bake · 4 prepped"); interim: a tap on the shop runs the next station; "TAP TO PREP!"; "N pies in the kitchen" | `storefront.tsx`, `index.tsx` | 03, 04, 05b |
+| Whole pizza numbers ("Nonna takes over in 71 more pizzas", never 70.0002) | `format.ts` `pizzas`/`pizzasLeft` | 05a |
+| Batch +2 pies every 20 prep levels; later neighbourhoods' build and upgrade prices ×1.5 to absorb the GM's ×2 (completion 183 min, longest story gap 23.7 min, was 227 / 34.5) | `tuning.ts` | — |
+
+Station badges, hit-tested taps and per-departure pops are v4.8; event-driven people v4.9; neighbourhood identity v5.0.

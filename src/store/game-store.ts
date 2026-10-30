@@ -9,6 +9,7 @@ import { PIER9_BID, TUNING, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
+import type { Station } from '../engine/pipeline';
 
 const SAVE_KEY = 'slice-empire/save/v1';
 
@@ -31,6 +32,8 @@ interface Store {
   lastSceneEndPlay: number | null;
   /** Scene currently playing (or replaying from the Scrapbook). */
   playing: { scene: Scene; replay: boolean } | null;
+  /** Wall-clock ms of the last game tick (not saved): the scene interpolates job timers from it between ticks. */
+  tickAt: number;
   /** Short-lived message, e.g. "Not enough cash". */
   /** `need`: a need-cash toast clears itself once the player can afford it. */
   toast: { text: string; at: number; need?: number } | null;
@@ -38,8 +41,10 @@ interface Store {
   load: () => Promise<void>;
   save: () => Promise<void>;
   tick: (dt: number) => void;
-  /** Tap the active pizzeria: queue a batch (no manager) or fill a rush order (managed). */
+  /** Tap the active pizzeria: the next station that can start (no GM) or a rush (GM). */
   tapShop: () => void;
+  /** Tap one station of the active pizzeria; a refused tap shows its reason. Returns whether it started. */
+  tapStation: (st: Station) => boolean;
   buy: (what: G.Upgrade) => boolean;
   buyFleet: () => boolean;
   buyDecor: (kind: DecorKind) => boolean;
@@ -95,6 +100,7 @@ export const useGame = create<Store>((set, get) => {
     lastSceneEndPlay: null,
     playing: null,
     toast: null,
+    tickAt: Date.now(),
 
     load: async () => {
       const now = Date.now();
@@ -143,7 +149,8 @@ export const useGame = create<Store>((set, get) => {
       if (!get().loaded) return;
       const game = G.playTick(get().game, dt);
       const toast = get().toast;
-      set(toast?.need !== undefined && game.cash >= toast.need ? { game, toast: null } : { game });
+      const tickAt = Date.now();
+      set(toast?.need !== undefined && game.cash >= toast.need ? { game, toast: null, tickAt } : { game, tickAt });
       queueScene();
     },
 
@@ -152,9 +159,25 @@ export const useGame = create<Store>((set, get) => {
       set({ game: G.tapShop(g, g.active), lastKitchenTap: Date.now() });
     },
 
+    tapStation: (st) => {
+      const g = get().game;
+      const r = G.tapStation(g, g.active, st);
+      set({ lastKitchenTap: Date.now() });
+      if (r.ok) {
+        set({ game: r.state });
+        return true;
+      }
+      const at = Date.now();
+      set({ toast: { text: r.reason, at } });
+      setTimeout(() => {
+        if (get().toast?.at === at) set({ toast: null });
+      }, 1400);
+      return false;
+    },
+
     buy: (what) => {
       const g = get().game;
-      const NAMES: Record<string, string> = { prep: 'Prep', ovens: 'Ovens', counter: 'Counter', drivers: 'Drivers', tables: 'Seating', grade: 'Oven grade', expand: 'Expand', manager: 'Manager' };
+      const NAMES: Record<string, string> = { prep: 'Prep', ovens: 'Ovens', counter: 'Counter', drivers: 'Drivers', tables: 'Seating', grade: 'Oven grade', expand: 'Expand', manager: 'Manager', headPrep: 'Head Prep Cook', headOven: 'Head Baker', headCounter: 'Head Cashier' };
       // when the tapped station isn't what's holding the shop back, the toast says so
       const STAGE_UPGRADE: Record<G.Stage, string> = { prep: 'prep', ovens: 'ovens', counter: 'counter', customers: 'drivers' };
       const shop = g.shops[g.active];
@@ -164,13 +187,14 @@ export const useGame = create<Store>((set, get) => {
       const sound = (next: G.GameState): AudioEvent => {
         const after = next.shops[g.active];
         const level = what === 'prep' || what === 'ovens' || what === 'counter' || what === 'drivers' || what === 'tables' ? what : null;
-        const sting = purchaseSting(what, {
+        const kind: Purchase = G.isHeadUpgrade(what) ? 'head' : what;
+        const sting = purchaseSting(kind, {
           levelBefore: level ? shop[level] : undefined,
           levelAfter: level ? after[level] : undefined,
           bottleneckBefore: G.bottleneck(shop, g.vehicle),
           bottleneckAfter: G.bottleneck(after, next.vehicle),
         });
-        return { type: 'buy', what, sting };
+        return { type: 'buy', what: kind, sting };
       };
       return commit(G.buyUpgrade(g, g.active, what), { name: NAMES[what] ?? what, cost: G.upgradeCostOf(g, g.active, what), hint }, sound);
     },

@@ -30,7 +30,9 @@ import { furnitureDeps, furnitureInputs, type FurnitureInputs } from './scene/fu
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell } from './scene/room';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, Street } from './scene/street';
 import { buildCast } from './scene/cast';
-import { payoutCrossed } from './scene/timelines';
+import { LINE, piesInFlight, type Station } from '../engine/pipeline';
+
+const TAP_LABEL: Record<Station, string> = { prep: 'Prep!', oven: 'Bake!', counter: 'Serve!' };
 
 export { CURB_Y, SCENE_H, SCENE_W, sceneFit } from './scene/projection';
 
@@ -84,7 +86,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const fp = shop.footprint;
   // Mutable per-mount scratch that does not drive rendering on its own: tap pills and the rush burst
   // (written in the tap handler) and the cash pop (written in the payout effect below).
-  const mem = useRef({ phases: [] as number[], lastPopAt: 0, lastSold: -1, pop: null as null | { at: number; text: string }, taps: [] as Tap[], rushAt: -9 });
+  const mem = useRef({ lastSold: -1, pop: null as null | { at: number; text: string }, taps: [] as Tap[], rushAt: -9 });
 
   const ovenCount = Math.min(FOOTPRINTS[fp].ovenSlots, 1 + Math.floor((shop.ovens - 1) / 8));
   const cookCount = Math.min(3, 1 + Math.floor((shop.prep - 1) / 15));
@@ -95,7 +97,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // geometry only changes with upgrades, so the layout object stays identical across frames and the
   // memoised layers that take `lay` (room shell, front wall, door, mat, hood) skip re-rendering
   const lay = useMemo(() => layout(fp, ovenCount, cookCount, staffCount, tablesShown, driverSlots, plants), [fp, ovenCount, cookCount, staffCount, tablesShown, driverSlots, plants]);
-  const running = shop.managed || shop.queued > 0.01;
+  const running = shop.managed || Game.lineBusy(shop.line);
   const rate = Game.shopRate(shop, game.vehicle);
   const pace = running ? Math.min(2.6, 0.8 + Math.log10(1 + rate)) : 0;
   const fit = sceneFit(width, height);
@@ -109,7 +111,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
 
   // ---- people (pure cast builder) + furniture, painter-sorted by depth
   type Item = { y: number; el: ReactElement };
-  const { cast, phases } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal });
+  const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal });
   const fin = furnitureInputs({ id, name: nd.name, shop, running, rate, vehicle: game.vehicle });
   // Furniture only changes with upgrades and the dough/box counts, so it is built once per change (M12), not 15 times a second.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are lay + every value of `fin`, the builder's only inputs
@@ -117,27 +119,22 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const items: Item[] = [...furniture, ...cast.map((c) => ({ y: c.sortY, el: <Person key={c.key} {...c.props} /> }))];
   items.sort((a, b) => b.y - a.y);
 
-  // ---- cash pop: real earnings since the last pop, detected after commit (render stays pure)
+  // ---- cash pop: pies that left the shop since the last frame (cash is only paid when they do), detected after
+  // commit so render stays pure. v4.8 keys pops on each departure and rides them on the carrier.
   const valuePer = Game.valuePerPizza(id, shop, game.vehicle);
   useEffect(() => {
     const m = mem.current;
-    if (m.lastSold > shop.sold || m.lastSold < 0) {
+    if (m.lastSold > shop.sold || m.lastSold < 0 || paused) {
       m.lastSold = shop.sold;
-      m.pop = null;
-      m.phases = phases;
+      if (m.lastSold < 0) m.pop = null;
       return;
     }
-    const crossed = running && payoutCrossed(m.phases, phases);
-    m.phases = phases;
-    if (!crossed || paused) return;
+    if (shop.sold === m.lastSold) return;
+    const earned = (shop.sold - m.lastSold) * valuePer;
+    m.lastSold = shop.sold;
     emitPayout();
     emitAudio({ type: 'cash' });
-    if (clock - m.lastPopAt > 0.9) {
-      const earned = (shop.sold - m.lastSold) * valuePer;
-      if (earned > 0) m.pop = { at: clock, text: `+${money(earned)}` };
-      m.lastPopAt = clock;
-      m.lastSold = shop.sold;
-    }
+    if (earned > 0) m.pop = { at: clock, text: `+${money(earned)}` };
   });
   const m = mem.current;
   const pop = m.pop && clock - m.pop.at < 1.2 ? { k: (clock - m.pop.at) / 1.2, text: m.pop.text } : null;
@@ -159,8 +156,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           const ly = e?.nativeEvent?.locationY;
           const x = typeof lx === 'number' && Number.isFinite(lx) ? (lx - fit.ox) / fit.s : SCENE_W / 2;
           const y = typeof ly === 'number' && Number.isFinite(ly) ? (ly - fit.oy) / fit.s : 300;
-          const full = !shop.managed && shop.queued > TUNING.tapQueueMax - 1;
-          const text = shop.managed ? `+${money(Game.shopEarnings(game, id) * TUNING.rushSeconds)} rush!` : full ? 'Kitchen full!' : `+${TUNING.tapBatch}`;
+          // the interim v4.7 tap runs the next station that can start (v4.8 hit-tests each station)
+          const st = shop.managed ? null : Game.nextStation(shop);
+          const full = !shop.managed && !st;
+          const text = shop.managed ? 'Rush!' : st ? TAP_LABEL[st] : 'Kitchen busy';
           const color = shop.managed ? C.basilDark : full ? INK : C.tomatoDark;
           const live = m.taps.filter((tp) => clock - tp.at < 0.9);
           const last = live[live.length - 1];
@@ -230,15 +229,15 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 return (
                   <G>
                     <Rect x={qx - 56} y={qy - 1} width={112} height={14} rx={7} fill="#fff" stroke={INK} strokeWidth={1} />
-                    <Rect x={qx - 55} y={qy} width={110 * Math.min(1, shop.queued / TUNING.tapQueueMax)} height={12} rx={6} fill={C.cheese} />
+                    <Rect x={qx - 55} y={qy} width={110 * Math.min(1, piesInFlight(shop.line) / LINE.prepBuffer)} height={12} rx={6} fill={C.cheese} />
                     <SvgText x={qx} y={qy + 9.5} fontFamily={F.bold} fontSize={10} fill={INK} textAnchor="middle">
-                      {`${Math.ceil(shop.queued)} / ${TUNING.tapQueueMax} queued`}
+                      {`${piesInFlight(shop.line)} pies in the kitchen`}
                     </SvgText>
                     {!running && (
                       <G transform={`translate(${qx} ${qy + 36}) scale(${1 + 0.06 * Math.sin(clock * 5)})`}>
                         <Rect x={-70} y={-17} width={140} height={34} rx={17} fill={C.tomato} stroke="#fff" strokeWidth={2.4} />
                         <SvgText x={0} y={7} fontFamily={F.bold} fontSize={18} fill="#fff" textAnchor="middle">
-                          TAP TO BAKE!
+                          TAP TO PREP!
                         </SvgText>
                       </G>
                     )}

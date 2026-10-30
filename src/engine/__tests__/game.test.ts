@@ -4,7 +4,7 @@ import { DECOR_BOOST, DECOR_TIER_COST, NEIGHBORHOODS, TUNING } from '../../conte
 import { duration, money } from '../format';
 
 const fresh = () => G.newGame(1_000_000);
-const managed = (s: G.GameState, id: G.GameState['active'] = 'downtown') => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], built: true, managed: true } } });
+const managed = (s: G.GameState, id: G.GameState['active'] = 'downtown') => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], built: true, managed: true, heads: G.allHeads() } } });
 
 describe('formulas', () => {
   test('cost grows 15% per level', () => {
@@ -50,49 +50,104 @@ describe('formulas', () => {
   });
 });
 
-describe('managers and tapping', () => {
-  test('an unmanaged pizzeria only makes what you tap for', () => {
+describe('managers, heads and tapping', () => {
+  const tapAll = (s: G.GameState) => {
+    for (let k = 0; k < 3; k++) {
+      const st = G.nextStation(s.shops.downtown);
+      if (!st) break;
+      const r = G.tapStation(s, 'downtown', st);
+      if (r.ok) s = r.state;
+    }
+    return s;
+  };
+  test('a pizzeria with nobody to run it only makes what you tap for, and pays when pies leave', () => {
     let s = fresh();
-    s = G.tick(s, 30);
+    s = G.lineTick(s, 30);
     expect(s.cash).toBe(0);
-    s = G.tapShop(s, 'downtown');
-    expect(s.shops.downtown.queued).toBe(TUNING.tapBatch);
-    s = G.tick(s, 60);
-    expect(s.shops.downtown.sold).toBeCloseTo(TUNING.tapBatch);
+    s = G.tapShop(s, 'downtown'); // prep
+    expect(s.shops.downtown.line.prep?.n).toBe(G.tapBatch(s.shops.downtown));
+    s = G.lineTick(s, 60);
+    expect(s.cash).toBe(0); // prepped, but nobody baked or served it
+    s = G.tapShop(s, 'downtown'); // oven
+    s = G.lineTick(s, 60);
+    expect(s.cash).toBe(0);
+    s = G.tapShop(s, 'downtown'); // counter
+    s = G.lineTick(s, 60);
+    expect(s.shops.downtown.sold).toBe(4);
     expect(s.cash).toBeGreaterThan(0);
   });
-  test('the tap queue is capped', () => {
-    let s = fresh();
-    for (let i = 0; i < 10; i++) s = G.tapShop(s, 'downtown');
-    expect(s.shops.downtown.queued).toBe(TUNING.tapQueueMax);
+  test('a station refuses a tap it cannot start, with a reason', () => {
+    const r = G.tapStation(fresh(), 'downtown', 'oven');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toMatch(/prep/i);
   });
-  test('a managed pizzeria earns its rate continuously, at any tick size', () => {
+  test('a GM pizzeria earns its rate (with the boost), at any tick size', () => {
     for (const dt of [0.05, 0.2, 1]) {
       let s = managed({ ...fresh() });
       s = { ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, prep: 60, ovens: 60, counter: 60, drivers: 60, footprint: 2 } } };
       const eps = G.earningsPerSecond(s);
-      const steps = Math.round(20 / dt);
-      for (let i = 0; i < steps; i++) s = G.tick(s, dt);
-      expect(s.cash / 20 / eps).toBeCloseTo(1, 3);
+      for (let i = 0; i < Math.round(10 / dt); i++) s = G.lineTick(s, dt); // fill the line
+      const c0 = s.cash;
+      for (let i = 0; i < Math.round(60 / dt); i++) s = G.lineTick(s, dt);
+      expect((s.cash - c0) / 60 / eps).toBeGreaterThan(0.97);
+      expect((s.cash - c0) / 60 / eps).toBeLessThan(1.03);
     }
   });
-  test('a rush tap on a managed shop pays a quarter-second of its earnings', () => {
-    const s = managed(fresh());
-    expect(G.tapShop(s, 'downtown').cash).toBeCloseTo(G.shopEarnings(s, 'downtown') * TUNING.rushSeconds);
+  test('the GM doubles a pizzeria’s income', () => {
+    const shop = { ...G.newShop(true), prep: 10, ovens: 10, counter: 10, drivers: 10 };
+    expect(G.shopRevenue('suburbs', { ...shop, managed: true }, 0) / G.shopRevenue('suburbs', shop, 0)).toBeCloseTo(2);
   });
-  test('Nonna’s recipe scene makes her Downtown’s manager', () => {
+  test('a rush tap on a GM pizzeria speeds the line up but pays nothing by itself', () => {
+    let s = managed(fresh());
+    s = G.lineTick(s, 0.5);
+    const r = G.tapShop(s, 'downtown');
+    expect(r.cash).toBe(s.cash);
+    expect(r.shops.downtown.line.prep!.left).toBeLessThan(s.shops.downtown.line.prep!.left);
+  });
+  test('heads: each one automates its station; the GM needs all three', () => {
+    let s = { ...fresh(), cash: 1e9 };
+    s = { ...s, shops: { ...s.shops, suburbs: { ...G.newShop(true) } } };
+    expect(G.upgradeLock(s, 'suburbs', 'manager')).toMatch(/heads/);
+    expect(G.headCost('suburbs', 'prep')).toBe(Math.ceil(NEIGHBORHOODS[1].managerCost * 0.2));
+    expect(G.headCost('downtown', 'counter')).toBe(120);
+    for (const u of ['headPrep', 'headOven', 'headCounter'] as const) {
+      const r = G.buyUpgrade(s, 'suburbs', u);
+      expect(r.ok).toBe(true);
+      if (r.ok) s = r.state;
+    }
+    expect(G.automationOf(s.shops.suburbs)).toEqual({ prep: true, oven: true, counter: true });
+    expect(G.upgradeLock(s, 'suburbs', 'manager')).toBeNull();
+    // all three heads run the shop in the foreground without any taps
+    for (let i = 0; i < 300; i++) s = G.lineTick(s, 0.2);
+    expect(s.shops.suburbs.sold).toBeGreaterThan(0);
+  });
+  test('one head only: its station runs, the others wait for taps', () => {
+    let s = fresh();
+    s = { ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, heads: { prep: true, oven: false, counter: false } } } };
+    for (let i = 0; i < 100; i++) s = G.lineTick(s, 0.2);
+    expect(s.shops.downtown.line.prepped).toBeGreaterThan(0);
+    expect(s.shops.downtown.line.oven).toBeNull();
+    expect(s.cash).toBe(0);
+  });
+  test('Nonna’s recipe scene makes her Downtown’s GM and brings every head', () => {
     const s = G.applyReward(fresh(), 'auto-bake');
     expect(s.shops.downtown.managed).toBe(true);
+    expect(s.shops.downtown.heads).toEqual({ prep: true, oven: true, counter: true });
   });
-  test('the first worker is affordable within ~15s of tapping', () => {
+  test('the batch grows by 2 pies every 20 prep levels', () => {
+    const at = (prep: number) => G.tapBatch({ ...G.newShop(true), prep });
+    expect([1, 19, 20, 39, 40, 100].map(at)).toEqual([4, 4, 6, 6, 8, 14]);
+    expect(G.nextBatchLevel({ ...G.newShop(true), prep: 7 })).toBe(20);
+  });
+  test('the first head is affordable within ~40 s of tapping', () => {
     let s = fresh();
     let t = 0;
-    while (s.cash < G.upgradeCostOf(s, 'downtown', 'drivers')! && t < 60) {
-      if (s.shops.downtown.queued < 1) s = G.tapShop(s, 'downtown');
-      s = G.tick(s, 0.5);
+    while (s.cash < G.headCost('downtown', 'prep') && t < 120) {
+      s = tapAll(s);
+      s = G.lineTick(s, 0.5);
       t += 0.5;
     }
-    expect(t).toBeLessThanOrEqual(15);
+    expect(t).toBeLessThanOrEqual(40);
   });
 });
 

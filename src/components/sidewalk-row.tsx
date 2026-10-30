@@ -2,6 +2,7 @@
 // manager button) plus "All". Every control is drawn at 44 pt (see tap-targets.ts). Moved out of app/index.tsx (A15).
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { HEAD_TITLE, HEADS } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
@@ -45,14 +46,17 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen }: { gam
     );
   };
   const views = stationViews(game, id);
-  const managerCost = G.upgradeCostOf(game, id, 'manager');
+  // the next hire: each head in turn, then the General Manager
+  const hire = G.nextHire(game.shops[id]) ?? 'manager';
+  const hireCost = G.upgradeCostOf(game, id, hire);
+  const hireLabel = G.isHeadUpgrade(hire) ? `HIRE ${HEADS[id][G.headOf(hire)].toUpperCase()} · ${HEAD_TITLE[G.headOf(hire)].toUpperCase()}` : `HIRE A GENERAL MANAGER · ×2`;
   return (
     <View style={[styles.row, { bottom }]} pointerEvents="box-none">
       {idleShop ? (
         <View style={styles.idleStack}>
           <View style={styles.chipRow}>{views.map((v) => station(v, false))}</View>
           {/* what you get on top, the price below (D310, D311) */}
-          <BuyButton compact testID="walk-manager" sub={`HIRE A MANAGER · +${money(G.shopEarnings(game, id))}/s`} label={money(managerCost ?? 0)} enabled={managerCost !== null && game.cash >= managerCost} onPress={() => onBuy('manager')} />
+          <BuyButton compact testID="walk-manager" sub={hireLabel} label={money(hireCost ?? 0)} enabled={hireCost !== null && !G.upgradeLock(game, id, hire) && game.cash >= hireCost} onPress={() => onBuy(hire)} />
         </View>
       ) : (
         views.map((v) => station(v, true))

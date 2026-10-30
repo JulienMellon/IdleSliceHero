@@ -140,7 +140,7 @@ export function milestoneCrossed(before: number, after: number): StingKind | nul
   return crossed[crossed.length - 1] >= TUNING.milestones[TUNING.milestones.length - 1] ? 'milestone_big' : 'milestone';
 }
 
-export type Purchase = 'prep' | 'ovens' | 'counter' | 'drivers' | 'tables' | 'grade' | 'expand' | 'manager' | 'fleet' | 'decor' | 'build' | 'bid';
+export type Purchase = 'prep' | 'ovens' | 'counter' | 'drivers' | 'tables' | 'grade' | 'expand' | 'manager' | 'head' | 'fleet' | 'decor' | 'build' | 'bid';
 
 /** A successful purchase → the stinger that rides over the loop, if any (AU14). Milestone beats bottleneck. */
 export function purchaseSting(what: Purchase, o: { levelBefore?: number; levelAfter?: number; bottleneckBefore?: string; bottleneckAfter?: string; vehicle?: number }): StingKind | null {
@@ -149,7 +149,7 @@ export function purchaseSting(what: Purchase, o: { levelBefore?: number; levelAf
     if (m) return m;
   }
   if (what === 'manager') return 'manager';
-  if (what === 'expand' || what === 'grade') return 'upgrade';
+  if (what === 'expand' || what === 'grade' || what === 'head') return 'upgrade';
   if (what === 'fleet') return o.vehicle === 4 ? 'drone' : 'fleet';
   if (o.bottleneckBefore !== undefined && o.bottleneckAfter !== undefined && o.bottleneckBefore !== o.bottleneckAfter) return 'bottleneck';
   return null;

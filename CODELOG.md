@@ -52,3 +52,21 @@ Round 14's two blocking items are fixed in v4.3 (commit d064ce5) but **v4.3 has 
 | T37, T38 | low | `engine/cutscene-input.ts`, `load()` | `resumeSceneEnd` never shortens a gap; a pure `awaySecondsOnResume` | Tests |
 | M27, M31, M34 | low | various | Remaining small per-render allocations | See the archive |
 | C37, C38, A12, A13, M16, M19, M20, M21, C22, C33, M10, M15, A10 | low | (carried) | See the archive | |
+
+---
+
+## Plan review (2026-10-30): PROCEED WITH CHANGES — folded into `docs/PLAN-v4.7-playtest2.md`
+Items adopted: price every departure with `valuePerPizza` (#6); offline split GM vs no-GM (#3); `tickAt` interpolation + pops keyed on increasing departure ids (#5); walk-in loop off at ~0 share + max wait (#4, v4.9); no separate 30 fps people layer (#1); 1.0 s walk cycle (#2); smaller steps (#11). Memory notes from the plan review, numbered here: **M35** dough/pass counts outside `furnitureDeps`; **M36** badge progress snapped to 1/24 + memo; **M37** ≤ 800 allocs/frame before any 30 fps; **M38** pills keyed on id, nothing kept at opacity 0; **M39** one working copy per advance. Next IDs: **K1, C67, A18, M40, T47**.
+
+## v4.7 — build (playtest 2, step 1: engine). Range: 7e60b02..HEAD. Also review the backlog d25b801..7e60b02 (paused since round 14).
+
+| Change | Where | Test |
+| --- | --- | --- |
+| `pipeline.ts`: event-stepped stage machine (`advanceLine`), taps, rush, back-pressure in batches, departures ≤ 6 (merge), Bresenham walk-in split for drawing only, cash = n × `valuePerPizza` | `src/engine/pipeline.ts` | `pipeline.test.ts` (tick-size independence, cash only with departures, increasing ids, split, taps) |
+| `Shop.line`, `Shop.heads`, integer `sold`, save v4 with `migrateLine` (v3 `queued` → bench) | `game.ts` | save v4 tests (v3 floor/queued/heads, mid-walk round trip, malformed line) |
+| `lineTick`/`playTick` run the line; `offlineTick`: GM = closed form + everything on the line, no GM = only running jobs finish; line settled so a second load pays 0 | `game.ts` | offline tests |
+| Heads + GM upgrades (`headCost`, `nextHire`, GM lock), GM ×2 in `shopRevenue`, `auto-bake` brings all heads; `buildGain` counts the GM boost | `game.ts`, `tuning.ts` | heads tests |
+| Store: `tapStation` (toast on refusal, updates `lastKitchenTap`), `tickAt` | `game-store.ts` | — |
+| Pacing sim models 3-tap play and heads: Nonna at 5.0 min after 35 taps; completion 183 min | `scripts/pacing-sim.ts` | — |
+
+`tsc` clean; `npm test` 173 pass. Screenshots `v4.7`: `errors: []`, `loaded: true`.

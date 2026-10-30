@@ -276,7 +276,7 @@ export function OfflinePopup({ seconds, capped, awaySeconds, earned, byShop, onC
             <View key={b.name} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <Text style={styles.small}>
                 {b.name}
-                {b.managed ? '' : ' (queued orders)'}
+                {b.managed ? '' : ' (orders already in the oven)'}
               </Text>
               <Text style={[styles.small, { color: C.basilDark, fontFamily: F.semi }]}>+{money(b.earned)}</Text>
             </View>

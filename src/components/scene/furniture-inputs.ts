@@ -20,7 +20,7 @@ export interface FurnitureInputs {
 export interface FurnitureSource {
   id: NeighborhoodId;
   name: string;
-  shop: { footprint: number; prep: number; managed: boolean; queued: number; decor: { plants: number; tables: number; signage: number } };
+  shop: { footprint: number; prep: number; managed: boolean; line: { prepped: number }; decor: { plants: number; tables: number; signage: number } };
   running: boolean;
   rate: number;
   vehicle: number;
@@ -35,8 +35,8 @@ export function furnitureInputs({ id, name, shop, running, rate, vehicle }: Furn
     tableTier: shop.decor.tables,
     signageTier: shop.decor.signage,
     prep: shop.prep,
-    // dough on the bench follows the tap queue in an unmanaged shop
-    dough: shop.managed ? 3 : Math.max(2, Math.min(8, Math.ceil(shop.queued / 1.5))),
+    // dough on the bench follows the pies prepped and waiting for the oven
+    dough: shop.managed ? 3 : Math.max(2, Math.min(8, Math.ceil(shop.line.prepped / 1.5))),
     boxes: running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0,
     // an unmanaged shop's chip strip covers the kerb, so its sidewalk props move up and the vehicle stays home
     idleShop: !shop.managed && id !== 'downtown',

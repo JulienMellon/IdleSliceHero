@@ -49,7 +49,7 @@ describe('save migration v2 → v3', () => {
   it('adds play time and scene times, and grants perks for finales already seen', () => {
     const old = { ...JSON.parse(JSON.stringify(G.newGame(0))), saveVersion: 2, playSeconds: undefined, sceneAt: undefined, seenScenes: ['suburbs-4', 'waterfront-4'] };
     const m = G.migrate(old, 0);
-    expect(G.SAVE_VERSION).toBe(3);
+    expect(G.SAVE_VERSION).toBe(4);
     expect(m.playSeconds).toBe(0);
     expect(m.sceneAt).toEqual({});
     expect(m.shops.suburbs.perk).toBe(true);
@@ -171,7 +171,7 @@ describe('perk scope (T31)', () => {
     if (a.ok && b.ok) expect(b.state.cash).toBe(a.state.cash);
   });
   it("Sal's perk leaves foreground earnings alone", () => {
-    expect(G.tick(managed('industrial', true), 10).cash).toBe(G.tick(managed('industrial', false), 10).cash);
+    expect(G.lineTick(managed("industrial", true), 10).cash).toBe(G.lineTick(managed("industrial", false), 10).cash);
   });
   it("Dale's perk raises exactly the walk-in share", () => {
     // one driver, plenty of seats: nearly every sale is a walk-in, so revenue = price × (delivered + walkIns × share)
@@ -179,7 +179,7 @@ describe('perk scope (T31)', () => {
     const sh = s.shops.suburbs;
     const sold = G.shopRate(sh, s.vehicle);
     const delivered = Math.min(sold, G.deliveryRate(sh, s.vehicle));
-    const price = G.def('suburbs').orderValue * G.decorMult(sh, 'suburbs');
+    const price = G.def('suburbs').orderValue * G.decorMult(sh, 'suburbs') * G.gmMult(sh);
     expect(G.shopEarnings(managed('suburbs', true), 'suburbs')).toBeCloseTo(price * (delivered + (sold - delivered) * 0.85), 6);
   });
 });

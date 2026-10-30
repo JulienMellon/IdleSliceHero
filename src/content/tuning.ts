@@ -115,11 +115,11 @@ export interface NeighborhoodDef {
 
 export const NEIGHBORHOODS: NeighborhoodDef[] = [
   { id: 'downtown', name: 'Downtown', orderValue: 3, buildCost: 0, costMult: 1, managerCost: 0, x: 22, y: 39, color: '#F2994A', wall: '#F7D9A8' },
-  { id: 'suburbs', name: 'Suburbs', orderValue: 10, buildCost: 300, costMult: 3, managerCost: 600, x: 30, y: 67, color: '#6FCF97', wall: '#DDF2D2' },
-  { id: 'waterfront', name: 'Waterfront', orderValue: 32, buildCost: 20_000, costMult: 10, managerCost: 30_000, x: 76, y: 67, color: '#56CCF2', wall: '#D6EEF8' },
-  { id: 'university', name: 'University', orderValue: 100, buildCost: 1_200_000, costMult: 30, managerCost: 1_800_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
-  { id: 'industrial', name: 'Industrial', orderValue: 320, buildCost: 20_000_000, costMult: 100, managerCost: 12_000_000, x: 50, y: 9, color: '#A0826D', wall: '#C4BCAE' },
-  { id: 'uptown', name: 'Uptown', orderValue: 1_000, buildCost: 200_000_000, costMult: 300, managerCost: 100_000_000, x: 82, y: 9, color: '#EB5757', wall: '#F6D6D6' },
+  { id: 'suburbs', name: 'Suburbs', orderValue: 10, buildCost: 450, costMult: 4.5, managerCost: 600, x: 30, y: 67, color: '#6FCF97', wall: '#DDF2D2' },
+  { id: 'waterfront', name: 'Waterfront', orderValue: 32, buildCost: 30_000, costMult: 15, managerCost: 30_000, x: 76, y: 67, color: '#56CCF2', wall: '#D6EEF8' },
+  { id: 'university', name: 'University', orderValue: 100, buildCost: 1_800_000, costMult: 45, managerCost: 1_800_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
+  { id: 'industrial', name: 'Industrial', orderValue: 320, buildCost: 30_000_000, costMult: 150, managerCost: 12_000_000, x: 50, y: 9, color: '#A0826D', wall: '#C4BCAE' },
+  { id: 'uptown', name: 'Uptown', orderValue: 1_000, buildCost: 300_000_000, costMult: 450, managerCost: 100_000_000, x: 82, y: 9, color: '#EB5757', wall: '#F6D6D6' },
 ];
 
 export const SHOP_POS = { x: 50, y: 36 };
@@ -188,3 +188,26 @@ export const PERKS: Partial<Record<NeighborhoodId, PerkDef>> = {
   uptown: { who: 'Genevieve', text: 'Each Uptown decor tier adds 6% to prices (was 4%)', decorBoost: 0.06 },
 };
 
+
+// ---------- Station heads and the General Manager (playtest 2, Julien 2026-10-30) ----------
+export type HeadKind = 'prep' | 'oven' | 'counter';
+export const HEAD_KINDS: HeadKind[] = ['prep', 'oven', 'counter'];
+/** A head's price as a share of the shop's manager price. */
+export const HEAD_SHARE: Record<HeadKind, number> = { prep: 0.2, oven: 0.3, counter: 0.5 };
+/** Downtown has no manager price (Nonna is its GM via the story), so its heads have fixed prices. */
+export const HEAD_COST_DOWNTOWN: Record<HeadKind, number> = { prep: 25, oven: 60, counter: 120 };
+/** A General Manager multiplies the shop's income (the neighbourhood boost). */
+export const GM_BOOST = 2;
+/** The tap batch grows by `step` pies every `every` prep levels (4 → 6 at Lv 20 …). */
+export const BATCH_GROWTH = { base: 4, every: 20, step: 2 } as const;
+
+/** The heads are supporting characters (docs/story/CAST.md). */
+export const HEADS: Record<NeighborhoodId, Record<HeadKind, string>> = {
+  downtown: { prep: 'Marco', oven: 'Lucia', counter: 'Benny' },
+  suburbs: { prep: 'Patty', oven: 'Hank', counter: 'Kayla' },
+  waterfront: { prep: 'Finn', oven: 'Gus', counter: 'Coral' },
+  university: { prep: 'Raj', oven: 'Mei', counter: 'Tyler' },
+  industrial: { prep: 'Stan', oven: 'Ox', counter: 'Rita' },
+  uptown: { prep: 'Pierre', oven: 'Margot', counter: 'Sterling' },
+};
+export const HEAD_TITLE: Record<HeadKind, string> = { prep: 'Head Prep Cook', oven: 'Head Baker', counter: 'Head Cashier' };
