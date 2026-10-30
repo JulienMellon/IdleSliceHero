@@ -119,15 +119,19 @@ describe('Pier 9 bid (v3.7)', () => {
 
 describe('returning to the app (C39, T32)', () => {
   it('a short interruption (Control Center, app switcher) keeps the story gap', () => {
-    expect(resumeSceneEnd(480, 5)).toBe(480);
-    expect(resumeSceneEnd(480, STORY_PACING.returnSeconds - 1)).toBe(480);
+    expect(resumeSceneEnd(480, 5, 600)).toBe(480);
+    expect(resumeSceneEnd(480, STORY_PACING.returnSeconds - 1, 600)).toBe(480);
   });
   it('a real absence counts as a return, so one waiting beat may play', () => {
-    expect(resumeSceneEnd(480, STORY_PACING.returnSeconds)).toBeNull();
-    expect(resumeSceneEnd(480, 3600)).toBeNull();
+    expect(resumeSceneEnd(480, STORY_PACING.returnSeconds, 600)).toBeNull();
+    expect(resumeSceneEnd(480, 3600, 600)).toBeNull();
+  });
+  it('a reload from an older save never stretches the gap (T35, C47)', () => {
+    // the gap started at 480 s of play, but the save on disk only got to 450 s
+    expect(resumeSceneEnd(480, 5, 450)).toBe(450);
   });
   it('a cold launch (nothing played yet) stays a return', () => {
-    expect(resumeSceneEnd(null, 2)).toBeNull();
+    expect(resumeSceneEnd(null, 2, 600)).toBeNull();
   });
 });
 
@@ -162,7 +166,9 @@ describe('perk scope (T31)', () => {
   it("Priya's perk leaves the city-wide fleet price alone", () => {
     const a = G.buyVehicle({ ...managed('university', false), cash: 1e12 });
     const b = G.buyVehicle({ ...managed('university', true), cash: 1e12 });
-    expect(a.ok && b.ok && a.state.cash).toBe(b.ok && b.state.cash);
+    expect(a.ok).toBe(true);
+    expect(b.ok).toBe(true);
+    if (a.ok && b.ok) expect(b.state.cash).toBe(a.state.cash);
   });
   it("Sal's perk leaves foreground earnings alone", () => {
     expect(G.tick(managed('industrial', true), 10).cash).toBe(G.tick(managed('industrial', false), 10).cash);

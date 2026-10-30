@@ -65,3 +65,17 @@ v3.7 adds save v3 (`playSeconds`, `sceneAt`, `Shop.perk`), the pure pacing gate 
 | T30, T31 | v3 round trip (bad `sceneAt` entries dropped); Priya leaves fleet prices alone; Sal leaves foreground earnings alone; exact Dale test. |
 | Tap targets | `components/tap-targets.ts` (`TAP`, `hitSize`, `slopOf`) + `tap-targets.test.ts`; `BuyButton` compact draws at 44 pt; `index.tsx` uses the constants for the label strip, chips and Close. |
 | Not done | A13, M20, M21 and the carried lows. 123 tests pass. |
+
+## v3.9 — build (round-10 items)
+
+| Item | Change |
+| --- | --- |
+| C44 | `tap-targets.ts` models `roomTop` / `roomBottom` (space the parent owns); the test fails any hitSlop larger than its room (T33). All sidewalk controls are drawn at 44 pt with no margin (T34). The v3.8 claims in the logs were wrong and are superseded by this row. |
+| C45 | The station label strip and its 26 pt upward margin are removed; nothing on the row reaches into the scene's tap area. |
+| C46 | Compact `BuyButton` has a fixed `height: 44` (`styles.buyOuterCompact` / `buyInnerCompact`); the inner fills it with `flex: 1`. The manager label is short again ("HIRE A MANAGER · +$x/s" on the sub line, price as the label). |
+| C47 | `resumeSceneEnd(prev, away, playSeconds)` clamps the kept gap to the reloaded play time (T35). |
+| C48 | On resume, `awaySeconds` is measured from the in-memory `lastSavedAt` even if the reload fails; the offline popup threshold uses `STORY_PACING.returnSeconds`. |
+| C49 | The Priya scope test asserts both purchases succeed. |
+| M22, M23 | `CLOSE_SLOP` is a module constant; compact button styles are in the StyleSheet. |
+| A14 (part) | Row geometry lives in `SIDEWALK_ROW` (card inset/height, raise per mode), tested against the button height. |
+| Process | New advisory agents `storycritic` and `audiocritic` (`.claude/agents/`), with `STORYLOG.md` and `AUDIOLOG.md`. 125 tests pass. |

@@ -206,15 +206,16 @@ with sync_playwright() as pw:
     page = seeded_page(browser, flag); settle(page)
     shot(page, "13-flagship-max", 1.2)
     # 8. Uptown, fully decorated, with tier-3 signage
-    up = dict(flag, active="uptown", shops=dict(flag["shops"], uptown=shop(prep=40, ovens=36, grade=2, counter=38, drivers=18, tables=30, footprint=2, sold=9e4,
+    up = dict(flag, active="uptown", shops=dict(flag["shops"], uptown=shop(perk=True, prep=40, ovens=36, grade=2, counter=38, drivers=18, tables=30, footprint=2, sold=9e4,
               decor={"plants": 3, "flooring": 3, "tables": 3, "walls": 3, "signage": 3})))
     page = seeded_page(browser, up); settle(page)
     shot(page, "14-uptown-decorated", 1.2)
     # 9. A station tag opens the drawer focused on that station
     try:
-        tid(page, "tag-ovens").click(); shot(page, "15-tag-ovens-drawer", 0.6)
+        tid(page, "open-upgrades").click(); shot(page, "15-uptown-drawer", 0.6)
+        page.mouse.wheel(0, 1400); shot(page, "15a-uptown-decor-section", 0.6)
     except Exception as e:
-        report["errors"].append(f"station tag tap failed: {e}")
+        report["errors"].append(f"uptown drawer failed: {e}")
 
     # 10. Playtest fixes the earlier shots could not show
     # 10a. Tied stations: the drawer explains what to buy together

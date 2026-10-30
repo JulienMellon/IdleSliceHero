@@ -47,3 +47,14 @@ v3.7 (story pacing, neighbourhood perks, the Pier 9 bid) loads clean and the cri
 | D308 | New shot `23-perk-banner-drawer`: the Suburbs drawer after Dale's finale shows the perk banner. |
 | C39 (code) | A short iOS interruption no longer plays the next story beat early. |
 | D302, D303, D306 | Carried. |
+
+## v3.9 — build (round-39 notes from the v3.8 review, and the codecritic's C44–C46)
+
+| Note | Change |
+| --- | --- |
+| Tap targets, redone | v3.8's hit margins don't work on a real iPhone (a touch outside a parent's bounds never reaches the child, and web ignores hitSlop, so the screenshots couldn't show it). Every sidewalk control is now **drawn** at 44 pt: each station is one button with its name above the price (the label strip is gone, **All** opens the drawer), chips are 44 pt, the manager button is 44 pt. Close is 36 pt with a 4 pt margin inside the header's padding. |
+| D309 | The station cards are 55 pt (v3.7: 62 pt), so the row sits above the kerb again (`SIDEWALK_ROW.raiseManaged = 13`): the kerb and both traffic lanes show (13). An unmanaged shop's column (chips 44 + manager 44) sits at `raiseIdle = 2`, clear of the WELCOME mat (05b). |
+| D310, D311 | The manager button reads "HIRE A MANAGER · +$22/s" over the price; greyed-out button text is #665A4F (~4:1, was ~2:1). |
+| D312 | No chip hit margins any more. |
+| D308 | Shot 15a shows the Uptown decor header "+6%" with Genevieve's perk (14/15 now seed that perk). Shot 15 is now the All drawer (station tags are gone). |
+| D302, D303, D306 | Carried. |

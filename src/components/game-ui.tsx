@@ -57,7 +57,8 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone 
   // can't afford = flat grey; affordable-but-no-gain-now = white with a basil border and ink text
   const outerBg = !enabled ? '#C9BCAD' : tone === 'soft' ? '#A9CFB1' : tone === 'neutral' ? C.basilDark : C.basilDark;
   const innerBg = !enabled ? '#E2D9CE' : tone === 'soft' ? '#E3F2E6' : tone === 'neutral' ? '#FFFFFF' : C.basil;
-  const labelColor = !enabled ? '#8A7B6E' : tone === 'soft' ? C.basilDark : tone === 'neutral' ? C.ink : '#fff';
+  // a greyed-out button still reads at ~4:1 (was #8A7B6E, ~2:1: D310)
+  const labelColor = !enabled ? '#665A4F' : tone === 'soft' ? C.basilDark : tone === 'neutral' ? C.ink : '#fff';
   const innerBorder = enabled && tone === 'neutral' ? { borderColor: C.basil, borderWidth: 1.5 } : null;
   const burst = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
@@ -79,9 +80,13 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone 
   };
   return (
     <Animated.View style={{ transform: [{ translateX: shake }] }}>
-      <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, compact && { minWidth: 0, alignSelf: 'stretch', minHeight: TAP.controls.buyButton.height }, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
-        <View style={[styles.buyInner, compact && styles.buyCompact, compact && { flex: 1, justifyContent: 'center' }, { backgroundColor: innerBg }, innerBorder]}>
-          {sub && tone !== 'soft' ? <Text style={styles.buySub}>{sub}</Text> : null}
+      <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, compact && styles.buyOuterCompact, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
+        <View style={[styles.buyInner, compact && styles.buyInnerCompact, { backgroundColor: innerBg }, innerBorder]}>
+          {sub && tone !== 'soft' ? (
+            <Text style={[styles.buySub, compact && { color: labelColor, letterSpacing: 0.4 }]} numberOfLines={1}>
+              {sub}
+            </Text>
+          ) : null}
           <Text style={[styles.buyLabel, compact && { fontSize: 15 }, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit>
             {label}
           </Text>
@@ -290,7 +295,9 @@ const styles = StyleSheet.create({
   buyOuter: { borderRadius: 14, paddingBottom: 4, minWidth: 88 },
   buyInner: { borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10, alignItems: 'center', borderWidth: 2, borderColor: 'rgba(0,0,0,0.12)' },
   buyLabel: { fontFamily: F.bold, color: '#fff', fontSize: 17 },
-  buyCompact: { paddingVertical: 2, paddingHorizontal: 4 },
+  // compact: a fixed 44 pt (outer, including its 4 pt lip), so nothing depends on flex-grow against a min height (C46)
+  buyOuterCompact: { minWidth: 0, alignSelf: 'stretch', height: TAP.controls.stationButton.height },
+  buyInnerCompact: { flex: 1, justifyContent: 'center', paddingVertical: 0, paddingHorizontal: 4 },
   buySub: { fontFamily: F.semi, color: 'rgba(255,255,255,0.85)', fontSize: 10, letterSpacing: 1 },
   burst: { position: 'absolute', alignSelf: 'center', top: 8 },
   modalIcons: { flexDirection: 'row', alignItems: 'center', gap: 2, marginVertical: 4 },

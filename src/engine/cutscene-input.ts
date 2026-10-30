@@ -56,6 +56,8 @@ export function pickScene(game: GameState, scenes: Scene[], nowMs: number, lastK
  * The story gap to keep when the app comes back to the foreground. A short interruption (Control Center, a call
  * banner, the app switcher) keeps it; a real absence, or a cold launch, clears it so one waiting beat may play.
  */
-export function resumeSceneEnd(prev: number | null, awaySeconds: number): number | null {
-  return prev === null || awaySeconds >= STORY_PACING.returnSeconds ? null : prev;
+export function resumeSceneEnd(prev: number | null, awaySeconds: number, playSeconds: number): number | null {
+  if (prev === null || awaySeconds >= STORY_PACING.returnSeconds) return null;
+  // a reload can bring back a save older than the gap's start (a failed write); never wait past the full gap (C47)
+  return Math.min(prev, playSeconds);
 }

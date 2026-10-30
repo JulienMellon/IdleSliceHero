@@ -3,7 +3,7 @@ import { create } from 'zustand';
 
 import { pickScene, resumeSceneEnd } from '../engine/cutscene-input';
 import { HOME_SCENES } from '../content/scenes/home';
-import { PIER9_BID, type DecorKind } from '../content/tuning';
+import { PIER9_BID, STORY_PACING, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
@@ -96,7 +96,8 @@ export const useGame = create<Store>((set, get) => {
       const wasLoaded = get().loaded;
       let game = wasLoaded ? get().game : G.newGame(now);
       let offline: OfflineSummary | null = null;
-      let awaySeconds = Number.POSITIVE_INFINITY;
+      // a cold launch is always a return; on resume, measure from the last save even if this load fails (C48)
+      let awaySeconds = wasLoaded ? Math.max(0, (now - get().game.lastSavedAt) / 1000) : Number.POSITIVE_INFINITY;
       try {
         await pendingSave;
         const raw = await AsyncStorage.getItem(SAVE_KEY);
@@ -104,7 +105,7 @@ export const useGame = create<Store>((set, get) => {
           const r = G.applyOffline(G.migrate(JSON.parse(raw), now), now);
           game = r.state;
           awaySeconds = r.awaySeconds;
-          if (r.earned >= 1 && r.seconds >= 60) {
+          if (r.earned >= 1 && r.seconds >= STORY_PACING.returnSeconds) {
             // Hold the cash back until the player taps Collect.
             offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed })) };
             game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
@@ -114,7 +115,7 @@ export const useGame = create<Store>((set, get) => {
         // Corrupt or unreadable save: start fresh rather than crash.
       }
       // a launch or a real return may play one waiting story beat straight away; a short interruption keeps the gap (C39)
-      set({ game, loaded: true, offline, lastSceneEndPlay: resumeSceneEnd(wasLoaded ? get().lastSceneEndPlay : null, awaySeconds) });
+      set({ game, loaded: true, offline, lastSceneEndPlay: resumeSceneEnd(wasLoaded ? get().lastSceneEndPlay : null, awaySeconds, game.playSeconds) });
       if (!offline) queueScene();
     },
 
