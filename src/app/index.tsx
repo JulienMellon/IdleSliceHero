@@ -9,13 +9,13 @@ import { SidewalkRow } from '@/components/sidewalk-row';
 import { CLOSE_SLOP, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, ManagerIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait';
-import { emitPayout } from '@/components/pulse-bus';
 import { CURB_Y, SCENE_H, sceneFit, Storefront } from '@/components/storefront';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
-import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEAD_TITLE, HEADS, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES } from '@/content/tuning';
+import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEAD_ROLE, HEAD_TITLE, HEADS, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
 import { money, pizzas, rate } from '@/engine/format';
 import * as G from '@/engine/game';
+import type { Station } from '@/engine/pipeline';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
 
@@ -29,11 +29,11 @@ export default function GameScreen() {
   const covered = useGame((s) => !!s.playing || !!s.offline);
   const { tapShop, buy, buyFleet, buyDecor, build, setActive, dismissOffline, bidPier9 } = useGame.getState();
   // stable, so the memoised scene isn't re-rendered by every 200 ms game tick
-  const onShopTap = useCallback(() => {
-    tapShop();
-    const g = useGame.getState().game;
-    if (g.shops[g.active].managed) emitPayout();
-  }, [tapShop]);
+  // a rush on a GM shop: jobs finish sooner; the cash still arrives with the pies (no payout here)
+  const onShopTap = useCallback(() => tapShop(), [tapShop]);
+  const onStationTap = useCallback((st: Station) => {
+    if (useGame.getState().tapStation(st)) haptic();
+  }, []);
   const [area, setArea] = useState({ w: 0, h: 0 });
   // The full upgrade list opens over the shop on a tap of "All" (no gestures).
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -54,6 +54,7 @@ export default function GameScreen() {
   const tiedCount = (['prep', 'ovens', 'counter', 'customers'] as const).filter(tied).length;
   const bundle = tiedCount >= 2 ? G.bundleHint(game, id) : null;
 
+  const idleShopHere = !shop.managed && id !== 'downtown';
   // Goal bar: the big purchase worth saving for, by cash/sec per dollar.
   const candidates: (Goal & { ratio: number })[] = [];
   for (const n of NEIGHBORHOODS) {
@@ -62,7 +63,8 @@ export default function GameScreen() {
     const hire = sh.built ? G.nextHire(sh) : null;
     if (hire && !(hire === 'manager' && n.id === 'downtown')) {
       const cost = G.upgradeCostOf(game, n.id, hire) ?? 0;
-      const label = G.isHeadUpgrade(hire) ? `Hire ${HEADS[n.id][G.headOf(hire)]}, ${n.name}’s ${HEAD_TITLE[G.headOf(hire)]}` : `Hire a General Manager for ${n.name}`;
+      // short enough to fit beside the amount (D338): "Waterfront: hire Finn (prep)"
+      const label = G.isHeadUpgrade(hire) ? `${n.name}: hire ${HEADS[n.id][G.headOf(hire)]} (${HEAD_ROLE[G.headOf(hire)]})` : `${n.name}: hire a manager`;
       candidates.push({ label, current: game.cash, target: cost, ratio: (G.shopEarnings(game, n.id) / Math.max(1, cost)) * 3, onPress: () => {
         if (game.active !== n.id) setActive(n.id);
         return useGame.getState().buy(hire);
@@ -78,8 +80,10 @@ export default function GameScreen() {
   if (G.pier9Available(game)) candidates.unshift({ label: 'Bid on Pier 9 to save Marisol’s dock', current: game.cash, target: PIER9_BID.cost, ratio: Number.MAX_VALUE, onPress: bidPier9 });
   // On an unmanaged shop the sidewalk already offers "Hire a manager" here: show the next goal instead.
   // viewing an unmanaged shop: its manager is the goal
-  const mine = (c: Goal) => c.label.startsWith('Hire') && c.label.includes(nd.name);
-  const shown = !shop.managed ? [...candidates.filter(mine), ...candidates.filter((c) => !mine(c))] : candidates;
+  // the sidewalk already offers this shop's next hire, so the goal bar moves on to the next goal (D341);
+  // Downtown's sidewalk shows its stations instead, so there the hire leads the goal bar
+  const mine = (c: Goal) => c.label.startsWith(`${nd.name}: hire`);
+  const shown = idleShopHere ? candidates.filter((c) => !mine(c)) : !shop.managed ? [...candidates.filter(mine), ...candidates.filter((c) => !mine(c))] : candidates;
   let goal: Goal | null = shown[0] ?? null;
   // Late game: fall back to the best big buy in this shop (Expand, Grade or a Decor tier) before the story count.
   if (!goal) {
@@ -121,8 +125,8 @@ export default function GameScreen() {
                 ? 'Serving…'
                 : 'Your heads are on it';
 
-  // Until a manager is hired, upgrades here only pay while you tap: mute them so the manager stands out.
-  const idleShop = !shop.managed && id !== 'downtown';
+  // Until the stations run themselves, upgrades here only pay while you tap: mute them so the hires stand out (C68).
+  const idleShop = !G.runsItself(shop) && id !== 'downtown';
   // Expand is still worth it when a station is stuck at its level cap.
   const atCap = (['prep', 'ovens', 'counter', 'tables'] as const).some((w) => shop[w] >= G.levelCap(shop));
   const card = (what: G.Upgrade, props: { icon: React.ReactNode; title: string; level?: string; detail: string; hot?: boolean; wide?: boolean; costLabel?: string }) => {
@@ -136,7 +140,7 @@ export default function GameScreen() {
         key={what}
         testID={`buy-${what}`}
         {...props}
-        detail={lock && what !== 'manager' ? lock : props.detail}
+        detail={lock && what !== 'manager' ? lock : lock && what === 'manager' && id !== 'downtown' ? `${lock} · then ×2 income here, and it earns while you're away` : props.detail}
         hot={muted ? false : props.hot}
         muted={muted}
         tone={buttonTone({ lock, gain, muted })}
@@ -197,6 +201,7 @@ export default function GameScreen() {
             height={area.h}
             paused={covered || drawerOpen}
             onTap={onShopTap}
+            onStation={onStationTap}
           />
         )}
         {/* upgrade row standing on the sidewalk */}
@@ -248,7 +253,7 @@ export default function GameScreen() {
                     wide: true,
                     costLabel: id === 'downtown' ? 'Soon' : undefined,
                   })}
-                {card('prep', { icon: <PrepIcon size={26} />, title: 'Prep Cooks', level: `Lv ${shop.prep}`, detail: stationDetail('prep', 'prep', `${rate(rates.prep)}/s`), hot: tied('prep') })}
+                {card('prep', { icon: <PrepIcon size={26} />, title: 'Prep Cooks', level: `Lv ${shop.prep}`, detail: `${stationDetail('prep', 'prep', `${rate(rates.prep)}/s`)} · batch ${G.tapBatch(shop)} (bigger at Lv\u00A0${G.nextBatchLevel(shop)})`, hot: tied('prep') })}
                 {card('ovens', { icon: <FlameIcon size={26} />, title: 'Ovens', level: `Lv ${shop.ovens}`, detail: stationDetail('ovens', 'ovens', `${rate(rates.ovens)}/s`), hot: tied('ovens') })}
                 {card('counter', { icon: <RegisterIcon size={26} />, title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rate(rates.counter)}/s`), hot: tied('counter') })}
                 {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${rate(G.deliveryRate(shop, v))}/s`), hot: tied('customers') })}

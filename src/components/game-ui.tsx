@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
-import { duration, goalAmount, money, shownValue } from '../engine/format';
+import { cashText, duration, goalAmount, money, shownValue } from '../engine/format';
 import { C, F } from '../theme';
 import { BookIcon, CoinIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
 import { emitPayout, onPayout } from './pulse-bus';
@@ -180,7 +180,7 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { 
         </Pressable>
         <View style={styles.cashPill}>
           <Animated.Text style={[styles.cash, { transform: [{ scale: flash }] }]} numberOfLines={1} adjustsFontSizeToFit testID="cash">
-            {money(shown, true)}
+            {cashText(shown)}
           </Animated.Text>
           <Text style={styles.perSec} numberOfLines={1}>
             {subtitle}
@@ -268,7 +268,7 @@ export function OfflinePopup({ seconds, capped, awaySeconds, earned, byShop, onC
         <Text style={styles.small}>
           {byShop.some((b) => b.managed)
             ? `Your managers kept ${byShop.filter((b) => b.managed).length} pizzeria${byShop.filter((b) => b.managed).length === 1 ? '' : 's'} running for ${duration(seconds)}`
-            : `Your kitchens finished their queued orders while you were away`}
+            : `Your kitchens finished the pizzas already in the oven while you were away`}
         </Text>
         {capped ? <Text style={[styles.small, { fontFamily: F.semi }]}>{`Capped at ${duration(seconds).replace(/ /g, '\u00A0')} (away ${duration(awaySeconds).replace(/ /g, '\u00A0')})`}</Text> : null}
         <View style={{ alignSelf: 'stretch', gap: 2 }}>

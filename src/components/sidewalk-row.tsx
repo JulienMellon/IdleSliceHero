@@ -2,7 +2,7 @@
 // manager button) plus "All". Every control is drawn at 44 pt (see tap-targets.ts). Moved out of app/index.tsx (A15).
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { HEAD_TITLE, HEADS } from '../content/tuning';
+import { HEAD_ROLE, HEADS } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
@@ -49,7 +49,8 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen }: { gam
   // the next hire: each head in turn, then the General Manager
   const hire = G.nextHire(game.shops[id]) ?? 'manager';
   const hireCost = G.upgradeCostOf(game, id, hire);
-  const hireLabel = G.isHeadUpgrade(hire) ? `HIRE ${HEADS[id][G.headOf(hire)].toUpperCase()} · ${HEAD_TITLE[G.headOf(hire)].toUpperCase()}` : `HIRE A GENERAL MANAGER · ×2`;
+  // say what the hire does, not just who (D341)
+  const hireLabel = G.isHeadUpgrade(hire) ? `HIRE ${HEADS[id][G.headOf(hire)].toUpperCase()} · RUNS ${HEAD_ROLE[G.headOf(hire)].toUpperCase()} FOR YOU` : `HIRE A MANAGER · ×2 INCOME + EARNS AWAY`;
   return (
     <View style={[styles.row, { bottom }]} pointerEvents="box-none">
       {idleShop ? (

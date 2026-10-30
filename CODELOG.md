@@ -70,3 +70,29 @@ Items adopted: price every departure with `valuePerPizza` (#6); offline split GM
 | Pacing sim models 3-tap play and heads: Nonna at 5.0 min after 35 taps; completion 183 min | `scripts/pacing-sim.ts` | — |
 
 `tsc` clean; `npm test` 173 pass. Screenshots `v4.7`: `errors: []`, `loaded: true`.
+
+## Round 15 (v4.7 + backlog d25b801..7e60b02): ✅ APPROVED. Next IDs: **K1, C72, A19, M43, T52**.
+Round 14's C63/C64/C65/M33/T46 verified fixed. Notes and their v4.8 status:
+| ID | Sev | Note | v4.8 |
+| --- | --- | --- | --- |
+| C67 | medium | `startAutomated` strands non-multiple remainders | takes everything waiting while under 2 batches; T47 |
+| C68 | low | All-heads shop muted and missing from city $/s | `runsItself`; test |
+| C69 | low | `migrateLine` ids / walk clamp / Infinity job | fixed; T50; jobs capped at 3600 s |
+| C70 | low | `MAX_EVENTS` drops time silently | `__DEV__` warning |
+| C71 | low | double `set`, dead check, "queued orders", doc | fixed (goal ids → A17) |
+| A18 | low | duplicated level key | `G.shopLevelKey` shared |
+| A17 | medium | drawer card model inline (open) | open |
+| M40 | low | unused `phases` in `buildCast` | removed (`payoutCrossed` stays until v4.9 routes) |
+| M41, M42 | low | per-tick allocations; coin budget | M42 met (≤ 3 coins, ≤ 2 pops); M41 open |
+| T47–T51 | — | remainders, ±1% revenue, immutability, save clamp, rush pays 0 | added |
+
+## v4.8 — build (step 2: stations UI). Range: fd58f05..HEAD
+| Change | Where | Test |
+| --- | --- | --- |
+| `stationRects` / `stationAt` / badge row geometry | `scene/stations.ts` | `stations.test.ts` (44 pt on 3 fits, each station hit, front-most, misses, badge band vs plank/menu/shelf, spacing, 1/24 snap) |
+| `StationBadge` memoised on primitives (M36); `DeparturePops` (M38: keyed on id, nothing at opacity 0); `HireBubble` | `scene/kitchen-hud.tsx` | — |
+| Interpolation from `tickAt`, never past 0; payout bump when a departure id disappears (ids only grow) | `storefront.tsx` | — |
+| Tap position from `pageX/pageY − measureInWindow` origin | `storefront.tsx` | screenshot 05b3 |
+| `game.tapStation` refusal names the head ("Finn has it covered") | `game.ts` | — |
+
+`tsc` clean; 186 tests pass; screenshots `v4.8`: `errors: []`.

@@ -7,7 +7,7 @@
 //
 // Everything is drawn in a 393×680 "scene" box that is scaled to cover the available area,
 // anchored to the bottom so the sidewalk and street are always visible (taller screens show more sky).
-import { memo, useEffect, useMemo, useRef, type ReactElement } from 'react';
+import { memo, useEffect, useMemo, useRef, type ComponentRef, type ReactElement } from 'react';
 import { Pressable, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { FOOTPRINTS, NEIGHBORHOODS, TUNING } from '../content/tuning';
@@ -30,9 +30,12 @@ import { furnitureDeps, furnitureInputs, type FurnitureInputs } from './scene/fu
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell } from './scene/room';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, Street } from './scene/street';
 import { buildCast } from './scene/cast';
-import { LINE, piesInFlight, type Station } from '../engine/pipeline';
-
-const TAP_LABEL: Record<Station, string> = { prep: 'Prep!', oven: 'Bake!', counter: 'Serve!' };
+import { STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
+import { pizzas } from '../engine/format';
+import { HEADS } from '../content/tuning';
+import { DeparturePops, HireBubble, StationBadge, type DepartureGeometry } from './scene/kitchen-hud';
+import { badgeRowY, badgeXs, MIN_TAP_PT, progressStep, stationAt, stationRects } from './scene/stations';
+import { DOOR_IN_Y, DOOR_OUT_Y } from './scene/layout';
 
 export { CURB_Y, SCENE_H, SCENE_W, sceneFit } from './scene/projection';
 
@@ -43,7 +46,10 @@ interface Props {
   width: number;
   height: number;
   paused: boolean;
+  /** A tap on a GM shop (rush). */
   onTap: () => void;
+  /** A tap on one station of a shop without a GM. */
+  onStation: (st: Station) => void;
 }
 
 /** Everything the still picture depends on: when this changes, the scene re-renders even while paused. */
@@ -63,7 +69,8 @@ const CLOUDS = [
 ] as const;
 const DRIFT_SPAN = SCENE_W + 200;
 
-type Tap = { at: number; x: number; y: number; text: string; color: string; count: number };
+const STATION_STAGE: Record<Station, Game.Stage[]> = { prep: ['prep'], oven: ['ovens'], counter: ['counter', 'customers'] };
+const HIRE_LINE: Record<Station, string> = { prep: 'I got the dough, boss!', oven: 'Ovens are mine now.', counter: 'Next customer, please!' };
 
 
 
@@ -74,7 +81,7 @@ const seedFor = (id: string) => Array.from(id).reduce((h, ch) => (h * 31 + ch.ch
  * Re-renders on its own 15 fps clock (reading the latest game state each frame) and when the shop's
  * upgrades change. The parent's 200 ms game ticks don't re-render it, and a paused scene stays still.
  */
-export const Storefront = memo(function Storefront({ id, width, height, paused, onTap }: Props) {
+export const Storefront = memo(function Storefront({ id, width, height, paused, onTap, onStation }: Props) {
   // Opt out of React Compiler memoisation: this component deliberately reads the live store
   // (useGame.getState()) on every clock frame, which auto-memoisation could otherwise cache.
   'use no memo';
@@ -86,7 +93,13 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const fp = shop.footprint;
   // Mutable per-mount scratch that does not drive rendering on its own: tap pills and the rush burst
   // (written in the tap handler) and the cash pop (written in the payout effect below).
-  const mem = useRef({ lastSold: -1, pop: null as null | { at: number; text: string }, taps: [] as Tap[], rushAt: -9 });
+  // where this view sits on the page, for turning a tap's pageX/pageY into scene coordinates
+  const viewRef = useRef<ComponentRef<typeof View>>(null);
+  const origin = useRef({ x: 0, y: 0 });
+  const measureOrigin = () => viewRef.current?.measureInWindow((x: number, y: number) => {
+    origin.current = { x, y };
+  });
+  const mem = useRef({ depIds: [] as number[], rushAt: -9, hintAt: -9, heads: null as null | Record<Station, boolean>, hire: null as null | { st: Station; at: number; text: string } });
 
   const ovenCount = Math.min(FOOTPRINTS[fp].ovenSlots, 1 + Math.floor((shop.ovens - 1) / 8));
   const cookCount = Math.min(3, 1 + Math.floor((shop.prep - 1) / 15));
@@ -119,26 +132,42 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const items: Item[] = [...furniture, ...cast.map((c) => ({ y: c.sortY, el: <Person key={c.key} {...c.props} /> }))];
   items.sort((a, b) => b.y - a.y);
 
-  // ---- cash pop: pies that left the shop since the last frame (cash is only paid when they do), detected after
-  // commit so render stays pure. v4.8 keys pops on each departure and rides them on the carrier.
-  const valuePer = Game.valuePerPizza(id, shop, game.vehicle);
+  // ---- departures: a carrier that paid this frame bumps the HUD cash (its coin just landed). Detected after
+  // commit so render stays pure; ids only grow, so a remount or the end of a pause never replays old ones.
+  const line = shop.line;
   useEffect(() => {
     const m = mem.current;
-    if (m.lastSold > shop.sold || m.lastSold < 0 || paused) {
-      m.lastSold = shop.sold;
-      if (m.lastSold < 0) m.pop = null;
-      return;
+    const ids = line.departures.map((d) => d.id);
+    const paid = m.depIds.some((i) => !ids.includes(i));
+    m.depIds = ids;
+    if (paid && !paused) {
+      emitPayout();
+      emitAudio({ type: 'cash' });
     }
-    if (shop.sold === m.lastSold) return;
-    const earned = (shop.sold - m.lastSold) * valuePer;
-    m.lastSold = shop.sold;
-    emitPayout();
-    emitAudio({ type: 'cash' });
-    if (earned > 0) m.pop = { at: clock, text: `+${money(earned)}` };
+    // a head just hired says hello over their station
+    const auto = Game.automationOf(shop);
+    if (m.heads) for (const st of STATIONS_IN_ORDER) if (auto[st] && !m.heads[st] && !shop.managed) m.hire = { st, at: clock, text: `${HEADS[id][st]}: ${HIRE_LINE[st]}` };
+    m.heads = { ...auto };
   });
   const m = mem.current;
-  const pop = m.pop && clock - m.pop.at < 1.2 ? { k: (clock - m.pop.at) / 1.2, text: m.pop.text } : null;
-  const taps = m.taps.filter((tp) => clock - tp.at < 0.9);
+  // job timers move between the engine's 200 ms ticks: interpolate from the tick's wall time, never past 0
+  const since = paused ? 0 : Math.max(0, (Date.now() - useGame.getState().tickAt) / 1000);
+  const leftNow = (left: number) => Math.max(0, left - since);
+  const auto = Game.automationOf(shop);
+  const neckStage = Game.bottleneck(shop, game.vehicle);
+  const next = shop.managed ? null : Game.nextStation(shop);
+  const hinting = clock - m.hintAt < 1.2;
+  const pulse = (Math.sin(clock * Math.PI * 2 * 1.2) + 1) / 2;
+  const rushJump = clock - m.rushAt < 0.2 ? 1 - (clock - m.rushAt) / 0.2 : 0;
+  const rects = useMemo(() => stationRects(lay, MIN_TAP_PT / fit.s), [lay, fit.s]);
+  const bxs = useMemo(() => badgeXs(lay), [lay]);
+  const by = badgeRowY();
+  const waiting: Record<Station, number> = { prep: Game.tapBatch(shop), oven: line.prepped, counter: line.baked };
+  const geo: DepartureGeometry = {
+    driverPath: [P(lay.spots[0].x, lay.spots[0].y, 62), P(lay.door.lanes.driverX, DOOR_IN_Y, 62), P(lay.door.lanes.driverPauseX, DOOR_OUT_Y, 62)],
+    register: P(lay.staff[0] + 12, 70, 78),
+    hud: [SCENE_W / 2, -fit.oy / fit.s + 6],
+  };
   const flicker = running ? Math.sin(clock * 9) * 1.4 : 0;
   const rushK = (clock - m.rushAt) / 0.6;
   const rushC = P((lay.ovenCols[0].x0 + lay.ovenCols[lay.ovenCols.length - 1].x1) / 2, D - 6, 50);
@@ -147,32 +176,31 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const qy = fasciaBottom + 26;
 
   return (
-    <View style={{ width, height, overflow: 'hidden' }}>
+    <View ref={viewRef} onLayout={measureOrigin} style={{ width, height, overflow: 'hidden' }}>
       <Pressable
         testID="shop"
         style={{ position: 'absolute', left: 0, top: 0, width, height }}
         onPress={(e) => {
-          const lx = e?.nativeEvent?.locationX;
-          const ly = e?.nativeEvent?.locationY;
-          const x = typeof lx === 'number' && Number.isFinite(lx) ? (lx - fit.ox) / fit.s : SCENE_W / 2;
-          const y = typeof ly === 'number' && Number.isFinite(ly) ? (ly - fit.oy) / fit.s : 300;
-          // the interim v4.7 tap runs the next station that can start (v4.8 hit-tests each station)
-          const st = shop.managed ? null : Game.nextStation(shop);
-          const full = !shop.managed && !st;
-          const text = shop.managed ? 'Rush!' : st ? TAP_LABEL[st] : 'Kitchen busy';
-          const color = shop.managed ? C.basilDark : full ? INK : C.tomatoDark;
-          const live = m.taps.filter((tp) => clock - tp.at < 0.9);
-          const last = live[live.length - 1];
-          if (last && last.text === text) {
-            last.count += 1;
-            last.at = clock;
-            m.taps = live;
-          } else {
-            m.taps = [{ at: clock, x: Math.max(70, Math.min(SCENE_W - 70, x)), y: 52, text, color, count: 1 }];
+          // page coordinates minus the view's measured origin: `locationX` is relative to whichever SVG child was
+          // hit on web, so it can't place a tap on a station (every tap used to land on the oven)
+          const ne = e?.nativeEvent;
+          const fin = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+          const lx = fin(ne?.pageX) ? ne.pageX - origin.current.x : ne?.locationX;
+          const ly = fin(ne?.pageY) ? ne.pageY - origin.current.y : ne?.locationY;
+          const x = fin(lx) ? (lx - fit.ox) / fit.s : SCENE_W / 2;
+          const y = fin(ly) ? (ly - fit.oy) / fit.s : 300;
+          // a GM shop: any tap is a rush (every running job finishes sooner); otherwise the station under the finger
+          if (shop.managed) {
+            m.rushAt = clock;
+            emitAudio({ type: 'rush' });
+            onTap();
+            return;
           }
-          if (shop.managed) m.rushAt = clock;
-          emitAudio({ type: shop.managed ? 'rush' : full ? 'full' : 'tap' });
-          onTap();
+          const st = stationAt(rects, x, y);
+          if (st) {
+            emitAudio({ type: 'tap' });
+            onStation(st);
+          } else m.hintAt = clock; // a miss points the hand at the station to tap
         }}>
         <Svg width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
           <SceneDefs />
@@ -190,27 +218,12 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             return (
               <G transform={pulse !== 1 ? `translate(${rushC[0]} ${rushC[1]}) scale(${pulse}) translate(${-rushC[0]} ${-rushC[1]})` : undefined}>
                 {lay.ovens.map((o, i) => (
-                  <Oven key={i} o={o} grade={shop.grade} lit={running} flicker={flicker * (i % 2 ? -1 : 1)} />
+                  <Oven key={i} o={o} grade={shop.grade} lit={shop.managed ? running : !!line.oven} flicker={flicker * (i % 2 ? -1 : 1)} />
                 ))}
               </G>
             );
           })()}
           {items.map((it) => it.el)}
-          {/* rush coins fly above everyone */}
-          {rushK >= 0 && rushK < 1 &&
-                  Array.from({ length: 6 }).map((_, j) => {
-                    const ang = -Math.PI / 2 + (j - 2.5) * 0.42;
-                    const d = 18 + rushK * 46;
-                    const cx = rushC[0] + Math.cos(ang) * d;
-                    const cy = rushC[1] + Math.sin(ang) * d + rushK * rushK * 40;
-                    return (
-                      <G key={j} opacity={rushK > 0.75 ? (1 - rushK) / 0.25 : 1}>
-                        <Circle cx={cx} cy={cy} r={5.5} fill="#FFC531" stroke={INK} strokeWidth={1} />
-                        <Circle cx={cx} cy={cy} r={3.4} fill="none" stroke="#E0A100" strokeWidth={0.9} />
-                        <Circle cx={cx - 1.6} cy={cy - 1.8} r={1.1} fill="#fff" opacity={0.7} />
-                      </G>
-                    );
-                  })}
           {CARS.map((c, i) => {
             const dir = c.lane === 0 ? -1 : 1;
             const raw = (c.offset + clock * c.speed) % DRIFT_SPAN;
@@ -221,68 +234,27 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
               </G>
             );
           })}
-          {/* idle prompt + tap queue, high on the back wall */}
-          {!shop.managed && (
-            <G>
-              {(() => {
-                const qx = SCENE_W / 2;
-                return (
-                  <G>
-                    <Rect x={qx - 56} y={qy - 1} width={112} height={14} rx={7} fill="#fff" stroke={INK} strokeWidth={1} />
-                    <Rect x={qx - 55} y={qy} width={110 * Math.min(1, piesInFlight(shop.line) / LINE.prepBuffer)} height={12} rx={6} fill={C.cheese} />
-                    <SvgText x={qx} y={qy + 9.5} fontFamily={F.bold} fontSize={10} fill={INK} textAnchor="middle">
-                      {`${piesInFlight(shop.line)} pies in the kitchen`}
-                    </SvgText>
-                    {!running && (
-                      <G transform={`translate(${qx} ${qy + 36}) scale(${1 + 0.06 * Math.sin(clock * 5)})`}>
-                        <Rect x={-70} y={-17} width={140} height={34} rx={17} fill={C.tomato} stroke="#fff" strokeWidth={2.4} />
-                        <SvgText x={0} y={7} fontFamily={F.bold} fontSize={18} fill="#fff" textAnchor="middle">
-                          TAP TO PREP!
-                        </SvgText>
-                      </G>
-                    )}
-                  </G>
-                );
-              })()}
-            </G>
-          )}
-          {/* tap feedback pills: repeats merge into one with a ×N counter */}
-          {taps.map((tp) => {
-            const k = (clock - tp.at) / 0.9;
-            const label = tp.count > 1 ? `${tp.text} ×${tp.count}` : tp.text;
-            const slice = /^\+\d+$/.test(tp.text);
-            const w = label.length * 6.4 + 14 + (slice ? 14 : 0);
+          {/* station badges: ring timer, pies in the job, a hand on the station to tap, the head who runs it */}
+          {STATIONS_IN_ORDER.map((st) => {
+            const job = line[st];
+            const ready = !auto[st] && (next === st || (hinting && next === st));
             return (
-              <G key={`${tp.text}`} opacity={k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3}>
-                <Rect x={tp.x - w / 2} y={tp.y - 12 - k * 14} width={w} height={18} rx={9} fill={tp.color} stroke="#fff" strokeWidth={1.4} />
-                <SvgText x={tp.x - (slice ? 7 : 0)} y={tp.y + 1.5 - k * 14} fontFamily={F.bold} fontSize={11} fill="#fff" textAnchor="middle">
-                  {label}
-                </SvgText>
-                {slice && (
-                  <G transform={`translate(${tp.x - 7 + label.length * 3.3 + 3} ${tp.y - 9 - k * 14})`}>
-                    <Path d="M0 1.5 Q6 -1 12 1.5 L6 13 Z" fill="#FFC531" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
-                    <Path d="M0 1.5 Q6 -1 12 1.5 L11.3 3 Q6 0.8 0.7 3 Z" fill="#E9A64B" />
-                    <Circle cx={4.5} cy={4.5} r={1.2} fill="#E8432E" />
-                    <Circle cx={7.6} cy={7.2} r={1.1} fill="#E8432E" />
-                  </G>
-                )}
-              </G>
+              <StationBadge
+                key={st}
+                x={bxs[st]}
+                y={by}
+                step={job ? progressStep(1 - leftNow(job.left) / job.total) : 0}
+                count={pizzas(job ? job.n : waiting[st])}
+                tone={STATION_STAGE[st].includes(neckStage) ? 'tomato' : 'basil'}
+                ready={ready}
+                pulse={ready ? pulse : 0}
+                head={auto[st] ? (shop.managed && id === 'downtown' ? 'N' : HEADS[id][st][0]) : ''}
+                jump={job ? rushJump : 0}
+              />
             );
           })}
-          {/* cash pop in the sky band, on a basil pill so it reads over any backdrop */}
-          {pop && (() => {
-            const w = pop.text.length * 10 + 18;
-            const x = Math.min(SCENE_W - 6 - w / 2, P(lay.door.cx, 0)[0]) - 30;
-            const y = P(0, 0, FRONT_TOP - 62)[1] - pop.k * 20;
-            return (
-              <G opacity={pop.k > 0.87 ? (1 - pop.k) / 0.13 : 1}>
-                <Rect x={x - w / 2} y={y - 15} width={w} height={22} rx={11} fill={C.basilDark} stroke="#fff" strokeWidth={1.8} />
-                <SvgText x={x} y={y + 1.5} fontFamily={F.bold} fontSize={15} fill="#fff" textAnchor="middle">
-                  {pop.text}
-                </SvgText>
-              </G>
-            );
-          })()}
+          {m.hire && clock - m.hire.at < 2.5 && <HireBubble x={bxs[m.hire.st]} y={by + 34} text={m.hire.text} />}
+          <DeparturePops deps={line.departures} left={(d) => leftNow(d.left)} geo={geo} />
         </Svg>
       </Pressable>
     </View>

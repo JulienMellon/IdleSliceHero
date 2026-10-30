@@ -211,3 +211,5 @@ export const HEADS: Record<NeighborhoodId, Record<HeadKind, string>> = {
   uptown: { prep: 'Pierre', oven: 'Margot', counter: 'Sterling' },
 };
 export const HEAD_TITLE: Record<HeadKind, string> = { prep: 'Head Prep Cook', oven: 'Head Baker', counter: 'Head Cashier' };
+/** One word for what a head runs (goal bar, sidewalk). */
+export const HEAD_ROLE: Record<HeadKind, string> = { prep: 'prep', oven: 'ovens', counter: 'counter' };

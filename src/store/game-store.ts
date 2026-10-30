@@ -162,13 +162,12 @@ export const useGame = create<Store>((set, get) => {
     tapStation: (st) => {
       const g = get().game;
       const r = G.tapStation(g, g.active, st);
-      set({ lastKitchenTap: Date.now() });
+      const at = Date.now();
       if (r.ok) {
-        set({ game: r.state });
+        set({ game: r.state, lastKitchenTap: at });
         return true;
       }
-      const at = Date.now();
-      set({ toast: { text: r.reason, at } });
+      set({ toast: { text: r.reason, at }, lastKitchenTap: at });
       setTimeout(() => {
         if (get().toast?.at === at) set({ toast: null });
       }, 1400);

@@ -49,3 +49,26 @@ Owner's playtest notes P1–P8 (2026-10-30) plus his decisions (station heads, G
 | Batch +2 pies every 20 prep levels; later neighbourhoods' build and upgrade prices ×1.5 to absorb the GM's ×2 (completion 183 min, longest story gap 23.7 min, was 227 / 34.5) | `tuning.ts` | — |
 
 Station badges, hit-tested taps and per-departure pops are v4.8; event-driven people v4.9; neighbourhood identity v5.0.
+
+## Round 45 (v4.7): ❌ NOT SATISFIED — bugs G76–G78, notes D338–D343. Next IDs: **G79, D344**.
+| ID | Type | Note | v4.8 |
+| --- | --- | --- | --- |
+| G76 | bug | "TAP TO PREP!" pill reappears between steps and contradicts the HUD | pill removed; station badges + hand |
+| G77 | bug | Oven lit while only prep runs | lit only while a job bakes (GM shops: while running) |
+| G78 | bug | Rush tap pulses the HUD cash though it pays nothing | removed |
+| D338 | major | Next-hire goal clipped ("…Head Prep C…$6.00K") | "Waterfront: hire Finn (prep)" |
+| D339 | minor | Refused-tap pill far from the kitchen, no reason | toast carries the line's reason ("Dough's still being prepped", "Serving · 2.6 s") |
+| D340 | note | No timer during a 17 s bake | ring timers |
+| D341 | note | Goal bar and sidewalk both "Hire Finn", neither says what he does | sidewalk "HIRE FINN · RUNS PREP FOR YOU"; goal bar moves on in that shop |
+| D342 | note | No shot of the head cards | `05b2-heads-drawer` (+ 05b3 prep ring, 05b4 refused tap) |
+| D343 | note | "$3.0" cash | whole dollars under $1K (HUD and goal amount) |
+| D336, D302, D337, D304, D305, D297, Pier 9 chip | open | unchanged | D336 → v4.9, D337 → v5.0 |
+
+## v4.8 — build (playtest 2, step 2: stations UI)
+| Change | Where | Shots |
+| --- | --- | --- |
+| Hit-tested station taps (counter → prep → oven, front-most first; ≥ 44 pt); tap position from page coordinates (web `locationX` was relative to the SVG child, so every tap hit the oven) | `scene/stations.ts`, `storefront.tsx` | 03b, 04, 05b3, 05b4 |
+| Badge row under the name plank: 24 pt ring timer (basil, tomato on the bottleneck), pies count pill, pulsing hand on the station to tap, head initial chip when a head runs it; rush = ring jump | `scene/kitchen-hud.tsx` | 04, 05b, 09–12 |
+| "+$X" / "×338 · +$213K" pop rides counter → door with each driver departure (walk-ins: over the register), turns into a coin that lands on the HUD cash when the cash lands; ≤ 2 pops, ≤ 3 coins | `kitchen-hud.tsx` | 10, 11 |
+| Head hire bubble ("Finn: I got the dough, boss!"); `docs/story/CAST.md` | `storefront.tsx` | — |
+| Old tap UI removed (queued pill, TAP TO PREP, tap pills, rush coins) | `storefront.tsx` | all |

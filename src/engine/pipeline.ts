@@ -3,6 +3,8 @@
 // keeps the closed-form rate in game.ts. Owner direction (playtest 2, 2026-10-30): cash goes up only when
 // pizza leaves the shop, and a shop makes pizza in three taps until its heads automate the stations.
 
+import type { HeadKind } from '../content/tuning';
+
 /** One batch of pies at a station. `left`/`total` are seconds. */
 export interface StageJob {
   n: number;
@@ -10,7 +12,8 @@ export interface StageJob {
   total: number;
 }
 
-export type Station = 'prep' | 'oven' | 'counter';
+/** The three stations; the same union as a head's kind (each head runs one station). */
+export type Station = HeadKind;
 export const STATIONS_IN_ORDER: readonly Station[] = ['prep', 'oven', 'counter'];
 
 /** A carrier with pies: a driver pays at the door, a walk-in at the register. Pays when `left` reaches 0. */
@@ -77,8 +80,10 @@ export const AUTOMATIC: Automation = { prep: true, oven: true, counter: true };
 /** Automated batch size: at least a tap batch, big enough that a job takes ~cycleSeconds at the shop's rate. */
 export const batchFor = (r: LineRates) => Math.max(r.tapBatch, Math.ceil(r.shop * LINE.cycleSeconds));
 
+/** A job never takes longer than this (a zero rate would otherwise give Infinity, which a save drops: C69). */
+const MAX_JOB_SECONDS = 3600;
 const job = (n: number, rate: number): StageJob => {
-  const total = rate > 0 ? n / rate : Number.POSITIVE_INFINITY;
+  const total = rate > 0 ? Math.min(MAX_JOB_SECONDS, n / rate) : MAX_JOB_SECONDS;
   return { n, left: total, total };
 };
 
@@ -131,19 +136,21 @@ export interface Advance {
 type Work = Line & { paid: number; sold: number };
 
 /**
- * Start every automated station that can. A station takes a full batch (or everything waiting, when the
- * station before it is manual, so a tapped batch isn't stranded) and won't start while its output already
- * holds two downstream batches (back-pressure counted in batches).
+ * Start every automated station that can. A station starts once a full batch waits (or anything waits, when the
+ * station before it is manual, so a tapped batch isn't stranded) and won't start while its output already holds
+ * two downstream batches (back-pressure counted in batches). It takes everything waiting while that's under two
+ * batches, so a remainder left by a batch-size change or by tapped play never gets stuck (C67).
  */
+const take = (waiting: number, b: number) => (waiting < 2 * b ? waiting : b);
 function startAutomated(w: Work, r: LineRates, auto: Automation) {
   const b = batchFor(r);
   if (auto.counter && !w.counter && w.baked > 0 && (w.baked >= b || !auto.oven)) {
-    const n = Math.min(w.baked, b);
+    const n = take(w.baked, b);
     w.baked -= n;
     w.counter = job(n, r.serve);
   }
   if (auto.oven && !w.oven && w.prepped > 0 && (w.prepped >= b || !auto.prep) && w.baked < 2 * b) {
-    const n = Math.min(w.prepped, b);
+    const n = take(w.prepped, b);
     w.prepped -= n;
     w.oven = job(n, r.oven);
   }
@@ -189,7 +196,8 @@ export function advanceLine(line: Line, dt: number, r: LineRates, auto: Automati
   if (any) startAutomated(w, r, auto);
   settle(w);
   let t = dt;
-  for (let k = 0; t > 1e-9 && k < MAX_EVENTS; k++) {
+  let k = 0;
+  for (; t > 1e-9 && k < MAX_EVENTS; k++) {
     let step = t;
     for (const st of STATIONS_IN_ORDER) {
       const j = w[st];
@@ -225,7 +233,9 @@ export function advanceLine(line: Line, dt: number, r: LineRates, auto: Automati
     // nothing running and nobody walking: nothing more can happen this step
     if (!w.prep && !w.oven && !w.counter && w.departures.length === 0) break;
   }
-  const { paid, sold, ...next } = w;
+  if (k >= MAX_EVENTS && t > 1e-9 && typeof __DEV__ !== 'undefined' && __DEV__) console.warn(`advanceLine: event cap hit, ${t.toFixed(2)} s dropped`); // C70
+  const { paid, sold } = w;
+  const next: Line = { prep: w.prep, oven: w.oven, counter: w.counter, prepped: w.prepped, baked: w.baked, departures: w.departures, walkInDebt: w.walkInDebt, nextId: w.nextId };
   return { line: next, paid, sold };
 }
 

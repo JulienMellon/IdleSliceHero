@@ -102,6 +102,13 @@ def tap_shop(page):
     box = tid(page, "shop").bounding_box()
     page.mouse.click(box["x"] + box["width"] * 0.5, box["y"] + box["height"] * 0.22)
 
+def tap_station(page, st):
+    """Tap a kitchen station: the shop's own hit-test decides; these points sit on the furniture."""
+    box = tid(page, "shop").bounding_box()
+    fx = {"prep": 0.31, "oven": 0.46, "counter": 0.6}[st]
+    fy = {"prep": 0.5, "oven": 0.45, "counter": 0.5}[st]
+    page.mouse.click(box["x"] + box["width"] * fx, box["y"] + box["height"] * fy)
+
 def tid(page, t):
     return page.locator(f'[data-testid="{t}"]').first
 
@@ -132,16 +139,16 @@ with sync_playwright() as pw:
     # 2. Fresh game screen; fill the tap queue and tap once more (should say "Kitchen full!")
     shot(page, "03-new-game")
     try:
-        for _ in range(4):
-            tap_shop(page); time.sleep(0.08)
-        tap_shop(page)
+        # v4.8: tap the prep table, then again while it's prepping (refused with its reason)
+        tap_station(page, "prep"); time.sleep(0.3)
+        tap_station(page, "prep")
         shot(page, "03b-full-queue-tap", 0.25)
     except Exception as e:
         report["errors"].append(f"full-queue tap failed: {e}")
     try:
         # v4.7: three taps per batch (prep → oven → counter), each stage takes a few seconds
         for i in range(70):
-            tap_shop(page); time.sleep(0.3)
+            tap_station(page, ["counter", "oven", "prep"][i % 3]); time.sleep(0.3)
             if i % 4 == 3:
                 for b in ["walk-drivers", "walk-ovens"]:
                     tid(page, b).click()
@@ -172,6 +179,12 @@ with sync_playwright() as pw:
     # 3b. An unmanaged pizzeria (Waterfront) via its tab, then the City overview
     try:
         tid(page, "tab-waterfront").click(); shot(page, "05b-unmanaged-shop", 0.8)
+        # the head cards and the GM's lock in a shop with no manager (D342)
+        tid(page, "open-upgrades").click(); shot(page, "05b2-heads-drawer", 0.6)
+        tid(page, "close-upgrades").click()
+        # station taps: prep, then the oven while it's still prepping (refused, with the reason)
+        tap_station(page, "prep"); shot(page, "05b3-prep-ring", 1.2)
+        tap_station(page, "oven"); shot(page, "05b4-refused-tap", 0.2)
         tid(page, "open-city").click(); shot(page, "05c-city", 0.8)
         tid(page, "back").click()
     except Exception as e:

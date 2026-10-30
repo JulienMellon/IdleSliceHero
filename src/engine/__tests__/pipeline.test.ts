@@ -161,3 +161,69 @@ describe('whole pizza numbers (P7)', () => {
     for (const n of NEIGHBORHOODS.slice(1)) expect(G.headCost(n.id, 'counter')).toBe(Math.ceil(n.managerCost * 0.5));
   });
 });
+
+describe('codecritic round 15', () => {
+  const deepFreeze = <T,>(o: T): T => {
+    if (o && typeof o === 'object') {
+      Object.values(o as object).forEach(deepFreeze);
+      Object.freeze(o);
+    }
+    return o;
+  };
+  test('T47: remainders after a batch-size change all leave; buffers stay under 2 batches', () => {
+    // tapped play left 3 on the bench and 5 on the pass, then the GM arrives with a bigger batch
+    let l = { ...emptyLine(), prepped: 3, baked: 5 };
+    const r = rates({ shop: 3.5, prep: 4, oven: 4, serve: 4 });
+    const b = Math.max(r.tapBatch, Math.ceil(r.shop * LINE.cycleSeconds));
+    let sold = 0;
+    for (let i = 0; i < 600; i++) {
+      const a = advanceLine(l, 0.2, r, AUTOMATIC);
+      sold += a.sold;
+      l = a.line;
+      expect(l.prepped).toBeLessThan(2 * b + 1);
+      expect(l.baked).toBeLessThan(2 * b + 1);
+    }
+    expect(sold).toBeGreaterThan(8 + 100);
+    // stop prepping new dough: everything already made must leave
+    for (let i = 0; i < 200; i++) l = advanceLine(l, 0.2, r, { prep: false, oven: true, counter: true }).line;
+    expect(l.prepped + l.baked).toBe(0);
+  });
+  test('T48: line revenue matches shopRevenue within 1% over 600 s at many levels', () => {
+    for (const lvl of [1, 10, 50, 150, 400]) {
+      let s = gm(G.newGame(0), 'downtown', { prep: lvl, ovens: lvl, counter: lvl, drivers: lvl, tables: lvl, footprint: 4, grade: 4 });
+      for (let i = 0; i < 100; i++) s = G.lineTick(s, 0.2);
+      const c0 = s.cash;
+      for (let i = 0; i < 3000; i++) s = G.lineTick(s, 0.2);
+      const ratio = (s.cash - c0) / 600 / G.shopEarnings(s, 'downtown');
+      expect(ratio).toBeGreaterThan(0.99);
+      expect(ratio).toBeLessThan(1.01);
+    }
+  });
+  test('T49: advanceLine and rush never mutate their input', () => {
+    let l = emptyLine();
+    for (let i = 0; i < 20; i++) l = advanceLine(l, 0.2, rates(), AUTOMATIC).line;
+    const frozen = deepFreeze(JSON.parse(JSON.stringify(l)));
+    expect(() => advanceLine(frozen, 1.5, rates(), AUTOMATIC)).not.toThrow();
+    let s = gm(G.newGame(0), 'downtown');
+    for (let i = 0; i < 20; i++) s = G.lineTick(s, 0.2);
+    deepFreeze(s);
+    expect(() => G.tapShop(s, 'downtown')).not.toThrow();
+  });
+  test('T50: a saved departure id at or past nextId raises it; an over-long walk is clamped', () => {
+    const raw = JSON.parse(JSON.stringify(G.newGame(0)));
+    raw.shops.downtown.line = { ...emptyLine(), nextId: 2, departures: [{ id: 9, kind: 'driver', n: 4, cash: 12, left: 99 }] };
+    const l = G.migrate(raw, 0).shops.downtown.line;
+    expect(l.nextId).toBe(10);
+    expect(l.departures[0].left).toBe(LINE.departSeconds);
+  });
+  test('T51: a rush on a GM shop pays nothing until pies leave', () => {
+    let s = gm(G.newGame(0), 'downtown');
+    s = G.lineTick(s, 0.5);
+    expect(G.tapShop(s, 'downtown').cash).toBe(s.cash);
+  });
+  test('C68: a shop with all three heads earns in the foreground and counts in the city $/s', () => {
+    const s = withShop(G.newGame(0), 'downtown', { heads: G.allHeads() });
+    expect(G.runsItself(s.shops.downtown)).toBe(true);
+    expect(G.earningsPerSecond(s)).toBeGreaterThan(0);
+  });
+});

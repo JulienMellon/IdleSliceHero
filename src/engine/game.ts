@@ -3,7 +3,7 @@
 // Every neighborhood has its own pizzeria. Each pizzeria is a pipeline:
 //   Prep → Ovens → Counter → customers (delivery drivers + walk-ins at the tables)
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
-import { BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEAD_COST_DOWNTOWN, HEAD_KINDS, HEAD_SHARE, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
+import { HEADS, BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEAD_COST_DOWNTOWN, HEAD_KINDS, HEAD_SHARE, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
 import { advanceLine, emptyLine, LINE, nextTap, piesInFlight, rushLine, tapStation as lineTap, type Automation, type Line, type LineRates, type Station } from './pipeline';
@@ -104,18 +104,24 @@ function migrateLine(raw: unknown, queued: number): Line {
   if (!raw || typeof raw !== 'object') return { ...base, prepped: Math.min(LINE.prepBuffer, Math.ceil(queued)) };
   const l = raw as Record<string, unknown>;
   const deps = Array.isArray(l.departures) ? (l.departures as Record<string, unknown>[]) : [];
+  const departures = deps
+    .filter((d) => d && typeof d === 'object' && nat(d.n) > 0)
+    .slice(0, LINE.maxDepartures)
+    .map((d) => {
+      const kind = d.kind === 'walkin' ? ('walkin' as const) : ('driver' as const);
+      const max = kind === 'walkin' ? LINE.handoffSeconds : LINE.departSeconds;
+      return { id: nat(d.id), kind, n: nat(d.n), cash: Math.max(0, num(d.cash, 0)), left: Math.min(max, Math.max(0, num(d.left, 0))) };
+    });
   return {
     prep: jobOf(l.prep),
     oven: jobOf(l.oven),
     counter: jobOf(l.counter),
     prepped: nat(l.prepped),
     baked: nat(l.baked),
-    departures: deps
-      .filter((d) => d && typeof d === 'object' && nat(d.n) > 0)
-      .slice(0, LINE.maxDepartures)
-      .map((d) => ({ id: nat(d.id), kind: d.kind === 'walkin' ? ('walkin' as const) : ('driver' as const), n: nat(d.n), cash: Math.max(0, num(d.cash, 0)), left: Math.max(0, num(d.left, 0)) })),
+    departures,
     walkInDebt: num(l.walkInDebt, 0),
-    nextId: Math.max(1, nat(l.nextId)),
+    // ids only grow, so the scene's "highest id seen" never misses a pop (C69)
+    nextId: Math.max(1, nat(l.nextId), ...departures.map((d) => d.id + 1)),
   };
 }
 
@@ -267,9 +273,12 @@ export function shopEarnings(s: GameState, id: NeighborhoodId): number {
   return shopRevenue(id, shop, s.vehicle);
 }
 
-/** Cash per second the city earns on its own (managed pizzerias only). */
+/** Every station runs on its own (a GM, or all three heads): the shop earns in the foreground without taps. */
+export const runsItself = (shop: Shop) => shop.managed || allHeadsHired(shop);
+
+/** Cash per second the city earns on its own in the foreground (pizzerias with a GM or all three heads, C68). */
 export function earningsPerSecond(s: GameState): number {
-  return SHOP_IDS.reduce((t, id) => t + (s.shops[id].built && s.shops[id].managed ? shopEarnings(s, id) : 0), 0);
+  return SHOP_IDS.reduce((t, id) => t + (s.shops[id].built && runsItself(s.shops[id]) ? shopEarnings(s, id) : 0), 0);
 }
 
 export type Stage = 'prep' | 'ovens' | 'counter' | 'customers';
@@ -463,7 +472,7 @@ export function buyVehicle(s: GameState): BuyResult {
 
 /** Pies per tapped prep batch: +BATCH_GROWTH.step every BATCH_GROWTH.every prep levels (4 → 6 at Lv 20 …). */
 export const tapBatch = (shop: Shop) => BATCH_GROWTH.base + BATCH_GROWTH.step * Math.floor(shop.prep / BATCH_GROWTH.every);
-/** Prep level at which the batch next grows, or null past the last milestone the formula cares about. */
+/** Prep level at which the batch next grows. */
 export const nextBatchLevel = (shop: Shop) => (Math.floor(shop.prep / BATCH_GROWTH.every) + 1) * BATCH_GROWTH.every;
 
 /** The next hire for a pizzeria without a GM: the first head not hired, then the GM; null with a GM. */
@@ -508,6 +517,7 @@ export type TapOutcome = { ok: true; state: GameState } | { ok: false; reason: s
 export function tapStation(s: GameState, id: NeighborhoodId, st: Station): TapOutcome {
   const shop = s.shops[id];
   if (!shop.built) return { ok: false, reason: 'Build this pizzeria first' };
+  if (automationOf(shop)[st]) return { ok: false, reason: shop.managed ? 'Your manager has it covered' : `${HEADS[id][st]} has it covered` };
   const r = lineTap(shop.line, st, lineRates(id, shop, s.vehicle), automationOf(shop));
   return r.ok ? { ok: true, state: withShop(s, id, { line: r.line }) } : r;
 }
@@ -751,13 +761,18 @@ export interface BundleHint {
   affordable: boolean;
 }
 
+/** One key for everything a shop's upgrade levels decide (not cash, sales or the line): shared caches key on it (A18). */
+export function shopLevelKey(s: GameState, id: NeighborhoodId): string {
+  const sh = s.shops[id];
+  return `${id}|${sh.built}|${sh.managed}|${sh.heads.prep}${sh.heads.oven}${sh.heads.counter}|${sh.prep}|${sh.ovens}|${sh.counter}|${sh.drivers}|${sh.tables}|${sh.grade}|${sh.footprint}|${sh.perk}|${s.vehicle}|${Object.values(sh.decor).join(',')}`;
+}
+
 let hintKey = '';
 let hintVal: Omit<BundleHint, 'affordable'> | null = null;
 
 /** "Upgrade prep + ovens · $X": the tied-station bundle, ready to show in the UI. Cached on levels, decor and fleet (not cash or sales), so a render only pays for it when something was upgraded. */
 export function bundleHint(s: GameState, id: NeighborhoodId): BundleHint | null {
-  const sh = s.shops[id];
-  const key = `${id}|${sh.built}|${sh.managed}|${sh.heads.prep}${sh.heads.oven}${sh.heads.counter}|${sh.prep}|${sh.ovens}|${sh.counter}|${sh.drivers}|${sh.tables}|${sh.grade}|${sh.footprint}|${sh.perk}|${s.vehicle}|${Object.values(sh.decor).join(',')}`;
+  const key = shopLevelKey(s, id);
   if (key !== hintKey) {
     hintKey = key;
     const b = bottleneckBundle(s, id);

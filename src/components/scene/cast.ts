@@ -52,9 +52,8 @@ export const edgeFade = (sx: number) => Math.max(0, Math.min(1, (SCENE_W + EDGE_
  *     per frame from an integer frame counter, so it never skips or stutters with timer jitter);
  *   - a 7.5 Hz pose clock for arm work and eating, so a worker's limbs keep identical props for two
  *     frames and their memo holds.
- * Returns the driver phases too, for payout edge detection.
  */
-export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal }: CastInput): { cast: CastMember[]; phases: number[] } {
+export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal }: CastInput): { cast: CastMember[] } {
   const t = clock * pace;
   const poseClock = Math.floor(clock * 7.5) / 7.5;
   const pt = poseClock * pace;
@@ -63,13 +62,11 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
   // a short blink every few seconds per person
   const blinkAt = (sd: number) => (clock + (sd % 37) * 0.31) % 3.7 < 0.13;
   const cast: CastMember[] = [];
-  const phases: number[] = [];
 
   const driverCount = Math.min(shop.drivers, lay.spots.length * 3, 2 + lay.fp);
   for (let i = 0; i < driverCount; i++) {
     const jitter = (hash32(shopSeed + i * 17) % 100) / 2500;
     const p = driverPhase(i, driverCount, t, jitter);
-    phases.push(p);
     if (!running && i > 0) continue;
     const spot = lay.spots[i % lay.spots.length];
     const dp = running ? driverPose(lay, i, p, SCENE_W) : null;
@@ -168,5 +165,5 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       props: { x, y: 92, kind: 'staff', front: true, alt: i === 1, cap: STAFF_CAPS[nIdx], seed: sd, blink: blinkAt(sd), arm: running ? Math.abs(Math.sin(pt * 5 + i * 2)) * 2 : 0 },
     });
   });
-  return { cast, phases };
+  return { cast };
 }

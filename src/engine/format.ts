@@ -37,7 +37,9 @@ export function rate(n: number): string {
 
 /** "$1.50K / $1.50K": both sides of the goal bar use the same precision so they never disagree. */
 export function goalAmount(current: number, target: number): string {
-  return `${money(Math.min(current, target), true)} / ${money(target, true)}`;
+  // whole dollars under $1K on both sides (D343), so "$3 / $25", never "$3.0 / $25"
+  const side = (n: number) => (n < 1000 ? `$${Math.floor(Math.max(0, n))}` : money(n, true));
+  return `${side(Math.min(current, target))} / ${side(target)}`;
 }
 
 export function duration(seconds: number): string {
@@ -60,4 +62,9 @@ export function pizzasLeft(n: number): string {
   if (!Number.isFinite(n) || n <= 0) return '0';
   const w = Math.ceil(n - 1e-9);
   return w < 1000 ? String(w) : count(w);
+}
+
+/** The HUD cash: whole dollars under $1K (cash arrives a pie at a time, so "$3.0" read as a rounding leftover), then "$1.23K". */
+export function cashText(n: number): string {
+  return Number.isFinite(n) && Math.abs(n) < 1000 ? `$${Math.floor(Math.max(0, n))}` : money(n, true);
 }

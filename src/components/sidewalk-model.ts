@@ -53,10 +53,7 @@ export interface StationView extends StationModel {
 let cacheKey = '';
 let cacheVal: StationModel[] = [];
 
-function levelKey(s: G.GameState, id: NeighborhoodId) {
-  const sh = s.shops[id];
-  return `${id}|${sh.built}|${sh.managed}|${sh.heads.prep}${sh.heads.oven}${sh.heads.counter}|${sh.prep}|${sh.ovens}|${sh.counter}|${sh.drivers}|${sh.tables}|${sh.grade}|${sh.footprint}|${sh.perk}|${s.vehicle}|${Object.values(sh.decor).join(',')}`;
-}
+const levelKey = G.shopLevelKey;
 
 /** The level-dependent part of every station button, cached on the shop's levels. */
 export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[] {
