@@ -20,6 +20,8 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
 | `storycritic` | Story, cut-scenes, hooks, voice, comedy, player-facing text | `STORYLOG.md` | Advisory (added 2026-10-29 at Julien's request); low effort at the end of a loop |
 | `audiocritic` | Music, SFX, mix vs. emotion; plans audio until it exists (cue sheet: `docs/AUDIO.md`) | `AUDIOLOG.md` | Advisory; low effort at the end of a loop |
 
+**If an agent type isn't found** (e.g. `audiocritic`): agent definitions are read from `.claude/agents/` when a session starts. Pull `main` first (`storycritic` and `audiocritic` arrived in commit 5573264), then start a new session or reload the repo context. If it still isn't listed, run a general-purpose agent and tell it to follow `.claude/agents/<name>.md` as its brief; the result is the same.
+
 ## The loop (when Julien restarts it)
 1. **Build v4.(n+1)**: fix the open notes in the logs. `sed -i "s/export const APP_VERSION = .*/export const APP_VERSION = '4.4';/" src/content/version.ts`.
 2. **Verify:** `npx tsc --noEmit` clean; `npm test` passes (134 tests, ~110 s); `npx expo export --platform web` then `python3 scripts/screenshots.py v4.4` → `screenshots/v4.4/report.json` shows `"errors": []` and `"loaded": true`. Look at the PNGs yourself (03, 05, 05a, 05b, 13, 16, 21 at least). Shot 22 (perk card) timed out once and passed on a re-run: re-run once before investigating.
