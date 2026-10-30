@@ -5,6 +5,14 @@ The **audiocritic** (`.claude/agents/audiocritic.md`) reviews music, sound effec
 - Added after v3.8 at Julien's request. It runs at **low effort** at the end of the build loop. Until Julien says otherwise it is advisory: its verdict doesn't gate the loop.
 - **Next IDs:** AU62.
 
+## Owner direction — ON HOLD until Julien restarts audio work (2026-10-30)
+> "Let's move stylistically toward a calmer, more lofi vibe."
+
+- **Hold.** Don't rework the audio until Julien says so. When he does, this note comes first, before AU58–AU61. Composer and audiocritic both read it before planning.
+- **Scope.** It changes the brief for the whole score: the six neighbourhood loops, the triumphs and the stingers. The audiocritic should re-plan against it rather than patch the current charts.
+- **Constraints.** Keep the shared city motif and the neighbourhood identities, played calmer: they're what holds the score together.
+- **First check with Julien:** how far the lofi brief goes into the story peaks. The MegaSlice villain cues and the win triumphs may still need their energy.
+
 ## Current state — v4.6, round 5 (full review): ❌ NOT SATISFIED (advisory) — one blocker, fixed after the review
 
 The audiocritic reports no other blockers for v1 audio. The first five device checks below must pass before submitting.

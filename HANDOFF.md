@@ -46,7 +46,7 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
 ## Agreed next work (pick up only when Julien says)
 1. Remaining critic and code notes in the logs (codecritic's A17, a cached drawer-card model, is the big one; C66 strike bar on a shrunk iOS label needs a device check).
 2. Daily and weekly tasks (`docs/REWARDS.md`).
-3. Audio: the device checks in `AUDIOLOG.md`, then AU58–AU61.
+3. Audio: **on hold** with a new owner direction, "calmer, more lofi" (see the top of `AUDIOLOG.md`). It comes first when Julien restarts audio work; then the device checks and AU58–AU61.
 4. Deferred: the dead zone (design discussion first), franchise-to-Boston (Claude Doc).
 
 ## Lessons learned (avoid repeating them)
