@@ -9,7 +9,7 @@
 // anchored to the bottom so the sidewalk and street are always visible (taller screens show more sky).
 import { memo, useEffect, useMemo, useRef, type ComponentRef, type ReactElement } from 'react';
 import { Pressable, View } from 'react-native';
-import Svg, { Circle, G, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { F } from '../theme';
 import { FOOTPRINTS, NEIGHBORHOODS } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
@@ -49,6 +49,8 @@ interface Props {
   onTap: () => void;
   /** A tap on one station of a shop without a GM; returns why it was refused, or null when it started. */
   onStation: (st: Station) => string | null;
+  /** Nonna's tutorial points at this station: dim the rest of the scene around it (D367). */
+  spotlight?: Station | null;
 }
 
 /** Everything the still picture depends on: when this changes, the scene re-renders even while paused. */
@@ -80,7 +82,7 @@ const seedFor = (id: string) => Array.from(id).reduce((h, ch) => (h * 31 + ch.ch
  * Re-renders on its own 15 fps clock (reading the latest game state each frame) and when the shop's
  * upgrades change. The parent's 200 ms game ticks don't re-render it, and a paused scene stays still.
  */
-export const Storefront = memo(function Storefront({ id, width, height, paused, onTap, onStation }: Props) {
+export const Storefront = memo(function Storefront({ id, width, height, paused, onTap, onStation, spotlight = null }: Props) {
   // Opt out of React Compiler memoisation: this component deliberately reads the live store
   // (useGame.getState()) on every clock frame, which auto-memoisation could otherwise cache.
   'use no memo';
@@ -234,6 +236,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const by = badgeRowY();
   const geoRegister = useMemo(() => P(lay.staff[0] + 12, 70, 78), [lay]);
   const geoPass = useMemo(() => P(lay.counter.x0 + 8, 70, 40), [lay]);
+  const dingAt = useMemo(() => {
+    const top = Math.max(...lay.ovens.map((o) => o.z + o.h));
+    return P(lay.ovenCols[lay.ovenCols.length - 1].x1 + 2, D, top * 0.55).map((v, i) => (i === 0 ? v + 22 : v)) as [number, number];
+  }, [lay]);
   const flicker = running ? Math.sin(clock * 9) * 1.4 : 0;
   const rushK = (clock - m.rushAt) / 0.6;
   const rushC = useMemo(() => P((lay.ovenCols[0].x0 + lay.ovenCols[lay.ovenCols.length - 1].x1) / 2, D - 6, 50), [lay]);
@@ -343,9 +349,11 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 <Circle cx={x} cy={y} r={5.2} fill="#FFC531" />
                 <Circle cx={x - 2} cy={y - 1} r={1.3} fill="#E8432E" />
                 <Circle cx={x + 2.2} cy={y + 1.4} r={1.2} fill="#E8432E" />
-                <G transform={`translate(${ax} ${ay - 26 - k * 8})`}>
+                {/* D371: beside the oven bank, its tail pointing at it, never over an oven door */}
+                <G transform={`translate(${dingAt[0]} ${dingAt[1] - k * 6})`}>
+                  <Path d="M-17 -2 L-23 1 L-17 4 Z" fill="#fff" stroke={INK} strokeWidth={1.1} strokeLinejoin="round" />
                   <Rect x={-17} y={-9} width={34} height={16} rx={8} fill="#fff" stroke={INK} strokeWidth={1.1} />
-                  <SvgText x={0} y={3} fontFamily={F.bold} fontSize={10} fill={INK} textAnchor="middle">
+                  <SvgText x={0} y={3} fontFamily={F.bold} fontSize={11} fill={INK} textAnchor="middle">
                     ding!
                   </SvgText>
                 </G>
@@ -368,6 +376,32 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
               </G>
             );
           })()}
+          {/* D367: Nonna's tutorial spotlights its station: a dark scrim with a rounded cut-out, a pulsing gold outline
+              and a hand pointing at the station itself */}
+          {spotlight &&
+            (() => {
+              const r = rects[spotlight];
+              const pad = 8;
+              const x0 = r.x0 - pad;
+              const y0 = r.y0 - pad;
+              const x1 = r.x1 + pad;
+              const y1 = r.y1 + pad;
+              const rr = 12;
+              const vb = { x: -fit.ox / fit.s, y: -fit.oy / fit.s, w: width / fit.s, h: height / fit.s };
+              const hole = `M${x0 + rr} ${y0} H${x1 - rr} Q${x1} ${y0} ${x1} ${y0 + rr} V${y1 - rr} Q${x1} ${y1} ${x1 - rr} ${y1} H${x0 + rr} Q${x0} ${y1} ${x0} ${y1 - rr} V${y0 + rr} Q${x0} ${y0} ${x0 + rr} ${y0} Z`;
+              const glow = 0.55 + 0.45 * pulse;
+              const hx = (x0 + x1) / 2 + 10;
+              const hy = y1 - 6 + 4 * pulse;
+              return (
+                <G>
+                  <Path d={`M${vb.x} ${vb.y} H${vb.x + vb.w} V${vb.y + vb.h} H${vb.x} Z ${hole}`} fill="#2A1408" opacity={0.6} fillRule="evenodd" />
+                  <Path d={hole} fill="none" stroke="#FFD54A" strokeWidth={3} opacity={glow} />
+                  <G transform={`translate(${hx} ${hy}) rotate(-20) scale(1.6)`}>
+                    <Path d="M0 -7 Q1.6 -7 1.6 -5 L1.6 -1 L5 -0.4 Q6.6 0 6.2 2 L5 6 Q4.4 7.4 3 7.4 L-2.4 7.4 Q-4 7.4 -4.4 6 L-5.6 1.6 Q-5.8 0 -4.2 0.2 L-1.6 1 L-1.6 -5 Q-1.6 -7 0 -7 Z" fill="#fff" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+                  </G>
+                </G>
+              );
+            })()}
           <DeparturePops deps={line.departures} left={(d) => leftNow(d.left)} anchor={(d) => carriers.get(d.id) ?? null} register={geoRegister} />
         </Svg>
       </Pressable>

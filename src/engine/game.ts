@@ -61,7 +61,7 @@ export interface GameState {
 }
 
 /** The tutorial's step after its last (tutorial.ts reads it from here to avoid an import cycle). */
-export const TUTORIAL_DONE = 9;
+export const TUTORIAL_DONE = 10;
 
 export const newDecor = (): Record<DecorKind, number> => ({ plants: 0, flooring: 0, tables: 0, walls: 0, signage: 0 });
 

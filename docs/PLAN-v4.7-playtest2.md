@@ -15,8 +15,8 @@ Status: **locked** after one review by `critic` and `codecritic` (both PROCEED W
 ## 1. Playtest notes → fixes
 | # | Note | Fix | Build |
 | --- | --- | --- | --- |
-| P1 | Startup splash | Logo (icon = slice + crown only, no text), splash bg = HUD red, title card | v5.2 |
-| P2 | Fuller Nonna tutorial | Coach marks with Nonna's card and a hand on the exact target | v5.2 |
+| P1 | Startup splash | Logo (icon = slice + crown only, no text), splash bg = HUD red, title card | v5.1–v5.2 ✔ |
+| P2 | Fuller Nonna tutorial | Coach marks with Nonna's card and a hand on the exact target | v5.1–v5.2 ✔ |
 | P3 | Baking is instant | Stage machine with real durations, ring timers, baker/oven animation | v4.7 / v4.8 / v5.1 |
 | P4 | Pizza as a process | Three tappable stations; heads automate them | v4.7 / v4.8 |
 | P5 | Show upgrade effect and pace | Badge row with ring timers, bottleneck ring, "+50% faster" flash, "4 pies · 2.6 s" labels | v4.8 / v5.1 |

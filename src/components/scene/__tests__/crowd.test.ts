@@ -8,6 +8,7 @@ import { BACK_ROW_Y, layout } from '../layout';
 import { hash32 } from '../looks';
 import { seatPalette } from '../palette';
 import { P, SCENE_W, kAt } from '../projection';
+import { popRect, staffFaces } from '../stations';
 import { quantArm, quantStep } from '../quantise';
 
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
@@ -171,6 +172,34 @@ describe('the sidewalk row (D352)', () => {
         for (const c of cast) if (c.role === 'walkin' || c.role === 'driver') expect([shop.name, c.key, c.props.y >= -22]).toEqual([shop.name, c.key, true]);
       }
     }
+  });
+});
+
+describe('pops and the waiting walk-in (D368, D370)', () => {
+  test('a pop riding a carrier never covers a cashier’s face', () => {
+    const bad: string[] = [];
+    for (const shop of busyShops()) {
+      const faces = staffFaces(shop.lay);
+      frames(shop, 1).forEach((cast, f) => {
+        for (const c of cast)
+          if (c.deps && c.deps.length) {
+            const r = popRect(P(c.props.x, c.props.y, 52), 96);
+            for (const fc of faces) if (r.x0 < fc.x1 && r.x1 > fc.x0 && r.y0 < fc.y1 && r.y1 > fc.y0) bad.push(`${shop.name} f${f} ${c.key}`);
+          }
+      });
+    }
+    expect(bad.slice(0, 5)).toEqual([]);
+  });
+  test('the walk-in waiting at the register never stacks with the driver anywhere (> 15%)', () => {
+    const bad: string[] = [];
+    for (const shop of busyShops())
+      for (const pace of [1, 2.6])
+        frames(shop, pace).forEach((cast, f) => {
+          const waiting = cast.filter((c) => c.role === 'walkin' && !c.props.step && c.props.kind !== 'sit');
+          const drivers = cast.filter((c) => c.role === 'driver');
+          for (const w of waiting) for (const d of drivers) if (overlap(box(w), box(d)) > 0.15) bad.push(`${shop.name} pace${pace} f${f}`);
+        });
+    expect(bad.slice(0, 5)).toEqual([]);
   });
 });
 

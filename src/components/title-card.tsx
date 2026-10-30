@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Defs, Path, RadialGradient, Stop } from 'react-native-svg';
 
 import { F } from '../theme';
 import { Logo } from './logo';
@@ -16,7 +16,7 @@ const DAY_KEY = 'slice-empire/title-day';
 const RAYS = Array.from({ length: 12 }, (_, i) => {
   const a = (i / 12) * Math.PI * 2;
   const b = a + Math.PI / 12;
-  return `M0 0 L${Math.cos(a) * 300} ${Math.sin(a) * 300} L${Math.cos(b) * 300} ${Math.sin(b) * 300} Z`;
+  return `M0 0 L${Math.cos(a) * 320} ${Math.sin(a) * 320} L${Math.cos(b) * 320} ${Math.sin(b) * 320} Z`;
 }).join(' ');
 
 export function TitleCard({ onDone }: { onDone: () => void }) {
@@ -24,6 +24,7 @@ export function TitleCard({ onDone }: { onDone: () => void }) {
   const [spin] = useState(() => new Animated.Value(0));
   const [wave] = useState(() => new Animated.Value(0));
   const [fade] = useState(() => new Animated.Value(1));
+  const [blink] = useState(() => new Animated.Value(1));
   const done = useRef(false);
   const finish = () => {
     if (done.current) return;
@@ -35,6 +36,7 @@ export function TitleCard({ onDone }: { onDone: () => void }) {
       Animated.spring(drop, { toValue: 1, friction: 5, tension: 70, useNativeDriver: true }),
       Animated.loop(Animated.timing(spin, { toValue: 1, duration: 9000, easing: Easing.linear, useNativeDriver: true })),
       Animated.loop(Animated.sequence([Animated.timing(wave, { toValue: 1, duration: 260, useNativeDriver: true }), Animated.timing(wave, { toValue: 0, duration: 260, useNativeDriver: true })])),
+      Animated.loop(Animated.sequence([Animated.timing(blink, { toValue: 0.45, duration: 600, useNativeDriver: true }), Animated.timing(blink, { toValue: 1, duration: 600, useNativeDriver: true })])),
     ];
     anims.forEach((a) => a.start());
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -61,21 +63,32 @@ export function TitleCard({ onDone }: { onDone: () => void }) {
     <Animated.View style={[StyleSheet.absoluteFill, styles.root, { opacity: fade }]} onLayout={() => SplashScreen.hideAsync().catch(() => {})}>
       <Pressable testID="title-card" style={StyleSheet.absoluteFill} onPress={finish}>
         <View style={styles.center}>
-          <Animated.View style={[styles.rays, { transform: [{ rotate: rot }] }]}>
-            <Svg width={600} height={600} viewBox="-300 -300 600 600">
-              <Path d={RAYS} fill="#FFFFFF" opacity={0.12} />
-            </Svg>
-          </Animated.View>
-          <Animated.View style={{ transform: [{ translateY: y }] }}>
-            <Logo size={180} />
-          </Animated.View>
+          {/* D369: the rays turn about the logo's own centre and fade out towards the edges */}
+          <View style={styles.logoBox}>
+            <Animated.View style={[styles.rays, { transform: [{ rotate: rot }] }]}>
+              <Svg width={640} height={640} viewBox="-320 -320 640 640">
+                <Defs>
+                  <RadialGradient id="rayFade" cx="0" cy="0" r="320" gradientUnits="userSpaceOnUse">
+                    <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.18} />
+                    <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0} />
+                  </RadialGradient>
+                </Defs>
+                <Path d={RAYS} fill="url(#rayFade)" />
+              </Svg>
+            </Animated.View>
+            <Animated.View style={{ transform: [{ translateY: y }] }}>
+              <Logo size={250} />
+            </Animated.View>
+          </View>
           <Animated.Text style={[styles.name, { opacity: drop }]}>SLICE EMPIRE</Animated.Text>
           <Text style={styles.sub}>Rosa’s Pizzeria · Port Marinara</Text>
         </View>
         <Animated.View style={[styles.nonna, { transform: [{ rotate: tilt }] }]}>
-          <Portrait id="nonna-rosa" mood="happy" size={88} />
+          <View style={styles.nonnaRing}>
+            <Portrait id="nonna-rosa" mood="happy" size={84} />
+          </View>
         </Animated.View>
-        <Text style={styles.skip}>Tap to start</Text>
+        <Animated.Text style={[styles.skip, { opacity: blink }]}>Tap to start</Animated.Text>
       </Pressable>
     </Animated.View>
   );
@@ -83,10 +96,13 @@ export function TitleCard({ onDone }: { onDone: () => void }) {
 
 const styles = StyleSheet.create({
   root: { backgroundColor: LOGO_RED, zIndex: 50 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  rays: { position: 'absolute', width: 600, height: 600 },
+  // the block sits ~60 pt above centre, so the top of the screen isn't empty
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 120 },
+  logoBox: { width: 250, height: 250, alignItems: 'center', justifyContent: 'center' },
+  rays: { position: 'absolute', width: 640, height: 640, left: -195, top: -195 },
   name: { marginTop: 14, fontFamily: F.bold, fontSize: 44, color: '#FFFFFF', letterSpacing: 1, textShadowColor: '#3B1F14', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 },
   sub: { marginTop: 4, fontFamily: F.semi, fontSize: 15, color: '#FFE7C2' },
-  nonna: { position: 'absolute', right: 22, bottom: 70 },
-  skip: { position: 'absolute', bottom: 34, alignSelf: 'center', fontFamily: F.semi, fontSize: 13, color: 'rgba(255,255,255,0.75)' },
+  nonna: { position: 'absolute', right: 20, bottom: 78 },
+  nonnaRing: { width: 104, height: 104, borderRadius: 52, backgroundColor: '#FFF4DC', borderWidth: 2, borderColor: '#5A2E1A', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  skip: { position: 'absolute', bottom: 34, alignSelf: 'center', fontFamily: F.bold, fontSize: 15, color: '#FFF4DC' },
 });

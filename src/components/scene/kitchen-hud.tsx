@@ -6,7 +6,7 @@ import { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { money } from '../../engine/format';
 import { LINE, type Departure } from '../../engine/pipeline';
 import { F } from '../../theme';
-import { BADGE_R, COIN_FLIGHT, popModels, type BadgeTone } from './stations';
+import { BADGE_R, COIN_FLIGHT, popModels, popRect, type BadgeTone } from './stations';
 import { HeadFace } from './head-face';
 import type { HeadKind } from '../../content/tuning';
 import { INK, SCENE_W } from './projection';
@@ -107,11 +107,13 @@ export function DeparturePops({ deps, left, anchor, register }: { deps: readonly
         const rest = d.kind === 'driver' ? l - COIN_FLIGHT : l;
         const k = Math.min(1, Math.max(0, 1 - rest / span));
         const at = anchor(d) ?? register;
+        const rideAlong = !!anchor(d);
         const text = n > 1 ? `×${n} · +${money(cash)}` : `+${money(cash)}`;
         const w = text.length * 6.6 + 14;
-        // keep the whole pill on screen (the door is near the right edge in wide rooms)
-        const px = Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, at[0]));
-        const py = at[1] - 40 - k * 10;
+        // beside the carrier's head, away from the cashiers (D368); kept on screen
+        const r = popRect(at, w);
+        const px = rideAlong ? (r.x0 + r.x1) / 2 : Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, at[0]));
+        const py = (rideAlong ? r.y1 : at[1] - 30) - k * 6;
         const fade = rest < 0.2 ? Math.max(0, rest / 0.2) : 1;
         if (fade <= 0) return null;
         return (

@@ -175,3 +175,17 @@ export function popModels<D extends { kind: 'driver' | 'walkin'; n: number; cash
   }
   return pops.slice(0, 2).map((d, i) => ({ dep: d, n: d.n + (i === 0 ? n : 0), cash: d.cash + (i === 0 ? cash : 0) }));
 }
+
+/** A pop's rectangle (scene units): beside its carrier's head, on the side away from the counter staff (D368). */
+export function popRect(head: [number, number], w: number): Rect {
+  // to the left of the head at head height: the cashiers stand behind the counter, above and to the right of a
+  // driver at the pickup spot, so a pop above the head landed on their faces
+  const x1 = Math.max(4 + w, head[0] - 10);
+  const y1 = head[1] + 10;
+  return { x0: x1 - w, y0: y1 - 18, x1, y1 };
+}
+
+/** The counter staff's faces (scene units), for keeping pops off them. */
+export function staffFaces(lay: Layout): Rect[] {
+  return lay.staff.map((x) => bounds([P(x - 8, 92, 44), P(x + 8, 92, 44), P(x - 8, 92, 64), P(x + 8, 92, 64)]));
+}

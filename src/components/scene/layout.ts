@@ -122,8 +122,10 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   const spots = Array.from({ length: Math.min(driverSlots, spotCols) }, (_, i) => ({ x: counter.x0 + 12 + i * 28, y: 46 }));
   // v5.0 (D336/D353): the walk-in waits beside the counter's right end, deeper than the drivers' exit lane, so a
   // driver leaving never walks across the waiting walk-in (the second spot is kept for older callers)
+  // v5.2 (D370/D372): further right, past the doorway's left post (which hid half of them) and clear of the
+  // driver's column at the door
   const orderSpots: Pt[] = [
-    [counter.x1 + 6, 60],
+    [counter.x1 + 26, 60],
     [counter.x1 + 4, 48],
   ];
   // Dining: two rows in front of the prep/oven area, clear of the left pilaster (and a floor plant).

@@ -205,6 +205,9 @@ with sync_playwright() as pw:
         # hire Finn from the sidewalk: his hello bubble over the prep badge, his face on the badge (D349)
         time.sleep(1.4)
         tid(page, "walk-manager").click(); shot(page, "05b5-hire-bubble", 0.5)
+        # D376: an Ovens buy shows "+N% faster" rising from the oven's badge
+        time.sleep(2.6)
+        tid(page, "mini-ovens").click(); shot(page, "05b6-upgrade-flash", 0.25)
         tid(page, "open-city").click(); shot(page, "05c-city", 0.8)
         tid(page, "back").click()
     except Exception as e:

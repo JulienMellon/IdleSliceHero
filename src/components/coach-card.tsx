@@ -10,7 +10,7 @@ import { Portrait } from './portrait';
 export const CoachCard = memo(function CoachCard({ step, low, high }: { step: CoachStep; low: number; high: number }) {
   return (
     <View testID="coach" pointerEvents="none" style={[styles.card, step.dock === 'low' ? { bottom: low } : { top: high }]}>
-      <Portrait id="nonna-rosa" mood="happy" size={56} />
+      <Portrait id="nonna-rosa" mood="happy" size={44} />
       <Text style={styles.text} maxFontSizeMultiplier={1.3}>
         {step.text}
       </Text>
@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    minHeight: 84,
+    minHeight: 64,
     backgroundColor: '#FFF4DC',
     borderWidth: 2,
     borderColor: '#5A2E1A',
@@ -34,5 +34,5 @@ const styles = StyleSheet.create({
     gap: 10,
     boxShadow: '0 4px 0 rgba(59,31,20,0.25)',
   } as object,
-  text: { flex: 1, fontFamily: F.bold, fontSize: 15, color: '#3B1F14' },
+  text: { flex: 1, fontFamily: F.bold, fontSize: 14, color: '#3B1F14' },
 });

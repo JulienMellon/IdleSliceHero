@@ -973,17 +973,19 @@ export const StreetProp = memo(function StreetProp({ id, x, y }: { id: Neighborh
         </G>
       )}
       {kind === 'bikerack' && (
-        // a dark bike rack holding two bikes (D363)
+        // two bikes in profile on a dark hoop rack (D363)
         <G>
-          <Rect x={-22} y={-3} width={44} height={3} rx={1.5} fill="#3A3A3A" />
-          {[-16, -6, 4, 14].map((px) => (
-            <Path key={px} d={`M${px - 4} 0 V-11 Q${px - 4} -15 ${px} -15 Q${px + 4} -15 ${px + 4} -11 V0`} stroke="#3A3A3A" strokeWidth={2} fill="none" />
+          {[-15, 0, 15].map((px) => (
+            <Path key={px} d={`M${px - 5} 0 V-12 Q${px - 5} -17 ${px} -17 Q${px + 5} -17 ${px + 5} -12 V0`} stroke="#3A3A44" strokeWidth={2.2} fill="none" />
           ))}
-          {[[-11, '#6A2C9A'], [9, '#FFC531']].map(([bx, col]) => (
-            <G key={bx as number} transform={`translate(${bx} 0)`}>
-              <Circle cx={-7} cy={-5} r={5} fill="none" stroke={INK} strokeWidth={1.4} />
-              <Circle cx={7} cy={-5} r={5} fill="none" stroke={INK} strokeWidth={1.4} />
-              <Path d="M-7 -5 L-1 -12 L5 -12 L7 -5 M-1 -12 L1 -5 L5 -12 M-1 -12 L-2 -15" stroke={col as string} strokeWidth={1.8} fill="none" strokeLinejoin="round" />
+          {[[-9, '#6A2C9A', -2], [9, '#E0A800', 2]].map(([bx, col, dy]) => (
+            <G key={bx as number} transform={`translate(${bx} ${dy})`}>
+              <Circle cx={-8} cy={-7} r={6.5} fill="none" stroke={INK} strokeWidth={1.5} />
+              <Circle cx={8} cy={-7} r={6.5} fill="none" stroke={INK} strokeWidth={1.5} />
+              <Circle cx={-8} cy={-7} r={1} fill={INK} />
+              <Circle cx={8} cy={-7} r={1} fill={INK} />
+              <Path d="M-8 -7 L-2 -16 L6 -16 L8 -7 L-1 -7 Z M-2 -16 L-1 -7" stroke={col as string} strokeWidth={2} fill="none" strokeLinejoin="round" />
+              <Path d="M-4 -19 H0 M6 -16 L7 -20 L10 -20" stroke={INK} strokeWidth={1.6} strokeLinecap="round" fill="none" />
             </G>
           ))}
         </G>

@@ -207,7 +207,7 @@ export default function GameScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Hud cash={game.cash} subtitle={subtitle} goal={goal} newScenes={newScenes} onScrapbook={() => router.push('/scrapbook')} onCity={() => router.push('/city')} halo={coach?.target === 'cash' ? 'cash' : coach?.target === 'goal' ? 'goal' : null} />
+      <Hud cash={game.cash} subtitle={coach && id === 'downtown' ? '' : subtitle} goal={goal} newScenes={newScenes} onScrapbook={() => router.push('/scrapbook')} onCity={() => router.push('/city')} halo={coach?.target === 'cash' ? 'cash' : coach?.target === 'goal' ? 'goal' : null} />
       <ShopTabs game={game} onSelect={setActive} onBuild={build} />
       <View style={styles.sceneArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
         {area.w > 0 && (
@@ -220,12 +220,14 @@ export default function GameScreen() {
             paused={covered || drawerOpen}
             onTap={onShopTap}
             onStation={onStationTap}
+            spotlight={coach && id === 'downtown' && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') ? coach.target : null}
           />
         )}
         {/* upgrade row standing on the sidewalk */}
         <SidewalkRow game={game} id={id} idleShop={idleShop} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} highlight={coach?.target === 'walk-ovens' ? 'ovens' : null} />
         {/* Nonna's tutorial (P2) */}
-        {coach && id === 'downtown' && !drawerOpen && <CoachCard step={coach} low={rowBottom + SIDEWALK_ROW.cardHeight + 12} high={12} />}
+        {/* D366: docked over the street band (decoration only), clear of the seating area */}
+        {coach && id === 'downtown' && !drawerOpen && <CoachCard step={coach} low={Math.max(8, insets.bottom)} high={12} />}
         {drawerOpen && (
           <View style={StyleSheet.absoluteFill}>
             <Pressable testID="close-upgrades-dim" style={styles.dim} onPress={() => setDrawerOpen(false)} />

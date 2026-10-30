@@ -26,7 +26,9 @@ describe('tutorial', () => {
     };
     s = tap(s, 'prep');
     note();
+    expect(coachStep(s)?.text).toMatch(/Rolling/); // G82: no "tap the oven" while the dough is still rolling
     s = run(s, 3);
+    note();
     s = tap(s, 'oven');
     note();
     s = run(s, 1);
@@ -38,13 +40,15 @@ describe('tutorial', () => {
     s = run(s, 5);
     note();
     // play until the ovens are affordable, then buy them
-    for (let k = 0; k < 400 && s.tutorial < 7; k++) {
+    for (let k = 0; k < 400 && s.tutorial < 8; k++) {
       for (const st of ['counter', 'oven', 'prep'] as const) s = tap(s, st);
       s = run(s, 1);
     }
     note();
-    expect(s.tutorial).toBe(7);
+    expect(s.tutorial).toBe(8);
     expect(coachStep(s)?.target).toBe('walk-ovens');
+    // D374: spend the Ovens cash elsewhere and Nonna goes back to "save up"
+    expect(coachStep({ ...s, cash: 0 })?.text).toMatch(/Save up/);
     const b = G.buyUpgrade(s, 'downtown', 'ovens');
     expect(b.ok).toBe(true);
     if (b.ok) s = tutorialAdvance(b.state);
@@ -60,8 +64,8 @@ describe('tutorial', () => {
     note();
     expect(s.tutorial).toBe(TUTORIAL_DONE);
     expect(coachStep(s)).toBeNull();
-    // step 6 ("Again! Save up…") is skipped when the first sale already pays for the ovens
-    expect(seen.filter((x) => x !== 6)).toEqual([1, 2, 3, 4, 5, 7, 8, TUTORIAL_DONE]);
+    // step 7 ("Again! Save up…") is skipped when the first sale already pays for the ovens
+    expect(seen.filter((x) => x !== 7)).toEqual([1, 2, 3, 4, 5, 6, 8, 9, TUTORIAL_DONE]);
   });
   test('the first batch is quick (≤ 3 s in the oven)', () => {
     const s = tap(run(tap(opened(), 'prep'), 3), 'oven');
@@ -69,7 +73,7 @@ describe('tutorial', () => {
   });
   test('story scenes wait during steps 1–5 only', () => {
     expect(tutorialHoldsStory({ ...opened(), tutorial: 3 })).toBe(true);
-    expect(tutorialHoldsStory({ ...opened(), tutorial: 6 })).toBe(false);
+    expect(tutorialHoldsStory({ ...opened(), tutorial: 7 })).toBe(false);
   });
   test('saves from before the tutorial skip it once pizza has been sold; new saves start it', () => {
     const v3 = JSON.parse(JSON.stringify(G.newGame(0)));
