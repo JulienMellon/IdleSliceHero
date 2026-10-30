@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
-import { pickScene } from '../engine/cutscene-input';
+import { pickScene, resumeSceneEnd } from '../engine/cutscene-input';
 import { HOME_SCENES } from '../content/scenes/home';
 import { PIER9_BID, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
@@ -93,14 +93,17 @@ export const useGame = create<Store>((set, get) => {
     load: async () => {
       const now = Date.now();
       // On resume, keep in-memory progress if the save can't be read.
-      let game = get().loaded ? get().game : G.newGame(now);
+      const wasLoaded = get().loaded;
+      let game = wasLoaded ? get().game : G.newGame(now);
       let offline: OfflineSummary | null = null;
+      let awaySeconds = Number.POSITIVE_INFINITY;
       try {
         await pendingSave;
         const raw = await AsyncStorage.getItem(SAVE_KEY);
         if (raw) {
           const r = G.applyOffline(G.migrate(JSON.parse(raw), now), now);
           game = r.state;
+          awaySeconds = r.awaySeconds;
           if (r.earned >= 1 && r.seconds >= 60) {
             // Hold the cash back until the player taps Collect.
             offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed })) };
@@ -110,8 +113,8 @@ export const useGame = create<Store>((set, get) => {
       } catch {
         // Corrupt or unreadable save: start fresh rather than crash.
       }
-      // a launch or return may play one waiting story beat straight away
-      set({ game, loaded: true, offline, lastSceneEndPlay: null });
+      // a launch or a real return may play one waiting story beat straight away; a short interruption keeps the gap (C39)
+      set({ game, loaded: true, offline, lastSceneEndPlay: resumeSceneEnd(wasLoaded ? get().lastSceneEndPlay : null, awaySeconds) });
       if (!offline) queueScene();
     },
 

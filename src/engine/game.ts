@@ -123,7 +123,7 @@ export function migrate(raw: unknown, now: number): GameState {
         decor: Object.fromEntries(DECOR_KINDS.map((k) => [k, int((s.decor as Record<string, unknown> | undefined)?.[k], 0, 0, 3)])) as Record<DecorKind, number>,
         sold: Math.max(0, num(s.sold, 0)),
         // v2 saves: a finale already seen earns its perk (v3.7)
-        perk: !!s.perk || (id !== 'downtown' && seen.includes(`${id}-4`)),
+        perk: !!s.perk || (!!PERKS[id] && seen.includes(finaleId(id))),
       };
     }
   } else {
@@ -143,6 +143,10 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!game.shops[game.active].built) game.active = 'downtown';
   return game;
 }
+
+/** Scene ids are `<neighbourhood>-<beat>` (pinned by a test); a neighbourhood's finale is beat 4. */
+export const sceneId = (id: NeighborhoodId, beat: 1 | 2 | 3 | 4) => `${id}-${beat}`;
+export const finaleId = (id: NeighborhoodId) => sceneId(id, 4);
 
 // ---------- Formulas ----------
 
@@ -340,7 +344,8 @@ export function nonnaPizzasLeft(s: GameState): number {
 
 export function nonnaCountdownText(s: GameState): string {
   const n = nonnaPizzasLeft(s);
-  return n > 0 ? `Nonna takes over in ${n} more pizza${n === 1 ? '' : 's'}` : 'Nonna is about to take over';
+  // the scene can wait out the story gap after the count is reached, so the copy doesn't promise "now" (C43)
+  return n > 0 ? `Nonna takes over in ${n} more pizza${n === 1 ? '' : 's'}` : 'Nonna takes over soon — keep baking';
 }
 
 export function buildShop(s: GameState, id: NeighborhoodId): BuyResult {
@@ -454,13 +459,12 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
   const seconds = Math.min(elapsed, TUNING.offlineCapSeconds);
   const ticked = tick(s, seconds);
   // a perk can raise what a pizzeria earns while away (Big Sal's, in Industrial)
-  let bonus = 0;
-  const byShop = SHOP_IDS.map((id) => {
+  const rows = SHOP_IDS.map((id) => {
     const base = (ticked.shops[id].sold - s.shops[id].sold) * valuePerPizza(id, s.shops[id], s.vehicle);
-    const extra = base * ((perkOf(id, s.shops[id])?.offlineMult ?? 1) - 1);
-    bonus += extra;
-    return { id, managed: s.shops[id].managed, earned: base + extra };
-  }).filter((x) => x.earned > 0);
+    return { id, managed: s.shops[id].managed, base, extra: base * ((perkOf(id, s.shops[id])?.offlineMult ?? 1) - 1) };
+  });
+  const bonus = rows.reduce((t, r) => t + r.extra, 0);
+  const byShop = rows.map((r) => ({ id: r.id, managed: r.managed, earned: r.base + r.extra })).filter((x) => x.earned > 0);
   const next = { ...ticked, cash: ticked.cash + bonus, totalEarned: ticked.totalEarned + bonus };
   return { state: { ...next, lastSavedAt: now }, seconds, capped: elapsed > TUNING.offlineCapSeconds, awaySeconds: elapsed, earned: next.cash - s.cash, byShop };
 }

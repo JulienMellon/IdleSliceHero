@@ -1,7 +1,7 @@
 import { HOME_SCENES } from '../../content/scenes/home';
 import { PERKS, PIER9_BID, STORY_PACING } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
-import { pickScene } from '../cutscene-input';
+import { pickScene, resumeSceneEnd } from '../cutscene-input';
 import * as G from '../game';
 
 const scene = (id: string) => HOME_SCENES.find((s) => s.id === id)!;
@@ -114,5 +114,66 @@ describe('Pier 9 bid (v3.7)', () => {
   it('the finale no longer plays from a pizza count alone', () => {
     const s = withShop(ready(), 'waterfront', { sold: 1e7 });
     expect(G.pendingScenes(s, HOME_SCENES).map((x) => x.id)).not.toContain('waterfront-4');
+  });
+});
+
+describe('returning to the app (C39, T32)', () => {
+  it('a short interruption (Control Center, app switcher) keeps the story gap', () => {
+    expect(resumeSceneEnd(480, 5)).toBe(480);
+    expect(resumeSceneEnd(480, STORY_PACING.returnSeconds - 1)).toBe(480);
+  });
+  it('a real absence counts as a return, so one waiting beat may play', () => {
+    expect(resumeSceneEnd(480, STORY_PACING.returnSeconds)).toBeNull();
+    expect(resumeSceneEnd(480, 3600)).toBeNull();
+  });
+  it('a cold launch (nothing played yet) stays a return', () => {
+    expect(resumeSceneEnd(null, 2)).toBeNull();
+  });
+});
+
+describe('story data contracts (T29)', () => {
+  it('every scene id is <neighbourhood>-<beat>', () => {
+    for (const sc of HOME_SCENES) expect(sc.id).toBe(G.sceneId(sc.neighborhood, sc.beat));
+  });
+  it('each perk has exactly one granting scene, its finale', () => {
+    for (const [hood] of Object.entries(PERKS)) {
+      const granting = HOME_SCENES.filter((sc) => sc.perk && sc.neighborhood === hood);
+      expect(granting.map((sc) => sc.id)).toEqual([G.finaleId(hood as NeighborhoodId)]);
+    }
+    for (const sc of HOME_SCENES.filter((x) => x.perk)) expect(PERKS[sc.neighborhood]).toBeDefined();
+  });
+});
+
+describe('save v3 round trip (T30)', () => {
+  it('keeps play time, scene times and perks; drops bad scene times', () => {
+    const s0 = G.newGame(0);
+    const s = { ...s0, playSeconds: 1234, sceneAt: { 'downtown-1': 0, 'downtown-2': 95 }, shops: { ...s0.shops, suburbs: { ...s0.shops.suburbs, built: true, perk: true } } };
+    const back = G.migrate(JSON.parse(JSON.stringify(s)), 0);
+    expect(back.playSeconds).toBe(1234);
+    expect(back.sceneAt).toEqual({ 'downtown-1': 0, 'downtown-2': 95 });
+    expect(back.shops.suburbs.perk).toBe(true);
+    const bad = G.migrate({ ...JSON.parse(JSON.stringify(s)), sceneAt: { a: 'x', b: null, c: 5 } }, 0);
+    expect(bad.sceneAt).toEqual({ c: 5 });
+  });
+});
+
+describe('perk scope (T31)', () => {
+  const managed = (id: NeighborhoodId, perk: boolean) => withShop(G.newGame(0), id, { built: true, managed: true, prep: 40, ovens: 40, counter: 40, drivers: 1, tables: 40, perk });
+  it("Priya's perk leaves the city-wide fleet price alone", () => {
+    const a = G.buyVehicle({ ...managed('university', false), cash: 1e12 });
+    const b = G.buyVehicle({ ...managed('university', true), cash: 1e12 });
+    expect(a.ok && b.ok && a.state.cash).toBe(b.ok && b.state.cash);
+  });
+  it("Sal's perk leaves foreground earnings alone", () => {
+    expect(G.tick(managed('industrial', true), 10).cash).toBe(G.tick(managed('industrial', false), 10).cash);
+  });
+  it("Dale's perk raises exactly the walk-in share", () => {
+    // one driver, plenty of seats: nearly every sale is a walk-in, so revenue = price × (delivered + walkIns × share)
+    const s = managed('suburbs', false);
+    const sh = s.shops.suburbs;
+    const sold = G.shopRate(sh, s.vehicle);
+    const delivered = Math.min(sold, G.deliveryRate(sh, s.vehicle));
+    const price = G.def('suburbs').orderValue * G.decorMult(sh, 'suburbs');
+    expect(G.shopEarnings(managed('suburbs', true), 'suburbs')).toBeCloseTo(price * (delivered + (sold - delivered) * 0.85), 6);
   });
 });

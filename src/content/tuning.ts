@@ -151,7 +151,13 @@ export const DECOR: Record<DecorKind, DecorDef> = {
  * waits for `gapSeconds` of play since the last one ended. A finale (beat 4) also waits this long after its beat 3.
  * Scenes the player causes (a new pizzeria, the Pier 9 bid) are never held back.
  */
-export const STORY_PACING = { gapSeconds: 90, beat4GapSeconds: 300, downtownBeat4GapSeconds: 120 } as const;
+export const STORY_PACING = {
+  gapSeconds: 90,
+  beat4GapSeconds: 300,
+  downtownBeat4GapSeconds: 120,
+  /** Away at least this long counts as a return. iOS also fires "active" after Control Center, a banner or the app switcher. */
+  returnSeconds: 60,
+} as const;
 
 /** Waterfront's finale is a purchase: bid on Pier 9 once "For Sale" has played and Waterfront has sold this many pizzas. ~4.7 min of income in the pacing sim. */
 export const PIER9_BID = { cost: 2_000_000, unlockPizzas: 50_000 } as const;
@@ -173,7 +179,7 @@ export interface PerkDef {
 }
 
 export const PERKS: Partial<Record<NeighborhoodId, PerkDef>> = {
-  suburbs: { who: 'Coach Dale', text: 'Suburbs walk-ins now pay 85% of the price (was 70%)', walkInShare: 0.85 },
+  suburbs: { who: 'Coach Dale', text: 'Suburbs walk-ins pay more: 85% of full price (was 70%)', walkInShare: 0.85 },
   waterfront: { who: 'Captain Marisol', text: 'Waterfront pizzas sell for 10% more', priceMult: 1.1 },
   university: { who: 'Priya', text: 'University driver upgrades cost 10% less', driversCostMult: 0.9 },
   industrial: { who: 'Big Sal', text: 'Industrial earns 25% more while you’re away', offlineMult: 1.25 },

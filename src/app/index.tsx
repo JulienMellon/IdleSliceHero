@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BuyButton, type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
+import { slopOf, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, ManagerIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait';
 import { emitPayout } from '@/components/pulse-bus';
@@ -46,6 +47,7 @@ export default function GameScreen() {
   const plus = (x: number) => `+${money(x)}/s`;
   const newScenes = Math.max(0, game.seenScenes.length - game.scrapbookViewed);
   const eps = G.earningsPerSecond(game);
+  const perk = G.perkOf(id, shop);
   // Tied stations: one upgrade alone adds $0/s, so say what to buy together. Keyed on levels, not cash or sales.
   const tiedCount = (['prep', 'ovens', 'counter', 'customers'] as const).filter(tied).length;
   const bundle = tiedCount >= 2 ? G.bundleHint(game, id) : null;
@@ -157,7 +159,9 @@ export default function GameScreen() {
 
   // ---- sidewalk row: the four stations (or the manager, on a shop that needs one) + "All"
   const fit = sceneFit(area.w || 1, area.h || 1);
-  const rowBottom = (SCENE_H - CURB_Y) * fit.s + 6;
+  // v3.8: the 44 pt buttons make the row ~14 pt taller; it moves down by as much (its foot just past the kerb),
+  // so its top stays where it was and the curb walk-ins still clear it (D285)
+  const rowBottom = (SCENE_H - CURB_Y) * fit.s - 8;
   const STATION: Record<StationKey, { what: G.Upgrade; icon: React.ReactNode; name: string; level: string }> = {
     prep: { what: 'prep', icon: <PrepIcon size={18} />, name: 'Prep', level: `${shop.prep}` },
     ovens: { what: 'ovens', icon: <FlameIcon size={18} />, name: 'Ovens', level: `${shop.ovens}` },
@@ -174,7 +178,7 @@ export default function GameScreen() {
     return (
       <View key={k} style={[styles.walkBtn, best && styles.walkBtnHot]}>
         {/* tapping the card head opens the drawer on that station (replaces the in-scene tags) */}
-        <Pressable testID={`tag-${k}`} onPress={() => openDrawer(what)} style={styles.walkTop} hitSlop={4}>
+        <Pressable testID={`tag-${k}`} onPress={() => openDrawer(what)} style={styles.walkTop} hitSlop={slopOf(TAP.controls.stationStrip, 4)}>
           {icon}
           <Text style={styles.walkName} numberOfLines={1}>
             {name}
@@ -229,7 +233,7 @@ export default function GameScreen() {
                   const cost = G.upgradeCostOf(game, id, what);
                   const can = cost !== null && game.cash >= cost;
                   return (
-                    <Pressable key={k} testID={`mini-${k}`} onPress={() => buy(what)} style={[styles.miniChip, can && styles.miniChipOn]}>
+                    <Pressable key={k} testID={`mini-${k}`} onPress={() => buy(what)} hitSlop={slopOf(TAP.controls.miniChip, 2)} style={[styles.miniChip, can && styles.miniChipOn]}>
                       <Text style={[styles.miniText, can && { color: '#fff' }]} numberOfLines={1}>
                         {`${STATION[k].name} ${money(cost ?? 0)}`}
                       </Text>
@@ -237,14 +241,9 @@ export default function GameScreen() {
                   );
                 })}
               </View>
-            <View style={[styles.walkBtn, styles.walkBtnHot]}>
-              <View style={styles.walkTop}>
-                <ManagerIcon size={18} />
-                <Text style={styles.walkName} numberOfLines={1}>
-                  Hire a {nd.name} manager · {plus(G.shopEarnings(game, id))}
-                </Text>
-              </View>
-              <BuyButton compact testID="walk-manager" label={money(managerCost ?? 0)} enabled={managerCost !== null && game.cash >= managerCost} onPress={() => buy('manager')} />
+            {/* v3.8: one 44 pt button carries the label, so the taller buttons don't push the column over the WELCOME mat */}
+            <View style={[styles.walkBtn, styles.walkBtnHot, styles.managerCard]}>
+              <BuyButton compact testID="walk-manager" label={`Hire a ${nd.name} manager · ${money(managerCost ?? 0)}`} enabled={managerCost !== null && game.cash >= managerCost} onPress={() => buy('manager')} />
             </View>
             </View>
           ) : (
@@ -264,7 +263,7 @@ export default function GameScreen() {
                   <Text style={styles.drawerTitle}>{`Rosa’s · ${nd.name}`}</Text>
                   <Text style={styles.drawerSub} numberOfLines={1}>{`Bottleneck: ${STAGE_NAME[neck]}`}</Text>
                 </View>
-                <Pressable testID="close-upgrades" onPress={() => setDrawer({ open: false, focus: null })} style={styles.closeBtn} hitSlop={10}>
+                <Pressable testID="close-upgrades" onPress={() => setDrawer({ open: false, focus: null })} style={styles.closeBtn} hitSlop={slopOf(TAP.controls.closeButton, 10)}>
                   <Text style={styles.closeText}>Close ▼</Text>
                 </Pressable>
               </View>
@@ -274,9 +273,9 @@ export default function GameScreen() {
                     <Text style={styles.bannerText}>Without a manager, upgrades here only pay while you tap.</Text>
                   </View>
                 )}
-                {G.perkOf(id, shop) && (
+                {perk && (
                   <View style={styles.banner}>
-                    <Text style={styles.bannerText}>{`★ ${G.perkOf(id, shop)!.who}’s perk: ${G.perkOf(id, shop)!.text}`}</Text>
+                    <Text style={styles.bannerText}>{`★ ${perk.who}’s perk: ${perk.text}`}</Text>
                   </View>
                 )}
                 {bundle && (
@@ -310,7 +309,7 @@ export default function GameScreen() {
                   useless={!vg || vg <= 1e-9}
                   onBuy={buyFleet}
                 />
-                <Text style={styles.section}>{`Decor · each tier: +${Math.round((G.perkOf(id, shop)?.decorBoost ?? DECOR_BOOST) * 100)}% pizza price in this shop`}</Text>
+                <Text style={styles.section}>{`Decor · each tier: +${Math.round((perk?.decorBoost ?? DECOR_BOOST) * 100)}% pizza price in this shop`}</Text>
                 {DECOR_KINDS.map((kind) => {
                   const d = DECOR[kind];
                   const tier = shop.decor[kind];
@@ -352,15 +351,16 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
   sceneArea: { flex: 1, overflow: 'hidden', backgroundColor: '#BFE0F7' },
   walkRow: { position: 'absolute', left: 8, right: 8, flexDirection: 'row', gap: 5 },
-  walkBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 12, borderWidth: 2.5, borderColor: C.ink, paddingHorizontal: 3, paddingTop: 2, paddingBottom: 4, gap: 2, ...shadow },
+  walkBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 12, borderWidth: 2.5, borderColor: C.ink, paddingHorizontal: 3, paddingTop: 2, paddingBottom: 3, gap: TAP.stripButtonGap, ...shadow },
   walkBtnHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
-  walkTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, height: 20 },
+  managerCard: { paddingTop: 3 },
+  walkTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, height: TAP.controls.stationStrip.height },
   walkIcon: { fontSize: 14 },
   walkName: { fontFamily: F.bold, fontSize: 12, color: C.ink, flexShrink: 1 },
-  miniRow: { flexDirection: 'row', gap: 4 },
-  miniChip: { flex: 1, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 9, borderWidth: 2, borderColor: C.ink, paddingVertical: 3, alignItems: 'center' },
+  miniRow: { flexDirection: 'row', gap: 4, marginBottom: TAP.controls.miniChip.slopBottom - 5 },
+  miniChip: { flex: 1, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 9, borderWidth: 2, borderColor: C.ink, height: TAP.controls.miniChip.height, alignItems: 'center', justifyContent: 'center' },
   miniChipOn: { backgroundColor: C.basil, borderColor: C.basilDark },
-  miniText: { fontFamily: F.bold, fontSize: 10.5, color: C.inkSoft },
+  miniText: { fontFamily: F.bold, fontSize: 12, color: C.inkSoft },
   walkLevel: { position: 'absolute', top: -9, right: -4, minWidth: 22, paddingHorizontal: 5, height: 17, borderRadius: 9, backgroundColor: C.ink, borderWidth: 1.5, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   walkLevelText: { fontFamily: F.bold, fontSize: 10, color: '#fff' },
   allBtn: { width: 46, backgroundColor: C.ink, borderRadius: 12, alignItems: 'center', justifyContent: 'center', ...shadow },
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   drawerHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 10, paddingBottom: 4 },
   drawerTitle: { fontFamily: F.bold, fontSize: 17, color: C.ink },
   drawerSub: { fontFamily: F.semi, fontSize: 12, color: C.tomatoDark },
-  closeBtn: { backgroundColor: '#fff', borderWidth: 2, borderColor: C.ink, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 2 },
+  closeBtn: { backgroundColor: '#fff', borderWidth: 2, borderColor: C.ink, borderRadius: 12, paddingHorizontal: 12, height: TAP.controls.closeButton.height, justifyContent: 'center' },
   closeText: { fontFamily: F.bold, fontSize: 13, color: C.ink },
   grid: { padding: 10, gap: 8, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   banner: { width: '100%', backgroundColor: '#FFE7C2', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10, borderWidth: 1.5, borderColor: C.cheeseDark },

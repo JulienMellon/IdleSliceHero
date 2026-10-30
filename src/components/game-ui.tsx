@@ -8,6 +8,7 @@ import { duration, goalAmount, money, shownValue } from '../engine/format';
 import { C, F } from '../theme';
 import { BookIcon, CoinIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
 import { emitPayout, onPayout } from './pulse-bus';
+import { TAP } from './tap-targets';
 
 const native = Platform.OS !== 'web';
 
@@ -78,8 +79,8 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone 
   };
   return (
     <Animated.View style={{ transform: [{ translateX: shake }] }}>
-      <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, compact && { minWidth: 0, alignSelf: 'stretch' }, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
-        <View style={[styles.buyInner, compact && styles.buyCompact, { backgroundColor: innerBg }, innerBorder]}>
+      <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, compact && { minWidth: 0, alignSelf: 'stretch', minHeight: TAP.controls.buyButton.height }, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
+        <View style={[styles.buyInner, compact && styles.buyCompact, compact && { flex: 1, justifyContent: 'center' }, { backgroundColor: innerBg }, innerBorder]}>
           {sub && tone !== 'soft' ? <Text style={styles.buySub}>{sub}</Text> : null}
           <Text style={[styles.buyLabel, compact && { fontSize: 15 }, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit>
             {label}

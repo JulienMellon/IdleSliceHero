@@ -282,6 +282,15 @@ with sync_playwright() as pw:
         shot(page, "22-dale-perk-card", 0.6)
     except Exception as e:
         report["errors"].append(f"perk card shot failed: {e}")
+
+    # 12. v3.8: an earned perk shows as a banner in that shop's drawer (D308)
+    perked = dict(MID_SAVE, active="suburbs", scrapbookViewed=9, seenScenes=MID_SAVE["seenScenes"] + ["suburbs-4"],
+                  shops=dict(MID_SAVE["shops"], suburbs=dict(MID_SAVE["shops"]["suburbs"], perk=True, sold=8200)))
+    page = seeded_page(browser, perked); settle(page)
+    try:
+        tid(page, "open-upgrades").click(); shot(page, "23-perk-banner-drawer", 0.7)
+    except Exception as e:
+        report["errors"].append(f"perk banner shot failed: {e}")
     browser.close()
 
 httpd.shutdown()

@@ -52,3 +52,16 @@ v3.7 adds save v3 (`playSeconds`, `sceneAt`, `Shop.perk`), the pure pacing gate 
 | C37, C38, A12, M16, M19, C22, C33, M10, M15, A10 | low | (carried) | See the round-8 archive | |
 
 **Tests to add:** T29 (perk scenes ↔ `PERKS`, id pattern), T30 (v3 round trip, bad `sceneAt` entries dropped), T31 (Priya leaves fleet costs alone, Sal leaves foreground earnings alone, exact Dale test), T32 (`resumeSceneEnd`).
+
+## v3.8 — build (round-9 items + tap targets)
+
+| Item | Change |
+| --- | --- |
+| C39 + T32 | `STORY_PACING.returnSeconds = 60`; pure `resumeSceneEnd(prev, awaySeconds)` in `engine/cutscene-input.ts`. `load()` keeps the in-memory gap after a short absence and clears it after a real return or a cold launch. |
+| C40 + T29 | `sceneId()` / `finaleId()` in `game.ts`; `migrate` uses `!!PERKS[id]`; `sceneReady` uses `sceneId`. Tests pin the `<neighbourhood>-<beat>` pattern and one finale per perk. |
+| C41 | `perkOf(id, shop)` computed once in `index.tsx`. |
+| C42 | `applyOffline` maps, then sums the bonus with `reduce`. |
+| C43 | "Nonna takes over soon — keep baking" once the count is reached but the scene waits out its gap. |
+| T30, T31 | v3 round trip (bad `sceneAt` entries dropped); Priya leaves fleet prices alone; Sal leaves foreground earnings alone; exact Dale test. |
+| Tap targets | `components/tap-targets.ts` (`TAP`, `hitSize`, `slopOf`) + `tap-targets.test.ts`; `BuyButton` compact draws at 44 pt; `index.tsx` uses the constants for the label strip, chips and Close. |
+| Not done | A13, M20, M21 and the carried lows. 123 tests pass. |

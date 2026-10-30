@@ -36,3 +36,14 @@ v3.7 (story pacing, neighbourhood perks, the Pier 9 bid) loads clean and the cri
 | D297 | note | Goal-bar fill runs through the label on an unmanaged shop | Darker label over the fill |
 | — | note | The Suburbs-locked toast covers the University and Industrial lock tiles | Sit it under the map |
 | — | planned | Tap targets below 44pt | v3.8 |
+
+## v3.8 — build (tap targets; round-38 notes)
+
+| Note | Change |
+| --- | --- |
+| Tap targets (planned) | `components/tap-targets.ts` holds the sizes; a test asserts every control reaches 44 pt with its hit margin. Sidewalk buy buttons are drawn at 44 pt. Each station card's label strip is 18 pt with a 26 pt hit margin above only, and 4 pt of dead space above the buy button. Unmanaged-shop chips are 26 pt with 9 pt margins (font 12, was 10.5). The drawer's Close button is 30 pt with 7 pt margins. The row is ~14 pt taller and sits ~14 pt lower (its foot just past the kerb), so its top is where it was and the curb walk-ins still clear it; it now covers the top edge of the street. |
+| Unmanaged shop | The manager card is one 44 pt button reading "Hire a Waterfront manager · $30K", so the taller controls don't cover the WELCOME mat (05b). |
+| D307 | Dale's perk reads "Suburbs walk-ins pay more: 85% of full price (was 70%)". |
+| D308 | New shot `23-perk-banner-drawer`: the Suburbs drawer after Dale's finale shows the perk banner. |
+| C39 (code) | A short iOS interruption no longer plays the next story beat early. |
+| D302, D303, D306 | Carried. |
