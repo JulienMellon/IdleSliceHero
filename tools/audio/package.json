@@ -1,0 +1,7 @@
+{
+  "name": "slice-empire-audio-tools",
+  "private": true,
+  "type": "module",
+  "description": "Offline MIDI -> audio renderer for Slice Empire. Not part of the app bundle.",
+  "dependencies": { "spessasynth_core": "4.4.2" }
+}

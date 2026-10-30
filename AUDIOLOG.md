@@ -24,3 +24,22 @@ No audio module and no `docs/AUDIO.md`. Per the brief, missing audio isn't a bui
 | AU11 | major | Memory | SFX mono AAC/M4A 22–32 kHz, preloaded once into a pool of ~6 players, never created per tap, under ~1.5 MB total; music streamed stereo AAC 96–128 kbps, at most 2 players (only while crossfading) |
 
 **Build first, in order:** AU2, AU1, AU9, AU5, AU8 (Downtown theme), AU3, AU4, AU7, purchase refused, AU6.
+
+## v4.4 — audio build 1 (Julien, 2026-10-30: MIDI score, neighbourhood style blends, gameplay leitmotifs)
+Plan: audiocritic round 2 (full plan, AU12–AU25). Cue sheet: `docs/AUDIO.md`. Pipeline: `tools/audio/` (compose.py → MIDI → spessasynth + GM soundfont → AAC), runtime `src/audio/`.
+
+| Note | Done |
+| --- | --- |
+| AU16 city motif | `tools/audio/material.py`: motif, answer, cadence, B development, 6/8 version |
+| AU17 / AU8 six loops | Downtown tarantella 6/8 F, Suburbs Americana-march G, Waterfront shanty-habanera D Mixolydian, University lo-fi-chiptune B♭, Industrial shuffle blues A, Uptown musette-swing E♭; 91–103 s, −18 LUFS |
+| AU20 | `downtown_sparse` (accordion + mandolin) until downtown-4 is seen |
+| AU18 | MegaSlice HQ march loop, Rep sting, Victor's exit |
+| AU12 / AU13 | `panelCue()` defaults for beats 1–3 plus explicit `cue` on wins and reveals; triumph ×6, bell-triumph, recipe, reunion, city theme, perk chime |
+| AU14 | 9 stingers × 6 keys, quantised to the loop's next beat (eighth in Downtown; bar for manager) with ducking |
+| AU15 / AU7 | celesta on the offline popup; Collect in 3 sizes |
+| AU1, AU2, AU5, AU21 | 14 synthesised SFX, 41 variants, 0.16 MB; purchase chain; voice limiter |
+| AU22 / AU9 | levels baked into files (SFX −9 dBFS, stingers −16 LUFS, music −18 LUFS, reveals −21/−23), ramped ducking |
+| AU23 / AU11 | ≤ 2 music players, hot SFX preloaded, stingers per active key only, one story player; 12.7 MB total |
+| AU24 / AU10 | silent switch respected, mixWithOthers, no background audio; Music/Sound toggles in Settings under their own key |
+| Tests | `src/audio/__tests__/logic.test.ts` (13): quantisation, limiter, chain, stinger rules, scene cue coverage, manifest files and budget |
+| Verify | tsc clean; 147 tests pass; web export; screenshots v4.4 `errors: []`, new shot 24 (Settings audio), audio probe log in `report.json` |

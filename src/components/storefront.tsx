@@ -16,6 +16,7 @@ import { money } from '../engine/format';
 import * as Game from '../engine/game';
 import { useGame } from '../store/game-store';
 import { C, F } from '../theme';
+import { emitAudio } from '../audio/bus';
 import { emitPayout } from './pulse-bus';
 import { Backdrop } from './scene/background';
 import { useClock } from './scene/clock';
@@ -130,6 +131,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     m.phases = phases;
     if (!crossed || paused) return;
     emitPayout();
+    emitAudio({ type: 'cash' });
     if (clock - m.lastPopAt > 0.9) {
       const earned = (shop.sold - m.lastSold) * valuePer;
       if (earned > 0) m.pop = { at: clock, text: `+${money(earned)}` };
@@ -170,6 +172,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             m.taps = [{ at: clock, x: Math.max(70, Math.min(SCENE_W - 70, x)), y: 52, text, color, count: 1 }];
           }
           if (shop.managed) m.rushAt = clock;
+          emitAudio({ type: shop.managed ? 'rush' : full ? 'full' : 'tap' });
           onTap();
         }}>
         <Svg width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>

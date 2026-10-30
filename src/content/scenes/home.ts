@@ -153,6 +153,7 @@ export const HOME_SCENES: Scene[] = [
       },
       {
         backdrop: 'shop',
+        cue: 'triumph',
         cast: [{ id: 'nonna-rosa', mood: 'happy' }],
         lines: [
           { speaker: 'Nonna Rosa', text: 'Your "modern ideas"... they work. Don\'t tell anyone I said so.' },
@@ -161,6 +162,7 @@ export const HOME_SCENES: Scene[] = [
       },
       {
         backdrop: 'shop',
+        cue: 'recipe',
         prop: 'recipe-card',
         cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
         caption: 'The secret sauce recipe. It is mostly love. And garlic.',
@@ -330,6 +332,7 @@ export const HOME_SCENES: Scene[] = [
       },
       {
         backdrop: 'suburbs',
+        cue: 'triumph',
         cast: [{ id: 'dale', mood: 'happy' }],
         caption: 'MUDHENS WIN. Somebody\'s mom faints.',
         lines: [
@@ -473,6 +476,7 @@ export const HOME_SCENES: Scene[] = [
     panels: [
       {
         backdrop: 'waterfront',
+        cue: 'rep',
         cast: [{ id: 'megaslice-rep', mood: 'surprised' }],
         caption: 'Auction day. The final bid comes in... from a pizza shop.',
         lines: [
@@ -481,6 +485,7 @@ export const HOME_SCENES: Scene[] = [
       },
       {
         backdrop: 'waterfront',
+        cue: 'bell-triumph',
         cast: [{ id: 'marisol', mood: 'happy' }],
         lines: [
           { speaker: 'Captain Marisol', text: 'Pier 9 stays a pier! Somebody ring the bell!' },
@@ -649,6 +654,7 @@ export const HOME_SCENES: Scene[] = [
       },
       {
         backdrop: 'university',
+        cue: 'triumph',
         cast: [{ id: 'priya', mood: 'happy' }],
         caption: 'A hundred tiny drones lift off over campus. Students cheer.',
         lines: [
@@ -802,6 +808,7 @@ export const HOME_SCENES: Scene[] = [
       },
       {
         backdrop: 'shop',
+        cue: 'reunion',
         cast: [
           { id: 'big-sal', mood: 'neutral' },
           { id: 'nonna-rosa', mood: 'surprised' },
@@ -826,6 +833,7 @@ export const HOME_SCENES: Scene[] = [
       },
       {
         backdrop: 'shop',
+        cue: 'triumph',
         cast: [
           { id: 'big-sal', mood: 'happy' },
           { id: 'nonna-rosa', mood: 'happy' },
@@ -973,6 +981,7 @@ export const HOME_SCENES: Scene[] = [
     panels: [
       {
         backdrop: 'uptown',
+        cue: 'triumph',
         cast: [{ id: 'genevieve', mood: 'happy' }],
         caption: 'The Port Marinara Times. Front page. Five stars.',
         lines: [
@@ -982,6 +991,7 @@ export const HOME_SCENES: Scene[] = [
       },
       {
         backdrop: 'megaslice-hq',
+        cue: 'victor-exit',
         cast: [{ id: 'victor-crust', mood: 'angry' }],
         caption: 'Every neighborhood has chosen you. MegaSlice is out of Port Marinara.',
         lines: [
@@ -1002,6 +1012,7 @@ export const HOME_SCENES: Scene[] = [
       },
       {
         backdrop: 'downtown',
+        cue: 'city-theme',
         cast: [],
         caption: 'Port Marinara is yours. Next stop: the whole country.',
         lines: [],

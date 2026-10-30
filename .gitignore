@@ -46,3 +46,7 @@ example
 
 # App Store reference screenshots are third-party marketing art: local-only, never commit
 screenshots/reference/
+
+# audio build intermediates
+tools/audio/build/
+__pycache__/

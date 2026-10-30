@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAudioPrefs } from '@/audio/prefs';
 import { BuyButton } from '@/components/game-ui';
+import { BUTTON_H } from '@/components/tap-targets';
 import { APP_VERSION } from '@/content/version';
 import { money } from '@/engine/format';
 import { useGame } from '@/store/game-store';
@@ -14,6 +16,8 @@ export default function Settings() {
   const game = useGame((s) => s.game);
   const resetGame = useGame((s) => s.resetGame);
   const [confirm, setConfirm] = useState(false);
+  const music = useAudioPrefs((s) => s.music);
+  const sound = useAudioPrefs((s) => s.sound);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -30,6 +34,14 @@ export default function Settings() {
           <Text style={styles.stat}>Lifetime earnings: {money(game.totalEarned)}</Text>
           <Text style={styles.stat}>Pizzas sold: {Math.floor(Object.values(game.shops).reduce((a, s) => a + s.sold, 0)).toLocaleString()}</Text>
           <Text style={styles.stat}>Story scenes seen: {game.seenScenes.length}/24</Text>
+        </View>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Audio</Text>
+          <Text style={styles.stat}>Follows your ring/silent switch.</Text>
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+            <Toggle label="Music" on={music} onPress={() => useAudioPrefs.getState().setMusic(!music)} testID="toggle-music" />
+            <Toggle label="Sound" on={sound} onPress={() => useAudioPrefs.getState().setSound(!sound)} testID="toggle-sound" />
+          </View>
         </View>
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Start over</Text>
@@ -63,7 +75,19 @@ export default function Settings() {
   );
 }
 
+function Toggle({ label, on, onPress, testID }: { label: string; on: boolean; onPress: () => void; testID: string }) {
+  return (
+    <Pressable testID={testID} accessibilityRole="switch" accessibilityState={{ checked: on }} onPress={onPress} style={[styles.toggle, on ? styles.toggleOn : styles.toggleOff]}>
+      <Text style={[styles.toggleText, { color: on ? '#fff' : C.inkSoft }]}>{`${label}: ${on ? 'On' : 'Off'}`}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  toggle: { flex: 1, minHeight: BUTTON_H, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 4 },
+  toggleOn: { backgroundColor: C.basil, borderColor: C.basilDark },
+  toggleOff: { backgroundColor: '#E2D9CE', borderColor: '#C9BCAD' },
+  toggleText: { fontFamily: F.bold, fontSize: 17 },
   root: { flex: 1, backgroundColor: C.bg },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark },
   backText: { fontFamily: F.bold, color: '#fff', fontSize: 18 },

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { emitAudio } from '../audio/bus';
 import { PERKS } from '../content/tuning';
 import type { Scene } from '../content/types';
 import { C, F } from '../theme';
@@ -43,6 +44,14 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   // Tall panel (~55% of the screen); the backdrop grows its sky to fill it, so nothing is cropped.
   const frameH = Math.max(frameW * 0.75, Math.min(height * 0.66 - insets.top, frameW * 1.45));
 
+  // Story music for this panel (docs/AUDIO.md); replays use the same cues.
+  useEffect(() => {
+    emitAudio({ type: 'scene-panel', sceneId: scene.id, panel });
+  }, [scene.id, panel]);
+  useEffect(() => {
+    if (showReward && perk) emitAudio({ type: 'perk' });
+  }, [showReward, perk]);
+
   // Panel motion: slide in, then slow zoom.
   useEffect(() => {
     slide.setValue(40);
@@ -56,6 +65,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   // Speech bubble pop for each line.
   useEffect(() => {
     lineShownAt.current = Date.now();
+    if (p.lines.length > 0 || p.caption) emitAudio({ type: 'bubble' });
     bubble.setValue(0.6);
     Animated.spring(bubble, { toValue: 1, friction: 5, useNativeDriver: native }).start();
   }, [panel, line, bubble]);
@@ -94,7 +104,14 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
       <Pressable style={[styles.root, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]} onPress={onTap} testID="cutscene">
         <View style={styles.topRow}>
           <Text style={styles.title}>{sceneHeading(scene, panel, showReward)}</Text>
-          <Pressable onPress={onDone} hitSlop={12} style={styles.skip} testID="skip-scene">
+          <Pressable
+            onPress={() => {
+              emitAudio({ type: 'scene-skip' });
+              onDone();
+            }}
+            hitSlop={12}
+            style={styles.skip}
+            testID="skip-scene">
             <Text style={styles.skipText}>Skip ▸▸</Text>
           </Pressable>
         </View>

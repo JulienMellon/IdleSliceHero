@@ -2,6 +2,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { emitAudio } from '../audio/bus';
 import { NEIGHBORHOODS } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
@@ -64,7 +65,10 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
           }
           const eps = Game.shopEarnings(game, n.id);
           return (
-            <Pressable key={n.id} onLayout={onTab(i)} testID={`tab-${n.id}`} onPress={() => onSelect(n.id)} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
+            <Pressable key={n.id} onLayout={onTab(i)} testID={`tab-${n.id}`} onPress={() => {
+                if (!active) emitAudio({ type: 'click' });
+                onSelect(n.id);
+              }} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
               <Text style={styles.tabName}>{n.name}</Text>
               <Text style={[styles.tabSub, active && { color: C.ink }, !shop.managed && !active && { color: C.tomato }]}>{shop.managed ? `${money(eps)}/s` : 'you run it'}</Text>
             </Pressable>

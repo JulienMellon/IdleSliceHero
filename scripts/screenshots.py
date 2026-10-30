@@ -55,9 +55,24 @@ def shot(page, name, wait=0.6):
     page.screenshot(path=p)
     report["shots"].append(p)
 
+# Audio probe (v4.4): log every media play() as "<file> @<seconds since load>" so a run shows which cues fired.
+AUDIO_PROBE = """(() => { window.__audioLog = []; const t0 = performance.now();
+  const play = HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play = function () {
+    const f = (this.currentSrc || this.src || '').split('/').pop().split('?')[0].replace(/\\.[0-9a-f]{20,}/, '');
+    window.__audioLog.push(f + ' @' + ((performance.now() - t0) / 1000).toFixed(1));
+    return play.apply(this, arguments); }; })();"""
+
+def audio_log(page, label):
+    try:
+        report.setdefault("audio", {})[label] = page.evaluate("window.__audioLog || []")
+    except Exception as e:
+        report.setdefault("audio", {})[label] = [f"probe failed: {e}"]
+
 def seeded_page(browser, save):
     """Fresh browser profile whose localStorage holds `save` before the app boots."""
     c = browser.new_context(viewport={"width": 393, "height": 852}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    c.add_init_script(AUDIO_PROBE)
     c.add_init_script(f"""if (!sessionStorage.getItem('seeded')) {{
         localStorage.setItem({json.dumps(KEY)}, {json.dumps(json.dumps(save))});
         sessionStorage.setItem('seeded', '1'); }}""")
@@ -89,6 +104,7 @@ def tid(page, t):
 with sync_playwright() as pw:
     browser = pw.chromium.launch()
     ctx = browser.new_context(viewport={"width": 393, "height": 852}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    ctx.add_init_script(AUDIO_PROBE)
     page = ctx.new_page()
     page.on("console", lambda m: m.type == "error" and report["errors"].append(f"console: {m.text}"))
     page.on("pageerror", lambda e: report["errors"].append(f"pageerror: {e}"))
@@ -104,6 +120,7 @@ with sync_playwright() as pw:
     try:
         tid(page, "cutscene").click(); tid(page, "cutscene").click()
         shot(page, "02-cutscene-dialog", 0.8)
+        audio_log(page, "opening")
         tid(page, "skip-scene").click()
     except Exception as e:
         report["errors"].append(f"could not skip cut-scene: {e}")
@@ -170,6 +187,7 @@ with sync_playwright() as pw:
     except Exception as e:
         report["errors"].append(f"offline popup missing: {e}")
     shot(page, "07-offline-popup", 0.8)
+    audio_log(page, "offline")
 
     # 6. Late game: every neighborhood, van fleet
     # On-curve late state (costs ~ a few minutes of income); exactly one cut-scene (industrial-3) is due.
@@ -254,6 +272,7 @@ with sync_playwright() as pw:
                 break
             tid(page, "cutscene").click(); time.sleep(1.3)
         shot(page, "19-recipe-card-scene", 0.5)
+        audio_log(page, "recipe")
     except Exception as e:
         report["errors"].append(f"recipe card scene failed: {e}")
     # 10d. Away longer than the offline cap: the popup says so
@@ -292,6 +311,20 @@ with sync_playwright() as pw:
         tid(page, "open-upgrades").click(); shot(page, "23-perk-banner-drawer", 0.7)
     except Exception as e:
         report["errors"].append(f"perk banner shot failed: {e}")
+    # 13. v4.4: Settings has Music and Sound toggles (AU24); the probe shows what a short session played
+    try:
+        page.keyboard.press("Escape"); time.sleep(0.3)
+        page = seeded_page(browser, perked); settle(page)
+        for _ in range(6):
+            tap_shop(page); time.sleep(0.25)
+        tid(page, "tab-downtown").click(); time.sleep(1.0)
+        audio_log(page, "session")
+        tid(page, "open-city").click(); time.sleep(0.6)
+        tid(page, "open-settings").click(); time.sleep(0.6)
+        tid(page, "toggle-music").click()
+        shot(page, "24-settings-audio", 0.5)
+    except Exception as e:
+        report["errors"].append(f"settings audio shot failed: {e}")
     browser.close()
 
 httpd.shutdown()

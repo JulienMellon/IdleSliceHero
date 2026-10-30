@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
+import { emitAudio, type AudioEvent } from '../audio/bus';
+import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resumeSceneEnd } from '../engine/cutscene-input';
 import { HOME_SCENES } from '../content/scenes/home';
 import { PIER9_BID, TUNING, type DecorKind } from '../content/tuning';
@@ -63,8 +65,10 @@ export const useGame = create<Store>((set, get) => {
     if (next) set({ playing: { scene: next, replay: false } });
   };
 
-  const commit = (result: G.BuyResult, item?: { name: string; cost: number | null; hint?: string }) => {
+  /** `sound` describes a successful purchase for the audio director (docs/AUDIO.md); a refusal always bonks. */
+  const commit = (result: G.BuyResult, item?: { name: string; cost: number | null; hint?: string }, sound?: (next: G.GameState) => AudioEvent) => {
     if (!result.ok) {
+      emitAudio({ type: 'refused' });
       const at = Date.now();
       // name what the player tapped
       const needCash = result.reason === 'Not enough cash' && item && item.cost !== null ? item.cost : undefined;
@@ -75,11 +79,13 @@ export const useGame = create<Store>((set, get) => {
       }, 1800);
       return false;
     }
+    if (sound) emitAudio(sound(result.state));
     set({ game: result.state });
     queueScene();
     void get().save();
     return true;
   };
+  const plain = (what: Purchase) => (): AudioEvent => ({ type: 'buy', what, sting: purchaseSting(what, {}) });
 
   return {
     game: G.newGame(Date.now()),
@@ -106,6 +112,7 @@ export const useGame = create<Store>((set, get) => {
           game = r.state;
           awaySeconds = r.awaySeconds;
           if (r.earned >= 1 && r.seconds >= TUNING.offlinePopupSeconds) {
+          emitAudio({ type: 'offline-open' });
             // Hold the cash back until the player taps Collect.
             offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed })) };
             game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
@@ -154,16 +161,28 @@ export const useGame = create<Store>((set, get) => {
       const shop = g.shops[g.active];
       const neck = STAGE_UPGRADE[G.bottleneck(shop, g.vehicle)];
       const hint = ['prep', 'ovens', 'counter', 'drivers'].includes(what) && what !== neck ? ` · ${NAMES[neck]} is the bottleneck` : '';
-      return commit(G.buyUpgrade(g, g.active, what), { name: NAMES[what] ?? what, cost: G.upgradeCostOf(g, g.active, what), hint });
+      // a station level crossing 25/50/100 gets the milestone stinger; a fixed bottleneck gets its own (AU14)
+      const sound = (next: G.GameState): AudioEvent => {
+        const after = next.shops[g.active];
+        const level = what === 'prep' || what === 'ovens' || what === 'counter' || what === 'drivers' || what === 'tables' ? what : null;
+        const sting = purchaseSting(what, {
+          levelBefore: level ? shop[level] : undefined,
+          levelAfter: level ? after[level] : undefined,
+          bottleneckBefore: G.bottleneck(shop, g.vehicle),
+          bottleneckAfter: G.bottleneck(after, next.vehicle),
+        });
+        return { type: 'buy', what, sting };
+      };
+      return commit(G.buyUpgrade(g, g.active, what), { name: NAMES[what] ?? what, cost: G.upgradeCostOf(g, g.active, what), hint }, sound);
     },
 
-    buyFleet: () => commit(G.buyVehicle(get().game)),
+    buyFleet: () => commit(G.buyVehicle(get().game), undefined, (next) => ({ type: 'buy', what: 'fleet', vehicle: next.vehicle, sting: purchaseSting('fleet', { vehicle: next.vehicle }) })),
 
-    buyDecor: (kind) => commit(G.buyDecor(get().game, get().game.active, kind), { name: kind[0].toUpperCase() + kind.slice(1), cost: G.decorCost(get().game, get().game.active, kind) }),
+    buyDecor: (kind) => commit(G.buyDecor(get().game, get().game.active, kind), { name: kind[0].toUpperCase() + kind.slice(1), cost: G.decorCost(get().game, get().game.active, kind) }, plain('decor')),
 
-    bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: PIER9_BID.cost }),
+    bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: PIER9_BID.cost }, plain('bid')),
 
-    build: (id) => commit(G.buildShop(get().game, id), { name: `Build ${G.def(id).name}`, cost: G.def(id).buildCost }),
+    build: (id) => commit(G.buildShop(get().game, id), { name: `Build ${G.def(id).name}`, cost: G.def(id).buildCost }, plain('build')),
 
     setActive: (id) => {
       const g = get().game;
@@ -188,6 +207,7 @@ export const useGame = create<Store>((set, get) => {
       const o = get().offline;
       if (!o) return;
       const g = get().game;
+      emitAudio({ type: 'collect', size: collectSize(o.earned, g.cash) });
       set({ offline: null, game: { ...g, cash: g.cash + o.earned, totalEarned: g.totalEarned + o.earned } });
       void get().save();
       queueScene();

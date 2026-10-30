@@ -41,7 +41,12 @@ export interface ScenePanel {
   prop?: 'vending-machine' | 'sold-sign' | 'recipe-card';
   /** 0–3 speech bubbles, shown in order. */
   lines: SceneLine[];
+  /** Story music for this panel (docs/AUDIO.md). Beats 1–3 get a default from `panelCue`; set it for wins and reveals. */
+  cue?: PanelCue;
 }
+
+/** A story cue a panel can start (docs/AUDIO.md, AU12/AU13). */
+export type PanelCue = 'welcome' | 'warmth' | 'megaslice' | 'rep' | 'triumph' | 'bell-triumph' | 'recipe' | 'reunion' | 'victor-exit' | 'city-theme' | 'none';
 
 export type SceneTrigger =
   /** Plays when the neighborhood is unlocked (Downtown: on first launch). */

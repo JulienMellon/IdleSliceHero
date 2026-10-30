@@ -6,12 +6,15 @@ import { useEffect, useRef } from 'react';
 import { AppState, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { startAudio } from '@/audio/director';
 import { CutscenePlayer } from '@/components/cutscene-player';
 import { TUNING } from '@/content/tuning';
 import { useGame } from '@/store/game-store';
 import { C } from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+// before the first load, so the offline popup's cue isn't missed
+startAudio();
 
 /** Runs the simulation, autosave, and app open/close handling for every screen. */
 function GameRunner() {
