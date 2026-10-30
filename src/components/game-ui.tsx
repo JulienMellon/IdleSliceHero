@@ -224,7 +224,7 @@ export function UpgradeRow(props: {
   );
 }
 
-export function OfflinePopup({ seconds, capped, awaySeconds, earned, byShop, onCollect }: { seconds: number; capped?: boolean; awaySeconds?: number; earned: number; byShop: { name: string; earned: number; managed: boolean }[]; onCollect: () => void }) {
+export function OfflinePopup({ seconds, capped, awaySeconds, earned, byShop, onCollect }: { seconds: number; capped: boolean; awaySeconds: number; earned: number; byShop: { name: string; earned: number; managed: boolean }[]; onCollect: () => void }) {
   const pop = useRef(new Animated.Value(0.7)).current;
   useEffect(() => {
     Animated.spring(pop, { toValue: 1, friction: 5, useNativeDriver: native }).start();
@@ -243,7 +243,7 @@ export function OfflinePopup({ seconds, capped, awaySeconds, earned, byShop, onC
             ? `Your managers kept ${byShop.filter((b) => b.managed).length} pizzeria${byShop.filter((b) => b.managed).length === 1 ? '' : 's'} running for ${duration(seconds)}`
             : `Your kitchens finished their queued orders while you were away`}
         </Text>
-        {capped && awaySeconds ? <Text style={[styles.small, { fontFamily: F.semi }]}>{`Earnings are capped at ${duration(seconds)} (you were away ${duration(awaySeconds)})`}</Text> : null}
+        {capped ? <Text style={[styles.small, { fontFamily: F.semi }]}>{`Earnings are capped at ${duration(seconds)} (you were away ${duration(awaySeconds)})`}</Text> : null}
         <View style={{ alignSelf: 'stretch', gap: 2 }}>
           {byShop.map((b) => (
             <View key={b.name} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

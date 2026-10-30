@@ -61,3 +61,19 @@ It runs alongside the visual critic (`CRITICLOG.md`). A step is done only when t
 | M11 | Cook `focus` mood is driven by `floor(poseClock / 1.5 + i)`, not a sine at 15 fps. |
 | Playtest | New pure modules: `components/cutscene-input.ts` (`canAdvance`, `sceneMayOpen`, `sceneHeading`) and `rate` / `goalAmount` in `engine/format.ts`. Engine: `upgradeLock` drivers, `buildLock` Suburbs + `nonnaPizzasLeft` / `nonnaCountdownText`, `applyOffline` returns `capped` and `awaySeconds`, `bundleHint`. New tests: `components/__tests__/cutscene-input.test.ts`, `engine/__tests__/playtest.test.ts` (existing build test now sets `seenScenes` for the Suburbs lock). |
 | Not done (planned) | C22, M6, M10; tap-target resize (v3.6); 90 s story pacing and perks (v3.5). No `SAVE_VERSION` bump this step (no new saved fields). |
+
+## v3.5 — build (round 6 items from the v3.4 review)
+
+| Item | Fix |
+| --- | --- |
+| K1 | The heading wording ("Act") now matches code and test; the red test was a working-tree change caught mid-edit. |
+| C24 | `cutscene-input.ts` moved to `src/engine/`; the store and player import it from there. |
+| C25 | `lastKitchenTap` is store state (not saved) and the gate is the pure `pickScene()`; boundary tests added (T19). |
+| C26 | `bundleHint` is cached in the engine on levels, decor and fleet (single-entry cache); the hand-built key, `useMemo` and the eslint suppression in `index.tsx` are gone. |
+| C27 | The lockout clocks reset in an effect keyed on `scene.id`. |
+| C28 | `NONNA_TAKEOVER` lives in `tuning.ts`; the engine no longer imports scene content; a test ties the constant to downtown-4's trigger. |
+| C29 | Tests: Drivers lock with and without room to expand, the bundle advisor never buys drivers past the cap. |
+| C30 | `OfflinePopup` `capped` and `awaySeconds` are required. |
+| M12 (M6) | Static furniture in `storefront.tsx` is built in a `useMemo` on `[lay, id, fp, plants, tableTier, signageTier, dough, boxes, idleShop, vehicle, shopName]`; only the cast is rebuilt per frame. |
+| T18–T23 | Added: single-panel heading, scene gate, no-soft-lock for Nonna's takeover, offline cap boundaries, `rate()` thresholds. |
+| Not done | C22, M10, M15, A10 (low). Version labels: this fix build is v3.5, so 90 s story pacing and perks are now v3.6 and the tap-target resize v3.7. |

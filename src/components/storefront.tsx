@@ -108,40 +108,51 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // ---- people (pure cast builder) + furniture, painter-sorted by depth
   type Item = { y: number; el: ReactElement };
   const { cast, phases } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal });
-  const items: Item[] = cast.map((c) => ({ y: c.sortY, el: <Person key={c.key} {...c.props} /> }));
-  // tables + seated diners: chairs, then the diner, then the table over their lap
-  lay.tables.forEach((tb, i) => {
-    if (lay.tables.length === 1) items.push({ y: tb.y + 12, el: <Rug key="rug" x={tb.x} y={tb.y} /> });
-    items.push({ y: tb.y + 0.6, el: <Table key={`tb${i}`} x={tb.x} y={tb.y} tier={shop.decor.tables} part="back" /> });
-    items.push({ y: tb.y - 0.6, el: <Table key={`tf${i}`} x={tb.x} y={tb.y} tier={shop.decor.tables} part="front" /> });
-  });
-  // potted plants (plants decor); the corner fern only stands in a starter room, before a front row of tables
-  if (plants >= 1 && !lay.tables.some((tb) => tb.y === FRONT_ROW_Y)) items.push({ y: 2, el: <FloorPlant key="pp1" x={lay.L + 4} y={2} k={0.8} /> });
-  if (plants >= 3) items.push({ y: 112, el: <WallPlanter key="pp4" lay={lay} /> });
-  items.push({ y: 66, el: <PrepBench key="prep" lay={lay} prep={shop.prep} dough={shop.managed ? 3 : Math.max(2, Math.min(8, Math.ceil(shop.queued / 1.5)))} /> });
-  items.push({ y: 64, el: <Counter key="counter" lay={lay} boxes={running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0} /> });
-  // front of the shop + sidewalk props
-  items.push({ y: 0, el: <FrontWall key="front" lay={lay} name={nd.name} signage={shop.decor.signage} plants={plants} /> });
-  items.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
-  if (lay.ledge) {
-    items.push({ y: STOOL_Y, el: <Stools key="stools" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
-    items.push({ y: LEDGE_Y, el: <LedgeBar key="ledge" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
-  }
   // an unmanaged shop's chip strip covers the kerb, so its sidewalk props move up and the vehicle stays home
   const idleShop = !shop.managed && id !== 'downtown';
-  if (fp === 0) items.push({ y: 8, el: <FloorProp key="fprop" id={id} x={lay.L + 22} y={8} /> });
-  items.push({ y: idleShop ? -18 : -34, el: <ChalkSign key="sign" x={lay.sign.x} y={idleShop ? -18 : -34} /> });
-  items.push({ y: 16, el: <DoorLeaf key="leaf" lay={lay} /> });
-  {
-    // the potted tree stays fully on screen (its pot is ~14 wide) in the widest rooms
-    const py = idleShop ? -22 : -40;
-    const px = Math.max(idleShop ? lay.L - 18 : lay.L + 8, unprojectX(20, py));
-    items.push({ y: py, el: <Planter key="pl" x={px} y={py} /> });
-  }
-  if (!idleShop) {
-    const [scx, scy] = P(lay.scooter.x, lay.scooter.y);
-    items.push({ y: lay.scooter.y, el: <ParkedVehicle key="scooter" x={scx} y={scy} v={game.vehicle} /> });
-  }
+  const dough = shop.managed ? 3 : Math.max(2, Math.min(8, Math.ceil(shop.queued / 1.5)));
+  const boxes = running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0;
+  // Furniture only changes with upgrades and the dough/box counts, so it is built once per change (M12), not 15 times a second.
+  const tableTier = shop.decor.tables;
+  const signageTier = shop.decor.signage;
+  const vehicle = game.vehicle;
+  const shopName = nd.name;
+  const furniture = useMemo(() => {
+    const f: Item[] = [];
+    // tables + seated diners: chairs, then the diner, then the table over their lap
+    lay.tables.forEach((tb, i) => {
+      if (lay.tables.length === 1) f.push({ y: tb.y + 12, el: <Rug key="rug" x={tb.x} y={tb.y} /> });
+      f.push({ y: tb.y + 0.6, el: <Table key={`tb${i}`} x={tb.x} y={tb.y} tier={tableTier} part="back" /> });
+      f.push({ y: tb.y - 0.6, el: <Table key={`tf${i}`} x={tb.x} y={tb.y} tier={tableTier} part="front" /> });
+    });
+    // potted plants (plants decor); the corner fern only stands in a starter room, before a front row of tables
+    if (plants >= 1 && !lay.tables.some((tb) => tb.y === FRONT_ROW_Y)) f.push({ y: 2, el: <FloorPlant key="pp1" x={lay.L + 4} y={2} k={0.8} /> });
+    if (plants >= 3) f.push({ y: 112, el: <WallPlanter key="pp4" lay={lay} /> });
+    f.push({ y: 66, el: <PrepBench key="prep" lay={lay} prep={shop.prep} dough={dough} /> });
+    f.push({ y: 64, el: <Counter key="counter" lay={lay} boxes={boxes} /> });
+    // front of the shop + sidewalk props
+    f.push({ y: 0, el: <FrontWall key="front" lay={lay} name={shopName} signage={signageTier} plants={plants} /> });
+    f.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
+    if (lay.ledge) {
+      f.push({ y: STOOL_Y, el: <Stools key="stools" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
+      f.push({ y: LEDGE_Y, el: <LedgeBar key="ledge" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
+    }
+    if (fp === 0) f.push({ y: 8, el: <FloorProp key="fprop" id={id} x={lay.L + 22} y={8} /> });
+    f.push({ y: idleShop ? -18 : -34, el: <ChalkSign key="sign" x={lay.sign.x} y={idleShop ? -18 : -34} /> });
+    f.push({ y: 16, el: <DoorLeaf key="leaf" lay={lay} /> });
+    {
+      // the potted tree stays fully on screen (its pot is ~14 wide) in the widest rooms
+      const py = idleShop ? -22 : -40;
+      const px = Math.max(idleShop ? lay.L - 18 : lay.L + 8, unprojectX(20, py));
+      f.push({ y: py, el: <Planter key="pl" x={px} y={py} /> });
+    }
+    if (!idleShop) {
+      const [scx, scy] = P(lay.scooter.x, lay.scooter.y);
+      f.push({ y: lay.scooter.y, el: <ParkedVehicle key="scooter" x={scx} y={scy} v={vehicle} /> });
+    }
+    return f;
+  }, [lay, id, fp, plants, tableTier, signageTier, dough, boxes, idleShop, vehicle, shopName]);
+  const items: Item[] = [...furniture, ...cast.map((c) => ({ y: c.sortY, el: <Person key={c.key} {...c.props} /> }))];
   items.sort((a, b) => b.y - a.y);
 
   // ---- cash pop: real earnings since the last pop, detected after commit (render stays pure)
@@ -208,7 +219,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           ))}
           <Sidewalk frontY={frontY} />
           <Street />
-          <RoomShell id={id} lay={lay} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
+          <RoomShell id={id} lay={lay} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={signageTier} plants={shop.decor.plants} />
           <OvenHood lay={lay} grade={shop.grade} mural={shop.decor.walls >= 3} />
           {/* rush tap: the oven bank pulses and throws a burst of coins */}
           {(() => {

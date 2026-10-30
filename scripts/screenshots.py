@@ -215,6 +215,53 @@ with sync_playwright() as pw:
         tid(page, "tag-ovens").click(); shot(page, "15-tag-ovens-drawer", 0.6)
     except Exception as e:
         report["errors"].append(f"station tag tap failed: {e}")
+
+    # 10. Playtest fixes the earlier shots could not show
+    # 10a. Tied stations: the drawer explains what to buy together
+    tied = dict(MID_SAVE, cash=500, active="downtown", scrapbookViewed=8,
+                shops=dict(MID_SAVE["shops"], downtown=shop(prep=6, ovens=8, counter=20, drivers=30, tables=4)))
+    page = seeded_page(browser, tied); settle(page)
+    try:
+        tid(page, "open-upgrades").click(); shot(page, "16-tied-bundle-drawer", 0.7)
+    except Exception as e:
+        report["errors"].append(f"tied drawer failed: {e}")
+    # 10b. Frugal path: Suburbs stays locked until Nonna takes over, with a countdown toast on the City screen
+    frugal = dict(MID_SAVE, cash=1000, vehicle=0, active="downtown", seenScenes=["downtown-1", "downtown-2", "downtown-3"], scrapbookViewed=3,
+                  shops={"downtown": shop(managed=False, prep=3, ovens=3, counter=3, drivers=3, sold=40), "suburbs": shop(built=False, managed=False),
+                         "waterfront": shop(built=False, managed=False), "university": shop(built=False, managed=False),
+                         "industrial": shop(built=False, managed=False), "uptown": shop(built=False, managed=False)})
+    page = seeded_page(browser, frugal); settle(page)
+    try:
+        tid(page, "open-city").click(); time.sleep(0.6)
+        tid(page, "city-row-suburbs").click(force=True); shot(page, "17-suburbs-locked", 0.4)
+    except Exception as e:
+        report["errors"].append(f"suburbs lock shot failed: {e}")
+    # 10c. Cut-scene props: the Pier 9 sold sign and Nonna's recipe card
+    pier = dict(MID_SAVE, active="waterfront", seenScenes=["downtown-1", "downtown-2", "downtown-3", "downtown-4", "suburbs-1", "suburbs-2", "suburbs-3", "suburbs-4", "waterfront-1", "waterfront-2"],
+                shops=dict(MID_SAVE["shops"], waterfront=shop(prep=20, ovens=18, counter=20, drivers=12, sold=15100)))
+    page = seeded_page(browser, pier); time.sleep(3)
+    if page.locator('[data-testid="collect-offline"]').count():
+        tid(page, "collect-offline").click(); time.sleep(0.8)
+    if page.locator('[data-testid="cutscene"]').count():
+        shot(page, "18-sold-sign-scene", 0.6)
+    sauce = dict(MID_SAVE, active="downtown", seenScenes=["downtown-1", "downtown-2", "downtown-3"], scrapbookViewed=3,
+                 shops=dict(MID_SAVE["shops"], downtown=shop(managed=False, prep=20, ovens=18, counter=20, drivers=12, sold=160), suburbs=shop(built=False, managed=False), waterfront=shop(built=False, managed=False)))
+    page = seeded_page(browser, sauce); time.sleep(3)
+    try:
+        for _ in range(14):
+            if page.get_by_text("secret sauce recipe").count():
+                break
+            tid(page, "cutscene").click(); time.sleep(1.3)
+        shot(page, "19-recipe-card-scene", 0.5)
+    except Exception as e:
+        report["errors"].append(f"recipe card scene failed: {e}")
+    # 10d. Away longer than the offline cap: the popup says so
+    page = seeded_page(browser, dict(MID_SAVE, lastSavedAt=now_ms - 9 * 3600 * 1000))
+    try:
+        tid(page, "collect-offline").wait_for(timeout=8000)
+        shot(page, "20-offline-capped", 0.8)
+    except Exception as e:
+        report["errors"].append(f"capped offline popup missing: {e}")
     browser.close()
 
 httpd.shutdown()

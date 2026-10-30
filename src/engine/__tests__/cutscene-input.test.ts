@@ -1,4 +1,6 @@
-import { canAdvance, LINE_LOCKOUT_MS, SCENE_GATE_AFTER_TAP_MS, SCENE_LOCKOUT_MS, sceneHeading, sceneMayOpen } from '../cutscene-input';
+import { HOME_SCENES } from '../../content/scenes/home';
+import { canAdvance, LINE_LOCKOUT_MS, pickScene, SCENE_GATE_AFTER_TAP_MS, SCENE_LOCKOUT_MS, sceneHeading, sceneMayOpen } from '../cutscene-input';
+import * as G from '../game';
 
 describe('cut-scene input (playtest bug 1)', () => {
   it('ignores taps right after a line or scene appears', () => {
@@ -28,9 +30,22 @@ describe('cut-scene input (playtest bug 1)', () => {
 describe('scene heading (playtest bug 3)', () => {
   const scene = { title: 'Brother Sal', neighborhood: 'industrial', beat: 4, panels: [1, 2, 3] } as never;
   it('hides a spoiler title until the last panel', () => {
-    expect(sceneHeading(scene, 0, false)).toBe('Industrial · Part 4');
-    expect(sceneHeading(scene, 1, false)).toBe('Industrial · Part 4');
+    expect(sceneHeading(scene, 0, false)).toBe('Industrial · Act 4');
+    expect(sceneHeading(scene, 1, false)).toBe('Industrial · Act 4');
     expect(sceneHeading(scene, 2, false)).toBe('Brother Sal');
     expect(sceneHeading(scene, 0, true)).toBe('Brother Sal');
+  });
+});
+
+describe('scene gate (T19)', () => {
+  it('a due scene waits for kitchen taps to stop, then opens', () => {
+    const g = G.newGame(0); // downtown-1 is due on first launch
+    expect(pickScene(g, HOME_SCENES, 1200, 1000, false)?.id).toBeUndefined();
+    expect(pickScene(g, HOME_SCENES, 1000 + SCENE_GATE_AFTER_TAP_MS, 1000, false)?.id).toBe('downtown-1');
+    expect(pickScene(g, HOME_SCENES, 99999, 0, true)).toBeNull(); // one already playing
+  });
+  it('a single-panel scene shows its title straight away', () => {
+    const one = { title: 'Solo', neighborhood: 'uptown', beat: 1, panels: [1] } as never;
+    expect(sceneHeading(one, 0, false)).toBe('Solo');
   });
 });

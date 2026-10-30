@@ -47,3 +47,16 @@ v3.3 loads clean. Seven of the round-33 notes are confirmed fixed: D273 (peel), 
 | Playtest 4–8 | No BOTTLENECK badge on the manager card; Settings shows `APP_VERSION`; rates use `rate()`; goal bar uses `goalAmount()` ("$1.50K / $1.50K"); Drivers capped at `levelCap`; the Build toast names the cost and shows on the City screen; the offline popup says when earnings are capped. |
 | Playtest, frugal path | Suburbs is locked until downtown-4 plays and shows "Nonna takes over in N more pizzas" on the Downtown manager card. |
 | Playtest, story | The speech tail is hidden on "You" lines; the MegaSlice HQ logo moved off Victor's head; "Ten thousand pies" → "A hundred thousand"; "…on a bike. Lately, a drone."; "2 AM" → "finals week"; `sold-sign` and `recipe-card` props are drawn. |
+
+## v3.5 — build (round 35 notes from the v3.4 review)
+
+| Note | Fix |
+| --- | --- |
+| D288, D289, D292 | Not changed. A walk-in passing in front of the chalkboard or planter is correct depth ordering (the walk lane sits closer to the viewer); the dining row density is carried. |
+| D290 | The cut-scene heading reads "Waterfront · Act 3" instead of "Part 3", so it can't be mistaken for the panel number. |
+| D291 | The tapped-tag highlight only shows on a bottleneck card, so the drawer never has two competing highlights. |
+| D293 | New shot `16-tied-bundle-drawer`: both tied cards are red and the banner reads "Upgrade prep + ovens · $35 (one alone adds $0/s)". |
+| D295 | New shot `17-suburbs-locked`: tapping Suburbs on the City map shows "Nonna takes over in 110 more pizzas". |
+| D296 | New shots `18-sold-sign-scene` and `19-recipe-card-scene`; both props sit inside the cropped frame (x 99–301) clear of the speaker's head. |
+| Offline cap | New shot `20-offline-capped` shows "Earnings are capped at 4h 0m (you were away 9h 1m)". |
+| D294, D297 | Not changed (notes). |

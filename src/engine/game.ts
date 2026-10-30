@@ -3,9 +3,8 @@
 // Every neighborhood has its own pizzeria. Each pizzeria is a pipeline:
 //   Prep → Ovens → Counter → customers (delivery drivers + walk-ins at the tables)
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
-import { DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, STATIONS, TUNING, VEHICLES, type DecorKind, type NeighborhoodDef } from '../content/tuning';
+import { DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, STATIONS, TUNING, VEHICLES, type DecorKind, type NeighborhoodDef } from '../content/tuning';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
-import { HOME_SCENES } from '../content/scenes/home';
 
 export const SAVE_VERSION = 2;
 export const SHOP_IDS = NEIGHBORHOODS.map((n) => n.id);
@@ -310,13 +309,12 @@ export function buildLock(s: GameState, id: NeighborhoodId): string | null {
   return null;
 }
 
-const NONNA_SCENE_ID = 'downtown-4';
+const NONNA_SCENE_ID = NONNA_TAKEOVER.sceneId;
 
 /** Pizzas Downtown still has to deliver before Nonna takes over the kitchen (0 once it's due or seen). */
 export function nonnaPizzasLeft(s: GameState): number {
-  const sc = HOME_SCENES.find((x) => x.id === NONNA_SCENE_ID);
-  if (!sc || sc.trigger.kind !== 'deliveries' || s.seenScenes.includes(NONNA_SCENE_ID)) return 0;
-  return Math.max(0, sc.trigger.count - s.shops[sc.trigger.neighborhood].sold);
+  if (s.seenScenes.includes(NONNA_SCENE_ID)) return 0;
+  return Math.max(0, NONNA_TAKEOVER.pizzas - s.shops.downtown.sold);
 }
 
 export function nonnaCountdownText(s: GameState): string {
@@ -539,12 +537,20 @@ export interface BundleHint {
   affordable: boolean;
 }
 
-/** "Upgrade prep + ovens · $X": the tied-station bundle, ready to show in the UI. */
+let hintKey = '';
+let hintVal: Omit<BundleHint, 'affordable'> | null = null;
+
+/** "Upgrade prep + ovens · $X": the tied-station bundle, ready to show in the UI. Cached on levels, decor and fleet (not cash or sales), so a render only pays for it when something was upgraded. */
 export function bundleHint(s: GameState, id: NeighborhoodId): BundleHint | null {
-  const b = bottleneckBundle(s, id);
-  if (!b) return null;
-  const names = [...new Set(b.steps.map((w) => STEP_LABEL[w] ?? w))];
-  return { label: `Upgrade ${names.join(' + ')}`, cost: b.cost, gain: b.gain, affordable: s.cash >= b.cost };
+  const sh = s.shops[id];
+  const key = `${id}|${sh.built}|${sh.managed}|${sh.prep}|${sh.ovens}|${sh.counter}|${sh.drivers}|${sh.tables}|${sh.grade}|${sh.footprint}|${s.vehicle}|${Object.values(sh.decor).join('')}`;
+  if (key !== hintKey) {
+    hintKey = key;
+    const b = bottleneckBundle(s, id);
+    const names = b ? [...new Set(b.steps.map((w) => STEP_LABEL[w] ?? w))] : [];
+    hintVal = b ? { label: `Upgrade ${names.join(' + ')}`, cost: b.cost, gain: b.gain } : null;
+  }
+  return hintVal ? { ...hintVal, affordable: s.cash >= hintVal.cost } : null;
 }
 
 // ---------- Decor ----------

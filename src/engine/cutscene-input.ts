@@ -1,5 +1,6 @@
 // Pure helpers for the cut-scene player and the store's scene gate (kept in .ts so they are unit-testable in node).
 import type { Scene } from '../content/types';
+import { pendingScenes, type GameState } from './game';
 
 /** Taps are ignored for this long after a line appears, so a tapping player can't blow past it. */
 export const LINE_LOCKOUT_MS = 450;
@@ -25,5 +26,11 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
  */
 export function sceneHeading(scene: Pick<Scene, 'title' | 'neighborhood' | 'beat' | 'panels'>, panel: number, showReward: boolean): string {
   if (showReward || panel >= scene.panels.length - 1) return scene.title;
-  return `${cap(scene.neighborhood)} · Part ${scene.beat}`;
+  return `${cap(scene.neighborhood)} · Act ${scene.beat}`;
+}
+
+/** The scene to open now, or null while one is playing or the player is still tapping the kitchen. */
+export function pickScene(game: GameState, scenes: Scene[], nowMs: number, lastKitchenTapMs: number, playing: boolean): Scene | null {
+  if (playing || !sceneMayOpen(nowMs, lastKitchenTapMs)) return null;
+  return pendingScenes(game, scenes)[0] ?? null;
 }

@@ -1,4 +1,5 @@
 import { HOME_SCENES } from '../../content/scenes/home';
+import { NONNA_TAKEOVER } from '../../content/tuning';
 import { goalAmount, money, rate } from '../format';
 import * as G from '../game';
 
@@ -9,6 +10,10 @@ describe('formatting (playtest bug 6)', () => {
     expect(rate(20000)).not.toMatch(/\.0$/);
     expect(rate(20000)).toBe('20K');
     expect(rate(3.14)).toBe('3.1');
+    expect(rate(9.94)).toBe('9.9');
+    expect(rate(10)).toBe('10');
+    expect(rate(1_500_000)).toBe('1.5M');
+    expect(rate(NaN)).toBe('0.0');
   });
   it('goal bar prints both amounts the same way', () => {
     expect(goalAmount(1500, 1500)).toBe(`${money(1500, true)} / ${money(1500, true)}`);
@@ -24,6 +29,18 @@ describe('drivers cap (playtest bug 6)', () => {
     expect(G.upgradeLock(s, 'downtown', 'drivers')).not.toBeNull();
     expect(G.buyUpgrade(s, 'downtown', 'drivers').ok).toBe(false);
   });
+  it('with room to expand, the lock says to expand; at the last footprint it says max', () => {
+    const s0 = G.newGame(0);
+    const at = (fp: number) => ({ ...s0, shops: { ...s0.shops, downtown: { ...s0.shops.downtown, footprint: fp, drivers: 25 * (fp + 1) } } });
+    expect(G.upgradeLock(at(0), 'downtown', 'drivers')).toMatch(/Expand/);
+    expect(G.upgradeLock(at(4), 'downtown', 'drivers')).toBe('Max drivers');
+  });
+  it('the bundle advisor never buys drivers past the cap', () => {
+    const s0 = G.newGame(0);
+    const s = { ...s0, shops: { ...s0.shops, downtown: { ...s0.shops.downtown, managed: true, prep: 25, ovens: 25, counter: 25, drivers: 25 } } };
+    const b = G.bundleHint(s, 'downtown');
+    expect(b === null || b.label.includes('expansion')).toBe(true);
+  });
   it('a save over the cap keeps its level', () => {
     let s = G.newGame(0);
     s = { ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, drivers: 500 } } };
@@ -38,6 +55,9 @@ describe('offline cap note (playtest bug 8)', () => {
     expect(r.capped).toBe(true);
     expect(r.awaySeconds).toBe(9 * 3600);
     expect(G.applyOffline(s, 3600 * 1000).capped).toBe(false);
+    const cap = 4 * 3600 * 1000;
+    expect(G.applyOffline(s, cap).capped).toBe(false); // exactly at the cap is not "over" it
+    expect(G.applyOffline(s, cap + 1000).capped).toBe(true);
   });
 });
 
@@ -50,8 +70,15 @@ describe('frugal path (playtest UX)', () => {
     expect(G.buildLock(seen, 'suburbs')).toBeNull();
     expect(G.nonnaPizzasLeft({ ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, sold: 120 } } })).toBe(30);
   });
-  it('the scripted scene data still has the 150-pizza takeover', () => {
-    expect(HOME_SCENES.find((x) => x.id === 'downtown-4')?.trigger).toMatchObject({ count: 150 });
+  it("the tuning constant matches downtown-4's trigger", () => {
+    expect(HOME_SCENES.find((x) => x.id === NONNA_TAKEOVER.sceneId)?.trigger).toMatchObject({ kind: 'deliveries', neighborhood: 'downtown', count: NONNA_TAKEOVER.pizzas });
+  });
+  it('a save already past the trigger counts as done (no soft-lock)', () => {
+    const s = rich(G.newGame(0));
+    const past = { ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, sold: 5000 } } };
+    expect(G.nonnaPizzasLeft(past)).toBe(0);
+    expect(G.pendingScenes(past, HOME_SCENES).map((x) => x.id)).toContain('downtown-4');
+    expect(G.nonnaPizzasLeft({ ...past, seenScenes: ['downtown-4'] })).toBe(0);
   });
 });
 

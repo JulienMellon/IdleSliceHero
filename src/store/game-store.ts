@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
-import { sceneMayOpen } from '../components/cutscene-input';
+import { pickScene } from '../engine/cutscene-input';
 import { HOME_SCENES } from '../content/scenes/home';
 import type { DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
@@ -23,6 +23,8 @@ interface Store {
   game: G.GameState;
   loaded: boolean;
   offline: OfflineSummary | null;
+  /** When the player last tapped the kitchen (ms): a scene never opens mid-tap. Not saved. */
+  lastKitchenTap: number;
   /** Scene currently playing (or replaying from the Scrapbook). */
   playing: { scene: Scene; replay: boolean } | null;
   /** Short-lived message, e.g. "Not enough cash". */
@@ -48,15 +50,12 @@ interface Store {
 
 /** Serialises saves so a resume never reads a save that is still being written. */
 let pendingSave: Promise<void> = Promise.resolve();
-/** When the player last tapped the kitchen: a scene never opens mid-tap (it would eat the taps). */
-let lastKitchenTap = 0;
 
 export const useGame = create<Store>((set, get) => {
   /** After any state change, queue the next story scene if one has triggered. */
   const queueScene = () => {
-    const { game, playing } = get();
-    if (playing || !sceneMayOpen(Date.now(), lastKitchenTap)) return;
-    const next = G.pendingScenes(game, HOME_SCENES)[0];
+    const { game, playing, lastKitchenTap } = get();
+    const next = pickScene(game, HOME_SCENES, Date.now(), lastKitchenTap, !!playing);
     if (next) set({ playing: { scene: next, replay: false } });
   };
 
@@ -82,6 +81,7 @@ export const useGame = create<Store>((set, get) => {
     game: G.newGame(Date.now()),
     loaded: false,
     offline: null,
+    lastKitchenTap: 0,
     playing: null,
     toast: null,
 
@@ -133,8 +133,7 @@ export const useGame = create<Store>((set, get) => {
 
     tapShop: () => {
       const g = get().game;
-      lastKitchenTap = Date.now();
-      set({ game: G.tapShop(g, g.active) });
+      set({ game: G.tapShop(g, g.active), lastKitchenTap: Date.now() });
     },
 
     buy: (what) => {

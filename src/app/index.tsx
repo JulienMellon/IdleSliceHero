@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -48,9 +48,7 @@ export default function GameScreen() {
   const eps = G.earningsPerSecond(game);
   // Tied stations: one upgrade alone adds $0/s, so say what to buy together. Keyed on levels, not cash or sales.
   const tiedCount = (['prep', 'ovens', 'counter', 'customers'] as const).filter(tied).length;
-  const bundleKey = `${id}.${shop.prep}.${shop.ovens}.${shop.counter}.${shop.drivers}.${shop.grade}.${shop.footprint}.${v}`;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const bundle = useMemo(() => (tiedCount >= 2 ? G.bundleHint(game, id) : null), [bundleKey, tiedCount]);
+  const bundle = tiedCount >= 2 ? G.bundleHint(game, id) : null;
 
   // Goal bar: the big purchase worth saving for, by cash/sec per dollar.
   const candidates: (Goal & { ratio: number })[] = [];
@@ -121,7 +119,7 @@ export default function GameScreen() {
         {...props}
         detail={lock && what !== 'manager' ? lock : props.detail}
         hot={muted ? false : props.hot}
-        focus={drawer.focus === what}
+        focus={drawer.focus === what && !!props.hot && !muted}
         muted={muted}
         useless={(G.upgradeGain(game, id, what) ?? 0) <= 1e-9 && what !== 'manager' && !(what === 'expand' && atCap)}
         cost={lock ? null : cost}

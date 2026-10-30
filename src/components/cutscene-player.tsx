@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Scene } from '../content/types';
 import { C, F } from '../theme';
 import { Backdrop } from './backdrop';
-import { canAdvance, sceneHeading } from './cutscene-input';
+import { canAdvance, sceneHeading } from '../engine/cutscene-input';
 import { Portrait } from './portrait';
 
 const native = Platform.OS !== 'web';
@@ -26,8 +26,12 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   const slide = useRef(new Animated.Value(0)).current;
   const bubble = useRef(new Animated.Value(0)).current;
   // Input lockout: a tapping player must not blow past a line or the whole scene (see cutscene-input.ts).
-  const openedAt = useRef(Date.now());
-  const lineShownAt = useRef(Date.now());
+  const openedAt = useRef(0);
+  const lineShownAt = useRef(0);
+  useEffect(() => {
+    openedAt.current = Date.now();
+    lineShownAt.current = Date.now();
+  }, [scene.id]);
 
   const p = scene.panels[panel];
   const current = p.lines[line];

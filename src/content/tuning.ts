@@ -52,6 +52,9 @@ export const OVEN_GRADES: OvenGrade[] = [
   { name: 'Golden', mult: 16, cost: 12_000_000, color: '#E0B000' },
 ];
 
+/** Downtown's tutorial ends when Nonna takes over: scene `sceneId` plays after this many Downtown pizzas (matches downtown-4's trigger). */
+export const NONNA_TAKEOVER = { sceneId: 'downtown-4', pizzas: 150 } as const;
+
 export interface FootprintTier {
   name: string;
   /** Cost × the shop's cost multiplier. */
