@@ -4,10 +4,10 @@ The visual **critic** (`.claude/agents/critic.md`) reviews each build's iPhone-s
 
 - **SATISFIED** requires 0 bugs, 0 [major] notes and ≤ 3 [minor] notes. A build that fails to load, or has a blocking bug, can never pass.
 - **Screenshots:** `screenshots/<version>/` (393×852 @2×). Regenerate with `npx expo export --platform web && python3 scripts/screenshots.py <version>`. `report.json` must show `"errors": []`.
-- **Full history:** rounds 1–37 (v0.1 → v3.6) are kept verbatim in [`docs/logs/CRITICLOG-archive.md`](docs/logs/CRITICLOG-archive.md). This file holds only the current state.
+- **Full history:** rounds 1–43 (v0.1 → v4.2) are kept verbatim in [`docs/logs/CRITICLOG-archive.md`](docs/logs/CRITICLOG-archive.md). This file holds only the current state.
 - **Owner's standing direction** (the storefront cutaway, sidewalk buttons, tap-only drawer, a WELCOME mat, visible decor tiers, the visual-polish and character bar) lives in the critic brief and holds in every build.
 
-**Next IDs:** bugs **G75**, design notes **D309**.
+**Next IDs:** bugs **G76**, design notes **D338**.
 
 ---
 
@@ -16,87 +16,20 @@ The visual **critic** (`.claude/agents/critic.md`) reviews each build's iPhone-s
 - **Verify in pixels.** The critic marks a fix open if the screenshot doesn't show it, whatever this log says.
 - **Don't remove owner-required elements** while fixing something else. The WELCOME mat was removed once by mistake (G54).
 
-## Current state — v3.7, round 38: ✅ SATISFIED (0 bugs, 0 [major], 3 [minor])
+## Current state — v4.3, round 44: ❌ NOT SATISFIED (0 bugs, 1 [major], 2 [minor]). The loop is paused here (Julien, 2026-10-30).
 
-v3.7 (story pacing, neighbourhood perks, the Pier 9 bid) loads clean and the critic opened all 27 shots with no regressions. The perk card (22) and the bid goal (21) were checked in pixels.
+v4.3 loads clean (`errors: []`, `loaded: true`); the critic checked all 29 shots. D330 (basil saving outline), D306 (distinct cooks: grey skull cap on cook two), D328 (walk-in under the baker's feet) and D331 (drivers stacked in the door) are confirmed fixed in the pixels.
 
-**Open (none blocks satisfaction)**
+**Caution on D336:** v4.3 changed no crowd or route code (only a cook `variant` prop in `scene/cast.ts`). Crowd overlaps depend on the frame each screenshot lands on, so D328/D331 "fixed" and D336 "regressed" are likely the same intermittent counter/door crowding caught on different frames. Treat it with the crowd-overlap lesson: reproduce it in `scene/__tests__/crowd.test.ts` (a driver/walk-in budget at the counter) and make the test fail before fixing it.
+
+**Open**
 
 | ID | Type | Note | Proposed fix |
 | --- | --- | --- | --- |
-| D302 | minor | Early shops leave ~190pt of plain sky above the roof | A back row of low buildings or a billboard at y 340–500, fill #9FB4CC |
-| D303 | minor | Back-row diners at Industrial and Uptown touch heads | Space back-row seats 6–8pt wider, or drop every other diner 4pt |
-| D306 | minor | The three Industrial chefs wear the same jacket and toque | A red neckerchief (#E5483A) or a skull cap on one |
-| D307 | note | Dale's perk text can read as a loss | "Suburbs walk-ins pay more: 85% of full price (was 70%)", green up-arrow |
-| D308 | note | No shot shows the drawer perk banner or Uptown's 6% decor header | Add a Suburbs drawer shot after Dale's finale |
-| — | note | Building University while saving for the $2.0M bid drops the bid progress without warning | A one-line hint on the University chip ("Pier 9 bid in progress") |
-| D304 | note | The tied-station banner looks like a label | Make it a tappable "buy both" button |
-| D305 | note | Suburbs shows a live "Build $300" while locked | Padlock and countdown on the row and tile |
-| D294 | note | "No gain now" buttons keep green price text | Grey the price |
-| D297 | note | Goal-bar fill runs through the label on an unmanaged shop | Darker label over the fill |
-| — | note | The Suburbs-locked toast covers the University and Industrial lock tiles | Sit it under the map |
-| — | planned | Tap targets below 44pt | v3.8 |
-
-## v3.8 — build (tap targets; round-38 notes)
-
-| Note | Change |
-| --- | --- |
-| Tap targets (planned) | `components/tap-targets.ts` holds the sizes; a test asserts every control reaches 44 pt with its hit margin. Sidewalk buy buttons are drawn at 44 pt. Each station card's label strip is 18 pt with a 26 pt hit margin above only, and 4 pt of dead space above the buy button. Unmanaged-shop chips are 26 pt with 9 pt margins (font 12, was 10.5). The drawer's Close button is 30 pt with 7 pt margins. The row is ~14 pt taller and sits ~14 pt lower (its foot just past the kerb), so its top is where it was and the curb walk-ins still clear it; it now covers the top edge of the street. |
-| Unmanaged shop | The manager card is one 44 pt button reading "Hire a Waterfront manager · $30K", so the taller controls don't cover the WELCOME mat (05b). |
-| D307 | Dale's perk reads "Suburbs walk-ins pay more: 85% of full price (was 70%)". |
-| D308 | New shot `23-perk-banner-drawer`: the Suburbs drawer after Dale's finale shows the perk banner. |
-| C39 (code) | A short iOS interruption no longer plays the next story beat early. |
-| D302, D303, D306 | Carried. |
-
-## v3.9 — build (round-39 notes from the v3.8 review, and the codecritic's C44–C46)
-
-| Note | Change |
-| --- | --- |
-| Tap targets, redone | v3.8's hit margins don't work on a real iPhone (a touch outside a parent's bounds never reaches the child, and web ignores hitSlop, so the screenshots couldn't show it). Every sidewalk control is now **drawn** at 44 pt: each station is one button with its name above the price (the label strip is gone, **All** opens the drawer), chips are 44 pt, the manager button is 44 pt. Close is 36 pt with a 4 pt margin inside the header's padding. |
-| D309 | The station cards are 55 pt (v3.7: 62 pt), so the row sits above the kerb again (`SIDEWALK_ROW.raiseManaged = 13`): the kerb and both traffic lanes show (13). An unmanaged shop's column (chips 44 + manager 44) sits at `raiseIdle = 2`, clear of the WELCOME mat (05b). |
-| D310, D311 | The manager button reads "HIRE A MANAGER · +$22/s" over the price; greyed-out button text is #665A4F (~4:1, was ~2:1). |
-| D312 | No chip hit margins any more. |
-| D308 | Shot 15a shows the Uptown decor header "+6%" with Genevieve's perk (14/15 now seed that perk). Shot 15 is now the All drawer (station tags are gone). |
-| D302, D303, D306 | Carried. |
-
-## v4.0 — build (round-40 notes from the v3.9 review)
-
-| Note | Change |
-| --- | --- |
-| D313 | One "no gain" look everywhere on the sidewalk: a flat #EFE6D8 face, #CFC3B2 rim and #8A7B6C text reading "NO GAIN" next to the station icon. Green now only ever means "this adds income" (03, 05, 05b). |
-| D314 | Station icons are back, 13 pt, left of the station name (05, 09, 14). |
-| D315 | An unmanaged shop's chips are the same buttons as the managed cards (icon, name over price, level badge), unframed to fit; All sits beside the manager button only (44 pt, not stretched); the A-board moves 10 right and shrinks to 85% (05b). |
-| D316 | A bottleneck you can't afford yet has a soft dashed #F2B8B0 outline and a dark badge; it turns solid red when affordable (03, 03b). |
-| D317 | "Expand to hire past 30" for Drivers; "Lv" and its number never split across lines. |
-| D302, D303, D306 | Carried. |
-
-## v4.1 — build (round-41 notes from the v4.0 review)
-
-| Note | Change |
-| --- | --- |
-| D319 | The drawer's no-gain buttons use the same flat muted look as the sidewalk ("no gain now" over a struck price); green appears only on buys that add income (05a, 15, 16, 23). |
-| D320 | Sidewalk buttons keep the station name; a no-gain price is struck through instead (03, 04, 05, 21). |
-| D321 | Waterfront: the third oven sits centred over both columns (any incomplete top row of stacked decks is centred); the porthole is 6 lower and clears the menu; the fishing net hangs under the porthole, clear of the menu and the counter staff (21). |
-| D324 | Station cards drop "+$0/s now" when the button already says "no gain now". |
-| D302, D303, D306 | Carried. |
-| Screenshots | One run of shot 22 (perk card) timed out waiting for the cut-scene; a re-run passed. Watch for flakiness. |
-
-## v4.2 — build (round-42 notes from the v4.1 review)
-
-| Note | Change |
-| --- | --- |
-| G75 | A locked or maxed upgrade is never "no gain": it shows "Locked" or "MAX" in the normal grey (16 Drivers). One rule, `buttonTone`, now drives the sidewalk and the drawer (cards and Fleet). |
-| D325 | No-gain prices get a drawn 2 pt bar at 52% height, −6°, instead of a font line-through ($65 is struck in 05, 05a). |
-| D326 | The bottleneck you're saving for has a pale basil face (#DDEFD9), #2E7D3E text and a cash-progress line along its foot (03 Drivers). |
-| D327 | Sidewalk icons 11 pt and letter spacing 0.1, so "COUNTER" has side room. |
-| D329 | Expand and Fleet drop "+$0/s now" too. |
-| D302, D306, D328 | Carried. |
-
-## v4.3 — build (round-43 notes from the v4.2 review)
-
-| Note | Change |
-| --- | --- |
-| D330 | The bottleneck being saved for has a basil dashed outline (#2E7D3E at 60%) matching its pale basil face; no more pink with green (03). Solid red stays for an affordable bottleneck. |
-| D306 | Cooks differ by position in the kitchen: the first keeps the toque and a red neckerchief, the second wears a grey skull cap and a mustard neckerchief, the third a basil neckerchief (09, 13). |
-| Code-review fixes seen on screen | Decor cards in an unmanaged shop no longer show a green button (C63); chips on an unmanaged shop no longer get the "saving for" face (C64). |
-| D302, D328, D331 | Carried. |
+| D336 | major | Walk-ins and the pickup driver share one spot at the counter: in 03b (opening minute) a walk-in is drawn over most of the driver at the register; in 11/12 a walk-in's head sticks up behind the driver's cap (one figure, two heads); in 14 two walk-ins overlap at the driver's shoulder | Give walk-ins their own order point ~34 pt left of the driver pickup (the register's left end), or queue them ~26 pt apart, never on the driver's spot; add a crowd-test budget for driver/walk-in overlap at the counter that fails on v4.3 first |
+| D302 | minor | Early shops (03, 05b, 21) leave plain sky above the roof | A back row of low #9FB4CC buildings or a billboard at y 340–500 (Waterfront: a far pier/lighthouse; Suburbs: a water tower and rooftops) |
+| D337 | minor | The cooks' neckerchiefs (red, mustard, basil) are ~2 pt wide and don't show at phone size; only the skull cap tells cook two apart | Widen each kerchief to a 6×4 pt triangle under the chin with a 1 pt outline (`scene/people.tsx`, `COOK_KERCHIEF`) |
+| D304 | note | The tied-station banner "Upgrade prep + ovens · $35" reads as a label (16) | Make it a green, tappable "Buy both · $35" button |
+| D305 | note | Suburbs shows a live "Build $300" on the City map and list while locked; the Nonna countdown toast covers the top lock tiles (17) | Padlock and the countdown on the row and pin; the toast under the map |
+| — | note | During the Pier 9 bid, the University chip is solid green "Build $1.2M" (21) | A one-line "Pier 9 bid in progress" hint on the chip |
+| D297 | note | Goal-bar fill runs through the label on an unmanaged shop ("ma\|nager") | Darker label over the fill |

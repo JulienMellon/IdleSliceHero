@@ -1390,3 +1390,99 @@ v3.6 loads clean (`errors: []`, `loaded: true`) and the critic opened every shot
 | Pacing sim (greedy buyer, one sitting) | Nonna takes over at 5.0 min (was 1.4), Suburbs opens at 5.0 (was 2.0), the bid is won at 35.9 min, University opens at 70.4 (was 66.1), the city completes at 227 min (was 221). Longest scene gap 34.5 min, the University dead zone (deferred). |
 | D302, D303, D306 | Carried, not changed. |
 
+---
+
+## Rounds 38–43 (v3.7 → v4.2) and build tables v3.8–v4.3, archived from CRITICLOG.md
+
+### Rounds 39–43 verdicts (summarised; the build tables below record what each round's notes were and how they were fixed)
+- **Round 39 (v3.8): NOT SATISFIED.** D309 the taller row hid the far traffic lane; D310 manager button contrast; D311 manager gain dropped; D312 chip hit margins overlapping; D308 follow-up (Uptown decor header).
+- **Round 40 (v3.9): NOT SATISFIED.** D313 no-gain buttons looked the same as buyable ones; D314 station icons lost; D315 unmanaged shop's second design language and the A-board on the sill; D316 bottleneck red on a greyed button; D317 drawer copy wraps; D318 note (tied stations invisible on the sidewalk).
+- **Round 41 (v4.0): NOT SATISFIED.** D319 drawer kept the green no-gain button; D320 "NO GAIN" replaced station names; D321 crowded Waterfront wall (net over menu, lopsided ovens); D322–D324 notes.
+- **Round 42 (v4.1): NOT SATISFIED.** G75 locked upgrades drawn as no-gain; D325 strike-through vanished on round digits; D326 the bottleneck to save for didn't stand out; D327 "COUNTER" touched the edges; D328 a walk-in's head into a baker's feet (Suburbs, shot 05); D329 Expand/Fleet "+$0/s now".
+- **Round 43 (v4.2): NOT SATISFIED.** D330 pink dashed outline around the green saving face; D331 two drivers stacked in Uptown's door (shot 14); D302/D306/D328 carried; D332–D335 notes.
+
+### Current state — v3.7, round 38: ✅ SATISFIED (0 bugs, 0 [major], 3 [minor])
+
+v3.7 (story pacing, neighbourhood perks, the Pier 9 bid) loads clean and the critic opened all 27 shots with no regressions. The perk card (22) and the bid goal (21) were checked in pixels.
+
+**Open (none blocks satisfaction)**
+
+| ID | Type | Note | Proposed fix |
+| --- | --- | --- | --- |
+| D302 | minor | Early shops leave ~190pt of plain sky above the roof | A back row of low buildings or a billboard at y 340–500, fill #9FB4CC |
+| D303 | minor | Back-row diners at Industrial and Uptown touch heads | Space back-row seats 6–8pt wider, or drop every other diner 4pt |
+| D306 | minor | The three Industrial chefs wear the same jacket and toque | A red neckerchief (#E5483A) or a skull cap on one |
+| D307 | note | Dale's perk text can read as a loss | "Suburbs walk-ins pay more: 85% of full price (was 70%)", green up-arrow |
+| D308 | note | No shot shows the drawer perk banner or Uptown's 6% decor header | Add a Suburbs drawer shot after Dale's finale |
+| — | note | Building University while saving for the $2.0M bid drops the bid progress without warning | A one-line hint on the University chip ("Pier 9 bid in progress") |
+| D304 | note | The tied-station banner looks like a label | Make it a tappable "buy both" button |
+| D305 | note | Suburbs shows a live "Build $300" while locked | Padlock and countdown on the row and tile |
+| D294 | note | "No gain now" buttons keep green price text | Grey the price |
+| D297 | note | Goal-bar fill runs through the label on an unmanaged shop | Darker label over the fill |
+| — | note | The Suburbs-locked toast covers the University and Industrial lock tiles | Sit it under the map |
+| — | planned | Tap targets below 44pt | v3.8 |
+
+### v3.8 — build (tap targets; round-38 notes)
+
+| Note | Change |
+| --- | --- |
+| Tap targets (planned) | `components/tap-targets.ts` holds the sizes; a test asserts every control reaches 44 pt with its hit margin. Sidewalk buy buttons are drawn at 44 pt. Each station card's label strip is 18 pt with a 26 pt hit margin above only, and 4 pt of dead space above the buy button. Unmanaged-shop chips are 26 pt with 9 pt margins (font 12, was 10.5). The drawer's Close button is 30 pt with 7 pt margins. The row is ~14 pt taller and sits ~14 pt lower (its foot just past the kerb), so its top is where it was and the curb walk-ins still clear it; it now covers the top edge of the street. |
+| Unmanaged shop | The manager card is one 44 pt button reading "Hire a Waterfront manager · $30K", so the taller controls don't cover the WELCOME mat (05b). |
+| D307 | Dale's perk reads "Suburbs walk-ins pay more: 85% of full price (was 70%)". |
+| D308 | New shot `23-perk-banner-drawer`: the Suburbs drawer after Dale's finale shows the perk banner. |
+| C39 (code) | A short iOS interruption no longer plays the next story beat early. |
+| D302, D303, D306 | Carried. |
+
+### v3.9 — build (round-39 notes from the v3.8 review, and the codecritic's C44–C46)
+
+| Note | Change |
+| --- | --- |
+| Tap targets, redone | v3.8's hit margins don't work on a real iPhone (a touch outside a parent's bounds never reaches the child, and web ignores hitSlop, so the screenshots couldn't show it). Every sidewalk control is now **drawn** at 44 pt: each station is one button with its name above the price (the label strip is gone, **All** opens the drawer), chips are 44 pt, the manager button is 44 pt. Close is 36 pt with a 4 pt margin inside the header's padding. |
+| D309 | The station cards are 55 pt (v3.7: 62 pt), so the row sits above the kerb again (`SIDEWALK_ROW.raiseManaged = 13`): the kerb and both traffic lanes show (13). An unmanaged shop's column (chips 44 + manager 44) sits at `raiseIdle = 2`, clear of the WELCOME mat (05b). |
+| D310, D311 | The manager button reads "HIRE A MANAGER · +$22/s" over the price; greyed-out button text is #665A4F (~4:1, was ~2:1). |
+| D312 | No chip hit margins any more. |
+| D308 | Shot 15a shows the Uptown decor header "+6%" with Genevieve's perk (14/15 now seed that perk). Shot 15 is now the All drawer (station tags are gone). |
+| D302, D303, D306 | Carried. |
+
+### v4.0 — build (round-40 notes from the v3.9 review)
+
+| Note | Change |
+| --- | --- |
+| D313 | One "no gain" look everywhere on the sidewalk: a flat #EFE6D8 face, #CFC3B2 rim and #8A7B6C text reading "NO GAIN" next to the station icon. Green now only ever means "this adds income" (03, 05, 05b). |
+| D314 | Station icons are back, 13 pt, left of the station name (05, 09, 14). |
+| D315 | An unmanaged shop's chips are the same buttons as the managed cards (icon, name over price, level badge), unframed to fit; All sits beside the manager button only (44 pt, not stretched); the A-board moves 10 right and shrinks to 85% (05b). |
+| D316 | A bottleneck you can't afford yet has a soft dashed #F2B8B0 outline and a dark badge; it turns solid red when affordable (03, 03b). |
+| D317 | "Expand to hire past 30" for Drivers; "Lv" and its number never split across lines. |
+| D302, D303, D306 | Carried. |
+
+### v4.1 — build (round-41 notes from the v4.0 review)
+
+| Note | Change |
+| --- | --- |
+| D319 | The drawer's no-gain buttons use the same flat muted look as the sidewalk ("no gain now" over a struck price); green appears only on buys that add income (05a, 15, 16, 23). |
+| D320 | Sidewalk buttons keep the station name; a no-gain price is struck through instead (03, 04, 05, 21). |
+| D321 | Waterfront: the third oven sits centred over both columns (any incomplete top row of stacked decks is centred); the porthole is 6 lower and clears the menu; the fishing net hangs under the porthole, clear of the menu and the counter staff (21). |
+| D324 | Station cards drop "+$0/s now" when the button already says "no gain now". |
+| D302, D303, D306 | Carried. |
+| Screenshots | One run of shot 22 (perk card) timed out waiting for the cut-scene; a re-run passed. Watch for flakiness. |
+
+### v4.2 — build (round-42 notes from the v4.1 review)
+
+| Note | Change |
+| --- | --- |
+| G75 | A locked or maxed upgrade is never "no gain": it shows "Locked" or "MAX" in the normal grey (16 Drivers). One rule, `buttonTone`, now drives the sidewalk and the drawer (cards and Fleet). |
+| D325 | No-gain prices get a drawn 2 pt bar at 52% height, −6°, instead of a font line-through ($65 is struck in 05, 05a). |
+| D326 | The bottleneck you're saving for has a pale basil face (#DDEFD9), #2E7D3E text and a cash-progress line along its foot (03 Drivers). |
+| D327 | Sidewalk icons 11 pt and letter spacing 0.1, so "COUNTER" has side room. |
+| D329 | Expand and Fleet drop "+$0/s now" too. |
+| D302, D306, D328 | Carried. |
+
+### v4.3 — build (round-43 notes from the v4.2 review)
+
+| Note | Change |
+| --- | --- |
+| D330 | The bottleneck being saved for has a basil dashed outline (#2E7D3E at 60%) matching its pale basil face; no more pink with green (03). Solid red stays for an affordable bottleneck. |
+| D306 | Cooks differ by position in the kitchen: the first keeps the toque and a red neckerchief, the second wears a grey skull cap and a mustard neckerchief, the third a basil neckerchief (09, 13). |
+| Code-review fixes seen on screen | Decor cards in an unmanaged shop no longer show a green button (C63); chips on an unmanaged shop no longer get the "saving for" face (C64). |
+| D302, D328, D331 | Carried. |
+

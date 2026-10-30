@@ -265,3 +265,112 @@ v3.6 fixes the round-7 blocker (the furniture memo missed `prep`, so a managed s
 | Tests | `story-pacing.test.ts` (19 tests: gate, beat-4 gaps, play time, migration, each perk and its scope, the bid). 111 tests pass. |
 | Not done | Open lows from round 8 (C37, C38, A12, M16, M19, C22, C33, M10, M15, A10). |
 
+---
+
+## Rounds 9–13 (v3.7 → v4.1) and build tables v3.8–v4.3, archived from CODELOG.md
+
+### Rounds 10–13 verdicts (summarised; each build table below records the items and their fixes)
+- **Round 10 (v3.8): CHANGES REQUESTED.** C44 [high] hitSlop outside a parent never fires on iOS (web ignores hitSlop), so the 44 pt claim was false; C45 the strip's upward slop stole kitchen taps; C46 compact button height; C47–C49 story-gap edge cases and a weak test; M22/M23 per-render allocations.
+- **Round 11 (v3.9): APPROVED.** C50 Larger Text in fixed 44 pt buttons; C51 tap-target tests compared constants with themselves; C52 dead `drawer.focus`; C53 offline popup threshold shared with story pacing; C54 load() vs ticks race; C55 logs not rotated; A15 extract the sidewalk row; M24/M25.
+- **Round 12 (v4.0): APPROVED.** C56 the separate no-gain component dropped the purchase burst; C57 Larger Text on badge/All; C58 dead code; C59 stacked doc blocks; A16 pure sidewalk model; M26 four gain simulations per tick; M27/M28.
+- **Round 13 (v4.1): CHANGES REQUESTED.** C60 [high] the drawer drew locked/maxed cards as no-gain; C61 docs/`soft` tone; C62 Waterfront wall magic offsets; A17 a cached drawer model; M29 throwaway `Animated.Value`s; M30 drawer gain simulations per tick; M31.
+
+### Current state — round 9 (v3.6 → v3.7): ✅ APPROVED
+
+v3.7 adds save v3 (`playSeconds`, `sceneAt`, `Shop.perk`), the pure pacing gate (`sceneReady` / `pickScene`), five neighbourhood perks and the Pier 9 bid. The engine changes are pure and every caller uses the new signatures; `tsc` is clean and 111 tests pass. Perk scope, the `bundleHint` key and save compatibility (v2 → v3, and v3 opened by v3.6) were checked.
+
+**Open (none blocks approval). Fix C39 first in v3.8: it is a real gameplay bug.**
+
+| ID | Sev | Where | Problem | Proposed fix |
+| --- | --- | --- | --- | --- |
+| C39 | medium | `store/game-store.ts` `load()` with `app/_layout.tsx` (AppState) | iOS fires inactive → active for Control Center, Notification Center, call banners and the app switcher; `load()` resets `lastSceneEndPlay` to null each time, so a one-second swipe plays the next beat and breaks the 90 s gap | Reset only after a real absence: `STORY_PACING.returnSeconds` (~60 s) compared with `awaySeconds`; keep null on a cold launch. Extract `resumeSceneEnd(prev, awaySeconds)` and test it (T32) |
+| C40 | low | `migrate` (`${id}-4`), `sceneReady` (`${hood}-3`) | Depend on the scene-id pattern; `migrate` hard-codes Downtown | Use `!!PERKS[id]`; pin the pattern with T29 |
+| C41 | low | `app/index.tsx` | `G.perkOf(id, shop)` called four times with `!` | Compute once |
+| C42 | low | `applyOffline` | The `.map` callback adds to an outer `bonus` | Map, then reduce |
+| C43 | low | `nonnaCountdownText` | "Nonna is about to take over" can show for 120 s+ while downtown-4 waits out its gap | Word it for a wait, or show the seconds left |
+| A13 | low | `pickScene` | Six positional arguments, three of them clocks | One gate object |
+| M20 | low | `playTick` | Spreads the state a second time on top of `tick` | Optional `playDt` in `tick` |
+| M21 | low | `queueScene` per 200 ms tick | Builds a `Set` and filtered array while a beat waits out its gap (<1 KB/s) | Optional: skip until the next gap boundary |
+| C37, C38, A12, M16, M19, C22, C33, M10, M15, A10 | low | (carried) | See the round-8 archive | |
+
+**Tests to add:** T29 (perk scenes ↔ `PERKS`, id pattern), T30 (v3 round trip, bad `sceneAt` entries dropped), T31 (Priya leaves fleet costs alone, Sal leaves foreground earnings alone, exact Dale test), T32 (`resumeSceneEnd`).
+
+### v3.8 — build (round-9 items + tap targets)
+
+| Item | Change |
+| --- | --- |
+| C39 + T32 | `STORY_PACING.returnSeconds = 60`; pure `resumeSceneEnd(prev, awaySeconds)` in `engine/cutscene-input.ts`. `load()` keeps the in-memory gap after a short absence and clears it after a real return or a cold launch. |
+| C40 + T29 | `sceneId()` / `finaleId()` in `game.ts`; `migrate` uses `!!PERKS[id]`; `sceneReady` uses `sceneId`. Tests pin the `<neighbourhood>-<beat>` pattern and one finale per perk. |
+| C41 | `perkOf(id, shop)` computed once in `index.tsx`. |
+| C42 | `applyOffline` maps, then sums the bonus with `reduce`. |
+| C43 | "Nonna takes over soon — keep baking" once the count is reached but the scene waits out its gap. |
+| T30, T31 | v3 round trip (bad `sceneAt` entries dropped); Priya leaves fleet prices alone; Sal leaves foreground earnings alone; exact Dale test. |
+| Tap targets | `components/tap-targets.ts` (`TAP`, `hitSize`, `slopOf`) + `tap-targets.test.ts`; `BuyButton` compact draws at 44 pt; `index.tsx` uses the constants for the label strip, chips and Close. |
+| Not done | A13, M20, M21 and the carried lows. 123 tests pass. |
+
+### v3.9 — build (round-10 items)
+
+| Item | Change |
+| --- | --- |
+| C44 | `tap-targets.ts` models `roomTop` / `roomBottom` (space the parent owns); the test fails any hitSlop larger than its room (T33). All sidewalk controls are drawn at 44 pt with no margin (T34). The v3.8 claims in the logs were wrong and are superseded by this row. |
+| C45 | The station label strip and its 26 pt upward margin are removed; nothing on the row reaches into the scene's tap area. |
+| C46 | Compact `BuyButton` has a fixed `height: 44` (`styles.buyOuterCompact` / `buyInnerCompact`); the inner fills it with `flex: 1`. The manager label is short again ("HIRE A MANAGER · +$x/s" on the sub line, price as the label). |
+| C47 | `resumeSceneEnd(prev, away, playSeconds)` clamps the kept gap to the reloaded play time (T35). |
+| C48 | On resume, `awaySeconds` is measured from the in-memory `lastSavedAt` even if the reload fails; the offline popup threshold uses `STORY_PACING.returnSeconds`. |
+| C49 | The Priya scope test asserts both purchases succeed. |
+| M22, M23 | `CLOSE_SLOP` is a module constant; compact button styles are in the StyleSheet. |
+| A14 (part) | Row geometry lives in `SIDEWALK_ROW` (card inset/height, raise per mode), tested against the button height. |
+| Process | New advisory agents `storycritic` and `audiocritic` (`.claude/agents/`), with `STORYLOG.md` and `AUDIOLOG.md`. 125 tests pass. |
+
+### v4.0 — build (round-11 review of v3.9: APPROVED; its items, plus the critic's round 40)
+
+The round-10 (v3.8, CHANGES REQUESTED) and round-11 (v3.9, APPROVED) reviews are archived with the next log rotation, when this loop passes (C55).
+
+| Item | Change |
+| --- | --- |
+| C50 | Text in the fixed 44 pt buttons caps iOS Larger Text at ×1.15 (`COMPACT_FONT_MAX_SCALE`). |
+| C51 + T36 | `STATION_CARD`, `DRAWER_HEAD`, `IDLE_STACK_GAP`, `BUTTON_H` in `tap-targets.ts`; the StyleSheets are built from them and `SIDEWALK_ROW` / Close's room are derived, so the tests describe the real layout. |
+| C52 | The drawer state is a boolean; the dead `focus` prop and `cardFocus` style are gone. |
+| C53 | `TUNING.offlinePopupSeconds`. |
+| A15 | `components/sidewalk-row.tsx` (`SidewalkRow`) owns the row: static station table and icons at module scope (M24). |
+| M25 | Compact text styles in the StyleSheet. |
+| UI | `BuyButton` tone `nogain` (a separate `NoGainButton`, chosen after all hooks run) and an optional `icon`; `ChalkSign` takes a scale. |
+| Not done | C54, T37, T38 and the carried lows. 125 tests pass. |
+
+### v4.1 — build (round-12 review of v4.0: APPROVED; its items, plus the critic's round 41)
+
+| Item | Change |
+| --- | --- |
+| C56 | `nogain` is a style variant inside `BuyButton`'s single tree (no separate component), so a station flipping to it right after a purchase keeps the burst, the shake and the pressed feedback. |
+| A16 + M26 + T39 | `components/sidewalk-model.ts`: `stationModels` (cost, lock, label, tone, bottleneck) cached on a levels key, `stationViews` adds `affordable` and the frame; `SidewalkRow` renders the views and no longer takes a `tied` closure. Tests: dashed vs solid bottleneck, nogain vs locked MAX, the cache reused across cash changes. |
+| C57 | Level badge and All text cap Larger Text. |
+| C58 | Dead imports, `managerCost` and `shadow` removed from `index.tsx`. |
+| C59 | One doc block on `BuyButton`. |
+| T40, T41 | Station locks keep "Lv" and the number together; `offlinePopupSeconds` pinned at 60. |
+| Layout | `layout()` centres an incomplete top row of stacked oven decks (D321); scene and crowd tests still pass. |
+| Not done | C54, T37, T38, M27 and the carried lows. 130 tests pass. |
+
+### v4.2 — build (round-13 review of v4.1: CHANGES REQUESTED)
+
+| Item | Change |
+| --- | --- |
+| C60 + T42 | `buttonTone({ lock, gain, muted })` in `sidewalk-model.ts` is the one rule: locked → normal, muted → neutral, gain ≤ 0 → nogain. `stationModels`, the drawer `card()` and the Fleet card use it; `StationCard` takes a `tone` (no more `useless`). Tests cover locked/maxed, no-gain, gain and muted. |
+| C61 | One doc block on `BuyButton`; the unused `soft` tone and its branches are removed. |
+| M29 | `Animated.Value`s in `BuyButton`, the Hud and the offline popup are created once with `useState(() => …)` instead of a throwaway per render. |
+| M30 (part) | The drawer card computes its gain once (Expand at a level cap counts as useful). |
+| UI | `BuyButton` gains `saving` / `progress` (pale basil face and a progress line for the bottleneck being saved for) and a drawn strike bar for no-gain prices. |
+| Not done | A17 (a full cached drawer model), C62/T43 (Waterfront wall geometry), T44, C54, T37, T38, M27, M31 and the carried lows. 133 tests pass. |
+
+### v4.3 — build (round-14 review of v4.2: CHANGES REQUESTED; not re-reviewed, the codecritic is paused)
+
+| Item | Change |
+| --- | --- |
+| C63 | Decor cards pass `tone={buttonTone({ lock: cost === null, gain, muted: idleShop })}`; `StationCard.tone` is required, so a missing tone can't fall back to green. |
+| C64 | `saving` only on framed (managed) station cards. |
+| C65 | `stationTone(lock, gain)` for the unmuted sidewalk case. |
+| T46 | `StationView.progress` (0–1, only for the bottleneck being saved for, never NaN), tested. |
+| M32 (part) | Grade and Expand gains computed once per render. |
+| M33 | Cut-scene `Animated.Value`s created once (`useState(() => …)`). |
+| Cooks (D306) | `PersonProps.variant` (cook index) drives the neckerchief colour and the second cook's skull cap. |
+| Not done | A17 (cached drawer model) with T45, C66 (strike bar on a shrunk iOS label: check on device), M31, M34, C62/T43, T44, C54, T37, T38, M27, carried lows. 134 tests pass. |
+
