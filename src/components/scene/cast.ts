@@ -43,6 +43,9 @@ export interface CastInput {
   crew: CrewState;
 }
 
+/** Walk-cycle poses per second: STEP_FRAMES (8) per second is one stride cycle a second. */
+export const WALK_POSES_PER_S = STEP_FRAMES;
+
 /** A figure stays opaque until its centre is this far past the screen edge, so it has fully left before it fades. */
 const EDGE_HOLD = 14;
 /** …then fades out over this many units (D284: it used to fade over the last 30 on screen and read as a ghost). */
@@ -61,8 +64,10 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
   const t = clock * pace;
   const poseClock = Math.floor(clock * 7.5) / 7.5;
   const pt = poseClock * pace;
-  const frame = Math.floor(clock * 15);
-  const walkStep = (k: number) => (((frame + k) % STEP_FRAMES) + 0.5) * ((Math.PI * 2) / STEP_FRAMES);
+  // a 1.0 s walk cycle of STEP_FRAMES poses, stepped by time (not by frame), so each pose holds ~2 frames at 15 fps
+  // and the memoised limbs keep hitting (P6, codecritic plan #2)
+  const pose = Math.floor(clock * WALK_POSES_PER_S);
+  const walkStep = (k: number) => (((pose + k) % STEP_FRAMES) + 0.5) * ((Math.PI * 2) / STEP_FRAMES);
   // a short blink every few seconds per person
   const blinkAt = (sd: number) => (clock + (sd % 37) * 0.31) % 3.7 < 0.13;
   const cast: CastMember[] = [];

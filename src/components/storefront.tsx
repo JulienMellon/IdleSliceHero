@@ -9,7 +9,8 @@
 // anchored to the bottom so the sidewalk and street are always visible (taller screens show more sky).
 import { memo, useEffect, useMemo, useRef, type ComponentRef, type ReactElement } from 'react';
 import { Pressable, View } from 'react-native';
-import Svg, { G, Rect } from 'react-native-svg';
+import Svg, { Circle, G, Rect, Text as SvgText } from 'react-native-svg';
+import { F } from '../theme';
 import { FOOTPRINTS, NEIGHBORHOODS } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import * as Game from '../engine/game';
@@ -22,7 +23,7 @@ import { SceneDefs } from './scene/defs';
 import { FRONT_ROW_Y, LEDGE_Y, STOOL_Y, layout, type Layout } from './scene/layout';
 import { seatPalette } from './scene/palette';
 import { GUEST_SHIRTS, HAIR_COLORS, hash32, Person } from './scene/people';
-import { CURB_Y, D, P, SCENE_W, sceneFit, unprojectX } from './scene/projection';
+import { CURB_Y, D, INK, P, SCENE_W, sceneFit, unprojectX } from './scene/projection';
 import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Rug, Stools, Table, WallPlanter } from './scene/props';
 import { furnitureDeps, furnitureInputs, type FurnitureInputs } from './scene/furniture-inputs';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, StreetProp } from './scene/room';
@@ -110,6 +111,13 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     heads: null as null | Record<Station, boolean>,
     hires: [] as { st: Station; text: string }[],
     hire: null as null | { st: Station; at: number; text: string },
+    /** The oven job's time left last frame (−1: no job), to spot a bake finishing (P3). */
+    ovenLeft: -1,
+    /** A baked batch sliding out of the oven onto the pass. */
+    slide: null as null | { at: number; n: number },
+    /** Station speeds last frame, to show what an upgrade did (P5). */
+    speeds: null as null | { prep: number; oven: number; counter: number; drivers: number },
+    flash: null as null | { st: Station | 'door'; at: number; text: string },
   });
 
   const ovenCount = Math.min(FOOTPRINTS[fp].ovenSlots, 1 + Math.floor((shop.ovens - 1) / 8));
@@ -186,6 +194,19 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       emitAudio({ type: 'cash' });
     }
     m.wasPaused = paused;
+    // a bake finished: the job is gone, or a new one started (its time left jumped up) → slide the pies out
+    const ov = line.oven;
+    const prevLeft = m.ovenLeft;
+    m.ovenLeft = ov ? ov.left : -1;
+    if (!paused && prevLeft >= 0 && (!ov || ov.left > prevLeft + 1e-6)) m.slide = { at: clock, n: line.baked + (line.counter?.n ?? 0) };
+    // an upgrade sped a station up: say by how much over its badge (drivers: over the door)
+    const sp = { prep: Game.prepRate(shop), oven: Game.ovenRate(shop), counter: Game.counterRate(shop), drivers: shop.drivers };
+    if (m.speeds) {
+      const pct = (a: number, b: number) => Math.round((b / a - 1) * 100);
+      if (sp.drivers > m.speeds.drivers) m.flash = { st: 'door', at: clock, text: `+${sp.drivers - m.speeds.drivers} driver${sp.drivers - m.speeds.drivers > 1 ? 's' : ''}` };
+      for (const st of STATIONS_IN_ORDER) if (sp[st] > m.speeds[st] * (1 + 1e-9)) m.flash = { st, at: clock, text: `+${pct(m.speeds[st], sp[st])}% faster` };
+    }
+    m.speeds = sp;
     // a head just hired says hello over their station; several at once (Nonna brings all three) queue up (C77)
     const heads = shop.heads;
     if (m.heads) for (const st of STATIONS_IN_ORDER) if (heads[st] && !m.heads[st]) m.hires.push({ st, text: `${HEADS[id][st]}: ${HIRE_LINE[st]}` });
@@ -212,6 +233,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const bxs = useMemo(() => badgeXs(lay), [lay]);
   const by = badgeRowY();
   const geoRegister = useMemo(() => P(lay.staff[0] + 12, 70, 78), [lay]);
+  const geoPass = useMemo(() => P(lay.counter.x0 + 8, 70, 40), [lay]);
   const flicker = running ? Math.sin(clock * 9) * 1.4 : 0;
   const rushK = (clock - m.rushAt) / 0.6;
   const rushC = useMemo(() => P((lay.ovenCols[0].x0 + lay.ovenCols[lay.ovenCols.length - 1].x1) / 2, D - 6, 50), [lay]);
@@ -268,7 +290,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             return (
               <G transform={pulse !== 1 ? `translate(${rushC[0]} ${rushC[1]}) scale(${pulse}) translate(${-rushC[0]} ${-rushC[1]})` : undefined}>
                 {lay.ovens.map((o, i) => (
-                  <Oven key={i} o={o} grade={shop.grade} lit={shop.managed ? running : !!line.oven} flicker={flicker * (i % 2 ? -1 : 1)} />
+                  <Oven key={i} o={o} grade={shop.grade} lit={shop.managed ? running : !!line.oven} hot={!!line.oven} flicker={flicker * (i % 2 ? -1 : 1)} />
                 ))}
               </G>
             );
@@ -308,6 +330,44 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           {/* a refused tap says why, just under the station's badge (D348) */}
           {refusal && <HireBubble x={bxs[refusal.st]} y={by + 40} text={refusal.text} tone="refusal" />}
           {!refusal && m.hire && clock - m.hire.at < 2.5 && <HireBubble x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} />}
+          {/* a finished bake: "ding!" at the oven and the pies slide onto the pass (P3) */}
+          {m.slide && clock - m.slide.at < 0.7 && (() => {
+            const k = (clock - m.slide.at) / 0.7;
+            const [ax, ay] = rushC;
+            const [bx, byy] = geoPass;
+            const x = ax + (bx - ax) * Math.min(1, k * 1.3);
+            const y = ay + (byy - ay) * Math.min(1, k * 1.3) - Math.sin(Math.min(1, k * 1.3) * Math.PI) * 10;
+            return (
+              <G opacity={k > 0.8 ? (1 - k) / 0.2 : 1}>
+                <Circle cx={x} cy={y} r={7} fill="#E9A64B" stroke={INK} strokeWidth={1} />
+                <Circle cx={x} cy={y} r={5.2} fill="#FFC531" />
+                <Circle cx={x - 2} cy={y - 1} r={1.3} fill="#E8432E" />
+                <Circle cx={x + 2.2} cy={y + 1.4} r={1.2} fill="#E8432E" />
+                <G transform={`translate(${ax} ${ay - 26 - k * 8})`}>
+                  <Rect x={-17} y={-9} width={34} height={16} rx={8} fill="#fff" stroke={INK} strokeWidth={1.1} />
+                  <SvgText x={0} y={3} fontFamily={F.bold} fontSize={10} fill={INK} textAnchor="middle">
+                    ding!
+                  </SvgText>
+                </G>
+              </G>
+            );
+          })()}
+          {/* what an upgrade did: "+50% faster" rising from the station's badge (P5) */}
+          {m.flash && clock - m.flash.at < 0.9 && (() => {
+            const k = (clock - m.flash.at) / 0.9;
+            const fx = m.flash.st === 'door' ? P(lay.door.cx, 0, 80)[0] : bxs[m.flash.st];
+            const fy = m.flash.st === 'door' ? P(lay.door.cx, 0, 80)[1] : by + 34;
+            const w = m.flash.text.length * 7 + 16;
+            const px = Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, fx));
+            return (
+              <G transform={`translate(${px} ${fy - k * 24})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
+                <Rect x={-w / 2} y={-11} width={w} height={20} rx={10} fill="#2E8B3E" stroke="#fff" strokeWidth={1.4} />
+                <SvgText x={0} y={4} fontFamily={F.bold} fontSize={13} fill="#fff" textAnchor="middle">
+                  {m.flash.text}
+                </SvgText>
+              </G>
+            );
+          })()}
           <DeparturePops deps={line.departures} left={(d) => leftNow(d.left)} anchor={(d) => carriers.get(d.id) ?? null} register={geoRegister} />
         </Svg>
       </Pressable>

@@ -9,6 +9,7 @@ import { PIER9_BID, TUNING, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
+import { tutorialAdvance, tutorialHoldsStory } from '../engine/tutorial';
 import type { Station } from '../engine/pipeline';
 
 const SAVE_KEY = 'slice-empire/save/v1';
@@ -32,6 +33,10 @@ interface Store {
   lastSceneEndPlay: number | null;
   /** Scene currently playing (or replaying from the Scrapbook). */
   playing: { scene: Scene; replay: boolean } | null;
+  /** The title card has finished this launch (not saved): scenes and the offline popup wait for it. */
+  titleDone: boolean;
+  /** The title card finished: let the story and popups through. */
+  finishTitle: () => void;
   /** Wall-clock ms of the last game tick (not saved): the scene interpolates job timers from it between ticks. */
   tickAt: number;
   /** Short-lived message, e.g. "Not enough cash". */
@@ -66,6 +71,8 @@ export const useGame = create<Store>((set, get) => {
   /** After any state change, queue the next story scene if one has triggered. */
   const queueScene = () => {
     const { game, playing, lastKitchenTap, lastSceneEndPlay } = get();
+    // the title card is still up, or Nonna is walking the player through the first batch: the story waits
+    if (!get().titleDone || tutorialHoldsStory(game)) return;
     const next = pickScene(game, HOME_SCENES, Date.now(), lastKitchenTap, !!playing, lastSceneEndPlay);
     if (next) set({ playing: { scene: next, replay: false } });
   };
@@ -85,7 +92,7 @@ export const useGame = create<Store>((set, get) => {
       return false;
     }
     if (sound) emitAudio(sound(result.state));
-    set({ game: result.state });
+    set({ game: tutorialAdvance(result.state) });
     queueScene();
     void get().save();
     return true;
@@ -101,6 +108,12 @@ export const useGame = create<Store>((set, get) => {
     playing: null,
     toast: null,
     tickAt: Date.now(),
+    titleDone: false,
+    finishTitle: () => {
+      if (get().titleDone) return;
+      set({ titleDone: true });
+      if (!get().offline) queueScene();
+    },
 
     load: async () => {
       const now = Date.now();
@@ -147,7 +160,7 @@ export const useGame = create<Store>((set, get) => {
 
     tick: (dt) => {
       if (!get().loaded) return;
-      const game = G.playTick(get().game, dt);
+      const game = tutorialAdvance(G.playTick(get().game, dt));
       const toast = get().toast;
       const tickAt = Date.now();
       set(toast?.need !== undefined && game.cash >= toast.need ? { game, toast: null, tickAt } : { game, tickAt });
@@ -164,7 +177,7 @@ export const useGame = create<Store>((set, get) => {
       const r = G.tapStation(g, g.active, st);
       const at = Date.now();
       if (r.ok) {
-        set({ game: r.state, lastKitchenTap: at });
+        set({ game: tutorialAdvance(r.state), lastKitchenTap: at });
         return null;
       }
       set({ lastKitchenTap: at });
@@ -213,7 +226,7 @@ export const useGame = create<Store>((set, get) => {
       if (!p) return;
       if (p.replay) set({ playing: null });
       else {
-        const game = G.markSceneSeen(get().game, p.scene);
+        const game = tutorialAdvance(G.markSceneSeen(get().game, p.scene));
         set({ playing: null, game, lastSceneEndPlay: game.playSeconds });
       }
       if (!p.replay) void get().save();

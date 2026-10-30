@@ -149,3 +149,17 @@ Round 14's C63/C64/C65/M33/T46 verified fixed. Notes and their v4.8 status:
 | Coin layer rework (C79, M47, C81) | `coin-layer.tsx`, `pulse-bus.ts`, `game-ui.tsx` | — |
 
 `tsc` clean; 204 tests; screenshots `v5.0`: `errors: []`. Pacing unchanged (Nonna 5.0 min / 35 taps; city 184.8 min).
+
+## v5.1 — build (steps 5 + 6). Range: a0a9bee..HEAD (round 18 on v5.0 still running; its notes go into v5.2)
+| Change | Where | Test |
+| --- | --- | --- |
+| `LINE.departSeconds` 2.0, `handoffSeconds` 1.0, laps 5.0 / 4.6 (D361); departures settle within 1e-9 s (a float boundary paid one frame late) | `pipeline.ts` | G81 carried test; earnings test over 120 s |
+| Tutorial model (pure) + saved `tutorial` step + migration; first Downtown batch ×2.5 | `engine/tutorial.ts`, `game.ts`, `game-store.ts` | `tutorial.test.ts` (full scripted run to Marco, first bake ≤ 3 s, story hold, migration) |
+| Bake slide, upgrade flash (effect-detected, mem only), oven `hot` | `storefront.tsx`, `props.tsx` | — |
+| Walk cycle by time | `cast.ts` | quantise tests |
+| Coach card, HUD/sidewalk highlights | `coach-card.tsx`, `game-ui.tsx`, `sidewalk-row.tsx`, `index.tsx` | — |
+| Title card (Animated, native driver, loops stopped on unmount), `titleDone` gate in the store | `title-card.tsx`, `_layout.tsx`, `game-store.ts` | screenshot 00 |
+| Logo art as data shared by the component and the PNG renderer | `logo-art.ts`, `logo.tsx`, `scripts/render-logo.ts` | — |
+| Identity extras: window views, Industrial haze/steel, lighthouse, fuller street props, city pins; no burst on compact buttons | `room.tsx`, `background.tsx`, `identity.ts`, `city-map.tsx`, `game-ui.tsx` | — |
+
+`tsc` clean; 211 tests; screenshots `v5.1`: `errors: []`.

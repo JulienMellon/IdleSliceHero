@@ -13,22 +13,24 @@ import { Box, FloorShadow } from './primitives';
  * differ in silhouette as well as finish.
  */
 /** A flickering flame: the only part of an oven that changes from frame to frame. */
-function Flame({ mx, my, mw, mh, flicker }: { mx: number; my: number; mw: number; mh: number; flicker: number }) {
+function Flame({ mx, my, mw, mh, flicker, hot }: { mx: number; my: number; mw: number; mh: number; flicker: number; hot: boolean }) {
   return (
     <G>
-      <Ellipse cx={mx} cy={my - mh * 0.35} rx={mw * 0.5} ry={mh * 0.5} fill="#FFD166" opacity={0.35} />
+      {/* a pie in the oven: the mouth glows brighter and wider (P3) */}
+      {hot && <Ellipse cx={mx} cy={my - mh * 0.3} rx={mw * 0.85} ry={mh * 0.85} fill="#FFB347" opacity={0.28} />}
+      <Ellipse cx={mx} cy={my - mh * 0.35} rx={mw * 0.5} ry={mh * 0.5} fill="#FFD166" opacity={hot ? 0.55 : 0.35} />
       <Path d={`M${mx - mw * 0.38} ${my} L${mx - mw * 0.22} ${my - mh * 0.55 - flicker} L${mx - mw * 0.06} ${my - mh * 0.3} L${mx + mw * 0.06} ${my - mh * 0.78 + flicker} L${mx + mw * 0.2} ${my - mh * 0.32} L${mx + mw * 0.32} ${my - mh * 0.55} L${mx + mw * 0.38} ${my} Z`} fill="#FFE08A" opacity={0.9} />
     </G>
   );
 }
 
 /** One oven: a memoised body (re-rendered only on upgrades) plus a per-frame flame. */
-export function Oven({ o, grade, lit, flicker }: { o: OvenSpec; grade: number; lit: boolean; flicker: number }) {
+export function Oven({ o, grade, lit, flicker, hot = false }: { o: OvenSpec; grade: number; lit: boolean; flicker: number; hot?: boolean }) {
   const fb = useMemo(() => flameBox(o, grade), [o, grade]);
   return (
     <G>
       <OvenBody o={o} grade={grade} lit={lit} />
-      {lit && <Flame {...fb} flicker={flicker} />}
+      {lit && <Flame {...fb} flicker={flicker} hot={hot} />}
       {!isBoxOven(o, grade) && <DomeFront o={o} gold={grade >= 3} wood={grade === 2} />}
     </G>
   );

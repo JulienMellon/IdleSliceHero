@@ -1,0 +1,83 @@
+{
+  "version": "v5.1",
+  "errors": [],
+  "shots": [
+    "/home/claude/wt/screenshots/v5.1/00-title-card.png",
+    "/home/claude/wt/screenshots/v5.1/01-opening-cutscene.png",
+    "/home/claude/wt/screenshots/v5.1/02-cutscene-dialog.png",
+    "/home/claude/wt/screenshots/v5.1/03-new-game.png",
+    "/home/claude/wt/screenshots/v5.1/03b-full-queue-tap.png",
+    "/home/claude/wt/screenshots/v5.1/04-after-20s-play.png",
+    "/home/claude/wt/screenshots/v5.1/05-mid-game.png",
+    "/home/claude/wt/screenshots/v5.1/05a-upgrades-sheet.png",
+    "/home/claude/wt/screenshots/v5.1/05a2-decor-section.png",
+    "/home/claude/wt/screenshots/v5.1/05b-unmanaged-shop.png",
+    "/home/claude/wt/screenshots/v5.1/05b2-heads-drawer.png",
+    "/home/claude/wt/screenshots/v5.1/05b3-prep-ring.png",
+    "/home/claude/wt/screenshots/v5.1/05b4-refused-tap.png",
+    "/home/claude/wt/screenshots/v5.1/05b5-hire-bubble.png",
+    "/home/claude/wt/screenshots/v5.1/05c-city.png",
+    "/home/claude/wt/screenshots/v5.1/06-scrapbook.png",
+    "/home/claude/wt/screenshots/v5.1/07-offline-popup.png",
+    "/home/claude/wt/screenshots/v5.1/08-late-cutscene.png",
+    "/home/claude/wt/screenshots/v5.1/09-late-game.png",
+    "/home/claude/wt/screenshots/v5.1/10-late-game-pops-a.png",
+    "/home/claude/wt/screenshots/v5.1/11-late-game-pops-b.png",
+    "/home/claude/wt/screenshots/v5.1/12-late-rush-tap.png",
+    "/home/claude/wt/screenshots/v5.1/25-look-suburbs.png",
+    "/home/claude/wt/screenshots/v5.1/25-look-university.png",
+    "/home/claude/wt/screenshots/v5.1/25-look-downtown.png",
+    "/home/claude/wt/screenshots/v5.1/13-flagship-max.png",
+    "/home/claude/wt/screenshots/v5.1/14-uptown-decorated.png",
+    "/home/claude/wt/screenshots/v5.1/15-uptown-drawer.png",
+    "/home/claude/wt/screenshots/v5.1/15a-uptown-decor-section.png",
+    "/home/claude/wt/screenshots/v5.1/16-tied-bundle-drawer.png",
+    "/home/claude/wt/screenshots/v5.1/17-suburbs-locked.png",
+    "/home/claude/wt/screenshots/v5.1/18-sold-sign-scene.png",
+    "/home/claude/wt/screenshots/v5.1/19-recipe-card-scene.png",
+    "/home/claude/wt/screenshots/v5.1/20-offline-capped.png",
+    "/home/claude/wt/screenshots/v5.1/21-pier9-bid-goal.png",
+    "/home/claude/wt/screenshots/v5.1/22-dale-perk-card.png",
+    "/home/claude/wt/screenshots/v5.1/23-perk-banner-drawer.png",
+    "/home/claude/wt/screenshots/v5.1/24-settings-audio.png"
+  ],
+  "loaded": true,
+  "audio": {
+    "opening": [
+      "downtown_sparse.m4a @1.7",
+      "bubble_1.m4a @1.9",
+      "bubble_2.m4a @3.2"
+    ],
+    "offline": [
+      "suburbs.m4a @0.7"
+    ],
+    "recipe": [
+      "downtown_sparse.m4a @1.8",
+      "downtown.m4a @2.1",
+      "bubble_0.m4a @2.2",
+      "triumph_downtown.m4a @5.4",
+      "bubble_2.m4a @5.4",
+      "bubble_1.m4a @6.8",
+      "bubble_2.m4a @8.3",
+      "recipe.m4a @9.7"
+    ],
+    "session": [
+      "suburbs.m4a @5.7",
+      "collect_1.m4a @9.8",
+      "cash_2.m4a @10.8",
+      "rush_1.m4a @12.7",
+      "rush_2.m4a @13.8",
+      "rush_0.m4a @14.4",
+      "rush_2.m4a @15.2",
+      "cash_4.m4a @15.9",
+      "rush_0.m4a @16.0",
+      "cash_2.m4a @16.6",
+      "rush_1.m4a @17.3",
+      "click_0.m4a @19.1",
+      "downtown.m4a @19.1",
+      "cash_3.m4a @21.3",
+      "cash_1.m4a @22.1"
+    ]
+  },
+  "cash_after_play": "$3"
+}

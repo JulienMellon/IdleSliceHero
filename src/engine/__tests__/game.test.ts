@@ -88,9 +88,10 @@ describe('managers, heads and tapping', () => {
       const eps = G.earningsPerSecond(s);
       for (let i = 0; i < Math.round(10 / dt); i++) s = G.lineTick(s, dt); // fill the line
       const c0 = s.cash;
-      for (let i = 0; i < Math.round(60 / dt); i++) s = G.lineTick(s, dt);
-      expect((s.cash - c0) / 60 / eps).toBeGreaterThan(0.97);
-      expect((s.cash - c0) / 60 / eps).toBeLessThan(1.03);
+      // cash comes in stacks every carrier lap (~5 s), so measure over two minutes
+      for (let i = 0; i < Math.round(120 / dt); i++) s = G.lineTick(s, dt);
+      expect((s.cash - c0) / 120 / eps).toBeGreaterThan(0.96);
+      expect((s.cash - c0) / 120 / eps).toBeLessThan(1.04);
     }
   });
   test('the GM doubles a pizzeria’s income', () => {

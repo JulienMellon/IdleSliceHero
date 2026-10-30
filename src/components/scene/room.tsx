@@ -502,10 +502,48 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
           })()}
         </G>
       ) : (
+        // each neighbourhood's own view out of the back window (D362)
         <G>
-          <Rect x={wx} y={wy} width={40} height={36} rx={3} fill="#BFE3F5" stroke={INK} strokeWidth={1.2} />
-          <Circle cx={wx + 14} cy={wy + 26} r={8} fill="#5DAE4B" />
-          <Circle cx={wx + 27} cy={wy + 28} r={6} fill="#4FA048" />
+          <Rect x={wx} y={wy} width={40} height={36} rx={3} fill={id === 'industrial' ? '#F2D3AE' : '#BFE3F5'} stroke={INK} strokeWidth={1.2} />
+          {id === 'downtown' && (
+            // the city skyline
+            <G>
+              <Rect x={wx + 3} y={wy + 14} width={8} height={22} fill="#8FA7BF" />
+              <Rect x={wx + 12} y={wy + 8} width={9} height={28} fill="#7C95AE" />
+              <Rect x={wx + 23} y={wy + 17} width={7} height={19} fill="#93ABC2" />
+              <Rect x={wx + 31} y={wy + 11} width={7} height={25} fill="#7C95AE" />
+              {[0, 1, 2].map((j) => <Rect key={j} x={wx + 14} y={wy + 12 + j * 6} width={2} height={2} fill="#FFE9A8" />)}
+            </G>
+          )}
+          {id === 'suburbs' && (
+            // pitched rooftops and a tree
+            <G>
+              <Path d={`M${wx + 2} ${wy + 36} V${wy + 24} L${wx + 11} ${wy + 16} L${wx + 20} ${wy + 24} V${wy + 36} Z`} fill="#F7F3EA" />
+              <Path d={`M${wx} ${wy + 25} L${wx + 11} ${wy + 15} L${wx + 22} ${wy + 25}`} stroke="#C0563A" strokeWidth={2.4} fill="none" />
+              <Path d={`M${wx + 22} ${wy + 36} V${wy + 27} L${wx + 30} ${wy + 20} L${wx + 38} ${wy + 27} V${wy + 36} Z`} fill="#DDF2D2" />
+              <Path d={`M${wx + 21} ${wy + 28} L${wx + 30} ${wy + 19} L${wx + 39} ${wy + 28}`} stroke="#8A5A3C" strokeWidth={2.2} fill="none" />
+              <Circle cx={wx + 33} cy={wy + 31} r={4} fill="#4FA048" />
+            </G>
+          )}
+          {id === 'university' && (
+            // the campus spire
+            <G>
+              <Path d={`M${wx + 5} ${wy + 36} V${wy + 24} H${wx + 35} V${wy + 36} Z`} fill="#B98AD0" />
+              <Rect x={wx + 16} y={wy + 14} width={8} height={12} fill="#A877C2" />
+              <Path d={`M${wx + 15} ${wy + 14} L${wx + 20} ${wy + 3} L${wx + 25} ${wy + 14} Z`} fill="#8E5BAA" />
+              <Circle cx={wx + 20} cy={wy + 19} r={2.2} fill="#FFF4D6" />
+            </G>
+          )}
+          {id === 'industrial' && (
+            // a smokestack in a warm haze
+            <G>
+              <Rect x={wx + 4} y={wy + 26} width={32} height={10} fill="#8E979E" />
+              <Rect x={wx + 22} y={wy + 8} width={6} height={20} fill="#6E757B" />
+              <Rect x={wx + 22} y={wy + 12} width={6} height={2} fill="#C0392B" />
+              <Circle cx={wx + 27} cy={wy + 5} r={4} fill="#E6E1DA" />
+              <Circle cx={wx + 32} cy={wy + 3} r={3} fill="#EEEAE4" />
+            </G>
+          )}
           <Path d={`M${wx + 20} ${wy} V${wy + 36} M${wx} ${wy + 18} H${wx + 40}`} stroke="#fff" strokeWidth={2} />
           <Rect x={wx - 2} y={wy + 34} width={44} height={4} fill="#8E5A3C" stroke={INK} strokeWidth={0.8} />
         </G>
@@ -913,11 +951,13 @@ export const StreetProp = memo(function StreetProp({ id, x, y }: { id: Neighborh
         </G>
       )}
       {kind === 'picket' && (
-        // a short white picket fence
+        // a white picket fence: two sections on a rail, with a shrub behind (D363)
         <G>
-          <Rect x={-14} y={-14} width={28} height={2.4} fill="#FFFFFF" stroke={INK} strokeWidth={0.7} />
-          <Rect x={-14} y={-7} width={28} height={2.4} fill="#FFFFFF" stroke={INK} strokeWidth={0.7} />
-          {[-12, -6, 0, 6, 12].map((px) => (
+          <Circle cx={-6} cy={-14} r={9} fill="#2E7D32" />
+          <Circle cx={8} cy={-12} r={7} fill="#3E9A44" />
+          <Rect x={-26} y={-15} width={52} height={2.6} fill="#FFFFFF" stroke={INK} strokeWidth={0.7} />
+          <Rect x={-26} y={-7} width={52} height={2.6} fill="#FFFFFF" stroke={INK} strokeWidth={0.7} />
+          {[-24, -18, -12, -6, 0, 6, 12, 18, 24].map((px) => (
             <Path key={px} d={`M${px - 2} 0 V-17 L${px} -20 L${px + 2} -17 V0 Z`} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
           ))}
         </G>
@@ -933,14 +973,19 @@ export const StreetProp = memo(function StreetProp({ id, x, y }: { id: Neighborh
         </G>
       )}
       {kind === 'bikerack' && (
-        // a bike rack with a parked bike
+        // a dark bike rack holding two bikes (D363)
         <G>
-          {[-10, 0, 10].map((px) => (
-            <Path key={px} d={`M${px - 4} 0 V-10 Q${px - 4} -14 ${px} -14 Q${px + 4} -14 ${px + 4} -10 V0`} stroke="#7A8A96" strokeWidth={1.8} fill="none" />
+          <Rect x={-22} y={-3} width={44} height={3} rx={1.5} fill="#3A3A3A" />
+          {[-16, -6, 4, 14].map((px) => (
+            <Path key={px} d={`M${px - 4} 0 V-11 Q${px - 4} -15 ${px} -15 Q${px + 4} -15 ${px + 4} -11 V0`} stroke="#3A3A3A" strokeWidth={2} fill="none" />
           ))}
-          <Circle cx={-8} cy={-5} r={5} fill="none" stroke={INK} strokeWidth={1.3} />
-          <Circle cx={8} cy={-5} r={5} fill="none" stroke={INK} strokeWidth={1.3} />
-          <Path d="M-8 -5 L-2 -12 L5 -12 L8 -5 M-2 -12 L1 -5 L5 -12 M-2 -12 L-3 -15" stroke="#6A2C9A" strokeWidth={1.5} fill="none" strokeLinejoin="round" />
+          {[[-11, '#6A2C9A'], [9, '#FFC531']].map(([bx, col]) => (
+            <G key={bx as number} transform={`translate(${bx} 0)`}>
+              <Circle cx={-7} cy={-5} r={5} fill="none" stroke={INK} strokeWidth={1.4} />
+              <Circle cx={7} cy={-5} r={5} fill="none" stroke={INK} strokeWidth={1.4} />
+              <Path d="M-7 -5 L-1 -12 L5 -12 L7 -5 M-1 -12 L1 -5 L5 -12 M-1 -12 L-2 -15" stroke={col as string} strokeWidth={1.8} fill="none" strokeLinejoin="round" />
+            </G>
+          ))}
         </G>
       )}
       {kind === 'barrel' && (
@@ -962,9 +1007,13 @@ export const StreetProp = memo(function StreetProp({ id, x, y }: { id: Neighborh
           <Rect x={-9} y={-13} width={2} height={5} fill="#6B4330" />
           <Circle cx={-8} cy={-19} r={7.5} fill="#3F8F4A" stroke={INK} strokeWidth={1} />
           <Circle cx={-10} cy={-21} r={2.2} fill="#5DB36A" opacity={0.8} />
-          <Rect x={8} y={-18} width={2.6} height={18} fill="#D4A84A" stroke={INK} strokeWidth={0.7} />
-          <Circle cx={9.3} cy={-19} r={2.6} fill="#D4A84A" stroke={INK} strokeWidth={0.7} />
-          <Path d="M9.3 -14 Q16 -6 22 -12" stroke="#B5203A" strokeWidth={2.2} fill="none" strokeLinecap="round" />
+          {[6, 26].map((px) => (
+            <G key={px}>
+              <Rect x={px} y={-18} width={2.6} height={18} fill="#D4A84A" stroke={INK} strokeWidth={0.7} />
+              <Circle cx={px + 1.3} cy={-19} r={2.6} fill="#D4A84A" stroke={INK} strokeWidth={0.7} />
+            </G>
+          ))}
+          <Path d="M7.3 -14 Q17 -5 27.3 -14" stroke="#B5203A" strokeWidth={2.2} fill="none" strokeLinecap="round" />
         </G>
       )}
     </G>

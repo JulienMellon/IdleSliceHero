@@ -56,7 +56,12 @@ export interface GameState {
   playSeconds: number;
   /** playSeconds when each scene was seen. */
   sceneAt: Record<string, number>;
+  /** Nonna's guided tutorial step (tutorial.ts): 0 = not started, TUTORIAL_DONE = finished. */
+  tutorial: number;
 }
+
+/** The tutorial's step after its last (tutorial.ts reads it from here to avoid an import cycle). */
+export const TUTORIAL_DONE = 9;
 
 export const newDecor = (): Record<DecorKind, number> => ({ plants: 0, flooring: 0, tables: 0, walls: 0, signage: 0 });
 
@@ -83,6 +88,7 @@ export function newGame(now: number): GameState {
     lastSavedAt: now,
     playSeconds: 0,
     sceneAt: {},
+    tutorial: 0,
   };
 }
 
@@ -193,6 +199,9 @@ export function migrate(raw: unknown, now: number): GameState {
   }
   game.shops.downtown.built = true;
   if (!game.shops[game.active].built) game.active = 'downtown';
+  // saves from before the tutorial: anyone who has sold pizza (or has Nonna running Downtown) skips it
+  const veteran = game.shops.downtown.sold > 0 || game.shops.downtown.managed;
+  game.tutorial = int(r.tutorial, veteran ? TUTORIAL_DONE : 0, 0, TUTORIAL_DONE);
   return game;
 }
 
@@ -510,16 +519,21 @@ export function walkInFraction(shop: Shop, vehicle: number): number {
   return sold > 0 ? Math.max(0, sold - Math.min(sold, deliveryRate(shop, vehicle))) / sold : 0;
 }
 
+/** The first Downtown batch runs this much faster (tutorial pacing). */
+export const FIRST_BATCH_SPEED = 2.5;
+
 /**
  * Everything the kitchen line needs from one pizzeria. An automated counter serves at min(counter, demand), so
  * the steady state matches `shopRate`; a tapped counter hands over at the counter's own speed (the player is
  * already the slow part of a serial prep → bake → serve).
  */
 export function lineRates(id: NeighborhoodId, shop: Shop, vehicle: number): LineRates {
+  // the very first batch Downtown is quick, so Nonna's "watch the timer" step lasts seconds, not half a minute
+  const first = id === 'downtown' && shop.sold === 0 && !shop.managed ? FIRST_BATCH_SPEED : 1;
   return {
-    prep: prepRate(shop),
-    oven: ovenRate(shop),
-    serve: automationOf(shop).counter ? Math.min(counterRate(shop), demandRate(shop, vehicle)) : counterRate(shop),
+    prep: prepRate(shop) * first,
+    oven: ovenRate(shop) * first,
+    serve: (automationOf(shop).counter ? Math.min(counterRate(shop), demandRate(shop, vehicle)) : counterRate(shop)) * first,
     shop: shopRate(shop, vehicle),
     price: valuePerPizza(id, shop, vehicle),
     walkInFraction: walkInFraction(shop, vehicle),

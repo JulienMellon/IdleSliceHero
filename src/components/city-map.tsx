@@ -1,3 +1,4 @@
+import { LOOKS } from './scene/identity';
 // City overview: every neighborhood and its pizzeria at a glance. Tap one to visit it (or build it).
 import Svg, { Circle, Ellipse, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
@@ -23,17 +24,21 @@ const ROADS: [number, number, number, number][] = [
 ];
 
 /** A built lot: a tiny Rosa's storefront in the neighbourhood's wall colour, with a striped awning. */
-function MiniShop({ x, y, wall, color }: { x: number; y: number; wall: string; color: string }) {
+/** A pizzeria pin in its own neighbourhood's colours (D365): facade, pilasters and awning from identity.ts. */
+function MiniShop({ x, y, id, color }: { x: number; y: number; id: NeighborhoodId; color: string }) {
+  const look = LOOKS[id];
   return (
     <G>
       <Rect x={x - 9} y={y - 5.5} width={18} height={12} rx={1.2} fill="rgba(59,31,20,0.25)" transform="translate(0 1)" />
-      <Rect x={x - 9} y={y - 6.5} width={18} height={12.5} rx={1.2} fill={wall} stroke={INK} strokeWidth={0.6} />
+      <Rect x={x - 9} y={y - 6.5} width={18} height={12.5} rx={1.2} fill={look.facade === 'clapboard' ? '#F7F3EA' : NEIGHBORHOODS.find((n) => n.id === id)!.wall} stroke={INK} strokeWidth={0.6} />
+      <Rect x={x - 9} y={y - 6.5} width={2.2} height={12.5} fill={look.pilaster} stroke={INK} strokeWidth={0.3} />
+      <Rect x={x + 6.8} y={y - 6.5} width={2.2} height={12.5} fill={look.pilaster} stroke={INK} strokeWidth={0.3} />
       <Rect x={x - 9.6} y={y - 8.5} width={19.2} height={3} rx={0.8} fill={color} stroke={INK} strokeWidth={0.5} />
       <SvgText x={x} y={y - 6.2} fontSize={2.2} fontFamily={F.bold} fill="#fff" textAnchor="middle">
         ROSA’S
       </SvgText>
       {Array.from({ length: 6 }).map((_, i) => (
-        <Path key={i} d={`M${x - 9.6 + i * 3.2} ${y - 5.5} h3.2 l-0.2 1.6 q-1.4 1 -2.8 0 Z`} fill={i % 2 ? '#FFF4E0' : '#D9443A'} stroke={INK} strokeWidth={0.3} />
+        <Path key={i} d={`M${x - 9.6 + i * 3.2} ${y - 5.5} h3.2 l-0.2 1.6 q-1.4 1 -2.8 0 Z`} fill={i % 2 ? look.awning[1] : look.awning[0]} stroke={INK} strokeWidth={0.3} />
       ))}
       <Rect x={x - 7} y={y - 2} width={7} height={5} rx={0.6} fill="#BFE3F5" stroke={INK} strokeWidth={0.4} />
       <Path d={`M${x - 6} ${y + 2} h5`} stroke="#E8432E" strokeWidth={0.8} />
@@ -97,7 +102,7 @@ export function CityMap({ game, width, height, onPress }: { game: Game.GameState
         return (
           <G key={n.id} onPress={() => onPress(n.id)}>
             {active && <Circle cx={n.x} cy={n.y} r={12} fill={C.cheese} opacity={0.55} />}
-            {shop.built ? <MiniShop x={n.x} y={n.y} wall={n.wall} color={n.color} /> : <BuildSite x={n.x} y={n.y} next={isNext} />}
+            {shop.built ? <MiniShop x={n.x} y={n.y} id={n.id} color={n.color} /> : <BuildSite x={n.x} y={n.y} next={isNext} />}
             <Rect x={n.x - 11} y={n.y + 8.5} width={22} height={8.5} rx={2.2} fill="rgba(59,31,20,0.25)" />
             <Rect x={n.x - 11} y={n.y + 7.5} width={22} height={8.5} rx={2.2} fill="#FFFFFF" stroke={isNext ? C.cheeseDark : INK} strokeWidth={0.45} />
             <SvgText x={n.x} y={n.y + 11} fontSize={3} fontFamily={F.bold} fill={INK} textAnchor="middle">

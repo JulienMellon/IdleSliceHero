@@ -53,13 +53,13 @@ export const LINE = {
   /** A tapped prep job won't start while the bench holds this many pies. */
   prepBuffer: 12,
   /** A driver walks from the counter to the door in this long, then pays. */
-  departSeconds: 1.2,
+  departSeconds: 2.0,
   /** A walk-in takes their pie at the register in this long, then pays (long enough for the scene to show it). */
-  handoffSeconds: 0.5,
+  handoffSeconds: 1.0,
   /** The driver's whole lap: out the door (departSeconds), down the street and back to the pickup spot. */
-  driverLap: 4.4,
+  driverLap: 5.0,
   /** After a walk-in is served, the next one is waiting at the register this much later. */
-  walkinLap: 4.2,
+  walkinLap: 4.6,
   /** Below this walk-in share nobody comes in to order (every pie goes out with the driver). */
   minWalkInShare: 0.02,
   /** At most this many carriers in flight; more merge into the newest. */
@@ -200,10 +200,10 @@ function dispatch(w: Work, r: LineRates) {
 
 /** Pay every departure that has reached the door (and walk-ins at the register). */
 function settle(w: Work) {
-  if (!w.departures.some((d) => d.left <= 0)) return;
+  if (!w.departures.some((d) => d.left <= 1e-9)) return;
   const keep: Departure[] = [];
   for (const d of w.departures) {
-    if (d.left <= 0) {
+    if (d.left <= 1e-9) {
       w.paid += d.cash;
       w.sold += d.n;
     } else keep.push(d);

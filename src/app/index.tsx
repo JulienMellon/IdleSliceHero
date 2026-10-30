@@ -4,6 +4,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
+import { CoachCard } from '@/components/coach-card';
+import { coachStep } from '@/engine/tutorial';
 import { type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
 import { buttonTone } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
@@ -36,7 +38,8 @@ const STAGE_NAME: Record<G.Stage, string> = { prep: 'prep', ovens: 'ovens', coun
 export default function GameScreen() {
   const insets = useSafeAreaInsets();
   const game = useGame((s) => s.game);
-  const offline = useGame((s) => s.offline);
+  // the offline popup waits for the title card
+  const offline = useGame((s) => (s.titleDone ? s.offline : null));
   const toast = useGame((s) => s.toast);
   const covered = useGame((s) => !!s.playing || !!s.offline);
   const { tapShop, buy, buyFleet, buyDecor, build, setActive, dismissOffline, bidPier9 } = useGame.getState();
@@ -62,6 +65,7 @@ export default function GameScreen() {
   const tied = (st: G.Stage) => rates[st] <= minRate * (1 + 1e-9);
   const plus = (x: number) => `+${money(x)}/s`;
   const newScenes = Math.max(0, game.seenScenes.length - game.scrapbookViewed);
+  const coach = coachStep(game);
   const eps = G.earningsPerSecond(game);
   const perk = G.perkOf(id, shop);
   // Tied stations: one upgrade alone adds $0/s, so say what to buy together. Keyed on levels, not cash or sales.
@@ -203,7 +207,7 @@ export default function GameScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Hud cash={game.cash} subtitle={subtitle} goal={goal} newScenes={newScenes} onScrapbook={() => router.push('/scrapbook')} onCity={() => router.push('/city')} />
+      <Hud cash={game.cash} subtitle={subtitle} goal={goal} newScenes={newScenes} onScrapbook={() => router.push('/scrapbook')} onCity={() => router.push('/city')} halo={coach?.target === 'cash' ? 'cash' : coach?.target === 'goal' ? 'goal' : null} />
       <ShopTabs game={game} onSelect={setActive} onBuild={build} />
       <View style={styles.sceneArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
         {area.w > 0 && (
@@ -219,7 +223,9 @@ export default function GameScreen() {
           />
         )}
         {/* upgrade row standing on the sidewalk */}
-        <SidewalkRow game={game} id={id} idleShop={idleShop} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} />
+        <SidewalkRow game={game} id={id} idleShop={idleShop} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} highlight={coach?.target === 'walk-ovens' ? 'ovens' : null} />
+        {/* Nonna's tutorial (P2) */}
+        {coach && id === 'downtown' && !drawerOpen && <CoachCard step={coach} low={rowBottom + SIDEWALK_ROW.cardHeight + 12} high={12} />}
         {drawerOpen && (
           <View style={StyleSheet.absoluteFill}>
             <Pressable testID="close-upgrades-dim" style={styles.dim} onPress={() => setDrawerOpen(false)} />

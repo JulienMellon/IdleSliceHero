@@ -33,7 +33,8 @@ export const LOOK: Record<NeighborhoodId, { sky: [string, string, string]; groun
   suburbs: { sky: ['#72BDF0', '#CDE9FA', '#FFF3DC'], ground: '#A6D48A', ground2: '#8FC475' },
   waterfront: { sky: ['#4FB3EA', '#BDE7FA', '#E9FAFF'], ground: '#E8D7A8', ground2: '#D9C48E' },
   university: { sky: ['#8A86DE', '#C9C2F2', '#F6EEFF'], ground: '#97C786', ground2: '#7FB471' },
-  industrial: { sky: ['#8E9DAA', '#B8C2C9', '#DDE2E5'], ground: '#A8A497', ground2: '#949082' },
+  // D364: a warm hazy sky and lighter hills so the steel shop stands out (was grey on grey)
+  industrial: { sky: ['#C9D3DC', '#E4D6C4', '#F2C99B'], ground: '#B7B0A0', ground2: '#A59E8E' },
   uptown: { sky: ['#3E4A8C', '#C98BA8', '#FBD3AE'], ground: '#8FBF7E', ground2: '#78AA6B' },
 };
 
@@ -95,6 +96,15 @@ export const SKYLINE: Record<NeighborhoodId, () => ReactElement> = {
       {[192, 210, 226].map((yy, j) => (
         <Path key={yy} d={`M${-10 + j * 14} ${yy} ${Array.from({ length: 12 }).map((_, i) => `q10 -4 20 0 t20 0`).join(' ')}`} stroke="#D6F0FB" strokeWidth={1.6} fill="none" opacity={0.8} />
       ))}
+      {/* a far headland with a lighthouse fills the sky band (D302) */}
+      <Path d="M250 176 Q290 140 330 150 Q370 138 420 160 L420 176 Z" fill="#9FB4CC" />
+      <Rect x={346} y={110} width={10} height={36} fill="#F4F1EC" stroke="#7F93AA" strokeWidth={0.8} />
+      <Rect x={346} y={120} width={10} height={6} fill="#D9443A" />
+      <Rect x={346} y={134} width={10} height={6} fill="#D9443A" />
+      <Path d="M344 110 L351 101 L358 110 Z" fill="#D9443A" stroke="#7F93AA" strokeWidth={0.8} />
+      <Path d="M358 104 L398 96 L398 112 Z" fill="#FFF4C2" opacity={0.55} />
+      <Path d="M140 92 q4 -4 8 0 q4 -4 8 0" stroke="#5E6E7E" strokeWidth={1.4} fill="none" strokeLinecap="round" />
+      <Path d="M172 78 q3 -3 6 0 q3 -3 6 0" stroke="#5E6E7E" strokeWidth={1.2} fill="none" strokeLinecap="round" />
       {/* sailboat and pier at the sides */}
       <Path d="M8 176 L48 176 L42 186 L14 186 Z M28 174 L28 136 L50 172 Z" fill="#fff" stroke="#7FA6C0" strokeWidth={1} />
       <Rect x={330} y={226} width={80} height={6} fill="#A8714B" stroke={INK} strokeWidth={0.8} />

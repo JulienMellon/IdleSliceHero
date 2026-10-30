@@ -114,7 +114,9 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
           {sub && !compact && nogain ? <Text style={[styles.buySub, { color: '#8A7B6C', letterSpacing: 0.3 }]}>{sub}</Text> : null}
         </View>
       </Pressable>
+      {/* no burst on the small sidewalk buttons: it showed through the buttons beside them (D357) */}
       {bursting &&
+        !compact &&
         BURST.map((e, i) => {
           const a = (i / BURST.length) * Math.PI * 2;
           return (
@@ -151,7 +153,7 @@ export interface Goal {
   onPress?: () => boolean;
 }
 
-export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { cash: number; subtitle: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number }) {
+export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes, halo = null }: { cash: number; subtitle: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null }) {
   const shown = useCountUp(cash);
   const [flash] = useState(() => new Animated.Value(1));
   // the cash text's window position: payout coins land on it (C81)
@@ -179,7 +181,7 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { 
             </View>
           )}
         </Pressable>
-        <View style={styles.cashPill}>
+        <View style={[styles.cashPill, halo === 'cash' && styles.halo]}>
           <Animated.Text
             ref={cashRef}
             onLayout={() => cashRef.current?.measureInWindow?.((x: number, y: number, w: number, h: number) => setCoinTarget(x + w / 2, y + h / 2))}
@@ -206,7 +208,7 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { 
             const ok = goal.onPress?.();
             haptic(ok ? 'success' : ok === false ? 'error' : 'light');
           }}
-          style={[styles.goal, ready && styles.goalReady]}>
+          style={[styles.goal, ready && styles.goalReady, halo === 'goal' && styles.haloGoal]}>
           <View style={[styles.goalFill, { width: `${pct * 100}%` }, ready && { backgroundColor: C.basil }]} />
           <Text style={[styles.goalLabel, ready && styles.goalTextReady]} numberOfLines={1}>
             {ready ? `▶ ${goal.label} — tap!` : goal.label}
@@ -349,6 +351,9 @@ const styles = StyleSheet.create({
   cashPill: { flex: 1, alignItems: 'center' },
   cash: { fontFamily: F.bold, fontSize: 34, color: '#fff', textShadowColor: C.tomatoDark, textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 },
   perSec: { fontFamily: F.semi, fontSize: 13, color: '#FFE7C2' },
+  // Nonna's tutorial points at the cash or the goal bar with a gold halo
+  halo: { borderRadius: 18, borderWidth: 3, borderColor: '#FFC531', backgroundColor: 'rgba(255,197,49,0.18)' },
+  haloGoal: { borderColor: '#FFC531', borderWidth: 3 },
   goal: { height: 30, borderRadius: 15, backgroundColor: '#FFE7C2', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderWidth: 2, borderColor: 'rgba(0,0,0,0.15)' },
   goalReady: { borderColor: '#fff', backgroundColor: C.basil },
   goalFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: C.cheese },

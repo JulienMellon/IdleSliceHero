@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { startAudio } from '@/audio/director';
 import { CutscenePlayer } from '@/components/cutscene-player';
+import { TitleCard } from '@/components/title-card';
 import { TUNING } from '@/content/tuning';
 import { useGame } from '@/store/game-store';
 import { C } from '@/theme';
@@ -50,8 +51,9 @@ function GameRunner() {
 function SceneOverlay() {
   const playing = useGame((s) => s.playing);
   const offline = useGame((s) => s.offline);
+  const titleDone = useGame((s) => s.titleDone);
   const finishScene = useGame((s) => s.finishScene);
-  if (!playing || offline) return null;
+  if (!playing || offline || !titleDone) return null;
   return <CutscenePlayer key={playing.scene.id + String(playing.replay)} scene={playing.scene} onDone={finishScene} />;
 }
 
@@ -60,9 +62,13 @@ export default function RootLayout() {
   const loaded = useGame((s) => s.loaded);
   const ready = (fontsLoaded || !!fontError) && loaded;
 
+  // the title card hides the native splash once it has laid out (no flash between them); on a failed font load
+  // the splash still goes
   useEffect(() => {
-    if (ready) SplashScreen.hideAsync().catch(() => {});
-  }, [ready]);
+    if (fontError) SplashScreen.hideAsync().catch(() => {});
+  }, [fontError]);
+  const titleDone = useGame((s) => s.titleDone);
+  const finishTitle = useGame((s) => s.finishTitle);
 
   return (
     <SafeAreaProvider>
@@ -73,6 +79,7 @@ export default function RootLayout() {
           <>
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }} />
             <SceneOverlay />
+            {!titleDone && <TitleCard onDone={finishTitle} />}
           </>
         ) : null}
       </View>

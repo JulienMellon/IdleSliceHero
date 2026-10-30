@@ -80,7 +80,17 @@ def seeded_page(browser, save):
     pg.on("console", lambda m: m.type == "error" and report["errors"].append(f"console: {m.text}"))
     pg.on("pageerror", lambda e: report["errors"].append(f"pageerror: {e}"))
     pg.goto(URL)
+    skip_title(pg)
     return pg
+
+def skip_title(page, timeout=8000):
+    """v5.1: a title card opens every launch; tap it away (it would also go by itself in ≤ 2 s)."""
+    try:
+        tid(page, "title-card").wait_for(timeout=timeout)
+        tid(page, "title-card").click()
+        page.locator('[data-testid="title-card"]').wait_for(state="detached", timeout=3000)
+    except Exception:
+        pass
 
 def settle(page, wait=2.5):
     """Dismiss the offline popup and any due cut-scene so the scene is interactive."""
@@ -122,6 +132,13 @@ with sync_playwright() as pw:
 
     # 1. Fresh install → opening cut-scene
     page.goto(URL)
+    # v5.1: the title card after the native splash
+    try:
+        tid(page, "title-card").wait_for(timeout=15000)
+        shot(page, "00-title-card", 0.9)
+    except Exception as e:
+        report["errors"].append(f"title card never appeared: {e}")
+    skip_title(page, 2000)
     try:
         tid(page, "cutscene").wait_for(timeout=15000)
         report["loaded"] = True
@@ -230,8 +247,14 @@ with sync_playwright() as pw:
         tid(page, "skip-scene").click()
     settle(page, 0.3)
     shot(page, "09-late-game", 1.2)
-    shot(page, "10-late-game-pops-a", 0.7)
-    shot(page, "11-late-game-pops-b", 0.9)
+    # D361: land these just after a pickup, so the pop riding the carrier is in the frame
+    def pop_on_screen(timeout=7000):
+        try:
+            page.wait_for_function("() => [...document.querySelectorAll('text')].some((t) => (t.textContent || '').includes('+$'))", timeout=timeout)
+        except Exception:
+            pass
+    pop_on_screen(); shot(page, "10-late-game-pops-a", 0.15)
+    time.sleep(1.5); pop_on_screen(); shot(page, "11-late-game-pops-b", 0.15)
     try:
         for _ in range(3):
             tap_shop(page); time.sleep(0.15)

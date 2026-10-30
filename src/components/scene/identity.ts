@@ -31,6 +31,6 @@ export const LOOKS: Record<NeighborhoodId, ShopLook> = {
   suburbs: { facade: 'clapboard', pilaster: '#F7F3EA', seam: '#D8CFC0', plinth: '#B9AE9C', awning: [RED, '#BFE8CF'], piping: null, shape: 'straight', band: 'beadboard', floor: '#E8CFA6', street: 'picket' },
   waterfront: { facade: 'planks', pilaster: '#5E8FA8', seam: '#3F6F88', plinth: '#3F6F88', awning: ['#2E5C8A', '#FFF4E0'], piping: RED, shape: 'scallop', band: 'shiplap', floor: '#C99A6B', street: 'bollard' },
   university: { facade: 'collegiate', pilaster: '#9C3B2E', seam: '#6E2A20', plinth: '#E8E0CC', awning: ['#6A2C9A', '#FFC531'], piping: RED, shape: 'straight', band: 'panelling', floor: '#C8A27A', street: 'bikerack' },
-  industrial: { facade: 'steel', pilaster: '#8E979E', seam: '#6E757B', plinth: '#4A4F54', awning: ['#E8742A', '#3A3A3A'], piping: RED, shape: 'box', band: 'ducts', floor: '#CFC6B8', street: 'barrel' },
+  industrial: { facade: 'steel', pilaster: '#5E6670', seam: '#454C55', plinth: '#4A4F54', awning: ['#E8742A', '#3A3A3A'], piping: RED, shape: 'box', band: 'ducts', floor: '#CFC6B8', street: 'barrel' },
   uptown: { facade: 'tile', pilaster: '#1F4D3A', seam: '#163A2B', plinth: '#D4A84A', awning: ['#7B1E3A', '#FFF4E0'], piping: '#D4A84A', shape: 'dome', band: 'none', floor: '#F4F1EC', street: 'topiary' },
 };

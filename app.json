@@ -32,7 +32,7 @@
         {
           "backgroundColor": "#E8432E",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 200
         }
       ],
       ["expo-audio", { "enableBackgroundPlayback": false, "recordAudioAndroid": false }]

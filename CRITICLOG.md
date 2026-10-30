@@ -120,3 +120,25 @@ Owner request (2026-10-30): each neighbourhood's pizzeria a little more differen
 | Industrial | corrugated steel | box orange/charcoal, red piping | ductwork at the ceiling | concrete | barrel + cone |
 | Uptown | green tile + brass caps | dome burgundy/cream, gold piping | (burgundy wainscot, kept) | marble | topiary + rope post |
 Shots: `25-look-suburbs`, `25-look-university`, `25-look-downtown`, plus 05b (Waterfront), 09 (Industrial), 14 (Uptown).
+
+## Round 48 (v5.0): ❌ NOT SATISFIED — identity PASS; D361–D365. Next IDs: **G82, D366**.
+| ID | Type | Note | v5.1 |
+| --- | --- | --- | --- |
+| D361 | major | Pops almost never on screen (~0.65 s of a 4.4 s lap) | driver walks counter → door in 2.0 s with the pop over his head (coin at the door), lap 5.0 s; walk-in hand-over 1.0 s; shots 10/11 wait for a pop |
+| D362 | minor | Same room everywhere | each back window has its own view (Downtown skyline, Suburbs rooftops, University spire, Industrial smokestack; Waterfront porthole, Uptown arch kept) |
+| D363 | minor | Sidewalk props look like fragments | 9-picket fence on two rails with a shrub; dark rack with two bikes; two brass rope posts |
+| D364 | minor | Industrial grey on grey | warm haze sky #F2C99B→#C9D3DC, steel #5E6670, hills #B7B0A0 |
+| D365 | minor | City pins ignore identity | pins use each shop's facade and awning colours |
+| D357 | minor | Hire burst through the buttons | no burst on the compact sidewalk buttons |
+| D302 | minor | Waterfront sky empty | far headland + lighthouse + gulls |
+| D354 | minor | Diners share tables | open |
+| D304, D305, D359, D297, Pier 9 chip | notes | | open |
+
+## v5.1 — build (playtest 2, steps 5 + 6: animation, tutorial, splash)
+| Change | Where | Shots |
+| --- | --- | --- |
+| P3: a finished bake says "ding!" and the pies slide onto the pass; the oven mouth glows brighter while a pie bakes | `storefront.tsx`, `props.tsx` | 10, 12 |
+| P5: "+50% faster" rises from a station's badge when an upgrade speeds it up ("+1 driver" at the door) | `storefront.tsx` | 04 (if a buy lands in frame) |
+| P6: 1.0 s walk cycle stepped by time (8 poses) | `cast.ts` | — |
+| P2: Nonna's guided tutorial (`engine/tutorial.ts`): prep → oven → watch (first batch ×2.5 speed) → counter → "money in the register" (cash halo) → again → Ovens button (gold frame) → "hire Marco" (goal-bar halo); story waits during steps 1–5; existing players skip it | `tutorial.ts`, `coach-card.tsx`, `index.tsx`, `game-ui.tsx`, `sidewalk-row.tsx` | 03, 03b, 04 |
+| P1: logo (crowned slice) → `icon.png` / `splash-icon.png` (`scripts/render-logo.ts`); title card (logo drops in over turning rays, name, Nonna waves; 2.0 s first launch of the day, 1.2 s after; tap skips); scenes and the offline popup wait for it | `logo-art.ts`, `logo.tsx`, `title-card.tsx`, `_layout.tsx` | 00 |

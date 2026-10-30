@@ -20,7 +20,7 @@ const ICON: Record<StationKey, React.ReactNode> = {
   drivers: <DriverIcon size={11} />,
 };
 
-export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen }: { game: G.GameState; id: NeighborhoodId; idleShop: boolean; bottom: number; onBuy: (what: G.Upgrade) => boolean; onOpen: () => void }) {
+export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlight = null }: { game: G.GameState; id: NeighborhoodId; idleShop: boolean; bottom: number; onBuy: (what: G.Upgrade) => boolean; onOpen: () => void; highlight?: StationKey | null }) {
   const station = (v: StationView, framed: boolean) => {
     const button = (
       <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={ICON[v.key]} sub={v.name} tone={v.tone} label={v.label} enabled={v.affordable} saving={framed && v.frame === 'waiting'} progress={v.progress} onPress={() => onBuy(v.what)} />
@@ -33,7 +33,7 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen }: { gam
       </View>
     );
     return framed ? (
-      <View key={v.key} style={[styles.card, v.frame === 'hot' && styles.cardHot, v.frame === 'waiting' && styles.cardWaiting]}>
+      <View key={v.key} style={[styles.card, v.frame === 'hot' && styles.cardHot, v.frame === 'waiting' && styles.cardWaiting, highlight === v.key && styles.cardCoach]}>
         {button}
         {badge}
       </View>
@@ -79,6 +79,8 @@ const styles = StyleSheet.create({
   row: { position: 'absolute', left: 8, right: 8, flexDirection: 'row', gap: 5, alignItems: 'flex-end' },
   card: { flex: 1, height: SIDEWALK_ROW.cardHeight, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 12, borderWidth: STATION_CARD.border, borderColor: C.ink, padding: STATION_CARD.padding, ...shadow },
   cardHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
+  // Nonna's tutorial points here: a gold frame
+  cardCoach: { borderColor: '#FFC531', borderWidth: 4, borderStyle: 'solid' },
   // saving for it: a basil dashed outline that matches the pale basil face inside (D330; was pink)
   cardWaiting: { borderColor: 'rgba(46,125,62,0.6)', borderStyle: 'dashed' },
   idleStack: { flex: 4, gap: IDLE_STACK_GAP },
