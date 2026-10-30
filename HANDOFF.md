@@ -12,7 +12,7 @@ For a fresh session picking up the build/review loop. Read this file, then `CRIT
 1. **Build v3.(n+1).** Fix every open note in `CRITICLOG.md` and every open item in `CODELOG.md`. Set the version with `sed -i "s/export const APP_VERSION = .*/export const APP_VERSION = '3.7';/" src/content/version.ts`.
 2. **Verify:**
    - `npx tsc --noEmit` must be clean.
-   - `npm test` must pass (89 tests at v3.6, about 100 s).
+   - `npm test` must pass (91 tests at v3.6, about 100 s).
    - `npx expo export --platform web`, then `python3 scripts/screenshots.py v3.7`. `screenshots/v3.7/report.json` must show `"errors": []` and `"loaded": true`.
    - Look at the PNGs yourself. Crop them with PIL into the scratchpad, especially 03b, 05, 05a, 13, 14 and 01.
 3. **Log:**
@@ -38,7 +38,7 @@ For a fresh session picking up the build/review loop. Read this file, then `CRIT
 ## Where things stand at v3.6
 - **Critic, round 37: SATISFIED** (0 bugs, 0 [major], 3 [minor]: D302 empty sky above early shops, D303 back-row density, D306 identical chefs). **Codecritic, round 8: APPROVED** (only low items open). Both passed on v3.6, so the loop is parked, not running.
 - **What v3.4–v3.6 did:** the crowd fixes (G72, D282–D285, C19–C21, A9, M11), the one-time playtest fixes (cut-scene input lockout and scene gate, hidden spoiler titles, number formatting, offline cap note, build toast with cost, Drivers cap at `levelCap`, Suburbs locked until Nonna takes over, tied-station bundle hint, story polish with two new props) and the furniture memo with typed inputs.
-- **Agreed next work (decisions from Julien, 2026-10-29; the full plan is `claude/PLAN-v3.4-v3.6.md` in the project, whose version numbers are now +1):**
+- **Agreed next work (decisions from Julien, 2026-10-29; the full plan is `claude/PLAN-v3.4-v3.6.md` in the project, already renumbered):**
   1. **v3.7 — story pacing and perks, one save migration.** One story beat on return, then at most one per 90 s of play from the very start (tutorial included; unlock scenes stay immediate); beat 4 needs ≥ 300 s after beat 3 (Downtown ≥ 120 s); downtown-3 moves 60 → 45 pizzas. Perks scoped to the character's own neighbourhood shop: Dale (Suburbs) walk-ins pay 85% instead of 70%, Marisol (Waterfront) +10% prices via a Pier 9 bid worth ~4–5 min of income (number set from the pacing sim and shown to Julien first), Priya (University) −10% fleet cost, Sal (Industrial) +25% offline earnings, Genevieve (Uptown) decor boost 6% per tier. Update `docs/REWARDS.md` line 7 to allow small neighbourhood-scoped story perks. Update the pacing sim to model scene gaps.
   2. **v3.8 — tap targets** to ≥ 44 px via named layout constants (walk buttons, chips, compact buy buttons), after D285.
   3. Then daily and weekly tasks (`docs/REWARDS.md`). Deferred: the dead-zone fix (design discussion first), sound, franchise-to-Boston (design doc in Claude Docs: "Franchise to Boston — Prestige Design").
@@ -54,4 +54,4 @@ For a fresh session picking up the build/review loop. Read this file, then `CRIT
 ## Outside the loop
 - The one-time UX playtest of v3.0–v3.2 was acted on at Julien's request (v3.4–v3.6 above). The dead-zone, endgame and tap-target items from it are the only parts still open.
 - **Screenshots** for every version since v0.1 are committed (`screenshots/`, ~640 files, ~200 MB). Ask Julien before pruning; don't delete them unasked.
-- The Settings screen shows the app.json version (`2.0.0`), not `APP_VERSION`. Leave it alone unless the critic or Julien raises it.
+- The Settings screen now shows `APP_VERSION`; `app.json` (`2.0.0`) stays the App Store marketing version.
