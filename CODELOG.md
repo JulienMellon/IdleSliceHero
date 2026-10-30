@@ -53,3 +53,16 @@ v3.6 fixes the round-7 blocker (the furniture memo missed `prep`, so a managed s
 | A10 | low | `app/index.tsx` | Card-detail strings are built inline each render | Extract a pure `stationDetails()` |
 
 **Resolved after the review (same build):** C35 (deps derived from the object, T27) and C36 (redundant `Math.max` in the Drivers lock).
+
+## v3.7 — build (feature step; open lows carried)
+
+| Item | Change |
+| --- | --- |
+| Save v3 | `SAVE_VERSION = 3`. `GameState.playSeconds` (foreground play), `GameState.sceneAt` (play time each scene was seen), `Shop.perk`. `migrate` defaults them and grants perks for finales a v2 save had already seen. |
+| Play time | `G.playTick(s, dt)` = `tick` + play seconds; the store and the pacing sim use it. `applyOffline` keeps using `tick`, so offline time never counts toward pacing (test). |
+| Pacing gate | Pure `sceneReady(game, scene, lastSceneEndPlay)` in `engine/cutscene-input.ts`; `pickScene` now takes the first ready pending scene. `STORY_PACING` in `tuning.ts`. The store keeps `lastSceneEndPlay` (session only, null after load or reset). |
+| Perks | `PERKS` in `tuning.ts` (one per neighbourhood except Downtown), `perkOf(id, shop)`; applied in `shopRevenue` (walk-in share, price), `decorMult(shop, id)` (decor boost), `upgradeCostOf` drivers (cost), `applyOffline` (offline bonus, also in `byShop`). `Scene.perk` grants it in `markSceneSeen`. The `bundleHint` cache key includes `perk`. |
+| Pier 9 bid | `PIER9_BID` ($2.0M after 50,000 Waterfront pizzas), `pier9Available`, `bidPier9`; new trigger kind `'bid'` plays waterfront-4 when the perk is won. Store action `bidPier9`; goal bar candidate first while available. |
+| UI | Cut-scene closing card shows the perk (with or without a reward); drawer perk banner; decor header uses the perk's boost. |
+| Tests | `story-pacing.test.ts` (19 tests: gate, beat-4 gaps, play time, migration, each perk and its scope, the bid). 111 tests pass. |
+| Not done | Open lows from round 8 (C37, C38, A12, M16, M19, C22, C33, M10, M15, A10). |

@@ -96,7 +96,7 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'downtown',
     beat: 3,
     title: 'Corporate Crust',
-    trigger: { kind: 'deliveries', neighborhood: 'downtown', count: 60 },
+    trigger: { kind: 'deliveries', neighborhood: 'downtown', count: 45 },
     panels: [
       {
         backdrop: 'shop',
@@ -310,6 +310,7 @@ export const HOME_SCENES: Scene[] = [
     beat: 4,
     title: 'Mudhens Rise',
     trigger: { kind: 'deliveries', neighborhood: 'suburbs', count: 8000 },
+    perk: true,
     panels: [
       {
         backdrop: 'suburbs',
@@ -467,7 +468,8 @@ export const HOME_SCENES: Scene[] = [
     neighborhood: 'waterfront',
     beat: 4,
     title: 'Dock Saved',
-    trigger: { kind: 'deliveries', neighborhood: 'waterfront', count: 50000 },
+    trigger: { kind: 'bid', neighborhood: 'waterfront' },
+    perk: true,
     panels: [
       {
         backdrop: 'waterfront',
@@ -625,6 +627,7 @@ export const HOME_SCENES: Scene[] = [
     beat: 4,
     title: 'Drone Launch',
     trigger: { kind: 'deliveries', neighborhood: 'university', count: 450000 },
+    perk: true,
     reward: 'drones',
     panels: [
       {
@@ -787,6 +790,7 @@ export const HOME_SCENES: Scene[] = [
     beat: 4,
     title: 'Brother Sal',
     trigger: { kind: 'deliveries', neighborhood: 'industrial', count: 1000000 },
+    perk: true,
     panels: [
       {
         backdrop: 'industrial',
@@ -964,6 +968,7 @@ export const HOME_SCENES: Scene[] = [
     beat: 4,
     title: 'Five Stars',
     trigger: { kind: 'deliveries', neighborhood: 'uptown', count: 1250000 },
+    perk: true,
     reward: 'city-complete',
     panels: [
       {

@@ -47,7 +47,9 @@ export type SceneTrigger =
   /** Plays when the neighborhood is unlocked (Downtown: on first launch). */
   | { kind: 'unlock'; neighborhood: NeighborhoodId }
   /** Plays when this many pizzas have been delivered to the neighborhood. */
-  | { kind: 'deliveries'; neighborhood: NeighborhoodId; count: number };
+  | { kind: 'deliveries'; neighborhood: NeighborhoodId; count: number }
+  /** Plays when the player wins this neighbourhood's bid (Pier 9). */
+  | { kind: 'bid'; neighborhood: NeighborhoodId };
 
 export type SceneReward = 'auto-bake' | 'drones' | 'city-complete';
 
@@ -62,6 +64,8 @@ export interface Scene {
   trigger: SceneTrigger;
   /** Gameplay unlock granted when the scene finishes. */
   reward?: SceneReward;
+  /** Grants this neighbourhood's perk (PERKS) when the scene finishes. */
+  perk?: true;
   /** 3–5 panels */
   panels: ScenePanel[];
 }

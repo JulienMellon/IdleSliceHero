@@ -262,6 +262,26 @@ with sync_playwright() as pw:
         shot(page, "20-offline-capped", 0.8)
     except Exception as e:
         report["errors"].append(f"capped offline popup missing: {e}")
+
+    # 11. v3.7: the Pier 9 bid leads the goal bar, and a finale shows its neighbourhood perk
+    bid = dict(MID_SAVE, cash=1.2e6, active="waterfront", scrapbookViewed=10,
+               seenScenes=MID_SAVE["seenScenes"] + ["suburbs-4", "waterfront-2", "waterfront-3"],
+               shops=dict(MID_SAVE["shops"], waterfront=shop(prep=30, ovens=28, grade=1, counter=30, drivers=14, tables=12, footprint=1, sold=52000)))
+    page = seeded_page(browser, bid); settle(page)
+    shot(page, "21-pier9-bid-goal", 0.8)
+    dale = dict(MID_SAVE, active="suburbs", seenScenes=MID_SAVE["seenScenes"], scrapbookViewed=8,
+                shops=dict(MID_SAVE["shops"], suburbs=shop(prep=30, ovens=28, grade=1, counter=30, drivers=14, tables=20, footprint=1, sold=8100)))
+    page = seeded_page(browser, dale); time.sleep(3)
+    if page.locator('[data-testid="collect-offline"]').count():
+        tid(page, "collect-offline").click(); time.sleep(1.0)
+    try:
+        for _ in range(20):
+            if page.get_by_text("PERK", exact=False).count():
+                break
+            tid(page, "cutscene").click(); time.sleep(1.3)
+        shot(page, "22-dale-perk-card", 0.6)
+    except Exception as e:
+        report["errors"].append(f"perk card shot failed: {e}")
     browser.close()
 
 httpd.shutdown()

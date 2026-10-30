@@ -3,10 +3,10 @@
 // Every neighborhood has its own pizzeria. Each pizzeria is a pipeline:
 //   Prep → Ovens → Counter → customers (delivery drivers + walk-ins at the tables)
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
-import { DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, STATIONS, TUNING, VEHICLES, type DecorKind, type NeighborhoodDef } from '../content/tuning';
+import { DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, TUNING, VEHICLES, type DecorKind, type NeighborhoodDef } from '../content/tuning';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const SHOP_IDS = NEIGHBORHOODS.map((n) => n.id);
 
 export interface Shop {
@@ -28,6 +28,8 @@ export interface Shop {
   sold: number;
   /** Decor tier (0–3) per category; each tier owned adds DECOR_BOOST to prices here. */
   decor: Record<DecorKind, number>;
+  /** This neighbourhood's finale perk (PERKS) has been earned. */
+  perk: boolean;
 }
 
 export interface GameState {
@@ -45,12 +47,16 @@ export interface GameState {
   /** How many scenes had been seen when the Scrapbook was last opened (drives the badge). */
   scrapbookViewed: number;
   lastSavedAt: number;
+  /** Seconds of foreground play (offline time doesn't count). Paces the story. */
+  playSeconds: number;
+  /** playSeconds when each scene was seen. */
+  sceneAt: Record<string, number>;
 }
 
 export const newDecor = (): Record<DecorKind, number> => ({ plants: 0, flooring: 0, tables: 0, walls: 0, signage: 0 });
 
 export function newShop(built = false): Shop {
-  return { built, managed: false, prep: 1, ovens: 1, grade: 0, counter: 1, drivers: 1, tables: 1, footprint: 0, queued: 0, sold: 0, decor: newDecor() };
+  return { built, managed: false, prep: 1, ovens: 1, grade: 0, counter: 1, drivers: 1, tables: 1, footprint: 0, queued: 0, sold: 0, decor: newDecor(), perk: false };
 }
 
 export function newGame(now: number): GameState {
@@ -67,6 +73,8 @@ export function newGame(now: number): GameState {
     seenScenes: [],
     scrapbookViewed: 0,
     lastSavedAt: now,
+    playSeconds: 0,
+    sceneAt: {},
   };
 }
 
@@ -91,6 +99,11 @@ export function migrate(raw: unknown, now: number): GameState {
     // Saves from before the badge existed: treat everything already seen as viewed.
     scrapbookViewed: int(r.scrapbookViewed, seen.length, 0),
     lastSavedAt: num(r.lastSavedAt, now),
+    playSeconds: Math.max(0, num(r.playSeconds, 0)),
+    sceneAt:
+      r.sceneAt && typeof r.sceneAt === 'object'
+        ? Object.fromEntries(Object.entries(r.sceneAt as Record<string, unknown>).filter((e): e is [string, number] => typeof e[1] === 'number' && Number.isFinite(e[1])))
+        : {},
   };
   if (r.shops && typeof r.shops === 'object') {
     for (const id of SHOP_IDS) {
@@ -109,6 +122,8 @@ export function migrate(raw: unknown, now: number): GameState {
         queued: Math.max(0, num(s.queued, 0)),
         decor: Object.fromEntries(DECOR_KINDS.map((k) => [k, int((s.decor as Record<string, unknown> | undefined)?.[k], 0, 0, 3)])) as Record<DecorKind, number>,
         sold: Math.max(0, num(s.sold, 0)),
+        // v2 saves: a finale already seen earns its perk (v3.7)
+        perk: !!s.perk || (id !== 'downtown' && seen.includes(`${id}-4`)),
       };
     }
   } else {
@@ -178,16 +193,21 @@ export function shopRevenue(id: NeighborhoodId, shop: Shop, vehicle: number): nu
   const sold = shopRate(shop, vehicle);
   const delivered = Math.min(sold, deliveryRate(shop, vehicle));
   const walkIns = sold - delivered;
-  return def(id).orderValue * decorMult(shop) * (delivered + walkIns * TUNING.walkInShare);
+  const perk = perkOf(id, shop);
+  return def(id).orderValue * (perk?.priceMult ?? 1) * decorMult(shop, id) * (delivered + walkIns * (perk?.walkInShare ?? TUNING.walkInShare));
 }
 
-/** Nicer places charge more: +DECOR_BOOST per decor tier owned. */
-export const decorMult = (shop: Shop) => 1 + DECOR_BOOST * DECOR_KINDS.reduce((t, k) => t + (shop.decor?.[k] ?? 0), 0);
+/** This pizzeria's finale perk, once earned. */
+export const perkOf = (id: NeighborhoodId, shop: Shop) => (shop.perk ? PERKS[id] : undefined);
+
+/** Nicer places charge more: +DECOR_BOOST per decor tier owned (Genevieve's perk raises it in Uptown). */
+export const decorMult = (shop: Shop, id?: NeighborhoodId) =>
+  1 + ((id && perkOf(id, shop)?.decorBoost) ?? DECOR_BOOST) * DECOR_KINDS.reduce((t, k) => t + (shop.decor?.[k] ?? 0), 0);
 
 /** Average cash per pizza sold right now. */
 export function valuePerPizza(id: NeighborhoodId, shop: Shop, vehicle: number): number {
   const sold = shopRate(shop, vehicle);
-  return sold > 0 ? shopRevenue(id, shop, vehicle) / sold : def(id).orderValue * decorMult(shop);
+  return sold > 0 ? shopRevenue(id, shop, vehicle) / sold : def(id).orderValue * (perkOf(id, shop)?.priceMult ?? 1) * decorMult(shop, id);
 }
 
 /** Cash per second this pizzeria makes while running (managed, or while you keep tapping). */
@@ -232,7 +252,7 @@ export function upgradeCostOf(s: GameState, id: NeighborhoodId, what: Upgrade): 
     case 'counter':
       return upgradeCost(STATIONS.counter.cost * m, shop.counter - 1);
     case 'drivers':
-      return upgradeCost(STATIONS.drivers.cost * m, shop.drivers - 1);
+      return Math.ceil(upgradeCost(STATIONS.drivers.cost * m, shop.drivers - 1) * (perkOf(id, shop)?.driversCostMult ?? 1));
     case 'tables':
       return upgradeCost(STATIONS.tables.cost * m, shop.tables - 1);
     case 'grade':
@@ -331,6 +351,22 @@ export function buildShop(s: GameState, id: NeighborhoodId): BuyResult {
   return { ok: true, state: { ...withShop(r.state, id, { built: true }), active: id } };
 }
 
+// ---------- Pier 9 bid (Waterfront's finale) ----------
+
+/** The Pier 9 bid is on offer once "For Sale" has played and Waterfront has sold enough pizzas. */
+export function pier9Available(s: GameState): boolean {
+  const w = s.shops.waterfront;
+  return w.built && !w.perk && s.seenScenes.includes('waterfront-3') && w.sold >= PIER9_BID.unlockPizzas;
+}
+
+/** Win the dock for Marisol: spends the bid and earns Waterfront's perk, which plays the finale. */
+export function bidPier9(s: GameState): BuyResult {
+  if (s.shops.waterfront.perk) return { ok: false, reason: 'Pier 9 is already saved' };
+  if (!pier9Available(s)) return { ok: false, reason: 'The Pier 9 auction hasn’t opened yet' };
+  const r = spend(s, PIER9_BID.cost);
+  return r.ok ? { ok: true, state: withShop(r.state, 'waterfront', { perk: true }) } : r;
+}
+
 /** Why the next delivery vehicle can't be bought yet (other than cash), or null when it can. */
 export type VehicleLock = { kind: 'maxed' } | { kind: 'story'; storyOf: 'priya' };
 
@@ -368,6 +404,12 @@ export function tapShop(s: GameState, id: NeighborhoodId): GameState {
   }
   const bonus = shopEarnings(s, id) * TUNING.rushSeconds;
   return { ...s, cash: s.cash + bonus, totalEarned: s.totalEarned + bonus };
+}
+
+/** Foreground play: advance the shops and count the seconds toward story pacing (offline catch-up uses `tick`). */
+export function playTick(s: GameState, dt: number): GameState {
+  if (!(dt > 0)) return s;
+  return { ...tick(s, dt), playSeconds: s.playSeconds + dt };
 }
 
 /** Advance every pizzeria by dt seconds. Continuous flows, so tick rate never caps output. */
@@ -410,8 +452,16 @@ export interface OfflineResult {
 export function applyOffline(s: GameState, now: number): OfflineResult {
   const elapsed = Math.max(0, (now - s.lastSavedAt) / 1000);
   const seconds = Math.min(elapsed, TUNING.offlineCapSeconds);
-  const next = tick(s, seconds);
-  const byShop = SHOP_IDS.map((id) => ({ id, managed: s.shops[id].managed, earned: (next.shops[id].sold - s.shops[id].sold) * valuePerPizza(id, s.shops[id], s.vehicle) })).filter((x) => x.earned > 0);
+  const ticked = tick(s, seconds);
+  // a perk can raise what a pizzeria earns while away (Big Sal's, in Industrial)
+  let bonus = 0;
+  const byShop = SHOP_IDS.map((id) => {
+    const base = (ticked.shops[id].sold - s.shops[id].sold) * valuePerPizza(id, s.shops[id], s.vehicle);
+    const extra = base * ((perkOf(id, s.shops[id])?.offlineMult ?? 1) - 1);
+    bonus += extra;
+    return { id, managed: s.shops[id].managed, earned: base + extra };
+  }).filter((x) => x.earned > 0);
+  const next = { ...ticked, cash: ticked.cash + bonus, totalEarned: ticked.totalEarned + bonus };
   return { state: { ...next, lastSavedAt: now }, seconds, capped: elapsed > TUNING.offlineCapSeconds, awaySeconds: elapsed, earned: next.cash - s.cash, byShop };
 }
 
@@ -422,6 +472,7 @@ export function sceneTriggered(s: GameState, scene: Scene): boolean {
   const shop = s.shops[tr.neighborhood];
   if (!shop.built) return false;
   if (tr.kind === 'unlock') return true;
+  if (tr.kind === 'bid') return shop.perk;
   return shop.sold >= tr.count;
 }
 
@@ -447,7 +498,9 @@ export function applyReward(s: GameState, reward: SceneReward | undefined): Game
 
 export function markSceneSeen(s: GameState, scene: Scene): GameState {
   if (s.seenScenes.includes(scene.id)) return s;
-  return applyReward({ ...s, seenScenes: [...s.seenScenes, scene.id] }, scene.reward);
+  let next: GameState = { ...s, seenScenes: [...s.seenScenes, scene.id], sceneAt: { ...s.sceneAt, [scene.id]: s.playSeconds } };
+  if (scene.perk) next = withShop(next, scene.neighborhood, { perk: true });
+  return applyReward(next, scene.reward);
 }
 
 // ---------- Advice ----------
@@ -544,7 +597,7 @@ let hintVal: Omit<BundleHint, 'affordable'> | null = null;
 /** "Upgrade prep + ovens · $X": the tied-station bundle, ready to show in the UI. Cached on levels, decor and fleet (not cash or sales), so a render only pays for it when something was upgraded. */
 export function bundleHint(s: GameState, id: NeighborhoodId): BundleHint | null {
   const sh = s.shops[id];
-  const key = `${id}|${sh.built}|${sh.managed}|${sh.prep}|${sh.ovens}|${sh.counter}|${sh.drivers}|${sh.tables}|${sh.grade}|${sh.footprint}|${s.vehicle}|${Object.values(sh.decor).join(',')}`;
+  const key = `${id}|${sh.built}|${sh.managed}|${sh.prep}|${sh.ovens}|${sh.counter}|${sh.drivers}|${sh.tables}|${sh.grade}|${sh.footprint}|${sh.perk}|${s.vehicle}|${Object.values(sh.decor).join(',')}`;
   if (key !== hintKey) {
     hintKey = key;
     const b = bottleneckBundle(s, id);

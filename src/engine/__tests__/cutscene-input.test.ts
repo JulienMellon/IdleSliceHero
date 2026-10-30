@@ -40,9 +40,9 @@ describe('scene heading (playtest bug 3)', () => {
 describe('scene gate (T19)', () => {
   it('a due scene waits for kitchen taps to stop, then opens', () => {
     const g = G.newGame(0); // downtown-1 is due on first launch
-    expect(pickScene(g, HOME_SCENES, 1200, 1000, false)).toBeNull();
-    expect(pickScene(g, HOME_SCENES, 1000 + SCENE_GATE_AFTER_TAP_MS, 1000, false)?.id).toBe('downtown-1');
-    expect(pickScene(g, HOME_SCENES, 99999, 0, true)).toBeNull(); // one already playing
+    expect(pickScene(g, HOME_SCENES, 1200, 1000, false, null)).toBeNull();
+    expect(pickScene(g, HOME_SCENES, 1000 + SCENE_GATE_AFTER_TAP_MS, 1000, false, null)?.id).toBe('downtown-1');
+    expect(pickScene(g, HOME_SCENES, 99999, 0, true, null)).toBeNull(); // one already playing
   });
   it('a single-panel scene shows its title straight away', () => {
     const one = { title: 'Solo', neighborhood: 'uptown', beat: 1, panels: [1] } as never;

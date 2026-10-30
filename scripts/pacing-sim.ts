@@ -2,8 +2,9 @@
 // The player always saves for the purchase with the best cash/sec gained per dollar, across every
 // pizzeria, and keeps tapping the newest pizzerias until it has a manager.
 import { HOME_SCENES } from '../src/content/scenes/home';
-import { DECOR_KINDS, NEIGHBORHOODS, VEHICLES } from '../src/content/tuning';
+import { DECOR_KINDS, NEIGHBORHOODS, PIER9_BID, VEHICLES } from '../src/content/tuning';
 import type { NeighborhoodId } from '../src/content/types';
+import { pickScene } from '../src/engine/cutscene-input';
 import * as G from '../src/engine/game';
 
 type Option = { label: string; cost: number; gain: number; buy: (s: G.GameState) => G.BuyResult };
@@ -65,6 +66,9 @@ function options(s: G.GameState): Option[] {
 
 let s = G.newGame(0);
 const events: [number, string][] = [];
+// v3.7 story pacing: one waiting beat may play at once after launch, then 90 s of play between beats.
+// The sim plays in one sitting and never taps during a scene, so the tap gate is always open.
+let lastSceneEnd: number | null = null;
 const dt = 1;
 const LIMIT = 60 * 60 * 30;
 for (let t = 0; t < LIMIT; t += dt) {
@@ -73,13 +77,23 @@ for (let t = 0; t < LIMIT; t += dt) {
   // NOTAP=1: a casual player who only taps Downtown until Nonna takes over, then never taps again.
   const tappers = (process.env.NOTAP ? ['downtown'] : [newest, 'downtown']) as NeighborhoodId[];
   for (const id of tappers) if (!s.shops[id].managed && s.shops[id].queued < 4) s = G.tapShop(s, id);
-  s = G.tick(s, dt);
-  for (const sc of G.pendingScenes(s, HOME_SCENES)) {
+  s = G.playTick(s, dt);
+  for (let sc = pickScene(s, HOME_SCENES, 1e15, 0, false, lastSceneEnd); sc; sc = pickScene(s, HOME_SCENES, 1e15, 0, false, lastSceneEnd)) {
     s = G.markSceneSeen(s, sc);
+    lastSceneEnd = s.playSeconds;
     events.push([t, `${sc.id}`]);
   }
+  // Waterfront's finale is a purchase: the player bids on Pier 9 as soon as they can afford it
+  if (G.pier9Available(s) && s.cash >= PIER9_BID.cost) {
+    const r = G.bidPier9(s);
+    if (r.ok) {
+      s = r.state;
+      events.push([t, '  buy pier9-bid']);
+    }
+  }
   if (s.cityComplete) break;
-  for (let k = 0; k < 30; k++) {
+  // the goal bar puts the bid first, so the player saves for it instead of buying anything else
+  for (let k = 0; k < 30 && !G.pier9Available(s); k++) {
     const opts = options(s).sort((a, b) => b.gain / b.cost - a.gain / a.cost);
     if (!opts.length) break;
     const r = opts[0].buy(s);

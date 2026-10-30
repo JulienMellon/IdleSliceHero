@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PERKS } from '../content/tuning';
 import type { Scene } from '../content/types';
 import { C, F } from '../theme';
 import { Backdrop } from './backdrop';
@@ -33,6 +34,9 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
     lineShownAt.current = Date.now();
   }, [scene.id]);
 
+  // the closing card: a gameplay unlock and/or this neighbourhood's perk
+  const perk = scene.perk ? PERKS[scene.neighborhood] : undefined;
+  const hasCard = !!scene.reward || !!perk;
   const p = scene.panels[panel];
   const current = p.lines[line];
   const frameW = Math.min(width - 24, 520);
@@ -64,7 +68,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
       setLine(0);
       return;
     }
-    if (scene.reward) return setShowReward(true);
+    if (hasCard) return setShowReward(true);
     onDone();
   };
 
@@ -115,10 +119,20 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
         </Animated.View>
 
         <View style={[styles.bubbleArea, { width: frameW }]}>
-          {showReward && scene.reward ? (
+          {showReward && hasCard ? (
             <Animated.View style={[styles.reward, { transform: [{ scale: bubble }] }]}>
-              <Text style={styles.rewardHead}>★ UNLOCKED ★</Text>
-              <Text style={styles.rewardText}>{REWARD_TEXT[scene.reward]}</Text>
+              {scene.reward ? (
+                <>
+                  <Text style={styles.rewardHead}>★ UNLOCKED ★</Text>
+                  <Text style={styles.rewardText}>{REWARD_TEXT[scene.reward]}</Text>
+                </>
+              ) : null}
+              {perk ? (
+                <>
+                  <Text style={[styles.rewardHead, scene.reward ? { marginTop: 10 } : null]}>{`★ ${perk.who.toUpperCase()}’S PERK ★`}</Text>
+                  <Text style={styles.rewardText}>{perk.text}</Text>
+                </>
+              ) : null}
             </Animated.View>
           ) : p.lines.length === 0 && p.caption ? (
             // narration-only panel: the caption reads below the art like a storybook line

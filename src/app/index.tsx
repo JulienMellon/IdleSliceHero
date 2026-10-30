@@ -9,7 +9,7 @@ import { Portrait } from '@/components/portrait';
 import { emitPayout } from '@/components/pulse-bus';
 import { CURB_Y, SCENE_H, sceneFit, type StationKey, Storefront } from '@/components/storefront';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
-import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, TUNING, VEHICLES } from '@/content/tuning';
+import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, TUNING, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
 import { money, rate } from '@/engine/format';
 import * as G from '@/engine/game';
@@ -24,7 +24,7 @@ export default function GameScreen() {
   const offline = useGame((s) => s.offline);
   const toast = useGame((s) => s.toast);
   const covered = useGame((s) => !!s.playing || !!s.offline);
-  const { tapShop, buy, buyFleet, buyDecor, build, setActive, dismissOffline } = useGame.getState();
+  const { tapShop, buy, buyFleet, buyDecor, build, setActive, dismissOffline, bidPier9 } = useGame.getState();
   // stable, so the memoised scene isn't re-rendered by every 200 ms game tick
   const onShopTap = useCallback(() => {
     tapShop();
@@ -66,6 +66,8 @@ export default function GameScreen() {
   const vg = G.vehicleGain(game);
   if (vg && vg > 0) candidates.push({ label: `Upgrade fleet to ${VEHICLES[v + 1].name}s · ${plus(vg)}`, current: game.cash, target: VEHICLES[v + 1].cost, ratio: vg / VEHICLES[v + 1].cost, onPress: buyFleet });
   candidates.sort((a, b) => b.ratio - a.ratio);
+  // Waterfront's finale is a purchase, so it leads the goal bar while it's on offer
+  if (G.pier9Available(game)) candidates.unshift({ label: 'Bid on Pier 9 to save Marisol’s dock', current: game.cash, target: PIER9_BID.cost, ratio: Number.MAX_VALUE, onPress: bidPier9 });
   // On an unmanaged shop the sidewalk already offers "Hire a manager" here: show the next goal instead.
   // viewing an unmanaged shop: its manager is the goal
   const shown = !shop.managed && id !== 'downtown' ? [...candidates.filter((c) => c.label === `Hire a manager for ${nd.name}`), ...candidates.filter((c) => c.label !== `Hire a manager for ${nd.name}`)] : candidates;
@@ -272,6 +274,11 @@ export default function GameScreen() {
                     <Text style={styles.bannerText}>Without a manager, upgrades here only pay while you tap.</Text>
                   </View>
                 )}
+                {G.perkOf(id, shop) && (
+                  <View style={styles.banner}>
+                    <Text style={styles.bannerText}>{`★ ${G.perkOf(id, shop)!.who}’s perk: ${G.perkOf(id, shop)!.text}`}</Text>
+                  </View>
+                )}
                 {bundle && (
                   <View style={styles.banner}>
                     <Text style={styles.bannerText}>{`${bundle.label} · ${money(bundle.cost)} (one alone adds $0/s)`}</Text>
@@ -303,7 +310,7 @@ export default function GameScreen() {
                   useless={!vg || vg <= 1e-9}
                   onBuy={buyFleet}
                 />
-                <Text style={styles.section}>{`Decor · each tier: +${Math.round(DECOR_BOOST * 100)}% pizza price in this shop`}</Text>
+                <Text style={styles.section}>{`Decor · each tier: +${Math.round((G.perkOf(id, shop)?.decorBoost ?? DECOR_BOOST) * 100)}% pizza price in this shop`}</Text>
                 {DECOR_KINDS.map((kind) => {
                   const d = DECOR[kind];
                   const tier = shop.decor[kind];

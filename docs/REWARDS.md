@@ -4,7 +4,7 @@ Oct 29, 2026 · @Julien
 
 ## Overview
 
-Three retention features that give the player a reason to open the game every day and to keep coming back for a month. None of them grants a permanent gameplay advantage: permanent rewards are cosmetic, and every income boost is timed.
+Three retention features that give the player a reason to open the game every day and to keep coming back for a month. None of them grants a permanent gameplay advantage: permanent rewards are cosmetic, and every income boost is timed. (Separately, since v3.7 each neighbourhood's story finale grants one small permanent perk that applies only to that neighbourhood's pizzeria; see `PERKS` in `src/content/tuning.ts`. Those come from the story, not from these retention features.)
 
 | Feature | Resets | Purpose |
 | --- | --- | --- |

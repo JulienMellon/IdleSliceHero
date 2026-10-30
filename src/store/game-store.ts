@@ -3,7 +3,7 @@ import { create } from 'zustand';
 
 import { pickScene } from '../engine/cutscene-input';
 import { HOME_SCENES } from '../content/scenes/home';
-import type { DecorKind } from '../content/tuning';
+import { PIER9_BID, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
@@ -25,6 +25,8 @@ interface Store {
   offline: OfflineSummary | null;
   /** When the player last tapped the kitchen (ms): a scene never opens mid-tap. Not saved. */
   lastKitchenTap: number;
+  /** Play time (s) when the last story scene ended this session; null after a launch or return (v3.7 pacing). Not saved. */
+  lastSceneEndPlay: number | null;
   /** Scene currently playing (or replaying from the Scrapbook). */
   playing: { scene: Scene; replay: boolean } | null;
   /** Short-lived message, e.g. "Not enough cash". */
@@ -40,6 +42,8 @@ interface Store {
   buyFleet: () => boolean;
   buyDecor: (kind: DecorKind) => boolean;
   build: (id: NeighborhoodId) => boolean;
+  /** Waterfront's finale: bid on Pier 9. */
+  bidPier9: () => boolean;
   setActive: (id: NeighborhoodId) => void;
   finishScene: () => void;
   replayScene: (scene: Scene) => void;
@@ -54,8 +58,8 @@ let pendingSave: Promise<void> = Promise.resolve();
 export const useGame = create<Store>((set, get) => {
   /** After any state change, queue the next story scene if one has triggered. */
   const queueScene = () => {
-    const { game, playing, lastKitchenTap } = get();
-    const next = pickScene(game, HOME_SCENES, Date.now(), lastKitchenTap, !!playing);
+    const { game, playing, lastKitchenTap, lastSceneEndPlay } = get();
+    const next = pickScene(game, HOME_SCENES, Date.now(), lastKitchenTap, !!playing, lastSceneEndPlay);
     if (next) set({ playing: { scene: next, replay: false } });
   };
 
@@ -82,6 +86,7 @@ export const useGame = create<Store>((set, get) => {
     loaded: false,
     offline: null,
     lastKitchenTap: 0,
+    lastSceneEndPlay: null,
     playing: null,
     toast: null,
 
@@ -105,7 +110,8 @@ export const useGame = create<Store>((set, get) => {
       } catch {
         // Corrupt or unreadable save: start fresh rather than crash.
       }
-      set({ game, loaded: true, offline });
+      // a launch or return may play one waiting story beat straight away
+      set({ game, loaded: true, offline, lastSceneEndPlay: null });
       if (!offline) queueScene();
     },
 
@@ -125,7 +131,7 @@ export const useGame = create<Store>((set, get) => {
 
     tick: (dt) => {
       if (!get().loaded) return;
-      const game = G.tick(get().game, dt);
+      const game = G.playTick(get().game, dt);
       const toast = get().toast;
       set(toast?.need !== undefined && game.cash >= toast.need ? { game, toast: null } : { game });
       queueScene();
@@ -151,6 +157,8 @@ export const useGame = create<Store>((set, get) => {
 
     buyDecor: (kind) => commit(G.buyDecor(get().game, get().game.active, kind), { name: kind[0].toUpperCase() + kind.slice(1), cost: G.decorCost(get().game, get().game.active, kind) }),
 
+    bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: PIER9_BID.cost }),
+
     build: (id) => commit(G.buildShop(get().game, id), { name: `Build ${G.def(id).name}`, cost: G.def(id).buildCost }),
 
     setActive: (id) => {
@@ -161,7 +169,11 @@ export const useGame = create<Store>((set, get) => {
     finishScene: () => {
       const p = get().playing;
       if (!p) return;
-      set({ playing: null, game: p.replay ? get().game : G.markSceneSeen(get().game, p.scene) });
+      if (p.replay) set({ playing: null });
+      else {
+        const game = G.markSceneSeen(get().game, p.scene);
+        set({ playing: null, game, lastSceneEndPlay: game.playSeconds });
+      }
       if (!p.replay) void get().save();
       queueScene();
     },
@@ -187,7 +199,7 @@ export const useGame = create<Store>((set, get) => {
 
     resetGame: async () => {
       await AsyncStorage.removeItem(SAVE_KEY).catch(() => {});
-      set({ game: G.newGame(Date.now()), offline: null, playing: null });
+      set({ game: G.newGame(Date.now()), offline: null, playing: null, lastSceneEndPlay: null });
       queueScene();
     },
   };

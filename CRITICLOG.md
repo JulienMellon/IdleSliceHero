@@ -33,3 +33,13 @@ v3.6 loads clean (`errors: []`, `loaded: true`) and the critic opened every shot
 | D297 | note | Goal-bar fill runs through the label on an unmanaged shop | Darker label over the fill |
 | — | note | The Suburbs-locked toast covers the University lock on the City map | Sit it lower, under the map |
 | — | planned | Tap targets below 44px (chips 22px, compact buy buttons 29px) | The v3.8 resize, after the v3.7 story pacing build |
+
+## v3.7 — build (planned feature: story pacing and neighbourhood perks; open minors carried)
+
+| Change | What to look for |
+| --- | --- |
+| Story pacing | After a launch or return one waiting story beat plays at once; after that a beat waits for 90 s of play since the last one ended (tutorial included). A finale waits 300 s after its beat 3 (Downtown 120 s). Scenes the player causes (a new pizzeria, the Pier 9 bid) still play at once. downtown-3 now triggers at 45 pizzas. |
+| Perks | Each finale shows a closing card "★ COACH DALE’S PERK ★ …" (new shot `22-dale-perk-card`). Perks apply only to their own pizzeria: Dale (Suburbs) walk-ins pay 85%, Marisol (Waterfront) +10% prices, Priya (University) driver upgrades −10%, Big Sal (Industrial) +25% offline earnings, Genevieve (Uptown) 6% per decor tier. The drawer shows the perk as a banner, and the decor header shows 6% in Uptown once earned. |
+| Pier 9 bid | Once "For Sale" has played and Waterfront has sold 50,000 pizzas, the goal bar leads with "Bid on Pier 9 to save Marisol’s dock · $2.00M" (new shot `21-pier9-bid-goal`). Winning it plays "Dock Saved". |
+| Pacing sim (greedy buyer, one sitting) | Nonna takes over at 5.0 min (was 1.4), Suburbs opens at 5.0 (was 2.0), the bid is won at 35.9 min, University opens at 70.4 (was 66.1), the city completes at 227 min (was 221). Longest scene gap 34.5 min, the University dead zone (deferred). |
+| D302, D303, D306 | Carried, not changed. |

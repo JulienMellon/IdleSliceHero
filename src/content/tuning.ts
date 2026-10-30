@@ -145,3 +145,38 @@ export const DECOR: Record<DecorKind, DecorDef> = {
   walls: { name: 'Wall Decor', icon: '🖼️', tiers: ['Bare walls', 'Posters', 'Framed photos', 'Hand-painted mural'] },
   signage: { name: 'Signage', icon: '🪧', tiers: ['Painted board', 'Neon sign', 'Marquee bulbs', 'Giant rooftop pizza'] },
 };
+
+/**
+ * Story pacing (v3.7). A launch or return plays at most one waiting story beat straight away; after that a beat
+ * waits for `gapSeconds` of play since the last one ended. A finale (beat 4) also waits this long after its beat 3.
+ * Scenes the player causes (a new pizzeria, the Pier 9 bid) are never held back.
+ */
+export const STORY_PACING = { gapSeconds: 90, beat4GapSeconds: 300, downtownBeat4GapSeconds: 120 } as const;
+
+/** Waterfront's finale is a purchase: bid on Pier 9 once "For Sale" has played and Waterfront has sold this many pizzas. ~4.7 min of income in the pacing sim. */
+export const PIER9_BID = { cost: 2_000_000, unlockPizzas: 50_000 } as const;
+
+/** A small permanent perk from each neighbourhood's finale. It only applies to that neighbourhood's pizzeria. */
+export interface PerkDef {
+  who: string;
+  text: string;
+  /** Walk-ins pay this share of the price (default TUNING.walkInShare). */
+  walkInShare?: number;
+  /** Multiplies the price of every pizza. */
+  priceMult?: number;
+  /** Multiplies the cost of Drivers upgrades. */
+  driversCostMult?: number;
+  /** Multiplies what the pizzeria earns while the app is closed. */
+  offlineMult?: number;
+  /** Price boost per decor tier (default DECOR_BOOST). */
+  decorBoost?: number;
+}
+
+export const PERKS: Partial<Record<NeighborhoodId, PerkDef>> = {
+  suburbs: { who: 'Coach Dale', text: 'Suburbs walk-ins now pay 85% of the price (was 70%)', walkInShare: 0.85 },
+  waterfront: { who: 'Captain Marisol', text: 'Waterfront pizzas sell for 10% more', priceMult: 1.1 },
+  university: { who: 'Priya', text: 'University driver upgrades cost 10% less', driversCostMult: 0.9 },
+  industrial: { who: 'Big Sal', text: 'Industrial earns 25% more while you’re away', offlineMult: 1.25 },
+  uptown: { who: 'Genevieve', text: 'Each Uptown decor tier adds 6% to prices (was 4%)', decorBoost: 0.06 },
+};
+
