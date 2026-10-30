@@ -30,6 +30,17 @@ describe('sidewalk station model (T39)', () => {
   });
 });
 
+describe('saving progress (T46)', () => {
+  test('only the bottleneck being saved for has progress, between 0 and 1, never NaN', () => {
+    const s = shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 0);
+    const cost = view(s, 'drivers').cost!;
+    expect(view({ ...s, cash: cost / 2 }, 'drivers').progress).toBeCloseTo(0.5, 6);
+    expect(view({ ...s, cash: cost / 2 }, 'prep').progress).toBe(0);
+    expect(view({ ...s, cash: cost * 3 }, 'drivers').progress).toBe(0); // affordable: solid, not saving
+    for (const v of stationViews(s, 'downtown')) expect(Number.isNaN(v.progress)).toBe(false);
+  });
+});
+
 describe('one button-tone rule for the sidewalk and the drawer (T42)', () => {
   test('a locked or maxed upgrade is never "no gain"', () => {
     expect(buttonTone({ lock: 'Expand to go past Lv 25', gain: null })).toBe('normal');

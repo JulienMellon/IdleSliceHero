@@ -22,7 +22,7 @@ const ICON: Record<StationKey, React.ReactNode> = {
 export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen }: { game: G.GameState; id: NeighborhoodId; idleShop: boolean; bottom: number; onBuy: (what: G.Upgrade) => boolean; onOpen: () => void }) {
   const station = (v: StationView, framed: boolean) => {
     const button = (
-      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={ICON[v.key]} sub={v.name} tone={v.tone} label={v.label} enabled={v.affordable} saving={v.frame === 'waiting'} progress={v.cost ? game.cash / v.cost : 0} onPress={() => onBuy(v.what)} />
+      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={ICON[v.key]} sub={v.name} tone={v.tone} label={v.label} enabled={v.affordable} saving={framed && v.frame === 'waiting'} progress={v.progress} onPress={() => onBuy(v.what)} />
     );
     const badge = (
       <View style={[styles.level, v.frame === 'hot' && styles.levelHot]} pointerEvents="none">
@@ -74,7 +74,8 @@ const styles = StyleSheet.create({
   row: { position: 'absolute', left: 8, right: 8, flexDirection: 'row', gap: 5, alignItems: 'flex-end' },
   card: { flex: 1, height: SIDEWALK_ROW.cardHeight, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 12, borderWidth: STATION_CARD.border, borderColor: C.ink, padding: STATION_CARD.padding, ...shadow },
   cardHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
-  cardWaiting: { borderColor: '#F2B8B0', borderStyle: 'dashed' },
+  // saving for it: a basil dashed outline that matches the pale basil face inside (D330; was pink)
+  cardWaiting: { borderColor: 'rgba(46,125,62,0.6)', borderStyle: 'dashed' },
   idleStack: { flex: 4, gap: IDLE_STACK_GAP },
   chipRow: { flexDirection: 'row', gap: 4 },
   chip: { flex: 1 },

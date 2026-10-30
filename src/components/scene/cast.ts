@@ -144,7 +144,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `c${i}`,
       sortY: y,
       role: 'cook',
-      props: { x, y, kind: 'cook', gold: shop.prep >= 100, front: true, act: COOK_ACTS[i % 3], mood: running && Math.floor(poseClock / 1.5 + i) % 2 === 0 ? 'focus' : 'smile', seed: sd, blink: blinkAt(sd), arm: running ? Math.abs(Math.sin(pt * 4 + i)) * 3 : 0 },
+      props: { x, y, kind: 'cook', variant: i, gold: shop.prep >= 100, front: true, act: COOK_ACTS[i % 3], mood: running && Math.floor(poseClock / 1.5 + i) % 2 === 0 ? 'focus' : 'smile', seed: sd, blink: blinkAt(sd), arm: running ? Math.abs(Math.sin(pt * 4 + i)) * 3 : 0 },
     });
   });
   // bakers in front of the oven bank; the one by the counter holds the peel upright so it clears the counter

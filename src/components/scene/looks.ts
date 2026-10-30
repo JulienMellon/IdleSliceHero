@@ -53,6 +53,8 @@ export interface PersonProps {
   dot?: string;
   gold?: boolean;
   alt?: boolean;
+  /** Which cook in the kitchen (0–2): neckerchief colour, and the second wears a skull cap (D306). */
+  variant?: number;
   // pose
   act?: Act;
   mood?: Mood;

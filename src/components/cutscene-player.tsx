@@ -23,9 +23,9 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   const [panel, setPanel] = useState(0);
   const [line, setLine] = useState(0);
   const [showReward, setShowReward] = useState(false);
-  const zoom = useRef(new Animated.Value(1)).current;
-  const slide = useRef(new Animated.Value(0)).current;
-  const bubble = useRef(new Animated.Value(0)).current;
+  const [zoom] = useState(() => new Animated.Value(1));
+  const [slide] = useState(() => new Animated.Value(0));
+  const [bubble] = useState(() => new Animated.Value(0));
   // Input lockout: a tapping player must not blow past a line or the whole scene (see cutscene-input.ts).
   const openedAt = useRef(0);
   const lineShownAt = useRef(0);

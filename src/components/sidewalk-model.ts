@@ -15,6 +15,9 @@ export function buttonTone({ lock, gain, muted = false }: { lock: string | null 
   return (gain ?? 0) > 1e-9 ? 'normal' : 'nogain';
 }
 
+/** The unmuted case of `buttonTone` (sidewalk stations are never muted). */
+export const stationTone = (lock: string | null, gain: number | null): 'normal' | 'nogain' => (lock || (gain ?? 0) > 1e-9 ? 'normal' : 'nogain');
+
 export type StationKey = 'prep' | 'ovens' | 'counter' | 'drivers';
 export const STATION_KEYS: StationKey[] = ['prep', 'ovens', 'counter', 'drivers'];
 const STATION: Record<StationKey, { what: G.Upgrade; name: string; stage: G.Stage }> = {
@@ -43,6 +46,8 @@ export interface StationView extends StationModel {
   affordable: boolean;
   /** Card frame: solid red when the bottleneck is affordable, dashed while the player saves for it. */
   frame: 'hot' | 'waiting' | null;
+  /** How close the player is to the bottleneck they're saving for, 0–1 (0 unless `frame` is waiting). */
+  progress: number;
 }
 
 let cacheKey = '';
@@ -74,7 +79,7 @@ export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[
       cost,
       lock,
       label: lock ? 'MAX' : money(cost ?? 0),
-      tone: buttonTone({ lock, gain }) === 'nogain' ? 'nogain' : 'normal',
+      tone: stationTone(lock, gain),
       neck: useful && rates[stage] <= min * (1 + 1e-9),
     };
   });
@@ -86,6 +91,8 @@ export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[
 export function stationViews(s: G.GameState, id: NeighborhoodId): StationView[] {
   return stationModels(s, id).map((m) => {
     const affordable = !m.lock && m.cost !== null && s.cash >= m.cost;
-    return { ...m, affordable, frame: m.neck ? (affordable ? 'hot' : 'waiting') : null };
+    const frame = m.neck ? (affordable ? 'hot' : 'waiting') : null;
+    const progress = frame === 'waiting' && m.cost ? Math.min(1, Math.max(0, s.cash / m.cost)) : 0;
+    return { ...m, affordable, frame, progress };
   });
 }

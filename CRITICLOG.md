@@ -91,3 +91,12 @@ v3.7 (story pacing, neighbourhood perks, the Pier 9 bid) loads clean and the cri
 | D327 | Sidewalk icons 11 pt and letter spacing 0.1, so "COUNTER" has side room. |
 | D329 | Expand and Fleet drop "+$0/s now" too. |
 | D302, D306, D328 | Carried. |
+
+## v4.3 — build (round-43 notes from the v4.2 review)
+
+| Note | Change |
+| --- | --- |
+| D330 | The bottleneck being saved for has a basil dashed outline (#2E7D3E at 60%) matching its pale basil face; no more pink with green (03). Solid red stays for an affordable bottleneck. |
+| D306 | Cooks differ by position in the kitchen: the first keeps the toque and a red neckerchief, the second wears a grey skull cap and a mustard neckerchief, the third a basil neckerchief (09, 13). |
+| Code-review fixes seen on screen | Decor cards in an unmanaged shop no longer show a green button (C63); chips on an unmanaged shop no longer get the "saving for" face (C64). |
+| D302, D328, D331 | Carried. |

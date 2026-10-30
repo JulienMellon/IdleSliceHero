@@ -118,3 +118,16 @@ The round-10 (v3.8, CHANGES REQUESTED) and round-11 (v3.9, APPROVED) reviews are
 | M30 (part) | The drawer card computes its gain once (Expand at a level cap counts as useful). |
 | UI | `BuyButton` gains `saving` / `progress` (pale basil face and a progress line for the bottleneck being saved for) and a drawn strike bar for no-gain prices. |
 | Not done | A17 (a full cached drawer model), C62/T43 (Waterfront wall geometry), T44, C54, T37, T38, M27, M31 and the carried lows. 133 tests pass. |
+
+## v4.3 — build (round-14 review of v4.2: CHANGES REQUESTED; not re-reviewed, the codecritic is paused)
+
+| Item | Change |
+| --- | --- |
+| C63 | Decor cards pass `tone={buttonTone({ lock: cost === null, gain, muted: idleShop })}`; `StationCard.tone` is required, so a missing tone can't fall back to green. |
+| C64 | `saving` only on framed (managed) station cards. |
+| C65 | `stationTone(lock, gain)` for the unmuted sidewalk case. |
+| T46 | `StationView.progress` (0–1, only for the bottleneck being saved for, never NaN), tested. |
+| M32 (part) | Grade and Expand gains computed once per render. |
+| M33 | Cut-scene `Animated.Value`s created once (`useState(() => …)`). |
+| Cooks (D306) | `PersonProps.variant` (cook index) drives the neckerchief colour and the second cook's skull cap. |
+| Not done | A17 (cached drawer model) with T45, C66 (strike bar on a shrunk iOS label: check on device), M31, M34, C62/T43, T44, C54, T37, T38, M27, carried lows. 134 tests pass. |

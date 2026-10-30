@@ -53,7 +53,11 @@ export function Hair({ style, color, hy, part }: { style: number; color: string;
 }
 
 /** Hats and headwear that make each job readable at a glance. */
-export function Headwear({ kind, hy, front = false, alt = false, dot = '#D9443A', cap }: { kind: Kind; hy: number; front?: boolean; alt?: boolean; dot?: string; cap?: string }) {
+export function Headwear({ kind, hy, front = false, alt = false, dot = '#D9443A', cap, variant = 0 }: { kind: Kind; hy: number; front?: boolean; alt?: boolean; dot?: string; cap?: string; variant?: number }) {
+  if (kind === 'cook' && variant === 1) {
+    // one cook in three wears a grey skull cap instead of the toque, so a kitchen crew doesn't read as clones (D306)
+    return <Path d={`M-7.6 ${hy - 5.6} Q-7 ${hy - 15.5} 0.6 ${hy - 15.8} Q8.4 ${hy - 15.5} 8.8 ${hy - 5.6} Q0.6 ${hy - 8.4} -7.6 ${hy - 5.6} Z`} fill="#6B7380" {...OUT} />;
+  }
   if (kind === 'cook') {
     return (
       <G>
@@ -148,7 +152,7 @@ export function Person({ x, y, o = 1, ...p }: PersonProps) {
       {/* the back limbs only use the arm swing when rolling dough with both hands */}
       <Limbs {...limbs} arm={act === 'pin' ? limbs.arm : 0} part="back" />
       <G transform={bob ? `translate(0 ${(-bob).toFixed(2)})` : undefined}>
-        <FigureBody kind={p.kind} seed={seed} shirt={p.shirt} hair={p.hair} cap={p.cap} dot={p.dot} gold={p.gold} alt={p.alt} front={p.front} flip={p.flip} blink={p.blink} talk={p.talk} mood={p.mood} />
+        <FigureBody kind={p.kind} seed={seed} shirt={p.shirt} hair={p.hair} cap={p.cap} dot={p.dot} gold={p.gold} alt={p.alt} variant={p.variant} front={p.front} flip={p.flip} blink={p.blink} talk={p.talk} mood={p.mood} />
       </G>
       <Limbs {...limbs} part="front" />
     </G>
@@ -180,9 +184,14 @@ function bodyGeom({ kind, shirt, flip = false, seed = 0, front = false, hair }: 
  * Head, hair, torso and outfit. Drawn standing still (walk bob is a translate around it), so it only
  * re-renders when the look, expression or blink changes — not with the arm swing or walk cycle.
  */
+/** Neckerchief colour per cook variant (red, mustard, basil); variant 1 also wears a skull cap (D306). */
+const COOK_KERCHIEF = ['#E8432E', '#F2C14E', '#3FAE5A'];
+
 const FigureBody = memo(function FigureBody(p: FigureProps) {
   const { worker, look, hairC, unflipBody, unflipHead, top, skin, by, hy, ww, eyeX, fx, torso } = bodyGeom(p);
   const { kind, shirt, front, blink = false, talk = false, mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false } = p;
+  // the first cook keeps the classic toque; the second and third are told apart by cap and neckerchief
+  const cookVariant = kind === 'cook' ? (p.variant ?? 0) % 3 : 0;
   return (
     <G>
       {/* back hair (behind the head) */}
@@ -196,7 +205,7 @@ const FigureBody = memo(function FigureBody(p: FigureProps) {
       {/* outfit details */}
       {kind === 'cook' && (
         <G>
-          <Path d={`M-4 ${by} L4.5 ${by} L0.3 ${by + 5} Z`} fill="#E8432E" {...OUT} strokeWidth={0.8} />
+          <Path d={`M-4 ${by} L4.5 ${by} L0.3 ${by + 5} Z`} fill={COOK_KERCHIEF[cookVariant]} {...OUT} strokeWidth={0.8} />
           {[[-2.2, 7], [-2.2, 12], [3, 7], [3, 12]].map(([dx, dy], i) => <Circle key={i} cx={dx} cy={by + dy} r={0.9} fill="#C9C3BA" />)}
           <Path d={`M0.4 ${by + 5} V${by + 19}`} stroke="#E1DAD0" strokeWidth={0.8} />
         </G>
@@ -327,8 +336,8 @@ const FigureBody = memo(function FigureBody(p: FigureProps) {
         />
       )}
       {kind === 'baker' && <Circle cx={-9.5} cy={hy + 4.5} r={3.6} fill={hairC} {...OUT} strokeWidth={0.8} />}
-      <Headwear kind={kind} hy={hy} front={front} alt={alt} dot={dot} cap={cap} />
-      {gold && kind === 'cook' && <Rect x={-6.2} y={hy - 11.6} width={13.6} height={2.2} rx={1} fill="#E0B000" stroke={INK} strokeWidth={0.5} />}
+      <Headwear kind={kind} hy={hy} front={front} alt={alt} dot={dot} cap={cap} variant={cookVariant} />
+      {gold && kind === 'cook' && cookVariant !== 1 && <Rect x={-6.2} y={hy - 11.6} width={13.6} height={2.2} rx={1} fill="#E0B000" stroke={INK} strokeWidth={0.5} />}
       {worker && look.trait === 4 && <Path d={`M${front ? -1 : 3} ${hy - 6.5} q-2.5 2.6 -0.4 4 q0.6 -2 2.6 -2.2 q-0.2 2 1.6 2.6 q0.8 -2.4 -1 -4.4 Z`} fill={hairC} stroke={INK} strokeWidth={0.6} />}
     </G>
   );

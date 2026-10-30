@@ -156,6 +156,9 @@ export default function GameScreen() {
   };
   const gradeNext = OVEN_GRADES[shop.grade + 1];
   const fpNext = FOOTPRINTS[shop.footprint + 1];
+  // computed once per render, not once per use (M32)
+  const gradeGain = G.upgradeGain(game, id, 'grade') ?? 0;
+  const expandGain = G.upgradeGain(game, id, 'expand') ?? 0;
   const lock = G.nextVehicleLock(game);
   const fleetLock = lock ? G.vehicleLockLabel(lock) : null;
   const nextVeh = VEHICLES[v + 1];
@@ -229,8 +232,8 @@ export default function GameScreen() {
                 {card('counter', { icon: <RegisterIcon size={26} />, title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rate(rates.counter)}/s`), hot: tied('counter') })}
                 {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${rate(G.deliveryRate(shop, v))}/s`), hot: tied('customers') })}
                 {card('tables', { icon: <SeatIcon size={26} />, title: 'Seating', level: `Lv ${shop.tables}`, detail: nextTableHint === 'dining room full' ? `Dining room full · ${rate(G.walkInRate(shop))}\u00A0walk‑ins/s` : `${stationDetail('customers', 'tables', `${rate(G.walkInRate(shop))}\u00A0walk‑ins/s`)} · ${nextTableHint}`, hot: tied('customers') })}
-                {card('grade', { icon: <SparkleIcon size={26} />, title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name} ×2 · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} ×2`) : 'Finest ovens in town' })}
-                {card('expand', { icon: <ExpandIcon size={26} />, title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? ` · ${plus(G.upgradeGain(game, id, 'expand')!)}` : atCap ? ` · Lv cap → ${G.levelCap(shop) + 25}` : ''}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
+                {card('grade', { icon: <SparkleIcon size={26} />, title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? (gradeGain > 1e-9 ? `→ ${gradeNext.name} ×2 · ${plus(gradeGain)}` : `→ ${gradeNext.name} ×2`) : 'Finest ovens in town' })}
+                {card('expand', { icon: <ExpandIcon size={26} />, title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter${expandGain > 1e-9 ? ` · ${plus(expandGain)}` : atCap ? ` · Lv cap → ${G.levelCap(shop) + 25}` : ''}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
                 <StationCard
                   testID="buy-fleet"
                   icon={<ScooterIcon size={26} />}
@@ -259,6 +262,7 @@ export default function GameScreen() {
                       cost={cost}
                       costLabel="MAX"
                       canBuy={cost !== null && game.cash >= cost}
+                      tone={buttonTone({ lock: cost === null, gain, muted: idleShop })}
                       muted={idleShop}
                       onBuy={() => buyDecor(kind)}
                     />

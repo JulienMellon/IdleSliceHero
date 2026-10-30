@@ -104,7 +104,7 @@ export function StationCard(props: {
   wide?: boolean;
   muted?: boolean;
   /** Button tone from `buttonTone` (sidewalk-model.ts): `nogain` draws the flat "no gain now" look. */
-  tone?: 'normal' | 'neutral' | 'nogain';
+  tone: 'normal' | 'neutral' | 'nogain';
 }) {
   return (
     <View style={[styles.card, props.wide && styles.cardWide, props.hot && styles.cardHot, props.muted && styles.cardMuted]}>
@@ -127,7 +127,7 @@ export function StationCard(props: {
         </View>
       </View>
       <View style={props.wide ? { width: 96 } : undefined}>
-        <BuyButton compact tone={props.tone ?? 'normal'} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : money(props.cost)} sub={props.tone === 'nogain' ? 'no gain now' : undefined} enabled={props.canBuy} onPress={props.onBuy} />
+        <BuyButton compact tone={props.tone} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : money(props.cost)} sub={props.tone === 'nogain' ? 'no gain now' : undefined} enabled={props.canBuy} onPress={props.onBuy} />
       </View>
     </View>
   );
