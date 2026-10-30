@@ -70,6 +70,7 @@ class Track:
     ccs: list = field(default_factory=list)  # (beat, cc, value)
 
     def n(self, t, dur, pitch, vel=90):
+        vel = int(max(1, min(127, vel)))
         if isinstance(pitch, (list, tuple)):
             for q in pitch:
                 self.events.append((t, dur, p(q), vel))

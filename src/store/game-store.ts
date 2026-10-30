@@ -182,7 +182,7 @@ export const useGame = create<Store>((set, get) => {
 
     bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: PIER9_BID.cost }, plain('bid')),
 
-    build: (id) => commit(G.buildShop(get().game, id), { name: `Build ${G.def(id).name}`, cost: G.def(id).buildCost }, plain('build')),
+    build: (id) => commit(G.buildShop(get().game, id), { name: `Build ${G.def(id).name}`, cost: G.def(id).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id })),
 
     setActive: (id) => {
       const g = get().game;

@@ -7,7 +7,10 @@ import { HOME_SCENES } from '../content/scenes/home';
 import type { NeighborhoodId, PanelCue } from '../content/types';
 import { useGame } from '../store/game-store';
 import { onAudio, type AudioEvent } from './bus';
-import { DUCK, EXCLUSIVE_CUES, PurchaseChain, VoiceLimiter, musicFor, nextVariant, panelCue, quantizeDelay, stingDuck, stingUnit, type MusicTrack, type StingKind } from './logic';
+import {
+  DUCK, EXCLUSIVE_CUES, PurchaseChain, RESTART_TRACKS, StingGate, VoiceLimiter, musicFor, nextVariant, panelCue, quantizeDelay, sharedTimeline,
+  stingDuck, stingUnit, type MusicTrack, type StingKind,
+} from './logic';
 import { MUSIC, SFX, STINGS, STORY, type SfxId, type StoryCueId } from './manifest';
 import { useAudioPrefs } from './prefs';
 
@@ -15,8 +18,12 @@ const CROSSFADE_MS = 600; // AU19
 const DUCK_DOWN_MS = 80; // AU22
 const DUCK_UP_MS = 400;
 const SKIP_FADE_MS = 400;
+const CUE_OUT_MS = 300; // an outgoing story cue always fades (AU26)
+const STING_OUT_MS = 150; // a scene's first panel clears gameplay stingers (AU27)
+const SFX_UNDER_STING = 0.7; // AU38
 /** Most-heard effects are created at start-up; the rest on first use, then kept (never per tap). */
-const PRELOAD: SfxId[] = ['tap', 'cash', 'buy', 'rush', 'refused', 'full', 'click', 'bubble'];
+const PRELOAD: SfxId[] = ['tap', 'cash', 'buy', 'full', 'refused', 'click'];
+const STING_PRELOAD: StingKind[] = ['bottleneck', 'milestone', 'milestone_big', 'manager', 'upgrade', 'fleet', 'drone', 'build', 'perk'];
 const SCENES = new Map(HOME_SCENES.map((s) => [s.id, s]));
 
 // ------------------------------------------------------------------------------------------------ volume ramps
@@ -66,6 +73,26 @@ function make(src: number | null): AudioPlayer {
   return p;
 }
 
+/**
+ * Start a one-shot from the top. A player that has played is rewound right after it ends, so the next play()
+ * is immediate; one still mid-sound is seeked first and played when the seek lands (AU39).
+ */
+function fire(p: AudioPlayer, seconds: number, volume: number, rate = 1) {
+  ramps.delete(p);
+  safe(() => {
+    p.volume = volume;
+    if (rate !== 1) p.setPlaybackRate(rate);
+    else if (safe(() => p.playbackRate, 1) !== 1) p.setPlaybackRate(1);
+  });
+  const at = safe(() => p.currentTime, 0);
+  if (at > 0.01) {
+    void p.seekTo(0).then(() => safe(() => p.play())).catch(() => {});
+  } else safe(() => p.play());
+  setTimeout(() => {
+    if (!safe(() => p.playing, false)) void p.seekTo(0).catch(() => {});
+  }, (seconds / rate) * 1000 + 60);
+}
+
 // ------------------------------------------------------------------------------------------------ state
 let started = false;
 let unlocked = Platform.OS !== 'web'; // web: browsers block audio until the first gesture
@@ -86,16 +113,20 @@ const lastVariant = new Map<SfxId, number>();
 const popLimiter = new VoiceLimiter();
 const rushLimiter = new VoiceLimiter();
 const chain = new PurchaseChain();
+const gate = new StingGate();
 
-// stingers: only the active key's are kept (AU23)
+// stingers: only the active key's are kept (AU23), preloaded shortly after a key change (AU40)
 let stingHood: NeighborhoodId | null = null;
 const stingPlayers = new Map<string, AudioPlayer>();
 const pendingStings = new Set<ReturnType<typeof setTimeout>>();
+let preloadTimer: ReturnType<typeof setTimeout> | null = null;
 
-// story: one player for the cue on screen
-let storyPlayer: AudioPlayer | null = null;
+// story: two players, so an outgoing cue fades while the next starts (AU26)
+const story: AudioPlayer[] = [];
+let storyFront = 0;
 let storyEnd: ReturnType<typeof setTimeout> | null = null;
 let scenePanelCue: PanelCue = 'none';
+let lastScenePanel = '';
 
 // ------------------------------------------------------------------------------------------------ music
 function musicGain() {
@@ -136,10 +167,14 @@ function setDuck(reason: string, gain: number | null, holdMs?: number) {
 function switchMusic(next: MusicTrack) {
   if (next === current) return;
   const out = deck[front];
+  const outPos = out && current ? safe(() => out.currentTime, 0) : 0;
   if (current && out) {
-    positions.set(current, safe(() => out.currentTime, 0));
+    positions.set(current, outPos);
     rampTo(out, 0, CROSSFADE_MS, () => safe(() => out.pause()));
   }
+  // Nonna's takeover: the full band picks up where the sparse chart was (AU41)
+  if (sharedTimeline(current, next)) positions.set(next, outPos);
+  if (RESTART_TRACKS.has(next)) positions.set(next, 0);
   front = 1 - front;
   const inc = deck[front];
   current = next;
@@ -163,6 +198,8 @@ function refreshMusic() {
   });
   switchMusic(track);
   setDuck('scene', scene ? DUCK.scene : null);
+  setDuck('popup', s.offline && !scene ? DUCK.popup : null);
+  scheduleStingPreload(s.game.active);
 }
 
 // ------------------------------------------------------------------------------------------------ effects
@@ -176,64 +213,82 @@ function sfxPlayer(id: SfxId, v: number) {
   return p;
 }
 
+const SFX_SECONDS: Partial<Record<SfxId, number>> = { collect: 1.5, build: 0.8, fleet: 0.6, grade: 0.6, gavel: 0.6, expand: 0.5, milestone: 0.4 };
+
 function playSfx(id: SfxId, opts: { variant?: number; gain?: number; jitter?: number } = {}) {
   if (!useAudioPrefs.getState().sound || !unlocked || !appActive) return;
   const n = SFX[id].length;
-  const v = opts.variant ?? nextVariant(lastVariant.get(id) ?? -1, n, Math.random());
+  const v = Math.min(n - 1, opts.variant ?? nextVariant(lastVariant.get(id) ?? -1, n, Math.random()));
   lastVariant.set(id, v);
-  const p = sfxPlayer(id, Math.min(n - 1, v));
   const semis = (Math.random() * 2 - 1) * (opts.jitter ?? 1);
-  safe(() => {
-    p.volume = opts.gain ?? 1;
-    p.setPlaybackRate(Math.pow(2, semis / 12));
-    void p.seekTo(0).catch(() => {});
-    p.play();
-  });
+  const under = gate.busy(Date.now()) ? SFX_UNDER_STING : 1;
+  fire(sfxPlayer(id, v), SFX_SECONDS[id] ?? 0.35, (opts.gain ?? 1) * under, Math.pow(2, semis / 12));
 }
 
 // ------------------------------------------------------------------------------------------------ stingers
-function stingPlayer(hood: NeighborhoodId, kind: StingKind) {
-  if (stingHood !== hood) {
-    for (const p of stingPlayers.values()) safe(() => p.remove());
-    stingPlayers.clear();
-    stingHood = hood;
-  }
+function useStingKey(hood: NeighborhoodId) {
+  if (stingHood === hood) return;
+  for (const p of stingPlayers.values()) safe(() => p.remove());
+  stingPlayers.clear();
+  stingHood = hood;
+}
+
+function stingPlayer(hood: NeighborhoodId, kind: StingKind | 'bid') {
+  if (kind !== 'build' && kind !== 'bid') useStingKey(hood);
   const key = `${hood}_${kind}` as keyof typeof STINGS;
   let p = stingPlayers.get(key);
   if (!p) {
     p = make(STINGS[key].src);
+    // other keys' build/bid players are kept with the active key's set and released with it
     stingPlayers.set(key, p);
   }
   return { p, info: STINGS[key] };
 }
 
-/** Play a stinger in `hood`'s key, its beat 1 on the loop's next beat (or bar). */
-function playSting(hood: NeighborhoodId, kind: StingKind, immediate = false) {
+function scheduleStingPreload(hood: NeighborhoodId) {
+  if (stingHood === hood || preloadTimer) return;
+  preloadTimer = setTimeout(() => {
+    preloadTimer = null;
+    const h = useGame.getState().game.active;
+    if (!useAudioPrefs.getState().music) return;
+    for (const k of STING_PRELOAD) safe(() => stingPlayer(h, k));
+  }, 1500);
+}
+
+function stopStings(ms: number) {
+  for (const t of pendingStings) clearTimeout(t);
+  pendingStings.clear();
+  for (const p of stingPlayers.values()) if (safe(() => p.playing, false)) rampTo(p, 0, ms, () => safe(() => p.pause()));
+  gate.clear();
+  setDuck('sting', null);
+}
+
+/** Play a stinger in `hood`'s key; its beat 1 lands on the loop's next beat or bar unless `immediate`. */
+function playSting(hood: NeighborhoodId, kind: StingKind | 'bid', o: { immediate?: boolean; gated?: boolean; duck?: number } = {}) {
   if (!useAudioPrefs.getState().music || !unlocked || !appActive) return;
   const { p, info } = stingPlayer(hood, kind);
+  const now = Date.now();
   const m = current ? MUSIC[current] : null;
   const pos = m && deck[front] ? safe(() => deck[front].currentTime, NaN) : NaN;
-  const delay = immediate || !m || !Number.isFinite(pos) ? 0 : quantizeDelay(pos, m.bpm, stingUnit(kind, m.beatsPerBar, current!), info.downbeatSeconds);
+  const delay = o.immediate || !m || !Number.isFinite(pos) || kind === 'bid' ? 0 : quantizeDelay(pos, m.bpm, stingUnit(kind, m.beatsPerBar, current!), info.downbeatSeconds);
+  if (o.gated !== false && kind !== 'bid' && !gate.admit(kind, now, (delay + info.seconds) * 1000)) return;
   const t = setTimeout(() => {
     pendingStings.delete(t);
-    setDuck('sting', stingDuck(kind), info.seconds * 1000);
-    safe(() => {
-      p.volume = 1;
-      void p.seekTo(0).catch(() => {});
-      p.play();
-    });
+    setDuck('sting', o.duck ?? (kind === 'bid' ? DUCK.bid : stingDuck(kind)), info.seconds * 1000);
+    fire(p, info.seconds, 1);
   }, delay * 1000);
   pendingStings.add(t);
 }
 
 // ------------------------------------------------------------------------------------------------ story
 function playStory(id: StoryCueId, exclusive: boolean) {
-  // keep the loop down when one exclusive cue follows another (no blip of the loop between them)
-  stopStory(0, exclusive);
+  stopStory(CUE_OUT_MS, exclusive);
   if (!useAudioPrefs.getState().music || !unlocked || !appActive) return;
-  if (!storyPlayer) storyPlayer = make(null);
-  const p = storyPlayer;
+  storyFront = 1 - storyFront;
+  const p = story[storyFront];
+  if (!p) return;
   const info = STORY[id];
+  ramps.delete(p);
   safe(() => {
     p.replace(info.src);
     p.volume = 1;
@@ -249,14 +304,18 @@ function playStory(id: StoryCueId, exclusive: boolean) {
 function stopStory(ms: number, keepDuck = false) {
   if (storyEnd) clearTimeout(storyEnd);
   storyEnd = null;
-  const p = storyPlayer;
-  if (p) rampTo(p, 0, ms, () => safe(() => p.pause()));
+  const p = story[storyFront];
+  if (p && safe(() => p.playing, false)) rampTo(p, 0, ms, () => safe(() => p.pause()));
   if (!keepDuck) setDuck('story', null);
 }
 
 function onPanel(sceneId: string, panel: number) {
   const scene = SCENES.get(sceneId);
   if (!scene) return;
+  const key = `${sceneId}/${panel}`;
+  if (key === lastScenePanel) return;
+  lastScenePanel = key;
+  if (panel === 0) stopStings(STING_OUT_MS); // a scene never opens over a gameplay stinger (AU27)
   const cue = panelCue(scene, panel);
   scenePanelCue = cue;
   refreshMusic();
@@ -264,9 +323,9 @@ function onPanel(sceneId: string, panel: number) {
   switch (cue) {
     case 'welcome':
     case 'warmth':
-      return playSting(hood, cue);
+      return playSting(hood, cue, { gated: false });
     case 'rep':
-      return playStory('megaslice_rep', false);
+      return playStory('megaslice_rep', EXCLUSIVE_CUES.has('rep'));
     case 'victor-exit':
       return playStory('victor_exit', false);
     case 'triumph':
@@ -286,7 +345,9 @@ function onPanel(sceneId: string, panel: number) {
 
 // ------------------------------------------------------------------------------------------------ events
 function handle(e: AudioEvent) {
-  const active = useGame.getState().game.active;
+  const g = useGame.getState();
+  const active = g.game.active;
+  const sceneHood = g.playing?.scene.neighborhood ?? active;
   const now = Date.now();
   switch (e.type) {
     case 'tap':
@@ -294,12 +355,12 @@ function handle(e: AudioEvent) {
     case 'full':
       return playSfx('full', { jitter: 0.5 });
     case 'rush': {
-      const g = rushLimiter.hit(now);
-      return g > 0 ? playSfx('rush', { gain: g }) : undefined;
+      const gain = rushLimiter.hit(now);
+      return gain > 0 ? playSfx('rush', { gain }) : undefined;
     }
     case 'cash': {
-      const g = popLimiter.hit(now);
-      return g > 0 ? playSfx('cash', { gain: g, jitter: 2 }) : undefined;
+      const gain = popLimiter.hit(now);
+      return gain > 0 ? playSfx('cash', { gain, jitter: 2 }) : undefined;
     }
     case 'refused':
       return playSfx('refused', { jitter: 0.5 });
@@ -312,25 +373,30 @@ function handle(e: AudioEvent) {
       else if (e.what === 'grade') playSfx('grade', { jitter: 0.5 });
       else if (e.what === 'fleet') playSfx('fleet', { variant: e.vehicle ?? 0, jitter: 0 });
       else if (e.what === 'build') playSfx('build', { jitter: 0 });
-      else playSfx('buy', { variant: chain.next(now), jitter: 0 });
+      else if (e.what === 'bid') playSfx('gavel', { jitter: 0 });
+      else {
+        const step = chain.next(now);
+        playSfx('buy', { variant: step, jitter: step === 0 ? 0.3 : 0 }); // AU37: slow play still varies
+      }
       if (e.what === 'decor') playSfx('sparkle', { jitter: 0.5 });
       if (e.sting === 'milestone' || e.sting === 'milestone_big') playSfx('milestone', { jitter: 0 });
-      if (e.what === 'bid') return playSting('waterfront', 'milestone_big', true);
+      // the bid holds a tension chord the Dock Saved scene resolves; a new pizzeria plays its own neighbourhood's motif
+      if (e.what === 'bid') return playSting('waterfront', 'bid', { immediate: true });
+      if (e.what === 'build' && e.hood) return playSting(e.hood, 'build', { immediate: true });
       if (e.sting) playSting(active, e.sting);
       return;
     }
     case 'perk':
-      return playStory('perk', false);
+      // layered over whatever story cue is still ringing, in the scene's key (AU26)
+      return playSting(sceneHood, 'perk', { immediate: true, gated: false, duck: 1 });
     case 'offline-open':
-      return playStory('offline_open', false);
+      return playSting(active, 'offline', { immediate: true, gated: false, duck: 1 });
     case 'collect':
-      stopStory(200);
       return playSfx('collect', { variant: e.size, jitter: 0 });
     case 'scene-panel':
       return onPanel(e.sceneId, e.panel);
     case 'scene-skip':
-      for (const t of pendingStings) clearTimeout(t);
-      pendingStings.clear();
+      stopStings(SKIP_FADE_MS);
       return stopStory(SKIP_FADE_MS);
   }
 }
@@ -344,6 +410,7 @@ export function startAudio() {
   void useAudioPrefs.getState().load();
   safe(() => {
     deck.push(make(null), make(null));
+    story.push(make(null), make(null));
     for (const id of PRELOAD) for (let v = 0; v < SFX[id].length; v++) sfxPlayer(id, v);
   });
   onAudio(handle);
@@ -360,18 +427,21 @@ export function startAudio() {
   let lastPlaying = useGame.getState().playing;
   let lastActive = useGame.getState().game.active;
   let lastSeen = useGame.getState().game.seenScenes.length;
+  let lastOffline = useGame.getState().offline;
   useGame.subscribe((s) => {
     if (s.playing !== lastPlaying) {
       if (!s.playing) {
         scenePanelCue = 'none';
+        lastScenePanel = '';
         stopStory(SKIP_FADE_MS);
       }
       lastPlaying = s.playing;
       refreshMusic();
     }
-    if (s.game.active !== lastActive || s.game.seenScenes.length !== lastSeen) {
+    if (s.game.active !== lastActive || s.game.seenScenes.length !== lastSeen || s.offline !== lastOffline) {
       lastActive = s.game.active;
       lastSeen = s.game.seenScenes.length;
+      lastOffline = s.offline;
       refreshMusic();
     }
   });
@@ -380,10 +450,10 @@ export function startAudio() {
     const was = appActive;
     appActive = state === 'active';
     if (was === appActive) return;
-    const p = deck[front];
     if (!appActive) {
-      safe(() => p?.pause());
-      safe(() => storyPlayer?.pause());
+      safe(() => deck[front]?.pause());
+      for (const p of story) safe(() => p.pause());
+      stopStings(0);
     } else {
       refreshMusic();
     }

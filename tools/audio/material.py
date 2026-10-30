@@ -101,3 +101,14 @@ def bar_melody(root, bars, mode=MAJOR, start=0.0, bar_beats=4.0, shift=0):
 
 def flat(root, d: int, mode=MAJOR):
     return deg(root, d, mode) - 1
+
+
+def material_third(root, pitch: int, mode=MAJOR) -> int:
+    """The diatonic third above `pitch` in the key (for parallel-thirds doubling)."""
+    from mlib import p as _p
+    r = _p(root)
+    pc = (pitch - r) % 12
+    steps = [m for m in mode]
+    i = min(range(7), key=lambda k: abs(steps[k] - pc))
+    up = steps[(i + 2) % 7] + (12 if i + 2 >= 7 else 0)
+    return pitch + (up - steps[i])

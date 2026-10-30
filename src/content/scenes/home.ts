@@ -47,6 +47,7 @@ export const HOME_SCENES: Scene[] = [
       },
       {
         backdrop: 'downtown',
+        cue: 'welcome',
         cast: [{ id: 'nonna-rosa', mood: 'happy' }],
         lines: [
           { speaker: 'Nonna Rosa', text: 'Make Downtown smell like Rosa\'s again. I\'ll be watching. Always watching.' },

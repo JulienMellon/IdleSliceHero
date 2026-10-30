@@ -1,5 +1,6 @@
 // Audio event bus: the store and components say *what happened*; the director decides what it sounds like.
 // Pure TS (no expo-audio) so the store stays testable in Node.
+import type { NeighborhoodId } from '../content/types';
 import type { Purchase, StingKind } from './logic';
 
 export type AudioEvent =
@@ -7,7 +8,7 @@ export type AudioEvent =
   | { type: 'full' }
   | { type: 'rush' }
   | { type: 'cash' }
-  | { type: 'buy'; what: Purchase; sting: StingKind | null; vehicle?: number }
+  | { type: 'buy'; what: Purchase; sting: StingKind | null; vehicle?: number; hood?: NeighborhoodId }
   | { type: 'refused' }
   | { type: 'click' }
   | { type: 'bubble' }

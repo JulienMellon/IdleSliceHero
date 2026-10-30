@@ -85,13 +85,17 @@ def seeded_page(browser, save):
 def settle(page, wait=2.5):
     """Dismiss the offline popup and any due cut-scene so the scene is interactive."""
     time.sleep(wait)
-    for _ in range(3):
+    quiet = 0
+    for _ in range(12):  # v4.5: audio preloading can delay the popup or a due beat, so wait for two quiet checks
         if page.locator('[data-testid="collect-offline"]').count():
-            tid(page, "collect-offline").click(); time.sleep(0.6)
+            tid(page, "collect-offline").click(); time.sleep(0.6); quiet = 0
         elif page.locator('[data-testid="skip-scene"]').count():
-            tid(page, "skip-scene").click(); time.sleep(0.6)
+            tid(page, "skip-scene").click(); time.sleep(0.6); quiet = 0
         else:
-            break
+            quiet += 1
+            if quiet >= 2:
+                break
+            time.sleep(0.5)
 
 def tap_shop(page):
     """Tap the back wall of the pizzeria (clear of the station tags)."""
@@ -317,7 +321,9 @@ with sync_playwright() as pw:
         page = seeded_page(browser, perked); settle(page)
         for _ in range(6):
             tap_shop(page); time.sleep(0.25)
+        settle(page, 0.5)  # a story beat may have come due during the taps
         tid(page, "tab-downtown").click(); time.sleep(1.0)
+        settle(page, 0.3)
         audio_log(page, "session")
         tid(page, "open-city").click(); time.sleep(0.6)
         tid(page, "open-settings").click(); time.sleep(0.6)

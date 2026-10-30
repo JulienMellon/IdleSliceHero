@@ -3,7 +3,7 @@
 import { TUNING } from '../content/tuning';
 import type { NeighborhoodId, PanelCue, Scene } from '../content/types';
 
-export type StingKind = 'bottleneck' | 'milestone' | 'milestone_big' | 'manager' | 'upgrade' | 'fleet' | 'drone' | 'welcome' | 'warmth';
+export type StingKind = 'bottleneck' | 'milestone' | 'milestone_big' | 'manager' | 'upgrade' | 'fleet' | 'drone' | 'welcome' | 'warmth' | 'build' | 'perk' | 'offline';
 export type MusicTrack = NeighborhoodId | 'downtown_sparse' | 'megaslice_hq';
 
 /** Everything the director needs to pick the music bed. */
@@ -27,7 +27,8 @@ export function panelCue(scene: Scene, panel: number): PanelCue {
   if (!p) return 'none';
   if (p.cue) return p.cue;
   if (p.backdrop === 'megaslice-hq') return 'megaslice';
-  if (scene.beat === 1 && panel === firstCastPanel(scene)) return 'welcome';
+  // an explicit welcome elsewhere in the scene (downtown-1 waits for Nonna's smile: AU30) replaces the default
+  if (scene.beat === 1 && panel === firstCastPanel(scene) && !scene.panels.some((q) => q.cue === 'welcome')) return 'welcome';
   if (scene.beat === 2 && panel === 0) return 'warmth';
   if (scene.beat === 3) {
     const rep = scene.panels.findIndex((q) => q.cast.some((c) => c.id === 'megaslice-rep'));
@@ -42,10 +43,10 @@ function firstCastPanel(scene: Scene) {
 }
 
 /** Cues that replace the loop while they play (the music drops out) rather than sitting over a ducked loop. */
-export const EXCLUSIVE_CUES: ReadonlySet<PanelCue> = new Set(['triumph', 'bell-triumph', 'recipe', 'reunion', 'city-theme']);
+export const EXCLUSIVE_CUES: ReadonlySet<PanelCue> = new Set(['triumph', 'bell-triumph', 'recipe', 'reunion', 'city-theme', 'rep']);
 
 /** Loop volume during a cut-scene (AU22: −8 dB) and under stingers. */
-export const DUCK = { scene: dbToGain(-8), stinger: dbToGain(-6), bottleneck: dbToGain(-3), bid: dbToGain(-10) } as const;
+export const DUCK = { scene: dbToGain(-8), popup: dbToGain(-8), stinger: dbToGain(-6), bottleneck: dbToGain(-3), bid: dbToGain(-10), build: dbToGain(-14) } as const;
 
 export function dbToGain(db: number) {
   return Math.pow(10, db / 20);
@@ -65,9 +66,9 @@ export function quantizeDelay(pos: number, bpm: number, unitBeats: number, downb
   return next - downbeat - pos;
 }
 
-/** Downtown (6/8) quantises to the eighth note; the others to the beat (AU14). */
+/** The loop's pulse: Downtown's 6/8 moves in dotted quarters (AU31a); the others in quarters. */
 export function beatUnit(track: MusicTrack): number {
-  return track === 'downtown' || track === 'downtown_sparse' ? 0.5 : 1;
+  return track === 'downtown' || track === 'downtown_sparse' ? 1.5 : 1;
 }
 
 /**
@@ -135,12 +136,53 @@ export function purchaseSting(what: Purchase, o: { levelBefore?: number; levelAf
   return null;
 }
 
-/** Quantisation for each stinger: the manager waits for the bar, the rest for the next beat. */
+/**
+ * Quantisation for each stinger: the chordal ones wait for the bar so their tonic lands where the loop's harmony
+ * restarts (AU31c); the one-line bottleneck phrase only waits for the next beat.
+ */
 export function stingUnit(kind: StingKind, beatsPerBar: number, track: MusicTrack): number {
-  return kind === 'manager' ? beatsPerBar : beatUnit(track);
+  return kind === 'bottleneck' ? beatUnit(track) : beatsPerBar;
+}
+
+/** Priority when stingers compete (AU32): a lower one never interrupts or overlaps a higher one. */
+export const STING_PRIORITY: Record<StingKind, number> = {
+  bottleneck: 1, upgrade: 2, fleet: 2, drone: 2, perk: 2, offline: 2, milestone: 3, welcome: 3, warmth: 3, manager: 4, build: 4, milestone_big: 5,
+};
+
+/**
+ * Gate for gameplay stingers (AU32): bottleneck at most once per `cooldownMs`; while a stinger sounds, anything of
+ * equal or lower priority is dropped (never restarted, never stacked); a higher one takes over.
+ */
+export class StingGate {
+  private playing: { kind: StingKind; until: number } | null = null;
+  private lastBottleneck = -Infinity;
+  constructor(private readonly cooldownMs = 20000) {}
+  /** True if `kind` may start now; on true the gate records it as playing for `lengthMs`. */
+  admit(kind: StingKind, now: number, lengthMs: number): boolean {
+    if (kind === 'bottleneck' && now - this.lastBottleneck < this.cooldownMs) return false;
+    const cur = this.playing && now < this.playing.until ? this.playing : null;
+    if (cur && STING_PRIORITY[kind] <= STING_PRIORITY[cur.kind]) return false;
+    this.playing = { kind, until: now + lengthMs };
+    if (kind === 'bottleneck') this.lastBottleneck = now;
+    return true;
+  }
+  /** A stinger is sounding (SFX play a little softer under it: AU38). */
+  busy(now: number) {
+    return !!this.playing && now < this.playing.until;
+  }
+  clear() {
+    this.playing = null;
+  }
+}
+
+/** Loops that always start from bar 1 (the HQ march: every scheme opens on its villain motif, AU29). */
+export const RESTART_TRACKS: ReadonlySet<MusicTrack> = new Set(['megaslice_hq']);
+/** Arrangements of one chart that share a timeline, so a hand-off keeps the position (AU41). */
+export function sharedTimeline(a: MusicTrack | null, b: MusicTrack) {
+  return (a === 'downtown_sparse' && b === 'downtown') || (a === 'downtown' && b === 'downtown_sparse');
 }
 
 /** Loop ducking under each stinger kind. */
 export function stingDuck(kind: StingKind): number {
-  return kind === 'bottleneck' ? DUCK.bottleneck : DUCK.stinger;
+  return kind === 'bottleneck' ? DUCK.bottleneck : kind === 'build' ? DUCK.build : DUCK.stinger;
 }

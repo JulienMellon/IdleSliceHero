@@ -43,3 +43,24 @@ Plan: audiocritic round 2 (full plan, AU12–AU25). Cue sheet: `docs/AUDIO.md`. 
 | AU24 / AU10 | silent switch respected, mixWithOthers, no background audio; Music/Sound toggles in Settings under their own key |
 | Tests | `src/audio/__tests__/logic.test.ts` (13): quantisation, limiter, chain, stinger rules, scene cue coverage, manifest files and budget |
 | Verify | tsc clean; 147 tests pass; web export; screenshots v4.4 `errors: []`, new shot 24 (Settings audio), audio probe log in `report.json` |
+
+## v4.5 — audio build 2 (fixes for round 3, AU26–AU41)
+| Note | Fix |
+| --- | --- |
+| AU26 | Triumphs rewritten: 2-beat swell, motif + closing phrase, tutti crash at 3.8–7.5 s (`payoffSeconds` in the report); city theme 26.9 s, entries one bar apart then A′ tutti, panel holds until it ends; story cues on two players with a 300 ms fade; perk chime is a per-key stinger layered over the story cue |
+| AU27 | Gavel SFX "knock, knock, SOLD" + `waterfront_bid` (held V7 over timpani, unresolved), duck −10 dB; a scene's first panel fades gameplay stingers in 150 ms |
+| AU28 | `rep` is exclusive (the loop drops out in 80 ms) |
+| AU29 | HQ march: one-bar tuba vamp (17 bars), always restarts at 0 (`RESTART_TRACKS`) |
+| AU30 | downtown-1 `welcome` on p5 (Nonna's smile); offline cue per key, loop ducked −8 dB while the popup is open |
+| AU31 | Stingers in each hood's meter (Downtown from `M68`), swung like the loop, beat 1 one beat in; chordal stingers wait for the bar, Downtown's pulse is the dotted quarter |
+| AU32 | `StingGate`: bottleneck ≤ 1 per 20 s, priority ladder, never restart/stack (tested) |
+| AU33 | Chip line: straight 16ths, melody note on every other step at vel 82, the rest 48; excluded from swing |
+| AU34 | Industrial graces placed after swing; Uptown beat 4 walks a semitone into the next root; recipe rubato accumulates; city tutti fiddle/clarinet a diatonic third above |
+| AU35 | Each triumph over its neighbourhood's rhythm section (`groove()`), in its tempo and meter |
+| AU36 | Loudness tiers for SFX and stingers (build.py `SFX_LUFS`, `STING_LUFS`); new `build` stinger in the new hood's key |
+| AU37 | ±0.3 st on purchase step 0 |
+| AU38 | Look-ahead limiter, all one-shots ≤ −6 dBFS; SFX at 0.7 while a stinger sounds |
+| AU39 | `fire()`: rewind after each play, seek-then-play if still sounding; start-up players 29 → 24 (20 SFX + 2 music + 2 story). Device measurement and the `react-native-audio-api` decision stay open (Julien) |
+| AU40 | Active key's stingers preloaded 1.5 s after a neighbourhood change; gapless loop stays a device check |
+| AU41 | sparse → full Downtown keeps its position; "mute when other audio plays" isn't exposed by expo-audio (documented; Music toggle) |
+| Verify | tsc clean; 151 tests pass (17 audio); screenshots v4.5 `errors: []` (settle() now waits for two quiet checks) |

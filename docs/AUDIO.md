@@ -35,45 +35,60 @@ GM programs are 1-based here (`compose.py` uses 0-based numbers). All loops are 
 **Seams.** The reverb tail past the loop end is folded onto the start. The decoded join step is below each file's 99th-percentile sample step (checked at build time). AAC adds about 10 ms of padding: **check on a device** that `loop = true` is gapless. If it isn't, crossfade between the two players.
 
 ## Story cues (AU12, AU13, AU18)
-A scene plays its own neighbourhood's loop, ducked −8 dB. `panelCue()` gives beats 1–3 their defaults; wins and reveals set `cue` in `scenes/home.ts`. Exclusive cues stop the loop (it fades out) while they play; Skip fades a story cue out in 0.4 s.
+A scene plays its own neighbourhood's loop, ducked −8 dB. `panelCue()` gives beats 1–3 their defaults; wins and reveals set `cue` in `scenes/home.ts`. Exclusive cues stop the loop (it fades out) while they play. Story cues alternate between two players, so an outgoing cue always fades over 300 ms instead of stopping dead. Skip fades story cues and stingers in 0.4 s, and a scene's first panel fades any gameplay stinger in 150 ms.
 
 | Moment | Cue | File | Length | Treatment |
 |---|---|---|---|---|
-| Beat 1, first panel with a character | `welcome` | `sting/<hood>_welcome` | 4–6 s | The character's opening phrase on their neighbourhood's lead instrument, with a harp roll; lands on the loop's next beat |
+| Beat 1, first panel with a character (downtown-1: the last panel, when Nonna smiles) | `welcome` | `sting/<hood>_welcome` | 3–5 s | The character's opening phrase on their neighbourhood's lead instrument, in its meter, with a harp roll; lands on the loop's next bar |
 | Beat 2, panel 1 | `warmth` | `sting/<hood>_warmth` | 5–7 s | Cadence and closing phrase, softer, over slow strings |
-| Beat 3, MegaSlice HQ panels | `megaslice` | `music/megaslice_hq` | 16 bars, 50.5 s, loop | C minor at ♩=76, a sneaky march: staccato tuba, bassoon villain motif `5, 1 ♭3 ♭5 ♭6 5 | ♭6 5 ♭5 4 1`, muted-trumpet stabs, pizzicato, timpani. Crossfades in and out like a tab change |
-| Beat 3, first Rep panel; waterfront-4 panel 1 | `rep` | `story/megaslice_rep` | 4.7 s | The villain motif at double speed on bassoon and tuba, plus a trombone glissando down |
-| Beat 4 win | `triumph` | `story/triumph_<hood>` | 14.3 s, exclusive | Snare-roll swell into the full motif on the lead instrument, with brass, strings, timpani and a crash ending, in the neighbourhood's key. Panels: downtown-4 p2, suburbs-4 p3, university-4 p3, industrial-4 p4, uptown-4 p1 |
-| Dock Saved | `bell-triumph` | `story/triumph_waterfront` | 14.4 s, exclusive | A three-strike ship's bell (Tubular Bells 15) opens the triumph (waterfront-4 p2) |
-| Recipe card | `recipe` | `story/recipe` | 10.7 s, exclusive | Solo accordion, rubato, with the phrase ends stretched (downtown-4 p3) |
+| Beat 3, MegaSlice HQ panels | `megaslice` | `music/megaslice_hq` | 17 bars, 53.7 s, loop | C minor at ♩=76, a sneaky march: a one-bar tuba vamp, then the bassoon villain motif `5, 1 ♭3 ♭5 ♭6 5 | ♭6 5 ♭5 4 1`, muted-trumpet stabs, pizzicato, timpani. **Always starts at bar 0**, so every scheme opens on the vamp and the motif |
+| Beat 3, first Rep panel; waterfront-4 panel 1 | `rep` | `story/megaslice_rep` | 4.7 s, exclusive | The villain motif at double speed on bassoon and tuba, plus a trombone glissando down. The loop drops out in 80 ms (no key clash) |
+| Beat 4 win | `triumph` | `story/triumph_<hood>` | 6.5–10.6 s (payoff crash at 3.8–7.5 s), exclusive | A two-beat snare swell, then the motif and closing phrase on the lead with brass, strings and timpani, in the neighbourhood's key, tempo and meter, over its own rhythm section (tarantella bass and tambourine; marching snare; habanera and shaker; lo-fi kit and Rhodes; shuffle, ride and organ; pompe and walking bass). It ends on a tutti tonic with a crash. Panels: downtown-4 p2, suburbs-4 p3, university-4 p3, industrial-4 p4, uptown-4 p1 |
+| Dock Saved | `bell-triumph` | `story/triumph_waterfront` | 10.7 s, exclusive | A three-strike ship's bell (Tubular Bells 15) opens the triumph (waterfront-4 p2) |
+| Recipe card | `recipe` | `story/recipe` | 10 s, exclusive | Solo accordion, rubato: a slight push into the phrase, then a held breath after every long note that carries forward (downtown-4 p3); −21 LUFS |
 | "...Salvatore?" | `reunion` | `story/reunion` | 17 s, exclusive | Solo accordion in F at ♩=60, the tenor sax answers with the closing phrase, then both play it in unison over a string pad (industrial-4 p2). Mastered to −23 LUFS (recipe −21, offline popup −20), the quietest cues in the game |
 | Victor's exit | `victor-exit` | `story/victor_exit` | 3.2 s | The tuba deflates and a trombone slides down (uptown-4 p2) |
-| City complete | `city-theme` | `story/city_theme` | 49.4 s, exclusive, once | The six leads enter in build order (accordion, trumpet, fiddle, square, sax, clarinet), then the whole band plays the A phrase (uptown-4 p4) |
-| Perk card | `perk` | `story/perk` | 2.4 s | The opening phrase on glockenspiel and harp |
-| Offline popup opens | — | `story/offline_open` | 2.1 s | The closing phrase on celesta |
+| City complete | `city-theme` | `story/city_theme` | 26.9 s, exclusive, once | The six leads enter one bar apart in build order (accordion, trumpet, fiddle, square, sax, clarinet), each adding the opening phrase while the earlier ones hold chord tones over a rising bed. Then the whole band plays A′, with the fiddle and clarinet a diatonic third above. **The panel waits for the cue to finish** before auto-advancing; a tap still advances it (uptown-4 p4) |
+| Perk card | `perk` | `sting/<hood>_perk` | 2.7 s | The opening phrase on glockenspiel and harp, in the scene's key, layered over any story cue still ringing |
+| Offline popup opens | `offline` | `sting/<hood>_offline` | 2.6 s | The closing phrase on celesta, in the active key; the loop ducks −8 dB while the popup is open; −20 LUFS |
 
-## Gameplay stingers (AU14)
-Every stinger is rendered in all six keys (`sting/<hood>_<kind>`), as mono AAC at 64 kbps, mastered to −16 LUFS. Beat 1 sits at `downbeatSeconds`, after its pickup. The director aligns beat 1 with the loop's next beat (an eighth note in Downtown), or the next bar for `manager`. The instant SFX always plays at the tap, so feedback never waits for the beat.
+## Gameplay stingers (AU14, AU31, AU32, AU36)
+Every stinger is rendered in all six keys (`sting/<hood>_<kind>`), as mono AAC at 64 kbps, peaking at −6 dBFS or below. Each is written in its neighbourhood's meter (Downtown's are 6/8, built from `M68`/`CLOSE68`) and swung like its loop. Beat 1 sits one beat in (`downbeatSeconds`), after its pickup. The director aligns beat 1 with the loop's next **bar** for every chordal stinger, so their tonic lands where the loop's harmony restarts. Only `bottleneck` waits for the next beat (a dotted quarter in Downtown). The instant SFX always plays at the tap.
 
-| Event (store) | Stinger | Length | Duck |
-|---|---|---|---|
-| Station buy that changes the bottleneck (`buy`) | `bottleneck`: opening phrase on the lead, plus a splash | 1 bar | −3 dB |
-| Station level crosses 25/50 (`buy`) | `milestone`: opening and closing phrases with brass, plus a crash | 2 bars | −6 dB |
-| Station level reaches 100 | `milestone_big`: as above, with a timpani roll | 2 bars | −6 dB |
-| Hire manager | `manager`: cadence and closing phrase over strings, triangle | 2 bars, waits for the bar | −6 dB |
-| Expand, oven grade | `upgrade`: opening phrase on brass, an octave up | 1.5 bars | −6 dB |
-| Fleet (scooter, car, van) | `fleet`: the same, plus a horn "beep-beeep" | 1.5 bars | −6 dB |
-| Fleet (drone) | `drone`: on square lead, with a chip arpeggio | 1.5 bars | −6 dB |
-| Pier 9 bid (`bidPier9`) | `waterfront_milestone_big`, played at once | 2 bars | −6 dB |
+**Gate (`StingGate`).** `bottleneck` plays at most once per 20 s. While a stinger sounds, any of equal or lower priority is dropped (never restarted, never stacked); a higher one takes over. Priority: `milestone_big` > `manager` = `build` > `milestone` = `welcome` = `warmth` > `upgrade` = `fleet` = `drone` = `perk` = `offline` > `bottleneck`. SFX play at 0.7 gain while a stinger sounds. The active key's set is preloaded 1.5 s after a neighbourhood change.
+
+| Event (store) | Stinger | Length | Loudness | Duck |
+|---|---|---|---|---|
+| Station buy that changes the bottleneck (`buy`), ≤ 1 per 20 s | `bottleneck`: opening phrase on the lead, plus a splash | 1 bar | −20 LUFS | −3 dB |
+| Station level crosses 25/50 | `milestone`: opening and closing phrases with brass and a I–V–I bed, plus a crash | 3 bars | −17 | −6 dB |
+| Station level reaches 100 | `milestone_big`: as above, with a timpani roll | 3 bars | −15 | −6 dB |
+| Hire manager | `manager`: cadence and closing phrase over strings (ii–V–I), triangle | 3 bars | −15 | −6 dB |
+| Expand, oven grade | `upgrade`: opening phrase on brass, an octave up | 2 bars | −18 | −6 dB |
+| Fleet (scooter, car, van) | `fleet`: the same, plus a horn "beep-beeep" | 2 bars | −18 | −6 dB |
+| Fleet (drone) | `drone`: on square lead, with a chip arpeggio | 2 bars | −18 | −6 dB |
+| Build a pizzeria (`build`) | `<new hood>_build`: the new neighbourhood's lead states the motif with glockenspiel and claps, played at once | 3 bars | −15 | −14 dB |
+| Pier 9 bid (`bidPier9`) | `waterfront_bid`: held V7 over a timpani roll, unresolved (waterfront-4 resolves it), with the gavel SFX "knock, knock, SOLD" | 2.6 s | −16 | −10 dB |
 
 ## Sound effects (AU21)
-All effects are mono AAC at 64 kbps, peaking at −9 dBFS: 0.16 MB in total, 41 files. They are synthesised in `sfx.py` from one palette of wood, dough, warm metal and kitchen fire. Runtime pitch jitter is ±1 semitone unless noted, done with `playbackRate` and `shouldCorrectPitch = false`. Variants rotate and never repeat back to back.
+All effects are mono AAC at 64 kbps: 0.17 MB in total, 42 files. Loudness is set by tier (AU36), so rare big moments are louder than frequent small ones, and every peak is limited to −6 dBFS or below:
+
+| Tier | Effects | Loudness |
+|---|---|---|
+| UI | click, bubble | −30 LUFS |
+| Constant | tap, full, cash | −26 |
+| Per purchase | buy, refused, rush (sparkle −24) | −22 |
+| Upgrades | milestone, expand, grade, fleet | −19 |
+| Gavel | gavel | ≈ −22 (transient-limited) |
+| Building | build | ≈ −18 |
+| Collect, by size | collect | −19, −17.5, −16 |
+
+The rest of this section: They are synthesised in `sfx.py` from one palette of wood, dough, warm metal and kitchen fire. Runtime pitch jitter is ±1 semitone unless noted, done with `playbackRate` and `shouldCorrectPitch = false`. Variants rotate and never repeat back to back.
 
 | # | Moment (trigger) | File | Length | Variation |
 |---|---|---|---|---|
 | 1 | Kitchen tap (storefront `onPress`) | `tap_0..3` | 0.12 s | 4 variants: dough thump, slap and sizzle |
 | 2 | Queue full | `full_0..1` | 0.10 s | 2 variants of a muted wooden tok, ±0.5 st |
-| 3 | Purchase OK (`commit` → `buy`) | `buy_0..7` | 0.35 s | A two-note marimba rising a fourth, with shimmer. Steps up a semitone per purchase within 2 s (`PurchaseChain`), capped at +7 |
+| 3 | Purchase OK (`commit` → `buy`) | `buy_0..7` | 0.35 s | A two-note marimba rising a fourth, with shimmer. Steps up a semitone per purchase within 2 s (`PurchaseChain`), capped at +7; step 0 gets ±0.3 st, so slow play still varies |
 | 3b | Decor purchase | `buy` + `sparkle_0` | 0.35 s | Adds a five-note sparkle tail |
 | 4 | Refused (`commit` fails) | `refused_0..1` | 0.20 s | Low felt bonk, with the error haptic |
 | 5 | Cash pop (storefront payout) | `cash_0..4` | 0.15 s | 5 coin variants, ±2 st; at most 3 voices in 300 ms, 60 ms apart, −3 dB each (`VoiceLimiter`) |
@@ -86,9 +101,10 @@ All effects are mono AAC at 64 kbps, peaking at −9 dBFS: 0.16 MB in total, 41 
 | 12 | Offline Collect | `collect_0..2` | 0.6, 1.0, 1.5 s | Register ka-ching plus a coin cascade, sized by the payout against cash (< 1×, 1–10×, ≥ 10×) |
 | 13 | Tab switch | `click_0` | 0.05 s | Soft click |
 | 14 | Speech bubble (each line) | `bubble_0..2` | 0.08 s | 3 variants |
+| 15 | Pier 9 bid | `gavel_0` | 0.6 s | Hardwood "knock, knock, SOLD" |
 
 ## Mix rules (AU22)
-- **No master bus.** `expo-audio` has no master bus, so clipping is prevented in the files: SFX peak at −9 dBFS, stingers and story cues at −16 LUFS, loops at −18 LUFS. Every file goes through a soft limiter at −1 dBFS (SFX at −6).
+- **No master bus.** `expo-audio` has no master bus, so clipping is prevented in the files. Loops sit at −18 LUFS; story cues at −16 LUFS (reveals −21/−23); stingers and SFX by tier. A look-ahead limiter keeps every stinger, story cue and SFX at or below −6 dBFS. The worst case is a milestone: stinger, ducked loop, buy, whoomp and three cash pops, with SFX at 0.7 under the stinger. That keeps a ≥ 3 dB margin before 0 dBFS.
 - **Ducking.** The loop's gain is the product of its active ducks: scene −8 dB, stinger −6 dB (bottleneck −3 dB) for the stinger's length, exclusive story cue to silence. Ramps take 80 ms down and 400 ms up.
 - **Music off or app in the background.** The loop pauses rather than playing at volume 0.
 
@@ -97,25 +113,28 @@ All effects are mono AAC at 64 kbps, peaking at −9 dBFS: 0.16 MB in total, 41 
 - **Settings.** Music and Sound toggles, stored under `slice-empire/audio/v1` so that Reset game keeps them.
 - **Players.**
   - Music: 2.
-  - SFX: the hot effects (tap, cash, buy, rush, refused, full, click, bubble) are created at start-up, one player per variant. The rest are created on first use, then kept.
-  - Stingers: only the active key's are kept, created on first use; a key change releases them (`remove()`).
-  - Story: one player.
+  - SFX: tap, cash, buy, full, refused and click are created at start-up, one player per variant (20). The rest are created on first use, then kept. A one-shot is rewound right after it ends, so the next `play()` is immediate; one still sounding is seeked first and played once the seek lands.
+  - Stingers: the active key's 9 are preloaded 1.5 s after a neighbourhood change; a key change releases them (`remove()`).
+  - Story: two players (for fades).
   - Nothing is created per tap.
 - **Size.**
 
 | Group | Size |
 |---|---|
 | Music | 8.4 MB (7 loops plus the HQ loop) |
-| Stingers | 2.1 MB (54) |
-| Story | 2.1 MB |
-| SFX | 0.16 MB |
-| **Total** | **12.7 MB** |
+| Stingers | 3.3 MB (73) |
+| Story | 1.4 MB |
+| SFX | 0.17 MB |
+| **Total** | **13.3 MB** (the test caps it at 14 MB) |
 
 - **Web.** Nothing plays until the first pointer press, because browsers block autoplay. `scripts/screenshots.py` logs every `play()` into `report.json` under `audio`.
 
 ## Open (device checks and v2)
-- **Device checks.**
-  - Gapless looping of AAC.
-  - The latency of the first SFX play.
-  - The ±1 st `playbackRate` jitter with `shouldCorrectPitch = false` on iOS.
+- **Device checks (AU39, AU40).** On an iPhone SE 2 or XR, measure:
+  - the launch hitch and resident memory with about 40 players;
+  - the delay from tap to sound;
+  - gapless looping of AAC;
+  - the ±1 st `playbackRate` jitter with `shouldCorrectPitch = false`.
+  - **If the delay is over 50 ms or memory is over about 15 MB**, move SFX and stingers to `react-native-audio-api`: buffers decoded once, gain per bus, a compressor as master limiter, sample-accurate stinger timing. It needs a development build rather than Expo Go, so it's Julien's call.
+- **Other apps' audio (AU41).** `expo-audio` doesn't expose iOS's "other audio is playing" hint, so the loops can't mute themselves when a podcast is on; the Music toggle covers it. Revisit with `react-native-audio-api` or a small config plugin.
 - **v2 work.** Arrangements that change once a shop has a manager, a rush rhythm layer kept in time with the loop, and the Boston theme (AU25).

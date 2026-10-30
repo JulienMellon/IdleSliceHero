@@ -7,7 +7,7 @@ const path: { join(...p: string[]): string } = require('path');
 
 import { HOME_SCENES } from '../../content/scenes/home';
 import { NEIGHBORHOODS } from '../../content/tuning';
-import { collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, VoiceLimiter, type StingKind } from '../logic';
+import { beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const MANIFEST = fs.readFileSync(path.join(__dirname, '..', 'manifest.ts'), 'utf8');
@@ -105,8 +105,44 @@ describe('music and story cues (AU12, AU13, AU20)', () => {
     }
     const reveal = (id: string) => HOME_SCENES.find((s) => s.id === id)!.panels.map((_, i, a) => panelCue(HOME_SCENES.find((s) => s.id === id)!, i));
     expect(reveal('downtown-4')).toContain('recipe');
+    // downtown-1 saves its welcome for Nonna's smile on the last panel (AU30)
+    expect(reveal('downtown-1')).toEqual(['none', 'none', 'none', 'none', 'welcome']);
+    expect(EXCLUSIVE_CUES.has('rep')).toBe(true);
     expect(reveal('industrial-4')).toContain('reunion');
     expect(reveal('uptown-4')).toEqual(expect.arrayContaining(['victor-exit', 'city-theme']));
+  });
+});
+
+describe('stinger timing and gating (AU31, AU32)', () => {
+  it('quantises Downtown to the dotted quarter, chordal stingers to the bar', () => {
+    expect(beatUnit('downtown')).toBe(1.5);
+    expect(beatUnit('suburbs')).toBe(1);
+    expect(stingUnit('bottleneck', 4, 'suburbs')).toBe(1);
+    for (const k of ['milestone', 'milestone_big', 'manager', 'upgrade', 'fleet', 'drone', 'welcome', 'warmth'] as StingKind[]) {
+      expect(stingUnit(k, 3, 'downtown')).toBe(3);
+    }
+  });
+  it('lets a bottleneck stinger through at most once per 20 s', () => {
+    const g = new StingGate(20000);
+    expect(g.admit('bottleneck', 0, 2000)).toBe(true);
+    expect(g.admit('bottleneck', 5000, 2000)).toBe(false);
+    expect(g.admit('bottleneck', 19000, 2000)).toBe(false);
+    expect(g.admit('bottleneck', 20500, 2000)).toBe(true);
+  });
+  it('never restarts or stacks a stinger of equal or lower priority; a higher one takes over', () => {
+    const g = new StingGate();
+    expect(g.admit('milestone', 0, 5000)).toBe(true);
+    expect(g.busy(1000)).toBe(true);
+    expect(g.admit('milestone', 1000, 5000)).toBe(false); // no restart
+    expect(g.admit('upgrade', 1500, 3000)).toBe(false); // lower
+    expect(g.admit('milestone_big', 2000, 5000)).toBe(true); // higher
+    expect(g.admit('manager', 3000, 5000)).toBe(false);
+    expect(g.admit('upgrade', 7500, 3000)).toBe(true); // after it ends
+    expect(g.busy(11000)).toBe(false);
+  });
+  it('keeps the position when Downtown hands from the sparse chart to the full band', () => {
+    expect(sharedTimeline('downtown_sparse', 'downtown')).toBe(true);
+    expect(sharedTimeline('suburbs', 'downtown')).toBe(false);
   });
 });
 
@@ -117,13 +153,13 @@ describe('generated manifest', () => {
     for (const f of files) expect(fs.existsSync(path.join(__dirname, '..', f))).toBe(true);
   });
   it('has every loop, every stinger in every key, and every story cue the director uses', () => {
-    const kinds: StingKind[] = ['bottleneck', 'milestone', 'milestone_big', 'manager', 'upgrade', 'fleet', 'drone', 'welcome', 'warmth'];
+    const kinds: StingKind[] = ['bottleneck', 'milestone', 'milestone_big', 'manager', 'upgrade', 'fleet', 'drone', 'welcome', 'warmth', 'build', 'perk', 'offline'];
     for (const n of NEIGHBORHOODS) {
       expect(MANIFEST).toMatch(new RegExp(`\\n  ${n.id}: \\{ src: require\\('../../assets/audio/music/`));
       expect(MANIFEST).toContain(`triumph_${n.id}:`);
       for (const k of kinds) expect(MANIFEST).toContain(`${n.id}_${k}: { src:`);
     }
-    for (const id of ['downtown_sparse', 'megaslice_hq', 'megaslice_rep', 'victor_exit', 'recipe', 'reunion', 'city_theme', 'perk', 'offline_open']) {
+    for (const id of ['downtown_sparse', 'megaslice_hq', 'megaslice_rep', 'victor_exit', 'recipe', 'reunion', 'city_theme', 'waterfront_bid']) {
       expect(MANIFEST).toContain(`${id}: { src:`);
     }
   });

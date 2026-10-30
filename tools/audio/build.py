@@ -29,7 +29,13 @@ MIDI = os.path.join(HERE, 'build', 'midi')
 ASSETS = os.path.join(ROOT, 'assets', 'audio')
 
 LOUD = dict(music=-18.0, story=-16.0, sting=-16.0)  # AU22
-SFX_PEAK = -9.0
+# AU36: loudness by tier, so rare big moments are louder than frequent small ones; every file's peak ≤ −6 dBFS (AU38)
+CEILING = -6.0
+SFX_LUFS = {'click': -30, 'bubble': -30, 'tap': -26, 'full': -26, 'cash': -26, 'buy': -22, 'refused': -22, 'rush': -22,
+            'sparkle': -24, 'milestone': -19, 'expand': -19, 'grade': -19, 'fleet': -19, 'gavel': -18, 'build': -16,
+            'collect': (-19, -17.5, -16)}
+STING_LUFS = {'bottleneck': -20, 'upgrade': -18, 'fleet': -18, 'drone': -18, 'milestone': -17, 'welcome': -17,
+              'warmth': -18, 'manager': -15, 'milestone_big': -15, 'build': -15, 'perk': -18, 'offline': -20, 'bid': -16}
 # per-cue loudness overrides: the reveals are the game's quietest moments (AU13)
 LUFS_OVERRIDE = {'reunion': -23.0, 'recipe': -21.0, 'offline_open': -20.0}
 
@@ -45,6 +51,9 @@ def lofi(a: np.ndarray, rng=np.random.default_rng(7)) -> np.ndarray:
 
 
 def main(only: set[str] | None = None):
+    if not only:  # a full build starts clean, so renamed or retired cues don't linger in the bundle
+        import shutil
+        shutil.rmtree(ASSETS, ignore_errors=True)
     subprocess.run([sys.executable, os.path.join(HERE, 'compose.py'), MIDI], check=True, stdout=subprocess.DEVNULL)
     man = json.load(open(os.path.join(MIDI, 'manifest.json')))
     rp = os.path.join(HERE, 'build', 'report.json')
@@ -61,11 +70,11 @@ def main(only: set[str] | None = None):
             info = post.encode(a, os.path.join(ASSETS, 'music', name + '.m4a'), 96, mono=False)
         elif cue['kind'] == 'stinger':
             a = post.fade(post.trim_silence(a, -50), 0, 0.15)
-            a = post.normalize(a, LOUD['sting'])
+            a = post.normalize(a, STING_LUFS.get(cue['cue'], LOUD['sting']), ceiling_db=CEILING)
             info = post.encode(a, os.path.join(ASSETS, 'sting', name.removeprefix('sting_') + '.m4a'), 64, mono=True)
         else:
             a = post.fade(post.trim_silence(a, -50), 0, 0.3)
-            a = post.normalize(a, LUFS_OVERRIDE.get(name, LOUD['story']))
+            a = post.normalize(a, LUFS_OVERRIDE.get(name, LOUD['story']), ceiling_db=CEILING)
             info = post.encode(a, os.path.join(ASSETS, 'story', name + '.m4a'), 96, mono=False)
         report[name] = {**cue, **info}
         print(f"{name:34s} {info['seconds']:7.2f}s {info['lufs']:6.1f} LUFS {info['peak_dbfs']:6.1f} dBFS {info['bytes'] / 1024:7.1f} KB")
@@ -73,7 +82,9 @@ def main(only: set[str] | None = None):
         if only and name not in only:
             continue
         for i, x in enumerate(variants):
-            a = post.normalize(x.reshape(-1, 1), None, SFX_PEAK, ceiling_db=-6)
+            tier = SFX_LUFS[name]
+            target = tier[i] if isinstance(tier, tuple) else tier
+            a = post.normalize(x.reshape(-1, 1), target, None, ceiling_db=CEILING)
             info = post.encode(a, os.path.join(ASSETS, 'sfx', f'{name}_{i}.m4a'), 64, mono=True)
             report[f'sfx_{name}_{i}'] = {'kind': 'sfx', **info}
     os.makedirs(os.path.join(HERE, 'build'), exist_ok=True)

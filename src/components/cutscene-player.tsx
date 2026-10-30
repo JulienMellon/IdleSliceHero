@@ -4,6 +4,8 @@ import { Animated, Platform, Pressable, StyleSheet, Text, useWindowDimensions, V
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { emitAudio } from '../audio/bus';
+import { panelCue } from '../audio/logic';
+import { STORY } from '../audio/manifest';
 import { PERKS } from '../content/tuning';
 import type { Scene } from '../content/types';
 import { C, F } from '../theme';
@@ -90,7 +92,9 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   // Auto-advance after a reading pause scaled to text length.
   useEffect(() => {
     const text = showReward ? 'x'.repeat(60) : (current?.text ?? p.caption ?? '');
-    const ms = 1800 + text.length * 45;
+    // the city theme's panel waits for its music to finish (AU26); the player can still tap on
+    const hold = !showReward && panelCue(scene, panel) === 'city-theme' ? STORY.city_theme.seconds * 1000 : 0;
+    const ms = Math.max(1800 + text.length * 45, hold);
     const t = setTimeout(advance, ms);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps

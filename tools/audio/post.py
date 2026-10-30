@@ -62,9 +62,25 @@ def peak_db(a: np.ndarray) -> float:
     return float(20 * np.log10(max(1e-9, np.max(np.abs(a)))))
 
 
-def soft_limit(a: np.ndarray, ceiling_db=-1.0) -> np.ndarray:
+def soft_limit(a: np.ndarray, ceiling_db=-1.0, lookahead=0.002, release=0.06) -> np.ndarray:
+    """Look-ahead peak limiter: gain rides down just before a peak and recovers over `release`, so a
+    loudness target never clips and transients aren't squared off."""
+    from scipy.ndimage import minimum_filter1d
     c = 10 ** (ceiling_db / 20)
-    return np.tanh(a / c) * c if np.max(np.abs(a)) > c * 0.7 else a
+    amp = np.max(np.abs(a), axis=1) if a.ndim == 2 else np.abs(a)
+    if amp.max() <= c:
+        return a
+    need = np.minimum(1.0, c / np.maximum(amp, 1e-9))
+    la = max(1, int(lookahead * SR))
+    need = minimum_filter1d(need, size=2 * la + 1, mode='nearest')
+    rel = np.exp(-1.0 / (release * SR))
+    g = np.empty_like(need)
+    cur = 1.0
+    for i, x in enumerate(need):
+        cur = x if x < cur else x + (cur - x) * rel
+        g[i] = cur
+    out = a * (g[:, None] if a.ndim == 2 else g)
+    return np.clip(out, -c, c)
 
 
 def normalize(a: np.ndarray, target_lufs: float | None = None, peak_target_db: float | None = None, ceiling_db=-1.0):
@@ -89,7 +105,7 @@ def encode(a: np.ndarray, out_path: str, kbps: int, mono: bool, sr_out: int = 44
            '-ar', str(sr_out), '-c:a', 'aac', '-b:a', f'{kbps}k', '-movflags', '+faststart', out_path]
     subprocess.run(cmd, input=pcm, check=True)
     return {'file': os.path.relpath(out_path, os.path.join(HERE, '..', '..')), 'bytes': os.path.getsize(out_path),
-            'seconds': round(len(x) / SR, 3), 'lufs': round(lufs(x if ch == 2 else np.repeat(x, 2, 1)), 1),
+            'seconds': round(len(x) / SR, 3), 'lufs': round(lufs(x), 1),
             'peak_dbfs': round(peak_db(x), 1), 'channels': ch, 'kbps': kbps, 'sample_rate': sr_out}
 
 

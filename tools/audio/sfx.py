@@ -171,7 +171,7 @@ def oven_roar():
     brown = np.cumsum(noise(rng, 0.6))
     brown = hp(brown / np.max(np.abs(brown)), 60)
     roar = bp(brown + 0.2 * noise(rng, 0.6), 120, 1400) * np.sin(np.pi * t / 0.6) ** 1.2
-    crackle = hp(noise(rng, 0.6), 3000) * (rng.random(len(t)) > 0.995) * 3
+    crackle = lp(hp(noise(rng, 0.6), 2500) * (rng.random(len(t)) > 0.993), 7000) * 0.8
     return roar * 2.2 + crackle * np.sin(np.pi * t / 0.6)
 
 
@@ -218,8 +218,8 @@ def build_ribbon():
         i = int(rng.uniform(0.05, 0.6) * SR)
         c = bp(noise(rng, 0.02), 1000, 4000) * env(int(0.02 * SR), 0.0005, 0.004)
         clap[i:i + len(c)] += c[: len(clap) - i] * 0.5
-    cheer = voices * 0.18 + clap
-    return pad_to(mix(snip[0], snip[1], cheer, at=[0, 0.06, 0.12]), 0.8)
+    cheer = voices * 0.3 + clap * 0.8
+    return pad_to(mix(snip[0] * 0.3, snip[1] * 0.3, cheer, at=[0, 0.06, 0.12]), 0.8)
 
 
 def collect(size):
@@ -252,6 +252,19 @@ def bubble_pop(v):
     return lp(x, 4000)
 
 
+def gavel():
+    """AU27: Pier 9 auction — knock, knock, SOLD. Hardwood block, the last strike bigger and lower."""
+    rng = np.random.default_rng(1400)
+    hits = []
+    for i, (f, g, d) in enumerate(((900, 0.6, 0.03), (900, 0.65, 0.03), (700, 1.0, 0.06))):
+        t = t_(0.25)
+        body = (np.sin(2 * np.pi * f * t) * np.exp(-t / d) + 0.5 * np.sin(2 * np.pi * f * 2.3 * t) * np.exp(-t / (d / 2)))
+        crack = bp(noise(rng, 0.25), 1500, 6000) * np.exp(-t / 0.003) * 0.35
+        thud = sweep_sine(160, 70, 0.25, 0.03) * env(len(t), 0.001, 0.05) * (0.9 if i == 2 else 0.3)
+        hits.append((body + crack + thud) * g)
+    return pad_to(mix(*hits, at=[0, 0.16, 0.36]), 0.6)
+
+
 ALL = {
     'tap': [kitchen_tap(v) for v in range(4)],
     'full': [queue_full(v) for v in range(2)],
@@ -268,4 +281,5 @@ ALL = {
     'collect': [collect(s) for s in range(3)],
     'click': [ui_click()],
     'bubble': [bubble_pop(v) for v in range(3)],
+    'gavel': [gavel()],
 }
