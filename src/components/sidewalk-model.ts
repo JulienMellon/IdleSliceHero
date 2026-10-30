@@ -5,6 +5,16 @@ import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
 
+/**
+ * The one rule for a purchase button's tone, shared by the sidewalk and the drawer (C60/G75): a locked or maxed
+ * upgrade is never "no gain" (it shows its reason or MAX), and a muted (unmanaged) card stays neutral.
+ */
+export function buttonTone({ lock, gain, muted = false }: { lock: string | null | boolean; gain: number | null; muted?: boolean }): 'normal' | 'neutral' | 'nogain' {
+  if (muted) return 'neutral';
+  if (lock) return 'normal';
+  return (gain ?? 0) > 1e-9 ? 'normal' : 'nogain';
+}
+
 export type StationKey = 'prep' | 'ovens' | 'counter' | 'drivers';
 export const STATION_KEYS: StationKey[] = ['prep', 'ovens', 'counter', 'drivers'];
 const STATION: Record<StationKey, { what: G.Upgrade; name: string; stage: G.Stage }> = {
@@ -54,7 +64,8 @@ export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[
     const { what, name, stage } = STATION[k];
     const cost = G.upgradeCostOf(s, id, what);
     const lock = G.upgradeLock(s, id, what);
-    const useful = (G.upgradeGain(s, id, what) ?? 0) > 1e-9;
+    const gain = G.upgradeGain(s, id, what);
+    const useful = (gain ?? 0) > 1e-9;
     return {
       key: k,
       what,
@@ -63,7 +74,7 @@ export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[
       cost,
       lock,
       label: lock ? 'MAX' : money(cost ?? 0),
-      tone: useful || lock ? 'normal' : 'nogain',
+      tone: buttonTone({ lock, gain }) === 'nogain' ? 'nogain' : 'normal',
       neck: useful && rates[stage] <= min * (1 + 1e-9),
     };
   });

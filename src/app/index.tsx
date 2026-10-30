@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
+import { buttonTone } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
 import { CLOSE_SLOP, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, ManagerIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
@@ -117,6 +118,8 @@ export default function GameScreen() {
     const cost = G.upgradeCostOf(game, id, what);
     const lock = G.upgradeLock(game, id, what);
     const muted = idleShop && what !== 'manager';
+    // Expand is still worth buying when a station is stuck at its level cap, even though it adds $0/s by itself
+    const gain = what === 'manager' || (what === 'expand' && atCap) ? 1 : G.upgradeGain(game, id, what);
     return (
       <StationCard
         key={what}
@@ -125,7 +128,7 @@ export default function GameScreen() {
         detail={lock && what !== 'manager' ? lock : props.detail}
         hot={muted ? false : props.hot}
         muted={muted}
-        useless={(G.upgradeGain(game, id, what) ?? 0) <= 1e-9 && what !== 'manager' && !(what === 'expand' && atCap)}
+        tone={buttonTone({ lock, gain, muted })}
         cost={lock ? null : cost}
         costLabel={props.costLabel ?? (lock && !/Finest|Biggest|Max/.test(lock) ? 'Locked' : 'MAX')}
         canBuy={!lock && cost !== null && game.cash >= cost}
@@ -227,16 +230,16 @@ export default function GameScreen() {
                 {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${rate(G.deliveryRate(shop, v))}/s`), hot: tied('customers') })}
                 {card('tables', { icon: <SeatIcon size={26} />, title: 'Seating', level: `Lv ${shop.tables}`, detail: nextTableHint === 'dining room full' ? `Dining room full · ${rate(G.walkInRate(shop))}\u00A0walk‑ins/s` : `${stationDetail('customers', 'tables', `${rate(G.walkInRate(shop))}\u00A0walk‑ins/s`)} · ${nextTableHint}`, hot: tied('customers') })}
                 {card('grade', { icon: <SparkleIcon size={26} />, title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? ((G.upgradeGain(game, id, 'grade') ?? 0) > 1e-9 ? `→ ${gradeNext.name} ×2 · ${plus(G.upgradeGain(game, id, 'grade')!)}` : `→ ${gradeNext.name} ×2`) : 'Finest ovens in town' })}
-                {card('expand', { icon: <ExpandIcon size={26} />, title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter · ${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? plus(G.upgradeGain(game, id, 'expand')!) : atCap ? `Lv cap → ${G.levelCap(shop) + 25}` : '+$0/s\u00A0now'}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
+                {card('expand', { icon: <ExpandIcon size={26} />, title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter${(G.upgradeGain(game, id, 'expand') ?? 0) > 1e-9 ? ` · ${plus(G.upgradeGain(game, id, 'expand')!)}` : atCap ? ` · Lv cap → ${G.levelCap(shop) + 25}` : ''}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
                 <StationCard
                   testID="buy-fleet"
                   icon={<ScooterIcon size={26} />}
                   title="Fleet"
-                  detail={nextVeh ? (fleetLock ? `→ ${nextVeh.name}s · ${fleetLock.charAt(0).toLowerCase()}${fleetLock.slice(1)}` : `→ ${nextVeh.name}s, all shops · ${vg && vg > 0 ? plus(vg) : '+$0/s\u00A0now'}`) : `${VEHICLES[v].name}s — top tier`}
+                  detail={nextVeh ? (fleetLock ? `→ ${nextVeh.name}s · ${fleetLock.charAt(0).toLowerCase()}${fleetLock.slice(1)}` : `→ ${nextVeh.name}s, all shops${vg && vg > 0 ? ` · ${plus(vg)}` : ''}`) : `${VEHICLES[v].name}s — top tier`}
                   cost={nextVeh && !fleetLock ? nextVeh.cost : null}
                   costLabel={nextVeh ? 'Locked' : 'MAX'}
                   canBuy={!!nextVeh && !fleetLock && game.cash >= nextVeh.cost}
-                  useless={!vg || vg <= 1e-9}
+                  tone={buttonTone({ lock: !nextVeh || !!fleetLock, gain: vg })}
                   onBuy={buyFleet}
                 />
                 <Text style={styles.section}>{`Decor · each tier: +${Math.round((perk?.decorBoost ?? DECOR_BOOST) * 100)}% pizza price in this shop`}</Text>

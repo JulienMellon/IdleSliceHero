@@ -80,3 +80,14 @@ v3.7 (story pacing, neighbourhood perks, the Pier 9 bid) loads clean and the cri
 | D324 | Station cards drop "+$0/s now" when the button already says "no gain now". |
 | D302, D303, D306 | Carried. |
 | Screenshots | One run of shot 22 (perk card) timed out waiting for the cut-scene; a re-run passed. Watch for flakiness. |
+
+## v4.2 — build (round-42 notes from the v4.1 review)
+
+| Note | Change |
+| --- | --- |
+| G75 | A locked or maxed upgrade is never "no gain": it shows "Locked" or "MAX" in the normal grey (16 Drivers). One rule, `buttonTone`, now drives the sidewalk and the drawer (cards and Fleet). |
+| D325 | No-gain prices get a drawn 2 pt bar at 52% height, −6°, instead of a font line-through ($65 is struck in 05, 05a). |
+| D326 | The bottleneck you're saving for has a pale basil face (#DDEFD9), #2E7D3E text and a cash-progress line along its foot (03 Drivers). |
+| D327 | Sidewalk icons 11 pt and letter spacing 0.1, so "COUNTER" has side room. |
+| D329 | Expand and Fleet drop "+$0/s now" too. |
+| D302, D306, D328 | Carried. |

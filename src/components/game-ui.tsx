@@ -48,27 +48,26 @@ export function useCountUp(target: number) {
 
 const BURST = ['star', 'coin', 'slice', 'star', 'coin', 'slice'] as const;
 
-/** 3D "candy" button. onPress returns true on a successful purchase (burst) or false (shake). */
 /**
- * tone: 'normal' = bright green when affordable; 'soft' = affordable but adds nothing right now;
- * 'neutral' = affordable but deliberately de-emphasised (e.g. before a shop has a manager).
+ * The game's purchase button (a 3D "candy" button). `onPress` returns true on a successful purchase (burst) or false
+ * (shake). `tone`: `normal` is green when affordable and grey when not; `neutral` is white (de-emphasised, e.g. before
+ * a shop has a manager); `nogain` is a buy that adds nothing right now, drawn flat and muted with its price struck,
+ * so green always means "this adds income" (D313). `nogain` is a style of the same element tree, so a station
+ * flipping to it right after a purchase keeps its burst (C56). `saving` (with `progress` 0–1) marks the bottleneck
+ * the player is saving for (D326). `compact` is the 44 pt sidewalk button: `icon` + `sub` above the price.
  */
-/**
- * The game's purchase button. `tone`: `normal` (green when affordable), `soft`, `neutral` (white), or `nogain`: a buy
- * that adds nothing right now, drawn flat and muted in every state so green always means "this adds income" (D313).
- * `nogain` is a style of the same element tree, so a station flipping to it right after a purchase keeps its burst
- * (C56). `compact` is the 44 pt sidewalk button: `icon` + `sub` (the station name) above the price.
- */
-export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal' }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: 'normal' | 'soft' | 'neutral' | 'nogain' }) {
-  // can't afford = flat grey; affordable-but-no-gain-now = white with a basil border and ink text
+export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal', saving = false, progress = 0 }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: 'normal' | 'neutral' | 'nogain'; saving?: boolean; progress?: number }) {
   const nogain = tone === 'nogain';
-  const outerBg = nogain ? '#CFC3B2' : !enabled ? '#C9BCAD' : tone === 'soft' ? '#A9CFB1' : tone === 'neutral' ? C.basilDark : C.basilDark;
-  const innerBg = nogain ? '#EFE6D8' : !enabled ? '#E2D9CE' : tone === 'soft' ? '#E3F2E6' : tone === 'neutral' ? '#FFFFFF' : C.basil;
+  // saving for the bottleneck: a pale basil face, so the one thing worth saving for stands out among the greys (D326)
+  const wait = saving && !enabled && !nogain;
+  const outerBg = nogain ? '#CFC3B2' : wait ? '#A9CFB1' : !enabled ? '#C9BCAD' : C.basilDark;
+  const innerBg = nogain ? '#EFE6D8' : wait ? '#DDEFD9' : !enabled ? '#E2D9CE' : tone === 'neutral' ? '#FFFFFF' : C.basil;
   // a greyed-out button still reads at ~4:1 (was #8A7B6E, ~2:1: D310)
-  const labelColor = nogain ? '#8A7B6C' : !enabled ? '#665A4F' : tone === 'soft' ? C.basilDark : tone === 'neutral' ? C.ink : '#fff';
+  const labelColor = nogain ? '#8A7B6C' : wait ? '#2E7D3E' : !enabled ? '#665A4F' : tone === 'neutral' ? C.ink : '#fff';
   const innerBorder = nogain ? styles.noGainInner : enabled && tone === 'neutral' ? { borderColor: C.basil, borderWidth: 1.5 } : null;
-  const burst = useRef(new Animated.Value(0)).current;
-  const shake = useRef(new Animated.Value(0)).current;
+  // lazily created once, not a throwaway Animated.Value on every render (M29)
+  const [burst] = useState(() => new Animated.Value(0));
+  const [shake] = useState(() => new Animated.Value(0));
   const [bursting, setBursting] = useState(false);
   const press = () => {
     const ok = onPress();
@@ -89,7 +88,7 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
     <Animated.View style={{ transform: [{ translateX: shake }] }}>
       <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, compact && styles.buyOuterCompact, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
         <View style={[styles.buyInner, compact && styles.buyInnerCompact, { backgroundColor: innerBg }, innerBorder]}>
-          {sub && (compact || (tone !== 'soft' && !nogain)) ? (
+          {sub && (compact || !nogain) ? (
             compact ? (
               <View style={styles.buySubRow}>
                 {icon}
@@ -101,11 +100,19 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
               <Text style={styles.buySub}>{sub}</Text>
             )
           ) : null}
-          <Text style={[styles.buyLabel, compact && styles.buyLabelCompact, nogain && compact && styles.struck, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}>
-            {label}
-          </Text>
-          {/* a soft button explains itself under the price */}
-          {sub && !compact && (tone === 'soft' || nogain) ? <Text style={[styles.buySub, { color: nogain ? '#8A7B6C' : C.basilDark, letterSpacing: 0.3 }]}>{sub}</Text> : null}
+          <View style={styles.struckWrap}>
+            <Text style={[styles.buyLabel, compact && styles.buyLabelCompact, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}>
+              {label}
+            </Text>
+            {nogain ? <View style={styles.strikeBar} pointerEvents="none" /> : null}
+          </View>
+          {wait ? (
+            <View style={styles.saveTrack} pointerEvents="none">
+              <View style={[styles.saveFill, { width: `${Math.round(Math.min(1, Math.max(0, progress)) * 100)}%` }]} />
+            </View>
+          ) : null}
+          {/* a no-gain button explains itself under the price */}
+          {sub && !compact && nogain ? <Text style={[styles.buySub, { color: '#8A7B6C', letterSpacing: 0.3 }]}>{sub}</Text> : null}
         </View>
       </Pressable>
       {bursting &&
@@ -147,7 +154,7 @@ export interface Goal {
 
 export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { cash: number; subtitle: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number }) {
   const shown = useCountUp(cash);
-  const flash = useRef(new Animated.Value(1)).current;
+  const [flash] = useState(() => new Animated.Value(1));
   const counting = shown < cash - 0.5;
   useEffect(() => {
     const bump = (to: number) => {
@@ -245,7 +252,7 @@ export function UpgradeRow(props: {
 }
 
 export function OfflinePopup({ seconds, capped, awaySeconds, earned, byShop, onCollect }: { seconds: number; capped: boolean; awaySeconds: number; earned: number; byShop: { name: string; earned: number; managed: boolean }[]; onCollect: () => void }) {
-  const pop = useRef(new Animated.Value(0.7)).current;
+  const [pop] = useState(() => new Animated.Value(0.7));
   useEffect(() => {
     Animated.spring(pop, { toValue: 1, friction: 5, useNativeDriver: native }).start();
   }, [pop]);
@@ -312,11 +319,14 @@ const styles = StyleSheet.create({
   // compact: a fixed 44 pt (outer, including its 4 pt lip), so nothing depends on flex-grow against a min height (C46)
   buyOuterCompact: { minWidth: 0, alignSelf: 'stretch', height: BUTTON_H },
   buySubRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3 },
-  buySubCompact: { fontFamily: F.semi, fontSize: 10, letterSpacing: 0.4 },
+  buySubCompact: { fontFamily: F.semi, fontSize: 10, letterSpacing: 0.1 },
   buyLabelCompact: { fontSize: 15 },
   noGainInner: { backgroundColor: '#EFE6D8', borderColor: '#CFC3B2' },
-  // a no-gain price is struck through: still buyable ahead of time, but it won't pay yet (D320)
-  struck: { textDecorationLine: 'line-through' },
+  // a no-gain price is struck through by a drawn bar: a font's line-through can vanish into round digits (D325)
+  struckWrap: { alignSelf: 'center', justifyContent: 'center' },
+  strikeBar: { position: 'absolute', left: -3, right: -3, height: 2, top: '52%', backgroundColor: '#8A7B6C', transform: [{ rotate: '-6deg' }] },
+  saveTrack: { position: 'absolute', left: 6, right: 6, bottom: 2, height: 3, borderRadius: 2, backgroundColor: 'rgba(46,125,62,0.18)' },
+  saveFill: { height: 3, borderRadius: 2, backgroundColor: '#2E7D3E' },
   buyInnerCompact: { flex: 1, justifyContent: 'center', paddingVertical: 0, paddingHorizontal: 4 },
   buySub: { fontFamily: F.semi, color: 'rgba(255,255,255,0.85)', fontSize: 10, letterSpacing: 1 },
   burst: { position: 'absolute', alignSelf: 'center', top: 8 },

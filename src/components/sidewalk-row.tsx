@@ -13,16 +13,16 @@ import { COMPACT_FONT_MAX_SCALE, IDLE_STACK_GAP, SIDEWALK_ROW, STATION_CARD } fr
 
 // static icon elements: built once, not per render (M24)
 const ICON: Record<StationKey, React.ReactNode> = {
-  prep: <PrepIcon size={13} />,
-  ovens: <FlameIcon size={13} />,
-  counter: <RegisterIcon size={13} />,
-  drivers: <DriverIcon size={13} />,
+  prep: <PrepIcon size={11} />,
+  ovens: <FlameIcon size={11} />,
+  counter: <RegisterIcon size={11} />,
+  drivers: <DriverIcon size={11} />,
 };
 
 export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen }: { game: G.GameState; id: NeighborhoodId; idleShop: boolean; bottom: number; onBuy: (what: G.Upgrade) => boolean; onOpen: () => void }) {
   const station = (v: StationView, framed: boolean) => {
     const button = (
-      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={ICON[v.key]} sub={v.name} tone={v.tone} label={v.label} enabled={v.affordable} onPress={() => onBuy(v.what)} />
+      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={ICON[v.key]} sub={v.name} tone={v.tone} label={v.label} enabled={v.affordable} saving={v.frame === 'waiting'} progress={v.cost ? game.cash / v.cost : 0} onPress={() => onBuy(v.what)} />
     );
     const badge = (
       <View style={[styles.level, v.frame === 'hot' && styles.levelHot]} pointerEvents="none">

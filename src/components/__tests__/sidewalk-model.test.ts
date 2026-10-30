@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 import * as G from '../../engine/game';
-import { stationModels, stationViews } from '../sidewalk-model';
+import { buttonTone, stationModels, stationViews } from '../sidewalk-model';
 
 const shopState = (patch: Partial<G.Shop>, cash = 0): G.GameState => {
   const s = G.newGame(0);
@@ -27,5 +27,20 @@ describe('sidewalk station model (T39)', () => {
     const a = stationModels(s, 'downtown');
     expect(stationModels({ ...s, cash: 5e6 }, 'downtown')).toBe(a);
     expect(stationModels(shopState({ prep: 21, ovens: 20, counter: 20, drivers: 1 }), 'downtown')).not.toBe(a);
+  });
+});
+
+describe('one button-tone rule for the sidewalk and the drawer (T42)', () => {
+  test('a locked or maxed upgrade is never "no gain"', () => {
+    expect(buttonTone({ lock: 'Expand to go past Lv 25', gain: null })).toBe('normal');
+    expect(buttonTone({ lock: true, gain: 0 })).toBe('normal');
+  });
+  test('an unlocked upgrade that adds nothing is "no gain"; one that adds income is normal', () => {
+    expect(buttonTone({ lock: null, gain: 0 })).toBe('nogain');
+    expect(buttonTone({ lock: null, gain: null })).toBe('nogain');
+    expect(buttonTone({ lock: null, gain: 2 })).toBe('normal');
+  });
+  test('a muted card (no manager yet) stays neutral', () => {
+    expect(buttonTone({ lock: null, gain: 0, muted: true })).toBe('neutral');
   });
 });

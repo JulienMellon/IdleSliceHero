@@ -107,3 +107,14 @@ The round-10 (v3.8, CHANGES REQUESTED) and round-11 (v3.9, APPROVED) reviews are
 | T40, T41 | Station locks keep "Lv" and the number together; `offlinePopupSeconds` pinned at 60. |
 | Layout | `layout()` centres an incomplete top row of stacked oven decks (D321); scene and crowd tests still pass. |
 | Not done | C54, T37, T38, M27 and the carried lows. 130 tests pass. |
+
+## v4.2 — build (round-13 review of v4.1: CHANGES REQUESTED)
+
+| Item | Change |
+| --- | --- |
+| C60 + T42 | `buttonTone({ lock, gain, muted })` in `sidewalk-model.ts` is the one rule: locked → normal, muted → neutral, gain ≤ 0 → nogain. `stationModels`, the drawer `card()` and the Fleet card use it; `StationCard` takes a `tone` (no more `useless`). Tests cover locked/maxed, no-gain, gain and muted. |
+| C61 | One doc block on `BuyButton`; the unused `soft` tone and its branches are removed. |
+| M29 | `Animated.Value`s in `BuyButton`, the Hud and the offline popup are created once with `useState(() => …)` instead of a throwaway per render. |
+| M30 (part) | The drawer card computes its gain once (Expand at a level cap counts as useful). |
+| UI | `BuyButton` gains `saving` / `progress` (pale basil face and a progress line for the bottleneck being saved for) and a drawn strike bar for no-gain prices. |
+| Not done | A17 (a full cached drawer model), C62/T43 (Waterfront wall geometry), T44, C54, T37, T38, M27, M31 and the carried lows. 133 tests pass. |
