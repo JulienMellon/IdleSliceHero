@@ -709,8 +709,9 @@ def bid_sting():
     for i in range(28):
         tim.n(0.6 + 0.125 * i, 0.12, deg(R, 5, md) - 24, 54 + 2 * i)
     s.save(os.path.join(OUT, 'sting_waterfront_bid.mid'), 4.2)
+    # musicSeconds: Dock Saved's villain sting comes in as the A7 hangs, not after the whole ring-out (AU57)
     MANIFEST['sting_waterfront_bid'] = dict(kind='stinger', hood='waterfront', cue='bid', bpm=h['bpm'], downbeatSeconds=0.0,
-                                            seconds=round(4.2 * 60 / h['bpm'], 3))
+                                            seconds=round(4.2 * 60 / h['bpm'], 3), musicSeconds=2.6)
 
 
 def groove(hood: str, s: Song, harm, t0: float, B: float, bars: int):

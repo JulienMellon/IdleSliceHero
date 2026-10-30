@@ -75,7 +75,7 @@ export const STINGS = {
   uptown_upgrade: { src: require('../../assets/audio/sting/uptown_upgrade.m4a'), seconds: 4.735, bpm: 104, downbeatSeconds: 0.5769, musicSeconds: 5.192 },
   uptown_warmth: { src: require('../../assets/audio/sting/uptown_warmth.m4a'), seconds: 8.071, bpm: 104, downbeatSeconds: 0.5769, musicSeconds: 7.5 },
   uptown_welcome: { src: require('../../assets/audio/sting/uptown_welcome.m4a'), seconds: 5.217, bpm: 104, downbeatSeconds: 0.5769, musicSeconds: 5.769 },
-  waterfront_bid: { src: require('../../assets/audio/sting/waterfront_bid.m4a'), seconds: 3.989, bpm: 96, downbeatSeconds: 0.0 },
+  waterfront_bid: { src: require('../../assets/audio/sting/waterfront_bid.m4a'), seconds: 3.989, bpm: 96, downbeatSeconds: 0.0, musicSeconds: 2.6 },
   waterfront_bottleneck: { src: require('../../assets/audio/sting/waterfront_bottleneck.m4a'), seconds: 3.742, bpm: 96, downbeatSeconds: 0.625, musicSeconds: 3.75 },
   waterfront_build: { src: require('../../assets/audio/sting/waterfront_build.m4a'), seconds: 6.202, bpm: 96, downbeatSeconds: 0.625, musicSeconds: 5.625 },
   waterfront_drone: { src: require('../../assets/audio/sting/waterfront_drone.m4a'), seconds: 5.199, bpm: 96, downbeatSeconds: 0.625, musicSeconds: 5.625 },

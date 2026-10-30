@@ -301,13 +301,14 @@ function stopStings(ms: number, keepHeld = false) {
   }
 }
 
-/** Run a story cue now, or when the held build/bid stinger ends. */
+/** Run a story cue now, or when the held build/bid stinger ends — unless the scene has moved on by then (AU57). */
 function afterHeld(fn: () => void) {
   const wait = heldUntil - Date.now();
   if (wait <= 0) return fn();
+  const panelAtCall = lastScenePanel;
   const t = setTimeout(() => {
     pendingCues.delete(t);
-    fn();
+    if (lastScenePanel === panelAtCall) fn();
   }, wait);
   pendingCues.add(t);
 }
@@ -336,7 +337,7 @@ function playSting(hood: NeighborhoodId, kind: StingKind | 'bid', o: { immediate
     }
   }
   // the duck and the gate last as long as the music, not the reverb tail (AU53)
-  const musicLen = 'musicSeconds' in info ? (info.musicSeconds as number) : info.seconds;
+  const musicLen = (info as { musicSeconds?: number; seconds: number }).musicSeconds ?? info.seconds;
   if (o.gated !== false && kind !== 'bid' && !gate.admit(kind as StingKind, now, (delay + musicLen) * 1000)) return;
   if (kind === 'build' || kind === 'bid') {
     heldKind = kind;
@@ -407,6 +408,8 @@ function onPanel(sceneId: string, panel: number) {
   const key = `${sceneId}/${panel}`;
   if (key === lastScenePanel) return;
   lastScenePanel = key;
+  // a cue still waiting for the previous panel (held stinger, triumph payoff) belongs to that panel: drop it (AU57)
+  clearPendingCues();
   // a scene never opens over a gameplay stinger (AU27), except the build or bid stinger that opened it (AU42)
   if (panel === 0) stopStings(STING_OUT_MS, true);
   const cue = panelCue(scene, panel);
