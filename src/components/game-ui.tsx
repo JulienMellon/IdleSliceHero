@@ -2,12 +2,11 @@
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
 
 import { cashText, duration, goalAmount, money, shownValue } from '../engine/format';
 import { C, F } from '../theme';
 import { BookIcon, CoinIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
-import { emitPayout, onPayout } from './pulse-bus';
+import { onPayout } from './pulse-bus';
 import { BUTTON_H, COMPACT_FONT_MAX_SCALE } from './tap-targets';
 
 const native = Platform.OS !== 'web';

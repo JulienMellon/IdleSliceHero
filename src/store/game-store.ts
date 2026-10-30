@@ -43,8 +43,8 @@ interface Store {
   tick: (dt: number) => void;
   /** Tap the active pizzeria: the next station that can start (no GM) or a rush (GM). */
   tapShop: () => void;
-  /** Tap one station of the active pizzeria; a refused tap shows its reason. Returns whether it started. */
-  tapStation: (st: Station) => boolean;
+  /** Tap one station of the active pizzeria. Returns why it was refused (the scene shows it under the badge), or null. */
+  tapStation: (st: Station) => string | null;
   buy: (what: G.Upgrade) => boolean;
   buyFleet: () => boolean;
   buyDecor: (kind: DecorKind) => boolean;
@@ -165,13 +165,10 @@ export const useGame = create<Store>((set, get) => {
       const at = Date.now();
       if (r.ok) {
         set({ game: r.state, lastKitchenTap: at });
-        return true;
+        return null;
       }
-      set({ toast: { text: r.reason, at }, lastKitchenTap: at });
-      setTimeout(() => {
-        if (get().toast?.at === at) set({ toast: null });
-      }, 1400);
-      return false;
+      set({ lastKitchenTap: at });
+      return r.reason;
     },
 
     buy: (what) => {

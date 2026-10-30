@@ -68,3 +68,62 @@ describe('badge row', () => {
     expect([0, 0.04, 0.5, 0.999, 1, 2].map(progressStep)).toEqual([0, 0, 12, 23, 24, 24]);
   });
 });
+
+import { badgeModels, popModels, ringSteps, COIN_FLIGHT } from '../stations';
+import { emptyLine } from '../../../engine/pipeline';
+import { SCENE_W } from '../projection';
+
+describe('codecritic round 16', () => {
+  const base = { auto: { prep: false, oven: false, counter: false }, managed: false, neck: new Set<'prep' | 'oven' | 'counter'>(), tapBatch: 4, since: 0 };
+  test('T53: a GM shop shows its runner on every station; a tapped shop has exactly one ready station', () => {
+    const gm = badgeModels({ ...base, line: emptyLine(), auto: { prep: true, oven: true, counter: true }, managed: true, next: null });
+    expect(gm.map((b) => b.runner)).toEqual(['gm', 'gm', 'gm']);
+    const tapped = badgeModels({ ...base, line: { ...emptyLine(), prepped: 4 }, next: 'oven' });
+    expect(tapped.filter((b) => b.ready).map((b) => b.st)).toEqual(['oven']);
+    expect(tapped[0].count).toBe('×4'); // D350: the idle prep table shows its next batch
+    expect(tapped[1].count).toBe('4');
+  });
+  test('T53: step is never NaN, even for a zero-length job, and changes at most ~8 times a second', () => {
+    const z = badgeModels({ ...base, line: { ...emptyLine(), oven: { n: 4, left: 0, total: 0 } }, next: null });
+    expect(Number.isNaN(z[1].step)).toBe(false);
+    expect(ringSteps(1.6)).toBe(13);
+    expect(ringSteps(30)).toBe(24);
+  });
+  test('G80: every tied station is tomato', () => {
+    const t = badgeModels({ ...base, line: emptyLine(), neck: new Set(['prep', 'oven'] as const), next: 'prep' });
+    expect(t.map((b) => b.tone)).toEqual(['tomato', 'tomato', 'basil']);
+  });
+  test('T52: a fresh walk-in and a fresh driver both pop; at most 2 pops; merged cash adds up', () => {
+    const deps = [
+      { kind: 'driver' as const, n: 4, cash: 12, left: 1.2 },
+      { kind: 'walkin' as const, n: 4, cash: 12, left: 0.5 },
+      { kind: 'driver' as const, n: 6, cash: 18, left: 1.1 },
+      { kind: 'driver' as const, n: 6, cash: 18, left: COIN_FLIGHT - 0.1 },
+    ];
+    const p = popModels(deps, (d) => d.left);
+    expect(p.length).toBe(2);
+    expect(p.some((x) => x.dep.kind === 'walkin')).toBe(true);
+    expect(p.reduce((t, x) => t + x.cash, 0)).toBe(12 + 12 + 18);
+  });
+  test('T54: where station rects overlap, the front-most wins (synthetic overlap), and real layouts never put the oven over the counter', () => {
+    const r = { counter: { x0: 0, y0: 0, x1: 50, y1: 50 }, prep: { x0: 100, y0: 0, x1: 150, y1: 50 }, oven: { x0: 25, y0: 25, x1: 75, y1: 75 } };
+    expect(stationAt(r, 40, 40)).toBe('counter');
+    expect(stationAt(r, 60, 60)).toBe('oven');
+    for (const lay of shops)
+      for (const s of [0.86, 1, 1.12]) {
+        const rr = stationRects(lay, MIN_TAP_PT / s);
+        const x0 = Math.max(rr.oven.x0, rr.counter.x0);
+        const x1 = Math.min(rr.oven.x1, rr.counter.x1);
+        const y0 = Math.max(rr.oven.y0, rr.counter.y0);
+        const y1 = Math.min(rr.oven.y1, rr.counter.y1);
+        if (x0 < x1 && y0 < y1) expect(stationAt(rr, (x0 + x1) / 2, (y0 + y1) / 2)).toBe('counter');
+      }
+  });
+  test('T55: every badge and the counter pill stay on screen', () => {
+    for (const lay of shops) {
+      const x = badgeXs(lay);
+      expect(x.prep - BADGE_R).toBeGreaterThanOrEqual(0);
+      expect(x.counter + BADGE_R + 3 + 40).toBeLessThanOrEqual(SCENE_W);
+    }
+  });
+});

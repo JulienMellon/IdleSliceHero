@@ -283,6 +283,18 @@ export function earningsPerSecond(s: GameState): number {
 
 export type Stage = 'prep' | 'ovens' | 'counter' | 'customers';
 
+/** Every stage tied for the slowest (an upgrade to one of them alone adds nothing). */
+export function tiedStages(shop: Shop, vehicle: number): Stage[] {
+  const rates: [Stage, number][] = [
+    ['prep', prepRate(shop)],
+    ['ovens', ovenRate(shop)],
+    ['counter', counterRate(shop)],
+    ['customers', demandRate(shop, vehicle)],
+  ];
+  const min = Math.min(...rates.map((r) => r[1]));
+  return rates.filter((r) => r[1] <= min * (1 + 1e-9)).map((r) => r[0]);
+}
+
 /** The slowest stage of a pizzeria's pipeline. */
 export function bottleneck(shop: Shop, vehicle: number): Stage {
   const rates: [Stage, number][] = [
@@ -486,7 +498,9 @@ export function nextHire(shop: Shop): Upgrade | null {
 export const lineBusy = (l: Line) => !!(l.prep || l.oven || l.counter || l.departures.length);
 
 /** Which stations run on their own: the GM runs all of them, otherwise each hired head runs theirs. */
-export const automationOf = (shop: Shop): Automation => (shop.managed ? { prep: true, oven: true, counter: true } : shop.heads);
+const ALL_AUTOMATIC: Automation = Object.freeze({ prep: true, oven: true, counter: true });
+/** One frozen object for GM shops, so the scene doesn't allocate it every frame (M44). */
+export const automationOf = (shop: Shop): Automation => (shop.managed ? ALL_AUTOMATIC : shop.heads);
 
 /** Share of pies that go to walk-ins at the steady state (drivers get first pick). */
 export function walkInFraction(shop: Shop, vehicle: number): number {

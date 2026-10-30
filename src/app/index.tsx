@@ -1,17 +1,20 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CoinLayer } from '@/components/coin-layer';
 import { type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
 import { buttonTone } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
 import { CLOSE_SLOP, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
-import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, ManagerIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
+import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait';
+import { HeadFace } from '@/components/scene/head-face';
+import Svg from 'react-native-svg';
 import { CURB_Y, SCENE_H, sceneFit, Storefront } from '@/components/storefront';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
-import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEAD_ROLE, HEAD_TITLE, HEADS, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES } from '@/content/tuning';
+import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEAD_ROLE, HEAD_TITLE, HEADS, type HeadKind, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
 import { money, pizzas, rate } from '@/engine/format';
 import * as G from '@/engine/game';
@@ -19,10 +22,20 @@ import type { Station } from '@/engine/pipeline';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
 
+/** A head's face for the drawer cards (D345). */
+function HeadIcon({ kind, name }: { kind: HeadKind | 'gm'; name: string }) {
+  return (
+    <Svg width={34} height={36} viewBox="-20 -24 40 44">
+      <HeadFace kind={kind} name={name} size={40} />
+    </Svg>
+  );
+}
+
 const STAGE_NAME: Record<G.Stage, string> = { prep: 'prep', ovens: 'ovens', counter: 'counter', customers: 'drivers & seats' };
 
 export default function GameScreen() {
   const insets = useSafeAreaInsets();
+  const { width: winW } = useWindowDimensions();
   const game = useGame((s) => s.game);
   const offline = useGame((s) => s.offline);
   const toast = useGame((s) => s.toast);
@@ -32,7 +45,9 @@ export default function GameScreen() {
   // a rush on a GM shop: jobs finish sooner; the cash still arrives with the pies (no payout here)
   const onShopTap = useCallback(() => tapShop(), [tapShop]);
   const onStationTap = useCallback((st: Station) => {
-    if (useGame.getState().tapStation(st)) haptic();
+    const reason = useGame.getState().tapStation(st);
+    if (!reason) haptic();
+    return reason;
   }, []);
   const [area, setArea] = useState({ w: 0, h: 0 });
   // The full upgrade list opens over the shop on a tap of "All" (no gestures).
@@ -238,7 +253,7 @@ export default function GameScreen() {
                 {!shop.managed &&
                   HEAD_KINDS.map((k) =>
                     card(G.HEAD_UPGRADE[k], {
-                      icon: <ManagerIcon size={26} />,
+                      icon: <HeadIcon kind={k} name={HEADS[id][k]} />,
                       title: `${HEAD_TITLE[k]}: ${HEADS[id][k]}`,
                       detail: shop.heads[k] ? `Runs your ${k === 'oven' ? 'ovens' : k} for you` : `Runs the ${k === 'prep' ? 'prep table' : k === 'oven' ? 'ovens' : 'counter'} so you don't have to tap it`,
                       wide: true,
@@ -247,7 +262,7 @@ export default function GameScreen() {
                   )}
                 {!shop.managed &&
                   card('manager', {
-                    icon: id === 'downtown' ? <Portrait id="nonna-rosa" mood="happy" size={32} /> : <ManagerIcon size={26} />,
+                    icon: id === 'downtown' ? <Portrait id="nonna-rosa" mood="happy" size={32} /> : <HeadIcon kind="gm" name={`${id}-gm`} />,
                     title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire a ${nd.name} manager`,
                     detail: id === 'downtown' ? `Keep baking — ${G.nonnaCountdownText(game)}` : `General Manager: ×2 income here, and it earns while you're away (${plus(G.shopEarnings(game, id))})`,
                     wide: true,
@@ -304,6 +319,8 @@ export default function GameScreen() {
         {/* Toast floats in the open sky at the top of the scene, clear of the shop, the row and the cards. */}
         {toast && <Toast compact text={toast.text} top={10} />}
       </View>
+      {/* payout coins fly from the carrier to the cash (D344) */}
+      <CoinLayer target={{ x: winW / 2, y: insets.top + 34 }} />
       {offline && <OfflinePopup seconds={offline.seconds} capped={offline.capped} awaySeconds={offline.awaySeconds} earned={offline.earned} byShop={offline.byShop} onCollect={dismissOffline} />}
     </View>
   );

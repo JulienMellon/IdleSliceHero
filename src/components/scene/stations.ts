@@ -1,6 +1,7 @@
 // Where the three kitchen stations are on screen: tap targets and the badge row (playtest 2, v4.8).
 // Pure (no React): hit-testing and badge placement are unit-tested in node.
-import type { Station } from '../../engine/pipeline';
+import { pizzas } from '../../engine/format';
+import type { Line, Station } from '../../engine/pipeline';
 import { D, FRONT_TOP, P } from './projection';
 import type { Layout } from './layout';
 
@@ -89,3 +90,88 @@ export function badgeXs(lay: Layout): Record<Station, number> {
 
 /** Ring progress snapped to 1/24 steps, so a memoised badge only re-renders when its arc visibly changes (M36). */
 export const progressStep = (p: number) => Math.max(0, Math.min(24, Math.floor(p * 24)));
+
+// ---------- badge view-model (A19): primitives per station, built from the line; tested in node ----------
+
+export type BadgeTone = 'basil' | 'tomato';
+
+export interface BadgeModel {
+  st: Station;
+  /** Ring progress in 24ths, changing at most ~8 times a second so the memoised badge holds (M43). */
+  step: number;
+  /** Pies in the job, or waiting; an idle prep table shows the next batch as "×4" (D350). */
+  count: string;
+  /** Tomato on every station tied for the bottleneck (G80), basil otherwise. */
+  tone: BadgeTone;
+  /** The station to tap next (manual stations only). */
+  ready: boolean;
+  /** Who runs it: a head, the GM, or the player. */
+  runner: 'head' | 'gm' | null;
+}
+
+export interface BadgeInput {
+  line: Line;
+  auto: Readonly<Record<Station, boolean>>;
+  managed: boolean;
+  /** Stations tied for the bottleneck. */
+  neck: ReadonlySet<Station>;
+  next: Station | null;
+  tapBatch: number;
+  /** Seconds since the engine's last tick (0 while paused). */
+  since: number;
+}
+
+/** Ring steps for a job: about 8 per second of its length, at most 24, at least 1. */
+export const ringSteps = (total: number) => Math.max(1, Math.min(24, Math.round(total * 8)));
+
+export function badgeModels(b: BadgeInput): BadgeModel[] {
+  const waiting: Record<Station, number> = { prep: b.tapBatch, oven: b.line.prepped, counter: b.line.baked };
+  return (['prep', 'oven', 'counter'] as const).map((st) => {
+    const job = b.line[st];
+    let step = 0;
+    if (job && job.total > 0) {
+      const p = Math.min(1, Math.max(0, 1 - Math.max(0, job.left - b.since) / job.total));
+      const n = ringSteps(job.total);
+      step = Math.round((Math.floor(p * n) * 24) / n);
+    }
+    const count = job ? pizzas(job.n) : st === 'prep' && !b.auto.prep ? `×${pizzas(b.tapBatch)}` : pizzas(waiting[st]);
+    return { st, step, count, tone: b.neck.has(st) ? 'tomato' : 'basil', ready: !b.auto[st] && b.next === st, runner: b.auto[st] ? (b.managed ? 'gm' : 'head') : null };
+  });
+}
+
+/** A tap on a badge (a ≥ 44 pt circle around it) counts as a tap on its station (G79). */
+export function badgeAt(xs: Record<Station, number>, y: number, x: number, ty: number, minScene: number): Station | null {
+  const r = Math.max(BADGE_R + 4, minScene / 2);
+  for (const st of ['prep', 'oven', 'counter'] as const) if (Math.hypot(x - xs[st], ty - y) <= r) return st;
+  return null;
+}
+
+/** Seconds of a driver's departure spent as a coin flying to the HUD cash (it lands when the engine pays). */
+export const COIN_FLIGHT = 0.55;
+
+export interface PopModel<D> {
+  dep: D;
+  /** Pies and cash shown: the newest pop also carries every pop beyond the first two. */
+  n: number;
+  cash: number;
+}
+
+/**
+ * Which departures show a "+$X" pop (T52): drivers until their coin launches, walk-ins for their whole hand-over
+ * (C72: they used to go straight to the coin). Newest first, at most 2; older ones' pies and cash merge into the
+ * newest, so the shown cash always adds up to the total.
+ */
+export function popModels<D extends { kind: 'driver' | 'walkin'; n: number; cash: number }>(deps: readonly D[], left: (d: D) => number): PopModel<D>[] {
+  const pops: D[] = [];
+  for (let i = deps.length - 1; i >= 0; i--) {
+    const d = deps[i];
+    if (d.kind === 'walkin' || left(d) > COIN_FLIGHT) pops.push(d);
+  }
+  let n = 0;
+  let cash = 0;
+  for (let i = 2; i < pops.length; i++) {
+    n += pops[i].n;
+    cash += pops[i].cash;
+  }
+  return pops.slice(0, 2).map((d, i) => ({ dep: d, n: d.n + (i === 0 ? n : 0), cash: d.cash + (i === 0 ? cash : 0) }));
+}

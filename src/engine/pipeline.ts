@@ -43,7 +43,7 @@ export const emptyLine = (): Line => ({ prep: null, oven: null, counter: null, p
 
 export const LINE = {
   /** A managed job lasts about this long at the shop's rate, so high levels move big stacks, not a strobe. */
-  cycleSeconds: 1.6,
+  cycleSeconds: 2.4,
   /** A tapped prep job won't start while the bench holds this many pies. */
   prepBuffer: 12,
   /** A driver walks from the counter to the door in this long, then pays. */
@@ -102,11 +102,11 @@ export function tapStation(line: Line, st: Station, r: LineRates, auto: Automati
   }
   if (st === 'oven') {
     if (line.oven) return { ok: false, reason: `Oven busy · ${secs(line.oven.left)}` };
-    if (line.prepped <= 0) return { ok: false, reason: line.prep ? 'Dough’s still being prepped' : 'Nothing prepped yet — tap the prep table' };
+    if (line.prepped <= 0) return { ok: false, reason: line.prep ? `Dough’s still prepping · ${secs(line.prep.left)}` : 'Nothing prepped yet — tap the prep table' };
     return { ok: true, line: { ...line, prepped: 0, oven: job(line.prepped, r.oven) } };
   }
   if (line.counter) return { ok: false, reason: `Serving · ${secs(line.counter.left)}` };
-  if (line.baked <= 0) return { ok: false, reason: line.oven ? 'Still baking' : 'Nothing baked yet — tap the oven' };
+  if (line.baked <= 0) return { ok: false, reason: line.oven ? `Still baking · ${secs(line.oven.left)}` : 'Nothing baked yet — tap the oven' };
   return { ok: true, line: { ...line, baked: 0, counter: job(line.baked, r.serve) } };
 }
 

@@ -72,3 +72,23 @@ Station badges, hit-tested taps and per-departure pops are v4.8; event-driven pe
 | "+$X" / "×338 · +$213K" pop rides counter → door with each driver departure (walk-ins: over the register), turns into a coin that lands on the HUD cash when the cash lands; ≤ 2 pops, ≤ 3 coins | `kitchen-hud.tsx` | 10, 11 |
 | Head hire bubble ("Finn: I got the dough, boss!"); `docs/story/CAST.md` | `storefront.tsx` | — |
 | Old tap UI removed (queued pill, TAP TO PREP, tap pills, rush coins) | `storefront.tsx` | all |
+
+## Round 46 (v4.8): ❌ NOT SATISFIED — G79, G80, D344–D351. Next IDs: **G81, D352**.
+| ID | Type | Note | v4.9 |
+| --- | --- | --- | --- |
+| G79 | bug | Hand points at a badge that isn't a tap target; a miss does nothing | a ≥ 44 pt circle round each badge taps its station; a miss bounces the hand 1.4× and outlines the station 0.3 s |
+| G80 | bug | Only one of two tied stations is red | every tied station is tomato (`tiedStages`) |
+| D344 | major | Coin stops at the scene top, 290 pt short of the cash | coins fly in a screen overlay (native driver) from the carrier to the HUD cash, 18 pt with a #8A5A00 rim, 4-dot sparkle on landing |
+| D345 | major | Heads have no faces | `HeadFace` bust per head with a role hat (cook cap, red bandana, green visor; GM tie) on the drawer cards and as a mini face on the badge |
+| D346 | minor | Badge row pasted on the awning | the row hangs on a 30 pt #4A2A1A rail at 85%; 12 pt pie icon |
+| D347 | minor | Pop covers faces / OPEN | 40 above the carrier's head, drifts up 10, fades over its last 0.2 s |
+| D348 | minor | Refusal toast far away, seconds not always shown | refusal pill under the tapped station's badge; every busy refusal carries the time left |
+| D349 | minor | No hire-bubble shot | `05b5-hire-bubble` |
+| D350 | note | Count pill means different things | idle prep shows "×4" (next batch) |
+| D351 | note | Struck "$90" reads as unaffordable | **declined**: the struck no-gain price is the D313/D325 rule (green always means "adds income"); kept |
+
+## v4.9 — build (playtest 2, step 3: people + round-46 fixes)
+| Change | Where | Shots |
+| --- | --- | --- |
+| **D336**: drivers and walk-ins follow departures (`scene/crew.ts`): one driver per pickup spot, out the door with each order along a lane in front of the register, back again; one walk-in waits at the register for a walk-in sale, eats, leaves (or gives up after 8 s); none when walk-ins buy nothing. Constant walking speed on every leg (P6). Crowd budget at the counter (walk-in vs driver, stacked drivers ≤ 15%, steady/sparse/burst cadences) failed on 541 frames with the old exit route; passes now | `crew.ts`, `cast.ts`, `crowd.test.ts` | 03b, 04, 09–12 |
+| Round-46 fixes above; automated jobs last ~2.4 s (was 1.6) so each stack leaving reads | `kitchen-hud.tsx`, `coin-layer.tsx`, `head-face.tsx`, `stations.ts` | 05b2, 05b5, 10, 11 |

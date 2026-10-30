@@ -185,6 +185,9 @@ with sync_playwright() as pw:
         # station taps: prep, then the oven while it's still prepping (refused, with the reason)
         tap_station(page, "prep"); shot(page, "05b3-prep-ring", 1.2)
         tap_station(page, "oven"); shot(page, "05b4-refused-tap", 0.2)
+        # hire Finn from the sidewalk: his hello bubble over the prep badge, his face on the badge (D349)
+        time.sleep(1.4)
+        tid(page, "walk-manager").click(); shot(page, "05b5-hire-bubble", 0.5)
         tid(page, "open-city").click(); shot(page, "05c-city", 0.8)
         tid(page, "back").click()
     except Exception as e:

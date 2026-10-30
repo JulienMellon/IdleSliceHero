@@ -9,13 +9,11 @@
 // anchored to the bottom so the sidewalk and street are always visible (taller screens show more sky).
 import { memo, useEffect, useMemo, useRef, type ComponentRef, type ReactElement } from 'react';
 import { Pressable, View } from 'react-native';
-import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
-import { FOOTPRINTS, NEIGHBORHOODS, TUNING } from '../content/tuning';
+import Svg, { G, Rect } from 'react-native-svg';
+import { FOOTPRINTS, NEIGHBORHOODS } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
-import { money } from '../engine/format';
 import * as Game from '../engine/game';
 import { useGame } from '../store/game-store';
-import { C, F } from '../theme';
 import { emitAudio } from '../audio/bus';
 import { emitPayout } from './pulse-bus';
 import { Backdrop } from './scene/background';
@@ -24,18 +22,18 @@ import { SceneDefs } from './scene/defs';
 import { FRONT_ROW_Y, LEDGE_Y, STOOL_Y, layout, type Layout } from './scene/layout';
 import { seatPalette } from './scene/palette';
 import { GUEST_SHIRTS, HAIR_COLORS, hash32, Person } from './scene/people';
-import { CURB_Y, D, FRONT_TOP, INK, P, SCENE_W, sceneFit, unprojectX } from './scene/projection';
+import { CURB_Y, D, P, SCENE_W, sceneFit, unprojectX } from './scene/projection';
 import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Rug, Stools, Table, WallPlanter } from './scene/props';
 import { furnitureDeps, furnitureInputs, type FurnitureInputs } from './scene/furniture-inputs';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell } from './scene/room';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, Street } from './scene/street';
 import { buildCast } from './scene/cast';
 import { STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
-import { pizzas } from '../engine/format';
 import { HEADS } from '../content/tuning';
-import { DeparturePops, HireBubble, StationBadge, type DepartureGeometry } from './scene/kitchen-hud';
-import { badgeRowY, badgeXs, MIN_TAP_PT, progressStep, stationAt, stationRects } from './scene/stations';
-import { DOOR_IN_Y, DOOR_OUT_Y } from './scene/layout';
+import { BadgeRail, COIN_FLIGHT, DeparturePops, HireBubble, StationBadge } from './scene/kitchen-hud';
+import { emptyCrew, stepCrew, type CrewState } from './scene/crew';
+import { emitCoin } from './pulse-bus';
+import { BADGE_R, badgeAt, badgeModels, badgeRowY, badgeXs, MIN_TAP_PT, stationAt, stationRects } from './scene/stations';
 
 export { CURB_Y, SCENE_H, SCENE_W, sceneFit } from './scene/projection';
 
@@ -48,8 +46,8 @@ interface Props {
   paused: boolean;
   /** A tap on a GM shop (rush). */
   onTap: () => void;
-  /** A tap on one station of a shop without a GM. */
-  onStation: (st: Station) => void;
+  /** A tap on one station of a shop without a GM; returns why it was refused, or null when it started. */
+  onStation: (st: Station) => string | null;
 }
 
 /** Everything the still picture depends on: when this changes, the scene re-renders even while paused. */
@@ -69,7 +67,7 @@ const CLOUDS = [
 ] as const;
 const DRIFT_SPAN = SCENE_W + 200;
 
-const STATION_STAGE: Record<Station, Game.Stage[]> = { prep: ['prep'], oven: ['ovens'], counter: ['counter', 'customers'] };
+const STAGE_STATION: Record<Game.Stage, Station> = { prep: 'prep', ovens: 'oven', counter: 'counter', customers: 'counter' };
 const HIRE_LINE: Record<Station, string> = { prep: 'I got the dough, boss!', oven: 'Ovens are mine now.', counter: 'Next customer, please!' };
 
 
@@ -91,15 +89,26 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const shop = game.shops[id];
   const nd = Game.def(id);
   const fp = shop.footprint;
-  // Mutable per-mount scratch that does not drive rendering on its own: tap pills and the rush burst
-  // (written in the tap handler) and the cash pop (written in the payout effect below).
   // where this view sits on the page, for turning a tap's pageX/pageY into scene coordinates
   const viewRef = useRef<ComponentRef<typeof View>>(null);
   const origin = useRef({ x: 0, y: 0 });
   const measureOrigin = () => viewRef.current?.measureInWindow((x: number, y: number) => {
     origin.current = { x, y };
   });
-  const mem = useRef({ depIds: [] as number[], rushAt: -9, hintAt: -9, heads: null as null | Record<Station, boolean>, hire: null as null | { st: Station; at: number; text: string } });
+  // Mutable per-mount scratch that does not drive rendering on its own: the crew, coin launches, the last
+  // departure seen, rush/miss/refusal moments (tap handler) and the queue of hire bubbles (effect).
+  const mem = useRef({
+    crew: null as CrewState | null,
+    launched: 0,
+    lastDep: 0,
+    wasPaused: false,
+    rushAt: -9,
+    hintAt: -9,
+    refusal: null as null | { st: Station; at: number; text: string },
+    heads: null as null | Record<Station, boolean>,
+    hires: [] as { st: Station; text: string }[],
+    hire: null as null | { st: Station; at: number; text: string },
+  });
 
   const ovenCount = Math.min(FOOTPRINTS[fp].ovenSlots, 1 + Math.floor((shop.ovens - 1) / 8));
   const cookCount = Math.min(3, 1 + Math.floor((shop.prep - 1) / 15));
@@ -124,7 +133,24 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
 
   // ---- people (pure cast builder) + furniture, painter-sorted by depth
   type Item = { y: number; el: ReactElement };
-  const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal });
+  // drivers and walk-ins follow the departures (crew.ts). The fold is idempotent for the same inputs, so writing the
+  // result back to the ref during render is safe on a re-render; a fresh mount starts past the departures already
+  // walking, so they don't all start at once (and their coins don't launch in a burst)
+  const line = shop.line;
+  const m0 = mem.current;
+  if (!m0.crew) {
+    const top = line.departures.reduce((t, d) => Math.max(t, d.id), 0);
+    m0.crew = { ...emptyCrew(), seenId: top };
+    m0.launched = top;
+  }
+  // one walk-in at the register at a time (two stacked there in D336)
+  const guestsWanted = running && Game.walkInFraction(shop, game.vehicle) > 0.02 ? 1 : 0;
+  const crew = paused ? m0.crew : stepCrew(m0.crew, { lay, drivers: shop.drivers, guests: guestsWanted, departures: line.departures }, clock, SCENE_W);
+  m0.crew = crew;
+  const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew });
+  // each pop rides over the figure carrying its departure
+  const carriers = new Map<number, [number, number]>();
+  for (const c of cast) if (c.dep) carriers.set(c.dep, P(c.props.x, c.props.y, 52));
   const fin = furnitureInputs({ id, name: nd.name, shop, running, rate, vehicle: game.vehicle });
   // Furniture only changes with upgrades and the dough/box counts, so it is built once per change (M12), not 15 times a second.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are lay + every value of `fin`, the builder's only inputs
@@ -133,62 +159,76 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   items.sort((a, b) => b.y - a.y);
 
   // ---- departures: a carrier that paid this frame bumps the HUD cash (its coin just landed). Detected after
-  // commit so render stays pure; ids only grow, so a remount or the end of a pause never replays old ones.
-  const line = shop.line;
+  // commit; ids only grow, so a remount or the end of a pause never replays old ones.
   useEffect(() => {
     const m = mem.current;
-    const ids = line.departures.map((d) => d.id);
-    const paid = m.depIds.some((i) => !ids.includes(i));
-    m.depIds = ids;
-    if (paid && !paused) {
+    // a departure about to pay launches its coin from the carrier to the HUD cash, timed to land with the cash
+    if (!paused)
+      for (const d of line.departures) {
+        const l = Math.max(0, d.left - Math.max(0, (Date.now() - useGame.getState().tickAt) / 1000));
+        if (d.id <= m.launched || l > COIN_FLIGHT) continue;
+        m.launched = d.id;
+        const [sx, sy] = carriers.get(d.id) ?? geoRegister;
+        emitCoin({ x: origin.current.x + fit.ox + (sx / 1) * fit.s, y: origin.current.y + fit.oy + (sy - 40) * fit.s, ms: l * 1000 });
+      }
+    // ids only grow: the oldest id still walking moved past the last one we knew → someone paid. The first frame
+    // after a pause skips the emit, so closing the drawer doesn't replay a stale cash sound (C75)
+    const oldest = line.departures.length ? line.departures[0].id : Number.POSITIVE_INFINITY;
+    const paid = m.lastDep > 0 && oldest > m.lastDep;
+    m.lastDep = line.departures.length ? line.departures[line.departures.length - 1].id : m.lastDep;
+    if (paid && !paused && !m.wasPaused) {
       emitPayout();
       emitAudio({ type: 'cash' });
     }
-    // a head just hired says hello over their station
-    const auto = Game.automationOf(shop);
-    if (m.heads) for (const st of STATIONS_IN_ORDER) if (auto[st] && !m.heads[st] && !shop.managed) m.hire = { st, at: clock, text: `${HEADS[id][st]}: ${HIRE_LINE[st]}` };
-    m.heads = { ...auto };
+    m.wasPaused = paused;
+    // a head just hired says hello over their station; several at once (Nonna brings all three) queue up (C77)
+    const heads = shop.heads;
+    if (m.heads) for (const st of STATIONS_IN_ORDER) if (heads[st] && !m.heads[st]) m.hires.push({ st, text: `${HEADS[id][st]}: ${HIRE_LINE[st]}` });
+    m.heads = heads;
+    if ((!m.hire || clock - m.hire.at >= 2.5) && m.hires.length) m.hire = { ...m.hires.shift()!, at: clock };
   });
   const m = mem.current;
   // job timers move between the engine's 200 ms ticks: interpolate from the tick's wall time, never past 0
   const since = paused ? 0 : Math.max(0, (Date.now() - useGame.getState().tickAt) / 1000);
   const leftNow = (left: number) => Math.max(0, left - since);
   const auto = Game.automationOf(shop);
-  const neckStage = Game.bottleneck(shop, game.vehicle);
   const next = shop.managed ? null : Game.nextStation(shop);
-  const hinting = clock - m.hintAt < 1.2;
-  const pulse = (Math.sin(clock * Math.PI * 2 * 1.2) + 1) / 2;
-  const rushJump = clock - m.rushAt < 0.2 ? 1 - (clock - m.rushAt) / 0.2 : 0;
+  // the stations tied for the bottleneck only change with upgrades: memo on the scene key (G80, M44)
+  const key = sceneKey(game, id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers every level the tie depends on
+  const neck = useMemo(() => new Set(Game.tiedStages(shop, game.vehicle).map((st) => STAGE_STATION[st])), [key]);
+  const badges = badgeModels({ line, auto, managed: shop.managed, neck, next, tapBatch: Game.tapBatch(shop), since });
+  // the "tap me" pulse and the miss nudge step on the 7.5 Hz pose clock, 6 levels, so the badge memo holds (M43)
+  const poseT = Math.floor(clock * 7.5) / 7.5;
+  const pulse = Math.round(((Math.sin(poseT * Math.PI * 2 * 1.2) + 1) / 2) * 5) / 5;
+  const nudge = clock - m.hintAt < 0.45 ? Math.round(Math.sin(((clock - m.hintAt) / 0.45) * Math.PI) * 5) / 5 : 0;
+  const rushJump = clock - m.rushAt < 0.2 ? Math.round((1 - (clock - m.rushAt) / 0.2) * 4) / 4 : 0;
   const rects = useMemo(() => stationRects(lay, MIN_TAP_PT / fit.s), [lay, fit.s]);
   const bxs = useMemo(() => badgeXs(lay), [lay]);
   const by = badgeRowY();
-  const waiting: Record<Station, number> = { prep: Game.tapBatch(shop), oven: line.prepped, counter: line.baked };
-  const geo: DepartureGeometry = {
-    driverPath: [P(lay.spots[0].x, lay.spots[0].y, 62), P(lay.door.lanes.driverX, DOOR_IN_Y, 62), P(lay.door.lanes.driverPauseX, DOOR_OUT_Y, 62)],
-    register: P(lay.staff[0] + 12, 70, 78),
-    hud: [SCENE_W / 2, -fit.oy / fit.s + 6],
-  };
+  const geoRegister = useMemo(() => P(lay.staff[0] + 12, 70, 78), [lay]);
   const flicker = running ? Math.sin(clock * 9) * 1.4 : 0;
   const rushK = (clock - m.rushAt) / 0.6;
-  const rushC = P((lay.ovenCols[0].x0 + lay.ovenCols[lay.ovenCols.length - 1].x1) / 2, D - 6, 50);
-  // the sky band above the shop carries the feedback pills
-  const [, fasciaBottom] = P(0, 0, FRONT_TOP - 20);
-  const qy = fasciaBottom + 26;
+  const rushC = useMemo(() => P((lay.ovenCols[0].x0 + lay.ovenCols[lay.ovenCols.length - 1].x1) / 2, D - 6, 50), [lay]);
+  const refusal = m.refusal && clock - m.refusal.at < 1.6 ? m.refusal : null;
+  const flash = next && clock - m.hintAt < 0.3 ? rects[next] : null;
 
   return (
     <View ref={viewRef} onLayout={measureOrigin} style={{ width, height, overflow: 'hidden' }}>
       <Pressable
         testID="shop"
         style={{ position: 'absolute', left: 0, top: 0, width, height }}
+        // re-measure on every touch: an ancestor can move without this view's own layout changing (C76)
+        onPressIn={measureOrigin}
         onPress={(e) => {
           // page coordinates minus the view's measured origin: `locationX` is relative to whichever SVG child was
           // hit on web, so it can't place a tap on a station (every tap used to land on the oven)
           const ne = e?.nativeEvent;
-          const fin = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-          const lx = fin(ne?.pageX) ? ne.pageX - origin.current.x : ne?.locationX;
-          const ly = fin(ne?.pageY) ? ne.pageY - origin.current.y : ne?.locationY;
-          const x = fin(lx) ? (lx - fit.ox) / fit.s : SCENE_W / 2;
-          const y = fin(ly) ? (ly - fit.oy) / fit.s : 300;
+          const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+          const lx = isNum(ne?.pageX) ? ne.pageX - origin.current.x : ne?.locationX;
+          const ly = isNum(ne?.pageY) ? ne.pageY - origin.current.y : ne?.locationY;
+          const x = isNum(lx) ? (lx - fit.ox) / fit.s : SCENE_W / 2;
+          const y = isNum(ly) ? (ly - fit.oy) / fit.s : 300;
           // a GM shop: any tap is a rush (every running job finishes sooner); otherwise the station under the finger
           if (shop.managed) {
             m.rushAt = clock;
@@ -196,11 +236,16 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             onTap();
             return;
           }
-          const st = stationAt(rects, x, y);
+          // a badge counts as its station (G79); a miss nudges the hand and outlines the station to tap
+          const st = badgeAt(bxs, by, x, y, MIN_TAP_PT / fit.s) ?? stationAt(rects, x, y);
           if (st) {
-            emitAudio({ type: 'tap' });
-            onStation(st);
-          } else m.hintAt = clock; // a miss points the hand at the station to tap
+            const reason = onStation(st);
+            emitAudio({ type: reason ? 'full' : 'tap' });
+            m.refusal = reason ? { st, at: clock, text: reason } : null;
+          } else {
+            m.hintAt = clock;
+            emitAudio({ type: 'full' });
+          }
         }}>
         <Svg width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
           <SceneDefs />
@@ -212,7 +257,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           <Street />
           <RoomShell id={id} lay={lay} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
           <OvenHood lay={lay} grade={shop.grade} mural={shop.decor.walls >= 3} />
-          {/* rush tap: the oven bank pulses and throws a burst of coins */}
+          {/* rush tap: the oven bank pulses (the jobs finish sooner; cash still waits for the pies to leave) */}
           {(() => {
             const pulse = rushK >= 0 && rushK < 0.25 ? 1 + 0.05 * Math.sin((rushK / 0.25) * Math.PI) : 1;
             return (
@@ -235,26 +280,30 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             );
           })}
           {/* station badges: ring timer, pies in the job, a hand on the station to tap, the head who runs it */}
-          {STATIONS_IN_ORDER.map((st) => {
-            const job = line[st];
-            const ready = !auto[st] && (next === st || (hinting && next === st));
-            return (
-              <StationBadge
-                key={st}
-                x={bxs[st]}
-                y={by}
-                step={job ? progressStep(1 - leftNow(job.left) / job.total) : 0}
-                count={pizzas(job ? job.n : waiting[st])}
-                tone={STATION_STAGE[st].includes(neckStage) ? 'tomato' : 'basil'}
-                ready={ready}
-                pulse={ready ? pulse : 0}
-                head={auto[st] ? (shop.managed && id === 'downtown' ? 'N' : HEADS[id][st][0]) : ''}
-                jump={job ? rushJump : 0}
-              />
-            );
-          })}
-          {m.hire && clock - m.hire.at < 2.5 && <HireBubble x={bxs[m.hire.st]} y={by + 34} text={m.hire.text} />}
-          <DeparturePops deps={line.departures} left={(d) => leftNow(d.left)} geo={geo} />
+          {/* a miss outlines the station to tap for a moment (G79) */}
+          {flash && <Rect x={flash.x0} y={flash.y0} width={flash.x1 - flash.x0} height={flash.y1 - flash.y0} rx={8} fill="none" stroke="#fff" strokeWidth={2.5} opacity={0.9} />}
+          {/* the ticket rail the badges hang on (D346) */}
+          <BadgeRail x0={bxs.prep - BADGE_R - 8} x1={bxs.counter + BADGE_R + 40} y={by} />
+          {badges.map((b) => (
+            <StationBadge
+              key={b.st}
+              x={bxs[b.st]}
+              y={by}
+              step={b.step}
+              count={b.count}
+              tone={b.tone}
+              ready={b.ready}
+              pulse={b.ready ? pulse : 0}
+              nudge={b.ready ? nudge : 0}
+              face={b.runner === 'gm' ? 'gm' : b.runner === 'head' ? b.st : null}
+              faceName={b.runner === 'gm' ? `${id}-gm` : HEADS[id][b.st]}
+              jump={line[b.st] ? rushJump : 0}
+            />
+          ))}
+          {/* a refused tap says why, just under the station's badge (D348) */}
+          {refusal && <HireBubble x={bxs[refusal.st]} y={by + 40} text={refusal.text} tone="refusal" />}
+          {!refusal && m.hire && clock - m.hire.at < 2.5 && <HireBubble x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} />}
+          <DeparturePops deps={line.departures} left={(d) => leftNow(d.left)} anchor={(d) => carriers.get(d.id) ?? null} register={geoRegister} />
         </Svg>
       </Pressable>
     </View>

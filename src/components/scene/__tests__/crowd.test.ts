@@ -2,6 +2,7 @@
 // Crowd budgets: simulate the cast frame by frame for busy shops and check, in screen space, that moving
 // people don't sit on top of the kitchen crew, each other, or the WELCOME mat for more than a moment.
 import { buildCast, type CastMember } from '../cast';
+import { emptyCrew, stepCrew, type CrewState } from '../crew';
 import { BACK_ROW_Y, layout } from '../layout';
 import { hash32 } from '../looks';
 import { seatPalette } from '../palette';
@@ -47,13 +48,31 @@ function* busyShops() {
 type Shop = ReturnType<typeof busyShops> extends Generator<infer T> ? T : never;
 /** Simulated once per (shop, pace) and shared by every test below (C21: the old suite re-simulated 40 s per test). */
 const frameCache = new Map<string, CastMember[][]>();
-function frames(shop: Shop, pace: number) {
-  const key = `${shop.name}|${pace}`;
+/**
+ * v4.9: people follow departures. `pace` sets the departure cadence (one every 1.6 / pace s, 40% walk-ins);
+ * `burst` sends them in clumps of 6 every 6 s instead (merged departures at high rates).
+ */
+function frames(shop: Shop, pace: number, burst = false) {
+  const key = `${shop.name}|${pace}|${burst}`;
   let out = frameCache.get(key);
   if (!out) {
     out = [];
+    let crew: CrewState = emptyCrew();
+    let id = 0;
+    let deps: { id: number; kind: 'driver' | 'walkin' }[] = [];
+    let nextAt = 0.3;
     for (let f = 0; f < SECONDS * FPS; f++) {
-      const { cast } = buildCast({ lay: shop.lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace, clock: f / FPS, shopSeed: shop.shopSeed, nIdx: 1, pal: shop.pal });
+      const clock = f / FPS;
+      if (clock >= nextAt) {
+        const n = burst ? 6 : 1;
+        for (let j = 0; j < n; j++) {
+          id++;
+          deps = [...deps, { id, kind: (id % 5 < 2 ? 'walkin' : 'driver') as 'walkin' | 'driver' }].slice(-6);
+        }
+        nextAt += burst ? 6 : 1.6 / pace;
+      }
+      crew = stepCrew(crew, { lay: shop.lay, drivers: 12, guests: 1, departures: deps }, clock, SCENE_W);
+      const { cast } = buildCast({ lay: shop.lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace, clock, shopSeed: shop.shopSeed, nIdx: 1, pal: shop.pal, crew });
       out.push(cast);
     }
     frameCache.set(key, out);
@@ -123,6 +142,24 @@ describe('crowd budgets', () => {
       }
       expect([shop.name, bad / fs.length < 0.15]).toEqual([shop.name, true]);
     }
+  });
+});
+
+describe('the counter (D336)', () => {
+  // D336: a walk-in drawn over the pickup driver at the register (one figure, two heads). Event-driven people keep
+  // one driver per pickup spot and route walk-ins in front of the pickup line, so at the counter nobody covers anyone.
+  test('no walk-in and driver overlap by more than 15% near the counter, in any frame (steady, sparse and burst)', () => {
+    const bad: string[] = [];
+    for (const shop of busyShops())
+      for (const [pace, burst] of [[1, false], [2.6, false], [0.3, false], [1, true]] as const)
+        frames(shop, pace, burst).forEach((cast, f) => {
+          const near = (c: CastMember) => c.props.y > 30 && c.props.y < 70;
+          const drivers = cast.filter((c) => c.role === 'driver' && near(c));
+          const walkins = cast.filter((c) => c.role === 'walkin' && c.props.kind !== 'sit' && near(c));
+          for (const d of drivers) for (const w of walkins) if (overlap(box(d), box(w)) > 0.15) bad.push(`${shop.name} pace${pace}${burst ? " burst" : ""} f${f} ${w.key}${w.props.step ? "w" : "s"}/${d.key}${d.props.step ? "w" : "s"}`);
+          for (const a of drivers) for (const b of drivers) if (a !== b && !a.props.step && !b.props.step && overlap(box(a), box(b)) > 0.15) bad.push(`${shop.name} f${f} ${a.key}/${b.key} stacked`);
+        });
+    expect(bad.slice(0, 5)).toEqual([]);
   });
 });
 

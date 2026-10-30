@@ -96,3 +96,30 @@ Round 14's C63/C64/C65/M33/T46 verified fixed. Notes and their v4.8 status:
 | `game.tapStation` refusal names the head ("Finn has it covered") | `game.ts` | — |
 
 `tsc` clean; 186 tests pass; screenshots `v4.8`: `errors: []`.
+
+## Round 16 (v4.8): ✅ APPROVED (3 [medium]). Next IDs: **K1, C78, A20, M46, T56**.
+| ID | Sev | Note | v4.9 |
+| --- | --- | --- | --- |
+| C72 | medium | Walk-ins never pop | `popModels` (pure): walk-ins pop for their whole hand-over; T52 |
+| C73 | low | Miss does nothing | nudge + station outline, quantised |
+| C74 | low | Dead imports/code/comments, `fin` shadow | removed; `isNum` |
+| C75 | low | Stale cash sound after a pause | `wasPaused`; payout detected by the oldest id passing the last known one (no per-frame id array) |
+| C76 | low | Origin measured only on layout | re-measured `onPressIn` |
+| C77 | low | One bubble for several hires; unclamped | queued; clamped |
+| A19 | medium | Badge view-model inline | `badgeModels` in `stations.ts`; T53 |
+| A17 | medium | Drawer card model inline | open |
+| M43 | medium | Badge memo fails on GM shops | ring steps ≈ 8/s (`ringSteps`), pulse/nudge/jump quantised on the 7.5 Hz pose clock |
+| M44 | medium | Per-frame allocations | `geo` gone, `rushC`/register/tie set memoised, frozen `AUTOMATIC`, no id arrays, coins off the SVG (native-driven overlay) |
+| M45 | low | Pop allocations | `popModels` one pass, no reduce objects |
+| T52–T55 | — | | added (T54 now tests a real overlap + real layouts) |
+
+## v4.9 — build (step 3: event-driven people). Range: 5f4f51a..HEAD
+| Change | Where | Test |
+| --- | --- | --- |
+| `crew.ts`: `stepCrew` folds departures (idempotent, bounded: ≤ spots drivers, 1 walk-in), `driverPoseAt`/`guestPoseAt`, `alongTimed` constant speed | `scene/crew.ts` | `crew.test.ts` |
+| `buildCast` takes `crew`; carriers tagged with their departure for pops | `cast.ts` | `crowd.test.ts` (+ D336 budget) |
+| Storefront folds the crew in render (idempotent ref write, noted) and launches coins via `pulse-bus` `emitCoin` → `CoinLayer` (Animated, native driver, ≤ 3) | `storefront.tsx`, `coin-layer.tsx` | — |
+| Store `tapStation` returns the refusal reason (no global toast) | `game-store.ts` | — |
+| `LINE.cycleSeconds` 1.6 → 2.4 | `pipeline.ts` | T48 still ±1% |
+
+`tsc` clean; 200 tests; screenshots `v4.9`: `errors: []`.
