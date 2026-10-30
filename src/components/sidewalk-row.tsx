@@ -8,16 +8,9 @@ import * as G from '../engine/game';
 import { C, F } from '../theme';
 import { BuyButton } from './game-ui';
 import { DriverIcon, FlameIcon, PrepIcon, RegisterIcon } from './icons';
-import type { StationKey } from './storefront';
-import { IDLE_STACK_GAP, SIDEWALK_ROW, STATION_CARD } from './tap-targets';
+import { stationViews, type StationKey, type StationView } from './sidewalk-model';
+import { COMPACT_FONT_MAX_SCALE, IDLE_STACK_GAP, SIDEWALK_ROW, STATION_CARD } from './tap-targets';
 
-const STATION_KEYS: StationKey[] = ['prep', 'ovens', 'counter', 'drivers'];
-const STATION: Record<StationKey, { what: G.Upgrade; name: string; stage: G.Stage }> = {
-  prep: { what: 'prep', name: 'PREP', stage: 'prep' },
-  ovens: { what: 'ovens', name: 'OVENS', stage: 'ovens' },
-  counter: { what: 'counter', name: 'COUNTER', stage: 'counter' },
-  drivers: { what: 'drivers', name: 'DRIVERS', stage: 'customers' },
-};
 // static icon elements: built once, not per render (M24)
 const ICON: Record<StationKey, React.ReactNode> = {
   prep: <PrepIcon size={13} />,
@@ -25,57 +18,52 @@ const ICON: Record<StationKey, React.ReactNode> = {
   counter: <RegisterIcon size={13} />,
   drivers: <DriverIcon size={13} />,
 };
-const levelOf = (k: StationKey, shop: G.Shop) => (k === 'drivers' ? `×${shop.drivers}` : `${shop[k]}`);
 
-export function SidewalkRow({ game, id, idleShop, bottom, tied, onBuy, onOpen }: { game: G.GameState; id: NeighborhoodId; idleShop: boolean; bottom: number; tied: (stage: G.Stage) => boolean; onBuy: (what: G.Upgrade) => boolean; onOpen: () => void }) {
-  const shop = game.shops[id];
-  const station = (k: StationKey, framed: boolean) => {
-    const { what, name, stage } = STATION[k];
-    const cost = G.upgradeCostOf(game, id, what);
-    const lock = G.upgradeLock(game, id, what);
-    const gain = G.upgradeGain(game, id, what) ?? 0;
-    const affordable = !lock && cost !== null && game.cash >= cost;
-    const useful = gain > 1e-9;
-    // the bottleneck: solid red once you can buy it, a soft dashed outline while you save for it (D316)
-    const neck = tied(stage) && useful;
+export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen }: { game: G.GameState; id: NeighborhoodId; idleShop: boolean; bottom: number; onBuy: (what: G.Upgrade) => boolean; onOpen: () => void }) {
+  const station = (v: StationView, framed: boolean) => {
     const button = (
-      <BuyButton compact testID={framed ? `walk-${k}` : `mini-${k}`} icon={ICON[k]} sub={name} tone={useful || lock ? 'normal' : 'nogain'} label={lock ? 'MAX' : money(cost ?? 0)} enabled={affordable} onPress={() => onBuy(what)} />
+      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={ICON[v.key]} sub={v.name} tone={v.tone} label={v.label} enabled={v.affordable} onPress={() => onBuy(v.what)} />
     );
     const badge = (
-      <View style={[styles.level, neck && affordable && styles.levelHot]} pointerEvents="none">
-        <Text style={styles.levelText} numberOfLines={1}>
-          {levelOf(k, shop)}
+      <View style={[styles.level, v.frame === 'hot' && styles.levelHot]} pointerEvents="none">
+        <Text style={styles.levelText} numberOfLines={1} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+          {v.level}
         </Text>
       </View>
     );
     return framed ? (
-      <View key={k} style={[styles.card, neck && (affordable ? styles.cardHot : styles.cardWaiting)]}>
+      <View key={v.key} style={[styles.card, v.frame === 'hot' && styles.cardHot, v.frame === 'waiting' && styles.cardWaiting]}>
         {button}
         {badge}
       </View>
     ) : (
       // an unmanaged shop has no room for frames: the same button and badge, unframed (D315)
-      <View key={k} style={styles.chip}>
+      <View key={v.key} style={styles.chip}>
         {button}
         {badge}
       </View>
     );
   };
+  const views = stationViews(game, id);
   const managerCost = G.upgradeCostOf(game, id, 'manager');
   return (
     <View style={[styles.row, { bottom }]} pointerEvents="box-none">
       {idleShop ? (
         <View style={styles.idleStack}>
-          <View style={styles.chipRow}>{STATION_KEYS.map((k) => station(k, false))}</View>
+          <View style={styles.chipRow}>{views.map((v) => station(v, false))}</View>
           {/* what you get on top, the price below (D310, D311) */}
           <BuyButton compact testID="walk-manager" sub={`HIRE A MANAGER · +${money(G.shopEarnings(game, id))}/s`} label={money(managerCost ?? 0)} enabled={managerCost !== null && game.cash >= managerCost} onPress={() => onBuy('manager')} />
         </View>
       ) : (
-        STATION_KEYS.map((k) => station(k, true))
+        views.map((v) => station(v, true))
       )}
       <Pressable testID="open-upgrades" onPress={onOpen} style={[styles.all, idleShop && styles.allIdle]}>
-        <Text style={styles.allIcon}>☰</Text>
-        <Text style={styles.allText}>All</Text>
+        <Text style={styles.allIcon} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+          ☰
+        </Text>
+        <Text style={styles.allText} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+          All
+        </Text>
       </Pressable>
     </View>
   );

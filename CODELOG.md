@@ -94,3 +94,16 @@ The round-10 (v3.8, CHANGES REQUESTED) and round-11 (v3.9, APPROVED) reviews are
 | M25 | Compact text styles in the StyleSheet. |
 | UI | `BuyButton` tone `nogain` (a separate `NoGainButton`, chosen after all hooks run) and an optional `icon`; `ChalkSign` takes a scale. |
 | Not done | C54, T37, T38 and the carried lows. 125 tests pass. |
+
+## v4.1 — build (round-12 review of v4.0: APPROVED; its items, plus the critic's round 41)
+
+| Item | Change |
+| --- | --- |
+| C56 | `nogain` is a style variant inside `BuyButton`'s single tree (no separate component), so a station flipping to it right after a purchase keeps the burst, the shake and the pressed feedback. |
+| A16 + M26 + T39 | `components/sidewalk-model.ts`: `stationModels` (cost, lock, label, tone, bottleneck) cached on a levels key, `stationViews` adds `affordable` and the frame; `SidewalkRow` renders the views and no longer takes a `tied` closure. Tests: dashed vs solid bottleneck, nogain vs locked MAX, the cache reused across cash changes. |
+| C57 | Level badge and All text cap Larger Text. |
+| C58 | Dead imports, `managerCost` and `shadow` removed from `index.tsx`. |
+| C59 | One doc block on `BuyButton`. |
+| T40, T41 | Station locks keep "Lv" and the number together; `offlinePopupSeconds` pinned at 60. |
+| Layout | `layout()` centres an incomplete top row of stacked oven decks (D321); scene and crowd tests still pass. |
+| Not done | C54, T37, T38, M27 and the carried lows. 130 tests pass. |

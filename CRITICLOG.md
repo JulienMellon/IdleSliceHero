@@ -69,3 +69,14 @@ v3.7 (story pacing, neighbourhood perks, the Pier 9 bid) loads clean and the cri
 | D316 | A bottleneck you can't afford yet has a soft dashed #F2B8B0 outline and a dark badge; it turns solid red when affordable (03, 03b). |
 | D317 | "Expand to hire past 30" for Drivers; "Lv" and its number never split across lines. |
 | D302, D303, D306 | Carried. |
+
+## v4.1 — build (round-41 notes from the v4.0 review)
+
+| Note | Change |
+| --- | --- |
+| D319 | The drawer's no-gain buttons use the same flat muted look as the sidewalk ("no gain now" over a struck price); green appears only on buys that add income (05a, 15, 16, 23). |
+| D320 | Sidewalk buttons keep the station name; a no-gain price is struck through instead (03, 04, 05, 21). |
+| D321 | Waterfront: the third oven sits centred over both columns (any incomplete top row of stacked decks is centred); the porthole is 6 lower and clears the menu; the fishing net hangs under the porthole, clear of the menu and the counter staff (21). |
+| D324 | Station cards drop "+$0/s now" when the button already says "no gain now". |
+| D302, D303, D306 | Carried. |
+| Screenshots | One run of shot 22 (perk card) timed out waiting for the cut-scene; a re-run passed. Watch for flakiness. |

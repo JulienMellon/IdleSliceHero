@@ -127,7 +127,7 @@ export function StationCard(props: {
         </View>
       </View>
       <View style={props.wide ? { width: 96 } : undefined}>
-        <BuyButton compact tone={props.muted ? 'neutral' : props.useless ? 'soft' : 'normal'} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : money(props.cost)} sub={props.useless && props.canBuy && !props.muted ? 'no gain now' : undefined} enabled={props.canBuy} onPress={props.onBuy} />
+        <BuyButton compact tone={props.muted ? 'neutral' : props.useless ? 'nogain' : 'normal'} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : money(props.cost)} sub={props.useless && !props.muted ? 'no gain now' : undefined} enabled={props.canBuy} onPress={props.onBuy} />
       </View>
     </View>
   );

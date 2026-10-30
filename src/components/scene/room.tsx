@@ -407,18 +407,19 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
         </G>
       ) : id === 'waterfront' ? (
         <G>
-          <Circle cx={wx + 20} cy={wy + 18} r={19} fill="#C9A04A" stroke={INK} strokeWidth={1.2} />
-          <Circle cx={wx + 20} cy={wy + 18} r={14} fill="#7CC8EE" stroke={INK} strokeWidth={1} />
-          <Path d={`M${wx + 6} ${wy + 22} q7 -3 14 0 t14 0`} stroke="#D6F0FB" strokeWidth={1.6} fill="none" />
-          <Path d={`M${wx + 12} ${wy + 9} A10 10 0 0 1 ${wx + 24} ${wy + 6}`} stroke="#fff" strokeWidth={1.6} opacity={0.6} fill="none" strokeLinecap="round" />
-          {[0, 90, 180, 270].map((a) => <Circle key={a} cx={wx + 20 + Math.cos((a * Math.PI) / 180) * 16.5} cy={wy + 18 + Math.sin((a * Math.PI) / 180) * 16.5} r={1.2} fill="#8C6A20" />)}
+          <Circle cx={wx + 20} cy={wy + 24} r={19} fill="#C9A04A" stroke={INK} strokeWidth={1.2} />
+          <Circle cx={wx + 20} cy={wy + 24} r={14} fill="#7CC8EE" stroke={INK} strokeWidth={1} />
+          <Path d={`M${wx + 6} ${wy + 28} q7 -3 14 0 t14 0`} stroke="#D6F0FB" strokeWidth={1.6} fill="none" />
+          <Path d={`M${wx + 12} ${wy + 15} A10 10 0 0 1 ${wx + 24} ${wy + 12}`} stroke="#fff" strokeWidth={1.6} opacity={0.6} fill="none" strokeLinecap="round" />
+          {[0, 90, 180, 270].map((a) => <Circle key={a} cx={wx + 20 + Math.cos((a * Math.PI) / 180) * 16.5} cy={wy + 24 + Math.sin((a * Math.PI) / 180) * 16.5} r={1.2} fill="#8C6A20" />)}
           {/* fishing net gathered on a peg: fans to a sagging hem, uneven mesh, two cork floats */}
           {(() => {
-            const ax = wx - 12;
-            const ay = wy - 4;
-            const hl = wx - 26;
-            const hr = wx - 1;
-            const hy = wy + 38;
+            // under the porthole, clear of the menu board (D321: it used to cover the menu's last line)
+            const ax = wx + 20;
+            const ay = wy + 46;
+            const hl = wx + 9;
+            const hr = wx + 31;
+            const hy = wy + 66;
             const sag = 6;
             const hem = (f: number) => [hl + (hr - hl) * f, hy + sag * 4 * f * (1 - f)] as const;
             const strands = [0, 0.18, 0.37, 0.55, 0.78, 1];

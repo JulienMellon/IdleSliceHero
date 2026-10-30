@@ -97,11 +97,16 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   const ow = Math.min(60, (zone - (cols - 1) * 6) / cols);
   const ovenCols = Array.from({ length: cols }, (_, c) => ({ x0: zone0 + c * (ow + 6), x1: zone0 + c * (ow + 6) + ow }));
   const ovens: Layout['ovens'] = [];
+  // an incomplete top row of stacked decks is centred over the columns, not left-aligned (D321: 3 ovens looked lopsided)
+  const topShift = decks === 2 ? ((cols - (ovenCount - cols)) * (ow + 6)) / 2 : 0;
   for (let i = 0; i < ovenCount; i++) {
     const c = i % cols;
     const deck = Math.floor(i / cols);
     if (decks === 1) ovens.push({ ...ovenCols[c], z: 0, h: 84, chimney: true });
-    else ovens.push({ ...ovenCols[c], z: deck * 64, h: 60, chimney: deck === 1 || i + cols >= ovenCount });
+    else {
+      const dx = deck === 1 ? topShift : 0;
+      ovens.push({ x0: ovenCols[c].x0 + dx, x1: ovenCols[c].x1 + dx, z: deck * 64, h: 60, chimney: deck === 1 || i + cols >= ovenCount });
+    }
   }
   // A 46-wide entrance with two lanes, so walk-ins and drivers never walk through each other.
   const d0 = R - 58;

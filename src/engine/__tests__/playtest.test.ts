@@ -1,5 +1,5 @@
 import { HOME_SCENES } from '../../content/scenes/home';
-import { NONNA_TAKEOVER } from '../../content/tuning';
+import { NONNA_TAKEOVER, TUNING } from '../../content/tuning';
 import { goalAmount, money, rate } from '../format';
 import * as G from '../game';
 
@@ -120,5 +120,18 @@ describe('bundleHint cache (T25)', () => {
     const b = G.bundleHint({ ...s, cash: 1e9, shops: { ...s.shops, downtown: { ...s.shops.downtown, sold: 999 } } }, 'downtown')!;
     expect(b.cost).toBe(a.cost);
     expect([a.affordable, b.affordable]).toEqual([false, true]);
+  });
+});
+
+describe('lock copy and thresholds (T40, T41)', () => {
+  it('station locks keep "Lv" and its number together', () => {
+    const s0 = G.newGame(0);
+    for (const what of ['prep', 'ovens', 'counter', 'tables'] as const) {
+      const s = { ...s0, shops: { ...s0.shops, downtown: { ...s0.shops.downtown, [what]: 25 } } };
+      expect(G.upgradeLock(s, 'downtown', what)).toBe('Expand to go past Lv 25');
+    }
+  });
+  it('the offline popup threshold is its own setting, pinned at 60 s', () => {
+    expect(TUNING.offlinePopupSeconds).toBe(60);
   });
 });

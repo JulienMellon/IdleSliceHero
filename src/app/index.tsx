@@ -3,13 +3,13 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BuyButton, type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
+import { type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
 import { SidewalkRow } from '@/components/sidewalk-row';
 import { CLOSE_SLOP, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, ManagerIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait';
 import { emitPayout } from '@/components/pulse-bus';
-import { CURB_Y, SCENE_H, sceneFit, type StationKey, Storefront } from '@/components/storefront';
+import { CURB_Y, SCENE_H, sceneFit, Storefront } from '@/components/storefront';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
 import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, TUNING, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
@@ -148,8 +148,8 @@ export default function GameScreen() {
       const others = (Object.keys(rates) as G.Stage[]).filter((x) => x !== st && tied(x)).map((x) => STAGE_NAME[x]);
       return `${rateText} · tied with ${others.join(' & ')}`;
     }
-    // the shared reason ("waiting on …") is shown once in the drawer header
-    return `${rateText} · +$0/s\u00A0now`;
+    // the shared reason ("waiting on …") is shown once in the drawer header; the button already says "no gain now" (D324)
+    return rateText;
   };
   const gradeNext = OVEN_GRADES[shop.grade + 1];
   const fpNext = FOOTPRINTS[shop.footprint + 1];
@@ -165,7 +165,6 @@ export default function GameScreen() {
     haptic();
     setDrawerOpen(true);
   };
-  const managerCost = G.upgradeCostOf(game, id, 'manager');
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -184,7 +183,7 @@ export default function GameScreen() {
           />
         )}
         {/* upgrade row standing on the sidewalk */}
-        <SidewalkRow game={game} id={id} idleShop={idleShop} bottom={rowBottom} tied={tied} onBuy={buy} onOpen={openDrawer} />
+        <SidewalkRow game={game} id={id} idleShop={idleShop} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} />
         {drawerOpen && (
           <View style={StyleSheet.absoluteFill}>
             <Pressable testID="close-upgrades-dim" style={styles.dim} onPress={() => setDrawerOpen(false)} />
@@ -277,7 +276,6 @@ export default function GameScreen() {
   );
 }
 
-const shadow = { boxShadow: '0 4px 0 rgba(59,31,20,0.25)' } as object;
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
   sceneArea: { flex: 1, overflow: 'hidden', backgroundColor: '#BFE0F7' },
