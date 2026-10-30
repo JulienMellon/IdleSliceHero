@@ -79,3 +79,18 @@ v3.7 adds save v3 (`playSeconds`, `sceneAt`, `Shop.perk`), the pure pacing gate 
 | M22, M23 | `CLOSE_SLOP` is a module constant; compact button styles are in the StyleSheet. |
 | A14 (part) | Row geometry lives in `SIDEWALK_ROW` (card inset/height, raise per mode), tested against the button height. |
 | Process | New advisory agents `storycritic` and `audiocritic` (`.claude/agents/`), with `STORYLOG.md` and `AUDIOLOG.md`. 125 tests pass. |
+
+## v4.0 — build (round-11 review of v3.9: APPROVED; its items, plus the critic's round 40)
+
+The round-10 (v3.8, CHANGES REQUESTED) and round-11 (v3.9, APPROVED) reviews are archived with the next log rotation, when this loop passes (C55).
+
+| Item | Change |
+| --- | --- |
+| C50 | Text in the fixed 44 pt buttons caps iOS Larger Text at ×1.15 (`COMPACT_FONT_MAX_SCALE`). |
+| C51 + T36 | `STATION_CARD`, `DRAWER_HEAD`, `IDLE_STACK_GAP`, `BUTTON_H` in `tap-targets.ts`; the StyleSheets are built from them and `SIDEWALK_ROW` / Close's room are derived, so the tests describe the real layout. |
+| C52 | The drawer state is a boolean; the dead `focus` prop and `cardFocus` style are gone. |
+| C53 | `TUNING.offlinePopupSeconds`. |
+| A15 | `components/sidewalk-row.tsx` (`SidewalkRow`) owns the row: static station table and icons at module scope (M24). |
+| M25 | Compact text styles in the StyleSheet. |
+| UI | `BuyButton` tone `nogain` (a separate `NoGainButton`, chosen after all hooks run) and an optional `icon`; `ChalkSign` takes a scale. |
+| Not done | C54, T37, T38 and the carried lows. 125 tests pass. |

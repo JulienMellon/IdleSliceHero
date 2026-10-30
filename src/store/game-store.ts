@@ -3,7 +3,7 @@ import { create } from 'zustand';
 
 import { pickScene, resumeSceneEnd } from '../engine/cutscene-input';
 import { HOME_SCENES } from '../content/scenes/home';
-import { PIER9_BID, STORY_PACING, type DecorKind } from '../content/tuning';
+import { PIER9_BID, TUNING, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
@@ -105,7 +105,7 @@ export const useGame = create<Store>((set, get) => {
           const r = G.applyOffline(G.migrate(JSON.parse(raw), now), now);
           game = r.state;
           awaySeconds = r.awaySeconds;
-          if (r.earned >= 1 && r.seconds >= STORY_PACING.returnSeconds) {
+          if (r.earned >= 1 && r.seconds >= TUNING.offlinePopupSeconds) {
             // Hold the cash back until the player taps Collect.
             offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed })) };
             game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };

@@ -724,10 +724,10 @@ export const DoorLeaf = memo(function DoorLeaf({ lay }: { lay: Layout }) {
 });
 
 /** Sidewalk A-frame chalkboard (replaces the doormat walkers kept covering). */
-export const ChalkSign = memo(function ChalkSign({ x, y }: { x: number; y: number }) {
+export const ChalkSign = memo(function ChalkSign({ x, y, k = 1 }: { x: number; y: number; k?: number }) {
   const [px, py] = P(x, y);
   return (
-    <G transform={`translate(${px} ${py})`}>
+    <G transform={`translate(${px} ${py})${k !== 1 ? ` scale(${k})` : ''}`}>
       <Ellipse cx={0} cy={0} rx={15} ry={3.4} fill="rgba(59,31,20,0.25)" />
       <Path d="M-11 0 L-7 -36 L7 -36 L11 0" fill="none" stroke="#8E5A3C" strokeWidth={3} strokeLinejoin="round" />
       <Path d="M-10 -1 L-6.6 -35 L6.6 -35 L10 -1 Z" fill="#8E5A3C" stroke={INK} strokeWidth={1.1} />

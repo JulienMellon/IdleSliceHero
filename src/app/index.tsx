@@ -4,7 +4,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BuyButton, type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
-import { CLOSE_SLOP, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
+import { SidewalkRow } from '@/components/sidewalk-row';
+import { CLOSE_SLOP, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, ManagerIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait';
 import { emitPayout } from '@/components/pulse-bus';
@@ -33,8 +34,8 @@ export default function GameScreen() {
     if (g.shops[g.active].managed) emitPayout();
   }, [tapShop]);
   const [area, setArea] = useState({ w: 0, h: 0 });
-  // The full upgrade list opens over the shop on a tap (no gestures); a station tag can focus one card.
-  const [drawer, setDrawer] = useState<{ open: boolean; focus: G.Upgrade | null }>({ open: false, focus: null });
+  // The full upgrade list opens over the shop on a tap of "All" (no gestures).
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const id = game.active;
   const shop = game.shops[id];
@@ -123,7 +124,6 @@ export default function GameScreen() {
         {...props}
         detail={lock && what !== 'manager' ? lock : props.detail}
         hot={muted ? false : props.hot}
-        focus={drawer.focus === what && !!props.hot && !muted}
         muted={muted}
         useless={(G.upgradeGain(game, id, what) ?? 0) <= 1e-9 && what !== 'manager' && !(what === 'expand' && atCap)}
         cost={lock ? null : cost}
@@ -137,7 +137,7 @@ export default function GameScreen() {
   const nextTableHint = (() => {
     const now = G.tablesShown(shop);
     for (let l = shop.tables + 1; l <= shop.tables + 400; l++) {
-      if (G.tablesShown({ ...shop, tables: l }) > now) return l === shop.tables + 1 ? 'next level: +1 table' : `+1 table at Lv ${l}`;
+      if (G.tablesShown({ ...shop, tables: l }) > now) return l === shop.tables + 1 ? 'next level: +1 table' : `+1 table at Lv\u00A0${l}`;
     }
     return 'dining room full';
   })();
@@ -161,42 +161,9 @@ export default function GameScreen() {
   const fit = sceneFit(area.w || 1, area.h || 1);
   // the row's foot sits above the kerb line; see SIDEWALK_ROW for why each mode uses its height
   const rowBottom = (SCENE_H - CURB_Y) * fit.s + (idleShop ? SIDEWALK_ROW.raiseIdle : SIDEWALK_ROW.raiseManaged);
-  const STATION: Record<StationKey, { what: G.Upgrade; icon: React.ReactNode; name: string; level: string }> = {
-    prep: { what: 'prep', icon: <PrepIcon size={18} />, name: 'Prep', level: `${shop.prep}` },
-    ovens: { what: 'ovens', icon: <FlameIcon size={18} />, name: 'Ovens', level: `${shop.ovens}` },
-    counter: { what: 'counter', icon: <RegisterIcon size={18} />, name: 'Counter', level: `${shop.counter}` },
-    drivers: { what: 'drivers', icon: <DriverIcon size={18} />, name: 'Drivers', level: `×${shop.drivers}` },
-  };
-  const walkButton = (k: StationKey) => {
-    const { what, name, level } = STATION[k];
-    const cost = G.upgradeCostOf(game, id, what);
-    const lock = G.upgradeLock(game, id, what);
-    const gain = G.upgradeGain(game, id, what) ?? 0;
-    const stage: G.Stage = k === 'drivers' ? 'customers' : k;
-    const best = tied(stage) && gain > 1e-9;
-    return (
-      <View key={k} style={[styles.walkBtn, best && styles.walkBtnHot]}>
-        {/* one 44 pt button per station: its name above the price (v3.9; the separate label strip is gone, All opens the drawer) */}
-        <BuyButton
-          compact
-          testID={`walk-${k}`}
-          sub={name.toUpperCase()}
-          tone={gain > 1e-9 ? 'normal' : 'neutral'}
-          label={lock ? 'MAX' : money(cost ?? 0)}
-          enabled={!lock && cost !== null && game.cash >= cost}
-          onPress={() => buy(what)}
-        />
-        <View style={[styles.walkLevel, best && { backgroundColor: C.tomato }]} pointerEvents="none">
-          <Text style={styles.walkLevelText} numberOfLines={1}>
-            {level}
-          </Text>
-        </View>
-      </View>
-    );
-  };
-  const openDrawer = (focus: G.Upgrade | null) => {
+  const openDrawer = () => {
     haptic();
-    setDrawer({ open: true, focus });
+    setDrawerOpen(true);
   };
   const managerCost = G.upgradeCostOf(game, id, 'manager');
 
@@ -212,50 +179,22 @@ export default function GameScreen() {
             id={id}
             width={area.w}
             height={area.h}
-            paused={covered || drawer.open}
+            paused={covered || drawerOpen}
             onTap={onShopTap}
           />
         )}
         {/* upgrade row standing on the sidewalk */}
-        <View style={[styles.walkRow, { bottom: rowBottom }]} pointerEvents="box-none">
-          {idleShop ? (
-            <View style={{ flex: 4, gap: 5 }}>
-              {/* a slim station strip stays available on unmanaged shops */}
-              <View style={styles.miniRow}>
-                {(['prep', 'ovens', 'counter', 'drivers'] as StationKey[]).map((k) => {
-                  const what = STATION[k].what;
-                  const cost = G.upgradeCostOf(game, id, what);
-                  const can = cost !== null && game.cash >= cost;
-                  return (
-                    <Pressable key={k} testID={`mini-${k}`} onPress={() => buy(what)} style={[styles.miniChip, can && styles.miniChipOn]}>
-                      <Text style={[styles.miniText, can && { color: '#fff' }]} numberOfLines={1}>
-                        {`${STATION[k].name} ${money(cost ?? 0)}`}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            {/* one 44 pt button: what you get on top, the price below (D310, D311) */}
-            <BuyButton compact testID="walk-manager" sub={`HIRE A MANAGER · ${plus(G.shopEarnings(game, id))}`} label={money(managerCost ?? 0)} enabled={managerCost !== null && game.cash >= managerCost} onPress={() => buy('manager')} />
-            </View>
-          ) : (
-            (['prep', 'ovens', 'counter', 'drivers'] as StationKey[]).map(walkButton)
-          )}
-          <Pressable testID="open-upgrades" onPress={() => openDrawer(null)} style={styles.allBtn}>
-            <Text style={styles.allIcon}>☰</Text>
-            <Text style={styles.allText}>All</Text>
-          </Pressable>
-        </View>
-        {drawer.open && (
+        <SidewalkRow game={game} id={id} idleShop={idleShop} bottom={rowBottom} tied={tied} onBuy={buy} onOpen={openDrawer} />
+        {drawerOpen && (
           <View style={StyleSheet.absoluteFill}>
-            <Pressable testID="close-upgrades-dim" style={styles.dim} onPress={() => setDrawer({ open: false, focus: null })} />
+            <Pressable testID="close-upgrades-dim" style={styles.dim} onPress={() => setDrawerOpen(false)} />
             <View style={styles.drawer}>
               <View style={styles.drawerHead}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.drawerTitle}>{`Rosa’s · ${nd.name}`}</Text>
                   <Text style={styles.drawerSub} numberOfLines={1}>{`Bottleneck: ${STAGE_NAME[neck]}`}</Text>
                 </View>
-                <Pressable testID="close-upgrades" onPress={() => setDrawer({ open: false, focus: null })} style={styles.closeBtn} hitSlop={CLOSE_SLOP}>
+                <Pressable testID="close-upgrades" onPress={() => setDrawerOpen(false)} style={styles.closeBtn} hitSlop={CLOSE_SLOP}>
                   <Text style={styles.closeText}>Close ▼</Text>
                 </Pressable>
               </View>
@@ -342,23 +281,9 @@ const shadow = { boxShadow: '0 4px 0 rgba(59,31,20,0.25)' } as object;
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
   sceneArea: { flex: 1, overflow: 'hidden', backgroundColor: '#BFE0F7' },
-  walkRow: { position: 'absolute', left: 8, right: 8, flexDirection: 'row', gap: 5 },
-  walkBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 12, borderWidth: 2.5, borderColor: C.ink, padding: 3, ...shadow },
-  walkBtnHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
-  walkIcon: { fontSize: 14 },
-  walkName: { fontFamily: F.bold, fontSize: 12, color: C.ink, flexShrink: 1 },
-  miniRow: { flexDirection: 'row', gap: 4 },
-  miniChip: { flex: 1, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 9, borderWidth: 2, borderColor: C.ink, height: TAP.controls.miniChip.height, alignItems: 'center', justifyContent: 'center' },
-  miniChipOn: { backgroundColor: C.basil, borderColor: C.basilDark },
-  miniText: { fontFamily: F.bold, fontSize: 12, color: C.inkSoft },
-  walkLevel: { position: 'absolute', top: -9, right: -4, minWidth: 22, paddingHorizontal: 5, height: 17, borderRadius: 9, backgroundColor: C.ink, borderWidth: 1.5, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  walkLevelText: { fontFamily: F.bold, fontSize: 10, color: '#fff' },
-  allBtn: { width: 46, backgroundColor: C.ink, borderRadius: 12, alignItems: 'center', justifyContent: 'center', ...shadow },
-  allIcon: { color: '#fff', fontSize: 16, lineHeight: 18 },
-  allText: { color: '#fff', fontFamily: F.bold, fontSize: 12 },
   dim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.4)' },
   drawer: { position: 'absolute', left: 0, right: 0, bottom: 0, top: '30%', backgroundColor: C.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderTopWidth: 3, borderColor: C.ink },
-  drawerHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 10, paddingBottom: 4 },
+  drawerHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: DRAWER_HEAD.padX, paddingTop: DRAWER_HEAD.padTop, paddingBottom: DRAWER_HEAD.padBottom },
   drawerTitle: { fontFamily: F.bold, fontSize: 17, color: C.ink },
   drawerSub: { fontFamily: F.semi, fontSize: 12, color: C.tomatoDark },
   closeBtn: { backgroundColor: '#fff', borderWidth: 2, borderColor: C.ink, borderRadius: 12, paddingHorizontal: 12, height: TAP.controls.closeButton.height, justifyContent: 'center' },

@@ -12,6 +12,8 @@ export const TUNING = {
   /** Each footprint tier lets prep, ovens and counter level up this much further. */
   levelsPerFootprint: 25,
   offlineCapSeconds: 4 * 60 * 60,
+  /** Away at least this long shows the "While you were away" popup. */
+  offlinePopupSeconds: 60,
   saveIntervalSeconds: 30,
   /** Each level after 1 adds this fraction of a station's base speed. */
   speedPerLevel: 0.5,

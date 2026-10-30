@@ -58,3 +58,14 @@ v3.7 (story pacing, neighbourhood perks, the Pier 9 bid) loads clean and the cri
 | D312 | No chip hit margins any more. |
 | D308 | Shot 15a shows the Uptown decor header "+6%" with Genevieve's perk (14/15 now seed that perk). Shot 15 is now the All drawer (station tags are gone). |
 | D302, D303, D306 | Carried. |
+
+## v4.0 — build (round-40 notes from the v3.9 review)
+
+| Note | Change |
+| --- | --- |
+| D313 | One "no gain" look everywhere on the sidewalk: a flat #EFE6D8 face, #CFC3B2 rim and #8A7B6C text reading "NO GAIN" next to the station icon. Green now only ever means "this adds income" (03, 05, 05b). |
+| D314 | Station icons are back, 13 pt, left of the station name (05, 09, 14). |
+| D315 | An unmanaged shop's chips are the same buttons as the managed cards (icon, name over price, level badge), unframed to fit; All sits beside the manager button only (44 pt, not stretched); the A-board moves 10 right and shrinks to 85% (05b). |
+| D316 | A bottleneck you can't afford yet has a soft dashed #F2B8B0 outline and a dark badge; it turns solid red when affordable (03, 03b). |
+| D317 | "Expand to hire past 30" for Drivers; "Lv" and its number never split across lines. |
+| D302, D303, D306 | Carried. |

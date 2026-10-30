@@ -278,7 +278,7 @@ export function upgradeLock(s: GameState, id: NeighborhoodId, what: Upgrade): st
     case 'ovens':
     case 'counter':
     case 'tables':
-      return shop[what] >= cap ? (shop.footprint + 1 < FOOTPRINTS.length ? `Expand to go past Lv ${cap}` : 'Max level') : null;
+      return shop[what] >= cap ? (shop.footprint + 1 < FOOTPRINTS.length ? `Expand to go past Lv\u00A0${cap}` : 'Max level') : null;
     case 'grade':
       return shop.grade + 1 >= OVEN_GRADES.length ? 'Finest ovens in town' : null;
     case 'expand':
@@ -289,7 +289,7 @@ export function upgradeLock(s: GameState, id: NeighborhoodId, what: Upgrade): st
       return null;
     case 'drivers':
       // a save that already went past the cap (before the cap existed) quotes its own level, not the lower cap
-      return shop.drivers >= cap ? (shop.footprint + 1 < FOOTPRINTS.length ? `Expand to go past Lv ${shop.drivers}` : 'Max drivers') : null;
+      return shop.drivers >= cap ? (shop.footprint + 1 < FOOTPRINTS.length ? `Expand to hire past\u00A0${shop.drivers}` : 'Max drivers') : null;
   }
 }
 

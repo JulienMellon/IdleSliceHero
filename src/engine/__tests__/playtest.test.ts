@@ -38,7 +38,7 @@ describe('drivers cap (playtest bug 6)', () => {
   it('a save already past the cap quotes its own level, never a lower cap', () => {
     const s0 = G.newGame(0);
     const s = { ...s0, shops: { ...s0.shops, downtown: { ...s0.shops.downtown, footprint: 0, drivers: 30 } } };
-    expect(G.upgradeLock(s, 'downtown', 'drivers')).toBe('Expand to go past Lv 30');
+    expect(G.upgradeLock(s, 'downtown', 'drivers')).toBe('Expand to hire past\u00A030');
   });
   it('the bundle advisor never buys drivers past the cap', () => {
     const s0 = G.newGame(0);

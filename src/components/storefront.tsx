@@ -310,7 +310,8 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs): { y: number; el: Rea
     f.push({ y: LEDGE_Y, el: <LedgeBar key="ledge" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
   }
   if (fin.fp === 0) f.push({ y: 8, el: <FloorProp key="fprop" id={fin.id} x={lay.L + 22} y={8} /> });
-  f.push({ y: fin.idleShop ? -18 : -34, el: <ChalkSign key="sign" x={lay.sign.x} y={fin.idleShop ? -18 : -34} /> });
+  // an unmanaged shop's taller column sits higher: its board moves right, into the gap by the mat, and shrinks (D315)
+  f.push({ y: fin.idleShop ? -18 : -34, el: <ChalkSign key="sign" x={fin.idleShop ? lay.sign.x + 10 : lay.sign.x} y={fin.idleShop ? -18 : -34} k={fin.idleShop ? 0.85 : 1} /> });
   f.push({ y: 16, el: <DoorLeaf key="leaf" lay={lay} /> });
   {
     // the potted tree stays fully on screen (its pot is ~14 wide) in the widest rooms

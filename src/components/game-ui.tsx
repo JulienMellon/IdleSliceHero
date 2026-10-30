@@ -8,7 +8,7 @@ import { duration, goalAmount, money, shownValue } from '../engine/format';
 import { C, F } from '../theme';
 import { BookIcon, CoinIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
 import { emitPayout, onPayout } from './pulse-bus';
-import { TAP } from './tap-targets';
+import { BUTTON_H, COMPACT_FONT_MAX_SCALE } from './tap-targets';
 
 const native = Platform.OS !== 'web';
 
@@ -53,7 +53,31 @@ const BURST = ['star', 'coin', 'slice', 'star', 'coin', 'slice'] as const;
  * tone: 'normal' = bright green when affordable; 'soft' = affordable but adds nothing right now;
  * 'neutral' = affordable but deliberately de-emphasised (e.g. before a shop has a manager).
  */
-export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone = 'normal' }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; tone?: 'normal' | 'soft' | 'neutral' }) {
+/**
+ * `tone`: normal (green when affordable), soft, neutral (white), or `nogain` — a buy that adds nothing right now:
+ * one flat muted look in every state, so green always means "this adds income" (D313).
+ */
+/** A buy that adds nothing right now: flat, muted and still tappable (it may be bought ahead of time). */
+function NoGainButton({ label, onPress, testID, compact, icon }: { label: string; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode }) {
+  return (
+    <Pressable testID={testID} onPress={() => { const ok = onPress(); haptic(ok === false ? 'error' : 'light'); }} style={[styles.buyOuter, compact && styles.buyOuterCompact, styles.noGainOuter]}>
+      <View style={[styles.buyInner, compact && styles.buyInnerCompact, styles.noGainInner]}>
+        {/* the station icon stays; the name gives way to "no gain" */}
+        <View style={styles.buySubRow}>
+          {icon}
+          <Text style={[styles.buySubCompact, styles.noGainText]} numberOfLines={1} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+            NO GAIN
+          </Text>
+        </View>
+        <Text style={[styles.buyLabel, compact && styles.buyLabelCompact, styles.noGainText]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}>
+          {label}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal' }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: 'normal' | 'soft' | 'neutral' | 'nogain' }) {
   // can't afford = flat grey; affordable-but-no-gain-now = white with a basil border and ink text
   const outerBg = !enabled ? '#C9BCAD' : tone === 'soft' ? '#A9CFB1' : tone === 'neutral' ? C.basilDark : C.basilDark;
   const innerBg = !enabled ? '#E2D9CE' : tone === 'soft' ? '#E3F2E6' : tone === 'neutral' ? '#FFFFFF' : C.basil;
@@ -78,16 +102,24 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, tone 
       Animated.timing(burst, { toValue: 1, duration: 650, easing: Easing.out(Easing.quad), useNativeDriver: native }).start(() => setBursting(false));
     }
   };
+  if (tone === 'nogain') return <NoGainButton label={label} onPress={onPress} testID={testID} compact={compact} icon={icon} />;
   return (
     <Animated.View style={{ transform: [{ translateX: shake }] }}>
       <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, compact && styles.buyOuterCompact, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
         <View style={[styles.buyInner, compact && styles.buyInnerCompact, { backgroundColor: innerBg }, innerBorder]}>
           {sub && tone !== 'soft' ? (
-            <Text style={[styles.buySub, compact && { color: labelColor, letterSpacing: 0.4 }]} numberOfLines={1}>
-              {sub}
-            </Text>
+            compact ? (
+              <View style={styles.buySubRow}>
+                {icon}
+                <Text style={[styles.buySubCompact, { color: labelColor }]} numberOfLines={1} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+                  {sub}
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.buySub}>{sub}</Text>
+            )
           ) : null}
-          <Text style={[styles.buyLabel, compact && { fontSize: 15 }, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit>
+          <Text style={[styles.buyLabel, compact && styles.buyLabelCompact, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}>
             {label}
           </Text>
           {/* a soft button explains itself under the price */}
@@ -296,7 +328,13 @@ const styles = StyleSheet.create({
   buyInner: { borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10, alignItems: 'center', borderWidth: 2, borderColor: 'rgba(0,0,0,0.12)' },
   buyLabel: { fontFamily: F.bold, color: '#fff', fontSize: 17 },
   // compact: a fixed 44 pt (outer, including its 4 pt lip), so nothing depends on flex-grow against a min height (C46)
-  buyOuterCompact: { minWidth: 0, alignSelf: 'stretch', height: TAP.controls.stationButton.height },
+  buyOuterCompact: { minWidth: 0, alignSelf: 'stretch', height: BUTTON_H },
+  buySubRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3 },
+  buySubCompact: { fontFamily: F.semi, fontSize: 10, letterSpacing: 0.4 },
+  buyLabelCompact: { fontSize: 15 },
+  noGainOuter: { backgroundColor: '#CFC3B2' },
+  noGainInner: { backgroundColor: '#EFE6D8', borderColor: '#CFC3B2' },
+  noGainText: { color: '#8A7B6C' },
   buyInnerCompact: { flex: 1, justifyContent: 'center', paddingVertical: 0, paddingHorizontal: 4 },
   buySub: { fontFamily: F.semi, color: 'rgba(255,255,255,0.85)', fontSize: 10, letterSpacing: 1 },
   burst: { position: 'absolute', alignSelf: 'center', top: 8 },
