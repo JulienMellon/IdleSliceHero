@@ -227,3 +227,41 @@ ID prefixes: K = blocker, C = issue, A = architecture, T = test.
 | T25 | `bundleHint` cache equals a fresh computation across upgrades and alternating shops; cash and sales change only `affordable`. |
 | Not done | M16 (merge instead of sort per frame), C22, C33, M10, M15, A10: low or medium and accepted. |
 
+---
+
+## Round 8 (v3.6) and the v3.7 build table, archived verbatim from CODELOG.md
+
+### Current state — round 8 (v3.5 → v3.6): ✅ APPROVED
+
+v3.6 fixes the round-7 blocker (the furniture memo missed `prep`, so a managed shop's prep bench never updated): `buildFurniture(lay, fin)` reads only `lay` and one typed object, and the memo deps are `[lay, ...furnitureDeps(fin)]`. The reviewer noted that a hand-listed `furnitureDeps` could still drift; it is now `Object.values(f)` with a length test (C35, T27). `tsc` is clean and `npm test` passes (89 tests, ~100 s). Rounds 6–7 (v3.4, v3.5) were CHANGES REQUESTED and are archived with their build tables.
+
+**Open (none blocks approval)**
+
+| ID | Sev | Where | Problem | Proposed fix |
+| --- | --- | --- | --- | --- |
+| C37 | low | `storefront.tsx` | The `eslint-disable` on the furniture memo is justified (constant-length deps derived from `fin`); say so in the comment | Reword the comment |
+| C38 | low | `backdrop.tsx` | SoldSign and RecipeCard coordinates are magic numbers with no test that they stay inside the cropped window x 99–301 | T28: geometry test |
+| A12 | low | `storefront.tsx` | `buildFurniture` still lives in the component file | Move it to `scene/furniture.tsx` |
+| M16 | low | `storefront.tsx` items | The items array is spread and sorted every frame | Keep furniture sorted and merge with the cast |
+| M19 | low | `storefront.tsx` | One `fin` object and a 12-element deps array per frame (negligible) | None needed |
+| C22 | low | `scene/props.tsx` `DomeFront` | Duplicates the dome geometry; `OvenHood` inlines the box-oven test | Use `domeGeom` and `isBoxOven` everywhere |
+| C33 | low | `cutscene-player.tsx` | The `[scene.id]` lockout effect is redundant (`_layout.tsx` remounts per scene) | Drop it or comment why |
+| M10 | low | `scene/cast.ts` walk cycle | The frame index comes from the wall clock | Have `useClock` return an integer tick |
+| M15 | low | `scene/geometry.ts` | `ovenFrame` and friends allocate per oven per frame | Memoise per `(o, grade)` in a WeakMap |
+| A10 | low | `app/index.tsx` | Card-detail strings are built inline each render | Extract a pure `stationDetails()` |
+
+**Resolved after the review (same build):** C35 (deps derived from the object, T27) and C36 (redundant `Math.max` in the Drivers lock).
+
+### v3.7 — build (feature step; open lows carried)
+
+| Item | Change |
+| --- | --- |
+| Save v3 | `SAVE_VERSION = 3`. `GameState.playSeconds` (foreground play), `GameState.sceneAt` (play time each scene was seen), `Shop.perk`. `migrate` defaults them and grants perks for finales a v2 save had already seen. |
+| Play time | `G.playTick(s, dt)` = `tick` + play seconds; the store and the pacing sim use it. `applyOffline` keeps using `tick`, so offline time never counts toward pacing (test). |
+| Pacing gate | Pure `sceneReady(game, scene, lastSceneEndPlay)` in `engine/cutscene-input.ts`; `pickScene` now takes the first ready pending scene. `STORY_PACING` in `tuning.ts`. The store keeps `lastSceneEndPlay` (session only, null after load or reset). |
+| Perks | `PERKS` in `tuning.ts` (one per neighbourhood except Downtown), `perkOf(id, shop)`; applied in `shopRevenue` (walk-in share, price), `decorMult(shop, id)` (decor boost), `upgradeCostOf` drivers (cost), `applyOffline` (offline bonus, also in `byShop`). `Scene.perk` grants it in `markSceneSeen`. The `bundleHint` cache key includes `perk`. |
+| Pier 9 bid | `PIER9_BID` ($2.0M after 50,000 Waterfront pizzas), `pier9Available`, `bidPier9`; new trigger kind `'bid'` plays waterfront-4 when the perk is won. Store action `bidPier9`; goal bar candidate first while available. |
+| UI | Cut-scene closing card shows the perk (with or without a reward); drawer perk banner; decor header uses the perk's boost. |
+| Tests | `story-pacing.test.ts` (19 tests: gate, beat-4 gaps, play time, migration, each perk and its scope, the bid). 111 tests pass. |
+| Not done | Open lows from round 8 (C37, C38, A12, M16, M19, C22, C33, M10, M15, A10). |
+

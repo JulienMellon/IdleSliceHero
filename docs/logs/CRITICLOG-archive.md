@@ -1358,3 +1358,35 @@ v3.3 loads clean. Seven of the round-33 notes are confirmed fixed: D273 (peel), 
 | D302, D303 | Carried (early-shop dead sky; back-row density). |
 | D304, D305 | Notes, not changed. |
 
+---
+
+## Round 37 (v3.6) and the v3.7 build table, archived verbatim from CRITICLOG.md
+
+### Current state — v3.6, round 37: ✅ SATISFIED (0 bugs, 0 [major], 3 [minor])
+
+v3.6 loads clean (`errors: []`, `loaded: true`) and the critic opened every shot. G73 (recipe card clipped), G74 (Drivers lock copy), D298 (sold sign on the cap), D299 (captions over art) and D300 (cap note wrap) are confirmed fixed; D301 was accepted as perspective. Rounds 35–36 (v3.4, v3.5) were NOT SATISFIED and are archived with their build tables.
+
+**Open (none blocks satisfaction)**
+
+| ID | Type | Note | Proposed fix |
+| --- | --- | --- | --- |
+| D302 | minor | Early shops (03, 03b) leave ~190pt of empty sky above the roof | A few background buildings, a billboard or a bird line at y 340–500 |
+| D303 | minor | Back-row diners at Industrial and Uptown sit shoulder to shoulder; heads overlap (carried from D292) | Space the back row 6–8pt wider or alternate heights |
+| D306 | minor | The three Industrial chefs share one white uniform and hat, differing only in hair and skin | A different hat, a neckerchief colour or a different prop for one chef |
+| D304 | note | The tied-station banner reads as a label, not a button | Make it a tappable "buy both" button |
+| D305 | note | Suburbs reads as a live "Build $300" on the City map and list while locked | Padlock and "Nonna takes over in N" on the row, dim the pin |
+| D294 | note | A "no gain now" button still has a green price | Grey the price text |
+| D297 | note | Goal-bar fill runs through the label on an unmanaged shop | Darker label over the fill |
+| — | note | The Suburbs-locked toast covers the University lock on the City map | Sit it lower, under the map |
+| — | planned | Tap targets below 44px (chips 22px, compact buy buttons 29px) | The v3.8 resize, after the v3.7 story pacing build |
+
+### v3.7 — build (planned feature: story pacing and neighbourhood perks; open minors carried)
+
+| Change | What to look for |
+| --- | --- |
+| Story pacing | After a launch or return one waiting story beat plays at once; after that a beat waits for 90 s of play since the last one ended (tutorial included). A finale waits 300 s after its beat 3 (Downtown 120 s). Scenes the player causes (a new pizzeria, the Pier 9 bid) still play at once. downtown-3 now triggers at 45 pizzas. |
+| Perks | Each finale shows a closing card "★ COACH DALE’S PERK ★ …" (new shot `22-dale-perk-card`). Perks apply only to their own pizzeria: Dale (Suburbs) walk-ins pay 85%, Marisol (Waterfront) +10% prices, Priya (University) driver upgrades −10%, Big Sal (Industrial) +25% offline earnings, Genevieve (Uptown) 6% per decor tier. The drawer shows the perk as a banner, and the decor header shows 6% in Uptown once earned. |
+| Pier 9 bid | Once "For Sale" has played and Waterfront has sold 50,000 pizzas, the goal bar leads with "Bid on Pier 9 to save Marisol’s dock · $2.00M" (new shot `21-pier9-bid-goal`). Winning it plays "Dock Saved". |
+| Pacing sim (greedy buyer, one sitting) | Nonna takes over at 5.0 min (was 1.4), Suburbs opens at 5.0 (was 2.0), the bid is won at 35.9 min, University opens at 70.4 (was 66.1), the city completes at 227 min (was 221). Longest scene gap 34.5 min, the University dead zone (deferred). |
+| D302, D303, D306 | Carried, not changed. |
+
