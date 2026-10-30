@@ -265,7 +265,7 @@ export function upgradeLock(s: GameState, id: NeighborhoodId, what: Upgrade): st
       return null;
     case 'drivers':
       // a save that already went past the cap (before the cap existed) quotes its own level, not the lower cap
-      return shop.drivers >= cap ? (shop.footprint + 1 < FOOTPRINTS.length ? `Expand to go past Lv ${Math.max(cap, shop.drivers)}` : 'Max drivers') : null;
+      return shop.drivers >= cap ? (shop.footprint + 1 < FOOTPRINTS.length ? `Expand to go past Lv ${shop.drivers}` : 'Max drivers') : null;
   }
 }
 

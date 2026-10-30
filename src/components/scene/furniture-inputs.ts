@@ -44,5 +44,5 @@ export function furnitureInputs({ id, name, shop, running, rate, vehicle }: Furn
   };
 }
 
-/** The memo dependencies: every input's value, in a fixed order. */
-export const furnitureDeps = (f: FurnitureInputs): (string | number | boolean)[] => [f.id, f.name, f.fp, f.plants, f.tableTier, f.signageTier, f.prep, f.dough, f.boxes, f.idleShop, f.vehicle];
+/** The memo dependencies: every input's value. Derived from the object (key order is fixed by `furnitureInputs`), so a new field can't be left out. */
+export const furnitureDeps = (f: FurnitureInputs): (string | number | boolean)[] => Object.values(f);

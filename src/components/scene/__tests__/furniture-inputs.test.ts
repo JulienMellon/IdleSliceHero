@@ -11,6 +11,20 @@ const base = (over: Partial<FurnitureSource['shop']> = {}): FurnitureSource => (
 });
 const deps = (s: FurnitureSource) => JSON.stringify(furnitureDeps(furnitureInputs(s)));
 
+describe('furniture memo deps (T27)', () => {
+  test('every input field is a dependency, in a constant-length list', () => {
+    const f = furnitureInputs(base());
+    expect(furnitureDeps(f)).toHaveLength(Object.keys(f).length);
+    expect(furnitureDeps(furnitureInputs(base({ queued: 8, managed: false })))).toHaveLength(Object.keys(f).length);
+  });
+  test('name, id and idleShop each change the deps', () => {
+    const d0 = deps(base());
+    expect(deps({ ...base(), name: 'Elsewhere' })).not.toBe(d0);
+    expect(deps({ ...base(), id: 'waterfront' })).not.toBe(d0);
+    expect(deps(base({ managed: false }))).not.toBe(d0);
+  });
+});
+
 describe('furniture memo inputs (T24)', () => {
   test('a prep upgrade changes the deps even in a managed shop, where dough is constant', () => {
     // the v3.5 bug: the PrepBench draws extra gear at prep 25/50/75 but the memo never saw prep
