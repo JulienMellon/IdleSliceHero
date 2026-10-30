@@ -33,13 +33,19 @@ export interface Line {
   prepped: number;
   /** Pies on the pass, waiting for the counter. */
   baked: number;
+  /** Pies served and boxed, waiting for a carrier (G81: nobody leaves → nobody pays). */
+  boxed: number;
+  /** Seconds until the driver is back at the pickup spot (0: waiting there). */
+  driverBusy: number;
+  /** Seconds until the next walk-in is waiting at the register (0: one is). */
+  walkinBusy: number;
   departures: Departure[];
   /** Pies owed to walk-ins (Bresenham): keeps the long-run walk-in share equal to the steady-state split. */
   walkInDebt: number;
   nextId: number;
 }
 
-export const emptyLine = (): Line => ({ prep: null, oven: null, counter: null, prepped: 0, baked: 0, departures: [], walkInDebt: 0, nextId: 1 });
+export const emptyLine = (): Line => ({ prep: null, oven: null, counter: null, prepped: 0, baked: 0, boxed: 0, driverBusy: 0, walkinBusy: 0, departures: [], walkInDebt: 0, nextId: 1 });
 
 export const LINE = {
   /** A managed job lasts about this long at the shop's rate, so high levels move big stacks, not a strobe. */
@@ -50,6 +56,12 @@ export const LINE = {
   departSeconds: 1.2,
   /** A walk-in takes their pie at the register in this long, then pays (long enough for the scene to show it). */
   handoffSeconds: 0.5,
+  /** The driver's whole lap: out the door (departSeconds), down the street and back to the pickup spot. */
+  driverLap: 4.4,
+  /** After a walk-in is served, the next one is waiting at the register this much later. */
+  walkinLap: 4.2,
+  /** Below this walk-in share nobody comes in to order (every pie goes out with the driver). */
+  minWalkInShare: 0.02,
   /** At most this many carriers in flight; more merge into the newest. */
   maxDepartures: 6,
   /** A rush tap takes this much off every running job. */
@@ -157,17 +169,33 @@ function startAutomated(w: Work, r: LineRates, auto: Automation) {
   if (auto.prep && !w.prep && w.prepped < 2 * b) w.prep = job(b, r.prep);
 }
 
-function depart(w: Work, n: number, r: LineRates) {
-  w.walkInDebt += n * r.walkInFraction;
-  const walkin = w.walkInDebt >= n / 2;
-  if (walkin) w.walkInDebt -= n;
-  const cash = n * r.price;
-  const d: Departure = { id: w.nextId++, kind: walkin ? 'walkin' : 'driver', n, cash, left: walkin ? LINE.handoffSeconds : LINE.departSeconds };
-  if (w.departures.length >= LINE.maxDepartures) {
-    // merge into the newest carrier rather than grow without bound
-    const last = w.departures[w.departures.length - 1];
-    w.departures[w.departures.length - 1] = { ...last, n: last.n + n, cash: last.cash + cash };
-  } else w.departures.push(d);
+/**
+ * Hand boxed pies to whoever is free to carry them (G81): the walk-in waiting at the register when the walk-in
+ * split is due, otherwise the driver at the pickup spot. Each trip takes everything boxed, so a busy carrier only
+ * makes the next stack bigger, never slower: throughput still equals `shopRate`. A carrier is then busy for its lap.
+ */
+function dispatch(w: Work, r: LineRates) {
+  const walkins = r.walkInFraction > LINE.minWalkInShare;
+  while (w.boxed > 0) {
+    const n = w.boxed;
+    const due = walkins && w.walkInDebt + n * r.walkInFraction >= n / 2;
+    let kind: Departure['kind'] | null = null;
+    if (due) kind = w.walkinBusy <= 0 ? 'walkin' : null;
+    else kind = w.driverBusy <= 0 ? 'driver' : null;
+    // the carrier who is due is out: the pies wait and join their next trip (keeps the split true)
+    if (!kind) return;
+    w.walkInDebt += n * r.walkInFraction - (kind === 'walkin' ? n : 0);
+    w.boxed = 0;
+    const cash = n * r.price;
+    const left = kind === 'walkin' ? LINE.handoffSeconds : LINE.departSeconds;
+    if (kind === 'walkin') w.walkinBusy = LINE.walkinLap;
+    else w.driverBusy = LINE.driverLap;
+    if (w.departures.length >= LINE.maxDepartures) {
+      // merge into the newest carrier rather than grow without bound
+      const last = w.departures[w.departures.length - 1];
+      w.departures[w.departures.length - 1] = { ...last, n: last.n + n, cash: last.cash + cash };
+    } else w.departures.push({ id: w.nextId++, kind, n, cash, left });
+  }
 }
 
 /** Pay every departure that has reached the door (and walk-ins at the register). */
@@ -194,11 +222,17 @@ export function advanceLine(line: Line, dt: number, r: LineRates, auto: Automati
   const w: Work = { ...line, departures: line.departures.map((d) => ({ ...d })), paid: 0, sold: 0 };
   const any = auto.prep || auto.oven || auto.counter;
   if (any) startAutomated(w, r, auto);
+  dispatch(w, r);
   settle(w);
   let t = dt;
   let k = 0;
   for (; t > 1e-9 && k < MAX_EVENTS; k++) {
     let step = t;
+    // a carrier coming free is an event only while pies wait for one
+    if (w.boxed > 0) {
+      if (w.driverBusy > 0 && w.driverBusy < step) step = w.driverBusy;
+      if (w.walkinBusy > 0 && w.walkinBusy < step) step = w.walkinBusy;
+    }
     for (const st of STATIONS_IN_ORDER) {
       const j = w[st];
       if (j && j.left < step) step = j.left;
@@ -211,12 +245,14 @@ export function advanceLine(line: Line, dt: number, r: LineRates, auto: Automati
       if (j) w[st] = j === line[st] ? { ...j, left: j.left - step } : ((j.left -= step), j);
     }
     for (const d of w.departures) d.left -= step;
+    w.driverBusy = Math.max(0, w.driverBusy - step);
+    w.walkinBusy = Math.max(0, w.walkinBusy - step);
     t -= step;
     // finish jobs, downstream first so a freed counter can take the oven's batch on the next start
     const c = w.counter;
     if (c && c.left <= 1e-9) {
       w.counter = null;
-      depart(w, c.n, r);
+      w.boxed += c.n;
     }
     const o = w.oven;
     if (o && o.left <= 1e-9) {
@@ -228,18 +264,25 @@ export function advanceLine(line: Line, dt: number, r: LineRates, auto: Automati
       w.prep = null;
       w.prepped += p.n;
     }
+    dispatch(w, r);
     settle(w);
     if (any) startAutomated(w, r, auto);
-    // nothing running and nobody walking: nothing more can happen this step
-    if (!w.prep && !w.oven && !w.counter && w.departures.length === 0) break;
+    // nothing running, nobody walking and nothing boxed: nothing more can happen this step (carrier timers still
+    // count down, below)
+    if (!w.prep && !w.oven && !w.counter && w.departures.length === 0 && w.boxed === 0) {
+      w.driverBusy = Math.max(0, w.driverBusy - t);
+      w.walkinBusy = Math.max(0, w.walkinBusy - t);
+      t = 0;
+      break;
+    }
   }
   if (k >= MAX_EVENTS && t > 1e-9 && typeof __DEV__ !== 'undefined' && __DEV__) console.warn(`advanceLine: event cap hit, ${t.toFixed(2)} s dropped`); // C70
   const { paid, sold } = w;
-  const next: Line = { prep: w.prep, oven: w.oven, counter: w.counter, prepped: w.prepped, baked: w.baked, departures: w.departures, walkInDebt: w.walkInDebt, nextId: w.nextId };
+  const next: Line = { prep: w.prep, oven: w.oven, counter: w.counter, prepped: w.prepped, baked: w.baked, boxed: w.boxed, driverBusy: w.driverBusy, walkinBusy: w.walkinBusy, departures: w.departures, walkInDebt: w.walkInDebt, nextId: w.nextId };
   return { line: next, paid, sold };
 }
 
 /** Whole pies anywhere on the line (prepping, on the bench, baking, on the pass, serving, walking out). */
 export function piesInFlight(line: Line): number {
-  return (line.prep?.n ?? 0) + line.prepped + (line.oven?.n ?? 0) + line.baked + (line.counter?.n ?? 0) + line.departures.reduce((t, d) => t + d.n, 0);
+  return (line.prep?.n ?? 0) + line.prepped + (line.oven?.n ?? 0) + line.baked + (line.counter?.n ?? 0) + line.boxed + line.departures.reduce((t, d) => t + d.n, 0);
 }

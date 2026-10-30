@@ -1,12 +1,12 @@
 // Game-screen building blocks: chunky buttons, the HUD + goal bar, the oven, upgrade rows, popups.
 import * as Haptics from 'expo-haptics';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { cashText, duration, goalAmount, money, shownValue } from '../engine/format';
 import { C, F } from '../theme';
 import { BookIcon, CoinIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
-import { onPayout } from './pulse-bus';
+import { onPayout, setCoinTarget } from './pulse-bus';
 import { BUTTON_H, COMPACT_FONT_MAX_SCALE } from './tap-targets';
 
 const native = Platform.OS !== 'web';
@@ -154,6 +154,8 @@ export interface Goal {
 export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { cash: number; subtitle: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number }) {
   const shown = useCountUp(cash);
   const [flash] = useState(() => new Animated.Value(1));
+  // the cash text's window position: payout coins land on it (C81)
+  const cashRef = useRef<ComponentRef<typeof Text>>(null);
   const counting = shown < cash - 0.5;
   useEffect(() => {
     const bump = (to: number) => {
@@ -178,7 +180,13 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes }: { 
           )}
         </Pressable>
         <View style={styles.cashPill}>
-          <Animated.Text style={[styles.cash, { transform: [{ scale: flash }] }]} numberOfLines={1} adjustsFontSizeToFit testID="cash">
+          <Animated.Text
+            ref={cashRef}
+            onLayout={() => cashRef.current?.measureInWindow?.((x: number, y: number, w: number, h: number) => setCoinTarget(x + w / 2, y + h / 2))}
+            style={[styles.cash, { transform: [{ scale: flash }] }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            testID="cash">
             {cashText(shown)}
           </Animated.Text>
           <Text style={styles.perSec} numberOfLines={1}>

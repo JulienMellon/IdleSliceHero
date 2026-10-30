@@ -3,6 +3,7 @@
 // people don't sit on top of the kitchen crew, each other, or the WELCOME mat for more than a moment.
 import { buildCast, type CastMember } from '../cast';
 import { emptyCrew, stepCrew, type CrewState } from '../crew';
+import { advanceLine, AUTOMATIC, emptyLine, type Line, type LineRates } from '../../../engine/pipeline';
 import { BACK_ROW_Y, layout } from '../layout';
 import { hash32 } from '../looks';
 import { seatPalette } from '../palette';
@@ -58,20 +59,13 @@ function frames(shop: Shop, pace: number, burst = false) {
   if (!out) {
     out = [];
     let crew: CrewState = emptyCrew();
-    let id = 0;
-    let deps: { id: number; kind: 'driver' | 'walkin' }[] = [];
-    let nextAt = 0.3;
+    // the real engine line drives who walks: `pace` sets its rate; `burst` runs a high-rate shop whose stacks merge
+    const r: LineRates = { prep: 4 * pace, oven: 4 * pace, serve: 4 * pace, shop: 3 * pace * (burst ? 6 : 1), price: 5, walkInFraction: 0.4, tapBatch: 4 };
+    let line: Line = emptyLine();
     for (let f = 0; f < SECONDS * FPS; f++) {
       const clock = f / FPS;
-      if (clock >= nextAt) {
-        const n = burst ? 6 : 1;
-        for (let j = 0; j < n; j++) {
-          id++;
-          deps = [...deps, { id, kind: (id % 5 < 2 ? 'walkin' : 'driver') as 'walkin' | 'driver' }].slice(-6);
-        }
-        nextAt += burst ? 6 : 1.6 / pace;
-      }
-      crew = stepCrew(crew, { lay: shop.lay, drivers: 12, guests: 1, departures: deps }, clock, SCENE_W);
+      line = advanceLine(line, 1 / FPS, r, AUTOMATIC).line;
+      crew = stepCrew(crew, { lay: shop.lay, walkins: true, departures: line.departures }, clock, SCENE_W);
       const { cast } = buildCast({ lay: shop.lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace, clock, shopSeed: shop.shopSeed, nIdx: 1, pal: shop.pal, crew });
       out.push(cast);
     }
@@ -156,8 +150,39 @@ describe('the counter (D336)', () => {
           const near = (c: CastMember) => c.props.y > 30 && c.props.y < 70;
           const drivers = cast.filter((c) => c.role === 'driver' && near(c));
           const walkins = cast.filter((c) => c.role === 'walkin' && c.props.kind !== 'sit' && near(c));
-          for (const d of drivers) for (const w of walkins) if (overlap(box(d), box(w)) > 0.15) bad.push(`${shop.name} pace${pace}${burst ? " burst" : ""} f${f} ${w.key}${w.props.step ? "w" : "s"}/${d.key}${d.props.step ? "w" : "s"}`);
+          for (const d of drivers) for (const w of walkins) if (overlap(box(d), box(w)) > 0.15) bad.push(`${shop.name} pace${pace}${burst ? " burst" : ""} f${f} ${w.key}${w.props.step ? "w" : "s"}@${w.props.x.toFixed(0)},${w.props.y.toFixed(0)}/${d.key}${d.props.step ? "w" : "s"}@${d.props.x.toFixed(0)},${d.props.y.toFixed(0)}`);
           for (const a of drivers) for (const b of drivers) if (a !== b && !a.props.step && !b.props.step && overlap(box(a), box(b)) > 0.15) bad.push(`${shop.name} f${f} ${a.key}/${b.key} stacked`);
+        });
+    expect(bad.slice(0, 5)).toEqual([]);
+  });
+});
+
+describe('the sidewalk row (D352)', () => {
+  test('on a shop with no manager nobody walks where the taller sidewalk row stands', () => {
+    for (const shop of busyShops()) {
+      let crew: CrewState = emptyCrew();
+      const r: LineRates = { prep: 4, oven: 4, serve: 4, shop: 3, price: 5, walkInFraction: 0.4, tapBatch: 4 };
+      let line: Line = emptyLine();
+      for (let f = 0; f < SECONDS * FPS; f++) {
+        line = advanceLine(line, 1 / FPS, r, AUTOMATIC).line;
+        crew = stepCrew(crew, { lay: shop.lay, walkins: true, idle: true, departures: line.departures }, f / FPS, SCENE_W);
+        const { cast } = buildCast({ lay: shop.lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace: 1, clock: f / FPS, shopSeed: shop.shopSeed, nIdx: 1, pal: shop.pal, crew });
+        // the row's top edge is at room depth ≈ −27.6; keep feet 4 pt clear of it
+        for (const c of cast) if (c.role === 'walkin' || c.role === 'driver') expect([shop.name, c.key, c.props.y >= -22]).toEqual([shop.name, c.key, true]);
+      }
+    }
+  });
+});
+
+describe('drivers and diners (D353)', () => {
+  test('no seated diner in front of a driver covers more than 15% of him standing (30% walking past), in any frame', () => {
+    const bad: string[] = [];
+    for (const shop of busyShops())
+      for (const pace of [1, 2.6])
+        frames(shop, pace).forEach((cast, f) => {
+          const drivers = cast.filter((c) => c.role === 'driver');
+          const sitters = cast.filter((c) => c.props.kind === 'sit');
+          for (const d of drivers) for (const s of sitters) if (s.props.y < d.props.y && overlap(box(d), box(s)) > (d.props.step ? 0.3 : 0.15)) bad.push(`${shop.name} pace${pace} f${f} ${s.key}@${s.props.x.toFixed(0)},${s.props.y.toFixed(0)} over ${d.key}@${d.props.x.toFixed(0)},${d.props.y.toFixed(0)}${d.props.step ? "w" : "s"} ${overlap(box(d), box(s)).toFixed(2)}`);
         });
     expect(bad.slice(0, 5)).toEqual([]);
   });

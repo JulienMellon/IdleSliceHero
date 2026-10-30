@@ -238,6 +238,14 @@ with sync_playwright() as pw:
         shot(page, "12-late-rush-tap", 0.2)
     except Exception as e:
         report["errors"].append(f"late oven tap failed: {e}")
+    # v5.0: every neighbourhood's own look (the critic had no Suburbs or University interior)
+    try:
+        for hood in ["suburbs", "university", "downtown"]:
+            tid(page, f"tab-{hood}").click(force=True); time.sleep(1.0)
+            settle(page, 0.3)
+            shot(page, f"25-look-{hood}", 0.6)
+    except Exception as e:
+        report["errors"].append(f"neighbourhood look shots failed: {e}")
     # 7. Flagship pizzeria with maxed Expand and Oven Grade
     flag = dict(late, active="industrial", cash=2.0e8, seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:19] + ["uptown-1"], scrapbookViewed=20,
                 shops=dict(late["shops"], industrial=shop(prep=104, ovens=100, grade=4, counter=104, drivers=44, tables=90, footprint=4, sold=450000,

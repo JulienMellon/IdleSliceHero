@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
@@ -35,7 +35,6 @@ const STAGE_NAME: Record<G.Stage, string> = { prep: 'prep', ovens: 'ovens', coun
 
 export default function GameScreen() {
   const insets = useSafeAreaInsets();
-  const { width: winW } = useWindowDimensions();
   const game = useGame((s) => s.game);
   const offline = useGame((s) => s.offline);
   const toast = useGame((s) => s.toast);
@@ -228,7 +227,7 @@ export default function GameScreen() {
               <View style={styles.drawerHead}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.drawerTitle}>{`Rosa’s · ${nd.name}`}</Text>
-                  <Text style={styles.drawerSub} numberOfLines={1}>{`Bottleneck: ${STAGE_NAME[neck]}`}</Text>
+                  <Text style={styles.drawerSub} numberOfLines={1}>{`Bottleneck: ${G.tiedStages(shop, v).map((st) => STAGE_NAME[st]).join(' + ')}`}</Text>
                 </View>
                 <Pressable testID="close-upgrades" onPress={() => setDrawerOpen(false)} style={styles.closeBtn} hitSlop={CLOSE_SLOP}>
                   <Text style={styles.closeText}>Close ▼</Text>
@@ -255,7 +254,8 @@ export default function GameScreen() {
                     card(G.HEAD_UPGRADE[k], {
                       icon: <HeadIcon kind={k} name={HEADS[id][k]} />,
                       title: `${HEAD_TITLE[k]}: ${HEADS[id][k]}`,
-                      detail: shop.heads[k] ? `Runs your ${k === 'oven' ? 'ovens' : k} for you` : `Runs the ${k === 'prep' ? 'prep table' : k === 'oven' ? 'ovens' : 'counter'} so you don't have to tap it`,
+                      // short enough not to leave a word alone on its last line (D358)
+                      detail: `Runs the ${k === 'prep' ? 'prep table' : k === 'oven' ? 'ovens' : 'counter'} for you`,
                       wide: true,
                       costLabel: 'Hired',
                     }),
@@ -320,7 +320,7 @@ export default function GameScreen() {
         {toast && <Toast compact text={toast.text} top={10} />}
       </View>
       {/* payout coins fly from the carrier to the cash (D344) */}
-      <CoinLayer target={{ x: winW / 2, y: insets.top + 34 }} />
+      <CoinLayer />
       {offline && <OfflinePopup seconds={offline.seconds} capped={offline.capped} awaySeconds={offline.awaySeconds} earned={offline.earned} byShop={offline.byShop} onCollect={dismissOffline} />}
     </View>
   );

@@ -25,15 +25,15 @@ import { GUEST_SHIRTS, HAIR_COLORS, hash32, Person } from './scene/people';
 import { CURB_Y, D, P, SCENE_W, sceneFit, unprojectX } from './scene/projection';
 import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Rug, Stools, Table, WallPlanter } from './scene/props';
 import { furnitureDeps, furnitureInputs, type FurnitureInputs } from './scene/furniture-inputs';
-import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell } from './scene/room';
+import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, StreetProp } from './scene/room';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, Street } from './scene/street';
 import { buildCast } from './scene/cast';
-import { STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
+import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEADS } from '../content/tuning';
-import { BadgeRail, COIN_FLIGHT, DeparturePops, HireBubble, StationBadge } from './scene/kitchen-hud';
+import { BadgeRail, DeparturePops, HireBubble, StationBadge } from './scene/kitchen-hud';
 import { emptyCrew, stepCrew, type CrewState } from './scene/crew';
 import { emitCoin } from './pulse-bus';
-import { BADGE_R, badgeAt, badgeModels, badgeRowY, badgeXs, MIN_TAP_PT, stationAt, stationRects } from './scene/stations';
+import { BADGE_R, COIN_FLIGHT, badgeAt, badgeModels, badgeRowY, badgeXs, MIN_TAP_PT, stationAt, stationRects } from './scene/stations';
 
 export { CURB_Y, SCENE_H, SCENE_W, sceneFit } from './scene/projection';
 
@@ -99,8 +99,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // departure seen, rush/miss/refusal moments (tap handler) and the queue of hire bubbles (effect).
   const mem = useRef({
     crew: null as CrewState | null,
-    launched: 0,
-    lastDep: 0,
+    /** Departure ids whose coin already launched (≤ maxDepartures kept). Coins launch per id, any order (C80). */
+    launched: new Set<number>(),
+    lastSold: 0,
+    carriers: new Map<number, [number, number]>(),
     wasPaused: false,
     rushAt: -9,
     hintAt: -9,
@@ -141,16 +143,19 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   if (!m0.crew) {
     const top = line.departures.reduce((t, d) => Math.max(t, d.id), 0);
     m0.crew = { ...emptyCrew(), seenId: top };
-    m0.launched = top;
+    for (const d of line.departures) m0.launched.add(d.id);
+    m0.lastSold = shop.sold;
   }
-  // one walk-in at the register at a time (two stacked there in D336)
-  const guestsWanted = running && Game.walkInFraction(shop, game.vehicle) > 0.02 ? 1 : 0;
-  const crew = paused ? m0.crew : stepCrew(m0.crew, { lay, drivers: shop.drivers, guests: guestsWanted, departures: line.departures }, clock, SCENE_W);
+  // walk-ins come in while the engine sends them sales (one waits at the register at a time: D336)
+  const walkins = Game.walkInFraction(shop, game.vehicle) > LINE.minWalkInShare;
+  const tickSince = paused ? 0 : Math.max(0, (Date.now() - useGame.getState().tickAt) / 1000);
+  const crew = paused ? m0.crew : stepCrew(m0.crew, { lay, walkins, idle: !Game.runsItself(shop) && id !== 'downtown', departures: line.departures, since: tickSince }, clock, SCENE_W);
   m0.crew = crew;
   const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew });
-  // each pop rides over the figure carrying its departure
-  const carriers = new Map<number, [number, number]>();
-  for (const c of cast) if (c.dep) carriers.set(c.dep, P(c.props.x, c.props.y, 52));
+  // each pop rides over the figure carrying its departure (one Map reused per mount, M48)
+  const carriers = m0.carriers;
+  carriers.clear();
+  for (const c of cast) if (c.deps) for (const dep of c.deps) carriers.set(dep, P(c.props.x, c.props.y, 52));
   const fin = furnitureInputs({ id, name: nd.name, shop, running, rate, vehicle: game.vehicle });
   // Furniture only changes with upgrades and the dough/box counts, so it is built once per change (M12), not 15 times a second.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are lay + every value of `fin`, the builder's only inputs
@@ -166,16 +171,16 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     if (!paused)
       for (const d of line.departures) {
         const l = Math.max(0, d.left - Math.max(0, (Date.now() - useGame.getState().tickAt) / 1000));
-        if (d.id <= m.launched || l > COIN_FLIGHT) continue;
-        m.launched = d.id;
+        if (m.launched.has(d.id) || l > COIN_FLIGHT) continue;
+        m.launched.add(d.id);
+        if (m.launched.size > 12) m.launched.delete(m.launched.values().next().value as number);
         const [sx, sy] = carriers.get(d.id) ?? geoRegister;
-        emitCoin({ x: origin.current.x + fit.ox + (sx / 1) * fit.s, y: origin.current.y + fit.oy + (sy - 40) * fit.s, ms: l * 1000 });
+        emitCoin({ x: origin.current.x + fit.ox + sx * fit.s, y: origin.current.y + fit.oy + (sy - 40) * fit.s, ms: l * 1000 });
       }
-    // ids only grow: the oldest id still walking moved past the last one we knew → someone paid. The first frame
-    // after a pause skips the emit, so closing the drawer doesn't replay a stale cash sound (C75)
-    const oldest = line.departures.length ? line.departures[0].id : Number.POSITIVE_INFINITY;
-    const paid = m.lastDep > 0 && oldest > m.lastDep;
-    m.lastDep = line.departures.length ? line.departures[line.departures.length - 1].id : m.lastDep;
+    // someone paid: the shop's whole-number sold count went up (C80: departures don't pay in id order). The first
+    // frame after a pause skips the emit, so closing the drawer doesn't replay a stale cash sound (C75)
+    const paid = shop.sold > m.lastSold;
+    m.lastSold = shop.sold;
     if (paid && !paused && !m.wasPaused) {
       emitPayout();
       emitAudio({ type: 'cash' });
@@ -283,7 +288,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           {/* a miss outlines the station to tap for a moment (G79) */}
           {flash && <Rect x={flash.x0} y={flash.y0} width={flash.x1 - flash.x0} height={flash.y1 - flash.y0} rx={8} fill="none" stroke="#fff" strokeWidth={2.5} opacity={0.9} />}
           {/* the ticket rail the badges hang on (D346) */}
-          <BadgeRail x0={bxs.prep - BADGE_R - 8} x1={bxs.counter + BADGE_R + 40} y={by} />
+          <BadgeRail x0={bxs.prep - BADGE_R - 8} x1={bxs.counter + BADGE_R + 40} y={by} gm={shop.managed && id !== 'downtown' ? `${id}-gm` : shop.managed ? 'nonna' : null} />
           {badges.map((b) => (
             <StationBadge
               key={b.st}
@@ -295,7 +300,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
               ready={b.ready}
               pulse={b.ready ? pulse : 0}
               nudge={b.ready ? nudge : 0}
-              face={b.runner === 'gm' ? 'gm' : b.runner === 'head' ? b.st : null}
+              face={b.runner === 'head' ? b.st : null}
               faceName={b.runner === 'gm' ? `${id}-gm` : HEADS[id][b.st]}
               jump={line[b.st] ? rushJump : 0}
             />
@@ -326,21 +331,28 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs): { y: number; el: Rea
   f.push({ y: 66, el: <PrepBench key="prep" lay={lay} prep={fin.prep} dough={fin.dough} /> });
   f.push({ y: 64, el: <Counter key="counter" lay={lay} boxes={fin.boxes} /> });
   // front of the shop + sidewalk props
-  f.push({ y: 0, el: <FrontWall key="front" lay={lay} name={fin.name} signage={fin.signageTier} plants={fin.plants} /> });
+  f.push({ y: 0, el: <FrontWall key="front" lay={lay} name={fin.name} signage={fin.signageTier} plants={fin.plants} id={fin.id} /> });
   f.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
   if (lay.ledge) {
     f.push({ y: STOOL_Y, el: <Stools key="stools" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
     f.push({ y: LEDGE_Y, el: <LedgeBar key="ledge" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
   }
   if (fin.fp === 0) f.push({ y: 8, el: <FloorProp key="fprop" id={fin.id} x={lay.L + 22} y={8} /> });
-  // an unmanaged shop's taller column sits higher: its board moves right, into the gap by the mat, and shrinks (D315)
-  f.push({ y: fin.idleShop ? -18 : -34, el: <ChalkSign key="sign" x={fin.idleShop ? lay.sign.x + 10 : lay.sign.x} y={fin.idleShop ? -18 : -34} k={fin.idleShop ? 0.85 : 1} /> });
+  // a shop with no manager has a taller sidewalk row: its sidewalk props would stand on the front sill (D356), so
+  // the sidewalk there stays clear apart from the mat (the hire bar is the focus)
+  if (!fin.idleShop) f.push({ y: -34, el: <ChalkSign key="sign" x={lay.sign.x} y={-34} k={1} /> });
   f.push({ y: 16, el: <DoorLeaf key="leaf" lay={lay} /> });
-  {
+  if (!fin.idleShop) {
     // the potted tree stays fully on screen (its pot is ~14 wide) in the widest rooms
-    const py = fin.idleShop ? -22 : -40;
-    const px = Math.max(fin.idleShop ? lay.L - 18 : lay.L + 8, unprojectX(20, py));
-    f.push({ y: py, el: <Planter key="pl" x={px} y={py} /> });
+    const py = -40;
+    const plx = Math.max(lay.L + 8, unprojectX(20, py));
+    f.push({ y: py, el: <Planter key="pl" x={plx} y={py} /> });
+    // the neighbourhood's sidewalk signature, between the potted tree and the chalkboard (v5.0)
+    const px = (plx + 16 + lay.sign.x - 18) / 2;
+    if (lay.sign.x - plx > 56) {
+      const [qx, qy] = P(px, -36);
+      f.push({ y: -36, el: <StreetProp key="street" id={fin.id} x={qx} y={qy} /> });
+    }
   }
   if (!fin.idleShop) {
     const [scx, scy] = P(lay.scooter.x, lay.scooter.y);

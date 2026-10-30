@@ -7,8 +7,6 @@ import { money } from '../../engine/format';
 import { LINE, type Departure } from '../../engine/pipeline';
 import { F } from '../../theme';
 import { BADGE_R, COIN_FLIGHT, popModels, type BadgeTone } from './stations';
-
-export { COIN_FLIGHT };
 import { HeadFace } from './head-face';
 import type { HeadKind } from '../../content/tuning';
 import { INK, SCENE_W } from './projection';
@@ -33,11 +31,18 @@ function arc(cx: number, cy: number, r: number, step: number) {
 const PIE_ICON = 'M-6 -4.5 Q0 -7.5 6 -4.5 L0 7.5 Z';
 
 /** The dark ticket rail the badges hang on, so the row reads as one object instead of pasted on the awning (D346). */
-export const BadgeRail = memo(function BadgeRail({ x0, x1, y }: { x0: number; x1: number; y: number }) {
+export const BadgeRail = memo(function BadgeRail({ x0, x1, y, gm }: { x0: number; x1: number; y: number; gm: string | null }) {
   return (
     <G>
       <Rect x={x0} y={y - 15} width={x1 - x0} height={30} rx={15} fill={OUTLINE} opacity={0.85} />
       <Rect x={x0 + 6} y={y - 14} width={x1 - x0 - 12} height={2} rx={1} fill="#fff" opacity={0.18} />
+      {/* the General Manager runs every station: one chip at the rail's left end, not three clones (D355) */}
+      {gm && (
+        <G transform={`translate(${x0 - 4} ${y})`}>
+          <Circle cx={0} cy={0} r={11} fill="#FFF8EA" stroke={OUTLINE} strokeWidth={1.4} />
+          <HeadFace kind="gm" name={gm} size={21} />
+        </G>
+      )}
     </G>
   );
 });

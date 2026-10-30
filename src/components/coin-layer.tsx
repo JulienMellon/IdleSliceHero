@@ -1,74 +1,81 @@
 // Payout coins (D344): fly from the departing carrier in the scene to the HUD cash, in a screen overlay above
 // everything, on the native driver (no per-frame JS). Each lands when the engine pays, with a small sparkle.
-import { useEffect, useRef, useState } from 'react';
+// C79: animations are built and started outside state updaters and stopped on unmount; M47: interpolations are
+// made once per coin at launch and the layer is memoised; C81: the target is the measured HUD cash text.
+import { memo, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 
-import { onCoin, type CoinLaunch } from './pulse-bus';
+import { coinTarget, onCoin } from './pulse-bus';
 
 const SIZE = 18;
 /** At most this many coins in flight; extra launches are dropped (the pop already showed the cash). */
 const MAX_COINS = 3;
+const SPARK: [number, number][] = [
+  [12, 0],
+  [-12, 0],
+  [0, 12],
+  [0, -12],
+];
 
-type Coin = CoinLaunch & { key: number; k: Animated.Value };
+interface Coin {
+  key: number;
+  tx: Animated.AnimatedInterpolation<number>;
+  ty: Animated.AnimatedInterpolation<number>;
+  sparkle: Animated.AnimatedInterpolation<number>;
+  dots: { x: Animated.AnimatedInterpolation<number>; y: Animated.AnimatedInterpolation<number> }[];
+}
 
-/** `target`: the HUD cash text's centre in window coordinates. */
-export function CoinLayer({ target }: { target: { x: number; y: number } }) {
+export const CoinLayer = memo(function CoinLayer() {
   const [coins, setCoins] = useState<Coin[]>([]);
+  const live = useRef(new Map<number, Animated.CompositeAnimation>());
   const nextKey = useRef(1);
-  const targetRef = useRef(target);
-  targetRef.current = target;
-  useEffect(
-    () =>
-      onCoin((c) => {
-        setCoins((list) => {
-          if (list.length >= MAX_COINS) return list;
-          const coin: Coin = { ...c, key: nextKey.current++, k: new Animated.Value(0) };
-          Animated.timing(coin.k, { toValue: 1, duration: Math.max(120, c.ms), easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() =>
-            setCoins((l) => l.filter((x) => x.key !== coin.key)),
-          );
-          return [...list, coin];
-        });
-      }),
-    [],
-  );
+  useEffect(() => {
+    const running = live.current;
+    const off = onCoin((c) => {
+      if (running.size >= MAX_COINS) return;
+      const t = coinTarget();
+      const key = nextKey.current++;
+      const k = new Animated.Value(0);
+      const dx = t.x - c.x;
+      // bow left of the goal bar on the way up
+      const coin: Coin = {
+        key,
+        tx: k.interpolate({ inputRange: [0, 0.5, 1], outputRange: [c.x - SIZE / 2, c.x + dx * 0.5 - 40 - SIZE / 2, t.x - SIZE / 2] }),
+        ty: k.interpolate({ inputRange: [0, 1], outputRange: [c.y - SIZE / 2, t.y - SIZE / 2] }),
+        sparkle: k.interpolate({ inputRange: [0, 0.85, 1], outputRange: [0, 0, 1] }),
+        dots: SPARK.map(([sx, sy]) => ({ x: k.interpolate({ inputRange: [0.85, 1], outputRange: [0, sx], extrapolate: 'clamp' }), y: k.interpolate({ inputRange: [0.85, 1], outputRange: [0, sy], extrapolate: 'clamp' }) })),
+      };
+      const anim = Animated.timing(k, { toValue: 1, duration: Math.max(120, c.ms), easing: Easing.in(Easing.quad), useNativeDriver: true });
+      running.set(key, anim);
+      anim.start(() => {
+        running.delete(key);
+        setCoins((l) => l.filter((x) => x.key !== key));
+      });
+      setCoins((l) => [...l, coin]);
+    });
+    return () => {
+      off();
+      running.forEach((a) => a.stop());
+      running.clear();
+    };
+  }, []);
   if (coins.length === 0) return null;
-  const t = targetRef.current;
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {coins.map((c) => {
-        const dx = t.x - c.x;
-        const dy = t.y - c.y;
-        // bow left of the goal bar on the way up
-        const tx = c.k.interpolate({ inputRange: [0, 0.5, 1], outputRange: [c.x - SIZE / 2, c.x + dx * 0.5 - 40 - SIZE / 2, t.x - SIZE / 2] });
-        const ty = c.k.interpolate({ inputRange: [0, 1], outputRange: [c.y - SIZE / 2, c.y + dy - SIZE / 2] });
-        const sparkle = c.k.interpolate({ inputRange: [0, 0.85, 1], outputRange: [0, 0, 1] });
-        return (
-          <Animated.View key={c.key} style={[styles.coinBox, { transform: [{ translateX: tx }, { translateY: ty }] }]}>
-            <View style={styles.coin}>
-              <View style={styles.inner} />
-              <View style={styles.shine} />
-            </View>
-            {[0, 1, 2, 3].map((j) => (
-              <Animated.View
-                key={j}
-                style={[
-                  styles.dot,
-                  {
-                    opacity: sparkle,
-                    transform: [
-                      { translateX: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, [12, -12, 0, 0][j]] }) },
-                      { translateY: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, [0, 0, 12, -12][j]] }) },
-                    ],
-                  },
-                ]}
-              />
-            ))}
-          </Animated.View>
-        );
-      })}
+      {coins.map((c) => (
+        <Animated.View key={c.key} style={[styles.coinBox, { transform: [{ translateX: c.tx }, { translateY: c.ty }] }]}>
+          <View style={styles.coin}>
+            <View style={styles.inner} />
+            <View style={styles.shine} />
+          </View>
+          {c.dots.map((d, j) => (
+            <Animated.View key={j} style={[styles.dot, { opacity: c.sparkle, transform: [{ translateX: d.x }, { translateY: d.y }] }]} />
+          ))}
+        </Animated.View>
+      ))}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   coinBox: { position: 'absolute', left: 0, top: 0, width: SIZE, height: SIZE },

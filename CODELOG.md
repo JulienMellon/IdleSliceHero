@@ -123,3 +123,29 @@ Round 14's C63/C64/C65/M33/T46 verified fixed. Notes and their v4.8 status:
 | `LINE.cycleSeconds` 1.6 → 2.4 | `pipeline.ts` | T48 still ±1% |
 
 `tsc` clean; 200 tests; screenshots `v4.9`: `errors: []`.
+
+## Round 17 (v4.9): ❌ CHANGES REQUESTED (4 [medium]). Next IDs: **K1, C84, A22, M50, T61**.
+| ID | Sev | Note | v5.0 |
+| --- | --- | --- | --- |
+| C78 | medium | Walk-in vanishes mid-meal when a tapped shop goes idle | walk-ins stopping only stops arrivals; waiting ones get a `quitAt`; `nextVisit` survives gaps; T56 |
+| C79 | medium | Coin animations started inside a setState updater; never stopped | built/started outside updaters, kept in a ref, stopped on unmount |
+| C80 | medium | Payout/coin detection assumed id order | payouts from `shop.sold` rising; coins launched per id (small bounded set) |
+| M46 | medium | Routes rebuilt per frame | `routesFor` cached per layout (WeakMap); `stepCrew` returns `prev` early |
+| C81 | low | Magic coin target | HUD measures its cash text (`setCoinTarget`) |
+| C82 | low | Give-up schedule mismatch | one `guestSchedule` for fold and pose |
+| C83 | low | Re-export, stale comment | removed |
+| A20 | low | Old timelines module only used by tests | open (GUEST_WALK_Y still lives there) |
+| A21 | low | Duplicate rate table | `stageRates` |
+| M47 | low | Coin layer re-renders/re-interpolates per tick | memo, interpolations built once per coin, no props |
+| M48 | low | Per-frame Map etc. | carriers Map reused from the ref |
+| T56–T60 | — | | added (T59: the speed test now checks each leg's own speed) |
+
+## v5.0 — build (step 4). Range: efa14c8..HEAD
+| Change | Where | Test |
+| --- | --- | --- |
+| **Carriers in the engine (G81)**: `boxed`, `driverBusy`, `walkinBusy`; `dispatch` hands everything boxed to the due carrier when free; laps in `LINE` | `engine/pipeline.ts`, save fields in `migrateLine` | T48 still ±1%; walk-in split test; offline/save tests |
+| Crew rewritten to follow the carriers exactly (trip start = dispatch time via `since`); routes cached; idle-shop lanes (D352); exit lane changes (D353) | `scene/crew.ts`, `cast.ts`, `layout.ts` (order spot) | `crew.test.ts` (G81 carried-every-frame test across footprints and rates, T56–T60), crowd budgets D336/D352/D353 |
+| Neighbourhood identity data + facade/awning/band/floor/street prop drawing | `scene/identity.ts`, `room.tsx`, `storefront.tsx` | screenshots |
+| Coin layer rework (C79, M47, C81) | `coin-layer.tsx`, `pulse-bus.ts`, `game-ui.tsx` | — |
+
+`tsc` clean; 204 tests; screenshots `v5.0`: `errors: []`. Pacing unchanged (Nonna 5.0 min / 35 taps; city 184.8 min).

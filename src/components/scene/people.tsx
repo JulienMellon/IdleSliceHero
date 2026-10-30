@@ -205,7 +205,9 @@ const FigureBody = memo(function FigureBody(p: FigureProps) {
       {/* outfit details */}
       {kind === 'cook' && (
         <G>
-          <Path d={`M-4 ${by} L4.5 ${by} L0.3 ${by + 5} Z`} fill={COOK_KERCHIEF[cookVariant]} {...OUT} strokeWidth={0.8} />
+          {/* D337: a kerchief big enough to read at phone size, with its knot ends out to the sides */}
+          <Path d={`M-6.5 ${by - 0.5} L7 ${by - 0.5} L0.3 ${by + 8} Z`} fill={COOK_KERCHIEF[cookVariant]} {...OUT} strokeWidth={1} />
+          <Path d={`M-6.5 ${by - 0.5} l-2.6 2.4 l2.2 0.8 Z M7 ${by - 0.5} l2.6 2.4 l-2.2 0.8 Z`} fill={COOK_KERCHIEF[cookVariant]} {...OUT} strokeWidth={0.8} />
           {[[-2.2, 7], [-2.2, 12], [3, 7], [3, 12]].map(([dx, dy], i) => <Circle key={i} cx={dx} cy={by + dy} r={0.9} fill="#C9C3BA" />)}
           <Path d={`M0.4 ${by + 5} V${by + 19}`} stroke="#E1DAD0" strokeWidth={0.8} />
         </G>

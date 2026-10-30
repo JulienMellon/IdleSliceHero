@@ -118,6 +118,9 @@ function migrateLine(raw: unknown, queued: number): Line {
     counter: jobOf(l.counter),
     prepped: nat(l.prepped),
     baked: nat(l.baked),
+    boxed: nat(l.boxed),
+    driverBusy: Math.min(LINE.driverLap, Math.max(0, num(l.driverBusy, 0))),
+    walkinBusy: Math.min(LINE.walkinLap, Math.max(0, num(l.walkinBusy, 0))),
     departures,
     walkInDebt: num(l.walkInDebt, 0),
     // ids only grow, so the scene's "highest id seen" never misses a pop (C69)
@@ -283,27 +286,26 @@ export function earningsPerSecond(s: GameState): number {
 
 export type Stage = 'prep' | 'ovens' | 'counter' | 'customers';
 
-/** Every stage tied for the slowest (an upgrade to one of them alone adds nothing). */
-export function tiedStages(shop: Shop, vehicle: number): Stage[] {
-  const rates: [Stage, number][] = [
+/** Each stage's rate (one table for `bottleneck` and `tiedStages`, A21). */
+export function stageRates(shop: Shop, vehicle: number): [Stage, number][] {
+  return [
     ['prep', prepRate(shop)],
     ['ovens', ovenRate(shop)],
     ['counter', counterRate(shop)],
     ['customers', demandRate(shop, vehicle)],
   ];
+}
+
+/** Every stage tied for the slowest (an upgrade to one of them alone adds nothing). */
+export function tiedStages(shop: Shop, vehicle: number): Stage[] {
+  const rates = stageRates(shop, vehicle);
   const min = Math.min(...rates.map((r) => r[1]));
   return rates.filter((r) => r[1] <= min * (1 + 1e-9)).map((r) => r[0]);
 }
 
 /** The slowest stage of a pizzeria's pipeline. */
 export function bottleneck(shop: Shop, vehicle: number): Stage {
-  const rates: [Stage, number][] = [
-    ['prep', prepRate(shop)],
-    ['ovens', ovenRate(shop)],
-    ['counter', counterRate(shop)],
-    ['customers', demandRate(shop, vehicle)],
-  ];
-  return rates.reduce((a, b) => (b[1] < a[1] ? b : a))[0];
+  return stageRates(shop, vehicle).reduce((a, b) => (b[1] < a[1] ? b : a))[0];
 }
 
 // ---------- Purchases ----------
@@ -495,7 +497,7 @@ export function nextHire(shop: Shop): Upgrade | null {
 }
 
 /** The line has something happening: a job running or a carrier walking out. */
-export const lineBusy = (l: Line) => !!(l.prep || l.oven || l.counter || l.departures.length);
+export const lineBusy = (l: Line) => !!(l.prep || l.oven || l.counter || l.departures.length || l.boxed);
 
 /** Which stations run on their own: the GM runs all of them, otherwise each hired head runs theirs. */
 const ALL_AUTOMATIC: Automation = Object.freeze({ prep: true, oven: true, counter: true });
@@ -574,7 +576,8 @@ export function lineTick(s: GameState, dt: number): GameState {
     const auto = automationOf(shop);
     const l = shop.line;
     // an idle manual line with nobody walking can't change: skip the allocation
-    if (!auto.prep && !auto.oven && !auto.counter && !l.prep && !l.oven && !l.counter && l.departures.length === 0) continue;
+    // (carrier laps keep counting down while pies wait or a carrier is still out)
+    if (!auto.prep && !auto.oven && !auto.counter && !l.prep && !l.oven && !l.counter && l.departures.length === 0 && l.boxed === 0 && l.driverBusy <= 0 && l.walkinBusy <= 0) continue;
     const a = advanceLine(l, dt, lineRates(id, shop, s.vehicle), auto);
     shops ??= { ...s.shops };
     shops[id] = { ...shop, line: a.line, sold: shop.sold + a.sold };

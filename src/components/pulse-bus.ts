@@ -33,3 +33,10 @@ export function onCoin(fn: CoinListener) {
 export function emitCoin(c: CoinLaunch) {
   coinListeners.forEach((fn) => fn(c));
 }
+
+/** Where coins land: the HUD cash text's centre in window coordinates (measured by the HUD, C81). */
+let target = { x: 196, y: 80 };
+export const coinTarget = () => target;
+export function setCoinTarget(x: number, y: number) {
+  target = { x, y };
+}

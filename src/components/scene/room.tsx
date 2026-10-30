@@ -4,6 +4,7 @@ import { F } from '../../theme';
 import { Circle, Defs, Ellipse, G, LinearGradient, Path, Polygon, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { INK, SCENE_W, D, WH, FRONT_TOP, P, pts, shade } from './projection';
 import type { Layout } from './layout';
+import { LOOKS } from './identity';
 import { hash32 } from './people';
 import { Sidewalk } from './street';
 
@@ -118,7 +119,7 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
       <Path d={`M${P(L, 0, sideTop).join(' ')} L${P(L, D, WH).join(' ')} L${P(R, D, WH).join(' ')} L${P(R, 0, sideTop).join(' ')}`} stroke="#5E3A26" strokeWidth={4.5} strokeLinejoin="round" fill="none" />
       <Path d={`M${P(L, 0, sideTop).join(' ')} L${P(L, D, WH).join(' ')} L${P(R, D, WH).join(' ')} L${P(R, 0, sideTop).join(' ')}`} stroke="#8E5A3C" strokeWidth={1.4} strokeLinejoin="round" fill="none" />
       {/* floor: plain tile → checkerboard → wood parquet → marble (decor) */}
-      <Polygon points={pts([P(L, 0), P(R, 0), P(R, D), P(L, D)])} fill={flooring === 0 && id === 'industrial' ? '#CFC6B8' : ['#E7D7BE', '#F4EFE6', '#C99A6B', '#E2D6C4'][flooring]} stroke={INK} strokeWidth={1.4} />
+      <Polygon points={pts([P(L, 0), P(R, 0), P(R, D), P(L, D)])} fill={flooring === 0 ? LOOKS[id].floor : ['#E7D7BE', '#F4EFE6', '#C99A6B', '#E2D6C4'][flooring]} stroke={INK} strokeWidth={1.4} />
       {flooring === 1 &&
         Array.from({ length: 20 * 6 }).map((_, i) => {
           const c = i % 20;
@@ -232,6 +233,59 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
           })}
         </G>
       )}
+      {/* each neighbourhood's wall band, at every decor tier (v5.0): subway tile, beadboard, shiplap, panelling, ducts */}
+      {(() => {
+        const band = LOOKS[id].band;
+        const top = 40;
+        if (band === 'subway')
+          return (
+            <G>
+              <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, top), P(L, D, top)])} fill="#F4EFE6" />
+              {Array.from({ length: 6 }).map((_, j) => (
+                <Path key={`sr${j}`} d={`M${P(L, D, (j + 1) * (top / 6)).join(' ')} L${P(R, D, (j + 1) * (top / 6)).join(' ')}`} stroke="#D4C9B8" strokeWidth={0.7} />
+              ))}
+              {Array.from({ length: 6 }).map((_, j) =>
+                Array.from({ length: Math.floor((R - L) / 12) }).map((__, i) => {
+                  const x = L + i * 12 + (j % 2 ? 6 : 0);
+                  return <Path key={`sc${j}-${i}`} d={`M${P(x, D, j * (top / 6)).join(' ')} L${P(x, D, (j + 1) * (top / 6)).join(' ')}`} stroke="#D4C9B8" strokeWidth={0.7} />;
+                }),
+              )}
+              <Path d={`M${P(L, D, top).join(' ')} L${P(R, D, top).join(' ')}`} stroke="#B9AE9C" strokeWidth={1.4} />
+            </G>
+          );
+        if (band === 'beadboard' || band === 'shiplap' || band === 'panelling') {
+          const fill = band === 'beadboard' ? '#FFFFFF' : band === 'shiplap' ? '#E4F3FA' : '#6B4A36';
+          const line = band === 'beadboard' ? '#E3EDE3' : band === 'shiplap' ? '#B9DCEC' : '#4E3426';
+          const h = band === 'panelling' ? 50 : top;
+          return (
+            <G>
+              <Polygon points={pts([P(L, D, 0), P(R, D, 0), P(R, D, h), P(L, D, h)])} fill={fill} />
+              {band === 'shiplap'
+                ? Array.from({ length: Math.floor(h / 8) }).map((_, j) => <Path key={j} d={`M${P(L, D, (j + 1) * 8).join(' ')} L${P(R, D, (j + 1) * 8).join(' ')}`} stroke={line} strokeWidth={1} />)
+                : Array.from({ length: Math.floor((R - L) / (band === 'panelling' ? 22 : 6)) }).map((_, i) => {
+                    const x = L + (i + 1) * (band === 'panelling' ? 22 : 6);
+                    return <Path key={i} d={`M${P(x, D, 2).join(' ')} L${P(x, D, h - 2).join(' ')}`} stroke={line} strokeWidth={band === 'panelling' ? 1.4 : 0.8} />;
+                  })}
+              <Polygon points={pts([P(L, D, h), P(R, D, h), P(R, D, h + 3), P(L, D, h + 3)])} fill={band === 'panelling' ? '#8E6448' : '#E9DCC8'} stroke={INK} strokeWidth={0.5} />
+            </G>
+          );
+        }
+        if (band === 'ducts') {
+          // exposed ductwork along the ceiling line, with clamps
+          const [ax, ay] = P(L + 4, D, WH - 34);
+          const [bx] = P(R - 4, D, WH - 34);
+          return (
+            <G>
+              <Rect x={ax} y={ay} width={bx - ax} height={9} rx={4.5} fill="#B8C0C6" stroke={INK} strokeWidth={0.9} />
+              <Rect x={ax + 2} y={ay + 1.5} width={bx - ax - 4} height={2} rx={1} fill="#fff" opacity={0.4} />
+              {Array.from({ length: Math.floor((bx - ax) / 30) }).map((_, i) => (
+                <Rect key={i} x={ax + 14 + i * 30} y={ay - 1} width={3} height={11} rx={1} fill="#8E979E" stroke={INK} strokeWidth={0.6} />
+              ))}
+            </G>
+          );
+        }
+        return null;
+      })()}
       {/* ambient occlusion where the walls meet the floor */}
       <Polygon points={pts([P(L, D - 10), P(R, D - 10), P(R, D), P(L, D)])} fill="rgba(59,31,20,0.16)" />
       <Polygon points={pts([P(L, 0), P(L + 10, 0), P(L + 10, D), P(L, D)])} fill="rgba(59,31,20,0.14)" />
@@ -464,38 +518,76 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
  * The street face of the shop: brick pilasters at both corners, a fascia beam across the top
  * carrying the sign, a full-width scalloped awning, the brick sill and the entrance on the right.
  */
-export const FrontWall = memo(function FrontWall({ lay, name, signage, plants }: { lay: Layout; name: string; signage: number; plants: number }) {
+export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, id }: { lay: Layout; name: string; signage: number; plants: number; id: NeighborhoodId }) {
   const { L, R, door } = lay;
+  const look = LOOKS[id];
   const sill = (x0: number, x1: number) => {
     const [ax, ay] = P(x0, 0);
     const [bx] = P(x1, 0);
     return (
       <G key={x0}>
-        <Rect x={ax} y={ay - 7} width={bx - ax} height={13} rx={2} fill="#A24B2C" stroke={INK} strokeWidth={1.2} />
+        <Rect x={ax} y={ay - 7} width={bx - ax} height={13} rx={2} fill={look.pilaster} stroke={INK} strokeWidth={1.2} />
         <Rect x={ax + 1} y={ay - 6} width={bx - ax - 2} height={4} fill="#fff" opacity={0.15} />
         {Array.from({ length: Math.floor((bx - ax) / 20) }).map((_, i) => (
-          <Path key={i} d={`M${ax + 10 + i * 20} ${ay - 7} V${ay + 6}`} stroke="#7A3520" strokeWidth={1} />
+          <Path key={i} d={`M${ax + 10 + i * 20} ${ay - 7} V${ay + 6}`} stroke={look.seam} strokeWidth={1} />
         ))}
       </G>
     );
   };
+  // the corner pilasters carry most of each neighbourhood's look (v5.0): brick, clapboard, planks, collegiate brick
+  // with limestone quoins, corrugated steel or green tile with brass caps
   const pilaster = (x0: number, x1: number, inner: 'l' | 'r') => {
     const [ax, ay] = P(x0, 0, 0);
     const [bx, ty] = P(x1, 0, FRONT_TOP);
     const w = bx - ax;
-    const rows = Math.floor((ay - ty) / 9);
+    const h = ay - ty;
+    const rows = Math.floor(h / 9);
+    const f = look.facade;
     return (
       <G key={x0}>
-        <Rect x={ax} y={ty} width={w} height={ay - ty + 6} fill="#A24B2C" stroke={INK} strokeWidth={1.3} />
-        {Array.from({ length: rows }).map((_, i) => (
-          <G key={i}>
-            <Path d={`M${ax} ${ty + 9 * (i + 1)} H${bx}`} stroke="#7A3520" strokeWidth={0.8} />
-            <Path d={`M${ax + w * (i % 2 ? 0.33 : 0.66)} ${ty + 9 * i} v9`} stroke="#7A3520" strokeWidth={0.8} />
+        <Rect x={ax} y={ty} width={w} height={h + 6} fill={look.pilaster} stroke={INK} strokeWidth={1.3} />
+        {(f === 'brick' || f === 'collegiate') &&
+          Array.from({ length: rows }).map((_, i) => (
+            <G key={i}>
+              <Path d={`M${ax} ${ty + 9 * (i + 1)} H${bx}`} stroke={look.seam} strokeWidth={0.8} />
+              <Path d={`M${ax + w * (i % 2 ? 0.33 : 0.66)} ${ty + 9 * i} v9`} stroke={look.seam} strokeWidth={0.8} />
+            </G>
+          ))}
+        {/* limestone quoins: pale blocks alternating on the outer corner */}
+        {f === 'collegiate' &&
+          Array.from({ length: Math.floor(rows / 2) }).map((_, i) => (
+            <Rect key={`q${i}`} x={inner === 'l' ? ax : bx - w * (i % 2 ? 0.45 : 0.7)} y={ty + 18 * i + 1} width={w * (i % 2 ? 0.45 : 0.7)} height={8} fill="#E8E0CC" stroke={look.seam} strokeWidth={0.6} />
+          ))}
+        {/* clapboard: overlapping horizontal boards */}
+        {f === 'clapboard' && Array.from({ length: Math.floor(h / 6) }).map((_, i) => <Path key={i} d={`M${ax} ${ty + 6 * (i + 1)} H${bx}`} stroke={look.seam} strokeWidth={1} />)}
+        {/* weathered planks, vertical seams, and a rope trim up each edge */}
+        {f === 'planks' && (
+          <G>
+            {[0.33, 0.66].map((t) => <Path key={t} d={`M${ax + w * t} ${ty} V${ay + 6}`} stroke={look.seam} strokeWidth={1} />)}
+            {[ax + 1.5, bx - 1.5].map((rx) => (
+              <Path key={rx} d={`M${rx} ${ty} V${ay + 4}`} stroke="#C99A6B" strokeWidth={2.4} strokeDasharray="3 2" />
+            ))}
           </G>
-        ))}
-        <Rect x={inner === 'l' ? bx - 3.5 : ax} y={ty} width={3.5} height={ay - ty + 6} fill="#000" opacity={0.18} />
-        <Rect x={inner === 'l' ? ax + 1.5 : bx - 4} y={ty} width={2.5} height={ay - ty + 6} fill="#fff" opacity={0.16} />
-        <Rect x={ax - 2} y={ay - 2} width={w + 4} height={8} rx={1.5} fill="#7A3520" stroke={INK} strokeWidth={1} />
+        )}
+        {/* corrugated steel: vertical ribs, lit and shaded */}
+        {f === 'steel' &&
+          Array.from({ length: Math.max(2, Math.floor(w / 4)) }).map((_, i) => (
+            <G key={i}>
+              <Path d={`M${ax + 2 + i * 4} ${ty} V${ay + 6}`} stroke="#A9B1B7" strokeWidth={1.2} />
+              <Path d={`M${ax + 3.4 + i * 4} ${ty} V${ay + 6}`} stroke={look.seam} strokeWidth={0.8} />
+            </G>
+          ))}
+        {/* green tile: a fine grid */}
+        {f === 'tile' && (
+          <G>
+            {Array.from({ length: Math.floor(h / 7) }).map((_, i) => <Path key={`h${i}`} d={`M${ax} ${ty + 7 * (i + 1)} H${bx}`} stroke={look.seam} strokeWidth={0.7} />)}
+            <Path d={`M${ax + w / 2} ${ty} V${ay + 6}`} stroke={look.seam} strokeWidth={0.7} />
+            <Rect x={ax - 2} y={ty} width={w + 4} height={5} rx={1} fill="#D4A84A" stroke={INK} strokeWidth={0.9} />
+          </G>
+        )}
+        <Rect x={inner === 'l' ? bx - 3.5 : ax} y={ty} width={3.5} height={h + 6} fill="#000" opacity={0.18} />
+        <Rect x={inner === 'l' ? ax + 1.5 : bx - 4} y={ty} width={2.5} height={h + 6} fill="#fff" opacity={0.16} />
+        <Rect x={ax - 2} y={ay - 2} width={w + 4} height={8} rx={1.5} fill={look.plinth} stroke={INK} strokeWidth={1} />
       </G>
     );
   };
@@ -527,9 +619,9 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants }:
         const [, bTop] = P(0, 0, FRONT_TOP - 20);
         const brick = (x0: number, x1: number, top: number, bot: number) => (
           <G>
-            <Rect x={x0} y={top} width={x1 - x0} height={bot - top} fill="#A24B2C" stroke={INK} strokeWidth={1.1} />
+            <Rect x={x0} y={top} width={x1 - x0} height={bot - top} fill={look.pilaster} stroke={INK} strokeWidth={1.1} />
             {Array.from({ length: Math.floor((bot - top) / 8) }).map((_, i) => (
-              <Path key={i} d={`M${x0} ${top + 8 * (i + 1)} H${x1}`} stroke="#7A3520" strokeWidth={0.7} />
+              <Path key={i} d={`M${x0} ${top + 8 * (i + 1)} H${x1}`} stroke={look.seam} strokeWidth={0.7} />
             ))}
           </G>
         );
@@ -586,7 +678,7 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants }:
             <Rect x={jax + 2} y={gTop + 2} width={kbx - jax - 4} height={lTop - gTop - 2} fill="none" stroke={INK} strokeWidth={0.8} />
             <Path d={`M${(jax + kbx) / 2} ${gTop} V${(gTop + lTop) / 2 - 14}`} stroke="#6B4330" strokeWidth={3} />
             {brick(jax, kbx, bTop, gTop + 2)}
-            <Rect x={jax - 1} y={gTop - 1} width={kbx - jax + 2} height={4} rx={1} fill="#7A3520" stroke={INK} strokeWidth={0.9} />
+            <Rect x={jax - 1} y={gTop - 1} width={kbx - jax + 2} height={4} rx={1} fill={look.plinth} stroke={INK} strokeWidth={0.9} />
             <Circle cx={(jax + kbx) / 2 + 4} cy={(bTop + gTop) / 2 - 6} r={8} fill="#FFE7A0" stroke="#6B4330" strokeWidth={2.6} />
             <Path d={`M${(jax + kbx) / 2 + 4} ${(bTop + gTop) / 2 - 14} V${(bTop + gTop) / 2 + 2} M${(jax + kbx) / 2 - 4} ${(bTop + gTop) / 2 - 6} H${(jax + kbx) / 2 + 12}`} stroke="#6B4330" strokeWidth={1.4} />
             {(() => {
@@ -620,10 +712,10 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants }:
             {/* jambs + lintel */}
             {/* the doorway's left side is a slim wooden post, so people walking in aren't hidden behind brick */}
             <Rect x={jbx - 3.2} y={lTop} width={3.2} height={jay + 6 - lTop} fill="#6B4330" stroke={INK} strokeWidth={0.9} />
-            <Rect x={jax} y={jay - 2} width={jbx - 3.2 - jax} height={8} fill="#A24B2C" stroke={INK} strokeWidth={0.9} />
+            <Rect x={jax} y={jay - 2} width={jbx - 3.2 - jax} height={8} fill={look.pilaster} stroke={INK} strokeWidth={0.9} />
             {brick(P(door.x1, 0)[0], kbx, lTop, jay + 6)}
             {brick(jax, kbx, lTop, lBot)}
-            <Rect x={jax - 1} y={lTop - 3} width={kbx - jax + 2} height={4} rx={1} fill="#7A3520" stroke={INK} strokeWidth={0.9} />
+            <Rect x={jax - 1} y={lTop - 3} width={kbx - jax + 2} height={4} rx={1} fill={look.plinth} stroke={INK} strokeWidth={0.9} />
             <Path d={`M${jbx} ${lBot} V${jay + 4} M${P(door.x1, 0)[0]} ${lBot} V${jay + 4}`} stroke="#5E3A26" strokeWidth={2.4} />
             {/* OPEN plate hanging from the lintel, centred in the doorway, above head height */}
             {(() => {
@@ -642,20 +734,37 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants }:
       })()}
       {pilaster(L - 6, L + 8, 'l')}
       {pilaster(R - 8, R + 6, 'r')}
-      {/* awning: alternating stripes with scalloped edge, under the fascia */}
-      <Path d={`M${fx0} ${fBot} L${fx1} ${fBot} L${fx1 + 6} ${fBot + 13} L${fx0 - 6} ${fBot + 13} Z`} fill="#FFF4E0" stroke={INK} strokeWidth={1.1} />
-      {Array.from({ length: n }).map((_, i) => {
-        const xa = fx0 - 6 + i * aw;
-        const ta = fx0 + (i * (fx1 - fx0)) / n;
-        const tb = fx0 + ((i + 1) * (fx1 - fx0)) / n;
+      {/* awning under the fascia: each neighbourhood's colours and shape; red stays as the first stripe or the piping */}
+      {(() => {
+        const [c0, c1] = look.awning;
+        const drop = look.shape === 'box' ? 16 : look.shape === 'dome' ? 15 : 13;
+        const bulge = look.shape === 'dome' ? 5 : 0;
         return (
-          <G key={i}>
-            {i % 2 === 0 && <Path d={`M${ta} ${fBot} L${tb} ${fBot} L${xa + aw} ${fBot + 13} L${xa} ${fBot + 13} Z`} fill="#D9443A" />}
-            <Path d={`M${xa} ${fBot + 13} q${aw / 2} ${aw * 0.5} ${aw} 0`} fill={i % 2 === 0 ? '#D9443A' : '#FFF4E0'} stroke={INK} strokeWidth={1} />
+          <G>
+            <Path d={`M${fx0} ${fBot} L${fx1} ${fBot} L${fx1 + 6} ${fBot + drop} L${fx0 - 6} ${fBot + drop} Z`} fill={c1} stroke={INK} strokeWidth={1.1} />
+            {Array.from({ length: n }).map((_, i) => {
+              const xa = fx0 - 6 + i * aw;
+              const ta = fx0 + (i * (fx1 - fx0)) / n;
+              const tb = fx0 + ((i + 1) * (fx1 - fx0)) / n;
+              // a dome awning bows out in the middle
+              const mid = bulge * Math.sin(((i + 0.5) / n) * Math.PI);
+              return (
+                <G key={i}>
+                  {i % 2 === 0 && <Path d={`M${ta} ${fBot} L${tb} ${fBot} L${xa + aw} ${fBot + drop + mid} L${xa} ${fBot + drop + mid} Z`} fill={c0} />}
+                  {look.shape === 'scallop' || look.shape === 'dome' ? (
+                    <Path d={`M${xa} ${fBot + drop + mid} q${aw / 2} ${aw * 0.5} ${aw} 0`} fill={i % 2 === 0 ? c0 : c1} stroke={INK} strokeWidth={1} />
+                  ) : (
+                    // straight and box awnings end in a flat valance
+                    <Rect x={xa} y={fBot + drop} width={aw} height={look.shape === 'box' ? 6 : 4} fill={i % 2 === 0 ? c0 : c1} stroke={INK} strokeWidth={0.8} />
+                  )}
+                </G>
+              );
+            })}
+            <Path d={`M${fx0 - 6} ${fBot + drop} H${fx1 + 6}`} stroke={look.piping ?? INK} strokeWidth={look.piping ? 2.4 : 1.1} />
+            {look.piping && <Path d={`M${fx0 - 6} ${fBot + drop - 1.4} H${fx1 + 6}`} stroke={INK} strokeWidth={0.6} opacity={0.6} />}
           </G>
         );
-      })}
-      <Path d={`M${fx0 - 6} ${fBot + 13} H${fx1 + 6}`} stroke={INK} strokeWidth={1.1} />
+      })()}
       <Rect x={fx0} y={fBot} width={fx1 - fx0} height={3} fill="#000" opacity={0.15} />
       {/* fascia beam */}
       <Rect x={fx0} y={fTop} width={fx1 - fx0} height={fBot - fTop} fill="#5E3A26" stroke={INK} strokeWidth={1.4} />
@@ -781,6 +890,83 @@ export const Planter = memo(function Planter({ x, y }: { x: number; y: number })
       <Rect x={-2} y={-36} width={4} height={18} fill="#7A4A26" />
       <Circle cx={0} cy={-42} r={13} fill="#4FA048" stroke={INK} strokeWidth={1.1} />
       <Circle cx={-4} cy={-46} r={5} fill="#7FD06A" />
+    </G>
+  );
+});
+
+/** Each neighbourhood's sidewalk signature (v5.0): drawn standing at screen point (x, y), ~26 units tall. */
+export const StreetProp = memo(function StreetProp({ id, x, y }: { id: NeighborhoodId; x: number; y: number }) {
+  const kind = LOOKS[id].street;
+  return (
+    <G transform={`translate(${x} ${y})`}>
+      <Ellipse cx={0} cy={1} rx={13} ry={3} fill="#000" opacity={0.15} />
+      {kind === 'newsbox' && (
+        // a blue newspaper box on legs
+        <G>
+          <Rect x={-7} y={-6} width={2} height={7} fill="#2B5E86" />
+          <Rect x={5} y={-6} width={2} height={7} fill="#2B5E86" />
+          <Rect x={-9} y={-27} width={18} height={22} rx={2} fill="#3F7FB0" stroke={INK} strokeWidth={1.1} />
+          <Rect x={-6} y={-24} width={12} height={8} rx={1} fill="#DCEBF5" stroke={INK} strokeWidth={0.7} />
+          <Rect x={-4} y={-22} width={8} height={1.4} fill="#7A8A96" />
+          <Rect x={-4} y={-19.5} width={6} height={1.4} fill="#7A8A96" />
+          <Rect x={-9} y={-28.5} width={18} height={3} rx={1.5} fill="#2B5E86" stroke={INK} strokeWidth={0.8} />
+        </G>
+      )}
+      {kind === 'picket' && (
+        // a short white picket fence
+        <G>
+          <Rect x={-14} y={-14} width={28} height={2.4} fill="#FFFFFF" stroke={INK} strokeWidth={0.7} />
+          <Rect x={-14} y={-7} width={28} height={2.4} fill="#FFFFFF" stroke={INK} strokeWidth={0.7} />
+          {[-12, -6, 0, 6, 12].map((px) => (
+            <Path key={px} d={`M${px - 2} 0 V-17 L${px} -20 L${px + 2} -17 V0 Z`} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
+          ))}
+        </G>
+      )}
+      {kind === 'bollard' && (
+        // a dock bollard with coiled rope
+        <G>
+          <Path d="M-7 0 V-14 Q-7 -20 0 -20 Q7 -20 7 -14 V0 Z" fill="#3A3F44" stroke={INK} strokeWidth={1.1} />
+          <Rect x={-9} y={-18} width={18} height={4} rx={2} fill="#4A5056" stroke={INK} strokeWidth={0.9} />
+          <Ellipse cx={-13} cy={-3} rx={7} ry={3.4} fill="none" stroke="#C99A6B" strokeWidth={2.4} />
+          <Ellipse cx={-13} cy={-5} rx={5} ry={2.4} fill="none" stroke="#B5844F" strokeWidth={2} />
+          <Path d="M-7 -12 Q-10 -9 -12 -6" stroke="#C99A6B" strokeWidth={2.2} fill="none" />
+        </G>
+      )}
+      {kind === 'bikerack' && (
+        // a bike rack with a parked bike
+        <G>
+          {[-10, 0, 10].map((px) => (
+            <Path key={px} d={`M${px - 4} 0 V-10 Q${px - 4} -14 ${px} -14 Q${px + 4} -14 ${px + 4} -10 V0`} stroke="#7A8A96" strokeWidth={1.8} fill="none" />
+          ))}
+          <Circle cx={-8} cy={-5} r={5} fill="none" stroke={INK} strokeWidth={1.3} />
+          <Circle cx={8} cy={-5} r={5} fill="none" stroke={INK} strokeWidth={1.3} />
+          <Path d="M-8 -5 L-2 -12 L5 -12 L8 -5 M-2 -12 L1 -5 L5 -12 M-2 -12 L-3 -15" stroke="#6A2C9A" strokeWidth={1.5} fill="none" strokeLinejoin="round" />
+        </G>
+      )}
+      {kind === 'barrel' && (
+        // a steel barrel and a traffic cone
+        <G>
+          <Rect x={-13} y={-22} width={15} height={22} rx={3} fill="#3A6E8C" stroke={INK} strokeWidth={1.1} />
+          <Rect x={-13} y={-16} width={15} height={2} fill="#2A5068" />
+          <Rect x={-13} y={-7} width={15} height={2} fill="#2A5068" />
+          <Ellipse cx={-5.5} cy={-22} rx={7.5} ry={2} fill="#4A86A8" stroke={INK} strokeWidth={0.8} />
+          <Path d="M6 0 L9.5 -16 L13 0 Z" fill="#E8742A" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+          <Path d="M7.4 -7 L11.6 -7 L11 -10 L8 -10 Z" fill="#fff" />
+          <Rect x={4} y={-1.5} width={11} height={2} rx={1} fill="#C85E1E" stroke={INK} strokeWidth={0.6} />
+        </G>
+      )}
+      {kind === 'topiary' && (
+        // a clipped topiary ball in a planter, and a brass rope post
+        <G>
+          <Rect x={-14} y={-8} width={12} height={8} rx={1.5} fill="#F4F1EC" stroke={INK} strokeWidth={0.9} />
+          <Rect x={-9} y={-13} width={2} height={5} fill="#6B4330" />
+          <Circle cx={-8} cy={-19} r={7.5} fill="#3F8F4A" stroke={INK} strokeWidth={1} />
+          <Circle cx={-10} cy={-21} r={2.2} fill="#5DB36A" opacity={0.8} />
+          <Rect x={8} y={-18} width={2.6} height={18} fill="#D4A84A" stroke={INK} strokeWidth={0.7} />
+          <Circle cx={9.3} cy={-19} r={2.6} fill="#D4A84A" stroke={INK} strokeWidth={0.7} />
+          <Path d="M9.3 -14 Q16 -6 22 -12" stroke="#B5203A" strokeWidth={2.2} fill="none" strokeLinecap="round" />
+        </G>
+      )}
     </G>
   );
 });

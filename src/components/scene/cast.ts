@@ -6,7 +6,7 @@ import { GUEST_SHIRTS, HAIR_COLORS, hash32, type Act, type Mood, type PersonProp
 import type { SeatPalette } from './palette';
 import { P, SCENE_W } from './projection';
 import { STEP_FRAMES } from './quantise';
-import { driverPoseAt, guestPoseAt, type CrewState } from './crew';
+import { driverPoseAt, guestPoseAt, WALKIN_TABLES, type CrewState } from './crew';
 
 const BAKER_SHIRTS = ['#B23A48', '#7E3A8E', '#2E6E8E'];
 const BAKER_DOTS = ['#D9443A', '#3FAE5A', '#2D9CDB'];
@@ -23,8 +23,8 @@ export interface CastMember {
   sortY: number;
   role: 'driver' | 'walkin' | 'diner' | 'companion' | 'cook' | 'baker' | 'staff';
   props: PersonProps;
-  /** The departure this figure is carrying or being handed (its pop rides above them), or 0. */
-  dep?: number;
+  /** Departures this figure carries or is being handed (their pops ride above them). */
+  deps?: readonly number[];
 }
 
 export interface CastInput {
@@ -69,42 +69,46 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
 
   // drivers and walk-ins follow the engine's departures (crew.ts): one driver per pickup spot, out the door with
   // each order and back again; walk-ins wait at their own order spot for a pie, eat, and leave
-  crew.drivers.forEach((slot, i) => {
-    const dp = driverPoseAt(lay, i, slot, clock, SCENE_W);
-    const [x, y] = dp.pos;
-    const o = edgeFade(P(x, y)[0]);
-    if (o <= 0) return; // off-screen: don't keep an invisible figure mounted
-    const sd = shopSeed + i + 10;
-    cast.push({
-      key: `d${i}`,
-      sortY: y,
-      role: 'driver',
-      props: { x, y, kind: 'driver', seed: sd, blink: blinkAt(sd), carry: dp.carry, carryWalk: dp.carry && dp.walking, step: dp.walking ? walkStep(i) : 0, arm: 0, flip: dp.face, o, mood: dp.leaving ? 'o' : 'smile' },
-      dep: dp.dep,
-    });
-  });
+  {
+    const dp = driverPoseAt(lay, crew.driver, clock, SCENE_W, crew.idle);
+    if (dp) {
+      const [x, y] = dp.pos;
+      const o = edgeFade(P(x, y)[0]);
+      const sd = shopSeed + 10;
+      // off-screen: don't keep an invisible figure mounted
+      if (o > 0)
+        cast.push({
+          key: 'd0',
+          sortY: y,
+          role: 'driver',
+          props: { x, y, kind: 'driver', seed: sd, blink: blinkAt(sd), carry: dp.carry, carryWalk: dp.carry && dp.walking, step: dp.walking ? walkStep(0) : 0, arm: 0, flip: dp.face, o, mood: dp.leaving ? 'o' : 'smile' },
+          deps: dp.deps,
+        });
+    }
+  }
 
-  const guestCount = crew.guests.length;
+  // walk-ins sit in the right-hand chair of the first WALKIN_TABLES tables; those tables' regulars take the left
+  const guestCount = crew.guests.length ? Math.min(WALKIN_TABLES, lay.tables.length) : 0;
   const fixedFill = Math.min(1, 0.4 + shop.tables / 40);
-  crew.guests.forEach((slot, i) => {
-    const g = guestPoseAt(lay, i, slot, clock, SCENE_W);
-    if (!g) return;
-    const lap = slot.visit;
+  for (const slot of crew.guests) {
+    const g = guestPoseAt(lay, slot, clock, SCENE_W, crew.idle);
+    if (!g) continue;
+    const i = slot.visit;
     // a different customer every visit, and different crowds in every shop
-    const gSeed = shopSeed + i * 2 + 3 + lap * 13;
+    const gSeed = shopSeed + (i % 4) * 2 + 3 + i * 13;
     const seated = g.stage === 'seated';
     const bite = Math.abs(Math.sin(poseClock * 2 + i));
     const mood: Mood = seated ? (bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile') : 'smile';
     const o = edgeFade(P(g.pos[0], g.pos[1])[0]);
-    if (o <= 0) return;
+    if (o <= 0) continue;
     cast.push({
-      key: `g${i}`,
+      key: `g${i % 8}`,
       sortY: g.pos[1] - 0.3,
       role: 'walkin',
-      props: { x: g.pos[0], y: g.pos[1], kind: seated ? 'sit' : 'guest', seed: gSeed, shirt: GUEST_SHIRTS[pal.walkShirt(i, lap)], hair: HAIR_COLORS[pal.walkHair(i, lap)], o, flip: g.face, step: g.walking ? walkStep(i + 3) : 0, talk: g.stage === 'order' && Math.sin(poseClock * 9) > -0.2, mood, blink: blinkAt(gSeed), arm: seated ? bite * 2 : 0 },
-      dep: g.dep,
+      props: { x: g.pos[0], y: g.pos[1], kind: seated ? 'sit' : 'guest', seed: gSeed, shirt: GUEST_SHIRTS[pal.walkShirt(i % 4, Math.floor(i / 4))], hair: HAIR_COLORS[pal.walkHair(i % 4, Math.floor(i / 4))], o, flip: g.face, step: g.walking ? walkStep((i % 4) + 3) : 0, talk: g.stage === 'order' && Math.sin(poseClock * 9) > -0.2, mood, blink: blinkAt(gSeed), arm: seated ? bite * 2 : 0 },
+      deps: g.deps,
     });
-  });
+  }
 
   // seated regulars (someone is always eating) and, in a busy room, a companion opposite
   const regulars = running ? Math.max(1, Math.round(lay.tables.length * fixedFill)) : 1;

@@ -92,3 +92,31 @@ Station badges, hit-tested taps and per-departure pops are v4.8; event-driven pe
 | --- | --- | --- |
 | **D336**: drivers and walk-ins follow departures (`scene/crew.ts`): one driver per pickup spot, out the door with each order along a lane in front of the register, back again; one walk-in waits at the register for a walk-in sale, eats, leaves (or gives up after 8 s); none when walk-ins buy nothing. Constant walking speed on every leg (P6). Crowd budget at the counter (walk-in vs driver, stacked drivers ≤ 15%, steady/sparse/burst cadences) failed on 541 frames with the old exit route; passes now | `crew.ts`, `cast.ts`, `crowd.test.ts` | 03b, 04, 09–12 |
 | Round-46 fixes above; automated jobs last ~2.4 s (was 1.6) so each stack leaving reads | `kitchen-hud.tsx`, `coin-layer.tsx`, `head-face.tsx`, `stations.ts` | 05b2, 05b5, 10, 11 |
+
+## Round 47 (v4.9): ❌ NOT SATISFIED — G81, D352–D360. D336 FIXED. Next IDs: **G82, D361**.
+| ID | Type | Note | v5.0 |
+| --- | --- | --- | --- |
+| G81 | bug | A sale paid with nobody carrying it (pop over the register) | the engine now has carriers: boxed pies wait for the driver (lap 4.4 s) or the walk-in at the register (next one 4.2 s after a hand-over); each trip takes everything boxed. The scene runs on the same timings (trips start at the engine's dispatch time). Test: every departure in flight has a visible carrier, all footprints, three rate profiles |
+| D352 | major | Walk-ins cut in half by the taller sidewalk row (no-manager shops) | walkers use a lane just outside the door there; crowd budget: no mover's feet in the row's band |
+| D347 | major | Fallback pops over the cashiers | no fallbacks left in normal play (G81) |
+| D353 | major | Flagship: driver among the front tables, a diner over his legs | driver exits along depth 40 (behind front diners' heads), steps forward to the doorway lane before the walk-in; the walk-in waits beside the counter's end (depth 60); budget: a seated diner never covers > 15% of a standing driver (30% walking past) |
+| D354 | minor | Diners share tables / no chair | open |
+| D355 | minor | GM mini face ×3 | one GM chip at the rail's left end |
+| D356 | minor | Idle-shop sidewalk props on the sill | no-manager shops keep the sidewalk clear except the mat |
+| D357 | minor | Hire burst shows through buttons | open (burst is inside the button; to check in pixels) |
+| D358 | minor | Orphan words in head cards | "Runs the counter for you" |
+| D359 | note | Struck price unexplained on the sidewalk | open |
+| D360 | note | Tied subtitle | "Bottleneck: prep + ovens" |
+| D337 | minor | Cook kerchiefs too small | 13×8.5 triangle with knot ends |
+
+## v5.0 — build (playtest 2, step 4: neighbourhood identity + round-47 fixes)
+Owner request (2026-10-30): each neighbourhood's pizzeria a little more different. `scene/identity.ts` (critic's proposal, red kept as piping):
+| Shop | Facade (pilasters, entrance, sill) | Awning | Wall band | Tier-0 floor | Sidewalk |
+| --- | --- | --- | --- | --- | --- |
+| Downtown | red brick | scalloped red/cream | subway tile | cream | newspaper box |
+| Suburbs | white clapboard | straight red/mint | beadboard | light oak | picket fence |
+| Waterfront | blue planks + rope trim | scalloped navy/cream, red piping | shiplap | teak | bollard + rope |
+| University | collegiate brick + limestone quoins | straight purple/gold, red piping | dark panelling | parquet tone | bike rack |
+| Industrial | corrugated steel | box orange/charcoal, red piping | ductwork at the ceiling | concrete | barrel + cone |
+| Uptown | green tile + brass caps | dome burgundy/cream, gold piping | (burgundy wainscot, kept) | marble | topiary + rope post |
+Shots: `25-look-suburbs`, `25-look-university`, `25-look-downtown`, plus 05b (Waterfront), 09 (Industrial), 14 (Uptown).
