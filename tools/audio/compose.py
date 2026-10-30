@@ -52,6 +52,19 @@ def swing(song: Song, ratio: float, tracks=None):
         tr.events = ev
 
 
+def swing_smooth(tracks, ratio: float):
+    """Swing every subdivision, not just the off-beat eighth: within each beat, 0→0, .5→ratio, 1→1 (piecewise
+    linear), so 16ths line up with swung 8th-note hats (AU48)."""
+    if ratio <= 0.5:
+        return
+    def f(x):
+        b = int(x)
+        fr = x - b
+        return b + (fr / 0.5 * ratio if fr <= 0.5 else ratio + (fr - 0.5) / 0.5 * (1 - ratio))
+    for tr in tracks:
+        tr.events = [(f(t), max(0.04, f(t + d) - f(t)), pi, v) for (t, d, pi, v) in tr.events]
+
+
 def melody(tr: Track, root, bars, mode, start, bar_beats, vel=96, legato=0.92, shift=0, accent_first=True):
     for (t, d, pi) in M.bar_melody(root, bars, mode, start, bar_beats, shift):
         v = vel + (6 if accent_first and abs((t - start) % bar_beats) < 1e-6 else 0)
@@ -88,6 +101,10 @@ def bass_root(root, d, mode, oct_=-2, remap=None):
 def finish(song: Song, name: str, bars: int, bar_beats: float, ts, kind: str, extra=None):
     beats = bars * bar_beats
     secs = song.save(os.path.join(OUT, f'{name}.mid'), beats, ts)
+    roots = getattr(song, 'bar_roots', None)
+    if roots:  # the chord degree on each bar's downbeat, so stingers can wait for the tonic (AU47)
+        assert len(roots) == bars, (name, len(roots), bars)
+        extra = {**(extra or {}), 'barRoots': roots}
     MANIFEST[name] = dict(kind=kind, bpm=song.bpm, beatsPerBar=bar_beats, bars=bars, seconds=round(secs, 4),
                           **(extra or {}))
     return secs
@@ -114,6 +131,7 @@ def downtown(sparse=False):
         ('bed', ['M', 'ANS'], None, None),
     ]
     t = 0.0
+    s.bar_roots = [bar[0][0] for (_, hkeys, _m, _w) in plan for k in hkeys for bar in M.H68[k]]
     for sec, hkeys, mel, who in plan:
         harm = [bar for k in hkeys for bar in M.H68[k]]
         nb = len(harm)
@@ -166,6 +184,7 @@ def downtown(sparse=False):
 def play_sections(s: Song, h: dict, plan, comp, bassf, drums, leads: dict, remap=None):
     """plan: list of (section name, harmony bars, melody bars | None, lead key, options)."""
     R, md, B = h['root'], h['mode'], h['bar']
+    s.bar_roots = [bar[0][0] for (_, harm, *_r) in plan for bar in harm]
     t = 0.0
     for (sec, harm, mel, who, opt) in plan:
         nb = len(harm)
@@ -384,7 +403,8 @@ def university():
         ('A', [H[0], H[1], H[6], [(5, 4, 4)]], None, None, dict(hook=lambda t, nb: chip(t, nb, M.A2_BARS[:3] + [[(1, 2), (None, 2)]]))),
     ]
     bars = play_sections(s, h, plan, comp, bassf, drums, dict(vib=vib, sq=sq, rh=rh))
-    swing(s, h['swing'], [tr for tr in s.tracks if tr is not sq])  # the chip line stays straight 16ths
+    swing(s, h['swing'], [tr for tr in s.tracks if tr is not sq])
+    swing_smooth([sq], h['swing'])  # the chip 16ths swing with the hats (AU48)
     s.humanize(0.018, 8)
     return finish(s, 'university', bars, B, h['ts'], 'loop', dict(hood='university', lofi=True))
 
@@ -446,6 +466,7 @@ def industrial():
             tr.n(u, d * 0.9, pi, vel)
 
     t = 0.0
+    s.bar_roots = [{'I': 1, 'IV': 4, 'V': 5}[c] for c in FORM] * 3
     for chorus in range(3):
         for k, c in enumerate(FORM):
             boogie(t + k * B, c)
@@ -560,6 +581,9 @@ def phrases(h):
     if h['bar'] == 3:
         return dict(B=3, open=[M.M68[0]], motif=[M.M68[0], M.M68[1], [(1, 3)]], cad=M.CLOSE68[:2] + [[(1, 3)]],
                     harm_motif=[[(1, 3, 3)], [(5, 4, 3)], [(1, 3, 3)]], harm_cad=[[(2, 3, 3)], [(5, 4, 3)], [(1, 3, 3)]])
+    if h['bpm'] < 100:  # slow neighbourhoods: two bars, so a stinger doesn't hold the loop down for ~10 s (AU53)
+        return dict(B=4, open=[M.MOTIF], motif=[M.MOTIF, M.CLOSE], cad=[M.CADENCE_1, M.CLOSE],
+                    harm_motif=[[(1, 3, 4)], [(5, 4, 2), (1, 3, 2)]], harm_cad=[[(2, 4, 2), (5, 4, 2)], [(1, 3, 4)]])
     return dict(B=4, open=[M.MOTIF], motif=[M.MOTIF, M.CLOSE[:4] + [(1, 2)], [(1, 4)]],
                 cad=[M.CADENCE_1, M.CLOSE[:4] + [(1, 2)], [(1, 4)]],
                 harm_motif=[[(1, 3, 4)], [(5, 4, 2), (1, 3, 2)], [(1, 3, 4)]],
@@ -593,22 +617,25 @@ def stingers(hood: str):
             melody(br, R, ph['motif'], md, t0, B, vel=84, shift=-12)
             chord_bed(br, R, md, ph['harm_motif'], t0, B, 74)
             drm.n(t0, 1, CRASH, 84)
+            nb = len(ph['motif'])
             if kind == 'milestone_big':
                 tim = s.track('timpani', 2, GM['timpani'], volume=110, reverb=50)
                 r = deg(R, 1, md) - 24
-                n_ = int(B * 8)
+                roll_from = t0 + (nb - 2) * B + (B / 2 if nb == 2 else 0)
+                n_ = int((t0 + (nb - 1) * B - roll_from) * 8)
                 for i in range(n_):
-                    tim.n(t0 + B + 0.125 * i, 0.12, r - 5, 60 + 56 * i / n_)
-                tim.n(t0 + 2 * B, 1.8, r, 120)
-                drm.n(t0 + 2 * B, 2, CRASH, 110)
-            end = t0 + 3 * B
+                    tim.n(roll_from + 0.125 * i, 0.12, r - 5, 60 + 56 * i / max(1, n_))
+                tim.n(t0 + (nb - 1) * B, 1.8, r, 120)
+                drm.n(t0 + (nb - 1) * B, 2, CRASH, 110)
+            end = t0 + nb * B
         elif kind == 'manager':  # warm, resolving: cadence then closing phrase over strings
             st = s.track('strings', 1, GM['strings'], volume=86, reverb=60)
             melody(ld, R, ph['cad'], md, t0, B, vel=88)
             chord_bed(st, R, md, ph['harm_cad'], t0, B, 66)
-            st.n(t0 + 2 * B, B, deg(R, 1, md) - 24, 70)
-            drm.n(t0 + 2 * B, 2, TRIANGLE_OPEN, 50)
-            end = t0 + 3 * B
+            nb = len(ph['cad'])
+            st.n(t0 + (nb - 1) * B, B, deg(R, 1, md) - 24, 70)
+            drm.n(t0 + (nb - 1) * B, 2, TRIANGLE_OPEN, 50)
+            end = t0 + nb * B
         elif kind in ('upgrade', 'fleet', 'drone'):  # opening phrase, brass an octave up; fleet horn; drone square
             prog = GM['square'] if kind == 'drone' else GM['brass']
             br = s.track('brass', 1, prog, volume=100, reverb=45)
@@ -620,8 +647,9 @@ def stingers(hood: str):
                 hn.n(t0 + B, 0.25, deg(R, 5, md) - 12, 100)  # beep
                 hn.n(t0 + B + 0.5, 0.8, deg(R, 5, md) - 12, 104)  # beeeep
             if kind == 'drone':
+                arp = s.track('arp', 3, GM['square'], volume=96, reverb=45)
                 for i in range(8):
-                    br.n(t0 + B + 0.125 * i, 0.1, deg(R, 1 + (i % 4) * 2, md) + 12, 70)
+                    arp.n(t0 + B + 0.125 * i, 0.1, deg(R, 1 + (i % 4) * 2, md) + 12, 70)
             drm.n(t0, 0.5, SPLASH, 70)
             end = t0 + 2 * B
         elif kind == 'build':  # a new pizzeria opens: its neighbourhood's lead states the motif, with claps (AU36)
@@ -629,10 +657,11 @@ def stingers(hood: str):
             melody(ld, R, ph['motif'], md, t0, B, vel=106)
             hp = s.track('glock', 1, GM['glock'], volume=84, reverb=55)
             melody(hp, R, ph['open'], md, t0, B, vel=70, shift=12)
-            for k in range(2 * int(B)):
+            nb = len(ph['motif'])
+            for k in range(int((nb - 1) * B)):
                 drm.n(t0 + k, 0.2, CLAP, 90 if k % 2 == 0 else 74)
-            drm.n(t0 + 2 * B, 2, CRASH, 96)
-            end = t0 + 3 * B
+            drm.n(t0 + (nb - 1) * B, 2, CRASH, 96)
+            end = t0 + nb * B
         elif kind == 'welcome':  # character sting (story beat 1)
             pickup(ld, R, md, t0, 80)
             melody(ld, R, ph['open'] + [[(5, B - 1), (None, 1)]], md, t0, B, vel=96)
@@ -644,7 +673,7 @@ def stingers(hood: str):
             melody(ld, R, ph['cad'], md, t0, B, vel=76)
             pd = s.track('pad', 1, GM['slow_strings'], volume=74, reverb=70)
             chord_bed(pd, R, md, ph['harm_cad'], t0, B, 56)
-            end = t0 + 3 * B
+            end = t0 + len(ph['cad']) * B
         elif kind == 'perk':  # perk card (AU13): the opening phrase on glockenspiel and harp, in this key (AU26)
             s.tracks.remove(ld)
             gl = s.track('glock', 0, GM['glock'], volume=100, reverb=60)
@@ -658,11 +687,12 @@ def stingers(hood: str):
             ce = s.track('celesta', 0, GM['celesta'], volume=96, reverb=60)
             melody(ce, R, ph['cad'][1:2], md, t0, B, vel=70, legato=1.1, shift=12)
             end = t0 + B + 1
-        swing(s, h['swing'])
+        swing(s, h['swing'], [tr for tr in s.tracks if tr.name not in ('perc', 'timpani', 'arp')])  # rolls stay even (AU48)
         name = f'sting_{hood}_{kind}'
         s.save(os.path.join(OUT, f'{name}.mid'), end, h['ts'])
+        # musicSeconds: where the music ends (the duck and the gate hold this long, not the reverb tail: AU53)
         MANIFEST[name] = dict(kind='stinger', hood=hood, cue=kind, bpm=bpm, downbeatSeconds=round(t0 * 60 / bpm, 4),
-                              seconds=round(end * 60 / bpm, 3))
+                              seconds=round(end * 60 / bpm, 3), musicSeconds=round(end * 60 / bpm, 3))
 
 
 def bid_sting():
@@ -792,11 +822,11 @@ def triumph(hood: str):
     br.n(end_, 3, M.chord_notes(R, 1, 3, md, -1) + [deg(R, 1, md) + 12], 108)
     ld.n(end_, 3, deg(R, 1, md) + 12, 108)
     st.n(end_, 3, M.chord_notes(R, 1, 3, md, 0), 96)
-    swing(s, h['swing'])
+    swing(s, h['swing'], [tr for tr in s.tracks if tr.name not in ('swell', 'timpani')])  # rolls stay even (AU48)
     name = f'triumph_{hood}'
     s.save(os.path.join(OUT, f'{name}.mid'), end_ + 3, h['ts'])
-    MANIFEST[name] = dict(kind='story', hood=hood, seconds=round((end_ + 3) * 60 / bpm, 3),
-                          payoffSeconds=round(end_ * 60 / bpm, 3))
+    MANIFEST[name] = dict(kind='story', hood=hood, seconds=round((end_ + 3) * 60 / bpm, 3), bpm=bpm, beatsPerBar=B,
+                          downbeatSeconds=round(t0 * 60 / bpm, 4), payoffSeconds=round(end_ * 60 / bpm, 3))
 
 
 # ================================================================================================ STORY CUES
@@ -863,6 +893,33 @@ def megaslice():
     tb.bends.append((10.6, 0))
     s.save(os.path.join(OUT, 'megaslice_rep.mid'), 11)
     MANIFEST['megaslice_rep'] = dict(kind='story', seconds=round(11 * 60 / 152, 3))
+
+    # Dock Saved (waterfront-4 p1, AU42): the same sting in D minor over an A pedal, so the bid's held A7 is still
+    # hanging when the ship's bell triumph resolves it to D
+    DR = 'D4'
+    s = Song(152, 4, seed=84)
+    bsn = s.track('bassoon', 0, GM['bassoon'], volume=104, reverb=35)
+    tb = s.track('trombone', 1, GM['trombone'], volume=104, reverb=40)
+    tuba = s.track('tuba', 2, GM['tuba'], volume=100, reverb=30)
+    ped = s.track('pedal', 3, GM['strings'], volume=90, reverb=50)
+    def dline(tr, t, bars, vel, shift=0, legato=0.6):
+        u = t
+        for bar in bars:
+            for d, dur in bar:
+                if d is not None:
+                    pi = deg(DR, 5, md) - 1 if d == 'b5' else deg(DR, d, md)
+                    tr.n(u, dur * legato, pi + shift, vel)
+                u += dur
+    pickup(bsn, DR, md, 0.5)
+    dline(bsn, 0.5, [V1, V2], 100)
+    dline(tuba, 0.5, [V1, V2], 88, -24, 0.4)
+    ped.n(0.5, 10.5, [p('A2'), p('A3')], 70)
+    tb.n(8.5, 2, deg(DR, 5, md) - 12, 100)
+    for k in range(17):
+        tb.bends.append((8.6 + k * 0.1, int(-8192 * k / 16)))
+    tb.bends.append((10.6, 0))
+    s.save(os.path.join(OUT, 'megaslice_rep_dock.mid'), 11)
+    MANIFEST['megaslice_rep_dock'] = dict(kind='story', seconds=round(11 * 60 / 152, 3))
 
     # Victor's exit: the tuba deflates, trombone slides down
     s = Song(90, 4, seed=83)
@@ -942,9 +999,11 @@ def city_theme():
         pickup(tr, R, md, u, 84, octave.get(order[i], 0))
         melody(tr, R, [M.MOTIF], md, u, 4, vel=96, shift=octave.get(order[i], 0))
         # the earlier leads hold a chord tone under the newcomer
-        for j, held in enumerate(leads[:i]):
-            held.n(u, 3.8, deg(R, (1, 3, 5, 8, 10, 12)[j], md) + octave.get(order[j], 0) - 12, 46)
         d, size, _ = entry_harm[i]
+        tones = M.chord_notes(R, d, 4 if size == 4 else 3, md, 0)
+        for j, held in enumerate(leads[:i]):
+            q = tones[j % len(tones)] + 12 * (j // len(tones))
+            held.n(u, 3.8, q + octave.get(order[j], 0) - 12, 46)
         st.n(u, 3.9, M.chord_notes(R, d, 3, md, -1), 46 + 6 * i)
         bs.n(u, 3.6, deg(R, d, md) - 24, 70 + 5 * i)
         for k in range(4):
@@ -977,7 +1036,8 @@ def city_theme():
         tr.n(end_, 3.5, deg(R, 1, md), 100)
     st.n(end_, 3.5, M.chord_notes(R, 1, 3, md, 0), 96)
     s.save(os.path.join(OUT, 'city_theme.mid'), end_ + 4)
-    MANIFEST['city_theme'] = dict(kind='story', seconds=round((end_ + 4) * 60 / bpm, 3))
+    MANIFEST['city_theme'] = dict(kind='story', seconds=round((end_ + 4) * 60 / bpm, 3), bpm=bpm, beatsPerBar=4,
+                                  downbeatSeconds=round(1.0 * 60 / bpm, 4), payoffSeconds=round(end_ * 60 / bpm, 3))
 
 
 if __name__ == '__main__':

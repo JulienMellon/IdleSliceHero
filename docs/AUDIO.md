@@ -18,7 +18,7 @@ Notation: scale degrees, with a comma marking the octave below. Durations are e 
 Every loop opens with a bed with no lead, states the motif at most twice, and has a bed with no lead before it returns.
 
 ## Neighbourhood loops (AU17)
-GM programs are 1-based here (`compose.py` uses 0-based numbers). All loops are mastered to −18 LUFS and encoded as stereo AAC at 96 kbps.
+GM programs are 1-based here (`compose.py` uses 0-based numbers). All loops are mastered to −18 LUFS with a −4 dBFS peak ceiling (AU52), and encoded as stereo AAC at 96 kbps. Each loop's manifest entry carries `barRoots`, the chord degree on every bar's downbeat, so stingers can wait for the tonic.
 
 | Area | Blend | Tempo, meter | Key | Instruments (GM) | Loop | Form |
 |---|---|---|---|---|---|---|
@@ -35,14 +35,15 @@ GM programs are 1-based here (`compose.py` uses 0-based numbers). All loops are 
 **Seams.** The reverb tail past the loop end is folded onto the start. The decoded join step is below each file's 99th-percentile sample step (checked at build time). AAC adds about 10 ms of padding: **check on a device** that `loop = true` is gapless. If it isn't, crossfade between the two players.
 
 ## Story cues (AU12, AU13, AU18)
-A scene plays its own neighbourhood's loop, ducked −8 dB. `panelCue()` gives beats 1–3 their defaults; wins and reveals set `cue` in `scenes/home.ts`. Exclusive cues stop the loop (it fades out) while they play. Story cues alternate between two players, so an outgoing cue always fades over 300 ms instead of stopping dead. Skip fades story cues and stingers in 0.4 s, and a scene's first panel fades any gameplay stinger in 150 ms.
+A scene plays its own neighbourhood's loop, ducked −8 dB. `panelCue()` gives beats 1–3 their defaults; wins and reveals set `cue` in `scenes/home.ts`. Exclusive cues stop the loop (it fades out) while they play. Story cues alternate between two players, so an outgoing cue always fades over 300 ms instead of stopping dead. A triumph is never replaced before its payoff crash plus one beat (`payoffSeconds`); the next cue waits. If the app goes to the background, a cue is paused and resumed on return when more than 0.5 s of it is left. Control Center and notifications don't pause anything. Skip fades story cues and stingers in 0.4 s, and a scene's first panel fades any gameplay stinger in 150 ms.
 
 | Moment | Cue | File | Length | Treatment |
 |---|---|---|---|---|
 | Beat 1, first panel with a character (downtown-1: the last panel, when Nonna smiles) | `welcome` | `sting/<hood>_welcome` | 3–5 s | The character's opening phrase on their neighbourhood's lead instrument, in its meter, with a harp roll; lands on the loop's next bar |
 | Beat 2, panel 1 | `warmth` | `sting/<hood>_warmth` | 5–7 s | Cadence and closing phrase, softer, over slow strings |
 | Beat 3, MegaSlice HQ panels | `megaslice` | `music/megaslice_hq` | 17 bars, 53.7 s, loop | C minor at ♩=76, a sneaky march: a one-bar tuba vamp, then the bassoon villain motif `5, 1 ♭3 ♭5 ♭6 5 | ♭6 5 ♭5 4 1`, muted-trumpet stabs, pizzicato, timpani. **Always starts at bar 0**, so every scheme opens on the vamp and the motif |
-| Beat 3, first Rep panel; waterfront-4 panel 1 | `rep` | `story/megaslice_rep` | 4.7 s, exclusive | The villain motif at double speed on bassoon and tuba, plus a trombone glissando down. The loop drops out in 80 ms (no key clash) |
+| Beat 3, first Rep panel | `rep` | `story/megaslice_rep` | 4.7 s, exclusive | The villain motif at double speed on bassoon and tuba, plus a trombone glissando down. The loop drops out in 80 ms (no key clash) |
+| waterfront-4 panel 1 (after the bid) | `rep` | `story/megaslice_rep_dock` | 4.7 s, exclusive | The same in D minor over a held A pedal, so the bid's A7 is still hanging when the bell triumph resolves it to D. It waits for the bid stinger to finish |
 | Beat 4 win | `triumph` | `story/triumph_<hood>` | 6.5–10.6 s (payoff crash at 3.8–7.5 s), exclusive | A two-beat snare swell, then the motif and closing phrase on the lead with brass, strings and timpani, in the neighbourhood's key, tempo and meter, over its own rhythm section (tarantella bass and tambourine; marching snare; habanera and shaker; lo-fi kit and Rhodes; shuffle, ride and organ; pompe and walking bass). It ends on a tutti tonic with a crash. Panels: downtown-4 p2, suburbs-4 p3, university-4 p3, industrial-4 p4, uptown-4 p1 |
 | Dock Saved | `bell-triumph` | `story/triumph_waterfront` | 10.7 s, exclusive | A three-strike ship's bell (Tubular Bells 15) opens the triumph (waterfront-4 p2) |
 | Recipe card | `recipe` | `story/recipe` | 10 s, exclusive | Solo accordion, rubato: a slight push into the phrase, then a held breath after every long note that carries forward (downtown-4 p3); −21 LUFS |
@@ -55,7 +56,11 @@ A scene plays its own neighbourhood's loop, ducked −8 dB. `panelCue()` gives b
 ## Gameplay stingers (AU14, AU31, AU32, AU36)
 Every stinger is rendered in all six keys (`sting/<hood>_<kind>`), as mono AAC at 64 kbps, peaking at −6 dBFS or below. Each is written in its neighbourhood's meter (Downtown's are 6/8, built from `M68`/`CLOSE68`) and swung like its loop. Beat 1 sits one beat in (`downbeatSeconds`), after its pickup. The director aligns beat 1 with the loop's next **bar** for every chordal stinger, so their tonic lands where the loop's harmony restarts. Only `bottleneck` waits for the next beat (a dotted quarter in Downtown). The instant SFX always plays at the tap.
 
-**Gate (`StingGate`).** `bottleneck` plays at most once per 20 s. While a stinger sounds, any of equal or lower priority is dropped (never restarted, never stacked); a higher one takes over. Priority: `milestone_big` > `manager` = `build` > `milestone` = `welcome` = `warmth` > `upgrade` = `fleet` = `drone` = `perk` = `offline` > `bottleneck`. SFX play at 0.7 gain while a stinger sounds. The active key's set is preloaded 1.5 s after a neighbourhood change.
+**Gate (`StingGate`).** `bottleneck` plays at most once per 20 s. While a stinger sounds, any of equal or lower priority is dropped (never restarted, never stacked); a higher one takes over. Priority: `milestone_big` > `manager` = `build` > `milestone` = `welcome` = `warmth` > `upgrade` = `fleet` = `drone` = `perk` = `offline` > `bottleneck`. SFX play at 0.7 gain while a stinger sounds. The set for the active key (during a scene, the scene's key) is preloaded 1.5 s after a change. A stinger still sounding at a key change is released only when it ends. The duck and the gate last for the stinger's music (`musicSeconds`), not its reverb tail; under 100 bpm, milestone and manager stingers are 2 bars.
+
+**Tonic alignment (AU47).** Bar-quantised stingers wait for the next bar whose chord is I (from `barRoots`), up to 2 bars ahead. Failing that they take the next bar, and the loop ducks a further −6 dB.
+
+**Build and bid stingers carry into their scene (AU42).** Building opens the neighbourhood's unlock scene at once, and the bid opens Dock Saved. Their stingers keep playing through the scene's first panel, and that panel's `welcome` or `rep` waits for them to end.
 
 | Event (store) | Stinger | Length | Loudness | Duck |
 |---|---|---|---|---|
@@ -74,13 +79,15 @@ All effects are mono AAC at 64 kbps: 0.17 MB in total, 42 files. Loudness is set
 
 | Tier | Effects | Loudness |
 |---|---|---|
-| UI | click, bubble | −30 LUFS |
+| UI | click, bubble | −30 LUFS (short files are measured over their own length, not padded with silence) |
 | Constant | tap, full, cash | −26 |
 | Per purchase | buy, refused, rush (sparkle −24) | −22 |
-| Upgrades | milestone, expand, grade, fleet | −19 |
+| Upgrades | milestone, fleet −19; expand ≈ −22 and grade ≈ −21 (transient-limited at the ceiling) | −19 |
 | Gavel | gavel | ≈ −22 (transient-limited) |
 | Building | build | ≈ −18 |
 | Collect, by size | collect | −19, −17.5, −16 |
+
+`build.py` fails if any effect misses its tier by more than 0.5 LU, unless the ceiling stopped it.
 
 The rest of this section: They are synthesised in `sfx.py` from one palette of wood, dough, warm metal and kitchen fire. Runtime pitch jitter is ±1 semitone unless noted, done with `playbackRate` and `shouldCorrectPitch = false`. Variants rotate and never repeat back to back.
 
@@ -104,7 +111,17 @@ The rest of this section: They are synthesised in `sfx.py` from one palette of w
 | 15 | Pier 9 bid | `gavel_0` | 0.6 s | Hardwood "knock, knock, SOLD" |
 
 ## Mix rules (AU22)
-- **No master bus.** `expo-audio` has no master bus, so clipping is prevented in the files. Loops sit at −18 LUFS; story cues at −16 LUFS (reveals −21/−23); stingers and SFX by tier. A look-ahead limiter keeps every stinger, story cue and SFX at or below −6 dBFS. The worst case is a milestone: stinger, ducked loop, buy, whoomp and three cash pops, with SFX at 0.7 under the stinger. That keeps a ≥ 3 dB margin before 0 dBFS.
+- **No master bus.** `expo-audio` has no master bus, so clipping is prevented in the files. Loops sit at −18 LUFS, peaking at −4 dBFS or below; story cues at −16 LUFS (reveals −21/−23); stingers and SFX by tier. A look-ahead limiter keeps every stinger, story cue and SFX at or below −6 dBFS.
+- **Worst case: a milestone.** Coincident peaks are summed as amplitudes:
+
+  | Layer | Peak | Amplitude |
+  |---|---|---|
+  | Loop, ducked −6 dB | −10 dBFS | 0.32 |
+  | Stinger | −6 dBFS | 0.50 |
+  | Whoomp at 0.7 | −9.6 dBFS | 0.33 |
+  | Buy at 0.7 | −13 dBFS | 0.22 |
+
+  The total is 1.37, but only if every peak landed on the same sample, which a 0.4 s whoomp, a 0.35 s marimba and the stinger's beat 1 (aligned to the next bar, not the tap) never do. Measured RMS sums stay below −12 dBFS. **Check on a device with the limiter-free path**; if it clips, the `react-native-audio-api` master compressor (open item) is the fix.
 - **Ducking.** The loop's gain is the product of its active ducks: scene −8 dB, stinger −6 dB (bottleneck −3 dB) for the stinger's length, exclusive story cue to silence. Ramps take 80 ms down and 400 ms up.
 - **Music off or app in the background.** The loop pauses rather than playing at volume 0.
 
@@ -113,7 +130,7 @@ The rest of this section: They are synthesised in `sfx.py` from one palette of w
 - **Settings.** Music and Sound toggles, stored under `slice-empire/audio/v1` so that Reset game keeps them.
 - **Players.**
   - Music: 2.
-  - SFX: tap, cash, buy, full, refused and click are created at start-up, one player per variant (20). The rest are created on first use, then kept. A one-shot is rewound right after it ends, so the next `play()` is immediate; one still sounding is seeked first and played once the seek lands.
+  - SFX: tap, cash, buy, rush, bubble, full, refused and click are created at start-up, one player per variant (27). Sparkle, milestone and fleet are created on first use and kept. The rare one-shots (collect, build, gavel, grade, expand) are created for each play and released when it ends. A one-shot is rewound right after it ends, so the next `play()` is immediate; one still sounding is seeked first and played once the seek lands.
   - Stingers: the active key's 9 are preloaded 1.5 s after a neighbourhood change; a key change releases them (`remove()`).
   - Story: two players (for fades).
   - Nothing is created per tap.
@@ -131,7 +148,7 @@ The rest of this section: They are synthesised in `sfx.py` from one palette of w
 
 ## Open (device checks and v2)
 - **Device checks (AU39, AU40).** On an iPhone SE 2 or XR, measure:
-  - the launch hitch and resident memory with about 40 players;
+  - the launch hitch and resident memory: 31 players at start-up (27 SFX, 2 music, 2 story), at most about 45 with the active key's stingers and the kept effects;
   - the delay from tap to sound;
   - gapless looping of AAC;
   - the ±1 st `playbackRate` jitter with `shouldCorrectPitch = false`.

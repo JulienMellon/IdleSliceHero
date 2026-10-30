@@ -64,3 +64,23 @@ Plan: audiocritic round 2 (full plan, AU12–AU25). Cue sheet: `docs/AUDIO.md`. 
 | AU40 | Active key's stingers preloaded 1.5 s after a neighbourhood change; gapless loop stays a device check |
 | AU41 | sparse → full Downtown keeps its position; "mute when other audio plays" isn't exposed by expo-audio (documented; Music toggle) |
 | Verify | tsc clean; 151 tests pass (17 audio); screenshots v4.5 `errors: []` (settle() now waits for two quiet checks) |
+
+## v4.6 — audio build 3 (fixes for round 4, AU42–AU56)
+| Note | Fix |
+| --- | --- |
+| AU42 | Build/bid stingers are "held": a scene's first panel fades other stingers but keeps them; `welcome`/`rep` wait for them (`afterHeld`); Dock Saved uses `megaslice_rep_dock` (D minor over an A pedal) |
+| AU43 | During a scene, stingers preload in the scene's key; a key change releases a still-playing stinger only when it ends |
+| AU44 | Offline celesta fires from the store subscription when `offline` appears (saved key); no music before `loaded` |
+| AU45 | `payoffSeconds` in the manifest; the next story cue waits for a triumph's payoff + 1 beat |
+| AU46 | Perk chime snaps to the ringing story cue's next bar (bpm/downbeat now in the manifest) |
+| AU47 | Loops export `barRoots`; `stingTiming()` waits up to 2 bars for a tonic bar, else −6 dB extra duck (tested on the 12-bar blues) |
+| AU48 | Snare swells, timpani rolls and the drone arp excluded from swing; the University chip line now swung per 16th (`swing_smooth`) |
+| AU49 | City theme held notes are tones of each entry's own chord |
+| AU50 | `musicFor`: Downtown scenes before beat 4 stay sparse (replays too) |
+| AU51 | Full clean build; short files measured over their own length; build fails if an effect misses its tier by > 0.5 LU unless ceiling-limited |
+| AU52 | Loops peak-limited at −4 dBFS; worst-case sum recomputed in docs/AUDIO.md |
+| AU53 | Duck and gate use `musicSeconds`; milestone/manager are 2 bars under 100 bpm |
+| AU54 | Only `background` pauses; story cues resume on return with > 0.5 s left |
+| AU55 | rush and bubble preloaded; rare one-shots released after each play |
+| AU56 | Music off stops story cues and stingers |
+| Verify | tsc clean; 155 tests pass (21 audio); screenshots v4.6 `errors: []`; web probe: recipe now starts 4.3 s after the Downtown triumph (payoff 3.8 s) |

@@ -66,7 +66,7 @@ def main(only: set[str] | None = None):
             a = post.wrap_loop(a, cue['seconds'])
             if cue.get('lofi'):
                 a = lofi(a)
-            a = post.normalize(a, LOUD['music'])
+            a = post.normalize(a, LOUD['music'], ceiling_db=-4.0)  # AU52: room for a tap on a kick
             info = post.encode(a, os.path.join(ASSETS, 'music', name + '.m4a'), 96, mono=False)
         elif cue['kind'] == 'stinger':
             a = post.fade(post.trim_silence(a, -50), 0, 0.15)
@@ -86,7 +86,11 @@ def main(only: set[str] | None = None):
             target = tier[i] if isinstance(tier, tuple) else tier
             a = post.normalize(x.reshape(-1, 1), target, None, ceiling_db=CEILING)
             info = post.encode(a, os.path.join(ASSETS, 'sfx', f'{name}_{i}.m4a'), 64, mono=True)
-            report[f'sfx_{name}_{i}'] = {'kind': 'sfx', **info}
+            report[f'sfx_{name}_{i}'] = {'kind': 'sfx', 'target_lufs': target, **info}
+            # AU51: every effect lands on its tier, unless the −6 dBFS ceiling stopped it (then it's quieter, never louder)
+            ok = abs(info['lufs'] - target) <= 0.5 or (info['lufs'] < target and info['peak_dbfs'] >= CEILING - 0.6)
+            if not ok:
+                raise SystemExit(f'sfx {name}_{i}: {info["lufs"]} LUFS, tier {target} (peak {info["peak_dbfs"]})')
     os.makedirs(os.path.join(HERE, 'build'), exist_ok=True)
     post.write_report(os.path.join(HERE, 'build', 'report.json'), report)
     write_manifest(report)
@@ -104,7 +108,7 @@ def write_manifest(report: dict):
     for k, r in sorted(report.items()):
         f = '../../' + r['file']
         meta = {'seconds': r['seconds']}
-        for key in ('bpm', 'beatsPerBar', 'downbeatSeconds'):
+        for key in ('bpm', 'beatsPerBar', 'downbeatSeconds', 'payoffSeconds', 'musicSeconds', 'barRoots'):
             if key in r:
                 meta[key] = r[key]
         if r['kind'] == 'loop':
@@ -120,7 +124,7 @@ def write_manifest(report: dict):
     def block(title, items):
         out = [f'export const {title} = {{']
         for k, f, meta in items:
-            props = ', '.join(f'{mk}: {mv}' for mk, mv in meta.items())
+            props = ', '.join(f'{mk}: {json.dumps(mv)}' for mk, mv in meta.items())
             out.append(f"  {k}: {{ src: require('{f}'), {props} }},")
         out.append('} as const;')
         return out

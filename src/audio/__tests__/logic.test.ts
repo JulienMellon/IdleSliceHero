@@ -7,7 +7,7 @@ const path: { join(...p: string[]): string } = require('path');
 
 import { HOME_SCENES } from '../../content/scenes/home';
 import { NEIGHBORHOODS } from '../../content/tuning';
-import { beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
+import { stingTiming, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const MANIFEST = fs.readFileSync(path.join(__dirname, '..', 'manifest.ts'), 'utf8');
@@ -146,6 +146,29 @@ describe('stinger timing and gating (AU31, AU32)', () => {
   });
 });
 
+describe('stingers wait for the tonic (AU47)', () => {
+  it('lands on the next bar whose chord is I, within two bars', () => {
+    const roots = [1, 1, 1, 1, 4, 4, 1, 1, 5, 4, 1, 5]; // 12-bar blues
+    const bar = (60 / 92) * 4;
+    // inside bar 3 (I): bars 4 and 5 are IV, bar 6 is I
+    const t = stingTiming(3.2 * bar, 92, 4, roots, 0.6);
+    expect(Math.round((3.2 * bar + t.delay + 0.6) / bar)).toBe(6);
+    expect(t.extraDuck).toBe(1);
+    // inside bar 8 (V): bar 9 is IV, bar 10 is I
+    const u = stingTiming(8.1 * bar, 92, 4, roots, 0.6);
+    expect(Math.round((8.1 * bar + u.delay + 0.6) / bar)).toBe(10);
+  });
+  it('takes the next bar and ducks deeper when no tonic is near', () => {
+    const t = stingTiming(0.1, 120, 4, [4, 5, 4, 5], 0.5);
+    expect(t.extraDuck).toBeLessThan(1);
+    expect(t.delay).toBeCloseTo(quantizeDelay(0.1, 120, 4, 0.5), 6);
+  });
+  it('replays of early Downtown scenes keep the sparse chart (AU50)', () => {
+    expect(musicFor({ active: 'uptown', downtownFull: true, scene: { neighborhood: 'downtown', panelCue: 'none', beat: 2 } })).toBe('downtown_sparse');
+    expect(musicFor({ active: 'uptown', downtownFull: true, scene: { neighborhood: 'downtown', panelCue: 'none', beat: 4 } })).toBe('downtown');
+  });
+});
+
 describe('generated manifest', () => {
   it('points at files that exist', () => {
     const files = [...MANIFEST.matchAll(/require\(['"]([^'"]+)['"]\)/g)].map((m) => m[1]);
@@ -159,8 +182,14 @@ describe('generated manifest', () => {
       expect(MANIFEST).toContain(`triumph_${n.id}:`);
       for (const k of kinds) expect(MANIFEST).toContain(`${n.id}_${k}: { src:`);
     }
-    for (const id of ['downtown_sparse', 'megaslice_hq', 'megaslice_rep', 'victor_exit', 'recipe', 'reunion', 'city_theme', 'waterfront_bid']) {
+    for (const id of ['downtown_sparse', 'megaslice_hq', 'megaslice_rep', 'megaslice_rep_dock', 'victor_exit', 'recipe', 'reunion', 'city_theme', 'waterfront_bid']) {
       expect(MANIFEST).toContain(`${id}: { src:`);
+    }
+  });
+  it('gives every loop its chord per bar and every triumph its payoff time', () => {
+    for (const n of NEIGHBORHOODS) {
+      expect(MANIFEST).toMatch(new RegExp(`\\n  ${n.id}: \\{[^\\n]*barRoots: \\[`));
+      expect(MANIFEST).toMatch(new RegExp(`triumph_${n.id}: \\{[^\\n]*payoffSeconds: `));
     }
   });
   it('keeps the audio inside its memory budget (AU23)', () => {

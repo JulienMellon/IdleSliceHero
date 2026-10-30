@@ -11,14 +11,16 @@ export interface MusicContext {
   active: NeighborhoodId;
   /** Nonna has taken over Downtown (downtown-4 seen): the full band plays there (AU20). */
   downtownFull: boolean;
-  scene: { neighborhood: NeighborhoodId; panelCue: PanelCue } | null;
+  scene: { neighborhood: NeighborhoodId; panelCue: PanelCue; beat?: number } | null;
 }
 
 /** The loop that should be playing: a scene plays its own neighbourhood; MegaSlice panels play the HQ march. */
 export function musicFor(c: MusicContext): MusicTrack {
   if (c.scene?.panelCue === 'megaslice') return 'megaslice_hq';
   const hood = c.scene?.neighborhood ?? c.active;
-  return hood === 'downtown' && !c.downtownFull ? 'downtown_sparse' : hood;
+  // Downtown's early scenes (rain, an empty shop) keep the sparse chart even on a Scrapbook replay (AU50)
+  const sparse = c.scene ? c.scene.neighborhood === 'downtown' && (c.scene.beat ?? 4) < 4 : !c.downtownFull;
+  return hood === 'downtown' && sparse ? 'downtown_sparse' : hood;
 }
 
 /** The story cue for a panel: the panel's own `cue`, else the beat's default (AU12). */
@@ -64,6 +66,23 @@ export function quantizeDelay(pos: number, bpm: number, unitBeats: number, downb
   // the pickup has to start `downbeat` seconds before the grid line
   while (next - downbeat - pos < 0.02) next += unit;
   return next - downbeat - pos;
+}
+
+/**
+ * Bar-quantised stingers wait for a bar whose chord is the tonic, up to `maxBars` ahead, so a cadence never lands
+ * its I over the loop's IV or V (AU47). Failing that they take the next bar and the loop ducks further (`extraDuck`).
+ */
+export function stingTiming(pos: number, bpm: number, beatsPerBar: number, barRoots: readonly number[] | undefined, downbeat: number, maxBars = 2): { delay: number; extraDuck: number } {
+  const first = quantizeDelay(pos, bpm, beatsPerBar, downbeat);
+  if (!barRoots || barRoots.length === 0) return { delay: first, extraDuck: 1 };
+  const bar = (60 / bpm) * beatsPerBar;
+  const landing = pos + first + downbeat; // time of the first candidate downbeat
+  const n = barRoots.length;
+  for (let k = 0; k <= maxBars; k++) {
+    const idx = (((Math.round(landing / bar) + k) % n) + n) % n;
+    if (barRoots[idx] === 1) return { delay: first + k * bar, extraDuck: 1 };
+  }
+  return { delay: first, extraDuck: dbToGain(-6) };
 }
 
 /** The loop's pulse: Downtown's 6/8 moves in dotted quarters (AU31a); the others in quarters. */

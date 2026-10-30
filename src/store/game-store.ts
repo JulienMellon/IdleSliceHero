@@ -112,7 +112,6 @@ export const useGame = create<Store>((set, get) => {
           game = r.state;
           awaySeconds = r.awaySeconds;
           if (r.earned >= 1 && r.seconds >= TUNING.offlinePopupSeconds) {
-          emitAudio({ type: 'offline-open' });
             // Hold the cash back until the player taps Collect.
             offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed })) };
             game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };

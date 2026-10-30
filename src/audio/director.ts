@@ -8,8 +8,8 @@ import type { NeighborhoodId, PanelCue } from '../content/types';
 import { useGame } from '../store/game-store';
 import { onAudio, type AudioEvent } from './bus';
 import {
-  DUCK, EXCLUSIVE_CUES, PurchaseChain, RESTART_TRACKS, StingGate, VoiceLimiter, musicFor, nextVariant, panelCue, quantizeDelay, sharedTimeline,
-  stingDuck, stingUnit, type MusicTrack, type StingKind,
+  DUCK, EXCLUSIVE_CUES, PurchaseChain, RESTART_TRACKS, StingGate, VoiceLimiter, beatUnit, musicFor, nextVariant, panelCue, quantizeDelay, sharedTimeline,
+  stingDuck, stingTiming, stingUnit, type MusicTrack, type StingKind,
 } from './logic';
 import { MUSIC, SFX, STINGS, STORY, type SfxId, type StoryCueId } from './manifest';
 import { useAudioPrefs } from './prefs';
@@ -22,7 +22,9 @@ const CUE_OUT_MS = 300; // an outgoing story cue always fades (AU26)
 const STING_OUT_MS = 150; // a scene's first panel clears gameplay stingers (AU27)
 const SFX_UNDER_STING = 0.7; // AU38
 /** Most-heard effects are created at start-up; the rest on first use, then kept (never per tap). */
-const PRELOAD: SfxId[] = ['tap', 'cash', 'buy', 'full', 'refused', 'click'];
+const PRELOAD: SfxId[] = ['tap', 'cash', 'buy', 'rush', 'bubble', 'full', 'refused', 'click'];
+/** Rare one-shots: their player is released after each play instead of staying resident (AU55). */
+const RARE: ReadonlySet<SfxId> = new Set(['collect', 'build', 'gavel', 'grade', 'expand']);
 const STING_PRELOAD: StingKind[] = ['bottleneck', 'milestone', 'milestone_big', 'manager', 'upgrade', 'fleet', 'drone', 'build', 'perk'];
 const SCENES = new Map(HOME_SCENES.map((s) => [s.id, s]));
 
@@ -77,7 +79,7 @@ function make(src: number | null): AudioPlayer {
  * Start a one-shot from the top. A player that has played is rewound right after it ends, so the next play()
  * is immediate; one still mid-sound is seeked first and played when the seek lands (AU39).
  */
-function fire(p: AudioPlayer, seconds: number, volume: number, rate = 1) {
+function fire(p: AudioPlayer, seconds: number, volume: number, rate = 1, onEnd?: () => void) {
   ramps.delete(p);
   safe(() => {
     p.volume = volume;
@@ -89,6 +91,7 @@ function fire(p: AudioPlayer, seconds: number, volume: number, rate = 1) {
     void p.seekTo(0).then(() => safe(() => p.play())).catch(() => {});
   } else safe(() => p.play());
   setTimeout(() => {
+    if (onEnd) return onEnd();
     if (!safe(() => p.playing, false)) void p.seekTo(0).catch(() => {});
   }, (seconds / rate) * 1000 + 60);
 }
@@ -121,10 +124,17 @@ const stingPlayers = new Map<string, AudioPlayer>();
 const pendingStings = new Set<ReturnType<typeof setTimeout>>();
 let preloadTimer: ReturnType<typeof setTimeout> | null = null;
 
+/** Build and bid stingers carry into the scene they open; story cues wait for them (AU42). */
+let heldUntil = 0;
+let heldKind: 'build' | 'bid' | null = null;
+const pendingCues = new Set<ReturnType<typeof setTimeout>>();
+
 // story: two players, so an outgoing cue fades while the next starts (AU26)
 const story: AudioPlayer[] = [];
 let storyFront = 0;
 let storyEnd: ReturnType<typeof setTimeout> | null = null;
+/** The story cue on the front player: for payoff protection (AU45), the perk's bar grid (AU46) and resume (AU54). */
+let storyNow: { id: StoryCueId; startedAt: number; pausedAt: number | null; exclusive: boolean } | null = null;
 let scenePanelCue: PanelCue = 'none';
 let lastScenePanel = '';
 
@@ -190,16 +200,18 @@ function switchMusic(next: MusicTrack) {
 
 function refreshMusic() {
   const s = useGame.getState();
+  if (!s.loaded) return; // no Downtown blip before the save says where the player is (AU44)
   const scene = s.playing ? s.playing.scene : null;
   const track = musicFor({
     active: s.game.active,
     downtownFull: s.game.seenScenes.includes('downtown-4'),
-    scene: scene ? { neighborhood: scene.neighborhood, panelCue: scenePanelCue } : null,
+    scene: scene ? { neighborhood: scene.neighborhood, panelCue: scenePanelCue, beat: scene.beat } : null,
   });
   switchMusic(track);
   setDuck('scene', scene ? DUCK.scene : null);
   setDuck('popup', s.offline && !scene ? DUCK.popup : null);
-  scheduleStingPreload(s.game.active);
+  // a scene's stingers are in its own key; preload there while it plays (AU43)
+  scheduleStingPreload(scene ? scene.neighborhood : s.game.active);
 }
 
 // ------------------------------------------------------------------------------------------------ effects
@@ -222,13 +234,28 @@ function playSfx(id: SfxId, opts: { variant?: number; gain?: number; jitter?: nu
   lastVariant.set(id, v);
   const semis = (Math.random() * 2 - 1) * (opts.jitter ?? 1);
   const under = gate.busy(Date.now()) ? SFX_UNDER_STING : 1;
-  fire(sfxPlayer(id, v), SFX_SECONDS[id] ?? 0.35, (opts.gain ?? 1) * under, Math.pow(2, semis / 12));
+  const key = `${id}/${v}`;
+  const p = sfxPlayer(id, v);
+  const release = RARE.has(id)
+    ? () => {
+        if (sfxPlayers.get(key) !== p) return;
+        sfxPlayers.delete(key);
+        safe(() => p.remove());
+      }
+    : undefined;
+  fire(p, SFX_SECONDS[id] ?? 0.35, (opts.gain ?? 1) * under, Math.pow(2, semis / 12), release);
 }
 
 // ------------------------------------------------------------------------------------------------ stingers
 function useStingKey(hood: NeighborhoodId) {
   if (stingHood === hood) return;
-  for (const p of stingPlayers.values()) safe(() => p.remove());
+  for (const p of stingPlayers.values()) {
+    // a stinger still sounding is released when it ends, never cut (AU43)
+    if (safe(() => p.playing, false)) {
+      const left = Math.max(0, safe(() => p.duration - p.currentTime, 0));
+      setTimeout(() => safe(() => p.remove()), left * 1000 + 200);
+    } else safe(() => p.remove());
+  }
   stingPlayers.clear();
   stingHood = hood;
 }
@@ -246,21 +273,48 @@ function stingPlayer(hood: NeighborhoodId, kind: StingKind | 'bid') {
 }
 
 function scheduleStingPreload(hood: NeighborhoodId) {
-  if (stingHood === hood || preloadTimer) return;
+  if (stingHood === hood) return;
+  if (preloadTimer) clearTimeout(preloadTimer);
   preloadTimer = setTimeout(() => {
     preloadTimer = null;
-    const h = useGame.getState().game.active;
+    const st = useGame.getState();
+    const h = st.playing ? st.playing.scene.neighborhood : st.game.active;
     if (!useAudioPrefs.getState().music) return;
     for (const k of STING_PRELOAD) safe(() => stingPlayer(h, k));
   }, 1500);
 }
 
-function stopStings(ms: number) {
+/** Fade gameplay stingers out. `keepHeld`: a build or bid stinger rides into the scene it opened (AU42). */
+function stopStings(ms: number, keepHeld = false) {
   for (const t of pendingStings) clearTimeout(t);
   pendingStings.clear();
-  for (const p of stingPlayers.values()) if (safe(() => p.playing, false)) rampTo(p, 0, ms, () => safe(() => p.pause()));
+  const held = keepHeld && heldKind && Date.now() < heldUntil ? heldKind : null;
+  for (const [key, p] of stingPlayers) {
+    if (held && key.endsWith(`_${held}`)) continue;
+    if (safe(() => p.playing, false)) rampTo(p, 0, ms, () => safe(() => p.pause()));
+  }
   gate.clear();
-  setDuck('sting', null);
+  if (!held) {
+    setDuck('sting', null);
+    heldUntil = 0;
+    heldKind = null;
+  }
+}
+
+/** Run a story cue now, or when the held build/bid stinger ends. */
+function afterHeld(fn: () => void) {
+  const wait = heldUntil - Date.now();
+  if (wait <= 0) return fn();
+  const t = setTimeout(() => {
+    pendingCues.delete(t);
+    fn();
+  }, wait);
+  pendingCues.add(t);
+}
+
+function clearPendingCues() {
+  for (const t of pendingCues) clearTimeout(t);
+  pendingCues.clear();
 }
 
 /** Play a stinger in `hood`'s key; its beat 1 lands on the loop's next beat or bar unless `immediate`. */
@@ -270,11 +324,27 @@ function playSting(hood: NeighborhoodId, kind: StingKind | 'bid', o: { immediate
   const now = Date.now();
   const m = current ? MUSIC[current] : null;
   const pos = m && deck[front] ? safe(() => deck[front].currentTime, NaN) : NaN;
-  const delay = o.immediate || !m || !Number.isFinite(pos) || kind === 'bid' ? 0 : quantizeDelay(pos, m.bpm, stingUnit(kind, m.beatsPerBar, current!), info.downbeatSeconds);
-  if (o.gated !== false && kind !== 'bid' && !gate.admit(kind, now, (delay + info.seconds) * 1000)) return;
+  // chordal stingers wait for a bar on the tonic (AU47); the bottleneck line only for the next beat
+  let delay = 0;
+  let extra = 1;
+  if (!o.immediate && m && Number.isFinite(pos) && kind !== 'bid') {
+    const unit = stingUnit(kind as StingKind, m.beatsPerBar, current!);
+    if (unit === beatUnit(current!)) delay = quantizeDelay(pos, m.bpm, unit, info.downbeatSeconds);
+    else {
+      const roots = 'barRoots' in m ? (m.barRoots as readonly number[]) : undefined;
+      ({ delay, extraDuck: extra } = stingTiming(pos, m.bpm, m.beatsPerBar, roots, info.downbeatSeconds));
+    }
+  }
+  // the duck and the gate last as long as the music, not the reverb tail (AU53)
+  const musicLen = 'musicSeconds' in info ? (info.musicSeconds as number) : info.seconds;
+  if (o.gated !== false && kind !== 'bid' && !gate.admit(kind as StingKind, now, (delay + musicLen) * 1000)) return;
+  if (kind === 'build' || kind === 'bid') {
+    heldKind = kind;
+    heldUntil = now + musicLen * 1000;
+  }
   const t = setTimeout(() => {
     pendingStings.delete(t);
-    setDuck('sting', o.duck ?? (kind === 'bid' ? DUCK.bid : stingDuck(kind)), info.seconds * 1000);
+    setDuck('sting', (o.duck ?? (kind === 'bid' ? DUCK.bid : stingDuck(kind as StingKind))) * extra, musicLen * 1000);
     fire(p, info.seconds, 1);
   }, delay * 1000);
   pendingStings.add(t);
@@ -282,6 +352,20 @@ function playSting(hood: NeighborhoodId, kind: StingKind | 'bid', o: { immediate
 
 // ------------------------------------------------------------------------------------------------ story
 function playStory(id: StoryCueId, exclusive: boolean) {
+  // a triumph is never cut before its payoff crash plus a beat (AU45)
+  const out = storyNow ? STORY[storyNow.id] : null;
+  if (out && storyNow && 'payoffSeconds' in out && storyNow.pausedAt === null) {
+    const beat = 'bpm' in out ? 60 / (out.bpm as number) : 0.5;
+    const wait = storyNow.startedAt + ((out.payoffSeconds as number) + beat) * 1000 - Date.now();
+    if (wait > 0) {
+      const t = setTimeout(() => {
+        pendingCues.delete(t);
+        playStory(id, exclusive);
+      }, wait);
+      pendingCues.add(t);
+      return;
+    }
+  }
   stopStory(CUE_OUT_MS, exclusive);
   if (!useAudioPrefs.getState().music || !unlocked || !appActive) return;
   storyFront = 1 - storyFront;
@@ -295,15 +379,23 @@ function playStory(id: StoryCueId, exclusive: boolean) {
     p.play();
   });
   if (exclusive) setDuck('story', 0);
+  storyNow = { id, startedAt: Date.now(), pausedAt: null, exclusive };
+  armStoryEnd(info.seconds * 1000);
+}
+
+function armStoryEnd(ms: number) {
+  if (storyEnd) clearTimeout(storyEnd);
   storyEnd = setTimeout(() => {
     storyEnd = null;
+    storyNow = null;
     setDuck('story', null);
-  }, info.seconds * 1000);
+  }, ms);
 }
 
 function stopStory(ms: number, keepDuck = false) {
   if (storyEnd) clearTimeout(storyEnd);
   storyEnd = null;
+  storyNow = null;
   const p = story[storyFront];
   if (p && safe(() => p.playing, false)) rampTo(p, 0, ms, () => safe(() => p.pause()));
   if (!keepDuck) setDuck('story', null);
@@ -315,7 +407,8 @@ function onPanel(sceneId: string, panel: number) {
   const key = `${sceneId}/${panel}`;
   if (key === lastScenePanel) return;
   lastScenePanel = key;
-  if (panel === 0) stopStings(STING_OUT_MS); // a scene never opens over a gameplay stinger (AU27)
+  // a scene never opens over a gameplay stinger (AU27), except the build or bid stinger that opened it (AU42)
+  if (panel === 0) stopStings(STING_OUT_MS, true);
   const cue = panelCue(scene, panel);
   scenePanelCue = cue;
   refreshMusic();
@@ -323,9 +416,10 @@ function onPanel(sceneId: string, panel: number) {
   switch (cue) {
     case 'welcome':
     case 'warmth':
-      return playSting(hood, cue, { gated: false });
+      return afterHeld(() => playSting(hood, cue, { gated: false }));
     case 'rep':
-      return playStory('megaslice_rep', EXCLUSIVE_CUES.has('rep'));
+      // Dock Saved: the D-minor version over an A pedal keeps the bid's A7 hanging for the bell triumph (AU42)
+      return afterHeld(() => playStory(scene.trigger.kind === 'bid' ? 'megaslice_rep_dock' : 'megaslice_rep', EXCLUSIVE_CUES.has('rep')));
     case 'victor-exit':
       return playStory('victor_exit', false);
     case 'triumph':
@@ -386,16 +480,32 @@ function handle(e: AudioEvent) {
       if (e.sting) playSting(active, e.sting);
       return;
     }
-    case 'perk':
-      // layered over whatever story cue is still ringing, in the scene's key (AU26)
+    case 'perk': {
+      // layered over a story cue still ringing, in the scene's key (AU26), snapped to that cue's next bar (AU46)
+      const cue = storyNow && storyNow.pausedAt === null ? STORY[storyNow.id] : null;
+      if (cue && 'bpm' in cue && storyNow) {
+        const pos = (now - storyNow.startedAt) / 1000 - (cue.downbeatSeconds as number);
+        const perk = STINGS[`${sceneHood}_perk` as keyof typeof STINGS];
+        const wait = quantizeDelay(pos, cue.bpm as number, cue.beatsPerBar as number, perk.downbeatSeconds);
+        if (pos < cue.seconds - 0.5 && wait < 3) {
+          const t = setTimeout(() => {
+            pendingCues.delete(t);
+            playSting(sceneHood, 'perk', { immediate: true, gated: false, duck: 1 });
+          }, wait * 1000);
+          pendingCues.add(t);
+          return;
+        }
+      }
       return playSting(sceneHood, 'perk', { immediate: true, gated: false, duck: 1 });
+    }
     case 'offline-open':
-      return playSting(active, 'offline', { immediate: true, gated: false, duck: 1 });
+      return; // played from the store subscription once the save is loaded (AU44)
     case 'collect':
       return playSfx('collect', { variant: e.size, jitter: 0 });
     case 'scene-panel':
       return onPanel(e.sceneId, e.panel);
     case 'scene-skip':
+      clearPendingCues();
       stopStings(SKIP_FADE_MS);
       return stopStory(SKIP_FADE_MS);
   }
@@ -428,33 +538,66 @@ export function startAudio() {
   let lastActive = useGame.getState().game.active;
   let lastSeen = useGame.getState().game.seenScenes.length;
   let lastOffline = useGame.getState().offline;
+  let lastLoaded = useGame.getState().loaded;
   useGame.subscribe((s) => {
     if (s.playing !== lastPlaying) {
       if (!s.playing) {
         scenePanelCue = 'none';
         lastScenePanel = '';
+        clearPendingCues();
         stopStory(SKIP_FADE_MS);
       }
       lastPlaying = s.playing;
       refreshMusic();
     }
+    if (s.loaded !== lastLoaded) {
+      lastLoaded = s.loaded;
+      refreshMusic();
+    }
     if (s.game.active !== lastActive || s.game.seenScenes.length !== lastSeen || s.offline !== lastOffline) {
+      // the popup's celesta in the saved neighbourhood's key, once the save is in (AU44)
+      if (s.offline && !lastOffline && s.loaded) playSting(s.game.active, 'offline', { immediate: true, gated: false, duck: 1 });
       lastActive = s.game.active;
       lastSeen = s.game.seenScenes.length;
       lastOffline = s.offline;
       refreshMusic();
     }
   });
-  useAudioPrefs.subscribe(() => refreshMusic());
+  useAudioPrefs.subscribe((p) => {
+    if (!p.music) {
+      clearPendingCues();
+      stopStory(200);
+      stopStings(200);
+    }
+    refreshMusic();
+  });
+  // Control Center or a notification makes the app `inactive`, not backgrounded: keep playing (AU54)
   AppState.addEventListener('change', (state) => {
     const was = appActive;
-    appActive = state === 'active';
+    appActive = state !== 'background';
     if (was === appActive) return;
     if (!appActive) {
       safe(() => deck[front]?.pause());
       for (const p of story) safe(() => p.pause());
+      if (storyNow) {
+        storyNow.pausedAt = Date.now();
+        if (storyEnd) clearTimeout(storyEnd);
+        storyEnd = null;
+      }
       stopStings(0);
     } else {
+      // resume a story cue with more than half a second left, else let the loop back in
+      const cue = storyNow;
+      if (cue && cue.pausedAt !== null) {
+        const played = (cue.pausedAt - cue.startedAt) / 1000;
+        const left = STORY[cue.id].seconds - played;
+        if (left > 0.5 && useAudioPrefs.getState().music) {
+          cue.startedAt = Date.now() - played * 1000;
+          cue.pausedAt = null;
+          safe(() => story[storyFront].play());
+          armStoryEnd(left * 1000);
+        } else stopStory(0);
+      }
       refreshMusic();
     }
   });

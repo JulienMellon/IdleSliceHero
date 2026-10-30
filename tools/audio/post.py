@@ -53,9 +53,10 @@ def fade(a: np.ndarray, fin=0.0, fout=0.0) -> np.ndarray:
 
 
 def lufs(a: np.ndarray) -> float:
-    if len(a) < int(0.4 * SR):  # meter needs 400 ms
-        a = np.concatenate([a, np.zeros((int(0.4 * SR) - len(a) + 1, a.shape[1]))])
-    return float(pyln.Meter(SR).integrated_loudness(a))
+    """Integrated loudness. Files shorter than the 400 ms gating block are measured over their own length,
+    not padded with silence (padding made short effects read ~5–9 dB quieter than they sound: AU51)."""
+    block = min(0.4, (len(a) - 1) / SR)
+    return float(pyln.Meter(SR, block_size=block).integrated_loudness(a))
 
 
 def peak_db(a: np.ndarray) -> float:
