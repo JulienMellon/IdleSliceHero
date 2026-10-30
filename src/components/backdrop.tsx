@@ -320,16 +320,18 @@ function Skyline({ top, dark, billboard, lit = false }: { top: number; dark: boo
 }
 
 // The art is 400 wide but a tall cut-scene frame crops it to about x 99–301, with the speaker centred, so
-// props live inside that window and clear of the head (the sign above the hat, the card by the shoulder).
+// props live inside that window and clear of the head: the sign on a post at the dock (left of the head,
+// above the cap), the card by the shoulder with a margin from the right edge.
 function SoldSign() {
   return (
     <G>
-      <Rect x={197} y={46} width={6} height={36} fill="#6B4423" stroke={INK} strokeWidth={2} />
-      <Rect x={146} y={6} width={108} height={44} rx={4} fill="#F2E2B8" stroke={INK} strokeWidth={3} />
-      <Text x={200} y={25} fontSize={14} fontFamily={F.bold} fill="#E8432E" textAnchor="middle">
+      <Rect x={121} y={58} width={7} height={72} fill="#6B4423" stroke={INK} strokeWidth={2} />
+      <Rect x={113} y={126} width={23} height={6} rx={2} fill="#4B2F18" stroke={INK} strokeWidth={1.5} />
+      <Rect x={106} y={16} width={96} height={44} rx={4} fill="#F2E2B8" stroke={INK} strokeWidth={3} />
+      <Text x={154} y={35} fontSize={13} fontFamily={F.bold} fill="#E8432E" textAnchor="middle">
         SOLD SOON
       </Text>
-      <Text x={200} y={41} fontSize={8.5} fontFamily={F.bold} fill={INK} textAnchor="middle">
+      <Text x={154} y={51} fontSize={8} fontFamily={F.bold} fill={INK} textAnchor="middle">
         FUTURE MEGASTORE
       </Text>
     </G>
@@ -338,16 +340,16 @@ function SoldSign() {
 
 function RecipeCard() {
   return (
-    <G transform="rotate(-6 270 160)">
-      <Rect x={236} y={126} width={64} height={64} rx={4} fill="#FFF4D6" stroke={INK} strokeWidth={3} />
-      <Text x={268} y={142} fontSize={9} fontFamily={F.bold} fill="#E8432E" textAnchor="middle">
+    <G transform="rotate(-6 268 164)">
+      <Rect x={246} y={138} width={46} height={52} rx={4} fill="#FFF4D6" stroke={INK} strokeWidth={2.5} />
+      <Text x={269} y={152} fontSize={7.5} fontFamily={F.bold} fill="#E8432E" textAnchor="middle">
         ROSA’S
       </Text>
-      <Text x={268} y={153} fontSize={9} fontFamily={F.bold} fill="#E8432E" textAnchor="middle">
+      <Text x={269} y={161} fontSize={7.5} fontFamily={F.bold} fill="#E8432E" textAnchor="middle">
         SAUCE
       </Text>
       {[0, 1, 2].map((i) => (
-        <Rect key={i} x={244} y={162 + i * 8} width={48 - i * 10} height={3} rx={1.5} fill={INK} opacity={0.55} />
+        <Rect key={i} x={252} y={169 + i * 6.5} width={34 - i * 7} height={2.5} rx={1.2} fill={INK} opacity={0.55} />
       ))}
     </G>
   );

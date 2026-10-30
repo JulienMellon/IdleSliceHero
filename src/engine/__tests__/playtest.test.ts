@@ -35,6 +35,11 @@ describe('drivers cap (playtest bug 6)', () => {
     expect(G.upgradeLock(at(0), 'downtown', 'drivers')).toMatch(/Expand/);
     expect(G.upgradeLock(at(4), 'downtown', 'drivers')).toBe('Max drivers');
   });
+  it('a save already past the cap quotes its own level, never a lower cap', () => {
+    const s0 = G.newGame(0);
+    const s = { ...s0, shops: { ...s0.shops, downtown: { ...s0.shops.downtown, footprint: 0, drivers: 30 } } };
+    expect(G.upgradeLock(s, 'downtown', 'drivers')).toBe('Expand to go past Lv 30');
+  });
   it('the bundle advisor never buys drivers past the cap', () => {
     const s0 = G.newGame(0);
     const s = { ...s0, shops: { ...s0.shops, downtown: { ...s0.shops.downtown, managed: true, prep: 25, ovens: 25, counter: 25, drivers: 25 } } };
@@ -90,5 +95,30 @@ describe('tied stations (playtest UX)', () => {
     expect(h).not.toBeNull();
     expect(h!.label).toBe('Upgrade prep + ovens');
     expect(h!.cost).toBeGreaterThan(0);
+  });
+});
+
+describe('bundleHint cache (T25)', () => {
+  const tiedState = (over: Partial<G.Shop> = {}) => {
+    const s0 = G.newGame(0);
+    return { ...s0, shops: { ...s0.shops, downtown: { ...s0.shops.downtown, managed: true, prep: 6, ovens: 8, counter: 20, drivers: 30, ...over } } };
+  };
+  const fresh = (s: G.GameState) => {
+    const b = G.bottleneckBundle(s, 'downtown');
+    return b ? b.cost : null;
+  };
+  it('always equals a fresh computation, across upgrades and alternating shops', () => {
+    for (const over of [{}, { ovens: 9 }, { prep: 8 }, { grade: 1 }, { footprint: 1 }, { ovens: 8 }, {}]) {
+      const s = tiedState(over);
+      expect(G.bundleHint(s, 'downtown')?.cost ?? null).toBe(fresh(s));
+      expect(G.bundleHint(s, 'suburbs')).toBeNull(); // another shop in between must not reuse downtown's entry
+    }
+  });
+  it('cash and sales change only `affordable`, never the cached bundle', () => {
+    const s = tiedState();
+    const a = G.bundleHint({ ...s, cash: 0 }, 'downtown')!;
+    const b = G.bundleHint({ ...s, cash: 1e9, shops: { ...s.shops, downtown: { ...s.shops.downtown, sold: 999 } } }, 'downtown')!;
+    expect(b.cost).toBe(a.cost);
+    expect([a.affordable, b.affordable]).toEqual([false, true]);
   });
 });

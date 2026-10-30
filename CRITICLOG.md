@@ -60,3 +60,16 @@ v3.3 loads clean. Seven of the round-33 notes are confirmed fixed: D273 (peel), 
 | D296 | New shots `18-sold-sign-scene` and `19-recipe-card-scene`; both props sit inside the cropped frame (x 99–301) clear of the speaker's head. |
 | Offline cap | New shot `20-offline-capped` shows "Earnings are capped at 4h 0m (you were away 9h 1m)". |
 | D294, D297 | Not changed (notes). |
+
+## v3.6 — build (round 36 notes from the v3.5 review)
+
+| Note | Fix |
+| --- | --- |
+| G73 | The recipe card is 46 wide at x 246–292 (rotated −6°), inside the cropped frame (x 99–301) with a margin on the right; it sits behind Nonna's shoulder. |
+| G74 | A save already past the Drivers cap quotes its own level in the lock text ("Expand to go past Lv 30"); a test covers it. |
+| D298 | The sold sign is on a post planted in the dock plank at the left (base plate at the plank), above the cap and clear of it. |
+| D299 | Caption boxes are 0.94 opaque with a soft drop shadow, so art behind them reads as intentionally overlaid. |
+| D300 | The cap note reads "Capped at 4h 0m (away 9h 1m)" with non-breaking spaces inside each duration. |
+| D301 | Not changed: curb walkers are drawn at 1.2× against 1.1× for floor diners (perspective only); the ratio in the screenshot comes from seated diners being drawn shorter. |
+| D302, D303 | Carried (early-shop dead sky; back-row density). |
+| D304, D305 | Notes, not changed. |

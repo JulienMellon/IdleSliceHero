@@ -264,7 +264,8 @@ export function upgradeLock(s: GameState, id: NeighborhoodId, what: Upgrade): st
       if (id === 'downtown') return nonnaCountdownText(s);
       return null;
     case 'drivers':
-      return shop.drivers >= cap ? (shop.footprint + 1 < FOOTPRINTS.length ? `Expand to go past Lv ${cap}` : 'Max drivers') : null;
+      // a save that already went past the cap (before the cap existed) quotes its own level, not the lower cap
+      return shop.drivers >= cap ? (shop.footprint + 1 < FOOTPRINTS.length ? `Expand to go past Lv ${Math.max(cap, shop.drivers)}` : 'Max drivers') : null;
   }
 }
 
@@ -543,7 +544,7 @@ let hintVal: Omit<BundleHint, 'affordable'> | null = null;
 /** "Upgrade prep + ovens · $X": the tied-station bundle, ready to show in the UI. Cached on levels, decor and fleet (not cash or sales), so a render only pays for it when something was upgraded. */
 export function bundleHint(s: GameState, id: NeighborhoodId): BundleHint | null {
   const sh = s.shops[id];
-  const key = `${id}|${sh.built}|${sh.managed}|${sh.prep}|${sh.ovens}|${sh.counter}|${sh.drivers}|${sh.tables}|${sh.grade}|${sh.footprint}|${s.vehicle}|${Object.values(sh.decor).join('')}`;
+  const key = `${id}|${sh.built}|${sh.managed}|${sh.prep}|${sh.ovens}|${sh.counter}|${sh.drivers}|${sh.tables}|${sh.grade}|${sh.footprint}|${s.vehicle}|${Object.values(sh.decor).join(',')}`;
   if (key !== hintKey) {
     hintKey = key;
     const b = bottleneckBundle(s, id);

@@ -77,3 +77,15 @@ It runs alongside the visual critic (`CRITICLOG.md`). A step is done only when t
 | M12 (M6) | Static furniture in `storefront.tsx` is built in a `useMemo` on `[lay, id, fp, plants, tableTier, signageTier, dough, boxes, idleShop, vehicle, shopName]`; only the cast is rebuilt per frame. |
 | T18–T23 | Added: single-panel heading, scene gate, no-soft-lock for Nonna's takeover, offline cap boundaries, `rate()` thresholds. |
 | Not done | C22, M10, M15, A10 (low). Version labels: this fix build is v3.5, so 90 s story pacing and perks are now v3.6 and the tap-target resize v3.7. |
+
+## v3.6 — build (round 7 items from the v3.5 review)
+
+| Item | Fix |
+| --- | --- |
+| K1 | The furniture memo missed `prep`: a managed shop's prep bench never updated. Fixed by construction: `scene/furniture-inputs.ts` builds one typed object of primitives (`furnitureInputs`) and `buildFurniture(lay, fin)` reads only that; the memo deps are `[lay, ...furnitureDeps(fin)]`, so a forgotten field can't compile. |
+| C31 + A11 | `buildFurniture` extracted from the component body (module-level function in `storefront.tsx`). |
+| C32 | The decor part of the `bundleHint` cache key is comma-joined. |
+| C34 | Gate test asserts `toBeNull()`. |
+| T24 | `furniture-inputs.test.ts`: a prep upgrade changes the deps in a managed shop; every drawn upgrade changes them; the tap queue only matters when unmanaged. |
+| T25 | `bundleHint` cache equals a fresh computation across upgrades and alternating shops; cash and sales change only `affordable`. |
+| Not done | M16 (merge instead of sort per frame), C22, C33, M10, M15, A10: low or medium and accepted. |

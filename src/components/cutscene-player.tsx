@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   skipText: { color: '#fff', fontFamily: F.semi, fontSize: 15 },
   frame: { borderRadius: 18, overflow: 'hidden', borderWidth: 4, borderColor: '#fff', backgroundColor: '#000' },
   castRow: { position: 'absolute', bottom: -6, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end' },
-  caption: { position: 'absolute', top: 10, left: 10, right: 10, backgroundColor: C.cheese, borderWidth: 2.5, borderColor: C.ink, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
+  caption: { position: 'absolute', top: 10, left: 10, right: 10, backgroundColor: C.cheese, opacity: 0.94, borderWidth: 2.5, borderColor: C.ink, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6, shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 4, shadowOffset: { width: 0, height: 3 } },
   captionText: { fontFamily: F.semi, color: C.ink, fontSize: 15 },
   narration: { backgroundColor: C.cheese, borderWidth: 3, borderColor: C.ink, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14 },
   narrationText: { fontFamily: F.bold, fontSize: 18, lineHeight: 24, color: C.ink, textAlign: 'center' },
