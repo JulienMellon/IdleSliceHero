@@ -27,8 +27,8 @@ Fixed (in code; not auditioned): AU73, AU74, AU75, AU60, AU61. The lofi loop is 
 
 | ID | Sev | Note | Fix |
 | --- | --- | --- | --- |
-| AU76 | major | Collect (claims, chests, weekly, gift, offline popup) can be silenced as it starts: `emitAudio` runs before `set()`, so `warmRare`'s sweep removes the still-loading `collect/*` player (`playing` false) | A `firing` set of keys started by `fire()`, cleared on that play's `onEnd`; `warmRare` removes only the collect player it created and only if not firing; test "claim → store update → player still alive" |
-| AU77 | minor | Perk over a triumph: if the payoff is 3–5 s away, the payoff crash lands inside the perk's −6 dB story duck | Cap the duck at `min(perkLen, payoffAt − now − DUCK_UP_MS)`, or if the payoff is ≤ 1 s past the cap, wait for payoff + one beat |
+| AU76 | major — fixed after the loop (unreviewed) | Collect (claims, chests, weekly, gift, offline popup) can be silenced as it starts: `emitAudio` runs before `set()`, so `warmRare`'s sweep removes the still-loading `collect/*` player (`playing` false) | A `firing` set of keys started by `fire()`, cleared on that play's `onEnd`; `warmRare` removes only the collect player it created and only if not firing; test "claim → store update → player still alive" |
+| AU77 | minor — fixed after the loop (unreviewed) | Perk over a triumph: if the payoff is 3–5 s away, the payoff crash lands inside the perk's −6 dB story duck | Cap the duck at `min(perkLen, payoffAt − now − DUCK_UP_MS)`, or if the payoff is ≤ 1 s past the cap, wait for payoff + one beat |
 | AU39 / AU40 / AU41 | — | Device checks (+ crackle under a podcast); `react-native-audio-api`; other-audio hint | Open (Julien) |
 | AU25 | — | v2 arrangements, rush layer, Boston theme | Deferred |
 
