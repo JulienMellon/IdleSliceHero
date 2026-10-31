@@ -7,7 +7,7 @@ The visual **critic** (`.claude/agents/critic.md`) reviews each build's iPhone-s
 - **Full history:** rounds 1–50 (v0.1 → v5.2) are kept verbatim in [`docs/logs/CRITICLOG-archive.md`](docs/logs/CRITICLOG-archive.md). This file holds only the current state.
 - **Owner's standing direction** (the storefront cutaway, sidewalk buttons, tap-only drawer, a WELCOME mat, visible decor tiers, the visual-polish and character bar) lives in the critic brief and holds in every build.
 
-**Next IDs:** bugs **G86**, design notes **D404**.
+**Next IDs:** bugs **G86**, design notes **D405**.
 
 ---
 
@@ -17,13 +17,11 @@ The visual **critic** (`.claude/agents/critic.md`) reviews each build's iPhone-s
 - **Don't remove owner-required elements** while fixing something else. The WELCOME mat was removed once by mistake (G54).
 - **Moving one figure moves the overlap onto another** (rounds 47–50, the walk-in vs. driver at the counter): run the whole crowd suite after every route/spot change, not only the budget you are fixing.
 
-## Current state — v5.8, round 56: ❌ NOT SATISFIED (0 bugs, 0 major, 3 minor; D402 is visible in the first minute)
-Fixed: D397, D398 (accepted with the SE/wide-web treetop overlap), D399, D400, D401, D394, D359 (follow-up D402), D297 (caramel fill accepted unless Julien wants yellow back), D304, D305. Codecritic skipped this build (owner rule); it reviews 0d6d3a4..HEAD on v5.9.
+## Current state — v5.9, round 57: ✅ SATISFIED (0 bugs, 0 major, 1 minor)
+Fixed: D402 (names kept; "need $X" only when cash > 0, maths checked in 04 and 13), D403 (short crossed thumbs), Pier 9 chip ("uses bid cash" in red; the cream-pill state on a green chip isn't in any shot).
 
 | ID | Severity | Where / shot | Note | Concrete fix |
 |---|---|---|---|---|
-| D402 | minor | 03, 13 sidewalk cards | Unaffordable cards replace the station name with "need $X": a new player sees four cards told apart only by a 10 pt icon; at $0 the shortfall equals the price ("need $6" over "$6") while the tutorial says "tap the prep table" | Keep the name on the top line; "need $X" as a 9 pt muted line under the price only when cash > 0; otherwise no need line |
-| D403 | minor | 02 | Nonna's clasp: two tall pointed upright thumb lobes read as a "V" sign or tongs | Thumbs ~60% height, rounded tips, one crossed over the other |
-| Pier 9 chip | minor | 21 | "Pier 9 savings" reads like a discount or reward, not a warning | Wording that reads as a cost (e.g. "uses Pier 9 bid cash") in #b3261e |
+| D404 | minor | 21 University chip | Three lines make the chip overfull: ~3 pt to the dashed border top and bottom vs ~10 pt on its neighbours | While the hint shows: title 15 pt, hint 9 pt / lineHeight 11; or merge to "$1.8M · uses bid cash" (two lines) |
 
-**Next IDs:** G86, D404.
+**Next IDs:** G86, D405.

@@ -11,7 +11,7 @@ It runs alongside the visual critic (`CRITICLOG.md`). A step is done only when t
 
 - **APPROVED** means: no blocker, no [high] item (issue, architecture or memory), and ≤ 3 [medium] items across ISSUES + MEMORY.
 - **Full history:** rounds 1–18 (v2.15 → v5.0) are kept verbatim in [`docs/logs/CODELOG-archive.md`](docs/logs/CODELOG-archive.md). This file holds only the current state.
-- **ID prefixes:** K blocker · C issue · A architecture · M memory · T test. **Next IDs: K1, C90, A24, M53, T66.**
+- **ID prefixes:** K blocker · C issue · A architecture · M memory · T test. **Next IDs: K1, C105, A28, M60, U10, T81.**
 
 ---
 
@@ -39,35 +39,24 @@ It runs alongside the visual critic (`CRITICLOG.md`). A step is done only when t
 
 ## Owner rule (Julien, 2026-10-31): skip after an APPROVED
 After the codecritic returns **APPROVED**, it skips the next **two** build rounds. The round after that reviews **everything since the last range it reviewed**. While it's skipped, a build passes when the critic is SATISFIED (the last APPROVED carries).
-- Round 22 (v5.6) APPROVED → **v5.7 skipped**, **v5.8 skipped**, the next build reviews `0d6d3a4..HEAD`.
+- Round 22 (v5.6) APPROVED → v5.7 and v5.8 skipped; round 23 (v5.9) reviewed `0d6d3a4..1430f5f` and APPROVED.
+- **Now:** round 23 APPROVED → the next **two** builds skip the codecritic; the third reviews `1430f5f..HEAD`.
 
-## Current state — round 22 (v5.6, 47e2f3d..0d6d3a4): ✅ APPROVED (3 medium). Loop STOPPED for handoff.
-Fixed: C98, U6, A25, M57, C99, T74, T75. Cut-scenes measured: heaviest panel ~160 SVG nodes (target ≤ 350), memoised on primitives, native-driver zoom/slide, unique gradient ids.
+## Current state — round 23 (v5.7–v5.9 + lofi audio, 0d6d3a4..1430f5f): ✅ APPROVED (3 medium). Loop STOPPED (both reviewers passed on v5.9).
+Fixed: C100 (T77), C101 (T76), U7. AU76/AU77 (audio fixes made after the audio loop closed) checked: correct, except overlapping plays (C102). New UI logic is pure and tested (city-model, goal-model, sidewalk-model). Cut-scene art static and memoised; nothing new on the 15 fps path.
 
 | ID | Severity | File:line | Issue | Fix |
 |---|---|---|---|---|
-| C100 | medium | cutscene-player.tsx:129-137; content/types.ts:37 | A panel with 3+ figures crashes (`stage[2]` undefined); `cast` is an open array (content max today: 2) | Type `cast` as a ≤ 2 tuple; T77 |
+| C102 | medium | audio/director.ts:262-274 | Rare players cached per key and `firing` is a Set: a second play of the same key within its length (task + chest claim within 1.5 s → `collect/v` twice; two quick Expands) is cut when the first play's release runs | `RarePlays` acquire/release counter or play token in logic.ts; release at 0 (T78) |
 | A22 / M50 | medium | scene/room.tsx (1,027 lines) | Facade drawing in room.tsx, many nodes per pattern | facade.tsx, one path per pattern |
-| A17 / M32 | medium | app/index.tsx drawer | Inline card model; ~12 gain simulations per tick while open | Cached `drawerCards()` in drawer-model.ts (T45) |
-| C101 | low | cutscene/staging.ts:7 | Hands/hats not in the tested boxes; ~0.5 px clearance on iPad mini; two surprised figures overlap palms ~30 px | `HANDS_BOX` per pose; fix the comment; T76 |
-| U7 | low | rewards-ui.tsx:159-160 | Strip scroll/size events re-render the whole drawer ~31×/s | Sizes in a ref; state only for the fade boolean |
-| M58 | low | backdrop.tsx, figure-art.ts | All scene strings built at import | Lazy per id only if profiling shows a cost |
-| A26 | low | backdrop.tsx (930 lines, 9 scenes) | One file for all scenes | Split per scene when the next is added |
-| C92 | low | app/index.tsx:223-235 | Spotlight-target predicate ×3; nested halo ternary | Derive `sceneSpot`/`hudHalo` once |
-| C93 | low | game-ui.tsx `halo`; sidewalk-row.tsx `cardCoach` | Halo changes border width → layout jump | Transparent reserved border |
-| A24 | low | engine/game.ts:~531 | FIRST_BATCH_SPEED hidden in lineRates | `firstBatch(shop)` predicate |
-| M53 | low | storefront.tsx:381-410 | Spotlight path strings rebuilt per frame | useMemo hole + scrim d |
-| M54 | low | tutorial.ts:49-52 | Step 7 returns a new object per tick | Cached per-target objects |
-| M55 | low | storefront.tsx:~206 | `sp` object + 3 rate calls per frame | Compare levels first |
-| C85 | low | storefront / crew | Two derivations of "idle" | One `G.idleShop` |
-| C86 | low | scene/crew.ts | A hire mid-trip re-routes a walking figure | Idle flag per trip/slot |
-| C87 | low | pipeline `dispatch` | `while` where only one carrier can leave | `if` |
-| C88 | low | coin-layer / Hud | Coin target not re-measured on layout/rotation | Re-measure |
-| C89 | low | storefront | `since` computed several times per frame | Once per frame |
-| A23 | low | scene/crew.ts | Magic route numbers | Named constants |
-| M51, M52 | low | scene per-frame paths (round 18; full text not preserved) | Small per-frame allocations | Re-derive on next review |
-| T61–T65 | test | rounds 17–18 (full text not preserved) | Requested tests | Re-derive on next review |
-| T67, T68, T69 | test | tutorial / game | coachStep same ref; lineRates first-batch rule; tutorialAdvance identity | add |
-| T76, T77 | test | staging / content | Hands box on every window and speaker; ≤ 2 figures per panel and ids in LOOKS | add |
+| A17 / M32 | medium | app/index.tsx drawer | Inline card model; gain simulations per tick while open | Cached `drawerCards()` in drawer-model.ts (T45) |
+| C103 | low | cutscene-player.tsx:107 | Card-holder rule inline; `Math.max(0, …)` gives the card to the first figure when Rosa is absent | `cardHolder(panel)` in staging.ts returning −1, keep the backdrop prop (T79) |
+| C104 | low | game-ui.tsx `GoalLine` | Comment says memo-friendly; not memo'd, ReactNode icon | Drop the claim or memo + icon key |
+| A27 | low | index.tsx:308 `buyBundle` | Up to 8 commits/saves/audio events/queueScene per press | Store `buyMany(steps)`: one commit, one save, one sting |
+| M59 | low | director.ts:502 | Sound off → `warmRare` returns before its sweep; a warmed collect stays resident | Run the release loop before the sound check |
+| U8 | low | director.ts:501-525 | `warmRare` on every set (≥ 5 Hz) runs `buildLock` for every hood when build/0 isn't resident (pre-Nonna and after the last build, forever) | Early return on a `builtCount\|seen\|offline\|pier9` key |
+| U9 | low | city-map.tsx, city.tsx | `lotView` twice per lot per render | Compute lots once in City, pass down |
+| T78–T80 | test | — | RarePlays overlap; cardHolder; perkDuckSeconds after a background resume (rebased `startedAt`) | — |
+| Carried | low | — | M58, A26 (backdrop.tsx 933 lines), C92, C93, A24, A23, M53, M54, M55, M51/M52, C85–C89; tests T61–T65, T67–T69 | — |
 
-**Next IDs:** K1, C102, A27, M59, U8, T78.
+**Next IDs:** K1, C105, A28, M60, U10, T81.

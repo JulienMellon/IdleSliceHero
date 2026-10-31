@@ -1749,3 +1749,16 @@ v5.7 = cut-scene fix round. Fixed: D391, D392, D393, D395, D396. Other changed s
 | Pier 9 chip | minor | 21 | "+ University Build $1.8M" gives no warning that building drops the bid's progress | "Pier 9 bid in progress" hint under the chip's price |
 
 **Next IDs:** G86, D402.
+
+---
+
+## v5.8, round 56: ❌ NOT SATISFIED (0 bugs, 0 major, 3 minor; D402 is visible in the first minute)
+Fixed: D397, D398 (accepted with the SE/wide-web treetop overlap), D399, D400, D401, D394, D359 (follow-up D402), D297 (caramel fill accepted unless Julien wants yellow back), D304, D305. Codecritic skipped this build (owner rule); it reviews 0d6d3a4..HEAD on v5.9.
+
+| ID | Severity | Where / shot | Note | Concrete fix |
+|---|---|---|---|---|
+| D402 | minor | 03, 13 sidewalk cards | Unaffordable cards replace the station name with "need $X": a new player sees four cards told apart only by a 10 pt icon; at $0 the shortfall equals the price ("need $6" over "$6") while the tutorial says "tap the prep table" | Keep the name on the top line; "need $X" as a 9 pt muted line under the price only when cash > 0; otherwise no need line |
+| D403 | minor | 02 | Nonna's clasp: two tall pointed upright thumb lobes read as a "V" sign or tongs | Thumbs ~60% height, rounded tips, one crossed over the other |
+| Pier 9 chip | minor | 21 | "Pier 9 savings" reads like a discount or reward, not a warning | Wording that reads as a cost (e.g. "uses Pier 9 bid cash") in #b3261e |
+
+**Next IDs:** G86, D404.
