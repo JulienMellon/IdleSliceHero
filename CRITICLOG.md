@@ -7,7 +7,7 @@ The visual **critic** (`.claude/agents/critic.md`) reviews each build's iPhone-s
 - **Full history:** rounds 1–50 (v0.1 → v5.2) are kept verbatim in [`docs/logs/CRITICLOG-archive.md`](docs/logs/CRITICLOG-archive.md). This file holds only the current state.
 - **Owner's standing direction** (the storefront cutaway, sidewalk buttons, tap-only drawer, a WELCOME mat, visible decor tiers, the visual-polish and character bar) lives in the critic brief and holds in every build.
 
-**Next IDs:** bugs **G86**, design notes **D402**.
+**Next IDs:** bugs **G86**, design notes **D404**.
 
 ---
 
@@ -17,21 +17,13 @@ The visual **critic** (`.claude/agents/critic.md`) reviews each build's iPhone-s
 - **Don't remove owner-required elements** while fixing something else. The WELCOME mat was removed once by mistake (G54).
 - **Moving one figure moves the overlap onto another** (rounds 47–50, the walk-in vs. driver at the counter): run the whole crowd suite after every route/spot change, not only the budget you are fixing.
 
-## Current state — v5.7, round 55: ❌ NOT SATISFIED (0 bugs, 0 major, 11 minor)
-v5.7 = cut-scene fix round. Fixed: D391, D392, D393, D395, D396. Other changed shots are timing noise; no regressions from the shared figure art (00, 03, 05b2, 05b5, 06). Codecritic skipped this build (owner rule, see CODELOG).
+## Current state — v5.8, round 56: ❌ NOT SATISFIED (0 bugs, 0 major, 3 minor; D402 is visible in the first minute)
+Fixed: D397, D398 (accepted with the SE/wide-web treetop overlap), D399, D400, D401, D394, D359 (follow-up D402), D297 (caramel fill accepted unless Julien wants yellow back), D304, D305. Codecritic skipped this build (owner rule); it reviews 0d6d3a4..HEAD on v5.9.
 
 | ID | Severity | Where / shot | Note | Concrete fix |
 |---|---|---|---|---|
-| D397 | minor | Cut-scenes 02, 18, 19 | Caption bar is see-through (`cutscene-player.tsx:214` `opacity: 0.94` on the view): wire and bulbs show through, text at 94% | Drop the view opacity; solid `C.cheese` background |
-| D398 | minor | 22 | Oak shading circles spill outside the canopy into the sky (~160,95 and 110,215 pt); canopy hides the left roof/chimney; crowds the caption | Clip shading to the canopy path, canopy −15%, 20 pt left so the roof ridge shows |
-| D399 | minor | 08 | MEGASLICE billboard sits straight on the red "MEGA" sign with no support; two stacked brand signs; left stack's steam hidden | Drop the "MEGA" header, or billboard on two #3a2a20 posts on the roof, below the frame top |
-| D400 | minor | 02, 18, 19 | Hands still one motif (round blob + 3 arcs): Nonna's clasp and Marisol's fist read as bread rolls; Rosa holds the card from below with two mitts; card keeps its pushpin | Thumbs as separate lobes over the card edge; remove the red pin dot |
-| D401 | minor | 18 | Marisol's hair a flat white sheet with no ink outline, cap to shoulders (reads as a veil) | 2.5 pt ink outline, #d9d4cc shadow side, 2–3 strand lines, or a low bun |
-| D394 | minor | 02, 19 | (bulbs only) bulbs half-hidden under the caption's bottom edge | String at y ≥ caption bottom + 6 pt, or none on captioned beats |
-| D359 | minor | 03, 05b5, 21 (sidewalk cards) | Struck-through prices unexplained | Muted price + "need $X" or a lock glyph; strikes only for real discounts |
-| D297 | minor | 05b2, 33 | Goal-bar label one dark colour over fill and cream ("Upg\|rade") | Darker/contrasting label over the fill (two-tone clip) |
-| D304 | minor | 16 | Tied-station banner "Upgrade prep + ovens · $35" reads as a label | Green, tappable "Buy both · $35" button |
-| D305 | minor | 17 | Suburbs shows a live "Build $300" on the City map/list while locked; Nonna countdown toast covers the top lock tiles | Padlock + countdown on the row and pin; toast under the map |
-| Pier 9 chip | minor | 21 | "+ University Build $1.8M" gives no warning that building drops the bid's progress | "Pier 9 bid in progress" hint under the chip's price |
+| D402 | minor | 03, 13 sidewalk cards | Unaffordable cards replace the station name with "need $X": a new player sees four cards told apart only by a 10 pt icon; at $0 the shortfall equals the price ("need $6" over "$6") while the tutorial says "tap the prep table" | Keep the name on the top line; "need $X" as a 9 pt muted line under the price only when cash > 0; otherwise no need line |
+| D403 | minor | 02 | Nonna's clasp: two tall pointed upright thumb lobes read as a "V" sign or tongs | Thumbs ~60% height, rounded tips, one crossed over the other |
+| Pier 9 chip | minor | 21 | "Pier 9 savings" reads like a discount or reward, not a warning | Wording that reads as a cost (e.g. "uses Pier 9 bid cash") in #b3261e |
 
-**Next IDs:** G86, D402.
+**Next IDs:** G86, D404.

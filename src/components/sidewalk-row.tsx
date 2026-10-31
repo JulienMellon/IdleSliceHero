@@ -9,7 +9,7 @@ import * as G from '../engine/game';
 import { C, F } from '../theme';
 import { BuyButton } from './game-ui';
 import { DriverIcon, FlameIcon, PrepIcon, RegisterIcon } from './icons';
-import { stationViews, type StationKey, type StationView } from './sidewalk-model';
+import { needLine, stationViews, type StationKey, type StationView } from './sidewalk-model';
 import { COMPACT_FONT_MAX_SCALE, IDLE_STACK_GAP, SIDEWALK_ROW, STATION_CARD } from './tap-targets';
 
 // static icon elements: built once, not per render (M24)
@@ -21,10 +21,10 @@ const ICON: Record<StationKey, React.ReactNode> = {
 };
 
 export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlight = null }: { game: G.GameState; id: NeighborhoodId; idleShop: boolean; bottom: number; onBuy: (what: G.Upgrade) => boolean; onOpen: () => void; highlight?: StationKey | null }) {
-  // a station the player can't afford yet shows its price muted, with "need $X" in place of its name (D359; the icon stays)
+  // the name always stays on top; a player who has some cash but not enough sees "need $X" under the muted price (D359, D402)
   const station = (v: StationView, framed: boolean) => {
     const button = (
-      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={ICON[v.key]} sub={v.need ?? v.name} tone={v.tone} label={v.label} enabled={v.affordable} saving={framed && v.frame === 'waiting'} progress={v.progress} onPress={() => onBuy(v.what)} />
+      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={ICON[v.key]} sub={v.name} need={needLine(v, framed)} tone={v.tone} label={v.label} enabled={v.affordable} saving={framed && v.frame === 'waiting'} progress={v.progress} onPress={() => onBuy(v.what)} />
     );
     const badge = (
       <View style={[styles.level, v.frame === 'hot' && styles.levelHot]} pointerEvents="none">

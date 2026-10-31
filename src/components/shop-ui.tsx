@@ -64,7 +64,7 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
                 <Text style={[styles.tabName, warn && styles.tabTight, { color: can ? '#fff' : C.ink }]}>+ {n.name}</Text>
                 <Text style={[styles.tabSub, warn && styles.tabTight, { color: can ? '#fff' : C.tomato }]}>Build {money(n.buildCost)}</Text>
                 {warn ? (
-                  <Text style={[styles.tabWarn, { color: can ? '#fff' : C.inkSoft }]} numberOfLines={1}>
+                  <Text style={[styles.tabWarn, can && styles.tabWarnOnGreen]} numberOfLines={1}>
                     {warn}
                   </Text>
                 ) : null}
@@ -164,7 +164,9 @@ const styles = StyleSheet.create({
   // the extra line is paid for by tighter padding and line heights, so the chip keeps its height (14 + 12 + 10 = 36 vs ~29 + 8)
   tabBuildWarn: { paddingVertical: 0, justifyContent: 'center' },
   tabTight: { lineHeight: 13 },
-  tabWarn: { fontFamily: F.semi, fontSize: 9, lineHeight: 10 },
+  tabWarn: { fontFamily: F.semi, fontSize: 9, lineHeight: 10, color: '#B3261E' },
+  // on the solid-green ready chip red would not read: a cream pill behind it
+  tabWarnOnGreen: { backgroundColor: '#FFF4E0', borderRadius: 4, paddingHorizontal: 4 },
   tabBuildReady: { backgroundColor: C.basil, borderColor: '#fff', borderStyle: 'solid' },
 
   card: { justifyContent: 'space-between', width: '48.5%', backgroundColor: C.panel, borderRadius: 16, padding: 7, gap: 5, borderWidth: 2.5, borderColor: C.ink, ...shadow },

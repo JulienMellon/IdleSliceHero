@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 import { money } from '../../engine/format';
 import * as G from '../../engine/game';
-import { buildChipHint, bundleButton, buttonTone, buyBundle, needText, stationModels, stationViews } from '../sidewalk-model';
+import { buildChipHint, bundleButton, buttonTone, buyBundle, needLine, needText, stationModels, stationViews } from '../sidewalk-model';
 
 const shopState = (patch: Partial<G.Shop>, cash = 0): G.GameState => {
   const s = G.newGame(0);
@@ -68,18 +68,29 @@ describe('"need $X" instead of a struck price (D359)', () => {
     expect(needText(100, 250)).toBeNull();
     expect(needText(null, 0)).toBeNull();
   });
-  test('an unaffordable station carries its shortfall; an affordable or maxed one does not', () => {
+  test('a station keeps its name; its need line shows only with some cash, and never at $0 (it would repeat the price)', () => {
     const s = shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 0);
-    const v = view(s, 'drivers');
-    expect(v.need).toBe(`need ${money(v.cost!)}`);
-    expect(view({ ...s, cash: 1e9 }, 'drivers').need).toBeNull();
-    const capped = shopState({ prep: 25, ovens: 25, counter: 25, drivers: 1, footprint: 0 }, 0);
+    for (const v of stationViews(s, 'downtown')) expect(v.need).toBeNull();
+    const prep = view({ ...s, cash: 1 }, 'prep');
+    expect(prep.need).toBe(`need ${money(prep.cost! - 1)}`);
+    expect(prep.name).toBe('PREP');
+    expect(view({ ...s, cash: 1e9 }, 'prep').need).toBeNull();
+    const capped = shopState({ prep: 25, ovens: 25, counter: 25, drivers: 1, footprint: 0 }, 5);
     expect(view(capped, 'prep').need).toBeNull(); // MAX has no price to be short of
   });
   test('the shortfall shrinks as cash arrives', () => {
     const s = shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 0);
-    const cost = view(s, 'drivers').cost!;
-    expect(view({ ...s, cash: cost - 3 }, 'drivers').need).toBe('need $3');
+    const cost = view(s, 'prep').cost!;
+    expect(view({ ...s, cash: cost - 3 }, 'prep').need).toBe('need $3');
+  });
+  test('a framed card saving for its bottleneck keeps its progress bar instead of the text', () => {
+    const s = shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 1);
+    const d = view(s, 'drivers');
+    expect(d.frame).toBe('waiting');
+    expect(d.need).not.toBeNull();
+    expect(needLine(d, true)).toBeNull();
+    expect(needLine(d, false)).toBe(d.need); // an unframed chip has no bar
+    expect(needLine(view(s, 'prep'), true)).toBe(view(s, 'prep').need);
   });
 });
 
@@ -129,7 +140,7 @@ describe('Pier 9 warning on the build chip', () => {
   test('shown only while the bid is on offer and not yet won', () => {
     expect(buildChipHint(base)).toBeNull();
     expect(G.pier9Available(open())).toBe(true);
-    expect(buildChipHint(open())).toMatch(/Pier 9/);
+    expect(buildChipHint(open())).toBe('uses bid cash'); // a cost, not a reward; never claims to reset progress
     expect(buildChipHint(open({ perk: true }))).toBeNull(); // won
   });
 });

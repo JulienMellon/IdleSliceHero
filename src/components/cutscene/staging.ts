@@ -43,7 +43,7 @@ export function poseFor(id: CharacterId, mood: Mood, holding?: 'recipe-card'): P
 export const HANDS_BOX: Record<Pose, Box> = {
   down: { x0: 19.2, x1: 100.8, y0: 125.6, y1: 142.4 },
   thumb: { x0: 19.2, x1: 103.8, y0: 69.7, y1: 142.4 },
-  clasp: { x0: 46.4, x1: 73.6, y0: 107, y1: 129.9 },
+  clasp: { x0: 46.4, x1: 73.6, y0: 110.9, y1: 129.9 },
   point: { x0: 25.2, x1: 108.8, y0: 83.2, y1: 139.8 },
   'hands-up': { x0: 13.2, x1: 106.8, y0: 44.9, y1: 67.3 },
   collar: { x0: 19.2, x1: 79.9, y0: 75.3, y1: 142.4 },

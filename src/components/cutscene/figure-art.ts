@@ -125,10 +125,12 @@ const n = (v: number) => Math.round(v * 10) / 10;
 export const GESTURES: Record<Pose, Gesture> = {
   down: { arms: 'M34 86 Q25 112 27 134 M86 86 Q95 112 93 134', hands: mittenDown(27, 134) + mittenDown(93, 134), creases: 'M30.6 129.5q2.6 3.5 0.6 8M89.4 129.5q-2.6 3.5 -0.6 8' },
   thumb: { arms: 'M34 86 Q25 112 27 134 M86 86 L96 108 L96 82', hands: mittenDown(27, 134) + thumbUp(96, 82), creases: 'M30.6 129.5q2.6 3.5 0.6 8' + knuckles(97, 83) },
-  // hands clasped at the belt: two overlapping hands (the seam between them reads), two thumbs standing up on top, finger lines on each
+  // hands clasped at the belt: two overlapping hands (the seam between them reads), finger lines on each, and two short round-tipped
+  // thumbs crossed on top: the back one (drawn under the hands) leans left, the front one leans right across it
   clasp: {
     arms: 'M34 86 Q29 112 55.5 122 M86 86 Q91 112 64.5 122',
-    hands: ell(55.5, 122, 8.2, 7) + ell(64.5, 122, 8.2, 7) + capsule(56.6, 117, 54.6, 110.4, 2.5) + capsule(63.4, 117, 65.4, 110.4, 2.5),
+    back: capsule(62.5, 118, 58.2, 114.6, 2.4),
+    hands: ell(55.5, 122, 8.2, 7) + ell(64.5, 122, 8.2, 7) + capsule(57.5, 118, 62.3, 114.2, 2.4),
     creases: 'M50.8 118q2 3.8 0 7.6M54.2 117q2 4.4 0 8.6M69.2 118q-2 3.8 0 7.6M65.8 117q-2 4.4 0 8.6',
   },
   point: { arms: 'M34 86 L19 110 L33 132 M86 86 Q91 99 94 91', hands: fist(33, 132) + pointRight(94, 91), creases: knuckles(33, 132) + 'M92 92.5q3 1.6 6 0' },

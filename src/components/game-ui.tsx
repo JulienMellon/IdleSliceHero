@@ -56,8 +56,9 @@ const BURST = ['star', 'coin', 'slice', 'star', 'coin', 'slice'] as const;
  * flipping to it right after a purchase keeps its burst (C56). `saving` (with `progress` 0–1) marks the bottleneck
  * the player is saving for (D326). `compact` is the 44 pt sidewalk button: `icon` + `sub` above the price.
  */
-export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal', saving = false, progress = 0 }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: 'normal' | 'neutral' | 'nogain'; saving?: boolean; progress?: number }) {
+export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal', saving = false, progress = 0, need = null }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: 'normal' | 'neutral' | 'nogain'; saving?: boolean; progress?: number; need?: string | null }) {
   const nogain = tone === 'nogain';
+  const needLine = !!need && !enabled;
   // saving for the bottleneck: a pale basil face, so the one thing worth saving for stands out among the greys (D326)
   const wait = saving && !enabled && !nogain;
   const outerBg = nogain ? '#CFC3B2' : wait ? '#A9CFB1' : !enabled ? '#C9BCAD' : C.basilDark;
@@ -92,7 +93,7 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
             compact ? (
               <View style={styles.buySubRow}>
                 {icon}
-                <Text style={[styles.buySubCompact, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+                <Text style={[styles.buySubCompact, needLine && styles.buySubTight, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
                   {sub}
                 </Text>
               </View>
@@ -100,9 +101,15 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
               <Text style={styles.buySub}>{sub}</Text>
             )
           ) : null}
-          <Text style={[styles.buyLabel, compact && styles.buyLabelCompact, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}>
+          <Text style={[styles.buyLabel, compact && styles.buyLabelCompact, compact && needLine && styles.buyLabelTight, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}>
             {label}
           </Text>
+          {/* D402: what is still missing, under the muted price (compact only; the line heights tighten to keep the 44 pt button) */}
+          {compact && needLine ? (
+            <Text style={[styles.buyNeed, { color: labelColor }]} numberOfLines={1} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+              {need}
+            </Text>
+          ) : null}
           {wait ? (
             <View style={styles.saveTrack} pointerEvents="none">
               <View style={[styles.saveFill, { width: `${Math.round(Math.min(1, Math.max(0, progress)) * 100)}%` }]} />
@@ -371,6 +378,10 @@ const styles = StyleSheet.create({
   buySubRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3 },
   buySubCompact: { fontFamily: F.semi, fontSize: 10, letterSpacing: 0.1, flexShrink: 1 },
   buyLabelCompact: { fontSize: 15 },
+  // with a need line the three lines share the 36 pt inside the button: 10 + 15 + 10
+  buySubTight: { lineHeight: 10 },
+  buyLabelTight: { lineHeight: 15 },
+  buyNeed: { fontFamily: F.semi, fontSize: 9, lineHeight: 10, opacity: 0.85 },
   noGainInner: { backgroundColor: '#EFE6D8', borderColor: '#CFC3B2' },
   saveTrack: { position: 'absolute', left: 6, right: 6, bottom: 2, height: 3, borderRadius: 2, backgroundColor: 'rgba(46,125,62,0.18)' },
   saveFill: { height: 3, borderRadius: 2, backgroundColor: '#2E7D3E' },

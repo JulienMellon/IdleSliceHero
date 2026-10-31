@@ -1728,3 +1728,24 @@ v5.6 = owner-requested cut-scene upscale (waist-up figures, layered backdrops). 
 | D359, D297, D304, D305, Pier 9 chip | note | carried | Texts in the round-53 archive section. | — |
 
 **Next IDs:** G86, D397.
+
+---
+
+## v5.7, round 55: ❌ NOT SATISFIED (0 bugs, 0 major, 11 minor)
+v5.7 = cut-scene fix round. Fixed: D391, D392, D393, D395, D396. Other changed shots are timing noise; no regressions from the shared figure art (00, 03, 05b2, 05b5, 06). Codecritic skipped this build (owner rule, see CODELOG).
+
+| ID | Severity | Where / shot | Note | Concrete fix |
+|---|---|---|---|---|
+| D397 | minor | Cut-scenes 02, 18, 19 | Caption bar is see-through (`cutscene-player.tsx:214` `opacity: 0.94` on the view): wire and bulbs show through, text at 94% | Drop the view opacity; solid `C.cheese` background |
+| D398 | minor | 22 | Oak shading circles spill outside the canopy into the sky (~160,95 and 110,215 pt); canopy hides the left roof/chimney; crowds the caption | Clip shading to the canopy path, canopy −15%, 20 pt left so the roof ridge shows |
+| D399 | minor | 08 | MEGASLICE billboard sits straight on the red "MEGA" sign with no support; two stacked brand signs; left stack's steam hidden | Drop the "MEGA" header, or billboard on two #3a2a20 posts on the roof, below the frame top |
+| D400 | minor | 02, 18, 19 | Hands still one motif (round blob + 3 arcs): Nonna's clasp and Marisol's fist read as bread rolls; Rosa holds the card from below with two mitts; card keeps its pushpin | Thumbs as separate lobes over the card edge; remove the red pin dot |
+| D401 | minor | 18 | Marisol's hair a flat white sheet with no ink outline, cap to shoulders (reads as a veil) | 2.5 pt ink outline, #d9d4cc shadow side, 2–3 strand lines, or a low bun |
+| D394 | minor | 02, 19 | (bulbs only) bulbs half-hidden under the caption's bottom edge | String at y ≥ caption bottom + 6 pt, or none on captioned beats |
+| D359 | minor | 03, 05b5, 21 (sidewalk cards) | Struck-through prices unexplained | Muted price + "need $X" or a lock glyph; strikes only for real discounts |
+| D297 | minor | 05b2, 33 | Goal-bar label one dark colour over fill and cream ("Upg\|rade") | Darker/contrasting label over the fill (two-tone clip) |
+| D304 | minor | 16 | Tied-station banner "Upgrade prep + ovens · $35" reads as a label | Green, tappable "Buy both · $35" button |
+| D305 | minor | 17 | Suburbs shows a live "Build $300" on the City map/list while locked; Nonna countdown toast covers the top lock tiles | Padlock + countdown on the row and pin; toast under the map |
+| Pier 9 chip | minor | 21 | "+ University Build $1.8M" gives no warning that building drops the bid's progress | "Pier 9 bid in progress" hint under the chip's price |
+
+**Next IDs:** G86, D402.

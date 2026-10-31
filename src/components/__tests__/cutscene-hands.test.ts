@@ -92,15 +92,26 @@ describe('T76 hands and limbs', () => {
 
   const subpaths = (d: string) => (d.match(/M/g) ?? []).length;
 
-  test('D400: the clasp reads as two hands: two palms, two thumbs standing up on top, finger lines on each', () => {
-    const { hands, creases } = GESTURES.clasp;
-    expect(subpaths(hands)).toBe(4); // left hand, right hand, left thumb, right thumb
+  test('D400 / D403: the clasp reads as two hands: two palms, finger lines, and two short round thumbs crossed on top', () => {
+    const { hands, back, creases } = GESTURES.clasp;
+    expect(subpaths(hands)).toBe(3); // left hand, right hand, front thumb
+    expect(subpaths(back!)).toBe(1); // back thumb, drawn under the hands
     expect(subpaths(creases)).toBe(4); // two finger lines a hand, curves only
     expect(creases).not.toMatch(/[hLhHvV]/); // no straight "#" bars
-    // the two thumbs are separate lobes standing clear of the hands' tops and of each other
-    const [leftHand, rightHand, leftThumb, rightThumb] = hands.match(/M[^M]+/g)!.map((d) => boundsOf(d));
-    for (const thumb of [leftThumb, rightThumb]) expect(thumb.y0).toBeLessThan(Math.min(leftHand.y0, rightHand.y0) - 3);
-    expect(rightThumb.x0 - leftThumb.x1).toBeGreaterThanOrEqual(1);
+    const [leftHand, rightHand, front] = hands.match(/M[^M]+/g)!.map((d) => boundsOf(d));
+    const rear = boundsOf(back!);
+    const handTop = Math.min(leftHand.y0, rightHand.y0);
+    // short: each thumb rises 2 to 4.5 units above the hands (the old upright lobes rose 7.1, the fix is about 60 % of that)
+    for (const thumb of [front, rear]) {
+      expect(handTop - thumb.y0).toBeGreaterThanOrEqual(2);
+      expect(handTop - thumb.y0).toBeLessThanOrEqual(4.5);
+    }
+    // crossed, not a V: the thumbs overlap in x and sit at the middle seam, the front from the left hand's side, the rear from the right's
+    expect(Math.min(front.x1, rear.x1) - Math.max(front.x0, rear.x0)).toBeGreaterThan(2);
+    const m = (b: typeof front) => (b.x0 + b.x1) / 2;
+    expect(Math.abs(m(front) - 60)).toBeLessThan(4);
+    expect(Math.abs(m(rear) - 60)).toBeLessThan(4);
+
     // and the hands overlap in the middle like laced palms, not one blob
     expect(leftHand.x1).toBeGreaterThan(rightHand.x0);
     expect(rightHand.x1 - leftHand.x0).toBeGreaterThan(20);

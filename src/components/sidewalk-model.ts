@@ -53,7 +53,7 @@ export interface StationModel {
 
 export interface StationView extends StationModel {
   affordable: boolean;
-  /** "need $X" while the player is short (shown over the muted price in place of the station name), else null. */
+  /** "need $X" for the 9 pt line under the price: only while the player is short and has some cash (at $0 it would just repeat the price), else null. */
   need: string | null;
   /** Card frame: solid red when the bottleneck is affordable, dashed while the player saves for it. */
   frame: 'hot' | 'waiting' | null;
@@ -101,8 +101,16 @@ export function stationViews(s: G.GameState, id: NeighborhoodId): StationView[] 
     const affordable = !m.lock && m.cost !== null && s.cash >= m.cost;
     const frame = m.neck ? (affordable ? 'hot' : 'waiting') : null;
     const progress = frame === 'waiting' && m.cost ? Math.min(1, Math.max(0, s.cash / m.cost)) : 0;
-    return { ...m, affordable, need: m.lock ? null : needText(m.cost, s.cash), frame, progress };
+    return { ...m, affordable, need: m.lock || s.cash <= 0 ? null : needText(m.cost, s.cash), frame, progress };
   });
+}
+
+/**
+ * The need line a station button actually draws. A framed card that is saving for its bottleneck already shows a
+ * progress bar in the same spot at the foot of the button, so it keeps the bar and skips the text (D402).
+ */
+export function needLine(v: StationView, framed: boolean): string | null {
+  return framed && v.frame === 'waiting' ? null : v.need;
 }
 
 // ---------- the tied-stations bundle button (D304) ----------
@@ -138,6 +146,6 @@ export function buyBundle(steps: readonly G.Upgrade[], buy: (what: G.Upgrade) =>
 
 /** While the Pier 9 bid is on offer (and not yet won), building spends the cash saved for it: say so under the chip's price. */
 export function buildChipHint(s: G.GameState): string | null {
-  // short enough for the ~94 pt chip at 9 pt ("Uses Pier 9 savings" would widen it)
-  return G.pier9Available(s) ? 'Pier 9 savings' : null;
+  // reads as a cost, not a reward, and is short enough for the ~94 pt chip at 9 pt (D402)
+  return G.pier9Available(s) ? 'uses bid cash' : null;
 }
