@@ -48,7 +48,7 @@ function firstCastPanel(scene: Scene) {
 export const EXCLUSIVE_CUES: ReadonlySet<PanelCue> = new Set(['triumph', 'bell-triumph', 'recipe', 'reunion', 'city-theme', 'rep']);
 
 /** Loop volume during a cut-scene (AU22: −8 dB) and under stingers. */
-export const DUCK = { scene: dbToGain(-8), popup: dbToGain(-8), stinger: dbToGain(-6), bottleneck: dbToGain(-3), bid: dbToGain(-10), build: dbToGain(-14) } as const;
+export const DUCK = { scene: dbToGain(-8), popup: dbToGain(-8), stinger: dbToGain(-6), bottleneck: dbToGain(-3), bid: dbToGain(-10), big: dbToGain(-9) } as const;
 
 export function dbToGain(db: number) {
   return Math.pow(10, db / 20);
@@ -71,11 +71,12 @@ export function quantizeDelay(pos: number, bpm: number, unitBeats: number, downb
 /**
  * Bar-quantised stingers wait for a bar whose chord is the tonic, up to `maxBars` ahead, so a cadence never lands
  * its I over the loop's IV or V (AU47). Failing that they take the next bar and the loop ducks further (`extraDuck`).
- * When a bar is longer than `LONG_BAR_SECONDS` (the lofi tempos: 2.8–3.2 s) the search is off (`maxBars` = 0): the
- * stinger takes the next bar, on a non-I bar with the extra duck, so the wait never passes about one bar (AU63).
+ * The search is capped in seconds: bar k is a candidate only while the wait `first + k * bar` is at most
+ * `MAX_TONIC_WAIT_SECONDS` (2.5 s). At the lofi tempos a bar is 2.8–3.2 s, so the stinger takes the next bar; in
+ * Downtown's 1.8 s bar it can still look one bar ahead when the next bar is close (AU63, AU74).
  */
-/** A bar longer than this and a stinger no longer hunts for a tonic bar (AU63). */
-export const LONG_BAR_SECONDS = 2.5;
+/** A stinger never waits longer than this for a tonic bar (AU74; AU63 capped it by bar length only). */
+export const MAX_TONIC_WAIT_SECONDS = 2.5;
 
 export function stingTiming(pos: number, bpm: number, beatsPerBar: number, barRoots: readonly number[] | undefined, downbeat: number, maxBars = 2): { delay: number; extraDuck: number } {
   const first = quantizeDelay(pos, bpm, beatsPerBar, downbeat);
@@ -83,8 +84,8 @@ export function stingTiming(pos: number, bpm: number, beatsPerBar: number, barRo
   const bar = (60 / bpm) * beatsPerBar;
   const landing = pos + first + downbeat; // time of the first candidate downbeat
   const n = barRoots.length;
-  const reach = bar > LONG_BAR_SECONDS ? 0 : maxBars;
-  for (let k = 0; k <= reach; k++) {
+  for (let k = 0; k <= maxBars; k++) {
+    if (k > 0 && first + k * bar > MAX_TONIC_WAIT_SECONDS) break;
     const idx = (((Math.round(landing / bar) + k) % n) + n) % n;
     if (barRoots[idx] === 1) return { delay: first + k * bar, extraDuck: 1 };
   }
@@ -207,7 +208,10 @@ export function sharedTimeline(a: MusicTrack | null, b: MusicTrack) {
   return (a === 'downtown_sparse' && b === 'downtown') || (a === 'downtown' && b === 'downtown_sparse');
 }
 
-/** Loop ducking under each stinger kind. */
+/** Stingers that get the deepest duck (−9 dB), so the size hierarchy holds over the −20 LUFS loop (AU73). */
+const BIG_STINGS: ReadonlySet<StingKind> = new Set<StingKind>(['milestone_big', 'manager', 'build']);
+
+/** Loop ducking under each stinger kind: bottleneck −3, milestone_big / manager / build −9, the rest −6. */
 export function stingDuck(kind: StingKind): number {
-  return kind === 'bottleneck' ? DUCK.bottleneck : kind === 'build' ? DUCK.build : DUCK.stinger;
+  return kind === 'bottleneck' ? DUCK.bottleneck : BIG_STINGS.has(kind) ? DUCK.big : DUCK.stinger;
 }

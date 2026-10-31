@@ -4,11 +4,13 @@ import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-aud
 import { AppState, Platform } from 'react-native';
 
 import { HOME_SCENES } from '../content/scenes/home';
+import { NEIGHBORHOODS } from '../content/tuning';
 import type { NeighborhoodId, PanelCue } from '../content/types';
+import * as G from '../engine/game';
 import { useGame } from '../store/game-store';
 import { onAudio, type AudioEvent } from './bus';
 import {
-  DUCK, EXCLUSIVE_CUES, PurchaseChain, RESTART_TRACKS, StingGate, VoiceLimiter, beatUnit, musicFor, nextVariant, panelCue, quantizeDelay, sharedTimeline,
+  DUCK, EXCLUSIVE_CUES, PurchaseChain, collectSize, dbToGain, RESTART_TRACKS, StingGate, VoiceLimiter, beatUnit, musicFor, nextVariant, panelCue, quantizeDelay, sharedTimeline,
   stingDuck, stingTiming, stingUnit, type MusicTrack, type StingKind,
 } from './logic';
 import { MUSIC, SFX, STINGS, STORY, type SfxId, type StoryCueId } from './manifest';
@@ -78,6 +80,8 @@ function make(src: number | null): AudioPlayer {
 /**
  * Start a one-shot from the top. A player that has played is rewound right after it ends, so the next play()
  * is immediate; one still mid-sound is seeked first and played when the seek lands (AU39).
+ * `onEnd` (the release of a rare one-shot) runs when the player reports it finished, or `seconds` + 300 ms after
+ * playback actually started (not after the call: a seek can delay it), whichever comes first (AU61).
  */
 function fire(p: AudioPlayer, seconds: number, volume: number, rate = 1, onEnd?: () => void) {
   ramps.delete(p);
@@ -86,14 +90,26 @@ function fire(p: AudioPlayer, seconds: number, volume: number, rate = 1, onEnd?:
     if (rate !== 1) p.setPlaybackRate(rate);
     else if (safe(() => p.playbackRate, 1) !== 1) p.setPlaybackRate(1);
   });
-  const at = safe(() => p.currentTime, 0);
-  if (at > 0.01) {
-    void p.seekTo(0).then(() => safe(() => p.play())).catch(() => {});
-  } else safe(() => p.play());
-  setTimeout(() => {
+  let finished = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let sub: { remove: () => void } | undefined;
+  const done = () => {
+    if (finished) return;
+    finished = true;
+    if (timer) clearTimeout(timer);
+    safe(() => sub?.remove());
     if (onEnd) return onEnd();
     if (!safe(() => p.playing, false)) void p.seekTo(0).catch(() => {});
-  }, (seconds / rate) * 1000 + 60);
+  };
+  const start = () => {
+    safe(() => p.play());
+    timer = setTimeout(done, (seconds / rate) * 1000 + (onEnd ? 300 : 60));
+  };
+  if (onEnd) sub = safe(() => p.addListener('playbackStatusUpdate', (st) => { if (st.didJustFinish) done(); }));
+  const at = safe(() => p.currentTime, 0);
+  if (at > 0.01) {
+    void p.seekTo(0).then(start).catch(() => { if (onEnd) done(); });
+  } else start();
 }
 
 // ------------------------------------------------------------------------------------------------ state
@@ -122,6 +138,10 @@ const gate = new StingGate();
 let stingHood: NeighborhoodId | null = null;
 const stingPlayers = new Map<string, AudioPlayer>();
 const pendingStings = new Set<ReturnType<typeof setTimeout>>();
+/** Stingers released from the set by a key change while still sounding; Skip and Music off still fade them (AU60). */
+const orphans = new Map<AudioPlayer, string>();
+/** Perks waiting for a story cue's payoff: a panel change doesn't drop them (AU75); Skip does. */
+const pendingPerks = new Set<ReturnType<typeof setTimeout>>();
 let preloadTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Build and bid stingers carry into the scene they open; story cues wait for them (AU42). */
@@ -249,14 +269,21 @@ function playSfx(id: SfxId, opts: { variant?: number; gain?: number; jitter?: nu
 // ------------------------------------------------------------------------------------------------ stingers
 function useStingKey(hood: NeighborhoodId) {
   if (stingHood === hood) return;
-  for (const p of stingPlayers.values()) {
-    // a stinger still sounding is released when it ends, never cut (AU43)
+  // the held build stinger of the key we are moving to stays in the set: it is still sounding and Skip must reach it
+  const keep = heldKind === 'build' && Date.now() < heldUntil ? `${hood}_build` : null;
+  for (const [key, p] of [...stingPlayers]) {
+    if (key === keep) continue;
+    // a stinger still sounding is released when it ends, never cut (AU43), but it stays fadable (AU60)
     if (safe(() => p.playing, false)) {
       const left = Math.max(0, safe(() => p.duration - p.currentTime, 0));
-      setTimeout(() => safe(() => p.remove()), left * 1000 + 200);
+      orphans.set(p, key);
+      setTimeout(() => {
+        orphans.delete(p);
+        safe(() => p.remove());
+      }, left * 1000 + 200);
     } else safe(() => p.remove());
+    stingPlayers.delete(key);
   }
-  stingPlayers.clear();
   stingHood = hood;
 }
 
@@ -280,7 +307,8 @@ function scheduleStingPreload(hood: NeighborhoodId) {
     const st = useGame.getState();
     const h = st.playing ? st.playing.scene.neighborhood : st.game.active;
     if (!useAudioPrefs.getState().music) return;
-    for (const k of STING_PRELOAD) safe(() => stingPlayer(h, k));
+    const buildHeld = heldKind === 'build' && Date.now() < heldUntil;
+    for (const k of STING_PRELOAD) if (!(k === 'build' && buildHeld)) safe(() => stingPlayer(h, k));  // AU60
   }, 1500);
 }
 
@@ -290,6 +318,10 @@ function stopStings(ms: number, keepHeld = false) {
   pendingStings.clear();
   const held = keepHeld && heldKind && Date.now() < heldUntil ? heldKind : null;
   for (const [key, p] of stingPlayers) {
+    if (held && key.endsWith(`_${held}`)) continue;
+    if (safe(() => p.playing, false)) rampTo(p, 0, ms, () => safe(() => p.pause()));
+  }
+  for (const [p, key] of orphans) {
     if (held && key.endsWith(`_${held}`)) continue;
     if (safe(() => p.playing, false)) rampTo(p, 0, ms, () => safe(() => p.pause()));
   }
@@ -311,6 +343,16 @@ function afterHeld(fn: () => void) {
     if (lastScenePanel === panelAtCall) fn();
   }, wait);
   pendingCues.add(t);
+}
+
+/** Duck the story cue −6 dB for `seconds` (a perk landing before the payoff), then bring it back if it is still the one playing. */
+function duckStory(sn: NonNullable<typeof storyNow>, seconds: number) {
+  const p = story[storyFront];
+  if (!p) return;
+  rampTo(p, dbToGain(-6), DUCK_DOWN_MS);
+  setTimeout(() => {
+    if (storyNow === sn && sn.pausedAt === null) rampTo(p, 1, DUCK_UP_MS);
+  }, seconds * 1000);
 }
 
 function clearPendingCues() {
@@ -440,6 +482,31 @@ function onPanel(sceneId: string, panel: number) {
   }
 }
 
+// ------------------------------------------------------------------------------------------------ rare one-shots (AU61)
+/**
+ * Create the rare effects' players when they become relevant, so the first play isn't made at play time: the Collect
+ * (the size the popup will use) while the offline popup is open, the build effect once a pizzeria can be built, the
+ * gavel once the Pier 9 bid is on offer. A play releases its player; this runs on every store update, so a build
+ * that is still on offer is warmed again, and an unused Collect is released once the popup is gone.
+ */
+function warmRare(s: ReturnType<typeof useGame.getState>) {
+  if (!s.loaded || !useAudioPrefs.getState().sound) return;
+  if (s.offline) {
+    const v = collectSize(s.offline.earned, s.game.cash);
+    if (!sfxPlayers.has(`collect/${v}`)) safe(() => sfxPlayer('collect', v));
+  } else {
+    for (const key of [...sfxPlayers.keys()]) {
+      const p = sfxPlayers.get(key);
+      if (key.startsWith('collect/') && p && !safe(() => p.playing, false)) {
+        sfxPlayers.delete(key);
+        safe(() => p.remove());
+      }
+    }
+  }
+  if (!sfxPlayers.has('build/0') && NEIGHBORHOODS.some((n) => !G.buildLock(s.game, n.id))) safe(() => sfxPlayer('build', 0));
+  if (!sfxPlayers.has('gavel/0') && G.pier9Available(s.game)) safe(() => sfxPlayer('gavel', 0));
+}
+
 // ------------------------------------------------------------------------------------------------ events
 function handle(e: AudioEvent) {
   const g = useGame.getState();
@@ -484,19 +551,21 @@ function handle(e: AudioEvent) {
       return;
     }
     case 'perk': {
-      // layered over a triumph or the city theme still ringing, in the scene's key (AU26): it waits for the cue's
-      // payoff, so it never plays against a tempo grid other than its own (AU66; the cues keep their old tempos)
-      const cue = storyNow && storyNow.pausedAt === null ? STORY[storyNow.id] : null;
-      if (cue && 'payoffSeconds' in cue && storyNow) {
-        const wait = (cue.payoffSeconds as number) - (now - storyNow.startedAt) / 1000;
-        if (wait > 0 && wait < 3) {
-          const t = setTimeout(() => {
-            pendingCues.delete(t);
-            playSting(sceneHood, 'perk', { immediate: true, gated: false, duck: 1 });
-          }, wait * 1000);
-          pendingCues.add(t);
-          return;
-        }
+      // layered over a triumph or the city theme still building to its payoff, in the scene's key (AU26): it waits
+      // for the payoff, at most 3 s (AU66, AU75). If the payoff is still ahead when it fires, the cue ducks −6 dB
+      // for the perk's length. The timer is not in pendingCues, so a panel change doesn't drop the perk.
+      const sn = storyNow && storyNow.pausedAt === null ? storyNow : null;
+      const cue = sn ? STORY[sn.id] : null;
+      const payoffAt = sn && cue && 'payoffSeconds' in cue ? sn.startedAt + (cue.payoffSeconds as number) * 1000 : 0;
+      if (sn && payoffAt > now) {
+        const perk = STINGS[`${sceneHood}_perk` as keyof typeof STINGS];
+        const t = setTimeout(() => {
+          pendingPerks.delete(t);
+          if (storyNow === sn && sn.pausedAt === null && payoffAt > Date.now()) duckStory(sn, (perk as { musicSeconds?: number; seconds: number }).musicSeconds ?? perk.seconds);
+          playSting(sceneHood, 'perk', { immediate: true, gated: false, duck: 1 });
+        }, Math.min(3000, payoffAt - now));
+        pendingPerks.add(t);
+        return;
       }
       return playSting(sceneHood, 'perk', { immediate: true, gated: false, duck: 1 });
     }
@@ -508,6 +577,8 @@ function handle(e: AudioEvent) {
       return onPanel(e.sceneId, e.panel);
     case 'scene-skip':
       clearPendingCues();
+      for (const t of pendingPerks) clearTimeout(t);
+      pendingPerks.clear();
       stopStings(SKIP_FADE_MS);
       return stopStory(SKIP_FADE_MS);
   }
@@ -542,6 +613,7 @@ export function startAudio() {
   let lastOffline = useGame.getState().offline;
   let lastLoaded = useGame.getState().loaded;
   useGame.subscribe((s) => {
+    warmRare(s);
     if (s.playing !== lastPlaying) {
       if (!s.playing) {
         scenePanelCue = 'none';

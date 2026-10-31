@@ -175,11 +175,18 @@ def lofi_loop(a: np.ndarray, seed: int) -> np.ndarray:
     return _lowpass(a, circular=True)
 
 
-def lofi_sting(a: np.ndarray) -> np.ndarray:
-    """Stinger master: tape saturation (hard, headroom 3: a short stinger has a 17 dB crest, and without it the
-    −6 dBFS limiter was taking 7 dB off the big ones and capping them under their tier) and the same 7 kHz roll-off.
-    No wow or crackle on a two-second one-shot."""
-    return _lowpass(tape_sat(a, 3.0))
+def lofi_sting(a: np.ndarray, bell: np.ndarray | None = None) -> np.ndarray:
+    """Stinger master (AU73). The file is trimmed first (at −46 dBFS, judged on the whole mix), then the body gets the
+    same soft tape saturation as the loops, with the drive set from the trimmed body, and the 7 kHz roll-off. The
+    bell stem (glockenspiel or celesta) skips the saturation and is mixed in afterwards with a 10 kHz roll-off, so
+    it keeps its top end and the bass can't modulate it. The limiter catches the bell's millisecond transients."""
+    full = a if bell is None else a + np.pad(bell, ((0, max(0, len(a) - len(bell))), (0, 0)))[:len(a)]
+    n = len(trim_silence(full, -46.0))
+    body = _lowpass(tape_sat(a[:n], 5.0))
+    if bell is None:
+        return body
+    b = np.pad(bell, ((0, max(0, n - len(bell))), (0, 0)))[:n]
+    return body + _lowpass(b, 10000.0)
 
 
 def story_master(a: np.ndarray, hz: float = 10000.0) -> np.ndarray:

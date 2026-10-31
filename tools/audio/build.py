@@ -61,7 +61,7 @@ def main(only: set[str] | None = None):
     rp = os.path.join(HERE, 'build', 'report.json')
     report = json.load(open(rp)) if only and os.path.exists(rp) else {}
     for name, cue in man.items():
-        if only and name not in only:
+        if cue['kind'] == 'stem' or (only and name not in only):  # stems are rendered with the cue that owns them
             continue
         a = post.render_midi(os.path.join(MIDI, name + '.mid'), tail=2.5 if cue.get('lofi') and cue['kind'] == 'stinger' else 4.0)
         if cue['kind'] == 'loop':
@@ -78,7 +78,8 @@ def main(only: set[str] | None = None):
             info['seam'] = [round(join, 5), round(p99, 5)]
         elif cue['kind'] == 'stinger':
             if cue.get('lofi'):  # shorter tails: trim at -46 dBFS and fade the last 0.3 s
-                a = post.fade(post.trim_silence(post.lofi_sting(a), -46), 0, 0.3)
+                bell = post.render_midi(os.path.join(MIDI, cue['bellStem'] + '.mid'), tail=2.5) if cue.get('bellStem') else None
+                a = post.fade(post.lofi_sting(a, bell), 0, 0.3)
             else:
                 a = post.fade(post.trim_silence(a, -50), 0, 0.15)
             # AU59/AU62: normalise after the mono fold, because mono is what ships (stereo-then-fold read ~3 LU low)

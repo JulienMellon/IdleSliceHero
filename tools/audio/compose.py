@@ -716,7 +716,7 @@ def stingers(hood: str):
                 mallet_swell(s, R, md, roll_from, arrive)
                 bs = s.track('bass', 3, GM['ac_bass'], volume=96, reverb=20)
                 bs.n(arrive, 2.5, deg(R, 1, md) - 24, 72)
-                ce = s.track('celesta', 8, GM['celesta'], volume=88, reverb=45)
+                ce = s.track('bell arrival', 8, GM['celesta'], volume=88, reverb=45)
                 ce.n(arrive, 2.5, [deg(R, 1, md) + 12, deg(R, 5, md) + 12], 66)
             else:
                 brush_swirl(s, roll_from, arrive)
@@ -789,10 +789,22 @@ def stingers(hood: str):
         swing_smooth([tr for tr in s.tracks if tr.name not in ('arp', 'swell', 'thump', 'swirl', 'soft claps')], h['swing'])  # rolls stay even (AU48)
         s.humanize_ms(5, 4, 6, cap={'lead': LEAD_CAP})
         name = f'sting_{hood}_{kind}'
-        s.save(os.path.join(OUT, f'{name}.mid'), end, h['ts'])
+        # AU73: the bell (glockenspiel / celesta) is its own stem. build.py saturates the body and mixes the bell in
+        # afterwards, so a bass or Rhodes peak can't drive the tanh through the bell, and the bell keeps its top end.
+        bells = [tr for tr in s.tracks if tr.name.startswith('bell')]
+        extra = {}
+        if bells:
+            s.tracks = [tr for tr in s.tracks if tr not in bells]
+            s.save(os.path.join(OUT, f'{name}.mid'), end, h['ts'])
+            s.tracks = bells
+            s.save(os.path.join(OUT, f'{name}__bell.mid'), end, h['ts'])
+            MANIFEST[f'{name}__bell'] = dict(kind='stem', of=name)
+            extra['bellStem'] = f'{name}__bell'
+        else:
+            s.save(os.path.join(OUT, f'{name}.mid'), end, h['ts'])
         # musicSeconds: where the music ends (the duck and the gate hold this long, not the reverb tail: AU53)
         MANIFEST[name] = dict(kind='stinger', hood=hood, cue=kind, bpm=bpm, downbeatSeconds=round(t0 * 60 / bpm, 4),
-                              seconds=round(end * 60 / bpm, 3), musicSeconds=round(end * 60 / bpm, 3), lofi=True)
+                              seconds=round(end * 60 / bpm, 3), musicSeconds=round(end * 60 / bpm, 3), lofi=True, **extra)
 
 
 def bid_sting():

@@ -7,7 +7,7 @@ const path: { join(...p: string[]): string } = require('path');
 
 import { HOME_SCENES } from '../../content/scenes/home';
 import { NEIGHBORHOODS } from '../../content/tuning';
-import { stingTiming, LONG_BAR_SECONDS, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
+import { stingTiming, MAX_TONIC_WAIT_SECONDS, DUCK, stingDuck, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const MANIFEST = fs.readFileSync(path.join(__dirname, '..', 'manifest.ts'), 'utf8');
@@ -87,6 +87,16 @@ describe('stingers (AU14)', () => {
   });
 });
 
+describe('stinger ducking (AU73)', () => {
+  it('ducks the loop 9 dB under milestone_big, manager and build; 3 dB under the bottleneck; 6 dB under the rest', () => {
+    const db = (g: number) => 20 * Math.log10(g);
+    for (const k of ['milestone_big', 'manager', 'build'] as StingKind[]) expect(db(stingDuck(k))).toBeCloseTo(-9, 6);
+    expect(db(stingDuck('bottleneck'))).toBeCloseTo(-3, 6);
+    for (const k of ['milestone', 'upgrade', 'fleet', 'drone', 'perk', 'offline', 'welcome', 'warmth'] as StingKind[]) expect(db(stingDuck(k))).toBeCloseTo(-6, 6);
+    expect(DUCK.big).toBeLessThan(DUCK.stinger);
+  });
+});
+
 describe('music and story cues (AU12, AU13, AU20)', () => {
   it('plays the sparse Downtown until Nonna takes over, and a scene plays its own neighbourhood', () => {
     expect(musicFor({ active: 'downtown', downtownFull: false, scene: null })).toBe('downtown_sparse');
@@ -147,21 +157,23 @@ describe('stinger timing and gating (AU31, AU32)', () => {
 });
 
 describe('stingers wait for the tonic (AU47)', () => {
-  it('lands on the next bar whose chord is I, within two bars (a short bar: 104 bpm)', () => {
-    const roots = [1, 1, 1, 1, 4, 4, 1, 1, 5, 4, 1, 5]; // 12-bar blues
-    const bar = (60 / 104) * 4;
-    // inside bar 3 (I): bars 4 and 5 are IV, bar 6 is I
-    const t = stingTiming(3.2 * bar, 104, 4, roots, 0.6);
-    expect(Math.round((3.2 * bar + t.delay + 0.6) / bar)).toBe(6);
+  it('lands on the next bar whose chord is I while the wait fits the cap (a short bar: 200 bpm)', () => {
+    const bpm = 200;
+    const bar = (60 / bpm) * 4; // 1.2 s
+    const roots = [4, 5, 1, 1, 4, 5, 4, 1];
+    // inside bar 0 (IV): bar 1 is V, bar 2 is I and its downbeat is 0.66 + 1.2 s away
+    const t = stingTiming(0.2 * bar, bpm, 4, roots, 0.3);
+    expect(Math.round((0.2 * bar + t.delay + 0.3) / bar)).toBe(2);
     expect(t.extraDuck).toBe(1);
-    // inside bar 8 (V): bar 9 is IV, bar 10 is I
-    const u = stingTiming(8.1 * bar, 104, 4, roots, 0.6);
-    expect(Math.round((8.1 * bar + u.delay + 0.6) / bar)).toBe(10);
+    // inside bar 4 (IV): bar 5 is V, bar 6 is IV, bar 7 is I, but that is past the cap, so it takes bar 5 and ducks
+    const u = stingTiming(4.2 * bar, bpm, 4, roots, 0.3);
+    expect(Math.round((4.2 * bar + u.delay + 0.3) / bar)).toBe(5);
+    expect(u.extraDuck).toBeLessThan(1);
   });
   it('does not hunt for a tonic when a bar is long: the lofi tempos wait one bar at most (AU63)', () => {
     const bpm = 76; // a bar is 3.16 s
     const bar = (60 / bpm) * 4;
-    expect(bar).toBeGreaterThan(LONG_BAR_SECONDS);
+    expect(bar).toBeGreaterThan(MAX_TONIC_WAIT_SECONDS);
     const roots = [4, 5, 4, 5, 1, 1, 1, 1]; // the tonic is four bars away
     for (const frac of [0.05, 0.4, 0.9]) {
       const t = stingTiming(frac * bar, bpm, 4, roots, 0.8);
@@ -174,13 +186,29 @@ describe('stingers wait for the tonic (AU47)', () => {
     expect(next.extraDuck).toBe(1);
     expect(next.delay).toBeLessThan(bar);
   });
-  it('still looks two bars ahead when the bar is short (Downtown 6/8)', () => {
+  it('caps the tonic search in seconds, so Downtown never waits past 2.5 s for it (AU74)', () => {
     const bpm = 99;
     const bar = (60 / bpm) * 3; // 1.82 s
-    expect(bar).toBeLessThan(LONG_BAR_SECONDS);
-    const t = stingTiming(0.5 * bar, bpm, 3, [4, 5, 1, 4], 0.6);
-    expect(t.extraDuck).toBe(1);
-    expect(t.delay).toBeGreaterThan(bar);
+    expect(bar).toBeLessThan(MAX_TONIC_WAIT_SECONDS);
+    const roots = [4, 5, 1, 4, 5, 1];
+    for (const pos of [0.05 * bar, 0.5 * bar, 0.9 * bar, 1.3 * bar, 2.2 * bar, 3.7 * bar]) {
+      const t = stingTiming(pos, bpm, 3, roots, 0.6);
+      const first = quantizeDelay(pos, bpm, 3, 0.6);
+      expect(t.delay).toBeLessThanOrEqual(Math.max(first, MAX_TONIC_WAIT_SECONDS) + 1e-9);
+    }
+    // a tonic one bar after the next bar line is taken while that still fits inside the cap
+    const pos = bar - 0.9; // the next bar line is bar 1 (V), 0.3 s after the pickup starts; bar 2 is I
+    const first = quantizeDelay(pos, bpm, 3, 0.6);
+    expect(first + bar).toBeLessThanOrEqual(MAX_TONIC_WAIT_SECONDS);
+    const near = stingTiming(pos, bpm, 3, roots, 0.6);
+    expect(near.extraDuck).toBe(1);
+    expect(near.delay).toBeCloseTo(first + bar, 6);
+    // ...but not when the first bar line is already far: it takes that bar and ducks
+    const farPos = 0.05 * bar;
+    expect(quantizeDelay(farPos, bpm, 3, 0.6) + bar).toBeGreaterThan(MAX_TONIC_WAIT_SECONDS);
+    const far = stingTiming(farPos, bpm, 3, roots, 0.6);
+    expect(far.extraDuck).toBeLessThan(1);
+    expect(far.delay).toBeCloseTo(quantizeDelay(farPos, bpm, 3, 0.6), 6);
   });
   it('takes the next bar and ducks deeper when no tonic is near', () => {
     const t = stingTiming(0.1, 120, 4, [4, 5, 4, 5], 0.5);
