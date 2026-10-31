@@ -215,3 +215,20 @@ const BIG_STINGS: ReadonlySet<StingKind> = new Set<StingKind>(['milestone_big', 
 export function stingDuck(kind: StingKind): number {
   return kind === 'bottleneck' ? DUCK.bottleneck : BIG_STINGS.has(kind) ? DUCK.big : DUCK.stinger;
 }
+
+/**
+ * Should the sweep release a Collect player it warmed ahead of time? Only one it created itself (`warmed`), never one a
+ * play started that has not finished (`firing`: a claim's Collect can still be loading, and iOS reports `playing`
+ * a little after play()), never while the offline popup that needs it is open, and never while it sounds (AU76).
+ */
+export function shouldReleaseWarmCollect(o: { warmed: boolean; firing: boolean; playing: boolean; offlineOpen: boolean }): boolean {
+  return o.warmed && !o.firing && !o.playing && !o.offlineOpen;
+}
+
+/**
+ * How long a perk ducks the story cue it lands over: its own length, but it must be back up before the payoff crash,
+ * so at most the time to the payoff less the ramp up (AU77). 0 when the payoff is too close to duck at all.
+ */
+export function perkDuckSeconds(perkSeconds: number, payoffAtMs: number, nowMs: number, rampUpMs: number): number {
+  return Math.max(0, Math.min(perkSeconds, (payoffAtMs - nowMs - rampUpMs) / 1000));
+}

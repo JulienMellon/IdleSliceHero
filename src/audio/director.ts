@@ -10,7 +10,7 @@ import * as G from '../engine/game';
 import { useGame } from '../store/game-store';
 import { onAudio, type AudioEvent } from './bus';
 import {
-  DUCK, EXCLUSIVE_CUES, PurchaseChain, collectSize, dbToGain, RESTART_TRACKS, StingGate, VoiceLimiter, beatUnit, musicFor, nextVariant, panelCue, quantizeDelay, sharedTimeline,
+  DUCK, EXCLUSIVE_CUES, PurchaseChain, collectSize, dbToGain, perkDuckSeconds, shouldReleaseWarmCollect, RESTART_TRACKS, StingGate, VoiceLimiter, beatUnit, musicFor, nextVariant, panelCue, quantizeDelay, sharedTimeline,
   stingDuck, stingTiming, stingUnit, type MusicTrack, type StingKind,
 } from './logic';
 import { MUSIC, SFX, STINGS, STORY, type SfxId, type StoryCueId } from './manifest';
@@ -128,6 +128,9 @@ const duckTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 // effects
 const sfxPlayers = new Map<string, AudioPlayer>();
+/** Rare-effect keys a play has started and not finished, and the Collect players warmRare created itself (AU76). */
+const firing = new Set<string>();
+const warmedCollect = new Set<string>();
 const lastVariant = new Map<SfxId, number>();
 const popLimiter = new VoiceLimiter();
 const rushLimiter = new VoiceLimiter();
@@ -258,11 +261,17 @@ function playSfx(id: SfxId, opts: { variant?: number; gain?: number; jitter?: nu
   const p = sfxPlayer(id, v);
   const release = RARE.has(id)
     ? () => {
+        firing.delete(key);
+        warmedCollect.delete(key);
         if (sfxPlayers.get(key) !== p) return;
         sfxPlayers.delete(key);
         safe(() => p.remove());
       }
     : undefined;
+  if (release) {
+    firing.add(key);
+    warmedCollect.delete(key); // a played player is the play's own, released when it ends
+  }
   fire(p, SFX_SECONDS[id] ?? 0.35, (opts.gain ?? 1) * under, Math.pow(2, semis / 12), release);
 }
 
@@ -493,14 +502,22 @@ function warmRare(s: ReturnType<typeof useGame.getState>) {
   if (!s.loaded || !useAudioPrefs.getState().sound) return;
   if (s.offline) {
     const v = collectSize(s.offline.earned, s.game.cash);
-    if (!sfxPlayers.has(`collect/${v}`)) safe(() => sfxPlayer('collect', v));
-  } else {
-    for (const key of [...sfxPlayers.keys()]) {
-      const p = sfxPlayers.get(key);
-      if (key.startsWith('collect/') && p && !safe(() => p.playing, false)) {
-        sfxPlayers.delete(key);
-        safe(() => p.remove());
-      }
+    if (!sfxPlayers.has(`collect/${v}`)) {
+      safe(() => sfxPlayer('collect', v));
+      warmedCollect.add(`collect/${v}`);
+    }
+  }
+  // release only a Collect this function warmed, and only when nothing is playing or about to (AU76)
+  for (const key of [...warmedCollect]) {
+    const p = sfxPlayers.get(key);
+    if (!p) {
+      warmedCollect.delete(key);
+      continue;
+    }
+    if (shouldReleaseWarmCollect({ warmed: true, firing: firing.has(key), playing: safe(() => p.playing, false), offlineOpen: !!s.offline })) {
+      warmedCollect.delete(key);
+      sfxPlayers.delete(key);
+      safe(() => p.remove());
     }
   }
   if (!sfxPlayers.has('build/0') && NEIGHBORHOODS.some((n) => !G.buildLock(s.game, n.id))) safe(() => sfxPlayer('build', 0));
@@ -561,7 +578,10 @@ function handle(e: AudioEvent) {
         const perk = STINGS[`${sceneHood}_perk` as keyof typeof STINGS];
         const t = setTimeout(() => {
           pendingPerks.delete(t);
-          if (storyNow === sn && sn.pausedAt === null && payoffAt > Date.now()) duckStory(sn, (perk as { musicSeconds?: number; seconds: number }).musicSeconds ?? perk.seconds);
+          if (storyNow === sn && sn.pausedAt === null && payoffAt > Date.now()) {
+            const len = perkDuckSeconds((perk as { musicSeconds?: number; seconds: number }).musicSeconds ?? perk.seconds, payoffAt, Date.now(), DUCK_UP_MS);
+            if (len > 0) duckStory(sn, len); // AU77: back up before the payoff crash
+          }
           playSting(sceneHood, 'perk', { immediate: true, gated: false, duck: 1 });
         }, Math.min(3000, payoffAt - now));
         pendingPerks.add(t);

@@ -7,7 +7,7 @@ const path: { join(...p: string[]): string } = require('path');
 
 import { HOME_SCENES } from '../../content/scenes/home';
 import { NEIGHBORHOODS } from '../../content/tuning';
-import { stingTiming, MAX_TONIC_WAIT_SECONDS, DUCK, stingDuck, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
+import { stingTiming, MAX_TONIC_WAIT_SECONDS, perkDuckSeconds, shouldReleaseWarmCollect, DUCK, stingDuck, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const MANIFEST = fs.readFileSync(path.join(__dirname, '..', 'manifest.ts'), 'utf8');
@@ -84,6 +84,27 @@ describe('stingers (AU14)', () => {
     expect(purchaseSting('fleet', { vehicle: 4 })).toBe('drone');
     expect(purchaseSting('fleet', { vehicle: 2 })).toBe('fleet');
     expect(purchaseSting('expand', {})).toBe('upgrade');
+  });
+});
+
+describe('rare one-shots and perks (AU76, AU77)', () => {
+  it('a claim\'s Collect survives the store update that follows it', () => {
+    // the claim played its own player (not warmed by the sweep) and it is still loading: playing is false
+    expect(shouldReleaseWarmCollect({ warmed: false, firing: true, playing: false, offlineOpen: false })).toBe(false);
+    // the popup's warmed player was fired by Collect: it is firing, so the sweep leaves it alone until it ends
+    expect(shouldReleaseWarmCollect({ warmed: true, firing: true, playing: false, offlineOpen: false })).toBe(false);
+    expect(shouldReleaseWarmCollect({ warmed: true, firing: true, playing: true, offlineOpen: false })).toBe(false);
+  });
+  it('releases a warmed Collect that was never fired once the popup is gone', () => {
+    expect(shouldReleaseWarmCollect({ warmed: true, firing: false, playing: false, offlineOpen: false })).toBe(true);
+    expect(shouldReleaseWarmCollect({ warmed: true, firing: false, playing: false, offlineOpen: true })).toBe(false);
+    expect(shouldReleaseWarmCollect({ warmed: true, firing: false, playing: true, offlineOpen: false })).toBe(false);
+  });
+  it('a perk ducks the story cue for its length, but is back up before the payoff crash', () => {
+    expect(perkDuckSeconds(3, 10_000, 0, 400)).toBe(3); // the payoff is far: the perk's whole length
+    expect(perkDuckSeconds(3, 4_000, 0, 400)).toBeCloseTo(3, 6);
+    expect(perkDuckSeconds(3, 3_000, 0, 400)).toBeCloseTo(2.6, 6); // 3 s away: ramp back up in time
+    expect(perkDuckSeconds(3, 300, 0, 400)).toBe(0); // too close to duck at all
   });
 });
 
