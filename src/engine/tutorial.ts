@@ -12,6 +12,8 @@ export interface CoachStep {
   target: CoachTarget;
   /** Scene targets get the card docked low; sidewalk/HUD targets get it high, so it never covers what it points at. */
   dock: 'low' | 'high';
+  /** A wait step (the player has nothing to tap): the spotlight shows a breathing ring and a resting hand on the station being waited on (G83). */
+  wait?: boolean;
 }
 
 export const TUTORIAL_DONE = G.TUTORIAL_DONE;
@@ -22,9 +24,9 @@ const marco = HEADS.downtown.prep;
 export const STEPS: readonly CoachStep[] = [
   { id: 1, text: 'Tap the prep table to roll your first pizzas!', target: 'prep', dock: 'low' },
   // G82: the oven only takes dough once it's rolled, so Nonna waits with you first
-  { id: 2, text: 'Rolling the dough… watch the ring fill up.', target: 'prep', dock: 'low' },
+  { id: 2, text: 'Rolling the dough… watch the ring fill up.', target: 'prep', dock: 'low', wait: true },
   { id: 3, text: 'Into the oven, caro! Tap the oven.', target: 'oven', dock: 'low' },
-  { id: 4, text: 'Watch the timer… good ovens take time.', target: 'oven', dock: 'low' },
+  { id: 4, text: 'Watch the timer… good ovens take time.', target: 'oven', dock: 'low', wait: true },
   { id: 5, text: 'Now tap the counter to serve!', target: 'counter', dock: 'low' },
   { id: 6, text: 'Every pizza out the door is money in the register!', target: 'cash', dock: 'low' },
   { id: 7, text: 'Again! Prep, bake, serve. Save up for a better oven.', target: 'prep', dock: 'low' },

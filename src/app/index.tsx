@@ -221,10 +221,15 @@ export default function GameScreen() {
             onTap={onShopTap}
             onStation={onStationTap}
             spotlight={coach && id === 'downtown' && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') ? coach.target : null}
+            spotlightWait={!!coach?.wait}
           />
         )}
         {/* upgrade row standing on the sidewalk */}
         <SidewalkRow game={game} id={id} idleShop={idleShop} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} highlight={coach?.target === 'walk-ovens' ? 'ovens' : null} />
+        {/* D378: the tutorial scrim carries on over the sidewalk row (same 60% tone as the scene's), touches pass through */}
+        {coach && id === 'downtown' && !drawerOpen && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') && (
+          <View pointerEvents="none" testID="coach-row-scrim" style={[styles.rowScrim, { bottom: rowBottom - 6, height: (idleShop ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + 12 }]} />
+        )}
         {/* Nonna's tutorial (P2) */}
         {/* D366: docked over the street band (decoration only), clear of the seating area */}
         {coach && id === 'downtown' && !drawerOpen && <CoachCard step={coach} low={Math.max(8, insets.bottom)} high={12} />}
@@ -338,6 +343,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
   sceneArea: { flex: 1, overflow: 'hidden', backgroundColor: '#BFE0F7' },
   dim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.4)' },
+  rowScrim: { position: 'absolute', left: 0, right: 0, backgroundColor: 'rgba(42,20,8,0.6)' },
   drawer: { position: 'absolute', left: 0, right: 0, bottom: 0, top: '30%', backgroundColor: C.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderTopWidth: 3, borderColor: C.ink },
   drawerHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: DRAWER_HEAD.padX, paddingTop: DRAWER_HEAD.padTop, paddingBottom: DRAWER_HEAD.padBottom },
   drawerTitle: { fontFamily: F.bold, fontSize: 17, color: C.ink },

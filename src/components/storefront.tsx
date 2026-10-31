@@ -51,6 +51,8 @@ interface Props {
   onStation: (st: Station) => string | null;
   /** Nonna's tutorial points at this station: dim the rest of the scene around it (D367). */
   spotlight?: Station | null;
+  /** The spotlit step is a wait (G83): a breathing ring and a resting hand instead of the tap bounce. */
+  spotlightWait?: boolean;
 }
 
 /** Everything the still picture depends on: when this changes, the scene re-renders even while paused. */
@@ -82,7 +84,7 @@ const seedFor = (id: string) => Array.from(id).reduce((h, ch) => (h * 31 + ch.ch
  * Re-renders on its own 15 fps clock (reading the latest game state each frame) and when the shop's
  * upgrades change. The parent's 200 ms game ticks don't re-render it, and a paused scene stays still.
  */
-export const Storefront = memo(function Storefront({ id, width, height, paused, onTap, onStation, spotlight = null }: Props) {
+export const Storefront = memo(function Storefront({ id, width, height, paused, onTap, onStation, spotlight = null, spotlightWait = false }: Props) {
   // Opt out of React Compiler memoisation: this component deliberately reads the live store
   // (useGame.getState()) on every clock frame, which auto-memoisation could otherwise cache.
   'use no memo';
@@ -368,7 +370,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             const w = m.flash.text.length * 7 + 16;
             const px = Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, fx));
             return (
-              <G transform={`translate(${px} ${fy - k * 24})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
+              <G transform={`translate(${px} ${fy - k * 24 - (spotlight ? 28 : 0)})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
                 <Rect x={-w / 2} y={-11} width={w} height={20} rx={10} fill="#2E8B3E" stroke="#fff" strokeWidth={1.4} />
                 <SvgText x={0} y={4} fontFamily={F.bold} fontSize={13} fill="#fff" textAnchor="middle">
                   {m.flash.text}
@@ -391,11 +393,15 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
               const hole = `M${x0 + rr} ${y0} H${x1 - rr} Q${x1} ${y0} ${x1} ${y0 + rr} V${y1 - rr} Q${x1} ${y1} ${x1 - rr} ${y1} H${x0 + rr} Q${x0} ${y1} ${x0} ${y1 - rr} V${y0 + rr} Q${x0} ${y0} ${x0 + rr} ${y0} Z`;
               const glow = 0.55 + 0.45 * pulse;
               const hx = (x0 + x1) / 2 + 10;
-              const hy = y1 - 6 + 4 * pulse;
+              const hy = y1 - 6 + (spotlightWait ? 0 : 4 * pulse);
               return (
                 <G>
                   <Path d={`M${vb.x} ${vb.y} H${vb.x + vb.w} V${vb.y + vb.h} H${vb.x} Z ${hole}`} fill="#2A1408" opacity={0.6} fillRule="evenodd" />
+                  {/* D378: a 4 pt soft glow around the cut-out, then the gold outline */}
+                  <Path d={hole} fill="none" stroke="#FFD54A" strokeWidth={3 + 2 * 4} opacity={0.28 * glow} strokeLinejoin="round" />
                   <Path d={hole} fill="none" stroke="#FFD54A" strokeWidth={3} opacity={glow} />
+                  {/* G83: on a wait step the ring breathes outward so the station being waited on still reads as the focus */}
+                  {spotlightWait && <Path d={hole} fill="none" stroke="#fff" strokeWidth={2} opacity={0.75 * (1 - pulse)} transform={`translate(${(x0 + x1) / 2} ${(y0 + y1) / 2}) scale(${1 + 0.05 * pulse}) translate(${-(x0 + x1) / 2} ${-(y0 + y1) / 2})`} />}
                   <G transform={`translate(${hx} ${hy}) rotate(-20) scale(1.6)`}>
                     <Path d="M0 -7 Q1.6 -7 1.6 -5 L1.6 -1 L5 -0.4 Q6.6 0 6.2 2 L5 6 Q4.4 7.4 3 7.4 L-2.4 7.4 Q-4 7.4 -4.4 6 L-5.6 1.6 Q-5.8 0 -4.2 0.2 L-1.6 1 L-1.6 -5 Q-1.6 -7 0 -7 Z" fill="#fff" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
                   </G>

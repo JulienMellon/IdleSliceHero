@@ -93,4 +93,8 @@ describe('tutorial', () => {
       expect(['low', 'high']).toContain(st.dock);
     }
   });
+  // G83: the two wait steps point at the station being waited on, flagged so the scene keeps a ring and hand on it
+  test('the wait steps (2 and 4) are flagged and target a scene station; tap steps are not', () => {
+    expect(STEPS.filter((st) => st.wait).map((st) => [st.id, st.target])).toEqual([[2, 'prep'], [4, 'oven']]);
+  });
 });

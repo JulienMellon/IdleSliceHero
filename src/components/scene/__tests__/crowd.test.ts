@@ -4,11 +4,11 @@
 import { buildCast, type CastMember } from '../cast';
 import { emptyCrew, stepCrew, type CrewState } from '../crew';
 import { advanceLine, AUTOMATIC, emptyLine, type Line, type LineRates } from '../../../engine/pipeline';
-import { BACK_ROW_Y, layout } from '../layout';
+import { BACK_ROW_Y, SEAT, layout } from '../layout';
 import { hash32 } from '../looks';
 import { seatPalette } from '../palette';
 import { P, SCENE_W, kAt } from '../projection';
-import { popRect, staffFaces } from '../stations';
+import { doorwaySignRect, popRect, staffFaces } from '../stations';
 import { quantArm, quantStep } from '../quantise';
 
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
@@ -183,7 +183,7 @@ describe('pops and the waiting walk-in (D368, D370)', () => {
       frames(shop, 1).forEach((cast, f) => {
         for (const c of cast)
           if (c.deps && c.deps.length) {
-            const r = popRect(P(c.props.x, c.props.y, 52), 96);
+            const r = popRect(P(c.props.x, c.props.y, 52), 80);
             for (const fc of faces) if (r.x0 < fc.x1 && r.x1 > fc.x0 && r.y0 < fc.y1 && r.y1 > fc.y0) bad.push(`${shop.name} f${f} ${c.key}`);
           }
       });
@@ -271,5 +271,47 @@ describe('pose churn (T12)', () => {
       }
       expect([shop.name, changes / pairs <= 0.55]).toEqual([shop.name, true]);
     }
+  });
+});
+
+describe('the doorway sign (D377)', () => {
+  const headOf = (c: CastMember) => {
+    const b = box(c);
+    return { x0: b.x0, x1: b.x1, y0: b.y0, y1: b.y0 + (b.y1 - b.y0) * 0.3 };
+  };
+  const hits = (a: Box, r: { x0: number; x1: number; y0: number; y1: number }) => a.x0 < r.x1 && a.x1 > r.x0 && a.y0 < r.y1 && a.y1 > r.y0;
+  test('no standing head (order spot, outside pause, pickup) or walking guest/driver head meets the PIZZERIA plank, in any frame', () => {
+    const bad: string[] = [];
+    for (const shop of busyShops()) {
+      const sign = doorwaySignRect(shop.lay);
+      for (const pace of [1, 2.6])
+        frames(shop, pace).forEach((cast, f) => {
+          for (const c of cast)
+            if ((c.role === 'walkin' && c.props.kind !== 'sit') || c.role === 'driver') if (hits(headOf(c), sign)) bad.push(`${shop.name} pace${pace} f${f} ${c.key}@${c.props.x.toFixed(0)},${c.props.y.toFixed(0)}`);
+        });
+    }
+    expect(bad.slice(0, 5)).toEqual([]);
+  });
+  test('the order spot and the pickup spots keep their heads clear of the plank (and a figure by the door would not)', () => {
+    for (const shop of busyShops()) {
+      const sign = doorwaySignRect(shop.lay);
+      const at = (x: number, y: number, role: 'walkin' | 'driver'): CastMember => ({ key: 'p', sortY: y, role, props: { x, y, kind: role === 'driver' ? 'driver' : 'guest', step: 0 } });
+      for (const [x, y] of shop.lay.orderSpots.slice(0, 1)) expect([shop.name, 'order', hits(headOf(at(x, y, 'walkin')), sign)]).toEqual([shop.name, 'order', false]);
+      for (const sp of shop.lay.spots) expect([shop.name, 'pickup', hits(headOf(at(sp.x, sp.y, 'driver')), sign)]).toEqual([shop.name, 'pickup', false]);
+      expect(hits(headOf(at(shop.lay.counter.x1 + 4, 60, 'walkin')), sign)).toBe(true); // the v5.2 spot, at the counter's right end by the door
+    }
+  });
+});
+
+describe('seated diners have chairs (D354)', () => {
+  test('every seated figure sits on a chair drawn at a table seat, in any frame', () => {
+    const bad: string[] = [];
+    for (const shop of busyShops())
+      for (const pace of [1, 2.6])
+        frames(shop, pace).forEach((cast, f) => {
+          for (const c of cast)
+            if (c.props.kind === 'sit' && !shop.lay.tables.some((tb) => Math.abs(tb.y - c.props.y) < 0.01 && Math.abs(Math.abs(c.props.x - tb.x) - SEAT) < 0.01)) bad.push(`${shop.name} pace${pace} f${f} ${c.key}@${c.props.x.toFixed(1)},${c.props.y}`);
+        });
+    expect(bad.slice(0, 5)).toEqual([]);
   });
 });

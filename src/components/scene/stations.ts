@@ -189,3 +189,15 @@ export function popRect(head: [number, number], w: number): Rect {
 export function staffFaces(lay: Layout): Rect[] {
   return lay.staff.map((x) => bounds([P(x - 8, 92, 44), P(x + 8, 92, 44), P(x - 8, 92, 64), P(x + 8, 92, 64)]));
 }
+
+/**
+ * The PIZZERIA plank on the doorway's lintel (scene units): from P(0,0,122) up 12 to P(0,0,108)'s top edge, spanning
+ * the left jamb (door.x0 − 8) to the right pilaster (R − 8). room.tsx draws it from this rect; the crowd budget (D377)
+ * keeps every standing head off it.
+ */
+export function doorwaySignRect(lay: Layout): Rect {
+  const x0 = P(lay.door.x0 - 8, 0, 0)[0] + 2;
+  const x1 = P(lay.R - 8, 0, 0)[0] - 2;
+  const lTop = P(0, 0, 122)[1];
+  return { x0, y0: lTop - 12, x1, y1: lTop - 1 };
+}

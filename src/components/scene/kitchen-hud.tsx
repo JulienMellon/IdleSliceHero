@@ -109,7 +109,8 @@ export function DeparturePops({ deps, left, anchor, register }: { deps: readonly
         const at = anchor(d) ?? register;
         const rideAlong = !!anchor(d);
         const text = n > 1 ? `×${n} · +${money(cash)}` : `+${money(cash)}`;
-        const w = text.length * 6.6 + 14;
+        // D379: a pill never grows past 80 pt (11 pt text), however long the "×n · +$X" is
+        const w = Math.min(80, text.length * 6.1 + 12);
         // beside the carrier's head, away from the cashiers (D368); kept on screen
         const r = popRect(at, w);
         const px = rideAlong ? (r.x0 + r.x1) / 2 : Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, at[0]));
@@ -119,7 +120,7 @@ export function DeparturePops({ deps, left, anchor, register }: { deps: readonly
         return (
           <G key={d.id} transform={`translate(${px} ${py})`} opacity={fade}>
             <Rect x={-w / 2} y={-18} width={w} height={18} rx={8} fill={POP_FILL} stroke="#fff" strokeWidth={1.4} />
-            <SvgText x={0} y={-5} fontFamily={F.bold} fontSize={12} fill="#fff" textAnchor="middle">
+            <SvgText x={0} y={-5} fontFamily={F.bold} fontSize={11} fill="#fff" textAnchor="middle">
               {text}
             </SvgText>
           </G>
