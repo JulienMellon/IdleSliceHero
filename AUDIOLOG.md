@@ -3,7 +3,7 @@
 The **audiocritic** (`.claude/agents/audiocritic.md`) reviews music, sound effects and the mix against the emotion of each moment. The game has no audio yet (the design doc defers sound), so its first reviews are a plan; the cue sheet will live in `docs/AUDIO.md` once audio work starts.
 
 - Added after v3.8 at Julien's request. It runs at **low effort** at the end of the build loop. Until Julien says otherwise it is advisory: its verdict doesn't gate the loop.
-- **Next IDs:** AU73.
+- **Next IDs:** AU76.
 
 ## Owner direction — ON HOLD until Julien restarts audio work (2026-10-30)
 > "Let's move stylistically toward a calmer, more lofi vibe."
@@ -17,24 +17,18 @@ The **audiocritic** (`.claude/agents/audiocritic.md`) reviews music, sound effec
 - Scope chosen by Julien: the six loops (plus Downtown sparse) and the gameplay stingers go fully lofi; MegaSlice villain cues and win triumphs keep their shape and energy, with a warmer, lighter mix. Verdict is advisory and doesn't gate the build loop.
 - Composer works in a worktree (branch `wip-audio`), the audiocritic reviews each commit, fixes go back to the same composer. Merged into `main` with the next build.
 - Round 1 (cee8dc5): loops rewritten (Downtown ♩.=66, Suburbs 86, Waterfront 80, University 76, Industrial 76, Uptown 84; Rhodes/brush/bass bed; tape wow, crackle, 7 kHz roll-off), −20 LUFS; stingers lead + Rhodes, 2 LU lower; 13.26 MB. **Nobody has listened to the renders yet.**
+- Round 2 (3a45be1): all round-6 notes; stingers normalised after the mono fold with a tier check; bell doubling; triumphs/city/rep mix pass; HQ, sparse, crackle, claps, SFX tiers.
 
-## Current state — lofi round 1, audiocritic round 6 (full review): ❌ NOT SATISFIED (advisory) — 3 major, 8 minor
+## Current state — lofi round 2 (3a45be1), audiocritic round 7 (medium): ❌ NOT SATISFIED (advisory) — 1 major, 2 minor
+Fixed (from code and measurements only, nothing auditioned): AU62, AU63, AU64, AU65, AU67, AU68, AU69, AU70, AU71, AU72. Round 2 also: stingers on tier exactly (bottleneck/offline −22 … milestone_big −16), triumphs/city/rep −18 LUFS, HQ −19.3, sparse −22, 13.27 MB.
 
 | ID | Sev | Note | Fix |
 | --- | --- | --- | --- |
-| AU62 | major | Milestone/manager/upgrade/bottleneck stingers now use the bed's own instruments (lead + Rhodes) and measure at or below the loop (bottleneck ~−25 LUFS over a −23 ducked loop) | Fix AU59 (normalise after the mono fold, +3 LU); a colour the bed lacks: celesta doubling the lead an octave up, vel ~50 (glock where the loop has none); brush swirl into the last bar of milestone/manager; drop the bottleneck's Rhodes I chord |
-| AU63 | major | Tonic wait: at 76–80 bpm a bar is 3.0–3.16 s, so a stinger can land 9–9.5 s after the tap (supersedes AU58) | `maxBars = 0` when a bar > 2.5 s (next bar, −6 dB extra duck on a non-I bar); caps the wait at ~3.2 s; drop AU58's variant renders |
-| AU64 | major | Lofi loop (−28 in a scene) → triumph at −16 LUFS: a 12 LU jump with crash 124, 24–30% faster, unswung; same for city_theme and rep | Mix pass: triumphs, city theme, rep at −18 LUFS through `tape_sat` + 10 kHz roll-off (no wow/crackle); crash 124→96, timpani 124→100; tempos and shapes kept |
-| AU65 | minor | milestone_big barely bigger than milestone (2 LU, a soft vib swell) | Bass root + celesta octave on the arrival, brush-swirl crescendo, gap 3 LU (−19/−16) |
-| AU66 | minor | Perk over a triumph drifts up to ~1 beat off the old grid | `case 'perk'`: wait for `payoffSeconds` (3 s cap); don't render perks at legacy tempos |
-| AU67 | minor | downtown_sparse normalised to −20 like the full band, so Nonna's takeover adds no lift | Master `downtown_sparse` at −22 LUFS |
-| AU68 | minor | Vinyl crackle: ~2% of pops reach −10 dB re RMS, ~10 clicks per loop in fixed places | Clip the exponential at 1.5; `pops_per_s` 4, `pop_db` −26 |
-| AU69 | minor | Suburbs' muted trumpet is also MegaSlice's HQ stab/second-statement colour | HQ stabs and the villain's second statement → staccato trombone |
-| AU70 | minor | (Q1) megaslice_hq is the only file over the ceiling (−4 dBFS) | −19 LUFS, −6 dBFS peak, no tape chain (10 kHz roll-off only) |
-| AU71 | minor | (Q3) "Finger snaps" read as soft claps (fine); swing flams them unevenly (~35 ms) | Rename "soft claps"; exclude from swing or place on even triplets after swing |
-| AU72 | minor | Constant SFX now 6 LU under the music instead of 8 | tap/full/cash −28, click/bubble −32; keep purchase/upgrade/build/collect tiers |
+| AU73 | major | `post.lofi_sting` `tape_sat(a, 3.0)` caps peak ≈ 9.5 dB over RMS (RMS measured before the tail is trimmed): ~7.5 dB off the milestone_big/manager/build arrival, heavy odd harmonics, bass modulating the celesta; 7 kHz roll-off dulls the AU62 bell | Headroom 5 on the trimmed file; bell as a separate stem added after saturation with a 10 kHz roll-off; let the limiter catch ms bell transients; size hierarchy by ducking the loop −9 dB under milestone_big/manager/build; listen to downtown_milestone_big and industrial_manager before closing |
+| AU74 | minor | Downtown's 1.82 s bar is under `LONG_BAR_SECONDS`, so the tonic search still reaches 2 bars (~5.5 s worst case) | Cap the search by seconds: accept bar k only while `first + k·bar ≤ 2.5` |
+| AU75 | minor | Perk waits only when the payoff is < 3 s away; further away it plays at once over the build-up (supersedes AU66); its timer is in `pendingCues`, so a panel change drops it | `delay = clamp(wait, 0, 3)`; duck the story player −6 dB for the perk if the payoff is still ahead; keep the perk timer out of `clearPendingCues()` |
 | AU60, AU61 | minor | Carried (orphaned stinger fade; rare one-shot preload) | See archive |
-| AU39 / AU40 / AU41 | — | Device checks (add: crackle under a podcast); `react-native-audio-api`; other-audio hint | Open (Julien) |
+| AU39 / AU40 / AU41 | — | Device checks (+ crackle under a podcast); `react-native-audio-api`; other-audio hint | Open (Julien) |
 | AU25 | — | v2 arrangements, rush layer, Boston theme | Deferred |
 
-**Next ID:** AU73.
+**Next ID:** AU76.
