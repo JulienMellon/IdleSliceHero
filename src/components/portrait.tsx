@@ -1,12 +1,13 @@
 // Character art: flat, cartoony SVG figures with mood-driven faces.
 // variant 'bust' (default): the small head-and-shoulders used by the coach card, title card, scrapbook and HUD.
 // variant 'stage': the waist-up, cel-shaded figure with a gesture per mood, used by the cut-scene player only.
-import { memo } from 'react';
-import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
+import { memo, useId } from 'react';
+import Svg, { ClipPath, Circle, Defs, Ellipse, G, Path, Rect, Text } from 'react-native-svg';
 
 import type { CharacterId, Mood } from '../content/types';
-import { BLUSH, EARS, EAR_INNER, FACES, FOLDS, GROUND, HEAD_SHIFT, LIGHT_RIM, LIGHT_SHADE, NECK, NECK_SHADOW, NOSE, OUTFIT, STRANDS, TORSO, gestureFor } from './cutscene/figure-art';
-import { STAGE_VB } from './cutscene/staging';
+import { ARM_INK, ARM_SLEEVE, BLUSH, BUN_KNOT, HAIR_FRONT, EARS, EAR_INNER, FACES, FOLDS, GROUND, HEAD_CLIP, HEAD_SHIFT, LIGHT_RIM, LIGHT_SHADE_HEAD, LIGHT_SHADE_TORSO, NECK, NECK_SHADOW, NOSE, OUTFIT, SHOULDERS_INK, SHOULDERS_SLEEVE, STRANDS, TORSO, gestureFor } from './cutscene/figure-art';
+import { STAGE_VB, poseFor } from './cutscene/staging';
+import { F } from '../theme';
 import { shade } from './scene/projection';
 
 interface Look {
@@ -57,17 +58,15 @@ function HairFront({ style, hair }: { style: Look['hairStyle']; hair: string }) 
     case 'bun':
       return (
         <G fill={hair} stroke={INK} strokeWidth={2}>
-          <Circle cx={50} cy={20} r={10} />
-          <Path d="M26 46 Q26 24 50 24 Q74 24 74 46 Q66 32 50 32 Q34 32 26 46 Z" />
+          <Circle cx={BUN_KNOT.cx} cy={BUN_KNOT.cy} r={BUN_KNOT.r} />
+          <Path d={HAIR_FRONT.bun} />
         </G>
       );
     case 'short':
     case 'long':
-      return <Path d="M26 46 Q24 22 50 22 Q76 22 74 46 Q70 34 56 32 Q46 38 30 38 Z" fill={hair} stroke={INK} strokeWidth={2} />;
     case 'bob':
-      return <Path d="M25 48 Q24 22 50 22 Q76 22 75 48 L70 40 Q50 30 30 40 Z" fill={hair} stroke={INK} strokeWidth={2} />;
     case 'slick':
-      return <Path d="M27 42 Q28 22 52 23 Q74 24 73 42 Q66 30 40 32 Z" fill={hair} stroke={INK} strokeWidth={2} />;
+      return <Path d={HAIR_FRONT[style]} fill={hair} stroke={INK} strokeWidth={2} />;
     case 'bald':
       // tapered sideburns
       return (
@@ -308,17 +307,44 @@ function Outfit({ who, shirt, tone }: { who: CharacterId; shirt: string; tone: (
   }
 }
 
-function Stage({ id, mood, size, flip, dim }: { id: CharacterId; mood: Mood; size: number; flip: boolean; dim: boolean }) {
+/** The recipe card Rosa holds up at chest height (drawn un-mirrored even in a flipped figure; it is symmetric about x = 60). */
+function HeldCard({ flip }: { flip: boolean }) {
+  return (
+    <G transform={flip ? `translate(${STAGE_VB.w} 0) scale(-1 1)` : undefined}>
+      <G transform="rotate(-3 60 103)">
+        <Rect x={44} y={89} width={32} height={27} rx={2.5} fill="#FFF4D6" stroke={INK} strokeWidth={2} />
+        <Circle cx={60} cy={92.6} r={1.5} fill="#E8432E" stroke={INK} strokeWidth={0.6} />
+        <Text x={60} y={100} fontSize={5.4} fontFamily={F.bold} fill="#E8432E" textAnchor="middle">
+          ROSA’S
+        </Text>
+        <Text x={60} y={106} fontSize={5.4} fontFamily={F.bold} fill="#E8432E" textAnchor="middle">
+          SAUCE
+        </Text>
+        <Path d="M48.5 109.5h23M48.5 113h16" stroke={INK} strokeWidth={1.4} opacity={0.5} strokeLinecap="round" />
+      </G>
+    </G>
+  );
+}
+
+function Stage({ id, mood, size, flip, dim, holding }: { id: CharacterId; mood: Mood; size: number; flip: boolean; dim: boolean; holding?: 'recipe-card' }) {
   const L = LOOKS[id];
   const tone = (c: string) => (dim ? shade(c, -0.2) : c);
   const skin = tone(L.skin);
   const hair = tone(L.hair);
   const shirt = tone(L.shirt);
   const face = FACES[mood];
-  const g = gestureFor(mood);
+  const pose = poseFor(id, mood, holding);
+  const g = gestureFor(pose);
   const skinShade = shade(skin, -0.22);
+  // light shade and rim are clipped to the head (unique per instance, like the backdrop's gradients)
+  const clipId = `head${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
     <Svg width={(size * STAGE_VB.w) / STAGE_VB.h} height={size} viewBox={`0 0 ${STAGE_VB.w} ${STAGE_VB.h}`}>
+      <Defs>
+        <ClipPath id={clipId}>
+          <Ellipse {...HEAD_CLIP} />
+        </ClipPath>
+      </Defs>
       <Ellipse {...GROUND.outer} fill="#000" opacity={0.14} />
       <Ellipse {...GROUND.inner} fill="#000" opacity={0.16} />
       <G transform={flip ? `translate(${STAGE_VB.w} 0) scale(-1 1)` : undefined}>
@@ -330,8 +356,12 @@ function Stage({ id, mood, size, flip, dim }: { id: CharacterId; mood: Mood; siz
         <Path d={TORSO} fill={shirt} stroke={INK} strokeWidth={2} strokeLinejoin="round" />
         <Path d={FOLDS} stroke={shade(shirt, -0.3)} strokeWidth={1.4} fill="none" strokeLinecap="round" />
         <Outfit who={id} shirt={L.shirt} tone={tone} />
-        <Path d={g.arms} stroke={INK} strokeWidth={15.5} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-        <Path d={g.arms} stroke={shirt} strokeWidth={12} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        {/* arms: butt-capped so each cuff ends flat against its hand; the shoulder discs round the other end */}
+        <Path d={g.arms} stroke={INK} strokeWidth={ARM_INK} strokeLinecap="butt" strokeLinejoin="round" fill="none" />
+        <Path d={SHOULDERS_INK} fill={INK} />
+        <Path d={g.arms} stroke={shirt} strokeWidth={ARM_SLEEVE} strokeLinecap="butt" strokeLinejoin="round" fill="none" />
+        <Path d={SHOULDERS_SLEEVE} fill={shirt} />
+        {holding === 'recipe-card' ? <HeldCard flip={flip} /> : null}
         <Path d={g.hands} fill={skin} stroke={INK} strokeWidth={1.6} strokeLinejoin="round" />
         <Path d={g.creases} stroke={skinShade} strokeWidth={1.2} fill="none" strokeLinecap="round" />
         <G transform={HEAD_SHIFT}>
@@ -342,11 +372,15 @@ function Stage({ id, mood, size, flip, dim }: { id: CharacterId; mood: Mood; siz
           {STRANDS[L.hairStyle] ? <Path d={STRANDS[L.hairStyle]} stroke={strandColor(hair)} strokeWidth={1.3} fill="none" strokeLinecap="round" /> : null}
           <Path d={BLUSH} fill="#F28B82" opacity={mood === 'happy' || mood === 'angry' ? 0.55 : 0.32} />
           <Path d={face.brows} stroke={INK} strokeWidth={face.browW} strokeLinecap="round" fill="none" />
-          <Path d={face.sclera} fill={tone('#FFFFFF')} />
-          <Path d={face.iris} fill={tone(L.eye)} />
-          <Path d={face.pupil} fill="#160A05" />
-          <Path d={face.glints} fill="#FFFFFF" />
-          <Path d={face.lids} stroke={INK} strokeWidth={1.9} strokeLinecap="round" fill="none" />
+          {face.sclera ? (
+            <>
+              <Path d={face.sclera} fill={tone('#FFFFFF')} />
+              <Path d={face.iris} fill={tone(L.eye)} />
+              <Path d={face.pupil} fill="#160A05" />
+              <Path d={face.glints} fill="#FFFFFF" />
+            </>
+          ) : null}
+          <Path d={face.lids} stroke={INK} strokeWidth={face.lidW ?? 1.9} strokeLinecap="round" fill="none" />
           <Path d={NOSE} stroke={skinShade} strokeWidth={1.7} strokeLinecap="round" fill="none" />
           <Path d={face.mouth} fill={face.mouthFill ? '#8E2A1E' : 'none'} stroke={INK} strokeWidth={face.mouthFill ? 2 : 2.6} strokeLinecap="round" strokeLinejoin="round" />
           {face.tongue ? <Path d={face.tongue} fill="#E8766A" /> : null}
@@ -355,16 +389,19 @@ function Stage({ id, mood, size, flip, dim }: { id: CharacterId; mood: Mood; siz
           {L.hat && <Hat hat={L.hat} stage />}
         </G>
       </G>
-      {/* light from the upper left, never mirrored */}
-      <Path d={LIGHT_SHADE} fill="#000" opacity={0.13} />
-      <Path d={LIGHT_RIM} stroke="#FFFFFF" strokeWidth={2} opacity={0.4} fill="none" strokeLinecap="round" />
+      {/* light from the upper left, never mirrored: the head's shade and rim stay inside the head */}
+      <Path d={LIGHT_SHADE_TORSO} fill="#000" opacity={0.13} />
+      <G clipPath={`url(#${clipId})`}>
+        <Path d={LIGHT_SHADE_HEAD} fill="#000" opacity={0.13} />
+        <Path d={LIGHT_RIM} stroke="#FFFFFF" strokeWidth={2} opacity={0.4} fill="none" strokeLinecap="round" />
+      </G>
     </Svg>
   );
 }
 
 /**
  * A character. `size` is the bust's square size, or the stage figure's height (its width is 0.8 × size).
- * `dim` (stage only) shades a listener down a little.
+ * `dim` (stage only) shades a listener down a little; `holding` (stage only) puts the prop in the figure's hands.
  */
 export const Portrait = memo(function Portrait({
   id,
@@ -373,6 +410,7 @@ export const Portrait = memo(function Portrait({
   flip = false,
   variant = 'bust',
   dim = false,
+  holding,
 }: {
   id: CharacterId;
   mood?: Mood;
@@ -380,7 +418,9 @@ export const Portrait = memo(function Portrait({
   flip?: boolean;
   variant?: 'bust' | 'stage';
   dim?: boolean;
+  /** Stage only: a prop the figure holds up at chest height. */
+  holding?: 'recipe-card';
 }) {
   const L = LOOKS[id];
-  return variant === 'stage' ? <Stage id={id} mood={mood} size={size} flip={flip} dim={dim} /> : <Bust L={L} mood={mood} size={size} flip={flip} />;
+  return variant === 'stage' ? <Stage id={id} mood={mood} size={size} flip={flip} dim={dim} holding={holding} /> : <Bust L={L} mood={mood} size={size} flip={flip} />;
 });

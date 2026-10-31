@@ -1,7 +1,7 @@
 // v5.4 rewards screens: the tasks drawer (daily / weekly tasks, Slice Points chests, boosters) and the gift calendar.
 // All text and state come from rewards-model.ts; this file only lays them out. No ad buttons yet (D2).
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { Animated, Easing, type LayoutChangeEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { DAILY_CHESTS, STREAK_SAVE_DIAMONDS } from '../content/rewards';
@@ -131,9 +131,38 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
   const running = R.runningBoosts(game, now);
   const claimTask = useCallback((i: number) => (tab === 'daily' ? actions.claimDaily(i) : actions.claimWeekly(i)), [tab, actions]);
   const claimChest = actions.claimChest;
-  // D390: the booster strip fades out on the right while it still scrolls
-  const [strip, setStrip] = useState({ content: 0, view: 0, x: 0 });
-  const fade = boostFadeShown(strip.content, strip.view, strip.x);
+  // D390: the booster strip fades out on the right while it still scrolls. U7: the strip's sizes and scroll offset live in a ref (a
+  // scroll event fires ~31×/s); only the fade boolean is state, and it is set only when it flips, so scrolling never re-renders the drawer.
+  const strip = useRef({ content: 0, view: 0, x: 0 });
+  const fadeNow = useRef(false);
+  const [fade, setFade] = useState(false);
+  const syncFade = useCallback(() => {
+    const next = boostFadeShown(strip.current.content, strip.current.view, strip.current.x);
+    if (next === fadeNow.current) return;
+    fadeNow.current = next;
+    setFade(next);
+  }, []);
+  const onStripLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      strip.current.view = e.nativeEvent.layout.width;
+      syncFade();
+    },
+    [syncFade],
+  );
+  const onStripContent = useCallback(
+    (w: number) => {
+      strip.current.content = w;
+      syncFade();
+    },
+    [syncFade],
+  );
+  const onStripScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      strip.current.x = e.nativeEvent.contentOffset.x;
+      syncFade();
+    },
+    [syncFade],
+  );
   return (
     <View style={StyleSheet.absoluteFill}>
       <Pressable testID="close-tasks-dim" style={styles.dim} onPress={onClose} />
@@ -155,9 +184,9 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.boostRow}
               scrollEventThrottle={32}
-              onLayout={(e) => setStrip((p) => ({ ...p, view: e.nativeEvent.layout.width }))}
-              onContentSizeChange={(w) => setStrip((p) => ({ ...p, content: w }))}
-              onScroll={(e) => setStrip((p) => ({ ...p, x: e.nativeEvent.contentOffset.x }))}>
+              onLayout={onStripLayout}
+              onContentSizeChange={onStripContent}
+              onScroll={onStripScroll}>
               {running.map((b, i) => (
                 <View key={`run-${i}`} style={[styles.chip, styles.chipRunning]} testID={`boost-running-${i}`}>
                   <BoostRing seconds={Math.max(0, Math.ceil((b.until - now) / 1000))} />

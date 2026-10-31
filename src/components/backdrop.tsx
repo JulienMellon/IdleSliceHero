@@ -7,7 +7,7 @@ import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Re
 
 import type { Backdrop as BackdropId } from '../content/types';
 import { F } from '../theme';
-import { alongQuad, brickPatch, n as n1, bricks, circle, cloud, gridLines, mullions, planks, rain, rect, skyline, windows } from './cutscene/backdrop-art';
+import { HQ_PLATE, INDUSTRIAL_BILLBOARD, OAK, PIER_PLAQUE, SHOP_SIGNS, SUN, STRING_LIGHTS, UPTOWN_BILLBOARD, alongQuad, backdropView, brickPatch, n as n1, bricks, circle, cloud, gridLines, mullions, planks, rain, rect, skyline, windows } from './cutscene/backdrop-art';
 
 const INK = '#3B1F14';
 
@@ -64,16 +64,20 @@ function Ground({ y, fill, line = INK }: { y: number; fill: string; line?: strin
   );
 }
 
-/** The MEGASLICE billboard on its frame (industrial and uptown skylines carry it). */
-function Billboard({ x, y, w = 172 }: { x: number; y: number; w?: number }) {
+/** The MEGASLICE billboard: on a braced frame (industrial skyline) or, without `legs`, bolted to a facade (uptown). */
+function Billboard({ x, y, w, h, legs = true }: { x: number; y: number; w: number; h: number; legs?: boolean }) {
   const fs = Math.round(w / 10);
   return (
     <G>
-      <Path d={`M${x + 22} ${y + 30}v40M${x + w - 22} ${y + 30}v40M${x + 22} ${y + 50}L${x + w - 22} ${y + 66}M${x + w - 22} ${y + 50}L${x + 22} ${y + 66}`} stroke="#2A2233" strokeWidth={3} />
-      <Rect x={x} y={y} width={w} height={30} rx={3} fill="#7B2CBF" stroke={INK} strokeWidth={2} />
+      {legs ? (
+        <Path d={`M${x + 22} ${y + h}v40M${x + w - 22} ${y + h}v40M${x + 22} ${y + h + 20}L${x + w - 22} ${y + h + 36}M${x + w - 22} ${y + h + 20}L${x + 22} ${y + h + 36}`} stroke="#2A2233" strokeWidth={3} />
+      ) : (
+        <Path d={`M${x + 8} ${y + h}v5h8v-5M${x + w - 16} ${y + h}v5h8v-5`} fill="#2A2233" />
+      )}
+      <Rect x={x} y={y} width={w} height={h} rx={3} fill="#7B2CBF" stroke={INK} strokeWidth={2} />
       <Path d={`M${x + 4} ${y + 4}h${w - 8}v5h${8 - w}Z`} fill="#fff" opacity={0.18} />
-      <Path d={`M${x + 8} ${y + 22}l9 -14l9 14Z`} fill="#FFC531" stroke={INK} strokeWidth={1.4} strokeLinejoin="round" />
-      <Text x={x + 16 + w / 2} y={y + 15 + fs * 0.36} fontSize={fs} fontFamily={F.bold} fill="#FFC531" stroke={INK} strokeWidth={0.8} textAnchor="middle">
+      <Path d={`M${x + 8} ${y + h - 8}l9 -12l9 12Z`} fill="#FFC531" stroke={INK} strokeWidth={1.4} strokeLinejoin="round" />
+      <Text x={x + (w + 26) / 2} y={y + h / 2 + fs * 0.36} fontSize={fs} fontFamily={F.bold} fill="#FFC531" stroke={INK} strokeWidth={0.8} textAnchor="middle">
         MEGASLICE
       </Text>
     </G>
@@ -101,10 +105,9 @@ const SHOP = (() => {
     ovenBricks += `M${xa.toFixed(1)} ${y}H${xb.toFixed(1)}`;
     for (let x = xa + (r % 2 ? 6 : 12); x < xb - 3; x += 12) if (y < 98 || x < 268 || x > 332) ovenBricks += `M${x.toFixed(1)} ${y}v7`;
   }
-  const lights = alongQuad([-10, -102], [100, -66], [200, -96], 5).concat(alongQuad([200, -96], [300, -66], [410, -102], 5));
   const bulbs = ['', '', ''];
   let glow = '';
-  lights.forEach(([x, y], i) => {
+  STRING_LIGHTS.bulbs.forEach(([x, y], i) => {
     bulbs[i % 3] += circle(x, y + 6, 4, 5);
     glow += circle(x, y + 6, 10);
   });
@@ -115,7 +118,7 @@ const SHOP = (() => {
     tiles,
     floor,
     ovenBricks,
-    wire: 'M-10 -102 Q100 -66 200 -96 Q300 -66 410 -102',
+    wire: STRING_LIGHTS.wire,
     bulbs,
     bulbGlow: glow,
     jarGlass: jarsX.map((x) => `M${x} 14q0 -3 3 -3h10q3 0 3 3v14q0 2 -2 2h-12q-2 0 -2 -2Z`).join(''),
@@ -147,35 +150,42 @@ function ShopScene({ glow }: Ids) {
       {S.bulbs.map((d, i) => (
         <Path key={i} d={d} fill={['#FFC531', '#E8432E', '#3FAE5A'][i]} stroke={INK} strokeWidth={1.2} />
       ))}
-      {/* PIZZA sign on two cords */}
-      <Path d="M134 -112V-72M198 -112V-72" stroke={INK} strokeWidth={1.4} />
-      <Rect x={124} y={-74} width={84} height={32} rx={6} fill="#FFFFFF" stroke="#D9443A" strokeWidth={3} />
-      <Circle cx={142} cy={-58} r={11} fill="#FFC531" stroke="#C97B2A" strokeWidth={3} />
-      <Path d={circle(138, -61, 2.6) + circle(146, -60, 2.6) + circle(141, -53, 2.6) + circle(147, -54, 2.2)} fill="#E8432E" />
-      <Text x={178} y={-52} fontSize={14} fontFamily={F.bold} fill="#D9443A" textAnchor="middle">
-        PIZZA
-      </Text>
-      {/* menu board */}
-      <Rect x={112} y={-34} width={70} height={40} rx={4} fill="#2F3B33" stroke="#8E5A3C" strokeWidth={3} />
-      <Path d="M118 -28 l20 26" stroke="#fff" strokeWidth={6} opacity={0.05} />
-      <Text x={147} y={-22} fontSize={9} fontFamily={F.bold} fill="#FFC531" textAnchor="middle">
-        MENU
-      </Text>
-      <Path d="M118 -16l6 0l-3 5ZM118 -8l6 0l-3 5ZM118 0l6 0l-3 5Z" fill="#FFC531" />
-      <Path d="M127 -14.5h28M127 -6.5h24M127 1.5h20" stroke="#FFF4E0" strokeWidth={2.4} strokeLinecap="round" />
-      <Text x={177} y={3} fontSize={6} fontFamily={F.bold} fill="#FFC531" textAnchor="end">
-        $3 · $4 · $4
-      </Text>
-      {/* framed photo: young Rosa at the oven, est. 1974 */}
-      <Path d="M210 -68 L227 -82 L244 -68" stroke={INK} strokeWidth={1.2} fill="none" />
-      <Rect x={194} y={-68} width={66} height={58} rx={3} fill="#C98F63" stroke={INK} strokeWidth={2.4} />
-      <Rect x={200} y={-62} width={54} height={36} fill="#EED9B0" />
-      <Path d="M233 -26 L233 -38 Q242 -49 251 -38 L251 -26 Z" fill="#B8784F" />
-      <Path d={circle(216, -46, 6.5) + 'M206 -26 Q216 -38 226 -26 Z'} fill="#A0664A" />
-      <Path d="M200 -62h54v36h-54Z" fill="#8E5A3C" opacity={0.12} />
-      <Text x={227} y={-14} fontSize={8} fontFamily={F.bold} fill="#FFF4E0" textAnchor="middle">
-        EST. 1974
-      </Text>
+      {/* PIZZA sign on two cords, menu board and the framed photo: 0.8× boards below the caption zone (see SHOP_SIGNS) */}
+      <G transform={`translate(${SHOP_SIGNS.pizza.x} ${SHOP_SIGNS.pizza.y}) scale(${SHOP_SIGNS.pizza.k})`}>
+        <Path d="M10 -120V2M74 -120V2" stroke={INK} strokeWidth={1.4} />
+        <Rect x={0} y={0} width={84} height={32} rx={6} fill="#FFFFFF" stroke="#D9443A" strokeWidth={3} />
+        <Circle cx={18} cy={16} r={11} fill="#FFC531" stroke="#C97B2A" strokeWidth={3} />
+        <Path d={circle(14, 13, 2.6) + circle(22, 14, 2.6) + circle(17, 21, 2.6) + circle(23, 20, 2.2)} fill="#E8432E" />
+        <Text x={54} y={22} fontSize={14} fontFamily={F.bold} fill="#D9443A" textAnchor="middle">
+          PIZZA
+        </Text>
+      </G>
+      <G transform={`translate(${SHOP_SIGNS.menu.x} ${SHOP_SIGNS.menu.y}) scale(${SHOP_SIGNS.menu.k})`}>
+        <Rect x={0} y={0} width={70} height={40} rx={4} fill="#2F3B33" stroke="#8E5A3C" strokeWidth={3} />
+        <Path d="M6 6 l20 26" stroke="#fff" strokeWidth={6} opacity={0.05} />
+        <Text x={35} y={12} fontSize={9} fontFamily={F.bold} fill="#FFC531" textAnchor="middle">
+          MENU
+        </Text>
+        <Path d="M6 18l6 0l-3 5ZM6 26l6 0l-3 5ZM6 34l6 0l-3 5Z" fill="#FFC531" />
+        <Path d="M15 19.5h28M15 27.5h24M15 35.5h20" stroke="#FFF4E0" strokeWidth={2.4} strokeLinecap="round" />
+        {/* one price per line, right-aligned */}
+        {['$3', '$4', '$4'].map((price, i) => (
+          <Text key={i} x={63} y={21.7 + i * 8} fontSize={6.5} fontFamily={F.bold} fill="#FFC531" textAnchor="end">
+            {price}
+          </Text>
+        ))}
+      </G>
+      <G transform={`translate(${SHOP_SIGNS.frame.x} ${SHOP_SIGNS.frame.y}) scale(${SHOP_SIGNS.frame.k})`}>
+        <Path d="M16 0 L33 -14 L50 0" stroke={INK} strokeWidth={1.2} fill="none" />
+        <Rect x={0} y={0} width={66} height={58} rx={3} fill="#C98F63" stroke={INK} strokeWidth={2.4} />
+        <Rect x={6} y={6} width={54} height={36} fill="#EED9B0" />
+        <Path d="M39 42 L39 30 Q48 19 57 30 L57 42 Z" fill="#B8784F" />
+        <Path d={circle(22, 22, 6.5) + 'M12 42 Q22 30 32 42 Z'} fill="#A0664A" />
+        <Path d="M6 6h54v36h-54Z" fill="#8E5A3C" opacity={0.12} />
+        <Text x={33} y={54} fontSize={8} fontFamily={F.bold} fill="#FFF4E0" textAnchor="middle">
+          EST. 1974
+        </Text>
+      </G>
       {/* shelf of labelled jars */}
       <Path d={S.jarGlass} fill="#E6F2F2" stroke={INK} strokeWidth={1.3} />
       {S.jarFill.map((j) => (
@@ -327,20 +337,20 @@ const SUB = (() => {
     roofB: 'M222 32 L290 -26 L358 32 Z',
     shingles: shingles(46, 186, 116, -40, 22) + shingles(222, 358, 290, -26, 32),
     chimney: 'M146 -26h14v-28h-14Z',
-    glass: rect(72, 34, 26, 30) + rect(134, 34, 26, 30) + rect(72, 86, 26, 30) + rect(248, 44, 26, 28) + rect(306, 44, 26, 28) + rect(306, 92, 26, 28) + rect(103, -14, 26, 22) + rect(277, -6, 26, 20),
-    bars: mullions(72, 34, 1, 1, 26, 30, 0, 0) + mullions(134, 34, 1, 1, 26, 30, 0, 0) + mullions(72, 86, 1, 1, 26, 30, 0, 0) + mullions(248, 44, 1, 1, 26, 28, 0, 0) + mullions(306, 44, 1, 1, 26, 28, 0, 0) + mullions(306, 92, 1, 1, 26, 28, 0, 0) + mullions(103, -14, 1, 1, 26, 22, 0, 0) + mullions(277, -6, 1, 1, 26, 20, 0, 0),
+    glass: rect(72, 34, 26, 30) + rect(134, 34, 26, 30) + rect(66, 86, 26, 30) + rect(248, 44, 26, 28) + rect(306, 44, 26, 28) + rect(306, 92, 26, 28) + rect(103, -14, 26, 22) + rect(277, -6, 26, 20),
+    bars: mullions(72, 34, 1, 1, 26, 30, 0, 0) + mullions(134, 34, 1, 1, 26, 30, 0, 0) + mullions(66, 86, 1, 1, 26, 30, 0, 0) + mullions(248, 44, 1, 1, 26, 28, 0, 0) + mullions(306, 44, 1, 1, 26, 28, 0, 0) + mullions(306, 92, 1, 1, 26, 28, 0, 0) + mullions(103, -14, 1, 1, 26, 22, 0, 0) + mullions(277, -6, 1, 1, 26, 20, 0, 0),
     shutters: rect(64, 34, 7, 30) + rect(99, 34, 7, 30) + rect(126, 34, 7, 30) + rect(161, 34, 7, 30) + rect(240, 44, 7, 28) + rect(275, 44, 7, 28) + rect(298, 44, 7, 28) + rect(333, 44, 7, 28),
-    doors: 'M130 140V98q0 -10 10 -10h6q10 0 10 10V140Z M250 140V102q0 -9 9 -9h6q9 0 9 9V140Z',
+    doors: 'M106 140V98q0 -10 10 -10h6q10 0 10 10V140Z M250 140V102q0 -9 9 -9h6q9 0 9 9V140Z',
     sides: rect(168, 22, 6, 118) + rect(340, 32, 6, 108),
-    canopy: circle(208, -40, 34) + circle(178, -10, 28) + circle(238, -6, 30) + circle(206, 14, 30) + circle(232, -54, 22),
-    canopyShade: circle(244, 0, 22) + circle(222, 26, 18) + circle(250, -40, 14),
-    canopyLight: circle(186, -34, 12) + circle(196, -60, 9),
-    trunk: 'M200 140 L203 30 Q206 18 210 30 L214 140 Z',
+    canopy: circle(146, -40, 34) + circle(116, -10, 28) + circle(176, -6, 30) + circle(144, 14, 30) + circle(170, -54, 22),
+    canopyShade: circle(182, 0, 22) + circle(160, 26, 18) + circle(188, -40, 14),
+    canopyLight: circle(124, -34, 12) + circle(134, -60, 9),
+    trunk: `M${OAK.trunkX0} 140 L${OAK.trunkX0 + 3} 30 Q${OAK.trunkX0 + 6} 18 ${OAK.trunkX0 + 10} 30 L${OAK.trunkX1} 140 Z`,
     fence: Array.from({ length: 30 }, (_, i) => `M${-16 + i * 15} 140V116l4 -5l4 5V140Z`).join('') + 'M-20 122h440v4h-440Z M-20 132h440v4h-440Z',
     lawnTufts: Array.from({ length: 18 }, (_, i) => `M${(i * 47) % 400} ${150 + ((i * 31) % 44)}l3 -6l2 5l3 -7l2 8`).join(''),
     walk: 'M-20 168 H420 V182 H-20 Z',
     walkJoints: gridLines(-20, 168, 420, 182, 30, 400),
-    shadows: 'M174 140 L214 140 L196 150 L160 150 Z M346 140 L386 140 L368 150 L332 150 Z M214 140 L250 140 L240 148 L210 148 Z',
+    shadows: 'M174 140 L214 140 L196 150 L160 150 Z M346 140 L386 140 L368 150 L332 150 Z M152 140 L188 140 L178 148 L148 148 Z',
     birds: 'M120 -78 q4 -4 8 0 q4 -4 8 0 M146 -88 q3 -3 6 0 q3 -3 6 0',
   };
 })();
@@ -368,7 +378,7 @@ function SuburbsScene() {
       <Path d={SUB.glass} fill="#CFE9F7" stroke={INK} strokeWidth={1.6} />
       <Path d={SUB.bars} stroke="#FFFFFF" strokeWidth={1.8} />
       <Path d={SUB.doors} fill="#8E5A3C" stroke={INK} strokeWidth={1.8} />
-      {/* the oak between the houses */}
+      {/* the oak, left of the centre line so no trunk grows out of a figure's cap */}
       <Path d={SUB.trunk} fill="#7A5236" stroke={INK} strokeWidth={1.8} />
       {/* outline under, fill over: the puffs read as one canopy */}
       <Path d={SUB.canopy} fill="none" stroke={INK} strokeWidth={4} />
@@ -423,8 +433,8 @@ const WF = (() => {
 function WaterfrontScene({ glow }: Ids) {
   return (
     <G>
-      <Circle cx={132} cy={-58} r={56} fill={`url(#${glow})`} />
-      <Circle cx={132} cy={-58} r={24} fill="#FFB347" />
+      <Circle cx={SUN.cx} cy={SUN.cy} r={SUN.glow} fill={`url(#${glow})`} />
+      <Circle cx={SUN.cx} cy={SUN.cy} r={SUN.r} fill="#FFB347" />
       <Path d={CLOUDS} fill="#FFF1E2" opacity={0.75} />
       <Path d={WF.gulls} stroke="#5A3A3A" strokeWidth={1.5} fill="none" strokeLinecap="round" />
       <Path d={WF.shore} fill="#C98C8C" opacity={0.5} />
@@ -446,8 +456,8 @@ function WaterfrontScene({ glow }: Ids) {
       <Path d="M300 -5 L330 10 V146 H312 V0 Z" fill="#000" opacity={0.14} />
       <Path d={WF.door} fill="#B6C4C4" stroke={INK} strokeWidth={1.8} />
       <Path d={WF.doorSlats} stroke="#8EA0A0" strokeWidth={1} />
-      <Rect x={234} y={20} width={68} height={26} rx={3} fill="#1F4E79" stroke={INK} strokeWidth={2} />
-      <Text x={268} y={39} fontSize={16} fontFamily={F.bold} fill="#FFF4E0" textAnchor="middle">
+      <Rect x={PIER_PLAQUE.x} y={PIER_PLAQUE.y} width={PIER_PLAQUE.w} height={PIER_PLAQUE.h} rx={3} fill="#1F4E79" stroke={INK} strokeWidth={2} />
+      <Text x={PIER_PLAQUE.x + PIER_PLAQUE.w / 2} y={PIER_PLAQUE.y + 19} fontSize={14} fontFamily={F.bold} fill="#FFF4E0" textAnchor="middle">
         PIER 9
       </Text>
       <Path d={WF.bunting} stroke={INK} strokeWidth={1.2} fill="none" />
@@ -564,7 +574,7 @@ const IND = (() => {
     shutter: gridLines(96, 104, 148, 140, 400, 4),
     chimneys: 'M108 30 V-62 h18 V30 Z M140 30 V-34 h14 V30 Z',
     chimneyBands: 'M108 -54h18M108 -46h18M140 -28h14',
-    steam: circle(120, -74, 9) + circle(134, -86, 12) + circle(152, -96, 10) + circle(170, -104, 12) + circle(146, -106, 7) + circle(150, -44, 6) + circle(160, -54, 8) + circle(174, -60, 6),
+    steam: circle(120, -72, 8) + circle(131, -81, 10) + circle(146, -87, 9) + circle(160, -90, 8) + circle(141, -92, 5.5) + circle(148, -44, 6) + circle(157, -52, 7) + circle(168, -57, 6),
     tower: { legs: 'M254 66L260 18M290 66L284 18M272 66V18M256 44H288', tank: 'M248 18 q0 -36 24 -36 q24 0 24 36 Z', bands: 'M250 6h44M252 -6h40' },
     shed: rect(244, 66, 176, 74),
     shedRibs: gridLines(244, 66, 420, 140, 7, 400),
@@ -583,7 +593,7 @@ function IndustrialScene() {
       <Path d={IND.farFactories} fill="#A3A0AC" opacity={0.5} />
       <Path d={IND.crane} stroke="#767487" strokeWidth={1.8} fill="none" opacity={0.7} />
       <Path d={IND.hook} fill="#767487" opacity={0.7} />
-      <Billboard x={172} y={-106} w={124} />
+      <Billboard {...INDUSTRIAL_BILLBOARD} />
       {/* chimneys, steam drifting up and right */}
       <Path d={IND.steam} fill="#F4F0EA" opacity={0.8} />
       <Path d={IND.chimneys} fill="#8B5A3C" stroke={INK} strokeWidth={2} />
@@ -672,7 +682,7 @@ function UptownScene({ glow }: Ids) {
       <Path d={UP.sides} fill="#000" opacity={0.22} />
       <Path d={UP.off} fill="#262A4E" />
       <Path d={UP.on} fill="#FFD27A" />
-      <Billboard x={192} y={-100} w={104} />
+      <Billboard {...UPTOWN_BILLBOARD} legs={false} />
       {/* the restaurant canopy */}
       <Path d={UP.canopy} fill="#7A1F3D" stroke={INK} strokeWidth={1.8} />
       <Path d={UP.canopyTrim} stroke="#E6C26E" strokeWidth={2.4} />
@@ -724,8 +734,8 @@ function HqScene({ glow }: Ids) {
       <Circle cx={200} cy={-82} r={26} fill={`url(#${glow})`} opacity={0.6} />
       <Path d="M200 -104 L222 -66 L178 -66 Z" fill="#FFC531" stroke="#000" strokeWidth={2.6} strokeLinejoin="round" />
       <Path d={circle(196, -76, 3.6) + circle(206, -72, 3.2) + circle(199, -88, 2.8)} fill="#E8432E" />
-      <Rect x={150} y={-58} width={100} height={18} rx={3} fill="#14041D" stroke="#C77DFF" strokeWidth={1.6} />
-      <Text x={200} y={-45} fontSize={12} fontFamily={F.bold} fill="#FFC531" textAnchor="middle">
+      <Rect x={HQ_PLATE.x} y={HQ_PLATE.y} width={HQ_PLATE.w} height={HQ_PLATE.h} rx={3} fill="#14041D" stroke="#C77DFF" strokeWidth={1.6} />
+      <Text x={HQ_PLATE.x + HQ_PLATE.w / 2} y={HQ_PLATE.y + 13} fontSize={12} fontFamily={F.bold} fill="#FFC531" textAnchor="middle">
         MEGASLICE
       </Text>
       <Path d={HQ.lobby} fill="#E2B8FF" opacity={0.35} />
@@ -764,7 +774,7 @@ function RainScene({ glow }: Ids) {
       <Circle cx={248} cy={-26} r={34} fill="#E8E4FF" opacity={0.12} />
       <Circle cx={248} cy={-26} r={22} fill="#E8E4FF" opacity={0.92} />
       <Path d={circle(240, -32, 5) + circle(256, -18, 3.4)} fill="#D2CCF2" opacity={0.7} />
-      <Path d={RAIN.far} fill="#141028" opacity={0.4} />
+      <Path d={RAIN.far} fill="#2D2B47" />
       <Path d={RAIN.farLit} fill="#FFD27A" opacity={0.55} />
       {/* lit neighbours either side of Rosa's */}
       <Path d={RAIN.neighbours} fill="#463F66" stroke={INK} strokeWidth={2} />
@@ -807,7 +817,7 @@ function RainScene({ glow }: Ids) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Props (scene-specific foreground pieces, in the top half, clear of the cast's heads)
+// Props (scene-specific foreground pieces, in the top half, clear of the cast's heads; Rosa's recipe card is held by the figure, see Portrait)
 
 /** Pier 9 sign: board above the speaker's cap, its post planted in the dock left of her. */
 function SoldSign() {
@@ -824,24 +834,6 @@ function SoldSign() {
       <Text x={156} y={-7} fontSize={8} fontFamily={F.bold} fill={INK} textAnchor="middle">
         FUTURE MEGASTORE
       </Text>
-    </G>
-  );
-}
-
-/** Rosa's sauce card, pinned on the backsplash right of her head. */
-function RecipeCard() {
-  return (
-    <G transform="rotate(-6 268 72)">
-      <Rect x={247} y={48} width={46} height={52} rx={4} fill="#000" opacity={0.18} transform="translate(3 3)" />
-      <Rect x={245} y={46} width={46} height={52} rx={4} fill="#FFF4D6" stroke={INK} strokeWidth={2.5} />
-      <Circle cx={268} cy={50} r={3} fill="#E8432E" stroke={INK} strokeWidth={1} />
-      <Text x={268} y={63} fontSize={7.5} fontFamily={F.bold} fill="#E8432E" textAnchor="middle">
-        ROSA’S
-      </Text>
-      <Text x={268} y={72} fontSize={7.5} fontFamily={F.bold} fill="#E8432E" textAnchor="middle">
-        SAUCE
-      </Text>
-      <Path d="M251 79h34M251 85.5h27M251 92h20" stroke={INK} strokeWidth={2.4} opacity={0.5} strokeLinecap="round" />
     </G>
   );
 }
@@ -888,13 +880,13 @@ const SCENES: Record<BackdropId, (ids: Ids) => ReactElement> = {
 /** Per-scene zoom on the scenery, anchored at the kerb (the rainy opening shot frames Rosa's front). */
 const SCENE_ZOOM: Partial<Record<BackdropId, number>> = { 'downtown-rain': 1.15 };
 
-export const Backdrop = memo(function Backdrop({ id, width, height, prop }: { id: BackdropId; width: number; height: number; prop?: 'vending-machine' | 'sold-sign' | 'recipe-card' }) {
+export const Backdrop = memo(function Backdrop({ id, width, height, prop }: { id: BackdropId; width: number; height: number; prop?: 'vending-machine' | 'sold-sign' }) {
   const [top, bottom] = SKY[id];
   // unique per instance: two backdrops on screen (a panel sliding in over the last) never share gradient ids
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const ids = { sky: `sky${uid}`, glow: `glow${uid}`, vig: `vig${uid}` };
   // Art is 400 wide with the ground at y 200 and up to 100 units of sky; a taller frame scales up and crops the sides.
-  const vbH = Math.max(200, Math.min(300, (400 * height) / width));
+  const { vbH } = backdropView(width, height);
   const Scene = SCENES[id];
   const zoom = SCENE_ZOOM[id];
   return (
@@ -923,7 +915,6 @@ export const Backdrop = memo(function Backdrop({ id, width, height, prop }: { id
       )}
       {prop === 'vending-machine' && <VendingMachine />}
       {prop === 'sold-sign' && <SoldSign />}
-      {prop === 'recipe-card' && <RecipeCard />}
       <Rect x={-20} y={200 - vbH - 10} width={440} height={vbH + 20} fill={`url(#${ids.vig})`} />
     </Svg>
   );

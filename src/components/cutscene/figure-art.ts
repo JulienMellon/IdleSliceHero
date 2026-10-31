@@ -3,7 +3,7 @@
 // translated by HEAD_SHIFT. The figure faces screen-right; a flipped figure mirrors the whole drawing, while the
 // light (upper left) is drawn unflipped on top.
 import type { Mood } from '../../content/types';
-import { POSE, type Pose } from './staging';
+import type { Pose } from './staging';
 
 export const HEAD_SHIFT = 'translate(10 -6)';
 
@@ -18,14 +18,25 @@ export const NECK_SHADOW = 'M53 62 Q60 70 67 62 L67 69 Q60 74 53 69 Z';
 export const FOLDS = 'M38 128 Q44 137 40 148 M82 122 Q76 134 80 148 M54 141 q6 -4 12 0';
 export const GROUND = { outer: { cx: 60, cy: 148, rx: 46, ry: 5 }, inner: { cx: 60, cy: 148, rx: 30, ry: 3 } };
 
-/** Upper-left light: one shade path (right side of head, neck and torso) and one rim-highlight path, both unflipped. */
-export const LIGHT_SHADE = [
-  'M72 21.5 A24 25 0 0 1 70 66.5 Q81 45 72 21.5 Z', // head (stage coords)
-  'M80 75.5 Q93 81 92 100 L94 151 L79 151 Q85 112 80 75.5 Z', // torso
-].join('');
+/**
+ * Upper-left light, never mirrored. The head shade and rim are clipped to HEAD_CLIP in Portrait so they can't spill over a
+ * hat or off the skull; the torso shade is a plain path.
+ */
+export const HEAD_CLIP = { cx: 60, cy: 44, rx: 24, ry: 25 } as const;
+export const LIGHT_SHADE_HEAD = 'M72 21.5 A24 25 0 0 1 70 66.5 Q81 45 72 21.5 Z';
+export const LIGHT_SHADE_TORSO = 'M80 75.5 Q93 81 92 100 L94 151 L79 151 Q85 112 80 75.5 Z';
 export const LIGHT_RIM = 'M48.8 64.4 A22.5 23.5 0 0 1 38.9 52';
 
-/** Arms as centre-lines (drawn as a thick ink stroke under a thinner sleeve stroke), and the mitten hands. */
+/** Arm stroke widths (ink outline, sleeve fill) and the shoulder discs that round the arms' butt-capped upper ends. */
+export const ARM_INK = 15.5;
+export const ARM_SLEEVE = 12;
+export const SHOULDERS_INK = ell(34, 86, ARM_INK / 2) + ell(86, 86, ARM_INK / 2);
+export const SHOULDERS_SLEEVE = ell(34, 86, ARM_SLEEVE / 2) + ell(86, 86, ARM_SLEEVE / 2);
+
+/**
+ * Arms as centre-lines (a thick ink stroke under a thinner sleeve stroke, butt-capped: the hand covers the flat end so the
+ * cuff sits flush against it) and the hands. Each arm ends at its hand's centre (palms: 1.5 inside the wrist).
+ */
 interface Gesture {
   arms: string;
   hands: string;
@@ -34,37 +45,61 @@ interface Gesture {
 }
 
 const knuckles = (cx: number, cy: number) => `M${cx - 3} ${cy - 1.6}q3 1.6 6 0M${cx - 3} ${cy + 1.6}q3 1.6 6 0`;
-const fingers = (cx: number, cy: number) => `M${cx - 2.1} ${cy - 11}v5.5M${cx + 2.1} ${cy - 11}v5.5`;
 
+// A fist or mitten is centred on its arm's end and as wide as the sleeve, so the cuff's flat end is hidden inside it.
 function fist(cx: number, cy: number) {
-  return ell(cx, cy, 6.2, 6.6);
+  return ell(cx, cy, 7, 7);
 }
+// (thumb and finger are wound the opposite way to the fist, so where they overlap it the fill doesn't cancel to a hole)
 function thumbUp(cx: number, cy: number) {
-  return `${fist(cx, cy)}M${cx - 3.6} ${cy - 3}L${cx - 3.6} ${cy - 11.5}a2.3 2.3 0 0 1 4.6 0L${cx + 1} ${cy - 3}Z`;
+  return `${fist(cx, cy)}M${cx + 1} ${cy - 3}L${cx + 1} ${cy - 9.2}a2.3 2.3 0 0 0 -4.6 0L${cx - 3.6} ${cy - 3}Z`;
 }
 function pointRight(cx: number, cy: number) {
-  return `${fist(cx, cy)}M${cx + 2} ${cy - 4.6}L${cx + 10.5} ${cy - 4.6}a2.2 2.2 0 0 1 0 4.4L${cx + 2} ${cy - 0.2}Z`;
-}
-/** An open mitten, palm out, fingers up; `thumb` −1 puts the thumb on its left. */
-function palm(cx: number, cy: number, thumb: 1 | -1) {
-  return (
-    ell(cx + thumb * 6, cy + 0.5, 2.8, 4.2) +
-    `M${cx - 5.8} ${cy + 6}L${cx - 6.4} ${cy - 4}Q${cx - 6.4} ${cy - 11.5} ${cx} ${cy - 11.5}Q${cx + 6.4} ${cy - 11.5} ${cx + 6.4} ${cy - 4}L${cx + 5.8} ${cy + 6}Z`
-  );
+  return `${fist(cx, cy)}M${cx + 2} ${cy - 0.2}L${cx + 2} ${cy - 4.6}L${cx + 11.8} ${cy - 4.6}a2.2 2.2 0 0 1 0 4.4Z`;
 }
 function mittenDown(cx: number, cy: number) {
-  return ell(cx, cy, 5.8, 7.2);
+  return ell(cx, cy, 7, 7.6);
 }
 
+/** Finger heights above the palm centre, outer finger first for a hand whose thumb is on its right. */
+const FINGER_TOPS = [8.6, 10.8, 11.8, 10.4];
+/**
+ * An open palm facing out: four rounded fingers and a thumb in one outline; its wrist is as wide as the sleeve (the base sits at
+ * cy + 9). `thumb` −1 mirrors it so the thumb is on its left.
+ */
+function palm(cx: number, cy: number, thumb: 1 | -1) {
+  const m = thumb;
+  const x = (dx: number) => n(cx + m * dx);
+  let d = `M${x(-7)} ${cy + 9}L${x(-6.4)} ${cy - 3}`;
+  FINGER_TOPS.forEach((t, i) => {
+    d += `L${x(-6.4 + i * 3.2)} ${n(cy - t + 1.6)}a1.6 1.6 0 0 ${m === 1 ? 1 : 0} ${m * 3.2} 0`;
+  });
+  return `${d}L${x(6.4)} ${cy - 1}Q${x(11.4)} ${cy - 2.4} ${x(10.8)} ${cy + 2.6}Q${x(10.2)} ${cy + 5.4} ${x(6.7)} ${cy + 5}L${x(7)} ${cy + 9}Z`;
+}
+/** The three gaps between a palm's four fingers. */
+function fingerGaps(cx: number, cy: number, thumb: 1 | -1) {
+  return [0, 1, 2].map((i) => `M${n(cx + thumb * (-3.2 + i * 3.2))} ${n(cy - Math.min(FINGER_TOPS[i], FINGER_TOPS[i + 1]) + 1.6)}v4.6`).join('');
+}
+const n = (v: number) => Math.round(v * 10) / 10;
+
 export const GESTURES: Record<Pose, Gesture> = {
-  down: { arms: 'M34 86 Q25 112 27 132 M86 86 Q95 112 93 132', hands: mittenDown(27, 136) + mittenDown(93, 136), creases: 'M30.4 131q2.4 3 0.6 7M89.6 131q-2.4 3 -0.6 7' },
-  thumb: { arms: 'M34 86 Q25 112 27 132 M86 86 L101 108 L101 88', hands: mittenDown(27, 136) + thumbUp(101, 82), creases: 'M30.4 131q2.4 3 0.6 7' + knuckles(102, 83) },
-  clasp: { arms: 'M34 86 Q29 112 51 121 M86 86 Q91 112 69 121', hands: fist(55, 121) + fist(65, 121), creases: 'M57 118.5q3 1.4 6 0M57 122q3 1.4 6 0' },
-  point: { arms: 'M34 86 L19 110 L31 131 M86 86 Q99 98 106 93', hands: fist(33, 132) + pointRight(107, 92), creases: knuckles(33, 132) + 'M104 93.5q3 1.6 6 0' },
-  'hands-up': { arms: 'M34 86 L19 86 L17 66 M86 86 L101 86 L103 66', hands: palm(17, 58, 1) + palm(103, 58, -1), creases: fingers(17, 58) + fingers(103, 58) },
+  down: { arms: 'M34 86 Q25 112 27 134 M86 86 Q95 112 93 134', hands: mittenDown(27, 134) + mittenDown(93, 134), creases: 'M30.6 129.5q2.6 3.5 0.6 8M89.4 129.5q-2.6 3.5 -0.6 8' },
+  thumb: { arms: 'M34 86 Q25 112 27 134 M86 86 L96 108 L96 82', hands: mittenDown(27, 134) + thumbUp(96, 82), creases: 'M30.6 129.5q2.6 3.5 0.6 8' + knuckles(97, 83) },
+  // hands clasped at the belt: one joined mass with three interlaced finger arcs
+  clasp: {
+    arms: 'M34 86 Q29 112 56 121 M86 86 Q91 112 64 121',
+    hands: ell(60, 121, 11, 7.8) + ell(57, 113.8, 3, 2) + ell(63.5, 113.8, 3, 2),
+    creases: 'M54.5 116q3.2 5.5 1.2 11M60 115q3.2 6.5 1.2 13M65.5 116q3.2 5.5 1.2 11',
+  },
+  point: { arms: 'M34 86 L19 110 L33 132 M86 86 Q91 99 94 91', hands: fist(33, 132) + pointRight(94, 91), creases: knuckles(33, 132) + 'M92 92.5q3 1.6 6 0' },
+  'hands-up': { arms: 'M34 86 L23 86 L21 65 M86 86 L97 86 L99 65', hands: palm(21, 57.5, 1) + palm(99, 57.5, -1), creases: fingerGaps(21, 57.5, 1) + fingerGaps(99, 57.5, -1) },
+  // worried: one hand at the collar, the other hanging
+  collar: { arms: 'M34 86 Q25 112 27 134 M86 86 L98 101 L68 87', hands: mittenDown(27, 134) + fist(68, 87), creases: 'M30.6 129.5q2.6 3.5 0.6 8' + knuckles(68, 87) },
+  // holding a card up at chest height (the card itself is drawn by Portrait)
+  card: { arms: 'M34 86 Q31 110 50 116 M86 86 Q89 110 70 116', hands: fist(50, 116) + fist(70, 116), creases: knuckles(50, 116) + knuckles(70, 116) },
 };
 
-/** Face parts per mood, in the head's 100-box coordinates (eyes at 42/58, 47). */
+/** Face parts per mood, in the head's 100-box coordinates (eyes at 42/58, 47). An empty eye path means the eyes are closed. */
 interface FaceArt {
   sclera: string;
   iris: string;
@@ -73,6 +108,8 @@ interface FaceArt {
   lids: string;
   brows: string;
   browW: number;
+  /** Lid line width when it isn't the default 1.9 (closed eyes carry the whole expression). */
+  lidW?: number;
   mouth: string;
   mouthFill: boolean;
   tongue?: string;
@@ -97,11 +134,16 @@ export const FACES: Record<Mood, FaceArt> = {
     mouth: 'M43 60 Q50 64 57 60',
     mouthFill: false,
   },
+  // closed, smiling eyes (the joyful ^ ^), so a win never reads as a stare
   happy: {
-    ...eyes(4.3, 4.6, 3.1, 0.9, 0.2),
-    lids: 'M37.4 45.4 Q42 40.8 46.6 45.4 M53.4 45.4 Q58 40.8 62.6 45.4 M38.2 51.4 Q42 49.2 45.8 51.4 M54.2 51.4 Q58 49.2 61.8 51.4',
+    sclera: '',
+    iris: '',
+    pupil: '',
+    glints: '',
+    lids: 'M37.4 49 Q42 41.6 46.6 49 M53.4 49 Q58 41.6 62.6 49',
     brows: 'M37 37.5 Q42 33.5 47 36.5 M53 36.5 Q58 33.5 63 37.5',
     browW: 2.4,
+    lidW: 2.7,
     mouth: 'M41 58 Q50 69 59 58 Z',
     mouthFill: true,
     tongue: 'M45.5 63.6 Q50 60.6 54.5 63.6 Q50 67 45.5 63.6 Z',
@@ -139,13 +181,24 @@ export const EARS = ell(26.5, 52, 4, 6) + ell(73.5, 52, 4, 6);
 export const EAR_INNER = 'M25.6 49 q2 2.5 0.2 6 M74.4 49 q-2 2.5 -0.2 6';
 
 export type HairStyle = 'bun' | 'short' | 'long' | 'bald' | 'slick' | 'bob';
-/** Two or three strand lines per hair style (head 100-box). */
+/** Front-hair outlines per style (head 100-box); portrait.tsx fills them, the tests check the strands against them. */
+export const HAIR_FRONT: Record<Exclude<HairStyle, 'bald'>, string> = {
+  bun: 'M26 46 Q26 24 50 24 Q74 24 74 46 Q66 32 50 32 Q34 32 26 46 Z',
+  short: 'M26 46 Q24 22 50 22 Q76 22 74 46 Q70 34 56 32 Q46 38 30 38 Z',
+  long: 'M26 46 Q24 22 50 22 Q76 22 74 46 Q70 34 56 32 Q46 38 30 38 Z',
+  bob: 'M25 48 Q24 22 50 22 Q76 22 75 48 L70 40 Q50 30 30 40 Z',
+  slick: 'M27 42 Q28 22 52 23 Q74 24 73 42 Q66 30 40 32 Z',
+};
+/** The bun's knot (a circle on top of the bun style's front hair). */
+export const BUN_KNOT = { cx: 50, cy: 20, r: 10 } as const;
+
+/** Two or three strand lines per hair style (head 100-box). Every point sits inside that style's front-hair shape (portrait.tsx HairFront), never on the skin. */
 export const STRANDS: Record<HairStyle, string> = {
-  bun: 'M32 38 Q38 30 49 28.5 M68 38 Q62 30 51 28.5 M44 15 q6 -3 12 1.5',
-  short: 'M30 42 Q31 33 38 30 M70 42 Q69 33 62 30',
-  long: 'M30 42 Q33 31 44 28 M70 42 Q67 32 56 30 M27.5 62 Q27 76 32 86',
-  bob: 'M29 47 Q29 34 41 29.5 M71 47 Q71 34 59 29.5 M50 25 Q47 30 44 31',
-  slick: 'M31 37 Q43 26.5 60 26.5 M38 32.5 Q52 26.5 68 31.5',
+  bun: 'M33 35.5 Q38 30 49 28.5 M67 35.5 Q62 30 51 28.5 M44 15 q6 -3 12 1.5',
+  short: 'M30.5 36 Q31 32 38 29.5 M70 36 Q69 32 62 29.5',
+  long: 'M30.5 36 Q33 31 44 28 M70 36 Q67 32 56 30',
+  bob: 'M27.5 42 Q28 33 41 29.5 M72.5 42 Q72 33 59 29.5 M50 25 Q47 30 44 31',
+  slick: 'M31 37 Q43 26.5 60 26.5 M38.5 31 Q52 25.5 68 30.5',
   bald: '',
 };
 
@@ -174,7 +227,7 @@ export const OUTFIT = {
   nameBadge: 'M72 99 h12 v7 h-12 Z',
 };
 
-/** The gesture a mood gets (shared with staging so tests see the same mapping). */
-export function gestureFor(mood: Mood): Gesture {
-  return GESTURES[POSE[mood]];
+/** The art for a pose (staging's `poseFor` picks the pose, so tests and the player see the same mapping). */
+export function gestureFor(pose: Pose): Gesture {
+  return GESTURES[pose];
 }

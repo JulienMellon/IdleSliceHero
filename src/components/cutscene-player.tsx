@@ -11,7 +11,7 @@ import type { Scene } from '../content/types';
 import { C, F } from '../theme';
 import { Backdrop } from './backdrop';
 import { canAdvance, sceneHeading } from '../engine/cutscene-input';
-import { PANEL_BORDER, panelSize, stageLayout, tailShare } from './cutscene/staging';
+import { CAPTION, PANEL_BORDER, panelSize, poseFor, stageLayout, tailShare } from './cutscene/staging';
 import { Portrait } from './portrait';
 
 const native = Platform.OS !== 'web';
@@ -102,7 +102,9 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
 
   const speakerIndex = current ? p.cast.findIndex((c) => current.speaker.toLowerCase().includes(c.id.split('-')[0]) || current.speaker.startsWith(nameOf(c.id))) : -1;
   // waist-up figures: centred, or at 30 % / 70 % facing each other; the speaker in front, the listener smaller and dimmed
-  const stage = stageLayout(p.cast.length, innerW, innerH, speakerIndex);
+  // a figure holding the recipe card shows it in its hands (the backdrop doesn't draw it), so the gesture is sized in too
+  const holder = p.prop === 'recipe-card' ? Math.max(0, p.cast.findIndex((c) => c.id === 'nonna-rosa')) : -1;
+  const stage = stageLayout(p.cast.length, innerW, innerH, speakerIndex, p.cast.map((c, i) => poseFor(c.id, c.mood, i === holder ? 'recipe-card' : undefined)));
 
   return (
     <View style={StyleSheet.absoluteFill}>
@@ -125,13 +127,13 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
         <Animated.View style={[styles.frameShadow, { width: frameW, height: frameH, transform: [{ translateX: slide }] }]}>
           <View style={styles.frame}>
             <Animated.View style={{ position: 'absolute', inset: 0, transform: [{ scale: zoom }] } as never}>
-              <Backdrop id={p.backdrop} width={innerW} height={innerH} prop={p.prop} />
+              <Backdrop id={p.backdrop} width={innerW} height={innerH} prop={p.prop === 'recipe-card' ? undefined : p.prop} />
             </Animated.View>
             {p.cast.map((c, i) => {
               const s = stage[i];
               return (
                 <View key={c.id} style={[styles.figure, { left: s.left, width: s.width, height: s.height, zIndex: s.z, transform: [{ scale: s.scale }] }]}>
-                  <Portrait id={c.id} mood={c.mood} size={s.height} flip={s.flip} dim={s.dim} variant="stage" />
+                  <Portrait id={c.id} mood={c.mood} size={s.height} flip={s.flip} dim={s.dim} variant="stage" holding={i === holder ? 'recipe-card' : undefined} />
                 </View>
               );
             })}
@@ -209,8 +211,8 @@ const styles = StyleSheet.create({
   frame: { flex: 1, borderRadius: 12, overflow: 'hidden', borderWidth: PANEL_BORDER, borderColor: C.ink, backgroundColor: '#000' },
   keyline: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 9, borderWidth: 1, borderColor: CREAM },
   figure: { position: 'absolute', bottom: 0, transformOrigin: 'bottom' } as object,
-  caption: { position: 'absolute', top: 10, left: 10, right: 10, backgroundColor: C.cheese, opacity: 0.94, borderWidth: 2.5, borderColor: C.ink, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6, shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 4, shadowOffset: { width: 0, height: 3 } },
-  captionText: { fontFamily: F.semi, color: C.ink, fontSize: 15 },
+  caption: { position: 'absolute', top: CAPTION.top, left: 10, right: 10, backgroundColor: C.cheese, opacity: 0.94, borderWidth: CAPTION.border, borderColor: C.ink, borderRadius: 6, paddingHorizontal: 10, paddingVertical: CAPTION.padV, shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 4, shadowOffset: { width: 0, height: 3 } },
+  captionText: { fontFamily: F.semi, color: C.ink, fontSize: CAPTION.fontSize, lineHeight: CAPTION.lineHeight },
   narration: { backgroundColor: C.cheese, borderWidth: 3, borderColor: C.ink, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14 },
   narrationText: { fontFamily: F.bold, fontSize: 18, lineHeight: 24, color: C.ink, textAlign: 'center' },
   bubbleArea: { minHeight: 130, marginTop: 18, justifyContent: 'flex-start' },

@@ -31,10 +31,17 @@ export interface SceneLine {
   text: string;
 }
 
+/** One character on stage. */
+export interface CastMember {
+  id: CharacterId;
+  mood: Mood;
+}
+/** 0–2 characters, left to right: the stage has two slots, so a third figure is a type error rather than a crash (C100). */
+export type Cast = readonly [] | readonly [CastMember] | readonly [CastMember, CastMember];
+
 export interface ScenePanel {
   backdrop: Backdrop;
-  /** 0–2 characters shown in the panel, left to right. */
-  cast: { id: CharacterId; mood: Mood }[];
+  cast: Cast;
   /** Optional narration box at the top of the panel. */
   caption?: string;
   /** Optional foreground prop drawn into the scene. */
