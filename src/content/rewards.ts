@@ -29,7 +29,7 @@ export const TASK_TEXT: Record<TaskKind, { title: string; unit: 'count' | 'cash'
   hire: { title: 'Hire a head or manager', unit: 'count' },
   decor: { title: 'Buy a decor upgrade', unit: 'count' },
   dailyDone: { title: 'Complete {n} daily tasks', unit: 'count' },
-  days: { title: 'Play on {n} different days', unit: 'count' },
+  days: { title: 'Show up on {n} different days', unit: 'count' },
   build: { title: 'Open a pizzeria in a new neighbourhood', unit: 'count' },
   ovens: { title: 'Buy {n} oven upgrades', unit: 'count' },
   fleet: { title: 'Upgrade the fleet', unit: 'count' },
@@ -157,3 +157,25 @@ export function cosmeticName(id: string): string {
 }
 
 export const VISITOR_NAMES: Readonly<Record<string, string>> = { nonna: 'Nonna Rosa', 'big-sal': 'Big Sal', genevieve: 'Genevieve' };
+
+/** What the day-30 visitor says on the gift card, by visitor id. */
+export const VISITOR_LINES: Readonly<Record<string, string>> = {
+  nonna: 'Thirty days. You eat, you come back. Good, eh?',
+  'big-sal': "Thirty days, no sick days. Union'd be proud, kid.",
+  genevieve: 'Thirty days, darling. Do try to keep up.',
+};
+
+// ---------- Limits ----------
+
+/** A boost's `until` is never more than this far past now (a load cap against a corrupt save). */
+export const BOOST_MAX_AHEAD_MS = 30 * 86_400_000;
+/** Boosters waiting in the inventory; grants past this are dropped. */
+export const MAX_BOOSTERS = 99;
+/** Boosts running at once; starting or gaining one past this drops the soonest-ending. */
+export const MAX_CONCURRENT_BOOSTS = 20;
+/** A clock this far ahead of the real time is treated as a mistake and recovered from (lastSeen = now, boosts cleared). */
+export const CLOCK_RECOVER_MS = 36 * 3_600_000;
+/** `lastSeen` is raised only when this stale (and on claims): it keeps `game.rewards` stable between ticks. */
+export const LAST_SEEN_STEP_MS = 60_000;
+/** The weekly chest's prize once every rotation cosmetic is owned. */
+export const WEEKLY_FALLBACK = { diamonds: 30, minutes: 120 } as const;

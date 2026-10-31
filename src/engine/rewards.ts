@@ -1,17 +1,22 @@
 // Daily tasks, weekly tasks and the daily gift: pure rules (docs/PLAN-v5.4-rewards.md §3). Data is in content/rewards.ts.
 // Task progress reads lifetime counters (`stats`, or `totalEarned`) against a base stored per task.
 import {
+  CLOCK_RECOVER_MS,
   DAILY_CHESTS,
   DAILY_POOL,
   DAILY_TASK_COUNT,
   DAILY_TASK_REWARD,
   GIFT_DAYS,
   GIFT_LENGTH,
+  LAST_SEEN_STEP_MS,
+  MAX_BOOSTERS,
+  MAX_CONCURRENT_BOOSTS,
   MIN_CASH_TARGET,
   MIN_COUNT_TARGET,
   STREAK_SAVE_DIAMONDS,
   TASK_TEXT,
   VISITORS,
+  WEEKLY_FALLBACK,
   WEEKLY_COSMETICS,
   WEEKLY_DIAMONDS,
   WEEKLY_POOL,
@@ -47,7 +52,7 @@ import { DECOR_KINDS } from '../content/tuning';
 
 export { boostMult };
 
-export const CLOCK_REASON = 'Your clock changed — rewards return soon';
+export const CLOCK_REASON = "Your phone's clock looks off. Rewards resume once it catches up.";
 const LOCKED_REASON = 'Rewards unlock when Nonna takes over';
 
 // ---------- Dates ----------
@@ -94,6 +99,15 @@ export const rewardsUnlocked = (s: GameState): boolean => s.seenScenes.includes(
 
 /** The device clock is behind the highest time seen: claims and resets wait. */
 export const clockBehind = (s: GameState, now: number): boolean => now < s.rewards.lastSeen;
+
+/** `lastSeen` is further ahead than a plausible rollback: the clock was set forward by mistake (see refreshRewards). */
+const clockWayBehind = (s: GameState, now: number): boolean => s.rewards.lastSeen - now > CLOCK_RECOVER_MS;
+
+/** Add granted boosters, dropping any past MAX_BOOSTERS (capped where granted, never silently on load). */
+const addBoosters = (have: Rewards['boosters'], more: Rewards['boosters']): Rewards['boosters'] => [...have, ...more].slice(0, MAX_BOOSTERS);
+
+/** Add a running boost; past MAX_CONCURRENT_BOOSTS the soonest-ending one goes. */
+const addBoost = (have: Boost[], b: Boost): Boost[] => [...have, b].sort((x, y) => y.until - x.until).slice(0, MAX_CONCURRENT_BOOSTS);
 
 /** What a claim must pass first, or null. */
 function gate(s: GameState, now: number): string | null {
@@ -192,19 +206,32 @@ function generate(s: GameState, pool: readonly PoolEntry[], n: number, key: stri
 // ---------- Refresh ----------
 
 /**
- * Keep rewards current: raise `lastSeen`, drop ended boosts, roll a new daily set when the local day changed and a
- * new weekly set when the week did. No-op before unlock and while the clock is behind `lastSeen`. Returns `s`
- * itself when nothing changed.
+ * Keep rewards current: raise `lastSeen`, drop ended boosts, roll a new daily set when the local day moved FORWARD and a
+ * new weekly set when the week did (a day key that goes backwards, e.g. a time-zone change, never re-rolls).
+ * No-op before unlock and while the clock is slightly behind `lastSeen`. A clock more than CLOCK_RECOVER_MS behind
+ * (set forward by mistake, then fixed) recovers: `lastSeen` = now and boosts are cleared. Returns `s` itself when
+ * nothing changed.
+ *
+ * `lastSeen` is raised only when it is LAST_SEEN_STEP_MS stale (and on every claim, via withRewards), so
+ * `game.rewards` keeps its identity between ticks. 60 s is safe for the rollback guard: a rollback shorter than
+ * that goes unnoticed and gains at most a minute of one boost, and day/week keys can't move backwards anyway.
  */
 export function refreshRewards(s: GameState, now: number): GameState {
-  if (!rewardsUnlocked(s) || clockBehind(s, now)) return s;
+  if (!rewardsUnlocked(s)) return s;
+  const recovering = clockWayBehind(s, now);
+  if (!recovering && clockBehind(s, now)) return s;
   let g = s;
   let r = s.rewards;
   const patch: Partial<Rewards> = {};
-  if (now > r.lastSeen) patch.lastSeen = now;
-  if (r.boosts.some((b) => b.until <= now)) patch.boosts = r.boosts.filter((b) => b.until > now);
+  if (recovering) {
+    patch.lastSeen = now;
+    if (r.boosts.length) patch.boosts = [];
+  } else {
+    if (now - r.lastSeen >= LAST_SEEN_STEP_MS) patch.lastSeen = now;
+    if (r.boosts.some((b) => b.until <= now)) patch.boosts = r.boosts.filter((b) => b.until > now);
+  }
   const today = dayKey(now);
-  if (r.day !== today) {
+  if (r.day === '' || dayNumber(today) > dayNumber(r.day)) {
     // the day counter moves first, so a weekly "play on N days" counts today
     g = { ...g, stats: { ...g.stats, days: g.stats.days + 1 } };
     patch.day = today;
@@ -214,7 +241,7 @@ export function refreshRewards(s: GameState, now: number): GameState {
     patch.rerollUsed = false;
   }
   const monday = weekKey(now);
-  if (r.week !== monday) {
+  if (r.week === '' || dayNumber(monday) > dayNumber(r.week)) {
     patch.week = monday;
     patch.weekly = generate(g, WEEKLY_POOL, WEEKLY_TASK_COUNT, `weekly:${monday}`, (k) => (k === 'days' && patch.day ? g.stats.days - 1 : taskCounter(g, k)));
     patch.weeklyChest = false;
@@ -280,7 +307,7 @@ export function claimChest(s: GameState, i: number, now: number): BuyResult {
   const paid = pay(s, c.minutes ? minutesToCash(s, c.minutes) : 0);
   return {
     ok: true,
-    state: withRewards(paid, { chests, diamonds: s.rewards.diamonds + (c.diamonds ?? 0), boosters: c.booster ? [...s.rewards.boosters, boosterOf(c.booster)] : s.rewards.boosters }, now),
+    state: withRewards(paid, { chests, diamonds: s.rewards.diamonds + (c.diamonds ?? 0), boosters: c.booster ? addBoosters(s.rewards.boosters, [boosterOf(c.booster)]) : s.rewards.boosters }, now),
   };
 }
 
@@ -295,9 +322,28 @@ export function claimWeekly(s: GameState, i: number, now: number): BuyResult {
   return { ok: true, state: withRewards(pay(s, minutesToCash(s, WEEKLY_TASK_REWARD.minutes)), { weekly, diamonds: s.rewards.diamonds + (WEEKLY_DIAMONDS[i] ?? 0) }, now) };
 }
 
-/** This week's final-chest cosmetic (rotates by ISO week number). */
+/** This week's place in the cosmetic rotation (by ISO week number). */
+const rotationStart = (s: GameState): number => isoWeek(s.rewards.week || dayKey(s.lastSavedAt)) % WEEKLY_COSMETICS.length;
+
+export type WeeklyChestPrize = { kind: 'cosmetic'; id: string } | { kind: 'fallback'; diamonds: number; minutes: number };
+
+/**
+ * What the weekly chest gives: the first cosmetic the player doesn't own, in rotation order from this week's;
+ * once all are owned, WEEKLY_FALLBACK diamonds and minutes of income.
+ */
+export function weeklyChestPrize(s: GameState): WeeklyChestPrize {
+  const start = rotationStart(s);
+  for (let k = 0; k < WEEKLY_COSMETICS.length; k++) {
+    const id = WEEKLY_COSMETICS[(start + k) % WEEKLY_COSMETICS.length];
+    if (!s.rewards.cosmetics.includes(id)) return { kind: 'cosmetic', id };
+  }
+  return { kind: 'fallback', diamonds: WEEKLY_FALLBACK.diamonds, minutes: WEEKLY_FALLBACK.minutes };
+}
+
+/** This week's rotation cosmetic, or the next unowned one (see weeklyChestPrize). */
 export function weeklyCosmetic(s: GameState): string {
-  return WEEKLY_COSMETICS[isoWeek(s.rewards.week || dayKey(s.lastSavedAt)) % WEEKLY_COSMETICS.length];
+  const p = weeklyChestPrize(s);
+  return p.kind === 'cosmetic' ? p.id : WEEKLY_COSMETICS[rotationStart(s)];
 }
 
 export const weeklyChestReady = (s: GameState): boolean => !s.rewards.weeklyChest && s.rewards.weekly.length > 0 && s.rewards.weekly.every((t) => t.claimed);
@@ -307,9 +353,9 @@ export function claimWeeklyChest(s: GameState, now: number): BuyResult {
   if (bad) return { ok: false, reason: bad };
   if (s.rewards.weeklyChest) return { ok: false, reason: 'Already opened' };
   if (!weeklyChestReady(s)) return { ok: false, reason: 'Claim every weekly task first' };
-  const own = s.rewards.cosmetics;
-  const cosmetic = weeklyCosmetic(s);
-  return { ok: true, state: withRewards(s, { weeklyChest: true, cosmetics: own.includes(cosmetic) ? own : [...own, cosmetic] }, now) };
+  const prize = weeklyChestPrize(s);
+  if (prize.kind === 'cosmetic') return { ok: true, state: withRewards(s, { weeklyChest: true, cosmetics: [...s.rewards.cosmetics, prize.id] }, now) };
+  return { ok: true, state: withRewards(pay(s, minutesToCash(s, prize.minutes)), { weeklyChest: true, diamonds: s.rewards.diamonds + prize.diamonds }, now) };
 }
 
 // ---------- Boosters and boosts ----------
@@ -323,7 +369,7 @@ export function startBooster(s: GameState, i: number, now: number): BuyResult {
   if (bad) return { ok: false, reason: bad };
   const b = s.rewards.boosters[i];
   if (!b) return { ok: false, reason: 'No such booster' };
-  const next = withRewards(s, { boosters: s.rewards.boosters.filter((_, k) => k !== i), boosts: [...s.rewards.boosts, { mult: b.mult, until: now + b.seconds * 1000, source: 'booster' }] }, now);
+  const next = withRewards(s, { boosters: s.rewards.boosters.filter((_, k) => k !== i), boosts: addBoost(s.rewards.boosts, { mult: b.mult, until: now + b.seconds * 1000, source: 'booster' }) }, now);
   return { ok: true, state: { ...next, stats: { ...next.stats, boosters: next.stats.boosters + 1 } } };
 }
 
@@ -367,9 +413,9 @@ export function claimGift(s: GameState, now: number, opts: { repair?: boolean } 
   const r = s.rewards;
   const cycle = r.gift.cycle;
   const diamonds = Math.max(0, r.diamonds - (repairing ? STREAK_SAVE_DIAMONDS : 0) + (gift.diamonds ?? 0));
-  const boosters = [...r.boosters, ...(gift.boosters ?? []).map(boosterOf)];
-  const boosts = [...r.boosts];
-  if (gift.boostNow) boosts.push({ mult: gift.boostNow.mult, until: now + gift.boostNow.minutes * 60_000, source: gift.visit ? `visit-${VISITORS[cycle % VISITORS.length]}` : `gift-day-${day}` });
+  const boosters = addBoosters(r.boosters, (gift.boosters ?? []).map(boosterOf));
+  let boosts = r.boosts;
+  if (gift.boostNow) boosts = addBoost(boosts, { mult: gift.boostNow.mult, until: now + gift.boostNow.minutes * 60_000, source: gift.visit ? `visit-${VISITORS[cycle % VISITORS.length]}` : `gift-day-${day}` });
   const cosmetics = [...r.cosmetics];
   if (gift.cosmetic) {
     const id = gift.cosmetic.replace('{cycle}', String(cycle + 1));

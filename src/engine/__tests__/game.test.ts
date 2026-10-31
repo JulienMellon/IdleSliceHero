@@ -2,6 +2,7 @@
 import * as G from '../game';
 import { DECOR_BOOST, DECOR_TIER_COST, NEIGHBORHOODS, TUNING } from '../../content/tuning';
 import { duration, money } from '../format';
+import { piesInFlight } from '../pipeline';
 
 const fresh = () => G.newGame(1_000_000);
 const managed = (s: G.GameState, id: G.GameState['active'] = 'downtown') => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], built: true, managed: true, heads: G.allHeads() } } });
@@ -247,6 +248,22 @@ describe('offline and saves', () => {
     expect(r.byShop.map((b) => b.id)).toEqual(['downtown']);
     expect(r.byShop[0].managed).toBe(true);
     expect(r.byShop[0].earned).toBeCloseTo(r.earned, 0);
+  });
+  test('C97: a GM shop boosts only the rest, not the cash already carried by departures', () => {
+    const base = managed(fresh());
+    const line = { ...base.shops.downtown.line, boxed: 0, departures: [{ id: 1, kind: 'driver' as const, n: 2, cash: 500, left: 5 }, { id: 2, kind: 'walkin' as const, n: 1, cash: 100, left: 3 }], nextId: 3 };
+    const s = { ...base, cash: 0, shops: { ...base.shops, downtown: { ...base.shops.downtown, line } } };
+    const shop = s.shops.downtown;
+    const seconds = 1000;
+    const mult = 3;
+    const now = s.lastSavedAt + seconds * 1000;
+    const boosted = { ...s, rewards: { ...s.rewards, boosts: [{ mult, until: now + 1e6, source: 'x' }] } };
+    const inFlight = piesInFlight(shop.line);
+    const rest = Math.floor(G.shopRate(shop, s.vehicle) * seconds) + inFlight - 3;
+    const value = G.valuePerPizza('downtown', shop, s.vehicle);
+    const plain = G.applyOffline(s, now).state.cash;
+    expect(plain).toBeCloseTo(600 + rest * value, 3);
+    expect(G.applyOffline(boosted, now).state.cash).toBeCloseTo(600 + rest * value * mult, 3);
   });
   test('clock going backwards earns nothing', () => {
     const s = managed(fresh());

@@ -1,9 +1,9 @@
 /// <reference types="jest" />
-import { DAILY_CHESTS, GIFT_DAYS } from '../../content/rewards';
+import { DAILY_CHESTS, GIFT_DAYS, VISITOR_LINES } from '../../content/rewards';
 import * as G from '../../engine/game';
 import { dayKey, refreshRewards, taskDone } from '../../engine/rewards';
 import { NONNA_TAKEOVER } from '../../content/tuning';
-import { boostChip, boosterLabel, boostSummary, chestRows, collectionText, compactSpan, countdownText, dailyRows, giftHeader, giftShort, giftText, giftTiles, hudBoostText, pointsPct, spanText, weeklyChestView, weeklyRows } from '../rewards-model';
+import { boostChip, boosterLabel, boosterStartLabel, boostOnText, boostRingPct, boostedRate, boostSummary, chestRows, collectionText, compactSpan, countdownText, dailyRows, giftHeader, giftIcon, giftShort, giftText, giftTiles, hudBoostText, hudRateText, pointsPct, rewardsHud, spanText, visitCaption, weeklyChestView, weeklyRows } from '../rewards-model';
 
 const NOW = new Date(2026, 9, 28, 13, 7, 41, 333).getTime(); // a Wednesday
 const DAY = 86_400_000;
@@ -32,11 +32,54 @@ describe('time text', () => {
     expect(hudBoostText(2, 14 * 60 + 5)).toBe('2× 14m');
     expect(boosterLabel({ mult: 2, seconds: 900 })).toBe('2× 15m');
     expect(boosterLabel({ mult: 3, minutes: 30 })).toBe('3× 30m');
+    expect(boosterStartLabel({ mult: 2, seconds: 900 })).toBe('Start 2× 15m');
+    expect(boostOnText(600)).toBe('ON · 10 m left');
+  });
+  test('the draining ring is the time left over the smallest standard length', () => {
+    expect(boostRingPct(900)).toBe(1);
+    expect(boostRingPct(450)).toBe(0.5);
+    expect(boostRingPct(1200)).toBeCloseTo(1200 / 1800);
+    expect(boostRingPct(0)).toBe(0);
+    expect(boostRingPct(NaN)).toBe(0);
+  });
+  test('G84: the HUD rate is the boosted rate', () => {
+    expect(boostedRate(179, 2)).toBe(358);
+    expect(boostedRate(179, 1)).toBe(179);
+    expect(boostedRate(179, 0)).toBe(179);
+    expect(hudRateText(179, 2)).toBe('$358/sec');
+    expect(hudRateText(179, 1)).toBe('$179/sec');
   });
   test('boost summary adds the multipliers and counts down to the first end', () => {
     const s = withR(base(), { boosts: [{ mult: 2, until: NOW + 840_500, source: 'a' }, { mult: 2, until: NOW + 9e6, source: 'b' }] });
     expect(boostSummary(s, NOW)).toEqual({ mult: 3, seconds: 841 });
     expect(boostSummary(base(), NOW)).toBeNull();
+  });
+});
+
+describe('rewardsHud (one gift status call)', () => {
+  test('a new player: badge 0, gift ready and the calendar opens by itself, no boost', () => {
+    const h = rewardsHud(base(), NOW);
+    expect(h).toEqual({ badge: 0, giftDot: true, autoGift: true, boost: null, mult: 1 });
+  });
+  test('shown today: no auto-open but the dot stays', () => {
+    const s = base();
+    const h = rewardsHud(withR(s, { giftShownDay: dayKey(NOW) }), NOW);
+    expect(h.autoGift).toBe(false);
+    expect(h.giftDot).toBe(true);
+  });
+  test('a running boost gives its text and multiplier', () => {
+    const s = withR(base(), { boosts: [{ mult: 2, until: NOW + 600_000, source: 'a' }], lastSeen: NOW - 1000 });
+    const h = rewardsHud(s, NOW);
+    expect(h.mult).toBe(2);
+    expect(h.boost).toEqual({ mult: 2, seconds: 600, text: '2× 10m' });
+  });
+  test('locked rewards: nothing to show', () => {
+    const s = { ...base(), seenScenes: [] };
+    expect(rewardsHud(s, NOW)).toMatchObject({ badge: 0, giftDot: false, autoGift: false });
+  });
+  test('a clock behind lastSeen hides the badge and the auto-open', () => {
+    const s = withR(base(), { lastSeen: NOW + 3600_000 });
+    expect(rewardsHud(s, NOW)).toMatchObject({ badge: 0, autoGift: false });
   });
 });
 
@@ -100,14 +143,22 @@ describe('chests', () => {
     let s = base();
     const v = weeklyChestView(s);
     expect(v.state).toBe('locked');
-    expect(v.label).toContain(v.cosmetic);
+    expect(v.label).toContain(v.prize);
     s = withR(s, { weekly: s.rewards.weekly.map((t) => ({ ...t, claimed: true })) });
     expect(weeklyChestView(s).state).toBe('ready');
     s = withR(s, { weeklyChest: true });
-    expect(weeklyChestView(s).label).toContain('unlocked');
+    expect(weeklyChestView(s).label).toBe('Opened this week');
+  });
+  test('G85: the weekly chest names the cosmetic, or the fallback once all are owned', () => {
+    const owned = ['oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold'];
+    const v = weeklyChestView(base());
+    expect(v.prize).toMatch(/^[A-Z][\w -]+$/);
+    const all = weeklyChestView(withR(base(), { cosmetics: owned }));
+    expect(all.prize).toBe('30 \u{1F48E} + 2 h income');
+    expect(all.label).toBe("30 \u{1F48E} + 2 h income \u00B7 7 tasks to go");
   });
   test('collection line', () => {
-    expect(collectionText(base())).toMatch(/nothing yet/);
+    expect(collectionText(base())).toBe('Collection: empty. Open a weekly chest or reach day 28.');
     expect(collectionText(withR(base(), { cosmetics: ['oven-gold', 'storefront-skin-2'] }))).toBe('Collection: Gold oven, Storefront skin 2');
   });
 });
@@ -131,7 +182,8 @@ describe('gift calendar', () => {
     expect(t.filter((x) => x.state === 'claimed')).toHaveLength(6);
     expect(t[6].state).toBe('today');
     expect(giftHeader(s, NOW).title).toBe('Day 7 of 30');
-    expect(giftHeader(s, NOW).caption).toBe('50 diamonds');
+    expect(giftHeader(s, NOW).prize).toBe('50 diamonds');
+    expect(giftHeader(s, NOW).prizeIcon).toBe('gem');
   });
   test('claimed today: ticks through today, nothing to claim', () => {
     const t = giftTiles(gift(7, 0), NOW);
@@ -143,21 +195,37 @@ describe('gift calendar', () => {
     const t = giftTiles(gift(6, 2), NOW);
     expect(t[6].state).toBe('missed');
     expect(t.filter((x) => x.state === 'claimed')).toHaveLength(6);
-    expect(giftHeader(gift(6, 2), NOW).caption).toMatch(/^You missed a day/);
+    expect(giftHeader(gift(6, 2), NOW).caption).toBe('Missed a day! Keep your streak for 20 \u{1F48E} (day 7: 50 \u{1F48E}).');
   });
   test('day 30 names the visitor of the cycle', () => {
-    expect(giftHeader(gift(29, 1), NOW).title).toBe('Day 30 of 30 · Nonna Rosa visits');
+    expect(giftHeader(gift(29, 1), NOW).title).toBe('Day 30 · Nonna Rosa visits');
     expect(giftHeader(gift(29, 1, { cycle: 1 }), NOW).title).toContain('Big Sal');
-    expect(giftHeader(gift(29, 1), NOW).caption).toBe('Nonna Rosa drops by: 2× income for 7 d · 300 diamonds · Gold oven');
+    const h = giftHeader(gift(29, 1), NOW);
+    expect(h.caption).toBe(`Nonna Rosa drops by. \u201C${VISITOR_LINES.nonna}\u201D`);
+    expect(h.caption).toBe(visitCaption('nonna'));
+    expect(h.prize).toBe('2× income for 7 days · 300 diamonds · Gold oven');
+    expect(h.prizeIcon).toBe('star');
   });
   test('gift text covers every kind', () => {
     expect(giftText(GIFT_DAYS[0])).toBe('30 min of income');
     expect(giftText(GIFT_DAYS[1])).toBe('2× 15m booster');
     expect(giftText(GIFT_DAYS[2])).toBe('5 diamonds');
     expect(giftText(GIFT_DAYS[13])).toBe('3 boosters · 2× 30m');
-    expect(giftText(GIFT_DAYS[20])).toBe('2× income for 1 d');
+    expect(giftText(GIFT_DAYS[20])).toBe('2× income for 1 day');
     expect(giftText(GIFT_DAYS[27], 1)).toBe('Storefront skin 2');
     expect(GIFT_DAYS.every((g) => giftShort(g).length > 0 && giftShort(g).length <= 8)).toBe(true);
+  });
+  test('D386/S13: tiles carry an icon kind and a clear label', () => {
+    const t = giftTiles(base(), NOW);
+    expect(t[0]).toMatchObject({ icon: 'coin', label: '30 min' });
+    expect(t[1]).toMatchObject({ icon: 'bolt', label: '15m' });
+    expect(t[2]).toMatchObject({ icon: 'gem', label: '5' });
+    expect(t[6]).toMatchObject({ icon: 'gem', label: '50', big: true });
+    expect(t[13]).toMatchObject({ icon: 'bolt', label: '3 boosts' });
+    expect(t[20]).toMatchObject({ icon: 'bolt', label: '1 day' });
+    expect(t[27]).toMatchObject({ icon: 'star', label: 'Skin' });
+    expect(t[29]).toMatchObject({ icon: 'star', label: 'Visit' });
+    expect(giftIcon(GIFT_DAYS[29])).toBe('star');
   });
 });
 

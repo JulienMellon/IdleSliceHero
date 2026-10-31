@@ -12,7 +12,7 @@ import { LockIcon } from './icons';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BuyButton, haptic } from './game-ui';
 
-export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; onSelect: (id: NeighborhoodId) => void; onBuild: (id: NeighborhoodId) => boolean }) {
+export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Game.GameState; /** The running income boost: the chips show what the shop earns now. */ boostMult?: number; onSelect: (id: NeighborhoodId) => void; onBuild: (id: NeighborhoodId) => boolean }) {
   const next = Game.nextToBuild(game);
   const scroller = useRef<{ scrollTo: (o: { x: number; animated: boolean }) => void } | null>(null);
   const activeIdx = NEIGHBORHOODS.findIndex((n) => n.id === game.active);
@@ -63,7 +63,7 @@ export function ShopTabs({ game, onSelect, onBuild }: { game: Game.GameState; on
               </Pressable>
             );
           }
-          const eps = Game.shopEarnings(game, n.id);
+          const eps = Game.shopEarnings(game, n.id) * boostMult;
           return (
             <Pressable key={n.id} onLayout={onTab(i)} testID={`tab-${n.id}`} onPress={() => {
                 if (!active) emitAudio({ type: 'click' });

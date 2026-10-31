@@ -976,9 +976,9 @@ export const StreetProp = memo(function StreetProp({ id, x, y }: { id: Neighborh
         </G>
       )}
       {kind === 'bikerack' && (
-        // two bikes in profile, 22 apart, each leaning on its own #5A5A5A hoop with its own contact shadow (D363)
+        // two bikes in profile, 44 apart (a bike is ~24 long, so they no longer overlap), each leaning on its own #5A5A5A hoop with its own contact shadow (D363)
         <G>
-          {[[-11, '#6A2C9A'], [11, '#E0A800']].map(([bx, col]) => (
+          {[[-22, '#6A2C9A'], [22, '#E0A800']].map(([bx, col]) => (
             <G key={bx as number} transform={`translate(${bx} 0)`}>
               <Ellipse cx={0} cy={0.5} rx={10} ry={2} fill="#000" opacity={0.2} />
               <Path d="M-5 0 V-12 Q-5 -17 0 -17 Q5 -17 5 -12 V0" stroke="#5A5A5A" strokeWidth={2} fill="none" />

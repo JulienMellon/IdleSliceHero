@@ -153,7 +153,7 @@ export interface Goal {
   onPress?: () => boolean;
 }
 
-export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes, halo = null, onTasks, tasksBadge = 0, onGift, giftDot = false }: { cash: number; subtitle: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null; onTasks?: () => void; tasksBadge?: number; onGift?: () => void; giftDot?: boolean }) {
+export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newScenes, halo = null, onTasks, tasksBadge = 0, onGift, giftDot = false }: { cash: number; subtitle: string; /** The running boost, "2× 10m": drawn in basil after the subtitle. */ boostText?: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null; onTasks?: () => void; tasksBadge?: number; onGift?: () => void; giftDot?: boolean }) {
   const shown = useCountUp(cash);
   const [flash] = useState(() => new Animated.Value(1));
   // the cash text's window position: payout coins land on it (C81)
@@ -204,6 +204,12 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes, halo
           </Animated.Text>
           <Text style={styles.perSec} numberOfLines={1}>
             {subtitle}
+            {boostText ? (
+              <>
+                {subtitle ? ' · ' : ''}
+                <Text style={styles.boostTail}>{`\u00A0${boostText}\u00A0`}</Text>
+              </>
+            ) : null}
           </Text>
         </View>
         {onGift && (
@@ -368,6 +374,7 @@ const styles = StyleSheet.create({
   badgeText: { fontFamily: F.bold, fontSize: 10, color: C.ink },
   cashPill: { flex: 1, alignItems: 'center' },
   cash: { fontFamily: F.bold, fontSize: 34, color: '#fff', textShadowColor: C.tomatoDark, textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 },
+  boostTail: { color: '#2E7D3E', backgroundColor: '#FFF4E0', fontFamily: F.bold },
   perSec: { fontFamily: F.semi, fontSize: 13, color: '#FFE7C2' },
   // Nonna's tutorial points at the cash or the goal bar with a gold halo
   halo: { borderRadius: 18, borderWidth: 3, borderColor: '#FFC531', backgroundColor: 'rgba(255,197,49,0.18)' },

@@ -47,7 +47,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "TZ=America/New_York jest"
   },
   "private": true
 }

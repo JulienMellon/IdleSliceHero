@@ -4,7 +4,7 @@
 //   Prep → Ovens → Counter → customers (delivery drivers + walk-ins at the tables)
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
 import { HEADS, BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEAD_COST_DOWNTOWN, HEAD_KINDS, HEAD_SHARE, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
-import { DAILY_CHESTS, DAILY_TASK_COUNT, TASK_KINDS, WEEKLY_TASK_COUNT, type TaskKind } from '../content/rewards';
+import { BOOST_MAX_AHEAD_MS, DAILY_CHESTS, DAILY_TASK_COUNT, MAX_BOOSTERS, MAX_CONCURRENT_BOOSTS, TASK_KINDS, WEEKLY_TASK_COUNT, type TaskKind } from '../content/rewards';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
 import { advanceLine, clampWalkInDebt, emptyLine, LINE, nextTap, piesInFlight, rushLine, tapStation as lineTap, type Automation, type Line, type LineRates, type Station } from './pipeline';
@@ -259,15 +259,15 @@ function migrateRewards(raw: unknown, now: number): Rewards {
   const weekly = migrateTasks(r.weekly, WEEKLY_TASK_COUNT);
   const g = (r.gift && typeof r.gift === 'object' ? r.gift : {}) as Record<string, unknown>;
   const chests = Array.isArray(r.chests) ? (r.chests as unknown[]) : [];
-  const boosters = (Array.isArray(r.boosters) ? (r.boosters as unknown[]) : []).slice(0, 99).flatMap((x) => {
+  const boosters = (Array.isArray(r.boosters) ? (r.boosters as unknown[]) : []).slice(0, MAX_BOOSTERS).flatMap((x) => {
     const b = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
     const seconds = num(b.seconds, 0);
     return seconds > 0 ? [{ mult: Math.min(MAX_MULT, Math.max(1, num(b.mult, 1))), seconds: Math.min(30 * 86400, seconds) }] : [];
   });
-  const boosts = (Array.isArray(r.boosts) ? (r.boosts as unknown[]) : []).slice(0, 20).flatMap((x) => {
+  const boosts = (Array.isArray(r.boosts) ? (r.boosts as unknown[]) : []).slice(0, MAX_CONCURRENT_BOOSTS).flatMap((x) => {
     const b = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
     const until = num(b.until, 0);
-    return until > 0 ? [{ mult: Math.min(MAX_MULT, Math.max(1, num(b.mult, 1))), until, source: typeof b.source === 'string' ? b.source.slice(0, 40) : 'boost' }] : [];
+    return until > 0 ? [{ mult: Math.min(MAX_MULT, Math.max(1, num(b.mult, 1))), until: Math.min(until, now + BOOST_MAX_AHEAD_MS), source: typeof b.source === 'string' ? b.source.slice(0, 40) : 'boost' }] : [];
   });
   const cosmetics = Array.isArray(r.cosmetics) ? [...new Set((r.cosmetics as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= 40))].slice(0, 200) : [];
   return {
@@ -813,7 +813,8 @@ export function offlineTick(s: GameState, seconds: number, boost = 1): { state: 
       const carriedPies = shop.line.departures.reduce((t, d) => t + d.n, 0);
       const rest = Math.floor(shopRate(shop, s.vehicle) * seconds) + inFlight - carriedPies;
       pies = carriedPies + rest;
-      paid = (carried + rest * valuePerPizza(id, shop, s.vehicle)) * boost;
+      // `carried` was already boosted when it left the shop: only the rest takes the boost
+      paid = carried + rest * valuePerPizza(id, shop, s.vehicle) * boost;
       // closed form: the walk-in share of the steady state decides the split
       const walk = Math.round(pies * walkInFraction(shop, s.vehicle));
       add.walkins += walk;

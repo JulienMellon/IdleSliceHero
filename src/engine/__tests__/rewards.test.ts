@@ -1,3 +1,6 @@
+/**
+ * @jest-environment <rootDir>/src/engine/__tests__/tz-env.js
+ */
 /// <reference types="jest" />
 import * as G from '../game';
 import * as R from '../rewards';
@@ -12,6 +15,13 @@ import {
   TASK_KINDS,
   VISITORS,
   WEEKLY_COSMETICS,
+  WEEKLY_FALLBACK,
+  CLOCK_RECOVER_MS,
+  LAST_SEEN_STEP_MS,
+  MAX_BOOSTERS,
+  MAX_CONCURRENT_BOOSTS,
+  BOOST_MAX_AHEAD_MS,
+  VISITOR_LINES,
   WEEKLY_DIAMONDS,
   WEEKLY_POOL,
   WEEKLY_TASK_COUNT,
@@ -88,7 +98,8 @@ describe('unlock and refresh', () => {
   });
   test('a refresh with nothing to do returns the same state', () => {
     const s = ready();
-    expect(R.refreshRewards(s, T + 1000)).not.toBe(s); // lastSeen moves
+    expect(R.refreshRewards(s, T + 1000)).toBe(s); // lastSeen moves only when 60 s stale
+    expect(R.refreshRewards(s, T + 61_000)).not.toBe(s);
     const t = R.refreshRewards(s, T);
     expect(t).toBe(s);
   });
@@ -576,7 +587,7 @@ describe('save v5', () => {
     expect(m.rewards.giftShownDay).toBe('');
     expect(m.rewards.diamonds).toBe(0);
     expect(m.rewards.boosters).toEqual([{ mult: 1, seconds: 5 }, { mult: 1, seconds: 30 * 86400 }]);
-    expect(m.rewards.boosts).toEqual([{ mult: 100, until: 1e12, source: 'boost' }]);
+    expect(m.rewards.boosts).toEqual([{ mult: 100, until: 1000 + BOOST_MAX_AHEAD_MS, source: 'boost' }]);
     expect(m.rewards.cosmetics).toEqual(['a']);
     expect(m.rewards.lastSeen).toBe(1000 + 400 * 86400_000);
     expect(m.stats).toMatchObject({ upgrades: 0, ovens: 0, hires: 3, days: 0 });
@@ -591,5 +602,177 @@ describe('save v5', () => {
       expect(m.rewards.daily).toEqual([]);
       expect(m.rewards.chests).toHaveLength(DAILY_CHESTS.length);
     }
+  });
+});
+
+/** Run `fn` with the process time zone set to `tz`, restoring it after. */
+function inTZ<T>(tz: string, fn: () => T): T {
+  const old = process.env.TZ;
+  process.env.TZ = tz;
+  try {
+    return fn();
+  } finally {
+    if (old === undefined) delete process.env.TZ;
+    else process.env.TZ = old;
+  }
+}
+const NY = 'America/New_York';
+const KIRI = 'Pacific/Kiritimati';
+
+describe('C94 time-zone changes never re-roll', () => {
+  test('NY -> Kiritimati -> NY keeps the set, the points and the day count', () => {
+    const instant = Date.UTC(2026, 9, 30, 20, 0, 0); // 16:00 NY Fri, Sat 10:00 Kiritimati
+    let s = inTZ(NY, () => ready(instant));
+    expect(s.rewards.day).toBe('2026-10-30');
+    s = { ...s, rewards: { ...s.rewards, points: 55, chests: [true, false, false] } };
+    const there = inTZ(KIRI, () => R.refreshRewards(s, instant + 60_000));
+    expect(there.rewards.day).toBe('2026-10-31'); // forward: a legitimate new day
+    expect(there.stats.days).toBe(2);
+    const back = inTZ(NY, () => R.refreshRewards(there, instant + 120_000));
+    expect(back.rewards.day).toBe('2026-10-31'); // never backwards
+    expect(back.rewards.points).toBe(0);
+    expect(back.stats.days).toBe(2); // no double count
+    // going back and forth again changes nothing
+    const again = inTZ(KIRI, () => R.refreshRewards(back, instant + 180_000));
+    expect(again.stats.days).toBe(2);
+    expect(again.rewards.daily).toBe(back.rewards.daily);
+  });
+  test('a backwards zone jump after progress keeps points, chests and weekly diamonds', () => {
+    const instant = Date.UTC(2026, 9, 30, 20, 0, 0);
+    let s = inTZ(KIRI, () => ready(instant)); // 10-31
+    s = { ...s, rewards: { ...s.rewards, points: 70, chests: [true, true, false], weeklyChest: true } };
+    const back = inTZ(NY, () => R.refreshRewards(s, instant + 120_000)); // 10-30 in NY
+    expect(back.rewards.points).toBe(70);
+    expect(back.rewards.chests).toEqual([true, true, false]);
+    expect(back.rewards.weeklyChest).toBe(true);
+    expect(back.rewards.daily).toBe(s.rewards.daily);
+    expect(back.stats.days).toBe(s.stats.days);
+  });
+  test('across a Monday: forward rolls the week once, back never does', () => {
+    const instant = Date.UTC(2026, 10, 1, 12, 0, 0); // Sunday noon UTC: Sun 07:00 NY, Mon 02:00 Kiritimati
+    let s = inTZ(NY, () => ready(instant));
+    expect(s.rewards.week).toBe('2026-10-26');
+    s = { ...s, rewards: { ...s.rewards, weeklyChest: true } };
+    const mon = inTZ(KIRI, () => R.refreshRewards(s, instant + 60_000));
+    expect(mon.rewards.week).toBe('2026-11-02');
+    expect(mon.rewards.weeklyChest).toBe(false);
+    const back = inTZ(NY, () => R.refreshRewards({ ...mon, rewards: { ...mon.rewards, weeklyChest: true } }, instant + 120_000));
+    expect(back.rewards.week).toBe('2026-11-02');
+    expect(back.rewards.weeklyChest).toBe(true);
+    expect(back.rewards.weekly).toBe(mon.rewards.weekly);
+  });
+  test('a gift claimed on a later date reads as claimed from an earlier one', () => {
+    let s = ready(at(2026, 10, 31));
+    s = ok(R.claimGift(s, at(2026, 10, 31)));
+    const back = at(2026, 10, 30, 13);
+    expect(R.giftStatus({ ...s, rewards: { ...s.rewards, lastSeen: 0 } }, back).kind).toBe('claimed');
+    expect(R.claimGift({ ...s, rewards: { ...s.rewards, lastSeen: 0 } }, back).ok).toBe(false);
+  });
+});
+
+describe('T71 DST', () => {
+  test('2026-11-01 in New York is a 25 h day; keys hold around 01:00-02:00', () => {
+    inTZ(NY, () => {
+      expect(R.resetCountdown(at(2026, 11, 1, 0, 0, 0), 'day')).toBe(25 * 3600);
+      for (const ms of [Date.UTC(2026, 10, 1, 4, 30), Date.UTC(2026, 10, 1, 5, 30), Date.UTC(2026, 10, 1, 6, 30), Date.UTC(2026, 10, 1, 7, 30)]) {
+        expect(R.dayKey(ms)).toBe('2026-11-01');
+        expect(R.weekKey(ms)).toBe('2026-10-26');
+      }
+      expect(R.dayKey(Date.UTC(2026, 10, 1, 3, 59))).toBe('2026-10-31');
+      expect(R.dayKey(Date.UTC(2026, 10, 2, 4, 59))).toBe('2026-11-01');
+      expect(R.dayKey(Date.UTC(2026, 10, 2, 5, 0))).toBe('2026-11-02');
+      expect(R.resetCountdown(Date.UTC(2026, 10, 1, 6, 30), 'day')).toBe(22 * 3600 + 30 * 60); // 01:30 EST -> midnight Nov 2 EST
+    });
+  });
+});
+
+describe('C95 a clock set far forward recovers', () => {
+  test('lastSeen +3 days: refresh recovers, claims work, boosts clear, today is not re-rolled', () => {
+    let s = finishDaily(ready(), 0);
+    s = { ...s, rewards: { ...s.rewards, boosts: [{ mult: 2, until: T + 3 * 24 * HOUR, source: 'x' }], lastSeen: T + 3 * 24 * HOUR } };
+    expect(R.claimDaily(s, 0, T).ok).toBe(false);
+    const r = R.refreshRewards(s, T);
+    expect(r.rewards.lastSeen).toBe(T);
+    expect(r.rewards.boosts).toEqual([]);
+    expect(r.rewards.daily).toBe(s.rewards.daily);
+    expect(r.rewards.day).toBe(s.rewards.day);
+    expect(r.stats.days).toBe(s.stats.days);
+    expect(R.claimDaily(r, 0, T).ok).toBe(true);
+  });
+  test('within 36 h the guard still waits', () => {
+    const s = ready();
+    const ahead = { ...s, rewards: { ...s.rewards, lastSeen: T + CLOCK_RECOVER_MS } };
+    expect(R.refreshRewards(ahead, T)).toBe(ahead);
+  });
+});
+
+describe('U4 lastSeen granularity', () => {
+  test('rewards keep identity between ticks and move once 60 s stale', () => {
+    const s = ready();
+    expect(R.refreshRewards(s, T + LAST_SEEN_STEP_MS - 1000)).toBe(s);
+    const t = R.refreshRewards(s, T + LAST_SEEN_STEP_MS);
+    expect(t.rewards.lastSeen).toBe(T + LAST_SEEN_STEP_MS);
+  });
+});
+
+describe('C96 limits', () => {
+  test('a boost end is capped to 30 days ahead on load', () => {
+    const base = G.migrate({}, T);
+    const m = G.migrate({ ...base, rewards: { ...base.rewards, boosts: [{ mult: 2, until: T + 400 * 86400_000, source: 'x' }] } }, T);
+    expect(m.rewards.boosts[0].until).toBe(T + BOOST_MAX_AHEAD_MS);
+  });
+  test('booster inventory is capped where granted', () => {
+    let s = ready();
+    s = { ...s, rewards: { ...s.rewards, boosters: Array.from({ length: MAX_BOOSTERS }, () => ({ mult: 2, seconds: 60 })), points: 100 } };
+    s = ok(R.claimChest(s, 2, T));
+    expect(s.rewards.boosters).toHaveLength(MAX_BOOSTERS);
+  });
+  test('concurrent boosts are capped', () => {
+    let s = ready();
+    s = {
+      ...s,
+      rewards: {
+        ...s.rewards,
+        boosts: Array.from({ length: MAX_CONCURRENT_BOOSTS }, (_, i) => ({ mult: 2, until: T + (i + 10) * HOUR, source: 'x' })),
+        boosters: [{ mult: 2, seconds: 60 }],
+      },
+    };
+    s = ok(R.startBooster(s, 0, T));
+    expect(s.rewards.boosts).toHaveLength(MAX_CONCURRENT_BOOSTS);
+  });
+});
+
+describe('G85 weekly chest prize', () => {
+  const chestReady = (cosmetics: string[]) => {
+    const s = ready();
+    return { ...s, rewards: { ...s.rewards, cosmetics, weekly: s.rewards.weekly.map((t) => ({ ...t, claimed: true })) } };
+  };
+  const start = WEEKLY_COSMETICS[R.isoWeek('2026-10-26') % WEEKLY_COSMETICS.length];
+  const order = (i: number) => WEEKLY_COSMETICS[(R.isoWeek('2026-10-26') + i) % WEEKLY_COSMETICS.length];
+  test('unowned: this week\'s', () => {
+    expect(R.weeklyChestPrize(chestReady([]))).toEqual({ kind: 'cosmetic', id: start });
+  });
+  test('owned: the next unowned in rotation order', () => {
+    const s = chestReady([start, order(1)]);
+    expect(R.weeklyChestPrize(s)).toEqual({ kind: 'cosmetic', id: order(2) });
+    const after = ok(R.claimWeeklyChest(s, T));
+    expect(after.rewards.cosmetics).toEqual([start, order(1), order(2)]);
+  });
+  test('all owned: 30 diamonds and 2 h of income', () => {
+    const s = chestReady([...WEEKLY_COSMETICS]);
+    expect(R.weeklyChestPrize(s)).toEqual({ kind: 'fallback', diamonds: WEEKLY_FALLBACK.diamonds, minutes: WEEKLY_FALLBACK.minutes });
+    expect(WEEKLY_FALLBACK).toEqual({ diamonds: 30, minutes: 120 });
+    const after = ok(R.claimWeeklyChest(s, T));
+    expect(after.rewards.diamonds - s.rewards.diamonds).toBe(30);
+    expect(after.cash - s.cash).toBeCloseTo(R.minutesToCash(s, 120));
+    expect(after.rewards.cosmetics).toEqual(s.rewards.cosmetics);
+    expect(after.rewards.weeklyChest).toBe(true);
+  });
+});
+
+describe('S9/S10 copy', () => {
+  test('every visitor has a line, and the clock reason reads as agreed', () => {
+    for (const v of VISITORS) expect(VISITOR_LINES[v]).toMatch(/^Thirty days/);
+    expect(R.CLOCK_REASON).toBe("Your phone's clock looks off. Rewards resume once it catches up.");
   });
 });

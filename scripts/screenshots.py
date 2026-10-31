@@ -389,25 +389,38 @@ with sync_playwright() as pw:
     def day_str(offset=0):
         return (datetime.datetime.now() + datetime.timedelta(days=offset)).strftime("%Y-%m-%d")
     monday = (datetime.datetime.now() - datetime.timedelta(days=datetime.datetime.now().weekday())).strftime("%Y-%m-%d")
-    def task(kind, target, base=0, claimed=False):
-        return {"kind": kind, "target": target, "base": base, "claimed": claimed}
     stats = {"upgrades": 14, "ovens": 5, "hires": 1, "builds": 0, "fleet": 0, "decor": 2, "walkins": 90, "deliveries": 130, "baked": 210, "offline": 1, "boosters": 0, "dailyDone": 9, "days": 3}
-    def rewarded(last, streak, diamonds=42, shown=None):
-        return dict(MID_SAVE, saveVersion=5, stats=stats, lastSavedAt=int(time.time() * 1000), totalEarned=15000, rewards={
-            "day": day_str(), "daily": [task("upgrades", 10), task("earn", 5000, 8000), task("deliveries", 5000), task("baked", 4000, 60), task("offline", 1, 0, True)],
-            "points": 40, "chests": [False, False, False], "rerollUsed": False,
-            "week": monday, "weekly": [task("dailyDone", 20), task("days", 5), task("ovens", 5), task("earn", 60000, 1000), task("upgrades", 60), task("deliveries", 9000), task("hire", 1, 0, True)],
-            "weeklyChest": False,
+    def rewarded(last, streak, diamonds=42, shown=None, generate=False):
+        """A rewards-unlocked save. With `generate`, the daily and weekly sets are left empty (day = week = ''), so the game rolls
+        them itself on load: the on-screen targets are exactly what the generator makes for this save (D389)."""
+        r = {
+            "day": "" if generate else day_str(), "daily": [], "points": 40, "chests": [False, False, False], "rerollUsed": False,
+            "week": "" if generate else monday, "weekly": [], "weeklyChest": False,
             "gift": {"streak": streak, "last": last, "saveUsed": False, "cycle": 0}, "giftShownDay": shown or "",
             "diamonds": diamonds, "boosters": [{"mult": 2, "seconds": 900}, {"mult": 2, "seconds": 1800}],
             "boosts": [{"mult": 2, "until": now_ms + 14 * 60 * 1000 + 5000, "source": "booster"}],
-            "cosmetics": ["oven-woodfired"], "lastSeen": now_ms - 60000})
+            "cosmetics": ["oven-woodfired"], "lastSeen": now_ms - 60000}
+        return dict(MID_SAVE, saveVersion=5, stats=stats, lastSavedAt=int(time.time() * 1000), totalEarned=15000, rewards=r)
+    def played_page(browser, save):
+        """Boot `save` (the game rolls its task sets), then add some play on top of what it saved and reload: progress is
+        measured from the generated baselines, so every target on screen is the generator's own."""
+        pg = seeded_page(browser, save); settle(pg, 3.5)
+        pg.evaluate("""(key) => {
+            const g = JSON.parse(localStorage.getItem(key));
+            const add = {upgrades: 6, walkins: 30, deliveries: 60, baked: 90, ovens: 2, dailyDone: 3, offline: 1};
+            for (const k in add) g.stats[k] = (g.stats[k] || 0) + add[k];
+            g.totalEarned += 4000; g.rewards.points = 40;
+            if (g.rewards.daily.length > 4) g.rewards.daily[4].claimed = true;
+            localStorage.setItem(key, JSON.stringify(g));
+        }""", KEY)
+        pg.reload(); skip_title(pg); settle(pg, 3.0)
+        return pg
     try:
-        page = seeded_page(browser, rewarded(day_str(), 3)); settle(page)
+        page = played_page(browser, rewarded(day_str(), 3, generate=True))
         shot(page, "29-hud-rewards", 0.8)
         tid(page, "open-tasks").click(); shot(page, "30-tasks-daily", 0.8)
         page.locator('[data-testid="chest-0"]').first.scroll_into_view_if_needed(); shot(page, "30b-tasks-daily-chests", 0.5)
-        tid(page, "tab-weekly").click(); page.locator('[data-testid="claim-weekly-0"]').first.scroll_into_view_if_needed(); shot(page, "31-tasks-weekly", 0.6)
+        tid(page, "tab-weekly").click(); page.locator('[data-testid$="claim-weekly-0"]').first.scroll_into_view_if_needed(); shot(page, "31-tasks-weekly", 0.6)
         page.locator('[data-testid="weekly-chest"]').first.scroll_into_view_if_needed(); shot(page, "31b-tasks-weekly-chest", 0.5)
     except Exception as e:
         report["errors"].append(f"tasks shots failed: {e}")
