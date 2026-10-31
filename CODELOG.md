@@ -37,20 +37,33 @@ It runs alongside the visual critic (`CRITICLOG.md`). A step is done only when t
 
 ---
 
-## Current state — round 21 (v5.5, cd6f9b2..9f7f1e8): ✅ APPROVED (3 medium). Both reviewers pass on v5.5.
-Fixed: C94, C96, C97, U2, U3, U4, U5, T70, T71, T73. Partly: C95 → C98, U1/M56 → U6/M57, T72 → T74.
+## Current state — round 22 (v5.6, 47e2f3d..0d6d3a4): ✅ APPROVED (3 medium). Loop STOPPED for handoff.
+Fixed: C98, U6, A25, M57, C99, T74, T75. Cut-scenes measured: heaviest panel ~160 SVG nodes (target ≤ 350), memoised on primitives, native-driver zoom/slide, unique gradient ids.
 
 | ID | Severity | File:line | Issue | Fix |
 |---|---|---|---|---|
-| C98 | medium | engine/rewards.ts:229-243 | Recovery leaves day/week/gift.last in the future; tasks and gift freeze up to 400 days | Re-key day/week to today without regenerating; clamp gift.last ≤ today |
-| U6 | medium | app/index.tsx:82; game.ts:560 | `stats` new every tick → drawer/calendar snapshot 5×/s; GameScreen renders twice per tick | Ignore stats identity; snapshot only while open; `bump` returns `s` on zero |
-| A22 / M50 | medium | scene/room.tsx | Facade drawing in room.tsx (1,027 lines) | facade.tsx, one path per pattern |
-| C99 | low | package.json:50 | TZ pinned only via the npm script; jest-environment-node undeclared | globalSetup; declare dep |
-| A25 | low | app/index.tsx:80-82 | Snapshot made by setState during render | `useSlowSnapshot` hook |
-| M57 | low | app/index.tsx:82 | Snapshot + re-render every tick with panels closed | Gate on open panels |
-| C92, C93, A24, M53, M54, M55, C85–C89, A23, M51, M52 | low | see round 19/20 (archive) | carried | carried |
-| A17 / M32 | medium (carried) | app/index.tsx drawer | Inline card model; gain sims every tick while open | Cached drawerCards() |
-| T74, T75 | test | rewards / game | Forward-clock-then-fixed recovery; lineTick keeps stats identity | add |
-| T61–T65, T67–T69 | test | — | carried | add |
+| C100 | medium | cutscene-player.tsx:129-137; content/types.ts:37 | A panel with 3+ figures crashes (`stage[2]` undefined); `cast` is an open array (content max today: 2) | Type `cast` as a ≤ 2 tuple; T77 |
+| A22 / M50 | medium | scene/room.tsx (1,027 lines) | Facade drawing in room.tsx, many nodes per pattern | facade.tsx, one path per pattern |
+| A17 / M32 | medium | app/index.tsx drawer | Inline card model; ~12 gain simulations per tick while open | Cached `drawerCards()` in drawer-model.ts (T45) |
+| C101 | low | cutscene/staging.ts:7 | Hands/hats not in the tested boxes; ~0.5 px clearance on iPad mini; two surprised figures overlap palms ~30 px | `HANDS_BOX` per pose; fix the comment; T76 |
+| U7 | low | rewards-ui.tsx:159-160 | Strip scroll/size events re-render the whole drawer ~31×/s | Sizes in a ref; state only for the fade boolean |
+| M58 | low | backdrop.tsx, figure-art.ts | All scene strings built at import | Lazy per id only if profiling shows a cost |
+| A26 | low | backdrop.tsx (930 lines, 9 scenes) | One file for all scenes | Split per scene when the next is added |
+| C92 | low | app/index.tsx:223-235 | Spotlight-target predicate ×3; nested halo ternary | Derive `sceneSpot`/`hudHalo` once |
+| C93 | low | game-ui.tsx `halo`; sidewalk-row.tsx `cardCoach` | Halo changes border width → layout jump | Transparent reserved border |
+| A24 | low | engine/game.ts:~531 | FIRST_BATCH_SPEED hidden in lineRates | `firstBatch(shop)` predicate |
+| M53 | low | storefront.tsx:381-410 | Spotlight path strings rebuilt per frame | useMemo hole + scrim d |
+| M54 | low | tutorial.ts:49-52 | Step 7 returns a new object per tick | Cached per-target objects |
+| M55 | low | storefront.tsx:~206 | `sp` object + 3 rate calls per frame | Compare levels first |
+| C85 | low | storefront / crew | Two derivations of "idle" | One `G.idleShop` |
+| C86 | low | scene/crew.ts | A hire mid-trip re-routes a walking figure | Idle flag per trip/slot |
+| C87 | low | pipeline `dispatch` | `while` where only one carrier can leave | `if` |
+| C88 | low | coin-layer / Hud | Coin target not re-measured on layout/rotation | Re-measure |
+| C89 | low | storefront | `since` computed several times per frame | Once per frame |
+| A23 | low | scene/crew.ts | Magic route numbers | Named constants |
+| M51, M52 | low | scene per-frame paths (round 18; full text not preserved) | Small per-frame allocations | Re-derive on next review |
+| T61–T65 | test | rounds 17–18 (full text not preserved) | Requested tests | Re-derive on next review |
+| T67, T68, T69 | test | tutorial / game | coachStep same ref; lineRates first-batch rule; tutorialAdvance identity | add |
+| T76, T77 | test | staging / content | Hands box on every window and speaker; ≤ 2 figures per panel and ids in LOOKS | add |
 
-**Next IDs:** K1, C100, A26, M58, U7, T76.
+**Next IDs:** K1, C102, A27, M59, U8, T78.

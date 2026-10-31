@@ -17,17 +17,17 @@ The visual **critic** (`.claude/agents/critic.md`) reviews each build's iPhone-s
 - **Don't remove owner-required elements** while fixing something else. The WELCOME mat was removed once by mistake (G54).
 - **Moving one figure moves the overlap onto another** (rounds 47–50, the walk-in vs. driver at the counter): run the whole crowd suite after every route/spot change, not only the budget you are fixing.
 
-## Current state — v5.5, round 53: ✅ SATISFIED (0 bugs, 0 major, 1 minor). Rewards feature passes.
-Fixed in v5.5: G84, G85, D385, D386, D387, D388, D363, D389. Next build v5.6 = the cut-scene upscale (owner request) + rewards follow-ups; it gets a fresh review.
+## Current state — v5.6, round 54: ❌ NOT SATISFIED (2 major on the new cut-scene art). Loop STOPPED for handoff (Julien, 2026-10-30 23:00).
+v5.6 = owner-requested cut-scene upscale (waist-up figures, layered backdrops). Clear step up; owner checks (clipping, crossing hands) fail. Fixed: D390, weekly-diamond note. Unchanged shots 00/03/06: busts still read.
 
 | ID | Severity | Where / shot | Note | Concrete fix |
 |---|---|---|---|---|
-| D390 | minor | Booster strip in the Tasks drawer (30, 30b, 31, 31b) | The third booster chip is cut hard at the right screen edge, so it looks broken, not scrollable. | 24 pt fade to #FFF5E6 on the right edge, or a 16 pt right inset. |
-| — | note | Weekly tasks (31) | One weekly task pays +8 💎, the rest +7; reads as an error. | Even split or show the total. |
-| D359 | note | Sidewalk cards (03, 04, 05b–05b6, 09–14, 29) | Struck-through prices are unexplained. | Muted price + "need $X" or a lock glyph. |
-| D297 | note | Goal bar (05b–05b6, 32, 33) | Fill ends mid-label; one text colour over two backgrounds. | Label drawn twice, clipped. |
-| D304 | note | Tied-station banner (16) | Reads as a label, not a button. | Green "Buy both · $35" button. |
-| D305 | note | City map while Suburbs is locked (17) | "Build $300" live while locked; toast covers lock tiles. | Padlock + countdown, pin 50%, toast under the map. |
-| Pier 9 chip | note | University chip during the bid (21) | No warning that building drops the bid's progress. | "Pier 9 bid in progress" hint. |
+| D391 | major | Cut-scenes 02, 08, 18, 19 | Signs clipped: "PIZZA" sign behind the EST. 1974 frame (02/19); two-line caption covers the PIZZA sign and frame (19); MEGASLICE billboard and steam cut by the frame top (08); PIER 9 plaque runs off the right edge (18). | Frame to x ≥ 0.62 or sign 0.8×; billboard down 24 pt; plaque inset 12 pt; keep the top 60 pt free of signs for two-line captions. |
+| D392 | major | Cut-scenes 02, 08, 18 | Hands: Nonna and Marisol share the same clasped "#" lump (clones); Sal's pointing finger jabs the suit man's elbow; the suit man's box mittens have detached ring cuffs. | Interlaced-finger clasp (3 arcs, no hash); a distinct worried gesture for Marisol; arms ≥ 8 pt clear of other figures; open palms with 4 fingers, flush cuffs. |
+| D393 | minor | 08, 18 | Pale translucent streak across Sal's and Marisol's faces; `LIGHT_SHADE` overhangs the head (arc to x≈93 on a 36–84 head). | Clip shade/rim to the head ellipse; hair strands off the face. |
+| D394 | minor | 02, 18, 19 | String-light bulbs half cut at the frame edges under the caption (02/19); sun behind the caption (18); Rosa's happy pose arms straight down, recipe card floats over the oven (19). | Bulbs 10 pt in; sun lowered; Rosa holds the card at chest height. |
+| D395 | minor | 22, 01 | Tree trunk grows out of Dale's cap; win face open-eyed (22). Moon halo over the right tower (01). | Tree to x≈0.25 or Dale to 0.6; closed-eye happy face; moon in the far layer. |
+| D396 | minor | 02, 19 | Chalkboard crams "$3 · $4 · $4" on one line. | One right-aligned price per line. |
+| D359, D297, D304, D305, Pier 9 chip | note | carried | Texts in the round-53 archive section. | — |
 
-**Next IDs:** G86, D391.
+**Next IDs:** G86, D397.

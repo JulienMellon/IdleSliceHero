@@ -1695,3 +1695,20 @@ Fixed in v5.4: D354, D384. New feature reviewed: daily/weekly tasks + gift calen
 
 **Next IDs:** G86, D390.
 
+---
+
+## Archived state — v5.5, round 53: ✅ SATISFIED (0 bugs, 0 major, 1 minor). Rewards feature passes.
+Fixed in v5.5: G84, G85, D385, D386, D387, D388, D363, D389. Next build v5.6 = the cut-scene upscale (owner request) + rewards follow-ups; it gets a fresh review.
+
+| ID | Severity | Where / shot | Note | Concrete fix |
+|---|---|---|---|---|
+| D390 | minor | Booster strip in the Tasks drawer (30, 30b, 31, 31b) | The third booster chip is cut hard at the right screen edge, so it looks broken, not scrollable. | 24 pt fade to #FFF5E6 on the right edge, or a 16 pt right inset. |
+| — | note | Weekly tasks (31) | One weekly task pays +8 💎, the rest +7; reads as an error. | Even split or show the total. |
+| D359 | note | Sidewalk cards (03, 04, 05b–05b6, 09–14, 29) | Struck-through prices are unexplained. | Muted price + "need $X" or a lock glyph. |
+| D297 | note | Goal bar (05b–05b6, 32, 33) | Fill ends mid-label; one text colour over two backgrounds. | Label drawn twice, clipped. |
+| D304 | note | Tied-station banner (16) | Reads as a label, not a button. | Green "Buy both · $35" button. |
+| D305 | note | City map while Suburbs is locked (17) | "Build $300" live while locked; toast covers lock tiles. | Padlock + countdown, pin 50%, toast under the map. |
+| Pier 9 chip | note | University chip during the bid (21) | No warning that building drops the bid's progress. | "Pier 9 bid in progress" hint. |
+
+**Next IDs:** G86, D391.
+

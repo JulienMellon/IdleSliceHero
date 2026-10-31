@@ -577,3 +577,23 @@ Fixed: C90, C91, T66. The engine timed: refreshRewards ~1 µs (≤ 1×/s); drawe
 
 **Next IDs:** K1, C98, A25, M57, U6, T74.
 
+---
+
+## Archived state — round 21 (v5.5, cd6f9b2..9f7f1e8): ✅ APPROVED (3 medium). Both reviewers pass on v5.5.
+Fixed: C94, C96, C97, U2, U3, U4, U5, T70, T71, T73. Partly: C95 → C98, U1/M56 → U6/M57, T72 → T74.
+
+| ID | Severity | File:line | Issue | Fix |
+|---|---|---|---|---|
+| C98 | medium | engine/rewards.ts:229-243 | Recovery leaves day/week/gift.last in the future; tasks and gift freeze up to 400 days | Re-key day/week to today without regenerating; clamp gift.last ≤ today |
+| U6 | medium | app/index.tsx:82; game.ts:560 | `stats` new every tick → drawer/calendar snapshot 5×/s; GameScreen renders twice per tick | Ignore stats identity; snapshot only while open; `bump` returns `s` on zero |
+| A22 / M50 | medium | scene/room.tsx | Facade drawing in room.tsx (1,027 lines) | facade.tsx, one path per pattern |
+| C99 | low | package.json:50 | TZ pinned only via the npm script; jest-environment-node undeclared | globalSetup; declare dep |
+| A25 | low | app/index.tsx:80-82 | Snapshot made by setState during render | `useSlowSnapshot` hook |
+| M57 | low | app/index.tsx:82 | Snapshot + re-render every tick with panels closed | Gate on open panels |
+| C92, C93, A24, M53, M54, M55, C85–C89, A23, M51, M52 | low | see round 19/20 (archive) | carried | carried |
+| A17 / M32 | medium (carried) | app/index.tsx drawer | Inline card model; gain sims every tick while open | Cached drawerCards() |
+| T74, T75 | test | rewards / game | Forward-clock-then-fixed recovery; lineTick keeps stats identity | add |
+| T61–T65, T67–T69 | test | — | carried | add |
+
+**Next IDs:** K1, C100, A26, M58, U7, T76.
+
