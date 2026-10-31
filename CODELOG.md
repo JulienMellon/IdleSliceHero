@@ -37,20 +37,22 @@ It runs alongside the visual critic (`CRITICLOG.md`). A step is done only when t
 
 ---
 
-## Current state — round 18 (v5.0): ✅ APPROVED. Not re-run on v5.1 / v5.2 (range a0a9bee..HEAD unreviewed). The loop is STOPPED (Julien, 2026-10-30).
+## Current state — round 19 (v5.1–v5.3, a0a9bee..320f0e8): ✅ APPROVED. Loop RESUMED 2026-10-30 night. From round 20 the brief adds a **CPU** section (U IDs).
+Fixed: C84 (its clamp introduced C90).
 
-**Open (round 18 + carried)**
+| ID | Severity | File:line | Issue | Fix |
+|---|---|---|---|---|
+| C90 | medium | engine/pipeline.ts:72,193 | Fixed WALK_IN_DEBT_MAX (72) clamp in `dispatch` stops walk-ins once a dispatch carries > 72/(0.5−f) pies | Clamp to max(WALK_IN_DEBT_MAX, 2n) in dispatch; fixed clamp only in migrateLine |
+| C91 | low | stations.ts:198, room.tsx:654,743 | `doorwaySignRect` duplicates what room.tsx draws | Draw the plank from `doorwaySignRect(lay)` |
+| C92 | low | app/index.tsx:223-235 | Spotlight-target predicate ×3, nested halo ternary | Derive `sceneSpot`/`hudHalo` once |
+| C93 | low | game-ui.tsx `halo`; sidewalk-row.tsx `cardCoach` | Halo changes border width → layout jump, coin target re-measure | Transparent reserved border |
+| A24 | low | engine/game.ts:531 | FIRST_BATCH_SPEED hidden in lineRates | `firstBatch(shop)` predicate beside TUTORIAL_DONE |
+| M53 | low | storefront.tsx:381-410 | Spotlight path strings rebuilt each frame | useMemo hole + scrim d |
+| M54 | low | tutorial.ts:49-52 | Step 7 returns a new object each tick | Cached per-target objects |
+| M55 | low | storefront.tsx:~206 | `sp` object + 3 rate calls per frame | Compare levels first |
+| A22 / M50 | medium | scene/room.tsx | Facade drawing in room.tsx; many nodes per pattern | facade.tsx; one path per pattern |
+| C85–C89, A23, M51, M52 | low | see round 18 (archive) | carried | carried |
+| T61–T69 | test | — | T66 split at large batches (fails on C90); T67 coachStep same ref; T68 lineRates first-batch rule; T69 tutorialAdvance identity; T61–T65 archive | add |
+| A17 / M32 | carried | — | cached drawer-card model | archive |
 
-| ID | Type | Note |
-| --- | --- | --- |
-| C84 | medium | Reset `walkInDebt` when walk-ins aren't buying; clamp it on load |
-| A22 / M50 | medium | Move the facade drawing out of `room.tsx` into `facade.tsx`; build one path string per pattern instead of many nodes |
-| C85 | low | One `G.idleShop` predicate (storefront and crew each derive "idle") |
-| C86 | low | Store the `idle` flag per trip/slot so a hire mid-trip doesn't re-route a walking figure |
-| C87 | low | `while` → `if` in `dispatch` (only the due carrier can leave) |
-| C88 | low | Re-measure the coin target on layout/rotation |
-| C89 | low | Compute `since` once per frame |
-| A23 | low | Name the magic route numbers in `crew.ts` |
-| M51, M52 | low | Small per-frame allocations |
-| T61–T65 | test | Tests requested in rounds 17–18 |
-| A17 / M32 | carried | Cached drawer-card model; see archive |
+**Next IDs:** K1, C94, A25, M56, U1, T70.

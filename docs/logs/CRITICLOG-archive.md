@@ -1637,3 +1637,24 @@ Shots: `25-look-suburbs`, `25-look-university`, `25-look-downtown`, plus 05b (Wa
 
 ## v5.2 — build (round-49 fixes)
 Shots: 00 (title), 03 (spotlit prep), 03b, 04, 05b6 ("+50% faster"), 10–12 (pops beside heads).
+
+---
+
+## Archived state — v5.2, round 50: ❌ NOT SATISFIED. The loop is STOPPED (Julien, 2026-10-30).
+Rounds 45–50 covered the playtest-2 rework (`docs/PLAN-v4.7-playtest2.md`): a discrete prep → bake → serve line, station heads + GM, cash on departure with coins, event-driven crew, neighbourhood identity (PASSED in round 48), Nonna's tutorial and the title card. Each round fixed most notes; round 50 still has one [major].
+
+**Open (round 50 on v5.2, plus carried notes)**
+
+| ID | Type | Note | Proposed fix | v5.3 WIP |
+| --- | --- | --- | --- | --- |
+| D377 | major | The waiting walk-in's head is hidden behind the doorway's PIZZERIA plank | Move the walk-in's order spot clear of the lintel; add a budget that no standing head rect meets the doorway-sign rect (lintel P(0,0,122)→P(0,0,108) across door.x0−8..R−8) | **Done, committed as v5.3 WIP:** drivers now pick up at the counter's right end (by the door), walk-ins order at the left end (`counter.x0 + 4`, 60) via the dining aisle; all 213 tests pass. Sign budget **not yet added**; not yet checked in pixels |
+| G83 | bug | Tutorial wait steps 2 and 4 show no hand | Show the hand (or a pulsing ring) on the station being waited on | — |
+| D378 | minor | Tutorial scrim too light | 60% scrim extended over the sidewalk row, 4 pt glow on the cut-out | — |
+| D379 | minor | Pops too wide | Cap at 80 pt with 11 pt text, or place above-left of the cap | — |
+| D363 | minor | Bike rack tangle | Bikes 22 pt apart, visible hoops | — |
+| D380 | minor | Title card: Nonna off-centre | Centre Nonna under the subtitle, waving hand | — |
+| D381 | minor | "+50% faster" flash collides with the tutorial hand | Offset the flash or hide the hand while it plays | — |
+| D354 | minor | Diners without chairs | Draw a chair under every seated diner | — |
+| D382, D383, D359 | note | Small polish notes (round-50 text was not logged verbatim; D359 is in the round-47 archive table) | Re-read on the next critic run | — |
+| D304, D305, D297, Pier 9 chip | carried | Older carried minors | See archive | — |
+

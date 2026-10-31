@@ -508,3 +508,24 @@ Round 14's C63/C64/C65/M33/T46 verified fixed. Notes and their v4.8 status:
 | Identity extras: window views, Industrial haze/steel, lighthouse, fuller street props, city pins; no burst on compact buttons | `room.tsx`, `background.tsx`, `identity.ts`, `city-map.tsx`, `game-ui.tsx` | — |
 
 `tsc` clean; 211 tests; screenshots `v5.1`: `errors: []`.
+
+---
+
+## Archived state — round 18 (v5.0): ✅ APPROVED. Not re-run on v5.1 / v5.2 (range a0a9bee..HEAD unreviewed). The loop is STOPPED (Julien, 2026-10-30).
+
+**Open (round 18 + carried)**
+
+| ID | Type | Note |
+| --- | --- | --- |
+| C84 | medium | Reset `walkInDebt` when walk-ins aren't buying; clamp it on load |
+| A22 / M50 | medium | Move the facade drawing out of `room.tsx` into `facade.tsx`; build one path string per pattern instead of many nodes |
+| C85 | low | One `G.idleShop` predicate (storefront and crew each derive "idle") |
+| C86 | low | Store the `idle` flag per trip/slot so a hire mid-trip doesn't re-route a walking figure |
+| C87 | low | `while` → `if` in `dispatch` (only the due carrier can leave) |
+| C88 | low | Re-measure the coin target on layout/rotation |
+| C89 | low | Compute `since` once per frame |
+| A23 | low | Name the magic route numbers in `crew.ts` |
+| M51, M52 | low | Small per-frame allocations |
+| T61–T65 | test | Tests requested in rounds 17–18 |
+| A17 / M32 | carried | Cached drawer-card model; see archive |
+
