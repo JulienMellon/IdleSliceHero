@@ -29,7 +29,7 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
 1. **Plan the step** into 1–3 task cards. Each card has: goal, **files in scope**, the **full text** of the notes to fix (never "see CRITICLOG"), and checks (`npx tsc --noEmit` + the targeted `npx jest` files). One programmer per card. Cards with disjoint files can run in parallel.
 2. **Programmer** works and reports. Read `git diff --stat` and only the hunks you need to judge the report. Don't re-read whole files.
 3. **Verify once** (orchestrator): bump `APP_VERSION`; `npx tsc --noEmit`; `npm test` (full, once, ~70 s; TZ is pinned to America/New_York by `jest.global-setup.js`); `npx expo export --platform web`; `python3 scripts/screenshots.py v5.10`; `python3 scripts/review_shots.py v5.10 v5.9`. Check `report.json` has `"errors": []`, `"loaded": true`. If shot 22 times out, re-run once.
-4. **Commit and push** to `main`: `git -c user.name="Julien Mellon" -c user.email="mellon.julien@gmail.com" commit …`, then `git fetch -q origin main && git rebase origin/main && git push -q origin main`. End commit messages with the session's attribution lines. Append a short `## v5.7 — build` table to each log.
+4. **Commit and push** to `main`: `git -c user.name="Julien Mellon" -c user.email="mellon.julien@gmail.com" commit …`, then `git fetch -q origin main && git rebase origin/main && git push -q origin main`. End commit messages with the session's attribution lines. Append a short `## v5.10 — build` table to each log.
 5. **Review in parallel, in the background.** Only run a critic whose inputs changed:
    - `critic` when `review/index.json` has any `new`/`changed` shot. Paste the open-notes table and next IDs into its task.
    - `codecritic` when `src/` changed. Pass the git range, the open items, next IDs, and the tsc/test results from step 3, so it doesn't re-run them.
@@ -38,7 +38,7 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
    - Don't edit the working tree while the codecritic runs.
 6. **Hand critiques back:** copy only the actionable lines (ID, severity, where, fix) into the next card. **Send** them to the same programmer if it's still alive and the files match (it keeps its context). Otherwise start a fresh one with a new card.
 7. **Log:** replace each log's "Current state" with the new verdict and its open-notes table (with note text). Move the old section to `docs/logs/*-archive.md` **every round**, so the live logs stay short. Update this file's "Where things stand". Commit, push, report to Julien in 2–4 sentences.
-8. **Stop** when the critic is SATISFIED and the codecritic APPROVES on the same build.
+8. **Stop** when the critic is SATISFIED and the codecritic APPROVES on the same build. On a build where the codecritic is skipped (rule above), its last APPROVED carries, so critic SATISFIED is enough.
 
 ### Token notes (measured 2026-10-30)
 - A general-purpose agent costs ~60K tokens before doing anything. The `programmer`, with 6 tools, finished a small task in ~16K. Use the narrow agent types, never general-purpose, for loop work. Prefer fewer, larger cards, and continue an agent with SendMessage for fix rounds.
@@ -75,7 +75,6 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
 - **Session restarts kill background agents** without a report: check `git status`/`tsc` in the worktree; the work on disk is usually usable (v5.6 art was).
 - **Rewards & time:** never re-roll on a key *change* — only when the day/week number increases (C94: time-zone toggling farmed chests). Keep `stats` identity on quiet ticks (U6) or memo'd panels re-render every tick.
 - **Critic churn:** each round tends to surface new minors. Fix the bugs and new notes first; carried minors (sky, crowd) are the ones that may stay.
-
 - **Worktree symlinks:** a `node_modules` symlink in a worktree is NOT matched by a `node_modules/` ignore pattern; `git add -A tools/audio` committed one and the merge replaced the real install with a self-link (fixed; `.gitignore` now says `node_modules`). Add paths explicitly in worktrees.
 - **Fake-clock capture:** Playwright's `page.clock.install()` + `run_for(33)` per frame gives smooth, deterministic 30 fps footage of the web build (`marketing/ad/record.py`). Read the HUD's "Tap to serve/bake/prep" to tap only stations that can start.
 - **Screenshot runs under load:** the late shots can hang while an audio render runs alongside; re-run once with `timeout 560 python3 -u`.
