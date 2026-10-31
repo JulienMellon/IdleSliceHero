@@ -37,22 +37,26 @@ It runs alongside the visual critic (`CRITICLOG.md`). A step is done only when t
 
 ---
 
-## Current state — round 19 (v5.1–v5.3, a0a9bee..320f0e8): ✅ APPROVED. Loop RESUMED 2026-10-30 night. From round 20 the brief adds a **CPU** section (U IDs).
-Fixed: C84 (its clamp introduced C90).
+## Current state — round 20 (v5.4, 3d60f81..c3796b5): ❌ CHANGES REQUESTED (C94 [high]). First round with the CPU section. Fix round v5.5 in progress.
+Fixed: C90, C91, T66. The engine timed: refreshRewards ~1 µs (≤ 1×/s); drawer model 17 µs, gift model 9 µs in node.
 
 | ID | Severity | File:line | Issue | Fix |
 |---|---|---|---|---|
-| C90 | medium | engine/pipeline.ts:72,193 | Fixed WALK_IN_DEBT_MAX (72) clamp in `dispatch` stops walk-ins once a dispatch carries > 72/(0.5−f) pies | Clamp to max(WALK_IN_DEBT_MAX, 2n) in dispatch; fixed clamp only in migrateLine |
-| C91 | low | stations.ts:198, room.tsx:654,743 | `doorwaySignRect` duplicates what room.tsx draws | Draw the plank from `doorwaySignRect(lay)` |
-| C92 | low | app/index.tsx:223-235 | Spotlight-target predicate ×3, nested halo ternary | Derive `sceneSpot`/`hudHalo` once |
-| C93 | low | game-ui.tsx `halo`; sidewalk-row.tsx `cardCoach` | Halo changes border width → layout jump, coin target re-measure | Transparent reserved border |
-| A24 | low | engine/game.ts:531 | FIRST_BATCH_SPEED hidden in lineRates | `firstBatch(shop)` predicate beside TUTORIAL_DONE |
-| M53 | low | storefront.tsx:381-410 | Spotlight path strings rebuilt each frame | useMemo hole + scrim d |
-| M54 | low | tutorial.ts:49-52 | Step 7 returns a new object each tick | Cached per-target objects |
-| M55 | low | storefront.tsx:~206 | `sp` object + 3 rate calls per frame | Compare levels first |
-| A22 / M50 | medium | scene/room.tsx | Facade drawing in room.tsx; many nodes per pattern | facade.tsx; one path per pattern |
-| C85–C89, A23, M51, M52 | low | see round 18 (archive) | carried | carried |
-| T61–T69 | test | — | T66 split at large batches (fails on C90); T67 coachStep same ref; T68 lineRates first-batch rule; T69 tutorialAdvance identity; T61–T65 archive | add |
+| C94 | high | engine/rewards.ts:207,217 | Any day/week key change, even backwards, re-rolls the set; time-zone toggling farms chests/diamonds/`days` (confirmed) | Roll only when the day/week number increases; gift caption for gap<0 |
+| C95 | medium | game.ts:290; rewards.ts clockBehind | A clock set forward by mistake locks rewards up to 400 days | If lastSeen−now > 36 h: lastSeen = now, clear boosts |
+| C96 | low | game.ts:262-270 | Boost `until` uncapped; boosters > 99 dropped on load; unlimited stacking | Cap until ≤ now + 30 d; cap inventory when granted |
+| C97 | low | game.ts:816 | Offline GM: in-flight `carried` boosted twice | Boost only rest·value |
+| U1 | medium | app/index.tsx:362,368 | Drawer (~70 views) and calendar (30 tiles) re-render 5×/s, ~1–3 ms JS each | memo + 1 Hz now + slices; memo rows/tiles/chests |
+| U2 | medium | app/index.tsx:250 | Scene animates at 15 fps under the gift modal | `giftOpen` in `paused` |
+| U3 | low | app/index.tsx:71-75,237 | giftStatus ×2 + claimableCount + boostSummary + new closures per tick | `rewardsHud` model, useCallback |
+| U4 | low | engine/rewards.ts:204 | lastSeen bumped 1 Hz → new rewards identity | Bump when ≥ 60 s stale / on claims |
+| U5 | low | rewards-ui.tsx:202-211 | Pulse loop runs with no "today" tile | Only when ready |
+| M56 | low | rewards-ui.tsx | ~150–200 objects per tick while open | Fixed by U1 |
+| C92, C93, A24, M53, M54, M55 | low | see round 19 (archive) | carried | carried |
+| A22 / M50 | medium | scene/room.tsx | Facade drawing in room.tsx | facade.tsx, one path per pattern |
+| C85–C89, A23, M51, M52 | low | archive | carried | carried |
+| T70–T73 | test | rewards | T70 TZ toggle NY↔Kiritimati (+Monday); T71 DST 2026-11-01 + pin TZ; T72 forward-clock recovery; T73 offline GM + boost | add |
+| T61–T65, T67–T69 | test | — | carried | add |
 | A17 / M32 | carried | — | cached drawer-card model | archive |
 
-**Next IDs:** K1, C94, A25, M56, U1, T70.
+**Next IDs:** K1, C98, A25, M57, U6, T74.

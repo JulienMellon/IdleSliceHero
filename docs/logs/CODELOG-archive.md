@@ -529,3 +529,25 @@ Round 14's C63/C64/C65/M33/T46 verified fixed. Notes and their v4.8 status:
 | T61–T65 | test | Tests requested in rounds 17–18 |
 | A17 / M32 | carried | Cached drawer-card model; see archive |
 
+---
+
+## Archived state — round 19 (v5.1–v5.3, a0a9bee..320f0e8): ✅ APPROVED. Loop RESUMED 2026-10-30 night. From round 20 the brief adds a **CPU** section (U IDs).
+Fixed: C84 (its clamp introduced C90).
+
+| ID | Severity | File:line | Issue | Fix |
+|---|---|---|---|---|
+| C90 | medium | engine/pipeline.ts:72,193 | Fixed WALK_IN_DEBT_MAX (72) clamp in `dispatch` stops walk-ins once a dispatch carries > 72/(0.5−f) pies | Clamp to max(WALK_IN_DEBT_MAX, 2n) in dispatch; fixed clamp only in migrateLine |
+| C91 | low | stations.ts:198, room.tsx:654,743 | `doorwaySignRect` duplicates what room.tsx draws | Draw the plank from `doorwaySignRect(lay)` |
+| C92 | low | app/index.tsx:223-235 | Spotlight-target predicate ×3, nested halo ternary | Derive `sceneSpot`/`hudHalo` once |
+| C93 | low | game-ui.tsx `halo`; sidewalk-row.tsx `cardCoach` | Halo changes border width → layout jump, coin target re-measure | Transparent reserved border |
+| A24 | low | engine/game.ts:531 | FIRST_BATCH_SPEED hidden in lineRates | `firstBatch(shop)` predicate beside TUTORIAL_DONE |
+| M53 | low | storefront.tsx:381-410 | Spotlight path strings rebuilt each frame | useMemo hole + scrim d |
+| M54 | low | tutorial.ts:49-52 | Step 7 returns a new object each tick | Cached per-target objects |
+| M55 | low | storefront.tsx:~206 | `sp` object + 3 rate calls per frame | Compare levels first |
+| A22 / M50 | medium | scene/room.tsx | Facade drawing in room.tsx; many nodes per pattern | facade.tsx; one path per pattern |
+| C85–C89, A23, M51, M52 | low | see round 18 (archive) | carried | carried |
+| T61–T69 | test | — | T66 split at large batches (fails on C90); T67 coachStep same ref; T68 lineRates first-batch rule; T69 tutorialAdvance identity; T61–T65 archive | add |
+| A17 / M32 | carried | — | cached drawer-card model | archive |
+
+**Next IDs:** K1, C94, A25, M56, U1, T70.
+

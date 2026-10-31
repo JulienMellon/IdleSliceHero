@@ -21,3 +21,7 @@ The jokes and payoffs are strong. The biggest risk: waterfront-4 closes its loop
 | S8 | minor | downtown-2 "Twelve pizzas. Is small. Is a start. Keep going, eh?" | Flat | "Twelve pizzas. In my day, twelve was Tuesday." |
 
 **Protect:** "a whisper of patience" (downtown-4) → paid off in uptown-2; Big Sal's "Then I hate Thursdays." → "And so's my Thursday."; "Pineapple. You put pineapple on Mama's pizza." / "And I'd do it again."; "Boats don't PARK, you barnacle!"
+
+
+## v5.4 — rewards text (low effort, 2026-10-30): SATISFIED (advisory)
+S9 day-30 visitor lines (VISITOR_LINES: Nonna "Thirty days. You eat, you come back. Good, eh?", Big Sal "Thirty days, no sick days. Union'd be proud, kid.", Genevieve "Thirty days, darling. Do try to keep up."); S10 clock reason "Your phone's clock looks off. Rewards resume once it catches up."; S11 streak-save copy names the reset; S12 "Day 30 · Nonna Rosa visits"; S13 "30 min" tiles; S14 "7 days" spelled out; S15 one duration style; S16 "Collection: empty. Open a weekly chest or reach day 28."; S17 keep the unlock text; S18 "Show up on 5 different days". All folded into v5.5 except S18 (pending). Next ID S19.
