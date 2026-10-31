@@ -119,6 +119,21 @@ class Song:
                 out.append((max(0, t + j), d, pi, max(1, min(127, v + self.rng.randint(-vel, vel)))))
             tr.events = out
 
+    def humanize_ms(self, ms=8.0, vel=8, drum_vel=10, cap: dict | None = None):
+        """Lofi humanising in real time: timing ±`ms` milliseconds on every track, velocity ±`vel` (±`drum_vel` on the
+        kit's channel). `cap` maps a track name to a maximum velocity (the leads stay at or under 80). Notes at beat 0
+        stay put so a loop's first downbeat is exact."""
+        amt = ms / 1000.0 * self.bpm / 60.0
+        for tr in self.tracks:
+            v_amt = drum_vel if tr.channel == 9 else vel
+            top = (cap or {}).get(tr.name, 127)
+            out = []
+            for (t, d, pi, v) in tr.events:
+                j = 0 if t == 0 else self.rng.uniform(-amt, amt)
+                nv = max(1, min(top, v + self.rng.randint(-v_amt, v_amt)))
+                out.append((max(0, t + j), d, pi, nv))
+            tr.events = out
+
     def save(self, path: str, length_beats: float | None = None, ts=(4, 4)):
         mid = mido.MidiFile(type=1, ticks_per_beat=TPB)
         meta = mido.MidiTrack()

@@ -110,6 +110,84 @@ def encode(a: np.ndarray, out_path: str, kbps: int, mono: bool, sr_out: int = 44
             'peak_dbfs': round(peak_db(x), 1), 'channels': ch, 'kbps': kbps, 'sample_rate': sr_out}
 
 
+# --- the lofi master chain (shared by every neighbourhood loop and gameplay stinger) --------------------------------
+LOFI_CUTOFF = 7000.0  # Hz: the tape roll-off
+
+
+def _lowpass(a: np.ndarray, hz: float = LOFI_CUTOFF, circular: bool = False) -> np.ndarray:
+    from scipy.signal import butter, sosfilt
+    sos = butter(2, hz, btype='low', fs=SR, output='sos')
+    if not circular:
+        return sosfilt(sos, a, axis=0)
+    n = len(a)  # filter three copies and keep the middle one, so the loop's seam has no start-up transient
+    return sosfilt(sos, np.concatenate([a, a, a]), axis=0)[n:2 * n]
+
+
+def tape_wow(a: np.ndarray, cents: float = 6.0) -> np.ndarray:
+    """Slow tape wow: a pitch drift of at most ±`cents`, as two slow sines (0.4 Hz and 0.15 Hz, 2:1) whose periods
+    divide the loop exactly, so the read position (and the seam) stays continuous."""
+    n = len(a)
+    length = n / SR
+    t = np.arange(n) / SR
+    delay = np.zeros(n)
+    for f_target, share, phase in ((0.4, 2 / 3, 0.0), (0.15, 1 / 3, 1.3)):
+        f = max(1, round(f_target * length)) / length
+        speed = 2 ** (cents * share / 1200) - 1  # peak speed deviation of this component
+        delay += -speed / (2 * np.pi * f) * np.cos(2 * np.pi * f * t + phase)
+    pos = (np.arange(n) + delay * SR) % n
+    i0 = np.floor(pos).astype(int)
+    fr = (pos - i0)[:, None]
+    return a[i0] * (1 - fr) + a[(i0 + 1) % n] * fr
+
+
+def vinyl(a: np.ndarray, seed: int, pops_per_s: float = 7.0, pop_db: float = -22.0, hiss_db: float = -54.0) -> np.ndarray:
+    """Gentle vinyl crackle: sparse soft pops (a few ms of band-limited noise) and a faint hiss, both relative to the
+    programme's RMS so every loop gets the same amount. Nothing lands in the first or last 50 ms (the seam)."""
+    from scipy.signal import butter, sosfilt
+    rng = np.random.default_rng(seed)
+    n = len(a)
+    rms = float(np.sqrt(np.mean(a ** 2)))
+    out = np.zeros(n)
+    amp = rms * 10 ** (pop_db / 20)
+    guard = int(0.05 * SR)
+    for pos in rng.integers(guard, n - guard - 60, size=int(pops_per_s * n / SR)):
+        k = int(rng.integers(12, 48))
+        burst = rng.standard_normal(k) * np.exp(-np.arange(k) / (k / 4)) * rng.exponential(1.0)
+        out[pos:pos + k] += burst * amp
+    out += rng.standard_normal(n) * rms * 10 ** (hiss_db / 20)
+    out = sosfilt(butter(2, 6500, btype='low', fs=SR, output='sos'), out)
+    return a + out[:, None]
+
+
+def tape_sat(a: np.ndarray, headroom: float = 5.0) -> np.ndarray:
+    """Soft tape saturation: tanh with the drive set from the programme's RMS, so the 16 dB crest of a soft kit and
+    Rhodes attacks is rounded off (about 3 dB at the peaks) instead of being hit by the −6 dBFS limiter."""
+    rms = float(np.sqrt(np.mean(a ** 2)))
+    k = 1.0 / (headroom * rms)
+    return np.tanh(a * k) / k
+
+
+def lofi_loop(a: np.ndarray, seed: int) -> np.ndarray:
+    """Loop master: tape wow, soft saturation, vinyl crackle, then the 7 kHz roll-off over everything (circular, so
+    the seam holds)."""
+    a = tape_sat(tape_wow(a))
+    a = vinyl(a, seed)
+    return _lowpass(a, circular=True)
+
+
+def lofi_sting(a: np.ndarray) -> np.ndarray:
+    """Stinger master: the same 7 kHz roll-off (no wow or crackle on a two-second one-shot)."""
+    return _lowpass(a)
+
+
+def seam_step(a: np.ndarray) -> tuple[float, float]:
+    """(join step, 99th-percentile sample step): the jump from the last sample back to the first, against how big a
+    normal sample-to-sample step is in the file. A seamless loop has a join step no bigger than the 99th percentile."""
+    join = float(np.max(np.abs(a[0] - a[-1])))
+    p99 = float(np.max(np.percentile(np.abs(np.diff(a, axis=0)), 99, axis=0)))
+    return join, p99
+
+
 def write_report(path: str, data):
     with open(path, 'w') as f:
         json.dump(data, f, indent=1)

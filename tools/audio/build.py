@@ -28,26 +28,19 @@ ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 MIDI = os.path.join(HERE, 'build', 'midi')
 ASSETS = os.path.join(ROOT, 'assets', 'audio')
 
-LOUD = dict(music=-18.0, story=-16.0, sting=-16.0)  # AU22
+LOUD = dict(music=-20.0, story=-16.0, sting=-18.0)  # AU22; the lofi loops sit 2 LU lower (2026-10-31)
+HQ_LUFS, HQ_CEILING = -18.0, -4.0  # the MegaSlice HQ loop keeps its old master (lofi round 1 leaves it alone)
+LOOP_CEILING = -6.0
 # AU36: loudness by tier, so rare big moments are louder than frequent small ones; every file's peak ≤ −6 dBFS (AU38)
 CEILING = -6.0
 SFX_LUFS = {'click': -30, 'bubble': -30, 'tap': -26, 'full': -26, 'cash': -26, 'buy': -22, 'refused': -22, 'rush': -22,
             'sparkle': -24, 'milestone': -19, 'expand': -19, 'grade': -19, 'fleet': -19, 'gavel': -18, 'build': -16,
             'collect': (-19, -17.5, -16)}
-STING_LUFS = {'bottleneck': -20, 'upgrade': -18, 'fleet': -18, 'drone': -18, 'milestone': -17, 'welcome': -17,
-              'warmth': -18, 'manager': -15, 'milestone_big': -15, 'build': -15, 'perk': -18, 'offline': -20, 'bid': -16}
+# every tier moved down 2 LU with the loops (lofi round 1), so each stinger sits the same distance above the music
+STING_LUFS = {'bottleneck': -22, 'upgrade': -20, 'fleet': -20, 'drone': -20, 'milestone': -19, 'welcome': -19,
+              'warmth': -20, 'manager': -17, 'milestone_big': -17, 'build': -17, 'perk': -20, 'offline': -22, 'bid': -18}
 # per-cue loudness overrides: the reveals are the game's quietest moments (AU13)
 LUFS_OVERRIDE = {'reunion': -23.0, 'recipe': -21.0, 'offline_open': -20.0}
-
-
-def lofi(a: np.ndarray, rng=np.random.default_rng(7)) -> np.ndarray:
-    """University: gentle tape roll-off plus vinyl crackle."""
-    from scipy.signal import butter, sosfilt
-    sos = butter(2, 7000, btype='low', fs=post.SR, output='sos')
-    out = sosfilt(sos, a, axis=0)
-    crackle = (rng.random(len(a)) > 0.9993) * rng.uniform(-1, 1, len(a)) * 0.05
-    hiss = rng.standard_normal(len(a)) * 0.002
-    return out + (crackle + hiss)[:, None]
 
 
 def main(only: set[str] | None = None):
@@ -61,15 +54,24 @@ def main(only: set[str] | None = None):
     for name, cue in man.items():
         if only and name not in only:
             continue
-        a = post.render_midi(os.path.join(MIDI, name + '.mid'), tail=4.0)
+        a = post.render_midi(os.path.join(MIDI, name + '.mid'), tail=2.5 if cue.get('lofi') and cue['kind'] == 'stinger' else 4.0)
         if cue['kind'] == 'loop':
             a = post.wrap_loop(a, cue['seconds'])
             if cue.get('lofi'):
-                a = lofi(a)
-            a = post.normalize(a, LOUD['music'], ceiling_db=-4.0)  # AU52: room for a tap on a kick
+                a = post.lofi_loop(a, seed=sum(map(ord, name)))
+                a = post.normalize(a, LOUD['music'], ceiling_db=LOOP_CEILING)
+            else:
+                a = post.normalize(a, HQ_LUFS, ceiling_db=HQ_CEILING)  # AU52: room for a tap on a kick
+            join, p99 = post.seam_step(a)
+            if join > p99:  # the loop seam must be no bigger than an ordinary sample step
+                raise SystemExit(f'{name}: loop seam step {join:.5f} > 99th-percentile step {p99:.5f}')
             info = post.encode(a, os.path.join(ASSETS, 'music', name + '.m4a'), 96, mono=False)
+            info['seam'] = [round(join, 5), round(p99, 5)]
         elif cue['kind'] == 'stinger':
-            a = post.fade(post.trim_silence(a, -50), 0, 0.15)
+            if cue.get('lofi'):  # shorter tails: trim at -46 dBFS and fade the last 0.3 s
+                a = post.fade(post.trim_silence(post.lofi_sting(a), -46), 0, 0.3)
+            else:
+                a = post.fade(post.trim_silence(a, -50), 0, 0.15)
             a = post.normalize(a, STING_LUFS.get(cue['cue'], LOUD['sting']), ceiling_db=CEILING)
             info = post.encode(a, os.path.join(ASSETS, 'sting', name.removeprefix('sting_') + '.m4a'), 64, mono=True)
         else:
