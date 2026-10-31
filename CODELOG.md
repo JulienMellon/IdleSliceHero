@@ -37,26 +37,20 @@ It runs alongside the visual critic (`CRITICLOG.md`). A step is done only when t
 
 ---
 
-## Current state — round 20 (v5.4, 3d60f81..c3796b5): ❌ CHANGES REQUESTED (C94 [high]). First round with the CPU section. Fix round v5.5 in progress.
-Fixed: C90, C91, T66. The engine timed: refreshRewards ~1 µs (≤ 1×/s); drawer model 17 µs, gift model 9 µs in node.
+## Current state — round 21 (v5.5, cd6f9b2..9f7f1e8): ✅ APPROVED (3 medium). Both reviewers pass on v5.5.
+Fixed: C94, C96, C97, U2, U3, U4, U5, T70, T71, T73. Partly: C95 → C98, U1/M56 → U6/M57, T72 → T74.
 
 | ID | Severity | File:line | Issue | Fix |
 |---|---|---|---|---|
-| C94 | high | engine/rewards.ts:207,217 | Any day/week key change, even backwards, re-rolls the set; time-zone toggling farms chests/diamonds/`days` (confirmed) | Roll only when the day/week number increases; gift caption for gap<0 |
-| C95 | medium | game.ts:290; rewards.ts clockBehind | A clock set forward by mistake locks rewards up to 400 days | If lastSeen−now > 36 h: lastSeen = now, clear boosts |
-| C96 | low | game.ts:262-270 | Boost `until` uncapped; boosters > 99 dropped on load; unlimited stacking | Cap until ≤ now + 30 d; cap inventory when granted |
-| C97 | low | game.ts:816 | Offline GM: in-flight `carried` boosted twice | Boost only rest·value |
-| U1 | medium | app/index.tsx:362,368 | Drawer (~70 views) and calendar (30 tiles) re-render 5×/s, ~1–3 ms JS each | memo + 1 Hz now + slices; memo rows/tiles/chests |
-| U2 | medium | app/index.tsx:250 | Scene animates at 15 fps under the gift modal | `giftOpen` in `paused` |
-| U3 | low | app/index.tsx:71-75,237 | giftStatus ×2 + claimableCount + boostSummary + new closures per tick | `rewardsHud` model, useCallback |
-| U4 | low | engine/rewards.ts:204 | lastSeen bumped 1 Hz → new rewards identity | Bump when ≥ 60 s stale / on claims |
-| U5 | low | rewards-ui.tsx:202-211 | Pulse loop runs with no "today" tile | Only when ready |
-| M56 | low | rewards-ui.tsx | ~150–200 objects per tick while open | Fixed by U1 |
-| C92, C93, A24, M53, M54, M55 | low | see round 19 (archive) | carried | carried |
-| A22 / M50 | medium | scene/room.tsx | Facade drawing in room.tsx | facade.tsx, one path per pattern |
-| C85–C89, A23, M51, M52 | low | archive | carried | carried |
-| T70–T73 | test | rewards | T70 TZ toggle NY↔Kiritimati (+Monday); T71 DST 2026-11-01 + pin TZ; T72 forward-clock recovery; T73 offline GM + boost | add |
+| C98 | medium | engine/rewards.ts:229-243 | Recovery leaves day/week/gift.last in the future; tasks and gift freeze up to 400 days | Re-key day/week to today without regenerating; clamp gift.last ≤ today |
+| U6 | medium | app/index.tsx:82; game.ts:560 | `stats` new every tick → drawer/calendar snapshot 5×/s; GameScreen renders twice per tick | Ignore stats identity; snapshot only while open; `bump` returns `s` on zero |
+| A22 / M50 | medium | scene/room.tsx | Facade drawing in room.tsx (1,027 lines) | facade.tsx, one path per pattern |
+| C99 | low | package.json:50 | TZ pinned only via the npm script; jest-environment-node undeclared | globalSetup; declare dep |
+| A25 | low | app/index.tsx:80-82 | Snapshot made by setState during render | `useSlowSnapshot` hook |
+| M57 | low | app/index.tsx:82 | Snapshot + re-render every tick with panels closed | Gate on open panels |
+| C92, C93, A24, M53, M54, M55, C85–C89, A23, M51, M52 | low | see round 19/20 (archive) | carried | carried |
+| A17 / M32 | medium (carried) | app/index.tsx drawer | Inline card model; gain sims every tick while open | Cached drawerCards() |
+| T74, T75 | test | rewards / game | Forward-clock-then-fixed recovery; lineTick keeps stats identity | add |
 | T61–T65, T67–T69 | test | — | carried | add |
-| A17 / M32 | carried | — | cached drawer-card model | archive |
 
-**Next IDs:** K1, C98, A25, M57, U6, T74.
+**Next IDs:** K1, C100, A26, M58, U7, T76.
