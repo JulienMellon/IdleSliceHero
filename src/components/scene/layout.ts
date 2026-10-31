@@ -119,13 +119,15 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   };
   // Drivers pick up along the counter's left; walk-ins order at its right end, away from the pickup line.
   const spotCols = Math.max(1, Math.floor((counter.x1 - 46 - (counter.x0 + 12)) / 28) + 1);
-  const spots = Array.from({ length: Math.min(driverSlots, spotCols) }, (_, i) => ({ x: counter.x0 + 12 + i * 28, y: 46 }));
+  // v5.3 (D370/D377): drivers pick up at the counter's right end, nearest the door, so a driver leaving never walks
+  // past the walk-in, who orders at the left end by the register
+  const spots = Array.from({ length: Math.min(driverSlots, spotCols) }, (_, i) => ({ x: counter.x1 - 14 - i * 28, y: 46 }));
   // v5.0 (D336/D353): the walk-in waits beside the counter's right end, deeper than the drivers' exit lane, so a
   // driver leaving never walks across the waiting walk-in (the second spot is kept for older callers)
-  // v5.2 (D370/D372): further right, past the doorway's left post (which hid half of them) and clear of the
-  // driver's column at the door
+  // v5.3 (D377/D370/D372): in front of the counter's right end, left of the doorway, so neither the doorway's post
+  // nor its PIZZERIA plank hides the walk-in, and clear of the driver's spot and his column at the door
   const orderSpots: Pt[] = [
-    [counter.x1 + 26, 60],
+    [counter.x0 + 4, 60],
     [counter.x1 + 4, 48],
   ];
   // Dining: two rows in front of the prep/oven area, clear of the left pilaster (and a floor plant).

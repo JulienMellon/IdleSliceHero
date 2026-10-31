@@ -21,7 +21,7 @@ export const MAX_WAIT_S = 8;
 /** Drivers leave and return along this depth: in front of the pickup line and the register queue (D336). */
 export const DRIVER_EXIT_Y = 40;
 /** Near the door, drivers cross at this depth: in front of the walk-in waiting beside the counter. */
-const DOOR_LANE_Y = 22;
+const DOOR_LANE_Y = 32;
 /** At most this many walk-ins in the shop (one waiting, the rest seating, eating or leaving). */
 const MAX_GUESTS = 4;
 /** Walk-ins sit at the first this-many tables (the others keep their regulars). */
@@ -102,21 +102,20 @@ function buildRoutes(lay: Layout, sceneW: number, idle: boolean): Routes {
   const walkY = idle ? IDLE_WALK_Y : GUEST_WALK_Y;
   const outY = idle ? IDLE_WALK_Y : DOOR_OUT_Y;
   const spot = lay.spots[0];
-  const { driverX, driverPauseX, guestX, guestVia, guestPauseX } = lay.door.lanes;
+  const { driverX, driverPauseX, guestX, guestPauseX } = lay.door.lanes;
   const at: Pt = [spot.x, spot.y];
-  const front: Pt = [spot.x, DRIVER_EXIT_Y];
   const inside: Pt = [driverX, DOOR_IN_Y];
   const outside: Pt = [driverPauseX, outY];
   const street: Pt = [sceneW + 50, idle ? IDLE_WALK_Y : -30];
   // walk the exit lane (behind the front diners' heads, D353) to the counter's end, then step forward to the
   // doorway lane before reaching the walk-in waiting beside the counter (D336), and out
-  const x1 = lay.counter.x1;
-  const laneEnd: Pt = [Math.max(spot.x, x1 - 26), DRIVER_EXIT_Y];
-  const doorLane: Pt = [Math.max(spot.x, x1 - 12), DOOR_LANE_Y];
+  // v5.3: step straight forward from the pickup spot to the doorway lane, then across in front of the walk-in
+  // waiting at the counter's end (D370), and out
+  const doorLane: Pt = [spot.x, DOOR_LANE_Y];
   const doorCol: Pt = [driverX, DOOR_LANE_Y];
-  const toDoor = route([at, front, laneEnd, doorLane, doorCol, inside]);
+  const toDoor = route([at, doorLane, doorCol, inside]);
   const away = route([inside, outside, street]);
-  const back = route([street, outside, inside, doorCol, doorLane, laneEnd, front, at]);
+  const back = route([street, outside, inside, doorCol, doorLane, at]);
   const rest = LINE.driverLap - LINE.departSeconds;
   // walk the rest of the lap at a normal pace if it fits, leaving the remainder off screen
   const speed = Math.max(WALK, (away.len + back.len) / Math.max(0.5, rest - 0.2));
@@ -132,9 +131,10 @@ function buildRoutes(lay: Layout, sceneW: number, idle: boolean): Routes {
     // D336: from the register the guest steps forward to the dining aisle and walks in front of the pickup line
     const aisleR: Pt = [orderAt[0], DINING_AISLE_Y];
     const aisleS: Pt = [seat[0], DINING_AISLE_Y];
-    const arrive = route([start, [gOut[0], walkY], gOut, gIn, guestVia, orderAt]);
+    // in through the door, along the dining aisle in front of the pickup line, and up to the register's end
+    const arrive = route([start, [gOut[0], walkY], gOut, gIn, [gIn[0], DINING_AISLE_Y], [orderAt[0], DINING_AISLE_Y], orderAt]);
     const leave = route([seat, aisleS, [gIn[0], DINING_AISLE_Y], gIn, gOut, [gOut[0], walkY], [sceneW + 50, walkY]]);
-    const giveUp = route([orderAt, guestVia, gIn, gOut, [gOut[0], walkY], [sceneW + 50, walkY]]);
+    const giveUp = route([orderAt, [orderAt[0], DINING_AISLE_Y], [gIn[0], DINING_AISLE_Y], gIn, gOut, [gOut[0], walkY], [sceneW + 50, walkY]]);
     const arriveSpeed = Math.max(WALK, arrive.len / Math.max(0.5, LINE.walkinLap - LINE.handoffSeconds - 0.1));
     return { arrive, toSeat: route([orderAt, aisleR, aisleS, seat]), leave, giveUp, arriveSpeed, seat, orderAt };
   });
