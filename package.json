@@ -37,6 +37,7 @@
     "@types/jest": "^30.0.0",
     "@types/react": "~19.3.0",
     "jest": "^30.5.2",
+    "jest-environment-node": "^30.5.2",
     "ts-jest": "^29.4.15",
     "typescript": "~6.0.3"
   },
@@ -47,7 +48,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test": "TZ=America/New_York jest"
+    "test": "jest"
   },
   "private": true
 }

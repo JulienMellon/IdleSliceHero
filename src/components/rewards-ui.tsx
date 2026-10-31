@@ -1,8 +1,8 @@
 // v5.4 rewards screens: the tasks drawer (daily / weekly tasks, Slice Points chests, boosters) and the gift calendar.
 // All text and state come from rewards-model.ts; this file only lays them out. No ad buttons yet (D2).
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Animated, Easing, type LayoutChangeEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { DAILY_CHESTS, STREAK_SAVE_DIAMONDS } from '../content/rewards';
 import type { GameState } from '../engine/game';
@@ -10,10 +10,23 @@ import * as R from '../engine/rewards';
 import { C, F } from '../theme';
 import { BuyButton } from './game-ui';
 import { BoostIcon, CoinIcon, DiamondIcon, GiftIcon, LockIcon, StarIcon } from './icons';
-import { boosterLabel, boosterStartLabel, boostOnText, boostRingPct, chestRows, collectionText, countdownText, dailyRows, giftHeader, giftTiles, pointsPct, weeklyChestView, weeklyRows, type GiftIconKind, type TaskState } from './rewards-model';
+import { BOOST_STRIP, boostFadeShown, boosterLabel, boosterStartLabel, boostOnText, boostRingPct, chestRows, collectionText, countdownText, dailyRows, giftHeader, giftTiles, pointsPct, weeklyChestView, weeklyRows, type GiftIconKind, type TaskState } from './rewards-model';
 import { CLOSE_SLOP, DRAWER_HEAD, TAP } from './tap-targets';
 
 const native = Platform.OS !== 'web';
+
+/**
+ * The game snapshot the tasks drawer and the calendar draw from (U1): taken while `open`, and then only when the second
+ * (`sec`) or `game.rewards` changes (a claim), not on every 200 ms tick or when only `stats` ticks over. While closed it
+ * stays frozen; opening takes a fresh one in the same render. No state is set during render.
+ */
+export function useSlowSnapshot(game: GameState, sec: number, open: boolean): { game: GameState; sec: number } {
+  const secKey = open ? sec : -1;
+  const rewardsKey = open ? game.rewards : null;
+  // `game` is deliberately not a dependency: only the keys above decide when a new snapshot is taken
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => ({ game, sec }), [secKey, rewardsKey]);
+}
 
 export interface TaskActions {
   claimDaily: (i: number) => boolean;
@@ -118,6 +131,9 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
   const running = R.runningBoosts(game, now);
   const claimTask = useCallback((i: number) => (tab === 'daily' ? actions.claimDaily(i) : actions.claimWeekly(i)), [tab, actions]);
   const claimChest = actions.claimChest;
+  // D390: the booster strip fades out on the right while it still scrolls
+  const [strip, setStrip] = useState({ content: 0, view: 0, x: 0 });
+  const fade = boostFadeShown(strip.content, strip.view, strip.x);
   return (
     <View style={StyleSheet.absoluteFill}>
       <Pressable testID="close-tasks-dim" style={styles.dim} onPress={onClose} />
@@ -133,21 +149,41 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
         </View>
         <View style={styles.boosters}>
           <Text style={styles.boostLabel}>Boosters</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.boostRow}>
-            {running.map((b, i) => (
-              <View key={`run-${i}`} style={[styles.chip, styles.chipRunning]} testID={`boost-running-${i}`}>
-                <BoostRing seconds={Math.max(0, Math.ceil((b.until - now) / 1000))} />
-                <Text style={[styles.chipText, styles.chipTextRunning]}>{`${boostOnText(Math.max(0, Math.ceil((b.until - now) / 1000)))}`}</Text>
-              </View>
-            ))}
-            {r.boosters.map((b, i) => (
-              <Pressable key={`inv-${i}`} testID={`booster-${i}`} onPress={() => actions.startBooster(i)} style={styles.chip} accessibilityLabel={`${boosterStartLabel(b)} booster`}>
-                <BoostIcon size={18} />
-                <Text style={styles.chipText}>{boosterStartLabel(b)}</Text>
-              </Pressable>
-            ))}
-            {!running.length && !r.boosters.length && <Text style={styles.empty}>None yet. Chests and gifts drop them.</Text>}
-          </ScrollView>
+          <View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.boostRow}
+              scrollEventThrottle={32}
+              onLayout={(e) => setStrip((p) => ({ ...p, view: e.nativeEvent.layout.width }))}
+              onContentSizeChange={(w) => setStrip((p) => ({ ...p, content: w }))}
+              onScroll={(e) => setStrip((p) => ({ ...p, x: e.nativeEvent.contentOffset.x }))}>
+              {running.map((b, i) => (
+                <View key={`run-${i}`} style={[styles.chip, styles.chipRunning]} testID={`boost-running-${i}`}>
+                  <BoostRing seconds={Math.max(0, Math.ceil((b.until - now) / 1000))} />
+                  <Text style={[styles.chipText, styles.chipTextRunning]}>{`${boostOnText(Math.max(0, Math.ceil((b.until - now) / 1000)))}`}</Text>
+                </View>
+              ))}
+              {r.boosters.map((b, i) => (
+                <Pressable key={`inv-${i}`} testID={`booster-${i}`} onPress={() => actions.startBooster(i)} style={styles.chip} accessibilityLabel={`${boosterStartLabel(b)} booster`}>
+                  <BoostIcon size={18} />
+                  <Text style={styles.chipText}>{boosterStartLabel(b)}</Text>
+                </Pressable>
+              ))}
+              {!running.length && !r.boosters.length && <Text style={styles.empty}>None yet. Chests and gifts drop them.</Text>}
+            </ScrollView>
+            {fade && (
+              <Svg testID="boost-fade" width={BOOST_STRIP.fade} height="100%" style={styles.boostFade} viewBox="0 0 24 10" preserveAspectRatio="none" pointerEvents="none">
+                <Defs>
+                  <LinearGradient id="boost-fade-grad" x1="0" y1="0" x2="1" y2="0">
+                    <Stop offset="0" stopColor={C.bg} stopOpacity={0} />
+                    <Stop offset="1" stopColor={C.bg} stopOpacity={1} />
+                  </LinearGradient>
+                </Defs>
+                <Rect x={0} y={0} width={24} height={10} fill="url(#boost-fade-grad)" />
+              </Svg>
+            )}
+          </View>
         </View>
         {clockOff && (
           <View style={styles.banner} testID="clock-banner">
@@ -330,7 +366,8 @@ const styles = StyleSheet.create({
   closeText: { fontFamily: F.bold, fontSize: 14, color: C.ink },
   boosters: { paddingLeft: DRAWER_HEAD.padX, gap: 4, paddingBottom: 6 },
   boostLabel: { fontFamily: F.bold, fontSize: 13, color: C.inkSoft },
-  boostRow: { gap: 8, alignItems: 'center', paddingRight: DRAWER_HEAD.padX },
+  boostRow: { gap: 8, alignItems: 'center', paddingRight: BOOST_STRIP.rightInset },
+  boostFade: { position: 'absolute', right: 0, top: 0, bottom: 0 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 44, paddingHorizontal: 12, borderRadius: 14, backgroundColor: '#FFE7C2', borderWidth: 2, borderColor: C.cheeseDark },
   chipRunning: { backgroundColor: '#3E9B4F', borderColor: C.basilDark },
   chipTextRunning: { color: '#fff' },

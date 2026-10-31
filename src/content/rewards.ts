@@ -64,8 +64,10 @@ export const DAILY_CHESTS: readonly Chest[] = [
   { points: 100, diamonds: 10, booster: { mult: 2, minutes: 15 } },
 ];
 
-/** Diamonds paid with each weekly task (by position); 50 in all. */
-export const WEEKLY_DIAMONDS: readonly number[] = [8, 7, 7, 7, 7, 7, 7];
+/** Diamonds paid with each weekly task (by position): 6 each, so 42 of the week's 50. */
+export const WEEKLY_DIAMONDS: readonly number[] = [6, 6, 6, 6, 6, 6, 6];
+/** Diamonds the final weekly chest pays alongside its cosmetic (the other 8 of 50). */
+export const WEEKLY_CHEST_DIAMONDS = 8;
 /** The final weekly chest's cosmetic, rotating by ISO week number. */
 export const WEEKLY_COSMETICS: readonly string[] = ['oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold'];
 
@@ -177,5 +179,5 @@ export const MAX_CONCURRENT_BOOSTS = 20;
 export const CLOCK_RECOVER_MS = 36 * 3_600_000;
 /** `lastSeen` is raised only when this stale (and on claims): it keeps `game.rewards` stable between ticks. */
 export const LAST_SEEN_STEP_MS = 60_000;
-/** The weekly chest's prize once every rotation cosmetic is owned. */
+/** The weekly chest's prize once every rotation cosmetic is owned (its total: the chest's usual 8 diamonds are part of the 30). */
 export const WEEKLY_FALLBACK = { diamonds: 30, minutes: 120 } as const;

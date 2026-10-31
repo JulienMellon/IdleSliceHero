@@ -3,7 +3,7 @@ import { DAILY_CHESTS, GIFT_DAYS, VISITOR_LINES } from '../../content/rewards';
 import * as G from '../../engine/game';
 import { dayKey, refreshRewards, taskDone } from '../../engine/rewards';
 import { NONNA_TAKEOVER } from '../../content/tuning';
-import { boostChip, boosterLabel, boosterStartLabel, boostOnText, boostRingPct, boostedRate, boostSummary, chestRows, collectionText, compactSpan, countdownText, dailyRows, giftHeader, giftIcon, giftShort, giftText, giftTiles, hudBoostText, hudRateText, pointsPct, rewardsHud, spanText, visitCaption, weeklyChestView, weeklyRows } from '../rewards-model';
+import { BOOST_STRIP, boostFadeShown, boostChip, boosterLabel, boosterStartLabel, boostOnText, boostRingPct, boostedRate, boostSummary, chestRows, collectionText, compactSpan, countdownText, dailyRows, giftHeader, giftIcon, giftShort, giftText, giftTiles, hudBoostText, hudRateText, pointsPct, rewardsHud, spanText, visitCaption, weeklyChestView, weeklyRows } from '../rewards-model';
 
 const NOW = new Date(2026, 9, 28, 13, 7, 41, 333).getTime(); // a Wednesday
 const DAY = 86_400_000;
@@ -114,8 +114,8 @@ describe('task rows', () => {
   test('weekly rows name the diamonds per task', () => {
     const rows = weeklyRows(base());
     expect(rows).toHaveLength(7);
-    expect(rows[0].reward).toMatch(/2 h income .* \+8 diamonds$/);
-    expect(rows[1].reward).toMatch(/\+7 diamonds$/);
+    expect(rows[0].reward).toMatch(/2 h income .* \+6 diamonds$/);
+    expect(new Set(rows.map((r) => r.reward)).size).toBe(1); // every task pays the same
   });
   test('cash tasks show money on both sides', () => {
     let s = base();
@@ -144,6 +144,7 @@ describe('chests', () => {
     const v = weeklyChestView(s);
     expect(v.state).toBe('locked');
     expect(v.label).toContain(v.prize);
+    expect(v.prize).toMatch(/ \+ 8 \u{1F48E}$/u);
     s = withR(s, { weekly: s.rewards.weekly.map((t) => ({ ...t, claimed: true })) });
     expect(weeklyChestView(s).state).toBe('ready');
     s = withR(s, { weeklyChest: true });
@@ -152,7 +153,7 @@ describe('chests', () => {
   test('G85: the weekly chest names the cosmetic, or the fallback once all are owned', () => {
     const owned = ['oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold'];
     const v = weeklyChestView(base());
-    expect(v.prize).toMatch(/^[A-Z][\w -]+$/);
+    expect(v.prize).toMatch(/^[A-Z][\w -]+ \+ 8 \u{1F48E}$/u);
     const all = weeklyChestView(withR(base(), { cosmetics: owned }));
     expect(all.prize).toBe('30 \u{1F48E} + 2 h income');
     expect(all.label).toBe("30 \u{1F48E} + 2 h income \u00B7 7 tasks to go");
@@ -236,5 +237,16 @@ describe('no raw floats in any string', () => {
     s = withR(s, { points: 33.333333, boosts: [{ mult: 2, until: NOW + 123456.789, source: 'x' }], diamonds: 12.5, cosmetics: ['oven-gold'] });
     const all = [dailyRows(s), weeklyRows(s), chestRows(s), weeklyChestView(s), giftTiles(s, NOW), giftHeader(s, NOW), collectionText(s), boostSummary(s, NOW), boostChip(2, 123456.789), hudBoostText(2, 99.999), countdownText(12345.6789)];
     for (const x of strings(all)) expect([x, NO_FLOAT.test(x)]).toEqual([x, false]);
+  });
+});
+
+describe('D390 booster strip fade', () => {
+  test('shows only while the chips overflow and the end is not reached', () => {
+    expect(BOOST_STRIP).toEqual({ rightInset: 16, fade: 24 });
+    expect(boostFadeShown(300, 0, 0)).toBe(false); // not laid out yet
+    expect(boostFadeShown(300, 340, 0)).toBe(false); // fits
+    expect(boostFadeShown(420, 340, 0)).toBe(true); // third chip cut at the edge
+    expect(boostFadeShown(420, 340, 40)).toBe(true);
+    expect(boostFadeShown(420, 340, 80)).toBe(false); // scrolled to the end
   });
 });

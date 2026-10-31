@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
 import { CoachCard } from '@/components/coach-card';
-import { GiftCalendar, TasksDrawer } from '@/components/rewards-ui';
+import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
 import { hudRateText, rewardsHud } from '@/components/rewards-model';
 import { coachStep } from '@/engine/tutorial';
 import { type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
@@ -75,11 +75,10 @@ export default function GameScreen() {
   const tutorialOn = !!coachStep(game);
   // the calendar opens by itself on the first open of a day: after the title card, the offline popup, any story scene and the tutorial
   const autoGift = titleDone && !covered && !tutorialOn && hud.autoGift;
-  // U1: the tasks drawer and the calendar see a snapshot that moves once a second, or at once when rewards or stats change
-  // (a claim), not on every 200 ms tick
+  // U1: the tasks drawer and the calendar see a snapshot that moves once a second, or at once when rewards change
+  // (a claim), not on every 200 ms tick, and is only taken while one of them is open
   const sec = Math.max(Math.floor(now / 1000) * 1000, game.rewards.lastSeen);
-  const [slow, setSlow] = useState({ game, sec });
-  if (slow.sec !== sec || slow.game.rewards !== game.rewards || slow.game.stats !== game.stats) setSlow({ game, sec });
+  const slow = useSlowSnapshot(game, sec, tasksOpen || giftOpen);
   const onScrapbook = useCallback(() => router.push('/scrapbook'), []);
   const onCity = useCallback(() => router.push('/city'), []);
   const onTasks = useCallback(() => { haptic(); setDrawerOpen(false); setTasksOpen(true); }, []);

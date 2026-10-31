@@ -160,14 +160,14 @@ export const pointsPct = (s: GameState): number => Math.min(1, Math.max(0, s.rew
 
 export interface WeeklyChestView {
   state: 'locked' | 'ready' | 'opened';
-  /** What the chest gives: a cosmetic's name, or "30 💎 + 2 h income" once every cosmetic is owned. */
+  /** What the chest gives: a cosmetic's name and its diamonds ("Gold awning + 8 💎"), or "30 💎 + 2 h income" once every cosmetic is owned. */
   prize: string;
   label: string;
 }
 
 export function weeklyChestView(s: GameState): WeeklyChestView {
   const p = R.weeklyChestPrize(s);
-  const prize = p.kind === 'cosmetic' ? cosmeticName(p.id) : `${p.diamonds} \u{1F48E} + ${minutesText(p.minutes)} income`;
+  const prize = p.kind === 'cosmetic' ? `${cosmeticName(p.id)} + ${p.diamonds} \u{1F48E}` : `${p.diamonds} \u{1F48E} + ${minutesText(p.minutes)} income`;
   const left = s.rewards.weekly.filter((t) => !t.claimed).length;
   const state = s.rewards.weeklyChest ? 'opened' : R.weeklyChestReady(s) ? 'ready' : 'locked';
   // once opened the prize is already owned (the next one shows), so the opened line doesn't name it
@@ -267,3 +267,11 @@ export function giftHeader(s: GameState, now: number): GiftHeader {
 export function visitCaption(visitor: string): string {
   return `${VISITOR_NAMES[visitor] ?? visitor} drops by. \u201C${VISITOR_LINES[visitor] ?? ''}\u201D`;
 }
+
+// ---------- Booster strip ----------
+
+/** The booster strip's right inset and the width of the fade that hints it scrolls on (D390). */
+export const BOOST_STRIP = { rightInset: 16, fade: 24 } as const;
+
+/** Show the strip's right-edge fade: the chips overflow the strip and it isn't scrolled to the end yet. */
+export const boostFadeShown = (contentW: number, viewW: number, scrollX: number): boolean => viewW > 0 && contentW - viewW > 2 && scrollX < contentW - viewW - 2;

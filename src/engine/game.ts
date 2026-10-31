@@ -557,9 +557,12 @@ function spend(s: GameState, cost: number): BuyResult {
   return { ok: true, state: { ...s, cash: s.cash - cost } };
 }
 
+/** Add to the lifetime counters. When every count is 0 the `stats` object is kept as is (a quiet tick must not look like a change). */
 const bump = (s: GameState, patch: Partial<Stats>): GameState => {
+  const keys = (Object.keys(patch) as (keyof Stats)[]).filter((k) => (patch[k] ?? 0) !== 0);
+  if (!keys.length) return s;
   const stats = { ...s.stats };
-  for (const k of Object.keys(patch) as (keyof Stats)[]) stats[k] += patch[k] ?? 0;
+  for (const k of keys) stats[k] += patch[k] ?? 0;
   return { ...s, stats };
 };
 

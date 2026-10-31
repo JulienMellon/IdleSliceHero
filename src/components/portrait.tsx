@@ -1,26 +1,34 @@
-// Placeholder character art: flat, cartoony SVG busts with mood-driven faces.
+// Character art: flat, cartoony SVG figures with mood-driven faces.
+// variant 'bust' (default): the small head-and-shoulders used by the coach card, title card, scrapbook and HUD.
+// variant 'stage': the waist-up, cel-shaded figure with a gesture per mood, used by the cut-scene player only.
+import { memo } from 'react';
 import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 
 import type { CharacterId, Mood } from '../content/types';
+import { BLUSH, EARS, EAR_INNER, FACES, FOLDS, GROUND, HEAD_SHIFT, LIGHT_RIM, LIGHT_SHADE, NECK, NECK_SHADOW, NOSE, OUTFIT, STRANDS, TORSO, gestureFor } from './cutscene/figure-art';
+import { STAGE_VB } from './cutscene/staging';
+import { shade } from './scene/projection';
 
 interface Look {
   skin: string;
   hair: string;
   shirt: string;
+  /** Iris colour (stage figures). */
+  eye: string;
   hairStyle: 'bun' | 'short' | 'long' | 'bald' | 'slick' | 'bob';
   hat?: 'captain' | 'hardhat' | 'cap' | 'beret';
   extra?: 'glasses' | 'mustache' | 'apron' | 'beard' | 'pearls' | 'whistle' | 'tie';
 }
 
 export const LOOKS: Record<CharacterId, Look> = {
-  'nonna-rosa': { skin: '#F2C9A0', hair: '#E8E4E0', shirt: '#B23A48', hairStyle: 'bun', extra: 'apron' },
-  dale: { skin: '#F5D0B0', hair: '#7A4A26', shirt: '#2F80ED', hairStyle: 'short', hat: 'cap', extra: 'whistle' },
-  marisol: { skin: '#C98F63', hair: '#F4F1EC', shirt: '#1F4E79', hairStyle: 'long', hat: 'captain' },
-  priya: { skin: '#B07A52', hair: '#1E1414', shirt: '#9B51E0', hairStyle: 'long', extra: 'glasses' },
-  'big-sal': { skin: '#E8B88E', hair: '#4A3A33', shirt: '#E67E22', hairStyle: 'bald', hat: 'hardhat', extra: 'mustache' },
-  genevieve: { skin: '#F6DCC8', hair: '#222222', shirt: '#111111', hairStyle: 'bob', hat: 'beret', extra: 'pearls' },
-  'victor-crust': { skin: '#E9C4A6', hair: '#1A1A1A', shirt: '#2C2C3A', hairStyle: 'slick', extra: 'tie' },
-  'megaslice-rep': { skin: '#F0C8A8', hair: '#C2A15A', shirt: '#7B2CBF', hairStyle: 'slick', extra: 'tie' },
+  'nonna-rosa': { skin: '#F2C9A0', hair: '#E8E4E0', shirt: '#B23A48', eye: '#6B4A2E', hairStyle: 'bun', extra: 'apron' },
+  dale: { skin: '#F5D0B0', hair: '#7A4A26', shirt: '#2F80ED', eye: '#3E7CB1', hairStyle: 'short', hat: 'cap', extra: 'whistle' },
+  marisol: { skin: '#C98F63', hair: '#F4F1EC', shirt: '#1F4E79', eye: '#4A2C1A', hairStyle: 'long', hat: 'captain' },
+  priya: { skin: '#B07A52', hair: '#1E1414', shirt: '#9B51E0', eye: '#3A2416', hairStyle: 'long', extra: 'glasses' },
+  'big-sal': { skin: '#E8B88E', hair: '#4A3A33', shirt: '#E67E22', eye: '#5A3A22', hairStyle: 'bald', hat: 'hardhat', extra: 'mustache' },
+  genevieve: { skin: '#F6DCC8', hair: '#222222', shirt: '#111111', eye: '#2F7A5A', hairStyle: 'bob', hat: 'beret', extra: 'pearls' },
+  'victor-crust': { skin: '#E9C4A6', hair: '#1A1A1A', shirt: '#2C2C3A', eye: '#5F87A3', hairStyle: 'slick', extra: 'tie' },
+  'megaslice-rep': { skin: '#F0C8A8', hair: '#C2A15A', shirt: '#7B2CBF', eye: '#5A3A80', hairStyle: 'slick', extra: 'tie' },
 };
 
 export const DISPLAY_NAMES: Record<CharacterId, string> = {
@@ -35,6 +43,92 @@ export const DISPLAY_NAMES: Record<CharacterId, string> = {
 };
 
 const INK = '#3B1F14';
+
+// ---- shared head gear (100-box head coordinates; the stage figure shifts them by HEAD_SHIFT) ----
+
+function HairBack({ style, hair }: { style: Look['hairStyle']; hair: string }) {
+  if (style === 'long') return <Path d="M24 44 Q22 82 34 90 L66 90 Q78 82 76 44 Z" fill={hair} />;
+  if (style === 'bob') return <Path d="M26 42 Q24 70 32 72 L68 72 Q76 70 74 42 Z" fill={hair} />;
+  return null;
+}
+
+function HairFront({ style, hair }: { style: Look['hairStyle']; hair: string }) {
+  switch (style) {
+    case 'bun':
+      return (
+        <G fill={hair} stroke={INK} strokeWidth={2}>
+          <Circle cx={50} cy={20} r={10} />
+          <Path d="M26 46 Q26 24 50 24 Q74 24 74 46 Q66 32 50 32 Q34 32 26 46 Z" />
+        </G>
+      );
+    case 'short':
+    case 'long':
+      return <Path d="M26 46 Q24 22 50 22 Q76 22 74 46 Q70 34 56 32 Q46 38 30 38 Z" fill={hair} stroke={INK} strokeWidth={2} />;
+    case 'bob':
+      return <Path d="M25 48 Q24 22 50 22 Q76 22 75 48 L70 40 Q50 30 30 40 Z" fill={hair} stroke={INK} strokeWidth={2} />;
+    case 'slick':
+      return <Path d="M27 42 Q28 22 52 23 Q74 24 73 42 Q66 30 40 32 Z" fill={hair} stroke={INK} strokeWidth={2} />;
+    case 'bald':
+      // tapered sideburns
+      return (
+        <G fill={hair} stroke={INK} strokeWidth={1}>
+          <Path d="M26.5 40 Q29.5 38.5 30.5 42 L33 53 Q36 55.5 39 56 Q32 58.5 28.5 54 Q26.5 49 26.5 40 Z" />
+          <Path d="M73.5 40 Q70.5 38.5 69.5 42 L67 53 Q64 55.5 61 56 Q68 58.5 71.5 54 Q73.5 49 73.5 40 Z" />
+        </G>
+      );
+  }
+}
+
+function Glasses({ stage }: { stage: boolean }) {
+  return (
+    <G stroke={INK} strokeWidth={2.2} fill={stage ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.25)'}>
+      <Path d="M35 47a7 7 0 1 0 14 0a7 7 0 1 0 -14 0Z M51 47a7 7 0 1 0 14 0a7 7 0 1 0 -14 0Z M49 47 L51 47" />
+    </G>
+  );
+}
+
+function Mustache({ hair }: { hair: string }) {
+  return <Path d="M38 56 Q44 52 50 56 Q56 52 62 56 Q56 60 50 57 Q44 60 38 56 Z" fill={hair} stroke={INK} strokeWidth={1.4} />;
+}
+
+function Hat({ hat, stage }: { hat: NonNullable<Look['hat']>; stage: boolean }) {
+  switch (hat) {
+    case 'captain':
+      return (
+        <G stroke={INK} strokeWidth={2}>
+          <Path d="M24 34 Q50 14 76 34 L72 38 L28 38 Z" fill="#FFFFFF" />
+          <Rect x={26} y={36} width={48} height={6} rx={2} fill="#1F2A44" />
+          {stage && <Path d="M28 39 H72" fill="none" stroke="#F2C94C" strokeWidth={1.6} />}
+          <Circle cx={50} cy={30} r={3.5} fill="#F2C94C" />
+        </G>
+      );
+    case 'hardhat':
+      return (
+        <G stroke={INK} strokeWidth={2}>
+          <Path d="M27 36 Q28 16 50 16 Q72 16 73 36 Z" fill="#F2C94C" />
+          {stage && <Path d="M44 17.5 Q43 26 44 35 L56 35 Q57 26 56 17.5 Z" fill="#F7D96B" strokeWidth={1.4} />}
+          <Rect x={22} y={34} width={56} height={6} rx={3} fill="#F2C94C" />
+        </G>
+      );
+    case 'cap':
+      return (
+        <G stroke={INK} strokeWidth={2}>
+          <Path d="M27 36 Q28 18 50 18 Q72 18 73 36 Z" fill="#E8432E" />
+          {stage && <Path d="M50 18.5 L50 35 M38 22 Q36 28 37 35" fill="none" stroke="#B52C1C" strokeWidth={1.4} />}
+          <Path d="M50 36 L84 36 Q84 41 72 41 L50 41 Z" fill="#E8432E" />
+        </G>
+      );
+    case 'beret':
+      return (
+        <G>
+          <Ellipse cx={46} cy={24} rx={22} ry={8} fill="#B52C1C" stroke={INK} strokeWidth={2} transform="rotate(-10 46 24)" />
+          {stage && <Path d="M47 16.5 l1 -4.5" stroke={INK} strokeWidth={2.4} strokeLinecap="round" />}
+        </G>
+      );
+  }
+}
+
+// ---- bust (small callers) ----
 
 function Face({ mood }: { mood: Mood }) {
   // Eyes
@@ -102,13 +196,10 @@ function Face({ mood }: { mood: Mood }) {
   );
 }
 
-export function Portrait({ id, mood = 'neutral', size = 120, flip = false }: { id: CharacterId; mood?: Mood; size?: number; flip?: boolean }) {
-  const L = LOOKS[id];
+function Bust({ L, mood, size, flip }: { L: Look; mood: Mood; size: number; flip: boolean }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100" style={flip ? { transform: [{ scaleX: -1 }] } : undefined}>
-      {/* back hair */}
-      {L.hairStyle === 'long' && <Path d="M24 44 Q22 82 34 90 L66 90 Q78 82 76 44 Z" fill={L.hair} />}
-      {L.hairStyle === 'bob' && <Path d="M26 42 Q24 70 32 72 L68 72 Q76 70 74 42 Z" fill={L.hair} />}
+      <HairBack style={L.hairStyle} hair={L.hair} />
       {/* body */}
       <Path d="M18 100 Q20 74 50 72 Q80 74 82 100 Z" fill={L.shirt} stroke={INK} strokeWidth={1.8} />
       <Path d="M62 74 Q80 76 82 100 L64 100 Q66 84 62 74 Z" fill="#000" opacity={0.14} />
@@ -135,55 +226,161 @@ export function Portrait({ id, mood = 'neutral', size = 120, flip = false }: { i
       <Ellipse cx={40} cy={36} rx={7} ry={4.5} fill="#fff" opacity={0.22} transform="rotate(-20 40 36)" />
       <Ellipse cx={26.5} cy={52} rx={4} ry={6} fill={L.skin} stroke={INK} strokeWidth={2} />
       <Ellipse cx={73.5} cy={52} rx={4} ry={6} fill={L.skin} stroke={INK} strokeWidth={2} />
-      {/* front hair */}
-      {L.hairStyle === 'bun' && (
-        <G fill={L.hair} stroke={INK} strokeWidth={2}>
-          <Circle cx={50} cy={20} r={10} />
-          <Path d="M26 46 Q26 24 50 24 Q74 24 74 46 Q66 32 50 32 Q34 32 26 46 Z" />
-        </G>
-      )}
-      {(L.hairStyle === 'short' || L.hairStyle === 'long') && (
-        <Path d="M26 46 Q24 22 50 22 Q76 22 74 46 Q70 34 56 32 Q46 38 30 38 Z" fill={L.hair} stroke={INK} strokeWidth={2} />
-      )}
-      {L.hairStyle === 'bob' && <Path d="M25 48 Q24 22 50 22 Q76 22 75 48 L70 40 Q50 30 30 40 Z" fill={L.hair} stroke={INK} strokeWidth={2} />}
-      {L.hairStyle === 'slick' && <Path d="M27 42 Q28 22 52 23 Q74 24 73 42 Q66 30 40 32 Z" fill={L.hair} stroke={INK} strokeWidth={2} />}
-      {/* tapered sideburns */}
-      {L.hairStyle === 'bald' && (
-        <G fill={L.hair} stroke={INK} strokeWidth={1}>
-          <Path d="M26.5 40 Q29.5 38.5 30.5 42 L33 53 Q36 55.5 39 56 Q32 58.5 28.5 54 Q26.5 49 26.5 40 Z" />
-          <Path d="M73.5 40 Q70.5 38.5 69.5 42 L67 53 Q64 55.5 61 56 Q68 58.5 71.5 54 Q73.5 49 73.5 40 Z" />
-        </G>
-      )}
+      <HairFront style={L.hairStyle} hair={L.hair} />
       <Face mood={mood} />
-      {L.extra === 'glasses' && (
-        <G stroke={INK} strokeWidth={2.2} fill="rgba(255,255,255,0.25)">
-          <Circle cx={42} cy={47} r={7} />
-          <Circle cx={58} cy={47} r={7} />
-          <Path d="M49 47 L51 47" />
-        </G>
-      )}
-      {L.extra === 'mustache' && <Path d="M38 56 Q44 52 50 56 Q56 52 62 56 Q56 60 50 57 Q44 60 38 56 Z" fill={L.hair} stroke={INK} strokeWidth={1.4} />}
-      {/* hats */}
-      {L.hat === 'captain' && (
-        <G stroke={INK} strokeWidth={2}>
-          <Path d="M24 34 Q50 14 76 34 L72 38 L28 38 Z" fill="#FFFFFF" />
-          <Rect x={26} y={36} width={48} height={6} rx={2} fill="#1F2A44" />
-          <Circle cx={50} cy={30} r={3.5} fill="#F2C94C" />
-        </G>
-      )}
-      {L.hat === 'hardhat' && (
-        <G stroke={INK} strokeWidth={2}>
-          <Path d="M27 36 Q28 16 50 16 Q72 16 73 36 Z" fill="#F2C94C" />
-          <Rect x={22} y={34} width={56} height={6} rx={3} fill="#F2C94C" />
-        </G>
-      )}
-      {L.hat === 'cap' && (
-        <G stroke={INK} strokeWidth={2}>
-          <Path d="M27 36 Q28 18 50 18 Q72 18 73 36 Z" fill="#E8432E" />
-          <Path d="M50 36 L84 36 Q84 41 72 41 L50 41 Z" fill="#E8432E" />
-        </G>
-      )}
-      {L.hat === 'beret' && <Ellipse cx={46} cy={24} rx={22} ry={8} fill="#B52C1C" stroke={INK} strokeWidth={2} transform="rotate(-10 46 24)" />}
+      {L.extra === 'glasses' && <Glasses stage={false} />}
+      {L.extra === 'mustache' && <Mustache hair={L.hair} />}
+      {L.hat && <Hat hat={L.hat} stage={false} />}
     </Svg>
   );
 }
+
+// ---- stage (cut-scene) ----
+
+/** Strand lines read darker on light hair and lighter on near-black hair. */
+function strandColor(hair: string) {
+  const n = parseInt(hair.slice(1), 16);
+  const lum = 0.3 * (n >> 16) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255);
+  return lum < 60 ? shade(hair, 0.32) : shade(hair, -0.28);
+}
+
+function Outfit({ who, shirt, tone }: { who: CharacterId; shirt: string; tone: (c: string) => string }) {
+  const thin = { stroke: INK, strokeWidth: 1.5, strokeLinejoin: 'round' as const };
+  switch (who) {
+    case 'nonna-rosa':
+      return (
+        <G>
+          <Path d={OUTFIT.apronStraps} stroke={INK} strokeWidth={5.4} strokeLinecap="round" fill="none" />
+          <Path d={OUTFIT.apronStraps} stroke={tone('#FFFFFF')} strokeWidth={3} strokeLinecap="round" fill="none" />
+          <Path d={OUTFIT.apronBib} fill={tone('#FFFFFF')} {...thin} strokeWidth={1.8} />
+          <Path d={OUTFIT.apronPocket} fill="none" stroke={tone('#D9CFC4')} strokeWidth={1.6} />
+        </G>
+      );
+    case 'dale':
+      return (
+        <G>
+          <Path d={OUTFIT.poloCollar} fill={tone(shade(shirt, 0.25))} {...thin} />
+          <Path d={OUTFIT.lanyard} stroke={tone('#F2C94C')} strokeWidth={2.2} fill="none" />
+          <Path d={OUTFIT.whistle} fill={tone('#C9CED6')} {...thin} strokeWidth={1.3} />
+        </G>
+      );
+    case 'victor-crust':
+    case 'megaslice-rep': {
+      const rep = who === 'megaslice-rep';
+      return (
+        <G>
+          <Path d={OUTFIT.suitV} fill={tone('#F4F1EC')} {...thin} />
+          <Path d={OUTFIT.tie} fill={tone(rep ? '#FFC531' : '#E8432E')} {...thin} strokeWidth={1.3} />
+          <Path d={OUTFIT.lapels} fill={tone(shade(shirt, -0.22))} {...thin} />
+          <Path d={rep ? OUTFIT.nameBadge : OUTFIT.pocketSquare} fill={tone(rep ? '#FFC531' : '#F4F1EC')} {...thin} strokeWidth={1.1} />
+        </G>
+      );
+    }
+    case 'genevieve':
+      return (
+        <G>
+          <Path d={OUTFIT.turtleneck} fill={tone('#1C1C1C')} {...thin} />
+          <Path d={OUTFIT.turtleFolds} stroke={tone('#3A3A3A')} strokeWidth={1.2} fill="none" />
+          <Path d={OUTFIT.pearls} fill={tone('#FFFDF5')} stroke={INK} strokeWidth={0.8} />
+        </G>
+      );
+    case 'priya':
+      // Priya: cardigan over a tee, campus lanyard
+      return (
+        <G>
+          <Path d={OUTFIT.teeStrip} fill={tone('#F4F1EC')} {...thin} />
+          <Path d={OUTFIT.badgeCord} stroke={tone('#2F80ED')} strokeWidth={2} fill="none" />
+          <Path d={OUTFIT.badge} fill={tone('#FFFFFF')} {...thin} strokeWidth={1.2} />
+        </G>
+      );
+    case 'big-sal':
+      // Big Sal: hi-vis work shirt with reflective tape
+      return <Path d={OUTFIT.vestStripes} fill={tone('#E9EDF0')} stroke={INK} strokeWidth={1} />;
+    case 'marisol':
+      // Captain Marisol: double-breasted jacket, brass buttons and epaulettes
+      return (
+        <G>
+          <Path d={OUTFIT.shirtV} fill={tone('#F4F1EC')} {...thin} />
+          <Path d={OUTFIT.jacketLine} stroke={INK} strokeWidth={1.4} fill="none" />
+          <Path d={OUTFIT.brass} fill={tone('#F2C94C')} stroke={INK} strokeWidth={0.9} />
+        </G>
+      );
+  }
+}
+
+function Stage({ id, mood, size, flip, dim }: { id: CharacterId; mood: Mood; size: number; flip: boolean; dim: boolean }) {
+  const L = LOOKS[id];
+  const tone = (c: string) => (dim ? shade(c, -0.2) : c);
+  const skin = tone(L.skin);
+  const hair = tone(L.hair);
+  const shirt = tone(L.shirt);
+  const face = FACES[mood];
+  const g = gestureFor(mood);
+  const skinShade = shade(skin, -0.22);
+  return (
+    <Svg width={(size * STAGE_VB.w) / STAGE_VB.h} height={size} viewBox={`0 0 ${STAGE_VB.w} ${STAGE_VB.h}`}>
+      <Ellipse {...GROUND.outer} fill="#000" opacity={0.14} />
+      <Ellipse {...GROUND.inner} fill="#000" opacity={0.16} />
+      <G transform={flip ? `translate(${STAGE_VB.w} 0) scale(-1 1)` : undefined}>
+        <G transform={HEAD_SHIFT}>
+          <HairBack style={L.hairStyle} hair={hair} />
+        </G>
+        <Path d={NECK} fill={skin} />
+        <Path d={NECK_SHADOW} fill={skinShade} />
+        <Path d={TORSO} fill={shirt} stroke={INK} strokeWidth={2} strokeLinejoin="round" />
+        <Path d={FOLDS} stroke={shade(shirt, -0.3)} strokeWidth={1.4} fill="none" strokeLinecap="round" />
+        <Outfit who={id} shirt={L.shirt} tone={tone} />
+        <Path d={g.arms} stroke={INK} strokeWidth={15.5} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <Path d={g.arms} stroke={shirt} strokeWidth={12} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <Path d={g.hands} fill={skin} stroke={INK} strokeWidth={1.6} strokeLinejoin="round" />
+        <Path d={g.creases} stroke={skinShade} strokeWidth={1.2} fill="none" strokeLinecap="round" />
+        <G transform={HEAD_SHIFT}>
+          <Ellipse cx={50} cy={50} rx={24} ry={25} fill={skin} stroke={INK} strokeWidth={2} />
+          <Path d={EARS} fill={skin} stroke={INK} strokeWidth={1.8} />
+          <Path d={EAR_INNER} stroke={skinShade} strokeWidth={1.4} fill="none" strokeLinecap="round" />
+          <HairFront style={L.hairStyle} hair={hair} />
+          {STRANDS[L.hairStyle] ? <Path d={STRANDS[L.hairStyle]} stroke={strandColor(hair)} strokeWidth={1.3} fill="none" strokeLinecap="round" /> : null}
+          <Path d={BLUSH} fill="#F28B82" opacity={mood === 'happy' || mood === 'angry' ? 0.55 : 0.32} />
+          <Path d={face.brows} stroke={INK} strokeWidth={face.browW} strokeLinecap="round" fill="none" />
+          <Path d={face.sclera} fill={tone('#FFFFFF')} />
+          <Path d={face.iris} fill={tone(L.eye)} />
+          <Path d={face.pupil} fill="#160A05" />
+          <Path d={face.glints} fill="#FFFFFF" />
+          <Path d={face.lids} stroke={INK} strokeWidth={1.9} strokeLinecap="round" fill="none" />
+          <Path d={NOSE} stroke={skinShade} strokeWidth={1.7} strokeLinecap="round" fill="none" />
+          <Path d={face.mouth} fill={face.mouthFill ? '#8E2A1E' : 'none'} stroke={INK} strokeWidth={face.mouthFill ? 2 : 2.6} strokeLinecap="round" strokeLinejoin="round" />
+          {face.tongue ? <Path d={face.tongue} fill="#E8766A" /> : null}
+          {L.extra === 'glasses' && <Glasses stage />}
+          {L.extra === 'mustache' && <Mustache hair={hair} />}
+          {L.hat && <Hat hat={L.hat} stage />}
+        </G>
+      </G>
+      {/* light from the upper left, never mirrored */}
+      <Path d={LIGHT_SHADE} fill="#000" opacity={0.13} />
+      <Path d={LIGHT_RIM} stroke="#FFFFFF" strokeWidth={2} opacity={0.4} fill="none" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+/**
+ * A character. `size` is the bust's square size, or the stage figure's height (its width is 0.8 × size).
+ * `dim` (stage only) shades a listener down a little.
+ */
+export const Portrait = memo(function Portrait({
+  id,
+  mood = 'neutral',
+  size = 120,
+  flip = false,
+  variant = 'bust',
+  dim = false,
+}: {
+  id: CharacterId;
+  mood?: Mood;
+  size?: number;
+  flip?: boolean;
+  variant?: 'bust' | 'stage';
+  dim?: boolean;
+}) {
+  const L = LOOKS[id];
+  return variant === 'stage' ? <Stage id={id} mood={mood} size={size} flip={flip} dim={dim} /> : <Bust L={L} mood={mood} size={size} flip={flip} />;
+});

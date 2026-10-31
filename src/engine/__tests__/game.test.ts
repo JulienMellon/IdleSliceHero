@@ -106,6 +106,16 @@ describe('managers, heads and tapping', () => {
     expect(r.cash).toBe(s.cash);
     expect(r.shops.downtown.line.prep!.left).toBeLessThan(s.shops.downtown.line.prep!.left);
   });
+  test('T75: a GM tick with no sale keeps the stats identity; a tick that sells replaces it', () => {
+    const s = managed(fresh());
+    const quiet = G.lineTick(s, 0.05);
+    expect(quiet.shops.downtown.line).not.toBe(s.shops.downtown.line); // the line did advance
+    expect(quiet.stats).toBe(s.stats);
+    let t = s;
+    for (let i = 0; i < 300; i++) t = G.lineTick(t, 0.2);
+    expect(t.stats).not.toBe(s.stats);
+    expect(t.stats.baked).toBeGreaterThan(0);
+  });
   test('heads: each one automates its station; the GM needs all three', () => {
     let s = { ...fresh(), cash: 1e9 };
     s = { ...s, shops: { ...s.shops, suburbs: { ...G.newShop(true) } } };

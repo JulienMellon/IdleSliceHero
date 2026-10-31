@@ -17,6 +17,7 @@ import {
   TASK_TEXT,
   VISITORS,
   WEEKLY_FALLBACK,
+  WEEKLY_CHEST_DIAMONDS,
   WEEKLY_COSMETICS,
   WEEKLY_DIAMONDS,
   WEEKLY_POOL,
@@ -209,7 +210,8 @@ function generate(s: GameState, pool: readonly PoolEntry[], n: number, key: stri
  * Keep rewards current: raise `lastSeen`, drop ended boosts, roll a new daily set when the local day moved FORWARD and a
  * new weekly set when the week did (a day key that goes backwards, e.g. a time-zone change, never re-rolls).
  * No-op before unlock and while the clock is slightly behind `lastSeen`. A clock more than CLOCK_RECOVER_MS behind
- * (set forward by mistake, then fixed) recovers: `lastSeen` = now and boosts are cleared. Returns `s` itself when
+ * (set forward by mistake, then fixed) recovers: `lastSeen` = now, boosts are cleared, and a day, week or gift date in the
+ * future is pulled back to today (the sets are kept, not re-rolled). Returns `s` itself when
  * nothing changed.
  *
  * `lastSeen` is raised only when it is LAST_SEEN_STEP_MS stale (and on every claim, via withRewards), so
@@ -226,6 +228,11 @@ export function refreshRewards(s: GameState, now: number): GameState {
   if (recovering) {
     patch.lastSeen = now;
     if (r.boosts.length) patch.boosts = [];
+    // a refresh under the wrong clock may have rolled day/week/gift into the future: pull them back to today, keeping the
+    // current sets (nothing regenerates, so nothing is farmable) so the next real day rolls normally
+    if (r.day !== '' && dayNumber(r.day) > dayNumber(dayKey(now))) patch.day = dayKey(now);
+    if (r.week !== '' && dayNumber(r.week) > dayNumber(weekKey(now))) patch.week = weekKey(now);
+    if (r.gift.last && dayNumber(r.gift.last) > dayNumber(dayKey(now))) patch.gift = { ...r.gift, last: dayKey(now) };
   } else {
     if (now - r.lastSeen >= LAST_SEEN_STEP_MS) patch.lastSeen = now;
     if (r.boosts.some((b) => b.until <= now)) patch.boosts = r.boosts.filter((b) => b.until > now);
@@ -325,17 +332,17 @@ export function claimWeekly(s: GameState, i: number, now: number): BuyResult {
 /** This week's place in the cosmetic rotation (by ISO week number). */
 const rotationStart = (s: GameState): number => isoWeek(s.rewards.week || dayKey(s.lastSavedAt)) % WEEKLY_COSMETICS.length;
 
-export type WeeklyChestPrize = { kind: 'cosmetic'; id: string } | { kind: 'fallback'; diamonds: number; minutes: number };
+export type WeeklyChestPrize = { kind: 'cosmetic'; id: string; diamonds: number } | { kind: 'fallback'; diamonds: number; minutes: number };
 
 /**
- * What the weekly chest gives: the first cosmetic the player doesn't own, in rotation order from this week's;
- * once all are owned, WEEKLY_FALLBACK diamonds and minutes of income.
+ * What the weekly chest gives: the first cosmetic the player doesn't own, in rotation order from this week's, plus
+ * WEEKLY_CHEST_DIAMONDS; once all are owned, WEEKLY_FALLBACK diamonds and minutes of income.
  */
 export function weeklyChestPrize(s: GameState): WeeklyChestPrize {
   const start = rotationStart(s);
   for (let k = 0; k < WEEKLY_COSMETICS.length; k++) {
     const id = WEEKLY_COSMETICS[(start + k) % WEEKLY_COSMETICS.length];
-    if (!s.rewards.cosmetics.includes(id)) return { kind: 'cosmetic', id };
+    if (!s.rewards.cosmetics.includes(id)) return { kind: 'cosmetic', id, diamonds: WEEKLY_CHEST_DIAMONDS };
   }
   return { kind: 'fallback', diamonds: WEEKLY_FALLBACK.diamonds, minutes: WEEKLY_FALLBACK.minutes };
 }
@@ -354,7 +361,7 @@ export function claimWeeklyChest(s: GameState, now: number): BuyResult {
   if (s.rewards.weeklyChest) return { ok: false, reason: 'Already opened' };
   if (!weeklyChestReady(s)) return { ok: false, reason: 'Claim every weekly task first' };
   const prize = weeklyChestPrize(s);
-  if (prize.kind === 'cosmetic') return { ok: true, state: withRewards(s, { weeklyChest: true, cosmetics: [...s.rewards.cosmetics, prize.id] }, now) };
+  if (prize.kind === 'cosmetic') return { ok: true, state: withRewards(s, { weeklyChest: true, cosmetics: [...s.rewards.cosmetics, prize.id], diamonds: s.rewards.diamonds + prize.diamonds }, now) };
   return { ok: true, state: withRewards(pay(s, minutesToCash(s, prize.minutes)), { weeklyChest: true, diamonds: s.rewards.diamonds + prize.diamonds }, now) };
 }
 

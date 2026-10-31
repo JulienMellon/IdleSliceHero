@@ -11,6 +11,7 @@ import type { Scene } from '../content/types';
 import { C, F } from '../theme';
 import { Backdrop } from './backdrop';
 import { canAdvance, sceneHeading } from '../engine/cutscene-input';
+import { PANEL_BORDER, panelSize, stageLayout, tailShare } from './cutscene/staging';
 import { Portrait } from './portrait';
 
 const native = Platform.OS !== 'web';
@@ -42,9 +43,8 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   const hasCard = !!scene.reward || !!perk;
   const p = scene.panels[panel];
   const current = p.lines[line];
-  const frameW = Math.min(width - 24, 520);
   // Tall panel (~55% of the screen); the backdrop grows its sky to fill it, so nothing is cropped.
-  const frameH = Math.max(frameW * 0.75, Math.min(height * 0.66 - insets.top, frameW * 1.45));
+  const { w: frameW, h: frameH, innerW, innerH } = panelSize(width, height, insets.top);
 
   // Story music for this panel (docs/AUDIO.md); replays use the same cues.
   useEffect(() => {
@@ -101,7 +101,8 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   }, [panel, line, showReward]);
 
   const speakerIndex = current ? p.cast.findIndex((c) => current.speaker.toLowerCase().includes(c.id.split('-')[0]) || current.speaker.startsWith(nameOf(c.id))) : -1;
-  const portraitSize = Math.min(frameH * 0.62, p.cast.length > 1 ? frameW * 0.49 : frameW * 0.78);
+  // waist-up figures: centred, or at 30 % / 70 % facing each other; the speaker in front, the listener smaller and dimmed
+  const stage = stageLayout(p.cast.length, innerW, innerH, speakerIndex);
 
   return (
     <View style={StyleSheet.absoluteFill}>
@@ -121,22 +122,26 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
         </View>
 
         <View style={styles.stage}>
-        <Animated.View style={[styles.frame, { width: frameW, height: frameH, transform: [{ translateX: slide }] }]}>
-          <Animated.View style={{ position: 'absolute', inset: 0, transform: [{ scale: zoom }] } as never}>
-            <Backdrop id={p.backdrop} width={frameW} height={frameH} prop={p.prop} />
-          </Animated.View>
-          <View style={styles.castRow}>
-            {p.cast.map((c, i) => (
-              <View key={c.id} style={{ transform: [{ scale: speakerIndex === -1 || speakerIndex === i ? 1 : 0.9 }], transformOrigin: 'bottom' } as never}>
-                <Portrait id={c.id} mood={c.mood} size={portraitSize} flip={p.cast.length === 2 && i === 1} />
+        <Animated.View style={[styles.frameShadow, { width: frameW, height: frameH, transform: [{ translateX: slide }] }]}>
+          <View style={styles.frame}>
+            <Animated.View style={{ position: 'absolute', inset: 0, transform: [{ scale: zoom }] } as never}>
+              <Backdrop id={p.backdrop} width={innerW} height={innerH} prop={p.prop} />
+            </Animated.View>
+            {p.cast.map((c, i) => {
+              const s = stage[i];
+              return (
+                <View key={c.id} style={[styles.figure, { left: s.left, width: s.width, height: s.height, zIndex: s.z, transform: [{ scale: s.scale }] }]}>
+                  <Portrait id={c.id} mood={c.mood} size={s.height} flip={s.flip} dim={s.dim} variant="stage" />
+                </View>
+              );
+            })}
+            {p.caption && p.lines.length > 0 ? (
+              <View style={styles.caption}>
+                <Text style={styles.captionText}>{p.caption}</Text>
               </View>
-            ))}
+            ) : null}
+            <View pointerEvents="none" style={styles.keyline} />
           </View>
-          {p.caption && p.lines.length > 0 ? (
-            <View style={styles.caption}>
-              <Text style={styles.captionText}>{p.caption}</Text>
-            </View>
-          ) : null}
         </Animated.View>
 
         <View style={[styles.bubbleArea, { width: frameW }]}>
@@ -163,7 +168,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
           ) : current ? (
             <Animated.View style={[styles.bubble, { transform: [{ scale: bubble }] }]}>
               {p.cast.length > 0 && current.speaker !== 'You' && (
-                <View style={[styles.tail, { left: p.cast.length === 1 ? '47%' : speakerIndex === 1 ? '70%' : '22%' }]} />
+                <View style={[styles.tail, { left: tailShare(p.cast.length, speakerIndex) * frameW - TAIL / 2 }]} />
               )}
               <Text style={styles.speaker}>{current.speaker}</Text>
               <Text style={styles.line}>{current.text}</Text>
@@ -190,21 +195,27 @@ function nameOf(id: string) {
     .join(' ');
 }
 
+const TAIL = 22;
+const CREAM = '#FFF4E0';
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#1E0E08', alignItems: 'center' },
   topRow: { width: '100%', maxWidth: 540, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 10 },
   title: { color: C.cheese, fontFamily: F.bold, fontSize: 22 },
   skip: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16 },
   skipText: { color: '#fff', fontFamily: F.semi, fontSize: 15 },
-  frame: { borderRadius: 18, overflow: 'hidden', borderWidth: 4, borderColor: '#fff', backgroundColor: '#000' },
-  castRow: { position: 'absolute', bottom: -6, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end' },
+  // comic panel: ink border, a cream keyline just inside it, and a drop shadow under the whole panel
+  frameShadow: { borderRadius: 12, backgroundColor: C.ink, boxShadow: '0 8px 18px rgba(0,0,0,0.6)' } as object,
+  frame: { flex: 1, borderRadius: 12, overflow: 'hidden', borderWidth: PANEL_BORDER, borderColor: C.ink, backgroundColor: '#000' },
+  keyline: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 9, borderWidth: 1, borderColor: CREAM },
+  figure: { position: 'absolute', bottom: 0, transformOrigin: 'bottom' } as object,
   caption: { position: 'absolute', top: 10, left: 10, right: 10, backgroundColor: C.cheese, opacity: 0.94, borderWidth: 2.5, borderColor: C.ink, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6, shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 4, shadowOffset: { width: 0, height: 3 } },
   captionText: { fontFamily: F.semi, color: C.ink, fontSize: 15 },
   narration: { backgroundColor: C.cheese, borderWidth: 3, borderColor: C.ink, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14 },
   narrationText: { fontFamily: F.bold, fontSize: 18, lineHeight: 24, color: C.ink, textAlign: 'center' },
   bubbleArea: { minHeight: 130, marginTop: 18, justifyContent: 'flex-start' },
   bubble: { backgroundColor: '#fff', borderRadius: 20, borderWidth: 3, borderColor: C.ink, padding: 14 },
-  tail: { position: 'absolute', top: -13, width: 22, height: 22, backgroundColor: '#fff', borderLeftWidth: 3, borderTopWidth: 3, borderColor: C.ink, transform: [{ rotate: '45deg' }] },
+  tail: { position: 'absolute', top: -13, width: TAIL, height: TAIL, backgroundColor: '#fff', borderLeftWidth: 3, borderTopWidth: 3, borderColor: C.ink, transform: [{ rotate: '45deg' }] },
   speaker: { fontFamily: F.bold, color: C.tomato, fontSize: 16, marginBottom: 2 },
   line: { fontFamily: F.regular, color: C.ink, fontSize: 19, lineHeight: 25 },
   reward: { backgroundColor: C.cheese, borderRadius: 20, borderWidth: 3, borderColor: C.ink, padding: 16, alignItems: 'center' },

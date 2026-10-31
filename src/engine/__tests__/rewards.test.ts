@@ -22,6 +22,7 @@ import {
   MAX_CONCURRENT_BOOSTS,
   BOOST_MAX_AHEAD_MS,
   VISITOR_LINES,
+  WEEKLY_CHEST_DIAMONDS,
   WEEKLY_DIAMONDS,
   WEEKLY_POOL,
   WEEKLY_TASK_COUNT,
@@ -329,8 +330,9 @@ describe('claims', () => {
     s = { ...s, rewards: { ...s.rewards, points: 40 } };
     expect(R.claimableCount(s, T)).toBe(1);
   });
-  test('weekly diamonds add up to 50', () => {
-    expect(WEEKLY_DIAMONDS.reduce((a, b) => a + b, 0)).toBe(50);
+  test('weekly diamonds: 6 per task plus the final chest add up to 50', () => {
+    expect(new Set(WEEKLY_DIAMONDS).size).toBe(1);
+    expect(WEEKLY_DIAMONDS.reduce((a, b) => a + b, 0) + WEEKLY_CHEST_DIAMONDS).toBe(50);
     expect(WEEKLY_DIAMONDS).toHaveLength(WEEKLY_TASK_COUNT);
   });
   test('weekly tasks pay income and diamonds; the final chest needs all of them and gives this week’s cosmetic', () => {
@@ -344,13 +346,14 @@ describe('claims', () => {
       s = ok(R.claimWeekly(s, i, T));
       expect(R.claimWeekly(s, i, T).ok).toBe(false);
     }
-    expect(s.rewards.diamonds).toBe(50);
+    expect(s.rewards.diamonds).toBe(42);
     expect(s.cash - cash).toBeCloseTo(R.rewardIncome(s) * 60 * WEEKLY_TASK_REWARD.minutes * WEEKLY_TASK_COUNT);
     const cosmetic = WEEKLY_COSMETICS[R.isoWeek('2026-10-26') % WEEKLY_COSMETICS.length];
     expect(R.weeklyCosmetic(s)).toBe(cosmetic);
     expect(R.claimableCount({ ...s, rewards: { ...s.rewards, daily: [] } }, T)).toBe(1);
     s = ok(R.claimWeeklyChest(s, T));
     expect(s.rewards.cosmetics).toEqual([cosmetic]);
+    expect(s.rewards.diamonds).toBe(50); // the chest pays the last 8
     expect(R.claimWeeklyChest(s, T).ok).toBe(false);
   });
   test('boosters start from the inventory, run for their time and stack', () => {
@@ -699,6 +702,30 @@ describe('C95 a clock set far forward recovers', () => {
     expect(r.stats.days).toBe(s.stats.days);
     expect(R.claimDaily(r, 0, T).ok).toBe(true);
   });
+  test('T74: a refresh under a clock set 3 days ahead, then the clock fixed: day, week and gift go back to today, sets kept', () => {
+    const s0 = ready();
+    const future = T + 3 * 24 * HOUR;
+    let s = R.refreshRewards(s0, future); // rolls to the future day and week
+    expect(s.rewards.day).toBe(R.dayKey(future));
+    expect(s.rewards.week).toBe(R.weekKey(future));
+    s = ok(R.claimGift(s, future));
+    expect(R.giftStatus(s, future).kind).toBe('claimed');
+    const days = s.stats.days;
+    const r = R.refreshRewards(s, T);
+    expect(r.rewards.day).toBe(R.dayKey(T));
+    expect(r.rewards.week).toBe(R.weekKey(T));
+    expect(r.rewards.daily).toBe(s.rewards.daily); // kept, not regenerated
+    expect(r.rewards.weekly).toBe(s.rewards.weekly);
+    expect(r.rewards.points).toBe(s.rewards.points);
+    expect(r.stats.days).toBe(days);
+    expect(r.rewards.gift.last).toBe(R.dayKey(T));
+    expect(R.giftStatus(r, T + 24 * HOUR).kind).toBe('ready'); // the next real day is claimable, not "claimed"
+    // and the next real day rolls a fresh daily set
+    const next = R.refreshRewards(r, T + 24 * HOUR);
+    expect(next.rewards.day).toBe(R.dayKey(T + 24 * HOUR));
+    expect(next.rewards.daily).not.toBe(r.rewards.daily);
+    expect(next.stats.days).toBe(days + 1);
+  });
   test('within 36 h the guard still waits', () => {
     const s = ready();
     const ahead = { ...s, rewards: { ...s.rewards, lastSeen: T + CLOCK_RECOVER_MS } };
@@ -750,13 +777,14 @@ describe('G85 weekly chest prize', () => {
   const start = WEEKLY_COSMETICS[R.isoWeek('2026-10-26') % WEEKLY_COSMETICS.length];
   const order = (i: number) => WEEKLY_COSMETICS[(R.isoWeek('2026-10-26') + i) % WEEKLY_COSMETICS.length];
   test('unowned: this week\'s', () => {
-    expect(R.weeklyChestPrize(chestReady([]))).toEqual({ kind: 'cosmetic', id: start });
+    expect(R.weeklyChestPrize(chestReady([]))).toEqual({ kind: 'cosmetic', id: start, diamonds: WEEKLY_CHEST_DIAMONDS });
   });
   test('owned: the next unowned in rotation order', () => {
     const s = chestReady([start, order(1)]);
-    expect(R.weeklyChestPrize(s)).toEqual({ kind: 'cosmetic', id: order(2) });
+    expect(R.weeklyChestPrize(s)).toEqual({ kind: 'cosmetic', id: order(2), diamonds: WEEKLY_CHEST_DIAMONDS });
     const after = ok(R.claimWeeklyChest(s, T));
     expect(after.rewards.cosmetics).toEqual([start, order(1), order(2)]);
+    expect(after.rewards.diamonds - s.rewards.diamonds).toBe(WEEKLY_CHEST_DIAMONDS);
   });
   test('all owned: 30 diamonds and 2 h of income', () => {
     const s = chestReady([...WEEKLY_COSMETICS]);
