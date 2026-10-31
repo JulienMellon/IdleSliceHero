@@ -50,3 +50,6 @@ screenshots/reference/
 # audio build intermediates
 tools/audio/build/
 __pycache__/
+
+# per-round review sets built by scripts/review_shots.py
+screenshots/*/review/

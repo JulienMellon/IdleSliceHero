@@ -1,11 +1,11 @@
 # Handoff — Slice Empire (IdleSliceHero), after v5.2 (+ v5.3 work in progress)
 
-For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` (current state only; history in `docs/logs/`), `docs/PLAN-v4.7-playtest2.md` (the playtest-2 plan and owner decisions), and `STORYLOG.md` / `AUDIOLOG.md`. The project's `claude/HANDOFF.md` mirrors this file.
+For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` (current state only; don't open `docs/logs/` unless you need one note's history), `docs/PLAN-v4.7-playtest2.md` (the playtest-2 plan and owner decisions), and `STORYLOG.md` / `AUDIOLOG.md`. The project's `claude/HANDOFF.md` mirrors this file.
 
 ## Status: the build/review loop is STOPPED (Julien, 2026-10-30)
 - Julien ended the session after critic round 50 (v5.2, NOT SATISFIED, one [major]) and codecritic round 18 (v5.0, APPROVED). Don't restart the loop or run reviewers until he asks.
 - **v5.3 is in progress** on `main` (APP_VERSION still `5.2`): only the D377 fix is in (walk-ins order at the counter's left end, drivers pick up at the right end by the door; 213 tests pass). It has not been screenshotted or reviewed.
-- **To restart:** finish the v5.3 list in `CRITICLOG.md` / `CODELOG.md` (add the doorway-sign crowd budget for D377 first), bump to 5.3, verify, then run critic (shots v5.2 → v5.3, next IDs G84/D384) and codecritic (range a0a9bee..HEAD, next IDs K1/C90/A24/M53/T66). Stop when both pass on the same build, then storycritic + audiocritic at low effort.
+- **To restart:** finish the v5.3 list in `CRITICLOG.md` / `CODELOG.md` (add the doorway-sign crowd budget for D377 first), bump to 5.3, verify, then run critic (review set v5.3 vs v5.2, next IDs G84/D384) and codecritic (range a0a9bee..HEAD, next IDs K1/C90/A24/M53/T66). Stop when both pass on the same build, then storycritic + audiocritic at low effort.
 - **Pacing change (flagged to Julien 2026-10-30):** post-Downtown build costs went ×1.5 to offset the GM ×2 boost, so the pacing sim now completes the city at ~184.8 min (was ~227). Nonna still takes over at 5.0 min / 35 taps.
 - **Owner decisions from playtest 2** (keep): 3 taps per batch until a manager; no tap-ahead; heads at 20/30/50% of the manager price, GM needs all three (×2 income, offline earning), Downtown heads $25/$60/$120 and Nonna brings missing heads; +2 pies every 20 prep levels (4 → 14), Nonna 150; cash only when pizza leaves, other shops pay quietly; native splash + 2 s title card, tap skips; red awning as piping only outside Downtown; heads are supporting cast (`docs/story/CAST.md`). Post each round's critic notes in chat.
 - **Worktree:** builds were made in a git worktree at `/home/claude/wt` (branch `wip-vX`, ff-merged to `main`); it was removed at handoff, so everything is on `main`. A fresh session can work directly in the repo.
@@ -16,24 +16,35 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
 - **Version:** `src/content/version.ts` (drawer footer and Settings). Current build **5.2** (5.3 in progress); builds go up by 0.1. `app.json` (2.0.0) stays the App Store marketing version.
 - **Owner:** Julien (mellon.julien@gmail.com). He likes concrete proposals he can correct over open questions, and evidence over superlatives.
 
-## Reviewers (agent types; briefs in `.claude/agents/`)
-| Agent | Reviews | Log | Gates the loop? |
+## Roles (briefs in `.claude/agents/`)
+| Agent | Model | Job | Gates? |
 | --- | --- | --- | --- |
-| `critic` | Pixels: screenshots vs. top idle games, characters, layout | `CRITICLOG.md` | Yes: SATISFIED = 0 bugs, 0 [major], ≤ 3 [minor] |
-| `codecritic` | The git diff: correctness, architecture, memory (the owner's focus) | `CODELOG.md` | Yes: APPROVED = no blocker/[high], ≤ 3 [medium] in ISSUES + MEMORY. |
-| `storycritic` | Story, cut-scenes, hooks, voice, comedy, player-facing text | `STORYLOG.md` | Advisory (added 2026-10-29 at Julien's request); low effort at the end of a loop |
-| `audiocritic` | Music, SFX, mix vs. emotion; plans audio until it exists (cue sheet: `docs/AUDIO.md`) | `AUDIOLOG.md` | Advisory; low effort at the end of a loop |
+| orchestrator (main session) | Opus | Plans, writes task cards, runs checks and screenshots, commits, logs, reports | — |
+| `programmer` | Sonnet, high | One task card: edits only the files in scope, runs the checks on the card, ≤ 12-line report | — |
+| `critic` | inherit | Pixels, from the review set | SATISFIED = 0 bugs, 0 [major], ≤ 3 [minor] |
+| `codecritic` | inherit | The git diff | APPROVED = no blocker/[high], ≤ 3 [medium] |
+| `storycritic`, `audiocritic` | inherit | Story/text; music/SFX | Advisory; only when their files change |
+| `search`, `docs`, `tests` | Haiku | Find code; fetch API docs; run tests | — |
 
-**If an agent type isn't found** (e.g. `audiocritic`): agent definitions are read from `.claude/agents/` when a session starts. Pull `main` first (`storycritic` and `audiocritic` arrived in commit 5573264), then start a new session or reload the repo context. If it still isn't listed, run a general-purpose agent and tell it to follow `.claude/agents/<name>.md` as its brief; the result is the same.
+## The loop (token-lean)
+1. **Plan the step** into 1–3 task cards. Each card has: goal, **files in scope**, the **full text** of the notes to fix (never "see CRITICLOG"), and checks (`npx tsc --noEmit` + the targeted `npx jest` files). One programmer per card. Cards with disjoint files can run in parallel.
+2. **Programmer** works and reports. Read `git diff --stat` and only the hunks you need to judge the report. Don't re-read whole files.
+3. **Verify once** (orchestrator): bump `APP_VERSION`; `npx tsc --noEmit`; `npm test` (full, once, ~110 s); `npx expo export --platform web`; `python3 scripts/screenshots.py v5.3`; `python3 scripts/review_shots.py v5.3 v5.2`. Check `report.json` has `"errors": []`, `"loaded": true`. If shot 22 times out, re-run once.
+4. **Commit and push** to `main`: `git -c user.name="Julien Mellon" -c user.email="mellon.julien@gmail.com" commit …`, then `git fetch -q origin main && git rebase origin/main && git push -q origin main`. End commit messages with the session's attribution lines. Append a short `## v5.3 — build` table to each log.
+5. **Review in parallel, in the background.** Only run a critic whose inputs changed:
+   - `critic` when `review/index.json` has any `new`/`changed` shot. Paste the open-notes table and next IDs into its task.
+   - `codecritic` when `src/` changed. Pass the git range, the open items, next IDs, and the tsc/test results from step 3, so it doesn't re-run them.
+   - `storycritic` when `src/content/scenes/` or player-facing strings changed. `audiocritic` when `src/audio/`, `tools/audio/` or `docs/AUDIO.md` changed. Low effort unless Julien asks.
+   - **Re-check rounds** (the step only fixed listed notes): run at **medium** effort and ask for a verdict on those IDs plus anything new. Full effort for a new feature step, or `review_shots.py --all`.
+   - Don't edit the working tree while the codecritic runs.
+6. **Hand critiques back:** copy only the actionable lines (ID, severity, where, fix) into the next card. **Send** them to the same programmer if it's still alive and the files match (it keeps its context). Otherwise start a fresh one with a new card.
+7. **Log:** replace each log's "Current state" with the new verdict and its open-notes table (with note text). Move the old section to `docs/logs/*-archive.md` **every round**, so the live logs stay short. Update this file's "Where things stand". Commit, push, report to Julien in 2–4 sentences.
+8. **Stop** when the critic is SATISFIED and the codecritic APPROVES on the same build.
 
-## The loop (when Julien restarts it)
-1. **Build v5.(n+1)**: fix the open notes in the logs. `sed -i "s/export const APP_VERSION = .*/export const APP_VERSION = '5.3';/" src/content/version.ts`.
-2. **Verify:** `npx tsc --noEmit` clean; `npm test` passes (213 tests); `npx expo export --platform web` then `python3 scripts/screenshots.py v5.3` → `screenshots/v5.3/report.json` shows `"errors": []` and `"loaded": true`. Look at the PNGs yourself (00, 03, 03b, 04, 05b2–05b6, 10–12, 25-look-* at least). Shot 22 (perk card) timed out once and passed on a re-run: re-run once before investigating.
-3. **Log:** append a `## v5.3 — build` table to `CRITICLOG.md` and `CODELOG.md`.
-4. **Commit and push to `main`:** `git -c user.name="Julien Mellon" -c user.email="mellon.julien@gmail.com" commit …`, then `git fetch -q origin main && git rebase origin/main && git push -q origin main` (Julien pushes too). End commit messages with the attribution lines the session gives you.
-5. **Review in parallel, in the background:** `critic` (version, new and previous screenshot folders, next IDs) and `codecritic` (git range, next IDs, the memory focus; read-only; never `npx expo lint`). **Don't edit the working tree while the codecritic runs**: it runs `npm test` on it, and a half-made edit once produced a false blocker.
-6. **Log the verdicts:** replace each log's "Current state" with the new verdict and its open-notes table **including each note's text** (a later round needs it), bump the next IDs, move the replaced section and build tables to `docs/logs/*-archive.md`, commit, push, report to Julien in 2–4 sentences.
-7. **Stop** when the critic is SATISFIED and the codecritic APPROVES on the same build. Then run `storycritic` and `audiocritic` at low effort and log them.
+### Token notes (measured 2026-10-30)
+- A general-purpose agent costs ~60K tokens before doing anything. The `programmer`, with 6 tools, finished a small task in ~16K. Use the narrow agent types, never general-purpose, for loop work. Prefer fewer, larger cards, and continue an agent with SendMessage for fix rounds.
+- Screenshots: a full round used to send ~78 full-size PNGs (~1.5K tokens each). The review set for v5.2 vs v5.1 is 20 half-size shots + 19 prev (~0.45K each), about 85% less.
+- The live logs are ~4 KB each after archiving finished rounds (was ~33 KB together). Archive every round to keep them that way.
 
 ## Where things stand at v5.2
 - **Critic, round 50 (v5.2): NOT SATISFIED.** One [major] (D377, fixed in v5.3 WIP but unverified), one bug (G83, no tutorial hand on wait steps) and minors; table in `CRITICLOG.md`. Neighbourhood identity passed in round 48.
@@ -58,6 +69,7 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
 - **Moving one figure moves the overlap:** after any crew route or spot change, run the whole crowd suite (D336, D352, D353, D368, D370), not just the budget you're fixing.
 - **Engine/scene sync:** carriers start their walk at the engine's dispatch time (`since`); don't add a scene-side fallback that changes who carries (it skewed the walk-in split to 50%).
 - **Codecritic and the working tree:** don't ff-merge into the tree it is testing.
+- **Agent types missing?** They load from `.claude/agents/` at session start: pull `main` and reload. As a last resort, run a general-purpose agent with the brief (~4× the cost).
 - **Critic churn:** each round tends to surface new minors. Fix the bugs and new notes first; carried minors (sky, crowd) are the ones that may stay.
 
 ## Outside the loop
