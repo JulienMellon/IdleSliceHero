@@ -83,11 +83,14 @@ export function TitleCard({ onDone }: { onDone: () => void }) {
           <Animated.Text style={[styles.name, { opacity: drop }]}>SLICE EMPIRE</Animated.Text>
           <Text style={styles.sub}>Rosa’s Pizzeria · Port Marinara</Text>
         </View>
-        <Animated.View style={[styles.nonna, { transform: [{ rotate: tilt }] }]}>
-          <View style={styles.nonnaRing}>
-            <Portrait id="nonna-rosa" mood="happy" size={84} />
-          </View>
-        </Animated.View>
+        {/* D380: Nonna is centred under the subtitle; the full-width row keeps her on the screen's centre line */}
+        <View style={styles.nonnaRow} pointerEvents="none">
+          <Animated.View style={{ transform: [{ rotate: tilt }] }}>
+            <View style={styles.nonnaRing}>
+              <Portrait id="nonna-rosa" mood="happy" size={84} />
+            </View>
+          </Animated.View>
+        </View>
         <Animated.Text style={[styles.skip, { opacity: blink }]}>Tap to start</Animated.Text>
       </Pressable>
     </Animated.View>
@@ -102,7 +105,7 @@ const styles = StyleSheet.create({
   rays: { position: 'absolute', width: 640, height: 640, left: -195, top: -195 },
   name: { marginTop: 14, fontFamily: F.bold, fontSize: 44, color: '#FFFFFF', letterSpacing: 1, textShadowColor: '#3B1F14', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 },
   sub: { marginTop: 4, fontFamily: F.semi, fontSize: 15, color: '#FFE7C2' },
-  nonna: { position: 'absolute', right: 20, bottom: 78 },
+  nonnaRow: { position: 'absolute', left: 0, right: 0, bottom: 78, alignItems: 'center' },
   nonnaRing: { width: 104, height: 104, borderRadius: 52, backgroundColor: '#FFF4DC', borderWidth: 2, borderColor: '#5A2E1A', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   skip: { position: 'absolute', bottom: 34, alignSelf: 'center', fontFamily: F.bold, fontSize: 15, color: '#FFF4DC' },
 });

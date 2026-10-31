@@ -68,6 +68,10 @@ export const LINE = {
   rushSeconds: 0.25,
 } as const;
 
+/** Bound on |walkInDebt| (C84): a few full prep benches' worth of pies, derived from LINE so it can't drift on its own. */
+export const WALK_IN_DEBT_MAX = LINE.prepBuffer * LINE.maxDepartures;
+export const clampWalkInDebt = (d: number): number => (Number.isFinite(d) ? Math.min(WALK_IN_DEBT_MAX, Math.max(-WALK_IN_DEBT_MAX, d)) : 0);
+
 /** Rates and prices the line needs from one shop (game.ts `lineRates` computes them). */
 export interface LineRates {
   prep: number;
@@ -176,6 +180,8 @@ function startAutomated(w: Work, r: LineRates, auto: Automation) {
  */
 function dispatch(w: Work, r: LineRates) {
   const walkins = r.walkInFraction > LINE.minWalkInShare;
+  // nobody is buying in person: the split owes nothing, so don't let old debt linger or build up (C84)
+  if (!walkins) w.walkInDebt = 0;
   while (w.boxed > 0) {
     const n = w.boxed;
     const due = walkins && w.walkInDebt + n * r.walkInFraction >= n / 2;
@@ -184,7 +190,7 @@ function dispatch(w: Work, r: LineRates) {
     else kind = w.driverBusy <= 0 ? 'driver' : null;
     // the carrier who is due is out: the pies wait and join their next trip (keeps the split true)
     if (!kind) return;
-    w.walkInDebt += n * r.walkInFraction - (kind === 'walkin' ? n : 0);
+    w.walkInDebt = walkins ? clampWalkInDebt(w.walkInDebt + n * r.walkInFraction - (kind === 'walkin' ? n : 0)) : 0;
     w.boxed = 0;
     const cash = n * r.price;
     const left = kind === 'walkin' ? LINE.handoffSeconds : LINE.departSeconds;

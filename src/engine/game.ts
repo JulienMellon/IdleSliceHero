@@ -6,7 +6,7 @@
 import { HEADS, BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEAD_COST_DOWNTOWN, HEAD_KINDS, HEAD_SHARE, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
-import { advanceLine, emptyLine, LINE, nextTap, piesInFlight, rushLine, tapStation as lineTap, type Automation, type Line, type LineRates, type Station } from './pipeline';
+import { advanceLine, clampWalkInDebt, emptyLine, LINE, nextTap, piesInFlight, rushLine, tapStation as lineTap, type Automation, type Line, type LineRates, type Station } from './pipeline';
 
 /** v4 (playtest 2): the kitchen line, station heads, whole-number `sold`. */
 export const SAVE_VERSION = 4;
@@ -128,7 +128,7 @@ function migrateLine(raw: unknown, queued: number): Line {
     driverBusy: Math.min(LINE.driverLap, Math.max(0, num(l.driverBusy, 0))),
     walkinBusy: Math.min(LINE.walkinLap, Math.max(0, num(l.walkinBusy, 0))),
     departures,
-    walkInDebt: num(l.walkInDebt, 0),
+    walkInDebt: clampWalkInDebt(num(l.walkInDebt, 0)),
     // ids only grow, so the scene's "highest id seen" never misses a pop (C69)
     nextId: Math.max(1, nat(l.nextId), ...departures.map((d) => d.id + 1)),
   };
