@@ -30,6 +30,15 @@ Julien asked for a specific look at **memory**. Every round, review and report o
 - **Device budget:** what this means for Hermes GC pauses and frame drops on an older iPhone; flag anything likely to cause GC jank.
 Report memory findings as their own ranked list in a **MEMORY** section (tag [high]/[medium]/[low], with file:line, the estimated cost, and the concrete fix). They count toward the verdict like ISSUES. If you can measure something cheaply (e.g. counting nodes or allocations by reading code, or a quick Jest micro-benchmark you describe but do not add), do so and give numbers.
 
+## CPU usage (owner's priority from code review round 20 on)
+Julien asked for a specific look at **CPU** (battery, heat and frame time on a real iPhone). Every round, review and report on:
+- **Work per frame:** what runs on each 15 fps scene tick and each 200 ms game tick (`useClock`, `tick`, `playTick`/`lineTick`, store `set` + selectors, `queueScene`/`pickScene`, rewards refresh). Estimate the cost per frame (function calls, loops over shops/people/routes, sorts, string formatting such as `toLocaleString`/`Intl`/`Date` calls) and say what to skip, cache or move off the hot path.
+- **Re-render cascades:** zustand selectors that change every tick and re-render big trees (the screen, the drawer, the HUD), components that re-render while hidden or covered, memo broken by new props, React Compiler opt-outs.
+- **Idle cost:** work that keeps running when nothing changes on screen (an idle manual shop, a covered scene, the app in the background, an open drawer or modal); timers and Animated loops that never stop; JS-driven animation where the native driver would do.
+- **Algorithmic cost:** O(n²) or repeated scans over scenes, tasks, shops or routes; pure helpers recomputed per frame that only change on purchase (key them on `shopLevelKey`).
+- **Device budget:** what this means for frame time on an older iPhone (aim for the JS thread well under 16 ms per frame at 15 fps scene + 5 Hz game tick) and for battery during long idle sessions.
+Report CPU findings as their own ranked list in a **CPU** section (IDs with prefix **U**, tag [high]/[medium]/[low], with file:line, the estimated cost, and the concrete fix). They count toward the verdict like ISSUES and MEMORY. Where you can measure cheaply (count calls per frame by reading code, or time a pure function with a one-off `node`/`npx tsx -e` snippet that you don't add to the repo), give numbers.
+
 Be pragmatic: this is a solo-developer game heading to the App Store, not a bank. Prefer a few high-leverage changes over a long list of nits. Every issue must say **where** (file:line or symbol), **why it matters**, and **the concrete change** (what to extract, rename, memoise, test).
 
 ## Output (exactly this shape)
@@ -44,9 +53,11 @@ ARCHITECTURE: (larger structural recommendations, ranked; tag [high]/[medium]/[l
 - A1 [medium] …
 MEMORY: (ranked; tag [high]/[medium]/[low]; file:line, estimated cost, concrete fix)
 - M1 [medium] …
+CPU: (ranked; tag [high]/[medium]/[low]; file:line, estimated cost per frame/tick, concrete fix)
+- U1 [medium] …
 TESTS: (specific tests to add, with the function under test and the case)
 - T1 …
 FIXED SINCE LAST REVIEW: <ids from CODELOG now resolved, or "n/a">
 STILL OPEN FROM LAST REVIEW: <ids not resolved, or "none">
 ```
-Rules: CHANGES REQUESTED if there is any blocker, any [high] issue, [high] architecture item or [high] memory item, or more than three [medium] items across ISSUES + MEMORY. APPROVED only when the remaining items are [low] or at most three [medium]. Number IDs continuing from CODELOG (K for blockers, C for issues, A for architecture, M for memory, T for tests). Keep it under ~900 words.
+Rules: CHANGES REQUESTED if there is any blocker, any [high] issue, [high] architecture item, [high] memory item or [high] CPU item, or more than three [medium] items across ISSUES + MEMORY + CPU. APPROVED only when the remaining items are [low] or at most three [medium]. Number IDs continuing from CODELOG (K for blockers, C for issues, A for architecture, M for memory, U for CPU, T for tests). Keep it under ~900 words.
