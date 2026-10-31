@@ -4,12 +4,13 @@
 //   Prep → Ovens → Counter → customers (delivery drivers + walk-ins at the tables)
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
 import { HEADS, BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEAD_COST_DOWNTOWN, HEAD_KINDS, HEAD_SHARE, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
+import { DAILY_CHESTS, DAILY_TASK_COUNT, TASK_KINDS, WEEKLY_TASK_COUNT, type TaskKind } from '../content/rewards';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
 import { advanceLine, clampWalkInDebt, emptyLine, LINE, nextTap, piesInFlight, rushLine, tapStation as lineTap, type Automation, type Line, type LineRates, type Station } from './pipeline';
 
-/** v4 (playtest 2): the kitchen line, station heads, whole-number `sold`. */
-export const SAVE_VERSION = 4;
+/** v5 (rewards): daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. v4 was the kitchen line and station heads. */
+export const SAVE_VERSION = 5;
 export const SHOP_IDS = NEIGHBORHOODS.map((n) => n.id);
 
 export interface Shop {
@@ -58,6 +59,101 @@ export interface GameState {
   sceneAt: Record<string, number>;
   /** Nonna's guided tutorial step (tutorial.ts): 0 = not started, TUTORIAL_DONE = finished. */
   tutorial: number;
+  /** Daily and weekly tasks, the gift calendar, boosts and diamonds (rules in rewards.ts). */
+  rewards: Rewards;
+  /** Lifetime counters that task progress is measured against (progress = counter − the task's base). */
+  stats: Stats;
+}
+
+/** One daily or weekly task. The target is fixed when it is generated. */
+export interface Task {
+  kind: TaskKind;
+  target: number;
+  /** The kind's counter when the task was generated. */
+  base: number;
+  claimed: boolean;
+}
+
+export interface Booster {
+  mult: number;
+  seconds: number;
+}
+
+export interface Boost {
+  mult: number;
+  /** Wall-clock ms when it ends. */
+  until: number;
+  source: string;
+}
+
+export interface Rewards {
+  /** Local YYYY-MM-DD of the current daily set ('' = none yet). */
+  day: string;
+  daily: Task[];
+  points: number;
+  chests: boolean[];
+  rerollUsed: boolean;
+  /** The Monday's YYYY-MM-DD of the current weekly set. */
+  week: string;
+  weekly: Task[];
+  weeklyChest: boolean;
+  gift: { streak: number; last: string; saveUsed: boolean; cycle: number };
+  /** The day the gift calendar last opened by itself. */
+  giftShownDay: string;
+  diamonds: number;
+  /** Boosters waiting to be started. */
+  boosters: Booster[];
+  /** Boosts running now. */
+  boosts: Boost[];
+  cosmetics: string[];
+  /** Highest device time (ms) seen: the clock-rollback guard. */
+  lastSeen: number;
+}
+
+export interface Stats {
+  upgrades: number;
+  ovens: number;
+  hires: number;
+  builds: number;
+  fleet: number;
+  decor: number;
+  walkins: number;
+  deliveries: number;
+  baked: number;
+  offline: number;
+  boosters: number;
+  dailyDone: number;
+  days: number;
+}
+export const STAT_KEYS: readonly (keyof Stats)[] = ['upgrades', 'ovens', 'hires', 'builds', 'fleet', 'decor', 'walkins', 'deliveries', 'baked', 'offline', 'boosters', 'dailyDone', 'days'];
+
+export const newStats = (): Stats => ({ upgrades: 0, ovens: 0, hires: 0, builds: 0, fleet: 0, decor: 0, walkins: 0, deliveries: 0, baked: 0, offline: 0, boosters: 0, dailyDone: 0, days: 0 });
+export const newRewards = (): Rewards => ({
+  day: '',
+  daily: [],
+  points: 0,
+  chests: DAILY_CHESTS.map(() => false),
+  rerollUsed: false,
+  week: '',
+  weekly: [],
+  weeklyChest: false,
+  gift: { streak: 0, last: '', saveUsed: false, cycle: 0 },
+  giftShownDay: '',
+  diamonds: 0,
+  boosters: [],
+  boosts: [],
+  cosmetics: [],
+  lastSeen: 0,
+});
+
+/**
+ * 1 + Σ(mult − 1) over the boosts running at `now` (boosts add, they don't multiply).
+ * A clock behind `lastSeen` gets no boost, so winding it back can't stretch one.
+ */
+export function boostMult(s: GameState, now: number): number {
+  const r = s.rewards;
+  if (!r.boosts.length || now < r.lastSeen) return 1;
+  return r.boosts.reduce((m, b) => (b.until > now ? m + (b.mult - 1) : m), 1);
 }
 
 /** The tutorial's step after its last (tutorial.ts reads it from here to avoid an import cycle). */
@@ -89,6 +185,8 @@ export function newGame(now: number): GameState {
     playSeconds: 0,
     sceneAt: {},
     tutorial: 0,
+    rewards: newRewards(),
+    stats: newStats(),
   };
 }
 
@@ -134,7 +232,71 @@ function migrateLine(raw: unknown, queued: number): Line {
   };
 }
 
-/** Load any save (v1 single-shop, v2, v3 or v4) over a fresh game so missing fields get defaults. */
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+const dateKey = (v: unknown) => (typeof v === 'string' && DATE_KEY.test(v) ? v : '');
+const MAX_MULT = 100;
+
+function migrateTasks(v: unknown, max: number): Task[] {
+  if (!Array.isArray(v)) return [];
+  const out: Task[] = [];
+  for (const x of v.slice(0, max)) {
+    if (!x || typeof x !== 'object') continue;
+    const t = x as Record<string, unknown>;
+    if (!TASK_KINDS.includes(t.kind as TaskKind)) continue;
+    const target = int(t.target, 0, 0);
+    if (target < 1) continue;
+    out.push({ kind: t.kind as TaskKind, target, base: Math.max(0, num(t.base, 0)), claimed: !!t.claimed });
+  }
+  return out;
+}
+
+/** Saved rewards, checked field by field; anything malformed falls back to its empty value (v4 saves have none). */
+function migrateRewards(raw: unknown, now: number): Rewards {
+  const base = newRewards();
+  if (!raw || typeof raw !== 'object') return base;
+  const r = raw as Record<string, unknown>;
+  const daily = migrateTasks(r.daily, DAILY_TASK_COUNT);
+  const weekly = migrateTasks(r.weekly, WEEKLY_TASK_COUNT);
+  const g = (r.gift && typeof r.gift === 'object' ? r.gift : {}) as Record<string, unknown>;
+  const chests = Array.isArray(r.chests) ? (r.chests as unknown[]) : [];
+  const boosters = (Array.isArray(r.boosters) ? (r.boosters as unknown[]) : []).slice(0, 99).flatMap((x) => {
+    const b = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
+    const seconds = num(b.seconds, 0);
+    return seconds > 0 ? [{ mult: Math.min(MAX_MULT, Math.max(1, num(b.mult, 1))), seconds: Math.min(30 * 86400, seconds) }] : [];
+  });
+  const boosts = (Array.isArray(r.boosts) ? (r.boosts as unknown[]) : []).slice(0, 20).flatMap((x) => {
+    const b = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
+    const until = num(b.until, 0);
+    return until > 0 ? [{ mult: Math.min(MAX_MULT, Math.max(1, num(b.mult, 1))), until, source: typeof b.source === 'string' ? b.source.slice(0, 40) : 'boost' }] : [];
+  });
+  const cosmetics = Array.isArray(r.cosmetics) ? [...new Set((r.cosmetics as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= 40))].slice(0, 200) : [];
+  return {
+    // a set with no usable tasks is dropped with its day, so the next refresh rolls a fresh one
+    day: daily.length ? dateKey(r.day) : '',
+    daily: dateKey(r.day) ? daily : [],
+    points: int(r.points, 0, 0, 1000),
+    chests: DAILY_CHESTS.map((_, i) => chests[i] === true),
+    rerollUsed: !!r.rerollUsed,
+    week: weekly.length ? dateKey(r.week) : '',
+    weekly: dateKey(r.week) ? weekly : [],
+    weeklyChest: !!r.weeklyChest,
+    gift: { streak: int(g.streak, 0, 0, 30), last: dateKey(g.last), saveUsed: !!g.saveUsed, cycle: int(g.cycle, 0, 0, 100000) },
+    giftShownDay: dateKey(r.giftShownDay),
+    diamonds: int(r.diamonds, 0, 0, 1e9),
+    boosters,
+    boosts,
+    cosmetics,
+    // a corrupt far-future value would lock rewards for good; a year of rollback headroom is plenty
+    lastSeen: Math.min(now + 400 * 86400_000, Math.max(0, num(r.lastSeen, 0))),
+  };
+}
+
+function migrateStats(raw: unknown): Stats {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  return Object.fromEntries(STAT_KEYS.map((k) => [k, int(r[k], 0, 0)])) as unknown as Stats;
+}
+
+/** Load any save (v1 single-shop, v2, v3, v4 or v5) over a fresh game so missing fields get defaults. */
 export function migrate(raw: unknown, now: number): GameState {
   const base = newGame(now);
   if (!raw || typeof raw !== 'object') return base;
@@ -157,6 +319,8 @@ export function migrate(raw: unknown, now: number): GameState {
       r.sceneAt && typeof r.sceneAt === 'object'
         ? Object.fromEntries(Object.entries(r.sceneAt as Record<string, unknown>).filter((e): e is [string, number] => typeof e[1] === 'number' && Number.isFinite(e[1])))
         : {},
+    rewards: migrateRewards(r.rewards, now),
+    stats: migrateStats(r.stats),
   };
   if (r.shops && typeof r.shops === 'object') {
     for (const id of SHOP_IDS) {
@@ -393,6 +557,12 @@ function spend(s: GameState, cost: number): BuyResult {
   return { ok: true, state: { ...s, cash: s.cash - cost } };
 }
 
+const bump = (s: GameState, patch: Partial<Stats>): GameState => {
+  const stats = { ...s.stats };
+  for (const k of Object.keys(patch) as (keyof Stats)[]) stats[k] += patch[k] ?? 0;
+  return { ...s, stats };
+};
+
 function withShop(s: GameState, id: NeighborhoodId, patch: Partial<Shop>): GameState {
   return { ...s, shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } } };
 }
@@ -415,7 +585,8 @@ export function buyUpgrade(s: GameState, id: NeighborhoodId, what: Upgrade): Buy
           : isHeadUpgrade(what)
             ? { heads: { ...shop.heads, [HEAD_OF[what]]: true } }
             : { [what]: shop[what] + 1 };
-  return { ok: true, state: withShop(r.state, id, patch) };
+  const hired = what === 'manager' || isHeadUpgrade(what);
+  return { ok: true, state: bump(withShop(r.state, id, patch), { upgrades: 1, ovens: what === 'ovens' || what === 'grade' ? 1 : 0, hires: hired ? 1 : 0 }) };
 }
 
 export function nextToBuild(s: GameState): NeighborhoodDef | null {
@@ -450,7 +621,7 @@ export function buildShop(s: GameState, id: NeighborhoodId): BuyResult {
   if (lock) return { ok: false, reason: lock };
   const r = spend(s, def(id).buildCost);
   if (!r.ok) return r;
-  return { ok: true, state: { ...withShop(r.state, id, { built: true }), active: id } };
+  return { ok: true, state: bump({ ...withShop(r.state, id, { built: true }), active: id }, { builds: 1 }) };
 }
 
 // ---------- Pier 9 bid (Waterfront's finale) ----------
@@ -488,7 +659,7 @@ export function buyVehicle(s: GameState): BuyResult {
   const lock = nextVehicleLock(s);
   if (lock) return { ok: false, reason: vehicleLockLabel(lock) };
   const r = spend(s, VEHICLES[s.vehicle + 1].cost);
-  return r.ok ? { ok: true, state: { ...r.state, vehicle: s.vehicle + 1 } } : r;
+  return r.ok ? { ok: true, state: bump({ ...r.state, vehicle: s.vehicle + 1 }, { fleet: 1 }) } : r;
 }
 
 // ---------- Simulation ----------
@@ -527,7 +698,7 @@ export const FIRST_BATCH_SPEED = 2.5;
  * the steady state matches `shopRate`; a tapped counter hands over at the counter's own speed (the player is
  * already the slow part of a serial prep → bake → serve).
  */
-export function lineRates(id: NeighborhoodId, shop: Shop, vehicle: number): LineRates {
+export function lineRates(id: NeighborhoodId, shop: Shop, vehicle: number, mult = 1): LineRates {
   // the very first batch Downtown is quick, so Nonna's "watch the timer" step lasts seconds, not half a minute
   const first = id === 'downtown' && shop.sold === 0 && !shop.managed ? FIRST_BATCH_SPEED : 1;
   return {
@@ -535,7 +706,8 @@ export function lineRates(id: NeighborhoodId, shop: Shop, vehicle: number): Line
     oven: ovenRate(shop) * first,
     serve: (automationOf(shop).counter ? Math.min(counterRate(shop), demandRate(shop, vehicle)) : counterRate(shop)) * first,
     shop: shopRate(shop, vehicle),
-    price: valuePerPizza(id, shop, vehicle),
+    // a running boost raises what every pie pays, so departures, pops and revenue agree
+    price: valuePerPizza(id, shop, vehicle) * mult,
     walkInFraction: walkInFraction(shop, vehicle),
     tapBatch: tapBatch(shop),
   };
@@ -569,20 +741,22 @@ export function tapShop(s: GameState, id: NeighborhoodId): GameState {
   return r.ok ? r.state : s;
 }
 
-/** Foreground play: run every kitchen line and count the seconds toward story pacing. */
-export function playTick(s: GameState, dt: number): GameState {
+/** Foreground play: run every kitchen line and count the seconds toward story pacing. `now` (wall ms) turns running boosts on. */
+export function playTick(s: GameState, dt: number, now?: number): GameState {
   if (!(dt > 0)) return s;
-  return { ...lineTick(s, dt), playSeconds: s.playSeconds + dt };
+  return { ...lineTick(s, dt, now), playSeconds: s.playSeconds + dt };
 }
 
 /**
  * Advance every pizzeria's kitchen line by dt seconds (foreground). Cash only arrives when a departure reaches
  * the door (a driver) or the register (a walk-in).
  */
-export function lineTick(s: GameState, dt: number): GameState {
+export function lineTick(s: GameState, dt: number, now?: number): GameState {
   if (!(dt > 0)) return s;
+  const mult = now === undefined ? 1 : boostMult(s, now);
   let cash = s.cash;
   let earned = 0;
+  const add = { walkins: 0, deliveries: 0, baked: 0 };
   let shops: Record<NeighborhoodId, Shop> | null = null;
   for (const id of SHOP_IDS) {
     const shop = s.shops[id];
@@ -592,13 +766,16 @@ export function lineTick(s: GameState, dt: number): GameState {
     // an idle manual line with nobody walking can't change: skip the allocation
     // (carrier laps keep counting down while pies wait or a carrier is still out)
     if (!auto.prep && !auto.oven && !auto.counter && !l.prep && !l.oven && !l.counter && l.departures.length === 0 && l.boxed === 0 && l.driverBusy <= 0 && l.walkinBusy <= 0) continue;
-    const a = advanceLine(l, dt, lineRates(id, shop, s.vehicle), auto);
+    const a = advanceLine(l, dt, lineRates(id, shop, s.vehicle, mult), auto);
     shops ??= { ...s.shops };
     shops[id] = { ...shop, line: a.line, sold: shop.sold + a.sold };
     cash += a.paid;
     earned += a.paid;
+    add.walkins += a.walkins;
+    add.deliveries += a.deliveries;
+    add.baked += a.baked;
   }
-  return shops ? { ...s, cash, totalEarned: s.totalEarned + earned, shops } : s;
+  return shops ? bump({ ...s, cash, totalEarned: s.totalEarned + earned, shops }, add) : s;
 }
 
 export interface OfflineResult {
@@ -618,8 +795,9 @@ export interface OfflineResult {
  * line; one without a GM only finishes the jobs already running and pays the carriers already walking out
  * (heads don't work while you're away; the GM does). Each line is settled, so nothing is paid twice.
  */
-export function offlineTick(s: GameState, seconds: number): { state: GameState; byShop: { id: NeighborhoodId; pies: number; base: number; extra: number }[] } {
+export function offlineTick(s: GameState, seconds: number, boost = 1): { state: GameState; byShop: { id: NeighborhoodId; pies: number; base: number; extra: number }[] } {
   const shops = { ...s.shops };
+  const add = { walkins: 0, deliveries: 0, baked: 0 };
   const rows: { id: NeighborhoodId; pies: number; base: number; extra: number }[] = [];
   let cash = s.cash;
   let earned = 0;
@@ -635,13 +813,21 @@ export function offlineTick(s: GameState, seconds: number): { state: GameState; 
       const carriedPies = shop.line.departures.reduce((t, d) => t + d.n, 0);
       const rest = Math.floor(shopRate(shop, s.vehicle) * seconds) + inFlight - carriedPies;
       pies = carriedPies + rest;
-      paid = carried + rest * valuePerPizza(id, shop, s.vehicle);
+      paid = (carried + rest * valuePerPizza(id, shop, s.vehicle)) * boost;
+      // closed form: the walk-in share of the steady state decides the split
+      const walk = Math.round(pies * walkInFraction(shop, s.vehicle));
+      add.walkins += walk;
+      add.deliveries += pies - walk;
+      add.baked += pies;
       line = { ...emptyLine(), walkInDebt: shop.line.walkInDebt, nextId: shop.line.nextId };
     } else {
       const a = advanceLine(shop.line, seconds, lineRates(id, shop, s.vehicle), { prep: false, oven: false, counter: false });
       pies = a.sold;
-      paid = a.paid;
+      paid = a.paid * boost;
       line = a.line;
+      add.walkins += a.walkins;
+      add.deliveries += a.deliveries;
+      add.baked += a.baked;
     }
     // a perk can raise what a pizzeria earns while away (Big Sal's, in Industrial)
     const extra = paid * ((perkOf(id, shop)?.offlineMult ?? 1) - 1);
@@ -650,14 +836,17 @@ export function offlineTick(s: GameState, seconds: number): { state: GameState; 
     earned += paid + extra;
     if (pies > 0) rows.push({ id, pies, base: paid, extra });
   }
-  return { state: { ...s, cash, totalEarned: s.totalEarned + earned, shops }, byShop: rows };
+  return { state: bump({ ...s, cash, totalEarned: s.totalEarned + earned, shops }, add), byShop: rows };
 }
 
 /** Catch up after the app was closed: GM shops run; the others finish what was already on the line. */
 export function applyOffline(s: GameState, now: number): OfflineResult {
   const elapsed = Math.max(0, (now - s.lastSavedAt) / 1000);
   const seconds = Math.min(elapsed, TUNING.offlineCapSeconds);
-  const { state, byShop } = offlineTick(s, seconds);
+  // each running boost adds (mult − 1) over the part of the offline window it covers
+  const from = s.lastSavedAt;
+  const boost = seconds > 0 ? s.rewards.boosts.reduce((m, b) => m + (b.mult - 1) * Math.max(0, Math.min(b.until, from + seconds * 1000) - from) / (seconds * 1000), 1) : 1;
+  const { state, byShop } = offlineTick(s, seconds, boost);
   const rows = byShop.map((r) => ({ id: r.id, managed: s.shops[r.id].managed, earned: r.base + r.extra })).filter((x) => x.earned > 0);
   return { state: { ...state, lastSavedAt: now }, seconds, capped: elapsed > TUNING.offlineCapSeconds, awaySeconds: elapsed, earned: state.cash - s.cash, byShop: rows };
 }
@@ -827,7 +1016,7 @@ export function buyDecor(s: GameState, id: NeighborhoodId, kind: DecorKind): Buy
   if (cost === null) return { ok: false, reason: 'Fully decorated' };
   const r = spend(s, cost);
   if (!r.ok) return r;
-  return { ok: true, state: withShop(r.state, id, { decor: { ...shop.decor, [kind]: shop.decor[kind] + 1 } }) };
+  return { ok: true, state: bump(withShop(r.state, id, { decor: { ...shop.decor, [kind]: shop.decor[kind] + 1 } }), { decor: 1 }) };
 }
 
 /** Cash/sec this pizzeria gains from the next decor tier (counting it as running). */

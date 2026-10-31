@@ -49,7 +49,7 @@ describe('save migration v2 → v3', () => {
   it('adds play time and scene times, and grants perks for finales already seen', () => {
     const old = { ...JSON.parse(JSON.stringify(G.newGame(0))), saveVersion: 2, playSeconds: undefined, sceneAt: undefined, seenScenes: ['suburbs-4', 'waterfront-4'] };
     const m = G.migrate(old, 0);
-    expect(G.SAVE_VERSION).toBe(4);
+    expect(G.SAVE_VERSION).toBe(5);
     expect(m.playSeconds).toBe(0);
     expect(m.sceneAt).toEqual({});
     expect(m.shops.suburbs.perk).toBe(true);

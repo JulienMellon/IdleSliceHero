@@ -146,10 +146,16 @@ export interface Advance {
   paid: number;
   /** Pies those departures carried. */
   sold: number;
+  /** Of `sold`: pies handed to walk-ins at the register. */
+  walkins: number;
+  /** Of `sold`: pies handed to drivers at the door. */
+  deliveries: number;
+  /** Pies that came out of the oven this step. */
+  baked: number;
 }
 
 /** Mutable working copy for one advance (never escapes). */
-type Work = Line & { paid: number; sold: number };
+type Work = Line & { paid: number; sold: number; walkins: number; deliveries: number; bakedOut: number };
 
 /**
  * Start every automated station that can. A station starts once a full batch waits (or anything waits, when the
@@ -212,6 +218,8 @@ function settle(w: Work) {
     if (d.left <= 1e-9) {
       w.paid += d.cash;
       w.sold += d.n;
+      if (d.kind === 'walkin') w.walkins += d.n;
+      else w.deliveries += d.n;
     } else keep.push(d);
   }
   w.departures = keep;
@@ -225,7 +233,7 @@ const MAX_EVENTS = 200;
  * so leftover time within a tick carries into the next job and the result doesn't depend on tick size.
  */
 export function advanceLine(line: Line, dt: number, r: LineRates, auto: Automation): Advance {
-  const w: Work = { ...line, departures: line.departures.map((d) => ({ ...d })), paid: 0, sold: 0 };
+  const w: Work = { ...line, departures: line.departures.map((d) => ({ ...d })), paid: 0, sold: 0, walkins: 0, deliveries: 0, bakedOut: 0 };
   const any = auto.prep || auto.oven || auto.counter;
   if (any) startAutomated(w, r, auto);
   dispatch(w, r);
@@ -264,6 +272,7 @@ export function advanceLine(line: Line, dt: number, r: LineRates, auto: Automati
     if (o && o.left <= 1e-9) {
       w.oven = null;
       w.baked += o.n;
+      w.bakedOut += o.n;
     }
     const p = w.prep;
     if (p && p.left <= 1e-9) {
@@ -283,9 +292,9 @@ export function advanceLine(line: Line, dt: number, r: LineRates, auto: Automati
     }
   }
   if (k >= MAX_EVENTS && t > 1e-9 && typeof __DEV__ !== 'undefined' && __DEV__) console.warn(`advanceLine: event cap hit, ${t.toFixed(2)} s dropped`); // C70
-  const { paid, sold } = w;
+  const { paid, sold, walkins, deliveries, bakedOut } = w;
   const next: Line = { prep: w.prep, oven: w.oven, counter: w.counter, prepped: w.prepped, baked: w.baked, boxed: w.boxed, driverBusy: w.driverBusy, walkinBusy: w.walkinBusy, departures: w.departures, walkInDebt: w.walkInDebt, nextId: w.nextId };
-  return { line: next, paid, sold };
+  return { line: next, paid, sold, walkins, deliveries, baked: bakedOut };
 }
 
 /** Whole pies anywhere on the line (prepping, on the bench, baking, on the pass, serving, walking out). */

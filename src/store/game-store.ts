@@ -9,6 +9,7 @@ import { PIER9_BID, TUNING, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
+import * as R from '../engine/rewards';
 import { tutorialAdvance, tutorialHoldsStory } from '../engine/tutorial';
 import type { Station } from '../engine/pipeline';
 
@@ -60,12 +61,23 @@ interface Store {
   finishScene: () => void;
   replayScene: (scene: Scene) => void;
   dismissOffline: () => void;
+  /** Rewards (all via `commit`: a toast on refusal, a save on success). */
+  claimDaily: (i: number) => boolean;
+  claimChest: (i: number) => boolean;
+  claimWeekly: (i: number) => boolean;
+  claimWeeklyChest: () => boolean;
+  startBooster: (i: number) => boolean;
+  claimGift: (repair?: boolean) => boolean;
+  /** The gift calendar opened by itself today: don't open it again until tomorrow. */
+  markGiftShown: () => void;
   markScrapbookViewed: () => void;
   resetGame: () => Promise<void>;
 }
 
 /** Serialises saves so a resume never reads a save that is still being written. */
 let pendingSave: Promise<void> = Promise.resolve();
+/** When rewards were last refreshed in a tick (ms): a day change or a boost ending needs at most a second's wait. */
+let lastRewardsRefresh = 0;
 
 export const useGame = create<Store>((set, get) => {
   /** After any state change, queue the next story scene if one has triggered. */
@@ -96,6 +108,12 @@ export const useGame = create<Store>((set, get) => {
     queueScene();
     void get().save();
     return true;
+  };
+  /** Cash claims sound like collecting; the rest just click. */
+  const claimSound = (before: G.GameState) => (next: G.GameState): AudioEvent => (next.cash > before.cash ? { type: 'collect', size: collectSize(next.cash - before.cash, before.cash) } : { type: 'click' });
+  const claim = (run: (g: G.GameState, now: number) => G.BuyResult) => {
+    const g = get().game;
+    return commit(run(g, Date.now()), undefined, claimSound(g));
   };
   const plain = (what: Purchase) => (): AudioEvent => ({ type: 'buy', what, sting: purchaseSting(what, {}) });
 
@@ -128,7 +146,7 @@ export const useGame = create<Store>((set, get) => {
         const raw = await AsyncStorage.getItem(SAVE_KEY);
         if (raw) {
           const r = G.applyOffline(G.migrate(JSON.parse(raw), now), now);
-          game = r.state;
+          game = R.refreshRewards(r.state, now);
           awaySeconds = r.awaySeconds;
           if (r.earned >= 1 && r.seconds >= TUNING.offlinePopupSeconds) {
             // Hold the cash back until the player taps Collect.
@@ -160,9 +178,15 @@ export const useGame = create<Store>((set, get) => {
 
     tick: (dt) => {
       if (!get().loaded) return;
-      const game = tutorialAdvance(G.playTick(get().game, dt));
+      const now = Date.now();
+      let g = get().game;
+      if (now - lastRewardsRefresh >= 1000 || now < lastRewardsRefresh) {
+        lastRewardsRefresh = now;
+        g = R.refreshRewards(g, now);
+      }
+      const game = tutorialAdvance(G.playTick(g, dt, now));
       const toast = get().toast;
-      const tickAt = Date.now();
+      const tickAt = now;
       set(toast?.need !== undefined && game.cash >= toast.need ? { game, toast: null, tickAt } : { game, tickAt });
       queueScene();
     },
@@ -240,9 +264,24 @@ export const useGame = create<Store>((set, get) => {
       if (!o) return;
       const g = get().game;
       emitAudio({ type: 'collect', size: collectSize(o.earned, g.cash) });
-      set({ offline: null, game: { ...g, cash: g.cash + o.earned, totalEarned: g.totalEarned + o.earned } });
+      set({ offline: null, game: { ...g, cash: g.cash + o.earned, totalEarned: g.totalEarned + o.earned, stats: { ...g.stats, offline: g.stats.offline + 1 } } });
       void get().save();
       queueScene();
+    },
+
+    claimDaily: (i) => claim((g, now) => R.claimDaily(g, i, now)),
+    claimChest: (i) => claim((g, now) => R.claimChest(g, i, now)),
+    claimWeekly: (i) => claim((g, now) => R.claimWeekly(g, i, now)),
+    claimWeeklyChest: () => claim((g, now) => R.claimWeeklyChest(g, now)),
+    startBooster: (i) => claim((g, now) => R.startBooster(g, i, now)),
+    claimGift: (repair = false) => claim((g, now) => R.claimGift(g, now, { repair })),
+    markGiftShown: () => {
+      const g = get().game;
+      const next = R.markGiftShown(g, Date.now());
+      if (next !== g) {
+        set({ game: next });
+        void get().save();
+      }
     },
 
     markScrapbookViewed: () => {
