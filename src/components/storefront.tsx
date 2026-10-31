@@ -34,7 +34,7 @@ import { HEADS } from '../content/tuning';
 import { BadgeRail, DeparturePops, HireBubble, StationBadge } from './scene/kitchen-hud';
 import { emptyCrew, stepCrew, type CrewState } from './scene/crew';
 import { emitCoin } from './pulse-bus';
-import { BADGE_R, COIN_FLIGHT, badgeAt, badgeModels, badgeRowY, badgeXs, MIN_TAP_PT, stationAt, stationRects } from './scene/stations';
+import { BADGE_R, COIN_FLIGHT, badgeAt, badgeModels, badgeRowY, badgeXs, MIN_TAP_PT, spotlightCutout, stationAt, stationRects, tutorialHand } from './scene/stations';
 
 export { CURB_Y, SCENE_H, SCENE_W, sceneFit } from './scene/projection';
 
@@ -383,17 +383,12 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           {spotlight &&
             (() => {
               const r = rects[spotlight];
-              const pad = 8;
-              const x0 = r.x0 - pad;
-              const y0 = r.y0 - pad;
-              const x1 = r.x1 + pad;
-              const y1 = r.y1 + pad;
+              const { x0, y0, x1, y1 } = spotlightCutout(r);
               const rr = 12;
               const vb = { x: -fit.ox / fit.s, y: -fit.oy / fit.s, w: width / fit.s, h: height / fit.s };
               const hole = `M${x0 + rr} ${y0} H${x1 - rr} Q${x1} ${y0} ${x1} ${y0 + rr} V${y1 - rr} Q${x1} ${y1} ${x1 - rr} ${y1} H${x0 + rr} Q${x0} ${y1} ${x0} ${y1 - rr} V${y0 + rr} Q${x0} ${y0} ${x0 + rr} ${y0} Z`;
               const glow = 0.55 + 0.45 * pulse;
-              const hx = (x0 + x1) / 2 + 10;
-              const hy = y1 - 6 + (spotlightWait ? 0 : 4 * pulse);
+              const { hx, hy, rot, scale: hs } = tutorialHand({ x0, y0, x1, y1 }, spotlightWait ? 0 : 4 * pulse);
               return (
                 <G>
                   <Path d={`M${vb.x} ${vb.y} H${vb.x + vb.w} V${vb.y + vb.h} H${vb.x} Z ${hole}`} fill="#2A1408" opacity={0.6} fillRule="evenodd" />
@@ -402,7 +397,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                   <Path d={hole} fill="none" stroke="#FFD54A" strokeWidth={3} opacity={glow} />
                   {/* G83: on a wait step the ring breathes outward so the station being waited on still reads as the focus */}
                   {spotlightWait && <Path d={hole} fill="none" stroke="#fff" strokeWidth={2} opacity={0.75 * (1 - pulse)} transform={`translate(${(x0 + x1) / 2} ${(y0 + y1) / 2}) scale(${1 + 0.05 * pulse}) translate(${-(x0 + x1) / 2} ${-(y0 + y1) / 2})`} />}
-                  <G transform={`translate(${hx} ${hy}) rotate(-20) scale(1.6)`}>
+                  <G transform={`translate(${hx} ${hy}) rotate(${rot}) scale(${hs})`}>
                     <Path d="M0 -7 Q1.6 -7 1.6 -5 L1.6 -1 L5 -0.4 Q6.6 0 6.2 2 L5 6 Q4.4 7.4 3 7.4 L-2.4 7.4 Q-4 7.4 -4.4 6 L-5.6 1.6 Q-5.8 0 -4.2 0.2 L-1.6 1 L-1.6 -5 Q-1.6 -7 0 -7 Z" fill="#fff" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
                   </G>
                 </G>

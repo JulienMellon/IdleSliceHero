@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
 import { CoachCard } from '@/components/coach-card';
+import { GiftCalendar, TasksDrawer } from '@/components/rewards-ui';
+import { boostSummary, hudBoostText } from '@/components/rewards-model';
 import { coachStep } from '@/engine/tutorial';
 import { type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
 import { buttonTone } from '@/components/sidewalk-model';
@@ -20,6 +22,7 @@ import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEA
 import { APP_VERSION } from '@/content/version';
 import { money, pizzas, rate } from '@/engine/format';
 import * as G from '@/engine/game';
+import * as R from '@/engine/rewards';
 import type { Station } from '@/engine/pipeline';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
@@ -42,7 +45,8 @@ export default function GameScreen() {
   const offline = useGame((s) => (s.titleDone ? s.offline : null));
   const toast = useGame((s) => s.toast);
   const covered = useGame((s) => !!s.playing || !!s.offline);
-  const { tapShop, buy, buyFleet, buyDecor, build, setActive, dismissOffline, bidPier9 } = useGame.getState();
+  const { tapShop, buy, buyFleet, buyDecor, build, setActive, dismissOffline, bidPier9, claimDaily, claimWeekly, claimChest, claimWeeklyChest, startBooster, claimGift, markGiftShown } = useGame.getState();
+  const titleDone = useGame((s) => s.titleDone);
   // stable, so the memoised scene isn't re-rendered by every 200 ms game tick
   // a rush on a GM shop: jobs finish sooner; the cash still arrives with the pies (no payout here)
   const onShopTap = useCallback(() => tapShop(), [tapShop]);
@@ -54,6 +58,25 @@ export default function GameScreen() {
   const [area, setArea] = useState({ w: 0, h: 0 });
   // The full upgrade list opens over the shop on a tap of "All" (no gestures).
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // v5.4: the tasks sheet and the gift calendar (the icons appear once Nonna has taken over)
+  const [tasksOpen, setTasksOpen] = useState(false);
+  const [tasksTab, setTasksTab] = useState<'daily' | 'weekly'>('daily');
+  const [giftOpen, setGiftOpen] = useState(false);
+  // the game tick's clock, never behind rewards.lastSeen (a claim moves lastSeen up to 200 ms ahead of the next tick);
+  // a real rollback (lastSeen well ahead of the tick) is `clockOff`
+  const tickAt = useGame((s) => s.tickAt);
+  const now = Math.max(tickAt, game.rewards.lastSeen);
+  const clockOff = game.rewards.lastSeen - tickAt > 2000;
+  const rewardsOn = R.rewardsUnlocked(game);
+  const giftKind = R.giftStatus(game, now).kind;
+  const tutorialOn = !!coachStep(game);
+  // the calendar opens by itself on the first open of a day: after the title card, the offline popup, any story scene and the tutorial
+  const autoGift = titleDone && !covered && !tutorialOn && R.shouldAutoOpenGift(game, now);
+  useEffect(() => {
+    if (!autoGift) return;
+    markGiftShown();
+    setGiftOpen(true);
+  }, [autoGift, markGiftShown]);
 
   const id = game.active;
   const shop = game.shops[id];
@@ -127,7 +150,8 @@ export default function GameScreen() {
   // the HUD names the next station to tap (prep → oven → counter) until a GM runs the shop
   const nextSt = shop.managed ? null : G.nextStation(shop);
   const line = shop.line;
-  const subtitle = shop.managed
+  const boost = boostSummary(game, now);
+  const baseSubtitle = shop.managed
     ? `${money(eps)}/sec across the city`
     : nextSt === 'counter'
       ? `Tap to serve · ${pizzas(line.baked)} baked`
@@ -142,6 +166,7 @@ export default function GameScreen() {
               : line.counter
                 ? 'Serving…'
                 : 'Your heads are on it';
+  const subtitle = boost ? `${shop.managed ? `${money(eps)}/sec` : baseSubtitle} · ${hudBoostText(boost.mult, boost.seconds)}` : baseSubtitle;
 
   // Until the stations run themselves, upgrades here only pay while you tap: mute them so the hires stand out (C68).
   const idleShop = !G.runsItself(shop) && id !== 'downtown';
@@ -207,7 +232,12 @@ export default function GameScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Hud cash={game.cash} subtitle={coach && id === 'downtown' ? '' : subtitle} goal={goal} newScenes={newScenes} onScrapbook={() => router.push('/scrapbook')} onCity={() => router.push('/city')} halo={coach?.target === 'cash' ? 'cash' : coach?.target === 'goal' ? 'goal' : null} />
+      <Hud cash={game.cash} subtitle={coach && id === 'downtown' ? '' : subtitle} goal={goal} newScenes={newScenes} onScrapbook={() => router.push('/scrapbook')} onCity={() => router.push('/city')}
+        onTasks={rewardsOn ? () => { haptic(); setDrawerOpen(false); setTasksOpen(true); } : undefined}
+        tasksBadge={clockOff ? 0 : R.claimableCount(game, now)}
+        onGift={rewardsOn ? () => { haptic(); setTasksOpen(false); setGiftOpen(true); } : undefined}
+        giftDot={giftKind === 'ready' || giftKind === 'save'}
+        halo={coach?.target === 'cash' ? 'cash' : coach?.target === 'goal' ? 'goal' : null} />
       <ShopTabs game={game} onSelect={setActive} onBuild={build} />
       <View style={styles.sceneArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
         {area.w > 0 && (
@@ -217,7 +247,7 @@ export default function GameScreen() {
             id={id}
             width={area.w}
             height={area.h}
-            paused={covered || drawerOpen}
+            paused={covered || drawerOpen || tasksOpen}
             onTap={onShopTap}
             onStation={onStationTap}
             spotlight={coach && id === 'downtown' && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') ? coach.target : null}
@@ -329,11 +359,13 @@ export default function GameScreen() {
             </View>
           </View>
         )}
+        {tasksOpen && <TasksDrawer game={game} now={now} clockOff={clockOff} bottomInset={insets.bottom} tab={tasksTab} onTab={setTasksTab} onClose={() => setTasksOpen(false)} actions={{ claimDaily, claimWeekly, claimChest, claimWeeklyChest, startBooster }} />}
         {/* Toast floats in the open sky at the top of the scene, clear of the shop, the row and the cards. */}
         {toast && <Toast compact text={toast.text} top={10} />}
       </View>
       {/* payout coins fly from the carrier to the cash (D344) */}
       <CoinLayer />
+      {giftOpen && !covered && <GiftCalendar game={game} now={now} onClaim={(repair) => claimGift(repair)} onClose={() => setGiftOpen(false)} />}
       {offline && <OfflinePopup seconds={offline.seconds} capped={offline.capped} awaySeconds={offline.awaySeconds} earned={offline.earned} byShop={offline.byShop} onCollect={dismissOffline} />}
     </View>
   );

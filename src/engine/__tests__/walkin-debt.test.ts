@@ -32,3 +32,22 @@ describe('walkInDebt (C84)', () => {
     expect(G.migrate(raw, 0).shops.downtown.line.walkInDebt).toBe(WALK_IN_DEBT_MAX);
   });
 });
+
+describe('late-game walk-ins (C90, T66)', () => {
+  test('at shop rate 200 and f 0.1 walk-ins still depart and take f of the pies (±5 points)', () => {
+    let line: Line = emptyLine();
+    let sold = 0;
+    let walkins = 0;
+    let walkinTrips = 0;
+    for (let i = 0; i < 2000; i++) {
+      const adv = advanceLine(line, 0.25, rates({ prep: 260, oven: 230, serve: 220, shop: 200, walkInFraction: 0.1, tapBatch: 4 }), AUTOMATIC);
+      line = adv.line;
+      sold += adv.sold;
+      walkins += adv.walkins;
+      if (adv.walkins > 0) walkinTrips++;
+    }
+    expect(sold).toBeGreaterThan(0);
+    expect(walkinTrips).toBeGreaterThan(0);
+    expect(Math.abs(walkins / sold - 0.1)).toBeLessThanOrEqual(0.05);
+  });
+});

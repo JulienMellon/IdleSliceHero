@@ -8,7 +8,8 @@ import { BACK_ROW_Y, SEAT, layout } from '../layout';
 import { hash32 } from '../looks';
 import { seatPalette } from '../palette';
 import { P, SCENE_W, kAt } from '../projection';
-import { doorwaySignRect, popRect, staffFaces } from '../stations';
+import { doorwaySignRect, popRect, spotlightCutout, staffFaces, stationRects, tutorialHand } from '../stations';
+import { bodyBy, chairBack, SEATED_TORSO_HALF } from '../geometry';
 import { quantArm, quantStep } from '../quantise';
 
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
@@ -154,6 +155,59 @@ describe('the counter (D336)', () => {
           for (const d of drivers) for (const w of walkins) if (overlap(box(d), box(w)) > 0.15) bad.push(`${shop.name} pace${pace}${burst ? " burst" : ""} f${f} ${w.key}${w.props.step ? "w" : "s"}@${w.props.x.toFixed(0)},${w.props.y.toFixed(0)}/${d.key}${d.props.step ? "w" : "s"}@${d.props.x.toFixed(0)},${d.props.y.toFixed(0)}`);
           for (const a of drivers) for (const b of drivers) if (a !== b && !a.props.step && !b.props.step && overlap(box(a), box(b)) > 0.15) bad.push(`${shop.name} f${f} ${a.key}/${b.key} stacked`);
         });
+    expect(bad.slice(0, 5)).toEqual([]);
+  });
+
+  // The old chair test only checked a seat existed at ±SEAT; the lone rug-table diner still sat on air because the
+  // old backrest (x −7.5…−1.1) hid entirely behind their torso. Now the chair must be at the diner's own side, with its
+  // back rail showing beside the torso and 6 above the shoulders (the old rail failed both: 0 visible, 5 above).
+  test('each seated figure\'s own chair has its back on the diner\'s back side, showing beside the torso, 6 above the shoulders', () => {
+    const bad: string[] = [];
+    for (const shop of busyShops())
+      for (const pace of [1, 2.6])
+        frames(shop, pace).forEach((cast, f) => {
+          for (const c of cast) {
+            if (c.props.kind !== 'sit') continue;
+            const tb = shop.lay.tables.find((t) => Math.abs(t.y - c.props.y) < 0.01 && Math.abs(Math.abs(c.props.x - t.x) - SEAT) < 0.01);
+            if (!tb) continue; // covered by the test above
+            const out = c.props.x < tb.x ? -1 : 1;
+            const cb = chairBack(out);
+            const visible = out < 0 ? -SEATED_TORSO_HALF - cb.x0 : cb.x1 - SEATED_TORSO_HALF; // rail width beyond the torso edge
+            const aboveShoulders = bodyBy('sit', 0) - cb.rail.y0;
+            if (Boolean(c.props.flip) !== out > 0 || visible < 3 || aboveShoulders < 5.5) bad.push(`${shop.name} pace${pace} f${f} ${c.key} flip${c.props.flip} visible${visible} above${aboveShoulders}`);
+          }
+        });
+    expect(bad.slice(0, 5)).toEqual([]);
+  });
+});
+
+describe('the tutorial hand (D384)', () => {
+  const headOf = (c: CastMember) => {
+    const b = box(c);
+    return { x0: b.x0, x1: b.x1, y0: b.y0, y1: b.y0 + (b.y1 - b.y0) * 0.3 };
+  };
+  test('the hand never meets any character head, for every spotlighted station, at any bounce, in any frame (Downtown, footprint 0)', () => {
+    const bad: string[] = [];
+    for (const shop of busyShops()) {
+      if (shop.lay.fp !== 0) continue;
+      for (const pace of [1, 2.6])
+        for (const scale of [0.95, 1.25, 1.6]) // fit.s on a 375 pt wide phone … a tablet
+          for (const st of ['prep', 'oven', 'counter'] as const) {
+            const cut = spotlightCutout(stationRects(shop.lay, 44 / scale)[st]);
+            for (const bounce of [0, 4]) {
+              const hand = tutorialHand(cut, bounce);
+              expect(hand.hx).toBeCloseTo((cut.x0 + cut.x1) / 2);
+              expect(hand.hy).toBeCloseTo(cut.y1 - 30 + bounce);
+              frames(shop, pace).forEach((cast, f) => {
+                for (const c of cast) {
+                  if (c.role === 'walkin' && c.props.kind !== 'sit') continue; // a guest in transit may cross any spot for a moment
+                  const h = headOf(c);
+                  if (hand.rect.x0 < h.x1 && hand.rect.x1 > h.x0 && hand.rect.y0 < h.y1 && hand.rect.y1 > h.y0) bad.push(`${shop.name} ${st} s${scale} pace${pace} f${f} ${c.key}`);
+                }
+              });
+            }
+          }
+    }
     expect(bad.slice(0, 5)).toEqual([]);
   });
 });

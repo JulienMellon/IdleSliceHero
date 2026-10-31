@@ -3,7 +3,7 @@
 Usage: python3 scripts/screenshots.py <version>   (expects `npx expo export --platform web` output in dist/)
 Writes screenshots/<version>/*.png and screenshots/<version>/report.json (console errors, load status).
 """
-import functools, http.server, json, os, socketserver, sys, threading, time
+import datetime, functools, http.server, json, os, socketserver, sys, threading, time
 from playwright.sync_api import sync_playwright
 
 VERSION = sys.argv[1] if len(sys.argv) > 1 else "dev"
@@ -93,7 +93,7 @@ def skip_title(page, timeout=8000):
         pass
 
 def settle(page, wait=2.5):
-    """Dismiss the offline popup and any due cut-scene so the scene is interactive."""
+    """Dismiss the offline popup, any due cut-scene and the daily gift calendar so the scene is interactive."""
     time.sleep(wait)
     quiet = 0
     for _ in range(12):  # v4.5: audio preloading can delay the popup or a due beat, so wait for two quiet checks
@@ -101,6 +101,8 @@ def settle(page, wait=2.5):
             tid(page, "collect-offline").click(); time.sleep(0.6); quiet = 0
         elif page.locator('[data-testid="skip-scene"]').count():
             tid(page, "skip-scene").click(); time.sleep(0.6); quiet = 0
+        elif page.locator('[data-testid="gift-close"]').count():  # v5.4: the daily gift calendar opens by itself once per day
+            tid(page, "gift-close").click(); time.sleep(0.6); quiet = 0
         else:
             quiet += 1
             if quiet >= 2:
@@ -382,6 +384,45 @@ with sync_playwright() as pw:
         shot(page, "24-settings-audio", 0.5)
     except Exception as e:
         report["errors"].append(f"settings audio shot failed: {e}")
+
+    # 14. v5.4: daily/weekly tasks and the gift calendar, from a save that looks mid-week
+    def day_str(offset=0):
+        return (datetime.datetime.now() + datetime.timedelta(days=offset)).strftime("%Y-%m-%d")
+    monday = (datetime.datetime.now() - datetime.timedelta(days=datetime.datetime.now().weekday())).strftime("%Y-%m-%d")
+    def task(kind, target, base=0, claimed=False):
+        return {"kind": kind, "target": target, "base": base, "claimed": claimed}
+    stats = {"upgrades": 14, "ovens": 5, "hires": 1, "builds": 0, "fleet": 0, "decor": 2, "walkins": 90, "deliveries": 130, "baked": 210, "offline": 1, "boosters": 0, "dailyDone": 9, "days": 3}
+    def rewarded(last, streak, diamonds=42, shown=None):
+        return dict(MID_SAVE, saveVersion=5, stats=stats, lastSavedAt=int(time.time() * 1000), totalEarned=15000, rewards={
+            "day": day_str(), "daily": [task("upgrades", 10), task("earn", 5000, 8000), task("deliveries", 5000), task("baked", 4000, 60), task("offline", 1, 0, True)],
+            "points": 40, "chests": [False, False, False], "rerollUsed": False,
+            "week": monday, "weekly": [task("dailyDone", 20), task("days", 5), task("ovens", 5), task("earn", 60000, 1000), task("upgrades", 60), task("deliveries", 9000), task("hire", 1, 0, True)],
+            "weeklyChest": False,
+            "gift": {"streak": streak, "last": last, "saveUsed": False, "cycle": 0}, "giftShownDay": shown or "",
+            "diamonds": diamonds, "boosters": [{"mult": 2, "seconds": 900}, {"mult": 2, "seconds": 1800}],
+            "boosts": [{"mult": 2, "until": now_ms + 14 * 60 * 1000 + 5000, "source": "booster"}],
+            "cosmetics": ["oven-woodfired"], "lastSeen": now_ms - 60000})
+    try:
+        page = seeded_page(browser, rewarded(day_str(), 3)); settle(page)
+        shot(page, "29-hud-rewards", 0.8)
+        tid(page, "open-tasks").click(); shot(page, "30-tasks-daily", 0.8)
+        page.locator('[data-testid="chest-0"]').first.scroll_into_view_if_needed(); shot(page, "30b-tasks-daily-chests", 0.5)
+        tid(page, "tab-weekly").click(); page.locator('[data-testid="claim-weekly-0"]').first.scroll_into_view_if_needed(); shot(page, "31-tasks-weekly", 0.6)
+        page.locator('[data-testid="weekly-chest"]').first.scroll_into_view_if_needed(); shot(page, "31b-tasks-weekly-chest", 0.5)
+    except Exception as e:
+        report["errors"].append(f"tasks shots failed: {e}")
+    try:
+        page = seeded_page(browser, rewarded(day_str(-1), 6))
+        tid(page, "gift-calendar").wait_for(timeout=8000)
+        shot(page, "32-gift-calendar", 1.0)
+    except Exception as e:
+        report["errors"].append(f"gift calendar shot failed: {e}")
+    try:
+        page = seeded_page(browser, rewarded(day_str(-2), 6, diamonds=25))
+        tid(page, "gift-calendar").wait_for(timeout=8000)
+        shot(page, "33-gift-streak-save", 1.0)
+    except Exception as e:
+        report["errors"].append(f"gift streak-save shot failed: {e}")
     browser.close()
 
 httpd.shutdown()

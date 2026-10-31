@@ -4,7 +4,7 @@ import type { NeighborhoodId } from '../../content/types';
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { INK, D, WH, P, kAt, shade } from './projection';
 import { type Layout, SEAT } from './layout';
-import { boxOvenGeom, domeGeom, flameBox, isBoxOven, ovenFrame, type OvenSpec } from './geometry';
+import { boxOvenGeom, chairBack, domeGeom, flameBox, isBoxOven, ovenFrame, type OvenSpec } from './geometry';
 import { Box, FloorShadow } from './primitives';
 
 /**
@@ -166,20 +166,22 @@ export const Table = memo(function Table({ x, y, tier, part }: { x: number; y: n
         {[-6, 6].map((lx) => <Rect key={lx} x={lx - 1} y={-4} width={2} height={4} rx={0.6} fill={st.chairDark} stroke={INK} strokeWidth={0.6} />)}
         {/* backrest rising from the seat's rear edge: two posts, top rail and a slat */}
         {(() => {
-          const x0 = out < 0 ? -7.5 : 1.5;
+          const cb = chairBack(out < 0 ? -1 : 1);
+          const x0 = cb.x0;
+          const h = cb.bottom - cb.top;
           return (
             <G>
-              <Rect x={x0} y={-25} width={1.8} height={19} rx={0.8} fill={st.chairDark} stroke={INK} strokeWidth={0.7} />
-              <Rect x={x0 + 4.2} y={-25} width={1.8} height={19} rx={0.8} fill={st.chairDark} stroke={INK} strokeWidth={0.7} />
-              <Rect x={x0 - 0.4} y={-26} width={6.8} height={5} rx={1.8} fill={st.chair} stroke={INK} strokeWidth={1.1} />
-              <Rect x={x0 + 0.3} y={-25.4} width={5.4} height={1.3} rx={0.6} fill="#fff" opacity={0.3} />
-              <Rect x={x0 + 0.2} y={-17} width={5.6} height={2.4} rx={1} fill={st.chair} stroke={INK} strokeWidth={0.8} />
+              <Rect x={x0} y={cb.top} width={1.8} height={h} rx={0.8} fill={st.chairDark} stroke={INK} strokeWidth={0.7} />
+              <Rect x={x0 + 4.2} y={cb.top} width={1.8} height={h} rx={0.8} fill={st.chairDark} stroke={INK} strokeWidth={0.7} />
+              <Rect x={cb.rail.x0} y={cb.rail.y0} width={cb.rail.x1 - cb.rail.x0} height={cb.rail.y1 - cb.rail.y0} rx={1.8} fill={st.chair} stroke={INK} strokeWidth={1.1} />
+              <Rect x={x0 + 0.3} y={cb.top + 0.6} width={5.4} height={1.3} rx={0.6} fill="#fff" opacity={0.3} />
+              <Rect x={x0 + 0.2} y={cb.top + 9} width={5.6} height={2.4} rx={1} fill={st.chair} stroke={INK} strokeWidth={0.8} />
             </G>
           );
         })()}
-        <Rect x={-7.5} y={-6.4} width={15} height={3.8} rx={1.6} fill={st.chair} stroke={INK} strokeWidth={1.2} />
-        <Rect x={-7.5} y={-3.8} width={15} height={1.2} rx={0.6} fill={st.chairDark} />
-        <Rect x={-6.5} y={-6} width={13} height={1.1} rx={0.5} fill="#fff" opacity={0.3} />
+        <Rect x={out < 0 ? -13 : -7.5} y={-6.4} width={20.5} height={3.8} rx={1.6} fill={st.chair} stroke={INK} strokeWidth={1.2} />
+        <Rect x={out < 0 ? -13 : -7.5} y={-3.8} width={20.5} height={1.2} rx={0.6} fill={st.chairDark} />
+        <Rect x={out < 0 ? -12 : -6.5} y={-6} width={18.5} height={1.1} rx={0.5} fill="#fff" opacity={0.3} />
       </G>
     );
   };

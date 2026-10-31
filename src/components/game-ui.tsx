@@ -5,7 +5,7 @@ import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'r
 
 import { cashText, duration, goalAmount, money, shownValue } from '../engine/format';
 import { C, F } from '../theme';
-import { BookIcon, CoinIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
+import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
 import { onPayout, setCoinTarget } from './pulse-bus';
 import { BUTTON_H, COMPACT_FONT_MAX_SCALE } from './tap-targets';
 
@@ -153,7 +153,7 @@ export interface Goal {
   onPress?: () => boolean;
 }
 
-export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes, halo = null }: { cash: number; subtitle: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null }) {
+export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes, halo = null, onTasks, tasksBadge = 0, onGift, giftDot = false }: { cash: number; subtitle: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null; onTasks?: () => void; tasksBadge?: number; onGift?: () => void; giftDot?: boolean }) {
   const shown = useCountUp(cash);
   const [flash] = useState(() => new Animated.Value(1));
   // the cash text's window position: payout coins land on it (C81)
@@ -181,6 +181,17 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes, halo
             </View>
           )}
         </Pressable>
+        {/* v5.4: the clipboard and the gift show once rewards unlock (their handlers are passed) */}
+        {onTasks && (
+          <Pressable onPress={onTasks} style={styles.hudIcon} testID="open-tasks" accessibilityLabel="Daily and weekly tasks">
+            <ClipboardIcon size={30} />
+            {tasksBadge > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{tasksBadge}</Text>
+              </View>
+            )}
+          </Pressable>
+        )}
         <View style={[styles.cashPill, halo === 'cash' && styles.halo]}>
           <Animated.Text
             ref={cashRef}
@@ -195,6 +206,12 @@ export function Hud({ cash, subtitle, goal, onScrapbook, onCity, newScenes, halo
             {subtitle}
           </Text>
         </View>
+        {onGift && (
+          <Pressable onPress={onGift} style={styles.hudIcon} testID="open-gift" accessibilityLabel="Daily gift">
+            <GiftIcon size={30} />
+            {giftDot && <View style={styles.giftDot} />}
+          </Pressable>
+        )}
         <Pressable onPress={onCity} style={styles.hudIcon} testID="open-city" hitSlop={8}>
           <MapIcon size={32} />
         </Pressable>
@@ -347,6 +364,7 @@ const styles = StyleSheet.create({
   hudEmoji: { fontSize: 22 },
   hudIconSmall: { position: 'absolute', right: -4, top: -4, width: 26, height: 26, borderRadius: 13, backgroundColor: C.tomatoDark, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+  giftDot: { position: 'absolute', top: -1, right: -1, width: 16, height: 16, borderRadius: 8, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato },
   badgeText: { fontFamily: F.bold, fontSize: 10, color: C.ink },
   cashPill: { flex: 1, alignItems: 'center' },
   cash: { fontFamily: F.bold, fontSize: 34, color: '#fff', textShadowColor: C.tomatoDark, textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 },

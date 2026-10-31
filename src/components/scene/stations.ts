@@ -201,3 +201,20 @@ export function doorwaySignRect(lay: Layout): Rect {
   const lTop = P(0, 0, 122)[1];
   return { x0, y0: lTop - 12, x1, y1: lTop - 1 };
 }
+
+/** The tutorial spotlight's cut-out: the station's rect grown by this much on every side. */
+export const SPOTLIGHT_PAD = 8;
+export const spotlightCutout = (r: Rect): Rect => ({ x0: r.x0 - SPOTLIGHT_PAD, y0: r.y0 - SPOTLIGHT_PAD, x1: r.x1 + SPOTLIGHT_PAD, y1: r.y1 + SPOTLIGHT_PAD });
+
+/**
+ * Where the tutorial hand sits (D384): inside the cut-out, centred across and 30 up from its bottom edge: over the work surface, below the heads of the worker at the station.
+ * It used to sit on the cut-out's bottom edge, over the rug-table diner's head; the right edge (x1 + 6) is no better,
+ * since the neighbouring baker's or counter staff's head stands there. `rot` is the glyph's rotation (the glyph points
+ * up at 0; it tilts like a pointing finger); `rect` is its generous bounding box (scene units).
+ */
+export function tutorialHand(cut: Rect, bounce = 0): { hx: number; hy: number; rot: number; scale: number; rect: Rect } {
+  const hx = (cut.x0 + cut.x1) / 2;
+  const hy = cut.y1 - 30 + bounce;
+  const scale = 1.6;
+  return { hx, hy, rot: -20, scale, rect: { x0: hx - 8 * scale, y0: hy - 8 * scale, x1: hx + 8 * scale, y1: hy + 8 * scale } };
+}

@@ -5,6 +5,7 @@ import { Circle, Defs, Ellipse, G, LinearGradient, Path, Polygon, Rect, Stop, Te
 import { INK, SCENE_W, D, WH, FRONT_TOP, P, pts, shade } from './projection';
 import type { Layout } from './layout';
 import { LOOKS } from './identity';
+import { doorwaySignRect } from './stations';
 import { hash32 } from './people';
 import { Sidewalk } from './street';
 
@@ -653,6 +654,7 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
         const [kbx] = P(jx1, 0, 0);
         const [, lTop] = P(0, 0, 122);
         const [, lBot] = P(0, 0, 108);
+        const sign = doorwaySignRect(lay);
         const [, gTop] = P(0, 0, 196);
         const [, bTop] = P(0, 0, FRONT_TOP - 20);
         const brick = (x0: number, x1: number, top: number, bot: number) => (
@@ -743,8 +745,9 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
               );
             })()}
             <Path d={`M${jax} ${lTop - 12} H${kbx}`} stroke="#6B4330" strokeWidth={2.4} />
-            <Rect x={jax + 2} y={lTop - 11} width={kbx - jax - 4} height={10} fill="#3B1F14" opacity={0.85} />
-            <SvgText x={(jax + kbx) / 2} y={lTop - 3.4} fontFamily={F.bold} fontSize={6.5} fill="#E0B000" textAnchor="middle" letterSpacing={1}>
+            {/* C91: the plank is drawn from the rect the crowd budget (D377) guards */}
+            <Rect x={sign.x0} y={sign.y0 + 1} width={sign.x1 - sign.x0} height={sign.y1 - sign.y0 - 1} fill="#3B1F14" opacity={0.85} />
+            <SvgText x={(sign.x0 + sign.x1) / 2} y={sign.y1 - 2.4} fontFamily={F.bold} fontSize={6.5} fill="#E0B000" textAnchor="middle" letterSpacing={1}>
               PIZZERIA
             </SvgText>
             {/* jambs + lintel */}
@@ -973,19 +976,20 @@ export const StreetProp = memo(function StreetProp({ id, x, y }: { id: Neighborh
         </G>
       )}
       {kind === 'bikerack' && (
-        // two bikes in profile on a dark hoop rack (D363)
+        // two bikes in profile, 22 apart, each leaning on its own #5A5A5A hoop with its own contact shadow (D363)
         <G>
-          {[-15, 0, 15].map((px) => (
-            <Path key={px} d={`M${px - 5} 0 V-12 Q${px - 5} -17 ${px} -17 Q${px + 5} -17 ${px + 5} -12 V0`} stroke="#3A3A44" strokeWidth={2.2} fill="none" />
-          ))}
-          {[[-9, '#6A2C9A', -2], [9, '#E0A800', 2]].map(([bx, col, dy]) => (
-            <G key={bx as number} transform={`translate(${bx} ${dy})`}>
-              <Circle cx={-8} cy={-7} r={6.5} fill="none" stroke={INK} strokeWidth={1.5} />
-              <Circle cx={8} cy={-7} r={6.5} fill="none" stroke={INK} strokeWidth={1.5} />
-              <Circle cx={-8} cy={-7} r={1} fill={INK} />
-              <Circle cx={8} cy={-7} r={1} fill={INK} />
-              <Path d="M-8 -7 L-2 -16 L6 -16 L8 -7 L-1 -7 Z M-2 -16 L-1 -7" stroke={col as string} strokeWidth={2} fill="none" strokeLinejoin="round" />
-              <Path d="M-4 -19 H0 M6 -16 L7 -20 L10 -20" stroke={INK} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+          {[[-11, '#6A2C9A'], [11, '#E0A800']].map(([bx, col]) => (
+            <G key={bx as number} transform={`translate(${bx} 0)`}>
+              <Ellipse cx={0} cy={0.5} rx={10} ry={2} fill="#000" opacity={0.2} />
+              <Path d="M-5 0 V-12 Q-5 -17 0 -17 Q5 -17 5 -12 V0" stroke="#5A5A5A" strokeWidth={2} fill="none" />
+              <G transform="scale(0.75)">
+                <Circle cx={-8} cy={-7} r={6.5} fill="none" stroke={INK} strokeWidth={1.5} />
+                <Circle cx={8} cy={-7} r={6.5} fill="none" stroke={INK} strokeWidth={1.5} />
+                <Circle cx={-8} cy={-7} r={1} fill={INK} />
+                <Circle cx={8} cy={-7} r={1} fill={INK} />
+                <Path d="M-8 -7 L-2 -16 L6 -16 L8 -7 L-1 -7 Z M-2 -16 L-1 -7" stroke={col as string} strokeWidth={2} fill="none" strokeLinejoin="round" />
+                <Path d="M-4 -19 H0 M6 -16 L7 -20 L10 -20" stroke={INK} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+              </G>
             </G>
           ))}
         </G>

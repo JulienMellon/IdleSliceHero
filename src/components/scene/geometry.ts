@@ -8,6 +8,19 @@ import { bobFor } from './quantise';
 // ---------- people ----------
 export const isWorker = (kind: Kind) => kind === 'cook' || kind === 'baker' || kind === 'staff' || kind === 'driver';
 
+/**
+ * A dining chair's backrest (D354), in the chair's own units, for a chair on the side `out` (−1 left, +1 right) of
+ * its table: it stands just outside the seated diner's torso (±8.5 wide) so it shows beside them, and its top rail
+ * rises 6 above the shoulders (shoulder line = bodyBy('sit')).
+ */
+export function chairBack(out: -1 | 1) {
+  const x0 = out < 0 ? -13.5 : 7.5;
+  const top = bodyBy('sit', 0) - 6;
+  return { x0, x1: x0 + 6, top, bottom: -6, rail: { x0: x0 - 0.4, x1: x0 + 6.4, y0: top, y1: top + 5 } };
+}
+/** Seated diner's torso half-width (looks widen it by up to ~1.1). */
+export const SEATED_TORSO_HALF = 9.6;
+
 /** Height of a figure's hip/shoulder line above its feet, at rest (no walk bob); `tall` is the look's height tweak. */
 export const bodyBy = (kind: Kind, tall: number) => (kind === 'sit' ? -21 : -30 - tall);
 

@@ -68,9 +68,9 @@ export const LINE = {
   rushSeconds: 0.25,
 } as const;
 
-/** Bound on |walkInDebt| (C84): a few full prep benches' worth of pies, derived from LINE so it can't drift on its own. */
+/** Bound on |walkInDebt| (C84; `dispatch` widens it to 2n for a big dispatch, C90, so late-game walk-ins keep coming): a few full prep benches' worth of pies, derived from LINE so it can't drift on its own. */
 export const WALK_IN_DEBT_MAX = LINE.prepBuffer * LINE.maxDepartures;
-export const clampWalkInDebt = (d: number): number => (Number.isFinite(d) ? Math.min(WALK_IN_DEBT_MAX, Math.max(-WALK_IN_DEBT_MAX, d)) : 0);
+export const clampWalkInDebt = (d: number, max: number = WALK_IN_DEBT_MAX): number => (Number.isFinite(d) ? Math.min(max, Math.max(-max, d)) : 0);
 
 /** Rates and prices the line needs from one shop (game.ts `lineRates` computes them). */
 export interface LineRates {
@@ -196,7 +196,7 @@ function dispatch(w: Work, r: LineRates) {
     else kind = w.driverBusy <= 0 ? 'driver' : null;
     // the carrier who is due is out: the pies wait and join their next trip (keeps the split true)
     if (!kind) return;
-    w.walkInDebt = walkins ? clampWalkInDebt(w.walkInDebt + n * r.walkInFraction - (kind === 'walkin' ? n : 0)) : 0;
+    w.walkInDebt = walkins ? clampWalkInDebt(w.walkInDebt + n * r.walkInFraction - (kind === 'walkin' ? n : 0), Math.max(WALK_IN_DEBT_MAX, 2 * n)) : 0;
     w.boxed = 0;
     const cash = n * r.price;
     const left = kind === 'walkin' ? LINE.handoffSeconds : LINE.departSeconds;

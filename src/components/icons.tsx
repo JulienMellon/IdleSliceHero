@@ -249,3 +249,50 @@ export function WhooshIcon({ size = 30 }: { size?: number }) {
     </Svg>
   );
 }
+
+/** Clipboard with a ticked list (Tasks button). */
+export function ClipboardIcon({ size = 30 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 30 30">
+      <Rect x={5} y={5} width={20} height={22} rx={3} fill="#FFF4E0" stroke={INK} strokeWidth={1.8} />
+      <Rect x={10} y={2.5} width={10} height={5.5} rx={2} fill="#C9B79E" stroke={INK} strokeWidth={1.6} />
+      <Path d="M8.5 13 L10 14.6 L12.8 11.6" stroke="#3FAE5A" strokeWidth={1.9} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M15 13 H22" stroke="#C9B79E" strokeWidth={1.8} strokeLinecap="round" />
+      <Path d="M8.5 19.5 L10 21.1 L12.8 18.1" stroke="#3FAE5A" strokeWidth={1.9} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M15 19.5 H22" stroke="#C9B79E" strokeWidth={1.8} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+/** Wrapped gift (daily gift button). */
+export function GiftIcon({ size = 30 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 30 30">
+      <Path d="M15 11 Q10 11 9.5 7.5 Q9.5 4.5 12 5 Q14.5 5.5 15 11 Z M15 11 Q20 11 20.5 7.5 Q20.5 4.5 18 5 Q15.5 5.5 15 11 Z" fill="#FFC531" stroke={INK} strokeWidth={1.5} strokeLinejoin="round" />
+      <Rect x={3.5} y={11} width={23} height={6} rx={1.5} fill="#E8432E" stroke={INK} strokeWidth={1.8} />
+      <Rect x={5} y={17} width={20} height={9.5} rx={1.5} fill="#F26B57" stroke={INK} strokeWidth={1.8} />
+      <Path d="M15 11 V26.5" stroke="#FFC531" strokeWidth={4} />
+      <Path d="M15 11 V26.5" stroke={INK} strokeWidth={0.8} opacity={0.4} />
+    </Svg>
+  );
+}
+
+/** Cut diamond (the premium currency). */
+export function DiamondIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Path d="M5 3 H15 L19 8 L10 18 L1 8 Z" fill="#7CC8EE" stroke={INK} strokeWidth={1.3} strokeLinejoin="round" />
+      <Path d="M1 8 H19 M7 3 L5.5 8 L10 18 M13 3 L14.5 8 L10 18" stroke={INK} strokeWidth={0.8} fill="none" strokeLinejoin="round" />
+      <Path d="M6.5 5 L8.5 4.5" stroke="#fff" strokeWidth={1.2} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+/** Lightning bolt (income boosters). */
+export function BoostIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 20 20">
+      <Path d="M11.5 1.5 L4 11 H9 L7.5 18.5 L16 8.5 H10.5 Z" fill="#FFC531" stroke={INK} strokeWidth={1.3} strokeLinejoin="round" />
+    </Svg>
+  );
+}
