@@ -186,18 +186,43 @@ export const SHOP_SIGNS = {
   frame: { x: 216, y: -12, k: 0.8, w: 66, h: 58 },
 } as const satisfies Record<string, Placed>;
 
-/** The MEGASLICE billboards: on its frame in the industrial skyline, bolted to the facade uptown. */
-export const INDUSTRIAL_BILLBOARD = { x: 162, y: -47, w: 98, h: 24 } as const;
+/**
+ * The MEGASLICE billboards: on two posts standing on the factory's sawtooth ridges in the industrial skyline (the ridges at x 204 and
+ * 240, y -6), bolted to the facade uptown. Clear of the left chimney's steam, which drifts up and right to about x 174.
+ */
+export const INDUSTRIAL_BILLBOARD = { x: 172, y: -47, w: 98, h: 24 } as const;
+export const INDUSTRIAL_POSTS = { xs: [204, 240], baseY: -6, color: '#3a2a20' } as const;
 export const UPTOWN_BILLBOARD = { x: 196, y: -30, w: 74, h: 30 } as const;
 export const PIER_PLAQUE = { x: 232, y: 20, w: 60, h: 26 } as const;
 export const HQ_PLATE = { x: 150, y: -46, w: 100, h: 18 } as const;
-/** The suburbs oak: its trunk stands left of the centre line, so a figure's cap never has a tree growing out of it. Canopy bottom in art y. */
-export const OAK = { trunkX0: 138, trunkX1: 152, canopyBottom: 44 } as const;
+/** Scale a [cx, cy, r] circle about (146, -14), then shift it by (dx, dy). */
+const oakCircle = ([cx, cy, r]: readonly [number, number, number], k: number, dx: number, dy: number): [number, number, number] => [n(146 + (cx - 146) * k + dx), n(-14 + (cy + 14) * k + dy), n(r * k)];
+/** The canopy as drawn in the original art (cut-scene 22 round 54): five puffs, three shading puffs, two highlights. */
+const OAK_ORIGINAL = {
+  canopy: [[146, -40, 34], [116, -10, 28], [176, -6, 30], [144, 14, 30], [170, -54, 22]],
+  shade: [[182, 0, 22], [160, 26, 18], [178, -40, 14]],
+  light: [[124, -34, 12], [134, -60, 9]],
+} as const;
+/** D398: the canopy shrunk 15 % and sat 6 units right of, 10 units lower than, the old one so it clears the caption and the left roof's ridge. */
+export const OAK_FIT = { k: 0.85, dx: 6, dy: 10, outline: 4 } as const;
+const fitOak = (list: readonly (readonly [number, number, number])[]) => list.map((c) => oakCircle(c, OAK_FIT.k, OAK_FIT.dx, OAK_FIT.dy));
+const OAK_CANOPY = fitOak(OAK_ORIGINAL.canopy);
+/** The suburbs oak: its trunk stands left of the centre line, so a figure's cap never has a tree growing out of it. Canopy bottom in art y (outline included). */
+export const OAK = {
+  trunkX0: 138,
+  trunkX1: 152,
+  canopy: OAK_CANOPY,
+  shade: fitOak(OAK_ORIGINAL.shade),
+  light: fitOak(OAK_ORIGINAL.light),
+  canopyTop: Math.min(...OAK_CANOPY.map(([, cy, r]) => cy - r)) - OAK_FIT.outline / 2,
+  canopyBottom: Math.max(...OAK_CANOPY.map(([, cy, r]) => cy + r)) + OAK_FIT.outline / 2,
+} as const;
+/** The left house's roof ridge and its chimney (standing on the ridge's right slope, tall enough to clear the canopy), in art units. */
+export const LEFT_HOUSE = { ridge: [116, -40], chimney: { x: 124, w: 12, base: -24, top: -66 } } as const;
 /** The sunset sun on the waterfront: low over the bay, clear of the caption. */
 export const SUN = { cx: 188, cy: 34, r: 20, glow: 46 } as const;
 /** Foreground prop signs. */
 export const SOLD_SIGN = { x: 106, y: -44, w: 100, h: 46 } as const;
-export const VENDING_HEAD = { x: 168, y: -22, w: 68, h: 18 } as const;
 
 const rectBox = (r: { x: number; y: number; w: number; h: number }): Box => ({ x0: r.x, y0: r.y, x1: r.x + r.w, y1: r.y + r.h });
 /** Every sign-like board per backdrop (and per prop), for the layout tests. */
@@ -210,7 +235,6 @@ export const SIGN_BOXES: Record<string, Box> = {
   'waterfront/pier-9': rectBox(PIER_PLAQUE),
   'megaslice-hq/plate': rectBox(HQ_PLATE),
   'prop/sold-sign': rectBox(SOLD_SIGN),
-  'prop/vending-machine': rectBox(VENDING_HEAD),
 };
 
 /** A point on a quadratic curve. */
@@ -232,3 +256,12 @@ export const STRING_LIGHTS = (() => {
   const bulbs = swags.flatMap(([p0, c, p1], s) => ts.map((t) => quadAt(p0, c, p1, s === 0 ? t : 1 - t)));
   return { wire: 'M-10 -102 Q100 -66 200 -96 Q300 -66 410 -102', bulbs, radius: 5 };
 })();
+
+/**
+ * D394: a captioned panel (the player draws its caption bar over the top of the art) hangs no string lights. On the smallest phone the
+ * bar plus a 6 pt gap ends below the signs' top row, so there is no clear stretch of wall to hang a bulb in.
+ */
+export const NO_LIGHTS = { wire: '', bulbs: [] as [number, number][], radius: STRING_LIGHTS.radius };
+export const lightsFor = (captioned: boolean) => (captioned ? NO_LIGHTS : STRING_LIGHTS);
+/** Gap kept between the caption bar's bottom edge and anything hung under it, in pt. */
+export const CAPTION_GAP_PT = 6;

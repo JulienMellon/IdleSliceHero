@@ -1,3 +1,4 @@
+import { lotView } from './city-model';
 import { LOOKS } from './scene/identity';
 // City overview: every neighborhood and its pizzeria at a glance. Tap one to visit it (or build it).
 import Svg, { Circle, Ellipse, G, Path, Rect, Text as SvgText } from 'react-native-svg';
@@ -68,7 +69,6 @@ function BuildSite({ x, y, next }: { x: number; y: number; next: boolean }) {
 }
 
 export function CityMap({ game, width, height, onPress }: { game: Game.GameState; width: number; height: number; onPress: (id: NeighborhoodId) => void }) {
-  const next = Game.nextToBuild(game);
   return (
     <Svg width={width} height={height} viewBox={`0 0 ${MAP_VIEWBOX.w} ${MAP_VIEWBOX.h}`} preserveAspectRatio="xMidYMid meet">
       <Rect x={-50} y={-50} width={200} height={200} fill={C.map} />
@@ -96,11 +96,13 @@ export function CityMap({ game, width, height, onPress }: { game: Game.GameState
       ))}
       {NEIGHBORHOODS.map((n) => {
         const shop = game.shops[n.id];
-        const isNext = next?.id === n.id;
+        // D305: a lot held back by Nonna's takeover is a dim padlock with the countdown, not a live "Build $"
+        const lot = lotView(game, n);
+        const isNext = lot.kind === 'buildable';
         const active = game.active === n.id;
         const eps = Game.shopEarnings(game, n.id);
         return (
-          <G key={n.id} onPress={() => onPress(n.id)}>
+          <G key={n.id} onPress={() => onPress(n.id)} opacity={lot.dim ? 0.7 : 1}>
             {active && <Circle cx={n.x} cy={n.y} r={12} fill={C.cheese} opacity={0.55} />}
             {shop.built ? <MiniShop x={n.x} y={n.y} id={n.id} color={n.color} /> : <BuildSite x={n.x} y={n.y} next={isNext} />}
             <Rect x={n.x - 11} y={n.y + 8.5} width={22} height={8.5} rx={2.2} fill="rgba(59,31,20,0.25)" />
@@ -109,7 +111,7 @@ export function CityMap({ game, width, height, onPress }: { game: Game.GameState
               {n.name}
             </SvgText>
             <SvgText x={n.x} y={n.y + 14.6} fontSize={2.8} fontFamily={F.bold} fill={shop.built ? (shop.managed ? C.basilDark : C.tomato) : isNext ? C.tomato : C.inkSoft} textAnchor="middle">
-              {shop.built ? (shop.managed ? `${money(eps)}/s` : 'needs manager') : isNext ? `Build ${money(n.buildCost)}` : '???'}
+              {shop.built ? (shop.managed ? `${money(eps)}/s` : 'needs manager') : lot.pin}
             </SvgText>
           </G>
         );

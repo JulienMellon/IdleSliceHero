@@ -3,11 +3,11 @@
 // Light comes from the upper left: right faces are shaded and shadows fall to the right.
 // Static per (id, size, prop): the component is memo'd and every path string is built once at module load.
 import { memo, useId, type ReactElement } from 'react';
-import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Rect, Stop, Text } from 'react-native-svg';
+import Svg, { Circle, ClipPath, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Rect, Stop, Text } from 'react-native-svg';
 
 import type { Backdrop as BackdropId } from '../content/types';
 import { F } from '../theme';
-import { HQ_PLATE, INDUSTRIAL_BILLBOARD, OAK, PIER_PLAQUE, SHOP_SIGNS, SUN, STRING_LIGHTS, UPTOWN_BILLBOARD, alongQuad, backdropView, brickPatch, n as n1, bricks, circle, cloud, gridLines, mullions, planks, rain, rect, skyline, windows } from './cutscene/backdrop-art';
+import { HQ_PLATE, INDUSTRIAL_BILLBOARD, INDUSTRIAL_POSTS, LEFT_HOUSE, OAK, PIER_PLAQUE, SHOP_SIGNS, SUN, STRING_LIGHTS, UPTOWN_BILLBOARD, alongQuad, backdropView, brickPatch, n as n1, bricks, circle, cloud, gridLines, lightsFor, mullions, planks, rain, rect, skyline, windows } from './cutscene/backdrop-art';
 
 const INK = '#3B1F14';
 
@@ -37,7 +37,7 @@ const GLOW: Record<BackdropId, string> = {
   'downtown-rain': '#FFC46B',
 };
 
-type Ids = { glow: string };
+type Ids = { glow: string; oak: string; lights: ReturnType<typeof lightsFor> };
 
 // ---------------------------------------------------------------------------------------------------------------
 // Shared pieces
@@ -64,13 +64,13 @@ function Ground({ y, fill, line = INK }: { y: number; fill: string; line?: strin
   );
 }
 
-/** The MEGASLICE billboard: on a braced frame (industrial skyline) or, without `legs`, bolted to a facade (uptown). */
-function Billboard({ x, y, w, h, legs = true }: { x: number; y: number; w: number; h: number; legs?: boolean }) {
+/** The MEGASLICE billboard: on two dark posts standing on a roof (industrial skyline) or, without `posts`, bolted to a facade (uptown). */
+function Billboard({ x, y, w, h, posts }: { x: number; y: number; w: number; h: number; posts?: typeof INDUSTRIAL_POSTS }) {
   const fs = Math.round(w / 10);
   return (
     <G>
-      {legs ? (
-        <Path d={`M${x + 22} ${y + h}v40M${x + w - 22} ${y + h}v40M${x + 22} ${y + h + 20}L${x + w - 22} ${y + h + 36}M${x + w - 22} ${y + h + 20}L${x + 22} ${y + h + 36}`} stroke="#2A2233" strokeWidth={3} />
+      {posts ? (
+        <Path d={posts.xs.map((px) => rect(px - 2.5, y + h, 5, posts.baseY - (y + h))).join('')} fill={posts.color} stroke={INK} strokeWidth={1.2} />
       ) : (
         <Path d={`M${x + 8} ${y + h}v5h8v-5M${x + w - 16} ${y + h}v5h8v-5`} fill="#2A2233" />
       )}
@@ -105,12 +105,17 @@ const SHOP = (() => {
     ovenBricks += `M${xa.toFixed(1)} ${y}H${xb.toFixed(1)}`;
     for (let x = xa + (r % 2 ? 6 : 12); x < xb - 3; x += 12) if (y < 98 || x < 268 || x > 332) ovenBricks += `M${x.toFixed(1)} ${y}v7`;
   }
-  const bulbs = ['', '', ''];
-  let glow = '';
-  STRING_LIGHTS.bulbs.forEach(([x, y], i) => {
-    bulbs[i % 3] += circle(x, y + 6, 4, 5);
-    glow += circle(x, y + 6, 10);
-  });
+  // the string lights: built for both cases (a captioned panel hangs none, see lightsFor)
+  const lights = (bulbList: [number, number][]) => {
+    const bulbs = ['', '', ''];
+    let glow = '';
+    bulbList.forEach(([x, y], i) => {
+      bulbs[i % 3] += circle(x, y + 6, 4, 5);
+      glow += circle(x, y + 6, 10);
+    });
+    return { bulbs, glow };
+  };
+  const strung = lights(STRING_LIGHTS.bulbs);
   const jarsX = [108, 130, 152, 174];
   const contents = ['#D9443A', '#4E9A4A', '#E8C27A', '#F4EEDC'];
   return {
@@ -118,9 +123,8 @@ const SHOP = (() => {
     tiles,
     floor,
     ovenBricks,
-    wire: STRING_LIGHTS.wire,
-    bulbs,
-    bulbGlow: glow,
+    bulbs: strung.bulbs,
+    bulbGlow: strung.glow,
     jarGlass: jarsX.map((x) => `M${x} 14q0 -3 3 -3h10q3 0 3 3v14q0 2 -2 2h-12q-2 0 -2 -2Z`).join(''),
     jarFill: jarsX.map((x, i) => ({ d: `M${x + 1.5} 19h13v9q0 1 -1 1h-11q-1 0 -1 -1Z`, c: contents[i] })),
     jarLids: jarsX.map((x) => rect(x + 1.5, 7.5, 13, 4)).join(''),
@@ -133,7 +137,7 @@ const SHOP = (() => {
   };
 })();
 
-function ShopScene({ glow }: Ids) {
+function ShopScene({ glow, lights }: Ids) {
   const S = SHOP;
   return (
     <G>
@@ -144,12 +148,16 @@ function ShopScene({ glow }: Ids) {
       <Path d={S.tiles} stroke="#D9C7AE" strokeWidth={1.2} />
       <Rect x={-20} y={42} width={440} height={6} fill="#C8483A" />
       <Rect x={-20} y={36} width={440} height={6} fill="#8E5A3C" stroke={INK} strokeWidth={1.4} />
-      {/* string lights */}
-      <Path d={S.bulbGlow} fill="#FFE7A0" opacity={0.28} />
-      <Path d={S.wire} stroke={INK} strokeWidth={1.6} fill="none" />
-      {S.bulbs.map((d, i) => (
-        <Path key={i} d={d} fill={['#FFC531', '#E8432E', '#3FAE5A'][i]} stroke={INK} strokeWidth={1.2} />
-      ))}
+      {/* string lights: none under a caption bar (D394) */}
+      {lights.bulbs.length > 0 && (
+        <>
+          <Path d={S.bulbGlow} fill="#FFE7A0" opacity={0.28} />
+          <Path d={lights.wire} stroke={INK} strokeWidth={1.6} fill="none" />
+          {S.bulbs.map((d, i) => (
+            <Path key={i} d={d} fill={['#FFC531', '#E8432E', '#3FAE5A'][i]} stroke={INK} strokeWidth={1.2} />
+          ))}
+        </>
+      )}
       {/* PIZZA sign on two cords, menu board and the framed photo: 0.8× boards below the caption zone (see SHOP_SIGNS) */}
       <G transform={`translate(${SHOP_SIGNS.pizza.x} ${SHOP_SIGNS.pizza.y}) scale(${SHOP_SIGNS.pizza.k})`}>
         <Path d="M10 -120V2M74 -120V2" stroke={INK} strokeWidth={1.4} />
@@ -336,15 +344,15 @@ const SUB = (() => {
     roofA: 'M46 22 L116 -40 L186 22 Z',
     roofB: 'M222 32 L290 -26 L358 32 Z',
     shingles: shingles(46, 186, 116, -40, 22) + shingles(222, 358, 290, -26, 32),
-    chimney: 'M146 -26h14v-28h-14Z',
+    chimney: `M${LEFT_HOUSE.chimney.x} ${LEFT_HOUSE.chimney.base}h${LEFT_HOUSE.chimney.w}V${LEFT_HOUSE.chimney.top}h${-LEFT_HOUSE.chimney.w}Z`,
     glass: rect(72, 34, 26, 30) + rect(134, 34, 26, 30) + rect(66, 86, 26, 30) + rect(248, 44, 26, 28) + rect(306, 44, 26, 28) + rect(306, 92, 26, 28) + rect(103, -14, 26, 22) + rect(277, -6, 26, 20),
     bars: mullions(72, 34, 1, 1, 26, 30, 0, 0) + mullions(134, 34, 1, 1, 26, 30, 0, 0) + mullions(66, 86, 1, 1, 26, 30, 0, 0) + mullions(248, 44, 1, 1, 26, 28, 0, 0) + mullions(306, 44, 1, 1, 26, 28, 0, 0) + mullions(306, 92, 1, 1, 26, 28, 0, 0) + mullions(103, -14, 1, 1, 26, 22, 0, 0) + mullions(277, -6, 1, 1, 26, 20, 0, 0),
     shutters: rect(64, 34, 7, 30) + rect(99, 34, 7, 30) + rect(126, 34, 7, 30) + rect(161, 34, 7, 30) + rect(240, 44, 7, 28) + rect(275, 44, 7, 28) + rect(298, 44, 7, 28) + rect(333, 44, 7, 28),
     doors: 'M106 140V98q0 -10 10 -10h6q10 0 10 10V140Z M250 140V102q0 -9 9 -9h6q9 0 9 9V140Z',
     sides: rect(168, 22, 6, 118) + rect(340, 32, 6, 108),
-    canopy: circle(146, -40, 34) + circle(116, -10, 28) + circle(176, -6, 30) + circle(144, 14, 30) + circle(170, -54, 22),
-    canopyShade: circle(182, 0, 22) + circle(160, 26, 18) + circle(188, -40, 14),
-    canopyLight: circle(124, -34, 12) + circle(134, -60, 9),
+    canopy: OAK.canopy.map(([cx, cy, r]) => circle(cx, cy, r)).join(''),
+    canopyShade: OAK.shade.map(([cx, cy, r]) => circle(cx, cy, r)).join(''),
+    canopyLight: OAK.light.map(([cx, cy, r]) => circle(cx, cy, r)).join(''),
     trunk: `M${OAK.trunkX0} 140 L${OAK.trunkX0 + 3} 30 Q${OAK.trunkX0 + 6} 18 ${OAK.trunkX0 + 10} 30 L${OAK.trunkX1} 140 Z`,
     fence: Array.from({ length: 30 }, (_, i) => `M${-16 + i * 15} 140V116l4 -5l4 5V140Z`).join('') + 'M-20 122h440v4h-440Z M-20 132h440v4h-440Z',
     lawnTufts: Array.from({ length: 18 }, (_, i) => `M${(i * 47) % 400} ${150 + ((i * 31) % 44)}l3 -6l2 5l3 -7l2 8`).join(''),
@@ -355,7 +363,7 @@ const SUB = (() => {
   };
 })();
 
-function SuburbsScene() {
+function SuburbsScene({ oak }: Ids) {
   return (
     <G>
       <Circle cx={60} cy={-74} r={26} fill="#FFF3B0" opacity={0.5} />
@@ -383,8 +391,16 @@ function SuburbsScene() {
       {/* outline under, fill over: the puffs read as one canopy */}
       <Path d={SUB.canopy} fill="none" stroke={INK} strokeWidth={4} />
       <Path d={SUB.canopy} fill="#5DAE55" />
-      <Path d={SUB.canopyShade} fill="#3F8A3E" opacity={0.75} />
-      <Path d={SUB.canopyLight} fill="#9ED58F" opacity={0.7} />
+      {/* shading and highlight puffs are clipped to the canopy so none spills into the sky (D398) */}
+      <Defs>
+        <ClipPath id={oak}>
+          <Path d={SUB.canopy} />
+        </ClipPath>
+      </Defs>
+      <G clipPath={`url(#${oak})`}>
+        <Path d={SUB.canopyShade} fill="#3F8A3E" opacity={0.75} />
+        <Path d={SUB.canopyLight} fill="#9ED58F" opacity={0.7} />
+      </G>
       {/* near: fence, lawn, walk */}
       <Ground y={140} fill="#7BC96F" />
       <Path d={SUB.shadows} fill="#1F5A2A" opacity={0.25} />
@@ -593,7 +609,7 @@ function IndustrialScene() {
       <Path d={IND.farFactories} fill="#A3A0AC" opacity={0.5} />
       <Path d={IND.crane} stroke="#767487" strokeWidth={1.8} fill="none" opacity={0.7} />
       <Path d={IND.hook} fill="#767487" opacity={0.7} />
-      <Billboard {...INDUSTRIAL_BILLBOARD} />
+      <Billboard {...INDUSTRIAL_BILLBOARD} posts={INDUSTRIAL_POSTS} />
       {/* chimneys, steam drifting up and right */}
       <Path d={IND.steam} fill="#F4F0EA" opacity={0.8} />
       <Path d={IND.chimneys} fill="#8B5A3C" stroke={INK} strokeWidth={2} />
@@ -682,7 +698,7 @@ function UptownScene({ glow }: Ids) {
       <Path d={UP.sides} fill="#000" opacity={0.22} />
       <Path d={UP.off} fill="#262A4E" />
       <Path d={UP.on} fill="#FFD27A" />
-      <Billboard {...UPTOWN_BILLBOARD} legs={false} />
+      <Billboard {...UPTOWN_BILLBOARD} />
       {/* the restaurant canopy */}
       <Path d={UP.canopy} fill="#7A1F3D" stroke={INK} strokeWidth={1.8} />
       <Path d={UP.canopyTrim} stroke="#E6C26E" strokeWidth={2.4} />
@@ -838,7 +854,7 @@ function SoldSign() {
   );
 }
 
-/** MegaSlice vending machine, tall enough that its sign and snack rows show between and above two heads. */
+/** MegaSlice vending machine, tall enough that its snack rows show between and above two heads. (No header sign: the billboard behind it carries the brand, D399.) */
 const VEND = {
   rows: gridLines(180, 26, 216, 92, 400, 13),
   snacks: windows(183, 16, 3, 5, 9, 9, 11.5, 13),
@@ -850,10 +866,6 @@ function VendingMachine() {
       <Path d="M236 140 L262 140 L252 148 L226 148 Z" fill="#000" opacity={0.2} />
       <Rect x={168} y={-6} width={68} height={146} rx={5} fill="#7B2CBF" stroke={INK} strokeWidth={3} />
       <Path d="M226 -4h8v142h-8Z" fill="#000" opacity={0.18} />
-      <Rect x={168} y={-22} width={68} height={18} rx={4} fill="#E8432E" stroke={INK} strokeWidth={2} />
-      <Text x={202} y={-9} fontSize={12} fontFamily={F.bold} fill="#FFFFFF" textAnchor="middle">
-        MEGA
-      </Text>
       <Rect x={177} y={6} width={42} height={88} fill="#D9C8EE" stroke={INK} strokeWidth={2} />
       <Path d={VEND.snacks} fill="#FFC531" stroke={INK} strokeWidth={0.9} />
       <Path d={VEND.snackHi} fill="#fff" opacity={0.6} />
@@ -880,11 +892,11 @@ const SCENES: Record<BackdropId, (ids: Ids) => ReactElement> = {
 /** Per-scene zoom on the scenery, anchored at the kerb (the rainy opening shot frames Rosa's front). */
 const SCENE_ZOOM: Partial<Record<BackdropId, number>> = { 'downtown-rain': 1.15 };
 
-export const Backdrop = memo(function Backdrop({ id, width, height, prop }: { id: BackdropId; width: number; height: number; prop?: 'vending-machine' | 'sold-sign' }) {
+export const Backdrop = memo(function Backdrop({ id, width, height, prop, captioned = false }: { id: BackdropId; width: number; height: number; prop?: 'vending-machine' | 'sold-sign'; captioned?: boolean }) {
   const [top, bottom] = SKY[id];
   // unique per instance: two backdrops on screen (a panel sliding in over the last) never share gradient ids
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const ids = { sky: `sky${uid}`, glow: `glow${uid}`, vig: `vig${uid}` };
+  const ids = { sky: `sky${uid}`, glow: `glow${uid}`, vig: `vig${uid}`, oak: `oak${uid}`, lights: lightsFor(captioned) };
   // Art is 400 wide with the ground at y 200 and up to 100 units of sky; a taller frame scales up and crops the sides.
   const { vbH } = backdropView(width, height);
   const Scene = SCENES[id];
@@ -908,10 +920,10 @@ export const Backdrop = memo(function Backdrop({ id, width, height, prop }: { id
       <Rect x={-20} y={-130} width={440} height={340} fill={`url(#${ids.sky})`} />
       {zoom ? (
         <G transform={`translate(200 200) scale(${zoom}) translate(-200 -200)`}>
-          <Scene glow={ids.glow} />
+          <Scene glow={ids.glow} oak={ids.oak} lights={ids.lights} />
         </G>
       ) : (
-        <Scene glow={ids.glow} />
+        <Scene glow={ids.glow} oak={ids.oak} lights={ids.lights} />
       )}
       {prop === 'vending-machine' && <VendingMachine />}
       {prop === 'sold-sign' && <SoldSign />}

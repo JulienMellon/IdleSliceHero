@@ -9,6 +9,7 @@ import { money } from '../engine/format';
 import * as Game from '../engine/game';
 import { C, F } from '../theme';
 import { LockIcon } from './icons';
+import { buildChipHint } from './sidewalk-model';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BuyButton, haptic } from './game-ui';
 
@@ -48,6 +49,8 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
           }
           if (!shop.built) {
             const can = game.cash >= n.buildCost;
+            // while the Pier 9 bid is on offer, building spends the cash saved for it: say so under the price
+            const warn = buildChipHint(game);
             return (
               <Pressable
                 key={n.id}
@@ -57,9 +60,14 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
                   const ok = onBuild(n.id);
                   haptic(ok ? 'success' : 'error');
                 }}
-                style={[styles.tab, styles.tabBuild, can && styles.tabBuildReady]}>
-                <Text style={[styles.tabName, { color: can ? '#fff' : C.ink }]}>+ {n.name}</Text>
-                <Text style={[styles.tabSub, { color: can ? '#fff' : C.tomato }]}>Build {money(n.buildCost)}</Text>
+                style={[styles.tab, styles.tabBuild, can && styles.tabBuildReady, warn && styles.tabBuildWarn]}>
+                <Text style={[styles.tabName, warn && styles.tabTight, { color: can ? '#fff' : C.ink }]}>+ {n.name}</Text>
+                <Text style={[styles.tabSub, warn && styles.tabTight, { color: can ? '#fff' : C.tomato }]}>Build {money(n.buildCost)}</Text>
+                {warn ? (
+                  <Text style={[styles.tabWarn, { color: can ? '#fff' : C.inkSoft }]} numberOfLines={1}>
+                    {warn}
+                  </Text>
+                ) : null}
               </Pressable>
             );
           }
@@ -153,6 +161,10 @@ const styles = StyleSheet.create({
   tabLocked: { minWidth: 40, backgroundColor: 'rgba(255,255,255,0.25)', borderColor: 'transparent', justifyContent: 'center' },
   tabLockedText: { fontSize: 14 },
   tabBuild: { borderStyle: 'dashed', borderColor: C.cheese, backgroundColor: '#FFF4E0' },
+  // the extra line is paid for by tighter padding and line heights, so the chip keeps its height (14 + 12 + 10 = 36 vs ~29 + 8)
+  tabBuildWarn: { paddingVertical: 0, justifyContent: 'center' },
+  tabTight: { lineHeight: 13 },
+  tabWarn: { fontFamily: F.semi, fontSize: 9, lineHeight: 10 },
   tabBuildReady: { backgroundColor: C.basil, borderColor: '#fff', borderStyle: 'solid' },
 
   card: { justifyContent: 'space-between', width: '48.5%', backgroundColor: C.panel, borderRadius: 16, padding: 7, gap: 5, borderWidth: 2.5, borderColor: C.ink, ...shadow },

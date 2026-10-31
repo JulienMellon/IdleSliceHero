@@ -5,6 +5,7 @@ import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'r
 
 import { cashText, duration, goalAmount, money, shownValue } from '../engine/format';
 import { C, F } from '../theme';
+import { GOAL_BAR, goalBarLayout } from './goal-model';
 import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
 import { onPayout, setCoinTarget } from './pulse-bus';
 import { BUTTON_H, COMPACT_FONT_MAX_SCALE } from './tap-targets';
@@ -50,8 +51,8 @@ const BURST = ['star', 'coin', 'slice', 'star', 'coin', 'slice'] as const;
 /**
  * The game's purchase button (a 3D "candy" button). `onPress` returns true on a successful purchase (burst) or false
  * (shake). `tone`: `normal` is green when affordable and grey when not; `neutral` is white (de-emphasised, e.g. before
- * a shop has a manager); `nogain` is a buy that adds nothing right now, drawn flat and muted with its price struck,
- * so green always means "this adds income" (D313). `nogain` is a style of the same element tree, so a station
+ * a shop has a manager); `nogain` is a buy that adds nothing right now, drawn flat and muted (no strike-through: a struck price read as
+ * "unaffordable" or "discounted", D359), so green always means "this adds income" (D313). `nogain` is a style of the same element tree, so a station
  * flipping to it right after a purchase keeps its burst (C56). `saving` (with `progress` 0–1) marks the bottleneck
  * the player is saving for (D326). `compact` is the 44 pt sidewalk button: `icon` + `sub` above the price.
  */
@@ -91,7 +92,7 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
             compact ? (
               <View style={styles.buySubRow}>
                 {icon}
-                <Text style={[styles.buySubCompact, { color: labelColor }]} numberOfLines={1} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+                <Text style={[styles.buySubCompact, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
                   {sub}
                 </Text>
               </View>
@@ -99,12 +100,9 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
               <Text style={styles.buySub}>{sub}</Text>
             )
           ) : null}
-          <View style={styles.struckWrap}>
-            <Text style={[styles.buyLabel, compact && styles.buyLabelCompact, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}>
-              {label}
-            </Text>
-            {nogain ? <View style={styles.strikeBar} pointerEvents="none" /> : null}
-          </View>
+          <Text style={[styles.buyLabel, compact && styles.buyLabelCompact, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}>
+            {label}
+          </Text>
           {wait ? (
             <View style={styles.saveTrack} pointerEvents="none">
               <View style={[styles.saveFill, { width: `${Math.round(Math.min(1, Math.max(0, progress)) * 100)}%` }]} />
@@ -168,8 +166,9 @@ export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newS
     // Every delivery that lands on the map gives the cash total a little kick.
     return onPayout(() => bump(1.08));
   }, [counting, flash]);
-  const pct = goal ? Math.max(0, Math.min(1, goal.current / goal.target)) : 0;
-  const ready = !!goal?.onPress && pct >= 1;
+  const [goalW, setGoalW] = useState(0);
+  const bar = goalBarLayout(goal?.current ?? 0, goal?.target ?? 0, !!goal?.onPress, goalW);
+  const { pct, ready } = bar;
   return (
     <View style={styles.hud}>
       <View style={styles.hudTop}>
@@ -231,15 +230,34 @@ export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newS
             const ok = goal.onPress?.();
             haptic(ok ? 'success' : ok === false ? 'error' : 'light');
           }}
+          onLayout={(e) => setGoalW(e.nativeEvent.layout.width)}
           style={[styles.goal, ready && styles.goalReady, halo === 'goal' && styles.haloGoal]}>
           <View style={[styles.goalFill, { width: `${pct * 100}%` }, ready && { backgroundColor: C.basil }]} />
-          <Text style={[styles.goalLabel, ready && styles.goalTextReady]} numberOfLines={1}>
-            {ready ? `▶ ${goal.label} — tap!` : goal.label}
-          </Text>
-          {goal.icon ? <View style={{ zIndex: 1, marginLeft: 6 }}>{goal.icon}</View> : <Text style={[styles.goalAmt, ready && styles.goalTextReady]}>{goal.text ?? goalAmount(goal.current, goal.target)}</Text>}
+          <GoalLine label={ready ? `▶ ${goal.label} — tap!` : goal.label} amount={goal.text ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone={ready ? 'ready' : 'track'} />
+          {/* D297: the same line again in cream, clipped to the fill, so the part over the fill is light and the rest stays dark */}
+          {bar.split ? (
+            <View pointerEvents="none" style={[styles.goalClip, { width: bar.fillW }]}>
+              <View style={[styles.goalClipLine, { width: bar.innerW }]}>
+                <GoalLine label={goal.label} amount={goal.text ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone="fill" />
+              </View>
+            </View>
+          ) : null}
         </Pressable>
       )}
     </View>
+  );
+}
+
+/** One line of the goal bar (label, then amount or icon) in one of its three inks. Primitive props, so it stays memo-friendly. */
+function GoalLine({ label, amount, icon, tone }: { label: string; amount: string; icon?: React.ReactNode; tone: 'track' | 'fill' | 'ready' }) {
+  const color = tone === 'track' ? GOAL_BAR.onTrack : tone === 'fill' ? GOAL_BAR.onFill : '#fff';
+  return (
+    <>
+      <Text style={[styles.goalLabel, { color }]} numberOfLines={1}>
+        {label}
+      </Text>
+      {icon ? <View style={{ zIndex: 1, marginLeft: 6 }}>{icon}</View> : <Text style={[styles.goalAmt, { color }]}>{amount}</Text>}
+    </>
   );
 }
 
@@ -351,12 +369,9 @@ const styles = StyleSheet.create({
   // compact: a fixed 44 pt (outer, including its 4 pt lip), so nothing depends on flex-grow against a min height (C46)
   buyOuterCompact: { minWidth: 0, alignSelf: 'stretch', height: BUTTON_H },
   buySubRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3 },
-  buySubCompact: { fontFamily: F.semi, fontSize: 10, letterSpacing: 0.1 },
+  buySubCompact: { fontFamily: F.semi, fontSize: 10, letterSpacing: 0.1, flexShrink: 1 },
   buyLabelCompact: { fontSize: 15 },
   noGainInner: { backgroundColor: '#EFE6D8', borderColor: '#CFC3B2' },
-  // a no-gain price is struck through by a drawn bar: a font's line-through can vanish into round digits (D325)
-  struckWrap: { alignSelf: 'center', justifyContent: 'center' },
-  strikeBar: { position: 'absolute', left: -3, right: -3, height: 2, top: '52%', backgroundColor: '#8A7B6C', transform: [{ rotate: '-6deg' }] },
   saveTrack: { position: 'absolute', left: 6, right: 6, bottom: 2, height: 3, borderRadius: 2, backgroundColor: 'rgba(46,125,62,0.18)' },
   saveFill: { height: 3, borderRadius: 2, backgroundColor: '#2E7D3E' },
   buyInnerCompact: { flex: 1, justifyContent: 'center', paddingVertical: 0, paddingHorizontal: 4 },
@@ -379,13 +394,14 @@ const styles = StyleSheet.create({
   // Nonna's tutorial points at the cash or the goal bar with a gold halo
   halo: { borderRadius: 18, borderWidth: 3, borderColor: '#FFC531', backgroundColor: 'rgba(255,197,49,0.18)' },
   haloGoal: { borderColor: '#FFC531', borderWidth: 3 },
-  goal: { height: 30, borderRadius: 15, backgroundColor: '#FFE7C2', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderWidth: 2, borderColor: 'rgba(0,0,0,0.15)' },
+  goal: { height: 30, borderRadius: 15, backgroundColor: GOAL_BAR.track, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderWidth: GOAL_BAR.border, borderColor: 'rgba(0,0,0,0.15)' },
   goalReady: { borderColor: '#fff', backgroundColor: C.basil },
-  goalFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: C.cheese },
-  // Dark ink on a light track + yellow fill: readable at every fill level.
-  goalLabel: { flex: 1, fontFamily: F.bold, fontSize: 14, color: C.ink },
-  goalAmt: { fontFamily: F.bold, fontSize: 13, color: C.ink },
-  goalTextReady: { color: '#fff' },
+  goalFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: GOAL_BAR.fill },
+  // two-tone label (D297): dark ink over the track, a cream copy clipped to the fill's width
+  goalClip: { position: 'absolute', left: 0, top: 0, bottom: 0, overflow: 'hidden' },
+  goalClipLine: { position: 'absolute', left: 0, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 },
+  goalLabel: { flex: 1, fontFamily: F.bold, fontSize: 14 },
+  goalAmt: { fontFamily: F.bold, fontSize: 13 },
 
   ovenCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.panel, borderRadius: 20, padding: 10, gap: 12, borderWidth: 3, borderColor: C.ink, ...shadow },
   ovenIdle: { borderColor: C.tomato, backgroundColor: '#FFF7F2' },

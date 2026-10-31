@@ -8,8 +8,8 @@ import { CoachCard } from '@/components/coach-card';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
 import { hudRateText, rewardsHud } from '@/components/rewards-model';
 import { coachStep } from '@/engine/tutorial';
-import { type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
-import { buttonTone } from '@/components/sidewalk-model';
+import { BuyButton, type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
+import { bundleButton, buttonTone, buyBundle } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
 import { CLOSE_SLOP, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
@@ -107,6 +107,7 @@ export default function GameScreen() {
   // Tied stations: one upgrade alone adds $0/s, so say what to buy together. Keyed on levels, not cash or sales.
   const tiedCount = (['prep', 'ovens', 'counter', 'customers'] as const).filter(tied).length;
   const bundle = tiedCount >= 2 ? G.bundleHint(game, id) : null;
+  const bundleBtn = bundle ? bundleButton(bundle, game.cash) : null;
 
   const idleShopHere = !shop.managed && id !== 'downtown';
   // Goal bar: the big purchase worth saving for, by cash/sec per dollar.
@@ -301,9 +302,10 @@ export default function GameScreen() {
                     <Text style={styles.bannerText}>{`★ ${perk.who}’s perk: ${perk.text}`}</Text>
                   </View>
                 )}
-                {bundle && (
-                  <View style={styles.banner}>
-                    <Text style={styles.bannerText}>{`${bundle.label} · ${money(bundle.cost)} (one alone adds $0/s)`}</Text>
+                {bundleBtn && (
+                  // D304: the tied stations' bundle is a button, not a label: it buys every step through the ordinary buy path
+                  <View style={styles.bundleRow}>
+                    <BuyButton compact testID="buy-bundle" label={bundleBtn.label} sub={bundleBtn.sub} enabled={bundleBtn.enabled} onPress={() => buyBundle(bundleBtn.steps, buy)} />
                   </View>
                 )}
                 {!shop.managed &&
@@ -399,6 +401,7 @@ const styles = StyleSheet.create({
   grid: { padding: 10, gap: 8, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   banner: { width: '100%', backgroundColor: '#FFE7C2', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10, borderWidth: 1.5, borderColor: C.cheeseDark },
   bannerText: { fontFamily: F.semi, fontSize: 12.5, color: C.ink, textAlign: 'center' },
+  bundleRow: { width: '100%' },
   section: { width: '100%', fontFamily: F.bold, fontSize: 14, color: C.ink, marginTop: 6 },
   footer: { width: '100%', textAlign: 'center', fontFamily: F.regular, color: C.inkSoft, fontSize: 12, marginTop: 4 },
 });

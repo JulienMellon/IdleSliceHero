@@ -5,7 +5,7 @@ import { memo, useId } from 'react';
 import Svg, { ClipPath, Circle, Defs, Ellipse, G, Path, Rect, Text } from 'react-native-svg';
 
 import type { CharacterId, Mood } from '../content/types';
-import { ARM_INK, ARM_SLEEVE, BLUSH, BUN_KNOT, HAIR_FRONT, EARS, EAR_INNER, FACES, FOLDS, GROUND, HEAD_CLIP, HEAD_SHIFT, LIGHT_RIM, LIGHT_SHADE_HEAD, LIGHT_SHADE_TORSO, NECK, NECK_SHADOW, NOSE, OUTFIT, SHOULDERS_INK, SHOULDERS_SLEEVE, STRANDS, TORSO, gestureFor } from './cutscene/figure-art';
+import { ARM_INK, ARM_SLEEVE, BLUSH, BUN_KNOT, HAIR_BACK_INK, HAIR_BACK_STAGE, HAIR_FRONT, EARS, EAR_INNER, FACES, FOLDS, GROUND, HEAD_CLIP, HEAD_SHIFT, LIGHT_RIM, LIGHT_SHADE_HEAD, LIGHT_SHADE_TORSO, NECK, NECK_SHADOW, NOSE, OUTFIT, SHOULDERS_INK, SHOULDERS_SLEEVE, STRANDS, TORSO, gestureFor } from './cutscene/figure-art';
 import { STAGE_VB, poseFor } from './cutscene/staging';
 import { F } from '../theme';
 import { shade } from './scene/projection';
@@ -17,6 +17,8 @@ interface Look {
   /** Iris colour (stage figures). */
   eye: string;
   hairStyle: 'bun' | 'short' | 'long' | 'bald' | 'slick' | 'bob';
+  /** The shade on the side of the back hair away from the light (stage figures); defaults to the hair darkened a little. */
+  hairShade?: string;
   hat?: 'captain' | 'hardhat' | 'cap' | 'beret';
   extra?: 'glasses' | 'mustache' | 'apron' | 'beard' | 'pearls' | 'whistle' | 'tie';
 }
@@ -24,7 +26,7 @@ interface Look {
 export const LOOKS: Record<CharacterId, Look> = {
   'nonna-rosa': { skin: '#F2C9A0', hair: '#E8E4E0', shirt: '#B23A48', eye: '#6B4A2E', hairStyle: 'bun', extra: 'apron' },
   dale: { skin: '#F5D0B0', hair: '#7A4A26', shirt: '#2F80ED', eye: '#3E7CB1', hairStyle: 'short', hat: 'cap', extra: 'whistle' },
-  marisol: { skin: '#C98F63', hair: '#F4F1EC', shirt: '#1F4E79', eye: '#4A2C1A', hairStyle: 'long', hat: 'captain' },
+  marisol: { skin: '#C98F63', hair: '#F4F1EC', hairShade: '#d9d4cc', shirt: '#1F4E79', eye: '#4A2C1A', hairStyle: 'long', hat: 'captain' },
   priya: { skin: '#B07A52', hair: '#1E1414', shirt: '#9B51E0', eye: '#3A2416', hairStyle: 'long', extra: 'glasses' },
   'big-sal': { skin: '#E8B88E', hair: '#4A3A33', shirt: '#E67E22', eye: '#5A3A22', hairStyle: 'bald', hat: 'hardhat', extra: 'mustache' },
   genevieve: { skin: '#F6DCC8', hair: '#222222', shirt: '#111111', eye: '#2F7A5A', hairStyle: 'bob', hat: 'beret', extra: 'pearls' },
@@ -46,6 +48,18 @@ export const DISPLAY_NAMES: Record<CharacterId, string> = {
 const INK = '#3B1F14';
 
 // ---- shared head gear (100-box head coordinates; the stage figure shifts them by HEAD_SHIFT) ----
+
+/** The stage figures' back hair: outlined, shaded on the shadow side, with strand lines (D401). Hidden behind the head, so never on the face. */
+function HairBackStage({ style, hair, shadeColor }: { style: 'long' | 'bob'; hair: string; shadeColor: string }) {
+  const art = HAIR_BACK_STAGE[style];
+  return (
+    <G>
+      <Path d={art.d} fill={hair} stroke={INK} strokeWidth={HAIR_BACK_INK} strokeLinejoin="round" />
+      <Path d={art.shade} fill={shadeColor} />
+      <Path d={art.strands} stroke={strandColor(hair)} strokeWidth={1.3} fill="none" strokeLinecap="round" />
+    </G>
+  );
+}
 
 function HairBack({ style, hair }: { style: Look['hairStyle']; hair: string }) {
   if (style === 'long') return <Path d="M24 44 Q22 82 34 90 L66 90 Q78 82 76 44 Z" fill={hair} />;
@@ -313,7 +327,6 @@ function HeldCard({ flip }: { flip: boolean }) {
     <G transform={flip ? `translate(${STAGE_VB.w} 0) scale(-1 1)` : undefined}>
       <G transform="rotate(-3 60 103)">
         <Rect x={44} y={89} width={32} height={27} rx={2.5} fill="#FFF4D6" stroke={INK} strokeWidth={2} />
-        <Circle cx={60} cy={92.6} r={1.5} fill="#E8432E" stroke={INK} strokeWidth={0.6} />
         <Text x={60} y={100} fontSize={5.4} fontFamily={F.bold} fill="#E8432E" textAnchor="middle">
           ROSA’S
         </Text>
@@ -349,7 +362,7 @@ function Stage({ id, mood, size, flip, dim, holding }: { id: CharacterId; mood: 
       <Ellipse {...GROUND.inner} fill="#000" opacity={0.16} />
       <G transform={flip ? `translate(${STAGE_VB.w} 0) scale(-1 1)` : undefined}>
         <G transform={HEAD_SHIFT}>
-          <HairBack style={L.hairStyle} hair={hair} />
+          {L.hairStyle === 'long' || L.hairStyle === 'bob' ? <HairBackStage style={L.hairStyle} hair={hair} shadeColor={tone(L.hairShade ?? shade(L.hair, -0.14))} /> : null}
         </G>
         <Path d={NECK} fill={skin} />
         <Path d={NECK_SHADOW} fill={skinShade} />
@@ -361,6 +374,8 @@ function Stage({ id, mood, size, flip, dim, holding }: { id: CharacterId; mood: 
         <Path d={SHOULDERS_INK} fill={INK} />
         <Path d={g.arms} stroke={shirt} strokeWidth={ARM_SLEEVE} strokeLinecap="butt" strokeLinejoin="round" fill="none" />
         <Path d={SHOULDERS_SLEEVE} fill={shirt} />
+        {/* the card's palms sit behind it, its thumbs come over its top corners */}
+        {g.back ? <Path d={g.back} fill={skin} stroke={INK} strokeWidth={1.6} strokeLinejoin="round" /> : null}
         {holding === 'recipe-card' ? <HeldCard flip={flip} /> : null}
         <Path d={g.hands} fill={skin} stroke={INK} strokeWidth={1.6} strokeLinejoin="round" />
         <Path d={g.creases} stroke={skinShade} strokeWidth={1.2} fill="none" strokeLinecap="round" />

@@ -37,6 +37,10 @@ It runs alongside the visual critic (`CRITICLOG.md`). A step is done only when t
 
 ---
 
+## Owner rule (Julien, 2026-10-31): skip after an APPROVED
+After the codecritic returns **APPROVED**, it skips the next **two** build rounds. The round after that reviews **everything since the last range it reviewed**. While it's skipped, a build passes when the critic is SATISFIED (the last APPROVED carries).
+- Round 22 (v5.6) APPROVED → **v5.7 skipped**, **v5.8 skipped**, the next build reviews `0d6d3a4..HEAD`.
+
 ## Current state — round 22 (v5.6, 47e2f3d..0d6d3a4): ✅ APPROVED (3 medium). Loop STOPPED for handoff.
 Fixed: C98, U6, A25, M57, C99, T74, T75. Cut-scenes measured: heaviest panel ~160 SVG nodes (target ≤ 350), memoised on primitives, native-driver zoom/slide, unique gradient ids.
 

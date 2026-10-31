@@ -43,20 +43,20 @@ export function poseFor(id: CharacterId, mood: Mood, holding?: 'recipe-card'): P
 export const HANDS_BOX: Record<Pose, Box> = {
   down: { x0: 19.2, x1: 100.8, y0: 125.6, y1: 142.4 },
   thumb: { x0: 19.2, x1: 103.8, y0: 69.7, y1: 142.4 },
-  clasp: { x0: 48.2, x1: 71.8, y0: 111, y1: 129.7 },
+  clasp: { x0: 46.4, x1: 73.6, y0: 107, y1: 129.9 },
   point: { x0: 25.2, x1: 108.8, y0: 83.2, y1: 139.8 },
   'hands-up': { x0: 13.2, x1: 106.8, y0: 44.9, y1: 67.3 },
-  collar: { x0: 19.2, x1: 75.8, y0: 79.2, y1: 142.4 },
-  card: { x0: 42.2, x1: 77.8, y0: 108.2, y1: 123.8 },
+  collar: { x0: 19.2, x1: 79.9, y0: 75.3, y1: 142.4 },
+  card: { x0: 34.7, x1: 85.3, y0: 88.5, y1: 114.9 },
 };
 export const LIMBS_BOX: Record<Pose, Box> = {
   down: { x0: 18.8, x1: 101.2, y0: 78.2, y1: 142.4 },
   thumb: { x0: 18.8, x1: 103.8, y0: 69.7, y1: 142.4 },
-  clasp: { x0: 25.4, x1: 94.6, y0: 78.2, y1: 129.7 },
+  clasp: { x0: 25.4, x1: 94.6, y0: 78.2, y1: 129.9 },
   point: { x0: 11.2, x1: 108.8, y0: 78.2, y1: 139.8 },
   'hands-up': { x0: 13.2, x1: 106.8, y0: 44.9, y1: 93.8 },
-  collar: { x0: 18.8, x1: 105.8, y0: 78.2, y1: 142.4 },
-  card: { x0: 25.8, x1: 94.2, y0: 78.2, y1: 123.8 },
+  collar: { x0: 18.8, x1: 105.8, y0: 75.3, y1: 142.4 },
+  card: { x0: 24.4, x1: 95.6, y0: 78.2, y1: 114.9 },
 };
 /** Air kept between one figure's limbs and the other figure, in px. */
 export const LIMB_CLEARANCE = 8;
@@ -81,6 +81,8 @@ export interface Placement {
 
 /** The caption box laid over the top of a panel (cutscene-player styles read these): inset, border, padding and text metrics in pt. */
 export const CAPTION = { top: 8, border: 2.5, padV: 6, fontSize: 14, lineHeight: 18 } as const;
+/** Whether a panel draws the caption bar over its art (narration-only panels, with no lines, read below the art instead). One rule for the player and the backdrop. */
+export const hasCaptionBar = (p: { caption?: string; lines: readonly unknown[] }) => !!p.caption && p.lines.length > 0;
 /** Where the caption's bottom edge lands, in pt from the panel's top, for `lines` lines of text. */
 export function captionBottom(lines: number) {
   return CAPTION.top + 2 * CAPTION.border + 2 * CAPTION.padV + lines * CAPTION.lineHeight;

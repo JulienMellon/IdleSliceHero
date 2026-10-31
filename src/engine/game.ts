@@ -980,6 +980,8 @@ const STEP_LABEL: Record<string, string> = { prep: 'prep', ovens: 'ovens', grade
 
 export interface BundleHint {
   label: string;
+  /** The upgrades to buy, in order: the UI's "Buy both" runs them through the ordinary buy path. */
+  steps: Upgrade[];
   cost: number;
   gain: number;
   affordable: boolean;
@@ -1001,7 +1003,7 @@ export function bundleHint(s: GameState, id: NeighborhoodId): BundleHint | null 
     hintKey = key;
     const b = bottleneckBundle(s, id);
     const names = b ? [...new Set(b.steps.map((w) => STEP_LABEL[w] ?? w))] : [];
-    hintVal = b ? { label: `Upgrade ${names.join(' + ')}`, cost: b.cost, gain: b.gain } : null;
+    hintVal = b ? { label: `Upgrade ${names.join(' + ')}`, steps: b.steps, cost: b.cost, gain: b.gain } : null;
   }
   return hintVal ? { ...hintVal, affordable: s.cash >= hintVal.cost } : null;
 }

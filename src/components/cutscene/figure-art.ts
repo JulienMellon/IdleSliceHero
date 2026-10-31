@@ -39,12 +39,52 @@ export const SHOULDERS_SLEEVE = ell(34, 86, ARM_SLEEVE / 2) + ell(86, 86, ARM_SL
  */
 interface Gesture {
   arms: string;
+  /** Hands drawn behind a held prop (the card's palms), under the prop; the prop's own layer comes after, then `hands`. */
+  back?: string;
   hands: string;
   /** Finger and knuckle creases. */
   creases: string;
 }
 
 const knuckles = (cx: number, cy: number) => `M${cx - 3} ${cy - 1.6}q3 1.6 6 0M${cx - 3} ${cy + 1.6}q3 1.6 6 0`;
+
+const f1 = (v: number) => Math.round(v * 10) / 10;
+/**
+ * A capsule (a finger or thumb lobe) from a to b, `r` thick. Wound counter-clockwise on screen like `ell`, so overlapping lobes and
+ * palms in one path add up instead of cancelling to a hole; the ink outline then draws each lobe's edge inside its neighbours.
+ */
+export function capsule(ax: number, ay: number, bx: number, by: number, r: number) {
+  const len = Math.hypot(bx - ax, by - ay);
+  const nx = (-(by - ay) / len) * r;
+  const ny = ((bx - ax) / len) * r;
+  const p = (x: number, y: number) => `${f1(x)} ${f1(y)}`;
+  return `M${p(ax + nx, ay + ny)}L${p(bx + nx, by + ny)}A${r} ${r} 0 0 0 ${p(bx - nx, by - ny)}L${p(ax - nx, ay - ny)}A${r} ${r} 0 0 0 ${p(ax + nx, ay + ny)}Z`;
+}
+
+/**
+ * An open hand at (cx, cy) reaching along the unit vector (ux, uy): a round palm, four fingers fanned a little, and a thumb lobe
+ * standing off the upper side. Returns the outline and a knuckle crease across the palm's far edge.
+ */
+function openHand(cx: number, cy: number, ux: number, uy: number) {
+  const vx = -uy; // sideways, toward the thumb (up the screen for a hand reaching left)
+  const vy = ux;
+  const lens = [6.4, 8.2, 8.6, 7];
+  let d = ell(cx, cy, 7);
+  [-4.2, -1.4, 1.4, 4.2].forEach((off, i) => {
+    const bx = cx + ux * 4.5 + vx * off;
+    const by = cy + uy * 4.5 + vy * off;
+    d += capsule(bx, by, bx + ux * lens[i] + vx * off * 0.3, by + uy * lens[i] + vy * off * 0.3, 1.8);
+  });
+  const tx = cx + vx * 4.8 + ux * 1;
+  const ty = cy + vy * 4.8 + uy * 1;
+  const c = Math.cos(0.7);
+  const s = Math.sin(0.7);
+  d += capsule(tx, ty, tx + (ux * c + vx * s) * 7.4, ty + (uy * c + vy * s) * 7.4, 2.3);
+  const kx = cx + ux * 4;
+  const ky = cy + uy * 4;
+  return { hand: d, crease: `M${f1(kx - vx * 4.6)} ${f1(ky - vy * 4.6)}L${f1(kx + vx * 4.6)} ${f1(ky + vy * 4.6)}` };
+}
+const COLLAR_HAND = openHand(72, 90, -0.921, -0.39);
 
 // A fist or mitten is centred on its arm's end and as wide as the sleeve, so the cuff's flat end is hidden inside it.
 function fist(cx: number, cy: number) {
@@ -85,18 +125,24 @@ const n = (v: number) => Math.round(v * 10) / 10;
 export const GESTURES: Record<Pose, Gesture> = {
   down: { arms: 'M34 86 Q25 112 27 134 M86 86 Q95 112 93 134', hands: mittenDown(27, 134) + mittenDown(93, 134), creases: 'M30.6 129.5q2.6 3.5 0.6 8M89.4 129.5q-2.6 3.5 -0.6 8' },
   thumb: { arms: 'M34 86 Q25 112 27 134 M86 86 L96 108 L96 82', hands: mittenDown(27, 134) + thumbUp(96, 82), creases: 'M30.6 129.5q2.6 3.5 0.6 8' + knuckles(97, 83) },
-  // hands clasped at the belt: one joined mass with three interlaced finger arcs
+  // hands clasped at the belt: two overlapping hands (the seam between them reads), two thumbs standing up on top, finger lines on each
   clasp: {
-    arms: 'M34 86 Q29 112 56 121 M86 86 Q91 112 64 121',
-    hands: ell(60, 121, 11, 7.8) + ell(57, 113.8, 3, 2) + ell(63.5, 113.8, 3, 2),
-    creases: 'M54.5 116q3.2 5.5 1.2 11M60 115q3.2 6.5 1.2 13M65.5 116q3.2 5.5 1.2 11',
+    arms: 'M34 86 Q29 112 55.5 122 M86 86 Q91 112 64.5 122',
+    hands: ell(55.5, 122, 8.2, 7) + ell(64.5, 122, 8.2, 7) + capsule(56.6, 117, 54.6, 110.4, 2.5) + capsule(63.4, 117, 65.4, 110.4, 2.5),
+    creases: 'M50.8 118q2 3.8 0 7.6M54.2 117q2 4.4 0 8.6M69.2 118q-2 3.8 0 7.6M65.8 117q-2 4.4 0 8.6',
   },
   point: { arms: 'M34 86 L19 110 L33 132 M86 86 Q91 99 94 91', hands: fist(33, 132) + pointRight(94, 91), creases: knuckles(33, 132) + 'M92 92.5q3 1.6 6 0' },
   'hands-up': { arms: 'M34 86 L23 86 L21 65 M86 86 L97 86 L99 65', hands: palm(21, 57.5, 1) + palm(99, 57.5, -1), creases: fingerGaps(21, 57.5, 1) + fingerGaps(99, 57.5, -1) },
-  // worried: one hand at the collar, the other hanging
-  collar: { arms: 'M34 86 Q25 112 27 134 M86 86 L98 101 L68 87', hands: mittenDown(27, 134) + fist(68, 87), creases: 'M30.6 129.5q2.6 3.5 0.6 8' + knuckles(68, 87) },
-  // holding a card up at chest height (the card itself is drawn by Portrait)
-  card: { arms: 'M34 86 Q31 110 50 116 M86 86 Q89 110 70 116', hands: fist(50, 116) + fist(70, 116), creases: knuckles(50, 116) + knuckles(70, 116) },
+  // worried: one open hand laid at the collar (fingers toward the neck, thumb up), the other hanging
+  collar: { arms: 'M34 86 Q25 112 27 134 M86 86 L98 101 L72 90', hands: mittenDown(27, 134) + COLLAR_HAND.hand, creases: 'M30.6 129.5q2.6 3.5 0.6 8' + COLLAR_HAND.crease },
+  // holding a card at chest height by its side edges (the card itself is drawn by Portrait between `back` and `hands`): palms behind the
+  // card's edges, fingers hidden behind it, a thumb over each top corner
+  card: {
+    arms: 'M34 86 Q28 100 43 105 M86 86 Q92 100 77 105',
+    back: ell(43, 105, 7.4, 9) + ell(77, 105, 7.4, 9),
+    hands: capsule(40.5, 98, 49.5, 92, 2.6) + capsule(79.5, 98, 70.5, 92, 2.6),
+    creases: 'M43.9 93.3q2 0.2 2.2 3.3M76.1 93.3q-2 0.2 -2.2 3.3',
+  },
 };
 
 /** Face parts per mood, in the head's 100-box coordinates (eyes at 42/58, 47). An empty eye path means the eyes are closed. */
@@ -201,6 +247,26 @@ export const STRANDS: Record<HairStyle, string> = {
   slick: 'M31 37 Q43 26.5 60 26.5 M38.5 31 Q52 25.5 68 30.5',
   bald: '',
 };
+
+/**
+ * D401: the hair behind the head for the stage figures (head 100-box), as an outlined mass, so long hair reads as hair and not a white
+ * veil: the outline path, a shade on the side away from the light inset 1.5 from the outline (so the 2.5 ink stays whole), and two or three
+ * strand lines. It is drawn before the head, so nothing here can touch the face.
+ */
+export const HAIR_BACK_STAGE = {
+  long: {
+    d: 'M24 50 Q22 28 50 26 Q78 28 76 50 Q82 86 68 94 L32 94 Q18 86 24 50 Z',
+    shade: 'M76.4 52 Q80 84 67 92.4 L58 92.4 Q71.5 82 69.5 52 Z',
+    strands: 'M26 58 Q24 76 31 88 M31 54 Q29 72 35 90 M74 58 Q76 74 69 88',
+  },
+  bob: {
+    d: 'M26 42 Q24 70 32 72 L68 72 Q76 70 74 42 Z',
+    shade: 'M72.6 44 Q74.4 68.5 67.5 70.5 L61 70.5 Q68 67 67.5 44 Z',
+    strands: 'M30.5 52 Q29 62 33 69 M69.5 52 Q71 62 67 69',
+  },
+} as const;
+/** Width of the stage back-hair outline, in figure units. */
+export const HAIR_BACK_INK = 2.5;
 
 /** Clothing pieces per character extra, in figure coordinates. */
 export const OUTFIT = {

@@ -11,7 +11,7 @@ import type { Scene } from '../content/types';
 import { C, F } from '../theme';
 import { Backdrop } from './backdrop';
 import { canAdvance, sceneHeading } from '../engine/cutscene-input';
-import { CAPTION, PANEL_BORDER, panelSize, poseFor, stageLayout, tailShare } from './cutscene/staging';
+import { CAPTION, PANEL_BORDER, hasCaptionBar, panelSize, poseFor, stageLayout, tailShare } from './cutscene/staging';
 import { Portrait } from './portrait';
 
 const native = Platform.OS !== 'web';
@@ -42,6 +42,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   const perk = scene.perk ? PERKS[scene.neighborhood] : undefined;
   const hasCard = !!scene.reward || !!perk;
   const p = scene.panels[panel];
+  const captionBar = hasCaptionBar(p);
   const current = p.lines[line];
   // Tall panel (~55% of the screen); the backdrop grows its sky to fill it, so nothing is cropped.
   const { w: frameW, h: frameH, innerW, innerH } = panelSize(width, height, insets.top);
@@ -127,7 +128,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
         <Animated.View style={[styles.frameShadow, { width: frameW, height: frameH, transform: [{ translateX: slide }] }]}>
           <View style={styles.frame}>
             <Animated.View style={{ position: 'absolute', inset: 0, transform: [{ scale: zoom }] } as never}>
-              <Backdrop id={p.backdrop} width={innerW} height={innerH} prop={p.prop === 'recipe-card' ? undefined : p.prop} />
+              <Backdrop id={p.backdrop} width={innerW} height={innerH} prop={p.prop === 'recipe-card' ? undefined : p.prop} captioned={captionBar} />
             </Animated.View>
             {p.cast.map((c, i) => {
               const s = stage[i];
@@ -137,7 +138,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
                 </View>
               );
             })}
-            {p.caption && p.lines.length > 0 ? (
+            {captionBar ? (
               <View style={styles.caption}>
                 <Text style={styles.captionText}>{p.caption}</Text>
               </View>
@@ -211,7 +212,7 @@ const styles = StyleSheet.create({
   frame: { flex: 1, borderRadius: 12, overflow: 'hidden', borderWidth: PANEL_BORDER, borderColor: C.ink, backgroundColor: '#000' },
   keyline: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 9, borderWidth: 1, borderColor: CREAM },
   figure: { position: 'absolute', bottom: 0, transformOrigin: 'bottom' } as object,
-  caption: { position: 'absolute', top: CAPTION.top, left: 10, right: 10, backgroundColor: C.cheese, opacity: 0.94, borderWidth: CAPTION.border, borderColor: C.ink, borderRadius: 6, paddingHorizontal: 10, paddingVertical: CAPTION.padV, shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 4, shadowOffset: { width: 0, height: 3 } },
+  caption: { position: 'absolute', top: CAPTION.top, left: 10, right: 10, backgroundColor: C.cheese, borderWidth: CAPTION.border, borderColor: C.ink, borderRadius: 6, paddingHorizontal: 10, paddingVertical: CAPTION.padV, shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 4, shadowOffset: { width: 0, height: 3 } },
   captionText: { fontFamily: F.semi, color: C.ink, fontSize: CAPTION.fontSize, lineHeight: CAPTION.lineHeight },
   narration: { backgroundColor: C.cheese, borderWidth: 3, borderColor: C.ink, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14 },
   narrationText: { fontFamily: F.bold, fontSize: 18, lineHeight: 24, color: C.ink, textAlign: 'center' },

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityMap } from '@/components/city-map';
 import { Toast } from '@/components/game-ui';
+import { lotView } from '@/components/city-model';
 import { LockIcon } from '@/components/icons';
 import { CITY_NAME, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES } from '@/content/tuning';
 import { money } from '@/engine/format';
@@ -43,60 +44,63 @@ export default function City() {
           }}
         />
       </View>
-      <ScrollView contentContainerStyle={styles.summary}>
-        <Text style={styles.big}>{money(G.earningsPerSecond(game))}/sec</Text>
-        <Text style={styles.small}>{built}/6 pizzerias built · {NEIGHBORHOODS.filter((n) => game.shops[n.id].managed).length} with managers · tap one to visit</Text>
-        {NEIGHBORHOODS.map((n) => {
-          const sh = game.shops[n.id];
-          const isNext = G.nextToBuild(game)?.id === n.id;
-          if (!sh.built) {
+      {/* build refusals ("Nonna takes over in 110 more pizzas") show here, just under the map, so they never cover its tiles (D305) */}
+      <View style={styles.listWrap}>
+        <ScrollView contentContainerStyle={styles.summary}>
+          <Text style={styles.big}>{money(G.earningsPerSecond(game))}/sec</Text>
+          <Text style={styles.small}>{built}/6 pizzerias built · {NEIGHBORHOODS.filter((n) => game.shops[n.id].managed).length} with managers · tap one to visit</Text>
+          {NEIGHBORHOODS.map((n) => {
+            const sh = game.shops[n.id];
+            const lot = lotView(game, n);
+            if (!sh.built) {
+              return (
+                <Pressable
+                  key={n.id}
+                  testID={`city-row-${n.id}`}
+                  disabled={!lot.tappable}
+                  onPress={() => {
+                    if (build(n.id)) router.back();
+                  }}
+                  style={[styles.row, styles.rowLocked, lot.kind === 'buildable' && { borderColor: C.cheeseDark, borderStyle: 'dashed', opacity: 1 }]}>
+                  <View style={[styles.dot, { backgroundColor: lot.kind === 'buildable' ? n.color : C.locked }]} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rowName}>{n.name}</Text>
+                    <Text style={styles.rowSub}>{lot.rowSub}</Text>
+                  </View>
+                  {lot.rowRight ? <Text style={[styles.rowEps, { color: C.tomato }]}>{lot.rowRight}</Text> : <LockIcon size={18} color="#E2D9CE" />}
+                </Pressable>
+              );
+            }
             return (
               <Pressable
                 key={n.id}
                 testID={`city-row-${n.id}`}
-                disabled={!isNext}
                 onPress={() => {
-                  if (build(n.id)) router.back();
+                  setActive(n.id);
+                  router.back();
                 }}
-                style={[styles.row, styles.rowLocked, isNext && { borderColor: C.cheeseDark, borderStyle: 'dashed', opacity: 1 }]}>
-                <View style={[styles.dot, { backgroundColor: isNext ? n.color : C.locked }]} />
+                style={[styles.row, { borderColor: n.color }]}>
+                <View style={[styles.dot, { backgroundColor: n.color }]} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rowName}>{n.name}</Text>
-                  <Text style={styles.rowSub}>{isNext ? `Pays ${money(n.orderValue)} a pizza · manager ${money(n.managerCost)}` : 'Build the previous pizzeria first'}</Text>
+                  <Text style={styles.rowSub}>
+                    {FOOTPRINTS[sh.footprint].name} · {OVEN_GRADES[sh.grade].name} ovens · {sh.drivers} driver{sh.drivers === 1 ? '' : 's'}
+                  </Text>
                 </View>
-                {isNext ? <Text style={[styles.rowEps, { color: C.tomato }]}>{`Build ${money(n.buildCost)}`}</Text> : <LockIcon size={18} color="#E2D9CE" />}
+                <Text style={[styles.rowEps, !sh.managed && { color: C.tomato }]}>{sh.managed ? `${money(G.shopEarnings(game, n.id))}/s` : 'no manager'}</Text>
               </Pressable>
             );
-          }
-          return (
-            <Pressable
-              key={n.id}
-              testID={`city-row-${n.id}`}
-              onPress={() => {
-                setActive(n.id);
-                router.back();
-              }}
-              style={[styles.row, { borderColor: n.color }]}>
-              <View style={[styles.dot, { backgroundColor: n.color }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowName}>{n.name}</Text>
-                <Text style={styles.rowSub}>
-                  {FOOTPRINTS[sh.footprint].name} · {OVEN_GRADES[sh.grade].name} ovens · {sh.drivers} driver{sh.drivers === 1 ? '' : 's'}
-                </Text>
-              </View>
-              <Text style={[styles.rowEps, !sh.managed && { color: C.tomato }]}>{sh.managed ? `${money(G.shopEarnings(game, n.id))}/s` : 'no manager'}</Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-      {/* build failures ("Build Suburbs: need $300") show here, where the tap happened */}
-      {toast && <Toast compact text={toast.text} top={insets.top + 56} />}
+          })}
+        </ScrollView>
+        {toast && <Toast compact text={toast.text} top={6} />}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
+  listWrap: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark },
   backText: { fontFamily: F.bold, color: '#fff', fontSize: 18 },
   title: { fontFamily: F.bold, color: '#fff', fontSize: 22 },
