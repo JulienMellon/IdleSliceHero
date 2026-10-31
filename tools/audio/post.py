@@ -140,7 +140,7 @@ def tape_wow(a: np.ndarray, cents: float = 6.0) -> np.ndarray:
     return a[i0] * (1 - fr) + a[(i0 + 1) % n] * fr
 
 
-def vinyl(a: np.ndarray, seed: int, pops_per_s: float = 7.0, pop_db: float = -22.0, hiss_db: float = -54.0) -> np.ndarray:
+def vinyl(a: np.ndarray, seed: int, pops_per_s: float = 4.0, pop_db: float = -26.0, hiss_db: float = -54.0) -> np.ndarray:
     """Gentle vinyl crackle: sparse soft pops (a few ms of band-limited noise) and a faint hiss, both relative to the
     programme's RMS so every loop gets the same amount. Nothing lands in the first or last 50 ms (the seam)."""
     from scipy.signal import butter, sosfilt
@@ -152,7 +152,7 @@ def vinyl(a: np.ndarray, seed: int, pops_per_s: float = 7.0, pop_db: float = -22
     guard = int(0.05 * SR)
     for pos in rng.integers(guard, n - guard - 60, size=int(pops_per_s * n / SR)):
         k = int(rng.integers(12, 48))
-        burst = rng.standard_normal(k) * np.exp(-np.arange(k) / (k / 4)) * rng.exponential(1.0)
+        burst = rng.standard_normal(k) * np.exp(-np.arange(k) / (k / 4)) * min(1.5, rng.exponential(1.0))  # AU68: clipped, so no pop is a click
         out[pos:pos + k] += burst * amp
     out += rng.standard_normal(n) * rms * 10 ** (hiss_db / 20)
     out = sosfilt(butter(2, 6500, btype='low', fs=SR, output='sos'), out)
@@ -176,8 +176,21 @@ def lofi_loop(a: np.ndarray, seed: int) -> np.ndarray:
 
 
 def lofi_sting(a: np.ndarray) -> np.ndarray:
-    """Stinger master: the same 7 kHz roll-off (no wow or crackle on a two-second one-shot)."""
-    return _lowpass(a)
+    """Stinger master: tape saturation (hard, headroom 3: a short stinger has a 17 dB crest, and without it the
+    −6 dBFS limiter was taking 7 dB off the big ones and capping them under their tier) and the same 7 kHz roll-off.
+    No wow or crackle on a two-second one-shot."""
+    return _lowpass(tape_sat(a, 3.0))
+
+
+def story_master(a: np.ndarray, hz: float = 10000.0) -> np.ndarray:
+    """Mix pass for the cues that sit over a lofi loop (triumphs, city theme, rep stings; AU64): the same soft tape
+    saturation as the loops and a 10 kHz roll-off, but no wow and no crackle."""
+    return _lowpass(tape_sat(a), hz)
+
+
+def rolloff(a: np.ndarray, hz: float = 10000.0, circular: bool = False) -> np.ndarray:
+    """A plain low-pass (the MegaSlice HQ loop uses it with no tape chain: AU70)."""
+    return _lowpass(a, hz, circular)
 
 
 def seam_step(a: np.ndarray) -> tuple[float, float]:

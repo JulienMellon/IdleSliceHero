@@ -484,13 +484,12 @@ function handle(e: AudioEvent) {
       return;
     }
     case 'perk': {
-      // layered over a story cue still ringing, in the scene's key (AU26), snapped to that cue's next bar (AU46)
+      // layered over a triumph or the city theme still ringing, in the scene's key (AU26): it waits for the cue's
+      // payoff, so it never plays against a tempo grid other than its own (AU66; the cues keep their old tempos)
       const cue = storyNow && storyNow.pausedAt === null ? STORY[storyNow.id] : null;
-      if (cue && 'bpm' in cue && storyNow) {
-        const pos = (now - storyNow.startedAt) / 1000 - (cue.downbeatSeconds as number);
-        const perk = STINGS[`${sceneHood}_perk` as keyof typeof STINGS];
-        const wait = quantizeDelay(pos, cue.bpm as number, cue.beatsPerBar as number, perk.downbeatSeconds);
-        if (pos < cue.seconds - 0.5 && wait < 3) {
+      if (cue && 'payoffSeconds' in cue && storyNow) {
+        const wait = (cue.payoffSeconds as number) - (now - storyNow.startedAt) / 1000;
+        if (wait > 0 && wait < 3) {
           const t = setTimeout(() => {
             pendingCues.delete(t);
             playSting(sceneHood, 'perk', { immediate: true, gated: false, duck: 1 });

@@ -29,18 +29,27 @@ MIDI = os.path.join(HERE, 'build', 'midi')
 ASSETS = os.path.join(ROOT, 'assets', 'audio')
 
 LOUD = dict(music=-20.0, story=-16.0, sting=-18.0)  # AU22; the lofi loops sit 2 LU lower (2026-10-31)
-HQ_LUFS, HQ_CEILING = -18.0, -4.0  # the MegaSlice HQ loop keeps its old master (lofi round 1 leaves it alone)
+HQ_LUFS = -19.0  # AU70: the MegaSlice HQ loop sits 1 LU under its old master, with a 10 kHz roll-off and no tape chain
 LOOP_CEILING = -6.0
+LOOP_LUFS = {'downtown_sparse': -22.0}  # AU67: Nonna's takeover (sparse -> full) lifts by 2 LU
+# AU64: the cues that sit over a lofi loop come down from -16 to -18 and get the story master (tape_sat, 10 kHz)
+STORY_MASTER = {'megaslice_rep': -18.0, 'megaslice_rep_dock': -18.0, 'city_theme': -18.0,
+                **{f'triumph_{h}': -18.0 for h in ('downtown', 'suburbs', 'waterfront', 'university', 'industrial', 'uptown')}}
 # AU36: loudness by tier, so rare big moments are louder than frequent small ones; every file's peak ≤ −6 dBFS (AU38)
 CEILING = -6.0
-SFX_LUFS = {'click': -30, 'bubble': -30, 'tap': -26, 'full': -26, 'cash': -26, 'buy': -22, 'refused': -22, 'rush': -22,
+SFX_LUFS = {'click': -32, 'bubble': -32, 'tap': -28, 'full': -28, 'cash': -28, 'buy': -22, 'refused': -22, 'rush': -22,
             'sparkle': -24, 'milestone': -19, 'expand': -19, 'grade': -19, 'fleet': -19, 'gavel': -18, 'build': -16,
             'collect': (-19, -17.5, -16)}
 # every tier moved down 2 LU with the loops (lofi round 1), so each stinger sits the same distance above the music
 STING_LUFS = {'bottleneck': -22, 'upgrade': -20, 'fleet': -20, 'drone': -20, 'milestone': -19, 'welcome': -19,
-              'warmth': -20, 'manager': -17, 'milestone_big': -17, 'build': -17, 'perk': -20, 'offline': -22, 'bid': -18}
+              'warmth': -20, 'manager': -17, 'milestone_big': -16, 'build': -17, 'perk': -20, 'offline': -22, 'bid': -18}
 # per-cue loudness overrides: the reveals are the game's quietest moments (AU13)
 LUFS_OVERRIDE = {'reunion': -23.0, 'recipe': -21.0, 'offline_open': -20.0}
+
+
+def tier_ok(info: dict, target: float) -> bool:
+    """AU51/AU62: a file lands within 0.5 LU of its tier, unless the -6 dBFS ceiling stopped it (then quieter, never louder)."""
+    return abs(info['lufs'] - target) <= 0.5 or (info['lufs'] < target and info['peak_dbfs'] >= CEILING - 0.6)
 
 
 def main(only: set[str] | None = None):
@@ -59,9 +68,9 @@ def main(only: set[str] | None = None):
             a = post.wrap_loop(a, cue['seconds'])
             if cue.get('lofi'):
                 a = post.lofi_loop(a, seed=sum(map(ord, name)))
-                a = post.normalize(a, LOUD['music'], ceiling_db=LOOP_CEILING)
+                a = post.normalize(a, LOOP_LUFS.get(name, LOUD['music']), ceiling_db=LOOP_CEILING)
             else:
-                a = post.normalize(a, HQ_LUFS, ceiling_db=HQ_CEILING)  # AU52: room for a tap on a kick
+                a = post.normalize(post.rolloff(a, 10000.0, circular=True), HQ_LUFS, ceiling_db=LOOP_CEILING)
             join, p99 = post.seam_step(a)
             if join > p99:  # the loop seam must be no bigger than an ordinary sample step
                 raise SystemExit(f'{name}: loop seam step {join:.5f} > 99th-percentile step {p99:.5f}')
@@ -72,11 +81,18 @@ def main(only: set[str] | None = None):
                 a = post.fade(post.trim_silence(post.lofi_sting(a), -46), 0, 0.3)
             else:
                 a = post.fade(post.trim_silence(a, -50), 0, 0.15)
-            a = post.normalize(a, STING_LUFS.get(cue['cue'], LOUD['sting']), ceiling_db=CEILING)
+            # AU59/AU62: normalise after the mono fold, because mono is what ships (stereo-then-fold read ~3 LU low)
+            a = post.normalize(post.to_mono(a), STING_LUFS.get(cue['cue'], LOUD['sting']), ceiling_db=CEILING)
             info = post.encode(a, os.path.join(ASSETS, 'sting', name.removeprefix('sting_') + '.m4a'), 64, mono=True)
+            target = STING_LUFS.get(cue['cue'], LOUD['sting'])
+            info['target_lufs'] = target
+            if not tier_ok(info, target):
+                raise SystemExit(f'stinger {name}: {info["lufs"]} LUFS, tier {target} (peak {info["peak_dbfs"]})')
         else:
+            if name in STORY_MASTER:
+                a = post.story_master(a)
             a = post.fade(post.trim_silence(a, -50), 0, 0.3)
-            a = post.normalize(a, LUFS_OVERRIDE.get(name, LOUD['story']), ceiling_db=CEILING)
+            a = post.normalize(a, STORY_MASTER.get(name, LUFS_OVERRIDE.get(name, LOUD['story'])), ceiling_db=CEILING)
             info = post.encode(a, os.path.join(ASSETS, 'story', name + '.m4a'), 96, mono=False)
         report[name] = {**cue, **info}
         print(f"{name:34s} {info['seconds']:7.2f}s {info['lufs']:6.1f} LUFS {info['peak_dbfs']:6.1f} dBFS {info['bytes'] / 1024:7.1f} KB")
@@ -90,8 +106,7 @@ def main(only: set[str] | None = None):
             info = post.encode(a, os.path.join(ASSETS, 'sfx', f'{name}_{i}.m4a'), 64, mono=True)
             report[f'sfx_{name}_{i}'] = {'kind': 'sfx', 'target_lufs': target, **info}
             # AU51: every effect lands on its tier, unless the −6 dBFS ceiling stopped it (then it's quieter, never louder)
-            ok = abs(info['lufs'] - target) <= 0.5 or (info['lufs'] < target and info['peak_dbfs'] >= CEILING - 0.6)
-            if not ok:
+            if not tier_ok(info, target):
                 raise SystemExit(f'sfx {name}_{i}: {info["lufs"]} LUFS, tier {target} (peak {info["peak_dbfs"]})')
     os.makedirs(os.path.join(HERE, 'build'), exist_ok=True)
     post.write_report(os.path.join(HERE, 'build', 'report.json'), report)

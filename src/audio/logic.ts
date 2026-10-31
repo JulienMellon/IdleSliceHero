@@ -71,14 +71,20 @@ export function quantizeDelay(pos: number, bpm: number, unitBeats: number, downb
 /**
  * Bar-quantised stingers wait for a bar whose chord is the tonic, up to `maxBars` ahead, so a cadence never lands
  * its I over the loop's IV or V (AU47). Failing that they take the next bar and the loop ducks further (`extraDuck`).
+ * When a bar is longer than `LONG_BAR_SECONDS` (the lofi tempos: 2.8–3.2 s) the search is off (`maxBars` = 0): the
+ * stinger takes the next bar, on a non-I bar with the extra duck, so the wait never passes about one bar (AU63).
  */
+/** A bar longer than this and a stinger no longer hunts for a tonic bar (AU63). */
+export const LONG_BAR_SECONDS = 2.5;
+
 export function stingTiming(pos: number, bpm: number, beatsPerBar: number, barRoots: readonly number[] | undefined, downbeat: number, maxBars = 2): { delay: number; extraDuck: number } {
   const first = quantizeDelay(pos, bpm, beatsPerBar, downbeat);
   if (!barRoots || barRoots.length === 0) return { delay: first, extraDuck: 1 };
   const bar = (60 / bpm) * beatsPerBar;
   const landing = pos + first + downbeat; // time of the first candidate downbeat
   const n = barRoots.length;
-  for (let k = 0; k <= maxBars; k++) {
+  const reach = bar > LONG_BAR_SECONDS ? 0 : maxBars;
+  for (let k = 0; k <= reach; k++) {
     const idx = (((Math.round(landing / bar) + k) % n) + n) % n;
     if (barRoots[idx] === 1) return { delay: first + k * bar, extraDuck: 1 };
   }

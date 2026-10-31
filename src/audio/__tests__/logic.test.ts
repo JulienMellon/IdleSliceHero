@@ -7,7 +7,7 @@ const path: { join(...p: string[]): string } = require('path');
 
 import { HOME_SCENES } from '../../content/scenes/home';
 import { NEIGHBORHOODS } from '../../content/tuning';
-import { stingTiming, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
+import { stingTiming, LONG_BAR_SECONDS, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const MANIFEST = fs.readFileSync(path.join(__dirname, '..', 'manifest.ts'), 'utf8');
@@ -147,16 +147,40 @@ describe('stinger timing and gating (AU31, AU32)', () => {
 });
 
 describe('stingers wait for the tonic (AU47)', () => {
-  it('lands on the next bar whose chord is I, within two bars', () => {
+  it('lands on the next bar whose chord is I, within two bars (a short bar: 104 bpm)', () => {
     const roots = [1, 1, 1, 1, 4, 4, 1, 1, 5, 4, 1, 5]; // 12-bar blues
-    const bar = (60 / 92) * 4;
+    const bar = (60 / 104) * 4;
     // inside bar 3 (I): bars 4 and 5 are IV, bar 6 is I
-    const t = stingTiming(3.2 * bar, 92, 4, roots, 0.6);
+    const t = stingTiming(3.2 * bar, 104, 4, roots, 0.6);
     expect(Math.round((3.2 * bar + t.delay + 0.6) / bar)).toBe(6);
     expect(t.extraDuck).toBe(1);
     // inside bar 8 (V): bar 9 is IV, bar 10 is I
-    const u = stingTiming(8.1 * bar, 92, 4, roots, 0.6);
+    const u = stingTiming(8.1 * bar, 104, 4, roots, 0.6);
     expect(Math.round((8.1 * bar + u.delay + 0.6) / bar)).toBe(10);
+  });
+  it('does not hunt for a tonic when a bar is long: the lofi tempos wait one bar at most (AU63)', () => {
+    const bpm = 76; // a bar is 3.16 s
+    const bar = (60 / bpm) * 4;
+    expect(bar).toBeGreaterThan(LONG_BAR_SECONDS);
+    const roots = [4, 5, 4, 5, 1, 1, 1, 1]; // the tonic is four bars away
+    for (const frac of [0.05, 0.4, 0.9]) {
+      const t = stingTiming(frac * bar, bpm, 4, roots, 0.8);
+      expect(t.delay).toBeCloseTo(quantizeDelay(frac * bar, bpm, 4, 0.8), 6);
+      expect(t.delay).toBeLessThan(bar + 0.01);
+      expect(t.extraDuck).toBeLessThan(1);
+    }
+    // an I bar next door is still taken without the extra duck
+    const next = stingTiming(0.5 * bar, bpm, 4, [4, 1, 4, 4], 0.8);
+    expect(next.extraDuck).toBe(1);
+    expect(next.delay).toBeLessThan(bar);
+  });
+  it('still looks two bars ahead when the bar is short (Downtown 6/8)', () => {
+    const bpm = 99;
+    const bar = (60 / bpm) * 3; // 1.82 s
+    expect(bar).toBeLessThan(LONG_BAR_SECONDS);
+    const t = stingTiming(0.5 * bar, bpm, 3, [4, 5, 1, 4], 0.6);
+    expect(t.extraDuck).toBe(1);
+    expect(t.delay).toBeGreaterThan(bar);
   });
   it('takes the next bar and ducks deeper when no tonic is near', () => {
     const t = stingTiming(0.1, 120, 4, [4, 5, 4, 5], 0.5);
