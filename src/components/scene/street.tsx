@@ -1,7 +1,10 @@
-import { memo } from 'react';
+import { memo, type ReactElement } from 'react';
 import { F } from '../../theme';
 import { Circle, Ellipse, G, Path, Rect, Text as SvgText } from 'react-native-svg';
-import { INK, SCENE_W, CURB_Y, shade } from './projection';
+import { chairBack } from './geometry';
+import { PATIO_SEAT, QUEUE_Y, waitTagAt, type Layout } from './layout';
+import { TABLE_STYLE } from './props';
+import { INK, SCENE_W, CURB_Y, P, kAt, shade } from './projection';
 
 // ---------- street + traffic ----------
 export const CARS = [
@@ -116,6 +119,101 @@ export const Sidewalk = memo(function Sidewalk({ frontY }: { frontY: number }) {
     </G>
   );
 });
+
+// ---------- the sidewalk patio and the waiting tag (v5.11) ----------
+const UMBRELLA = ['#D9443A', '#FFF4E0'];
+
+/**
+ * One small patio table with two chairs and an umbrella, standing on the sidewalk at room (x, y). Three layers so
+ * diners really sit: `back` is the shadow and both chairs, `front` the table top over their laps, `umbrella` the
+ * canopy over their heads. Chairs sit ±PATIO_SEAT from the table.
+ */
+export const PatioTable = memo(function PatioTable({ x, y, part }: { x: number; y: number; part: 'back' | 'front' | 'umbrella' }) {
+  const [cx, cy] = P(x, y);
+  const k = kAt(y) * 1.1;
+  const st = TABLE_STYLE[0];
+  if (part === 'back') {
+    const chair = (dx: number) => {
+      const out = dx < 0 ? -1 : 1;
+      const cb = chairBack(out);
+      const [px, py] = P(x + dx, y);
+      return (
+        <G key={dx} transform={`translate(${px} ${py}) scale(${k})`}>
+          <Ellipse cx={0} cy={0} rx={8} ry={2.2} fill="rgba(59,31,20,0.18)" />
+          {[-6, 6].map((lx) => <Rect key={lx} x={lx - 1} y={-4} width={2} height={4} rx={0.6} fill={st.chairDark} stroke={INK} strokeWidth={0.6} />)}
+          <Rect x={cb.x0} y={cb.top} width={1.8} height={cb.bottom - cb.top} rx={0.8} fill={st.chairDark} stroke={INK} strokeWidth={0.7} />
+          <Rect x={cb.x0 + 4.2} y={cb.top} width={1.8} height={cb.bottom - cb.top} rx={0.8} fill={st.chairDark} stroke={INK} strokeWidth={0.7} />
+          <Rect x={cb.rail.x0} y={cb.rail.y0} width={cb.rail.x1 - cb.rail.x0} height={cb.rail.y1 - cb.rail.y0} rx={1.8} fill={st.chair} stroke={INK} strokeWidth={1.1} />
+          <Rect x={out < 0 ? -13 : -7.5} y={-6.4} width={20.5} height={3.8} rx={1.6} fill={st.chair} stroke={INK} strokeWidth={1.2} />
+          <Rect x={out < 0 ? -13 : -7.5} y={-3.8} width={20.5} height={1.2} rx={0.6} fill={st.chairDark} />
+        </G>
+      );
+    };
+    return (
+      <G>
+        <Ellipse cx={cx} cy={cy} rx={30 * k} ry={6 * k} fill="rgba(59,31,20,0.16)" />
+        {chair(-PATIO_SEAT)}
+        {chair(PATIO_SEAT)}
+      </G>
+    );
+  }
+  if (part === 'front') {
+    return (
+      <G transform={`translate(${cx} ${cy}) scale(${k})`}>
+        <Rect x={-1.4} y={-14} width={2.8} height={14} fill={st.leg} />
+        <Ellipse cx={0} cy={-1} rx={5} ry={1.8} fill={st.leg} />
+        <Ellipse cx={0} cy={-15} rx={10} ry={3.6} fill={st.rim} stroke={INK} strokeWidth={1.1} />
+        <Ellipse cx={0} cy={-16} rx={10} ry={3.6} fill={st.top} stroke={INK} strokeWidth={1.1} />
+        <Ellipse cx={-2} cy={-16.4} rx={3.6} ry={1.3} fill="#FFC531" stroke={INK} strokeWidth={0.5} />
+      </G>
+    );
+  }
+  return (
+    <G transform={`translate(${cx} ${cy}) scale(${k})`}>
+      <Rect x={-0.9} y={-62} width={1.8} height={48} fill="#7A5C48" stroke={INK} strokeWidth={0.6} />
+      {/* four wedges of a red-and-cream canopy, a scalloped rim, and the finial */}
+      {[0, 1, 2, 3].map((n) => {
+        const x0 = -26 + n * 13;
+        return <Path key={n} d={`M0 -72 L${x0} -57 Q${x0 + 3.25} -53.5 ${x0 + 6.5} -57 Q${x0 + 9.75} -53.5 ${x0 + 13} -57 Z`} fill={UMBRELLA[n % 2]} stroke={INK} strokeWidth={1} strokeLinejoin="round" />;
+      })}
+      <Circle cx={0} cy={-73} r={1.7} fill={INK} />
+    </G>
+  );
+});
+
+/** A small white pill in the scene's style: "×N waiting" over the drivers who have no order to carry. */
+export const WaitTag = memo(function WaitTag({ x, y, n, w, tail }: { x: number; y: number; n: number; w: number; tail: number }) {
+  const t = Math.max(-w / 2 + 9, Math.min(w / 2 - 9, tail));
+  return (
+    <G transform={`translate(${x.toFixed(1)} ${y.toFixed(1)})`}>
+      <Path d={`M${t - 4} 7 L${t} 12 L${t + 4} 7 Z`} fill="#fff" stroke={INK} strokeWidth={1.1} strokeLinejoin="round" />
+      <Rect x={-w / 2} y={-9} width={w} height={17} rx={8.5} fill="#fff" stroke={INK} strokeWidth={1.1} />
+      <Rect x={t - 3.4} y={6.4} width={6.8} height={2.4} fill="#fff" />
+      <SvgText x={0} y={3} fontFamily={F.bold} fontSize={10} fill={INK} textAnchor="middle">
+        {`×${n} waiting`}
+      </SvgText>
+    </G>
+  );
+});
+
+/**
+ * The sidewalk's own scenery, depth-sorted with the cast: the patio's tables (with the umbrellas over the diners'
+ * heads) and the "×N waiting" tag. `patio`: tables standing (0..2); `waiting`: idle drivers when there are more than
+ * the queue spots show, else 0 (cast.ts `sidewalkOf`).
+ */
+export function sidewalkItems(lay: Layout, patio: number, waiting: number): { y: number; el: ReactElement }[] {
+  const out: { y: number; el: ReactElement }[] = [];
+  lay.patio.slice(0, patio).forEach((p, i) => {
+    out.push({ y: p.y + 0.6, el: <PatioTable key={`pb${i}`} x={p.x} y={p.y} part="back" /> });
+    out.push({ y: p.y - 0.6, el: <PatioTable key={`pf${i}`} x={p.x} y={p.y} part="front" /> });
+    out.push({ y: p.y - 0.9, el: <PatioTable key={`pu${i}`} x={p.x} y={p.y} part="umbrella" /> });
+  });
+  if (waiting > 0) {
+    const t = waitTagAt(lay, waiting);
+    out.push({ y: QUEUE_Y - 2, el: <WaitTag key="wait" x={t.x} y={t.y} n={waiting} w={t.w} tail={t.tail} /> });
+  }
+  return out;
+}
 
 /** A drifting cloud: the shape is memoised at the origin and only the translate changes per frame. */
 export function Cloud({ x, y, k, dusk = false }: { x: number; y: number; k: number; dusk?: boolean }) {

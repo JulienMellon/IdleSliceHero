@@ -9,7 +9,8 @@ import { money } from '../engine/format';
 import * as Game from '../engine/game';
 import { C, F } from '../theme';
 import { LockIcon } from './icons';
-import { buildChipHint, buildChipSub } from './sidewalk-model';
+import { lotView } from './city-model';
+import { buildChipHint, buildChipSub, type ButtonTone } from './sidewalk-model';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BuyButton, haptic } from './game-ui';
 
@@ -48,6 +49,18 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
             );
           }
           if (!shop.built) {
+            // G87: held back by Nonna's takeover, the tab is a dashed, unpressable lot with the City screen's countdown ("Nonna in 110"), not a green "Build"
+            const lot = lotView(game, n);
+            if (lot.locked) {
+              return (
+                <View key={n.id} onLayout={onTab(i)} testID={`build-${n.id}`} accessibilityState={{ disabled: true }} style={[styles.tab, styles.tabBuild, styles.tabHeld]}>
+                  <Text style={[styles.tabName, { color: C.inkSoft }]}>+ {n.name}</Text>
+                  <Text style={[styles.tabSub, { color: C.inkSoft }]} numberOfLines={1}>
+                    {lot.pin}
+                  </Text>
+                </View>
+              );
+            }
             const can = game.cash >= n.buildCost;
             // while the Pier 9 bid is on offer, building spends the cash saved for it: say so beside the price
             const warn = buildChipHint(game);
@@ -113,8 +126,10 @@ export function StationCard(props: {
   testID?: string;
   wide?: boolean;
   muted?: boolean;
-  /** Button tone from `buttonTone` (sidewalk-model.ts): `nogain` draws the flat "no gain now" look. */
-  tone: 'normal' | 'neutral' | 'nogain';
+  /** Button tone from `buttonTone` (sidewalk-model.ts): `nogain` draws the flat "no gain now" look; `expand` is the amber Expand buy. */
+  tone: ButtonTone;
+  /** Replaces the price on the button (the drawer's "Expand · $500" on a station that only the level cap locks, D413). */
+  buyLabel?: string;
 }) {
   return (
     <View style={[styles.card, props.wide && styles.cardWide, props.hot && styles.cardHot, props.muted && styles.cardMuted]}>
@@ -137,7 +152,7 @@ export function StationCard(props: {
         </View>
       </View>
       <View style={props.wide ? { width: 96 } : undefined}>
-        <BuyButton compact tone={props.tone} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : money(props.cost)} sub={props.tone === 'nogain' ? 'no gain now' : undefined} enabled={props.canBuy} onPress={props.onBuy} />
+        <BuyButton compact tone={props.tone} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : props.buyLabel ?? money(props.cost)} sub={props.tone === 'nogain' ? 'no gain now' : undefined} enabled={props.canBuy} onPress={props.onBuy} />
       </View>
     </View>
   );
@@ -159,6 +174,7 @@ const styles = StyleSheet.create({
   tabLocked: { minWidth: 40, backgroundColor: 'rgba(255,255,255,0.25)', borderColor: 'transparent', justifyContent: 'center' },
   tabLockedText: { fontSize: 14 },
   tabBuild: { borderStyle: 'dashed', borderColor: C.cheese, backgroundColor: '#FFF4E0' },
+  tabHeld: { backgroundColor: 'rgba(255,255,255,0.55)', borderColor: C.cheeseDark },
   tabBuildReady: { backgroundColor: C.basil, borderColor: '#fff', borderStyle: 'solid' },
 
   card: { justifyContent: 'space-between', width: '48.5%', backgroundColor: C.panel, borderRadius: 16, padding: 7, gap: 5, borderWidth: 2.5, borderColor: C.ink, ...shadow },

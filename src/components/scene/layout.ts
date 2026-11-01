@@ -1,5 +1,6 @@
 // Pure scene geometry: where every station, table, lane and person stands for a given shop size.
 // No React here, so it is unit-tested directly (src/components/scene/__tests__/scene.test.ts).
+import { P, SCENE_W, unprojectX } from './projection';
 
 export const ROOM_W = [270, 295, 320, 340, 358];
 
@@ -31,6 +32,25 @@ const BACKROW_BAKER_SHIFT = 17;
 export const VEHICLE_HALF_W = 24;
 /** Half the sidewalk chalkboard's width (room units). */
 export const SIGN_HALF_W = 15;
+
+// ---------- the sidewalk (v5.11): a diner queue and patio tables left of the door, idle drivers right of it ----------
+/** Depth of the standing queues: hugging the shop front, behind the walkers' lanes (−30 / −42) and the parked vehicle. */
+export const QUEUE_Y = -9;
+/** Depth of the patio tables (centre of the table; its chairs stand on the same line). */
+export const PATIO_Y = -12;
+/** A patio chair sits this far either side of its (small, round) table. */
+export const PATIO_SEAT = 13;
+/** Room units between neighbouring queue spots: a figure is ~25 wide, so a queue overlaps by under a quarter. */
+export const QUEUE_PITCH = 19;
+export const DRIVER_QUEUE_PITCH = 20;
+/** Dining queue: the first spot is this far left of the door's left jamb; patio table A and B are these far left of it. */
+const QUEUE_GAP = 27;
+const PATIO_AT = [126, 213];
+/** A queuing driver stands fully on screen: its centre stays this far inside the scene's right edge. */
+const EDGE_MARGIN = 14;
+/** Leftmost x the chalkboard may take: the sidewalk prop between it and the potted tree is only drawn while they stand > 56 apart. */
+const PLANTER_X = (L: number) => Math.max(L + 8, unprojectX(20, -40));
+const SIGN_PLANTER_SPAN = 58;
 
 /** Narrowest oven bank (one column) the back wall must keep between the prep bench and the counter. */
 export const MIN_OVEN_ZONE = 36;
@@ -73,6 +93,14 @@ export interface Layout {
   scooter: { x: number; y: number };
   /** The sidewalk chalkboard stands left of the parked vehicle. */
   sign: { x: number };
+  /** Up to two patio tables on the sidewalk left of the queue (small umbrella tables; chairs at ±PATIO_SEAT). */
+  patio: { x: number; y: number }[];
+  /** Diner queue: up to four standing spots outside, left of the door, nearest the door first, facing right. */
+  queue: Pt[];
+  /** Idle drivers wait right of the door past the mat, facing left, nearest the door first (as many as stand fully on screen, up to 3). */
+  driverQueue: Pt[];
+  /** Where the "×N waiting" tag hangs: over the last driver spot. */
+  waitTag: Pt;
 }
 
 export function layout(fp: number, ovenCount: number, cookCount: number, staffCount: number, tableCount: number, driverSlots: number, plants = 0): Layout {
@@ -162,6 +190,31 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   const lx0 = Math.max(counter.x0 + 4, frontRowRight);
   const lx1 = d0 - 12;
   const ledge = lx1 - lx0 > 30 ? { x0: lx0, x1: lx1 } : null;
-  return { fp, L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, orderSpots, tables, bakers, ledge, // D282: the vehicle parks well left of the walk-ins' turn-in (guestPauseX = d0 − 6), the chalkboard left of it
-    scooter: { x: d0 - 60, y: -30 }, sign: { x: d0 - 115 } };
+  // v5.11: the diner queue stands left of the door, the patio left of the queue; the chalkboard stands between the two
+  // patio tables (so a walk-in's way to a patio chair never crosses it), but never so near the tree that the sidewalk
+  // prop between them (storefront) would be dropped
+  const queue: Pt[] = Array.from({ length: 4 }, (_, i) => [d0 - QUEUE_GAP - QUEUE_PITCH * i, QUEUE_Y]);
+  const patio = PATIO_AT.map((dx) => ({ x: d0 - dx, y: PATIO_Y }));
+  const signX = Math.max(d0 - 169.5, PLANTER_X(L) + SIGN_PLANTER_SPAN);
+  const xMax = unprojectX(SCENE_W - EDGE_MARGIN, QUEUE_Y);
+  const dq0 = d1 + 19;
+  const driverQueue: Pt[] = [];
+  for (let j = 0; j < 3; j++) {
+    const x = dq0 + DRIVER_QUEUE_PITCH * j;
+    if (j === 0) driverQueue.push([Math.min(x, xMax), QUEUE_Y]);
+    else if (x <= xMax) driverQueue.push([x, QUEUE_Y]);
+  }
+  const waitTag = driverQueue[driverQueue.length - 1];
+  return { fp, L, R, prep, cooks, ovens, ovenCols, counter, staff, door, spots, orderSpots, tables, bakers, ledge, // D282: the vehicle parks well left of the walk-ins' turn-in (guestPauseX = d0 − 6)
+    scooter: { x: d0 - 60, y: -30 }, sign: { x: signX }, patio, queue, driverQueue, waitTag };
+}
+
+/** Width of the "×N waiting" pill for its text. */
+export const waitTagWidth = (n: number) => `×${n} waiting`.length * 5.8 + 14;
+/** Where the pill's centre sits (screen), over the last waiting driver, kept inside the screen edges. */
+export function waitTagAt(lay: Pick<Layout, 'waitTag'>, n: number): { x: number; y: number; w: number; tail: number } {
+  const [sx, sy] = P(lay.waitTag[0], lay.waitTag[1], 74);
+  const w = waitTagWidth(n);
+  const x = Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, sx));
+  return { x, y: sy, w, tail: sx - x };
 }

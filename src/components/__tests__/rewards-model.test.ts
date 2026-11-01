@@ -3,7 +3,7 @@ import { DAILY_CHESTS, GIFT_DAYS, VISITOR_LINES } from '../../content/rewards';
 import * as G from '../../engine/game';
 import { dayKey, refreshRewards, taskDone } from '../../engine/rewards';
 import { NONNA_TAKEOVER } from '../../content/tuning';
-import { BOOST_STRIP, boostFadeShown, boostChip, boosterLabel, boosterStartLabel, boostOnText, boostRingPct, boostedRate, boostSummary, chestRows, collectionText, compactSpan, countdownText, dailyRows, giftHeader, giftIcon, giftShort, giftText, giftTiles, hudBoostText, hudRateText, pointsPct, rewardsHud, spanText, visitCaption, weeklyChestView, weeklyRows } from '../rewards-model';
+import { BOOST_STRIP, boostFadeShown, boostChip, boosterLabel, boosterStartLabel, boostOnText, boostRingPct, boostedRate, boostSummary, chestRows, collectionText, compactSpan, countdownText, dailyRows, giftHeader, giftIcon, giftShort, giftText, giftTiles, hudBoostText, citywideText, hudRateText, pointsPct, TAP_PREP_TEXT, rewardsHud, spanText, visitCaption, weeklyChestView, weeklyRows } from '../rewards-model';
 
 const NOW = new Date(2026, 9, 28, 13, 7, 41, 333).getTime(); // a Wednesday
 const DAY = 86_400_000;
@@ -46,8 +46,15 @@ describe('time text', () => {
     expect(boostedRate(179, 2)).toBe(358);
     expect(boostedRate(179, 1)).toBe(179);
     expect(boostedRate(179, 0)).toBe(179);
-    expect(hudRateText(179, 2)).toBe('$358/sec');
-    expect(hudRateText(179, 1)).toBe('$179/sec');
+    expect(hudRateText(179, 2)).toBe('$358/s');
+    expect(hudRateText(179, 1)).toBe('$179/s');
+  });
+  test('D409: the HUD subtitle is short and says citywide', () => {
+    expect(citywideText(1_270_000, 1)).toBe('$1.27M/s citywide');
+    expect(TAP_PREP_TEXT).toBe('Tap the prep table');
+    // the pill cut "Tap to prep a batch of pi…" (26 chars) and "$1.27M/sec across the ci…" (25): stay well under
+    for (const eps of [0.5, 179, 12_345, 1_270_000, 9.99e12, 9.99e21]) expect(citywideText(eps, 1).length).toBeLessThanOrEqual(22);
+    expect(TAP_PREP_TEXT.length).toBeLessThanOrEqual(22);
   });
   test('boost summary adds the multipliers and counts down to the first end', () => {
     const s = withR(base(), { boosts: [{ mult: 2, until: NOW + 840_500, source: 'a' }, { mult: 2, until: NOW + 9e6, source: 'b' }] });

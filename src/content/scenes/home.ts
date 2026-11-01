@@ -841,7 +841,8 @@ export const HOME_SCENES: Scene[] = [
         ],
         lines: [
           { speaker: 'Nonna Rosa', text: 'Come here, you big meatball.' },
-          { speaker: 'Big Sal', text: 'Kid, you brought my family back. Industrial’s yours. Heck, I might even like Thursdays now.' },
+          { speaker: 'Big Sal', text: 'Kid, you brought my family back. Industrial’s yours.' },
+          { speaker: 'Big Sal', text: 'Heck. I might even like Thursdays now.' },
         ],
       },
     ],
@@ -869,7 +870,7 @@ export const HOME_SCENES: Scene[] = [
         caption: 'She takes one dainty bite.',
         lines: [
           { speaker: 'Genevieve', text: 'Genevieve Laurent. Food critic. You may have heard of me. Everyone has.' },
-          { speaker: 'Genevieve', text: 'A grand opening. How quaint. Let us see.' },
+          { speaker: 'Genevieve', text: 'A grand opening. How quaint. Well. Let us taste.' },
         ],
       },
       {

@@ -48,9 +48,15 @@ export function boostRingPct(seconds: number): number {
   return total > 0 ? Math.min(1, s / total) : 0;
 }
 
-/** Income per second with the running boost applied (lineTick earns x boostMult, so the HUD and the chips must too): "$358/sec". */
+/** Income per second with the running boost applied (lineTick earns x boostMult, so the HUD and the chips must too): "$358/s". */
 export const boostedRate = (eps: number, mult: number): number => eps * (mult > 0 ? mult : 1);
-export const hudRateText = (eps: number, mult: number): string => `${money(boostedRate(eps, mult))}/sec`;
+export const hudRateText = (eps: number, mult: number): string => `${money(boostedRate(eps, mult))}/s`;
+
+/** The HUD subtitle on a managed shop (D409): short enough for the cash pill without an ellipsis ("$1.27M/s citywide"). */
+export const citywideText = (eps: number, mult: number): string => `${hudRateText(eps, mult)} citywide`;
+
+/** The HUD prompt while the player runs the prep table themselves (D409; "Tap to prep a batch of pizzas!" was cut off). */
+export const TAP_PREP_TEXT = 'Tap the prep table';
 
 /** Inventory booster button: "2× 15m". */
 export const boosterLabel = (b: Booster | BoosterDef): string => `${multText(b.mult)} ${compactSpan('seconds' in b ? b.seconds : b.minutes * 60)}`;

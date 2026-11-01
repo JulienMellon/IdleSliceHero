@@ -1762,3 +1762,12 @@ Fixed: D397, D398 (accepted with the SE/wide-web treetop overlap), D399, D400, D
 | Pier 9 chip | minor | 21 | "Pier 9 savings" reads like a discount or reward, not a warning | Wording that reads as a cost (e.g. "uses Pier 9 bid cash") in #b3261e |
 
 **Next IDs:** G86, D404.
+
+---
+
+## Round 57 — v5.9: ✅ SATISFIED (0 bugs, 0 major, 1 minor)
+Fixed: D402 (names kept; "need $X" only when cash > 0, maths checked in 04 and 13), D403 (short crossed thumbs), Pier 9 chip ("uses bid cash" in red; the cream-pill state on a green chip isn't in any shot).
+
+| ID | Severity | Where / shot | Note | Concrete fix |
+|---|---|---|---|---|
+| D404 | minor | 21 University chip | Three lines make the chip overfull: ~3 pt to the dashed border top and bottom vs ~10 pt on its neighbours | While the hint shows: title 15 pt, hint 9 pt / lineHeight 11; or merge to "$1.8M · uses bid cash" (two lines) |

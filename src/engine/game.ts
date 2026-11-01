@@ -424,6 +424,28 @@ function pieSplit(shop: Shop, vehicle: number): { sold: number; walkIns: number;
 }
 
 /**
+ * Who is left waiting at the steady state, for the street scene (v5.11). Both counts come from the same `pieSplit`:
+ *   - diners: walk-ins who want a seat but the kitchen can't feed (the seating rate minus the walk-ins served), as
+ *     quarters of a full line, 0..4; 0 when the kitchen keeps up with the seats;
+ *   - drivers: drivers with nothing to carry (the delivered share of the fleet's capacity left over). Not capped: the
+ *     scene draws up to 3 and a "×N waiting" tag for the rest.
+ */
+export function queueSizes(shop: Shop, vehicle: number): { diners: number; drivers: number } {
+  const { walkIns, delivered } = pieSplit(shop, vehicle);
+  const seats = walkInRate(shop);
+  const fleet = deliveryRate(shop, vehicle);
+  const unmet = seats > 0 ? (seats - walkIns) / seats : 0;
+  const idle = fleet > 0 ? shop.drivers * (1 - delivered / fleet) : 0;
+  return { diners: Math.max(0, Math.min(4, Math.ceil(4 * unmet))), drivers: Math.max(0, Math.round(idle)) };
+}
+
+/**
+ * Seating levels past the footprint's indoor cap put tables out on the sidewalk, up to two (v5.11). Purely visual:
+ * it never changes `walkInRate`.
+ */
+export const patioTables = (shop: Shop) => Math.max(0, Math.min(2, 1 + Math.floor((shop.tables - 1) / 6) - FOOTPRINTS[shop.footprint].maxTables));
+
+/**
  * Cash per second a running pizzeria makes. Walk-ins get the kitchen's pies first, up to the seating rate
  * (they pay walkInShare of the price, 1.0 by default); drivers deliver the rest at full price.
  */

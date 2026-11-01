@@ -106,15 +106,17 @@ export function DeparturePops({ deps, left, anchor, register }: { deps: readonly
         const span = d.kind === 'driver' ? LINE.departSeconds - COIN_FLIGHT : LINE.handoffSeconds;
         const rest = d.kind === 'driver' ? l - COIN_FLIGHT : l;
         const k = Math.min(1, Math.max(0, 1 - rest / span));
-        const at = anchor(d) ?? register;
-        const rideAlong = !!anchor(d);
+        // D410: a walk-in's pop hangs over the register, not over their own head (it used to cover the face of the one at the counter)
+        const walkin = d.kind === 'walkin';
+        const at = walkin ? register : anchor(d) ?? register;
+        const rideAlong = !walkin && !!anchor(d);
         const text = n > 1 ? `×${n} · +${money(cash)}` : `+${money(cash)}`;
         // D379: a pill never grows past 80 pt (11 pt text), however long the "×n · +$X" is
         const w = Math.min(80, text.length * 6.1 + 12);
         // beside the carrier's head, away from the cashiers (D368); kept on screen
         const r = popRect(at, w);
         const px = rideAlong ? (r.x0 + r.x1) / 2 : Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, at[0]));
-        const py = (rideAlong ? r.y1 : at[1] - 30) - k * 6;
+        const py = (rideAlong ? r.y1 : at[1] - (walkin ? 58 : 30)) - k * 6;
         const fade = rest < 0.2 ? Math.max(0, rest / 0.2) : 1;
         if (fade <= 0) return null;
         return (
@@ -155,12 +157,14 @@ export const HireBubble = memo(function HireBubble({ x, y, text, tone = 'hire' }
  * where a head's hello would be; it never touches the sign above or the badges. Memoised on primitives: it only re-renders
  * when the text or the kind changes.
  */
-export const RushPill = memo(function RushPill({ x, y, kind, text }: { x: number; y: number; kind: 'hint' | 'combo'; text: string }) {
-  const w = Math.max(70, text.length * 6.2 + 18);
+export const RushPill = memo(function RushPill({ x, y, kind, text, pulse = 0 }: { x: number; y: number; kind: 'hint' | 'combo'; text: string; pulse?: number }) {
+  const w = rushPillWidth(text);
   const px = Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, x));
   const combo = kind === 'combo';
+  // D406: the hint breathes 1.0 → 1.08 while it shows (`pulse` is 0..1 in fifths, from the scene's pose clock)
+  const s = combo ? 1 : 1 + 0.08 * pulse;
   return (
-    <G transform={`translate(${px} ${y})`}>
+    <G transform={`translate(${px} ${y}) scale(${s})`}>
       <Rect x={-w / 2} y={-14} width={w} height={18} rx={9} fill={combo ? TOMATO : DISC} stroke={combo ? '#fff' : INK} strokeWidth={combo ? 1.4 : 1.2} />
       <SvgText x={0} y={-1.5} fontFamily={F.bold} fontSize={10} fill={combo ? '#fff' : INK} textAnchor="middle">
         {text}
@@ -168,3 +172,6 @@ export const RushPill = memo(function RushPill({ x, y, kind, text }: { x: number
     </G>
   );
 });
+
+/** The rush pill's width: its text plus padding, never wider than 120 (D406) so it can sit under the oven chip without crossing the menu. */
+export const rushPillWidth = (text: string) => Math.min(120, Math.max(70, text.length * 6.2 + 18));

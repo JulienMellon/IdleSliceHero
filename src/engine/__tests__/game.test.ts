@@ -86,6 +86,63 @@ describe('formulas', () => {
       expect(walks / (walks + drives)).toBeLessThan(G.walkInFraction(busy, 0) + 0.03);
     });
   });
+  describe('queues and the patio (v5.11)', () => {
+    const base = G.newShop(true);
+    test('a kitchen that keeps up with the seats leaves no diner waiting', () => {
+      // one bike driver + one table: the seats (0.3/s) are all served, the one driver is busy
+      expect(G.queueSizes(base, 0)).toEqual({ diners: 0, drivers: 0 });
+      const fastKitchen = { ...G.newShop(true), prep: 60, ovens: 60, counter: 60, footprint: 4, grade: 4, drivers: 3, tables: 5 };
+      expect(G.queueSizes(fastKitchen, 0).diners).toBe(0);
+    });
+    test('diners queue in quarters of the unmet seating rate, ceiling, 0..4', () => {
+      const slow = { ...base, tables: 60, drivers: 3 }; // 36 seats/s against a 0.7/s kitchen
+      expect(G.queueSizes(slow, 0).diners).toBe(4);
+      // seats 0.75/s (level 4) against a 0.7/s kitchen: a sliver unmet still shows one diner
+      const sliver = { ...base, tables: 4, drivers: 0 };
+      const seats = G.walkInRate(sliver);
+      const sold = G.shopRate(sliver, 0);
+      expect(sold).toBeLessThan(seats);
+      expect(G.queueSizes(sliver, 0).diners).toBe(1);
+      expect(G.queueSizes(sliver, 0).diners).toBe(Math.ceil((4 * (seats - sold)) / seats));
+      // every count is within 0..4 across a sweep of kitchens and seatings
+      for (const prep of [1, 5, 30, 80])
+        for (const tables of [1, 4, 10, 40, 90])
+          for (const drivers of [0, 1, 4, 20]) {
+            const q = G.queueSizes({ ...base, prep, ovens: prep, counter: prep, tables, drivers }, 0);
+            expect(q.diners).toBeGreaterThanOrEqual(0);
+            expect(q.diners).toBeLessThanOrEqual(4);
+          }
+    });
+    test('drivers wait when the walk-ins and the kitchen leave their capacity idle; the count is not capped', () => {
+      // a kitchen as fast as its seats leaves the whole fleet idle only when nothing is left to deliver
+      const idleFleet = { ...base, prep: 1, ovens: 1, counter: 1, tables: 60, drivers: 3 }; // kitchen 0.7/s, all walk-ins
+      expect(G.queueSizes(idleFleet, 0).drivers).toBe(3);
+      const many = { ...idleFleet, drivers: 12 };
+      expect(G.queueSizes(many, 0).drivers).toBe(12); // > 3: the scene adds a "×N waiting" tag
+      expect(G.queueSizes({ ...base, drivers: 0 }, 0).drivers).toBe(0);
+    });
+    test('both counts come from the same split: idle drivers = drivers × (1 − delivered / fleet)', () => {
+      for (const drivers of [1, 2, 5, 9])
+        for (const tables of [1, 7, 19, 40]) {
+          const shop = { ...base, prep: 30, ovens: 30, counter: 30, footprint: 3, drivers, tables };
+          const sold = G.shopRate(shop, 1);
+          const walk = Math.min(sold, G.walkInRate(shop));
+          const expected = Math.max(0, Math.round(drivers * (1 - (sold - walk) / G.deliveryRate(shop, 1))));
+          expect(G.queueSizes(shop, 1).drivers).toBe(expected);
+          expect(G.queueSizes(shop, 1).diners).toBe(Math.max(0, Math.min(4, Math.ceil((4 * (G.walkInRate(shop) - walk)) / G.walkInRate(shop)))));
+        }
+    });
+    test('patio tables: levels past the footprint\'s indoor cap, 0..2, and never a change to the seating rate', () => {
+      const at = (footprint: number, tables: number) => ({ ...base, footprint, tables });
+      // footprint 0 holds 2 indoors: level 13 is the third table, level 19 the fourth
+      expect([1, 7, 12, 13, 18, 19, 25].map((t) => G.patioTables(at(0, t)))).toEqual([0, 0, 0, 1, 1, 2, 2]);
+      expect(G.patioTables(at(4, 25))).toBe(0); // 5 shown, 6 indoors fit
+      expect(G.patioTables(at(4, 37))).toBe(1);
+      expect(G.patioTables(at(4, 125))).toBe(2);
+      for (let fp = 0; fp < 5; fp++) for (const t of [1, 6, 7, 30, 60, 125]) expect(G.patioTables(at(fp, t))).toBe(Math.max(0, Math.min(2, 1 + Math.floor((t - 1) / 6) - [2, 3, 4, 5, 6][fp])));
+      expect(G.walkInRate(at(0, 19))).toBe(G.walkInRate({ ...base, tables: 19 }));
+    });
+  });
   test('seating never lowers income, even when the kitchen is the limit', () => {
     for (const prep of [1, 10, 40, 104]) {
       for (const drivers of [1, 5, 30]) {

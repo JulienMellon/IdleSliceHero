@@ -106,3 +106,31 @@ describe('G81: every sale has someone carrying it', () => {
       }
   });
 });
+
+describe('walk-ins at every table (v5.11)', () => {
+  const lay = lays[3];
+  test('walk-ins take every room table, then the patio tables; an idle shop has no patio', () => {
+    const t = lay.tables.length;
+    expect(routesFor(lay, SCENE_W).guests.map((g) => g.table)).toEqual(Array.from({ length: t }, (_, i) => i));
+    const R = routesFor(lay, SCENE_W, false, 2);
+    expect(R.guests.length).toBe(t + 2);
+    expect(R.guests.map((g) => g.patio)).toEqual([...Array(t).fill(false), true, true]);
+    expect(routesFor(lay, SCENE_W, true, 2).guests.length).toBe(t);
+    expect(routesFor(lay, SCENE_W, false, 9).guests.length).toBe(t + 2); // never more than the layout has
+  });
+  test('stepCrew carries the patio count, ignores it on an idle shop, and stays idempotent', () => {
+    const c = stepCrew(emptyCrew(), { lay, walkins: true, patio: 2, departures: [] }, 1, SCENE_W);
+    expect(c.patio).toBe(2);
+    expect(stepCrew(c, { lay, walkins: true, patio: 2, departures: [] }, 1, SCENE_W)).toBe(c);
+    expect(stepCrew(c, { lay, walkins: true, patio: 1, departures: [] }, 1, SCENE_W).patio).toBe(1);
+    expect(stepCrew(emptyCrew(), { lay, walkins: true, idle: true, patio: 2, departures: [] }, 1, SCENE_W).patio).toBe(0);
+  });
+  test('a lone table is cleared before the next walk-in is handed their pie', () => {
+    const solo = layout(0, 1, 1, 1, 1, 2, 0);
+    const g = routesFor(solo, SCENE_W).guests;
+    expect(g.length).toBe(1);
+    const sit = (LINE.handoffSeconds + g[0].toSeat.len / WALK);
+    // the next walk-in is served LINE.walkinLap after this one and walks the same way: the first has stood up by then
+    expect(sit + g[0].eat).toBeLessThan(LINE.walkinLap + sit);
+  });
+});

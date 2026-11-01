@@ -8,9 +8,13 @@ import { C, F } from '../theme';
 import { GOAL_BAR, goalBarLayout } from './goal-model';
 import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
 import { onPayout, setCoinTarget } from './pulse-bus';
+import type { ButtonTone } from './sidewalk-model';
 import { BUTTON_H, COMPACT_FONT_MAX_SCALE } from './tap-targets';
 
 const native = Platform.OS !== 'web';
+
+/** The Expand buy's amber (D407): a shop-wide purchase that must not read as a station buy. */
+export const EXPAND_AMBER = '#F2A51A';
 
 export function haptic(kind: 'light' | 'success' | 'error' = 'light') {
   if (!native) return;
@@ -54,17 +58,20 @@ const BURST = ['star', 'coin', 'slice', 'star', 'coin', 'slice'] as const;
  * a shop has a manager); `nogain` is a buy that adds nothing right now, drawn flat and muted (no strike-through: a struck price read as
  * "unaffordable" or "discounted", D359), so green always means "this adds income" (D313). `nogain` is a style of the same element tree, so a station
  * flipping to it right after a purchase keeps its burst (C56). `saving` (with `progress` 0–1) marks the bottleneck
- * the player is saving for (D326). `compact` is the 44 pt sidewalk button: `icon` + `sub` above the price.
+ * the player is saving for (D326). `expand` is the amber Expand buy (D407). `compact` is the 44 pt sidewalk button: `icon` + `sub`
+ * above the price, and `foot` (or the "need" line) under it.
  */
-export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal', saving = false, progress = 0, need = null }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: 'normal' | 'neutral' | 'nogain'; saving?: boolean; progress?: number; need?: string | null }) {
+export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal', saving = false, progress = 0, need = null, foot = null }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: ButtonTone; saving?: boolean; progress?: number; need?: string | null; /** A line under the price that shows whether or not the button is affordable (compact only). */ foot?: string | null }) {
   const nogain = tone === 'nogain';
-  const needLine = !!need && !enabled;
+  const amber = tone === 'expand' && enabled;
+  const footText = foot ?? (!enabled ? need : null);
+  const needLine = !!footText;
   // saving for the bottleneck: a pale basil face, so the one thing worth saving for stands out among the greys (D326)
   const wait = saving && !enabled && !nogain;
-  const outerBg = nogain ? '#CFC3B2' : wait ? '#A9CFB1' : !enabled ? '#C9BCAD' : C.basilDark;
-  const innerBg = nogain ? '#EFE6D8' : wait ? '#DDEFD9' : !enabled ? '#E2D9CE' : tone === 'neutral' ? '#FFFFFF' : C.basil;
+  const outerBg = nogain ? '#CFC3B2' : wait ? '#A9CFB1' : !enabled ? '#C9BCAD' : amber ? '#B9780B' : C.basilDark;
+  const innerBg = nogain ? '#EFE6D8' : wait ? '#DDEFD9' : !enabled ? '#E2D9CE' : amber ? EXPAND_AMBER : tone === 'neutral' ? '#FFFFFF' : C.basil;
   // a greyed-out button still reads at ~4:1 (was #8A7B6E, ~2:1: D310)
-  const labelColor = nogain ? '#8A7B6C' : wait ? '#2E7D3E' : !enabled ? '#665A4F' : tone === 'neutral' ? C.ink : '#fff';
+  const labelColor = nogain ? '#8A7B6C' : wait ? '#2E7D3E' : !enabled ? '#665A4F' : amber || tone === 'neutral' ? C.ink : '#fff';
   const innerBorder = nogain ? styles.noGainInner : enabled && tone === 'neutral' ? { borderColor: C.basil, borderWidth: 1.5 } : null;
   // lazily created once, not a throwaway Animated.Value on every render (M29)
   const [burst] = useState(() => new Animated.Value(0));
@@ -107,7 +114,7 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
           {/* D402: what is still missing, under the muted price (compact only; the line heights tighten to keep the 44 pt button) */}
           {compact && needLine ? (
             <Text style={[styles.buyNeed, { color: labelColor }]} numberOfLines={1} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
-              {need}
+              {footText}
             </Text>
           ) : null}
           {wait ? (

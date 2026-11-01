@@ -1,7 +1,7 @@
 import { COUNTER_LANE_Y, DINING_AISLE_Y, DOOR_IN_Y, DOOR_OUT_Y, SEAT, type Layout } from './layout';
 
 /** Walk-ins walk the sidewalk on the curb side (drivers use −30…−42), so the two never stack. */
-export const GUEST_WALK_Y = -44;
+export const GUEST_WALK_Y = -42;
 
 /** Linear interpolation along a polyline at fraction k (0..1) of its length. */
 export function along(path: [number, number][], k: number): [number, number] {

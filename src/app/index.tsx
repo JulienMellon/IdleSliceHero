@@ -6,11 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CoinLayer } from '@/components/coin-layer';
 import { CoachCard } from '@/components/coach-card';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
-import { hudRateText, rewardsHud } from '@/components/rewards-model';
+import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
 import { coachStep } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
 import { aOrAn } from '@/components/goal-model';
-import { bundleButton, buttonTone, buyBundle, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
+import { bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
 import { CLOSE_SLOP, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
@@ -168,13 +168,13 @@ export default function GameScreen() {
   const line = shop.line;
   const boost = hud.boost;
   const baseSubtitle = shop.managed
-    ? `${hudRateText(eps, hud.mult)} across the city`
+    ? citywideText(eps, hud.mult)
     : nextSt === 'counter'
       ? `Tap to serve · ${pizzas(line.baked)} baked`
       : nextSt === 'oven'
         ? `Tap to bake · ${pizzas(line.prepped)} prepped`
         : nextSt === 'prep'
-          ? 'Tap to prep a batch of pizzas!'
+          ? TAP_PREP_TEXT
           : line.oven
             ? 'Baking…'
             : line.prep
@@ -195,6 +195,8 @@ export default function GameScreen() {
     const muted = idleShop && what !== 'manager' && !G.isHeadUpgrade(what);
     // Expand is still worth buying when a station is stuck at its level cap, even though it adds $0/s by itself
     const gain = what === 'manager' || G.isHeadUpgrade(what) || (what === 'expand' && atCap) ? 1 : G.upgradeGain(game, id, what);
+    // D413: a station only the level cap locks offers the Expand buy right on its card, as the sidewalk does
+    const expandCost = capExpandCost(game, id, what);
     return (
       <StationCard
         key={what}
@@ -203,11 +205,12 @@ export default function GameScreen() {
         detail={lock && what !== 'manager' ? lock : lock && what === 'manager' && id !== 'downtown' ? `${lock} · then ×2 income here, and it earns while you're away` : props.detail}
         hot={muted ? false : props.hot}
         muted={muted}
-        tone={buttonTone({ lock, gain, muted })}
-        cost={lock ? null : cost}
+        tone={expandCost !== null ? 'expand' : buttonTone({ lock, gain, muted })}
+        cost={expandCost ?? (lock ? null : cost)}
+        buyLabel={expandCost !== null ? `Expand · ${money(expandCost)}` : undefined}
         costLabel={props.costLabel ?? (lock && !/Finest|Biggest|Max/.test(lock) ? 'Locked' : 'MAX')}
-        canBuy={!lock && cost !== null && game.cash >= cost}
-        onBuy={() => buy(what)}
+        canBuy={expandCost !== null ? game.cash >= expandCost : !lock && cost !== null && game.cash >= cost}
+        onBuy={() => buy(expandCost !== null ? 'expand' : what)}
       />
     );
   };
@@ -273,8 +276,8 @@ export default function GameScreen() {
         )}
         {/* upgrade row standing on the sidewalk */}
         <SidewalkRow game={game} id={id} idleShop={idleShopHere} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} highlight={coach?.target === 'walk-ovens' ? 'ovens' : null}
-          // the tied stations' bundle, centred above the row; hidden while Nonna's coach is up
-          bundle={showBundlePill(bundle, !!coach) ? bundleBtn : null} onBundle={bundleBtn ? () => buyBundle(bundleBtn.steps, buy) : undefined} />
+          // the tied stations merge into one "Buy both" card in the row; kept apart while Nonna's coach is up
+          bundle={showBundlePill(bundle, !!coach) ? bundle : null} onBundle={bundle ? () => buyBundle(bundle.steps, buy) : undefined} />
         {/* D378: the tutorial scrim carries on over the sidewalk row (same 60% tone as the scene's), touches pass through */}
         {coach && id === 'downtown' && !drawerOpen && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') && (
           <View pointerEvents="none" testID="coach-row-scrim" style={[styles.rowScrim, { bottom: rowBottom - 6, height: (idleShopHere ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + 12 }]} />

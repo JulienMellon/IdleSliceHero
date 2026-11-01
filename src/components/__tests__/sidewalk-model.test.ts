@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 import { money } from '../../engine/format';
 import * as G from '../../engine/game';
-import { BUNDLE_PILL, buildChipHint, buildChipSub, bundleButton, bundlePillBottom, buttonTone, buyBundle, goalHidesOwnHire, hireOnSidewalk, needLine, needText, showBundlePill, stationModels, stationViews } from '../sidewalk-model';
+import { buildChipHint, buildChipSub, bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, type MergedSlot, mergeGroups, needLine, needText, showBundlePill, sidewalkSlots, stationModels, stationTitle, stationViews } from '../sidewalk-model';
 import { BUTTON_H, SIDEWALK_ROW, TAP } from '../tap-targets';
 
 const shopState = (patch: Partial<G.Shop>, cash = 0): G.GameState => {
@@ -41,11 +41,12 @@ describe('EXPAND at the level cap (B4)', () => {
       const v = view(s, k);
       expect(v.expand).toBe(true);
       expect(v.what).toBe('expand');
-      expect(v.name).toBe('EXPAND');
-      expect(v.label).toBe(money(expandCost(s)));
+      expect(v.name).toBe(k.toUpperCase()); // D407: the station's name stays
+      expect(stationTitle(v)).toBe(`${k.toUpperCase()} MAX`);
+      expect(v.label).toBe(`Expand ${money(expandCost(s))}`);
       expect(v.cost).toBe(expandCost(s));
       expect(v.lock).toBeNull();
-      expect(v.tone).toBe('normal');
+      expect(v.tone).toBe('expand'); // amber, so it never reads as a station buy
       expect(v.affordable).toBe(true);
     }
   });
@@ -54,6 +55,7 @@ describe('EXPAND at the level cap (B4)', () => {
     expect(v.expand).toBe(false);
     expect(v.what).toBe('drivers');
     expect(v.name).toBe('DRIVERS');
+    expect(stationTitle(v)).toBe('DRIVERS');
   });
   test('affordability and "need $X" follow Expand\'s cost', () => {
     const s = capped(0);
@@ -160,13 +162,16 @@ describe('the tied-station bundle as a button (D304)', () => {
     const { hint } = tied(0);
     expect(hint).not.toBeNull();
     const poor = bundleButton(hint!, 0);
-    expect(poor.label).toMatch(/^Buy (both|all \d) · \$/);
+    expect(poor.label).toMatch(/^Buy (both|all \d) \$/);
     expect(poor.label).toContain(money(hint!.cost));
     expect(poor.enabled).toBe(false);
     expect(poor.sub).toContain('need ');
     const rich = bundleButton(hint!, hint!.cost);
     expect(rich.enabled).toBe(true);
-    expect(rich.sub).toContain(hint!.label);
+    // D412: the payoff, never "one alone adds $0/s"
+    expect(rich.sub).toBe(`Tied: buy both · ${money(hint!.cost)} · +${money(hint!.gain)}/s`);
+    expect(poor.sub).toContain(`+${money(hint!.gain)}/s`);
+    expect(`${rich.sub} ${poor.sub}`).not.toContain('$0/s');
   });
   test('buyBundle runs every step through the buy path and stops at the first refusal', () => {
     const bought: G.Upgrade[] = [];
@@ -228,20 +233,144 @@ describe('who is offered the next hire (B1)', () => {
   });
 });
 
-describe('"Buy both" on the sidewalk', () => {
-  test('the pill is at least 44 pt tall, sits above the row and its badges, and never over the buttons', () => {
-    expect(BUNDLE_PILL.height).toBeGreaterThanOrEqual(TAP.min);
-    expect(BUNDLE_PILL.height).toBe(BUTTON_H);
-    expect(bundlePillBottom(20, false)).toBe(20 + SIDEWALK_ROW.cardHeight + BUNDLE_PILL.gapAboveRow);
-    expect(bundlePillBottom(20, true)).toBe(20 + SIDEWALK_ROW.idleStackHeight + BUNDLE_PILL.gapAboveRow);
-    expect(BUNDLE_PILL.gapAboveRow).toBeGreaterThanOrEqual(9); // the level badges stand 9 pt over the cards
+describe('capExpandCost: the one rule for "locked by the level cap alone" (D413)', () => {
+  const capped = shopState({ prep: 25, ovens: 10, counter: 10, drivers: 25, footprint: 0 }, 0);
+  test('a station at the cap with a next footprint offers Expand\'s price; below the cap or on a maxed shop it does not', () => {
+    const cost = G.upgradeCostOf(capped, 'downtown', 'expand');
+    expect(capExpandCost(capped, 'downtown', 'prep')).toBe(cost);
+    expect(capExpandCost(capped, 'downtown', 'drivers')).toBe(cost);
+    expect(capExpandCost(capped, 'downtown', 'ovens')).toBeNull();
+    expect(capExpandCost(capped, 'downtown', 'grade')).toBeNull();
+    expect(capExpandCost(capped, 'downtown', 'expand')).toBeNull();
+    const top = shopState({ footprint: 4, prep: 125, drivers: 125 }, 0);
+    expect(capExpandCost(top, 'downtown', 'prep')).toBeNull();
+    expect(capExpandCost(top, 'downtown', 'drivers')).toBeNull();
   });
-  test('it shows only when a bundle exists and the tutorial coach is down', () => {
-    const s = shopState({ prep: 3, ovens: 3, counter: 3, drivers: 3 }, 0);
-    const hint = G.bundleHint(s, 'downtown');
-    expect(hint).not.toBeNull();
-    expect(showBundlePill(hint, false)).toBe(true);
-    expect(showBundlePill(hint, true)).toBe(false);
+  test('the sidewalk model agrees with it', () => {
+    expect(view(capped, 'prep').expand).toBe(true);
+    expect(view(capped, 'ovens').expand).toBe(false);
+  });
+});
+
+// Levels found by search: prep 6 / ovens 8 / counter 5 tie prep+ovens; 10 / 14 / 8 tie prep+counter (not adjacent); 6 / 10 / 8 tie ovens+counter
+const TIES = {
+  prepOvens: { prep: 6, ovens: 8, counter: 5, drivers: 25 },
+  prepCounter: { prep: 10, ovens: 14, counter: 8, drivers: 25 },
+  twoCapped: { prep: 6, ovens: 8, counter: 25, drivers: 25 },
+};
+const slotsOf = (patch: Partial<G.Shop>, cash: number) => {
+  const s = shopState(patch, cash);
+  return { s, slots: sidewalkSlots(s, 'downtown', G.bundleHint(s, 'downtown')) };
+};
+const merged = (slots: ReturnType<typeof sidewalkSlots>) => slots.filter((x): x is MergedSlot => x.kind !== 'station');
+
+describe('tied stations merge into one card in their slots (D405)', () => {
+  test('adjacent tied stations: one wider card, the others unchanged, the floating pill is gone', () => {
+    const { s, slots } = slotsOf(TIES.prepOvens, 0);
+    expect(stationViews(s, 'downtown').filter((v) => v.tied).map((v) => v.key)).toEqual(['prep', 'ovens']);
+    const m = merged(slots);
+    expect(m).toHaveLength(1);
+    expect(m[0].kind).toBe('bundle');
+    expect(m[0].keys).toEqual(['prep', 'ovens']);
+    expect(m[0].span).toBe(2);
+    expect(m[0].title).toBe('PREP + OVENS');
+    const hint = G.bundleHint(s, 'downtown')!;
+    expect(m[0].label).toBe(`Buy both ${money(hint.cost)}`);
+    expect(m[0].foot).toContain(`+${money(hint.gain)}/s`);
+    expect(m[0].steps).toEqual(hint.steps);
+    // the row still has four slots' width: the merged card's 2 + counter + drivers
+    expect(slots.map((x) => x.kind)).toEqual(['bundle', 'station', 'station']); // counter, and drivers (capped: its own amber card)
+    expect(slots.reduce((t, x) => t + x.span, 0)).toBe(4);
+  });
+  test('non-adjacent tied stations: the card sits in the first tied slot, the other slot collapses into it', () => {
+    const { s, slots } = slotsOf(TIES.prepCounter, 0);
+    expect(stationViews(s, 'downtown').filter((v) => v.tied).map((v) => v.key)).toEqual(['prep', 'counter']);
+    expect(slots.map((x) => (x.kind === 'station' ? x.key : x.keys.join('+')))).toEqual(['prep+counter', 'ovens', 'drivers']);
+    expect(slots.reduce((t, x) => t + x.span, 0)).toBe(4);
+  });
+  test('the card shows "need $X" while short (not at $0), is dashed while saving and solid when affordable', () => {
+    const poor = merged(slotsOf(TIES.prepOvens, 0).slots)[0];
+    expect(poor.enabled).toBe(false);
+    expect(poor.frame).toBe('waiting');
+    expect(poor.foot).not.toContain('need');
+    const some = slotsOf(TIES.prepOvens, 1);
+    const short = merged(some.slots)[0];
+    expect(short.foot).toContain('need ');
+    const rich = merged(slotsOf(TIES.prepOvens, 1e9).slots)[0];
+    expect(rich.enabled).toBe(true);
+    expect(rich.frame).toBe('hot');
+    expect(rich.foot).not.toContain('need');
+  });
+  test('without a bundle (coach up, or none) the stations stay apart', () => {
+    const s = shopState(TIES.prepOvens, 0);
+    expect(sidewalkSlots(s, 'downtown', null).every((x) => x.kind === 'station')).toBe(true);
+    expect(showBundlePill(G.bundleHint(s, 'downtown'), true)).toBe(false);
+    expect(showBundlePill(G.bundleHint(s, 'downtown'), false)).toBe(true);
     expect(showBundlePill(null, false)).toBe(false);
+  });
+  test('one tied station is not a bundle', () => {
+    const s = shopState({ prep: 3, ovens: 3, counter: 3, drivers: 3 }, 0);
+    expect(stationViews(s, 'downtown').filter((v) => v.tied)).toHaveLength(1);
+    expect(sidewalkSlots(s, 'downtown', G.bundleHint(s, 'downtown')).every((x) => x.kind === 'station')).toBe(true);
+  });
+  test('the merged card keeps the row\'s sizes: a 44 pt button in the same card height', () => {
+    expect(BUTTON_H).toBeGreaterThanOrEqual(TAP.min);
+    expect(SIDEWALK_ROW.cardHeight).toBeGreaterThanOrEqual(TAP.min);
+  });
+});
+
+describe('EXPAND merges into one shop-wide card (D407)', () => {
+  test('two or more capped stations: one wide card "EXPAND to <footprint>" with the price and the cap step', () => {
+    const { s, slots } = slotsOf({ prep: 25, ovens: 25, counter: 25, drivers: 1, footprint: 0 }, 1e9);
+    const m = merged(slots);
+    expect(m).toHaveLength(1);
+    expect(m[0].kind).toBe('expand');
+    expect(m[0].keys).toEqual(['prep', 'ovens', 'counter']);
+    expect(m[0].span).toBe(3);
+    expect(m[0].title).toBe('EXPAND to Corner shop');
+    expect(m[0].label).toBe(money(G.upgradeCostOf(s, 'downtown', 'expand')!));
+    expect(m[0].foot).toBe('Lv cap 25 → 50');
+    expect(m[0].steps).toEqual(['expand']);
+    expect(m[0].enabled).toBe(true);
+    expect(slots.map((x) => x.kind)).toEqual(['expand', 'station']);
+  });
+  test('it is not enabled until the player can pay', () => {
+    expect(merged(slotsOf({ prep: 25, ovens: 25, counter: 25, drivers: 1, footprint: 0 }, 0).slots)[0].enabled).toBe(false);
+  });
+  test('one capped station keeps its own card: its name, "MAX", and the amber Expand button', () => {
+    const { slots } = slotsOf({ prep: 25, ovens: 10, counter: 10, drivers: 10, footprint: 0 }, 1e9);
+    expect(merged(slots)).toHaveLength(0);
+    const prep = slots.find((x) => x.kind === 'station' && x.key === 'prep');
+    expect(prep?.kind === 'station' && prep.view.tone).toBe('expand');
+    expect(prep?.kind === 'station' && stationTitle(prep.view)).toBe('PREP MAX');
+    expect(prep?.kind === 'station' && prep.view.label).toMatch(/^Expand \$/);
+    expect(prep?.kind === 'station' && prep.view.what).toBe('expand');
+  });
+  test('both merges can stand in one row: the bundle in the first slots, the capped stations in theirs', () => {
+    const { slots } = slotsOf(TIES.twoCapped, 1e9);
+    expect(slots.map((x) => x.kind)).toEqual(['bundle', 'expand']);
+    expect(merged(slots).map((m) => m.keys)).toEqual([['prep', 'ovens'], ['counter', 'drivers']]);
+  });
+});
+
+describe('merge priority: Expand first (D405 meets D407)', () => {
+  const v = (key: StationKeyT, expand: boolean, tied: boolean) => ({ key, expand, tied });
+  type StationKeyT = 'prep' | 'ovens' | 'counter' | 'drivers';
+  test('a tied station that is capped holds the bundle back; the Expand card takes it first', () => {
+    const g = mergeGroups([v('prep', true, true), v('ovens', true, true), v('counter', false, false), v('drivers', false, false)], true);
+    expect(g.expand).toEqual(['prep', 'ovens']);
+    expect(g.bundle).toBeNull();
+    const one = mergeGroups([v('prep', true, true), v('ovens', false, true), v('counter', false, false), v('drivers', false, false)], true);
+    expect(one.expand).toBeNull(); // a single capped station keeps its own amber card
+    expect(one.bundle).toBeNull();
+  });
+  test('tied stations that are not capped bundle as usual, beside a capped station\'s Expand', () => {
+    const g = mergeGroups([v('prep', false, true), v('ovens', false, true), v('counter', true, false), v('drivers', true, false)], true);
+    expect(g.bundle).toEqual(['prep', 'ovens']);
+    expect(g.expand).toEqual(['counter', 'drivers']);
+    expect(g.expand!.some((k) => g.bundle!.includes(k))).toBe(false);
+  });
+  test('no bundle, no merge', () => {
+    expect(mergeGroups([v('prep', false, true), v('ovens', false, true), v('counter', false, false), v('drivers', false, false)], false).bundle).toBeNull();
   });
 });

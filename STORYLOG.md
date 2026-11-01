@@ -3,7 +3,7 @@
 The **storycritic** (`.claude/agents/storycritic.md`) reviews the storyline, the cut-scenes and every line the game says to the player: hooks, pacing, character voice, comedy and how clearly the game tells the player what happened and what to do next. Julien's direction: the storyline is one of the game's greatest retention tools, and every cut-scene should leave the player wanting the next one.
 
 - Added after v3.8 at Julien's request. It runs at **low effort** at the end of the build loop. Until Julien says otherwise it is advisory: its verdict doesn't gate the loop.
-- **Next IDs:** S9.
+- **Next IDs:** S21.
 
 ## Current state — v4.3, round 1 (low effort): ❌ NOT SATISFIED (2 [major], 6 [minor]; advisory)
 
@@ -25,3 +25,6 @@ The jokes and payoffs are strong. The biggest risk: waterfront-4 closes its loop
 
 ## v5.4 — rewards text (low effort, 2026-10-30): SATISFIED (advisory)
 S9 day-30 visitor lines (VISITOR_LINES: Nonna "Thirty days. You eat, you come back. Good, eh?", Big Sal "Thirty days, no sick days. Union'd be proud, kid.", Genevieve "Thirty days, darling. Do try to keep up."); S10 clock reason "Your phone's clock looks off. Rewards resume once it catches up."; S11 streak-save copy names the reset; S12 "Day 30 · Nonna Rosa visits"; S13 "30 min" tiles; S14 "7 days" spelled out; S15 one duration style; S16 "Collection: empty. Open a weekly chest or reach day 28."; S17 keep the unlock text; S18 "Show up on 5 different days". All folded into v5.5 except S18 (pending). Next ID S19.
+
+## v5.10 — playthrough text fixes (low effort, 2026-11-01): SATISFIED (advisory)
+Protects the downtown-1 tutorial lines ("Prep, oven, counter. Tap, tap, tap!" / "Marco, Lucia, Benny: good kids."), the en-dash scores and "A hundred and fifty deliveries.". S19 [minor] uptown-1 P2: the bite caption came before "Let us see" → line now "A grand opening. How quaint. Well. Let us taste." S20 [minor] industrial-4 P4: split into "Kid, you brought my family back. Industrial’s yours." / "Heck. I might even like Thursdays now." Both folded into v5.11. Not reviewed this pass: the UI strings (rush pill, EXPAND, Dale's perk text). Owner: uptown-4's drone line and the Boston ending wait for the economy rebalance. Next ID S21.

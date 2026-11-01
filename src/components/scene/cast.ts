@@ -1,12 +1,12 @@
 // The cast builder: who is in the shop this frame, where they stand and what they're doing.
 // Pure (no React), so crowd layouts can be simulated frame by frame in node tests; Storefront only
 // turns the records into <Person/> elements.
-import { SEAT, type Layout } from './layout';
+import { PATIO_SEAT, SEAT, type Layout } from './layout';
 import { GUEST_SHIRTS, HAIR_COLORS, hash32, type Act, type Mood, type PersonProps } from './looks';
 import type { SeatPalette } from './palette';
 import { P, SCENE_W } from './projection';
 import { STEP_FRAMES } from './quantise';
-import { driverPoseAt, guestPoseAt, WALKIN_TABLES, type CrewState } from './crew';
+import { driverPoseAt, guestLeg, guestPoseAt, guestSchedule, type CrewState } from './crew';
 
 const BAKER_SHIRTS = ['#B23A48', '#7E3A8E', '#2E6E8E'];
 const BAKER_DOTS = ['#D9443A', '#3FAE5A', '#2D9CDB'];
@@ -21,7 +21,7 @@ export interface CastMember {
   key: string;
   /** depth used for painter's sorting (larger = further back) */
   sortY: number;
-  role: 'driver' | 'walkin' | 'diner' | 'companion' | 'cook' | 'baker' | 'staff';
+  role: 'driver' | 'walkin' | 'diner' | 'companion' | 'cook' | 'baker' | 'staff' | 'queue';
   props: PersonProps;
   /** Departures this figure carries or is being handed (their pops ride above them). */
   deps?: readonly number[];
@@ -41,6 +41,21 @@ export interface CastInput {
   pal: SeatPalette;
   /** Who is waiting, walking out or eating, folded from the engine's departures (crew.ts `stepCrew`). */
   crew: CrewState;
+  /** Who is waiting outside (`Game.queueSizes`): hungry diners left of the door, idle drivers right of it. Absent: nobody. */
+  queue?: { diners: number; drivers: number };
+}
+
+/** What the sidewalk shows this frame. An idle shop (the hire stack stands on the sidewalk) keeps it clear. */
+export function sidewalkOf(lay: Layout, crew: Pick<CrewState, 'idle' | 'patio'>, queue?: { diners: number; drivers: number }) {
+  if (crew.idle) return { patio: 0, diners: 0, drivers: 0, waiting: 0 };
+  const drivers = Math.max(0, Math.floor(queue?.drivers ?? 0));
+  return {
+    patio: Math.min(lay.patio.length, crew.patio),
+    diners: Math.max(0, Math.min(lay.queue.length, Math.floor(queue?.diners ?? 0))),
+    drivers: Math.min(lay.driverQueue.length, drivers),
+    /** The "×N waiting" tag: all the idle drivers, once there are more than the spots can show. */
+    waiting: drivers > lay.driverQueue.length ? drivers : 0,
+  };
 }
 
 /** Walk-cycle poses per second: STEP_FRAMES (8) per second is one stride cycle a second. */
@@ -60,7 +75,7 @@ export const edgeFade = (sx: number) => Math.max(0, Math.min(1, (SCENE_W + EDGE_
  *   - a 7.5 Hz pose clock for arm work and eating, so a worker's limbs keep identical props for two
  *     frames and their memo holds.
  */
-export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew }: CastInput): { cast: CastMember[] } {
+export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue }: CastInput): { cast: CastMember[] } {
   const t = clock * pace;
   const poseClock = Math.floor(clock * 7.5) / 7.5;
   const pt = poseClock * pace;
@@ -92,11 +107,16 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
     }
   }
 
-  // walk-ins sit in the right-hand chair of the first WALKIN_TABLES tables; those tables' regulars take the left
-  const guestCount = crew.guests.length ? Math.min(WALKIN_TABLES, lay.tables.length) : 0;
+  // walk-ins sit in the right-hand chair of any table, indoors or on the patio, in turn (crew.ts); that table's regular
+  // keeps the left chair, and a companion takes the right one only while no walk-in has the table
+  const claimed = new Set<number>();
+  for (const slot of crew.guests) {
+    const L = guestLeg(lay, SCENE_W, slot.visit, crew.idle, crew.patio);
+    if (clock < guestSchedule(slot, L).done) claimed.add(L.table);
+  }
   const fixedFill = Math.min(1, 0.4 + shop.tables / 40);
   for (const slot of crew.guests) {
-    const g = guestPoseAt(lay, slot, clock, SCENE_W, crew.idle);
+    const g = guestPoseAt(lay, slot, clock, SCENE_W, crew.idle, crew.patio);
     if (!g) continue;
     const i = slot.visit;
     // a different customer every visit, and different crowds in every shop
@@ -116,33 +136,60 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
   }
 
   // seated regulars (someone is always eating) and, in a busy room, a companion opposite
-  const regulars = running ? Math.max(1, Math.round(lay.tables.length * fixedFill)) : 1;
-  lay.tables.forEach((tb, i) => {
+  const side = sidewalkOf(lay, crew, queue);
+  const seats = [...lay.tables.map((t) => ({ ...t, seat: SEAT, outside: false })), ...lay.patio.slice(0, side.patio).map((t) => ({ ...t, seat: PATIO_SEAT, outside: true }))];
+  const regulars = running ? Math.max(1, Math.round(seats.length * fixedFill)) : 1;
+  seats.forEach((tb, i) => {
     if (i >= regulars) return;
     const dSeed = shopSeed + i * 3 + 7 + Math.floor(t / 14 + i * 0.37) * 29;
     const bite = Math.abs(Math.sin(poseClock * 2 + i));
     const act: Act = SEATED_ACTS[(hash32(dSeed) >>> 3) % 4];
-    // tables a walk-in heads for keep their right-hand chair free (see guestPose); others alternate sides
-    const side = i < guestCount ? -SEAT : i % 2 ? SEAT : -SEAT;
+    const sx = -tb.seat;
     cast.push({
       key: `s${i}`,
       sortY: tb.y,
       role: 'diner',
-      props: { x: tb.x + side, y: tb.y, kind: 'sit', flip: side > 0, seed: dSeed, act, shirt: GUEST_SHIRTS[pal.shirt(i)], hair: HAIR_COLORS[pal.hair(i)], blink: blinkAt(dSeed), arm: bite * 2, mood: act === 'slice' || bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile' },
+      props: { x: tb.x + sx, y: tb.y, kind: 'sit', flip: false, seed: dSeed, act, shirt: GUEST_SHIRTS[pal.shirt(i)], hair: HAIR_COLORS[pal.hair(i)], blink: blinkAt(dSeed), arm: bite * 2, mood: act === 'slice' || bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile' },
     });
-    const cx = tb.x - side;
-    const crowded = lay.tables.some((o) => o !== tb && Math.abs(o.y - tb.y) < 32 && (Math.abs(o.x - SEAT - cx) < 18 || Math.abs(o.x + SEAT - cx) < 18));
-    if (running && i >= guestCount && !crowded && (shop.tables >= 13 ? i % 2 === 0 : fixedFill >= 0.6 && hash32(dSeed + 1) % 3 !== 0)) {
+    const cx = tb.x - sx;
+    const crowded = !tb.outside && lay.tables.some((o) => o !== tb && Math.abs(o.y - tb.y) < 32 && (Math.abs(o.x - SEAT - cx) < 18 || Math.abs(o.x + SEAT - cx) < 18));
+    if (running && !tb.outside && !claimed.has(i) && !crowded && (shop.tables >= 13 ? i % 2 === 0 : fixedFill >= 0.6 && hash32(dSeed + 1) % 3 !== 0)) {
       const cSeed = dSeed + 501;
       const cb = Math.abs(Math.sin(poseClock * 2 + i + 1.7));
       cast.push({
         key: `s2${i}`,
         sortY: tb.y - 0.1,
         role: 'companion',
-        props: { x: cx, y: tb.y, kind: 'sit', flip: cx > tb.x, seed: cSeed, act: COMPANION_ACTS[(hash32(cSeed) >>> 3) % 4], shirt: GUEST_SHIRTS[pal.companionShirt(i)], hair: HAIR_COLORS[pal.companionHair(i)], blink: blinkAt(cSeed), arm: cb * 2, mood: cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile' },
+        props: { x: cx, y: tb.y, kind: 'sit', flip: true, seed: cSeed, act: COMPANION_ACTS[(hash32(cSeed) >>> 3) % 4], shirt: GUEST_SHIRTS[pal.companionShirt(i)], hair: HAIR_COLORS[pal.companionHair(i)], blink: blinkAt(cSeed), arm: cb * 2, mood: cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile' },
       });
     }
   });
+
+  // the sidewalk queues: hungry diners left of the door (facing it), idle drivers right of it (facing left, in uniform).
+  // They stand at their spots with a one-pixel bob on the 7.5 Hz pose clock
+  const bobAt = (n: number) => (Math.sin(poseClock * 2.4 + n * 1.7) > 0.35 ? 0.8 : 0);
+  for (let q = 0; q < side.diners; q++) {
+    const [x, y0] = lay.queue[q];
+    const y = y0 + bobAt(q);
+    const sd = shopSeed + 61 + q * 7;
+    cast.push({
+      key: `q${q}`,
+      sortY: y,
+      role: 'queue',
+      props: { x, y, kind: 'guest', seed: sd, shirt: GUEST_SHIRTS[pal.walkShirt(q, 7)], hair: HAIR_COLORS[pal.walkHair(q, 7)], flip: false, blink: blinkAt(sd), mood: 'smile', o: edgeFade(P(x, y)[0]) },
+    });
+  }
+  for (let q = 0; q < side.drivers; q++) {
+    const [x, y0] = lay.driverQueue[q];
+    const y = y0 + bobAt(q + 5);
+    const sd = shopSeed + 83 + q * 9;
+    cast.push({
+      key: `w${q}`,
+      sortY: y,
+      role: 'queue',
+      props: { x, y, kind: 'driver', seed: sd, flip: true, blink: blinkAt(sd), mood: 'smile', o: edgeFade(P(x, y)[0]) },
+    });
+  }
 
   // kitchen crew
   const cookY = lay.cooks.length === 1 ? 74 : 92;
