@@ -490,7 +490,7 @@ with sync_playwright() as pw:
     try:
         page = seeded_page(browser, hood_save("downtown", cash=5e4, prep=24, ovens=30, counter=30, drivers=20, tables=6, footprint=1, sold=6000)); settle(page)
         page.locator('[data-testid="walk-prep"], [data-testid="mini-prep"]').first.click()
-        shot(page, "42-milestone-moment", 0.35)
+        shot(page, "42-milestone-moment", 0.15)
     except Exception as e:
         report["errors"].append(f"milestone shot failed: {e}")
     for name, save in [
