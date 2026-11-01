@@ -1,6 +1,6 @@
 # Handoff — Slice Empire (IdleSliceHero), after v5.9
 
-For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` (current state only; don't open `docs/logs/` unless you need one note's history), `docs/PLAN-v5.4-rewards.md` (daily/weekly tasks + gift calendar; defaults D1–D10 confirmed by Julien), `docs/PLAN-v4.7-playtest2.md`, and `STORYLOG.md` / `AUDIOLOG.md`. The project's `claude/HANDOFF.md` mirrors this file.
+For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` (current state only; don't open `docs/logs/` unless you need one note's history), `docs/PLAN-v5.4-rewards.md` (daily/weekly tasks + gift calendar; defaults D1–D10 confirmed by Julien), `docs/PLAN-v4.7-playtest2.md`, and `STORYLOG.md` / `AUDIOLOG.md`, and **`docs/REVIEW-v5.9-playthrough.md`** (Claude's full playthrough review of 2026-11-01: pacing, bugs B1–B5, story text fixes, per-neighbourhood layers, decisions D1–D6 waiting on Julien). The project's `claude/HANDOFF.md` mirrors this file.
 
 ## Status: build loop STOPPED — both reviewers passed on v5.9 (2026-10-31)
 - Session of 2026-10-31 shipped **v5.7 → v5.9** on `main`. **v5.9 passed both reviewers:** critic round 57 SATISFIED (1 minor, D404), codecritic round 23 APPROVED (range 0d6d3a4..1430f5f; mediums C102, A22/M50, A17/M32). Don't restart the loop until Julien asks.
@@ -54,6 +54,7 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
 - **UI:** sidewalk cards show "need $X" under the price only when cash > 0; two-tone goal label; "Buy both" bundle button; locked Suburbs padlock + countdown on the City screen; University chip "uses bid cash" while the Pier 9 bid is open.
 
 ## Agreed next work (pick up only when Julien says)
+0. **Playthrough review (2026-11-01), not yet acted on.** Read `docs/REVIEW-v5.9-playthrough.md`. Nothing in it has been built. Julien still has to answer D1–D6 (target length, visual ladder, walk-ins as demand, fleet zones, visible rush, first neighbourhood layer). Suggested order: a polish build with bugs B1–B5 and the story text table, then economy changes, then one layer per build. Re-verify the "inferred" items in its confidence section first. Tools are in `scripts/review/`.
 1. Julien listens to the lofi score on a device (5 checks in `AUDIOLOG.md`); fold his notes into an audio round.
 2. A small polish build: D404, C102 (+T78), M59, C103 (+T79). Codecritic skips it under the rule.
 3. Ad draft 2 after Julien's notes: re-record with the lofi score; TikTok-safe caption position (y ≈ 1350).

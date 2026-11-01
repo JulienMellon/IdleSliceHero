@@ -53,3 +53,6 @@ __pycache__/
 
 # per-round review sets built by scripts/review_shots.py
 screenshots/*/review/
+saves/
+vis/
+seeded/
