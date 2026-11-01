@@ -63,10 +63,10 @@ describe('neighbourhood perks (v3.7)', () => {
   it('each perk is defined for its own neighbourhood only', () => {
     expect(Object.keys(PERKS).sort()).toEqual(['industrial', 'suburbs', 'university', 'uptown', 'waterfront']);
   });
-  it("Dale: Suburbs walk-ins pay 85% instead of 70%", () => {
+  it("Dale: Suburbs walk-ins pay 15% extra", () => {
     const a = G.shopEarnings(managed('suburbs', false), 'suburbs');
     const b = G.shopEarnings(managed('suburbs', true), 'suburbs');
-    expect(b / a).toBeCloseTo(0.85 / 0.7, 1); // nearly all sales are walk-ins with one driver
+    expect(b / a).toBeCloseTo(1.15, 1); // 40 tables seat nearly every pie
   });
   it('Marisol: Waterfront prices +10%', () => {
     const a = G.shopEarnings(managed('waterfront', false), 'waterfront');
@@ -174,12 +174,12 @@ describe('perk scope (T31)', () => {
     expect(G.lineTick(managed("industrial", true), 10).cash).toBe(G.lineTick(managed("industrial", false), 10).cash);
   });
   it("Dale's perk raises exactly the walk-in share", () => {
-    // one driver, plenty of seats: nearly every sale is a walk-in, so revenue = price × (delivered + walkIns × share)
+    // plenty of seats: nearly every sale is a walk-in, so revenue = price × (delivered + walkIns × share)
     const s = managed('suburbs', false);
     const sh = s.shops.suburbs;
     const sold = G.shopRate(sh, s.vehicle);
-    const delivered = Math.min(sold, G.deliveryRate(sh, s.vehicle));
+    const walkIns = Math.min(sold, G.walkInRate(sh));
     const price = G.def('suburbs').orderValue * G.decorMult(sh, 'suburbs') * G.gmMult(sh);
-    expect(G.shopEarnings(managed('suburbs', true), 'suburbs')).toBeCloseTo(price * (delivered + (sold - delivered) * 0.85), 6);
+    expect(G.shopEarnings(managed('suburbs', true), 'suburbs')).toBeCloseTo(price * (sold - walkIns + walkIns * 1.15), 6);
   });
 });

@@ -22,10 +22,69 @@ describe('formulas', () => {
     expect(G.shopRate(shop, 0)).toBeCloseTo(expected);
     expect(G.bottleneck(shop, 0)).toBe('customers'); // one bike driver + one table at the start
   });
-  test('walk-ins pay less than deliveries', () => {
+  test('walk-ins pay full price by default, so a pie is worth the same either way', () => {
+    expect(TUNING.walkInShare).toBe(1);
     const shop = { ...G.newShop(true), drivers: 1, tables: 1 };
-    expect(G.valuePerPizza('downtown', shop, 0)).toBeLessThan(3);
-    expect(G.valuePerPizza('downtown', shop, 0)).toBeGreaterThan(3 * TUNING.walkInShare);
+    expect(G.valuePerPizza('downtown', shop, 0)).toBeCloseTo(G.def('downtown').orderValue * G.decorMult(shop, 'downtown') * G.gmMult(shop), 9);
+  });
+  describe('walk-ins are seated first (v5.10)', () => {
+    // a fast kitchen with 20 seats and 3 drivers: the kitchen outruns the tables, so drivers get the rest
+    const busy = { ...G.newShop(true), prep: 60, ovens: 60, counter: 60, footprint: 4, grade: 4, drivers: 3, tables: 5 };
+    test('walk-ins take pies up to the seating rate and the drivers deliver the rest', () => {
+      const sold = G.shopRate(busy, 0);
+      expect(sold).toBeGreaterThan(G.walkInRate(busy)); // the kitchen is the faster side
+      expect(G.walkInFraction(busy, 0)).toBeCloseTo(G.walkInRate(busy) / sold, 9);
+      expect(G.walkInFraction(busy, 0)).toBeLessThan(1);
+      // the drivers only get what the seats can't take
+      expect(sold - G.walkInRate(busy)).toBeLessThanOrEqual(G.deliveryRate(busy, 0) + 1e-9);
+    });
+    test('when the kitchen is slower than the seating, every pie is a walk-in', () => {
+      const slow = { ...G.newShop(true), tables: 60, drivers: 3 };
+      expect(G.shopRate(slow, 0)).toBeLessThan(G.walkInRate(slow));
+      expect(G.walkInFraction(slow, 0)).toBe(1);
+    });
+    test('revenue splits walk-ins first: price × (walk-ins + delivered)', () => {
+      const sold = G.shopRate(busy, 0);
+      const walk = Math.min(sold, G.walkInRate(busy));
+      const price = G.def('downtown').orderValue * G.decorMult(busy, 'downtown') * G.gmMult(busy);
+      expect(G.shopRevenue('downtown', busy, 0)).toBeCloseTo(price * sold, 9); // both at full price
+      expect(G.valuePerPizza('downtown', busy, 0) * sold).toBeCloseTo(G.shopRevenue('downtown', busy, 0), 9);
+      expect(walk).toBeCloseTo(G.walkInRate(busy), 9);
+    });
+    test('lineRates: the line pays exactly shopRevenue (price × shop rate)', () => {
+      for (const sh of [busy, { ...G.newShop(true), tables: 60, drivers: 3 }]) {
+        const r = G.lineRates('suburbs', sh, 0);
+        expect(r.price * r.shop).toBeCloseTo(G.shopRevenue('suburbs', sh, 0), 9);
+        expect(r.walkInFraction).toBe(G.walkInFraction(sh, 0));
+      }
+    });
+    test('Suburbs perk: walk-in pies pay x1.15, delivered pies stay at full price', () => {
+      const plain = { ...busy, perk: false };
+      const perked = { ...busy, perk: true };
+      const sold = G.shopRate(busy, 0);
+      const walk = G.walkInRate(busy);
+      const price = G.def('suburbs').orderValue * G.decorMult(busy, 'suburbs') * G.gmMult(busy);
+      expect(G.shopRevenue('suburbs', plain, 0)).toBeCloseTo(price * sold, 9);
+      expect(G.shopRevenue('suburbs', perked, 0)).toBeCloseTo(price * (sold - walk + walk * 1.15), 9);
+      // all walk-ins (slow kitchen): exactly x1.15
+      const slow = { ...G.newShop(true), tables: 60, drivers: 3 };
+      expect(G.shopRevenue('suburbs', { ...slow, perk: true }, 0) / G.shopRevenue('suburbs', { ...slow, perk: false }, 0)).toBeCloseTo(1.15, 9);
+    });
+    test('over a long run the line banks what shopRevenue promises, walk-ins first', () => {
+      let s = G.newGame(0);
+      s = { ...s, shops: { ...s.shops, downtown: { ...busy, built: true, managed: true, heads: G.allHeads(), line: s.shops.downtown.line } } };
+      for (let i = 0; i < 100; i++) s = G.lineTick(s, 0.2);
+      const c0 = s.cash;
+      const w0 = s.stats.walkins;
+      const d0 = s.stats.deliveries;
+      for (let i = 0; i < 3000; i++) s = G.lineTick(s, 0.2);
+      expect((s.cash - c0) / 600 / G.shopEarnings(s, 'downtown')).toBeGreaterThan(0.99);
+      expect((s.cash - c0) / 600 / G.shopEarnings(s, 'downtown')).toBeLessThan(1.01);
+      const walks = s.stats.walkins - w0;
+      const drives = s.stats.deliveries - d0;
+      expect(walks / (walks + drives)).toBeGreaterThan(G.walkInFraction(busy, 0) - 0.03);
+      expect(walks / (walks + drives)).toBeLessThan(G.walkInFraction(busy, 0) + 0.03);
+    });
   });
   test('seating never lowers income, even when the kitchen is the limit', () => {
     for (const prep of [1, 10, 40, 104]) {

@@ -4,6 +4,7 @@
 import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
+import { BUTTON_H, SIDEWALK_ROW } from './tap-targets';
 
 /**
  * The one rule for a purchase button's tone, shared by the sidewalk and the drawer (C60/G75): a locked or maxed
@@ -45,6 +46,8 @@ export interface StationModel {
   /** Why it can't be bought (ignoring cash), or null. */
   lock: string | null;
   label: string;
+  /** Stuck at the level cap while the next footprint exists: the button buys Expand instead (B4). */
+  expand: boolean;
   /** `nogain` when an unlocked upgrade adds nothing right now. */
   tone: 'normal' | 'nogain';
   /** Tied for the bottleneck and adds income: the station to buy. */
@@ -73,21 +76,28 @@ export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[
   const shop = s.shops[id];
   const rates: Record<G.Stage, number> = { prep: G.prepRate(shop), ovens: G.ovenRate(shop), counter: G.counterRate(shop), customers: G.demandRate(shop, s.vehicle) };
   const min = Math.min(...Object.values(rates));
+  // what can raise the level cap: the next footprint, when it can be bought at all
+  const expandCost = G.upgradeLock(s, id, 'expand') ? null : G.upgradeCostOf(s, id, 'expand');
   cacheVal = STATION_KEYS.map((k) => {
     const { what, name, stage } = STATION[k];
-    const cost = G.upgradeCostOf(s, id, what);
-    const lock = G.upgradeLock(s, id, what);
+    const stationLock = G.upgradeLock(s, id, what);
     const gain = G.upgradeGain(s, id, what);
     const useful = (gain ?? 0) > 1e-9;
+    // locked by the level cap alone, and Expand exists: the button becomes EXPAND with Expand's price, through the ordinary buy path.
+    // MAX is left for when nothing can raise the cap. Expand is worth buying here even though it adds $0/s by itself (as in the drawer).
+    const expand = stationLock !== null && expandCost !== null && (k === 'drivers' ? shop.drivers : shop[k]) >= G.levelCap(shop);
+    const cost = expand ? expandCost : G.upgradeCostOf(s, id, what);
+    const lock = expand ? null : stationLock;
     return {
       key: k,
-      what,
-      name,
+      what: expand ? 'expand' : what,
+      name: expand ? 'EXPAND' : name,
       level: k === 'drivers' ? `×${shop.drivers}` : `${shop[k]}`,
       cost,
       lock,
       label: lock ? 'MAX' : money(cost ?? 0),
-      tone: stationTone(lock, gain),
+      expand,
+      tone: stationTone(lock, expand ? 1 : gain),
       neck: useful && rates[stage] <= min * (1 + 1e-9),
     };
   });
@@ -142,6 +152,32 @@ export function buyBundle(steps: readonly G.Upgrade[], buy: (what: G.Upgrade) =>
   return steps.length > 0;
 }
 
+/** Where the sidewalk's "Buy both" pill sits: its foot is this far above the row's top (the level badges stand 9 pt over the cards). */
+export const BUNDLE_PILL = { height: BUTTON_H, gapAboveRow: 17, width: 232 } as const;
+
+/** The pill's `bottom` (pt, from the scene area's foot) given the row's `bottom`: above the row and its badges, never over a button. */
+export const bundlePillBottom = (rowBottom: number, stacked: boolean) => rowBottom + (stacked ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + BUNDLE_PILL.gapAboveRow;
+
+/** The pill shows when a bundle exists and the tutorial coach isn't up. */
+export const showBundlePill = (hint: G.BundleHint | null, coachUp: boolean) => hint !== null && !coachUp;
+
+// ---------- who is offered the next hire, and where ----------
+
+/**
+ * The sidewalk offers the next hire (each head in turn, then the General Manager) on every pizzeria without a GM,
+ * except Downtown, whose GM is Nonna via the story. It stays until the GM is hired: three heads do not end the offer (B1).
+ */
+export const hireOnSidewalk = (shop: Pick<G.Shop, 'managed'>, id: NeighborhoodId) => !shop.managed && id !== 'downtown';
+
+/**
+ * The goal bar skips this shop's own hire only while the sidewalk already offers a head (D341). The GM hire is offered in both
+ * places until it is bought (B1).
+ */
+export const goalHidesOwnHire = (shop: G.Shop, id: NeighborhoodId) => {
+  const hire = G.nextHire(shop);
+  return hireOnSidewalk(shop, id) && hire !== null && G.isHeadUpgrade(hire);
+};
+
 // ---------- the Pier 9 warning on the build chip ----------
 
 /** While the Pier 9 bid is on offer (and not yet won), building spends the cash saved for it: say so under the chip's price. */
@@ -149,3 +185,9 @@ export function buildChipHint(s: G.GameState): string | null {
   // reads as a cost, not a reward, and is short enough for the ~94 pt chip at 9 pt (D402)
   return G.pier9Available(s) ? 'uses bid cash' : null;
 }
+
+/**
+ * The build chip's second line. While the Pier 9 warning applies the price and the warning share one line, so the chip
+ * keeps two lines like its neighbours (D404): "$1.8M · uses bid cash"; otherwise "Build $1.8M".
+ */
+export const buildChipSub = (cost: number, warn: string | null) => (warn ? `${money(cost)} · ${warn}` : `Build ${money(cost)}`);

@@ -1,3 +1,4 @@
+/// <reference types="node" />
 // Review sim: the pacing-sim greedy player, plus (a) purchase cadence, (b) saves at key moments, (c) a check-in player.
 import { writeFileSync, mkdirSync } from 'fs';
 import { HOME_SCENES } from '../../src/content/scenes/home';

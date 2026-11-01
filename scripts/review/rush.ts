@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { readFileSync } from 'fs';
 import * as G from '../../src/engine/game';
 for (const name of ['at-suburbs-4', 'at-university-2', 'end']) {

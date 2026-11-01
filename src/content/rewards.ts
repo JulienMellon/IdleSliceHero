@@ -6,7 +6,7 @@ export type TaskKind = 'upgrades' | 'walkins' | 'deliveries' | 'baked' | 'earn' 
 export const TASK_KINDS: readonly TaskKind[] = ['upgrades', 'walkins', 'deliveries', 'baked', 'earn', 'offline', 'booster', 'hire', 'decor', 'dailyDone', 'days', 'build', 'ovens', 'fleet'];
 
 /** When a task may be generated. The engine maps each key to a check on the game state. */
-export type Eligibility = 'always' | 'walkins' | 'booster' | 'hire' | 'decor' | 'build' | 'fleet';
+export type Eligibility = 'always' | 'walkins' | 'deliveries' | 'booster' | 'hire' | 'decor' | 'build' | 'fleet';
 
 /** How a target is set: a fixed number, or a rate (pies or cash per second) × seconds, rounded to 2 significant figures. */
 export type TaskScale = { fixed: number } | { rate: 'walkin' | 'driver' | 'city' | 'income'; seconds: number };
@@ -74,7 +74,7 @@ export const WEEKLY_COSMETICS: readonly string[] = ['oven-woodfired', 'scooter-m
 export const DAILY_POOL: readonly PoolEntry[] = [
   { kind: 'upgrades', scale: { fixed: 10 }, eligible: 'always' },
   { kind: 'walkins', scale: { rate: 'walkin', seconds: 600 }, eligible: 'walkins' },
-  { kind: 'deliveries', scale: { rate: 'driver', seconds: 600 }, eligible: 'always' },
+  { kind: 'deliveries', scale: { rate: 'driver', seconds: 600 }, eligible: 'deliveries' },
   { kind: 'baked', scale: { rate: 'city', seconds: 600 }, eligible: 'always' },
   { kind: 'earn', scale: { rate: 'income', seconds: 1200 }, eligible: 'always' },
   { kind: 'offline', scale: { fixed: 1 }, eligible: 'always' },
@@ -92,7 +92,7 @@ export const WEEKLY_POOL: readonly PoolEntry[] = [
   { kind: 'earn', scale: { rate: 'income', seconds: 3 * 3600 }, eligible: 'always' },
   { kind: 'fleet', scale: { fixed: 1 }, eligible: 'fleet' },
   { kind: 'upgrades', scale: { fixed: 60 }, eligible: 'always' },
-  { kind: 'deliveries', scale: { rate: 'driver', seconds: 3600 }, eligible: 'always' },
+  { kind: 'deliveries', scale: { rate: 'driver', seconds: 3600 }, eligible: 'deliveries' },
 ];
 
 // ---------- Daily gift calendar ----------

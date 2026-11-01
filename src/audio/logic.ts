@@ -226,6 +226,36 @@ export function shouldReleaseWarmCollect(o: { warmed: boolean; firing: boolean; 
 }
 
 /**
+ * Plays in flight per cached rare player (C102). Two plays of the same key within its length (a task claim and a chest
+ * claim: `collect/v` twice; two quick Expands) share one player, so the first play's end must not release it from under
+ * the second: `acquire` when a play starts, `release` when it ends, and only the release that brings the count back to
+ * 0 returns true (the player may then be removed). A release with nothing acquired is ignored (false).
+ */
+export class RarePlays {
+  private counts = new Map<string, number>();
+  acquire(key: string): number {
+    const n = (this.counts.get(key) ?? 0) + 1;
+    this.counts.set(key, n);
+    return n;
+  }
+  /** True when this was the last outstanding play of `key`. */
+  release(key: string): boolean {
+    const n = this.counts.get(key) ?? 0;
+    if (n <= 0) return false;
+    if (n === 1) {
+      this.counts.delete(key);
+      return true;
+    }
+    this.counts.set(key, n - 1);
+    return false;
+  }
+  /** A play of `key` has started and not ended. */
+  active(key: string): boolean {
+    return (this.counts.get(key) ?? 0) > 0;
+  }
+}
+
+/**
  * How long a perk ducks the story cue it lands over: its own length, but it must be back up before the payoff crash,
  * so at most the time to the payoff less the ramp up (AU77). 0 when the payoff is too close to duck at all.
  */

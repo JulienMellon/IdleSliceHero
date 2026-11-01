@@ -24,12 +24,17 @@ export interface OfflineSummary {
   byShop: { name: string; earned: number; managed: boolean }[];
 }
 
+/** How many rush taps the store remembers. */
+export const RUSH_TAPS_KEPT = 8;
+
 interface Store {
   game: G.GameState;
   loaded: boolean;
   offline: OfflineSummary | null;
-  /** When the player last tapped the kitchen (ms): a scene never opens mid-tap. Not saved. */
+  /** When the player last made a successful manual station tap (ms): a scene never opens mid-tap. A refused tap or a rush doesn't count. Not saved. */
   lastKitchenTap: number;
+  /** Wall-clock ms of the last (up to RUSH_TAPS_KEPT) rush taps on a managed pizzeria, newest last. Replaced, never mutated. Not saved. */
+  rushTaps: number[];
   /** Play time (s) when the last story scene ended this session; null after a launch or return (v3.7 pacing). Not saved. */
   lastSceneEndPlay: number | null;
   /** Scene currently playing (or replaying from the Scrapbook). */
@@ -122,6 +127,7 @@ export const useGame = create<Store>((set, get) => {
     loaded: false,
     offline: null,
     lastKitchenTap: 0,
+    rushTaps: [],
     lastSceneEndPlay: null,
     playing: null,
     toast: null,
@@ -193,18 +199,24 @@ export const useGame = create<Store>((set, get) => {
 
     tapShop: () => {
       const g = get().game;
-      set({ game: G.tapShop(g, g.active), lastKitchenTap: Date.now() });
+      const next = G.tapShop(g, g.active);
+      const at = Date.now();
+      if (g.shops[g.active].managed) {
+        // a rush: remember when (for the HUD), but it isn't a manual station tap
+        set({ game: next, rushTaps: [...get().rushTaps, at].slice(-RUSH_TAPS_KEPT) });
+      } else if (next !== g) {
+        // an unmanaged shop tapped the next station that could start: that is a manual station tap
+        set({ game: next, lastKitchenTap: at });
+      }
     },
 
     tapStation: (st) => {
       const g = get().game;
       const r = G.tapStation(g, g.active, st);
-      const at = Date.now();
       if (r.ok) {
-        set({ game: tutorialAdvance(r.state), lastKitchenTap: at });
+        set({ game: tutorialAdvance(r.state), lastKitchenTap: Date.now() });
         return null;
       }
-      set({ lastKitchenTap: at });
       return r.reason;
     },
 

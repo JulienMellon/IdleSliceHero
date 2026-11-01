@@ -150,6 +150,8 @@ export function cityRates(s: GameState): { city: number; walkin: number; driver:
 const ELIGIBLE: Record<Eligibility, (s: GameState) => boolean> = {
   always: () => true,
   walkins: (s) => cityRates(s).walkin > 0,
+  // v5.10: walk-ins are seated first, so a shop whose kitchen is slower than its seats sends no drivers out
+  deliveries: (s) => cityRates(s).driver > 1e-9,
   booster: (s) => s.rewards.boosters.length > 0,
   hire: (s) => SHOP_IDS.some((id) => s.shops[id].built && nextHire(s.shops[id]) !== null),
   decor: (s) => SHOP_IDS.some((id) => s.shops[id].built && DECOR_KINDS.some((k) => s.shops[id].decor[k] < 3)),

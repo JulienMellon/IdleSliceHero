@@ -11,7 +11,7 @@ import type { Scene } from '../content/types';
 import { C, F } from '../theme';
 import { Backdrop } from './backdrop';
 import { canAdvance, sceneHeading } from '../engine/cutscene-input';
-import { CAPTION, PANEL_BORDER, hasCaptionBar, panelSize, poseFor, stageLayout, tailShare } from './cutscene/staging';
+import { CAPTION, cardHolder, PANEL_BORDER, hasCaptionBar, panelSize, poseFor, stageLayout, tailShare } from './cutscene/staging';
 import { Portrait } from './portrait';
 
 const native = Platform.OS !== 'web';
@@ -104,7 +104,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   const speakerIndex = current ? p.cast.findIndex((c) => current.speaker.toLowerCase().includes(c.id.split('-')[0]) || current.speaker.startsWith(nameOf(c.id))) : -1;
   // waist-up figures: centred, or at 30 % / 70 % facing each other; the speaker in front, the listener smaller and dimmed
   // a figure holding the recipe card shows it in its hands (the backdrop doesn't draw it), so the gesture is sized in too
-  const holder = p.prop === 'recipe-card' ? Math.max(0, p.cast.findIndex((c) => c.id === 'nonna-rosa')) : -1;
+  const holder = cardHolder(p);
   const stage = stageLayout(p.cast.length, innerW, innerH, speakerIndex, p.cast.map((c, i) => poseFor(c.id, c.mood, i === holder ? 'recipe-card' : undefined)));
 
   return (

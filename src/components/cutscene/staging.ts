@@ -36,6 +36,14 @@ export function poseFor(id: CharacterId, mood: Mood, holding?: 'recipe-card'): P
 }
 
 /**
+ * Index of the figure holding the recipe card in a panel: Nonna Rosa, when the panel has the card prop and she is in the
+ * cast. -1 when nobody holds it (no card prop, or Rosa absent), so no figure is given the card and the backdrop draws it.
+ */
+export function cardHolder(p: { prop?: string; cast: readonly { id: CharacterId }[] }): number {
+  return p.prop === 'recipe-card' ? p.cast.findIndex((c) => c.id === 'nonna-rosa') : -1;
+}
+
+/**
  * Both hands of each pose, ink outline included, and the whole limbs (arm sleeves with their ink, plus the hands), in art units
  * for the unflipped figure (its inner side, the one facing the other figure, is the right). Measured from the art in
  * figure-art.ts; the staging tests re-measure them so they can't drift.

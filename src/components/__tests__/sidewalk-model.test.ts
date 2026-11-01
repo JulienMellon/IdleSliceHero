@@ -1,7 +1,8 @@
 /// <reference types="jest" />
 import { money } from '../../engine/format';
 import * as G from '../../engine/game';
-import { buildChipHint, bundleButton, buttonTone, buyBundle, needLine, needText, stationModels, stationViews } from '../sidewalk-model';
+import { BUNDLE_PILL, buildChipHint, buildChipSub, bundleButton, bundlePillBottom, buttonTone, buyBundle, goalHidesOwnHire, hireOnSidewalk, needLine, needText, showBundlePill, stationModels, stationViews } from '../sidewalk-model';
+import { BUTTON_H, SIDEWALK_ROW, TAP } from '../tap-targets';
 
 const shopState = (patch: Partial<G.Shop>, cash = 0): G.GameState => {
   const s = G.newGame(0);
@@ -16,12 +17,67 @@ describe('sidewalk station model (T39)', () => {
     expect(view(s, 'drivers').frame).toBe('waiting');
     expect(view({ ...s, cash: 1e9 }, 'drivers').frame).toBe('hot');
   });
-  test('an unlocked station that adds nothing is "nogain"; a locked one says MAX and stays normal', () => {
+  test('an unlocked station that adds nothing is "nogain"', () => {
     const s = shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 1e9);
     expect(view(s, 'prep').tone).toBe('nogain');
-    const capped = shopState({ prep: 25, ovens: 25, counter: 25, drivers: 1, footprint: 0 }, 1e9);
-    expect(view(capped, 'prep').label).toBe('MAX');
-    expect(view(capped, 'prep').tone).toBe('normal');
+  });
+  test('MAX only when nothing can raise the cap: the last footprint, every level at its cap', () => {
+    const top = shopState({ footprint: 4, prep: 125, ovens: 125, counter: 125, drivers: 125 }, 1e9);
+    expect(G.levelCap(top.shops.downtown)).toBe(125);
+    for (const k of ['prep', 'ovens', 'counter', 'drivers']) {
+      expect(view(top, k).label).toBe('MAX');
+      expect(view(top, k).tone).toBe('normal');
+      expect(view(top, k).what).not.toBe('expand');
+    }
+  });
+});
+
+describe('EXPAND at the level cap (B4)', () => {
+  const capped = (cash: number) => shopState({ prep: 25, ovens: 25, counter: 25, drivers: 1, footprint: 0 }, cash);
+  const expandCost = (s: G.GameState) => G.upgradeCostOf(s, 'downtown', 'expand')!;
+  test('a station stuck at the cap, with a next footprint, says EXPAND with Expand\'s price and buys expand', () => {
+    const s = capped(1e9);
+    for (const k of ['prep', 'ovens', 'counter']) {
+      const v = view(s, k);
+      expect(v.expand).toBe(true);
+      expect(v.what).toBe('expand');
+      expect(v.name).toBe('EXPAND');
+      expect(v.label).toBe(money(expandCost(s)));
+      expect(v.cost).toBe(expandCost(s));
+      expect(v.lock).toBeNull();
+      expect(v.tone).toBe('normal');
+      expect(v.affordable).toBe(true);
+    }
+  });
+  test('a station below the cap is untouched', () => {
+    const v = view(capped(1e9), 'drivers');
+    expect(v.expand).toBe(false);
+    expect(v.what).toBe('drivers');
+    expect(v.name).toBe('DRIVERS');
+  });
+  test('affordability and "need $X" follow Expand\'s cost', () => {
+    const s = capped(0);
+    const cost = expandCost(s);
+    expect(view(s, 'prep').affordable).toBe(false);
+    expect(view({ ...s, cash: cost - 10 }, 'prep').need).toBe(`need ${money(10)}`);
+    expect(view({ ...s, cash: cost - 10 }, 'prep').affordable).toBe(false);
+    expect(view({ ...s, cash: cost }, 'prep').affordable).toBe(true);
+    expect(view({ ...s, cash: cost }, 'prep').need).toBeNull();
+  });
+  test('the button buys expand through the ordinary buy path, and the cap rises', () => {
+    const s = capped(1e9);
+    const r = G.buyUpgrade(s, 'downtown', view(s, 'prep').what);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.state.shops.downtown.footprint).toBe(1);
+      expect(view(r.state, 'prep').expand).toBe(false);
+      expect(view(r.state, 'prep').what).toBe('prep');
+    }
+  });
+  test('the model is re-cached when the footprint changes', () => {
+    const s = capped(0);
+    const a = stationModels(s, 'downtown');
+    expect(stationModels(shopState({ prep: 25, ovens: 25, counter: 25, drivers: 1, footprint: 1 }), 'downtown')).not.toBe(a);
   });
   test('cash changes only affordability: the level part is cached and reused', () => {
     const s = shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 0);
@@ -76,7 +132,7 @@ describe('"need $X" instead of a struck price (D359)', () => {
     expect(prep.name).toBe('PREP');
     expect(view({ ...s, cash: 1e9 }, 'prep').need).toBeNull();
     const capped = shopState({ prep: 25, ovens: 25, counter: 25, drivers: 1, footprint: 0 }, 5);
-    expect(view(capped, 'prep').need).toBeNull(); // MAX has no price to be short of
+    expect(view(capped, 'prep').need).toBe(`need ${money(G.upgradeCostOf(capped, 'downtown', 'expand')! - 5)}`); // EXPAND is short by Expand's price
   });
   test('the shortfall shrinks as cash arrives', () => {
     const s = shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 0);
@@ -142,5 +198,50 @@ describe('Pier 9 warning on the build chip', () => {
     expect(G.pier9Available(open())).toBe(true);
     expect(buildChipHint(open())).toBe('uses bid cash'); // a cost, not a reward; never claims to reset progress
     expect(buildChipHint(open({ perk: true }))).toBeNull(); // won
+  });
+});
+
+describe('the build chip keeps two lines (D404)', () => {
+  test('the Pier 9 warning merges with the price on one line', () => {
+    expect(buildChipSub(1_800_000, 'uses bid cash')).toBe('$1.8M · uses bid cash');
+    expect(buildChipSub(1_800_000, null)).toBe('Build $1.8M');
+  });
+});
+
+describe('who is offered the next hire (B1)', () => {
+  const sh = (patch: Partial<G.Shop>): G.Shop => ({ ...G.newGame(0).shops.suburbs, built: true, managed: false, ...patch });
+  const heads = { prep: true, oven: true, counter: true };
+  test('the sidewalk offers hires on every shop without a GM except Downtown, whose GM is Nonna', () => {
+    expect(hireOnSidewalk(sh({}), 'suburbs')).toBe(true);
+    expect(hireOnSidewalk(sh({ heads }), 'suburbs')).toBe(true); // all three heads: the GM is still on offer
+    expect(hireOnSidewalk(sh({ managed: true, heads }), 'suburbs')).toBe(false);
+    expect(hireOnSidewalk(sh({}), 'downtown')).toBe(false);
+  });
+  test('the goal bar steps aside for a head, but keeps the GM hire until it is bought', () => {
+    expect(goalHidesOwnHire(sh({}), 'suburbs')).toBe(true);
+    expect(goalHidesOwnHire(sh({ heads: { prep: true, oven: true, counter: false } }), 'suburbs')).toBe(true);
+    expect(goalHidesOwnHire(sh({ heads }), 'suburbs')).toBe(false);
+    expect(goalHidesOwnHire(sh({ managed: true, heads }), 'suburbs')).toBe(false);
+  });
+  test('Downtown\'s goal bar keeps its heads', () => {
+    expect(goalHidesOwnHire(sh({}), 'downtown')).toBe(false);
+  });
+});
+
+describe('"Buy both" on the sidewalk', () => {
+  test('the pill is at least 44 pt tall, sits above the row and its badges, and never over the buttons', () => {
+    expect(BUNDLE_PILL.height).toBeGreaterThanOrEqual(TAP.min);
+    expect(BUNDLE_PILL.height).toBe(BUTTON_H);
+    expect(bundlePillBottom(20, false)).toBe(20 + SIDEWALK_ROW.cardHeight + BUNDLE_PILL.gapAboveRow);
+    expect(bundlePillBottom(20, true)).toBe(20 + SIDEWALK_ROW.idleStackHeight + BUNDLE_PILL.gapAboveRow);
+    expect(BUNDLE_PILL.gapAboveRow).toBeGreaterThanOrEqual(9); // the level badges stand 9 pt over the cards
+  });
+  test('it shows only when a bundle exists and the tutorial coach is down', () => {
+    const s = shopState({ prep: 3, ovens: 3, counter: 3, drivers: 3 }, 0);
+    const hint = G.bundleHint(s, 'downtown');
+    expect(hint).not.toBeNull();
+    expect(showBundlePill(hint, false)).toBe(true);
+    expect(showBundlePill(hint, true)).toBe(false);
+    expect(showBundlePill(null, false)).toBe(false);
   });
 });

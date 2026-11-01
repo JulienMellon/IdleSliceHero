@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import { CHEST_BOX, FACE_BOX, LISTENER_SCALE, POSE, boxInPanel, panelSize, stageLayout, tailShare } from '../cutscene/staging';
+import { CHEST_BOX, cardHolder, FACE_BOX, LISTENER_SCALE, POSE, boxInPanel, panelSize, stageLayout, tailShare } from '../cutscene/staging';
 
 // iPhone SE, 13 mini, 15, 15 Pro Max, iPad mini portrait, a landscape-ish web window
 const WINDOWS: [number, number, number][] = [
@@ -10,6 +10,23 @@ const WINDOWS: [number, number, number][] = [
   [744, 1133, 24],
   [900, 600, 0],
 ];
+
+describe('cardHolder (C103, T79)', () => {
+  const rosa = { id: 'nonna-rosa' as const };
+  const gen = { id: 'genevieve' as const };
+  test('Rosa holds the recipe card, wherever she stands', () => {
+    expect(cardHolder({ prop: 'recipe-card', cast: [rosa] })).toBe(0);
+    expect(cardHolder({ prop: 'recipe-card', cast: [gen, rosa] })).toBe(1);
+  });
+  test('nobody holds it when Rosa is absent: not the first figure', () => {
+    expect(cardHolder({ prop: 'recipe-card', cast: [gen] })).toBe(-1);
+    expect(cardHolder({ prop: 'recipe-card', cast: [] })).toBe(-1);
+  });
+  test('no holder without the card prop', () => {
+    expect(cardHolder({ cast: [rosa] })).toBe(-1);
+    expect(cardHolder({ prop: 'sold-sign', cast: [rosa] })).toBe(-1);
+  });
+});
 
 describe('cut-scene staging', () => {
   test('one figure is centred and about half the panel tall', () => {

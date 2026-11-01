@@ -31,7 +31,8 @@ import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, Street } from './scene/stree
 import { buildCast } from './scene/cast';
 import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEADS } from '../content/tuning';
-import { BadgeRail, DeparturePops, HireBubble, StationBadge } from './scene/kitchen-hud';
+import { BadgeRail, DeparturePops, HireBubble, RushPill, StationBadge } from './scene/kitchen-hud';
+import { rushPill } from './rush-model';
 import { emptyCrew, stepCrew, type CrewState } from './scene/crew';
 import { emitCoin } from './pulse-bus';
 import { BADGE_R, COIN_FLIGHT, badgeAt, badgeModels, badgeRowY, badgeXs, MIN_TAP_PT, spotlightCutout, stationAt, stationRects, tutorialHand } from './scene/stations';
@@ -90,6 +91,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   'use no memo';
   const clock = useClock(15, paused);
   useGame((s) => sceneKey(s.game, id));
+  // the last rush taps (wall ms, newest last): the store replaces the array on a tap, so this is a stable dependency
+  const rushTaps = useGame((s) => s.rushTaps);
   const game = useGame.getState().game;
   const shop = game.shops[id];
   const nd = Game.def(id);
@@ -227,6 +230,13 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const key = sceneKey(game, id);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers every level the tie depends on
   const neck = useMemo(() => new Set(Game.tiedStages(shop, game.vehicle).map((st) => STAGE_STATION[st])), [key]);
+  // the rush pill (GM shops): decided on a 200 ms bucket of the wall clock and the shop's levels, not rebuilt on every 15 fps frame
+  const rushBucket = Math.floor(Date.now() / 200);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers the levels the rates depend on; `rushBucket` is the time
+  const rushModel = useMemo(
+    () => rushPill({ managed: shop.managed, taps: rushTaps, now: rushBucket * 200, kitchenRate: Math.min(Game.prepRate(shop), Game.ovenRate(shop), Game.counterRate(shop)), demandRate: Game.demandRate(shop, game.vehicle) }),
+    [key, rushTaps, rushBucket],
+  );
   const badges = badgeModels({ line, auto, managed: shop.managed, neck, next, tapBatch: Game.tapBatch(shop), since });
   // the "tap me" pulse and the miss nudge step on the 7.5 Hz pose clock, 6 levels, so the badge memo holds (M43)
   const poseT = Math.floor(clock * 7.5) / 7.5;
@@ -338,6 +348,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           {/* a refused tap says why, just under the station's badge (D348) */}
           {refusal && <HireBubble x={bxs[refusal.st]} y={by + 40} text={refusal.text} tone="refusal" />}
           {!refusal && m.hire && clock - m.hire.at < 2.5 && <HireBubble x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} />}
+          {/* a General Manager shop: "Tap to rush!" until the first tap, then the combo; a head's hello takes the spot while it shows */}
+          {rushModel && !refusal && !(m.hire && clock - m.hire.at < 2.5) && <RushPill x={bxs.oven} y={by + 40} kind={rushModel.kind} text={rushModel.text} />}
           {/* a finished bake: "ding!" at the oven and the pies slide onto the pass (P3) */}
           {m.slide && clock - m.slide.at < 0.7 && (() => {
             const k = (clock - m.slide.at) / 0.7;

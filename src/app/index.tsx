@@ -9,7 +9,8 @@ import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards
 import { hudRateText, rewardsHud } from '@/components/rewards-model';
 import { coachStep } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
-import { bundleButton, buttonTone, buyBundle } from '@/components/sidewalk-model';
+import { aOrAn } from '@/components/goal-model';
+import { bundleButton, buttonTone, buyBundle, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
 import { CLOSE_SLOP, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
@@ -109,7 +110,8 @@ export default function GameScreen() {
   const bundle = tiedCount >= 2 ? G.bundleHint(game, id) : null;
   const bundleBtn = bundle ? bundleButton(bundle, game.cash) : null;
 
-  const idleShopHere = !shop.managed && id !== 'downtown';
+  // the sidewalk offers the next hire (each head, then the GM) here; see hireOnSidewalk (B1)
+  const idleShopHere = hireOnSidewalk(shop, id);
   // Goal bar: the big purchase worth saving for, by cash/sec per dollar.
   const candidates: (Goal & { ratio: number })[] = [];
   for (const n of NEIGHBORHOODS) {
@@ -127,18 +129,18 @@ export default function GameScreen() {
     }
   }
   const next = G.nextToBuild(game);
-  if (next) candidates.push({ label: `Build a pizzeria in ${next.name}`, current: game.cash, target: next.buildCost, ratio: G.buildGain(game, next.id) / G.buildAllIn(next.id), onPress: () => build(next.id) });
+  // a locked build (Nonna's takeover, an unbuilt neighbour) is not a goal: its tap would do nothing (B2)
+  if (next && !G.buildLock(game, next.id)) candidates.push({ label: `Build a pizzeria in ${next.name}`, current: game.cash, target: next.buildCost, ratio: G.buildGain(game, next.id) / G.buildAllIn(next.id), onPress: () => build(next.id) });
   const vg = G.vehicleGain(game);
   if (vg && vg > 0) candidates.push({ label: `Upgrade fleet to ${VEHICLES[v + 1].name}s · ${plus(vg)}`, current: game.cash, target: VEHICLES[v + 1].cost, ratio: vg / VEHICLES[v + 1].cost, onPress: buyFleet });
   candidates.sort((a, b) => b.ratio - a.ratio);
   // Waterfront's finale is a purchase, so it leads the goal bar while it's on offer
   if (G.pier9Available(game)) candidates.unshift({ label: 'Bid on Pier 9 to save Marisol’s dock', current: game.cash, target: PIER9_BID.cost, ratio: Number.MAX_VALUE, onPress: bidPier9 });
-  // On an unmanaged shop the sidewalk already offers "Hire a manager" here: show the next goal instead.
-  // viewing an unmanaged shop: its manager is the goal
-  // the sidewalk already offers this shop's next hire, so the goal bar moves on to the next goal (D341);
+  // viewing an unmanaged shop: its next hire is the goal
+  // while the sidewalk offers a head, the goal bar moves on to the next goal (D341); the GM hire is offered in both places until it is hired (B1).
   // Downtown's sidewalk shows its stations instead, so there the hire leads the goal bar
   const mine = (c: Goal) => c.label.startsWith(`${nd.name}: hire`);
-  const shown = idleShopHere ? candidates.filter((c) => !mine(c)) : !shop.managed ? [...candidates.filter(mine), ...candidates.filter((c) => !mine(c))] : candidates;
+  const shown = goalHidesOwnHire(shop, id) ? candidates.filter((c) => !mine(c)) : !shop.managed ? [...candidates.filter(mine), ...candidates.filter((c) => !mine(c))] : candidates;
   let goal: Goal | null = shown[0] ?? null;
   // Late game: fall back to the best big buy in this shop (Expand, Grade or a Decor tier) before the story count.
   if (!goal) {
@@ -239,7 +241,7 @@ export default function GameScreen() {
   // ---- sidewalk row: the four stations (or the manager, on a shop that needs one) + "All"
   const fit = sceneFit(area.w || 1, area.h || 1);
   // the row's foot sits above the kerb line; see SIDEWALK_ROW for why each mode uses its height
-  const rowBottom = (SCENE_H - CURB_Y) * fit.s + (idleShop ? SIDEWALK_ROW.raiseIdle : SIDEWALK_ROW.raiseManaged);
+  const rowBottom = (SCENE_H - CURB_Y) * fit.s + (idleShopHere ? SIDEWALK_ROW.raiseIdle : SIDEWALK_ROW.raiseManaged);
   const openDrawer = () => {
     haptic();
     setDrawerOpen(true);
@@ -270,10 +272,12 @@ export default function GameScreen() {
           />
         )}
         {/* upgrade row standing on the sidewalk */}
-        <SidewalkRow game={game} id={id} idleShop={idleShop} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} highlight={coach?.target === 'walk-ovens' ? 'ovens' : null} />
+        <SidewalkRow game={game} id={id} idleShop={idleShopHere} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} highlight={coach?.target === 'walk-ovens' ? 'ovens' : null}
+          // the tied stations' bundle, centred above the row; hidden while Nonna's coach is up
+          bundle={showBundlePill(bundle, !!coach) ? bundleBtn : null} onBundle={bundleBtn ? () => buyBundle(bundleBtn.steps, buy) : undefined} />
         {/* D378: the tutorial scrim carries on over the sidewalk row (same 60% tone as the scene's), touches pass through */}
         {coach && id === 'downtown' && !drawerOpen && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') && (
-          <View pointerEvents="none" testID="coach-row-scrim" style={[styles.rowScrim, { bottom: rowBottom - 6, height: (idleShop ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + 12 }]} />
+          <View pointerEvents="none" testID="coach-row-scrim" style={[styles.rowScrim, { bottom: rowBottom - 6, height: (idleShopHere ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + 12 }]} />
         )}
         {/* Nonna's tutorial (P2) */}
         {/* D366: docked over the street band (decoration only), clear of the seating area */}
@@ -322,7 +326,7 @@ export default function GameScreen() {
                 {!shop.managed &&
                   card('manager', {
                     icon: id === 'downtown' ? <Portrait id="nonna-rosa" mood="happy" size={32} /> : <HeadIcon kind="gm" name={`${id}-gm`} />,
-                    title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire a ${nd.name} manager`,
+                    title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire ${aOrAn(nd.name)} ${nd.name} manager`,
                     detail: id === 'downtown' ? `Keep baking — ${G.nonnaCountdownText(game)}` : `General Manager: ×2 income here, and it earns while you're away (${plus(G.shopEarnings(game, id))})`,
                     wide: true,
                     costLabel: id === 'downtown' ? 'Soon' : undefined,

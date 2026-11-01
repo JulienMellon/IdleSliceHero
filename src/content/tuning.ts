@@ -17,8 +17,8 @@ export const TUNING = {
   saveIntervalSeconds: 30,
   /** Each level after 1 adds this fraction of a station's base speed. */
   speedPerLevel: 0.5,
-  /** Walk-ins pay this share of the order value (no delivery). */
-  walkInShare: 0.7,
+  /** Walk-ins pay this share of the order value (seated first, at full price). */
+  walkInShare: 1.0,
   /** Pizzas added per tap when a pizzeria has no manager, and how many can be queued. */
   tapBatch: 4,
   tapQueueMax: 12,
@@ -181,7 +181,7 @@ export interface PerkDef {
 }
 
 export const PERKS: Partial<Record<NeighborhoodId, PerkDef>> = {
-  suburbs: { who: 'Coach Dale', text: 'Suburbs walk-ins pay more: 85% of full price (was 70%)', walkInShare: 0.85 },
+  suburbs: { who: 'Coach Dale', text: 'Suburbs walk-ins pay 15% extra', walkInShare: 1.15 },
   waterfront: { who: 'Captain Marisol', text: 'Waterfront pizzas sell for 10% more', priceMult: 1.1 },
   university: { who: 'Priya', text: 'University driver upgrades cost 10% less', driversCostMult: 0.9 },
   industrial: { who: 'Big Sal', text: 'Industrial earns 25% more while you’re away', offlineMult: 1.25 },

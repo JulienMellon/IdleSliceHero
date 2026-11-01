@@ -33,3 +33,6 @@ export function goalBarLayout(current: number, target: number, tappable: boolean
   const fillW = pct * innerW;
   return { pct, ready, innerW, fillW, split: !ready && fillW > 0 };
 }
+
+/** "a" or "an" from the word's first letter: "a Suburbs", "an Uptown", "an Industrial" (B5). */
+export const aOrAn = (word: string): 'a' | 'an' => (/^[aeiou]/i.test(word.trim()) ? 'an' : 'a');

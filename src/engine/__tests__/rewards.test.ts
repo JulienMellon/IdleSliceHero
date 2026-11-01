@@ -146,13 +146,13 @@ describe('unlock and refresh', () => {
     // no booster in the inventory: no "start a booster" task; with one, it shows up
     expect(kinds(base).has('booster')).toBe(false);
     expect(kinds({ ...base, rewards: { ...base.rewards, boosters: [{ mult: 2, seconds: 900 }] } }).has('booster')).toBe(true);
-    // everything built, hired, decorated and bought: no hire / decor / build / fleet tasks, and no walk-ins when drivers take every pie
+    // everything built, hired, decorated and bought: no hire / decor / build / fleet tasks, (walk-ins are seated first, so walk-in tasks stay available however many drivers there are)
     const full = everythingBuilt(base);
     const none = kinds(full);
     for (const k of ['hire', 'decor', 'build', 'fleet']) expect(none.has(k)).toBe(false);
     const driversOnly = { ...base, shops: { ...base.shops, downtown: { ...base.shops.downtown, drivers: 60 } } };
-    expect(R.cityRates(driversOnly).walkin).toBe(0);
-    expect(kinds(driversOnly).has('walkins')).toBe(false);
+    expect(R.cityRates(driversOnly).walkin).toBeGreaterThan(0);
+    expect(kinds(driversOnly).has('walkins')).toBe(true);
     expect(kinds(base).has('walkins')).toBe(true);
     // with a second pizzeria still to staff, a hire task can come up; with only Nonna's Downtown it cannot
     expect(kinds(base).has('hire')).toBe(false);
@@ -217,7 +217,7 @@ describe('progress counters', () => {
     expect(s.stats.upgrades).toBe(0);
   });
   test('the line reports walk-ins, deliveries and pies out of the oven', () => {
-    const rates = G.lineRates('downtown', { ...G.newShop(true), managed: true, tables: 20, drivers: 2 }, 0);
+    const rates = G.lineRates('downtown', { ...G.newShop(true), managed: true, prep: 60, ovens: 60, counter: 60, footprint: 4, grade: 4, tables: 5, drivers: 3 }, 0); // kitchen faster than the seats: drivers get the rest
     let line = emptyLine();
     let w = 0;
     let d = 0;

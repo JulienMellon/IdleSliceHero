@@ -148,3 +148,23 @@ export const HireBubble = memo(function HireBubble({ x, y, text, tone = 'hire' }
     </G>
   );
 });
+
+/**
+ * The rush pill (D5): "Tap to rush!" on a General Manager shop that hasn't been tapped lately (cream, like a refusal), and
+ * "RUSH ×n · +p%" while the player taps fast (tomato). Sits under the badge row, centred on `x` and clamped to the screen,
+ * where a head's hello would be; it never touches the sign above or the badges. Memoised on primitives: it only re-renders
+ * when the text or the kind changes.
+ */
+export const RushPill = memo(function RushPill({ x, y, kind, text }: { x: number; y: number; kind: 'hint' | 'combo'; text: string }) {
+  const w = Math.max(70, text.length * 6.2 + 18);
+  const px = Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, x));
+  const combo = kind === 'combo';
+  return (
+    <G transform={`translate(${px} ${y})`}>
+      <Rect x={-w / 2} y={-14} width={w} height={18} rx={9} fill={combo ? TOMATO : DISC} stroke={combo ? '#fff' : INK} strokeWidth={combo ? 1.4 : 1.2} />
+      <SvgText x={0} y={-1.5} fontFamily={F.bold} fontSize={10} fill={combo ? '#fff' : INK} textAnchor="middle">
+        {text}
+      </SvgText>
+    </G>
+  );
+});

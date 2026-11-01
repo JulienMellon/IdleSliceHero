@@ -414,14 +414,21 @@ export function shopRate(shop: Shop, vehicle: number): number {
 }
 
 /**
- * Cash per second a running pizzeria makes. Drivers get first pick of what the kitchen makes
- * (full price); walk-ins buy whatever is left (walkInShare of the price). So adding seats can only
- * ever add sales, never dilute them.
+ * How the kitchen's pies split at the steady state: walk-ins are seated first, up to the seating rate
+ * (walkInRate); the drivers deliver the rest. One rule for revenue, value per pizza and the walk-in fraction.
+ */
+function pieSplit(shop: Shop, vehicle: number): { sold: number; walkIns: number; delivered: number } {
+  const sold = shopRate(shop, vehicle);
+  const walkIns = Math.min(sold, walkInRate(shop));
+  return { sold, walkIns, delivered: sold - walkIns };
+}
+
+/**
+ * Cash per second a running pizzeria makes. Walk-ins get the kitchen's pies first, up to the seating rate
+ * (they pay walkInShare of the price, 1.0 by default); drivers deliver the rest at full price.
  */
 export function shopRevenue(id: NeighborhoodId, shop: Shop, vehicle: number): number {
-  const sold = shopRate(shop, vehicle);
-  const delivered = Math.min(sold, deliveryRate(shop, vehicle));
-  const walkIns = sold - delivered;
+  const { walkIns, delivered } = pieSplit(shop, vehicle);
   const perk = perkOf(id, shop);
   return def(id).orderValue * (perk?.priceMult ?? 1) * decorMult(shop, id) * gmMult(shop) * (delivered + walkIns * (perk?.walkInShare ?? TUNING.walkInShare));
 }
@@ -687,10 +694,10 @@ const ALL_AUTOMATIC: Automation = Object.freeze({ prep: true, oven: true, counte
 /** One frozen object for GM shops, so the scene doesn't allocate it every frame (M44). */
 export const automationOf = (shop: Shop): Automation => (shop.managed ? ALL_AUTOMATIC : shop.heads);
 
-/** Share of pies that go to walk-ins at the steady state (drivers get first pick). */
+/** Share of pies that go to walk-ins at the steady state (walk-ins are seated first, up to walkInRate). */
 export function walkInFraction(shop: Shop, vehicle: number): number {
-  const sold = shopRate(shop, vehicle);
-  return sold > 0 ? Math.max(0, sold - Math.min(sold, deliveryRate(shop, vehicle))) / sold : 0;
+  const { sold, walkIns } = pieSplit(shop, vehicle);
+  return sold > 0 ? walkIns / sold : 0;
 }
 
 /** The first Downtown batch runs this much faster (tutorial pacing). */

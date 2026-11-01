@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { readFileSync } from 'fs';
 import * as G from '../../src/engine/game';
 import { NEIGHBORHOODS, VEHICLES } from '../../src/content/tuning';

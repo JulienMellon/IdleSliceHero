@@ -17,7 +17,7 @@ export const HOME_SCENES: Scene[] = [
       {
         backdrop: 'downtown-rain',
         cast: [],
-        caption: 'Port Marinara. Rain. One flickering sign: "Rosa\'s Pizza."',
+        caption: 'Port Marinara. Rain. One flickering sign: “Rosa’s Pizza.”',
         lines: [],
       },
       {
@@ -26,7 +26,7 @@ export const HOME_SCENES: Scene[] = [
         caption: 'Inside, one oven. Zero customers.',
         lines: [
           { speaker: 'Nonna Rosa', text: 'Fifty years I run this shop. Now? Even the mice order from MegaSlice.' },
-          { speaker: 'Nonna Rosa', text: 'My knees are done. So, cara mia... the keys are yours.' },
+          { speaker: 'Nonna Rosa', text: 'My knees are done. So, cara mia… the keys are yours.' },
         ],
       },
       {
@@ -34,15 +34,15 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'nonna-rosa', mood: 'surprised' }],
         lines: [
           { speaker: 'You', text: 'What if we did delivery? Maybe an app? Some marketing?' },
-          { speaker: 'Nonna Rosa', text: '"App." "Marketing." Modern ideas! In my day, the pizza WAS the marketing.' },
+          { speaker: 'Nonna Rosa', text: '“App.” “Marketing.” Modern ideas! In my day, the pizza WAS the marketing.' },
         ],
       },
       {
         backdrop: 'shop',
         cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
         lines: [
-          { speaker: 'Nonna Rosa', text: 'Fine. First you bake. Tap the kitchen, one batch each tap. Tap, tap, tap!' },
-          { speaker: 'Nonna Rosa', text: 'Then hire workers. Drivers to deliver, more cooks for the kitchen. Capisce?' },
+          { speaker: 'Nonna Rosa', text: 'Fine. First you bake. Prep, oven, counter. Tap, tap, tap!' },
+          { speaker: 'Nonna Rosa', text: 'Then hire help. Marco, Lucia, Benny: good kids. Capisce?' },
         ],
       },
       {
@@ -50,7 +50,7 @@ export const HOME_SCENES: Scene[] = [
         cue: 'welcome',
         cast: [{ id: 'nonna-rosa', mood: 'happy' }],
         lines: [
-          { speaker: 'Nonna Rosa', text: 'Make Downtown smell like Rosa\'s again. I\'ll be watching. Always watching.' },
+          { speaker: 'Nonna Rosa', text: 'Make Downtown smell like Rosa’s again. I’ll be watching. Always watching.' },
         ],
       },
     ],
@@ -78,7 +78,7 @@ export const HOME_SCENES: Scene[] = [
         lines: [
           { speaker: 'Nonna Rosa', text: 'The drivers, they come back fast. Hmph. Buy them better rides. Go faster.' },
           { speaker: 'You', text: 'Wait, are you endorsing a modern idea?' },
-          { speaker: 'Nonna Rosa', text: 'I endorse nothing. I am simply... noticing.' },
+          { speaker: 'Nonna Rosa', text: 'I endorse nothing. I am simply… noticing.' },
         ],
       },
       {
@@ -104,8 +104,8 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'megaslice-rep', mood: 'happy' }],
         caption: 'A man in a very shiny suit walks in. He does not wipe his feet.',
         lines: [
-          { speaker: 'MegaSlice Rep', text: 'Love the vibe! Very "before electricity." MegaSlice wants to buy it!' },
-          { speaker: 'MegaSlice Rep', text: 'We\'ll keep the name. Well, the "Pizza" part. Probably.' },
+          { speaker: 'MegaSlice Rep', text: 'Love the vibe! Very “before electricity.” MegaSlice wants to buy it!' },
+          { speaker: 'MegaSlice Rep', text: 'We’ll keep the name. Well, the “Pizza” part. Probably.' },
         ],
       },
       {
@@ -116,7 +116,7 @@ export const HOME_SCENES: Scene[] = [
         ],
         lines: [
           { speaker: 'Nonna Rosa', text: 'Out! Your crust tastes like a cardboard box that gave up!' },
-          { speaker: 'MegaSlice Rep', text: 'Ma\'am, our crust is 40% real bread!' },
+          { speaker: 'MegaSlice Rep', text: 'Ma’am, our crust is 40% real bread!' },
         ],
       },
       {
@@ -149,7 +149,7 @@ export const HOME_SCENES: Scene[] = [
       {
         backdrop: 'downtown',
         cast: [],
-        caption: '150 deliveries. Downtown smells like Rosa\'s again.',
+        caption: 'A hundred and fifty deliveries. Downtown smells like Rosa’s again.',
         lines: [],
       },
       {
@@ -157,7 +157,7 @@ export const HOME_SCENES: Scene[] = [
         cue: 'triumph',
         cast: [{ id: 'nonna-rosa', mood: 'happy' }],
         lines: [
-          { speaker: 'Nonna Rosa', text: 'Your "modern ideas"... they work. Don\'t tell anyone I said so.' },
+          { speaker: 'Nonna Rosa', text: 'Your “modern ideas”… they work. Don’t tell anyone I said so.' },
           { speaker: 'Nonna Rosa', text: 'Come. Closer. Nobody has seen this card in fifty years.' },
         ],
       },
@@ -168,7 +168,7 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
         caption: 'The secret sauce recipe. It is mostly love. And garlic.',
         lines: [
-          { speaker: 'You', text: 'That\'s it? Tomatoes, garlic, basil, and "a whisper of patience"?' },
+          { speaker: 'You', text: 'That’s it? Tomatoes, garlic, basil, and “a whisper of patience”?' },
           { speaker: 'Nonna Rosa', text: 'Is the whisper that matters.' },
         ],
       },
@@ -199,14 +199,14 @@ export const HOME_SCENES: Scene[] = [
         caption: 'Snip! Your Suburbs pizzeria opens. Lawns, minivans, a loud whistle.',
         lines: [
           { speaker: 'Dale', text: 'Hey there, pal! Dale Hoffman, Mudhens coach. Welcome to the neighborhood!' },
-          { speaker: 'Dale', text: 'We\'re oh-and-fourteen this season. Which means we can only go up!' },
+          { speaker: 'Dale', text: 'We’re oh-and-fourteen this season. Which means we can only go up!' },
         ],
       },
       {
         backdrop: 'suburbs',
         cast: [{ id: 'dale', mood: 'sad' }],
         lines: [
-          { speaker: 'Dale', text: 'Problem is, post-game snack is orange slices. The kids are... not inspired.' },
+          { speaker: 'Dale', text: 'Problem is, post-game snack is orange slices. The kids are… not inspired.' },
           { speaker: 'You', text: 'What if the post-game snack was pizza?' },
         ],
       },
@@ -222,8 +222,8 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'suburbs',
         cast: [{ id: 'dale', mood: 'happy' }],
         lines: [
-          { speaker: 'Dale', text: 'Who runs this shop when you\'re gone? Hire a manager, pal. Trust a coach.' },
-          { speaker: 'Dale', text: 'Go, Mudhens! ...That\'s our chant. It\'s a work in progress.' },
+          { speaker: 'Dale', text: 'Who runs this shop when you’re gone? Hire a manager, pal. Trust a coach.' },
+          { speaker: 'Dale', text: 'Go, Mudhens! …That’s our chant. It’s a work in progress.' },
         ],
       },
     ],
@@ -240,7 +240,7 @@ export const HOME_SCENES: Scene[] = [
       {
         backdrop: 'suburbs',
         cast: [],
-        caption: 'Saturday. The Mudhens trail 6-0. Then the pizza arrives at halftime.',
+        caption: 'Saturday. The Mudhens trail 6–0. Then the pizza arrives at halftime.',
         lines: [],
       },
       {
@@ -248,15 +248,15 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'dale', mood: 'surprised' }],
         caption: 'A kid named Tater kicks the ball. It goes in the RIGHT goal.',
         lines: [
-          { speaker: 'Dale', text: 'Was that... the correct net? Somebody check! Somebody check the net!' },
+          { speaker: 'Dale', text: 'Was that… the correct net? Somebody check! Somebody check the net!' },
         ],
       },
       {
         backdrop: 'suburbs',
         cast: [{ id: 'dale', mood: 'happy' }],
         lines: [
-          { speaker: 'Dale', text: 'We lost 6-1 but that is the BEST loss in Mudhens history!' },
-          { speaker: 'Dale', text: 'Pizza every game from now on. That\'s not a request, pal. It\'s a strategy.' },
+          { speaker: 'Dale', text: 'We lost 6–1, but that’s the BEST loss in Mudhens history!' },
+          { speaker: 'Dale', text: 'Pizza every game from now on. That’s not a request, pal. It’s a strategy.' },
         ],
       },
     ],
@@ -275,7 +275,7 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'megaslice-rep', mood: 'happy' }],
         caption: 'The Mudhens are winning. Someone has noticed.',
         lines: [
-          { speaker: 'MegaSlice Rep', text: 'Free jerseys for the team! All you gotta do is say "MegaSlice" a lot.' },
+          { speaker: 'MegaSlice Rep', text: 'Free jerseys for the team! All you gotta do is say “MegaSlice” a lot.' },
         ],
       },
       {
@@ -300,7 +300,7 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'suburbs',
         cast: [{ id: 'dale', mood: 'neutral' }],
         lines: [
-          { speaker: 'Dale', text: 'Lemme think on it, pal. Championship\'s coming up. We need every edge.' },
+          { speaker: 'Dale', text: 'Lemme think on it, pal. Championship’s coming up. We need every edge.' },
         ],
       },
     ],
@@ -320,13 +320,13 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'dale', mood: 'neutral' }],
         caption: 'The championship. Mudhens vs. the undefeated Thunder Llamas.',
         lines: [
-          { speaker: 'Dale', text: 'I told that MegaSlice fella no thanks. Jerseys don\'t score goals. Pizza does.' },
+          { speaker: 'Dale', text: 'I told that MegaSlice fella no thanks. Jerseys don’t score goals. Pizza does.' },
         ],
       },
       {
         backdrop: 'suburbs',
         cast: [{ id: 'dale', mood: 'surprised' }],
-        caption: 'Final seconds. Tied 2-2. Tater has the ball.',
+        caption: 'Final seconds. Tied 2–2. Tater has the ball.',
         lines: [
           { speaker: 'Dale', text: 'Go, Tater, go! Not that way! THAT way! Yes! YES!' },
         ],
@@ -335,10 +335,10 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'suburbs',
         cue: 'triumph',
         cast: [{ id: 'dale', mood: 'happy' }],
-        caption: 'MUDHENS WIN. Somebody\'s mom faints.',
+        caption: 'MUDHENS WIN. Somebody’s mom faints.',
         lines: [
-          { speaker: 'Dale', text: 'Champions! The Mudhens are champions! I\'m gonna cry. I\'m crying.' },
-          { speaker: 'Dale', text: 'Whole Suburbs is eating at your shop now, pal. You\'re family.' },
+          { speaker: 'Dale', text: 'Champions! The Mudhens are champions! I’m gonna cry. I’m crying.' },
+          { speaker: 'Dale', text: 'Whole Suburbs is eating at your shop now, pal. You’re family.' },
         ],
       },
     ],
@@ -380,7 +380,7 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'waterfront',
         cast: [{ id: 'marisol', mood: 'neutral' }],
         lines: [
-          { speaker: 'Captain Marisol', text: 'Just keep the anchovies off mine. I\'ve met enough fish for one lifetime.' },
+          { speaker: 'Captain Marisol', text: 'Just keep the anchovies off mine. I’ve met enough fish for one lifetime.' },
         ],
       },
     ],
@@ -399,7 +399,7 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'marisol', mood: 'happy' }],
         caption: 'Friday nights, the whole dock eats together now.',
         lines: [
-          { speaker: 'Captain Marisol', text: 'Haven\'t seen this many folks on Pier 9 since the Great Lobster Escape of \'88.' },
+          { speaker: 'Captain Marisol', text: 'Haven’t seen this many folks on Pier 9 since the Great Lobster Escape of ’88.' },
         ],
       },
       {
@@ -407,14 +407,14 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'marisol', mood: 'neutral' }],
         lines: [
           { speaker: 'You', text: 'What happened in the Great Lobster Escape?' },
-          { speaker: 'Captain Marisol', text: 'We don\'t talk about it. They\'re still out there.' },
+          { speaker: 'Captain Marisol', text: 'We don’t talk about it. They’re still out there.' },
         ],
       },
       {
         backdrop: 'waterfront',
         cast: [{ id: 'marisol', mood: 'happy' }],
         lines: [
-          { speaker: 'Captain Marisol', text: 'This dock\'s been my home all my life. Nice to see it full again.' },
+          { speaker: 'Captain Marisol', text: 'This dock’s been my home all my life. Nice to see it full again.' },
         ],
       },
     ],
@@ -432,9 +432,9 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'waterfront',
         prop: 'sold-sign',
         cast: [{ id: 'marisol', mood: 'sad' }],
-        caption: 'A sign appears on Pier 9: "SOLD SOON — FUTURE MEGASLICE MEGASTORE."',
+        caption: 'A sign appears on Pier 9: “SOLD SOON — FUTURE MEGASLICE MEGASTORE.”',
         lines: [
-          { speaker: 'Captain Marisol', text: 'The harbor board\'s broke. They\'re selling my dock to the highest bidder.' },
+          { speaker: 'Captain Marisol', text: 'The harbor board’s broke. They’re selling my dock to the highest bidder.' },
         ],
       },
       {
@@ -445,7 +445,7 @@ export const HOME_SCENES: Scene[] = [
         ],
         lines: [
           { speaker: 'MegaSlice Rep', text: 'Picture it! A 40-story pizza megastore! With a parking lot for boats!' },
-          { speaker: 'Captain Marisol', text: 'Boats don\'t PARK, you barnacle!' },
+          { speaker: 'Captain Marisol', text: 'Boats don’t PARK, you barnacle!' },
         ],
       },
       {
@@ -459,7 +459,7 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'waterfront',
         cast: [{ id: 'marisol', mood: 'neutral' }],
         lines: [
-          { speaker: 'You', text: 'Then we sell a LOT of pizza. Captain, we\'re buying your dock.' },
+          { speaker: 'You', text: 'Then we sell a LOT of pizza. Captain, we’re buying your dock.' },
           { speaker: 'Captain Marisol', text: 'Hmph. Never bet against a stubborn crew. All hands!' },
         ],
       },
@@ -479,9 +479,9 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'waterfront',
         cue: 'rep',
         cast: [{ id: 'megaslice-rep', mood: 'surprised' }],
-        caption: 'Auction day. The final bid comes in... from a pizza shop.',
+        caption: 'Auction day. The final bid comes in… from a pizza shop.',
         lines: [
-          { speaker: 'MegaSlice Rep', text: 'You outbid us? With PIZZA money? That\'s not in my slideshow!' },
+          { speaker: 'MegaSlice Rep', text: 'You outbid us? With PIZZA money? That’s not in my slideshow!' },
         ],
       },
       {
@@ -498,7 +498,7 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'marisol', mood: 'happy' }],
         caption: 'The new sign on Pier 9 has a slice of pizza painted on it.',
         lines: [
-          { speaker: 'Captain Marisol', text: 'Waterfront\'s yours, Captain. Even the anchovies are on your side now.' },
+          { speaker: 'Captain Marisol', text: 'Waterfront’s yours, Captain. Even the anchovies are on your side now.' },
         ],
       },
     ],
@@ -524,7 +524,7 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'shop',
         cast: [{ id: 'priya', mood: 'neutral' }],
         lines: [
-          { speaker: 'Priya', text: 'Hi. One plain cheese slice. Your cheapest one. I\'m paying in quarters.' },
+          { speaker: 'Priya', text: 'Hi. One plain cheese slice. Your cheapest one. I’m paying in quarters.' },
           { speaker: 'Priya', text: 'Some dimes. One button. Is a button legal tender? Asking for me.' },
         ],
       },
@@ -557,9 +557,9 @@ export const HOME_SCENES: Scene[] = [
       {
         backdrop: 'university',
         cast: [{ id: 'priya', mood: 'surprised' }],
-        caption: 'Night 63 of Priya\'s plain cheese slice.',
+        caption: 'Night 63 of Priya’s plain cheese slice.',
         lines: [
-          { speaker: 'Priya', text: 'Your driver took a weird route. I mapped it. You\'re losing four minutes a trip.' },
+          { speaker: 'Priya', text: 'Your driver took a weird route. I mapped it. You’re losing four minutes a trip.' },
         ],
       },
       {
@@ -567,16 +567,16 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'priya', mood: 'happy' }],
         lines: [
           { speaker: 'Priya', text: 'So I wrote a little routing app. On a napkin. Then on a laptop. Mostly laptop.' },
-          { speaker: 'You', text: 'You built that... for one slice of pizza?' },
-          { speaker: 'Priya', text: 'For a HOT slice of pizza. There\'s a difference.' },
+          { speaker: 'You', text: 'You built that… for one slice of pizza?' },
+          { speaker: 'Priya', text: 'For a HOT slice of pizza. There’s a difference.' },
         ],
       },
       {
         backdrop: 'shop',
         cast: [{ id: 'priya', mood: 'happy' }],
         lines: [
-          { speaker: 'You', text: 'Priya, how\'d you like a job? Paid in actual money. And unlimited slices.' },
-          { speaker: 'Priya', text: 'Unlimited?? Okay. Okay okay okay. I\'m in.' },
+          { speaker: 'You', text: 'Priya, how’d you like a job? Paid in actual money. And unlimited slices.' },
+          { speaker: 'Priya', text: 'Unlimited?? Okay. Okay okay okay. I’m in.' },
         ],
       },
     ],
@@ -620,7 +620,7 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'shop',
         cast: [{ id: 'priya', mood: 'sad' }],
         lines: [
-          { speaker: 'Priya', text: 'They offered me a lot. Like, "pay off my loans" a lot. I need to think.' },
+          { speaker: 'Priya', text: 'They offered me a lot. Like, “pay off my loans” a lot. I need to think.' },
         ],
       },
     ],
@@ -642,15 +642,15 @@ export const HOME_SCENES: Scene[] = [
         caption: 'Priya returns. She is carrying something with propellers.',
         lines: [
           { speaker: 'Priya', text: 'I said no to MegaSlice. Their code was spaghetti. And not the good kind.' },
-          { speaker: 'Priya', text: 'Also you gave me a slice when I had only buttons. That counts for a lot.' },
+          { speaker: 'Priya', text: 'Also, you gave me a slice when all I had was buttons. That counts for a lot.' },
         ],
       },
       {
         backdrop: 'shop',
         cast: [{ id: 'priya', mood: 'surprised' }],
         lines: [
-          { speaker: 'You', text: 'Is that... a flying pizza box?' },
-          { speaker: 'Priya', text: 'Delivery drone. GPS, heat-lock lid, and it says "thank you" in nine languages.' },
+          { speaker: 'You', text: 'Is that… a flying pizza box?' },
+          { speaker: 'Priya', text: 'Delivery drone. GPS, heat-lock lid, and it says “thank you” in nine languages.' },
         ],
       },
       {
@@ -660,7 +660,7 @@ export const HOME_SCENES: Scene[] = [
         caption: 'A hundred tiny drones lift off over campus. Students cheer.',
         lines: [
           { speaker: 'Priya', text: 'Drones are live! No traffic, no parking, no excuses. Only pizza.' },
-          { speaker: 'Priya', text: 'University is officially Team You. Now... about those unlimited slices.' },
+          { speaker: 'Priya', text: 'University is officially Team You. Now… about those unlimited slices.' },
         ],
       },
     ],
@@ -687,7 +687,7 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'big-sal', mood: 'angry' }],
         lines: [
           { speaker: 'Big Sal', text: 'You the pizza kid? I hate pizza. I hate kids. I hate Tuesdays.' },
-          { speaker: 'You', text: 'It\'s Thursday.' },
+          { speaker: 'You', text: 'It’s Thursday.' },
           { speaker: 'Big Sal', text: 'Then I hate Thursdays.' },
         ],
       },
@@ -696,15 +696,15 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'big-sal', mood: 'neutral' }],
         lines: [
           { speaker: 'Big Sal', text: 'Three shifts. Hungry crews. Whole crates of pies at a time. Big money.' },
-          { speaker: 'Big Sal', text: 'Don\'t get excited. I said the money\'s big. Not that I like you.' },
+          { speaker: 'Big Sal', text: 'Don’t get excited. I said the money’s big. Not that I like you.' },
         ],
       },
       {
         backdrop: 'industrial',
         cast: [{ id: 'big-sal', mood: 'neutral' }],
         lines: [
-          { speaker: 'Big Sal', text: 'Hot by midnight. Cold pizza, you\'re done. Got it? Good.' },
-          { speaker: 'Big Sal', text: 'And get a manager. A shop that stops when you leave ain\'t a shop.' },
+          { speaker: 'Big Sal', text: 'Hot by midnight. Cold pizza, you’re done. Got it? Good.' },
+          { speaker: 'Big Sal', text: 'And get a manager. A shop that stops when you leave ain’t a shop.' },
         ],
       },
     ],
@@ -723,22 +723,22 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'big-sal', mood: 'neutral' }],
         caption: 'Midnight. A hundred thousand pies in. Not one cold.',
         lines: [
-          { speaker: 'Big Sal', text: 'Pizza\'s... fine. Crust\'s fine. Sauce is...' },
+          { speaker: 'Big Sal', text: 'Pizza’s… fine. Crust’s fine. Sauce is…' },
         ],
       },
       {
         backdrop: 'industrial',
         cast: [{ id: 'big-sal', mood: 'surprised' }],
         lines: [
-          { speaker: 'Big Sal', text: 'Wait. This sauce. Where\'d you get this sauce?' },
-          { speaker: 'You', text: 'Family recipe. Well, somebody\'s family.' },
+          { speaker: 'Big Sal', text: 'Wait. This sauce. Where’d you get this sauce?' },
+          { speaker: 'You', text: 'Family recipe. Well, somebody’s family.' },
         ],
       },
       {
         backdrop: 'industrial',
         cast: [{ id: 'big-sal', mood: 'sad' }],
         lines: [
-          { speaker: 'Big Sal', text: 'Hmph. Tastes like... something I used to know. Forget it. Back to work.' },
+          { speaker: 'Big Sal', text: 'Hmph. Tastes like… something I used to know. Forget it. Back to work.' },
         ],
       },
     ],
@@ -758,7 +758,7 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'megaslice-rep', mood: 'happy' }],
         caption: 'Overnight, MegaSlice vending machines appear in every break room.',
         lines: [
-          { speaker: 'MegaSlice Rep', text: 'Pizza from a machine! 90 seconds! It\'s hot on the outside! Mostly!' },
+          { speaker: 'MegaSlice Rep', text: 'Pizza from a machine! 90 seconds! It’s hot on the outside! Mostly!' },
         ],
       },
       {
@@ -770,7 +770,7 @@ export const HOME_SCENES: Scene[] = [
         ],
         lines: [
           { speaker: 'Big Sal', text: 'One of my guys bit into that thing and chipped a tooth.' },
-          { speaker: 'MegaSlice Rep', text: 'That\'s our signature Crunch-Crust! Very premium!' },
+          { speaker: 'MegaSlice Rep', text: 'That’s our signature Crunch-Crust! Very premium!' },
         ],
       },
       {
@@ -784,7 +784,7 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'industrial',
         cast: [{ id: 'big-sal', mood: 'neutral' }],
         lines: [
-          { speaker: 'Big Sal', text: 'Kid. Keep the real pizza coming. I\'ll handle the machines.' },
+          { speaker: 'Big Sal', text: 'Kid. Keep the real pizza coming. I’ll handle the machines.' },
         ],
       },
     ],
@@ -814,9 +814,9 @@ export const HOME_SCENES: Scene[] = [
           { id: 'big-sal', mood: 'neutral' },
           { id: 'nonna-rosa', mood: 'surprised' },
         ],
-        caption: 'Big Sal visits Rosa\'s Downtown shop for the first time.',
+        caption: 'Big Sal visits Rosa’s Downtown shop for the first time.',
         lines: [
-          { speaker: 'Nonna Rosa', text: '...Salvatore?' },
+          { speaker: 'Nonna Rosa', text: '…Salvatore?' },
           { speaker: 'Big Sal', text: 'Hi, Rosie. Forty years. I knew that sauce the second I tasted it.' },
         ],
       },
@@ -827,9 +827,9 @@ export const HOME_SCENES: Scene[] = [
           { id: 'nonna-rosa', mood: 'sad' },
         ],
         lines: [
-          { speaker: 'Big Sal', text: 'I was a stubborn fool. Left over a fight about... what was it?' },
-          { speaker: 'Nonna Rosa', text: 'Pineapple. You put pineapple on Mama\'s pizza.' },
-          { speaker: 'Big Sal', text: 'And I\'d do it again. ...But I\'m sorry I left.' },
+          { speaker: 'Big Sal', text: 'I was a stubborn fool. Left over a fight about… what was it?' },
+          { speaker: 'Nonna Rosa', text: 'Pineapple. You put pineapple on Mama’s pizza.' },
+          { speaker: 'Big Sal', text: 'And I’d do it again. …But I’m sorry I left.' },
         ],
       },
       {
@@ -841,7 +841,7 @@ export const HOME_SCENES: Scene[] = [
         ],
         lines: [
           { speaker: 'Nonna Rosa', text: 'Come here, you big meatball.' },
-          { speaker: 'Big Sal', text: 'Kid, you brought my family back. Industrial\'s yours. And so\'s my Thursday.' },
+          { speaker: 'Big Sal', text: 'Kid, you brought my family back. Industrial’s yours. Heck, I might even like Thursdays now.' },
         ],
       },
     ],
@@ -866,16 +866,17 @@ export const HOME_SCENES: Scene[] = [
       {
         backdrop: 'shop',
         cast: [{ id: 'genevieve', mood: 'neutral' }],
+        caption: 'She takes one dainty bite.',
         lines: [
           { speaker: 'Genevieve', text: 'Genevieve Laurent. Food critic. You may have heard of me. Everyone has.' },
-          { speaker: 'Genevieve', text: 'A grand opening. How quaint. Let us see. *one dainty bite*' },
+          { speaker: 'Genevieve', text: 'A grand opening. How quaint. Let us see.' },
         ],
       },
       {
         backdrop: 'uptown',
         cast: [{ id: 'genevieve', mood: 'angry' }],
         lines: [
-          { speaker: 'Genevieve', text: 'Lukewarm. Rushed. The basil is... frightened. One star.' },
+          { speaker: 'Genevieve', text: 'Lukewarm. Rushed. The basil is… frightened. One star.' },
           { speaker: 'You', text: 'Frightened basil?!' },
         ],
       },
@@ -884,7 +885,7 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'genevieve', mood: 'neutral' }],
         lines: [
           { speaker: 'Genevieve', text: 'Uptown pays the most in the city, darling. So we expect the most.' },
-          { speaker: 'Genevieve', text: 'Impress me, and the whole city will follow. Fail, and... well. One star.' },
+          { speaker: 'Genevieve', text: 'Impress me, and the whole city will follow. Fail, and… well. One star.' },
         ],
       },
     ],
@@ -911,15 +912,15 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'genevieve', mood: 'surprised' }],
         caption: 'One bite. The critic goes very, very still.',
         lines: [
-          { speaker: 'Genevieve', text: 'Oh. Oh no. I think I... like it?' },
-          { speaker: 'Genevieve', text: 'The crust sings. The sauce has a whisper of... patience?' },
+          { speaker: 'Genevieve', text: 'Oh. Oh no. I think I… like it?' },
+          { speaker: 'Genevieve', text: 'The crust sings. The sauce has a whisper of… patience?' },
         ],
       },
       {
         backdrop: 'uptown',
         cast: [{ id: 'genevieve', mood: 'happy' }],
         lines: [
-          { speaker: 'Genevieve', text: 'I may have been... hasty. Do not quote me. I will deny everything.' },
+          { speaker: 'Genevieve', text: 'I may have been… hasty. Do not quote me. I will deny everything.' },
           { speaker: 'Genevieve', text: 'Bring another. For research. And one for my dog, Croissant.' },
         ],
       },
@@ -957,7 +958,7 @@ export const HOME_SCENES: Scene[] = [
         backdrop: 'uptown',
         cast: [{ id: 'megaslice-rep', mood: 'happy' }],
         lines: [
-          { speaker: 'MegaSlice Rep', text: 'Big review drops tomorrow! Pretty sure it\'s about us! Ninety percent sure!' },
+          { speaker: 'MegaSlice Rep', text: 'Big review drops tomorrow! Pretty sure it’s about us! Ninety percent sure!' },
         ],
       },
       {
@@ -986,7 +987,7 @@ export const HOME_SCENES: Scene[] = [
         cast: [{ id: 'genevieve', mood: 'happy' }],
         caption: 'The Port Marinara Times. Front page. Five stars.',
         lines: [
-          { speaker: 'Genevieve', text: '"The best pizza in Port Marinara is not on a yacht. It is on a bike. Lately, a drone."' },
+          { speaker: 'Genevieve', text: '“The best pizza in Port Marinara is not on a yacht. It is on a bike. Lately, a drone.”' },
           { speaker: 'Genevieve', text: 'I returned the yacht. Croissant was seasick anyway.' },
         ],
       },
@@ -997,7 +998,7 @@ export const HOME_SCENES: Scene[] = [
         caption: 'Every neighborhood has chosen you. MegaSlice is out of Port Marinara.',
         lines: [
           { speaker: 'Victor Crust', text: 'One city. You won ONE city. This war is not over, pizza person.' },
-          { speaker: 'Victor Crust', text: 'Enjoy your little port. I\'ll be waiting in Boston.' },
+          { speaker: 'Victor Crust', text: 'Enjoy your little port. I’ll be waiting in Boston.' },
         ],
       },
       {
@@ -1007,7 +1008,7 @@ export const HOME_SCENES: Scene[] = [
           { id: 'nonna-rosa', mood: 'happy' },
         ],
         lines: [
-          { speaker: 'Genevieve', text: 'My review went national, darling. Everyone wants a Rosa\'s now.' },
+          { speaker: 'Genevieve', text: 'My review went national, darling. Everyone wants a Rosa’s now.' },
           { speaker: 'Nonna Rosa', text: 'A new city? Pack the sauce. And take a sweater. Boston is cold.' },
         ],
       },

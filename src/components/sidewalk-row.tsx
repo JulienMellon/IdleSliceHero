@@ -9,7 +9,7 @@ import * as G from '../engine/game';
 import { C, F } from '../theme';
 import { BuyButton } from './game-ui';
 import { DriverIcon, FlameIcon, PrepIcon, RegisterIcon } from './icons';
-import { needLine, stationViews, type StationKey, type StationView } from './sidewalk-model';
+import { type BundleButton, BUNDLE_PILL, bundlePillBottom, needLine, stationViews, type StationKey, type StationView } from './sidewalk-model';
 import { COMPACT_FONT_MAX_SCALE, IDLE_STACK_GAP, SIDEWALK_ROW, STATION_CARD } from './tap-targets';
 
 // static icon elements: built once, not per render (M24)
@@ -20,7 +20,7 @@ const ICON: Record<StationKey, React.ReactNode> = {
   drivers: <DriverIcon size={11} />,
 };
 
-export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlight = null }: { game: G.GameState; id: NeighborhoodId; idleShop: boolean; bottom: number; onBuy: (what: G.Upgrade) => boolean; onOpen: () => void; highlight?: StationKey | null }) {
+export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlight = null, bundle = null, onBundle }: { game: G.GameState; id: NeighborhoodId; /** The hire stack replaces the framed cards: `hireOnSidewalk` (sidewalk-model.ts). */ idleShop: boolean; bottom: number; onBuy: (what: G.Upgrade) => boolean; onOpen: () => void; highlight?: StationKey | null; /** The tied stations' "Buy both" pill, centred above the row; null hides it. */ bundle?: BundleButton | null; onBundle?: () => boolean }) {
   // the name always stays on top; a player who has some cash but not enough sees "need $X" under the muted price (D359, D402)
   const station = (v: StationView, framed: boolean) => {
     const button = (
@@ -53,25 +53,35 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
   // say what the hire does, not just who (D341)
   const hireLabel = G.isHeadUpgrade(hire) ? `HIRE ${HEADS[id][G.headOf(hire)].toUpperCase()} · RUNS ${HEAD_ROLE[G.headOf(hire)].toUpperCase()} FOR YOU` : `HIRE A MANAGER · ×2 INCOME + EARNS AWAY`;
   return (
-    <View style={[styles.row, { bottom }]} pointerEvents="box-none">
-      {idleShop ? (
-        <View style={styles.idleStack}>
-          <View style={styles.chipRow}>{views.map((v) => station(v, false))}</View>
-          {/* what you get on top, the price below (D310, D311) */}
-          <BuyButton compact testID="walk-manager" sub={hireLabel} label={money(hireCost ?? 0)} enabled={hireCost !== null && !G.upgradeLock(game, id, hire) && game.cash >= hireCost} onPress={() => onBuy(hire)} />
+    <>
+      {bundle && onBundle ? (
+        // above the row and its level badges, centred; never over a station button
+        <View style={[styles.bundleWrap, { bottom: bundlePillBottom(bottom, idleShop) }]} pointerEvents="box-none">
+          <View style={styles.bundlePill}>
+            <BuyButton compact testID="walk-bundle" label={bundle.label} sub={bundle.sub} enabled={bundle.enabled} onPress={onBundle} />
+          </View>
         </View>
-      ) : (
-        views.map((v) => station(v, true))
-      )}
-      <Pressable testID="open-upgrades" onPress={onOpen} style={[styles.all, idleShop && styles.allIdle]}>
-        <Text style={styles.allIcon} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
-          ☰
-        </Text>
-        <Text style={styles.allText} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
-          All
-        </Text>
-      </Pressable>
-    </View>
+      ) : null}
+      <View style={[styles.row, { bottom }]} pointerEvents="box-none">
+        {idleShop ? (
+          <View style={styles.idleStack}>
+            <View style={styles.chipRow}>{views.map((v) => station(v, false))}</View>
+            {/* what you get on top, the price below (D310, D311) */}
+            <BuyButton compact testID="walk-manager" sub={hireLabel} label={money(hireCost ?? 0)} enabled={hireCost !== null && !G.upgradeLock(game, id, hire) && game.cash >= hireCost} onPress={() => onBuy(hire)} />
+          </View>
+        ) : (
+          views.map((v) => station(v, true))
+        )}
+        <Pressable testID="open-upgrades" onPress={onOpen} style={[styles.all, idleShop && styles.allIdle]}>
+          <Text style={styles.allIcon} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+            ☰
+          </Text>
+          <Text style={styles.allText} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+            All
+          </Text>
+        </Pressable>
+      </View>
+    </>
   );
 }
 
@@ -84,6 +94,8 @@ const styles = StyleSheet.create({
   cardCoach: { borderColor: '#FFC531', borderWidth: 4, borderStyle: 'solid' },
   // saving for it: a basil dashed outline that matches the pale basil face inside (D330; was pink)
   cardWaiting: { borderColor: 'rgba(46,125,62,0.6)', borderStyle: 'dashed' },
+  bundleWrap: { position: 'absolute', left: 8, right: 8, alignItems: 'center' },
+  bundlePill: { width: BUNDLE_PILL.width, height: BUNDLE_PILL.height },
   idleStack: { flex: 4, gap: IDLE_STACK_GAP },
   chipRow: { flexDirection: 'row', gap: 4 },
   chip: { flex: 1 },

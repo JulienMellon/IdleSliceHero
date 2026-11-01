@@ -10,7 +10,7 @@ import * as G from '../engine/game';
 import { useGame } from '../store/game-store';
 import { onAudio, type AudioEvent } from './bus';
 import {
-  DUCK, EXCLUSIVE_CUES, PurchaseChain, collectSize, dbToGain, perkDuckSeconds, shouldReleaseWarmCollect, RESTART_TRACKS, StingGate, VoiceLimiter, beatUnit, musicFor, nextVariant, panelCue, quantizeDelay, sharedTimeline,
+  DUCK, EXCLUSIVE_CUES, PurchaseChain, RarePlays, collectSize, dbToGain, perkDuckSeconds, shouldReleaseWarmCollect, RESTART_TRACKS, StingGate, VoiceLimiter, beatUnit, musicFor, nextVariant, panelCue, quantizeDelay, sharedTimeline,
   stingDuck, stingTiming, stingUnit, type MusicTrack, type StingKind,
 } from './logic';
 import { MUSIC, SFX, STINGS, STORY, type SfxId, type StoryCueId } from './manifest';
@@ -128,8 +128,8 @@ const duckTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 // effects
 const sfxPlayers = new Map<string, AudioPlayer>();
-/** Rare-effect keys a play has started and not finished, and the Collect players warmRare created itself (AU76). */
-const firing = new Set<string>();
+/** Plays of each rare-effect key started and not finished (a player is released with its last play: C102), and the Collect players warmRare created itself (AU76). */
+const firing = new RarePlays();
 const warmedCollect = new Set<string>();
 const lastVariant = new Map<SfxId, number>();
 const popLimiter = new VoiceLimiter();
@@ -261,7 +261,7 @@ function playSfx(id: SfxId, opts: { variant?: number; gain?: number; jitter?: nu
   const p = sfxPlayer(id, v);
   const release = RARE.has(id)
     ? () => {
-        firing.delete(key);
+        if (!firing.release(key)) return; // another play of this key is still sounding on the same player (C102)
         warmedCollect.delete(key);
         if (sfxPlayers.get(key) !== p) return;
         sfxPlayers.delete(key);
@@ -269,7 +269,7 @@ function playSfx(id: SfxId, opts: { variant?: number; gain?: number; jitter?: nu
       }
     : undefined;
   if (release) {
-    firing.add(key);
+    firing.acquire(key);
     warmedCollect.delete(key); // a played player is the play's own, released when it ends
   }
   fire(p, SFX_SECONDS[id] ?? 0.35, (opts.gain ?? 1) * under, Math.pow(2, semis / 12), release);
@@ -498,26 +498,31 @@ function onPanel(sceneId: string, panel: number) {
  * gavel once the Pier 9 bid is on offer. A play releases its player; this runs on every store update, so a build
  * that is still on offer is warmed again, and an unused Collect is released once the popup is gone.
  */
-function warmRare(s: ReturnType<typeof useGame.getState>) {
-  if (!s.loaded || !useAudioPrefs.getState().sound) return;
-  if (s.offline) {
-    const v = collectSize(s.offline.earned, s.game.cash);
-    if (!sfxPlayers.has(`collect/${v}`)) {
-      safe(() => sfxPlayer('collect', v));
-      warmedCollect.add(`collect/${v}`);
-    }
-  }
-  // release only a Collect this function warmed, and only when nothing is playing or about to (AU76)
+function sweepWarmCollect(s: ReturnType<typeof useGame.getState>) {
+  // release only a Collect this function warmed, and only when nothing is playing or about to (AU76); this runs with sound off too (M59)
   for (const key of [...warmedCollect]) {
     const p = sfxPlayers.get(key);
     if (!p) {
       warmedCollect.delete(key);
       continue;
     }
-    if (shouldReleaseWarmCollect({ warmed: true, firing: firing.has(key), playing: safe(() => p.playing, false), offlineOpen: !!s.offline })) {
+    if (shouldReleaseWarmCollect({ warmed: true, firing: firing.active(key), playing: safe(() => p.playing, false), offlineOpen: !!s.offline })) {
       warmedCollect.delete(key);
       sfxPlayers.delete(key);
       safe(() => p.remove());
+    }
+  }
+}
+
+function warmRare(s: ReturnType<typeof useGame.getState>) {
+  if (!s.loaded) return;
+  sweepWarmCollect(s);
+  if (!useAudioPrefs.getState().sound) return;
+  if (s.offline) {
+    const v = collectSize(s.offline.earned, s.game.cash);
+    if (!sfxPlayers.has(`collect/${v}`)) {
+      safe(() => sfxPlayer('collect', v));
+      warmedCollect.add(`collect/${v}`);
     }
   }
   if (!sfxPlayers.has('build/0') && NEIGHBORHOODS.some((n) => !G.buildLock(s.game, n.id))) safe(() => sfxPlayer('build', 0));

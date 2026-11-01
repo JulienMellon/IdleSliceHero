@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import { GOAL_BAR, goalBarLayout } from '../goal-model';
+import { aOrAn, GOAL_BAR, goalBarLayout } from '../goal-model';
 
 const lum = (hex: string) => {
   const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
@@ -39,5 +39,16 @@ describe('goal bar two-tone label (D297)', () => {
       expect(Number.isNaN(b.pct)).toBe(false);
       expect(Number.isNaN(b.fillW)).toBe(false);
     }
+  });
+});
+
+describe('a / an (B5)', () => {
+  test('picked from the name\'s first letter', () => {
+    expect(aOrAn('Uptown')).toBe('an');
+    expect(aOrAn('Industrial')).toBe('an');
+    expect(aOrAn('Suburbs')).toBe('a');
+    expect(aOrAn('Waterfront')).toBe('a');
+    expect(aOrAn('Downtown')).toBe('a');
+    expect(aOrAn('university')).toBe('an');
   });
 });

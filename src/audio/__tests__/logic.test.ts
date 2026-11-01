@@ -7,7 +7,7 @@ const path: { join(...p: string[]): string } = require('path');
 
 import { HOME_SCENES } from '../../content/scenes/home';
 import { NEIGHBORHOODS } from '../../content/tuning';
-import { stingTiming, MAX_TONIC_WAIT_SECONDS, perkDuckSeconds, shouldReleaseWarmCollect, DUCK, stingDuck, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
+import { stingTiming, MAX_TONIC_WAIT_SECONDS, perkDuckSeconds, RarePlays, shouldReleaseWarmCollect, DUCK, stingDuck, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const MANIFEST = fs.readFileSync(path.join(__dirname, '..', 'manifest.ts'), 'utf8');
@@ -99,6 +99,24 @@ describe('rare one-shots and perks (AU76, AU77)', () => {
     expect(shouldReleaseWarmCollect({ warmed: true, firing: false, playing: false, offlineOpen: false })).toBe(true);
     expect(shouldReleaseWarmCollect({ warmed: true, firing: false, playing: false, offlineOpen: true })).toBe(false);
     expect(shouldReleaseWarmCollect({ warmed: true, firing: false, playing: true, offlineOpen: false })).toBe(false);
+  });
+  it('two overlapping plays of one key keep the player until both release (C102, T78)', () => {
+    const plays = new RarePlays();
+    plays.acquire('collect/1'); // the task claim
+    plays.acquire('collect/1'); // the chest claim, inside the first one's length
+    expect(plays.active('collect/1')).toBe(true);
+    expect(plays.release('collect/1')).toBe(false); // the first ends: the player stays for the second
+    expect(plays.active('collect/1')).toBe(true);
+    expect(plays.release('collect/1')).toBe(true); // the last ends: now it can go
+    expect(plays.active('collect/1')).toBe(false);
+    expect(plays.release('collect/1')).toBe(false); // a stray release is ignored
+  });
+  it('plays of different keys release independently', () => {
+    const plays = new RarePlays();
+    plays.acquire('collect/0');
+    plays.acquire('collect/1');
+    expect(plays.release('collect/0')).toBe(true);
+    expect(plays.active('collect/1')).toBe(true);
   });
   it('a perk ducks the story cue for its length, but is back up before the payoff crash', () => {
     expect(perkDuckSeconds(3, 10_000, 0, 400)).toBe(3); // the payoff is far: the perk's whole length
