@@ -42,21 +42,20 @@ After the codecritic returns **APPROVED**, it skips the next **two** build round
 - Round 22 (v5.6) APPROVED → v5.7 and v5.8 skipped; round 23 (v5.9) reviewed `0d6d3a4..1430f5f` and APPROVED.
 - **Now:** round 23 APPROVED → the next **two** builds skip the codecritic; the third reviews `1430f5f..HEAD`.
 
-## Current state — round 23 (v5.7–v5.9 + lofi audio, 0d6d3a4..1430f5f): ✅ APPROVED (3 medium). Loop STOPPED (both reviewers passed on v5.9).
-Fixed: C100 (T77), C101 (T76), U7. AU76/AU77 (audio fixes made after the audio loop closed) checked: correct, except overlapping plays (C102). New UI logic is pure and tested (city-model, goal-model, sidewalk-model). Cut-scene art static and memoised; nothing new on the 15 fps path.
+## Current state — round 24 (v5.10–v5.12, 1430f5f..5d82004): ✅ APPROVED (3 medium)
+Fixed: C102 (T78), C103 (T79), M59. v5.12 numbers are numerically safe (max cost 1.87e17; suffixes to 1e33). **Skip rule:** the next two builds (v5.13, v5.14) skip the codecritic; v5.15 reviews `5d82004..HEAD`.
 
-| ID | Severity | File:line | Issue | Fix |
+| ID | Severity | File | Issue | Fix |
 |---|---|---|---|---|
-| C102 | medium | audio/director.ts:262-274 | Rare players cached per key and `firing` is a Set: a second play of the same key within its length (task + chest claim within 1.5 s → `collect/v` twice; two quick Expands) is cut when the first play's release runs | `RarePlays` acquire/release counter or play token in logic.ts; release at 0 (T78) |
-| A22 / M50 | medium | scene/room.tsx (1,027 lines) | Facade drawing in room.tsx, many nodes per pattern | facade.tsx, one path per pattern |
-| A17 / M32 | medium | app/index.tsx drawer | Inline card model; gain simulations per tick while open | Cached `drawerCards()` in drawer-model.ts (T45) |
-| C103 | low | cutscene-player.tsx:107 | Card-holder rule inline; `Math.max(0, …)` gives the card to the first figure when Rosa is absent | `cardHolder(panel)` in staging.ts returning −1, keep the backdrop prop (T79) |
-| C104 | low | game-ui.tsx `GoalLine` | Comment says memo-friendly; not memo'd, ReactNode icon | Drop the claim or memo + icon key |
-| A27 | low | index.tsx:308 `buyBundle` | Up to 8 commits/saves/audio events/queueScene per press | Store `buyMany(steps)`: one commit, one save, one sting |
-| M59 | low | director.ts:502 | Sound off → `warmRare` returns before its sweep; a warmed collect stays resident | Run the release loop before the sound check |
-| U8 | low | director.ts:501-525 | `warmRare` on every set (≥ 5 Hz) runs `buildLock` for every hood when build/0 isn't resident (pre-Nonna and after the last build, forever) | Early return on a `builtCount\|seen\|offline\|pier9` key |
-| U9 | low | city-map.tsx, city.tsx | `lotView` twice per lot per render | Compute lots once in City, pass down |
-| T78–T80 | test | — | RarePlays overlap; cardHolder; perkDuckSeconds after a background resume (rebased `startedAt`) | — |
-| Carried | low | — | M58, A26 (backdrop.tsx 933 lines), C92, C93, A24, A23, M53, M54, M55, M51/M52, C85–C89; tests T61–T65, T67–T69 | — |
+| C105 | medium | game-ui.tsx `GoalLine` | Only the last word shrinks; on 375/320 pt phones the payoff word truncates first and the amount can be pushed under the bar; 6–9 Texts ×2 reconcile every cash tick | Words in a `flexShrink: 1, overflow: hidden` row, amount outside at `flexShrink: 0`, `maxFontSizeMultiplier`; memo'd `GoalWords` with a stable `onSpans` (closes C104); T81 `goalLabelFits` at 320/375/393 |
+| A22 / M50 | medium | scene/room.tsx | 1,027 lines, facade node count | facade.tsx |
+| A17 / M32 | medium | app/index.tsx drawer | Inline card model, gain sims per tick, now + `capExpandCost` per card | `drawerCards()` in drawer-model.ts |
+| C106 | low | saves | Pre-retune saves load but carry no economy marker (windfall or sudden wall) | `economy: 2` field + policy before TestFlight (T82) |
+| C107 | low | tuning.ts | Uptown costMult 8e8: Lv 25 round = 5.4 h income; Lv 50 buy ~$6T | Check goal bar and "upgrades ×N" tasks don't point at multi-day buys |
+| C108 | low | scene/crew.ts `guestLeg` | New table changes the modulus; seated walk-ins jump tables | Store `table` in `GuestSlot` (T84) |
+| C109 | low | engine/format.ts | 999,500–999,999 prints "$1000K" | Recompute the tier after rounding (T83) |
+| A28, A29, A27 | low | storefront.tsx, FurnitureSource, index.tsx | Level-up state machine in render body; optional counter/drivers; `buyMany` | `stepMoments()` in moments.ts; required fields; store `buyMany` |
+| M60, U10, U11, U8, U9 | low | storefront.tsx, cast.ts, director.ts, city | ~60–90 short-lived objects per frame; `queueSizes`/`waitingText` at 15 Hz; carried | Memo on scene keys |
+| T80–T84 | test | — | perkDuckSeconds resume; goal label budget; migrate pre-v5.12; economy pin; crew tables | — |
 
-**Next IDs:** K1, C105, A28, M60, U10, T81.
+**Next IDs:** K1, C110, A30, M62, U12, T85.

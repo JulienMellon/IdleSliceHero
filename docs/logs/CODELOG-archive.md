@@ -629,3 +629,23 @@ Fixed: C98, U6, A25, M57, C99, T74, T75. Cut-scenes measured: heaviest panel ~16
 | T76, T77 | test | staging / content | Hands box on every window and speaker; ≤ 2 figures per panel and ids in LOOKS | add |
 
 **Next IDs:** K1, C102, A27, M59, U8, T78.
+
+
+## round 23 (v5.7–v5.9 + lofi audio, 0d6d3a4..1430f5f): ✅ APPROVED (3 medium). Loop STOPPED (both reviewers passed on v5.9).
+Fixed: C100 (T77), C101 (T76), U7. AU76/AU77 (audio fixes made after the audio loop closed) checked: correct, except overlapping plays (C102). New UI logic is pure and tested (city-model, goal-model, sidewalk-model). Cut-scene art static and memoised; nothing new on the 15 fps path.
+
+| ID | Severity | File:line | Issue | Fix |
+|---|---|---|---|---|
+| C102 | medium | audio/director.ts:262-274 | Rare players cached per key and `firing` is a Set: a second play of the same key within its length (task + chest claim within 1.5 s → `collect/v` twice; two quick Expands) is cut when the first play's release runs | `RarePlays` acquire/release counter or play token in logic.ts; release at 0 (T78) |
+| A22 / M50 | medium | scene/room.tsx (1,027 lines) | Facade drawing in room.tsx, many nodes per pattern | facade.tsx, one path per pattern |
+| A17 / M32 | medium | app/index.tsx drawer | Inline card model; gain simulations per tick while open | Cached `drawerCards()` in drawer-model.ts (T45) |
+| C103 | low | cutscene-player.tsx:107 | Card-holder rule inline; `Math.max(0, …)` gives the card to the first figure when Rosa is absent | `cardHolder(panel)` in staging.ts returning −1, keep the backdrop prop (T79) |
+| C104 | low | game-ui.tsx `GoalLine` | Comment says memo-friendly; not memo'd, ReactNode icon | Drop the claim or memo + icon key |
+| A27 | low | index.tsx:308 `buyBundle` | Up to 8 commits/saves/audio events/queueScene per press | Store `buyMany(steps)`: one commit, one save, one sting |
+| M59 | low | director.ts:502 | Sound off → `warmRare` returns before its sweep; a warmed collect stays resident | Run the release loop before the sound check |
+| U8 | low | director.ts:501-525 | `warmRare` on every set (≥ 5 Hz) runs `buildLock` for every hood when build/0 isn't resident (pre-Nonna and after the last build, forever) | Early return on a `builtCount\|seen\|offline\|pier9` key |
+| U9 | low | city-map.tsx, city.tsx | `lotView` twice per lot per render | Compute lots once in City, pass down |
+| T78–T80 | test | — | RarePlays overlap; cardHolder; perkDuckSeconds after a background resume (rebased `startedAt`) | — |
+| Carried | low | — | M58, A26 (backdrop.tsx 933 lines), C92, C93, A24, A23, M53, M54, M55, M51/M52, C85–C89; tests T61–T65, T67–T69 | — |
+
+**Next IDs:** K1, C105, A28, M60, U10, T81.
