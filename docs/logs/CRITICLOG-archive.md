@@ -1817,3 +1817,27 @@ First round under the award-winning-games standard (critic brief, 2026-11-11) wi
 | D422 | note | 39–46 | Fixtures show the goal bar "tap!" at $6.00K with $625K cash | Confirm the ready goal is claimed in live play |
 
 **Next IDs:** G91, D428.
+
+
+## v5.12, round 60: ❌ NOT SATISFIED (2 bugs, 2 major + 4 retention majors open by plan, 6 minor)
+v5.12 = economy retune to ~5 days + round-59 fixes. Fixed in pixels: G88, G89, G90, D414, D415, D416, D418, D420, D421. Being fixed in v5.13.
+
+| ID | Severity | Where / shot | Note | Concrete fix |
+|---|---|---|---|---|
+| G91 | bug | 34, 35, 36, 41, 42, 14 | The "+$" pop covers the end of the waiting pill ("buy F") | Add the pop rect to `clearPillX`'s avoid (ladder.ts:352) or spawn the pop 22 pt above the pill |
+| G92 | bug | 07 | "Capped at 2h 0m (away 2h 0m)" on an uncapped return (game.ts:884) | Show only when away exceeds the cap by ≥ 60 s |
+| D417 | major | 39/44/42/40 | Ovens get narrower as they level (50 → 32 → 50 → 32 pt); the Lv 3 brick dome is still the best-looking oven | Fixed 52 pt oven bay per footprint, bench grows leftward; `MIN_OVEN_W` 30 → 44; brick arch/dome on the top deck at every tier |
+| D433 | major | 20 | 2 h offline cap < the 4 h check-in the economy targets: every return says "Capped" | Cap ≥ check-in interval (4 h, extendable) and refit; show a full meter instead of "Capped" |
+| D423–D426 | major | retention | Open by plan (v5.13–v5.15): mid-session taps, session-end reason to return, gift-like return, floating bonus / special orders | See HANDOFF plan |
+| D434 | note | 05b, 21, 14 | Level prices tiny vs build costs (Waterfront build $200M, Lv 1 $330); Uptown reversed (goal "$20.7B / $400T") | Refit with costMult in proportion to order value; split far goals into steps |
+| D435 | note | 37 | PREP $3.55K next to HIRE A MANAGER $100M; goal bar at 0% | Show "about 3 h at current rate" or an intermediate goal |
+| D419 | minor | 37, 05b | Affordable Waterfront cards still washed out | 2 pt #3B1F14 outline, full-opacity label |
+| D428 | minor | 41, 13, 14 | Patio inside the wall reads as an indoor table | Plank deck, step-down, low rail; fixtures 45/46 at footprint 2 |
+| D429 | minor | 42 | Milestone: no confetti in frame, badge hides the cook, pill under the badge | Hide the pill 1.5 s, badge 30 pt above the hat, capture at 0.4 s |
+| D430 | minor | 40 | Queue drivers overlap ~40%, feet on the sill | 26 pt spacing, ±3 pt height, feet 6 pt inside |
+| D431 | minor | 43, 46 | Diner queue + driver + seated diner clump | Drivers door side (x ≥ 250), diners left |
+| D432 | minor | 41, 07, 20, 34 | Orphan picket fence; scooter clips the sandwich board | Remove / separate |
+| D422 | note | 41, 38, 05b | Fixtures show impossible states | Regenerate fixtures from the pacing sim |
+| D427 | minor | 13 | Endgame goal only says "hire Pierre" | v5.15 |
+
+**Next IDs:** G93, D436.
