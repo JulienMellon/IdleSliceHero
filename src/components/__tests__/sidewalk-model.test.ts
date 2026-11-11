@@ -1,7 +1,8 @@
+import { NEIGHBORHOODS } from '../../content/tuning';
 /// <reference types="jest" />
 import { money } from '../../engine/format';
 import * as G from '../../engine/game';
-import { buildChipHint, buildChipSub, bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, type MergedSlot, mergeGroups, needLine, needText, showBundlePill, sidewalkSlots, stationModels, stationTitle, stationViews } from '../sidewalk-model';
+import { AFFORDABLE_OUTLINE, buildChipHint, buttonOutline, cardLook, buildChipSub, bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, type MergedSlot, mergeGroups, needLine, needText, showBundlePill, sidewalkSlots, stationModels, stationTitle, stationViews } from '../sidewalk-model';
 import { BUTTON_H, SIDEWALK_ROW, TAP } from '../tap-targets';
 
 const shopState = (patch: Partial<G.Shop>, cash = 0): G.GameState => {
@@ -377,5 +378,40 @@ describe('merge priority: Expand first (D405 meets D407)', () => {
   });
   test('no bundle, no merge', () => {
     expect(mergeGroups([v('prep', false, true), v('ovens', false, true), v('counter', false, false), v('drivers', false, false)], false).bundle).toBeNull();
+  });
+});
+
+describe('affordable cards are never washed out (D419, round 60)', () => {
+  const frames = ['hot', 'waiting', null] as const;
+  const lum = (hex: string) => {
+    const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  };
+  const contrast = (a: string, b: string) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+  test('an affordable card, in every neighbourhood and every frame, has a 2 pt #3B1F14 outline on a solid face and a full-opacity label', () => {
+    expect(AFFORDABLE_OUTLINE).toEqual({ color: '#3B1F14', width: 2 });
+    for (const n of NEIGHBORHOODS)
+      for (const frame of frames) {
+        const look = cardLook(frame, true);
+        expect([n.id, frame, look.borderColor, look.borderWidth, look.borderStyle, look.labelOpacity]).toEqual([n.id, frame, '#3B1F14', 2, 'solid', 1]);
+        expect([n.id, frame, look.backgroundColor.startsWith('#')]).toEqual([n.id, frame, true]); // solid, not rgba
+        // the outline reads against the face and against the neighbourhood's own colour (the Waterfront blue, the Uptown violet…)
+        expect([n.id, frame, contrast(look.borderColor, look.backgroundColor) >= 7, contrast(look.borderColor, n.color) >= 2]).toEqual([n.id, frame, true, true]);
+      }
+  });
+  test('the check can fail: the old affordable bottleneck card had a tomato outline on a pale pink face (under 3:1 against its face)', () => {
+    expect(contrast('#E5483A', '#FFF4F0')).toBeLessThan(4);
+    expect(cardLook('hot', true).borderColor).not.toBe('#E5483A');
+    expect(contrast(cardLook('hot', true).borderColor, cardLook('hot', true).backgroundColor)).toBeGreaterThan(10);
+  });
+  test('the bottleneck keeps its signal: a tinted face, distinct from the plain affordable card; a card you cannot buy keeps its quiet frame', () => {
+    expect(cardLook('hot', true).backgroundColor).not.toBe(cardLook(null, true).backgroundColor);
+    expect(cardLook('waiting', false)).toMatchObject({ borderStyle: 'dashed' });
+    expect(cardLook(null, false).borderWidth).toBe(2.5);
+  });
+  test('the button face is outlined the same way whenever the buy can be made, whatever its tone, and not when it is flat or unaffordable', () => {
+    for (const tone of ['normal', 'neutral', 'expand'] as const) expect(buttonOutline(true, tone)).toEqual({ borderColor: '#3B1F14', borderWidth: 2 });
+    expect(buttonOutline(true, 'nogain')).toBeNull();
+    for (const tone of ['normal', 'neutral', 'expand', 'nogain'] as const) expect(buttonOutline(false, tone)).toBeNull();
   });
 });

@@ -4,6 +4,8 @@
 //   npx tsx scripts/pacing-fit.ts                 fit build costs (and Uptown's cost multiplier) to the targets below
 //   npx tsx scripts/pacing-fit.ts check           just print the unlock days of the current tuning, all four sim rows
 //   OV=3,10,27,75,200,550 CM=1,4.5,12,34,90,250 MCR=0.5 npx tsx scripts/pacing-fit.ts
+//   K=300 RHO=0.45 MCR=0.5 npx tsx scripts/pacing-fit.ts fit3   v5.13: proportional costs. Per pizzeria one free number (its order value):
+//                                    costMult = RHO x orderValue, buildCost = K x costMult, managerCost = MCR x buildCost; ov is bisected to the day target.
 //
 // Order values (OV), cost multipliers (CM), the manager-cost ratio (MCR = managerCost / buildCost) and the other cost tables
 // (OG, FP, DC, VC, PB, PP, CAP, EFF as in scripts/review/sim2.ts) are chosen by hand; the fitter bisects each later pizzeria's
@@ -59,18 +61,22 @@ function scan(f: (x: number) => number, target: number, lo: number, hi: number) 
 
 function fit() {
   const cur: Cfg = { ...base, bc: base.bc ? [...base.bc] : NEIGHBORHOODS.map((n) => n.buildCost), cm: base.cm ? [...base.cm] : NEIGHBORHOODS.map((n) => n.costMult), mc: NEIGHBORHOODS.map((n) => n.managerCost) };
-  const setBC = (i: number, v: number) => { cur.bc![i] = v; if (mcRatio !== undefined) cur.mc![i] = v * mcRatio; };
+  const mk = num('MK'); // manager price in units of the shop's cost multiplier (v5.13); beats MCR when set
+  const setBC = (i: number, v: number) => { cur.bc![i] = v; if (mk !== undefined) cur.mc![i] = mk * cur.cm![i]; else if (mcRatio !== undefined) cur.mc![i] = v * mcRatio; };
   // stages: waterfront (2), university (3), industrial (4), uptown (5)
   for (let i = 2; i <= 5; i++) {
     const key = KEYS[i - 2];
     const lo = num('LO') ?? 1e4;
-    const best = scan((v) => { setBC(i, v); return days(cur, SCENE[key], TARGETS[key] * 2.5).out[key] ?? TARGETS[key] * 3; }, TARGETS[key], i > 2 ? cur.bc![i - 1] / 8 : lo, 1e13);
+    const best = scan((v) => { setBC(i, v); return days(cur, SCENE[key], TARGETS[key] * 2.5).out[key] ?? TARGETS[key] * 3; }, TARGETS[key], i > 2 ? cur.bc![i - 1] / 8 : lo, num("HI") ?? 8.5e15);
     setBC(i, best.x);
     console.log(`${NEIGHBORHOODS[i].id.padEnd(10)} buildCost ${best.x.toPrecision(3)} managerCost ${cur.mc![i].toPrecision(3)} -> day ${best.d.toFixed(2)} (target ${TARGETS[key]})`);
   }
   // finale: Uptown's cost multiplier (cheaper upgrades -> more pizzas sooner)
-  const best = scan((v) => { cur.cm![5] = v; return days(cur, 'uptown-4', 9).out.finale ?? 20; }, TARGETS.finale, cur.cm![5] / 8, cur.cm![5] * 8);
-  cur.cm![5] = best.x;
+  // finale: Uptown's cost multiplier within 0.3x-1.0x of its order value (v5.13: no outlier), the rest of the table fixed
+  const ov5 = cur.ov![5];
+  const best = scan((v) => { cur.cm![5] = v; if (mk !== undefined) cur.mc![5] = mk * v; return days(cur, 'uptown-4', 9).out.finale ?? 20; }, TARGETS.finale, 0.3 * ov5, 1.0 * ov5);
+  cur.cm![5] = Math.min(ov5, Math.max(0.3 * ov5, best.x));
+  if (mk !== undefined) cur.mc![5] = mk * cur.cm![5];
   console.log(`uptown costMult ${best.x.toPrecision(3)} -> finale day ${best.d.toFixed(2)} (target ${TARGETS.finale})`);
   console.log(JSON.stringify({ ov: cur.ov, bc: cur.bc!.map((v) => +v.toPrecision(3)), cm: cur.cm!.map((v) => +v.toPrecision(3)), mc: cur.mc!.map((v) => +v.toPrecision(3)) }));
 }
@@ -146,6 +152,8 @@ function dayOfScene(c: Cfg, eager: boolean, scene: string, maxDays: number) {
 function fit2() {
   const rho = num('RHO') ?? 0.45;
   const mcr2 = mcRatio ?? 0.5;
+  const mk = num('MK'); // manager price in units of the shop's cost multiplier (v5.13); beats MCR when set
+  const bcMax = num('BCMAX') ?? Infinity; // the engine's what-if gains stop at 2^53 (about 9.0e15): keep builds below it
   const cur = { ov: [3, 10, 0, 0, 0, 0], bc: [0, 450, 0, 0, 0, 0], cm: [1, 4.5, 0, 0, 0, 0], mc: [0, 600, 0, 0, 0, 0] };
   const fixed = (process.env.FIX ?? '').split(';').filter(Boolean).map((s) => s.split(',').map(Number)); // optional [ov,bc] for finished stages
   for (let i = 2; i <= 5; i++) {
@@ -154,12 +162,13 @@ function fit2() {
     const prevOv = cur.ov[i - 1];
     let best = { score: Infinity, ov: 0, bc: 0, g: 0, e: 0 };
     const tryIt = (ov: number, bc: number) => {
-      const c: Cfg = { ...base, ov: [...cur.ov.slice(0, i), ov, ...cur.ov.slice(i + 1)], bc: [...cur.bc.slice(0, i), bc, ...cur.bc.slice(i + 1)], cm: [...cur.cm.slice(0, i), ov * rho, ...cur.cm.slice(i + 1)], mc: [...cur.mc.slice(0, i), bc * mcr2, ...cur.mc.slice(i + 1)] };
+      const c: Cfg = { ...base, ov: [...cur.ov.slice(0, i), ov, ...cur.ov.slice(i + 1)], bc: [...cur.bc.slice(0, i), bc, ...cur.bc.slice(i + 1)], cm: [...cur.cm.slice(0, i), ov * rho, ...cur.cm.slice(i + 1)], mc: [...cur.mc.slice(0, i), mk !== undefined ? ov * rho * mk : bc * mcr2, ...cur.mc.slice(i + 1)] };
+      if (bc > bcMax) return;
       const g = dayOfScene(c, false, SCENE[key], T * 2.2);
       const e = dayOfScene(c, true, SCENE[key], T * 2.2);
       const score = Math.log(g / T) ** 2 + 0.5 * Math.log(e / T) ** 2;
       if (score < 0.01 && process.env.VERBOSE) console.log(`   ${NEIGHBORHOODS[i].id} ov ${ov.toPrecision(3)} bc ${bc.toPrecision(3)} greedy ${g.toFixed(2)} eager ${e.toFixed(2)}`);
-      if (score < best.score - 1e-4 || (Math.abs(score - best.score) <= 1e-4 && ov < best.ov)) best = { score, ov, bc, g, e };
+      if (score < best.score - 1e-4 || (Math.abs(score - best.score) <= 1e-4 && (process.env.TIE === 'big' ? ov > best.ov : ov < best.ov))) best = { score, ov, bc, g, e };
     };
     const fx = fixed[i - 2];
     if (fx) tryIt(fx[0], fx[1]);
@@ -169,10 +178,66 @@ function fit2() {
       const { ov: o0, bc: b0 } = best;
       for (const fo of (process.env.FO ?? "0.8,0.9,1,1.12,1.25").split(",").map(Number)) for (const fb of [0.7, 0.85, 1, 1.2, 1.4]) tryIt(o0 * fo, b0 * fb);
     }
-    cur.ov[i] = best.ov; cur.bc[i] = best.bc; cur.cm[i] = best.ov * rho; cur.mc[i] = best.bc * mcr2;
+    cur.ov[i] = best.ov; cur.bc[i] = best.bc; cur.cm[i] = best.ov * rho; cur.mc[i] = mk !== undefined ? best.ov * rho * mk : best.bc * mcr2;
     console.log(`${NEIGHBORHOODS[i].id.padEnd(10)} ov ${best.ov.toPrecision(3)} buildCost ${best.bc.toPrecision(3)} -> greedy day ${best.g.toFixed(2)}, eager day ${best.e.toFixed(2)} (target ${T})`);
   }
   console.log(JSON.stringify(cur));
+}
+
+
+// ---- v5.13: proportional fit. costMult = RHO x orderValue, buildCost = K x costMult, managerCost = MCR x buildCost (D434, D435) ----
+function fit3() {
+  const rho = num('RHO') ?? 0.45;
+  const K = num('K') ?? 300;
+  const mcr = mcRatio ?? 0.5;
+  const cur = { ov: [3, 10, 0, 0, 0, 0], bc: [0, 450, 0, 0, 0, 0], cm: [1, 4.5, 0, 0, 0, 0], mc: [0, 600, 0, 0, 0, 0] };
+  const set = (i: number, ov: number) => { cur.ov[i] = ov; cur.cm[i] = ov * rho; cur.bc[i] = ov * rho * K; cur.mc[i] = ov * rho * K * mcr; };
+  for (let i = 2; i <= 5; i++) {
+    const key = KEYS[i - 2];
+    const best = scan((ov) => { set(i, ov); return dayOfScene({ ...base, ...cur }, false, SCENE[key], TARGETS[key] * 2.5); }, TARGETS[key], cur.ov[i - 1] * 1.5, cur.ov[i - 1] * 1e9);
+    set(i, best.x);
+    console.log(`${NEIGHBORHOODS[i].id.padEnd(10)} ov ${best.x.toPrecision(3)} (x${(best.x / cur.ov[i - 1]).toExponential(1)} the last) buildCost ${cur.bc[i].toPrecision(3)} -> day ${best.d.toFixed(2)} (target ${TARGETS[key]})`);
+  }
+  console.log(JSON.stringify({ ov: cur.ov.map((v) => +v.toPrecision(3)), bc: cur.bc.map((v) => +v.toPrecision(3)), cm: cur.cm.map((v) => +v.toPrecision(3)), mc: cur.mc.map((v) => +v.toPrecision(3)) }));
+}
+
+// ---- v5.13: proportional fit over the (orderValue step, K) plane. costMult = RHO x ov, buildCost = K x costMult, managerCost = MK x costMult.
+// Several (ov, K) pairs reach the same day (the greedy player climbs the old ladder first), so list every pair that lands in the band and let the caller pick. ----
+function fit4() {
+  const rho = num('RHO') ?? 0.45;
+  const mk = num('MK') ?? 1600;
+  const ks = (process.env.KS ?? '200,300,450,700,1000').split(',').map(Number);
+  const fovs = (process.env.FOV ?? '20,40,80,160,320,640,1300,2600,5200,10000').split(',').map(Number);
+  const bcMax = num('BCMAX') ?? 8.5e15;
+  const cmMax = num('CMMAX') ?? 4.5e7;
+  const cur = { ov: [3, 10, 0, 0, 0, 0], bc: [0, 450, 0, 0, 0, 0], cm: [1, 4.5, 0, 0, 0, 0], mc: [0, 600, 0, 0, 0, 0] };
+  const fixed = (process.env.FIX ?? '').split(';').filter(Boolean).map((s) => s.split(',').map(Number)); // [ov,K] per finished stage
+  const set = (i: number, ov: number, K: number) => { cur.ov[i] = ov; cur.cm[i] = ov * rho; cur.bc[i] = ov * rho * K; cur.mc[i] = ov * rho * mk; };
+  for (let i = 2; i <= 5; i++) {
+    const key = KEYS[i - 2];
+    const T = TARGETS[key];
+    const hits: { ov: number; K: number; g: number; e: number; score: number }[] = [];
+    const tryIt = (ov: number, K: number) => {
+      set(i, ov, K);
+      // the engine's what-if gains stop at 2^53 (about 9.0e15): a price above it has no hint, so the whole ladder (Lv 125 costs 2e8 x costMult) must stay under it
+      if (cur.bc[i] > bcMax || cur.cm[i] > cmMax || mk > K) return;
+      const g = dayOfScene({ ...base, ...cur }, false, SCENE[key], T * 2.2);
+      const e = dayOfScene({ ...base, ...cur }, true, SCENE[key], T * 2.2);
+      const score = Math.log(g / T) ** 2 + 0.5 * Math.log(e / T) ** 2;
+      hits.push({ ov, K, g, e, score });
+      if (process.env.VERBOSE) console.log(`   ${NEIGHBORHOODS[i].id} ov ${ov.toPrecision(3)} K ${K} greedy ${g.toFixed(2)} eager ${e.toFixed(2)}`);
+    };
+    const fx = fixed[i - 2];
+    if (fx) tryIt(fx[0], fx[1]);
+    else for (const f of fovs) for (const K of ks) tryIt(cur.ov[i - 1] * f, K);
+    hits.sort((a, b) => a.score - b.score || a.K - b.K);
+    const good = hits.filter((h) => h.score < 0.01);
+    console.log(`${NEIGHBORHOODS[i].id}: ${good.length} of ${hits.length} pairs within ~10% of day ${T}; best 6: ${hits.slice(0, 6).map((h) => `ov ${h.ov.toPrecision(3)} K ${h.K} -> ${h.g.toFixed(2)}/${h.e.toFixed(2)}`).join(' | ')}`);
+    if (!hits.length) { console.log('no pair fits the limits'); return; }
+    const pick = (process.env.PICK ?? 'smallK') === 'smallK' ? [...(good.length ? good : hits)].sort((a, b) => a.K - b.K || a.score - b.score)[0] : hits[0];
+    set(i, pick.ov, pick.K);
+  }
+  console.log(JSON.stringify({ ov: cur.ov.map((v) => +v.toPrecision(3)), bc: cur.bc.map((v) => +v.toPrecision(3)), cm: cur.cm.map((v) => +v.toPrecision(3)), mc: cur.mc.map((v) => +v.toPrecision(3)) }));
 }
 
 // ---- polish: random local search on the last three stages, scoring the greedy and the eager player together ----
@@ -231,6 +296,8 @@ function polish(seed: number, iters: number) {
 
 if (process.argv[2] === 'polish') polish(Number(process.env.SEED ?? 1), Number(process.env.ITERS ?? 60));
 else if (process.argv[2] === 'fit2') fit2();
+else if (process.argv[2] === 'fit3') fit3();
+else if (process.argv[2] === 'fit4') fit4();
 else if (process.argv[2] === 'check') check();
 else if (process.argv[2] === 'search') {
   const start: Vec = process.env.START ? JSON.parse(process.env.START) : { bc: [0, 450, 5e7, 1.75e8, 5.5e8, 5.4e9], cm: [1, 4.5, 12, 34, 90, 250], mcr: 0.5, ovg: 2.7, og: 1, fp: 1 };

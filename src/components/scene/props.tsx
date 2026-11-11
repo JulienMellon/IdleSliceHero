@@ -83,7 +83,7 @@ const OvenBody = memo(function OvenBody({ o, grade, lit, tier }: { o: OvenSpec; 
   const dome = (dx: number) => `M${ax + dx} ${pTop} L${ax + dx} ${shoulder} A${w / 2} ${ry} 0 0 1 ${bx + dx} ${shoulder} L${bx + dx} ${pTop} Z`;
   return (
     <G>
-      {o.chimney && (
+      {o.chimney && !o.stacked && (
         <G>
           <Rect x={cx - w * 0.09} y={top - (16 + HOOD_EXTRA[tier]) * k} width={w * 0.18} height={(20 + HOOD_EXTRA[tier]) * k} fill={grade >= 3 ? shade(base, -0.1) : '#8C7B6A'} stroke={INK} strokeWidth={1} />
           <Rect x={cx - w * 0.12} y={top - (19 + HOOD_EXTRA[tier]) * k} width={w * 0.24} height={4 * k} rx={1} fill={tier >= 1 ? BRASS : grade >= 3 ? shade(base, -0.25) : '#6E5F51'} stroke={INK} strokeWidth={0.8} />
@@ -92,7 +92,7 @@ const OvenBody = memo(function OvenBody({ o, grade, lit, tier }: { o: OvenSpec; 
       <Path d={dome(3)} fill={dark} />
       <Path d={dome(0)} fill={`url(#oven${grade})`} stroke={INK} strokeWidth={1.3} />
       {/* brick courses on brick/wood-fired domes, rivet band on copper/gold */}
-      {grade === 0 || grade === 2
+      {grade <= 2
         ? [0.3, 0.55].map((f) => <Path key={f} d={`M${ax + 2} ${pTop - (pTop - top) * f} Q${cx} ${pTop - (pTop - top) * f - 4} ${bx - 2} ${pTop - (pTop - top) * f}`} stroke={dark} strokeWidth={0.9} fill="none" opacity={0.55} />)
         : (
           <G>
@@ -138,9 +138,10 @@ const DomeFront = memo(function DomeFront({ o, gold, wood, tier }: { o: OvenSpec
 
 /** One stainless hood + flue over a bank of box deck ovens. */
 export const OvenHood = memo(function OvenHood({ lay, grade, mural, tier = 0 }: { lay: Layout; grade: number; mural: boolean; tier?: 0 | 1 | 2 }) {
+  // a stacked bank (some lower deck is a box oven) carries one hood over the whole bank, domes included; a single deck of domes has a flue each
   const boxes = lay.ovens.filter((o) => isBoxOven(o, grade));
   if (!boxes.length) return null;
-  const top = Math.max(...boxes.map((o) => o.z + o.h));
+  const top = Math.max(...lay.ovens.map((o) => o.z + o.h));
   const x0 = lay.ovenCols[0].x0 - 6;
   const x1 = lay.ovenCols[lay.ovenCols.length - 1].x1 + 6;
   const y = D - 6;

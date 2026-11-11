@@ -10,7 +10,7 @@ import * as G from '../engine/game';
 import { C, F } from '../theme';
 import { BuyButton } from './game-ui';
 import { DriverIcon, FlameIcon, PrepIcon, RegisterIcon } from './icons';
-import { type MergedSlot, needLine, sidewalkSlots, stationTitle, type StationKey, type StationView } from './sidewalk-model';
+import { cardLook, type MergedSlot, needLine, sidewalkSlots, stationTitle, type StationKey, type StationView } from './sidewalk-model';
 import { COMPACT_FONT_MAX_SCALE, IDLE_STACK_GAP, SIDEWALK_ROW, STATION_CARD } from './tap-targets';
 
 // static icon elements: built once, not per render (M24)
@@ -35,7 +35,7 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
       </View>
     );
     return framed ? (
-      <View key={v.key} style={[styles.card, v.frame === 'hot' && styles.cardHot, v.frame === 'waiting' && styles.cardWaiting, highlight === v.key && styles.cardCoach]}>
+      <View key={v.key} style={[styles.card, look(v.frame, v.affordable), highlight === v.key && styles.cardCoach]}>
         {button}
         {badge}
       </View>
@@ -53,7 +53,7 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
       <BuyButton compact testID={m.kind === 'bundle' ? 'walk-bundle' : 'walk-expand'} sub={m.title} label={m.label} foot={m.foot} tone={m.kind === 'expand' ? 'expand' : 'normal'} enabled={m.enabled} onPress={() => (m.kind === 'bundle' ? onBundle?.() ?? false : onBuy('expand'))} />
     );
     return framed ? (
-      <View key={m.kind} style={[styles.card, { flex: m.span }, m.frame === 'hot' && styles.cardHot, m.frame === 'waiting' && styles.cardWaiting]}>
+      <View key={m.kind} style={[styles.card, { flex: m.span }, look(m.frame, m.enabled)]}>
         {button}
       </View>
     ) : (
@@ -92,15 +92,18 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
   );
 }
 
+/** D419: an affordable card is a 2 pt #3B1F14 outline on a solid face; a quiet or saving card keeps its 2.5 pt frame. The content box stays the same size. */
+const look = (frame: 'hot' | 'waiting' | null, affordable: boolean) => {
+  const l = cardLook(frame, affordable);
+  return { borderColor: l.borderColor, borderWidth: l.borderWidth, borderStyle: l.borderStyle, backgroundColor: l.backgroundColor, padding: STATION_CARD.padding + (STATION_CARD.border - l.borderWidth) } as const;
+};
+
 const shadow = { boxShadow: '0 4px 0 rgba(59,31,20,0.25)' } as object;
 const styles = StyleSheet.create({
   row: { position: 'absolute', left: 8, right: 8, flexDirection: 'row', gap: 5, alignItems: 'flex-end' },
   card: { flex: 1, height: SIDEWALK_ROW.cardHeight, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 12, borderWidth: STATION_CARD.border, borderColor: C.ink, padding: STATION_CARD.padding, ...shadow },
-  cardHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
   // Nonna's tutorial points here: a gold frame
   cardCoach: { borderColor: '#FFC531', borderWidth: 4, borderStyle: 'solid' },
-  // saving for it: a basil dashed outline that matches the pale basil face inside (D330; was pink)
-  cardWaiting: { borderColor: 'rgba(46,125,62,0.6)', borderStyle: 'dashed' },
   idleStack: { flex: 4, gap: IDLE_STACK_GAP },
   chipRow: { flexDirection: 'row', gap: 4 },
   chip: { flex: 1 },

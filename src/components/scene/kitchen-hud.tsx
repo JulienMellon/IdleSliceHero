@@ -6,7 +6,7 @@ import { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { money } from '../../engine/format';
 import { LINE, type Departure } from '../../engine/pipeline';
 import { F } from '../../theme';
-import { BADGE_R, COIN_FLIGHT, popModels, popRect, type BadgeTone } from './stations';
+import { BADGE_R, COIN_FLIGHT, popModels, popPlace, popWidth, POP_H, type BadgeTone, type Rect as ScreenRect } from './stations';
 import { HeadFace } from './head-face';
 import type { HeadKind } from '../../content/tuning';
 import { INK, SCENE_W } from './projection';
@@ -98,7 +98,7 @@ type Pt = [number, number];
  * register for a walk-in with nobody to hand it to), drifting up and fading over its last 0.2 s before it becomes
  * a coin (the coin itself flies in the screen overlay, `CoinLayer`). Nothing is mounted at opacity 0 (M38).
  */
-export function DeparturePops({ deps, left, anchor, register }: { deps: readonly Departure[]; left: (d: Departure) => number; anchor: (d: Departure) => Pt | null; register: Pt }) {
+export function DeparturePops({ deps, left, anchor, register, keepOff = [] }: { deps: readonly Departure[]; left: (d: Departure) => number; anchor: (d: Departure) => Pt | null; register: Pt; /** Rects a pop must not cover: the sidewalk pills (G91). */ keepOff?: readonly ScreenRect[] }) {
   if (deps.length === 0) return null;
   const shown = popModels(deps, left);
   return (
@@ -114,16 +114,14 @@ export function DeparturePops({ deps, left, anchor, register }: { deps: readonly
         const rideAlong = !walkin && !!anchor(d);
         const text = n > 1 ? `×${n} · +${money(cash)}` : `+${money(cash)}`;
         // D379: a pill never grows past 80 pt (11 pt text), however long the "×n · +$X" is
-        const w = Math.min(80, text.length * 6.1 + 12);
-        // beside the carrier's head, away from the cashiers (D368); kept on screen
-        const r = popRect(at, w);
-        const px = rideAlong ? (r.x0 + r.x1) / 2 : Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, at[0]));
-        const py = (rideAlong ? r.y1 : at[1] - (walkin ? 58 : 30)) - k * 6;
+        const w = popWidth(text);
+        // beside the carrier's head, away from the cashiers (D368), kept on screen, and lifted clear of the waiting pill (G91)
+        const { x: px, y: py } = popPlace(at, w, { walkin, rideAlong, k, keepOff, sceneW: SCENE_W });
         const fade = rest < 0.2 ? Math.max(0, rest / 0.2) : 1;
         if (fade <= 0) return null;
         return (
           <G key={d.id} transform={`translate(${px} ${py})`} opacity={fade}>
-            <Rect x={-w / 2} y={-18} width={w} height={18} rx={8} fill={POP_FILL} stroke="#fff" strokeWidth={1.4} />
+            <Rect x={-w / 2} y={-POP_H} width={w} height={POP_H} rx={8} fill={POP_FILL} stroke="#fff" strokeWidth={1.4} />
             <SvgText x={0} y={-5} fontFamily={F.bold} fontSize={11} fill="#fff" textAnchor="middle">
               {text}
             </SvgText>

@@ -8,6 +8,7 @@ import { LOOKS } from './identity';
 import { doorwaySignRect } from './stations';
 import { hash32 } from './people';
 import { Sidewalk } from './street';
+import { PICKET } from './street-props';
 
 // ---------- the room shell (static per layout) ----------
 /** A small back-wall prop that tells neighbourhoods apart before any wall decor is bought. */
@@ -954,14 +955,23 @@ export const StreetProp = memo(function StreetProp({ id, x, y }: { id: Neighborh
         </G>
       )}
       {kind === 'picket' && (
-        // a white picket fence: two sections on a rail, with a shrub behind (D363)
+        // a fenced front-garden bed (D432): a grass border, a capped post at each end, pickets between them and the shrub planted inside
         <G>
+          <Rect x={PICKET.bed.x0} y={PICKET.bed.y0} width={PICKET.bed.x1 - PICKET.bed.x0} height={PICKET.bed.y1 - PICKET.bed.y0} rx={2.2} fill="#6FA85A" stroke={INK} strokeWidth={0.9} />
+          <Rect x={PICKET.bed.x0 + 3} y={PICKET.bed.y0 + 1} width={PICKET.bed.x1 - PICKET.bed.x0 - 6} height={1.4} rx={0.7} fill="#4F7F3F" opacity={0.7} />
           <Circle cx={-6} cy={-14} r={9} fill="#2E7D32" />
           <Circle cx={8} cy={-12} r={7} fill="#3E9A44" />
-          <Rect x={-26} y={-15} width={52} height={2.6} fill="#FFFFFF" stroke={INK} strokeWidth={0.7} />
-          <Rect x={-26} y={-7} width={52} height={2.6} fill="#FFFFFF" stroke={INK} strokeWidth={0.7} />
-          {[-24, -18, -12, -6, 0, 6, 12, 18, 24].map((px) => (
+          <Circle cx={-9} cy={-17} r={2.6} fill="#58B35D" opacity={0.8} />
+          <Rect x={PICKET.posts[0]} y={-15} width={PICKET.posts[1] - PICKET.posts[0]} height={2.6} fill="#FFFFFF" stroke={INK} strokeWidth={0.7} />
+          <Rect x={PICKET.posts[0]} y={-7} width={PICKET.posts[1] - PICKET.posts[0]} height={2.6} fill="#FFFFFF" stroke={INK} strokeWidth={0.7} />
+          {PICKET.pickets.map((px) => (
             <Path key={px} d={`M${px - 2} 0 V-17 L${px} -20 L${px + 2} -17 V0 Z`} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
+          ))}
+          {PICKET.posts.map((px) => (
+            <G key={`post${px}`}>
+              <Rect x={px - PICKET.postW / 2} y={-20} width={PICKET.postW} height={21} rx={0.8} fill="#F4EEE4" stroke={INK} strokeWidth={0.9} />
+              <Rect x={px - PICKET.postW / 2 - 0.8} y={-22} width={PICKET.postW + 1.6} height={3} rx={1} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
+            </G>
           ))}
         </G>
       )}

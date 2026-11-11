@@ -23,13 +23,13 @@ describe('story pacing (v3.7)', () => {
     const s = withShop(seenUpTo(['downtown-1', 'downtown-2', 'downtown-3', 'downtown-4'], 100), 'suburbs', { built: true });
     expect(pickScene(s, HOME_SCENES, LATE, 0, false, 99)?.id).toBe('suburbs-1');
   });
-  it('beat 4 waits 300 s of play after beat 3 (Downtown: 120 s)', () => {
+  it('beat 4 waits 300 s of play after beat 3 (Downtown: 60 s)', () => {
     const sub = withShop(seenUpTo(['suburbs-1', 'suburbs-2', 'suburbs-3', 'downtown-1', 'downtown-2', 'downtown-3', 'downtown-4'], 1000, { 'suburbs-3': 800 }), 'suburbs', { built: true, sold: 9000 });
     expect(pickScene(sub, HOME_SCENES, LATE, 0, false, null)).toBeNull(); // 200 s since beat 3
     expect(pickScene({ ...sub, playSeconds: 1100 }, HOME_SCENES, LATE, 0, false, null)?.id).toBe('suburbs-4');
     const dt = withShop(seenUpTo(['downtown-1', 'downtown-2', 'downtown-3'], 500, { 'downtown-3': 400 }), 'downtown', { sold: 200 });
-    expect(pickScene(dt, HOME_SCENES, LATE, 0, false, null)).toBeNull(); // 100 s
-    expect(pickScene({ ...dt, playSeconds: 520 }, HOME_SCENES, LATE, 0, false, null)?.id).toBe('downtown-4');
+    expect(pickScene({ ...dt, playSeconds: 450 }, HOME_SCENES, LATE, 0, false, null)).toBeNull(); // 50 s
+    expect(pickScene({ ...dt, playSeconds: 470 }, HOME_SCENES, LATE, 0, false, null)?.id).toBe('downtown-4'); // 70 s
   });
   it('downtown-3 comes at 45 pizzas', () => {
     expect(scene('downtown-3').trigger).toMatchObject({ count: 45 });
@@ -96,7 +96,7 @@ describe('neighbourhood perks (v3.7)', () => {
 
 describe('Pier 9 bid (v3.7)', () => {
   const ready = () => withShop({ ...seenUpTo(['waterfront-1', 'waterfront-2', 'waterfront-3']), cash: PIER9_BID.cost * 1.5 }, 'waterfront', { built: true, managed: true, sold: PIER9_BID.unlockPizzas });
-  it('costs $30M (about 4–5 minutes of income when it opens, v5.12)', () => expect(PIER9_BID.cost).toBe(30_000_000));
+  it('costs $120M (about 4–5 minutes of income when it opens, v5.13)', () => expect(PIER9_BID.cost).toBe(120_000_000));
   it('opens after "For Sale" and 50,000 Waterfront pizzas', () => {
     expect(G.pier9Available(ready())).toBe(true);
     expect(G.pier9Available(withShop(ready(), 'waterfront', { sold: PIER9_BID.unlockPizzas - 1 }))).toBe(false);

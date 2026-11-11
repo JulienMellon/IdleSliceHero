@@ -3,7 +3,7 @@
 import { advanceLine, AUTOMATIC, emptyLine, LINE, type Line, type LineRates } from '../../../engine/pipeline';
 import { layout } from '../layout';
 import { SCENE_W } from '../projection';
-import { alongDist, driverPoseAt, emptyCrew, guestPoseAt, guestSchedule, routesFor, stepCrew, WALK, type CrewState } from '../crew';
+import { alongDist, driverPoseAt, emptyCrew, guestLeg, guestPoseAt, guestSchedule, routesFor, seatFor, stepCrew, WALK, type CrewState } from '../crew';
 
 const lays = [0, 1, 2, 3, 4].map((fp) => layout(fp, fp + 1, 3, 2, 4, [2, 2, 3, 3, 4][fp], 0));
 const rates = (over: Partial<LineRates> = {}): LineRates => ({ prep: 3, oven: 3, serve: 3, shop: 2.5, price: 5, walkInFraction: 0.35, tapBatch: 4, ...over });
@@ -64,7 +64,7 @@ describe('stepCrew', () => {
     let c = stepCrew(emptyCrew(), { lay, walkins: true, departures: [] }, 5, SCENE_W);
     c = stepCrew(c, { lay, walkins: true, departures: [{ id: 3, kind: 'walkin', left: LINE.handoffSeconds }] }, 6, SCENE_W);
     const eater = c.guests.find((g) => g.servedAt !== null)!;
-    const S = guestSchedule(eater, routesFor(lay, SCENE_W).guests[eater.visit % 2]);
+    const S = guestSchedule(eater, guestLeg(lay, SCENE_W, eater));
     const mid = (S.seated + S.eaten) / 2;
     c = stepCrew(c, { lay, walkins: false, departures: [] }, mid, SCENE_W);
     expect(c.guests.some((g) => g.visit === eater.visit)).toBe(true);
@@ -135,5 +135,53 @@ describe('walk-ins at every table (v5.11)', () => {
     const sit = (LINE.handoffSeconds + g[0].toSeat.len / WALK);
     // the next walk-in is served LINE.walkinLap after this one and walks the same way: the first has stood up by then
     expect(sit + g[0].eat).toBeLessThan(LINE.walkinLap + sit);
+  });
+});
+
+// T84 (C108): a walk-in's table is fixed when they spawn, so buying a table or a patio set mid-meal never moves them.
+describe('a walk-in keeps their table when the shop grows (C108, T84)', () => {
+  const small = layout(3, 3, 3, 2, 3, 3, 0);
+  const big = layout(3, 3, 3, 2, 4, 3, 0);
+  const place = (lay: ReturnType<typeof layout>, seat: { table: number; patio: boolean }) => guestLeg(lay, SCENE_W, seat, false, 2).seat;
+  test('the old rule (visit mod the table count) moved this walk-in; the stored table does not', () => {
+    expect(small.tables.length).toBe(3);
+    expect(big.tables.length).toBe(4);
+    // visit 4 sat at table 1 of 3, but 4 mod 4 is table 0
+    const seat = seatFor(small, SCENE_W, 4, false, 0);
+    expect(seat).toEqual({ table: 1, patio: false });
+    const oldRule = (lay: ReturnType<typeof layout>, visit: number) => routesFor(lay, SCENE_W, false, 0).guests[visit % routesFor(lay, SCENE_W, false, 0).guests.length].seat;
+    expect(oldRule(big, 4)).not.toEqual(oldRule(small, 4));
+    expect(place(big, seat)).toEqual(place(small, seat));
+    expect(place(big, seat)).toEqual([small.tables[1].x + 19.5, small.tables[1].y]);
+  });
+  test('through stepCrew: a meal in progress is in the same chair after the layout changes (and after a patio set appears)', () => {
+    let c: CrewState = emptyCrew();
+    // walk visits 0..4 through the register on the small layout
+    let now = 5;
+    c = stepCrew(c, { lay: small, walkins: true, departures: [] }, now, SCENE_W);
+    let id = 1;
+    while (c.nextVisit < 5) {
+      now += LINE.walkinLap + 1;
+      c = stepCrew(c, { lay: small, walkins: true, departures: [{ id: id++, kind: 'walkin', left: LINE.handoffSeconds }] }, now, SCENE_W);
+    }
+    const eater = c.guests.find((g) => g.servedAt !== null && g.visit === 3) ?? c.guests.find((g) => g.servedAt !== null)!;
+    const S = guestSchedule(eater, guestLeg(small, SCENE_W, eater));
+    const mid = (S.seated + S.eaten) / 2;
+    const before = guestPoseAt(small, eater, mid, SCENE_W)!;
+    expect(before.stage).toBe('seated');
+    c = stepCrew(c, { lay: big, walkins: true, patio: 2, departures: [] }, mid, SCENE_W);
+    const after = c.guests.find((g) => g.visit === eater.visit)!;
+    expect(after.table).toBe(eater.table);
+    expect(guestPoseAt(big, after, mid, SCENE_W, false, 2)?.pos).toEqual(before.pos);
+    expect(guestPoseAt(big, after, mid, SCENE_W, false, 2)?.stage).toBe('seated');
+  });
+  test('a patio seat stays the same patio seat when a room table is added', () => {
+    const withPatio = (lay: ReturnType<typeof layout>) => routesFor(lay, SCENE_W, false, 2).guests;
+    const n = small.patio.length;
+    expect(n).toBeGreaterThanOrEqual(1);
+    const visit = small.tables.length; // the first patio seat
+    const seat = seatFor(small, SCENE_W, visit, false, 2);
+    expect(seat).toEqual({ table: 0, patio: true });
+    expect(guestLeg(big, SCENE_W, seat, false, 2).seat).toEqual(withPatio(small)[small.tables.length].seat);
   });
 });

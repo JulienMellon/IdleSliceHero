@@ -118,7 +118,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
   // keeps the left chair, and a companion takes the right one only while no walk-in has the table
   const claimed = new Set<number>();
   for (const slot of crew.guests) {
-    const L = guestLeg(lay, SCENE_W, slot.visit, crew.idle, crew.patio);
+    const L = guestLeg(lay, SCENE_W, slot, crew.idle, crew.patio);
     if (clock < guestSchedule(slot, L).done) claimed.add(L.table);
   }
   const fixedFill = Math.min(1, 0.4 + shop.tables / 40);

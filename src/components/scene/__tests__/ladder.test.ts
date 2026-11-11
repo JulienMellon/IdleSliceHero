@@ -6,7 +6,7 @@ import { FOOTPRINTS, HEADS, NEIGHBORHOODS, TUNING } from '../../../content/tunin
 import { levelCap } from '../../../engine/game';
 import {
   BOUNCE_SECONDS, BOUNCE_STEPS, CONFETTI, CONFETTI_FRAMES, CONFETTI_N, CONFETTI_OPACITY, CONFETTI_SECONDS, LADDER_LEVELS, MILESTONE_LINES, STEPS,
-  bounceStep, bounceTransforms, candidates, clearPillX, confettiStep, crossedMilestone, ladderProps, ladderStep, milestoneSpeaker, wallRects,
+  bounceStep, bounceTransforms, candidates, clearPillX, confettiStep, crossedMilestone, ladderProps, ladderStep, milestoneSpeaker, propRect, signRect, wallRects,
   type LadderInput, type Placed, type PropId,
 } from '../ladder';
 import { ladderInput, furnitureInputs, furnitureDeps, type FurnitureSource } from '../furniture-inputs';
@@ -20,7 +20,7 @@ const hit = (a: Box, b: Box) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y
 
 /** A busy shop at footprint fp, with the crew its levels bring: 3 cooks, 2 cashiers, the footprint's ovens, a full dining room. */
 function shop(fp: number) {
-  return layout(fp, FOOTPRINTS[fp].ovenSlots, 3, 2, 8, DRIVER_SLOTS[fp], 1);
+  return layout(fp, FOOTPRINTS[fp].ovenSlots, fp === 0 ? 2 : 3, 2, 8, DRIVER_SLOTS[fp], 1);
 }
 /** What each footprint can reach: levels up to the cap (25 per tier). */
 const capStep = (fp: number) => ladderStep(levelCap({ footprint: fp } as never));
@@ -132,7 +132,13 @@ describe('ladder budget', () => {
 
   // each footprint's reachable levels decide which steps can show; where the room is too tight a prop is skipped
   // Waterfront: the porthole's net hangs to the staff's heads, so the belt along the counter wall (Lv 120) is skipped there.
-  const SKIPPED: Record<string, PropId[]> = { 'waterfront:4': ['passBelt'] };
+  // The Corner shop (fp 2): its patio chair-way, the neighbourhood prop and the chalkboard fill the sidewalk left of the parked vehicle, so the second vehicle (Lv 30) has no room beside the board (D432).
+  // The Restaurant (fp 3): its two-column oven bay (52 pt a column, D417) leaves a 66 pt bench, which is too short for the floor strip's mixer and the wall bins (Lv 60 / 80).
+  const SKIPPED: Record<string, PropId[]> = {
+    'waterfront:4': ['passBelt'],
+    'downtown:2': ['vehicle2'], 'waterfront:2': ['vehicle2'], 'uptown:2': ['vehicle2'],
+    'downtown:3': ['mixer', 'toppings'], 'waterfront:3': ['mixer', 'toppings'], 'uptown:3': ['mixer', 'toppings'],
+  };
   test('every reachable step shows at its footprint, except the listed skips', () => {
     const missing: Record<string, PropId[]> = {};
     for (let fp = 0; fp < 5; fp++) {
@@ -151,6 +157,30 @@ describe('ladder budget', () => {
     expect(missing).toEqual(SKIPPED);
   });
 
+  // D432: the yellow scooter clipped the sandwich board. No street prop (the second vehicle, the wrap) and no parked vehicle touches the board or the prop.
+  test('D432: the parked vehicle, the second vehicle and the wrap never touch the chalkboard or the neighbourhood prop, at any footprint', () => {
+    let rawClips = 0;
+    for (let fp = 0; fp < 5; fp++) {
+      const lay = shop(fp);
+      const board = signRect(lay);
+      const prop = propRect(lay);
+      const [vx] = P(lay.scooter.x, lay.scooter.y);
+      // the parked vehicle (±20: the scooter's shadow, its rear box and its bars; a car at 0.62 is narrower)
+      const parked: Box = { x0: vx - 20, x1: vx + 20, y0: board.y0, y1: board.y1 };
+      expect([fp, 'parked vs board', hit(parked, board)]).toEqual([fp, 'parked vs board', false]);
+      expect([fp, 'parked vs prop', hit(parked, prop)]).toEqual([fp, 'parked vs prop', false]);
+      for (const id of IDS)
+        for (const p of ladderProps(lay, input(fp, { id }))) {
+          if (p.mount !== 'street') continue;
+          expect([fp, id, p.id, 'board', hit(p.rect, board)]).toEqual([fp, id, p.id, 'board', false]);
+          expect([fp, id, p.id, 'prop', hit(p.rect, prop)]).toEqual([fp, id, p.id, 'prop', false]);
+        }
+      // the check can fail: where the second vehicle is dropped, its spot really does land on the board (the old layout drew it there)
+      for (const c of candidates(lay, { id: 'downtown', pins: 12, outside: true })) if (c.mount === 'street' && !c.ok && (hit(c.rect, board) || hit(c.rect, prop))) rawClips++;
+    }
+    expect(rawClips).toBeGreaterThan(0);
+  });
+
   test('no two candidates overlap each other', () => {
     for (let fp = 0; fp < 5; fp++) {
       const cs = candidates(shop(fp), { id: 'downtown', pins: 12, outside: true }).filter((c) => c.ok && c.id !== 'wrap');
@@ -160,8 +190,8 @@ describe('ladder budget', () => {
   });
 
   test('a step shows from its level and not before; idle shops keep the street clear', () => {
-    const lay = shop(3);
-    const ids = (prepStep: number, over: Partial<LadderInput> = {}) => ladderProps(lay, { ...input(3), prepStep, counterStep: 0, driverStep: 0, ...over }).map((p) => p.id);
+    const lay = shop(4);
+    const ids = (prepStep: number, over: Partial<LadderInput> = {}) => ladderProps(lay, { ...input(4), prepStep, counterStep: 0, driverStep: 0, ...over }).map((p) => p.id);
     expect(ids(0)).toEqual([]);
     expect(ids(ladderStep(9))).toEqual([]);
     expect(ids(ladderStep(10))).toEqual(['pin2']);

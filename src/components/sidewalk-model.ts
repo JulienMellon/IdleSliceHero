@@ -19,6 +19,30 @@ export function buttonTone({ lock, gain, muted = false }: { lock: string | null 
   return (gain ?? 0) > 1e-9 ? 'normal' : 'nogain';
 }
 
+/**
+ * The look of an affordable card and its button (D419): a 2 pt crust-brown outline and a solid face in every neighbourhood, so a buy
+ * you can make never reads as washed out. The bottleneck keeps its signal in the card's tomato fill instead of the outline (the old
+ * affordable bottleneck card had a tomato outline on a pale pink face, which read faded beside the dark-outlined cards).
+ */
+export const AFFORDABLE_OUTLINE = { color: '#3B1F14', width: 2 } as const;
+export interface CardLook {
+  borderColor: string;
+  borderWidth: number;
+  borderStyle: 'solid' | 'dashed';
+  backgroundColor: string;
+  /** Opacity of the card's label and price (1 whenever the buy can be made). */
+  labelOpacity: number;
+}
+export function cardLook(frame: 'hot' | 'waiting' | null, affordable: boolean): CardLook {
+  if (affordable) return { borderColor: AFFORDABLE_OUTLINE.color, borderWidth: AFFORDABLE_OUTLINE.width, borderStyle: 'solid', backgroundColor: frame === 'hot' ? '#FFD9CF' : '#FFFFFF', labelOpacity: 1 };
+  // not affordable: saving for it is a dashed basil outline, anything else the quiet card
+  if (frame === 'waiting') return { borderColor: 'rgba(46,125,62,0.6)', borderWidth: 2.5, borderStyle: 'dashed', backgroundColor: 'rgba(255,255,255,0.95)', labelOpacity: 1 };
+  return { borderColor: '#3B1F14', borderWidth: 2.5, borderStyle: 'solid', backgroundColor: 'rgba(255,255,255,0.95)', labelOpacity: 1 };
+}
+/** The border of a button's face: dark and 2 pt whenever the buy can be made (any tone but the flat "no gain"), else none. */
+export const buttonOutline = (enabled: boolean, tone: ButtonTone): { borderColor: string; borderWidth: number } | null =>
+  enabled && tone !== 'nogain' ? { borderColor: AFFORDABLE_OUTLINE.color, borderWidth: AFFORDABLE_OUTLINE.width } : null;
+
 /** The unmuted case of `buttonTone` (sidewalk stations are never muted). */
 export const stationTone = (lock: string | null, gain: number | null): 'normal' | 'nogain' => (lock || (gain ?? 0) > 1e-9 ? 'normal' : 'nogain');
 

@@ -8,7 +8,9 @@ import { HOME_SCENES } from '../content/scenes/home';
 import { PIER9_BID, TUNING, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
+import * as B from '../engine/bonus';
 import * as G from '../engine/game';
+import * as O from '../engine/orders';
 import * as R from '../engine/rewards';
 import { tutorialAdvance, tutorialHoldsStory } from '../engine/tutorial';
 import type { Station } from '../engine/pipeline';
@@ -45,6 +47,14 @@ interface Store {
   finishTitle: () => void;
   /** Wall-clock ms of the last game tick (not saved): the scene interpolates job timers from it between ticks. */
   tickAt: number;
+  /** A drawer, the tasks sheet, the gift calendar or another screen is open (set by the main screen, not saved): the golden pizza waits. */
+  bonusHold: boolean;
+  setBonusHold: (hold: boolean) => void;
+  /** Tap the golden pizza. Null when none is on screen; otherwise what it paid. Never counts as a kitchen tap (the story gate). */
+  tapBonus: () => { paid: number; lucky: boolean } | null;
+  /** The special order on the table: take it, or send it away. */
+  acceptOrder: () => void;
+  declineOrder: () => void;
   /** Short-lived message, e.g. "Not enough cash". */
   /** `need`: a need-cash toast clears itself once the player can afford it. */
   toast: { text: string; at: number; need?: number } | null;
@@ -78,6 +88,11 @@ interface Store {
   markScrapbookViewed: () => void;
   resetGame: () => Promise<void>;
 }
+
+/** A scene, the return popup or the title card is up: the orders' clocks stop and no offer appears. */
+export const gameCovered = (s: Pick<Store, 'playing' | 'offline' | 'titleDone'>): boolean => !!s.playing || !!s.offline || !s.titleDone;
+/** The golden pizza also waits behind a drawer or another screen. */
+export const bonusBlocked = (s: Pick<Store, 'playing' | 'offline' | 'titleDone' | 'bonusHold'>): boolean => s.bonusHold || gameCovered(s);
 
 /** Serialises saves so a resume never reads a save that is still being written. */
 let pendingSave: Promise<void> = Promise.resolve();
@@ -131,6 +146,7 @@ export const useGame = create<Store>((set, get) => {
     lastSceneEndPlay: null,
     playing: null,
     toast: null,
+    bonusHold: false,
     tickAt: Date.now(),
     titleDone: false,
     finishTitle: () => {
@@ -151,8 +167,10 @@ export const useGame = create<Store>((set, get) => {
         await pendingSave;
         const raw = await AsyncStorage.getItem(SAVE_KEY);
         if (raw) {
-          const r = G.applyOffline(G.migrate(JSON.parse(raw), now), now);
-          game = R.refreshRewards(r.state, now);
+          const saved = G.migrate(JSON.parse(raw), now);
+          const r = G.applyOffline(saved, now);
+          // an order that ran out while away is over (silently); the pies sold meanwhile don't count toward one that didn't
+          game = R.refreshRewards(B.bonusAway(O.returnFromAway(saved, r.state, r.awaySeconds), r.awaySeconds), now);
           awaySeconds = r.awaySeconds;
           if (r.earned >= 1 && r.seconds >= TUNING.offlinePopupSeconds) {
             // Hold the cash back until the player taps Collect.
@@ -190,7 +208,18 @@ export const useGame = create<Store>((set, get) => {
         lastRewardsRefresh = now;
         g = R.refreshRewards(g, now);
       }
-      const game = tutorialAdvance(G.playTick(g, dt, now));
+      const st = get();
+      let game = tutorialAdvance(G.playTick(g, dt, now));
+      game = B.bonusTick(game, dt, bonusBlocked(st));
+      const covered = gameCovered(st);
+      const before = game;
+      game = O.orderTick(game, dt, covered);
+      // a new offer, a finished order: a sound and a save (a failure is quiet)
+      if (game.order.offer && !before.order.offer && !before.order.active) emitAudio({ type: 'bubble' });
+      if (game.stats.ordersDone > before.stats.ordersDone) {
+        emitAudio({ type: 'collect', size: collectSize(game.cash - before.cash, before.cash) });
+        setTimeout(() => void get().save(), 0);
+      }
       const toast = get().toast;
       const tickAt = now;
       set(toast?.need !== undefined && game.cash >= toast.need ? { game, toast: null, tickAt } : { game, tickAt });
@@ -218,6 +247,38 @@ export const useGame = create<Store>((set, get) => {
         return null;
       }
       return r.reason;
+    },
+
+    setBonusHold: (hold) => {
+      if (get().bonusHold !== hold) set({ bonusHold: hold });
+    },
+
+    tapBonus: () => {
+      const g = get().game;
+      const r = B.collectBonus(g);
+      if (!r) return null;
+      emitAudio({ type: 'collect', size: collectSize(r.paid, g.cash) });
+      set({ game: r.state });
+      void get().save();
+      return { paid: r.paid, lucky: r.lucky };
+    },
+
+    acceptOrder: () => {
+      const g = get().game;
+      const next = O.acceptOrder(g);
+      if (next === g) return;
+      emitAudio({ type: 'click' });
+      set({ game: next });
+      void get().save();
+    },
+
+    declineOrder: () => {
+      const g = get().game;
+      const next = O.declineOrder(g);
+      if (next === g) return;
+      emitAudio({ type: 'click' });
+      set({ game: next });
+      void get().save();
     },
 
     buy: (what) => {

@@ -20,7 +20,7 @@ import { emitPayout } from './pulse-bus';
 import { Backdrop } from './scene/background';
 import { useClock } from './scene/clock';
 import { SceneDefs } from './scene/defs';
-import { FRONT_ROW_Y, LEDGE_Y, PROP_Y, SIGN_Y, STOOL_Y, TREE_Y, layout, type Layout } from './scene/layout';
+import { FRONT_ROW_Y, LEDGE_Y, PROP_Y, SIGN_Y, STOOL_Y, TREE_Y, layout, moreTagRect, waitTagRect, type Layout } from './scene/layout';
 import { seatPalette } from './scene/palette';
 import { GUEST_SHIRTS, HAIR_COLORS, hash32, Person } from './scene/people';
 import { CURB_Y, D, INK, P, SCENE_W, sceneFit, unprojectX } from './scene/projection';
@@ -40,7 +40,7 @@ import { hireOnSidewalk } from './sidewalk-model';
 import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEADS } from '../content/tuning';
 import { BadgeRail, DeparturePops, HireBubble, MilestoneBadge, RushPill, StationBadge, rushPillWidth } from './scene/kitchen-hud';
-import { CHIP_ROW_HALF, MILE_SECONDS, ROW_AIR, STATION_LABEL, chipAt, hudOpacity, mileAnchor, mileOpacity, mileScale, mileSpeechY, mileSub } from './scene/moments';
+import { CHIP_ROW_HALF, MILE_SECONDS, ROW_AIR, STATION_LABEL, chipAt, hidesWaitingPill, hudOpacity, mileAnchor, mileOpacity, mileScale, mileSpeechY, mileSub, stationHatTop } from './scene/moments';
 import { rushPill } from './rush-model';
 import { emptyCrew, stepCrew, type CrewState } from './scene/crew';
 import { emitCoin } from './pulse-bus';
@@ -197,6 +197,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const queue = running ? Game.queueSizes(shop, game.vehicle) : undefined;
   const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue });
   const side = sidewalkOf(lay, crew, queue);
+  // the pills over the sidewalk queues; the drivers' one hides while a milestone badge and its confetti are up (D429), and pops keep off both (G91)
+  const waitText = side.waiting > 0 && !(m0.mile && hidesWaitingPill(clock - m0.mile.at)) ? waitingText(side.waiting, slowest) : null;
+  const moreText = side.more > 0 ? `+${side.more}` : null;
+  const pillRects = [...(waitText ? [waitTagRect(lay, waitText)] : []), ...(moreText ? [moreTagRect(lay, moreText)] : [])];
   // each pop rides over the figure carrying its departure (one Map reused per mount, M48)
   const carriers = m0.carriers;
   carriers.clear();
@@ -223,7 +227,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const items: Item[] = [
     // a bought station's furniture wraps in a group whose transform is the precomputed bounce step (always wrapped, so the tree doesn't change when it starts)
     ...furniture.map((f) => (f.st ? { y: f.y, el: <G key={f.el.key} transform={bouncing === f.st ? bounceT[f.st][bounceNow] : undefined}>{f.el}</G> } : f)),
-    ...sidewalkItems(lay, side.patio, side.waiting > 0 ? waitingText(side.waiting, slowest) : null, side.more > 0 ? `+${side.more}` : null),
+    ...sidewalkItems(lay, side.patio, waitText, moreText),
     ...cast.map((c) => ({ y: c.sortY, el: <Person key={c.key} {...c.props} /> })),
   ];
   items.sort((a, b) => b.y - a.y);
@@ -323,7 +327,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const mileAge = m.mile ? clock - m.mile.at : -1;
   const mileLine = m.mile?.text && mileAge < 2.5 ? m.mile.text : null;
   // D415: the badge's centre (over the station's furniture, below the chip row), and the speed-up pill that rides in it instead of rising over the chips
-  const mileAt = m.mile && mileAge < MILE_SECONDS ? mileAnchor(rects[m.mile.st], by) : null;
+  const mileAt = m.mile && mileAge < MILE_SECONDS ? mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st)) : null;
   const mileFlash = m.mile && m.flash && m.flash.st === m.mile.st && m.flash.at === m.mile.at ? m.flash : null;
   const flash = next && clock - m.hintAt < 0.3 ? rects[next] : null;
 
@@ -421,7 +425,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           {refusal && <HireBubble x={bxs[refusal.st]} y={by + 40} text={refusal.text} tone="refusal" />}
           {/* a milestone line (Lv 25 / 50 / 100) from the station's head beats a hello and the rush pill */}
           {/* D415: directly under the badge, over the station's furniture, never over the chip row */}
-          {!refusal && mileLine && m.mile && <HireBubble x={mileAnchor(rects[m.mile.st], by).cx} y={mileSpeechY(mileAnchor(rects[m.mile.st], by).cy)} text={mileLine} />}
+          {!refusal && mileLine && m.mile && (() => { const a = mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st)); return <HireBubble x={a.cx} y={mileSpeechY(a.cy)} text={mileLine} />; })()}
           {!refusal && !mileLine && m.hire && clock - m.hire.at < 2.5 && <HireBubble x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} />}
           {/* a General Manager shop: "Tap to rush!" until the first tap, then the combo; a head's hello takes the spot while it shows */}
           {/* D406: under the oven chip, ≤ 120 wide, moved clear of the menu board and the ladder's wall props */}
@@ -525,7 +529,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 </G>
               );
             })()}
-          <DeparturePops deps={line.departures} left={(d) => leftNow(d.left)} anchor={(d) => carriers.get(d.id) ?? null} register={geoRegister} />
+          <DeparturePops deps={line.departures} left={(d) => leftNow(d.left)} anchor={(d) => carriers.get(d.id) ?? null} register={geoRegister} keepOff={pillRects} />
         </Svg>
       </Pressable>
     </View>

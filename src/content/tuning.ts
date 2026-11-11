@@ -11,7 +11,7 @@ export const TUNING = {
   footprintBoost: 1.5,
   /** Each footprint tier lets prep, ovens and counter level up this much further. */
   levelsPerFootprint: 25,
-  offlineCapSeconds: 2 * 60 * 60,
+  offlineCapSeconds: 4 * 60 * 60,
   /** Away at least this long shows the "While you were away" popup. */
   offlinePopupSeconds: 60,
   saveIntervalSeconds: 30,
@@ -114,19 +114,22 @@ export interface NeighborhoodDef {
 }
 
 /**
- * v5.12 pacing: the story should last about 5 days for a check-in player (5 min every 4 h, offline cap 2 h), roughly one
- * neighbourhood a day. Unlock days in `npx tsx scripts/review/sim2.ts checkin`: Waterfront 1.0, University 2.0, Industrial 2.7,
- * Uptown 3.9, finale 4.9. Downtown and Suburbs are unchanged (the first ~15 minutes of play). Order values step up about 15x
- * from Waterfront on so a new pizzeria is worth building the moment its cost is in reach; Uptown's cost multiplier is huge on
- * purpose, it is what paces its 1.25 M pizzas. Refit with scripts/pacing-fit.ts (never edit one number alone).
+ * v5.13 pacing: a check-in player (5 min every 4 h, offline cap 4 h) finishes the story in about 4.8 days, roughly one
+ * neighbourhood a day. Unlock days in `npx tsx scripts/review/sim2.ts checkin`: Waterfront 1.0, University 2.0, Industrial 3.1,
+ * Uptown 4.4, finale 4.8. Downtown and Suburbs are unchanged (the first ~15 minutes of play). From Waterfront on every pizzeria
+ * keeps costMult = orderValue (the original game had about 0.45x; 1.0x is the top of the allowed 0.3x-1.0x band, it makes a level
+ * cost what a pizza pays) and managerCost = 600 x costMult (about 75x the typical Lv 1 station price, 100x prep's). Build costs
+ * are what the day targets fit. They stay far above a Lv 1 station (Waterfront 77,000x prep): the engine's what-if gains
+ * (upgradeGain, buildGain) test a purchase with 2^53 cash, so no price may pass 9.0e15 and the order values cannot step up
+ * slowly enough to keep builds near the level prices. Refit with scripts/pacing-fit.ts (never edit one number alone).
  */
 export const NEIGHBORHOODS: NeighborhoodDef[] = [
   { id: 'downtown', name: 'Downtown', orderValue: 3, buildCost: 0, costMult: 1, managerCost: 0, x: 22, y: 39, color: '#F2994A', wall: '#F7D9A8' },
   { id: 'suburbs', name: 'Suburbs', orderValue: 10, buildCost: 450, costMult: 4.5, managerCost: 600, x: 30, y: 67, color: '#6FCF97', wall: '#DDF2D2' },
-  { id: 'waterfront', name: 'Waterfront', orderValue: 120, buildCost: 200_000_000, costMult: 55, managerCost: 100_000_000, x: 76, y: 67, color: '#56CCF2', wall: '#D6EEF8' },
-  { id: 'university', name: 'University', orderValue: 2_000, buildCost: 5_000_000_000, costMult: 900, managerCost: 2_500_000_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
-  { id: 'industrial', name: 'Industrial', orderValue: 40_000, buildCost: 40_000_000_000, costMult: 7_000, managerCost: 20_000_000_000, x: 50, y: 9, color: '#A0826D', wall: '#C4BCAE' },
-  { id: 'uptown', name: 'Uptown', orderValue: 400_000, buildCost: 600_000_000_000, costMult: 800_000_000, managerCost: 300_000_000_000, x: 82, y: 9, color: '#EB5757', wall: '#F6D6D6' },
+  { id: 'waterfront', name: 'Waterfront', orderValue: 2_500, buildCost: 1_150_000_000, costMult: 2_500, managerCost: 1_500_000, x: 76, y: 67, color: '#56CCF2', wall: '#D6EEF8' },
+  { id: 'university', name: 'University', orderValue: 200_000, buildCost: 230_000_000_000, costMult: 200_000, managerCost: 120_000_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
+  { id: 'industrial', name: 'Industrial', orderValue: 6_000_000, buildCost: 15_000_000_000_000, costMult: 6_000_000, managerCost: 3_600_000_000, x: 50, y: 9, color: '#A0826D', wall: '#C4BCAE' },
+  { id: 'uptown', name: 'Uptown', orderValue: 60_000_000, buildCost: 900_000_000_000_000, costMult: 60_000_000, managerCost: 36_000_000_000, x: 82, y: 9, color: '#EB5757', wall: '#F6D6D6' },
 ];
 
 export const SHOP_POS = { x: 50, y: 36 };
@@ -163,13 +166,13 @@ export const DECOR: Record<DecorKind, DecorDef> = {
 export const STORY_PACING = {
   gapSeconds: 90,
   beat4GapSeconds: 300,
-  downtownBeat4GapSeconds: 120,
+  downtownBeat4GapSeconds: 60,
   /** Away at least this long counts as a return. iOS also fires "active" after Control Center, a banner or the app switcher. */
   returnSeconds: 60,
 } as const;
 
-/** Waterfront's finale is a purchase: bid on Pier 9 once "For Sale" has played and Waterfront has sold this many pizzas. ~4.6 min of income at that moment in the pacing sim (v5.12 retune). */
-export const PIER9_BID = { cost: 30_000_000, unlockPizzas: 50_000 } as const;
+/** Waterfront's finale is a purchase: bid on Pier 9 once "For Sale" has played and Waterfront has sold this many pizzas. ~4.4 min of income at that moment in the pacing sim (v5.13 retune). */
+export const PIER9_BID = { cost: 120_000_000, unlockPizzas: 50_000 } as const;
 
 /** A small permanent perk from each neighbourhood's finale. It only applies to that neighbourhood's pizzeria. */
 export interface PerkDef {

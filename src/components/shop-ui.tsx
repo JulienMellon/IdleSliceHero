@@ -10,7 +10,7 @@ import * as Game from '../engine/game';
 import { C, F } from '../theme';
 import { LockIcon } from './icons';
 import { lotView } from './city-model';
-import { buildChipHint, buildChipSub, type ButtonTone } from './sidewalk-model';
+import { buildChipHint, buildChipSub, cardLook, type ButtonTone } from './sidewalk-model';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BuyButton, haptic } from './game-ui';
 
@@ -131,8 +131,10 @@ export function StationCard(props: {
   /** Replaces the price on the button (the drawer's "Expand · $500" on a station that only the level cap locks, D413). */
   buyLabel?: string;
 }) {
+  // D419: a card you can afford has the 2 pt crust-brown outline on a solid face (the bottleneck's signal is its tint and chip, not a pale outline)
+  const look = cardLook(props.hot && !props.muted ? 'hot' : null, props.canBuy);
   return (
-    <View style={[styles.card, props.wide && styles.cardWide, props.hot && styles.cardHot, props.muted && !props.canBuy && styles.cardMuted]}>
+    <View style={[styles.card, props.wide && styles.cardWide, props.canBuy ? { borderColor: look.borderColor, borderWidth: look.borderWidth, backgroundColor: look.backgroundColor, padding: 5 + (2.5 - look.borderWidth) } : props.hot && styles.cardHot, props.muted && !props.canBuy && styles.cardMuted]}>
       <View style={styles.cardHead}>
         <View style={styles.icon}>{typeof props.icon === 'string' ? <Text style={styles.iconText}>{props.icon}</Text> : props.icon}</View>
         <View style={{ flex: 1 }}>

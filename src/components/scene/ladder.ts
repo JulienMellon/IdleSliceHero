@@ -8,7 +8,7 @@
 import { TUNING } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import type { Station } from '../../engine/pipeline';
-import { type Layout, SEAT } from './layout';
+import { PROP_HALF_W, PROP_Y, type Layout, SEAT, SECOND_VEHICLE_SHIFT, SIGN_HALF_W, SIGN_Y } from './layout';
 import { hash32 } from './looks';
 import { D, P, SCENE_W, kAt, shade } from './projection';
 import { BADGE_R, badgeRowY, badgeXs, doorwaySignRect, stationRects, type Rect } from './stations';
@@ -131,6 +131,17 @@ export function figureBox(x: number, y: number, h = 52): Rect {
 }
 /** The top 40% of a figure's box: the head and shoulders. */
 export const headBox = (b: Rect): Rect => ({ ...b, y1: b.y0 + (b.y1 - b.y0) * 0.4 });
+
+/** The sidewalk chalkboard's drawn box (ChalkSign: a 30 wide A-frame, 36 up, its shadow ±15 wide). */
+export function signRect(lay: Layout): Rect {
+  const [sx, sy] = P(lay.sign.x, SIGN_Y);
+  return { x0: sx - SIGN_HALF_W, x1: sx + SIGN_HALF_W, y0: sy - 37, y1: sy + 3.5 };
+}
+/** The neighbourhood prop's box: its widest kind (the bike rack, ±PROP_HALF_W), 30 up. */
+export function propRect(lay: Layout): Rect {
+  const [px, py] = P(lay.prop.x, PROP_Y);
+  return { x0: px - PROP_HALF_W, x1: px + PROP_HALF_W, y0: py - 30, y1: py + 3 };
+}
 
 /** The doormat's screen box, from the corners Doormat draws (room y −8 … −22). */
 export function matRect(lay: Layout): Rect {
@@ -269,7 +280,7 @@ export function candidates(lay: Layout, inp: Pick<LadderInput, 'id' | 'pins' | '
     const [vx, vy] = P(lay.scooter.x, lay.scooter.y);
     push('wrap', vx, vy, 1, lay.scooter.y - 0.1);
     // nose to tail with the first, a little left of it and drawn just behind it, clear of the doormat and the walkers' turn-in
-    const [wx, wy] = P(lay.scooter.x - 24, lay.scooter.y);
+    const [wx, wy] = P(lay.scooter.x - SECOND_VEHICLE_SHIFT, lay.scooter.y);
     push('vehicle2', wx, wy, 1, lay.scooter.y + 0.1);
   }
 
@@ -288,6 +299,8 @@ export function candidates(lay: Layout, inp: Pick<LadderInput, 'id' | 'pins' | '
     // never over another station's tap area (a prop may stand in its own station's)
     const own = c.station === 'drivers' ? '' : c.station;
     for (const st of ['prep', 'oven', 'counter'] as const) if (st !== own && hits(c.rect, rects[st])) why.push(`${st} rect`);
+    // street gear (the second vehicle, the wrap) never stands over the chalkboard or the neighbourhood's prop (D432)
+    if (c.mount === 'street') for (const [name, b] of [['sign', signRect(lay)], ['prop', propRect(lay)]] as const) hits(c.rect, b) && why.push(name);
     if (c.mount === 'wall') {
       blockers.wall.forEach((b, i) => hits(c.rect, b) && why.push(`wall ${i}`));
       const zn = zoneOf[c.id];
@@ -411,14 +424,22 @@ export const CONFETTI: readonly ConfettiPiece[] = Array.from({ length: CONFETTI_
   h: 5 + (hash32(i * 17 + 5) % 4),
   tone: (hash32(i * 17 + 9) % 3) as 0 | 1 | 2,
 }));
+/** Pieces start on the badge's rim (the disc is 36 in radius and the confetti is drawn behind it) and are flung out fast enough to be well clear of it by 0.4 s (D429: they used to stay behind the disc and never showed). */
+export const CONFETTI_RIM = 32;
+/** Where piece `i` is, relative to the badge's centre, at step `s` (a toss up and out, gravity). */
+export function confettiOffset(s: number, i: number): { dx: number; dy: number } {
+  const t = ((s + 0.5) / CONFETTI_STEPS) * CONFETTI_SECONDS;
+  // fanned over the whole upper half, nearly sideways at both ends
+  const a = -Math.PI * (0.05 + (0.9 * ((i * 5) % CONFETTI_N)) / (CONFETTI_N - 1));
+  const v = 125 + (hash32(i * 31 + 1) % 75);
+  const reach = CONFETTI_RIM + v * t;
+  return { dx: Math.cos(a) * reach, dy: Math.sin(a) * reach + 0.5 * 150 * t * t };
+}
 /** Per step, per piece: the transform at that moment (a toss up and out, gravity, a spin). Precomputed once at load. */
 export const CONFETTI_FRAMES: readonly (readonly string[])[] = Array.from({ length: CONFETTI_STEPS }, (_, s) => {
   const t = ((s + 0.5) / CONFETTI_STEPS) * CONFETTI_SECONDS;
   return CONFETTI.map((_, i) => {
-    const a = -Math.PI * (0.08 + (0.84 * ((i * 5) % CONFETTI_N)) / (CONFETTI_N - 1));
-    const v = 55 + (hash32(i * 31 + 1) % 45);
-    const dx = Math.cos(a) * v * t;
-    const dy = Math.sin(a) * v * t + 0.5 * 150 * t * t;
+    const { dx, dy } = confettiOffset(s, i);
     const rot = ((hash32(i * 31 + 7) % 360) + t * (240 + (hash32(i * 31 + 9) % 200))) % 360;
     return `translate(${dx.toFixed(1)} ${dy.toFixed(1)}) rotate(${rot.toFixed(0)})`;
   });

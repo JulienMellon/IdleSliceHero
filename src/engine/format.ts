@@ -9,10 +9,22 @@ export function money(n: number, fixed = false): string {
   const sign = n < 0 ? '-' : '';
   n = Math.abs(n);
   if (n < 1000) return `${sign}$${n < 10 && n % 1 !== 0 ? n.toFixed(1) : Math.floor(n)}`;
-  const tier = Math.min(SUFFIXES.length - 1, Math.floor(Math.log10(n) / 3));
-  const v = n / Math.pow(1000, tier);
-  const digits = v.toFixed(v < 10 ? 2 : v < 100 ? 1 : 0);
+  const { tier, digits } = scaled(n);
   return `${sign}$${fixed ? digits : parseFloat(digits)}${SUFFIXES[tier]}`;
+}
+
+/**
+ * n ≥ 1000 as a tier and its rounded digits. Rounding can carry into the next tier (999,500 rounds to "1000" in K),
+ * so the tier is recomputed after rounding: "$1M", never "$1000K" (C109).
+ */
+function scaled(n: number): { tier: number; digits: string } {
+  const at = (tier: number) => {
+    const v = n / Math.pow(1000, tier);
+    return { tier, digits: v.toFixed(v < 10 ? 2 : v < 100 ? 1 : 0) };
+  };
+  let r = at(Math.min(SUFFIXES.length - 1, Math.floor(Math.log10(n) / 3)));
+  if (parseFloat(r.digits) >= 1000 && r.tier < SUFFIXES.length - 1) r = at(r.tier + 1);
+  return { tier: r.tier, digits: r.digits };
 }
 
 /** The value `money(n)` displays, so totals can be summed from the same rounded lines. */
@@ -20,9 +32,8 @@ export function shownValue(n: number): number {
   if (!Number.isFinite(n)) return 0;
   const a = Math.abs(n);
   if (a < 1000) return Math.sign(n) * (a < 10 && a % 1 !== 0 ? Math.round(a * 10) / 10 : Math.floor(a));
-  const tier = Math.min(SUFFIXES.length - 1, Math.floor(Math.log10(a) / 3));
-  const v = a / Math.pow(1000, tier);
-  return Math.sign(n) * parseFloat(v.toFixed(v < 10 ? 2 : v < 100 ? 1 : 0)) * Math.pow(1000, tier);
+  const { tier, digits } = scaled(a);
+  return Math.sign(n) * parseFloat(digits) * Math.pow(1000, tier);
 }
 
 export function count(n: number): string {

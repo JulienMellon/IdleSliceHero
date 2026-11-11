@@ -1,6 +1,8 @@
 // The scene's big moments as plain data (D415, D418): where the milestone badge and the rising "Lv N" chip go, and how
 // long the chip row dims. Pure, so the budgets are tested in node (the drawing lives in kitchen-hud.tsx).
 import type { Station } from '../../engine/pipeline';
+import type { Layout } from './layout';
+import { P, kAt } from './projection';
 import type { Rect } from './stations';
 
 /** A station reaches Lv 25 / 50 / 100: a gold badge 72 pt across, centred over the station's furniture. */
@@ -16,10 +18,30 @@ export const ROW_AIR = 4;
 
 export const STATION_LABEL: Record<Station, string> = { prep: 'PREP', oven: 'OVENS', counter: 'COUNTER' };
 
-/** Where the badge's centre goes: the middle of the station's furniture, pushed down if need be so its top clears the chip row. */
-export function mileAnchor(rect: Rect, rowY: number): { cx: number; cy: number } {
-  return { cx: (rect.x0 + rect.x1) / 2, cy: Math.max((rect.y0 + rect.y1) / 2, rowY + CHIP_ROW_HALF + ROW_AIR + MILE_R) };
+/** The gap kept between the badge's lower edge and the hat of the head it celebrates (D429: the badge used to sit on the cook). */
+export const MILE_HAT_GAP = 30;
+
+/** Screen y of the top of the tallest hat among the people who work a station (a cook's toque, a baker's cap, the cashier's cap): ~56 tall at their depth scale. */
+export function stationHatTop(lay: Pick<Layout, 'cooks' | 'bakers' | 'staff'>, st: Station): number {
+  const tops = (people: { x: number; y: number }[]) => people.map(({ y }) => P(0, y)[1] - 56 * kAt(y) * 1.14);
+  const cookY = lay.cooks.length === 1 ? 74 : 92;
+  const who = st === 'prep' ? lay.cooks.map((x, i) => ({ x, y: cookY + (i % 2) * 8 })) : st === 'oven' ? lay.bakers : lay.staff.map((x) => ({ x, y: 92 }));
+  return Math.min(...tops(who));
 }
+
+/**
+ * Where the badge's centre goes: over the station's middle, but 30 above the hats of the people who work it (the badge used to
+ * cover the very cook it celebrated), and never so high that its top reaches the chip row (if the hats leave less room than
+ * 30 + 72 the badge takes what there is, as high as the row allows).
+ */
+export function mileAnchor(rect: Rect, rowY: number, hatTop = Number.POSITIVE_INFINITY): { cx: number; cy: number } {
+  const lowest = rowY + CHIP_ROW_HALF + ROW_AIR + MILE_R;
+  const mid = (rect.y0 + rect.y1) / 2;
+  return { cx: (rect.x0 + rect.x1) / 2, cy: Math.max(lowest, Math.min(mid, hatTop - MILE_HAT_GAP - MILE_R)) };
+}
+/** The waiting pill stays hidden this long after a milestone starts, so the badge and the confetti are the only things to read (D429). */
+export const MILE_PILL_HIDE_S = 1.5;
+export const hidesWaitingPill = (age: number) => age >= 0 && age < MILE_PILL_HIDE_S;
 /** The head's speech pill hangs directly under the badge: its tail tip touches the disc's lower edge. */
 export const mileSpeechY = (cy: number) => cy + MILE_R + 20;
 

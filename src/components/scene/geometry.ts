@@ -83,8 +83,11 @@ export const HOOD_EXTRA = [0, 8, 16] as const;
 
 export type OvenSpec = Layout['ovens'][number];
 
-/** Stacked decks and the Stone grade are box ovens; single decks are domes. */
-export const isBoxOven = (o: OvenSpec, grade: number) => o.h < 70 || grade === 1;
+/**
+ * Only the lower decks of a stack are box ovens; the topmost oven of every column is a brick dome at every grade (D417: the Lv 3 dome
+ * is the most charming oven in the game, so stone, wood-fired, copper and gold change its colour and trim, never its arch).
+ */
+export const isBoxOven = (o: OvenSpec, _grade?: number) => !o.chimney;
 
 /** An oven's front face in screen units: left/right x, base y, centre x, depth scale, top y. */
 export function ovenFrame(o: OvenSpec) {

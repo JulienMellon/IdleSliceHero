@@ -1,5 +1,7 @@
 /// <reference types="jest" />
-import { aOrAn, GOAL_BAR, goalBarLayout, goalWords, snapSeam } from '../goal-model';
+import { CITY_NAME, DECOR, DECOR_KINDS, FOOTPRINTS, HEAD_ROLE, HEADS, NEIGHBORHOODS, OVEN_GRADES, VEHICLES } from '../../content/tuning';
+import { goalAmount, money } from '../../engine/format';
+import { aOrAn, GOAL_BAR, GOAL_LAYOUT, goalBarLayout, goalLabelFit, goalLabelFits, goalTextW, goalWords, snapSeam } from '../goal-model';
 
 const lum = (hex: string) => {
   const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
@@ -89,5 +91,43 @@ describe('goal bar seam snaps to a word edge (G88)', () => {
   test('words are split on blanks and the label order is kept', () => {
     expect(goalWords('Downtown:  Hire Marco')).toEqual(['Downtown:', 'Hire', 'Marco']);
     expect(goalWords('')).toEqual([]);
+  });
+});
+
+// T81 (C105): the goal line must never clip its amount, on a 320, 375 or 393 pt phone. The bar is the screen less the HUD's 12 pt margins.
+describe('the goal line fits (C105, T81)', () => {
+  const bars = [320, 375, 393].map((w) => w - 24);
+  // every label app/index.tsx builds, from the content tables the same way it does
+  const labels = (): string[] => {
+    const out: string[] = [];
+    for (const n of NEIGHBORHOODS) {
+      out.push(`${n.name}: hire a manager`);
+      for (const st of ['prep', 'oven', 'counter'] as const) out.push(`${n.name}: hire ${HEADS[n.id][st]} (${HEAD_ROLE[st]})`);
+      out.push(`Build a pizzeria in ${n.name}`);
+      out.push(`▶ Build a pizzeria in ${n.name} — tap!`);
+      for (const f of FOOTPRINTS.slice(1)) out.push(`Expand ${n.name} · ${f.name}`);
+      for (const g of OVEN_GRADES.slice(1)) out.push(`${g.name} ovens in ${n.name}`);
+      for (const k of DECOR_KINDS) for (const t of DECOR[k].tiers.slice(1)) out.push(`${t} in ${n.name}`);
+    }
+    for (const v of VEHICLES.slice(1)) out.push(`Upgrade fleet to ${v.name}s · +$1.23K/s`, `Upgrade fleet to ${v.name}s · +$999K/s`);
+    out.push('Bid on Pier 9 to save Marisol’s dock', `${CITY_NAME} is yours! Franchising soon`, 'Story 12/24');
+    return out;
+  };
+  // the widest amounts: the two-sided money text at every magnitude, and the story count
+  const amounts = (): string[] => [...Array.from({ length: 36 }, (_, i) => goalAmount(Math.pow(10, i) * 9.99, Math.pow(10, i) * 9.99)), goalAmount(0, 999_999_999_999_999), '24/24', money(1e33)];
+  test('the amount is never clipped and the words keep a readable share, for every label generator, at 320, 375 and 393 pt', () => {
+    const bad: string[] = [];
+    for (const barW of bars) for (const label of labels()) for (const amount of amounts()) if (!goalLabelFits(label, amount, barW)) bad.push(`${barW} "${label}" ${amount}`);
+    expect(bad.slice(0, 5)).toEqual([]);
+  });
+  test('the check can fail: an amount wider than the bar, or one that leaves the words nothing, does not fit', () => {
+    expect(goalLabelFits('Hire Marco', '$1.23K / $4.56K', 40)).toBe(false);
+    expect(goalLabelFits('Waterfront: hire Finn (prep)', goalAmount(999e9, 999e9), 150)).toBe(false);
+    expect(goalLabelFit('Hire Marco', '$1 / $2', 351).wordsRoom).toBeGreaterThan(goalLabelFit('Hire Marco', '$1.23K / $4.56K', 351).wordsRoom);
+    expect(goalTextW('abcd', 10)).toBe(23);
+  });
+  test('the layout contract: the words are one row that shrinks and clips, the amount sits outside it and never shrinks', () => {
+    expect(GOAL_LAYOUT.words).toEqual({ flexShrink: 1, overflow: 'hidden' });
+    expect(GOAL_LAYOUT.amount.flexShrink).toBe(0);
   });
 });

@@ -1,8 +1,9 @@
 import { memo, type ReactElement } from 'react';
 import { F } from '../../theme';
-import { Circle, Ellipse, G, Path, Rect, Text as SvgText } from 'react-native-svg';
+import { Circle, Ellipse, G, Path, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 import { chairBack } from './geometry';
 import { PATIO_SEAT, QUEUE_Y, moreTagAt, waitTagAt, type Layout } from './layout';
+import { DECK_COLOR, DECK_LINE, RAIL_PT, patioDeck } from './patio-deck';
 import { TABLE_STYLE } from './props';
 import { INK, SCENE_W, CURB_Y, P, kAt, shade } from './projection';
 
@@ -130,7 +131,8 @@ export const UMBRELLA_R = 24;
  * diners really sit: `back` is the shadow and both chairs, `front` the table top over their laps, `umbrella` the
  * canopy over their heads. Chairs sit ±PATIO_SEAT from the table.
  */
-export const PatioTable = memo(function PatioTable({ x, y, part }: { x: number; y: number; part: 'back' | 'front' | 'umbrella' }) {
+export const PatioTable = memo(function PatioTable({ x, y, part }: { x: number; y: number; part: 'deck' | 'back' | 'front' | 'umbrella' | 'rail' }) {
+  if (part === 'deck' || part === 'rail') return <PatioDeck x={x} y={y} part={part} />;
   const [cx, cy] = P(x, y);
   const k = kAt(y) * 1.1;
   const st = TABLE_STYLE[0];
@@ -184,6 +186,31 @@ export const PatioTable = memo(function PatioTable({ x, y, part }: { x: number; 
   );
 });
 
+const RAIL_COLOR = '#F4EBDD';
+const toPts = (q: readonly [number, number][]) => q.map(([a, b]) => `${a.toFixed(1)},${b.toFixed(1)}`).join(' ');
+/**
+ * The plank deck under a patio set (D428): #C99A6B planks one step (10 pt) down from the shop front, with a lit riser along its back
+ * edge, and a low rail round the front and sides with a gap where the guests walk in. `deck` is drawn under the chairs, `rail` over them.
+ */
+const PatioDeck = memo(function PatioDeck({ x, y, part }: { x: number; y: number; part: 'deck' | 'rail' }) {
+  const d = patioDeck({ x, y });
+  if (part === 'deck')
+    return (
+      <G>
+        <Polygon points={toPts(d.riser)} fill="#9C7149" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+        <Polygon points={toPts(d.top)} fill={DECK_COLOR} stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+        {d.planks.map(([a, b], i) => <Path key={i} d={`M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${b[0].toFixed(1)} ${b[1].toFixed(1)}`} stroke={DECK_LINE} strokeWidth={0.8} opacity={0.8} />)}
+      </G>
+    );
+  return (
+    <G>
+      {d.rail.posts.map(([px, py], i) => <Rect key={`p${i}`} x={px - 1.1} y={py - RAIL_PT} width={2.2} height={RAIL_PT} rx={0.6} fill={RAIL_COLOR} stroke={INK} strokeWidth={0.8} />)}
+      {d.rail.bars.map(([a, b], i) => <Path key={`b${i}`} d={`M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${b[0].toFixed(1)} ${b[1].toFixed(1)}`} stroke={INK} strokeWidth={3.4} strokeLinecap="round" />)}
+      {d.rail.bars.map(([a, b], i) => <Path key={`c${i}`} d={`M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${b[0].toFixed(1)} ${b[1].toFixed(1)}`} stroke={RAIL_COLOR} strokeWidth={1.8} strokeLinecap="round" />)}
+    </G>
+  );
+});
+
 /** A small white pill in the scene's style, tail pointing down at `tail` (offset from its centre): "29 drivers idle · buy Ovens", or "+1" over the diner queue. */
 export const WaitTag = memo(function WaitTag({ x, y, text, w, tail }: { x: number; y: number; text: string; w: number; tail: number }) {
   const t = Math.max(-w / 2 + 9, Math.min(w / 2 - 9, tail));
@@ -207,6 +234,8 @@ export const WaitTag = memo(function WaitTag({ x, y, text, w, tail }: { x: numbe
 export function sidewalkItems(lay: Layout, patio: number, waiting: string | null, more: string | null = null): { y: number; el: ReactElement }[] {
   const out: { y: number; el: ReactElement }[] = [];
   lay.patio.slice(0, patio).forEach((p, i) => {
+    out.push({ y: p.y + 1.2, el: <PatioTable key={`pd${i}`} x={p.x} y={p.y} part="deck" /> });
+    out.push({ y: p.y - 7, el: <PatioTable key={`pr${i}`} x={p.x} y={p.y} part="rail" /> });
     out.push({ y: p.y + 0.6, el: <PatioTable key={`pb${i}`} x={p.x} y={p.y} part="back" /> });
     out.push({ y: p.y - 0.6, el: <PatioTable key={`pf${i}`} x={p.x} y={p.y} part="front" /> });
     out.push({ y: p.y - 0.9, el: <PatioTable key={`pu${i}`} x={p.x} y={p.y} part="umbrella" /> });

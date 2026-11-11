@@ -514,6 +514,65 @@ with sync_playwright() as pw:
             shot(page, name, 2.5)
         except Exception as e:
             report["errors"].append(f"{name} failed: {e}")
+
+    # 17. v5.13 session hooks: the golden pizza (47) and the special orders (48-50). The save carries each state, so nothing waits
+    # for real minutes: `bonus.until` puts a golden pizza in the sky (its flight is 12 s, so these shots skip settle()'s long waits),
+    # `order.offer` / `order.active` put the chip in its offer / mid-progress faces, and an order one pie short of done finishes
+    # a second after load, so 50 waits for the "done" line and shoots while it flashes (2.5 s). Every save is stamped "now"
+    # (no time away, so nothing fails or expires on load) and the daily gift is marked shown (it would cover the scene).
+    HOOK_PLAY = 300
+    def hooks_save(order=None, bonus=None, stats=None, **shop_kw):
+        kw = dict(prep=4, ovens=4, counter=4, drivers=3, tables=3, footprint=0, sold=700)
+        kw.update(shop_kw)
+        sv = hood_save("suburbs", cash=2e4, **kw)
+        sv.update(lastSavedAt=int(time.time() * 1000), playSeconds=HOOK_PLAY, rewards={"giftShownDay": day_str()})
+        if order: sv["order"] = dict({"seed": 7, "made": 1, "nextAt": HOOK_PLAY + 400}, **order)
+        if bonus: sv["bonus"] = dict({"seed": 7, "spawned": 2, "next": HOOK_PLAY + 400}, **bonus)
+        if stats: sv["stats"] = stats
+        return sv
+    def quiet_start(pg, wait=0.2):
+        """A short settle: dismiss a due scene or popup, but keep the clock (a golden pizza stays 12 s)."""
+        settle(pg, wait)
+    try:
+        page = seeded_page(browser, hooks_save(bonus={"until": HOOK_PLAY + 12}, stats={"bonusTaps": 2}))
+        quiet_start(page)
+        tid(page, "golden-pizza").wait_for(timeout=8000)
+        shot(page, "47-golden-pizza", 0.2)
+    except Exception as e:
+        report["errors"].append(f"golden pizza shot failed: {e}")
+    try:
+        # the lucky slice: four taps made, so this is the 5th; tap it for the pop, the coins and the banner
+        page = seeded_page(browser, hooks_save(bonus={"until": HOOK_PLAY + 12}, stats={"bonusTaps": 4}))
+        quiet_start(page)
+        tid(page, "golden-pizza").wait_for(timeout=8000)
+        shot(page, "47b-golden-lucky", 0.15)
+        tid(page, "golden-pizza").click(force=True)
+        tid(page, "golden-pop").wait_for(timeout=3000)
+        shot(page, "47c-golden-lucky-tap", 0.25)
+    except Exception as e:
+        report["errors"].append(f"golden lucky shot failed: {e}")
+    try:
+        page = seeded_page(browser, hooks_save(order={"offer": {"hood": "suburbs", "target": 40, "left": 45, "variant": 0}}))
+        quiet_start(page)
+        tid(page, "order-accept").wait_for(timeout=8000)
+        shot(page, "48-order-offer", 0.3)
+    except Exception as e:
+        report["errors"].append(f"order offer shot failed: {e}")
+    try:
+        # 20 of 40 pies sold with 84 s left (the managed shop keeps selling while the page loads)
+        page = seeded_page(browser, hooks_save(order={"active": {"hood": "suburbs", "target": 40, "startSold": 680, "left": 84, "variant": 0}}))
+        quiet_start(page)
+        tid(page, "order-active").wait_for(timeout=8000)
+        shot(page, "49-order-active", 0.3)
+    except Exception as e:
+        report["errors"].append(f"order active shot failed: {e}")
+    try:
+        # one pie short: it finishes within a second of load; shoot while the chip flashes gold with the thank-you
+        page = seeded_page(browser, hooks_save(order={"active": {"hood": "suburbs", "target": 40, "startSold": 661, "left": 80, "variant": 0}}))
+        tid(page, "order-done").wait_for(timeout=15000)
+        shot(page, "50-order-success", 0.2)
+    except Exception as e:
+        report["errors"].append(f"order success shot failed: {e}")
     browser.close()
 
 httpd.shutdown()

@@ -59,3 +59,40 @@ export function goalBarLayout(current: number, target: number, tappable: boolean
 
 /** "a" or "an" from the word's first letter: "a Suburbs", "an Uptown", "an Industrial" (B5). */
 export const aOrAn = (word: string): 'a' | 'an' => (/^[aeiou]/i.test(word.trim()) ? 'an' : 'a');
+
+// ---------- the line's fit (C105, T81) ----------
+/** Horizontal padding inside the bar (pt) and the gap kept between the words and the amount. */
+export const GOAL_PAD = 12;
+export const GOAL_GAP = 6;
+/** Largest Dynamic Type scale the goal line follows: the bar is 30 pt tall, so past this the words would not fit it. */
+export const GOAL_FONT_MAX_SCALE = 1.2;
+export const GOAL_FONT = { label: 14, amount: 13 } as const;
+/** The words keep at least this much room (or all of it, if the label is shorter): "Waterfront:" stays readable before the amount ever clips. */
+export const GOAL_MIN_WORDS_W = 72;
+/** The bar's layout contract: the words are one row that shrinks and clips, the amount sits outside it and never shrinks (C105). */
+export const GOAL_LAYOUT = {
+  words: { flexShrink: 1, overflow: 'hidden' },
+  amount: { flexShrink: 0 },
+} as const;
+
+/** Bold text's width at `size` pt, estimated at 0.56 em a character (the Baloo-style face runs ~0.52–0.55; padded so the check errs wide). */
+export const goalTextW = (text: string, size: number): number => Math.ceil(text.length * size * 0.56);
+
+export interface GoalFit {
+  amountW: number;
+  labelW: number;
+  /** Room the words get once the amount has its full width. */
+  wordsRoom: number;
+  /** The amount shows whole, with at least min(its words, GOAL_MIN_WORDS_W) left for the words. */
+  fits: boolean;
+}
+
+/** Whether a goal line fits a bar `barW` wide (its outer width, border included): the amount is never clipped and the words keep a readable share. */
+export function goalLabelFit(label: string, amount: string, barW: number): GoalFit {
+  const inner = Math.max(0, barW - 2 * GOAL_BAR.border) - 2 * GOAL_PAD;
+  const amountW = goalTextW(amount, GOAL_FONT.amount);
+  const labelW = goalTextW(goalWords(label).join(' '), GOAL_FONT.label);
+  const wordsRoom = inner - amountW - GOAL_GAP;
+  return { amountW, labelW, wordsRoom, fits: amountW <= inner && wordsRoom >= Math.min(labelW, GOAL_MIN_WORDS_W) };
+}
+export const goalLabelFits = (label: string, amount: string, barW: number): boolean => goalLabelFit(label, amount, barW).fits;

@@ -191,6 +191,9 @@ export interface GuestSlot {
   dep: number;
   /** Visit number (a new face each visit; survives gaps, C78). */
   visit: number;
+  /** The table this walk-in was sent to, fixed at spawn (C108): an index into the room's tables, or into the patio's when `patio`. Buying a table later never moves a meal. */
+  table: number;
+  patio: boolean;
   /** While waiting: when they give up and leave (set only once walk-ins stop buying), else null. */
   quitAt: number | null;
 }
@@ -243,10 +246,22 @@ export function guestSchedule(g: GuestSlot, L: GuestLeg): GuestSchedule {
   return { arrived, waitEnd: g.servedAt, seated, eaten, done: eaten + L.leave.len / WALK };
 }
 
-/** Walk-in visit `visit`'s route and seat. */
-export const guestLeg = (lay: Layout, sceneW: number, visit: number, idle = false, patio = 0) => {
+/**
+ * The table visit `visit` is sent to, in turn (visit v takes seat v mod n of the room's tables, then the patio's). Called once, when
+ * the walk-in spawns; the slot keeps the answer (C108: the modulus changes whenever a table or patio set is bought).
+ */
+export function seatFor(lay: Layout, sceneW: number, visit: number, idle = false, patio = 0): Pick<GuestSlot, 'table' | 'patio'> {
   const gs = routesFor(lay, sceneW, idle, patio).guests;
-  return gs[visit % gs.length];
+  if (!gs.length) return { table: 0, patio: false };
+  const g = gs[visit % gs.length];
+  return { table: g.patio ? g.table - gs.filter((x) => !x.patio).length : g.table, patio: g.patio };
+}
+
+/** The route and seat of the table a walk-in was sent to (`slot.table`, set at spawn). A patio seat that is gone (the shop went idle) falls back to a room table. */
+export const guestLeg = (lay: Layout, sceneW: number, slot: Pick<GuestSlot, 'table' | 'patio'>, idle = false, patio = 0) => {
+  const gs = routesFor(lay, sceneW, idle, patio).guests;
+  const i = (slot.patio ? gs.filter((x) => !x.patio).length : 0) + slot.table;
+  return gs[i] ?? gs[((i % gs.length) + gs.length) % gs.length];
 };
 const legOf = guestLeg;
 
@@ -261,7 +276,7 @@ export function stepCrew(prev: CrewState, input: CrewInput, now: number, sceneW:
   const patio = idle ? 0 : Math.max(0, Math.min(lay.patio.length, input.patio ?? 0));
   const R = routesFor(lay, sceneW, idle, patio);
   const canSeat = R.guests.length > 0;
-  const live = (g: GuestSlot) => now < guestSchedule(g, legOf(lay, sceneW, g.visit, idle, patio)).done;
+  const live = (g: GuestSlot) => now < guestSchedule(g, legOf(lay, sceneW, g, idle, patio)).done;
   // while walk-ins buy, the one at the register waits as long as it takes (the engine will serve them); once they
   // stop, they give up after MAX_WAIT_S
   const patience = (g: GuestSlot) => g.servedAt === null && (input.walkins ? g.quitAt !== null : g.quitAt === null);
@@ -293,9 +308,10 @@ export function stepCrew(prev: CrewState, input: CrewInput, now: number, sceneW:
         guests = guests.map((g, j) => (j === i ? { ...g, servedAt: at, dep: dep.id, quitAt: null, start: Math.min(g.start, at - g.arriveT) } : g));
       } else if (canSeat) {
         // the scene missed the arrival (it was paused): this walk-in is served the moment they appear at the register
-        const L = legOf(lay, sceneW, nextVisit, idle, patio);
+        const seat = seatFor(lay, sceneW, nextVisit, idle, patio);
+        const L = legOf(lay, sceneW, seat, idle, patio);
         const arriveT = L.arrive.len / L.arriveSpeed;
-        guests = [...guests, { start: at - arriveT, arriveT, servedAt: at, dep: dep.id, visit: nextVisit++, quitAt: null }];
+        guests = [...guests, { start: at - arriveT, arriveT, servedAt: at, dep: dep.id, visit: nextVisit++, ...seat, quitAt: null }];
       }
     }
   }
@@ -303,12 +319,13 @@ export function stepCrew(prev: CrewState, input: CrewInput, now: number, sceneW:
   // timed to arrive exactly when the engine's walk-in lap ends; on a fresh mount one is already there. A shop going
   // idle only stops new arrivals: nobody vanishes mid-meal (C78)
   if (input.walkins && canSeat && !guests.some((g) => g.servedAt === null)) {
-    const L = legOf(lay, sceneW, nextVisit, idle, patio);
+    const seat = seatFor(lay, sceneW, nextVisit, idle, patio);
+    const L = legOf(lay, sceneW, seat, idle, patio);
     const arriveT = L.arrive.len / L.arriveSpeed;
     let lastServe = -Infinity;
     for (const g of guests) if (g.servedAt !== null && g.servedAt > lastServe) lastServe = g.servedAt;
     const start = now - lastServe < LINE.walkinLap ? lastServe + LINE.walkinLap - arriveT : prev.nextVisit === 0 ? now - arriveT : now;
-    guests = [...guests, { start, arriveT, servedAt: null, dep: 0, visit: nextVisit++, quitAt: null }];
+    guests = [...guests, { start, arriveT, servedAt: null, dep: 0, visit: nextVisit++, ...seat, quitAt: null }];
   }
   if (guests.length > MAX_GUESTS) guests = guests.slice(guests.length - MAX_GUESTS);
   return { idle, patio, driver, guests, seenId, nextVisit };
@@ -351,7 +368,7 @@ export interface GuestPoseAt extends MoverPose {
 }
 
 export function guestPoseAt(lay: Layout, g: GuestSlot, now: number, sceneW: number, idle = false, patio = 0): GuestPoseAt | null {
-  const L = legOf(lay, sceneW, g.visit, idle, patio);
+  const L = legOf(lay, sceneW, g, idle, patio);
   const S = guestSchedule(g, L);
   if (now < g.start) return null;
   const base = { carry: false, deps: NONE };

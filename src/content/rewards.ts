@@ -2,8 +2,8 @@
 // Balancing is an edit to this file; the rules live in src/engine/rewards.ts.
 
 /** Every kind of task. Progress reads a lifetime counter (`stats`, or `totalEarned` for 'earn'). */
-export type TaskKind = 'upgrades' | 'walkins' | 'deliveries' | 'baked' | 'earn' | 'offline' | 'booster' | 'hire' | 'decor' | 'dailyDone' | 'days' | 'build' | 'ovens' | 'fleet';
-export const TASK_KINDS: readonly TaskKind[] = ['upgrades', 'walkins', 'deliveries', 'baked', 'earn', 'offline', 'booster', 'hire', 'decor', 'dailyDone', 'days', 'build', 'ovens', 'fleet'];
+export type TaskKind = 'upgrades' | 'walkins' | 'deliveries' | 'baked' | 'earn' | 'offline' | 'booster' | 'hire' | 'decor' | 'dailyDone' | 'days' | 'build' | 'ovens' | 'fleet' | 'bonusTaps';
+export const TASK_KINDS: readonly TaskKind[] = ['upgrades', 'walkins', 'deliveries', 'baked', 'earn', 'offline', 'booster', 'hire', 'decor', 'dailyDone', 'days', 'build', 'ovens', 'fleet', 'bonusTaps'];
 
 /** When a task may be generated. The engine maps each key to a check on the game state. */
 export type Eligibility = 'always' | 'walkins' | 'deliveries' | 'booster' | 'hire' | 'decor' | 'build' | 'fleet';
@@ -33,6 +33,7 @@ export const TASK_TEXT: Record<TaskKind, { title: string; unit: 'count' | 'cash'
   build: { title: 'Open a pizzeria in a new neighbourhood', unit: 'count' },
   ovens: { title: 'Buy {n} oven upgrades', unit: 'count' },
   fleet: { title: 'Upgrade the fleet', unit: 'count' },
+  bonusTaps: { title: 'Tap {n} golden pizzas', unit: 'count' },
 };
 
 /** Rate-scaled targets never go below these. */
@@ -81,6 +82,8 @@ export const DAILY_POOL: readonly PoolEntry[] = [
   { kind: 'booster', scale: { fixed: 1 }, eligible: 'booster' },
   { kind: 'hire', scale: { fixed: 1 }, eligible: 'hire' },
   { kind: 'decor', scale: { fixed: 1 }, eligible: 'decor' },
+  // v5.13: the golden pizza flies by itself while the game is open, so this is always possible (it was dropped in v5.4 for want of one)
+  { kind: 'bonusTaps', scale: { fixed: 3 }, eligible: 'always' },
 ];
 
 export const WEEKLY_POOL: readonly PoolEntry[] = [

@@ -62,7 +62,8 @@ describe('offline cap note (playtest bug 8)', () => {
     expect(G.applyOffline(s, 3600 * 1000).capped).toBe(false);
     const cap = TUNING.offlineCapSeconds * 1000;
     expect(G.applyOffline(s, cap).capped).toBe(false); // exactly at the cap is not "over" it
-    expect(G.applyOffline(s, cap + 1000).capped).toBe(true);
+    expect(G.applyOffline(s, cap + 1000).capped).toBe(false); // G92: a few seconds over the cap is not "capped" either
+    expect(G.applyOffline(s, cap + 60_000).capped).toBe(true); // a minute or more over is
   });
 });
 

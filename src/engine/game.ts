@@ -5,6 +5,7 @@
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
 import { HEADS, BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEAD_COST_DOWNTOWN, HEAD_KINDS, HEAD_SHARE, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
 import { BOOST_MAX_AHEAD_MS, DAILY_CHESTS, DAILY_TASK_COUNT, MAX_BOOSTERS, MAX_CONCURRENT_BOOSTS, TASK_KINDS, WEEKLY_TASK_COUNT, type TaskKind } from '../content/rewards';
+import { BONUS, ORDER } from '../content/hooks';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
 import { advanceLine, clampWalkInDebt, emptyLine, LINE, nextTap, piesInFlight, rushLine, tapStation as lineTap, type Automation, type Line, type LineRates, type Station } from './pipeline';
@@ -63,6 +64,65 @@ export interface GameState {
   rewards: Rewards;
   /** Lifetime counters that task progress is measured against (progress = counter − the task's base). */
   stats: Stats;
+  /** The golden pizza's schedule (rules in bonus.ts). */
+  bonus: BonusState;
+  /** Special orders from the cast (rules in orders.ts). */
+  order: OrderState;
+}
+
+/** The golden pizza. Times are play seconds, so the schedule only runs while the game is open. */
+export interface BonusState {
+  /** Fixes every gap and flight path (hashed with `spawned`), so the schedule is the same on every replay. */
+  seed: number;
+  /** Golden pizzas that have appeared; the one on screen is number `spawned`. */
+  spawned: number;
+  /** playSeconds when the next one appears. */
+  next: number;
+  /** playSeconds when the one on screen leaves; 0 = none on screen. */
+  until: number;
+}
+
+/** An order on the table, not yet accepted. */
+export interface OrderOffer {
+  hood: NeighborhoodId;
+  /** Pies to sell. */
+  target: number;
+  /** Seconds the offer still waits. */
+  left: number;
+  /** Which of the character's two lines. */
+  variant: 0 | 1;
+}
+
+/** An accepted order: sell `target` pies in `hood`'s shop before `left` runs out. */
+export interface ActiveOrder {
+  hood: NeighborhoodId;
+  target: number;
+  /** The shop's lifetime `sold` when it was accepted: progress = sold − startSold. */
+  startSold: number;
+  /** Seconds left. */
+  left: number;
+  variant: 0 | 1;
+}
+
+/** How the last order ended, shown on the chip for `left` more seconds (not saved). */
+export interface OrderResult {
+  kind: 'done' | 'failed';
+  hood: NeighborhoodId;
+  /** Cash paid (0 when failed). */
+  reward: number;
+  left: number;
+  variant: 0 | 1;
+}
+
+export interface OrderState {
+  seed: number;
+  /** Orders offered so far: who asks next and which line they use. */
+  made: number;
+  /** playSeconds when the next offer appears. */
+  nextAt: number;
+  offer: OrderOffer | null;
+  active: ActiveOrder | null;
+  result: OrderResult | null;
 }
 
 /** One daily or weekly task. The target is fixed when it is generated. */
@@ -124,10 +184,19 @@ export interface Stats {
   boosters: number;
   dailyDone: number;
   days: number;
+  /** Golden pizzas tapped (every 5th is the lucky slice). */
+  bonusTaps: number;
+  /** Special orders finished in time. */
+  ordersDone: number;
 }
-export const STAT_KEYS: readonly (keyof Stats)[] = ['upgrades', 'ovens', 'hires', 'builds', 'fleet', 'decor', 'walkins', 'deliveries', 'baked', 'offline', 'boosters', 'dailyDone', 'days'];
+export const STAT_KEYS: readonly (keyof Stats)[] = ['upgrades', 'ovens', 'hires', 'builds', 'fleet', 'decor', 'walkins', 'deliveries', 'baked', 'offline', 'boosters', 'dailyDone', 'days', 'bonusTaps', 'ordersDone'];
 
-export const newStats = (): Stats => ({ upgrades: 0, ovens: 0, hires: 0, builds: 0, fleet: 0, decor: 0, walkins: 0, deliveries: 0, baked: 0, offline: 0, boosters: 0, dailyDone: 0, days: 0 });
+export const newStats = (): Stats => ({ upgrades: 0, ovens: 0, hires: 0, builds: 0, fleet: 0, decor: 0, walkins: 0, deliveries: 0, baked: 0, offline: 0, boosters: 0, dailyDone: 0, days: 0, bonusTaps: 0, ordersDone: 0 });
+
+/** A starting seed from the clock (a save keeps its own). */
+const seedOf = (now: number) => Math.abs(Math.floor(now)) % 2147483647;
+export const newBonus = (now: number): BonusState => ({ seed: seedOf(now), spawned: 0, next: BONUS.firstAtPlay, until: 0 });
+export const newOrders = (now: number): OrderState => ({ seed: seedOf(now + 7919), made: 0, nextAt: ORDER.firstOfferAtPlay, offer: null, active: null, result: null });
 export const newRewards = (): Rewards => ({
   day: '',
   daily: [],
@@ -187,11 +256,15 @@ export function newGame(now: number): GameState {
     tutorial: 0,
     rewards: newRewards(),
     stats: newStats(),
+    bonus: newBonus(now),
+    order: newOrders(now),
   };
 }
 
 const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 const int = (v: unknown, d: number, min: number, max = Number.MAX_SAFE_INTEGER) => Math.min(max, Math.max(min, Math.floor(num(v, d))));
+/** Cash for "what would this purchase add?" checks: above any price in the game (MAX_SAFE_INTEGER was not: Uptown prices pass 9e15). */
+const WHAT_IF_CASH = 1e300;
 
 /** A saved line, checked field by field; anything malformed starts empty (keeping the id counter moving). */
 function migrateLine(raw: unknown, queued: number): Line {
@@ -296,6 +369,62 @@ function migrateStats(raw: unknown): Stats {
   return Object.fromEntries(STAT_KEYS.map((k) => [k, int(r[k], 0, 0)])) as unknown as Stats;
 }
 
+/**
+ * The golden pizza's saved schedule. A new session starts its first pizza BONUS.firstAtPlay seconds in (never sooner,
+ * and a saved value far in the future is pulled back to the longest gap). The one on screen when the game closed is
+ * kept for its remaining flight; bonus.ts `bonusAway` takes the time away off it.
+ */
+function migrateBonus(raw: unknown, play: number, now: number): BonusState {
+  const b = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const until = num(b.until, 0);
+  return {
+    seed: int(b.seed, seedOf(now), 0, 2147483647),
+    spawned: int(b.spawned, 0, 0, 1e9),
+    next: Math.min(play + Math.max(BONUS.gapMax, BONUS.firstAtPlay), Math.max(play + BONUS.firstAtPlay, num(b.next, 0))),
+    until: until > play ? Math.min(until, play + BONUS.visibleSeconds) : 0,
+  };
+}
+
+/**
+ * The saved orders: the next-offer time (a new session waits ORDER.firstOfferAtPlay), the order in progress and the
+ * offer on the table, each with the seconds it has left. Anything malformed is dropped; orders.ts `returnFromAway`
+ * takes the time away off them. The result flash is never saved.
+ */
+function migrateOrders(raw: unknown, play: number, now: number, shops: Record<NeighborhoodId, Shop>): OrderState {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const obj = (v: unknown) => (v && typeof v === 'object' ? (v as Record<string, unknown>) : null);
+  const hoodOf = (v: unknown) => (SHOP_IDS.includes(v as NeighborhoodId) ? (v as NeighborhoodId) : null);
+  const variantOf = (v: unknown): 0 | 1 => (v === 1 ? 1 : 0);
+  const offerRaw = obj(o.offer);
+  const activeRaw = obj(o.active);
+  const offerHood = offerRaw ? hoodOf(offerRaw.hood) : null;
+  const activeHood = activeRaw ? hoodOf(activeRaw.hood) : null;
+  const offer: OrderOffer | null =
+    offerRaw && offerHood && shops[offerHood].built && num(offerRaw.left, 0) > 0 && int(offerRaw.target, 0, 0) >= 1
+      ? { hood: offerHood, target: int(offerRaw.target, 0, 0, 1e15), left: Math.min(ORDER.offerWaitSeconds, num(offerRaw.left, 0)), variant: variantOf(offerRaw.variant) }
+      : null;
+  const active: ActiveOrder | null =
+    activeRaw && activeHood && shops[activeHood].built && num(activeRaw.left, 0) > 0 && int(activeRaw.target, 0, 0) >= 1
+      ? {
+          hood: activeHood,
+          target: int(activeRaw.target, 0, 0, 1e15),
+          // never ahead of the shop's own count, so a corrupt value can't finish the order for free
+          startSold: Math.min(shops[activeHood].sold, int(activeRaw.startSold, 0, 0)),
+          left: Math.min(ORDER.windowSeconds, num(activeRaw.left, 0)),
+          variant: variantOf(activeRaw.variant),
+        }
+      : null;
+  return {
+    seed: int(o.seed, seedOf(now + 7919), 0, 2147483647),
+    made: int(o.made, 0, 0, 1e9),
+    nextAt: Math.min(play + Math.max(ORDER.gapSeconds, ORDER.firstOfferAtPlay), Math.max(play + ORDER.firstOfferAtPlay, num(o.nextAt, 0))),
+    // one thing at a time: an order in progress wins over an offer
+    offer: active ? null : offer,
+    active,
+    result: null,
+  };
+}
+
 /** Load any save (v1 single-shop, v2, v3, v4 or v5) over a fresh game so missing fields get defaults. */
 export function migrate(raw: unknown, now: number): GameState {
   const base = newGame(now);
@@ -366,6 +495,8 @@ export function migrate(raw: unknown, now: number): GameState {
   // saves from before the tutorial: anyone who has sold pizza (or has Nonna running Downtown) skips it
   const veteran = game.shops.downtown.sold > 0 || game.shops.downtown.managed;
   game.tutorial = int(r.tutorial, veteran ? TUTORIAL_DONE : 0, 0, TUTORIAL_DONE);
+  game.bonus = migrateBonus(r.bonus, game.playSeconds, now);
+  game.order = migrateOrders(r.order, game.playSeconds, now, game.shops);
   return game;
 }
 
@@ -872,6 +1003,9 @@ export function offlineTick(s: GameState, seconds: number, boost = 1): { state: 
   return { state: bump({ ...s, cash, totalEarned: s.totalEarned + earned, shops }, add), byShop: rows };
 }
 
+/** Away longer than the offline cap by less than this is not "capped": the popup would say "Capped at 4h (away 4h)" (G92). */
+export const CAPPED_SLACK_SECONDS = 60;
+
 /** Catch up after the app was closed: GM shops run; the others finish what was already on the line. */
 export function applyOffline(s: GameState, now: number): OfflineResult {
   const elapsed = Math.max(0, (now - s.lastSavedAt) / 1000);
@@ -881,7 +1015,7 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
   const boost = seconds > 0 ? s.rewards.boosts.reduce((m, b) => m + (b.mult - 1) * Math.max(0, Math.min(b.until, from + seconds * 1000) - from) / (seconds * 1000), 1) : 1;
   const { state, byShop } = offlineTick(s, seconds, boost);
   const rows = byShop.map((r) => ({ id: r.id, managed: s.shops[r.id].managed, earned: r.base + r.extra })).filter((x) => x.earned > 0);
-  return { state: { ...state, lastSavedAt: now }, seconds, capped: elapsed > TUNING.offlineCapSeconds, awaySeconds: elapsed, earned: state.cash - s.cash, byShop: rows };
+  return { state: { ...state, lastSavedAt: now }, seconds, capped: elapsed - TUNING.offlineCapSeconds >= CAPPED_SLACK_SECONDS, awaySeconds: elapsed, earned: state.cash - s.cash, byShop: rows };
 }
 
 // ---------- Story ----------
@@ -927,7 +1061,7 @@ export function markSceneSeen(s: GameState, scene: Scene): GameState {
 /** Cash/sec this pizzeria gains from an upgrade (counting it as running), or null if unavailable. */
 export function upgradeGain(s: GameState, id: NeighborhoodId, what: Upgrade): number | null {
   if (upgradeLock(s, id, what)) return null;
-  const r = buyUpgrade({ ...s, cash: Number.MAX_SAFE_INTEGER }, id, what);
+  const r = buyUpgrade({ ...s, cash: WHAT_IF_CASH }, id, what);
   if (!r.ok) return null;
   // a head adds no steady-state rate (the shop is counted as running); it's worth the shop's earnings in time saved
   if (isHeadUpgrade(what)) return shopEarnings(s, id);
@@ -936,14 +1070,14 @@ export function upgradeGain(s: GameState, id: NeighborhoodId, what: Upgrade): nu
 
 /** Cash/sec the whole city gains from the next fleet tier. */
 export function vehicleGain(s: GameState): number | null {
-  const r = buyVehicle({ ...s, cash: Number.MAX_SAFE_INTEGER });
+  const r = buyVehicle({ ...s, cash: WHAT_IF_CASH });
   if (!r.ok) return null;
   return SHOP_IDS.reduce((t, id) => t + (s.shops[id].built ? shopEarnings(r.state, id) - shopEarnings(s, id) : 0), 0);
 }
 
 /** A starting pizzeria's earnings once it runs itself (heads + a GM, so with the GM boost). */
 export function buildGain(s: GameState, id: NeighborhoodId): number {
-  const r = buildShop({ ...s, cash: Number.MAX_SAFE_INTEGER }, id);
+  const r = buildShop({ ...s, cash: WHAT_IF_CASH }, id);
   return r.ok ? shopEarnings(withShop(r.state, id, { managed: true, heads: allHeads() }), id) : 0;
 }
 
@@ -964,7 +1098,7 @@ export interface Bundle {
  */
 export function bottleneckBundle(s: GameState, id: NeighborhoodId, maxSteps = 8): Bundle | null {
   if (!s.shops[id].built) return null;
-  let st: GameState = { ...s, cash: Number.MAX_SAFE_INTEGER };
+  let st: GameState = { ...s, cash: WHAT_IF_CASH };
   const start = shopEarnings(s, id);
   const steps: Upgrade[] = [];
   let cost = 0;
@@ -1056,6 +1190,6 @@ export function buyDecor(s: GameState, id: NeighborhoodId, kind: DecorKind): Buy
 
 /** Cash/sec this pizzeria gains from the next decor tier (counting it as running). */
 export function decorGain(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null {
-  const r = buyDecor({ ...s, cash: Number.MAX_SAFE_INTEGER }, id, kind);
+  const r = buyDecor({ ...s, cash: WHAT_IF_CASH }, id, kind);
   return r.ok ? shopEarnings(r.state, id) - shopEarnings(s, id) : null;
 }

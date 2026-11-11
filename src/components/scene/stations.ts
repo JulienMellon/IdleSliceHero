@@ -185,6 +185,33 @@ export function popRect(head: [number, number], w: number): Rect {
   return { x0: x1 - w, y0: y1 - 18, x1, y1 };
 }
 
+/** Pop pills never grow past this wide (11 pt text, D379). */
+export const POP_MAX_W = 80;
+/** A pop's pill is this tall (it hangs from its anchor y up). */
+export const POP_H = 18;
+/** The pop's pill width for its text. */
+export const popWidth = (text: string) => Math.min(POP_MAX_W, text.length * 6.1 + 12);
+
+/**
+ * Where a pop's pill is drawn (G91): its centre x and bottom y, and the screen rect it covers. `at` is the carrier's head
+ * (or the register for a walk-in's hand-over, which hangs 58 above it); `k` (0..1) is how far through its drift it is.
+ * `keepOff` are rects the pop must not cover (the waiting pill, whose last word names the station to buy): a pop that would
+ * land on one lifts to sit 4 above it, so the instruction is never cut.
+ */
+export function popPlace(at: [number, number], w: number, opts: { walkin: boolean; rideAlong: boolean; k: number; keepOff?: readonly Rect[]; sceneW: number }): { x: number; y: number; rect: Rect } {
+  const r = popRect(at, w);
+  const x = opts.rideAlong ? (r.x0 + r.x1) / 2 : Math.min(opts.sceneW - 4 - w / 2, Math.max(4 + w / 2, at[0]));
+  let y = (opts.rideAlong ? r.y1 : at[1] - (opts.walkin ? 58 : 30)) - opts.k * 6;
+  // lifting clear of one rect can land on the next, so repeat until nothing is touched (each pass moves up, so it ends)
+  const off = opts.keepOff ?? [];
+  for (let pass = 0; pass <= off.length; pass++) {
+    const o = off.find((r) => x - w / 2 < r.x1 && x + w / 2 > r.x0 && y - POP_H < r.y1 && y > r.y0);
+    if (!o) break;
+    y = o.y0 - 4;
+  }
+  return { x, y, rect: { x0: x - w / 2, x1: x + w / 2, y0: y - POP_H, y1: y } };
+}
+
 /** The counter staff's faces (scene units), for keeping pops off them. */
 export function staffFaces(lay: Layout): Rect[] {
   return lay.staff.map((x) => bounds([P(x - 8, 92, 44), P(x + 8, 92, 44), P(x - 8, 92, 64), P(x + 8, 92, 64)]));

@@ -4,13 +4,13 @@
 import { buildCast, sidewalkOf, type CastMember } from '../cast';
 import { alongDist, emptyCrew, routesFor, stepCrew, type CrewState } from '../crew';
 import { advanceLine, AUTOMATIC, emptyLine, type Line, type LineRates } from '../../../engine/pipeline';
-import { BACK_ROW_Y, DRIVER_QUEUE_PITCH, DRIVER_SPOTS, PATIO_HALF_W, PATIO_SEAT, PROP_Y, QUEUE_MIN_X, QUEUE_PITCH, QUEUE_Y, SEAT, TAG_MARGIN, TREE_Y, VEHICLE_HALF_W, layout, moreTagAt, waitTagAt, waitTagWidth } from '../layout';
+import { BACK_ROW_Y, DRIVER_QUEUE_PITCH, DRIVER_SPOTS, PATIO_HALF_W, PATIO_SEAT, PROP_Y, QUEUE_PITCH, QUEUE_Y, SEAT, TAG_MARGIN, TREE_Y, VEHICLE_HALF_W, layout, moreTagAt, moreTagRect, waitTagAt, waitTagRect, waitTagWidth } from '../layout';
 import { driverCast, hash32, lookFor } from '../looks';
 import { driverFigures, queueOverflow, waitingText } from '../waiting';
 import { seatPalette } from '../palette';
 import { CURB_Y, FRONT_TOP, P, SCENE_H, SCENE_W, kAt, unprojectX } from '../projection';
 import { SIDEWALK_ROW } from '../../tap-targets';
-import { doorwaySignRect, popRect, spotlightCutout, staffFaces, stationRects, tutorialHand } from '../stations';
+import { doorwaySignRect, popPlace, popRect, popWidth, spotlightCutout, staffFaces, stationRects, tutorialHand } from '../stations';
 import { bodyBy, chairBack, SEATED_TORSO_HALF } from '../geometry';
 import { quantArm, quantStep } from '../quantise';
 
@@ -43,7 +43,8 @@ function matBox(lay: ReturnType<typeof layout>): Box {
 function* busyShops() {
   for (let fp = 0; fp < 5; fp++)
     for (const tables of [1, 3, 6, 8]) {
-      const lay = layout(fp, Math.min(fp + 1, 6), 3, 2, tables, DRIVER_SLOTS[fp], 1);
+      // the starter shop's level cap (25) allows two cooks at most: its 54 pt bench beside the oven bay seats no more
+      const lay = layout(fp, Math.min(fp + 1, 6), fp === 0 ? 2 : 3, 2, tables, DRIVER_SLOTS[fp], 1);
       const shopSeed = 97 * (fp + 3);
       const pal = seatPalette(hash32(shopSeed) % 8, hash32(shopSeed + 9) % 6, 8, 6, lay.tables.length);
       yield { name: `fp${fp} t${tables}`, lay, shopSeed, pal };
@@ -454,14 +455,16 @@ describe('the sidewalk row never cuts a figure off (D408)', () => {
 describe('the sidewalk queues', () => {
   const standing = (x: number, y: number, kind: 'guest' | 'driver' = 'guest'): CastMember => ({ key: 'p', sortY: y, role: 'walkin', props: { x, y, kind, step: 0 } });
 
-  test('a full lane is up to 4 diners nearest the door and 4 drivers behind them, all facing the door; the pills count the rest', () => {
+  test('a full lane is 4 drivers nearest the door and up to 4 diners left of them, all facing the door; the pills count the rest', () => {
     for (const sh of sideShops()) {
       if (sh.idle || sh.tables === 1) continue;
       const cast = sideFrames(sh)[100];
       const q = queuers(cast);
       expect([sh.name, q.filter((c) => c.props.kind === 'guest').length]).toEqual([sh.name, sh.lay.queue.length]);
       expect([sh.name, q.filter((c) => c.props.kind === 'driver').length]).toEqual([sh.name, 4]);
-      for (const c of q) expect([sh.name, c.props.kind === 'guest' ? c.props.x < sh.lay.door.x0 : c.props.x < sh.lay.queue[sh.lay.queue.length - 1][0]]).toEqual([sh.name, true]);
+      // D431: the drivers stand nearest the door, the diners left of the last driver
+      const lastDriverX = sh.lay.driverQueue[sh.lay.driverQueue.length - 1][0];
+      for (const c of q) expect([sh.name, c.props.kind === 'guest' ? c.props.x < lastDriverX : c.props.x < sh.lay.door.x0]).toEqual([sh.name, true]);
       for (const c of q) expect([sh.name, !c.props.flip]).toEqual([sh.name, true]); // everyone faces the door
       const s = sidewalkOf(sh.lay, { idle: false, patio: 2 }, sh.queue);
       expect(s.waiting).toBe(37);
@@ -507,7 +510,45 @@ describe('the sidewalk queues', () => {
     const sh = [...sideShops()].find((x) => x.name === 'fp3 full')!;
     const w = queuers(sideFrames(sh)[100]).filter((c) => c.props.kind === 'driver');
     expect(w.filter((c) => c.props.act === 'phone')).toHaveLength(1);
-    expect(new Set(w.map((c) => c.props.y < -5.5)).size).toBe(2); // staggered depth (−3 and −8, plus the 0.8 bob)
+    expect(new Set(w.map((c) => Math.round(P(c.props.x, c.props.y)[1] / 2))).size).toBeGreaterThanOrEqual(3); // at three or more heights (D430)
+  });
+  // D430: the queued drivers overlapped ~40% at one height, feet on the sill
+  test('D430: queued drivers stand 26 apart without overlapping, at three or more heights (±3 pt), feet at least 6 pt in front of the shop front', () => {
+    const sill = P(0, 0)[1];
+    for (const sh of sideShops()) {
+      if (sh.idle) continue;
+      const drivers = sh.lay.driverQueue.map(([x, y]) => figureAt(x, y, 'driver'));
+      drivers.forEach((a, i) => {
+        if (i) expect([sh.name, i, overlap(box(drivers[i - 1]), box(a))]).toEqual([sh.name, i, 0]);
+        expect([sh.name, i, P(a.props.x, a.props.y)[1] - sill >= 6 - 1e-6]).toEqual([sh.name, i, true]);
+      });
+      const rows = new Set(drivers.map((d) => Math.round(P(d.props.x, d.props.y)[1] * 2)));
+      expect([sh.name, rows.size >= 3]).toEqual([sh.name, true]);
+      const ys = drivers.map((d) => P(d.props.x, d.props.y)[1]);
+      expect([sh.name, Math.max(...ys) - Math.min(...ys) <= 6.01, Math.max(...ys) - Math.min(...ys) >= 5.5]).toEqual([sh.name, true, true]);
+      // the check can fail: the v5.12 lane (22 apart, feet 3.8 in front, two alternating depths) overlapped its neighbours and stood on the sill
+      const old = [0, 1, 2, 3].map((j) => figureAt(unprojectX(P(sh.lay.driverQueue[0][0], -3)[0] - 22 * j, -3), -3, 'driver'));
+      expect(overlap(box(old[0]), box(old[1]))).toBeGreaterThan(0.05);
+      expect(P(old[0].props.x, old[0].props.y)[1] - sill).toBeLessThan(6);
+    }
+  });
+  // D431: the diner queue shared its floor band with the queued driver and the seated diner (a five-head clump)
+  test('D431: the drivers stand at the door (the first at x ≥ 250), every diner left of every driver with a clear gap, and no queue figure crowds a seated patio diner', () => {
+    for (const sh of sideShops()) {
+      if (sh.idle) continue;
+      const diners = sh.lay.queue.map(([x, y]) => P(x, y)[0]);
+      const drivers = sh.lay.driverQueue.map(([x, y]) => P(x, y)[0]);
+      expect([sh.name, drivers[0] >= 250]).toEqual([sh.name, true]);
+      expect([sh.name, Math.max(...diners) < Math.min(...drivers)]).toEqual([sh.name, true]);
+      expect([sh.name, Math.min(...drivers) - Math.max(...diners) >= 29.9]).toEqual([sh.name, true]);
+      // no five-head clump: any 60 pt window of the lane holds at most three queue heads
+      const heads = [...diners, ...drivers];
+      for (const h of heads) expect([sh.name, h, heads.filter((o) => o >= h && o < h + 60).length <= 3]).toEqual([sh.name, h, true]);
+      for (const cast of sideFrames(sh).filter((_, f) => f % 5 === 0)) {
+        const q = queuers(cast).map((c) => box(c));
+        for (const c of cast) if (c.props.kind === 'sit' && c.props.y < 0) for (const b of q) expect([sh.name, c.key, overlap(box(c), b) <= 0.05]).toEqual([sh.name, c.key, true]);
+      }
+    }
   });
   test('queue figures stand fully on screen, never on the mat, and miss each other (< 30%)', () => {
     for (const sh of sideShops()) {
@@ -602,7 +643,8 @@ const propBoxes = (lay: Lay): Box[] => {
 const vehicleBox = (lay: Lay): Box => {
   const [vx, vy] = P(lay.scooter.x, lay.scooter.y);
   const k = kAt(lay.scooter.y);
-  return { x0: vx - VEHICLE_HALF_W * k, x1: vx + VEHICLE_HALF_W * k, y0: vy - 30, y1: vy + 2 };
+  // the roofline is 22 up (a car at 0.62 is ~25, a scooter's rear box and handlebars poke to 30 over ~12 pt): queue feet stand 6 pt in front of the shop front (D430), so they may sink a few pt behind a scooter's top but never reach its body
+  return { x0: vx - VEHICLE_HALF_W * k, x1: vx + VEHICLE_HALF_W * k, y0: vy - 22, y1: vy + 2 };
 };
 const touches = (a: Box, b: Box) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
 const figureAt = (x: number, y: number, kind: 'guest' | 'driver' = 'guest'): CastMember => ({ key: 'f', sortY: y, role: 'queue', props: { x, y, kind, step: 0 } });
@@ -626,7 +668,8 @@ describe('the sidewalk budgets (D414)', () => {
   test('the checks can fail: the v5.11 sidewalk had a queue figure over the patio, one against the parked vehicle, and an umbrella across the pillar', () => {
     const lay = layout(0, 1, 3, 2, 6, 2, 1);
     const old = oldSidewalk(lay);
-    expect(old.queue.some((f) => touches(box(f), vehicleBox(lay)))).toBe(true);
+    // (against the strict 30-tall silhouette the v5.11 budget used; vehicleBox now stops at the 22 roofline so the D430 queue can stand 6 pt out)
+    expect(old.queue.some((f) => touches(box(f), { ...vehicleBox(lay), y0: vehicleBox(lay).y0 - 8 }))).toBe(true);
     const straddle = old.patio.map((p) => umbrellaBox(p)).some((u) => u.x0 < pillarBox(lay).x1 && u.x1 > pillarBox(lay).x0);
     expect(straddle).toBe(true);
     // the old table at d0 − 126 on a wider shop sat 4 pt from the last queue figure's elbow; any patio set under the queue's span fails the same budget
@@ -658,10 +701,10 @@ describe('the sidewalk budgets (D414)', () => {
         expect([name, setBox(p).x0 >= pil.x1]).toEqual([name, true]); // chairs too
       }
   });
-  test('the diner queue is single file along the door lane, 22 pt apart, at x ≥ 200, the WELCOME mat and the signature prop stay in clear view', () => {
+  test('the diner queue is single file along the door lane, 22 pt apart, the WELCOME mat and the signature prop stay in clear view', () => {
     for (const [name, lay] of lays()) {
       const xs = lay.queue.map(([x, y]) => P(x, y)[0]);
-      expect([name, xs.every((x) => x >= QUEUE_MIN_X - 1e-6), xs.length <= 4]).toEqual([name, true, true]);
+      expect([name, xs.every((x) => x >= 70), xs.length >= 3, xs.length <= 4]).toEqual([name, true, true, true]);
       xs.forEach((x, i) => i && expect(xs[i - 1] - x).toBeCloseTo(QUEUE_PITCH, 5));
       expect(new Set(lay.queue.map(([, y]) => y)).size).toBe(1); // one file: one depth
       expect(lay.queue[0][1]).toBe(QUEUE_Y);
@@ -672,7 +715,7 @@ describe('the sidewalk budgets (D414)', () => {
         for (const pb of propBoxes(lay)) expect([name, f.props.x, f.props.y > PROP_Y, touches(box(f), pb)]).toEqual([name, f.props.x, true, false]);
       }
       expect(DRIVER_SPOTS).toBe(4);
-      expect(DRIVER_QUEUE_PITCH).toBe(22);
+      expect(DRIVER_QUEUE_PITCH).toBe(26);
       expect(PATIO_HALF_W).toBeGreaterThanOrEqual(26.5 * kAt(-12) * 1.1 - 0.5);
     }
   });
@@ -743,5 +786,57 @@ describe('the patio and walk-ins at every table', () => {
     expect(exit).toEqual(g.seat);
     expect(g.toSeat.pts.some(([x, y]) => x === lay.door.lanes.guestPauseX && y < 0)).toBe(true);
     expect(routesFor(lay, SCENE_W, true, 2).guests.length).toBe(lay.tables.length); // idle: no patio
+  });
+});
+
+// ---------- G91: the "+$" pop never covers the waiting pill ----------
+describe('pops and the waiting pill (G91)', () => {
+  const TEXTS = ['28 drivers idle · buy Prep + Ovens', '37 drivers idle · buy all three', '12 drivers idle · buy Counter', '11 drivers idle · buy Prep'];
+  const hit = (a: { x0: number; x1: number; y0: number; y1: number }, b: { x0: number; x1: number; y0: number; y1: number }) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+  /** Every pop on screen in a frame, as the scene draws it: riding a driver's head, or hanging over the register for a hand-over. */
+  function pops(sh: SideShop, cast: CastMember[], keepOff: { x0: number; x1: number; y0: number; y1: number }[]) {
+    const register = P(sh.lay.staff[0] + 12, 70, 78);
+    const out: { rect: { x0: number; x1: number; y0: number; y1: number }; role: string }[] = [];
+    for (const c of cast)
+      if (c.deps?.length)
+        for (const text of ['+$12', '×3 · +$12.3K'])
+          for (const k of [0, 0.5, 1]) {
+            const walkin = c.role === 'walkin';
+            const at = walkin ? register : P(c.props.x, c.props.y, 52);
+            out.push({ rect: popPlace(at, popWidth(text), { walkin, rideAlong: !walkin, k, keepOff, sceneW: SCENE_W }).rect, role: c.role });
+          }
+    return out;
+  }
+  test('with the pill\'s rect to keep off, no pop covers it or the "+N" pill, in any frame, at any footprint and for every instruction text', () => {
+    const bad: string[] = [];
+    for (const sh of sideShops()) {
+      if (sh.idle) continue;
+      for (const text of TEXTS) {
+        const pill = [waitTagRect(sh.lay, text), moreTagRect(sh.lay, '+3')];
+        sideFrames(sh).forEach((cast, f) => {
+          for (const p of pops(sh, cast, pill)) for (const r of pill) if (hit(p.rect, r)) bad.push(`${sh.name} "${text}" f${f} ${p.role}`);
+        });
+      }
+    }
+    expect(bad.slice(0, 5)).toEqual([]);
+  });
+  test('the check can fail: placed the old way (no keep-off) the pop of the driver leaving the pickup spot lands on the pill\'s right end', () => {
+    let covered = 0;
+    for (const sh of sideShops()) {
+      if (sh.idle) continue;
+      const pill = [waitTagRect(sh.lay, TEXTS[0])];
+      sideFrames(sh).forEach((cast) => {
+        for (const p of pops(sh, cast, [])) if (pill.some((r) => hit(p.rect, r))) covered++;
+      });
+    }
+    expect(covered).toBeGreaterThan(100);
+  });
+  test('a lifted pop stays on screen and sits just above the pill (4 pt), it does not jump to the sky', () => {
+    const sh = [...sideShops()].find((x) => x.name === 'fp4 full')!;
+    const pill = waitTagRect(sh.lay, TEXTS[0]);
+    const at = P(302, 46, 52);
+    const placed = popPlace(at, popWidth('+$12'), { walkin: false, rideAlong: true, k: 0, keepOff: [pill], sceneW: SCENE_W });
+    expect(placed.rect.y1).toBeCloseTo(pill.y0 - 4, 6);
+    expect(placed.rect.y0).toBeGreaterThan(0);
   });
 });

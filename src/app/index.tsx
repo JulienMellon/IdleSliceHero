@@ -1,10 +1,14 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
 import { CoachCard } from '@/components/coach-card';
+import { FloatingBonus } from '@/components/floating-bonus';
+import { OrderChip } from '@/components/order-chip';
+import { chipPhase } from '@/components/order-model';
+import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
 import { coachStep } from '@/engine/tutorial';
@@ -66,6 +70,22 @@ export default function GameScreen() {
   const [tasksOpen, setTasksOpen] = useState(false);
   const [tasksTab, setTasksTab] = useState<'daily' | 'weekly'>('daily');
   const [giftOpen, setGiftOpen] = useState(false);
+  // v5.13: the golden pizza waits behind any drawer, the tasks sheet, the calendar, or another screen (scrapbook, city)
+  const [focused, setFocused] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      setFocused(true);
+      return () => setFocused(false);
+    }, []),
+  );
+  const setBonusHold = useGame((s) => s.setBonusHold);
+  const hold = drawerOpen || tasksOpen || giftOpen || !focused;
+  useEffect(() => {
+    setBonusHold(hold);
+  }, [hold, setBonusHold]);
+  // an order chip is up: the golden pizza flies just below it, not behind it
+  const chipUp = chipPhase(game) !== 'none';
+  const bonusTop = chipUp ? ORDER_VIEW.top + ORDER_VIEW.height + 6 : BONUS_VIEW.laneTop;
   // the game tick's clock, never behind rewards.lastSeen (a claim moves lastSeen up to 200 ms ahead of the next tick);
   // a real rollback (lastSeen well ahead of the tick) is `clockOff`
   const tickAt = useGame((s) => s.tickAt);
@@ -285,6 +305,9 @@ export default function GameScreen() {
         {/* Nonna's tutorial (P2) */}
         {/* D366: docked over the street band (decoration only), clear of the seating area */}
         {coach && id === 'downtown' && !drawerOpen && <CoachCard step={coach} low={Math.max(8, insets.bottom)} high={12} />}
+        {/* v5.13: the special-order chip under the goal bar, and the golden pizza in the sky (both sit under the drawers) */}
+        <OrderChip top={ORDER_VIEW.top} onShop={setActive} />
+        {area.w > 0 && <FloatingBonus width={area.w} top={bonusTop} />}
         {drawerOpen && (
           <View style={StyleSheet.absoluteFill}>
             <Pressable testID="close-upgrades-dim" style={styles.dim} onPress={() => setDrawerOpen(false)} />
