@@ -36,9 +36,41 @@ export function lookFor(seed: number, worker = false): Look {
   };
 }
 
+/** One idle driver of the sidewalk lane: the seed that draws their face, and whether they are checking a phone. */
+export interface DriverCast { seed: number; phone: boolean }
+const driverCastCache = new Map<number, DriverCast[]>();
+/**
+ * The four idle drivers a shop shows (D416): a cast, not clones. The uniform stays the brand's (red cap, blue jacket), so the
+ * variety is in the people under it: no two share a skin tone, a hair colour or a trait (glasses, moustache, freckles, tuft: a
+ * worker always has one), so at most one of four has the moustache; the old queue was three moustached clones. The second
+ * one is looking at a phone. Stable per shop seed, so nothing flickers between frames or visits.
+ */
+export function driverCast(shopSeed: number): DriverCast[] {
+  const hit = driverCastCache.get(shopSeed);
+  if (hit) return hit;
+  const picked: DriverCast[] = [];
+  const looks: Look[] = [];
+  for (let q = 0; q < 4; q++) {
+    // the first seed from this slot's own stream that differs from everyone already picked (the slot's own seed if none does)
+    let seed = shopSeed + 83 + q * 9;
+    for (let attempt = 0; attempt < 2000; attempt++) {
+      const s = shopSeed + 83 + q * 9 + attempt * 101;
+      const l = lookFor(s, true);
+      if (looks.every((o) => o.skin !== l.skin && o.hair !== l.hair && o.trait !== l.trait)) {
+        seed = s;
+        break;
+      }
+    }
+    looks.push(lookFor(seed, true));
+    picked.push({ seed, phone: q === 1 });
+  }
+  driverCastCache.set(shopSeed, picked);
+  return picked;
+}
+
 export type Mood = 'smile' | 'focus' | 'happy' | 'o' | 'chew';
 /** What a worker's hands are doing: cooks roll / toss / ladle; bakers hold an empty peel, a pizza, or slide one in. */
-export type Act = 'none' | 'pin' | 'toss' | 'ladle' | 'peel' | 'pizza' | 'slide' | 'slice' | 'cup' | 'lean';
+export type Act = 'none' | 'phone' | 'pin' | 'toss' | 'ladle' | 'peel' | 'pizza' | 'slide' | 'slice' | 'cup' | 'lean';
 
 /** Props for one chibi figure. Role (`kind`) picks the uniform; look comes from `seed` unless overridden. */
 export interface PersonProps {

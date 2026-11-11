@@ -2,7 +2,7 @@ import { memo, type ReactElement } from 'react';
 import { F } from '../../theme';
 import { Circle, Ellipse, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { chairBack } from './geometry';
-import { PATIO_SEAT, QUEUE_Y, waitTagAt, type Layout } from './layout';
+import { PATIO_SEAT, QUEUE_Y, moreTagAt, waitTagAt, type Layout } from './layout';
 import { TABLE_STYLE } from './props';
 import { INK, SCENE_W, CURB_Y, P, kAt, shade } from './projection';
 
@@ -122,6 +122,8 @@ export const Sidewalk = memo(function Sidewalk({ frontY }: { frontY: number }) {
 
 // ---------- the sidewalk patio and the waiting tag (v5.11) ----------
 const UMBRELLA = ['#D9443A', '#FFF4E0'];
+/** The canopy's radius at table scale: the whole set (canopy and both chairs) is 2 × PATIO_HALF_W wide on screen (layout.ts). */
+export const UMBRELLA_R = 24;
 
 /**
  * One small patio table with two chairs and an umbrella, standing on the sidewalk at room (x, y). Three layers so
@@ -173,16 +175,17 @@ export const PatioTable = memo(function PatioTable({ x, y, part }: { x: number; 
       <Rect x={-0.9} y={-62} width={1.8} height={48} fill="#7A5C48" stroke={INK} strokeWidth={0.6} />
       {/* four wedges of a red-and-cream canopy, a scalloped rim, and the finial */}
       {[0, 1, 2, 3].map((n) => {
-        const x0 = -26 + n * 13;
-        return <Path key={n} d={`M0 -72 L${x0} -57 Q${x0 + 3.25} -53.5 ${x0 + 6.5} -57 Q${x0 + 9.75} -53.5 ${x0 + 13} -57 Z`} fill={UMBRELLA[n % 2]} stroke={INK} strokeWidth={1} strokeLinejoin="round" />;
+        const x0 = -UMBRELLA_R + n * (UMBRELLA_R / 2);
+        const w = UMBRELLA_R / 2;
+        return <Path key={n} d={`M0 -72 L${x0} -57 Q${x0 + w / 4} -53.5 ${x0 + w / 2} -57 Q${x0 + (3 * w) / 4} -53.5 ${x0 + w} -57 Z`} fill={UMBRELLA[n % 2]} stroke={INK} strokeWidth={1} strokeLinejoin="round" />;
       })}
       <Circle cx={0} cy={-73} r={1.7} fill={INK} />
     </G>
   );
 });
 
-/** A small white pill in the scene's style: "×N waiting" over the drivers who have no order to carry. */
-export const WaitTag = memo(function WaitTag({ x, y, n, w, tail }: { x: number; y: number; n: number; w: number; tail: number }) {
+/** A small white pill in the scene's style, tail pointing down at `tail` (offset from its centre): "29 drivers idle · buy Ovens", or "+1" over the diner queue. */
+export const WaitTag = memo(function WaitTag({ x, y, text, w, tail }: { x: number; y: number; text: string; w: number; tail: number }) {
   const t = Math.max(-w / 2 + 9, Math.min(w / 2 - 9, tail));
   return (
     <G transform={`translate(${x.toFixed(1)} ${y.toFixed(1)})`}>
@@ -190,7 +193,7 @@ export const WaitTag = memo(function WaitTag({ x, y, n, w, tail }: { x: number; 
       <Rect x={-w / 2} y={-9} width={w} height={17} rx={8.5} fill="#fff" stroke={INK} strokeWidth={1.1} />
       <Rect x={t - 3.4} y={6.4} width={6.8} height={2.4} fill="#fff" />
       <SvgText x={0} y={3} fontFamily={F.bold} fontSize={10} fill={INK} textAnchor="middle">
-        {`×${n} waiting`}
+        {text}
       </SvgText>
     </G>
   );
@@ -198,19 +201,23 @@ export const WaitTag = memo(function WaitTag({ x, y, n, w, tail }: { x: number; 
 
 /**
  * The sidewalk's own scenery, depth-sorted with the cast: the patio's tables (with the umbrellas over the diners'
- * heads) and the "×N waiting" tag. `patio`: tables standing (0..2); `waiting`: idle drivers when there are more than
- * the queue spots show, else 0 (cast.ts `sidewalkOf`).
+ * heads) and the pills. `patio`: tables standing (0..2); `waiting`: the text of the idle drivers' pill, or null; `more`: the
+ * text of the "+N" pill at the end of the diner queue, or null (cast.ts `sidewalkOf`, waiting.ts).
  */
-export function sidewalkItems(lay: Layout, patio: number, waiting: number): { y: number; el: ReactElement }[] {
+export function sidewalkItems(lay: Layout, patio: number, waiting: string | null, more: string | null = null): { y: number; el: ReactElement }[] {
   const out: { y: number; el: ReactElement }[] = [];
   lay.patio.slice(0, patio).forEach((p, i) => {
     out.push({ y: p.y + 0.6, el: <PatioTable key={`pb${i}`} x={p.x} y={p.y} part="back" /> });
     out.push({ y: p.y - 0.6, el: <PatioTable key={`pf${i}`} x={p.x} y={p.y} part="front" /> });
     out.push({ y: p.y - 0.9, el: <PatioTable key={`pu${i}`} x={p.x} y={p.y} part="umbrella" /> });
   });
-  if (waiting > 0) {
+  if (waiting) {
     const t = waitTagAt(lay, waiting);
-    out.push({ y: QUEUE_Y - 2, el: <WaitTag key="wait" x={t.x} y={t.y} n={waiting} w={t.w} tail={t.tail} /> });
+    out.push({ y: QUEUE_Y - 2, el: <WaitTag key="wait" x={t.x} y={t.y} text={waiting} w={t.w} tail={t.tail} /> });
+  }
+  if (more) {
+    const t = moreTagAt(lay, more);
+    out.push({ y: QUEUE_Y - 2.5, el: <WaitTag key="more" x={t.x} y={t.y} text={more} w={t.w} tail={0} /> });
   }
   return out;
 }

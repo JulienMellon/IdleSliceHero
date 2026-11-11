@@ -10,6 +10,8 @@ import { BADGE_R, COIN_FLIGHT, popModels, popRect, type BadgeTone } from './stat
 import { HeadFace } from './head-face';
 import type { HeadKind } from '../../content/tuning';
 import { INK, SCENE_W } from './projection';
+import { CONFETTI, CONFETTI_FRAMES, CONFETTI_OPACITY, confettiFills } from './ladder';
+import { MILE_R, mileLevelSize } from './moments';
 
 const BASIL = '#4CAF50';
 const TOMATO = '#E5483A';
@@ -175,3 +177,45 @@ export const RushPill = memo(function RushPill({ x, y, kind, text, pulse = 0 }: 
 
 /** The rush pill's width: its text plus padding, never wider than 120 (D406) so it can sit under the oven chip without crossing the menu. */
 export const rushPillWidth = (text: string) => Math.min(120, Math.max(70, text.length * 6.2 + 18));
+
+/**
+ * The milestone moment (D415): a gold badge 72 pt across, centred over the station that reached Lv 25 / 50 / 100, with
+ * its level in big type and the speed-up it bought underneath. The confetti is drawn FIRST, so it bursts out from behind
+ * the disc and never covers the text (it used to land on its own "Lv 25"). `step` is the confetti step (−1: none),
+ * `scale` / `opacity` come from moments.ts (quantised, so the memo holds), `color` is the neighbourhood's.
+ */
+export const MilestoneBadge = memo(function MilestoneBadge({ x, y, level, label, sub, scale, opacity, step, color }: { x: number; y: number; level: string; label: string; sub: string | null; scale: number; opacity: number; step: number; color: string }) {
+  const fills = confettiFills(color);
+  const subW = Math.min(48, Math.max(34, (sub?.length ?? 0) * 6.4 + 8));
+  return (
+    <G transform={`translate(${x.toFixed(1)} ${y.toFixed(1)})`}>
+      {step >= 0 && (
+        <G opacity={CONFETTI_OPACITY[step]}>
+          {CONFETTI.map((c, i) => (
+            <Rect key={i} x={-c.w / 2} y={-c.h / 2} width={c.w} height={c.h} rx={0.8} fill={fills[c.tone]} stroke={INK} strokeWidth={0.5} transform={CONFETTI_FRAMES[step][i]} />
+          ))}
+        </G>
+      )}
+      <G transform={`scale(${scale})`} opacity={opacity}>
+        <Circle cx={0} cy={2} r={MILE_R} fill="rgba(59,31,20,0.28)" />
+        <Circle cx={0} cy={0} r={MILE_R} fill="#FFC531" stroke={INK} strokeWidth={2.2} />
+        <Circle cx={0} cy={0} r={MILE_R - 5} fill="#FFD866" stroke="#E09B00" strokeWidth={1.6} />
+        <Path d="M-22 -14 A26 26 0 0 1 -4 -27" stroke="#fff" strokeWidth={2.4} opacity={0.6} fill="none" strokeLinecap="round" />
+        <SvgText x={0} y={-15} fontFamily={F.bold} fontSize={8.5} fill="#8A5A00" textAnchor="middle">
+          {label}
+        </SvgText>
+        <SvgText x={0} y={sub ? 7 : 10} fontFamily={F.bold} fontSize={mileLevelSize(level)} fill={INK} textAnchor="middle">
+          {level}
+        </SvgText>
+        {sub ? (
+          <G>
+            <Rect x={-subW / 2} y={12} width={subW} height={14} rx={7} fill={POP_FILL} stroke="#fff" strokeWidth={1.2} />
+            <SvgText x={0} y={22.5} fontFamily={F.bold} fontSize={10} fill="#fff" textAnchor="middle">
+              {sub}
+            </SvgText>
+          </G>
+        ) : null}
+      </G>
+    </G>
+  );
+});

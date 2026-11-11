@@ -112,17 +112,20 @@ describe('walk-ins at every table (v5.11)', () => {
   test('walk-ins take every room table, then the patio tables; an idle shop has no patio', () => {
     const t = lay.tables.length;
     expect(routesFor(lay, SCENE_W).guests.map((g) => g.table)).toEqual(Array.from({ length: t }, (_, i) => i));
+    const n = lay.patio.length; // how many whole patio sets the sidewalk has room for (layout.ts)
+    expect(n).toBeGreaterThanOrEqual(1);
     const R = routesFor(lay, SCENE_W, false, 2);
-    expect(R.guests.length).toBe(t + 2);
-    expect(R.guests.map((g) => g.patio)).toEqual([...Array(t).fill(false), true, true]);
+    expect(R.guests.length).toBe(t + n);
+    expect(R.guests.map((g) => g.patio)).toEqual([...Array(t).fill(false), ...Array(n).fill(true)]);
     expect(routesFor(lay, SCENE_W, true, 2).guests.length).toBe(t);
-    expect(routesFor(lay, SCENE_W, false, 9).guests.length).toBe(t + 2); // never more than the layout has
+    expect(routesFor(lay, SCENE_W, false, 9).guests.length).toBe(t + n); // never more than the layout has
   });
   test('stepCrew carries the patio count, ignores it on an idle shop, and stays idempotent', () => {
     const c = stepCrew(emptyCrew(), { lay, walkins: true, patio: 2, departures: [] }, 1, SCENE_W);
-    expect(c.patio).toBe(2);
+    expect(c.patio).toBe(lay.patio.length);
     expect(stepCrew(c, { lay, walkins: true, patio: 2, departures: [] }, 1, SCENE_W)).toBe(c);
     expect(stepCrew(c, { lay, walkins: true, patio: 1, departures: [] }, 1, SCENE_W).patio).toBe(1);
+    expect(stepCrew(c, { lay, walkins: true, patio: 0, departures: [] }, 1, SCENE_W).patio).toBe(0);
     expect(stepCrew(emptyCrew(), { lay, walkins: true, idle: true, patio: 2, departures: [] }, 1, SCENE_W).patio).toBe(0);
   });
   test('a lone table is cleared before the next walk-in is handed their pie', () => {

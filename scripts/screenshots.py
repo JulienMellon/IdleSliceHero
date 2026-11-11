@@ -69,9 +69,17 @@ def audio_log(page, label):
     except Exception as e:
         report.setdefault("audio", {})[label] = [f"probe failed: {e}"]
 
+_last_seeded = None
 def seeded_page(browser, save):
     """Fresh browser profile whose localStorage holds `save` before the app boots."""
+    # v5.12: close the previous seeded profile first; ~50 live pages animating at once stalled the late shots.
+    global _last_seeded
+    if _last_seeded is not None:
+        try: _last_seeded.close()
+        except Exception: pass
     c = browser.new_context(viewport={"width": 393, "height": 852}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    _last_seeded = c
+    c.set_default_timeout(20000)
     c.add_init_script(AUDIO_PROBE)
     c.add_init_script(f"""if (!sessionStorage.getItem('seeded')) {{
         localStorage.setItem({json.dumps(KEY)}, {json.dumps(json.dumps(save))});

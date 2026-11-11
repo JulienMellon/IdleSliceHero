@@ -60,7 +60,7 @@ describe('offline cap note (playtest bug 8)', () => {
     expect(r.capped).toBe(true);
     expect(r.awaySeconds).toBe(9 * 3600);
     expect(G.applyOffline(s, 3600 * 1000).capped).toBe(false);
-    const cap = 4 * 3600 * 1000;
+    const cap = TUNING.offlineCapSeconds * 1000;
     expect(G.applyOffline(s, cap).capped).toBe(false); // exactly at the cap is not "over" it
     expect(G.applyOffline(s, cap + 1000).capped).toBe(true);
   });

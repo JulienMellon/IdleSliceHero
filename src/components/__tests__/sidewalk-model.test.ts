@@ -42,8 +42,11 @@ describe('EXPAND at the level cap (B4)', () => {
       expect(v.expand).toBe(true);
       expect(v.what).toBe('expand');
       expect(v.name).toBe(k.toUpperCase()); // D407: the station's name stays
-      expect(stationTitle(v)).toBe(`${k.toUpperCase()} MAX`);
-      expect(v.label).toBe(`Expand ${money(expandCost(s))}`);
+      expect(stationTitle(v)).toBe('EXPAND'); // G89: the title is short enough for the ~66 pt button; the station shows as its icon and badge
+      expect(v.badge).toBe(`MAX ${v.level}`);
+      expect(v.label).toBe(money(expandCost(s))); // the real price, alone
+      expect(v.label.length).toBeLessThanOrEqual(7); // G89: "Expand $500" (11) and "DRIVERS MAX" were truncated in a ~66 pt button; a price and a 6-letter title fit
+      expect(stationTitle(v).length).toBeLessThanOrEqual(7);
       expect(v.cost).toBe(expandCost(s));
       expect(v.lock).toBeNull();
       expect(v.tone).toBe('expand'); // amber, so it never reads as a station buy
@@ -56,6 +59,7 @@ describe('EXPAND at the level cap (B4)', () => {
     expect(v.what).toBe('drivers');
     expect(v.name).toBe('DRIVERS');
     expect(stationTitle(v)).toBe('DRIVERS');
+    expect(v.badge).toBe(v.level);
   });
   test('affordability and "need $X" follow Expand\'s cost', () => {
     const s = capped(0);
@@ -337,13 +341,14 @@ describe('EXPAND merges into one shop-wide card (D407)', () => {
   test('it is not enabled until the player can pay', () => {
     expect(merged(slotsOf({ prep: 25, ovens: 25, counter: 25, drivers: 1, footprint: 0 }, 0).slots)[0].enabled).toBe(false);
   });
-  test('one capped station keeps its own card: its name, "MAX", and the amber Expand button', () => {
+  test('one capped station keeps its own card: EXPAND over the real price, "MAX 25" on its badge, and the amber button', () => {
     const { slots } = slotsOf({ prep: 25, ovens: 10, counter: 10, drivers: 10, footprint: 0 }, 1e9);
     expect(merged(slots)).toHaveLength(0);
     const prep = slots.find((x) => x.kind === 'station' && x.key === 'prep');
     expect(prep?.kind === 'station' && prep.view.tone).toBe('expand');
-    expect(prep?.kind === 'station' && stationTitle(prep.view)).toBe('PREP MAX');
-    expect(prep?.kind === 'station' && prep.view.label).toMatch(/^Expand \$/);
+    expect(prep?.kind === 'station' && stationTitle(prep.view)).toBe('EXPAND');
+    expect(prep?.kind === 'station' && prep.view.badge).toBe('MAX 25');
+    expect(prep?.kind === 'station' && prep.view.label).toMatch(/^\$/);
     expect(prep?.kind === 'station' && prep.view.what).toBe('expand');
   });
   test('both merges can stand in one row: the bundle in the first slots, the capped stations in theirs', () => {

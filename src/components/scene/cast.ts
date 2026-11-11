@@ -2,7 +2,8 @@
 // Pure (no React), so crowd layouts can be simulated frame by frame in node tests; Storefront only
 // turns the records into <Person/> elements.
 import { PATIO_SEAT, SEAT, type Layout } from './layout';
-import { GUEST_SHIRTS, HAIR_COLORS, hash32, type Act, type Mood, type PersonProps } from './looks';
+import { GUEST_SHIRTS, HAIR_COLORS, driverCast, hash32, type Act, type Mood, type PersonProps } from './looks';
+import { driverFigures, queueOverflow } from './waiting';
 import type { SeatPalette } from './palette';
 import { P, SCENE_W } from './projection';
 import { STEP_FRAMES } from './quantise';
@@ -41,20 +42,26 @@ export interface CastInput {
   pal: SeatPalette;
   /** Who is waiting, walking out or eating, folded from the engine's departures (crew.ts `stepCrew`). */
   crew: CrewState;
-  /** Who is waiting outside (`Game.queueSizes`): hungry diners left of the door, idle drivers right of it. Absent: nobody. */
+  /** Who is waiting outside (`Game.queueSizes`): hungry diners and, left of them, the idle drivers (one figure per ten). Absent: nobody. */
   queue?: { diners: number; drivers: number };
 }
 
 /** What the sidewalk shows this frame. An idle shop (the hire stack stands on the sidewalk) keeps it clear. */
 export function sidewalkOf(lay: Layout, crew: Pick<CrewState, 'idle' | 'patio'>, queue?: { diners: number; drivers: number }) {
-  if (crew.idle) return { patio: 0, diners: 0, drivers: 0, waiting: 0 };
-  const drivers = Math.max(0, Math.floor(queue?.drivers ?? 0));
+  if (crew.idle) return { patio: 0, diners: 0, drivers: 0, waiting: 0, more: 0 };
+  const idle = Math.max(0, Math.floor(queue?.drivers ?? 0));
+  const diners = Math.max(0, Math.floor(queue?.diners ?? 0));
+  const figures = Math.min(lay.driverQueue.length, driverFigures(idle));
+  const shown = Math.min(lay.queue.length, diners);
   return {
     patio: Math.min(lay.patio.length, crew.patio),
-    diners: Math.max(0, Math.min(lay.queue.length, Math.floor(queue?.diners ?? 0))),
-    drivers: Math.min(lay.driverQueue.length, drivers),
-    /** The "×N waiting" tag: all the idle drivers, once there are more than the spots can show. */
-    waiting: drivers > lay.driverQueue.length ? drivers : 0,
+    diners: shown,
+    /** One figure per ten idle drivers, at most four (waiting.ts). */
+    drivers: figures,
+    /** The "N drivers idle" pill: all the idle drivers, whenever the figures stand for more than themselves. */
+    waiting: idle > figures ? idle : 0,
+    /** The "+N" pill at the end of the diner queue: hungry diners beyond the spots. */
+    more: queueOverflow(diners, shown),
   };
 }
 
@@ -165,8 +172,8 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
     }
   });
 
-  // the sidewalk queues: hungry diners left of the door (facing it), idle drivers right of it (facing left, in uniform).
-  // They stand at their spots with a one-pixel bob on the 7.5 Hz pose clock
+  // the sidewalk lane: hungry diners nearest the door, then the idle drivers, all facing the door. They stand at their spots
+  // with a one-pixel bob on the 7.5 Hz pose clock
   const bobAt = (n: number) => (Math.sin(poseClock * 2.4 + n * 1.7) > 0.35 ? 0.8 : 0);
   for (let q = 0; q < side.diners; q++) {
     const [x, y0] = lay.queue[q];
@@ -179,15 +186,17 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       props: { x, y, kind: 'guest', seed: sd, shirt: GUEST_SHIRTS[pal.walkShirt(q, 7)], hair: HAIR_COLORS[pal.walkHair(q, 7)], flip: false, blink: blinkAt(sd), mood: 'smile', o: edgeFade(P(x, y)[0]) },
     });
   }
+  // D416: a varied cast of drivers (skin, hair, build; one moustache at most), one of them checking a phone
+  const drivers = driverCast(shopSeed);
   for (let q = 0; q < side.drivers; q++) {
     const [x, y0] = lay.driverQueue[q];
     const y = y0 + bobAt(q + 5);
-    const sd = shopSeed + 83 + q * 9;
+    const d = drivers[q];
     cast.push({
       key: `w${q}`,
       sortY: y,
       role: 'queue',
-      props: { x, y, kind: 'driver', seed: sd, flip: true, blink: blinkAt(sd), mood: 'smile', o: edgeFade(P(x, y)[0]) },
+      props: { x, y, kind: 'driver', seed: d.seed, act: d.phone ? 'phone' : 'none', flip: false, blink: blinkAt(d.seed), mood: d.phone ? 'focus' : 'smile', o: edgeFade(P(x, y)[0]) },
     });
   }
 

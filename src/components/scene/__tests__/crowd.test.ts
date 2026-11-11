@@ -4,10 +4,11 @@
 import { buildCast, sidewalkOf, type CastMember } from '../cast';
 import { alongDist, emptyCrew, routesFor, stepCrew, type CrewState } from '../crew';
 import { advanceLine, AUTOMATIC, emptyLine, type Line, type LineRates } from '../../../engine/pipeline';
-import { BACK_ROW_Y, PATIO_SEAT, SEAT, VEHICLE_HALF_W, layout, waitTagAt, waitTagWidth } from '../layout';
-import { hash32 } from '../looks';
+import { BACK_ROW_Y, DRIVER_QUEUE_PITCH, DRIVER_SPOTS, PATIO_HALF_W, PATIO_SEAT, PROP_Y, QUEUE_MIN_X, QUEUE_PITCH, QUEUE_Y, SEAT, TAG_MARGIN, TREE_Y, VEHICLE_HALF_W, layout, moreTagAt, waitTagAt, waitTagWidth } from '../layout';
+import { driverCast, hash32, lookFor } from '../looks';
+import { driverFigures, queueOverflow, waitingText } from '../waiting';
 import { seatPalette } from '../palette';
-import { CURB_Y, P, SCENE_H, SCENE_W, kAt } from '../projection';
+import { CURB_Y, FRONT_TOP, P, SCENE_H, SCENE_W, kAt, unprojectX } from '../projection';
 import { SIDEWALK_ROW } from '../../tap-targets';
 import { doorwaySignRect, popRect, spotlightCutout, staffFaces, stationRects, tutorialHand } from '../stations';
 import { bodyBy, chairBack, SEATED_TORSO_HALF } from '../geometry';
@@ -392,14 +393,14 @@ interface SideShop {
   shopSeed: number;
   pal: ReturnType<typeof seatPalette>;
 }
-/** Every footprint with a full sidewalk (4 hungry diners, 5 idle drivers, 2 patio tables), a lone starter table, and an idle shop. */
+/** Every footprint with a full sidewalk (4 hungry diners, 37 idle drivers = 4 figures, every patio table the layout has room for), a lone starter table, and an idle shop. */
 function* sideShops(): Generator<SideShop> {
   for (let fp = 0; fp < 5; fp++)
     for (const [tag, tables, patio, idle] of [['full', 6, 2, false], ['solo', 1, 0, false], ['idle', 6, 2, true]] as const) {
       const lay = layout(fp, Math.min(fp + 1, 6), 3, 2, tables, DRIVER_SLOTS[fp], 1);
       const shopSeed = 97 * (fp + 3);
       const pal = seatPalette(hash32(shopSeed) % 8, hash32(shopSeed + 9) % 6, 8, 6, lay.tables.length + patio);
-      yield { name: `fp${fp} ${tag}`, lay, patio, queue: { diners: 4, drivers: 5 }, idle, tables, shopSeed, pal };
+      yield { name: `fp${fp} ${tag}`, lay, patio: Math.min(patio, lay.patio.length), queue: { diners: 4, drivers: 37 }, idle, tables, shopSeed, pal };
     }
 }
 const sideCache = new Map<string, CastMember[][]>();
@@ -444,31 +445,69 @@ describe('the sidewalk row never cuts a figure off (D408)', () => {
   test('an idle shop keeps the sidewalk clear: no queue, no patio, no walk-in on the patio', () => {
     for (const sh of sideShops()) {
       if (!sh.idle) continue;
-      expect(sidewalkOf(sh.lay, { idle: true, patio: 2 }, sh.queue)).toEqual({ patio: 0, diners: 0, drivers: 0, waiting: 0 });
+      expect(sidewalkOf(sh.lay, { idle: true, patio: 2 }, sh.queue)).toEqual({ patio: 0, diners: 0, drivers: 0, waiting: 0, more: 0 });
       for (const cast of sideFrames(sh)) expect(queuers(cast)).toEqual([]);
     }
   });
 });
 
 describe('the sidewalk queues', () => {
-  const points = (sh: SideShop) => sh.lay.queue.concat(sh.lay.driverQueue);
   const standing = (x: number, y: number, kind: 'guest' | 'driver' = 'guest'): CastMember => ({ key: 'p', sortY: y, role: 'walkin', props: { x, y, kind, step: 0 } });
 
-  test('a full queue is 4 diners left of the door and up to 3 drivers right of it, and the tag counts the rest', () => {
+  test('a full lane is up to 4 diners nearest the door and 4 drivers behind them, all facing the door; the pills count the rest', () => {
     for (const sh of sideShops()) {
       if (sh.idle || sh.tables === 1) continue;
       const cast = sideFrames(sh)[100];
       const q = queuers(cast);
-      expect([sh.name, q.filter((c) => c.props.kind === 'guest').length]).toEqual([sh.name, 4]);
-      expect([sh.name, q.filter((c) => c.props.kind === 'driver').length]).toEqual([sh.name, sh.lay.driverQueue.length]);
-      expect(sh.lay.driverQueue.length).toBeGreaterThanOrEqual(1);
-      expect(sh.lay.driverQueue.length).toBeLessThanOrEqual(3);
-      for (const c of q) expect([sh.name, c.props.kind === 'guest' ? c.props.x < sh.lay.door.x0 : c.props.x > sh.lay.door.x1]).toEqual([sh.name, true]);
-      for (const c of q) expect([sh.name, c.props.kind === 'guest' ? !c.props.flip : !!c.props.flip]).toEqual([sh.name, true]); // diners face the door, drivers face left
+      expect([sh.name, q.filter((c) => c.props.kind === 'guest').length]).toEqual([sh.name, sh.lay.queue.length]);
+      expect([sh.name, q.filter((c) => c.props.kind === 'driver').length]).toEqual([sh.name, 4]);
+      for (const c of q) expect([sh.name, c.props.kind === 'guest' ? c.props.x < sh.lay.door.x0 : c.props.x < sh.lay.queue[sh.lay.queue.length - 1][0]]).toEqual([sh.name, true]);
+      for (const c of q) expect([sh.name, !c.props.flip]).toEqual([sh.name, true]); // everyone faces the door
       const s = sidewalkOf(sh.lay, { idle: false, patio: 2 }, sh.queue);
-      expect(s.waiting).toBe(sh.queue.drivers > sh.lay.driverQueue.length ? sh.queue.drivers : 0);
-      expect(sidewalkOf(sh.lay, { idle: false, patio: 0 }, { diners: 0, drivers: sh.lay.driverQueue.length }).waiting).toBe(0);
+      expect(s.waiting).toBe(37);
+      expect(s.more).toBe(Math.max(0, 4 - sh.lay.queue.length));
+      expect(sidewalkOf(sh.lay, { idle: false, patio: 0 }, { diners: 0, drivers: 1 }).waiting).toBe(0); // one driver: one figure, nothing left to count
     }
+  });
+
+  // G90: the old scene drew as many drivers as the footprint had room for (×29 idle: 1 figure, ×9: 3, ×37: 2)
+  test('G90: the idle drivers drawn are min(4, ceil(n / 10)) at every footprint, and the same in every frame', () => {
+    const want = (n: number) => (n <= 0 ? 0 : Math.min(4, Math.ceil(n / 10)));
+    expect([0, 1, 9, 10, 11, 29, 30, 31, 37, 40, 41, 125].map(driverFigures)).toEqual([0, 1, 1, 1, 2, 3, 3, 4, 4, 4, 4, 4]);
+    for (let fp = 0; fp < 5; fp++) {
+      const lay = layout(fp, 3, 3, 2, 6, DRIVER_SLOTS[fp], 1);
+      const pal = seatPalette(1, 2, 8, 6, lay.tables.length);
+      for (const n of [0, 1, 9, 10, 11, 29, 30, 31, 37, 40, 99]) {
+        expect([fp, n, sidewalkOf(lay, { idle: false, patio: 0 }, { diners: 0, drivers: n }).drivers]).toEqual([fp, n, want(n)]);
+        const crew: CrewState = emptyCrew();
+        let keys = '';
+        for (let f = 0; f < 30; f++) {
+          const { cast } = buildCast({ lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace: 1, clock: f / 15, shopSeed: 1234, nIdx: 1, pal, crew, queue: { diners: 0, drivers: n } });
+          const k = queuers(cast).filter((c) => c.props.kind === 'driver').map((c) => `${c.key}:${c.props.seed}`).join(',');
+          if (f === 0) keys = k;
+          expect([fp, n, f, k]).toEqual([fp, n, f, keys]); // no flicker: the same figures with the same faces every frame
+        }
+        expect([fp, n, keys === '' ? 0 : keys.split(',').length]).toEqual([fp, n, want(n)]);
+      }
+    }
+  });
+  test('D416: the drivers are a cast: distinct skin and hair, at most one moustache, one on a phone, a depth stagger', () => {
+    const shops = [97 * 3, 97 * 4, 97 * 5, 1234, 7, 0, 997 * 97, 31337];
+    for (const seed of shops) {
+      const cast = driverCast(seed);
+      expect(cast).toHaveLength(4);
+      const looks = cast.map((c) => lookFor(c.seed, true));
+      expect([seed, new Set(looks.map((l) => l.skin)).size]).toEqual([seed, 4]);
+      expect([seed, new Set(looks.map((l) => l.hair)).size]).toEqual([seed, 4]);
+      expect([seed, looks.filter((l) => l.trait === 2).length <= 1]).toEqual([seed, true]);
+      expect([seed, looks.slice(0, 3).filter((l) => l.trait === 2).length <= 1]).toEqual([seed, true]); // no moustache on at least two of three
+      expect([seed, cast.filter((c) => c.phone).length]).toEqual([seed, 1]);
+      expect(driverCast(seed)).toBe(cast); // stable
+    }
+    const sh = [...sideShops()].find((x) => x.name === 'fp3 full')!;
+    const w = queuers(sideFrames(sh)[100]).filter((c) => c.props.kind === 'driver');
+    expect(w.filter((c) => c.props.act === 'phone')).toHaveLength(1);
+    expect(new Set(w.map((c) => c.props.y < -5.5)).size).toBe(2); // staggered depth (−3 and −8, plus the 0.8 bob)
   });
   test('queue figures stand fully on screen, never on the mat, and miss each other (< 30%)', () => {
     for (const sh of sideShops()) {
@@ -492,23 +531,6 @@ describe('the sidewalk queues', () => {
       for (const c of queuers(sideFrames(sh)[100])) for (const l of [standing(ln.guestX, 8), standing(ln.driverX, 8, 'driver')]) expect([sh.name, c.key, overlap(box(c), box(l)) <= 0.2]).toEqual([sh.name, c.key, true]);
     }
   });
-  test('they stand behind the parked vehicle, which covers at most their feet (< 20%), and clear of the patio tables (< 10%)', () => {
-    for (const sh of sideShops()) {
-      const { x, y } = sh.lay.scooter;
-      const [vx, vy] = P(x, y);
-      const k = kAt(y);
-      const vehicle: Box = { x0: vx - VEHICLE_HALF_W * k, x1: vx + VEHICLE_HALF_W * k, y0: vy - 30, y1: vy + 2 };
-      const sets = sh.lay.patio.map((p) => {
-        const [sx, sy] = P(p.x, p.y);
-        const kk = kAt(p.y);
-        return { x0: sx - (PATIO_SEAT + 13) * kk, x1: sx + (PATIO_SEAT + 13) * kk, y0: sy - 50, y1: sy };
-      });
-      for (const c of queuers(sideFrames(sh)[100])) {
-        expect([sh.name, c.key, 'vehicle', overlap(box(c), vehicle) < 0.2]).toEqual([sh.name, c.key, 'vehicle', true]);
-        if (c.props.kind === 'guest') for (const set of sets) expect([sh.name, c.key, 'patio', overlap(box(c), set) < 0.1]).toEqual([sh.name, c.key, 'patio', true]);
-      }
-    }
-  });
   test('a walker passing in front covers a queue figure (> 50%) in under 15% of frames', () => {
     for (const sh of sideShops()) {
       if (sh.idle) continue;
@@ -522,13 +544,137 @@ describe('the sidewalk queues', () => {
       expect([sh.name, bad / fs.length < 0.15]).toEqual([sh.name, true]);
     }
   });
-  test('the "×N waiting" tag fits on screen for any count and points at the last driver spot', () => {
+  test('D420/D421: the pills stay 12 pt inside the screen for any text, the drivers\' one points at the group and the "+N" over the last diner', () => {
+    const texts = ['1 driver idle', '11 drivers idle · buy Ovens', '29 drivers idle · buy Prep + Ovens', '1234 drivers idle · buy all three'];
     for (const sh of sideShops())
-      for (const n of [4, 9, 10, 99, 1234]) {
-        const t = waitTagAt(sh.lay, n);
-        expect([sh.name, n, t.x - t.w / 2 >= 0, t.x + t.w / 2 <= SCENE_W, t.w === waitTagWidth(n)]).toEqual([sh.name, n, true, true, true]);
+      for (const text of texts) {
+        const t = waitTagAt(sh.lay, text);
+        expect([sh.name, text, t.x - t.w / 2 >= TAG_MARGIN - 1e-6, t.x + t.w / 2 <= SCENE_W - TAG_MARGIN + 1e-6, t.w === waitTagWidth(text)]).toEqual([sh.name, text, true, true, true]);
         expect(Math.abs(t.x + t.tail - P(sh.lay.waitTag[0], sh.lay.waitTag[1])[0])).toBeLessThan(0.01);
       }
+    for (const sh of sideShops()) {
+      const m = moreTagAt(sh.lay, '+1');
+      expect(Math.abs(m.x - P(...sh.lay.queue[sh.lay.queue.length - 1])[0])).toBeLessThan(0.01);
+      // the two pills never meet: the "+N" hangs lower than the drivers' (taller) one
+      const t = waitTagAt(sh.lay, texts[1]);
+      const sepY = m.y - t.y;
+      const sepX = Math.abs(m.x - t.x) < (m.w + t.w) / 2;
+      expect([sh.name, sepX ? sepY >= 17 : true]).toEqual([sh.name, true]);
+    }
+    expect(TAG_MARGIN).toBe(12);
+  });
+  test('D421: the pill names how many drivers wait and which station to buy', () => {
+    expect(waitingText(29, ['ovens'])).toBe('29 drivers idle · buy Ovens');
+    expect(waitingText(1, ['prep'])).toBe('1 driver idle · buy Prep');
+    expect(waitingText(12, ['counter', 'prep'])).toBe('12 drivers idle · buy Prep + Counter');
+    expect(waitingText(12, ['prep', 'ovens', 'counter'])).toBe('12 drivers idle · buy all three');
+    expect(waitingText(12, ['customers'])).toBe('12 drivers idle'); // nothing to buy in the kitchen
+    expect(queueOverflow(4, 3)).toBe(1);
+    expect(queueOverflow(2, 3)).toBe(0);
+  });
+});
+
+// ---------- D414: the budgets that fail on the v5.11 sidewalk ----------
+// Boxes are the real drawn extents in screen units: a figure (box()), a patio set (chairs ±26.5, canopy to 73 up), the umbrella canopy,
+// the wall's left pilaster, the potted tree (pot ±12, crown to 55 up), the signature prop (per kind), the parked vehicle (±24, 30 up).
+type Lay = ReturnType<typeof layout>;
+const setBox = (p: { x: number; y: number }): Box => {
+  const [sx, sy] = P(p.x, p.y);
+  const k = kAt(p.y) * 1.1;
+  return { x0: sx - 26.5 * k, x1: sx + 26.5 * k, y0: sy - 73 * k, y1: sy };
+};
+const umbrellaBox = (p: { x: number; y: number }): Box => {
+  const [sx, sy] = P(p.x, p.y);
+  const k = kAt(p.y) * 1.1;
+  return { x0: sx - 24 * k, x1: sx + 24 * k, y0: sy - 73 * k, y1: sy - 53 * k };
+};
+const pillarBox = (lay: Lay): Box => ({ x0: P(lay.L - 6, 0)[0], x1: P(lay.L + 8, 0)[0], y0: P(0, 0, FRONT_TOP)[1], y1: P(0, 0)[1] });
+const treeBox = (lay: Lay): Box => {
+  const [sx, sy] = P(Math.max(lay.L + 8, unprojectX(20, TREE_Y)), TREE_Y);
+  return { x0: sx - 14, x1: sx + 14, y0: sy - 55, y1: sy };
+};
+/** x extents of each neighbourhood's signature prop around its anchor, and its height. */
+const PROP_EXTENT = { newsbox: [-9, 9, 29], picket: [-26, 26, 22], bollard: [-20, 9, 20], bikerack: [-33, 33, 22], barrel: [-13, 15, 22], topiary: [-14, 28.6, 25] } as const;
+const propBoxes = (lay: Lay): Box[] => {
+  const [sx, sy] = P(lay.prop.x, PROP_Y);
+  return Object.values(PROP_EXTENT).map(([a, b, h]) => ({ x0: sx + a, x1: sx + b, y0: sy - h, y1: sy }));
+};
+const vehicleBox = (lay: Lay): Box => {
+  const [vx, vy] = P(lay.scooter.x, lay.scooter.y);
+  const k = kAt(lay.scooter.y);
+  return { x0: vx - VEHICLE_HALF_W * k, x1: vx + VEHICLE_HALF_W * k, y0: vy - 30, y1: vy + 2 };
+};
+const touches = (a: Box, b: Box) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+const figureAt = (x: number, y: number, kind: 'guest' | 'driver' = 'guest'): CastMember => ({ key: 'f', sortY: y, role: 'queue', props: { x, y, kind, step: 0 } });
+
+/** The v5.11 sidewalk, as the old layout placed it: queue at −9 from d0 − 27 (19 apart), patio at d0 − 126 / d0 − 213. */
+function oldSidewalk(lay: Lay) {
+  const d0 = lay.door.x0;
+  return {
+    queue: Array.from({ length: 4 }, (_, i) => figureAt(d0 - 27 - 19 * i, -9)),
+    patio: [126, 213].map((dx) => ({ x: d0 - dx, y: -12 })),
+  };
+}
+
+describe('the sidewalk budgets (D414)', () => {
+  const full = (lay: Lay) => [
+    ...lay.queue.map(([x, y]) => figureAt(x, y)),
+    ...lay.driverQueue.map(([x, y]) => figureAt(x, y, 'driver')),
+  ];
+  const lays = (): [string, Lay][] => [0, 1, 2, 3, 4].map((fp) => [`fp${fp}`, layout(fp, Math.min(fp + 1, 6), 3, 2, 6, DRIVER_SLOTS[fp], 1)]);
+
+  test('the checks can fail: the v5.11 sidewalk had a queue figure over the patio, one against the parked vehicle, and an umbrella across the pillar', () => {
+    const lay = layout(0, 1, 3, 2, 6, 2, 1);
+    const old = oldSidewalk(lay);
+    expect(old.queue.some((f) => touches(box(f), vehicleBox(lay)))).toBe(true);
+    const straddle = old.patio.map((p) => umbrellaBox(p)).some((u) => u.x0 < pillarBox(lay).x1 && u.x1 > pillarBox(lay).x0);
+    expect(straddle).toBe(true);
+    // the old table at d0 − 126 on a wider shop sat 4 pt from the last queue figure's elbow; any patio set under the queue's span fails the same budget
+    const under = { x: old.queue[3].props.x - 6, y: -12 };
+    expect(touches(box(old.queue[3]), setBox(under))).toBe(true);
+  });
+  test('no queue or driver figure overlaps a patio set (chairs, table or umbrella) or the parked vehicle, at any footprint', () => {
+    for (const [name, lay] of lays())
+      for (const f of full(lay)) {
+        const b = box(f);
+        for (const p of lay.patio) expect([name, f.props.x, 'patio', touches(b, setBox(p))]).toEqual([name, f.props.x, 'patio', false]);
+        expect([name, f.props.x, 'vehicle', touches(b, vehicleBox(lay))]).toEqual([name, f.props.x, 'vehicle', false]);
+      }
+  });
+  test('no queue or driver figure overlaps the potted tree or the neighbourhood\'s signature prop (whichever of the six it is)', () => {
+    for (const [name, lay] of lays())
+      for (const f of full(lay)) {
+        const b = box(f);
+        expect([name, f.props.x, 'tree', touches(b, treeBox(lay))]).toEqual([name, f.props.x, 'tree', false]);
+        for (const pb of propBoxes(lay)) expect([name, f.props.x, 'prop', touches(b, pb)]).toEqual([name, f.props.x, 'prop', false]);
+      }
+  });
+  test('every umbrella stands wholly inside the wall line (right of the left pilaster) and inside the screen', () => {
+    for (const [name, lay] of lays())
+      for (const p of lay.patio) {
+        const u = umbrellaBox(p);
+        const pil = pillarBox(lay);
+        expect([name, u.x0 >= pil.x1, u.x0 >= 0, u.x1 <= SCENE_W]).toEqual([name, true, true, true]);
+        expect([name, setBox(p).x0 >= pil.x1]).toEqual([name, true]); // chairs too
+      }
+  });
+  test('the diner queue is single file along the door lane, 22 pt apart, at x ≥ 200, the WELCOME mat and the signature prop stay in clear view', () => {
+    for (const [name, lay] of lays()) {
+      const xs = lay.queue.map(([x, y]) => P(x, y)[0]);
+      expect([name, xs.every((x) => x >= QUEUE_MIN_X - 1e-6), xs.length <= 4]).toEqual([name, true, true]);
+      xs.forEach((x, i) => i && expect(xs[i - 1] - x).toBeCloseTo(QUEUE_PITCH, 5));
+      expect(new Set(lay.queue.map(([, y]) => y)).size).toBe(1); // one file: one depth
+      expect(lay.queue[0][1]).toBe(QUEUE_Y);
+      // the mat is untouched by any lane figure, and no figure stands in front of the prop to hide it
+      const mat = matBox(lay);
+      for (const f of full(lay)) {
+        expect([name, f.props.x, overlap(box(f), mat) <= 0.2]).toEqual([name, f.props.x, true]);
+        for (const pb of propBoxes(lay)) expect([name, f.props.x, f.props.y > PROP_Y, touches(box(f), pb)]).toEqual([name, f.props.x, true, false]);
+      }
+      expect(DRIVER_SPOTS).toBe(4);
+      expect(DRIVER_QUEUE_PITCH).toBe(22);
+      expect(PATIO_HALF_W).toBeGreaterThanOrEqual(26.5 * kAt(-12) * 1.1 - 0.5);
+    }
   });
 });
 
@@ -585,9 +731,11 @@ describe('the patio and walk-ins at every table', () => {
     }
   });
   test('a patio walk-in is served inside, walks out the door and along the curb lane to the chair, and walks back the same way', () => {
-    const lay = layout(2, 3, 2, 2, 6, 3, 0);
+    const lay = layout(4, 3, 2, 2, 6, 4, 0);
+    const n = lay.patio.length;
+    expect(n).toBeGreaterThanOrEqual(1);
     const R = routesFor(lay, SCENE_W, false, 2);
-    expect(R.guests.length).toBe(lay.tables.length + 2);
+    expect(R.guests.length).toBe(lay.tables.length + n);
     const g = R.guests[lay.tables.length];
     expect(g.patio).toBe(true);
     expect(g.seat[0]).toBeCloseTo(lay.patio[0].x + PATIO_SEAT);

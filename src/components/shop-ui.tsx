@@ -132,7 +132,7 @@ export function StationCard(props: {
   buyLabel?: string;
 }) {
   return (
-    <View style={[styles.card, props.wide && styles.cardWide, props.hot && styles.cardHot, props.muted && styles.cardMuted]}>
+    <View style={[styles.card, props.wide && styles.cardWide, props.hot && styles.cardHot, props.muted && !props.canBuy && styles.cardMuted]}>
       <View style={styles.cardHead}>
         <View style={styles.icon}>{typeof props.icon === 'string' ? <Text style={styles.iconText}>{props.icon}</Text> : props.icon}</View>
         <View style={{ flex: 1 }}>
@@ -177,8 +177,9 @@ const styles = StyleSheet.create({
   tabHeld: { backgroundColor: 'rgba(255,255,255,0.55)', borderColor: C.cheeseDark },
   tabBuildReady: { backgroundColor: C.basil, borderColor: '#fff', borderStyle: 'solid' },
 
-  card: { justifyContent: 'space-between', width: '48.5%', backgroundColor: C.panel, borderRadius: 16, padding: 7, gap: 5, borderWidth: 2.5, borderColor: C.ink, ...shadow },
+  card: { justifyContent: 'space-between', width: '48.5%', backgroundColor: C.panel, borderRadius: 16, padding: 5, gap: 5, borderWidth: 2.5, borderColor: C.ink, ...shadow },
   cardWide: { width: '100%', flexDirection: 'row', alignItems: 'flex-start' },
+  // D419: only a card that cannot be bought fades; a buyable one (Ovens on a shop with no manager) stays at full strength
   cardMuted: { opacity: 0.6 },
   cardHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
   neckChip: { alignSelf: 'flex-start', backgroundColor: C.tomato, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1, marginVertical: 1 },

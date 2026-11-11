@@ -21,6 +21,12 @@ export const SceneDefs = memo(function SceneDefs() {
         <Stop offset="0.45" stopColor="#E8432E" />
         <Stop offset="1" stopColor="#FFB23A" />
       </LinearGradient>
+      {/* banked coals: an oven with no pie in it still glows, so every tier of the ladder keeps a visible fire (D417) */}
+      <LinearGradient id="emberDim" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0" stopColor="#4A1608" />
+        <Stop offset="0.5" stopColor="#B83A1C" />
+        <Stop offset="1" stopColor="#F08A2E" />
+      </LinearGradient>
       {OVEN_GRADES.map((g, i) => (
         <LinearGradient key={i} id={`oven${i}`} x1="0" y1="0" x2="1" y2="0">
           <Stop offset="0" stopColor={shade(g.color, 0.3)} />

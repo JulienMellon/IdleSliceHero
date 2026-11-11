@@ -11,7 +11,7 @@ export const TUNING = {
   footprintBoost: 1.5,
   /** Each footprint tier lets prep, ovens and counter level up this much further. */
   levelsPerFootprint: 25,
-  offlineCapSeconds: 4 * 60 * 60,
+  offlineCapSeconds: 2 * 60 * 60,
   /** Away at least this long shows the "While you were away" popup. */
   offlinePopupSeconds: 60,
   saveIntervalSeconds: 30,
@@ -113,13 +113,20 @@ export interface NeighborhoodDef {
   wall: string;
 }
 
+/**
+ * v5.12 pacing: the story should last about 5 days for a check-in player (5 min every 4 h, offline cap 2 h), roughly one
+ * neighbourhood a day. Unlock days in `npx tsx scripts/review/sim2.ts checkin`: Waterfront 1.0, University 2.0, Industrial 2.7,
+ * Uptown 3.9, finale 4.9. Downtown and Suburbs are unchanged (the first ~15 minutes of play). Order values step up about 15x
+ * from Waterfront on so a new pizzeria is worth building the moment its cost is in reach; Uptown's cost multiplier is huge on
+ * purpose, it is what paces its 1.25 M pizzas. Refit with scripts/pacing-fit.ts (never edit one number alone).
+ */
 export const NEIGHBORHOODS: NeighborhoodDef[] = [
   { id: 'downtown', name: 'Downtown', orderValue: 3, buildCost: 0, costMult: 1, managerCost: 0, x: 22, y: 39, color: '#F2994A', wall: '#F7D9A8' },
   { id: 'suburbs', name: 'Suburbs', orderValue: 10, buildCost: 450, costMult: 4.5, managerCost: 600, x: 30, y: 67, color: '#6FCF97', wall: '#DDF2D2' },
-  { id: 'waterfront', name: 'Waterfront', orderValue: 32, buildCost: 30_000, costMult: 15, managerCost: 30_000, x: 76, y: 67, color: '#56CCF2', wall: '#D6EEF8' },
-  { id: 'university', name: 'University', orderValue: 100, buildCost: 1_800_000, costMult: 45, managerCost: 1_800_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
-  { id: 'industrial', name: 'Industrial', orderValue: 320, buildCost: 30_000_000, costMult: 150, managerCost: 12_000_000, x: 50, y: 9, color: '#A0826D', wall: '#C4BCAE' },
-  { id: 'uptown', name: 'Uptown', orderValue: 1_000, buildCost: 300_000_000, costMult: 450, managerCost: 100_000_000, x: 82, y: 9, color: '#EB5757', wall: '#F6D6D6' },
+  { id: 'waterfront', name: 'Waterfront', orderValue: 120, buildCost: 200_000_000, costMult: 55, managerCost: 100_000_000, x: 76, y: 67, color: '#56CCF2', wall: '#D6EEF8' },
+  { id: 'university', name: 'University', orderValue: 2_000, buildCost: 5_000_000_000, costMult: 900, managerCost: 2_500_000_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
+  { id: 'industrial', name: 'Industrial', orderValue: 40_000, buildCost: 40_000_000_000, costMult: 7_000, managerCost: 20_000_000_000, x: 50, y: 9, color: '#A0826D', wall: '#C4BCAE' },
+  { id: 'uptown', name: 'Uptown', orderValue: 400_000, buildCost: 600_000_000_000, costMult: 800_000_000, managerCost: 300_000_000_000, x: 82, y: 9, color: '#EB5757', wall: '#F6D6D6' },
 ];
 
 export const SHOP_POS = { x: 50, y: 36 };
@@ -161,8 +168,8 @@ export const STORY_PACING = {
   returnSeconds: 60,
 } as const;
 
-/** Waterfront's finale is a purchase: bid on Pier 9 once "For Sale" has played and Waterfront has sold this many pizzas. ~4.7 min of income in the pacing sim. */
-export const PIER9_BID = { cost: 2_000_000, unlockPizzas: 50_000 } as const;
+/** Waterfront's finale is a purchase: bid on Pier 9 once "For Sale" has played and Waterfront has sold this many pizzas. ~4.6 min of income at that moment in the pacing sim (v5.12 retune). */
+export const PIER9_BID = { cost: 30_000_000, unlockPizzas: 50_000 } as const;
 
 /** A small permanent perk from each neighbourhood's finale. It only applies to that neighbourhood's pizzeria. */
 export interface PerkDef {

@@ -25,12 +25,35 @@ export interface GoalBarLayout {
   split: boolean;
 }
 
-export function goalBarLayout(current: number, target: number, tappable: boolean, outerW: number): GoalBarLayout {
+/** One whole word, the amount or the icon of the goal line: x from the bar's inner left edge, and its width (pt). */
+export interface GoalSpan {
+  x: number;
+  w: number;
+}
+
+/**
+ * Where the two-tone seam really goes (G88). A seam inside a word or the amount cut a letter in two ("Hire" read "ire")
+ * and split "$15.4M" into two colours. So when the fill's edge lands inside a span, the seam (and the fill's visible
+ * edge with it) moves to the nearer end of that span, at most half a word. In a gap, in the padding, or past the last
+ * span the seam stays exactly where the progress is, so a small fill never vanishes.
+ */
+export function snapSeam(fillW: number, spans: readonly GoalSpan[]): number {
+  for (const s of spans) {
+    if (s.w <= 0) continue;
+    if (fillW > s.x && fillW < s.x + s.w) return fillW - s.x >= s.w / 2 ? s.x + s.w : s.x;
+  }
+  return fillW;
+}
+
+/** The label split into the words that are measured and coloured whole (blank runs dropped). */
+export const goalWords = (label: string): string[] => label.split(/\s+/).filter(Boolean);
+
+export function goalBarLayout(current: number, target: number, tappable: boolean, outerW: number, spans: readonly GoalSpan[] = []): GoalBarLayout {
   const raw = target > 0 ? current / target : 0;
   const pct = Number.isFinite(raw) ? Math.max(0, Math.min(1, raw)) : 0;
   const ready = tappable && pct >= 1;
   const innerW = Math.max(0, outerW - 2 * GOAL_BAR.border);
-  const fillW = pct * innerW;
+  const fillW = pct >= 1 ? innerW : Math.min(innerW, snapSeam(pct * innerW, spans));
   return { pct, ready, innerW, fillW, split: !ready && fillW > 0 };
 }
 

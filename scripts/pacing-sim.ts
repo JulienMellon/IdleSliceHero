@@ -71,7 +71,7 @@ const events: [number, string][] = [];
 let lastSceneEnd: number | null = null;
 let downtownTaps = 0;
 const dt = 1;
-const LIMIT = 60 * 60 * 30;
+const LIMIT = 60 * 60 * 200;
 for (let t = 0; t < LIMIT; t += dt) {
   // Tap every unmanaged pizzeria the player is "looking at": the newest one.
   const newest = [...NEIGHBORHOODS].reverse().find((n) => s.shops[n.id].built)!.id as NeighborhoodId;

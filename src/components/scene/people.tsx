@@ -417,6 +417,13 @@ const Limbs = memo(function Limbs({ part, ...p }: LimbProps & { part: 'back' | '
           <Path d={`M${hand[0] + 1} ${hand[1] + 8} Q${hand[0] + 4} ${hand[1] + 13} ${hand[0] + 7.5} ${hand[1] + 8} Z`} fill="#D9443A" {...OUT} strokeWidth={0.8} />
         </G>
       )}
+      {act === 'phone' && (
+        <G>
+          <Rect x={hand[0] - 2.4} y={hand[1] - 7.6} width={5} height={8} rx={1.1} fill="#2A2F3A" {...OUT} strokeWidth={0.8} />
+          <Rect x={hand[0] - 1.6} y={hand[1] - 6.6} width={3.4} height={5.4} rx={0.6} fill="#9AD8FF" />
+          <Path d={`M${hand[0] - 0.9} ${hand[1] - 5.2} h1.8 M${hand[0] - 0.9} ${hand[1] - 3.6} h1.2`} stroke="#fff" strokeWidth={0.5} opacity={0.8} />
+        </G>
+      )}
       <Circle cx={hand[0]} cy={hand[1]} r={2.4} fill={skin} {...OUT} strokeWidth={0.8} />
       {pin && <Circle cx={hand[0] - 9} cy={hand[1]} r={2.1} fill={shade(skin, -0.08)} {...OUT} strokeWidth={0.7} />}
       {/* seated poses: a slice raised to the mouth, or a mug */}

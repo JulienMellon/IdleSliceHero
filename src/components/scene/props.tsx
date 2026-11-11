@@ -4,7 +4,7 @@ import type { NeighborhoodId } from '../../content/types';
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { INK, D, WH, P, kAt, shade } from './projection';
 import { type Layout, SEAT } from './layout';
-import { boxOvenGeom, chairBack, domeGeom, flameBox, isBoxOven, ovenFrame, type OvenSpec } from './geometry';
+import { HOOD_EXTRA, boxOvenGeom, chairBack, domeGeom, flameBox, isBoxOven, ovenFrame, type OvenSpec } from './geometry';
 import { Box, FloorShadow } from './primitives';
 
 /**
@@ -25,22 +25,27 @@ function Flame({ mx, my, mw, mh, flicker, hot }: { mx: number; my: number; mw: n
 }
 
 /** One oven: a memoised body (re-rendered only on upgrades) plus a per-frame flame. */
-export function Oven({ o, grade, lit, flicker, hot = false }: { o: OvenSpec; grade: number; lit: boolean; flicker: number; hot?: boolean }) {
+export function Oven({ o, grade, lit, flicker, hot = false, tier = 0 }: { o: OvenSpec; grade: number; lit: boolean; flicker: number; hot?: boolean; tier?: 0 | 1 | 2 }) {
   const fb = useMemo(() => flameBox(o, grade), [o, grade]);
   return (
     <G>
-      <OvenBody o={o} grade={grade} lit={lit} />
+      <OvenBody o={o} grade={grade} lit={lit} tier={tier} />
       {lit && <Flame {...fb} flicker={flicker} hot={hot} />}
-      {!isBoxOven(o, grade) && <DomeFront o={o} gold={grade >= 3} wood={grade === 2} />}
+      {!isBoxOven(o, grade) && <DomeFront o={o} gold={grade >= 3} wood={grade === 2} tier={tier} />}
     </G>
   );
 }
 
-const OvenBody = memo(function OvenBody({ o, grade, lit }: { o: OvenSpec; grade: number; lit: boolean }) {
+/** Brass trim for the oven ladder's Lv 25 / 50 tiers (D417). */
+const BRASS = '#D4A84A';
+const BRASS_DARK = '#8A6A1E';
+
+const OvenBody = memo(function OvenBody({ o, grade, lit, tier }: { o: OvenSpec; grade: number; lit: boolean; tier: 0 | 1 | 2 }) {
   const { ax, ay, bx, w, cx, k, top } = ovenFrame(o);
   const base = OVEN_GRADES[grade].color;
   const dark = shade(base, -0.4);
-  const fire = lit ? 'url(#ember)' : '#24120A';
+  // never a black window: an oven with no pie in it still glows with banked coals (D417)
+  const fire = lit ? 'url(#ember)' : 'url(#emberDim)';
   const box = isBoxOven(o, grade);
   if (box) {
     const { legs, bTop, bBot, bh, dw, dh, dy } = boxOvenGeom(o);
@@ -53,7 +58,21 @@ const OvenBody = memo(function OvenBody({ o, grade, lit }: { o: OvenSpec; grade:
         {/* door with a glowing window and a handle bar */}
         <Rect x={cx - dw / 2} y={dy} width={dw} height={dh} rx={3} fill={shade(base, -0.25)} stroke={INK} strokeWidth={1} />
         <Rect x={cx - dw / 2 + 3} y={dy + 3} width={dw - 6} height={dh - 6} rx={2} fill={fire} />
-        <Rect x={cx - dw * 0.3} y={dy - 5} width={dw * 0.6} height={3.4} rx={1.7} fill="#E9E4DC" stroke={INK} strokeWidth={0.8} />
+        <Rect x={cx - dw * 0.3} y={dy - 5} width={dw * 0.6} height={3.4} rx={1.7} fill={tier >= 1 ? BRASS : '#E9E4DC'} stroke={INK} strokeWidth={0.8} />
+        {tier >= 1 && (
+          <G>
+            {/* Lv 25: a brass frame round the fire window and a brass cap along the top */}
+            <Rect x={cx - dw / 2 + 1.5} y={dy + 1.5} width={dw - 3} height={dh - 3} rx={2.5} fill="none" stroke={BRASS} strokeWidth={1.8} />
+            <Rect x={ax + 1} y={bTop} width={w - 2} height={3.4} rx={1.5} fill={BRASS} stroke={INK} strokeWidth={0.7} />
+          </G>
+        )}
+        {tier >= 2 && (
+          <G>
+            {/* Lv 50: a second brass band below the door, and studs on the corners */}
+            <Rect x={ax + 1} y={dy + dh + 3} width={w - 2} height={2.8} rx={1.2} fill={BRASS} stroke={INK} strokeWidth={0.6} />
+            {[ax + 4, ax + w - 4].map((sx) => <Circle key={sx} cx={sx} cy={bTop + 7} r={1.5} fill={BRASS_DARK} stroke={BRASS} strokeWidth={0.8} />)}
+          </G>
+        )}
         <Circle cx={ax + w - 6} cy={bTop + bh * 0.22} r={2.2} fill={lit ? '#7FE0A0' : '#9A958E'} stroke={INK} strokeWidth={0.6} />
         {grade >= 4 && <Path d={`M${ax + 4} ${bTop + 2} H${bx - 4}`} stroke="#FFF3B0" strokeWidth={1.6} />}
       </G>
@@ -66,8 +85,8 @@ const OvenBody = memo(function OvenBody({ o, grade, lit }: { o: OvenSpec; grade:
     <G>
       {o.chimney && (
         <G>
-          <Rect x={cx - w * 0.09} y={top - 16 * k} width={w * 0.18} height={20 * k} fill={grade >= 3 ? shade(base, -0.1) : '#8C7B6A'} stroke={INK} strokeWidth={1} />
-          <Rect x={cx - w * 0.12} y={top - 19 * k} width={w * 0.24} height={4 * k} rx={1} fill={grade >= 3 ? shade(base, -0.25) : '#6E5F51'} stroke={INK} strokeWidth={0.8} />
+          <Rect x={cx - w * 0.09} y={top - (16 + HOOD_EXTRA[tier]) * k} width={w * 0.18} height={(20 + HOOD_EXTRA[tier]) * k} fill={grade >= 3 ? shade(base, -0.1) : '#8C7B6A'} stroke={INK} strokeWidth={1} />
+          <Rect x={cx - w * 0.12} y={top - (19 + HOOD_EXTRA[tier]) * k} width={w * 0.24} height={4 * k} rx={1} fill={tier >= 1 ? BRASS : grade >= 3 ? shade(base, -0.25) : '#6E5F51'} stroke={INK} strokeWidth={0.8} />
         </G>
       )}
       <Path d={dome(3)} fill={dark} />
@@ -85,6 +104,8 @@ const OvenBody = memo(function OvenBody({ o, grade, lit }: { o: OvenSpec; grade:
       {/* arched mouth with a brick ring and keystone */}
       <Path d={`M${cx - mw / 2 - 3} ${pTop} L${cx - mw / 2 - 3} ${mTop + mw * 0.3} A${mw / 2 + 3} ${mw * 0.34} 0 0 1 ${cx + mw / 2 + 3} ${mTop + mw * 0.3} L${cx + mw / 2 + 3} ${pTop} Z`} fill={shade(base, -0.3)} stroke={INK} strokeWidth={1} />
       <Path d={`M${cx - mw / 2} ${pTop} L${cx - mw / 2} ${mTop + mw * 0.3} A${mw / 2} ${mw * 0.3} 0 0 1 ${cx + mw / 2} ${mTop + mw * 0.3} L${cx + mw / 2} ${pTop} Z`} fill={fire} />
+      {tier >= 1 && <Path d={`M${cx - mw / 2 - 1.5} ${pTop} L${cx - mw / 2 - 1.5} ${mTop + mw * 0.3} A${mw / 2 + 1.5} ${mw * 0.32} 0 0 1 ${cx + mw / 2 + 1.5} ${mTop + mw * 0.3} L${cx + mw / 2 + 1.5} ${pTop}`} fill="none" stroke={BRASS} strokeWidth={1.8} />}
+      {tier >= 2 && <Path d={`M${ax + 2} ${shoulder + 9} H${bx - 2}`} stroke={BRASS} strokeWidth={2.2} />}
       {grade >= 4 && (
         <G>
           <Path d={`M${ax + 4} ${shoulder - 2} A${w / 2 - 4} ${ry - 4} 0 0 1 ${bx - 4} ${shoulder - 2}`} stroke="#FFF3B0" strokeWidth={1.4} fill="none" />
@@ -96,7 +117,7 @@ const OvenBody = memo(function OvenBody({ o, grade, lit }: { o: OvenSpec; grade:
 });
 
 /** A dome's keystone and brick plinth, drawn over its flame so the glow stays inside the mouth. */
-const DomeFront = memo(function DomeFront({ o, gold, wood }: { o: OvenSpec; gold: boolean; wood: boolean }) {
+const DomeFront = memo(function DomeFront({ o, gold, wood, tier }: { o: OvenSpec; gold: boolean; wood: boolean; tier: 0 | 1 | 2 }) {
   const { ax, ay, bx, w, cx } = ovenFrame(o);
   const { plinth, pTop, mTop } = domeGeom(o);
   return (
@@ -105,6 +126,7 @@ const DomeFront = memo(function DomeFront({ o, gold, wood }: { o: OvenSpec; gold
       {/* plinth */}
       <Rect x={ax - 3} y={pTop} width={w + 6} height={plinth} rx={1.5} fill="#A24B2C" stroke={INK} strokeWidth={1.1} />
       <Path d={`M${ax - 3} ${pTop + plinth / 2} H${bx + 3}`} stroke="#7A3520" strokeWidth={0.8} />
+      {tier >= 1 && <Rect x={ax - 3} y={pTop - 1.2} width={w + 6} height={2.6} rx={1} fill={BRASS} stroke={INK} strokeWidth={0.6} />}
       {Array.from({ length: Math.max(2, Math.floor((w + 6) / 12)) }).map((_, i) => (
         <Path key={i} d={`M${ax + 3 + i * 12 + (i % 2) * 6} ${pTop} v${plinth / 2} M${ax + 9 + i * 12} ${pTop + plinth / 2} v${plinth / 2}`} stroke="#7A3520" strokeWidth={0.8} />
       ))}
@@ -115,7 +137,7 @@ const DomeFront = memo(function DomeFront({ o, gold, wood }: { o: OvenSpec; gold
 });
 
 /** One stainless hood + flue over a bank of box deck ovens. */
-export const OvenHood = memo(function OvenHood({ lay, grade, mural }: { lay: Layout; grade: number; mural: boolean }) {
+export const OvenHood = memo(function OvenHood({ lay, grade, mural, tier = 0 }: { lay: Layout; grade: number; mural: boolean; tier?: 0 | 1 | 2 }) {
   const boxes = lay.ovens.filter((o) => isBoxOven(o, grade));
   if (!boxes.length) return null;
   const top = Math.max(...boxes.map((o) => o.z + o.h));
@@ -123,7 +145,8 @@ export const OvenHood = memo(function OvenHood({ lay, grade, mural }: { lay: Lay
   const x1 = lay.ovenCols[lay.ovenCols.length - 1].x1 + 6;
   const y = D - 6;
   const [ax, ay] = P(x0, y, top + 6);
-  const [bx, by] = P(x1, y, top + 22);
+  // Lv 25 / 50: a taller hood with a brass rim (D417)
+  const [bx, by] = P(x1, y, top + 22 + HOOD_EXTRA[tier]);
   const [cx] = P((x0 + x1) / 2, y);
   const [, fyFull] = P(0, D, WH - 24);
   const fy = mural ? by - 12 : fyFull;
@@ -135,7 +158,8 @@ export const OvenHood = memo(function OvenHood({ lay, grade, mural }: { lay: Lay
       {mural && <Rect x={cx - fw / 2 - 3} y={fy - 4} width={fw + 6} height={5} rx={1.5} fill="#9AA1A8" stroke={INK} strokeWidth={0.9} />}
       <Path d={`M${ax + 8} ${by} L${bx - 8} ${by} L${bx} ${ay} L${ax} ${ay} Z`} fill="#C9CED4" stroke={INK} strokeWidth={1.2} strokeLinejoin="round" />
       <Path d={`M${ax + 10} ${by + 3} L${bx - 10} ${by + 3}`} stroke="#fff" strokeWidth={2} opacity={0.6} />
-      <Rect x={ax - 1} y={ay - 2} width={bx - ax + 2} height={4} rx={1.5} fill="#9AA1A8" stroke={INK} strokeWidth={0.8} />
+      <Rect x={ax - 1} y={ay - 2} width={bx - ax + 2} height={4} rx={1.5} fill={tier >= 1 ? BRASS : '#9AA1A8'} stroke={INK} strokeWidth={0.8} />
+      {tier >= 2 && <Rect x={ax + 8} y={by - 1.5} width={bx - ax - 16} height={2.6} rx={1.2} fill={BRASS} stroke={INK} strokeWidth={0.6} />}
     </G>
   );
 });

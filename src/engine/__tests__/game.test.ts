@@ -362,7 +362,7 @@ describe('decor', () => {
 });
 
 describe('offline and saves', () => {
-  test('managed shops earn offline, capped at 4 hours; unmanaged only finish their queue', () => {
+  test('managed shops earn offline, capped at TUNING.offlineCapSeconds; unmanaged only finish their queue', () => {
     let s = managed(fresh());
     s = G.buildShop({ ...s, cash: 1e9 }, 'suburbs').ok ? (G.buildShop({ ...s, cash: 1e9 }, 'suburbs') as { state: G.GameState }).state : s;
     s = { ...s, cash: 0 };

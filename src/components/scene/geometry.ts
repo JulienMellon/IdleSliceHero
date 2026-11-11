@@ -24,6 +24,9 @@ export const SEATED_TORSO_HALF = 9.6;
 /** Height of a figure's hip/shoulder line above its feet, at rest (no walk bob); `tall` is the look's height tweak. */
 export const bodyBy = (kind: Kind, tall: number) => (kind === 'sit' ? -21 : -30 - tall);
 
+/** A standing figure's hand when it holds a phone up to read it: in front of the chest, just under the chin. */
+export const PHONE_HAND = (by: number): [number, number] => [8.5, by - 1];
+
 export interface LimbGeomInput {
   kind: Kind;
   act: Act;
@@ -59,7 +62,9 @@ export function limbGeom({ kind, act, carry, carryWalk, step, arm, tall }: LimbG
         ? [5, hy - 14 - arm]
         : act === 'ladle'
           ? [10, by + 11 - arm]
-          : pin
+          : act === 'phone'
+            ? PHONE_HAND(by)
+            : pin
             ? [6 + arm, by + 13 - arm * 1.2]
             : worker && arm > 0
               ? [10 + arm, by + 13 - arm * 2]
@@ -71,6 +76,11 @@ export function limbGeom({ kind, act, carry, carryWalk, step, arm, tall }: LimbG
 }
 
 // ---------- ovens ----------
+/** The oven ladder's trim tier from the Ovens level (D417): 0 plain, 1 brass trim and a taller hood from Lv 25, 2 more of both from Lv 50. */
+export const ovenTier = (level: number): 0 | 1 | 2 => (level >= 50 ? 2 : level >= 25 ? 1 : 0);
+/** How much taller the hood (and a dome's chimney) stands at each tier. */
+export const HOOD_EXTRA = [0, 8, 16] as const;
+
 export type OvenSpec = Layout['ovens'][number];
 
 /** Stacked decks and the Stone grade are box ovens; single decks are domes. */
@@ -88,12 +98,14 @@ export function ovenFrame(o: OvenSpec) {
 /** A box deck oven's body and its glowing door window. */
 export function boxOvenGeom(o: OvenSpec) {
   const { ay, w, k, top } = ovenFrame(o);
-  const legs = o.z === 0 ? 10 * k : 0;
+  // short decks (a 3- or 4-high bank) get shorter legs and a taller window share, so their fire stays readable (D417)
+  const short = o.h < 50;
+  const legs = o.z === 0 ? (short ? 5 : 10) * k : 0;
   const bTop = top;
   const bBot = ay - legs;
   const bh = bBot - bTop;
-  const dw = w * 0.74;
-  const dh = bh * 0.42;
+  const dw = w * 0.8;
+  const dh = bh * (short ? 0.5 : 0.42);
   const dy = bTop + bh * 0.4;
   return { legs, bTop, bBot, bh, dw, dh, dy };
 }

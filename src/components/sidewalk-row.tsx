@@ -25,12 +25,12 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
   // the name always stays on top; a player who has some cash but not enough sees "need $X" under the muted price (D359, D402)
   const station = (v: StationView, framed: boolean) => {
     const button = (
-      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={v.expand ? undefined : ICON[v.key]} sub={stationTitle(v)} need={needLine(v, framed)} tone={v.tone} label={v.label} enabled={v.affordable} saving={framed && v.frame === 'waiting'} progress={v.progress} onPress={() => onBuy(v.what)} />
+      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={ICON[v.key]} sub={stationTitle(v)} need={needLine(v, framed)} tone={v.tone} label={v.label} enabled={v.affordable} saving={framed && v.frame === 'waiting'} progress={v.progress} onPress={() => onBuy(v.what)} />
     );
     const badge = (
       <View style={[styles.level, v.frame === 'hot' && styles.levelHot]} pointerEvents="none">
         <Text style={styles.levelText} numberOfLines={1} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
-          {v.level}
+          {v.badge}
         </Text>
       </View>
     );

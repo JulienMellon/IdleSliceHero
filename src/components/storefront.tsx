@@ -20,24 +20,27 @@ import { emitPayout } from './pulse-bus';
 import { Backdrop } from './scene/background';
 import { useClock } from './scene/clock';
 import { SceneDefs } from './scene/defs';
-import { FRONT_ROW_Y, LEDGE_Y, STOOL_Y, layout, type Layout } from './scene/layout';
+import { FRONT_ROW_Y, LEDGE_Y, PROP_Y, SIGN_Y, STOOL_Y, TREE_Y, layout, type Layout } from './scene/layout';
 import { seatPalette } from './scene/palette';
 import { GUEST_SHIRTS, HAIR_COLORS, hash32, Person } from './scene/people';
 import { CURB_Y, D, INK, P, SCENE_W, sceneFit, unprojectX } from './scene/projection';
 import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Rug, Stools, Table, WallPlanter } from './scene/props';
+import { ovenTier } from './scene/geometry';
 import { furnitureDeps, furnitureInputs, ladderInput, type FurnitureInputs } from './scene/furniture-inputs';
 import { LadderPiece } from './scene/ladder-props';
 import {
-  CHIP_RISE, CHIP_SECONDS, CONFETTI, CONFETTI_FRAMES, CONFETTI_OPACITY, MILESTONE_LINES, bounceStep, bounceTransforms, clearPillX, confettiFills, confettiStep, crossedMilestone,
+  CHIP_RISE, CHIP_SECONDS, MILESTONE_LINES, bounceStep, bounceTransforms, clearPillX, confettiStep, crossedMilestone,
   ladderProps, menuRect, milestoneSpeaker, wallRects, type Placed,
 } from './scene/ladder';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, StreetProp } from './scene/room';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, sidewalkItems, Street } from './scene/street';
 import { buildCast, sidewalkOf } from './scene/cast';
+import { waitingText } from './scene/waiting';
 import { hireOnSidewalk } from './sidewalk-model';
 import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEADS } from '../content/tuning';
-import { BadgeRail, DeparturePops, HireBubble, RushPill, StationBadge, rushPillWidth } from './scene/kitchen-hud';
+import { BadgeRail, DeparturePops, HireBubble, MilestoneBadge, RushPill, StationBadge, rushPillWidth } from './scene/kitchen-hud';
+import { CHIP_ROW_HALF, MILE_SECONDS, ROW_AIR, STATION_LABEL, chipAt, hudOpacity, mileAnchor, mileOpacity, mileScale, mileSpeechY, mileSub } from './scene/moments';
 import { rushPill } from './rush-model';
 import { emptyCrew, stepCrew, type CrewState } from './scene/crew';
 import { emitCoin } from './pulse-bus';
@@ -140,7 +143,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     bounce: null as null | { st: Bounced; at: number },
     chip: null as null | { st: Bounced; at: number; text: string },
     /** A station just reached Lv 25 / 50 / 100: confetti for 1.5 s and the head's line (null text: nobody to say it). */
-    mile: null as null | { st: Station; at: number; text: string | null },
+    mile: null as null | { st: Station; at: number; text: string | null; level: number },
   });
   // wall ms when this shop's scene was opened (the scene remounts per shop): the rush hint shows for the start of a visit
   const [visitAt] = useState(() => Date.now());
@@ -186,6 +189,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // still stacks it, so the old `runsItself` test let walkers stand behind the stack); that shop keeps the sidewalk clear
   const crew = paused ? m0.crew : stepCrew(m0.crew, { lay, walkins, idle: hireOnSidewalk(shop, id), patio: Game.patioTables(shop), departures: line.departures, since: tickSince }, clock, SCENE_W);
   m0.crew = crew;
+  // the stations tied for the bottleneck only change with upgrades: memo on the scene key (G80, M44); the idle drivers' pill names them (D421)
+  const key = sceneKey(game, id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers every level the tie depends on
+  const slowest = useMemo(() => Game.tiedStages(shop, game.vehicle), [key]);
   // who waits outside: hungry diners and idle drivers (steady state, so only while the shop runs); the patio's tables
   const queue = running ? Game.queueSizes(shop, game.vehicle) : undefined;
   const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue });
@@ -216,7 +223,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const items: Item[] = [
     // a bought station's furniture wraps in a group whose transform is the precomputed bounce step (always wrapped, so the tree doesn't change when it starts)
     ...furniture.map((f) => (f.st ? { y: f.y, el: <G key={f.el.key} transform={bouncing === f.st ? bounceT[f.st][bounceNow] : undefined}>{f.el}</G> } : f)),
-    ...sidewalkItems(lay, side.patio, side.waiting),
+    ...sidewalkItems(lay, side.patio, side.waiting > 0 ? waitingText(side.waiting, slowest) : null, side.more > 0 ? `+${side.more}` : null),
     ...cast.map((c) => ({ y: c.sortY, el: <Person key={c.key} {...c.props} /> })),
   ];
   items.sort((a, b) => b.y - a.y);
@@ -267,7 +274,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         const hit = st === 'drivers' ? null : crossedMilestone(m.levels[st], lv[st]);
         if (hit && st !== 'drivers') {
           const who = milestoneSpeaker(shop.heads[st], HEADS[id][st], id === 'downtown');
-          m.mile = { st, at: clock, text: who ? `${who}: ${MILESTONE_LINES[st][hit]}` : null };
+          m.mile = { st, at: clock, text: who ? `${who}: ${MILESTONE_LINES[st][hit]}` : null, level: lv[st] };
         }
       }
     }
@@ -284,10 +291,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const leftNow = (left: number) => Math.max(0, left - since);
   const auto = Game.automationOf(shop);
   const next = shop.managed ? null : Game.nextStation(shop);
-  // the stations tied for the bottleneck only change with upgrades: memo on the scene key (G80, M44)
-  const key = sceneKey(game, id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers every level the tie depends on
-  const neck = useMemo(() => new Set(Game.tiedStages(shop, game.vehicle).map((st) => STAGE_STATION[st])), [key]);
+  const neck = useMemo(() => new Set(slowest.map((st) => STAGE_STATION[st])), [slowest]);
   // the rush pill (GM shops): decided on a 200 ms bucket of the wall clock and the shop's levels, not rebuilt on every 15 fps frame
   const rushBucket = Math.floor(Date.now() / 200);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers the levels the rates depend on; `rushBucket` is the time
@@ -297,7 +301,6 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   );
   // back-wall rects the rush pill keeps clear of: the menu board and the ladder's wall props (D406)
   const pillAvoid = useMemo(() => [...(menuRect(lay) ? [menuRect(lay)!] : []), ...wallRects(placed)], [lay, placed]);
-  const mileFills = useMemo(() => confettiFills(NEIGHBORHOODS[nIdx].color), [nIdx]);
   const badges = badgeModels({ line, auto, managed: shop.managed, neck, next, tapBatch: Game.tapBatch(shop), since });
   // the "tap me" pulse and the miss nudge step on the 7.5 Hz pose clock, 6 levels, so the badge memo holds (M43)
   const poseT = Math.floor(clock * 7.5) / 7.5;
@@ -317,7 +320,11 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const rushK = (clock - m.rushAt) / 0.6;
   const rushC = useMemo(() => P((lay.ovenCols[0].x0 + lay.ovenCols[lay.ovenCols.length - 1].x1) / 2, D - 6, 50), [lay]);
   const refusal = m.refusal && clock - m.refusal.at < 1.6 ? m.refusal : null;
-  const mileLine = m.mile?.text && clock - m.mile.at < 2.5 ? m.mile.text : null;
+  const mileAge = m.mile ? clock - m.mile.at : -1;
+  const mileLine = m.mile?.text && mileAge < 2.5 ? m.mile.text : null;
+  // D415: the badge's centre (over the station's furniture, below the chip row), and the speed-up pill that rides in it instead of rising over the chips
+  const mileAt = m.mile && mileAge < MILE_SECONDS ? mileAnchor(rects[m.mile.st], by) : null;
+  const mileFlash = m.mile && m.flash && m.flash.st === m.mile.st && m.flash.at === m.mile.at ? m.flash : null;
   const flash = next && clock - m.hintAt < 0.3 ? rects[next] : null;
 
   return (
@@ -363,14 +370,14 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           <Sidewalk frontY={frontY} />
           <Street />
           <RoomShell id={id} lay={lay} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
-          <OvenHood lay={lay} grade={shop.grade} mural={shop.decor.walls >= 3} />
+          <OvenHood lay={lay} grade={shop.grade} mural={shop.decor.walls >= 3} tier={ovenTier(shop.ovens)} />
           {/* rush tap: the oven bank pulses (the jobs finish sooner; cash still waits for the pies to leave) */}
           {(() => {
             const pulse = rushK >= 0 && rushK < 0.25 ? 1 + 0.05 * Math.sin((rushK / 0.25) * Math.PI) : 1;
             return (
               <G transform={pulse !== 1 ? `translate(${rushC[0]} ${rushC[1]}) scale(${pulse}) translate(${-rushC[0]} ${-rushC[1]})` : bouncing === 'oven' ? bounceT.oven[bounceNow] : undefined}>
                 {lay.ovens.map((o, i) => (
-                  <Oven key={i} o={o} grade={shop.grade} lit={shop.managed ? running : !!line.oven} hot={!!line.oven} flicker={flicker * (i % 2 ? -1 : 1)} />
+                  <Oven key={i} o={o} grade={shop.grade} lit={shop.managed ? running : !!line.oven} hot={!!line.oven} flicker={flicker * (i % 2 ? -1 : 1)} tier={ovenTier(shop.ovens)} />
                 ))}
               </G>
             );
@@ -390,27 +397,31 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           {/* a miss outlines the station to tap for a moment (G79) */}
           {flash && <Rect x={flash.x0} y={flash.y0} width={flash.x1 - flash.x0} height={flash.y1 - flash.y0} rx={8} fill="none" stroke="#fff" strokeWidth={2.5} opacity={0.9} />}
           {/* the ticket rail the badges hang on (D346) */}
-          <BadgeRail x0={bxs.prep - BADGE_R - 8} x1={bxs.counter + BADGE_R + 40} y={by} gm={shop.managed && id !== 'downtown' ? `${id}-gm` : shop.managed ? 'nonna' : null} />
-          {badges.map((b) => (
-            <StationBadge
-              key={b.st}
-              x={bxs[b.st]}
-              y={by}
-              step={b.step}
-              count={b.count}
-              tone={b.tone}
-              ready={b.ready}
-              pulse={b.ready ? pulse : 0}
-              nudge={b.ready ? nudge : 0}
-              face={b.runner === 'head' ? b.st : null}
-              faceName={b.runner === 'gm' ? `${id}-gm` : HEADS[id][b.st]}
-              jump={line[b.st] ? rushJump : 0}
-            />
-          ))}
+          {/* D415: the whole chip row dims while a milestone badge is up */}
+          <G opacity={hudOpacity(mileAge)}>
+            <BadgeRail x0={bxs.prep - BADGE_R - 8} x1={bxs.counter + BADGE_R + 40} y={by} gm={shop.managed && id !== 'downtown' ? `${id}-gm` : shop.managed ? 'nonna' : null} />
+            {badges.map((b) => (
+              <StationBadge
+                key={b.st}
+                x={bxs[b.st]}
+                y={by}
+                step={b.step}
+                count={b.count}
+                tone={b.tone}
+                ready={b.ready}
+                pulse={b.ready ? pulse : 0}
+                nudge={b.ready ? nudge : 0}
+                face={b.runner === 'head' ? b.st : null}
+                faceName={b.runner === 'gm' ? `${id}-gm` : HEADS[id][b.st]}
+                jump={line[b.st] ? rushJump : 0}
+              />
+            ))}
+          </G>
           {/* a refused tap says why, just under the station's badge (D348) */}
           {refusal && <HireBubble x={bxs[refusal.st]} y={by + 40} text={refusal.text} tone="refusal" />}
           {/* a milestone line (Lv 25 / 50 / 100) from the station's head beats a hello and the rush pill */}
-          {!refusal && mileLine && <HireBubble x={bxs[m.mile!.st]} y={by + 40} text={mileLine} />}
+          {/* D415: directly under the badge, over the station's furniture, never over the chip row */}
+          {!refusal && mileLine && m.mile && <HireBubble x={mileAnchor(rects[m.mile.st], by).cx} y={mileSpeechY(mileAnchor(rects[m.mile.st], by).cy)} text={mileLine} />}
           {!refusal && !mileLine && m.hire && clock - m.hire.at < 2.5 && <HireBubble x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} />}
           {/* a General Manager shop: "Tap to rush!" until the first tap, then the combo; a head's hello takes the spot while it shows */}
           {/* D406: under the oven chip, ≤ 120 wide, moved clear of the menu board and the ladder's wall props */}
@@ -442,14 +453,14 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             );
           })()}
           {/* what an upgrade did: "+50% faster" rising from the station's badge (P5) */}
-          {m.flash && clock - m.flash.at < 0.9 && (() => {
+          {m.flash && clock - m.flash.at < 0.9 && m.flash !== mileFlash && (() => {
             const k = (clock - m.flash.at) / 0.9;
             const fx = m.flash.st === 'door' ? P(lay.door.cx, 0, 80)[0] : bxs[m.flash.st];
-            const fy = m.flash.st === 'door' ? P(lay.door.cx, 0, 80)[1] : by + 34;
+            const fy = m.flash.st === 'door' ? P(lay.door.cx, 0, 80)[1] : by + 34 + CHIP_ROW_HALF + ROW_AIR - 4;
             const w = m.flash.text.length * 7 + 16;
             const px = Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, fx));
             return (
-              <G transform={`translate(${px} ${fy - k * 24 - (spotlight ? 28 : 0)})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
+              <G transform={`translate(${px} ${fy - k * (m.flash.st === 'door' ? 24 : 14) - (spotlight ? 28 : 0)})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
                 <Rect x={-w / 2} y={-11} width={w} height={20} rx={10} fill="#2E8B3E" stroke="#fff" strokeWidth={1.4} />
                 <SvgText x={0} y={4} fontFamily={F.bold} fontSize={13} fill="#fff" textAnchor="middle">
                   {m.flash.text}
@@ -457,15 +468,17 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
               </G>
             );
           })()}
-          {/* a station just levelled up: a cream "Lv N" chip rises 20 from its badge (the drivers': from the door) */}
-          {m.chip && clock - m.chip.at < CHIP_SECONDS && (() => {
+          {/* a station just levelled up: a cream "Lv N" chip rises 20 from its furniture (the drivers': from the door), stopping under the chip row (D418);
+              a milestone shows its own badge instead */}
+          {m.chip && clock - m.chip.at < CHIP_SECONDS && !(m.mile && m.mile.at === m.chip.at && mileAge < MILE_SECONDS) && (() => {
             const k = (clock - m.chip.at) / CHIP_SECONDS;
             const text = m.chip.text;
             const r = Math.max(13, text.length * 3.4 + 4);
-            const cx = m.chip.st === 'drivers' ? P(lay.door.cx, 0, 80)[0] - 34 : bxs[m.chip.st];
-            const cy = (m.chip.st === 'drivers' ? P(lay.door.cx, 0, 80)[1] - 18 : by) - k * CHIP_RISE;
+            const door = [P(lay.door.cx, 0, 80)[0] - 34, P(lay.door.cx, 0, 80)[1] - 18] as const;
+            const rect = m.chip.st === 'drivers' ? { x0: door[0], x1: door[0], y0: door[1], y1: door[1] } : rects[m.chip.st];
+            const at = chipAt(rect, by, r, k, CHIP_RISE);
             return (
-              <G transform={`translate(${Math.min(SCENE_W - 4 - r, Math.max(4 + r, cx))} ${cy})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
+              <G transform={`translate(${Math.min(SCENE_W - 4 - r, Math.max(4 + r, at.x))} ${at.y})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
                 <Circle cx={0} cy={0} r={r} fill="#FFF8EA" stroke={INK} strokeWidth={1.1} />
                 <SvgText x={0} y={3.8} fontFamily={F.bold} fontSize={11} fill={INK} textAnchor="middle">
                   {text}
@@ -473,18 +486,20 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
               </G>
             );
           })()}
-          {/* Lv 25 / 50 / 100 on prep, ovens, counter: 14 pieces of confetti in the neighbourhood's colour for 1.5 s */}
-          {m.mile && (() => {
-            const step = confettiStep(clock - m.mile.at);
-            if (step < 0) return null;
-            return (
-              <G transform={`translate(${bxs[m.mile.st]} ${by})`} opacity={CONFETTI_OPACITY[step]}>
-                {CONFETTI.map((c, i) => (
-                  <Rect key={i} x={-c.w / 2} y={-c.h / 2} width={c.w} height={c.h} rx={0.8} fill={mileFills[c.tone]} stroke={INK} strokeWidth={0.5} transform={CONFETTI_FRAMES[step][i]} />
-                ))}
-              </G>
-            );
-          })()}
+          {/* D415: Lv 25 / 50 / 100 on prep, ovens, counter: a 72 pt gold badge centred over the station, confetti bursting from behind it (drawn first, so never over the text) */}
+          {m.mile && mileAt && (
+            <MilestoneBadge
+              x={mileAt.cx}
+              y={mileAt.cy}
+              level={`Lv ${m.mile.level}`}
+              label={STATION_LABEL[m.mile.st]}
+              sub={mileSub(mileFlash?.text ?? null)}
+              scale={mileScale(mileAge)}
+              opacity={mileOpacity(mileAge)}
+              step={confettiStep(mileAge)}
+              color={NEIGHBORHOODS[nIdx].color}
+            />
+          )}
           {/* D367: Nonna's tutorial spotlights its station: a dark scrim with a rounded cut-out, a pulsing gold outline
               and a hand pointing at the station itself */}
           {spotlight &&
@@ -548,19 +563,15 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
   if (fin.fp === 0) f.push({ y: 8, el: <FloorProp key="fprop" id={fin.id} x={lay.L + 22} y={8} /> });
   // a shop with no manager has a taller sidewalk row: its sidewalk props would stand on the front sill (D356), so
   // the sidewalk there stays clear apart from the mat (the hire bar is the focus)
-  if (!fin.idleShop) f.push({ y: -34, el: <ChalkSign key="sign" x={lay.sign.x} y={-34} k={1} /> });
+  if (!fin.idleShop) f.push({ y: SIGN_Y, el: <ChalkSign key="sign" x={lay.sign.x} y={SIGN_Y} k={1} /> });
   f.push({ y: 16, el: <DoorLeaf key="leaf" lay={lay} /> });
   if (!fin.idleShop) {
     // the potted tree stays fully on screen (its pot is ~14 wide) in the widest rooms
-    const py = -40;
-    const plx = Math.max(lay.L + 8, unprojectX(20, py));
-    f.push({ y: py, el: <Planter key="pl" x={plx} y={py} /> });
-    // the neighbourhood's sidewalk signature, between the potted tree and the chalkboard (v5.0)
-    const px = (plx + 16 + lay.sign.x - 18) / 2;
-    if (lay.sign.x - plx > 56) {
-      const [qx, qy] = P(px, -36);
-      f.push({ y: -36, el: <StreetProp key="street" id={fin.id} x={qx} y={qy} /> });
-    }
+    const plx = Math.max(lay.L + 8, unprojectX(20, TREE_Y));
+    f.push({ y: TREE_Y, el: <Planter key="pl" x={plx} y={TREE_Y} /> });
+    // the neighbourhood's sidewalk signature (v5.0): always drawn now, in the room layout.ts keeps clear for it (D414)
+    const [qx, qy] = P(lay.prop.x, PROP_Y);
+    f.push({ y: PROP_Y, el: <StreetProp key="street" id={fin.id} x={qx} y={qy} /> });
   }
   if (!fin.idleShop) {
     const [scx, scy] = P(lay.scooter.x, lay.scooter.y);

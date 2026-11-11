@@ -5,7 +5,7 @@ import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'r
 
 import { cashText, duration, goalAmount, money, shownValue } from '../engine/format';
 import { C, F } from '../theme';
-import { GOAL_BAR, goalBarLayout } from './goal-model';
+import { GOAL_BAR, goalBarLayout, goalWords, type GoalSpan } from './goal-model';
 import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
 import { onPayout, setCoinTarget } from './pulse-bus';
 import type { ButtonTone } from './sidewalk-model';
@@ -181,7 +181,10 @@ export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newS
     return onPayout(() => bump(1.08));
   }, [counting, flash]);
   const [goalW, setGoalW] = useState(0);
-  const bar = goalBarLayout(goal?.current ?? 0, goal?.target ?? 0, !!goal?.onPress, goalW);
+  // the measured words/amount of the goal line: the two-tone seam snaps to their edges (G88)
+  const [measured, setMeasured] = useState<{ label: string; spans: GoalSpan[] }>({ label: '', spans: [] });
+  // spans measured for another label (the goal just changed) are not used: until the new line reports, the seam is exact
+  const bar = goalBarLayout(goal?.current ?? 0, goal?.target ?? 0, !!goal?.onPress, goalW, measured.label === goal?.label ? measured.spans : []);
   const { pct, ready } = bar;
   return (
     <View style={styles.hud}>
@@ -246,8 +249,8 @@ export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newS
           }}
           onLayout={(e) => setGoalW(e.nativeEvent.layout.width)}
           style={[styles.goal, ready && styles.goalReady, halo === 'goal' && styles.haloGoal]}>
-          <View style={[styles.goalFill, { width: `${pct * 100}%` }, ready && { backgroundColor: C.basil }]} />
-          <GoalLine label={ready ? `▶ ${goal.label} — tap!` : goal.label} amount={goal.text ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone={ready ? 'ready' : 'track'} />
+          <View style={[styles.goalFill, goalW > 0 ? { width: bar.fillW } : { width: `${pct * 100}%` }, ready && { backgroundColor: C.basil }]} />
+          <GoalLine key={ready ? 'ready' : goal.label} label={ready ? `▶ ${goal.label} — tap!` : goal.label} amount={goal.text ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone={ready ? 'ready' : 'track'} onSpans={ready ? undefined : (spans) => setMeasured({ label: goal.label, spans })} />
           {/* D297: the same line again in cream, clipped to the fill, so the part over the fill is light and the rest stays dark */}
           {bar.split ? (
             <View pointerEvents="none" style={[styles.goalClip, { width: bar.fillW }]}>
@@ -262,16 +265,42 @@ export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newS
   );
 }
 
-/** One line of the goal bar (label, then amount or icon) in one of its three inks. Primitive props, so it stays memo-friendly. */
-function GoalLine({ label, amount, icon, tone }: { label: string; amount: string; icon?: React.ReactNode; tone: 'track' | 'fill' | 'ready' }) {
+/**
+ * One line of the goal bar (words, then amount or icon) in one of its three inks. Every word and the amount is its own
+ * Text, so the track copy can report where each one sits (`onSpans`) and the seam can snap to a word edge (G88).
+ * Primitive props, so it stays memo-friendly.
+ */
+function GoalLine({ label, amount, icon, tone, onSpans }: { label: string; amount: string; icon?: React.ReactNode; tone: 'track' | 'fill' | 'ready'; onSpans?: (spans: GoalSpan[]) => void }) {
   const color = tone === 'track' ? GOAL_BAR.onTrack : tone === 'fill' ? GOAL_BAR.onFill : '#fff';
+  const words = goalWords(label);
+  const count = words.length + 1;
+  const seen = useRef<(GoalSpan | undefined)[]>([]);
+  const report = (i: number, x: number, w: number) => {
+    const prev = seen.current[i];
+    if (prev && prev.x === x && prev.w === w) return;
+    seen.current[i] = { x, w };
+    const all = seen.current.slice(0, count);
+    if (onSpans && all.length === count && all.every(Boolean)) onSpans(all as GoalSpan[]);
+  };
+  const at = (i: number) => (e: { nativeEvent: { layout: { x: number; width: number } } }) => report(i, e.nativeEvent.layout.x, e.nativeEvent.layout.width);
   return (
-    <>
-      <Text style={[styles.goalLabel, { color }]} numberOfLines={1}>
-        {label}
-      </Text>
-      {icon ? <View style={{ zIndex: 1, marginLeft: 6 }}>{icon}</View> : <Text style={[styles.goalAmt, { color }]}>{amount}</Text>}
-    </>
+    <View style={styles.goalLine} pointerEvents="none">
+      {words.map((w, i) => (
+        <Text key={`${i}:${w}`} onLayout={onSpans ? at(i) : undefined} style={[styles.goalLabel, i === words.length - 1 && styles.goalLabelLast, { color }]} numberOfLines={1}>
+          {w}
+        </Text>
+      ))}
+      <View style={{ flex: 1 }} />
+      {icon ? (
+        <View onLayout={onSpans ? at(words.length) : undefined} style={{ zIndex: 1, marginLeft: 6 }}>
+          {icon}
+        </View>
+      ) : (
+        <Text onLayout={onSpans ? at(words.length) : undefined} style={[styles.goalAmt, { color }]}>
+          {amount}
+        </Text>
+      )}
+    </View>
   );
 }
 
@@ -417,8 +446,11 @@ const styles = StyleSheet.create({
   goalFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: GOAL_BAR.fill },
   // two-tone label (D297): dark ink over the track, a cream copy clipped to the fill's width
   goalClip: { position: 'absolute', left: 0, top: 0, bottom: 0, overflow: 'hidden' },
-  goalClipLine: { position: 'absolute', left: 0, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 },
-  goalLabel: { flex: 1, fontFamily: F.bold, fontSize: 14 },
+  goalClipLine: { position: 'absolute', left: 0, top: 0, bottom: 0 },
+  // each word is its own Text so the seam can snap to a word edge (G88); the last one shrinks and truncates
+  goalLine: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 },
+  goalLabel: { fontFamily: F.bold, fontSize: 14, marginRight: 4, flexShrink: 0 },
+  goalLabelLast: { flexShrink: 1 },
   goalAmt: { fontFamily: F.bold, fontSize: 13 },
 
   ovenCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.panel, borderRadius: 20, padding: 10, gap: 12, borderWidth: 3, borderColor: C.ink, ...shadow },

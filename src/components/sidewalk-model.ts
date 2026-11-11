@@ -61,6 +61,8 @@ export interface StationModel {
   /** Why it can't be bought (ignoring cash), or null. */
   lock: string | null;
   label: string;
+  /** The corner badge: the level, or "MAX" and the level while the button is the Expand buy (G89). */
+  badge: string;
   /** Stuck at the level cap while the next footprint exists: the button buys Expand instead (B4). */
   expand: boolean;
   /** `nogain` when an unlocked upgrade adds nothing right now; `expand` is the amber Expand buy. */
@@ -100,6 +102,7 @@ export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[
     const useful = (gain ?? 0) > 1e-9;
     // locked by the level cap alone, and Expand exists: the button buys Expand (amber, the station's name stays), through the ordinary buy path.
     // MAX is left for when nothing can raise the cap. Expand is worth buying here even though it adds $0/s by itself (as in the drawer).
+    const level = k === 'drivers' ? `×${shop.drivers}` : `${shop[k]}`;
     const expandCost = capExpandCost(s, id, what);
     const expand = expandCost !== null;
     const cost = expand ? expandCost : G.upgradeCostOf(s, id, what);
@@ -108,10 +111,13 @@ export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[
       key: k,
       what: expand ? 'expand' : what,
       name,
-      level: k === 'drivers' ? `×${shop.drivers}` : `${shop[k]}`,
+      level,
       cost,
       lock,
-      label: expand ? `Expand ${money(cost ?? 0)}` : lock ? 'MAX' : money(cost ?? 0),
+      // G89: the Expand button shows its real price alone, in the same 15 pt face as every other price; the word is its small title
+      // ("EXPAND" beside the station's icon) and "MAX" moves to the badge, because "DRIVERS MAX" / "Expand $500" were both truncated at 78 pt
+      label: lock && !expand ? 'MAX' : money(cost ?? 0),
+      badge: expand ? `MAX ${level}` : level,
       expand,
       tone: expand ? 'expand' : stationTone(lock, gain),
       neck: useful && rates[stage] <= min * (1 + 1e-9),
@@ -122,8 +128,11 @@ export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[
   return cacheVal;
 }
 
-/** The small title over a station's price: its name, and "MAX" beside it while the button is the Expand buy (D407). */
-export const stationTitle = (v: Pick<StationModel, 'name' | 'expand'>): string => (v.expand ? `${v.name} MAX` : v.name);
+/**
+ * The small title over a station's price: its name, or "EXPAND" while the button is the Expand buy (D407, G89). The station
+ * still shows through its icon beside the title and its badge ("MAX 25"), and the price below is Expand's real one.
+ */
+export const stationTitle = (v: Pick<StationModel, 'name' | 'expand'>): string => (v.expand ? 'EXPAND' : v.name);
 
 /** Add the cash-dependent part. */
 export function stationViews(s: G.GameState, id: NeighborhoodId): StationView[] {

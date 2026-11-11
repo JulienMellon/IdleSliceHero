@@ -95,8 +95,8 @@ describe('neighbourhood perks (v3.7)', () => {
 });
 
 describe('Pier 9 bid (v3.7)', () => {
-  const ready = () => withShop({ ...seenUpTo(['waterfront-1', 'waterfront-2', 'waterfront-3']), cash: 3e6 }, 'waterfront', { built: true, managed: true, sold: PIER9_BID.unlockPizzas });
-  it('costs $2.0M', () => expect(PIER9_BID.cost).toBe(2_000_000));
+  const ready = () => withShop({ ...seenUpTo(['waterfront-1', 'waterfront-2', 'waterfront-3']), cash: PIER9_BID.cost * 1.5 }, 'waterfront', { built: true, managed: true, sold: PIER9_BID.unlockPizzas });
+  it('costs $30M (about 4–5 minutes of income when it opens, v5.12)', () => expect(PIER9_BID.cost).toBe(30_000_000));
   it('opens after "For Sale" and 50,000 Waterfront pizzas', () => {
     expect(G.pier9Available(ready())).toBe(true);
     expect(G.pier9Available(withShop(ready(), 'waterfront', { sold: PIER9_BID.unlockPizzas - 1 }))).toBe(false);
@@ -106,7 +106,7 @@ describe('Pier 9 bid (v3.7)', () => {
     const r = G.bidPier9(ready());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.state.cash).toBe(1e6);
+    expect(r.state.cash).toBe(PIER9_BID.cost * 0.5);
     expect(r.state.shops.waterfront.perk).toBe(true);
     expect(G.pendingScenes(r.state, HOME_SCENES).map((x) => x.id)).toContain('waterfront-4');
     expect(G.bidPier9(r.state).ok).toBe(false);

@@ -2,7 +2,7 @@
 // Review sim: the pacing-sim greedy player, plus (a) purchase cadence, (b) saves at key moments, (c) a check-in player.
 import { writeFileSync, mkdirSync } from 'fs';
 import { HOME_SCENES } from '../../src/content/scenes/home';
-import { DECOR_KINDS, NEIGHBORHOODS, PIER9_BID, VEHICLES, TUNING } from '../../src/content/tuning';
+import { DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES, TUNING } from '../../src/content/tuning';
 import type { NeighborhoodId } from '../../src/content/types';
 import { pickScene } from '../../src/engine/cutscene-input';
 import * as G from '../../src/engine/game';
@@ -44,11 +44,11 @@ function options(s: G.GameState): Option[] {
 }
 
 /** mode 'continuous': plays without stopping. mode 'checkin': plays `session` s, then away `away` s (offline catch-up). */
-function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 3600, dumpDir?: string) {
+export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 3600, dumpDir?: string, stop: { atScene?: string; maxWall?: number } = {}) {
   let s = G.newGame(0);
   let lastSceneEnd: number | null = null;
   let wall = 0; // real seconds since install
-  const buys: { t: number; wall: number; label: string; cost: number }[] = [];
+  const buys: { t: number; wall: number; label: string; cost: number; session: number; cashBefore: number }[] = [];
   const scenes: { t: number; wall: number; id: string }[] = [];
   const dumped = new Set<string>();
   let sessions = 0;
@@ -63,29 +63,81 @@ function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 3600, dum
       for (let sc = pickScene(s, HOME_SCENES, 1e15, 0, false, lastSceneEnd); sc; sc = pickScene(s, HOME_SCENES, 1e15, 0, false, lastSceneEnd)) {
         s = G.markSceneSeen(s, sc); lastSceneEnd = s.playSeconds; scenes.push({ t: s.playSeconds, wall, id: sc.id });
         dump(`at-${sc.id}`);
+        if (stop.atScene === sc.id) break outer;
       }
-      if (G.pier9Available(s) && s.cash >= PIER9_BID.cost) { const r = G.bidPier9(s); if (r.ok) { s = r.state; buys.push({ t: s.playSeconds, wall, label: 'pier9', cost: PIER9_BID.cost }); } }
+      if (G.pier9Available(s) && s.cash >= PIER9_BID.cost) { const before = s.cash; const r = G.bidPier9(s); if (r.ok) { s = r.state; buys.push({ t: s.playSeconds, wall, label: 'pier9', cost: PIER9_BID.cost, session: sessions, cashBefore: before }); } }
       if (s.cityComplete) break outer;
+      // EAGER=1: a human who builds the next neighbourhood the moment they can afford it (the default greedy waits until the build also beats every upgrade per dollar)
+      if (cfg.eager && !G.pier9Available(s)) { const nb = G.nextToBuild(s); if (nb && !G.buildLock(s, nb.id) && s.cash >= nb.buildCost) { const r = G.buildShop(s, nb.id); if (r.ok) { const before = s.cash; s = r.state; buys.push({ t: s.playSeconds, wall, label: `build:${nb.id}`, cost: nb.buildCost, session: sessions, cashBefore: before }); } } }
       for (let q = 0; q < 30 && !G.pier9Available(s); q++) {
         const opts = options(s).sort((a, b) => b.gain / b.cost - a.gain / a.cost);
         if (!opts.length) break;
         const r = opts[0].buy(s);
         if (!r.ok) break;
-        s = r.state; buys.push({ t: s.playSeconds, wall, label: opts[0].label, cost: opts[0].cost });
+        const before = s.cash; s = r.state; buys.push({ t: s.playSeconds, wall, label: opts[0].label, cost: opts[0].cost, session: sessions, cashBefore: before });
       }
-      if (s.playSeconds > 60 * 60 * 40) break outer;
+      if (s.playSeconds > 60 * 60 * 200) break outer;
     }
     // away
-    const cap = Number(process.env.CAP ?? 14400), eff = Number(process.env.EFF ?? 1);
-    s = G.offlineTick(s, Math.min(away, cap) * eff).state;
+    s = G.offlineTick(s, Math.min(away, cfg.cap) * cfg.eff).state;
     wall += away;
-    if (sessions > 400) break;
+    if (sessions > 400 || wall > (stop.maxWall ?? Infinity)) break;
   }
   return { s, buys, scenes, sessions, wall };
 }
 
-if (process.env.OV) { const ov = process.env.OV.split(',').map(Number); NEIGHBORHOODS.forEach((n, i) => { (n as any).orderValue = ov[i]; }); }
-if (process.env.BC) { const bc = process.env.BC.split(',').map(Number); NEIGHBORHOODS.forEach((n, i) => { (n as any).buildCost = bc[i]; }); }
+/** Purchases per check-in session (the last session, cut short by the finale, is left out). `from` = first wall-clock second counted. */
+export function sessionStats(r: ReturnType<typeof run>, sessionSeconds: number, awaySeconds: number, from = 0) {
+  const counts: number[] = [];
+  for (let i = 1; i < r.sessions; i++) {
+    if ((i - 1) * (sessionSeconds + awaySeconds) < from) continue;
+    counts.push(r.buys.filter((b) => b.session === i).length);
+  }
+  const sorted = [...counts].sort((a, b) => a - b);
+  return { min: sorted.length ? sorted[0] : 0, median: sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0, counts };
+}
+
+/** Purchases per session after day 0 and what the late-game items ended as. */
+export function endSummary(r: ReturnType<typeof run>, sessionSeconds: number, awaySeconds: number) {
+  const st = sessionStats(r, sessionSeconds, awaySeconds, 86400);
+  const shops = Object.values(r.s.shops);
+  const per = st.counts.length ? `min ${st.min}, median ${st.median}` : 'n/a';
+  return `buys/session after day 0: ${per}; fleet ${VEHICLES[r.s.vehicle].id}, golden ovens in ${shops.filter((x) => x.grade >= OVEN_GRADES.length - 1).length}/6, flagships ${shops.filter((x) => x.footprint >= FOOTPRINTS.length - 1).length}/6`;
+}
+
+/** Everything the fitter can vary. Lists are per neighbourhood (6) unless noted. Unset fields keep src/content/tuning.ts. */
+export interface Cfg {
+  ov?: number[]; bc?: number[]; cm?: number[]; mc?: number[];
+  /** Pier 9 bid cost and the Waterfront pizzas that unlock it. */
+  pier9?: number; pier9Pizzas?: number;
+  /** Oven grade costs for grades 1–4, footprint costs for tiers 1–4, decor tier costs 1–3, vehicle costs for 1–4 (scooter…drone). */
+  og?: number[]; fp?: number[]; dc?: number[]; vc?: number[];
+  cap?: number; eff?: number; eager?: boolean;
+}
+export const cfg = { cap: TUNING.offlineCapSeconds, eff: 1, eager: false };
+export function applyCfg(c: Cfg) {
+  const each = (xs: number[] | undefined, set: (i: number, v: number) => void) => xs?.forEach((v, i) => { if (Number.isFinite(v)) set(i, v); });
+  each(c.ov, (i, v) => { (NEIGHBORHOODS[i] as any).orderValue = v; });
+  each(c.bc, (i, v) => { (NEIGHBORHOODS[i] as any).buildCost = v; });
+  each(c.cm, (i, v) => { (NEIGHBORHOODS[i] as any).costMult = v; });
+  each(c.mc, (i, v) => { (NEIGHBORHOODS[i] as any).managerCost = v; });
+  each(c.og, (i, v) => { OVEN_GRADES[i + 1].cost = v; });
+  each(c.fp, (i, v) => { FOOTPRINTS[i + 1].cost = v; });
+  each(c.dc, (i, v) => { DECOR_TIER_COST[i] = v; });
+  each(c.vc, (i, v) => { VEHICLES[i + 1].cost = v; });
+  if (c.pier9 !== undefined) (PIER9_BID as any).cost = c.pier9;
+  if (c.pier9Pizzas !== undefined) (PIER9_BID as any).unlockPizzas = c.pier9Pizzas;
+  if (c.cap !== undefined) cfg.cap = c.cap;
+  if (c.eff !== undefined) cfg.eff = c.eff;
+  if (c.eager !== undefined) cfg.eager = c.eager;
+}
+const list = (name: string) => process.env[name]?.split(',').map(Number);
+
+// Env overrides (all optional): OV BC CM MC = six values; OG FP VC = four; DC = three; PB = Pier 9 bid; PP = Pier 9 unlock pizzas; CAP, EFF = offline cap (s) and rate; EAGER=1 builds the next pizzeria as soon as it is affordable.
+const main = () => {
+applyCfg({ ov: list('OV'), bc: list('BC'), cm: list('CM'), mc: list('MC'), og: list('OG'), fp: list('FP'), dc: list('DC'), vc: list('VC'),
+  pier9: process.env.PB ? Number(process.env.PB) : undefined, pier9Pizzas: process.env.PP ? Number(process.env.PP) : undefined,
+  cap: process.env.CAP ? Number(process.env.CAP) : undefined, eff: process.env.EFF ? Number(process.env.EFF) : undefined, eager: process.env.EAGER ? true : undefined });
 const mode = process.argv[2] ?? 'continuous';
 if (mode === 'continuous') {
   mkdirSync('saves', { recursive: true });
@@ -115,6 +167,8 @@ if (mode === 'continuous') {
     const days = r.wall / 86400;
     const m: Record<string, number> = {};
     for (const x of r.scenes) if (x.id.endsWith('-1') || x.id === 'uptown-4') m[x.id] = +(x.wall / 86400).toFixed(2);
-    console.log(`sessions of ${sess / 60} min every ${(sess + away) / 3600} h: done=${r.s.cityComplete} after ${r.sessions} sessions, ${days.toFixed(1)} days; scenes ${r.s.seenScenes.length}/24; unlock days ${JSON.stringify(m)}`);
+    console.log(`sessions of ${sess / 60} min every ${(sess + away) / 3600} h: done=${r.s.cityComplete} after ${r.sessions} sessions, ${days.toFixed(1)} days; scenes ${r.s.seenScenes.length}/24; unlock days ${JSON.stringify(m)}; ${endSummary(r, sess, away)}`);
   }
 }
+};
+if (require.main === module) main();

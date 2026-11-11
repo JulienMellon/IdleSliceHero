@@ -1,6 +1,6 @@
 /// <reference types="jest" />
-import { BACK_ROW_Y, COUNTER_LANE_Y, FRONT_ROW_Y, LEDGE_Y, PATIO_SEAT, QUEUE_PITCH, ROOM_W, SEAT, STOOL_Y, SIGN_HALF_W, TABLE_PITCH, VEHICLE_HALF_W, layout, type Layout } from '../layout';
-import { unprojectX } from '../projection';
+import { BACK_ROW_Y, COUNTER_LANE_Y, DRIVER_QUEUE_PITCH, DRIVER_SPOTS, FRONT_ROW_Y, LEDGE_Y, PATIO_SEAT, PROP_HALF_W, PROP_Y, QUEUE_MIN_X, QUEUE_PITCH, QUEUE_SPOTS, ROOM_W, SEAT, SIGN_Y, STOOL_Y, SIGN_HALF_W, TABLE_PITCH, TREE_Y, VEHICLE_HALF_W, layout, type Layout } from '../layout';
+import { P, unprojectX } from '../projection';
 import { pickAvoid, seatPalette } from '../palette';
 import { DRIVER_PAYOUT, GUEST_WALK_Y, along, driverPhase, driverPose, guestPose, payoutCrossed } from '../timelines';
 
@@ -271,7 +271,7 @@ describe('parked vehicle and curb lane (D282 / D285)', () => {
     for (const [name, lay] of allLayouts()) {
       const gap = lay.scooter.x - VEHICLE_HALF_W - (lay.sign.x + SIGN_HALF_W);
       expect([name, gap >= 6]).toEqual([name, true]);
-      expect([name, lay.sign.x - SIGN_HALF_W > lay.L + 24]).toEqual([name, true]); // clear of the planter at the left
+      expect([name, lay.sign.x - SIGN_HALF_W > lay.L + 8]).toEqual([name, true]); // right of the pilaster the planter stands in front of
     }
   });
   test('the curb lane sits at y −42, so walk-ins’ feet clear the Prep card on a 375 pt phone too (D408; drivers use −30 … −42)', () => {
@@ -279,32 +279,60 @@ describe('parked vehicle and curb lane (D282 / D285)', () => {
   });
 });
 
-describe('the sidewalk queues and patio (v5.11)', () => {
-  test('the diner queue (4) and the patio (2) stand left of the door, the patio left of the queue, all inside the scene', () => {
+describe('the sidewalk lane (v5.12: D414, G90, D416)', () => {
+  const sx = (x: number, y: number) => P(x, y)[0];
+  test('up to 4 diner spots in single file left of the door, 22 pt apart on screen, none left of x = 200; the first clears the door lanes', () => {
     for (const [name, lay] of allLayouts()) {
-      expect([name, lay.queue.length, lay.patio.length]).toEqual([name, 4, 2]);
-      const front = lay.queue[0][0];
-      expect([name, front < lay.door.x0 - 14]).toEqual([name, true]); // clear of the mat and the pause spot
-      for (let i = 1; i < 4; i++) expect(lay.queue[i - 1][0] - lay.queue[i][0]).toBeCloseTo(QUEUE_PITCH);
-      const tail = lay.queue[3][0];
-      for (const p of lay.patio) {
-        expect([name, p.x + PATIO_SEAT + 13 < tail - 13]).toEqual([name, true]);
-        expect([name, p.x - PATIO_SEAT - 13 > unprojectX(0, p.y)]).toEqual([name, true]);
+      expect([name, lay.queue.length >= 3, lay.queue.length <= QUEUE_SPOTS]).toEqual([name, true, true]);
+      for (let i = 0; i < lay.queue.length; i++) {
+        expect([name, i, sx(...lay.queue[i]) >= QUEUE_MIN_X - 1e-6]).toEqual([name, i, true]);
+        if (i) expect(sx(...lay.queue[i - 1]) - sx(...lay.queue[i])).toBeCloseTo(QUEUE_PITCH, 5);
       }
-      expect([name, lay.patio[0].x > lay.patio[1].x]).toEqual([name, true]);
+      expect([name, lay.queue[0][0] < lay.door.x0 - 14]).toEqual([name, true]); // clear of the mat and the pause spot
     }
   });
-  test('1 to 3 drivers wait right of the door, past the mat and fully on screen, the tag over the last', () => {
+  test('four driver spots, always, left of the diners, 22 pt apart on screen, in two alternating depths, all inside the scene', () => {
     for (const [name, lay] of allLayouts()) {
-      expect([name, lay.driverQueue.length >= 1, lay.driverQueue.length <= 3]).toEqual([name, true, true]);
-      for (const [x, y] of lay.driverQueue) expect([name, x > lay.door.x1 + 10, x <= unprojectX(393 - 12, y) + 1]).toEqual([name, true, true]);
-      expect(lay.waitTag).toBe(lay.driverQueue[lay.driverQueue.length - 1]);
+      expect([name, lay.driverQueue.length]).toEqual([name, DRIVER_SPOTS]);
+      const last = lay.queue[lay.queue.length - 1];
+      lay.driverQueue.forEach(([x, y], j) => {
+        expect([name, j, sx(x, y) < sx(...last) - DRIVER_QUEUE_PITCH + 1e-6, sx(x, y) > 14]).toEqual([name, j, true, true]);
+        expect([name, j, y === (j % 2 ? lay.driverQueue[1][1] : lay.driverQueue[0][1])]).toEqual([name, j, true]);
+        if (j) expect(sx(...lay.driverQueue[j - 1]) - sx(x, y)).toBeCloseTo(DRIVER_QUEUE_PITCH, 5);
+      });
+      expect([name, lay.driverQueue[0][1] !== lay.driverQueue[1][1]]).toEqual([name, true]);
+      const mid = (sx(...lay.driverQueue[0]) + sx(...lay.driverQueue[DRIVER_SPOTS - 1])) / 2;
+      expect(Math.abs(sx(...lay.waitTag) - mid)).toBeLessThan(0.01);
     }
   });
-  test('the chalkboard keeps the sidewalk prop between it and the tree (they must stand > 56 apart), and stays off the patio chairs\' way', () => {
+  test('patio sets stand wholly right of the left pilaster (never across the wall line) and left of the drivers; none when there is no room', () => {
     for (const [name, lay] of allLayouts()) {
-      const tree = Math.max(lay.L + 8, unprojectX(20, -40));
-      expect([name, lay.sign.x - tree > 56]).toEqual([name, true]);
+      expect([name, lay.patio.length <= 2]).toEqual([name, true]);
+      const pilasterRight = sx(lay.L + 8, 0);
+      const firstDriverLeft = sx(...lay.driverQueue[DRIVER_SPOTS - 1]) - 12.5;
+      for (const p of lay.patio) {
+        const c = sx(p.x, p.y);
+        expect([name, c - 30 > pilasterRight, c + 30 < firstDriverLeft]).toEqual([name, true, true]);
+      }
+      if (lay.patio.length === 2) expect([name, lay.patio[0].x > lay.patio[1].x]).toEqual([name, true]);
+    }
+    // the roomier shops still seat a patio table
+    const wide = layout(4, 3, 2, 2, 6, 4, 1);
+    expect(wide.patio.length).toBeGreaterThanOrEqual(1);
+  });
+  test('the chalkboard and the signature prop both stand clear of the tree, each other, the vehicle and the patio guests\' way up to their chairs', () => {
+    for (const [name, lay] of allLayouts()) {
+      const signC = sx(lay.sign.x, SIGN_Y);
+      const propC = sx(lay.prop.x, PROP_Y);
+      const treeC = sx(Math.max(lay.L + 8, unprojectX(20, TREE_Y)), TREE_Y);
+      expect([name, propC - PROP_HALF_W > treeC + 14 - 4]).toEqual([name, true]);
+      expect([name, Math.abs(signC - propC) >= PROP_HALF_W + 16]).toEqual([name, true]);
+      const vehicleL = sx(lay.scooter.x, lay.scooter.y) - 25;
+      expect([name, signC + 16 <= vehicleL - 3, propC + PROP_HALF_W <= vehicleL - 3]).toEqual([name, true, true]);
+      for (const p of lay.patio) {
+        const way = sx(p.x + PATIO_SEAT, p.y);
+        expect([name, Math.abs(signC - way) >= 16 + 9, Math.abs(propC - way) >= PROP_HALF_W + 9]).toEqual([name, true, true]);
+      }
     }
   });
 });
