@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.14-seam      # label of the last screenshot set that passed verify
 codecritic_range_start: 5d82004
 cards:                 # todo | running | done | partial | blocked
-  W1: running
+  W1: done
   E1: running
   U1: todo
   S1: todo
@@ -23,7 +23,6 @@ next: wait for W1 + E1, then wave 2 (storycritic low on docs/story/COPY-v5.15.md
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-12 r1 verify passed (True 0 []) after C3 viewport fix; pushed to main.
 - 2026-11-12 r1 critic NOT SATISFIED (2 bugs, 1 major, 7 minor). Fix round r2 started.
 - 2026-11-12 r2 verify passed (True 0 []); pushed to main; r2 critic launched.
 - 2026-11-12 r2 critic NOT SATISFIED (1 bug G95, 3 minor). Fix round r3 started.
@@ -33,3 +32,4 @@ next: wait for W1 + E1, then wave 2 (storycritic low on docs/story/COPY-v5.15.md
 - 2026-11-12 K0a done (golden hashes unchanged; digest needs re-run after K0b).
 - 2026-11-12 Seam: 45 changed vs r3, but identical code re-run gives 41 (same top shots) = clock noise; accepted. tsx not installed (digest via node --experimental-strip-types); python playwright 1.63.0 pip-installed this session. v5.14 closed.
 - 2026-11-12 v5.15 wave 1 (W1, E1) launched.
+- 2026-11-12 W1 done (COPY-v5.15.md; open questions for Julien: Kayla name clash suburbs vs Boston; shop display names ≤19 chars).
