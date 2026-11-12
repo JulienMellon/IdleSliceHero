@@ -91,6 +91,7 @@ describe('buying', () => {
     const v = nightOvenView({ ...s0, cash: 1e12 });
     expect(v.chip).toBe('🌙 4 h');
     expect(v.body).toBe("While you're away, Nonna's night oven keeps baking for up to 4 h. Come back before it's full!");
+    expect(v.leaveLine).toBe("Leave now and it's full in 4 h.");
     expect(v.tiers.map((t) => [t.hours, t.state])).toEqual([['4 h', 'owned'], ['8 h', 'next'], ['12 h', 'later']]);
     expect(v.next).toMatchObject({ tier: 1, title: 'Night oven: holds 8 h', lock: null, canBuy: true });
     const locked = nightOvenView(city(['downtown']));

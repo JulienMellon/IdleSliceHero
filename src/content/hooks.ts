@@ -183,7 +183,7 @@ export const GIFT = {
   /** After opening, the popup closes by itself this long after the count finishes. */
   autoCloseMs: 1500,
   /** Coins sent to the cash counter when the oven opens. */
-  coins: 8,
+  coins: 10,
 } as const;
 
 /** The oven's fill and the teaser ring change in steps of this much (a 5% step), so they never repaint on every tick. */

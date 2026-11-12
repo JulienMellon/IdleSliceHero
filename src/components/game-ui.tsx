@@ -2,7 +2,7 @@
 import * as Haptics from 'expo-haptics';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Defs, G, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { GIFT } from '../content/hooks';
 import { cashText, goalAmount, money } from '../engine/format';
@@ -11,6 +11,7 @@ import { C, F } from '../theme';
 import { GOAL_BAR, GOAL_FONT_MAX_SCALE, GOAL_GAP, GOAL_LAYOUT, GOAL_PAD, goalBarLayout, goalWords, type GoalSpan } from './goal-model';
 import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, SliceIcon, StarIcon } from './icons';
 import { countUpValue, offlineGiftView, type GiftSummary } from './offline-model';
+import { Portrait } from './portrait';
 import { emitCoin, emitPayout, onPayout, setCoinTarget } from './pulse-bus';
 import { buttonOutline, type ButtonTone } from './sidewalk-model';
 import { BUTTON_H, COMPACT_FONT_MAX_SCALE } from './tap-targets';
@@ -170,7 +171,7 @@ export interface Goal {
   onPress?: () => boolean;
 }
 
-export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newScenes, halo = null, onTasks, tasksBadge = 0, onGift, giftDot = false, ovenText, onOven, scrapRing }: { /** The night oven chip's text ("🌙 4 h"); the chip shows once it is given with `onOven`. */ ovenText?: string; onOven?: () => void; /** The next story scene's progress ring around the scrapbook button, in whole 5% steps (0..20); none when undefined. */ scrapRing?: number; cash: number; subtitle: string; /** The running boost, "2× 10m": drawn in basil after the subtitle. */ boostText?: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null; onTasks?: () => void; tasksBadge?: number; onGift?: () => void; giftDot?: boolean }) {
+export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newScenes, halo = null, onTasks, tasksBadge = 0, onGift, giftDot = false, ovenText, onOven, scrapRing }: { /** The night oven chip's hours ("4 h"), under a moon; the chip shows once it is given with `onOven`. */ ovenText?: string; onOven?: () => void; /** The next story scene's progress ring around the scrapbook button, in whole 5% steps (0..20); none when undefined. */ scrapRing?: number; cash: number; subtitle: string; /** The running boost, "2× 10m": drawn in basil after the subtitle. */ boostText?: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null; onTasks?: () => void; tasksBadge?: number; onGift?: () => void; giftDot?: boolean }) {
   const shown = useCountUp(cash);
   const [flash] = useState(() => new Animated.Value(1));
   // the cash text's window position: payout coins land on it (C81)
@@ -262,7 +263,7 @@ export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newS
           onLayout={(e) => setGoalW(e.nativeEvent.layout.width)}
           style={[styles.goal, styles.goalFlex, ready && styles.goalReady, halo === 'goal' && styles.haloGoal]}>
           <View style={[styles.goalFill, goalW > 0 ? { width: bar.fillW } : { width: `${pct * 100}%` }, ready && { backgroundColor: C.basil }]} />
-          <GoalLine key={ready ? 'ready' : goal.label} label={ready ? `▶ ${goal.label} — tap!` : goal.label} amount={goal.text ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone={ready ? 'ready' : 'track'} onSpans={ready ? undefined : onWords} onAmount={ready ? undefined : onAmount} />
+          <GoalLine key={ready ? 'ready' : goal.label} label={ready ? `▶ ${goal.label}` : goal.label} amount={ready ? 'tap!' : goal.text ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone={ready ? 'ready' : 'track'} onSpans={ready ? undefined : onWords} onAmount={ready ? undefined : onAmount} />
           {/* D297: the same line again in cream, clipped to the fill, so the part over the fill is light and the rest stays dark */}
           {bar.split ? (
             <View pointerEvents="none" style={[styles.goalClip, { width: bar.fillW }]}>
@@ -273,13 +274,12 @@ export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newS
           ) : null}
         </Pressable>
         {ovenText && onOven ? (
-          // the chip is drawn 44 pt tall (the tap target); the pill inside is 30
-          <Pressable testID="night-oven-chip" onPress={onOven} style={styles.ovenChip} accessibilityLabel="Nonna's night oven">
-            <View style={styles.ovenPill}>
-              <Text style={styles.ovenPillText} numberOfLines={1} maxFontSizeMultiplier={1.15}>
-                {ovenText}
-              </Text>
-            </View>
+          // a 44 pt round chip (the tap target), kept narrow so the goal keeps its words and its "tap!"
+          <Pressable testID="night-oven-chip" onPress={onOven} style={styles.ovenChip} accessibilityLabel={`Nonna's night oven: full in ${ovenText}`}>
+            <MoonIcon size={16} />
+            <Text style={styles.ovenPillText} numberOfLines={1} maxFontSizeMultiplier={1.1}>
+              {ovenText}
+            </Text>
           </Pressable>
         ) : null}
         </View>
@@ -293,11 +293,30 @@ const RING_R = 20;
 const RING_LEN = 2 * Math.PI * RING_R;
 const ProgressRing = memo(function ProgressRing({ step }: { step: number }) {
   const k = Math.max(0, Math.min(20, step)) / 20;
+  // close to the next scene (90%+): the ring breathes, so the player knows a story is about to come
+  const near = step >= 18;
+  const [pulse] = useState(() => new Animated.Value(1));
+  useEffect(() => {
+    if (!near) {
+      pulse.setValue(1);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 0.3, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: native }),
+        Animated.timing(pulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: native }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [near, pulse]);
   return (
-    <Svg width={44} height={44} viewBox="0 0 44 44" style={styles.ring} pointerEvents="none">
-      <Circle cx={22} cy={22} r={RING_R} stroke="rgba(255,255,255,0.28)" strokeWidth={3} fill="none" />
-      {k > 0 && <Circle cx={22} cy={22} r={RING_R} stroke={C.cheese} strokeWidth={3} fill="none" strokeLinecap="round" strokeDasharray={`${RING_LEN * k} ${RING_LEN}`} transform="rotate(-90 22 22)" />}
-    </Svg>
+    <Animated.View pointerEvents="none" style={[styles.ring, { opacity: pulse }]}>
+      <Svg width={44} height={44} viewBox="0 0 44 44">
+        <Circle cx={22} cy={22} r={RING_R} stroke="rgba(255,255,255,0.28)" strokeWidth={3} fill="none" />
+        {k > 0 && <Circle cx={22} cy={22} r={RING_R} stroke={C.cheese} strokeWidth={3} fill="none" strokeLinecap="round" strokeDasharray={`${RING_LEN * k} ${RING_LEN}`} transform="rotate(-90 22 22)" />}
+      </Svg>
+    </Animated.View>
   );
 });
 
@@ -401,28 +420,61 @@ export function UpgradeRow(props: {
 // ---------- The welcome-back gift (v5.14): a night oven to open ----------
 
 const OVEN_INK = '#3B1F14';
-/** The oven's door: its width and the arch it closes (pt). The door is hinged on its left edge. */
-const DOOR = { x: 30, y: 38, w: 100, h: 72 } as const;
-const ARCH = (w: number, h: number) => `M0 ${h} V${h * 0.36} Q0 0 ${w / 2} 0 Q${w} 0 ${w} ${h * 0.36} V${h} Z`;
+/** The oven's drawing: a brick dome with a chimney, in a 160 × 150 box whose viewBox starts 22 pt above the chimney for the smoke. */
+const OVEN_VB = { w: 160, h: 150, top: -22 } as const;
+/** The oven's mouth and its door (pt, in the drawing's own coordinates). The door is hinged on its left edge. */
+const DOOR = { x: 46, y: 62, w: 68, h: 50 } as const;
+const ARCH = (w: number, h: number) => `M0 ${h} V${h * 0.4} Q0 0 ${w / 2} 0 Q${w} 0 ${w} ${h * 0.4} V${h} Z`;
+const MOUTH_C = { x: DOOR.x + DOOR.w / 2, y: DOOR.y + DOOR.h * 0.55 } as const;
+const RAYS = Array.from({ length: 9 }, (_, i) => (-170 + i * 20) * (Math.PI / 180));
 
-/** The oven body and its cavity. `glow` is the fill in 5% steps (0..20); `open` shows the baked pizza. Primitive props: it repaints only on a step. */
+/** A crescent moon (SVG, so it draws the same everywhere; the emoji did not). */
+export function MoonIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M16.5 3.2A9 9 0 1 0 20.8 15.5 7.2 7.2 0 0 1 16.5 3.2Z" fill="#F6C343" stroke={OVEN_INK} strokeWidth={1.6} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+/**
+ * Nonna's brick dome oven. `glow` is the fill in 5% steps (0..20): the heat halo behind the dome, the mouth's fire and the smoke
+ * all grow with it. `open` adds the rays and the stacked pizza boxes. Primitive props: it repaints only on a step or when opened.
+ */
 const OvenArt = memo(function OvenArt({ glow, open }: { glow: number; open: boolean }) {
   const k = open ? 1 : glow / 20;
+  const puffs = open ? 3 : Math.round(k * 3);
   return (
-    <Svg width={160} height={128} viewBox="0 0 160 128" style={styles.ovenArt}>
-      <Rect x={104} y={0} width={22} height={24} rx={4} fill="#9C4A33" stroke={OVEN_INK} strokeWidth={3} />
-      <Rect x={6} y={14} width={148} height={110} rx={20} fill="#C8553D" stroke={OVEN_INK} strokeWidth={4} />
-      <Path d="M18 34 H44 M60 34 H92 M18 118 H50 M70 118 H142 M130 60 H146 M14 82 H24 M130 90 H146" stroke="#A8412C" strokeWidth={3} strokeLinecap="round" />
+    <Svg width={OVEN_VB.w} height={OVEN_VB.h} viewBox={`0 ${OVEN_VB.top} ${OVEN_VB.w} ${OVEN_VB.h}`} style={styles.ovenArt}>
+      <Defs>
+        <RadialGradient id="ovenHeat" cx="50%" cy="50%" r="50%">
+          <Stop offset="0" stopColor="#FFB23E" stopOpacity="0.95" />
+          <Stop offset="1" stopColor="#FF7A1A" stopOpacity="0" />
+        </RadialGradient>
+      </Defs>
+      {/* heat halo, behind everything: bigger and brighter as the oven fills */}
+      <Circle cx={MOUTH_C.x} cy={MOUTH_C.y} r={46 + 34 * k} fill="url(#ovenHeat)" opacity={0.15 + 0.85 * k} />
+      {open
+        ? RAYS.map((a, i) => <Path key={i} d={`M${MOUTH_C.x + Math.cos(a) * 52} ${MOUTH_C.y + Math.sin(a) * 52} L${MOUTH_C.x + Math.cos(a) * 78} ${MOUTH_C.y + Math.sin(a) * 78}`} stroke="#F6C343" strokeWidth={4} strokeLinecap="round" />)
+        : null}
+      {/* smoke from the chimney: more puffs as it fills */}
+      {puffs >= 1 ? <Circle cx={106} cy={-5} r={5} fill="#E9E1D8" opacity={0.85} /> : null}
+      {puffs >= 2 ? <Circle cx={111} cy={-13} r={6.5} fill="#E9E1D8" opacity={0.7} /> : null}
+      {puffs >= 3 ? <Circle cx={105} cy={-21} r={7.5} fill="#E9E1D8" opacity={0.55} /> : null}
+      <Rect x={96} y={2} width={20} height={28} rx={3} fill="#9C4A33" stroke={OVEN_INK} strokeWidth={3} />
+      <Path d="M14 122 V76 Q14 20 80 20 Q146 20 146 76 V122 Z" fill="#C8553D" stroke={OVEN_INK} strokeWidth={4} strokeLinejoin="round" />
+      <Path d="M30 50 Q40 40 52 36 M64 28 H96 M24 70 H38 M118 56 H134 M128 82 H140 M22 100 H34 M122 104 H138 M58 48 H72 M100 44 H112" stroke="#A8412C" strokeWidth={3} strokeLinecap="round" fill="none" />
+      <Rect x={6} y={114} width={148} height={14} rx={5} fill="#8F5B3E" stroke={OVEN_INK} strokeWidth={3} />
       <G transform={`translate(${DOOR.x} ${DOOR.y})`}>
         <Path d={ARCH(DOOR.w, DOOR.h)} fill="#3A1D12" stroke={OVEN_INK} strokeWidth={3} />
         <Path d={ARCH(DOOR.w, DOOR.h)} fill="#FF8A1F" opacity={0.15 + 0.85 * k} />
         <Path d={ARCH(DOOR.w, DOOR.h)} fill="#FFD36B" opacity={0.7 * k * k} />
         {open ? (
           <G>
-            <Circle cx={50} cy={50} r={22} fill="#F6C343" stroke={OVEN_INK} strokeWidth={2.5} />
-            <Circle cx={42} cy={44} r={4.5} fill="#C63B2B" />
-            <Circle cx={57} cy={48} r={4.5} fill="#C63B2B" />
-            <Circle cx={49} cy={58} r={4.5} fill="#C63B2B" />
+            <Rect x={14} y={36} width={40} height={11} rx={2} fill="#E2B56B" stroke={OVEN_INK} strokeWidth={2} />
+            <Rect x={17} y={25} width={34} height={11} rx={2} fill="#EBC27B" stroke={OVEN_INK} strokeWidth={2} />
+            <Rect x={20} y={14} width={28} height={11} rx={2} fill="#F3CE8B" stroke={OVEN_INK} strokeWidth={2} />
+            <Path d="M24 19.5 H44 M21 30.5 H47 M18 41.5 H50" stroke="#C63B2B" strokeWidth={2} strokeLinecap="round" />
           </G>
         ) : null}
       </G>
@@ -436,25 +488,28 @@ const OvenDoor = memo(function OvenDoor({ glow }: { glow: number }) {
   return (
     <Svg width={DOOR.w} height={DOOR.h} viewBox={`0 0 ${DOOR.w} ${DOOR.h}`}>
       <Path d={ARCH(DOOR.w, DOOR.h)} fill="#6B4331" stroke={OVEN_INK} strokeWidth={3} />
-      <Circle cx={DOOR.w / 2} cy={34} r={17} fill="#3A1D12" stroke={OVEN_INK} strokeWidth={3} />
-      <Circle cx={DOOR.w / 2} cy={34} r={14} fill="#FF8A1F" opacity={0.15 + 0.85 * k} />
-      <Circle cx={DOOR.w / 2} cy={34} r={9} fill="#FFD36B" opacity={0.8 * k * k} />
-      <Rect x={DOOR.w - 18} y={40} width={7} height={20} rx={3.5} fill="#F6C343" stroke={OVEN_INK} strokeWidth={2} />
+      <Circle cx={DOOR.w / 2} cy={26} r={13} fill="#3A1D12" stroke={OVEN_INK} strokeWidth={3} />
+      <Circle cx={DOOR.w / 2} cy={26} r={10.5} fill="#FF8A1F" opacity={0.15 + 0.85 * k} />
+      <Circle cx={DOOR.w / 2} cy={26} r={6.5} fill="#FFD36B" opacity={0.8 * k * k} />
+      <Rect x={DOOR.w - 15} y={28} width={6} height={16} rx={3} fill="#F6C343" stroke={OVEN_INK} strokeWidth={2} />
     </Svg>
   );
 });
 
 /**
- * The return popup is a gift, not a receipt (D424, D425): Nonna's night oven stands with its door shut and glowing in proportion to
- * how full it got. "Open the oven" swings the door, counts the total up over GIFT.countUpMs and sends coins to the cash counter; the
- * shop rows and the news line then fade in, and a second tap (or GIFT.autoCloseMs later) closes it. The button keeps testID
- * `collect-offline` in both states. The maths lives in offline-model.ts.
+ * The return popup is a gift, not a receipt (D424, D425, D447): Nonna's night oven stands with its door shut, its heat glowing and
+ * its chimney smoking in proportion to how full it got (a full one shakes). The news line is on show before the door opens.
+ * "Open the oven" swings the door, shows rays and stacked pizza boxes, counts the total up over GIFT.countUpMs and sends
+ * GIFT.coins coins to the cash counter; the shop rows then fade in, and a second tap (or GIFT.autoCloseMs later) closes it. The
+ * button keeps testID `collect-offline` in both states. A full oven offers the bigger one (`onUpgrade` opens the night-oven sheet).
+ * The maths lives in offline-model.ts.
  */
-export function OfflinePopup({ summary, nightOven, onCollect }: { summary: GiftSummary; nightOven: number; onCollect: () => void }) {
+export function OfflinePopup({ summary, nightOven, onCollect, onUpgrade }: { summary: GiftSummary; nightOven: number; onCollect: () => void; onUpgrade?: () => void }) {
   const view = useMemo(() => offlineGiftView(summary, nightOven), [summary, nightOven]);
   const [pop] = useState(() => new Animated.Value(0.7));
   const [door] = useState(() => new Animated.Value(0));
   const [fade] = useState(() => new Animated.Value(0));
+  const [shake] = useState(() => new Animated.Value(0));
   const [opened, setOpened] = useState(false);
   const [shown, setShown] = useState(0);
   const ovenRef = useRef<ComponentRef<typeof View>>(null);
@@ -467,6 +522,22 @@ export function OfflinePopup({ summary, nightOven, onCollect }: { summary: GiftS
       if (t.close) clearTimeout(t.close);
     };
   }, [pop]);
+  // a full oven rattles until it is opened
+  const rattle = view.full && !opened;
+  useEffect(() => {
+    if (!rattle) {
+      shake.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(500),
+        ...[1, -1, 0.8, -0.8, 0].map((v) => Animated.timing(shake, { toValue: v, duration: 70, useNativeDriver: native })),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [rattle, shake]);
   const close = () => {
     const t = timers.current;
     if (t.closed) return;
@@ -496,18 +567,25 @@ export function OfflinePopup({ summary, nightOven, onCollect }: { summary: GiftS
       t.close = setTimeout(close, GIFT.autoCloseMs);
     }, 33);
   };
+  const upgrade = () => {
+    close();
+    onUpgrade?.();
+  };
   const doorScale = door.interpolate({ inputRange: [0, 1], outputRange: [1, 0.12] });
   const doorShift = door.interpolate({ inputRange: [0, 1], outputRange: [0, -DOOR.w * 0.44] });
+  const tilt = shake.interpolate({ inputRange: [-1, 1], outputRange: ['-3deg', '3deg'] });
   return (
     <View style={styles.overlay}>
       <Animated.View style={[styles.modal, { transform: [{ scale: pop }] }]}>
         <Text style={styles.modalHead}>{view.title}</Text>
-        <View ref={ovenRef} style={styles.ovenBox} testID="offline-oven" accessibilityLabel={`Nonna's night oven, ${view.fillText}`}>
-          <OvenArt glow={view.step} open={opened} />
-          <Animated.View pointerEvents="none" style={[styles.ovenDoor, { transform: [{ translateX: doorShift }, { scaleX: doorScale }] }]}>
-            <OvenDoor glow={view.step} />
-          </Animated.View>
-        </View>
+        <Animated.View style={{ transform: [{ rotate: tilt }] }}>
+          <View ref={ovenRef} style={styles.ovenBox} testID="offline-oven" accessibilityLabel={`Nonna's night oven, ${view.fillText}`}>
+            <OvenArt glow={view.step} open={opened} />
+            <Animated.View pointerEvents="none" style={[styles.ovenDoor, { transform: [{ translateX: doorShift }, { scaleX: doorScale }] }]}>
+              <OvenDoor glow={view.step} />
+            </Animated.View>
+          </View>
+        </Animated.View>
         <View style={styles.meter}>
           <View style={[styles.meterFill, { width: `${view.step * 5}%` }]} />
         </View>
@@ -515,7 +593,19 @@ export function OfflinePopup({ summary, nightOven, onCollect }: { summary: GiftS
           {view.fillText}
         </Text>
         {view.fullLine ? <Text style={styles.giftLine}>{view.fullLine}</Text> : null}
-        {view.upgradeLine ? <Text style={[styles.giftLine, { color: C.tomato }]}>{view.upgradeLine}</Text> : null}
+        {view.upgradeLine ? (
+          onUpgrade ? (
+            <Pressable testID="gift-upgrade" onPress={upgrade} style={styles.upgradeBtn} accessibilityRole="button">
+              <MoonIcon size={18} />
+              <Text style={styles.upgradeText}>{view.upgradeLine}</Text>
+            </Pressable>
+          ) : (
+            <Text style={styles.giftLine}>{view.upgradeLine}</Text>
+          )
+        ) : null}
+        <Text style={[styles.giftLine, { fontFamily: F.regular, color: C.inkSoft }]} testID="offline-news">
+          {view.news}
+        </Text>
         <Text style={[styles.modalCash, !opened && { opacity: 0 }]} testID="offline-total">
           +{money(shown)}
         </Text>
@@ -530,7 +620,6 @@ export function OfflinePopup({ summary, nightOven, onCollect }: { summary: GiftS
                 <Text style={[styles.small, { color: C.basilDark, fontFamily: F.semi }]}>+{money(b.earned)}</Text>
               </View>
             ))}
-            <Text style={[styles.small, { fontFamily: F.semi, textAlign: 'center', marginTop: 4 }]}>{view.news}</Text>
           </Animated.View>
         ) : null}
         <View style={{ alignSelf: 'stretch' }}>
@@ -550,19 +639,35 @@ export function OfflinePopup({ summary, nightOven, onCollect }: { summary: GiftS
   );
 }
 
-/** Nonna's night oven, explained: what the away meter is, the tiers, and the next one's price or lock reason (opened from the HUD chip). */
+/** Nonna's night oven, explained: what the away meter is, the tiers, and the next one's price or lock reason (opened from the HUD chip or the gift). */
 export function NightOvenSheet({ view, onBuy, onClose }: { view: NightOvenView; onBuy: () => boolean; onClose: () => void }) {
   const next = view.next;
   return (
     <View style={styles.overlay} testID="night-oven-sheet">
       <View style={styles.modal}>
-        <Text style={styles.modalHead}>{view.chip}</Text>
+        <View style={styles.sheetHead}>
+          <Portrait id="nonna-rosa" mood="happy" size={44} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.sheetTitle}>Nonna’s night oven</Text>
+            <View style={styles.sheetSub}>
+              <MoonIcon size={16} />
+              <Text style={styles.small}>{`Holds ${view.hours}`}</Text>
+            </View>
+          </View>
+        </View>
         <Text style={[styles.small, { textAlign: 'center' }]}>{view.body}</Text>
+        <Text style={[styles.small, { textAlign: 'center', fontFamily: F.semi, color: C.ink }]} testID="night-oven-leave">
+          {view.leaveLine}
+        </Text>
         <View style={{ alignSelf: 'stretch', gap: 4, marginVertical: 6 }}>
           {view.tiers.map((t) => (
             <View key={t.tier} style={[styles.tierRow, t.state === 'owned' && styles.tierOwned]}>
-              <Text style={styles.tierHours}>{`🌙 ${t.hours}`}</Text>
-              <Text style={[styles.small, { flexShrink: 1, textAlign: 'right' }, t.state === 'next' && { color: C.basilDark, fontFamily: F.semi }]}>{t.note}</Text>
+              <View style={styles.sheetSub}>
+                <MoonIcon size={16} />
+                <Text style={styles.tierHours}>{t.hours}</Text>
+              </View>
+              {/* the price is basil only when you can buy it; otherwise ink, like any price you can't pay yet */}
+              <Text style={[styles.small, { flexShrink: 1, textAlign: 'right', color: C.ink }, t.state === 'next' && !!next?.canBuy && { color: C.basilDark, fontFamily: F.semi }]}>{t.note}</Text>
             </View>
           ))}
         </View>
@@ -620,9 +725,8 @@ const styles = StyleSheet.create({
   ring: { position: 'absolute', left: 0, top: 0 },
   goalRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   goalFlex: { flex: 1 },
-  ovenChip: { height: 44, minWidth: 64, alignItems: 'center', justifyContent: 'center' },
-  ovenPill: { height: 30, minWidth: 64, borderRadius: 15, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.22)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)' },
-  ovenPillText: { fontFamily: F.bold, fontSize: 13, color: '#fff' },
+  ovenChip: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
+  ovenPillText: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: '#fff' },
   hudIconSmall: { position: 'absolute', right: -4, top: -4, width: 26, height: 26, borderRadius: 13, backgroundColor: C.tomatoDark, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   giftDot: { position: 'absolute', top: -1, right: -1, width: 16, height: 16, borderRadius: 8, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato },
@@ -676,9 +780,9 @@ const styles = StyleSheet.create({
   modal: { backgroundColor: C.bg, borderRadius: 24, borderWidth: 4, borderColor: C.ink, padding: 22, alignItems: 'center', width: '100%', maxWidth: 360, gap: 8 },
   modalHead: { fontFamily: F.bold, fontSize: 24, color: C.ink },
   modalEmoji: { fontSize: 44 },
-  ovenBox: { width: 160, height: 128, marginTop: 2 },
+  ovenBox: { width: OVEN_VB.w, height: OVEN_VB.h },
   ovenArt: { position: 'absolute', left: 0, top: 0 },
-  ovenDoor: { position: 'absolute', left: DOOR.x, top: DOOR.y, width: DOOR.w, height: DOOR.h },
+  ovenDoor: { position: 'absolute', left: DOOR.x, top: DOOR.y - OVEN_VB.top, width: DOOR.w, height: DOOR.h },
   meter: { alignSelf: 'stretch', height: 16, borderRadius: 8, backgroundColor: '#F1E4D3', borderWidth: 2, borderColor: C.ink, overflow: 'hidden' },
   meterFill: { height: '100%', backgroundColor: '#FF9A2E' },
   meterText: { fontFamily: F.bold, fontSize: 16, color: C.ink },
@@ -686,6 +790,11 @@ const styles = StyleSheet.create({
   tierRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, backgroundColor: '#fff', borderWidth: 2, borderColor: C.cheeseDark },
   tierOwned: { backgroundColor: '#FFF4E0' },
   tierHours: { fontFamily: F.bold, fontSize: 15, color: C.ink },
+  upgradeBtn: { alignSelf: 'stretch', minHeight: 44, borderRadius: 14, borderWidth: 2, borderColor: C.ink, backgroundColor: C.cheese, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 12 },
+  upgradeText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
+  sheetHead: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'stretch' },
+  sheetTitle: { fontFamily: F.bold, fontSize: 22, color: C.ink },
+  sheetSub: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   sheetClose: { alignSelf: 'stretch', height: 44, borderRadius: 12, borderWidth: 2, borderColor: C.ink, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   closeText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   modalCash: { fontFamily: F.bold, fontSize: 40, color: C.basilDark, marginBottom: 6 },

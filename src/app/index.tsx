@@ -12,7 +12,7 @@ import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
 import { coachStep } from '@/engine/tutorial';
-import { BuyButton, type Goal, haptic, Hud, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
+import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { aOrAn } from '@/components/goal-model';
 import { bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
@@ -27,7 +27,7 @@ import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEA
 import { APP_VERSION } from '@/content/version';
 import { money, pizzas, rate } from '@/engine/format';
 import * as G from '@/engine/game';
-import { nightOvenChip, nightOvenView } from '@/engine/night-oven';
+import { hoursText, nightOvenView } from '@/engine/night-oven';
 import * as R from '@/engine/rewards';
 import { nextSceneTeaser } from '@/engine/teaser';
 import type { Station } from '@/engine/pipeline';
@@ -291,7 +291,7 @@ export default function GameScreen() {
         tasksBadge={hud.badge}
         onGift={rewardsOn ? onGift : undefined}
         giftDot={hud.giftDot}
-        ovenText={rewardsOn ? nightOvenChip(game) : undefined}
+        ovenText={rewardsOn ? hoursText(G.offlineCapOf(game)) : undefined}
         onOven={rewardsOn ? onOven : undefined}
         scrapRing={teaser.kind === 'complete' ? undefined : teaser.step}
         halo={coach?.target === 'cash' ? 'cash' : coach?.target === 'goal' ? 'goal' : null} />
@@ -395,7 +395,7 @@ export default function GameScreen() {
                 {ovenView && (
                   <StationCard
                     testID="buy-night-oven"
-                    icon="🌙"
+                    icon={<MoonIcon size={26} />}
                     title={ovenView.next ? ovenView.next.title : `Night oven: holds ${ovenView.hours}`}
                     detail={ovenView.next ? ovenView.next.lock ?? `Nonna keeps baking while you're away · now ${ovenView.hours}` : 'Biggest it gets'}
                     cost={ovenView.next && !ovenView.next.lock ? ovenView.next.price : null}
@@ -443,7 +443,7 @@ export default function GameScreen() {
       <CoinLayer />
       {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
       {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}
-      {offline && <OfflinePopup summary={offline} nightOven={game.nightOven} onCollect={dismissOffline} />}
+      {offline && <OfflinePopup summary={offline} nightOven={game.nightOven} onCollect={dismissOffline} onUpgrade={onOven} />}
     </View>
   );
 }

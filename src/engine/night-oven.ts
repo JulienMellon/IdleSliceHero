@@ -50,6 +50,8 @@ export interface NightOvenView {
   hours: string;
   /** The info sheet's text. */
   body: string;
+  /** "Leave now and it's full in 4 h." */
+  leaveLine: string;
   tiers: NightOvenTier[];
   /** The next tier on offer (the drawer card and the sheet's buy button), or null when maxed. */
   next: null | { tier: number; title: string; hours: string; price: number; lock: string | null; canBuy: boolean };
@@ -76,6 +78,7 @@ export function nightOvenView(s: GameState): NightOvenView {
     chip: nightOvenChip(s),
     hours,
     body: `While you're away, Nonna's night oven keeps baking for up to ${hours}. Come back before it's full!`,
+    leaveLine: `Leave now and it's full in ${hours}.`,
     tiers,
     next,
   };
