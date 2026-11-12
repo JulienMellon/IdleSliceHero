@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.13      # label of the last screenshot set that passed verify
 codecritic_range_start: 5d82004
 cards:                 # todo | running | done | partial | blocked
-  B3: partial
+  B3: done
   R3: done
   C3: running
   K0a: todo
@@ -29,3 +29,4 @@ next: v5.14 wave 1 (B3 + R3). All spec exports are in the repo.
 - 2026-11-12 Spec exports added: docs/story/STORY-v4-final.md, docs/specs/PRESTIGE.md, both privacy docs. Nothing missing.
 - 2026-11-12 v5.14 wave 1: R3 done (after npm ci); B3 running.
 - 2026-11-12 B3 partial (checks pending, pulse 'cheer'); wave 2 C3 launched.
+- 2026-11-12 B3 done (tsc clean, 346 tests pass).
