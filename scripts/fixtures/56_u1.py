@@ -48,13 +48,21 @@ def attack_state(shop_id, **kw):
     return {"counterattack": st}
 
 
-def skip_boston(page):
-    """The Boston card opens once after the finale: tap it away."""
+def skip_boston(page, wait=4000):
+    """The Boston card opens once after the finale: tap it away. It covers the whole screen, so do this BEFORE settle(), which
+    needs to click the gift calendar's close button underneath."""
     try:
-        tid(page, "soon-card").wait_for(timeout=4000)
+        tid(page, "soon-card").wait_for(timeout=wait)
         tid(page, "soon-card").click(); time.sleep(0.6)
     except Exception:
         pass
+
+
+def ready(page):
+    """Get a post-finale save to the game screen: the Boston card first (it sits over everything), then the usual settle."""
+    skip_boston(page, 3000)
+    settle(page, 2.0)
+    skip_boston(page, 500)
 
 
 def clock_page(browser, save, when):
@@ -96,9 +104,11 @@ def run(ctx):
 
     # 58 then 56: the Boston card opens by itself on the first launch after the finale; behind it, the goal bar reads "Mastery n/18"
     try:
-        page = seeded_page(browser, endgame_save()); settle(page, 3.0)
+        page = seeded_page(browser, endgame_save())
+        tid(page, "soon-card").wait_for(timeout=6000)
         shot(page, "58-boston-card", 1.0)
         skip_boston(page)
+        settle(page, 2.0)
         shot(page, "56-post-story-goal", 0.6)
     except Exception as e:
         report["errors"].append(f"U1 56/58 failed: {e}")
@@ -106,7 +116,7 @@ def run(ctx):
     # 57: the City screen with the stars on every pin, the Boston tile, and (in this save) an attack on Waterfront
     try:
         sv = endgame_save(x=attack_state("waterfront"))
-        page = seeded_page(browser, sv); settle(page, 3.0); skip_boston(page)
+        page = seeded_page(browser, sv); ready(page)
         tid(page, "open-city").click(); time.sleep(1.0)
         shot(page, "57-city-stars-boston", 0.8)
         shot(page, "59b-attack-marked-tile", 0.1)
@@ -115,7 +125,7 @@ def run(ctx):
 
     # 59: the attack banner on the Suburbs, naming the shop, with its Defend button
     try:
-        page = seeded_page(browser, endgame_save(x=attack_state("suburbs"))); settle(page, 3.0); skip_boston(page)
+        page = seeded_page(browser, endgame_save(x=attack_state("suburbs"))); ready(page)
         shot(page, "59-attack-banner", 0.8)
     except Exception as e:
         report["errors"].append(f"U1 59 failed: {e}")
@@ -124,7 +134,7 @@ def run(ctx):
     try:
         sold = 5.1e6
         ch = {"target": 2900, "startSold": int(sold - 580), "left": 150}
-        page = seeded_page(browser, endgame_save(x=attack_state("suburbs", challenge=ch))); settle(page, 3.0); skip_boston(page)
+        page = seeded_page(browser, endgame_save(x=attack_state("suburbs", challenge=ch))); ready(page)
         shot(page, "60-challenge-behind", 0.8)
     except Exception as e:
         report["errors"].append(f"U1 60 failed: {e}")
@@ -133,17 +143,17 @@ def run(ctx):
     try:
         sold = 5.1e6
         ch = {"target": 2900, "startSold": int(sold - 2897), "left": 40}
-        page = seeded_page(browser, endgame_save(x=attack_state("suburbs", challenge=ch))); settle(page, 3.0); skip_boston(page)
+        page = seeded_page(browser, endgame_save(x=attack_state("suburbs", challenge=ch))); ready(page)
         shot(page, "61-challenge-won", 1.5)
     except Exception as e:
         report["errors"].append(f"U1 61 failed: {e}")
 
     # 62: the hour before Friday Night Rush (the chip), then while it runs (the banner)
     try:
-        c, page = clock_page(browser, endgame_save(), next_weekday(4, 16, 30)); settle(page, 3.0); skip_boston(page)
+        c, page = clock_page(browser, endgame_save(), next_weekday(4, 16, 30)); ready(page)
         shot(page, "62-event-countdown-chip", 0.8)
         c.close()
-        c, page = clock_page(browser, endgame_save(), next_weekday(4, 18, 48)); settle(page, 3.0); skip_boston(page)
+        c, page = clock_page(browser, endgame_save(), next_weekday(4, 18, 48)); ready(page)
         shot(page, "62b-event-banner", 0.8)
         c.close()
     except Exception as e:
@@ -171,7 +181,7 @@ def run(ctx):
     try:
         rw = {"giftShownDay": day_str(), "diamonds": 340, "cosmetics": ["oven-gold", "scooter-mint"], "worn": ["oven-gold"],
               "boosters": [{"mult": 2, "seconds": 900}, {"mult": 2, "seconds": 3600}]}
-        page = seeded_page(browser, endgame_save(rewards=rw)); settle(page, 3.0); skip_boston(page)
+        page = seeded_page(browser, endgame_save(rewards=rw)); ready(page)
         tid(page, "shop-chip").click(); time.sleep(0.8)
         shot(page, "64-vanity-tab", 0.8)
         tid(page, "shop-tab-1").click()
@@ -182,7 +192,7 @@ def run(ctx):
     # 65: the sidewalk on MAX: each card shows the total price and the levels it buys
     try:
         sv = endgame_save(cash=8.4e12, active="uptown")
-        page = seeded_page(browser, sv); settle(page, 3.0); skip_boston(page)
+        page = seeded_page(browser, sv); ready(page)
         tid(page, "buy-amount-max").click()
         shot(page, "65-sidewalk-max", 0.8)
     except Exception as e:
