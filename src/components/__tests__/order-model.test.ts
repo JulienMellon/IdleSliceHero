@@ -1,9 +1,9 @@
 /// <reference types="jest" />
-import { ORDER, ORDER_FAIL_LINE } from '../../content/hooks';
+import { ORDER, ORDER_CAST, ORDER_FAIL_LINE, ORDER_VIEW } from '../../content/hooks';
 import { money } from '../../engine/format';
 import * as G from '../../engine/game';
 import * as O from '../../engine/orders';
-import { chipPhase, chipView, clockText, progressText } from '../order-model';
+import { behindPace, chipPhase, chipView, clockText, offerExpiry, progressText } from '../order-model';
 
 const T0 = 1_700_000_000_000;
 const ready = (): G.GameState => {
@@ -56,5 +56,38 @@ describe('the order chip', () => {
 
   test('the clock reads m:ss and rounds up', () => {
     expect([120, 119.2, 61, 59.01, 0.2, 0, -3].map(clockText)).toEqual(['2:00', '2:00', '1:01', '1:00', '0:01', '0:00', '0:00']);
+  });
+});
+
+describe('v5.14 fix round (D441, D442, D443)', () => {
+  test('D441: the offer carries its reward ("+$X") and a draining expiry 1 → 0', () => {
+    const v = chipView(withOffer())!;
+    expect(v.reward).toMatch(/^\+\$/);
+    expect(v.expiry).toBe(1);
+    const half = chipView({ ...withOffer(), order: { ...withOffer().order, offer: { hood: 'suburbs', target: 40, left: ORDER.offerWaitSeconds / 2, variant: 0 } } })!;
+    expect(half.expiry).toBeCloseTo(0.5, 6);
+    expect([45, 22.5, 0, -1, 90].map(offerExpiry)).toEqual([1, 0.5, 0, 0, 1]);
+  });
+
+  test('D442: "tap to rush!" when the fill is behind the clock, not at the start or when ahead', () => {
+    expect(behindPace(0, 40, ORDER.windowSeconds)).toBe(false);
+    // 30 s used of 120 (25%) with 5 of 40 sold (12.5%): behind
+    expect(behindPace(5, 40, 90)).toBe(true);
+    // on pace, or ahead
+    expect(behindPace(10, 40, 90)).toBe(false);
+    expect(behindPace(30, 40, 90)).toBe(false);
+    // inside the slack
+    expect(behindPace(9, 40, 90)).toBe(false);
+    expect(ORDER_VIEW.paceSlack).toBeGreaterThan(0);
+    let s = O.acceptOrder(withOffer());
+    s = { ...s, order: { ...s.order, active: { ...s.order.active!, left: 60 } } };
+    expect(chipView(s)!.behind).toBe(true);
+    s = { ...s, shops: { ...s.shops, suburbs: { ...s.shops.suburbs, sold: s.shops.suburbs.sold + 30 } } };
+    expect(chipView(s)!.behind).toBe(false);
+  });
+
+  test('D443: Marisol thanks the player as "sailor", not with her own title', () => {
+    expect(ORDER_CAST.waterfront.thanks.join(' ')).not.toMatch(/Captain/);
+    expect(ORDER_CAST.waterfront.thanks[1]).toBe('“Well done, sailor. Even the gulls approve.”');
   });
 });

@@ -3,15 +3,14 @@
 import { memo } from 'react';
 import { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
-import { money } from '../../engine/format';
-import { LINE, type Departure } from '../../engine/pipeline';
+import type { Departure } from '../../engine/pipeline';
 import { F } from '../../theme';
-import { BADGE_R, COIN_FLIGHT, popModels, popPlace, popWidth, POP_H, type BadgeTone, type Rect as ScreenRect } from './stations';
+import { BADGE_R, placePops, POP_H, type BadgeTone, type Rect as ScreenRect } from './stations';
 import { HeadFace } from './head-face';
 import type { HeadKind } from '../../content/tuning';
 import { INK, SCENE_W } from './projection';
 import { CONFETTI, CONFETTI_FRAMES, CONFETTI_OPACITY, confettiFills } from './ladder';
-import { MILE_R, mileLevelSize } from './moments';
+import { MILE_R, bubbleWidth, bubbleX, mileLevelSize } from './moments';
 
 const BASIL = '#4CAF50';
 const TOMATO = '#E5483A';
@@ -98,25 +97,13 @@ type Pt = [number, number];
  * register for a walk-in with nobody to hand it to), drifting up and fading over its last 0.2 s before it becomes
  * a coin (the coin itself flies in the screen overlay, `CoinLayer`). Nothing is mounted at opacity 0 (M38).
  */
-export function DeparturePops({ deps, left, anchor, register, keepOff = [] }: { deps: readonly Departure[]; left: (d: Departure) => number; anchor: (d: Departure) => Pt | null; register: Pt; /** Rects a pop must not cover: the sidewalk pills (G91). */ keepOff?: readonly ScreenRect[] }) {
+export function DeparturePops({ deps, left, anchor, register, keepOff = [] }: { deps: readonly Departure[]; left: (d: Departure) => number; anchor: (d: Departure) => Pt | null; register: Pt; /** Rects a pop must be lifted clear of (none in the scene since D439: the sidewalk pills fade instead). */ keepOff?: readonly ScreenRect[] }) {
   if (deps.length === 0) return null;
-  const shown = popModels(deps, left);
+  // beside the carrier's head, away from the cashiers (D368), kept on screen (stations.ts `placePops`, shared with the pills that fade for a pop)
+  const shown = placePops(deps, left, anchor, register, SCENE_W, keepOff);
   return (
     <G>
-      {shown.map(({ dep: d, n, cash }) => {
-        const l = left(d);
-        const span = d.kind === 'driver' ? LINE.departSeconds - COIN_FLIGHT : LINE.handoffSeconds;
-        const rest = d.kind === 'driver' ? l - COIN_FLIGHT : l;
-        const k = Math.min(1, Math.max(0, 1 - rest / span));
-        // D410: a walk-in's pop hangs over the register, not over their own head (it used to cover the face of the one at the counter)
-        const walkin = d.kind === 'walkin';
-        const at = walkin ? register : anchor(d) ?? register;
-        const rideAlong = !walkin && !!anchor(d);
-        const text = n > 1 ? `×${n} · +${money(cash)}` : `+${money(cash)}`;
-        // D379: a pill never grows past 80 pt (11 pt text), however long the "×n · +$X" is
-        const w = popWidth(text);
-        // beside the carrier's head, away from the cashiers (D368), kept on screen, and lifted clear of the waiting pill (G91)
-        const { x: px, y: py } = popPlace(at, w, { walkin, rideAlong, k, keepOff, sceneW: SCENE_W });
+      {shown.map(({ dep: d, text, w, x: px, y: py, rest }) => {
         const fade = rest < 0.2 ? Math.max(0, rest / 0.2) : 1;
         if (fade <= 0) return null;
         return (
@@ -136,9 +123,9 @@ export function DeparturePops({ deps, left, anchor, register, keepOff = [] }: { 
  * Speech pill under a station's badge: a newly hired head's hello, or (tone "refusal") why a tap didn't start.
  * Clamped to the screen like the pops (C77); the tail points up at the badge.
  */
-export const HireBubble = memo(function HireBubble({ x, y, text, tone = 'hire' }: { x: number; y: number; text: string; tone?: 'hire' | 'refusal' }) {
-  const w = text.length * 5.6 + 16;
-  const px = Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, x));
+export const HireBubble = memo(function HireBubble({ x, y, text, wall0, wall1, tone = 'hire' }: { x: number; y: number; text: string; /** The side walls' inner edges (moments.ts `bubbleWalls`): the pill stays between them (D440). */ wall0: number; wall1: number; tone?: 'hire' | 'refusal' }) {
+  const w = bubbleWidth(text);
+  const px = bubbleX(x, w, { x0: wall0, x1: wall1 });
   const fill = tone === 'refusal' ? DISC : '#fff';
   return (
     <G transform={`translate(${px} ${y})`}>

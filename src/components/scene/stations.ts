@@ -1,7 +1,7 @@
 // Where the three kitchen stations are on screen: tap targets and the badge row (playtest 2, v4.8).
 // Pure (no React): hit-testing and badge placement are unit-tested in node.
-import { pizzas } from '../../engine/format';
-import type { Line, Station } from '../../engine/pipeline';
+import { money, pizzas } from '../../engine/format';
+import { LINE, type Line, type Station } from '../../engine/pipeline';
 import { D, FRONT_TOP, P } from './projection';
 import type { Layout } from './layout';
 
@@ -211,6 +211,46 @@ export function popPlace(at: [number, number], w: number, opts: { walkin: boolea
   }
   return { x, y, rect: { x0: x - w / 2, x1: x + w / 2, y0: y - POP_H, y1: y } };
 }
+
+/** One pop as the scene draws it: its text and pill, where it sits (centre x, bottom y), how far through its drift it is, and the screen rect it covers. */
+export interface PlacedPop<D> {
+  dep: D;
+  text: string;
+  w: number;
+  x: number;
+  y: number;
+  /** Seconds the pop has left to show (a driver's pop ends where its coin launches). */
+  rest: number;
+  rect: Rect;
+}
+
+/**
+ * Every pop on screen this frame, placed (D439): one rule for the drawing (kitchen-hud `DeparturePops`) and for the pills that fade while one is
+ * up (storefront), so they cannot disagree. Each rides beside its carrier's head (`anchor`; a walk-in's hangs over the register); none is lifted
+ * any more: a pop that would land on a sidewalk pill used to jump above it and sit across the faces behind (a 45 pt band), so the pill gives way instead
+ * (`popsCover`). `keepOff` is still honoured for a caller that wants a pop lifted.
+ */
+export function placePops<D extends { kind: 'driver' | 'walkin'; n: number; cash: number }>(deps: readonly D[], left: (d: D) => number, anchor: (d: D) => [number, number] | null, register: [number, number], sceneW: number, keepOff: readonly Rect[] = []): PlacedPop<D>[] {
+  if (deps.length === 0) return [];
+  return popModels(deps, left).map(({ dep: d, n, cash }) => {
+    const l = left(d);
+    const span = d.kind === 'driver' ? LINE.departSeconds - COIN_FLIGHT : LINE.handoffSeconds;
+    const rest = d.kind === 'driver' ? l - COIN_FLIGHT : l;
+    const k = Math.min(1, Math.max(0, 1 - rest / span));
+    // D410: a walk-in's pop hangs over the register, not over their own head (it used to cover the face of the one at the counter)
+    const walkin = d.kind === 'walkin';
+    const carrier = anchor(d);
+    const at = walkin ? register : carrier ?? register;
+    const text = n > 1 ? `×${n} · +${money(cash)}` : `+${money(cash)}`;
+    // D379: a pill never grows past 80 pt (11 pt text), however long the "×n · +$X" is
+    const w = popWidth(text);
+    const { x, y, rect } = popPlace(at, w, { walkin, rideAlong: !walkin && !!carrier, k, keepOff, sceneW });
+    return { dep: d, text, w, x, y, rest, rect };
+  });
+}
+
+/** True when any of the pops' rects meets `pill` (screen rects): that pill fades while the pop is up (D439). */
+export const popsCover = (pops: readonly Rect[], pill: Rect): boolean => pops.some((r) => r.x0 < pill.x1 && r.x1 > pill.x0 && r.y0 < pill.y1 && r.y1 > pill.y0);
 
 /** The counter staff's faces (scene units), for keeping pops off them. */
 export function staffFaces(lay: Layout): Rect[] {

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DISPLAY_NAMES, Portrait } from '@/components/portrait';
 import { HOME_SCENES } from '@/content/scenes/home';
 import { NEIGHBORHOODS } from '@/content/tuning';
+import { nextSceneTeaser } from '@/engine/teaser';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
 
@@ -14,6 +15,8 @@ export default function Scrapbook() {
   const seen = useGame((s) => s.game.seenScenes);
   const replay = useGame((s) => s.replayScene);
   const markViewed = useGame((s) => s.markScrapbookViewed);
+  // one line on whose story is next and what it waits for (a string, so the screen re-renders only when it changes)
+  const teaser = useGame((s) => nextSceneTeaser(s.game).text);
   useEffect(() => {
     markViewed();
   }, [markViewed, seen.length]);
@@ -21,12 +24,17 @@ export default function Scrapbook() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back} testID="back">
-          <Text style={styles.backText}>‹ Back</Text>
-        </Pressable>
-        <Text style={styles.title}>Scrapbook</Text>
-        <Text style={styles.count}>
-          {seen.length}/{HOME_SCENES.length}
+        <View style={styles.headRow}>
+          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back} testID="back">
+            <Text style={styles.backText}>‹ Back</Text>
+          </Pressable>
+          <Text style={styles.title}>Scrapbook</Text>
+          <Text style={styles.count}>
+            {seen.length}/{HOME_SCENES.length}
+          </Text>
+        </View>
+        <Text style={styles.teaser} testID="scrapbook-teaser">
+          {teaser}
         </Text>
       </View>
       <ScrollView contentContainerStyle={{ padding: 14, gap: 16, paddingBottom: insets.bottom + 24 }}>
@@ -67,7 +75,9 @@ export default function Scrapbook() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark },
+  header: { paddingHorizontal: 14, paddingVertical: 10, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark, gap: 4 },
+  headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  teaser: { fontFamily: F.semi, fontSize: 14, color: '#FFE7C2', textAlign: 'center' },
   back: { width: 70 },
   backText: { fontFamily: F.bold, color: '#fff', fontSize: 18 },
   title: { fontFamily: F.bold, color: '#fff', fontSize: 24 },

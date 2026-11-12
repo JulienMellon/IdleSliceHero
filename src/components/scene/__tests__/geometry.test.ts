@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import { bodyBy, boxOvenGeom, domeGeom, flameBox, isBoxOven, limbGeom, ovenFrame } from '../geometry';
+import { CHEER_HAND, bodyBy, boxOvenGeom, domeGeom, flameBox, isBoxOven, limbGeom, ovenFrame } from '../geometry';
 import { layout } from '../layout';
 import type { Act, Kind } from '../looks';
 import { bobFor } from '../quantise';
@@ -48,3 +48,23 @@ describe("limbs hang from the body's hip (T15)", () => {
           }
   });
 });
+
+describe('the cheer pose (D444)', () => {
+  test('both hands go above the head, one either side of it, for every cook at every walk and arm phase', () => {
+    for (const tall of [-2, 0, 3])
+      for (const arm of [0, 1.5, 3]) {
+        const g = limbGeom({ kind: 'cook', act: 'cheer', carry: false, carryWalk: false, step: 0, arm, tall });
+        const headTop = g.by - 9 - 8; // the head's centre is 9 above the shoulders, and it is ~8 tall above that
+        expect(g.hand[1]).toBeLessThan(headTop);
+        expect(g.backHand[1]).toBeLessThan(headTop);
+        expect(g.hand[0]).toBeGreaterThan(0);
+        expect(g.backHand[0]).toBeLessThan(0);
+        expect(g.hand[0] + g.backHand[0]).toBeCloseTo(0, 6); // a mirrored pair
+      }
+    expect(CHEER_HAND(-39)[1]).toBeLessThan(-39);
+    // the working poses are untouched
+    const toss = limbGeom({ kind: 'cook', act: 'toss', carry: false, carryWalk: false, step: 0, arm: 0, tall: 0 });
+    expect(toss.backHand[1]).toBeGreaterThan(toss.hand[1]);
+  });
+});
+

@@ -16,7 +16,7 @@ import type { NeighborhoodId } from '../content/types';
 import * as Game from '../engine/game';
 import { useGame } from '../store/game-store';
 import { emitAudio } from '../audio/bus';
-import { emitPayout } from './pulse-bus';
+import { CHEER_SECONDS, emitPayout, onCheer } from './pulse-bus';
 import { Backdrop } from './scene/background';
 import { useClock } from './scene/clock';
 import { SceneDefs } from './scene/defs';
@@ -35,16 +35,16 @@ import {
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, StreetProp } from './scene/room';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, sidewalkItems, Street } from './scene/street';
 import { buildCast, sidewalkOf } from './scene/cast';
-import { waitingText } from './scene/waiting';
+import { queueLabel, waitingText } from './scene/waiting';
 import { hireOnSidewalk } from './sidewalk-model';
 import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEADS } from '../content/tuning';
 import { BadgeRail, DeparturePops, HireBubble, MilestoneBadge, RushPill, StationBadge, rushPillWidth } from './scene/kitchen-hud';
-import { CHIP_ROW_HALF, MILE_SECONDS, ROW_AIR, STATION_LABEL, chipAt, hidesWaitingPill, hudOpacity, mileAnchor, mileOpacity, mileScale, mileSpeechY, mileSub, stationHatTop } from './scene/moments';
+import { CHIP_ROW_HALF, MILE_SECONDS, ROW_AIR, STATION_LABEL, bubbleWalls, chipAt, hidesWaitingPill, hudOpacity, mileAnchor, mileOpacity, mileScale, mileSpeechY, mileSub, stationHatTop } from './scene/moments';
 import { rushPill } from './rush-model';
 import { emptyCrew, stepCrew, type CrewState } from './scene/crew';
 import { emitCoin } from './pulse-bus';
-import { BADGE_R, COIN_FLIGHT, badgeAt, badgeModels, badgeRowY, badgeXs, MIN_TAP_PT, spotlightCutout, stationAt, stationRects, tutorialHand } from './scene/stations';
+import { BADGE_R, COIN_FLIGHT, badgeAt, badgeModels, badgeRowY, badgeXs, MIN_TAP_PT, placePops, popsCover, spotlightCutout, stationAt, stationRects, tutorialHand } from './scene/stations';
 
 export { CURB_Y, SCENE_H, SCENE_W, sceneFit } from './scene/projection';
 
@@ -127,6 +127,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     wasPaused: false,
     rushAt: -9,
     hintAt: -9,
+    /** Wall seconds the `cheer` pulse last fired (pulse-bus.ts, D444). */
+    cheerAt: -9,
     refusal: null as null | { st: Station; at: number; text: string },
     heads: null as null | Record<Station, boolean>,
     hires: [] as { st: Station; text: string }[],
@@ -195,16 +197,19 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const slowest = useMemo(() => Game.tiedStages(shop, game.vehicle), [key]);
   // who waits outside: hungry diners and idle drivers (steady state, so only while the shop runs); the patio's tables
   const queue = running ? Game.queueSizes(shop, game.vehicle) : undefined;
-  const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue });
+  const cheer = Date.now() / 1000 - m0.cheerAt < CHEER_SECONDS;
+  const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cheer });
   const side = sidewalkOf(lay, crew, queue);
-  // the pills over the sidewalk queues; the drivers' one hides while a milestone badge and its confetti are up (D429), and pops keep off both (G91)
-  const waitText = side.waiting > 0 && !(m0.mile && hidesWaitingPill(clock - m0.mile.at)) ? waitingText(side.waiting, slowest) : null;
-  const moreText = side.more > 0 ? `+${side.more}` : null;
-  const pillRects = [...(waitText ? [waitTagRect(lay, waitText)] : []), ...(moreText ? [moreTagRect(lay, moreText)] : [])];
   // each pop rides over the figure carrying its departure (one Map reused per mount, M48)
   const carriers = m0.carriers;
   carriers.clear();
   for (const c of cast) if (c.deps) for (const dep of c.deps) carriers.set(dep, P(c.props.x, c.props.y, 52));
+  // the pills over the sidewalk queues; the drivers' one hides while a milestone badge and its confetti are up (D429), and either fades while a "+$" pop would land on it (D439: the pop used to lift above the pill and sit across the faces)
+  const popRects = placePops(line.departures, (d) => Math.max(0, d.left - tickSince), (d) => carriers.get(d.id) ?? null, P(lay.staff[0] + 12, 70, 78), SCENE_W).map((q) => q.rect);
+  const waitRaw = side.waiting > 0 && !(m0.mile && hidesWaitingPill(clock - m0.mile.at)) ? waitingText(side.waiting, slowest) : null;
+  const waitText = waitRaw && !popsCover(popRects, waitTagRect(lay, waitRaw)) ? waitRaw : null;
+  const moreRaw = side.more > 0 ? queueLabel(side.more, side.diners) : null;
+  const moreText = moreRaw && !popsCover(popRects, moreTagRect(lay, moreRaw)) ? moreRaw : null;
   const fin = furnitureInputs({ id, name: nd.name, shop, running, rate, vehicle: game.vehicle });
   // Furniture only changes with upgrades and the dough/box counts, so it is built once per change (M12), not 15 times a second.
   // The visual ladder (v5.11): the props this shop's levels have earned, placed from the layout; built once per upgrade like the furniture
@@ -232,6 +237,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   ];
   items.sort((a, b) => b.y - a.y);
 
+  useEffect(() => onCheer(() => { mem.current.cheerAt = Date.now() / 1000; }), []);
   // ---- departures: a carrier that paid this frame bumps the HUD cash (its coin just landed). Detected after
   // commit; ids only grow, so a remount or the end of a pause never replays old ones.
   useEffect(() => {
@@ -314,6 +320,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const rects = useMemo(() => stationRects(lay, MIN_TAP_PT / fit.s), [lay, fit.s]);
   const bxs = useMemo(() => badgeXs(lay), [lay]);
   const by = badgeRowY();
+  const walls = useMemo(() => bubbleWalls(lay), [lay]);
   const geoRegister = useMemo(() => P(lay.staff[0] + 12, 70, 78), [lay]);
   const geoPass = useMemo(() => P(lay.counter.x0 + 8, 70, 40), [lay]);
   const dingAt = useMemo(() => {
@@ -422,11 +429,11 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             ))}
           </G>
           {/* a refused tap says why, just under the station's badge (D348) */}
-          {refusal && <HireBubble x={bxs[refusal.st]} y={by + 40} text={refusal.text} tone="refusal" />}
+          {refusal && <HireBubble x={bxs[refusal.st]} y={by + 40} text={refusal.text} wall0={walls.x0} wall1={walls.x1} tone="refusal" />}
           {/* a milestone line (Lv 25 / 50 / 100) from the station's head beats a hello and the rush pill */}
           {/* D415: directly under the badge, over the station's furniture, never over the chip row */}
-          {!refusal && mileLine && m.mile && (() => { const a = mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st)); return <HireBubble x={a.cx} y={mileSpeechY(a.cy)} text={mileLine} />; })()}
-          {!refusal && !mileLine && m.hire && clock - m.hire.at < 2.5 && <HireBubble x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} />}
+          {!refusal && mileLine && m.mile && (() => { const a = mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st)); return <HireBubble x={a.cx} y={mileSpeechY(a.cy)} text={mileLine} wall0={walls.x0} wall1={walls.x1} />; })()}
+          {!refusal && !mileLine && m.hire && clock - m.hire.at < 2.5 && <HireBubble x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} wall0={walls.x0} wall1={walls.x1} />}
           {/* a General Manager shop: "Tap to rush!" until the first tap, then the combo; a head's hello takes the spot while it shows */}
           {/* D406: under the oven chip, ≤ 120 wide, moved clear of the menu board and the ladder's wall props */}
           {rushModel && !refusal && !mileLine && !(m.hire && clock - m.hire.at < 2.5) && (
@@ -529,7 +536,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 </G>
               );
             })()}
-          <DeparturePops deps={line.departures} left={(d) => leftNow(d.left)} anchor={(d) => carriers.get(d.id) ?? null} register={geoRegister} keepOff={pillRects} />
+          <DeparturePops deps={line.departures} left={(d) => leftNow(d.left)} anchor={(d) => carriers.get(d.id) ?? null} register={geoRegister} />
         </Svg>
       </Pressable>
     </View>

@@ -44,6 +44,8 @@ export interface CastInput {
   crew: CrewState;
   /** Who is waiting outside (`Game.queueSizes`): hungry diners and, left of them, the idle drivers (one figure per ten). Absent: nobody. */
   queue?: { diners: number; drivers: number };
+  /** The `cheer` pulse is up (pulse-bus.ts, D444): the cooks raise both arms. */
+  cheer?: boolean;
 }
 
 /** What the sidewalk shows this frame. An idle shop (the hire stack stands on the sidewalk) keeps it clear. */
@@ -82,7 +84,7 @@ export const edgeFade = (sx: number) => Math.max(0, Math.min(1, (SCENE_W + EDGE_
  *   - a 7.5 Hz pose clock for arm work and eating, so a worker's limbs keep identical props for two
  *     frames and their memo holds.
  */
-export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue }: CastInput): { cast: CastMember[] } {
+export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cheer = false }: CastInput): { cast: CastMember[] } {
   const t = clock * pace;
   const poseClock = Math.floor(clock * 7.5) / 7.5;
   const pt = poseClock * pace;
@@ -209,7 +211,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `c${i}`,
       sortY: y,
       role: 'cook',
-      props: { x, y, kind: 'cook', variant: i, gold: shop.prep >= 100, front: true, act: COOK_ACTS[i % 3], mood: running && Math.floor(poseClock / 1.5 + i) % 2 === 0 ? 'focus' : 'smile', seed: sd, blink: blinkAt(sd), arm: running ? Math.abs(Math.sin(pt * 4 + i)) * 3 : 0 },
+      props: { x, y, kind: 'cook', variant: i, gold: shop.prep >= 100, front: true, act: cheer ? 'cheer' : COOK_ACTS[i % 3], mood: cheer ? 'happy' : running && Math.floor(poseClock / 1.5 + i) % 2 === 0 ? 'focus' : 'smile', seed: sd, blink: blinkAt(sd), arm: running ? Math.abs(Math.sin(pt * 4 + i)) * 3 : 0 },
     });
   });
   // bakers in front of the oven bank; the one by the counter holds the peel upright so it clears the counter

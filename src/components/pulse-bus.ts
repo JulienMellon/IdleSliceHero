@@ -40,3 +40,21 @@ export const coinTarget = () => target;
 export function setCoinTarget(x: number, y: number) {
   target = { x, y };
 }
+
+/**
+ * The `cheer` pulse (D444): something worth a cheer happened (a streak, a reward): the scene's cooks raise both arms for CHEER_SECONDS.
+ * Anyone may `emitCheer()`; the storefront listens and turns it into a flag on the cooks (`cast.ts` `cheer`).
+ */
+export const CHEER_SECONDS = 1.2;
+const cheerListeners = new Set<Listener>();
+
+export function onCheer(fn: Listener) {
+  cheerListeners.add(fn);
+  return () => {
+    cheerListeners.delete(fn);
+  };
+}
+
+export function emitCheer() {
+  cheerListeners.forEach((fn) => fn());
+}

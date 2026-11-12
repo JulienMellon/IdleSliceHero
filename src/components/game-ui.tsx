@@ -1,13 +1,17 @@
 // Game-screen building blocks: chunky buttons, the HUD + goal bar, the oven, upgrade rows, popups.
 import * as Haptics from 'expo-haptics';
-import React, { memo, useCallback, useEffect, useRef, useState, type ComponentRef } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
-import { cashText, duration, goalAmount, money, shownValue } from '../engine/format';
+import { GIFT } from '../content/hooks';
+import { cashText, goalAmount, money } from '../engine/format';
+import type { NightOvenView } from '../engine/night-oven';
 import { C, F } from '../theme';
 import { GOAL_BAR, GOAL_FONT_MAX_SCALE, GOAL_GAP, GOAL_LAYOUT, GOAL_PAD, goalBarLayout, goalWords, type GoalSpan } from './goal-model';
-import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, ScooterIcon, SliceIcon, StarIcon, WhooshIcon } from './icons';
-import { onPayout, setCoinTarget } from './pulse-bus';
+import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, SliceIcon, StarIcon } from './icons';
+import { countUpValue, offlineGiftView, type GiftSummary } from './offline-model';
+import { emitCoin, emitPayout, onPayout, setCoinTarget } from './pulse-bus';
 import { buttonOutline, type ButtonTone } from './sidewalk-model';
 import { BUTTON_H, COMPACT_FONT_MAX_SCALE } from './tap-targets';
 
@@ -166,7 +170,7 @@ export interface Goal {
   onPress?: () => boolean;
 }
 
-export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newScenes, halo = null, onTasks, tasksBadge = 0, onGift, giftDot = false }: { cash: number; subtitle: string; /** The running boost, "2× 10m": drawn in basil after the subtitle. */ boostText?: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null; onTasks?: () => void; tasksBadge?: number; onGift?: () => void; giftDot?: boolean }) {
+export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newScenes, halo = null, onTasks, tasksBadge = 0, onGift, giftDot = false, ovenText, onOven, scrapRing }: { /** The night oven chip's text ("🌙 4 h"); the chip shows once it is given with `onOven`. */ ovenText?: string; onOven?: () => void; /** The next story scene's progress ring around the scrapbook button, in whole 5% steps (0..20); none when undefined. */ scrapRing?: number; cash: number; subtitle: string; /** The running boost, "2× 10m": drawn in basil after the subtitle. */ boostText?: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null; onTasks?: () => void; tasksBadge?: number; onGift?: () => void; giftDot?: boolean }) {
   const shown = useCountUp(cash);
   const [flash] = useState(() => new Animated.Value(1));
   // the cash text's window position: payout coins land on it (C81)
@@ -196,6 +200,7 @@ export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newS
     <View style={styles.hud}>
       <View style={styles.hudTop}>
         <Pressable onPress={onScrapbook} style={styles.hudIcon} testID="open-scrapbook" hitSlop={8}>
+          {scrapRing !== undefined && <ProgressRing step={scrapRing} />}
           <BookIcon size={32} />
           {newScenes > 0 && (
             <View style={styles.badge}>
@@ -246,6 +251,7 @@ export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newS
 
       </View>
       {goal && (
+        <View style={styles.goalRow}>
         <Pressable
           testID="goal"
           disabled={!goal.onPress}
@@ -254,7 +260,7 @@ export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newS
             haptic(ok ? 'success' : ok === false ? 'error' : 'light');
           }}
           onLayout={(e) => setGoalW(e.nativeEvent.layout.width)}
-          style={[styles.goal, ready && styles.goalReady, halo === 'goal' && styles.haloGoal]}>
+          style={[styles.goal, styles.goalFlex, ready && styles.goalReady, halo === 'goal' && styles.haloGoal]}>
           <View style={[styles.goalFill, goalW > 0 ? { width: bar.fillW } : { width: `${pct * 100}%` }, ready && { backgroundColor: C.basil }]} />
           <GoalLine key={ready ? 'ready' : goal.label} label={ready ? `▶ ${goal.label} — tap!` : goal.label} amount={goal.text ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone={ready ? 'ready' : 'track'} onSpans={ready ? undefined : onWords} onAmount={ready ? undefined : onAmount} />
           {/* D297: the same line again in cream, clipped to the fill, so the part over the fill is light and the rest stays dark */}
@@ -266,10 +272,34 @@ export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newS
             </View>
           ) : null}
         </Pressable>
+        {ovenText && onOven ? (
+          // the chip is drawn 44 pt tall (the tap target); the pill inside is 30
+          <Pressable testID="night-oven-chip" onPress={onOven} style={styles.ovenChip} accessibilityLabel="Nonna's night oven">
+            <View style={styles.ovenPill}>
+              <Text style={styles.ovenPillText} numberOfLines={1} maxFontSizeMultiplier={1.15}>
+                {ovenText}
+              </Text>
+            </View>
+          </Pressable>
+        ) : null}
+        </View>
       )}
     </View>
   );
 }
+
+/** The ring round the scrapbook button: how far along the next story scene is. Primitive props, so it repaints only when the 5% step changes. */
+const RING_R = 20;
+const RING_LEN = 2 * Math.PI * RING_R;
+const ProgressRing = memo(function ProgressRing({ step }: { step: number }) {
+  const k = Math.max(0, Math.min(20, step)) / 20;
+  return (
+    <Svg width={44} height={44} viewBox="0 0 44 44" style={styles.ring} pointerEvents="none">
+      <Circle cx={22} cy={22} r={RING_R} stroke="rgba(255,255,255,0.28)" strokeWidth={3} fill="none" />
+      {k > 0 && <Circle cx={22} cy={22} r={RING_R} stroke={C.cheese} strokeWidth={3} fill="none" strokeLinecap="round" strokeDasharray={`${RING_LEN * k} ${RING_LEN}`} transform="rotate(-90 22 22)" />}
+    </Svg>
+  );
+});
 
 /**
  * One line of the goal bar (words, then amount or icon) in one of its three inks. Every word and the amount is its own
@@ -368,50 +398,183 @@ export function UpgradeRow(props: {
   );
 }
 
-export function OfflinePopup({ seconds, capped, awaySeconds, earned, byShop, onCollect }: { seconds: number; capped: boolean; awaySeconds: number; earned: number; byShop: { name: string; earned: number; managed: boolean }[]; onCollect: () => void }) {
+// ---------- The welcome-back gift (v5.14): a night oven to open ----------
+
+const OVEN_INK = '#3B1F14';
+/** The oven's door: its width and the arch it closes (pt). The door is hinged on its left edge. */
+const DOOR = { x: 30, y: 38, w: 100, h: 72 } as const;
+const ARCH = (w: number, h: number) => `M0 ${h} V${h * 0.36} Q0 0 ${w / 2} 0 Q${w} 0 ${w} ${h * 0.36} V${h} Z`;
+
+/** The oven body and its cavity. `glow` is the fill in 5% steps (0..20); `open` shows the baked pizza. Primitive props: it repaints only on a step. */
+const OvenArt = memo(function OvenArt({ glow, open }: { glow: number; open: boolean }) {
+  const k = open ? 1 : glow / 20;
+  return (
+    <Svg width={160} height={128} viewBox="0 0 160 128" style={styles.ovenArt}>
+      <Rect x={104} y={0} width={22} height={24} rx={4} fill="#9C4A33" stroke={OVEN_INK} strokeWidth={3} />
+      <Rect x={6} y={14} width={148} height={110} rx={20} fill="#C8553D" stroke={OVEN_INK} strokeWidth={4} />
+      <Path d="M18 34 H44 M60 34 H92 M18 118 H50 M70 118 H142 M130 60 H146 M14 82 H24 M130 90 H146" stroke="#A8412C" strokeWidth={3} strokeLinecap="round" />
+      <G transform={`translate(${DOOR.x} ${DOOR.y})`}>
+        <Path d={ARCH(DOOR.w, DOOR.h)} fill="#3A1D12" stroke={OVEN_INK} strokeWidth={3} />
+        <Path d={ARCH(DOOR.w, DOOR.h)} fill="#FF8A1F" opacity={0.15 + 0.85 * k} />
+        <Path d={ARCH(DOOR.w, DOOR.h)} fill="#FFD36B" opacity={0.7 * k * k} />
+        {open ? (
+          <G>
+            <Circle cx={50} cy={50} r={22} fill="#F6C343" stroke={OVEN_INK} strokeWidth={2.5} />
+            <Circle cx={42} cy={44} r={4.5} fill="#C63B2B" />
+            <Circle cx={57} cy={48} r={4.5} fill="#C63B2B" />
+            <Circle cx={49} cy={58} r={4.5} fill="#C63B2B" />
+          </G>
+        ) : null}
+      </G>
+    </Svg>
+  );
+});
+
+/** The door itself: a closed arch with a window that glows with the fill. */
+const OvenDoor = memo(function OvenDoor({ glow }: { glow: number }) {
+  const k = glow / 20;
+  return (
+    <Svg width={DOOR.w} height={DOOR.h} viewBox={`0 0 ${DOOR.w} ${DOOR.h}`}>
+      <Path d={ARCH(DOOR.w, DOOR.h)} fill="#6B4331" stroke={OVEN_INK} strokeWidth={3} />
+      <Circle cx={DOOR.w / 2} cy={34} r={17} fill="#3A1D12" stroke={OVEN_INK} strokeWidth={3} />
+      <Circle cx={DOOR.w / 2} cy={34} r={14} fill="#FF8A1F" opacity={0.15 + 0.85 * k} />
+      <Circle cx={DOOR.w / 2} cy={34} r={9} fill="#FFD36B" opacity={0.8 * k * k} />
+      <Rect x={DOOR.w - 18} y={40} width={7} height={20} rx={3.5} fill="#F6C343" stroke={OVEN_INK} strokeWidth={2} />
+    </Svg>
+  );
+});
+
+/**
+ * The return popup is a gift, not a receipt (D424, D425): Nonna's night oven stands with its door shut and glowing in proportion to
+ * how full it got. "Open the oven" swings the door, counts the total up over GIFT.countUpMs and sends coins to the cash counter; the
+ * shop rows and the news line then fade in, and a second tap (or GIFT.autoCloseMs later) closes it. The button keeps testID
+ * `collect-offline` in both states. The maths lives in offline-model.ts.
+ */
+export function OfflinePopup({ summary, nightOven, onCollect }: { summary: GiftSummary; nightOven: number; onCollect: () => void }) {
+  const view = useMemo(() => offlineGiftView(summary, nightOven), [summary, nightOven]);
   const [pop] = useState(() => new Animated.Value(0.7));
+  const [door] = useState(() => new Animated.Value(0));
+  const [fade] = useState(() => new Animated.Value(0));
+  const [opened, setOpened] = useState(false);
+  const [shown, setShown] = useState(0);
+  const ovenRef = useRef<ComponentRef<typeof View>>(null);
+  const timers = useRef<{ tick: ReturnType<typeof setInterval> | null; close: ReturnType<typeof setTimeout> | null; closed: boolean }>({ tick: null, close: null, closed: false });
   useEffect(() => {
     Animated.spring(pop, { toValue: 1, friction: 5, useNativeDriver: native }).start();
+    const t = timers.current;
+    return () => {
+      if (t.tick) clearInterval(t.tick);
+      if (t.close) clearTimeout(t.close);
+    };
   }, [pop]);
+  const close = () => {
+    const t = timers.current;
+    if (t.closed) return;
+    t.closed = true;
+    if (t.tick) clearInterval(t.tick);
+    if (t.close) clearTimeout(t.close);
+    onCollect();
+  };
+  const open = () => {
+    setOpened(true);
+    haptic('success');
+    Animated.timing(door, { toValue: 1, duration: GIFT.doorMs, easing: Easing.out(Easing.cubic), useNativeDriver: native }).start();
+    // coins from the oven to the cash counter, and the cash text's kick
+    ovenRef.current?.measureInWindow?.((x: number, y: number, w: number, h: number) => {
+      for (let i = 0; i < GIFT.coins; i++) emitCoin({ x: x + w / 2 + (i % 2 ? 14 : -14), y: y + h / 2, ms: 420 + i * 60 });
+      emitPayout();
+    });
+    const t0 = Date.now();
+    const t = timers.current;
+    t.tick = setInterval(() => {
+      const elapsed = Date.now() - t0;
+      setShown(countUpValue(view.total, elapsed, GIFT.countUpMs));
+      if (elapsed < GIFT.countUpMs) return;
+      if (t.tick) clearInterval(t.tick);
+      t.tick = null;
+      Animated.timing(fade, { toValue: 1, duration: 280, useNativeDriver: native }).start();
+      t.close = setTimeout(close, GIFT.autoCloseMs);
+    }, 33);
+  };
+  const doorScale = door.interpolate({ inputRange: [0, 1], outputRange: [1, 0.12] });
+  const doorShift = door.interpolate({ inputRange: [0, 1], outputRange: [0, -DOOR.w * 0.44] });
   return (
     <View style={styles.overlay}>
       <Animated.View style={[styles.modal, { transform: [{ scale: pop }] }]}>
-        <Text style={styles.modalHead}>While you were away…</Text>
-        <View style={styles.modalIcons}>
-          <ScooterIcon size={46} />
-          <WhooshIcon size={34} />
-          <SliceIcon size={40} />
+        <Text style={styles.modalHead}>{view.title}</Text>
+        <View ref={ovenRef} style={styles.ovenBox} testID="offline-oven" accessibilityLabel={`Nonna's night oven, ${view.fillText}`}>
+          <OvenArt glow={view.step} open={opened} />
+          <Animated.View pointerEvents="none" style={[styles.ovenDoor, { transform: [{ translateX: doorShift }, { scaleX: doorScale }] }]}>
+            <OvenDoor glow={view.step} />
+          </Animated.View>
         </View>
-        <Text style={styles.small}>
-          {byShop.some((b) => b.managed)
-            ? `Your managers kept ${byShop.filter((b) => b.managed).length} pizzeria${byShop.filter((b) => b.managed).length === 1 ? '' : 's'} running for ${duration(seconds)}`
-            : `Your kitchens finished the pizzas already in the oven while you were away`}
+        <View style={styles.meter}>
+          <View style={[styles.meterFill, { width: `${view.step * 5}%` }]} />
+        </View>
+        <Text style={styles.meterText} testID="offline-fill">
+          {view.fillText}
         </Text>
-        {capped ? <Text style={[styles.small, { fontFamily: F.semi }]}>{`Capped at ${duration(seconds).replace(/ /g, '\u00A0')} (away ${duration(awaySeconds).replace(/ /g, '\u00A0')})`}</Text> : null}
-        <View style={{ alignSelf: 'stretch', gap: 2 }}>
-          {byShop.map((b) => (
-            <View key={b.name} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={styles.small}>
-                {b.name}
-                {b.managed ? '' : ' (orders already in the oven)'}
-              </Text>
-              <Text style={[styles.small, { color: C.basilDark, fontFamily: F.semi }]}>+{money(b.earned)}</Text>
-            </View>
-          ))}
-        </View>
-        <Text style={styles.modalCash}>+{money(byShop.length ? byShop.reduce((t, b) => t + shownValue(b.earned), 0) : earned)}</Text>
+        {view.fullLine ? <Text style={styles.giftLine}>{view.fullLine}</Text> : null}
+        {view.upgradeLine ? <Text style={[styles.giftLine, { color: C.tomato }]}>{view.upgradeLine}</Text> : null}
+        <Text style={[styles.modalCash, !opened && { opacity: 0 }]} testID="offline-total">
+          +{money(shown)}
+        </Text>
+        {opened ? (
+          <Animated.View style={{ alignSelf: 'stretch', gap: 2, opacity: fade }}>
+            {view.rows.map((b) => (
+              <View key={b.name} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={styles.small}>
+                  {b.name}
+                  {b.note}
+                </Text>
+                <Text style={[styles.small, { color: C.basilDark, fontFamily: F.semi }]}>+{money(b.earned)}</Text>
+              </View>
+            ))}
+            <Text style={[styles.small, { fontFamily: F.semi, textAlign: 'center', marginTop: 4 }]}>{view.news}</Text>
+          </Animated.View>
+        ) : null}
         <View style={{ alignSelf: 'stretch' }}>
           <BuyButton
-            label="Collect"
+            label={opened ? 'Collect' : 'Open the oven'}
             enabled
             onPress={() => {
-              onCollect();
+              if (opened) close();
+              else open();
               return true;
             }}
             testID="collect-offline"
           />
         </View>
       </Animated.View>
+    </View>
+  );
+}
+
+/** Nonna's night oven, explained: what the away meter is, the tiers, and the next one's price or lock reason (opened from the HUD chip). */
+export function NightOvenSheet({ view, onBuy, onClose }: { view: NightOvenView; onBuy: () => boolean; onClose: () => void }) {
+  const next = view.next;
+  return (
+    <View style={styles.overlay} testID="night-oven-sheet">
+      <View style={styles.modal}>
+        <Text style={styles.modalHead}>{view.chip}</Text>
+        <Text style={[styles.small, { textAlign: 'center' }]}>{view.body}</Text>
+        <View style={{ alignSelf: 'stretch', gap: 4, marginVertical: 6 }}>
+          {view.tiers.map((t) => (
+            <View key={t.tier} style={[styles.tierRow, t.state === 'owned' && styles.tierOwned]}>
+              <Text style={styles.tierHours}>{`🌙 ${t.hours}`}</Text>
+              <Text style={[styles.small, { flexShrink: 1, textAlign: 'right' }, t.state === 'next' && { color: C.basilDark, fontFamily: F.semi }]}>{t.note}</Text>
+            </View>
+          ))}
+        </View>
+        {next ? (
+          <View style={{ alignSelf: 'stretch' }}>
+            <BuyButton testID="buy-night-oven-sheet" label={`${next.title} · ${money(next.price)}`} enabled={next.canBuy} tone={next.lock ? 'nogain' : 'normal'} onPress={onBuy} />
+          </View>
+        ) : null}
+        <Pressable testID="close-night-oven" onPress={onClose} style={styles.sheetClose}>
+          <Text style={styles.closeText}>Close</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -454,6 +617,12 @@ const styles = StyleSheet.create({
   hudTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   hudIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
   hudEmoji: { fontSize: 22 },
+  ring: { position: 'absolute', left: 0, top: 0 },
+  goalRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  goalFlex: { flex: 1 },
+  ovenChip: { height: 44, minWidth: 64, alignItems: 'center', justifyContent: 'center' },
+  ovenPill: { height: 30, minWidth: 64, borderRadius: 15, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.22)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)' },
+  ovenPillText: { fontFamily: F.bold, fontSize: 13, color: '#fff' },
   hudIconSmall: { position: 'absolute', right: -4, top: -4, width: 26, height: 26, borderRadius: 13, backgroundColor: C.tomatoDark, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   giftDot: { position: 'absolute', top: -1, right: -1, width: 16, height: 16, borderRadius: 8, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato },
@@ -507,6 +676,18 @@ const styles = StyleSheet.create({
   modal: { backgroundColor: C.bg, borderRadius: 24, borderWidth: 4, borderColor: C.ink, padding: 22, alignItems: 'center', width: '100%', maxWidth: 360, gap: 8 },
   modalHead: { fontFamily: F.bold, fontSize: 24, color: C.ink },
   modalEmoji: { fontSize: 44 },
+  ovenBox: { width: 160, height: 128, marginTop: 2 },
+  ovenArt: { position: 'absolute', left: 0, top: 0 },
+  ovenDoor: { position: 'absolute', left: DOOR.x, top: DOOR.y, width: DOOR.w, height: DOOR.h },
+  meter: { alignSelf: 'stretch', height: 16, borderRadius: 8, backgroundColor: '#F1E4D3', borderWidth: 2, borderColor: C.ink, overflow: 'hidden' },
+  meterFill: { height: '100%', backgroundColor: '#FF9A2E' },
+  meterText: { fontFamily: F.bold, fontSize: 16, color: C.ink },
+  giftLine: { fontFamily: F.semi, fontSize: 14, color: C.ink, textAlign: 'center' },
+  tierRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, backgroundColor: '#fff', borderWidth: 2, borderColor: C.cheeseDark },
+  tierOwned: { backgroundColor: '#FFF4E0' },
+  tierHours: { fontFamily: F.bold, fontSize: 15, color: C.ink },
+  sheetClose: { alignSelf: 'stretch', height: 44, borderRadius: 12, borderWidth: 2, borderColor: C.ink, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  closeText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   modalCash: { fontFamily: F.bold, fontSize: 40, color: C.basilDark, marginBottom: 6 },
 
   toast: { position: 'absolute', alignSelf: 'center', backgroundColor: C.ink, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, borderWidth: 2, borderColor: '#fff' },

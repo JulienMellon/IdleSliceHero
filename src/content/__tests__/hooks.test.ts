@@ -13,5 +13,13 @@ describe('session hook constants (the v5.13 spec)', () => {
     expect(BONUS_VIEW.height).toBeGreaterThanOrEqual(44);
     expect(BONUS_VIEW.width).toBeGreaterThanOrEqual(44);
     expect(ORDER_VIEW.height).toBeGreaterThanOrEqual(44 + 2 * 2);
+    // the drawn golden pizza is bigger than the art, never smaller
+    expect(BONUS_VIEW.height * BONUS_VIEW.scale).toBeGreaterThanOrEqual(44);
+    expect(BONUS_VIEW.height * BONUS_VIEW.luckyScale).toBeGreaterThan(BONUS_VIEW.height * BONUS_VIEW.scale);
+  });
+  test('v5.14 fix round numbers (D436, D437, D444, D445)', () => {
+    expect(BONUS_VIEW).toMatchObject({ scale: 1.3, luckyScale: 1.6, glowPx: 10, sparkles: 3, bannerMs: 1200, luckyCoins: 10 });
+    expect(ORDER_VIEW).toMatchObject({ coins: 5, bounce: 1.15 });
+    expect(BONUS.firstAfterUnlock).toBeLessThanOrEqual(5);
   });
 });

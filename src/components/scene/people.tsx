@@ -374,7 +374,7 @@ const Limbs = memo(function Limbs({ part, ...p }: LimbProps & { part: 'back' | '
         })
       )}
       {/* back arm */}
-      <Limb d={`M-6 ${by + 4} Q${-8.5} ${by + 10} ${backHand[0]} ${backHand[1]}`} color={shade(sleeve, -0.18)} />
+      <Limb d={act === 'cheer' ? `M-6 ${by + 4} L${-10.5} ${by - 3} L${backHand[0]} ${backHand[1]}` : `M-6 ${by + 4} Q${-8.5} ${by + 10} ${backHand[0]} ${backHand[1]}`} color={shade(sleeve, -0.18)} />
       <Circle cx={backHand[0]} cy={backHand[1]} r={2.3} fill={shade(skin, -0.12)} {...OUT} strokeWidth={0.8} />
       </G>
     );
@@ -395,7 +395,7 @@ const Limbs = memo(function Limbs({ part, ...p }: LimbProps & { part: 'back' | '
           )}
         </G>
       )}
-      <Limb d={act === 'toss' ? `M6.5 ${by + 4} L${10.5} ${by - 3} L${hand[0]} ${hand[1]}` : `M6.5 ${by + 4} Q${9.5} ${by + 9} ${hand[0]} ${hand[1]}`} color={sleeve} />
+      <Limb d={act === 'toss' || act === 'cheer' ? `M6.5 ${by + 4} L${10.5} ${by - 3} L${hand[0]} ${hand[1]}` : `M6.5 ${by + 4} Q${9.5} ${by + 9} ${hand[0]} ${hand[1]}`} color={sleeve} />
       {kind === 'cook' || kind === 'baker' ? <Path d={`M${hand[0] - 2.4} ${hand[1] - 2.2} l2.8 -1`} stroke={kind === 'cook' ? '#E1DAD0' : '#7E2A35'} strokeWidth={1.2} /> : null}
       {pin && (
         <G>

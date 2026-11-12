@@ -5,7 +5,7 @@
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
 import { HEADS, BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEAD_COST_DOWNTOWN, HEAD_KINDS, HEAD_SHARE, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
 import { BOOST_MAX_AHEAD_MS, DAILY_CHESTS, DAILY_TASK_COUNT, MAX_BOOSTERS, MAX_CONCURRENT_BOOSTS, TASK_KINDS, WEEKLY_TASK_COUNT, type TaskKind } from '../content/rewards';
-import { BONUS, ORDER } from '../content/hooks';
+import { BONUS, NIGHT_OVEN, ORDER } from '../content/hooks';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
 import { advanceLine, clampWalkInDebt, emptyLine, LINE, nextTap, piesInFlight, rushLine, tapStation as lineTap, type Automation, type Line, type LineRates, type Station } from './pipeline';
@@ -68,6 +68,8 @@ export interface GameState {
   bonus: BonusState;
   /** Special orders from the cast (rules in orders.ts). */
   order: OrderState;
+  /** Nonna's night oven: the tier owned (index into NIGHT_OVEN.capSeconds, 0 = the base cap). Rules in night-oven.ts. */
+  nightOven: number;
 }
 
 /** The golden pizza. Times are play seconds, so the schedule only runs while the game is open. */
@@ -258,6 +260,7 @@ export function newGame(now: number): GameState {
     stats: newStats(),
     bonus: newBonus(now),
     order: newOrders(now),
+    nightOven: 0,
   };
 }
 
@@ -497,6 +500,8 @@ export function migrate(raw: unknown, now: number): GameState {
   game.tutorial = int(r.tutorial, veteran ? TUTORIAL_DONE : 0, 0, TUTORIAL_DONE);
   game.bonus = migrateBonus(r.bonus, game.playSeconds, now);
   game.order = migrateOrders(r.order, game.playSeconds, now, game.shops);
+  // saves from before the night oven have none: the base cap
+  game.nightOven = int(r.nightOven, 0, 0, NIGHT_OVEN.capSeconds.length - 1);
   return game;
 }
 
@@ -941,16 +946,23 @@ export function lineTick(s: GameState, dt: number, now?: number): GameState {
   return shops ? bump({ ...s, cash, totalEarned: s.totalEarned + earned, shops }, add) : s;
 }
 
+/** How many seconds away the player is paid for: the night oven's owned cap. */
+export const offlineCapOf = (s: Pick<GameState, 'nightOven'>): number => NIGHT_OVEN.capSeconds[Math.min(NIGHT_OVEN.capSeconds.length - 1, Math.max(0, s.nightOven | 0))];
+
 export interface OfflineResult {
   state: GameState;
   seconds: number;
+  /** The cap that applied (the night oven's size), in seconds. */
+  cap: number;
   /** True when the player was away longer than the offline cap. */
   capped: boolean;
   /** Real time away, before the cap. */
   awaySeconds: number;
   earned: number;
-  /** Cash each pizzeria made while away (only those that made any). */
-  byShop: { id: NeighborhoodId; earned: number; managed: boolean }[];
+  /** Cash each pizzeria made while away (only those that made any), and the pies it sold. */
+  byShop: { id: NeighborhoodId; earned: number; managed: boolean; pies: number }[];
+  /** Built pizzerias (not Downtown) without a GM: they only finish what was already on the line while you're away. */
+  idle: NeighborhoodId[];
 }
 
 /**
@@ -1009,13 +1021,16 @@ export const CAPPED_SLACK_SECONDS = 60;
 /** Catch up after the app was closed: GM shops run; the others finish what was already on the line. */
 export function applyOffline(s: GameState, now: number): OfflineResult {
   const elapsed = Math.max(0, (now - s.lastSavedAt) / 1000);
-  const seconds = Math.min(elapsed, TUNING.offlineCapSeconds);
+  const cap = offlineCapOf(s);
+  const seconds = Math.min(elapsed, cap);
   // each running boost adds (mult − 1) over the part of the offline window it covers
   const from = s.lastSavedAt;
   const boost = seconds > 0 ? s.rewards.boosts.reduce((m, b) => m + (b.mult - 1) * Math.max(0, Math.min(b.until, from + seconds * 1000) - from) / (seconds * 1000), 1) : 1;
   const { state, byShop } = offlineTick(s, seconds, boost);
-  const rows = byShop.map((r) => ({ id: r.id, managed: s.shops[r.id].managed, earned: r.base + r.extra })).filter((x) => x.earned > 0);
-  return { state: { ...state, lastSavedAt: now }, seconds, capped: elapsed - TUNING.offlineCapSeconds >= CAPPED_SLACK_SECONDS, awaySeconds: elapsed, earned: state.cash - s.cash, byShop: rows };
+  const rows = byShop.map((r) => ({ id: r.id, managed: s.shops[r.id].managed, earned: r.base + r.extra, pies: r.pies })).filter((x) => x.earned > 0);
+  // Downtown's manager is Nonna's story beat, not a hire the player can make, so it is never named as idle
+  const idle = SHOP_IDS.filter((id) => id !== 'downtown' && s.shops[id].built && !s.shops[id].managed);
+  return { state: { ...state, lastSavedAt: now }, seconds, cap, capped: elapsed - cap >= CAPPED_SLACK_SECONDS, awaySeconds: elapsed, earned: state.cash - s.cash, byShop: rows, idle };
 }
 
 // ---------- Story ----------

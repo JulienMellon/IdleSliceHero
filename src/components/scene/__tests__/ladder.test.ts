@@ -136,7 +136,6 @@ describe('ladder budget', () => {
   // The Restaurant (fp 3): its two-column oven bay (52 pt a column, D417) leaves a 66 pt bench, which is too short for the floor strip's mixer and the wall bins (Lv 60 / 80).
   const SKIPPED: Record<string, PropId[]> = {
     'waterfront:4': ['passBelt'],
-    'downtown:2': ['vehicle2'], 'waterfront:2': ['vehicle2'], 'uptown:2': ['vehicle2'],
     'downtown:3': ['mixer', 'toppings'], 'waterfront:3': ['mixer', 'toppings'], 'uptown:3': ['mixer', 'toppings'],
   };
   test('every reachable step shows at its footprint, except the listed skips', () => {

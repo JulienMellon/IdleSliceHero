@@ -955,13 +955,17 @@ export const StreetProp = memo(function StreetProp({ id, x, y }: { id: Neighborh
         </G>
       )}
       {kind === 'picket' && (
-        // a fenced front-garden bed (D432): a grass border, a capped post at each end, pickets between them and the shrub planted inside
+        // a fenced front yard (D432): a lawn strip wider than the fence, the shrubs planted in it behind the pickets, a capped post at each end
         <G>
-          <Rect x={PICKET.bed.x0} y={PICKET.bed.y0} width={PICKET.bed.x1 - PICKET.bed.x0} height={PICKET.bed.y1 - PICKET.bed.y0} rx={2.2} fill="#6FA85A" stroke={INK} strokeWidth={0.9} />
-          <Rect x={PICKET.bed.x0 + 3} y={PICKET.bed.y0 + 1} width={PICKET.bed.x1 - PICKET.bed.x0 - 6} height={1.4} rx={0.7} fill="#4F7F3F" opacity={0.7} />
-          <Circle cx={-6} cy={-14} r={9} fill="#2E7D32" />
-          <Circle cx={8} cy={-12} r={7} fill="#3E9A44" />
-          <Circle cx={-9} cy={-17} r={2.6} fill="#58B35D" opacity={0.8} />
+          <Rect x={PICKET.bed.x0} y={PICKET.bed.y0} width={PICKET.bed.x1 - PICKET.bed.x0} height={PICKET.bed.y1 - PICKET.bed.y0} rx={3} fill="#6FA85A" stroke={INK} strokeWidth={0.9} />
+          <Rect x={PICKET.bed.x0 + 3} y={PICKET.bed.y0 + 1.2} width={PICKET.bed.x1 - PICKET.bed.x0 - 6} height={1.6} rx={0.8} fill="#8CC36F" opacity={0.8} />
+          <Rect x={PICKET.bed.x0 + 3} y={PICKET.bed.y1 - 3} width={PICKET.bed.x1 - PICKET.bed.x0 - 6} height={1.4} rx={0.7} fill="#4F7F3F" opacity={0.7} />
+          {PICKET.shrubs.map((b) => (
+            <G key={b.cx}>
+              <Circle cx={b.cx} cy={b.cy} r={b.r} fill="#2E7D32" stroke={INK} strokeWidth={0.8} />
+              <Circle cx={b.cx - b.r * 0.35} cy={b.cy - b.r * 0.4} r={b.r * 0.38} fill="#58B35D" opacity={0.8} />
+            </G>
+          ))}
           <Rect x={PICKET.posts[0]} y={-15} width={PICKET.posts[1] - PICKET.posts[0]} height={2.6} fill="#FFFFFF" stroke={INK} strokeWidth={0.7} />
           <Rect x={PICKET.posts[0]} y={-7} width={PICKET.posts[1] - PICKET.posts[0]} height={2.6} fill="#FFFFFF" stroke={INK} strokeWidth={0.7} />
           {PICKET.pickets.map((px) => (

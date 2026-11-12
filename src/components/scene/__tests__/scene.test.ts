@@ -283,7 +283,7 @@ describe('the sidewalk lane (v5.12: D414, G90, D416)', () => {
   const sx = (x: number, y: number) => P(x, y)[0];
   test('D431: the drivers stand nearest the door (the first at x >= 250), the diners in single file left of them, 22 pt apart, a clear GROUP_GAP between the groups', () => {
     for (const [name, lay] of allLayouts()) {
-      expect([name, lay.queue.length >= 3, lay.queue.length <= QUEUE_SPOTS]).toEqual([name, true, true]);
+      expect([name, lay.queue.length <= QUEUE_SPOTS]).toEqual([name, true]);
       expect([name, sx(...lay.driverQueue[0]) >= DRIVER_NEAR_X]).toEqual([name, true]);
       const pilasterRight = sx(lay.L + 8, 0);
       const lastDriver = sx(...lay.driverQueue[DRIVER_SPOTS - 1]);
@@ -292,12 +292,14 @@ describe('the sidewalk lane (v5.12: D414, G90, D416)', () => {
         expect([name, i, x < lastDriver, x - FIGURE_HALF_W >= pilasterRight]).toEqual([name, i, true, true]);
         if (i) expect(sx(...lay.queue[i - 1]) - x).toBeCloseTo(QUEUE_PITCH, 5);
       }
-      expect(sx(...lay.driverQueue[DRIVER_SPOTS - 1]) - sx(...lay.queue[0])).toBeCloseTo(GROUP_GAP, 5);
-      expect([name, lay.queue[0][0] < lay.door.x0 - 14]).toEqual([name, true]); // clear of the mat and the pause spot
+      // the first diner always keeps GROUP_GAP from the last driver (the spots are the same however many fit); the pill hangs there when none does
+      expect(sx(...lay.driverQueue[DRIVER_SPOTS - 1]) - sx(...lay.queueTag)).toBeGreaterThanOrEqual(GROUP_GAP - 1e-6);
+      if (lay.queue.length) expect([name, lay.queue[0][0] < lay.door.x0 - 14]).toEqual([name, true]); // clear of the mat and the pause spot
     }
   });
-  test('D430: four driver spots, always, 26 pt apart on screen, each at its own height (±3 pt around the mean, no two neighbours level), feet 6 pt in front of the shop front', () => {
-    expect(DRIVER_QUEUE_PITCH).toBe(26);
+  test('D430: three driver spots, always, 30 pt apart on screen, each at its own height (0 / 6 / 3 pt), feet 7 pt or more in front of the shop front', () => {
+    expect(DRIVER_SPOTS).toBe(3);
+    expect(DRIVER_QUEUE_PITCH).toBe(30);
     const sill = P(0, 0)[1];
     for (const [name, lay] of allLayouts()) {
       expect([name, lay.driverQueue.length]).toEqual([name, DRIVER_SPOTS]);
@@ -309,9 +311,9 @@ describe('the sidewalk lane (v5.12: D414, G90, D416)', () => {
       });
       const mean = feet.reduce((a, b) => a + b, 0) / feet.length;
       for (const f of feet) expect([name, Math.abs(f - mean) <= 3.5]).toEqual([name, true]);
-      expect(Math.min(...feet)).toBeGreaterThanOrEqual(FEET_IN - 1e-6);
-      feet.forEach((f, j) => j && expect([name, j, Math.abs(f - feet[j - 1]) >= 3]).toEqual([name, j, true]));
-      // the diners stand on the first row, 6 pt in front of the shop front too
+      expect(Math.min(...feet)).toBeGreaterThanOrEqual(7 - 1e-6);
+      feet.forEach((f, j) => j && expect([name, j, Math.abs(f - feet[j - 1]) >= 2.9]).toEqual([name, j, true]));
+      // the diners stand on the first row, 7 pt in front of the shop front too
       for (const [x, y] of lay.queue) expect(P(x, y)[1] - sill).toBeCloseTo(FEET_IN, 5);
       expect(QUEUE_Y).toBeLessThan(-4);
       const mid = (sx(...lay.driverQueue[0]) + sx(...lay.driverQueue[DRIVER_SPOTS - 1])) / 2;

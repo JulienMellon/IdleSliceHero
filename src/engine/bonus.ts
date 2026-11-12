@@ -1,7 +1,7 @@
 // The golden pizza (v5.13): a floating bonus that drifts across the sky while the game is open. Pure rules: when the next
 // one appears, how it flies, whether it is the lucky slice and what a tap pays. The drawing is components/floating-bonus.tsx.
 // All times are play seconds (`GameState.playSeconds`); the schedule is a hash of the saved seed, so it replays the same.
-import { BONUS } from '../content/hooks';
+import { BONUS, BONUS_VIEW } from '../content/hooks';
 import type { GameState } from './game';
 import { minutesToCash, rewardsUnlocked } from './rewards';
 
@@ -44,6 +44,40 @@ export function streakPips(bonusTaps: number): { filled: number; total: number; 
   return { filled: bonusTaps % BONUS.luckyEvery, total: BONUS.luckyEvery, lucky: isLucky(bonusTaps) };
 }
 
+/** The streak's label by the pips: "4/5". */
+export const pipsLabel = (bonusTaps: number): string => {
+  const p = streakPips(bonusTaps);
+  return `${p.filled}/${p.total}`;
+};
+
+/** D445: golden pizza number 1 with no tap made yet is the scripted gift: it gets Nonna's label. */
+export const isFirstGift = (n: number, bonusTaps: number): boolean => n === 1 && bonusTaps === 0;
+
+/** D446: what a tap's income is worth in time, as the pop's second line: "+45 s of sales", "+3 min of sales". */
+export function salesLine(lucky: boolean): string {
+  const s = lucky ? BONUS.luckyIncomeSeconds : BONUS.incomeSeconds;
+  return s >= 120 && s % 60 === 0 ? `+${s / 60} min of sales` : `+${s} s of sales`;
+}
+
+/**
+ * G93: where the "+$X" pop sits, in the scene area's own coordinates, for a tap at (x, y) on a box `boxHeight` tall.
+ * Left is clamped so the pop's whole width stays on screen (its "+" was cut at the left edge); top is under the box, so the
+ * lane at the top of the scene (under the tab strip) never pushes it out of sight.
+ */
+export function popPlace(x: number, y: number, width: number, boxHeight: number): { left: number; top: number } {
+  const lo = BONUS_VIEW.popEdge;
+  const hi = Math.max(lo, width - BONUS_VIEW.popWidth - BONUS_VIEW.popEdge);
+  return { left: Math.min(hi, Math.max(lo, x - BONUS_VIEW.popWidth / 2)), top: Math.max(0, y + boxHeight / 2 + BONUS_VIEW.popGap) };
+}
+
+/** The box is drawn at this scale: bigger than the 60 × 44 art, the lucky slice biggest. */
+export const bonusScale = (lucky: boolean): number => (lucky ? BONUS_VIEW.luckyScale : BONUS_VIEW.scale);
+
+/** D437: the trailing sparkles, in the 60 × 44 art's units relative to its centre, behind the way it flies (dir 1 = to the right). */
+export function sparkleTrail(dir: 1 | -1): { x: number; y: number; r: number }[] {
+  return Array.from({ length: BONUS_VIEW.sparkles }, (_, i) => ({ x: -dir * (38 + i * 15), y: [-9, 7, -3][i % 3], r: 5 - i * 1 }));
+}
+
 /** Golden pizzas unlock with the rewards: when Nonna manages Downtown and the tutorial is over. */
 export const bonusUnlocked = (s: GameState): boolean => rewardsUnlocked(s);
 
@@ -74,7 +108,9 @@ export function bonusTick(s: GameState, dt: number, hold: boolean): GameState {
     if (s.playSeconds >= b.until) return { ...s, bonus: { ...b, until: 0, next: s.playSeconds + bonusGap(b.seed, b.spawned) } };
     return s;
   }
-  if (!hold && s.playSeconds >= b.next) return { ...s, bonus: { ...b, spawned: b.spawned + 1, until: s.playSeconds + BONUS.visibleSeconds } };
+  // D445: the very first one comes right after the unlock (a save loaded after the takeover scene would otherwise wait 20 s)
+  if (!hold && b.spawned === 0 && b.next > s.playSeconds + BONUS.firstAfterUnlock) s = { ...s, bonus: { ...b, next: s.playSeconds + BONUS.firstAfterUnlock } };
+  if (!hold && s.playSeconds >= s.bonus.next) return { ...s, bonus: { ...s.bonus, spawned: s.bonus.spawned + 1, until: s.playSeconds + BONUS.visibleSeconds } };
   return s;
 }
 

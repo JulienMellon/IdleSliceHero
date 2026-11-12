@@ -1,4 +1,5 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -18,6 +19,8 @@ export default function City() {
   const game = useGame((s) => s.game);
   const toast = useGame((s) => s.toast);
   const { setActive, build } = useGame.getState();
+  // G94: leaving the City takes its toast with it
+  useFocusEffect(useCallback(() => () => useGame.setState({ toast: null }), []));
   const built = NEIGHBORHOODS.filter((n) => game.shops[n.id].built).length;
   const mapH = Math.min(height * 0.6, width * 0.84);
   return (

@@ -506,8 +506,10 @@ with sync_playwright() as pw:
         ("43-diner-queue", hood_save("downtown", prep=3, ovens=3, counter=3, drivers=3, tables=20, footprint=0, sold=2000)),
         # kitchen faster than the seats, drivers to spare: drivers wait by the door
         ("44-driver-queue", hood_save("downtown", prep=20, ovens=20, counter=20, drivers=12, tables=3, footprint=0, sold=4000)),
-        ("45-patio-one", hood_save("downtown", prep=10, ovens=10, counter=10, drivers=2, tables=13, footprint=0, sold=3000)),
-        ("46-patio-two-busy", hood_save("downtown", prep=1, ovens=1, counter=1, drivers=4, tables=19, footprint=0, sold=1500)),
+        # D428: the Hole-in-the-wall and the Corner shop (footprint 0 / 1) have no room for a patio set beside the prop, the chalkboard and the
+        # vehicle, so the deck shots move up: the Double storefront seats one set (25 tables), the Restaurant two (37 tables)
+        ("45-patio-one", hood_save("downtown", prep=10, ovens=10, counter=10, drivers=2, tables=25, footprint=2, sold=3000)),
+        ("46-patio-two-busy", hood_save("downtown", prep=1, ovens=1, counter=1, drivers=4, tables=37, footprint=3, sold=1500)),
     ]:
         try:
             page = seeded_page(browser, save); settle(page)
@@ -522,7 +524,10 @@ with sync_playwright() as pw:
     # (no time away, so nothing fails or expires on load) and the daily gift is marked shown (it would cover the scene).
     HOOK_PLAY = 300
     def hooks_save(order=None, bonus=None, stats=None, **shop_kw):
-        kw = dict(prep=4, ovens=4, counter=4, drivers=3, tables=3, footprint=0, sold=700)
+        # D422: the Suburbs shop at the same mid-game levels as the other fixtures (about 7.7 pies/s), so an order's target (1,100 pies for
+        # 2 minutes) and the kitchen counters agree; `sold` leaves room for an order's start count to sit below it
+        kw = dict(prep=12, ovens=10, grade=1, counter=9, drivers=6, tables=7, footprint=1, sold=5000,
+                  decor={"plants": 1, "flooring": 1, "tables": 1, "walls": 1, "signage": 1})
         kw.update(shop_kw)
         sv = hood_save("suburbs", cash=2e4, **kw)
         sv.update(lastSavedAt=int(time.time() * 1000), playSeconds=HOOK_PLAY, rewards={"giftShownDay": day_str()})
@@ -541,7 +546,15 @@ with sync_playwright() as pw:
     except Exception as e:
         report["errors"].append(f"golden pizza shot failed: {e}")
     try:
-        # the lucky slice: four taps made, so this is the 5th; tap it for the pop, the coins and the banner
+        # D445: the very first golden pizza (number 1, no tap yet) carries Nonna's "A gift, caro. Tap it!"
+        page = seeded_page(browser, hooks_save(bonus={"spawned": 1, "until": HOOK_PLAY + 12}, stats={"bonusTaps": 0}))
+        quiet_start(page)
+        tid(page, "golden-gift").wait_for(timeout=8000)
+        shot(page, "47a-golden-gift", 0.15)
+    except Exception as e:
+        report["errors"].append(f"golden gift shot failed: {e}")
+    try:
+        # the lucky slice: four taps made, so this is the 5th; tap it for the pop, the ten coins and the full-width banner
         page = seeded_page(browser, hooks_save(bonus={"until": HOOK_PLAY + 12}, stats={"bonusTaps": 4}))
         quiet_start(page)
         tid(page, "golden-pizza").wait_for(timeout=8000)
@@ -552,27 +565,69 @@ with sync_playwright() as pw:
     except Exception as e:
         report["errors"].append(f"golden lucky shot failed: {e}")
     try:
-        page = seeded_page(browser, hooks_save(order={"offer": {"hood": "suburbs", "target": 40, "left": 45, "variant": 0}}))
+        page = seeded_page(browser, hooks_save(order={"offer": {"hood": "suburbs", "target": 1100, "left": 45, "variant": 0}}))
         quiet_start(page)
         tid(page, "order-accept").wait_for(timeout=8000)
         shot(page, "48-order-offer", 0.3)
     except Exception as e:
         report["errors"].append(f"order offer shot failed: {e}")
     try:
-        # 20 of 40 pies sold with 84 s left (the managed shop keeps selling while the page loads)
-        page = seeded_page(browser, hooks_save(order={"active": {"hood": "suburbs", "target": 40, "startSold": 680, "left": 84, "variant": 0}}))
+        # D422: 250 of 1,100 pies sold with 84 s left: behind the clock (30% used, 23% sold), so "tap to rush!" shows (the managed shop
+        # keeps selling at about 7.7 pies/s while the page loads)
+        page = seeded_page(browser, hooks_save(order={"active": {"hood": "suburbs", "target": 1100, "startSold": 4750, "left": 84, "variant": 0}}))
         quiet_start(page)
         tid(page, "order-active").wait_for(timeout=8000)
         shot(page, "49-order-active", 0.3)
     except Exception as e:
         report["errors"].append(f"order active shot failed: {e}")
     try:
-        # one pie short: it finishes within a second of load; shoot while the chip flashes gold with the thank-you
-        page = seeded_page(browser, hooks_save(order={"active": {"hood": "suburbs", "target": 40, "startSold": 661, "left": 80, "variant": 0}}))
+        # a few pies short: it finishes within a second of load; shoot while the chip flashes gold with the thank-you and the coins fly
+        page = seeded_page(browser, hooks_save(order={"active": {"hood": "suburbs", "target": 1100, "startSold": 3908, "left": 80, "variant": 0}}))
         tid(page, "order-done").wait_for(timeout=15000)
         shot(page, "50-order-success", 0.2)
     except Exception as e:
         report["errors"].append(f"order success shot failed: {e}")
+    # 18. v5.14 return hooks: Nonna's night oven (51), the welcome-back gift (52-54) and the next-scene teaser (55). Each save carries
+    # its state: `nightOven` is the tier owned, and `lastSavedAt` puts the player away for the gift. 52-54 skip settle() because it taps
+    # `collect-offline`; the gift is the shot. The daily gift calendar is marked shown so it doesn't cover the scene afterwards.
+    def return_save(away_hours=None, oven=0):
+        sv = hooks_save()
+        sv["nightOven"] = oven
+        if away_hours:
+            sv["lastSavedAt"] = int(time.time() * 1000) - int(away_hours * 3600 * 1000)
+        return sv
+    try:
+        page = seeded_page(browser, return_save()); quiet_start(page)
+        tid(page, "night-oven-chip").click()
+        tid(page, "night-oven-sheet").wait_for(timeout=5000)
+        shot(page, "51-night-oven-sheet", 0.5)
+    except Exception as e:
+        report["errors"].append(f"night oven sheet shot failed: {e}")
+    try:
+        # away 3 h 12 m of a 4 h oven: the door is shut and glows at about 80%
+        page = seeded_page(browser, return_save(away_hours=3.2))
+        tid(page, "collect-offline").wait_for(timeout=8000)
+        shot(page, "52-gift-closed", 0.8)
+        # open it: the door swings and the total counts up; shoot partway
+        tid(page, "collect-offline").click()
+        shot(page, "53-gift-counting", 0.3)
+    except Exception as e:
+        report["errors"].append(f"welcome-back gift shots failed: {e}")
+    try:
+        # away 9 h with the 4 h oven: full, and the bigger oven is on offer
+        page = seeded_page(browser, return_save(away_hours=9))
+        tid(page, "collect-offline").wait_for(timeout=8000)
+        shot(page, "54-gift-full-upgrade", 0.8)
+    except Exception as e:
+        report["errors"].append(f"full night oven shot failed: {e}")
+    try:
+        page = seeded_page(browser, return_save()); quiet_start(page)
+        shot(page, "55b-hud-teaser-ring", 0.3)
+        tid(page, "open-scrapbook").click()
+        tid(page, "scrapbook-teaser").wait_for(timeout=5000)
+        shot(page, "55-scrapbook-teaser", 0.8)
+    except Exception as e:
+        report["errors"].append(f"scrapbook teaser shot failed: {e}")
     browser.close()
 
 httpd.shutdown()

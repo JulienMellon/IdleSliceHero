@@ -12,7 +12,7 @@ import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
 import { coachStep } from '@/engine/tutorial';
-import { BuyButton, type Goal, haptic, Hud, OfflinePopup, Toast } from '@/components/game-ui';
+import { BuyButton, type Goal, haptic, Hud, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { aOrAn } from '@/components/goal-model';
 import { bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
@@ -27,7 +27,9 @@ import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEA
 import { APP_VERSION } from '@/content/version';
 import { money, pizzas, rate } from '@/engine/format';
 import * as G from '@/engine/game';
+import { nightOvenChip, nightOvenView } from '@/engine/night-oven';
 import * as R from '@/engine/rewards';
+import { nextSceneTeaser } from '@/engine/teaser';
 import type { Station } from '@/engine/pipeline';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
@@ -50,7 +52,7 @@ export default function GameScreen() {
   const offline = useGame((s) => (s.titleDone ? s.offline : null));
   const toast = useGame((s) => s.toast);
   const covered = useGame((s) => !!s.playing || !!s.offline);
-  const { tapShop, buy, buyFleet, buyDecor, build, setActive, dismissOffline, bidPier9, claimDaily, claimWeekly, claimChest, claimWeeklyChest, startBooster, claimGift, markGiftShown } = useGame.getState();
+  const { tapShop, buy, buyFleet, buyDecor, build, setActive, dismissOffline, bidPier9, claimDaily, claimWeekly, claimChest, claimWeeklyChest, startBooster, claimGift, markGiftShown, buyNightOven } = useGame.getState();
   // stable (the store's actions never change), so the memoised drawer and calendar aren't re-rendered by them
   const taskActions = useMemo(() => ({ claimDaily, claimWeekly, claimChest, claimWeeklyChest, startBooster }), [claimDaily, claimWeekly, claimChest, claimWeeklyChest, startBooster]);
   const onClaimGift = useCallback((repair: boolean) => claimGift(repair), [claimGift]);
@@ -70,16 +72,22 @@ export default function GameScreen() {
   const [tasksOpen, setTasksOpen] = useState(false);
   const [tasksTab, setTasksTab] = useState<'daily' | 'weekly'>('daily');
   const [giftOpen, setGiftOpen] = useState(false);
+  // v5.14: Nonna's night oven info sheet (opened from the HUD chip)
+  const [ovenOpen, setOvenOpen] = useState(false);
   // v5.13: the golden pizza waits behind any drawer, the tasks sheet, the calendar, or another screen (scrapbook, city)
   const [focused, setFocused] = useState(true);
   useFocusEffect(
     useCallback(() => {
       setFocused(true);
-      return () => setFocused(false);
+      // G94: a refused-tap toast belongs to the screen it was shown on; it doesn't ride along onto the City or the Scrapbook
+      return () => {
+        setFocused(false);
+        useGame.setState({ toast: null });
+      };
     }, []),
   );
   const setBonusHold = useGame((s) => s.setBonusHold);
-  const hold = drawerOpen || tasksOpen || giftOpen || !focused;
+  const hold = drawerOpen || tasksOpen || giftOpen || ovenOpen || !focused;
   useEffect(() => {
     setBonusHold(hold);
   }, [hold, setBonusHold]);
@@ -106,6 +114,12 @@ export default function GameScreen() {
   const onGift = useCallback(() => { haptic(); setTasksOpen(false); setGiftOpen(true); }, []);
   const closeTasks = useCallback(() => setTasksOpen(false), []);
   const closeGift = useCallback(() => setGiftOpen(false), []);
+  const onOven = useCallback(() => { haptic(); setDrawerOpen(false); setTasksOpen(false); setGiftOpen(false); setOvenOpen(true); }, []);
+  const closeOven = useCallback(() => setOvenOpen(false), []);
+  // the night oven's sheet and drawer card read one view, built only while one of them is open (it prices the tiers); the chip is a string
+  const ovenView = ovenOpen || drawerOpen ? nightOvenView(game) : null;
+  // the ring on the scrapbook button: how far the next story scene is (whole 5% steps, so it repaints rarely)
+  const teaser = nextSceneTeaser(game);
   useEffect(() => {
     if (!autoGift) return;
     markGiftShown();
@@ -277,6 +291,9 @@ export default function GameScreen() {
         tasksBadge={hud.badge}
         onGift={rewardsOn ? onGift : undefined}
         giftDot={hud.giftDot}
+        ovenText={rewardsOn ? nightOvenChip(game) : undefined}
+        onOven={rewardsOn ? onOven : undefined}
+        scrapRing={teaser.kind === 'complete' ? undefined : teaser.step}
         halo={coach?.target === 'cash' ? 'cash' : coach?.target === 'goal' ? 'goal' : null} />
       <ShopTabs game={game} boostMult={hud.mult} onSelect={setActive} onBuild={build} />
       <View style={styles.sceneArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
@@ -375,6 +392,19 @@ export default function GameScreen() {
                   tone={buttonTone({ lock: !nextVeh || !!fleetLock, gain: vg })}
                   onBuy={buyFleet}
                 />
+                {ovenView && (
+                  <StationCard
+                    testID="buy-night-oven"
+                    icon="🌙"
+                    title={ovenView.next ? ovenView.next.title : `Night oven: holds ${ovenView.hours}`}
+                    detail={ovenView.next ? ovenView.next.lock ?? `Nonna keeps baking while you're away · now ${ovenView.hours}` : 'Biggest it gets'}
+                    cost={ovenView.next && !ovenView.next.lock ? ovenView.next.price : null}
+                    costLabel={ovenView.next ? 'Locked' : 'MAX'}
+                    canBuy={!!ovenView.next?.canBuy}
+                    tone={buttonTone({ lock: !ovenView.next || !!ovenView.next.lock, gain: 1 })}
+                    onBuy={buyNightOven}
+                  />
+                )}
                 <Text style={styles.section}>{`Decor · each tier: +${Math.round((perk?.decorBoost ?? DECOR_BOOST) * 100)}% pizza price in this shop`}</Text>
                 {DECOR_KINDS.map((kind) => {
                   const d = DECOR[kind];
@@ -412,7 +442,8 @@ export default function GameScreen() {
       {/* payout coins fly from the carrier to the cash (D344) */}
       <CoinLayer />
       {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
-      {offline && <OfflinePopup seconds={offline.seconds} capped={offline.capped} awaySeconds={offline.awaySeconds} earned={offline.earned} byShop={offline.byShop} onCollect={dismissOffline} />}
+      {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}
+      {offline && <OfflinePopup summary={offline} nightOven={game.nightOven} onCollect={dismissOffline} />}
     </View>
   );
 }

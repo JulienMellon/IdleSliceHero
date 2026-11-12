@@ -2,7 +2,7 @@
 // long the chip row dims. Pure, so the budgets are tested in node (the drawing lives in kitchen-hud.tsx).
 import type { Station } from '../../engine/pipeline';
 import type { Layout } from './layout';
-import { P, kAt } from './projection';
+import { P, SCENE_W, kAt } from './projection';
 import type { Rect } from './stations';
 
 /** A station reaches Lv 25 / 50 / 100: a gold badge 72 pt across, centred over the station's furniture. */
@@ -37,7 +37,26 @@ export function stationHatTop(lay: Pick<Layout, 'cooks' | 'bakers' | 'staff'>, s
 export function mileAnchor(rect: Rect, rowY: number, hatTop = Number.POSITIVE_INFINITY): { cx: number; cy: number } {
   const lowest = rowY + CHIP_ROW_HALF + ROW_AIR + MILE_R;
   const mid = (rect.y0 + rect.y1) / 2;
-  return { cx: (rect.x0 + rect.x1) / 2, cy: Math.max(lowest, Math.min(mid, hatTop - MILE_HAT_GAP - MILE_R)) };
+  // D440: shifted MILE_SHIFT down and right of the station's middle, off the two station chips and the awning corner it used to hide; kept on screen
+  const cx = Math.min(SCENE_W - MILE_R - MILE_EDGE, (rect.x0 + rect.x1) / 2 + MILE_SHIFT);
+  return { cx, cy: Math.max(lowest, Math.min(mid, hatTop - MILE_HAT_GAP - MILE_R)) + MILE_SHIFT };
+}
+/** D440: how far (pt) the badge sits down and to the right of where D429 put it, and the air it keeps from the screen's right edge. */
+export const MILE_SHIFT = 20;
+export const MILE_EDGE = 2;
+/** Air (screen pt) a speech pill keeps from the wall it stands inside. */
+export const BUBBLE_AIR = 2;
+/** The speech pill's width for its text (10 pt bold plus padding). */
+export const bubbleWidth = (text: string) => text.length * 5.6 + 16;
+/** The shop's side walls as a speech pill sees them: from the left pilaster's inner edge to the right pilaster's (D440: Marco's pill poked through the left wall at x 22). */
+export function bubbleWalls(lay: Pick<Layout, 'L' | 'R'>): { x0: number; x1: number } {
+  return { x0: P(lay.L + 8, 0)[0], x1: P(lay.R - 8, 0)[0] };
+}
+/** The pill's centre x: its anchor, moved to keep the whole pill inside the walls (and the scene), whichever is tighter. */
+export function bubbleX(x: number, w: number, walls: { x0: number; x1: number }): number {
+  const lo = Math.max(walls.x0 + BUBBLE_AIR, 4) + w / 2;
+  const hi = Math.min(walls.x1 - BUBBLE_AIR, SCENE_W - 4) - w / 2;
+  return lo > hi ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, x));
 }
 /** The waiting pill stays hidden this long after a milestone starts, so the badge and the confetti are the only things to read (D429). */
 export const MILE_PILL_HIDE_S = 1.5;

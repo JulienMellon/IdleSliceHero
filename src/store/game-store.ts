@@ -10,6 +10,7 @@ import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
 import * as B from '../engine/bonus';
 import * as G from '../engine/game';
+import * as N from '../engine/night-oven';
 import * as O from '../engine/orders';
 import * as R from '../engine/rewards';
 import { tutorialAdvance, tutorialHoldsStory } from '../engine/tutorial';
@@ -23,7 +24,9 @@ export interface OfflineSummary {
   capped: boolean;
   awaySeconds: number;
   earned: number;
-  byShop: { name: string; earned: number; managed: boolean }[];
+  byShop: { name: string; earned: number; managed: boolean; pies: number }[];
+  /** Built pizzerias with no manager: the gift's news line says one waited for the player. */
+  idle: string[];
 }
 
 /** How many rush taps the store remembers. */
@@ -69,6 +72,8 @@ interface Store {
   buy: (what: G.Upgrade) => boolean;
   buyFleet: () => boolean;
   buyDecor: (kind: DecorKind) => boolean;
+  /** Nonna's night oven: buy the next tier of the away meter. */
+  buyNightOven: () => boolean;
   build: (id: NeighborhoodId) => boolean;
   /** Waterfront's finale: bid on Pier 9. */
   bidPier9: () => boolean;
@@ -174,7 +179,7 @@ export const useGame = create<Store>((set, get) => {
           awaySeconds = r.awaySeconds;
           if (r.earned >= 1 && r.seconds >= TUNING.offlinePopupSeconds) {
             // Hold the cash back until the player taps Collect.
-            offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed })) };
+            offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed, pies: b.pies })), idle: r.idle.map((id) => G.def(id).name) };
             game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
           }
         }
@@ -308,6 +313,12 @@ export const useGame = create<Store>((set, get) => {
     buyFleet: () => commit(G.buyVehicle(get().game), undefined, (next) => ({ type: 'buy', what: 'fleet', vehicle: next.vehicle, sting: purchaseSting('fleet', { vehicle: next.vehicle }) })),
 
     buyDecor: (kind) => commit(G.buyDecor(get().game, get().game.active, kind), { name: kind[0].toUpperCase() + kind.slice(1), cost: G.decorCost(get().game, get().game.active, kind) }, plain('decor')),
+
+    buyNightOven: () => {
+      const g = get().game;
+      const nt = N.nextTier(g);
+      return commit(N.buyNightOven(g), { name: 'Night oven', cost: nt === null ? null : N.nightOvenPrice(g, nt) }, plain('grade'));
+    },
 
     bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: PIER9_BID.cost }, plain('bid')),
 

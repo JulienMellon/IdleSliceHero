@@ -70,7 +70,7 @@ export function driverCast(shopSeed: number): DriverCast[] {
 
 export type Mood = 'smile' | 'focus' | 'happy' | 'o' | 'chew';
 /** What a worker's hands are doing: cooks roll / toss / ladle; bakers hold an empty peel, a pizza, or slide one in. */
-export type Act = 'none' | 'phone' | 'pin' | 'toss' | 'ladle' | 'peel' | 'pizza' | 'slide' | 'slice' | 'cup' | 'lean';
+export type Act = 'none' | 'phone' | 'pin' | 'toss' | 'ladle' | 'peel' | 'pizza' | 'slide' | 'slice' | 'cup' | 'lean' | 'cheer';
 
 /** Props for one chibi figure. Role (`kind`) picks the uniform; look comes from `seed` unless overridden. */
 export interface PersonProps {

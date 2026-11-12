@@ -59,4 +59,23 @@ describe('the patio deck (D428)', () => {
         for (const [a, b] of d.rail.bars.slice(0, 2)) expect([fp, Math.min(a[1], b[1]) > seatFeet]).toEqual([fp, true]);
       }
   });
+  // v5.14 (D428): the deck was not visible in the fixtures at the small shops. The sidewalk packs the tree, the chalkboard, the prop and the vehicle first; a set only
+  // stays where those still fit, so the screenshots use footprints that always seat one (2: Double storefront) and two (3, 4: from three indoor tables)
+  test('D428: every shop from the Double storefront up seats at least one deck at any table count and kitchen size; the Restaurant and Flagship seat two from three indoor tables', () => {
+    for (const fp of [2, 3, 4])
+      for (const tables of [1, 2, 3, 4, 5, 6])
+        for (const ovens of [1, 3, 6])
+          for (const plants of [0, 1, 3]) {
+            const n = layout(fp, ovens, 3, 2, tables, DRIVER_SLOTS[fp], plants).patio.length;
+            expect([fp, tables, ovens, plants, n >= 1]).toEqual([fp, tables, ovens, plants, true]);
+            if (fp >= 3 && tables >= 3) expect([fp, tables, ovens, plants, n]).toEqual([fp, tables, ovens, plants, 2]);
+          }
+  });
+  test('D428: a shop whose sidewalk has no room for a deck draws none (no half-set), and the chalkboard and prop always clear the vehicle', () => {
+    for (let fp = 0; fp < 5; fp++) {
+      const lay = layout(fp, 2, 3, 2, 6, DRIVER_SLOTS[fp], 1);
+      const vehicleLeft = P(lay.scooter.x, lay.scooter.y)[0] - 25;
+      expect([fp, P(lay.sign.x, -34)[0] + 16 + 3 <= vehicleLeft, P(lay.prop.x, -36)[0] + 33 + 3 <= vehicleLeft]).toEqual([fp, true, true]);
+    }
+  });
 });

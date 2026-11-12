@@ -1,6 +1,6 @@
 // Pure scene geometry: where every station, table, lane and person stands for a given shop size.
 // No React here, so it is unit-tested directly (src/components/scene/__tests__/scene.test.ts).
-import { P, SC, SCENE_W, unprojectX } from './projection';
+import { P, SC, SCENE_W, kAt, unprojectX } from './projection';
 
 export const ROOM_W = [270, 295, 320, 340, 358];
 
@@ -34,13 +34,13 @@ export const VEHICLE_HALF_W = 24;
 export const SIGN_HALF_W = 15;
 
 // ---------- the sidewalk (v5.11, re-planned in v5.12: D414, G90, D416; v5.13: D430, D431) ----------
-// One lane of figures stands against the shop front, left of the door, nearest the door first: the idle drivers (always four
+// One lane of figures stands against the shop front, left of the door, nearest the door first: the idle drivers (always three
 // spots, the first at x >= 250 on screen), a clear gap, then the hungry diners (up to four, the room left permitting), then the
 // patio tables in what room is left. Everything is placed in SCREEN units from the door leftwards (so the spacing is the spacing the
 // player sees) and turned back into room units for the cast. Nothing is placed right of the door: at the big footprints the door
 // sits 30 pt from the screen edge, which is why x29 idle drivers used to show one figure.
-/** How far (screen pt) a queue figure's feet stand in front of the shop front's base line (D430: they stood on the sill). */
-export const FEET_IN = 6;
+/** How far (screen pt) a queue figure's feet stand in front of the shop front's base line (D430: they stood on the sill; v5.14: 6 still read as on it; the patio deck's back edge, room y −6, is the limit). */
+export const FEET_IN = 7;
 /** Depth of the standing queues: FEET_IN in front of the shop front, behind the walkers' lanes (-30 / -42) and the parked vehicle (-30). */
 export const QUEUE_Y = -FEET_IN / (1.25 * SC);
 /** Room units of depth per screen pt at the front (the projection drops 1.25 SC pt per unit of y). */
@@ -51,15 +51,18 @@ export const PATIO_Y = -12;
 export const PATIO_SEAT = 13;
 /** Screen units between neighbouring diner spots (a figure is ~25 wide, so neighbours overlap by about a tenth). */
 export const QUEUE_PITCH = 22;
-/** Drivers stand 26 apart (D430: at 22 their shoulders overlapped ~40%). */
-export const DRIVER_QUEUE_PITCH = 26;
+/**
+ * Drivers stand 30 apart (D430: at 22 their shoulders overlapped ~40%, at 26 their cap brims still met): a driver's silhouette is
+ * about 29 wide with the brim, so neighbours overlap by well under the 15% budget.
+ */
+export const DRIVER_QUEUE_PITCH = 30;
 /** Diner spots: at most four, the first this far (room units) left of the door's left jamb. */
 export const QUEUE_SPOTS = 4;
 export const QUEUE_FIRST = 18;
-/** Idle drivers: four spots, the first at QUEUE_FIRST left of the door's jamb, nearest the door. */
-export const DRIVER_SPOTS = 4;
+/** Idle drivers: three spots (D430: four was a wall of caps), the first at QUEUE_FIRST left of the door's jamb, nearest the door; the pill counts the rest. */
+export const DRIVER_SPOTS = 3;
 /** Each driver stands this many screen pt lower than the first row (0 = QUEUE_Y itself): ±3 around the mean, in no alternating "fence" order (D430). */
-export const DRIVER_DROP_PT = [0, 6, 2, 5] as const;
+export const DRIVER_DROP_PT = [0, 6, 3] as const;
 /** The drivers' nearest spot is never left of this screen x, so the group reads as standing at the door (D431). */
 export const DRIVER_NEAR_X = 250;
 /** Clear screen space between the last driver and the first diner: two groups, not one crowd (D431). */
@@ -69,8 +72,15 @@ const MIN_DINERS_FOR_PATIO = 3;
 /** Half a standing figure's width on screen (box: ±11 at k = depth scale × 1.14). */
 export const FIGURE_HALF_W = 12.5;
 /** Heights (z) the pills hang at over the feet: the drivers' above the "+N" of the diner queue. */
-export const WAIT_TAG_Z = 96;
-export const MORE_TAG_Z = 68;
+export const WAIT_TAG_Z = 84;
+export const MORE_TAG_Z = 66;
+/**
+ * Half the width of a dining table's set on screen-room units: the table top (±14), the chairs and the diners in them (SEAT + 11 each way).
+ * The glass shop front shows the front rows through it, so a queue figure standing in front of one covers a seated diner or the table (D430).
+ */
+export const TABLE_SET_HALF = SEAT + 11;
+/** Tables at this depth or nearer the sill sit behind the sidewalk queue's heads; the back row is clear above them. */
+export const NEAR_ROW_Y = 24;
 /** Half the width of a patio set on screen: the chairs reach ±26.5 at table scale (×1.1 at that depth), the umbrella ±24. */
 export const PATIO_HALF_W = 30;
 /** Clear space (screen) kept between the patio set and the wall's left pilaster / the nearest diner. */
@@ -211,12 +221,16 @@ export interface Layout {
   prop: { x: number };
   /** Up to two patio tables on the sidewalk, right of the left pilaster and left of the drivers: only as many whole sets as fit (0 on the narrowest shops). */
   patio: { x: number; y: number }[];
-  /** Diner queue: up to four standing spots outside, left of the idle drivers (GROUP_GAP clear of the last), nearest the door first, facing right; none past the wall's left pilaster. */
+  /** Diner queue: up to four standing spots outside, left of the idle drivers (GROUP_GAP clear of the last), nearest the door first, facing right; none past the wall's left pilaster, and none in front of a table set (D430: the rest show in the "+N" pill). */
   queue: Pt[];
+  /** Where the "+N" pill hangs: over the last diner, or, with no diner figures, over the first spot the diners would take. */
+  queueTag: Pt;
   /** Idle drivers wait in the same lane, nearest the door (the first at x >= DRIVER_NEAR_X), facing the door, each at its own height (DRIVER_DROP_PT): always DRIVER_SPOTS spots. */
   driverQueue: Pt[];
   /** Where the "N drivers idle" tag hangs: over the middle of the driver group. */
   waitTag: Pt;
+  /** The pill's left edge never goes left of this screen x: the back row's seated faces end here (D439: the long pill grazed the walk-in at the right-hand back table). */
+  tagLeft: number;
 }
 
 export function layout(fp: number, ovenCount: number, cookCount: number, staffCount: number, tableCount: number, driverSlots: number, plants = 0): Layout {
@@ -325,8 +339,15 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   const setSpan = 2 * PATIO_HALF_W + PATIO_AIR;
   const setsLeft = (rightEdge: number) => Math.max(0, Math.min(2, Math.floor((rightEdge - laneLeft + PATIO_AIR) / setSpan)));
   const dinerX = (i: number) => lastDriver - GROUP_GAP - QUEUE_PITCH * i;
+  // the sets the glass front shows nearest the sill: a diner standing in front of one would cover its table or a seated diner
+  const sets = tables.filter((tb) => tb.y <= NEAR_ROW_Y).map((tb): [number, number] => {
+    const c = sxQ(tb.x, tb.y);
+    const h = TABLE_SET_HALF * kAt(tb.y) * 1.1;
+    return [c - h, c + h];
+  });
+  const dinerClear = (x: number) => sets.every(([a, b]) => x + FIGURE_HALF_W <= a || x - FIGURE_HALF_W >= b);
   let nDiners = 0;
-  while (nDiners < QUEUE_SPOTS && dinerX(nDiners) - FIGURE_HALF_W >= laneLeft) nDiners++;
+  while (nDiners < QUEUE_SPOTS && dinerX(nDiners) - FIGURE_HALF_W >= laneLeft && dinerClear(dinerX(nDiners))) nDiners++;
   // a patio set takes the room left of the diners: give up diners (down to a couple) rather than the patio when that is what makes it fit
   if (nDiners > 0 && setsLeft(dinerX(nDiners - 1) - FIGURE_HALF_W - PATIO_AIR) === 0)
     for (let n = nDiners - 1; n >= Math.min(nDiners, MIN_DINERS_FOR_PATIO); n--)
@@ -335,6 +356,7 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
         break;
       }
   const queue: Pt[] = Array.from({ length: nDiners }, (_, i) => [unprojectX(dinerX(i), QUEUE_Y), QUEUE_Y] as Pt);
+  const queueTag: Pt = queue[nDiners - 1] ?? ([unprojectX(dinerX(0), QUEUE_Y), QUEUE_Y] as Pt);
   // the patio takes the room between the left pilaster and the last diner (or driver): whole sets only, nearest the diners first, none straddling the wall line
   const patioRight = (nDiners ? dinerX(nDiners - 1) - FIGURE_HALF_W : lastDriver - FIGURE_HALF_W) - PATIO_AIR;
   const centreLo = laneLeft + PATIO_HALF_W;
@@ -342,22 +364,24 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   for (let c = patioRight - PATIO_HALF_W; patio.length < 2 && c >= centreLo - 1e-6; c -= 2 * PATIO_HALF_W + PATIO_AIR) patio.push({ x: unprojectX(c, PATIO_Y), y: PATIO_Y });
   // the tag hangs over the driver group's middle
   const waitTag: Pt = [unprojectX(dq0 - (DRIVER_QUEUE_PITCH * (DRIVER_SPOTS - 1)) / 2, QUEUE_Y), QUEUE_Y];
+  // the pill's body is ~84 up from the feet, level with the back row's seated faces: it keeps right of the right-most seat (a diner's head is ±8 wide)
+  const tagLeft = Math.max(0, ...tables.filter((tb) => tb.y >= BACK_ROW_Y).map((tb) => sxQ(tb.x + SEAT, tb.y) + 8 * kAt(tb.y) * 1.14 + 3));
   // the sidewalk's props stand in the front row of the sidewalk (−34 … −40): the potted tree is fixed, then the neighbourhood's signature
   // prop and the chalkboard take the first room that is clear of the tree, of the patio guests' way to their chairs and of the parked vehicle
   const scooter = { x: d0 - 60, y: -30 };
   const treeX = sxQ(PLANTER_X(L), TREE_Y);
-  const patioWay = patio.map((t): [number, number] => {
+  const patioWayOf = (t: { x: number; y: number }): [number, number] => {
     const cx = sxQ(t.x + PATIO_SEAT, PATIO_Y);
     return [cx - CHAIR_WAY_HALF_W, cx + CHAIR_WAY_HALF_W];
-  });
+  };
   const vehicleX = sxQ(scooter.x, scooter.y);
   const vehicle1: [number, number] = [vehicleX - VEHICLE_SCREEN_HALF_W, vehicleX + VEHICLE_SCREEN_HALF_W];
   // the second vehicle the drivers' Lv 30 step adds parks nose to tail on the left of the first (ladder.ts `vehicle2`); where the sidewalk has room it is kept clear
   // always, so the board and the prop never move when the step arrives (D432: the yellow scooter clipped the sandwich board). The starter shop has no room for both.
   const vehicle2: [number, number] = [sxQ(scooter.x - SECOND_VEHICLE_SHIFT, scooter.y) - VEHICLE_SCREEN_HALF_W, vehicle1[1]];
   const treeIv: [number, number] = [treeX - TREE_HALF_W, treeX + TREE_HALF_W];
-  const pack = (vehicle: [number, number]) => {
-    const taken: [number, number][] = [treeIv, vehicle, ...patioWay];
+  const pack = (vehicle: [number, number], ways: [number, number][]) => {
+    const taken: [number, number][] = [treeIv, vehicle, ...ways];
     const free = (half: number) => {
       let c = treeX + TREE_HALF_W + PROP_AIR + half;
       for (let guard = 0; guard < 8; guard++) {
@@ -372,12 +396,24 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
     const sign = free(SIGN_SCREEN_HALF_W);
     return { prop, sign };
   };
-  let packed = pack(vehicle2);
-  if (packed.sign > vehicle1[0] || packed.prop > vehicle1[0]) packed = pack(vehicle1);
+  const fits = (pk: { prop: number; sign: number }) => pk.prop + PROP_HALF_W + PROP_AIR <= vehicle1[0] && pk.sign + SIGN_SCREEN_HALF_W + PROP_AIR <= vehicle1[0];
+  const packFor = (ways: [number, number][]) => {
+    const wide = pack(vehicle2, ways);
+    if (fits(wide)) return wide;
+    return pack(vehicle1, ways);
+  };
+  // a patio set only stays where the chalkboard and the signature prop still fit clear of the vehicle (D428: the sets the lane makes room for must not push them under it); the outermost set goes first
+  let nPatio = patio.length;
+  let packed = packFor(patio.slice(0, nPatio).map(patioWayOf));
+  while (nPatio > 0 && !fits(packed)) {
+    nPatio--;
+    packed = packFor(patio.slice(0, nPatio).map(patioWayOf));
+  }
+  patio.length = nPatio;
   const propX = unprojectX(packed.prop, PROP_Y);
   const signX = unprojectX(packed.sign, SIGN_Y);
   return { fp, L, R, prep, cooks, ovens, bay: { x0: bay.x0, x1: bay.x1 }, ovenCols, counter, staff, door, spots, orderSpots, tables, bakers, ledge, // D282: the vehicle parks well left of the walk-ins' turn-in (guestPauseX = d0 − 6)
-    scooter, sign: { x: signX }, prop: { x: propX }, patio, queue, driverQueue, waitTag };
+    scooter, sign: { x: signX }, prop: { x: propX }, patio, queue, queueTag, driverQueue, waitTag, tagLeft };
 }
 
 /** The pills keep this far (screen) from the screen edge (D420: the "×11 waiting" pill used to end 3 pt from it). */
@@ -385,16 +421,15 @@ export const TAG_MARGIN = 12;
 /** Width of a pill for its text (10 pt bold: ~5.8 per character plus the padding). */
 export const waitTagWidth = (text: string) => text.length * 5.8 + 14;
 /** Where the pill's centre sits (screen), over the idle drivers' group, kept TAG_MARGIN inside the screen edges. */
-export function waitTagAt(lay: Pick<Layout, 'waitTag'>, text: string): { x: number; y: number; w: number; tail: number } {
+export function waitTagAt(lay: Pick<Layout, 'waitTag' | 'tagLeft'>, text: string): { x: number; y: number; w: number; tail: number } {
   const [sx, sy] = P(lay.waitTag[0], lay.waitTag[1], WAIT_TAG_Z);
   const w = waitTagWidth(text);
-  const x = Math.min(SCENE_W - TAG_MARGIN - w / 2, Math.max(TAG_MARGIN + w / 2, sx));
+  const x = Math.min(SCENE_W - TAG_MARGIN - w / 2, Math.max(TAG_MARGIN + w / 2, lay.tagLeft + w / 2, sx));
   return { x, y: sy, w, tail: sx - x };
 }
 /** The "+N" pill over the last diner: higher than that figure's head and lower than the drivers' pill, so the two never meet. */
-export function moreTagAt(lay: Pick<Layout, 'queue'>, text: string): { x: number; y: number; w: number } {
-  const last = lay.queue[lay.queue.length - 1] ?? [0, QUEUE_Y];
-  const [sx, sy] = P(last[0], last[1], MORE_TAG_Z);
+export function moreTagAt(lay: Pick<Layout, 'queueTag'>, text: string): { x: number; y: number; w: number } {
+  const [sx, sy] = P(lay.queueTag[0], lay.queueTag[1], MORE_TAG_Z);
   const w = waitTagWidth(text);
   return { x: Math.min(SCENE_W - TAG_MARGIN - w / 2, Math.max(TAG_MARGIN + w / 2, sx)), y: sy, w };
 }
@@ -402,12 +437,12 @@ export function moreTagAt(lay: Pick<Layout, 'queue'>, text: string): { x: number
 /** What a pill covers on screen, tail included (the pill is 17 tall from 9 above its anchor; the tail reaches 12 below it). */
 const pillRect = (x: number, y: number, w: number) => ({ x0: x - w / 2, x1: x + w / 2, y0: y - 9 - 0.7, y1: y + 12 + 0.7 });
 /** The drivers' "N drivers idle · buy …" pill's screen rect (G91: pops keep off it, so the station it names is never covered). */
-export function waitTagRect(lay: Pick<Layout, 'waitTag'>, text: string) {
+export function waitTagRect(lay: Pick<Layout, 'waitTag' | 'tagLeft'>, text: string) {
   const t = waitTagAt(lay, text);
   return pillRect(t.x, t.y, t.w);
 }
 /** The "+N" pill's screen rect. */
-export function moreTagRect(lay: Pick<Layout, 'queue'>, text: string) {
+export function moreTagRect(lay: Pick<Layout, 'queueTag'>, text: string) {
   const t = moreTagAt(lay, text);
   return pillRect(t.x, t.y, t.w);
 }

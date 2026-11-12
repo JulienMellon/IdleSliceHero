@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import { BONUS, LUCKY_MULT } from '../../content/hooks';
+import { BONUS, BONUS_VIEW, LUCKY_MULT } from '../../content/hooks';
 import * as B from '../bonus';
 import * as G from '../game';
 import * as R from '../rewards';
@@ -46,13 +46,13 @@ describe('the golden pizza schedule', () => {
     expect(B.bonusVisible(after)).toBe(false);
   });
 
-  test('the first appears 20 s into the session, and stays 12 s', () => {
+  test('D445: the first is scripted for right after the unlock (2 s), not 20 s in, and stays 12 s', () => {
     const s = unlocked();
-    const before = run(s, 19.4);
+    const before = run(s, 1.4);
     expect(B.bonusVisible(before)).toBe(false);
     const up = untilVisible(before);
-    expect(up.playSeconds).toBeGreaterThanOrEqual(BONUS.firstAtPlay);
-    expect(up.playSeconds).toBeLessThan(BONUS.firstAtPlay + 0.5);
+    expect(up.playSeconds).toBeGreaterThanOrEqual(BONUS.firstAfterUnlock);
+    expect(up.playSeconds).toBeLessThan(BONUS.firstAfterUnlock + 0.5);
     expect(up.bonus.spawned).toBe(1);
     expect(up.bonus.until - up.playSeconds).toBeCloseTo(BONUS.visibleSeconds, 5);
     // still there 11.5 s on, gone a moment after 12 s
@@ -124,7 +124,7 @@ describe('the golden pizza schedule', () => {
 
   test('a quiet tick returns the very same state (identity), and a spawn keeps stats and rewards identity', () => {
     const s = unlocked();
-    const quiet = { ...s, playSeconds: 3 };
+    const quiet = { ...s, playSeconds: 3, bonus: { ...s.bonus, next: 3 + BONUS.firstAfterUnlock } };
     expect(B.bonusTick(quiet, 0.2, false)).toBe(quiet);
     const due = { ...s, playSeconds: BONUS.firstAtPlay };
     const up = B.bonusTick(due, 0.2, false);
@@ -226,5 +226,78 @@ describe('time away', () => {
     // with none on screen there is nothing to change
     const idle = unlocked();
     expect(B.bonusAway(idle, 600)).toBe(idle);
+  });
+});
+
+describe('v5.14 fix round (G93, D437, D438, D445, D446)', () => {
+  const WIDTH = 390;
+  const BOX_H = BONUS_VIEW.height * BONUS_VIEW.scale;
+
+  test('G93: the pop keeps its whole width on screen, so "+" and "LUCKY" are never cut', () => {
+    const lo = BONUS_VIEW.popEdge;
+    const hi = WIDTH - BONUS_VIEW.popWidth - BONUS_VIEW.popEdge;
+    // the old placement was x - 90 with no clamp: a tap at x = 20 started at -70
+    expect(B.popPlace(20, 40, WIDTH, BOX_H).left).toBe(lo);
+    expect(B.popPlace(WIDTH - 5, 40, WIDTH, BOX_H).left).toBe(hi);
+    expect(B.popPlace(195, 40, WIDTH, BOX_H).left).toBe(195 - BONUS_VIEW.popWidth / 2);
+    for (let x = -50; x <= WIDTH + 50; x += 7) {
+      const { left } = B.popPlace(x, 40, WIDTH, BOX_H);
+      expect(left).toBeGreaterThanOrEqual(lo);
+      expect(left + BONUS_VIEW.popWidth).toBeLessThanOrEqual(WIDTH - BONUS_VIEW.popEdge);
+    }
+  });
+
+  test('G93: in the top lane the pop drops below the box instead of rising out of the scene', () => {
+    const p = B.popPlace(200, 30, WIDTH, BOX_H);
+    expect(p.top).toBeGreaterThan(30 + BOX_H / 2);
+    expect(p.top).toBeGreaterThanOrEqual(0);
+    // a very narrow scene still gives a sane left
+    expect(B.popPlace(10, 10, 150, BOX_H).left).toBe(BONUS_VIEW.popEdge);
+  });
+
+  test('D437: 1.3x for every pizza, 1.6x for the lucky slice; the drawn box stays at least 44 pt', () => {
+    expect(B.bonusScale(false)).toBe(1.3);
+    expect(B.bonusScale(true)).toBe(1.6);
+    expect(BONUS_VIEW.height * B.bonusScale(false)).toBeGreaterThanOrEqual(44);
+    expect(BONUS_VIEW.width * B.bonusScale(false)).toBeGreaterThanOrEqual(44);
+    expect(BONUS_VIEW.glowPx).toBe(10);
+  });
+
+  test('D437: three sparkles trail behind the flight, on the side it came from', () => {
+    const right = B.sparkleTrail(1);
+    const left = B.sparkleTrail(-1);
+    expect(right).toHaveLength(3);
+    expect(right.every((p) => p.x < 0)).toBe(true);
+    expect(left.every((p) => p.x > 0)).toBe(true);
+    expect(right.map((p) => p.x)).toEqual([...right.map((p) => p.x)].sort((a, b) => b - a));
+  });
+
+  test('D438: the streak label reads "4/5" with four taps made', () => {
+    expect([0, 1, 4, 5, 9].map(B.pipsLabel)).toEqual(['0/5', '1/5', '4/5', '0/5', '4/5']);
+  });
+
+  test('D446: the pop says what the payout is worth in time', () => {
+    expect(B.salesLine(false)).toBe('+45 s of sales');
+    expect(B.salesLine(true)).toBe('+3 min of sales');
+  });
+
+  test('D445: only the very first pizza, with no tap yet, is the gift', () => {
+    expect(B.isFirstGift(1, 0)).toBe(true);
+    expect(B.isFirstGift(2, 0)).toBe(false);
+    expect(B.isFirstGift(1, 1)).toBe(false);
+  });
+
+  test('D445: a save loaded after the takeover with the first still unsent gets it 2 s in, not 20 s; later ones keep their gaps', () => {
+    const s = { ...unlocked(), playSeconds: 500 };
+    const loaded = { ...s, bonus: { ...s.bonus, next: 520 } };
+    const t1 = B.bonusTick({ ...loaded, playSeconds: 500.2 }, 0.2, false);
+    expect(t1.bonus.next).toBeCloseTo(500.2 + BONUS.firstAfterUnlock, 6);
+    const up = untilVisible(loaded);
+    expect(up.playSeconds - 500).toBeLessThan(BONUS.firstAfterUnlock + 0.5);
+    // held back by a scene: no pull-in, nothing appears
+    expect(B.bonusTick({ ...loaded, playSeconds: 500.2 }, 0.2, true).bonus.next).toBe(520);
+    // not the first: the schedule is the gap it was given
+    const second = { ...loaded, bonus: { ...loaded.bonus, spawned: 1, next: 600 } };
+    expect(B.bonusTick({ ...second, playSeconds: 500.2 }, 0.2, false).bonus.next).toBe(600);
   });
 });

@@ -24,6 +24,9 @@ export const SEATED_TORSO_HALF = 9.6;
 /** Height of a figure's hip/shoulder line above its feet, at rest (no walk bob); `tall` is the look's height tweak. */
 export const bodyBy = (kind: Kind, tall: number) => (kind === 'sit' ? -21 : -30 - tall);
 
+/** A cheering figure's hands (D444): both arms straight up past the head, wide of the hat (the back hand mirrors the front one). */
+export const CHEER_HAND = (hy: number): [number, number] => [9.5, hy - 17];
+
 /** A standing figure's hand when it holds a phone up to read it: in front of the chest, just under the chin. */
 export const PHONE_HAND = (by: number): [number, number] => [8.5, by - 1];
 
@@ -58,6 +61,8 @@ export function limbGeom({ kind, act, carry, carryWalk, step, arm, tall }: LimbG
         : act === 'cup'
           ? [10.5, by + 6.5]
           : [12 + arm, by + 9 - arm]
+      : act === 'cheer'
+        ? CHEER_HAND(hy)
       : act === 'toss'
         ? [5, hy - 14 - arm]
         : act === 'ladle'
@@ -71,7 +76,7 @@ export function limbGeom({ kind, act, carry, carryWalk, step, arm, tall }: LimbG
               : [9 + sw * 2.5, by + 16];
   // a walking carrier holds the box centred in front, both hands on it
   const bx = carryWalk ? 10 : 3;
-  const backHand: [number, number] = carry && carryWalk ? [-4, by + 10] : pin ? [hand[0] - 9, hand[1]] : sitting ? (act === 'lean' ? [-12, by + 3] : [-7, by + 15]) : [-8.5 - sw * 2.5, by + 15.5];
+  const backHand: [number, number] = act === 'cheer' && !sitting ? [-CHEER_HAND(hy)[0], CHEER_HAND(hy)[1]] : carry && carryWalk ? [-4, by + 10] : pin ? [hand[0] - 9, hand[1]] : sitting ? (act === 'lean' ? [-12, by + 3] : [-7, by + 15]) : [-8.5 - sw * 2.5, by + 15.5];
   return { pin, sitting, walking, sw, by, hand, bx, backHand, peel: kind === 'baker' };
 }
 
