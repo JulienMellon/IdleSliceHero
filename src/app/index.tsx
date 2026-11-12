@@ -324,7 +324,7 @@ export default function GameScreen() {
         {coach && id === 'downtown' && !drawerOpen && <CoachCard step={coach} low={Math.max(8, insets.bottom)} high={12} />}
         {/* v5.13: the special-order chip under the goal bar, and the golden pizza in the sky (both sit under the drawers) */}
         <OrderChip top={ORDER_VIEW.top} onShop={setActive} />
-        {area.w > 0 && <FloatingBonus width={area.w} top={bonusTop} />}
+        {area.w > 0 && <FloatingBonus width={area.w} height={area.h} top={bonusTop} />}
         {drawerOpen && (
           <View style={StyleSheet.absoluteFill}>
             <Pressable testID="close-upgrades-dim" style={styles.dim} onPress={() => setDrawerOpen(false)} />

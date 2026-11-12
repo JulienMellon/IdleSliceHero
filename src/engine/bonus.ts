@@ -98,6 +98,20 @@ export function edgeRider(width: number, boxW: number, itemW: number, edge = BON
   return { input, shift, opacity };
 }
 
+/** G95: the sky band's bottom edge in the scene area: the top of the shop's roof sign (`signTop`, scene units) through the scene's fit. */
+export const skyBottom = (oy: number, s: number, signTop: number): number => oy + (signTop - 5) * s;
+
+/**
+ * G95: the top of the golden pizza's lane for a path lane of 0..1. The whole drawn pizza (`drawnH` = box + pips, plus the bob and the
+ * glow) stays in the sky band above the roof sign when the band has the room; when it hasn't, the pizza flies at the band's top
+ * (`top` + `extraTop`, the room a gift label needs) rather than sliding down over the sign. Pass `bandBottom` 0 when unknown.
+ */
+export function laneY(lane: number, top: number, bandBottom: number, drawnH: number, extraTop = 0): number {
+  const lo = top + extraTop;
+  const hi = bandBottom > 0 ? bandBottom - drawnH - BONUS_VIEW.bobPx - BONUS_VIEW.glowPx : lo + BONUS_VIEW.laneHeight;
+  return lo + lane * Math.max(0, Math.min(BONUS_VIEW.laneHeight, hi - lo));
+}
+
 /** The box is drawn at this scale: bigger than the 60 × 44 art, the lucky slice biggest. */
 export const bonusScale = (lucky: boolean): number => (lucky ? BONUS_VIEW.luckyScale : BONUS_VIEW.scale);
 

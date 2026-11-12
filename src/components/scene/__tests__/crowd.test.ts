@@ -1056,4 +1056,18 @@ describe('the waiting pill over the patio (D450)', () => {
       }
     }
   });
+  test('no patio table ever has more than 2 diners seated at it (its regular and a walk-in), in any frame', () => {
+    let seated = 0;
+    for (const sh of sideShops()) {
+      if (sh.idle) continue;
+      for (const cast of sideFrames(sh)) {
+        for (const p of sh.lay.patio) {
+          const at = cast.filter((c) => c.props.kind === 'sit' && Math.abs(c.props.y - p.y) < 0.01 && Math.abs(c.props.x - p.x) <= PATIO_SEAT + 0.01);
+          seated += at.length;
+          expect([sh.name, at.length <= 2]).toEqual([sh.name, true]);
+        }
+      }
+    }
+    expect(seated).toBeGreaterThan(50);
+  });
 });

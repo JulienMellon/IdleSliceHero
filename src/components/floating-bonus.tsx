@@ -12,12 +12,13 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-nativ
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
 
 import { BONUS, BONUS_VIEW, LUCKY_MULT } from '../content/hooks';
-import { bonusPath, bonusScale, edgeRider, flightX, isFirstGift, pipsLabel, popPlace, salesLine, sparkleTrail, streakPips } from '../engine/bonus';
+import { bonusPath, bonusScale, edgeRider, flightX, laneY, skyBottom, isFirstGift, pipsLabel, popPlace, salesLine, sparkleTrail, streakPips } from '../engine/bonus';
 import { money } from '../engine/format';
 import { bonusBlocked, useGame } from '../store/game-store';
 import { F } from '../theme';
 import { haptic } from './game-ui';
 import { emitCheer, emitCoin, emitPayout } from './pulse-bus';
+import { FRONT_TOP, P, sceneFit } from './scene/projection';
 
 const { width: W, height: H } = BONUS_VIEW;
 const INK = '#3B1F14';
@@ -33,7 +34,7 @@ interface Pop {
   lucky: boolean;
 }
 
-export const FloatingBonus = memo(function FloatingBonus({ width, top }: { width: number; top: number }) {
+export const FloatingBonus = memo(function FloatingBonus({ width, height, top }: { width: number; height: number; top: number }) {
   // which golden pizza is on screen (0 = none; also none while something covers the scene)
   const live = useGame((s) => (bonusBlocked(s) ? 0 : s.game.bonus.until > s.game.playSeconds ? s.game.bonus.spawned : 0));
   const seed = useGame((s) => s.game.bonus.seed);
@@ -69,7 +70,7 @@ export const FloatingBonus = memo(function FloatingBonus({ width, top }: { width
   const dropBanner = useCallback((key: number) => setBanner((k) => (k === key ? 0 : k)), []);
   return (
     <View ref={root} pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      {live > 0 && <Golden key={live} n={live} seed={seed} taps={taps} width={width} top={top} onTap={collect} />}
+      {live > 0 && <Golden key={live} n={live} seed={seed} taps={taps} width={width} height={height} top={top} onTap={collect} />}
       {pops.map((p) => (
         <PopText key={p.key} pop={p} onDone={drop} />
       ))}
@@ -79,7 +80,7 @@ export const FloatingBonus = memo(function FloatingBonus({ width, top }: { width
 });
 
 /** One golden pizza's flight. Mounted when it appears (or when a drawer closes on it) and keyed by its number. */
-function Golden({ n, seed, taps, width, top, onTap }: { n: number; seed: number; taps: number; width: number; top: number; onTap: (pageX: number, pageY: number) => void }) {
+function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed: number; taps: number; width: number; height: number; top: number; onTap: (pageX: number, pageY: number) => void }) {
   const path = bonusPath(seed, n);
   const pips = streakPips(taps);
   const k = bonusScale(pips.lucky);
@@ -116,8 +117,12 @@ function Golden({ n, seed, taps, width, top, onTap }: { n: number; seed: number;
   const b = BONUS_VIEW.bobPx;
   const g = BONUS_VIEW.glowPx;
   const gift = isFirstGift(n, taps);
-  // the gift label sits over the pizza, so its lane starts lower to leave it room
-  const lane = top + (gift ? BONUS_VIEW.giftRoom : 0) + path.lane * BONUS_VIEW.laneHeight;
+  // G95: the lane stays in the sky band above the roof sign; the gift label sits over the pizza, so its lane starts lower to leave it room
+  const fit = sceneFit(width, height || 1);
+  const bandBottom = height > 0 ? skyBottom(fit.oy, fit.s, P(0, 0, FRONT_TOP)[1]) : 0;
+  const lane = laneY(path.lane, top, bandBottom, bh + PIPS_H, gift ? BONUS_VIEW.giftRoom : 0);
+  // a refused-tap toast sits in the same sky: the label gives way to it
+  const toastUp = useGame((s) => !!s.toast);
   const flapScale = fly.flap.interpolate({ inputRange: [0, 1], outputRange: [1, 0.5] });
   const twinkle = fly.flap.interpolate({ inputRange: [0, 1], outputRange: [1, 0.35] });
   const rays = bw * 1.7;
@@ -194,7 +199,7 @@ function Golden({ n, seed, taps, width, top, onTap }: { n: number; seed: number;
           {pipsLabel(taps)}
         </Text>
       </View>
-      {giftRide && (
+      {giftRide && !toastUp && (
         <Animated.View
           testID="golden-gift"
           pointerEvents="none"

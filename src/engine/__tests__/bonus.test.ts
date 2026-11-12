@@ -323,4 +323,23 @@ describe('v5.14 fix round (G93, D437, D438, D445, D446)', () => {
       expect(r.shift.some((x, i) => r.opacity[i] === 1 && Math.abs(x - (boxW - itemW) / 2) < 1e-6)).toBe(true);
     }
   });
+
+  test('G95: the lane stays in the sky band above the roof sign, and drops to the band top when there is no room', () => {
+    const drawnH = BONUS_VIEW.height * BONUS_VIEW.scale + 12;
+    // a tall screen: a band 8..180 has room, so every lane keeps the whole pizza above the sign
+    for (const lane of [0, 0.5, 1]) {
+      const y = B.laneY(lane, 8, 180, drawnH);
+      expect(y).toBeGreaterThanOrEqual(8);
+      expect(y + drawnH + BONUS_VIEW.bobPx + BONUS_VIEW.glowPx).toBeLessThanOrEqual(180 + 1e-6);
+    }
+    // the band is shorter than the lane's travel: lane 1 is held back, not pushed over the sign
+    expect(B.laneY(1, 8, 100, drawnH)).toBeLessThan(8 + BONUS_VIEW.laneHeight);
+    // no room at all: the band's top
+    expect(B.laneY(1, 8, 60, drawnH)).toBe(8);
+    // the gift leaves room for its label above
+    expect(B.laneY(0, 8, 400, drawnH, BONUS_VIEW.giftRoom)).toBe(8 + BONUS_VIEW.giftRoom);
+    // unknown band: the old lane
+    expect(B.laneY(1, 8, 0, drawnH)).toBe(8 + BONUS_VIEW.laneHeight);
+    expect(B.skyBottom(-30, 1, 129)).toBe(94);
+  });
 });
