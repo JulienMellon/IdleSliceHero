@@ -2,14 +2,30 @@
 
 For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` (current state only; don't open `docs/logs/` unless you need one note's history), `docs/PLAN-v5.4-rewards.md` (daily/weekly tasks + gift calendar; defaults D1–D10 confirmed by Julien), `docs/PLAN-v4.7-playtest2.md`, and `STORYLOG.md` / `AUDIOLOG.md`, and **`docs/REVIEW-v5.9-playthrough.md`** (Claude's full playthrough review of 2026-11-01: pacing, bugs B1–B5, story text fixes, per-neighbourhood layers, decisions D1–D6 waiting on Julien). The project's `claude/HANDOFF.md` mirrors this file.
 
-## Status (2026-11-11): v5.13 on `main`; critic round 61 NOT SATISFIED; codecritic round 24 APPROVED at v5.12 (skips v5.13, v5.14); loop RUNNING
-- **Julien, 2026-11-11:** make the game fun, addictive and paced to bring players back. The critic's bar is award-winning games (critic brief) with a FUN AND RETENTION section every round. **Report only verdicts, bugs and majors to him** (token saving).
-- **Approved plan:** v5.12 pacing retune (done) → v5.13 session hooks (floating bonus, special orders from the cast) → v5.14 return hooks (away meter, gift-like welcome back, next-scene teaser, offline-cap upgrades) → v5.15 endgame (mastery stars, Victor's weekly counter-attack). Each build also fixes the previous round's notes.
-- **v5.12:** economy refit with `scripts/pacing-fit.ts` (5 min / 4 h check-in: waterfront day 1.0, university 2.0, industrial 2.7, uptown 3.9, finale 4.9; 8 h check-in 9.8 days). Tuning is a fitted set: refit, don't edit one number. Known flaws to fix in v5.13's refit: 2 h cap vs the 4 h check-in (D433), level prices tiny vs build costs and Uptown costMult 8e8 (D434, C107), Nonna's takeover 1 s after a 5-min first session.
-- **v5.13:** golden pizza (`engine/bonus.ts`, `components/floating-bonus.tsx`) and special orders (`engine/orders.ts`, `components/order-chip.tsx`), numbers and cast lines in `content/hooks.ts`; refit: 4 h cap, costMult = order value (2.5K / 200K / 6M / 60M), builds $1.15B / $230B / $15T / $900T, Pier 9 $120M, `downtownBeat4GapSeconds` 60 (Suburbs in session 1); sim days 1.0 / 2.0 / 3.1 / 4.4 / 4.8. Accepted for now: ~90–300 cheap levels after a build, and a few no-purchase sessions before a build (a strict fit needs ×6,000 order-value jumps per shop; Julien has been told and can choose it). `WHAT_IF_CASH = 1e300` in game.ts (MAX_SAFE_INTEGER hid gains above 9e15).
-- **Reviews:** `CRITICLOG.md` (round 61; next G95, D447), `CODELOG.md` (round 24 APPROVED; v5.13 and v5.14 skip the codecritic; v5.15 reviews `5d82004..HEAD`).
-- **Screenshots:** `scripts/screenshots.py` now closes each finished seeded page (the run hung at shot 42 with ~50 live pages); run it detached (`nohup … &`) and wait ~7 min. `review/` folders are git-ignored; rebuild with `review_shots.py`.
-- The "Where things stand at v5.9" section below is history. Owner decisions and loop rules below still hold.
+## Status (2026-11-11, evening): v5.13 on `main`; v5.14 planned but NOT started — start here
+- **Next step:** read `docs/PLAN-v5.14-retention.md` and launch its three cards (C3 hooks fix round, B3 scene minors, R3 return hooks: night oven, welcome-back gift, next-scene teaser) as `programmer` agents in parallel. All three hit the usage limit on 2026-11-11 before writing anything, and the tree was clean at `fbc481a`. Then verify, take screenshots, and run the critic (the codecritic skips v5.14). v5.15 = endgame + codecritic on `5d82004..HEAD`.
+- **Julien, 2026-11-11:**
+  - Goal: make the game fun, addictive, and paced to bring players back.
+  - The critic's bar is award-winning games (see the critic brief), with a FUN AND RETENTION section every round.
+  - **Report only verdicts, bugs and majors to him.**
+  - The loop runs until the plan is done; he approved it with "go".
+- **Shipped this session:**
+  - **v5.12:** economy at about 5 days (`scripts/pacing-fit.ts`).
+  - **v5.13:**
+    - Golden pizza: `engine/bonus.ts`, `components/floating-bonus.tsx`.
+    - Special orders from the cast: `engine/orders.ts`, `components/order-chip.tsx`.
+    - Numbers and lines in `content/hooks.ts`.
+    - Economy refit: 4 h cap; costMult = order value (2.5K / 200K / 6M / 60M); builds $1.15B / $230B / $15T / $900T; Pier 9 $120M; Suburbs in session 1.
+    - Sim days 1.0 / 2.0 / 3.1 / 4.4 / 4.8.
+    - `WHAT_IF_CASH = 1e300` in game.ts (MAX_SAFE_INTEGER hid gains above 9e15).
+- **Tuning is a fitted set:** refit with `pacing-fit.ts`; don't edit one number.
+- **Open economy choice for Julien:** keep the post-build "tap spree", or take a strict fit with order values ×6,000 per shop. Details are in the plan.
+- **Reviews:**
+  - `CRITICLOG.md`: round 61 NOT SATISFIED; next IDs G95, D447. Its majors are the cards' content.
+  - `CODELOG.md`: round 24 APPROVED at v5.12; next IDs K1, C110, A28, M60, U12, T85.
+- **Screenshots:** `scripts/screenshots.py` closes each seeded page. Run it detached (`nohup … &`, about 7 min). The `review/` folders are git-ignored.
+- **Usage limits:** three parallel Sonnet programmers plus reviews used up the 5-hour limit twice in one day. Consider two cards at a time.
+- The "Where things stand at v5.9" section below is history. The owner decisions and loop rules below still hold.
 
 ## What this is
 - **Game:** an idle pizza-tycoon game for the iOS App Store. Working title **Slice Empire**; repo `JulienMellon/IdleSliceHero`. Design: `docs/DESIGN.md`; retention features: `docs/REWARDS.md`; prestige design: Claude Doc "Franchise to Boston — Prestige Design".
