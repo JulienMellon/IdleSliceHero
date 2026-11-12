@@ -70,6 +70,34 @@ export function popPlace(x: number, y: number, width: number, boxHeight: number)
   return { left: Math.min(hi, Math.max(lo, x - BONUS_VIEW.popWidth / 2)), top: Math.max(0, y + boxHeight / 2 + BONUS_VIEW.popGap) };
 }
 
+/**
+ * G95: a label that rides on the flying box (the gift line, the LUCKY tag) must stay on screen while the box slides in and out.
+ * The box's x is `-boxW + p * (width + boxW)` for the flight value p (0..1, left to right). Returns the keyframes for native
+ * `interpolate`s over p: `shift` is the label's left within the box (centred on it, held `edge` pt inside the screen) and
+ * `opacity` fades the label out as the box centre leaves the screen, so a label never floats alone at the edge.
+ */
+export function edgeRider(width: number, boxW: number, itemW: number, edge = BONUS_VIEW.popEdge): { input: number[]; shift: number[]; opacity: number[] } {
+  const span = width + boxW;
+  const base = (boxW - itemW) / 2;
+  const lo = edge;
+  const hi = Math.max(lo, width - edge - itemW);
+  const fade = 12;
+  const at = (tx: number) => (tx + boxW) / span;
+  const raw = [0, 1, at(lo - base), at(hi - base), at(-boxW / 2), at(fade - boxW / 2), at(width - fade - boxW / 2), at(width - boxW / 2)]
+    .filter((p) => p >= 0 && p <= 1)
+    .sort((a, b) => a - b);
+  const input = raw.filter((p, i) => i === 0 || p - raw[i - 1] > 1e-6);
+  const shift = input.map((p) => {
+    const tx = -boxW + p * span;
+    return Math.min(hi, Math.max(lo, tx + base)) - tx;
+  });
+  const opacity = input.map((p) => {
+    const cx = -boxW + p * span + boxW / 2;
+    return Math.max(0, Math.min(1, Math.min(cx, width - cx) / fade));
+  });
+  return { input, shift, opacity };
+}
+
 /** The box is drawn at this scale: bigger than the 60 × 44 art, the lucky slice biggest. */
 export const bonusScale = (lucky: boolean): number => (lucky ? BONUS_VIEW.luckyScale : BONUS_VIEW.scale);
 

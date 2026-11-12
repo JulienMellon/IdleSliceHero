@@ -62,6 +62,12 @@ export const BONUS_VIEW = {
   luckyCoins: 10,
   /** A normal tap throws this many coins. */
   coins: 3,
+  /** G95: the gift label's room above the lane (it sits over the pizza, clear of the roof sign below), and its size. */
+  giftRoom: 28,
+  giftWidth: 150,
+  tagWidth: 54,
+  /** D451: the lucky banner sits in the sky band (the lane's top) so the cooks' cheer below it stays in view. */
+  bannerHeight: 48,
   /** D445: the label by the very first golden pizza. */
   giftLine: 'A gift, caro. Tap it!',
 } as const;

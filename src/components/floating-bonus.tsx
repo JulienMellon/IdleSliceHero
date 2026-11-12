@@ -12,7 +12,7 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-nativ
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
 
 import { BONUS, BONUS_VIEW, LUCKY_MULT } from '../content/hooks';
-import { bonusPath, bonusScale, flightX, isFirstGift, pipsLabel, popPlace, salesLine, sparkleTrail, streakPips } from '../engine/bonus';
+import { bonusPath, bonusScale, edgeRider, flightX, isFirstGift, pipsLabel, popPlace, salesLine, sparkleTrail, streakPips } from '../engine/bonus';
 import { money } from '../engine/format';
 import { bonusBlocked, useGame } from '../store/game-store';
 import { F } from '../theme';
@@ -73,7 +73,7 @@ export const FloatingBonus = memo(function FloatingBonus({ width, top }: { width
       {pops.map((p) => (
         <PopText key={p.key} pop={p} onDone={drop} />
       ))}
-      {banner > 0 && <LuckyBanner id={banner} onDone={dropBanner} />}
+      {banner > 0 && <LuckyBanner id={banner} top={top} onDone={dropBanner} />}
     </View>
   );
 });
@@ -115,10 +115,15 @@ function Golden({ n, seed, taps, width, top, onTap }: { n: number; seed: number;
   }, [fly]);
   const b = BONUS_VIEW.bobPx;
   const g = BONUS_VIEW.glowPx;
-  const lane = top + path.lane * BONUS_VIEW.laneHeight;
+  const gift = isFirstGift(n, taps);
+  // the gift label sits over the pizza, so its lane starts lower to leave it room
+  const lane = top + (gift ? BONUS_VIEW.giftRoom : 0) + path.lane * BONUS_VIEW.laneHeight;
   const flapScale = fly.flap.interpolate({ inputRange: [0, 1], outputRange: [1, 0.5] });
   const twinkle = fly.flap.interpolate({ inputRange: [0, 1], outputRange: [1, 0.35] });
   const rays = bw * 1.7;
+  // G95: the label and the tag ride the box but stay on screen (and fade out with it) at the edges
+  const giftRide = gift ? edgeRider(width, bw, BONUS_VIEW.giftWidth) : null;
+  const tagRide = pips.lucky ? edgeRider(width, bw, BONUS_VIEW.tagWidth) : null;
   return (
     <Animated.View
       pointerEvents="box-none"
@@ -173,10 +178,13 @@ function Golden({ n, seed, taps, width, top, onTap }: { n: number; seed: number;
           <Box />
         </Svg>
       </Pressable>
-      {pips.lucky && (
-        <View testID="golden-lucky-tag" pointerEvents="none" style={styles.tag}>
+      {tagRide && (
+        <Animated.View
+          testID="golden-lucky-tag"
+          pointerEvents="none"
+          style={[styles.tag, { transform: [{ translateX: fly.x.interpolate({ inputRange: tagRide.input, outputRange: tagRide.shift }) }], opacity: fly.x.interpolate({ inputRange: tagRide.input, outputRange: tagRide.opacity }) }]}>
           <Text style={styles.tagText}>LUCKY</Text>
-        </View>
+        </Animated.View>
       )}
       <View testID="golden-pips" accessibilityLabel={`${pips.filled} of ${pips.total} to the lucky slice`} pointerEvents="none" style={styles.pips}>
         {Array.from({ length: pips.total }, (_, i) => (
@@ -186,10 +194,13 @@ function Golden({ n, seed, taps, width, top, onTap }: { n: number; seed: number;
           {pipsLabel(taps)}
         </Text>
       </View>
-      {isFirstGift(n, taps) && (
-        <View testID="golden-gift" pointerEvents="none" style={[styles.gift, { top: bh + PIPS_H + 2, left: (bw - GIFT_W) / 2 }]}>
+      {giftRide && (
+        <Animated.View
+          testID="golden-gift"
+          pointerEvents="none"
+          style={[styles.gift, { transform: [{ translateX: fly.x.interpolate({ inputRange: giftRide.input, outputRange: giftRide.shift }) }], opacity: fly.x.interpolate({ inputRange: giftRide.input, outputRange: giftRide.opacity }) }]}>
           <Text style={styles.giftText}>{BONUS_VIEW.giftLine}</Text>
-        </View>
+        </Animated.View>
       )}
     </Animated.View>
   );
@@ -296,8 +307,8 @@ function PopText({ pop, onDone }: { pop: Pop; onDone: (key: number) => void }) {
   );
 }
 
-/** D444: "LUCKY SLICE ×4!" across the whole scene at its centre for 1.2 s. */
-function LuckyBanner({ id, onDone }: { id: number; onDone: (key: number) => void }) {
+/** D444: "LUCKY SLICE ×4!" across the whole scene width for 1.2 s, in the sky band (D451) so the cooks' cheer shows below it. */
+function LuckyBanner({ id, top, onDone }: { id: number; top: number; onDone: (key: number) => void }) {
   const [t] = useState(() => new Animated.Value(0));
   useEffect(() => {
     const run = Animated.timing(t, { toValue: 1, duration: BONUS_VIEW.bannerMs, easing: Easing.linear, useNativeDriver: true });
@@ -305,7 +316,7 @@ function LuckyBanner({ id, onDone }: { id: number; onDone: (key: number) => void
     return () => run.stop();
   }, [t, id, onDone]);
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.bannerWrap]}>
+    <View pointerEvents="none" style={[styles.bannerWrap, { top: top + 4 }]}>
       <Animated.View
         testID="golden-banner"
         style={[
@@ -325,22 +336,22 @@ function LuckyBanner({ id, onDone }: { id: number; onDone: (key: number) => void
 
 /** The pips row under the box. */
 const PIPS_H = 12;
-const GIFT_W = 150;
+const GIFT_H = BONUS_VIEW.giftRoom - 6;
 
 const styles = StyleSheet.create({
   box: { position: 'absolute', left: 0 },
   wing: { position: 'absolute' },
   pips: { height: PIPS_H, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 2 },
   pipsLabel: { marginLeft: 3, fontFamily: F.bold, fontSize: 10, color: '#fff', textShadowColor: INK, textShadowRadius: 2, textShadowOffset: { width: 0, height: 1 } },
-  tag: { position: 'absolute', top: -8, alignSelf: 'center', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8, backgroundColor: '#E8432E', borderWidth: 1.5, borderColor: '#fff' },
+  tag: { position: 'absolute', top: -8, left: 0, width: BONUS_VIEW.tagWidth, alignItems: 'center', paddingVertical: 1, borderRadius: 8, backgroundColor: '#E8432E', borderWidth: 1.5, borderColor: '#fff' },
   tagText: { fontFamily: F.bold, fontSize: 10, letterSpacing: 0.8, color: '#fff' },
-  gift: { position: 'absolute', width: GIFT_W, alignItems: 'center', paddingVertical: 3, paddingHorizontal: 6, borderRadius: 10, backgroundColor: '#FFF4DC', borderWidth: 1.5, borderColor: INK },
+  gift: { position: 'absolute', top: -GIFT_H - 4, left: 0, width: BONUS_VIEW.giftWidth, height: GIFT_H, justifyContent: 'center', alignItems: 'center', paddingVertical: 3, paddingHorizontal: 6, borderRadius: 10, backgroundColor: '#FFF4DC', borderWidth: 1.5, borderColor: INK },
   giftText: { fontFamily: F.bold, fontSize: 12, color: INK },
   pop: { position: 'absolute', width: BONUS_VIEW.popWidth, alignItems: 'center' },
   popText: { fontFamily: F.bold, fontSize: 20, color: '#FFE27A', textShadowColor: INK, textShadowRadius: 3, textShadowOffset: { width: 0, height: 1 } },
   popTextLucky: { fontSize: 26 },
   popSub: { fontFamily: F.semi, fontSize: 12, color: '#fff', textShadowColor: INK, textShadowRadius: 3, textShadowOffset: { width: 0, height: 1 } },
-  bannerWrap: { justifyContent: 'center' },
+  bannerWrap: { position: 'absolute', left: 0, right: 0, height: BONUS_VIEW.bannerHeight, justifyContent: 'center' },
   banner: { alignSelf: 'stretch', paddingVertical: 8, paddingHorizontal: 12, alignItems: 'center', backgroundColor: 'rgba(192,57,43,0.94)', borderTopWidth: 2, borderBottomWidth: 2, borderColor: '#FFE27A' },
   bannerText: { fontFamily: F.bold, fontSize: 30, letterSpacing: 0.5, color: '#fff', textShadowColor: INK, textShadowRadius: 4, textShadowOffset: { width: 0, height: 2 } },
 });

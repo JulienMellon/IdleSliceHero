@@ -300,4 +300,27 @@ describe('v5.14 fix round (G93, D437, D438, D445, D446)', () => {
     const second = { ...loaded, bonus: { ...loaded.bonus, spawned: 1, next: 600 } };
     expect(B.bonusTick({ ...second, playSeconds: 500.2 }, 0.2, false).bonus.next).toBe(600);
   });
+
+  test('G95: the gift label and the LUCKY tag stay on screen while the box slides in and out, and fade with it', () => {
+    const W = 393;
+    for (const [boxW, itemW] of [[78, BONUS_VIEW.giftWidth], [96, BONUS_VIEW.tagWidth]] as const) {
+      const r = B.edgeRider(W, boxW, itemW);
+      expect(r.input[0]).toBe(0);
+      expect(r.input[r.input.length - 1]).toBe(1);
+      r.input.forEach((p, i) => {
+        const left = -boxW + p * (W + boxW) + r.shift[i];
+        // whenever it is visible at all, the whole label is inside the window
+        if (r.opacity[i] > 0) {
+          expect(left).toBeGreaterThanOrEqual(BONUS_VIEW.popEdge - 1e-6);
+          expect(left + itemW).toBeLessThanOrEqual(W - BONUS_VIEW.popEdge + 1e-6);
+        }
+      });
+      // off screen at both ends, fully shown mid-flight
+      expect(r.opacity[0]).toBe(0);
+      expect(r.opacity[r.opacity.length - 1]).toBe(0);
+      expect(Math.max(...r.opacity)).toBe(1);
+      // and where nothing needs clamping it is centred on the box
+      expect(r.shift.some((x, i) => r.opacity[i] === 1 && Math.abs(x - (boxW - itemW) / 2) < 1e-6)).toBe(true);
+    }
+  });
 });
