@@ -129,7 +129,7 @@ function Golden({ n, seed, taps, width, top, onTap }: { n: number; seed: number;
           width: bw,
           height: bh + PIPS_H,
           transform: [
-            { translateX: fly.x.interpolate({ inputRange: [0, 1], outputRange: [-bw * 2, width + bw] }) },
+            { translateX: fly.x.interpolate({ inputRange: [0, 1], outputRange: [-bw, width] }) },
             { translateY: fly.bob.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: [0, -b, 0, b, 0] }) },
           ],
         },

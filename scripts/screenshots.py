@@ -559,6 +559,13 @@ with sync_playwright() as pw:
         quiet_start(page)
         tid(page, "golden-pizza").wait_for(timeout=8000)
         shot(page, "47b-golden-lucky", 0.15)
+        # the pizza is flying (12 s across): wait until the whole box is inside the window, then tap it
+        for _ in range(60):
+            bb = tid(page, "golden-pizza").bounding_box()
+            vw = page.viewport_size["width"]
+            if bb and bb["x"] >= 4 and bb["x"] + bb["width"] <= vw - 4:
+                break
+            page.wait_for_timeout(100)
         tid(page, "golden-pizza").click(force=True)
         tid(page, "golden-pop").wait_for(timeout=3000)
         shot(page, "47c-golden-lucky-tap", 0.25)
