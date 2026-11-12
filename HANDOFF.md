@@ -1,3 +1,5 @@
+> **2026-11-11: the build loop now runs from `docs/build/`. Start at `docs/build/README.md`, then `docs/build/STATE.md`. The sections below are history and lessons.**
+
 # Handoff — Slice Empire (IdleSliceHero), after v5.9
 
 For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` (current state only; don't open `docs/logs/` unless you need one note's history), `docs/PLAN-v5.4-rewards.md` (daily/weekly tasks + gift calendar; defaults D1–D10 confirmed by Julien), `docs/PLAN-v4.7-playtest2.md`, and `STORYLOG.md` / `AUDIOLOG.md`, and **`docs/REVIEW-v5.9-playthrough.md`** (Claude's full playthrough review of 2026-11-01: pacing, bugs B1–B5, story text fixes, per-neighbourhood layers, decisions D1–D6 waiting on Julien). The project's `claude/HANDOFF.md` mirrors this file.
