@@ -174,14 +174,14 @@ export const PatioTable = memo(function PatioTable({ x, y, part }: { x: number; 
   }
   return (
     <G transform={`translate(${cx} ${cy}) scale(${k})`}>
-      <Rect x={-0.9} y={-62} width={1.8} height={48} fill="#7A5C48" stroke={INK} strokeWidth={0.6} />
+      <Rect x={-0.9} y={-56} width={1.8} height={42} fill="#7A5C48" stroke={INK} strokeWidth={0.6} />
       {/* four wedges of a red-and-cream canopy, a scalloped rim, and the finial */}
       {[0, 1, 2, 3].map((n) => {
         const x0 = -UMBRELLA_R + n * (UMBRELLA_R / 2);
         const w = UMBRELLA_R / 2;
-        return <Path key={n} d={`M0 -72 L${x0} -57 Q${x0 + w / 4} -53.5 ${x0 + w / 2} -57 Q${x0 + (3 * w) / 4} -53.5 ${x0 + w} -57 Z`} fill={UMBRELLA[n % 2]} stroke={INK} strokeWidth={1} strokeLinejoin="round" />;
+        return <Path key={n} d={`M0 -66 L${x0} -51 Q${x0 + w / 4} -47.5 ${x0 + w / 2} -51 Q${x0 + (3 * w) / 4} -47.5 ${x0 + w} -51 Z`} fill={UMBRELLA[n % 2]} stroke={INK} strokeWidth={1} strokeLinejoin="round" />;
       })}
-      <Circle cx={0} cy={-73} r={1.7} fill={INK} />
+      <Circle cx={0} cy={-67} r={1.7} fill={INK} />
     </G>
   );
 });

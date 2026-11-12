@@ -4,6 +4,10 @@
 import { CHAIR_WAY_HALF_W, PATIO_HALF_W, PATIO_SEAT, QUEUE_Y } from './layout';
 import { P } from './projection';
 
+/** The umbrella's finial stands this high over its table's base (street.tsx `PatioTable`; D450: was 75, which put the tip within 1.4 pt of the waiting pill's body). */
+export const UMBRELLA_TOP = 69;
+/** Air the waiting pill keeps over the umbrella tips (screen pt). */
+export const PILL_UMBRELLA_AIR = 6;
 export const DECK_COLOR = '#C99A6B';
 export const DECK_LINE = '#A9794A';
 /** The step down from the shop front to the deck (pt), drawn as a lit riser on the deck's back edge. */

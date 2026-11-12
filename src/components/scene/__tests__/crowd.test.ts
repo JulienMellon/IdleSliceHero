@@ -10,6 +10,7 @@ import { driverFigures, queueLabel, queueOverflow, waitingText } from '../waitin
 import { seatPalette } from '../palette';
 import { CURB_Y, FRONT_TOP, P, SCENE_H, SCENE_W, kAt, unprojectX } from '../projection';
 import { SIDEWALK_ROW } from '../../tap-targets';
+import { PILL_UMBRELLA_AIR, UMBRELLA_TOP } from '../patio-deck';
 import { doorwaySignRect, placePops, popPlace, popRect, popsCover, popWidth, spotlightCutout, staffFaces, stationRects, tutorialHand } from '../stations';
 import { bodyBy, chairBack, SEATED_TORSO_HALF } from '../geometry';
 import { quantArm, quantStep } from '../quantise';
@@ -1019,5 +1020,40 @@ describe('queued diners never stand in front of a table or a seated diner (D430)
     // with nobody in the lane the pill hangs over the first spot the diners would take, GROUP_GAP left of the last driver
     expect(Math.abs(moreTagAt(lay, '4 waiting').x - Math.max(TAG_MARGIN + waitTagWidth('4 waiting') / 2, P(...lay.queueTag)[0]))).toBeLessThan(0.01);
     expect(P(...lay.driverQueue[DRIVER_SPOTS - 1])[0] - P(...lay.queueTag)[0]).toBeCloseTo(30, 5);
+  });
+});
+
+// ---------- D450: the waiting pill clears the umbrellas; fewer patio diners ----------
+describe('the waiting pill over the patio (D450)', () => {
+  test('the pill\'s body stays PILL_UMBRELLA_AIR (6 pt) above every umbrella tip, at every footprint with a patio, for every text; the old tip (75 up) was within 2 pt', () => {
+    let sets = 0;
+    for (const sh of sideShops()) {
+      if (sh.idle) continue;
+      for (const text of ['1 driver idle', '28 drivers idle · buy Prep + Ovens', '37 drivers idle · buy all three']) {
+        const t = waitTagAt(sh.lay, text);
+        const bodyBottom = t.y + 8.7;
+        const x0 = t.x - t.w / 2;
+        const x1 = t.x + t.w / 2;
+        for (const p of sh.lay.patio) {
+          const [sx, sy] = P(p.x, p.y);
+          const k = kAt(p.y) * 1.1;
+          if (sx + 24 * k < x0 || sx - 24 * k > x1) continue; // the pill is not over this umbrella
+          sets++;
+          expect([sh.name, text, sy - UMBRELLA_TOP * k - bodyBottom >= PILL_UMBRELLA_AIR - 1e-9]).toEqual([sh.name, text, true]);
+          expect(sy - 75 * k - bodyBottom).toBeLessThan(PILL_UMBRELLA_AIR);
+        }
+      }
+    }
+    expect(sets).toBeGreaterThan(5);
+  });
+  test('only the first patio set seats a regular: the second stays empty until a walk-in takes it', () => {
+    for (const sh of sideShops()) {
+      if (sh.idle || sh.lay.patio.length < 2) continue;
+      const patioXs = sh.lay.patio.map((p) => p.x - PATIO_SEAT);
+      const seatedAt = (cast: CastMember[], x: number) => cast.some((c) => c.role === 'diner' && Math.abs(c.props.x - x) < 0.01);
+      for (const cast of sideFrames(sh).filter((_, f) => f % 10 === 0)) {
+        expect([sh.name, seatedAt(cast, patioXs[1])]).toEqual([sh.name, false]);
+      }
+    }
   });
 });

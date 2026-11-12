@@ -150,6 +150,8 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
   const regulars = running ? Math.max(1, Math.round(seats.length * fixedFill)) : 1;
   seats.forEach((tb, i) => {
     if (i >= regulars) return;
+    // D450: only the first patio set keeps a regular; the second waits for a walk-in, so the sidewalk is not a row of diners under umbrellas
+    if (tb.outside && i > lay.tables.length) return;
     const dSeed = shopSeed + i * 3 + 7 + Math.floor(t / 14 + i * 0.37) * 29;
     const bite = Math.abs(Math.sin(poseClock * 2 + i));
     const act: Act = SEATED_ACTS[(hash32(dSeed) >>> 3) % 4];

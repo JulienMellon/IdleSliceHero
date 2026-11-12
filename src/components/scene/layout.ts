@@ -72,7 +72,7 @@ const MIN_DINERS_FOR_PATIO = 3;
 /** Half a standing figure's width on screen (box: ±11 at k = depth scale × 1.14). */
 export const FIGURE_HALF_W = 12.5;
 /** Heights (z) the pills hang at over the feet: the drivers' above the "+N" of the diner queue. */
-export const WAIT_TAG_Z = 89;
+export const WAIT_TAG_Z = 84;
 export const MORE_TAG_Z = 66;
 /**
  * Half the width of a dining table's set on screen-room units: the table top (±14), the chairs and the diners in them (SEAT + 11 each way).
