@@ -4,8 +4,8 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.14
-step: fix              # setup | waves | verify | review | fix | close
-round: r2              # r1 | r2 | r3
+step: verify           # setup | waves | verify | review | fix | close
+round: r3              # r1 | r2 | r3
 last_shots: v5.14-r2      # label of the last screenshot set that passed verify
 codecritic_range_start: 5d82004
 cards:                 # todo | running | done | partial | blocked
