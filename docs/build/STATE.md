@@ -4,7 +4,7 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.14
-step: review           # setup | waves | verify | review | fix | close
+step: fix              # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.14      # label of the last screenshot set that passed verify
 codecritic_range_start: 5d82004
@@ -15,12 +15,12 @@ cards:                 # todo | running | done | partial | blocked
   K0a: todo
   K0b: todo
 reviews:               # latest review file per critic, with verdict and counts
-  critic: CRITICLOG.md "Current state" (round 61, NOT SATISFIED; next IDs G95, D447)
+  critic: docs/build/v5.14/review-r1-critic.md (r1 NOT SATISFIED; bug 2 major 1 minor 7; E2 U7 S1)
   code:   CODELOG.md "Current state" (round 24, APPROVED at v5.12; next IDs K1, C110, A30, M62, U12, T85)
   story:  STORYLOG.md (next ID S21)
   audio:  AUDIOLOG.md (next ID AU78)
 open: round 61 notes, all written into the v5.14 cards
-next: v5.14 r1 critic review running (docs/build/v5.14/review-r1-critic.md).
+next: v5.14 fix round r2: R3 + C3 running, then B3; then verify with L=v5.14-r2, P=v5.14.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
@@ -32,3 +32,4 @@ next: v5.14 r1 critic review running (docs/build/v5.14/review-r1-critic.md).
 - 2026-11-12 B3 done (tsc clean, 346 tests pass).
 - 2026-11-12 C3 done (tsc clean, 633 tests pass). Waves 1-2 complete.
 - 2026-11-12 r1 verify passed (True 0 []) after C3 viewport fix; pushed to main.
+- 2026-11-12 r1 critic NOT SATISFIED (2 bugs, 1 major, 7 minor). Fix round r2 started.
