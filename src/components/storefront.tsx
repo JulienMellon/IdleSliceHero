@@ -32,7 +32,7 @@ import {
   CHIP_RISE, CHIP_SECONDS, MILESTONE_LINES, bounceStep, bounceTransforms, clearPillX, confettiStep, crossedMilestone,
   ladderProps, menuRect, milestoneSpeaker, wallRects, type Placed,
 } from './scene/ladder';
-import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, StreetProp } from './scene/room';
+import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverlays, StreetProp } from './scene/room';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, sidewalkItems, Street } from './scene/street';
 import { buildCast, sidewalkOf } from './scene/cast';
 import { queueLabel, waitingText } from './scene/waiting';
@@ -539,6 +539,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           <DeparturePops deps={line.departures} left={(d) => leftNow(d.left)} anchor={(d) => carriers.get(d.id) ?? null} register={geoRegister} />
         </Svg>
       </Pressable>
+      {/* the SCENE_OVERLAYS slot: above the floor and furniture, below the HUD; nothing while the slot is empty */}
+      <SceneOverlays shopId={id} width={width} height={height} />
     </View>
   );
 });
