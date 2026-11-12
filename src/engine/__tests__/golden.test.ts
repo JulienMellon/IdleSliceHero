@@ -55,7 +55,8 @@ describe('golden run', () => {
     const { lastSavedAt: _t, ...rest } = state;
     void _t;
     const json = JSON.stringify(rest, (k, v) => (k === 'x' ? undefined : v));
-    expect(sha1(json)).toBe('cff4162945b6c57433d314ba1b4c61ee7fb236da');
+    // v5.15 re-record: the save gained `economy` (C106) and `rewards.worn` (worn cosmetics). The golden run itself earns the same cash and buys the same things.
+    expect(sha1(json)).toBe('b7bd29aa3dff55e454359b3b251d3d3577e16096');
   });
 
   it('golden: the run really earned something (guards against an empty script)', () => {

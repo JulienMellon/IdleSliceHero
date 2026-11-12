@@ -6,6 +6,7 @@
 import { HEADS, BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEAD_COST_DOWNTOWN, HEAD_KINDS, HEAD_SHARE, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
 import { BOOST_MAX_AHEAD_MS, DAILY_CHESTS, DAILY_TASK_COUNT, MAX_BOOSTERS, MAX_CONCURRENT_BOOSTS, TASK_KINDS, WEEKLY_TASK_COUNT, type TaskKind } from '../content/rewards';
 import { BONUS, NIGHT_OVEN, ORDER } from '../content/hooks';
+import { cosmeticPart } from '../content/endgame';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
 import { FEATURES } from './features';
@@ -14,6 +15,12 @@ import { advanceLine, clampWalkInDebt, emptyLine, LINE, nextTap, piesInFlight, r
 /** v5 (rewards): daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. v4 was the kitchen line and station heads. */
 export const SAVE_VERSION = 5;
 export const SHOP_IDS = NEIGHBORHOODS.map((n) => n.id);
+/**
+ * C106: the economy marker. 2 = the v5.13 retune (costMult = orderValue, 4 h offline cap, Pier 9 $120M). A save without it
+ * loads as 2 with its cash untouched. Any later retune that changes prices or income must bump this number and decide in the
+ * same change what a save with the old number gets (a refund, a bonus, nothing); it must never silently reprice a save.
+ */
+export const ECONOMY = 2;
 
 export interface Shop {
   built: boolean;
@@ -42,6 +49,8 @@ export interface Shop {
 
 export interface GameState {
   saveVersion: number;
+  /** C106: which economy this save was made under (ECONOMY). */
+  economy: number;
   cash: number;
   totalEarned: number;
   /** City-wide fleet tier: index into VEHICLES. */
@@ -171,6 +180,8 @@ export interface Rewards {
   /** Boosts running now. */
   boosts: Boost[];
   cosmetics: string[];
+  /** The owned cosmetics currently worn (rewards.ts `wear`); at most one per part (`cosmeticPart`). */
+  worn: string[];
   /** Highest device time (ms) seen: the clock-rollback guard. */
   lastSeen: number;
 }
@@ -217,6 +228,7 @@ export const newRewards = (): Rewards => ({
   boosters: [],
   boosts: [],
   cosmetics: [],
+  worn: [],
   lastSeen: 0,
 });
 
@@ -246,6 +258,7 @@ export function newGame(now: number): GameState {
   const shops = Object.fromEntries(SHOP_IDS.map((id) => [id, newShop(id === 'downtown')])) as Record<NeighborhoodId, Shop>;
   return {
     saveVersion: SAVE_VERSION,
+    economy: ECONOMY,
     cash: 0,
     totalEarned: 0,
     vehicle: 0,
@@ -350,6 +363,10 @@ function migrateRewards(raw: unknown, now: number): Rewards {
     return until > 0 ? [{ mult: Math.min(MAX_MULT, Math.max(1, num(b.mult, 1))), until: Math.min(until, now + BOOST_MAX_AHEAD_MS), source: typeof b.source === 'string' ? b.source.slice(0, 40) : 'boost' }] : [];
   });
   const cosmetics = Array.isArray(r.cosmetics) ? [...new Set((r.cosmetics as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= 40))].slice(0, 200) : [];
+  // worn: a save from before worn cosmetics wore everything it owned, so it keeps doing so (the latest of each part)
+  const savedWorn = Array.isArray(r.worn) ? (r.worn as unknown[]).filter((x): x is string => typeof x === 'string' && cosmetics.includes(x)) : cosmetics;
+  const worn: string[] = [];
+  for (const id of savedWorn) if (!worn.includes(id)) worn.splice(0, worn.length, ...worn.filter((w) => cosmeticPart(w) !== cosmeticPart(id)), id);
   return {
     // a set with no usable tasks is dropped with its day, so the next refresh rolls a fresh one
     day: daily.length ? dateKey(r.day) : '',
@@ -366,6 +383,7 @@ function migrateRewards(raw: unknown, now: number): Rewards {
     boosters,
     boosts,
     cosmetics,
+    worn,
     // a corrupt far-future value would lock rewards for good; a year of rollback headroom is plenty
     lastSeen: Math.min(now + 400 * 86400_000, Math.max(0, num(r.lastSeen, 0))),
   };
@@ -440,6 +458,8 @@ export function migrate(raw: unknown, now: number): GameState {
   const seen = Array.isArray(r.seenScenes) ? (r.seenScenes as unknown[]).filter((x): x is string => typeof x === 'string') : [];
   const game: GameState = {
     ...base,
+    // C106: a save without the marker is stamped with the current economy; one that has it keeps its own
+    economy: int(r.economy, ECONOMY, 0),
     cash: Math.max(0, num(r.cash, 0)),
     totalEarned: Math.max(0, num(r.totalEarned, 0)),
     vehicle: int(r.vehicle, 0, 0, VEHICLES.length - 1),

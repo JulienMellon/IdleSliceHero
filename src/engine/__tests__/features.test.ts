@@ -48,16 +48,21 @@ beforeEach(() => {
 });
 
 describe('feature registry', () => {
-  it('ships empty, so nothing changes until a feature is added', () => {
-    expect(FEATURES).toHaveLength(0);
-    expect(G.newGame(T0).x).toEqual({});
-    expect(G.featureMults(G.newGame(T0), 'downtown')).toEqual({ value: 1, demand: 1 });
+  it('ships the four endgame features (v5.15), and with none registered nothing changes', () => {
+    expect(FEATURES.map((f) => f.key)).toEqual(['mastery', 'counterattack', 'events', 'recipes']);
+    withFeatures([], () => {
+      expect(G.newGame(T0).x).toEqual({});
+      expect(G.featureMults(G.newGame(T0), 'downtown')).toEqual({ value: 1, demand: 1 });
+    });
+    // a new game's endgame features change no price
+    expect(G.featureMults(G.newGame(T0), 'downtown', T0)).toEqual({ value: 1, demand: 1 });
   });
 
   it('withFeatures swaps the registry for the call and puts it back, even on a throw', () => {
+    const shipped = FEATURES.length;
     withFeatures([fakeA], () => expect(FEATURES).toHaveLength(1));
     expect(() => withFeatures([fakeA], () => { throw new Error('boom'); })).toThrow('boom');
-    expect(FEATURES).toHaveLength(0);
+    expect(FEATURES).toHaveLength(shipped);
   });
 
   it('init: newGame fills x from every feature', () => {
@@ -78,7 +83,7 @@ describe('feature registry', () => {
 
   it('migrate: a save from a feature that is no longer registered drops its slice', () => {
     const saved = { ...G.newGame(T0), x: { gone: { n: 1 } } };
-    expect(G.migrate(JSON.parse(JSON.stringify(saved)), T0).x).toEqual({});
+    withFeatures([], () => expect(G.migrate(JSON.parse(JSON.stringify(saved)), T0).x).toEqual({}));
   });
 
   it('tick: runs after the ordinary body, once per playTick, in registry order', () => {

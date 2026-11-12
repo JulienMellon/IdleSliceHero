@@ -11,14 +11,26 @@
 // (OG, FP, DC, VC, PB, PP, CAP, EFF as in scripts/review/sim2.ts) are chosen by hand; the fitter bisects each later pizzeria's
 // buildCost so its first scene lands on the target day, one stage at a time (a stage only depends on earlier ones), then
 // bisects Uptown's cost multiplier so the finale lands on its target. Round the printed numbers by hand and run `check`.
-import { NEIGHBORHOODS } from '../src/content/tuning';
-import { applyCfg, endSummary, run, sessionStats, type Cfg } from './review/sim2';
+import { FOOTPRINTS, HEAD_KINDS, NEIGHBORHOODS, OVEN_GRADES } from '../src/content/tuning';
+import { COUNTERATTACK } from '../src/content/endgame';
+import * as G from '../src/engine/game';
+import { getFeature } from '../src/engine/features';
+import { ackAttack, counterattack, attackView, startChallenge } from '../src/engine/features/counterattack';
+import { masteryStars, masteryTotal } from '../src/engine/features/mastery';
+import { applyCfg, endSummary, options, run, sessionStats, type Cfg } from './review/sim2';
 
 const SESSION = 300;
 const AWAY = 4 * 3600;
-/** Target day (midpoint of the allowed band) of each pizzeria's first scene, and of the finale. */
-export const TARGETS = { waterfront: 1.0, university: 2.05, industrial: 3.05, uptown: 4.05, finale: 5.2 };
-export const BANDS = { waterfront: [0.7, 1.3], university: [1.7, 2.4], industrial: [2.7, 3.4], uptown: [3.7, 4.4], finale: [4.8, 5.6] } as const;
+/** Target day of each pizzeria's first scene, and of the finale (card E1 step 7, v5.15): the check-in player must land within STORY_TOLERANCE of each. */
+export const TARGETS = { waterfront: 1.0, university: 2.0, industrial: 3.1, uptown: 4.4, finale: 4.8 };
+export const STORY_TOLERANCE = 0.3;
+export const BANDS = {
+  waterfront: [TARGETS.waterfront - STORY_TOLERANCE, TARGETS.waterfront + STORY_TOLERANCE],
+  university: [TARGETS.university - STORY_TOLERANCE, TARGETS.university + STORY_TOLERANCE],
+  industrial: [TARGETS.industrial - STORY_TOLERANCE, TARGETS.industrial + STORY_TOLERANCE],
+  uptown: [TARGETS.uptown - STORY_TOLERANCE, TARGETS.uptown + STORY_TOLERANCE],
+  finale: [TARGETS.finale - STORY_TOLERANCE, TARGETS.finale + STORY_TOLERANCE],
+} as const;
 const SCENE = { waterfront: 'waterfront-1', university: 'university-1', industrial: 'industrial-1', uptown: 'uptown-1', finale: 'uptown-4' } as const;
 type Key = keyof typeof TARGETS;
 const KEYS: Key[] = ['waterfront', 'university', 'industrial', 'uptown', 'finale'];
@@ -90,6 +102,131 @@ function check() {
     for (const x of r.scenes) if (x.id.endsWith('-1') || x.id === 'uptown-4') m[x.id] = +(x.wall / 86400).toFixed(2);
     console.log(`${sess / 60} min every ${(sess + away) / 3600} h: ${(r.wall / 86400).toFixed(1)} days, done=${r.s.cityComplete}, ${JSON.stringify(m)}; ${endSummary(r, sess, away)}`);
   }
+  endgameCheck();
+}
+
+// ---- v5.15: after the story. The check-in player keeps coming back every 4 h for 5 min, buys heads, Flagships and golden ovens
+// (the three mastery stars) and defends each weekly counter-attack. Targets: the story days above, and 18 stars between day 10 and 14. ----
+
+/** The install moment of the simulated player: a Monday morning, local time (the events and the attack week are local). */
+const INSTALL = new Date(2026, 10, 9, 9, 0, 0).getTime();
+export const STAR_DAYS = { min: 10, max: 14 };
+/** How much more the player wants a star step than its income gain alone says (a prestige purchase), STARK=n. */
+const STARK = num('STARK') ?? 3;
+const DEFEND_TAPS_PER_SECOND = num('TAPS') ?? 3;
+const TOP_FOOTPRINT = FOOTPRINTS.length - 1;
+const TOP_GRADE = OVEN_GRADES.length - 1;
+
+/** The purchases that move a mastery star one step, with the preference the check-in player gives them. */
+function starSteps(s: G.GameState): ReturnType<typeof options> {
+  const out: ReturnType<typeof options> = [];
+  for (const n of NEIGHBORHOODS) {
+    const shop = s.shops[n.id];
+    if (!shop.built) continue;
+    const have = masteryStars(shop);
+    const want: G.Upgrade[] = [];
+    if (!have.heads) for (const k of HEAD_KINDS) if (!shop.heads[k]) want.push(G.HEAD_UPGRADE[k]);
+    if (shop.footprint < TOP_FOOTPRINT) want.push('expand');
+    if (shop.grade < TOP_GRADE) want.push('grade');
+    for (const what of want) {
+      const cost = G.upgradeCostOf(s, n.id, what);
+      if (cost === null || G.upgradeLock(s, n.id, what)) continue;
+      const gain = Math.max(G.upgradeGain(s, n.id, what) ?? 0, 0.01 * G.shopEarnings(s, n.id)) * STARK;
+      out.push({ label: `${n.id}:${what}`, cost, gain, buy: (st) => G.buyUpgrade(st, n.id, what) });
+    }
+  }
+  return out;
+}
+
+export interface EndgameResult {
+  /** Days since install when the city reached 6, 12 and 18 stars (null = not within the limit). */
+  starDay: Record<6 | 12 | 18, number | null>;
+  attacks: number;
+  won: number;
+  lost: number;
+  expired: number;
+  days: number;
+  stars: number;
+}
+
+/** Play on from the end of the story (state `s0`, `wall0` real seconds since install) as the 5-min-every-4-h player, up to `maxDays`. */
+export function endgame(s0: G.GameState, wall0: number, maxDays = 30, minAttacks = 3): EndgameResult {
+  let s = s0;
+  let wall = wall0;
+  const res: EndgameResult = { starDay: { 6: null, 12: null, 18: null }, attacks: 0, won: 0, lost: 0, expired: 0, days: 0, stars: 0 };
+  let lastWeek = -1;
+  while (wall < maxDays * 86400) {
+    for (let k = 0; k < SESSION; k++) {
+      const now = INSTALL + (wall + k) * 1000;
+      if (k === 0) {
+        const v = attackView(s, now);
+        if (v.phase === 'open') {
+          const r = startChallenge(s, now);
+          if (r.ok) s = r.state;
+        }
+      }
+      const a = getFeature(s, counterattack);
+      if (a.challenge && a.target) for (let t = 0; t < DEFEND_TAPS_PER_SECOND; t++) s = G.tapShop(s, a.target);
+      s = G.playTick(s, 1, now);
+      const st = getFeature(s, counterattack);
+      if (st.open && st.seenWeek !== lastWeek) { res.attacks++; lastWeek = st.seenWeek; }
+      if (st.news) {
+        if (st.news.kind === 'won') res.won++;
+        else if (st.news.kind === 'lost') res.lost++;
+        else res.expired++;
+        s = ackAttack(s);
+      }
+      for (let q = 0; q < 30; q++) {
+        const opts = [...starSteps(s), ...options(s)].sort((x, y) => y.gain / y.cost - x.gain / x.cost);
+        if (!opts.length) break;
+        const r = opts[0].buy(s);
+        if (!r.ok) break;
+        s = r.state;
+      }
+      const total = masteryTotal(s);
+      for (const m of [6, 12, 18] as const) if (total >= m && res.starDay[m] === null) res.starDay[m] = +((wall + k) / 86400).toFixed(2);
+      res.stars = total;
+      if (total >= 18 && res.attacks >= minAttacks) { res.days = (wall + k) / 86400; return res; }
+    }
+    wall += SESSION;
+    s = { ...s, lastSavedAt: INSTALL + wall * 1000 };
+    wall += AWAY;
+    s = G.applyOffline(s, INSTALL + wall * 1000).state;
+  }
+  res.days = wall / 86400;
+  return res;
+}
+
+/**
+ * v5.15: the top oven grade (Golden) and the top footprint (Flagship) are the last two mastery stars of every shop. Scale both by one
+ * factor k (the other tiers stay as they are) until the check-in player has all 18 stars on the middle of STAR_DAYS, then print the
+ * two prices and the day table. Round the printed numbers by hand, put them in src/content/tuning.ts and run `check`.
+ *   npx tsx scripts/pacing-fit.ts fitstars        (TARGET=12 to move the target day)
+ */
+function fitStars() {
+  const target = num('TARGET') ?? (STAR_DAYS.min + STAR_DAYS.max) / 2;
+  const og = OVEN_GRADES.map((g) => g.cost);
+  const fp = FOOTPRINTS.map((f) => f.cost);
+  const cfgOf = (k: number): Cfg => ({ ...base, og: [...og.slice(1, 4), og[4] * k], fp: [...fp.slice(1, 4), fp[4] * k] });
+  const dayOf = (k: number) => {
+    applyCfg(cfgOf(k));
+    const r = run('checkin', SESSION, AWAY);
+    return endgame(r.s, r.wall, 40).starDay[18] ?? 60;
+  };
+  const best = scan((k) => { const d = dayOf(k); console.log(`   k ${k.toPrecision(3)} -> all 18 stars on day ${d.toFixed(2)}`); return d; }, target, 1, 4096);
+  console.log(`k ${best.x.toPrecision(3)}: golden oven ${(og[4] * best.x).toPrecision(3)}, flagship ${(fp[4] * best.x).toPrecision(3)} (x costMult) -> day ${best.d.toFixed(2)} (target ${target})`);
+  applyCfg(cfgOf(best.x));
+  endgameCheck();
+}
+
+/** One line: the story days of the 5-min-every-4-h player, then the days its stars come in and how the attacks went. */
+function endgameCheck() {
+  applyCfg({ ...base });
+  const r = run('checkin', SESSION, AWAY);
+  const story = KEYS.map((k) => `${k} ${((r.scenes.find((x) => x.id === SCENE[k])?.wall ?? NaN) / 86400).toFixed(2)}`).join(' / ');
+  const e = endgame(r.s, r.wall);
+  const ok = (v: number | null, lo: number, hi: number) => (v !== null && v >= lo && v <= hi ? 'ok' : 'OUT');
+  console.log(`day table: story ${story} (targets ${KEYS.map((k) => TARGETS[k]).join(' / ')}) | stars 6 d${e.starDay[6]} 12 d${e.starDay[12]} 18 d${e.starDay[18]} (target ${STAR_DAYS.min}-${STAR_DAYS.max}: ${ok(e.starDay[18], STAR_DAYS.min, STAR_DAYS.max)}) | attacks ${e.attacks}: won ${e.won}, lost ${e.lost}, expired ${e.expired} (${COUNTERATTACK.challengeSeconds / 60} min, x${COUNTERATTACK.targetMargin})`);
 }
 
 // ---- random local search over the whole table (loss on the 5-min-every-4-h run) ----
@@ -294,12 +431,17 @@ function polish(seed: number, iters: number) {
   }
 }
 
-if (process.argv[2] === 'polish') polish(Number(process.env.SEED ?? 1), Number(process.env.ITERS ?? 60));
-else if (process.argv[2] === 'fit2') fit2();
-else if (process.argv[2] === 'fit3') fit3();
-else if (process.argv[2] === 'fit4') fit4();
-else if (process.argv[2] === 'check') check();
-else if (process.argv[2] === 'search') {
-  const start: Vec = process.env.START ? JSON.parse(process.env.START) : { bc: [0, 450, 5e7, 1.75e8, 5.5e8, 5.4e9], cm: [1, 4.5, 12, 34, 90, 250], mcr: 0.5, ovg: 2.7, og: 1, fp: 1 };
-  search(Number(process.env.SEED ?? 1), Number(process.env.ITERS ?? 200), start);
-} else fit();
+// (a test imports `endgame` and the targets above, so the commands only run when this file is the entry point)
+if (require.main === module) {
+  if (process.argv[2] === 'endgame') endgameCheck();
+  else if (process.argv[2] === 'fitstars') fitStars();
+  else if (process.argv[2] === 'polish') polish(Number(process.env.SEED ?? 1), Number(process.env.ITERS ?? 60));
+  else if (process.argv[2] === 'fit2') fit2();
+  else if (process.argv[2] === 'fit3') fit3();
+  else if (process.argv[2] === 'fit4') fit4();
+  else if (process.argv[2] === 'check') check();
+  else if (process.argv[2] === 'search') {
+    const start: Vec = process.env.START ? JSON.parse(process.env.START) : { bc: [0, 450, 5e7, 1.75e8, 5.5e8, 5.4e9], cm: [1, 4.5, 12, 34, 90, 250], mcr: 0.5, ovg: 2.7, og: 1, fp: 1 };
+    search(Number(process.env.SEED ?? 1), Number(process.env.ITERS ?? 200), start);
+  } else fit();
+}

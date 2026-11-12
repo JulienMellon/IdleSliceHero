@@ -6,6 +6,7 @@ import { DECOR_KINDS, NEIGHBORHOODS, PIER9_BID, VEHICLES } from '../src/content/
 import type { NeighborhoodId } from '../src/content/types';
 import { pickScene } from '../src/engine/cutscene-input';
 import * as G from '../src/engine/game';
+import { masteryTotal } from '../src/engine/features/mastery';
 
 type Option = { label: string; cost: number; gain: number; buy: (s: G.GameState) => G.BuyResult };
 
@@ -123,7 +124,7 @@ for (const [t, e] of events) {
   console.log(`${(t / 60).toFixed(1).padStart(7)} min  ${scene ? `(+${((t - prev) / 60).toFixed(1)})` : '        '}  ${e}`);
   if (scene) prev = t;
 }
-console.log(`scenes ${s.seenScenes.length}/24 · longest scene gap ${(maxGap / 60).toFixed(1)} min · $/s ${G.earningsPerSecond(s).toFixed(0)}`);
+console.log(`scenes ${s.seenScenes.length}/24 · longest scene gap ${(maxGap / 60).toFixed(1)} min · $/s ${G.earningsPerSecond(s).toFixed(0)} · mastery stars at the finale ${masteryTotal(s)}/18 (the check-in player's days after the story: scripts/pacing-fit.ts check)`);
 if (process.env.DEBUG) {
   for (const n of NEIGHBORHOODS) {
     const sh = s.shops[n.id];

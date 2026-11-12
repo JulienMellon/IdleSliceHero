@@ -46,12 +46,15 @@ export interface OvenGrade {
   color: string;
 }
 
+// v5.15 refit (scripts/pacing-fit.ts fitstars): Golden (cost 12M before) and the Flagship below (15M before) are two of a shop's three
+// mastery stars, the last ones the player earns. Both went up by the same factor, about 67x, so the check-in player has all 18 stars
+// on about day 12 (target: day 10 to 14). The story days did not leave their targets.
 export const OVEN_GRADES: OvenGrade[] = [
   { name: 'Brick', mult: 1, cost: 0, color: '#B85C38' },
   { name: 'Stone', mult: 2, cost: 400, color: '#8A8A8A' },
   { name: 'Wood-fired', mult: 4, cost: 12_000, color: '#7A4A26' },
   { name: 'Copper', mult: 8, cost: 400_000, color: '#C8763A' },
-  { name: 'Golden', mult: 16, cost: 12_000_000, color: '#E0B000' },
+  { name: 'Golden', mult: 16, cost: 800_000_000, color: '#E0B000' },
 ];
 
 /** Downtown's tutorial ends when Nonna takes over: scene `sceneId` plays after this many Downtown pizzas (matches downtown-4's trigger). */
@@ -72,7 +75,7 @@ export const FOOTPRINTS: FootprintTier[] = [
   { name: 'Corner shop', cost: 500, maxTables: 3, ovenSlots: 3 },
   { name: 'Double storefront', cost: 15_000, maxTables: 4, ovenSlots: 4 },
   { name: 'Restaurant', cost: 500_000, maxTables: 5, ovenSlots: 5 },
-  { name: 'Flagship', cost: 15_000_000, maxTables: 6, ovenSlots: 6 },
+  { name: 'Flagship', cost: 1_000_000_000, maxTables: 6, ovenSlots: 6 },
 ];
 
 export interface VehicleDef {

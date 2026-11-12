@@ -30,6 +30,7 @@ import {
   type PoolEntry,
   type TaskKind,
 } from '../content/rewards';
+import { cosmeticPart } from '../content/endgame';
 import { NONNA_TAKEOVER } from '../content/tuning';
 import { count, money } from './format';
 import {
@@ -331,6 +332,33 @@ export function claimWeekly(s: GameState, i: number, now: number): BuyResult {
   return { ok: true, state: withRewards(pay(s, minutesToCash(s, WEEKLY_TASK_REWARD.minutes)), { weekly, diamonds: s.rewards.diamonds + (WEEKLY_DIAMONDS[i] ?? 0) }, now) };
 }
 
+// ---------- Worn cosmetics ----------
+
+/** `worn` with `id` put on: anything already worn for the same part comes off. */
+const wornWith = (worn: string[], id: string): string[] => [...worn.filter((w) => cosmeticPart(w) !== cosmeticPart(id)), id];
+
+/**
+ * The rewards patch for earning a cosmetic: it is owned and, being new, worn at once (replacing what was worn for its part).
+ * Already owned: no change. The one place a cosmetic is added, so the weekly chest, the gift calendar and mastery agree.
+ */
+export function grantCosmetic(r: Rewards, id: string): Pick<Rewards, 'cosmetics' | 'worn'> {
+  if (r.cosmetics.includes(id)) return { cosmetics: r.cosmetics, worn: r.worn };
+  return { cosmetics: [...r.cosmetics, id], worn: wornWith(r.worn, id) };
+}
+
+/** Put an owned cosmetic on; the one worn for the same part comes off. Not owned: `g` itself. */
+export function wear(g: GameState, id: string): GameState {
+  const r = g.rewards;
+  if (!r.cosmetics.includes(id) || r.worn.includes(id)) return g;
+  return { ...g, rewards: { ...r, worn: wornWith(r.worn, id) } };
+}
+
+/** Take a cosmetic off. Not worn: `g` itself. */
+export function unwear(g: GameState, id: string): GameState {
+  const r = g.rewards;
+  return r.worn.includes(id) ? { ...g, rewards: { ...r, worn: r.worn.filter((w) => w !== id) } } : g;
+}
+
 /** This week's place in the cosmetic rotation (by ISO week number). */
 const rotationStart = (s: GameState): number => isoWeek(s.rewards.week || dayKey(s.lastSavedAt)) % WEEKLY_COSMETICS.length;
 
@@ -363,7 +391,7 @@ export function claimWeeklyChest(s: GameState, now: number): BuyResult {
   if (s.rewards.weeklyChest) return { ok: false, reason: 'Already opened' };
   if (!weeklyChestReady(s)) return { ok: false, reason: 'Claim every weekly task first' };
   const prize = weeklyChestPrize(s);
-  if (prize.kind === 'cosmetic') return { ok: true, state: withRewards(s, { weeklyChest: true, cosmetics: [...s.rewards.cosmetics, prize.id], diamonds: s.rewards.diamonds + prize.diamonds }, now) };
+  if (prize.kind === 'cosmetic') return { ok: true, state: withRewards(s, { weeklyChest: true, ...grantCosmetic(s.rewards, prize.id), diamonds: s.rewards.diamonds + prize.diamonds }, now) };
   return { ok: true, state: withRewards(pay(s, minutesToCash(s, prize.minutes)), { weeklyChest: true, diamonds: s.rewards.diamonds + prize.diamonds }, now) };
 }
 
@@ -425,17 +453,13 @@ export function claimGift(s: GameState, now: number, opts: { repair?: boolean } 
   const boosters = addBoosters(r.boosters, (gift.boosters ?? []).map(boosterOf));
   let boosts = r.boosts;
   if (gift.boostNow) boosts = addBoost(boosts, { mult: gift.boostNow.mult, until: now + gift.boostNow.minutes * 60_000, source: gift.visit ? `visit-${VISITORS[cycle % VISITORS.length]}` : `gift-day-${day}` });
-  const cosmetics = [...r.cosmetics];
-  if (gift.cosmetic) {
-    const id = gift.cosmetic.replace('{cycle}', String(cycle + 1));
-    if (!cosmetics.includes(id)) cosmetics.push(id);
-  }
+  const dressed = gift.cosmetic ? grantCosmetic(r, gift.cosmetic.replace('{cycle}', String(cycle + 1))) : { cosmetics: r.cosmetics, worn: r.worn };
   // the day-30 claim closes the cycle: the next claim is day 1 of the next one, with a fresh streak save
   // (starting over at day 1 is a fresh run too, with its own save)
   const done = day >= GIFT_LENGTH;
   const saveUsed = done ? false : repairing ? true : day === 1 ? false : r.gift.saveUsed;
   const streakGift = { streak: day, last: dayKey(now), saveUsed, cycle: done ? cycle + 1 : cycle };
-  return { ok: true, state: withRewards(pay(s, gift.minutes ? minutesToCash(s, gift.minutes) : 0), { gift: streakGift, diamonds, boosters, boosts, cosmetics }, now) };
+  return { ok: true, state: withRewards(pay(s, gift.minutes ? minutesToCash(s, gift.minutes) : 0), { gift: streakGift, diamonds, boosters, boosts, ...dressed }, now) };
 }
 
 /** The gift calendar should pop open by itself: unlocked, something to claim, and not shown yet today. */
