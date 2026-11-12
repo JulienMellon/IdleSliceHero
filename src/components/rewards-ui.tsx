@@ -1,5 +1,6 @@
 // v5.4 rewards screens: the tasks drawer (daily / weekly tasks, Slice Points chests, boosters) and the gift calendar.
 // All text and state come from rewards-model.ts; this file only lays them out. No ad buttons yet (D2).
+import { router } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -68,12 +69,13 @@ function BoostRing({ seconds }: { seconds: number }) {
 }
 
 // Memoised on primitives, with ONE stable handler bound by index, so a 1 Hz refresh re-renders only the rows that changed (U1, M56).
-const TaskItem = memo(function TaskItem({ index, title, progress, pct, state, reward, claimId, onClaim }: { index: number; title: string; progress: string; pct: number; state: TaskState; reward: string; claimId: string; onClaim: (i: number) => boolean }) {
+const TaskItem = memo(function TaskItem({ index, title, starred, progress, pct, state, reward, claimId, onClaim }: { index: number; title: string; starred: boolean; progress: string; pct: number; state: TaskState; reward: string; claimId: string; onClaim: (i: number) => boolean }) {
   const press = useCallback(() => onClaim(index), [onClaim, index]);
   return (
     <View style={[styles.task, state === 'ready' && styles.taskReady, state === 'claimed' && styles.taskClaimed]}>
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={styles.taskTitle} numberOfLines={2}>
+          {starred ? <Text testID="task-star" accessibilityLabel="Head of the Week task" style={styles.taskStar}>{'\u2605 '}</Text> : null}
           {title}
         </Text>
         <View style={styles.barTrack}>
@@ -232,7 +234,7 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
         <ScrollView contentContainerStyle={[styles.list, { paddingBottom: bottomInset + 20 }]}>
           {rows.length === 0 && <Text style={styles.empty}>New tasks arrive in a moment.</Text>}
           {rows.map((row) => (
-            <TaskItem key={`${tab}-${row.index}`} index={row.index} title={row.title} progress={row.progress} pct={row.pct} state={row.state} reward={row.reward} claimId={`claim-${tab}-${row.index}`} onClaim={claimTask} />
+            <TaskItem key={`${tab}-${row.index}`} index={row.index} title={row.title} starred={row.starred} progress={row.progress} pct={row.pct} state={row.state} reward={row.reward} claimId={`claim-${tab}-${row.index}`} onClaim={claimTask} />
           ))}
           {tab === 'daily' ? (
             <View style={styles.points} testID="points-track">
@@ -264,9 +266,11 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
               {week.state === 'opened' && <Text style={styles.tick}>✓</Text>}
             </Pressable>
           )}
-          <Text style={styles.collection} testID="collection">
-            {collectionText(game)}
-          </Text>
+          {/* v5.15: the recipe count; a tap opens the Scrapbook on its Recipes tab */}
+          <Pressable testID="collection" accessibilityRole="link" accessibilityLabel={`${collectionText(game)}. Open the Scrapbook`} style={styles.collectionRow} onPress={() => { onClose(); router.push({ pathname: '/scrapbook', params: { section: 'recipes' } }); }}>
+            <Text style={styles.collection}>{collectionText(game)}</Text>
+            <Text style={styles.collectionGo}>{'\u203A'}</Text>
+          </Pressable>
         </ScrollView>
       </View>
     </View>
@@ -435,7 +439,10 @@ const styles = StyleSheet.create({
   chestTick: { position: 'absolute', right: -2, bottom: -4, fontFamily: F.bold, fontSize: 16, color: C.basilDark },
   chestCaption: { fontFamily: F.semi, fontSize: 12, color: C.inkSoft },
   weekChest: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, backgroundColor: C.panel, borderRadius: 16, padding: 10, borderWidth: 3, borderColor: C.ink, ...shadow },
-  collection: { fontFamily: F.semi, fontSize: 12.5, color: C.inkSoft, textAlign: 'center', marginTop: 4 },
+  taskStar: { color: '#E09B00' },
+  collectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: TAP.min, marginTop: 4 },
+  collection: { fontFamily: F.semi, fontSize: 12.5, color: C.inkSoft, textAlign: 'center' },
+  collectionGo: { fontFamily: F.bold, fontSize: 20, lineHeight: 22, color: C.tomato },
 
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   modal: { backgroundColor: C.bg, borderRadius: 24, borderWidth: 4, borderColor: C.ink, padding: 18, alignItems: 'center', width: '100%', maxWidth: 360, gap: 8 },

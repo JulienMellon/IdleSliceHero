@@ -48,8 +48,8 @@ beforeEach(() => {
 });
 
 describe('feature registry', () => {
-  it('ships the four endgame features (v5.15), and with none registered nothing changes', () => {
-    expect(FEATURES.map((f) => f.key)).toEqual(['mastery', 'counterattack', 'events', 'recipes']);
+  it('ships the four endgame features (v5.15) and the heads feature (v5.15 S1), and with none registered nothing changes', () => {
+    expect(FEATURES.map((f) => f.key)).toEqual(['mastery', 'counterattack', 'events', 'recipes', 'heads']);
     withFeatures([], () => {
       expect(G.newGame(T0).x).toEqual({});
       expect(G.featureMults(G.newGame(T0), 'downtown')).toEqual({ value: 1, demand: 1 });

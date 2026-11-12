@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Modal } from 'react-native';
 import { lotView } from './city-model';
 import { LOOKS } from './scene/identity';
 // City overview: every neighborhood and its pizzeria at a glance. Tap one to visit it (or build it).
@@ -7,7 +9,13 @@ import { MAP_VIEWBOX, NEIGHBORHOODS } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
 import * as Game from '../engine/game';
+import { finaleSeen } from '../engine/features/counterattack';
 import { C, F } from '../theme';
+import { attackLite } from './endgame/attack-model';
+import { copy } from './endgame/copy-text';
+import { pipBits, starPips } from './endgame/mastery-model';
+import { MapStars } from './endgame/star-pips';
+import { SoonCard } from './title-card';
 
 const INK = '#3B1F14';
 const TREES = [
@@ -68,8 +76,35 @@ function BuildSite({ x, y, next }: { x: number; y: number; next: boolean }) {
   );
 }
 
-export function CityMap({ game, width, height, onPress }: { game: Game.GameState; width: number; height: number; onPress: (id: NeighborhoodId) => void }) {
+/** Where the locked seventh tile stands: the open lot between the avenues, clear of the piazza and the water. */
+const BOSTON = { x: 77, y: 40 };
+
+/** v5.15: a padlocked lot for the next city. Its label is the copy file's "Coming soon: Boston", split at the colon. */
+function BostonLot({ onPress }: { onPress: () => void }) {
+  const [soon, city] = copy('soon.boston.title').split(': ');
+  const { x, y } = BOSTON;
   return (
+    <G testID="city-boston" onPress={onPress} opacity={0.85}>
+      <BuildSite x={x} y={y} next={false} />
+      <Rect x={x - 11} y={y + 8.5} width={22} height={8.5} rx={2.2} fill="rgba(59,31,20,0.25)" />
+      <Rect x={x - 11} y={y + 7.5} width={22} height={8.5} rx={2.2} fill="#FFFFFF" stroke={INK} strokeWidth={0.45} strokeDasharray="1.2 0.8" />
+      <SvgText x={x} y={y + 11} fontSize={3} fontFamily={F.bold} fill={INK} textAnchor="middle">
+        {city ?? soon}
+      </SvgText>
+      <SvgText x={x} y={y + 14.6} fontSize={2.8} fontFamily={F.bold} fill={C.inkSoft} textAnchor="middle">
+        {city ? soon : ''}
+      </SvgText>
+    </G>
+  );
+}
+
+export function CityMap({ game, width, height, onPress }: { game: Game.GameState; width: number; height: number; onPress: (id: NeighborhoodId) => void }) {
+  // v5.15: the shop under attack is marked; Boston's card opens from its locked tile
+  const attack = attackLite(game);
+  const attacked = attack.face === 'banner' || attack.face === 'running' ? attack.shopId : null;
+  const [soon, setSoon] = useState(false);
+  return (
+    <>
     <Svg width={width} height={height} viewBox={`0 0 ${MAP_VIEWBOX.w} ${MAP_VIEWBOX.h}`} preserveAspectRatio="xMidYMid meet">
       <Rect x={-50} y={-50} width={200} height={200} fill={C.map} />
       {ROADS.map(([x0, y0, x1, y1], i) => (
@@ -104,9 +139,20 @@ export function CityMap({ game, width, height, onPress }: { game: Game.GameState
         return (
           <G key={n.id} onPress={() => onPress(n.id)} opacity={lot.dim ? 0.7 : 1}>
             {active && <Circle cx={n.x} cy={n.y} r={12} fill={C.cheese} opacity={0.55} />}
+            {attacked === n.id && <Circle testID={`city-attack-${n.id}`} cx={n.x} cy={n.y} r={12} fill="none" stroke={C.tomato} strokeWidth={0.9} strokeDasharray="2 1.4" />}
             {shop.built ? <MiniShop x={n.x} y={n.y} id={n.id} color={n.color} /> : <BuildSite x={n.x} y={n.y} next={isNext} />}
-            <Rect x={n.x - 11} y={n.y + 8.5} width={22} height={8.5} rx={2.2} fill="rgba(59,31,20,0.25)" />
-            <Rect x={n.x - 11} y={n.y + 7.5} width={22} height={8.5} rx={2.2} fill="#FFFFFF" stroke={isNext ? C.cheeseDark : INK} strokeWidth={0.45} />
+            {attacked === n.id && (
+              <G>
+                <Circle cx={n.x + 9.5} cy={n.y - 8} r={2.8} fill={C.tomato} stroke="#fff" strokeWidth={0.5} />
+                <SvgText x={n.x + 9.5} y={n.y - 6.9} fontSize={3.6} fontFamily={F.bold} fill="#fff" textAnchor="middle">
+                  !
+                </SvgText>
+              </G>
+            )}
+            {/* a built pizzeria's card has a third row: its three mastery stars (heads, Flagship, golden ovens) */}
+            <Rect x={n.x - 11} y={n.y + 8.5} width={22} height={shop.built ? 11.5 : 8.5} rx={2.2} fill="rgba(59,31,20,0.25)" />
+            <Rect x={n.x - 11} y={n.y + 7.5} width={22} height={shop.built ? 11.5 : 8.5} rx={2.2} fill="#FFFFFF" stroke={attacked === n.id ? C.tomato : isNext ? C.cheeseDark : INK} strokeWidth={attacked === n.id ? 0.8 : 0.45} />
+            {shop.built && <MapStars x={n.x} y={n.y + 16.9} bits={pipBits(starPips(shop))} r={1.8} />}
             <SvgText x={n.x} y={n.y + 11} fontSize={3} fontFamily={F.bold} fill={INK} textAnchor="middle">
               {n.name}
             </SvgText>
@@ -116,6 +162,13 @@ export function CityMap({ game, width, height, onPress }: { game: Game.GameState
           </G>
         );
       })}
+      {finaleSeen(game) && <BostonLot onPress={() => setSoon(true)} />}
     </Svg>
+    {soon && (
+      <Modal transparent animationType="fade" statusBarTranslucent onRequestClose={() => setSoon(false)}>
+        <SoonCard onDone={() => setSoon(false)} />
+      </Modal>
+    )}
+    </>
   );
 }

@@ -3,6 +3,8 @@ import { create } from 'zustand';
 
 import { emitAudio, type AudioEvent } from '../audio/bus';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
+import { buyCosmetic as buyVanity } from '../components/endgame/shop-model';
+import { buyMany, buyPlan, type BuyAmount } from '../components/sidewalk-model';
 import { pickScene, resumeSceneEnd } from '../engine/cutscene-input';
 import { HOME_SCENES } from '../content/scenes/home';
 import { PIER9_BID, TUNING, type DecorKind } from '../content/tuning';
@@ -12,6 +14,9 @@ import * as B from '../engine/bonus';
 import * as G from '../engine/game';
 import * as N from '../engine/night-oven';
 import * as O from '../engine/orders';
+import { ackAttack, startChallenge } from '../engine/features/counterattack';
+import { ackMastery } from '../engine/features/mastery';
+import { ackRecipes } from '../engine/features/recipes';
 import * as R from '../engine/rewards';
 import { tutorialAdvance, tutorialHoldsStory } from '../engine/tutorial';
 import type { Station } from '../engine/pipeline';
@@ -58,6 +63,19 @@ interface Store {
   /** The special order on the table: take it, or send it away. */
   acceptOrder: () => void;
   declineOrder: () => void;
+  /** v5.15: how many levels a tap on a sidewalk station buys (not saved). */
+  buyAmount: BuyAmount;
+  setBuyAmount: (a: BuyAmount) => void;
+  /** Tap on a sidewalk station for the chosen amount: one purchase, one save, one sound (sidewalk-model `buyPlan`). */
+  buyStation: (what: G.Upgrade) => boolean;
+  /** Victor's attack: start the defence challenge. */
+  defend: () => boolean;
+  /** Put an owned cosmetic on (`on`) or take it off. */
+  equip: (id: string, on: boolean) => void;
+  /** The vanity shop: buy a cosmetic with diamonds (it is worn at once). */
+  buyCosmetic: (id: string) => boolean;
+  /** The UI has shown the endgame news: `news` = stars and recipe cards, `attack` = how the last attack ended. Clears it; not saved. */
+  ackEndgame: (part: 'news' | 'attack') => void;
   /** Short-lived message, e.g. "Not enough cash". */
   /** `need`: a need-cash toast clears itself once the player can afford it. */
   toast: { text: string; at: number; need?: number } | null;
@@ -98,6 +116,8 @@ interface Store {
 export const gameCovered = (s: Pick<Store, 'playing' | 'offline' | 'titleDone'>): boolean => !!s.playing || !!s.offline || !s.titleDone;
 /** The golden pizza also waits behind a drawer or another screen. */
 export const bonusBlocked = (s: Pick<Store, 'playing' | 'offline' | 'titleDone' | 'bonusHold'>): boolean => s.bonusHold || gameCovered(s);
+
+const UPGRADE_NAMES: Record<string, string> = { prep: 'Prep', ovens: 'Ovens', counter: 'Counter', drivers: 'Drivers', tables: 'Seating', grade: 'Oven grade', expand: 'Expand', manager: 'Manager', headPrep: 'Head Prep Cook', headOven: 'Head Baker', headCounter: 'Head Cashier' };
 
 /** Serialises saves so a resume never reads a save that is still being written. */
 let pendingSave: Promise<void> = Promise.resolve();
@@ -142,6 +162,30 @@ export const useGame = create<Store>((set, get) => {
   };
   const plain = (what: Purchase) => (): AudioEvent => ({ type: 'buy', what, sting: purchaseSting(what, {}) });
 
+  /** A station or hire purchase for the active shop (one level, or several at once): the toast on a refusal, the sound, one save. */
+  const purchase = (what: G.Upgrade, result: G.BuyResult, cost: number | null) => {
+    const g = get().game;
+    // when the tapped station isn't what's holding the shop back, the toast says so
+    const STAGE_UPGRADE: Record<G.Stage, string> = { prep: 'prep', ovens: 'ovens', counter: 'counter', customers: 'drivers' };
+    const shop = g.shops[g.active];
+    const neck = STAGE_UPGRADE[G.bottleneck(shop, g.vehicle)];
+    const hint = ['prep', 'ovens', 'counter', 'drivers'].includes(what) && what !== neck ? ` · ${UPGRADE_NAMES[neck]} is the bottleneck` : '';
+    // a station level crossing 25/50/100 gets the milestone stinger; a fixed bottleneck gets its own (AU14)
+    const sound = (next: G.GameState): AudioEvent => {
+      const after = next.shops[g.active];
+      const level = what === 'prep' || what === 'ovens' || what === 'counter' || what === 'drivers' || what === 'tables' ? what : null;
+      const kind: Purchase = G.isHeadUpgrade(what) ? 'head' : what;
+      const sting = purchaseSting(kind, {
+        levelBefore: level ? shop[level] : undefined,
+        levelAfter: level ? after[level] : undefined,
+        bottleneckBefore: G.bottleneck(shop, g.vehicle),
+        bottleneckAfter: G.bottleneck(after, next.vehicle),
+      });
+      return { type: 'buy', what: kind, sting };
+    };
+    return commit(result, { name: UPGRADE_NAMES[what] ?? what, cost, hint }, sound);
+  };
+
   return {
     game: G.newGame(Date.now()),
     loaded: false,
@@ -154,6 +198,7 @@ export const useGame = create<Store>((set, get) => {
     bonusHold: false,
     tickAt: Date.now(),
     titleDone: false,
+    buyAmount: 1,
     finishTitle: () => {
       if (get().titleDone) return;
       set({ titleDone: true });
@@ -288,26 +333,43 @@ export const useGame = create<Store>((set, get) => {
 
     buy: (what) => {
       const g = get().game;
-      const NAMES: Record<string, string> = { prep: 'Prep', ovens: 'Ovens', counter: 'Counter', drivers: 'Drivers', tables: 'Seating', grade: 'Oven grade', expand: 'Expand', manager: 'Manager', headPrep: 'Head Prep Cook', headOven: 'Head Baker', headCounter: 'Head Cashier' };
-      // when the tapped station isn't what's holding the shop back, the toast says so
-      const STAGE_UPGRADE: Record<G.Stage, string> = { prep: 'prep', ovens: 'ovens', counter: 'counter', customers: 'drivers' };
-      const shop = g.shops[g.active];
-      const neck = STAGE_UPGRADE[G.bottleneck(shop, g.vehicle)];
-      const hint = ['prep', 'ovens', 'counter', 'drivers'].includes(what) && what !== neck ? ` · ${NAMES[neck]} is the bottleneck` : '';
-      // a station level crossing 25/50/100 gets the milestone stinger; a fixed bottleneck gets its own (AU14)
-      const sound = (next: G.GameState): AudioEvent => {
-        const after = next.shops[g.active];
-        const level = what === 'prep' || what === 'ovens' || what === 'counter' || what === 'drivers' || what === 'tables' ? what : null;
-        const kind: Purchase = G.isHeadUpgrade(what) ? 'head' : what;
-        const sting = purchaseSting(kind, {
-          levelBefore: level ? shop[level] : undefined,
-          levelAfter: level ? after[level] : undefined,
-          bottleneckBefore: G.bottleneck(shop, g.vehicle),
-          bottleneckAfter: G.bottleneck(after, next.vehicle),
-        });
-        return { type: 'buy', what: kind, sting };
-      };
-      return commit(G.buyUpgrade(g, g.active, what), { name: NAMES[what] ?? what, cost: G.upgradeCostOf(g, g.active, what), hint }, sound);
+      return purchase(what, G.buyUpgrade(g, g.active, what), G.upgradeCostOf(g, g.active, what));
+    },
+
+    buyStation: (what) => {
+      const g = get().game;
+      const plan = buyPlan(g, g.active, what, get().buyAmount);
+      // one level (or a single buy) is the ordinary path
+      if (plan.count <= 1) return get().buy(what);
+      return purchase(what, buyMany(g, g.active, what, plan.count), plan.total);
+    },
+
+    setBuyAmount: (a) => {
+      if (get().buyAmount !== a) set({ buyAmount: a });
+    },
+
+    defend: () => {
+      const g = get().game;
+      const r = startChallenge(g, Date.now());
+      if (r.ok) emitAudio({ type: 'click' });
+      return commit(r);
+    },
+
+    equip: (id, on) => {
+      const g = get().game;
+      const next = on ? R.wear(g, id) : R.unwear(g, id);
+      if (next === g) return;
+      emitAudio({ type: 'click' });
+      set({ game: next });
+      void get().save();
+    },
+
+    buyCosmetic: (id) => commit(buyVanity(get().game, id), undefined, plain('decor')),
+
+    ackEndgame: (part) => {
+      const g = get().game;
+      const next = part === 'attack' ? ackAttack(g) : ackRecipes(ackMastery(g));
+      if (next !== g) set({ game: next });
     },
 
     buyFleet: () => commit(G.buyVehicle(get().game), undefined, (next) => ({ type: 'buy', what: 'fleet', vehicle: next.vehicle, sting: purchaseSting('fleet', { vehicle: next.vehicle }) })),

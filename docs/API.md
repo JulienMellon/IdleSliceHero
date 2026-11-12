@@ -69,12 +69,31 @@
 - events: Feature<EventsState> — src/engine/features/events.ts:67
 - types: EventsState, EventView
 
+## src/engine/features/heads.ts
+- KEY — src/engine/features/heads.ts:15
+- STATIONS: readonly BarkStation[] — src/engine/features/heads.ts:16
+- hiredHeads(g: Pick<GameState, 'shops'>): HeadPick[] — src/engine/features/heads.ts:35 — Every hired head in a built shop, in shop then station order.
+- pickHead(g: Pick<GameState, 'shops'>, week: number): HeadPick | null — src/engine/features/heads.ts:46 — The pick for a week: seeded by the week number from the hired heads (null when there are none).
+- headOfWeek(g: GameState): HeadPick | null — src/engine/features/heads.ts:53 — The Head of the Week right now, or null.
+- weekStation(g: GameState, shopId: NeighborhoodId): BarkStation | null — src/engine/features/heads.ts:56 — The station of `shopId`'s head that is Head of the Week, or null.
+- starredKinds(g: GameState): readonly string[] — src/engine/features/heads.ts:62 — The daily-task kinds starred for this week's head (its station's, see STATION_TASKS); none when the…
+- isStarredTask(g: GameState, kind: string): boolean — src/engine/features/heads.ts:68 — Whether a daily task of `kind` is starred (the tasks drawer asks this per row).
+- rankOf(level: number): 0 | 1 | 2 | 3 — src/engine/features/heads.ts:71 — The rank pin a head wears: 0 none, 1 at Lv 25, 2 at Lv 50, 3 at Lv 100 (HEAD_BARKS.rankLevels).
+- stationLevel(shop: Pick<Shop, 'prep' | 'ovens' | 'counter'>, st: BarkStation): number — src/engine/features/heads.ts:74 — A station's level in a shop (ovens are `ovens`).
+- heads: Feature<HeadsState> — src/engine/features/heads.ts:88
+- barkText(shopId: NeighborhoodId, station: BarkStation, trigger: BarkTrigger): string — src/engine/features/heads.ts:105 — What a head says: the copy's line for the shop, station and trigger.
+- newBarkMem(): BarkMem — src/engine/features/heads.ts:121
+- nextBark(mem: BarkMem, shopId: NeighborhoodId, asks: readonly BarkAsk[], now: number, blocked: boolean): { me… — src/engine/features/heads.ts:132 — Decide this frame's bubble for one shop.
+- barkShowing(mem: BarkMem, now: number): boolean — src/engine/features/heads.ts:142 — The bubble is up for HEAD_BARKS.seconds after it starts.
+- speakerFor(shop: Pick<Shop, 'heads'>, salt: number): BarkStation | null — src/engine/features/heads.ts:145 — Which hired head speaks for something that belongs to the whole shop (a rush, an attack): rotated b…
+- types: HeadPick, HeadsState, BarkAsk, BarkMem, Bark
+
 ## src/engine/features/index.ts
-- Feature (re-export) — src/engine/features/index.ts:9
-- FEATURES: Feature<any>[] — src/engine/features/index.ts:13 — Every feature, in the order their hooks run.
-- getFeature<S>(g: GameState, f: Feature<S>): S — src/engine/features/index.ts:16 — A feature's state.
-- setFeature<S>(g: GameState, f: Feature<S>, s: S): GameState — src/engine/features/index.ts:21 — A copy of `g` with the feature's state replaced.
-- withFeatures<T>(list: Feature<any>[], fn: () => T): T — src/engine/features/index.ts:26 — Test helper: run `fn` with `list` as the registry, then put the real one back (even if `fn` throws).
+- Feature (re-export) — src/engine/features/index.ts:10
+- FEATURES: Feature<any>[] — src/engine/features/index.ts:14 — Every feature, in the order their hooks run.
+- getFeature<S>(g: GameState, f: Feature<S>): S — src/engine/features/index.ts:17 — A feature's state.
+- setFeature<S>(g: GameState, f: Feature<S>, s: S): GameState — src/engine/features/index.ts:22 — A copy of `g` with the feature's state replaced.
+- withFeatures<T>(list: Feature<any>[], fn: () => T): T — src/engine/features/index.ts:27 — Test helper: run `fn` with `list` as the registry, then put the real one back (even if `fn` throws).
 
 ## src/engine/features/mastery.ts
 - KEY — src/engine/features/mastery.ts:36
@@ -331,14 +350,14 @@ CITY_NAME, TUNING, STATIONS, OvenGrade, OVEN_GRADES, NONNA_TAKEOVER, FootprintTi
 - types: CoinLaunch
 
 ## src/components/slots.tsx
-- onOvenAsk(fn: () => void) — src/components/slots.tsx:39 — The screen listens here; returns the unsubscribe.
-- askOven() — src/components/slots.tsx:46 — Ask the screen to open Nonna's night-oven sheet (it also closes the drawer, tasks and calendar).
-- inOrder<P>(items: readonly SlotEntry<P>[]): readonly SlotEntry<P>[] — src/components/slots.tsx:51 — The entries in `order` (ascending, stable).
-- Slots({ items }: { items: readonly SlotEntry[] }) — src/components/slots.tsx:56 — Renders every entry of a prop-less slot.
-- SceneSlots({ items, shopId, width, height }: { items: readonly SlotEntry<SceneSlotProps>[]; shopId: string; w… — src/components/slots.tsx:68 — Renders every scene overlay with the shop and the scene size.
-- HUD_CHIPS: SlotEntry[] — src/components/slots.tsx:96
-- BANNERS: SlotEntry[] — src/components/slots.tsx:97
-- SHEETS: SlotEntry[] — src/components/slots.tsx:98
-- DRAWER_CARDS: SlotEntry[] — src/components/slots.tsx:99
-- SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] — src/components/slots.tsx:100
+- onOvenAsk(fn: () => void) — src/components/slots.tsx:43 — The screen listens here; returns the unsubscribe.
+- askOven() — src/components/slots.tsx:50 — Ask the screen to open Nonna's night-oven sheet (it also closes the drawer, tasks and calendar).
+- inOrder<P>(items: readonly SlotEntry<P>[]): readonly SlotEntry<P>[] — src/components/slots.tsx:55 — The entries in `order` (ascending, stable).
+- Slots({ items }: { items: readonly SlotEntry[] }) — src/components/slots.tsx:60 — Renders every entry of a prop-less slot.
+- SceneSlots({ items, shopId, width, height }: { items: readonly SlotEntry<SceneSlotProps>[]; shopId: string; w… — src/components/slots.tsx:72 — Renders every scene overlay with the shop and the scene size.
+- HUD_CHIPS: SlotEntry[] — src/components/slots.tsx:100
+- BANNERS: SlotEntry[] — src/components/slots.tsx:107
+- SHEETS: SlotEntry[] — src/components/slots.tsx:109
+- DRAWER_CARDS: SlotEntry[] — src/components/slots.tsx:110
+- SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] — src/components/slots.tsx:111
 - types: SlotProps, SceneSlotProps, SlotEntry

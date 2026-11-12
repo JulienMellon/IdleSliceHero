@@ -6,6 +6,8 @@ import { F } from '../../theme';
 import { Circle, Ellipse, G, Path, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 import { INK, SCENE_W, FRONT_TOP, P, pts } from './projection';
 import type { Layout } from './layout';
+import { GoldPlaque } from './cosmetic-props';
+import { dressedLook, plaqueRect } from './cosmetics';
 import { LOOKS } from './identity';
 import { doorwaySignRect } from './stations';
 import { Sidewalk } from './street';
@@ -15,9 +17,9 @@ import { PICKET } from './street-props';
  * The street face of the shop: brick pilasters at both corners, a fascia beam across the top
  * carrying the sign, a full-width scalloped awning, the brick sill and the entrance on the right.
  */
-export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, id }: { lay: Layout; name: string; signage: number; plants: number; id: NeighborhoodId }) {
+export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, id, facadeSkin = 0, awningGold = false, plaque = false }: { lay: Layout; name: string; signage: number; plants: number; id: NeighborhoodId; /** Worn cosmetics (cosmetics.ts): the storefront skin's 1-based number (0: none), the gold awning, the master's plaque. */ facadeSkin?: number; awningGold?: boolean; plaque?: boolean }) {
   const { L, R, door } = lay;
-  const look = LOOKS[id];
+  const look = dressedLook(LOOKS[id], { facadeSkin, awningGold });
   const sill = (x0: number, x1: number) => {
     const [ax, ay] = P(x0, 0);
     const [bx] = P(x1, 0);
@@ -233,6 +235,15 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
       })()}
       {pilaster(L - 6, L + 8, 'l')}
       {pilaster(R - 8, R + 6, 'r')}
+      {/* the master's plaque: brass on the right pilaster, by the door (cosmetics.ts `plaqueRect`) */}
+      {plaque && (() => {
+        const r = plaqueRect(lay);
+        return (
+          <G transform={`translate(${(r.x0 + r.x1) / 2} ${(r.y0 + r.y1) / 2})`}>
+            <GoldPlaque />
+          </G>
+        );
+      })()}
       {/* awning under the fascia: each neighbourhood's colours and shape; red stays as the first stripe or the piping */}
       {(() => {
         const [c0, c1] = look.awning;
@@ -266,7 +277,7 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
       })()}
       <Rect x={fx0} y={fBot} width={fx1 - fx0} height={3} fill="#000" opacity={0.15} />
       {/* fascia beam */}
-      <Rect x={fx0} y={fTop} width={fx1 - fx0} height={fBot - fTop} fill="#5E3A26" stroke={INK} strokeWidth={1.4} />
+      <Rect x={fx0} y={fTop} width={fx1 - fx0} height={fBot - fTop} fill={look.fascia} stroke={INK} strokeWidth={1.4} />
       <Rect x={fx0 + 1} y={fTop + 1} width={fx1 - fx0 - 2} height={4} fill="#fff" opacity={0.14} />
       {/* hanging ferns from the fascia (plants decor) */}
       {plants >= 2 &&

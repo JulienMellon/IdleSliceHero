@@ -69,3 +69,6 @@ export function deckBox(d: Deck) {
 
 /** Where the deck's back edge stands relative to the queue's feet: the deck starts below the lane so figures never stand on it. */
 export const DECK_CLEARS_QUEUE = DECK_BACK_Y < QUEUE_Y;
+
+/** The depths a patio set's five layers sort at (street.tsx `sidewalkItems`): the deck under everything, the rail in front, the umbrella over the diners' heads. The pills (layout.ts PILL_LAYER_Y) sort in front of all of them. */
+export const patioSortYs = (y: number) => ({ deck: y + 1.2, rail: y - 7, back: y + 0.6, front: y - 0.6, umbrella: y - 0.9 });

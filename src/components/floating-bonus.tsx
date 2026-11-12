@@ -120,7 +120,12 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
   // G95: the lane stays in the sky band above the roof sign; the gift label sits over the pizza, so its lane starts lower to leave it room
   const fit = sceneFit(width, height || 1);
   const bandBottom = height > 0 ? skyBottom(fit.oy, fit.s, P(0, 0, FRONT_TOP)[1]) : 0;
-  const lane = laneY(path.lane, top, bandBottom, bh + PIPS_H, gift ? BONUS_VIEW.giftRoom : 0);
+  // G95 (card up): an order or perk card, or the endgame notices, can push `top` below the sky band's bottom. laneY would then return its
+  // top, which is on the roof sign. With no room under the cards the pizza flies at the band's own bottom limit instead (over the cards,
+  // above the sign), with the gift label's room kept above it.
+  const bandHi = bandBottom > 0 ? bandBottom - (bh + PIPS_H) - BONUS_VIEW.bobPx - BONUS_VIEW.glowPx : Number.POSITIVE_INFINITY;
+  const noRoom = bandBottom > 0 && bandHi < top + (gift ? BONUS_VIEW.giftRoom : 0);
+  const lane = noRoom ? Math.max(gift ? BONUS_VIEW.giftRoom : 0, bandHi) : laneY(path.lane, top, bandBottom, bh + PIPS_H, gift ? BONUS_VIEW.giftRoom : 0);
   // a refused-tap toast sits in the same sky: the label gives way to it
   const toastUp = useGame((s) => !!s.toast);
   const flapScale = fly.flap.interpolate({ inputRange: [0, 1], outputRange: [1, 0.5] });

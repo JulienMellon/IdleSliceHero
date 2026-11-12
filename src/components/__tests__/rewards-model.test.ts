@@ -109,6 +109,18 @@ describe('task rows', () => {
     }
     expect(t0.kind).toBeTruthy();
   });
+  test('v5.15: the daily tasks of Head of the Week\'s station wear a star; weekly rows and an empty pick never do', () => {
+    const g = base();
+    const daily = (kinds: string[]): G.GameState => withR(g, { daily: kinds.map((kind) => ({ ...g.rewards.daily[0], kind: kind as never })) });
+    const pick = (station: 'prep' | 'oven' | 'counter' | null) => ({ ...g.x, heads: { week: 5, pick: station ? { shopId: 'downtown', station } : null } });
+    const s = { ...daily(['upgrades', 'baked', 'walkins', 'decor', 'earn']), x: pick('prep') };
+    expect(dailyRows(s).map((r) => r.starred)).toEqual([true, false, false, true, false]);
+    expect(dailyRows({ ...s, x: pick('oven') }).map((r) => r.starred)).toEqual([false, true, false, false, false]);
+    expect(dailyRows({ ...s, x: pick('counter') }).map((r) => r.starred)).toEqual([false, false, true, false, false]);
+    expect(dailyRows({ ...s, x: pick(null) }).every((r) => !r.starred)).toBe(true);
+    expect(dailyRows({ ...s, x: {} }).every((r) => !r.starred)).toBe(true);
+    expect(weeklyRows({ ...s, x: pick('prep') }).every((r) => !r.starred)).toBe(true);
+  });
   test('a finished task is ready and its bar is full', () => {
     let s = base();
     const t = s.rewards.daily[0];
@@ -165,9 +177,11 @@ describe('chests', () => {
     expect(all.prize).toBe('30 \u{1F48E} + 2 h income');
     expect(all.label).toBe("30 \u{1F48E} + 2 h income \u00B7 7 tasks to go");
   });
-  test('collection line', () => {
-    expect(collectionText(base())).toBe('Collection: empty. Open a weekly chest or reach day 28.');
-    expect(collectionText(withR(base(), { cosmetics: ['oven-gold', 'storefront-skin-2'] }))).toBe('Collection: Gold oven, Storefront skin 2');
+  test('collection line: the recipe cards owned of 24 (v5.15)', () => {
+    expect(collectionText(base())).toBe('Collection: 0/24 recipes');
+    const g = base();
+    const owned = ['recipe.downtown.1', 'recipe.downtown.2', 'recipe.suburbs.1'];
+    expect(collectionText({ ...g, x: { ...g.x, recipes: { owned, fresh: [], synced: true, summary: null } } })).toBe('Collection: 3/24 recipes');
   });
 });
 

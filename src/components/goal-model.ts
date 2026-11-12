@@ -1,6 +1,13 @@
 // The goal bar's numbers and colours as plain data (D297). The label is drawn twice: dark ink over the cream track,
 // and a cream copy clipped to the fill's width, so it stays readable at every fill fraction. Pure: unit-tested in node.
+// the engine's game module first: game -> features -> game is a cycle, and it only resolves when game loads before a feature
+import '../engine/game';
+import { finaleSeen } from '../engine/features/counterattack';
+import { MASTERY_MAX, masteryTotal, nextStar } from '../engine/features/mastery';
+import type { GameState } from '../engine/game';
 import { C } from '../theme';
+import { copy } from './endgame/copy-text';
+import { nextStarLine } from './endgame/mastery-model';
 
 export const GOAL_BAR = {
   /** The bar's own border (pt); the fill and the clipped copy live inside it. */
@@ -96,3 +103,25 @@ export function goalLabelFit(label: string, amount: string, barW: number): GoalF
   return { amountW, labelW, wordsRoom, fits: amountW <= inner && wordsRoom >= Math.min(labelW, GOAL_MIN_WORDS_W) };
 }
 export const goalLabelFits = (label: string, amount: string, barW: number): boolean => goalLabelFit(label, amount, barW).fits;
+
+// ---------- the post-story goal (v5.15, D427) ----------
+
+/** The goal bar once the story is told: the stars of every shop, 0..18. */
+export interface MasteryGoal {
+  /** "Mastery 7/18 · Next: Flagship in Suburbs": the words clip at their end, so the count always shows. */
+  label: string;
+  /** The amount beside the words: the next star's steps ("2/3"), or a star when all 18 are earned. */
+  text: string;
+  /** The bar: stars earned of 18. */
+  current: number;
+  target: number;
+}
+
+/** The goal bar's line after the last finale, or null while the story is still being told (then the ordinary goals show). */
+export function masteryGoal(g: GameState): MasteryGoal | null {
+  if (!finaleSeen(g)) return null;
+  const n = masteryTotal(g);
+  const next = nextStar(g);
+  const count = copy('goal.mastery', { n });
+  return { label: next ? `${count} \u00B7 ${nextStarLine(next)}` : count, text: next ? `${next.have}/${next.need}` : '\u2605', current: n, target: MASTERY_MAX };
+}

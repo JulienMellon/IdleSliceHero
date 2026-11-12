@@ -1,11 +1,14 @@
-import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { recipeGroups } from '@/components/endgame/recipes-model';
+import { RecipesSection } from '@/components/endgame/recipes-section';
 import { DISPLAY_NAMES, Portrait } from '@/components/portrait';
 import { HOME_SCENES } from '@/content/scenes/home';
 import { NEIGHBORHOODS } from '@/content/tuning';
+import { collectionView } from '@/engine/features/recipes';
 import { nextSceneTeaser } from '@/engine/teaser';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
@@ -17,6 +20,16 @@ export default function Scrapbook() {
   const markViewed = useGame((s) => s.markScrapbookViewed);
   // one line on whose story is next and what it waits for (a string, so the screen re-renders only when it changes)
   const teaser = useGame((s) => nextSceneTeaser(s.game).text);
+  // v5.15: Story | Recipes. The tasks drawer's collection line opens it on Recipes (?section=recipes).
+  const { section } = useLocalSearchParams<{ section?: string }>();
+  const [tab, setTab] = useState<'story' | 'recipes'>(section === 'recipes' ? 'recipes' : 'story');
+  useEffect(() => {
+    if (section === 'recipes') setTab('recipes');
+  }, [section]);
+  // the owned cards are primitives (a count and a key), so the Recipes tab repaints when a card drops, not on every tick
+  const owned = useGame((s) => collectionView(s.game).owned);
+  const ownedKey = useGame((s) => collectionView(s.game).shops.map((x) => x.cards.map((c) => (c.owned ? 1 : 0)).join('')).join('|'));
+  const groups = useMemo(() => recipeGroups(useGame.getState().game), [ownedKey]); // eslint-disable-line react-hooks/exhaustive-deps -- `ownedKey` is what the groups depend on
   useEffect(() => {
     markViewed();
   }, [markViewed, seen.length]);
@@ -37,6 +50,18 @@ export default function Scrapbook() {
           {teaser}
         </Text>
       </View>
+      <View style={styles.tabs} accessibilityRole="tablist">
+        {(['story', 'recipes'] as const).map((t) => (
+          <Pressable key={t} testID={`scrapbook-tab-${t}`} accessibilityRole="tab" accessibilityState={{ selected: tab === t }} onPress={() => setTab(t)} style={[styles.tab, tab === t && styles.tabOn]}>
+            <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>{t === 'story' ? 'Story' : `Recipes ${owned}/24`}</Text>
+          </Pressable>
+        ))}
+      </View>
+      {tab === 'recipes' ? (
+        <ScrollView>
+          <RecipesSection groups={groups} bottom={insets.bottom + 24} />
+        </ScrollView>
+      ) : (
       <ScrollView contentContainerStyle={{ padding: 14, gap: 16, paddingBottom: insets.bottom + 24 }}>
         {NEIGHBORHOODS.map((n) => {
           const scenes = HOME_SCENES.filter((s) => s.neighborhood === n.id);
@@ -69,6 +94,7 @@ export default function Scrapbook() {
           );
         })}
       </ScrollView>
+      )}
     </View>
   );
 }
@@ -78,6 +104,11 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 14, paddingVertical: 10, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark, gap: 4 },
   headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   teaser: { fontFamily: F.semi, fontSize: 14, color: '#FFE7C2', textAlign: 'center' },
+  tabs: { flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingTop: 10 },
+  tab: { flex: 1, minHeight: 44, borderRadius: 14, borderWidth: 2.5, borderColor: C.ink, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  tabOn: { backgroundColor: C.tomato, borderColor: C.tomatoDark },
+  tabText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
+  tabTextOn: { color: '#fff' },
   back: { width: 70 },
   backText: { fontFamily: F.bold, color: '#fff', fontSize: 18 },
   title: { fontFamily: F.bold, color: '#fff', fontSize: 24 },

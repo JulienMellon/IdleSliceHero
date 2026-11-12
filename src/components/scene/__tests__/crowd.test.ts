@@ -4,13 +4,13 @@
 import { buildCast, sidewalkOf, type CastMember } from '../cast';
 import { alongDist, emptyCrew, routesFor, stepCrew, type CrewState } from '../crew';
 import { advanceLine, AUTOMATIC, emptyLine, type Line, type LineRates } from '../../../engine/pipeline';
-import { BACK_ROW_Y, DRIVER_QUEUE_PITCH, DRIVER_SPOTS, FEET_IN, NEAR_ROW_Y, PATIO_HALF_W, PATIO_SEAT, PROP_Y, QUEUE_PITCH, QUEUE_Y, SEAT, TABLE_SET_HALF, TAG_MARGIN, TREE_Y, VEHICLE_HALF_W, WAIT_TAG_Z, layout, moreTagAt, moreTagRect, waitTagAt, waitTagRect, waitTagWidth } from '../layout';
+import { BACK_ROW_Y, DRIVER_QUEUE_PITCH, MORE_TAG_DRIVER_AIR, MORE_TAG_GAP, MORE_TAG_Z, MORE_TAG_Z_ALONE, PATIO_Y, PILL_LAYER_Y, SIGN_Y, DRIVER_SPOTS, FEET_IN, NEAR_ROW_Y, PATIO_HALF_W, PATIO_SEAT, PROP_Y, QUEUE_PITCH, QUEUE_Y, SEAT, TABLE_SET_HALF, TAG_MARGIN, TREE_Y, VEHICLE_HALF_W, WAIT_TAG_Z, layout, moreTagAt, moreTagRect, waitTagAt, waitTagRect, waitTagWidth } from '../layout';
 import { driverCast, hash32, lookFor } from '../looks';
 import { driverFigures, queueLabel, queueOverflow, waitingText } from '../waiting';
 import { seatPalette } from '../palette';
 import { CURB_Y, FRONT_TOP, P, SCENE_H, SCENE_W, kAt, unprojectX } from '../projection';
 import { SIDEWALK_ROW } from '../../tap-targets';
-import { PILL_UMBRELLA_AIR, UMBRELLA_TOP } from '../patio-deck';
+import { PILL_UMBRELLA_AIR, UMBRELLA_TOP, patioSortYs } from '../patio-deck';
 import { doorwaySignRect, placePops, popPlace, popRect, popsCover, popWidth, spotlightCutout, staffFaces, stationRects, tutorialHand } from '../stations';
 import { bodyBy, chairBack, SEATED_TORSO_HALF } from '../geometry';
 import { quantArm, quantStep } from '../quantise';
@@ -604,7 +604,9 @@ describe('the sidewalk queues', () => {
       }
     for (const sh of sideShops()) {
       const m = moreTagAt(sh.lay, '+1');
-      expect(Math.abs(m.x - P(...sh.lay.queueTag)[0])).toBeLessThan(0.01);
+      // over the last diner; with nobody in the lane (D450) it moves left of the nearest idle driver instead
+      if (sh.lay.queue.length) expect(Math.abs(m.x - P(...sh.lay.queueTag)[0])).toBeLessThan(0.01);
+      else expect(m.x + m.w / 2).toBeLessThanOrEqual(P(...sh.lay.driverQueue[DRIVER_SPOTS - 1])[0] - MORE_TAG_DRIVER_AIR + 0.01);
       // the two pills never meet: the "+N" hangs lower than the drivers' (taller) one
       const t = waitTagAt(sh.lay, texts[1]);
       const sepY = m.y - t.y;
@@ -1017,8 +1019,13 @@ describe('queued diners never stand in front of a table or a seated diner (D430)
     expect(queueLabel(4, 0)).toBe('4 waiting');
     const lay = layout(1, 2, 3, 2, 6, 3, 1);
     expect(lay.queue).toHaveLength(0);
-    // with nobody in the lane the pill hangs over the first spot the diners would take, GROUP_GAP left of the last driver
-    expect(Math.abs(moreTagAt(lay, '4 waiting').x - Math.max(TAG_MARGIN + waitTagWidth('4 waiting') / 2, P(...lay.queueTag)[0]))).toBeLessThan(0.01);
+    // with nobody in the lane the pill hangs over the first spot the diners would take, GROUP_GAP left of the last driver; D450: wide as it is, it
+    // moves left until its right end is MORE_TAG_DRIVER_AIR clear of the nearest driver
+    const w = waitTagWidth('4 waiting');
+    const driverX = P(...lay.driverQueue[DRIVER_SPOTS - 1])[0];
+    const m = moreTagAt(lay, '4 waiting');
+    expect(m.x).toBeLessThanOrEqual(Math.max(TAG_MARGIN + w / 2, Math.min(P(...lay.queueTag)[0], driverX - MORE_TAG_DRIVER_AIR - w / 2)) + 0.01);
+    expect(m.x - w / 2).toBeGreaterThanOrEqual(TAG_MARGIN - 0.01);
     expect(P(...lay.driverQueue[DRIVER_SPOTS - 1])[0] - P(...lay.queueTag)[0]).toBeCloseTo(30, 5);
   });
 });
@@ -1069,5 +1076,85 @@ describe('the waiting pill over the patio (D450)', () => {
       }
     }
     expect(seated).toBeGreaterThan(50);
+  });
+  // ---- S1 round: the "N waiting" pill (the shots 45 / 46) ----
+  const WAIT_TEXTS = ['1 driver idle', '11 drivers idle · buy Ovens', '28 drivers idle · buy Prep + Ovens', '37 drivers idle · buy all three'];
+  const ALONE = (): SideShop[] => [...sideShops()].filter((sh) => !sh.idle && sh.lay.queue.length === 0);
+  test('"N waiting" hangs at least MORE_TAG_GAP (6 pt) under the drivers\' pill\'s body, and never touches its tail, for every text at every footprint where it shows', () => {
+    let n = 0;
+    for (const sh of ALONE())
+      for (const text of WAIT_TEXTS)
+        for (const more of ['3 waiting', '12 waiting', '120 waiting']) {
+          const w = waitTagRect(sh.lay, text);
+          const m = moreTagRect(sh.lay, more);
+          // the body ends 3.3 above the rect (which holds the 12.7 tail); the tail points at the middle driver, far right of the pill
+          const tailX = waitTagAt(sh.lay, text).x + waitTagAt(sh.lay, text).tail;
+          expect([sh.name, text, more, m.x1 < tailX - 4]).toEqual([sh.name, text, more, true]);
+          if (m.x1 <= w.x0 || m.x0 >= w.x1) continue;
+          n++;
+          expect([sh.name, text, more, m.y0 - (w.y1 - 4) >= MORE_TAG_GAP - 1e-9]).toEqual([sh.name, text, more, true]);
+        }
+    expect(n).toBeGreaterThan(20);
+  });
+  test('the check can fail: at the old height (MORE_TAG_Z) the pill overlapped the drivers\' pill by about 4 pt', () => {
+    expect(MORE_TAG_Z_ALONE).toBeLessThan(MORE_TAG_Z);
+    for (const sh of ALONE()) {
+      const w = waitTagRect(sh.lay, WAIT_TEXTS[1]);
+      const m = moreTagRect(sh.lay, '3 waiting');
+      const oldY0 = m.y0 - (MORE_TAG_Z - MORE_TAG_Z_ALONE) * 0.99;
+      expect(oldY0 - w.y1).toBeLessThan(0); // overlapping the tail's rect
+      expect(oldY0 - (w.y1 - 4)).toBeLessThan(MORE_TAG_GAP); // and not 6 pt clear of the body
+    }
+  });
+  test('"N waiting" covers no sidewalk figure (face or body), and no indoor diner\'s face behind the glass that the old pill (z 66, unmoved) did not already cover', () => {
+    const faceBox = (c: CastMember): Box => {
+      const [sx, sy] = P(c.props.x, c.props.y);
+      const k = kAt(c.props.y) * 1.14;
+      // chin to eye line: the forehead and hair above it are not the face
+      const [lo, hi] = c.props.kind === 'sit' ? [22, 31] : [31, 40];
+      return { x0: sx - 7 * k, x1: sx + 7 * k, y0: sy - hi * k, y1: sy - lo * k };
+    };
+    for (const sh of ALONE())
+      for (const more of ['3 waiting', '120 waiting']) {
+        const m = moreTagRect(sh.lay, more);
+        const pill = { x0: m.x0, x1: m.x1, y0: m.y0, y1: m.y1 - 4 }; // the body: the tail is 12.7 below the centre, the body 8.7
+        // the pill before D450: the same text over the first spot, MORE_TAG_Z high
+        const [ox, oy] = P(sh.lay.queueTag[0], sh.lay.queueTag[1], MORE_TAG_Z);
+        const ow = waitTagWidth(more);
+        const old = { x0: ox - ow / 2, x1: ox + ow / 2, y0: oy - 9.7, y1: oy + 8.7 };
+        const bad: string[] = [];
+        sideFrames(sh).forEach((cast, f) => {
+          for (const c of cast) {
+            if (c.props.step) continue; // a walker crossing under it for a moment is not covered for long
+            const sidewalk = c.props.y < 0;
+            if (touches(faceBox(c), pill) && (sidewalk || !touches(faceBox(c), old))) bad.push(`${sh.name} "${more}" f${f} ${c.key} ${c.role} face`);
+            if (sidewalk && silhouette(c).some((b) => touches(b, pill))) bad.push(`${sh.name} "${more}" f${f} ${c.key} ${c.role} body`);
+          }
+        });
+        expect([...new Set(bad)].slice(0, 3)).toEqual([]);
+      }
+  });
+  test('both pills are drawn on the layer above the umbrellas, so a canopy tip never cuts a digit (and below the parked vehicle and the chalkboard)', () => {
+    // painter order sorts larger y first: a smaller y is drawn on top
+    for (const y of [PATIO_Y, PATIO_Y + 2]) for (const part of Object.values(patioSortYs(y))) expect(PILL_LAYER_Y).toBeLessThan(part);
+    expect(PILL_LAYER_Y).toBeGreaterThan(SIGN_Y);
+    expect(PILL_LAYER_Y - 0.5).toBeGreaterThan(SIGN_Y);
+    expect(PILL_LAYER_Y).toBeGreaterThan(-30);
+    // the old layer (QUEUE_Y - 2) sat behind the umbrellas
+    expect(QUEUE_Y - 2).toBeGreaterThan(patioSortYs(PATIO_Y).umbrella);
+  });
+  test('no patio set has more than 2 figures standing or sitting still on the sidewalk at it, in any frame (the indoor front row seen through the glass is not the patio)', () => {
+    let seen = 0;
+    for (const sh of sideShops()) {
+      if (sh.idle) continue;
+      for (const cast of sideFrames(sh))
+        for (const p of sh.lay.patio) {
+          const sb = setBox(p);
+          const at = cast.filter((c) => c.props.y < 0 && !c.props.step && silhouette(c).some((b) => touches(b, sb)));
+          seen += at.length;
+          expect([sh.name, at.length <= 2]).toEqual([sh.name, true]);
+        }
+    }
+    expect(seen).toBeGreaterThan(50);
   });
 });

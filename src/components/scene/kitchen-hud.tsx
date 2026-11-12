@@ -7,6 +7,7 @@ import type { Departure } from '../../engine/pipeline';
 import { F } from '../../theme';
 import { BADGE_R, placePops, POP_H, type BadgeTone, type Rect as ScreenRect } from './stations';
 import { HeadFace } from './head-face';
+import { HEAD_BARKS } from '../../content/heads';
 import type { HeadKind } from '../../content/tuning';
 import { INK, SCENE_W } from './projection';
 import { CONFETTI, CONFETTI_FRAMES, CONFETTI_OPACITY, confettiFills } from './ladder';
@@ -54,7 +55,7 @@ export const BadgeRail = memo(function BadgeRail({ x0, x1, y, gm }: { x0: number
  * "×4" for the next prep batch); `ready` pulses with a hand (tap me), and `nudge` bounces it after a missed tap;
  * `face` is the head (or GM) who runs the station, drawn as a small bust (D345), or null when the player taps it.
  */
-export const StationBadge = memo(function StationBadge({ x, y, step, count, tone, ready, pulse, nudge, face, faceName, jump }: { x: number; y: number; step: number; count: string; tone: BadgeTone; ready: boolean; pulse: number; nudge: number; face: HeadKind | 'gm' | null; faceName: string; jump: number }) {
+export const StationBadge = memo(function StationBadge({ x, y, step, count, tone, ready, pulse, nudge, face, faceName, jump, rank = 0, star = false }: { x: number; y: number; step: number; count: string; tone: BadgeTone; ready: boolean; pulse: number; nudge: number; face: HeadKind | 'gm' | null; faceName: string; jump: number; /** The head's rank pin: 0 none, 1-3 at station Lv 25 / 50 / 100 (features/heads.ts `rankOf`). */ rank?: number; /** The head is Head of the Week: a gold star pin. */ star?: boolean }) {
   const s = (ready ? 1 + 0.12 * pulse : 1) * (1 + 0.18 * jump);
   const r = BADGE_R;
   const pillW = Math.max(18, count.length * 6.2 + 10);
@@ -86,9 +87,29 @@ export const StationBadge = memo(function StationBadge({ x, y, step, count, tone
           <HeadFace kind={face} name={faceName} size={17} />
         </G>
       )}
+      {/* the head's pins, on the badge's lower edge (so they show whether the head or the General Manager's chip is on the rail) */}
+      {rank > 0 && <RankPin x={-6} y={r + 3} rank={rank} />}
+      {star && <StarPin x={6} y={r + 3.5} />}
     </G>
   );
 });
+
+/** A rank pin: a disc in bronze, silver or gold with one, two or three pips for Lv 25, 50 and 100. */
+const RankPin = ({ x, y, rank }: { x: number; y: number; rank: number }) => (
+  <G transform={`translate(${x} ${y})`}>
+    <Circle cx={0} cy={0} r={4.6} fill={HEAD_BARKS.rankColors[rank - 1]} stroke={INK} strokeWidth={1} />
+    {Array.from({ length: rank }).map((_, i) => (
+      <Circle key={i} cx={(i - (rank - 1) / 2) * 2.6} cy={0} r={0.95} fill={INK} />
+    ))}
+  </G>
+);
+
+/** The Head of the Week's gold star pin. */
+const StarPin = ({ x, y }: { x: number; y: number }) => (
+  <G transform={`translate(${x} ${y})`}>
+    <Path d="M0 -5.4 L1.5 -1.7 L5.4 -1.4 L2.4 1.1 L3.3 5 L0 2.9 L-3.3 5 L-2.4 1.1 L-5.4 -1.4 L-1.5 -1.7 Z" fill="#FFC531" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+  </G>
+);
 
 type Pt = [number, number];
 
@@ -134,6 +155,41 @@ export const HireBubble = memo(function HireBubble({ x, y, text, wall0, wall1, t
       <SvgText x={0} y={-1.5} fontFamily={F.bold} fontSize={10} fill={INK} textAnchor="middle">
         {text}
       </SvgText>
+    </G>
+  );
+});
+
+/** The day-30 visitor's tag over their head (cameo.ts): the visit's time left, "6d 4h". */
+export const CameoTag = memo(function CameoTag({ x0, x1, y0, y1, text }: { x0: number; x1: number; y0: number; y1: number; text: string }) {
+  return (
+    <G>
+      <Rect x={x0} y={y0} width={x1 - x0} height={y1 - y0} rx={(y1 - y0) / 2} fill="#FFE08A" stroke={INK} strokeWidth={1.2} />
+      <SvgText x={(x0 + x1) / 2} y={y1 - 3.4} fontFamily={F.bold} fontSize={10} fill={INK} textAnchor="middle">
+        {text}
+      </SvgText>
+    </G>
+  );
+});
+
+/**
+ * A visitor's line over their tag (cameo.ts `sayLines`: `text` holds one or two lines, split by "\n"). The pill sits above `y` (its bottom edge),
+ * clamped inside the walls like every bubble (D440); the tail points down at `tail`, the head.
+ */
+export const CameoBubble = memo(function CameoBubble({ tail, y, text, wall0, wall1 }: { tail: number; y: number; text: string; wall0: number; wall1: number }) {
+  const lines = text.split('\n');
+  const w = Math.max(...lines.map(bubbleWidth));
+  const h = 6 + 12 * lines.length;
+  const px = bubbleX(tail, w, { x0: wall0, x1: wall1 });
+  return (
+    <G transform={`translate(${px} ${y})`}>
+      <Path d={`M${tail - px - 4} -1 L${tail - px} 5 L${tail - px + 4} -1 Z`} fill="#fff" stroke={INK} strokeWidth={1.2} strokeLinejoin="round" />
+      <Rect x={-w / 2} y={-h} width={w} height={h} rx={9} fill="#fff" stroke={INK} strokeWidth={1.2} />
+      <Rect x={tail - px - 3} y={-2} width={6} height={2.4} fill="#fff" />
+      {lines.map((l, i) => (
+        <SvgText key={i} x={0} y={-h + 13 + i * 12} fontFamily={F.bold} fontSize={10} fill={INK} textAnchor="middle">
+          {l}
+        </SvgText>
+      ))}
     </G>
   );
 });

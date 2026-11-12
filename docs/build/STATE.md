@@ -4,7 +4,7 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.15
-step: waves            # setup | waves | verify | review | fix | close
+step: verify            # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.14-seam      # label of the last screenshot set that passed verify
 codecritic_range_start: 5d82004
@@ -19,11 +19,10 @@ reviews:               # latest review file per critic, with verdict and counts
   story:  docs/build/v5.15/review-r0-story.md (r0 NOT SATISFIED; bug 0 major 0 minor 6; E1 U2 T3)
   audio:  AUDIOLOG.md (next ID AU78)
 open: v5.14 carried notes (G95 + minors): rows in docs/build/v5.14/review-r3-critic.md
-next: wave 3 (U1 + S1) running; then verify r1.
+next: verify r1 running (screenshots v5.15); then commit, push, launch critic + codecritic r1.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-12 Julien accepted G95 overlap; carried to v5.15. Wave 4 (K0a, K0b) launched.
 - 2026-11-12 K0a done (golden hashes unchanged; digest needs re-run after K0b).
 - 2026-11-12 Seam: 45 changed vs r3, but identical code re-run gives 41 (same top shots) = clock noise; accepted. tsx not installed (digest via node --experimental-strip-types); python playwright 1.63.0 pip-installed this session. v5.14 closed.
 - 2026-11-12 v5.15 wave 1 (W1, E1) launched.
@@ -33,3 +32,4 @@ next: wave 3 (U1 + S1) running; then verify r1.
 - 2026-11-12 U1 PARTIAL: needs U-lane files outside card (app/index.tsx, shop-ui.tsx, G95/D454); sent back to U1 per OWNERS. Open: buyMany/buyCosmetic in components (owner E may move).
 - 2026-11-12 U1 done (G95, D454, D455 fixed in U files; 460 component tests pass). Waiting on S1.
 - 2026-11-12 S1 done (D450 fixed; 478 tests pass). Out-of-scope asks sent: features.test pin → E1, Tasks-drawer star → U1.
+- 2026-11-12 Waves done. Verify r1: tsc clean, 895 tests pass, export ok; screenshots v5.15 running (pip-installed playwright 1.63.0).

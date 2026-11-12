@@ -2,9 +2,11 @@
 // furniture from these alone and memoises on their values, so a field the builder needs can't be forgotten
 // from the memo's dependencies (the v3.5 `prep` bug: a managed shop's prep bench never updated).
 import type { NeighborhoodId } from '../../content/types';
+import { dressOf, type Dress } from './cosmetics';
 import { MAX_PINS, ladderStep, type LadderInput } from './ladder';
 
-export interface FurnitureInputs {
+/** What the furniture is built from. The worn cosmetics (`Dress`, cosmetics.ts) are part of it: a skin change rebuilds the furniture. */
+export interface FurnitureInputs extends Dress {
   id: NeighborhoodId;
   name: string;
   fp: number;
@@ -31,9 +33,11 @@ export interface FurnitureSource {
   running: boolean;
   rate: number;
   vehicle: number;
+  /** `rewards.worn`: the cosmetics on (city-wide). Absent: none. */
+  worn?: readonly string[];
 }
 
-export function furnitureInputs({ id, name, shop, running, rate, vehicle }: FurnitureSource): FurnitureInputs {
+export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn = [] }: FurnitureSource): FurnitureInputs {
   return {
     id,
     name,
@@ -52,6 +56,7 @@ export function furnitureInputs({ id, name, shop, running, rate, vehicle }: Furn
     // an unmanaged shop's chip strip covers the kerb, so its sidewalk props move up and the vehicle stays home
     idleShop: !shop.managed && id !== 'downtown',
     vehicle,
+    ...dressOf(worn),
   };
 }
 

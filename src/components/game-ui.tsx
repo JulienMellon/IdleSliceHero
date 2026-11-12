@@ -66,7 +66,7 @@ const BURST = ['star', 'coin', 'slice', 'star', 'coin', 'slice'] as const;
  * the player is saving for (D326). `expand` is the amber Expand buy (D407). `compact` is the 44 pt sidewalk button: `icon` + `sub`
  * above the price, and `foot` (or the "need" line) under it.
  */
-export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal', saving = false, progress = 0, need = null, foot = null }: { label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: ButtonTone; saving?: boolean; progress?: number; need?: string | null; /** A line under the price that shows whether or not the button is affordable (compact only). */ foot?: string | null }) {
+export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal', saving = false, progress = 0, need = null, foot = null, noBurst = false }: { /** D454: no confetti over the label (the offline popup's Collect: a star cut its "C"). */ noBurst?: boolean; label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: ButtonTone; saving?: boolean; progress?: number; need?: string | null; /** A line under the price that shows whether or not the button is affordable (compact only). */ foot?: string | null }) {
   const nogain = tone === 'nogain';
   const amber = tone === 'expand' && enabled;
   const footText = foot ?? (!enabled ? need : null);
@@ -92,7 +92,7 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
       return;
     }
     haptic(ok ? 'success' : 'light');
-    if (ok) {
+    if (ok && !noBurst) {
       setBursting(true);
       burst.setValue(0);
       Animated.timing(burst, { toValue: 1, duration: 650, easing: Easing.out(Easing.quad), useNativeDriver: native }).start(() => setBursting(false));
@@ -458,6 +458,9 @@ const OvenArt = memo(function OvenArt({ glow, open }: { glow: number; open: bool
       <Path d="M30 50 Q40 40 52 36 M64 28 H96 M24 70 H38 M118 56 H134 M128 82 H140 M22 100 H34 M122 104 H138 M58 48 H72 M100 44 H112" stroke="#A8412C" strokeWidth={3} strokeLinecap="round" fill="none" />
       <Rect x={6} y={114} width={148} height={14} rx={5} fill="#8F5B3E" stroke={OVEN_INK} strokeWidth={3} />
       <G transform={`translate(${DOOR.x} ${DOOR.y})`}>
+        {/* D454: the heat in front of the dome, as a ring round the door's arch: the half outside the arch shows over the bricks */}
+        <Path d={ARCH(DOOR.w, DOOR.h)} fill="none" stroke="#FFB23E" strokeWidth={14} strokeLinejoin="round" opacity={0.2 + 0.55 * k} />
+        <Path d={ARCH(DOOR.w, DOOR.h)} fill="none" stroke="#FFE08A" strokeWidth={7} strokeLinejoin="round" opacity={0.25 + 0.65 * k} />
         <Path d={ARCH(DOOR.w, DOOR.h)} fill="#3A1D12" stroke={OVEN_INK} strokeWidth={3} />
         <Path d={ARCH(DOOR.w, DOOR.h)} fill="#FF8A1F" opacity={0.15 + 0.85 * k} />
         <Path d={ARCH(DOOR.w, DOOR.h)} fill="#FFD36B" opacity={0.7 * k * k} />
@@ -630,6 +633,7 @@ export function OfflinePopup({ summary, nightOven, onCollect, onUpgrade }: { sum
               return true;
             }}
             testID="collect-offline"
+            noBurst
           />
         </View>
       </Animated.View>

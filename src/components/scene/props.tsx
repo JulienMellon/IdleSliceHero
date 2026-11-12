@@ -6,6 +6,7 @@ import { INK, D, WH, P, kAt, shade } from './projection';
 import { type Layout, SEAT } from './layout';
 import { HOOD_EXTRA, boxOvenGeom, chairBack, domeGeom, flameBox, isBoxOven, ovenFrame, type OvenSpec } from './geometry';
 import { Box, FloorShadow } from './primitives';
+import { ovenPaint, ovenTrim, type OvenSkin } from './cosmetics';
 
 /**
  * An oven against the back wall. Single-deck ovens are domed pizza ovens on a brick plinth
@@ -24,17 +25,43 @@ function Flame({ mx, my, mw, mh, flicker, hot }: { mx: number; my: number; mw: n
   );
 }
 
-/** One oven: a memoised body (re-rendered only on upgrades) plus a per-frame flame. */
-export function Oven({ o, grade, lit, flicker, hot = false, tier = 0 }: { o: OvenSpec; grade: number; lit: boolean; flicker: number; hot?: boolean; tier?: 0 | 1 | 2 }) {
-  const fb = useMemo(() => flameBox(o, grade), [o, grade]);
+/**
+ * One oven: a memoised body (re-rendered only on upgrades) plus a per-frame flame. `skin` is the worn oven cosmetic (cosmetics.ts):
+ * 1 paints it as the Golden grade with brass trim, 2 as the wood-fired grade with its log pile and a wisp of smoke; 0 is the grade bought.
+ */
+export function Oven({ o, grade, lit, flicker, hot = false, tier = 0, skin = 0 }: { o: OvenSpec; grade: number; lit: boolean; flicker: number; hot?: boolean; tier?: 0 | 1 | 2; skin?: OvenSkin }) {
+  const paint = ovenPaint(grade, skin);
+  const trim = ovenTrim(tier, skin);
+  const fb = useMemo(() => flameBox(o, paint), [o, paint]);
   return (
     <G>
-      <OvenBody o={o} grade={grade} lit={lit} tier={tier} />
+      <OvenBody o={o} grade={paint} lit={lit} tier={trim} />
       {lit && <Flame {...fb} flicker={flicker} hot={hot} />}
-      {!isBoxOven(o, grade) && <DomeFront o={o} gold={grade >= 3} wood={grade === 2} tier={tier} />}
+      {!isBoxOven(o, paint) && <DomeFront o={o} gold={paint >= 3} wood={paint === 2} tier={trim} />}
+      {skin === 2 && <WoodExtras o={o} lit={lit} tier={trim} />}
     </G>
   );
 }
+
+/** The wood-fired skin's extras: a log pile by a box oven (domes carry theirs already) and a wisp of smoke over a chimney. */
+const WoodExtras = memo(function WoodExtras({ o, lit, tier }: { o: OvenSpec; lit: boolean; tier: 0 | 1 | 2 }) {
+  const { ay, bx, cx, k, top } = ovenFrame(o);
+  // the wisp starts at the chimney's cap (which the hood tiers raise)
+  const cap = top - (22 + HOOD_EXTRA[tier]) * k;
+  const box = isBoxOven(o);
+  return (
+    <G>
+      {box && o.z === 0 && [0, 1, 2].map((i) => <Circle key={`wl${i}`} cx={bx + 4 + (i % 2) * 5} cy={ay - 3 - Math.floor(i / 2) * 5} r={2.8} fill="#9C6B3F" stroke={INK} strokeWidth={0.7} />)}
+      {o.chimney && !o.stacked && lit && (
+        <G>
+          <Circle cx={cx + 1} cy={cap} r={3.2 * k} fill="#E5E1DA" opacity={0.7} />
+          <Circle cx={cx + 4} cy={cap - 7 * k} r={4.2 * k} fill="#E5E1DA" opacity={0.5} />
+          <Circle cx={cx + 8} cy={cap - 15 * k} r={5.2 * k} fill="#E5E1DA" opacity={0.3} />
+        </G>
+      )}
+    </G>
+  );
+});
 
 /** Brass trim for the oven ladder's Lv 25 / 50 tiers (D417). */
 const BRASS = '#D4A84A';

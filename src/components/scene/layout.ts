@@ -75,6 +75,18 @@ export const FIGURE_HALF_W = 12.5;
 export const WAIT_TAG_Z = 84;
 export const MORE_TAG_Z = 66;
 /**
+ * D450: the "N waiting" pill (no diner figure fits the lane, so nobody stands under it) hangs this low, so its top clears the drivers' pill's
+ * body by MORE_TAG_GAP (and the pill is moved left of the drivers, so it clears that pill's tail too). The drivers' pill cannot go up (z 90 covers
+ * the face of the driver at the pickup spot: D439) and this one cannot go lower (z 54 covers the faces of the diners seated behind the glass),
+ * so 59 is the one height that gives both. The "+N" over a standing diner keeps MORE_TAG_Z: it must stay above that head.
+ */
+export const MORE_TAG_Z_ALONE = 59;
+export const MORE_TAG_GAP = 6;
+/** The depth the sidewalk's pills are sorted at (D450): in front of every patio part (`patioSortYs`) and the queue, behind the parked vehicle (y -30) and the chalkboard (SIGN_Y). */
+export const PILL_LAYER_Y = PATIO_Y - 8;
+/** The "N waiting" pill keeps this far (screen pt) left of the nearest idle driver's silhouette (his cap's brim reaches 15.5 right of him; the body 10 left). */
+export const MORE_TAG_DRIVER_AIR = 13;
+/**
  * Half the width of a dining table's set on screen-room units: the table top (±14), the chairs and the diners in them (SEAT + 11 each way).
  * The glass shop front shows the front rows through it, so a queue figure standing in front of one covers a seated diner or the table (D430).
  */
@@ -427,11 +439,32 @@ export function waitTagAt(lay: Pick<Layout, 'waitTag' | 'tagLeft'>, text: string
   const x = Math.min(SCENE_W - TAG_MARGIN - w / 2, Math.max(TAG_MARGIN + w / 2, lay.tagLeft + w / 2, sx));
   return { x, y: sy, w, tail: sx - x };
 }
-/** The "+N" pill over the last diner: higher than that figure's head and lower than the drivers' pill, so the two never meet. */
-export function moreTagAt(lay: Pick<Layout, 'queueTag'>, text: string): { x: number; y: number; w: number } {
-  const [sx, sy] = P(lay.queueTag[0], lay.queueTag[1], MORE_TAG_Z);
+/** The chin-to-eye-line band of a diner seated at a table's chair (screen units): what a pill hung there would cover. */
+function seatedFace(tb: { x: number; y: number }, dx: number) {
+  const [sx, sy] = P(tb.x + dx, tb.y);
+  const k = kAt(tb.y) * 1.14;
+  return { x0: sx - 7 * k, x1: sx + 7 * k, y0: sy - 31 * k, y1: sy - 22 * k };
+}
+
+/**
+ * The "+N" pill over the last diner: higher than that figure's head and lower than the drivers' pill, so the two never meet. With no diner figure
+ * (`lay.queue` is empty) it reads "N waiting" instead: it hangs MORE_TAG_Z_ALONE (a full MORE_TAG_GAP under the drivers' pill's body), moves left
+ * until it clears the nearest idle driver and then, if it can, until it covers no seated diner's face behind the glass (D450).
+ * storefront.tsx draws both pills on the layer above the patio's umbrellas.
+ */
+export function moreTagAt(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue' | 'tables'>, text: string): { x: number; y: number; w: number } {
+  const alone = lay.queue.length === 0;
+  const [sx, sy] = P(lay.queueTag[0], lay.queueTag[1], alone ? MORE_TAG_Z_ALONE : MORE_TAG_Z);
   const w = waitTagWidth(text);
-  return { x: Math.min(SCENE_W - TAG_MARGIN - w / 2, Math.max(TAG_MARGIN + w / 2, sx)), y: sy, w };
+  const lo = TAG_MARGIN + w / 2;
+  const hi = SCENE_W - TAG_MARGIN - w / 2;
+  if (!alone) return { x: Math.min(hi, Math.max(lo, sx)), y: sy, w };
+  const driverX = P(...lay.driverQueue[lay.driverQueue.length - 1])[0];
+  const start = Math.min(hi, Math.max(lo, Math.min(sx, driverX - MORE_TAG_DRIVER_AIR - w / 2)));
+  const faces = lay.tables.flatMap((tb) => [seatedFace(tb, -SEAT), seatedFace(tb, SEAT)]);
+  const clear = (x: number) => faces.every((f) => x + w / 2 <= f.x0 || x - w / 2 >= f.x1 || sy + 8.7 <= f.y0 || sy - 9.7 >= f.y1);
+  for (let x = start; x >= lo; x -= 2) if (clear(x)) return { x, y: sy, w };
+  return { x: start, y: sy, w };
 }
 
 /** What a pill covers on screen, tail included (the pill is 17 tall from 9 above its anchor; the tail reaches 12 below it). */
@@ -442,7 +475,7 @@ export function waitTagRect(lay: Pick<Layout, 'waitTag' | 'tagLeft'>, text: stri
   return pillRect(t.x, t.y, t.w);
 }
 /** The "+N" pill's screen rect. */
-export function moreTagRect(lay: Pick<Layout, 'queueTag'>, text: string) {
+export function moreTagRect(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue' | 'tables'>, text: string) {
   const t = moreTagAt(lay, text);
   return pillRect(t.x, t.y, t.w);
 }

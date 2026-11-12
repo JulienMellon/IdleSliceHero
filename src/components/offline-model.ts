@@ -29,7 +29,7 @@ export function clock(seconds: number): string {
 /** One line of news about the time away: the best seller, else the shop that waited, else what the kitchens finished. */
 export function offlineNews(byShop: GiftSummary['byShop'], idle: readonly string[]): string {
   const best = byShop.filter((b) => b.managed && b.pies >= 1).sort((a, b) => b.pies - a.pies)[0];
-  if (best) return `${best.name} sold ${commas(best.pies)} ${best.pies === 1 ? 'pie' : 'pies'} while you were out`;
+  if (best) return `${best.name} sold ${commas(best.pies)} ${best.pies === 1 ? 'pie' : 'pies'} while you were\u00A0away`; // D455: "away", and the last two words never split (a lone "out" orphaned on line 2)
   if (idle.length) return `${idle[0]} waited for you: hire a manager and it bakes while you're away`;
   return 'Your kitchens finished the pizzas already in the oven';
 }

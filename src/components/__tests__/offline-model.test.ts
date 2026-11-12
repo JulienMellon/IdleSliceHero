@@ -102,8 +102,8 @@ describe('the total, the rows and the count-up', () => {
 
 describe('the news line', () => {
   test('the best-selling managed shop', () => {
-    expect(offlineNews(summary().byShop, [])).toBe('Suburbs sold 12,400 pies while you were out');
-    expect(offlineNews([{ name: 'Suburbs', earned: 5, managed: true, pies: 1 }], [])).toBe('Suburbs sold 1 pie while you were out');
+    expect(offlineNews(summary().byShop, [])).toBe('Suburbs sold 12,400 pies while you were\u00A0away');
+    expect(offlineNews([{ name: 'Suburbs', earned: 5, managed: true, pies: 1 }], [])).toBe('Suburbs sold 1 pie while you were\u00A0away');
   });
 
   test('a shop that waited for a manager', () => {

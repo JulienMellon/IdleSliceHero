@@ -2,7 +2,7 @@ import { NEIGHBORHOODS } from '../../content/tuning';
 /// <reference types="jest" />
 import { money } from '../../engine/format';
 import * as G from '../../engine/game';
-import { AFFORDABLE_OUTLINE, buildChipHint, buttonOutline, cardLook, buildChipSub, bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, type MergedSlot, mergeGroups, needLine, needText, showBundlePill, sidewalkSlots, stationModels, stationTitle, stationViews } from '../sidewalk-model';
+import { amountCard, amountLabel, BUY_AMOUNTS, buyMany, buyPlan, AFFORDABLE_OUTLINE, buildChipHint, buttonOutline, cardLook, buildChipSub, bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, type MergedSlot, mergeGroups, needLine, needText, showBundlePill, sidewalkSlots, stationModels, stationTitle, stationViews } from '../sidewalk-model';
 import { BUTTON_H, SIDEWALK_ROW, TAP } from '../tap-targets';
 
 const shopState = (patch: Partial<G.Shop>, cash = 0): G.GameState => {
@@ -413,5 +413,108 @@ describe('affordable cards are never washed out (D419, round 60)', () => {
     for (const tone of ['normal', 'neutral', 'expand'] as const) expect(buttonOutline(true, tone)).toEqual({ borderColor: '#3B1F14', borderWidth: 2 });
     expect(buttonOutline(true, 'nogain')).toBeNull();
     for (const tone of ['normal', 'neutral', 'expand', 'nogain'] as const) expect(buttonOutline(false, tone)).toBeNull();
+  });
+});
+
+describe('×1 / ×10 / MAX: one rule for how many levels a station tap buys (v5.15)', () => {
+  const at = (cash: number, patch: Partial<G.Shop> = {}) => shopState({ prep: 10, ovens: 10, counter: 10, drivers: 5, footprint: 1, ...patch }, cash);
+  /** What `n` single buys cost in all, bought one at a time through the engine. */
+  const oneByOne = (s: G.GameState, what: G.Upgrade, n: number) => {
+    let cur = { ...s, cash: Number.POSITIVE_INFINITY };
+    let spent = 0;
+    for (let i = 0; i < n; i++) {
+      spent += G.upgradeCostOf(cur, 'downtown', what)!;
+      const r = G.buyUpgrade(cur, 'downtown', what);
+      if (!r.ok) throw new Error(r.reason);
+      cur = r.state;
+    }
+    return { spent, level: cur.shops.downtown[what as 'prep'] };
+  };
+
+  test('the three amounts and their labels', () => {
+    expect(BUY_AMOUNTS).toEqual([1, 10, 'max']);
+    expect(BUY_AMOUNTS.map(amountLabel)).toEqual(['\u00D71', '\u00D710', 'MAX']);
+  });
+
+  test('×1 is the station\'s own price', () => {
+    const s = at(1e12);
+    for (const what of ['prep', 'ovens', 'counter', 'drivers'] as const) expect(buyPlan(s, 'downtown', what, 1)).toEqual({ count: 1, total: G.upgradeCostOf(s, 'downtown', what), affordable: true });
+  });
+
+  test('×10 costs what ten single buys cost, for ten levels', () => {
+    const s = at(1e12);
+    const plan = buyPlan(s, 'downtown', 'prep', 10);
+    expect(plan.count).toBe(10);
+    expect(plan.total).toBe(oneByOne(s, 'prep', 10).spent);
+    expect(plan.affordable).toBe(true);
+    expect(amountCard(s, 'downtown', { what: 'prep', expand: false }, 10)).toEqual({ label: money(plan.total), foot: '+10 lv', enabled: true, count: 10 });
+  });
+
+  test('×10 without the cash is shown, unaffordable and disabled', () => {
+    const s = at(10);
+    const plan = buyPlan(s, 'downtown', 'prep', 10);
+    expect(plan).toMatchObject({ count: 10, affordable: false });
+    expect(amountCard(s, 'downtown', { what: 'prep', expand: false }, 10)?.enabled).toBe(false);
+  });
+
+  test('the level cap cuts ×10 short: 3 levels left under the cap shows "+3 lv"', () => {
+    const s = at(1e12, { prep: 23, footprint: 0 });
+    expect(G.levelCap(s.shops.downtown)).toBe(25);
+    expect(buyPlan(s, 'downtown', 'prep', 10)).toMatchObject({ count: 2 });
+    expect(amountCard(s, 'downtown', { what: 'prep', expand: false }, 10)?.foot).toBe('+2 lv');
+  });
+
+  test('MAX is every level the cash pays for, and the next one shown unaffordable when it pays for none', () => {
+    const s = at(0);
+    const costs = [1, 2, 3, 4, 5, 6].map((n) => oneByOne(s, 'prep', n).spent);
+    // cash for exactly four levels, and a little over
+    const four = buyPlan({ ...s, cash: costs[3] + 0.5 }, 'downtown', 'prep', 'max');
+    expect(four).toMatchObject({ count: 4, total: costs[3], affordable: true });
+    const none = buyPlan({ ...s, cash: 1 }, 'downtown', 'prep', 'max');
+    expect(none).toMatchObject({ count: 1, total: costs[0], affordable: false });
+    // exactly the cost of four is four, not three
+    expect(buyPlan({ ...s, cash: costs[3] }, 'downtown', 'prep', 'max').count).toBe(4);
+  });
+
+  test('MAX stops at the level cap and never asks for more than the cap allows', () => {
+    const s = at(1e30, { prep: 20, footprint: 0 });
+    expect(buyPlan(s, 'downtown', 'prep', 'max').count).toBe(5);
+  });
+
+  test('a locked or maxed station, Expand, hires and every single buy are left as they are', () => {
+    const maxed = shopState({ footprint: 4, prep: 125, ovens: 125, counter: 125, drivers: 125 }, 1e12);
+    expect(buyPlan(maxed, 'downtown', 'prep', 10)).toEqual({ count: 0, total: 0, affordable: false });
+    expect(amountCard(maxed, 'downtown', { what: 'prep', expand: false }, 'max')).toBeNull();
+    expect(amountCard(at(1e12), 'downtown', { what: 'expand', expand: true }, 10)).toBeNull();
+    expect(amountCard(at(1e12), 'downtown', { what: 'headPrep', expand: false }, 10)).toBeNull();
+    expect(amountCard(at(1e12), 'downtown', { what: 'prep', expand: false }, 1)).toBeNull();
+    const hire = buyPlan(at(1e12), 'downtown', 'headPrep', 10);
+    expect(hire.count).toBe(1);
+  });
+
+  test('buyMany spends exactly the plan’s total and raises the level by the plan’s count: one new state', () => {
+    const s = at(1e12);
+    const plan = buyPlan(s, 'downtown', 'ovens', 10);
+    const r = buyMany(s, 'downtown', 'ovens', plan.count);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.state.shops.downtown.ovens).toBe(s.shops.downtown.ovens + 10);
+      expect(s.cash - r.state.cash).toBeCloseTo(plan.total, 0);
+      expect(r.state.stats.upgrades - s.stats.upgrades).toBe(10);
+    }
+  });
+
+  test('buyMany is all or nothing', () => {
+    const s = at(5);
+    expect(buyMany(s, 'downtown', 'prep', 10)).toMatchObject({ ok: false, reason: 'Not enough cash' });
+    expect(s.shops.downtown.prep).toBe(10);
+    expect(buyMany(s, 'downtown', 'prep', 0)).toMatchObject({ ok: false });
+  });
+
+  test('MAX on a rich save is a few taps: one buys a whole station to its cap', () => {
+    const s = at(1e30, { prep: 1, ovens: 1, counter: 1, drivers: 1, footprint: 1 });
+    const plan = buyPlan(s, 'downtown', 'prep', 'max');
+    const r = buyMany(s, 'downtown', 'prep', plan.count);
+    expect(r.ok && r.state.shops.downtown.prep).toBe(G.levelCap(s.shops.downtown));
   });
 });

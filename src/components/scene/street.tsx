@@ -2,8 +2,9 @@ import { memo, type ReactElement } from 'react';
 import { F } from '../../theme';
 import { Circle, Ellipse, G, Path, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 import { chairBack } from './geometry';
-import { PATIO_SEAT, QUEUE_Y, moreTagAt, waitTagAt, type Layout } from './layout';
-import { DECK_COLOR, DECK_LINE, RAIL_PT, patioDeck } from './patio-deck';
+import { PATIO_SEAT, PILL_LAYER_Y, moreTagAt, waitTagAt, type Layout } from './layout';
+import { DECK_COLOR, DECK_LINE, RAIL_PT, patioDeck, patioSortYs } from './patio-deck';
+import { MINT } from './cosmetics';
 import { TABLE_STYLE } from './props';
 import { INK, SCENE_W, CURB_Y, P, kAt, shade } from './projection';
 
@@ -51,12 +52,12 @@ export const Car = memo(function Car({ x, y, color, kind, dir, label = 'MEGASLIC
   );
 });
 
-/** The shop's delivery vehicle parked by the door, drawn in the scene's outlined style. */
-export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v }: { x: number; y: number; v: number }) {
+/** The shop's delivery vehicle parked by the door, drawn in the scene's outlined style. `mint` is the worn mint-scooter cosmetic: the body is repainted whichever tier is parked. */
+export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v, mint = false }: { x: number; y: number; v: number; mint?: boolean }) {
   if (v >= 2 && v <= 3) {
     return (
       <G transform={`translate(${x} ${y + 2}) scale(0.62)`}>
-        <Car x={0} y={0} color={v === 3 ? '#D9443A' : '#E8432E'} kind={v === 3 ? 'van' : 'car'} dir={1} label="ROSA’S" labelColor="#FFF4E0" />
+        <Car x={0} y={0} color={mint ? MINT.body : v === 3 ? '#D9443A' : '#E8432E'} kind={v === 3 ? 'van' : 'car'} dir={1} label="ROSA’S" labelColor="#FFF4E0" />
       </G>
     );
   }
@@ -66,7 +67,7 @@ export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v }: { x: numbe
         <Ellipse cx={0} cy={20} rx={14} ry={3} fill="rgba(59,31,20,0.2)" />
         <Path d="M-18 -4 H18" stroke={INK} strokeWidth={2} />
         {[-18, 18].map((dx) => <Ellipse key={dx} cx={dx} cy={-6} rx={9} ry={2} fill="#BFE3F5" stroke={INK} strokeWidth={0.8} />)}
-        <Rect x={-10} y={-4} width={20} height={10} rx={4} fill="#9B51E0" stroke={INK} strokeWidth={1} />
+        <Rect x={-10} y={-4} width={20} height={10} rx={4} fill={mint ? MINT.body : '#9B51E0'} stroke={INK} strokeWidth={1} />
         <Rect x={-6} y={6} width={12} height={8} rx={1} fill="#F6E7C1" stroke={INK} strokeWidth={0.8} />
       </G>
     );
@@ -82,12 +83,12 @@ export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v }: { x: numbe
         </G>
       ))}
       {bike ? (
-        <Path d="M-12 -7 L-2 -18 L8 -18 L12 -7 M-2 -18 L2 -7 L8 -18 M8 -18 L6 -24 M-4 -20 H2" stroke="#E8432E" strokeWidth={2.2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+        <Path d="M-12 -7 L-2 -18 L8 -18 L12 -7 M-2 -18 L2 -7 L8 -18 M8 -18 L6 -24 M-4 -20 H2" stroke={mint ? MINT.dark : '#E8432E'} strokeWidth={2.2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
       ) : (
         <G>
-          <Path d="M-16 -9 Q-16 -20 -4 -20 L6 -20 L10 -10 L14 -10 L12 -5 L-16 -5 Z" fill="#FFC531" stroke={INK} strokeWidth={1.1} />
+          <Path d="M-16 -9 Q-16 -20 -4 -20 L6 -20 L10 -10 L14 -10 L12 -5 L-16 -5 Z" fill={mint ? MINT.body : '#FFC531'} stroke={INK} strokeWidth={1.1} />
           <Path d="M8 -20 L12 -30 M9 -30 H16" stroke={INK} strokeWidth={1.8} strokeLinecap="round" />
-          <Rect x={-18} y={-30} width={14} height={10} rx={1.5} fill="#E8432E" stroke={INK} strokeWidth={1} />
+          <Rect x={-18} y={-30} width={14} height={10} rx={1.5} fill={mint ? MINT.dark : '#E8432E'} stroke={INK} strokeWidth={1} />
           <Rect x={-14} y={-27} width={6} height={3} rx={1} fill="#fff" opacity={0.8} />
         </G>
       )}
@@ -234,19 +235,21 @@ export const WaitTag = memo(function WaitTag({ x, y, text, w, tail }: { x: numbe
 export function sidewalkItems(lay: Layout, patio: number, waiting: string | null, more: string | null = null): { y: number; el: ReactElement }[] {
   const out: { y: number; el: ReactElement }[] = [];
   lay.patio.slice(0, patio).forEach((p, i) => {
-    out.push({ y: p.y + 1.2, el: <PatioTable key={`pd${i}`} x={p.x} y={p.y} part="deck" /> });
-    out.push({ y: p.y - 7, el: <PatioTable key={`pr${i}`} x={p.x} y={p.y} part="rail" /> });
-    out.push({ y: p.y + 0.6, el: <PatioTable key={`pb${i}`} x={p.x} y={p.y} part="back" /> });
-    out.push({ y: p.y - 0.6, el: <PatioTable key={`pf${i}`} x={p.x} y={p.y} part="front" /> });
-    out.push({ y: p.y - 0.9, el: <PatioTable key={`pu${i}`} x={p.x} y={p.y} part="umbrella" /> });
+    const sy = patioSortYs(p.y);
+    out.push({ y: sy.deck, el: <PatioTable key={`pd${i}`} x={p.x} y={p.y} part="deck" /> });
+    out.push({ y: sy.rail, el: <PatioTable key={`pr${i}`} x={p.x} y={p.y} part="rail" /> });
+    out.push({ y: sy.back, el: <PatioTable key={`pb${i}`} x={p.x} y={p.y} part="back" /> });
+    out.push({ y: sy.front, el: <PatioTable key={`pf${i}`} x={p.x} y={p.y} part="front" /> });
+    out.push({ y: sy.umbrella, el: <PatioTable key={`pu${i}`} x={p.x} y={p.y} part="umbrella" /> });
   });
+  // D450: both pills sit on the layer above the umbrellas (patioSortYs), so a canopy tip never cuts a digit
   if (waiting) {
     const t = waitTagAt(lay, waiting);
-    out.push({ y: QUEUE_Y - 2, el: <WaitTag key="wait" x={t.x} y={t.y} text={waiting} w={t.w} tail={t.tail} /> });
+    out.push({ y: PILL_LAYER_Y, el: <WaitTag key="wait" x={t.x} y={t.y} text={waiting} w={t.w} tail={t.tail} /> });
   }
   if (more) {
     const t = moreTagAt(lay, more);
-    out.push({ y: QUEUE_Y - 2.5, el: <WaitTag key="more" x={t.x} y={t.y} text={more} w={t.w} tail={0} /> });
+    out.push({ y: PILL_LAYER_Y - 0.5, el: <WaitTag key="more" x={t.x} y={t.y} text={more} w={t.w} tail={0} /> });
   }
   return out;
 }

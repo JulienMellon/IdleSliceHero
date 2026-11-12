@@ -16,6 +16,10 @@ import { hoursText } from '../engine/night-oven';
 import { rewardsUnlocked } from '../engine/rewards';
 import { useGame } from '../store/game-store';
 import { F } from '../theme';
+import { BannerStack } from './endgame/banner-stack';
+import { BostonSheet } from './endgame/boston-sheet';
+import { DiamondChip } from './endgame/diamond-chip';
+import { EventChip } from './endgame/event-chip';
 import { MoonIcon } from './game-ui';
 
 /** The slot kinds with no props: each component reads its own state. */
@@ -93,9 +97,16 @@ const NightOvenChip = memo(function NightOvenChip() {
   );
 });
 
-export const HUD_CHIPS: SlotEntry[] = [{ id: 'night-oven', order: 10, Component: NightOvenChip }];
-export const BANNERS: SlotEntry[] = [];
-export const SHEETS: SlotEntry[] = [];
+export const HUD_CHIPS: SlotEntry[] = [
+  { id: 'night-oven', order: 10, Component: NightOvenChip },
+  // v5.15 (U1): the event countdown in the hour before an event, then the diamonds chip that opens the Shop screen
+  { id: 'event-countdown', order: 15, Component: EventChip },
+  { id: 'diamond-shop', order: 20, Component: DiamondChip },
+];
+// v5.15 (U1): the event banner, the counter-attack banner / challenge chip and the star, recipe and event toasts, one column under the order chip
+export const BANNERS: SlotEntry[] = [{ id: 'endgame-stack', order: 10, Component: BannerStack }];
+// v5.15 (U1): "Coming soon: Boston", once, after the last finale
+export const SHEETS: SlotEntry[] = [{ id: 'boston-card', order: 10, Component: BostonSheet }];
 export const DRAWER_CARDS: SlotEntry[] = [];
 export const SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] = [];
 

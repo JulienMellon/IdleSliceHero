@@ -13,6 +13,8 @@ import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
 import { coachStep } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
+import { bonusLaneTop } from '@/components/endgame/stack-model';
+import { masteryGoal } from '@/components/goal-model';
 import { BANNERS, DRAWER_CARDS, HUD_CHIPS, onOvenAsk, SHEETS, Slots } from '@/components/slots';
 import { type DrawerIcon, type DrawerView, drawerCards, tiedBundle } from '@/components/drawer-model';
 import { buttonTone, buyBundle, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
@@ -121,11 +123,13 @@ export default function GameScreen() {
   }, [hold, setBonusHold]);
   // an order chip is up: the golden pizza flies just below it, not behind it
   const chipUp = chipPhase(game) !== 'none';
-  const bonusTop = chipUp ? ORDER_VIEW.top + ORDER_VIEW.height + 6 : BONUS_VIEW.laneTop;
+  // v5.15: ...and below the endgame notices (event banner, attack banner / challenge chip), which share that column
+  const baseTop = chipUp ? ORDER_VIEW.top + ORDER_VIEW.height + 6 : BONUS_VIEW.laneTop;
   // the game tick's clock, never behind rewards.lastSeen (a claim moves lastSeen up to 200 ms ahead of the next tick);
   // a real rollback (lastSeen well ahead of the tick) is `clockOff`
   const tickAt = useGame((s) => s.tickAt);
   const now = Math.max(tickAt, game.rewards.lastSeen);
+  const bonusTop = bonusLaneTop(game, now, baseTop);
   const clockOff = game.rewards.lastSeen - tickAt > 2000;
   const rewardsOn = R.rewardsUnlocked(game);
   const hud = rewardsHud(game, now);
@@ -199,6 +203,9 @@ export default function GameScreen() {
   const mine = (c: Goal) => c.label.startsWith(`${nd.name}: hire`);
   const shown = goalHidesOwnHire(shop, id) ? candidates.filter((c) => !mine(c)) : !shop.managed ? [...candidates.filter(mine), ...candidates.filter((c) => !mine(c))] : candidates;
   let goal: Goal | null = shown[0] ?? null;
+  // v5.15 (D427): once the story is told and nothing else is worth saving for, the bar shows the city's mastery stars
+  const mg = masteryGoal(game);
+  if (!goal && mg) goal = { label: mg.label, text: mg.text, current: mg.current, target: mg.target };
   // Late game: fall back to the best big buy in this shop (Expand, Grade or a Decor tier) before the story count.
   if (!goal) {
     const big: (Goal & { ratio: number })[] = [];
@@ -375,13 +382,13 @@ export default function GameScreen() {
         {/* Toast floats in the open sky at the top of the scene, clear of the shop, the row and the cards. */}
         {toast && <Toast compact text={toast.text} top={10} />}
       </View>
-      {/* payout coins fly from the carrier to the cash (D344) */}
-      <CoinLayer />
       {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
       {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}
       {/* the SHEETS slot: modal sheets over the whole screen, under the offline popup */}
       <Slots items={SHEETS} />
       {offline && <OfflinePopup summary={offline} nightOven={game.nightOven} onCollect={dismissOffline} onUpgrade={onOven} />}
+      {/* payout coins fly from the carrier to the cash (D344); last, so the offline popup's burst from the oven's mouth shows over it (D454) */}
+      <CoinLayer />
     </View>
   );
 }

@@ -1,9 +1,12 @@
 // View models for the tasks drawer, the gift calendar and the HUD boost chip (docs/PLAN-v5.4-rewards.md §4).
 // Pure: everything the screen shows as text or state is decided here and unit-tested in node.
+import { collectionView } from '../engine/features/recipes';
+import { collectionLine } from './endgame/recipes-model';
 import { cosmeticName, DAILY_CHESTS, DAILY_TASK_REWARD, GIFT_DAYS, GIFT_LENGTH, GIFT_MILESTONES, STREAK_SAVE_DIAMONDS, TASK_TEXT, VISITOR_LINES, VISITOR_NAMES, WEEKLY_DIAMONDS, WEEKLY_TASK_REWARD, type BoosterDef, type Chest, type GiftDef } from '../content/rewards';
 import { count, money, pizzas } from '../engine/format';
 import type { Booster, GameState, Task } from '../engine/game';
 import * as R from '../engine/rewards';
+import { isStarredTask } from '../engine/features/heads';
 
 // ---------- Time text ----------
 
@@ -109,6 +112,8 @@ export interface TaskRow {
   pct: number;
   state: TaskState;
   reward: string;
+  /** v5.15: a daily task of the kind Head of the Week's station earns (engine/features/heads.ts `isStarredTask`): the row wears a star. */
+  starred: boolean;
 }
 
 const minutesText = (m: number): string => (m >= 60 && m % 60 === 0 ? `${m / 60} h` : `${m} min`);
@@ -118,7 +123,7 @@ function progressText(s: GameState, t: Task): string {
   return TASK_TEXT[t.kind].unit === 'cash' ? `${money(Math.floor(p))} / ${money(t.target)}` : `${pizzas(p)} / ${count(t.target)}`;
 }
 
-function taskRow(s: GameState, t: Task, index: number, reward: string): TaskRow {
+function taskRow(s: GameState, t: Task, index: number, reward: string, starred = false): TaskRow {
   const state: TaskState = t.claimed ? 'claimed' : R.taskDone(s, t) ? 'ready' : 'todo';
   return {
     index,
@@ -127,12 +132,13 @@ function taskRow(s: GameState, t: Task, index: number, reward: string): TaskRow 
     pct: t.claimed ? 1 : t.target > 0 ? Math.min(1, R.taskProgress(s, t) / t.target) : 1,
     state,
     reward,
+    starred,
   };
 }
 
 export function dailyRows(s: GameState): TaskRow[] {
   const reward = `${minutesText(DAILY_TASK_REWARD.minutes)} income (${money(R.minutesToCash(s, DAILY_TASK_REWARD.minutes))}) · +${DAILY_TASK_REWARD.points} pts`;
-  return s.rewards.daily.map((t, i) => taskRow(s, t, i, reward));
+  return s.rewards.daily.map((t, i) => taskRow(s, t, i, reward, isStarredTask(s, t.kind)));
 }
 
 export function weeklyRows(s: GameState): TaskRow[] {
@@ -180,10 +186,9 @@ export function weeklyChestView(s: GameState): WeeklyChestView {
   return { state, prize, label: state === 'opened' ? 'Opened this week' : state === 'ready' ? `Open for ${p.kind === 'cosmetic' ? 'the ' : ''}${prize}` : `${prize} · ${left} ${left === 1 ? 'task' : 'tasks'} to go` };
 }
 
-/** "Collection: Wood-fired oven, Gold oven" or an empty-state line. */
+/** v5.15: the tasks drawer's collection line, "Collection: 9/24 recipes" (the cards of engine/features/recipes.ts; cosmetics live in the Shop screen). */
 export function collectionText(s: GameState): string {
-  const own = s.rewards.cosmetics;
-  return own.length ? `Collection: ${own.map(cosmeticName).join(', ')}` : 'Collection: empty. Open a weekly chest or reach day 28.';
+  return collectionLine(collectionView(s));
 }
 
 // ---------- Gift calendar ----------
