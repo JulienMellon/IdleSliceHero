@@ -23,7 +23,6 @@ next: verify r1 running (screenshots v5.15); then commit, push, launch critic + 
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-12 K0a done (golden hashes unchanged; digest needs re-run after K0b).
 - 2026-11-12 Seam: 45 changed vs r3, but identical code re-run gives 41 (same top shots) = clock noise; accepted. tsx not installed (digest via node --experimental-strip-types); python playwright 1.63.0 pip-installed this session. v5.14 closed.
 - 2026-11-12 v5.15 wave 1 (W1, E1) launched.
 - 2026-11-12 W1 done (COPY-v5.15.md; open questions for Julien: Kayla name clash suburbs vs Boston; shop display names ≤19 chars).
@@ -33,3 +32,4 @@ next: verify r1 running (screenshots v5.15); then commit, push, launch critic + 
 - 2026-11-12 U1 done (G95, D454, D455 fixed in U files; 460 component tests pass). Waiting on S1.
 - 2026-11-12 S1 done (D450 fixed; 478 tests pass). Out-of-scope asks sent: features.test pin → E1, Tasks-drawer star → U1.
 - 2026-11-12 Waves done. Verify r1: tsc clean, 895 tests pass, export ok; screenshots v5.15 running (pip-installed playwright 1.63.0).
+- 2026-11-12 Verify r1 shots v5.15: 1 error (U1 fixture 62, Boston soon overlay blocks gift-close); sent to U1.
