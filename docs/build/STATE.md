@@ -20,9 +20,10 @@ reviews:               # latest review file per critic, with verdict and counts
   story:  STORYLOG.md (next ID S21)
   audio:  AUDIOLOG.md (next ID AU78)
 open: round 61 notes, all written into the v5.14 cards
-next: v5.14 wave 1 (B3 + R3). Missing for Julien (export as Markdown): docs/story/STORY-v4-final.md (before v5.16 w2), docs/specs/PRESTIGE.md (before v5.18 w2), docs/specs/PRIVACY-POLICY-DRAFT.md + APP-PRIVACY-LABEL-AND-AGE-RATING.md (before v5.17 w2).
+next: v5.14 wave 1 (B3 + R3). All spec exports are in the repo.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
 - 2026-11-11 Plan delivered. Repo at 07e9d8e (v5.13). Nothing started.
 - 2026-11-12 Setup done: writer agent, critic review-file rule, HANDOFF pointer, Todd plan spec. 4 spec exports still missing.
+- 2026-11-12 Spec exports added: docs/story/STORY-v4-final.md, docs/specs/PRESTIGE.md, both privacy docs. Nothing missing.

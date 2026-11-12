@@ -19,6 +19,8 @@ printf '%s\n\n' "> **2026-11-11: the build loop now runs from \`docs/build/\`. S
 ```
 
 ## 3. Specs that are not in the repo yet
+**Done 2026-11-12:** all five files below are in the repo (`docs/story/STORY-v4-final.md`, `docs/specs/*.md`). Check with `ls docs/story/STORY-v4-final.md docs/specs/` and skip to section 4.
+
 These are needed later. Each is a one-time export; do it in this session if the tools are available, otherwise list what is missing in STATE `next:` for Julien.
 
 | Needed before | Target path | Source |
