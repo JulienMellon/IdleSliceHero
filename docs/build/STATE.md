@@ -4,7 +4,7 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.14
-step: waves            # setup | waves | verify | review | fix | close
+step: verify           # setup | waves | verify | review | fix | close
 round: r3              # r1 | r2 | r3
 last_shots: v5.14-r3      # label of the last screenshot set that passed verify
 codecritic_range_start: 5d82004
@@ -13,7 +13,7 @@ cards:                 # todo | running | done | partial | blocked
   R3: done
   C3: done
   K0a: done
-  K0b: running
+  K0b: done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.14/review-r3-critic.md (r3 NOT SATISFIED; bug 1 major 0 minor 4; E1 U3 S1)
   code:   CODELOG.md "Current state" (round 24, APPROVED at v5.12; next IDs K1, C110, A30, M62, U12, T85)
