@@ -1,0 +1,20 @@
+# Card L1 — site, accessibility, performance, store shots (v5.17, lane N)
+
+**Goal:** the launch items that are code or files in this repo.
+
+**Read first:** `docs/specs/PRIVACY-POLICY-DRAFT.md`; `docs/specs/APP-PRIVACY-LABEL-AND-AGE-RATING.md`; `docs/API.md` (`src/services`, for what is actually collected).
+
+## Files
+- Own: `site/**` (new; GitHub Pages source), `.github/workflows/pages.yml` (new), `src/content/links.ts` (new: the two URLs), `scripts/store_shots.py` (new), `docs/STORE-LISTING.md` (new), accessibility props anywhere under `src/components/**` and `src/app/**` (props only: no layout, colour or logic changes), `src/store/game-store.ts` and `src/app/index.tsx` for step 4 only.
+- Do not touch: `src/services/**`, `src/app/settings.tsx`, `src/app/shop.tsx` (cards N1 and U3).
+
+## Steps
+- [ ] **1. Site.** Static HTML, no framework: `site/index.html` (a one-screen landing page: the name, one line, three screenshots, a support link), `site/support/index.html` (how to get help, the contact address as a placeholder `SUPPORT_EMAIL`, how to send the Install ID for a data request), `site/privacy/index.html` (the policy from the draft, with its placeholders filled where the code answers them: which SDKs, which data, the opt-out toggle; leave `COMPANY_NAME`, `SUPPORT_EMAIL` and the effective date as visible placeholders and list them in the report). A Pages workflow that publishes `site/`.
+- [ ] **2. The policy must match the code.** For every data type the policy or the privacy-label doc names, find where the code collects it; for everything the services collect, find it in the policy. List mismatches in the report under `Needs:`; fix the site text where the code is the truth.
+- [ ] **3. Accessibility pass.** Every `Pressable` has an `accessibilityRole` and a label that says what it does and its state (price, locked reason, on or off). Decorative SVG groups are hidden from the reader. Cut-scenes: each panel exposes its lines as text. Respect Reduce Motion: with it on, coin bursts, rays and screen shakes become simple fades (one helper, `useReducedMotion`). Add a pure test that walks the component tree of the main screen's models where that is possible, and a grep-based test that fails on a `Pressable` without a role.
+- [ ] **4. Performance and battery.** When the app goes to the background: stop the tick, the animation loops and the audio loops; resume cleanly. Confirm no component re-renders on every tick without a visible change (use the existing memo rules; add a render-count test for the HUD if one doesn't exist). Report the save payload size.
+- [ ] **5. Store screenshots.** `scripts/store_shots.py`: six seeded scenes at 1320 × 2868 px portrait (the 6.9-inch iPhone set, the one iPhone size App Store Connect requires; it scales that set down for smaller phones), written to `marketing/store/iphone-6.9/`. If `app.json` has `ios.supportsTablet` true, also 2064 × 2752 px to `marketing/store/ipad-13/`, and report whether the layout holds at that size. Scenes: Downtown in full swing; a cut-scene panel; the City screen with stars; a Game Day rush; the welcome-back gift; the Scrapbook. No device frames, no added text. Apple's accepted sizes change with new devices: note in `docs/STORE-LISTING.md` that the sizes were checked on 2026-11-11 and must be re-checked against Apple's "Screenshot specifications" page before upload.
+- [ ] **6. `docs/STORE-LISTING.md`.** Drafts for Julien to edit: name (30 chars), subtitle (30), promotional text (170), description, keywords (100 chars, comma-separated, no repeats of the name), the support and privacy URLs, the age-rating answers and the privacy-label answers copied from the spec doc and corrected by step 2. Mark the title and the home city's name as open.
+
+## Checks
+`npx tsc --noEmit`; `npx jest`; `python3 -m py_compile scripts/store_shots.py`; `python3 -c "import html.parser,sys;[html.parser.HTMLParser().feed(open(f).read()) for f in sys.argv[1:]]" site/index.html site/support/index.html site/privacy/index.html`.
