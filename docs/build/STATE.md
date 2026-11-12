@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.14
-step: verify           # setup | waves | verify | review | fix | close
+step: review           # setup | waves | verify | review | fix | close
 round: r3              # r1 | r2 | r3
-last_shots: v5.14-r2      # label of the last screenshot set that passed verify
+last_shots: v5.14-r3      # label of the last screenshot set that passed verify
 codecritic_range_start: 5d82004
 cards:                 # todo | running | done | partial | blocked
   B3: done
@@ -20,7 +20,7 @@ reviews:               # latest review file per critic, with verdict and counts
   story:  STORYLOG.md (next ID S21)
   audio:  AUDIOLOG.md (next ID AU78)
 open: round 61 notes, all written into the v5.14 cards
-next: v5.14 fix round r3: C3 + R3 running, then B3; then verify L=v5.14-r3, P=v5.14-r2. Last round: bug left after r3 = stop and report.
+next: v5.14 r3 critic medium re-check running (docs/build/v5.14/review-r3-critic.md).
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
@@ -35,3 +35,4 @@ next: v5.14 fix round r3: C3 + R3 running, then B3; then verify L=v5.14-r3, P=v5
 - 2026-11-12 r1 critic NOT SATISFIED (2 bugs, 1 major, 7 minor). Fix round r2 started.
 - 2026-11-12 r2 verify passed (True 0 []); pushed to main; r2 critic launched.
 - 2026-11-12 r2 critic NOT SATISFIED (1 bug G95, 3 minor). Fix round r3 started.
+- 2026-11-12 r3 verify passed (True 0 []); pushed to main; r3 critic launched.
