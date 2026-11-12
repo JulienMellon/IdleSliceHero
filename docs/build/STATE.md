@@ -12,7 +12,7 @@ cards:                 # todo | running | done | partial | blocked
   B3: done
   R3: done
   C3: done
-  K0a: running
+  K0a: done
   K0b: running
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.14/review-r3-critic.md (r3 NOT SATISFIED; bug 1 major 0 minor 4; E1 U3 S1)
@@ -38,3 +38,4 @@ next: wave 4 (K0a + K0b) running; then seam verify L=v5.14-seam vs P=v5.14-r3 (0
 - 2026-11-12 r3 verify passed (True 0 []); pushed to main; r3 critic launched.
 - 2026-11-12 r3 critic NOT SATISFIED (G95 still open, 4 minor). Stopped per README 4.5; asked Julien.
 - 2026-11-12 Julien accepted G95 overlap; carried to v5.15. Wave 4 (K0a, K0b) launched.
+- 2026-11-12 K0a done (golden hashes unchanged; digest needs re-run after K0b).

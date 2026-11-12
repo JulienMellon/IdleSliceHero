@@ -13,8 +13,9 @@ import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
 import { coachStep } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
-import { aOrAn } from '@/components/goal-model';
-import { bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
+import { BANNERS, DRAWER_CARDS, HUD_CHIPS, onOvenAsk, SHEETS, Slots } from '@/components/slots';
+import { type DrawerIcon, type DrawerView, drawerCards, tiedBundle } from '@/components/drawer-model';
+import { buttonTone, buyBundle, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
 import { CLOSE_SLOP, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
@@ -23,11 +24,11 @@ import { HeadFace } from '@/components/scene/head-face';
 import Svg from 'react-native-svg';
 import { CURB_Y, SCENE_H, sceneFit, Storefront } from '@/components/storefront';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
-import { CITY_NAME, DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEAD_ROLE, HEAD_TITLE, HEADS, type HeadKind, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES } from '@/content/tuning';
+import { CITY_NAME, DECOR, DECOR_KINDS, FOOTPRINTS, HEAD_ROLE, HEADS, type HeadKind, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
-import { money, pizzas, rate } from '@/engine/format';
+import { money, pizzas } from '@/engine/format';
 import * as G from '@/engine/game';
-import { hoursText, nightOvenView } from '@/engine/night-oven';
+import { nightOvenView } from '@/engine/night-oven';
 import * as R from '@/engine/rewards';
 import { nextSceneTeaser } from '@/engine/teaser';
 import type { Station } from '@/engine/pipeline';
@@ -43,7 +44,34 @@ function HeadIcon({ kind, name }: { kind: HeadKind | 'gm'; name: string }) {
   );
 }
 
-const STAGE_NAME: Record<G.Stage, string> = { prep: 'prep', ovens: 'ovens', counter: 'counter', customers: 'drivers & seats' };
+const STATION_ICON: Record<Extract<DrawerIcon, { t: 'station' }>['what'], React.ReactNode> = {
+  prep: <PrepIcon size={26} />,
+  ovens: <FlameIcon size={26} />,
+  counter: <RegisterIcon size={26} />,
+  drivers: <DriverIcon size={28} />,
+  tables: <SeatIcon size={26} />,
+  grade: <SparkleIcon size={26} />,
+  expand: <ExpandIcon size={26} />,
+  fleet: <ScooterIcon size={26} />,
+};
+
+/** The SVG for a drawer card's icon (the model only names it). */
+function drawerIcon(icon: DrawerIcon): React.ReactNode {
+  switch (icon.t) {
+    case 'head':
+      return <HeadIcon kind={icon.kind} name={icon.name} />;
+    case 'gm':
+      return <HeadIcon kind="gm" name={icon.name} />;
+    case 'nonna':
+      return <Portrait id="nonna-rosa" mood="happy" size={32} />;
+    case 'station':
+      return STATION_ICON[icon.what];
+    case 'decor':
+      return <DecorIcon kind={icon.kind} size={26} />;
+  }
+}
+
+type DrawerCardView = DrawerView['cards'][number];
 
 export default function GameScreen() {
   const insets = useSafeAreaInsets();
@@ -116,6 +144,8 @@ export default function GameScreen() {
   const closeGift = useCallback(() => setGiftOpen(false), []);
   const onOven = useCallback(() => { haptic(); setDrawerOpen(false); setTasksOpen(false); setGiftOpen(false); setOvenOpen(true); }, []);
   const closeOven = useCallback(() => setOvenOpen(false), []);
+  // the night-oven chip is a HUD_CHIPS slot: it asks, the screen opens the sheet
+  useEffect(() => onOvenAsk(onOven), [onOven]);
   // the night oven's sheet and drawer card read one view, built only while one of them is open (it prices the tiers); the chip is a string
   const ovenView = ovenOpen || drawerOpen ? nightOvenView(game) : null;
   // the ring on the scrapbook button: how far the next story scene is (whole 5% steps, so it repaints rarely)
@@ -130,19 +160,12 @@ export default function GameScreen() {
   const shop = game.shops[id];
   const nd = G.def(id);
   const v = game.vehicle;
-  const neck = G.bottleneck(shop, v);
-  const rates: Record<G.Stage, number> = { prep: G.prepRate(shop), ovens: G.ovenRate(shop), counter: G.counterRate(shop), customers: G.demandRate(shop, v) };
-  const minRate = Math.min(...Object.values(rates));
-  const tied = (st: G.Stage) => rates[st] <= minRate * (1 + 1e-9);
   const plus = (x: number) => `+${money(x)}/s`;
   const newScenes = Math.max(0, game.seenScenes.length - game.scrapbookViewed);
   const coach = coachStep(game);
   const eps = G.earningsPerSecond(game);
-  const perk = G.perkOf(id, shop);
   // Tied stations: one upgrade alone adds $0/s, so say what to buy together. Keyed on levels, not cash or sales.
-  const tiedCount = (['prep', 'ovens', 'counter', 'customers'] as const).filter(tied).length;
-  const bundle = tiedCount >= 2 ? G.bundleHint(game, id) : null;
-  const bundleBtn = bundle ? bundleButton(bundle, game.cash) : null;
+  const bundle = tiedBundle(game, id);
 
   // the sidewalk offers the next hire (each head, then the GM) here; see hireOnSidewalk (B1)
   const idleShopHere = hireOnSidewalk(shop, id);
@@ -219,61 +242,28 @@ export default function GameScreen() {
   // while boosted the rate shown is what lineTick really earns (G84); the boost itself is drawn in basil after it
   const subtitle = boost && shop.managed ? hudRateText(eps, hud.mult) : baseSubtitle;
 
-  // Until the stations run themselves, upgrades here only pay while you tap: mute them so the hires stand out (C68).
-  const idleShop = !G.runsItself(shop) && id !== 'downtown';
-  // Expand is still worth it when a station is stuck at its level cap.
-  const atCap = (['prep', 'ovens', 'counter', 'tables'] as const).some((w) => shop[w] >= G.levelCap(shop));
-  const card = (what: G.Upgrade, props: { icon: React.ReactNode; title: string; level?: string; detail: string; hot?: boolean; wide?: boolean; costLabel?: string }) => {
-    const cost = G.upgradeCostOf(game, id, what);
-    const lock = G.upgradeLock(game, id, what);
-    const muted = idleShop && what !== 'manager' && !G.isHeadUpgrade(what);
-    // Expand is still worth buying when a station is stuck at its level cap, even though it adds $0/s by itself
-    const gain = what === 'manager' || G.isHeadUpgrade(what) || (what === 'expand' && atCap) ? 1 : G.upgradeGain(game, id, what);
-    // D413: a station only the level cap locks offers the Expand buy right on its card, as the sidewalk does
-    const expandCost = capExpandCost(game, id, what);
-    return (
-      <StationCard
-        key={what}
-        testID={`buy-${what}`}
-        {...props}
-        detail={lock && what !== 'manager' ? lock : lock && what === 'manager' && id !== 'downtown' ? `${lock} · then ×2 income here, and it earns while you're away` : props.detail}
-        hot={muted ? false : props.hot}
-        muted={muted}
-        tone={expandCost !== null ? 'expand' : buttonTone({ lock, gain, muted })}
-        cost={expandCost ?? (lock ? null : cost)}
-        buyLabel={expandCost !== null ? `Expand · ${money(expandCost)}` : undefined}
-        costLabel={props.costLabel ?? (lock && !/Finest|Biggest|Max/.test(lock) ? 'Locked' : 'MAX')}
-        canBuy={expandCost !== null ? game.cash >= expandCost : !lock && cost !== null && game.cash >= cost}
-        onBuy={() => buy(expandCost !== null ? 'expand' : what)}
-      />
-    );
-  };
-  // Seating card: when the next visible table arrives
-  const nextTableHint = (() => {
-    const now = G.tablesShown(shop);
-    for (let l = shop.tables + 1; l <= shop.tables + 400; l++) {
-      if (G.tablesShown({ ...shop, tables: l }) > now) return l === shop.tables + 1 ? 'next level: +1 table' : `+1 table at Lv\u00A0${l}`;
-    }
-    return 'dining room full';
-  })();
-  const stationDetail = (st: G.Stage, what: G.Upgrade, rateText: string) => {
-    const g = G.upgradeGain(game, id, what) ?? 0;
-    if (g > 1e-9) return `${rateText} · ${plus(g)}`;
-    if (tied(st)) {
-      const others = (Object.keys(rates) as G.Stage[]).filter((x) => x !== st && tied(x)).map((x) => STAGE_NAME[x]);
-      return `${rateText} · tied with ${others.join(' & ')}`;
-    }
-    // the shared reason ("waiting on …") is shown once in the drawer header; the button already says "no gain now" (D324)
-    return rateText;
-  };
-  const gradeNext = OVEN_GRADES[shop.grade + 1];
-  const fpNext = FOOTPRINTS[shop.footprint + 1];
-  // computed once per render, not once per use (M32)
-  const gradeGain = G.upgradeGain(game, id, 'grade') ?? 0;
-  const expandGain = G.upgradeGain(game, id, 'expand') ?? 0;
-  const lock = G.nextVehicleLock(game);
-  const fleetLock = lock ? G.vehicleLockLabel(lock) : null;
-  const nextVeh = VEHICLES[v + 1];
+  // the drawer's cards are a pure model (drawer-model.ts): its level-dependent part is cached on the levels of every shop, so only cash is applied per tick; nothing while it is closed
+  const drawer = drawerOpen ? drawerCards({ game, id }) : null;
+
+  const drawerCard = (c: DrawerCardView) => (
+    <StationCard
+      key={c.key}
+      testID={c.testID}
+      icon={drawerIcon(c.icon)}
+      title={c.title}
+      level={c.level}
+      detail={c.detail}
+      hot={c.hot}
+      wide={c.wide}
+      muted={c.muted}
+      tone={c.tone}
+      cost={c.cost}
+      buyLabel={c.buyLabel}
+      costLabel={c.costLabel}
+      canBuy={c.canBuy}
+      onBuy={() => (c.buy.t === 'fleet' ? buyFleet() : c.buy.t === 'decor' ? buyDecor(c.buy.kind) : buy(c.buy.what))}
+    />
+  );
 
   // ---- sidewalk row: the four stations (or the manager, on a shop that needs one) + "All"
   const fit = sceneFit(area.w || 1, area.h || 1);
@@ -291,8 +281,7 @@ export default function GameScreen() {
         tasksBadge={hud.badge}
         onGift={rewardsOn ? onGift : undefined}
         giftDot={hud.giftDot}
-        ovenText={rewardsOn ? hoursText(G.offlineCapOf(game)) : undefined}
-        onOven={rewardsOn ? onOven : undefined}
+        chips={<Slots items={HUD_CHIPS} />}
         scrapRing={teaser.kind === 'complete' ? undefined : teaser.step}
         halo={coach?.target === 'cash' ? 'cash' : coach?.target === 'goal' ? 'goal' : null} />
       <ShopTabs game={game} boostMult={hud.mult} onSelect={setActive} onBuild={build} />
@@ -325,73 +314,39 @@ export default function GameScreen() {
         {/* v5.13: the special-order chip under the goal bar, and the golden pizza in the sky (both sit under the drawers) */}
         <OrderChip top={ORDER_VIEW.top} onShop={setActive} />
         {area.w > 0 && <FloatingBonus width={area.w} height={area.h} top={bonusTop} />}
-        {drawerOpen && (
+        {/* the BANNERS slot: notices over the scene, under the drawers */}
+        <Slots items={BANNERS} />
+        {drawer && (
           <View style={StyleSheet.absoluteFill}>
             <Pressable testID="close-upgrades-dim" style={styles.dim} onPress={() => setDrawerOpen(false)} />
             <View style={styles.drawer}>
               <View style={styles.drawerHead}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.drawerTitle}>{`Rosa’s · ${nd.name}`}</Text>
-                  <Text style={styles.drawerSub} numberOfLines={1}>{`Bottleneck: ${G.tiedStages(shop, v).map((st) => STAGE_NAME[st]).join(' + ')}`}</Text>
+                  <Text style={styles.drawerTitle}>{drawer.title}</Text>
+                  <Text style={styles.drawerSub} numberOfLines={1}>{drawer.bottleneck}</Text>
                 </View>
                 <Pressable testID="close-upgrades" onPress={() => setDrawerOpen(false)} style={styles.closeBtn} hitSlop={CLOSE_SLOP}>
                   <Text style={styles.closeText}>Close ▼</Text>
                 </Pressable>
               </View>
               <ScrollView contentContainerStyle={[styles.grid, { paddingBottom: insets.bottom + 20 }]}>
-                {idleShop && (
+                {drawer.idleBanner && (
                   <View style={styles.banner}>
                     <Text style={styles.bannerText}>Without a manager, upgrades here only pay while you tap.</Text>
                   </View>
                 )}
-                {perk && (
+                {drawer.perkBanner && (
                   <View style={styles.banner}>
-                    <Text style={styles.bannerText}>{`★ ${perk.who}’s perk: ${perk.text}`}</Text>
+                    <Text style={styles.bannerText}>{drawer.perkBanner}</Text>
                   </View>
                 )}
-                {bundleBtn && (
+                {drawer.bundle && (
                   // D304: the tied stations' bundle is a button, not a label: it buys every step through the ordinary buy path
                   <View style={styles.bundleRow}>
-                    <BuyButton compact testID="buy-bundle" label={bundleBtn.label} sub={bundleBtn.sub} enabled={bundleBtn.enabled} onPress={() => buyBundle(bundleBtn.steps, buy)} />
+                    <BuyButton compact testID="buy-bundle" label={drawer.bundle.label} sub={drawer.bundle.sub} enabled={drawer.bundle.enabled} onPress={() => buyBundle(drawer.bundle!.steps, buy)} />
                   </View>
                 )}
-                {!shop.managed &&
-                  HEAD_KINDS.map((k) =>
-                    card(G.HEAD_UPGRADE[k], {
-                      icon: <HeadIcon kind={k} name={HEADS[id][k]} />,
-                      title: `${HEAD_TITLE[k]}: ${HEADS[id][k]}`,
-                      // short enough not to leave a word alone on its last line (D358)
-                      detail: `Runs the ${k === 'prep' ? 'prep table' : k === 'oven' ? 'ovens' : 'counter'} for you`,
-                      wide: true,
-                      costLabel: 'Hired',
-                    }),
-                  )}
-                {!shop.managed &&
-                  card('manager', {
-                    icon: id === 'downtown' ? <Portrait id="nonna-rosa" mood="happy" size={32} /> : <HeadIcon kind="gm" name={`${id}-gm`} />,
-                    title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire ${aOrAn(nd.name)} ${nd.name} manager`,
-                    detail: id === 'downtown' ? `Keep baking — ${G.nonnaCountdownText(game)}` : `General Manager: ×2 income here, and it earns while you're away (${plus(G.shopEarnings(game, id))})`,
-                    wide: true,
-                    costLabel: id === 'downtown' ? 'Soon' : undefined,
-                  })}
-                {card('prep', { icon: <PrepIcon size={26} />, title: 'Prep Cooks', level: `Lv ${shop.prep}`, detail: `${stationDetail('prep', 'prep', `${rate(rates.prep)}/s`)} · batch ${G.tapBatch(shop)} (bigger at Lv\u00A0${G.nextBatchLevel(shop)})`, hot: tied('prep') })}
-                {card('ovens', { icon: <FlameIcon size={26} />, title: 'Ovens', level: `Lv ${shop.ovens}`, detail: stationDetail('ovens', 'ovens', `${rate(rates.ovens)}/s`), hot: tied('ovens') })}
-                {card('counter', { icon: <RegisterIcon size={26} />, title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rate(rates.counter)}/s`), hot: tied('counter') })}
-                {card('drivers', { icon: <DriverIcon size={28} />, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${rate(G.deliveryRate(shop, v))}/s`), hot: tied('customers') })}
-                {card('tables', { icon: <SeatIcon size={26} />, title: 'Seating', level: `Lv ${shop.tables}`, detail: nextTableHint === 'dining room full' ? `Dining room full · ${rate(G.walkInRate(shop))}\u00A0walk‑ins/s` : `${stationDetail('customers', 'tables', `${rate(G.walkInRate(shop))}\u00A0walk‑ins/s`)} · ${nextTableHint}`, hot: tied('customers') })}
-                {card('grade', { icon: <SparkleIcon size={26} />, title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? (gradeGain > 1e-9 ? `→ ${gradeNext.name} ×2 · ${plus(gradeGain)}` : `→ ${gradeNext.name} ×2`) : 'Finest ovens in town' })}
-                {card('expand', { icon: <ExpandIcon size={26} />, title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter${expandGain > 1e-9 ? ` · ${plus(expandGain)}` : atCap ? ` · Lv cap → ${G.levelCap(shop) + 25}` : ''}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` })}
-                <StationCard
-                  testID="buy-fleet"
-                  icon={<ScooterIcon size={26} />}
-                  title="Fleet"
-                  detail={nextVeh ? (fleetLock ? `→ ${nextVeh.name}s · ${fleetLock.charAt(0).toLowerCase()}${fleetLock.slice(1)}` : `→ ${nextVeh.name}s, all shops${vg && vg > 0 ? ` · ${plus(vg)}` : ''}`) : `${VEHICLES[v].name}s — top tier`}
-                  cost={nextVeh && !fleetLock ? nextVeh.cost : null}
-                  costLabel={nextVeh ? 'Locked' : 'MAX'}
-                  canBuy={!!nextVeh && !fleetLock && game.cash >= nextVeh.cost}
-                  tone={buttonTone({ lock: !nextVeh || !!fleetLock, gain: vg })}
-                  onBuy={buyFleet}
-                />
+                {drawer.cards.map(drawerCard)}
                 {ovenView && (
                   <StationCard
                     testID="buy-night-oven"
@@ -405,31 +360,12 @@ export default function GameScreen() {
                     onBuy={buyNightOven}
                   />
                 )}
-                <Text style={styles.section}>{`Decor · each tier: +${Math.round((perk?.decorBoost ?? DECOR_BOOST) * 100)}% pizza price in this shop`}</Text>
-                {DECOR_KINDS.map((kind) => {
-                  const d = DECOR[kind];
-                  const tier = shop.decor[kind];
-                  const cost = G.decorCost(game, id, kind);
-                  const gain = G.decorGain(game, id, kind) ?? 0;
-                  return (
-                    <StationCard
-                      key={kind}
-                      testID={`decor-${kind}`}
-                      icon={<DecorIcon kind={kind} size={26} />}
-                      title={d.name}
-                      level={`${tier}/3`}
-                      detail={cost === null ? d.tiers[3] : `→ ${d.tiers[tier + 1]} · ${plus(gain)}`}
-                      cost={cost}
-                      costLabel="MAX"
-                      canBuy={cost !== null && game.cash >= cost}
-                      tone={buttonTone({ lock: cost === null, gain, muted: idleShop })}
-                      muted={idleShop}
-                      onBuy={() => buyDecor(kind)}
-                    />
-                  );
-                })}
+                {/* the DRAWER_CARDS slot: city-wide cards */}
+                <Slots items={DRAWER_CARDS} />
+                <Text style={styles.section}>{drawer.decorTitle}</Text>
+                {drawer.decor.map(drawerCard)}
                 <Text style={styles.footer}>
-                  {CITY_NAME} · {NEIGHBORHOODS.filter((n) => game.shops[n.id].built).length}/6 pizzerias · v{APP_VERSION}
+                  {CITY_NAME} · {drawer.built}/6 pizzerias · v{APP_VERSION}
                 </Text>
               </ScrollView>
             </View>
@@ -443,6 +379,8 @@ export default function GameScreen() {
       <CoinLayer />
       {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
       {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}
+      {/* the SHEETS slot: modal sheets over the whole screen, under the offline popup */}
+      <Slots items={SHEETS} />
       {offline && <OfflinePopup summary={offline} nightOven={game.nightOven} onCollect={dismissOffline} onUpgrade={onOven} />}
     </View>
   );

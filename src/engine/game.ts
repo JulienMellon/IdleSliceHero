@@ -8,6 +8,7 @@ import { BOOST_MAX_AHEAD_MS, DAILY_CHESTS, DAILY_TASK_COUNT, MAX_BOOSTERS, MAX_C
 import { BONUS, NIGHT_OVEN, ORDER } from '../content/hooks';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
+import { FEATURES } from './features';
 import { advanceLine, clampWalkInDebt, emptyLine, LINE, nextTap, piesInFlight, rushLine, tapStation as lineTap, type Automation, type Line, type LineRates, type Station } from './pipeline';
 
 /** v5 (rewards): daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. v4 was the kitchen line and station heads. */
@@ -70,6 +71,8 @@ export interface GameState {
   order: OrderState;
   /** Nonna's night oven: the tier owned (index into NIGHT_OVEN.capSeconds, 0 = the base cap). Rules in night-oven.ts. */
   nightOven: number;
+  /** Feature slices (features/): each registered feature keeps its state at `x[feature.key]`. */
+  x: Record<string, unknown>;
 }
 
 /** The golden pizza. Times are play seconds, so the schedule only runs while the game is open. */
@@ -261,6 +264,7 @@ export function newGame(now: number): GameState {
     bonus: newBonus(now),
     order: newOrders(now),
     nightOven: 0,
+    x: Object.fromEntries(FEATURES.map((f) => [f.key, f.init(now)])),
   };
 }
 
@@ -502,6 +506,9 @@ export function migrate(raw: unknown, now: number): GameState {
   game.order = migrateOrders(r.order, game.playSeconds, now, game.shops);
   // saves from before the night oven have none: the base cap
   game.nightOven = int(r.nightOven, 0, 0, NIGHT_OVEN.capSeconds.length - 1);
+  // feature slices: a save without `x` (or without a feature's key) gets that feature's defaults; keys of features no longer registered are dropped
+  const savedX = (r.x && typeof r.x === 'object' ? r.x : {}) as Record<string, unknown>;
+  game.x = Object.fromEntries(FEATURES.map((f) => [f.key, f.migrate(savedX[f.key], now)]));
   return game;
 }
 
@@ -529,6 +536,30 @@ export const def = (id: NeighborhoodId): NeighborhoodDef => NEIGHBORHOODS.find((
 /** Prep, ovens and counter can't level past this until the footprint grows. */
 export const levelCap = (shop: Shop) => TUNING.levelsPerFootprint * (shop.footprint + 1);
 
+/** What the registered features multiply in one shop right now (features/types.ts `shopValueMult`, `shopDemandMult`). */
+export interface FeatureMults {
+  /** × the value per pizza. */
+  value: number;
+  /** × the demand rate (drivers and walk-ins). */
+  demand: number;
+}
+const NO_FX: FeatureMults = Object.freeze({ value: 1, demand: 1 });
+
+/**
+ * The product of every feature's multipliers for one shop (1 and 1 with no features). `now` is wall ms; callers that
+ * don't know it (the UI's earnings readouts) get the save time, so a hook that only needs "about now" still works.
+ */
+export function featureMults(s: GameState, id: NeighborhoodId, now: number = s.lastSavedAt): FeatureMults {
+  if (!FEATURES.length) return NO_FX;
+  let value = 1;
+  let demand = 1;
+  for (const f of FEATURES) {
+    if (f.shopValueMult) value *= f.shopValueMult(s, id, now);
+    if (f.shopDemandMult) demand *= f.shopDemandMult(s, id, now);
+  }
+  return { value, demand };
+}
+
 const levelSpeed = (base: number, level: number) => base * (1 + TUNING.speedPerLevel * (level - 1)) * milestoneMultiplier(level);
 
 /** Room to work: each expansion speeds up prep and the counter. */
@@ -542,20 +573,20 @@ export const deliveryRate = (shop: Shop, vehicle: number) => (shop.drivers * tri
 export const walkInRate = (shop: Shop) => levelSpeed(STATIONS.tables.speed, shop.tables);
 /** Tables drawn in the cutaway: grows with seating level, limited by the footprint. */
 export const tablesShown = (shop: Shop) => Math.min(FOOTPRINTS[shop.footprint].maxTables, 1 + Math.floor((shop.tables - 1) / 6));
-export const demandRate = (shop: Shop, vehicle: number) => deliveryRate(shop, vehicle) + walkInRate(shop);
+export const demandRate = (shop: Shop, vehicle: number, fx: FeatureMults = NO_FX) => (deliveryRate(shop, vehicle) + walkInRate(shop)) * fx.demand;
 
 /** Pizzas per second this pizzeria sells when running. */
-export function shopRate(shop: Shop, vehicle: number): number {
-  return Math.min(prepRate(shop), ovenRate(shop), counterRate(shop), demandRate(shop, vehicle));
+export function shopRate(shop: Shop, vehicle: number, fx: FeatureMults = NO_FX): number {
+  return Math.min(prepRate(shop), ovenRate(shop), counterRate(shop), demandRate(shop, vehicle, fx));
 }
 
 /**
  * How the kitchen's pies split at the steady state: walk-ins are seated first, up to the seating rate
  * (walkInRate); the drivers deliver the rest. One rule for revenue, value per pizza and the walk-in fraction.
  */
-function pieSplit(shop: Shop, vehicle: number): { sold: number; walkIns: number; delivered: number } {
-  const sold = shopRate(shop, vehicle);
-  const walkIns = Math.min(sold, walkInRate(shop));
+function pieSplit(shop: Shop, vehicle: number, fx: FeatureMults = NO_FX): { sold: number; walkIns: number; delivered: number } {
+  const sold = shopRate(shop, vehicle, fx);
+  const walkIns = Math.min(sold, walkInRate(shop) * fx.demand);
   return { sold, walkIns, delivered: sold - walkIns };
 }
 
@@ -585,10 +616,10 @@ export const patioTables = (shop: Shop) => Math.max(0, Math.min(2, 1 + Math.floo
  * Cash per second a running pizzeria makes. Walk-ins get the kitchen's pies first, up to the seating rate
  * (they pay walkInShare of the price, 1.0 by default); drivers deliver the rest at full price.
  */
-export function shopRevenue(id: NeighborhoodId, shop: Shop, vehicle: number): number {
-  const { walkIns, delivered } = pieSplit(shop, vehicle);
+export function shopRevenue(id: NeighborhoodId, shop: Shop, vehicle: number, fx: FeatureMults = NO_FX): number {
+  const { walkIns, delivered } = pieSplit(shop, vehicle, fx);
   const perk = perkOf(id, shop);
-  return def(id).orderValue * (perk?.priceMult ?? 1) * decorMult(shop, id) * gmMult(shop) * (delivered + walkIns * (perk?.walkInShare ?? TUNING.walkInShare));
+  return def(id).orderValue * (perk?.priceMult ?? 1) * decorMult(shop, id) * gmMult(shop) * fx.value * (delivered + walkIns * (perk?.walkInShare ?? TUNING.walkInShare));
 }
 
 /** The General Manager's neighbourhood boost. */
@@ -602,16 +633,16 @@ export const decorMult = (shop: Shop, id?: NeighborhoodId) =>
   1 + ((id && perkOf(id, shop)?.decorBoost) ?? DECOR_BOOST) * DECOR_KINDS.reduce((t, k) => t + (shop.decor?.[k] ?? 0), 0);
 
 /** Average cash per pizza sold right now. */
-export function valuePerPizza(id: NeighborhoodId, shop: Shop, vehicle: number): number {
-  const sold = shopRate(shop, vehicle);
-  return sold > 0 ? shopRevenue(id, shop, vehicle) / sold : def(id).orderValue * (perkOf(id, shop)?.priceMult ?? 1) * decorMult(shop, id) * gmMult(shop);
+export function valuePerPizza(id: NeighborhoodId, shop: Shop, vehicle: number, fx: FeatureMults = NO_FX): number {
+  const sold = shopRate(shop, vehicle, fx);
+  return sold > 0 ? shopRevenue(id, shop, vehicle, fx) / sold : def(id).orderValue * (perkOf(id, shop)?.priceMult ?? 1) * decorMult(shop, id) * gmMult(shop) * fx.value;
 }
 
 /** Cash per second this pizzeria makes while running (managed, or while you keep tapping). */
-export function shopEarnings(s: GameState, id: NeighborhoodId): number {
+export function shopEarnings(s: GameState, id: NeighborhoodId, now?: number): number {
   const shop = s.shops[id];
   if (!shop.built) return 0;
-  return shopRevenue(id, shop, s.vehicle);
+  return shopRevenue(id, shop, s.vehicle, featureMults(s, id, now));
 }
 
 /** Every station runs on its own (a GM, or all three heads): the shop earns in the foreground without taps. */
@@ -853,8 +884,8 @@ const ALL_AUTOMATIC: Automation = Object.freeze({ prep: true, oven: true, counte
 export const automationOf = (shop: Shop): Automation => (shop.managed ? ALL_AUTOMATIC : shop.heads);
 
 /** Share of pies that go to walk-ins at the steady state (walk-ins are seated first, up to walkInRate). */
-export function walkInFraction(shop: Shop, vehicle: number): number {
-  const { sold, walkIns } = pieSplit(shop, vehicle);
+export function walkInFraction(shop: Shop, vehicle: number, fx: FeatureMults = NO_FX): number {
+  const { sold, walkIns } = pieSplit(shop, vehicle, fx);
   return sold > 0 ? walkIns / sold : 0;
 }
 
@@ -866,17 +897,17 @@ export const FIRST_BATCH_SPEED = 2.5;
  * the steady state matches `shopRate`; a tapped counter hands over at the counter's own speed (the player is
  * already the slow part of a serial prep → bake → serve).
  */
-export function lineRates(id: NeighborhoodId, shop: Shop, vehicle: number, mult = 1): LineRates {
+export function lineRates(id: NeighborhoodId, shop: Shop, vehicle: number, mult = 1, fx: FeatureMults = NO_FX): LineRates {
   // the very first batch Downtown is quick, so Nonna's "watch the timer" step lasts seconds, not half a minute
   const first = id === 'downtown' && shop.sold === 0 && !shop.managed ? FIRST_BATCH_SPEED : 1;
   return {
     prep: prepRate(shop) * first,
     oven: ovenRate(shop) * first,
-    serve: (automationOf(shop).counter ? Math.min(counterRate(shop), demandRate(shop, vehicle)) : counterRate(shop)) * first,
-    shop: shopRate(shop, vehicle),
+    serve: (automationOf(shop).counter ? Math.min(counterRate(shop), demandRate(shop, vehicle, fx)) : counterRate(shop)) * first,
+    shop: shopRate(shop, vehicle, fx),
     // a running boost raises what every pie pays, so departures, pops and revenue agree
-    price: valuePerPizza(id, shop, vehicle) * mult,
-    walkInFraction: walkInFraction(shop, vehicle),
+    price: valuePerPizza(id, shop, vehicle, fx) * mult,
+    walkInFraction: walkInFraction(shop, vehicle, fx),
     tapBatch: tapBatch(shop),
   };
 }
@@ -888,7 +919,7 @@ export function tapStation(s: GameState, id: NeighborhoodId, st: Station): TapOu
   const shop = s.shops[id];
   if (!shop.built) return { ok: false, reason: 'Build this pizzeria first' };
   if (automationOf(shop)[st]) return { ok: false, reason: shop.managed ? 'Your manager has it covered' : `${HEADS[id][st]} has it covered` };
-  const r = lineTap(shop.line, st, lineRates(id, shop, s.vehicle), automationOf(shop));
+  const r = lineTap(shop.line, st, lineRates(id, shop, s.vehicle, 1, featureMults(s, id)), automationOf(shop));
   return r.ok ? { ok: true, state: withShop(s, id, { line: r.line }) } : r;
 }
 
@@ -912,7 +943,10 @@ export function tapShop(s: GameState, id: NeighborhoodId): GameState {
 /** Foreground play: run every kitchen line and count the seconds toward story pacing. `now` (wall ms) turns running boosts on. */
 export function playTick(s: GameState, dt: number, now?: number): GameState {
   if (!(dt > 0)) return s;
-  return { ...lineTick(s, dt, now), playSeconds: s.playSeconds + dt };
+  let next: GameState = { ...lineTick(s, dt, now), playSeconds: s.playSeconds + dt };
+  // feature slices tick after the ordinary body, in registry order
+  for (const f of FEATURES) if (f.tick) next = f.tick(next, dt, now ?? s.lastSavedAt);
+  return next;
 }
 
 /**
@@ -934,7 +968,7 @@ export function lineTick(s: GameState, dt: number, now?: number): GameState {
     // an idle manual line with nobody walking can't change: skip the allocation
     // (carrier laps keep counting down while pies wait or a carrier is still out)
     if (!auto.prep && !auto.oven && !auto.counter && !l.prep && !l.oven && !l.counter && l.departures.length === 0 && l.boxed === 0 && l.driverBusy <= 0 && l.walkinBusy <= 0) continue;
-    const a = advanceLine(l, dt, lineRates(id, shop, s.vehicle, mult), auto);
+    const a = advanceLine(l, dt, lineRates(id, shop, s.vehicle, mult, featureMults(s, id, now)), auto);
     shops ??= { ...s.shops };
     shops[id] = { ...shop, line: a.line, sold: shop.sold + a.sold };
     cash += a.paid;
@@ -970,7 +1004,7 @@ export interface OfflineResult {
  * line; one without a GM only finishes the jobs already running and pays the carriers already walking out
  * (heads don't work while you're away; the GM does). Each line is settled, so nothing is paid twice.
  */
-export function offlineTick(s: GameState, seconds: number, boost = 1): { state: GameState; byShop: { id: NeighborhoodId; pies: number; base: number; extra: number }[] } {
+export function offlineTick(s: GameState, seconds: number, boost = 1, now?: number): { state: GameState; byShop: { id: NeighborhoodId; pies: number; base: number; extra: number }[] } {
   const shops = { ...s.shops };
   const add = { walkins: 0, deliveries: 0, baked: 0 };
   const rows: { id: NeighborhoodId; pies: number; base: number; extra: number }[] = [];
@@ -982,22 +1016,23 @@ export function offlineTick(s: GameState, seconds: number, boost = 1): { state: 
     let pies: number;
     let paid: number;
     let line: Line;
+    const fx = featureMults(s, id, now);
     if (shop.managed) {
       const inFlight = piesInFlight(shop.line);
       const carried = shop.line.departures.reduce((t, d) => t + d.cash, 0);
       const carriedPies = shop.line.departures.reduce((t, d) => t + d.n, 0);
-      const rest = Math.floor(shopRate(shop, s.vehicle) * seconds) + inFlight - carriedPies;
+      const rest = Math.floor(shopRate(shop, s.vehicle, fx) * seconds) + inFlight - carriedPies;
       pies = carriedPies + rest;
       // `carried` was already boosted when it left the shop: only the rest takes the boost
-      paid = carried + rest * valuePerPizza(id, shop, s.vehicle) * boost;
+      paid = carried + rest * valuePerPizza(id, shop, s.vehicle, fx) * boost;
       // closed form: the walk-in share of the steady state decides the split
-      const walk = Math.round(pies * walkInFraction(shop, s.vehicle));
+      const walk = Math.round(pies * walkInFraction(shop, s.vehicle, fx));
       add.walkins += walk;
       add.deliveries += pies - walk;
       add.baked += pies;
       line = { ...emptyLine(), walkInDebt: shop.line.walkInDebt, nextId: shop.line.nextId };
     } else {
-      const a = advanceLine(shop.line, seconds, lineRates(id, shop, s.vehicle), { prep: false, oven: false, counter: false });
+      const a = advanceLine(shop.line, seconds, lineRates(id, shop, s.vehicle, 1, fx), { prep: false, oven: false, counter: false });
       pies = a.sold;
       paid = a.paid * boost;
       line = a.line;
@@ -1026,7 +1061,10 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
   // each running boost adds (mult − 1) over the part of the offline window it covers
   const from = s.lastSavedAt;
   const boost = seconds > 0 ? s.rewards.boosts.reduce((m, b) => m + (b.mult - 1) * Math.max(0, Math.min(b.until, from + seconds * 1000) - from) / (seconds * 1000), 1) : 1;
-  const { state, byShop } = offlineTick(s, seconds, boost);
+  const { state: ticked, byShop } = offlineTick(s, seconds, boost, now);
+  let state = ticked;
+  // feature slices settle after the ordinary catch-up, in registry order
+  for (const f of FEATURES) if (f.onOffline) state = f.onOffline(state, seconds, now);
   const rows = byShop.map((r) => ({ id: r.id, managed: s.shops[r.id].managed, earned: r.base + r.extra, pies: r.pies })).filter((x) => x.earned > 0);
   // Downtown's manager is Nonna's story beat, not a hire the player can make, so it is never named as idle
   const idle = SHOP_IDS.filter((id) => id !== 'downtown' && s.shops[id].built && !s.shops[id].managed);

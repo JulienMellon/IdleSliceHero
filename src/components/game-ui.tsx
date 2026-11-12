@@ -171,7 +171,7 @@ export interface Goal {
   onPress?: () => boolean;
 }
 
-export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newScenes, halo = null, onTasks, tasksBadge = 0, onGift, giftDot = false, ovenText, onOven, scrapRing }: { /** The night oven chip's hours ("4 h"), under a moon; the chip shows once it is given with `onOven`. */ ovenText?: string; onOven?: () => void; /** The next story scene's progress ring around the scrapbook button, in whole 5% steps (0..20); none when undefined. */ scrapRing?: number; cash: number; subtitle: string; /** The running boost, "2× 10m": drawn in basil after the subtitle. */ boostText?: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null; onTasks?: () => void; tasksBadge?: number; onGift?: () => void; giftDot?: boolean }) {
+export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newScenes, halo = null, onTasks, tasksBadge = 0, onGift, giftDot = false, chips, scrapRing }: { /** The chips at the end of the goal row (the HUD_CHIPS slot); the screen passes `<Slots items={HUD_CHIPS} />`. */ chips?: React.ReactNode; /** The next story scene's progress ring around the scrapbook button, in whole 5% steps (0..20); none when undefined. */ scrapRing?: number; cash: number; subtitle: string; /** The running boost, "2× 10m": drawn in basil after the subtitle. */ boostText?: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null; onTasks?: () => void; tasksBadge?: number; onGift?: () => void; giftDot?: boolean }) {
   const shown = useCountUp(cash);
   const [flash] = useState(() => new Animated.Value(1));
   // the cash text's window position: payout coins land on it (C81)
@@ -273,15 +273,7 @@ export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newS
             </View>
           ) : null}
         </Pressable>
-        {ovenText && onOven ? (
-          // a 44 pt round chip (the tap target), kept narrow so the goal keeps its words and its "tap!"
-          <Pressable testID="night-oven-chip" onPress={onOven} style={styles.ovenChip} accessibilityLabel={`Nonna's night oven: full in ${ovenText}`}>
-            <MoonIcon size={16} />
-            <Text style={styles.ovenPillText} numberOfLines={1} maxFontSizeMultiplier={1.1}>
-              {ovenText}
-            </Text>
-          </Pressable>
-        ) : null}
+        {chips}
         </View>
       )}
     </View>
@@ -731,8 +723,6 @@ const styles = StyleSheet.create({
   ring: { position: 'absolute', left: 0, top: 0 },
   goalRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   goalFlex: { flex: 1 },
-  ovenChip: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
-  ovenPillText: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: '#fff' },
   hudIconSmall: { position: 'absolute', right: -4, top: -4, width: 26, height: 26, borderRadius: 13, backgroundColor: C.tomatoDark, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   giftDot: { position: 'absolute', top: -1, right: -1, width: 16, height: 16, borderRadius: 8, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato },
