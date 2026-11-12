@@ -9,8 +9,8 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.13      # label of the last screenshot set that passed verify
 codecritic_range_start: 5d82004
 cards:                 # todo | running | done | partial | blocked
-  B3: todo
-  R3: todo
+  B3: running
+  R3: running
   C3: todo
   K0a: todo
   K0b: todo
