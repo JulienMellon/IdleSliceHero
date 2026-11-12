@@ -12,7 +12,7 @@ cards:                 # todo | running | done | partial | blocked
   W1: done
   E1: done
   U1: done
-  S1: running
+  S1: done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.14/review-r3-critic.md (r3 NOT SATISFIED; bug 1 major 0 minor 4; E1 U3 S1)
   code:   CODELOG.md "Current state" (round 24, APPROVED at v5.12; next IDs K1, C110, A30, M62, U12, T85)
@@ -23,7 +23,6 @@ next: wave 3 (U1 + S1) running; then verify r1.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-12 r3 critic NOT SATISFIED (G95 still open, 4 minor). Stopped per README 4.5; asked Julien.
 - 2026-11-12 Julien accepted G95 overlap; carried to v5.15. Wave 4 (K0a, K0b) launched.
 - 2026-11-12 K0a done (golden hashes unchanged; digest needs re-run after K0b).
 - 2026-11-12 Seam: 45 changed vs r3, but identical code re-run gives 41 (same top shots) = clock noise; accepted. tsx not installed (digest via node --experimental-strip-types); python playwright 1.63.0 pip-installed this session. v5.14 closed.
@@ -33,3 +32,4 @@ next: wave 3 (U1 + S1) running; then verify r1.
 - 2026-11-12 E1 checkpoint: tsc clean, 777 tests pass, API digest regenerated. Story r0: 0 major, 6 minor (carry). Wave 3 (U1, S1) launched.
 - 2026-11-12 U1 PARTIAL: needs U-lane files outside card (app/index.tsx, shop-ui.tsx, G95/D454); sent back to U1 per OWNERS. Open: buyMany/buyCosmetic in components (owner E may move).
 - 2026-11-12 U1 done (G95, D454, D455 fixed in U files; 460 component tests pass). Waiting on S1.
+- 2026-11-12 S1 done (D450 fixed; 478 tests pass). Out-of-scope asks sent: features.test pin → E1, Tasks-drawer star → U1.
