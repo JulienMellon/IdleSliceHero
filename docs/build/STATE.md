@@ -10,7 +10,7 @@ last_shots: v5.13      # label of the last screenshot set that passed verify
 codecritic_range_start: 5d82004
 cards:                 # todo | running | done | partial | blocked
   B3: running
-  R3: partial
+  R3: done
   C3: todo
   K0a: todo
   K0b: todo
@@ -27,3 +27,4 @@ next: v5.14 wave 1 (B3 + R3). All spec exports are in the repo.
 - 2026-11-11 Plan delivered. Repo at 07e9d8e (v5.13). Nothing started.
 - 2026-11-12 Setup done: writer agent, critic review-file rule, HANDOFF pointer, Todd plan spec. 4 spec exports still missing.
 - 2026-11-12 Spec exports added: docs/story/STORY-v4-final.md, docs/specs/PRESTIGE.md, both privacy docs. Nothing missing.
+- 2026-11-12 v5.14 wave 1: R3 done (after npm ci); B3 running.
