@@ -43,3 +43,4 @@ v5.13 = golden pizza + special orders, economy refit (4 h cap, costMult = order 
 | D434, D422 | note | 37, 05c, 13, 34, 49 | Tap spree accepted; fixtures with impossible states | Regenerate fixtures from the sim |
 
 **Next IDs:** G95, D447.
+- v5.14 closed 2026-11-12: critic NOT SATISFIED r3 (G95 accepted by Julien, carried) — notes: docs/build/v5.14/review-r3-critic.md
