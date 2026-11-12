@@ -24,7 +24,7 @@ export const TASK_TEXT: Record<TaskKind, { title: string; unit: 'count' | 'cash'
   deliveries: { title: 'Deliver {n} pizzas', unit: 'count' },
   baked: { title: 'Bake {n} pizzas', unit: 'count' },
   earn: { title: 'Earn {n}', unit: 'cash' },
-  offline: { title: 'Open Nonna's night oven', unit: 'count' },
+  offline: { title: 'Open Nonna’s night oven', unit: 'count' },
   booster: { title: 'Start a booster', unit: 'count' },
   hire: { title: 'Hire a head or manager', unit: 'count' },
   decor: { title: 'Buy a decor upgrade', unit: 'count' },
