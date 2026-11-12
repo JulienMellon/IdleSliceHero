@@ -453,7 +453,7 @@ const OvenArt = memo(function OvenArt({ glow, open }: { glow: number; open: bool
         </RadialGradient>
       </Defs>
       {/* heat halo, behind everything: bigger and brighter as the oven fills */}
-      <Circle cx={MOUTH_C.x} cy={MOUTH_C.y} r={46 + 34 * k} fill="url(#ovenHeat)" opacity={0.15 + 0.85 * k} />
+      <Circle cx={MOUTH_C.x} cy={MOUTH_C.y} r={46 + 34 * k} fill="url(#ovenHeat)" opacity={0.3 + 0.7 * k} />
       {open
         ? RAYS.map((a, i) => <Path key={i} d={`M${MOUTH_C.x + Math.cos(a) * 52} ${MOUTH_C.y + Math.sin(a) * 52} L${MOUTH_C.x + Math.cos(a) * 78} ${MOUTH_C.y + Math.sin(a) * 78}`} stroke="#F6C343" strokeWidth={4} strokeLinecap="round" />)
         : null}
@@ -552,7 +552,10 @@ export function OfflinePopup({ summary, nightOven, onCollect, onUpgrade }: { sum
     Animated.timing(door, { toValue: 1, duration: GIFT.doorMs, easing: Easing.out(Easing.cubic), useNativeDriver: native }).start();
     // coins from the oven to the cash counter, and the cash text's kick
     ovenRef.current?.measureInWindow?.((x: number, y: number, w: number, h: number) => {
-      for (let i = 0; i < GIFT.coins; i++) emitCoin({ x: x + w / 2 + (i % 2 ? 14 : -14), y: y + h / 2, ms: 420 + i * 60 });
+      // from the oven's mouth, fanned out a little, so the burst reads as coming out of the door
+      const mx = x + MOUTH_C.x * (w / OVEN_VB.w);
+      const my = y + (MOUTH_C.y - OVEN_VB.top) * (h / OVEN_VB.h);
+      for (let i = 0; i < GIFT.coins; i++) emitCoin({ x: mx + (i - (GIFT.coins - 1) / 2) * 5, y: my - (i % 3) * 6, ms: 420 + i * 60 });
       emitPayout();
     });
     const t0 = Date.now();
@@ -575,7 +578,7 @@ export function OfflinePopup({ summary, nightOven, onCollect, onUpgrade }: { sum
   const doorShift = door.interpolate({ inputRange: [0, 1], outputRange: [0, -DOOR.w * 0.44] });
   const tilt = shake.interpolate({ inputRange: [-1, 1], outputRange: ['-3deg', '3deg'] });
   return (
-    <View style={styles.overlay}>
+    <View style={[styles.overlay, styles.giftOverlay]}>
       <Animated.View style={[styles.modal, { transform: [{ scale: pop }] }]}>
         <Text style={styles.modalHead}>{view.title}</Text>
         <Animated.View style={{ transform: [{ rotate: tilt }] }}>
@@ -606,9 +609,12 @@ export function OfflinePopup({ summary, nightOven, onCollect, onUpgrade }: { sum
         <Text style={[styles.giftLine, { fontFamily: F.regular, color: C.inkSoft }]} testID="offline-news">
           {view.news}
         </Text>
-        <Text style={[styles.modalCash, !opened && { opacity: 0 }]} testID="offline-total">
-          +{money(shown)}
-        </Text>
+        {/* no reserved blank slot before the door opens (it left a 70 pt hole): the card is anchored near the top and grows downward */}
+        {opened ? (
+          <Text style={styles.modalCash} testID="offline-total">
+            +{money(shown)}
+          </Text>
+        ) : null}
         {opened ? (
           <Animated.View style={{ alignSelf: 'stretch', gap: 2, opacity: fade }}>
             {view.rows.map((b) => (
@@ -790,6 +796,7 @@ const styles = StyleSheet.create({
   tierRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, backgroundColor: '#fff', borderWidth: 2, borderColor: C.cheeseDark },
   tierOwned: { backgroundColor: '#FFF4E0' },
   tierHours: { fontFamily: F.bold, fontSize: 15, color: C.ink },
+  giftOverlay: { justifyContent: 'flex-start', paddingTop: 64 },
   upgradeBtn: { alignSelf: 'stretch', minHeight: 44, borderRadius: 14, borderWidth: 2, borderColor: C.ink, backgroundColor: C.cheese, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 12 },
   upgradeText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   sheetHead: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'stretch' },
