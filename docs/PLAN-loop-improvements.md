@@ -1,6 +1,13 @@
 # Plan: a faster, cheaper build/review loop
 
-Written 2026-11-13 against `main` at `4836f53` (v5.15 closed, v5.16 not started). Nothing in `src/`, `scripts/` or `docs/build/` was changed. This file is a proposal; the loop keeps running from `docs/build/README.md` until Julien approves it.
+Written 2026-11-13 against `main` at `4836f53` (v5.15 closed, v5.16 not started). The audit changed nothing in `src/` or `scripts/`.
+
+**Status, 2026-11-13: approved.** Julien chose to update the loop before the next build session. His answers are in "Decisions" at the end and in `docs/build/DECISIONS.md` (#26 to #32). The cards are written and STATE points at them:
+- `docs/build/v5.15-loop/`: `VERSION.md` and cards Q2, Q6, Q1, Q3, Q4, in that running order, plus `poc/` with the audit's scripts.
+- `docs/build/v5.16/card-U5.md`: the tap-target and text-size fixes, as the last card of v5.16.
+- Q5 (a public playtest build) is parked. The first half of Q6 is done: the screenshots from before v5.0 are in `JulienMellon/idleslicearchive`.
+
+The measurements and the reasoning below are as written before those decisions; where a card file differs from the outline here, the card file is right.
 
 ## Summary
 
@@ -12,8 +19,8 @@ The loop's structure is sound (cards passed by path, critics writing to files, a
 | Q2 | Programmers see their own shots | `--only`, fixtures assert their state | UI cards are checked with `tsc`, `jest` and `py_compile` only |
 | Q3 | Layout checks in the screenshot run | Tap-target, text-size and clipping checks before the critic | 40 pt HUD buttons and 7.5 to 9 pt text are in the build; no review flags them |
 | Q4 | Re-check rules | Scoped review sets, a two-round limit per bug | G95 stayed open through five reviews |
-| Q5 | Playable build on every push | GitHub Actions, GitHub Pages | The published playtest build is v4.5; the game is at v5.15 |
-| Q6 | Repo weight and loop metrics | One screenshot baseline in the tree, a metrics line per round | 744 MB to clone; no record of how long a round takes |
+| Q5 | Playable build on every push (**parked**: no public playtest for now) | GitHub Actions, GitHub Pages | The published playtest build is v4.5; the game is at v5.15 |
+| Q6 | Repo weight and loop metrics | Old screenshots out of the tree (**done** for v0.1 to v4.9), a metrics line per version | 744 MB to clone; no record of how long a round takes |
 
 ## What I measured
 
@@ -30,7 +37,7 @@ All on a 2-core sandbox, on the same code as v5.15 r3 (`git diff b226b9d HEAD --
 The slowest shots are `70-head-rush-bark` (28 s), `04-after-20s-play` (26 s) and `22-dale-perk-card` (15 s). They wait on the wall clock.
 
 ### v5.15 took 7 h 18 min; 2 h 11 min of it was work
-From `git log` (18:55 wave 1 launched, 02:13 closed):
+From `git log` (wave 1 launched at 18:55 UTC, closed at 02:13 UTC):
 - 71 minutes from launch to the first committed build.
 - 5 h 07 min waiting on the usage limit, between the r1 reviews (20:15) and the resume (01:22).
 - Fix round r2 took 27 minutes and r3 took 22. In each, 7 to 8 minutes passed between the fix commit and the screenshot commit.
@@ -146,21 +153,26 @@ GitHub's billing page says standard hosted runners are free in public repositori
 
 ## Order
 
-1. **Now, before v5.16 wave 1:** Q1, then Q2, then Q3, in one session with one programmer. v5.16 has five cards with screens (P1, S2a, S2b, T1a, T1b), so these pay back in the same version. Q4 is a text edit the orchestrator makes in the same session.
-2. **Any time:** Q5 and Q6. They don't touch the loop's files.
-3. **After v5.16 closes:** compare its `METRICS.md` line with v5.15's (3 rounds, 8 bugs, 78 to 83 shots re-reviewed per fix round).
+1. **Now, before v5.16 wave 1** (`docs/build/v5.15-loop/VERSION.md`): Q2 and Q6 together, then Q1, then Q3, then Q4. Q2 goes first so that Q1 can be developed one fixture at a time; Q4 goes last because it writes the rules for what the others built. v5.16 has five cards with screens (P1, S2a, S2b, T1a, T1b), so these pay back in the same version.
+2. **In v5.16:** card U5, last, fixes the controls and text the layout check lists.
+3. **Parked:** Q5.
+4. **After v5.16 closes:** compare its `METRICS.md` line with v5.15's (3 rounds, 8 bugs, 78 to 83 shots re-reviewed per fix round).
 
 Targets for v5.16, so the plan can be judged: the critic re-checks under 40 images in a fix round (r3 of v5.15 had 156); no bug is open for more than two rounds; verify fails on a 40 pt button; the gate is met in two rounds or fewer.
 
-## Decisions for you (each has a default)
+## Decisions (Julien, 2026-11-13)
 
-| # | Decision | Default |
+| # | Decision | Answer |
 | --- | --- | --- |
-| 1 | Run Q1 to Q4 before v5.16 starts, or alongside it | Before. About one session; v5.16's UI cards benefit |
-| 2 | Delete old screenshot folders from the tree (HANDOFF says to ask you first) | Yes; keep one baseline and whatever open reviews cite. History keeps the rest |
-| 3 | Public playtest link on GitHub Pages | Yes. Say no if the game should stay unlisted until launch |
-| 4 | Lint | Drop the lint line from `AGENTS.md` for now; `tsc`, tests and Q3 are the gates |
-| 5 | Tap targets drawn at 40 pt in the HUD | Restore 44 pt, and narrow the bar's contents instead |
+| 1 | Run the loop update before v5.16 starts, or alongside it | **Before.** It is its own step, `v5.15-loop` |
+| 2 | Old screenshot folders | **v0.1 to v4.9 moved** to the private repo `JulienMellon/idleslicearchive` (51 folders, 1,113 files, 354 MB, same paths; every file checked by hash from a fresh clone of the archive). Folders from v5.0 on stay |
+| 3 | Public playtest link on GitHub Pages | **No, for now.** Q5 is parked |
+| 4 | Lint | Not answered. The default stands: `AGENTS.md` drops the lint line until ESLint is configured (card Q4; DECISIONS #32) |
+| 5 | The HUD's round buttons at 40 pt | **Keep 40 pt.** I had proposed restoring 44 pt; that would take 20 pt from the cash (139 pt wide now, 119 pt with five 44 pt buttons). The rule becomes: drawn at 44 pt or more, or at 40 pt or more with a `hitSlop` that a test proves reaches 44 pt; never under 40 pt |
+| 6 | Other controls under 44 pt | **Fix all to the rule** in v5.16 (card U5). No exceptions except Close |
+| 7 | Minimum text size | **10 pt** |
+
+A depth-1 clone of this repo is about 350 MB smaller once the removal is on `main`. A baseline-only screenshot folder (the rest of Q6) is still open and waits for Q1.
 
 ## What I did not measure
 - Token use per agent. The image estimate uses HANDOFF's 0.45K figure.

@@ -35,3 +35,19 @@ The build never waits on these. Each has a default the cards already use. Correc
 | 25 | The scrolling shop | Build it in 5.18, after the city as data | 5.18 · V1, V2 |
 
 Two rules follow from 20 and 22 and are the cards' defaults; correct them before v5.16 starts if you disagree. With the manager a day away, a shop with all three heads earns at half speed while you're away (otherwise the newest shop would earn nothing offline for a day). The cold line costs 10% of value rather than walk-ins, because fewer walk-ins changes nothing while the kitchen is the limit; the shorter queue is drawn in 5.18.
+
+## Decided by Julien, 2026-11-13 (loop update)
+| # | Decision | Answer | Bites in |
+| --- | --- | --- | --- |
+| 26 | Update the loop before the next build | Yes. `docs/build/v5.15-loop/` (cards Q2, Q6, Q1, Q3, Q4) runs before v5.16 | now |
+| 27 | Screenshots from before v5.0 | Moved to the private repo `JulienMellon/idleslicearchive` (51 folders, v0.1 to v4.9), same paths. Screenshots from v5.0 on stay here | done 2026-11-13 |
+| 28 | A public playtest link (GitHub Pages) | No, for now. Card Q5 of `docs/PLAN-loop-improvements.md` is parked | n/a |
+| 29 | The HUD's five round buttons, drawn at 40 pt since v5.15 r3 | Keep 40 pt. The rule becomes: drawn at 44 pt or more, or at 40 pt or more with a `hitSlop` that a test in `tap-targets.test.ts` proves reaches 44 pt. Never under 40 pt | loop · Q3, Q4; 5.16 · U5 |
+| 30 | Other controls under 44 pt (the ×1 chip, the Collect, Claim and night-oven buttons, Back, the goal bar) | Fix all of them to the rule in v5.16. No exceptions except Close | 5.16 · U5 |
+| 31 | Minimum text size | 10 pt | loop · Q3; 5.16 · U5 |
+
+One default from the same plan is still unconfirmed and follows the rule at the top of this file:
+
+| # | Decision | Default the plan uses | Bites in |
+| --- | --- | --- | --- |
+| 32 | Lint: `AGENTS.md` says to run it, the programmer brief forbids it, and no ESLint config exists | Drop the instruction from `AGENTS.md` until ESLint is set up. `tsc`, the tests and the layout check are the gates | loop · Q4 |
