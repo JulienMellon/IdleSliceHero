@@ -172,7 +172,7 @@ Targets for v5.16, so the plan can be judged: the critic re-checks under 40 imag
 | 6 | Other controls under 44 pt | **Fix all to the rule** in v5.16 (card U5). No exceptions except Close |
 | 7 | Minimum text size | **10 pt** |
 
-A depth-1 clone of this repo is about 350 MB smaller once the removal is on `main`. A baseline-only screenshot folder (the rest of Q6) is still open and waits for Q1.
+Measured after the removal: a depth-1 clone is 422 MB and took 31 s (it was 744 MB and 44 s). A baseline-only screenshot folder (the rest of Q6) is still open and waits for Q1.
 
 ## What I did not measure
 - Token use per agent. The image estimate uses HANDOFF's 0.45K figure.
