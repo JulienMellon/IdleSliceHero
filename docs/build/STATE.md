@@ -23,7 +23,6 @@ next: fix r2: U1 + S1 running; E1 (owner E, incl. A30) after U1 reports; A-owner
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-12 E1 done (387 engine tests pass; no node_modules in container, npm ci started). Wave 2 storycritic r0 launched.
 - 2026-11-12 E1 checkpoint: tsc clean, 777 tests pass, API digest regenerated. Story r0: 0 major, 6 minor (carry). Wave 3 (U1, S1) launched.
 - 2026-11-12 U1 PARTIAL: needs U-lane files outside card (app/index.tsx, shop-ui.tsx, G95/D454); sent back to U1 per OWNERS. Open: buyMany/buyCosmetic in components (owner E may move).
 - 2026-11-12 U1 done (G95, D454, D455 fixed in U files; 460 component tests pass). Waiting on S1.
@@ -33,3 +32,4 @@ next: fix r2: U1 + S1 running; E1 (owner E, incl. A30) after U1 reports; A-owner
 - 2026-11-12 Verify r1 passed (True 0 []; 21 new, 64 changed). Pushed; critic + codecritic r1 launched.
 - 2026-11-12 r1 critic NOT SATISFIED (5 bugs, 4 major, 12 minor; U15 S6). Waiting on codecritic.
 - 2026-11-12 r1 codecritic CHANGES REQUESTED (0 high, 5 medium, 19 low). Gate not met; fix round r2: U1 + S1 sent, E1 queued.
+- 2026-11-13 U1 + S1 hit the 5-hour limit mid r2; resumed after reset (U1 had partial edits on disk).
