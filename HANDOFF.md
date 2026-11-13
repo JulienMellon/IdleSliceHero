@@ -1,4 +1,6 @@
 > **2026-11-11: the build loop now runs from `docs/build/`. Start at `docs/build/README.md`, then `docs/build/STATE.md`. The sections below are history and lessons.**
+>
+> **2026-11-13: the loop itself is being updated before v5.16.** `docs/build/STATE.md` points at `docs/build/v5.15-loop/VERSION.md`; the why is in `docs/PLAN-loop-improvements.md`.
 
 # Handoff — Slice Empire (IdleSliceHero), after v5.9
 
@@ -102,5 +104,5 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
 - **Fix one note, open another:** removing the struck price (D359) replaced the station name with "need $X" (D402). Check that a fix keeps what the element already told the player.
 
 ## Outside the loop
-- **Screenshots** for every version since v0.1 are committed (`screenshots/`, ~700 files). Ask Julien before pruning.
+- **Screenshots** from v5.0 on are committed (`screenshots/`). The 51 folders from before v5.0 (v0.1 to v4.9) were moved on 2026-11-13 to the private repo `JulienMellon/idleslicearchive`, at the same paths; this repo's git history still holds them. Ask Julien before pruning anything else.
 - The one-time playtest of v3.0–v3.2 has been acted on (v3.4–v3.7); its dead-zone, endgame and University-chip-during-the-bid items are still open.

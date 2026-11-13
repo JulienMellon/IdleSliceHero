@@ -19,6 +19,7 @@ Everything that changes the pacing ships together and shares one refit: the new 
 | S2a | S+U | Scene and HUD for Suburbs, Waterfront, the rival | `card-S2a.md` |
 | S2b | S+U | Scene and HUD for University, Industrial, Uptown | `card-S2b.md` |
 | T1b | T | Todd's looks and props, the managers' faces, Scrapbook and hint, cut-scene backdrops | `card-T1b.md` |
+| U5 | U | Tap targets and text size to the rule; empties the layout allowlist (added 2026-11-13 with the loop update) | `card-U5.md` |
 
 ## Waves
 1. **W2 + E0.** E0 is the long card of this wave; W2 will report first.
@@ -28,7 +29,8 @@ Everything that changes the pacing ships together and shares one refit: the new 
 5. **Refit:** when both have reported, continue the E2b agent: `Run step 7 of your card (the refit) now; card T1a has landed.`
 6. **S2a + S2b.** `extra` for both: `Copy: docs/story/COPY-v5.16.md.`
 7. **T1b.**
-8. Verify, commit, review, fix rounds.
+8. **U5.** Alone and last: it edits sizes in files that P1, S2a, S2b and T1b own.
+9. Verify, commit, review, fix rounds.
 
 Every card also gets: `extra: Carried notes: rows with your owner letter in <last v5.15 critic review file>`.
 
@@ -41,7 +43,7 @@ Every card also gets: `extra: Carried notes: rows with your owner letter in <las
 | Owner | Cards |
 | --- | --- |
 | E | E0 (numbers, rewards, sim, offline rule), E2a, E2b; P1 for `features/service.ts` |
-| U | P1 (strip, sheet, sidewalk row, drawer), S2a, S2b |
+| U | P1 (strip, sheet, sidewalk row, drawer), S2a, S2b; U5 for tap-target sizes, text sizes and any layout finding |
 | S | S2a, S2b; T1b for the managers' faces in the shop |
 | T | T1a (text, rules, hire scenes), T1b (art, Scrapbook) |
 
@@ -53,6 +55,8 @@ Every card also gets: `extra: Carried notes: rows with your owner letter in <las
 - **Save:** `SAVE_VERSION` 5 → 6 for the Todd rules. Feature slices migrate themselves. The economy marker goes 2 → 3 (card E0).
 - **Julien's playtest 3 decisions (2026-11-13):** session 1 about 40 minutes with Suburbs at 16; from Waterfront on the manager arrives about a full day after the build; cash rewards cut 70 to 80%; service has consequences (+10% at 90% served, −10% after a minute under 60%); the red "buy this" frame goes after the tutorial and "Buy both" stays; the managers are Deb, Skip, Noor, Dee and Anton; the scrolling shop waits for v5.18.
 - **Two rules that follow from those decisions.** A shop with all three heads and no manager earns at half speed while the player is away (`HEADS_OFFLINE_SHARE`, card E0). The cold line costs value, not demand, because thinner demand changes nothing while the kitchen is the limit (card P1).
+- **Layout rule (Julien, 2026-11-13, DECISIONS #29 to #31).** A control is drawn at 44 pt or more, or at 40 pt or more with a `hitSlop` proven in `tap-targets.test.ts`; never under 40 pt. Text is 10 pt or more. The HUD's five round buttons stay 40 pt drawn. Verify's layout line must print 0 new findings; a note from a critic does not outrank this rule.
+- **This version runs after the loop update** (`docs/build/v5.15-loop/`). If STATE's `last_shots` is not `v5.15-loop`, the loop update has not closed: stop and tell Julien.
 
 ## Not in this version
 The shorter queue while the line is cold (`reportView`'s `queueShare`) is not drawn yet: it goes to the scene cards of v5.18 with the scrolling shop.
