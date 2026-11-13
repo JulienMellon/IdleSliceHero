@@ -125,7 +125,7 @@ def run(ctx):
     # 58 then 56: the Boston card opens by itself on the first launch after the finale; behind it, the goal bar reads "Mastery n/18"
     try:
         page = seeded_page(browser, endgame_save())
-        tid(page, "soon-card").wait_for(timeout=6000)
+        expect(page, "soon-card", 6000)
         shot(page, "58-boston-card", 1.0)
         skip_boston(page)
         settle(page, 2.0)
@@ -138,6 +138,7 @@ def run(ctx):
         sv = endgame_save(x=attack_state("waterfront"))
         page = seeded_page(browser, sv); ready(page)
         tid(page, "open-city").click(); time.sleep(1.0)
+        expect(page, "city-attack-waterfront", 3000)  # the marked tile
         shot(page, "57-city-stars-boston", 0.8)
         shot(page, "59b-attack-marked-tile", 0.1)
     except Exception as e:
@@ -146,6 +147,7 @@ def run(ctx):
     # 59: the attack banner on the Suburbs, naming the shop, with its Defend button
     try:
         page = seeded_page(browser, endgame_save(x=attack_state("suburbs"))); ready(page)
+        expect(page, "attack-banner", 5000)
         shot(page, "59-attack-banner", 0.8)
     except Exception as e:
         report["errors"].append(f"U1 59 failed: {e}")
@@ -156,7 +158,8 @@ def run(ctx):
         sv = hooks_save(sold=5000)
         sv["x"] = attack_state("suburbs", challenge={"target": 2888, "startSold": 5000 - 580, "left": 150})
         c, page = fresh_page(browser, sv); settle(page, 1.0)
-        tid(page, "challenge-chip").wait_for(timeout=8000)
+        expect(page, "challenge-chip", 8000)
+        expect(page, "challenge-rush", 3000)  # D467: the chip must say it is behind pace ("tap to rush!")
         shot(page, "60-challenge-behind", 0.8)
         c.close()
     except Exception as e:
@@ -168,7 +171,7 @@ def run(ctx):
         ch = {"target": 2900, "startSold": int(sold - 2897), "left": 40}
         c, page = fresh_page(browser, endgame_save(x=attack_state("suburbs", challenge=ch))); settle(page, 1.0)
         # the win is paid on the next tick: wait for the result chip (G103), then for the recipe card turning over in the middle
-        tid(page, "challenge-won").wait_for(timeout=10000)
+        expect(page, "challenge-won", 10000)
         try:
             tid(page, "recipe-reveal").wait_for(timeout=3000)
         except Exception:
@@ -181,9 +184,11 @@ def run(ctx):
     # 62: the hour before Friday Night Rush (the chip), then while it runs (the banner)
     try:
         c, page = clock_page(browser, endgame_save(), next_weekday(4, 16, 30)); ready(page)
+        expect(page, "event-chip", 5000)
         shot(page, "62-event-countdown-chip", 0.8)
         c.close()
         c, page = clock_page(browser, endgame_save(), next_weekday(4, 18, 48)); ready(page)
+        expect(page, "event-banner", 5000)
         shot(page, "62b-event-banner", 0.8)
         c.close()
     except Exception as e:

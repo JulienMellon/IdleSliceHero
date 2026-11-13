@@ -3,7 +3,7 @@
 Importing this module starts the static server for dist/ and creates the shared `report`; a fixture just does
 `from shots_lib import *` and uses `seeded_page`, `settle`, `shot`, `tid`, `report`, ... Version comes from argv[1].
 """
-import datetime, functools, http.server, json, os, socketserver, sys, threading, time
+import datetime, functools, http.server, json, os, re, socketserver, sys, threading, time
 from playwright.sync_api import sync_playwright
 
 VERSION = sys.argv[1] if len(sys.argv) > 1 else "dev"
@@ -49,7 +49,61 @@ MID_SAVE = {
 }
 report = {"version": VERSION, "errors": [], "shots": [], "loaded": False}
 
+def _only_arg(argv):
+    """`--only a,b` / `--only=a,b` from the command line: the fixture names (or number prefixes) to run; None = all of them."""
+    for i, a in enumerate(argv):
+        if a == "--only" and i + 1 < len(argv):
+            return [t.strip() for t in argv[i + 1].split(",") if t.strip()]
+        if a.startswith("--only="):
+            return [t.strip() for t in a[len("--only="):].split(",") if t.strip()]
+    return None
+
+ONLY = _only_arg(sys.argv[2:])
+if ONLY is not None:
+    report["only"] = ONLY  # a partial run can never be mistaken for a full one
+
+# ---- expectations: a fixture says which state a shot is meant to show; a miss is an error, not a skipped shot ----
+_current = {"fixture": "screenshots.py"}
+_missed = []
+
+def _flush_missed(before):
+    for what in _missed:
+        report["errors"].append(f"fixture {_current['fixture']}: expected {what} before shot {before}")
+    del _missed[:]
+
+def expect(page, testid, timeout=5000):
+    """Wait for [data-testid=testid] to be on screen. A miss is reported against the next shot and the fixture carries on."""
+    try:
+        page.locator(f'[data-testid="{testid}"]').first.wait_for(timeout=timeout)
+        return True
+    except Exception:
+        _missed.append(f'testid "{testid}"')
+        return False
+
+def expect_text(page, testid, pattern, timeout=5000):
+    """Wait for the text of [data-testid=testid] to match the regex `pattern` (case-insensitive). With testid=None the text of every
+    SVG <text> on the page is searched (for what the scene draws, a head's bark, which has no test ID)."""
+    sel = f'[data-testid="{testid}"]'
+    want = re.compile(pattern, re.I | re.S)
+    deadline = time.time() + timeout / 1000
+    while True:
+        try:
+            if testid is None:
+                txt = page.evaluate("() => [...document.querySelectorAll('text')].map((t) => t.textContent || '').join('\\n')")
+            else:
+                txt = page.locator(sel).first.inner_text(timeout=300)
+            if want.search(txt or ""):
+                return True
+        except Exception:
+            pass
+        if time.time() >= deadline:
+            break
+        time.sleep(0.15)
+    _missed.append(f'text /{pattern}/ in ' + (f'testid "{testid}"' if testid else "the scene's text"))
+    return False
+
 def shot(page, name, wait=0.6):
+    _flush_missed(name)
     time.sleep(wait)
     p = os.path.join(OUT, f"{name}.png")
     page.screenshot(path=p)
@@ -172,15 +226,51 @@ def quiet_start(pg, wait=0.2):
     """A short settle: dismiss a due scene or popup, but keep the clock (a golden pizza stays 12 s)."""
     settle(pg, wait)
 
+# ---- saves several fixtures share ----
+LATE_SAVE = dict(MID_SAVE, cash=1.5e6, vehicle=3, active="industrial", dronesUnlocked=False,
+                 shops={
+                     "downtown": shop(prep=85, ovens=80, grade=3, counter=82, drivers=40, tables=60, footprint=3, sold=7e5),
+                     "suburbs": shop(prep=75, ovens=70, grade=3, counter=72, drivers=34, tables=50, footprint=3, sold=6e5),
+                     "waterfront": shop(prep=66, ovens=60, grade=3, counter=62, drivers=30, tables=45, footprint=2, sold=4e5),
+                     "university": shop(prep=58, ovens=52, grade=3, counter=55, drivers=26, tables=38, footprint=2, sold=3e5),
+                     "industrial": shop(prep=52, ovens=48, grade=3, counter=50, drivers=22, tables=34, footprint=2, sold=360500),
+                     "uptown": shop(managed=False, sold=0),
+                 },
+                 seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:18] + ["uptown-1"], scrapbookViewed=19)
+TIED_SAVE = dict(MID_SAVE, cash=500, active="downtown", scrapbookViewed=8,
+                 shops=dict(MID_SAVE["shops"], downtown=shop(prep=6, ovens=8, counter=20, drivers=30, tables=4)))
+FRUGAL_SAVE = dict(MID_SAVE, cash=1000, vehicle=0, active="downtown", seenScenes=["downtown-1", "downtown-2", "downtown-3"], scrapbookViewed=3,
+                   shops={"downtown": shop(managed=False, prep=3, ovens=3, counter=3, drivers=3, sold=40), "suburbs": shop(built=False, managed=False),
+                          "waterfront": shop(built=False, managed=False), "university": shop(built=False, managed=False),
+                          "industrial": shop(built=False, managed=False), "uptown": shop(built=False, managed=False)})
+
 # ---- per-card fixtures: scripts/fixtures/NN_card.py, each with run(ctx) ----
 FIXTURES = os.path.join(ROOT, "scripts", "fixtures")
 
-def run_fixtures(browser):
+def fixture_files():
+    return sorted(f for f in os.listdir(FIXTURES) if f.endswith(".py") and not f.startswith("_")) if os.path.isdir(FIXTURES) else []
+
+def wanted(name, only):
+    """`--only` matches a fixture by its file name without `.py` (56_u1) or by its number prefix alone (56)."""
+    stem = name[:-3]
+    return only is None or any(stem == t or stem.split("_")[0] == t for t in only)
+
+def run_fixtures(browser, only=None):
     """Import every scripts/fixtures/*.py in sorted order and call its run(ctx). A fixture that raises is reported, not fatal.
+    `only` (default: --only on the command line) limits the run to those fixtures.
     ctx has: browser, report, version, out (the screenshots folder)."""
     import importlib.util, types
+    only = ONLY if only is None else only
     ctx = types.SimpleNamespace(browser=browser, report=report, version=VERSION, out=OUT)
-    for name in sorted(f for f in os.listdir(FIXTURES) if f.endswith(".py") and not f.startswith("_")) if os.path.isdir(FIXTURES) else []:
+    names = fixture_files()
+    for t in only or []:
+        if not any(wanted(n, [t]) for n in names):
+            report["errors"].append(f"--only {t}: no such fixture in scripts/fixtures/")
+    for name in names:
+        if not wanted(name, only):
+            continue
+        _current["fixture"] = name
+        del _missed[:]
         try:
             spec = importlib.util.spec_from_file_location(f"fixture_{name[:-3]}", os.path.join(FIXTURES, name))
             mod = importlib.util.module_from_spec(spec)
@@ -188,3 +278,4 @@ def run_fixtures(browser):
             mod.run(ctx)
         except Exception as e:
             report["errors"].append(f"fixture {name} failed: {e}")
+        _flush_missed("(none: the fixture ended first)")

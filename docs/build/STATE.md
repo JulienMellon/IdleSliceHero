@@ -31,3 +31,4 @@ next: fresh session; read docs/build/sessions/S1-loop-update.md (the loop update
 - 2026-11-13 16:55 UTC Loop audit: plan in docs/PLAN-loop-improvements.md; Julien approved the loop update before v5.16 (DECISIONS 26–32). Cards in docs/build/v5.15-loop/; v5.16 gains U5. Screenshots v0.1–v4.9 moved to idleslicearchive.
 - 2026-11-13 Handoff pointers plan: v5.17 gains U4 (wave 3) and L1's measured perf step; E0 gains step 3b (winnable orders); sessions push their branch and open a PR (DECISIONS 33–34). No new version.
 - 2026-11-13 Q6 done: loop_stats.py + METRICS.md (5.14, 5.15 rows). Needs: round = first-to-last rN commit (r3 14 min vs plan 22); kept, Julien may change.
+- 2026-11-13 Q2 partial (refactor done, no deps to run). Installed npm deps + py playwright, exported; Q2 resumed for steps 2-3.

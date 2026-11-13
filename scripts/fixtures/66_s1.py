@@ -51,6 +51,8 @@ def run(ctx):
     for _ in range(10):
         tap_shop(page)
         time.sleep(0.12)
+    # the bark is SVG text with no test ID: look for one of the three Downtown rush lines (content/heads.ts BARKS.downtown.*.rush)
+    expect_text(page, None, r"Dough.s flying|Nobody touches the oven door|Mrs\. Russo", 2000)
     shot(page, "70-head-rush-bark", 0.3)
 
     # 71: Head of the Week: the only hired head in the city is the week's pick, so the star pin shows on its badge (and it says so)
