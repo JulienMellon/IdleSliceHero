@@ -23,7 +23,6 @@ next: fix r2: U1 + S1 running; E1 (owner E, incl. A30) after U1 reports; A-owner
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-12 U1 PARTIAL: needs U-lane files outside card (app/index.tsx, shop-ui.tsx, G95/D454); sent back to U1 per OWNERS. Open: buyMany/buyCosmetic in components (owner E may move).
 - 2026-11-12 U1 done (G95, D454, D455 fixed in U files; 460 component tests pass). Waiting on S1.
 - 2026-11-12 S1 done (D450 fixed; 478 tests pass). Out-of-scope asks sent: features.test pin → E1, Tasks-drawer star → U1.
 - 2026-11-12 Waves done. Verify r1: tsc clean, 895 tests pass, export ok; screenshots v5.15 running (pip-installed playwright 1.63.0).
@@ -33,3 +32,4 @@ next: fix r2: U1 + S1 running; E1 (owner E, incl. A30) after U1 reports; A-owner
 - 2026-11-12 r1 codecritic CHANGES REQUESTED (0 high, 5 medium, 19 low). Gate not met; fix round r2: U1 + S1 sent, E1 queued.
 - 2026-11-13 U1 + S1 hit the 5-hour limit mid r2; resumed after reset (U1 had partial edits on disk).
 - 2026-11-13 r2 U1 done (21 U rows fixed; carry D465 needs copy key, M63, U9). E1 r2 launched (owner E + A30/A31). S1 still running.
+- 2026-11-13 r2 S1 done (G99, G100, D458, D459, D470, A29 fixed; D450 partial; A28/M60/U10/U11 carry). Waiting on E1.
