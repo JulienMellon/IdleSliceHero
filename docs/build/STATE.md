@@ -3,23 +3,20 @@
 Keep this file under 40 lines. It is the only file the orchestrator edits by hand.
 
 ```
-version: 5.15
-step: close                   # setup | waves | verify | review | fix | close
-round: r3              # r1 | r2 | r3
+version: 5.16
+step: waves                    # setup | waves | verify | review | fix | close
+round: r1              # r1 | r2 | r3
 last_shots: v5.15-r3      # label of the last screenshot set that passed verify
-codecritic_range_start: 5d82004
+codecritic_range_start: f83d281
 cards:                 # todo | running | done | partial | blocked
-  W1: done
-  E1: done
-  U1: done
-  S1: done
+  (from docs/build/v5.16/VERSION.md)
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.15/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 8; U5 S3; carried)
   code:   docs/build/v5.15/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 16; E8 U4 S4 A2; C116/C117 carry)
   story:  docs/build/v5.15/review-r0-story.md (r0 NOT SATISFIED; bug 0 major 0 minor 6; E1 U2 T3)
   audio:  AUDIOLOG.md (next ID AU78)
-open: v5.14 carried notes (G95 + minors): rows in docs/build/v5.14/review-r3-critic.md
-next: r3 critic medium re-check running; then gate (r3 = last: bug/major open → stop, report Julien; only minors → close).
+open: v5.15 carried: critic minors (docs/build/v5.15/review-r3-critic.md); code C116, C117 + lows (docs/build/v5.15/review-r2-code.md); story r0 minors; D465 needs copy key.
+next: v5.16 wave 1 in a fresh session. Carried notes: docs/build/v5.15/review-r3-critic.md and docs/build/v5.15/review-r2-code.md.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
