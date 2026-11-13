@@ -46,3 +46,6 @@ Every card also gets: `extra: Carried notes: rows with your owner letter in <las
 
 ## Close
 The gate here is the web loop only. Native paths are verified by Julien on a device with `DEVICE-CHECKLIST.md`; its failures come back as bugs for a fix round in a later session. After APPROVED, set `codecritic_range_start` to this version's closing commit.
+
+## Handoff notes
+`HANDOFF-perf-and-ui.md` in this folder: a partial performance audit (feeds L1 item 4) and outlines for three UI cards (first-session focus, one sky event at a time, rewards that look claimable). Julien put the UI cards in v5.17 on 2026-11-13; they are not yet written as cards and are not in the Cards table above.
