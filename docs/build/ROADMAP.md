@@ -8,12 +8,12 @@ For Julien. The orchestrator does not read this file. Written 2026-11-11 against
 | --- | --- | --- | --- |
 | **5.14** | Retention (night oven, welcome-back gift, teaser, golden-pizza polish, scene minors), then the seams | B3, R3, C3, K0a, K0b | critic |
 | **5.15** | Endgame, economy close-out, recipe cards, head reactions, events, cosmetics drawn, shops | W1, E1, U1, S1 | critic, codecritic, storycritic on the copy doc |
-| **5.16** | Five neighbourhood layers, the rival, the drone job, the Todd B-plot and every pending story item | W2, E2a, E2b, T1a, S2a, S2b, T1b | critic, codecritic, storycritic |
+| **5.16** | Playtest 3 (economy and session 1, manager prices, reward cuts, the shop report, the five managers in the story), then five neighbourhood layers, the rival, the drone job, the Todd B-plot and every pending story item | W2, E0, E2a, P1, E2b, T1a, S2a, S2b, T1b | critic, codecritic, storycritic |
 | **5.17** | Ads, purchases, analytics, crash reporting, audio on device, Settings, the site, accessibility, store assets. The TestFlight candidate | N1, A1, U3, L1 | critic, codecritic, audiocritic |
-| **5.18** | The city as data, the franchise, Boston, Audio v2 | K1, W3, E3, T2, A2 | all four |
+| **5.18** | The city as data, the scrolling shop, the franchise, Boston, Audio v2 | K1, V1, W3, E3, T2, A2, V2 | all four |
 | **5.19** | Chicago, New York, Los Angeles, the Victor Crust showdown | W4b, W4s × 3, E4, CITY × 3, A3 | all four, mostly at low effort |
 
-That is 34 card runs for the wishlist's 65 items. I recommend submitting to the App Store after 5.17 and shipping 5.18 and 5.19 as content updates; the "Coming soon: Boston" card from 5.15 covers the gap.
+That is 38 card runs (34, plus E0 and P1 in 5.16 and V1 and V2 in 5.18 from playtest 3 on 2026-11-13) for the wishlist's 65 items. I recommend submitting to the App Store after 5.17 and shipping 5.18 and 5.19 as content updates; the "Coming soon: Boston" card from 5.15 covers the gap.
 
 ## Why six and not fewer
 A version boundary costs one full verify, one screenshot run and one round of critics, so fewer is cheaper, up to the point where a single round can no longer tell which change broke what. Five things force a boundary:

@@ -16,11 +16,10 @@ reviews:               # latest review file per critic, with verdict and counts
   story:  docs/build/v5.15/review-r0-story.md (r0 NOT SATISFIED; bug 0 major 0 minor 6; E1 U2 T3)
   audio:  AUDIOLOG.md (next ID AU78)
 open: v5.15 carried: critic minors (docs/build/v5.15/review-r3-critic.md); code C116, C117 + lows (docs/build/v5.15/review-r2-code.md); story r0 minors; D465 needs copy key.
-next: v5.16 wave 1 in a fresh session. Carried notes: docs/build/v5.15/review-r3-critic.md and docs/build/v5.15/review-r2-code.md.
+next: v5.16 wave 1 (W2 + E0) in a fresh session; VERSION.md was rewritten for playtest 3 (9 cards, 8 waves). Carried notes: docs/build/v5.15/review-r3-critic.md and docs/build/v5.15/review-r2-code.md.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-13 r2 U1 done (21 U rows fixed; carry D465 needs copy key, M63, U9). E1 r2 launched (owner E + A30/A31). S1 still running.
 - 2026-11-13 r2 S1 done (G99, G100, D458, D459, D470, A29 fixed; D450 partial; A28/M60/U10/U11 carry). Waiting on E1.
 - 2026-11-13 r2 E1 done (C110-C112, A30, A31, T85-T88). Verify r2: tsc clean, 917 tests, API digest, export ok; shots v5.15-r2 running.
 - 2026-11-13 Verify r2 passed (True 0 []; 83 changed vs v5.15). Pushed; critic + codecritic r2 launched.
@@ -30,3 +29,4 @@ next: v5.16 wave 1 in a fresh session. Carried notes: docs/build/v5.15/review-r3
 - 2026-11-13 r3 U1 done (G95, G98, G101-G103, D469, D468, C119). Verify r3: tsc clean, 939 tests, export ok; shots v5.15-r3 running.
 - 2026-11-13 Verify r3 passed (True 0 []; 78 changed vs r2). Pushed; critic r3 launched.
 - 2026-11-13 r3 critic: 0 bugs, 0 major, 8 minor (U5 S3) → close per 4.5; minors carry. v5.15 closed.
+- 2026-11-13 Playtest 3 planned: v5.16 gains E0, P1 and edits to W2, T1a, T1b, E2b; v5.18 gains V1, V2. Decisions 19–25 in DECISIONS.md.

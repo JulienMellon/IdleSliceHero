@@ -15,12 +15,14 @@ This version first turns "the city" from constants into data, with no behaviour 
 | E3 | E | Franchise reset, permanent multiplier, the number ceiling | `card-E3.md` |
 | T2 | T+S | Boston pack: data, scenes, portraits, backdrops | `card-T2.md` |
 | A2 | A | Audio v2 and the Boston theme | `card-A2.md` |
+| V1 | S | The shop's width as data and a scroll container: no pixel change | `card-V1.md` |
+| V2 | S+U | Wide Restaurant and Flagship, mirrored floor plan, off-screen cues | `card-V2.md` |
 
 ## Waves
-1. **K1 + W3.** K1's gate is the same as the v5.14 seam: after it, run the verify block with label `v5.18-seam`; the review index must show 0 new and 0 changed shots and every test must pass. Commit.
+1. **K1 + W3**, then **V1** in K1's slot once K1 has reported (both are no-change seams). The gate is the same as the v5.14 seam: after K1 and V1, run the verify block with label `v5.18-seam`; the review index must show 0 new and 0 changed shots and every test must pass. Commit.
 2. Doc review: `storycritic`, **full effort**, on `docs/story/BOSTON-SCRIPT.md` only. Review file `review-r0-story.md`. Send its majors and minors back to the W3 writer; allow two passes. A script is far cheaper to fix as a document than as scenes and screenshots.
 3. **E3 + T2.** `extra` for T2: `Script: docs/story/BOSTON-SCRIPT.md. City schema: docs/API.md (src/content/cities).`
-4. **A2**, with T2's or E3's fix work if any.
+4. **A2 + V2**, with T2's or E3's fix work if any. V2 adds shots 140–147 and is reviewed with the rest in r1.
 5. Verify, commit, review, fix rounds.
 
 ## Reviews
@@ -33,13 +35,16 @@ This version first turns "the city" from constants into data, with no behaviour 
 | E | E3 (K1 for city-data plumbing) |
 | T, S | T2 |
 | A | A2 |
-| U | T2 (city picker and franchise screens are in its files) |
+| U | T2 (city picker and franchise screens are in its files); V2 for the off-screen cues |
+| S (the scrolling shop) | V1 for the frame and scrolling, V2 for wide layouts and mirroring |
 
 ## Defaults
 - **No big-number library.** Cash and costs reset on a franchise and each city's curve stays under 1e300; card E3 proves it with a test over all five planned cities. Only if that test can't be made to pass does a library go in, as its own card in a later session.
 - **What a franchise keeps:** diamonds, cosmetics, recipe cards, mastery stars already earned, the Scrapbook, purchases. Everything else follows `docs/specs/PRESTIGE.md`.
 - **Boston's layers:** each Boston neighbourhood reuses one of the six existing layer types by data; no new layer code in this version.
 - **Refit:** Boston is fitted to the same day targets as the home city, shifted by the multiplier the prestige design gives.
+
+- **The scrolling shop (Julien, 2026-11-13):** built here, after the city as data, so both seams share one no-change verify. Taps stay enough to reach everything; dragging is an addition.
 
 ## Close
 After APPROVED, set `codecritic_range_start` to this version's closing commit.

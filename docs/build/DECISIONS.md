@@ -22,3 +22,16 @@ The build never waits on these. Each has a default the cards already use. Correc
 | 16 | The casts of Chicago, New York and Los Angeles | Written as a bible first; the build stops for your approval before any script is written | 5.19 |
 | 17 | When to submit to the App Store | After 5.17. Boston and the later cities ship as updates | after 5.17 |
 | 18 | Version numbering | Fix rounds keep the version number | now |
+
+## Decided by Julien, 2026-11-13 (playtest 3)
+| # | Decision | Answer | Bites in |
+| --- | --- | --- | --- |
+| 19 | Session 1 length | About 40 minutes; Suburbs opens at 16 | 5.16 · E0 |
+| 20 | When a later shop's manager arrives | About a full day after the build, just before the next neighbourhood | 5.16 · E0 |
+| 21 | Cash rewards | Cut 70 to 80% | 5.16 · E0 |
+| 22 | Service stakes | Consequences: +10% at 90% served, −10% after a minute under 60% | 5.16 · P1 |
+| 23 | The bottleneck guidance | The red "buy this" frame goes after the tutorial; "Buy both" stays | 5.16 · P1 |
+| 24 | The five managers | Deb (Suburbs), Skip (Waterfront), Noor (University), Dee (Industrial), Anton (Uptown) | 5.16 · W2, T1a, T1b |
+| 25 | The scrolling shop | Build it in 5.18, after the city as data | 5.18 · V1, V2 |
+
+Two rules follow from 20 and 22 and are the cards' defaults; correct them before v5.16 starts if you disagree. With the manager a day away, a shop with all three heads earns at half speed while you're away (otherwise the newest shop would earn nothing offline for a day). The cold line costs 10% of value rather than walk-ins, because fewer walk-ins changes nothing while the kitchen is the limit; the shorter queue is drawn in 5.18.
