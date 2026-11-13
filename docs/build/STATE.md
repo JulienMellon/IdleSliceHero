@@ -16,7 +16,7 @@ reviews:               # latest review file per critic, with verdict and counts
   story:  docs/build/v5.15/review-r0-story.md (r0 NOT SATISFIED; bug 0 major 0 minor 6; E1 U2 T3)
   audio:  AUDIOLOG.md (next ID AU78)
 open: v5.15 carried: critic minors (docs/build/v5.15/review-r3-critic.md); code C116, C117 + lows (docs/build/v5.15/review-r2-code.md); story r0 minors; D465 needs copy key.
-next: the loop update first, in a fresh session: read docs/build/v5.15-loop/VERSION.md (it overrides README sections 5, 7 and 8; no version bump, no critics) and launch wave 1 (Q2 + Q6). Its close sets version 5.16 and last_shots v5.15-loop. Then v5.16 wave 1 (W2 + E0) in another fresh session: 10 cards, 9 waves (U5 added). Carried notes: docs/build/v5.15/review-r3-critic.md and docs/build/v5.15/review-r2-code.md.
+next: fresh session; read docs/build/sessions/S1-loop-update.md (the loop update: wave 1 is Q2 + Q6). Then v5.16 in two sessions, v5.17, v5.18; each session file names the next. Carried notes: docs/build/v5.15/review-r3-critic.md and docs/build/v5.15/review-r2-code.md.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
