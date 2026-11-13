@@ -20,7 +20,6 @@ next: the loop update first, in a fresh session: read docs/build/v5.15-loop/VERS
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-13 r2 E1 done (C110-C112, A30, A31, T85-T88). Verify r2: tsc clean, 917 tests, API digest, export ok; shots v5.15-r2 running.
 - 2026-11-13 Verify r2 passed (True 0 []; 83 changed vs v5.15). Pushed; critic + codecritic r2 launched.
 - 2026-11-13 r2 critic NOT SATISFIED (5 bugs, 1 major, 8 minor; U8 S6). Waiting on codecritic.
 - 2026-11-13 r2 codecritic APPROVED (0 high, 2 medium). Critic not met; fix round r3: U1 + S1 sent.
@@ -30,3 +29,4 @@ next: the loop update first, in a fresh session: read docs/build/v5.15-loop/VERS
 - 2026-11-13 r3 critic: 0 bugs, 0 major, 8 minor (U5 S3) → close per 4.5; minors carry. v5.15 closed.
 - 2026-11-13 Playtest 3 planned: v5.16 gains E0, P1 and edits to W2, T1a, T1b, E2b; v5.18 gains V1, V2. Decisions 19–25 in DECISIONS.md.
 - 2026-11-13 16:55 UTC Loop audit: plan in docs/PLAN-loop-improvements.md; Julien approved the loop update before v5.16 (DECISIONS 26–32). Cards in docs/build/v5.15-loop/; v5.16 gains U5. Screenshots v0.1–v4.9 moved to idleslicearchive.
+- 2026-11-13 Handoff pointers plan: v5.17 gains U4 (wave 3) and L1's measured perf step; E0 gains step 3b (winnable orders); sessions push their branch and open a PR (DECISIONS 33–34). No new version.

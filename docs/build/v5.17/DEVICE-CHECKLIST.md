@@ -39,3 +39,5 @@ The web loop can't run native code. These checks need a development build on a r
 - [ ] S. VoiceOver: you can buy an upgrade and read a cut-scene with the screen off.
 - [ ] T. Twenty minutes of play on battery: the phone is not hot; note the battery drop.
 - [ ] U. Background the app for an hour, return: the welcome-back gift shows the right time.
+- [ ] V. Flagship shop (Industrial at the top tier) with the Expo performance monitor on: note the UI and JS frame rates over 20 seconds. The web numbers in card L1's report don't carry over to a phone.
+- [ ] W. The same shop with a sheet open over it (tasks, then the shop report): the frame rate should rise, because the scene pauses.

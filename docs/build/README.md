@@ -78,8 +78,9 @@ git config user.email "$(grep -o 'user.email="[^"]*"' HANDOFF.md | head -1 | cut
 Then per round:
 ```
 git add -A && git commit -q -m "v$V $ROUND: <one line>" -m "<this session's attribution lines>"
-git fetch -q origin main && git rebase -q origin/main && git push -q origin main; git log -1 --format=%h
+git fetch -q origin main && git rebase -q origin/main && git push -q -u origin "$(git branch --show-current)"; git log -1 --format=%h
 ```
+A cloud session may push only to its own `claude/` branch, so `main` moves by pull request (Julien, 2026-11-13): when the session ends, open one pull request from that branch to `main` and give Julien the link. Don't watch it. Wherever this folder says `git push -q origin main`, push the session's branch instead. The next session starts from `main` after he merges.
 
 ## 7. Review prompts
 Review file names: `docs/build/<version>/review-<round>-critic.md`, `-code.md`, `-story.md`, `-audio.md`. `PREV` is the same critic's most recent review file from STATE (`reviews:` block).
@@ -93,6 +94,8 @@ Write your critique to docs/build/<version>/review-<round>-critic.md and return 
 ```
 Codecritic: same shape, with `Git range: <codecritic_range_start>..HEAD`, `Paths: <from VERSION.md>`, and `tsc and the full test suite passed at this commit; don't re-run them`.
 Storycritic and audiocritic: same shape, with the files VERSION.md names and the effort it names.
+
+Model: launch r2 and r3 re-checks and low-effort document reviews with `model: sonnet`. r1 reviews, and every codecritic run whose paths include `src/services`, `src/store` or a save migration, keep the session's model.
 
 After each critic returns, record in STATE: the verdict, the three counts, the owner counts, and the review file path. Nothing else.
 
