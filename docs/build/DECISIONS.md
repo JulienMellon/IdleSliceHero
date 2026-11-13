@@ -51,3 +51,9 @@ One default from the same plan is still unconfirmed and follows the rule at the 
 | # | Decision | Default the plan uses | Bites in |
 | --- | --- | --- | --- |
 | 32 | Lint: `AGENTS.md` says to run it, the programmer brief forbids it, and no ESLint config exists | Drop the instruction from `AGENTS.md` until ESLint is set up. `tsc`, the tests and the layout check are the gates | loop · Q4 |
+
+## Decided by Julien, 2026-11-13 (handoff pointers plan)
+| # | Decision | Answer | Bites in |
+| --- | --- | --- | --- |
+| 33 | The seven ideas in `docs/REVIEW-v5.15-pacing.md` | Only idea 5 (special orders that can be won by playing) is built. Ideas 1 (spread the beats over check-ins), 2 (a ladder of sub-goals, or a nearer goal on the bar) and 7 (the 8-hour oven on day 0) are not planned. Ideas 3 and 6 are met by card E0's manager timing. Idea 4 (a meter paying 30 minutes of income) contradicts the reward cuts and is dropped | 5.16 · E0 step 3b |
+| 34 | How a cloud session's work reaches `main` | Each session pushes its own `claude/` branch and opens one pull request when it ends; Julien merges | README section 6 |

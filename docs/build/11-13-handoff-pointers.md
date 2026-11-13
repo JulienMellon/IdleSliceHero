@@ -72,3 +72,21 @@ PR #1 (`docs/loop-improvement-plan`) carried all of the above into `main`.
 - **Timings** in the plan were taken on a 2-core sandbox (`npm test` took 121 s there; HANDOFF says about 70 s). Compare ratios, not seconds.
 - **Not saved anywhere:** the screenshots of the two same-build runs and the probe's full output (scratch folders, gone). The counts are in the plan and the scripts in `poc/` reproduce them: about 8 minutes a run. Two earlier frozen-clock attempts that failed are described in the plan's table, not kept as code.
 - `docs/logs/CRITICLOG-archive.md` still names paths under `screenshots/v2.0/`; those files are now in the archive repo.
+
+## Status after the planning session of 2026-11-13 (evening)
+Everything above is placed. It is built in the versions that already existed (the loop update, then v5.16, v5.17 and v5.18); no version was added. Nothing is built yet.
+
+| Open item above | Resolved how |
+| --- | --- |
+| The three UI cards "not yet in the Cards table" | Written as one card, `docs/build/v5.17/card-U4.md`, wave 3 of v5.17 |
+| The performance audit "feeds card L1 item 4" | Written into `docs/build/v5.17/card-L1.md` step 4 (measure first with `scripts/review/perf.py`, then fix only what the numbers show). Phone measurements are items V and W of `DEVICE-CHECKLIST.md` |
+| The pacing review's seven ideas | Julien chose idea 5 only: `docs/build/v5.16/card-E0.md` step 3b. The rest are not planned (DECISIONS #33) |
+| Pacing F2 and F4 against card E0 | F2: E0's session-1 and manager targets already change day 0; no edit. F4: its fix was idea 4, dropped because it contradicts the reward cuts |
+| Pacing F3 (the goal bar) against card P1 | Not planned (idea 2 was not chosen); P1 is unchanged |
+| Card U5 against the three UI outlines | U5 covers the small text only. U4 runs a version later, in files U5 has sized, and carries the layout rule |
+| v5.16's cards and L1 written for the old screenshot tools | Card Q4 adds the line to every spawn prompt; L1 step 5 and U4 now say it themselves |
+| Sessions told to push to `main` | README section 6: push the session's branch and open one pull request (DECISIONS #34) |
+
+**Running order:** (1) the loop update; (2) v5.16 waves 1 to 5, ending on a `tsc` and tests checkpoint; (3) v5.16 waves 6 to 8, verify and reviews; (4) v5.17; (5) v5.18. Each is a fresh session that ends with a pull request.
+
+**For the orchestrator, to keep tokens down** (on top of the README): re-check rounds (r2, r3) and low-effort document reviews run their critic with `model: sonnet`; the codecritic on money, consent and save-migration paths keeps the session's model. Scratch scripts listed above as "not saved anywhere" are not rebuilt unless a card asks for one.

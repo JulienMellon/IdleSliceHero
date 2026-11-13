@@ -15,11 +15,13 @@ Everything that needs a development build goes into this one version, so there i
 | A1 | A | SFX and stingers on `react-native-audio-api`; other-audio hint | `card-A1.md` |
 | U3 | U+N | Ad buttons, store, Nonna's Plus, Settings | `card-U3.md` |
 | L1 | N | Support and privacy site, accessibility, performance, store shots | `card-L1.md` |
+| U4 | U | First-minute focus, one sky event at a time, tasks and the day-30 prize that look claimable (added 2026-11-13) | `card-U4.md` |
 
 ## Waves
 1. **N1 + A1.**
 2. **U3 + L1.** `extra` for U3: `Services API: docs/API.md (src/services).`
-3. Verify, commit, review, fix rounds.
+3. **U4.** Alone: it edits `src/app/index.tsx` and the rewards UI after L1 and U3 have.
+4. Verify, commit, review, fix rounds.
 
 Every card also gets: `extra: Carried notes: rows with your owner letter in <last v5.16 critic review file>`.
 
@@ -32,7 +34,7 @@ Every card also gets: `extra: Carried notes: rows with your owner letter in <las
 | Owner | Cards |
 | --- | --- |
 | N | N1, L1 |
-| U | U3 |
+| U | U3 (ad buttons, store, Settings); U4 for the tutorial's hints, the strip above the shop, the task rows and the gift calendar |
 | A | A1 |
 | E, S, T | spawn a programmer on the card of the same lane from the version that built the file; name the files in the prompt |
 
@@ -48,4 +50,4 @@ Every card also gets: `extra: Carried notes: rows with your owner letter in <las
 The gate here is the web loop only. Native paths are verified by Julien on a device with `DEVICE-CHECKLIST.md`; its failures come back as bugs for a fix round in a later session. After APPROVED, set `codecritic_range_start` to this version's closing commit.
 
 ## Handoff notes
-`HANDOFF-perf-and-ui.md` in this folder: a partial performance audit (feeds L1 item 4) and outlines for three UI cards (first-session focus, one sky event at a time, rewards that look claimable). Julien put the UI cards in v5.17 on 2026-11-13; they are not yet written as cards and are not in the Cards table above.
+`HANDOFF-perf-and-ui.md` in this folder is the source of card L1 step 4 (the performance audit) and of card U4 (its three UI outlines). Both are written into the cards; no agent needs to read the handoff.

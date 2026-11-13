@@ -27,6 +27,7 @@ Everything that changes the pacing ships together and shares one refit: the new 
 3. **E2a + P1.** `extra` for P1: `Copy: docs/story/COPY-v5.16.md section 7.`
 4. **E2b + T1a.** `extra` for T1a: `Rival API: docs/API.md (features/layers/rival.ts). Copy: docs/story/COPY-v5.16.md.`
 5. **Refit:** when both have reported, continue the E2b agent: `Run step 7 of your card (the refit) now; card T1a has landed.`
+   **Session break (2026-11-13).** After the refit, run `npx tsc --noEmit 2>&1 | tail -3` and `npm test 2>&1 | tail -6`, commit, set STATE's `next:` to `v5.16 wave 6 (S2a + S2b)`, open the pull request and end the session. No screenshots and no critics here: the version still has one verify and one review round, in the next session.
 6. **S2a + S2b.** `extra` for both: `Copy: docs/story/COPY-v5.16.md.`
 7. **T1b.**
 8. **U5.** Alone and last: it edits sizes in files that P1, S2a, S2b and T1b own.
