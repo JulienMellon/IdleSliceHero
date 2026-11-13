@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.15-r3      # label of the last screenshot set that passed verify
 codecritic_range_start: f83d281
 cards:                 # todo | running | done | partial | blocked
-  Q2 running, Q6 running, Q1 todo, Q3 todo, Q4 todo
+  Q2 running, Q6 done, Q1 todo, Q3 todo, Q4 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.15/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 8; U5 S3; carried)
   code:   docs/build/v5.15/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 16; E8 U4 S4 A2; C116/C117 carry)
@@ -30,3 +30,4 @@ next: fresh session; read docs/build/sessions/S1-loop-update.md (the loop update
 - 2026-11-13 Playtest 3 planned: v5.16 gains E0, P1 and edits to W2, T1a, T1b, E2b; v5.18 gains V1, V2. Decisions 19–25 in DECISIONS.md.
 - 2026-11-13 16:55 UTC Loop audit: plan in docs/PLAN-loop-improvements.md; Julien approved the loop update before v5.16 (DECISIONS 26–32). Cards in docs/build/v5.15-loop/; v5.16 gains U5. Screenshots v0.1–v4.9 moved to idleslicearchive.
 - 2026-11-13 Handoff pointers plan: v5.17 gains U4 (wave 3) and L1's measured perf step; E0 gains step 3b (winnable orders); sessions push their branch and open a PR (DECISIONS 33–34). No new version.
+- 2026-11-13 Q6 done: loop_stats.py + METRICS.md (5.14, 5.15 rows). Needs: round = first-to-last rN commit (r3 14 min vs plan 22); kept, Julien may change.
