@@ -14,7 +14,7 @@ cards:                 # todo | running | done | partial | blocked
   U1: done
   S1: done
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.15/review-r1-critic.md (r1 NOT SATISFIED; bug 5 major 4 minor 12; U15 S6)
+  critic: docs/build/v5.15/review-r2-critic.md (r2 NOT SATISFIED; bug 5 major 1 minor 8; U8 S6)
   code:   docs/build/v5.15/review-r1-code.md (r1 CHANGES REQUESTED; blocker/high 0 medium 5 low 19; E10 U9 S3 A2)
   story:  docs/build/v5.15/review-r0-story.md (r0 NOT SATISFIED; bug 0 major 0 minor 6; E1 U2 T3)
   audio:  AUDIOLOG.md (next ID AU78)
@@ -23,7 +23,6 @@ next: r2 critic + codecritic medium re-checks running; record verdicts, then gat
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-12 Waves done. Verify r1: tsc clean, 895 tests pass, export ok; screenshots v5.15 running (pip-installed playwright 1.63.0).
 - 2026-11-12 Verify r1 shots v5.15: 1 error (U1 fixture 62, Boston soon overlay blocks gift-close); sent to U1.
 - 2026-11-12 Verify r1 passed (True 0 []; 21 new, 64 changed). Pushed; critic + codecritic r1 launched.
 - 2026-11-12 r1 critic NOT SATISFIED (5 bugs, 4 major, 12 minor; U15 S6). Waiting on codecritic.
@@ -33,3 +32,4 @@ next: r2 critic + codecritic medium re-checks running; record verdicts, then gat
 - 2026-11-13 r2 S1 done (G99, G100, D458, D459, D470, A29 fixed; D450 partial; A28/M60/U10/U11 carry). Waiting on E1.
 - 2026-11-13 r2 E1 done (C110-C112, A30, A31, T85-T88). Verify r2: tsc clean, 917 tests, API digest, export ok; shots v5.15-r2 running.
 - 2026-11-13 Verify r2 passed (True 0 []; 83 changed vs v5.15). Pushed; critic + codecritic r2 launched.
+- 2026-11-13 r2 critic NOT SATISFIED (5 bugs, 1 major, 8 minor; U8 S6). Waiting on codecritic.
