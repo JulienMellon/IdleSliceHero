@@ -23,7 +23,6 @@ next: fix r3: U1 + S1 running (owner U/S rows in review-r2-*). Then verify r3 (l
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-12 Verify r1 passed (True 0 []; 21 new, 64 changed). Pushed; critic + codecritic r1 launched.
 - 2026-11-12 r1 critic NOT SATISFIED (5 bugs, 4 major, 12 minor; U15 S6). Waiting on codecritic.
 - 2026-11-12 r1 codecritic CHANGES REQUESTED (0 high, 5 medium, 19 low). Gate not met; fix round r2: U1 + S1 sent, E1 queued.
 - 2026-11-13 U1 + S1 hit the 5-hour limit mid r2; resumed after reset (U1 had partial edits on disk).
@@ -33,3 +32,4 @@ next: fix r3: U1 + S1 running (owner U/S rows in review-r2-*). Then verify r3 (l
 - 2026-11-13 Verify r2 passed (True 0 []; 83 changed vs v5.15). Pushed; critic + codecritic r2 launched.
 - 2026-11-13 r2 critic NOT SATISFIED (5 bugs, 1 major, 8 minor; U8 S6). Waiting on codecritic.
 - 2026-11-13 r2 codecritic APPROVED (0 high, 2 medium). Critic not met; fix round r3: U1 + S1 sent.
+- 2026-11-13 r3 S1 done (D471/D450 partial; D472, D474, D459, D470, U15 fixed). Waiting on U1.
