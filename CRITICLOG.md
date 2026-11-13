@@ -44,3 +44,4 @@ v5.13 = golden pizza + special orders, economy refit (4 h cap, costMult = order 
 
 **Next IDs:** G95, D447.
 - v5.14 closed 2026-11-12: critic NOT SATISFIED r3 (G95 accepted by Julien, carried) — notes: docs/build/v5.14/review-r3-critic.md
+- v5.15 closed 2026-11-13: critic NOT SATISFIED (minors only, 8 carry) r3 — notes: docs/build/v5.15/review-r3-critic.md

@@ -60,3 +60,4 @@ Fixed: C102 (T78), C103 (T79), M59. v5.12 numbers are numerically safe (max cost
 
 **Next IDs:** K1, C110, A30, M62, U12, T85.
 - v5.14 closed 2026-11-12: codecritic skipped — notes: docs/build/v5.14/review-r3-code.md
+- v5.15 closed 2026-11-13: codecritic APPROVED r2 — notes: docs/build/v5.15/review-r2-code.md
