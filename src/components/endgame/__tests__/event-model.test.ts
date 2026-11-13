@@ -1,7 +1,7 @@
 /// <reference types="jest" />
-import '../../../engine/game';
+import '../../../engine/features'; // registers the features (A31)
 import { eventView } from '../../../engine/features/events';
-import { eventBannerView, eventChipText, eventTime } from '../event-model';
+import { eventBannerView, eventChipText, eventTime, eventViewNow } from '../event-model';
 
 const at = (y: number, m: number, d: number, h = 0, mi = 0, s = 0) => new Date(y, m - 1, d, h, mi, s).getTime();
 // Fri 2026-11-13 (Friday Night Rush 17:00-21:00), Sun 2026-11-15 (Big Game Day 13:00-16:00)
@@ -65,5 +65,16 @@ describe('time text', () => {
     expect(eventTime(60)).toBe('1m');
     expect(eventTime(59)).toBe('59s');
     expect(eventTime(0)).toBe('0s');
+  });
+});
+
+describe('U14: one eventView per whole second', () => {
+  test('the same answer within a second, a new one the next', () => {
+    const t = FRI(16, 30);
+    const a = eventViewNow(t + 100);
+    expect(eventViewNow(t + 900)).toBe(a);
+    expect(eventViewNow(t + 1100)).not.toBe(a);
+    expect(eventChipText(eventViewNow(t + 1100))).toBe('Rush: 30m left');
+    expect(eventViewNow(at(2026, 11, 12, 12))).toBeNull();
   });
 });

@@ -4,7 +4,7 @@ import { FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES } from '../../../content/tuning'
 import type { NeighborhoodId } from '../../../content/types';
 import * as G from '../../../engine/game';
 import { masteryTotal, nextStar } from '../../../engine/features/mastery';
-import { masteryGoal, goalLabelFit } from '../../goal-model';
+import { masteryGoal, goalLabelFit, STAR_UNIT } from '../../goal-model';
 import { masteryNewsText, nextStarLine, pipBits, starName, starPath, starPips, starToast } from '../mastery-model';
 
 const IDS = NEIGHBORHOODS.map((n) => n.id);
@@ -30,7 +30,9 @@ describe('post-story goal bar (D427)', () => {
     expect(goal.label.startsWith('Mastery 1/18')).toBe(true);
     const next = nextStar(g)!;
     expect(goal.label).toContain(nextStarLine(next));
-    expect(goal.text).toBe(`${next.have}/${next.need}`);
+    expect(goal.text).toBe(`${next.have}/${next.need} ${STAR_UNIT[next.star]}`);
+    // D466: never a bare fraction
+    expect(goal.text).toMatch(/^\d+\/\d+ [a-z]+$/);
   });
 
   test('all 18: the count alone and a star', () => {

@@ -235,7 +235,7 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
       })()}
       {pilaster(L - 6, L + 8, 'l')}
       {pilaster(R - 8, R + 6, 'r')}
-      {/* the master's plaque: brass on the right pilaster, by the door (cosmetics.ts `plaqueRect`) */}
+      {/* the master's plaque: brass on the brick header over the door (cosmetics.ts `plaqueRect`, 34 x 22) */}
       {plaque && (() => {
         const r = plaqueRect(lay);
         return (

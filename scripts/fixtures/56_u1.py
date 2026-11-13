@@ -130,11 +130,12 @@ def run(ctx):
     except Exception as e:
         report["errors"].append(f"U1 59 failed: {e}")
 
-    # 60: the challenge is running and the pies are behind the clock: "tap to rush!"
+    # 60: the challenge is running and the pies are behind the clock: "tap to rush!" (D467). A mid-game Suburbs (about 7.7 pies/s, so a
+    # five minute challenge asks for ceil(300 x 7.7 x 1.25) = 2,888 pies) with 580 sold and 150 s left: 20% of the pies, 50% of the time.
     try:
-        sold = 5.1e6
-        ch = {"target": 2900, "startSold": int(sold - 580), "left": 150}
-        page = seeded_page(browser, endgame_save(x=attack_state("suburbs", challenge=ch))); ready(page)
+        sv = hooks_save(sold=5000)
+        sv["x"] = attack_state("suburbs", challenge={"target": 2888, "startSold": 5000 - 580, "left": 150})
+        page = seeded_page(browser, sv); settle(page, 3.0)
         shot(page, "60-challenge-behind", 0.8)
     except Exception as e:
         report["errors"].append(f"U1 60 failed: {e}")
@@ -193,7 +194,7 @@ def run(ctx):
     try:
         sv = endgame_save(cash=8.4e12, active="uptown")
         page = seeded_page(browser, sv); ready(page)
-        tid(page, "buy-amount-max").click()
+        tid(page, "buy-amount").click(); tid(page, "buy-amount").click()
         shot(page, "65-sidewalk-max", 0.8)
     except Exception as e:
         report["errors"].append(f"U1 65 failed: {e}")

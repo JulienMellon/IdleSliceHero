@@ -3,6 +3,8 @@
 import { CAMEO, CAMEO_NONNA_LINES } from '../../../content/heads';
 import { FOOTPRINTS, NEIGHBORHOODS } from '../../../content/tuning';
 import { VISITORS } from '../../../content/rewards';
+import { neonSpot } from '../cosmetics';
+import { staffFaces } from '../stations';
 import { SAY_MAX_CHARS, TAG_H, VISITOR_LOOK, cameoGeom, sayHeight, sayLines, cameoSpot, linesOf, tagWidth, visitLine, visitOf, visitTag } from '../cameo';
 import { candidates, fixedPeople, hits, obstacles } from '../ladder';
 import { layout } from '../layout';
@@ -74,31 +76,39 @@ describe('the lines', () => {
   });
 });
 
-describe('where the visitor stands (budget)', () => {
-  test('at every footprint and counter crew: clear of the cashiers, and the tag and the line stay in the walls, off the badges, the doorway and the wall props', () => {
+describe('where the visitor stands (budget; G100)', () => {
+  test('at every footprint and counter crew she stands in front of the counter, clear of the order spot and the pickup spots, and her tag sits on her head, clear of faces, badges, the doorway, the neon sign and the wall gear', () => {
     for (let fp = 0; fp < FOOTPRINTS.length; fp++)
       for (const staff of [1, 2, 3])
         for (const tagText of ['7d 0h', '6d 23h', '5h 12m']) {
           const lay = shopAt(fp, staff);
           const g = cameoGeom(lay, tagText);
-          // a body's width apart from every cashier
-          for (const sx of lay.staff) expect(Math.abs(sx - g.spot.x)).toBeGreaterThanOrEqual(24);
           expect(g.spot).toEqual(cameoSpot(lay));
-          // by the counter: inside its span
+          // in FRONT of the counter (it stands at 64 … 84): the box stack cannot hide her
+          expect(g.spot.y).toBeLessThan(64);
           expect(g.spot.x).toBeGreaterThan(lay.counter.x0);
           expect(g.spot.x).toBeLessThan(lay.counter.x1);
-          // the tag is as wide as its text needs and sits over the head
+          // a body apart from the walk-in's order spot and the drivers' pickup spots (the only people who stand in front of the counter)
+          for (const [x, y] of [...lay.orderSpots, ...lay.spots.map((s): [number, number] => [s.x, s.y])]) expect(Math.hypot(g.spot.x - x, (g.spot.y - y) * 1.2)).toBeGreaterThanOrEqual(20);
+          // the tag is as wide as its text needs and floats a hand over the head (not over nobody)
           expect(g.tag.x1 - g.tag.x0).toBeCloseTo(tagWidth(tagText), 6);
           expect(g.tag.y1 - g.tag.y0).toBe(TAG_H);
-          expect(g.tag.y1).toBeLessThan(g.body.y0);
+          expect(g.body.y0 - g.tag.y1).toBeLessThanOrEqual(6);
+          expect(g.tag.y1).toBeLessThanOrEqual(g.body.y0);
+          expect((g.tag.x0 + g.tag.x1) / 2).toBeLessThanOrEqual(g.tailX + tagWidth(tagText));
+          expect(g.tag.x0).toBeLessThanOrEqual(g.tailX);
+          expect(g.tag.x1).toBeGreaterThanOrEqual(g.tailX);
           const walls = bubbleWalls(lay);
           expect(g.tag.x0).toBeGreaterThanOrEqual(walls.x0);
           expect(g.tag.x1).toBeLessThanOrEqual(walls.x1);
           expect(g.tag.x1).toBeLessThanOrEqual(SCENE_W);
+          for (const f of staffFaces(lay)) expect(hits(g.tag, f)).toBe(false);
+          expect(hits(g.tag, neonSpot(lay).rect)).toBe(false);
           for (const n of NEIGHBORHOODS) {
             const ob = obstacles(lay, n.id);
-            for (const b of [...ob.all]) expect(hits(g.tag, b)).toBe(false);
-            for (const c of candidates(lay, { id: n.id, pins: 12, outside: true })) expect(hits(g.tag, c.rect)).toBe(false);
+            for (const b of ob.all) expect(hits(g.tag, b)).toBe(false);
+            // the wall gear (the counter-mounted pieces stand on the counter, below her tag's reach)
+            for (const c of candidates(lay, { id: n.id, pins: 12, outside: true })) if (c.mount === 'wall') expect(hits(g.tag, c.rect)).toBe(false);
           }
           // nobody's head is under the tag
           for (const p of fixedPeople(lay)) expect(hits(g.tag, p.head)).toBe(false);

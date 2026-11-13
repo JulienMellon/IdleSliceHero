@@ -171,7 +171,7 @@ export interface Goal {
   onPress?: () => boolean;
 }
 
-export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newScenes, halo = null, onTasks, tasksBadge = 0, onGift, giftDot = false, chips, scrapRing }: { /** The chips at the end of the goal row (the HUD_CHIPS slot); the screen passes `<Slots items={HUD_CHIPS} />`. */ chips?: React.ReactNode; /** The next story scene's progress ring around the scrapbook button, in whole 5% steps (0..20); none when undefined. */ scrapRing?: number; cash: number; subtitle: string; /** The running boost, "2× 10m": drawn in basil after the subtitle. */ boostText?: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null; onTasks?: () => void; tasksBadge?: number; onGift?: () => void; giftDot?: boolean }) {
+export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, onCity, newScenes, halo = null, onTasks, tasksBadge = 0, onGift, giftDot = false, chips, scrapRing }: { /** G98: small round chips in the top row, after the gift (the HUD_TOP_CHIPS slot); the goal bar keeps its width. */ topChips?: React.ReactNode; /** The chips at the end of the goal row (the HUD_CHIPS slot); the screen passes `<Slots items={HUD_CHIPS} />`. */ chips?: React.ReactNode; /** The next story scene's progress ring around the scrapbook button, in whole 5% steps (0..20); none when undefined. */ scrapRing?: number; cash: number; subtitle: string; /** The running boost, "2× 10m": drawn in basil after the subtitle. */ boostText?: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null; onTasks?: () => void; tasksBadge?: number; onGift?: () => void; giftDot?: boolean }) {
   const shown = useCountUp(cash);
   const [flash] = useState(() => new Animated.Value(1));
   // the cash text's window position: payout coins land on it (C81)
@@ -246,6 +246,7 @@ export function Hud({ cash, subtitle, boostText, goal, onScrapbook, onCity, newS
             {giftDot && <View style={styles.giftDot} />}
           </Pressable>
         )}
+        {topChips}
         <Pressable onPress={onCity} style={styles.hudIcon} testID="open-city" hitSlop={8}>
           <MapIcon size={32} />
         </Pressable>

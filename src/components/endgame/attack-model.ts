@@ -3,8 +3,6 @@
 import { ORDER } from '../../content/hooks';
 import { COUNTERATTACK } from '../../content/endgame';
 import type { CharacterId, NeighborhoodId } from '../../content/types';
-// the engine's game module first: game -> features -> game is a cycle, and it only resolves when game loads before a feature
-import '../../engine/game';
 import { challengeProgress, KEY as ATTACK_KEY, type AttackState, type AttackView } from '../../engine/features/counterattack';
 import type { GameState } from '../../engine/game';
 import { castOf } from '../../engine/orders';

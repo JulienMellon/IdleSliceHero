@@ -12,7 +12,7 @@ import { useGame } from '../store/game-store';
 import { C, F } from '../theme';
 import { BuyButton, haptic } from './game-ui';
 import { DriverIcon, FlameIcon, PrepIcon, RegisterIcon } from './icons';
-import { amountCard, amountLabel, BUY_AMOUNTS, type BuyAmount, cardLook, type MergedSlot, needLine, sidewalkSlots, stationTitle, type StationKey, type StationView } from './sidewalk-model';
+import { amountCard, amountLabel, type BuyAmount, cardLook, type MergedSlot, needLine, nextAmount, sidewalkSlots, stationTitle, type StationKey, type StationView } from './sidewalk-model';
 import { COMPACT_FONT_MAX_SCALE, IDLE_STACK_GAP, SIDEWALK_ROW, STATION_CARD, TAP } from './tap-targets';
 
 // static icon elements: built once, not per render (M24)
@@ -23,18 +23,14 @@ const ICON: Record<StationKey, React.ReactNode> = {
   drivers: <DriverIcon size={11} />,
 };
 
-/** v5.15: ×1 / ×10 / MAX. Three segments, each drawn 44 pt tall (never a hitSlop); MAX is a little wider for its three letters. */
-function AmountToggle({ amount, onPick, bottom }: { amount: BuyAmount; onPick: (a: BuyAmount) => void; bottom: number }) {
+/** D456: the amount is one 44 pt chip at the row's left end: a tap cycles x1 -> x10 -> MAX (a three-way toggle that takes no space over the street). */
+function AmountChip({ amount, onPick }: { amount: BuyAmount; onPick: (a: BuyAmount) => void }) {
   return (
-    <View style={[styles.amounts, { bottom }]} testID="buy-amounts" accessibilityRole="radiogroup">
-      {BUY_AMOUNTS.map((a) => (
-        <Pressable key={String(a)} testID={`buy-amount-${a}`} accessibilityRole="radio" accessibilityState={{ selected: amount === a }} accessibilityLabel={a === 'max' ? 'Buy as many as you can afford' : `Buy ${a} at a time`} onPress={() => { haptic(); onPick(a); }} style={[styles.amountSeg, a === 'max' && styles.amountSegMax, amount === a && styles.amountOn]}>
-          <Text style={[styles.amountText, amount === a && styles.amountTextOn]} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
-            {amountLabel(a)}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
+    <Pressable testID="buy-amount" accessibilityRole="button" accessibilityLabel={`Buy ${amount === 'max' ? 'as many as you can afford' : `${amount} at a time`}. Tap to change`} onPress={() => { haptic(); onPick(nextAmount(amount)); }} style={[styles.amountChip, amount !== 1 && styles.amountOn]}>
+      <Text style={[styles.amountText, amount !== 1 && styles.amountTextOn]} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+        {amountLabel(amount)}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -58,7 +54,7 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
       </View>
     );
     return framed ? (
-      <View key={v.key} style={[styles.card, look(v.frame, v.affordable), highlight === v.key && styles.cardCoach]}>
+      <View key={v.key} style={[styles.card, look(v.frame, many?.enabled ?? v.affordable), highlight === v.key && styles.cardCoach]}>
         {button}
         {badge}
       </View>
@@ -94,8 +90,8 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
   const hireLabel = G.isHeadUpgrade(hire) ? `HIRE ${HEADS[id][G.headOf(hire)].toUpperCase()} · RUNS ${HEAD_ROLE[G.headOf(hire)].toUpperCase()} FOR YOU` : `HIRE A MANAGER · ×2 INCOME + EARNS AWAY`;
   return (
     <>
-    {toggleOn && <AmountToggle amount={picked} onPick={useGame.getState().setBuyAmount} bottom={bottom + (idleShop ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + AMOUNTS_GAP} />}
     <View style={[styles.row, { bottom }]} pointerEvents="box-none">
+      {toggleOn && <AmountChip amount={picked} onPick={useGame.getState().setBuyAmount} />}
       {idleShop ? (
         <View style={styles.idleStack}>
           <View style={styles.chipRow}>{cards(false)}</View>
@@ -124,8 +120,6 @@ const look = (frame: 'hot' | 'waiting' | null, affordable: boolean) => {
   return { borderColor: l.borderColor, borderWidth: l.borderWidth, borderStyle: l.borderStyle, backgroundColor: l.backgroundColor, padding: STATION_CARD.padding + (STATION_CARD.border - l.borderWidth) } as const;
 };
 
-/** The toggle floats this far above the row (pt). */
-const AMOUNTS_GAP = 6;
 const shadow = { boxShadow: '0 4px 0 rgba(59,31,20,0.25)' } as object;
 const styles = StyleSheet.create({
   row: { position: 'absolute', left: 8, right: 8, flexDirection: 'row', gap: 5, alignItems: 'flex-end' },
@@ -143,9 +137,7 @@ const styles = StyleSheet.create({
   allIdle: { height: 44 },
   allIcon: { color: '#fff', fontSize: 16, lineHeight: 18 },
   allText: { color: '#fff', fontFamily: F.bold, fontSize: 12 },
-  amounts: { position: 'absolute', right: 8, flexDirection: 'row', height: TAP.min, borderRadius: 14, overflow: 'hidden', backgroundColor: C.ink, ...shadow },
-  amountSeg: { width: TAP.min, height: TAP.min, alignItems: 'center', justifyContent: 'center' },
-  amountSegMax: { width: 52 },
+  amountChip: { width: TAP.min, height: TAP.min, borderRadius: 14, backgroundColor: C.ink, alignItems: 'center', justifyContent: 'center', ...shadow },
   amountOn: { backgroundColor: C.basil },
   amountText: { fontFamily: F.bold, fontSize: 14, color: '#FFE7C2' },
   amountTextOn: { color: '#fff' },

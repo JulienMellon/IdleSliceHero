@@ -3,20 +3,19 @@
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { eventView } from '../../engine/features/events';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { FlameIcon } from '../icons';
-import { eventBannerView } from './event-model';
+import { eventBannerView, eventViewNow } from './event-model';
 import { STACK } from './stack-model';
 
 export const EventBanner = memo(function EventBanner() {
   // a string: the banner repaints when the event or the minutes left change
   const key = useGame((s) => {
-    const b = eventBannerView(eventView(Math.max(Date.now(), s.tickAt)));
+    const b = eventBannerView(eventViewNow(Date.now()));
     return b ? `${b.id}|${b.left}` : '';
   });
-  const b = key ? eventBannerView(eventView(Date.now())) : null;
+  const b = key ? eventBannerView(eventViewNow(Date.now())) : null;
   if (!b) return null;
   return (
     <View testID="event-banner" accessibilityLabel={`${b.title} ${b.mult} income, ${b.left} left`} style={styles.banner} pointerEvents="none">

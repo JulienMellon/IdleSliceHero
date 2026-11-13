@@ -3,22 +3,23 @@ import { create } from 'zustand';
 
 import { emitAudio, type AudioEvent } from '../audio/bus';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
-import { buyCosmetic as buyVanity } from '../components/endgame/shop-model';
-import { buyMany, buyPlan, type BuyAmount } from '../components/sidewalk-model';
 import { pickScene, resumeSceneEnd } from '../engine/cutscene-input';
 import { HOME_SCENES } from '../content/scenes/home';
 import { PIER9_BID, TUNING, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
 import * as B from '../engine/bonus';
+import { buyMany, buyPlan, type BuyAmount } from '../engine/buy-many';
 import * as G from '../engine/game';
 import * as N from '../engine/night-oven';
 import * as O from '../engine/orders';
+import '../engine/features'; // registers the features before any game is made
 import { ackAttack, startChallenge } from '../engine/features/counterattack';
 import { ackMastery } from '../engine/features/mastery';
 import { ackRecipes } from '../engine/features/recipes';
 import * as R from '../engine/rewards';
 import { tutorialAdvance, tutorialHoldsStory } from '../engine/tutorial';
+import { buyCosmetic as buyVanity } from '../engine/vanity';
 import type { Station } from '../engine/pipeline';
 
 const SAVE_KEY = 'slice-empire/save/v1';

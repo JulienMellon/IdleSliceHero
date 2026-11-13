@@ -29,7 +29,7 @@ export interface FurnitureInputs extends Dress {
 export interface FurnitureSource {
   id: NeighborhoodId;
   name: string;
-  shop: { footprint: number; prep: number; counter?: number; drivers?: number; managed: boolean; line: { prepped: number }; decor: { plants: number; tables: number; signage: number } };
+  shop: { footprint: number; prep: number; counter: number; drivers: number; managed: boolean; line: { prepped: number }; decor: { plants: number; tables: number; signage: number } };
   running: boolean;
   rate: number;
   vehicle: number;
@@ -47,9 +47,9 @@ export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn =
     signageTier: shop.decor.signage,
     prep: shop.prep,
     prepStep: ladderStep(shop.prep),
-    counterStep: ladderStep(shop.counter ?? 1),
-    driverStep: ladderStep(shop.drivers ?? 1),
-    pins: Math.min(MAX_PINS, shop.drivers ?? 1),
+    counterStep: ladderStep(shop.counter),
+    driverStep: ladderStep(shop.drivers),
+    pins: Math.min(MAX_PINS, shop.drivers),
     // dough on the bench follows the pies prepped and waiting for the oven
     dough: shop.managed ? 3 : Math.max(2, Math.min(8, Math.ceil(shop.line.prepped / 1.5))),
     boxes: running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0,

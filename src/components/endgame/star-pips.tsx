@@ -6,8 +6,10 @@ import Svg, { G, Path } from 'react-native-svg';
 
 import { starPath } from './mastery-model';
 
-const GOLD = '#FFC531';
-const GOLD_EDGE = '#B07A00';
+// G97: a deeper gold than the selected tab's cheese (#FFC531), with a white halo, so a lit star never vanishes on it
+const GOLD = '#F29A00';
+const GOLD_EDGE = '#8A5200';
+const HALO = '#FFFFFF';
 const DIM = 'rgba(59,31,20,0.14)';
 const DIM_EDGE = 'rgba(59,31,20,0.35)';
 
@@ -19,6 +21,7 @@ export const StarPips = memo(function StarPips({ bits, size = 14, testID }: { bi
   const w = size * 3 + gap * 2;
   return (
     <Svg testID={testID} width={w} height={size} viewBox={`0 0 ${w} ${size}`} accessibilityLabel={`${[0, 1, 2].filter((i) => lit(bits, i)).length} of 3 stars`}>
+      {[0, 1, 2].map((i) => lit(bits, i) && <Path key={`h${i}`} d={starPath(size / 2 + i * (size + gap), size / 2 + 0.5, size / 2 - 0.5)} fill={HALO} stroke={HALO} strokeWidth={size * 0.22} strokeLinejoin="round" />)}
       {[0, 1, 2].map((i) => (
         <Path key={i} d={starPath(size / 2 + i * (size + gap), size / 2 + 0.5, size / 2 - 0.5)} fill={lit(bits, i) ? GOLD : DIM} stroke={lit(bits, i) ? GOLD_EDGE : DIM_EDGE} strokeWidth={size * 0.07} strokeLinejoin="round" />
       ))}

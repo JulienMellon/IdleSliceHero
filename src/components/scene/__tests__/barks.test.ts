@@ -30,7 +30,8 @@ describe('head barks stay inside the walls', () => {
   });
   test('the bubble hangs under the chip row (its top is the speech pill y - 14 - tail)', () => {
     const by = badgeRowY();
-    const pillY = by + 40;
+    const pillY = by + 44; // storefront.tsx: 4 under the hello's, so the tail clears the badge's pins (they reach by + 22.4)
+    expect(pillY - 20).toBeGreaterThanOrEqual(by + 12 + 4 + 6.4 + 1.5); // the badge's radius, a pin's offset and radius, and air
     expect(pillY - 20).toBeGreaterThanOrEqual(by + CHIP_ROW_HALF + ROW_AIR);
   });
 });

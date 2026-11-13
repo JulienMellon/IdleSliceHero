@@ -4,6 +4,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Svg, { Path, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { boosterShelf, SHELF_EMPTY, SHOP_TABS, vanityViews, type VanityView } from '@/components/endgame/shop-model';
@@ -26,7 +27,7 @@ function VanityCard({ v, onWear, onBuy }: { v: VanityView; onWear: (id: string, 
   return (
     <View testID={`vanity-${v.id}`} style={styles.card}>
       <View style={styles.cardTop}>
-        <VanityArt id={v.id} />
+        <VanityArt id={v.id} size={64} />
         <View style={styles.cardText}>
           <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.15}>
             {v.name}
@@ -90,9 +91,18 @@ export default function Shop() {
         {tab === 0 ? (
           vanity.map((v) => <VanityCard key={v.id} v={v} onWear={(id, on) => equip(id, on)} onBuy={(id) => haptic(buyCosmetic(id) ? 'success' : 'error')} />)
         ) : shelf.length === 0 ? (
-          <Text testID="shelf-empty" style={styles.empty}>
-            {SHELF_EMPTY()}
-          </Text>
+          <View style={styles.emptyBox}>
+            <Text testID="shelf-empty" style={styles.empty}>
+              {SHELF_EMPTY()}
+            </Text>
+            {/* D462: an empty shelf, drawn below the line */}
+            <Svg width={220} height={90} viewBox="0 0 220 90" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              <Rect x={10} y={46} width={200} height={12} rx={3} fill="#A8714B" stroke={C.ink} strokeWidth={2} />
+              <Path d="M30 58 V78 M190 58 V78 M30 58 L50 58 M190 58 L170 58" stroke={C.ink} strokeWidth={3} strokeLinecap="round" />
+              <Path d="M70 46 q4 -22 14 -22 q10 0 14 22 Z" fill="none" stroke={C.locked} strokeWidth={2} strokeDasharray="4 4" />
+              <Rect x={130} y={26} width={26} height={20} rx={3} fill="none" stroke={C.locked} strokeWidth={2} strokeDasharray="4 4" />
+            </Svg>
+          </View>
         ) : (
           shelf.map((row) => (
             <View key={row.index} testID={`shelf-${row.index}`} style={styles.shelfRow}>
@@ -100,7 +110,7 @@ export default function Shop() {
               <Text style={styles.shelfLabel} numberOfLines={1}>
                 {row.label}
               </Text>
-              <Pressable testID={`shelf-activate-${row.index}`} accessibilityRole="button" accessibilityLabel={`Activate ${row.label} booster`} onPress={() => haptic(startBooster(row.index) ? 'success' : 'error')} style={({ pressed }) => [styles.btn, styles.btnBuy, styles.activate, pressed && styles.pressed]}>
+              <Pressable testID={`shelf-activate-${row.index}`} accessibilityRole="button" accessibilityLabel={`Activate ${row.label} booster`} onPress={() => haptic(startBooster(row.index) ? 'success' : 'error')} style={({ pressed }) => [styles.btn, styles.btnWear, styles.activate, pressed && styles.pressed]}>
                 <Text style={styles.btnText}>Activate</Text>
               </Pressable>
             </View>
@@ -131,14 +141,16 @@ const styles = StyleSheet.create({
   desc: { fontFamily: F.regular, fontSize: 13, lineHeight: 16, color: C.inkSoft },
   btn: { minHeight: TAP.min, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 12, borderBottomWidth: 4 },
   btnWear: { backgroundColor: C.basil, borderBottomColor: C.basilDark },
-  btnWorn: { backgroundColor: '#E6F4E8', borderBottomColor: '#B9DDBF', borderWidth: 2, borderColor: C.basil },
-  btnBuy: { backgroundColor: C.basil, borderBottomColor: C.basilDark },
+  btnWorn: { backgroundColor: '#fff', borderBottomColor: C.basil, borderWidth: 2, borderColor: C.basil },
+  // D461: buying is blue (the diamond's colour), wearing green, worn an outlined chip: three looks, never two identical greens
+  btnBuy: { backgroundColor: '#2D8FD9', borderBottomColor: '#1D5F9A' },
   btnOff: { backgroundColor: '#E2D9CE', borderBottomColor: '#C9BCAD' },
   btnText: { fontFamily: F.bold, fontSize: 15, color: '#fff' },
   btnTextWorn: { color: C.basilDark },
   btnTextOff: { color: '#665A4F' },
   pressed: { transform: [{ translateY: 2 }] },
-  empty: { fontFamily: F.semi, fontSize: 15, color: C.inkSoft, textAlign: 'center', paddingVertical: 30 },
+  emptyBox: { alignItems: 'center', gap: 8, paddingVertical: 24 },
+  empty: { fontFamily: F.semi, fontSize: 15, color: C.inkSoft, textAlign: 'center' },
   shelfRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 16, borderWidth: 2.5, borderColor: C.ink, padding: 10 },
   shelfLabel: { flex: 1, fontFamily: F.bold, fontSize: 16, color: C.ink },
   activate: { minWidth: 96 },

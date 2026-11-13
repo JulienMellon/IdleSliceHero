@@ -114,3 +114,18 @@ const PART_OVERRIDES: Readonly<Record<string, string>> = { 'neon-counter': 'coun
 export function cosmeticPart(id: string): string {
   return PART_OVERRIDES[id] ?? id.split('-')[0];
 }
+
+// ---------- The vanity shop (diamonds) ----------
+
+/** What a cosmetic costs, in diamonds. */
+export const VANITY_PRICE = 150;
+
+/** The seven cosmetics, in the order the shop lists them. `plaque-master` is earned at 18 stars and never sold. */
+export const VANITY_IDS = ['oven-gold', 'storefront-skin', 'oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold', 'plaque-master'] as const;
+export type VanityId = (typeof VANITY_IDS)[number];
+
+/**
+ * C115: skins bought with diamonds are numbered from 101, so they never collide with the day-28 gift's `storefront-skin-{cycle}`
+ * (cycles 1, 2, 3 ...): a bought skin can't swallow a later gift. The scene wears skin N as `SKINS[(N - 1) % SKINS.length]`.
+ */
+export const SOLD_SKIN_BASE = 100;

@@ -4,7 +4,7 @@ import { furnitureDeps, furnitureInputs, type FurnitureSource } from '../furnitu
 const base = (over: Partial<FurnitureSource['shop']> = {}): FurnitureSource => ({
   id: 'suburbs',
   name: 'Suburbs',
-  shop: { footprint: 1, prep: 24, managed: true, line: { prepped: 0 }, decor: { plants: 1, tables: 1, signage: 1 }, ...over },
+  shop: { footprint: 1, prep: 24, counter: 1, drivers: 1, managed: true, line: { prepped: 0 }, decor: { plants: 1, tables: 1, signage: 1 }, ...over },
   running: true,
   rate: 4,
   vehicle: 1,

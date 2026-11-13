@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 import { MASTERY } from '../../../content/endgame';
 import * as G from '../../../engine/game';
-import { wear } from '../../../engine/rewards';
+import { grantCosmetic, wear } from '../../../engine/rewards';
 import { boosterShelf, buyCosmetic, SHELF_EMPTY, SHOP_TABS, VANITY_IDS, VANITY_PRICE, vanityViews } from '../shop-model';
 
 const base = (): G.GameState => G.newGame(1_700_000_000_000);
@@ -60,16 +60,23 @@ describe('tab 1: Shop Style, the seven cosmetics', () => {
     expect(back[2].state).toBe('owned');
   });
 
-  test('the storefront item is any numbered skin: buy skin 1, then the next one is skin 2', () => {
+  test('T89 / C115: a sold skin is numbered from 101, so it never collides with the day-28 gift storefront-skin-{cycle}', () => {
     const first = vanityViews(rich(500))[1];
-    expect(first).toMatchObject({ id: 'storefront-skin', buyId: 'storefront-skin-1', state: 'buy' });
+    expect(first).toMatchObject({ id: 'storefront-skin', buyId: 'storefront-skin-101', state: 'buy' });
     const g = ok(buyCosmetic(rich(500), first.buyId!));
-    const own = vanityViews(g)[1];
-    expect(own).toMatchObject({ state: 'worn', wearId: 'storefront-skin-1', buyId: null });
+    expect(vanityViews(g)[1]).toMatchObject({ state: 'worn', wearId: 'storefront-skin-101', buyId: null });
+    // the gift of cycle 1 still lands: it is a different id, and is worn on arrival
+    const gifted = { ...g, rewards: { ...g.rewards, ...grantCosmetic(g.rewards, 'storefront-skin-1') } };
+    expect(gifted.rewards.cosmetics).toEqual(['storefront-skin-101', 'storefront-skin-1']);
+    expect(gifted.rewards.worn).toEqual(['storefront-skin-1']);
+    // an id a gift could give is not for sale
+    expect(buyCosmetic(rich(500), 'storefront-skin-1')).toEqual({ ok: false, reason: 'Not for sale' });
+    expect(buyCosmetic(rich(500), 'storefront-skin-28')).toEqual({ ok: false, reason: 'Not for sale' });
+  });
+
+  test('a gifted skin shows the item as owned: Wear', () => {
     const gifted: G.GameState = { ...base(), rewards: { ...base().rewards, cosmetics: ['storefront-skin-1'], worn: [], diamonds: 500 } };
-    expect(vanityViews(gifted)[1]).toMatchObject({ state: 'owned', label: 'Wear' });
-    const two = ok(buyCosmetic({ ...rich(500), rewards: { ...rich(500).rewards, cosmetics: ['storefront-skin-1'] } }, 'storefront-skin-2'));
-    expect(two.rewards.cosmetics).toEqual(['storefront-skin-1', 'storefront-skin-2']);
+    expect(vanityViews(gifted)[1]).toMatchObject({ state: 'owned', label: 'Wear', wearId: 'storefront-skin-1' });
   });
 
   test('earned cosmetics show as owned too (a gift, or the plaque)', () => {
@@ -88,7 +95,9 @@ describe('tab 2: the booster shelf', () => {
     const g: G.GameState = { ...base(), rewards: { ...base().rewards, boosters: [{ mult: 2, seconds: 900 }, { mult: 3, seconds: 1800 }] } };
     const rows = boosterShelf(g);
     expect(rows.map((r) => r.index)).toEqual([0, 1]);
-    expect(rows.map((r) => r.label)).toEqual(['2× 15m', '3× 30m']);
+    expect(rows.map((r) => r.label)).toEqual(['2× income · 15 m', '3× income · 30 m']);
+    const hour: G.GameState = { ...g, rewards: { ...g.rewards, boosters: [{ mult: 2, seconds: 3600 }, { mult: 2, seconds: 86400 }, { mult: 1.5, seconds: 5400 }] } };
+    expect(boosterShelf(hour).map((r) => r.label)).toEqual(['2× income · 1 h', '2× income · 1 d', '1.5× income · 1 h 30 m']);
     expect(Object.keys(rows[0])).toEqual(['index', 'label']);
   });
 

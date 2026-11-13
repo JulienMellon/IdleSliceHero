@@ -73,16 +73,29 @@ export const VISITOR_LOOK: Readonly<Record<string, Pick<PersonProps, 'seed' | 's
   genevieve: { seed: 6329, shirt: '#7B1E3A', hair: '#E3C16F' },
 };
 
-/** Where the visitor stands: behind the counter's right end, the cashiers' depth (the door side, clear of the counter staff). Room units. */
-export const cameoSpot = (lay: Pick<Layout, 'counter'>): { x: number; y: number } => ({ x: lay.counter.x1 - 10, y: 92 });
+/** The depth the visitor stands at: in front of the counter (G100: behind it she was hidden by the box stack), clear of the register queue. */
+export const CAMEO_Y = 58;
+/**
+ * Where the visitor stands, in room units: in FRONT of the counter, at the x along it that is furthest from the walk-in's order spot and the
+ * drivers' pickup spots (the only people who stand there). With one cashier the counter is 56 wide and the best x leaves 22 to each.
+ */
+export function cameoSpot(lay: Pick<Layout, 'counter' | 'spots' | 'orderSpots'>): { x: number; y: number } {
+  const others: [number, number][] = [...lay.spots.map((s): [number, number] => [s.x, s.y]), ...lay.orderSpots];
+  let best = { x: (lay.counter.x0 + lay.counter.x1) / 2, d: -1 };
+  for (let x = lay.counter.x0 + 6; x <= lay.counter.x1 - 6; x += 1) {
+    const d = Math.min(...others.map(([ox, oy]) => Math.hypot(x - ox, (CAMEO_Y - oy) * 1.2)));
+    if (d > best.d + 1e-9) best = { x, d };
+  }
+  return { x: best.x, y: CAMEO_Y };
+}
 
 /** The tag's size on screen, and the air between it and the head. */
 export const TAG_H = 13;
 export const tagWidth = (text: string) => text.length * 5.6 + 12;
-const TAG_AIR = 13;
+const TAG_AIR = 1;
 
 /** Where the figure, its tag and its speech pill go, in scene units (the figure's box is the crowd budget's: 22 wide, 56 tall at its depth). */
-export function cameoGeom(lay: Pick<Layout, 'counter' | 'door' | 'R'>, tag: string): { spot: { x: number; y: number }; body: Rect; tag: Rect; sayY: number; tailX: number } {
+export function cameoGeom(lay: Pick<Layout, 'counter' | 'door' | 'R' | 'spots' | 'orderSpots'>, tag: string): { spot: { x: number; y: number }; body: Rect; tag: Rect; sayY: number; tailX: number } {
   const spot = cameoSpot(lay);
   const body = figureBox(spot.x, spot.y, 56);
   const w = tagWidth(tag);

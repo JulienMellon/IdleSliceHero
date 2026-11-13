@@ -10,7 +10,7 @@ import { LOOKS } from '../identity';
 import { candidates, fixedPeople, hits, obstacles } from '../ladder';
 import { layout } from '../layout';
 import { SCENE_W, P } from '../projection';
-import { doorwaySignRect } from '../stations';
+import { doorwaySignRect, staffFaces } from '../stations';
 
 const DS = [2, 2, 3, 3, 4];
 const shopAt = (fp: number, staff = 2) => layout(fp, FOOTPRINTS[fp].ovenSlots, fp === 0 ? 2 : 3, staff, 8, DS[fp], 1);
@@ -78,7 +78,7 @@ describe('the furniture memo sees what is worn', () => {
   const base = (worn: string[]): FurnitureSource => ({
     id: 'suburbs',
     name: 'Suburbs',
-    shop: { footprint: 1, prep: 24, managed: true, line: { prepped: 0 }, decor: { plants: 1, tables: 1, signage: 1 } },
+    shop: { footprint: 1, prep: 24, counter: 1, drivers: 1, managed: true, line: { prepped: 0 }, decor: { plants: 1, tables: 1, signage: 1 } },
     running: true,
     rate: 4,
     vehicle: 1,
@@ -99,40 +99,55 @@ describe('the furniture memo sees what is worn', () => {
   });
 });
 
-describe('the neon sign (budget)', () => {
-  test('at every footprint, every neighbourhood and every counter crew it has its slot, clear of badges, doorway, menu, window, ovens, props and faces', () => {
+describe('the neon sign (budget; G99)', () => {
+  test('at every footprint and counter crew it is at least 40 x 14, over the register, inside the walls, under the badge band and over the cashiers’ faces', () => {
     for (let fp = 0; fp < FOOTPRINTS.length; fp++)
-      for (const staff of [1, 2, 3])
-        for (const n of NEIGHBORHOODS) {
-          const lay = shopAt(fp, staff);
-          const spot = neonSpot(lay, n.id);
-          expect(spot).not.toBeNull();
-          const r = spot!.rect;
-          const ob = obstacles(lay, n.id);
-          for (const b of [...ob.all, ...ob.wall]) expect(hits(r, b)).toBe(false);
-          // every other ladder prop at every step
-          for (const c of candidates(lay, { id: n.id, pins: 12, outside: true })) if (c.id !== 'neon') expect(hits(r, c.rect)).toBe(false);
-          for (const p of fixedPeople(lay)) expect(hits(r, p.head)).toBe(false);
-          // inside the scene, and under the badge band (the awning's valance ends at 186)
-          expect(r.x0).toBeGreaterThanOrEqual(0);
-          expect(r.x1).toBeLessThanOrEqual(SCENE_W);
-          expect(r.y0).toBeGreaterThanOrEqual(190);
-        }
+      for (const staff of [1, 2, 3]) {
+        const lay = shopAt(fp, staff);
+        const { cx, rect: r } = neonSpot(lay);
+        expect(r.x1 - r.x0).toBeGreaterThanOrEqual(40);
+        expect(r.y1 - r.y0).toBeGreaterThanOrEqual(14);
+        // over the register (the first cashier's, 12 along), unless the wall stops it
+        expect(Math.abs(cx - P(lay.staff[0] + 12, 70)[0])).toBeLessThan(0.01);
+        expect(r.x0).toBeGreaterThanOrEqual(P(lay.L + 8, 0)[0]);
+        expect(r.x1).toBeLessThanOrEqual(P(lay.R - 8, 0)[0]);
+        expect(r.x1).toBeLessThanOrEqual(SCENE_W);
+        const ob = obstacles(lay, 'downtown');
+        for (const b of ob.all) expect(hits(r, b)).toBe(false);
+        for (const f of staffFaces(lay)) expect(hits(r, f)).toBe(false);
+        for (const p of fixedPeople(lay)) expect(hits(r, p.head)).toBe(false);
+        // under the awning and the badge band (they end at 186)
+        expect(r.y0).toBeGreaterThanOrEqual(190);
+      }
+  });
+  test('the check can fail: the old slot (the ladder’s neon spot) was 38 x 13 and sat on the wall behind the menu board and window', () => {
+    for (let fp = 1; fp < FOOTPRINTS.length; fp++) {
+      const lay = shopAt(fp, 2);
+      const slot = candidates(lay, { id: 'downtown', pins: 12, outside: true }).find((c) => c.id === 'neon')!;
+      expect(slot.rect.x1 - slot.rect.x0).toBeLessThan(40);
+      expect(slot.rect.y0).toBeLessThan(270); // on the wall, above the window's foot: the sign now hangs below the wall's gear
+    }
   });
 });
 
-describe('the plaque (budget)', () => {
-  test('it sits on the right pilaster, by the door, inside the scene, off the doorway plank and the door', () => {
+describe('the plaque (budget; D458)', () => {
+  test('it is 34 x 22 on the brick header over the door, under the awning, off the glass, the PIZZA blade and the doorway plank', () => {
     for (let fp = 0; fp < FOOTPRINTS.length; fp++) {
       const lay = shopAt(fp);
       const r = plaqueRect(lay);
-      expect(r.x0).toBeGreaterThanOrEqual(P(lay.R - 8, 0)[0]);
-      expect(r.x1).toBeLessThanOrEqual(P(lay.R + 6, 0)[0]);
+      expect(r.x1 - r.x0).toBe(34);
+      expect(r.y1 - r.y0).toBe(22);
+      expect(r.x0).toBeGreaterThanOrEqual(P(lay.door.x0 - 8, 0)[0]);
+      expect(r.x1).toBeLessThanOrEqual(P(lay.R - 8, 0)[0]);
       expect(r.x1).toBeLessThanOrEqual(SCENE_W);
+      expect(r.y0).toBeGreaterThanOrEqual(190);
+      expect(r.y1).toBeLessThanOrEqual(P(0, 0, 196)[1]);
       expect(hits(r, doorwaySignRect(lay))).toBe(false);
-      // below the doorway's lintel: nothing of the window or the hanging sign is behind it
-      expect(r.y0).toBeGreaterThan(doorwaySignRect(lay).y1);
-      expect(r.x0).toBeGreaterThanOrEqual(P(lay.door.x1, 0)[0]);
+      // the blade hangs at the header's mid-height + 14, 21 tall, when it has no room outside the wall
+      const mid = (P(0, 0, 340 - 20)[1] + P(0, 0, 196)[1]) / 2;
+      expect(r.y0).toBeGreaterThan(mid + 14 + 10.5);
+      // the clock face (r 8 at mid - 6)
+      expect(r.y0).toBeGreaterThan(mid - 6 + 8);
     }
   });
 });

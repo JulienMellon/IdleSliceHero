@@ -1,7 +1,5 @@
 // The goal bar's numbers and colours as plain data (D297). The label is drawn twice: dark ink over the cream track,
 // and a cream copy clipped to the fill's width, so it stays readable at every fill fraction. Pure: unit-tested in node.
-// the engine's game module first: game -> features -> game is a cycle, and it only resolves when game loads before a feature
-import '../engine/game';
 import { finaleSeen } from '../engine/features/counterattack';
 import { MASTERY_MAX, masteryTotal, nextStar } from '../engine/features/mastery';
 import type { GameState } from '../engine/game';
@@ -110,12 +108,15 @@ export const goalLabelFits = (label: string, amount: string, barW: number): bool
 export interface MasteryGoal {
   /** "Mastery 7/18 · Next: Flagship in Suburbs": the words clip at their end, so the count always shows. */
   label: string;
-  /** The amount beside the words: the next star's steps ("2/3"), or a star when all 18 are earned. */
+  /** The amount beside the words: the next star's steps with their unit ("2/3 heads"), or a star when all 18 are earned. */
   text: string;
   /** The bar: stars earned of 18. */
   current: number;
   target: number;
 }
+
+/** D466: the unit after the next star's steps, so "3/4" is never bare: heads hired, footprint sizes, oven grades. */
+export const STAR_UNIT = { heads: 'heads', flagship: 'sizes', golden: 'grades' } as const;
 
 /** The goal bar's line after the last finale, or null while the story is still being told (then the ordinary goals show). */
 export function masteryGoal(g: GameState): MasteryGoal | null {
@@ -123,5 +124,5 @@ export function masteryGoal(g: GameState): MasteryGoal | null {
   const n = masteryTotal(g);
   const next = nextStar(g);
   const count = copy('goal.mastery', { n });
-  return { label: next ? `${count} \u00B7 ${nextStarLine(next)}` : count, text: next ? `${next.have}/${next.need}` : '\u2605', current: n, target: MASTERY_MAX };
+  return { label: next ? `${count} \u00B7 ${nextStarLine(next)}` : count, text: next ? `${next.have}/${next.need} ${STAR_UNIT[next.star]}` : '\u2605', current: n, target: MASTERY_MAX };
 }

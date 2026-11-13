@@ -2,6 +2,7 @@
 import { COUNTERATTACK } from '../../../content/endgame';
 import { NEIGHBORHOODS } from '../../../content/tuning';
 import type { NeighborhoodId } from '../../../content/types';
+import '../../../engine/features'; // registers the features (A31)
 import * as G from '../../../engine/game';
 import { attackView, startChallenge } from '../../../engine/features/counterattack';
 import { behindPace } from '../../order-model';

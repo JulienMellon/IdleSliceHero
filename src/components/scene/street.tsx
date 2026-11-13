@@ -159,6 +159,8 @@ export const PatioTable = memo(function PatioTable({ x, y, part }: { x: number; 
         <Ellipse cx={cx} cy={cy} rx={30 * k} ry={6 * k} fill="rgba(59,31,20,0.16)" />
         {chair(-PATIO_SEAT)}
         {chair(PATIO_SEAT)}
+        {/* D450: the umbrella's pole stands behind the diners (it used to be drawn with the canopy, over their faces) */}
+        <Rect x={cx - 0.9 * k} y={cy - 56 * k} width={1.8 * k} height={42 * k} fill="#7A5C48" stroke={INK} strokeWidth={0.6} />
       </G>
     );
   }
@@ -175,7 +177,6 @@ export const PatioTable = memo(function PatioTable({ x, y, part }: { x: number; 
   }
   return (
     <G transform={`translate(${cx} ${cy}) scale(${k})`}>
-      <Rect x={-0.9} y={-56} width={1.8} height={42} fill="#7A5C48" stroke={INK} strokeWidth={0.6} />
       {/* four wedges of a red-and-cream canopy, a scalloped rim, and the finial */}
       {[0, 1, 2, 3].map((n) => {
         const x0 = -UMBRELLA_R + n * (UMBRELLA_R / 2);

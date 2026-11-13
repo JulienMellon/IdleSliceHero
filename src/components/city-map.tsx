@@ -13,11 +13,13 @@ import { finaleSeen } from '../engine/features/counterattack';
 import { C, F } from '../theme';
 import { attackLite } from './endgame/attack-model';
 import { copy } from './endgame/copy-text';
-import { pipBits, starPips } from './endgame/mastery-model';
+import { pipBits, showPips, starPips } from './endgame/mastery-model';
 import { MapStars } from './endgame/star-pips';
 import { SoonCard } from './title-card';
 
 const INK = '#3B1F14';
+/** D463: the bottom row's label cards have a third row of stars now: the view is this much taller, so the list panel below never cuts them. */
+const MAP_PAD_BOTTOM = 8;
 const TREES = [
   // kept ≥ 8 units clear of every label card
   [2, 40], [42, 34], [60, 33], [44, 48], [58, 48], [93, 36], [96, 44], [3, 70], [9, 82], [48, 72], [57, 80], [38, 4], [6, 60],
@@ -105,7 +107,7 @@ export function CityMap({ game, width, height, onPress }: { game: Game.GameState
   const [soon, setSoon] = useState(false);
   return (
     <>
-    <Svg width={width} height={height} viewBox={`0 0 ${MAP_VIEWBOX.w} ${MAP_VIEWBOX.h}`} preserveAspectRatio="xMidYMid meet">
+    <Svg width={width} height={height} viewBox={`0 0 ${MAP_VIEWBOX.w} ${MAP_VIEWBOX.h + MAP_PAD_BOTTOM}`} preserveAspectRatio="xMidYMid meet">
       <Rect x={-50} y={-50} width={200} height={200} fill={C.map} />
       {ROADS.map(([x0, y0, x1, y1], i) => (
         <G key={i}>
@@ -136,6 +138,8 @@ export function CityMap({ game, width, height, onPress }: { game: Game.GameState
         const isNext = lot.kind === 'buildable';
         const active = game.active === n.id;
         const eps = Game.shopEarnings(game, n.id);
+        // D464: no stars until the first head is hired
+        const pips = shop.built && showPips(shop);
         return (
           <G key={n.id} onPress={() => onPress(n.id)} opacity={lot.dim ? 0.7 : 1}>
             {active && <Circle cx={n.x} cy={n.y} r={12} fill={C.cheese} opacity={0.55} />}
@@ -150,9 +154,9 @@ export function CityMap({ game, width, height, onPress }: { game: Game.GameState
               </G>
             )}
             {/* a built pizzeria's card has a third row: its three mastery stars (heads, Flagship, golden ovens) */}
-            <Rect x={n.x - 11} y={n.y + 8.5} width={22} height={shop.built ? 11.5 : 8.5} rx={2.2} fill="rgba(59,31,20,0.25)" />
-            <Rect x={n.x - 11} y={n.y + 7.5} width={22} height={shop.built ? 11.5 : 8.5} rx={2.2} fill="#FFFFFF" stroke={attacked === n.id ? C.tomato : isNext ? C.cheeseDark : INK} strokeWidth={attacked === n.id ? 0.8 : 0.45} />
-            {shop.built && <MapStars x={n.x} y={n.y + 16.9} bits={pipBits(starPips(shop))} r={1.8} />}
+            <Rect x={n.x - 11} y={n.y + 8.5} width={22} height={pips ? 11.5 : 8.5} rx={2.2} fill="rgba(59,31,20,0.25)" />
+            <Rect x={n.x - 11} y={n.y + 7.5} width={22} height={pips ? 11.5 : 8.5} rx={2.2} fill="#FFFFFF" stroke={attacked === n.id ? C.tomato : isNext ? C.cheeseDark : INK} strokeWidth={attacked === n.id ? 0.8 : 0.45} />
+            {pips && <MapStars x={n.x} y={n.y + 16.9} bits={pipBits(starPips(shop))} r={1.8} />}
             <SvgText x={n.x} y={n.y + 11} fontSize={3} fontFamily={F.bold} fill={INK} textAnchor="middle">
               {n.name}
             </SvgText>

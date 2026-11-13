@@ -31,6 +31,8 @@ export const ChallengeChip = memo(function ChallengeChip() {
   useGame((s) => attackLite(s.game).step);
   const [flash] = useState(() => new Animated.Value(0));
   const [bounce] = useState(() => new Animated.Value(1));
+  // D469: the won chip flips over from the edge to the win line (its width opens from a sliver)
+  const [flip] = useState(() => new Animated.Value(1));
   const root = useRef<ComponentRef<typeof View>>(null);
   const done = face === 'won' || face === 'lost';
 
@@ -44,7 +46,9 @@ export const ChallengeChip = memo(function ChallengeChip() {
     if (face !== 'won') return;
     flash.setValue(0);
     bounce.setValue(1);
+    flip.setValue(0.05);
     const run = Animated.parallel([
+      Animated.spring(flip, { toValue: 1, friction: 6, tension: 80, useNativeDriver: true }),
       Animated.sequence([0, 1, 0, 1, 0].map((to) => Animated.timing(flash, { toValue: to, duration: FLASH_MS, useNativeDriver: true }))),
       Animated.sequence([ORDER_VIEW.bounce, 1].map((to) => Animated.timing(bounce, { toValue: to, duration: ORDER_VIEW.bounceMs, useNativeDriver: true }))),
     ]);
@@ -57,7 +61,7 @@ export const ChallengeChip = memo(function ChallengeChip() {
       emitCheer();
     });
     return () => run.stop();
-  }, [face, flash, bounce]);
+  }, [face, flash, bounce, flip]);
 
   if (face !== 'running' && !done) return null;
   const g = useGame.getState().game;
@@ -99,7 +103,7 @@ export const ChallengeChip = memo(function ChallengeChip() {
   if (!result) return null;
   const won = result.kind === 'won';
   return (
-    <View ref={root} testID={`challenge-${result.kind}`} style={[styles.chip, won ? styles.chipWon : styles.chipLost]}>
+    <Animated.View ref={root} testID={`challenge-${result.kind}`} style={[styles.chip, won ? styles.chipWon : styles.chipLost, won && { transform: [{ scaleX: flip }] }]}>
       {won && <Animated.View pointerEvents="none" style={[styles.glow, { opacity: flash }]} />}
       <Pressable accessibilityRole="button" accessibilityLabel={`${result.speaker}: ${result.line}. Dismiss`} style={styles.row} onPress={() => useGame.getState().ackEndgame('attack')}>
         <Animated.View style={{ transform: [{ scale: bounce }] }}>
@@ -120,7 +124,7 @@ export const ChallengeChip = memo(function ChallengeChip() {
           </View>
         )}
       </Pressable>
-    </View>
+    </Animated.View>
   );
 });
 

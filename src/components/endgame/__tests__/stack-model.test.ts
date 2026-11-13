@@ -2,9 +2,8 @@
 import { ORDER_VIEW } from '../../../content/hooks';
 import * as G from '../../../engine/game';
 import { TAP } from '../../tap-targets';
-import { bonusLaneTop, STACK, stackHeight, stackTop } from '../stack-model';
+import { holdsBonus, STACK, stackHeight, stackTop } from '../stack-model';
 
-const at = (y: number, m: number, d: number, h = 0, mi = 0) => new Date(y, m - 1, d, h, mi).getTime();
 const base = (): G.GameState => G.newGame(1_700_000_000_000);
 const withAttack = (patch: Record<string, unknown>): G.GameState => {
   const g = base();
@@ -33,23 +32,16 @@ describe('the notices at the top of the scene area', () => {
     expect(stackTop(true)).toBe(ORDER_VIEW.top + ORDER_VIEW.height + STACK.gap);
   });
 
-  test('the golden pizza’s lane starts below the notices: it never flies behind a banner', () => {
-    const lane = 8;
-    const quiet = base();
-    expect(bonusLaneTop(quiet, at(2026, 11, 12, 12), lane)).toBe(lane);
-    const banner = withAttack({});
-    const top = bonusLaneTop(banner, at(2026, 11, 12, 12), lane);
-    expect(top).toBeGreaterThanOrEqual(ORDER_VIEW.top + STACK.banner + STACK.gap);
-    // the old lane (8) is inside the banner's rows [6, 62): the pizza would be hidden behind it
-    expect(lane).toBeLessThan(ORDER_VIEW.top + STACK.banner);
-    // an event adds its row on a Friday evening
-    const withEvent = bonusLaneTop(banner, at(2026, 11, 13, 18), lane);
-    expect(withEvent).toBe(top + STACK.event + STACK.gap);
-  });
-
-  test('with an order chip up the lane starts under it and the notices', () => {
-    const g = { ...withAttack({}), order: { ...base().order, offer: { hood: 'suburbs' as const, target: 40, left: 45, variant: 0 as const } } };
-    const base0 = ORDER_VIEW.top + ORDER_VIEW.height + STACK.gap;
-    expect(bonusLaneTop(g, at(2026, 11, 12, 12), base0)).toBe(base0 + STACK.banner + STACK.gap);
+  test('G95: the golden pizza waits while an order card or the challenge chip is up, never for a banner', () => {
+    expect(holdsBonus(base())).toBe(false);
+    // a week-long open attack is a banner: the pizza flies over it
+    expect(holdsBonus(withAttack({}))).toBe(false);
+    const ch = { target: 40, startSold: 0, left: 100 };
+    expect(holdsBonus(withAttack({ challenge: ch }))).toBe(true);
+    expect(holdsBonus(withAttack({ news: { kind: 'won', shopId: 'downtown', cash: 5, diamonds: 15 } }))).toBe(true);
+    expect(holdsBonus(withAttack({ news: { kind: 'lost', shopId: 'downtown' } }))).toBe(true);
+    expect(holdsBonus(withAttack({ news: { kind: 'expired', shopId: 'downtown' } }))).toBe(false);
+    const order = { ...base(), order: { ...base().order, offer: { hood: 'suburbs' as const, target: 40, left: 45, variant: 0 as const } } };
+    expect(holdsBonus(order)).toBe(true);
   });
 });

@@ -5,8 +5,6 @@ import { MASTERY } from '../../content/endgame';
 import { cosmeticName } from '../../content/rewards';
 import type { NeighborhoodId } from '../../content/types';
 import type { EventBannerView } from './event-model';
-// the engine's game module first: game -> features -> game is a cycle, and it only resolves when game loads before a feature
-import '../../engine/game';
 import type { GameState } from '../../engine/game';
 import { KEY as MASTERY_KEY, type MasteryState } from '../../engine/features/mastery';
 import { KEY as RECIPES_KEY, type RecipesState } from '../../engine/features/recipes';
@@ -16,10 +14,13 @@ import { VANITY_IDS } from './shop-model';
 
 export type NewsItem =
   | { key: string; kind: 'star'; text: string; sub: string; shopId: NeighborhoodId }
-  | { key: string; kind: 'recipe'; text: string; sub: string }
+  | { key: string; kind: 'recipe'; text: string; sub: string; hood: NeighborhoodId; n: 1 | 2 | 3 | 4 }
   | { key: string; kind: 'cosmetic'; text: string; sub: string }
   | { key: string; kind: 'all'; text: string; sub: string }
   | { key: string; kind: 'event'; text: string; sub: string };
+
+/** D469: the small header over a recipe card's reveal. */
+export const RECIPE_HEADER = 'NEW RECIPE';
 
 /** How long one toast stays up (ms). */
 export const NEWS_MS = 3200;
@@ -40,7 +41,10 @@ export function newsItems(g: GameState): NewsItem[] {
     else if (n.id === MASTERY.masterCosmetic) out.push({ key: `all:${n.id}`, kind: 'all', text: copy('mastery.all'), sub: speakerOf('mastery.all') ?? '' });
     else out.push({ key: `cos:${n.id}`, kind: 'cosmetic', text: cosmeticTitle(n.id), sub: '' });
   }
-  for (const id of r?.fresh ?? []) out.push({ key: `recipe:${id}`, kind: 'recipe', text: recipeName(id), sub: recipeLine(id) });
+  for (const id of r?.fresh ?? []) {
+    const m = /^recipe\.(\w+)\.([1-4])$/.exec(id);
+    if (m) out.push({ key: `recipe:${id}`, kind: 'recipe', text: recipeName(id), sub: recipeLine(id), hood: m[1] as NeighborhoodId, n: Number(m[2]) as 1 | 2 | 3 | 4 });
+  }
   return out;
 }
 

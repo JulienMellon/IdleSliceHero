@@ -13,9 +13,9 @@ import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
 import { coachStep } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
-import { bonusLaneTop } from '@/components/endgame/stack-model';
+import { holdsBonus } from '@/components/endgame/stack-model';
 import { masteryGoal } from '@/components/goal-model';
-import { BANNERS, DRAWER_CARDS, HUD_CHIPS, onOvenAsk, SHEETS, Slots } from '@/components/slots';
+import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, SHEETS, Slots } from '@/components/slots';
 import { type DrawerIcon, type DrawerView, drawerCards, tiedBundle } from '@/components/drawer-model';
 import { buttonTone, buyBundle, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
@@ -117,19 +117,19 @@ export default function GameScreen() {
     }, []),
   );
   const setBonusHold = useGame((s) => s.setBonusHold);
-  const hold = drawerOpen || tasksOpen || giftOpen || ovenOpen || !focused;
+  // G95: the golden pizza also waits while a card is up (an order, or Victor's challenge): the sky has no room beside it
+  const cardUp = holdsBonus(game);
+  const hold = drawerOpen || tasksOpen || giftOpen || ovenOpen || !focused || cardUp;
   useEffect(() => {
     setBonusHold(hold);
   }, [hold, setBonusHold]);
   // an order chip is up: the golden pizza flies just below it, not behind it
   const chipUp = chipPhase(game) !== 'none';
-  // v5.15: ...and below the endgame notices (event banner, attack banner / challenge chip), which share that column
-  const baseTop = chipUp ? ORDER_VIEW.top + ORDER_VIEW.height + 6 : BONUS_VIEW.laneTop;
+  const bonusTop = chipUp ? ORDER_VIEW.top + ORDER_VIEW.height + 6 : BONUS_VIEW.laneTop;
   // the game tick's clock, never behind rewards.lastSeen (a claim moves lastSeen up to 200 ms ahead of the next tick);
   // a real rollback (lastSeen well ahead of the tick) is `clockOff`
   const tickAt = useGame((s) => s.tickAt);
   const now = Math.max(tickAt, game.rewards.lastSeen);
-  const bonusTop = bonusLaneTop(game, now, baseTop);
   const clockOff = game.rewards.lastSeen - tickAt > 2000;
   const rewardsOn = R.rewardsUnlocked(game);
   const hud = rewardsHud(game, now);
@@ -204,8 +204,8 @@ export default function GameScreen() {
   const shown = goalHidesOwnHire(shop, id) ? candidates.filter((c) => !mine(c)) : !shop.managed ? [...candidates.filter(mine), ...candidates.filter((c) => !mine(c))] : candidates;
   let goal: Goal | null = shown[0] ?? null;
   // v5.15 (D427): once the story is told and nothing else is worth saving for, the bar shows the city's mastery stars
-  const mg = masteryGoal(game);
-  if (!goal && mg) goal = { label: mg.label, text: mg.text, current: mg.current, target: mg.target };
+  const mg = goal ? null : masteryGoal(game);
+  if (mg) goal = { label: mg.label, text: mg.text, current: mg.current, target: mg.target };
   // Late game: fall back to the best big buy in this shop (Expand, Grade or a Decor tier) before the story count.
   if (!goal) {
     const big: (Goal & { ratio: number })[] = [];
@@ -289,6 +289,7 @@ export default function GameScreen() {
         onGift={rewardsOn ? onGift : undefined}
         giftDot={hud.giftDot}
         chips={<Slots items={HUD_CHIPS} />}
+        topChips={<Slots items={HUD_TOP_CHIPS} />}
         scrapRing={teaser.kind === 'complete' ? undefined : teaser.step}
         halo={coach?.target === 'cash' ? 'cash' : coach?.target === 'goal' ? 'goal' : null} />
       <ShopTabs game={game} boostMult={hud.mult} onSelect={setActive} onBuild={build} />
@@ -320,9 +321,10 @@ export default function GameScreen() {
         {coach && id === 'downtown' && !drawerOpen && <CoachCard step={coach} low={Math.max(8, insets.bottom)} high={12} />}
         {/* v5.13: the special-order chip under the goal bar, and the golden pizza in the sky (both sit under the drawers) */}
         <OrderChip top={ORDER_VIEW.top} onShop={setActive} />
-        {area.w > 0 && <FloatingBonus width={area.w} height={area.h} top={bonusTop} />}
         {/* the BANNERS slot: notices over the scene, under the drawers */}
         <Slots items={BANNERS} />
+        {/* G95: drawn after the banners, so the pizza flies over a banner (a week-long attack) and stays tappable */}
+        {area.w > 0 && <FloatingBonus width={area.w} height={area.h} top={bonusTop} />}
         {drawer && (
           <View style={StyleSheet.absoluteFill}>
             <Pressable testID="close-upgrades-dim" style={styles.dim} onPress={() => setDrawerOpen(false)} />

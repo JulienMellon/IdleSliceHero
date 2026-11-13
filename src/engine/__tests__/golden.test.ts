@@ -2,6 +2,7 @@
 // so any refactor that changes what the player sees or earns fails here. Do not edit the constant to make a
 // refactor pass; change it only for an intended balance change.
 import { createHash } from 'crypto';
+import '../features'; // the registry is filled by importing it (A31): the recorded hash is with the shipped features
 import * as G from '../game';
 import { NONNA_TAKEOVER } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';

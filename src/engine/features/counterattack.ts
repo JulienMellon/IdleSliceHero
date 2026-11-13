@@ -204,15 +204,26 @@ export const counterattack: Feature<AttackState> = {
   tick(g, dt, now) {
     return challenge(weeks(g, now), dt, now);
   },
+  shopKey(g, id) {
+    const st = read(g);
+    return st.open && st.target === id ? 'attack' : '';
+  },
   shopValueMult(g, id) {
     const st = read(g);
     return st.open && st.target === id ? COUNTERATTACK.valueMult : 1;
   },
-  onOffline(g, seconds, now) {
-    // pies sold while away must not finish a challenge the player wasn't there for: it lapses (no cooldown)
-    let next = weeks(g, now);
+  onOffline(g, seconds, now, before) {
+    // a running challenge keeps going across a short absence (a Control Center pull, a call: C110). The time away comes off its
+    // clock and the pies the shops sold meanwhile don't count toward it; it lapses (no cooldown: the player wasn't there)
+    // only when the clock has run out.
+    const next = weeks(g, now);
     const st = read(next);
-    if (st.challenge && seconds >= 1) next = write(next, { ...st, challenge: null });
-    return next;
+    const c = st.challenge;
+    const id = st.target;
+    if (!c || !id) return next;
+    const left = c.left - seconds;
+    if (left <= 0) return write(next, { ...st, challenge: null });
+    const away = Math.max(0, Math.floor(next.shops[id].sold) - Math.floor(before.shops[id].sold));
+    return write(next, { ...st, challenge: { ...c, left, startSold: c.startSold + away } });
   },
 };

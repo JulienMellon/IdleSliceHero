@@ -28,7 +28,11 @@ import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Ru
 import { ovenTier } from './scene/geometry';
 import { furnitureDeps, furnitureInputs, ladderInput, type FurnitureInputs } from './scene/furniture-inputs';
 import { LadderPiece } from './scene/ladder-props';
-import { neonSpot } from './scene/cosmetics';
+import { NEON_W, neonSpot } from './scene/cosmetics';
+import { DuskTint, StringLights } from './scene/event-props';
+import { eventLook } from './scene/event-look';
+import { activeEvent } from '../engine/features/events';
+import { NeonCounterSign } from './scene/cosmetic-props';
 import { VISITOR_LOOK, cameoGeom, sayLines, visitLine, visitOf, visitTag } from './scene/cameo';
 import {
   CHIP_RISE, CHIP_SECONDS, MILESTONE_LINES, bounceStep, bounceTransforms, clearPillX, confettiStep, crossedMilestone,
@@ -47,7 +51,7 @@ import { heads as headsFeature, newBarkMem, nextBark, rankOf, speakerFor, statio
 import { HEADS } from '../content/tuning';
 import { BadgeRail, CameoBubble, CameoTag, DeparturePops, HireBubble, MilestoneBadge, RushPill, StationBadge, rushPillWidth } from './scene/kitchen-hud';
 import { CHIP_ROW_HALF, MILE_SECONDS, ROW_AIR, STATION_LABEL, bubbleWalls, chipAt, hidesWaitingPill, hudOpacity, mileAnchor, mileOpacity, mileScale, mileSpeechY, mileSub, stationHatTop } from './scene/moments';
-import { rushPill } from './rush-model';
+import { rushCombo, rushPill } from './rush-model';
 import { emptyCrew, stepCrew, type CrewState } from './scene/crew';
 import { emitCoin } from './pulse-bus';
 import { BADGE_R, COIN_FLIGHT, badgeAt, badgeModels, badgeRowY, badgeXs, MIN_TAP_PT, placePops, popsCover, spotlightCutout, stationAt, stationRects, tutorialHand } from './scene/stations';
@@ -214,7 +218,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers every level the tie depends on
   const slowest = useMemo(() => Game.tiedStages(shop, game.vehicle), [key]);
   // who waits outside: hungry diners and idle drivers (steady state, so only while the shop runs); the patio's tables
-  const queue = running ? Game.queueSizes(shop, game.vehicle) : undefined;
+  // a running weekly event (D470): the sky goes to dusk, string lights come on, and two more hungry diners stand in the lane while the shop sells
+  const evLook = eventLook(activeEvent(Date.now()), id, running);
+  const q0 = running ? Game.queueSizes(shop, game.vehicle) : undefined;
+  const queue = q0 && evLook.extraDiners ? { ...q0, diners: q0.diners + evLook.extraDiners } : q0;
   const cheer = Date.now() / 1000 - m0.cheerAt < CHEER_SECONDS;
   const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cheer });
   const side = sidewalkOf(lay, crew, queue);
@@ -327,7 +334,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       const sp = speakerFor(shop, atk.seenWeek);
       if (sp) asks.push({ trigger: 'attack', station: sp, key: `attack-${atk.seenWeek}` });
     }
-    const combo = rushModel?.kind === 'combo';
+    // a rush combo: three quick taps inside the window (rush-model.ts), whether or not the kitchen could still go faster (so the pill may be a hint)
+    const combo = rushCombo(rushTaps, Date.now()).n >= 3;
     if (combo && !m.combo) {
       const sp = speakerFor(shop, Math.floor(wall / 7));
       if (sp) asks.push({ trigger: 'rush', station: sp });
@@ -431,6 +439,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           {CLOUDS.map((c, i) => (
             <Cloud key={i} x={((c.x0 + clock * c.v) % DRIFT_SPAN) - 100} y={c.y} k={c.k} dusk={id === 'uptown'} />
           ))}
+          {evLook.dusk && <DuskTint x={-fit.ox / fit.s} y={-fit.oy / fit.s} w={width / fit.s} h={frontY + fit.oy / fit.s} />}
           <Sidewalk frontY={frontY} />
           <Street />
           <RoomShell id={id} lay={lay} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
@@ -457,6 +466,9 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
               </G>
             );
           })}
+          {evLook.lights && <StringLights x0={8} x1={SCENE_W - 8} y={104} />}
+          {/* the neon counter sign hangs over the register, in front of the wall (cosmetics.ts `neonSpot`; G99) */}
+          {fin.neon && (() => { const n = neonSpot(lay); return <G transform={`translate(${n.cx} ${n.rect.y1 - 1.2}) scale(${NEON_W / 38})`}><NeonCounterSign /></G>; })()}
           {/* the day-30 visitor's tag over their head, and their line above it (cameo.ts), over the front wall */}
           {visit && cameo && <CameoTag x0={cameo.tag.x0} x1={cameo.tag.x1} y0={cameo.tag.y0} y1={cameo.tag.y1} text={visitTagText} />}
           {cameo && visitSays && !mileLine && <CameoBubble tail={cameo.tailX} y={cameo.sayY} text={sayLines(visitSays).join('\n')} wall0={walls.x0} wall1={walls.x1} />}
@@ -493,7 +505,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           {!refusal && mileLine && m.mile && (() => { const a = mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st)); return <HireBubble x={a.cx} y={mileSpeechY(a.cy)} text={mileLine} wall0={walls.x0} wall1={walls.x1} />; })()}
           {!refusal && !mileLine && m.hire && clock - m.hire.at < 2.5 && <HireBubble x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} wall0={walls.x0} wall1={walls.x1} />}
           {/* a head's bark takes the same spot under its badge, clamped inside the walls (D440); the rush pill gives way to it */}
-          {!refusal && !mileLine && !(m.hire && clock - m.hire.at < 2.5) && barkOn && <HireBubble x={bxs[barkOn.st]} y={by + 40} text={barkOn.text} wall0={walls.x0} wall1={walls.x1} />}
+          {!refusal && !mileLine && !(m.hire && clock - m.hire.at < 2.5) && barkOn && <HireBubble x={bxs[barkOn.st]} y={by + 44} text={barkOn.text} wall0={walls.x0} wall1={walls.x1} />}
           {/* a General Manager shop: "Tap to rush!" until the first tap, then the combo; a head's hello takes the spot while it shows */}
           {/* D406: under the oven chip, ≤ 120 wide, moved clear of the menu board and the ladder's wall props */}
           {rushModel && !refusal && !mileLine && !barkOn && !(m.hire && clock - m.hire.at < 2.5) && (
@@ -625,12 +637,7 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
   f.push({ y: 64, st: 'counter', el: <Counter key="counter" lay={lay} boxes={fin.boxes} /> });
   // the visual ladder: bench, counter and street props bounce with their station; the wall ones stay put
   for (const p of ladder)
-    f.push({ y: p.sortY, st: p.mount === 'wall' ? undefined : p.station === 'drivers' ? 'drivers' : p.station === 'prep' ? 'prep' : 'counter', el: <LadderPiece key={`lp-${p.id}`} id={p.id} ax={p.ax} ay={p.ay} k={p.k} n={p.n} v={fin.vehicle} mint={fin.scooterMint} neon={fin.neon} /> });
-  // the neon counter cosmetic: when the Lv 100 sign is not up, the sign takes the same slot (cosmetics.ts `neonSpot`)
-  if (fin.neon && !ladder.some((p) => p.id === 'neon')) {
-    const spot = neonSpot(lay, fin.id);
-    if (spot) f.push({ y: D + 1, el: <LadderPiece key="lp-neon-cosmetic" id="neon" ax={spot.ax} ay={spot.ay} k={spot.k} n={0} v={fin.vehicle} neon /> });
-  }
+    f.push({ y: p.sortY, st: p.mount === 'wall' ? undefined : p.station === 'drivers' ? 'drivers' : p.station === 'prep' ? 'prep' : 'counter', el: <LadderPiece key={`lp-${p.id}`} id={p.id} ax={p.ax} ay={p.ay} k={p.k} n={p.n} v={fin.vehicle} mint={fin.scooterMint} /> });
   // front of the shop + sidewalk props
   f.push({ y: 0, el: <FrontWall key="front" lay={lay} name={fin.name} signage={fin.signageTier} plants={fin.plants} id={fin.id} facadeSkin={fin.facadeSkin} awningGold={fin.awningGold} plaque={fin.plaque} /> });
   f.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });

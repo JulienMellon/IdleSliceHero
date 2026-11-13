@@ -2,10 +2,7 @@
 // then a toast. Fixed heights, so the stack's height is plain arithmetic the screen can use to keep the golden pizza's lane clear.
 // Pure: unit-tested in node.
 import { ORDER_VIEW } from '../../content/hooks';
-// the engine's game module first: game -> features -> game is a cycle, and it only resolves when game loads before a feature
-import '../../engine/game';
 import type { GameState } from '../../engine/game';
-import { eventView } from '../../engine/features/events';
 import { chipPhase } from '../order-model';
 import { attackLite, type AttackFace } from './attack-model';
 
@@ -19,6 +16,8 @@ export const STACK = {
   chip: ORDER_VIEW.height,
   /** A toast: a star earned, a recipe card, an event's start line (two lines). */
   toast: 52,
+  /** A recipe card's reveal: the card's picture, a header, the name and the line. */
+  recipe: 68,
 } as const;
 
 /** Where the stack starts: the order chip's spot, or just under it while an order is up. */
@@ -36,10 +35,11 @@ export function stackHeight({ event, attack }: StackParts): number {
 }
 
 /**
- * Where the golden pizza's lane starts (pt from the scene's top) so it flies below the notices: `base` is what the screen uses
- * without them (the order chip's bottom, or the lane's own top). Unchanged when there are no notices.
+ * G95: the golden pizza waits while a card is up: the special-order chip (any face) or the challenge chip (running or its result).
+ * The sky has no room for it beside those cards, and it used to land on their text. The persistent banners (an open attack, a running
+ * event) don't hold it: the pizza flies over them, drawn above the BANNERS slot, so a week-long attack never starves it.
  */
-export function bonusLaneTop(g: GameState, now: number, base: number): number {
-  const h = stackHeight({ event: eventView(now)?.active === true, attack: attackLite(g).face });
-  return h > 0 ? Math.max(base, stackTop(chipPhase(g) !== 'none') + h + STACK.gap) : base;
+export function holdsBonus(g: GameState): boolean {
+  const face = attackLite(g).face;
+  return chipPhase(g) !== 'none' || face === 'running' || face === 'won' || face === 'lost';
 }

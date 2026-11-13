@@ -4,7 +4,7 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.15
-step: fix               # setup | waves | verify | review | fix | close
+step: verify               # setup | waves | verify | review | fix | close
 round: r2              # r1 | r2 | r3
 last_shots: v5.15      # label of the last screenshot set that passed verify
 codecritic_range_start: 5d82004
@@ -19,11 +19,10 @@ reviews:               # latest review file per critic, with verdict and counts
   story:  docs/build/v5.15/review-r0-story.md (r0 NOT SATISFIED; bug 0 major 0 minor 6; E1 U2 T3)
   audio:  AUDIOLOG.md (next ID AU78)
 open: v5.14 carried notes (G95 + minors): rows in docs/build/v5.14/review-r3-critic.md
-next: fix r2: U1 + S1 running; E1 (owner E, incl. A30) after U1 reports; A-owner rows have no card (carry). Then verify r2 (label v5.15-r2), critic + codecritic medium re-check.
+next: verify r2 running (shots v5.15-r2); then commit, push, critic + codecritic medium re-check (PREV = review-r1-*).
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-12 U1 done (G95, D454, D455 fixed in U files; 460 component tests pass). Waiting on S1.
 - 2026-11-12 S1 done (D450 fixed; 478 tests pass). Out-of-scope asks sent: features.test pin → E1, Tasks-drawer star → U1.
 - 2026-11-12 Waves done. Verify r1: tsc clean, 895 tests pass, export ok; screenshots v5.15 running (pip-installed playwright 1.63.0).
 - 2026-11-12 Verify r1 shots v5.15: 1 error (U1 fixture 62, Boston soon overlay blocks gift-close); sent to U1.
@@ -33,3 +32,4 @@ next: fix r2: U1 + S1 running; E1 (owner E, incl. A30) after U1 reports; A-owner
 - 2026-11-13 U1 + S1 hit the 5-hour limit mid r2; resumed after reset (U1 had partial edits on disk).
 - 2026-11-13 r2 U1 done (21 U rows fixed; carry D465 needs copy key, M63, U9). E1 r2 launched (owner E + A30/A31). S1 still running.
 - 2026-11-13 r2 S1 done (G99, G100, D458, D459, D470, A29 fixed; D450 partial; A28/M60/U10/U11 carry). Waiting on E1.
+- 2026-11-13 r2 E1 done (C110-C112, A30, A31, T85-T88). Verify r2: tsc clean, 917 tests, API digest, export ok; shots v5.15-r2 running.

@@ -102,5 +102,6 @@ export const recipes: Feature<RecipesState> = {
   },
   tick: (g) => settle(g),
   onOffline: (g) => settle(g),
+  shopKey: (g, id) => String(ownedIn(g, id)),
   shopValueMult: (g, id) => Math.pow(RECIPE.valueMult, ownedIn(g, id)),
 };

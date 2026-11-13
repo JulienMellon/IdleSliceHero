@@ -4,7 +4,7 @@
 import { memo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { attackView } from '../../engine/features/counterattack';
+import { attackView, KEY as ATTACK_KEY, type AttackState } from '../../engine/features/counterattack';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { haptic } from '../game-ui';
@@ -20,6 +20,8 @@ export const AttackBanner = memo(function AttackBanner() {
     const l = attackLite(s.game);
     return l.face === 'banner' ? l.shopId : null;
   });
+  // C114: the Defend button re-enables the moment the retry wait ends: a boolean that flips when `retryAt` passes
+  useGame((s) => ((s.game.x?.[ATTACK_KEY] as AttackState | undefined)?.retryAt ?? 0) <= Date.now());
   // the words under it change by the minute
   useGame((s) => (attackLite(s.game).face === 'banner' ? Math.floor(Math.max(Date.now(), s.tickAt) / 60_000) : 0));
   const [victor, setVictor] = useState(false);

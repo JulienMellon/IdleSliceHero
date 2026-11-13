@@ -26,7 +26,7 @@ describe('the endgame toasts', () => {
 
   test('a recipe card: its name and flavour line', () => {
     const [i] = newsItems(withNews([], ['recipe.waterfront.3']));
-    expect(i).toMatchObject({ kind: 'recipe', text: 'Bell-Ringer Pie', sub: 'Baked the night the pier stayed a pier. Ring the bell!' });
+    expect(i).toMatchObject({ kind: 'recipe', hood: 'waterfront', n: 3, text: 'Bell-Ringer Pie', sub: 'Baked the night the pier stayed a pier. Ring the bell!' });
   });
 
   test('18 stars: Nonna’s line for the plaque; other cosmetics by their shop name', () => {

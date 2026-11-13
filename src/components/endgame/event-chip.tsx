@@ -3,13 +3,12 @@
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { eventView } from '../../engine/features/events';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
-import { eventChipText } from './event-model';
+import { eventChipText, eventViewNow } from './event-model';
 
 export const EventChip = memo(function EventChip() {
-  const text = useGame((s) => eventChipText(eventView(Math.max(Date.now(), s.tickAt))));
+  const text = useGame((s) => eventChipText(eventViewNow(Date.now())));
   if (!text) return null;
   return (
     <View testID="event-chip" accessibilityLabel={text} style={styles.chip}>

@@ -1,11 +1,23 @@
 // What the weekly events show, as plain data (v5.15): a countdown chip in the hour before, a banner while one runs.
 // The rules are engine/features/events.ts (`eventView`); the words are the copy table. Pure: unit-tested in node.
 import type { EventId } from '../../content/endgame';
-import type { EventView } from '../../engine/features/events';
+import { eventView, type EventView } from '../../engine/features/events';
 import { copy, speakerOf } from './copy-text';
 
 /** The copy keys call the events `friday` and `gameday`. */
 const COPY_EVENT: Record<EventId, 'friday' | 'gameday'> = { 'friday-rush': 'friday', 'game-day': 'gameday' };
+
+let cachedSecond = -1;
+let cachedView: EventView | null = null;
+/** U14: `eventView` once per whole second (the store ticks five times a second and four selectors ask): the same answer within a second. */
+export function eventViewNow(now: number): EventView | null {
+  const sec = Math.floor(now / 1000);
+  if (sec !== cachedSecond) {
+    cachedView = eventView(sec * 1000);
+    cachedSecond = sec;
+  }
+  return cachedView;
+}
 
 /** "42m" while there are minutes left, "45s" in the last minute: the chip repaints once a minute, then once a second. */
 export const eventTime = (seconds: number): string => {

@@ -7,12 +7,10 @@
 //   oven-woodfired          oven       every oven                               wood-fired grade paint, a log pile and a wisp of smoke
 //   storefront-skin-{n}     storefront the facade: pilasters, plinth, fascia    SKINS[(n - 1) % SKINS.length]; the sign, OPEN and mat stay
 //   scooter-mint            scooter    the drivers' vehicles                    a mint body, whichever fleet tier is parked
-//   neon-counter            counter    a neon sign over the counter             `neonSpot`: the back wall's neon slot, none if it does not fit
+//   neon-counter            counter    a neon sign over the register            `neonSpot`: in front of the wall, 44 x 15
 //   awning-gold             awning     the awning                               gold and cream stripes; the brand's red stays as the piping
-//   plaque-master           plaque     a gold plaque by the door                on the right pilaster
-import type { NeighborhoodId } from '../../content/types';
+//   plaque-master           plaque     a gold plaque by the door                on the brick header over the door
 import type { ShopLook } from './identity';
-import { candidates } from './ladder';
 import type { Layout } from './layout';
 import { P } from './projection';
 import type { Rect } from './stations';
@@ -97,23 +95,35 @@ export function dressedLook(look: ShopLook, d: Pick<Dress, 'facadeSkin' | 'awnin
 
 // ---------- the neon sign ----------
 
+/** The neon sign's size on screen (G99: at least 40 x 14 to read). */
+export const NEON_W = 44;
+export const NEON_H = 15;
+/** Its top edge: under the awning and the badge band (which end at 186), over the cashiers' faces (which start at 297) and the Lv 120 pass belt (287). */
+export const NEON_TOP = 270;
+
 /**
- * Where the neon sign hangs: the back wall's neon slot over the counter's right end (ladder.ts places the Lv 100 "ORDER HERE" sign
- * there; the wall above the counter has no other room). The slot is checked by the ladder budget at every footprint, so the sign
- * inherits its clearances: badge band, doorway, menu, window, oven column and every other prop. Worn, the sign takes the slot's
- * place at any level and the Lv 100 sign is not drawn twice. Null when the slot does not fit (the sign is then not drawn).
+ * Where the neon sign hangs: over the register, drawn in FRONT of the wall (the menu board, the window and the wall gear are behind it; G99: it used
+ * to sit in the ladder's neon slot and the menu board hid it). Centred on the register, kept inside the walls. `cx` is the screen x of its centre,
+ * `rect` its box. It clears the badge band, the doorway and the cashiers' faces (the budget in __tests__/cosmetics.test.ts).
  */
-export function neonSpot(lay: Layout, id: NeighborhoodId): { ax: number; ay: number; k: number; rect: Rect } | null {
-  const c = candidates(lay, { id, pins: 12, outside: true }).find((p) => p.id === 'neon');
-  return c && c.ok ? { ax: c.ax, ay: c.ay, k: c.k, rect: c.rect } : null;
+export function neonSpot(lay: Pick<Layout, 'staff' | 'L' | 'R'>): { cx: number; rect: Rect } {
+  const lo = P(lay.L + 8, 0)[0] + NEON_W / 2;
+  const hi = P(lay.R - 8, 0)[0] - NEON_W / 2;
+  const cx = Math.min(hi, Math.max(lo, P(lay.staff[0] + 12, 70)[0]));
+  return { cx, rect: { x0: cx - NEON_W / 2, x1: cx + NEON_W / 2, y0: NEON_TOP, y1: NEON_TOP + NEON_H } };
 }
 
 // ---------- the plaque ----------
 
-export const PLAQUE_W = 11;
-export const PLAQUE_H = 15;
-/** The master's plaque on the right pilaster, 70 up: its screen rect. */
-export function plaqueRect(lay: Pick<Layout, 'R'>): Rect {
-  const [cx, cy] = P(lay.R - 1, 0, 70);
-  return { x0: cx - PLAQUE_W / 2, x1: cx + PLAQUE_W / 2, y0: cy - PLAQUE_H / 2, y1: cy + PLAQUE_H / 2 };
+export const PLAQUE_W = 34;
+export const PLAQUE_H = 22;
+/**
+ * The master's plaque by the door (D458): 34 x 22, on the brick header over the doorway's glass, at its left end, 8 over the glass
+ * (facade.tsx draws the header from jax = P(door.x0 - 8, 0) to the right pilaster). Under the awning and the badge band, over the PIZZA blade
+ * (which hangs at mid-height) and off the glass.
+ */
+export function plaqueRect(lay: Pick<Layout, 'door'>): Rect {
+  const x0 = P(lay.door.x0 - 8, 0)[0] + 3;
+  const y1 = P(0, 0, 196)[1] - 8;
+  return { x0, x1: x0 + PLAQUE_W, y0: y1 - PLAQUE_H, y1 };
 }

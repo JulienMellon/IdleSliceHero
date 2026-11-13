@@ -52,7 +52,7 @@ describe('feature registry', () => {
     expect(FEATURES.map((f) => f.key)).toEqual(['mastery', 'counterattack', 'events', 'recipes', 'heads']);
     withFeatures([], () => {
       expect(G.newGame(T0).x).toEqual({});
-      expect(G.featureMults(G.newGame(T0), 'downtown')).toEqual({ value: 1, demand: 1 });
+      expect(G.featureMults(G.newGame(T0), 'downtown', T0)).toEqual({ value: 1, demand: 1 });
     });
     // a new game's endgame features change no price
     expect(G.featureMults(G.newGame(T0), 'downtown', T0)).toEqual({ value: 1, demand: 1 });

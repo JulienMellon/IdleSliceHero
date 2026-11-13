@@ -85,7 +85,7 @@ export const MORE_TAG_GAP = 6;
 /** The depth the sidewalk's pills are sorted at (D450): in front of every patio part (`patioSortYs`) and the queue, behind the parked vehicle (y -30) and the chalkboard (SIGN_Y). */
 export const PILL_LAYER_Y = PATIO_Y - 8;
 /** The "N waiting" pill keeps this far (screen pt) left of the nearest idle driver's silhouette (his cap's brim reaches 15.5 right of him; the body 10 left). */
-export const MORE_TAG_DRIVER_AIR = 13;
+export const MORE_TAG_DRIVER_AIR = 12;
 /**
  * Half the width of a dining table's set on screen-room units: the table top (±14), the chairs and the diners in them (SEAT + 11 each way).
  * The glass shop front shows the front rows through it, so a queue figure standing in front of one covers a seated diner or the table (D430).

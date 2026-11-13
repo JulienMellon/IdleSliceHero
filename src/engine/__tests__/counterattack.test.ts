@@ -240,14 +240,38 @@ describe('the challenge', () => {
     expect(state(retry).challenge).not.toBeNull();
   });
 
-  it('the clock stops while the app is closed, and pies sold meanwhile do not count', () => {
+  it('T85 a short absence keeps the challenge: the time away comes off its clock and the pies sold meanwhile do not count', () => {
+    const g = ok(startChallenge(attacked(), MON));
+    const t = state(g).target!;
+    const a0 = state(g).challenge!;
+    const away = G.applyOffline({ ...g, lastSavedAt: MON }, MON + 3_000).state;
+    const c = state(away).challenge!;
+    expect(c).not.toBeNull();
+    expect(c.left).toBe(a0.left - 3);
+    expect(c.target).toBe(a0.target);
+    const sold = away.shops[t].sold - g.shops[t].sold;
+    expect(c.startSold).toBe(a0.startSold + sold);
+    expect(G.playTick(away, 0, MON + 3_000).shops[t].sold - c.startSold).toBe(0); // nothing counts yet
+    expect(state(away).retryAt).toBe(0);
+    expect(state(away).open).toBe(true);
+  });
+
+  it('T85 an absence longer than the clock lapses the challenge, with no cooldown and no loss', () => {
     const g = ok(startChallenge(attacked(), MON));
     const t = state(g).target!;
     const away = G.applyOffline({ ...g, lastSavedAt: MON }, MON + 2 * 3_600_000).state;
     expect(state(away).challenge).toBeNull();
     expect(state(away).open).toBe(true);
     expect(state(away).retryAt).toBe(0); // no penalty: the player wasn't there
+    expect(state(away).news).toBeNull();
     expect(away.shops[t].sold).toBeGreaterThan(g.shops[t].sold);
+    expect(startChallenge(away, MON + 2 * 3_600_000).ok).toBe(true);
+  });
+
+  it('an absence exactly as long as the clock lapses it', () => {
+    const g = ok(startChallenge(attacked(), MON));
+    expect(state(G.applyOffline({ ...g, lastSavedAt: MON }, MON + 300_000).state).challenge).toBeNull();
+    expect(state(G.applyOffline({ ...g, lastSavedAt: MON }, MON + 299_000).state).challenge).not.toBeNull();
   });
 });
 

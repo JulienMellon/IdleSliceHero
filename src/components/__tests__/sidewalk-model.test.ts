@@ -2,7 +2,7 @@ import { NEIGHBORHOODS } from '../../content/tuning';
 /// <reference types="jest" />
 import { money } from '../../engine/format';
 import * as G from '../../engine/game';
-import { amountCard, amountLabel, BUY_AMOUNTS, buyMany, buyPlan, AFFORDABLE_OUTLINE, buildChipHint, buttonOutline, cardLook, buildChipSub, bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, type MergedSlot, mergeGroups, needLine, needText, showBundlePill, sidewalkSlots, stationModels, stationTitle, stationViews } from '../sidewalk-model';
+import { amountCard, amountLabel, nextAmount, BUY_AMOUNTS, buyMany, buyPlan, AFFORDABLE_OUTLINE, buildChipHint, buttonOutline, cardLook, buildChipSub, bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, type MergedSlot, mergeGroups, needLine, needText, showBundlePill, sidewalkSlots, stationModels, stationTitle, stationViews } from '../sidewalk-model';
 import { BUTTON_H, SIDEWALK_ROW, TAP } from '../tap-targets';
 
 const shopState = (patch: Partial<G.Shop>, cash = 0): G.GameState => {
@@ -434,6 +434,12 @@ describe('×1 / ×10 / MAX: one rule for how many levels a station tap buys (v5.
   test('the three amounts and their labels', () => {
     expect(BUY_AMOUNTS).toEqual([1, 10, 'max']);
     expect(BUY_AMOUNTS.map(amountLabel)).toEqual(['\u00D71', '\u00D710', 'MAX']);
+  });
+
+  test('D456: one chip cycles the three amounts', () => {
+    expect(nextAmount(1)).toBe(10);
+    expect(nextAmount(10)).toBe('max');
+    expect(nextAmount('max')).toBe(1);
   });
 
   test('×1 is the station\'s own price', () => {

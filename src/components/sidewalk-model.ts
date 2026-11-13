@@ -3,6 +3,7 @@
 // upgrade simulations (M26); only `affordable` depends on cash. Pure: unit-tested in node.
 import { FOOTPRINTS } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
+import { BUY_AMOUNTS, buyPlan, isLevelUpgrade, type BuyAmount } from '../engine/buy-many';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
 
@@ -348,80 +349,12 @@ export const buildChipSub = (cost: number, warn: string | null) => (warn ? `${mo
 
 // ---------- ×1 / ×10 / MAX (v5.15): one rule for how many levels a station buy takes ----------
 
-/** How many levels one tap on a station card buys: one, ten, or as many as the cash pays for. */
-export type BuyAmount = 1 | 10 | 'max';
-export const BUY_AMOUNTS: readonly BuyAmount[] = [1, 10, 'max'];
+// The rules (BuyAmount, buyPlan, buyMany) are the engine's (A30: engine/buy-many.ts); this file keeps the card views.
+export { BUY_AMOUNTS, buyMany, buyPlan, isLevelUpgrade, type BuyAmount, type BuyPlan, type LevelUpgrade } from '../engine/buy-many';
+
+/** D456: the amount chip's tap cycles x1 -> x10 -> MAX -> x1. */
+export const nextAmount = (a: BuyAmount): BuyAmount => BUY_AMOUNTS[(BUY_AMOUNTS.indexOf(a) + 1) % BUY_AMOUNTS.length];
 export const amountLabel = (a: BuyAmount): string => (a === 'max' ? 'MAX' : `×${a}`);
-
-/** The upgrades that are bought a level at a time (hires, Expand and the oven grade are single buys, whatever the amount). */
-export type LevelUpgrade = 'prep' | 'ovens' | 'counter' | 'drivers';
-export const isLevelUpgrade = (what: G.Upgrade): what is LevelUpgrade => what === 'prep' || what === 'ovens' || what === 'counter' || what === 'drivers';
-
-/** A station can't take more levels than this at once (the level cap stops it far sooner). */
-const LADDER_MAX = 400;
-const ladders = new Map<string, number[]>();
-
-/**
- * What the next levels cost in all: entry i is the price of i+1 levels. It ends where the upgrade is locked (the level cap).
- * Cached on the shop's levels, like the station models: cash is not part of it.
- */
-function costLadder(s: G.GameState, id: NeighborhoodId, what: LevelUpgrade): number[] {
-  const key = `${id}|${levelKey(s, id)}|${what}`;
-  const hit = ladders.get(key);
-  if (hit) return hit;
-  // an endless purse, so the engine's own buy rule (cost, cap, perks) walks the levels and nothing here repeats it
-  let cur: G.GameState = { ...s, cash: Number.POSITIVE_INFINITY };
-  const out: number[] = [];
-  let total = 0;
-  while (out.length < LADDER_MAX && G.upgradeLock(cur, id, what) === null) {
-    const cost = G.upgradeCostOf(cur, id, what);
-    const r = G.buyUpgrade(cur, id, what);
-    if (cost === null || !r.ok) break;
-    total += cost;
-    out.push(total);
-    cur = r.state;
-  }
-  if (ladders.size >= 48) ladders.clear();
-  ladders.set(key, out);
-  return out;
-}
-
-export interface BuyPlan {
-  /** Levels the tap buys (0 when nothing can be bought: locked or maxed). MAX with no cash shows the next level, unaffordable. */
-  count: number;
-  /** What they cost in all. */
-  total: number;
-  affordable: boolean;
-}
-
-/** The one rule: ×1 is one level, ×10 is ten (fewer when the level cap stops it), MAX is every level the cash pays for (at least the next one, shown unaffordable). */
-export function buyPlan(s: G.GameState, id: NeighborhoodId, what: G.Upgrade, amount: BuyAmount): BuyPlan {
-  if (!isLevelUpgrade(what)) {
-    const cost = G.upgradeCostOf(s, id, what);
-    return cost === null ? { count: 0, total: 0, affordable: false } : { count: 1, total: cost, affordable: s.cash >= cost };
-  }
-  const ladder = costLadder(s, id, what);
-  if (!ladder.length) return { count: 0, total: 0, affordable: false };
-  let count: number;
-  if (amount === 'max') {
-    count = 0;
-    while (count < ladder.length && ladder[count] <= s.cash) count++;
-    count = Math.max(1, count);
-  } else count = Math.min(amount, ladder.length);
-  return { count, total: ladder[count - 1], affordable: s.cash >= ladder[count - 1] };
-}
-
-/** Buy `count` levels of one upgrade through the engine's own buy, all or nothing: one new state, so one save and one sound. */
-export function buyMany(s: G.GameState, id: NeighborhoodId, what: G.Upgrade, count: number): G.BuyResult {
-  if (!(count >= 1)) return { ok: false, reason: 'Nothing to buy' };
-  let cur = s;
-  for (let i = 0; i < count; i++) {
-    const r = G.buyUpgrade(cur, id, what);
-    if (!r.ok) return r;
-    cur = r.state;
-  }
-  return { ok: true, state: cur };
-}
 
 /**
  * How a station card reads for the chosen amount: the total price and the levels gained ("+10 lv"), enabled when the cash covers it.

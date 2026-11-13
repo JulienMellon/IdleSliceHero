@@ -109,14 +109,15 @@ const styles = StyleSheet.create({
   nonnaRow: { position: 'absolute', left: 0, right: 0, bottom: 78, alignItems: 'center' },
   nonnaRing: { width: 104, height: 104, borderRadius: 52, backgroundColor: '#FFF4DC', borderWidth: 2, borderColor: '#5A2E1A', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   skip: { position: 'absolute', bottom: 34, alignSelf: 'center', fontFamily: F.bold, fontSize: 15, color: '#FFF4DC' },
-  soonCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 190, paddingHorizontal: 24 },
-  soonLogo: { width: 150, height: 150, alignItems: 'center', justifyContent: 'center' },
-  soonText: { marginTop: 14, alignItems: 'center', gap: 6 },
-  soonTitle: { fontFamily: F.bold, fontSize: 30, lineHeight: 34, color: '#FFFFFF', textAlign: 'center', textShadowColor: '#3B1F14', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 },
-  soonLine: { fontFamily: F.semi, fontSize: 15, lineHeight: 20, color: '#FFE7C2', textAlign: 'center', maxWidth: 300 },
-  soonNonna: { position: 'absolute', left: 24, right: 24, bottom: 96, alignItems: 'center', gap: 8 },
+  skyline: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  soonCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 90, paddingHorizontal: 24, gap: 14 },
+  soonLogo: { width: 130, height: 130, alignItems: 'center', justifyContent: 'center' },
+  soonText: { alignItems: 'center', gap: 6 },
+  soonTitle: { fontFamily: F.bold, fontSize: 30, lineHeight: 34, color: '#FFFFFF', textAlign: 'center', textWrap: 'balance', textShadowColor: '#3B1F14', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 } as object,
+  soonLine: { fontFamily: F.semi, fontSize: 15, lineHeight: 20, color: '#FFE7C2', textAlign: 'center', maxWidth: 260, textWrap: 'balance' } as object,
+  soonNonna: { alignItems: 'center', gap: 8 },
   soonBubble: { backgroundColor: '#FFF4DC', borderWidth: 2, borderColor: '#5A2E1A', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8, maxWidth: 320 },
-  soonSign: { fontFamily: F.semi, fontSize: 14, lineHeight: 18, color: '#3B1F14', textAlign: 'center' },
+  soonSign: { fontFamily: F.semi, fontSize: 14, lineHeight: 18, color: '#3B1F14', textAlign: 'center', textWrap: 'balance' } as object,
   soonClose: { position: 'absolute', bottom: 34, alignSelf: 'center', minHeight: 44, justifyContent: 'center' },
   skip2: { fontFamily: F.bold, fontSize: 15, color: '#FFF4DC' },
 });
@@ -143,6 +144,11 @@ export function SoonCard({ onDone }: { onDone: () => void }) {
   return (
     <View style={[StyleSheet.absoluteFill, styles.root]}>
       <Pressable testID="soon-card" accessibilityRole="button" accessibilityLabel={`${copy('soon.boston.title')}. Tap to close`} style={StyleSheet.absoluteFill} onPress={onDone}>
+        {/* D460: Boston's skyline stands along the foot of the card (a tower, the dome of a statehouse, brownstones), behind everything */}
+        <Svg style={styles.skyline} width="100%" height={110} viewBox="0 0 200 60" preserveAspectRatio="xMidYMax slice" pointerEvents="none">
+          <Path d="M0 60 V44 H10 V36 H18 V44 H26 V30 H30 V20 L33 12 L36 20 V30 H40 V40 H52 V26 H62 V40 H70 V34 H78 V44 H88 V38 Q96 22 104 38 V44 H112 V32 H120 V14 H126 V32 H134 V42 H146 V28 H158 V42 H168 V36 H178 V44 H188 V38 H200 V60 Z" fill="#8F2216" />
+          <Path d="M0 60 V50 H14 V46 H24 V50 H44 V44 H58 V50 H90 V46 H106 V50 H140 V45 H152 V50 H176 V47 H200 V60 Z" fill="#6F1A10" />
+        </Svg>
         <View style={styles.soonCenter}>
           <View style={styles.soonLogo}>
             <Animated.View style={[styles.rays, { transform: [{ rotate: rot }] }]}>
@@ -156,7 +162,7 @@ export function SoonCard({ onDone }: { onDone: () => void }) {
                 <Path d={RAYS} fill="url(#soonFade)" />
               </Svg>
             </Animated.View>
-            <Logo size={150} />
+            <Logo size={130} />
           </View>
           <Animated.View style={[styles.soonText, { opacity: rise, transform: [{ translateY: y }] }]}>
             <Text testID="soon-title" style={styles.soonTitle} maxFontSizeMultiplier={1.2}>
@@ -169,15 +175,16 @@ export function SoonCard({ onDone }: { onDone: () => void }) {
               {copy('soon.boston.line.2')}
             </Text>
           </Animated.View>
-        </View>
-        <View style={styles.soonNonna} pointerEvents="none">
-          <View style={styles.nonnaRing}>
-            <Portrait id="nonna-rosa" mood="happy" size={84} />
-          </View>
-          <View style={styles.soonBubble}>
-            <Text style={styles.soonSign} maxFontSizeMultiplier={1.2}>
-              {copy('soon.boston.signoff')}
-            </Text>
+          {/* the gap between the lines and Nonna is one small step, not a hole */}
+          <View style={styles.soonNonna} pointerEvents="none">
+            <View style={styles.nonnaRing}>
+              <Portrait id="nonna-rosa" mood="happy" size={84} />
+            </View>
+            <View style={styles.soonBubble}>
+              <Text style={styles.soonSign} maxFontSizeMultiplier={1.2}>
+                {copy('soon.boston.signoff')}
+              </Text>
+            </View>
           </View>
         </View>
         <Animated.View style={[styles.soonClose, { opacity: blink }]}>

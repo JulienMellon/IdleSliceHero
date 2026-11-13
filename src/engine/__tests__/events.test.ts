@@ -9,6 +9,7 @@ import type { NeighborhoodId } from '../../content/types';
 import { getFeature } from '../features';
 import { activeEvent, events, eventView } from '../features/events';
 import * as G from '../game';
+import * as R from '../rewards';
 
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const at = (y: number, m: number, d: number, h = 0, mi = 0, s = 0) => new Date(y, m - 1, d, h, mi, s).getTime();
@@ -125,6 +126,38 @@ describe('while the app is open', () => {
     const ratio = earn(FRI(18)) / earn(at(2026, 11, 12, 18));
     expect(ratio).toBeGreaterThan(1.2);
     expect(ratio).toBeLessThan(1.3); // 2.5 / 2, not 1.5
+  });
+});
+
+describe('T86 cash rewards are not inflated by an event (C111)', () => {
+  const now = FRI(18);
+  it('rewardIncome during an event equals the off-event value, with and without a 2x boost', () => {
+    const boosted = (g: G.GameState): G.GameState => ({ ...g, rewards: { ...g.rewards, boosts: [{ mult: 2, until: now + 3_600_000, source: 't' }], lastSeen: now } });
+    const on = running(now);
+    expect(G.earningsPerSecond(on)).toBeCloseTo(G.earningsPerSecond(base(now)) * 1.5, 6); // the readout at the stamp does show the event
+    expect(R.rewardIncome(on)).toBeCloseTo(R.rewardIncome(base(now)), 6);
+    expect(R.rewardIncome(boosted(on))).toBeCloseTo(R.rewardIncome(boosted(base(now))), 6);
+    expect(R.minutesToCash(boosted(on), 30)).toBeCloseTo(R.minutesToCash(base(now), 30), 3);
+  });
+
+  it('a daily-task claim pays the same in and out of an event', () => {
+    const claim = (g: G.GameState) => {
+      const s = { ...g, seenScenes: ['downtown-4'], rewards: { ...g.rewards, lastSeen: 0, daily: [{ kind: 'upgrades' as const, target: 1, base: 0, claimed: false }], day: R.dayKey(now) }, stats: { ...g.stats, upgrades: 5 } };
+      const r = R.claimDaily(s, 0, now);
+      if (!r.ok) throw new Error(r.reason);
+      return r.state.cash - s.cash;
+    };
+    expect(claim(running(now))).toBeCloseTo(claim(base(now)), 3);
+  });
+});
+
+describe('freshness is 0 <= now - stamp <= 5 s (C111)', () => {
+  it('a readout dated before the stamp gets no event', () => {
+    const g = running(FRI(18));
+    expect(eventMult(g, 'uptown', FRI(18) - 1)).toBe(1);
+    expect(eventMult(g, 'uptown', FRI(18))).toBeCloseTo(1.5, 12);
+    expect(eventMult(g, 'uptown', FRI(18, 0, 5))).toBeCloseTo(1.5, 12);
+    expect(eventMult(g, 'uptown', FRI(18, 0, 5) + 1)).toBe(1);
   });
 });
 

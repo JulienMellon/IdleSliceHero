@@ -88,26 +88,30 @@ export const StationBadge = memo(function StationBadge({ x, y, step, count, tone
         </G>
       )}
       {/* the head's pins, on the badge's lower edge (so they show whether the head or the General Manager's chip is on the rail) */}
-      {rank > 0 && <RankPin x={-6} y={r + 3} rank={rank} />}
-      {star && <StarPin x={6} y={r + 3.5} />}
+      {rank > 0 && <RankPin x={-7} y={r + 4} rank={rank} />}
+      {star && <StarPin x={9} y={r + 4} />}
     </G>
   );
 });
 
-/** A rank pin: a disc in bronze, silver or gold with one, two or three pips for Lv 25, 50 and 100. */
-const RankPin = ({ x, y, rank }: { x: number; y: number; rank: number }) => (
-  <G transform={`translate(${x} ${y})`}>
-    <Circle cx={0} cy={0} r={4.6} fill={HEAD_BARKS.rankColors[rank - 1]} stroke={INK} strokeWidth={1} />
-    {Array.from({ length: rank }).map((_, i) => (
-      <Circle key={i} cx={(i - (rank - 1) / 2) * 2.6} cy={0} r={0.95} fill={INK} />
-    ))}
-  </G>
-);
+/** A rank pin, 12 across (D459): a bronze, silver or gold disc with the level it marks, 25, 50 or 100. */
+const RankPin = ({ x, y, rank }: { x: number; y: number; rank: number }) => {
+  const level = String(HEAD_BARKS.rankLevels[rank - 1]);
+  return (
+    <G transform={`translate(${x} ${y})`}>
+      <Circle cx={0} cy={0} r={6.4} fill={HEAD_BARKS.rankColors[rank - 1]} stroke={INK} strokeWidth={1.2} />
+      <SvgText x={0} y={level.length > 2 ? 2.3 : 2.6} fontFamily={F.bold} fontSize={level.length > 2 ? 6.4 : 7.4} fill={INK} textAnchor="middle">
+        {level}
+      </SvgText>
+    </G>
+  );
+};
 
-/** The Head of the Week's gold star pin. */
+/** The Head of the Week's gold star pin, 14 across, on a white disc so it reads over any wall art behind the badge (D459). */
 const StarPin = ({ x, y }: { x: number; y: number }) => (
   <G transform={`translate(${x} ${y})`}>
-    <Path d="M0 -5.4 L1.5 -1.7 L5.4 -1.4 L2.4 1.1 L3.3 5 L0 2.9 L-3.3 5 L-2.4 1.1 L-5.4 -1.4 L-1.5 -1.7 Z" fill="#FFC531" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+    <Circle cx={0} cy={0} r={7.4} fill="#fff" stroke={INK} strokeWidth={1.2} />
+    <Path d="M0 -5.6 L1.6 -1.8 L5.6 -1.5 L2.5 1.2 L3.4 5.2 L0 3 L-3.4 5.2 L-2.5 1.2 L-5.6 -1.5 L-1.6 -1.8 Z" fill="#FFC531" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
   </G>
 );
 

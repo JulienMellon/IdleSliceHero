@@ -6,7 +6,6 @@ import { Circle, Ellipse, G, Path, Rect, Text as SvgText } from 'react-native-sv
 
 import { F } from '../../theme';
 import { INK } from './projection';
-import { NeonCounterSign } from './cosmetic-props';
 import { ParkedVehicle } from './street';
 import type { PropId } from './ladder';
 
@@ -335,12 +334,10 @@ export interface LadderPieceProps {
   v: number;
   /** The worn mint-scooter cosmetic: the parked vehicle is repainted (cosmetics.ts). */
   mint?: boolean;
-  /** The worn neon-counter cosmetic: the neon slot shows its sign instead of "ORDER HERE" (cosmetics.ts `neonSpot`). */
-  neon?: boolean;
 }
 
 /** One ladder prop at its screen anchor. */
-export const LadderPiece = memo(function LadderPiece({ id, ax, ay, k, n, v, mint = false, neon = false }: LadderPieceProps) {
+export const LadderPiece = memo(function LadderPiece({ id, ax, ay, k, n, v, mint = false }: LadderPieceProps) {
   if (id === 'vehicle2') {
     return (
       <G opacity={1}>
@@ -369,7 +366,7 @@ export const LadderPiece = memo(function LadderPiece({ id, ax, ay, k, n, v, mint
       {id === 'tickets' && <Tickets />}
       {id === 'screen' && <OrderScreen />}
       {id === 'register2' && <Register2 />}
-      {id === 'neon' && (neon ? <NeonCounterSign /> : <Neon />)}
+      {id === 'neon' && <Neon />}
       {id === 'board' && <Board n={n} />}
       {id === 'hooks' && <Hooks />}
       {id === 'photo' && <Photo />}

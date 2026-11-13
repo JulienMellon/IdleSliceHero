@@ -58,7 +58,9 @@ const read = (g: GameState): EventsState => (g.x?.[KEY] as EventsState | undefin
 function runningFor(g: GameState, id: NeighborhoodId, now: number): EventDef | null {
   const st = read(g);
   const e = defOf(st.id);
-  return e && now - st.at <= EVENT_FRESH_MS && hits(e, id) ? e : null;
+  // the stamp is of a past foreground tick: a `now` before it (a stale readout) or long after it (an offline catch-up) gets nothing (C111)
+  const age = now - st.at;
+  return e && age >= 0 && age <= EVENT_FRESH_MS && hits(e, id) ? e : null;
 }
 
 /** `g` with no event running (for a reward that must not be inflated by one). */
@@ -75,6 +77,10 @@ export const events: Feature<EventsState> = {
     if (!e) return st.id === null ? g : { ...g, x: { ...g.x, [KEY]: { id: null, at: 0 } } };
     if (st.id === e.id && now - st.at < EVENT_STAMP_MS && now >= st.at) return g;
     return { ...g, x: { ...g.x, [KEY]: { id: e.id, at: now } } };
+  },
+  shopKey(g, id) {
+    const e = defOf(read(g).id);
+    return e && hits(e, id) ? e.id : '';
   },
   shopValueMult(g, id, now) {
     const e = runningFor(g, id, now);

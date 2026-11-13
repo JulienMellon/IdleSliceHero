@@ -27,6 +27,9 @@ export const starPips = (shop: Shop): boolean[] => {
 /** The pips as a 3-bit number (heads = 1, Flagship = 2, golden ovens = 4): a primitive for a memoised pip row. */
 export const pipBits = (pips: readonly boolean[]): number => pips.reduce((b, on, i) => (on ? b | (1 << i) : b), 0);
 
+/** D464: the pips are hidden until the shop's first head is hired (a manager brings all three), so a new shop doesn't wear three empty stars. */
+export const showPips = (shop: Shop): boolean => shop.managed || Object.values(shop.heads).some(Boolean);
+
 export { shopStars };
 
 /** A toast's text for one piece of mastery news; null for a cosmetic (the toast shows its name through the shop copy). */

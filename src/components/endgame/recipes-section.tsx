@@ -2,14 +2,15 @@
 // silhouette with "???" and what earns it. Cards come from play only (never bought). Data: recipes-model.ts.
 import { StyleSheet, Text, View } from 'react-native';
 
+import type { NeighborhoodId } from '../../content/types';
 import { C, F } from '../../theme';
 import type { RecipeGroup, RecipeTile } from './recipes-model';
 import { RecipeArt } from './recipe-art';
 
-function Tile({ t }: { t: RecipeTile }) {
+function Tile({ t, hood }: { t: RecipeTile; hood: NeighborhoodId }) {
   return (
     <View testID={`recipe-${t.id}`} accessibilityLabel={t.owned ? `${t.name}. ${t.line}` : `Recipe not found yet. ${t.drop}`} style={[styles.tile, !t.owned && styles.tileLocked]}>
-      <RecipeArt n={t.n} owned={t.owned} />
+      <RecipeArt hood={hood} n={t.n} owned={t.owned} />
       <Text style={[styles.name, !t.owned && styles.nameLocked]} numberOfLines={2} maxFontSizeMultiplier={1.15}>
         {t.name}
       </Text>
@@ -31,7 +32,7 @@ export function RecipesSection({ groups, bottom }: { groups: RecipeGroup[]; bott
           </View>
           <View style={styles.grid}>
             {g.tiles.map((t) => (
-              <Tile key={t.id} t={t} />
+              <Tile key={t.id} t={t} hood={g.id} />
             ))}
           </View>
         </View>

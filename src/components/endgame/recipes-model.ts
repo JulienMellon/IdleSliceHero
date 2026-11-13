@@ -3,8 +3,6 @@
 import { RECIPE_DROPS } from '../../content/endgame';
 import { NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
-// the engine's game module first: game -> features -> game is a cycle, and it only resolves when game loads before a feature
-import '../../engine/game';
 import type { GameState } from '../../engine/game';
 import { collectionView, type Collection } from '../../engine/features/recipes';
 import { recipeLine, recipeName } from './copy-text';

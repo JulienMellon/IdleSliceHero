@@ -27,8 +27,9 @@ export default function Scrapbook() {
     if (section === 'recipes') setTab('recipes');
   }, [section]);
   // the owned cards are primitives (a count and a key), so the Recipes tab repaints when a card drops, not on every tick
-  const owned = useGame((s) => collectionView(s.game).owned);
+  // M64: one primitive selector (the key), the count is read off it
   const ownedKey = useGame((s) => collectionView(s.game).shops.map((x) => x.cards.map((c) => (c.owned ? 1 : 0)).join('')).join('|'));
+  const owned = ownedKey.split('1').length - 1;
   const groups = useMemo(() => recipeGroups(useGame.getState().game), [ownedKey]); // eslint-disable-line react-hooks/exhaustive-deps -- `ownedKey` is what the groups depend on
   useEffect(() => {
     markViewed();
@@ -43,7 +44,7 @@ export default function Scrapbook() {
           </Pressable>
           <Text style={styles.title}>Scrapbook</Text>
           <Text style={styles.count}>
-            {seen.length}/{HOME_SCENES.length}
+            {`Stories ${seen.length}/${HOME_SCENES.length}`}
           </Text>
         </View>
         <Text style={styles.teaser} testID="scrapbook-teaser">
@@ -112,7 +113,7 @@ const styles = StyleSheet.create({
   back: { width: 70 },
   backText: { fontFamily: F.bold, color: '#fff', fontSize: 18 },
   title: { fontFamily: F.bold, color: '#fff', fontSize: 24 },
-  count: { width: 70, textAlign: 'right', fontFamily: F.semi, color: '#FFE7C2', fontSize: 16 },
+  count: { minWidth: 70, textAlign: 'right', fontFamily: F.semi, color: '#FFE7C2', fontSize: 14 },
   chapter: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 3, borderColor: C.ink, overflow: 'hidden' },
   chapterHead: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderBottomWidth: 3, borderColor: C.ink },
   avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#fff', borderWidth: 2.5, borderColor: C.ink, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },

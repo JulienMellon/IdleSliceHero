@@ -6,6 +6,7 @@ import { DECOR_KINDS, NEIGHBORHOODS, PIER9_BID, VEHICLES } from '../src/content/
 import type { NeighborhoodId } from '../src/content/types';
 import { pickScene } from '../src/engine/cutscene-input';
 import * as G from '../src/engine/game';
+import '../src/engine/features'; // registers the features (they are not part of the game module alone)
 import { masteryTotal } from '../src/engine/features/mastery';
 
 type Option = { label: string; cost: number; gain: number; buy: (s: G.GameState) => G.BuyResult };

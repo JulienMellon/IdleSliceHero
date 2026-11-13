@@ -99,10 +99,11 @@ const NightOvenChip = memo(function NightOvenChip() {
 
 export const HUD_CHIPS: SlotEntry[] = [
   { id: 'night-oven', order: 10, Component: NightOvenChip },
-  // v5.15 (U1): the event countdown in the hour before an event, then the diamonds chip that opens the Shop screen
+  // v5.15 (U1): the event countdown in the hour before an event
   { id: 'event-countdown', order: 15, Component: EventChip },
-  { id: 'diamond-shop', order: 20, Component: DiamondChip },
 ];
+// G98: the diamonds chip lives in the HUD's top row (after the gift), so it never narrows the goal bar
+export const HUD_TOP_CHIPS: SlotEntry[] = [{ id: 'diamond-shop', order: 20, Component: DiamondChip }];
 // v5.15 (U1): the event banner, the counter-attack banner / challenge chip and the star, recipe and event toasts, one column under the order chip
 export const BANNERS: SlotEntry[] = [{ id: 'endgame-stack', order: 10, Component: BannerStack }];
 // v5.15 (U1): "Coming soon: Boston", once, after the last finale

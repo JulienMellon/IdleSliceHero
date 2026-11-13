@@ -1,20 +1,16 @@
 // The Shop screen as plain data (v5.15): tab 1 is the vanity shop (the seven cosmetics), tab 2 the booster shelf.
 // Cosmetics cost diamonds; boosters are never sold (the shelf only shows the inventory and starts a booster). The rules for
 // wearing are engine/rewards.ts (`wear`, `unwear`, `grantCosmetic`); the names and lines are the copy table. Pure: unit-tested in node.
-import { MASTERY } from '../../content/endgame';
-import type { BuyResult, GameState } from '../../engine/game';
-import { grantCosmetic } from '../../engine/rewards';
-import { boosterLabel } from '../rewards-model';
+import { MASTERY, VANITY_IDS, VANITY_PRICE, type VanityId } from '../../content/endgame';
+import type { GameState } from '../../engine/game';
+import { isSkin, nextSkin } from '../../engine/vanity';
+import { spanText } from '../rewards-model';
 import { copy } from './copy-text';
 
-/** What a cosmetic costs, in diamonds. */
-export const VANITY_PRICE = 150;
+// The price, the ids and the buy rule are the engine's (A30: engine/vanity.ts); this file is the views.
+export { buyCosmetic, SOLD_SKIN_BASE } from '../../engine/vanity';
+export { VANITY_IDS, VANITY_PRICE, type VanityId };
 
-/** The seven cosmetics, in the order the shop lists them. `plaque-master` is earned at 18 stars and never sold. */
-export const VANITY_IDS = ['oven-gold', 'storefront-skin', 'oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold', 'plaque-master'] as const;
-export type VanityId = (typeof VANITY_IDS)[number];
-
-const isSkin = (id: string) => /^storefront-skin-\d+$/.test(id);
 /** The owned ids a shop item stands for: the storefront skins are numbered by gift cycle, so "Fresh Storefront" is any of them. */
 const idsOf = (item: VanityId, owned: readonly string[]): string[] => (item === 'storefront-skin' ? owned.filter(isSkin) : owned.filter((o) => o === item));
 
@@ -34,13 +30,6 @@ export interface VanityView {
   buyId: string | null;
 }
 
-/** The next storefront skin the player doesn't own: `storefront-skin-1`, `-2`, ... */
-function nextSkin(owned: readonly string[]): string {
-  let n = 1;
-  while (owned.includes(`storefront-skin-${n}`)) n++;
-  return `storefront-skin-${n}`;
-}
-
 export function vanityViews(g: GameState): VanityView[] {
   const { cosmetics, worn, diamonds } = g.rewards;
   return VANITY_IDS.map((id) => {
@@ -53,28 +42,18 @@ export function vanityViews(g: GameState): VanityView[] {
   });
 }
 
-/**
- * Buy a cosmetic with diamonds: it is owned and, being new, worn at once (`grantCosmetic`). Only the six for sale: the plaque
- * is earned. Not enough diamonds, or already owned: refused with the reason, nothing changes.
- */
-export function buyCosmetic(g: GameState, id: string): BuyResult {
-  const item = VANITY_IDS.find((v) => v === id || (v === 'storefront-skin' && isSkin(id)));
-  if (!item || item === 'plaque-master') return { ok: false, reason: 'Not for sale' };
-  const r = g.rewards;
-  if (r.cosmetics.includes(id)) return { ok: false, reason: 'Already yours' };
-  if (r.diamonds < VANITY_PRICE) return { ok: false, reason: 'Not enough diamonds' };
-  return { ok: true, state: { ...g, rewards: { ...r, ...grantCosmetic(r, id), diamonds: r.diamonds - VANITY_PRICE } } };
-}
-
 export interface ShelfRow {
   /** Index in `rewards.boosters`: what `startBooster(i)` takes. */
   index: number;
-  /** "2× 15m". */
+  /** D462: "2× income · 15 m", "2× income · 1 h" (never "1h0m"). */
   label: string;
 }
 
 /** The booster shelf: the inventory, one row each. Empty = the empty-shelf line. */
-export const boosterShelf = (g: GameState): ShelfRow[] => g.rewards.boosters.map((b, index) => ({ index, label: boosterLabel(b) }));
+export const boosterShelf = (g: GameState): ShelfRow[] => g.rewards.boosters.map((b, index) => ({ index, label: shelfLabel(b.mult, b.seconds) }));
+
+/** "2× income · 1 h": the shelf's own wording; whole hours and days drop their zero minutes and hours. */
+export const shelfLabel = (mult: number, seconds: number): string => `${Number.isInteger(mult) ? mult : Math.round(mult * 10) / 10}\u00D7 income \u00B7 ${spanText(seconds).replace(/ 0 m$/, '').replace(/ 0 h$/, '')}`;
 
 export const SHELF_EMPTY = (): string => copy('shop.boosters.empty');
 

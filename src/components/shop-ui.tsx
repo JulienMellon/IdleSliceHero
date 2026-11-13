@@ -13,7 +13,7 @@ import { lotView } from './city-model';
 import { buildChipHint, buildChipSub, cardLook, type ButtonTone } from './sidewalk-model';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BuyButton, haptic } from './game-ui';
-import { pipBits, starPips } from './endgame/mastery-model';
+import { pipBits, showPips, starPips } from './endgame/mastery-model';
 import { StarPips } from './endgame/star-pips';
 
 export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Game.GameState; /** The running income boost: the chips show what the shop earns now. */ boostMult?: number; onSelect: (id: NeighborhoodId) => void; onBuild: (id: NeighborhoodId) => boolean }) {
@@ -93,7 +93,7 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
               <Text style={styles.tabName}>{n.name}</Text>
               <Text style={[styles.tabSub, active && { color: C.ink }, !shop.managed && !active && { color: C.tomato }]}>{shop.managed ? `${money(eps)}/s` : 'you run it'}</Text>
               {/* v5.15: the shop's three mastery stars (heads, Flagship, golden ovens) */}
-              <StarPips testID={`stars-${n.id}`} bits={pipBits(starPips(shop))} size={10} />
+              {showPips(shop) && <StarPips testID={`stars-${n.id}`} bits={pipBits(starPips(shop))} size={10} />}
             </Pressable>
           );
         })}
