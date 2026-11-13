@@ -8,7 +8,7 @@ import { AWNING_GOLD, MINT, NO_DRESS, SKINS, dressOf, dressedLook, isDressed, ne
 import { furnitureDeps, furnitureInputs, type FurnitureSource } from '../furniture-inputs';
 import { LOOKS } from '../identity';
 import { candidates, fixedPeople, hits, obstacles } from '../ladder';
-import { layout } from '../layout';
+import { layout, secondVehicleShift } from '../layout';
 import { SCENE_W, P } from '../projection';
 import { doorwaySignRect, staffFaces } from '../stations';
 
@@ -149,5 +149,24 @@ describe('the plaque (budget; D458)', () => {
       // the clock face (r 8 at mid - 6)
       expect(r.y0).toBeGreaterThan(mid - 6 + 8);
     }
+  });
+});
+
+describe('the second parked vehicle (D471)', () => {
+  const first = (lay: ReturnType<typeof shopAt>) => P(lay.scooter.x, lay.scooter.y)[0];
+  const second = (fp: number, vehicle: number) => {
+    const lay = shopAt(fp, 2);
+    const c = candidates(lay, { id: 'downtown', pins: 12, outside: true, vehicle }).find((p) => p.id === 'vehicle2')!;
+    return { ok: c.ok, gap: first(lay) - c.ax };
+  };
+  test('a car parks 40 and a van 52 left of its twin where the sidewalk has room, so they do not read as one vehicle', () => {
+    expect(secondVehicleShift(1)).toBe(24);
+    expect(secondVehicleShift(2)).toBeGreaterThan(secondVehicleShift(1));
+    expect(secondVehicleShift(3)).toBeGreaterThan(secondVehicleShift(2));
+    for (const fp of [2, 3, 4]) expect(second(fp, 2).gap).toBeGreaterThan(38);
+    expect(second(2, 3).gap).toBeGreaterThan(50);
+  });
+  test('where the wider shift does not fit the second vehicle stays (at the old shift), never dropped', () => {
+    for (let fp = 1; fp < FOOTPRINTS.length; fp++) for (const v of [1, 2, 3]) expect([fp, v, second(fp, v).ok]).toEqual([fp, v, true]);
   });
 });

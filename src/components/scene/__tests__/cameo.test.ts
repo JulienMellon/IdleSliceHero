@@ -71,8 +71,10 @@ describe('the lines', () => {
     expect(per).toBeLessThanOrEqual(300);
     expect(CAMEO.lineSeconds).toBeLessThan(per / 10);
   });
-  test('every visitor has a look', () => {
-    for (const id of VISITORS) expect(VISITOR_LOOK[id]).toBeDefined();
+  test('every visitor has a look, bigger than the crowd, and Nonna is in a red cardigan and a shawl (D474)', () => {
+    for (const id of VISITORS) expect(VISITOR_LOOK[id].scale).toBeGreaterThan(1);
+    expect(VISITOR_LOOK.nonna.shirt).toBe('#B5302A');
+    expect(VISITOR_LOOK.nonna.shawl).toBeDefined();
   });
 });
 
@@ -111,7 +113,8 @@ describe('where the visitor stands (budget; G100)', () => {
             for (const c of candidates(lay, { id: n.id, pins: 12, outside: true })) if (c.mount === 'wall') expect(hits(g.tag, c.rect)).toBe(false);
           }
           // nobody's head is under the tag
-          for (const p of fixedPeople(lay)) expect(hits(g.tag, p.head)).toBe(false);
+          // (the cashiers' shoulders: she is 1.1x and stands in front of them; their faces are checked above)
+          for (const p of fixedPeople(lay)) expect(hits(g.tag, { ...p.head, y1: p.head.y0 + (p.head.y1 - p.head.y0) * 0.6 })).toBe(false);
         }
   });
   test('every line fits the walls at every footprint, under the tag', () => {

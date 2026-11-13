@@ -141,7 +141,7 @@ export function Person({ x, y, o = 1, ...p }: PersonProps) {
   const look = useMemo(() => lookFor(seed, worker), [seed, worker]);
   if (o <= 0) return null;
   const [sx, sy] = P(x, y);
-  const k = kAt(y) * 1.14;
+  const k = kAt(y) * 1.14 * (p.scale ?? 1);
   const step = quantStep(p.step ?? 0);
   const act = p.act ?? 'none';
   const { top, pants } = outfitColors(p.kind, p.shirt, look);
@@ -154,10 +154,21 @@ export function Person({ x, y, o = 1, ...p }: PersonProps) {
       <G transform={bob ? `translate(0 ${(-bob).toFixed(2)})` : undefined}>
         <FigureBody kind={p.kind} seed={seed} shirt={p.shirt} hair={p.hair} cap={p.cap} dot={p.dot} gold={p.gold} alt={p.alt} variant={p.variant} front={p.front} flip={p.flip} blink={p.blink} talk={p.talk} mood={p.mood} />
       </G>
+      {p.shawl && <Shawl color={p.shawl} by={bodyBy(p.kind, look.tall)} />}
       <Limbs {...limbs} part="front" />
     </G>
   );
 }
+
+/** A shawl over the shoulders (the day-30 visitor's): a rounded cape with a pointed front and a fringe, over the torso at `by`. */
+const Shawl = memo(function Shawl({ color, by }: { color: string; by: number }) {
+  return (
+    <G>
+      <Path d={`M-9.6 ${by + 2.5} Q-9.6 ${by - 1.5} -4.6 ${by - 1.5} L5.4 ${by - 1.5} Q10.4 ${by - 1.5} 10.4 ${by + 2.5} L8.6 ${by + 9} L0.4 ${by + 14} L-7.8 ${by + 9} Z`} fill={color} {...OUT} />
+      <Path d={`M-7.8 ${by + 9} L0.4 ${by + 14} L8.6 ${by + 9}`} stroke="#F6E7C1" strokeWidth={1.1} strokeDasharray="1.2 1.2" fill="none" />
+    </G>
+  );
+});
 
 /** Body measurements and colours for the head, torso and outfit, drawn at rest. */
 function bodyGeom({ kind, shirt, flip = false, seed = 0, front = false, hair }: FigureProps) {

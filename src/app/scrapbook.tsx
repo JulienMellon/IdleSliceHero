@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { SCRAPBOOK_HEAD } from '@/components/endgame/fit-model';
 import { recipeGroups } from '@/components/endgame/recipes-model';
 import { RecipesSection } from '@/components/endgame/recipes-section';
 import { DISPLAY_NAMES, Portrait } from '@/components/portrait';
@@ -112,8 +113,8 @@ const styles = StyleSheet.create({
   tabTextOn: { color: '#fff' },
   back: { width: 70 },
   backText: { fontFamily: F.bold, color: '#fff', fontSize: 18 },
-  title: { fontFamily: F.bold, color: '#fff', fontSize: 24 },
-  count: { minWidth: 70, textAlign: 'right', fontFamily: F.semi, color: '#FFE7C2', fontSize: 14 },
+  title: { fontFamily: F.bold, color: '#fff', fontSize: SCRAPBOOK_HEAD.title },
+  count: { minWidth: 70, textAlign: 'right', fontFamily: F.semi, color: '#FFE7C2', fontSize: SCRAPBOOK_HEAD.count },
   chapter: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 3, borderColor: C.ink, overflow: 'hidden' },
   chapterHead: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderBottomWidth: 3, borderColor: C.ink },
   avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#fff', borderWidth: 2.5, borderColor: C.ink, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },

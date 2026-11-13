@@ -42,7 +42,7 @@ export const GoldPlaque = memo(function GoldPlaque() {
       {[[-w / 2 + 4.5, -h / 2 + 4.5], [w / 2 - 4.5, -h / 2 + 4.5], [-w / 2 + 4.5, h / 2 - 4.5], [w / 2 - 4.5, h / 2 - 4.5]].map(([x, y], i) => (
         <Circle key={i} cx={x} cy={y} r={1.1} fill={GOLD_PLAQUE.rim} />
       ))}
-      <SvgText x={0} y={-1.2} fontFamily={F.bold} fontSize={8} fill={GOLD_PLAQUE.text} textAnchor="middle" letterSpacing={0.6}>
+      <SvgText x={0} y={-1.2} fontFamily={F.bold} fontSize={6.6} fill={GOLD_PLAQUE.text} textAnchor="middle" letterSpacing={0.2}>
         MASTER
       </SvgText>
       {[-7, 0, 7].map((dx) => (

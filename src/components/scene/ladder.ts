@@ -8,7 +8,7 @@
 import { TUNING } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import type { Station } from '../../engine/pipeline';
-import { PROP_HALF_W, PROP_Y, type Layout, SEAT, SECOND_VEHICLE_SHIFT, SIGN_HALF_W, SIGN_Y } from './layout';
+import { PROP_HALF_W, PROP_Y, type Layout, SEAT, secondVehicleShift, SIGN_HALF_W, SIGN_Y } from './layout';
 import { hash32 } from './looks';
 import { D, P, SCENE_W, kAt, shade } from './projection';
 import { BADGE_R, badgeRowY, badgeXs, doorwaySignRect, stationRects, type Rect } from './stations';
@@ -230,7 +230,7 @@ const STRIP_GAP = 3;
 
 /** Every ladder prop at its spot for this layout, whether or not its level is reached. `ok` is false where it would not fit. */
 export type Candidate = Placed & { ok: boolean; why: string[] };
-export function candidates(lay: Layout, inp: Pick<LadderInput, 'id' | 'pins' | 'outside'>): Candidate[] {
+export function candidates(lay: Layout, inp: Pick<LadderInput, 'id' | 'pins' | 'outside'> & { vehicle?: number }): Candidate[] {
   const out: Candidate[] = [];
   const push = (id: PropId, ax: number, ay: number, k: number, sortY: number, n = 0) => {
     const def = STEPS.find((s) => s.id === id)!;
@@ -280,7 +280,7 @@ export function candidates(lay: Layout, inp: Pick<LadderInput, 'id' | 'pins' | '
     const [vx, vy] = P(lay.scooter.x, lay.scooter.y);
     push('wrap', vx, vy, 1, lay.scooter.y - 0.1);
     // nose to tail with the first, a little left of it and drawn just behind it, clear of the doormat and the walkers' turn-in
-    const [wx, wy] = P(lay.scooter.x - SECOND_VEHICLE_SHIFT, lay.scooter.y);
+    const [wx, wy] = P(lay.scooter.x - secondVehicleShift(inp.vehicle ?? 1), lay.scooter.y);
     push('vehicle2', wx, wy, 1, lay.scooter.y + 0.1);
   }
 
@@ -317,6 +317,13 @@ export function candidates(lay: Layout, inp: Pick<LadderInput, 'id' | 'pins' | '
     if (c.id === 'register2' && counter.x1 - counter.x0 < 60) why.push('counter too short');
     c.why = why;
     c.ok = why.length === 0;
+  }
+  // D471: where the wider shift for a car or a van does not fit (the chalkboard, the prop, the door), the second vehicle keeps the old nose-to-tail shift
+  // rather than vanishing: a shop must not lose the Lv 30 step to the paint of its fleet
+  const second = out.find((c) => c.id === 'vehicle2');
+  if (second && !second.ok && secondVehicleShift(inp.vehicle ?? 1) !== secondVehicleShift(1)) {
+    const fallback = candidates(lay, { ...inp, vehicle: 1 }).find((c) => c.id === 'vehicle2')!;
+    out[out.indexOf(second)] = fallback;
   }
   return out;
 }

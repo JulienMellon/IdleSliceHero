@@ -4,7 +4,7 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.15
-step: fix                  # setup | waves | verify | review | fix | close
+step: verify                  # setup | waves | verify | review | fix | close
 round: r3              # r1 | r2 | r3
 last_shots: v5.15-r2      # label of the last screenshot set that passed verify
 codecritic_range_start: 5d82004
@@ -19,11 +19,10 @@ reviews:               # latest review file per critic, with verdict and counts
   story:  docs/build/v5.15/review-r0-story.md (r0 NOT SATISFIED; bug 0 major 0 minor 6; E1 U2 T3)
   audio:  AUDIOLOG.md (next ID AU78)
 open: v5.14 carried notes (G95 + minors): rows in docs/build/v5.14/review-r3-critic.md
-next: fix r3: U1 + S1 running (owner U/S rows in review-r2-*). Then verify r3 (label v5.15-r3), critic medium re-check only (codecritic APPROVED). E rows (C116, C117) carry to v5.16.
+next: verify r3 running (shots v5.15-r3); then commit, push, critic medium re-check (PREV review-r2-critic.md); then gate per README 4.5 (r3 = last).
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-12 r1 critic NOT SATISFIED (5 bugs, 4 major, 12 minor; U15 S6). Waiting on codecritic.
 - 2026-11-12 r1 codecritic CHANGES REQUESTED (0 high, 5 medium, 19 low). Gate not met; fix round r2: U1 + S1 sent, E1 queued.
 - 2026-11-13 U1 + S1 hit the 5-hour limit mid r2; resumed after reset (U1 had partial edits on disk).
 - 2026-11-13 r2 U1 done (21 U rows fixed; carry D465 needs copy key, M63, U9). E1 r2 launched (owner E + A30/A31). S1 still running.
@@ -33,3 +32,4 @@ next: fix r3: U1 + S1 running (owner U/S rows in review-r2-*). Then verify r3 (l
 - 2026-11-13 r2 critic NOT SATISFIED (5 bugs, 1 major, 8 minor; U8 S6). Waiting on codecritic.
 - 2026-11-13 r2 codecritic APPROVED (0 high, 2 medium). Critic not met; fix round r3: U1 + S1 sent.
 - 2026-11-13 r3 S1 done (D471/D450 partial; D472, D474, D459, D470, U15 fixed). Waiting on U1.
+- 2026-11-13 r3 U1 done (G95, G98, G101-G103, D469, D468, C119). Verify r3: tsc clean, 939 tests, export ok; shots v5.15-r3 running.

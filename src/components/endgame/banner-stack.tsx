@@ -1,6 +1,6 @@
 // The BANNERS slot's one entry for the endgame: a column at the top of the scene area, under the order chip while one is up.
 // Event banner, then the attack's banner or challenge chip, then the toast. Each piece draws nothing when it has nothing to say;
-// the column has fixed row heights (stack-model.ts), so the screen can keep the golden pizza's lane clear of it (`bonusLaneTop`).
+// the rows have fixed heights (stack-model.ts). The golden pizza waits while a card or the open banner is up (`holdsBonus`).
 import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 

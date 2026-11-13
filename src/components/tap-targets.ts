@@ -53,4 +53,14 @@ export const SIDEWALK_ROW = {
   idleStackHeight: BUTTON_H + IDLE_STACK_GAP + BUTTON_H,
   raiseManaged: 13,
   raiseIdle: 2,
+  /** G102: the row's geometry, one place for the layout and the fit arithmetic (endgame/fit-model.ts). */
+  edge: 8,
+  gap: 5,
+  /** The "All" button and the ×1/×10/MAX chip at the row's left end: 42 and 36 pt wide, the full 55 pt row tall. */
+  allWidth: 42,
+  amountWidth: 36,
+  /** The gap between the unframed chips of an unmanaged shop. */
+  chipGap: 4,
+  /** A compact button's own horizontal chrome: its 2 pt border and 1 pt padding on both sides. */
+  buttonChrome: 2 * (2 + 1),
 } as const;

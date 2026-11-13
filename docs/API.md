@@ -370,15 +370,15 @@ CITY_NAME, TUNING, STATIONS, OvenGrade, OVEN_GRADES, NONNA_TAKEOVER, FootprintTi
 - types: CoinLaunch
 
 ## src/components/slots.tsx
-- onOvenAsk(fn: () => void) — src/components/slots.tsx:43 — The screen listens here; returns the unsubscribe.
-- askOven() — src/components/slots.tsx:50 — Ask the screen to open Nonna's night-oven sheet (it also closes the drawer, tasks and calendar).
-- inOrder<P>(items: readonly SlotEntry<P>[]): readonly SlotEntry<P>[] — src/components/slots.tsx:55 — The entries in `order` (ascending, stable).
-- Slots({ items }: { items: readonly SlotEntry[] }) — src/components/slots.tsx:60 — Renders every entry of a prop-less slot.
-- SceneSlots({ items, shopId, width, height }: { items: readonly SlotEntry<SceneSlotProps>[]; shopId: string; w… — src/components/slots.tsx:72 — Renders every scene overlay with the shop and the scene size.
-- HUD_CHIPS: SlotEntry[] — src/components/slots.tsx:100
-- HUD_TOP_CHIPS: SlotEntry[] — src/components/slots.tsx:106
-- BANNERS: SlotEntry[] — src/components/slots.tsx:108
-- SHEETS: SlotEntry[] — src/components/slots.tsx:110
-- DRAWER_CARDS: SlotEntry[] — src/components/slots.tsx:111
-- SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] — src/components/slots.tsx:112
+- onOvenAsk(fn: () => void) — src/components/slots.tsx:44 — The screen listens here; returns the unsubscribe.
+- askOven() — src/components/slots.tsx:51 — Ask the screen to open Nonna's night-oven sheet (it also closes the drawer, tasks and calendar).
+- inOrder<P>(items: readonly SlotEntry<P>[]): readonly SlotEntry<P>[] — src/components/slots.tsx:56 — The entries in `order` (ascending, stable).
+- Slots({ items }: { items: readonly SlotEntry[] }) — src/components/slots.tsx:61 — Renders every entry of a prop-less slot.
+- SceneSlots({ items, shopId, width, height }: { items: readonly SlotEntry<SceneSlotProps>[]; shopId: string; w… — src/components/slots.tsx:73 — Renders every scene overlay with the shop and the scene size.
+- HUD_CHIPS: SlotEntry[] — src/components/slots.tsx:101
+- HUD_TOP_CHIPS: SlotEntry[] — src/components/slots.tsx:107
+- BANNERS: SlotEntry[] — src/components/slots.tsx:109
+- SHEETS: SlotEntry[] — src/components/slots.tsx:115
+- DRAWER_CARDS: SlotEntry[] — src/components/slots.tsx:116
+- SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] — src/components/slots.tsx:117
 - types: SlotProps, SceneSlotProps, SlotEntry

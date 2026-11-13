@@ -325,14 +325,14 @@ describe('tied stations merge into one card in their slots (D405)', () => {
 });
 
 describe('EXPAND merges into one shop-wide card (D407)', () => {
-  test('two or more capped stations: one wide card "EXPAND to <footprint>" with the price and the cap step', () => {
+  test('two or more capped stations: one wide card "EXPAND · <footprint>" (G102) with the price and the cap step', () => {
     const { s, slots } = slotsOf({ prep: 25, ovens: 25, counter: 25, drivers: 1, footprint: 0 }, 1e9);
     const m = merged(slots);
     expect(m).toHaveLength(1);
     expect(m[0].kind).toBe('expand');
     expect(m[0].keys).toEqual(['prep', 'ovens', 'counter']);
     expect(m[0].span).toBe(3);
-    expect(m[0].title).toBe('EXPAND to Corner shop');
+    expect(m[0].title).toBe('EXPAND \u00B7 Corner');
     expect(m[0].label).toBe(money(G.upgradeCostOf(s, 'downtown', 'expand')!));
     expect(m[0].foot).toBe('Lv cap 25 → 50');
     expect(m[0].steps).toEqual(['expand']);

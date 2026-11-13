@@ -10,7 +10,7 @@ export const DuskTint = memo(function DuskTint({ x, y, w, h }: { x: number; y: n
   const band = h / 4;
   return (
     <G>
-      {[0.32, 0.26, 0.2, 0.16].map((o, i) => (
+      {[0.55, 0.45, 0.36, 0.28].map((o, i) => (
         <Rect key={i} x={x} y={y + band * i} width={w} height={band + 0.5} fill={i < 2 ? '#3B2A6B' : '#FF7A45'} opacity={o} />
       ))}
     </G>

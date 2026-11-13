@@ -1,7 +1,7 @@
 // The upgrade row standing on the sidewalk: four station buttons (or, on a shop with no manager, a chip row and the
 // manager button) plus "All". Every control is drawn at 44 pt (see tap-targets.ts). Moved out of app/index.tsx (A15).
 // Tied stations and capped stations merge into one wider card in their slots (sidewalk-model.ts `sidewalkSlots`).
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { HEAD_ROLE, HEADS } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
@@ -11,6 +11,7 @@ import { rewardsUnlocked } from '../engine/rewards';
 import { useGame } from '../store/game-store';
 import { C, F } from '../theme';
 import { BuyButton, haptic } from './game-ui';
+import { cardFonts, cardTextWidths, fitFont, iconWidth } from './endgame/fit-model';
 import { DriverIcon, FlameIcon, PrepIcon, RegisterIcon } from './icons';
 import { amountCard, amountLabel, type BuyAmount, cardLook, type MergedSlot, needLine, nextAmount, sidewalkSlots, stationTitle, type StationKey, type StationView } from './sidewalk-model';
 import { COMPACT_FONT_MAX_SCALE, IDLE_STACK_GAP, SIDEWALK_ROW, STATION_CARD, TAP } from './tap-targets';
@@ -40,11 +41,14 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
   const toggleOn = rewardsUnlocked(game);
   const picked: BuyAmount = toggleOn ? amount : 1;
   // the name always stays on top; a player who has some cash but not enough sees "need $X" under the muted price (D359, D402)
-  const station = (v: StationView, framed: boolean) => {
+  const station = (v: StationView, framed: boolean, textW: number) => {
     // ×10 / MAX: the card shows the total price and the levels gained, and a tap buys them all at once (sidewalk-model `buyPlan`)
     const many = amountCard(game, id, v, picked);
+    // G102: the price, the title and the foot line each get the size the card's width allows (the icon takes 14 pt of the title's line, and goes when the card is too narrow for both)
+    const need = many ? null : needLine(v, framed);
+    const fonts = cardFonts(textW, { label: many?.label ?? v.label, sub: stationTitle(v), foot: many?.foot ?? need, iconW: iconWidth(textW) });
     const button = (
-      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={ICON[v.key]} sub={stationTitle(v)} need={many ? null : needLine(v, framed)} foot={many?.foot} tone={v.tone} label={many?.label ?? v.label} enabled={many ? many.enabled : v.affordable} saving={framed && v.frame === 'waiting'} progress={v.progress} onPress={() => (many ? useGame.getState().buyStation(v.what) : onBuy(v.what))} />
+      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={iconWidth(textW) ? ICON[v.key] : undefined} sub={stationTitle(v)} need={need} foot={many?.foot} labelSize={fonts.label} subSize={fonts.sub} footSize={fonts.foot} tone={v.tone} label={many?.label ?? v.label} enabled={many ? many.enabled : v.affordable} saving={framed && v.frame === 'waiting'} progress={v.progress} onPress={() => (many ? useGame.getState().buyStation(v.what) : onBuy(v.what))} />
     );
     const badge = (
       <View style={[styles.level, v.frame === 'hot' && styles.levelHot]} pointerEvents="none">
@@ -67,9 +71,10 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
     );
   };
   // one card for several slots (D405, D407): the same frame as a bottleneck card, no level badge (it stands for several stations)
-  const merged = (m: MergedSlot, framed: boolean) => {
+  const merged = (m: MergedSlot, framed: boolean, textW: number) => {
+    const fonts = cardFonts(textW, { label: m.label, sub: m.title, foot: m.foot });
     const button = (
-      <BuyButton compact testID={m.kind === 'bundle' ? 'walk-bundle' : 'walk-expand'} sub={m.title} label={m.label} foot={m.foot} tone={m.kind === 'expand' ? 'expand' : 'normal'} enabled={m.enabled} onPress={() => (m.kind === 'bundle' ? onBundle?.() ?? false : onBuy('expand'))} />
+      <BuyButton compact testID={m.kind === 'bundle' ? 'walk-bundle' : 'walk-expand'} sub={m.title} label={m.label} foot={m.foot} labelSize={fonts.label} subSize={fonts.sub} footSize={fonts.foot} tone={m.kind === 'expand' ? 'expand' : 'normal'} enabled={m.enabled} onPress={() => (m.kind === 'bundle' ? onBundle?.() ?? false : onBuy('expand'))} />
     );
     return framed ? (
       <View key={m.kind} style={[styles.card, { flex: m.span }, look(m.frame, m.enabled)]}>
@@ -82,7 +87,11 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
     );
   };
   const slots = sidewalkSlots(game, id, bundle);
-  const cards = (framed: boolean) => slots.map((sl) => (sl.kind === 'station' ? station(sl.view, framed) : merged(sl, framed)));
+  const { width: screenW } = useWindowDimensions();
+  const cards = (framed: boolean) => {
+    const widths = cardTextWidths(screenW, slots.map((sl) => sl.span), { chip: toggleOn, framed });
+    return slots.map((sl, i) => (sl.kind === 'station' ? station(sl.view, framed, widths[i]) : merged(sl, framed, widths[i])));
+  };
   // the next hire: each head in turn, then the General Manager
   const hire = G.nextHire(game.shops[id]) ?? 'manager';
   const hireCost = G.upgradeCostOf(game, id, hire);
@@ -96,7 +105,7 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
         <View style={styles.idleStack}>
           <View style={styles.chipRow}>{cards(false)}</View>
           {/* what you get on top, the price below (D310, D311) */}
-          <BuyButton compact testID="walk-manager" sub={hireLabel} label={money(hireCost ?? 0)} enabled={hireCost !== null && !G.upgradeLock(game, id, hire) && game.cash >= hireCost} onPress={() => onBuy(hire)} />
+          <BuyButton compact testID="walk-manager" subSize={fitFont(hireLabel, screenW - 2 * SIDEWALK_ROW.edge - SIDEWALK_ROW.allWidth - (toggleOn ? SIDEWALK_ROW.amountWidth : 0) - SIDEWALK_ROW.gap * (toggleOn ? 2 : 1) - 24, 10, 7)} sub={hireLabel} label={money(hireCost ?? 0)} enabled={hireCost !== null && !G.upgradeLock(game, id, hire) && game.cash >= hireCost} onPress={() => onBuy(hire)} />
         </View>
       ) : (
         cards(true)
@@ -122,22 +131,23 @@ const look = (frame: 'hot' | 'waiting' | null, affordable: boolean) => {
 
 const shadow = { boxShadow: '0 4px 0 rgba(59,31,20,0.25)' } as object;
 const styles = StyleSheet.create({
-  row: { position: 'absolute', left: 8, right: 8, flexDirection: 'row', gap: 5, alignItems: 'flex-end' },
+  row: { position: 'absolute', left: SIDEWALK_ROW.edge, right: SIDEWALK_ROW.edge, flexDirection: 'row', gap: SIDEWALK_ROW.gap, alignItems: 'flex-end' },
   card: { flex: 1, height: SIDEWALK_ROW.cardHeight, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 12, borderWidth: STATION_CARD.border, borderColor: C.ink, padding: STATION_CARD.padding, ...shadow },
   // Nonna's tutorial points here: a gold frame
   cardCoach: { borderColor: '#FFC531', borderWidth: 4, borderStyle: 'solid' },
   idleStack: { flex: 4, gap: IDLE_STACK_GAP },
-  chipRow: { flexDirection: 'row', gap: 4 },
+  chipRow: { flexDirection: 'row', gap: SIDEWALK_ROW.chipGap },
   chip: { flex: 1 },
   level: { position: 'absolute', top: -9, right: -4, minWidth: 22, paddingHorizontal: 5, height: 17, borderRadius: 9, backgroundColor: C.ink, borderWidth: 1.5, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   levelHot: { backgroundColor: C.tomato },
   levelText: { fontFamily: F.bold, fontSize: 10, color: '#fff' },
-  all: { width: 46, height: SIDEWALK_ROW.cardHeight, backgroundColor: C.ink, borderRadius: 12, alignItems: 'center', justifyContent: 'center', ...shadow },
+  all: { width: SIDEWALK_ROW.allWidth, height: SIDEWALK_ROW.cardHeight, backgroundColor: C.ink, borderRadius: 12, alignItems: 'center', justifyContent: 'center', ...shadow },
   // on an unmanaged shop "All" sits beside the manager button only, not stretched over both rows
   allIdle: { height: 44 },
   allIcon: { color: '#fff', fontSize: 16, lineHeight: 18 },
   allText: { color: '#fff', fontFamily: F.bold, fontSize: 12 },
-  amountChip: { width: TAP.min, height: TAP.min, borderRadius: 14, backgroundColor: C.ink, alignItems: 'center', justifyContent: 'center', ...shadow },
+  // G102: 36 pt wide (the cards need the room) and the row's full 55 pt tall
+  amountChip: { width: SIDEWALK_ROW.amountWidth, height: SIDEWALK_ROW.cardHeight, borderRadius: 14, backgroundColor: C.ink, alignItems: 'center', justifyContent: 'center', ...shadow },
   amountOn: { backgroundColor: C.basil },
   amountText: { fontFamily: F.bold, fontSize: 14, color: '#FFE7C2' },
   amountTextOn: { color: '#fff' },

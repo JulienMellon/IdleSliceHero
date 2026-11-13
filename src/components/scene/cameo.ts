@@ -67,10 +67,12 @@ export function sayLines(text: string): string[] {
 export const sayHeight = (lines: readonly string[]) => 6 + 12 * lines.length;
 
 /** How each visitor is drawn: a standing guest figure with their own hair and shirt (people.tsx `Person` props), facing us. */
-export const VISITOR_LOOK: Readonly<Record<string, Pick<PersonProps, 'seed' | 'shirt' | 'hair'>>> = {
-  nonna: { seed: 4107, shirt: '#6B3E7A', hair: '#CFCBC6' },
-  'big-sal': { seed: 5213, shirt: '#E8742A', hair: '#2B1A12' },
-  genevieve: { seed: 6329, shirt: '#7B1E3A', hair: '#E3C16F' },
+export const VISITOR_SCALE = 1.1;
+export const VISITOR_LOOK: Readonly<Record<string, Pick<PersonProps, 'seed' | 'shirt' | 'hair' | 'scale' | 'shawl'>>> = {
+  // D474: bigger than the crowd (1.1x), and dressed so she is not a grey-haired walk-in: a red cardigan and a purple shawl
+  nonna: { seed: 4107, shirt: '#B5302A', hair: '#CFCBC6', scale: VISITOR_SCALE, shawl: '#5B3A7A' },
+  'big-sal': { seed: 5213, shirt: '#E8742A', hair: '#2B1A12', scale: VISITOR_SCALE },
+  genevieve: { seed: 6329, shirt: '#7B1E3A', hair: '#E3C16F', scale: VISITOR_SCALE, shawl: '#D4A84A' },
 };
 
 /** The depth the visitor stands at: in front of the counter (G100: behind it she was hidden by the box stack), clear of the register queue. */
@@ -97,7 +99,7 @@ const TAG_AIR = 1;
 /** Where the figure, its tag and its speech pill go, in scene units (the figure's box is the crowd budget's: 22 wide, 56 tall at its depth). */
 export function cameoGeom(lay: Pick<Layout, 'counter' | 'door' | 'R' | 'spots' | 'orderSpots'>, tag: string): { spot: { x: number; y: number }; body: Rect; tag: Rect; sayY: number; tailX: number } {
   const spot = cameoSpot(lay);
-  const body = figureBox(spot.x, spot.y, 56);
+  const body = figureBox(spot.x, spot.y, 56 * VISITOR_SCALE);
   const w = tagWidth(tag);
   const cx = (body.x0 + body.x1) / 2;
   const y1 = body.y0 - TAG_AIR;

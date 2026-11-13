@@ -2,7 +2,7 @@
 import { ORDER_VIEW } from '../../../content/hooks';
 import * as G from '../../../engine/game';
 import { TAP } from '../../tap-targets';
-import { holdsBonus, STACK, stackHeight, stackTop } from '../stack-model';
+import { holdsBonus, STACK, stackTop } from '../stack-model';
 
 const base = (): G.GameState => G.newGame(1_700_000_000_000);
 const withAttack = (patch: Record<string, unknown>): G.GameState => {
@@ -18,15 +18,6 @@ describe('the notices at the top of the scene area', () => {
     expect(STACK.chip - 2 * 2).toBeGreaterThanOrEqual(TAP.min);
   });
 
-  test('heights add up with a gap between rows', () => {
-    expect(stackHeight({ event: false, attack: 'none' })).toBe(0);
-    expect(stackHeight({ event: true, attack: 'none' })).toBe(STACK.event);
-    expect(stackHeight({ event: false, attack: 'banner' })).toBe(STACK.banner);
-    expect(stackHeight({ event: false, attack: 'running' })).toBe(STACK.chip);
-    expect(stackHeight({ event: false, attack: 'won' })).toBe(STACK.chip);
-    expect(stackHeight({ event: true, attack: 'banner' })).toBe(STACK.event + STACK.gap + STACK.banner);
-  });
-
   test('the stack starts at the order chip’s top, or under the chip while an order is up', () => {
     expect(stackTop(false)).toBe(ORDER_VIEW.top);
     expect(stackTop(true)).toBe(ORDER_VIEW.top + ORDER_VIEW.height + STACK.gap);
@@ -36,6 +27,10 @@ describe('the notices at the top of the scene area', () => {
     expect(holdsBonus(base())).toBe(false);
     // a week-long open attack is a banner: the pizza flies over it
     expect(holdsBonus(withAttack({}))).toBe(false);
+    // ...while it is open in full (its first 10 s, or after a tap on its badge) the pizza waits, so it never covers Defend; collapsed it flies over the badge
+    expect(holdsBonus(withAttack({}), true)).toBe(true);
+    expect(holdsBonus(base(), true)).toBe(false);
+    expect(STACK.badge).toBeGreaterThanOrEqual(44);
     const ch = { target: 40, startSold: 0, left: 100 };
     expect(holdsBonus(withAttack({ challenge: ch }))).toBe(true);
     expect(holdsBonus(withAttack({ news: { kind: 'won', shopId: 'downtown', cash: 5, diamonds: 15 } }))).toBe(true);

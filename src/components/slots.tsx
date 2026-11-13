@@ -20,6 +20,7 @@ import { BannerStack } from './endgame/banner-stack';
 import { BostonSheet } from './endgame/boston-sheet';
 import { DiamondChip } from './endgame/diamond-chip';
 import { EventChip } from './endgame/event-chip';
+import { RecipeReveal } from './endgame/recipe-reveal';
 import { MoonIcon } from './game-ui';
 
 /** The slot kinds with no props: each component reads its own state. */
@@ -105,7 +106,11 @@ export const HUD_CHIPS: SlotEntry[] = [
 // G98: the diamonds chip lives in the HUD's top row (after the gift), so it never narrows the goal bar
 export const HUD_TOP_CHIPS: SlotEntry[] = [{ id: 'diamond-shop', order: 20, Component: DiamondChip }];
 // v5.15 (U1): the event banner, the counter-attack banner / challenge chip and the star, recipe and event toasts, one column under the order chip
-export const BANNERS: SlotEntry[] = [{ id: 'endgame-stack', order: 10, Component: BannerStack }];
+export const BANNERS: SlotEntry[] = [
+  { id: 'endgame-stack', order: 10, Component: BannerStack },
+  // D469: a recipe card turns over in the middle of the scene
+  { id: 'recipe-reveal', order: 20, Component: RecipeReveal },
+];
 // v5.15 (U1): "Coming soon: Boston", once, after the last finale
 export const SHEETS: SlotEntry[] = [{ id: 'boston-card', order: 10, Component: BostonSheet }];
 export const DRAWER_CARDS: SlotEntry[] = [];

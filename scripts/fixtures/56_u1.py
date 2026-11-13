@@ -65,6 +65,26 @@ def ready(page):
     skip_boston(page, 500)
 
 
+def fresh_page(browser, save, ahead_ms=20000):
+    """A seeded page whose save is stamped at the PAGE's clock (plus a little ahead): a running challenge lapses when the app was away
+    for a second or more (engine onOffline), and the script's own clock is already seconds behind by the time the page has booted (G103)."""
+    c = browser.new_context(viewport={"width": 393, "height": 852}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    c.set_default_timeout(20000)
+    c.add_init_script(AUDIO_PROBE)
+    c.add_init_script(f"""if (!sessionStorage.getItem('seeded')) {{
+        const s = {json.dumps(json.dumps(save))};
+        const g = JSON.parse(s); g.lastSavedAt = Date.now() + {ahead_ms};
+        localStorage.setItem({json.dumps(KEY)}, JSON.stringify(g));
+        localStorage.setItem('slice-empire/boston-seen', '1');
+        sessionStorage.setItem('seeded', '1'); }}""")
+    pg = c.new_page()
+    pg.on("console", lambda m: m.type == "error" and report["errors"].append(f"console: {m.text}"))
+    pg.on("pageerror", lambda e: report["errors"].append(f"pageerror: {e}"))
+    pg.goto(URL)
+    skip_title(pg)
+    return c, pg
+
+
 def clock_page(browser, save, when):
     """A seeded page whose Date is shifted to `when` (a local datetime), for the events."""
     target = int(when.timestamp() * 1000)
@@ -135,8 +155,10 @@ def run(ctx):
     try:
         sv = hooks_save(sold=5000)
         sv["x"] = attack_state("suburbs", challenge={"target": 2888, "startSold": 5000 - 580, "left": 150})
-        page = seeded_page(browser, sv); settle(page, 3.0)
+        c, page = fresh_page(browser, sv); settle(page, 1.0)
+        tid(page, "challenge-chip").wait_for(timeout=8000)
         shot(page, "60-challenge-behind", 0.8)
+        c.close()
     except Exception as e:
         report["errors"].append(f"U1 60 failed: {e}")
 
@@ -144,8 +166,15 @@ def run(ctx):
     try:
         sold = 5.1e6
         ch = {"target": 2900, "startSold": int(sold - 2897), "left": 40}
-        page = seeded_page(browser, endgame_save(x=attack_state("suburbs", challenge=ch))); ready(page)
-        shot(page, "61-challenge-won", 1.5)
+        c, page = fresh_page(browser, endgame_save(x=attack_state("suburbs", challenge=ch))); settle(page, 1.0)
+        # the win is paid on the next tick: wait for the result chip (G103), then for the recipe card turning over in the middle
+        tid(page, "challenge-won").wait_for(timeout=10000)
+        try:
+            tid(page, "recipe-reveal").wait_for(timeout=3000)
+        except Exception:
+            pass
+        shot(page, "61-challenge-won", 0.9)
+        c.close()
     except Exception as e:
         report["errors"].append(f"U1 61 failed: {e}")
 

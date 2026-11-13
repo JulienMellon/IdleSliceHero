@@ -13,6 +13,7 @@ import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
 import { coachStep } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
+import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
 import { masteryGoal } from '@/components/goal-model';
 import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, SHEETS, Slots } from '@/components/slots';
@@ -118,7 +119,8 @@ export default function GameScreen() {
   );
   const setBonusHold = useGame((s) => s.setBonusHold);
   // G95: the golden pizza also waits while a card is up (an order, or Victor's challenge): the sky has no room beside it
-  const cardUp = holdsBonus(game);
+  const bannerOpen = useBannerOpen();
+  const cardUp = holdsBonus(game, bannerOpen);
   const hold = drawerOpen || tasksOpen || giftOpen || ovenOpen || !focused || cardUp;
   useEffect(() => {
     setBonusHold(hold);
@@ -205,7 +207,7 @@ export default function GameScreen() {
   let goal: Goal | null = shown[0] ?? null;
   // v5.15 (D427): once the story is told and nothing else is worth saving for, the bar shows the city's mastery stars
   const mg = goal ? null : masteryGoal(game);
-  if (mg) goal = { label: mg.label, text: mg.text, current: mg.current, target: mg.target };
+  if (mg) goal = { label: mg.label, short: mg.short, text: mg.text, current: mg.current, target: mg.target };
   // Late game: fall back to the best big buy in this shop (Expand, Grade or a Decor tier) before the story count.
   if (!goal) {
     const big: (Goal & { ratio: number })[] = [];

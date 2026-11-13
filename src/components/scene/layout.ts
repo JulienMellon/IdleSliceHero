@@ -111,6 +111,12 @@ const SIGN_SCREEN_HALF_W = 16;
 const VEHICLE_SCREEN_HALF_W = 25;
 /** The second vehicle parks this far (room units) left of the first (ladder.ts). */
 export const SECOND_VEHICLE_SHIFT = 24;
+/**
+ * D471: how far left the second vehicle parks for the fleet tier parked (0 bike, 1 scooter, 2 car, 3 van, 4 drone): the car (35 wide at 0.62) and the van (46) used to
+ * overlap their twin and read as one long vehicle. The layout still reserves SECOND_VEHICLE_SHIFT for the sign and the prop; a wider shift that does not fit there is
+ * dropped by the ladder's own clearance check rather than drawn over them.
+ */
+export const secondVehicleShift = (vehicle: number): number => (vehicle === 3 ? 52 : vehicle === 2 ? 40 : SECOND_VEHICLE_SHIFT);
 /** A patio guest walks straight up to the right-hand chair from the curb lane; nothing stands within this of that line. */
 export const CHAIR_WAY_HALF_W = 9;
 const PROP_AIR = 3;

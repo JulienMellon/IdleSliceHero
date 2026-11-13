@@ -8,7 +8,8 @@ import { GIFT } from '../content/hooks';
 import { cashText, goalAmount, money } from '../engine/format';
 import type { NightOvenView } from '../engine/night-oven';
 import { C, F } from '../theme';
-import { GOAL_BAR, GOAL_FONT_MAX_SCALE, GOAL_GAP, GOAL_LAYOUT, GOAL_PAD, goalBarLayout, goalWords, type GoalSpan } from './goal-model';
+import { cashFont, HUD_GAP, HUD_ICON, rateLine } from './endgame/fit-model';
+import { GOAL_BAR, GOAL_FONT_MAX_SCALE, GOAL_GAP, GOAL_LAYOUT, GOAL_PAD, goalBarLayout, goalLine, goalWords, type GoalSpan } from './goal-model';
 import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, SliceIcon, StarIcon } from './icons';
 import { countUpValue, offlineGiftView, type GiftSummary } from './offline-model';
 import { Portrait } from './portrait';
@@ -66,7 +67,7 @@ const BURST = ['star', 'coin', 'slice', 'star', 'coin', 'slice'] as const;
  * the player is saving for (D326). `expand` is the amber Expand buy (D407). `compact` is the 44 pt sidewalk button: `icon` + `sub`
  * above the price, and `foot` (or the "need" line) under it.
  */
-export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal', saving = false, progress = 0, need = null, foot = null, noBurst = false }: { /** D454: no confetti over the label (the offline popup's Collect: a star cut its "C"). */ noBurst?: boolean; label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: ButtonTone; saving?: boolean; progress?: number; need?: string | null; /** A line under the price that shows whether or not the button is affordable (compact only). */ foot?: string | null }) {
+export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal', saving = false, progress = 0, need = null, foot = null, noBurst = false, labelSize, subSize, footSize }: { /** G102: font sizes from the fit arithmetic (endgame/fit-model.ts): the web build can't shrink text to fit, so a long price would clip. */ labelSize?: number; subSize?: number; footSize?: number; /** D454: no confetti over the label (the offline popup's Collect: a star cut its "C"). */ noBurst?: boolean; label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: ButtonTone; saving?: boolean; progress?: number; need?: string | null; /** A line under the price that shows whether or not the button is affordable (compact only). */ foot?: string | null }) {
   const nogain = tone === 'nogain';
   const amber = tone === 'expand' && enabled;
   const footText = foot ?? (!enabled ? need : null);
@@ -106,7 +107,7 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
             compact ? (
               <View style={styles.buySubRow}>
                 {icon}
-                <Text style={[styles.buySubCompact, needLine && styles.buySubTight, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+                <Text style={[styles.buySubCompact, needLine && styles.buySubTight, subSize ? { fontSize: subSize } : null, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
                   {sub}
                 </Text>
               </View>
@@ -114,12 +115,12 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
               <Text style={styles.buySub}>{sub}</Text>
             )
           ) : null}
-          <Text style={[styles.buyLabel, compact && styles.buyLabelCompact, compact && needLine && styles.buyLabelTight, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}>
+          <Text style={[styles.buyLabel, compact && styles.buyLabelCompact, compact && needLine && styles.buyLabelTight, labelSize ? { fontSize: labelSize } : null, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}>
             {label}
           </Text>
           {/* D402: what is still missing, under the muted price (compact only; the line heights tighten to keep the 44 pt button) */}
           {compact && needLine ? (
-            <Text style={[styles.buyNeed, { color: labelColor }]} numberOfLines={1} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+            <Text style={[styles.buyNeed, footSize ? { fontSize: footSize } : null, { color: labelColor }]} numberOfLines={1} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
               {footText}
             </Text>
           ) : null}
@@ -162,6 +163,8 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
 
 export interface Goal {
   label: string;
+  /** G98: a shorter line for a narrow bar (goal-model `goalLine`). */
+  short?: string;
   current: number;
   target: number;
   /** Shown instead of a money amount, e.g. "9/24". */
@@ -187,6 +190,12 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
     return onPayout(() => bump(1.08));
   }, [counting, flash]);
   const [goalW, setGoalW] = useState(0);
+  // G101: the cash pill's measured width: the cash and its rate line are sized to fit it (the web build can't shrink text to fit)
+  const [cashW, setCashW] = useState(0);
+  const rate = cashW > 0 ? rateLine(subtitle, cashW, boostText ? boostText.length + 5 : 0) : null;
+  const line = goal ? goalLine(goal, goalW) : null;
+  const shownLabel = line?.label ?? '';
+  const shownText = line ? line.text : undefined;
   // the measured words/amount of the goal line: the two-tone seam snaps to their edges (G88)
   const [words, setWords] = useState<{ label: string; spans: GoalSpan[] }>({ label: '', spans: [] });
   const [amountSpan, setAmountSpan] = useState<GoalSpan | null>(null);
@@ -194,7 +203,7 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
   const onWords = useCallback((label: string, spans: GoalSpan[]) => setWords({ label, spans }), []);
   const onAmount = useCallback((span: GoalSpan) => setAmountSpan((p) => (p && p.x === span.x && p.w === span.w ? p : span)), []);
   // spans measured for another label (the goal just changed) are not used: until the new line reports, the seam is exact
-  const measuredSpans = words.label === goal?.label && amountSpan ? [...words.spans, amountSpan] : [];
+  const measuredSpans = words.label === shownLabel && amountSpan ? [...words.spans, amountSpan] : [];
   const bar = goalBarLayout(goal?.current ?? 0, goal?.target ?? 0, !!goal?.onPress, goalW, measuredSpans);
   const { pct, ready } = bar;
   return (
@@ -211,7 +220,7 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
         </Pressable>
         {/* v5.4: the clipboard and the gift show once rewards unlock (their handlers are passed) */}
         {onTasks && (
-          <Pressable onPress={onTasks} style={styles.hudIcon} testID="open-tasks" accessibilityLabel="Daily and weekly tasks">
+          <Pressable onPress={onTasks} style={styles.hudIcon} testID="open-tasks" accessibilityLabel="Daily and weekly tasks" hitSlop={4}>
             <ClipboardIcon size={30} />
             {tasksBadge > 0 && (
               <View style={styles.badge}>
@@ -220,28 +229,28 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
             )}
           </Pressable>
         )}
-        <View style={[styles.cashPill, halo === 'cash' && styles.halo]}>
+        <View style={[styles.cashPill, halo === 'cash' && styles.halo]} onLayout={(e) => setCashW(e.nativeEvent.layout.width)}>
           <Animated.Text
             ref={cashRef}
             onLayout={() => cashRef.current?.measureInWindow?.((x: number, y: number, w: number, h: number) => setCoinTarget(x + w / 2, y + h / 2))}
-            style={[styles.cash, { transform: [{ scale: flash }] }]}
+            style={[styles.cash, cashW > 0 && { fontSize: cashFont(cashText(Math.max(shown, cash)), cashW) }, { transform: [{ scale: flash }] }]}
             numberOfLines={1}
             adjustsFontSizeToFit
             testID="cash">
             {cashText(shown)}
           </Animated.Text>
-          <Text style={styles.perSec} numberOfLines={1}>
-            {subtitle}
+          <Text style={[styles.perSec, rate && { fontSize: rate.size }]} numberOfLines={1}>
+            {rate ? rate.text : subtitle}
             {boostText ? (
               <>
-                {subtitle ? ' · ' : ''}
+                {(rate ? rate.text : subtitle) ? ' · ' : ''}
                 <Text style={styles.boostTail}>{`\u00A0${boostText}\u00A0`}</Text>
               </>
             ) : null}
           </Text>
         </View>
         {onGift && (
-          <Pressable onPress={onGift} style={styles.hudIcon} testID="open-gift" accessibilityLabel="Daily gift">
+          <Pressable onPress={onGift} style={styles.hudIcon} testID="open-gift" accessibilityLabel="Daily gift" hitSlop={4}>
             <GiftIcon size={30} />
             {giftDot && <View style={styles.giftDot} />}
           </Pressable>
@@ -264,12 +273,12 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
           onLayout={(e) => setGoalW(e.nativeEvent.layout.width)}
           style={[styles.goal, styles.goalFlex, ready && styles.goalReady, halo === 'goal' && styles.haloGoal]}>
           <View style={[styles.goalFill, goalW > 0 ? { width: bar.fillW } : { width: `${pct * 100}%` }, ready && { backgroundColor: C.basil }]} />
-          <GoalLine key={ready ? 'ready' : goal.label} label={ready ? `▶ ${goal.label}` : goal.label} amount={ready ? 'tap!' : goal.text ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone={ready ? 'ready' : 'track'} onSpans={ready ? undefined : onWords} onAmount={ready ? undefined : onAmount} />
+          <GoalLine key={ready ? 'ready' : shownLabel} label={ready ? `▶ ${shownLabel}` : shownLabel} amount={ready ? 'tap!' : shownText ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone={ready ? 'ready' : 'track'} onSpans={ready ? undefined : onWords} onAmount={ready ? undefined : onAmount} />
           {/* D297: the same line again in cream, clipped to the fill, so the part over the fill is light and the rest stays dark */}
           {bar.split ? (
             <View pointerEvents="none" style={[styles.goalClip, { width: bar.fillW }]}>
               <View style={[styles.goalClipLine, { width: bar.innerW }]}>
-                <GoalLine label={goal.label} amount={goal.text ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone="fill" />
+                <GoalLine label={shownLabel} amount={shownText ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone="fill" />
               </View>
             </View>
           ) : null}
@@ -305,7 +314,7 @@ const ProgressRing = memo(function ProgressRing({ step }: { step: number }) {
   }, [near, pulse]);
   return (
     <Animated.View pointerEvents="none" style={[styles.ring, { opacity: pulse }]}>
-      <Svg width={44} height={44} viewBox="0 0 44 44">
+      <Svg width={HUD_ICON} height={HUD_ICON} viewBox="0 0 44 44">
         <Circle cx={22} cy={22} r={RING_R} stroke="rgba(255,255,255,0.28)" strokeWidth={3} fill="none" />
         {k > 0 && <Circle cx={22} cy={22} r={RING_R} stroke={C.cheese} strokeWidth={3} fill="none" strokeLinecap="round" strokeDasharray={`${RING_LEN * k} ${RING_LEN}`} transform="rotate(-90 22 22)" />}
       </Svg>
@@ -716,14 +725,14 @@ const styles = StyleSheet.create({
   noGainInner: { backgroundColor: '#EFE6D8', borderColor: '#CFC3B2' },
   saveTrack: { position: 'absolute', left: 6, right: 6, bottom: 2, height: 3, borderRadius: 2, backgroundColor: 'rgba(46,125,62,0.18)' },
   saveFill: { height: 3, borderRadius: 2, backgroundColor: '#2E7D3E' },
-  buyInnerCompact: { flex: 1, justifyContent: 'center', paddingVertical: 0, paddingHorizontal: 4 },
+  buyInnerCompact: { flex: 1, justifyContent: 'center', paddingVertical: 0, paddingHorizontal: 1 },
   buySub: { fontFamily: F.semi, color: 'rgba(255,255,255,0.85)', fontSize: 10, letterSpacing: 1 },
   burst: { position: 'absolute', alignSelf: 'center', top: 8 },
   modalIcons: { flexDirection: 'row', alignItems: 'center', gap: 2, marginVertical: 4 },
 
   hud: { backgroundColor: C.tomato, paddingHorizontal: 12, paddingBottom: 10, paddingTop: 6, gap: 8 },
-  hudTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  hudIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
+  hudTop: { flexDirection: 'row', alignItems: 'center', gap: HUD_GAP },
+  hudIcon: { width: HUD_ICON, height: HUD_ICON, borderRadius: HUD_ICON / 2, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
   hudEmoji: { fontSize: 22 },
   ring: { position: 'absolute', left: 0, top: 0 },
   goalRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

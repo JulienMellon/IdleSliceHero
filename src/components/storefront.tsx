@@ -164,6 +164,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     /** The rush pill was a combo last frame: a bark asks when one starts. */
     combo: false,
   });
+  const eventAt = useRef({ sec: -1, ev: null as ReturnType<typeof activeEvent> });
   // wall ms when this shop's scene was opened (the scene remounts per shop): the rush hint shows for the start of a visit
   const [visitAt] = useState(() => Date.now());
 
@@ -219,7 +220,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const slowest = useMemo(() => Game.tiedStages(shop, game.vehicle), [key]);
   // who waits outside: hungry diners and idle drivers (steady state, so only while the shop runs); the patio's tables
   // a running weekly event (D470): the sky goes to dusk, string lights come on, and two more hungry diners stand in the lane while the shop sells
-  const evLook = eventLook(activeEvent(Date.now()), id, running);
+  // (activeEvent is looked up once a second, not on every 15 fps frame: U15)
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (eventAt.current.sec !== nowSec) eventAt.current = { sec: nowSec, ev: activeEvent(nowSec * 1000) };
+  const evLook = eventLook(eventAt.current.ev, id, running);
   const q0 = running ? Game.queueSizes(shop, game.vehicle) : undefined;
   const queue = q0 && evLook.extraDiners ? { ...q0, diners: q0.diners + evLook.extraDiners } : q0;
   const cheer = Date.now() / 1000 - m0.cheerAt < CHEER_SECONDS;

@@ -45,10 +45,13 @@ def run(ctx):
     sv = dressed("downtown", [], prep=30, ovens=55, counter=100, drivers=40, tables=12, heads=heads)
     page = seeded_page(b, sv)
     settle(page, 2.0)
+    # the city's only hired heads are Downtown's, so one of them is Head of the Week and says so on load; bubbles are 20 s apart, so let that
+    # one pass (D459: the rush bark used to be held back by it and shot 70 showed none)
+    time.sleep(22)
     for _ in range(10):
         tap_shop(page)
         time.sleep(0.12)
-    shot(page, "70-head-rush-bark", 0.4)
+    shot(page, "70-head-rush-bark", 0.3)
 
     # 71: Head of the Week: the only hired head in the city is the week's pick, so the star pin shows on its badge (and it says so)
     one = {"prep": False, "oven": True, "counter": False}

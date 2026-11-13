@@ -13,6 +13,7 @@ import { emitCheer, emitCoin, emitPayout } from '../pulse-bus';
 import { eventBannerView, eventViewNow } from './event-model';
 import { eventNews, NEWS_MS, newsItems, newsKey, RECIPE_HEADER, type NewsItem } from './news-model';
 import { RecipeArt } from './recipe-art';
+import { emitReveal } from './reveal-bus';
 import { STACK } from './stack-model';
 
 const COINS = 8;
@@ -31,9 +32,10 @@ export const NewsToast = memo(function NewsToast() {
 
   useEffect(() => {
     if (!key) return;
-    const items = newsItems(useGame.getState().game);
-    if (!items.length) return;
-    setQueue((q) => [...q, ...items]);
+    // D469: a recipe card turns over in the middle of the scene (recipe-reveal.tsx); the rest are toasts in the notice column
+    const items = newsItems(useGame.getState().game).filter((i) => !(i.kind === 'recipe' && emitReveal(i)));
+    const any = items.length > 0;
+    if (any) setQueue((q) => [...q, ...items]);
     useGame.getState().ackEndgame('news');
   }, [key]);
 

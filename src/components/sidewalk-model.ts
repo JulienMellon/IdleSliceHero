@@ -282,7 +282,7 @@ export function sidewalkSlots(s: G.GameState, id: NeighborhoodId, bundle: G.Bund
       kind: 'expand',
       keys: expandKeys,
       span: expandKeys.length,
-      title: `EXPAND to ${next.name}`,
+      title: `EXPAND \u00B7 ${next.name.split(' ')[0]}`, // G102: "EXPAND · Double", one word of the tier's name
       label: money(cost),
       foot: `Lv cap ${G.levelCap(shop)} → ${G.levelCap({ ...shop, footprint: shop.footprint + 1 })}`,
       enabled: s.cash >= cost,

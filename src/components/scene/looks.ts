@@ -85,6 +85,9 @@ export interface PersonProps {
   dot?: string;
   gold?: boolean;
   alt?: boolean;
+  /** The day-30 visitor (cameo.ts): the figure drawn this much bigger (1 = the crowd's size), and a shawl over the shoulders in this colour. */
+  scale?: number;
+  shawl?: string;
   /** Which cook in the kitchen (0–2): neckerchief colour, and the second wears a skull cap (D306). */
   variant?: number;
   // pose
