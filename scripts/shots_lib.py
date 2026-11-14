@@ -64,7 +64,7 @@ MID_SAVE = {
         "university": shop(built=False, managed=False), "industrial": shop(built=False, managed=False), "uptown": shop(built=False, managed=False),
     },
     "dronesUnlocked": False, "cityComplete": False,
-    "seenScenes": ["downtown-1", "downtown-2", "downtown-3", "downtown-4", "suburbs-1", "suburbs-2", "suburbs-3", "waterfront-1"],
+    "seenScenes": ["downtown-1", "downtown-2", "downtown-3", "downtown-4", "suburbs-1", "suburbs-2", "suburbs-3", "suburbs-3b", "waterfront-1"],
     "scrapbookViewed": 7, "lastSavedAt": now_ms,
 }
 report = {"version": VERSION, "errors": [], "shots": [], "loaded": False}
@@ -554,7 +554,7 @@ LATE_SAVE = dict(MID_SAVE, cash=1.5e6, vehicle=3, active="industrial", dronesUnl
                      "industrial": shop(prep=52, ovens=48, grade=3, counter=50, drivers=22, tables=34, footprint=2, sold=360500),
                      "uptown": shop(managed=False, sold=0),
                  },
-                 seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:18] + ["uptown-1"], scrapbookViewed=19)
+                 seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:18] + ["industrial-2b", "uptown-1"], scrapbookViewed=19)
 TIED_SAVE = dict(MID_SAVE, cash=500, active="downtown", scrapbookViewed=8,
                  shops=dict(MID_SAVE["shops"], downtown=shop(prep=6, ovens=8, counter=20, drivers=30, tables=4)))
 FRUGAL_SAVE = dict(MID_SAVE, cash=1000, vehicle=0, active="downtown", seenScenes=["downtown-1", "downtown-2", "downtown-3"], scrapbookViewed=3,

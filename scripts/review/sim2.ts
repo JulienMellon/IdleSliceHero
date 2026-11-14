@@ -10,7 +10,7 @@ import { DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, P
 import { DAILY_CHESTS } from '../../src/content/rewards';
 import { ORDER } from '../../src/content/hooks';
 import type { NeighborhoodId } from '../../src/content/types';
-import { pickScene } from '../../src/engine/cutscene-input';
+import { pickScene, scenePacesGap } from '../../src/engine/cutscene-input';
 import * as G from '../../src/engine/game';
 import { buyRack, rackLock, rackPrice } from '../../src/engine/features/layers/waterfront-boats';
 import { rivalView, startRivalChallenge } from '../../src/engine/features/layers/rival';
@@ -214,7 +214,7 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
     }
     for (const n of NEIGHBORHOODS) {
       const sh = s.shops[n.id];
-      if (!sh.built || !G.runsItself(sh) || rivalView(s, n.id, at).phase !== 'available') continue;
+      if (!sh.built || !G.runsItself(sh) || !G.challengeOffered(s, n.id) || rivalView(s, n.id, at).phase !== 'available') continue; // v5.16 (card T1a): the finale wait gates the offer
       const r = startRivalChallenge(s, n.id, at);
       if (r.ok) { s = r.state; rival.started++; rival.running = n.id; }
       break;
@@ -249,7 +249,7 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
       for (const id of (cfg.notap ? ['downtown'] : [newest, 'downtown']) as NeighborhoodId[]) for (let j = 0; j < 3 && !s.shops[id].managed; j++) { const st = G.nextStation(s.shops[id]); if (!st) break; const r = G.tapStation(s, id, st); if (!r.ok) break; s = r.state; }
       s = G.playTick(s, 1); wall += 1;
       for (let sc = pickScene(s, HOME_SCENES, 1e15, 0, false, lastSceneEnd); sc; sc = pickScene(s, HOME_SCENES, 1e15, 0, false, lastSceneEnd)) {
-        s = G.markSceneSeen(s, sc); lastSceneEnd = s.playSeconds; scenes.push({ t: s.playSeconds, wall, id: sc.id });
+        s = G.markSceneSeen(s, sc); if (scenePacesGap(sc)) lastSceneEnd = s.playSeconds; scenes.push({ t: s.playSeconds, wall, id: sc.id });
         dump(`at-${sc.id}`);
         if (stop.atScene === sc.id) break outer;
       }

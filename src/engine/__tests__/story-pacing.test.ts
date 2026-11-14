@@ -214,6 +214,11 @@ describe('interludes (v5.16)', () => {
     expect(G.sceneTriggered(seenUpTo([], 1e6), scene('suburbs-3b'))).toBe(false); // the scene it counts from has not been seen
     expect(G.sceneTriggered(withShop(seenUpTo(['suburbs-3'], 1e6, { 'suburbs-3': 0 }), 'suburbs', { built: false }), scene('suburbs-3b'))).toBe(false);
   });
+  it('a scene seen with no time on record (an old save, or one the migration marked) counts from the start of play', () => {
+    const s = withShop(seenUpTo([...DT, 'suburbs-1', 'suburbs-2', 'suburbs-3'], 0), 'suburbs', { built: true });
+    expect(G.sceneTriggered({ ...s, playSeconds: after('suburbs-3b') - 1 }, scene('suburbs-3b'))).toBe(false);
+    expect(G.sceneTriggered({ ...s, playSeconds: after('suburbs-3b') }, scene('suburbs-3b'))).toBe(true);
+  });
   it('an interlude obeys the 90 s gap like any beat', () => {
     const s = sub3(800 + after('suburbs-3b') + 10);
     expect(pickScene(s, HOME_SCENES, LATE, 0, false, s.playSeconds - 30)).toBeNull();

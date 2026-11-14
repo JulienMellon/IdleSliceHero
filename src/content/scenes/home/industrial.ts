@@ -210,7 +210,7 @@ export const INDUSTRIAL_SCENES: Scene[] = [
     neighborhood: 'industrial',
     beat: 'interlude',
     title: 'Nobody Saw Anything',
-    trigger: { kind: 'after', neighborhood: 'industrial', scene: 'industrial-3', seconds: 800 },
+    trigger: { kind: 'after', neighborhood: 'industrial', scene: 'industrial-3', seconds: 660 },
     panels: [
       {
         backdrop: 'industrial',

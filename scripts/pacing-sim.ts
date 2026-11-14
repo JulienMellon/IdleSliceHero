@@ -2,14 +2,20 @@
 // The player always saves for the purchase with the best cash/sec gained per dollar, across every pizzeria, and keeps tapping the newest
 // pizzerias until it has a manager. v5.16: this is scripts/review/sim2.ts's `run('continuous')` (one player, one set of rules: it also plays
 // the rewards, REWARDS=0 turns them off), printed as the scene table it always was. NOTAP=1: a casual player who only taps Downtown.
+import { HOME_SCENES } from '../src/content/scenes/home';
 import { NEIGHBORHOODS } from '../src/content/tuning';
 import * as G from '../src/engine/game';
 import { masteryTotal } from '../src/engine/features/mastery';
-import { options, reportLines, run } from './review/sim2';
+import { applyCfg, options, reportLines, run } from './review/sim2';
 
 const r = run('continuous');
 const s = r.s;
-const events: [number, string][] = r.scenes.map((x) => [x.wall, x.id]);
+/** What starts each scene, as the table prints it (v5.16, card T1a: the story models `after`, `requires`, the rival `challenge` and the hired `manager`). */
+const KIND = (id: string): string => {
+  const t = HOME_SCENES.find((x) => x.id === id)!.trigger;
+  return t.kind === 'after' ? `after ${t.scene} +${t.seconds}s` : t.kind;
+};
+const events: [number, string][] = r.scenes.map((x) => [x.wall, `${x.id} [${KIND(x.id)}]`]);
 for (const b of r.buys) {
   const l = b.label;
   if (l.startsWith('build') || l.endsWith('manager') || l.includes(':head') || l === 'fleet' || l.includes('expand') || l.includes('grade') || l === 'pier9' || l === 'night-oven') events.push([b.wall, `  buy ${l}`]);
@@ -23,8 +29,55 @@ for (const [t, e] of events) {
   console.log(`${(t / 60).toFixed(1).padStart(7)} min  ${scene ? `(+${((t - prev) / 60).toFixed(1)})` : '        '}  ${e}`);
   if (scene) prev = t;
 }
-console.log(`scenes ${s.seenScenes.length}/24 · longest scene gap ${(maxGap / 60).toFixed(1)} min · $/s ${G.earningsPerSecond(s).toFixed(0)} · mastery stars at the finale ${masteryTotal(s)}/18 (the check-in player's days after the story: scripts/pacing-fit.ts check)`);
+const played = new Set(r.scenes.map((x) => x.id));
+const missing = HOME_SCENES.filter((x) => !played.has(x.id)).map((x) => x.id);
+console.log(`scenes ${played.size}/${HOME_SCENES.length} · longest scene gap ${(maxGap / 60).toFixed(1)} min · $/s ${G.earningsPerSecond(s).toFixed(0)} · mastery stars at the finale ${masteryTotal(s)}/18 (the check-in player's days after the story: scripts/pacing-fit.ts check)`);
 console.log(reportLines(r).join('\n'));
+
+// ---- v5.16 (card T1a): the story, all of it ----
+// Every scene must play; the gaps are listed by what ends them. A timer gap (an `after` interlude) is the only one `after` delays change: the others wait
+// for the economy (a build, a manager's price) or for a won challenge, which card E2b's refit fits.
+const byId = new Map(HOME_SCENES.map((x) => [x.id, x]));
+const gapsOf = (walls: { id: string; wall: number }[]) => walls.map((x, i) => ({ id: x.id, min: (x.wall - (i ? walls[i - 1].wall : 0)) / 60, kind: byId.get(x.id)!.trigger.kind }));
+const gaps = gapsOf(r.scenes);
+const MAX_GAP_MIN = 12;
+const over = gaps.filter((g) => g.min > MAX_GAP_MIN);
+const timers = gaps.filter((g) => g.kind === 'after');
+console.log(`scene gaps over ${MAX_GAP_MIN} min: ${over.length ? over.map((g) => `${g.id} +${g.min.toFixed(0)} (${g.kind})`).join(', ') : 'none'}`);
+console.log(`longest interlude timer gap ${Math.max(...timers.map((g) => g.min)).toFixed(1)} min (${timers.sort((a, b) => b.min - a.min)[0].id}); longest of the others ${Math.max(...gaps.filter((g) => g.kind !== 'after').map((g) => g.min)).toFixed(1)} min`);
+if (missing.length) {
+  console.error(`NOT ALL SCENES PLAY: ${played.size}/${HOME_SCENES.length}, missing ${missing.join(', ')}`);
+  process.exitCode = 1;
+}
+if (timers.some((g) => g.min > MAX_GAP_MIN)) {
+  console.error(`AN INTERLUDE TIMER IS OVER ${MAX_GAP_MIN} MIN: ${timers.filter((g) => g.min > MAX_GAP_MIN).map((g) => g.id).join(', ')}`);
+  process.exitCode = 1;
+}
+
+// The player who builds University before the bid. EAGER builds every pizzeria the moment it is affordable, and University's build price is cut to twice
+// Waterfront's so that moment comes before the bid opens (at the real price it never does: the bid opens first). Scenes must still all play, and the
+// goal bar's hint ("Save Marisol's dock to continue University's story") must be on screen while University's act 3 waits for the bid.
+applyCfg({ eager: true, bc: NEIGHBORHOODS.map((n) => (n.id === 'university' ? NEIGHBORHOODS.find((w) => w.id === 'waterfront')!.buildCost * 2 : NaN)) });
+let hintFrom = -1;
+let hintTo = -1;
+let hintText = '';
+const e = run('continuous', 0, 0, undefined, {
+  onSecond: (st, wall) => {
+    const h = G.storyWaitHint(st);
+    if (h) { if (hintFrom < 0) { hintFrom = wall; hintText = h; } hintTo = wall; }
+  },
+});
+const ePlayed = new Set(e.scenes.map((x) => x.id));
+const eWall = (id: string) => e.scenes.find((x) => x.id === id)?.wall;
+const uniBuilt = e.timeline.university?.build;
+const bidOpen = e.pier9Open?.wall;
+console.log(`\nUniversity built before the bid (EAGER): University built ${uniBuilt === undefined ? 'never' : (uniBuilt / 60).toFixed(1) + ' min'}, bid open ${bidOpen === undefined ? 'never' : (bidOpen / 60).toFixed(1) + ' min'}, waterfront-4 ${eWall('waterfront-4') === undefined ? 'never' : ((eWall('waterfront-4') ?? 0) / 60).toFixed(1) + ' min'}, university-3 ${eWall('university-3') === undefined ? 'never' : ((eWall('university-3') ?? 0) / 60).toFixed(1) + ' min'}`);
+console.log(`  hint on screen ${hintFrom < 0 ? 'never' : `${(hintFrom / 60).toFixed(1)} to ${(hintTo / 60).toFixed(1)} min: "${hintText}"`} · scenes ${ePlayed.size}/${HOME_SCENES.length} · city complete ${e.s.cityComplete}`);
+const eMissing = HOME_SCENES.filter((x) => !ePlayed.has(x.id)).map((x) => x.id);
+if (eMissing.length) {
+  console.error(`NOT ALL SCENES PLAY (University first): missing ${eMissing.join(', ')}`);
+  process.exitCode = 1;
+}
 if (process.env.DEBUG) {
   for (const n of NEIGHBORHOODS) {
     const sh = s.shops[n.id];

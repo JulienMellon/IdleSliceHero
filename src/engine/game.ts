@@ -1131,9 +1131,8 @@ function triggerPasses(s: GameState, scene: Scene): boolean {
       return shop.perk;
     case 'after': {
       if (!s.seenScenes.includes(tr.scene)) return false;
-      const at = s.sceneAt[tr.scene];
-      // seen, but with no time on record (a save from before play time existed): it was long ago
-      return at === undefined || at + tr.seconds <= s.playSeconds;
+      // seen with no time on record (a save from before play time existed, or a scene the migration marked): counted from the start of play
+      return (s.sceneAt[tr.scene] ?? 0) + tr.seconds <= s.playSeconds;
     }
     case 'challenge':
       return challengeWon(s, tr.neighborhood);
