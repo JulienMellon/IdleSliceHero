@@ -34,3 +34,4 @@ next: fresh session; read docs/build/sessions/S1-loop-update.md (the loop update
 - 2026-11-13 Q2 partial (refactor done, no deps to run). Installed npm deps + py playwright, exported; Q2 resumed for steps 2-3.
 - 2026-11-13 Q2 done. Changed: fixtures in scripts/fixtures/ (11 new), --only + expect/expect_text in shots_lib.py; full run ok, --only 56_u1 1m04s. Wave 2: Q1 launched.
 - 2026-11-14 Q1 done. Changed: frozen clock (T0) in shots_lib.py, all fixture sleeps -> advance(); two full runs 93/93 identical; run 530 s (+14%). Wave 3: Q3 launched.
+- 2026-11-14 Container restart killed Q3 mid-card; work on disk ok, tsc clean; Q3 relaunched with resume line.
