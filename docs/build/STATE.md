@@ -10,7 +10,7 @@ last_shots: v5.15-loop      # label of the last screenshot set that passed verif
 codecritic_range_start: f83d281
 cards:                 # todo | running | done | partial | blocked
   W2 done  E0 done  E2a done  P1 partial  E2b done  T1a done
-  S2a todo  S2b todo  T1b todo  U5 todo
+  S2a running  S2b running  T1b todo  U5 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.15/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 8; U5 S3; carried)
   code:   docs/build/v5.15/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 16; E8 U4 S4 A2; C116/C117 carry)
@@ -31,3 +31,4 @@ next: fresh session; read docs/build/sessions/S3-v5.16-second-half.md (wave 6: S
 - 2026-11-14 17:43 UTC T1a done (compile fixes, stand-in looks for 8 ids; tsc clean; components+store 518 pass). Waiting on E2b refit.
 - 2026-11-14 18:11 UTC E2b refit done: days 0.85/2.04/3.23/4.25/5.106; S1 Nonna 11.4, Suburbs 17.8, finale 38.0 min; max gap 11.0 min; drones d3.23; critic 0.75 min. Break: tsc clean, 1182/1183 (audio logic.test cue for new scenes) -> T1a.
 - 2026-11-14 18:14 UTC Session break: tsc clean, 1183/1183 tests (T1a fixed audio cue). S2 ends; PR to main.
+- 2026-11-14 18:27 UTC S3 start: npm ci; py playwright 1.63.0 pinned (matches /opt/pw-browsers). Wave 6: S2a + S2b launched.
