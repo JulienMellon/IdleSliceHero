@@ -1,6 +1,8 @@
 import type { Scene } from '../../types';
+import { PIER9_BID } from '../../tuning';
 
 // ───────────────────────────── WATERFRONT · Marisol ─────────────────────────────
+// Text is the Todd script (docs/story/STORY-v4-final.md, Julien 2026-11-14: where it disagrees with an earlier fix, the script wins) plus the v5.16 copy (docs/story/COPY-v5.16.md).
 export const WATERFRONT_SCENES: Scene[] = [
   {
     id: 'waterfront-1',
@@ -37,7 +39,7 @@ export const WATERFRONT_SCENES: Scene[] = [
         backdrop: 'waterfront',
         cast: [{ id: 'marisol', mood: 'neutral' }],
         lines: [
-          { speaker: 'Captain Marisol', text: 'Just keep the anchovies off mine. I’ve met enough fish for one lifetime.' },
+          { speaker: 'Captain Marisol', text: "Just keep the anchovies off mine. I've met enough fish for one lifetime." },
         ],
       },
     ],
@@ -56,7 +58,7 @@ export const WATERFRONT_SCENES: Scene[] = [
         cast: [{ id: 'marisol', mood: 'happy' }],
         caption: 'Friday nights, the whole dock eats together now.',
         lines: [
-          { speaker: 'Captain Marisol', text: 'Haven’t seen this many folks on Pier 9 since the Great Lobster Escape of ’88.' },
+          { speaker: 'Captain Marisol', text: "Haven't seen this many folks on Pier 9 since the Great Lobster Escape of '88." },
         ],
       },
       {
@@ -64,14 +66,46 @@ export const WATERFRONT_SCENES: Scene[] = [
         cast: [{ id: 'marisol', mood: 'neutral' }],
         lines: [
           { speaker: 'You', text: 'What happened in the Great Lobster Escape?' },
-          { speaker: 'Captain Marisol', text: 'We don’t talk about it. They’re still out there.' },
+          { speaker: 'Captain Marisol', text: "We don't talk about it. They're still out there." },
         ],
       },
       {
         backdrop: 'waterfront',
         cast: [{ id: 'marisol', mood: 'happy' }],
         lines: [
-          { speaker: 'Captain Marisol', text: 'This dock’s been my home all my life. Nice to see it full again.' },
+          { speaker: 'Captain Marisol', text: "This dock's been my home all my life. Nice to see it full again." },
+          { speaker: 'Gus', text: 'Seen it fuller once. That was the storm, though. Mostly water.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'waterfront-hire',
+    city: 'home',
+    character: 'marisol',
+    neighborhood: 'waterfront',
+    beat: 'interlude',
+    title: 'Counted Twice',
+    trigger: { kind: 'manager', neighborhood: 'waterfront' },
+    panels: [
+      {
+        backdrop: 'shop',
+        cast: [
+          { id: 'marisol', mood: 'happy' },
+          { id: 'skip', mood: 'neutral' },
+        ],
+        caption: 'Someone in a purser’s cap is already counting your napkins.',
+        lines: [
+          { speaker: 'Captain Marisol', text: 'Kid, meet Skip. Ferry purser, retired. Mostly. Like me.' },
+          { speaker: 'Captain Marisol', text: 'He counts everything twice. Never lost a ticket, a crate or a passenger.' },
+        ],
+      },
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'skip', mood: 'happy' }],
+        lines: [
+          { speaker: 'Skip', text: 'Napkins: counted. Napkins: counted again. Good. We can open.' },
+          { speaker: 'Skip', text: 'The ferry log from the Great Lobster Escape doesn’t add up. I counted twice.' },
         ],
       },
     ],
@@ -89,9 +123,10 @@ export const WATERFRONT_SCENES: Scene[] = [
         backdrop: 'waterfront',
         prop: 'sold-sign',
         cast: [{ id: 'marisol', mood: 'sad' }],
-        caption: 'A sign appears on Pier 9: “SOLD SOON — FUTURE MEGASLICE MEGASTORE.”',
+        caption: 'A sign appears on Pier 9: "SOLD SOON — FUTURE MEGASLICE MEGASTORE."',
         lines: [
-          { speaker: 'Captain Marisol', text: 'The harbor board’s broke. They’re selling my dock to the highest bidder.' },
+          { speaker: 'Captain Marisol', text: "The harbor board's broke. They're selling my dock to the highest bidder." },
+          { speaker: 'Skip', text: 'Counted the board’s books twice. Broke both times.', ifSeen: 'waterfront-hire' },
         ],
       },
       {
@@ -101,8 +136,8 @@ export const WATERFRONT_SCENES: Scene[] = [
           { id: 'marisol', mood: 'angry' },
         ],
         lines: [
-          { speaker: 'MegaSlice Rep', text: 'Picture it! A 40-story pizza megastore! With a parking lot for boats!' },
-          { speaker: 'Captain Marisol', text: 'Boats don’t PARK, you barnacle!' },
+          { speaker: 'Todd', text: 'Picture it! A 40-story pizza megastore! With a parking lot for boats!' },
+          { speaker: 'Captain Marisol', text: "Boats don't PARK, you barnacle!" },
         ],
       },
       {
@@ -110,14 +145,61 @@ export const WATERFRONT_SCENES: Scene[] = [
         cast: [{ id: 'victor-crust', mood: 'happy' }],
         lines: [
           { speaker: 'Victor Crust', text: 'The auction closes soon. Outbid MegaSlice? With pizza money? Ha!' },
+          { speaker: 'Victor Crust', text: 'Go measure the pier, Tom.' },
         ],
       },
       {
         backdrop: 'waterfront',
         cast: [{ id: 'marisol', mood: 'neutral' }],
         lines: [
-          { speaker: 'You', text: 'Then we sell a LOT of pizza. Captain, we’re buying your dock.' },
+          { speaker: 'You', text: "Then we sell a LOT of pizza. Captain, we're buying your dock." },
           { speaker: 'Captain Marisol', text: 'Hmph. Never bet against a stubborn crew. All hands!' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'waterfront-3b',
+    city: 'home',
+    character: 'marisol',
+    neighborhood: 'waterfront',
+    beat: 'interlude',
+    title: 'Man Overboard',
+    trigger: { kind: 'deliveries', neighborhood: 'waterfront', count: PIER9_BID.unlockPizzas },
+    requires: ['waterfront-3'],
+    panels: [
+      {
+        backdrop: 'waterfront',
+        cast: [{ id: 'megaslice-rep', mood: 'neutral' }],
+        caption: 'Pier 9. Todd measures it for the megastore. Name tag: ASSOCIATE.',
+        lines: [
+          { speaker: 'Todd', text: 'Forty stories... the pier is... eleven feet wide. That seems bad.' },
+        ],
+      },
+      {
+        backdrop: 'waterfront',
+        cast: [],
+        caption: 'SPLASH.',
+        lines: [],
+      },
+      {
+        backdrop: 'waterfront',
+        cast: [
+          { id: 'marisol', mood: 'neutral' },
+          { id: 'megaslice-rep', mood: 'sad' },
+        ],
+        caption: 'Marisol fishes him out with a boat hook.',
+        lines: [
+          { speaker: 'Captain Marisol', text: "Forty years I've hauled things out of this harbor. Never a salesman." },
+          { speaker: 'Todd', text: "Please don't throw me back." },
+        ],
+      },
+      {
+        backdrop: 'waterfront',
+        cast: [{ id: 'marisol', mood: 'happy' }],
+        lines: [
+          { speaker: 'Captain Marisol', text: "The auction's open, kid. Bid two million and Pier 9 stays a pier." },
+          { speaker: 'Captain Marisol', text: 'Tap the bid on your goal bar when the cash is in. All hands!' },
         ],
       },
     ],
@@ -130,15 +212,16 @@ export const WATERFRONT_SCENES: Scene[] = [
     beat: 4,
     title: 'Dock Saved',
     trigger: { kind: 'bid', neighborhood: 'waterfront' },
+    requires: ['waterfront-3b'],
     perk: true,
     panels: [
       {
         backdrop: 'waterfront',
         cue: 'rep',
         cast: [{ id: 'megaslice-rep', mood: 'surprised' }],
-        caption: 'Auction day. The final bid comes in… from a pizza shop.',
+        caption: 'Auction day. The final bid comes in... from a pizza shop.',
         lines: [
-          { speaker: 'MegaSlice Rep', text: 'You outbid us? With PIZZA money? That’s not in my slideshow!' },
+          { speaker: 'Todd', text: "You outbid us? With PIZZA money? That's not in my slideshow!" },
         ],
       },
       {
@@ -147,7 +230,7 @@ export const WATERFRONT_SCENES: Scene[] = [
         cast: [{ id: 'marisol', mood: 'happy' }],
         lines: [
           { speaker: 'Captain Marisol', text: 'Pier 9 stays a pier! Somebody ring the bell!' },
-          { speaker: 'Captain Marisol', text: 'You saved this old dock, kid. Saved me, too, I reckon.' },
+          { speaker: 'Captain Marisol', text: "You saved this old dock, kid. Now I've got nowhere left to complain but your shop." },
         ],
       },
       {
@@ -155,7 +238,58 @@ export const WATERFRONT_SCENES: Scene[] = [
         cast: [{ id: 'marisol', mood: 'happy' }],
         caption: 'The new sign on Pier 9 has a slice of pizza painted on it.',
         lines: [
-          { speaker: 'Captain Marisol', text: 'Waterfront’s yours, Captain. Even the anchovies are on your side now.' },
+          { speaker: 'Captain Marisol', text: "Waterfront's yours, Captain. Even the anchovies are on your side now." },
+        ],
+      },
+      {
+        backdrop: 'megaslice-hq',
+        cast: [{ id: 'victor-crust', mood: 'angry' }],
+        lines: [
+          { speaker: 'Victor Crust', text: "Fine. Keep the dock. I'll buy their brains instead." },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'waterfront-5',
+    city: 'home',
+    character: 'marisol',
+    neighborhood: 'waterfront',
+    beat: 'interlude',
+    title: 'The Lobster Incident',
+    trigger: { kind: 'after', neighborhood: 'waterfront', scene: 'suburbs-5', seconds: 540 },
+    panels: [
+      {
+        backdrop: 'waterfront',
+        cast: [
+          { id: 'marisol', mood: 'neutral' },
+          { id: 'todd-coat', mood: 'sad' },
+        ],
+        caption: 'Night on Pier 9. A man in a trench coat is fishing. Badly.',
+        lines: [
+          { speaker: 'Captain Marisol', text: "You've been out here three hours. What're you after?" },
+          { speaker: 'Mr. Smith', text: 'A lobster took my mustache.' },
+        ],
+      },
+      {
+        backdrop: 'waterfront',
+        cast: [{ id: 'marisol', mood: 'surprised' }],
+        lines: [
+          { speaker: 'Captain Marisol', text: '...You met one of them.' },
+          { speaker: 'Mr. Smith', text: 'Them?' },
+          { speaker: 'Captain Marisol', text: "We don't talk about it. They're still out there." },
+        ],
+      },
+      {
+        backdrop: 'waterfront',
+        cast: [
+          { id: 'marisol', mood: 'neutral' },
+          { id: 'todd-coat', mood: 'sad' },
+        ],
+        caption: 'His coat falls open. Name tag: INTERN.',
+        lines: [
+          { speaker: 'Mr. Smith', text: "I can't stay. Tomorrow I recruit at the university." },
+          { speaker: 'Mr. Smith', text: 'With a smoke machine. Please forget I said that.' },
         ],
       },
     ],

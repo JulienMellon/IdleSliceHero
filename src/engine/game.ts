@@ -3,18 +3,20 @@
 // Every neighborhood has its own pizzeria. Each pizzeria is a pipeline:
 //   Prep → Ovens → Counter → customers (delivery drivers + walk-ins at the tables)
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
-import { HEADS, BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEADS_OFFLINE_SHARE, HEAD_COST_DOWNTOWN, HEAD_KINDS, HEAD_SHARE, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
+import { HEADS, BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEADS_OFFLINE_SHARE, HEAD_COST_DOWNTOWN, HEAD_KINDS, HEAD_SHARE, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, STORY_PACING, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
 import { BOOST_MAX_AHEAD_MS, DAILY_CHESTS, DAILY_TASK_COUNT, MAX_BOOSTERS, MAX_CONCURRENT_BOOSTS, TASK_KINDS, WEEKLY_TASK_COUNT, type TaskKind } from '../content/rewards';
 import { BONUS, NIGHT_OVEN, ORDER } from '../content/hooks';
 import { auctionMult, LAYER_KEYS } from '../content/layers';
 import { cosmeticPart } from '../content/endgame';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
+import { HOME_SCENES } from '../content/scenes/home';
 import { pizzasLeft } from './format';
 import { FEATURES } from './features/registry';
+import { challengeWon, rivalOpen } from './features/layers/rival';
 import { advanceLine, clampWalkInDebt, emptyLine, LINE, nextTap, piesInFlight, rushLine, tapStation as lineTap, type Automation, type Line, type LineRates, type Station } from './pipeline';
 
-/** v5 (rewards): daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. v4 was the kitchen line and station heads. */
-export const SAVE_VERSION = 5;
+/** v6 (Todd's story): 40 scenes, interludes that hold main beats back, manager hire scenes; the migration marks skipped scenes seen. v5 was rewards: daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. */
+export const SAVE_VERSION = 6;
 export const SHOP_IDS = NEIGHBORHOODS.map((n) => n.id);
 /**
  * C106: the economy marker. 2 = the v5.13 retune (costMult = orderValue, 4 h offline cap, Pier 9 $120M); 3 = the v5.16 rules
@@ -456,7 +458,7 @@ function migrateOrders(raw: unknown, play: number, now: number, shops: Record<Ne
   };
 }
 
-/** Load any save (v1 single-shop, v2, v3, v4 or v5) over a fresh game so missing fields get defaults. */
+/** Load any save (v1 single-shop, v2, v3, v4, v5 or v6) over a fresh game so missing fields get defaults. */
 export function migrate(raw: unknown, now: number): GameState {
   const base = newGame(now);
   if (!raw || typeof raw !== 'object') return base;
@@ -535,7 +537,7 @@ export function migrate(raw: unknown, now: number): GameState {
   // feature slices: a save without `x` (or without a feature's key) gets that feature's defaults; keys of features no longer registered are dropped
   const savedX = (r.x && typeof r.x === 'object' ? r.x : {}) as Record<string, unknown>;
   game.x = Object.fromEntries(FEATURES.map((f) => [f.key, f.migrate(savedX[f.key], now)]));
-  return game;
+  return migrateStory(game);
 }
 
 /** Scene ids are `<neighbourhood>-<beat>` (pinned by a test); a neighbourhood's finale is beat 4. */
@@ -857,10 +859,10 @@ export function buildShop(s: GameState, id: NeighborhoodId): BuyResult {
 
 // ---------- Pier 9 bid (Waterfront's finale) ----------
 
-/** The Pier 9 bid is on offer once "For Sale" has played and Waterfront has sold enough pizzas. */
+/** The Pier 9 bid is on offer once "Man Overboard" (waterfront-3b, which plays at the same pizza count) has played and Waterfront has sold enough pizzas. */
 export function pier9Available(s: GameState): boolean {
   const w = s.shops.waterfront;
-  return w.built && !w.perk && s.seenScenes.includes('waterfront-3') && w.sold >= PIER9_BID.unlockPizzas;
+  return w.built && !w.perk && s.seenScenes.includes('waterfront-3b') && w.sold >= PIER9_BID.unlockPizzas;
 }
 
 /** What the Pier 9 bid costs now: the base bid times the live auction's multiplier (features/layers/waterfront-boats.ts `pier9AuctionMult`, the same number from the saved state: content/layers.ts). */
@@ -1111,19 +1113,116 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
 
 // ---------- Story ----------
 
-export function sceneTriggered(s: GameState, scene: Scene): boolean {
+/** Every scene a scene waits for: its `requires`, and the scene an `after` trigger counts from. */
+export function prerequisites(scene: Scene): string[] {
+  const tr = scene.trigger;
+  return tr.kind === 'after' ? [...(scene.requires ?? []), tr.scene] : scene.requires ?? [];
+}
+
+/** The scene's own trigger, ignoring `requires`. */
+function triggerPasses(s: GameState, scene: Scene): boolean {
   const tr = scene.trigger;
   const shop = s.shops[tr.neighborhood];
   if (!shop.built) return false;
-  if (tr.kind === 'unlock') return true;
-  if (tr.kind === 'bid') return shop.perk;
-  return shop.sold >= tr.count;
+  switch (tr.kind) {
+    case 'unlock':
+      return true;
+    case 'bid':
+      return shop.perk;
+    case 'after': {
+      if (!s.seenScenes.includes(tr.scene)) return false;
+      const at = s.sceneAt[tr.scene];
+      // seen, but with no time on record (a save from before play time existed): it was long ago
+      return at === undefined || at + tr.seconds <= s.playSeconds;
+    }
+    case 'challenge':
+      return challengeWon(s, tr.neighborhood);
+    case 'manager':
+      return shop.managed;
+    default:
+      return shop.sold >= tr.count;
+  }
 }
 
-/** Unseen scenes whose triggers pass, in story order (earliest first). */
+/** The scene's trigger has passed and every scene it requires has been seen. */
+export function sceneTriggered(s: GameState, scene: Scene): boolean {
+  if (scene.requires?.some((id) => !s.seenScenes.includes(id))) return false;
+  return triggerPasses(s, scene);
+}
+
+/** Unseen scenes whose triggers pass, in story order (earliest first); main beats come before interludes when both are ready. */
 export function pendingScenes(s: GameState, scenes: Scene[]): Scene[] {
   const seen = new Set(s.seenScenes);
-  return scenes.filter((sc) => !seen.has(sc.id) && sceneTriggered(s, sc));
+  const ready = scenes.filter((sc) => !seen.has(sc.id) && sceneTriggered(s, sc));
+  return [...ready.filter((sc) => sc.beat !== 'interlude'), ...ready.filter((sc) => sc.beat === 'interlude')];
+}
+
+const capital = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
+
+/**
+ * A line for the goal bar when a main beat has triggered but is held behind a finale the player still has to earn (Uptown behind
+ * Industrial's, University behind the Pier 9 bid). Holds that clear with play time return null: they clear on their own.
+ */
+export function storyWaitHint(s: GameState, scenes: readonly Scene[] = HOME_SCENES): string | null {
+  const seen = new Set(s.seenScenes);
+  const byId = new Map(scenes.map((sc) => [sc.id, sc]));
+  const unseenBehind = (sc: Scene, out: Set<string> = new Set()): Set<string> => {
+    for (const id of prerequisites(sc)) {
+      const p = byId.get(id);
+      if (seen.has(id) || out.has(id) || !p) continue;
+      out.add(id);
+      unseenBehind(p, out);
+    }
+    return out;
+  };
+  for (const sc of scenes) {
+    if (seen.has(sc.id) || sc.beat === 'interlude' || !triggerPasses(s, sc) || sceneTriggered(s, sc)) continue;
+    for (const id of unseenBehind(sc)) {
+      const f = byId.get(id)!;
+      // a finale of its own that nobody has earned yet (a finale that has been earned is only waiting its turn)
+      if (f.beat !== 4 || triggerPasses(s, f)) continue;
+      return f.trigger.kind === 'bid' ? `Save Marisol’s dock to continue ${capital(sc.neighborhood)}’s story` : `Win over ${capital(f.neighborhood)} to continue ${capital(sc.neighborhood)}’s story`;
+    }
+  }
+  return null;
+}
+
+/**
+ * The rival challenge in `id` may be taken now: the MegaSlice shop is open there and the finale wait is over (300 s of play after beat 3,
+ * Downtown's shorter). This wait gates when the challenge is offered, not when beat 4 plays: beat 4 plays the moment it is won.
+ */
+export function challengeOffered(s: GameState, id: NeighborhoodId): boolean {
+  if (!rivalOpen(s, id)) return false;
+  const beat3 = s.sceneAt[sceneId(id, 3)];
+  const gap = id === 'downtown' ? STORY_PACING.downtownBeat4GapSeconds : STORY_PACING.beat4GapSeconds;
+  return beat3 === undefined || s.playSeconds - beat3 >= gap;
+}
+
+/**
+ * The story part of `migrate` (idempotent, so it runs on every load). Every scene a seen scene waits for is seen too, however far back the
+ * chain goes (a save that has played University's beat 3 never meets "Sorry in advance about the university" afterwards), stamped with
+ * the time of the scene that needed it. A shop that already has its manager has met them: its hire scene is seen.
+ */
+function migrateStory(game: GameState): GameState {
+  const byId = new Map(HOME_SCENES.map((sc) => [sc.id, sc]));
+  const seen = new Set(game.seenScenes);
+  const sceneAt = { ...game.sceneAt };
+  const mark = (id: string, at: number | undefined) => {
+    const sc = byId.get(id);
+    if (!sc) return;
+    for (const pre of prerequisites(sc)) {
+      if (!seen.has(pre)) {
+        seen.add(pre);
+        if (at !== undefined && sceneAt[pre] === undefined) sceneAt[pre] = at;
+      }
+      mark(pre, at);
+    }
+  };
+  for (const sc of HOME_SCENES) if (sc.trigger.kind === 'manager' && game.shops[sc.trigger.neighborhood].managed) seen.add(sc.id);
+  for (const id of [...seen]) mark(id, sceneAt[id]);
+  if (seen.size === game.seenScenes.length) return game;
+  const seenScenes = [...game.seenScenes, ...[...seen].filter((id) => !game.seenScenes.includes(id))];
+  return { ...game, seenScenes, sceneAt };
 }
 
 export function applyReward(s: GameState, reward: SceneReward | undefined): GameState {

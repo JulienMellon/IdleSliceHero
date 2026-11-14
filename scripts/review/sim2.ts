@@ -14,6 +14,10 @@ import { pickScene } from '../../src/engine/cutscene-input';
 import * as G from '../../src/engine/game';
 import { buyRack, rackLock, rackPrice } from '../../src/engine/features/layers/waterfront-boats';
 import { rivalView, startRivalChallenge } from '../../src/engine/features/layers/rival';
+import { bestMix, mixOf, setMenu } from '../../src/engine/features/layers/university-menu';
+import { fixJam, jamView } from '../../src/engine/features/layers/industrial-shifts';
+import { buyIngredients, ingredientsLock, ingredientsPrice, type StarsState } from '../../src/engine/features/layers/uptown-stars';
+import { LAYER_KEYS } from '../../src/content/layers';
 import '../../src/engine/features'; // the registry must be live (mastery, heads, recipes, ...): without this import no feature hook runs
 import * as B from '../../src/engine/bonus';
 import * as O from '../../src/engine/orders';
@@ -57,6 +61,22 @@ export function options(s: G.GameState): Option[] {
       }
     }
   }
+  // Uptown's Ingredients (card E2b): a tier moves the rating by a point, and the pay only changes where a rating crosses 3 or 5 stars, so one tier's own gain is often nil.
+  // The player weighs the whole track: the gain of every tier, shared out by price.
+  const up = s.shops.uptown;
+  if (up.built && up.managed && ingredientsPrice(s) !== null && !ingredientsLock(s)) {
+    let all = s;
+    let total = 0;
+    for (let price = ingredientsPrice(all); price !== null; price = ingredientsPrice(all)) {
+      const r = buyIngredients({ ...all, cash: price });
+      if (!r.ok) break;
+      all = r.state;
+      total += price;
+    }
+    const price = ingredientsPrice(s)!;
+    const gainAll = G.shopEarnings(all, 'uptown') - G.shopEarnings(s, 'uptown');
+    if (total > 0) out.push({ label: 'uptown:ingredients', cost: price, gain: (gainAll * price) / total, buy: buyIngredients });
+  }
   const next = G.nextToBuild(s);
   // a build that is locked (Nonna has not taken over, the last finale has not played) cannot be bought: a player does not save for it, they buy something else
   if (next && !G.buildLock(s, next.id)) out.push({ label: `build:${next.id}`, cost: next.buildCost, gain: G.buildGain(s, next.id) / 2, buy: (st) => G.buildShop(st, next.id) });
@@ -86,7 +106,7 @@ export function levelsAffordable(s: G.GameState, id: NeighborhoodId, cash: numbe
 
 const median = (xs: number[]) => { const a = [...xs].sort((x, y) => x - y); return a.length ? a[Math.floor(a.length / 2)] : 0; };
 
-export type RewardKind = 'golden' | 'order' | 'daily' | 'chest' | 'weekly' | 'weeklyChest' | 'gift';
+export type RewardKind = 'golden' | 'order' | 'daily' | 'chest' | 'weekly' | 'weeklyChest' | 'gift' | 'critic';
 /** One reward paid: when (wall seconds since install), what and how much cash (0 for a diamond or booster only). */
 export interface Claim { wall: number; kind: RewardKind; cash: number }
 /** One purchase decision after Nonna's takeover: whether the best-payback item was also the cheapest on offer, and the third-best payback over the best. */
@@ -200,6 +220,27 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
       break;
     }
   };
+  /**
+   * The layers (card E2b), played the way a keen player would: University's best menu mix every half minute, Industrial's jam fixed within
+   * five seconds of play (the wrench), and Uptown's critic result taken (a passed visit is a claim). Drones are bought by the ordinary
+   * `fleet` option: the zones are in `vehicleGain`; Ingredients are an option in `options()`.
+   */
+  let jammedFor = 0;
+  const layerSecond = () => {
+    if (s.shops.university.built && wall % 30 === 0) {
+      const best = bestMix(s);
+      const now = mixOf(s);
+      if (best.pepperoni !== now.pepperoni || best.knots !== now.knots) { const r = setMenu(s, best.pepperoni, best.knots); if (r.ok) s = r.state; }
+    }
+    if (s.shops.industrial.built && jamView(s).jammed) {
+      if (++jammedFor >= 5) { const r = fixJam(s); if (r.ok) s = r.state; jammedFor = 0; }
+    } else jammedFor = 0;
+    const stars = s.x[LAYER_KEYS.stars] as StarsState | undefined;
+    if (stars?.result) {
+      if (stars.result.hit) claims.push({ wall, kind: 'critic', cash: stars.result.cash });
+      s = { ...s, x: { ...s.x, [LAYER_KEYS.stars]: { ...stars, result: null } } };
+    }
+  };
   outer: for (;;) {
     sessions++;
     lastSceneEnd = null;
@@ -219,6 +260,7 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
       if (G.pier9Available(s) && s.cash >= G.pier9Price(s)) { const before = s.cash; const r = G.bidPier9(s); if (r.ok) { s = r.state; buys.push({ t: s.playSeconds, wall, label: 'pier9', cost: before - s.cash, session: sessions, cashBefore: before }); } }
       rackSecond();
       rivalSecond();
+      layerSecond();
       if (s.cityComplete) { storyEnd ??= { wall, earned: s.totalEarned }; if (!stop.keepGoing) break outer; }
       // EAGER=1: a human who builds the next neighbourhood the moment they can afford it (the default greedy waits until the build also beats every upgrade per dollar)
       if (cfg.eager && !G.pier9Available(s)) { const nb = G.nextToBuild(s); if (nb && !G.buildLock(s, nb.id) && s.cash >= nb.buildCost) { const r = G.buildShop(s, nb.id); if (r.ok) { const before = s.cash; s = r.state; waitCash = 0; mark(nb.id, { build: wall }); buys.push({ t: s.playSeconds, wall, label: `build:${nb.id}`, cost: nb.buildCost, session: sessions, cashBefore: before }); builds.push({ id: nb.id, wall, left: s.cash, levels: levelsAffordable(s, nb.id, s.cash) }); } } }
@@ -277,7 +319,8 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
     // away
     const before = s;
     const cap = Math.max(cfg.cap, G.offlineCapOf(s));
-    s = G.offlineTick(s, Math.min(away, cap) * cfg.eff).state;
+    // the time away is settled at the moment the player comes back (Industrial pays it at the night rate: the foreground stamp is stale by then)
+    s = G.offlineTick(s, Math.min(away, cap) * cfg.eff, 1, INSTALL + (wall + away) * 1000).state;
     if (cfg.rewards) s = B.bonusAway(O.returnFromAway(before, s, away), away);
     wall += away;
     if (sessions > 400 || wall > (stop.maxWall ?? Infinity)) break;

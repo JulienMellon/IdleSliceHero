@@ -18,6 +18,15 @@ const WHO: Record<CharacterId, string> = {
   genevieve: 'Genevieve',
   'victor-crust': 'Victor Crust',
   'megaslice-rep': 'the MegaSlice rep',
+  // a scene's `character` is the neighbourhood's lead; these only appear on stage, but the table covers every id
+  'mr-smith': 'Mr. Smith',
+  'todd-coat': 'Todd',
+  slicey: 'Slicey',
+  deb: 'Deb',
+  skip: 'Skip',
+  noor: 'Noor',
+  dee: 'Dee',
+  anton: 'Anton',
 };
 
 export type TeaserKind = 'deliveries' | 'unlock' | 'bid' | 'soon' | 'complete';
@@ -45,10 +54,10 @@ export function commas(n: number): string {
 
 const ratio = (a: number, b: number) => (b > 0 ? Math.max(0, Math.min(1, a / b)) : 0);
 
-/** The first scene not yet seen, in story order (an already-triggered one is only waiting for its moment). */
+/** The first scene not yet seen, in story order (an already-triggered one is only waiting for its moment). A hire scene waits for the player's hire, not for the story, so it is never "next". */
 export function nextScene(s: GameState, scenes: readonly Scene[] = HOME_SCENES): Scene | null {
   const seen = new Set(s.seenScenes);
-  return scenes.find((sc) => !seen.has(sc.id)) ?? null;
+  return scenes.find((sc) => !seen.has(sc.id) && sc.trigger.kind !== 'manager') ?? null;
 }
 
 export function nextSceneTeaser(s: GameState, scenes: readonly Scene[] = HOME_SCENES): Teaser {
@@ -63,8 +72,12 @@ export function nextSceneTeaser(s: GameState, scenes: readonly Scene[] = HOME_SC
   if (!shop.built) return make('unlock', `${who} when you build ${hood.name}`, buildLock(s, sc.neighborhood) ? 0 : ratio(s.cash, hood.buildCost));
   const tr = sc.trigger;
   if (tr.kind === 'bid') return make('bid', `${who} when you bid on Pier 9`, pier9Available(s) ? ratio(s.cash, PIER9_BID.cost) : ratio(shop.sold, PIER9_BID.unlockPizzas));
+  if (tr.kind === 'after') return make('soon', `${who} soon`, 0);
+  if (tr.kind === 'challenge') return make('soon', `${who} when you outsell MegaSlice`, 0);
   if (tr.kind === 'deliveries') {
     const left = tr.count - shop.sold;
+    // the pies are in, but the scene is held behind another one: it comes on its own
+    if (left <= 0) return make('soon', `${who} soon`, 1);
     return make('deliveries', `${who} after ${commas(left)} more ${hood.name} ${left <= 1 ? 'pie' : 'pies'}`, ratio(shop.sold, tr.count));
   }
   // an unlock scene of a built shop is already triggered (handled above); this keeps the compiler and a malformed scene list honest

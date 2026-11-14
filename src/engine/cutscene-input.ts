@@ -1,5 +1,5 @@
 // Pure helpers for the cut-scene player and the store's scene gate (kept in .ts so they are unit-testable in node).
-import type { Scene } from '../content/types';
+import type { Scene, SceneLine } from '../content/types';
 import { STORY_PACING } from '../content/tuning';
 import { pendingScenes, sceneId, type GameState } from './game';
 
@@ -27,8 +27,18 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
  */
 export function sceneHeading(scene: Pick<Scene, 'title' | 'neighborhood' | 'beat' | 'panels'>, panel: number, showReward: boolean): string {
   if (showReward || panel >= scene.panels.length - 1) return scene.title;
-  return `${cap(scene.neighborhood)} · Act ${scene.beat}`;
+  return `${cap(scene.neighborhood)} · ${scene.beat === 'interlude' ? 'Interlude' : `Act ${scene.beat}`}`;
 }
+
+/** The scene as it plays for this save: a line that waits on another scene (`ifSeen`: a manager speaking before their hire scene) is left out until that scene has been seen. */
+export function resolveScene(scene: Scene, seenScenes: readonly string[]): Scene {
+  const gone = (l: SceneLine) => l.ifSeen !== undefined && !seenScenes.includes(l.ifSeen);
+  if (!scene.panels.some((p) => p.lines.some(gone))) return scene;
+  return { ...scene, panels: scene.panels.map((p) => (p.lines.some(gone) ? { ...p, lines: p.lines.filter((l) => !gone(l)) } : p)) };
+}
+
+/** Whether the scene's end restarts the 90 s story gap. A hire scene is something the player did (like a build or the bid): it never holds the next main beat back. */
+export const scenePacesGap = (scene: Pick<Scene, 'trigger'>): boolean => scene.trigger.kind !== 'manager';
 
 /**
  * Whether a waiting scene may play now (v3.7 pacing). `lastSceneEndPlay` is the play time the last scene ended
@@ -36,7 +46,8 @@ export function sceneHeading(scene: Pick<Scene, 'title' | 'neighborhood' | 'beat
  */
 export function sceneReady(game: GameState, scene: Scene, lastSceneEndPlay: number | null): boolean {
   const kind = scene.trigger.kind;
-  if (kind === 'unlock' || kind === 'bid') return true; // the player caused it
+  // the player caused it: a new pizzeria, the Pier 9 bid, a won challenge, a hired manager. (The finale wait for a challenge gates when it is offered: `challengeOffered`.)
+  if (kind === 'unlock' || kind === 'bid' || kind === 'challenge' || kind === 'manager') return true;
   if (lastSceneEndPlay !== null && game.playSeconds - lastSceneEndPlay < STORY_PACING.gapSeconds) return false;
   if (scene.beat === 4) {
     const beat3 = game.sceneAt[sceneId(scene.neighborhood, 3)];
@@ -49,7 +60,8 @@ export function sceneReady(game: GameState, scene: Scene, lastSceneEndPlay: numb
 /** The scene to open now, or null while one is playing, the player is still tapping the kitchen, or pacing holds it back. */
 export function pickScene(game: GameState, scenes: Scene[], nowMs: number, lastKitchenTapMs: number, playing: boolean, lastSceneEndPlay: number | null): Scene | null {
   if (playing || !sceneMayOpen(nowMs, lastKitchenTapMs)) return null;
-  return pendingScenes(game, scenes).find((sc) => sceneReady(game, sc, lastSceneEndPlay)) ?? null;
+  const next = pendingScenes(game, scenes).find((sc) => sceneReady(game, sc, lastSceneEndPlay));
+  return next ? resolveScene(next, game.seenScenes) : null;
 }
 
 /**
