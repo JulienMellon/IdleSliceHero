@@ -33,6 +33,7 @@ import {
 import { cosmeticPart } from '../content/endgame';
 import { NONNA_TAKEOVER } from '../content/tuning';
 import { withoutEvent } from './features/events';
+import { withoutService } from './features/service';
 import { count, money } from './format';
 import {
   boostMult,
@@ -277,8 +278,8 @@ export function taskProgress(s: GameState, task: Task): number {
 
 export const taskDone = (s: GameState, task: Task): boolean => taskProgress(s, task) >= task.target;
 
-/** Reward income: cash per second with no boosts and no event (C111), so neither can inflate a cash reward. */
-export const rewardIncome = (s: GameState): number => earningsPerSecond(withoutEvent(s));
+/** Reward income: cash per second with no boosts, no event (C111) and no service tip (v5.16), so none of them can inflate a cash reward. */
+export const rewardIncome = (s: GameState): number => earningsPerSecond(withoutService(withoutEvent(s)));
 
 /** Cash a "N minutes of income" reward pays right now. */
 export const minutesToCash = (s: GameState, minutes: number): number => rewardIncome(s) * 60 * minutes;

@@ -202,7 +202,7 @@ describe('the tied-station bundle as a button (D304)', () => {
 
 describe('Pier 9 warning on the build chip', () => {
   const base = G.newGame(0);
-  const open = (patch: Partial<G.Shop> = {}): G.GameState => ({ ...base, seenScenes: [...base.seenScenes, 'waterfront-3'], shops: { ...base.shops, waterfront: { ...base.shops.waterfront, built: true, sold: 1e9, ...patch } } });
+  const open = (patch: Partial<G.Shop> = {}): G.GameState => ({ ...base, seenScenes: [...base.seenScenes, 'waterfront-3', 'waterfront-3b'], shops: { ...base.shops, waterfront: { ...base.shops.waterfront, built: true, sold: 1e9, ...patch } } });
   test('shown only while the bid is on offer and not yet won', () => {
     expect(buildChipHint(base)).toBeNull();
     expect(G.pier9Available(open())).toBe(true);

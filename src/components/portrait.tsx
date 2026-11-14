@@ -32,6 +32,15 @@ export const LOOKS: Record<CharacterId, Look> = {
   genevieve: { skin: '#F6DCC8', hair: '#222222', shirt: '#111111', eye: '#2F7A5A', hairStyle: 'bob', hat: 'beret', extra: 'pearls' },
   'victor-crust': { skin: '#E9C4A6', hair: '#1A1A1A', shirt: '#2C2C3A', eye: '#5F87A3', hairStyle: 'slick', extra: 'tie' },
   'megaslice-rep': { skin: '#F0C8A8', hair: '#C2A15A', shirt: '#7B2CBF', eye: '#5A3A80', hairStyle: 'slick', extra: 'tie' },
+  // v5.16 placeholders (card T1a): each reuses an existing look until card T1b draws its own
+  'mr-smith': { skin: '#F0C8A8', hair: '#C2A15A', shirt: '#7B2CBF', eye: '#5A3A80', hairStyle: 'slick', extra: 'tie' },
+  'todd-coat': { skin: '#F0C8A8', hair: '#C2A15A', shirt: '#7B2CBF', eye: '#5A3A80', hairStyle: 'slick', extra: 'tie' },
+  slicey: { skin: '#F0C8A8', hair: '#C2A15A', shirt: '#7B2CBF', eye: '#5A3A80', hairStyle: 'slick', extra: 'tie' },
+  deb: { skin: '#F2C9A0', hair: '#E8E4E0', shirt: '#B23A48', eye: '#6B4A2E', hairStyle: 'bun', extra: 'apron' },
+  skip: { skin: '#C98F63', hair: '#F4F1EC', hairShade: '#d9d4cc', shirt: '#1F4E79', eye: '#4A2C1A', hairStyle: 'long', hat: 'captain' },
+  noor: { skin: '#B07A52', hair: '#1E1414', shirt: '#9B51E0', eye: '#3A2416', hairStyle: 'long', extra: 'glasses' },
+  dee: { skin: '#E8B88E', hair: '#4A3A33', shirt: '#E67E22', eye: '#5A3A22', hairStyle: 'bald', hat: 'hardhat', extra: 'mustache' },
+  anton: { skin: '#E9C4A6', hair: '#1A1A1A', shirt: '#2C2C3A', eye: '#5F87A3', hairStyle: 'slick', extra: 'tie' },
 };
 
 export const DISPLAY_NAMES: Record<CharacterId, string> = {
@@ -43,6 +52,14 @@ export const DISPLAY_NAMES: Record<CharacterId, string> = {
   genevieve: 'Genevieve',
   'victor-crust': 'Victor Crust',
   'megaslice-rep': 'MegaSlice Rep',
+  'mr-smith': 'Mr. Smith',
+  'todd-coat': 'Todd',
+  slicey: 'Slicey',
+  deb: 'Deb',
+  skip: 'Skip',
+  noor: 'Noor',
+  dee: 'Dee',
+  anton: 'Anton',
 };
 
 const INK = '#3B1F14';

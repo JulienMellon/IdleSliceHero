@@ -189,7 +189,7 @@ describe('the Pier 9 live auction', () => {
   /** Waterfront with the bid on offer (beat 3 seen, enough pies sold, enough cash). */
   const bidding = () => {
     const g = patch(G.newGame(NOW), { built: true, sold: PIER9_BID.unlockPizzas });
-    return { ...g, seenScenes: ['waterfront-3'], cash: PIER9_BID.cost * 2 };
+    return { ...g, seenScenes: ['waterfront-3', 'waterfront-3b'], cash: PIER9_BID.cost * 2 };
   };
 
   it('opens when the bid does, runs on play seconds, and the bid price follows it', () => {
@@ -232,7 +232,7 @@ describe('old saves', () => {
   it('a v5.15 save loads with no rack, an unopened auction and a schedule that starts now', () => {
     const saved = JSON.parse(JSON.stringify(patch(G.newGame(NOW), { built: true, sold: PIER9_BID.unlockPizzas })));
     delete saved.x;
-    saved.seenScenes = ['waterfront-3'];
+    saved.seenScenes = ['waterfront-3', 'waterfront-3b'];
     saved.playSeconds = 7000;
     run(() => {
       const g = G.migrate(saved, NOW);

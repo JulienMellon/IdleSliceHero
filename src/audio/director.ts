@@ -228,7 +228,7 @@ function refreshMusic() {
   const track = musicFor({
     active: s.game.active,
     downtownFull: s.game.seenScenes.includes('downtown-4'),
-    scene: scene ? { neighborhood: scene.neighborhood, panelCue: scenePanelCue, beat: scene.beat } : null,
+    scene: scene ? { neighborhood: scene.neighborhood, panelCue: scenePanelCue, beat: typeof scene.beat === 'number' ? scene.beat : undefined } : null,
   });
   switchMusic(track);
   setDuck('scene', scene ? DUCK.scene : null);

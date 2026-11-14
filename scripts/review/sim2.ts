@@ -208,7 +208,8 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
     const at = INSTALL + wall * 1000;
     if (rival.running) {
       const v = rivalView(s, rival.running, at);
-      if (v.phase === 'running') return;
+      // the player rushes the shop all through the challenge, as for an order (a managed shop's tap is a rush)
+      if (v.phase === 'running') { if (s.shops[rival.running].managed) for (let i = 0; i < ORDER.rushTapsPerSecond; i++) s = G.tapShop(s, rival.running); return; }
       if (v.won) rival.won++;
       rival.running = null;
     }

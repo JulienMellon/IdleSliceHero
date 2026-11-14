@@ -3,7 +3,7 @@ import { create } from 'zustand';
 
 import { emitAudio, type AudioEvent } from '../audio/bus';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
-import { pickScene, resumeSceneEnd } from '../engine/cutscene-input';
+import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
 import { HOME_SCENES } from '../content/scenes/home';
 import { PIER9_BID, TUNING, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
@@ -398,13 +398,13 @@ export const useGame = create<Store>((set, get) => {
       if (p.replay) set({ playing: null });
       else {
         const game = tutorialAdvance(G.markSceneSeen(get().game, p.scene));
-        set({ playing: null, game, lastSceneEndPlay: game.playSeconds });
+        set({ playing: null, game, lastSceneEndPlay: scenePacesGap(p.scene) ? game.playSeconds : get().lastSceneEndPlay });
       }
       if (!p.replay) void get().save();
       queueScene();
     },
 
-    replayScene: (scene) => set({ playing: { scene, replay: true } }),
+    replayScene: (scene) => set({ playing: { scene: resolveScene(scene, get().game.seenScenes), replay: true } }),
 
     dismissOffline: () => {
       const o = get().offline;

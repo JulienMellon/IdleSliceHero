@@ -549,8 +549,8 @@ describe('save v5', () => {
     delete v4.rewards;
     delete v4.stats;
     const m = G.migrate(v4, 5);
-    expect(G.SAVE_VERSION).toBe(5);
-    expect(m.saveVersion).toBe(5);
+    expect(G.SAVE_VERSION).toBe(6);
+    expect(m.saveVersion).toBe(6);
     expect(m.rewards).toEqual(G.newRewards());
     expect(m.stats).toEqual(G.newStats());
   });

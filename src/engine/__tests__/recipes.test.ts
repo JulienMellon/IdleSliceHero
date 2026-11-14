@@ -117,18 +117,21 @@ describe('a v5.14 save', () => {
     const g = G.migrate(old(), T0);
     expect(state(g)).toEqual({ owned: [], fresh: [], synced: false, summary: null });
     const a = tick(g);
-    // downtown 1, 2; uptown 2, 3 (downtown's finale is not a card-3 flood: downtown-4 is seen, so downtown 3 too); the others have a GM only if set
-    expect(owned(a).sort()).toEqual(['recipe.downtown.1', 'recipe.downtown.2', 'recipe.downtown.3', 'recipe.uptown.2', 'recipe.uptown.3'].sort());
-    expect(state(a).summary).toEqual({ cards: 5 });
+    // downtown 1, 2; uptown 2, 3 (downtown's finale is not a card-3 flood: downtown-4 is seen, so downtown 3 too); the others have a GM only if set.
+    // v5.16: a seen finale means the finales before it were seen (migrateStory), so Industrial's card 3 comes with Uptown's
+    expect(owned(a).sort()).toEqual(['recipe.downtown.1', 'recipe.downtown.2', 'recipe.downtown.3', 'recipe.industrial.3', 'recipe.uptown.2', 'recipe.uptown.3'].sort());
+    expect(state(a).summary).toEqual({ cards: 6 });
     expect(state(a).fresh).toEqual([]);
-    expect(collectionView(a).owned).toBe(5);
+    expect(collectionView(a).owned).toBe(6);
     expect(state(ackRecipes(a)).summary).toBeNull();
-    expect(tick(a).x).toBe(a.x);
+    expect(state(tick(a))).toBe(state(a)); // (the other layers keep their own stamps in `x`)
   });
 
   it('applies the multiplier from the first tick', () => {
     const a = tick(G.migrate(old(), T0));
-    expect(G.featureMults(a, 'downtown', T0).value).toBeCloseTo(1.01 ** 3, 12);
+    // the cards alone: the same game with none owned is the baseline (the service tip and the other layers are in both)
+    const bare = { ...a, x: { ...a.x, recipes: { ...state(a), owned: [] } } };
+    expect(G.featureMults(a, 'downtown', T0).value / G.featureMults(bare, 'downtown', T0).value).toBeCloseTo(1.01 ** 3, 12);
   });
 
   it('migrate tolerates junk and unknown ids', () => {

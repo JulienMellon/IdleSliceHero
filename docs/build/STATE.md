@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.15-loop      # label of the last screenshot set that passed verify
 codecritic_range_start: f83d281
 cards:                 # todo | running | done | partial | blocked
-  W2 done  E0 done  E2a done  P1 partial  E2b running  T1a partial
+  W2 done  E0 done  E2a done  P1 partial  E2b running  T1a done
   S2a todo  S2b todo  T1b todo  U5 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.15/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 8; U5 S3; carried)
@@ -21,7 +21,6 @@ next: S2 in progress: wave 4 (E2b + T1a) running; then refit msg to E2b (+P1 E i
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-14 11:44 UTC S2: W2 + E0 stopped on the 5-hour limit (reset 03:10); both resumed with the resume line.
 - 2026-11-14 11:45 UTC W2 done (COPY-v5.16.md). Needs: (1) Todd script reverses protected scene-file fixes (downtown-1 P4, '150 deliveries.', en-dash scores, university-4 P1, industrial-4 P4, uptown-1 caption, curly quotes) — Julien picks; (2) uptown-4 UI text/lamp fit unchecked, §5 visitor dupes unchecked; (3) waterfront-4 beat after challenge or bid — left as is. r0 storycritic launched.
 - 2026-11-14 11:50 UTC Julien: Todd script wins over the scene-file fixes (W2 Needs 1) — tell T1a. r0 story NOT SATISFIED (major 1, S26) sent to W2 once.
 - 2026-11-14 16:58 UTC Container restart; E0 report lost but all 7 card steps ticked -> done. W2 fixed S26 (Todd script applied). node_modules gone: npm ci rerun.
@@ -30,4 +29,5 @@ next: S2 in progress: wave 4 (E2b + T1a) running; then refit msg to E2b (+P1 E i
 - 2026-11-14 17:16 UTC E2a done (registry.test 8 features; tsc ok, features 90/90). Waiting on P1.
 - 2026-11-14 17:19 UTC P1 partial (service, strip, sheet; tsc ok; shots unrun, py playwright gone). For E2b refit: rewards.ts rewardIncome use withoutService; golden+pacing re-fit for tip x1.1; counterattack/events/recipes whole-x tests need service. For S2a: storefront.tsx push slammedAsks; pulse-bus relay onServicePulse. Wave 4 launched.
 - 2026-11-14 17:32 UTC E2b steps 1-6 done (3 layers, 52 tests), waiting for T1a. For refit msg: features.test key list +3; events.test eventMult neutral baseline; critic reward ~20% vs 10% cap; 2 waterfront-boats test fails. Open: Garlic Knots oven needs FeatureMults.oven (game.ts).
-- 2026-11-14 17:40 UTC T1a partial (40 scenes, SAVE_VERSION 6; tsc red in director/cutscene-player/backdrop/portrait). Sent T1a: min compile fixes + finishScene. Refit + E test lists sent to E2b.
+- 2026-11-14 17:40 UTC T1a done (40 scenes, SAVE_VERSION 6; tsc red in director/cutscene-player/backdrop/portrait). Sent T1a: min compile fixes + finishScene. Refit + E test lists sent to E2b.
+- 2026-11-14 17:43 UTC T1a done (compile fixes, stand-in looks for 8 ids; tsc clean; components+store 518 pass). Waiting on E2b refit.

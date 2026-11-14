@@ -7,7 +7,7 @@ import { EVENTS } from '../../content/endgame';
 import { NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { getFeature } from '../features';
-import { activeEvent, events, eventView } from '../features/events';
+import { activeEvent, events, eventView, withoutEvent } from '../features/events';
 import * as G from '../game';
 import * as R from '../rewards';
 
@@ -24,7 +24,8 @@ function city(now: number): G.GameState {
   for (const id of IDS) g = withShop(g, id, { built: true, managed: true, heads: G.allHeads(), prep: 40, ovens: 40, counter: 40, footprint: 3, tables: 5, drivers: 2 });
   return { ...g, lastSavedAt: now };
 }
-const base = (now: number) => G.playTick(city(now), 1, now - 60_000); // an ordinary tick well before: nothing running
+// the same city at the same moment with no event: every other layer (the service tip, Industrial's shift, Uptown's stars) reads the same in both
+const base = (now: number) => withoutEvent(G.playTick(city(now), 1, now));
 const running = (now: number) => G.playTick(city(now), 1, now);
 /** What the event alone does to a shop's value (the managed shops' recipe cards are in both). */
 const eventMult = (g: G.GameState, id: NeighborhoodId, now: number) => G.featureMults(g, id, now).value / G.featureMults(base(now), id, now).value;
@@ -196,7 +197,8 @@ describe('the state', () => {
     expect(G.playTick(a, 1, FRI(18) + 500).x).toBe(a.x);
     expect(G.playTick(a, 1, FRI(18) + 2500).x).not.toBe(a.x);
     const calm = G.playTick(city(at(2026, 11, 12, 18)), 1, at(2026, 11, 12, 18));
-    expect(G.playTick(calm, 1, at(2026, 11, 12, 18) + 5000).x).toBe(calm.x);
+    // (the other layers keep their own foreground stamps: it is the events' slice that stays put while none runs)
+    expect(getFeature(G.playTick(calm, 1, at(2026, 11, 12, 18) + 5000), events)).toBe(getFeature(calm, events));
   });
 
   it('is never saved as running', () => {
