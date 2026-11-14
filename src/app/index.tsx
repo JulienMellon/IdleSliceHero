@@ -16,10 +16,11 @@ import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePop
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
 import { masteryGoal } from '@/components/goal-model';
-import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, SHEETS, Slots } from '@/components/slots';
+import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots } from '@/components/slots';
 import { type DrawerIcon, type DrawerView, drawerCards, tiedBundle } from '@/components/drawer-model';
 import { buttonTone, buyBundle, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
+import { STRIP } from '@/components/report/report-model';
 import { CLOSE_SLOP, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait';
@@ -314,6 +315,8 @@ export default function GameScreen() {
         <SidewalkRow game={game} id={id} idleShop={idleShopHere} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} highlight={coach?.target === 'walk-ovens' ? 'ovens' : null}
           // the tied stations merge into one "Buy both" card in the row; kept apart while Nonna's coach is up
           bundle={showBundlePill(bundle, !!coach) ? bundle : null} onBundle={bundle ? () => buyBundle(bundle.steps, buy) : undefined} />
+        {/* v5.16 (P1): the shop report's strip, one 44 pt row directly above the sidewalk row */}
+        <ReportSlots items={SHOP_REPORT} bottom={rowBottom + (idleShopHere ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + STRIP.above} />
         {/* D378: the tutorial scrim carries on over the sidewalk row (same 60% tone as the scene's), touches pass through */}
         {coach && id === 'downtown' && !drawerOpen && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') && (
           <View pointerEvents="none" testID="coach-row-scrim" style={[styles.rowScrim, { bottom: rowBottom - 6, height: (idleShopHere ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + 12 }]} />

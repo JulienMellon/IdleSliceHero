@@ -18,13 +18,13 @@
 Service has consequences. The red "buy this" frame goes after the tutorial; **"Buy both" stays**.
 
 ## Steps
-- [ ] **1. The service feature** (`features/service.ts`, pure views plus one small piece of state per shop). For a shop that runs itself, after the tutorial:
+- [x] **1. The service feature** (`features/service.ts`, pure views plus one small piece of state per shop). For a shop that runs itself, after the tutorial:
   - `wanted` = the demand rate with every other feature's demand multipliers, **before** this feature's own effect. `kitchen` = the slowest of prep, ovens and counter. `sold` = the smaller of the two. `service` = `sold / wanted` (1 when nothing is wanted).
   - Station load = `sold` ÷ that station's rate. Lamp: **Slammed** at 95% or more, **Busy** from 60%, **Idle** below.
   - Floor lamp from `wanted / kitchen`: **Line out the door** at 1.05 or more, **Steady** from 0.6, **Quiet** below.
   - `lostPerMinute` = (`wanted` − `sold`) × the shop's value per pizza × 60.
   - `reportView(g, id, now)` returns those, the quantities per minute, and `state: 'inactive' | 'tipping' | 'normal' | 'cold'`. Quantise loads and service to 5% steps.
-- [ ] **2. Stakes**, through the `shopValueMult` hook.
+- [x] **2. Stakes**, through the `shopValueMult` hook.
   - **Tips:** service at 90% or more makes the shop's pizzas worth × 1.1. This is a pure function of the shop's rates, so `upgradeGain` sees it and a card can show the tip its upgrade would earn.
   - **Cold line:** service under 60% for 60 seconds of play in a row makes them worth × 0.9 until service is back to 60%. Julien picked "walk-ins thin out"; thinning demand changes nothing while the kitchen is the limit, so the cost is on value and the thinning is the picture: `reportView` gives `queueShare: 0.5` while cold, for the scene to draw a shorter line later.
   - Service is measured against demand before the penalty, so it cannot recover by itself. A 45-second Game Day or a 30-second boat cannot trip it. Away time: no tip, no penalty, and the timer starts again on return.

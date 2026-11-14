@@ -49,7 +49,7 @@ beforeEach(() => {
 
 describe('feature registry', () => {
   it('ships the four endgame features (v5.15) and the heads feature (v5.15 S1), and with none registered nothing changes', () => {
-    expect(FEATURES.map((f) => f.key)).toEqual(['mastery', 'counterattack', 'events', 'recipes', 'heads']);
+    expect(FEATURES.map((f) => f.key)).toEqual(['mastery', 'counterattack', 'events', 'recipes', 'heads', 'service', 'suburbsGameDay', 'waterfrontBoats', 'rival']);
     withFeatures([], () => {
       expect(G.newGame(T0).x).toEqual({});
       expect(G.featureMults(G.newGame(T0), 'downtown', T0)).toEqual({ value: 1, demand: 1 });

@@ -12,6 +12,8 @@ import { ORDER } from '../../src/content/hooks';
 import type { NeighborhoodId } from '../../src/content/types';
 import { pickScene } from '../../src/engine/cutscene-input';
 import * as G from '../../src/engine/game';
+import { buyRack, rackLock, rackPrice } from '../../src/engine/features/layers/waterfront-boats';
+import { rivalView, startRivalChallenge } from '../../src/engine/features/layers/rival';
 import '../../src/engine/features'; // the registry must be live (mastery, heads, recipes, ...): without this import no feature hook runs
 import * as B from '../../src/engine/bonus';
 import * as O from '../../src/engine/orders';
@@ -115,6 +117,8 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
   /** Every head hired, in order: which shop, which station, when. */
   const headBuys: { id: NeighborhoodId; kind: string; wall: number }[] = [];
   const orders = { offered: 0, done: 0 };
+  /** Rival challenges the player took and won (card E2a). */
+  const rival: { started: number; won: number; running: NeighborhoodId | null } = { started: 0, won: 0, running: null };
   /** When Pier 9 opens: the bid in minutes of citywide income at that moment. */
   let pier9Open: { wall: number; eps: number; minutes: number } | null = null;
   let sessions = 0;
@@ -165,6 +169,37 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
       if (r.ok) { s = r.state; waitCash = 0; buys.push({ t: s.playSeconds, wall, label: 'night-oven', cost: before - s.cash, session: sessions, cashBefore: before }); }
     }
   };
+  /**
+   * The rival (card E2a): a shop that runs itself takes its challenge whenever it is on offer (the challenge asks 1.2 x the shop's rate, so a
+   * shop that needs somebody at the stations cannot make it). Losing costs nothing: it retries after the wait. Won and started are counted.
+   */
+  /**
+   * The warming rack (card E2a) never wins the greedy cash-per-dollar race (20 pies per boat is little against its price), so the player
+   * buys the next tier as a luxury: once Waterfront runs itself and the tier costs under a quarter of the cash in hand.
+   */
+  const rackSecond = () => {
+    const price = rackPrice(s);
+    if (price === null || rackLock(s) || !G.runsItself(s.shops.waterfront) || price > s.cash / 4) return;
+    const before = s.cash;
+    const r = buyRack(s);
+    if (r.ok) { s = r.state; waitCash = 0; buys.push({ t: s.playSeconds, wall, label: 'waterfront:rack', cost: before - s.cash, session: sessions, cashBefore: before }); }
+  };
+  const rivalSecond = () => {
+    const at = INSTALL + wall * 1000;
+    if (rival.running) {
+      const v = rivalView(s, rival.running, at);
+      if (v.phase === 'running') return;
+      if (v.won) rival.won++;
+      rival.running = null;
+    }
+    for (const n of NEIGHBORHOODS) {
+      const sh = s.shops[n.id];
+      if (!sh.built || !G.runsItself(sh) || rivalView(s, n.id, at).phase !== 'available') continue;
+      const r = startRivalChallenge(s, n.id, at);
+      if (r.ok) { s = r.state; rival.started++; rival.running = n.id; }
+      break;
+    }
+  };
   outer: for (;;) {
     sessions++;
     lastSceneEnd = null;
@@ -180,7 +215,10 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
       if (cfg.rewards) rewardSecond();
       stop.onSecond?.(s, wall);
       if (!pier9Open && G.pier9Available(s)) { const eps = G.earningsPerSecond(s); pier9Open = { wall, eps, minutes: PIER9_BID.cost / eps / 60 }; }
-      if (G.pier9Available(s) && s.cash >= PIER9_BID.cost) { const before = s.cash; const r = G.bidPier9(s); if (r.ok) { s = r.state; buys.push({ t: s.playSeconds, wall, label: 'pier9', cost: PIER9_BID.cost, session: sessions, cashBefore: before }); } }
+      // the bid is a live auction (card E2a): the price is the base times the auction's multiplier
+      if (G.pier9Available(s) && s.cash >= G.pier9Price(s)) { const before = s.cash; const r = G.bidPier9(s); if (r.ok) { s = r.state; buys.push({ t: s.playSeconds, wall, label: 'pier9', cost: before - s.cash, session: sessions, cashBefore: before }); } }
+      rackSecond();
+      rivalSecond();
       if (s.cityComplete) { storyEnd ??= { wall, earned: s.totalEarned }; if (!stop.keepGoing) break outer; }
       // EAGER=1: a human who builds the next neighbourhood the moment they can afford it (the default greedy waits until the build also beats every upgrade per dollar)
       if (cfg.eager && !G.pier9Available(s)) { const nb = G.nextToBuild(s); if (nb && !G.buildLock(s, nb.id) && s.cash >= nb.buildCost) { const r = G.buildShop(s, nb.id); if (r.ok) { const before = s.cash; s = r.state; waitCash = 0; mark(nb.id, { build: wall }); buys.push({ t: s.playSeconds, wall, label: `build:${nb.id}`, cost: nb.buildCost, session: sessions, cashBefore: before }); builds.push({ id: nb.id, wall, left: s.cash, levels: levelsAffordable(s, nb.id, s.cash) }); } } }
@@ -245,7 +283,7 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
     if (sessions > 400 || wall > (stop.maxWall ?? Infinity)) break;
   }
   const rewardCash = claims.filter((c) => !storyEnd || c.wall <= storyEnd.wall).reduce((t, c) => t + c.cash, 0);
-  return { storyEnd, s, buys, scenes, sessions, wall, builds, hires, rounds, pier9Open, claims, rewardCash, earnedCash: storyEnd?.earned ?? s.totalEarned, decisions, timeline, headBuys, orders };
+  return { storyEnd, s, buys, scenes, sessions, wall, builds, hires, rounds, pier9Open, claims, rewardCash, earnedCash: storyEnd?.earned ?? s.totalEarned, decisions, timeline, headBuys, orders, rival: { started: rival.started, won: rival.won } };
 }
 
 const median2 = (xs: number[]) => (xs.length ? median(xs) : NaN);
