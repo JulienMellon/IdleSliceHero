@@ -4,12 +4,12 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.15-loop
-step: waves                    # setup | waves | verify | review | fix | close
+step: verify                   # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.15-r3      # label of the last screenshot set that passed verify
 codecritic_range_start: f83d281
 cards:                 # todo | running | done | partial | blocked
-  Q2 done, Q6 done, Q1 done, Q3 done, Q4 running
+  Q2 done, Q6 done, Q1 done, Q3 done, Q4 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.15/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 8; U5 S3; carried)
   code:   docs/build/v5.15/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 16; E8 U4 S4 A2; C116/C117 carry)
@@ -36,3 +36,4 @@ next: fresh session; read docs/build/sessions/S1-loop-update.md (the loop update
 - 2026-11-14 Q1 done. Changed: frozen clock (T0) in shots_lib.py, all fixture sleeps -> advance(); two full runs 93/93 identical; run 530 s (+14%). Wave 3: Q3 launched.
 - 2026-11-14 Container restart killed Q3 mid-card; work on disk ok, tsc clean; Q3 relaunched with resume line.
 - 2026-11-14 Q3 done. Changed: per-shot layout probe (tap/text/clip/edge) in shots_lib.py, layout_check.py, layout_allow.json (32: 17 tap, 14 text, 1 clip D477); full run 0 new, 8m38s. Wave 4: Q4 launched.
+- 2026-11-14 Q4 done: README, programmer/critic briefs, review_shots --notes (threshold 0.1%). Verify started.

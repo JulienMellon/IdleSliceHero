@@ -86,6 +86,7 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
 ## Lessons learned (avoid repeating them)
 - **Crowd overlaps:** fix them in the pure modules (`scene/cast.ts`, `timelines.ts`, `layout.ts`) and prove the fix with a budget in `scene/__tests__/crowd.test.ts` that fails on the old code.
 - **Tap targets:** draw controls at 44 pt. A hitSlop only works inside space the parent owns on iOS, and web screenshots can't show it. `tap-targets.ts` constants drive the StyleSheets; keep it that way.
+- **A suggested fix does not outrank a house rule:** a critic's "40 pt buttons" overrode the 44 pt tap-target rule and nobody decided it (the v5.15 r3 HUD buttons). A fix that needs an exception says so and is tagged `needs-owner`.
 - **One rule, one place:** button tone lives in `buttonTone`; the drawer and the sidewalk drifted apart twice before it did (G75, C60, C63).
 - **Memo deps:** give a big memoised builder one typed input object and derive the deps from it (`furnitureInputs` / `furnitureDeps`); a hand-listed dep array shipped a bug (v3.5 `prep`).
 - **Memoisation:** React skips a subtree only when props equal the previous frame's; keep memoised parts on primitive props; create `Animated.Value`s with `useState(() => …)`, not `useRef(new …)`.
