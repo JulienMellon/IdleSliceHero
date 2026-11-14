@@ -9,14 +9,15 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.15-loop      # label of the last screenshot set that passed verify
 codecritic_range_start: f83d281
 cards:                 # todo | running | done | partial | blocked
-  (from docs/build/v5.16/VERSION.md)
+  W2 running  E0 running  E2a todo  P1 todo  E2b todo  T1a todo
+  S2a todo  S2b todo  T1b todo  U5 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.15/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 8; U5 S3; carried)
   code:   docs/build/v5.15/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 16; E8 U4 S4 A2; C116/C117 carry)
   story:  docs/build/v5.15/review-r0-story.md (r0 NOT SATISFIED; bug 0 major 0 minor 6; E1 U2 T3)
   audio:  AUDIOLOG.md (next ID AU78)
 open: loop_stats.py can't read 'loop:' commits (5.15-loop METRICS row by hand). Shot 18-sold-sign-scene now always taken (93 shots), no fixture expect yet (Q2 lane). v5.15 carried: critic minors (docs/build/v5.15/review-r3-critic.md); code C116, C117 + lows (docs/build/v5.15/review-r2-code.md); story r0 minors; D465 needs copy key.
-next: fresh session; read docs/build/sessions/S2-v5.16-first-half.md
+next: S2 in progress: wave 1 (W2 + E0) running; then r0 story doc review, waves 3-5, session break (docs/build/sessions/S2-v5.16-first-half.md)
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
