@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 import * as G from '../game';
-import { DECOR_BOOST, DECOR_TIER_COST, NEIGHBORHOODS, TUNING } from '../../content/tuning';
+import { DECOR_BOOST, DECOR_TIER_COST, HEAD_COST_DOWNTOWN, NEIGHBORHOODS, TUNING } from '../../content/tuning';
 import { duration, money } from '../format';
 import { piesInFlight } from '../pipeline';
 
@@ -236,8 +236,8 @@ describe('managers, heads and tapping', () => {
     let s = { ...fresh(), cash: 1e9 };
     s = { ...s, shops: { ...s.shops, suburbs: { ...G.newShop(true) } } };
     expect(G.upgradeLock(s, 'suburbs', 'manager')).toMatch(/heads/);
-    expect(G.headCost('suburbs', 'prep')).toBe(Math.ceil(NEIGHBORHOODS[1].managerCost * 0.2));
-    expect(G.headCost('downtown', 'counter')).toBe(120);
+    expect(G.headCost('suburbs', 'prep')).toBe(Math.ceil(NEIGHBORHOODS[1].headsCost * 0.2));
+    expect(G.headCost('downtown', 'counter')).toBe(HEAD_COST_DOWNTOWN.counter);
     for (const u of ['headPrep', 'headOven', 'headCounter'] as const) {
       const r = G.buyUpgrade(s, 'suburbs', u);
       expect(r.ok).toBe(true);
@@ -267,15 +267,15 @@ describe('managers, heads and tapping', () => {
     expect([1, 19, 20, 39, 40, 100].map(at)).toEqual([4, 4, 6, 6, 8, 14]);
     expect(G.nextBatchLevel({ ...G.newShop(true), prep: 7 })).toBe(20);
   });
-  test('the first head is affordable within ~40 s of tapping', () => {
+  test('the first head is affordable within about 4 minutes of tapping alone (v5.16: the heads come at about 3, 5 and 7 minutes)', () => {
     let s = fresh();
     let t = 0;
-    while (s.cash < G.headCost('downtown', 'prep') && t < 120) {
+    while (s.cash < Math.min(...Object.values(HEAD_COST_DOWNTOWN)) && t < 400) {
       s = tapAll(s);
       s = G.lineTick(s, 0.5);
       t += 0.5;
     }
-    expect(t).toBeLessThanOrEqual(40);
+    expect(t).toBeLessThanOrEqual(300); // pure tapping, no upgrade bought: about 4 min (the sim, which also buys upgrades, hires it at ~2.7 min)
   });
 });
 

@@ -1,122 +1,26 @@
 // Greedy-player pacing simulation. Run: npx tsx scripts/pacing-sim.ts
-// The player always saves for the purchase with the best cash/sec gained per dollar, across every
-// pizzeria, and keeps tapping the newest pizzerias until it has a manager.
+// The player always saves for the purchase with the best cash/sec gained per dollar, across every pizzeria, and keeps tapping the newest
+// pizzerias until it has a manager. v5.16: this is scripts/review/sim2.ts's `run('continuous')` (one player, one set of rules: it also plays
+// the rewards, REWARDS=0 turns them off), printed as the scene table it always was. NOTAP=1: a casual player who only taps Downtown.
 import { HOME_SCENES } from '../src/content/scenes/home';
-import { DECOR_KINDS, NEIGHBORHOODS, PIER9_BID, VEHICLES } from '../src/content/tuning';
-import type { NeighborhoodId } from '../src/content/types';
-import { pickScene } from '../src/engine/cutscene-input';
+import { NEIGHBORHOODS } from '../src/content/tuning';
 import * as G from '../src/engine/game';
-import '../src/engine/features'; // registers the features (they are not part of the game module alone)
 import { masteryTotal } from '../src/engine/features/mastery';
+import { applyCfg, options, reportLines, run } from './review/sim2';
 
-type Option = { label: string; cost: number; gain: number; buy: (s: G.GameState) => G.BuyResult };
-
-function options(s: G.GameState): Option[] {
-  const out: Option[] = [];
-  for (const n of NEIGHBORHOODS) {
-    const shop = s.shops[n.id];
-    if (!shop.built) continue;
-    for (const what of ['prep', 'ovens', 'counter', 'drivers', 'tables', 'grade', 'headPrep', 'headOven', 'headCounter', 'manager'] as G.Upgrade[]) {
-      const gain = G.upgradeGain(s, n.id, what);
-      const cost = G.upgradeCostOf(s, n.id, what);
-      if (gain === null || cost === null) continue;
-      // An unmanaged shop only earns while tapped; treat its upgrades as worth a third.
-      const g = what === 'manager' ? gain : shop.managed ? gain : gain / 3;
-      out.push({ label: `${n.id}:${what}`, cost, gain: g, buy: (st) => G.buyUpgrade(st, n.id, what) });
-    }
-    for (const kind of DECOR_KINDS) {
-      const gain = G.decorGain(s, n.id, kind);
-      const cost = G.decorCost(s, n.id, kind);
-      if (gain !== null && cost !== null && shop.managed) out.push({ label: `${n.id}:decor-${kind}`, cost, gain, buy: (st) => G.buyDecor(st, n.id, kind) });
-    }
-    const b = G.bottleneckBundle(s, n.id);
-    if (b && shop.managed) {
-      out.push({
-        label: `${n.id}:bundle(${b.steps.join('+')})`,
-        cost: b.cost,
-        gain: b.gain,
-        buy: (st) => {
-          let cur = st;
-          for (const w of b.steps) {
-            const r = G.buyUpgrade(cur, n.id, w);
-            if (!r.ok) return r;
-            cur = r.state;
-          }
-          return { ok: true, state: cur };
-        },
-      });
-    }
-    // Expand is worth what the capped bottleneck station would gain after it.
-    if (!G.upgradeLock(s, n.id, 'expand')) {
-      const stage = G.bottleneck(shop, s.vehicle);
-      const what: G.Upgrade = stage === 'customers' ? 'tables' : stage;
-      if (G.upgradeLock(s, n.id, what)) {
-        const after = G.buyUpgrade({ ...s, cash: 1e300 }, n.id, 'expand');
-        if (after.ok) {
-          const gain = G.upgradeGain(after.state, n.id, what) ?? 0;
-          out.push({ label: `${n.id}:expand`, cost: G.upgradeCostOf(s, n.id, 'expand')!, gain, buy: (st) => G.buyUpgrade(st, n.id, 'expand') });
-        }
-      }
-    }
-  }
-  const next = G.nextToBuild(s);
-  if (next) out.push({ label: `build:${next.id}`, cost: next.buildCost, gain: G.buildGain(s, next.id) / 2, buy: (st) => G.buildShop(st, next.id) });
-  const vg = G.vehicleGain(s);
-  if (vg !== null) out.push({ label: 'fleet', cost: VEHICLES[s.vehicle + 1].cost, gain: vg, buy: G.buyVehicle });
-  return out.filter((o) => o.gain > 1e-9);
+const r = run('continuous');
+const s = r.s;
+/** What starts each scene, as the table prints it (v5.16, card T1a: the story models `after`, `requires`, the rival `challenge` and the hired `manager`). */
+const KIND = (id: string): string => {
+  const t = HOME_SCENES.find((x) => x.id === id)!.trigger;
+  return t.kind === 'after' ? `after ${t.scene} +${t.seconds}s` : t.kind;
+};
+const events: [number, string][] = r.scenes.map((x) => [x.wall, `${x.id} [${KIND(x.id)}]`]);
+for (const b of r.buys) {
+  const l = b.label;
+  if (l.startsWith('build') || l.endsWith('manager') || l.includes(':head') || l === 'fleet' || l.includes('expand') || l.includes('grade') || l === 'pier9' || l === 'night-oven') events.push([b.wall, `  buy ${l}`]);
 }
-
-let s = G.newGame(0);
-const events: [number, string][] = [];
-// v3.7 story pacing: one waiting beat may play at once after launch, then 90 s of play between beats.
-// The sim plays in one sitting and never taps during a scene, so the tap gate is always open.
-let lastSceneEnd: number | null = null;
-let downtownTaps = 0;
-const dt = 1;
-const LIMIT = 60 * 60 * 200;
-for (let t = 0; t < LIMIT; t += dt) {
-  // Tap every unmanaged pizzeria the player is "looking at": the newest one.
-  const newest = [...NEIGHBORHOODS].reverse().find((n) => s.shops[n.id].built)!.id as NeighborhoodId;
-  // NOTAP=1: a casual player who only taps Downtown until Nonna takes over, then never taps again.
-  const tappers = (process.env.NOTAP ? ['downtown'] : [newest, 'downtown']) as NeighborhoodId[];
-  // a tapping player taps every station that can start (prep → oven → counter), once a second
-  for (const id of tappers) {
-    for (let k = 0; k < 3 && !s.shops[id].managed; k++) {
-      const st = G.nextStation(s.shops[id]);
-      if (!st) break;
-      const r = G.tapStation(s, id, st);
-      if (!r.ok) break;
-      s = r.state;
-      if (id === 'downtown' && !s.seenScenes.includes('downtown-4')) downtownTaps++;
-    }
-  }
-  s = G.playTick(s, dt);
-  for (let sc = pickScene(s, HOME_SCENES, 1e15, 0, false, lastSceneEnd); sc; sc = pickScene(s, HOME_SCENES, 1e15, 0, false, lastSceneEnd)) {
-    s = G.markSceneSeen(s, sc);
-    lastSceneEnd = s.playSeconds;
-    events.push([t, sc.id === 'downtown-4' ? `${sc.id}  (${downtownTaps} kitchen taps)` : sc.id]);
-  }
-  // Waterfront's finale is a purchase: the player bids on Pier 9 as soon as they can afford it
-  if (G.pier9Available(s) && s.cash >= PIER9_BID.cost) {
-    const r = G.bidPier9(s);
-    if (r.ok) {
-      s = r.state;
-      events.push([t, '  buy pier9-bid']);
-    }
-  }
-  if (process.env.TRACE && t % 600 === 0) console.log(`  t=${t / 60}m cash=${s.cash.toExponential(2)} eps=${G.earningsPerSecond(s).toExponential(2)} actual=${((s.totalEarned - (globalThis as any).__te) / 600).toExponential(2)}`), ((globalThis as any).__te = s.totalEarned);
-  if (s.cityComplete) break;
-  // the goal bar puts the bid first, so the player saves for it instead of buying anything else
-  for (let k = 0; k < 30 && !G.pier9Available(s); k++) {
-    const opts = options(s).sort((a, b) => b.gain / b.cost - a.gain / a.cost);
-    if (!opts.length) break;
-    const r = opts[0].buy(s);
-    if (!r.ok) break;
-    if (opts[0].label.startsWith('build') || opts[0].label.endsWith('manager') || opts[0].label.includes(':head') || opts[0].label === 'fleet' || opts[0].label.includes('expand') || opts[0].label.includes('grade'))
-      events.push([t, `  buy ${opts[0].label}`]);
-    s = r.state;
-  }
-}
+events.sort((a, b) => a[0] - b[0]);
 let prev = 0;
 let maxGap = 0;
 for (const [t, e] of events) {
@@ -125,7 +29,55 @@ for (const [t, e] of events) {
   console.log(`${(t / 60).toFixed(1).padStart(7)} min  ${scene ? `(+${((t - prev) / 60).toFixed(1)})` : '        '}  ${e}`);
   if (scene) prev = t;
 }
-console.log(`scenes ${s.seenScenes.length}/24 · longest scene gap ${(maxGap / 60).toFixed(1)} min · $/s ${G.earningsPerSecond(s).toFixed(0)} · mastery stars at the finale ${masteryTotal(s)}/18 (the check-in player's days after the story: scripts/pacing-fit.ts check)`);
+const played = new Set(r.scenes.map((x) => x.id));
+const missing = HOME_SCENES.filter((x) => !played.has(x.id)).map((x) => x.id);
+console.log(`scenes ${played.size}/${HOME_SCENES.length} · longest scene gap ${(maxGap / 60).toFixed(1)} min · $/s ${G.earningsPerSecond(s).toFixed(0)} · mastery stars at the finale ${masteryTotal(s)}/18 (the check-in player's days after the story: scripts/pacing-fit.ts check)`);
+console.log(reportLines(r).join('\n'));
+
+// ---- v5.16 (card T1a): the story, all of it ----
+// Every scene must play; the gaps are listed by what ends them. A timer gap (an `after` interlude) is the only one `after` delays change: the others wait
+// for the economy (a build, a manager's price) or for a won challenge, which card E2b's refit fits.
+const byId = new Map(HOME_SCENES.map((x) => [x.id, x]));
+const gapsOf = (walls: { id: string; wall: number }[]) => walls.map((x, i) => ({ id: x.id, min: (x.wall - (i ? walls[i - 1].wall : 0)) / 60, kind: byId.get(x.id)!.trigger.kind }));
+const gaps = gapsOf(r.scenes);
+const MAX_GAP_MIN = 12;
+const over = gaps.filter((g) => g.min > MAX_GAP_MIN);
+const timers = gaps.filter((g) => g.kind === 'after');
+console.log(`scene gaps over ${MAX_GAP_MIN} min: ${over.length ? over.map((g) => `${g.id} +${g.min.toFixed(0)} (${g.kind})`).join(', ') : 'none'}`);
+console.log(`longest interlude timer gap ${Math.max(...timers.map((g) => g.min)).toFixed(1)} min (${timers.sort((a, b) => b.min - a.min)[0].id}); longest of the others ${Math.max(...gaps.filter((g) => g.kind !== 'after').map((g) => g.min)).toFixed(1)} min`);
+if (missing.length) {
+  console.error(`NOT ALL SCENES PLAY: ${played.size}/${HOME_SCENES.length}, missing ${missing.join(', ')}`);
+  process.exitCode = 1;
+}
+if (timers.some((g) => g.min > MAX_GAP_MIN)) {
+  console.error(`AN INTERLUDE TIMER IS OVER ${MAX_GAP_MIN} MIN: ${timers.filter((g) => g.min > MAX_GAP_MIN).map((g) => g.id).join(', ')}`);
+  process.exitCode = 1;
+}
+
+// The player who builds University before the bid. EAGER builds every pizzeria the moment it is affordable, and University's build price is cut to twice
+// Waterfront's so that moment comes before the bid opens (at the real price it never does: the bid opens first). Scenes must still all play, and the
+// goal bar's hint ("Save Marisol's dock to continue University's story") must be on screen while University's act 3 waits for the bid.
+applyCfg({ eager: true, bc: NEIGHBORHOODS.map((n) => (n.id === 'university' ? NEIGHBORHOODS.find((w) => w.id === 'waterfront')!.buildCost * 2 : NaN)) });
+let hintFrom = -1;
+let hintTo = -1;
+let hintText = '';
+const e = run('continuous', 0, 0, undefined, {
+  onSecond: (st, wall) => {
+    const h = G.storyWaitHint(st);
+    if (h) { if (hintFrom < 0) { hintFrom = wall; hintText = h; } hintTo = wall; }
+  },
+});
+const ePlayed = new Set(e.scenes.map((x) => x.id));
+const eWall = (id: string) => e.scenes.find((x) => x.id === id)?.wall;
+const uniBuilt = e.timeline.university?.build;
+const bidOpen = e.pier9Open?.wall;
+console.log(`\nUniversity built before the bid (EAGER): University built ${uniBuilt === undefined ? 'never' : (uniBuilt / 60).toFixed(1) + ' min'}, bid open ${bidOpen === undefined ? 'never' : (bidOpen / 60).toFixed(1) + ' min'}, waterfront-4 ${eWall('waterfront-4') === undefined ? 'never' : ((eWall('waterfront-4') ?? 0) / 60).toFixed(1) + ' min'}, university-3 ${eWall('university-3') === undefined ? 'never' : ((eWall('university-3') ?? 0) / 60).toFixed(1) + ' min'}`);
+console.log(`  hint on screen ${hintFrom < 0 ? 'never' : `${(hintFrom / 60).toFixed(1)} to ${(hintTo / 60).toFixed(1)} min: "${hintText}"`} · scenes ${ePlayed.size}/${HOME_SCENES.length} · city complete ${e.s.cityComplete}`);
+const eMissing = HOME_SCENES.filter((x) => !ePlayed.has(x.id)).map((x) => x.id);
+if (eMissing.length) {
+  console.error(`NOT ALL SCENES PLAY (University first): missing ${eMissing.join(', ')}`);
+  process.exitCode = 1;
+}
 if (process.env.DEBUG) {
   for (const n of NEIGHBORHOODS) {
     const sh = s.shops[n.id];

@@ -2,7 +2,7 @@ import { NEIGHBORHOODS } from '../../content/tuning';
 /// <reference types="jest" />
 import { money } from '../../engine/format';
 import * as G from '../../engine/game';
-import { amountCard, amountLabel, nextAmount, BUY_AMOUNTS, buyMany, buyPlan, AFFORDABLE_OUTLINE, buildChipHint, buttonOutline, cardLook, buildChipSub, bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, type MergedSlot, mergeGroups, needLine, needText, showBundlePill, sidewalkSlots, stationModels, stationTitle, stationViews } from '../sidewalk-model';
+import { amountCard, amountLabel, effectFoot, nextAmount, BUY_AMOUNTS, buyMany, buyPlan, AFFORDABLE_OUTLINE, buildChipHint, buttonOutline, cardLook, buildChipSub, bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, type MergedSlot, mergeGroups, needLine, needText, showBundlePill, sidewalkSlots, stationModels, stationTitle, stationViews } from '../sidewalk-model';
 import { BUTTON_H, SIDEWALK_ROW, TAP } from '../tap-targets';
 
 const shopState = (patch: Partial<G.Shop>, cash = 0): G.GameState => {
@@ -202,7 +202,7 @@ describe('the tied-station bundle as a button (D304)', () => {
 
 describe('Pier 9 warning on the build chip', () => {
   const base = G.newGame(0);
-  const open = (patch: Partial<G.Shop> = {}): G.GameState => ({ ...base, seenScenes: [...base.seenScenes, 'waterfront-3'], shops: { ...base.shops, waterfront: { ...base.shops.waterfront, built: true, sold: 1e9, ...patch } } });
+  const open = (patch: Partial<G.Shop> = {}): G.GameState => ({ ...base, seenScenes: [...base.seenScenes, 'waterfront-3', 'waterfront-3b'], shops: { ...base.shops, waterfront: { ...base.shops.waterfront, built: true, sold: 1e9, ...patch } } });
   test('shown only while the bid is on offer and not yet won', () => {
     expect(buildChipHint(base)).toBeNull();
     expect(G.pier9Available(open())).toBe(true);
@@ -522,5 +522,49 @@ describe('×1 / ×10 / MAX: one rule for how many levels a station tap buys (v5.
     const plan = buyPlan(s, 'downtown', 'prep', 'max');
     const r = buyMany(s, 'downtown', 'prep', plan.count);
     expect(r.ok && r.state.shops.downtown.prep).toBe(G.levelCap(s.shops.downtown));
+  });
+});
+
+// ---------- v5.16 (card P1): after the tutorial the game stops choosing, and every card says what it does ----------
+
+describe('after the tutorial: no frame, no tomato fill, effect lines (P1)', () => {
+  const after = (s: G.GameState): G.GameState => ({ ...s, seenScenes: [...s.seenScenes, 'downtown-4'] });
+  const bottleneck = () => shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 1e9);
+
+  test('during the tutorial the bottleneck card is still framed (nothing changes)', () => {
+    expect(view(bottleneck(), 'drivers').frame).toBe('hot');
+    expect(view({ ...bottleneck(), cash: 0 }, 'drivers').frame).toBe('waiting');
+  });
+  test('after it, frame is always null: affordable or saving, merged or not', () => {
+    const s = after(bottleneck());
+    for (const v of stationViews(s, 'downtown')) expect(v.frame).toBeNull();
+    for (const v of stationViews({ ...s, cash: 0 }, 'downtown')) expect(v.frame).toBeNull();
+    expect(view(s, 'drivers').neck).toBe(true); // it is still the limit; the card just does not shout it
+    // the "Buy both" card stays, without a frame
+    const tied = after(shopState(TIES.prepOvens, 1e9));
+    const bundle = sidewalkSlots(tied, 'downtown', G.bundleHint(tied, 'downtown')).find((x): x is MergedSlot => x.kind === 'bundle');
+    expect(bundle).toBeDefined();
+    expect(bundle!.label).toMatch(/^Buy both/);
+    expect(bundle!.frame).toBeNull();
+    expect(cardLook(bundle!.frame, bundle!.enabled).backgroundColor).not.toBe('#FFD9CF'); // no tomato fill
+  });
+  test('a card says the gain a minute and its payback; a station that is not the limit says so', () => {
+    const s = after(bottleneck());
+    const d = view(s, 'drivers');
+    expect(d.gain).toBeGreaterThan(0);
+    const line = effectFoot(s, d, 200, true)!;
+    expect(line).toContain(`+${money(d.gain! * 60)}/min`);
+    expect(line).toMatch(/· \d+[smh]/);
+    expect(effectFoot(s, view(s, 'prep'), 200, true)).toBe('No gain');
+    // narrower cards keep the gain and drop the payback
+    expect(effectFoot(s, d, 50, true)).toBe(`+${money(d.gain! * 60)}/min`);
+  });
+  test('no effect line in the tutorial, on the Expand buy, on a locked card or in a shop still tapped by hand', () => {
+    const s = bottleneck();
+    expect(effectFoot(s, view(s, 'drivers'), 200, true)).toBeNull();
+    const a = after(s);
+    expect(effectFoot(a, view(a, 'drivers'), 200, false)).toBeNull();
+    expect(effectFoot(a, { ...view(a, 'drivers'), expand: true }, 200, true)).toBeNull();
+    expect(effectFoot(a, { ...view(a, 'drivers'), lock: 'Max' }, 200, true)).toBeNull();
   });
 });

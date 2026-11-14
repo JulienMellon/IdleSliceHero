@@ -13,7 +13,7 @@ import { C, F } from '../theme';
 import { BuyButton, haptic } from './game-ui';
 import { cardFonts, cardTextWidths, fitFont, iconWidth } from './endgame/fit-model';
 import { DriverIcon, FlameIcon, PrepIcon, RegisterIcon } from './icons';
-import { amountCard, amountLabel, type BuyAmount, cardLook, type MergedSlot, needLine, nextAmount, sidewalkSlots, stationTitle, type StationKey, type StationView } from './sidewalk-model';
+import { amountCard, amountLabel, type BuyAmount, cardLook, effectFoot, type MergedSlot, needLine, nextAmount, sidewalkSlots, stationTitle, type StationKey, type StationView } from './sidewalk-model';
 import { COMPACT_FONT_MAX_SCALE, IDLE_STACK_GAP, SIDEWALK_ROW, STATION_CARD, TAP } from './tap-targets';
 
 // static icon elements: built once, not per render (M24)
@@ -46,9 +46,11 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
     const many = amountCard(game, id, v, picked);
     // G102: the price, the title and the foot line each get the size the card's width allows (the icon takes 14 pt of the title's line, and goes when the card is too narrow for both)
     const need = many ? null : needLine(v, framed);
-    const fonts = cardFonts(textW, { label: many?.label ?? v.label, sub: stationTitle(v), foot: many?.foot ?? need, iconW: iconWidth(textW) });
+    // v5.16: after the tutorial a card says what it does (the gain a minute and the payback), ahead of "need $X"
+    const effect = many ? null : effectFoot(game, v, textW, framed);
+    const fonts = cardFonts(textW, { label: many?.label ?? v.label, sub: stationTitle(v), foot: many?.foot ?? effect ?? need, iconW: iconWidth(textW) });
     const button = (
-      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={iconWidth(textW) ? ICON[v.key] : undefined} sub={stationTitle(v)} need={need} foot={many?.foot} labelSize={fonts.label} subSize={fonts.sub} footSize={fonts.foot} tone={v.tone} label={many?.label ?? v.label} enabled={many ? many.enabled : v.affordable} saving={framed && v.frame === 'waiting'} progress={v.progress} onPress={() => (many ? useGame.getState().buyStation(v.what) : onBuy(v.what))} />
+      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={iconWidth(textW) ? ICON[v.key] : undefined} sub={stationTitle(v)} need={need} foot={many?.foot ?? effect} labelSize={fonts.label} subSize={fonts.sub} footSize={fonts.foot} tone={v.tone} label={many?.label ?? v.label} enabled={many ? many.enabled : v.affordable} saving={framed && v.frame === 'waiting'} progress={v.progress} onPress={() => (many ? useGame.getState().buyStation(v.what) : onBuy(v.what))} />
     );
     const badge = (
       <View style={[styles.level, v.frame === 'hot' && styles.levelHot]} pointerEvents="none">

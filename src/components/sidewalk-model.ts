@@ -4,8 +4,10 @@
 import { FOOTPRINTS } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { BUY_AMOUNTS, buyPlan, isLevelUpgrade, type BuyAmount } from '../engine/buy-many';
+import { bonusUnlocked } from '../engine/bonus';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
+import { compactEffect } from './report/report-model';
 
 /** The look of a purchase button: `expand` is the amber Expand buy, which never reads as a station buy (D407). */
 export type ButtonTone = 'normal' | 'neutral' | 'nogain' | 'expand';
@@ -92,6 +94,8 @@ export interface StationModel {
   expand: boolean;
   /** `nogain` when an unlocked upgrade adds nothing right now; `expand` is the amber Expand buy. */
   tone: 'normal' | 'nogain' | 'expand';
+  /** Cash a second the buy adds (`upgradeGain`, counting the shop as running), or null when it is locked or maxed. */
+  gain: number | null;
   /** Tied for the bottleneck and adds income: the station to buy. */
   neck: boolean;
   /** Among the slowest stages, whether or not one upgrade alone would add income (the bundle's stations). */
@@ -102,7 +106,7 @@ export interface StationView extends StationModel {
   affordable: boolean;
   /** "need $X" for the 9 pt line under the price: only while the player is short and has some cash (at $0 it would just repeat the price), else null. */
   need: string | null;
-  /** Card frame: solid red when the bottleneck is affordable, dashed while the player saves for it. */
+  /** Card frame: solid red when the bottleneck is affordable, dashed while the player saves for it. Always null after the tutorial (v5.16: the player chooses what to upgrade, the game stops pointing). */
   frame: 'hot' | 'waiting' | null;
   /** How close the player is to the bottleneck they're saving for, 0–1 (0 unless `frame` is waiting). */
   progress: number;
@@ -145,6 +149,7 @@ export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[
       badge: expand ? `MAX ${level}` : level,
       expand,
       tone: expand ? 'expand' : stationTone(lock, gain),
+      gain,
       neck: useful && rates[stage] <= min * (1 + 1e-9),
       tied: rates[stage] <= min * (1 + 1e-9),
     };
@@ -163,10 +168,20 @@ export const stationTitle = (v: Pick<StationModel, 'name' | 'expand'>): string =
 export function stationViews(s: G.GameState, id: NeighborhoodId): StationView[] {
   return stationModels(s, id).map((m) => {
     const affordable = !m.lock && m.cost !== null && s.cash >= m.cost;
-    const frame = m.neck ? (affordable ? 'hot' : 'waiting') : null;
+    const frame = !bonusUnlocked(s) && m.neck ? (affordable ? 'hot' : 'waiting') : null;
     const progress = frame === 'waiting' && m.cost ? Math.min(1, Math.max(0, s.cash / m.cost)) : 0;
     return { ...m, affordable, need: m.lock || s.cash <= 0 ? null : needText(m.cost, s.cash), frame, progress };
   });
+}
+
+/**
+ * v5.16: what a station card says it does, after the tutorial: the gain a minute with its payback time (as much as `width` allows), or "No gain"
+ * for a station that is not the limit. Null during the tutorial, for the Expand buy, a locked or maxed station and a shop still tapped by hand (its
+ * cards only pay while you tap): those keep their own foot line.
+ */
+export function effectFoot(s: G.GameState, v: Pick<StationView, 'gain' | 'cost' | 'lock' | 'expand'>, width: number, running: boolean): string | null {
+  if (!running || !bonusUnlocked(s) || v.expand || v.lock || v.cost === null) return null;
+  return compactEffect(v.gain, v.cost, width) ?? 'No gain';
 }
 
 /**
@@ -302,7 +317,7 @@ export function sidewalkSlots(s: G.GameState, id: NeighborhoodId, bundle: G.Bund
       foot: need ? `${gainText(bundle.gain)} · ${need}` : gainText(bundle.gain),
       enabled: button.enabled,
       steps: bundle.steps,
-      frame: button.enabled ? 'hot' : 'waiting',
+      frame: bonusUnlocked(s) ? null : button.enabled ? 'hot' : 'waiting',
     });
   }
   const slots: SidewalkSlot[] = [];

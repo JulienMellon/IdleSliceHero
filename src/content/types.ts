@@ -18,7 +18,17 @@ export type CharacterId =
   | 'big-sal'
   | 'genevieve'
   | 'victor-crust'
-  | 'megaslice-rep';
+  | 'megaslice-rep'
+  // Todd, three ways (all variants of the megaslice-rep bust; card T1b draws them)
+  | 'mr-smith' // the trench coat with the mustache drawn on in marker
+  | 'todd-coat' // the same coat, no mustache
+  | 'slicey' // the foam pizza-slice mascot costume
+  // the five General Managers (MANAGERS in tuning.ts); each appears in their shop's hire scene
+  | 'deb'
+  | 'skip'
+  | 'noor'
+  | 'dee'
+  | 'anton';
 
 export type Mood = 'neutral' | 'happy' | 'sad' | 'angry' | 'surprised';
 
@@ -29,6 +39,8 @@ export interface SceneLine {
   /** Display name shown on the speech bubble, e.g. "Nonna Rosa". Use "You" for the player. */
   speaker: string;
   text: string;
+  /** The line plays only when this scene has been seen (a manager speaking before or after their hire scene); otherwise the panel plays without it. */
+  ifSeen?: string;
 }
 
 /** One character on stage. */
@@ -45,7 +57,9 @@ export interface ScenePanel {
   /** Optional narration box at the top of the panel. */
   caption?: string;
   /** Optional foreground prop drawn into the scene. */
-  prop?: 'vending-machine' | 'sold-sign' | 'recipe-card';
+  prop?: 'vending-machine' | 'sold-sign' | 'recipe-card' | 'order-slip' | 'name-tag' | 'phone-footage';
+  /** Text drawn on the prop (a name tag: "SENIOR ASSOCIATE", "TODD · ROSA'S"). */
+  propText?: string;
   /** 0–3 speech bubbles, shown in order. */
   lines: SceneLine[];
   /** Story music for this panel (docs/AUDIO.md). Beats 1–3 get a default from `panelCue`; set it for wins and reveals. */
@@ -61,7 +75,13 @@ export type SceneTrigger =
   /** Plays when this many pizzas have been delivered to the neighborhood. */
   | { kind: 'deliveries'; neighborhood: NeighborhoodId; count: number }
   /** Plays when the player wins this neighbourhood's bid (Pier 9). */
-  | { kind: 'bid'; neighborhood: NeighborhoodId };
+  | { kind: 'bid'; neighborhood: NeighborhoodId }
+  /** Interlude: plays this much play time (`seconds`) after `scene` was seen, once the neighbourhood's shop is built. */
+  | { kind: 'after'; neighborhood: NeighborhoodId; scene: string; seconds: number }
+  /** Beat 4: plays when the player has won this neighbourhood's rival challenge (`challengeWon`, features/layers/rival.ts). */
+  | { kind: 'challenge'; neighborhood: NeighborhoodId }
+  /** Manager hire scene: plays when this neighbourhood's shop has its General Manager. */
+  | { kind: 'manager'; neighborhood: NeighborhoodId };
 
 export type SceneReward = 'auto-bake' | 'drones' | 'city-complete';
 
@@ -70,10 +90,12 @@ export interface Scene {
   city: 'home';
   character: CharacterId;
   neighborhood: NeighborhoodId;
-  /** 1 = unlock, 2 = first milestone, 3 = complication (MegaSlice moves in), 4 = resolution */
-  beat: 1 | 2 | 3 | 4;
+  /** 1 = unlock, 2 = first milestone, 3 = complication (MegaSlice moves in), 4 = resolution; 'interlude' = a Todd scene or a manager's hire scene between beats (id is not `<neighbourhood>-<beat>`). */
+  beat: 1 | 2 | 3 | 4 | 'interlude';
   title: string;
   trigger: SceneTrigger;
+  /** Scenes that must be seen before this one may play (this also holds a main beat back behind an interlude). A scene named by an `after` trigger is required too. */
+  requires?: string[];
   /** Gameplay unlock granted when the scene finishes. */
   reward?: SceneReward;
   /** Grants this neighbourhood's perk (PERKS) when the scene finishes. */

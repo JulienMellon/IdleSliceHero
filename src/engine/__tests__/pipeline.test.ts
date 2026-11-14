@@ -4,7 +4,7 @@
 import * as G from '../game';
 import { pizzas, pizzasLeft } from '../format';
 import { advanceLine, AUTOMATIC, emptyLine, LINE, MANUAL, piesInFlight, tapStation, type LineRates } from '../pipeline';
-import { NEIGHBORHOODS } from '../../content/tuning';
+import { GM_BOOST, HEADS_OFFLINE_SHARE, NEIGHBORHOODS } from '../../content/tuning';
 
 const rates = (over: Partial<LineRates> = {}): LineRates => ({ prep: 2, oven: 1.5, serve: 3, shop: 1.5, price: 5, walkInFraction: 0.3, tapBatch: 4, ...over });
 const withShop = (s: G.GameState, id: G.GameState['active'], patch: Partial<G.Shop>): G.GameState => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } } });
@@ -95,16 +95,48 @@ describe('offline settles the line', () => {
     expect(piesInFlight(r.state.shops.downtown.line)).toBe(0);
     expect(r.state.shops.downtown.line.nextId).toBe(s.shops.downtown.line.nextId);
   });
-  test('without a GM, only running jobs finish (heads do not work while you are away)', () => {
-    let s = withShop(G.newGame(0), 'downtown', { heads: { prep: true, oven: true, counter: true } });
-    for (let i = 0; i < 40; i++) s = G.lineTick(s, 0.2);
-    const r = G.offlineTick(s, 3600);
-    const l = r.state.shops.downtown.line;
+  // v5.16: a shop with all three heads and no GM keeps selling while you are away, at HEADS_OFFLINE_SHARE of its rate and without the GM's boost
+  const levelled = { prep: 20, ovens: 20, counter: 20, drivers: 20 };
+  const away = (s: G.GameState, sec: number) => {
+    let cur = s;
+    for (let i = 0; i < 40; i++) cur = G.lineTick(cur, 0.2);
+    return { before: cur, after: G.offlineTick(cur, sec) };
+  };
+  test('with no head and no GM, only running jobs finish', () => {
+    let s = withShop(G.newGame(0), 'downtown', levelled);
+    s = withShop(s, 'downtown', { line: { ...s.shops.downtown.line, prep: { n: 4, left: 1, total: 2 } } });
+    const { before, after } = away(s, 3600);
+    const l = after.state.shops.downtown.line;
     expect(l.prep).toBeNull();
     expect(l.oven).toBeNull();
     expect(l.counter).toBeNull();
     expect(l.departures).toEqual([]);
-    expect(r.state.shops.downtown.sold - s.shops.downtown.sold).toBeLessThanOrEqual(piesInFlight(s.shops.downtown.line));
+    expect(after.state.shops.downtown.sold - before.shops.downtown.sold).toBeLessThanOrEqual(piesInFlight(before.shops.downtown.line));
+  });
+  test('with two heads of three it is still idle: it only finishes what was on the line', () => {
+    const s = withShop(G.newGame(0), 'downtown', { ...levelled, heads: { prep: true, oven: true, counter: false } });
+    const { before, after } = away(s, 3600);
+    expect(after.state.shops.downtown.sold - before.shops.downtown.sold).toBeLessThanOrEqual(piesInFlight(before.shops.downtown.line));
+    expect(after.state.shops.downtown.line.prep).toBeNull();
+    const idle = G.applyOffline({ ...withShop(withShop(G.newGame(0), 'suburbs', { ...levelled, built: true, heads: { prep: true, oven: true, counter: false } }), 'downtown', { managed: true, heads: G.allHeads() }), lastSavedAt: 0 }, 3600_000);
+    expect(idle.idle).toEqual(['suburbs']);
+  });
+  test('with all three heads and no GM it sells HEADS_OFFLINE_SHARE of its rate, at the plain price (no GM boost)', () => {
+    const s = withShop(G.newGame(0), 'downtown', { ...levelled, heads: G.allHeads() });
+    const { before, after } = away(s, 3600);
+    const shop = before.shops.downtown;
+    const inFlight = piesInFlight(shop.line);
+    const pies = after.state.shops.downtown.sold - shop.sold;
+    expect(pies).toBe(Math.floor(G.shopRate(shop, 0) * HEADS_OFFLINE_SHARE * 3600) + inFlight);
+    expect(after.state.cash - before.cash).toBeCloseTo(after.byShop[0].base, 6);
+    // the same shop with a GM sells the full rate at twice the price per pie
+    const full = away(withShop(G.newGame(0), 'downtown', { ...levelled, managed: true, heads: G.allHeads() }), 3600);
+    const fullPies = full.after.state.shops.downtown.sold - full.before.shops.downtown.sold;
+    expect(fullPies / pies).toBeCloseTo(1 / HEADS_OFFLINE_SHARE, 1);
+    expect(full.after.byShop[0].base / after.byShop[0].base).toBeCloseTo((fullPies / pies) * GM_BOOST, 1);
+    // all three heads: not idle
+    const r = G.applyOffline({ ...withShop(withShop(G.newGame(0), 'suburbs', { ...levelled, built: true, heads: G.allHeads() }), 'downtown', { managed: true, heads: G.allHeads() }), lastSavedAt: 0 }, 3600_000);
+    expect(r.idle).toEqual([]);
   });
   test('applyOffline never pays twice: a second load right after pays nothing', () => {
     let s = gm(G.newGame(0), 'downtown');
@@ -154,11 +186,11 @@ describe('whole pizza numbers (P7)', () => {
   test('no player-facing count shows a long decimal', () => {
     for (const sold of [0, 0.5, 79.9998, 80.0002, 149.99]) {
       const s = withShop(G.newGame(0), 'downtown', { sold });
-      expect(G.nonnaCountdownText(s)).not.toMatch(/\d\.\d/);
+      expect(G.nonnaCountdownText(s)).not.toMatch(/\d\.\d+(?![\dKMB])/); // "2.22K" is a short count, "70.0002" is not
     }
   });
-  test('Downtown heads have their fixed prices; other shops scale with the manager price', () => {
-    for (const n of NEIGHBORHOODS.slice(1)) expect(G.headCost(n.id, 'counter')).toBe(Math.ceil(n.managerCost * 0.5));
+  test('Downtown heads have their fixed prices; other shops split their own heads price', () => {
+    for (const n of NEIGHBORHOODS.slice(1)) expect(G.headCost(n.id, 'counter')).toBe(Math.ceil(n.headsCost * 0.5));
   });
 });
 

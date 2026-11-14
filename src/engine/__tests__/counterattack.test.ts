@@ -63,7 +63,7 @@ describe('when it starts', () => {
     expect(state(monday).open).toBe(true);
     expect(state(monday).target).not.toBeNull();
     expect(attackView(monday, MON).phase).toBe('open');
-    expect(tick(armed, MON - 1000).x).toBe(armed.x);
+    expect(state(tick(armed, MON - 1000))).toBe(state(armed)); // (the other layers keep their own stamps in `x`)
   });
 
   it('a finale seen on a Sunday night still waits for Monday', () => {
@@ -90,7 +90,7 @@ describe('the week roll', () => {
     const t = state(a).target;
     for (const at_ of [MON + 3_600_000, MON + 3 * 86_400_000, MON + WEEK - 1000]) {
       const x = tick(a, at_);
-      expect(x.x).toBe(a.x);
+      expect(state(x)).toBe(state(a));
     }
     const next = tick(a, MON + WEEK);
     expect(state(next).open).toBe(true);
@@ -105,13 +105,13 @@ describe('the week roll', () => {
     expect(state(there).open).toBe(true);
     const target = state(there).target;
     const back = inTZ(NY, () => tick(there, instant + 120_000)); // the key went backwards
-    expect(back.x).toBe(there.x);
+    expect(state(back)).toBe(state(there));
     const again = inTZ(KIRI, () => tick(back, instant + 180_000));
-    expect(again.x).toBe(there.x);
+    expect(state(again)).toBe(state(there));
     expect(state(again).target).toBe(target);
     // and back in NY, when its Monday really comes, nothing rolls a second time
     const monNY = inTZ(NY, () => tick(again, MON));
-    expect(monNY.x).toBe(there.x);
+    expect(state(monNY)).toBe(state(there));
     expect(state(inTZ(NY, () => tick(monNY, MON + WEEK))).target).not.toBe(target);
   });
 
@@ -205,8 +205,8 @@ describe('the challenge', () => {
     expect(state(won).news).toMatchObject({ kind: 'won', shopId: t, cash: expected, diamonds: 15 });
     expect(attackView(won, MON + 1000).phase).toBe('none');
     expect(state(ackAttack(won)).news).toBeNull();
-    // the shop is back to full value: nothing but its recipe cards multiplies it
-    expect(G.featureMults(won, t, MON + 1000).value).toBeGreaterThanOrEqual(1);
+    // the shop is back to full value: nothing of the attack is left in its multiplier (the cards, the service tip and the layers are the same without it)
+    expect(G.featureMults(won, t, MON + 1000).value).toBeGreaterThanOrEqual(G.featureMults(calm, t, MON + 1000).value - 1e-9);
   });
 
   it('a win while an event runs is not inflated by it', () => {

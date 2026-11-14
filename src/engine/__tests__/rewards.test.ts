@@ -549,8 +549,8 @@ describe('save v5', () => {
     delete v4.rewards;
     delete v4.stats;
     const m = G.migrate(v4, 5);
-    expect(G.SAVE_VERSION).toBe(5);
-    expect(m.saveVersion).toBe(5);
+    expect(G.SAVE_VERSION).toBe(6);
+    expect(m.saveVersion).toBe(6);
     expect(m.rewards).toEqual(G.newRewards());
     expect(m.stats).toEqual(G.newStats());
   });
@@ -786,13 +786,14 @@ describe('G85 weekly chest prize', () => {
     expect(after.rewards.cosmetics).toEqual([start, order(1), order(2)]);
     expect(after.rewards.diamonds - s.rewards.diamonds).toBe(WEEKLY_CHEST_DIAMONDS);
   });
-  test('all owned: 30 diamonds and 2 h of income', () => {
+  test('all owned: 30 diamonds and WEEKLY_FALLBACK.minutes of income', () => {
     const s = chestReady([...WEEKLY_COSMETICS]);
     expect(R.weeklyChestPrize(s)).toEqual({ kind: 'fallback', diamonds: WEEKLY_FALLBACK.diamonds, minutes: WEEKLY_FALLBACK.minutes });
-    expect(WEEKLY_FALLBACK).toEqual({ diamonds: 30, minutes: 120 });
+    expect(WEEKLY_FALLBACK.diamonds).toBe(30);
+    expect(WEEKLY_FALLBACK.minutes).toBeLessThanOrEqual(20); // v5.16: cut from 120
     const after = ok(R.claimWeeklyChest(s, T));
     expect(after.rewards.diamonds - s.rewards.diamonds).toBe(30);
-    expect(after.cash - s.cash).toBeCloseTo(R.minutesToCash(s, 120));
+    expect(after.cash - s.cash).toBeCloseTo(R.minutesToCash(s, WEEKLY_FALLBACK.minutes));
     expect(after.rewards.cosmetics).toEqual(s.rewards.cosmetics);
     expect(after.rewards.weeklyChest).toBe(true);
   });

@@ -5,6 +5,8 @@ import * as G from '../game';
 import { commas, nextSceneTeaser, ringStep, TEASER_COMPLETE } from '../teaser';
 
 const T0 = new Date(2026, 10, 11, 12, 0, 0).getTime();
+/** The pizzas a count-triggered scene waits for (fitted in v5.16, so read from the scene). */
+const countOf = (id: string): number => (HOME_SCENES.find((s) => s.id === id)!.trigger as { count: number }).count;
 
 /** A game that has seen every scene before `id`. */
 function before(id: string, patch: Partial<G.GameState> = {}): G.GameState {
@@ -15,19 +17,22 @@ const withShop = (s: G.GameState, id: G.GameState['active'], patch: Partial<G.Sh
 
 describe('nextSceneTeaser: one test per trigger kind', () => {
   test('deliveries: the character and the pies to go, never the scene', () => {
-    // suburbs-2 waits for 300 Suburbs pies
-    const s = withShop(before('suburbs-2'), 'suburbs', { built: true, sold: 100 });
+    // suburbs-2 waits for countOf('suburbs-2') Suburbs pies
+    const need = countOf('suburbs-2');
+    const sold = Math.floor(need / 3);
+    const s = withShop(before('suburbs-2'), 'suburbs', { built: true, sold });
     const t = nextSceneTeaser(s);
     expect(t.kind).toBe('deliveries');
-    expect(t.text).toBe("Next: Dale's story continues after 200 more Suburbs pies");
-    expect(t.progress).toBeCloseTo(100 / 300);
-    expect(t.step).toBe(6);
+    expect(t.text).toBe(`Next: Dale's story continues after ${commas(need - sold)} more Suburbs pies`);
+    expect(t.progress).toBeCloseTo(sold / need);
+    expect(t.step).toBe(ringStep(sold / need));
   });
 
   test('deliveries: thousands get a comma; the last pie is singular', () => {
-    const s = withShop(before('suburbs-3'), 'suburbs', { built: true, sold: 800 });
-    expect(nextSceneTeaser(s).text).toBe("Next: Dale's story continues after 1,200 more Suburbs pies");
-    const one = withShop(before('suburbs-3'), 'suburbs', { built: true, sold: 1999 });
+    const need = countOf('suburbs-3');
+    const s = withShop(before('suburbs-3'), 'suburbs', { built: true, sold: need - 1234 });
+    expect(nextSceneTeaser(s).text).toBe("Next: Dale's story continues after 1,234 more Suburbs pies");
+    const one = withShop(before('suburbs-3'), 'suburbs', { built: true, sold: need - 1 });
     expect(nextSceneTeaser(one).text).toBe("Next: Dale's story continues after 1 more Suburbs pie");
   });
 
@@ -57,7 +62,7 @@ describe('nextSceneTeaser: one test per trigger kind', () => {
   });
 
   test('a scene already due is "in a moment" at a full ring', () => {
-    const s = withShop(before('suburbs-2'), 'suburbs', { built: true, sold: 5000 });
+    const s = withShop(before('suburbs-2'), 'suburbs', { built: true, sold: countOf('suburbs-2') + 5000 });
     const t = nextSceneTeaser(s);
     expect(t.kind).toBe('soon');
     expect(t.text).toBe("Next: Dale's story continues in a moment");

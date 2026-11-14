@@ -28,13 +28,17 @@ export const TUNING = {
   rushSeconds: 0.25,
 } as const;
 
-/** Per-station base speed (pizzas/sec at level 1) and base cost (× the shop's cost multiplier). */
+/**
+ * Per-station base speed (pizzas/sec at level 1), base cost (× the shop's cost multiplier) and `growth`: what each level costs
+ * more than the one before (a station without one uses TUNING.costGrowth). v5.16: the five differ, so the cheapest item on offer
+ * is no longer always the best buy (the price of level n is cost × costMult × growth^(n-1)).
+ */
 export const STATIONS = {
-  prep: { name: 'Prep Cooks', speed: 0.9, cost: 6 },
-  ovens: { name: 'Ovens', speed: 0.7, cost: 8 },
-  counter: { name: 'Counter', speed: 1.1, cost: 7 },
-  drivers: { name: 'Drivers', cost: 8 },
-  tables: { name: 'Seating', speed: 0.3, cost: 12 },
+  prep: { name: 'Prep Cooks', speed: 0.9, cost: 5.76, growth: 1.125 },
+  ovens: { name: 'Ovens', speed: 0.7, cost: 11.7, growth: 1.171 },
+  counter: { name: 'Counter', speed: 1.1, cost: 12.4, growth: 1.152 },
+  drivers: { name: 'Drivers', cost: 6.27, growth: 1.168 },
+  tables: { name: 'Seating', speed: 0.3, cost: 6.79, growth: 1.155 },
 } as const;
 
 export interface OvenGrade {
@@ -58,7 +62,7 @@ export const OVEN_GRADES: OvenGrade[] = [
 ];
 
 /** Downtown's tutorial ends when Nonna takes over: scene `sceneId` plays after this many Downtown pizzas (matches downtown-4's trigger). */
-export const NONNA_TAKEOVER = { sceneId: 'downtown-4', pizzas: 150 } as const;
+export const NONNA_TAKEOVER = { sceneId: 'downtown-4', pizzas: 2217 } as const;
 
 export interface FootprintTier {
   name: string;
@@ -97,6 +101,9 @@ export const VEHICLES: VehicleDef[] = [
   { id: 'drone', name: 'Drone', emoji: '🛸', speed: 5, capacity: 10, cost: 25_000_000 },
 ];
 
+/** Downtown has no manager price (Nonna is its GM via the story), so its heads have fixed prices. */
+export const HEAD_COST_DOWNTOWN: Record<HeadKind, number> = { prep: 450, oven: 900, counter: 900 };
+
 export interface NeighborhoodDef {
   id: NeighborhoodId;
   name: string;
@@ -106,8 +113,10 @@ export interface NeighborhoodDef {
   buildCost: number;
   /** Multiplies every upgrade cost in this pizzeria. */
   costMult: number;
-  /** Cost to hire this pizzeria's manager (Downtown's is Nonna, via the story). */
+  /** Cost to hire this pizzeria's General Manager (Downtown's is Nonna, via the story). */
   managerCost: number;
+  /** The three station heads together, split by HEAD_SHARE (Downtown's have their own prices, HEAD_COST_DOWNTOWN; this is their sum). */
+  headsCost: number;
   /** Map position in the 100×76 City viewBox. */
   x: number;
   y: number;
@@ -119,20 +128,24 @@ export interface NeighborhoodDef {
 /**
  * v5.13 pacing: a check-in player (5 min every 4 h, offline cap 4 h) finishes the story in about 4.8 days, roughly one
  * neighbourhood a day. Unlock days in `npx tsx scripts/review/sim2.ts checkin`: Waterfront 1.0, University 2.0, Industrial 3.1,
- * Uptown 4.4, finale 4.8. Downtown and Suburbs are unchanged (the first ~15 minutes of play). From Waterfront on every pizzeria
- * keeps costMult = orderValue (the original game had about 0.45x; 1.0x is the top of the allowed 0.3x-1.0x band, it makes a level
- * cost what a pizza pays) and managerCost = 600 x costMult (about 75x the typical Lv 1 station price, 100x prep's). Build costs
- * are what the day targets fit. They stay far above a Lv 1 station (Waterfront 77,000x prep): the engine's what-if gains
- * (upgradeGain, buildGain) test a purchase with 2^53 cash, so no price may pass 9.0e15 and the order values cannot step up
- * slowly enough to keep builds near the level prices. Refit with scripts/pacing-fit.ts (never edit one number alone).
+ * Uptown 4.4, finale 4.8. From Waterfront on every pizzeria keeps costMult = orderValue (the original game had about 0.45x; 1.0x is the
+ * top of the allowed 0.3x-1.0x band, it makes a level cost what a pizza pays). Build costs are what the day targets fit; they stay far
+ * above a Lv 1 station. The engine's what-if gains (upgradeGain, buildGain) test a purchase with 2^53 cash, so no price may pass 9.0e15.
+ *
+ * v5.16 (card E0, playtest 3): session 1 lasts about 40 minutes (heads at 2, 5 and 8 min, Nonna at 10, Suburbs at 16, its manager at 28,
+ * its finale at 40; `npx tsx scripts/pacing-fit.ts session1`), and from Waterfront on a shop's heads come within two check-ins of its
+ * build and its manager about a day after, just before the next neighbourhood (`... pacing-fit.ts managers`). So a pizzeria has two prices
+ * for its staff: `headsCost` (the three heads together, split by HEAD_SHARE) and `managerCost`, each fitted on its own, not a share of the
+ * build. The first shop's numbers were fitted with the rewards in the sim (scripts/review/sim2.ts plays them). Refit with
+ * scripts/pacing-fit.ts (never edit one number alone).
  */
 export const NEIGHBORHOODS: NeighborhoodDef[] = [
-  { id: 'downtown', name: 'Downtown', orderValue: 3, buildCost: 0, costMult: 1, managerCost: 0, x: 22, y: 39, color: '#F2994A', wall: '#F7D9A8' },
-  { id: 'suburbs', name: 'Suburbs', orderValue: 10, buildCost: 450, costMult: 4.5, managerCost: 600, x: 30, y: 67, color: '#6FCF97', wall: '#DDF2D2' },
-  { id: 'waterfront', name: 'Waterfront', orderValue: 2_500, buildCost: 1_150_000_000, costMult: 2_500, managerCost: 1_500_000, x: 76, y: 67, color: '#56CCF2', wall: '#D6EEF8' },
-  { id: 'university', name: 'University', orderValue: 200_000, buildCost: 230_000_000_000, costMult: 200_000, managerCost: 120_000_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
-  { id: 'industrial', name: 'Industrial', orderValue: 6_000_000, buildCost: 15_000_000_000_000, costMult: 6_000_000, managerCost: 3_600_000_000, x: 50, y: 9, color: '#A0826D', wall: '#C4BCAE' },
-  { id: 'uptown', name: 'Uptown', orderValue: 60_000_000, buildCost: 900_000_000_000_000, costMult: 60_000_000, managerCost: 36_000_000_000, x: 82, y: 9, color: '#EB5757', wall: '#F6D6D6' },
+  { id: 'downtown', name: 'Downtown', orderValue: 3, buildCost: 0, costMult: 1, managerCost: 0, headsCost: HEAD_COST_DOWNTOWN.prep + HEAD_COST_DOWNTOWN.oven + HEAD_COST_DOWNTOWN.counter, x: 22, y: 39, color: '#F2994A', wall: '#F7D9A8' },
+  { id: 'suburbs', name: 'Suburbs', orderValue: 60, buildCost: 240_000, costMult: 18, managerCost: 4_000_000, headsCost: 400_000, x: 30, y: 67, color: '#6FCF97', wall: '#DDF2D2' },
+  { id: 'waterfront', name: 'Waterfront', orderValue: 2_500, buildCost: 600_000_000, costMult: 2_500, managerCost: 15_000_000_000, headsCost: 2_000_000_000, x: 76, y: 67, color: '#56CCF2', wall: '#D6EEF8' },
+  { id: 'university', name: 'University', orderValue: 200_000, buildCost: 35_000_000_000, costMult: 200_000, managerCost: 350_000_000_000, headsCost: 80_000_000_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
+  { id: 'industrial', name: 'Industrial', orderValue: 6_000_000, buildCost: 1_200_000_000_000, costMult: 6_000_000, managerCost: 60_000_000_000_000, headsCost: 1_200_000_000_000, x: 50, y: 9, color: '#A0826D', wall: '#C4BCAE' },
+  { id: 'uptown', name: 'Uptown', orderValue: 60_000_000, buildCost: 35_000_000_000_000, costMult: 60_000_000, managerCost: 2_000_000_000_000_000, headsCost: 80_000_000_000_000, x: 82, y: 9, color: '#EB5757', wall: '#F6D6D6' },
 ];
 
 export const SHOP_POS = { x: 50, y: 36 };
@@ -207,10 +220,14 @@ export type HeadKind = 'prep' | 'oven' | 'counter';
 export const HEAD_KINDS: HeadKind[] = ['prep', 'oven', 'counter'];
 /** A head's price as a share of the shop's manager price. */
 export const HEAD_SHARE: Record<HeadKind, number> = { prep: 0.2, oven: 0.3, counter: 0.5 };
-/** Downtown has no manager price (Nonna is its GM via the story), so its heads have fixed prices. */
-export const HEAD_COST_DOWNTOWN: Record<HeadKind, number> = { prep: 25, oven: 60, counter: 120 };
 /** A General Manager multiplies the shop's income (the neighbourhood boost). */
 export const GM_BOOST = 2;
+/**
+ * A shop with all three heads and no manager sells this share of its rate while the app is closed, without the manager's boost
+ * (v5.16). With the manager a day away, the newest shop would otherwise earn nothing offline for that day. The fit may move it
+ * within 0.3 to 0.6.
+ */
+export const HEADS_OFFLINE_SHARE = 0.5;
 /** The tap batch grows by `step` pies every `every` prep levels (4 → 6 at Lv 20 …). */
 export const BATCH_GROWTH = { base: 4, every: 20, step: 2 } as const;
 
@@ -222,6 +239,15 @@ export const HEADS: Record<NeighborhoodId, Record<HeadKind, string>> = {
   university: { prep: 'Raj', oven: 'Mei', counter: 'Tyler' },
   industrial: { prep: 'Stan', oven: 'Ox', counter: 'Rita' },
   uptown: { prep: 'Pierre', oven: 'Margot', counter: 'Sterling' },
+};
+/** The General Manager of each neighbourhood (cards read the names from here). Downtown's is Nonna, by the story; the rest are hired. */
+export const MANAGERS: Record<NeighborhoodId, { id: string; name: string; title: 'General Manager' }> = {
+  downtown: { id: 'nonna-rosa', name: 'Nonna Rosa', title: 'General Manager' },
+  suburbs: { id: 'deb', name: 'Deb', title: 'General Manager' },
+  waterfront: { id: 'skip', name: 'Skip', title: 'General Manager' },
+  university: { id: 'noor', name: 'Noor', title: 'General Manager' },
+  industrial: { id: 'dee', name: 'Dee', title: 'General Manager' },
+  uptown: { id: 'anton', name: 'Anton', title: 'General Manager' },
 };
 export const HEAD_TITLE: Record<HeadKind, string> = { prep: 'Head Prep Cook', oven: 'Head Baker', counter: 'Head Cashier' };
 /** One word for what a head runs (goal bar, sidewalk). */

@@ -165,24 +165,32 @@ describe('how big an order is', () => {
     expect(O.friendlyTarget(NaN)).toBe(20);
   });
 
-  test('the shop’s pies a second × 120 s × 1.2, so it scales with the shop', () => {
+  test('what the shop sells in the window with rush held, × 0.9, so it scales with the shop', () => {
     const s = ready();
-    const rate = (lv: number) => {
+    const at = (lv: number) => {
       const t = { ...s, shops: { ...s.shops, suburbs: { ...s.shops.suburbs, prep: lv, ovens: lv, counter: lv, drivers: lv + 2, tables: lv } } };
-      return { t, target: O.orderTarget(t, 'suburbs'), pps: G.shopRate(t.shops.suburbs, t.vehicle) };
+      return { t, target: O.orderTarget(t, 'suburbs'), pps: G.shopRate(t.shops.suburbs, t.vehicle), rushed: O.rushedRate(t.shops.suburbs, t.vehicle) };
     };
-    const lo = rate(5);
-    const mid = rate(12);
-    const hi = rate(30);
-    for (const r of [lo, mid, hi]) expect(r.target).toBe(O.friendlyTarget(r.pps * ORDER.windowSeconds * ORDER.targetMargin));
+    const lo = at(5);
+    const mid = at(12);
+    const hi = at(30);
+    for (const r of [lo, mid, hi]) expect(r.target).toBe(O.friendlyTarget(r.rushed * ORDER.windowSeconds * ORDER.targetMargin));
+    expect(ORDER.targetMargin).toBeLessThan(1);
     expect(hi.pps).toBeGreaterThan(mid.pps);
     expect(mid.pps).toBeGreaterThan(lo.pps);
     expect(hi.target).toBeGreaterThan(mid.target);
     expect(mid.target).toBeGreaterThan(lo.target);
-    // waiting alone is a fifth short: the pies at the steady rate in 120 s are under the target
+    // waiting alone falls well short of the target (a rush adds 1 + 0.25 × taps), and a buy during the order raises the rate
     expect(hi.pps * ORDER.windowSeconds).toBeLessThan(hi.target);
-    // and an upgrade made during the order raises the rate enough to catch up
-    expect(rate(31).pps * ORDER.windowSeconds).toBeGreaterThan(rate(30).pps * ORDER.windowSeconds);
+    expect(at(31).pps * ORDER.windowSeconds).toBeGreaterThan(at(30).pps * ORDER.windowSeconds);
+  });
+
+  test('a shop with three heads and no GM has no rush: its target is the plain rate’s', () => {
+    const s = ready();
+    const heads = { ...s, shops: { ...s.shops, suburbs: { ...s.shops.suburbs, managed: false } } };
+    const rate = G.shopRate(heads.shops.suburbs, heads.vehicle);
+    expect(O.rushedRate(heads.shops.suburbs, heads.vehicle)).toBe(rate);
+    expect(O.orderTarget(heads, 'suburbs')).toBe(O.friendlyTarget(rate * ORDER.windowSeconds * ORDER.targetMargin));
   });
 
   test('a shop that does not run itself asks for 24', () => {
@@ -190,6 +198,50 @@ describe('how big an order is', () => {
     const hand = { ...s, shops: { ...s.shops, suburbs: { ...s.shops.suburbs, managed: false, heads: G.noHeads(), prep: 40, ovens: 40 } } };
     expect(O.orderTarget(hand, 'suburbs')).toBe(ORDER.unmanagedTarget);
     expect(ORDER.unmanagedTarget).toBe(24);
+  });
+});
+
+describe('an order can be won by playing (v5.16)', () => {
+  /** A managed Suburbs shop of the given levels, the order for it on the table and accepted, then 120 s of the real line with `tapsPerSecond` rush taps. */
+  const play = (lv: number, drivers: number, tables: number, tapsPerSecond: number) => {
+    const s0 = ready();
+    const shop = { ...s0.shops.suburbs, prep: lv, ovens: lv, counter: lv, drivers, tables, footprint: 3 };
+    let s: G.GameState = { ...s0, shops: { ...s0.shops, suburbs: shop }, playSeconds: 100 };
+    const target = O.orderTarget(s, 'suburbs');
+    s = O.acceptOrder({ ...s, order: { ...s.order, offer: { hood: 'suburbs', target, left: ORDER.offerWaitSeconds, variant: 0 } } });
+    const dt = 0.05;
+    let owed = 0;
+    for (let t = 0; t < ORDER.windowSeconds + 1 && s.order.active; t += dt) {
+      owed += tapsPerSecond * dt;
+      for (; owed >= 1; owed -= 1) s = G.tapShop(s, 'suburbs');
+      s = G.lineTick(s, dt);
+      s = step(s, dt);
+    }
+    return { won: s.stats.ordersDone === 1, target, sold: s.shops.suburbs.sold - shop.sold, shop };
+  };
+  // kitchen-limited: customers want far more than the three stations make. Demand-limited: the kitchen out-runs the drivers and tables.
+  const SHOPS: [string, number, number, number][] = [
+    ['kitchen-limited, small', 8, 60, 60],
+    ['kitchen-limited, mid', 25, 120, 120],
+    ['kitchen-limited, big', 60, 300, 300],
+    ['demand-limited, small', 25, 8, 20],
+    ['demand-limited, mid', 40, 20, 40],
+    ['demand-limited, big', 80, 40, 90],
+  ];
+  test.each(SHOPS)('%s: tapping through the window wins with no purchase', (_name, lv, drivers, tables) => {
+    const r = play(lv, drivers, tables, ORDER.rushTapsPerSecond);
+    expect([r.won, r.sold >= r.target]).toEqual([true, true]);
+  });
+  test.each(SHOPS)('%s: waiting without tapping does not win', (_name, lv, drivers, tables) => {
+    const r = play(lv, drivers, tables, 0);
+    expect([r.won, r.sold < r.target]).toEqual([false, true]);
+  });
+  test('the demand-limited shops are limited by demand, the kitchen-limited ones by the kitchen', () => {
+    for (const [name, lv, drivers, tables] of SHOPS) {
+      const sh = { ...ready().shops.suburbs, prep: lv, ovens: lv, counter: lv, drivers, tables, footprint: 3 };
+      const kitchen = Math.min(G.prepRate(sh), G.ovenRate(sh), G.counterRate(sh));
+      expect([name, G.demandRate(sh, 0) < kitchen]).toEqual([name, name.startsWith('demand')]);
+    }
   });
 });
 
@@ -210,7 +262,7 @@ describe('an order from accept to the end', () => {
     expect(O.orderProgress(s, a)).toBe(0);
   });
 
-  test('success pays 5 min of income at that moment, counts, flashes and sets the next offer 4 min out', () => {
+  test('success pays ORDER.rewardMinutes of income at that moment, counts, flashes and sets the next offer 4 min out', () => {
     const s = accepted();
     const a = s.order.active!;
     const partway = run(sold(s, a.hood, a.target - 1), 10);
@@ -218,7 +270,7 @@ describe('an order from accept to the end', () => {
     const done = step(sold(partway, a.hood, 1));
     expect(done.order.active).toBeNull();
     expect(done.stats.ordersDone).toBe(1);
-    const reward = R.minutesToCash(partway, 5);
+    const reward = R.minutesToCash(partway, ORDER.rewardMinutes);
     expect(reward).toBeGreaterThan(0);
     expect(done.cash).toBeCloseTo(partway.cash + reward, 6);
     expect(done.totalEarned).toBeCloseTo(partway.totalEarned + reward, 6);

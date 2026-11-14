@@ -44,8 +44,10 @@ export const DAILY_TASK_COUNT = 5;
 export const WEEKLY_TASK_COUNT = 7;
 
 /** Cash is minutes of income (earnings per second × 60 × minutes, at claim time). */
-export const DAILY_TASK_REWARD = { minutes: 15, points: 20 } as const;
-export const WEEKLY_TASK_REWARD = { minutes: 120 } as const;
+// v5.16: cash rewards cut by 90% or more (daily task 15 → 1, weekly 120 → 5, chests 30/60 → 2/3, gift 30 → 5): one daily task had paid 15 minutes of income, and in a 40-minute first session
+// rewards at the first card's cut (3 / 20 / 5 / 10) were half of all the cash earned. The sim (scripts/review/sim2.ts) now plays them, so the fit sees them.
+export const DAILY_TASK_REWARD = { minutes: 1, points: 20 } as const;
+export const WEEKLY_TASK_REWARD = { minutes: 5 } as const;
 
 export interface BoosterDef {
   mult: number;
@@ -60,8 +62,8 @@ export interface Chest {
   booster?: BoosterDef;
 }
 export const DAILY_CHESTS: readonly Chest[] = [
-  { points: 40, minutes: 30 },
-  { points: 70, minutes: 60 },
+  { points: 40, minutes: 2 },
+  { points: 70, minutes: 3 },
   { points: 100, diamonds: 10, booster: { mult: 2, minutes: 15 } },
 ];
 
@@ -119,7 +121,7 @@ export interface GiftDef {
 export const GIFT_LENGTH = 30;
 /** Small gifts, in order, on the days that are not milestones. */
 export const GIFT_SMALL: readonly GiftDef[] = [
-  { label: '30 min of income', minutes: 30 },
+  { label: '10 min of income', minutes: 10 },
   { label: '2× booster · 15 min', boosters: [{ mult: 2, minutes: 15 }] },
   { label: '5 diamonds', diamonds: 5 },
 ];
@@ -183,4 +185,4 @@ export const CLOCK_RECOVER_MS = 36 * 3_600_000;
 /** `lastSeen` is raised only when this stale (and on claims): it keeps `game.rewards` stable between ticks. */
 export const LAST_SEEN_STEP_MS = 60_000;
 /** The weekly chest's prize once every rotation cosmetic is owned (its total: the chest's usual 8 diamonds are part of the 30). */
-export const WEEKLY_FALLBACK = { diamonds: 30, minutes: 120 } as const;
+export const WEEKLY_FALLBACK = { diamonds: 30, minutes: 5 } as const;

@@ -52,7 +52,7 @@ describe('T87 shopLevelKey follows the features', () => {
 });
 
 describe('T88 module order', () => {
-  const features = ['recipes', 'mastery', 'counterattack', 'events', 'heads'];
+  const features = ['recipes', 'mastery', 'counterattack', 'events', 'heads', 'service', 'layers/suburbs-gameday', 'layers/waterfront-boats', 'layers/rival', 'layers/university-menu', 'layers/industrial-shifts', 'layers/uptown-stars'];
   for (const f of features) {
     it(`importing features/${f} before the game does not throw`, () => {
       jest.isolateModules(() => {
@@ -66,9 +66,9 @@ describe('T88 module order', () => {
       const game = require('../game');
       expect(game.newGame(0).x).toEqual({});
       require('../features');
-      expect(Object.keys(game.newGame(0).x)).toEqual(['mastery', 'counterattack', 'events', 'recipes', 'heads']);
+      expect(Object.keys(game.newGame(0).x)).toEqual(['mastery', 'counterattack', 'events', 'recipes', 'heads', 'service', 'suburbsGameDay', 'waterfrontBoats', 'rival', 'universityMenu', 'industrialShifts', 'uptownStars']);
       require('../features');
-      expect(Object.keys(game.newGame(0).x)).toHaveLength(5);
+      expect(Object.keys(game.newGame(0).x)).toHaveLength(12);
     });
   });
 
@@ -76,8 +76,8 @@ describe('T88 module order', () => {
     jest.isolateModules(() => {
       const f = require('../features');
       const game = require('../game');
-      expect(f.FEATURES).toHaveLength(5);
-      expect(Object.keys(game.newGame(0).x)).toHaveLength(5);
+      expect(f.FEATURES).toHaveLength(12);
+      expect(Object.keys(game.newGame(0).x)).toHaveLength(12);
     });
   });
 });

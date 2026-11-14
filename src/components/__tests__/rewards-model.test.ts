@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import { DAILY_CHESTS, GIFT_DAYS, VISITOR_LINES } from '../../content/rewards';
+import { DAILY_CHESTS, DAILY_TASK_REWARD, GIFT_DAYS, VISITOR_LINES, WEEKLY_FALLBACK, WEEKLY_TASK_REWARD } from '../../content/rewards';
 import * as G from '../../engine/game';
 import { dayKey, refreshRewards, taskDone } from '../../engine/rewards';
 import { NONNA_TAKEOVER } from '../../content/tuning';
@@ -8,6 +8,8 @@ import { BOOST_STRIP, boostFadeShown, boostChip, boosterLabel, boosterStartLabel
 const NOW = new Date(2026, 9, 28, 13, 7, 41, 333).getTime(); // a Wednesday
 const DAY = 86_400_000;
 const NO_FLOAT = /\d\.\d{3,}/;
+/** How the model writes a cash reward's size (v5.16 cut them, so the tests read the constants): "15 min", "2 h". */
+const minText = (m: number): string => (m >= 60 && m % 60 === 0 ? `${m / 60} h` : `${m} min`);
 
 function base(): G.GameState {
   const s = G.newGame(NOW);
@@ -103,7 +105,7 @@ describe('task rows', () => {
     expect(rows[1].pct).toBe(1);
     expect(rows[0].state).toBe(taskDone(s, s.rewards.daily[0]) ? 'ready' : 'todo');
     for (const r of rows) {
-      expect(r.reward).toMatch(/^15 min income \(\$[\d.]+[KMBT]?\) · \+20 pts$/);
+      expect(r.reward).toMatch(new RegExp(`^${minText(DAILY_TASK_REWARD.minutes)} income \\(\\$[\\d.]+[KMBT]?\\) · \\+${DAILY_TASK_REWARD.points} pts$`));
       expect(r.pct).toBeGreaterThanOrEqual(0);
       expect(r.pct).toBeLessThanOrEqual(1);
     }
@@ -133,7 +135,7 @@ describe('task rows', () => {
   test('weekly rows name the diamonds per task', () => {
     const rows = weeklyRows(base());
     expect(rows).toHaveLength(7);
-    expect(rows[0].reward).toMatch(/2 h income .* \+6 diamonds$/);
+    expect(rows[0].reward).toMatch(new RegExp(`${minText(WEEKLY_TASK_REWARD.minutes)} income .* \\+6 diamonds$`));
     expect(new Set(rows.map((r) => r.reward)).size).toBe(1); // every task pays the same
   });
   test('cash tasks show money on both sides', () => {
@@ -152,7 +154,7 @@ describe('chests', () => {
     expect(chestRows(s).map((c) => c.state)).toEqual(['opened', 'ready', 'ready']);
     expect(chestRows(s).map((c) => c.points)).toEqual(DAILY_CHESTS.map((c) => c.points));
     expect(chestRows(s)[2].label).toBe('10 diamonds + 2× 15m booster');
-    expect(chestRows(s)[0].label).toBe('30 min income');
+    expect(chestRows(s)[0].label).toBe(`${minText(DAILY_CHESTS[0].minutes!)} income`);
   });
   test('points bar clamps', () => {
     expect(pointsPct(withR(base(), { points: 50 }))).toBe(0.5);
@@ -174,8 +176,8 @@ describe('chests', () => {
     const v = weeklyChestView(base());
     expect(v.prize).toMatch(/^[A-Z][\w -]+ \+ 8 \u{1F48E}$/u);
     const all = weeklyChestView(withR(base(), { cosmetics: owned }));
-    expect(all.prize).toBe('30 \u{1F48E} + 2 h income');
-    expect(all.label).toBe("30 \u{1F48E} + 2 h income \u00B7 7 tasks to go");
+    expect(all.prize).toBe(`30 \u{1F48E} + ${minText(WEEKLY_FALLBACK.minutes)} income`);
+    expect(all.label).toBe(`30 \u{1F48E} + ${minText(WEEKLY_FALLBACK.minutes)} income \u00B7 7 tasks to go`);
   });
   test('collection line: the recipe cards owned of 24 (v5.15)', () => {
     expect(collectionText(base())).toBe('Collection: 0/24 recipes');
@@ -229,7 +231,7 @@ describe('gift calendar', () => {
     expect(h.prizeIcon).toBe('star');
   });
   test('gift text covers every kind', () => {
-    expect(giftText(GIFT_DAYS[0])).toBe('30 min of income');
+    expect(giftText(GIFT_DAYS[0])).toBe(`${minText(GIFT_DAYS[0].minutes!)} of income`);
     expect(giftText(GIFT_DAYS[1])).toBe('2× 15m booster');
     expect(giftText(GIFT_DAYS[2])).toBe('5 diamonds');
     expect(giftText(GIFT_DAYS[13])).toBe('3 boosters · 2× 30m');
@@ -239,7 +241,7 @@ describe('gift calendar', () => {
   });
   test('D386/S13: tiles carry an icon kind and a clear label', () => {
     const t = giftTiles(base(), NOW);
-    expect(t[0]).toMatchObject({ icon: 'coin', label: '30 min' });
+    expect(t[0]).toMatchObject({ icon: 'coin', label: minText(GIFT_DAYS[0].minutes!) });
     expect(t[1]).toMatchObject({ icon: 'bolt', label: '15m' });
     expect(t[2]).toMatchObject({ icon: 'gem', label: '5' });
     expect(t[6]).toMatchObject({ icon: 'gem', label: '50', big: true });

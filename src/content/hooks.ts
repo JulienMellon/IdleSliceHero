@@ -13,14 +13,14 @@ export const BONUS = {
   gapMax: 120,
   /** How long it drifts across the sky before it leaves. */
   visibleSeconds: 12,
-  /** A tap pays this many seconds of citywide income (the rewards' income: boosts ignored)… */
-  incomeSeconds: 45,
+  /** A tap pays this many seconds of citywide income (the rewards' income: boosts ignored)… (v5.16: 45 → 5, cash rewards cut) */
+  incomeSeconds: 5,
   /** …but never less than this. */
   minPayout: 5,
   /** Every Nth one is the lucky slice… */
   luckyEvery: 5,
   /** …which pays this many seconds of income. */
-  luckyIncomeSeconds: 180,
+  luckyIncomeSeconds: 20,
   /** D445: the very first one comes at most this many play seconds after the golden pizzas unlock (Nonna's takeover scene ends). */
   firstAfterUnlock: 2,
 } as const;
@@ -83,13 +83,18 @@ export const ORDER = {
   offerWaitSeconds: 45,
   /** Time to sell the pies once accepted. */
   windowSeconds: 120,
-  /** The target is the shop's pies/sec × windowSeconds × this: it needs a rush or an upgrade, not just waiting. */
-  targetMargin: 1.2,
+  /**
+   * v5.16: the target is what the shop sells in windowSeconds with rush held the whole time, × this (under 1, so constant tapping
+   * wins without an upgrade). Where customers cap the rush, the target comes down with it.
+   */
+  targetMargin: 0.9,
+  /** The tapping speed "rush held the whole time" means (taps per second; each takes LINE.rushSeconds off every running job). */
+  rushTapsPerSecond: 3,
   minTarget: 20,
   /** A shop that doesn't run itself asks for this many (taps). */
   unmanagedTarget: 24,
-  /** Success pays this many minutes of citywide income (rewards' income) at completion time. */
-  rewardMinutes: 5,
+  /** Success pays this many minutes of citywide income (rewards' income) at completion time (v5.16: 5 → 0.5). */
+  rewardMinutes: 0.5,
   doneShowSeconds: 2.5,
   failShowSeconds: 2,
 } as const;

@@ -27,7 +27,7 @@ def run(ctx):
 
     # 11. v3.7: the Pier 9 bid leads the goal bar, and a finale shows its neighbourhood perk
     bid = dict(MID_SAVE, cash=1.2e6, active="waterfront", scrapbookViewed=10,
-               seenScenes=MID_SAVE["seenScenes"] + ["suburbs-4", "waterfront-2", "waterfront-3"],
+               seenScenes=MID_SAVE["seenScenes"] + ["suburbs-4", "waterfront-2", "waterfront-3", "waterfront-3b"],
                shops=dict(MID_SAVE["shops"], waterfront=shop(prep=30, ovens=28, grade=1, counter=30, drivers=14, tables=12, footprint=1, sold=52000)))
     page = seeded_page(browser, bid); settle(page)
     shot(page, "21-pier9-bid-goal", 0.8)

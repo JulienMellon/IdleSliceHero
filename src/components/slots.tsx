@@ -3,6 +3,7 @@
 //   HUD_CHIPS       small round chips at the end of the goal row (44 pt tap targets)         mounted in app/index.tsx -> <Hud chips>
 //   BANNERS         notices over the shop scene, under the drawers (position yourself)       mounted in app/index.tsx, scene area
 //   SHEETS          modal sheets / popups over the whole screen                              mounted in app/index.tsx, root
+//   SHOP_REPORT     the shop report's strip: a 44 pt row over the sidewalk row, told its `bottom`   mounted in app/index.tsx, scene area
 //   DRAWER_CARDS    city-wide cards in the upgrade drawer's list (after the Fleet card)      mounted in app/index.tsx, drawer
 //   SCENE_OVERLAYS  drawn inside the shop scene, above the floor and furniture, below the HUD   mounted in scene/room.tsx <SceneOverlays>
 //
@@ -22,6 +23,8 @@ import { DiamondChip } from './endgame/diamond-chip';
 import { EventChip } from './endgame/event-chip';
 import { RecipeReveal } from './endgame/recipe-reveal';
 import { MoonIcon } from './game-ui';
+import { ReportSheet } from './report/report-sheet';
+import { ReportStrip } from './report/report-strip';
 
 /** The slot kinds with no props: each component reads its own state. */
 export type SlotProps = Readonly<Record<never, never>>;
@@ -30,6 +33,11 @@ export interface SceneSlotProps {
   shopId: string;
   width: number;
   height: number;
+}
+
+/** What the shop report's strip is told: its foot's distance from the scene area's bottom, just above the sidewalk row. */
+export interface ShopReportSlotProps {
+  bottom: number;
 }
 
 export interface SlotEntry<P = SlotProps> {
@@ -81,6 +89,18 @@ export function SceneSlots({ items, shopId, width, height }: { items: readonly S
   );
 }
 
+/** Renders every shop-report entry with the strip's `bottom`. Nothing (no wrapper) when the array is empty. */
+export function ReportSlots({ items, bottom }: { items: readonly SlotEntry<ShopReportSlotProps>[]; bottom: number }) {
+  if (items.length === 0) return null;
+  return (
+    <>
+      {inOrder(items).map(({ id, Component }) => (
+        <Component key={id} bottom={bottom} />
+      ))}
+    </>
+  );
+}
+
 // ---- the entries (append yours; keep the component in this file or its own module) ----
 
 /** v5.14 (R3): Nonna's night oven, a 44 pt round chip with the hours it holds; shows once rewards unlock. */
@@ -112,7 +132,13 @@ export const BANNERS: SlotEntry[] = [
   { id: 'recipe-reveal', order: 20, Component: RecipeReveal },
 ];
 // v5.15 (U1): "Coming soon: Boston", once, after the last finale
-export const SHEETS: SlotEntry[] = [{ id: 'boston-card', order: 10, Component: BostonSheet }];
+export const SHEETS: SlotEntry[] = [
+  { id: 'boston-card', order: 10, Component: BostonSheet },
+  // v5.16 (P1): the shop report's sheet, opened by a tap on its strip
+  { id: 'shop-report', order: 20, Component: ReportSheet },
+];
+// v5.16 (P1): the shop report's strip, one 44 pt row above the sidewalk row
+export const SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] = [{ id: 'shop-report-strip', order: 10, Component: ReportStrip }];
 export const DRAWER_CARDS: SlotEntry[] = [];
 export const SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] = [];
 
