@@ -13,7 +13,20 @@ from playwright.sync_api import sync_playwright
 VERSION = sys.argv[1] if len(sys.argv) > 1 else "dev"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIST = os.path.join(ROOT, "dist")
-OUT = os.path.join(ROOT, "screenshots", VERSION)
+
+def _viewport_arg(argv):
+    """`--viewport 375x667` / `--viewport=375x667` from the command line (Q3): the phone size to run at; None = the default iPhone 15 (393x852)."""
+    for i, a in enumerate(argv):
+        v = argv[i + 1] if a == "--viewport" and i + 1 < len(argv) else a[len("--viewport="):] if a.startswith("--viewport=") else None
+        if v:
+            m = re.fullmatch(r"(\d+)x(\d+)", v.strip())
+            if not m:
+                raise SystemExit(f"--viewport wants WIDTHxHEIGHT (375x667), got {v!r}")
+            return int(m.group(1)), int(m.group(2))
+    return None
+
+VIEWPORT = _viewport_arg(sys.argv[2:])
+OUT = os.path.join(ROOT, "screenshots", VERSION + ("-se" if VIEWPORT else ""))   # a narrow-phone run never overwrites the normal one
 os.makedirs(OUT, exist_ok=True)
 KEY = "slice-empire/save/v1"
 
@@ -55,6 +68,8 @@ MID_SAVE = {
     "scrapbookViewed": 7, "lastSavedAt": now_ms,
 }
 report = {"version": VERSION, "errors": [], "shots": [], "loaded": False}
+if VIEWPORT:
+    report["viewport"] = f"{VIEWPORT[0]}x{VIEWPORT[1]}"
 
 def _only_arg(argv):
     """`--only a,b` / `--only=a,b` from the command line: the fixture names (or number prefixes) to run; None = all of them."""
@@ -238,13 +253,73 @@ def expect_text(page, testid, pattern, timeout=5000):
     _missed.append(f'text /{pattern}/ in ' + (f'testid "{testid}"' if testid else "the scene's text"))
     return False
 
+# ---- layout probe (Q3): at every shot, one page.evaluate asks the DOM what a player would trip over ----
+# Four kinds of finding, each with a key that does not change with the save (a number in text, with its K/M/B/T/Q, becomes #):
+#   tap   a visible, uncovered button (role=button / tabindex=0) drawn under 44 px in either direction. key: data-testid (or its text); detail: "WxH"
+#   text  visible text under 10 px. key: nearest ancestor's data-testid + the text
+#   clip  text that is cut off. react-native-web draws numberOfLines={1} as `overflow:hidden; white-space:nowrap; text-overflow:ellipsis`
+#         and numberOfLines={n} as `-webkit-line-clamp:n`; adjustsFontSizeToFit does nothing in this build. So: a box that hides its overflow
+#         and whose text (measured with a Range, which ignores the clipping) is wider than the box's content, or, with a line clamp or a
+#         wrapping box, taller than the box. A scrollWidth/clientWidth comparison alone rounds both to whole pixels and misses a 1 px cut
+#         (D477: "+$83/s" is 41.8 wide in a 40.5 box). Also: text that itself ends in "…" (layout_check.py drops those whose source does).
+#   edge  text that starts left of 0 or ends right of the viewport (text inside a horizontal scroller is skipped: the shop tabs scroll)
+# The page is only read: no waiting, no clock step.
+LAYOUT_PROBE = """() => {
+  const out = []; const vw = document.documentElement.clientWidth, vh = innerHeight;
+  const norm = (t) => t.replace(/\\s+/g, ' ').trim().replace(/[0-9][0-9.,]*[KMBTQ]?/g, '#').slice(0, 40);   // "need $1.2K" and "need $450" are one key
+  const tidOf = (el) => { const a = el.closest('[data-testid]'); return a ? a.getAttribute('data-testid') : '(none)'; };
+  const seen = (el, r) => {   // on screen and not under something else (a sheet, a popup); pointer-events: none overlays do not count
+    if (r.width < 1 || r.height < 1) return false;
+    for (let a = el; a && a !== document.body; a = a.parentElement) { const c = getComputedStyle(a); if (c.visibility === 'hidden' || c.display === 'none' || +c.opacity === 0) return false; }
+    const cx = Math.min(vw - 1, Math.max(0, r.left + r.width / 2)), cy = r.top + r.height / 2;
+    if (cy < 0 || cy > vh) return false;
+    const top = document.elementFromPoint(cx, cy);
+    return !!top && (el === top || el.contains(top) || top.contains(el)); };
+  const inHScroller = (el) => { for (let a = el.parentElement; a; a = a.parentElement) { const o = getComputedStyle(a).overflowX; if (o === 'auto' || o === 'scroll') return true; } return false; };
+  const px = (v) => parseFloat(v) || 0;
+  for (const el of document.querySelectorAll('div[dir="auto"], span[dir="auto"]')) {
+    let own = ''; for (const n of el.childNodes) if (n.nodeType === 3) own += n.data;
+    if (!own.trim()) continue;
+    const r = el.getBoundingClientRect(); if (!seen(el, r)) continue;
+    const cs = getComputedStyle(el), text = own.trim().replace(/\\s+/g, ' '), key = tidOf(el) + ' | ' + norm(text);
+    const fs = px(cs.fontSize);
+    if (fs < 9.995) out.push({kind: 'text', key, detail: fs + ' px'});
+    const rg = document.createRange(); rg.selectNodeContents(el); const t = rg.getBoundingClientRect();
+    if (t.width && (t.left < -0.5 || t.right > vw + 0.5) && !inHScroller(el)) out.push({kind: 'edge', key, detail: 'x ' + Math.round(t.left) + ' to ' + Math.round(t.right) + ' of ' + vw});
+    if (cs.overflowX !== 'visible' || cs.overflowY !== 'visible') {
+      const sx = el.offsetWidth ? r.width / el.offsetWidth : 1, sy = el.offsetHeight ? r.height / el.offsetHeight : 1;
+      const room = (el.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight)) * sx, high = el.clientHeight * sy;
+      const clamp = cs.webkitLineClamp && cs.webkitLineClamp !== 'none';
+      if (cs.whiteSpace.startsWith('nowrap') || cs.whiteSpace === 'pre') {
+        if (cs.overflowX !== 'visible' && t.width > room + 0.5) out.push({kind: 'clip', key, detail: 'text ' + t.width.toFixed(1) + ' px in ' + room.toFixed(1) + ' px, ' + (cs.textOverflow === 'ellipsis' ? 'drawn with an ellipsis' : 'cut')});
+      } else if (cs.overflowY !== 'visible' && (clamp || el.offsetHeight) && el.scrollHeight * sy > high + 1.5) {
+        out.push({kind: 'clip', key, detail: 'text ' + (el.scrollHeight * sy).toFixed(1) + ' px high in ' + high.toFixed(1) + ' px' + (clamp ? ' (' + cs.webkitLineClamp + ' lines)' : '')});
+      }
+    }
+    if (/[…]$/.test(text)) out.push({kind: 'clip', key, detail: 'ends in …', ellipsis: text});
+  }
+  for (const el of document.querySelectorAll('[role="button"], [tabindex="0"]')) {
+    const r = el.getBoundingClientRect(); if (!seen(el, r)) continue;
+    if (r.width < 43.5 || r.height < 43.5) out.push({kind: 'tap', key: el.getAttribute('data-testid') || norm(el.textContent) || '(none)', detail: Math.round(r.width) + 'x' + Math.round(r.height)});
+  }
+  return out; }"""
+LAYOUT = {}   # shot name -> findings; screenshots.py writes it to layout-raw.json
+
+def layout_probe(page, name):
+    key = name if name not in LAYOUT else f"{name}#{len(LAYOUT)}"
+    try:
+        LAYOUT[key] = page.evaluate(LAYOUT_PROBE)
+    except Exception as e:   # the page was mid-navigation: say so, the shot itself is fine
+        LAYOUT[key] = [{"kind": "probe-error", "key": name, "detail": str(e)[:120]}]
+
 def shot(page, name, wait=0.6):
-    """Let `wait` seconds of game time pass, then take the shot."""
+    """Let `wait` seconds of game time pass, then take the shot, then read the layout of what is on screen (one page.evaluate, no waiting)."""
     _flush_missed(name)
     advance(page, wait * 1000)
     p = os.path.join(OUT, f"{name}.png")
     page.screenshot(path=p)
     report["shots"].append(p)
+    layout_probe(page, name)
 
 # Audio probe (v4.4): log every media play() as "<file> @<seconds since load>" so a run shows which cues fired.
 AUDIO_PROBE = """(() => { window.__audioLog = []; const t0 = performance.now();
@@ -289,7 +364,7 @@ def seeded_page(browser, save, when=None, ahead_ms=None, storage=None, keep=Fals
 def _open(browser, save, when, ahead_ms, storage):
     start = when or T0
     start_ms = int(start.timestamp() * 1000)
-    c = browser.new_context(viewport={"width": 393, "height": 852}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    c = browser.new_context(viewport=dict(zip(("width", "height"), VIEWPORT or (393, 852))), device_scale_factor=2, is_mobile=True, has_touch=True)
     c.set_default_timeout(20000)
     c.clock.install(time=start)          # the page's Date, timers and animation frames are fake from its first line
     c.add_init_script(AUDIO_PROBE)

@@ -61,3 +61,33 @@ def run(ctx):
 `report["errors"]`, and the shot is still taken so you can look at it. Put one before every shot whose point is a state rather than a screen.
 `expect_text(page, None, pattern)` searches the scene's SVG text (a head's bark has no test ID). Saves shared by several fixtures live in
 `shots_lib.py` (`MID_SAVE`, `LATE_SAVE`, `TIED_SAVE`, `FRUGAL_SAVE`, `hood_save`, `hooks_save`).
+
+## Layout checks at every shot (Q3)
+`shot()` ends with one `page.evaluate` (no waiting, no clock step) that reads the DOM and keeps what it found under the shot's name.
+`screenshots.py` writes all of it to `screenshots/<label>/layout-raw.json`; after a **full** run it calls `scripts/layout_check.py <label>`, which
+drops what `scripts/layout_allow.json` accepts, writes `layout.json` and prints `layout: <n> new, <m> allowed, <k> stale`. Verify wants `0 new`.
+After a `--only` run call it by hand: `python3 scripts/layout_check.py dev`; the entries of shots you did not take show up as `stale`, which is expected.
+
+| kind | what it is | key (stable across saves) |
+|---|---|---|
+| `tap` | a visible, uncovered `role="button"` / `tabindex="0"` drawn under 44 px in either direction | its `data-testid` (its text if none); `detail` is `WxH` |
+| `text` | visible text with a computed font size under 10 px | nearest ancestor's `data-testid` + the text, a number (with K/M/B/T) as `#` |
+| `clip` | text that is cut off: a box that hides its overflow and whose text (measured with a Range) is wider or taller than it, or text that itself ends in "…" and its source does not | same |
+| `edge` | text starting left of 0 or ending right of the viewport (not inside a horizontal scroller: the shop tabs scroll) | same |
+
+How a cut-off shows in this build: react-native-web draws `numberOfLines={1}` as `overflow:hidden; white-space:nowrap; text-overflow:ellipsis` and
+`numberOfLines={n}` as `-webkit-line-clamp:n`; `adjustsFontSizeToFit` does nothing. `scrollWidth` vs `clientWidth` rounds both sides to whole pixels and
+misses a 1 px cut (D477: "+$83/s" is 41.8 px wide in a 40.5 px box), so the probe measures the text with a `Range`. The ellipsis is not in the DOM.
+
+**The allowlist is a to-do list, not a list of exceptions.** An entry is `{kind, key, reason, card}`:
+- `"card": "U5"`: a control or text under the rule that card U5 fixes; accepted until U5 lands, then U5 deletes the entry.
+- `"card": null`: a documented exception (the Close buttons, `tap-targets.ts`).
+- `"proof": "<test name>"` on a `tap` entry: the control is drawn at 40 to 43 px and that test in `src/components/__tests__/tap-targets.test.ts` proves its
+  hitSlop reaches 44 pt inside space its parent owns. This is the only way a 40 to 43 px control passes for good; it needs 40 px drawn both ways.
+  Under 40 px drawn only a `U5` or `null` entry lets it through.
+- `"drawn": <px>` on a `tap` entry: the shortest side when the entry was written; a control that gets shorter than that is new again.
+A `stale` entry matched nothing in the run: delete it (the problem is fixed) or check that the fixture still reaches that shot.
+
+## A narrow phone
+`python3 scripts/screenshots.py <label> --viewport 375x667` runs the fixtures at iPhone SE size into `screenshots/<label>-se/` with the probe on and
+prints the raw count per kind at the end. It is not part of verify (the allowlist is for the normal phone), and it does not call `layout_check.py`.
