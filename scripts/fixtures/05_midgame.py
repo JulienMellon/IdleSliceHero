@@ -12,7 +12,7 @@ def run(ctx):
     # 3a. The full upgrades sheet (tap "All")
     try:
         tid(page, "open-upgrades").click(); shot(page, "05a-upgrades-sheet", 0.6)
-        page.mouse.wheel(0, 900); time.sleep(0.4)
+        page.mouse.wheel(0, 900); advance(page, 400)
         page.locator('[data-testid="decor-plants"]').first.scroll_into_view_if_needed()
         shot(page, "05a2-decor-section", 0.4)
         tid(page, "close-upgrades").click()
@@ -29,10 +29,10 @@ def run(ctx):
         tap_station(page, "prep"); shot(page, "05b3-prep-ring", 1.2)
         tap_station(page, "oven"); shot(page, "05b4-refused-tap", 0.2)
         # hire Finn from the sidewalk: his hello bubble over the prep badge, his face on the badge (D349)
-        time.sleep(1.4)
+        advance(page, 1400)
         tid(page, "walk-manager").click(); shot(page, "05b5-hire-bubble", 0.5)
         # D376: an Ovens buy shows "+N% faster" rising from the oven's badge
-        time.sleep(2.6)
+        advance(page, 2600)
         tid(page, "mini-ovens").click(); shot(page, "05b6-upgrade-flash", 0.25)
         tid(page, "open-city").click(); shot(page, "05c-city", 0.8)
         tid(page, "back").click()

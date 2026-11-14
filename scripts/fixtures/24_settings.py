@@ -11,13 +11,13 @@ def run(ctx):
     try:
         page = seeded_page(browser, perked); settle(page)
         for _ in range(6):
-            tap_shop(page); time.sleep(0.25)
+            tap_shop(page); advance(page, 250)
         settle(page, 0.5)  # a story beat may have come due during the taps
-        tid(page, "tab-downtown").click(); time.sleep(1.0)
+        tid(page, "tab-downtown").click(); advance(page, 1000)
         settle(page, 0.3)
         audio_log(page, "session")
-        tid(page, "open-city").click(); time.sleep(0.6)
-        tid(page, "open-settings").click(); time.sleep(0.6)
+        tid(page, "open-city").click(); advance(page, 600)
+        tid(page, "open-settings").click(); advance(page, 600)
         tid(page, "toggle-music").click()
         shot(page, "24-settings-audio", 0.5)
     except Exception as e:

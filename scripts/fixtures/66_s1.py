@@ -16,7 +16,7 @@ BUSY = dict(prep=30, ovens=30, counter=30, drivers=14, tables=8, grade=1, footpr
 def dressed(hood, worn, vehicle=2, rewards=None, **kw):
     """A save in `hood` with these cosmetics owned and worn (city-wide), the daily gift already shown."""
     sv = hood_save(hood, vehicle=vehicle, **dict(BUSY, **kw))
-    sv.update(lastSavedAt=int(time.time() * 1000))
+    sv.update(lastSavedAt=T0_MS)
     sv["rewards"] = dict({"giftShownDay": day_str(), "cosmetics": list(worn), "worn": list(worn)}, **(rewards or {}))
     return sv
 
@@ -47,10 +47,10 @@ def run(ctx):
     settle(page, 2.0)
     # the city's only hired heads are Downtown's, so one of them is Head of the Week and says so on load; bubbles are 20 s apart, so let that
     # one pass (D459: the rush bark used to be held back by it and shot 70 showed none)
-    time.sleep(22)
+    advance(page, 22000)
     for _ in range(10):
         tap_shop(page)
-        time.sleep(0.12)
+        advance(page, 120)
     # the bark is SVG text with no test ID: look for one of the three Downtown rush lines (content/heads.ts BARKS.downtown.*.rush)
     expect_text(page, None, r"Dough.s flying|Nobody touches the oven door|Mrs\. Russo", 2000)
     shot(page, "70-head-rush-bark", 0.3)
@@ -62,16 +62,18 @@ def run(ctx):
     settle(page, 2.0)
     shot(page, "71-head-of-the-week", 0.6)
 
-    # 72: day 30's visit: Nonna by the counter with the visit's time on her tag. She speaks for 4 s of every 150 s (wall clock), so wait
+    # 72: day 30's visit: Nonna by the counter with the visit's time on her tag. She speaks for 4 s of every 150 s (game clock: wall seconds of Date.now()), so wait
     # for it when it is near.
-    visit = {"boosts": [{"mult": 2, "until": int(time.time() * 1000) + 6 * DAY_MS + 4 * 3_600_000, "source": "visit-nonna"}]}
+    visit = {"boosts": [{"mult": 2, "until": T0_MS + 6 * DAY_MS + 4 * 3_600_000, "source": "visit-nonna"}]}
     sv = dressed("downtown", [], rewards=visit)
     page = seeded_page(b, sv)
     settle(page, 2.0)
-    phase = time.time() % 150
+    phase = (page_ms(page) / 1000) % 150      # the page's own (frozen) clock; T0 is on the hour, so this is the game seconds since boot
     ahead = (8.6 - phase) % 150
     if ahead <= 20:
-        time.sleep(ahead)
+        advance(page, ahead * 1000)
+    else:
+        report["errors"].append(f"fixture 66_s1: the cameo's next line is {ahead:.0f} s of game time away (phase {phase:.1f}); shot 72 would not show it")
     shot(page, "72-nonna-cameo", 0.3)
 
     # 73: the same shop as 66 with nothing worn

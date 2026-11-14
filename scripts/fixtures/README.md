@@ -28,6 +28,25 @@ python3 scripts/screenshots.py dev --only 56               # a number prefix alo
 `--only` takes file names without `.py` (or their number prefix), comma separated. `report.json` then carries `"only": [...]`, so a partial run is never
 mistaken for a full one; a name that matches no file is an error. Use a scratch label (`dev`, `<version>-b`): both are git-ignored.
 
+## Game time is frozen (Q1)
+Every page runs on Playwright's fake clock, frozen before the app boots, so two runs of one build give the same pixels (`review_shots.py`
+then flags only what the code changed). The rules:
+- **`T0`** (`shots_lib.py`) is the one fixed moment: Wednesday 2026-11-11 12:00 local. Saves are stamped from `T0`/`T0_MS`/`now_ms` and dates
+  from `day_str()`; never read `time.time()` or `datetime.now()`. Shots on another day pass `when=` (see `clock_page`, shots 62/62b).
+- **Game time moves only when a fixture moves it**: `advance(page, ms)`, `settle`, `shot(page, name, wait)`, `expect`, `expect_text`,
+  `wait_for(page, testid)` and `until(page, check)` all step the fake clock. `time.sleep` and `page.wait_for_timeout` are real time and
+  give the game none; a locator's own `wait_for`/`wait_for_function` waits in real time, so a state that needs game time never shows up.
+  `page_ms(page)` is the page's `Date.now()`.
+- **`seeded_page`** (and `fresh_page`, `clock_page`, thin wrappers) boots on the frozen clock and returns with the title card tapped away.
+  Pass `title=False` to keep it, `save=None` for a fresh install.
+- The page gets four things a plain Chromium does not: no `MessageChannel` (React's scheduler then runs on the fake `setTimeout`), a
+  `ResizeObserver` and `requestAnimationFrame` that run on the fake clock (a 16 ms grid of `Date.now()`), and its own requests held until
+  the clock stands still (`_quiet`). Without them a step ended in a different state on each run. Do not add a real-time wait around a click.
+- Two runs of one build are byte-identical. Check with `python3 scripts/screenshots.py dev`, then `dev-b`, then
+  `python3 scripts/review_shots.py dev-b dev | tail -1` (`0 new, 0 changed`). If a new shot differs between two runs, find what moves
+  before changing a wait: `document.getAnimations()` lists CSS animations, and anything that reads the real clock shows up as a shot that
+  changes with machine load.
+
 ## Fixtures assert their state
 ```python
 from shots_lib import *   # seeded_page, settle, shot, tid, expect, expect_text, tap_shop, hood_save, report, ...

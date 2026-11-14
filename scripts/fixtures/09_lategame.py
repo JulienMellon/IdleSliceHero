@@ -18,9 +18,9 @@ def run(ctx):
                     "uptown": shop(managed=False, sold=0),
                 },
                 seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:18] + ["uptown-1"], scrapbookViewed=19)
-    page = seeded_page(browser, late); time.sleep(2.5)
+    page = seeded_page(browser, late); advance(page, 2500)
     if page.locator('[data-testid="collect-offline"]').count():
-        tid(page, "collect-offline").click(); time.sleep(0.8)
+        tid(page, "collect-offline").click(); advance(page, 800)
     if page.locator('[data-testid="skip-scene"]').count():
         tid(page, "cutscene").click(); shot(page, "08-late-cutscene", 0.8)
         tid(page, "skip-scene").click()
@@ -28,22 +28,19 @@ def run(ctx):
     shot(page, "09-late-game", 1.2)
     # D361: land these just after a pickup, so the pop riding the carrier is in the frame
     def pop_on_screen(timeout=7000):
-        try:
-            page.wait_for_function("() => [...document.querySelectorAll('text')].some((t) => (t.textContent || '').includes('+$'))", timeout=timeout)
-        except Exception:
-            pass
+        until(page, lambda: page.evaluate("() => [...document.querySelectorAll('text')].some((t) => (t.textContent || '').includes('+$'))"), timeout)
     pop_on_screen(); shot(page, "10-late-game-pops-a", 0.15)
-    time.sleep(1.5); pop_on_screen(); shot(page, "11-late-game-pops-b", 0.15)
+    advance(page, 1500); pop_on_screen(); shot(page, "11-late-game-pops-b", 0.15)
     try:
         for _ in range(3):
-            tap_shop(page); time.sleep(0.15)
+            tap_shop(page); advance(page, 150)
         shot(page, "12-late-rush-tap", 0.2)
     except Exception as e:
         report["errors"].append(f"late oven tap failed: {e}")
     # v5.0: every neighbourhood's own look (the critic had no Suburbs or University interior)
     try:
         for hood in ["suburbs", "university", "downtown"]:
-            tid(page, f"tab-{hood}").click(force=True); time.sleep(1.0)
+            tid(page, f"tab-{hood}").click(force=True); advance(page, 1000)
             settle(page, 0.3)
             shot(page, f"25-look-{hood}", 0.6)
     except Exception as e:
@@ -82,15 +79,15 @@ def run(ctx):
                          "industrial": shop(built=False, managed=False), "uptown": shop(built=False, managed=False)})
     page = seeded_page(browser, frugal); settle(page)
     try:
-        tid(page, "open-city").click(); time.sleep(0.6)
+        tid(page, "open-city").click(); advance(page, 600)
         tid(page, "city-row-suburbs").click(force=True); shot(page, "17-suburbs-locked", 0.4)
     except Exception as e:
         report["errors"].append(f"suburbs lock shot failed: {e}")
     # 10c. Cut-scene props: the Pier 9 sold sign and Nonna's recipe card
     pier = dict(MID_SAVE, active="waterfront", seenScenes=["downtown-1", "downtown-2", "downtown-3", "downtown-4", "suburbs-1", "suburbs-2", "suburbs-3", "suburbs-4", "waterfront-1", "waterfront-2"],
                 shops=dict(MID_SAVE["shops"], waterfront=shop(prep=20, ovens=18, counter=20, drivers=12, sold=15100)))
-    page = seeded_page(browser, pier); time.sleep(3)
+    page = seeded_page(browser, pier); advance(page, 3000)
     if page.locator('[data-testid="collect-offline"]').count():
-        tid(page, "collect-offline").click(); time.sleep(0.8)
+        tid(page, "collect-offline").click(); advance(page, 800)
     if page.locator('[data-testid="cutscene"]').count():
         shot(page, "18-sold-sign-scene", 0.6)

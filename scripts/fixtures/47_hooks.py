@@ -36,7 +36,7 @@ def run(ctx):
             vw = page.viewport_size["width"]
             if bb and bb["x"] >= 4 and bb["x"] + bb["width"] <= vw - 4:
                 break
-            page.wait_for_timeout(100)
+            advance(page, 100)
         tid(page, "golden-pizza").click(force=True)
         expect(page, "golden-pop", 3000)
         shot(page, "47c-golden-lucky-tap", 0.25)

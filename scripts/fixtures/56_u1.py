@@ -6,11 +6,12 @@
 64 vanity tab (+ 64b booster shelf)   65 sidewalk on MAX
 
 Every save is seeded; the numbers are the late game's (about 7 pies/s in the Suburbs, a 5 minute challenge asks for about 2,900).
-Shots 62 and 62b run on a shifted clock (a Friday at 16:30 and 18:48), because the events follow the device's local time.
+Shots 62 and 62b run on a shifted clock (the Friday after T0, at 16:30 and 18:48), because the events follow the device's local time.
+`fresh_page` and `clock_page` are in shots_lib (thin wrappers on `seeded_page`).
 """
-import datetime, json, time
+import datetime
 
-from shots_lib import *  # seeded_page, settle, shot, tid, shop, hood_save, MID_SAVE, IDS, day_str, report, KEY, URL, AUDIO_PROBE
+from shots_lib import *  # seeded_page, fresh_page, clock_page, settle, shot, tid, shop, hood_save, MID_SAVE, IDS, day_str, T0, T0_MS, report
 
 SCENES = lambda hoods: [f"{h}-{b}" for h in hoods for b in range(1, 5)]
 DECOR3 = {"plants": 3, "flooring": 3, "tables": 3, "walls": 3, "signage": 3}
@@ -34,7 +35,7 @@ def endgame_save(**over):
         "uptown": shop(prep=56, ovens=50, grade=2, counter=54, drivers=28, tables=36, footprint=1, sold=6.1e5, decor=DECOR3),
     }
     sv = dict(MID_SAVE, cash=3.2e14, totalEarned=9.5e15, vehicle=3, active="suburbs", shops=shops, cityComplete=True,
-              seenScenes=SCENES(IDS), scrapbookViewed=24, lastSavedAt=int(time.time() * 1000), playSeconds=9000)
+              seenScenes=SCENES(IDS), scrapbookViewed=24, lastSavedAt=T0_MS, playSeconds=9000)
     sv["rewards"] = {"giftShownDay": day_str(), "diamonds": 340}
     sv.update(over)
     return sv
@@ -42,7 +43,7 @@ def endgame_save(**over):
 
 def attack_state(shop_id, **kw):
     """An attack that is open this week (the week roll sees nothing new: seenWeek is this week's number)."""
-    w = week_number(int(time.time() * 1000))
+    w = week_number(T0_MS)
     st = {"armedWeek": w - 1, "seenWeek": w, "target": shop_id, "open": True, "defended": [], "challenge": None, "retryAt": 0}
     st.update(kw)
     return {"counterattack": st}
@@ -52,8 +53,8 @@ def skip_boston(page, wait=4000):
     """The Boston card opens once after the finale: tap it away. It covers the whole screen, so do this BEFORE settle(), which
     needs to click the gift calendar's close button underneath."""
     try:
-        tid(page, "soon-card").wait_for(timeout=wait)
-        tid(page, "soon-card").click(); time.sleep(0.6)
+        wait_for(page, "soon-card", wait)
+        tid(page, "soon-card").click(); advance(page, 600)
     except Exception:
         pass
 
@@ -65,55 +66,9 @@ def ready(page):
     skip_boston(page, 500)
 
 
-def fresh_page(browser, save, ahead_ms=20000):
-    """A seeded page whose save is stamped at the PAGE's clock (plus a little ahead): a running challenge lapses when the app was away
-    for a second or more (engine onOffline), and the script's own clock is already seconds behind by the time the page has booted (G103)."""
-    c = browser.new_context(viewport={"width": 393, "height": 852}, device_scale_factor=2, is_mobile=True, has_touch=True)
-    c.set_default_timeout(20000)
-    c.add_init_script(AUDIO_PROBE)
-    c.add_init_script(f"""if (!sessionStorage.getItem('seeded')) {{
-        const s = {json.dumps(json.dumps(save))};
-        const g = JSON.parse(s); g.lastSavedAt = Date.now() + {ahead_ms};
-        localStorage.setItem({json.dumps(KEY)}, JSON.stringify(g));
-        localStorage.setItem('slice-empire/boston-seen', '1');
-        sessionStorage.setItem('seeded', '1'); }}""")
-    pg = c.new_page()
-    pg.on("console", lambda m: m.type == "error" and report["errors"].append(f"console: {m.text}"))
-    pg.on("pageerror", lambda e: report["errors"].append(f"pageerror: {e}"))
-    pg.goto(URL)
-    skip_title(pg)
-    return c, pg
-
-
-def clock_page(browser, save, when):
-    """A seeded page whose Date is shifted to `when` (a local datetime), for the events."""
-    target = int(when.timestamp() * 1000)
-    c = browser.new_context(viewport={"width": 393, "height": 852}, device_scale_factor=2, is_mobile=True, has_touch=True)
-    c.set_default_timeout(20000)
-    c.add_init_script(AUDIO_PROBE)
-    c.add_init_script(f"""(() => {{
-        const Real = Date, off = {target} - Real.now();
-        class Shifted extends Real {{
-            constructor(...a) {{ if (a.length === 0) super(Real.now() + off); else super(...a); }}
-            static now() {{ return Real.now() + off; }}
-        }}
-        window.Date = Shifted;
-    }})();""")
-    save = dict(save, lastSavedAt=target)
-    c.add_init_script(f"""if (!sessionStorage.getItem('seeded')) {{
-        localStorage.setItem({json.dumps(KEY)}, {json.dumps(json.dumps(save))});
-        sessionStorage.setItem('seeded', '1'); }}""")
-    pg = c.new_page()
-    pg.on("console", lambda m: m.type == "error" and report["errors"].append(f"console: {m.text}"))
-    pg.on("pageerror", lambda e: report["errors"].append(f"pageerror: {e}"))
-    pg.goto(URL)
-    skip_title(pg)
-    return c, pg
-
-
 def next_weekday(weekday, hour, minute):
     """The coming local `weekday` (Monday = 0) at hour:minute, at least a day away."""
-    d = datetime.datetime.now() + datetime.timedelta(days=1)
+    d = T0 + datetime.timedelta(days=1)
     while d.weekday() != weekday:
         d += datetime.timedelta(days=1)
     return d.replace(hour=hour, minute=minute, second=0, microsecond=0)
@@ -137,7 +92,7 @@ def run(ctx):
     try:
         sv = endgame_save(x=attack_state("waterfront"))
         page = seeded_page(browser, sv); ready(page)
-        tid(page, "open-city").click(); time.sleep(1.0)
+        tid(page, "open-city").click(); advance(page, 1000)
         expect(page, "city-attack-waterfront", 3000)  # the marked tile
         shot(page, "57-city-stars-boston", 0.8)
         shot(page, "59b-attack-marked-tile", 0.1)
@@ -172,10 +127,7 @@ def run(ctx):
         c, page = fresh_page(browser, endgame_save(x=attack_state("suburbs", challenge=ch))); settle(page, 1.0)
         # the win is paid on the next tick: wait for the result chip (G103), then for the recipe card turning over in the middle
         expect(page, "challenge-won", 10000)
-        try:
-            tid(page, "recipe-reveal").wait_for(timeout=3000)
-        except Exception:
-            pass
+        until(page, lambda: is_up(page, "recipe-reveal"), 3000)  # no miss to report: the shot is of whichever moment comes
         shot(page, "61-challenge-won", 0.9)
         c.close()
     except Exception as e:
@@ -202,11 +154,11 @@ def run(ctx):
         shops["downtown"] = shop(prep=52, ovens=48, grade=2, counter=50, drivers=20, tables=30, footprint=2, sold=4e5)
         shops["suburbs"] = shop(prep=51, ovens=44, grade=2, counter=46, drivers=18, tables=28, footprint=2, sold=3e5)
         shops["waterfront"] = shop(prep=30, ovens=28, grade=1, counter=30, drivers=12, tables=18, footprint=1, sold=1e5)
-        sv = dict(MID_SAVE, cash=2e6, vehicle=3, active="suburbs", shops=shops, seenScenes=SCENES(hoods), scrapbookViewed=12, lastSavedAt=int(time.time() * 1000), playSeconds=5000)
+        sv = dict(MID_SAVE, cash=2e6, vehicle=3, active="suburbs", shops=shops, seenScenes=SCENES(hoods), scrapbookViewed=12, lastSavedAt=T0_MS, playSeconds=5000)
         sv["rewards"] = {"giftShownDay": day_str()}
-        sv["x"] = {"counterattack": {"armedWeek": 1, "seenWeek": week_number(int(time.time() * 1000)), "target": None, "open": False, "defended": ["downtown"], "challenge": None, "retryAt": 0}}
+        sv["x"] = {"counterattack": {"armedWeek": 1, "seenWeek": week_number(T0_MS), "target": None, "open": False, "defended": ["downtown"], "challenge": None, "retryAt": 0}}
         page = seeded_page(browser, sv); settle(page, 3.0)
-        tid(page, "open-scrapbook").click(); time.sleep(0.8)
+        tid(page, "open-scrapbook").click(); advance(page, 800)
         tid(page, "scrapbook-tab-recipes").click()
         shot(page, "63-scrapbook-recipes", 0.8)
     except Exception as e:
@@ -217,7 +169,7 @@ def run(ctx):
         rw = {"giftShownDay": day_str(), "diamonds": 340, "cosmetics": ["oven-gold", "scooter-mint"], "worn": ["oven-gold"],
               "boosters": [{"mult": 2, "seconds": 900}, {"mult": 2, "seconds": 3600}]}
         page = seeded_page(browser, endgame_save(rewards=rw)); ready(page)
-        tid(page, "shop-chip").click(); time.sleep(0.8)
+        tid(page, "shop-chip").click(); advance(page, 800)
         shot(page, "64-vanity-tab", 0.8)
         tid(page, "shop-tab-1").click()
         shot(page, "64b-booster-shelf", 0.6)

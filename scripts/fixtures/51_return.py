@@ -12,7 +12,7 @@ def run(ctx):
         sv = hooks_save()
         sv["nightOven"] = oven
         if away_hours:
-            sv["lastSavedAt"] = int(time.time() * 1000) - int(away_hours * 3600 * 1000)
+            sv["lastSavedAt"] = T0_MS - int(away_hours * 3600 * 1000)
         return sv
     try:
         page = seeded_page(browser, return_save()); quiet_start(page)

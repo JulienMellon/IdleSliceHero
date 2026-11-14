@@ -17,7 +17,7 @@ def run(ctx):
     away = dict(MID_SAVE, lastSavedAt=now_ms - 2 * 3600 * 1000)
     page = seeded_page(browser, away)
     try:
-        tid(page, "collect-offline").wait_for(timeout=8000)
+        wait_for(page, "collect-offline", 8000)
     except Exception as e:
         report["errors"].append(f"offline popup missing: {e}")
     shot(page, "07-offline-popup", 0.8)

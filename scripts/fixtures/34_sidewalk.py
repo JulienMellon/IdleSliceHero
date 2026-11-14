@@ -23,7 +23,7 @@ def run(ctx):
         rushy = dict(late, shops=dict(late["shops"], industrial=dict(late["shops"]["industrial"], drivers=40)))
         page = seeded_page(browser, rushy); settle(page)
         for _ in range(8):
-            tap_shop(page); time.sleep(0.05)
+            tap_shop(page); advance(page, 50)
         shot(page, "36-rush-combo", 0.05)
     except Exception as e:
         report["errors"].append(f"rush combo shot failed: {e}")
