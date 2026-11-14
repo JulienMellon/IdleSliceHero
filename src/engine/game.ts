@@ -3,7 +3,7 @@
 // Every neighborhood has its own pizzeria. Each pizzeria is a pipeline:
 //   Prep → Ovens → Counter → customers (delivery drivers + walk-ins at the tables)
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
-import { HEADS, BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEAD_COST_DOWNTOWN, HEAD_KINDS, HEAD_SHARE, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
+import { HEADS, BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEADS_OFFLINE_SHARE, HEAD_COST_DOWNTOWN, HEAD_KINDS, HEAD_SHARE, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
 import { BOOST_MAX_AHEAD_MS, DAILY_CHESTS, DAILY_TASK_COUNT, MAX_BOOSTERS, MAX_CONCURRENT_BOOSTS, TASK_KINDS, WEEKLY_TASK_COUNT, type TaskKind } from '../content/rewards';
 import { BONUS, NIGHT_OVEN, ORDER } from '../content/hooks';
 import { cosmeticPart } from '../content/endgame';
@@ -16,15 +16,20 @@ import { advanceLine, clampWalkInDebt, emptyLine, LINE, nextTap, piesInFlight, r
 export const SAVE_VERSION = 5;
 export const SHOP_IDS = NEIGHBORHOODS.map((n) => n.id);
 /**
- * C106: the economy marker. 2 = the v5.13 retune (costMult = orderValue, 4 h offline cap, Pier 9 $120M). A save without it
- * loads as 2 with its cash untouched. Any later retune that changes prices or income must bump this number and decide in the
- * same change what a save with the old number gets (a refund, a bonus, nothing); it must never silently reprice a save.
+ * C106: the economy marker. 2 = the v5.13 retune (costMult = orderValue, 4 h offline cap, Pier 9 $120M); 3 = the v5.16 rules
+ * (managers and heads priced apart, three heads sell half speed while you are away, station prices grow at their own rates,
+ * cash rewards cut). A save without the marker is from before the marker existed and loads as 2; one that has it keeps its own.
+ * Old saves keep their cash and hires untouched (nothing is refunded or repriced: they simply buy at the new prices from now on).
+ * Any later retune that changes prices or income must bump this number and decide in the same change what a save with the old
+ * number gets (a refund, a bonus, nothing); it must never silently reprice a save.
  */
-export const ECONOMY = 2;
+export const ECONOMY = 3;
+/** The economy of a save that carries no marker. */
+const ECONOMY_BEFORE_MARKER = 2;
 
 export interface Shop {
   built: boolean;
-  /** Has a General Manager: every station runs itself, income ×GM_BOOST, and it earns while you're away. */
+  /** Has a General Manager: every station runs itself, income ×GM_BOOST, and it earns at full rate while you're away (three heads alone earn HEADS_OFFLINE_SHARE of it away, without the boost). */
   managed: boolean;
   /** Station heads hired here: each runs its station on its own. */
   heads: Record<HeadKind, boolean>;
@@ -458,8 +463,8 @@ export function migrate(raw: unknown, now: number): GameState {
   const seen = Array.isArray(r.seenScenes) ? (r.seenScenes as unknown[]).filter((x): x is string => typeof x === 'string') : [];
   const game: GameState = {
     ...base,
-    // C106: a save without the marker is stamped with the current economy; one that has it keeps its own
-    economy: int(r.economy, ECONOMY, 0),
+    // C106: a save without the marker is from before it existed (economy 2); one that has it keeps its own
+    economy: int(r.economy, ECONOMY_BEFORE_MARKER, 0),
     cash: Math.max(0, num(r.cash, 0)),
     totalEarned: Math.max(0, num(r.totalEarned, 0)),
     vehicle: int(r.vehicle, 0, 0, VEHICLES.length - 1),
@@ -541,6 +546,10 @@ export const finaleId = (id: NeighborhoodId) => sceneId(id, 4);
 export function upgradeCost(baseCost: number, timesBought: number, growth: number = TUNING.costGrowth): number {
   return Math.ceil(baseCost * Math.pow(growth, timesBought));
 }
+
+/** A station's price for its next level: its base cost × the shop's cost multiplier, growing by the station's own `growth` per level bought (STATIONS; else TUNING.costGrowth). */
+export const stationCost = (id: NeighborhoodId, key: keyof typeof STATIONS, timesBought: number): number =>
+  upgradeCost(STATIONS[key].cost * def(id).costMult, timesBought, STATIONS[key].growth ?? TUNING.costGrowth);
 
 export function milestoneMultiplier(level: number): number {
   return TUNING.milestones.reduce((m, at) => (level >= at ? m * 2 : m), 1);
@@ -709,7 +718,7 @@ export const isHeadUpgrade = (u: Upgrade): u is HeadUpgrade => u in HEAD_OF;
 export const headOf = (u: HeadUpgrade): HeadKind => HEAD_OF[u];
 
 /** What hiring a station head costs in this pizzeria. */
-export const headCost = (id: NeighborhoodId, k: HeadKind) => (id === 'downtown' ? HEAD_COST_DOWNTOWN[k] : Math.ceil(def(id).managerCost * HEAD_SHARE[k]));
+export const headCost = (id: NeighborhoodId, k: HeadKind) => (id === 'downtown' ? HEAD_COST_DOWNTOWN[k] : Math.ceil(def(id).headsCost * HEAD_SHARE[k]));
 export const allHeadsHired = (shop: Shop) => HEAD_KINDS.every((k) => shop.heads[k]);
 export type BuyResult = { ok: true; state: GameState } | { ok: false; reason: string };
 
@@ -719,15 +728,15 @@ export function upgradeCostOf(s: GameState, id: NeighborhoodId, what: Upgrade): 
   const m = def(id).costMult;
   switch (what) {
     case 'prep':
-      return upgradeCost(STATIONS.prep.cost * m, shop.prep - 1);
+      return stationCost(id, 'prep', shop.prep - 1);
     case 'ovens':
-      return upgradeCost(STATIONS.ovens.cost * m, shop.ovens - 1);
+      return stationCost(id, 'ovens', shop.ovens - 1);
     case 'counter':
-      return upgradeCost(STATIONS.counter.cost * m, shop.counter - 1);
+      return stationCost(id, 'counter', shop.counter - 1);
     case 'drivers':
-      return Math.ceil(upgradeCost(STATIONS.drivers.cost * m, shop.drivers - 1) * (perkOf(id, shop)?.driversCostMult ?? 1));
+      return Math.ceil(stationCost(id, 'drivers', shop.drivers - 1) * (perkOf(id, shop)?.driversCostMult ?? 1));
     case 'tables':
-      return upgradeCost(STATIONS.tables.cost * m, shop.tables - 1);
+      return stationCost(id, 'tables', shop.tables - 1);
     case 'grade':
       return shop.grade + 1 < OVEN_GRADES.length ? Math.ceil(OVEN_GRADES[shop.grade + 1].cost * m) : null;
     case 'expand':
@@ -1017,14 +1026,15 @@ export interface OfflineResult {
   earned: number;
   /** Cash each pizzeria made while away (only those that made any), and the pies it sold. */
   byShop: { id: NeighborhoodId; earned: number; managed: boolean; pies: number }[];
-  /** Built pizzerias (not Downtown) without a GM: they only finish what was already on the line while you're away. */
+  /** Built pizzerias (not Downtown) missing a GM and a head: they only finish what was already on the line while you're away. A shop with all three heads and no GM is not idle: it sells HEADS_OFFLINE_SHARE of its rate. */
   idle: NeighborhoodId[];
 }
 
 /**
- * Closed-form catch-up for time away. A pizzeria with a GM sells at its rate (whole pies) and everything on its
- * line; one without a GM only finishes the jobs already running and pays the carriers already walking out
- * (heads don't work while you're away; the GM does). Each line is settled, so nothing is paid twice.
+ * Closed-form catch-up for time away. A pizzeria with a GM sells at its rate (whole pies) and everything on its line. One with
+ * all three heads and no GM sells HEADS_OFFLINE_SHARE of that rate, without the GM's boost (v5.16: the heads keep it going,
+ * at half speed). One missing a head only finishes the jobs already running and pays the carriers already walking out.
+ * Each line is settled, so nothing is paid twice.
  */
 export function offlineTick(s: GameState, seconds: number, boost = 1, now?: number): { state: GameState; byShop: { id: NeighborhoodId; pies: number; base: number; extra: number }[] } {
   const shops = { ...s.shops };
@@ -1039,11 +1049,13 @@ export function offlineTick(s: GameState, seconds: number, boost = 1, now?: numb
     let paid: number;
     let line: Line;
     const fx = featureMults(s, id, now ?? s.lastSavedAt);
-    if (shop.managed) {
+    if (runsItself(shop)) {
+      // a GM sells at the full rate; three heads alone sell their share of it (and `valuePerPizza` has no GM boost without one)
+      const share = shop.managed ? 1 : HEADS_OFFLINE_SHARE;
       const inFlight = piesInFlight(shop.line);
       const carried = shop.line.departures.reduce((t, d) => t + d.cash, 0);
       const carriedPies = shop.line.departures.reduce((t, d) => t + d.n, 0);
-      const rest = Math.floor(shopRate(shop, s.vehicle, fx) * seconds) + inFlight - carriedPies;
+      const rest = Math.floor(shopRate(shop, s.vehicle, fx) * share * seconds) + inFlight - carriedPies;
       pies = carriedPies + rest;
       // `carried` was already boosted when it left the shop: only the rest takes the boost
       paid = carried + rest * valuePerPizza(id, shop, s.vehicle, fx) * boost;
@@ -1075,7 +1087,7 @@ export function offlineTick(s: GameState, seconds: number, boost = 1, now?: numb
 /** Away longer than the offline cap by less than this is not "capped": the popup would say "Capped at 4h (away 4h)" (G92). */
 export const CAPPED_SLACK_SECONDS = 60;
 
-/** Catch up after the app was closed: GM shops run; the others finish what was already on the line. */
+/** Catch up after the app was closed: GM shops run, three-head shops run at half speed, the others finish what was already on the line. */
 export function applyOffline(s: GameState, now: number): OfflineResult {
   const elapsed = Math.max(0, (now - s.lastSavedAt) / 1000);
   const cap = offlineCapOf(s);
@@ -1089,7 +1101,7 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
   for (const f of FEATURES) if (f.onOffline) state = f.onOffline(state, seconds, now, s);
   const rows = byShop.map((r) => ({ id: r.id, managed: s.shops[r.id].managed, earned: r.base + r.extra, pies: r.pies })).filter((x) => x.earned > 0);
   // Downtown's manager is Nonna's story beat, not a hire the player can make, so it is never named as idle
-  const idle = SHOP_IDS.filter((id) => id !== 'downtown' && s.shops[id].built && !s.shops[id].managed);
+  const idle = SHOP_IDS.filter((id) => id !== 'downtown' && s.shops[id].built && !runsItself(s.shops[id]));
   return { state: { ...state, lastSavedAt: now }, seconds, cap, capped: elapsed - cap >= CAPPED_SLACK_SECONDS, awaySeconds: elapsed, earned: state.cash - s.cash, byShop: rows, idle };
 }
 
@@ -1157,7 +1169,7 @@ export function buildGain(s: GameState, id: NeighborhoodId): number {
 }
 
 /** Everything it takes to get a new pizzeria running itself: the build, three heads and a GM. */
-export const buildAllIn = (id: NeighborhoodId) => def(id).buildCost + 2 * def(id).managerCost;
+export const buildAllIn = (id: NeighborhoodId) => def(id).buildCost + def(id).headsCost + def(id).managerCost;
 
 export interface Bundle {
   /** Upgrades to buy, in order (may repeat, may include an expansion). */

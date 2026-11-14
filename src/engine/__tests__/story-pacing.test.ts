@@ -5,17 +5,19 @@ import { pickScene, resumeSceneEnd } from '../cutscene-input';
 import * as G from '../game';
 
 const scene = (id: string) => HOME_SCENES.find((s) => s.id === id)!;
+/** The pizzas a count-triggered scene waits for (v5.16: fitted in scripts/pacing-fit.ts session1, so the tests read them). */
+const countOf = (id: string): number => (scene(id).trigger as { count: number }).count;
 const withShop = (s: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } } });
 const seenUpTo = (ids: string[], playSeconds = 0, sceneAt: Record<string, number> = {}): G.GameState => ({ ...G.newGame(0), seenScenes: ids, playSeconds, sceneAt });
 const LATE = 1e9; // ms: long after any kitchen tap
 
 describe('story pacing (v3.7)', () => {
   it('the first scene after a launch or return plays straight away', () => {
-    const s = withShop(seenUpTo(['downtown-1'], 10), 'downtown', { sold: 20 });
+    const s = withShop(seenUpTo(['downtown-1'], 10), 'downtown', { sold: countOf('downtown-2') });
     expect(pickScene(s, HOME_SCENES, LATE, 0, false, null)?.id).toBe('downtown-2');
   });
   it('after a scene, the next waits for 90 s of play', () => {
-    const s = withShop(seenUpTo(['downtown-1'], 100), 'downtown', { sold: 20 });
+    const s = withShop(seenUpTo(['downtown-1'], 100), 'downtown', { sold: countOf('downtown-2') });
     expect(pickScene(s, HOME_SCENES, LATE, 0, false, 100 - 30)).toBeNull();
     expect(pickScene(s, HOME_SCENES, LATE, 0, false, 100 - STORY_PACING.gapSeconds)?.id).toBe('downtown-2');
   });
@@ -24,15 +26,19 @@ describe('story pacing (v3.7)', () => {
     expect(pickScene(s, HOME_SCENES, LATE, 0, false, 99)?.id).toBe('suburbs-1');
   });
   it('beat 4 waits 300 s of play after beat 3 (Downtown: 60 s)', () => {
-    const sub = withShop(seenUpTo(['suburbs-1', 'suburbs-2', 'suburbs-3', 'downtown-1', 'downtown-2', 'downtown-3', 'downtown-4'], 1000, { 'suburbs-3': 800 }), 'suburbs', { built: true, sold: 9000 });
+    const sub = withShop(seenUpTo(['suburbs-1', 'suburbs-2', 'suburbs-3', 'downtown-1', 'downtown-2', 'downtown-3', 'downtown-4'], 1000, { 'suburbs-3': 800 }), 'suburbs', { built: true, sold: countOf('suburbs-4') });
     expect(pickScene(sub, HOME_SCENES, LATE, 0, false, null)).toBeNull(); // 200 s since beat 3
     expect(pickScene({ ...sub, playSeconds: 1100 }, HOME_SCENES, LATE, 0, false, null)?.id).toBe('suburbs-4');
-    const dt = withShop(seenUpTo(['downtown-1', 'downtown-2', 'downtown-3'], 500, { 'downtown-3': 400 }), 'downtown', { sold: 200 });
+    const dt = withShop(seenUpTo(['downtown-1', 'downtown-2', 'downtown-3'], 500, { 'downtown-3': 400 }), 'downtown', { sold: countOf('downtown-4') });
     expect(pickScene({ ...dt, playSeconds: 450 }, HOME_SCENES, LATE, 0, false, null)).toBeNull(); // 50 s
     expect(pickScene({ ...dt, playSeconds: 470 }, HOME_SCENES, LATE, 0, false, null)?.id).toBe('downtown-4'); // 70 s
   });
-  it('downtown-3 comes at 45 pizzas', () => {
-    expect(scene('downtown-3').trigger).toMatchObject({ count: 45 });
+  it('the count-triggered scenes wait for more pizzas, beat after beat', () => {
+    for (const hood of ['downtown', 'suburbs']) {
+      const c = [2, 3, 4].map((n) => countOf(`${hood}-${n}`));
+      expect(c[0]).toBeLessThan(c[1]);
+      expect(c[1]).toBeLessThan(c[2]);
+    }
   });
   it('play time only grows while playing, not offline', () => {
     const s = G.newGame(0);

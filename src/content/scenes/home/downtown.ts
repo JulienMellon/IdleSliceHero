@@ -59,7 +59,7 @@ export const DOWNTOWN_SCENES: Scene[] = [
     neighborhood: 'downtown',
     beat: 2,
     title: 'First Regulars',
-    trigger: { kind: 'deliveries', neighborhood: 'downtown', count: 12 },
+    trigger: { kind: 'deliveries', neighborhood: 'downtown', count: 424 },
     panels: [
       {
         backdrop: 'shop',
@@ -94,7 +94,7 @@ export const DOWNTOWN_SCENES: Scene[] = [
     neighborhood: 'downtown',
     beat: 3,
     title: 'Corporate Crust',
-    trigger: { kind: 'deliveries', neighborhood: 'downtown', count: 45 },
+    trigger: { kind: 'deliveries', neighborhood: 'downtown', count: 941 },
     panels: [
       {
         backdrop: 'shop',
@@ -140,7 +140,7 @@ export const DOWNTOWN_SCENES: Scene[] = [
     neighborhood: 'downtown',
     beat: 4,
     title: 'The Secret Sauce',
-    trigger: { kind: 'deliveries', neighborhood: 'downtown', count: 150 },
+    trigger: { kind: 'deliveries', neighborhood: 'downtown', count: 2217 },
     reward: 'auto-bake',
     panels: [
       {

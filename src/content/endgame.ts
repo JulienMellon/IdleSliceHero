@@ -37,7 +37,7 @@ export const COUNTERATTACK = {
   /** The challenge asks for challengeSeconds × the shop's current pizza rate × this. */
   targetMargin: 1.25,
   /** A win pays this many minutes of boost-free citywide income… */
-  rewardMinutes: 30,
+  rewardMinutes: 2,
   /** …and these diamonds. */
   rewardDiamonds: 15,
   /** A lost challenge may be tried again this long after (real milliseconds). */

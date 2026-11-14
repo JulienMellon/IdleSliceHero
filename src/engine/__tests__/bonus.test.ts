@@ -156,14 +156,14 @@ describe('what a tap pays', () => {
     return untilVisible({ ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, prep: 20, ovens: 20, counter: 20, drivers: 12, tables: 8 } } });
   };
 
-  test('45 s of citywide income, in cash and totalEarned, counted in stats.bonusTaps', () => {
+  test('BONUS.incomeSeconds of citywide income, in cash and totalEarned, counted in stats.bonusTaps', () => {
     const s = rich();
     const income = R.rewardIncome(s);
     expect(income).toBeGreaterThan(1);
     const r = B.collectBonus(s)!;
     expect(r.lucky).toBe(false);
     expect(r.paid).toBeCloseTo(income * BONUS.incomeSeconds, 6);
-    expect(r.paid).toBeCloseTo(R.minutesToCash(s, 0.75), 6);
+    expect(r.paid).toBeCloseTo(R.minutesToCash(s, BONUS.incomeSeconds / 60), 6);
     expect(r.state.cash).toBeCloseTo(s.cash + r.paid, 6);
     expect(r.state.totalEarned).toBeCloseTo(s.totalEarned + r.paid, 6);
     expect(r.state.stats.bonusTaps).toBe(1);
@@ -182,7 +182,7 @@ describe('what a tap pays', () => {
     expect(B.collectBonus(boosted)!.paid).toBeCloseTo(B.collectBonus(plain)!.paid, 9);
   });
 
-  test('every 5th is the lucky slice: 3 min of income, ×4 a normal one', () => {
+  test('every 5th is the lucky slice: BONUS.luckyIncomeSeconds of income, ×4 a normal one', () => {
     expect(LUCKY_MULT).toBe(4);
     expect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14].map(B.isLucky)).toEqual([false, false, false, false, true, false, false, false, false, true, true]);
     let s = rich();
@@ -277,8 +277,8 @@ describe('v5.14 fix round (G93, D437, D438, D445, D446)', () => {
   });
 
   test('D446: the pop says what the payout is worth in time', () => {
-    expect(B.salesLine(false)).toBe('+45 s of sales');
-    expect(B.salesLine(true)).toBe('+3 min of sales');
+    expect(B.salesLine(false)).toBe(`+${BONUS.incomeSeconds} s of sales`);
+    expect(B.salesLine(true)).toBe(BONUS.luckyIncomeSeconds >= 120 && BONUS.luckyIncomeSeconds % 60 === 0 ? `+${BONUS.luckyIncomeSeconds / 60} min of sales` : `+${BONUS.luckyIncomeSeconds} s of sales`);
   });
 
   test('D445: only the very first pizza, with no tap yet, is the gift', () => {

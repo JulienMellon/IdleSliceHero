@@ -53,7 +53,7 @@ export const SUBURBS_SCENES: Scene[] = [
     neighborhood: 'suburbs',
     beat: 2,
     title: 'A Real Goal',
-    trigger: { kind: 'deliveries', neighborhood: 'suburbs', count: 300 },
+    trigger: { kind: 'deliveries', neighborhood: 'suburbs', count: 12430 },
     panels: [
       {
         backdrop: 'suburbs',
@@ -86,7 +86,7 @@ export const SUBURBS_SCENES: Scene[] = [
     neighborhood: 'suburbs',
     beat: 3,
     title: 'Sponsored by Sadness',
-    trigger: { kind: 'deliveries', neighborhood: 'suburbs', count: 2000 },
+    trigger: { kind: 'deliveries', neighborhood: 'suburbs', count: 28045 },
     panels: [
       {
         backdrop: 'suburbs',
@@ -130,7 +130,7 @@ export const SUBURBS_SCENES: Scene[] = [
     neighborhood: 'suburbs',
     beat: 4,
     title: 'Mudhens Rise',
-    trigger: { kind: 'deliveries', neighborhood: 'suburbs', count: 8000 },
+    trigger: { kind: 'deliveries', neighborhood: 'suburbs', count: 83421 },
     perk: true,
     panels: [
       {

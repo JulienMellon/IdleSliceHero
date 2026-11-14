@@ -6,6 +6,7 @@ import type { NeighborhoodId } from '../content/types';
 import { seededUnit } from './bonus';
 import { pizzas } from './format';
 import { sceneId, runsItself, shopRate, SHOP_IDS, type ActiveOrder, type GameState, type OrderOffer, type OrderState, type Shop } from './game';
+import { LINE } from './pipeline';
 import { minutesToCash, rewardsUnlocked } from './rewards';
 
 /** Orders start when the Suburbs shop is built (which needs Nonna's takeover, so never during the tutorial). */
@@ -24,19 +25,32 @@ export function friendlyTarget(raw: number): number {
 }
 
 /**
- * Pies to sell: the shop's pies per second × the window × the margin, so waiting alone falls a fifth short and a rush or an
- * upgrade made during the order closes the gap. A shop that doesn't run itself asks for a fixed number of taps' worth.
+ * Pies per second the shop sells while rush is held (ORDER.rushTapsPerSecond taps a second): each second of tapping moves every
+ * running job on by 1 + LINE.rushSeconds × taps seconds, so every stage, the counter's serve job (which runs at the customers'
+ * demand) included, runs that much faster. Measured on the engine (orders.test.ts) in kitchen- and demand-limited shops alike.
+ * Only a shop with a General Manager can rush (three heads alone have nothing to tap); any other sells at its plain rate.
+ */
+export function rushedRate(shop: Shop, vehicle: number): number {
+  const rate = shopRate(shop, vehicle);
+  return shop.managed ? rate * (1 + LINE.rushSeconds * ORDER.rushTapsPerSecond) : rate;
+}
+
+/**
+ * Pies to sell (v5.16): what the shop sells in the window with rush held the whole time × a margin under 1, so a player who
+ * taps through the window wins without buying anything, and one who only waits falls short (the rush adds far more than the
+ * margin's slack). A shop without a General Manager has no rush, so its target is the plain rate's (waiting wins it). A shop that
+ * doesn't run itself at all asks for a fixed number of taps' worth.
  */
 export function orderTarget(s: GameState, hood: NeighborhoodId): number {
   const shop: Shop = s.shops[hood];
   if (!runsItself(shop)) return ORDER.unmanagedTarget;
-  return friendlyTarget(shopRate(shop, s.vehicle) * ORDER.windowSeconds * ORDER.targetMargin);
+  return friendlyTarget(rushedRate(shop, s.vehicle) * ORDER.windowSeconds * ORDER.targetMargin);
 }
 
 /** Pies sold toward an order so far, 0..target. */
 export const orderProgress = (s: GameState, a: ActiveOrder): number => Math.max(0, Math.min(a.target, Math.floor(s.shops[a.hood].sold - a.startSold)));
 
-/** What finishing pays right now: 5 minutes of citywide income (the rewards' income, which ignores boosts). */
+/** What finishing pays right now: ORDER.rewardMinutes (1.5) of citywide income (the rewards' income, which ignores boosts). */
 export const orderReward = (s: GameState): number => minutesToCash(s, ORDER.rewardMinutes);
 
 /** A character's offer line with the pie count filled in. */

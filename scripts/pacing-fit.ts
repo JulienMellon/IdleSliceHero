@@ -3,6 +3,8 @@
 //
 //   npx tsx scripts/pacing-fit.ts                 fit build costs (and Uptown's cost multiplier) to the targets below
 //   npx tsx scripts/pacing-fit.ts check           just print the unlock days of the current tuning, all four sim rows
+//   npx tsx scripts/pacing-fit.ts session1        v5.16: the first 40 minutes (continuous, rewards on) against SESSION1
+//   npx tsx scripts/pacing-fit.ts managers        v5.16: when each shop's heads and manager arrive (check-in player, rewards on) and the reward rules
 //   OV=3,10,27,75,200,550 CM=1,4.5,12,34,90,250 MCR=0.5 npx tsx scripts/pacing-fit.ts
 //   K=300 RHO=0.45 MCR=0.5 npx tsx scripts/pacing-fit.ts fit3   v5.13: proportional costs. Per pizzeria one free number (its order value):
 //                                    costMult = RHO x orderValue, buildCost = K x costMult, managerCost = MCR x buildCost; ov is bisected to the day target.
@@ -17,7 +19,187 @@ import * as G from '../src/engine/game';
 import { getFeature } from '../src/engine/features';
 import { ackAttack, counterattack, attackView, startChallenge } from '../src/engine/features/counterattack';
 import { masteryStars, masteryTotal } from '../src/engine/features/mastery';
-import { applyCfg, endSummary, options, run, sessionStats, type Cfg } from './review/sim2';
+import { applyCfg, decisionMetric, endSummary, INSTALL, options, reportLines, rewardRules, run, sessionStats, type Cfg } from './review/sim2';
+
+
+// ---- v5.16 (card E0): the economy rules after playtest 3. Every target the tests pin is a named constant here, so the version's final
+// refit (card E2b) changes numbers and not tests. ----
+
+/** Session 1 (card E0 step 6): the continuous player, rewards on, from the first launch to the Suburbs finale. Times in minutes. */
+export const SESSION1 = {
+  /** Downtown's three heads, in the order they are hired, each within `headsTolerance`. */
+  downtownHeads: [2, 5, 8],
+  headsTolerance: 1,
+  /** Nonna takes over (downtown-4). */
+  takeover: 10,
+  takeoverTolerance: 1.5,
+  /** Suburbs opens (it is built). */
+  suburbsOpens: 16,
+  opensTolerance: 2,
+  suburbsManager: 28,
+  managerTolerance: 3,
+  suburbsFinale: 40,
+  finaleTolerance: 5,
+  /** A purchase at least this often at the median, and never a wait over this (seconds). */
+  medianBuyGapSeconds: 60,
+  maxBuyGapSeconds: 120,
+  /** A scene at least this often (minutes), from the first scene to the finale. */
+  maxSceneGapMinutes: 6,
+} as const;
+
+/**
+ * What the fit could not reach in session 1 (the sim's player saves for the best-payback item whatever it takes, so it makes no purchase
+ * while it saves for the Suburbs manager, and the scene chain has one fixed link). The tests pin these measured values, so a worse
+ * result fails; card E2b tries again for SESSION1's numbers.
+ */
+export const SESSION1_MISSES = { maxBuyGapSeconds: 600, maxSceneGapMinutes: 6.4 } as const;
+
+/** Waterfront to Uptown (card E0 step 7): where the manager and the heads fall for the check-in player (5 min every 4 h). */
+export const MANAGER_TIMING = {
+  /** The first head within this many check-ins of the build, all three within `allHeadsCheckins`. */
+  firstHeadCheckins: 2,
+  allHeadsCheckins: 4,
+  /** The manager at this share of the way from its build to the next neighbourhood's build (Waterfront, University, Industrial)… */
+  managerShare: { min: 0.7, max: 1.0 },
+  /** …and Uptown's, which has no next build, this many days after its own. */
+  uptownManagerDays: { min: 0.7, max: 1.3 },
+} as const;
+
+/** The three reward rules (card E0 step 7), checked on the check-in player's story. */
+export const REWARD_RULES = {
+  /** Rewards are at most this share of all cash earned over the story. */
+  storyShare: 0.1,
+  /** While the newest shop has no manager: one claim pays at most this share of that manager's price… */
+  claimOfManager: 0.1,
+  /** …and one day's claims together pay less than this share of it. */
+  dayOfManager: 1,
+} as const;
+
+/** Card E0 step 5: after Nonna's takeover the best item should seldom be just the cheapest, and the third best should not be far behind. */
+export const DECISION_TARGETS = { cheapestShare: 0.5, thirdOverBest: 3 } as const;
+
+export interface Session1Result {
+  /** Minutes. */
+  heads: number[];
+  takeover: number;
+  opens: number;
+  manager: number;
+  finale: number;
+  /** Seconds between purchases, from the start to the finale. */
+  medianGap: number;
+  maxGap: number;
+  /** Minutes between scenes (the longest). */
+  sceneGap: number;
+  /** Between Nonna's takeover and the Suburbs build: the first Expand, the Stone oven and one decor tier were bought. */
+  bought: { expand: boolean; stone: boolean; decor: boolean };
+  /** Suburbs was not built before Nonna took over. */
+  suburbsLocked: boolean;
+  scenes: { id: string; minutes: number }[];
+  rewards: ReturnType<typeof rewardRules>;
+  decisions: ReturnType<typeof decisionMetric>;
+}
+
+/** Play session 1 and measure it against SESSION1. */
+export function session1(c: Cfg = {}): Session1Result {
+  applyCfg({ ...c, rewards: c.rewards ?? true });
+  const r = run('continuous', 0, 0, undefined, { atScene: 'suburbs-4', maxWall: 90 * 60 });
+  const min = (x: number | undefined) => (x === undefined ? NaN : x / 60);
+  const at = (id: string) => r.scenes.find((x) => x.id === id)?.wall;
+  const takeover = at('downtown-4');
+  const opens = r.timeline.suburbs?.build;
+  const finale = at('suburbs-4');
+  const end = finale ?? r.wall;
+  const walls = r.buys.filter((b) => b.wall <= end).map((b) => b.wall);
+  const gaps = walls.map((w, i) => w - (i ? walls[i - 1] : 0));
+  gaps.push(end - (walls.length ? walls[walls.length - 1] : 0));
+  const sceneWalls = [...r.scenes.map((x) => x.wall), end];
+  const between = r.buys.filter((b) => takeover !== undefined && opens !== undefined && b.wall >= takeover && b.wall <= opens).map((b) => b.label);
+  return {
+    heads: r.headBuys.filter((h) => h.id === 'downtown').map((h) => min(h.wall)),
+    takeover: min(takeover),
+    opens: min(opens),
+    manager: min(r.timeline.suburbs?.manager),
+    finale: min(finale),
+    medianGap: [...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)],
+    maxGap: Math.max(...gaps),
+    sceneGap: Math.max(...sceneWalls.map((w, i) => w - (i ? sceneWalls[i - 1] : 0))) / 60,
+    bought: { expand: between.some((l) => l.includes('expand')), stone: between.some((l) => l.endsWith(':grade')), decor: between.some((l) => l.includes(':decor-')) },
+    suburbsLocked: takeover === undefined || opens === undefined || opens >= takeover,
+    scenes: r.scenes.map((x) => ({ id: x.id, minutes: x.wall / 60 })),
+    rewards: rewardRules(r),
+    decisions: decisionMetric(r, takeover ?? 0, finale ?? Infinity),
+  };
+}
+
+export interface ManagerRow {
+  id: string;
+  /** Days since install. */
+  build: number;
+  head1: number;
+  heads3: number;
+  manager: number;
+  /** Check-ins after the build when the first head and the third head were hired. */
+  head1Checkins: number;
+  heads3Checkins: number;
+  /** Manager day as a share of the way from this build to the next one (Uptown: null) and, for Uptown, days after its build. */
+  share: number | null;
+  daysAfter: number;
+  /** The manager's price in hours of the city's income when it was hired. */
+  hours: number;
+}
+
+/** The check-in player's story, played on for two days past the finale, so Uptown's manager (which comes after its finale) is seen. */
+export function managerRun() {
+  return run('checkin', SESSION, AWAY, undefined, { keepGoing: true, maxWall: 8 * 86400 });
+}
+
+/** Waterfront to Uptown's heads and manager in a finished check-in run (every wall time in seconds since install). */
+export function managerRows(r: ReturnType<typeof run>): ManagerRow[] {
+  const day = (w: number | undefined) => (w === undefined ? NaN : w / 86400);
+  const cycle = SESSION + AWAY;
+  const ids = ['waterfront', 'university', 'industrial', 'uptown'] as const;
+  return ids.map((id, i) => {
+    const t = r.timeline[id] ?? {};
+    const next = i + 1 < ids.length ? r.timeline[ids[i + 1]]?.build : undefined;
+    const build = t.build ?? NaN;
+    const manager = t.manager ?? NaN;
+    return {
+      id,
+      build: day(t.build),
+      head1: day(t.head1),
+      heads3: day(t.heads3),
+      manager: day(t.manager),
+      head1Checkins: Math.floor((t.head1 ?? NaN) / cycle) - Math.floor(build / cycle),
+      heads3Checkins: Math.floor((t.heads3 ?? NaN) / cycle) - Math.floor(build / cycle),
+      share: next === undefined ? null : (manager - build) / (next - build),
+      daysAfter: (manager - build) / 86400,
+      hours: t.managerHours ?? NaN,
+    };
+  });
+}
+
+/** Print session 1's table: the target and the result. */
+function session1Check() {
+  const m = session1();
+  const f = (x: number) => (Number.isFinite(x) ? x.toFixed(1) : 'n/a');
+  console.log(`Downtown heads  ${SESSION1.downtownHeads.join(' / ')} min      -> ${m.heads.map(f).join(' / ')}`);
+  console.log(`Nonna           ${SESSION1.takeover} min               -> ${f(m.takeover)}`);
+  console.log(`Suburbs opens   ${SESSION1.suburbsOpens} min              -> ${f(m.opens)}`);
+  console.log(`Suburbs manager ${SESSION1.suburbsManager} min              -> ${f(m.manager)}`);
+  console.log(`Suburbs finale  ${SESSION1.suburbsFinale} min              -> ${f(m.finale)}`);
+  console.log(`purchase gaps: median ${m.medianGap} s (max ${SESSION1.medianBuyGapSeconds}), longest ${m.maxGap} s (max ${SESSION1.maxBuyGapSeconds}); longest scene gap ${m.sceneGap.toFixed(1)} min (max ${SESSION1.maxSceneGapMinutes})`);
+  console.log(`bought between takeover and the build: ${JSON.stringify(m.bought)}; Suburbs locked until Nonna: ${m.suburbsLocked}`);
+  console.log(`scenes ${m.scenes.map((x) => `${x.id}@${f(x.minutes)}`).join(' ')}`);
+  console.log(`rewards ${(m.rewards.share * 100).toFixed(1)}% of cash; decisions ${(m.decisions.cheapestShare * 100).toFixed(0)}% cheapest, third/best ${m.decisions.medianRatio3.toFixed(1)}`);
+}
+
+/** Print manager timing and the reward rules of the check-in run. */
+function managersCheck() {
+  applyCfg({ ...base, rewards: true });
+  const r = managerRun();
+  for (const m of managerRows(r)) console.log(`${m.id.padEnd(10)} build d${m.build.toFixed(2)}  head1 d${m.head1.toFixed(2)} (+${m.head1Checkins} check-ins)  heads3 d${m.heads3.toFixed(2)} (+${m.heads3Checkins})  manager d${m.manager.toFixed(2)} (${m.share === null ? `${m.daysAfter.toFixed(2)} days after its build` : `${(m.share * 100).toFixed(0)}% of the way to the next build`}; ${m.hours.toFixed(1)} h of income)`);
+  console.log(reportLines(r).slice(0, 2).join('\n'));
+}
 
 const SESSION = 300;
 const AWAY = 4 * 3600;
@@ -108,8 +290,7 @@ function check() {
 // ---- v5.15: after the story. The check-in player keeps coming back every 4 h for 5 min, buys heads, Flagships and golden ovens
 // (the three mastery stars) and defends each weekly counter-attack. Targets: the story days above, and 18 stars between day 10 and 14. ----
 
-/** The install moment of the simulated player: a Monday morning, local time (the events and the attack week are local). */
-const INSTALL = new Date(2026, 10, 9, 9, 0, 0).getTime();
+// (INSTALL, the simulated player's Monday-morning install moment, is sim2.ts's: the events and the attack week are local time)
 export const STAR_DAYS = { min: 10, max: 14 };
 /** How much more the player wants a star step than its income gain alone says (a prestige purchase), STARK=n. */
 const STARK = num('STARK') ?? 3;
@@ -434,6 +615,8 @@ function polish(seed: number, iters: number) {
 // (a test imports `endgame` and the targets above, so the commands only run when this file is the entry point)
 if (require.main === module) {
   if (process.argv[2] === 'endgame') endgameCheck();
+  else if (process.argv[2] === 'session1') session1Check();
+  else if (process.argv[2] === 'managers') managersCheck();
   else if (process.argv[2] === 'fitstars') fitStars();
   else if (process.argv[2] === 'polish') polish(Number(process.env.SEED ?? 1), Number(process.env.ITERS ?? 60));
   else if (process.argv[2] === 'fit2') fit2();
