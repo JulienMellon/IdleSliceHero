@@ -32,7 +32,7 @@
   - Every `tap` and `text` finding gets `"card": "U5"` and a one-line reason ("HUD round button, 40 pt drawn; U5 adds the proof"). 
   - Close buttons (`close-upgrades`, `close-tasks`) get `"card": null` and the reason "documented exception in tap-targets.ts".
   - An entry with `"proof": "<test name>"` is how a 40 to 43 pt control passes for good: `layout_check.py` accepts a `tap` finding only if it is drawn at 40 pt or more **and** its entry names a proof. Entries marked `U5` are accepted without a proof until that card lands.
-- [ ] **5. A narrow phone (do this last; skip it if the card is running long).** `python3 scripts/screenshots.py <label> --viewport 375x667` re-runs the fixtures at iPhone SE size into `screenshots/<label>-se/`, with the probe on. It is not part of verify yet; report what it finds as a count per kind.
+- [x] **5. A narrow phone (do this last; skip it if the card is running long).** `python3 scripts/screenshots.py <label> --viewport 375x667` re-runs the fixtures at iPhone SE size into `screenshots/<label>-se/`, with the probe on. It is not part of verify yet; report what it finds as a count per kind.
 
 ## Rules
 - The probe sees the DOM, not the SVG scene. Don't try to check the scene here; scene overlaps stay with the budget tests in `src/components/scene/__tests__/`.
