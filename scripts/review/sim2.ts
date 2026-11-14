@@ -236,6 +236,9 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
     if (s.shops.industrial.built && jamView(s).jammed) {
       if (++jammedFor >= 5) { const r = fixJam(s); if (r.ok) s = r.state; jammedFor = 0; }
     } else jammedFor = 0;
+    // Uptown's Ingredients are a luxury too (a rating is a goal, not a rate): bought once Uptown runs itself and the tier costs under a quarter of the cash in hand
+    const ing = ingredientsPrice(s);
+    if (ing !== null && !ingredientsLock(s) && G.runsItself(s.shops.uptown) && ing <= s.cash / 4) { const before = s.cash; const r = buyIngredients(s); if (r.ok) { s = r.state; waitCash = 0; buys.push({ t: s.playSeconds, wall, label: 'uptown:ingredients', cost: before - s.cash, session: sessions, cashBefore: before }); } }
     const stars = s.x[LAYER_KEYS.stars] as StarsState | undefined;
     if (stars?.result) {
       if (stars.result.hit) claims.push({ wall, kind: 'critic', cash: stars.result.cash });

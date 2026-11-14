@@ -56,8 +56,8 @@ describe('golden run', () => {
     const { lastSavedAt: _t, ...rest } = state;
     void _t;
     const json = JSON.stringify(rest, (k, v) => (k === 'x' ? undefined : v));
-    // v5.16 re-record: ECONOMY 3, the heads/manager/station prices and the offline share changed the run. (v5.15 re-record: the save gained `economy` (C106) and `rewards.worn` (worn cosmetics). The golden run itself earns the same cash and buys the same things.)
-    expect(sha1(json)).toBe('0c7614174d45814d19e659bf57caa3ae31468582');
+    // v5.16 re-record 2 (card E2b's refit): Downtown's head prices, Suburbs' build and manager, Waterfront's manager, University's build, Uptown's build and manager, and the Golden oven and Flagship prices changed. v5.16 re-record: ECONOMY 3, the heads/manager/station prices and the offline share changed the run. (v5.15 re-record: the save gained `economy` (C106) and `rewards.worn` (worn cosmetics). The golden run itself earns the same cash and buys the same things.)
+    expect(sha1(json)).toBe('031a4fadab26d2b4ae9363582d52d877ecf680b3');
   });
 
   it('golden: the run really earned something (guards against an empty script)', () => {
