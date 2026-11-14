@@ -1,0 +1,3663 @@
+{
+ "00-title-card": [],
+ "01-opening-cutscene": [
+  {
+   "kind": "tap",
+   "key": "skip-scene",
+   "detail": "74x31"
+  }
+ ],
+ "02-cutscene-dialog": [
+  {
+   "kind": "tap",
+   "key": "skip-scene",
+   "detail": "74x31"
+  }
+ ],
+ "03-new-game": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "369x30"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "03b-full-queue-tap": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "369x30"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "04-after-20s-play": [
+  {
+   "kind": "text",
+   "key": "walk-prep | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "369x30"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "05-mid-game": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "05a-upgrades-sheet": [
+  {
+   "kind": "text",
+   "key": "(none) | BOTTLENECK",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "(none) | BOTTLENECK",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "close-upgrades",
+   "detail": "76x36"
+  }
+ ],
+ "05a2-decor-section": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "close-upgrades",
+   "detail": "76x36"
+  }
+ ],
+ "05b-unmanaged-shop": [
+  {
+   "kind": "clip",
+   "key": "goal | +$#/s",
+   "detail": "text 41.8 px in 41.1 px, drawn with an ellipsis"
+  },
+  {
+   "kind": "clip",
+   "key": "goal | +$#/s",
+   "detail": "text 41.8 px in 41.1 px, drawn with an ellipsis"
+  },
+  {
+   "kind": "text",
+   "key": "mini-prep | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-ovens | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-counter | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-drivers | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x44"
+  }
+ ],
+ "05b2-heads-drawer": [
+  {
+   "kind": "clip",
+   "key": "goal | +$#/s",
+   "detail": "text 41.8 px in 40.5 px, drawn with an ellipsis"
+  },
+  {
+   "kind": "clip",
+   "key": "goal | +$#/s",
+   "detail": "text 41.8 px in 40.5 px, drawn with an ellipsis"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "close-upgrades",
+   "detail": "76x36"
+  }
+ ],
+ "05b3-prep-ring": [
+  {
+   "kind": "clip",
+   "key": "(none) | Prepping\u2026",
+   "detail": "ends in \u2026",
+   "ellipsis": "Prepping\u2026"
+  },
+  {
+   "kind": "clip",
+   "key": "goal | +$#/s",
+   "detail": "text 41.8 px in 40.5 px, drawn with an ellipsis"
+  },
+  {
+   "kind": "clip",
+   "key": "goal | +$#/s",
+   "detail": "text 41.8 px in 40.5 px, drawn with an ellipsis"
+  },
+  {
+   "kind": "text",
+   "key": "mini-prep | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-ovens | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-counter | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-drivers | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x44"
+  }
+ ],
+ "05b4-refused-tap": [
+  {
+   "kind": "clip",
+   "key": "(none) | Prepping\u2026",
+   "detail": "ends in \u2026",
+   "ellipsis": "Prepping\u2026"
+  },
+  {
+   "kind": "clip",
+   "key": "goal | +$#/s",
+   "detail": "text 41.8 px in 40.5 px, drawn with an ellipsis"
+  },
+  {
+   "kind": "clip",
+   "key": "goal | +$#/s",
+   "detail": "text 41.8 px in 40.5 px, drawn with an ellipsis"
+  },
+  {
+   "kind": "text",
+   "key": "mini-prep | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-ovens | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-counter | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-drivers | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x44"
+  }
+ ],
+ "05b5-hire-bubble": [
+  {
+   "kind": "clip",
+   "key": "(none) | Prepping\u2026",
+   "detail": "ends in \u2026",
+   "ellipsis": "Prepping\u2026"
+  },
+  {
+   "kind": "clip",
+   "key": "goal | +$#/s",
+   "detail": "text 41.8 px in 40.5 px, drawn with an ellipsis"
+  },
+  {
+   "kind": "clip",
+   "key": "goal | +$#/s",
+   "detail": "text 41.8 px in 40.5 px, drawn with an ellipsis"
+  },
+  {
+   "kind": "text",
+   "key": "mini-prep | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-ovens | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-counter | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-drivers | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x44"
+  }
+ ],
+ "05b6-upgrade-flash": [
+  {
+   "kind": "text",
+   "key": "mini-prep | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-ovens | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-counter | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-drivers | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x44"
+  }
+ ],
+ "05c-city": [
+  {
+   "kind": "tap",
+   "key": "back",
+   "detail": "70x22"
+  },
+  {
+   "kind": "tap",
+   "key": "open-settings",
+   "detail": "70x29"
+  }
+ ],
+ "06-scrapbook": [
+  {
+   "kind": "tap",
+   "key": "back",
+   "detail": "70x22"
+  }
+ ],
+ "07-offline-popup": [
+  {
+   "kind": "tap",
+   "key": "collect-offline",
+   "detail": "293x39"
+  }
+ ],
+ "08-late-cutscene": [
+  {
+   "kind": "tap",
+   "key": "skip-scene",
+   "detail": "74x31"
+  }
+ ],
+ "09-late-game": [
+  {
+   "kind": "text",
+   "key": "walk-prep | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-ovens | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "10-late-game-pops-a": [
+  {
+   "kind": "text",
+   "key": "walk-prep | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-ovens | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "11-late-game-pops-b": [
+  {
+   "kind": "text",
+   "key": "walk-prep | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-ovens | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "12-late-rush-tap": [
+  {
+   "kind": "text",
+   "key": "walk-prep | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-ovens | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "25-look-suburbs": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "25-look-university": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "25-look-downtown": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "13-flagship-max": [
+  {
+   "kind": "text",
+   "key": "walk-prep | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-ovens | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "14-uptown-decorated": [
+  {
+   "kind": "text",
+   "key": "walk-ovens | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "15-uptown-drawer": [
+  {
+   "kind": "text",
+   "key": "(none) | BOTTLENECK",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "close-upgrades",
+   "detail": "76x36"
+  }
+ ],
+ "15a-uptown-decor-section": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "close-upgrades",
+   "detail": "76x36"
+  }
+ ],
+ "16-tied-bundle-drawer": [
+  {
+   "kind": "text",
+   "key": "(none) | BOTTLENECK",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "(none) | BOTTLENECK",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "close-upgrades",
+   "detail": "76x36"
+  }
+ ],
+ "17-suburbs-locked": [
+  {
+   "kind": "tap",
+   "key": "back",
+   "detail": "70x22"
+  },
+  {
+   "kind": "tap",
+   "key": "open-settings",
+   "detail": "70x29"
+  }
+ ],
+ "18-sold-sign-scene": [
+  {
+   "kind": "tap",
+   "key": "skip-scene",
+   "detail": "74x31"
+  }
+ ],
+ "19-recipe-card-scene": [
+  {
+   "kind": "tap",
+   "key": "skip-scene",
+   "detail": "74x31"
+  }
+ ],
+ "20-offline-capped": [
+  {
+   "kind": "tap",
+   "key": "collect-offline",
+   "detail": "293x39"
+  }
+ ],
+ "21-pier9-bid-goal": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "22-dale-perk-card": [
+  {
+   "kind": "tap",
+   "key": "skip-scene",
+   "detail": "74x31"
+  }
+ ],
+ "23-perk-banner-drawer": [
+  {
+   "kind": "text",
+   "key": "(none) | BOTTLENECK",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "(none) | BOTTLENECK",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "close-upgrades",
+   "detail": "76x36"
+  }
+ ],
+ "24-settings-audio": [
+  {
+   "kind": "tap",
+   "key": "back",
+   "detail": "70x22"
+  }
+ ],
+ "29-hud-rewards": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "30-tasks-daily": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "close-tasks",
+   "detail": "80x36"
+  }
+ ],
+ "30b-tasks-daily-chests": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "close-tasks",
+   "detail": "80x36"
+  }
+ ],
+ "31-tasks-weekly": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "close-tasks",
+   "detail": "80x36"
+  }
+ ],
+ "31b-tasks-weekly-chest": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "close-tasks",
+   "detail": "80x36"
+  }
+ ],
+ "32-gift-calendar": [
+  {
+   "kind": "tap",
+   "key": "gift-claim-btn",
+   "detail": "301x39"
+  }
+ ],
+ "33-gift-streak-save": [
+  {
+   "kind": "tap",
+   "key": "gift-repair",
+   "detail": "301x39"
+  }
+ ],
+ "34-sidewalk-expand": [
+  {
+   "kind": "text",
+   "key": "walk-expand | Lv cap # \u2192 #",
+   "detail": "9 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "35-sidewalk-bundle": [
+  {
+   "kind": "text",
+   "key": "walk-bundle | +$#/s",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "9 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "36-rush-combo": [
+  {
+   "kind": "text",
+   "key": "walk-ovens | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | need $#",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "37-gm-hire-sidewalk": [
+  {
+   "kind": "clip",
+   "key": "(none) | Baking\u2026",
+   "detail": "ends in \u2026",
+   "ellipsis": "Baking\u2026"
+  },
+  {
+   "kind": "text",
+   "key": "mini-prep | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-ovens | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-counter | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "mini-drivers | need $#",
+   "detail": "9 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x44"
+  }
+ ],
+ "38-suburbs-locked-goal": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "369x30"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "39-ladder-lv10": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "40-ladder-lv40": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "41-ladder-lv120": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "42-milestone-moment": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "43-diner-queue": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "44-driver-queue": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "45-patio-one": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "46-patio-two-busy": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "47-golden-pizza": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "47a-golden-gift": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "47b-golden-lucky": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "47c-golden-lucky-tap": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "48-order-offer": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "49-order-active": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "50-order-success": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "51-night-oven-sheet": [
+  {
+   "kind": "tap",
+   "key": "buy-night-oven-sheet",
+   "detail": "293x39"
+  }
+ ],
+ "52-gift-closed": [
+  {
+   "kind": "tap",
+   "key": "collect-offline",
+   "detail": "293x39"
+  }
+ ],
+ "53-gift-counting": [
+  {
+   "kind": "tap",
+   "key": "collect-offline",
+   "detail": "293x39"
+  }
+ ],
+ "54-gift-full-upgrade": [
+  {
+   "kind": "tap",
+   "key": "collect-offline",
+   "detail": "293x39"
+  }
+ ],
+ "55b-hud-teaser-ring": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "55-scrapbook-teaser": [
+  {
+   "kind": "tap",
+   "key": "back",
+   "detail": "70x22"
+  }
+ ],
+ "58-boston-card": [],
+ "56-post-story-goal": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "57-city-stars-boston": [
+  {
+   "kind": "tap",
+   "key": "back",
+   "detail": "70x22"
+  },
+  {
+   "kind": "tap",
+   "key": "open-settings",
+   "detail": "70x29"
+  }
+ ],
+ "59b-attack-marked-tile": [
+  {
+   "kind": "tap",
+   "key": "back",
+   "detail": "70x22"
+  },
+  {
+   "kind": "tap",
+   "key": "open-settings",
+   "detail": "70x29"
+  }
+ ],
+ "59-attack-banner": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "60-challenge-behind": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "61-challenge-won": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "62-event-countdown-chip": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "62b-event-banner": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "63-scrapbook-recipes": [
+  {
+   "kind": "tap",
+   "key": "back",
+   "detail": "70x22"
+  }
+ ],
+ "64-vanity-tab": [],
+ "64b-booster-shelf": [],
+ "65-sidewalk-max": [
+  {
+   "kind": "text",
+   "key": "walk-expand | Lv cap # \u2192 #",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "9.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | +# lv",
+   "detail": "9 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "66-gold-oven-awning": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "67-woodfired-neon": [
+  {
+   "kind": "text",
+   "key": "walk-prep | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-ovens | need $#",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | need $#",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "68-skin-mint-scooter": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "69-master-plaque": [
+  {
+   "kind": "text",
+   "key": "walk-prep | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-ovens | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-counter | need $#",
+   "detail": "7.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "70-head-rush-bark": [
+  {
+   "kind": "text",
+   "key": "walk-expand | Lv cap # \u2192 #",
+   "detail": "9 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "9 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "71-head-of-the-week": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "72-nonna-cameo": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "73-nothing-worn": [
+  {
+   "kind": "text",
+   "key": "walk-counter | COUNTER",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "text",
+   "key": "walk-drivers | DRIVERS",
+   "detail": "8.5 px"
+  },
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "goal",
+   "detail": "317x30"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "36x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ]
+}

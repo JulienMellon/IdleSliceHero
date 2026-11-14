@@ -25,9 +25,11 @@ Spawn prompt for a card (the file name is in the Card column of VERSION.md; add 
 Your task card is the file docs/build/<version>/<card file>. Read it first and follow it exactly.
 Read docs/API.md before opening any engine file (skip if it doesn't exist yet).
 As each step's check passes, tick its box in the card file, so the work can be resumed.
+If your card has a `Fixtures` section: when your checks pass, run: npx expo export --platform web > /tmp/export.log 2>&1 && python3 scripts/screenshots.py dev --only <your fixture file>. Open at most three shots from screenshots/dev at half size and fix what you see before you report.
+If your card writes a fixture: Fixtures follow scripts/fixtures/README.md: move time with advance(), never time.sleep, and call expect() before a shot that shows a state.
 Report in your standard format.
 ```
-Writer cards use `subagent_type: writer` with the same prompt, minus the API line.
+Writer cards use `subagent_type: writer` with the same prompt, minus the API line and the two fixture lines.
 
 ## 4. One version, start to finish
 1. **Waves.** Launch the waves in VERSION.md in order. A wave starts when the one before it has reported.
@@ -48,6 +50,7 @@ Writer cards use `subagent_type: writer` with the same prompt, minus the API lin
    Fix the rows that concern the files of docs/build/<version>/<card file> and ignore the rest; say which you ignored.
    Scope, rules and checks are that card's. Fix bugs and majors first. Report as usual.
    ```
+   **Two rounds per bug.** A row with `sev` = `bug` whose ID was in the one-line-per-bug returns of the two previous reviews of this version is not sent again as a note. Send this instead: `<ID> has survived two fixes. Before changing the code, write a test that fails for every state this element can be in (list the states in the test's name), then fix until it passes.`
    Then set `round` to the next value and go to step 2. **Fix rounds do not bump the version number.**
 7. **Close.** Run the close commands in section 8, set STATE to the next version with `step: waves`, `round: r1`, and report to Julien in 2–4 sentences: verdicts, bugs and majors only. End the session. **Each version starts in a fresh session.**
 
@@ -61,13 +64,14 @@ npm test 2>&1 | tail -6
 npx expo export --platform web > /tmp/export.log 2>&1; tail -2 /tmp/export.log
 nohup python3 -u scripts/screenshots.py $L > /tmp/shots.log 2>&1 &
 ```
-Wait about 7 minutes (longer once fixtures pass 80), then:
+Wait about 9 minutes (longer once fixtures pass 100), then:
 ```
 python3 -c "import json;r=json.load(open('screenshots/$L/report.json'));print(r['loaded'],len(r['errors']),r['errors'][:3])"
+python3 -c "import json;print(json.load(open('screenshots/$L/layout.json'))['new'])"
 python3 scripts/review_shots.py $L $P 2>&1 | tail -3
 python3 -c "import json;i=json.load(open('screenshots/$L/review/index.json'));print(str(i)[:300])"
 ```
-Must print `True 0 []`. If the script hangs on a late shot, re-run once with `timeout 900`. Set `last_shots: $L` in STATE.
+The report line must print `True 0 []` and the layout line `0`. A non-zero layout count goes to the owning lane's programmer with the path `screenshots/$L/layout.json`, like a failed test. If the script hangs on a late shot, re-run once with `timeout 900`. Set `last_shots: $L` in STATE.
 
 ## 6. Commit and push
 At session start, set the git identity once without opening HANDOFF.md:
@@ -85,11 +89,13 @@ A cloud session may push only to its own `claude/` branch, so `main` moves by pu
 ## 7. Review prompts
 Review file names: `docs/build/<version>/review-<round>-critic.md`, `-code.md`, `-story.md`, `-audio.md`. `PREV` is the same critic's most recent review file from STATE (`reviews:` block).
 
+For r2 and r3, build the critic's review set first with `python3 scripts/review_shots.py $L $P --notes <PREV> 2>&1 | tail -1`. It keeps the shots that changed and the shots the open notes name; r1 uses the plain verify run.
+
 Critic:
 ```
-Review build <L>. Review set: screenshots/<L>/review/ (index.json lists new and changed shots). Report: screenshots/<L>/report.json.
+Review build <L>. Review set: screenshots/<L>/review/ (index.json marks each shot new, changed or noted). Report: screenshots/<L>/report.json.
 Open notes and next IDs: the "## Open notes" table at the end of <PREV>.
-Effort: <full for r1 | medium re-check for r2 and r3: verdict on the open IDs plus anything new>.
+Effort: <full for r1 | medium re-check for r2 and r3: verdict on the open IDs plus anything new. A new minor on a shot marked neither changed nor noted is recorded as carried and does not count against the gate>.
 Write your critique to docs/build/<version>/review-<round>-critic.md and return only the summary your brief's "Review file" section defines.
 ```
 Codecritic: same shape, with `Git range: <codecritic_range_start>..HEAD`, `Paths: <from VERSION.md>`, and `tsc and the full test suite passed at this commit; don't re-run them`.
@@ -103,8 +109,11 @@ After each critic returns, record in STATE: the verdict, the three counts, the o
 ```
 echo "- v$V closed $(date +%F): critic <verdict> <round> — notes: docs/build/v$V/review-<round>-critic.md" >> CRITICLOG.md
 echo "- v$V closed $(date +%F): codecritic <verdict or skipped> — notes: docs/build/v$V/review-<round>-code.md" >> CODELOG.md
-git add -A && git commit -q -m "v$V closed" && git push -q origin main
+git add -A && git commit -q -m "v$V closed"
+python3 scripts/loop_stats.py $V --line --shots "<changed counts of the r2 and r3 verify, e.g. 12, 4>" --layout "$(python3 -c "import json;d=json.load(open('screenshots/$L/layout.json'));print(d['new']+d['allowed'])")" >> docs/build/METRICS.md
+git add -A && git commit -q --amend --no-edit && git push -q origin main
 ```
+The `METRICS.md` row needs the `closed` commit, which is why it is appended after it and amended in.
 Carried notes need no action: the next version's cards read the open-notes table of the last review file, whose path you put in the spawn prompt as `extra: Carried notes: rows with your owner letter in <path>`.
 
 ## 9. If an agent dies (usage limit, session restart)
