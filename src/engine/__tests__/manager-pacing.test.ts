@@ -3,7 +3,8 @@
 // the way from the build to the next neighbourhood's build, and Uptown's 0.7 to 1.3 days after its own (it has no next one). The story
 // days stay within 0.3 of 1.0 / 2.0 / 3.1 / 4.4 / 4.8. Targets are constants in scripts/pacing-fit.ts (MANAGER_TIMING, TARGETS): card E2b's
 // refit changes numbers there, not here. Check it with `npx tsx scripts/pacing-fit.ts managers`.
-import { managerRows, managerRun, MANAGER_TIMING, STORY_TOLERANCE, TARGETS } from '../../../scripts/pacing-fit';
+import { DECISION_TARGETS, managerRows, managerRun, MANAGER_TIMING, STORY_RULES, STORY_TOLERANCES, storyRules, TARGETS } from '../../../scripts/pacing-fit';
+import { decisionMetric } from '../../../scripts/review/sim2';
 
 jest.setTimeout(120_000);
 
@@ -14,9 +15,9 @@ describe('check-in player: heads and managers', () => {
   const rows = managerRows(run);
 
   for (const key of Object.keys(TARGETS) as (keyof typeof TARGETS)[]) {
-    it(`${key} still lands within ${STORY_TOLERANCE} days of day ${TARGETS[key]}`, () => {
+    it(`${key} still lands within ${STORY_TOLERANCES[key]} days of day ${TARGETS[key]}`, () => {
       const day = run.scenes.find((x) => x.id === SCENE[key])!.wall / 86400;
-      expect(Math.abs(day - TARGETS[key])).toBeLessThanOrEqual(STORY_TOLERANCE);
+      expect(Math.abs(day - TARGETS[key])).toBeLessThanOrEqual(STORY_TOLERANCES[key]);
     });
   }
 
@@ -51,5 +52,27 @@ describe('check-in player: heads and managers', () => {
 
   it('a manager costs hours of income, not minutes', () => {
     for (const r of rows) expect([r.id, r.hours >= 4]).toEqual([r.id, true]);
+  });
+
+  // card E2b step 7: the whole story with the six layers, the rival and the interludes in
+  describe('the story as a whole', () => {
+    const q = storyRules(run);
+
+    it(`no gap between two scenes over ${STORY_RULES.maxSceneGapPlayMinutes} minutes of play`, () => {
+      expect([q.longestGap.id, q.longestGap.minutes <= STORY_RULES.maxSceneGapPlayMinutes]).toEqual([q.longestGap.id, true]);
+    });
+
+    it('no day of the story, from the first to the finale, goes by without a scene', () => {
+      expect(q.scenelessDays).toEqual([]);
+    });
+
+    it('the drones are bought before the Uptown finale', () => {
+      expect(Number.isFinite(q.droneDay)).toBe(true);
+      expect(q.droneDay).toBeLessThan(q.finaleDay);
+    });
+
+    it(`over the whole run the best-payback buy is also the cheapest in at most ${DECISION_TARGETS.cheapestShare * 100}% of the purchases`, () => {
+      expect(decisionMetric(run).cheapestShare).toBeLessThanOrEqual(DECISION_TARGETS.cheapestShare);
+    });
   });
 });

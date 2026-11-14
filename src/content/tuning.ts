@@ -58,7 +58,7 @@ export const OVEN_GRADES: OvenGrade[] = [
   { name: 'Stone', mult: 2, cost: 400, color: '#8A8A8A' },
   { name: 'Wood-fired', mult: 4, cost: 12_000, color: '#7A4A26' },
   { name: 'Copper', mult: 8, cost: 400_000, color: '#C8763A' },
-  { name: 'Golden', mult: 16, cost: 800_000_000, color: '#E0B000' },
+  { name: 'Golden', mult: 16, cost: 2_000_000_000, color: '#E0B000' },
 ];
 
 /** Downtown's tutorial ends when Nonna takes over: scene `sceneId` plays after this many Downtown pizzas (matches downtown-4's trigger). */
@@ -79,7 +79,7 @@ export const FOOTPRINTS: FootprintTier[] = [
   { name: 'Corner shop', cost: 500, maxTables: 3, ovenSlots: 3 },
   { name: 'Double storefront', cost: 15_000, maxTables: 4, ovenSlots: 4 },
   { name: 'Restaurant', cost: 500_000, maxTables: 5, ovenSlots: 5 },
-  { name: 'Flagship', cost: 1_000_000_000, maxTables: 6, ovenSlots: 6 },
+  { name: 'Flagship', cost: 2_500_000_000, maxTables: 6, ovenSlots: 6 },
 ];
 
 export interface VehicleDef {
@@ -102,7 +102,7 @@ export const VEHICLES: VehicleDef[] = [
 ];
 
 /** Downtown has no manager price (Nonna is its GM via the story), so its heads have fixed prices. */
-export const HEAD_COST_DOWNTOWN: Record<HeadKind, number> = { prep: 450, oven: 900, counter: 900 };
+export const HEAD_COST_DOWNTOWN: Record<HeadKind, number> = { prep: 400, oven: 800, counter: 950 };
 
 export interface NeighborhoodDef {
   id: NeighborhoodId;
@@ -138,14 +138,18 @@ export interface NeighborhoodDef {
  * for its staff: `headsCost` (the three heads together, split by HEAD_SHARE) and `managerCost`, each fitted on its own, not a share of the
  * build. The first shop's numbers were fitted with the rewards in the sim (scripts/review/sim2.ts plays them). Refit with
  * scripts/pacing-fit.ts (never edit one number alone).
+ *
+ * v5.16 final refit (card E2b), with the six layers, the service tip, the rival (x0.8) and the interludes in: Downtown's heads 400 / 800 / 950,
+ * Suburbs' build 270K and manager 4.6M, Waterfront's manager 8B, University's build 8B, Uptown's build 10T and manager 2.6Q, the Golden oven 2B
+ * and the Flagship 2.5B (all 18 stars on day 11.7). The finale comes 0.006 days past its band: see STORY_TOLERANCES in scripts/pacing-fit.ts.
  */
 export const NEIGHBORHOODS: NeighborhoodDef[] = [
   { id: 'downtown', name: 'Downtown', orderValue: 3, buildCost: 0, costMult: 1, managerCost: 0, headsCost: HEAD_COST_DOWNTOWN.prep + HEAD_COST_DOWNTOWN.oven + HEAD_COST_DOWNTOWN.counter, x: 22, y: 39, color: '#F2994A', wall: '#F7D9A8' },
-  { id: 'suburbs', name: 'Suburbs', orderValue: 60, buildCost: 240_000, costMult: 18, managerCost: 4_000_000, headsCost: 400_000, x: 30, y: 67, color: '#6FCF97', wall: '#DDF2D2' },
-  { id: 'waterfront', name: 'Waterfront', orderValue: 2_500, buildCost: 600_000_000, costMult: 2_500, managerCost: 15_000_000_000, headsCost: 2_000_000_000, x: 76, y: 67, color: '#56CCF2', wall: '#D6EEF8' },
-  { id: 'university', name: 'University', orderValue: 200_000, buildCost: 35_000_000_000, costMult: 200_000, managerCost: 350_000_000_000, headsCost: 80_000_000_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
+  { id: 'suburbs', name: 'Suburbs', orderValue: 60, buildCost: 270_000, costMult: 18, managerCost: 4_600_000, headsCost: 400_000, x: 30, y: 67, color: '#6FCF97', wall: '#DDF2D2' },
+  { id: 'waterfront', name: 'Waterfront', orderValue: 2_500, buildCost: 600_000_000, costMult: 2_500, managerCost: 8_000_000_000, headsCost: 2_000_000_000, x: 76, y: 67, color: '#56CCF2', wall: '#D6EEF8' },
+  { id: 'university', name: 'University', orderValue: 200_000, buildCost: 8_000_000_000, costMult: 200_000, managerCost: 350_000_000_000, headsCost: 80_000_000_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
   { id: 'industrial', name: 'Industrial', orderValue: 6_000_000, buildCost: 1_200_000_000_000, costMult: 6_000_000, managerCost: 60_000_000_000_000, headsCost: 1_200_000_000_000, x: 50, y: 9, color: '#A0826D', wall: '#C4BCAE' },
-  { id: 'uptown', name: 'Uptown', orderValue: 60_000_000, buildCost: 35_000_000_000_000, costMult: 60_000_000, managerCost: 2_000_000_000_000_000, headsCost: 80_000_000_000_000, x: 82, y: 9, color: '#EB5757', wall: '#F6D6D6' },
+  { id: 'uptown', name: 'Uptown', orderValue: 60_000_000, buildCost: 10_000_000_000_000, costMult: 60_000_000, managerCost: 2_600_000_000_000_000, headsCost: 80_000_000_000_000, x: 82, y: 9, color: '#EB5757', wall: '#F6D6D6' },
 ];
 
 export const SHOP_POS = { x: 50, y: 36 };

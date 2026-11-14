@@ -31,7 +31,8 @@ export function panelCue(scene: Scene, panel: number): PanelCue {
   if (p.backdrop === 'megaslice-hq') return 'megaslice';
   // an explicit welcome elsewhere in the scene (downtown-1 waits for Nonna's smile: AU30) replaces the default
   if (scene.beat === 1 && panel === firstCastPanel(scene) && !scene.panels.some((q) => q.cue === 'welcome')) return 'welcome';
-  if (scene.beat === 2 && panel === 0) return 'warmth';
+  // an interlude or a hire scene (v5.16) opens on the warm cue like a beat 2; a Todd scene's HQ panel still gets the villain's
+  if ((scene.beat === 2 || scene.beat === 'interlude') && panel === 0) return 'warmth';
   if (scene.beat === 3) {
     const rep = scene.panels.findIndex((q) => q.cast.some((c) => c.id === 'megaslice-rep'));
     if (rep === panel) return 'rep';

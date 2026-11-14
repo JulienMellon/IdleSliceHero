@@ -6,7 +6,7 @@
 // Uptown's income at purchase time.
 //
 // The critic: every 15 minutes of play (seeded gaps, the same save replays the same visits) a critic comes with a target rating. Meeting
-// it pays 3 minutes of citywide income (the rewards' income, which ignores boosts and events) and adds a star to the sign, a cosmetic
+// it pays CRITIC.rewardMinutes of citywide income (45 s: the card's 3 minutes on Julien's reduced reward scale; the rewards' income, which ignores boosts and events) and adds a star to the sign, a cosmetic
 // count; missing it does nothing. Play time only; inactive until Uptown is built; old saves load as "inactive, the first visit is one gap
 // after the shop is first seen built".
 import { seededUnit } from '../../bonus';

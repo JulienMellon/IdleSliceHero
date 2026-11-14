@@ -170,11 +170,11 @@ describe('the critic', () => {
     });
   });
 
-  it('meeting the target pays 3 minutes of citywide income and adds a star to the sign', () => {
+  it('meeting the target pays the critic’s minutes of citywide income and adds a star to the sign', () => {
     run(() => {
       const g0 = uptown(4, 3, 3); // 5 stars: meets any target
       const g = withState(g0, { seed: seedFor(1, 4), nextAt: 100 });
-      const reward = R.minutesToCash(g, 3);
+      const reward = R.minutesToCash(g, CRITIC.rewardMinutes);
       expect(reward).toBeGreaterThan(0);
       const after = visitAt(g, 100);
       expect(after.cash - g.cash).toBeCloseTo(reward, 6);

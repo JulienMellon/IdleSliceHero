@@ -44,7 +44,8 @@ describe('session 1: the first 40 minutes (rewards on)', () => {
     expect(NEIGHBORHOODS[0].headsCost).toBe(HEAD_COST_DOWNTOWN.prep + HEAD_COST_DOWNTOWN.oven + HEAD_COST_DOWNTOWN.counter);
   });
   it('the scenes come in story order', () => {
-    const order = ['downtown-1', 'downtown-2', 'downtown-3', 'downtown-4', 'suburbs-1', 'suburbs-2', 'suburbs-3', 'suburbs-4'];
+    // v5.16 (card T1a): Deb's hire scene comes with the manager, and Dale's "3b" interlude after beat 3
+    const order = ['downtown-1', 'downtown-2', 'downtown-3', 'downtown-4', 'suburbs-1', 'suburbs-2', 'suburbs-hire', 'suburbs-3', 'suburbs-3b', 'suburbs-4'];
     expect(m.scenes.map((x) => x.id)).toEqual(order);
   });
 });

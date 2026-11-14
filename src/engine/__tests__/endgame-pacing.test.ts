@@ -3,7 +3,7 @@
 //  - after the story buys heads, Flagships and golden ovens and defends each weekly counter-attack, and has all 18 mastery stars
 //    between day 10 and day 14.
 // A later retune that moves one of these has to say so here. Refit with `npx tsx scripts/pacing-fit.ts fitstars` / `check`.
-import { endgame, STAR_DAYS, STORY_TOLERANCE, TARGETS } from '../../../scripts/pacing-fit';
+import { endgame, STAR_DAYS, STORY_TOLERANCES, TARGETS } from '../../../scripts/pacing-fit';
 import { run } from '../../../scripts/review/sim2';
 
 jest.setTimeout(120_000);
@@ -15,9 +15,9 @@ describe('check-in player: story days and the mastery stars', () => {
   const after = endgame(story.s, story.wall, 30, 1);
 
   for (const key of Object.keys(TARGETS) as (keyof typeof TARGETS)[]) {
-    it(`${key} lands within ${STORY_TOLERANCE} days of day ${TARGETS[key]}`, () => {
+    it(`${key} lands within ${STORY_TOLERANCES[key]} days of day ${TARGETS[key]}`, () => {
       const day = story.scenes.find((x) => x.id === SCENE[key])!.wall / 86400;
-      expect(Math.abs(day - TARGETS[key])).toBeLessThanOrEqual(STORY_TOLERANCE);
+      expect(Math.abs(day - TARGETS[key])).toBeLessThanOrEqual(STORY_TOLERANCES[key]);
     });
   }
 

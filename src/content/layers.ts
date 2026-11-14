@@ -137,5 +137,6 @@ export const CRITIC = {
   seedSalt: 5104,
   /** The target is 2 to 4 by the seed; every `fiveEvery`-th visit asks for 5. */
   fiveEvery: 5,
-  rewardMinutes: 3,
+  /** The card said 3 minutes before Julien's cut of cash rewards by 70 to 80% (2026-11-13); on that scale it is 45 seconds, as a golden pizza. Measured: at 3 minutes a player who hits every visit pushed the story's reward share from 9.7% to 15.5%. */
+  rewardMinutes: 0.75,
 } as const;
