@@ -1,7 +1,7 @@
 // The one ad button (card U3). The rule is ad-model.ts `runAd`: a Nonna's Plus owner gets the benefit at once (and the button says so);
 // anyone else sees the film icon, watches the ad, and on a dismissed or missing ad simply goes on, with no error screen.
 import * as Haptics from 'expo-haptics';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
@@ -9,7 +9,7 @@ import { ads, analytics, EVENTS, type AdPlacement } from '../../services';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { StarIcon } from '../icons';
-import { adLabel, buttonShown, gives, runAd } from './ad-model';
+import { adLabel, adOffering, buttonShown, gives, runAd } from './ad-model';
 
 /** The film-strip icon of every ad button. */
 export function FilmIcon({ size = 20, color = C.ink }: { size?: number; color?: string }) {
@@ -51,19 +51,16 @@ export const AdButton = memo(function AdButton({ placement, label, plusLabel, te
   const [ready, setReady] = useState(() => ads.ready(placement));
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
-  const offered = useRef(false);
   useEffect(() => {
     const t = setInterval(() => setReady(ads.ready(placement)), READY_CHECK_MS);
     return () => clearInterval(t);
   }, [placement]);
   const shown = buttonShown(plus, ready);
-  // ad_offered: once for this button, the first time it is on show for a player who would watch an ad
+  // ad_offered: each time the button comes on show for a player who would watch an ad (an ad is ready, no Plus)
+  const offering = adOffering(plus, ready);
   useEffect(() => {
-    if (shown && !plus && !offered.current) {
-      offered.current = true;
-      analytics.track(EVENTS.adOffered, { placement });
-    }
-  }, [shown, plus, placement]);
+    if (offering) analytics.track(EVENTS.adOffered, { placement });
+  }, [offering, placement]);
   const press = useCallback(() => {
     if (busy) return;
     setBusy(true);

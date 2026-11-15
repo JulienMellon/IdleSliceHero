@@ -27,7 +27,7 @@ import { ackCritic as ackUptownCritic, buyIngredients as buyUptownIngredients, i
 import * as R from '../engine/rewards';
 import { tutorialAdvance, tutorialHoldsStory } from '../engine/tutorial';
 import { buyCosmetic as buyVanity } from '../engine/vanity';
-import { onGrant, purchases, startServices, type Grant } from '../services';
+import { analytics, EVENTS, onGrant, purchases, startServices, type Grant } from '../services';
 import type { Station } from '../engine/pipeline';
 
 const SAVE_KEY = 'slice-empire/save/v1';
@@ -495,7 +495,11 @@ export const useGame = create<Store>((set, get) => {
 
     bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: G.pier9Price(get().game) }, plain('bid')),
 
-    build: (id) => commit(G.buildShop(get().game, id), { name: `Build ${G.def(id).name}`, cost: G.def(id).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id })),
+    build: (id) => {
+      const ok = commit(G.buildShop(get().game, id), { name: `Build ${G.def(id).name}`, cost: G.def(id).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id }));
+      if (ok) analytics.track(EVENTS.shopBuilt, { shop: id });
+      return ok;
+    },
 
     setActive: (id) => {
       const g = get().game;
@@ -508,6 +512,7 @@ export const useGame = create<Store>((set, get) => {
       if (p.replay) set({ playing: null });
       else {
         const game = tutorialAdvance(G.markSceneSeen(get().game, p.scene));
+        analytics.track(EVENTS.sceneSeen, { scene: p.scene.id });
         set({ playing: null, game, lastSceneEndPlay: scenePacesGap(p.scene) ? game.playSeconds : get().lastSceneEndPlay });
       }
       if (!p.replay) void get().save();

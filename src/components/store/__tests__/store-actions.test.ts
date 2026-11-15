@@ -11,7 +11,10 @@ import * as G from '../../../engine/game';
 import { dayKey, refreshRewards } from '../../../engine/rewards';
 import { GRANTS } from '../../../services/grants';
 import { useGame } from '../../../store/game-store';
-import { boosterAdOffer } from '../ad-model';
+import { analytics } from '../../../services';
+import { adOffering, boosterAdOffer } from '../ad-model';
+import * as fs from 'fs';
+import * as path from 'path';
 
 function fresh(): G.GameState {
   const now = Date.now();
@@ -133,5 +136,51 @@ describe("the Starter Pack's cue", () => {
   test('marking it offered is saved with the prefs', () => {
     st().markStarterOffered();
     expect(st().prefs.starterOffered).toBe(true);
+  });
+});
+
+describe('analytics events (card N1)', () => {
+  let track: jest.SpyInstance;
+  beforeEach(() => {
+    track = jest.spyOn(analytics, 'track').mockImplementation(() => {});
+  });
+  afterEach(() => track.mockRestore());
+
+  test('shop_built is sent when a build succeeds, and not when it is refused', () => {
+    const g = fresh();
+    useGame.setState({ game: { ...g, cash: 0 } });
+    expect(st().build('suburbs')).toBe(false);
+    expect(track).not.toHaveBeenCalledWith('shop_built', expect.anything());
+    useGame.setState({ game: { ...g, cash: 1e15, shops: { ...g.shops, suburbs: { ...g.shops.suburbs, built: false } } } });
+    const id = G.SHOP_IDS.find((i) => !st().game.shops[i].built && G.buildLock(st().game, i) === null);
+    expect(id).toBeDefined();
+    expect(st().build(id!)).toBe(true);
+    expect(track).toHaveBeenCalledWith('shop_built', { shop: id });
+  });
+
+  test('scene_seen is sent when a scene ends, not when one is replayed', () => {
+    const scene = { id: 'downtown-1' } as never;
+    useGame.setState({ playing: { scene, replay: true } });
+    st().finishScene();
+    expect(track).not.toHaveBeenCalledWith('scene_seen', expect.anything());
+    useGame.setState({ playing: { scene: { ...(scene as object), id: 'downtown-2', trigger: { kind: 'start' } } as never, replay: false } });
+    st().finishScene();
+    expect(track).toHaveBeenCalledWith('scene_seen', { scene: 'downtown-2' });
+  });
+
+  test('ad_offered is for a player who would watch an ad: an ad ready and no Plus', () => {
+    expect(adOffering(false, true)).toBe(true);
+    expect(adOffering(false, false)).toBe(false);
+    expect(adOffering(true, true)).toBe(false);
+    const src = fs.readFileSync(path.join(__dirname, '..', 'ad-button.tsx'), 'utf8');
+    expect(src).toMatch(/analytics\.track\(EVENTS\.adOffered/);
+    expect(src).toMatch(/adOffering\(plus, ready\)/);
+  });
+
+  test('iap_viewed is sent by the Store tab and by the Starter Pack sheet', () => {
+    const tab = fs.readFileSync(path.join(__dirname, '..', 'store-tab.tsx'), 'utf8');
+    const sheet = fs.readFileSync(path.join(__dirname, '..', 'starter-sheet.tsx'), 'utf8');
+    expect(tab).toMatch(/EVENTS\.iapViewed, \{ surface: 'store_tab' \}/);
+    expect(sheet).toMatch(/EVENTS\.iapViewed, \{ surface: 'starter_sheet' \}/);
   });
 });

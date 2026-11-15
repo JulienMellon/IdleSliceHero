@@ -51,6 +51,9 @@ export const gives = (o: AdOutcome): boolean => o !== 'skipped';
 /** Whether the button is on show: a Plus owner always has it; anyone else when an ad could be shown. */
 export const buttonShown = (plus: boolean, adReady: boolean): boolean => plus || adReady;
 
+/** `ad_offered` is tracked each time this becomes true: an ad is ready and the player has no Plus (a Plus owner is never offered an ad). */
+export const adOffering = (plus: boolean, adReady: boolean): boolean => adReady && !plus;
+
 /** What the button says: the Plus line when the benefit is free, the ad line otherwise. */
 export const adLabel = (plus: boolean, ad: string, plusLine: string): string => (plus ? plusLine : ad);
 
