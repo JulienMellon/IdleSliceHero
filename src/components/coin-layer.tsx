@@ -6,6 +6,7 @@ import { memo, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 
 import { coinTarget, onCoin } from './pulse-bus';
+import { useMotion } from './scene/clock';
 
 const SIZE = 18;
 /** At most this many coins in flight; extra launches are dropped (the pop already showed the cash). */
@@ -22,6 +23,8 @@ interface Coin {
   tx: Animated.AnimatedInterpolation<number>;
   ty: Animated.AnimatedInterpolation<number>;
   sparkle: Animated.AnimatedInterpolation<number>;
+  /** 1 for a coin in flight; with Reduce Motion the coin sits at the cash and fades in and out. */
+  opacity: Animated.AnimatedInterpolation<number> | 1;
   dots: { x: Animated.AnimatedInterpolation<number>; y: Animated.AnimatedInterpolation<number> }[];
 }
 
@@ -29,6 +32,12 @@ export const CoinLayer = memo(function CoinLayer() {
   const [coins, setCoins] = useState<Coin[]>([]);
   const live = useRef(new Map<number, Animated.CompositeAnimation>());
   const nextKey = useRef(1);
+  // Reduce Motion: no flight, no sparkle; the coin fades in and out at the cash. Read at launch, so the listener below never restarts.
+  const { fly } = useMotion();
+  const flies = useRef(fly);
+  useEffect(() => {
+    flies.current = fly;
+  }, [fly]);
   useEffect(() => {
     const running = live.current;
     const off = onCoin((c) => {
@@ -38,14 +47,27 @@ export const CoinLayer = memo(function CoinLayer() {
       const k = new Animated.Value(0);
       const dx = t.x - c.x;
       // bow left of the goal bar on the way up
-      const coin: Coin = {
-        key,
-        tx: k.interpolate({ inputRange: [0, 0.5, 1], outputRange: [c.x - SIZE / 2, c.x + dx * 0.5 - 40 - SIZE / 2, t.x - SIZE / 2] }),
-        ty: k.interpolate({ inputRange: [0, 1], outputRange: [c.y - SIZE / 2, t.y - SIZE / 2] }),
-        sparkle: k.interpolate({ inputRange: [0, 0.85, 1], outputRange: [0, 0, 1] }),
-        dots: SPARK.map(([sx, sy]) => ({ x: k.interpolate({ inputRange: [0.85, 1], outputRange: [0, sx], extrapolate: 'clamp' }), y: k.interpolate({ inputRange: [0.85, 1], outputRange: [0, sy], extrapolate: 'clamp' }) })),
-      };
-      const anim = Animated.timing(k, { toValue: 1, duration: Math.max(120, c.ms), easing: Easing.in(Easing.quad), useNativeDriver: true });
+      const still = k.interpolate({ inputRange: [0, 1], outputRange: [0, 0] });
+      const coin: Coin = flies.current
+        ? {
+            key,
+            tx: k.interpolate({ inputRange: [0, 0.5, 1], outputRange: [c.x - SIZE / 2, c.x + dx * 0.5 - 40 - SIZE / 2, t.x - SIZE / 2] }),
+            ty: k.interpolate({ inputRange: [0, 1], outputRange: [c.y - SIZE / 2, t.y - SIZE / 2] }),
+            sparkle: k.interpolate({ inputRange: [0, 0.85, 1], outputRange: [0, 0, 1] }),
+            opacity: 1,
+            dots: SPARK.map(([sx, sy]) => ({ x: k.interpolate({ inputRange: [0.85, 1], outputRange: [0, sx], extrapolate: 'clamp' }), y: k.interpolate({ inputRange: [0.85, 1], outputRange: [0, sy], extrapolate: 'clamp' }) })),
+          }
+        : {
+            key,
+            tx: k.interpolate({ inputRange: [0, 1], outputRange: [t.x - SIZE / 2, t.x - SIZE / 2] }),
+            ty: k.interpolate({ inputRange: [0, 1], outputRange: [t.y - SIZE / 2, t.y - SIZE / 2] }),
+            sparkle: still,
+            opacity: k.interpolate({ inputRange: [0, 0.3, 0.7, 1], outputRange: [0, 1, 1, 0] }),
+            dots: [],
+          };
+      const anim = flies.current
+        ? Animated.timing(k, { toValue: 1, duration: Math.max(120, c.ms), easing: Easing.in(Easing.quad), useNativeDriver: true })
+        : Animated.timing(k, { toValue: 1, duration: 450, easing: Easing.linear, useNativeDriver: true });
       running.set(key, anim);
       anim.start(() => {
         running.delete(key);
@@ -63,7 +85,7 @@ export const CoinLayer = memo(function CoinLayer() {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       {coins.map((c) => (
-        <Animated.View key={c.key} style={[styles.coinBox, { transform: [{ translateX: c.tx }, { translateY: c.ty }] }]}>
+        <Animated.View key={c.key} style={[styles.coinBox, { opacity: c.opacity, transform: [{ translateX: c.tx }, { translateY: c.ty }] }]}>
           <View style={styles.coin}>
             <View style={styles.inner} />
             <View style={styles.shine} />

@@ -18,6 +18,7 @@ import { bonusBlocked, useGame } from '../store/game-store';
 import { F } from '../theme';
 import { haptic } from './game-ui';
 import { emitCheer, emitCoin, emitPayout } from './pulse-bus';
+import { useMotion } from './scene/clock';
 import { FRONT_TOP, P, sceneFit } from './scene/projection';
 
 const { width: W, height: H } = BONUS_VIEW;
@@ -87,6 +88,7 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
   const bw = W * k;
   const bh = H * k;
   // where it is in its flight now (it may come back mid-way after a drawer), and the values that carry it
+  const { loops } = useMotion();
   const [fly] = useState(() => {
     const g = useGame.getState().game;
     const left = Math.max(0.1, g.bonus.until - g.playSeconds);
@@ -95,6 +97,12 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
   });
   useEffect(() => {
     const run = Animated.timing(fly.x, { toValue: fly.toX, duration: fly.ms, easing: Easing.linear, useNativeDriver: true });
+    run.start();
+    return () => run.stop();
+  }, [fly]);
+  // Reduce Motion and the background stop the turning rays, the bobbing and the wing flap; the flight across the sky is the game and goes on
+  useEffect(() => {
+    if (!loops) return;
     const bob = Animated.loop(Animated.timing(fly.bob, { toValue: 1, duration: BONUS_VIEW.bobMs, easing: Easing.linear, useNativeDriver: true }));
     const flap = Animated.loop(
       Animated.sequence([
@@ -103,17 +111,15 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
       ]),
     );
     const spin = Animated.loop(Animated.timing(fly.spin, { toValue: 1, duration: BONUS_VIEW.raysMs, easing: Easing.linear, useNativeDriver: true }));
-    run.start();
     bob.start();
     flap.start();
     spin.start();
     return () => {
-      run.stop();
       bob.stop();
       flap.stop();
       spin.stop();
     };
-  }, [fly]);
+  }, [fly, loops]);
   const b = BONUS_VIEW.bobPx;
   const g = BONUS_VIEW.glowPx;
   const gift = isFirstGift(n, taps);
@@ -162,7 +168,7 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
         </Animated.View>
       )}
       {/* the glow, 10 pt past the box all round */}
-      <Svg pointerEvents="none" width={bw + 2 * g} height={bh + 2 * g} viewBox={`0 0 ${bw + 2 * g} ${bh + 2 * g}`} style={{ position: 'absolute', left: -g, top: -g }}>
+      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none" width={bw + 2 * g} height={bh + 2 * g} viewBox={`0 0 ${bw + 2 * g} ${bh + 2 * g}`} style={{ position: 'absolute', left: -g, top: -g }}>
         <Defs>
           <RadialGradient id="gpGlow" cx="50%" cy="50%" rx="50%" ry="50%">
             <Stop offset="0.55" stopColor="#FFE27A" stopOpacity={pips.lucky ? 0.9 : 0.75} />
@@ -173,7 +179,7 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
       </Svg>
       {/* three sparkles trailing behind the flight */}
       <Animated.View pointerEvents="none" style={{ position: 'absolute', left: -60 * k, top: 0, opacity: twinkle }}>
-        <Svg width={180 * k} height={bh} viewBox="-60 0 180 44">
+        <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={180 * k} height={bh} viewBox="-60 0 180 44">
           {sparkleTrail(path.dir).map((sp, i) => (
             <Path key={i} d={sparkle(30 + sp.x, 22 + sp.y, sp.r)} fill="#FFF6C2" stroke="#E0A800" strokeWidth={0.6} />
           ))}
@@ -191,7 +197,7 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
         accessibilityLabel={pips.lucky ? 'Lucky golden pizza. Tap for a big bonus' : 'Golden pizza. Tap for a bonus'}
         onPress={(e) => onTap(e.nativeEvent.pageX, e.nativeEvent.pageY)}
         style={{ width: bw, height: bh }}>
-        <Svg width={bw} height={bh} viewBox="0 0 60 44">
+        <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={bw} height={bh} viewBox="0 0 60 44">
           <Box />
         </Svg>
       </Pressable>
@@ -262,7 +268,7 @@ function Rays({ size }: { size: number }) {
     return `M${c} ${c} L${p(a - half)} L${p(a + half)} Z`;
   });
   return (
-    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <Defs>
         <RadialGradient id="gpRay" cx="50%" cy="50%" rx="50%" ry="50%">
           <Stop offset="0.2" stopColor="#FFF6C2" stopOpacity={0.85} />
@@ -280,7 +286,7 @@ function Rays({ size }: { size: number }) {
 function PipSlice({ on, last, lucky }: { on: boolean; last: boolean; lucky: boolean }) {
   const isLucky = last && lucky;
   return (
-    <Svg width={8} height={8} viewBox="0 0 8 8">
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={8} height={8} viewBox="0 0 8 8">
       <Path d="M0.7 1.2 H7.3 L4 7.4 Z" fill={isLucky ? '#FFF6C2' : on ? '#FFC531' : 'rgba(255,255,255,0.55)'} stroke={isLucky ? '#E8432E' : GOLD_DARK} strokeWidth={0.9} strokeLinejoin="round" />
     </Svg>
   );
@@ -288,7 +294,7 @@ function PipSlice({ on, last, lucky }: { on: boolean; last: boolean; lucky: bool
 
 function Wing({ k }: { k: number }) {
   return (
-    <Svg width={20 * k} height={26 * k} viewBox="0 0 20 26">
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={20 * k} height={26 * k} viewBox="0 0 20 26">
       <Path d="M19 18 Q14 3 1 4 Q5 9 3 12 Q8 12 7 17 Q12 16 19 22 Z" fill="#FFFFFF" stroke={INK} strokeWidth={1.4} strokeLinejoin="round" />
       <Path d="M17 17 Q11 11 5 8" stroke="#D8E6F2" strokeWidth={1.2} fill="none" strokeLinecap="round" />
     </Svg>

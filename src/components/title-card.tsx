@@ -12,6 +12,7 @@ import { copy } from './endgame/copy-text';
 import { Logo } from './logo';
 import { LOGO_RED } from './logo-art';
 import { Portrait } from './portrait';
+import { useMotion } from './scene/clock';
 
 const DAY_KEY = 'slice-empire/title-day';
 const RAYS = Array.from({ length: 12 }, (_, i) => {
@@ -27,6 +28,7 @@ export function TitleCard({ onDone }: { onDone: () => void }) {
   const [fade] = useState(() => new Animated.Value(1));
   const [blink] = useState(() => new Animated.Value(1));
   const done = useRef(false);
+  const { loops } = useMotion();
   const finish = () => {
     if (done.current) return;
     done.current = true;
@@ -35,9 +37,6 @@ export function TitleCard({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     const anims = [
       Animated.spring(drop, { toValue: 1, friction: 5, tension: 70, useNativeDriver: true }),
-      Animated.loop(Animated.timing(spin, { toValue: 1, duration: 9000, easing: Easing.linear, useNativeDriver: true })),
-      Animated.loop(Animated.sequence([Animated.timing(wave, { toValue: 1, duration: 260, useNativeDriver: true }), Animated.timing(wave, { toValue: 0, duration: 260, useNativeDriver: true })])),
-      Animated.loop(Animated.sequence([Animated.timing(blink, { toValue: 0.45, duration: 600, useNativeDriver: true }), Animated.timing(blink, { toValue: 1, duration: 600, useNativeDriver: true })])),
     ];
     anims.forEach((a) => a.start());
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -57,17 +56,28 @@ export function TitleCard({ onDone }: { onDone: () => void }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per mount
   }, []);
+  // the turning rays, Nonna's wave and the blinking hint: not with Reduce Motion, and not in the background
+  useEffect(() => {
+    if (!loops) return;
+    const anims = [
+      Animated.loop(Animated.timing(spin, { toValue: 1, duration: 9000, easing: Easing.linear, useNativeDriver: true })),
+      Animated.loop(Animated.sequence([Animated.timing(wave, { toValue: 1, duration: 260, useNativeDriver: true }), Animated.timing(wave, { toValue: 0, duration: 260, useNativeDriver: true })])),
+      Animated.loop(Animated.sequence([Animated.timing(blink, { toValue: 0.45, duration: 600, useNativeDriver: true }), Animated.timing(blink, { toValue: 1, duration: 600, useNativeDriver: true })])),
+    ];
+    anims.forEach((a) => a.start());
+    return () => anims.forEach((a) => a.stop());
+  }, [loops, spin, wave, blink]);
   const y = drop.interpolate({ inputRange: [0, 1], outputRange: [-260, 0] });
   const rot = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   const tilt = wave.interpolate({ inputRange: [0, 1], outputRange: ['-8deg', '8deg'] });
   return (
     <Animated.View style={[StyleSheet.absoluteFill, styles.root, { opacity: fade }]} onLayout={() => SplashScreen.hideAsync().catch(() => {})}>
-      <Pressable testID="title-card" style={StyleSheet.absoluteFill} onPress={finish}>
+      <Pressable testID="title-card" accessibilityRole="button" accessibilityLabel="Slice Empire. Tap to start" style={StyleSheet.absoluteFill} onPress={finish}>
         <View style={styles.center}>
           {/* D369: the rays turn about the logo's own centre and fade out towards the edges */}
           <View style={styles.logoBox}>
             <Animated.View style={[styles.rays, { transform: [{ rotate: rot }] }]}>
-              <Svg width={640} height={640} viewBox="-320 -320 640 640">
+              <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={640} height={640} viewBox="-320 -320 640 640">
                 <Defs>
                   <RadialGradient id="rayFade" cx="0" cy="0" r="320" gradientUnits="userSpaceOnUse">
                     <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.18} />
@@ -130,29 +140,35 @@ export function SoonCard({ onDone }: { onDone: () => void }) {
   const [spin] = useState(() => new Animated.Value(0));
   const [rise] = useState(() => new Animated.Value(0));
   const [blink] = useState(() => new Animated.Value(1));
+  const { loops } = useMotion();
   useEffect(() => {
+    const a = Animated.spring(rise, { toValue: 1, friction: 6, tension: 70, useNativeDriver: true });
+    a.start();
+    return () => a.stop();
+  }, [rise]);
+  useEffect(() => {
+    if (!loops) return;
     const anims = [
       Animated.loop(Animated.timing(spin, { toValue: 1, duration: 9000, easing: Easing.linear, useNativeDriver: true })),
-      Animated.spring(rise, { toValue: 1, friction: 6, tension: 70, useNativeDriver: true }),
       Animated.loop(Animated.sequence([Animated.timing(blink, { toValue: 0.45, duration: 600, useNativeDriver: true }), Animated.timing(blink, { toValue: 1, duration: 600, useNativeDriver: true })])),
     ];
     anims.forEach((a) => a.start());
     return () => anims.forEach((a) => a.stop());
-  }, [spin, rise, blink]);
+  }, [loops, spin, blink]);
   const rot = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   const y = rise.interpolate({ inputRange: [0, 1], outputRange: [40, 0] });
   return (
     <View style={[StyleSheet.absoluteFill, styles.root]}>
       <Pressable testID="soon-card" accessibilityRole="button" accessibilityLabel={`${copy('soon.boston.title')}. Tap to close`} style={StyleSheet.absoluteFill} onPress={onDone}>
         {/* D460: Boston's skyline stands along the foot of the card (a tower, the dome of a statehouse, brownstones), behind everything */}
-        <Svg style={styles.skyline} width="100%" height={110} viewBox="0 0 200 60" preserveAspectRatio="xMidYMax slice" pointerEvents="none">
+        <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.skyline} width="100%" height={110} viewBox="0 0 200 60" preserveAspectRatio="xMidYMax slice" pointerEvents="none">
           <Path d="M0 60 V44 H10 V36 H18 V44 H26 V30 H30 V20 L33 12 L36 20 V30 H40 V40 H52 V26 H62 V40 H70 V34 H78 V44 H88 V38 Q96 22 104 38 V44 H112 V32 H120 V14 H126 V32 H134 V42 H146 V28 H158 V42 H168 V36 H178 V44 H188 V38 H200 V60 Z" fill="#8F2216" />
           <Path d="M0 60 V50 H14 V46 H24 V50 H44 V44 H58 V50 H90 V46 H106 V50 H140 V45 H152 V50 H176 V47 H200 V60 Z" fill="#6F1A10" />
         </Svg>
         <View style={styles.soonCenter}>
           <View style={styles.soonLogo}>
             <Animated.View style={[styles.rays, { transform: [{ rotate: rot }] }]}>
-              <Svg width={640} height={640} viewBox="-320 -320 640 640">
+              <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={640} height={640} viewBox="-320 -320 640 640">
                 <Defs>
                   <RadialGradient id="soonFade" cx="0" cy="0" r="320" gradientUnits="userSpaceOnUse">
                     <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.18} />

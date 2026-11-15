@@ -72,7 +72,7 @@ export const ChallengeChip = memo(function ChallengeChip() {
     const { setActive } = useGame.getState();
     return (
       <View testID="challenge-chip" style={styles.chip}>
-        <Pressable testID="challenge-active" accessibilityLabel={`${run.title}: ${run.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); setActive(run.shopId); }}>
+        <Pressable testID="challenge-active" accessibilityRole="button" accessibilityLabel={`${run.title}: ${run.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); setActive(run.shopId); }}>
           <Portrait id="victor-crust" mood="angry" size={40} />
           <View style={styles.mid}>
             <Text style={styles.name} numberOfLines={1}>{`${run.title} · ${run.name}`}</Text>

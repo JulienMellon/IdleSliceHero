@@ -9,6 +9,7 @@
 //   scooter-mint            scooter    the drivers' vehicles                    a mint body, whichever fleet tier is parked
 //   neon-counter            counter    a neon sign over the register            `neonSpot`: in front of the wall, 44 x 15
 //   awning-gold             awning     the awning                               gold and cream stripes; the brand's red stays as the piping
+//   awning-founder          awning     the awning                               red and white stripes with a dark-red piping (the Starter Pack's; never sold on its own)
 //   plaque-master           plaque     a gold plaque by the door                on the brick header over the door
 import type { ShopLook } from './identity';
 import type { Layout } from './layout';
@@ -22,6 +23,8 @@ export interface Dress {
   /** 0 none, 1 oven-gold, 2 oven-woodfired. */
   ovenSkin: OvenSkin;
   awningGold: boolean;
+  /** The Starter Pack's red-and-white awning. Absent (not false) when not worn, so a save of the old shape compares equal. */
+  awningFounder?: boolean;
   /** 0 none, else the 1-based index into SKINS. */
   facadeSkin: number;
   scooterMint: boolean;
@@ -48,6 +51,7 @@ export const SKINS: readonly FacadeSkin[] = [
 ];
 
 export const AWNING_GOLD = { main: '#E3B52E', alt: '#FFF4E0', piping: '#D9443A' } as const;
+export const AWNING_FOUNDER = { main: '#D9443A', alt: '#FFF4E0', piping: '#7A1E16' } as const;
 export const MINT = { body: '#6FD8B8', dark: '#2FA58A', light: '#C9F5E6' } as const;
 export const GOLD_PLAQUE = { face: '#F2C94C', rim: '#9A6B00', text: '#7A5200' } as const;
 
@@ -66,6 +70,7 @@ export function dressOf(worn: readonly string[]): Dress {
     if (id === 'oven-gold') d.ovenSkin = 1;
     else if (id === 'oven-woodfired') d.ovenSkin = 2;
     else if (id === 'awning-gold') d.awningGold = true;
+    else if (id === 'awning-founder') d.awningFounder = true;
     else if (id === 'scooter-mint') d.scooterMint = true;
     else if (id === 'neon-counter') d.neon = true;
     else if (id === 'plaque-master') d.plaque = true;
@@ -75,7 +80,7 @@ export function dressOf(worn: readonly string[]): Dress {
 }
 
 /** Whether anything at all is worn (the "nothing worn" shop is the plain one). */
-export const isDressed = (d: Dress): boolean => d.ovenSkin !== 0 || d.awningGold || d.facadeSkin !== 0 || d.scooterMint || d.neon || d.plaque;
+export const isDressed = (d: Dress): boolean => d.ovenSkin !== 0 || d.awningGold || !!d.awningFounder || d.facadeSkin !== 0 || d.scooterMint || d.neon || d.plaque;
 
 /** OVEN_GRADES index an oven is painted with: a skin overrides the grade bought (gold = Golden, 4; wood-fired = 2). */
 export const ovenPaint = (grade: number, skin: OvenSkin): number => (skin === 1 ? 4 : skin === 2 ? 2 : grade);
@@ -83,12 +88,13 @@ export const ovenPaint = (grade: number, skin: OvenSkin): number => (skin === 1 
 export const ovenTrim = (tier: 0 | 1 | 2, skin: OvenSkin): 0 | 1 | 2 => (skin === 1 && tier < 1 ? 1 : tier);
 
 /** A neighbourhood's look with the worn skin and awning painted over it (the brand's OPEN sign, WELCOME mat and plank are not in `ShopLook`). */
-export function dressedLook(look: ShopLook, d: Pick<Dress, 'facadeSkin' | 'awningGold'>): ShopLook & { fascia: string } {
+export function dressedLook(look: ShopLook, d: Pick<Dress, 'facadeSkin' | 'awningGold' | 'awningFounder'>): ShopLook & { fascia: string } {
   const skin = d.facadeSkin ? SKINS[d.facadeSkin - 1] : null;
   return {
     ...look,
     ...(skin ? { pilaster: skin.pilaster, seam: skin.seam, plinth: skin.plinth } : {}),
     ...(d.awningGold ? { awning: [AWNING_GOLD.main, AWNING_GOLD.alt] as [string, string], piping: AWNING_GOLD.piping } : {}),
+    ...(d.awningFounder ? { awning: [AWNING_FOUNDER.main, AWNING_FOUNDER.alt] as [string, string], piping: AWNING_FOUNDER.piping } : {}),
     fascia: skin ? skin.fascia : '#5E3A26',
   };
 }

@@ -35,7 +35,7 @@ export function LayerChip({ testID, rows, label, onPress }: { testID: string; ro
 export function LayerSheet({ testID, title, onClose, children }: { testID: string; title: string; onClose: () => void; children: ReactNode }) {
   return (
     <View style={styles.overlay} testID={testID}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={`Close ${title}`} />
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel={`Close ${title}`} />
       <View style={styles.card}>
         <Text style={styles.title} numberOfLines={1}>
           {title}

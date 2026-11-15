@@ -9,6 +9,7 @@ import { isDrones } from '../../../engine/features/layers/university-menu';
 import { skyBottom } from '../../../engine/bonus';
 import { useGame } from '../../../store/game-store';
 import type { SceneSlotProps } from '../../slots';
+import { useMotion } from '../../scene/clock';
 import { FRONT_TOP, INK, P, sceneFit } from '../../scene/projection';
 import { campusOut, droneCount, droneLane, droneX, type DroneLane } from './zones-model';
 
@@ -18,7 +19,7 @@ const native = Platform.OS !== 'web';
 
 function DroneArt() {
   return (
-    <Svg width={W} height={H} viewBox="0 0 30 18">
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={W} height={H} viewBox="0 0 30 18">
       <Path d="M4 4 H11 M19 4 H26" stroke={INK} strokeWidth={1.4} strokeLinecap="round" />
       <Ellipse cx={7.5} cy={3.4} rx={5} ry={1.3} fill="#fff" opacity={0.7} />
       <Ellipse cx={22.5} cy={3.4} rx={5} ry={1.3} fill="#fff" opacity={0.7} />
@@ -32,14 +33,16 @@ function DroneArt() {
 
 const Drone = memo(function Drone({ lane, width, top }: { lane: DroneLane; width: number; top: number }) {
   const [p] = useState(() => new Animated.Value(0));
+  const { loops } = useMotion();
   useEffect(() => {
     p.setValue(0);
+    if (!loops) return;
     const loop = Animated.loop(
       Animated.sequence([Animated.delay(lane.delay), Animated.timing(p, { toValue: 1, duration: lane.ms, easing: Easing.linear, useNativeDriver: native }), Animated.timing(p, { toValue: 0, duration: 0, useNativeDriver: native })]),
     );
     loop.start();
     return () => loop.stop();
-  }, [p, lane.delay, lane.ms]);
+  }, [p, lane.delay, lane.ms, loops]);
   const x = p.interpolate({ inputRange: [0, 1], outputRange: [droneX(lane, 0, width, W), droneX(lane, 1, width, W)] });
   const bob = p.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: [0, -4, 0, 4, 0] });
   return (

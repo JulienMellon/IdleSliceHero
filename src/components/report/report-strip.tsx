@@ -22,7 +22,7 @@ const CHIPS = ['prep', 'ovens', 'counter', 'floor'] as const;
 function ManagerBadge({ hood }: { hood: NeighborhoodId }) {
   if (hood === 'downtown') return <Portrait id="nonna-rosa" mood="happy" size={STRIP.badge} />;
   return (
-    <Svg width={STRIP.badge} height={STRIP.badge} viewBox="-20 -24 40 44">
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={STRIP.badge} height={STRIP.badge} viewBox="-20 -24 40 44">
       <HeadFace kind="gm" name={MANAGERS[hood].id} size={40} />
     </Svg>
   );

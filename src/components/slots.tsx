@@ -48,6 +48,8 @@ import { UniversityChip } from './layers/university/university-chip';
 import { UniversitySheet } from './layers/university/university-sheet';
 import { ReportSheet } from './report/report-sheet';
 import { ReportStrip } from './report/report-strip';
+import { ClaimSheet } from './store/claim-sheet';
+import { StarterSheet } from './store/starter-sheet';
 
 /** The slot kinds with no props: each component reads its own state. */
 export type SlotProps = Readonly<Record<never, never>>;
@@ -132,7 +134,7 @@ const NightOvenChip = memo(function NightOvenChip() {
   const hours = useGame((s) => (rewardsUnlocked(s.game) ? hoursText(offlineCapOf(s.game)) : ''));
   if (!hours) return null;
   return (
-    <Pressable testID="night-oven-chip" onPress={askOven} style={styles.ovenChip} accessibilityLabel={`Nonna's night oven: full in ${hours}`}>
+    <Pressable testID="night-oven-chip" onPress={askOven} style={styles.ovenChip} accessibilityRole="button" accessibilityLabel={`Nonna's night oven: full in ${hours}`}>
       <MoonIcon size={16} />
       <Text style={styles.ovenPillText} numberOfLines={1} maxFontSizeMultiplier={1.1}>
         {hours}
@@ -210,6 +212,9 @@ export const SHEETS: SlotEntry[] = [
   { id: 'university-sheet', order: 40, Component: UniversitySheet },
   { id: 'industrial-sheet', order: 50, Component: IndustrialSheet },
   { id: 'stars-sheet', order: 60, Component: StarsSheet },
+  // v5.17 (U3): what a claim paid with its "double it" ad button, and the Starter Pack offered once after the tutorial
+  { id: 'claim-sheet', order: 70, Component: ClaimSheet },
+  { id: 'starter-sheet', order: 80, Component: StarterSheet },
 ];
 // v5.16 (P1): the shop report's strip, one 44 pt row above the sidewalk row
 export const SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] = [{ id: 'shop-report-strip', order: 10, Component: ReportStrip }];

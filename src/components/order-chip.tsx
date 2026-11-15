@@ -97,7 +97,7 @@ export const OrderChip = memo(function OrderChip({ top, onShop }: { top: number;
       {/* D436: the flash sits behind the content (first child), so the portrait and the reward are never washed out */}
       {view.phase === 'done' && <Animated.View pointerEvents="none" style={[styles.glow, { opacity: flash }]} />}
       {view.phase === 'active' ? (
-        <Pressable testID="order-active" accessibilityLabel={`${view.name}’s order: ${view.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); onShop(view.hood); }}>
+        <Pressable testID="order-active" accessibilityRole="button" accessibilityLabel={`${view.name}’s order: ${view.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); onShop(view.hood); }}>
           {face}
         </Pressable>
       ) : (

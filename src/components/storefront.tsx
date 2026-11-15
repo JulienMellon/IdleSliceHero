@@ -18,7 +18,7 @@ import { useGame } from '../store/game-store';
 import { emitAudio } from '../audio/bus';
 import { CHEER_SECONDS, emitPayout, onCheer } from './pulse-bus';
 import { Backdrop } from './scene/background';
-import { useClock } from './scene/clock';
+import { useClock, usePerfMarks } from './scene/clock';
 import { SceneDefs } from './scene/defs';
 import { FRONT_ROW_Y, LEDGE_Y, PROP_Y, SIGN_Y, STOOL_Y, TREE_Y, layout, moreTagRect, waitTagRect, type Layout } from './scene/layout';
 import { seatPalette } from './scene/palette';
@@ -118,6 +118,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // Opt out of React Compiler memoisation: this component deliberately reads the live store
   // (useGame.getState()) on every clock frame, which auto-memoisation could otherwise cache.
   'use no memo';
+  usePerfMarks('Storefront');
   const clock = useClock(15, paused);
   useGame((s) => sceneKey(s.game, id));
   // the last rush taps (wall ms, newest last): the store replaces the array on a tap, so this is a stable dependency
@@ -412,6 +413,9 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     <View ref={viewRef} onLayout={measureOrigin} style={{ width, height, overflow: 'hidden' }}>
       <Pressable
         testID="shop"
+        accessibilityRole="button"
+        accessibilityLabel={`${nd.name} pizzeria`}
+        accessibilityHint={shop.managed ? 'Double tap to rush the kitchen' : 'Double tap to make the next batch'}
         style={{ position: 'absolute', left: 0, top: 0, width, height }}
         // re-measure on every touch: an ancestor can move without this view's own layout changing (C76)
         onPressIn={measureOrigin}
@@ -442,7 +446,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             emitAudio({ type: 'full' });
           }
         }}>
-        <Svg width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
+        {/* the drawing is decoration for a screen reader: the pizzeria's name and what a tap does are the Pressable's label */}
+        <Svg width={width} height={height} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
           <SceneDefs />
           <Backdrop id={id} L={lay.L} R={lay.R} />
           {CLOUDS.map((c, i) => (

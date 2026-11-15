@@ -37,7 +37,7 @@ export const NightTint = memo(function NightTint({ shopId, width, height }: Scen
   const at = toWindow(f, BADGE.x, BADGE.y);
   return (
     <View testID="shift-tint" pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} style={StyleSheet.absoluteFill}>
         <G transform={`translate(${f.ox} ${f.oy}) scale(${f.s})`}>
           {/* the sky and the skyline: the tint, with the pizzeria's box cut out */}
           <Path d={shape.path} fillRule="evenodd" fill={tint.color} opacity={tint.opacity} />

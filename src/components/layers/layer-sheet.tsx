@@ -13,7 +13,7 @@ function Sheet({ kind }: { kind: SheetKind }) {
   const m = sheetModel(kind, game, Date.now());
   return (
     <View style={styles.overlay} testID={`layer-sheet-${kind}`}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={closeLayerSheet} accessibilityLabel="Close" />
+      <Pressable style={StyleSheet.absoluteFill} onPress={closeLayerSheet} accessibilityRole="button" accessibilityLabel="Close" />
       <View style={styles.card}>
         <Text style={styles.title}>{m.title}</Text>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.body}>

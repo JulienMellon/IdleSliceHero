@@ -42,7 +42,7 @@ export default function Scrapbook() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <View style={styles.headRow}>
-          <Pressable onPress={() => router.back()} style={styles.back} testID="back">
+          <Pressable accessibilityRole="button" accessibilityLabel="Back to the shop" onPress={() => router.back()} style={styles.back} testID="back">
             <Text style={styles.backText}>‹ Back</Text>
           </Pressable>
           <Text style={styles.title}>Scrapbook</Text>
@@ -83,7 +83,7 @@ export default function Scrapbook() {
                 {scenes.map((s) => {
                   const open = seen.includes(s.id);
                   return (
-                    <Pressable key={s.id} disabled={!open} onPress={() => replay(s)} style={[styles.tile, !open && styles.tileLocked]} testID={`scene-${s.id}`}>
+                    <Pressable key={s.id} accessibilityRole="button" accessibilityLabel={open ? `${tileLabel(s)}: ${s.title}. Replay` : `${tileLabel(s)}: locked, not seen yet`} accessibilityState={{ disabled: !open }} disabled={!open} onPress={() => replay(s)} style={[styles.tile, !open && styles.tileLocked]} testID={`scene-${s.id}`}>
                       <Text style={[styles.tileNum, s.beat === 'interlude' && styles.tileInterlude]}>{tileLabel(s)}</Text>
                       <Text style={[styles.tileTitle, !open && { color: C.inkSoft }]} numberOfLines={2}>
                         {open ? s.title : '???'}

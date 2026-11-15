@@ -13,6 +13,7 @@ import { lotView } from './city-model';
 import { buildChipHint, buildChipSub, cardLook, type ButtonTone } from './sidewalk-model';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BuyButton, haptic } from './game-ui';
+import { shopStars } from '../engine/features/mastery';
 import { pipBits, showPips, starPips } from './endgame/mastery-model';
 import { StarPips } from './endgame/star-pips';
 
@@ -71,6 +72,9 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
                 key={n.id}
                 onLayout={onTab(i)}
                 testID={`build-${n.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Build ${n.name}, ${buildChipSub(n.buildCost, warn)}`}
+                accessibilityState={{ disabled: !can }}
                 onPress={() => {
                   const ok = onBuild(n.id);
                   haptic(ok ? 'success' : 'error');
@@ -86,7 +90,7 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
           }
           const eps = Game.shopEarnings(game, n.id) * boostMult;
           return (
-            <Pressable key={n.id} onLayout={onTab(i)} testID={`tab-${n.id}`} onPress={() => {
+            <Pressable key={n.id} onLayout={onTab(i)} testID={`tab-${n.id}`} accessibilityRole="tab" accessibilityLabel={`${n.name}, ${Game.runsItself(shop) ? `${money(eps)} a second` : 'you run it'}${showPips(shop) ? `, ${shopStars(shop)} of 3 stars` : ''}`} accessibilityState={{ selected: active }} onPress={() => {
                 if (!active) emitAudio({ type: 'click' });
                 onSelect(n.id);
               }} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
@@ -101,7 +105,7 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
       {/* edge fades so a clipped tab reads as "scroll for more" */}
       {/* hide each fade when the strip is already at that end */}
       {(['l', 'r'] as const).filter((side) => (side === 'l' ? sx > 2 : sx < maxScroll - 2)).map((side) => (
-        <Svg key={side} width={30} height="100%" style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]} viewBox="0 0 30 10" preserveAspectRatio="none" pointerEvents="none">
+        <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" key={side} width={30} height="100%" style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]} viewBox="0 0 30 10" preserveAspectRatio="none" pointerEvents="none">
           <Defs>
             <LinearGradient id={`tf-${side}`} x1={side === 'l' ? '0' : '1'} y1="0" x2={side === 'l' ? '1' : '0'} y2="0">
               <Stop offset="0" stopColor="#B52C1C" stopOpacity={1} />
@@ -158,7 +162,7 @@ export function StationCard(props: {
         </View>
       </View>
       <View style={props.wide ? { width: 96 } : undefined}>
-        <BuyButton compact tone={props.tone} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : props.buyLabel ?? money(props.cost)} sub={props.tone === 'nogain' ? 'no gain now' : undefined} enabled={props.canBuy} onPress={props.onBuy} />
+        <BuyButton compact name={props.title} tone={props.tone} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : props.buyLabel ?? money(props.cost)} sub={props.tone === 'nogain' ? 'no gain now' : undefined} enabled={props.canBuy} onPress={props.onBuy} />
       </View>
     </View>
   );

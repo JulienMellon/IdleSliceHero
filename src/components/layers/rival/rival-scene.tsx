@@ -100,7 +100,7 @@ export const RivalScene = memo(function RivalScene({ shopId, width, height }: Sc
   const shut = closedAt === null ? 0 : shutterShare((Date.now() - closedAt) / 1000);
   return (
     <View ref={root} testID="rival-shop" pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Svg width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
+      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
         <G transform={`translate(${RIVAL_SHOP.x} ${RIVAL_SHOP.top})`}>
           <MegaShop shut={shut} />
         </G>

@@ -10,10 +10,15 @@ import type { NightOvenView } from '../engine/night-oven';
 import { C, F } from '../theme';
 import { cashFont, HUD_GAP, HUD_ICON, MIN_FONT, rateLine } from './endgame/fit-model';
 import { GOAL_BAR, GOAL_FONT_MAX_SCALE, GOAL_GAP, GOAL_LAYOUT, GOAL_PAD, goalBarLayout, goalLine, goalWords, type GoalSpan } from './goal-model';
+import { buyLabelText } from './a11y-labels';
 import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, SliceIcon, StarIcon } from './icons';
 import { countUpValue, offlineGiftView, type GiftSummary } from './offline-model';
 import { Portrait } from './portrait';
 import { emitCoin, emitPayout, onPayout, setCoinTarget } from './pulse-bus';
+import { AdButton } from './store/ad-button';
+import { offlineOffer } from './store/ad-model';
+import { useGame } from '../store/game-store';
+import { useMotion } from './scene/clock';
 import { buttonOutline, type ButtonTone } from './sidewalk-model';
 import { BUTTON_H, COMPACT_FONT_MAX_SCALE, GOAL_BAR_H, GOAL_TAP_H, GOAL_TAP_ROOM, HUD_BUTTON_SLOP, HUD_ROW_H, HUD_STACK } from './tap-targets';
 
@@ -67,7 +72,7 @@ const BURST = ['star', 'coin', 'slice', 'star', 'coin', 'slice'] as const;
  * the player is saving for (D326). `expand` is the amber Expand buy (D407). `compact` is the 44 pt sidewalk button: `icon` + `sub`
  * above the price, and `foot` (or the "need" line) under it.
  */
-export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal', saving = false, progress = 0, need = null, foot = null, noBurst = false, labelSize, subSize, footSize }: { /** G102: font sizes from the fit arithmetic (endgame/fit-model.ts): the web build can't shrink text to fit, so a long price would clip. */ labelSize?: number; subSize?: number; footSize?: number; /** D454: no confetti over the label (the offline popup's Collect: a star cut its "C"). */ noBurst?: boolean; label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: ButtonTone; saving?: boolean; progress?: number; need?: string | null; /** A line under the price that shows whether or not the button is affordable (compact only). */ foot?: string | null }) {
+export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal', saving = false, progress = 0, need = null, foot = null, noBurst = false, labelSize, subSize, footSize, name }: { /** What it buys, for a screen reader ("Prep"): the label alone is a price. */ name?: string; /** G102: font sizes from the fit arithmetic (endgame/fit-model.ts): the web build can't shrink text to fit, so a long price would clip. */ labelSize?: number; subSize?: number; footSize?: number; /** D454: no confetti over the label (the offline popup's Collect: a star cut its "C"). */ noBurst?: boolean; label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: ButtonTone; saving?: boolean; progress?: number; need?: string | null; /** A line under the price that shows whether or not the button is affordable (compact only). */ foot?: string | null }) {
   const nogain = tone === 'nogain';
   const amber = tone === 'expand' && enabled;
   const footText = foot ?? (!enabled ? need : null);
@@ -84,16 +89,19 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
   const [burst] = useState(() => new Animated.Value(0));
   const [shake] = useState(() => new Animated.Value(0));
   const [bursting, setBursting] = useState(false);
+  // Reduce Motion: a refused buy still buzzes (haptic) and a bought one still clicks, but the button doesn't shake and no confetti flies
+  const motion = useMotion();
   const press = () => {
     const ok = onPress();
     if (ok === false) {
       haptic('error');
+      if (!motion.shake) return;
       shake.setValue(0);
       Animated.sequence([-6, 6, -4, 4, 0].map((v) => Animated.timing(shake, { toValue: v, duration: 45, useNativeDriver: native }))).start();
       return;
     }
     haptic(ok ? 'success' : 'light');
-    if (ok && !noBurst) {
+    if (ok && !noBurst && motion.burst) {
       setBursting(true);
       burst.setValue(0);
       Animated.timing(burst, { toValue: 1, duration: 650, easing: Easing.out(Easing.quad), useNativeDriver: native }).start(() => setBursting(false));
@@ -101,7 +109,7 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
   };
   return (
     <Animated.View style={{ transform: [{ translateX: shake }] }}>
-      <Pressable testID={testID} onPress={press} style={({ pressed }) => [styles.buyOuter, compact && styles.buyOuterCompact, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
+      <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={buyLabelText(name, label, sub, footText)} accessibilityState={{ disabled: !enabled }} onPress={press} style={({ pressed }) => [styles.buyOuter, compact && styles.buyOuterCompact, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
         <View style={[styles.buyInner, compact && styles.buyInnerCompact, { backgroundColor: innerBg }, innerBorder]}>
           {sub && (compact || !nogain) ? (
             compact ? (
@@ -212,7 +220,7 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
   return (
     <View style={styles.hud}>
       <View style={styles.hudTop}>
-        <Pressable onPress={onScrapbook} style={styles.hudIcon} testID="open-scrapbook" hitSlop={HUD_BUTTON_SLOP.scrapbook}>
+        <Pressable onPress={onScrapbook} style={styles.hudIcon} testID="open-scrapbook" accessibilityRole="button" accessibilityLabel={newScenes > 0 ? `Scrapbook, ${newScenes} new` : 'Scrapbook'} hitSlop={HUD_BUTTON_SLOP.scrapbook}>
           {scrapRing !== undefined && <ProgressRing step={scrapRing} />}
           <BookIcon size={32} />
           {newScenes > 0 && (
@@ -223,7 +231,7 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
         </Pressable>
         {/* v5.4: the clipboard and the gift show once rewards unlock (their handlers are passed) */}
         {onTasks && (
-          <Pressable onPress={onTasks} style={styles.hudIcon} testID="open-tasks" accessibilityLabel="Daily and weekly tasks" hitSlop={HUD_BUTTON_SLOP.tasks}>
+          <Pressable onPress={onTasks} style={styles.hudIcon} testID="open-tasks" accessibilityRole="button" accessibilityLabel={tasksBadge > 0 ? `Daily and weekly tasks, ${tasksBadge} ready` : 'Daily and weekly tasks'} hitSlop={HUD_BUTTON_SLOP.tasks}>
             <ClipboardIcon size={30} />
             {tasksBadge > 0 && (
               <View style={styles.badge}>
@@ -253,13 +261,13 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
           </Text>
         </View>
         {onGift && (
-          <Pressable onPress={onGift} style={styles.hudIcon} testID="open-gift" accessibilityLabel="Daily gift" hitSlop={HUD_BUTTON_SLOP.gift}>
+          <Pressable onPress={onGift} style={styles.hudIcon} testID="open-gift" accessibilityRole="button" accessibilityLabel={giftDot ? 'Daily gift, ready to claim' : 'Daily gift'} hitSlop={HUD_BUTTON_SLOP.gift}>
             <GiftIcon size={30} />
             {giftDot && <View style={styles.giftDot} />}
           </Pressable>
         )}
         {topChips}
-        <Pressable onPress={onCity} style={styles.hudIcon} testID="open-city" hitSlop={HUD_BUTTON_SLOP.city}>
+        <Pressable onPress={onCity} style={styles.hudIcon} testID="open-city" accessibilityRole="button" accessibilityLabel="City map" hitSlop={HUD_BUTTON_SLOP.city}>
           <MapIcon size={32} />
         </Pressable>
 
@@ -268,6 +276,9 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
         <View style={styles.goalRow}>
         <Pressable
           testID="goal"
+          accessibilityRole="button"
+          accessibilityLabel={`${ready ? 'Ready: ' : 'Goal: '}${goal.label}, ${goalAmount(goal.current, goal.target)}${ready ? '. Tap to buy' : ''}`}
+          accessibilityState={{ disabled: !goal.onPress }}
           disabled={!goal.onPress}
           onPress={() => {
             const ok = goal.onPress?.();
@@ -303,8 +314,9 @@ const ProgressRing = memo(function ProgressRing({ step }: { step: number }) {
   // close to the next scene (90%+): the ring breathes, so the player knows a story is about to come
   const near = step >= 18;
   const [pulse] = useState(() => new Animated.Value(1));
+  const { loops } = useMotion();
   useEffect(() => {
-    if (!near) {
+    if (!near || !loops) {
       pulse.setValue(1);
       return;
     }
@@ -316,10 +328,10 @@ const ProgressRing = memo(function ProgressRing({ step }: { step: number }) {
     );
     loop.start();
     return () => loop.stop();
-  }, [near, pulse]);
+  }, [near, loops, pulse]);
   return (
     <Animated.View pointerEvents="none" style={[styles.ring, { opacity: pulse }]}>
-      <Svg width={HUD_ICON} height={HUD_ICON} viewBox="0 0 44 44">
+      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={HUD_ICON} height={HUD_ICON} viewBox="0 0 44 44">
         <Circle cx={22} cy={22} r={RING_R} stroke="rgba(255,255,255,0.28)" strokeWidth={3} fill="none" />
         {k > 0 && <Circle cx={22} cy={22} r={RING_R} stroke={C.cheese} strokeWidth={3} fill="none" strokeLinecap="round" strokeDasharray={`${RING_LEN * k} ${RING_LEN}`} transform="rotate(-90 22 22)" />}
       </Svg>
@@ -438,7 +450,7 @@ const RAYS = Array.from({ length: 9 }, (_, i) => (-170 + i * 20) * (Math.PI / 18
 /** A crescent moon (SVG, so it draws the same everywhere; the emoji did not). */
 export function MoonIcon({ size = 18 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={size} height={size} viewBox="0 0 24 24">
       <Path d="M16.5 3.2A9 9 0 1 0 20.8 15.5 7.2 7.2 0 0 1 16.5 3.2Z" fill="#F6C343" stroke={OVEN_INK} strokeWidth={1.6} strokeLinejoin="round" />
     </Svg>
   );
@@ -452,7 +464,7 @@ const OvenArt = memo(function OvenArt({ glow, open }: { glow: number; open: bool
   const k = open ? 1 : glow / 20;
   const puffs = open ? 3 : Math.round(k * 3);
   return (
-    <Svg width={OVEN_VB.w} height={OVEN_VB.h} viewBox={`0 ${OVEN_VB.top} ${OVEN_VB.w} ${OVEN_VB.h}`} style={styles.ovenArt}>
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={OVEN_VB.w} height={OVEN_VB.h} viewBox={`0 ${OVEN_VB.top} ${OVEN_VB.w} ${OVEN_VB.h}`} style={styles.ovenArt}>
       <Defs>
         <RadialGradient id="ovenHeat" cx="50%" cy="50%" r="50%">
           <Stop offset="0" stopColor="#FFB23E" stopOpacity="0.95" />
@@ -496,7 +508,7 @@ const OvenArt = memo(function OvenArt({ glow, open }: { glow: number; open: bool
 const OvenDoor = memo(function OvenDoor({ glow }: { glow: number }) {
   const k = glow / 20;
   return (
-    <Svg width={DOOR.w} height={DOOR.h} viewBox={`0 0 ${DOOR.w} ${DOOR.h}`}>
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={DOOR.w} height={DOOR.h} viewBox={`0 0 ${DOOR.w} ${DOOR.h}`}>
       <Path d={ARCH(DOOR.w, DOOR.h)} fill="#6B4331" stroke={OVEN_INK} strokeWidth={3} />
       <Circle cx={DOOR.w / 2} cy={26} r={13} fill="#3A1D12" stroke={OVEN_INK} strokeWidth={3} />
       <Circle cx={DOOR.w / 2} cy={26} r={10.5} fill="#FF8A1F" opacity={0.15 + 0.85 * k} />
@@ -506,6 +518,9 @@ const OvenDoor = memo(function OvenDoor({ glow }: { glow: number }) {
   );
 });
 
+/** The welcome-back gift's 2× ad gave its benefit: the held-back total is doubled (store `doubleOffline`). */
+const doubleOffline = (): void => void useGame.getState().doubleOffline();
+
 /**
  * The return popup is a gift, not a receipt (D424, D425, D447): Nonna's night oven stands with its door shut, its heat glowing and
  * its chimney smoking in proportion to how full it got (a full one shakes). The news line is on show before the door opens.
@@ -514,7 +529,7 @@ const OvenDoor = memo(function OvenDoor({ glow }: { glow: number }) {
  * button keeps testID `collect-offline` in both states. A full oven offers the bigger one (`onUpgrade` opens the night-oven sheet).
  * The maths lives in offline-model.ts.
  */
-export function OfflinePopup({ summary, nightOven, onCollect, onUpgrade }: { summary: GiftSummary; nightOven: number; onCollect: () => void; onUpgrade?: () => void }) {
+export function OfflinePopup({ summary, nightOven, onCollect, onUpgrade }: { /** `boost`: what a timed boost multiplied the window by; `doubled`: the 2× ad (or Nonna's Plus) has been taken (v5.17, store/ad-model.ts). */ summary: GiftSummary & { boost?: number; doubled?: boolean }; nightOven: number; onCollect: () => void; onUpgrade?: () => void }) {
   const view = useMemo(() => offlineGiftView(summary, nightOven), [summary, nightOven]);
   const [pop] = useState(() => new Animated.Value(0.7));
   const [door] = useState(() => new Animated.Value(0));
@@ -524,16 +539,21 @@ export function OfflinePopup({ summary, nightOven, onCollect, onUpgrade }: { sum
   const [shown, setShown] = useState(0);
   const ovenRef = useRef<ComponentRef<typeof View>>(null);
   const timers = useRef<{ tick: ReturnType<typeof setInterval> | null; close: ReturnType<typeof setTimeout> | null; closed: boolean }>({ tick: null, close: null, closed: false });
+  const { loops, slide } = useMotion();
+  // read once, when the popup opens: a setting that changes while it is up must not restart its count-up
+  const [springs] = useState(() => slide);
   useEffect(() => {
-    Animated.spring(pop, { toValue: 1, friction: 5, useNativeDriver: native }).start();
+    // Reduce Motion: the popup is simply there
+    if (springs) Animated.spring(pop, { toValue: 1, friction: 5, useNativeDriver: native }).start();
+    else pop.setValue(1);
     const t = timers.current;
     return () => {
       if (t.tick) clearInterval(t.tick);
       if (t.close) clearTimeout(t.close);
     };
-  }, [pop]);
+  }, [pop, springs]);
   // a full oven rattles until it is opened
-  const rattle = view.full && !opened;
+  const rattle = view.full && !opened && loops;
   useEffect(() => {
     if (!rattle) {
       shake.setValue(0);
@@ -638,6 +658,13 @@ export function OfflinePopup({ summary, nightOven, onCollect, onUpgrade }: { sum
             ))}
           </Animated.View>
         ) : null}
+        {/* v5.17 (U3): 2× the whole total, before the door opens so the count-up lands on it; it replaces a timed boost, never stacks */}
+        {!opened && offlineOffer(summary.boost, summary.doubled) && <AdButton placement="offline_2x" label="2× earnings" plusLabel="2× earnings · Nonna’s Plus" testID="offline-double" onBenefit={doubleOffline} />}
+        {summary.doubled ? (
+          <Text style={[styles.giftLine, { fontFamily: F.bold, color: C.basilDark }]} testID="offline-doubled">
+            Doubled! 2× earnings
+          </Text>
+        ) : null}
         <View style={{ alignSelf: 'stretch' }}>
           <BuyButton
             label={opened ? 'Collect' : 'Open the oven'}
@@ -693,7 +720,7 @@ export function NightOvenSheet({ view, onBuy, onClose }: { view: NightOvenView; 
             <BuyButton testID="buy-night-oven-sheet" label={`${next.title} · ${money(next.price)}`} enabled={next.canBuy} tone={next.lock ? 'nogain' : 'normal'} onPress={onBuy} />
           </View>
         ) : null}
-        <Pressable testID="close-night-oven" onPress={onClose} style={styles.sheetClose}>
+        <Pressable testID="close-night-oven" accessibilityRole="button" accessibilityLabel="Close the night oven" onPress={onClose} style={styles.sheetClose}>
           <Text style={styles.closeText}>Close</Text>
         </Pressable>
       </View>

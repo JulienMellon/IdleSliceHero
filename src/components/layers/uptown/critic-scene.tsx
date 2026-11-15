@@ -35,7 +35,7 @@ function Figure({ door, p, mood, act, width, height, target }: { door: Door; p: 
   const box = pillBox(width, head.left, text, 4);
   return (
     <View testID="critic" pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} style={StyleSheet.absoluteFill}>
         <G transform={`translate(${f.ox} ${f.oy}) scale(${f.s})`}>
           <Person x={at.x} y={at.y} kind="guest" front={false} flip={at.flip && p < 1} step={at.step} act={act} mood={mood} {...LOOK} />
         </G>

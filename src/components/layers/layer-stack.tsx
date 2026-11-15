@@ -170,7 +170,7 @@ const RivalCard = memo(function RivalCard() {
   if (m.face === 'running') {
     return (
       <View testID="rival-chip" style={styles.card}>
-        <Pressable testID="rival-active" accessibilityLabel={`${m.title}: ${m.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); useGame.getState().setActive(hood); }}>
+        <Pressable testID="rival-active" accessibilityRole="button" accessibilityLabel={`${m.title}: ${m.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); useGame.getState().setActive(hood); }}>
           <Portrait id={m.who} mood="angry" size={34} />
           <View style={styles.mid}>
             <Text testID="rival-progress" style={styles.progress} numberOfLines={1}>

@@ -107,7 +107,7 @@ export function CityMap({ game, width, height, onPress }: { game: Game.GameState
   const [soon, setSoon] = useState(false);
   return (
     <>
-    <Svg width={width} height={height} viewBox={`0 0 ${MAP_VIEWBOX.w} ${MAP_VIEWBOX.h + MAP_PAD_BOTTOM}`} preserveAspectRatio="xMidYMid meet">
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} viewBox={`0 0 ${MAP_VIEWBOX.w} ${MAP_VIEWBOX.h + MAP_PAD_BOTTOM}`} preserveAspectRatio="xMidYMid meet">
       <Rect x={-50} y={-50} width={200} height={200} fill={C.map} />
       {ROADS.map(([x0, y0, x1, y1], i) => (
         <G key={i}>
