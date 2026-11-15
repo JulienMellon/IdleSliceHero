@@ -73,10 +73,10 @@
 
 ## src/engine/features/events.ts
 - KEY — src/engine/features/events.ts:19
-- activeEvent(now: number): EventDef | null — src/engine/features/events.ts:25 — The event running at `now` (local time; the start is inclusive, the end is not), or null.
-- eventView(now: number): EventView | null — src/engine/features/events.ts:39 — The event running now, or the next one starting within 60 minutes with its countdown; null otherwis…
-- withoutEvent(g: GameState): GameState — src/engine/features/events.ts:67 — `g` with no event running (for a reward that must not be inflated by one).
-- events: Feature<EventsState> — src/engine/features/events.ts:69
+- activeEvent(now: number, g?: Pick<GameState, 'shops'>): EventDef | null — src/engine/features/events.ts:28 — The event running at `now` (local time; the start is inclusive, the end is not), or null.
+- eventView(now: number, g?: Pick<GameState, 'shops'>): EventView | null — src/engine/features/events.ts:42 — The event running now, or the next one starting within 60 minutes with its countdown; null otherwis…
+- withoutEvent(g: GameState): GameState — src/engine/features/events.ts:70 — `g` with no event running (for a reward that must not be inflated by one).
+- events: Feature<EventsState> — src/engine/features/events.ts:72
 - types: EventsState, EventView
 
 ## src/engine/features/heads.ts
@@ -213,16 +213,16 @@
 - KEY — src/engine/features/service.ts:20
 - quantise(x: number): number — src/engine/features/service.ts:48 — Round down to a 5% step (an epsilon so 0.9 stays 0.9), as a plain two-decimal number.
 - flowOf(g: GameState, id: NeighborhoodId, now: number): Flow — src/engine/features/service.ts:61 — The shop's flow right now.
-- serviceOf(f: Flow): number — src/engine/features/service.ts:74 — Service, 0..1, in 5% steps (rounded down).
-- loadOf(f: Flow, rate: number): number — src/engine/features/service.ts:76 — A station's load, 0..1, in 5% steps.
-- lampOf(load: number): Lamp — src/engine/features/service.ts:78
-- floorOf(f: Flow): FloorLamp — src/engine/features/service.ts:80 — The floor's lamp from wanted ÷ kitchen (the raw ratio: its thresholds are not 5% steps).
-- reportActive(g: GameState, id: NeighborhoodId): boolean — src/engine/features/service.ts:86 — A shop that runs itself, after the tutorial: the only kind the report covers.
-- reportView(g: GameState, id: NeighborhoodId, now: number): ReportView — src/engine/features/service.ts:148 — Everything the strip and the sheet show for one shop.
-- onServicePulse(fn: (p: ServicePulse) => void) — src/engine/features/service.ts:193
-- slammedAsks(g: GameState, id: NeighborhoodId): BarkAsk[] — src/engine/features/service.ts:204 — The asks of a shop's heads: each hired head whose station has been Slammed for `slammedBarkSeconds`…
-- service: Feature<ServiceStateSlice> — src/engine/features/service.ts:216
-- withoutService(g: GameState): GameState — src/engine/features/service.ts:266 — `g` with no tip and no penalty (for a reward that must not move with how well the shop is served, a…
+- serviceOf(f: Flow): number — src/engine/features/service.ts:86 — Service, 0..1, in 5% steps (rounded down).
+- loadOf(f: Flow, rate: number): number — src/engine/features/service.ts:88 — A station's load, 0..1, in 5% steps.
+- lampOf(load: number): Lamp — src/engine/features/service.ts:90
+- floorOf(f: Flow): FloorLamp — src/engine/features/service.ts:92 — The floor's lamp from wanted ÷ kitchen (the raw ratio: its thresholds are not 5% steps).
+- reportActive(g: GameState, id: NeighborhoodId): boolean — src/engine/features/service.ts:98 — A shop that runs itself, after the tutorial: the only kind the report covers.
+- reportView(g: GameState, id: NeighborhoodId, now: number): ReportView — src/engine/features/service.ts:160 — Everything the strip and the sheet show for one shop.
+- onServicePulse(fn: (p: ServicePulse) => void) — src/engine/features/service.ts:205
+- slammedAsks(g: GameState, id: NeighborhoodId): BarkAsk[] — src/engine/features/service.ts:216 — The asks of a shop's heads: each hired head whose station has been Slammed for `slammedBarkSeconds`…
+- service: Feature<ServiceStateSlice> — src/engine/features/service.ts:228
+- withoutService(g: GameState): GameState — src/engine/features/service.ts:278 — `g` with no tip and no penalty (for a reward that must not move with how well the shop is served, a…
 - types: Lamp, FloorLamp, ServiceState, KitchenStation, ShopService, ServiceStateSlice, Flow, ReportView, ServicePulse
 
 ## src/engine/features/types.ts
@@ -428,7 +428,8 @@
 - ringStep(progress: number): number — src/engine/teaser.ts:47 — Whole steps of RING_STEP, rounded down so a ring never shows a step it hasn't reached (full only at…
 - commas(n: number): string — src/engine/teaser.ts:50 — 1200 → "1,200"; from a million up the usual "1.2M".
 - nextScene(s: GameState, scenes: readonly Scene[] = HOME_SCENES): Scene | null — src/engine/teaser.ts:58 — The first scene not yet seen, in story order (an already-triggered one is only waiting for its mome…
-- nextSceneTeaser(s: GameState, scenes: readonly Scene[] = HOME_SCENES): Teaser — src/engine/teaser.ts:63
+- nextSceneTeaser(s: GameState, scenes: readonly Scene[] = HOME_SCENES): Teaser — src/engine/teaser.ts:88
+- teaserStep(s: GameState, scenes: readonly Scene[] = HOME_SCENES): number — src/engine/teaser.ts:93 — U13: only the ring's step of `nextSceneTeaser` (the HUD asks five times a second): no text is built…
 - types: TeaserKind, Teaser
 
 ## src/engine/tutorial.ts
@@ -483,12 +484,12 @@ CITY_NAME, TUNING, STATIONS, OvenGrade, OVEN_GRADES, NONNA_TAKEOVER, FootprintTi
 - Slots({ items }: { items: readonly SlotEntry[] }) — src/components/slots.tsx:92 — Renders every entry of a prop-less slot.
 - SceneSlots({ items, shopId, width, height }: { items: readonly SlotEntry<SceneSlotProps>[]; shopId: string; w… — src/components/slots.tsx:104 — Renders every scene overlay with the shop and the scene size.
 - ReportSlots({ items, bottom }: { items: readonly SlotEntry<ShopReportSlotProps>[]; bottom: number }) — src/components/slots.tsx:116 — Renders every shop-report entry with the strip's `bottom`.
-- StoryWaitBanner — src/components/slots.tsx:148 — v5.16 (T1b): "Win over Industrial to continue Uptown’s story" (storyWaitHint), one line at the top …
-- HUD_CHIPS: SlotEntry[] — src/components/slots.tsx:161
-- HUD_TOP_CHIPS: SlotEntry[] — src/components/slots.tsx:175
-- BANNERS: SlotEntry[] — src/components/slots.tsx:177
-- SHEETS: SlotEntry[] — src/components/slots.tsx:189
-- SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] — src/components/slots.tsx:201
-- DRAWER_CARDS: SlotEntry[] — src/components/slots.tsx:203
-- SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] — src/components/slots.tsx:211
+- StoryWaitBanner — src/components/slots.tsx:162 — v5.16 (T1b): "Win over Industrial to continue Uptown’s story" (storyWaitHint), one line at the top …
+- HUD_CHIPS: SlotEntry[] — src/components/slots.tsx:175
+- HUD_TOP_CHIPS: SlotEntry[] — src/components/slots.tsx:189
+- BANNERS: SlotEntry[] — src/components/slots.tsx:191
+- SHEETS: SlotEntry[] — src/components/slots.tsx:203
+- SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] — src/components/slots.tsx:215
+- DRAWER_CARDS: SlotEntry[] — src/components/slots.tsx:217
+- SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] — src/components/slots.tsx:225
 - types: SlotProps, SceneSlotProps, ShopReportSlotProps, SlotEntry
