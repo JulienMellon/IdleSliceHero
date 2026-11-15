@@ -200,7 +200,7 @@
 
 | Key | Scene · panel · slot | Speaker | Old | New |
 | --- | --- | --- | --- | --- |
-| `beat4.downtown-4` | downtown-4 · P1 caption | caption | A hundred and fifty deliveries. Downtown smells like Rosa’s again. | A hundred and fifty deliveries. Before lunch. Downtown smells like Rosa’s again. |
+| `beat4.downtown-4` | downtown-4 · P1 caption | caption | A hundred and fifty deliveries. Downtown smells like Rosa’s again. | Two thousand deliveries. Before lunch. Downtown smells like Rosa’s again. |
 | `beat4.suburbs-4.p1` | suburbs-4 · new P1, caption only · backdrop suburbs · no cast | caption | none | Across the street, the MegaSlice balloons are gone. One drifts past the window. |
 | `beat4.waterfront-4` | waterfront-4 | — | none | — |
 | `beat4.university-4` | university-4 | — | none | — |
@@ -214,7 +214,7 @@
 | --- | --- | --- | --- |
 | `fix.downtown-2.p1` | downtown-2 · P1 caption | Twelve deliveries. The phone is actually ringing. | Four hundred deliveries. The phone is actually ringing. |
 | `fix.downtown-2.p3.l3` | downtown-2 · P3 · line 3 · Nonna Rosa | Twelve pizzas. Is small. Is a start. Keep going, eh? | Four hundred pizzas. Is small. Is a start. Keep going, eh? |
-| `fix.downtown-4.p1` | downtown-4 · P1 caption | A hundred and fifty deliveries. Downtown smells like Rosa’s again. | A hundred and fifty deliveries. Before lunch. Downtown smells like Rosa’s again. |
+| `fix.downtown-4.p1` | downtown-4 · P1 caption | A hundred and fifty deliveries. Downtown smells like Rosa’s again. | Two thousand deliveries. Before lunch. Downtown smells like Rosa’s again. |
 | `fix.waterfront-3.p3.l1` | waterfront-3 · P3 · line 1 · Victor Crust | The auction closes soon. Outbid MegaSlice? With pizza money? Ha! | An auction? Against MegaSlice? With pizza money? Ha! |
 | `fix.waterfront-3b.p4.l1` | waterfront-3b · P4 · line 1 · Captain Marisol | The auction’s open, kid. Bid two million and Pier 9 stays a pier. | Auction’s open, kid. They raise every two minutes. Beat ’em to it. |
 | `fix.university-3c.p2` | university-3c · P2 caption | A MegaSlice stairwell. A man peels off a mustache. | A MegaSlice stairwell. A man wipes off his mustache. With a napkin. |
@@ -239,7 +239,7 @@
 | `head.downtown.benny` | uptown-3 · P4 · line 2 | Benny | Mrs. Russo read about the yacht. She says she’ll still have the usual. |
 | `head.suburbs.patty` | suburbs-2 · P3 · line 3 | Patty | I already made Tater a new label. It says “RIGHT NET.” Laminated. |
 | `head.waterfront.gus` | waterfront-2 · P3 · line 2 | Gus | Seen it fuller once. That was the storm, though. Mostly water. |
-| `head.university.raj` | university-2 · P3 · line 3 | Raj | Welcome aboard. I’ll send you my dough spreadsheet. It has tabs. |
+| `head.university.raj` | university-2 · P3 · line 3 | Raj | Welcome aboard. I’ll send you my dough spreadsheet. It’s peer-reviewed. |
 | `head.industrial.rita` | industrial-2 · P3 · line 2 | Rita | Leave him be, hon. Some sauces get you right here. |
 | `head.uptown.margot` | uptown-2 · P3 · line 3 | Margot | A dog named Croissant. Finally, someone Uptown who respects pastry. |
 

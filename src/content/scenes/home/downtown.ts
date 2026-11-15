@@ -153,7 +153,7 @@ export const DOWNTOWN_SCENES: Scene[] = [
       {
         backdrop: 'downtown',
         cast: [],
-        caption: "A hundred and fifty deliveries. Before lunch. Downtown smells like Rosa's again.",
+        caption: "Two thousand deliveries. Before lunch. Downtown smells like Rosa's again.",
         lines: [],
       },
       {

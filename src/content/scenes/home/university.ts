@@ -76,7 +76,7 @@ export const UNIVERSITY_SCENES: Scene[] = [
         lines: [
           { speaker: 'You', text: "Priya, how'd you like a job? Paid in actual money. And unlimited slices." },
           { speaker: 'Priya', text: "Unlimited?? Okay. Okay okay okay. I'm in." },
-          { speaker: 'Raj', text: 'Welcome aboard. I’ll send you my dough spreadsheet. It has tabs.' },
+          { speaker: 'Raj', text: 'Welcome aboard. I’ll send you my dough spreadsheet. It’s peer-reviewed.' },
         ],
       },
     ],
