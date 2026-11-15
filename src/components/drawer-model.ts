@@ -4,7 +4,7 @@
 //
 // The cache key covers everything the drawer reads from the game except cash. A new feature that moves a gain with some other state
 // must add that state to `drawerKey` (the same rule as `stationModels`).
-import { DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEAD_TITLE, HEADS, OVEN_GRADES, VEHICLES, type DecorKind, type HeadKind } from '../content/tuning';
+import { DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEAD_TITLE, HEADS, MANAGERS, OVEN_GRADES, VEHICLES, type DecorKind, type HeadKind } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { bonusUnlocked } from '../engine/bonus';
 import { money, rate } from '../engine/format';
@@ -188,7 +188,7 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
     }
     cards.push(
       card('manager', {
-        icon: id === 'downtown' ? { t: 'nonna' } : { t: 'gm', name: `${id}-gm` },
+        icon: id === 'downtown' ? { t: 'nonna' } : { t: 'gm', name: MANAGERS[id].id },
         title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire ${aOrAn(nd.name)} ${nd.name} manager`,
         detail: id === 'downtown' ? `Keep baking — ${G.nonnaCountdownText(game)}` : after ? managerEffect() : `General Manager: ×2 income here, and it earns while you're away (${plus(G.shopEarnings(game, id))})`,
         wide: true,

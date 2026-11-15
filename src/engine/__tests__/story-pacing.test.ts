@@ -32,10 +32,10 @@ describe('story pacing (v3.7)', () => {
     const s = withShop(seenUpTo(['downtown-1', 'downtown-2', 'downtown-3', 'downtown-4'], 100), 'suburbs', { built: true });
     expect(pickScene(s, HOME_SCENES, LATE, 0, false, 99)?.id).toBe('suburbs-1');
   });
-  it('Downtown’s beat 4 (a pizza count) waits 60 s of play after beat 3', () => {
+  it('Downtown’s beat 4 (a pizza count) waits 120 s of play after beat 3 (S45)', () => {
     const dt = withShop(seenUpTo(['downtown-1', 'downtown-2', 'downtown-3'], 500, { 'downtown-3': 400 }), 'downtown', { sold: countOf('downtown-4') });
-    expect(pickScene({ ...dt, playSeconds: 450 }, HOME_SCENES, LATE, 0, false, null)).toBeNull(); // 50 s
-    expect(pickScene({ ...dt, playSeconds: 470 }, HOME_SCENES, LATE, 0, false, null)?.id).toBe('downtown-4'); // 70 s
+    expect(pickScene({ ...dt, playSeconds: 400 + STORY_PACING.downtownBeat4GapSeconds - 10 }, HOME_SCENES, LATE, 0, false, null)).toBeNull();
+    expect(pickScene({ ...dt, playSeconds: 400 + STORY_PACING.downtownBeat4GapSeconds + 10 }, HOME_SCENES, LATE, 0, false, null)?.id).toBe('downtown-4');
   });
   it('the count-triggered scenes wait for more pizzas, beat after beat', () => {
     const c = [2, 3, 4].map((n) => countOf(`downtown-${n}`));

@@ -1,4 +1,5 @@
 // The rival (v5.16): it opens after beat 3 (x0.8 on the shop), the challenge's target, win / lose / retry, and old saves.
+import { STORY_PACING } from '../../../../content/tuning';
 import { RIVAL } from '../../../../content/layers';
 import type { NeighborhoodId } from '../../../../content/types';
 import { getFeature, withFeatures } from '../../index';
@@ -121,6 +122,23 @@ describe('the challenge', () => {
       const again = play(near, 1);
       expect(rivalView(again, ID, NOW).phase).toBe('available');
       expect(startRivalChallenge(again, ID, NOW).ok).toBe(true);
+    });
+  });
+
+  it('waits for the beat-4 gap after beat 3 (C120): a "waiting" phase, and no start before it is over', () => {
+    run(() => {
+      const gap = STORY_PACING.beat4GapSeconds;
+      const at = (play: number): G.GameState => ({ ...open(), sceneAt: { 'university-3': 100 }, playSeconds: play });
+      const early = at(100 + gap - 1);
+      expect(rivalOpen(early, ID)).toBe(true); // the x0.8 is on from beat 3
+      expect(rivalView(early, ID, NOW)).toMatchObject({ open: true, phase: 'waiting' });
+      expect(startRivalChallenge(early, ID, NOW).ok).toBe(false);
+      expect(rivalView(at(100 + gap), ID, NOW).phase).toBe('available');
+      expect(startRivalChallenge(at(100 + gap), ID, NOW).ok).toBe(true);
+      // Downtown's wait is shorter
+      const dt: G.GameState = { ...shopOf(open(['downtown-3']), 'downtown', { built: true }), sceneAt: { 'downtown-3': 100 }, playSeconds: 100 + STORY_PACING.downtownBeat4GapSeconds - 1 };
+      expect(rivalView(dt, 'downtown', NOW).phase).toBe('waiting');
+      expect(rivalView({ ...dt, playSeconds: dt.playSeconds + 1 }, 'downtown', NOW).phase).toBe('available');
     });
   });
 

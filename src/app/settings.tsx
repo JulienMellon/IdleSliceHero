@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAudioPrefs } from '@/audio/prefs';
 import { BuyButton } from '@/components/game-ui';
-import { BUTTON_H } from '@/components/tap-targets';
+import { BUTTON_H, TAP } from '@/components/tap-targets';
 import { APP_VERSION } from '@/content/version';
 import { money } from '@/engine/format';
 import { useGame } from '@/store/game-store';
@@ -22,7 +22,7 @@ export default function Settings() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={{ width: 70 }} testID="back">
+        <Pressable onPress={() => router.back()} style={styles.back} testID="back">
           <Text style={styles.backText}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>Settings</Text>
@@ -89,7 +89,8 @@ const styles = StyleSheet.create({
   toggleOff: { backgroundColor: '#E2D9CE', borderColor: '#C9BCAD' },
   toggleText: { fontFamily: F.bold, fontSize: 17 },
   root: { flex: 1, backgroundColor: C.bg },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 4, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark },
+  back: { width: 70, minHeight: TAP.min, justifyContent: 'center' },
   backText: { fontFamily: F.bold, color: '#fff', fontSize: 18 },
   title: { fontFamily: F.bold, color: '#fff', fontSize: 24 },
   card: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 3, borderColor: C.ink, padding: 14 },

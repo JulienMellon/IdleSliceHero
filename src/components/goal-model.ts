@@ -1,5 +1,6 @@
 // The goal bar's numbers and colours as plain data (D297). The label is drawn twice: dark ink over the cream track,
 // and a cream copy clipped to the fill's width, so it stays readable at every fill fraction. Pure: unit-tested in node.
+import { HOME_SCENES } from '../content/scenes/home';
 import { finaleSeen } from '../engine/features/counterattack';
 import { MASTERY_MAX, masteryTotal, nextStar } from '../engine/features/mastery';
 import { def, type GameState } from '../engine/game';
@@ -102,6 +103,15 @@ export function goalLabelFit(label: string, amount: string, barW: number): GoalF
 }
 export const goalLabelFits = (label: string, amount: string, barW: number): boolean => goalLabelFit(label, amount, barW).fits;
 
+// ---------- the story count (v5.16) ----------
+
+/** Every scene of the home city: the bar's total (40 with Todd's interludes and the hire scenes), never a number typed in a screen. */
+export const STORY_TOTAL = HOME_SCENES.length;
+/** The completed-city fallback goal: "Story 12/40", the bar filling as scenes are seen. */
+export function storyGoal(seen: number): { label: string; current: number; target: number } {
+  return { label: `Story ${seen}/${STORY_TOTAL}`, current: seen, target: STORY_TOTAL };
+}
+
 // ---------- the post-story goal (v5.15, D427) ----------
 
 /** The goal bar once the story is told: the stars of every shop, 0..18. */
@@ -110,6 +120,8 @@ export interface MasteryGoal {
   label: string;
   /** G98: the same line short, "\u260510/18 \u00B7 Flagship: Waterfront", for a narrow bar (an event chip beside it): the star stands for "Mastery". */
   short: string;
+  /** The same line shortest, "\u260510/18 \u00B7 Flagship": for a bar with three chips beside it, where even the short line does not fit. */
+  tiny: string;
   /** The amount beside the words: the next star's steps with their unit ("2/3 heads"), or a star when all 18 are earned. */
   text: string;
   /** The bar: stars earned of 18. */
@@ -127,7 +139,8 @@ export function masteryGoal(g: GameState): MasteryGoal | null {
   const next = nextStar(g);
   const count = copy('goal.mastery', { n });
   const short = next ? `\u2605${n}/18 \u00B7 ${starName(next.star)}: ${def(next.shopId).name}` : `\u2605${n}/18`;
-  return { label: next ? `${count} \u00B7 ${nextStarLine(next)}` : count, short, text: next ? `${next.have}/${next.need} ${STAR_UNIT[next.star]}` : '\u2605', current: n, target: MASTERY_MAX };
+  const tiny = next ? `\u2605${n}/18 \u00B7 ${starName(next.star)}` : `\u2605${n}/18`;
+  return { label: next ? `${count} \u00B7 ${nextStarLine(next)}` : count, short, tiny, text: next ? `${next.have}/${next.need} ${STAR_UNIT[next.star]}` : '\u2605', current: n, target: MASTERY_MAX };
 }
 
 /** The line and its amount both show whole in a bar `barW` wide (no word clipped): the strict form of `goalLabelFits`. */
@@ -141,10 +154,12 @@ export function goalFitsWhole(label: string, amount: string, barW: number): bool
  * else the short one ("\u260510/18 \u00B7 Flagship: Waterfront") with the amount ("3/4 sizes"); else the short one alone, which gets all
  * the room. A goal with no short line is shown as it is (the ordinary rule, `goalLabelFit`, applies to it).
  */
-export function goalLine(goal: { label: string; short?: string; text?: string }, barW: number): { label: string; text: string | undefined } {
+export function goalLine(goal: { label: string; short?: string; tiny?: string; text?: string }, barW: number): { label: string; text: string | undefined } {
   if (!goal.short || !(barW > 0)) return { label: goal.label, text: goal.text };
   const text = goal.text ?? '';
   if (goalFitsWhole(goal.label, text, barW)) return { label: goal.label, text: goal.text };
   if (goalFitsWhole(goal.short, text, barW)) return { label: goal.short, text: goal.text };
+  // the narrowest bars (three chips beside it): the short line alone may still not fit whole, so the tiny one, if it has one
+  if (goal.tiny && !goalFitsWhole(goal.short, '', barW)) return { label: goal.tiny, text: '' };
   return { label: goal.short, text: '' };
 }

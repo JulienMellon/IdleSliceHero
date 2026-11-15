@@ -58,3 +58,23 @@ export function onCheer(fn: Listener) {
 export function emitCheer() {
   cheerListeners.forEach((fn) => fn());
 }
+
+/**
+ * The `gameday` pulse (v5.16 S2a): the final whistle of a Mudhens game, a Game Day rush begins. The audio lane listens; the HUD's layer stack
+ * emits it when the Suburbs rush starts.
+ */
+const gameDayListeners = new Set<Listener>();
+
+export function onGameDay(fn: Listener) {
+  gameDayListeners.add(fn);
+  return () => {
+    gameDayListeners.delete(fn);
+  };
+}
+
+export function emitGameDay() {
+  gameDayListeners.forEach((fn) => fn());
+}
+
+/** The shop report's pulses (`service-up` when a shop starts tipping, `service-down` when its line goes cold), relayed here so the audio lane hears every pulse from one bus. */
+export { onServicePulse, type ServicePulse } from '../engine/features/service';

@@ -8,14 +8,14 @@ import { GIFT } from '../content/hooks';
 import { cashText, goalAmount, money } from '../engine/format';
 import type { NightOvenView } from '../engine/night-oven';
 import { C, F } from '../theme';
-import { cashFont, HUD_GAP, HUD_ICON, rateLine } from './endgame/fit-model';
+import { cashFont, HUD_GAP, HUD_ICON, MIN_FONT, rateLine } from './endgame/fit-model';
 import { GOAL_BAR, GOAL_FONT_MAX_SCALE, GOAL_GAP, GOAL_LAYOUT, GOAL_PAD, goalBarLayout, goalLine, goalWords, type GoalSpan } from './goal-model';
 import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, SliceIcon, StarIcon } from './icons';
 import { countUpValue, offlineGiftView, type GiftSummary } from './offline-model';
 import { Portrait } from './portrait';
 import { emitCoin, emitPayout, onPayout, setCoinTarget } from './pulse-bus';
 import { buttonOutline, type ButtonTone } from './sidewalk-model';
-import { BUTTON_H, COMPACT_FONT_MAX_SCALE } from './tap-targets';
+import { BUTTON_H, COMPACT_FONT_MAX_SCALE, GOAL_BAR_H, GOAL_TAP_H, GOAL_TAP_ROOM, HUD_BUTTON_SLOP, HUD_ROW_H, HUD_STACK } from './tap-targets';
 
 const native = Platform.OS !== 'web';
 
@@ -107,7 +107,7 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
             compact ? (
               <View style={styles.buySubRow}>
                 {icon}
-                <Text style={[styles.buySubCompact, needLine && styles.buySubTight, subSize ? { fontSize: subSize } : null, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+                <Text style={[styles.buySubCompact, needLine && styles.buySubTight, subSize ? { fontSize: subSize } : null, { color: labelColor }]} numberOfLines={1} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
                   {sub}
                 </Text>
               </View>
@@ -115,7 +115,7 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
               <Text style={styles.buySub}>{sub}</Text>
             )
           ) : null}
-          <Text style={[styles.buyLabel, compact && styles.buyLabelCompact, compact && needLine && styles.buyLabelTight, labelSize ? { fontSize: labelSize } : null, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}>
+          <Text style={[styles.buyLabel, compact && styles.buyLabelCompact, compact && needLine && styles.buyLabelTight, labelSize ? { fontSize: labelSize } : null, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={compact ? Math.min(1, MIN_FONT / (labelSize ?? 15)) : undefined} maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}>
             {label}
           </Text>
           {/* D402: what is still missing, under the muted price (compact only; the line heights tighten to keep the 44 pt button) */}
@@ -165,6 +165,8 @@ export interface Goal {
   label: string;
   /** G98: a shorter line for a narrow bar (goal-model `goalLine`). */
   short?: string;
+  /** The shortest form, for the narrowest bar (goal-model `goalLine`). */
+  tiny?: string;
   current: number;
   target: number;
   /** Shown instead of a money amount, e.g. "9/24". */
@@ -193,7 +195,8 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
   // G101: the cash pill's measured width: the cash and its rate line are sized to fit it (the web build can't shrink text to fit)
   const [cashW, setCashW] = useState(0);
   const rate = cashW > 0 ? rateLine(subtitle, cashW, boostText ? boostText.length + 5 : 0) : null;
-  const line = goal ? goalLine(goal, goalW) : null;
+  // D477: a money goal's amount is drawn from its cash and target, so the fit counts it too (goalLine only knew a goal's own `text`)
+  const line = goal ? goalLine(goal.text === undefined && goal.short ? { ...goal, text: goalAmount(goal.current, goal.target) } : goal, goalW) : null;
   const shownLabel = line?.label ?? '';
   const shownText = line ? line.text : undefined;
   // the measured words/amount of the goal line: the two-tone seam snaps to their edges (G88)
@@ -209,7 +212,7 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
   return (
     <View style={styles.hud}>
       <View style={styles.hudTop}>
-        <Pressable onPress={onScrapbook} style={styles.hudIcon} testID="open-scrapbook" hitSlop={8}>
+        <Pressable onPress={onScrapbook} style={styles.hudIcon} testID="open-scrapbook" hitSlop={HUD_BUTTON_SLOP.scrapbook}>
           {scrapRing !== undefined && <ProgressRing step={scrapRing} />}
           <BookIcon size={32} />
           {newScenes > 0 && (
@@ -220,7 +223,7 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
         </Pressable>
         {/* v5.4: the clipboard and the gift show once rewards unlock (their handlers are passed) */}
         {onTasks && (
-          <Pressable onPress={onTasks} style={styles.hudIcon} testID="open-tasks" accessibilityLabel="Daily and weekly tasks" hitSlop={4}>
+          <Pressable onPress={onTasks} style={styles.hudIcon} testID="open-tasks" accessibilityLabel="Daily and weekly tasks" hitSlop={HUD_BUTTON_SLOP.tasks}>
             <ClipboardIcon size={30} />
             {tasksBadge > 0 && (
               <View style={styles.badge}>
@@ -250,13 +253,13 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
           </Text>
         </View>
         {onGift && (
-          <Pressable onPress={onGift} style={styles.hudIcon} testID="open-gift" accessibilityLabel="Daily gift" hitSlop={4}>
+          <Pressable onPress={onGift} style={styles.hudIcon} testID="open-gift" accessibilityLabel="Daily gift" hitSlop={HUD_BUTTON_SLOP.gift}>
             <GiftIcon size={30} />
             {giftDot && <View style={styles.giftDot} />}
           </Pressable>
         )}
         {topChips}
-        <Pressable onPress={onCity} style={styles.hudIcon} testID="open-city" hitSlop={8}>
+        <Pressable onPress={onCity} style={styles.hudIcon} testID="open-city" hitSlop={HUD_BUTTON_SLOP.city}>
           <MapIcon size={32} />
         </Pressable>
 
@@ -271,7 +274,8 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
             haptic(ok ? 'success' : ok === false ? 'error' : 'light');
           }}
           onLayout={(e) => setGoalW(e.nativeEvent.layout.width)}
-          style={[styles.goal, styles.goalFlex, ready && styles.goalReady, halo === 'goal' && styles.haloGoal]}>
+          style={styles.goalTap}>
+        <View style={[styles.goal, ready && styles.goalReady, halo === 'goal' && styles.haloGoal]}>
           <View style={[styles.goalFill, goalW > 0 ? { width: bar.fillW } : { width: `${pct * 100}%` }, ready && { backgroundColor: C.basil }]} />
           <GoalLine key={ready ? 'ready' : shownLabel} label={ready ? `▶ ${shownLabel}` : shownLabel} amount={ready ? 'tap!' : shownText ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone={ready ? 'ready' : 'track'} onSpans={ready ? undefined : onWords} onAmount={ready ? undefined : onAmount} />
           {/* D297: the same line again in cream, clipped to the fill, so the part over the fill is light and the rest stays dark */}
@@ -282,6 +286,7 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
               </View>
             </View>
           ) : null}
+        </View>
         </Pressable>
         {chips}
         </View>
@@ -710,18 +715,19 @@ const shadow = Platform.select({
 });
 
 const styles = StyleSheet.create({
-  buyOuter: { borderRadius: 14, paddingBottom: 4, minWidth: 88 },
-  buyInner: { borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10, alignItems: 'center', borderWidth: 2, borderColor: 'rgba(0,0,0,0.12)' },
+  // U5: a button is never shorter than 44 pt (the full-size ones were 39); the face grows to fill it
+  buyOuter: { borderRadius: 14, paddingBottom: 4, minWidth: 88, minHeight: BUTTON_H },
+  buyInner: { flexGrow: 1, justifyContent: 'center', borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10, alignItems: 'center', borderWidth: 2, borderColor: 'rgba(0,0,0,0.12)' },
   buyLabel: { fontFamily: F.bold, color: '#fff', fontSize: 17 },
   // compact: a fixed 44 pt (outer, including its 4 pt lip), so nothing depends on flex-grow against a min height (C46)
   buyOuterCompact: { minWidth: 0, alignSelf: 'stretch', height: BUTTON_H },
   buySubRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3 },
   buySubCompact: { fontFamily: F.semi, fontSize: 10, letterSpacing: 0.1, flexShrink: 1 },
   buyLabelCompact: { fontSize: 15 },
-  // with a need line the three lines share the 36 pt inside the button: 10 + 15 + 10
+  // with a need line the three lines share the 36 pt inside the button: 10 + 15 + 10 (U5: no text under 10 pt)
   buySubTight: { lineHeight: 10 },
   buyLabelTight: { lineHeight: 15 },
-  buyNeed: { fontFamily: F.semi, fontSize: 9, lineHeight: 10, opacity: 0.85 },
+  buyNeed: { fontFamily: F.semi, fontSize: MIN_FONT, lineHeight: 10, opacity: 0.85 },
   noGainInner: { backgroundColor: '#EFE6D8', borderColor: '#CFC3B2' },
   saveTrack: { position: 'absolute', left: 6, right: 6, bottom: 2, height: 3, borderRadius: 2, backgroundColor: 'rgba(46,125,62,0.18)' },
   saveFill: { height: 3, borderRadius: 2, backgroundColor: '#2E7D3E' },
@@ -730,13 +736,15 @@ const styles = StyleSheet.create({
   burst: { position: 'absolute', alignSelf: 'center', top: 8 },
   modalIcons: { flexDirection: 'row', alignItems: 'center', gap: 2, marginVertical: 4 },
 
-  hud: { backgroundColor: C.tomato, paddingHorizontal: 12, paddingBottom: 10, paddingTop: 6, gap: 8 },
-  hudTop: { flexDirection: 'row', alignItems: 'center', gap: HUD_GAP },
+  hud: { backgroundColor: C.tomato, paddingHorizontal: 12, paddingBottom: HUD_STACK.padBottom, paddingTop: 6, gap: HUD_STACK.gap },
+  // the row is at least HUD_ROW_H tall: 4 pt of room above and below a 40 pt button for its hitSlop (tap-targets.ts)
+  hudTop: { flexDirection: 'row', alignItems: 'center', gap: HUD_GAP, minHeight: HUD_ROW_H },
   hudIcon: { width: HUD_ICON, height: HUD_ICON, borderRadius: HUD_ICON / 2, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
   hudEmoji: { fontSize: 22 },
   ring: { position: 'absolute', left: 0, top: 0 },
-  goalRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  goalFlex: { flex: 1 },
+  // U5: the goal button is 44 pt tall round its 30 pt bar; the row's negative margin takes the 7 pt either side back, so the HUD is no taller
+  goalRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: -GOAL_TAP_ROOM },
+  goalTap: { flex: 1, height: GOAL_TAP_H, justifyContent: 'center' },
   hudIconSmall: { position: 'absolute', right: -4, top: -4, width: 26, height: 26, borderRadius: 13, backgroundColor: C.tomatoDark, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   giftDot: { position: 'absolute', top: -1, right: -1, width: 16, height: 16, borderRadius: 8, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato },
@@ -748,7 +756,7 @@ const styles = StyleSheet.create({
   // Nonna's tutorial points at the cash or the goal bar with a gold halo
   halo: { borderRadius: 18, borderWidth: 3, borderColor: '#FFC531', backgroundColor: 'rgba(255,197,49,0.18)' },
   haloGoal: { borderColor: '#FFC531', borderWidth: 3 },
-  goal: { height: 30, borderRadius: 15, backgroundColor: GOAL_BAR.track, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderWidth: GOAL_BAR.border, borderColor: 'rgba(0,0,0,0.15)' },
+  goal: { height: GOAL_BAR_H, alignSelf: 'stretch', borderRadius: 15, backgroundColor: GOAL_BAR.track, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderWidth: GOAL_BAR.border, borderColor: 'rgba(0,0,0,0.15)' },
   goalReady: { borderColor: '#fff', backgroundColor: C.basil },
   goalFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: GOAL_BAR.fill },
   // two-tone label (D297): dark ink over the track, a cream copy clipped to the fill's width

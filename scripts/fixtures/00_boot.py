@@ -52,8 +52,12 @@ def run(ctx):
         shot(page, "04-after-20s-play")
         cash = tid(page, "cash").inner_text()
         report["cash_after_play"] = cash
-        if cash.strip() in ("$0", ""):
-            report["errors"].append("cash still $0 after 20s of tapping — core loop broken")
+        # the loop above buys with every dollar (walk-* buttons), so the cash left says nothing: check what was earned (the save's totalEarned)
+        advance(page, 1000)
+        earned = page.evaluate("(key) => (JSON.parse(localStorage.getItem(key) || 'null') || {}).totalEarned || 0", KEY)
+        report["earned_after_play"] = earned
+        if earned <= 0:
+            report["errors"].append("nothing earned after 20s of tapping — core loop broken")
     except Exception as e:
         report["errors"].append(f"core loop interaction failed: {e}")
     browser_ctx.close()

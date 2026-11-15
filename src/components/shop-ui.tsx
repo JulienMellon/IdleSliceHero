@@ -91,7 +91,7 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
                 onSelect(n.id);
               }} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
               <Text style={styles.tabName}>{n.name}</Text>
-              <Text style={[styles.tabSub, active && { color: C.ink }, !shop.managed && !active && { color: C.tomato }]}>{shop.managed ? `${money(eps)}/s` : 'you run it'}</Text>
+              <Text style={[styles.tabSub, active && { color: C.ink }, !Game.runsItself(shop) && !active && { color: C.tomato }]}>{Game.runsItself(shop) ? `${money(eps)}/s` : 'you run it'}</Text>
               {/* v5.15: the shop's three mastery stars (heads, Flagship, golden ovens) */}
               {showPips(shop) && <StarPips testID={`stars-${n.id}`} bits={pipBits(starPips(shop))} size={10} />}
             </Pressable>
@@ -142,7 +142,7 @@ export function StationCard(props: {
       <View style={styles.cardHead}>
         <View style={styles.icon}>{typeof props.icon === 'string' ? <Text style={styles.iconText}>{props.icon}</Text> : props.icon}</View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title} numberOfLines={1}>
+          <Text style={styles.title} numberOfLines={2}>
             {props.title}
             {props.level ? <Text style={styles.level}> {props.level}</Text> : null}
           </Text>
@@ -151,7 +151,7 @@ export function StationCard(props: {
               <Text style={styles.neckText}>BOTTLENECK</Text>
             </View>
           ) : null}
-          <Text style={styles.detail} numberOfLines={3}>
+          <Text style={styles.detail} numberOfLines={4}>
             {/* a line may break before a "·", never after it */}
             {props.detail.replace(/ · /g, ' ·\u00A0')}
           </Text>
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   cardMuted: { opacity: 0.6 },
   cardHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
   neckChip: { alignSelf: 'flex-start', backgroundColor: C.tomato, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1, marginVertical: 1 },
-  neckText: { fontFamily: F.bold, fontSize: 8.5, letterSpacing: 0.6, color: '#fff' },
+  neckText: { fontFamily: F.bold, fontSize: 10, letterSpacing: 0.4, color: '#fff' },
   cardHead: { flexDirection: 'row', gap: 6, alignItems: 'flex-start', flex: 1 },
   icon: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FFE9C7', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: C.cheeseDark },
   iconText: { fontSize: 19 },

@@ -2,6 +2,7 @@
 // is one path string per pattern, built once at module load — a backdrop render only picks strings.
 // Art space: 400 wide, ground at the bottom (y 200), up to 110 units of wall/sky above y 0 (the panel shows y -100…200).
 
+import type { NeighborhoodId } from '../../content/types';
 import { captionBottom } from './staging';
 
 export const n = (v: number) => Math.round(v * 10) / 10;
@@ -224,6 +225,20 @@ export const SUN = { cx: 188, cy: 34, r: 20, glow: 46 } as const;
 /** Foreground prop signs. */
 export const SOLD_SIGN = { x: 106, y: -44, w: 100, h: 46 } as const;
 
+/**
+ * The three Todd props (v5.16), foreground inserts in the top half: above the cast's heads (their tops are at art y 50 on every window) and
+ * under the caption zone, centred so they sit between two figures' heads as well as over one.
+ */
+export const PROP_BOXES = {
+  'order-slip': { x: 145, y: -42, w: 110, h: 80 },
+  'name-tag': { x: 134, y: -40, w: 132, h: 76 },
+  'phone-footage': { x: 172, y: -42, w: 56, h: 80 },
+} as const;
+/** The name tag's white field, under its red HELLO band, in the tag's own coordinates: `propText` is fitted into it. */
+export const NAME_TAG_FIELD = { x: 8, y: 30, w: 116, h: 38 } as const;
+/** The order slip's printed lines (spec section 6) and the room each has, in the slip's own coordinates. */
+export const ORDER_SLIP = { lines: ['MR. SMITH', '1 LG PEPPERONI'], x: 8, w: 94 } as const;
+
 const rectBox = (r: { x: number; y: number; w: number; h: number }): Box => ({ x0: r.x, y0: r.y, x1: r.x + r.w, y1: r.y + r.h });
 /** Every sign-like board per backdrop (and per prop), for the layout tests. */
 export const SIGN_BOXES: Record<string, Box> = {
@@ -235,6 +250,9 @@ export const SIGN_BOXES: Record<string, Box> = {
   'waterfront/pier-9': rectBox(PIER_PLAQUE),
   'megaslice-hq/plate': rectBox(HQ_PLATE),
   'prop/sold-sign': rectBox(SOLD_SIGN),
+  'prop/order-slip': rectBox(PROP_BOXES['order-slip']),
+  'prop/name-tag': rectBox(PROP_BOXES['name-tag']),
+  'prop/phone-footage': rectBox(PROP_BOXES['phone-footage']),
 };
 
 /** A point on a quadratic curve. */
@@ -265,3 +283,53 @@ export const NO_LIGHTS = { wire: '', bulbs: [] as [number, number][], radius: ST
 export const lightsFor = (captioned: boolean) => (captioned ? NO_LIGHTS : STRING_LIGHTS);
 /** Gap kept between the caption bar's bottom edge and anything hung under it, in pt. */
 export const CAPTION_GAP_PT = 6;
+
+// ---------------------------------------------------------------------------------------------------------------
+// Shop interiors per neighbourhood (v5.16). Every cut-scene panel set in "the shop" used Rosa's Downtown room; now the scene's neighbourhood
+// picks the room. Downtown keeps the original; the other five change the palette (wall, tiles, rail, floor), swap the EST. 1974 photo for a
+// window onto that neighbourhood, and swap the jar shelf for one signature object. The PIZZA sign and menu board stay (shared signage).
+
+/** A room's colours: the wall gradient (top to bottom), wallpaper stripes, the tiled band and its grout, the colour band and rail above it, the floor. */
+export interface ShopLook {
+  wall: [string, string];
+  stripe: string;
+  tile: string;
+  grout: string;
+  band: string;
+  rail: string;
+  baseboard: string;
+  floor: string;
+  floorLine: string;
+  floorGrain: string;
+}
+export const SHOP_LOOKS: Readonly<Record<NeighborhoodId, ShopLook>> = {
+  downtown: { wall: ['#F3CB94', '#F2B880'], stripe: '#C8925E', tile: '#F6EEE2', grout: '#D9C7AE', band: '#C8483A', rail: '#8E5A3C', baseboard: '#6B3A22', floor: '#B8743F', floorLine: '#8A5129', floorGrain: '#D49A62' },
+  // light blue clapboard, a team-blue band, pale oak
+  suburbs: { wall: ['#B9E0F2', '#E6F5FC'], stripe: '#86BEDD', tile: '#FFF8E8', grout: '#E3D6BC', band: '#2F80ED', rail: '#C9A06A', baseboard: '#8A5A32', floor: '#C99458', floorLine: '#9C6B38', floorGrain: '#E2B880' },
+  // sea-green wall, a navy band, driftwood rail and weathered boards
+  waterfront: { wall: ['#8FD0DC', '#E8F4EC'], stripe: '#52A6B8', tile: '#E3F1F1', grout: '#B4D3D6', band: '#1F6F8B', rail: '#5E4630', baseboard: '#3F2E1F', floor: '#97724A', floorLine: '#6E4E2C', floorGrain: '#B89468' },
+  // lilac wall, a violet band, a study-room oak floor
+  university: { wall: ['#C6B6F0', '#EFE8FF'], stripe: '#9A84D8', tile: '#F4F0FB', grout: '#D5CCE8', band: '#6C4BC4', rail: '#7A5A3A', baseboard: '#4E3A28', floor: '#A9835A', floorLine: '#7E5C3A', floorGrain: '#C9A27A' },
+  // concrete wall, steel-panel band, a safety-yellow stripe and a poured floor
+  industrial: { wall: ['#8E94A3', '#C9C3B8'], stripe: '#6D7384', tile: '#C5CAD0', grout: '#8E949C', band: '#F2A41B', rail: '#3E4552', baseboard: '#2F333A', floor: '#7A7E83', floorLine: '#585C61', floorGrain: '#979CA1' },
+  // deep plum wall with gold pinstripes, a marble band, a brass rail and a pale marble floor
+  uptown: { wall: ['#3A3258', '#5C4C7C'], stripe: '#D4B35A', tile: '#F2EFF3', grout: '#CFC8D6', band: '#B08D3C', rail: '#CDA64B', baseboard: '#2A2440', floor: '#D9D3DD', floorLine: '#B8AFC0', floorGrain: '#ECE8F0' },
+};
+
+/**
+ * The signature object's room on the wall (art units): between the menu board's foot (y -14) and the rail (y 36), left of the framed window.
+ * It stays under the caption zone and above the cast's heads (art y 50), so a figure's hands and face never meet it.
+ */
+export const SHOP_OBJECT: Box = { x0: 102, y0: -10, x1: 200, y1: 36 };
+/** The window onto the neighbourhood hangs where Rosa's EST. 1974 photo does (SHOP_SIGNS.frame). */
+export const SHOP_WINDOW = SHOP_SIGNS.frame;
+/** University's own string of lights, under the caption zone: a swag from x 94 to 206 (bulbs well inside the panel) and its bulb spots. */
+export const UNI_LIGHTS = (() => {
+  const p0: [number, number] = [94, -12];
+  const c: [number, number] = [150, 4];
+  const p1: [number, number] = [206, -12];
+  const bulbs = [0.12, 0.27, 0.42, 0.58, 0.73, 0.88].map((t) => quadAt(p0, c, p1, t));
+  return { wire: 'M94 -12 Q150 4 206 -12', bulbs, radius: 3.2 };
+})();
+/** The shop's `hood`: only the five neighbourhoods with their own room differ from Downtown's. */
+export const shopLookFor = (hood: NeighborhoodId | undefined): ShopLook => SHOP_LOOKS[hood ?? 'downtown'];

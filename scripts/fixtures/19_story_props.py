@@ -6,7 +6,7 @@ from shots_lib import *  # noqa: F401,F403  (seeded_page, settle, shot, expect, 
 def run(ctx):
     browser = ctx.browser
     sauce = dict(MID_SAVE, active="downtown", seenScenes=["downtown-1", "downtown-2", "downtown-3"], scrapbookViewed=3,
-                 shops=dict(MID_SAVE["shops"], downtown=shop(managed=False, prep=20, ovens=18, counter=20, drivers=12, sold=160), suburbs=shop(built=False, managed=False), waterfront=shop(built=False, managed=False)))
+                 shops=dict(MID_SAVE["shops"], downtown=shop(managed=False, prep=20, ovens=18, counter=20, drivers=12, sold=2217), suburbs=shop(built=False, managed=False), waterfront=shop(built=False, managed=False)))
     page = seeded_page(browser, sauce); advance(page, 3000)
     try:
         for _ in range(14):
@@ -33,6 +33,7 @@ def run(ctx):
     shot(page, "21-pier9-bid-goal", 0.8)
     dale = dict(MID_SAVE, active="suburbs", seenScenes=MID_SAVE["seenScenes"], scrapbookViewed=8,
                 shops=dict(MID_SAVE["shops"], suburbs=shop(prep=30, ovens=28, grade=1, counter=30, drivers=14, tables=20, footprint=1, sold=8100)))
+    dale["x"] = {"rival": {"won": ["suburbs"], "challenge": None, "retryAt": {}}}   # v5.16: suburbs-4 plays when the rival challenge is won
     page = seeded_page(browser, dale); advance(page, 3000)
     if page.locator('[data-testid="collect-offline"]').count():
         tid(page, "collect-offline").click(); advance(page, 1000)

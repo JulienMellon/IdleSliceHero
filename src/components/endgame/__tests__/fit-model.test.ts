@@ -4,7 +4,7 @@ import * as G from '../../../engine/game';
 import { money } from '../../../engine/format';
 import { goalLine, goalLabelFit, masteryGoal } from '../../goal-model';
 import { SIDEWALK_ROW, TAP } from '../../tap-targets';
-import { cardFonts, cardTextWidths, cashFont, cashWidth, fits, fitFont, HUD_ICON, iconWidth, rateLine, SCRAPBOOK_HEAD } from '../fit-model';
+import { cardFonts, cardTextWidths, cashFont, cashWidth, fits, fitFont, HUD_ICON, iconWidth, MIN_FONT, rateLine, SCRAPBOOK_HEAD } from '../fit-model';
 
 // iPhone SE (320 pt) and a 393 pt phone. Plain arithmetic: nothing here can be seen in a screenshot, so it is proved here.
 const SE = 320;
@@ -23,44 +23,65 @@ describe('fitFont', () => {
 
 describe('G102: sidewalk cards at iPhone SE width', () => {
   test('the row geometry: four cards, the All button and the ×1 chip share 304 pt', () => {
-    expect(SIDEWALK_ROW.allWidth + SIDEWALK_ROW.amountWidth).toBe(78);
+    expect(SIDEWALK_ROW.allWidth + SIDEWALK_ROW.amountWidth).toBe(82);
     const w = cardTextWidths(SE, [1, 1, 1, 1], { chip: true, framed: true });
-    // (304 - 42 - 36 - 5 gaps x 5) / 4 = 50.25 per card, minus 11 of frame and 6 of button chrome
-    expect(w[0]).toBeCloseTo(50.25 - 17, 5);
+    // (304 - 42 - 40 - 5 gaps x 5) / 4 = 49.25 per card, minus 11 of frame and 6 of button chrome
+    expect(w[0]).toBeCloseTo(49.25 - 17, 5);
     const sum = w.reduce((t, x) => t + x + 17, 0) + SIDEWALK_ROW.allWidth + SIDEWALK_ROW.amountWidth + 5 * SIDEWALK_ROW.gap;
     expect(sum).toBeCloseTo(SE - 2 * SIDEWALK_ROW.edge, 5);
   });
 
-  test.each([[SE], [BIG]])('every price up to six characters fits its card at %i pt, never below 9 pt', (screen) => {
-    for (const chip of [true, false]) {
-      const widths = cardTextWidths(screen, [1, 1, 1, 1], { chip, framed: true });
-      for (const price of PRICES) {
-        const f = cardFonts(widths[0], { label: price });
-        expect(f.label).toBeGreaterThanOrEqual(9);
-        expect(fits(price, widths[0], f.label)).toBe(true);
+  test('no card line is ever set under 10 pt (U5): the label, the title and the foot all floor at MIN_FONT', () => {
+    expect(MIN_FONT).toBe(10);
+    for (const screen of [SE, BIG]) {
+      for (const chip of [true, false]) {
+        const w = cardTextWidths(screen, [1, 1, 1, 1], { chip, framed: true })[0];
+        for (const price of PRICES) {
+          const f = cardFonts(w, { label: price, sub: 'DRIVERS', foot: `need ${price}`, iconW: iconWidth(w, 'DRIVERS') });
+          expect(Math.min(f.label, f.sub, f.foot)).toBeGreaterThanOrEqual(10);
+        }
       }
     }
   });
 
-  test('the station titles fit: beside their 14 pt icon where the card has room, alone where it has not (320 pt with the chip)', () => {
-    for (const [screen, icon] of [[SE, 0], [BIG, 14]] as const) {
-      const widths = cardTextWidths(screen, [1, 1, 1, 1], { chip: true, framed: true });
-      expect(iconWidth(widths[0])).toBe(icon);
-      for (const title of ['PREP', 'OVENS', 'COUNTER', 'DRIVERS', 'EXPAND']) {
-        const f = cardFonts(widths[0], { label: '$1.2K', sub: title, iconW: iconWidth(widths[0]) });
-        expect(fits(title, widths[0] - icon, f.sub)).toBe(true);
+  test('every price up to six characters fits its card at 393 pt, and up to five at 320 pt (a six-character one gets 33 of the 36 pt it wants: it ellipsizes before it shrinks under 10)', () => {
+    for (const [screen, longest] of [[BIG, 6], [SE, 5]] as const) {
+      for (const chip of [true, false]) {
+        const w = cardTextWidths(screen, [1, 1, 1, 1], { chip, framed: true })[0];
+        for (const price of PRICES.filter((p) => p.length <= longest)) {
+          const f = cardFonts(w, { label: price });
+          expect([screen, chip, price, fits(price, w, f.label)]).toEqual([screen, chip, price, true]);
+        }
       }
     }
   });
 
-  test('a merged card of two slots: the bundle title, the Expand title and the buy label fit', () => {
-    const w = cardTextWidths(SE, [2, 1, 1], { chip: true, framed: true });
-    for (const [label, sub] of [['Buy both $83.2T', 'PREP + OVENS'], ['$83.2T', 'EXPAND \u00B7 Double'], ['Buy both $35', 'PREP + OVENS']] as const) {
-      const f = cardFonts(w[0], { label, sub });
-      expect(f.label).toBeGreaterThanOrEqual(9);
-      expect(fits(label, w[0], f.label)).toBe(true);
-      expect(f.sub).toBeGreaterThanOrEqual(7);
-      expect(fits(sub, w[0], f.sub)).toBe(true);
+  test('the station titles are set at 10 pt: beside their 14 pt icon where the card has room for both, alone where it has not (U5)', () => {
+    const at = (screen: number, title: string) => {
+      const w = cardTextWidths(screen, [1, 1, 1, 1], { chip: true, framed: true })[0];
+      const iconW = iconWidth(w, title);
+      return { w, iconW, f: cardFonts(w, { label: '$1.2K', sub: title, iconW }) };
+    };
+    // 320 pt: a 32 pt card never has the icon; the short titles fit, "COUNTER" and "DRIVERS" (seven letters, 42 pt) are cut by the card, not shrunk
+    for (const title of ['PREP', 'OVENS', 'COUNTER', 'DRIVERS', 'EXPAND']) expect([title, at(SE, title).iconW, at(SE, title).f.sub]).toEqual([title, 0, 10]);
+    // 393 pt: 50 pt of text. The icon stays for the titles that fit beside it at 10 pt (PREP, OVENS, EXPAND), and goes for the seven-letter ones, which then fit alone
+    for (const title of ['PREP', 'OVENS', 'EXPAND']) expect([title, at(BIG, title).iconW]).toEqual([title, 14]);
+    for (const title of ['COUNTER', 'DRIVERS']) {
+      const r = at(BIG, title);
+      expect([title, r.iconW, fits(title, r.w, r.f.sub)]).toEqual([title, 0, true]);
+    }
+  });
+
+  test('a merged card of two slots: the bundle title, the Expand title and the buy label fit (at 320 pt: up to 14 characters; "Buy both $83.2T" ellipsizes rather than go under 10 pt)', () => {
+    for (const screen of [SE, BIG]) {
+      const w = cardTextWidths(screen, [2, 1, 1], { chip: true, framed: true });
+      for (const [label, sub] of [['Buy both $83.2K', 'PREP + OVENS'], ['$83.2T', 'EXPAND \u00B7 Double'], ['Buy both $35', 'PREP + OVENS'], ['Buy both $83.2T', 'PREP + OVENS']] as const) {
+        const f = cardFonts(w[0], { label, sub });
+        expect(f.label).toBeGreaterThanOrEqual(10);
+        expect(f.sub).toBe(10);
+        if (screen === BIG || sub.length <= 14) expect([sub, fits(sub, w[0], f.sub)]).toEqual([sub, true]);
+        if (screen === BIG || label.length <= 14) expect([label, fits(label, w[0], f.label)]).toEqual([label, true]);
+      }
     }
   });
 
@@ -81,9 +102,9 @@ describe('G102: sidewalk cards at iPhone SE width', () => {
 
   test('an unmanaged shop: the four chips and its manager button at 320 pt', () => {
     const w = cardTextWidths(SE, [1, 1, 1, 1], { chip: true, framed: false });
-    // the stack is 304 - 42 - 36 - 2 x 5 = 216; four chips with three 4 pt gaps: 51 each; minus the 6 pt button chrome
-    expect(w[0]).toBeCloseTo((216 - 12) / 4 - 6, 5);
-    for (const price of PRICES) expect(fitFont(price, w[0], 15, 9)).toBeGreaterThanOrEqual(9);
+    // the stack is 304 - 42 - 40 - 2 x 5 = 212; four chips with three 4 pt gaps: 51 each; minus the 6 pt button chrome
+    expect(w[0]).toBeCloseTo((212 - 12) / 4 - 6, 5);
+    for (const price of PRICES) expect(fitFont(price, w[0], 15, MIN_FONT)).toBeGreaterThanOrEqual(10);
   });
 
   test('the amount chip and the All button are the row\u2019s full height', () => {
@@ -142,11 +163,23 @@ describe('G98: the mastery goal line beside the oven chip and the event chip', (
   test('with the event chip at 320 the amount goes and the short line has the whole bar', () => {
     const g = masteryGoal(city())!;
     const line = goalLine(g, barSEEvent);
-    expect(line.label).toBe(g.short);
+    // U5: the whole short line no longer fits there by the estimate, so the tiny one ("\u260510/18 \u00B7 Flagship") leads; it never ellipsizes
+    expect(line.label).toBe(g.tiny);
     expect(line.text).toBe('');
+    expect(goalLabelFit(g.tiny, '', barSEEvent).labelW).toBeLessThanOrEqual(goalLabelFit(g.tiny, '', barSEEvent).wordsRoom);
     // the count and the first word of the star's name are inside the bar's text room: never clipped to "Fla" (the r2 shot)
     const room = barSEEvent - 4 - 24;
     expect(room / (14 * 0.56)).toBeGreaterThan(`\u260510/18 \u00B7 Flagship`.length);
+  });
+
+  test('three chips beside the bar (oven, rush, game day) at 393: the short line does not fit, the tiny one does (62-event-countdown-chip)', () => {
+    const g = masteryGoal(city())!;
+    const bar = BIG - 24 - 44 - 56 - 44 - 3 * 8;
+    const line = goalLine(g, bar);
+    expect(line.label).toBe(g.tiny);
+    expect(line.text).toBe('');
+    const fit = goalLabelFit(line.label, '', bar);
+    expect(fit.labelW).toBeLessThanOrEqual(fit.wordsRoom);
   });
 
   test('at 393 the short line fits whole, with or without the amount', () => {

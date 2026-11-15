@@ -5,9 +5,10 @@
 import { memo, useId, type ReactElement } from 'react';
 import Svg, { Circle, ClipPath, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Rect, Stop, Text } from 'react-native-svg';
 
-import type { Backdrop as BackdropId } from '../content/types';
+import type { Backdrop as BackdropId, NeighborhoodId } from '../content/types';
 import { F } from '../theme';
-import { HQ_PLATE, INDUSTRIAL_BILLBOARD, INDUSTRIAL_POSTS, LEFT_HOUSE, OAK, PIER_PLAQUE, SHOP_SIGNS, SUN, STRING_LIGHTS, UPTOWN_BILLBOARD, alongQuad, backdropView, brickPatch, n as n1, bricks, circle, cloud, gridLines, lightsFor, mullions, planks, rain, rect, skyline, windows } from './cutscene/backdrop-art';
+import { PROP_FONT, fitPropText, lineFont } from './cutscene/prop-text';
+import { NAME_TAG_FIELD, ORDER_SLIP, PROP_BOXES, SHOP_WINDOW, UNI_LIGHTS, shopLookFor, HQ_PLATE, INDUSTRIAL_BILLBOARD, INDUSTRIAL_POSTS, LEFT_HOUSE, OAK, PIER_PLAQUE, SHOP_SIGNS, SUN, STRING_LIGHTS, UPTOWN_BILLBOARD, alongQuad, backdropView, quadAt, brickPatch, n as n1, bricks, circle, cloud, gridLines, lightsFor, mullions, planks, rain, rect, skyline, windows } from './cutscene/backdrop-art';
 
 const INK = '#3B1F14';
 
@@ -37,7 +38,7 @@ const GLOW: Record<BackdropId, string> = {
   'downtown-rain': '#FFC46B',
 };
 
-type Ids = { glow: string; oak: string; lights: ReturnType<typeof lightsFor> };
+type Ids = { glow: string; oak: string; lights: ReturnType<typeof lightsFor>; /** The neighbourhood a shop-interior panel is set in (its room, window and signature object). */ hood?: NeighborhoodId };
 
 // ---------------------------------------------------------------------------------------------------------------
 // Shared pieces
@@ -137,17 +138,20 @@ const SHOP = (() => {
   };
 })();
 
-function ShopScene({ glow, lights }: Ids) {
+function ShopScene({ glow, lights, hood }: Ids) {
   const S = SHOP;
+  const L = shopLookFor(hood);
+  const own = !!hood && hood !== 'downtown';
   return (
     <G>
       {/* far: plaster wall, wallpaper stripes */}
-      <Path d={S.wallpaper} stroke="#C8925E" strokeWidth={5} opacity={0.18} />
-      {/* mid: rail, red tile band, cream tiles */}
-      <Rect x={-20} y={42} width={440} height={94} fill="#F6EEE2" />
-      <Path d={S.tiles} stroke="#D9C7AE" strokeWidth={1.2} />
-      <Rect x={-20} y={42} width={440} height={6} fill="#C8483A" />
-      <Rect x={-20} y={36} width={440} height={6} fill="#8E5A3C" stroke={INK} strokeWidth={1.4} />
+      <Path d={S.wallpaper} stroke={L.stripe} strokeWidth={5} opacity={own ? 0.3 : 0.18} />
+      {/* mid: rail, coloured band, tiles */}
+      <Rect x={-20} y={42} width={440} height={94} fill={L.tile} />
+      <Path d={S.tiles} stroke={L.grout} strokeWidth={1.2} />
+      {hood === 'uptown' && <Path d={SHOPX.marbleVeins} stroke="#B9AFC4" strokeWidth={1.1} fill="none" opacity={0.8} strokeLinecap="round" />}
+      <Rect x={-20} y={42} width={440} height={6} fill={L.band} />
+      <Rect x={-20} y={36} width={440} height={6} fill={L.rail} stroke={INK} strokeWidth={1.4} />
       {/* string lights: none under a caption bar (D394) */}
       {lights.bulbs.length > 0 && (
         <>
@@ -183,6 +187,9 @@ function ShopScene({ glow, lights }: Ids) {
           </Text>
         ))}
       </G>
+      {own ? (
+        <ShopWindow hood={hood} />
+      ) : (
       <G transform={`translate(${SHOP_SIGNS.frame.x} ${SHOP_SIGNS.frame.y}) scale(${SHOP_SIGNS.frame.k})`}>
         <Path d="M16 0 L33 -14 L50 0" stroke={INK} strokeWidth={1.2} fill="none" />
         <Rect x={0} y={0} width={66} height={58} rx={3} fill="#C98F63" stroke={INK} strokeWidth={2.4} />
@@ -194,7 +201,11 @@ function ShopScene({ glow, lights }: Ids) {
           EST. 1974
         </Text>
       </G>
-      {/* shelf of labelled jars */}
+      )}
+      {own ? (
+        <ShopObject hood={hood} glow={glow} />
+      ) : (
+        <G>
       <Path d={S.jarGlass} fill="#E6F2F2" stroke={INK} strokeWidth={1.3} />
       {S.jarFill.map((j) => (
         <Path key={j.c} d={j.d} fill={j.c} />
@@ -205,6 +216,9 @@ function ShopScene({ glow, lights }: Ids) {
       <Path d={S.jarLids} fill="#7A4A26" stroke={INK} strokeWidth={1} />
       <Rect x={100} y={30} width={98} height={5} fill="#8E5A3C" stroke={INK} strokeWidth={1.3} />
       <Path d="M110 35l5 7M188 35l-5 7" stroke="#5E3A26" strokeWidth={2} strokeLinecap="round" />
+        </G>
+      )}
+      {hood === 'university' && <UniLights />}
       {/* brick oven under a pendant lamp */}
       <G transform="translate(-16 0)">
       <Path d="M288 -22 L232 42 L368 42 L312 -22 Z" fill="#FFE7A0" opacity={0.2} />
@@ -224,10 +238,10 @@ function ShopScene({ glow, lights }: Ids) {
       <Rect x={258} y={134} width={84} height={7} fill="#8C8C8C" stroke={INK} strokeWidth={1.4} />
       </G>
       {/* near: baseboard, plank floor, warm spill from the oven, pizza boxes */}
-      <Rect x={-20} y={134} width={440} height={8} fill="#6B3A22" />
-      <Rect x={-20} y={142} width={440} height={70} fill="#B8743F" />
-      <Path d={S.floor.lines + S.floor.joints} stroke="#8A5129" strokeWidth={1.3} />
-      <Path d={S.floor.grain} stroke="#D49A62" strokeWidth={1.4} fill="none" strokeLinecap="round" />
+      <Rect x={-20} y={134} width={440} height={8} fill={L.baseboard} />
+      <Rect x={-20} y={142} width={440} height={70} fill={L.floor} />
+      <Path d={S.floor.lines + S.floor.joints} stroke={L.floorLine} strokeWidth={1.3} />
+      <Path d={S.floor.grain} stroke={L.floorGrain} strokeWidth={1.4} fill="none" strokeLinecap="round" />
       <Rect x={-20} y={142} width={440} height={5} fill="#000" opacity={0.16} />
       <Ellipse cx={284} cy={156} rx={70} ry={12} fill={`url(#${glow})`} opacity={0.75} />
       <Path d={S.shadows} fill="#000" opacity={0.16} />
@@ -236,6 +250,237 @@ function ShopScene({ glow, lights }: Ids) {
       <Path d={circle(122, 118, 2.4) + circle(123, 127, 2.4) + circle(121, 136, 2.4)} fill="#E8432E" />
     </G>
   );
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// The other five shops' interiors (v5.16): a window onto the neighbourhood where Rosa's photo hangs, and one signature object on the shelf wall.
+// Palettes live in cutscene/backdrop-art.ts SHOP_LOOKS; the object's room (SHOP_OBJECT) and the window's (SHOP_WINDOW) are tested there.
+
+const SHOPX = (() => {
+  // pennants hang from a rope across the shelf wall
+  const rope: [[number, number], [number, number], [number, number]] = [[102, -6], [151, 10], [200, -6]];
+  const pennants = [0.1, 0.26, 0.42, 0.58, 0.74, 0.9].map((t, i) => {
+    const [x, y] = quadAt(rope[0], rope[1], rope[2], t);
+    return { d: `M${n1(x - 4.5)} ${n1(y)}h9l-4.5 12Z`, c: ['#D9443A', '#FFC531', '#2F80ED'][i % 3] };
+  });
+  const cups = [120, 150, 180].map((x) => `M${x - 6} 17h12v4q0 6 -6 7q-6 -1 -6 -7ZM${x - 1.2} 27h2.4v2h-2.4ZM${x - 4} 29h8v1h-8Z`).join('');
+  // the fishing net: diagonal mesh over a draped shape, floats along its top rope
+  let mesh = '';
+  for (let k = -50; k <= 90; k += 8) mesh += `M${98 + k} -10L${98 + k + 46} 36M${98 + k + 46} -10L${98 + k} 36`;
+  const floats = [108, 126, 144, 162].map((x) => [x, -9 + Math.sin(x / 22) * -1.2 + 3.6 * (1 - Math.abs((x - 137) / 40) ** 2)] as const);
+  // marble veins across the tiled band
+  let veins = '';
+  for (let i = 0; i < 12; i++) veins += `M${-12 + i * 38} ${50 + ((i * 37) % 34)}q9 9 5 19t9 17q5 8 -2 14`;
+  return {
+    pennantRope: 'M102 -6Q151 10 200 -6',
+    pennants,
+    cups,
+    net: { shape: 'M102 -10Q140 -2 176 -10L172 20Q142 40 104 30Z', mesh, floats },
+    marbleVeins: veins,
+    notes: [
+      [106, 9, 16, 12, '#FFF4C2'],
+      [126, 11, 14, 17, '#F7B6C8'],
+      [145, 8, 18, 13, '#FFFFFF'],
+      [166, 12, 14, 14, '#BFE3F2'],
+      [112, 23, 18, 8, '#FFFFFF'],
+      [140, 25, 16, 7, '#FFF4C2'],
+    ] as const,
+    cork: Array.from({ length: 26 }, (_, i) => `M${102 + ((i * 29) % 82)} ${6 + ((i * 17) % 26)}h1.6`).join(''),
+    thread: 'M114 15L152 28L172 18',
+    crates: [
+      [106, -2, 13, 10, '#E0A82E'],
+      [122, 0, 9, 8, '#4F7DB5'],
+      [133, -3, 14, 11, '#C8483A'],
+      [150, 0, 9, 8, '#4F7DB5'],
+      [162, -1, 16, 9, '#E0A82E'],
+      [108, 20, 15, 11, '#BFC6CE'],
+      [126, 22, 10, 9, '#E0A82E'],
+      [140, 19, 18, 12, '#8E9AA6'],
+      [163, 21, 12, 10, '#C8483A'],
+    ] as const,
+  };
+})();
+
+function UniLights() {
+  const bulbs = UNI_LIGHTS.bulbs;
+  return (
+    <G>
+      <Path d={bulbs.map(([x, y]) => circle(x, y + 3, 9)).join('')} fill="#FFE7A0" opacity={0.28} />
+      <Path d={UNI_LIGHTS.wire} stroke={INK} strokeWidth={1.4} fill="none" />
+      {bulbs.map(([x, y], i) => (
+        <Path key={i} d={circle(x, y + 3, UNI_LIGHTS.radius, UNI_LIGHTS.radius + 1)} fill={['#FFC531', '#E8432E', '#3FAE5A'][i % 3]} stroke={INK} strokeWidth={1} />
+      ))}
+    </G>
+  );
+}
+
+/** The window onto each neighbourhood, hung where Rosa's EST. 1974 photo hangs (same box, same scale). Drawn in the frame's own 66 × 58 space. */
+function ShopWindow({ hood }: { hood: NeighborhoodId | undefined }) {
+  const f = SHOP_WINDOW;
+  let art: ReactElement | null = null;
+  if (hood === 'suburbs') {
+    art = (
+      <G>
+        <Rect x={0} y={0} width={66} height={58} rx={3} fill="#FFFFFF" stroke={INK} strokeWidth={2.4} />
+        <Rect x={5} y={5} width={56} height={44} fill="#9AD7F2" />
+        <Path d="M5 49V36Q22 27 38 34Q50 30 61 36V49Z" fill="#6FBF5A" />
+        <Path d="M12 40V31L22 24L32 31V40Z" fill="#F4C27A" stroke={INK} strokeWidth={1} />
+        <Path d="M10 32L22 20L34 32Z" fill="#D9443A" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+        <Circle cx={48} cy={29} r={8} fill="#3E9A4A" stroke={INK} strokeWidth={1} />
+        <Rect x={46.5} y={34} width={3} height={9} fill="#7A4A26" />
+        <Path d="M33 5V49M5 27H61" stroke="#FFFFFF" strokeWidth={2.4} />
+        <Rect x={-3} y={49} width={72} height={6} rx={1.5} fill="#FFFFFF" stroke={INK} strokeWidth={1.6} />
+      </G>
+    );
+  } else if (hood === 'waterfront') {
+    art = (
+      <G>
+        <Circle cx={33} cy={29} r={27} fill="#C9A24A" stroke={INK} strokeWidth={2.4} />
+        <Circle cx={33} cy={29} r={21} fill="#8FD0E8" stroke={INK} strokeWidth={1.6} />
+        <Circle cx={42} cy={20} r={5} fill="#FFD27A" />
+        <Path d="M12.4 33H53.6A21 21 0 0 1 12.4 33Z" fill="#2E86AB" />
+        <Path d="M16 38q4 -2 8 0t8 0t8 0t8 0M22 44q4 -2 8 0t8 0" stroke="#BFE8F2" strokeWidth={1.2} fill="none" strokeLinecap="round" />
+        <Path d="M31 32V19L39 32Z" fill="#FFFFFF" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+        <Path d="M25 33H40L37 37H28Z" fill="#8E3B2E" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+        <Path d={[0, 1, 2, 3, 4, 5, 6, 7].map((i) => circle(33 + 24 * Math.cos((i * Math.PI) / 4), 29 + 24 * Math.sin((i * Math.PI) / 4), 1.6)).join('')} fill="#8A6A22" />
+      </G>
+    );
+  } else if (hood === 'university') {
+    art = (
+      <G>
+        <Path d="M0 58V22Q0 0 33 0Q66 0 66 22V58Z" fill="#F4F0FB" stroke={INK} strokeWidth={2.4} />
+        <Path d="M5 53V23Q5 5 33 5Q61 5 61 23V53Z" fill="#BFD0FF" />
+        <Rect x={28} y={25} width={10} height={28} fill="#B9886A" stroke={INK} strokeWidth={1} />
+        <Path d="M26.5 25L33 13L39.5 25Z" fill="#6C4BC4" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+        <Circle cx={33} cy={31} r={3.2} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
+        <Circle cx={14} cy={45} r={7} fill="#4FA86A" stroke={INK} strokeWidth={1} />
+        <Circle cx={52} cy={45} r={7} fill="#4FA86A" stroke={INK} strokeWidth={1} />
+        <Path d="M33 5V53M5 33H61" stroke="#F4F0FB" strokeWidth={2.2} />
+      </G>
+    );
+  } else if (hood === 'industrial') {
+    art = (
+      <G>
+        <Rect x={0} y={0} width={66} height={58} rx={2} fill="#4A515C" stroke={INK} strokeWidth={2.4} />
+        <Rect x={5} y={5} width={56} height={48} fill="#F0B46A" />
+        <Rect x={14} y={14} width={6} height={39} fill="#3B3F47" />
+        <Rect x={44} y={9} width={7} height={44} fill="#3B3F47" />
+        <Path d="M5 53V42L16 35V42L27 35V42L38 35V53Z" fill="#4A4F58" />
+        <Path d={circle(17, 10, 4) + circle(21, 5, 3) + circle(47, 5, 4.5)} fill="#E6DFD6" opacity={0.85} />
+        <Path d="M33.5 5V53M5 29H61" stroke="#4A515C" strokeWidth={3} />
+      </G>
+    );
+  } else if (hood === 'uptown') {
+    art = (
+      <G>
+        <Path d="M0 58V22Q0 0 33 0Q66 0 66 22V58Z" fill="#CDA64B" stroke={INK} strokeWidth={2.4} />
+        <Path d="M5 53V23Q5 5 33 5Q61 5 61 23V53Z" fill="#1D2350" />
+        <Circle cx={49} cy={17} r={5} fill="#F4EFC8" />
+        <Path d={rect(9, 30, 10, 23) + rect(21, 22, 9, 31) + rect(34, 34, 12, 19) + rect(48, 28, 10, 25)} fill="#2C3470" />
+        <Path d={windows(11, 33, 2, 5, 2.4, 2.8, 5, 4.6) + windows(23, 25, 2, 6, 2.4, 2.8, 4.6, 4.6) + windows(37, 37, 3, 3, 2.4, 2.8, 3.8, 4.6) + windows(50, 31, 2, 4, 2.4, 2.8, 4.6, 4.8)} fill="#FFD76A" />
+        <Path d="M33 5V53" stroke="#CDA64B" strokeWidth={2.2} />
+      </G>
+    );
+  }
+  return (
+    <G transform={`translate(${f.x} ${f.y}) scale(${f.k})`}>
+      <Path d="M16 0 L33 -14 L50 0" stroke={INK} strokeWidth={1.2} fill="none" />
+      {art}
+    </G>
+  );
+}
+
+/** The one thing in the room that is the neighbourhood's: Suburbs' team pennants, Waterfront's nets, University's corkboard, Industrial's steel shelving, Uptown's marble and brass. */
+function ShopObject({ hood, glow }: { hood: NeighborhoodId | undefined; glow: string }) {
+  const X = SHOPX;
+  if (hood === 'suburbs') {
+    return (
+      <G>
+        <Path d={X.pennantRope} stroke={INK} strokeWidth={1.4} fill="none" />
+        {X.pennants.map((p, i) => (
+          <Path key={i} d={p.d} fill={p.c} stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+        ))}
+        <Path d={X.cups} fill="#F2C94C" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+        <Rect x={102} y={30} width={96} height={5} fill="#8E5A3C" stroke={INK} strokeWidth={1.3} />
+        <Path d="M110 35l5 7M188 35l-5 7" stroke="#5E3A26" strokeWidth={2} strokeLinecap="round" />
+      </G>
+    );
+  }
+  if (hood === 'waterfront') {
+    const clip = `${glow}net`;
+    return (
+      <G>
+        <Defs>
+          <ClipPath id={clip}>
+            <Path d={X.net.shape} />
+          </ClipPath>
+        </Defs>
+        <Path d={X.net.shape} fill="#3B2E1F" opacity={0.22} transform="translate(2 2)" />
+        <G clipPath={`url(#${clip})`}>
+          <Path d={X.net.mesh} stroke="#9C7A44" strokeWidth={1.3} />
+        </G>
+        <Path d={X.net.shape} stroke={INK} strokeWidth={1.6} fill="none" strokeLinejoin="round" />
+        <Path d="M102 -10Q140 -2 176 -10" stroke="#C9A56A" strokeWidth={3} fill="none" strokeLinecap="round" />
+        {X.net.floats.map(([x, y], i) => (
+          <Circle key={i} cx={x} cy={y} r={3.4} fill={i % 2 ? '#FFFFFF' : '#E8742A'} stroke={INK} strokeWidth={1} />
+        ))}
+      </G>
+    );
+  }
+  if (hood === 'university') {
+    return (
+      <G>
+        <Rect x={102} y={4} width={84} height={30} rx={2} fill="#C58B52" stroke="#7A4A26" strokeWidth={3} />
+        <Path d={X.cork} stroke="#8E5E34" strokeWidth={1.4} strokeLinecap="round" />
+        {X.notes.map(([x, y, w, h, c], i) => (
+          <G key={i}>
+            <Rect x={x} y={y} width={w} height={h} fill={c} stroke="#7A6A50" strokeWidth={0.7} />
+            <Circle cx={x + w / 2} cy={y + 1.8} r={1.5} fill="#D9443A" />
+          </G>
+        ))}
+        <Path d={X.thread} stroke="#D9443A" strokeWidth={1} fill="none" />
+      </G>
+    );
+  }
+  if (hood === 'industrial') {
+    return (
+      <G>
+        <Path d="M102 -10h3.6v46h-3.6ZM194 -10h3.6v46h-3.6Z" fill="#8A95A1" stroke={INK} strokeWidth={1.2} />
+        {X.crates.map(([x, y, w, h, c], i) => (
+          <Rect key={i} x={x} y={y} width={w} height={h} fill={c} stroke={INK} strokeWidth={1} />
+        ))}
+        <Rect x={102} y={8} width={94} height={3.4} fill="#6F7B88" stroke={INK} strokeWidth={1} />
+        <Rect x={102} y={31} width={94} height={3.4} fill="#6F7B88" stroke={INK} strokeWidth={1} />
+        <Path d="M104 11L192 31" stroke="#8A95A1" strokeWidth={1} opacity={0.5} />
+      </G>
+    );
+  }
+  if (hood === 'uptown') {
+    const sconce = (x: number) => (
+      <G key={x}>
+        <Ellipse cx={x} cy={6} rx={13} ry={11} fill={`url(#${glow})`} opacity={0.7} />
+        <Path d={`M${x - 4} -1h8l2 8h-12Z`} fill="#FFE9A8" stroke="#CDA64B" strokeWidth={1.4} strokeLinejoin="round" />
+        <Path d={`M${x} 7v5q0 4 -4 4`} stroke="#CDA64B" strokeWidth={2} fill="none" strokeLinecap="round" />
+        <Circle cx={x - 4} cy={16} r={2.4} fill="#CDA64B" stroke={INK} strokeWidth={0.8} />
+      </G>
+    );
+    return (
+      <G>
+        {sconce(114)}
+        {sconce(188)}
+        <Path d="M128 27V8Q128 -10 149 -10Q170 -10 170 8V27Z" fill="#CFE6F0" stroke="#CDA64B" strokeWidth={3.2} strokeLinejoin="round" />
+        <Path d="M128 27V8Q128 -10 149 -10Q170 -10 170 8V27Z" fill="none" stroke={INK} strokeWidth={1} />
+        <Path d="M134 22L146 -4M142 22L150 6" stroke="#FFFFFF" strokeWidth={3} opacity={0.5} strokeLinecap="round" />
+        <Rect x={102} y={28} width={96} height={6} fill="#F4F1F6" stroke={INK} strokeWidth={1.3} />
+        <Path d="M104 31q8 -1 14 1t12 -1t14 1" stroke="#B9AFC4" strokeWidth={1} fill="none" />
+        <Rect x={102} y={33.4} width={96} height={2.6} fill="#CDA64B" stroke={INK} strokeWidth={0.9} />
+        <Path d="M112 36l4 6M186 36l-4 6" stroke="#CDA64B" strokeWidth={2.2} strokeLinecap="round" />
+        <Path d="M143 28q-5 -8 -2 -13h16q3 5 -2 13Z" fill="#2E8B9A" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+        <Path d={circle(146, 12, 3.2) + circle(152, 9.5, 3.2) + circle(157, 13, 3)} fill="#F28AA8" stroke={INK} strokeWidth={0.8} />
+      </G>
+    );
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -877,6 +1122,97 @@ function VendingMachine() {
   );
 }
 
+/** The props a panel can show over the backdrop (the recipe card is held by Rosa's figure instead). */
+export type BackdropProp = 'vending-machine' | 'sold-sign' | 'order-slip' | 'name-tag' | 'phone-footage';
+
+const SLIP = (() => {
+  // a receipt's torn bottom edge: a zigzag of 10 teeth
+  const w = PROP_BOXES['order-slip'].w;
+  const h = PROP_BOXES['order-slip'].h;
+  const tooth = w / 10;
+  let edge = '';
+  for (let i = 0; i < 10; i++) edge += `l${-tooth / 2} 6l${-tooth / 2} -6`;
+  return { paper: `M0 0H${w}V${h - 6}${edge}Z`, price: lineFont(ORDER_SLIP.lines[1], ORDER_SLIP.w, 11), name: lineFont(ORDER_SLIP.lines[0], ORDER_SLIP.w, 13) };
+})();
+
+/** Mr. Smith's order slip: a paper receipt taped up, tilted a little. */
+function OrderSlip() {
+  const b = PROP_BOXES['order-slip'];
+  return (
+    <G transform={`translate(${b.x} ${b.y}) rotate(-3 ${b.w / 2} ${b.h / 2})`}>
+      <Path d={SLIP.paper} transform="translate(3 4)" fill="#000" opacity={0.2} />
+      <Path d={SLIP.paper} fill="#FFFDF5" stroke={INK} strokeWidth={2} strokeLinejoin="round" />
+      <Text x={b.w / 2} y={16} fontSize={PROP_FONT.min} fontFamily={F.bold} fill="#D9443A" textAnchor="middle">
+        ORDER
+      </Text>
+      <Path d={`M8 22H${b.w - 8}`} stroke={INK} strokeWidth={1} strokeDasharray="3 2.5" />
+      <Text x={b.w / 2} y={42} fontSize={SLIP.name} fontFamily={F.bold} fill={INK} textAnchor="middle">
+        {ORDER_SLIP.lines[0]}
+      </Text>
+      <Text x={b.w / 2} y={60} fontSize={SLIP.price} fontFamily={F.bold} fill={INK} textAnchor="middle">
+        {ORDER_SLIP.lines[1]}
+      </Text>
+      <Path d={`M8 67H${b.w - 8}`} stroke={INK} strokeWidth={1} strokeDasharray="3 2.5" />
+      <Rect x={b.w / 2 - 15} y={-3} width={30} height={9} fill="#FFE27A" opacity={0.85} stroke="#C9A93A" strokeWidth={0.8} />
+    </G>
+  );
+}
+
+/** A name tag in close-up: a red HELLO band over a white field with the name in marker, fitted to the field (prop-text.ts). */
+function NameTag({ text }: { text: string }) {
+  const b = PROP_BOXES['name-tag'];
+  const f = NAME_TAG_FIELD;
+  const fit = fitPropText(text, f.w, f.h);
+  const block = fit.lines.length * fit.fontSize * 1.18;
+  const top = f.y + (f.h - block) / 2;
+  return (
+    <G transform={`translate(${b.x} ${b.y}) rotate(2 ${b.w / 2} ${b.h / 2})`}>
+      <Rect x={3} y={4} width={b.w} height={b.h} rx={8} fill="#000" opacity={0.2} />
+      <Rect x={0} y={0} width={b.w} height={b.h} rx={8} fill="#FFFFFF" stroke={INK} strokeWidth={2.4} />
+      <Path d={`M1.2 26V9.2Q1.2 1.2 9.2 1.2H${b.w - 9.2}Q${b.w - 1.2} 1.2 ${b.w - 1.2} 9.2V26Z`} fill="#D9443A" />
+      <Text x={b.w / 2} y={20} fontSize={14} fontFamily={F.bold} fill="#FFFFFF" textAnchor="middle">
+        HELLO
+      </Text>
+      {fit.lines.map((line, i) => (
+        <Text key={i} x={b.w / 2} y={top + i * fit.fontSize * 1.18 + fit.fontSize * 0.92} fontSize={fit.fontSize} fontFamily={F.bold} fill="#1E2A5A" textAnchor="middle">
+          {line}
+        </Text>
+      ))}
+    </G>
+  );
+}
+
+const PHONE = {
+  screen: { x: 4, y: 6, w: 48, h: 68 },
+  grain: gridLines(4, 6, 52, 74, 400, 3),
+  // a stairwell: stepped landings climbing to the right, a rail along them, and a figure standing on the middle landing
+  stairs: 'M4 74V58H18V50H30V42H42V34H52V74Z',
+  rail: 'M18 46L30 38L42 30L52 24',
+  figure: circle(30, 29, 3.6) + 'M25 41Q25 33 30 33Q35 33 35 41Z',
+};
+/** The phone-footage insert: a phone held up, its grainy screen showing a stairwell and a figure on the landing, a red REC dot. */
+function PhoneFootage() {
+  const b = PROP_BOXES['phone-footage'];
+  const s = PHONE.screen;
+  return (
+    <G transform={`translate(${b.x} ${b.y}) rotate(-4 ${b.w / 2} ${b.h / 2})`}>
+      <Rect x={3} y={4} width={b.w} height={b.h} rx={8} fill="#000" opacity={0.22} />
+      <Rect x={0} y={0} width={b.w} height={b.h} rx={8} fill="#1B1B22" stroke={INK} strokeWidth={2.4} />
+      <Rect x={s.x} y={s.y} width={s.w} height={s.h} rx={2} fill="#8E9A93" />
+      <Path d={PHONE.stairs} fill="#3B4540" />
+      <Path d={PHONE.rail} stroke="#2A312D" strokeWidth={1.6} fill="none" />
+      <Path d={PHONE.figure} fill="#232A27" />
+      <Path d={PHONE.grain} stroke="#fff" strokeWidth={1} opacity={0.16} />
+      <Path d={PHONE.grain} stroke="#000" strokeWidth={0.8} opacity={0.12} transform="translate(0 1.5)" />
+      <Circle cx={10} cy={13} r={3.2} fill="#E8432E" />
+      <Text x={16} y={16.4} fontSize={PROP_FONT.min} fontFamily={F.bold} fill="#FFFFFF" textAnchor="start">
+        REC
+      </Text>
+      <Rect x={b.w / 2 - 8} y={b.h - 5} width={16} height={2.4} rx={1.2} fill="#5A5A66" />
+    </G>
+  );
+}
+
 const SCENES: Record<BackdropId, (ids: Ids) => ReactElement> = {
   shop: ShopScene,
   downtown: DowntownScene,
@@ -892,11 +1228,11 @@ const SCENES: Record<BackdropId, (ids: Ids) => ReactElement> = {
 /** Per-scene zoom on the scenery, anchored at the kerb (the rainy opening shot frames Rosa's front). */
 const SCENE_ZOOM: Partial<Record<BackdropId, number>> = { 'downtown-rain': 1.15 };
 
-export const Backdrop = memo(function Backdrop({ id, width, height, prop, captioned = false }: { id: BackdropId; width: number; height: number; prop?: 'vending-machine' | 'sold-sign'; captioned?: boolean }) {
-  const [top, bottom] = SKY[id];
+export const Backdrop = memo(function Backdrop({ id, width, height, prop, propText, hood, captioned = false }: { id: BackdropId; width: number; height: number; prop?: BackdropProp; /** The text on a name tag. */ propText?: string; /** The neighbourhood a shop-interior panel is set in: it picks the room (Downtown's when absent). */ hood?: NeighborhoodId; captioned?: boolean }) {
+  const [top, bottom] = id === 'shop' ? shopLookFor(hood).wall : SKY[id];
   // unique per instance: two backdrops on screen (a panel sliding in over the last) never share gradient ids
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const ids = { sky: `sky${uid}`, glow: `glow${uid}`, vig: `vig${uid}`, oak: `oak${uid}`, lights: lightsFor(captioned) };
+  const ids = { sky: `sky${uid}`, glow: `glow${uid}`, vig: `vig${uid}`, oak: `oak${uid}`, lights: lightsFor(captioned), hood };
   // Art is 400 wide with the ground at y 200 and up to 100 units of sky; a taller frame scales up and crops the sides.
   const { vbH } = backdropView(width, height);
   const Scene = SCENES[id];
@@ -920,13 +1256,16 @@ export const Backdrop = memo(function Backdrop({ id, width, height, prop, captio
       <Rect x={-20} y={-130} width={440} height={340} fill={`url(#${ids.sky})`} />
       {zoom ? (
         <G transform={`translate(200 200) scale(${zoom}) translate(-200 -200)`}>
-          <Scene glow={ids.glow} oak={ids.oak} lights={ids.lights} />
+          <Scene glow={ids.glow} oak={ids.oak} lights={ids.lights} hood={ids.hood} />
         </G>
       ) : (
-        <Scene glow={ids.glow} oak={ids.oak} lights={ids.lights} />
+        <Scene glow={ids.glow} oak={ids.oak} lights={ids.lights} hood={ids.hood} />
       )}
       {prop === 'vending-machine' && <VendingMachine />}
       {prop === 'sold-sign' && <SoldSign />}
+      {prop === 'order-slip' && <OrderSlip />}
+      {prop === 'name-tag' && <NameTag text={propText ?? ''} />}
+      {prop === 'phone-footage' && <PhoneFootage />}
       <Rect x={-20} y={200 - vbH - 10} width={440} height={vbH + 20} fill={`url(#${ids.vig})`} />
     </Svg>
   );

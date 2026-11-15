@@ -186,7 +186,7 @@ export const DECOR: Record<DecorKind, DecorDef> = {
 export const STORY_PACING = {
   gapSeconds: 90,
   beat4GapSeconds: 300,
-  downtownBeat4GapSeconds: 60,
+  downtownBeat4GapSeconds: 120,
   /** Away at least this long counts as a return. iOS also fires "active" after Control Center, a banner or the app switcher. */
   returnSeconds: 60,
 } as const;

@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
@@ -15,20 +15,22 @@ import { coachStep } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
-import { masteryGoal } from '@/components/goal-model';
-import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots } from '@/components/slots';
+import { fitFont, MIN_FONT } from '@/components/endgame/fit-model';
+import { masteryGoal, STORY_TOTAL, storyGoal } from '@/components/goal-model';
+import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots, StoryWaitBanner } from '@/components/slots';
 import { type DrawerIcon, type DrawerView, drawerCards, tiedBundle } from '@/components/drawer-model';
 import { buttonTone, buyBundle, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
-import { STRIP } from '@/components/report/report-model';
-import { CLOSE_SLOP, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
+import { STRIP, stripKind } from '@/components/report/report-model';
+import { reportView } from '@/engine/features/service';
+import { CLOSE_SLOP, DRAWER_CLOSE_W, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait';
 import { HeadFace } from '@/components/scene/head-face';
 import Svg from 'react-native-svg';
 import { CURB_Y, SCENE_H, sceneFit, Storefront } from '@/components/storefront';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
-import { CITY_NAME, DECOR, DECOR_KINDS, FOOTPRINTS, HEAD_ROLE, HEADS, type HeadKind, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES } from '@/content/tuning';
+import { CITY_NAME, DECOR, DECOR_KINDS, FOOTPRINTS, HEAD_ROLE, HEADS, type HeadKind, NEIGHBORHOODS, OVEN_GRADES, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
 import { money, pizzas } from '@/engine/format';
 import * as G from '@/engine/game';
@@ -77,8 +79,12 @@ function drawerIcon(icon: DrawerIcon): React.ReactNode {
 
 type DrawerCardView = DrawerView['cards'][number];
 
+/** D494: a goal further than this many seconds of the city's income is skipped for a nearer one. */
+const GOAL_FAR_SECONDS = 1800;
+
 export default function GameScreen() {
   const insets = useSafeAreaInsets();
+  const { width: screenW } = useWindowDimensions();
   const game = useGame((s) => s.game);
   // the offline popup waits for the title card
   const offline = useGame((s) => (s.titleDone ? s.offline : null));
@@ -186,7 +192,9 @@ export default function GameScreen() {
       const cost = G.upgradeCostOf(game, n.id, hire) ?? 0;
       // short enough to fit beside the amount (D338): "Waterfront: hire Finn (prep)"
       const label = G.isHeadUpgrade(hire) ? `${n.name}: hire ${HEADS[n.id][G.headOf(hire)]} (${HEAD_ROLE[G.headOf(hire)]})` : `${n.name}: hire a manager`;
-      candidates.push({ label, current: game.cash, target: cost, ratio: (G.shopEarnings(game, n.id) / Math.max(1, cost)) * 3, onPress: () => {
+      // D477: the bar beside the HUD's chips is narrow: the same goal without the shop's name
+      const short = G.isHeadUpgrade(hire) ? `Hire ${HEADS[n.id][G.headOf(hire)]} (${HEAD_ROLE[G.headOf(hire)]})` : 'Hire a manager';
+      candidates.push({ label, short, current: game.cash, target: cost, ratio: (G.shopEarnings(game, n.id) / Math.max(1, cost)) * 3, onPress: () => {
         if (game.active !== n.id) setActive(n.id);
         return useGame.getState().buy(hire);
       } });
@@ -194,47 +202,54 @@ export default function GameScreen() {
   }
   const next = G.nextToBuild(game);
   // a locked build (Nonna's takeover, an unbuilt neighbour) is not a goal: its tap would do nothing (B2)
-  if (next && !G.buildLock(game, next.id)) candidates.push({ label: `Build a pizzeria in ${next.name}`, current: game.cash, target: next.buildCost, ratio: G.buildGain(game, next.id) / G.buildAllIn(next.id), onPress: () => build(next.id) });
+  if (next && !G.buildLock(game, next.id)) candidates.push({ label: `Build a pizzeria in ${next.name}`, short: `Build in ${next.name}`, current: game.cash, target: next.buildCost, ratio: G.buildGain(game, next.id) / G.buildAllIn(next.id), onPress: () => build(next.id) });
   const vg = G.vehicleGain(game);
-  if (vg && vg > 0) candidates.push({ label: `Upgrade fleet to ${VEHICLES[v + 1].name}s · ${plus(vg)}`, current: game.cash, target: VEHICLES[v + 1].cost, ratio: vg / VEHICLES[v + 1].cost, onPress: buyFleet });
+  if (vg && vg > 0) candidates.push({ label: `Upgrade fleet to ${VEHICLES[v + 1].name}s · ${plus(vg)}`, short: `${VEHICLES[v + 1].name}s ${plus(vg)}`, current: game.cash, target: VEHICLES[v + 1].cost, ratio: vg / VEHICLES[v + 1].cost, onPress: buyFleet });
   candidates.sort((a, b) => b.ratio - a.ratio);
   // Waterfront's finale is a purchase, so it leads the goal bar while it's on offer
-  if (G.pier9Available(game)) candidates.unshift({ label: 'Bid on Pier 9 to save Marisol’s dock', current: game.cash, target: PIER9_BID.cost, ratio: Number.MAX_VALUE, onPress: bidPier9 });
+  if (G.pier9Available(game)) candidates.unshift({ label: 'Bid on Pier 9 to save Marisol’s dock', short: 'Bid on Pier 9', current: game.cash, target: G.pier9Price(game), ratio: Number.MAX_VALUE, onPress: bidPier9 });
   // viewing an unmanaged shop: its next hire is the goal
   // while the sidewalk offers a head, the goal bar moves on to the next goal (D341); the GM hire is offered in both places until it is hired (B1).
   // Downtown's sidewalk shows its stations instead, so there the hire leads the goal bar
   const mine = (c: Goal) => c.label.startsWith(`${nd.name}: hire`);
   const shown = goalHidesOwnHire(shop, id) ? candidates.filter((c) => !mine(c)) : !shop.managed ? [...candidates.filter(mine), ...candidates.filter((c) => !mine(c))] : candidates;
-  let goal: Goal | null = shown[0] ?? null;
-  // v5.15 (D427): once the story is told and nothing else is worth saving for, the bar shows the city's mastery stars
-  const mg = goal ? null : masteryGoal(game);
-  if (mg) goal = { label: mg.label, short: mg.short, text: mg.text, current: mg.current, target: mg.target };
-  // Late game: fall back to the best big buy in this shop (Expand, Grade or a Decor tier) before the story count.
-  if (!goal) {
+  // the best big buy in this shop (Expand, Grade or a Decor tier), best gain per dollar first
+  const bigGoals = () => {
     const big: (Goal & { ratio: number })[] = [];
     for (const what of ['expand', 'grade'] as const) {
       const cost = G.upgradeCostOf(game, id, what);
       if (cost !== null && !G.upgradeLock(game, id, what)) {
         const gain = G.upgradeGain(game, id, what) ?? 0;
-        big.push({ label: what === 'expand' ? `Expand ${nd.name} · ${FOOTPRINTS[shop.footprint + 1]?.name ?? ''}` : `${OVEN_GRADES[shop.grade + 1]?.name ?? ''} ovens in ${nd.name}`, current: game.cash, target: cost, ratio: (gain + 1e-6) / cost, onPress: () => buy(what) });
+        big.push({ label: what === 'expand' ? `Expand ${nd.name} · ${FOOTPRINTS[shop.footprint + 1]?.name ?? ''}` : `${OVEN_GRADES[shop.grade + 1]?.name ?? ''} ovens in ${nd.name}`, short: what === 'expand' ? `Expand · ${FOOTPRINTS[shop.footprint + 1]?.name ?? ''}` : `${OVEN_GRADES[shop.grade + 1]?.name ?? ''} ovens`, current: game.cash, target: cost, ratio: (gain + 1e-6) / cost, onPress: () => buy(what) });
       }
     }
     for (const kind of DECOR_KINDS) {
       const cost = G.decorCost(game, id, kind);
-      if (cost !== null) big.push({ label: `${DECOR[kind].tiers[shop.decor[kind] + 1]} in ${nd.name}`, current: game.cash, target: cost, ratio: ((G.decorGain(game, id, kind) ?? 0) + 1e-6) / cost, onPress: () => buyDecor(kind) });
+      if (cost !== null) big.push({ label: `${DECOR[kind].tiers[shop.decor[kind] + 1]} in ${nd.name}`, short: `${DECOR[kind].tiers[shop.decor[kind] + 1]}`, current: game.cash, target: cost, ratio: ((G.decorGain(game, id, kind) ?? 0) + 1e-6) / cost, onPress: () => buyDecor(kind) });
     }
-    big.sort((a, b) => b.ratio - a.ratio);
-    goal = big[0] ?? null;
-  }
+    return big.sort((a, b) => b.ratio - a.ratio);
+  };
+  let goal: Goal | null = shown[0] ?? null;
+  // D494: a goal more than about half an hour of income away is not a goal ("Hire a manager $68.3K / $8.00B"): lead with the nearest one that is reachable
+  const farAway = (c: Goal) => c.target - c.current > GOAL_FAR_SECONDS * Math.max(1, eps);
+  if (goal && farAway(goal)) goal = shown.find((c) => !farAway(c)) ?? bigGoals().find((c) => !farAway(c)) ?? goal;
+  // v5.15 (D427): once the story is told and nothing else is worth saving for, the bar shows the city's mastery stars
+  const mg = goal ? null : masteryGoal(game);
+  if (mg) goal = { label: mg.label, short: mg.short, tiny: mg.tiny, text: mg.text, current: mg.current, target: mg.target };
+  // Late game: fall back to the best big buy in this shop before the story count.
+  if (!goal) goal = bigGoals()[0] ?? null;
   if (!goal) {
-    goal = { label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : `Story ${game.seenScenes.length}/24`, current: game.seenScenes.length, target: 24, icon: <TrophyIcon size={22} /> };
+    const story = storyGoal(game.seenScenes.length);
+    goal = { label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : story.label, current: story.current, target: STORY_TOTAL, icon: <TrophyIcon size={22} /> };
   }
 
   // the HUD names the next station to tap (prep → oven → counter) until a GM runs the shop
-  const nextSt = shop.managed ? null : G.nextStation(shop);
+  // G106: a shop whose three heads are hired runs itself too: it shows its rate, not "Baking…"
+  const runs = G.runsItself(shop);
+  const nextSt = runs ? null : G.nextStation(shop);
   const line = shop.line;
   const boost = hud.boost;
-  const baseSubtitle = shop.managed
+  const baseSubtitle = runs
     ? citywideText(eps, hud.mult)
     : nextSt === 'counter'
       ? `Tap to serve · ${pizzas(line.baked)} baked`
@@ -250,10 +265,12 @@ export default function GameScreen() {
                 ? 'Serving…'
                 : 'Your heads are on it';
   // while boosted the rate shown is what lineTick really earns (G84); the boost itself is drawn in basil after it
-  const subtitle = boost && shop.managed ? hudRateText(eps, hud.mult) : baseSubtitle;
+  const subtitle = boost && runs ? hudRateText(eps, hud.mult) : baseSubtitle;
 
   // the drawer's cards are a pure model (drawer-model.ts): its level-dependent part is cached on the levels of every shop, so only cash is applied per tick; nothing while it is closed
   const drawer = drawerOpen ? drawerCards({ game, id }) : null;
+  // D488: the drawer's line is green when it is good news (tips), red only for what holds the shop back
+  const drawerGood = drawer ? stripKind(reportView(game, id, game.lastSavedAt)) === 'tipping' : false;
 
   const drawerCard = (c: DrawerCardView) => (
     <StationCard
@@ -337,7 +354,8 @@ export default function GameScreen() {
               <View style={styles.drawerHead}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.drawerTitle}>{drawer.title}</Text>
-                  <Text style={styles.drawerSub} numberOfLines={1}>{drawer.bottleneck}</Text>
+                  {/* the manager's line is long: it shrinks (never under 10 pt) to the room beside Close, then wraps rather than clip */}
+                  <Text style={[styles.drawerSub, drawerGood && styles.drawerSubGood, { fontSize: fitFont(drawer.bottleneck, screenW - 2 * DRAWER_HEAD.padX - DRAWER_CLOSE_W, 12, MIN_FONT) }]} numberOfLines={2}>{drawer.bottleneck}</Text>
                 </View>
                 <Pressable testID="close-upgrades" onPress={() => setDrawerOpen(false)} style={styles.closeBtn} hitSlop={CLOSE_SLOP}>
                   <Text style={styles.closeText}>Close ▼</Text>
@@ -354,6 +372,8 @@ export default function GameScreen() {
                     <Text style={styles.bannerText}>{drawer.perkBanner}</Text>
                   </View>
                 )}
+                {/* v5.16 (T1b): why this neighbourhood's next story is held, with the other notices at the top */}
+                <StoryWaitBanner />
                 {drawer.bundle && (
                   // D304: the tied stations' bundle is a button, not a label: it buys every step through the ordinary buy path
                   <View style={styles.bundleRow}>
@@ -365,7 +385,8 @@ export default function GameScreen() {
                   <StationCard
                     testID="buy-night-oven"
                     icon={<MoonIcon size={26} />}
-                    title={ovenView.next ? ovenView.next.title : `Night oven: holds ${ovenView.hours}`}
+                    // D487: "holds 8 h" never breaks before the unit
+                    title={(ovenView.next ? ovenView.next.title : `Night oven: holds ${ovenView.hours}`).replace(/(\d) h$/, '$1\u00A0h')}
                     detail={ovenView.next ? ovenView.next.lock ?? `Nonna keeps baking while you're away · now ${ovenView.hours}` : 'Biggest it gets'}
                     cost={ovenView.next && !ovenView.next.lock ? ovenView.next.price : null}
                     costLabel={ovenView.next ? 'Locked' : 'MAX'}
@@ -409,6 +430,7 @@ const styles = StyleSheet.create({
   drawerHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: DRAWER_HEAD.padX, paddingTop: DRAWER_HEAD.padTop, paddingBottom: DRAWER_HEAD.padBottom },
   drawerTitle: { fontFamily: F.bold, fontSize: 17, color: C.ink },
   drawerSub: { fontFamily: F.semi, fontSize: 12, color: C.tomatoDark },
+  drawerSubGood: { color: C.basilDark },
   closeBtn: { backgroundColor: '#fff', borderWidth: 2, borderColor: C.ink, borderRadius: 12, paddingHorizontal: 12, height: TAP.controls.closeButton.height, justifyContent: 'center' },
   closeText: { fontFamily: F.bold, fontSize: 13, color: C.ink },
   grid: { padding: 10, gap: 8, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },

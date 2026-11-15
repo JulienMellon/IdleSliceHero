@@ -228,7 +228,7 @@ export const BLUSH = ell(35.5, 55, 4.4, 3) + ell(64.5, 55, 4.4, 3);
 export const EARS = ell(26.5, 52, 4, 6) + ell(73.5, 52, 4, 6);
 export const EAR_INNER = 'M25.6 49 q2 2.5 0.2 6 M74.4 49 q-2 2.5 -0.2 6';
 
-export type HairStyle = 'bun' | 'short' | 'long' | 'bald' | 'slick' | 'bob';
+export type HairStyle = 'bun' | 'short' | 'long' | 'bald' | 'slick' | 'bob' | 'perm' | 'crew' | 'crop';
 /** Front-hair outlines per style (head 100-box); portrait.tsx fills them, the tests check the strands against them. */
 export const HAIR_FRONT: Record<Exclude<HairStyle, 'bald'>, string> = {
   bun: 'M26 46 Q26 24 50 24 Q74 24 74 46 Q66 32 50 32 Q34 32 26 46 Z',
@@ -236,6 +236,10 @@ export const HAIR_FRONT: Record<Exclude<HairStyle, 'bald'>, string> = {
   long: 'M26 46 Q24 22 50 22 Q76 22 74 46 Q70 34 56 32 Q46 38 30 38 Z',
   bob: 'M25 48 Q24 22 50 22 Q76 22 75 48 L70 40 Q50 30 30 40 Z',
   slick: 'M27 42 Q28 22 52 23 Q74 24 73 42 Q66 30 40 32 Z',
+  // v5.16 (managers): Deb's frosted perm (a cloud of curls), Skip's flat crew cut (mostly under his cap), Dee's cropped hair with a quiff
+  perm: 'M25 50 Q20 44 24 38 Q20 30 29 26 Q31 16 42 19 Q50 12 58 19 Q69 16 71 26 Q80 30 76 38 Q80 44 75 50 Q72 42 66 36 Q58 32 50 32 Q42 32 34 36 Q28 42 25 50 Z',
+  crew: 'M26 44 Q25 24 50 23 Q75 24 74 44 Q71 36 64 33 L36 33 Q29 36 26 44 Z',
+  crop: 'M26 46 Q24 28 42 23 Q47 13 57 19 Q62 21 66 24 Q76 30 74 46 Q72 37 62 34 Q50 39 38 34 Q28 37 26 46 Z',
 };
 /** The bun's knot (a circle on top of the bun style's front hair). */
 export const BUN_KNOT = { cx: 50, cy: 20, r: 10 } as const;
@@ -247,6 +251,9 @@ export const STRANDS: Record<HairStyle, string> = {
   long: 'M30.5 36 Q33 31 44 28 M70 36 Q67 32 56 30',
   bob: 'M27.5 42 Q28 33 41 29.5 M72.5 42 Q72 33 59 29.5 M50 25 Q47 30 44 31',
   slick: 'M31 37 Q43 26.5 60 26.5 M38.5 31 Q52 25.5 68 30.5',
+  perm: 'M33 31 q3 -4 7 -1 M44 25 q4 -4 8 0 M60 26 q4 -3 7 1 M26 42 q2 -4 5 -4 M74 42 q-2 -4 -5 -4',
+  crew: 'M34 30 Q50 26 66 30',
+  crop: 'M32 33 Q36 27 44 25 M61 25 Q68 27 70 33',
   bald: '',
 };
 
@@ -293,7 +300,74 @@ export const OUTFIT = {
   tie: 'M57.8 75 L62.2 75 L64 98 L60 104 L56 98 Z',
   pocketSquare: 'M72 92 l8 -2 l-1 5 Z',
   nameBadge: 'M72 99 h12 v7 h-12 Z',
+  // v5.16: Todd's trench coat (tan, wide lapels, a belt with a brass buckle), Skip's brass buttons, Noor's stopwatch, Anton's waistcoat and bow tie
+  trenchLapels: 'M51 73.5 L60 104 L50 108 L36 80 Z M69 73.5 L60 104 L70 108 L84 80 Z',
+  trenchBelt: 'M27 127 L93 127 L93 134 L27 134 Z',
+  trenchBuckle: 'M55.5 126 h9 v9 h-9 Z',
+  trenchSeam: 'M60 134 L60 151',
+  brassColumn: [ell(60, 110, 1.9), ell(60, 122, 1.9), ell(60, 134, 1.9)].join(''),
+  watchCord: 'M52 76 L56 105 M68 76 L64 105',
+  watchBody: ell(60, 114, 8.5),
+  watchCrown: 'M58 103.5 h4 v-3 h-4 Z',
+  watchHands: 'M60 114 L60 108.5 M60 114 L64 116.5',
+  waistcoat: 'M45 74 L60 104 L75 74 L81 151 L39 151 Z',
+  waistcoatButtons: [ell(60, 112, 1.4), ell(60, 122, 1.4), ell(60, 132, 1.4)].join(''),
+  bowTie: 'M60 78 L51 73.5 L51 82.5 Z M60 78 L69 73.5 L69 82.5 Z',
+  bowKnot: ell(60, 78, 2.3),
 };
+
+/** A spot on a pose's left arm (figure coordinates) and the angle, in degrees, of a band lying across the arm there (0 = level, across a vertical arm). */
+export interface ArmSpot {
+  x: number;
+  y: number;
+  deg: number;
+}
+/** Where Dee's armband sits (the upper arm, just under the shoulder) and where Anton's napkin hangs (over the forearm), per pose: on the left arm's centre-line (GESTURES). */
+export const ARM_UPPER: Readonly<Record<Pose, ArmSpot>> = {
+  down: { x: 31.1, y: 95.2, deg: 15.5 },
+  thumb: { x: 31.1, y: 95.2, deg: 15.5 },
+  collar: { x: 31.1, y: 95.2, deg: 15.5 },
+  point: { x: 28.8, y: 94.4, deg: 32 },
+  'hands-up': { x: 28, y: 86, deg: 90 },
+  clasp: { x: 33.3, y: 95.8, deg: -3.3 },
+  card: { x: 32.4, y: 91.2, deg: 8.4 },
+};
+export const ARM_FORE: Readonly<Record<Pose, ArmSpot>> = {
+  down: { x: 27.1, y: 116.7, deg: 5.3 },
+  thumb: { x: 27.1, y: 116.7, deg: 5.3 },
+  collar: { x: 27.1, y: 116.7, deg: 5.3 },
+  point: { x: 26.7, y: 122.1, deg: -32.5 },
+  'hands-up': { x: 22, y: 75.5, deg: -5.5 },
+  clasp: { x: 42.4, y: 114.6, deg: -49 },
+  card: { x: 36.8, y: 102, deg: -53.4 },
+};
+/** The armband and the napkin, drawn about their own origin (the arm is 12 wide there; both are a little wider so they wrap it). */
+export const ARMBAND = { d: 'M-7.2 -3.4 h14.4 v6.8 h-14.4 Z', stripe: 'M-7.2 -0.9 h14.4 v1.8 h-14.4 Z' } as const;
+export const NAPKIN = { d: 'M-8 -5 h16 v10 h-16 Z', fold: 'M-8 -0.5 h16', flap: 'M-8 5 L-8.6 11.5 L-1.5 10.5 L-1 5' } as const;
+
+/** Todd's fedora (head 100-box): a pinched crown, a band and a brim a hand wider than the head, level with the brows; the brim stays inside the face box (x 20 to 80). */
+export const FEDORA = {
+  crown: 'M30 33 Q29 14 50 13 Q71 14 70 33 Z',
+  dent: 'M43 14.5 Q50 23 57 14.5',
+  band: 'M30.3 29 Q50 35.5 69.7 29 L70 33.4 Q50 40 30 33.4 Z',
+  brim: { cx: 50, cy: 34.5, rx: 30, ry: 5 },
+} as const;
+/** The marker-stroke mustache: one uneven dark stroke that starts left of the lip and ends high on the right, so it sits off-centre (head 100-box). */
+export const MARKER_MUSTACHE = { stroke: 'M39 59.2 Q43.5 53.6 49 57.8 Q55 52.6 63.2 59.2', tail: 'M63.2 59.2 l3 -1.8', width: 3.8 } as const;
+
+/** Slicey's costume (head 100-box): a cheese wedge (point down) behind the head with a crust band across the top, pepperoni and a cut-out ring the face shows through. */
+export const SLICEY = {
+  wedge: 'M5 21 L95 21 L50 106 Z',
+  crust: 'M8 11 Q8 8 12 8 H88 Q92 8 92 11 V19 Q92 22 88 22 H12 Q8 22 8 19 Z',
+  crustBumps: ell(20, 15, 3.2, 2.2) + ell(38, 14.5, 3.2, 2.2) + ell(58, 15, 3.2, 2.2) + ell(78, 14.5, 3.2, 2.2),
+  pepperoni: [
+    [16, 34, 5.5],
+    [84, 34, 5.5],
+    [50, 90, 5.5],
+  ] as const,
+  holes: ell(24, 46, 2.1, 1.5) + ell(77, 48, 2.1, 1.5) + ell(42, 74, 1.8, 1.3) + ell(60, 78, 1.8, 1.3),
+  cutout: { cx: 50, cy: 50, rx: 27.5, ry: 28.5 },
+} as const;
 
 /** The art for a pose (staging's `poseFor` picks the pose, so tests and the player see the same mapping). */
 export function gestureFor(pose: Pose): Gesture {
