@@ -12,7 +12,7 @@
 import { memo, type ComponentType } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { offlineCapOf, storyWaitHint } from '../engine/game';
+import { offlineCapOf, storyWaitHint, type GameState } from '../engine/game';
 import { hoursText } from '../engine/night-oven';
 import { rewardsUnlocked } from '../engine/rewards';
 import { useGame } from '../store/game-store';
@@ -141,12 +141,26 @@ const NightOvenChip = memo(function NightOvenChip() {
   );
 });
 
+// U18: storyWaitHint walks every scene; the store sets at 5 Hz, so it runs once a play second (and when a scene is seen), not per set
+let waitSeen: GameState['seenScenes'] | null = null;
+let waitSecond = -1;
+let waitText: string | null = null;
+function waitHintOnce(g: GameState): string | null {
+  const sec = Math.floor(g.playSeconds);
+  if (g.seenScenes !== waitSeen || sec !== waitSecond) {
+    waitSeen = g.seenScenes;
+    waitSecond = sec;
+    waitText = storyWaitHint(g);
+  }
+  return waitText;
+}
+
 /**
  * v5.16 (T1b): "Win over Industrial to continue Uptown’s story" (storyWaitHint), one line at the top of the waiting neighbourhood's drawer, in the
  * drawer banner's style (the Nonna countdown's: cream, ink text). It selects a string, so it repaints only when the words change.
  */
 export const StoryWaitBanner = memo(function StoryWaitBanner() {
-  const text = useGame((s) => hintForHood(storyWaitHint(s.game), s.game.active));
+  const text = useGame((s) => hintForHood(waitHintOnce(s.game), s.game.active));
   const { width } = useWindowDimensions();
   if (!text) return null;
   return (

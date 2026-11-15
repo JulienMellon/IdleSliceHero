@@ -134,6 +134,12 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
   // G95: the label and the tag ride the box but stay on screen (and fade out with it) at the edges
   const giftRide = gift ? edgeRider(width, bw, BONUS_VIEW.giftWidth) : null;
   const tagRide = pips.lucky ? edgeRider(width, bw, BONUS_VIEW.tagWidth) : null;
+  // D489: the box itself is never seen half off the screen: it is clear while it straddles an edge and solid once it is 8 pt or more inside
+  const boxFade = (() => {
+    const at = (left: number) => (left + bw) / (width + bw);
+    const a = [0, at(-bw / 2), at(BONUS_VIEW.popEdge), at(width - BONUS_VIEW.popEdge - bw), at(width - bw / 2), 1];
+    return width > 0 && a.every((v, i) => i === 0 || v > a[i - 1]) ? { input: a, output: [0, 0, 1, 1, 0, 0] } : null;
+  })();
   return (
     <Animated.View
       pointerEvents="box-none"
@@ -143,6 +149,7 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
           top: lane,
           width: bw,
           height: bh + PIPS_H,
+          ...(boxFade ? { opacity: fly.x.interpolate({ inputRange: boxFade.input, outputRange: boxFade.output }) } : null),
           transform: [
             { translateX: fly.x.interpolate({ inputRange: [0, 1], outputRange: [-bw, width] }) },
             { translateY: fly.bob.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: [0, -b, 0, b, 0] }) },

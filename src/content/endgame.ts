@@ -62,11 +62,13 @@ export interface EventDef {
   hoods: 'all' | readonly NeighborhoodId[];
   /** × the value per pizza (it adds with boosts, as docs/REWARDS.md says). */
   mult: number;
+  /** S22: the neighbourhood whose character opens the rush (its copy line is theirs): the event waits until that shop is built. */
+  opener: NeighborhoodId;
 }
 
 export const EVENTS: readonly EventDef[] = [
-  { id: 'friday-rush', name: 'Friday Night Rush', weekday: 5, fromHour: 17, toHour: 21, hoods: 'all', mult: 1.5 },
-  { id: 'game-day', name: 'Big Game Day', weekday: 0, fromHour: 13, toHour: 16, hoods: ['suburbs', 'downtown'], mult: 2 },
+  { id: 'friday-rush', name: 'Friday Night Rush', weekday: 5, fromHour: 17, toHour: 21, hoods: 'all', mult: 1.5, opener: 'waterfront' },
+  { id: 'game-day', name: 'Mudhens Playoff Rush', weekday: 0, fromHour: 13, toHour: 16, hoods: ['suburbs', 'downtown'], mult: 2, opener: 'suburbs' },
 ];
 
 /** An upcoming event shows once it is this close, with a countdown. */

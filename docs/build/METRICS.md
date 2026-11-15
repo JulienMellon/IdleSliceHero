@@ -25,3 +25,4 @@ Columns:
 | 5.14 | 2026-11-12 | 3 | 2 h 04 min | 0 min | 2 h 04 min | 2, 0, 0 | 4 | not recorded | not recorded |
 | 5.15 | 2026-11-13 | 3 | 7 h 17 min | 5 h 07 min | 2 h 10 min | 5, 3, 0 | 8 | 83, 78 | not measured |
 | 5.15-loop | 2026-11-14 | 1 | 3 h 36 min | 2 h 18 min (Q1 programmer running, not idle) | 1 h 18 min | no critics | 11 | 0 changed, 93 same (two runs) | 0 new, 32 allowed |
+| 5.16 | 2026-11-15 | 3 | 40 h 13 min | 34 h 40 min | 5 h 33 min | 3, 0, 0 | 10 | 96, 83 | 9 |

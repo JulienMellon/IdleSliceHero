@@ -23,11 +23,22 @@ export const FIGURE_SHARE = 0.5;
 export const SLOTS: Record<1 | 2, readonly number[]> = { 1: [0.5], 2: [0.3, 0.7] };
 export const LISTENER_SCALE = 0.92;
 
-export type Pose = 'down' | 'thumb' | 'clasp' | 'point' | 'hands-up' | 'collar' | 'card';
+export type Pose = 'down' | 'thumb' | 'clasp' | 'point' | 'hands-up' | 'collar' | 'card' | 'salute' | 'clipboard';
 /** One gesture per mood. */
 export const POSE: Record<Mood, Pose> = { neutral: 'down', happy: 'thumb', sad: 'clasp', angry: 'point', surprised: 'hands-up' };
 /** A character whose gesture for a mood differs from everyone else's (Marisol worries with a hand at her collar, Nonna wrings her hands). */
-const POSE_OVERRIDE: Partial<Record<CharacterId, Partial<Record<Mood, Pose>>>> = { marisol: { sad: 'collar' } };
+const POSE_OVERRIDE: Partial<Record<CharacterId, Partial<Record<Mood, Pose>>>> = {
+  marisol: { sad: 'collar' },
+  // D490: a calm scene only ever showed 'down' and 'thumb'. Those who check things hold a clipboard, those who served salute, the bossy point.
+  'megaslice-rep': { neutral: 'clipboard' },
+  'mr-smith': { neutral: 'clipboard' },
+  'todd-coat': { neutral: 'clipboard' },
+  noor: { neutral: 'clipboard' },
+  'big-sal': { happy: 'salute' },
+  dee: { happy: 'salute', neutral: 'point' },
+  skip: { happy: 'salute' },
+  'victor-crust': { neutral: 'point' },
+};
 
 /** The pose for a character in a mood; a character holding a prop (the recipe card) holds it at chest height whatever the mood. */
 export function poseFor(id: CharacterId, mood: Mood, holding?: 'recipe-card'): Pose {
@@ -56,6 +67,8 @@ export const HANDS_BOX: Record<Pose, Box> = {
   'hands-up': { x0: 13.2, x1: 106.8, y0: 44.9, y1: 67.3 },
   collar: { x0: 19.2, x1: 79.9, y0: 75.3, y1: 142.4 },
   card: { x0: 34.7, x1: 85.3, y0: 88.5, y1: 114.9 },
+  salute: { x0: 19.1, x1: 97.9, y0: 30.5, y1: 142.5 },
+  clipboard: { x0: 19.1, x1: 96.9, y0: 80.1, y1: 142.5 },
 };
 export const LIMBS_BOX: Record<Pose, Box> = {
   down: { x0: 18.8, x1: 101.2, y0: 78.2, y1: 142.4 },
@@ -65,6 +78,8 @@ export const LIMBS_BOX: Record<Pose, Box> = {
   'hands-up': { x0: 13.2, x1: 106.8, y0: 44.9, y1: 93.8 },
   collar: { x0: 18.8, x1: 105.8, y0: 75.3, y1: 142.4 },
   card: { x0: 24.4, x1: 95.6, y0: 78.2, y1: 114.9 },
+  salute: { x0: 18.8, x1: 110.8, y0: 30.5, y1: 142.5 },
+  clipboard: { x0: 18.8, x1: 96.9, y0: 78.2, y1: 142.5 },
 };
 /** Air kept between one figure's limbs and the other figure, in px. */
 export const LIMB_CLEARANCE = 8;

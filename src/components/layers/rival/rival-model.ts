@@ -9,7 +9,7 @@ import type { RivalView } from '../../../engine/features/layers/rival';
 import { behindPace } from '../../order-model';
 import { CURB_Y, SCENE_W } from '../../scene/projection';
 import { mmss, step5 } from '../layer-model';
-import { LABELS, rivalLine, rivalSpeaker } from '../layer-text';
+import { LABELS, lc, rivalLine, rivalSpeaker } from '../layer-text';
 
 // ---------- the tag ----------
 
@@ -17,24 +17,31 @@ import { LABELS, rivalLine, rivalSpeaker } from '../layer-text';
 export const rivalPercent = (valueMult: number = RIVAL.valueMult): number => Math.round((1 - valueMult) * 100);
 
 /** The HUD tag's text ("−20% sales", with the real minus sign), or '' when no rival is open here. */
-export const rivalTagText = (v: Pick<RivalView, 'open' | 'valueMult'>): string => (v.open ? `−${rivalPercent(v.valueMult)}% sales` : '');
+export const rivalTagText = (v: Pick<RivalView, 'open' | 'valueMult'>): string => (v.open ? lc('rival.tag') : '');
 
 // ---------- the storefront across the street ----------
 
 /**
- * Where the MegaSlice shop stands: across the road from the shop's door, on the kerb at the road's foot, drawn whole (sign, awning, window,
- * shutters) at 96 x 44, small and at the left, away from the door's walk-in lane. It sits below the curb and the sidewalk row (the row, the
- * report strip and the doormat are all above the curb line). Scene units.
+ * Where the MegaSlice shop stands (D481): across the road from the shop's door, on the far kerb at the screen's foot, drawn WHOLE (sign,
+ * awning, window, door, shutter box, kerb) at 60% of its 108 x 52 art, so it is 65 x 31 on screen and its kerb ends 8 units above the
+ * scene's last row (the old 96 x 44 shop sat flush on the bottom edge and read as cropped under the road). Small and at the left, away from
+ * the door's walk-in lane. It sits below the curb and the sidewalk row (the row, the report strip and the doormat are all above the curb
+ * line). Scene units.
  */
 export const RIVAL_SHOP = {
-  w: 96,
-  /** The whole shop, sign to foot (D481: drawn full, not cropped by the screen's foot). */
-  h: 44,
+  /** The drawing's own size, and how much of it shows. */
+  art: { w: 108, h: 52 },
+  scale: 0.6,
+  /** On screen: the whole shop, sign to foot. */
+  w: 65,
+  h: 31,
   /** Left edge and top. */
   x: 10,
-  top: 628,
-  /** The kerb strip it stands on, under its foot. */
-  kerb: 5,
+  top: 637,
+  /** The far kerb it stands on, under its foot. */
+  kerb: 4,
+  /** The sign's text is never drawn under this size, whatever the shop's scale. */
+  signFont: 10,
 } as const;
 
 /** The rect the rival occupies (scene units): the tests keep it clear of the mat, the strip and the sidewalk row. */
@@ -47,7 +54,7 @@ export const RIVAL_SCENE_W = SCENE_W;
 // ---------- the shutters ----------
 
 /** Seconds the shutters take to come down, and how long the closed shop stays up before it is taken away. */
-export const SHUTTERS = { down: 1.1, hold: 1.4 } as const;
+export const SHUTTERS = { down: 1.1, hold: 2.4 } as const;
 
 /** How far the shutters have come down, 0..1, `age` seconds after the win. */
 export const shutterShare = (age: number): number => Math.max(0, Math.min(1, age / SHUTTERS.down));

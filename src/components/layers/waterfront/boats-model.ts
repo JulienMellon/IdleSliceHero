@@ -44,20 +44,24 @@ export function untilNextBoat(g: GameState, sinceTick = 0): number {
   return st.nextAt - g.playSeconds - sinceTick;
 }
 
-/** The boat's size in the harbour: hull length 50 at scale 0.85. */
-export const BOAT_ART = { half: 25, scale: 0.85, waterline: 231 } as const;
+/** The boat's art: hull half-length 27 at scale 1, drawn at most at 0.85 and at least at 0.3 (a far boat), waterline y 231 in the sea band. */
+export const BOAT_ART = { half: 27, scale: 0.85, minScale: 0.3, waterline: 231 } as const;
+
+/** Sea left clear on each side of the docked boat, scene units. */
+export const BOAT_PAD = 2;
 
 /**
- * Where the boat docks and where the shop's side wall hides it. D482: the boat docks at the LEFT pier (the backdrop's pier runs x -20..50,
- * out at sea beyond the room's left wall), not at the right, where the shop's sign and the door's pillar stand. `wallLeft` (the room's front
- * corner on screen) is the right edge of what shows: the wall stands between the viewer and the sea, so a boat wider than the margin is
- * clipped there, not drawn over the shop. It sails in from beyond the left edge, bow first.
+ * Where the boat docks, and how big it is there (D482). The only sea the backdrop shows is the strip left of the shop's side wall, between
+ * the screen's edge and `wallLeft` (the room's front corner on screen): 21 to 64 units wide by footprint. The boat is scaled to fit that
+ * strip with a pad on each side and docked in the middle of it, so the whole hull is on screen, off the wall and off the screen edge. It
+ * sails in from beyond the left edge and out the same way; on the way the wall hides the part behind it (`clipX`).
  */
-export function boatDock(wallLeft: number): { x: number; clipX: number; visible: number } {
-  const half = BOAT_ART.half * BOAT_ART.scale;
-  const x = half;
+export function boatDock(wallLeft: number): { x: number; scale: number; clipX: number; left: number; right: number } {
   const clipX = Math.max(0, wallLeft);
-  return { x, clipX, visible: Math.max(0, Math.min(clipX, x + half) - Math.max(0, x - half)) };
+  const fit = (clipX - 2 * BOAT_PAD) / (2 * BOAT_ART.half);
+  const scale = Math.max(BOAT_ART.minScale, Math.min(BOAT_ART.scale, fit));
+  const x = clipX / 2;
+  return { x, scale, clipX, left: x - BOAT_ART.half * scale, right: x + BOAT_ART.half * scale };
 }
 
 // ---------- the HUD chip ----------
@@ -102,14 +106,18 @@ export interface RackBox {
 export const RACK_W = 30;
 
 /**
- * Where the rack stands: on the back wall at the counter's right end, just behind its pizza boxes (D482: further right it stood on the
- * PIZZERIA window of the front). The back wall is at room y 100, so the rack stands there and is drawn at that depth's scale.
+ * Where the rack stands: on the back wall at the counter's right end, just behind its pizza boxes, and never past the glazed front's left
+ * jamb (D482: it stood on the PIZZERIA window's frame). The back wall is at room y 100, so the rack is drawn at that depth's scale; its
+ * widest tier (RACK_W x 1.2) must end `RACK_GAP` short of the jamb, which is where `facade.tsx` starts the window (door.x0 - 8 on the front plane).
  */
-export function rackBox(lay: Pick<Layout, 'counter' | 'R'>): RackBox {
+export const RACK_GAP = 3;
+export function rackBox(lay: Pick<Layout, 'counter' | 'R' | 'door'>): RackBox {
   const y = 100;
   const x = Math.min(lay.counter.x1 + 2, lay.R - 30);
+  const k = kAt(y) * 1.1;
   const [sx, sy] = P(x, y);
-  return { x: sx, y: sy, k: kAt(y) * 1.1 };
+  const jamb = P(lay.door.x0 - 8, 0)[0] - RACK_GAP;
+  return { x: Math.min(sx, jamb - (RACK_W * 1.2 * k) / 2), y: sy, k };
 }
 
 /** The rack card in the drawer: its price, its tier name and what it holds. */
@@ -174,11 +182,11 @@ export function auctionStatus(g: GameState): AuctionStatus {
 
 export interface AuctionCard {
   title: string;
-  /** "MegaSlice raised its bid to $126M": none before the first raise. */
+  /** "MegaSlice raised it. $126M wins Pier 9": none before the first raise. */
   raised: string;
   /** "Next raise 1:42" (none at the cap). */
   next: string;
-  /** "Cap $180M". */
+  /** "Bid cap $180M". */
   cap: string;
   price: number;
   canBuy: boolean;

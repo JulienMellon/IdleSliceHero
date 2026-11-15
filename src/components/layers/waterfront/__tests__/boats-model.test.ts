@@ -7,7 +7,7 @@ import type { BoatsView } from '../../../../engine/features/layers/waterfront-bo
 import { layout } from '../../../scene/layout';
 import { P } from '../../../scene/projection';
 import {
-  BOAT, BOAT_ART, RACK_STEPS, auctionCard, auctionStatus, boatBanner, boatDock, boatPose, harbourChip, rackBox, rackCard, rackStep, raiseNotice, tierName, untilNextBoat,
+  BOAT, BOAT_ART, BOAT_PAD, RACK_STEPS, auctionCard, auctionStatus, boatBanner, boatDock, boatPose, harbourChip, rackBox, rackCard, rackStep, raiseNotice, tierName, untilNextBoat,
 } from '../boats-model';
 
 const view = (o: Partial<BoatsView> = {}): BoatsView => ({ active: true, boat: false, nextIn: 130, left: 0, rackTier: 0, rackPies: 0, rackCapacity: 0, rackPrice: 5000, auctionMult: 1, ...o });
@@ -33,15 +33,15 @@ describe('the warming rack in four steps', () => {
     for (let p = 0; p <= 80; p++) seen.add(rackStep(p, 80));
     expect([...seen].sort()).toEqual([0, 1, 2, 3, 4]);
   });
-  test('it stands on the back wall at the counter\u2019s right end, clear of the front window\u2019s PIZZERIA sign, inside the room', () => {
+  test('it stands on the back wall at the counter\u2019s right end, off the glazed front\u2019s window frame and sign, inside the room', () => {
     for (let fp = 0; fp < 5; fp++) {
       const lay = layout(fp, 2, 2, 2, 4, 3, 1);
       const b = rackBox(lay);
       const half = (30 * 1.2 * b.k) / 2;
       expect(b.k).toBeGreaterThan(0.5);
-      // right of the counter's left end, left of the door's left jamb (the front window with the sign stands right of it)
+      // right of the counter's left end; left of where the front window's frame starts (facade.tsx: door.x0 - 8), even at the widest tier (D482)
       expect(b.x - half).toBeGreaterThan(P(lay.counter.x0, 100)[0]);
-      expect(b.x + half).toBeLessThanOrEqual(P(lay.door.x0 + 12, 0)[0]);
+      expect(b.x + half).toBeLessThanOrEqual(P(lay.door.x0 - 8, 0)[0] - 2);
       expect(b.x + half).toBeLessThan(P(lay.R, 100)[0]);
     }
   });
@@ -81,19 +81,21 @@ describe('the boat', () => {
     }
     expect(last).toBeGreaterThan(0.95);
   });
-  test('the dock is at the left pier and the shop wall clips what lies behind it', () => {
-    const wide = boatDock(58);
-    expect(wide.x - BOAT_ART.half * BOAT_ART.scale).toBeGreaterThanOrEqual(0);
-    expect(wide.visible).toBeGreaterThan(40);
-    // at the flagship the margin is 21 pt: the wall hides the rest, but the stern still shows
-    const narrow = boatDock(21);
-    expect(narrow.visible).toBeGreaterThanOrEqual(20);
-    expect(narrow.visible).toBeLessThan(wide.visible);
-    // every footprint leaves at least half the boat showing
+  test('docked, the whole hull is on screen and clear of the shop wall at every footprint (D482)', () => {
     for (let fp = 0; fp < 5; fp++) {
       const lay = layout(fp, 2, 2, 2, 4, 3, 1);
-      expect(boatDock(P(lay.L, 0)[0]).visible).toBeGreaterThanOrEqual(20);
+      const wall = P(lay.L, 0)[0];
+      const d = boatDock(wall);
+      expect(d.left).toBeGreaterThanOrEqual(BOAT_PAD);
+      expect(d.right).toBeLessThanOrEqual(wall - BOAT_PAD + 1e-9);
+      expect(d.scale).toBeGreaterThanOrEqual(BOAT_ART.minScale);
+      // still a boat, not a speck
+      expect(d.right - d.left).toBeGreaterThanOrEqual(16);
     }
+    // a wide margin gets the full-size boat; a narrow one a smaller boat in the middle of the strip
+    expect(boatDock(120).scale).toBe(BOAT_ART.scale);
+    expect(boatDock(40).scale).toBeLessThan(boatDock(64).scale);
+    expect(boatDock(40).x).toBe(20);
   });
   test('the seconds to the next boat come from the saved schedule', () => {
     const g = auctionGame(380);
@@ -134,18 +136,18 @@ describe('the Pier 9 auction', () => {
   test('the bid card shows the price, the raise with the time to the next, and the cap', () => {
     const g = auctionGame(100 + 2 * AUCTION.stepSeconds + 10, 100, 135_000_000);
     const c = auctionCard(auctionStatus(g), g.cash);
-    expect(c.raised).toBe('MegaSlice raised its bid to $132M');
+    expect(c.raised).toBe('MegaSlice raised it. $132M wins Pier 9');
     expect(c.next).toBe('Next raise 1:50');
-    expect(c.cap).toBe('Cap $180M');
+    expect(c.cap).toBe('Bid cap $180M');
     expect(c.canBuy).toBe(true);
     expect(auctionCard(auctionStatus(g), 1e6).canBuy).toBe(false);
     expect(auctionCard(auctionStatus(auctionGame(120)), 0).raised).toBe('');
     expect(auctionCard(auctionStatus(auctionGame(100 + 20 * AUCTION.stepSeconds)), 0).next).toBe('');
   });
   test('a raise that puts the bid out of reach says "Outbid!"', () => {
-    expect(raiseNotice(120e6, 126e6, 125e6)).toBe('Outbid! MegaSlice at $126M');
-    expect(raiseNotice(120e6, 126e6, 10e6)).toBe('MegaSlice raised its bid to $126M');
-    expect(raiseNotice(120e6, 126e6, 130e6)).toBe('MegaSlice raised its bid to $126M');
+    expect(raiseNotice(120e6, 126e6, 125e6)).toBe('Outbid! You need $126M for Pier 9');
+    expect(raiseNotice(120e6, 126e6, 10e6)).toBe('MegaSlice raised it. $126M wins Pier 9');
+    expect(raiseNotice(120e6, 126e6, 130e6)).toBe('MegaSlice raised it. $126M wins Pier 9');
     expect(raiseNotice(126e6, 126e6, 0)).toBe('');
   });
 });

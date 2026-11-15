@@ -26,7 +26,7 @@ function gap(a: Box, b: Box) {
 describe('T76 hands and limbs', () => {
   test('HANDS_BOX and LIMBS_BOX contain the art they describe, and are no looser than 0.2 units', () => {
     for (const pose of POSES) {
-      const hands = boundsOf(GESTURES[pose].hands + (GESTURES[pose].back ?? ''), 0.8); // ink outline (a held prop's palms included)
+      const hands = boundsOf(GESTURES[pose].hands + (GESTURES[pose].back ?? '') + (GESTURES[pose].prop ?? ''), 0.8); // ink outline (a held prop and its palms included)
       const arms = boundsOf(GESTURES[pose].arms, ARM_INK / 2);
       const limbs = { x0: Math.min(hands.x0, arms.x0), y0: Math.min(hands.y0, arms.y0), x1: Math.max(hands.x1, arms.x1), y1: Math.max(hands.y1, arms.y1) };
       for (const [name, box, art] of [['hands', HANDS_BOX[pose], hands], ['limbs', LIMBS_BOX[pose], limbs]] as const) {
@@ -184,5 +184,24 @@ describe('D393 / D395 face art', () => {
     expect(FACES.happy.iris).toBe('');
     expect(FACES.happy.lids).not.toBe('');
     for (const mood of ['neutral', 'sad', 'angry', 'surprised'] as const) expect(FACES[mood].sclera).not.toBe('');
+  });
+});
+
+describe('D490 more arm poses', () => {
+  test('the clipboard and the salute are poses of their own, and characters who check, serve or boss use them', () => {
+    expect(POSES).toEqual(expect.arrayContaining(['salute', 'clipboard']));
+    expect(poseFor('noor', 'neutral')).toBe('clipboard');
+    expect(poseFor('mr-smith', 'neutral')).toBe('clipboard');
+    expect(poseFor('big-sal', 'happy')).toBe('salute');
+    expect(poseFor('dee', 'neutral')).toBe('point');
+    // the others keep the mood's gesture
+    expect(poseFor('nonna-rosa', 'neutral')).toBe(POSE.neutral);
+  });
+
+  test('the clipboard is held in the inner hand, with a board and a clip that reach the hand box', () => {
+    expect(GESTURES.clipboard.prop).toBeDefined();
+    const prop = boundsOf(GESTURES.clipboard.prop!);
+    expect(prop.y0).toBeLessThan(82); // the clip
+    expect(prop.x1).toBeLessThanOrEqual(HANDS_BOX.clipboard.x1);
   });
 });

@@ -42,7 +42,7 @@ describe('layer-copy.ts is the copy file, by key', () => {
 
   test('placeholders are filled; a missing value is left as written', () => {
     expect(lc('layer.suburbs.gameday.chip', { time: '3:07' })).toBe('Game Day 3:07');
-    expect(lc('layer.waterfront.auction.raise', { bid: '$126M' })).toBe('MegaSlice raised its bid to $126M');
+    expect(lc('layer.waterfront.auction.raise', { bid: '$126M' })).toBe('MegaSlice raised it. $126M wins Pier 9');
     expect(lc('layer.waterfront.auction.chip')).toBe('Next raise {time}');
     expect(rivalLine('suburbs', 'title', { n: 120 })).toBe('Halftime Showdown: 120 pies in 5 minutes');
   });

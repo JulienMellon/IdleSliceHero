@@ -10,7 +10,7 @@ import type { NeighborhoodId } from '../../content/types';
 import { auctionStatus, tierName } from './waterfront/boats-model';
 import { rivalCard, rivalPercent } from './rival/rival-model';
 import { mmss } from './layer-model';
-import { LABELS, lc, rivalLine, rivalSpeaker } from './layer-text';
+import { LABELS, lc } from './layer-text';
 import type { SheetKind } from './sheet-state';
 
 export interface SheetRow {
@@ -110,9 +110,9 @@ export function rivalSheet(g: GameState, id: NeighborhoodId, now: number): Sheet
   const card = rivalCard(v, id);
   return {
     kind: 'rival',
-    title: rivalLine(id, 'title', { n: target }),
-    body: rivalLine(id, 'open'),
-    speaker: rivalSpeaker(id, 'open') ?? '',
+    title: lc('rival.info.title'),
+    body: lc('rival.info.body'),
+    speaker: '',
     rows,
     buys: [
       { key: 'rush', title: 'Rush the shop', line: 'The target is 20% above your normal pace: tap to rush while it runs.' },

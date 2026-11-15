@@ -44,8 +44,8 @@ describe('the info sheets say what it is, the numbers and what to buy', () => {
   });
   test('the rival: its title with the pies, the opener, the cut and the time', () => {
     const m = rivalSheet({ ...base(), active: 'suburbs' }, 'suburbs', NOW);
-    expect(m.title).toMatch(/^Halftime Showdown: \d+ pies in 5 minutes$/);
-    expect(m.speaker).toBe('Todd');
+    expect(m.title).toBe('The MegaSlice Next Door');
+    expect(m.body).toMatch(/takes 20% of your sales/);
     expect(m.rows[0]).toMatchObject({ key: 'sales', value: '−20%' });
     expect(m.rows[2].value).toBe('5:00');
     // D480: the offer lives in the sheet: a Start button while the challenge may begin

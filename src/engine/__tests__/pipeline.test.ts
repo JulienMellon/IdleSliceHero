@@ -134,6 +134,10 @@ describe('offline settles the line', () => {
     const fullPies = full.after.state.shops.downtown.sold - full.before.shops.downtown.sold;
     expect(fullPies / pies).toBeCloseTo(1 / HEADS_OFFLINE_SHARE, 1);
     expect(full.after.byShop[0].base / after.byShop[0].base).toBeCloseTo((fullPies / pies) * GM_BOOST, 1);
+    // S33: the result says which rows ran on heads alone
+    const rowOf = (sh: Partial<G.Shop>) => G.applyOffline({ ...withShop(G.newGame(0), 'downtown', { ...levelled, ...sh }), lastSavedAt: 0 }, 3600_000).byShop[0];
+    expect(rowOf({ heads: G.allHeads() }).headsOnly).toBe(true);
+    expect(rowOf({ managed: true, heads: G.allHeads() }).headsOnly).toBe(false);
     // all three heads: not idle
     const r = G.applyOffline({ ...withShop(withShop(G.newGame(0), 'suburbs', { ...levelled, built: true, heads: G.allHeads() }), 'downtown', { managed: true, heads: G.allHeads() }), lastSavedAt: 0 }, 3600_000);
     expect(r.idle).toEqual([]);

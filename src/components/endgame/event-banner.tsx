@@ -12,10 +12,10 @@ import { STACK } from './stack-model';
 export const EventBanner = memo(function EventBanner() {
   // a string: the banner repaints when the event or the minutes left change
   const key = useGame((s) => {
-    const b = eventBannerView(eventViewNow(Date.now()));
+    const b = eventBannerView(eventViewNow(Date.now(), s.game));
     return b ? `${b.id}|${b.left}` : '';
   });
-  const b = key ? eventBannerView(eventViewNow(Date.now())) : null;
+  const b = key ? eventBannerView(eventViewNow(Date.now(), useGame.getState().game)) : null;
   if (!b) return null;
   return (
     <View testID="event-banner" accessibilityLabel={`${b.title} ${b.mult} income, ${b.left} left`} style={styles.banner} pointerEvents="none">

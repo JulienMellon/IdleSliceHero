@@ -19,7 +19,7 @@ import { BOAT, BOAT_ART, RACK_STEPS, RACK_W, boatDock, boatPose, rackBox, rackSt
 const BoatArt = memo(function BoatArt({ docked }: { docked: boolean }) {
   return (
     <G>
-      <Path d="M-34 4 q16 5 34 5 t34 -5" stroke="#D6F0FB" strokeWidth={1.6} fill="none" opacity={0.9} />
+      <Path d="M-27 4 q13 5 27 5 t27 -5" stroke="#D6F0FB" strokeWidth={1.6} fill="none" opacity={0.9} />
       <Path d="M-27 -10 L27 -10 L21 3 L-21 3 Z" fill="#B23A48" stroke={INK} strokeWidth={1.2} strokeLinejoin="round" />
       <Rect x={-27} y={-13} width={54} height={4} fill="#F4F1EC" stroke={INK} strokeWidth={1} />
       <Rect x={-8} y={-27} width={22} height={14} rx={2} fill="#F4F1EC" stroke={INK} strokeWidth={1.1} />
@@ -107,7 +107,7 @@ export const HarbourScene = memo(function HarbourScene({ shopId, width, height }
   const pose = boatPose({ active: true, docked, untilNext: untilNextBoat(g, sinceTick) }, leftAt === null ? -1 : (Date.now() - leftAt) / 1000);
   const dock = boatDock(wallLeft);
   // sails in from beyond the left edge (and out the same way)
-  const boatX = dock.x - (1 - pose.along) * (dock.x + BOAT_ART.half + 40);
+  const boatX = dock.x - (1 - pose.along) * (dock.x + BOAT_ART.half * dock.scale + 40);
   const rb = rackKey > 0 ? rackBox(lay) : null;
   const tier = Math.floor(rackKey / 10);
   const step = rackKey % 10;
@@ -121,7 +121,7 @@ export const HarbourScene = memo(function HarbourScene({ shopId, width, height }
         </Defs>
         {pose.phase !== 'away' && (
           <G clipPath="url(#harbour-clip)">
-            <G testID="boat" transform={`translate(${boatX.toFixed(1)} ${BOAT_ART.waterline}) scale(${-BOAT_ART.scale} ${BOAT_ART.scale})`}>
+            <G testID="boat" transform={`translate(${boatX.toFixed(1)} ${BOAT_ART.waterline}) scale(${-dock.scale} ${dock.scale})`}>
               <BoatArt docked={pose.phase === 'docked'} />
             </G>
           </G>

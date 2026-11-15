@@ -42,7 +42,7 @@ export interface BannerView {
   shopId: NeighborhoodId;
   /** "Suburbs": names the shop. */
   name: string;
-  /** "MegaSlice is coming! Defend your shop." */
+  /** "MegaSlice attacks this week! Out-sell them to win." */
   title: string;
   /** Victor's announcement for this shop. */
   victor: string;

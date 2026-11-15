@@ -61,7 +61,7 @@ export interface ToastText {
 /** Where the notice goes now: where S2a's layer column starts (under the order chip, the event banner and the attack's row). Primitive selectors only. */
 function useToastTop(): number {
   const bannerOpen = useBannerOpen();
-  return useGame((s) => layerTop({ orderUp: chipPhase(s.game) !== 'none', eventUp: !!eventBannerView(eventViewNow(Date.now())), attack: attackLite(s.game).face, collapsed: !bannerOpen }));
+  return useGame((s) => layerTop({ orderUp: chipPhase(s.game) !== 'none', eventUp: !!eventBannerView(eventViewNow(Date.now(), s.game)), attack: attackLite(s.game).face, collapsed: !bannerOpen }));
 }
 
 /** A notice in the endgame stack's column. It takes no touches. */

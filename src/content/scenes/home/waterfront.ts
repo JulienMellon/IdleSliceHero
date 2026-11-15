@@ -144,7 +144,7 @@ export const WATERFRONT_SCENES: Scene[] = [
         backdrop: 'megaslice-hq',
         cast: [{ id: 'victor-crust', mood: 'happy' }],
         lines: [
-          { speaker: 'Victor Crust', text: 'The auction closes soon. Outbid MegaSlice? With pizza money? Ha!' },
+          { speaker: 'Victor Crust', text: 'An auction? Against MegaSlice? With pizza money? Ha!' },
           { speaker: 'Victor Crust', text: 'Go measure the pier, Tom.' },
         ],
       },
@@ -198,7 +198,7 @@ export const WATERFRONT_SCENES: Scene[] = [
         backdrop: 'waterfront',
         cast: [{ id: 'marisol', mood: 'happy' }],
         lines: [
-          { speaker: 'Captain Marisol', text: "The auction's open, kid. Bid two million and Pier 9 stays a pier." },
+          { speaker: 'Captain Marisol', text: "Auction's open, kid. They raise every two minutes. Beat 'em to it." },
           { speaker: 'Captain Marisol', text: 'Tap the bid on your goal bar when the cash is in. All hands!' },
         ],
       },

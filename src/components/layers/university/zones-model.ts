@@ -1,12 +1,11 @@
 // University's campus zones as plain data: the sheet's rows (the scene has no zones strip: it covered the dining room, D485), the HUD chip and
 // the drones' flight lanes. Text is the copy's, by key. Pure: unit-tested in node.
-import { FOOTPRINTS } from '../../../content/tuning';
 import type { GameState } from '../../../engine/game';
 import type { ZonesView } from '../../../engine/features/layers/university-menu';
 import { fill } from '../../report/report-model';
 import { COPY } from './copy';
 
-export const DRONES_NOTE = 'ignores distance';
+export const DRONES_NOTE = COPY['zone.drone.trip'];
 
 /** "6s" / "2.4s": a trip's length (one decimal under 10 s). */
 export function tripText(seconds: number): string {
@@ -31,7 +30,7 @@ export function zoneCells(v: ZonesView): ZoneCell[] {
     const name = COPY[`zone.${z.id}.name` as "zone.dorms.name"];
     const mid = z.open ? `${z.share}% · ${tripText(z.tripSeconds)}` : 'Locked';
     const open = v.drones ? DRONES_NOTE : `distance ${z.distance}`;
-    const foot = z.open ? open : `Opens at ${FOOTPRINTS[z.opensAt].name}`;
+    const foot = z.open ? open : COPY['zone.locked'];
     return { id: z.id, name, mid, foot, locked: !z.open, label: `${name}. ${mid}. ${foot}` };
   });
 }

@@ -9,7 +9,7 @@ const HIRE_TITLES: Record<string, string> = {
   'suburbs-hire': 'Deb Takes the Counter',
   'waterfront-hire': 'Counted Twice',
   'university-hire': 'A Chapter About You',
-  'industrial-hire': 'Breaks on Time',
+  'industrial-hire': 'Nobody Yells at Ox',
   'uptown-hire': 'A Napkin, Folded',
 };
 

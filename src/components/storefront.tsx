@@ -39,6 +39,8 @@ import {
   ladderProps, menuRect, milestoneSpeaker, wallRects, type Placed,
 } from './scene/ladder';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverlays, StreetProp } from './scene/room';
+import { trafficFor } from './scene/street-props';
+import { rivalOpen } from '../engine/features/layers/rival';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, sidewalkItems, Street } from './scene/street';
 import { buildCast, sidewalkOf } from './scene/cast';
 import { queueLabel, waitingText } from './scene/waiting';
@@ -223,7 +225,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // a running weekly event (D470): the sky goes to dusk, string lights come on, and two more hungry diners stand in the lane while the shop sells
   // (activeEvent is looked up once a second, not on every 15 fps frame: U15)
   const nowSec = Math.floor(Date.now() / 1000);
-  if (eventAt.current.sec !== nowSec) eventAt.current = { sec: nowSec, ev: activeEvent(nowSec * 1000) };
+  if (eventAt.current.sec !== nowSec) eventAt.current = { sec: nowSec, ev: activeEvent(nowSec * 1000, game) };
   const evLook = eventLook(eventAt.current.ev, id, running);
   const q0 = running ? Game.queueSizes(shop, game.vehicle) : undefined;
   const queue = q0 && evLook.extraDiners ? { ...q0, diners: q0.diners + evLook.extraDiners } : q0;
@@ -463,7 +465,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             );
           })()}
           {items.map((it) => it.el)}
-          {CARS.map((c, i) => {
+          {trafficFor(CARS, rivalOpen(game, id)).map((c, i) => {
             const dir = c.lane === 0 ? -1 : 1;
             const raw = (c.offset + clock * c.speed) % DRIFT_SPAN;
             const x = dir === 1 ? raw - 100 : SCENE_W + 100 - raw;

@@ -297,13 +297,13 @@ describe('hire scenes (v5.16)', () => {
   });
   it('a manager’s line in a beat plays only after the hire scene, and the panel plays without it before', () => {
     const beat4 = scene('suburbs-4');
-    const line = (sc: typeof beat4) => sc.panels[0].lines.map((l) => l.speaker);
+    const line = (sc: typeof beat4) => sc.panels[1].lines.map((l) => l.speaker);
     expect(line(resolveScene(beat4, []))).toEqual(['Dale']);
     expect(line(resolveScene(beat4, ['suburbs-hire']))).toEqual(['Dale', 'Deb']);
     expect(resolveScene(scene('downtown-1'), [])).toBe(scene('downtown-1')); // nothing to leave out: the same scene
     const s = won(withShop(seenUpTo([...DT, 'suburbs-1', 'suburbs-2', 'suburbs-3', 'suburbs-3b'], 1e6, { 'suburbs-3': 0 }), 'suburbs', { built: true }), 'suburbs');
-    expect(pickScene(s, HOME_SCENES, LATE, 0, false, null)?.panels[0].lines).toHaveLength(1);
-    expect(pickScene({ ...s, seenScenes: [...s.seenScenes, 'suburbs-hire'] }, HOME_SCENES, LATE, 0, false, null)?.panels[0].lines).toHaveLength(2);
+    expect(pickScene(s, HOME_SCENES, LATE, 0, false, null)?.panels[1].lines).toHaveLength(1);
+    expect(pickScene({ ...s, seenScenes: [...s.seenScenes, 'suburbs-hire'] }, HOME_SCENES, LATE, 0, false, null)?.panels[1].lines).toHaveLength(2);
   });
 });
 

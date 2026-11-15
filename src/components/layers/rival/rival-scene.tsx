@@ -18,36 +18,47 @@ import { RIVAL_SHOP, SHUTTERS_TOTAL, shutterShare } from './rival-model';
 const PURPLE = '#7B2CBF';
 const YELLOW = '#FFC531';
 
-/** The shop: sign band, striped awning, window with shutters coming down (`shut` 0..1). Drawn in scene units from its own top-left. */
+/**
+ * The shop: sign band, striped awning, window with a shutter box above it, door, and the shutters that come down over both (`shut` 0..1).
+ * The shapes are drawn at the art's size (RIVAL_SHOP.art) and scaled down; the sign's text is drawn outside the scale at a readable size.
+ */
 const MegaShop = memo(function MegaShop({ shut }: { shut: number }) {
-  const { w, h, kerb } = RIVAL_SHOP;
-  const winY = 20;
+  const { art, scale, w, kerb } = RIVAL_SHOP;
+  const aw = art.w;
+  const h = art.h;
+  const winY = 28;
   const winH = h - winY - 3;
+  const slats = Math.floor((winH * shut) / 4);
   return (
     <G>
-      {/* the kerb it stands on */}
-      <Rect x={-2} y={h} width={w + 4} height={kerb} rx={1.5} fill="#9B9386" stroke={INK} strokeWidth={0.9} />
-      <Rect x={0} y={4} width={w} height={h - 4} rx={3} fill={PURPLE} stroke={INK} strokeWidth={1.2} />
-      <Rect x={0} y={0} width={w} height={14} rx={3} fill={YELLOW} stroke={INK} strokeWidth={1.2} />
-      <SvgText x={w / 2} y={11} fontFamily={F.bold} fontSize={10} fill={INK} textAnchor="middle">
+      {/* the far kerb it stands on, a little wider than the shop */}
+      <Rect x={-3} y={h * scale} width={w + 6} height={kerb} rx={1.5} fill="#9B9386" stroke={INK} strokeWidth={0.8} />
+      <G transform={`scale(${scale})`}>
+        <Rect x={0} y={6} width={aw} height={h - 6} rx={4} fill={PURPLE} stroke={INK} strokeWidth={1.8} />
+        <Rect x={0} y={0} width={aw} height={19} rx={4} fill={YELLOW} stroke={INK} strokeWidth={1.8} />
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <Path key={i} d={`M${i * 18} 19 h18 v6 q-9 5 -18 0 Z`} fill={i % 2 ? '#fff' : '#E8432E'} stroke={INK} strokeWidth={1.2} />
+        ))}
+        <Rect x={8} y={winY} width={aw - 16 - 28} height={winH} fill="#FFE9A8" stroke={INK} strokeWidth={1.4} />
+        {/* the door, with a balloon tied to it */}
+        <Rect x={aw - 30} y={winY} width={20} height={winH} fill="#3B1F14" stroke={INK} strokeWidth={1.4} />
+        <Circle cx={aw - 6} cy={winY - 3} r={6} fill="#E8432E" stroke={INK} strokeWidth={1} opacity={shut > 0.5 ? 0.35 : 1} />
+        {/* the shutter box under the awning: the rolled shutters, always in view */}
+        <Rect x={6} y={winY - 4} width={aw - 12} height={5} rx={1.5} fill="#8E979E" stroke={INK} strokeWidth={1.2} />
+        {/* the shutters: slats that come down over the window and the door */}
+        {shut > 0 && (
+          <G>
+            <Rect x={8} y={winY} width={aw - 16} height={winH * shut} fill="#8E979E" stroke={INK} strokeWidth={1.2} />
+            {Array.from({ length: slats }).map((_, i) => (
+              <Path key={i} d={`M8 ${winY + (i + 1) * 4} h${aw - 16}`} stroke="#6E757B" strokeWidth={1.2} />
+            ))}
+          </G>
+        )}
+      </G>
+      {/* the sign, at its own size (a 10 pt text never scales down with the shop) */}
+      <SvgText x={w / 2} y={(19 * scale) / 2 + 3.4} fontFamily={F.bold} fontSize={RIVAL_SHOP.signFont} fill={INK} textAnchor="middle">
         MEGASLICE
       </SvgText>
-      {[0, 1, 2, 3, 4, 5].map((i) => (
-        <Path key={i} d={`M${i * 16} 14 h16 v4 q-8 4 -16 0 Z`} fill={i % 2 ? '#fff' : '#E8432E'} stroke={INK} strokeWidth={0.8} />
-      ))}
-      <Rect x={8} y={winY} width={w - 16 - 22} height={winH} fill="#FFE9A8" stroke={INK} strokeWidth={1} />
-      {/* the door, with a balloon tied to it */}
-      <Rect x={w - 26} y={winY} width={18} height={winH} fill="#3B1F14" stroke={INK} strokeWidth={1} />
-      <Circle cx={w - 5} cy={winY - 2} r={4} fill="#E8432E" stroke={INK} strokeWidth={0.7} opacity={shut > 0.5 ? 0.35 : 1} />
-      {/* the shutters: slats that come down over the window and the door */}
-      {shut > 0 && (
-        <G>
-          <Rect x={8} y={winY} width={w - 16} height={winH * shut} fill="#8E979E" stroke={INK} strokeWidth={0.8} />
-          {Array.from({ length: Math.floor((winH * shut) / 4) }).map((_, i) => (
-            <Path key={i} d={`M8 ${winY + (i + 1) * 4} h${w - 16}`} stroke="#6E757B" strokeWidth={0.8} />
-          ))}
-        </G>
-      )}
     </G>
   );
 });

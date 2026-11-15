@@ -13,6 +13,7 @@ export const COPY = {
   "layer.industrial.shift.start": "Whistle blows, crews eat. Miss a shift, you hear from me.",
   "layer.industrial.shift.night.line": "Night shift. My guys. Best pay, worst moods. Feed ’em.",
   "layer.industrial.jam.alert": "Oven jammed! Tap the wrench.",
+  "layer.industrial.jam.headfix": "Head Baker fixing… {n}s",
   "layer.industrial.jam.line": "Oven’s jammed. Get a wrench on it. Now.",
   "layer.industrial.jam.fixed": "(Ox taps it once. It purrs.)",
 } as const;

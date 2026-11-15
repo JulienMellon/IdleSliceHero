@@ -275,6 +275,7 @@ export const UPTOWN_SCENES: Scene[] = [
         ],
         caption: 'Every neighborhood has chosen you. MegaSlice is out of Port Marinara.',
         lines: [
+          { speaker: 'Victor Crust', text: 'My boutique has a For Lease sign. And now THIS?' },
           { speaker: 'Victor Crust', text: 'A RENTAL? On PAGE TWO? Who talked?' },
           { speaker: 'Todd', text: 'Me. Hi. I quit.' },
         ],

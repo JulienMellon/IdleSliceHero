@@ -18,9 +18,13 @@ const RICH = 1e300;
 
 export type PayTag = 'half' | 'full' | 'double';
 export const payTagOf = (payMult: number): PayTag => (payMult < 1 ? 'half' : payMult > 1 ? 'double' : 'full');
-export const PAY_WORDS: Readonly<Record<PayTag, string>> = { half: 'Half pay', full: 'Full pay', double: 'Double pay' };
-/** The rule in one line: "Under 3★ half pay · 3–4★ full pay · 5★ double pay". */
-export const PAY_RULE = `Under 3★ half pay · 3–4★ full pay · 5★ double pay`;
+export const PAY_WORDS: Readonly<Record<PayTag, string>> = {
+  half: COPY['layer.uptown.stars.pay.half'],
+  full: COPY['layer.uptown.stars.pay.full'],
+  double: COPY['layer.uptown.stars.pay.double'],
+};
+/** The rule in one line: "Below 3★: half pay. 3–4★: full pay. 5★: double pay." */
+export const PAY_RULE = COPY['layer.uptown.stars.payrule'];
 
 /** The fewest points that earn `stars` stars (1 star at 0 points). */
 export function pointsForStar(stars: number): number {

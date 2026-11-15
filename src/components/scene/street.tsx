@@ -9,12 +9,7 @@ import { TABLE_STYLE } from './props';
 import { INK, SCENE_W, CURB_Y, P, kAt, shade } from './projection';
 
 // ---------- street + traffic ----------
-export const CARS = [
-  { lane: 0, speed: 46, offset: 40, color: '#56CCF2', kind: 'car' as const },
-  { lane: 0, speed: 46, offset: 330, color: '#7B2CBF', kind: 'van' as const },
-  { lane: 1, speed: 62, offset: 120, color: '#FFC531', kind: 'taxi' as const },
-  { lane: 1, speed: 62, offset: 420, color: '#E8432E', kind: 'car' as const },
-];
+export { CARS } from './street-props';
 
 export const Car = memo(function Car({ x, y, color, kind, dir, label = 'MEGASLICE', labelColor = '#FFC531' }: { x: number; y: number; color: string; kind: 'car' | 'van' | 'taxi'; dir: 1 | -1; label?: string; labelColor?: string }) {
   const len = kind === 'van' ? 74 : 56;

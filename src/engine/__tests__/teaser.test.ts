@@ -2,7 +2,7 @@
 import { HOME_SCENES } from '../../content/scenes/home';
 import { PIER9_BID } from '../../content/tuning';
 import * as G from '../game';
-import { commas, nextSceneTeaser, ringStep, TEASER_COMPLETE } from '../teaser';
+import { commas, nextSceneTeaser, ringStep, TEASER_COMPLETE, teaserStep } from '../teaser';
 
 const T0 = new Date(2026, 10, 11, 12, 0, 0).getTime();
 /** The pizzas a count-triggered scene waits for (fitted in v5.16, so read from the scene). */
@@ -92,5 +92,13 @@ describe('the ring', () => {
   });
   test('commas', () => {
     expect([5, 999, 1200, 12400, 999999, 2500000].map(commas)).toEqual(['5', '999', '1,200', '12,400', '999,999', '2.5M']);
+  });
+});
+
+describe('U13: teaserStep is the ring of nextSceneTeaser', () => {
+  test('the same step as the full teaser in every state of the story', () => {
+    const states = [G.newGame(T0), ...HOME_SCENES.map((sc) => before(sc.id)), { ...G.newGame(T0), seenScenes: HOME_SCENES.map((s) => s.id) }];
+    for (const s of states) expect(teaserStep(s)).toBe(nextSceneTeaser(s).step);
+    expect(teaserStep(states[states.length - 1])).toBe(0);
   });
 });

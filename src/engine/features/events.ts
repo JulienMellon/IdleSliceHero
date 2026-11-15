@@ -1,4 +1,4 @@
-// Weekly events (v5.15): "Friday Night Rush" (Friday 17:00-21:00 local, every shop's value x1.5) and "Big Game Day" (Sunday
+// Weekly events (v5.15): "Friday Night Rush" (Friday 17:00-21:00 local, every shop's value x1.5) and "Mudhens Playoff Rush" (Sunday
 // 13:00-16:00 local, Suburbs and Downtown x2). They apply only while the app is open and never to offline earnings.
 // How: the feature stamps `at` (wall ms) on foreground ticks while an event runs; a multiplier is only given while the stamp is
 // fresh, so an offline catch-up (a cold start, or a return after the app was away) finds none. An event adds with the boosts
@@ -21,10 +21,13 @@ export const KEY = 'events';
 const startOf = (e: EventDef, d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), e.fromHour).getTime();
 const endOf = (e: EventDef, d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), e.toHour).getTime();
 
-/** The event running at `now` (local time; the start is inclusive, the end is not), or null. */
-export function activeEvent(now: number): EventDef | null {
+/** S22: an event is on offer once its opener's shop is built (no game given: always, as the schedule alone). */
+const opened = (e: EventDef, g?: Pick<GameState, 'shops'>): boolean => !g || !!g.shops[e.opener]?.built;
+
+/** The event running at `now` (local time; the start is inclusive, the end is not), or null. With `g`, only an event whose opener's shop is built. */
+export function activeEvent(now: number, g?: Pick<GameState, 'shops'>): EventDef | null {
   const d = new Date(now);
-  return EVENTS.find((e) => e.weekday === d.getDay() && now >= startOf(e, d) && now < endOf(e, d)) ?? null;
+  return EVENTS.find((e) => e.weekday === d.getDay() && now >= startOf(e, d) && now < endOf(e, d) && opened(e, g)) ?? null;
 }
 
 export interface EventView {
@@ -36,13 +39,13 @@ export interface EventView {
 }
 
 /** The event running now, or the next one starting within 60 minutes with its countdown; null otherwise. Pure: for the banner. */
-export function eventView(now: number): EventView | null {
-  const on = activeEvent(now);
+export function eventView(now: number, g?: Pick<GameState, 'shops'>): EventView | null {
+  const on = activeEvent(now, g);
   if (on) return { def: on, active: true, seconds: Math.ceil((endOf(on, new Date(now)) - now) / 1000) };
   const d = new Date(now);
   let soon: EventView | null = null;
   for (const e of EVENTS) {
-    if (e.weekday !== d.getDay()) continue;
+    if (e.weekday !== d.getDay() || !opened(e, g)) continue;
     const seconds = Math.ceil((startOf(e, d) - now) / 1000);
     if (seconds > 0 && seconds <= EVENT_HEADS_UP_SECONDS && (!soon || seconds < soon.seconds)) soon = { def: e, active: false, seconds };
   }
@@ -73,7 +76,7 @@ export const events: Feature<EventsState> = {
   migrate: () => ({ id: null, at: 0 }),
   tick(g, _dt, now) {
     const st = read(g);
-    const e = activeEvent(now);
+    const e = activeEvent(now, g);
     if (!e) return st.id === null ? g : { ...g, x: { ...g.x, [KEY]: { id: null, at: 0 } } };
     if (st.id === e.id && now - st.at < EVENT_STAMP_MS && now >= st.at) return g;
     return { ...g, x: { ...g.x, [KEY]: { id: e.id, at: now } } };

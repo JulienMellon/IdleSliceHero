@@ -68,7 +68,7 @@ def run(ctx):
     page = page_of(b, layer_save("university", menu(), footprint=2, vehicle=4, cash=1e12))
     settle(page, 2.0)
     expect(page, "drone-flight")
-    expect_text(page, "university-chip", r"drones? up")
+    expect_text(page, "university-chip", r"drones?\s+up")  # the chip is two rows ("1 drone" / "up"), so inner_text has a newline, not a space
     advance(page, 3000)
     shot(page, "84-drones", 0.4)
     tid(page, "university-chip").click()

@@ -73,10 +73,10 @@
 
 ## src/engine/features/events.ts
 - KEY — src/engine/features/events.ts:19
-- activeEvent(now: number): EventDef | null — src/engine/features/events.ts:25 — The event running at `now` (local time; the start is inclusive, the end is not), or null.
-- eventView(now: number): EventView | null — src/engine/features/events.ts:39 — The event running now, or the next one starting within 60 minutes with its countdown; null otherwis…
-- withoutEvent(g: GameState): GameState — src/engine/features/events.ts:67 — `g` with no event running (for a reward that must not be inflated by one).
-- events: Feature<EventsState> — src/engine/features/events.ts:69
+- activeEvent(now: number, g?: Pick<GameState, 'shops'>): EventDef | null — src/engine/features/events.ts:28 — The event running at `now` (local time; the start is inclusive, the end is not), or null.
+- eventView(now: number, g?: Pick<GameState, 'shops'>): EventView | null — src/engine/features/events.ts:42 — The event running now, or the next one starting within 60 minutes with its countdown; null otherwis…
+- withoutEvent(g: GameState): GameState — src/engine/features/events.ts:70 — `g` with no event running (for a reward that must not be inflated by one).
+- events: Feature<EventsState> — src/engine/features/events.ts:72
 - types: EventsState, EventView
 
 ## src/engine/features/heads.ts
@@ -121,8 +121,8 @@
 - rivalOpen(g: GameState, id: NeighborhoodId): boolean — src/engine/features/layers/rival.ts:39 — The MegaSlice shop across the street is open: beat 3 seen, the shop built and the challenge not yet…
 - rivalTarget(g: GameState, id: NeighborhoodId, now: number): number — src/engine/features/layers/rival.ts:42 — Pies the challenge asks for in `id` right now: ceil(5 min x the shop's current pizza rate x 1.2), a…
 - rivalView(g: GameState, id: NeighborhoodId, now: number): RivalView — src/engine/features/layers/rival.ts:69 — Everything the rival's banner and challenge card need for one shop, pure.
-- startRivalChallenge(g: GameState, id: NeighborhoodId, now: number): BuyResult — src/engine/features/layers/rival.ts:82 — Start the challenge in `id`: the rival is open, none is running and any retry wait is over.
-- rival: Feature<RivalState> — src/engine/features/layers/rival.ts:103
+- startRivalChallenge(g: GameState, id: NeighborhoodId, now: number): BuyResult — src/engine/features/layers/rival.ts:83 — Start the challenge in `id`: the rival is open, none is running and any retry wait is over.
+- rival: Feature<RivalState> — src/engine/features/layers/rival.ts:105
 - types: RivalChallenge, RivalState, RivalPhase, RivalView
 
 ## src/engine/features/layers/suburbs-gameday.ts
@@ -162,13 +162,14 @@
 - payMult(stars: number): number — src/engine/features/layers/uptown-stars.ts:73 — What Uptown's pizzas are worth at a star rating: 50% under 3 stars, 100% at 3 and 4, 200% at 5.
 - starsNow(g: GameState): number — src/engine/features/layers/uptown-stars.ts:76 — Uptown's stars right now (1 for a game that has no Uptown yet).
 - ingredientsTier(g: GameState): number — src/engine/features/layers/uptown-stars.ts:81 — The Ingredients tier owned, 0 (Store-brand) to 3 (Truffle).
-- ingredientsPrice(g: GameState): number | null — src/engine/features/layers/uptown-stars.ts:84 — What the next Ingredients tier costs now: its minutes of Uptown's income (no boost), or null at the…
+- ingredientsPrice(g: GameState): number | null — src/engine/features/layers/uptown-stars.ts:84 — What the next Ingredients tier costs now: its minutes of Uptown's income (shopRevenue: no boost, no…
 - ingredientsLock(g: GameState): string | null — src/engine/features/layers/uptown-stars.ts:91 — Why the next tier can't be bought yet (other than cash), or null.
 - buyIngredients(g: GameState): BuyResult — src/engine/features/layers/uptown-stars.ts:97 — Buy the next Ingredients tier: spends its price and earns a point.
 - criticTarget(seed: number, n: number): number — src/engine/features/layers/uptown-stars.ts:110 — The rating visit number `n` (1, 2, ...) asks for: 2 to 4 by the seed, and 5 on every fifth visit.
 - ackCritic(g: GameState): GameState — src/engine/features/layers/uptown-stars.ts:116 — The UI has shown how the last visit went.
 - starsView(g: GameState): StarsView — src/engine/features/layers/uptown-stars.ts:138 — What the rating card needs, pure.
-- criticView(g: GameState): CriticView — src/engine/features/layers/uptown-stars.ts:172 — What the critic's banner needs, pure.
+- criticReward(g: GameState): number — src/engine/features/layers/uptown-stars.ts:170 — The cash a passed visit pays right now (the rewards' income, so it costs a full earnings pass: ask …
+- criticView(g: GameState): CriticView — src/engine/features/layers/uptown-stars.ts:173 — What the critic's banner needs, pure and cheap (no income pass; `criticReward` is the cash).
 - uptownStars: Feature<StarsState> — src/engine/features/layers/uptown-stars.ts:196
 - types: CriticResult, StarsState, Points, StarsView, CriticView
 
@@ -212,16 +213,16 @@
 - KEY — src/engine/features/service.ts:20
 - quantise(x: number): number — src/engine/features/service.ts:48 — Round down to a 5% step (an epsilon so 0.9 stays 0.9), as a plain two-decimal number.
 - flowOf(g: GameState, id: NeighborhoodId, now: number): Flow — src/engine/features/service.ts:61 — The shop's flow right now.
-- serviceOf(f: Flow): number — src/engine/features/service.ts:74 — Service, 0..1, in 5% steps (rounded down).
-- loadOf(f: Flow, rate: number): number — src/engine/features/service.ts:76 — A station's load, 0..1, in 5% steps.
-- lampOf(load: number): Lamp — src/engine/features/service.ts:78
-- floorOf(f: Flow): FloorLamp — src/engine/features/service.ts:80 — The floor's lamp from wanted ÷ kitchen (the raw ratio: its thresholds are not 5% steps).
-- reportActive(g: GameState, id: NeighborhoodId): boolean — src/engine/features/service.ts:86 — A shop that runs itself, after the tutorial: the only kind the report covers.
-- reportView(g: GameState, id: NeighborhoodId, now: number): ReportView — src/engine/features/service.ts:148 — Everything the strip and the sheet show for one shop.
-- onServicePulse(fn: (p: ServicePulse) => void) — src/engine/features/service.ts:193
-- slammedAsks(g: GameState, id: NeighborhoodId): BarkAsk[] — src/engine/features/service.ts:204 — The asks of a shop's heads: each hired head whose station has been Slammed for `slammedBarkSeconds`…
-- service: Feature<ServiceStateSlice> — src/engine/features/service.ts:216
-- withoutService(g: GameState): GameState — src/engine/features/service.ts:266 — `g` with no tip and no penalty (for a reward that must not move with how well the shop is served, a…
+- serviceOf(f: Flow): number — src/engine/features/service.ts:86 — Service, 0..1, in 5% steps (rounded down).
+- loadOf(f: Flow, rate: number): number — src/engine/features/service.ts:88 — A station's load, 0..1, in 5% steps.
+- lampOf(load: number): Lamp — src/engine/features/service.ts:90
+- floorOf(f: Flow): FloorLamp — src/engine/features/service.ts:92 — The floor's lamp from wanted ÷ kitchen (the raw ratio: its thresholds are not 5% steps).
+- reportActive(g: GameState, id: NeighborhoodId): boolean — src/engine/features/service.ts:98 — A shop that runs itself, after the tutorial: the only kind the report covers.
+- reportView(g: GameState, id: NeighborhoodId, now: number): ReportView — src/engine/features/service.ts:160 — Everything the strip and the sheet show for one shop.
+- onServicePulse(fn: (p: ServicePulse) => void) — src/engine/features/service.ts:205
+- slammedAsks(g: GameState, id: NeighborhoodId): BarkAsk[] — src/engine/features/service.ts:216 — The asks of a shop's heads: each hired head whose station has been Slammed for `slammedBarkSeconds`…
+- service: Feature<ServiceStateSlice> — src/engine/features/service.ts:228
+- withoutService(g: GameState): GameState — src/engine/features/service.ts:278 — `g` with no tip and no penalty (for a reward that must not move with how well the shop is served, a…
 - types: Lamp, FloorLamp, ServiceState, KitchenStation, ShopService, ServiceStateSlice, Flow, ReportView, ServicePulse
 
 ## src/engine/features/types.ts
@@ -329,18 +330,18 @@
 - pendingScenes(s: GameState, scenes: Scene[]): Scene[] — src/engine/game.ts:1153 — Unseen scenes whose triggers pass, in story order (earliest first); main beats come before interlud…
 - storyWaitHint(s: GameState, scenes: readonly Scene[] = HOME_SCENES): string | null — src/engine/game.ts:1165 — A line for the goal bar when a main beat has triggered but is held behind a finale the player still…
 - challengeOffered(s: GameState, id: NeighborhoodId): boolean — src/engine/game.ts:1193 — The rival challenge in `id` may be taken now: the MegaSlice shop is open there and the finale wait …
-- applyReward(s: GameState, reward: SceneReward | undefined): GameState — src/engine/game.ts:1227
-- markSceneSeen(s: GameState, scene: Scene): GameState — src/engine/game.ts:1241
-- upgradeGain(s: GameState, id: NeighborhoodId, what: Upgrade): number | null — src/engine/game.ts:1251 — Cash/sec this pizzeria gains from an upgrade (counting it as running), or null if unavailable.
-- vehicleGain(s: GameState): number | null — src/engine/game.ts:1261 — Cash/sec the whole city gains from the next fleet tier.
-- buildGain(s: GameState, id: NeighborhoodId): number — src/engine/game.ts:1268 — A starting pizzeria's earnings once it runs itself (heads + a GM, so with the GM boost).
-- buildAllIn(id: NeighborhoodId) — src/engine/game.ts:1274 — Everything it takes to get a new pizzeria running itself: the build, three heads and a GM.
-- bottleneckBundle(s: GameState, id: NeighborhoodId, maxSteps = 8): Bundle | null — src/engine/game.ts:1288 — The cheapest set of upgrades that actually raises a pizzeria's output.
-- shopLevelKey(s: GameState, id: NeighborhoodId): string — src/engine/game.ts:1343 — One key for everything a shop's upgrade levels decide (not cash, sales or the line): shared caches …
-- bundleHint(s: GameState, id: NeighborhoodId): BundleHint | null — src/engine/game.ts:1354 — "Upgrade prep + ovens · $X": the tied-station bundle, ready to show in the UI.
-- decorCost(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null — src/engine/game.ts:1367
-- buyDecor(s: GameState, id: NeighborhoodId, kind: DecorKind): BuyResult — src/engine/game.ts:1372
-- decorGain(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null — src/engine/game.ts:1383 — Cash/sec this pizzeria gains from the next decor tier (counting it as running).
+- applyReward(s: GameState, reward: SceneReward | undefined): GameState — src/engine/game.ts:1228
+- markSceneSeen(s: GameState, scene: Scene): GameState — src/engine/game.ts:1242
+- upgradeGain(s: GameState, id: NeighborhoodId, what: Upgrade): number | null — src/engine/game.ts:1252 — Cash/sec this pizzeria gains from an upgrade (counting it as running), or null if unavailable.
+- vehicleGain(s: GameState): number | null — src/engine/game.ts:1262 — Cash/sec the whole city gains from the next fleet tier.
+- buildGain(s: GameState, id: NeighborhoodId): number — src/engine/game.ts:1269 — A starting pizzeria's earnings once it runs itself (heads + a GM, so with the GM boost).
+- buildAllIn(id: NeighborhoodId) — src/engine/game.ts:1275 — Everything it takes to get a new pizzeria running itself: the build, three heads and a GM.
+- bottleneckBundle(s: GameState, id: NeighborhoodId, maxSteps = 8): Bundle | null — src/engine/game.ts:1289 — The cheapest set of upgrades that actually raises a pizzeria's output.
+- shopLevelKey(s: GameState, id: NeighborhoodId): string — src/engine/game.ts:1344 — One key for everything a shop's upgrade levels decide (not cash, sales or the line): shared caches …
+- bundleHint(s: GameState, id: NeighborhoodId): BundleHint | null — src/engine/game.ts:1355 — "Upgrade prep + ovens · $X": the tied-station bundle, ready to show in the UI.
+- decorCost(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null — src/engine/game.ts:1368
+- buyDecor(s: GameState, id: NeighborhoodId, kind: DecorKind): BuyResult — src/engine/game.ts:1373
+- decorGain(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null — src/engine/game.ts:1384 — Cash/sec this pizzeria gains from the next decor tier (counting it as running).
 - types: Shop, GameState, BonusState, OrderOffer, ActiveOrder, OrderResult, OrderState, Task, Booster, Boost, Rewards, Stats, FeatureMults, Stage, HeadUpgrade, Upgrade, BuyResult, VehicleLock, TapOutcome, OfflineResult, Bundle, BundleHint
 
 ## src/engine/night-oven.ts
@@ -427,7 +428,8 @@
 - ringStep(progress: number): number — src/engine/teaser.ts:47 — Whole steps of RING_STEP, rounded down so a ring never shows a step it hasn't reached (full only at…
 - commas(n: number): string — src/engine/teaser.ts:50 — 1200 → "1,200"; from a million up the usual "1.2M".
 - nextScene(s: GameState, scenes: readonly Scene[] = HOME_SCENES): Scene | null — src/engine/teaser.ts:58 — The first scene not yet seen, in story order (an already-triggered one is only waiting for its mome…
-- nextSceneTeaser(s: GameState, scenes: readonly Scene[] = HOME_SCENES): Teaser — src/engine/teaser.ts:63
+- nextSceneTeaser(s: GameState, scenes: readonly Scene[] = HOME_SCENES): Teaser — src/engine/teaser.ts:88
+- teaserStep(s: GameState, scenes: readonly Scene[] = HOME_SCENES): number — src/engine/teaser.ts:93 — U13: only the ring's step of `nextSceneTeaser` (the HUD asks five times a second): no text is built…
 - types: TeaserKind, Teaser
 
 ## src/engine/tutorial.ts
@@ -476,18 +478,18 @@ CITY_NAME, TUNING, STATIONS, OvenGrade, OVEN_GRADES, NONNA_TAKEOVER, FootprintTi
 - types: CoinLaunch
 
 ## src/components/slots.tsx
-- onOvenAsk(fn: () => void) — src/components/slots.tsx:76 — The screen listens here; returns the unsubscribe.
-- askOven() — src/components/slots.tsx:83 — Ask the screen to open Nonna's night-oven sheet (it also closes the drawer, tasks and calendar).
-- inOrder<P>(items: readonly SlotEntry<P>[]): readonly SlotEntry<P>[] — src/components/slots.tsx:88 — The entries in `order` (ascending, stable).
-- Slots({ items }: { items: readonly SlotEntry[] }) — src/components/slots.tsx:93 — Renders every entry of a prop-less slot.
-- SceneSlots({ items, shopId, width, height }: { items: readonly SlotEntry<SceneSlotProps>[]; shopId: string; w… — src/components/slots.tsx:105 — Renders every scene overlay with the shop and the scene size.
-- ReportSlots({ items, bottom }: { items: readonly SlotEntry<ShopReportSlotProps>[]; bottom: number }) — src/components/slots.tsx:117 — Renders every shop-report entry with the strip's `bottom`.
-- StoryWaitBanner — src/components/slots.tsx:149 — v5.16 (T1b): "Win over Industrial to continue Uptown’s story" (storyWaitHint), one line at the top …
-- HUD_CHIPS: SlotEntry[] — src/components/slots.tsx:162
-- HUD_TOP_CHIPS: SlotEntry[] — src/components/slots.tsx:176
-- BANNERS: SlotEntry[] — src/components/slots.tsx:178
-- SHEETS: SlotEntry[] — src/components/slots.tsx:190
-- SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] — src/components/slots.tsx:202
-- DRAWER_CARDS: SlotEntry[] — src/components/slots.tsx:208
-- SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] — src/components/slots.tsx:216
+- onOvenAsk(fn: () => void) — src/components/slots.tsx:75 — The screen listens here; returns the unsubscribe.
+- askOven() — src/components/slots.tsx:82 — Ask the screen to open Nonna's night-oven sheet (it also closes the drawer, tasks and calendar).
+- inOrder<P>(items: readonly SlotEntry<P>[]): readonly SlotEntry<P>[] — src/components/slots.tsx:87 — The entries in `order` (ascending, stable).
+- Slots({ items }: { items: readonly SlotEntry[] }) — src/components/slots.tsx:92 — Renders every entry of a prop-less slot.
+- SceneSlots({ items, shopId, width, height }: { items: readonly SlotEntry<SceneSlotProps>[]; shopId: string; w… — src/components/slots.tsx:104 — Renders every scene overlay with the shop and the scene size.
+- ReportSlots({ items, bottom }: { items: readonly SlotEntry<ShopReportSlotProps>[]; bottom: number }) — src/components/slots.tsx:116 — Renders every shop-report entry with the strip's `bottom`.
+- StoryWaitBanner — src/components/slots.tsx:162 — v5.16 (T1b): "Win over Industrial to continue Uptown’s story" (storyWaitHint), one line at the top …
+- HUD_CHIPS: SlotEntry[] — src/components/slots.tsx:175
+- HUD_TOP_CHIPS: SlotEntry[] — src/components/slots.tsx:189
+- BANNERS: SlotEntry[] — src/components/slots.tsx:191
+- SHEETS: SlotEntry[] — src/components/slots.tsx:203
+- SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] — src/components/slots.tsx:215
+- DRAWER_CARDS: SlotEntry[] — src/components/slots.tsx:217
+- SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] — src/components/slots.tsx:225
 - types: SlotProps, SceneSlotProps, ShopReportSlotProps, SlotEntry
