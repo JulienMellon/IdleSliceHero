@@ -12,7 +12,7 @@ cards:                 # todo | running | done | partial | blocked
   W2 done  E0 done  E2a done  P1 partial  E2b done  T1a done
   S2a partial  S2b done  T1b partial  U5 done
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.16/review-r2-critic.md (r2 NOT SATISFIED; bug 0 major 2 minor 12; E2 U6 S5 T1)
+  critic: docs/build/v5.16/review-r3-critic.md (r3 NOT SATISFIED, minors only -> close; bug 0 major 0 minor 10; E2 U3 S4 T1)
   code:   docs/build/v5.16/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 3 low 23; E16 U5 S3 A2)
   story:  docs/build/v5.16/review-r3-story.md (r3 SATISFIED; bug 0 major 0 minor 1; U1)
   audio:  AUDIOLOG.md (next ID AU78)
