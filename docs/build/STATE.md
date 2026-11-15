@@ -45,3 +45,4 @@ next: fresh session; read docs/build/sessions/S3-v5.16-second-half.md (wave 6: S
 - 2026-11-15 02:01 UTC r2 E0 partial (C121 + S45 fixed; tsc ok, engine+content pass; C107 D495 left). E2a launched (C120).
 - 2026-11-15 02:02 UTC r2 E2a partial (C120 engine fixed; tsc ok, 791 pass). Needs for S2a: rival-model.ts rivalCard NONE on 'waiting', sheet-model.ts:105 waiting case. D493 left (story gate, T). E2b launched (+C123).
 - 2026-11-15 02:06 UTC r2 U5 done (S40/G104 crash, G106, D494 partial, D488, D487; tsc ok, 717 pass, layout 0 new). P1 launched (D479 D486 D485).
+- 2026-11-15 02:09 UTC r2 E2b partial (C123, U16 engine; pacing-fit finale crash fixed; days 1.02/2.04/3.06/4.42; sim gap readout 1808 min uptown-hire, off before too). Needs S2b: stars-model.test.ts:125 expect shopRevenue (1 test red). S2a launched (G105 D480-483 D492 + rival waiting).

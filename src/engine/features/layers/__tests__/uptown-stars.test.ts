@@ -76,7 +76,7 @@ describe('the Ingredients track', () => {
     run(() => {
       let g = uptown();
       for (const [i, minutes] of [30, 120, 480].entries()) {
-        const income = G.shopEarnings(g, HOOD);
+        const income = G.shopRevenue(HOOD, g.shops[HOOD], g.vehicle);
         expect(ingredientsPrice(g)).toBe(Math.ceil(minutes * 60 * income));
         const r = buyIngredients({ ...g, cash: 1e30 });
         expect(r.ok).toBe(true);
