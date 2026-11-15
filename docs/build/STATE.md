@@ -47,3 +47,4 @@ next: fresh session; read docs/build/sessions/S3-v5.16-second-half.md (wave 6: S
 - 2026-11-15 02:06 UTC r2 U5 done (S40/G104 crash, G106, D494 partial, D488, D487; tsc ok, 717 pass, layout 0 new). P1 launched (D479 D486 D485).
 - 2026-11-15 02:09 UTC r2 E2b partial (C123, U16 engine; pacing-fit finale crash fixed; days 1.02/2.04/3.06/4.42; sim gap readout 1808 min uptown-hire, off before too). Needs S2b: stars-model.test.ts:125 expect shopRevenue (1 test red). S2a launched (G105 D480-483 D492 + rival waiting).
 - 2026-11-15 02:15 UTC r2 S2a done (G105 D480-D483, rival waiting; tsc ok; components 718/720: Ingredients card (S2b) + 'head barks stay inside the walls' red). S30 S32 need copy file (T). S2b launched.
+- 2026-11-15 02:18 UTC r2 P1 partial (D479 D492 S31 S34 fixed; D485 strip part; D486 in attack-model.ts + U17 left; tsc ok, 1 red = S2b Ingredients). Copy-file updates pending for writer: S31 line, new bark, 'Tipping'/'Cold'. T1a launched (S37 S38 S39 D493).
