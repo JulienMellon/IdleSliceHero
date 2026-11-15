@@ -48,7 +48,7 @@ export default function Scrapbook() {
           <Text style={styles.title}>Scrapbook</Text>
           <Text style={styles.count}>{storiesCount(seen.length)}</Text>
         </View>
-        // D476: one line when it can be: the size shrinks to the header's width, never under 10 pt
+        {/* D476: one line when it can be: the size shrinks to the header's width, never under 10 pt */}
         <Text style={[styles.teaser, { fontSize: fitFont(teaser, width - 28, 14, MIN_FONT) }]} testID="scrapbook-teaser">
           {teaser}
         </Text>

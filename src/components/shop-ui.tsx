@@ -91,7 +91,7 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
                 onSelect(n.id);
               }} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
               <Text style={styles.tabName}>{n.name}</Text>
-              <Text style={[styles.tabSub, active && { color: C.ink }, !shop.managed && !active && { color: C.tomato }]}>{shop.managed ? `${money(eps)}/s` : 'you run it'}</Text>
+              <Text style={[styles.tabSub, active && { color: C.ink }, !Game.runsItself(shop) && !active && { color: C.tomato }]}>{Game.runsItself(shop) ? `${money(eps)}/s` : 'you run it'}</Text>
               {/* v5.15: the shop's three mastery stars (heads, Flagship, golden ovens) */}
               {showPips(shop) && <StarPips testID={`stars-${n.id}`} bits={pipBits(starPips(shop))} size={10} />}
             </Pressable>

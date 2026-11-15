@@ -537,7 +537,7 @@ export function migrate(raw: unknown, now: number): GameState {
   // feature slices: a save without `x` (or without a feature's key) gets that feature's defaults; keys of features no longer registered are dropped
   const savedX = (r.x && typeof r.x === 'object' ? r.x : {}) as Record<string, unknown>;
   game.x = Object.fromEntries(FEATURES.map((f) => [f.key, f.migrate(savedX[f.key], now)]));
-  return migrateStory(game);
+  return migrateStory(game, num(r.saveVersion, 0));
 }
 
 /** Scene ids are `<neighbourhood>-<beat>` (pinned by a test); a neighbourhood's finale is beat 4. */
@@ -1200,9 +1200,10 @@ export function challengeOffered(s: GameState, id: NeighborhoodId): boolean {
 /**
  * The story part of `migrate` (idempotent, so it runs on every load). Every scene a seen scene waits for is seen too, however far back the
  * chain goes (a save that has played University's beat 3 never meets "Sorry in advance about the university" afterwards), stamped with
- * the time of the scene that needed it. A shop that already has its manager has met them: its hire scene is seen.
+ * the time of the scene that needed it. A shop that already has its manager in a save from before v6 (when the hire scenes came) has met
+ * them: its hire scene is seen. A v6 save keeps a hire scene pending until it plays (C121: it used to be marked seen on the next load).
  */
-function migrateStory(game: GameState): GameState {
+function migrateStory(game: GameState, fromVersion: number): GameState {
   const byId = new Map(HOME_SCENES.map((sc) => [sc.id, sc]));
   const seen = new Set(game.seenScenes);
   const sceneAt = { ...game.sceneAt };
@@ -1217,7 +1218,7 @@ function migrateStory(game: GameState): GameState {
       mark(pre, at);
     }
   };
-  for (const sc of HOME_SCENES) if (sc.trigger.kind === 'manager' && game.shops[sc.trigger.neighborhood].managed) seen.add(sc.id);
+  if (fromVersion < 6) for (const sc of HOME_SCENES) if (sc.trigger.kind === 'manager' && game.shops[sc.trigger.neighborhood].managed) seen.add(sc.id);
   for (const id of [...seen]) mark(id, sceneAt[id]);
   if (seen.size === game.seenScenes.length) return game;
   const seenScenes = [...game.seenScenes, ...[...seen].filter((id) => !game.seenScenes.includes(id))];
