@@ -36,3 +36,4 @@ next: fresh session; read docs/build/sessions/S3-v5.16-second-half.md (wave 6: S
 - 2026-11-15 00:13 UTC S2a partial (steps 1-4; tsc ok; components 668/669, fail is S2b's shift chip; shots 74-81 ok). Waiting on S2b.
 - 2026-11-15 00:17 UTC S2b done (tsc ok, components 670/670, shots 82-89 ok). Wave 7: T1b launched.
 - 2026-11-15 00:40 UTC T1b partial (steps 1-7 coded; tsc ok, components 702/702; shots 90-97,138,139,139b ok). Wave 8: U5 launched with S2a+T1b U needs.
+- 2026-11-15 01:01 UTC U5 partial (9 steps; tsc ok, components 716; allowlist 33->9; 2 layout new). Sent back: slots dup banner, strip clipping 15/15a/16, compactEffect 10. Open: 00_boot cash $0 after 20s (E?); settings.tsx /24 carries.
