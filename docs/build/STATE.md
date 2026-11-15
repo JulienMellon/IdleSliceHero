@@ -46,3 +46,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md
 - 2026-11-15 v5.17 r1 L1 done (perf 0/1200 >16ms; 6 store shots 1320x2868). Awning-founder fix launched on v5.16 card-P1.
 - 2026-11-15 v5.17 r1 awning-founder done (facade/storefront/rewards/shop-model; 183 pass). Carried: vanity-art icon fallback, copy key.
 - 2026-11-15 v5.17 r1 U4 partial (focus, sky queue, task pills, day-30; 828 pass; 148_u4 0 err). Needs: offer clock hold (-> U3). Kept U4 default: event holds strip 15 s. Carried: day-30 name placeholder (writer).
+- 2026-11-15 v5.17 r1 U3 offer hold + 148 README row done (820 pass). All cards in. Verify v5.17: tsc pass; npm test running.

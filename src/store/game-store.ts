@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
 import { emitAudio, type AudioEvent } from '../audio/bus';
+import { getBannerOpen } from '../components/endgame/banner-state';
+import { offerWaits } from '../components/endgame/stack-model';
 import { applyDouble, claimDelta, claimOffer, grantDailyBooster, offlineBoost, offlineExtra, offlineFactor, repairByAd, rerollDaily as rerollDailyTask, type ClaimInfo, type ClaimKind } from '../components/store/ad-model';
 import { applyGrant, NO_PREFS, parsePrefs, PREFS_KEY, type StorePrefs } from '../components/store/store-model';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
@@ -344,7 +346,8 @@ export const useGame = create<Store>((set, get) => {
       game = B.bonusTick(game, dt, bonusBlocked(st));
       const covered = gameCovered(st);
       const before = game;
-      game = O.orderTick(game, dt, covered);
+      // an offer's wait also holds while something ahead of it in the sky strip (an attack banner or chip) hides it
+      game = O.orderTick(game, dt, covered || offerWaits(game, getBannerOpen(), now));
       // a new offer, a finished order: a sound and a save (a failure is quiet)
       if (game.order.offer && !before.order.offer && !before.order.active) emitAudio({ type: 'bubble' });
       if (game.stats.ordersDone > before.stats.ordersDone) {

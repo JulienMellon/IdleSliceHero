@@ -19,6 +19,7 @@ One file per group of shots, `NN_name.py`, NN = the first shot number the file o
 | `56_u1.py` | 56-65 endgame (card U1) |
 | `66_s1.py` | 66-73 cosmetics, heads, cameo (card S1) |
 | `98_u3.py` | 98-105 ad buttons, store, Starter Pack, Settings rows (card U3) |
+| `148_u4.py` | 148-152 first minute, one sky event at a time, task progress, day-30 prize (card U4) |
 
 ## One fixture at a time
 ```

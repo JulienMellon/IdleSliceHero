@@ -6,12 +6,14 @@ jest.mock('@react-native-async-storage/async-storage', () => {
 
 jest.useFakeTimers();
 
+import { HOME_SCENES } from '../../../content/scenes/home';
 import { NONNA_TAKEOVER } from '../../../content/tuning';
 import * as G from '../../../engine/game';
 import { dayKey, refreshRewards } from '../../../engine/rewards';
 import { GRANTS } from '../../../services/grants';
 import { useGame } from '../../../store/game-store';
 import { analytics } from '../../../services';
+import { setBannerOpen } from '../../endgame/banner-state';
 import { adOffering, boosterAdOffer } from '../ad-model';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -182,5 +184,36 @@ describe('analytics events (card N1)', () => {
     const sheet = fs.readFileSync(path.join(__dirname, '..', 'starter-sheet.tsx'), 'utf8');
     expect(tab).toMatch(/EVENTS\.iapViewed, \{ surface: 'store_tab' \}/);
     expect(sheet).toMatch(/EVENTS\.iapViewed, \{ surface: 'starter_sheet' \}/);
+  });
+});
+
+describe("an order offer's wait holds while something ahead of it hides it", () => {
+  const withOffer = (attack: boolean): G.GameState => {
+    const g = fresh();
+    const x = attack ? { ...g.x, counterattack: { armedWeek: 1, seenWeek: 1, target: 'downtown', open: true, defended: [], challenge: null, retryAt: 0, news: null } } : g.x;
+    return {
+      ...g,
+      x,
+      shops: { ...g.shops, suburbs: { ...g.shops.suburbs, built: true } }, // every scene seen: none is left to open and cover the game
+      seenScenes: HOME_SCENES.map((sc) => sc.id),
+      order: { ...g.order, offer: { hood: 'suburbs', target: 40, left: 45, variant: 0 } },
+    };
+  };
+  beforeEach(() => useGame.setState({ playing: null }));
+  afterEach(() => setBannerOpen(false));
+
+  test('behind the open attack banner the 45 s do not run down; in front they do', () => {
+    useGame.setState({ game: withOffer(true) });
+    setBannerOpen(true);
+    st().tick(1);
+    expect(st().game.order.offer!.left).toBe(45);
+    // the banner collapses to a badge: the offer is visible again and its wait runs
+    setBannerOpen(false);
+    st().tick(1);
+    expect(st().game.order.offer!.left).toBeLessThan(45);
+    // no attack at all: it runs
+    useGame.setState({ game: withOffer(false) });
+    st().tick(1);
+    expect(st().game.order.offer!.left).toBeLessThan(45);
   });
 });
