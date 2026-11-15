@@ -10,7 +10,7 @@ last_shots: v5.16-r3           # label of the last screenshot set that passed ve
 codecritic_range_start: aff34d1
 cards:                 # todo | running | done | partial | blocked
   (v5.17 cards: see docs/build/v5.17/VERSION.md)
-  N1 done  A1 done  U3 partial  L1 partial  U4 todo
+  N1 done  A1 done  U3 done  L1 running  U4 running
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.16/review-r3-critic.md (r3 NOT SATISFIED, minors only -> close; bug 0 major 0 minor 10; E2 U3 S4 T1)
   code:   docs/build/v5.16/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 3 low 23; E16 U5 S3 A2)
@@ -42,3 +42,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md
 - 2026-11-15 v5.17 r1 L1 partial (site, a11y, perf ok; 1558 pass; store_shots/perf.py not run). Needs: site placeholders + Pages on (Julien); policy mismatches/_layout tick/events (-> N1); links re-export + settings a11y (-> U3).
 - 2026-11-15 v5.17 r1 N1 done (manifest = spec, tracking off, _layout tick paused, 3 events; 1560 pass). Crash link undone (spec: not linked). 4 events -> U3.
 - 2026-11-15 v5.17 r1 N1 crash link undone (49 pass). L1 sent to run store_shots + perf.
+- 2026-11-15 v5.17 r1 U3 done (settings music, links, a11y, 4 events; 854 pass; 98_u3 0 err, layout 0 new). Open: awning-founder not drawn (facade/storefront, cosmeticName, Style tab) -> P lane; clipboard; Swap generator. Wave 3: U4 launched.
