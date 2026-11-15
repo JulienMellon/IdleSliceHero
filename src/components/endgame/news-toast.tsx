@@ -24,7 +24,7 @@ export const NewsToast = memo(function NewsToast() {
   // the batch is taken when something is waiting and nothing covers the screen (a scene, the return popup, the title card)
   const key = useGame((s) => (gameCovered(s) ? '' : newsKey(s.game)));
   // an event that is running: its start line is a toast too, once per event per launch
-  const eventId = useGame((s) => eventBannerView(eventViewNow(Date.now()))?.id ?? '');
+  const eventId = useGame((s) => eventBannerView(eventViewNow(Date.now(), s.game))?.id ?? '');
   const told = useRef('');
   const [queue, setQueue] = useState<NewsItem[]>([]);
   const [pop] = useState(() => new Animated.Value(0));
@@ -42,7 +42,7 @@ export const NewsToast = memo(function NewsToast() {
   useEffect(() => {
     if (!eventId || told.current === eventId) return;
     told.current = eventId;
-    const b = eventBannerView(eventViewNow(Date.now()));
+    const b = eventBannerView(eventViewNow(Date.now(), useGame.getState().game));
     if (b) setQueue((q) => [...q, eventNews(b)]);
   }, [eventId]);
 

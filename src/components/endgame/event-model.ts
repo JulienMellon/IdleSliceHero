@@ -2,19 +2,33 @@
 // The rules are engine/features/events.ts (`eventView`); the words are the copy table. Pure: unit-tested in node.
 import type { EventId } from '../../content/endgame';
 import { eventView, type EventView } from '../../engine/features/events';
+import type { GameState } from '../../engine/game';
 import { copy, speakerOf } from './copy-text';
 
 /** The copy keys call the events `friday` and `gameday`. */
 const COPY_EVENT: Record<EventId, 'friday' | 'gameday'> = { 'friday-rush': 'friday', 'game-day': 'gameday' };
 
 let cachedSecond = -1;
+let cachedBuilt = '';
 let cachedView: EventView | null = null;
-/** U14: `eventView` once per whole second (the store ticks five times a second and four selectors ask): the same answer within a second. */
-export function eventViewNow(now: number): EventView | null {
+/** Which shops are built, as one string: the part of the game an event's opener (S22) depends on. */
+const builtKey = (g: Pick<GameState, 'shops'> | undefined): string => {
+  if (!g) return '*';
+  let k = '';
+  for (const id in g.shops) if (g.shops[id as keyof typeof g.shops].built) k += `${id},`;
+  return k;
+};
+/**
+ * U14: `eventView` once per whole second (the store ticks five times a second and four selectors ask): the same answer within a second.
+ * S22: with the game, an event shows only once its opener's shop is built; the answer is kept per second and per set of built shops.
+ */
+export function eventViewNow(now: number, g?: Pick<GameState, 'shops'>): EventView | null {
   const sec = Math.floor(now / 1000);
-  if (sec !== cachedSecond) {
-    cachedView = eventView(sec * 1000);
+  const built = builtKey(g);
+  if (sec !== cachedSecond || built !== cachedBuilt) {
+    cachedView = eventView(sec * 1000, g);
     cachedSecond = sec;
+    cachedBuilt = built;
   }
   return cachedView;
 }

@@ -36,7 +36,7 @@ import { money, pizzas } from '@/engine/format';
 import * as G from '@/engine/game';
 import { nightOvenView } from '@/engine/night-oven';
 import * as R from '@/engine/rewards';
-import { nextSceneTeaser } from '@/engine/teaser';
+import { nextScene, teaserStep } from '@/engine/teaser';
 import type { Station } from '@/engine/pipeline';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
@@ -162,7 +162,9 @@ export default function GameScreen() {
   // the night oven's sheet and drawer card read one view, built only while one of them is open (it prices the tiers); the chip is a string
   const ovenView = ovenOpen || drawerOpen ? nightOvenView(game) : null;
   // the ring on the scrapbook button: how far the next story scene is (whole 5% steps, so it repaints rarely)
-  const teaser = nextSceneTeaser(game);
+  // no ring once the story is complete (no scene left); the set of seen scenes changes rarely, so that check is memoised on it
+  const storyDone = useMemo(() => nextScene(game) === null, [game.seenScenes]); // eslint-disable-line react-hooks/exhaustive-deps -- nextScene reads only seenScenes
+  const ring = storyDone ? undefined : teaserStep(game);
   useEffect(() => {
     if (!autoGift) return;
     markGiftShown();
@@ -310,7 +312,7 @@ export default function GameScreen() {
         giftDot={hud.giftDot}
         chips={<Slots items={HUD_CHIPS} />}
         topChips={<Slots items={HUD_TOP_CHIPS} />}
-        scrapRing={teaser.kind === 'complete' ? undefined : teaser.step}
+        scrapRing={ring}
         halo={coach?.target === 'cash' ? 'cash' : coach?.target === 'goal' ? 'goal' : null} />
       <ShopTabs game={game} boostMult={hud.mult} onSelect={setActive} onBuild={build} />
       <View style={styles.sceneArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>

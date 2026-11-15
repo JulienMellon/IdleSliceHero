@@ -8,7 +8,7 @@ import { C, F } from '../../theme';
 import { eventChipText, eventViewNow } from './event-model';
 
 export const EventChip = memo(function EventChip() {
-  const text = useGame((s) => eventChipText(eventViewNow(Date.now())));
+  const text = useGame((s) => eventChipText(eventViewNow(Date.now(), s.game)));
   if (!text) return null;
   return (
     <View testID="event-chip" accessibilityLabel={text} style={styles.chip}>

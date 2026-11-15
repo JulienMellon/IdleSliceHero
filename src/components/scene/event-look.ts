@@ -13,7 +13,7 @@ export interface EventLook {
 export const NO_EVENT_LOOK: EventLook = { dusk: false, lights: false, extraDiners: 0 };
 export const EVENT_LOOK: EventLook = { dusk: true, lights: true, extraDiners: 2 };
 
-/** The look of `shop` while `event` runs: the event's own shops only (Big Game Day dresses Downtown and the Suburbs, Friday Night Rush all). */
+/** The look of `shop` while `event` runs: the event's own shops only (the Mudhens Playoff Rush dresses Downtown and the Suburbs, Friday Night Rush all). */
 export function eventLook(event: Pick<EventDef, 'hoods'> | null, shop: NeighborhoodId, running: boolean): EventLook {
   if (!event) return NO_EVENT_LOOK;
   if (event.hoods !== 'all' && !event.hoods.includes(shop)) return NO_EVENT_LOOK;

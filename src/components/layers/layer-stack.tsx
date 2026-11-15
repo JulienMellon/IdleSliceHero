@@ -209,7 +209,7 @@ export const LayerStack = memo(function LayerStack() {
   const bannerOpen = useBannerOpen();
   const top = useGame((s) => layerTop({
     orderUp: chipPhase(s.game) !== 'none',
-    eventUp: !!eventBannerView(eventViewNow(Date.now())),
+    eventUp: !!eventBannerView(eventViewNow(Date.now(), s.game)),
     attack: attackLite(s.game).face,
     collapsed: !bannerOpen,
   }));
