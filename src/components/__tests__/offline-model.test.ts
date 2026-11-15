@@ -106,6 +106,11 @@ describe('the news line', () => {
     expect(offlineNews([{ name: 'Suburbs', earned: 5, managed: true, pies: 1 }], [])).toBe('Suburbs sold 1 pie while you were\u00A0away');
   });
 
+  test('S33: a heads-only shop says why it sold less', () => {
+    const rows = [{ name: 'Waterfront', earned: 5, managed: false, headsOnly: true, pies: 40 }, { name: 'Suburbs', earned: 9, managed: true, pies: 90 }];
+    expect(offlineNews(rows, [])).toBe('No manager, so your head cooks kept the shop at half\u00A0speed.');
+  });
+
   test('a shop that waited for a manager', () => {
     const idle = offlineNews([{ name: 'Downtown', earned: 5, managed: false, pies: 2 }], ['Waterfront']);
     expect(idle).toBe("Waterfront waited for you: hire a manager and it bakes while you're away");

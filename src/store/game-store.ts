@@ -35,7 +35,7 @@ export interface OfflineSummary {
   capped: boolean;
   awaySeconds: number;
   earned: number;
-  byShop: { name: string; earned: number; managed: boolean; pies: number }[];
+  byShop: { name: string; earned: number; managed: boolean; /** No manager, all three heads: it ran at half speed. */ headsOnly: boolean; pies: number }[];
   /** Built pizzerias with no manager: the gift's news line says one waited for the player. */
   idle: string[];
 }
@@ -246,7 +246,7 @@ export const useGame = create<Store>((set, get) => {
           awaySeconds = r.awaySeconds;
           if (r.earned >= 1 && r.seconds >= TUNING.offlinePopupSeconds) {
             // Hold the cash back until the player taps Collect.
-            offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed, pies: b.pies })), idle: r.idle.map((id) => G.def(id).name) };
+            offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed, headsOnly: b.headsOnly, pies: b.pies })), idle: r.idle.map((id) => G.def(id).name) };
             game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
           }
         }

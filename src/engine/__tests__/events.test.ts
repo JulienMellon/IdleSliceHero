@@ -75,6 +75,25 @@ describe('the schedule', () => {
   });
 });
 
+describe('S22: a rush waits for its opener', () => {
+  const young = (now: number): G.GameState => ({ ...G.newGame(now), lastSavedAt: now });
+  it('Friday needs Waterfront, the playoffs need the Suburbs', () => {
+    const g = young(FRI(18));
+    expect(activeEvent(FRI(18), g)).toBeNull();
+    expect(eventView(FRI(16, 30), g)).toBeNull();
+    expect(activeEvent(FRI(18), withShop(g, 'suburbs', { built: true }))).toBeNull();
+    expect(activeEvent(FRI(18), withShop(g, 'waterfront', { built: true }))?.id).toBe('friday-rush');
+    expect(activeEvent(SUN(14), g)).toBeNull();
+    expect(activeEvent(SUN(14), withShop(g, 'suburbs', { built: true }))?.id).toBe('game-day');
+    expect(EVENTS.find((e) => e.id === 'game-day')!.name).toBe('Mudhens Playoff Rush');
+  });
+  it('no event is stamped or paid before then', () => {
+    const g = G.playTick(young(FRI(18)), 1, FRI(18));
+    expect(getFeature(g, events).id).toBeNull();
+    expect(G.featureMults(g, 'downtown', FRI(18)).value).toBe(G.featureMults(withoutEvent(g), 'downtown', FRI(18)).value);
+  });
+});
+
 describe('while the app is open', () => {
   it("Friday Night Rush multiplies every shop's value by 1.5", () => {
     const g = running(FRI(18));

@@ -60,26 +60,36 @@ export function nextScene(s: GameState, scenes: readonly Scene[] = HOME_SCENES):
   return scenes.find((sc) => !seen.has(sc.id) && sc.trigger.kind !== 'manager') ?? null;
 }
 
-export function nextSceneTeaser(s: GameState, scenes: readonly Scene[] = HOME_SCENES): Teaser {
+type Make = (kind: TeaserKind, text: (() => string) | string, progress: number) => Teaser;
+
+function teaserWith(s: GameState, scenes: readonly Scene[], make: Make): Teaser {
   const sc = nextScene(s, scenes);
-  if (!sc) return { kind: 'complete', text: TEASER_COMPLETE, progress: 1, step: 0 };
-  const who = `Next: ${WHO[sc.character]}'s story continues`;
+  if (!sc) return make('complete', TEASER_COMPLETE, 1);
+  const who = () => `Next: ${WHO[sc.character]}'s story continues`;
   const hood = def(sc.neighborhood);
   const shop = s.shops[sc.neighborhood];
-  const make = (kind: TeaserKind, text: string, progress: number): Teaser => ({ kind, text, progress, step: ringStep(progress) });
-  if (sceneTriggered(s, sc)) return make('soon', `${who} in a moment`, 1);
+  if (sceneTriggered(s, sc)) return make('soon', () => `${who()} in a moment`, 1);
   // the shop isn't there yet: whatever the scene waits for, the player's next move is to build it
-  if (!shop.built) return make('unlock', `${who} when you build ${hood.name}`, buildLock(s, sc.neighborhood) ? 0 : ratio(s.cash, hood.buildCost));
+  if (!shop.built) return make('unlock', () => `${who()} when you build ${hood.name}`, buildLock(s, sc.neighborhood) ? 0 : ratio(s.cash, hood.buildCost));
   const tr = sc.trigger;
-  if (tr.kind === 'bid') return make('bid', `${who} when you bid on Pier 9`, pier9Available(s) ? ratio(s.cash, PIER9_BID.cost) : ratio(shop.sold, PIER9_BID.unlockPizzas));
-  if (tr.kind === 'after') return make('soon', `${who} soon`, 0);
-  if (tr.kind === 'challenge') return make('soon', `${who} when you outsell MegaSlice`, 0);
+  if (tr.kind === 'bid') return make('bid', () => `${who()} when you bid on Pier 9`, pier9Available(s) ? ratio(s.cash, PIER9_BID.cost) : ratio(shop.sold, PIER9_BID.unlockPizzas));
+  if (tr.kind === 'after') return make('soon', () => `${who()} soon`, 0);
+  if (tr.kind === 'challenge') return make('soon', () => `${who()} when you outsell MegaSlice`, 0);
   if (tr.kind === 'deliveries') {
     const left = tr.count - shop.sold;
     // the pies are in, but the scene is held behind another one: it comes on its own
-    if (left <= 0) return make('soon', `${who} soon`, 1);
-    return make('deliveries', `${who} after ${commas(left)} more ${hood.name} ${left <= 1 ? 'pie' : 'pies'}`, ratio(shop.sold, tr.count));
+    if (left <= 0) return make('soon', () => `${who()} soon`, 1);
+    return make('deliveries', () => `${who()} after ${commas(left)} more ${hood.name} ${left <= 1 ? 'pie' : 'pies'}`, ratio(shop.sold, tr.count));
   }
   // an unlock scene of a built shop is already triggered (handled above); this keeps the compiler and a malformed scene list honest
-  return make('soon', `${who} in a moment`, 1);
+  return make('soon', () => `${who()} in a moment`, 1);
+}
+
+export function nextSceneTeaser(s: GameState, scenes: readonly Scene[] = HOME_SCENES): Teaser {
+  return teaserWith(s, scenes, (kind, text, progress) => ({ kind, text: typeof text === 'string' ? text : text(), progress, step: kind === 'complete' ? 0 : ringStep(progress) }));
+}
+
+/** U13: only the ring's step of `nextSceneTeaser` (the HUD asks five times a second): no text is built, the same answer. */
+export function teaserStep(s: GameState, scenes: readonly Scene[] = HOME_SCENES): number {
+  return teaserWith(s, scenes, (kind, _text, progress) => ({ kind, text: '', progress, step: kind === 'complete' ? 0 : ringStep(progress) })).step;
 }

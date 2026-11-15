@@ -1030,8 +1030,8 @@ export interface OfflineResult {
   /** Real time away, before the cap. */
   awaySeconds: number;
   earned: number;
-  /** Cash each pizzeria made while away (only those that made any), and the pies it sold. */
-  byShop: { id: NeighborhoodId; earned: number; managed: boolean; pies: number }[];
+  /** Cash each pizzeria made while away (only those that made any), and the pies it sold. `headsOnly`: no GM, all three heads: it sold at HEADS_OFFLINE_SHARE of its rate (S33). */
+  byShop: { id: NeighborhoodId; earned: number; managed: boolean; headsOnly: boolean; pies: number }[];
   /** Built pizzerias (not Downtown) missing a GM and a head: they only finish what was already on the line while you're away. A shop with all three heads and no GM is not idle: it sells HEADS_OFFLINE_SHARE of its rate. */
   idle: NeighborhoodId[];
 }
@@ -1105,7 +1105,7 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
   let state = ticked;
   // feature slices settle after the ordinary catch-up, in registry order
   for (const f of FEATURES) if (f.onOffline) state = f.onOffline(state, seconds, now, s);
-  const rows = byShop.map((r) => ({ id: r.id, managed: s.shops[r.id].managed, earned: r.base + r.extra, pies: r.pies })).filter((x) => x.earned > 0);
+  const rows = byShop.map((r) => ({ id: r.id, managed: s.shops[r.id].managed, headsOnly: !s.shops[r.id].managed && runsItself(s.shops[r.id]), earned: r.base + r.extra, pies: r.pies })).filter((x) => x.earned > 0);
   // Downtown's manager is Nonna's story beat, not a hire the player can make, so it is never named as idle
   const idle = SHOP_IDS.filter((id) => id !== 'downtown' && s.shops[id].built && !runsItself(s.shops[id]));
   return { state: { ...state, lastSavedAt: now }, seconds, cap, capped: elapsed - cap >= CAPPED_SLACK_SECONDS, awaySeconds: elapsed, earned: state.cash - s.cash, byShop: rows, idle };

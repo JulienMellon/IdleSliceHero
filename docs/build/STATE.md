@@ -50,3 +50,4 @@ next: v5.16 fix round r2 in progress (step fix, round r2). Done this round: E0 E
 - 2026-11-15 18:31 UTC r3 S2a done (D481 D482 fixed + tests; 723 pass). Needs: D491 MegaSlice van only while rivalOpen (scene/street.tsx, storefront.tsx -> P1). T1b launched.
 - 2026-11-15 18:34 UTC r3 T1b done (D490 already fixed; no edits). P1 launched (+D491).
 - 2026-11-15 18:35 UTC r3 U5 partial (D489 D487 D465 D478 S23 S24 S44; 723 pass, layout dev 0 new). S33 U13 + Big Game Day name -> E0 launched.
+- 2026-11-15 18:37 UTC r3 E0 partial (S33 S22-engine U13-engine, Mudhens rename; 657 pass). Wiring sent to U5 (index teaserStep, eventViewNow) and P1 (storefront activeEvent).

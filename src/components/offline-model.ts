@@ -12,7 +12,7 @@ export interface GiftSummary {
   capped: boolean;
   awaySeconds: number;
   earned: number;
-  byShop: { name: string; earned: number; managed: boolean; pies: number }[];
+  byShop: { name: string; earned: number; managed: boolean; headsOnly?: boolean; pies: number }[];
   /** Names of built pizzerias with no manager (they didn't bake while you were away). */
   idle: string[];
 }
@@ -28,6 +28,8 @@ export function clock(seconds: number): string {
 
 /** One line of news about the time away: the best seller, else the shop that waited, else what the kitchens finished. */
 export function offlineNews(byShop: GiftSummary['byShop'], idle: readonly string[]): string {
+  // S33: a shop with heads and no manager says why it sold less
+  if (byShop.some((b) => b.headsOnly && b.pies >= 1)) return 'No manager, so your head cooks kept the shop at half\u00A0speed.';
   const best = byShop.filter((b) => b.managed && b.pies >= 1).sort((a, b) => b.pies - a.pies)[0];
   if (best) return `${best.name} sold ${commas(best.pies)} ${best.pies === 1 ? 'pie' : 'pies'} while you were\u00A0away`; // D455: "away", and the last two words never split (a lone "out" orphaned on line 2)
   if (idle.length) return `${idle[0]} waited for you: hire a manager and it bakes while you're away`;
@@ -71,7 +73,7 @@ export function offlineGiftView(summary: GiftSummary, nightOven: number): GiftVi
     fullLine: full ? `The night oven was full — it holds ${clock(cap)}` : null,
     upgradeLine: full && bigger !== undefined ? `Upgrade it to hold ${clock(bigger)}` : null,
     total: summary.byShop.length ? summary.byShop.reduce((t, b) => t + shownValue(b.earned), 0) : summary.earned,
-    rows: summary.byShop.map((b) => ({ name: b.name, earned: b.earned, note: b.managed ? '' : ' (orders already in the oven)' })),
+    rows: summary.byShop.map((b) => ({ name: b.name, earned: b.earned, note: b.managed ? '' : b.headsOnly ? ' (half speed)' : ' (orders already in the oven)' })),
     news: offlineNews(summary.byShop, summary.idle),
   };
 }
