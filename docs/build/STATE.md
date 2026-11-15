@@ -40,3 +40,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md
 - 2026-11-15 v5.17 r1 pip playwright==1.63.0 installed (launch ok). U3 to run 98_u3 shots when a slot frees; A1 getter sent.
 - 2026-11-15 v5.17 r1 A1 done (musicSuppressed/onMusicSuppressed; 53 pass). Sent to U3 with shots run.
 - 2026-11-15 v5.17 r1 L1 partial (site, a11y, perf ok; 1558 pass; store_shots/perf.py not run). Needs: site placeholders + Pages on (Julien); policy mismatches/_layout tick/events (-> N1); links re-export + settings a11y (-> U3).
+- 2026-11-15 v5.17 r1 N1 done (manifest = spec, tracking off, _layout tick paused, 3 events; 1560 pass). Crash link undone (spec: not linked). 4 events -> U3.

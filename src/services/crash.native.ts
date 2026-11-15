@@ -23,3 +23,8 @@ export function startCrash(): void {
     beforeSend: (event) => (privacy.isOptedOut() ? null : event),
   });
 }
+
+/** File reports under the random Install ID (the analytics distinct id), so a deletion request can find them; null clears it. */
+export function setCrashUser(id: string | null): void {
+  Sentry.setUser(id ? { id } : null);
+}

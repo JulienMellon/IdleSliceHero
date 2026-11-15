@@ -16,38 +16,75 @@
         "GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511"
       },
       "privacyManifests": {
-        "NSPrivacyTracking": true,
-        "NSPrivacyTrackingDomains": [
-          "googleads.g.doubleclick.net"
-        ],
+        "NSPrivacyTracking": false,
+        "NSPrivacyTrackingDomains": [],
         "NSPrivacyCollectedDataTypes": [
           {
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeDeviceID",
-            "NSPrivacyCollectedDataTypeLinked": false,
-            "NSPrivacyCollectedDataTypeTracking": true,
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
             "NSPrivacyCollectedDataTypePurposes": [
-              "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"
+              "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising",
+              "NSPrivacyCollectedDataTypePurposeAnalytics"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeUserID",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAnalytics",
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeAdvertisingData",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising",
+              "NSPrivacyCollectedDataTypePurposeAnalytics"
             ]
           },
           {
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
-            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeLinked": true,
             "NSPrivacyCollectedDataTypeTracking": false,
             "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising",
+              "NSPrivacyCollectedDataTypePurposeAnalytics"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePerformanceData",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising",
               "NSPrivacyCollectedDataTypePurposeAnalytics"
             ]
           },
           {
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeCrashData",
-            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeLinked": true,
             "NSPrivacyCollectedDataTypeTracking": false,
             "NSPrivacyCollectedDataTypePurposes": [
-              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+              "NSPrivacyCollectedDataTypePurposeAnalytics"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeCoarseLocation",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising",
+              "NSPrivacyCollectedDataTypePurposeAnalytics"
             ]
           },
           {
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePurchaseHistory",
-            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeLinked": true,
             "NSPrivacyCollectedDataTypeTracking": false,
             "NSPrivacyCollectedDataTypePurposes": [
               "NSPrivacyCollectedDataTypePurposeAppFunctionality"
@@ -141,7 +178,8 @@
         "skAdNetworkItems": "Only Google's own id is listed. Paste the full current list from Google's AdMob SKAdNetwork page into the plugin's skAdNetworkItems before a store build.",
         "keys": "SDK keys are read in code from EXPO_PUBLIC_ADMOB_REWARDED_IOS, EXPO_PUBLIC_REVENUECAT_IOS_KEY, EXPO_PUBLIC_POSTHOG_KEY, EXPO_PUBLIC_POSTHOG_HOST and EXPO_PUBLIC_SENTRY_DSN; all default to empty (the service is then off). None is committed.",
         "sentry": "Set SENTRY_DISABLE_AUTO_UPLOAD=true for builds without SENTRY_AUTH_TOKEN.",
-        "privacy": "ios.privacyManifests lists what the app itself and its SDKs collect; review it before submission."
+        "privacy": "ios.privacyManifests follows docs/specs/APP-PRIVACY-LABEL-AND-AGE-RATING.md for linked flags and purposes. Crash Data is Linked because crash reports are filed under the Install ID (the spec table says not linked: update it). Re-check against the SDK versions on the day of submission.",
+        "tracking": "TRACKING IS OFF TODAY: NSPrivacyTracking is false, NSPrivacyTrackingDomains is empty and every NSPrivacyCollectedDataTypeTracking is false, because the ATT prompt is stubbed (ads.native.ts) and AdMob serves non-personalised ads. When expo-tracking-transparency lands and the prompt is wired: set NSPrivacyTracking true, add googleads.g.doubleclick.net to NSPrivacyTrackingDomains, and set NSPrivacyCollectedDataTypeTracking true on Device ID, Advertising Data, Product Interaction, Performance Data and Coarse Location (the spec's Tracking = Yes rows)."
       }
     }
   }

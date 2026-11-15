@@ -110,7 +110,7 @@ describe('motion', () => {
 });
 
 describe('exemptions', () => {
-  it.each(Object.entries(OTHER_CARDS))('%s (card %s) is still not done: remove it from OTHER_CARDS when it is', (file) => {
+  if (Object.keys(OTHER_CARDS).length > 0) it.each(Object.entries(OTHER_CARDS))('%s (card %s) is still not done: remove it from OTHER_CARDS when it is', (file) => {
     const mine = every.filter((f) => f.file === file);
     expect(mine.some(lacks)).toBe(true);
   });
