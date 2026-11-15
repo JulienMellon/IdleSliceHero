@@ -35,6 +35,20 @@ function Sheet({ kind }: { kind: SheetKind }) {
             </View>
           ))}
         </ScrollView>
+        {m.action ? (
+          <Pressable
+            testID="layer-action"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !m.action.enabled }}
+            onPress={() => {
+              if (!m.action?.enabled) return;
+              if (useGame.getState().startRival(game.active)) closeLayerSheet();
+            }}
+            style={[styles.start, !m.action.enabled && styles.startWait]}
+          >
+            <Text style={styles.startText}>{m.action.label}</Text>
+          </Pressable>
+        ) : null}
         <Pressable testID="close-layer-sheet" accessibilityRole="button" onPress={closeLayerSheet} style={styles.close}>
           <Text style={styles.closeText}>{LABELS.close}</Text>
         </Pressable>
@@ -64,6 +78,9 @@ const styles = StyleSheet.create({
   buy: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5, borderColor: C.lockedDark, padding: 8, gap: 1 },
   buyTitle: { fontFamily: F.bold, fontSize: 14, color: C.ink },
   small: { fontFamily: F.regular, fontSize: 12, lineHeight: 15, color: C.inkSoft },
+  start: { height: 44, borderRadius: 12, backgroundColor: C.tomato, borderWidth: 2, borderColor: C.tomatoDark, alignItems: 'center', justifyContent: 'center' },
+  startWait: { backgroundColor: C.locked, borderColor: C.lockedDark },
+  startText: { fontFamily: F.bold, fontSize: 15, color: '#fff' },
   close: { height: 44, borderRadius: 12, borderWidth: 2, borderColor: C.ink, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   closeText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
 });

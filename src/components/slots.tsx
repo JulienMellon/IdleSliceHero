@@ -46,7 +46,6 @@ import { StarsSheet } from './layers/uptown/stars-sheet';
 import { DroneFlight } from './layers/university/drone-flight';
 import { UniversityChip } from './layers/university/university-chip';
 import { UniversitySheet } from './layers/university/university-sheet';
-import { ZonesStrip } from './layers/university/zones-strip';
 import { ReportSheet } from './report/report-sheet';
 import { ReportStrip } from './report/report-strip';
 
@@ -199,11 +198,7 @@ export const SHEETS: SlotEntry[] = [
   { id: 'stars-sheet', order: 60, Component: StarsSheet },
 ];
 // v5.16 (P1): the shop report's strip, one 44 pt row above the sidewalk row
-export const SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] = [
-  { id: 'shop-report-strip', order: 10, Component: ReportStrip },
-  // v5.16 (S2b): University's zones strip, stacked over the report's strip
-  { id: 'zones-strip', order: 20, Component: ZonesStrip },
-];
+export const SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] = [{ id: 'shop-report-strip', order: 10, Component: ReportStrip }];
 // v5.16 (S2a): Waterfront's Pier 9 bid card (while the auction is live) and its warming rack
 export const DRAWER_CARDS: SlotEntry[] = [
   // v5.16 (T1b): why this neighbourhood's next story is held, as one line

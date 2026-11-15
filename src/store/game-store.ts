@@ -64,6 +64,9 @@ interface Store {
   /** A drawer, the tasks sheet, the gift calendar or another screen is open (set by the main screen, not saved): the golden pizza waits. */
   bonusHold: boolean;
   setBonusHold: (hold: boolean) => void;
+  /** v5.16 (G105): a layer notice or the rival's chip is up (set by layers/layer-stack.tsx, not saved): the golden pizza waits, so it never flies over their words. */
+  layerHold: boolean;
+  setLayerHold: (hold: boolean) => void;
   /** Tap the golden pizza. Null when none is on screen; otherwise what it paid. Never counts as a kitchen tap (the story gate). */
   tapBonus: () => { paid: number; lucky: boolean } | null;
   /** The special order on the table: take it, or send it away. */
@@ -133,7 +136,7 @@ interface Store {
 /** A scene, the return popup or the title card is up: the orders' clocks stop and no offer appears. */
 export const gameCovered = (s: Pick<Store, 'playing' | 'offline' | 'titleDone'>): boolean => !!s.playing || !!s.offline || !s.titleDone;
 /** The golden pizza also waits behind a drawer or another screen. */
-export const bonusBlocked = (s: Pick<Store, 'playing' | 'offline' | 'titleDone' | 'bonusHold'>): boolean => s.bonusHold || gameCovered(s);
+export const bonusBlocked = (s: Pick<Store, 'playing' | 'offline' | 'titleDone' | 'bonusHold'> & { layerHold?: boolean }): boolean => s.bonusHold || !!s.layerHold || gameCovered(s);
 
 const UPGRADE_NAMES: Record<string, string> = { prep: 'Prep', ovens: 'Ovens', counter: 'Counter', drivers: 'Drivers', tables: 'Seating', grade: 'Oven grade', expand: 'Expand', manager: 'Manager', headPrep: 'Head Prep Cook', headOven: 'Head Baker', headCounter: 'Head Cashier' };
 
@@ -214,6 +217,7 @@ export const useGame = create<Store>((set, get) => {
     playing: null,
     toast: null,
     bonusHold: false,
+    layerHold: false,
     tickAt: Date.now(),
     titleDone: false,
     buyAmount: 1,
@@ -319,6 +323,10 @@ export const useGame = create<Store>((set, get) => {
 
     setBonusHold: (hold) => {
       if (get().bonusHold !== hold) set({ bonusHold: hold });
+    },
+
+    setLayerHold: (hold) => {
+      if (get().layerHold !== hold) set({ layerHold: hold });
     },
 
     tapBonus: () => {

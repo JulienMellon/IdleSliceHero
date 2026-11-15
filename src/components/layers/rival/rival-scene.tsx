@@ -20,31 +20,34 @@ const YELLOW = '#FFC531';
 
 /** The shop: sign band, striped awning, window with shutters coming down (`shut` 0..1). Drawn in scene units from its own top-left. */
 const MegaShop = memo(function MegaShop({ shut }: { shut: number }) {
-  const { w, h } = RIVAL_SHOP;
-  const winY = 17;
-  const winH = h - winY;
+  const { w, h, kerb } = RIVAL_SHOP;
+  const winY = 20;
+  const winH = h - winY - 3;
   return (
     <G>
-      <Rect x={0} y={4} width={w} height={h} rx={3} fill={PURPLE} stroke={INK} strokeWidth={1.2} />
-      <Rect x={0} y={0} width={w} height={13} rx={3} fill={YELLOW} stroke={INK} strokeWidth={1.2} />
-      <SvgText x={w / 2} y={10.5} fontFamily={F.bold} fontSize={10} fill={INK} textAnchor="middle">
+      {/* the kerb it stands on */}
+      <Rect x={-2} y={h} width={w + 4} height={kerb} rx={1.5} fill="#9B9386" stroke={INK} strokeWidth={0.9} />
+      <Rect x={0} y={4} width={w} height={h - 4} rx={3} fill={PURPLE} stroke={INK} strokeWidth={1.2} />
+      <Rect x={0} y={0} width={w} height={14} rx={3} fill={YELLOW} stroke={INK} strokeWidth={1.2} />
+      <SvgText x={w / 2} y={11} fontFamily={F.bold} fontSize={10} fill={INK} textAnchor="middle">
         MEGASLICE
       </SvgText>
       {[0, 1, 2, 3, 4, 5].map((i) => (
-        <Path key={i} d={`M${i * 16} 13 h16 v4 q-8 4 -16 0 Z`} fill={i % 2 ? '#fff' : '#E8432E'} stroke={INK} strokeWidth={0.8} />
+        <Path key={i} d={`M${i * 16} 14 h16 v4 q-8 4 -16 0 Z`} fill={i % 2 ? '#fff' : '#E8432E'} stroke={INK} strokeWidth={0.8} />
       ))}
-      <Rect x={8} y={winY + 3} width={w - 16} height={winH - 3} fill="#FFE9A8" stroke={INK} strokeWidth={1} />
-      {/* the shutters: slats that come down over the window */}
+      <Rect x={8} y={winY} width={w - 16 - 22} height={winH} fill="#FFE9A8" stroke={INK} strokeWidth={1} />
+      {/* the door, with a balloon tied to it */}
+      <Rect x={w - 26} y={winY} width={18} height={winH} fill="#3B1F14" stroke={INK} strokeWidth={1} />
+      <Circle cx={w - 5} cy={winY - 2} r={4} fill="#E8432E" stroke={INK} strokeWidth={0.7} opacity={shut > 0.5 ? 0.35 : 1} />
+      {/* the shutters: slats that come down over the window and the door */}
       {shut > 0 && (
         <G>
-          <Rect x={8} y={winY + 3} width={w - 16} height={(winH - 3) * shut} fill="#8E979E" stroke={INK} strokeWidth={0.8} />
-          {Array.from({ length: Math.floor(((winH - 3) * shut) / 4) }).map((_, i) => (
-            <Path key={i} d={`M8 ${winY + 3 + (i + 1) * 4} h${w - 16}`} stroke="#6E757B" strokeWidth={0.8} />
+          <Rect x={8} y={winY} width={w - 16} height={winH * shut} fill="#8E979E" stroke={INK} strokeWidth={0.8} />
+          {Array.from({ length: Math.floor((winH * shut) / 4) }).map((_, i) => (
+            <Path key={i} d={`M8 ${winY + (i + 1) * 4} h${w - 16}`} stroke="#6E757B" strokeWidth={0.8} />
           ))}
         </G>
       )}
-      {/* a balloon or two, tied to the door */}
-      <Circle cx={w - 10} cy={winY + 6} r={3.6} fill="#E8432E" stroke={INK} strokeWidth={0.7} opacity={shut > 0.5 ? 0.35 : 1} />
     </G>
   );
 });

@@ -2,7 +2,7 @@
 import { STARS } from '../../../../content/layers';
 import { getFeature, withFeatures } from '../../../../engine/features';
 import { buyIngredients, ingredientsPrice, starsView, uptownStars, type StarsState } from '../../../../engine/features/layers/uptown-stars';
-import { newGame, shopEarnings, type GameState, type Shop } from '../../../../engine/game';
+import { newGame, shopRevenue, type GameState, type Shop } from '../../../../engine/game';
 import { chipPillWidth, twoRows } from '../../university/layer-model';
 import { TAP } from '../../../tap-targets';
 import { BUTTON_H } from '../../university/layer-model';
@@ -122,7 +122,7 @@ describe('the Ingredients card', () => {
       expect(r.state.cash).toBe(g.cash - price);
       expect(run(() => starsView(r.state).tier)).toBe(1);
     }
-    expect(price).toBe(Math.ceil(STARS.ingredients[1].minutes * 60 * shopEarnings(g, 'uptown')));
+    expect(price).toBe(Math.ceil(STARS.ingredients[1].minutes * 60 * shopRevenue('uptown', g.shops.uptown, g.vehicle)));
   });
 
   it('names the four tiers from the copy', () => {

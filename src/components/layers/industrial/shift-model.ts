@@ -45,3 +45,30 @@ const x = (n: number) => `×${Math.round(n * 100) / 100}`;
 export function shiftRows(current: string, shifts: readonly { id: ShiftId; demand: number; value: number }[]): ShiftRow[] {
   return shifts.map((s) => ({ id: s.id, name: NAME[s.id], effect: `demand ${x(s.demand)} · pays ${x(s.value)}`, now: s.id === current }));
 }
+
+// ---------- the tint's shape (D484) ----------
+
+/** A box in scene units. */
+export interface Box {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+/**
+ * Where the night falls: the sky and the skyline are tinted, the pizzeria is not (a flat wash over the whole scene greyed every face). The
+ * building's box is the front wall's width at the front line (`frontY`) up to the roof; the tint covers the scene's width down to the front line
+ * except that box. `roofY` is the roof's top edge in scene units. The street below the front line keeps its colours (street lamps).
+ */
+export function nightShape(lay: { L: number; R: number }, sceneW: number, frontY: number, roofY: number): { sky: Box; house: Box; path: string } {
+  const house: Box = { x0: Math.max(0, lay.L - 12), y0: roofY, x1: Math.min(sceneW, lay.R + 12), y1: frontY };
+  const sky: Box = { x0: 0, y0: 0, x1: sceneW, y1: frontY };
+  const r = (b: Box) => `M${b.x0} ${b.y0} H${b.x1} V${b.y1} H${b.x0} Z`;
+  return { sky, house, path: `${r(sky)} ${r(house)}` };
+}
+
+/** The moon in the sky, in scene units: a crescent (a disc and a smaller disc of the sky's colour biting it). */
+export const MOON = { cx: 60, cy: 36, r: 11, bite: { dx: 5, dy: -3, r: 9.5 } } as const;
+/** The warm light of the shop's windows at night: an amber wash over the building, so the interior reads lit against the blue sky. */
+export const WARM = { color: '#FFB347', opacity: 0.1 } as const;

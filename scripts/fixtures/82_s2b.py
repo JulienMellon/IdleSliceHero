@@ -1,6 +1,6 @@
 """Shots 82-89 (v5.16, card S2b): University, Industrial and Uptown.
 
-82 University menu sheet at 50/30/20 · 83 zones strip with the Stadium locked · 84 zones with drones (and the drone flight) ·
+82 University menu sheet at 50/30/20 · 83 zones in the sheet with the Stadium locked · 84 drone flight (84b: the sheet, "ignores distance") ·
 85 Industrial night shift (tint, x2, chip) · 86 jammed oven with the wrench (86b: a Head Baker fixing it) ·
 87 Uptown at 2 stars with the half-pay tag · 88 stars sheet at 4 stars · 89 the critic's pass moment.
 Seeded saves: the layer's state lives in the save's `x` (universityMenu / industrialShifts / uptownStars); play time is `playSeconds`.
@@ -56,20 +56,24 @@ def run(ctx):
     expect_text(page, "mix-pct-cheese", r"50%")
     shot(page, "82-menu-sheet", 0.4)
 
-    # 83: the zones strip, the Stadium still locked (footprint 1)
+    # 83: the zones in the sheet, the Stadium still locked (footprint 1); the scene has no zones strip (D485: it covered the dining room)
     page = page_of(b, layer_save("university", menu(), footprint=1))
     settle(page, 2.0)
-    expect(page, "zones-strip")
-    expect_text(page, "zone-stadium", r"Locked")
+    tid(page, "university-chip").click()
+    expect(page, "university-sheet")
+    expect_text(page, "zone-row-stadium", r"Locked")
     shot(page, "83-zones-locked", 0.4)
 
-    # 84: drones: every zone says "ignores distance", and the drones cross the sky
+    # 84: drones cross the sky ("1 drone up" or more on the chip); 84b: the sheet says every zone "ignores distance"
     page = page_of(b, layer_save("university", menu(), footprint=2, vehicle=4, cash=1e12))
     settle(page, 2.0)
     expect(page, "drone-flight")
-    expect_text(page, "zone-library", r"ignores distance")
+    expect_text(page, "university-chip", r"drones? up")
     advance(page, 3000)
-    shot(page, "84-zones-drones", 0.4)
+    shot(page, "84-drones", 0.4)
+    tid(page, "university-chip").click()
+    expect_text(page, "zone-row-library", r"ignores distance")
+    shot(page, "84b-zones-drones", 0.4)
 
     # 85: the night shift: blue tint, the x2 badge and the chip
     page = page_of(b, layer_save("industrial", shifts(900)))

@@ -1,15 +1,20 @@
-// Industrial's scene tint (SCENE_OVERLAYS slot): the night shift washes the scene deep blue and hangs a gold "×2" by the sign (it pays double);
-// the swing shift is a faint amber. Decoration only: it takes no touches. Selects the shift id, so it repaints once a shift.
+// Industrial's scene tint (SCENE_OVERLAYS slot): the night shift washes the sky and the skyline deep blue (the pizzeria stays in its own colours, warm
+// as if lit, D484), hangs a moon and a gold "×2" by the sign (it pays double); the swing shift is a faint amber. Decoration only: it takes no touches. Selects the shift id, so it repaints once a shift.
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
 import { shiftView } from '../../../engine/features/layers/industrial-shifts';
 import { useGame } from '../../../store/game-store';
 import { C, F } from '../../../theme';
-import { sceneFit } from '../../scene/projection';
+import { FRONT_TOP, INK, P, SCENE_W, sceneFit } from '../../scene/projection';
+import { layoutOfShop } from '../shop-layout';
 import { toWindow } from '../layer-geometry';
 import type { SceneSlotProps } from '../../slots';
-import { payTag, shiftTint } from './shift-model';
+import { MOON, nightShape, payTag, shiftTint, WARM } from './shift-model';
+
+/** The pizzeria's roof edge in scene units (the pitched roof's peak sits above the fascia's top). */
+const ROOF_Y = P(0, 0, FRONT_TOP)[1] - 62;
 
 /** Where the ×2 badge hangs, in scene units: right of the sign's plate. */
 const BADGE = { x: 312, y: 139, size: 34 } as const;
@@ -18,17 +23,34 @@ export const NightTint = memo(function NightTint({ shopId, width, height }: Scen
   const key = useGame((s) => {
     if (shopId !== 'industrial' || !s.game.shops.industrial.built) return '';
     const v = shiftView(s.game);
-    return `${v.shift}|${v.valueMult}`;
+    const lay = layoutOfShop(s.game.shops.industrial);
+    return `${v.shift}|${v.valueMult}|${lay.L}|${lay.R}`;
   });
-  const [shift, value] = key.split('|');
+  if (!key || !(width > 0)) return null;
+  const [shift, value, L, R] = key.split('|');
   const tint = shiftTint(shift);
-  if (!tint || !(width > 0)) return null;
+  if (!tint) return null;
+  const f = sceneFit(width, height);
+  const shape = nightShape({ L: Number(L), R: Number(R) }, SCENE_W, P(0, 0)[1], ROOF_Y);
+  const night = shift === 'night';
   const tag = payTag(Number(value));
-  const at = toWindow(sceneFit(width, height), BADGE.x, BADGE.y);
+  const at = toWindow(f, BADGE.x, BADGE.y);
   return (
     <View testID="shift-tint" pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: tint.color, opacity: tint.opacity }]} />
-      {tag ? (
+      <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+        <G transform={`translate(${f.ox} ${f.oy}) scale(${f.s})`}>
+          {/* the sky and the skyline: the tint, with the pizzeria's box cut out */}
+          <Path d={shape.path} fillRule="evenodd" fill={tint.color} opacity={tint.opacity} />
+          {night && (
+            <G>
+              <Rect x={shape.house.x0} y={shape.house.y0} width={shape.house.x1 - shape.house.x0} height={shape.house.y1 - shape.house.y0} fill={WARM.color} opacity={WARM.opacity} />
+              <Circle cx={MOON.cx} cy={MOON.cy} r={MOON.r} fill="#FFF6D6" stroke={INK} strokeWidth={1.2} />
+              <Circle cx={MOON.cx + MOON.bite.dx} cy={MOON.cy + MOON.bite.dy} r={MOON.bite.r} fill="#2B3F73" />
+            </G>
+          )}
+        </G>
+      </Svg>
+      {tag && night ? (
         <View testID="shift-x2" style={[styles.badge, { left: at.left - BADGE.size / 2, top: at.top - BADGE.size / 2 }]}>
           <Text style={styles.badgeText} maxFontSizeMultiplier={1.1}>
             {tag}

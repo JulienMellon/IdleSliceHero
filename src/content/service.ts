@@ -41,6 +41,9 @@ export const MANAGER_COPY_KEY: Record<NeighborhoodId, string> = {
   uptown: 'anton',
 };
 
+/** The initial in each lamp chip on the strip (D492): Prep, Ovens, Counter, and the floor's customers coming In. */
+export const LAMP_INITIAL = { prep: 'P', ovens: 'O', counter: 'C', floor: 'In' } as const;
+
 /** Every line, by the copy's key. `{name}` is filled by `fill` in components/report/report-model.ts. */
 export const COPY = {
   'report.kitchen': 'Serving {served} of {wanted} orders a minute. {lost} walking out.',
@@ -59,7 +62,7 @@ export const COPY = {
   'report.skip.quiet': 'We can do {could}. Only {wanted} came aboard. I checked twice.',
   'report.skip.tipping': 'Tips up 10%. Counted twice. Then once more, for joy.',
   'report.skip.cold': 'Service is slipping. −10% till we mend it. Recounting.',
-  'report.noor.kitchen': 'Queue: {served} of {wanted} a minute. {lost} lost to balking.',
+  'report.noor.kitchen': 'Queue: {served} of {wanted} a minute. {lost} gave up and left.',
   'report.noor.quiet': 'Capacity {could}, arrivals {wanted}. Idle servers. Fascinating.',
   'report.noor.tipping': 'Barely any wait. Tips up 10%. This is publishable.',
   'report.noor.cold': 'Queue’s unstable. Word spread. −10% until it settles.',
@@ -78,6 +81,9 @@ export const COPY = {
   'lamp.floor.full': 'Packed',
   'lamp.floor.steady': 'Steady',
   'lamp.floor.quiet': 'Quiet',
+  // the strip's one state word when no lamp is the worst (D492)
+  'lamp.state.tipping': 'Tipping',
+  'lamp.state.cold': 'Cold',
 
   'effect.gain': '+{gain}/min · pays back in {time}',
   'effect.nogain': '{station} isn’t holding you back',

@@ -4,7 +4,9 @@ import { getFeature, withFeatures } from '../../../../engine/features';
 import { industrialShifts, shiftView, type ShiftsState } from '../../../../engine/features/layers/industrial-shifts';
 import { newGame, type GameState } from '../../../../engine/game';
 import { chipPillWidth } from '../../university/layer-model';
-import { payTag, shiftChip, shiftRows, shiftTint, whistle } from '../shift-model';
+import { layout } from '../../../scene/layout';
+import { FRONT_TOP, P, SCENE_W } from '../../../scene/projection';
+import { MOON, nightShape, payTag, shiftChip, shiftRows, shiftTint, whistle } from '../shift-model';
 
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 const SHIFT = SHIFTS.cycleSeconds / 3;
@@ -60,5 +62,27 @@ describe('the tint and the whistle', () => {
     const rows = shiftRows('swing', SHIFTS.shifts);
     expect(rows.map((r) => [r.name, r.now])).toEqual([['Day Shift', false], ['Swing Shift', true], ['Night Shift', false]]);
     expect(rows[2].effect).toBe('demand ×1.2 · pays ×2');
+  });
+});
+
+describe('the night falls on the sky, not on the pizzeria (D484)', () => {
+  const frontY = P(0, 0)[1];
+  const roofY = P(0, 0, FRONT_TOP)[1] - 62;
+  it.each([0, 1, 2, 3, 4])('at footprint %i the shop\u2019s box is cut out of the tint, inside the scene', (fp) => {
+    const lay = layout(fp, 1, 1, 1, 0, 2, 0);
+    const { sky, house, path } = nightShape(lay, SCENE_W, frontY, roofY);
+    expect(house.x0).toBeGreaterThanOrEqual(0);
+    expect(house.x1).toBeLessThanOrEqual(SCENE_W);
+    expect(house.x0).toBeLessThan(lay.L);
+    expect(house.x1).toBeGreaterThan(lay.R);
+    // the box lies inside the tinted area, so the cut-out leaves sky on every side but the bottom
+    expect(house.y0).toBeGreaterThan(sky.y0);
+    expect(house.y1).toBe(sky.y1);
+    expect((path.match(/M/g) ?? []).length).toBe(2);
+  });
+  it('keeps the moon in the visible sky, clear of the roof', () => {
+    expect(MOON.cx - MOON.r).toBeGreaterThan(0);
+    expect(MOON.cy - MOON.r).toBeGreaterThan(20);
+    expect(MOON.cy + MOON.r).toBeLessThan(roofY);
   });
 });

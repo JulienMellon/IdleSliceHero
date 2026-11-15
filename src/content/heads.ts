@@ -31,7 +31,7 @@ export const STATION_TASKS: Readonly<Record<BarkStation, readonly string[]>> = {
 export const BARKS: Record<NeighborhoodId, Record<BarkStation, Record<BarkTrigger, string>>> = {
   downtown: {
     prep: { milestone: 'Flour on the ceiling! Worth it!', rush: 'Dough’s flying! Duck, everybody!', attack: 'MegaSlice? I’ll roll ’em out flat!', week: 'Me? Head of the Week? Nonna, look!', slammed: 'Dough’s piling up! I need more arms!' },
-    oven: { milestone: 'My oven. My fire. My record.', rush: 'Nobody touches the oven door but me!', attack: 'They want this oven? Over my ashes.', week: 'Zia Rosa will pretend not to be proud.', slammed: 'Oven’s full! Upgrade it. Don’t touch it.' },
+    oven: { milestone: 'My oven. My fire. My record.', rush: 'Nobody touches the oven door but me!', attack: 'They want this oven? Over my ashes.', week: 'Zia Rosa will pretend not to be proud.', slammed: 'Oven’s full! Upgrade. Hands off my dial.' },
     counter: { milestone: 'Every regular, by name. And by topping.', rush: 'Mrs. Russo, the usual? Already rung up!', attack: 'MegaSlice doesn’t know anyone’s usual.', week: 'Head of the Week! Put it on my tab.', slammed: 'Even Mrs. Russo is waiting. Help!' },
   },
   suburbs: {

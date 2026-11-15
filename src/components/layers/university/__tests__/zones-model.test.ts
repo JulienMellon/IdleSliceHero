@@ -4,8 +4,7 @@ import { chipPillWidth, twoRows } from '../layer-model';
 import { zonesView, type ZonesView } from '../../../../engine/features/layers/university-menu';
 import { withFeatures } from '../../../../engine/features';
 import { universityMenu } from '../../../../engine/features/layers/university-menu';
-import { STRIP } from '../../../report/report-model';
-import { cellTextWidth, DRONE_MAX, DRONES_NOTE, STRIP_H, campusChipText, campusOut, droneCount, droneLane, droneX, stripBottom, tripText, zoneCells } from '../zones-model';
+import { DRONE_MAX, DRONES_NOTE, campusChipText, campusOut, droneCount, droneLane, droneX, tripText, zoneCells } from '../zones-model';
 
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 function uni(p: { footprint: number; vehicle: number }): GameState {
@@ -19,7 +18,7 @@ describe('the zones strip', () => {
     const cells = zoneCells(view({ footprint: 1, vehicle: 2 }));
     expect(cells.map((c) => c.name)).toEqual(['Dorms', 'Library', 'Stadium']);
     expect(cells.map((c) => c.locked)).toEqual([false, false, true]);
-    expect(cells[2]).toMatchObject({ mid: 'Locked', foot: 'Expand to open', footFull: 'Opens at Double storefront' });
+    expect(cells[2]).toMatchObject({ mid: 'Locked', foot: 'Opens at Double storefront' });
     // the two open zones split the demand 50 : 30 -> 63% and 38%
     expect(cells[0].mid).toMatch(/^6\d% · \d/);
     expect(cells[1].mid).toMatch(/^3\d% · \d/);
@@ -39,12 +38,6 @@ describe('the zones strip', () => {
     expect(cells.every((c) => !c.locked)).toBe(true);
   });
 
-  it('is a row 48 pt tall of three-line cells, 44 pt or more, stacked over the report strip when that is up', () => {
-    expect(STRIP_H).toBeGreaterThanOrEqual(44);
-    expect(stripBottom(100, false)).toBe(100);
-    expect(stripBottom(100, true)).toBe(100 + STRIP.height + STRIP.above);
-  });
-
   it('writes trips short', () => {
     expect([tripText(0), tripText(2.4), tripText(2.449), tripText(9.96), tripText(14.6)]).toEqual(['0s', '2.4s', '2.4s', '10s', '15s']);
   });
@@ -54,6 +47,10 @@ describe('the chip', () => {
   it('counts the drivers out on campus, and says drones once they are the fleet', () => {
     expect(campusChipText(3, false)).toBe('3 out on campus');
     expect(campusChipText(3, true)).toBe('3 drones up');
+    // G107: one drone is singular
+    expect(campusChipText(1, true)).toBe('1 drone up');
+    expect(campusChipText(1, false)).toBe('1 out on campus');
+    expect(campusChipText(0, true)).toBe('0 drones up');
     // widest plausible: two digits; both fit the chip's 76 pt cap on two lines
     expect(chipPillWidth(twoRows(campusChipText(12, false)))).toBeLessThanOrEqual(76);
     expect(chipPillWidth(twoRows(campusChipText(12, true)))).toBeLessThanOrEqual(76);
@@ -90,23 +87,5 @@ describe('the drone flight', () => {
     expect(droneX(left, 0, 393, 30)).toBe(393 + 30);
     expect(droneX(left, 1, 393, 30)).toBe(-30);
     for (const p of [-1, 0.3, 2]) expect(droneX(right, p, 393, 30)).toBeGreaterThanOrEqual(-30);
-  });
-});
-
-describe('the strip fits the screen (budget)', () => {
-  // Fredoka runs about 0.55 em a character at 10 pt; the strip's lines are semibold or regular, so this errs wide
-  const EM = 0.55;
-  const worst = (): string[] => {
-    const lines: string[] = [];
-    for (const p of [{ footprint: 1, vehicle: 2 }, { footprint: 2, vehicle: 4 }, { footprint: 2, vehicle: 0 }]) {
-      for (const c of zoneCells(view(p))) lines.push(c.name, c.mid, c.foot);
-    }
-    return lines;
-  };
-  it.each([320, 375, 393])('every line of every cell is one line wide on a %i pt screen', (w) => {
-    for (const line of worst()) expect(line.length * 10 * EM).toBeLessThanOrEqual(cellTextWidth(w));
-  });
-  it('is no taller than the report strip it stacks on, plus a few points', () => {
-    expect(STRIP_H).toBeLessThanOrEqual(STRIP.height + 8);
   });
 });

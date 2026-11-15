@@ -1,6 +1,6 @@
 // The shop report as plain data (card P1): the strip above the sidewalk, its sheet, the cards' effect lines. Pure: unit-tested in node.
 // All text is the copy's, by key (content/service.ts COPY); nothing here is drawn. The strip and the sheet pass the primitives they need.
-import { COPY, FIX_ROWS, MANAGER_COPY_KEY, SERVICE, type CopyKey } from '../../content/service';
+import { COPY, FIX_ROWS, LAMP_INITIAL, MANAGER_COPY_KEY, SERVICE, type CopyKey } from '../../content/service';
 import { MANAGERS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { count, duration, money } from '../../engine/format';
@@ -24,6 +24,8 @@ export const LAMP_COLOR: Record<LampTone, string> = {
   idle: '#4FA05B',
   quiet: '#8AA4B8',
 };
+/** The initial's colour on its chip: white on red (contrast), ink elsewhere. */
+export const LAMP_INK: Record<LampTone, 'light' | 'dark'> = { slammed: 'light', full: 'light', busy: 'dark', steady: 'dark', idle: 'dark', quiet: 'dark' };
 export const lampWord = (kind: KitchenStation | 'floor', lamp: Lamp | FloorLamp): string => copy(`lamp.${kind === 'floor' ? 'floor' : 'station'}.${lamp}` as CopyKey);
 
 // ---------- the strip ----------
@@ -64,8 +66,9 @@ export interface StripModel {
   ovens: LampTone;
   counter: LampTone;
   floor: LampTone;
-  /** The worst lamp's dot ('prep' ... 'floor') and its one word, or ''. */
+  /** The worst lamp's chip ('prep' ... 'floor'), or ''. */
   worstDot: string;
+  /** One state word, always (D492): the worst lamp's ("Slammed", "Quiet"), else the state's ("Tipping", "Cold"). */
   word: string;
 }
 
@@ -86,7 +89,7 @@ export function stripModel(g: GameState, id: NeighborhoodId, now: number): Strip
     counter: v.lamps.counter,
     floor: v.lamps.floor,
     worstDot: v.worst?.kind ?? '',
-    word: v.worst ? lampWord(v.worst.kind, v.worst.lamp) : '',
+    word: v.worst ? lampWord(v.worst.kind, v.worst.lamp) : copy(`lamp.state.${line.kind === 'cold' ? 'cold' : 'tipping'}` as CopyKey),
   };
 }
 
@@ -98,27 +101,43 @@ export function drawerLine(g: GameState, id: NeighborhoodId): string | null {
 
 // ---------- fitting the strip's line ----------
 
-/** The strip: one row, 44 pt, directly above the sidewalk row. Its pieces' widths are here so the fit arithmetic and the layout share them. */
+/**
+ * The strip (D479, D485, D492). Its touch box is 44 pt, directly above the sidewalk row, but only the bottom `pill` pt are drawn: the rest is
+ * clear, so the shop front and the WELCOME mat show above the pill. Inside the pill: four lamp chips with initials (P, O, C, In) over one
+ * state word, then the manager's face, then the line (two lines at 10 pt or more). The widths live here so the fit arithmetic and the layout share them.
+ */
 export const STRIP = {
+  /** The touch box (the control's drawn size for the tap-target rule). */
   height: 44,
+  /** The drawn pill, at the bottom of the box. */
+  pill: 28,
+  border: 2,
   margin: 8,
-  padX: 8,
-  dot: 10,
-  dotGap: 5,
-  /** Four dots with their gaps, and the lamp block's width (the one-word label under them needs about as much). */
-  lampsWidth: 4 * 10 + 3 * 5 + 4,
-  gap: 8,
+  padX: 6,
+  /** A lamp chip: its colour with the initial in it. */
+  chipW: 14,
+  chipH: 12,
+  chipGap: 2,
+  /** Four chips with their gaps (the state word under them needs about as much). */
+  lampsWidth: 4 * 14 + 3 * 2,
+  gap: 6,
   /** The manager's face badge. */
-  badge: 28,
+  badge: 22,
   /** Gap between the strip and the sidewalk row below it. */
   above: 4,
-  maxLines: 3,
+  maxLines: 2,
   fonts: [11, 10] as readonly number[],
 } as const;
 
+/** A line of the strip's text at `size` takes this much height. */
+export const stripLineHeight = (size: number): number => size + 1;
+
+/** The lamp chip's initial. */
+export const lampInitial = (d: KitchenStation | 'floor'): string => LAMP_INITIAL[d];
+
 /** The width of the strip's line on a screen `screenW` wide, with or without a manager's badge. */
 export const stripTextWidth = (screenW: number, withBadge: boolean): number =>
-  screenW - 2 * STRIP.margin - 2 * STRIP.padX - STRIP.lampsWidth - STRIP.gap - (withBadge ? STRIP.badge + STRIP.gap : 0);
+  screenW - 2 * STRIP.margin - 2 * (STRIP.padX + STRIP.border) - STRIP.lampsWidth - STRIP.gap - (withBadge ? STRIP.badge + STRIP.gap : 0);
 
 /** How many lines `text` takes at `size` in `width` pt (greedy word wrap by the same per-character estimate as `fitFont`). */
 export function wrapLines(text: string, width: number, size: number): number {

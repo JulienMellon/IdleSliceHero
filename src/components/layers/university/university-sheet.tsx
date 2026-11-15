@@ -1,4 +1,4 @@
-// University's sheet (SHEETS slot), opened from its HUD chip or the zones strip: Priya's menu (three recipes, each with a plus and a minus
+// University's sheet (SHEETS slot), opened from its HUD chip: Priya's menu (three recipes, each with a plus and a minus
 // button of 44 pt; taps only) and the campus zones with the trip time for the current fleet. Built only while it is open.
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -53,7 +53,7 @@ function Sheet() {
         <View key={z.id} style={[styles.zone, z.locked && styles.zoneLocked]} testID={`zone-row-${z.id}`}>
           <Text style={styles.zoneName} numberOfLines={1}>{z.name}</Text>
           <Text style={styles.zoneMid} numberOfLines={1}>{z.mid}</Text>
-          <Text style={styles.zoneFoot} numberOfLines={1}>{z.footFull}</Text>
+          <Text style={styles.zoneFoot} numberOfLines={1}>{z.foot}</Text>
         </View>
       ))}
       {zv.drones ? <Text style={styles.drones}>{COPY['layer.university.drones.info']}</Text> : null}

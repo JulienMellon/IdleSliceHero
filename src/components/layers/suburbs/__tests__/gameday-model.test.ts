@@ -5,7 +5,7 @@ import { layout } from '../../../scene/layout';
 import { SEAT } from '../../../scene/layout';
 import { P, SCENE_W } from '../../../scene/projection';
 import {
-  WAVE, arrived, chairsOf, familiesFor, freeChairs, gameDayBanner, gameDayChipShown, gameDayChipText, gameDayPopText, glowing, waveFigures, waveGap, walkLength, walkTime, spreadGap, FAMILY_AIR, FAMILY_SEATS,
+  WAVE, arrived, chairsOf, familiesFor, freeChairs, gameDayBanner, gameDayChipShown, gameDayChipText, gameDayPopText, glowing, seatedFamilies, waveFigures, waveGap, walkLength, walkTime, spreadGap, FAMILY_AIR, FAMILY_SEATS,
 } from '../gameday-model';
 
 const view = (o: Partial<GameDayView> = {}): GameDayView => ({ active: true, rush: false, nextIn: 187, left: 0, seatsFree: 16, seats: 32, ...o });
@@ -114,5 +114,31 @@ describe('the wave', () => {
     expect(end[0].y).toBeGreaterThan(WAVE.laneY);
     expect(end[0].y).toBeLessThanOrEqual(WAVE.doorY + 1);
     expect(waveFigures(l, walk + 0.01, 1, 0)).toHaveLength(0);
+  });
+});
+
+describe('seats fill as families arrive', () => {
+  test('each family that has come in sits in the next chair, right-hand chairs first, and stays', () => {
+    const l = lay(4, 1);
+    const chairs = chairsOf(l, 0);
+    const walk = walkTime(l);
+    const fam = 6;
+    expect(seatedFamilies(l, chairs, 6, walk - 0.1, fam)).toHaveLength(0);
+    const one = seatedFamilies(l, chairs, 6, walk + 0.1, fam);
+    expect(one).toHaveLength(1);
+    expect(one[0].x).toBe(chairs[0].x);
+    expect(one[0].age).toBeCloseTo(0.1, 5);
+    expect(one[0].flip).toBe(true);
+    const all = seatedFamilies(l, chairs, 6, GAME_DAY.rushSeconds, fam);
+    expect(all.length).toBeLessThanOrEqual(6);
+    expect(new Set(all.map((f) => `${f.x},${f.y}`)).size).toBe(all.length);
+  });
+  test('never more than the free chairs, the families or the chairs', () => {
+    const l = lay(4, 1);
+    const chairs = chairsOf(l, 0);
+    expect(seatedFamilies(l, chairs, 2, GAME_DAY.rushSeconds, 9)).toHaveLength(2);
+    expect(seatedFamilies(l, chairs, 99, GAME_DAY.rushSeconds, 3)).toHaveLength(3);
+    expect(seatedFamilies(l, chairs, 99, GAME_DAY.rushSeconds, 99).length).toBeLessThanOrEqual(chairs.length);
+    expect(seatedFamilies(l, chairs, 0, GAME_DAY.rushSeconds, 9)).toHaveLength(0);
   });
 });

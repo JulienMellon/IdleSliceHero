@@ -1,6 +1,5 @@
 // What every layer screen shares, as plain data: time and progress text, the 5% steps, and where the layer notices stack under the
 // endgame stack. Pure: unit-tested in node.
-import { ORDER_VIEW } from '../../content/hooks';
 import { STACK, stackTop } from '../endgame/stack-model';
 
 /** "3:07": seconds as minutes and seconds (rounded up, never negative). */
@@ -50,4 +49,4 @@ export function layerTop(a: StackAbove): number {
 }
 
 /** The layer column's rows: a one-line notice, then the rival's card. */
-export const ROWS = { notice: 30, rival: ORDER_VIEW.height } as const;
+export const ROWS = { notice: 30, rival: 46 } as const;

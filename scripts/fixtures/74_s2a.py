@@ -79,12 +79,11 @@ def run(ctx):
         report["errors"].append(f"fixture 74_s2a: scrolling to the bid card failed: {e}")
     shot(page, "78-auction-bid-card", 0.5)
 
-    # 79: the Suburbs rival is open (beat 3 seen, beat 4 not): the shop across the street, the "-20% sales" tag and Todd's offer
+    # 79: the Suburbs rival is open (beat 3 seen, beat 4 not): the shop across the street, the "-20% sales" tag (a tap opens the sheet with Todd's offer and Start)
     page = seeded_page(b, save("suburbs", x={"suburbsGameDay": timed(PLAY + 300)}))
     settle(page, 2.0)
     expect(page, "rival-shop")
     expect(page, "rival-tag")
-    expect(page, "rival-offer")
     shot(page, "79-rival-open", 0.4)
 
     # 80: the challenge running and behind the pace: 100 of 900 pies with 110 s left

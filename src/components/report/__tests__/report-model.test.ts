@@ -6,7 +6,7 @@ import type { NeighborhoodId } from '../../../content/types';
 import { withFeatures } from '../../../engine/features';
 import { reportView, service } from '../../../engine/features/service';
 import * as G from '../../../engine/game';
-import { compactEffect, copy, drawerLine, effectLine, fill, HIDDEN_STRIP, lampWord, noGainLine, sheetModel, STRIP, stripFont, stripKind, stripLine, stripModel, stripTextWidth, wrapLines } from '../report-model';
+import { lampInitial, stripLineHeight, compactEffect, copy, drawerLine, effectLine, fill, HIDDEN_STRIP, lampWord, noGainLine, sheetModel, STRIP, stripFont, stripKind, stripLine, stripModel, stripTextWidth, wrapLines } from '../report-model';
 
 const T0 = 1_800_000_000_000;
 const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
@@ -124,14 +124,26 @@ describe('the strip', () => {
 });
 
 describe('the strip fits an iPhone SE', () => {
-  const SE = 320;
+  const SE = 375; // an iPhone SE (375 pt): the narrowest phone the app runs on
   const worst = { served: '99.9K', wanted: '99.9K', could: '99.9K', lost: '$999K/min' };
-  test('the strip is 44 pt tall and its pieces leave the line room', () => {
+  test('the strip is a 44 pt touch box with a 28 pt pill (D479): the front wall and the mat show above it', () => {
     expect(STRIP.height).toBe(44);
-    expect(stripTextWidth(SE, true)).toBeGreaterThan(150);
-    expect(STRIP.maxLines * STRIP.fonts[STRIP.fonts.length - 1] * 1.2).toBeLessThanOrEqual(STRIP.height - 4);
+    expect(STRIP.pill).toBeLessThanOrEqual(28);
+    expect(STRIP.pill).toBeLessThan(STRIP.height - 12);
+    expect(stripTextWidth(SE, true)).toBeGreaterThan(130);
+    // the line's lines, the chips over the word, and the pill's border all fit the pill
+    expect(STRIP.maxLines * stripLineHeight(STRIP.fonts[STRIP.fonts.length - 1])).toBeLessThanOrEqual(STRIP.pill - 2 * STRIP.border);
+    expect(STRIP.chipH + 11).toBeLessThanOrEqual(STRIP.pill - 2 * STRIP.border);
   });
-  test('every manager line, with the longest numbers, takes at most 3 lines at 10 pt or more beside the face', () => {
+  test('every lamp chip has an initial, and the strip always has a state word (D492)', () => {
+    expect(['prep', 'ovens', 'counter', 'floor'].map((d) => lampInitial(d as 'prep'))).toEqual(['P', 'O', 'C', 'In']);
+    only(() => {
+      const { g, now } = play(shop(10, 10, 10, { managed: true }), 3);
+      const m = stripModel(g, 'downtown', now);
+      if (m.show) expect(m.word).not.toBe('');
+    });
+  });
+  test('every manager line, with the longest numbers, takes at most 2 lines at 10 pt or more beside the face', () => {
     for (const id of Object.keys(MANAGERS) as NeighborhoodId[]) {
       for (const k of KINDS) {
         const text = fill(COPY[`report.${MANAGER_COPY_KEY[id]}.${k}` as CopyKey], worst);
@@ -146,7 +158,7 @@ describe('the strip fits an iPhone SE', () => {
       expect(lines).toBeLessThanOrEqual(STRIP.maxLines);
     }
   });
-  test('the fit really can fail: one very long line takes more than 3 lines (the test is not vacuous)', () => {
+  test('the fit really can fail: one very long line takes more than 2 lines (the test is not vacuous)', () => {
     expect(wrapLines('word '.repeat(40), stripTextWidth(SE, true), 10)).toBeGreaterThan(STRIP.maxLines);
   });
 });
