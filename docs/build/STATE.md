@@ -10,7 +10,7 @@ last_shots: v5.16-r3           # label of the last screenshot set that passed ve
 codecritic_range_start: aff34d1
 cards:                 # todo | running | done | partial | blocked
   (v5.17 cards: see docs/build/v5.17/VERSION.md)
-  N1 done  A1 running  U3 todo  L1 todo  U4 todo
+  N1 done  A1 partial  U3 running  L1 todo  U4 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.16/review-r3-critic.md (r3 NOT SATISFIED, minors only -> close; bug 0 major 0 minor 10; E2 U3 S4 T1)
   code:   docs/build/v5.16/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 3 low 23; E16 U5 S3 A2)
@@ -33,3 +33,5 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md
 - 2026-11-15 v5.17 r1 wave 1 launched: N1 + A1.
 - 2026-11-15 v5.17 r1 N1 partial (services built, 47 tests). Needs: tracking prompt needs expo-tracking-transparency (ask Julien); game must call onGrant (-> U3); starter 150 diamonds sent back to N1.
 - 2026-11-15 v5.17 r1 N1 done (starter 150; 47 pass). Device-time items: AdMob app ID, SKAdNetwork list, privacy manifest, SENTRY_DISABLE_AUTO_UPLOAD.
+- 2026-11-15 v5.17 r1 A1 partial (output seam, mixer; audio 50 pass). Needs: native SliceAudioSession.isOtherAudioPlaying (ask Julien; AU41 open); Settings Music shown on while suppressed (-> U3); audio-api plugin + lock (-> N1).
+- 2026-11-15 v5.17 r1 wave 2: U3 launched (+onGrant, Settings music). L1 waits for N1 lock fix.

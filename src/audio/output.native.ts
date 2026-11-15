@@ -117,7 +117,7 @@ export function createOutput(): AudioOutput {
       buffers.delete(id);
       loading.delete(id);
     },
-    isLoaded: (id) => (viaExpo(id) ? expo.isLoaded(id) : buffers.has(id)),
+    isLoaded: (id) => (viaExpo(id) ? expo.isLoaded(id) : buffers.has(id) || loading.has(id)),
     loadedCount: () => buffers.size + expo.loadedCount(),
     play(id, o) {
       if (viaExpo(id)) return expo.play(id, o);

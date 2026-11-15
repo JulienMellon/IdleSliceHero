@@ -149,13 +149,27 @@ The rest of this section: They are synthesised in `sfx.py` from one palette of w
 - **Web.** Nothing plays until the first pointer press, because browsers block autoplay. `scripts/screenshots.py` logs every `play()` into `report.json` under `audio`.
 
 ## Open (device checks and v2)
-- **Device checks (AU39, AU40).** On an iPhone SE 2 or XR, measure:
-  - the launch hitch and resident memory: 31 players at start-up (27 SFX, 2 music, 2 story), at most about 45 with the active key's stingers and the kept effects;
-  - the delay from tap to sound;
-  - gapless looping of AAC;
-  - the ±1 st `playbackRate` jitter with `shouldCorrectPitch = false`.
-  - **If the delay is over 50 ms or memory is over about 15 MB**, move SFX and stingers to `react-native-audio-api`: buffers decoded once, gain per bus, a compressor as master limiter, sample-accurate stinger timing. It needs a development build rather than Expo Go, so it's Julien's call.
-- **Other apps' audio (AU41).** `expo-audio` doesn't expose iOS's "other audio is playing" hint, so the loops can't mute themselves when a podcast is on; the Music toggle covers it. Revisit with `react-native-audio-api` or a small config plugin.
+v5.17 (card A1) moved the output onto a seam. The sections above describe the web build and the music and story players, which are unchanged; where they say "players" for effects and stingers, the phone now has buffers.
+
+- **What moved.**
+  - `src/audio/mixer.ts` holds everything the director used to do with players (ducks, the loop crossfade, stinger timing and gating, story cues, the rare-effect release, the launch order). It talks only to `AudioOutput` (`output-core.ts`: `load`, `unload`, `play {gain, rate, at}`, `loop`, `stop`, `resume`, `fade`, `setBus`) and is tested against a fake (`__tests__/mixer.test.ts`).
+  - `output.native.ts` runs effects and stingers on `react-native-audio-api`: each file is decoded once, every play is a new source (so a second play of one sound overlaps the first: C102, and the limit of 24 sources stops the oldest), a gain node per bus (`sfx`, `sting`), then the master. A stinger's `at` is passed as `start(currentTime + at)`, so the audio thread places beat 1, not a JS timer.
+  - **Master limiter.** audio-api 1.0 has no compressor node, so the master is a WaveShaper with a soft-knee curve (`limiterCurve`: linear to 0.8, never above 0.96). It clamps the 1.25 worst case of the mix table without pumping. It is a static curve, not a look-ahead limiter; the files still carry the −6 dBFS ceiling.
+  - **Launch (AU39).** At start-up: the title set (click, tap, bubble) and the Downtown set (tap, cash, buy, rush), 8 effects, plus 2 loops and 2 story slots when they are first used: 12 players at most (it was 31). After the first frame the other common effects (and sparkle, milestone, fleet) load three at a time every 120 ms; a neighbourhood's nine stingers load 1.5 s after its key becomes active (as before); the rare effects are still made ahead of their moment (AU61).
+  - **Overlap (C102).** The mixer counts plays of each rare effect (`RarePlays`, test T78) and unloads one only when its last play ends. Both outputs now sound a second play over the first: audio-api with a second source, the web build with a temporary second player.
+  - **Other audio (AU41).** The mixer's `OtherAudioRule`: if the output says another app is playing at launch, Music is off for this session (loop, stingers, story), effects still play, and the saved preference is not written. The player turning Music on or off by hand ends the rule.
+- **What stayed.**
+  - Music loops and story cues stay on `expo-audio` (one native player with `loop = true`, two slots for the crossfade). Nothing in the code or here shows a looping gap, and moving them would put the loop clock on a new engine for no measured gain. If check M finds a gap, the move is to a looped `AudioBufferSourceNode` on the same context, and stinger timing then becomes exact against the loop (today it is read from the loop's `currentTime` at call time, so it is as exact as that read).
+  - The web build is `expo-audio` for everything and logs the same `play()` calls; only the number of players made at start-up is lower.
+  - Audio mode (`mixWithOthers`, silent switch, no background) is still `setAudioModeAsync`; the native output sets audio-api's session to the same `ambient` category.
+- **What a device must still tell (DEVICE-CHECKLIST K to N).**
+  - K: the launch hitch and the time to the title screen; resident memory. Buffers are decoded to 32-bit float, mono at 44.1 kHz (176 KB a second; 192 KB if the context runs at 48 kHz): a key's nine stingers are about 7 MB, all the effects about 2.7 MB, so about 10 MB in all against the 15 MB line. The AAC files are small; the decoded buffers are not.
+  - L: the delay from tap to sound (audio-api's `latencyHint: 'interactive'`; under about 50 ms).
+  - M: a gap or click at the loop point of the AAC loops, and the stinger landing on the beat.
+  - N: a podcast started before the game. **iOS's "other audio is playing" hint is not readable from `expo-audio` or `react-native-audio-api`** (the library only reads it inside `activelyReclaimSession`, which pauses its own engine as an interruption, so effects would stop too). `output.native.ts` therefore asks an optional native module, `SliceAudioSession.isOtherAudioPlaying()` (`AVAudioSession.sharedInstance().secondaryAudioShouldBeSilencedHint`), and treats its absence as "can't tell". Until that module exists, the Music toggle still covers it and N will fail. It is a ten-line Expo module or config plugin outside `src/audio/`.
+  - The `±1 st playbackRate` jitter now runs on `AudioBufferSourceNode.playbackRate` (it changes pitch with speed, as before); listen for zipper noise on `cash` at +2 st.
+  - The soft limiter's curve at the loudest milestone: no audible distortion on the Whoomp plus the stinger.
+- **Other apps' audio (AU41), the remaining part.** The rule and its tests are in; only the reading is missing (above).
 - **v2 work.** Arrangements that change once a shop has a manager, a rush rhythm layer kept in time with the loop, and the Boston theme (AU25).
 
 ## Lofi brief (2026-10-31)
