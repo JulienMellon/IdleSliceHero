@@ -59,6 +59,8 @@ export interface Flow {
 
 /** The shop's flow right now. `now` only reaches the other features' demand hooks. */
 export function flowOf(g: GameState, id: NeighborhoodId, now: number): Flow {
+  const hit = flowCache.get(g)?.[id];
+  if (hit && hit.now === now && sameRegistry(hit.list)) return hit.flow;
   const shop = g.shops[id];
   let demand = 1;
   for (const f of FEATURES) if (f.key !== KEY && f.shopDemandMult) demand *= f.shopDemandMult(g, id, now);
@@ -67,8 +69,18 @@ export function flowOf(g: GameState, id: NeighborhoodId, now: number): Flow {
   const counter = counterRate(shop);
   const kitchen = Math.min(prep, ovens, counter);
   const wanted = demandRate(shop, g.vehicle, { value: 1, demand });
-  return { prep, ovens, counter, kitchen, wanted, sold: Math.min(wanted, kitchen) };
+  const flow = { prep, ovens, counter, kitchen, wanted, sold: Math.min(wanted, kitchen) };
+  let per = flowCache.get(g);
+  if (!per) flowCache.set(g, (per = {}));
+  per[id] = { now, list: FEATURES.slice(), flow };
+  return flow;
 }
+
+// U17: the value hook (read by every `featureMults` pass) and the tick, the report and the heads' asks all want the same flow of one
+// state: each state's flows are kept per shop, so the other features' demand hooks run once per state, not once per reader.
+// (`featureMults` cannot hand its demand over: it is still building it when it calls the value hook.)
+const flowCache = new WeakMap<GameState, Partial<Record<NeighborhoodId, { now: number; list: Feature<any>[]; flow: Flow }>>>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+const sameRegistry = (list: readonly unknown[]): boolean => list.length === FEATURES.length && list.every((f, i) => f === FEATURES[i]);
 
 /** Service, 0..1, in 5% steps (rounded down). */
 export const serviceOf = (f: Flow): number => (f.wanted > 0 ? quantise(f.sold / f.wanted) : 1);

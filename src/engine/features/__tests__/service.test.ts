@@ -100,6 +100,24 @@ describe('what is measured', () => {
   });
 });
 
+describe('the cost of the hook (U17)', () => {
+  test('the other features demand hooks run once per state, however often the shop is read', () => {
+    let calls = 0;
+    const counting = { key: 'cnt', init: () => 0, migrate: () => 0, shopDemandMult: () => (calls++, 1) };
+    withFeatures([counting, service], () => {
+      const g = TIPPING();
+      for (let i = 0; i < 5; i++) {
+        view(g);
+        slammedAsks(g, 'downtown');
+      }
+      expect(calls).toBe(1);
+      // a different state is a different flow
+      view(withShop(g, 'downtown', { drivers: 3 }));
+      expect(calls).toBe(2);
+    });
+  });
+});
+
 describe('who takes part', () => {
   test('a shop still tapped by hand, and a shop in the tutorial, show nothing new', () => {
     only(() => {
