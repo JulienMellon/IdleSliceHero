@@ -300,12 +300,12 @@ function fit() {
   }
   // finale: Uptown's cost multiplier (cheaper upgrades -> more pizzas sooner)
   // finale: Uptown's cost multiplier within 0.3x-1.0x of its order value (v5.13: no outlier), the rest of the table fixed
-  const ov5 = cur.ov![5];
+  const ov5 = cur.ov?.[5] ?? NEIGHBORHOODS[5].orderValue;
   const best = scan((v) => { cur.cm![5] = v; if (mk !== undefined) cur.mc![5] = mk * v; return days(cur, 'uptown-4', 9).out.finale ?? 20; }, TARGETS.finale, 0.3 * ov5, 1.0 * ov5);
   cur.cm![5] = Math.min(ov5, Math.max(0.3 * ov5, best.x));
   if (mk !== undefined) cur.mc![5] = mk * cur.cm![5];
   console.log(`uptown costMult ${best.x.toPrecision(3)} -> finale day ${best.d.toFixed(2)} (target ${TARGETS.finale})`);
-  console.log(JSON.stringify({ ov: cur.ov, bc: cur.bc!.map((v) => +v.toPrecision(3)), cm: cur.cm!.map((v) => +v.toPrecision(3)), mc: cur.mc!.map((v) => +v.toPrecision(3)) }));
+  console.log(JSON.stringify({ ov: cur.ov ?? NEIGHBORHOODS.map((n) => n.orderValue), bc: cur.bc!.map((v) => +v.toPrecision(3)), cm: cur.cm!.map((v) => +v.toPrecision(3)), mc: cur.mc!.map((v) => +v.toPrecision(3)) }));
 }
 
 function check() {

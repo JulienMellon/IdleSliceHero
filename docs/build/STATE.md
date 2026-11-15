@@ -44,3 +44,4 @@ next: fresh session; read docs/build/sessions/S3-v5.16-second-half.md (wave 6: S
 - 2026-11-15 01:59 UTC r1 gate not met (critic bug4 maj8; code high1 bugs C120 C121; story bug1 maj4). Fix round r2: cards E0 U5 E2a E2b P1 S2a S2b T1a T1b, two at a time; first E0 + U5.
 - 2026-11-15 02:01 UTC r2 E0 partial (C121 + S45 fixed; tsc ok, engine+content pass; C107 D495 left). E2a launched (C120).
 - 2026-11-15 02:02 UTC r2 E2a partial (C120 engine fixed; tsc ok, 791 pass). Needs for S2a: rival-model.ts rivalCard NONE on 'waiting', sheet-model.ts:105 waiting case. D493 left (story gate, T). E2b launched (+C123).
+- 2026-11-15 02:06 UTC r2 U5 done (S40/G104 crash, G106, D494 partial, D488, D487; tsc ok, 717 pass, layout 0 new). P1 launched (D479 D486 D485).

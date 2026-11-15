@@ -4,7 +4,7 @@ import { DECOR_KINDS } from '../../../../content/tuning';
 import { getFeature, withFeatures } from '../../index';
 import * as G from '../../../game';
 import * as R from '../../../rewards';
-import { ackCritic, buyIngredients, criticTarget, criticView, ingredientsLock, ingredientsPrice, payMult, pointsOf, starsNow, starsOf, starsView, uptownStars, type StarsState } from '../uptown-stars';
+import { ackCritic, buyIngredients, criticReward, criticTarget, criticView, ingredientsLock, ingredientsPrice, payMult, pointsOf, starsNow, starsOf, starsView, uptownStars, type StarsState } from '../uptown-stars';
 
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 const HOOD = STARS.hood;
@@ -115,6 +115,8 @@ describe('the Ingredients track', () => {
       const g = uptown(3, 0, 2);
       expect(starsView(g)).toMatchObject({ active: true, stars: 3, payMult: 1, tier: 2, tierName: 'Farm', nextTierName: 'Truffle', sign: 0, maxPoints: 7, points: { oven: 2, decor: 0, ingredients: 2, total: 4 } });
       expect(starsView(g).nextPrice).toBe(ingredientsPrice(g));
+      // C123: the price is minutes of the shop's own revenue (shopRevenue, no feature multipliers), as the boats' rack is
+      expect(ingredientsPrice(g)).toBe(Math.max(1, Math.ceil(STARS.ingredients[3].minutes * 60 * G.shopRevenue(HOOD, g.shops[HOOD], g.vehicle))));
       expect(starsView(uptown(0, 0, 3))).toMatchObject({ nextTierName: null, nextPrice: null });
       expect(starsView(G.newGame(NOW))).toMatchObject({ active: false, nextPrice: null });
     });
@@ -183,6 +185,10 @@ describe('the critic', () => {
       expect(state(after).result!.cash).toBeCloseTo(reward, 6);
       expect(state(after).nextAt).toBeGreaterThan(100 + CRITIC.everySeconds * 0.85);
       expect(criticView(after)).toMatchObject({ sign: 1, last: { hit: true } });
+      // U16: the cash lives in criticReward; the view carries no income pass
+      expect(criticView(g)).not.toHaveProperty('reward');
+      expect(criticReward(g)).toBeCloseTo(reward, 6);
+      expect(criticReward(G.newGame(NOW))).toBe(0);
       // the next target is the next visit's
       expect(criticView(after).target).toBe(criticTarget(state(after).seed, 2));
     });

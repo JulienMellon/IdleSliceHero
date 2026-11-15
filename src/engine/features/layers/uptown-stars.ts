@@ -12,7 +12,7 @@
 import { seededUnit } from '../../bonus';
 import { CRITIC, LAYER_KEYS, STARS } from '../../../content/layers';
 import { DECOR_KINDS } from '../../../content/tuning';
-import { shopEarnings, type BuyResult, type GameState, type Shop } from '../../game';
+import { shopRevenue, type BuyResult, type GameState, type Shop } from '../../game';
 import { minutesToCash } from '../../rewards';
 import type { Feature } from '../types';
 import { freshTimed, gapOf, type TimedSpec } from './suburbs-gameday';
@@ -80,11 +80,11 @@ export const starsNow = (g: GameState): number => starsOf(pointsOf(g.shops[HOOD]
 /** The Ingredients tier owned, 0 (Store-brand) to 3 (Truffle). */
 export const ingredientsTier = (g: GameState): number => read(g).tier;
 
-/** What the next Ingredients tier costs now: its minutes of Uptown's income (no boost), or null at the top. */
+/** What the next Ingredients tier costs now: its minutes of Uptown's income (shopRevenue: no boost, no event), or null at the top. */
 export function ingredientsPrice(g: GameState): number | null {
   const tier = read(g).tier;
   if (tier >= MAX_TIER) return null;
-  return Math.max(1, Math.ceil(STARS.ingredients[tier + 1].minutes * 60 * shopEarnings(g, HOOD)));
+  return Math.max(1, Math.ceil(STARS.ingredients[tier + 1].minutes * 60 * shopRevenue(HOOD, g.shops[HOOD], g.vehicle)));
 }
 
 /** Why the next tier can't be bought yet (other than cash), or null. */
@@ -160,15 +160,16 @@ export interface CriticView {
   /** The rating the next visit asks for. */
   target: number;
   stars: number;
-  /** The cash a passed visit pays right now. */
-  reward: number;
   /** Stars on the sign. */
   sign: number;
   /** The last visit's result until acknowledged. */
   last: CriticResult | null;
 }
 
-/** What the critic's banner needs, pure. */
+/** The cash a passed visit pays right now (the rewards' income, so it costs a full earnings pass: ask for it where it is shown, not in a store selector). */
+export const criticReward = (g: GameState): number => (built(g) ? minutesToCash(g, CRITIC.rewardMinutes) : 0);
+
+/** What the critic's banner needs, pure and cheap (no income pass; `criticReward` is the cash). */
 export function criticView(g: GameState): CriticView {
   const st = read(g);
   return {
@@ -176,7 +177,6 @@ export function criticView(g: GameState): CriticView {
     nextIn: st.nextAt < 0 ? CRITIC.everySeconds : Math.max(0, Math.ceil(st.nextAt - g.playSeconds)),
     target: criticTarget(st.seed, st.n + 1),
     stars: starsNow(g),
-    reward: built(g) ? minutesToCash(g, CRITIC.rewardMinutes) : 0,
     sign: st.sign,
     last: st.result,
   };
