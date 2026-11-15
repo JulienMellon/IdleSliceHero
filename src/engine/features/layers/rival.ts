@@ -5,7 +5,7 @@
 // challenge won (read from the seen scenes, so no migration has to guess). Inactive until the shop is built.
 import { LAYER_KEYS, RIVAL } from '../../../content/layers';
 import type { NeighborhoodId } from '../../../content/types';
-import { featureMults, finaleId, sceneId, shopRate, SHOP_IDS, type BuyResult, type GameState } from '../../game';
+import { challengeOffered, featureMults, finaleId, sceneId, shopRate, SHOP_IDS, type BuyResult, type GameState } from '../../game';
 import type { Feature } from '../types';
 
 export interface RivalChallenge {
@@ -46,13 +46,13 @@ export function rivalTarget(g: GameState, id: NeighborhoodId, now: number): numb
 
 const progressOf = (g: GameState, c: RivalChallenge): number => Math.max(0, Math.min(c.target, Math.floor(g.shops[c.hood].sold - c.startSold)));
 
-export type RivalPhase = 'none' | 'available' | 'running' | 'retry';
+export type RivalPhase = 'none' | 'waiting' | 'available' | 'running' | 'retry';
 
 export interface RivalView {
   /** The rival's shop is open here (its x0.8 is on). */
   open: boolean;
   won: boolean;
-  /** 'available' = may start; 'running'; 'retry' = lost, waiting; 'none' = no rival here (not open, or another challenge is running). */
+  /** 'waiting' = open, but the finale wait after beat 3 is not over (`challengeOffered`): no card yet; 'available' = may start; 'running'; 'retry' = lost, waiting; 'none' = no rival here (not open, or another challenge is running). */
   phase: RivalPhase;
   /** Pies asked: fixed while it runs, otherwise what it would ask now. */
   target: number;
@@ -74,6 +74,7 @@ export function rivalView(g: GameState, id: NeighborhoodId, now: number): RivalV
   const st = read(g);
   const c = st.challenge;
   if (c && c.hood === id) return { ...base, phase: 'running', target: c.target, progress: progressOf(g, c), secondsLeft: Math.max(0, Math.ceil(c.left)), retryIn: 0 };
+  if (!challengeOffered(g, id)) return { ...base, phase: 'waiting', target: 0, progress: 0, secondsLeft: 0, retryIn: 0 };
   const wait = Math.max(0, Math.ceil((st.retryAt[id] ?? 0) - g.playSeconds));
   return { ...base, phase: wait > 0 ? 'retry' : 'available', target: rivalTarget(g, id, now), progress: 0, secondsLeft: 0, retryIn: wait };
 }
@@ -81,6 +82,7 @@ export function rivalView(g: GameState, id: NeighborhoodId, now: number): RivalV
 /** Start the challenge in `id`: the rival is open, none is running and any retry wait is over. */
 export function startRivalChallenge(g: GameState, id: NeighborhoodId, now: number): BuyResult {
   if (!rivalOpen(g, id)) return { ok: false, reason: 'No rival to outsell here' };
+  if (!challengeOffered(g, id)) return { ok: false, reason: 'Not yet: the rival is still setting up' }; // C120: the beat-4 wait is the engine's, not each caller's
   const st = read(g);
   if (st.challenge) return { ok: false, reason: 'Already outselling a rival' };
   if (g.playSeconds < (st.retryAt[id] ?? 0)) return { ok: false, reason: 'Try again later' };
