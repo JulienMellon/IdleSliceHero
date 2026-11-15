@@ -29,7 +29,12 @@ describe('the shop across the street', () => {
     expect(RIVAL_SHOP.top + RIVAL_SHOP.h + RIVAL_SHOP.kerb).toBeLessThanOrEqual(SCENE_H);
     expect(r.x0).toBeGreaterThanOrEqual(0);
     expect(r.x1).toBeLessThanOrEqual(SCENE_W);
-    expect(RIVAL_SHOP.h).toBeLessThanOrEqual(48);
+    // D481: at 60% of its art, the kerb ends clear of the scene's last row (the old shop sat flush on it), sign text still 10 pt or more
+    expect(RIVAL_SHOP.scale).toBe(0.6);
+    expect(RIVAL_SHOP.w).toBeCloseTo(RIVAL_SHOP.art.w * RIVAL_SHOP.scale, 0);
+    expect(RIVAL_SHOP.h).toBeCloseTo(RIVAL_SHOP.art.h * RIVAL_SHOP.scale, 0);
+    expect(r.y1).toBeLessThanOrEqual(SCENE_H - 6);
+    expect(RIVAL_SHOP.signFont).toBeGreaterThanOrEqual(10);
     for (let fp = 0; fp < 5; fp++) {
       const lay = layout(fp, 2, 2, 2, 4, 3, 1);
       // the doormat is on the sidewalk, over 100 scene units above the road
