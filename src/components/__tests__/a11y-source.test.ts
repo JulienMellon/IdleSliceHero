@@ -55,7 +55,7 @@ export function pressables(src: string, file = ''): Found[] {
 }
 
 /** Screens that another card is rewriting at the same time: their Pressables are checked once that card lands (the test below fails when an entry is no longer needed, so the list can only shrink). */
-const OTHER_CARDS: Record<string, string> = { 'app/settings.tsx': 'N1' };
+const OTHER_CARDS: Record<string, string> = {};
 
 const every = files(SRC).flatMap((f) => pressables(fs.readFileSync(f, 'utf8'), path.relative(SRC, f)));
 const all = every.filter((f) => !(f.file in OTHER_CARDS));

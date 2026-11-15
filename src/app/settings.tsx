@@ -67,7 +67,7 @@ export default function Settings() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.back} testID="back">
+        <Pressable onPress={() => router.back()} style={styles.back} testID="back" accessibilityRole="button" accessibilityLabel="Back">
           <Text style={styles.backText}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>Settings</Text>
@@ -139,6 +139,8 @@ export default function Settings() {
                 </View>
                 <Pressable
                   testID="confirm-reset"
+                  accessibilityRole="button"
+                  accessibilityLabel="Yes, erase everything"
                   style={styles.danger}
                   onPress={async () => {
                     await resetGame();
@@ -148,7 +150,7 @@ export default function Settings() {
                 </Pressable>
               </View>
             ) : (
-              <Pressable style={styles.danger} onPress={() => setConfirm(true)} testID="reset">
+              <Pressable style={styles.danger} onPress={() => setConfirm(true)} testID="reset" accessibilityRole="button" accessibilityLabel="Reset game" accessibilityHint="Asks you to confirm before anything is erased">
                 <Text style={styles.dangerText}>Reset game</Text>
               </Pressable>
             )}
