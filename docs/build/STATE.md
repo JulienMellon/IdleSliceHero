@@ -4,15 +4,15 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.16
-step: review                   # setup | waves | verify | review | fix | close
-round: r1              # r1 | r2 | r3
+step: fix                      # setup | waves | verify | review | fix | close
+round: r2              # r1 | r2 | r3
 last_shots: v5.16           # label of the last screenshot set that passed verify
 codecritic_range_start: f83d281
 cards:                 # todo | running | done | partial | blocked
   W2 done  E0 done  E2a done  P1 partial  E2b done  T1a done
   S2a partial  S2b done  T1b partial  U5 done
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.15/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 8; U5 S3; carried)
+  critic: docs/build/v5.16/review-r1-critic.md (r1 NOT SATISFIED; bug 4 major 8 minor 15; E2 U16 S8 T1)
   code:   docs/build/v5.16/review-r1-code.md (r1 CHANGES REQUESTED; blocker/high 1 medium 5 low 21; bugs C120 C121; E18 U4 S3 A2)
   story:  docs/build/v5.16/review-r1-story.md (r1 NOT SATISFIED; bug 1 major 4 minor 18; E4 U9 T10)
   audio:  AUDIOLOG.md (next ID AU78)
@@ -41,3 +41,4 @@ next: fresh session; read docs/build/sessions/S3-v5.16-second-half.md (wave 6: S
 - 2026-11-15 01:31 UTC E-lane diag: 3 verify errors are fixture bugs (00_boot buy clicks spend cash; 19_story_props old sold triggers for downtown-4 2217 + suburbs-4 rival win). Same agent given fixture edits + sweep of other old-trigger fixtures.
 - 2026-11-15 01:33 UTC U5 fixed 3 layout clips (no allowlist adds; dev layout 0 new). Waiting on fixture fixes.
 - 2026-11-15 01:51 UTC Verify v5.16 PASS: True 0 [], layout 0 new; 129 shots (36 new, 89 changed). r1 reviews launched: critic, story, code.
+- 2026-11-15 01:59 UTC r1 gate not met (critic bug4 maj8; code high1 bugs C120 C121; story bug1 maj4). Fix round r2: cards E0 U5 E2a E2b P1 S2a S2b T1a T1b, two at a time; first E0 + U5.
