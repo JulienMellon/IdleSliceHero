@@ -6,7 +6,7 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 version: 5.16
 step: fix                      # setup | waves | verify | review | fix | close
 round: r3              # r1 | r2 | r3
-last_shots: v5.16-r2           # label of the last screenshot set that passed verify
+last_shots: v5.16-r3           # label of the last screenshot set that passed verify
 codecritic_range_start: f83d281
 cards:                 # todo | running | done | partial | blocked
   W2 done  E0 done  E2a done  P1 partial  E2b done  T1a done
@@ -53,3 +53,4 @@ next: v5.16 fix round r2 in progress (step fix, round r2). Done this round: E0 E
 - 2026-11-15 18:37 UTC r3 E0 partial (S33 S22-engine U13-engine, Mudhens rename; 657 pass). Wiring sent to U5 (index teaserStep, eventViewNow) and P1 (storefront activeEvent).
 - 2026-11-15 18:39 UTC r3 P1 done (U17 D491 + storefront activeEvent; 1353 pass). U5 done (teaserStep ring, eventViewNow). Waiting S2a eventViewNow calls.
 - 2026-11-15 18:40 UTC r3 all fixes in (S2a eventViewNow calls). Verify v5.16-r3.
+- 2026-11-15 18:57 UTC Verify v5.16-r3 PASS: True 0 [], layout 0 new; 83 changed. r3 re-checks: critic, story (sonnet).
