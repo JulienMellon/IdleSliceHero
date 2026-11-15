@@ -32,3 +32,4 @@ next: v5.16 fix round r2 in progress (step fix, round r2). Done this round: E0 E
 - 2026-11-15 02:18 UTC r2 P1 partial (D479 D492 S31 S34 fixed; D485 strip part; D486 in attack-model.ts + U17 left; tsc ok, 1 red = S2b Ingredients). Copy-file updates pending for writer: S31 line, new bark, 'Tipping'/'Cold'. T1a launched (S37 S38 S39 D493).
 - 2026-11-15 12:47 UTC Session S3 stopped at usage limit mid r2 (S2b, T1a died; no edits on disk). Tree clean: tsc ok, components+engine 1349/1349. PR opened.
 - 2026-11-15 13:55 UTC Session S3 resumed r2: S2b + T1a relaunched (fix prompt).
+- 2026-11-15 13:57 UTC r2 S2b done (G107 D484 D485-strip already on disk; tsc ok, components 721 pass). W2 launched.
