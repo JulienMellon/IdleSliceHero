@@ -11,7 +11,7 @@ import { chipPhase } from '@/components/order-model';
 import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
-import { coachStep } from '@/engine/tutorial';
+import { coachStep, hintsAllowed } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
@@ -419,7 +419,7 @@ export default function GameScreen() {
         )}
         {tasksOpen && <TasksDrawer game={slow.game} now={slow.sec} clockOff={clockOff} bottomInset={insets.bottom} tab={tasksTab} onTab={setTasksTab} onClose={closeTasks} actions={taskActions} />}
         {/* Toast floats in the open sky at the top of the scene, clear of the shop, the row and the cards. */}
-        {toast && <Toast compact text={toast.text} top={10} />}
+        {toast && hintsAllowed(game).toast && <Toast compact text={toast.text} top={10} />}
       </View>
       {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
       {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}

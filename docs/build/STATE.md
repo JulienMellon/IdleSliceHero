@@ -44,3 +44,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md
 - 2026-11-15 v5.17 r1 N1 crash link undone (49 pass). L1 sent to run store_shots + perf.
 - 2026-11-15 v5.17 r1 U3 done (settings music, links, a11y, 4 events; 854 pass; 98_u3 0 err, layout 0 new). Open: awning-founder not drawn (facade/storefront, cosmeticName, Style tab) -> P lane; clipboard; Swap generator. Wave 3: U4 launched.
 - 2026-11-15 v5.17 r1 L1 done (perf 0/1200 >16ms; 6 store shots 1320x2868). Awning-founder fix launched on v5.16 card-P1.
+- 2026-11-15 v5.17 r1 awning-founder done (facade/storefront/rewards/shop-model; 183 pass). Carried: vanity-art icon fallback, copy key.

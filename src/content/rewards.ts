@@ -153,6 +153,7 @@ export const COSMETIC_NAMES: Readonly<Record<string, string>> = {
   'scooter-mint': 'Mint scooter',
   'neon-counter': 'Neon counter sign',
   'awning-gold': 'Gold awning',
+  'awning-founder': 'Founder awning',
   'oven-gold': 'Gold oven',
 };
 

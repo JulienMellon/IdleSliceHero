@@ -13,6 +13,7 @@ import { lotView } from './city-model';
 import { buildChipHint, buildChipSub, cardLook, type ButtonTone } from './sidewalk-model';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BuyButton, haptic } from './game-ui';
+import { showLockedTabs } from '../engine/tutorial';
 import { shopStars } from '../engine/features/mastery';
 import { pipBits, showPips, starPips } from './endgame/mastery-model';
 import { StarPips } from './endgame/star-pips';
@@ -24,9 +25,13 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
   // Keep the active pizzeria's tab in view, snapped so the strip always starts on a tab edge.
   const xs = useRef<number[]>([]);
   const [offsets, setOffsets] = useState<number[]>([]);
+  // U4: no padlocked tabs before the first head is hired (the built shops, the active one and the next to build stay)
+  const lockedShown = showLockedTabs(game);
+  const hidden = (n: (typeof NEIGHBORHOODS)[number]) => !lockedShown && !game.shops[n.id].built && next?.id !== n.id && game.active !== n.id;
+  const tabCount = NEIGHBORHOODS.filter((n) => !hidden(n)).length;
   const onTab = (i: number) => (e: { nativeEvent: { layout: { x: number } } }) => {
     xs.current[i] = e.nativeEvent.layout.x;
-    if (xs.current.filter((v) => v !== undefined).length === NEIGHBORHOODS.length) setOffsets(xs.current.map((x, i) => (i === 0 ? 0 : x - 6)));
+    if (xs.current.filter((v) => v !== undefined).length === tabCount) setOffsets(xs.current.map((x, i) => (i === 0 ? 0 : x - 6)));
   };
   const [dims, setDims] = useState({ content: 0, view: 0 });
   const [sx, setSx] = useState(0);
@@ -44,6 +49,7 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
         {NEIGHBORHOODS.map((n, i) => {
           const shop = game.shops[n.id];
           const active = game.active === n.id;
+          if (hidden(n)) return null;
           if (!shop.built && next?.id !== n.id) {
             return (
               <View key={n.id} onLayout={onTab(i)} style={[styles.tab, styles.tabLocked]}>

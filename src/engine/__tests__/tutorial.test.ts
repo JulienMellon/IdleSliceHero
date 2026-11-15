@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 // Nonna's guided tutorial (P2).
 import * as G from '../game';
-import { coachStep, STEPS, TUTORIAL_DONE, tutorialAdvance, tutorialHoldsStory } from '../tutorial';
+import { coachStep, HINTS, hintsAllowed, showLockedTabs, STEPS, TUTORIAL_DONE, tutorialAdvance, tutorialHoldsStory } from '../tutorial';
 
 const opened = () => tutorialAdvance({ ...G.newGame(0), seenScenes: ['downtown-1'] });
 const tap = (s: G.GameState, st: 'prep' | 'oven' | 'counter') => {
@@ -96,5 +96,34 @@ describe('tutorial', () => {
   // G83: the two wait steps point at the station being waited on, flagged so the scene keeps a ring and hand on it
   test('the wait steps (2 and 4) are flagged and target a scene station; tap steps are not', () => {
     expect(STEPS.filter((st) => st.wait).map((st) => [st.id, st.target])).toEqual([[2, 'prep'], [4, 'oven']]);
+  });
+  // U4: one instruction at a time
+  test('at every tutorial step at most one hint is allowed (none: Nonna is the one voice); all of them once it is over', () => {
+    for (const st of STEPS) {
+      const g = { ...opened(), tutorial: st.id };
+      expect(coachStep(g)).not.toBeNull();
+      const allowed = HINTS.filter((h) => hintsAllowed(g)[h]);
+      expect(allowed.length).toBeLessThanOrEqual(1);
+      expect(allowed).toEqual([]);
+    }
+    const over = { ...opened(), tutorial: TUTORIAL_DONE };
+    expect(HINTS.every((h) => hintsAllowed(over)[h])).toBe(true);
+    // Nonna running Downtown ends the tutorial for hints too
+    const g = opened();
+    expect(HINTS.every((h) => hintsAllowed({ ...g, shops: { ...g.shops, downtown: { ...g.shops.downtown, managed: true } } })[h])).toBe(true);
+  });
+  test('the scene and the screen ask hintsAllowed (no second tutorial test of their own)', () => {
+    const read = (p: string) => require('fs').readFileSync(require('path').join(__dirname, '../../..', p), 'utf8') as string;
+    expect(read('src/components/storefront.tsx')).toMatch(/hintsAllowed\(/);
+    expect(read('src/app/index.tsx')).toMatch(/hintsAllowed\(/);
+  });
+  test('the padlocked tabs wait for the first hired head', () => {
+    const g = opened();
+    expect(showLockedTabs(g)).toBe(false);
+    expect(showLockedTabs({ ...g, shops: { ...g.shops, downtown: { ...g.shops.downtown, heads: { ...g.shops.downtown.heads, prep: true } } } })).toBe(true);
+    expect(showLockedTabs({ ...g, shops: { ...g.shops, downtown: { ...g.shops.downtown, managed: true } } })).toBe(true);
+    // the shop tabs ask it (a source check: the strip is a component)
+    const src = require('fs').readFileSync(require('path').join(__dirname, '../../components/shop-ui.tsx'), 'utf8') as string;
+    expect(src).toMatch(/showLockedTabs\(/);
   });
 });

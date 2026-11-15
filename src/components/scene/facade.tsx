@@ -17,9 +17,9 @@ import { PICKET } from './street-props';
  * The street face of the shop: brick pilasters at both corners, a fascia beam across the top
  * carrying the sign, a full-width scalloped awning, the brick sill and the entrance on the right.
  */
-export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, id, facadeSkin = 0, awningGold = false, plaque = false }: { lay: Layout; name: string; signage: number; plants: number; id: NeighborhoodId; /** Worn cosmetics (cosmetics.ts): the storefront skin's 1-based number (0: none), the gold awning, the master's plaque. */ facadeSkin?: number; awningGold?: boolean; plaque?: boolean }) {
+export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, id, facadeSkin = 0, awningGold = false, awningFounder = false, plaque = false }: { lay: Layout; name: string; signage: number; plants: number; id: NeighborhoodId; /** Worn cosmetics (cosmetics.ts): the storefront skin's 1-based number (0: none), the gold awning, the master's plaque. */ facadeSkin?: number; awningGold?: boolean; /** The Starter Pack's red and white awning. */ awningFounder?: boolean; plaque?: boolean }) {
   const { L, R, door } = lay;
-  const look = dressedLook(LOOKS[id], { facadeSkin, awningGold });
+  const look = dressedLook(LOOKS[id], { facadeSkin, awningGold, awningFounder });
   const sill = (x0: number, x1: number) => {
     const [ax, ay] = P(x0, 0);
     const [bx] = P(x1, 0);

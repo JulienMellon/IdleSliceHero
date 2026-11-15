@@ -49,6 +49,7 @@ import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEAD_BARKS } from '../content/heads';
 import { getFeature } from '../engine/features';
 import { counterattack } from '../engine/features/counterattack';
+import { hintsAllowed } from '../engine/tutorial';
 import { slammedAsks } from '../engine/features/service';
 import { heads as headsFeature, newBarkMem, nextBark, rankOf, speakerFor, stationLevel, weekStation, type BarkAsk, type BarkMem } from '../engine/features/heads';
 import { HEADS } from '../content/tuning';
@@ -239,9 +240,11 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   for (const c of cast) if (c.deps) for (const dep of c.deps) carriers.set(dep, P(c.props.x, c.props.y, 52));
   // the pills over the sidewalk queues; the drivers' one hides while a milestone badge and its confetti are up (D429), and either fades while a "+$" pop would land on it (D439: the pop used to lift above the pill and sit across the faces)
   const popRects = placePops(line.departures, (d) => Math.max(0, d.left - tickSince), (d) => carriers.get(d.id) ?? null, P(lay.staff[0] + 12, 70, 78), SCENE_W).map((q) => q.rect);
-  const waitRaw = side.waiting > 0 && !(m0.mile && hidesWaitingPill(clock - m0.mile.at)) ? waitingText(side.waiting, slowest) : null;
+  // U4: while Nonna's coach is up the scene says nothing else (tutorial.ts `hintsAllowed`)
+  const hints = hintsAllowed(game);
+  const waitRaw = hints.waiting && side.waiting > 0 && !(m0.mile && hidesWaitingPill(clock - m0.mile.at)) ? waitingText(side.waiting, slowest) : null;
   const waitText = waitRaw && !popsCover(popRects, waitTagRect(lay, waitRaw)) ? waitRaw : null;
-  const moreRaw = side.more > 0 ? queueLabel(side.more, side.diners) : null;
+  const moreRaw = hints.more && side.more > 0 ? queueLabel(side.more, side.diners) : null;
   const moreText = moreRaw && !popsCover(popRects, moreTagRect(lay, moreRaw)) ? moreRaw : null;
   const fin = furnitureInputs({ id, name: nd.name, shop, running, rate, vehicle: game.vehicle, worn: game.rewards.worn });
   // Furniture only changes with upgrades and the dough/box counts, so it is built once per change (M12), not 15 times a second.
@@ -399,7 +402,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const flicker = running ? Math.sin(clock * 9) * 1.4 : 0;
   const rushK = (clock - m.rushAt) / 0.6;
   const rushC = useMemo(() => P((lay.ovenCols[0].x0 + lay.ovenCols[lay.ovenCols.length - 1].x1) / 2, D - 6, 50), [lay]);
-  const refusal = m.refusal && clock - m.refusal.at < 1.6 ? m.refusal : null;
+  const refusal = hints.refusal && m.refusal && clock - m.refusal.at < 1.6 ? m.refusal : null;
   // the visitor's line shows only while no head's bubble does (one bubble per shop)
   const visitSays = visitLineNow && !barkOn && !refusal && !(m.hire && clock - m.hire.at < 2.5) ? visitLineNow : null;
   const mileAge = m.mile ? clock - m.mile.at : -1;
@@ -653,7 +656,7 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
   for (const p of ladder)
     f.push({ y: p.sortY, st: p.mount === 'wall' ? undefined : p.station === 'drivers' ? 'drivers' : p.station === 'prep' ? 'prep' : 'counter', el: <LadderPiece key={`lp-${p.id}`} id={p.id} ax={p.ax} ay={p.ay} k={p.k} n={p.n} v={fin.vehicle} mint={fin.scooterMint} /> });
   // front of the shop + sidewalk props
-  f.push({ y: 0, el: <FrontWall key="front" lay={lay} name={fin.name} signage={fin.signageTier} plants={fin.plants} id={fin.id} facadeSkin={fin.facadeSkin} awningGold={fin.awningGold} plaque={fin.plaque} /> });
+  f.push({ y: 0, el: <FrontWall key="front" lay={lay} name={fin.name} signage={fin.signageTier} plants={fin.plants} id={fin.id} facadeSkin={fin.facadeSkin} awningGold={fin.awningGold} awningFounder={!!fin.awningFounder} plaque={fin.plaque} /> });
   f.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
   if (lay.ledge) {
     f.push({ y: STOOL_Y, el: <Stools key="stools" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
