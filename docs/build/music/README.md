@@ -99,6 +99,8 @@ If the rebase stops on a conflict under `assets/audio/` or `src/audio/manifest.t
 
 A cloud session pushes only to its own `claude/` branch. When the session ends, open **one** pull request from that branch to `main`. Title: `music <round>: <what ran>`. Body, three lines at most: what was built, the checks, what Julien is asked. Then the attribution lines. Don't watch it.
 
+If you have no pull-request tool: `gh pr create` fails in cloud sessions (it needs GraphQL). Write the body to `/tmp/pr.txt` and run `gh api repos/JulienMellon/IdleSliceHero/pulls -f title="…" -f head="$(git branch --show-current)" -f base=main -F body=@/tmp/pr.txt --jq .html_url | tail -1`.
+
 ## 9. Notes round
 Julien answered with notes and no yes. The round stays the same.
 1. Spawn a `composer` on `card-NOTES.md` with `extra: Julien's notes: docs/build/music/notes/<round>.md. Round: <round>.`
