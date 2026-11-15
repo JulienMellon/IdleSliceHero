@@ -165,6 +165,8 @@ export interface Goal {
   label: string;
   /** G98: a shorter line for a narrow bar (goal-model `goalLine`). */
   short?: string;
+  /** The shortest form, for the narrowest bar (goal-model `goalLine`). */
+  tiny?: string;
   current: number;
   target: number;
   /** Shown instead of a money amount, e.g. "9/24". */

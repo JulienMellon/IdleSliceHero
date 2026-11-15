@@ -212,7 +212,7 @@ export default function GameScreen() {
   let goal: Goal | null = shown[0] ?? null;
   // v5.15 (D427): once the story is told and nothing else is worth saving for, the bar shows the city's mastery stars
   const mg = goal ? null : masteryGoal(game);
-  if (mg) goal = { label: mg.label, short: mg.short, text: mg.text, current: mg.current, target: mg.target };
+  if (mg) goal = { label: mg.label, short: mg.short, tiny: mg.tiny, text: mg.text, current: mg.current, target: mg.target };
   // Late game: fall back to the best big buy in this shop (Expand, Grade or a Decor tier) before the story count.
   if (!goal) {
     const big: (Goal & { ratio: number })[] = [];

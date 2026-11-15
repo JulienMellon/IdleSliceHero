@@ -142,7 +142,7 @@ export function StationCard(props: {
       <View style={styles.cardHead}>
         <View style={styles.icon}>{typeof props.icon === 'string' ? <Text style={styles.iconText}>{props.icon}</Text> : props.icon}</View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title} numberOfLines={1}>
+          <Text style={styles.title} numberOfLines={2}>
             {props.title}
             {props.level ? <Text style={styles.level}> {props.level}</Text> : null}
           </Text>
@@ -151,7 +151,7 @@ export function StationCard(props: {
               <Text style={styles.neckText}>BOTTLENECK</Text>
             </View>
           ) : null}
-          <Text style={styles.detail} numberOfLines={3}>
+          <Text style={styles.detail} numberOfLines={4}>
             {/* a line may break before a "·", never after it */}
             {props.detail.replace(/ · /g, ' ·\u00A0')}
           </Text>
