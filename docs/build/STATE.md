@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.16
-step: verify                   # setup | waves | verify | review | fix | close
+step: review                   # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
-last_shots: v5.15-loop      # label of the last screenshot set that passed verify
+last_shots: v5.16           # label of the last screenshot set that passed verify
 codecritic_range_start: f83d281
 cards:                 # todo | running | done | partial | blocked
   W2 done  E0 done  E2a done  P1 partial  E2b done  T1a done
@@ -40,3 +40,4 @@ next: fresh session; read docs/build/sessions/S3-v5.16-second-half.md (wave 6: S
 - 2026-11-15 01:27 UTC Verify v5.16 FAIL: tsc ok, 1381/1381 tests, export ok; report True 3 errors (boot cash $0, recipe+perk cutscene timeouts) -> E0 lane programmer; layout 3 new (perk banner, rack card, goal Waterfront) -> U5. Shots 36 new 87 changed.
 - 2026-11-15 01:31 UTC E-lane diag: 3 verify errors are fixture bugs (00_boot buy clicks spend cash; 19_story_props old sold triggers for downtown-4 2217 + suburbs-4 rival win). Same agent given fixture edits + sweep of other old-trigger fixtures.
 - 2026-11-15 01:33 UTC U5 fixed 3 layout clips (no allowlist adds; dev layout 0 new). Waiting on fixture fixes.
+- 2026-11-15 01:51 UTC Verify v5.16 PASS: True 0 [], layout 0 new; 129 shots (36 new, 89 changed). r1 reviews launched: critic, story, code.

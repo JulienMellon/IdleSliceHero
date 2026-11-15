@@ -1,10 +1,6 @@
 {
   "version": "v5.16",
-  "errors": [
-    "cash still $0 after 20s of tapping \u2014 core loop broken",
-    "recipe card scene failed: Locator.click: Timeout 20000ms exceeded.\nCall log:\n  - waiting for locator(\"[data-testid=\\\"cutscene\\\"]\").first\n",
-    "perk card shot failed: Locator.click: Timeout 20000ms exceeded.\nCall log:\n  - waiting for locator(\"[data-testid=\\\"cutscene\\\"]\").first\n"
-  ],
+  "errors": [],
   "shots": [
     "/home/user/IdleSliceHero/screenshots/v5.16/00-title-card.png",
     "/home/user/IdleSliceHero/screenshots/v5.16/01-opening-cutscene.png",
@@ -47,8 +43,10 @@
     "/home/user/IdleSliceHero/screenshots/v5.16/135-cards-effect-lines.png",
     "/home/user/IdleSliceHero/screenshots/v5.16/136-tutorial-frame.png",
     "/home/user/IdleSliceHero/screenshots/v5.16/137-heads-slammed.png",
+    "/home/user/IdleSliceHero/screenshots/v5.16/19-recipe-card-scene.png",
     "/home/user/IdleSliceHero/screenshots/v5.16/20-offline-capped.png",
     "/home/user/IdleSliceHero/screenshots/v5.16/21-pier9-bid-goal.png",
+    "/home/user/IdleSliceHero/screenshots/v5.16/22-dale-perk-card.png",
     "/home/user/IdleSliceHero/screenshots/v5.16/23-perk-banner-drawer.png",
     "/home/user/IdleSliceHero/screenshots/v5.16/24-settings-audio.png",
     "/home/user/IdleSliceHero/screenshots/v5.16/29-hud-rewards.png",
@@ -144,18 +142,30 @@
     "offline": [
       "suburbs.m4a @2.2"
     ],
+    "recipe": [
+      "downtown_sparse.m4a @2.2",
+      "downtown.m4a @2.5",
+      "bubble_1.m4a @2.5",
+      "triumph_downtown.m4a @5.5",
+      "bubble_2.m4a @5.5",
+      "bubble_1.m4a @6.8",
+      "bubble_0.m4a @8.1",
+      "bubble_1.m4a @9.4",
+      "recipe.m4a @9.8"
+    ],
     "session": [
       "suburbs.m4a @2.2",
-      "rush_0.m4a @6.1",
-      "rush_1.m4a @6.4",
-      "rush_3.m4a @6.6",
-      "rush_1.m4a @6.9",
+      "rush_1.m4a @6.1",
+      "rush_2.m4a @6.4",
+      "rush_0.m4a @6.6",
+      "rush_2.m4a @6.9",
       "rush_3.m4a @7.1",
-      "rush_0.m4a @7.4",
+      "rush_1.m4a @7.4",
       "click_0.m4a @8.6",
       "downtown.m4a @8.6",
-      "cash_1.m4a @9.8"
+      "cash_0.m4a @9.8"
     ]
   },
-  "cash_after_play": "$0"
+  "cash_after_play": "$0",
+  "earned_after_play": 24
 }

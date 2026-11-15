@@ -1,38 +1,6 @@
 {
- "new": 3,
- "findings": [
-  {
-   "kind": "clip",
-   "key": "(none) | # walk‑ins/s · +$#/min · pays back in #s",
-   "shots": [
-    "23-perk-banner-drawer"
-   ],
-   "detail": [
-    "text 56.0 px high in 42.0 px (3 lines)"
-   ]
-  },
-  {
-   "kind": "clip",
-   "key": "(none) | Night oven: holds # h",
-   "shots": [
-    "77-rack-card",
-    "78-auction-bid-card"
-   ],
-   "detail": [
-    "text 130.8 px in 126.9 px, drawn with an ellipsis"
-   ]
-  },
-  {
-   "kind": "clip",
-   "key": "goal | Waterfront",
-   "shots": [
-    "62-event-countdown-chip"
-   ],
-   "detail": [
-    "text 72.7 px in 39.5 px, drawn with an ellipsis"
-   ]
-  }
- ],
+ "new": 0,
+ "findings": [],
  "allowed": 9,
  "stale": []
 }

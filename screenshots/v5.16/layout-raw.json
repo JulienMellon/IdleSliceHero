@@ -1090,6 +1090,7 @@
    "detail": "42x44"
   }
  ],
+ "19-recipe-card-scene": [],
  "20-offline-capped": [],
  "21-pier9-bid-goal": [
   {
@@ -1128,12 +1129,8 @@
    "detail": "42x55"
   }
  ],
+ "22-dale-perk-card": [],
  "23-perk-banner-drawer": [
-  {
-   "kind": "clip",
-   "key": "(none) | # walk\u2011ins/s \u00b7 +$#/min \u00b7 pays back in #s",
-   "detail": "text 56.0 px high in 42.0 px (3 lines)"
-  },
   {
    "kind": "tap",
    "key": "open-scrapbook",
@@ -2254,16 +2251,6 @@
  ],
  "62-event-countdown-chip": [
   {
-   "kind": "clip",
-   "key": "goal | Waterfront",
-   "detail": "text 72.7 px in 39.5 px, drawn with an ellipsis"
-  },
-  {
-   "kind": "clip",
-   "key": "goal | Waterfront",
-   "detail": "text 72.7 px in 39.5 px, drawn with an ellipsis"
-  },
-  {
    "kind": "tap",
    "key": "open-scrapbook",
    "detail": "40x40"
@@ -2785,11 +2772,6 @@
  ],
  "77-rack-card": [
   {
-   "kind": "clip",
-   "key": "(none) | Night oven: holds # h",
-   "detail": "text 130.8 px in 126.9 px, drawn with an ellipsis"
-  },
-  {
    "kind": "tap",
    "key": "open-scrapbook",
    "detail": "40x40"
@@ -2821,11 +2803,6 @@
   }
  ],
  "78-auction-bid-card": [
-  {
-   "kind": "clip",
-   "key": "(none) | Night oven: holds # h",
-   "detail": "text 130.8 px in 126.9 px, drawn with an ellipsis"
-  },
   {
    "kind": "tap",
    "key": "open-scrapbook",
