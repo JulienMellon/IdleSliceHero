@@ -10,7 +10,77 @@
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.julienmellon.sliceempire",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSUserTrackingUsageDescription": "Slice Empire uses this to show ads that suit you. You can say no and still play.",
+        "GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511"
+      },
+      "privacyManifests": {
+        "NSPrivacyTracking": true,
+        "NSPrivacyTrackingDomains": [
+          "googleads.g.doubleclick.net"
+        ],
+        "NSPrivacyCollectedDataTypes": [
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeDeviceID",
+            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeTracking": true,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAnalytics"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeCrashData",
+            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePurchaseHistory",
+            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          }
+        ],
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "C617.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "35F9.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "E174.1"
+            ]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -35,11 +105,37 @@
           "imageWidth": 200
         }
       ],
-      ["expo-audio", { "enableBackgroundPlayback": false, "recordAudioAndroid": false }]
+      [
+        "expo-audio",
+        {
+          "enableBackgroundPlayback": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511",
+          "userTrackingUsageDescription": "Slice Empire uses this to show ads that suit you. You can say no and still play.",
+          "skAdNetworkItems": [
+            "cstr6suwn9.skadnetwork"
+          ]
+        }
+      ],
+      "@sentry/react-native/expo"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "configNotes": {
+        "admob": "iosAppId and GADApplicationIdentifier are Google's public SAMPLE app id. Put the real AdMob iOS app id in BOTH places (plugins -> react-native-google-mobile-ads -> iosAppId, and ios.infoPlist.GADApplicationIdentifier) before a store build.",
+        "skAdNetworkItems": "Only Google's own id is listed. Paste the full current list from Google's AdMob SKAdNetwork page into the plugin's skAdNetworkItems before a store build.",
+        "keys": "SDK keys are read in code from EXPO_PUBLIC_ADMOB_REWARDED_IOS, EXPO_PUBLIC_REVENUECAT_IOS_KEY, EXPO_PUBLIC_POSTHOG_KEY, EXPO_PUBLIC_POSTHOG_HOST and EXPO_PUBLIC_SENTRY_DSN; all default to empty (the service is then off). None is committed.",
+        "sentry": "Set SENTRY_DISABLE_AUTO_UPLOAD=true for builds without SENTRY_AUTH_TOKEN.",
+        "privacy": "ios.privacyManifests lists what the app itself and its SDKs collect; review it before submission."
+      }
     }
   }
 }

@@ -10,6 +10,8 @@ import { startAudio } from '@/audio/director';
 import { CutscenePlayer } from '@/components/cutscene-player';
 import { TitleCard } from '@/components/title-card';
 import { TUNING } from '@/content/tuning';
+import { TUTORIAL_DONE } from '@/engine/game';
+import { adsTutorialDone, analytics, EVENTS, startServices } from '@/services';
 import { useGame } from '@/store/game-store';
 import { C } from '@/theme';
 
@@ -48,6 +50,23 @@ function GameRunner() {
   return null;
 }
 
+/** Starts the four services (opt-out first, no prompts), counts sessions, and tells the ads when the tutorial is over. */
+function ServicesRunner() {
+  const tutorialDone = useGame((s) => s.game.tutorial >= TUTORIAL_DONE);
+  useEffect(() => {
+    void startServices().then(() => analytics.track(EVENTS.sessionStart));
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'background') analytics.track(EVENTS.sessionEnd);
+      if (state === 'active') analytics.track(EVENTS.sessionStart);
+    });
+    return () => sub.remove();
+  }, []);
+  useEffect(() => {
+    if (tutorialDone) adsTutorialDone();
+  }, [tutorialDone]);
+  return null;
+}
+
 function SceneOverlay() {
   const playing = useGame((s) => s.playing);
   const offline = useGame((s) => s.offline);
@@ -74,6 +93,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StatusBar style="light" />
       <GameRunner />
+      <ServicesRunner />
       <View style={{ flex: 1, backgroundColor: C.bg }}>
         {ready ? (
           <>
