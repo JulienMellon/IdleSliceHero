@@ -7,7 +7,7 @@ import { castOf } from '../../../engine/orders';
 import type { CharacterId, NeighborhoodId } from '../../../content/types';
 import type { RivalView } from '../../../engine/features/layers/rival';
 import { behindPace } from '../../order-model';
-import { CURB_Y, SCENE_H, SCENE_W } from '../../scene/projection';
+import { CURB_Y, SCENE_W } from '../../scene/projection';
 import { mmss, step5 } from '../layer-model';
 import { LABELS, rivalLine, rivalSpeaker } from '../layer-text';
 
@@ -22,21 +22,23 @@ export const rivalTagText = (v: Pick<RivalView, 'open' | 'valueMult'>): string =
 // ---------- the storefront across the street ----------
 
 /**
- * Where the MegaSlice shop stands: on the near side of the road, so it reads as "across the street" from the shop's door. It sits in the
- * bottom strip of the scene, below the curb and the sidewalk row (the row, the report strip and the doormat are all above the curb line),
- * at the right edge away from the door's walk-in lane, and small: a facade 96 wide whose roof edge, sign and awning show above the
- * screen's foot. Scene units.
+ * Where the MegaSlice shop stands: across the road from the shop's door, on the kerb at the road's foot, drawn whole (sign, awning, window,
+ * shutters) at 96 x 44, small and at the left, away from the door's walk-in lane. It sits below the curb and the sidewalk row (the row, the
+ * report strip and the doormat are all above the curb line). Scene units.
  */
 export const RIVAL_SHOP = {
   w: 96,
-  h: 34,
+  /** The whole shop, sign to foot (D481: drawn full, not cropped by the screen's foot). */
+  h: 44,
   /** Left edge and top. */
-  x: 12,
-  top: SCENE_H - 34,
+  x: 10,
+  top: 628,
+  /** The kerb strip it stands on, under its foot. */
+  kerb: 5,
 } as const;
 
 /** The rect the rival occupies (scene units): the tests keep it clear of the mat, the strip and the sidewalk row. */
-export const rivalRect = () => ({ x0: RIVAL_SHOP.x, x1: RIVAL_SHOP.x + RIVAL_SHOP.w, y0: RIVAL_SHOP.top, y1: SCENE_H });
+export const rivalRect = () => ({ x0: RIVAL_SHOP.x, x1: RIVAL_SHOP.x + RIVAL_SHOP.w, y0: RIVAL_SHOP.top, y1: RIVAL_SHOP.top + RIVAL_SHOP.h + RIVAL_SHOP.kerb });
 
 /** The road's lower edge is the screen's foot; the rival must stay below the curb. */
 export const RIVAL_BELOW = CURB_Y;
@@ -97,7 +99,8 @@ export function rivalCard(v: RivalView, hood: NeighborhoodId, result: 'won' | 'l
   const cast = castOf(hood);
   if (result === 'won') return { ...NONE(hood), face: 'won', who: cast.who, speaker: rivalSpeaker(hood, 'win') ?? cast.name, line: rivalLine(hood, 'win') };
   if (result === 'lost' && v.open) return { ...NONE(hood), face: 'lost', who: cast.who, speaker: rivalSpeaker(hood, 'lose') ?? cast.name, line: rivalLine(hood, 'lose') };
-  if (!v.open) return NONE(hood);
+  // 'waiting': the rival is open but the finale wait is not over (engine `challengeOffered`): nothing to start, nothing to show
+  if (!v.open || v.phase === 'waiting') return NONE(hood);
   if (v.phase === 'running') {
     const left = v.secondsLeft;
     return {

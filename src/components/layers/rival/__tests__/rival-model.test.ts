@@ -24,10 +24,12 @@ describe('the shop across the street', () => {
   test('it sits below the curb, inside the scene, away from the mat, the sidewalk row and the report strip', () => {
     const r = rivalRect();
     expect(r.y0).toBeGreaterThan(CURB_Y + 8);
-    expect(r.y1).toBe(SCENE_H);
+    expect(r.y1).toBeLessThanOrEqual(SCENE_H);
+    // drawn whole: its foot and kerb are on screen (D481)
+    expect(RIVAL_SHOP.top + RIVAL_SHOP.h + RIVAL_SHOP.kerb).toBeLessThanOrEqual(SCENE_H);
     expect(r.x0).toBeGreaterThanOrEqual(0);
     expect(r.x1).toBeLessThanOrEqual(SCENE_W);
-    expect(RIVAL_SHOP.h).toBeLessThanOrEqual(40);
+    expect(RIVAL_SHOP.h).toBeLessThanOrEqual(48);
     for (let fp = 0; fp < 5; fp++) {
       const lay = layout(fp, 2, 2, 2, 4, 3, 1);
       // the doormat is on the sidewalk, over 100 scene units above the road
@@ -48,8 +50,11 @@ describe('the shop across the street', () => {
 });
 
 describe('the challenge card', () => {
-  test('no rival, no card', () => {
+  test('no rival, no card; and none while the rival is still setting up (C120)', () => {
     expect(rivalCard(view({ open: false, phase: 'none' }), 'suburbs').face).toBe('none');
+    const wait = rivalCard(view({ phase: 'waiting', target: 0 }), 'suburbs');
+    expect(wait.face).toBe('none');
+    expect(wait.canStart).toBe(false);
   });
   test('the offer: the opener, the title with the pies, and a Start button', () => {
     const m = rivalCard(view({ target: 1234 }), 'suburbs');

@@ -1,6 +1,6 @@
 // Waterfront in the shop scene (SCENE_OVERLAYS slot): the boat in the harbour backdrop and the warming rack by the counter.
-//  - the boat sails in from the right over the 4 s before it docks, stays moored while the crew orders (30 s), and sails out;
-//    the shop's side wall hides the part of it that is behind the wall (clip at the room's front corner)
+//  - the boat sails in from the left over the 4 s before it docks, stays moored while the crew orders (30 s), and sails out;
+//    the shop's side wall hides the part of it that is behind the wall (clip at the room's left front corner)
 //  - the rack stands on the back wall right of the counter, four trays that fill with pies in four steps; nothing before tier 1
 import { memo, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -10,12 +10,12 @@ import { BOATS } from '../../../content/layers';
 import { boatsView } from '../../../engine/features/layers/waterfront-boats';
 import { useGame } from '../../../store/game-store';
 import { useClock } from '../../scene/clock';
-import { INK, P, SCENE_W, sceneFit } from '../../scene/projection';
+import { INK, P, sceneFit } from '../../scene/projection';
 import type { SceneSlotProps } from '../../slots';
 import { layoutOfShop } from '../shop-layout';
 import { BOAT, BOAT_ART, RACK_STEPS, RACK_W, boatDock, boatPose, rackBox, rackStep, untilNextBoat } from './boats-model';
 
-/** The boat, drawn at the origin on its waterline, bow to the left (it sails in from the right). */
+/** The boat, drawn at the origin on its waterline, bow to the left; the scene mirrors it so the bow leads (it sails in from the left). */
 const BoatArt = memo(function BoatArt({ docked }: { docked: boolean }) {
   return (
     <G>
@@ -102,11 +102,12 @@ export const HarbourScene = memo(function HarbourScene({ shopId, width, height }
   if (!shop.built) return null;
   const lay = layoutOfShop(shop);
   const fit = sceneFit(width, height);
-  const wallRight = P(lay.R, 0)[0];
+  const wallLeft = P(lay.L, 0)[0];
   const sinceTick = Math.max(0, (Date.now() - st.tickAt) / 1000);
   const pose = boatPose({ active: true, docked, untilNext: untilNextBoat(g, sinceTick) }, leftAt === null ? -1 : (Date.now() - leftAt) / 1000);
-  const dock = boatDock(SCENE_W, wallRight);
-  const boatX = dock.x + (1 - pose.along) * (SCENE_W + 60 - dock.x);
+  const dock = boatDock(wallLeft);
+  // sails in from beyond the left edge (and out the same way)
+  const boatX = dock.x - (1 - pose.along) * (dock.x + BOAT_ART.half + 40);
   const rb = rackKey > 0 ? rackBox(lay) : null;
   const tier = Math.floor(rackKey / 10);
   const step = rackKey % 10;
@@ -115,12 +116,12 @@ export const HarbourScene = memo(function HarbourScene({ shopId, width, height }
       <Svg width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
         <Defs>
           <ClipPath id="harbour-clip">
-            <Rect x={dock.clipX} y={0} width={SCENE_W + 80 - dock.clipX} height={BOAT_ART.waterline + 20} />
+            <Rect x={-120} y={0} width={120 + dock.clipX} height={BOAT_ART.waterline + 20} />
           </ClipPath>
         </Defs>
         {pose.phase !== 'away' && (
           <G clipPath="url(#harbour-clip)">
-            <G testID="boat" transform={`translate(${boatX.toFixed(1)} ${BOAT_ART.waterline}) scale(${BOAT_ART.scale})`}>
+            <G testID="boat" transform={`translate(${boatX.toFixed(1)} ${BOAT_ART.waterline}) scale(${-BOAT_ART.scale} ${BOAT_ART.scale})`}>
               <BoatArt docked={pose.phase === 'docked'} />
             </G>
           </G>

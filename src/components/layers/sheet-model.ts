@@ -5,10 +5,10 @@ import { money } from '../../engine/format';
 import { upgradeCostOf, type GameState } from '../../engine/game';
 import { gameDayView } from '../../engine/features/layers/suburbs-gameday';
 import { boatsView } from '../../engine/features/layers/waterfront-boats';
-import { rivalView } from '../../engine/features/layers/rival';
+import { rivalTarget, rivalView } from '../../engine/features/layers/rival';
 import type { NeighborhoodId } from '../../content/types';
 import { auctionStatus, tierName } from './waterfront/boats-model';
-import { rivalPercent } from './rival/rival-model';
+import { rivalCard, rivalPercent } from './rival/rival-model';
 import { mmss } from './layer-model';
 import { LABELS, lc, rivalLine, rivalSpeaker } from './layer-text';
 import type { SheetKind } from './sheet-state';
@@ -31,6 +31,8 @@ export interface SheetModel {
   speaker: string;
   rows: SheetRow[];
   buys: SheetBuy[];
+  /** The sheet's one button (the rival's Start), or null. */
+  action: { label: string; enabled: boolean } | null;
 }
 
 const price = (g: GameState, id: NeighborhoodId, what: 'tables' | 'ovens' | 'counter' | 'drivers' | 'prep'): string => {
@@ -46,6 +48,7 @@ export function gameDaySheet(g: GameState, now: number): SheetModel {
     title: lc('layer.suburbs.gameday.info.title'),
     body: lc('layer.suburbs.gameday.info.body'),
     speaker: '',
+    action: null,
     rows: [
       { key: 'next', label: v.rush ? LABELS.rushLeft : LABELS.nextGame, value: mmss(v.rush ? v.left : v.nextIn) },
       { key: 'seats', label: LABELS.seatsFree, value: `${v.seatsFree} / ${v.seats}` },
@@ -67,7 +70,7 @@ export function boatSheet(g: GameState, now: number): SheetModel {
   const buys: SheetBuy[] = [];
   if (v.rackPrice !== null) buys.push({ key: 'rack', title: `${tierName(v.rackTier + 1)} · ${money(v.rackPrice)}`, line: `Holds ${BOATS.rack.capacity[v.rackTier]} pies between boats.` });
   buys.push({ key: 'counter', title: `Counter · ${price(g, id, 'counter')}`, line: 'A faster counter empties the rack faster.' });
-  return { kind: 'boat', title: lc('layer.waterfront.boat.info.title'), body: `${lc('layer.waterfront.boat.info.body')} ${lc('upgrade.waterfront.rack.info.body')}`, speaker: '', rows, buys };
+  return { kind: 'boat', title: lc('layer.waterfront.boat.info.title'), body: `${lc('layer.waterfront.boat.info.body')} ${lc('upgrade.waterfront.rack.info.body')}`, speaker: '', rows, buys, action: null };
 }
 
 export function auctionSheet(g: GameState): SheetModel {
@@ -84,6 +87,7 @@ export function auctionSheet(g: GameState): SheetModel {
     title: lc('layer.waterfront.auction.info.title'),
     body: lc('layer.waterfront.auction.info.body'),
     speaker: '',
+    action: null,
     rows,
     buys: [
       { key: 'ovens', title: `Ovens · ${price(g, BOATS.hood, 'ovens')}`, line: lc('layer.waterfront.auction.outbid.line') },
@@ -94,20 +98,28 @@ export function auctionSheet(g: GameState): SheetModel {
 
 export function rivalSheet(g: GameState, id: NeighborhoodId, now: number): SheetModel {
   const v = rivalView(g, id, now);
+  // while the rival is still setting up (`waiting`) the view has no target: show what it would ask
+  const target = v.target > 0 ? v.target : rivalTarget(g, id, now);
+  const timeLabel = v.phase === 'retry' ? LABELS.retryIn : LABELS.timeLeft;
+  const rows: SheetRow[] = [
+    { key: 'sales', label: LABELS.sales, value: `\u2212${rivalPercent(v.valueMult)}%` },
+    { key: 'target', label: LABELS.target, value: `${target} pies` },
+  ];
+  if (v.phase === 'waiting') rows.push({ key: 'time', label: LABELS.challenge, value: LABELS.soon });
+  else rows.push({ key: 'time', label: timeLabel, value: mmss(v.phase === 'running' ? v.secondsLeft : v.phase === 'retry' ? v.retryIn : RIVAL.challengeSeconds) });
+  const card = rivalCard(v, id);
   return {
     kind: 'rival',
-    title: rivalLine(id, 'title', { n: v.target }),
+    title: rivalLine(id, 'title', { n: target }),
     body: rivalLine(id, 'open'),
     speaker: rivalSpeaker(id, 'open') ?? '',
-    rows: [
-      { key: 'sales', label: LABELS.sales, value: `−${rivalPercent(v.valueMult)}%` },
-      { key: 'target', label: LABELS.target, value: `${v.target} pies` },
-      { key: 'time', label: v.phase === 'running' ? LABELS.timeLeft : v.phase === 'retry' ? LABELS.retryIn : LABELS.timeLeft, value: mmss(v.phase === 'running' ? v.secondsLeft : v.phase === 'retry' ? v.retryIn : RIVAL.challengeSeconds) },
-    ],
+    rows,
     buys: [
       { key: 'rush', title: 'Rush the shop', line: 'The target is 20% above your normal pace: tap to rush while it runs.' },
       { key: 'prep', title: `Prep · ${price(g, id, 'prep')}`, line: 'A faster kitchen clears more pies in five minutes.' },
     ],
+    // the Start button: offered, or waiting out a retry (greyed); nothing while setting up or running
+    action: v.open && (v.phase === 'available' || v.phase === 'retry') ? { label: card.button, enabled: card.canStart } : null,
   };
 }
 

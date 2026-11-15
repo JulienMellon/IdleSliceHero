@@ -45,6 +45,8 @@ export const LABELS = {
   buy: 'Buy',
   start: 'Start',
   maxed: 'Biggest rack',
+  challenge: 'Challenge',
+  soon: 'Soon',
   fromGameDay: 'from Game Day',
   sold: 'sold',
 } as const;

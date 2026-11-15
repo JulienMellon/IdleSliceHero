@@ -48,6 +48,9 @@ describe('the info sheets say what it is, the numbers and what to buy', () => {
     expect(m.speaker).toBe('Todd');
     expect(m.rows[0]).toMatchObject({ key: 'sales', value: '−20%' });
     expect(m.rows[2].value).toBe('5:00');
+    // D480: the offer lives in the sheet: a Start button while the challenge may begin
+    expect(m.action).toEqual({ label: 'Start', enabled: true });
+    expect(gameDaySheet(base(), NOW).action).toBeNull();
   });
   test('sheetModel picks by kind', () => {
     const g = { ...base(), active: 'suburbs' as const };

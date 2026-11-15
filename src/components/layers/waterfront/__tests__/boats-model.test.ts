@@ -5,6 +5,7 @@ import '../../../../engine/features';
 import * as G from '../../../../engine/game';
 import type { BoatsView } from '../../../../engine/features/layers/waterfront-boats';
 import { layout } from '../../../scene/layout';
+import { P } from '../../../scene/projection';
 import {
   BOAT, BOAT_ART, RACK_STEPS, auctionCard, auctionStatus, boatBanner, boatDock, boatPose, harbourChip, rackBox, rackCard, rackStep, raiseNotice, tierName, untilNextBoat,
 } from '../boats-model';
@@ -32,13 +33,16 @@ describe('the warming rack in four steps', () => {
     for (let p = 0; p <= 80; p++) seen.add(rackStep(p, 80));
     expect([...seen].sort()).toEqual([0, 1, 2, 3, 4]);
   });
-  test('it stands on the back wall right of the counter, inside the room', () => {
+  test('it stands on the back wall at the counter\u2019s right end, clear of the front window\u2019s PIZZERIA sign, inside the room', () => {
     for (let fp = 0; fp < 5; fp++) {
       const lay = layout(fp, 2, 2, 2, 4, 3, 1);
       const b = rackBox(lay);
-      expect(b.x).toBeGreaterThan(0);
-      expect(b.y).toBeGreaterThan(0);
+      const half = (30 * 1.2 * b.k) / 2;
       expect(b.k).toBeGreaterThan(0.5);
+      // right of the counter's left end, left of the door's left jamb (the front window with the sign stands right of it)
+      expect(b.x - half).toBeGreaterThan(P(lay.counter.x0, 100)[0]);
+      expect(b.x + half).toBeLessThanOrEqual(P(lay.door.x0 + 12, 0)[0]);
+      expect(b.x + half).toBeLessThan(P(lay.R, 100)[0]);
     }
   });
   test('the card names the tier, what the next holds and its price', () => {
@@ -77,14 +81,19 @@ describe('the boat', () => {
     }
     expect(last).toBeGreaterThan(0.95);
   });
-  test('the dock is at the right edge and the shop wall clips what lies behind it', () => {
-    const wide = boatDock(393, 328);
-    expect(wide.x + BOAT_ART.half * BOAT_ART.scale).toBeLessThanOrEqual(393);
-    expect(wide.visible).toBeGreaterThan(30);
-    // at the flagship the margin is 22 pt: the wall hides the rest, but the bow and funnel still show
-    const narrow = boatDock(393, 371);
-    expect(narrow.visible).toBeGreaterThanOrEqual(18);
+  test('the dock is at the left pier and the shop wall clips what lies behind it', () => {
+    const wide = boatDock(58);
+    expect(wide.x - BOAT_ART.half * BOAT_ART.scale).toBeGreaterThanOrEqual(0);
+    expect(wide.visible).toBeGreaterThan(40);
+    // at the flagship the margin is 21 pt: the wall hides the rest, but the stern still shows
+    const narrow = boatDock(21);
+    expect(narrow.visible).toBeGreaterThanOrEqual(20);
     expect(narrow.visible).toBeLessThan(wide.visible);
+    // every footprint leaves at least half the boat showing
+    for (let fp = 0; fp < 5; fp++) {
+      const lay = layout(fp, 2, 2, 2, 4, 3, 1);
+      expect(boatDock(P(lay.L, 0)[0]).visible).toBeGreaterThanOrEqual(20);
+    }
   });
   test('the seconds to the next boat come from the saved schedule', () => {
     const g = auctionGame(380);

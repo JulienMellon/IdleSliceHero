@@ -48,15 +48,16 @@ export function untilNextBoat(g: GameState, sinceTick = 0): number {
 export const BOAT_ART = { half: 25, scale: 0.85, waterline: 231 } as const;
 
 /**
- * Where the boat docks and where the shop's side wall hides it. The pier is at the right edge of the harbour (the backdrop's pier runs
- * x 330..410), so the boat docks against the screen's right edge; `wallRight` (the room's front corner on screen) is the left edge of what
- * shows: the wall stands between the viewer and the sea, so a boat wider than the margin is clipped there, not drawn over the shop.
+ * Where the boat docks and where the shop's side wall hides it. D482: the boat docks at the LEFT pier (the backdrop's pier runs x -20..50,
+ * out at sea beyond the room's left wall), not at the right, where the shop's sign and the door's pillar stand. `wallLeft` (the room's front
+ * corner on screen) is the right edge of what shows: the wall stands between the viewer and the sea, so a boat wider than the margin is
+ * clipped there, not drawn over the shop. It sails in from beyond the left edge, bow first.
  */
-export function boatDock(sceneW: number, wallRight: number): { x: number; clipX: number; visible: number } {
-  const x = sceneW - BOAT_ART.half * BOAT_ART.scale - 3;
-  const clipX = Math.min(wallRight, sceneW);
-  const left = x - BOAT_ART.half * BOAT_ART.scale;
-  return { x, clipX, visible: Math.max(0, Math.min(sceneW, x + BOAT_ART.half * BOAT_ART.scale) - Math.max(clipX, left)) };
+export function boatDock(wallLeft: number): { x: number; clipX: number; visible: number } {
+  const half = BOAT_ART.half * BOAT_ART.scale;
+  const x = half;
+  const clipX = Math.max(0, wallLeft);
+  return { x, clipX, visible: Math.max(0, Math.min(clipX, x + half) - Math.max(0, x - half)) };
 }
 
 // ---------- the HUD chip ----------
@@ -101,12 +102,12 @@ export interface RackBox {
 export const RACK_W = 30;
 
 /**
- * Where the rack stands: on the back wall to the right of the counter, between its end and the room's right wall, where the drivers
- * pick up (layout.ts `spots`). The back wall is at room y 100, so the rack stands there and is drawn at that depth's scale.
+ * Where the rack stands: on the back wall at the counter's right end, just behind its pizza boxes (D482: further right it stood on the
+ * PIZZERIA window of the front). The back wall is at room y 100, so the rack stands there and is drawn at that depth's scale.
  */
 export function rackBox(lay: Pick<Layout, 'counter' | 'R'>): RackBox {
   const y = 100;
-  const x = Math.min(lay.counter.x1 + 24, lay.R - 22);
+  const x = Math.min(lay.counter.x1 + 2, lay.R - 30);
   const [sx, sy] = P(x, y);
   return { x: sx, y: sy, k: kAt(y) * 1.1 };
 }

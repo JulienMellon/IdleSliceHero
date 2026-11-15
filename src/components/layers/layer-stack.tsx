@@ -31,7 +31,6 @@ import { lc } from './layer-text';
 
 const NOTICE_MS = 3600;
 const AUCTION_OPEN_MS = 8000;
-const OFFER_OPEN_MS = 10_000;
 
 // ---------- the notice line ----------
 
@@ -107,16 +106,31 @@ const NoticeLine = memo(function NoticeLine({ text, good }: { text: string; good
 });
 
 // ---------- the rival's card ----------
+// D480: the offer is no longer a card over the roof: the "-20% sales" chip in the HUD opens the rival's sheet, which has Todd's line and the
+// Start button. Only a running challenge and how it ended stand in the column, one compact row each.
+
+/** Which of the column's pieces are up: the golden pizza waits while any is (G105), so it never flies over their words. */
+const holds = new Set<string>();
+function useHold(key: string, on: boolean) {
+  useEffect(() => {
+    if (on) holds.add(key);
+    else holds.delete(key);
+    useGame.getState().setLayerHold(holds.size > 0);
+    return () => {
+      holds.delete(key);
+      useGame.getState().setLayerHold(holds.size > 0);
+    };
+  }, [key, on]);
+}
 
 const RivalCard = memo(function RivalCard() {
   // Reads the live store below (like the order chip): React Compiler must not cache that.
   'use no memo';
   const hood = useGame((s) => s.game.active);
-  // the face and what changes under a running chip (whole seconds left, the pies bar's 5% step, the retry wait), in one string
+  // the face and what changes under a running chip (whole seconds left, the pies bar's 5% step), in one string
   const key = useGame((s) => rivalLite(rivalView(s.game, s.game.active, Date.now())));
   const phase = key.split('|')[1];
   const [result, setResult] = useState<{ kind: 'won' | 'lost'; hood: typeof hood } | null>(null);
-  const [expanded, setExpanded] = useState(true);
   const prev = useRef({ phase, hood });
   const [flash] = useState(() => new Animated.Value(0));
   const root = useRef<ComponentRef<typeof View>>(null);
@@ -146,61 +160,26 @@ const RivalCard = memo(function RivalCard() {
     });
     return () => run.stop();
   }, [result, flash]);
-  useEffect(() => {
-    if (phase !== 'available') return;
-    setExpanded(true);
-    const t = setTimeout(() => setExpanded(false), OFFER_OPEN_MS);
-    return () => clearTimeout(t);
-  }, [phase, hood]);
 
   const g = useGame.getState().game;
   const shown = result && result.hood === hood ? result.kind : null;
   const m: RivalCardModel = rivalCard(rivalView(g, hood, Date.now()), hood, shown);
-  if (m.face === 'none') return null;
-  if (m.face === 'offer' && !expanded) {
-    return (
-      <Pressable testID="rival-badge" accessibilityRole="button" accessibilityLabel={`${m.title}. Show`} onPress={() => setExpanded(true)} style={styles.badge}>
-        <Portrait id={m.who} mood="angry" size={36} />
-      </Pressable>
-    );
-  }
-  if (m.face === 'offer') {
-    return (
-      <View testID="rival-offer" style={styles.card}>
-        <View style={styles.row}>
-          <Portrait id={m.who} mood="angry" size={40} />
-          <View style={styles.mid}>
-            <Text style={styles.title} numberOfLines={2} maxFontSizeMultiplier={1.1}>{m.title}</Text>
-            <Text style={styles.line} numberOfLines={2} maxFontSizeMultiplier={1.1}>{m.line}</Text>
-          </View>
-          <Pressable
-            testID="rival-start"
-            accessibilityRole="button"
-            accessibilityState={{ disabled: !m.canStart }}
-            onPress={() => {
-              if (m.canStart) haptic();
-              useGame.getState().startRival(hood);
-            }}
-            style={[styles.start, !m.canStart && styles.startWait]}
-          >
-            <Text style={styles.startText} numberOfLines={2} maxFontSizeMultiplier={1.1}>{m.button}</Text>
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
+  const up = m.face === 'running' || m.face === 'won' || m.face === 'lost';
+  useHold('rival', up);
+  if (!up) return null;
   if (m.face === 'running') {
     return (
       <View testID="rival-chip" style={styles.card}>
         <Pressable testID="rival-active" accessibilityLabel={`${m.title}: ${m.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); useGame.getState().setActive(hood); }}>
-          <Portrait id={m.who} mood="angry" size={40} />
+          <Portrait id={m.who} mood="angry" size={34} />
           <View style={styles.mid}>
-            <Text style={styles.name} numberOfLines={1}>{m.title}</Text>
-            <Text testID="rival-progress" style={styles.progress} numberOfLines={1}>{m.progress}</Text>
+            <Text testID="rival-progress" style={styles.progress} numberOfLines={1}>
+              {m.progress}
+              {m.behind ? <Text testID="rival-rush" style={styles.rush}>{'  tap to rush!'}</Text> : null}
+            </Text>
             <View style={styles.track}>
               <View style={[styles.fill, { width: `${pct5(m.fillStep)}%` }]} />
             </View>
-            {m.behind && <Text testID="rival-rush" style={styles.rush} numberOfLines={1}>tap to rush!</Text>}
           </View>
           <View style={styles.right}>
             <Text testID="rival-clock" style={[styles.clock, m.urgent && styles.clockUrgent]}>{m.clock}</Text>
@@ -215,10 +194,9 @@ const RivalCard = memo(function RivalCard() {
     <Animated.View ref={root} testID={`rival-${m.face}`} style={[styles.card, won ? styles.cardWon : styles.cardLost]}>
       {won && <Animated.View pointerEvents="none" style={[styles.glow, { opacity: flash }]} />}
       <Pressable accessibilityRole="button" accessibilityLabel={`${m.speaker}: ${m.line}. Dismiss`} style={styles.row} onPress={() => setResult(null)}>
-        <Portrait id={m.who} mood={won ? 'happy' : 'sad'} size={40} />
+        <Portrait id={m.who} mood={won ? 'happy' : 'sad'} size={34} />
         <View style={styles.mid}>
-          <Text style={styles.name} numberOfLines={1}>{m.speaker}</Text>
-          <Text testID="rival-line" style={styles.line} numberOfLines={3} maxFontSizeMultiplier={1.1}>{m.line}</Text>
+          <Text testID="rival-line" style={styles.line} numberOfLines={3} maxFontSizeMultiplier={1.1}>{`${m.speaker}: ${m.line}`}</Text>
         </View>
       </Pressable>
     </Animated.View>
@@ -241,6 +219,7 @@ export const LayerStack = memo(function LayerStack() {
   });
   const transient = useTransientNotice();
   const text = transient?.text ?? base;
+  useHold('notice', !!text);
   return (
     <View testID="layer-stack" pointerEvents="box-none" style={[styles.stack, { top }]}>
       <NoticeLine text={text} good={!!transient?.good} />
@@ -254,13 +233,11 @@ const styles = StyleSheet.create({
   notice: { height: ROWS.notice, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderRadius: 15, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.cheeseDark, boxShadow: '0 2px 0 rgba(59,31,20,0.25)' } as object,
   noticeGood: { backgroundColor: '#CDEFC9', borderColor: C.basilDark },
   noticeText: { fontFamily: F.bold, fontSize: 13, color: C.ink },
-  card: { minHeight: ROWS.rival, backgroundColor: '#FFF4DC', borderWidth: 2, borderColor: '#5A2E1A', borderRadius: 16, paddingLeft: 8, paddingRight: 4, justifyContent: 'center', overflow: 'hidden', boxShadow: '0 3px 0 rgba(59,31,20,0.25)' } as object,
+  card: { minHeight: ROWS.rival, maxHeight: 64, backgroundColor: '#FFF4DC', borderWidth: 2, borderColor: '#5A2E1A', borderRadius: 16, paddingLeft: 8, paddingRight: 4, justifyContent: 'center', overflow: 'hidden', boxShadow: '0 3px 0 rgba(59,31,20,0.25)' } as object,
   cardWon: { backgroundColor: '#FFD04A', borderColor: C.cheeseDark },
   cardLost: { backgroundColor: '#EFE6D8', borderColor: C.inkSoft },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: TAP.min },
   mid: { flex: 1, justifyContent: 'center' },
-  name: { fontFamily: F.bold, fontSize: 11.5, lineHeight: 14, color: C.tomatoDark },
-  title: { fontFamily: F.bold, fontSize: 11.5, lineHeight: 14, color: C.tomatoDark },
   line: { fontFamily: F.semi, fontSize: 11.5, lineHeight: 13, color: C.ink },
   progress: { fontFamily: F.bold, fontSize: 14, lineHeight: 16, color: C.ink },
   track: { height: 8, borderRadius: 4, backgroundColor: '#E2D3BC', overflow: 'hidden', marginTop: 2 },
@@ -271,8 +248,4 @@ const styles = StyleSheet.create({
   rush: { fontFamily: F.bold, fontSize: 11, lineHeight: 13, color: C.tomato },
   drain: { position: 'absolute', left: 0, bottom: 0, height: 4, backgroundColor: C.tomato },
   glow: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#FFF6C2' },
-  badge: { alignSelf: 'flex-end', width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF4DC', borderWidth: 2, borderColor: '#5A2E1A', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  start: { minWidth: 64, maxWidth: 84, height: 44, borderRadius: 14, paddingHorizontal: 6, backgroundColor: C.tomato, borderWidth: 2, borderColor: C.tomatoDark, alignItems: 'center', justifyContent: 'center' },
-  startWait: { backgroundColor: C.locked, borderColor: C.lockedDark },
-  startText: { fontFamily: F.bold, fontSize: 12, lineHeight: 14, color: '#fff', textAlign: 'center' },
 });

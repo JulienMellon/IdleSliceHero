@@ -154,6 +154,39 @@ export function waveFigures(lay: Pick<Layout, 'door'>, t: number, families: numb
   return out;
 }
 
+export interface SeatedFamily {
+  key: string;
+  /** The chair the family took (room position, and which way it faces: the right-hand chair faces left). */
+  x: number;
+  y: number;
+  flip: boolean;
+  seed: number;
+  /** Seconds since the family sat down: a burst of confetti plays over the first BURST_SECONDS. */
+  age: number;
+}
+
+/** The confetti over a chair a family has just taken. */
+export const BURST_SECONDS = 0.9;
+
+/**
+ * Who is seated `t` seconds into the rush: the family that has come in sits in the next free chair (the order `chairsOf` gives), and
+ * stays for the rest of the rush. At most `free` chairs fill, and never more than there are families.
+ */
+export function seatedFamilies(lay: Pick<Layout, 'door'>, chairs: readonly Chair[], free: number, t: number, families: number): SeatedFamily[] {
+  const gap = spreadGap(lay, families);
+  const walk = walkTime(lay);
+  const out: SeatedFamily[] = [];
+  const n = Math.min(families, free, chairs.length);
+  for (let i = 0; i < n; i++) {
+    const age = t - (i * gap + walk);
+    if (age < 0) break;
+    const c = chairs[i];
+    // the right-hand chair of a table faces left (scene/cast.ts: the companion), the left one faces right
+    out.push({ key: `sf${i}`, x: c.x, y: c.y, flip: i < chairs.length / 2, seed: 7300 + i * 5, age });
+  }
+  return out;
+}
+
 /** Screen point of a room point on the floor. */
 export const floorPt = (x: number, y: number): [number, number] => P(x, y);
 
