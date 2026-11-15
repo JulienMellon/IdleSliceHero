@@ -10,7 +10,7 @@ last_shots: v5.16-r3           # label of the last screenshot set that passed ve
 codecritic_range_start: aff34d1
 cards:                 # todo | running | done | partial | blocked
   (v5.17 cards: see docs/build/v5.17/VERSION.md)
-  S2a partial  S2b done  T1b partial  U5 done
+  N1 running  A1 running  U3 todo  L1 todo  U4 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.16/review-r3-critic.md (r3 NOT SATISFIED, minors only -> close; bug 0 major 0 minor 10; E2 U3 S4 T1)
   code:   docs/build/v5.16/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 3 low 23; E16 U5 S3 A2)
@@ -21,7 +21,6 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-15 18:28 UTC r3 T1a done (S47 scene, Raj line; golden re-recorded; 639 pass; sim 40/40). S2b launched.
 - 2026-11-15 18:31 UTC r3 S2b done (U18; components 723 pass). U5 launched.
 - 2026-11-15 18:31 UTC r3 S2a done (D481 D482 fixed + tests; 723 pass). Needs: D491 MegaSlice van only while rivalOpen (scene/street.tsx, storefront.tsx -> P1). T1b launched.
 - 2026-11-15 18:34 UTC r3 T1b done (D490 already fixed; no edits). P1 launched (+D491).
@@ -31,3 +30,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md
 - 2026-11-15 18:40 UTC r3 all fixes in (S2a eventViewNow calls). Verify v5.16-r3.
 - 2026-11-15 18:57 UTC Verify v5.16-r3 PASS: True 0 [], layout 0 new; 83 changed. r3 re-checks: critic, story (sonnet).
 - 2026-11-15 18:58 UTC v5.16 closed: r3 critic minors only (10), story SATISFIED, code APPROVED (r2). Next v5.17.
+- 2026-11-15 v5.17 r1 wave 1 launched: N1 + A1.
