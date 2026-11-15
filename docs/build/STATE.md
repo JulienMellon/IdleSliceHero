@@ -10,13 +10,13 @@ last_shots: v5.15-loop      # label of the last screenshot set that passed verif
 codecritic_range_start: f83d281
 cards:                 # todo | running | done | partial | blocked
   W2 done  E0 done  E2a done  P1 partial  E2b done  T1a done
-  S2a running  S2b running  T1b todo  U5 todo
+  S2a partial  S2b running  T1b todo  U5 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.15/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 8; U5 S3; carried)
   code:   docs/build/v5.15/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 16; E8 U4 S4 A2; C116/C117 carry)
   story:  docs/build/v5.16/review-r0-story.md (r0 NOT SATISFIED; bug 0 major 1 minor 16; E1 U2 T14; S26 to writer)
   audio:  AUDIOLOG.md (next ID AU78)
-open: S2a gets P1 Needs (storefront slammedAsks, pulse-bus onServicePulse, pier9Price UI + layer views); P1 fixture shots 130-137 unrun (py playwright missing after restart). v5.16 finale day 5.106 vs 4.8±0.3 (pinned ±0.31; shorten uptown-2b or -3b wait ~1 min, T). v5.16 for later cards: waterfront-3b P4 "Bid two million" vs $120M bid (W/T); scenes mix straight+curly quotes (T); migrated hire scenes raise Scrapbook badge on old saves (T1b); S5 Dale perk text not applied; Downtown beat 4 stays a pizza count. loop_stats.py can't read 'loop:' commits (5.15-loop METRICS row by hand). Shot 18-sold-sign-scene now always taken (93 shots), no fixture expect yet (Q2 lane). v5.15 carried: critic minors (docs/build/v5.15/review-r3-critic.md); code C116, C117 + lows (docs/build/v5.15/review-r2-code.md); story r0 minors; D465 needs copy key.
+open: S2a Needs: app/index.tsx goal bar uses PIER9_BID.cost not pier9Price (U -> U5 extra); golden pizza (stack-model holdsBonus) flies over rival notice+offer card (E); copy rows missing: rival info text, LABELS in layer-text.ts, "−20% sales", "from Game Day" (T). S2a step 5 carried rows D471 D475 D450 out of scope. S2a gets P1 Needs (storefront slammedAsks, pulse-bus onServicePulse, pier9Price UI + layer views); P1 fixture shots 130-137 unrun (py playwright missing after restart). v5.16 finale day 5.106 vs 4.8±0.3 (pinned ±0.31; shorten uptown-2b or -3b wait ~1 min, T). v5.16 for later cards: waterfront-3b P4 "Bid two million" vs $120M bid (W/T); scenes mix straight+curly quotes (T); migrated hire scenes raise Scrapbook badge on old saves (T1b); S5 Dale perk text not applied; Downtown beat 4 stays a pizza count. loop_stats.py can't read 'loop:' commits (5.15-loop METRICS row by hand). Shot 18-sold-sign-scene now always taken (93 shots), no fixture expect yet (Q2 lane). v5.15 carried: critic minors (docs/build/v5.15/review-r3-critic.md); code C116, C117 + lows (docs/build/v5.15/review-r2-code.md); story r0 minors; D465 needs copy key.
 next: fresh session; read docs/build/sessions/S3-v5.16-second-half.md (wave 6: S2a + S2b)
 ```
 
@@ -33,3 +33,4 @@ next: fresh session; read docs/build/sessions/S3-v5.16-second-half.md (wave 6: S
 - 2026-11-14 18:14 UTC Session break: tsc clean, 1183/1183 tests (T1a fixed audio cue). S2 ends; PR to main.
 - 2026-11-14 18:27 UTC S3 start: npm ci; py playwright 1.63.0 pinned (matches /opt/pw-browsers). Wave 6: S2a + S2b launched.
 - 2026-11-15 00:04 UTC S2a + S2b hit 5-hour limit mid-card (tsc clean, work on disk); both resumed via SendMessage.
+- 2026-11-15 00:13 UTC S2a partial (steps 1-4; tsc ok; components 668/669, fail is S2b's shift chip; shots 74-81 ok). Waiting on S2b.
