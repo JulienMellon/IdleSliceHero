@@ -88,7 +88,7 @@ export const DOWNTOWN_SCENES: Scene[] = [
         lines: [
           { speaker: 'You', text: 'Our first regular is a "Mr. Smith." He tipped in MegaSlice coupons.' },
           { speaker: 'Nonna Rosa', text: 'Suspicious. But a tip is a tip.' },
-          { speaker: 'Nonna Rosa', text: 'Four hundred pizzas. In my day, that was Tuesday.' },
+          { speaker: 'Nonna Rosa', text: 'Four hundred pizzas. Is small. Is a start. Keep going, eh?' },
         ],
       },
     ],
@@ -153,7 +153,7 @@ export const DOWNTOWN_SCENES: Scene[] = [
       {
         backdrop: 'downtown',
         cast: [],
-        caption: "Two thousand deliveries. Downtown smells like Rosa's again.",
+        caption: "A hundred and fifty deliveries. Before lunch. Downtown smells like Rosa's again.",
         lines: [],
       },
       {

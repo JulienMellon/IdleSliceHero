@@ -260,7 +260,7 @@ export const UPTOWN_SCENES: Scene[] = [
         backdrop: 'uptown',
         cue: 'triumph',
         cast: [{ id: 'genevieve', mood: 'happy' }],
-        caption: 'Front page: five stars. Page 2: MEGASLICE YACHT WAS A RENTAL. The marble boutique has a For Lease sign.',
+        caption: 'Front page: five stars. Page 2: MEGASLICE YACHT WAS A RENTAL.',
         lines: [
           { speaker: 'Genevieve', text: '"The best pizza in Port Marinara is not on a yacht. It is on a bike. Lately, a drone."' },
           { speaker: 'Genevieve', text: 'I returned the yacht. Croissant was seasick anyway.' },
@@ -275,6 +275,7 @@ export const UPTOWN_SCENES: Scene[] = [
         ],
         caption: 'Every neighborhood has chosen you. MegaSlice is out of Port Marinara.',
         lines: [
+          { speaker: 'Victor Crust', text: 'My boutique has a For Lease sign. And now THIS?' },
           { speaker: 'Victor Crust', text: 'A RENTAL? On PAGE TWO? Who talked?' },
           { speaker: 'Todd', text: 'Me. Hi. I quit.' },
         ],

@@ -260,6 +260,12 @@ export const INDUSTRIAL_SCENES: Scene[] = [
     panels: [
       {
         backdrop: 'industrial',
+        cast: [],
+        caption: 'Across the street, the all-night MegaSlice is dark. The door finally closed.',
+        lines: [],
+      },
+      {
+        backdrop: 'industrial',
         cast: [{ id: 'big-sal', mood: 'happy' }],
         caption: 'The MegaSlice machines are gone. Mysteriously. Nobody saw anything.',
         lines: [

@@ -200,20 +200,28 @@
 
 | Key | Scene · panel · slot | Speaker | Old | New |
 | --- | --- | --- | --- | --- |
-| `beat4.downtown-4` | downtown-4 · P1 caption | caption | A hundred and fifty deliveries. Downtown smells like Rosa’s again. | keep (protected; see `held.downtown-4.p1`) |
+| `beat4.downtown-4` | downtown-4 · P1 caption | caption | A hundred and fifty deliveries. Downtown smells like Rosa’s again. | A hundred and fifty deliveries. Before lunch. Downtown smells like Rosa’s again. |
 | `beat4.suburbs-4.p1` | suburbs-4 · new P1, caption only · backdrop suburbs · no cast | caption | none | Across the street, the MegaSlice balloons are gone. One drifts past the window. |
 | `beat4.waterfront-4` | waterfront-4 | — | none | — |
 | `beat4.university-4` | university-4 | — | none | — |
 | `beat4.industrial-4.p1` | industrial-4 · new P1, caption only · backdrop industrial · no cast (scene goes to 5 panels) | caption | none | Across the street, the all-night MegaSlice is dark. The door finally closed. |
-| `beat4.uptown-4.drop` | uptown-4 · the caption-only P1 the scene file added | caption | The marble boutique has a For Lease sign. The doorman stays at his post. | remove (6 panels breaks the 3–5 rule); `beat4.uptown-4.p2.l1` replaces it |
-| `beat4.uptown-4.p2.l1` | uptown-4 · P2 (megaslice-hq) · new line 1, before “A RENTAL?” | Victor Crust | none | My boutique has a For Lease sign. And now THIS? |
+| `beat4.uptown-4.drop` | uptown-4 · 5 panels, no caption-only P1 (P1 is Genevieve’s review) | caption | The marble boutique has a For Lease sign. The doorman stays at his post. | none (cut); `beat4.uptown-4.p2.l1` carries it |
+| `beat4.uptown-4.p2.l1` | uptown-4 · P2 (megaslice-hq) · line 1, before “A RENTAL?” | Victor Crust | none | My boutique has a For Lease sign. And now THIS? |
 
 ## 3. Text fixes held for the rebalance
 
 | Key | Scene · panel | Old | New |
 | --- | --- | --- | --- |
+| `fix.downtown-2.p1` | downtown-2 · P1 caption | Twelve deliveries. The phone is actually ringing. | Four hundred deliveries. The phone is actually ringing. |
+| `fix.downtown-2.p3.l3` | downtown-2 · P3 · line 3 · Nonna Rosa | Twelve pizzas. Is small. Is a start. Keep going, eh? | Four hundred pizzas. Is small. Is a start. Keep going, eh? |
+| `fix.downtown-4.p1` | downtown-4 · P1 caption | A hundred and fifty deliveries. Downtown smells like Rosa’s again. | A hundred and fifty deliveries. Before lunch. Downtown smells like Rosa’s again. |
+| `fix.waterfront-3.p3.l1` | waterfront-3 · P3 · line 1 · Victor Crust | The auction closes soon. Outbid MegaSlice? With pizza money? Ha! | An auction? Against MegaSlice? With pizza money? Ha! |
+| `fix.waterfront-3b.p4.l1` | waterfront-3b · P4 · line 1 · Captain Marisol | The auction’s open, kid. Bid two million and Pier 9 stays a pier. | Auction’s open, kid. They raise every two minutes. Beat ’em to it. |
+| `fix.university-3c.p2` | university-3c · P2 caption | A MegaSlice stairwell. A man peels off a mustache. | A MegaSlice stairwell. A man wipes off his mustache. With a napkin. |
+| `fix.university-4.p3.l3` | university-4 · P3 · line 3 · Priya | University is officially Team You. Now… about those unlimited slices. | Now, about those unlimited slices. I brought a list. It has tabs. |
+| `fix.industrial-2b.p3.l2` | industrial-2b · P3 · line 2 · Big Sal | Also your mustache is on upside down. Don’t tell me why. I hate why. | Also you drew your mustache on upside down. Don’t tell me why. I hate why. |
 | `fix.uptown-4.p1.drone` | uptown-4 · P1 · Genevieve | "The best pizza in Port Marinara is not on a yacht. It is on a bike. Lately, a drone." | keep as is |
-| `fix.uptown-4.p5.boston` | uptown-4 · P5 caption (last panel) | Port Marinara is yours. Next stop: Boston. | keep (protected) |
+| `fix.uptown-4.p5.boston` | uptown-4 · P5 caption (last of 5 panels) | Port Marinara is yours. Next stop: Boston. | keep (protected) |
 
 ### Added lines (review r1)
 
@@ -221,19 +229,6 @@
 | --- | --- | --- | --- |
 | `add.suburbs-4.p4.l3` | suburbs-4 · P4 (script P3, the win) · line 3 | Dale | Poor Todd lost the ‘Senior.’ Wonder what they make him do next. |
 | `add.industrial-4.p5.l3` | industrial-4 · P5 (script P4) · line 3 | Big Sal | Your mustache kid came by. Says he’s off to Uptown. Wouldn’t say as what. |
-
-### Script lines held for Julien (protected: the copy keeps the script text until he approves the proposal)
-
-| Key | Scene · panel · slot | Speaker | Script (current copy) | Proposed | Why |
-| --- | --- | --- | --- | --- | --- |
-| `held.downtown-2.p1` | downtown-2 · P1 caption | caption | Twelve deliveries. The phone is actually ringing. | Four hundred deliveries. The phone is actually ringing. | trigger is 424 |
-| `held.downtown-2.p3.l3` | downtown-2 · P3 · line 3 | Nonna Rosa | Twelve pizzas. Is small. Is a start. Keep going, eh? | Four hundred pizzas. Is small. Is a start. Keep going, eh? | trigger is 424 |
-| `held.downtown-4.p1` | downtown-4 · P1 caption | caption | A hundred and fifty deliveries. Downtown smells like Rosa’s again. | A hundred and fifty deliveries. Before lunch. Downtown smells like Rosa’s again. | trigger is 2,217; keeps the protected sentence |
-| `held.waterfront-3.p3.l1` | waterfront-3 · P3 · line 1 | Victor Crust | The auction closes soon. Outbid MegaSlice? With pizza money? Ha! | An auction? Against MegaSlice? With pizza money? Ha! | the live auction never closes |
-| `held.waterfront-3b.p4.l1` | waterfront-3b · P4 · line 1 | Captain Marisol | The auction’s open, kid. Bid two million and Pier 9 stays a pier. | Auction’s open, kid. They raise every two minutes. Beat ’em to it. | the bid is not two million; raises every 2 min |
-| `held.university-3c.p2` | university-3c · P2 caption | caption | A MegaSlice stairwell. A man peels off a mustache. | A MegaSlice stairwell. A man wipes off his mustache. With a napkin. | the mustache is drawn on (downtown-5) |
-| `held.industrial-2b.p3.l2` | industrial-2b · P3 · line 2 | Big Sal | Also your mustache is on upside down. Don’t tell me why. I hate why. | Also you drew your mustache on upside down. Don’t tell me why. I hate why. | the mustache is drawn on |
-| `held.university-4.p3.l3` | university-4 · P3 · line 3 | Priya | University is officially Team You. Now… about those unlimited slices. | Now, about those unlimited slices. I brought a list. It has tabs. | a pull forward |
 
 ## 4. Head story lines
 

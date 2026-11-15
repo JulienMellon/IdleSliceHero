@@ -20,6 +20,6 @@ describe('golden scenes', () => {
   });
 
   it('golden: JSON.stringify(HOME_SCENES) hashes to the recorded script', () => {
-    expect(sha1(JSON.stringify(HOME_SCENES))).toBe('946565984eab85cd4b0345b13ca654c53be004ae');
+    expect(sha1(JSON.stringify(HOME_SCENES))).toBe('296711073924a6a335c17c2216a57ac5d56bfa1c');
   });
 });
