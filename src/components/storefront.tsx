@@ -225,7 +225,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // a running weekly event (D470): the sky goes to dusk, string lights come on, and two more hungry diners stand in the lane while the shop sells
   // (activeEvent is looked up once a second, not on every 15 fps frame: U15)
   const nowSec = Math.floor(Date.now() / 1000);
-  if (eventAt.current.sec !== nowSec) eventAt.current = { sec: nowSec, ev: activeEvent(nowSec * 1000) };
+  if (eventAt.current.sec !== nowSec) eventAt.current = { sec: nowSec, ev: activeEvent(nowSec * 1000, game) };
   const evLook = eventLook(eventAt.current.ev, id, running);
   const q0 = running ? Game.queueSizes(shop, game.vehicle) : undefined;
   const queue = q0 && evLook.extraDiners ? { ...q0, diners: q0.diners + evLook.extraDiners } : q0;
