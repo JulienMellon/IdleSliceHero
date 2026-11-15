@@ -12,10 +12,11 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-nativ
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
 
 import { BONUS, BONUS_VIEW, LUCKY_MULT } from '../content/hooks';
-import { bonusPath, bonusScale, edgeRider, flightX, laneY, skyBottom, isFirstGift, pipsLabel, popPlace, salesLine, sparkleTrail, streakPips } from '../engine/bonus';
+import { bonusPath, bonusScale, flightX, laneY, skyBottom, isFirstGift, pipsLabel, popPlace, salesLine, sparkleTrail, streakPips } from '../engine/bonus';
 import { money } from '../engine/format';
 import { bonusBlocked, useGame } from '../store/game-store';
 import { F } from '../theme';
+import { FLIGHT_FADE, flightBounds } from './endgame/stack-model';
 import { haptic } from './game-ui';
 import { emitCheer, emitCoin, emitPayout } from './pulse-bus';
 import { useMotion } from './scene/clock';
@@ -137,15 +138,11 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
   const flapScale = fly.flap.interpolate({ inputRange: [0, 1], outputRange: [1, 0.5] });
   const twinkle = fly.flap.interpolate({ inputRange: [0, 1], outputRange: [1, 0.35] });
   const rays = bw * 1.7;
-  // G95: the label and the tag ride the box but stay on screen (and fade out with it) at the edges
-  const giftRide = gift ? edgeRider(width, bw, BONUS_VIEW.giftWidth) : null;
-  const tagRide = pips.lucky ? edgeRider(width, bw, BONUS_VIEW.tagWidth) : null;
-  // D489: the box itself is never seen half off the screen: it is clear while it straddles an edge and solid once it is 8 pt or more inside
-  const boxFade = (() => {
-    const at = (left: number) => (left + bw) / (width + bw);
-    const a = [0, at(-bw / 2), at(BONUS_VIEW.popEdge), at(width - BONUS_VIEW.popEdge - bw), at(width - bw / 2), 1];
-    return width > 0 && a.every((v, i) => i === 0 || v > a[i - 1]) ? { input: a, output: [0, 0, 1, 1, 0, 0] } : null;
-  })();
+  // D489 (U4): the box and the label over it fly inside the screen (flightBounds, stack-model.ts): the label is centred on the box and the
+  // flight is held far enough from both edges for it; the ends of the flight fade instead of sliding off the screen
+  const labelW = gift ? BONUS_VIEW.giftWidth : pips.lucky ? BONUS_VIEW.tagWidth : 0;
+  const bounds = flightBounds(width, bw, labelW);
+  const labelShift = (bw - labelW) / 2;
   return (
     <Animated.View
       pointerEvents="box-none"
@@ -155,9 +152,9 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
           top: lane,
           width: bw,
           height: bh + PIPS_H,
-          ...(boxFade ? { opacity: fly.x.interpolate({ inputRange: boxFade.input, outputRange: boxFade.output }) } : null),
+          opacity: fly.x.interpolate({ inputRange: [0, FLIGHT_FADE, 1 - FLIGHT_FADE, 1], outputRange: [0, 1, 1, 0] }),
           transform: [
-            { translateX: fly.x.interpolate({ inputRange: [0, 1], outputRange: [-bw, width] }) },
+            { translateX: fly.x.interpolate({ inputRange: [0, 1], outputRange: [bounds.from, bounds.to] }) },
             { translateY: fly.bob.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: [0, -b, 0, b, 0] }) },
           ],
         },
@@ -201,11 +198,8 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
           <Box />
         </Svg>
       </Pressable>
-      {tagRide && (
-        <Animated.View
-          testID="golden-lucky-tag"
-          pointerEvents="none"
-          style={[styles.tag, { transform: [{ translateX: fly.x.interpolate({ inputRange: tagRide.input, outputRange: tagRide.shift }) }], opacity: fly.x.interpolate({ inputRange: tagRide.input, outputRange: tagRide.opacity }) }]}>
+      {pips.lucky && (
+        <Animated.View testID="golden-lucky-tag" pointerEvents="none" style={[styles.tag, { transform: [{ translateX: labelShift }] }]}>
           <Text style={styles.tagText}>LUCKY</Text>
         </Animated.View>
       )}
@@ -217,11 +211,8 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
           {pipsLabel(taps)}
         </Text>
       </View>
-      {giftRide && !toastUp && (
-        <Animated.View
-          testID="golden-gift"
-          pointerEvents="none"
-          style={[styles.gift, { transform: [{ translateX: fly.x.interpolate({ inputRange: giftRide.input, outputRange: giftRide.shift }) }], opacity: fly.x.interpolate({ inputRange: giftRide.input, outputRange: giftRide.opacity }) }]}>
+      {gift && !toastUp && (
+        <Animated.View testID="golden-gift" pointerEvents="none" style={[styles.gift, { transform: [{ translateX: labelShift }] }]}>
           <Text style={styles.giftText}>{BONUS_VIEW.giftLine}</Text>
         </Animated.View>
       )}

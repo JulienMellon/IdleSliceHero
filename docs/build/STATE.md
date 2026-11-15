@@ -10,7 +10,7 @@ last_shots: v5.16-r3           # label of the last screenshot set that passed ve
 codecritic_range_start: aff34d1
 cards:                 # todo | running | done | partial | blocked
   (v5.17 cards: see docs/build/v5.17/VERSION.md)
-  N1 done  A1 done  U3 done  L1 done  U4 running
+  N1 done  A1 done  U3 done  L1 done  U4 partial
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.16/review-r3-critic.md (r3 NOT SATISFIED, minors only -> close; bug 0 major 0 minor 10; E2 U3 S4 T1)
   code:   docs/build/v5.16/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 3 low 23; E16 U5 S3 A2)
@@ -45,3 +45,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md
 - 2026-11-15 v5.17 r1 U3 done (settings music, links, a11y, 4 events; 854 pass; 98_u3 0 err, layout 0 new). Open: awning-founder not drawn (facade/storefront, cosmeticName, Style tab) -> P lane; clipboard; Swap generator. Wave 3: U4 launched.
 - 2026-11-15 v5.17 r1 L1 done (perf 0/1200 >16ms; 6 store shots 1320x2868). Awning-founder fix launched on v5.16 card-P1.
 - 2026-11-15 v5.17 r1 awning-founder done (facade/storefront/rewards/shop-model; 183 pass). Carried: vanity-art icon fallback, copy key.
+- 2026-11-15 v5.17 r1 U4 partial (focus, sky queue, task pills, day-30; 828 pass; 148_u4 0 err). Needs: offer clock hold (-> U3). Kept U4 default: event holds strip 15 s. Carried: day-30 name placeholder (writer).

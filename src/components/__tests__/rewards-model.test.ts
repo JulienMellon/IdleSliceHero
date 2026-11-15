@@ -1,9 +1,9 @@
 /// <reference types="jest" />
-import { DAILY_CHESTS, DAILY_TASK_REWARD, GIFT_DAYS, VISITOR_LINES, WEEKLY_FALLBACK, WEEKLY_TASK_REWARD } from '../../content/rewards';
+import { DAILY_CHESTS, DAILY_TASK_REWARD, GIFT_DAYS, GIFT_MILESTONES, VISITOR_LINES, WEEKLY_FALLBACK, WEEKLY_TASK_REWARD } from '../../content/rewards';
 import * as G from '../../engine/game';
 import { dayKey, refreshRewards, taskDone } from '../../engine/rewards';
 import { NONNA_TAKEOVER } from '../../content/tuning';
-import { BOOST_STRIP, boostFadeShown, boostChip, boosterLabel, boosterStartLabel, boostOnText, boostRingPct, boostedRate, boostSummary, chestRows, collectionText, compactSpan, countdownText, dailyRows, giftHeader, giftIcon, giftShort, giftText, giftTiles, hudBoostText, citywideText, hudRateText, pointsPct, TAP_PREP_TEXT, rewardsHud, spanText, visitCaption, weeklyChestView, weeklyRows } from '../rewards-model';
+import { BOOST_STRIP, boostFadeShown, boostChip, boosterLabel, boosterStartLabel, boostOnText, boostRingPct, boostedRate, boostSummary, chestRows, collectionText, compactSpan, countdownText, dailyRows, progressPill, giftHeader, giftIcon, giftShort, giftText, giftTiles, hudBoostText, citywideText, hudRateText, pointsPct, TAP_PREP_TEXT, rewardsHud, spanText, visitCaption, weeklyChestView, weeklyRows } from '../rewards-model';
 
 const NOW = new Date(2026, 9, 28, 13, 7, 41, 333).getTime(); // a Wednesday
 const DAY = 86_400_000;
@@ -143,6 +143,50 @@ describe('task rows', () => {
     s = withR(s, { daily: [{ kind: 'earn', target: 5000, base: s.totalEarned - 1234.56789, claimed: false }] });
     const r = dailyRows(s)[0];
     expect(r.progress).toBe('$1.23K / $5K');
+  });
+});
+
+describe('U4: an unfinished task shows its progress where the padlock was', () => {
+  test('"3 / 5" with the label "In progress, 3 of 5"; a finished or claimed task has no pill', () => {
+    let s = base();
+    s = withR(s, { daily: [{ kind: 'walkins', target: 5, base: 0, claimed: false }, { kind: 'walkins', target: 5, base: 0, claimed: false }, { kind: 'walkins', target: 5, base: 0, claimed: true }] });
+    s = { ...s, stats: { ...s.stats, walkins: 3 } };
+    const rows = dailyRows(s);
+    expect(rows[0].state).toBe('todo');
+    expect(rows[0].pill).toBe('3 / 5');
+    expect(rows[0].pillLabel).toBe('In progress, 3 of 5');
+    expect(rows[2].state).toBe('claimed');
+    expect([rows[2].pill, rows[2].pillLabel]).toEqual(['', '']);
+    s = { ...s, stats: { ...s.stats, walkins: 5 } };
+    expect(dailyRows(s)[0].state).toBe('ready');
+    expect(dailyRows(s)[0].pill).toBe('');
+  });
+  test('weekly rows too; a cash task shows its percent and says the money in the label', () => {
+    let s = base();
+    s = withR(s, { daily: [{ kind: 'earn', target: 5000, base: s.totalEarned - 1250, claimed: false }] });
+    const r = dailyRows(s)[0];
+    expect(r.pill).toBe('25%');
+    expect(r.pillLabel).toBe('In progress, $1.25K of $5K');
+    expect(weeklyRows(base()).every((w) => w.state !== 'todo' || /^[\d.,KMBT$%]+( \/ [\d.,KMBT]+)?$/.test(w.pill))).toBe(true);
+    expect(progressPill(s, s.rewards.daily[0]).pill.length).toBeLessThanOrEqual(9);
+  });
+  test('every pill is short enough for the 60 pt pill at 10 pt or more (at most 9 characters)', () => {
+    const s = base();
+    for (const r of [...dailyRows(s), ...weeklyRows(s)]) expect(r.pill.length).toBeLessThanOrEqual(9);
+  });
+});
+
+describe('U4: the day-30 cell is named', () => {
+  test('only day 30 carries the prize name (from the content) and what it is; no cell says just "Visit"', () => {
+    const t = giftTiles(base(), NOW);
+    const named = t.filter((x) => x.name !== '');
+    expect(named.map((x) => x.day)).toEqual([30]);
+    expect(named[0].name).toBe(GIFT_MILESTONES[30].name);
+    expect(named[0].name).not.toBe('Visit');
+    expect(named[0].what).toMatch(/2× income for 7 days/);
+    expect(named[0].what).toMatch(/300 diamonds/);
+    expect(named[0].what).toMatch(/Gold oven/);
+    expect(t.filter((x) => x.day !== 30).every((x) => x.what === '')).toBe(true);
   });
 });
 

@@ -111,6 +111,10 @@ export interface TaskRow {
   /** 0..1 */
   pct: number;
   state: TaskState;
+  /** U4: what the pill by an unfinished task says instead of a padlock: "3 / 5" (a cash task: its percent, "25%"). Empty once the task is ready or claimed. */
+  pill: string;
+  /** The pill's spoken label: "In progress, 3 of 5". */
+  pillLabel: string;
   reward: string;
   /** v5.15: a daily task of the kind Head of the Week's station earns (engine/features/heads.ts `isStarredTask`): the row wears a star. */
   starred: boolean;
@@ -123,9 +127,21 @@ function progressText(s: GameState, t: Task): string {
   return TASK_TEXT[t.kind].unit === 'cash' ? `${money(Math.floor(p))} / ${money(t.target)}` : `${pizzas(p)} / ${count(t.target)}`;
 }
 
+/** U4: the in-progress pill's text and label for an unfinished task (the bar says the same in full; the pill fits 60 pt). */
+export function progressPill(s: GameState, t: Task): { pill: string; pillLabel: string } {
+  const p = R.taskProgress(s, t);
+  if (TASK_TEXT[t.kind].unit === 'cash') {
+    const pct = t.target > 0 ? Math.min(99, Math.floor((p / t.target) * 100)) : 0;
+    return { pill: `${pct}%`, pillLabel: `In progress, ${money(Math.floor(p))} of ${money(t.target)}` };
+  }
+  return { pill: `${pizzas(p)} / ${count(t.target)}`, pillLabel: `In progress, ${pizzas(p)} of ${count(t.target)}` };
+}
+
 function taskRow(s: GameState, t: Task, index: number, reward: string, starred = false): TaskRow {
   const state: TaskState = t.claimed ? 'claimed' : R.taskDone(s, t) ? 'ready' : 'todo';
+  const pill = state === 'todo' ? progressPill(s, t) : { pill: '', pillLabel: '' };
   return {
+    ...pill,
     index,
     title: R.taskTitle(t),
     progress: t.claimed ? 'Done' : progressText(s, t),
@@ -235,6 +251,9 @@ export interface GiftTile {
   icon: GiftIconKind;
   big: boolean;
   state: TileState;
+  /** U4: the prize's name and what it is, for the day-30 cell (drawn full width, the most prominent); '' on the other tiles. */
+  name: string;
+  what: string;
 }
 
 export function giftTiles(s: GameState, now: number): GiftTile[] {
@@ -246,7 +265,8 @@ export function giftTiles(s: GameState, now: number): GiftTile[] {
     else if (st.kind === 'claimed') state = day <= st.day ? 'claimed' : 'future';
     else if (st.kind === 'save') state = day < st.day ? 'claimed' : day === st.day ? 'missed' : 'future';
     else state = day < st.day ? 'claimed' : day === st.day ? 'today' : 'future';
-    return { day, label: giftShort(g), icon: giftIcon(g), big: day in GIFT_MILESTONES, state };
+    const last = day === GIFT_LENGTH;
+    return { day, label: giftShort(g), icon: giftIcon(g), big: day in GIFT_MILESTONES, state, name: last ? g.name ?? 'Day 30 prize' : '', what: last ? giftText(g, st.cycle) : '' };
   });
 }
 
