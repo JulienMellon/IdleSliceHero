@@ -24,7 +24,7 @@ function uptown(p: Partial<Shop> & { tier?: number; cash?: number; tiers?: numbe
 describe('the pay rule', () => {
   it('names half pay under 3 stars, full pay at 3 and 4, double pay at 5', () => {
     expect([1, 2, 3, 4, 5].map((n) => PAY_WORDS[payTagOf(n === 5 ? STARS.pay.top : n >= 3 ? STARS.pay.mid : STARS.pay.low)])).toEqual(['Half pay', 'Half pay', 'Full pay', 'Full pay', 'Double pay']);
-    expect(PAY_RULE).toBe('Under 3★ half pay · 3–4★ full pay · 5★ double pay');
+    expect(PAY_RULE).toBe('Below 3★: half pay. 3–4★: full pay. 5★: double pay.');
   });
 
   it('finds the points a star takes', () => {

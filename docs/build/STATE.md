@@ -39,3 +39,4 @@ next: v5.16 fix round r2 in progress (step fix, round r2). Done this round: E0 E
 - 2026-11-15 14:26 UTC r2 W2 done (8 held rows official). All r2 cards in; verify v5.16-r2.
 - 2026-11-15 14:29 UTC verify r2: tsc ok; 4 red (layer copy tests vs new copy rows) -> S2a + S2b.
 - 2026-11-15 14:32 UTC r2 S2a done (layer-copy synced; 1 red stars-model PAY_RULE -> S2b running).
+- 2026-11-15 14:34 UTC r2 S2b done (copy synced; components 723/723).
