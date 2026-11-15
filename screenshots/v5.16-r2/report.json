@@ -1,8 +1,6 @@
 {
   "version": "v5.16-r2",
-  "errors": [
-    "fixture 82_s2b.py: expected text /drones? up/ in testid \"university-chip\" before shot 84-drones"
-  ],
+  "errors": [],
   "shots": [
     "/home/user/IdleSliceHero/screenshots/v5.16-r2/00-title-card.png",
     "/home/user/IdleSliceHero/screenshots/v5.16-r2/01-opening-cutscene.png",
@@ -138,9 +136,9 @@
   "loaded": true,
   "audio": {
     "opening": [
-      "downtown_sparse.m4a @2.8",
-      "bubble_0.m4a @3.0",
-      "bubble_2.m4a @4.1"
+      "downtown_sparse.m4a @3.1",
+      "bubble_0.m4a @3.3",
+      "bubble_1.m4a @4.4"
     ],
     "offline": [
       "suburbs.m4a @2.2"
@@ -148,22 +146,22 @@
     "recipe": [
       "downtown_sparse.m4a @2.2",
       "downtown.m4a @2.4",
-      "bubble_1.m4a @2.4",
+      "bubble_0.m4a @2.4",
       "triumph_downtown.m4a @5.5",
       "bubble_2.m4a @5.5",
       "bubble_0.m4a @6.8",
       "bubble_1.m4a @8.1",
-      "bubble_0.m4a @9.4",
+      "bubble_2.m4a @9.4",
       "recipe.m4a @9.8"
     ],
     "session": [
       "suburbs.m4a @2.2",
-      "rush_1.m4a @6.1",
-      "rush_2.m4a @6.3",
-      "rush_3.m4a @6.6",
-      "rush_2.m4a @6.8",
-      "rush_1.m4a @7.1",
-      "rush_3.m4a @7.3",
+      "rush_2.m4a @6.1",
+      "rush_1.m4a @6.3",
+      "rush_0.m4a @6.6",
+      "rush_3.m4a @6.8",
+      "rush_2.m4a @7.1",
+      "rush_0.m4a @7.3",
       "click_0.m4a @8.6",
       "downtown.m4a @8.6",
       "cash_0.m4a @9.8"
