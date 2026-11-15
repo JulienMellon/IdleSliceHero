@@ -42,7 +42,7 @@ describe('which face the attack shows', () => {
     expect(attackFace(v)).toBe('banner');
     expect(attackLite(g)).toMatchObject({ face: 'banner', shopId: v.shopId });
     expect(b.name).toBe(v.name);
-    expect(b.title).toBe('MegaSlice is coming! Defend your shop.');
+    expect(b.title).toBe('MegaSlice attacks this week! Out-sell them to win.');
     expect(b.victor).toMatch(/\S/);
     expect(b).toMatchObject({ canDefend: true, button: 'Defend' });
   });

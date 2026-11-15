@@ -1,4 +1,4 @@
-// A recipe card turns over in the middle of the scene (BANNERS slot): D469. It flips open from its edge onto the card's picture, a "NEW RECIPE"
+// A recipe card turns over at the top of the scene, in the sky band, so the kitchen stays in view (BANNERS slot; D478): D469. It flips open from its edge onto the card's picture, a "NEW RECIPE"
 // header, the name and the line; coins fly from it to the cash and the cooks cheer. A tap closes it (or it closes by itself after 4 s). The
 // cards of one batch show one after another. Primitive state only; the card is drawn at 220 pt or less, so it fits an iPhone SE.
 import { memo, useEffect, useRef, useState, type ComponentRef } from 'react';
@@ -56,7 +56,7 @@ export const RecipeReveal = memo(function RecipeReveal() {
 });
 
 const styles = StyleSheet.create({
-  layer: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  layer: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'flex-start', paddingTop: 8 },
   card: { alignItems: 'center', gap: 4, paddingVertical: 14, paddingHorizontal: 14, borderRadius: 18, borderWidth: 3, borderColor: C.cheeseDark, backgroundColor: '#FFF9EC', boxShadow: '0 6px 0 rgba(59,31,20,0.3)' } as object,
   header: { fontFamily: F.bold, fontSize: 12, letterSpacing: 1.5, color: C.tomato },
   name: { fontFamily: F.bold, fontSize: 18, lineHeight: 21, color: C.ink, textAlign: 'center' },

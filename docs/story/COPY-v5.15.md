@@ -138,17 +138,17 @@
 | `attack.uptown.win` | Genevieve | Gold leaf on cardboard is still cardboard, darling. We won. |
 | `attack.uptown.lose` | Genevieve | A dreadful week. I shall pretend it never happened. So will you. |
 | `attack.chip.title` | — | MegaSlice Counter-Attack |
-| `attack.banner` | — | MegaSlice is coming! Defend your shop. |
+| `attack.banner` | — | MegaSlice attacks this week! Out-sell them to win. |
 
 ## 4. Rush-hour events
 
 | Key | Speaker | Text |
 | --- | --- | --- |
 | `rush.friday.banner` | — | Friday Night Rush! |
-| `rush.friday.chip` | — | Rush: {time} left |
+| `rush.friday.chip` | — | Rush in {time} |
 | `rush.friday.start` | Captain Marisol | Friday night, crew! The whole dock’s hungry. All hands to the ovens! |
-| `rush.gameday.banner` | — | Big Game Day! |
-| `rush.gameday.chip` | — | Game: {time} left |
+| `rush.gameday.banner` | — | Mudhens Playoff Rush! |
+| `rush.gameday.chip` | — | Playoffs in {time} |
 | `rush.gameday.start` | Dale | Big game today, pal! Every family wants pizza at halftime. Go, Mudhens! |
 
 ## 5. Mastery
@@ -161,7 +161,7 @@
 | `mastery.flagship.toast` | — | Flagship {shop}! Fly the flag! |
 | `mastery.gold.name` | — | Golden Ovens |
 | `mastery.gold.toast` | — | Golden ovens glow in {shop}! |
-| `mastery.all` | Nonna Rosa | Eighteen stars, cara mia. Every shop, every oven. Now I can finally sit down. |
+| `mastery.all` | Nonna Rosa | Eighteen stars, cara mia. Every shop, every oven. Now I sit down. On the bus. To Boston. |
 
 ## 6. Post-story
 

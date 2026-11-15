@@ -48,3 +48,4 @@ next: v5.16 fix round r2 in progress (step fix, round r2). Done this round: E0 E
 - 2026-11-15 18:28 UTC r3 T1a done (S47 scene, Raj line; golden re-recorded; 639 pass; sim 40/40). S2b launched.
 - 2026-11-15 18:31 UTC r3 S2b done (U18; components 723 pass). U5 launched.
 - 2026-11-15 18:31 UTC r3 S2a done (D481 D482 fixed + tests; 723 pass). Needs: D491 MegaSlice van only while rivalOpen (scene/street.tsx, storefront.tsx -> P1). T1b launched.
+- 2026-11-15 18:34 UTC r3 T1b done (D490 already fixed; no edits). P1 launched (+D491).

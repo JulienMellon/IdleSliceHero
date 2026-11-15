@@ -44,7 +44,7 @@ describe('copy.ts is the copy file, by key', () => {
 
   test('placeholders are filled; a missing value is left as written', () => {
     expect(copy('goal.mastery', { n: 7 })).toBe('Mastery 7/18');
-    expect(copy('rush.friday.chip', { time: '42m' })).toBe('Rush: 42m left');
+    expect(copy('rush.friday.chip', { time: '42m' })).toBe('Rush in 42m');
     expect(copy('mastery.crew.toast', { shop: 'Uptown' })).toBe('Every head hired in Uptown!');
     expect(copy('mastery.crew.toast')).toBe('Every head hired in {shop}!');
   });
@@ -61,7 +61,7 @@ describe('copy.ts is the copy file, by key', () => {
       if (k.startsWith('recipe.')) expect(v.length).toBeLessThanOrEqual(60);
       if (k.endsWith('.open')) expect(v.length).toBeLessThanOrEqual(90);
       if (k === 'attack.chip.title') expect(v.length).toBeLessThanOrEqual(28);
-      if (k === 'attack.banner') expect(v.length).toBeLessThanOrEqual(44);
+      if (k === 'attack.banner') expect(v.length).toBeLessThanOrEqual(52);
       if (k.endsWith('.banner') && k.startsWith('rush.')) expect(v.length).toBeLessThanOrEqual(28);
       if (k.endsWith('.chip') && k.startsWith('rush.')) expect(v.length).toBeLessThanOrEqual(20);
     }

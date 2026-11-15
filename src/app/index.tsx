@@ -385,8 +385,8 @@ export default function GameScreen() {
                   <StationCard
                     testID="buy-night-oven"
                     icon={<MoonIcon size={26} />}
-                    // D487: "holds 8 h" never breaks before the unit
-                    title={(ovenView.next ? ovenView.next.title : `Night oven: holds ${ovenView.hours}`).replace(/(\d) h$/, '$1\u00A0h')}
+                    // D487: "Night oven · 8 h" is short enough for one line, and the unit never breaks off the number
+                    title={`Night oven · ${(ovenView.next ? ovenView.next.hours : ovenView.hours).replace(/(\d) h$/, '$1\u00A0h')}`}
                     detail={ovenView.next ? ovenView.next.lock ?? `Nonna keeps baking while you're away · now ${ovenView.hours}` : 'Biggest it gets'}
                     cost={ovenView.next && !ovenView.next.lock ? ovenView.next.price : null}
                     costLabel={ovenView.next ? 'Locked' : 'MAX'}

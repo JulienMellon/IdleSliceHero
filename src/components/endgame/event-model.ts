@@ -25,7 +25,7 @@ export const eventTime = (seconds: number): string => {
   return s >= 60 ? `${Math.ceil(s / 60)}m` : `${s}s`;
 };
 
-/** "Rush: 42m left": the chip in the hour before an event starts; '' while one runs or none is near (the chip is then not drawn). */
+/** "Rush in 42m": the chip in the hour before an event starts; '' while one runs or none is near (the chip is then not drawn). */
 export function eventChipText(v: EventView | null): string {
   if (!v || v.active) return '';
   return copy(`rush.${COPY_EVENT[v.def.id]}.chip`, { time: eventTime(v.seconds) });
