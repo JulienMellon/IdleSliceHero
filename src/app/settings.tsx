@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { musicSuppressed, onMusicSuppressed } from '@/audio/director';
 import { useAudioPrefs } from '@/audio/prefs';
 import { BuyButton } from '@/components/game-ui';
 import { BUTTON_H, TAP } from '@/components/tap-targets';
@@ -24,6 +25,18 @@ export default function Settings() {
   const [confirm, setConfirm] = useState(false);
   const music = useAudioPrefs((s) => s.music);
   const sound = useAudioPrefs((s) => s.sound);
+  // AU41: another app's audio switched Music off for this session; the saved preference is untouched, the switch shows what plays
+  const [hushed, setHushed] = useState(musicSuppressed);
+  useEffect(() => onMusicSuppressed(setHushed), []);
+  const musicShown = music && !hushed;
+  const pressMusic = () => {
+    const prefs = useAudioPrefs.getState();
+    // while hushed the player's tap means "on": a toggle ends the rule, so go off and on again (the preference ends as it was)
+    if (hushed && music) {
+      prefs.setMusic(false);
+      prefs.setMusic(true);
+    } else prefs.setMusic(!music);
+  };
   // the opt-out is saved by the privacy service; the switch shows what it holds now
   const [shareOn, setShareOn] = useState(() => !privacy.isOptedOut());
   const [installId] = useState(() => installIdText(analytics.installId()));
@@ -71,7 +84,7 @@ export default function Settings() {
           <Text style={styles.cardTitle}>Audio</Text>
           <Text style={styles.stat}>Follows your ring/silent switch.</Text>
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
-            <Toggle label="Music" on={music} onPress={() => useAudioPrefs.getState().setMusic(!music)} testID="toggle-music" />
+            <Toggle label="Music" on={musicShown} onPress={pressMusic} testID="toggle-music" />
             <Toggle label="Sound" on={sound} onPress={() => useAudioPrefs.getState().setSound(!sound)} testID="toggle-sound" />
           </View>
         </View>

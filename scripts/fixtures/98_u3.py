@@ -52,7 +52,7 @@ def run(ctx):
     # 98: claim a finished daily task; the card says what it paid and offers to pay it again for an ad
     try:
         page = tasks_page(browser, "?ads=rewarded")
-        expect(page, "swap-daily-2")  # an unfinished row offers the day's swap
+        expect(page, "swap-daily-3")  # an unfinished row offers the day's swap
         tid(page, "claim-daily-0").click()
         expect(page, "claim-sheet")
         expect(page, "claim-double")
