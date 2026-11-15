@@ -12,12 +12,14 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-nativ
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
 
 import { BONUS, BONUS_VIEW, LUCKY_MULT } from '../content/hooks';
-import { bonusPath, bonusScale, edgeRider, flightX, laneY, skyBottom, isFirstGift, pipsLabel, popPlace, salesLine, sparkleTrail, streakPips } from '../engine/bonus';
+import { bonusPath, bonusScale, flightX, laneY, skyBottom, isFirstGift, pipsLabel, popPlace, salesLine, sparkleTrail, streakPips } from '../engine/bonus';
 import { money } from '../engine/format';
 import { bonusBlocked, useGame } from '../store/game-store';
 import { F } from '../theme';
+import { FLIGHT_FADE, flightBounds } from './endgame/stack-model';
 import { haptic } from './game-ui';
 import { emitCheer, emitCoin, emitPayout } from './pulse-bus';
+import { useMotion } from './scene/clock';
 import { FRONT_TOP, P, sceneFit } from './scene/projection';
 
 const { width: W, height: H } = BONUS_VIEW;
@@ -87,6 +89,7 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
   const bw = W * k;
   const bh = H * k;
   // where it is in its flight now (it may come back mid-way after a drawer), and the values that carry it
+  const { loops } = useMotion();
   const [fly] = useState(() => {
     const g = useGame.getState().game;
     const left = Math.max(0.1, g.bonus.until - g.playSeconds);
@@ -95,6 +98,12 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
   });
   useEffect(() => {
     const run = Animated.timing(fly.x, { toValue: fly.toX, duration: fly.ms, easing: Easing.linear, useNativeDriver: true });
+    run.start();
+    return () => run.stop();
+  }, [fly]);
+  // Reduce Motion and the background stop the turning rays, the bobbing and the wing flap; the flight across the sky is the game and goes on
+  useEffect(() => {
+    if (!loops) return;
     const bob = Animated.loop(Animated.timing(fly.bob, { toValue: 1, duration: BONUS_VIEW.bobMs, easing: Easing.linear, useNativeDriver: true }));
     const flap = Animated.loop(
       Animated.sequence([
@@ -103,17 +112,15 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
       ]),
     );
     const spin = Animated.loop(Animated.timing(fly.spin, { toValue: 1, duration: BONUS_VIEW.raysMs, easing: Easing.linear, useNativeDriver: true }));
-    run.start();
     bob.start();
     flap.start();
     spin.start();
     return () => {
-      run.stop();
       bob.stop();
       flap.stop();
       spin.stop();
     };
-  }, [fly]);
+  }, [fly, loops]);
   const b = BONUS_VIEW.bobPx;
   const g = BONUS_VIEW.glowPx;
   const gift = isFirstGift(n, taps);
@@ -131,15 +138,11 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
   const flapScale = fly.flap.interpolate({ inputRange: [0, 1], outputRange: [1, 0.5] });
   const twinkle = fly.flap.interpolate({ inputRange: [0, 1], outputRange: [1, 0.35] });
   const rays = bw * 1.7;
-  // G95: the label and the tag ride the box but stay on screen (and fade out with it) at the edges
-  const giftRide = gift ? edgeRider(width, bw, BONUS_VIEW.giftWidth) : null;
-  const tagRide = pips.lucky ? edgeRider(width, bw, BONUS_VIEW.tagWidth) : null;
-  // D489: the box itself is never seen half off the screen: it is clear while it straddles an edge and solid once it is 8 pt or more inside
-  const boxFade = (() => {
-    const at = (left: number) => (left + bw) / (width + bw);
-    const a = [0, at(-bw / 2), at(BONUS_VIEW.popEdge), at(width - BONUS_VIEW.popEdge - bw), at(width - bw / 2), 1];
-    return width > 0 && a.every((v, i) => i === 0 || v > a[i - 1]) ? { input: a, output: [0, 0, 1, 1, 0, 0] } : null;
-  })();
+  // D489 (U4): the box and the label over it fly inside the screen (flightBounds, stack-model.ts): the label is centred on the box and the
+  // flight is held far enough from both edges for it; the ends of the flight fade instead of sliding off the screen
+  const labelW = gift ? BONUS_VIEW.giftWidth : pips.lucky ? BONUS_VIEW.tagWidth : 0;
+  const bounds = flightBounds(width, bw, labelW);
+  const labelShift = (bw - labelW) / 2;
   return (
     <Animated.View
       pointerEvents="box-none"
@@ -149,9 +152,9 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
           top: lane,
           width: bw,
           height: bh + PIPS_H,
-          ...(boxFade ? { opacity: fly.x.interpolate({ inputRange: boxFade.input, outputRange: boxFade.output }) } : null),
+          opacity: fly.x.interpolate({ inputRange: [0, FLIGHT_FADE, 1 - FLIGHT_FADE, 1], outputRange: [0, 1, 1, 0] }),
           transform: [
-            { translateX: fly.x.interpolate({ inputRange: [0, 1], outputRange: [-bw, width] }) },
+            { translateX: fly.x.interpolate({ inputRange: [0, 1], outputRange: [bounds.from, bounds.to] }) },
             { translateY: fly.bob.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: [0, -b, 0, b, 0] }) },
           ],
         },
@@ -162,7 +165,7 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
         </Animated.View>
       )}
       {/* the glow, 10 pt past the box all round */}
-      <Svg pointerEvents="none" width={bw + 2 * g} height={bh + 2 * g} viewBox={`0 0 ${bw + 2 * g} ${bh + 2 * g}`} style={{ position: 'absolute', left: -g, top: -g }}>
+      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none" width={bw + 2 * g} height={bh + 2 * g} viewBox={`0 0 ${bw + 2 * g} ${bh + 2 * g}`} style={{ position: 'absolute', left: -g, top: -g }}>
         <Defs>
           <RadialGradient id="gpGlow" cx="50%" cy="50%" rx="50%" ry="50%">
             <Stop offset="0.55" stopColor="#FFE27A" stopOpacity={pips.lucky ? 0.9 : 0.75} />
@@ -173,7 +176,7 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
       </Svg>
       {/* three sparkles trailing behind the flight */}
       <Animated.View pointerEvents="none" style={{ position: 'absolute', left: -60 * k, top: 0, opacity: twinkle }}>
-        <Svg width={180 * k} height={bh} viewBox="-60 0 180 44">
+        <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={180 * k} height={bh} viewBox="-60 0 180 44">
           {sparkleTrail(path.dir).map((sp, i) => (
             <Path key={i} d={sparkle(30 + sp.x, 22 + sp.y, sp.r)} fill="#FFF6C2" stroke="#E0A800" strokeWidth={0.6} />
           ))}
@@ -191,15 +194,12 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
         accessibilityLabel={pips.lucky ? 'Lucky golden pizza. Tap for a big bonus' : 'Golden pizza. Tap for a bonus'}
         onPress={(e) => onTap(e.nativeEvent.pageX, e.nativeEvent.pageY)}
         style={{ width: bw, height: bh }}>
-        <Svg width={bw} height={bh} viewBox="0 0 60 44">
+        <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={bw} height={bh} viewBox="0 0 60 44">
           <Box />
         </Svg>
       </Pressable>
-      {tagRide && (
-        <Animated.View
-          testID="golden-lucky-tag"
-          pointerEvents="none"
-          style={[styles.tag, { transform: [{ translateX: fly.x.interpolate({ inputRange: tagRide.input, outputRange: tagRide.shift }) }], opacity: fly.x.interpolate({ inputRange: tagRide.input, outputRange: tagRide.opacity }) }]}>
+      {pips.lucky && (
+        <Animated.View testID="golden-lucky-tag" pointerEvents="none" style={[styles.tag, { transform: [{ translateX: labelShift }] }]}>
           <Text style={styles.tagText}>LUCKY</Text>
         </Animated.View>
       )}
@@ -211,11 +211,8 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
           {pipsLabel(taps)}
         </Text>
       </View>
-      {giftRide && !toastUp && (
-        <Animated.View
-          testID="golden-gift"
-          pointerEvents="none"
-          style={[styles.gift, { transform: [{ translateX: fly.x.interpolate({ inputRange: giftRide.input, outputRange: giftRide.shift }) }], opacity: fly.x.interpolate({ inputRange: giftRide.input, outputRange: giftRide.opacity }) }]}>
+      {gift && !toastUp && (
+        <Animated.View testID="golden-gift" pointerEvents="none" style={[styles.gift, { transform: [{ translateX: labelShift }] }]}>
           <Text style={styles.giftText}>{BONUS_VIEW.giftLine}</Text>
         </Animated.View>
       )}
@@ -262,7 +259,7 @@ function Rays({ size }: { size: number }) {
     return `M${c} ${c} L${p(a - half)} L${p(a + half)} Z`;
   });
   return (
-    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <Defs>
         <RadialGradient id="gpRay" cx="50%" cy="50%" rx="50%" ry="50%">
           <Stop offset="0.2" stopColor="#FFF6C2" stopOpacity={0.85} />
@@ -280,7 +277,7 @@ function Rays({ size }: { size: number }) {
 function PipSlice({ on, last, lucky }: { on: boolean; last: boolean; lucky: boolean }) {
   const isLucky = last && lucky;
   return (
-    <Svg width={8} height={8} viewBox="0 0 8 8">
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={8} height={8} viewBox="0 0 8 8">
       <Path d="M0.7 1.2 H7.3 L4 7.4 Z" fill={isLucky ? '#FFF6C2' : on ? '#FFC531' : 'rgba(255,255,255,0.55)'} stroke={isLucky ? '#E8432E' : GOLD_DARK} strokeWidth={0.9} strokeLinejoin="round" />
     </Svg>
   );
@@ -288,7 +285,7 @@ function PipSlice({ on, last, lucky }: { on: boolean; last: boolean; lucky: bool
 
 function Wing({ k }: { k: number }) {
   return (
-    <Svg width={20 * k} height={26 * k} viewBox="0 0 20 26">
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={20 * k} height={26 * k} viewBox="0 0 20 26">
       <Path d="M19 18 Q14 3 1 4 Q5 9 3 12 Q8 12 7 17 Q12 16 19 22 Z" fill="#FFFFFF" stroke={INK} strokeWidth={1.4} strokeLinejoin="round" />
       <Path d="M17 17 Q11 11 5 8" stroke="#D8E6F2" strokeWidth={1.2} fill="none" strokeLinecap="round" />
     </Svg>

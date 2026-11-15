@@ -6,7 +6,7 @@ import { CHEESE_STOPS, LOGO_SHAPES } from './logo-art';
 
 export const Logo = memo(function Logo({ size }: { size: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 200 200">
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={size} height={size} viewBox="0 0 200 200">
       <Defs>
         <LinearGradient id="logoCheese" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={CHEESE_STOPS[0]} />

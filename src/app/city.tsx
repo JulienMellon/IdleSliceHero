@@ -27,11 +27,11 @@ export default function City() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.back} testID="back">
+        <Pressable accessibilityRole="button" accessibilityLabel="Back to the shop" onPress={() => router.back()} style={styles.back} testID="back">
           <Text style={styles.backText}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>{CITY_NAME}</Text>
-        <Pressable onPress={() => router.push('/settings')} style={styles.settings} testID="open-settings">
+        <Pressable accessibilityRole="button" accessibilityLabel="Settings" onPress={() => router.push('/settings')} style={styles.settings} testID="open-settings">
           <Text style={{ fontSize: 24, color: '#FFF4E0', fontFamily: F.bold }}>⚙︎</Text>
         </Pressable>
       </View>
@@ -60,6 +60,9 @@ export default function City() {
               return (
                 <Pressable
                   key={n.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${n.name}: ${lot.rowSub}${lot.rowRight ? `. ${lot.rowRight}` : ''}`}
+                  accessibilityState={{ disabled: !lot.tappable }}
                   testID={`city-row-${n.id}`}
                   disabled={!lot.tappable}
                   onPress={() => {
@@ -78,6 +81,8 @@ export default function City() {
             return (
               <Pressable
                 key={n.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${n.name}: ${sh.managed ? `${money(G.shopEarnings(game, n.id))} a second` : 'no manager'}. Visit`}
                 testID={`city-row-${n.id}`}
                 onPress={() => {
                   setActive(n.id);

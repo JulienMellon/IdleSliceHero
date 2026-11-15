@@ -387,7 +387,7 @@ function BustGear({ L }: { L: Look }) {
 
 function Bust({ L, mood, size, flip }: { L: Look; mood: Mood; size: number; flip: boolean }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 100 100" style={flip ? { transform: [{ scaleX: -1 }] } : undefined}>
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={size} height={size} viewBox="0 0 100 100" style={flip ? { transform: [{ scaleX: -1 }] } : undefined}>
       <HairBack style={L.hairStyle} hair={L.hair} />
       {/* body */}
       <Path d="M18 100 Q20 74 50 72 Q80 74 82 100 Z" fill={L.shirt} stroke={INK} strokeWidth={1.8} />
@@ -629,7 +629,7 @@ function Stage({ id, mood, size, flip, dim, holding }: { id: CharacterId; mood: 
   // light shade and rim are clipped to the head (unique per instance, like the backdrop's gradients)
   const clipId = `head${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
-    <Svg width={(size * STAGE_VB.w) / STAGE_VB.h} height={size} viewBox={`0 0 ${STAGE_VB.w} ${STAGE_VB.h}`}>
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={(size * STAGE_VB.w) / STAGE_VB.h} height={size} viewBox={`0 0 ${STAGE_VB.w} ${STAGE_VB.h}`}>
       <Defs>
         <ClipPath id={clipId}>
           <Ellipse {...HEAD_CLIP} />

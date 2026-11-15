@@ -12,7 +12,9 @@ import { C, F } from '../theme';
 import { Backdrop } from './backdrop';
 import { canAdvance, sceneHeading } from '../engine/cutscene-input';
 import { CAPTION, cardHolder, PANEL_BORDER, hasCaptionBar, panelSize, poseFor, stageLayout, tailShare } from './cutscene/staging';
+import { panelSpeech, sceneLabel } from './cutscene/panel-speech';
 import { Portrait } from './portrait';
+import { useReducedMotion } from './scene/clock';
 import { TAP } from './tap-targets';
 
 const native = Platform.OS !== 'web';
@@ -25,6 +27,7 @@ const REWARD_TEXT: Record<string, string> = {
 export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => void }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
   const [panel, setPanel] = useState(0);
   const [line, setLine] = useState(0);
   const [showReward, setShowReward] = useState(false);
@@ -58,21 +61,24 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
 
   // Panel motion: slide in, then slow zoom.
   useEffect(() => {
-    slide.setValue(40);
+    // Reduce Motion: the panel just appears (the speech bubble's pop below is the only movement left, and it is a fade)
+    slide.setValue(reduceMotion ? 0 : 40);
     zoom.setValue(1);
+    if (reduceMotion) return;
     Animated.parallel([
       Animated.timing(slide, { toValue: 0, duration: 350, useNativeDriver: native }),
       Animated.timing(zoom, { toValue: 1.08, duration: 6000, useNativeDriver: native }),
     ]).start();
-  }, [panel, slide, zoom]);
+  }, [panel, slide, zoom, reduceMotion]);
 
   // Speech bubble pop for each line.
   useEffect(() => {
     lineShownAt.current = Date.now();
     if (p.lines.length > 0 || p.caption) emitAudio({ type: 'bubble' });
-    bubble.setValue(0.6);
-    Animated.spring(bubble, { toValue: 1, friction: 5, useNativeDriver: native }).start();
-  }, [panel, line, bubble]);
+    // Reduce Motion: the bubble is simply there (no pop)
+    bubble.setValue(reduceMotion ? 1 : 0.6);
+    if (!reduceMotion) Animated.spring(bubble, { toValue: 1, friction: 5, useNativeDriver: native }).start();
+  }, [panel, line, bubble, reduceMotion]);
 
   const advance = () => {
     if (showReward) return onDone();
@@ -110,7 +116,13 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
 
   return (
     <View style={StyleSheet.absoluteFill}>
-      <Pressable style={[styles.root, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]} onPress={onTap} testID="cutscene">
+      {/* a tap anywhere advances; for a screen reader the Skip button and the stage (below) are the two things to reach, so this container is not one itself */}
+      <Pressable
+        accessible={false}
+        accessibilityRole="button"
+        style={[styles.root, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}
+        onPress={onTap}
+        testID="cutscene">
         <View style={styles.topRow}>
           <Text style={styles.title}>{sceneHeading(scene, panel, showReward)}</Text>
           <Pressable
@@ -118,13 +130,21 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
               emitAudio({ type: 'scene-skip' });
               onDone();
             }}
+            accessibilityRole="button"
+            accessibilityLabel="Skip the scene"
             style={styles.skip}
             testID="skip-scene">
             <Text style={styles.skipText}>Skip ▸▸</Text>
           </Pressable>
         </View>
 
-        <View style={styles.stage}>
+        <View
+          style={styles.stage}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={sceneLabel(sceneHeading(scene, panel, showReward), showReward ? [scene.reward ? REWARD_TEXT[scene.reward] : '', perk ? `${perk.who}’s perk. ${perk.text}` : ''].filter(Boolean).join('. ') : panelSpeech(p, line))}
+          accessibilityHint="Double tap for the next line"
+          onAccessibilityTap={onTap}>
         <Animated.View style={[styles.frameShadow, { width: frameW, height: frameH, transform: [{ translateX: slide }] }]}>
           <View style={styles.frame}>
             <Animated.View style={{ position: 'absolute', inset: 0, transform: [{ scale: zoom }] } as never}>

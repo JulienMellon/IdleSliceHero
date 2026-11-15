@@ -22,7 +22,8 @@ import { STACK } from './stack-model';
 
 const FLASH_MS = 260;
 
-export const ChallengeChip = memo(function ChallengeChip() {
+/** `shown`: the sky strip's queue gave this chip the strip (stack-model.ts `skyShown`); a result waits unseen-proof: its 6 s start once it shows. */
+export const ChallengeChip = memo(function ChallengeChip({ shown = true }: { shown?: boolean }) {
   // Reads the live store below (like the order chip): React Compiler must not cache that.
   'use no memo';
   const face = useGame((s) => attackLite(s.game).face);
@@ -37,13 +38,13 @@ export const ChallengeChip = memo(function ChallengeChip() {
   const done = face === 'won' || face === 'lost';
 
   useEffect(() => {
-    if (!done) return;
+    if (!done || !shown) return;
     const t = setTimeout(() => useGame.getState().ackEndgame('attack'), RESULT_MS);
     return () => clearTimeout(t);
-  }, [done, face]);
+  }, [done, face, shown]);
 
   useEffect(() => {
-    if (face !== 'won') return;
+    if (face !== 'won' || !shown) return;
     flash.setValue(0);
     bounce.setValue(1);
     flip.setValue(0.05);
@@ -61,9 +62,9 @@ export const ChallengeChip = memo(function ChallengeChip() {
       emitCheer();
     });
     return () => run.stop();
-  }, [face, flash, bounce, flip]);
+  }, [face, shown, flash, bounce, flip]);
 
-  if (face !== 'running' && !done) return null;
+  if ((face !== 'running' && !done) || !shown) return null;
   const g = useGame.getState().game;
   const view = attackView(g, Date.now());
   const run = challengeView(view);
@@ -72,7 +73,7 @@ export const ChallengeChip = memo(function ChallengeChip() {
     const { setActive } = useGame.getState();
     return (
       <View testID="challenge-chip" style={styles.chip}>
-        <Pressable testID="challenge-active" accessibilityLabel={`${run.title}: ${run.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); setActive(run.shopId); }}>
+        <Pressable testID="challenge-active" accessibilityRole="button" accessibilityLabel={`${run.title}: ${run.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); setActive(run.shopId); }}>
           <Portrait id="victor-crust" mood="angry" size={40} />
           <View style={styles.mid}>
             <Text style={styles.name} numberOfLines={1}>{`${run.title} · ${run.name}`}</Text>

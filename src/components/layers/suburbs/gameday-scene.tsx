@@ -42,7 +42,7 @@ export const GameDayScene = memo(function GameDayScene({ shopId, width, height }
   const seated = seatedFamilies(lay, chairs, free, t, families);
   return (
     <View testID="gameday-scene" pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Svg width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
+      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
         {chairs.slice(0, open).map((c, i) => {
           const [x, y] = P(c.x, c.y);
           const k = kAt(c.y) * (c.patio ? 1.1 : 1);

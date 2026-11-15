@@ -10,7 +10,7 @@ last_shots: v5.16-r3           # label of the last screenshot set that passed ve
 codecritic_range_start: aff34d1
 cards:                 # todo | running | done | partial | blocked
   (v5.17 cards: see docs/build/v5.17/VERSION.md)
-  S2a partial  S2b done  T1b partial  U5 done
+  N1 done  A1 done  U3 done  L1 done  U4 partial
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.16/review-r3-critic.md (r3 NOT SATISFIED, minors only -> close; bug 0 major 0 minor 10; E2 U3 S4 T1)
   code:   docs/build/v5.16/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 3 low 23; E16 U5 S3 A2)
@@ -21,7 +21,6 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-15 18:28 UTC r3 T1a done (S47 scene, Raj line; golden re-recorded; 639 pass; sim 40/40). S2b launched.
 - 2026-11-15 18:31 UTC r3 S2b done (U18; components 723 pass). U5 launched.
 - 2026-11-15 18:31 UTC r3 S2a done (D481 D482 fixed + tests; 723 pass). Needs: D491 MegaSlice van only while rivalOpen (scene/street.tsx, storefront.tsx -> P1). T1b launched.
 - 2026-11-15 18:34 UTC r3 T1b done (D490 already fixed; no edits). P1 launched (+D491).
@@ -31,3 +30,20 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md
 - 2026-11-15 18:40 UTC r3 all fixes in (S2a eventViewNow calls). Verify v5.16-r3.
 - 2026-11-15 18:57 UTC Verify v5.16-r3 PASS: True 0 [], layout 0 new; 83 changed. r3 re-checks: critic, story (sonnet).
 - 2026-11-15 18:58 UTC v5.16 closed: r3 critic minors only (10), story SATISFIED, code APPROVED (r2). Next v5.17.
+- 2026-11-15 v5.17 r1 wave 1 launched: N1 + A1.
+- 2026-11-15 v5.17 r1 N1 partial (services built, 47 tests). Needs: tracking prompt needs expo-tracking-transparency (ask Julien); game must call onGrant (-> U3); starter 150 diamonds sent back to N1.
+- 2026-11-15 v5.17 r1 N1 done (starter 150; 47 pass). Device-time items: AdMob app ID, SKAdNetwork list, privacy manifest, SENTRY_DISABLE_AUTO_UPLOAD.
+- 2026-11-15 v5.17 r1 A1 partial (output seam, mixer; audio 50 pass). Needs: native SliceAudioSession.isOtherAudioPlaying (ask Julien; AU41 open); Settings Music shown on while suppressed (-> U3); audio-api plugin + lock (-> N1).
+- 2026-11-15 v5.17 r1 wave 2: U3 launched (+onGrant, Settings music). L1 waits for N1 lock fix.
+- 2026-11-15 v5.17 r1 N1 lock+audio-api plugin done (97 pass). L1 launched.
+- 2026-11-15 v5.17 r1 U3 partial (store/ads/settings; 849 pass; shots not run: no playwright). Needs: awningFounder in facade/storefront + cosmeticName/Style tab; mixer getter (-> A1); links.ts -> L1 re-export; expo-clipboard; daily-task generator export; 98_u3 README row.
+- 2026-11-15 v5.17 r1 pip playwright==1.63.0 installed (launch ok). U3 to run 98_u3 shots when a slot frees; A1 getter sent.
+- 2026-11-15 v5.17 r1 A1 done (musicSuppressed/onMusicSuppressed; 53 pass). Sent to U3 with shots run.
+- 2026-11-15 v5.17 r1 L1 partial (site, a11y, perf ok; 1558 pass; store_shots/perf.py not run). Needs: site placeholders + Pages on (Julien); policy mismatches/_layout tick/events (-> N1); links re-export + settings a11y (-> U3).
+- 2026-11-15 v5.17 r1 N1 done (manifest = spec, tracking off, _layout tick paused, 3 events; 1560 pass). Crash link undone (spec: not linked). 4 events -> U3.
+- 2026-11-15 v5.17 r1 N1 crash link undone (49 pass). L1 sent to run store_shots + perf.
+- 2026-11-15 v5.17 r1 U3 done (settings music, links, a11y, 4 events; 854 pass; 98_u3 0 err, layout 0 new). Open: awning-founder not drawn (facade/storefront, cosmeticName, Style tab) -> P lane; clipboard; Swap generator. Wave 3: U4 launched.
+- 2026-11-15 v5.17 r1 L1 done (perf 0/1200 >16ms; 6 store shots 1320x2868). Awning-founder fix launched on v5.16 card-P1.
+- 2026-11-15 v5.17 r1 awning-founder done (facade/storefront/rewards/shop-model; 183 pass). Carried: vanity-art icon fallback, copy key.
+- 2026-11-15 v5.17 r1 U4 partial (focus, sky queue, task pills, day-30; 828 pass; 148_u4 0 err). Needs: offer clock hold (-> U3). Kept U4 default: event holds strip 15 s. Carried: day-30 name placeholder (writer).
+- 2026-11-15 v5.17 r1 U3 offer hold + 148 README row done (820 pass). All cards in. Verify v5.17: tsc pass; npm test running.

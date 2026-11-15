@@ -12,6 +12,8 @@ import { ORDER_VIEW } from '../content/hooks';
 import type { NeighborhoodId } from '../content/types';
 import { useGame } from '../store/game-store';
 import { C, F } from '../theme';
+import { useBannerOpen } from './endgame/banner-state';
+import { skyOf } from './endgame/stack-model';
 import { haptic } from './game-ui';
 import { emitCheer, emitCoin, emitPayout } from './pulse-bus';
 import { chipPhase, chipView, RUSH_HINT } from './order-model';
@@ -24,6 +26,9 @@ export const OrderChip = memo(function OrderChip({ top, onShop }: { top: number;
   // Reads the live store below (like the scene does): React Compiler must not cache that.
   'use no memo';
   const phase = useGame((s) => chipPhase(s.game));
+  // U4: an offer waits while the attack's banner or challenge shows (stack-model.ts: one sky event at a time); a running order always shows
+  const bannerOpen = useBannerOpen();
+  const behind = useGame((s) => phase === 'offer' && skyOf(s.game, bannerOpen, Date.now()) !== 'offer');
   // whole seconds left on the active order or the offer: the one thing that changes under the chip while it is up
   useGame((s) => Math.ceil(s.game.order.active?.left ?? s.game.order.offer?.left ?? 0));
   const [flash] = useState(() => new Animated.Value(0));
@@ -47,7 +52,7 @@ export const OrderChip = memo(function OrderChip({ top, onShop }: { top: number;
     return () => run.stop();
   }, [phase, flash, bounce]);
   const view = chipView(useGame.getState().game);
-  if (!view) return null;
+  if (!view || behind) return null;
   const { acceptOrder, declineOrder } = useGame.getState();
   const face = (
     <>
@@ -97,7 +102,7 @@ export const OrderChip = memo(function OrderChip({ top, onShop }: { top: number;
       {/* D436: the flash sits behind the content (first child), so the portrait and the reward are never washed out */}
       {view.phase === 'done' && <Animated.View pointerEvents="none" style={[styles.glow, { opacity: flash }]} />}
       {view.phase === 'active' ? (
-        <Pressable testID="order-active" accessibilityLabel={`${view.name}’s order: ${view.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); onShop(view.hood); }}>
+        <Pressable testID="order-active" accessibilityRole="button" accessibilityLabel={`${view.name}’s order: ${view.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); onShop(view.hood); }}>
           {face}
         </Pressable>
       ) : (

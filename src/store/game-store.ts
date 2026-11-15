@@ -2,6 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
 import { emitAudio, type AudioEvent } from '../audio/bus';
+import { getBannerOpen } from '../components/endgame/banner-state';
+import { offerWaits } from '../components/endgame/stack-model';
+import { applyDouble, claimDelta, claimOffer, grantDailyBooster, offlineBoost, offlineExtra, offlineFactor, repairByAd, rerollDaily as rerollDailyTask, type ClaimInfo, type ClaimKind } from '../components/store/ad-model';
+import { applyGrant, NO_PREFS, parsePrefs, PREFS_KEY, type StorePrefs } from '../components/store/store-model';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
 import { HOME_SCENES } from '../content/scenes/home';
@@ -25,6 +29,7 @@ import { ackCritic as ackUptownCritic, buyIngredients as buyUptownIngredients, i
 import * as R from '../engine/rewards';
 import { tutorialAdvance, tutorialHoldsStory } from '../engine/tutorial';
 import { buyCosmetic as buyVanity } from '../engine/vanity';
+import { analytics, EVENTS, onGrant, purchases, startServices, type Grant } from '../services';
 import type { Station } from '../engine/pipeline';
 
 const SAVE_KEY = 'slice-empire/save/v1';
@@ -38,6 +43,10 @@ export interface OfflineSummary {
   byShop: { name: string; earned: number; managed: boolean; /** No manager, all three heads: it ran at half speed. */ headsOnly: boolean; pies: number }[];
   /** Built pizzerias with no manager: the gift's news line says one waited for the player. */
   idle: string[];
+  /** What a timed boost multiplied the window by (1 with none): the offline ad replaces it, never stacks (store/ad-model.ts `offlineFactor`). */
+  boost: number;
+  /** The offline ad (or Nonna's Plus) has made the total 2x. */
+  doubled?: boolean;
 }
 
 /** How many rush taps the store remembers. */
@@ -67,6 +76,9 @@ interface Store {
   /** v5.16 (G105): a layer notice or the rival's chip is up (set by layers/layer-stack.tsx, not saved): the golden pizza waits, so it never flies over their words. */
   layerHold: boolean;
   setLayerHold: (hold: boolean) => void;
+  /** The app is in the background (set by the main screen from AppState, not saved): `tick` does nothing until it is back, so no game time is played unseen (the time away is paid by `load`). */
+  background: boolean;
+  setBackground: (background: boolean) => void;
   /** Tap the golden pizza. Null when none is on screen; otherwise what it paid. Never counts as a kitchen tap (the story gate). */
   tapBonus: () => { paid: number; lucky: boolean } | null;
   /** The special order on the table: take it, or send it away. */
@@ -130,6 +142,29 @@ interface Store {
   /** The gift calendar opened by itself today: don't open it again until tomorrow. */
   markGiftShown: () => void;
   markScrapbookViewed: () => void;
+  /** v5.17 (U3): the player owns Nonna's Plus (every ad benefit without the ad). Not saved: `purchases.owned()` is the truth, read again after the services start. */
+  plus: boolean;
+  syncPlus: () => void;
+  /** A paid-out purchase (services `onGrant`): diamonds, a boost, a cosmetic, Plus. */
+  receiveGrant: (grant: Grant) => void;
+  /** What the last daily, weekly or gift claim paid, for the "double it" sheet (not saved); null once dismissed. */
+  claimed: ClaimInfo | null;
+  dismissClaim: () => void;
+  /** Pay the last claim again (after an ad, or at once for a Plus owner). */
+  doubleClaim: () => boolean;
+  /** Swap daily task `i` for another kind (once a day, after an ad). */
+  rerollDaily: (i: number) => boolean;
+  /** The gift's missed day, saved after an ad instead of 20 diamonds (the engine allows it once per 30-day cycle). */
+  repairGiftByAd: () => boolean;
+  /** The shelf's free booster (once a day, after an ad). */
+  freeBooster: () => boolean;
+  /** The welcome-back gift's 2x (after an ad, or at once for a Plus owner). */
+  doubleOffline: () => boolean;
+  /** Small saved prefs of the store (the Starter Pack was offered, the day the shelf's booster was taken). */
+  prefs: StorePrefs;
+  /** Play seconds when the tutorial ended this session (the Starter Pack sheet's cue); null otherwise. Not saved. */
+  starterAt: number | null;
+  markStarterOffered: () => void;
   resetGame: () => Promise<void>;
 }
 
@@ -144,6 +179,8 @@ const UPGRADE_NAMES: Record<string, string> = { prep: 'Prep', ovens: 'Ovens', co
 let pendingSave: Promise<void> = Promise.resolve();
 /** When rewards were last refreshed in a tick (ms): a day change or a boost ending needs at most a second's wait. */
 let lastRewardsRefresh = 0;
+/** The services' grants are wired to the game once, after the first load (a grant made earlier is held by the bus). */
+let grantsWired = false;
 
 export const useGame = create<Store>((set, get) => {
   /** After any state change, queue the next story scene if one has triggered. */
@@ -182,6 +219,19 @@ export const useGame = create<Store>((set, get) => {
     return commit(run(g, Date.now()), undefined, claimSound(g));
   };
   const plain = (what: Purchase) => (): AudioEvent => ({ type: 'buy', what, sting: purchaseSting(what, {}) });
+  /** v5.17 (U3): a claim that paid cash or diamonds is remembered for the "double it" sheet. */
+  const claimTracked = (kind: ClaimKind, run: (g: G.GameState, now: number) => G.BuyResult) => {
+    const before = get().game;
+    if (!claim(run)) return false;
+    const delta = claimDelta(before, get().game);
+    if (claimOffer(delta)) set({ claimed: { kind, delta, doubled: false, at: Date.now() } });
+    return true;
+  };
+  const setPrefs = (patch: Partial<StorePrefs>) => {
+    const prefs = { ...get().prefs, ...patch };
+    set({ prefs });
+    void AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefs)).catch(() => {});
+  };
 
   /** A station or hire purchase for the active shop (one level, or several at once): the toast on a refusal, the sound, one save. */
   const purchase = (what: G.Upgrade, result: G.BuyResult, cost: number | null) => {
@@ -218,9 +268,14 @@ export const useGame = create<Store>((set, get) => {
     toast: null,
     bonusHold: false,
     layerHold: false,
+    background: false,
     tickAt: Date.now(),
     titleDone: false,
     buyAmount: 1,
+    plus: false,
+    claimed: null,
+    prefs: NO_PREFS,
+    starterAt: null,
     finishTitle: () => {
       if (get().titleDone) return;
       set({ titleDone: true });
@@ -246,7 +301,7 @@ export const useGame = create<Store>((set, get) => {
           awaySeconds = r.awaySeconds;
           if (r.earned >= 1 && r.seconds >= TUNING.offlinePopupSeconds) {
             // Hold the cash back until the player taps Collect.
-            offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed, headsOnly: b.headsOnly, pies: b.pies })), idle: r.idle.map((id) => G.def(id).name) };
+            offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed, headsOnly: b.headsOnly, pies: b.pies })), idle: r.idle.map((id) => G.def(id).name), boost: offlineBoost(saved.rewards.boosts, saved.lastSavedAt, r.seconds) };
             game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
           }
         }
@@ -255,6 +310,12 @@ export const useGame = create<Store>((set, get) => {
       }
       // a launch or a real return may play one waiting story beat straight away; a short interruption keeps the gap (C39)
       set({ game, loaded: true, offline, lastSceneEndPlay: resumeSceneEnd(wasLoaded ? get().lastSceneEndPlay : null, awaySeconds, game.playSeconds) });
+      if (!grantsWired) {
+        grantsWired = true;
+        onGrant((grant) => get().receiveGrant(grant));
+        void startServices().then(() => get().syncPlus());
+        void AsyncStorage.getItem(PREFS_KEY).then((raw) => set({ prefs: parsePrefs(raw) })).catch(() => {});
+      }
       if (!offline) queueScene();
     },
 
@@ -273,7 +334,7 @@ export const useGame = create<Store>((set, get) => {
     },
 
     tick: (dt) => {
-      if (!get().loaded) return;
+      if (!get().loaded || get().background) return;
       const now = Date.now();
       let g = get().game;
       if (now - lastRewardsRefresh >= 1000 || now < lastRewardsRefresh) {
@@ -285,7 +346,8 @@ export const useGame = create<Store>((set, get) => {
       game = B.bonusTick(game, dt, bonusBlocked(st));
       const covered = gameCovered(st);
       const before = game;
-      game = O.orderTick(game, dt, covered);
+      // an offer's wait also holds while something ahead of it in the sky strip (an attack banner or chip) hides it
+      game = O.orderTick(game, dt, covered || offerWaits(game, getBannerOpen(), now));
       // a new offer, a finished order: a sound and a save (a failure is quiet)
       if (game.order.offer && !before.order.offer && !before.order.active) emitAudio({ type: 'bubble' });
       if (game.stats.ordersDone > before.stats.ordersDone) {
@@ -327,6 +389,10 @@ export const useGame = create<Store>((set, get) => {
 
     setLayerHold: (hold) => {
       if (get().layerHold !== hold) set({ layerHold: hold });
+    },
+
+    setBackground: (background) => {
+      if (get().background !== background) set({ background });
     },
 
     tapBonus: () => {
@@ -432,7 +498,11 @@ export const useGame = create<Store>((set, get) => {
 
     bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: G.pier9Price(get().game) }, plain('bid')),
 
-    build: (id) => commit(G.buildShop(get().game, id), { name: `Build ${G.def(id).name}`, cost: G.def(id).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id })),
+    build: (id) => {
+      const ok = commit(G.buildShop(get().game, id), { name: `Build ${G.def(id).name}`, cost: G.def(id).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id }));
+      if (ok) analytics.track(EVENTS.shopBuilt, { shop: id });
+      return ok;
+    },
 
     setActive: (id) => {
       const g = get().game;
@@ -445,6 +515,7 @@ export const useGame = create<Store>((set, get) => {
       if (p.replay) set({ playing: null });
       else {
         const game = tutorialAdvance(G.markSceneSeen(get().game, p.scene));
+        analytics.track(EVENTS.sceneSeen, { scene: p.scene.id });
         set({ playing: null, game, lastSceneEndPlay: scenePacesGap(p.scene) ? game.playSeconds : get().lastSceneEndPlay });
       }
       if (!p.replay) void get().save();
@@ -463,12 +534,12 @@ export const useGame = create<Store>((set, get) => {
       queueScene();
     },
 
-    claimDaily: (i) => claim((g, now) => R.claimDaily(g, i, now)),
+    claimDaily: (i) => claimTracked('daily', (g, now) => R.claimDaily(g, i, now)),
     claimChest: (i) => claim((g, now) => R.claimChest(g, i, now)),
-    claimWeekly: (i) => claim((g, now) => R.claimWeekly(g, i, now)),
+    claimWeekly: (i) => claimTracked('weekly', (g, now) => R.claimWeekly(g, i, now)),
     claimWeeklyChest: () => claim((g, now) => R.claimWeeklyChest(g, now)),
     startBooster: (i) => claim((g, now) => R.startBooster(g, i, now)),
-    claimGift: (repair = false) => claim((g, now) => R.claimGift(g, now, { repair })),
+    claimGift: (repair = false) => claimTracked('gift', (g, now) => R.claimGift(g, now, { repair })),
     markGiftShown: () => {
       const g = get().game;
       const next = R.markGiftShown(g, Date.now());
@@ -486,10 +557,68 @@ export const useGame = create<Store>((set, get) => {
       }
     },
 
+    syncPlus: () => {
+      const plus = purchases.owned().includes('nonnas_plus');
+      if (plus !== get().plus) set({ plus });
+    },
+
+    receiveGrant: (grant) => {
+      set({ game: applyGrant(get().game, grant, Date.now()), ...(grant.plus ? { plus: true } : {}) });
+      emitAudio({ type: 'click' });
+      void get().save();
+    },
+
+    dismissClaim: () => {
+      if (get().claimed) set({ claimed: null });
+    },
+
+    doubleClaim: () => {
+      const c = get().claimed;
+      if (!c || c.doubled) return false;
+      const g = get().game;
+      emitAudio({ type: 'collect', size: collectSize(c.delta.cash, g.cash) });
+      set({ game: applyDouble(g, c.delta), claimed: { ...c, doubled: true } });
+      void get().save();
+      return true;
+    },
+
+    rerollDaily: (i) => commit(rerollDailyTask(get().game, i, Date.now()), undefined, () => ({ type: 'click' })),
+
+    repairGiftByAd: () => {
+      const g = get().game;
+      return commit(repairByAd(g, Date.now()), undefined, claimSound(g));
+    },
+
+    freeBooster: () => {
+      const now = Date.now();
+      const ok = commit(grantDailyBooster(get().game, now), undefined, () => ({ type: 'click' }));
+      if (ok) setPrefs({ boosterAdDay: R.dayKey(now) });
+      return ok;
+    },
+
+    doubleOffline: () => {
+      const o = get().offline;
+      if (!o || o.doubled) return false;
+      const f = offlineFactor(o.boost);
+      if (f <= 1) return false;
+      set({ offline: { ...o, doubled: true, earned: o.earned + offlineExtra(o.earned, o.boost), byShop: o.byShop.map((b) => ({ ...b, earned: b.earned * f })) } });
+      return true;
+    },
+
+    markStarterOffered: () => {
+      if (!get().prefs.starterOffered) setPrefs({ starterOffered: true });
+    },
+
     resetGame: async () => {
       await AsyncStorage.removeItem(SAVE_KEY).catch(() => {});
-      set({ game: G.newGame(Date.now()), offline: null, playing: null, lastSceneEndPlay: null });
+      set({ game: G.newGame(Date.now()), offline: null, playing: null, lastSceneEndPlay: null, claimed: null, starterAt: null });
       queueScene();
     },
   };
+});
+
+// v5.17 (U3): the tutorial ending in play (not a save that loads already done) is the Starter Pack sheet's cue.
+useGame.subscribe((s, prev) => {
+  if (!prev.loaded || !s.loaded || s.starterAt !== null) return;
+  if (prev.game.tutorial < G.TUTORIAL_DONE && s.game.tutorial >= G.TUTORIAL_DONE) useGame.setState({ starterAt: s.game.playSeconds });
 });

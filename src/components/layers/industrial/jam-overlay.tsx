@@ -8,6 +8,7 @@ import Svg, { Path } from 'react-native-svg';
 import { jamView } from '../../../engine/features/layers/industrial-shifts';
 import { useGame } from '../../../store/game-store';
 import { C, F } from '../../../theme';
+import { useMotion } from '../../scene/clock';
 import { INK, sceneFit } from '../../scene/projection';
 import type { SceneSlotProps } from '../../slots';
 import { layoutOfShop } from '../shop-layout';
@@ -18,12 +19,14 @@ const PUFFS = 3;
 
 function Puff({ i, left, top, s }: { i: number; left: number; top: number; s: number }) {
   const [t] = useState(() => new Animated.Value(0));
+  const { loops } = useMotion();
   useEffect(() => {
     t.setValue(0);
+    if (!loops) return;
     const loop = Animated.loop(Animated.sequence([Animated.delay(i * 520), Animated.timing(t, { toValue: 1, duration: 1560, easing: Easing.out(Easing.quad), useNativeDriver: native }), Animated.timing(t, { toValue: 0, duration: 0, useNativeDriver: native })]));
     loop.start();
     return () => loop.stop();
-  }, [t, i]);
+  }, [t, i, loops]);
   const size = Math.round(16 * s);
   const rise = t.interpolate({ inputRange: [0, 1], outputRange: [0, -34 * s] });
   const drift = t.interpolate({ inputRange: [0, 1], outputRange: [0, (i - 1) * 8 * s] });
@@ -34,7 +37,7 @@ function Puff({ i, left, top, s }: { i: number; left: number; top: number; s: nu
 
 function WrenchArt() {
   return (
-    <Svg width={26} height={26} viewBox="0 0 26 26">
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={26} height={26} viewBox="0 0 26 26">
       <Path d="M17.5 3.5 A6 6 0 0 0 11 10.5 L3.8 17.7 A2.6 2.6 0 0 0 8.3 22.2 L15.5 15 A6 6 0 0 0 22.5 8.5 L18.6 12.4 L14 11.8 L13.4 7.2 Z" fill="#E8EEF2" stroke={INK} strokeWidth={1.6} strokeLinejoin="round" />
     </Svg>
   );

@@ -10,6 +10,8 @@ import { startAudio } from '@/audio/director';
 import { CutscenePlayer } from '@/components/cutscene-player';
 import { TitleCard } from '@/components/title-card';
 import { TUNING } from '@/content/tuning';
+import { TUTORIAL_DONE } from '@/engine/game';
+import { adsTutorialDone, analytics, EVENTS, startServices } from '@/services';
 import { useGame } from '@/store/game-store';
 import { C } from '@/theme';
 
@@ -20,10 +22,13 @@ startAudio();
 /** Runs the simulation, autosave, and app open/close handling for every screen. */
 function GameRunner() {
   const load = useGame((s) => s.load);
+  const background = useGame((s) => s.background);
   const lastTick = useRef(Date.now());
 
+  // The tick timer only runs in the foreground: nothing fires every 200 ms while the app is in the background.
   useEffect(() => {
-    void load();
+    if (background) return;
+    lastTick.current = Date.now();
     const tickTimer = setInterval(() => {
       const now = Date.now();
       // Clamp so a stalled JS thread can't produce a giant step; long gaps go through offline catch-up.
@@ -31,6 +36,11 @@ function GameRunner() {
       lastTick.current = now;
       useGame.getState().tick(dt);
     }, 200);
+    return () => clearInterval(tickTimer);
+  }, [background]);
+
+  useEffect(() => {
+    void load();
     const saveTimer = setInterval(() => void useGame.getState().save(), TUNING.saveIntervalSeconds * 1000);
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'background' || state === 'inactive') void useGame.getState().save();
@@ -40,11 +50,27 @@ function GameRunner() {
       }
     });
     return () => {
-      clearInterval(tickTimer);
       clearInterval(saveTimer);
       sub.remove();
     };
   }, [load]);
+  return null;
+}
+
+/** Starts the four services (opt-out first, no prompts), counts sessions, and tells the ads when the tutorial is over. */
+function ServicesRunner() {
+  const tutorialDone = useGame((s) => s.game.tutorial >= TUTORIAL_DONE);
+  useEffect(() => {
+    void startServices().then(() => analytics.track(EVENTS.sessionStart));
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'background') analytics.track(EVENTS.sessionEnd);
+      if (state === 'active') analytics.track(EVENTS.sessionStart);
+    });
+    return () => sub.remove();
+  }, []);
+  useEffect(() => {
+    if (tutorialDone) adsTutorialDone();
+  }, [tutorialDone]);
   return null;
 }
 
@@ -74,6 +100,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StatusBar style="light" />
       <GameRunner />
+      <ServicesRunner />
       <View style={{ flex: 1, backgroundColor: C.bg }}>
         {ready ? (
           <>

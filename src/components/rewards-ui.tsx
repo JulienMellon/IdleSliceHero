@@ -1,5 +1,5 @@
 // v5.4 rewards screens: the tasks drawer (daily / weekly tasks, Slice Points chests, boosters) and the gift calendar.
-// All text and state come from rewards-model.ts; this file only lays them out. No ad buttons yet (D2).
+// All text and state come from rewards-model.ts; this file only lays them out. v5.17 (U3): a task row's Swap and the missed day's Save streak are ad buttons (store/ad-button.tsx).
 import { router } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -8,9 +8,13 @@ import Svg, { Circle, Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
 import { DAILY_CHESTS, STREAK_SAVE_DIAMONDS } from '../content/rewards';
 import type { GameState } from '../engine/game';
 import * as R from '../engine/rewards';
+import { useGame } from '../store/game-store';
 import { C, F } from '../theme';
 import { BuyButton } from './game-ui';
-import { BoostIcon, CoinIcon, DiamondIcon, GiftIcon, LockIcon, StarIcon } from './icons';
+import { BoostIcon, CoinIcon, DiamondIcon, GiftIcon, StarIcon } from './icons';
+import { useMotion } from './scene/clock';
+import { AdButton } from './store/ad-button';
+import { canReroll } from './store/ad-model';
 import { BOOST_STRIP, boostFadeShown, boosterLabel, boosterStartLabel, boostOnText, boostRingPct, chestRows, collectionText, countdownText, dailyRows, giftHeader, giftTiles, pointsPct, weeklyChestView, weeklyRows, type GiftIconKind, type TaskState } from './rewards-model';
 import { CLOSE_SLOP, DRAWER_HEAD, TAP } from './tap-targets';
 
@@ -28,6 +32,9 @@ export function useSlowSnapshot(game: GameState, sec: number, open: boolean): { 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => ({ game, sec }), [secKey, rewardsKey]);
 }
+
+/** A task row's Swap button gave its benefit: another daily task takes the row (once a day). */
+const swapDaily = (i: number): void => void useGame.getState().rerollDaily(i);
 
 export interface TaskActions {
   claimDaily: (i: number) => boolean;
@@ -59,7 +66,7 @@ function BoostRing({ seconds }: { seconds: number }) {
   const c = 2 * Math.PI * r;
   return (
     <View style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={28} height={28} viewBox="0 0 28 28" style={StyleSheet.absoluteFill}>
+      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={28} height={28} viewBox="0 0 28 28" style={StyleSheet.absoluteFill}>
         <Circle cx={14} cy={14} r={r} stroke="rgba(255,255,255,0.35)" strokeWidth={3} fill="none" />
         <Circle cx={14} cy={14} r={r} stroke="#fff" strokeWidth={3} fill="none" strokeLinecap="round" strokeDasharray={`${c * boostRingPct(seconds)} ${c}`} transform="rotate(-90 14 14)" />
       </Svg>
@@ -69,8 +76,9 @@ function BoostRing({ seconds }: { seconds: number }) {
 }
 
 // Memoised on primitives, with ONE stable handler bound by index, so a 1 Hz refresh re-renders only the rows that changed (U1, M56).
-const TaskItem = memo(function TaskItem({ index, title, starred, progress, pct, state, reward, claimId, onClaim }: { index: number; title: string; starred: boolean; progress: string; pct: number; state: TaskState; reward: string; claimId: string; onClaim: (i: number) => boolean }) {
+const TaskItem = memo(function TaskItem({ index, title, starred, progress, pill, pillLabel, pct, state, reward, claimId, canSwap, onClaim, onSwap }: { index: number; title: string; starred: boolean; progress: string; /** U4: the in-progress pill (rewards-model.ts `progressPill`). */ pill: string; pillLabel: string; pct: number; state: TaskState; reward: string; claimId: string; /** The day's swap is still free and this row can use it (store/ad-model.ts `canReroll`). */ canSwap: boolean; onClaim: (i: number) => boolean; onSwap: (i: number) => void }) {
   const press = useCallback(() => onClaim(index), [onClaim, index]);
+  const swap = useCallback(() => onSwap(index), [onSwap, index]);
   return (
     <View style={[styles.task, state === 'ready' && styles.taskReady, state === 'claimed' && styles.taskClaimed]}>
       <View style={{ flex: 1, gap: 2 }}>
@@ -94,10 +102,15 @@ const TaskItem = memo(function TaskItem({ index, title, starred, progress, pct, 
         ) : state === 'ready' ? (
           <BuyButton compact testID={claimId} label="Claim" enabled onPress={press} />
         ) : (
-          // D385: an unfinished task shows a quiet lock, not a struck-through button
-          <View style={styles.lockPill} testID={`locked-${claimId}`} accessibilityLabel="Locked until the task is done">
-            <LockIcon size={18} color="#CFC3B2" />
-          </View>
+          // U4: an unfinished task shows how far it is ("3 / 5"), not a padlock: the list reads as things to do, and Claim appears when one is done
+          <>
+            <View style={styles.lockPill} testID={`progress-${claimId}`} accessible accessibilityLabel={pillLabel}>
+              <Text style={[styles.pillText, pill.length > 8 ? styles.pillTextSmall : pill.length > 6 ? styles.pillTextMid : null]} numberOfLines={1} maxFontSizeMultiplier={1.1}>
+                {pill}
+              </Text>
+            </View>
+            {canSwap && <AdButton compact placement="reroll_task" label="Swap" plusLabel="Swap" testID={`swap-${claimId.replace('claim-', '')}`} onBenefit={swap} />}
+          </>
         )}
       </View>
     </View>
@@ -109,6 +122,8 @@ const ChestButton = memo(function ChestButton({ index, points, state, onPress }:
   return (
     <Pressable
       testID={`chest-${index}`}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: state === 'opened' }}
       onPress={press}
       disabled={state === 'opened'}
       accessibilityLabel={`${points} point chest, ${state}`}
@@ -167,14 +182,14 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
   );
   return (
     <View style={StyleSheet.absoluteFill}>
-      <Pressable testID="close-tasks-dim" style={styles.dim} onPress={onClose} />
+      <Pressable testID="close-tasks-dim" accessibilityRole="button" accessibilityLabel="Close the tasks" style={styles.dim} onPress={onClose} />
       <View style={styles.drawer} testID="tasks-drawer">
         <View style={styles.head}>
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={styles.title}>Tasks</Text>
             <Diamonds n={r.diamonds} />
           </View>
-          <Pressable testID="close-tasks" onPress={onClose} style={styles.closeBtn} hitSlop={CLOSE_SLOP}>
+          <Pressable testID="close-tasks" accessibilityRole="button" accessibilityLabel="Close the tasks" onPress={onClose} style={styles.closeBtn} hitSlop={CLOSE_SLOP}>
             <Text style={styles.closeText}>Close ▼</Text>
           </Pressable>
         </View>
@@ -196,7 +211,7 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
                 </View>
               ))}
               {r.boosters.map((b, i) => (
-                <Pressable key={`inv-${i}`} testID={`booster-${i}`} onPress={() => actions.startBooster(i)} style={styles.chip} accessibilityLabel={`${boosterStartLabel(b)} booster`}>
+                <Pressable key={`inv-${i}`} testID={`booster-${i}`} accessibilityRole="button" onPress={() => actions.startBooster(i)} style={styles.chip} accessibilityLabel={`${boosterStartLabel(b)} booster`}>
                   <BoostIcon size={18} />
                   <Text style={styles.chipText}>{boosterStartLabel(b)}</Text>
                 </Pressable>
@@ -204,7 +219,7 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
               {!running.length && !r.boosters.length && <Text style={styles.empty}>None yet. Chests and gifts drop them.</Text>}
             </ScrollView>
             {fade && (
-              <Svg testID="boost-fade" width={BOOST_STRIP.fade} height="100%" style={styles.boostFade} viewBox="0 0 24 10" preserveAspectRatio="none" pointerEvents="none">
+              <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" testID="boost-fade" width={BOOST_STRIP.fade} height="100%" style={styles.boostFade} viewBox="0 0 24 10" preserveAspectRatio="none" pointerEvents="none">
                 <Defs>
                   <LinearGradient id="boost-fade-grad" x1="0" y1="0" x2="1" y2="0">
                     <Stop offset="0" stopColor={C.bg} stopOpacity={0} />
@@ -223,7 +238,7 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
         )}
         <View style={styles.tabs}>
           {(['daily', 'weekly'] as const).map((t) => (
-            <Pressable key={t} testID={`tab-${t}`} onPress={() => onTab(t)} style={[styles.tab, tab === t && styles.tabOn]}>
+            <Pressable key={t} testID={`tab-${t}`} accessibilityRole="tab" accessibilityState={{ selected: tab === t }} onPress={() => onTab(t)} style={[styles.tab, tab === t && styles.tabOn]}>
               <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>{t === 'daily' ? 'Daily' : 'Weekly'}</Text>
             </Pressable>
           ))}
@@ -234,7 +249,7 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
         <ScrollView contentContainerStyle={[styles.list, { paddingBottom: bottomInset + 20 }]}>
           {rows.length === 0 && <Text style={styles.empty}>New tasks arrive in a moment.</Text>}
           {rows.map((row) => (
-            <TaskItem key={`${tab}-${row.index}`} index={row.index} title={row.title} starred={row.starred} progress={row.progress} pct={row.pct} state={row.state} reward={row.reward} claimId={`claim-${tab}-${row.index}`} onClaim={claimTask} />
+            <TaskItem key={`${tab}-${row.index}`} index={row.index} title={row.title} starred={row.starred} progress={row.progress} pill={row.pill} pillLabel={row.pillLabel} pct={row.pct} state={row.state} reward={row.reward} claimId={`claim-${tab}-${row.index}`} canSwap={tab === 'daily' && row.state === 'todo' && canReroll(game, row.index)} onClaim={claimTask} onSwap={swapDaily} />
           ))}
           {tab === 'daily' ? (
             <View style={styles.points} testID="points-track">
@@ -255,7 +270,7 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
               ))}
             </View>
           ) : (
-            <Pressable testID="weekly-chest" onPress={() => actions.claimWeeklyChest()} disabled={week.state === 'opened'} style={[styles.weekChest, week.state === 'ready' && styles.chestReady, week.state === 'opened' && styles.chestOpened]}>
+            <Pressable testID="weekly-chest" accessibilityRole="button" accessibilityLabel={`Weekly chest, ${week.state === 'opened' ? 'opened' : week.state === 'ready' ? 'ready to open' : 'locked'}`} accessibilityState={{ disabled: week.state === 'opened' }} onPress={() => actions.claimWeeklyChest()} disabled={week.state === 'opened'} style={[styles.weekChest, week.state === 'ready' && styles.chestReady, week.state === 'opened' && styles.chestOpened]}>
               <View style={week.state === 'locked' ? { opacity: 0.45 } : null}>
                 <GiftIcon size={34} />
               </View>
@@ -277,10 +292,31 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
   );
 });
 
-const Tile = memo(function Tile({ day, label, icon, big, state, w, pulse, onClaim }: { day: number; label: string; icon: GiftIconKind; big: boolean; state: 'claimed' | 'today' | 'future' | 'missed'; w: number; pulse: Animated.Value; onClaim: () => void }) {
+/** The missed day is saved after an ad, with no diamonds spent. The engine offers the repair once per 30-day cycle (`gift.saveUsed`). */
+const saveByAd = (): void => void useGame.getState().repairGiftByAd();
+
+const Tile = memo(function Tile({ day, label, icon, big, name, what, state, w, pulse, onClaim }: { day: number; label: string; icon: GiftIconKind; big: boolean; /** U4: day 30's name and what it is: the cell is drawn the grid's full width. */ name: string; what: string; state: 'claimed' | 'today' | 'future' | 'missed'; w: number; pulse: Animated.Value; onClaim: () => void }) {
   const today = state === 'today';
   const done = state === 'claimed';
-  const body = (
+  const wide = name !== '';
+  const body = wide ? (
+    <>
+      <Text style={[styles.tileDay, styles.tileDayBig, done && { opacity: 0.45 }]}>{day}</Text>
+      <View style={done ? { opacity: 0.45 } : null}>
+        <KindIcon kind={icon} size={30} />
+      </View>
+      <View style={styles.wideText}>
+        <Text testID="gift-day30-name" style={[styles.wideName, done && { opacity: 0.45 }]} numberOfLines={1}>
+          {name}
+        </Text>
+        <Text testID="gift-day30-what" style={[styles.wideWhat, done && { opacity: 0.45 }]} numberOfLines={2}>
+          {what}
+        </Text>
+      </View>
+      {done && <Text style={styles.tileTick}>✓</Text>}
+      {!done && <View style={styles.ribbon} pointerEvents="none" />}
+    </>
+  ) : (
     <>
       <Text style={[styles.tileDay, big && styles.tileDayBig, done && { opacity: 0.45 }]}>{day}</Text>
       <View style={done ? { opacity: 0.45 } : null}>
@@ -293,11 +329,11 @@ const Tile = memo(function Tile({ day, label, icon, big, state, w, pulse, onClai
       {big && !done && <View style={styles.ribbon} pointerEvents="none" />}
     </>
   );
-  const style = [styles.tile, { width: w, height: Math.max(44, w + 8) }, big && styles.tileBig, today && styles.tileToday, state === 'missed' && styles.tileMissed, done && styles.tileDone];
-  if (!today) return <View style={style} testID={`gift-tile-${day}`}>{body}</View>;
+  const style = [styles.tile, wide ? styles.tileWide : { width: w, height: Math.max(44, w + 8) }, big && styles.tileBig, today && styles.tileToday, state === 'missed' && styles.tileMissed, done && styles.tileDone];
+  if (!today) return <View style={style} testID={`gift-tile-${day}`} accessible={wide} accessibilityLabel={wide ? `Day ${day}: ${name}. ${what}` : undefined}>{body}</View>;
   return (
-    <Animated.View style={{ transform: [{ scale: pulse }] }}>
-      <Pressable testID="gift-claim" onPress={onClaim} style={style} accessibilityLabel={`Claim day ${day}`}>
+    <Animated.View style={[{ transform: [{ scale: pulse }] }, wide && { alignSelf: 'stretch' }]}>
+      <Pressable testID="gift-claim" onPress={onClaim} style={style} accessibilityRole="button" accessibilityLabel={wide ? `Claim day ${day}: ${name}. ${what}` : `Claim day ${day}`}>
         {body}
       </Pressable>
     </Animated.View>
@@ -317,8 +353,9 @@ export const GiftCalendar = memo(function GiftCalendar({ game, now, onClaim, onC
   useEffect(() => {
     Animated.spring(pop, { toValue: 1, friction: 5, useNativeDriver: native }).start();
   }, [pop]);
+  const { loops } = useMotion();
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !loops) return;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1.1, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: native }),
@@ -330,7 +367,7 @@ export const GiftCalendar = memo(function GiftCalendar({ game, now, onClaim, onC
       loop.stop();
       pulse.setValue(1);
     };
-  }, [ready, pulse]);
+  }, [ready, loops, pulse]);
   const claim = useCallback(() => onClaim(false), [onClaim]);
   const repair = useCallback(() => onClaim(true), [onClaim]);
   const head = giftHeader(game, now);
@@ -358,7 +395,7 @@ export const GiftCalendar = memo(function GiftCalendar({ game, now, onClaim, onC
           </View>
         )}
         <View style={[styles.grid, { gap }]} onLayout={(e: LayoutChangeEvent) => setGridW(e.nativeEvent.layout.width)}>
-          {w > 0 && tiles.map((t) => <Tile key={t.day} day={t.day} label={t.label} icon={t.icon} big={t.big} state={t.state} w={w} pulse={pulse} onClaim={claim} />)}
+          {w > 0 && tiles.map((t) => <Tile key={t.day} day={t.day} label={t.label} icon={t.icon} big={t.big} name={t.name} what={t.what} state={t.state} w={w} pulse={pulse} onClaim={claim} />)}
         </View>
         <View style={styles.actions}>
           {st.kind === 'ready' && <BuyButton testID="gift-claim-btn" label={`Claim day ${st.day}`} enabled onPress={claim} />}
@@ -366,9 +403,10 @@ export const GiftCalendar = memo(function GiftCalendar({ game, now, onClaim, onC
             <>
               <Text style={styles.caption}>{`You have ${Math.floor(diamonds)} diamonds`}</Text>
               <BuyButton testID="gift-repair" label={`Repair streak · ${STREAK_SAVE_DIAMONDS} 💎`} enabled={canRepair} onPress={repair} />
+              <AdButton placement="streak_save" label="Save streak · watch an ad" plusLabel="Save streak · Nonna’s Plus" testID="gift-repair-ad" onBenefit={saveByAd} />
             </>
           )}
-          <Pressable testID="gift-close" onPress={onClose} style={styles.closeWide}>
+          <Pressable testID="gift-close" accessibilityRole="button" onPress={onClose} style={styles.closeWide}>
             <Text style={styles.closeText}>{st.kind === 'claimed' ? 'Done' : 'Later'}</Text>
           </Pressable>
           {st.kind === 'save' && (
@@ -424,7 +462,10 @@ const styles = StyleSheet.create({
   barFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: C.cheese },
   barText: { fontFamily: F.semi, fontSize: 11, color: C.ink, textAlign: 'center' },
   lockPill: { width: 60, height: 36, borderRadius: 12, backgroundColor: '#E2D9CE', alignItems: 'center', justifyContent: 'center' },
-  claimSlot: { width: 84, alignItems: 'center', justifyContent: 'center' },
+  pillText: { fontFamily: F.bold, fontSize: 13, color: C.inkSoft },
+  pillTextMid: { fontSize: 11.5 },
+  pillTextSmall: { fontSize: 10 },
+  claimSlot: { width: 84, alignItems: 'center', justifyContent: 'center', gap: 4 },
   tick: { fontFamily: F.bold, fontSize: 26, color: C.basilDark },
   points: { backgroundColor: C.panel, borderRadius: 16, padding: 12, borderWidth: 3, borderColor: C.ink, gap: 4, ...shadow },
   pointsHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
@@ -451,6 +492,11 @@ const styles = StyleSheet.create({
   caption: { fontFamily: F.semi, fontSize: 13.5, color: C.inkSoft, textAlign: 'center' },
   grid: { alignSelf: 'stretch', flexDirection: 'row', flexWrap: 'wrap', minHeight: 4 },
   tile: { borderRadius: 10, backgroundColor: '#fff', borderWidth: 2, borderColor: '#D9C4AB', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 1, gap: 1 },
+  // U4: day 30, the grid's full width: the cycle's best prize, named
+  tileWide: { alignSelf: 'stretch', width: '100%', minHeight: 56, flexDirection: 'row', gap: 10, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 3 },
+  wideText: { flex: 1, gap: 1 },
+  wideName: { fontFamily: F.bold, fontSize: 15, color: C.ink },
+  wideWhat: { fontFamily: F.semi, fontSize: 11.5, lineHeight: 14, color: C.inkSoft },
   tileBig: { backgroundColor: '#FFE7C2', borderColor: MILESTONE_GOLD, borderWidth: 2 },
   tileToday: { backgroundColor: '#F1FFF0', borderColor: C.basilDark, borderWidth: 3 },
   tileMissed: { borderColor: C.tomato, borderStyle: 'dashed' },

@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { AppState, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
@@ -11,7 +11,7 @@ import { chipPhase } from '@/components/order-model';
 import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
-import { coachStep } from '@/engine/tutorial';
+import { coachStep, hintsAllowed } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
@@ -29,6 +29,8 @@ import { Portrait } from '@/components/portrait';
 import { HeadFace } from '@/components/scene/head-face';
 import Svg from 'react-native-svg';
 import { CURB_Y, SCENE_H, sceneFit, Storefront } from '@/components/storefront';
+import { isForeground } from '@/components/app-state-model';
+import { usePerfMarks } from '@/components/scene/clock';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
 import { CITY_NAME, DECOR, DECOR_KINDS, FOOTPRINTS, HEAD_ROLE, HEADS, type HeadKind, NEIGHBORHOODS, OVEN_GRADES, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
@@ -44,7 +46,7 @@ import { C, F } from '@/theme';
 /** A head's face for the drawer cards (D345). */
 function HeadIcon({ kind, name }: { kind: HeadKind | 'gm'; name: string }) {
   return (
-    <Svg width={34} height={36} viewBox="-20 -24 40 44">
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={34} height={36} viewBox="-20 -24 40 44">
       <HeadFace kind={kind} name={name} size={40} />
     </Svg>
   );
@@ -83,6 +85,7 @@ type DrawerCardView = DrawerView['cards'][number];
 const GOAL_FAR_SECONDS = 1800;
 
 export default function GameScreen() {
+  usePerfMarks('GameScreen');
   const insets = useSafeAreaInsets();
   const { width: screenW } = useWindowDimensions();
   const game = useGame((s) => s.game);
@@ -125,6 +128,12 @@ export default function GameScreen() {
     }, []),
   );
   const setBonusHold = useGame((s) => s.setBonusHold);
+  // the app goes to the background: the game tick stops (the animation loops and the scene clock follow AppState themselves); the time away is paid when it returns
+  const setBackground = useGame((s) => s.setBackground);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (st) => setBackground(!isForeground(st)));
+    return () => sub.remove();
+  }, [setBackground]);
   // G95: the golden pizza also waits while a card is up (an order, or Victor's challenge): the sky has no room beside it
   const bannerOpen = useBannerOpen();
   const cardUp = holdsBonus(game, bannerOpen);
@@ -351,7 +360,7 @@ export default function GameScreen() {
         {area.w > 0 && <FloatingBonus width={area.w} height={area.h} top={bonusTop} />}
         {drawer && (
           <View style={StyleSheet.absoluteFill}>
-            <Pressable testID="close-upgrades-dim" style={styles.dim} onPress={() => setDrawerOpen(false)} />
+            <Pressable testID="close-upgrades-dim" accessibilityRole="button" accessibilityLabel="Close the upgrades" style={styles.dim} onPress={() => setDrawerOpen(false)} />
             <View style={styles.drawer}>
               <View style={styles.drawerHead}>
                 <View style={{ flex: 1 }}>
@@ -359,7 +368,7 @@ export default function GameScreen() {
                   {/* the manager's line is long: it shrinks (never under 10 pt) to the room beside Close, then wraps rather than clip */}
                   <Text style={[styles.drawerSub, drawerGood && styles.drawerSubGood, { fontSize: fitFont(drawer.bottleneck, screenW - 2 * DRAWER_HEAD.padX - DRAWER_CLOSE_W, 12, MIN_FONT) }]} numberOfLines={2}>{drawer.bottleneck}</Text>
                 </View>
-                <Pressable testID="close-upgrades" onPress={() => setDrawerOpen(false)} style={styles.closeBtn} hitSlop={CLOSE_SLOP}>
+                <Pressable testID="close-upgrades" accessibilityRole="button" accessibilityLabel="Close the upgrades" onPress={() => setDrawerOpen(false)} style={styles.closeBtn} hitSlop={CLOSE_SLOP}>
                   <Text style={styles.closeText}>Close ▼</Text>
                 </Pressable>
               </View>
@@ -410,7 +419,7 @@ export default function GameScreen() {
         )}
         {tasksOpen && <TasksDrawer game={slow.game} now={slow.sec} clockOff={clockOff} bottomInset={insets.bottom} tab={tasksTab} onTab={setTasksTab} onClose={closeTasks} actions={taskActions} />}
         {/* Toast floats in the open sky at the top of the scene, clear of the shop, the row and the cards. */}
-        {toast && <Toast compact text={toast.text} top={10} />}
+        {toast && hintsAllowed(game).toast && <Toast compact text={toast.text} top={10} />}
       </View>
       {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
       {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}

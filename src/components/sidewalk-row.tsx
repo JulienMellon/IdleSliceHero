@@ -113,7 +113,7 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
       ) : (
         cards(true)
       )}
-      <Pressable testID="open-upgrades" onPress={onOpen} hitSlop={SIDEWALK_SLOP.all} style={[styles.all, idleShop && styles.allIdle]}>
+      <Pressable testID="open-upgrades" accessibilityRole="button" accessibilityLabel="All upgrades" onPress={onOpen} hitSlop={SIDEWALK_SLOP.all} style={[styles.all, idleShop && styles.allIdle]}>
         <Text style={styles.allIcon} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
           ☰
         </Text>

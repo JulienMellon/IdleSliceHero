@@ -14,7 +14,8 @@ import { attackLite, bannerView } from './attack-model';
 import { BANNER_OPEN_MS, setBannerOpen } from './banner-state';
 import { STACK } from './stack-model';
 
-export const AttackBanner = memo(function AttackBanner() {
+/** `shown`: the sky strip's queue gave the open banner the strip (stack-model.ts); the collapsed badge takes no room and always draws. */
+export const AttackBanner = memo(function AttackBanner({ shown = true }: { shown?: boolean }) {
   // Reads the live store below: React Compiler must not cache that.
   'use no memo';
   const shop = useGame((s) => {
@@ -43,6 +44,7 @@ export const AttackBanner = memo(function AttackBanner() {
     };
   }, [open, st.n]);
   if (!shop) return null;
+  if (open && !shown) return null;
   const g = useGame.getState().game;
   const b = bannerView(attackView(g, Date.now()));
   if (!b) return null;

@@ -116,6 +116,8 @@ export interface GiftDef {
   cosmetic?: string;
   /** Day 30: the cycle's visitor (VISITORS) comes by. */
   visit?: boolean;
+  /** The prize's own name, for the calendar's big last cell (v5.17). PLACEHOLDER on day 30 until the writer names it. */
+  name?: string;
 }
 
 export const GIFT_LENGTH = 30;
@@ -131,7 +133,7 @@ export const GIFT_MILESTONES: Readonly<Record<number, GiftDef>> = {
   14: { label: '3 boosters · 2× · 30 min', boosters: [{ mult: 2, minutes: 30 }, { mult: 2, minutes: 30 }, { mult: 2, minutes: 30 }] },
   21: { label: '2× income for 24 h', boostNow: { mult: 2, minutes: 24 * 60 } },
   28: { label: 'Storefront skin', cosmetic: 'storefront-skin-{cycle}' },
-  30: { label: 'Visit: 2× for 7 days', boostNow: { mult: 2, minutes: 7 * 24 * 60 }, diamonds: 300, cosmetic: 'oven-gold', visit: true },
+  30: { label: 'Visit: 2× for 7 days', boostNow: { mult: 2, minutes: 7 * 24 * 60 }, diamonds: 300, cosmetic: 'oven-gold', visit: true, name: 'Day 30 prize' },
 };
 
 /** The 30 gifts, day 1 first. */
@@ -153,6 +155,7 @@ export const COSMETIC_NAMES: Readonly<Record<string, string>> = {
   'scooter-mint': 'Mint scooter',
   'neon-counter': 'Neon counter sign',
   'awning-gold': 'Gold awning',
+  'awning-founder': 'Founder awning',
   'oven-gold': 'Gold oven',
 };
 

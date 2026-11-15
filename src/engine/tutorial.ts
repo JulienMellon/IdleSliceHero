@@ -91,3 +91,23 @@ export function tutorialAdvance(s: G.GameState): G.GameState {
 
 /** Story scenes wait while Nonna is showing the first batch (steps 1–6). */
 export const tutorialHoldsStory = (s: G.GameState) => s.tutorial >= 1 && s.tutorial <= 6 && !s.shops.downtown.managed;
+
+/** The small notes the screen can show besides Nonna's card: a refused tap's reason, the idle-drivers pill, the queue count, a refused buy's toast. */
+export type Hint = 'refusal' | 'waiting' | 'more' | 'toast';
+export const HINTS: readonly Hint[] = ['refusal', 'waiting', 'more', 'toast'];
+
+/**
+ * v5.17 (U4): one instruction at a time. While the coach has a step, that step is the only thing the screen says: no "Still baking" bubble, no
+ * "drivers idle" pill, no queue count, no refusal toast (every purchase stays one tap away on the sidewalk row; only the words wait).
+ * Outside the tutorial every hint may show. Components ask this, none keeps its own tutorial test.
+ */
+export function hintsAllowed(s: G.GameState): Record<Hint, boolean> {
+  const on = coachStep(s) !== null;
+  return { refusal: !on, waiting: !on, more: !on, toast: !on };
+}
+
+/**
+ * v5.17 (U4): the padlocked tabs of neighbourhoods that cannot be built yet only mean something once the player is past the first
+ * hire: until a head (or a manager) is hired anywhere, the tab strip shows the shops that are built plus the next one to build.
+ */
+export const showLockedTabs = (s: G.GameState): boolean => Object.values(s.shops).some((sh) => sh.managed || Object.values(sh.heads).some(Boolean));

@@ -13,6 +13,8 @@ import { lotView } from './city-model';
 import { buildChipHint, buildChipSub, cardLook, type ButtonTone } from './sidewalk-model';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BuyButton, haptic } from './game-ui';
+import { showLockedTabs } from '../engine/tutorial';
+import { shopStars } from '../engine/features/mastery';
 import { pipBits, showPips, starPips } from './endgame/mastery-model';
 import { StarPips } from './endgame/star-pips';
 
@@ -23,9 +25,13 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
   // Keep the active pizzeria's tab in view, snapped so the strip always starts on a tab edge.
   const xs = useRef<number[]>([]);
   const [offsets, setOffsets] = useState<number[]>([]);
+  // U4: no padlocked tabs before the first head is hired (the built shops, the active one and the next to build stay)
+  const lockedShown = showLockedTabs(game);
+  const hidden = (n: (typeof NEIGHBORHOODS)[number]) => !lockedShown && !game.shops[n.id].built && next?.id !== n.id && game.active !== n.id;
+  const tabCount = NEIGHBORHOODS.filter((n) => !hidden(n)).length;
   const onTab = (i: number) => (e: { nativeEvent: { layout: { x: number } } }) => {
     xs.current[i] = e.nativeEvent.layout.x;
-    if (xs.current.filter((v) => v !== undefined).length === NEIGHBORHOODS.length) setOffsets(xs.current.map((x, i) => (i === 0 ? 0 : x - 6)));
+    if (xs.current.filter((v) => v !== undefined).length === tabCount) setOffsets(xs.current.map((x, i) => (i === 0 ? 0 : x - 6)));
   };
   const [dims, setDims] = useState({ content: 0, view: 0 });
   const [sx, setSx] = useState(0);
@@ -43,6 +49,7 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
         {NEIGHBORHOODS.map((n, i) => {
           const shop = game.shops[n.id];
           const active = game.active === n.id;
+          if (hidden(n)) return null;
           if (!shop.built && next?.id !== n.id) {
             return (
               <View key={n.id} onLayout={onTab(i)} style={[styles.tab, styles.tabLocked]}>
@@ -71,6 +78,9 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
                 key={n.id}
                 onLayout={onTab(i)}
                 testID={`build-${n.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Build ${n.name}, ${buildChipSub(n.buildCost, warn)}`}
+                accessibilityState={{ disabled: !can }}
                 onPress={() => {
                   const ok = onBuild(n.id);
                   haptic(ok ? 'success' : 'error');
@@ -86,7 +96,7 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
           }
           const eps = Game.shopEarnings(game, n.id) * boostMult;
           return (
-            <Pressable key={n.id} onLayout={onTab(i)} testID={`tab-${n.id}`} onPress={() => {
+            <Pressable key={n.id} onLayout={onTab(i)} testID={`tab-${n.id}`} accessibilityRole="tab" accessibilityLabel={`${n.name}, ${Game.runsItself(shop) ? `${money(eps)} a second` : 'you run it'}${showPips(shop) ? `, ${shopStars(shop)} of 3 stars` : ''}`} accessibilityState={{ selected: active }} onPress={() => {
                 if (!active) emitAudio({ type: 'click' });
                 onSelect(n.id);
               }} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
@@ -101,7 +111,7 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
       {/* edge fades so a clipped tab reads as "scroll for more" */}
       {/* hide each fade when the strip is already at that end */}
       {(['l', 'r'] as const).filter((side) => (side === 'l' ? sx > 2 : sx < maxScroll - 2)).map((side) => (
-        <Svg key={side} width={30} height="100%" style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]} viewBox="0 0 30 10" preserveAspectRatio="none" pointerEvents="none">
+        <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" key={side} width={30} height="100%" style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]} viewBox="0 0 30 10" preserveAspectRatio="none" pointerEvents="none">
           <Defs>
             <LinearGradient id={`tf-${side}`} x1={side === 'l' ? '0' : '1'} y1="0" x2={side === 'l' ? '1' : '0'} y2="0">
               <Stop offset="0" stopColor="#B52C1C" stopOpacity={1} />
@@ -158,7 +168,7 @@ export function StationCard(props: {
         </View>
       </View>
       <View style={props.wide ? { width: 96 } : undefined}>
-        <BuyButton compact tone={props.tone} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : props.buyLabel ?? money(props.cost)} sub={props.tone === 'nogain' ? 'no gain now' : undefined} enabled={props.canBuy} onPress={props.onBuy} />
+        <BuyButton compact name={props.title} tone={props.tone} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : props.buyLabel ?? money(props.cost)} sub={props.tone === 'nogain' ? 'no gain now' : undefined} enabled={props.canBuy} onPress={props.onBuy} />
       </View>
     </View>
   );

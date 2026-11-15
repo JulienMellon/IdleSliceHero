@@ -30,7 +30,7 @@ export const SignPlaque = memo(function SignPlaque({ shopId, width, height }: Sc
   const tagAt = toWindow(f, box.tagX, box.tagY);
   return (
     <View testID="sign-rating" accessibilityLabel={`Rating ${stars} stars. ${PAY_WORDS[tag as PayTag]}`} pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} style={StyleSheet.absoluteFill}>
         <G transform={`translate(${f.ox} ${f.oy}) scale(${f.s})`}>
           <G transform={`translate(${box.x} ${box.y})`}>
             <Rect x={0.7} y={0.7} width={PLAQUE_W - 1.4} height={PLAQUE.height - 1.4} rx={(PLAQUE.height - 1.4) / 2} fill="#FFF4E0" stroke={INK} strokeWidth={1.4} />

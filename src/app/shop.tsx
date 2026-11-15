@@ -1,6 +1,7 @@
 // The Shop screen (v5.15), opened from the diamond chip. Tab 1, Shop Style: the seven cosmetics, each owned (wear / take off), for
 // 150 diamonds, or earned (the master's plaque: "earn 18 stars", never sold). Tab 2, Booster Shelf: the inventory with an Activate
-// button each, or the empty-shelf line. Boosters have no diamond price: they are never sold for diamonds. Data: endgame/shop-model.ts.
+// button each, or the empty-shelf line, and above it one free booster a day for an ad. Boosters have no diamond price: they are never sold for
+// diamonds. Tab 3, Store (v5.17, components/store): the Starter Pack, Nonna's Plus and the diamond packs, for money. Data: endgame/shop-model.ts.
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -10,12 +11,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { boosterShelf, SHELF_EMPTY, SHOP_TABS, vanityViews, type VanityView } from '@/components/endgame/shop-model';
 import { VanityArt } from '@/components/endgame/vanity-art';
 import { haptic, Toast } from '@/components/game-ui';
+import { AdButton } from '@/components/store/ad-button';
+import { boosterAdOffer } from '@/components/store/ad-model';
+import { StoreTab } from '@/components/store/store-tab';
 import { BoostIcon, DiamondIcon } from '@/components/icons';
 import { TAP } from '@/components/tap-targets';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
 
-type Tab = 0 | 1;
+type Tab = 0 | 1 | 2;
+
+/** The shelf's ad gives the booster; the store sets today as taken. Module-level, so the memoised button keeps one callback. */
+const takeBooster = () => void useGame.getState().freeBooster();
 
 function VanityCard({ v, onWear, onBuy }: { v: VanityView; onWear: (id: string, on: boolean) => void; onBuy: (id: string) => void }) {
   const can = v.state === 'owned' || v.state === 'worn' || v.state === 'buy';
@@ -60,13 +67,14 @@ export default function Shop() {
   // primitives: the screen repaints when a diamond, a cosmetic or a booster changes, not on every game tick
   const wardrobe = useGame((s) => `${s.game.rewards.cosmetics.join(',')}|${s.game.rewards.worn.join(',')}|${Math.floor(s.game.rewards.diamonds)}`);
   const shelfKey = useGame((s) => s.game.rewards.boosters.map((b) => `${b.mult}:${b.seconds}`).join(','));
+  const boosterAd = useGame((s) => boosterAdOffer(s.game, Date.now(), s.prefs.boosterAdDay));
   const [tab, setTab] = useState<Tab>(0);
   // G94: leaving the screen takes its toast with it
   useFocusEffect(useCallback(() => () => useGame.setState({ toast: null }), []));
   const { equip, buyCosmetic, startBooster } = useGame.getState();
   const vanity = useMemo(() => vanityViews(useGame.getState().game), [wardrobe]); // eslint-disable-line react-hooks/exhaustive-deps -- `wardrobe` is what the views depend on
   const shelf = useMemo(() => boosterShelf(useGame.getState().game), [shelfKey]); // eslint-disable-line react-hooks/exhaustive-deps -- `shelfKey` is what the shelf depends on
-  const tabs = SHOP_TABS();
+  const tabs = [...SHOP_TABS(), 'Store'];
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -88,8 +96,11 @@ export default function Shop() {
         ))}
       </View>
       <ScrollView contentContainerStyle={{ padding: 14, gap: 10, paddingBottom: insets.bottom + 24 }}>
+        {tab === 1 && boosterAd && <AdButton placement="daily_booster" label="Free booster: 2× for 15 min" plusLabel="Free booster · Nonna’s Plus" testID="booster-ad" onBenefit={takeBooster} />}
         {tab === 0 ? (
           vanity.map((v) => <VanityCard key={v.id} v={v} onWear={(id, on) => equip(id, on)} onBuy={(id) => haptic(buyCosmetic(id) ? 'success' : 'error')} />)
+        ) : tab === 2 ? (
+          <StoreTab />
         ) : shelf.length === 0 ? (
           <View style={styles.emptyBox}>
             <Text testID="shelf-empty" style={styles.empty}>

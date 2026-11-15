@@ -14,7 +14,7 @@ function Sheet() {
   const m = sheetModel(game, game.active, now);
   return (
     <View style={styles.overlay} testID="report-sheet">
-      <Pressable style={StyleSheet.absoluteFill} onPress={closeReport} accessibilityLabel="Close the shop report" />
+      <Pressable style={StyleSheet.absoluteFill} onPress={closeReport} accessibilityRole="button" accessibilityLabel="Close the shop report" />
       <View style={styles.card}>
         <Text style={styles.title}>{m.title}</Text>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.body}>

@@ -1238,7 +1238,7 @@ export const Backdrop = memo(function Backdrop({ id, width, height, prop, propTe
   const Scene = SCENES[id];
   const zoom = SCENE_ZOOM[id];
   return (
-    <Svg width={width} height={height} viewBox={`0 ${200 - vbH} 400 ${vbH}`} preserveAspectRatio="xMidYMax slice">
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} viewBox={`0 ${200 - vbH} 400 ${vbH}`} preserveAspectRatio="xMidYMax slice">
       <Defs>
         <LinearGradient id={ids.sky} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={top} />
