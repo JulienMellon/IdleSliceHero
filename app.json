@@ -122,7 +122,14 @@
           ]
         }
       ],
-      "@sentry/react-native/expo"
+      "@sentry/react-native/expo",
+      [
+        "react-native-audio-api",
+        {
+          "iosBackgroundMode": false,
+          "androidPermissions": []
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
