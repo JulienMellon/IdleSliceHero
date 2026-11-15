@@ -1,7 +1,5 @@
 import { analyticsLog, clearAnalyticsLog } from '../analytics';
-import { crashUser } from '../crash';
-import { ads, analytics, purchases, startServices } from '../index';
-import { privacy } from '../runtime';
+import { ads, purchases, startServices } from '../index';
 
 const setSearch = (s: string) => ((globalThis as { location?: unknown }).location = { search: s });
 afterEach(() => {
@@ -32,13 +30,5 @@ describe('service wiring', () => {
     setSearch('?buy=purchased');
     await purchases.buy('diamonds_80');
     expect(analyticsLog().map((e) => e.event)).toEqual(['iap_purchased']);
-  });
-
-  it('crash reports are filed under the Install ID, and not once analytics is opted out', () => {
-    expect(crashUser()).toBe(analytics.installId());
-    privacy.set(true);
-    expect(crashUser()).toBeNull();
-    privacy.set(false);
-    expect(crashUser()).toBe(analytics.installId());
   });
 });

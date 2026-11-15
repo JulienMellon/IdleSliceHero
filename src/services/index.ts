@@ -1,7 +1,7 @@
 // The one import for game code. Metro picks the .native.ts file on iOS and the .web.ts stub elsewhere.
 import { adsTutorialDone, ads as rawAds, startAds } from './ads';
 import { analytics, startAnalytics } from './analytics';
-import { crash, setCrashUser, startCrash } from './crash';
+import { crash, startCrash } from './crash';
 import { EVENTS } from './events';
 import { purchases as rawPurchases, startPurchases } from './purchases';
 import { grantBus, privacy } from './runtime';
@@ -37,9 +37,6 @@ export const purchases: Purchases = {
   },
 };
 
-/** Crash reports carry the Install ID only while analytics consent allows it. */
-const fileCrashUnderInstallId = () => setCrashUser(privacy.isOptedOut() ? null : analytics.installId());
-
 let started: Promise<void> | null = null;
 
 /** Start every service once, opt-out first. Nothing here prompts the player; consent waits for the first ad. */
@@ -48,7 +45,5 @@ export function startServices(): Promise<void> {
     await privacy.load();
     startCrash();
     await Promise.all([startAnalytics(), startPurchases(), startAds()]).catch((e) => crash.capture(e, 'startServices'));
-    fileCrashUnderInstallId();
-    privacy.subscribe(fileCrashUnderInstallId);
   })());
 }

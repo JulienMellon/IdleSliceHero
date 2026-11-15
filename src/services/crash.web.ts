@@ -13,10 +13,3 @@ export const clearCrashLog = (): void => void (log.length = 0);
 
 export const crash: Crash = createCrash(privacy, { capture: (error, context) => void log.push({ error, context }) });
 export function startCrash(): void {}
-
-let user: string | null = null;
-/** The Install ID the reports are filed under (null: none). */
-export const crashUser = (): string | null => user;
-export function setCrashUser(id: string | null): void {
-  user = id;
-}
