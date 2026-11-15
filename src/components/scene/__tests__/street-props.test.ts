@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 // D432: the Suburbs' picket fence was an orphan fragment (rails and pickets floating, cut off at both ends, nothing behind it).
 import { PROP_HALF_W } from '../layout';
-import { PICKET } from '../street-props';
+import { CARS, PICKET, trafficFor } from '../street-props';
 
 describe('the picket fence (D432)', () => {
   test('it starts and stops: a capped post at each end, the pickets between them, all standing on a bed that is wider than the fence', () => {
@@ -47,3 +47,14 @@ describe('the front yard (v5.14, D432)', () => {
   });
 });
 
+
+describe('the MegaSlice van (D491)', () => {
+  test('it is not on the street until the rival is open, and then it is; the other traffic never changes', () => {
+    const closed = trafficFor(CARS, false);
+    const open = trafficFor(CARS, true);
+    expect(closed.some((c) => c.megaslice)).toBe(false);
+    expect(closed.some((c) => c.kind === 'van')).toBe(false);
+    expect(open).toHaveLength(CARS.length);
+    expect(closed).toHaveLength(CARS.length - 1);
+  });
+});

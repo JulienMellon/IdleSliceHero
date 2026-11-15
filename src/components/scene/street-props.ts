@@ -25,3 +25,14 @@ export const PICKET = {
     { cx: 14, cy: -10, r: 6.5 },
   ],
 } as const;
+
+/** D491: the traffic on the street. The MegaSlice van (`megaslice`) is the rival's: it shows only while the rival shop is open (`rivalOpen`). */
+export const trafficFor = <T extends { megaslice?: boolean }>(cars: readonly T[], rivalIsOpen: boolean): T[] => cars.filter((c) => rivalIsOpen || !c.megaslice);
+
+/** `megaslice`: the rival's van (D491): it drives only while the MegaSlice shop is open (`trafficFor`). */
+export const CARS: { lane: number; speed: number; offset: number; color: string; kind: 'car' | 'van' | 'taxi'; megaslice?: boolean }[] = [
+  { lane: 0, speed: 46, offset: 40, color: '#56CCF2', kind: 'car' as const },
+  { lane: 0, speed: 46, offset: 330, color: '#7B2CBF', kind: 'van' as const, megaslice: true },
+  { lane: 1, speed: 62, offset: 120, color: '#FFC531', kind: 'taxi' as const },
+  { lane: 1, speed: 62, offset: 420, color: '#E8432E', kind: 'car' as const },
+];

@@ -39,6 +39,8 @@ import {
   ladderProps, menuRect, milestoneSpeaker, wallRects, type Placed,
 } from './scene/ladder';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverlays, StreetProp } from './scene/room';
+import { trafficFor } from './scene/street-props';
+import { rivalOpen } from '../engine/features/layers/rival';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, sidewalkItems, Street } from './scene/street';
 import { buildCast, sidewalkOf } from './scene/cast';
 import { queueLabel, waitingText } from './scene/waiting';
@@ -463,7 +465,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             );
           })()}
           {items.map((it) => it.el)}
-          {CARS.map((c, i) => {
+          {trafficFor(CARS, rivalOpen(game, id)).map((c, i) => {
             const dir = c.lane === 0 ? -1 : 1;
             const raw = (c.offset + clock * c.speed) % DRIFT_SPAN;
             const x = dir === 1 ? raw - 100 : SCENE_W + 100 - raw;
