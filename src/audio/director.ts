@@ -30,6 +30,21 @@ const CATALOG: Catalog = {
 
 let started = false;
 let mixer: Mixer;
+let suppressed = false;
+const suppressedListeners = new Set<(suppressed: boolean) => void>();
+
+/** AU41: Music is off for this session because another app is playing (the saved preference is untouched). For Settings. */
+export function musicSuppressed(): boolean {
+  return suppressed;
+}
+
+/** Subscribe to `musicSuppressed()` changes; returns the unsubscribe. */
+export function onMusicSuppressed(cb: (suppressed: boolean) => void): () => void {
+  suppressedListeners.add(cb);
+  return () => {
+    suppressedListeners.delete(cb);
+  };
+}
 const chain = new PurchaseChain();
 let scenePanelCue: PanelCue = 'none';
 let lastScenePanel = '';
@@ -179,7 +194,12 @@ export function startAudio() {
   void setAudioModeAsync({ playsInSilentMode: false, interruptionMode: 'mixWithOthers', shouldPlayInBackground: false }).catch(() => {});
   void useAudioPrefs.getState().load();
   try {
-    mixer = createMixer({ out: createOutput(), catalog: CATALOG, prefs: () => useAudioPrefs.getState() });
+    mixer = createMixer({ out: createOutput(), catalog: CATALOG, prefs: () => useAudioPrefs.getState(),
+      onSuppressed: (v) => {
+        suppressed = v;
+        for (const cb of [...suppressedListeners]) cb(v);
+      },
+    });
     mixer.boot({ unlocked: Platform.OS !== 'web' }); // web: browsers block audio until the first gesture
   } catch {
     started = false;

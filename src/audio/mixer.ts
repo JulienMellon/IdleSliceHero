@@ -79,6 +79,8 @@ export interface MixerDeps {
   catalog: Catalog;
   /** The saved preferences. */
   prefs: () => { music: boolean; sound: boolean };
+  /** Called when "another app is playing" starts or ends suppressing Music (launch, or the player's own toggle). */
+  onSuppressed?: (suppressed: boolean) => void;
   random?: () => number;
 }
 
@@ -128,6 +130,11 @@ export function createMixer(deps: MixerDeps) {
   let busMute: Timer | null = null;
 
   const now = () => Date.now();
+  const setRule = (change: () => void) => {
+    const before = rule.suppressed;
+    change();
+    if (rule.suppressed !== before) deps.onSuppressed?.(rule.suppressed);
+  };
   const num = (x: number, fallback: number) => (Number.isFinite(x) ? x : fallback);
 
   function musicOn() {
@@ -157,7 +164,7 @@ export function createMixer(deps: MixerDeps) {
   // ------------------------------------------------------------------------------------------ launch
   function boot(o: { unlocked: boolean }) {
     unlocked = o.unlocked;
-    rule.start(out.otherAudio());
+    setRule(() => rule.start(out.otherAudio()));
     syncBuses();
     for (const id of launchPlan(catalog).launch) out.load(id);
   }
@@ -539,7 +546,7 @@ export function createMixer(deps: MixerDeps) {
 
   /** The player changed a preference: a hand-made Music choice ends the other-audio rule (AU41); buses follow. */
   function prefsChanged(musicToggled: boolean) {
-    if (musicToggled) rule.userChoice();
+    if (musicToggled) setRule(() => rule.userChoice());
     syncBuses();
   }
 

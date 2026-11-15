@@ -328,6 +328,22 @@ describe('another app is playing (AU41)', () => {
   });
 });
 
+describe('the suppressed flag for Settings', () => {
+  it('reports the rule at launch and when the player ends it, once each', () => {
+    const out = new FakeOut();
+    out.other = true;
+    const seen: boolean[] = [];
+    const mixer = createMixer({ out, catalog: CATALOG, prefs: () => ({ music: true, sound: true }), onSuppressed: (v) => seen.push(v) });
+    mixer.boot({ unlocked: true });
+    expect(seen).toEqual([true]);
+    mixer.prefsChanged(false); // Sound changed, not Music: no report
+    mixer.prefsChanged(true);
+    mixer.prefsChanged(true);
+    expect(seen).toEqual([true, false]);
+    expect(mixer.otherAudioSuppressed).toBe(false);
+  });
+});
+
 describe('the master limiter curve', () => {
   const c = limiterCurve();
   it('is linear below the knee, odd, monotonic and never reaches 1', () => {

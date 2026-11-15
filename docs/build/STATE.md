@@ -37,3 +37,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md
 - 2026-11-15 v5.17 r1 wave 2: U3 launched (+onGrant, Settings music). L1 waits for N1 lock fix.
 - 2026-11-15 v5.17 r1 N1 lock+audio-api plugin done (97 pass). L1 launched.
 - 2026-11-15 v5.17 r1 U3 partial (store/ads/settings; 849 pass; shots not run: no playwright). Needs: awningFounder in facade/storefront + cosmeticName/Style tab; mixer getter (-> A1); links.ts -> L1 re-export; expo-clipboard; daily-task generator export; 98_u3 README row.
+- 2026-11-15 v5.17 r1 pip playwright==1.63.0 installed (launch ok). U3 to run 98_u3 shots when a slot frees; A1 getter sent.
