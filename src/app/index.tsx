@@ -15,8 +15,8 @@ import { coachStep } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
-import { masteryGoal } from '@/components/goal-model';
-import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots } from '@/components/slots';
+import { masteryGoal, STORY_TOTAL, storyGoal } from '@/components/goal-model';
+import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots, StoryWaitBanner } from '@/components/slots';
 import { type DrawerIcon, type DrawerView, drawerCards, tiedBundle } from '@/components/drawer-model';
 import { buttonTone, buyBundle, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
@@ -28,7 +28,7 @@ import { HeadFace } from '@/components/scene/head-face';
 import Svg from 'react-native-svg';
 import { CURB_Y, SCENE_H, sceneFit, Storefront } from '@/components/storefront';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
-import { CITY_NAME, DECOR, DECOR_KINDS, FOOTPRINTS, HEAD_ROLE, HEADS, type HeadKind, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES } from '@/content/tuning';
+import { CITY_NAME, DECOR, DECOR_KINDS, FOOTPRINTS, HEAD_ROLE, HEADS, type HeadKind, NEIGHBORHOODS, OVEN_GRADES, VEHICLES } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
 import { money, pizzas } from '@/engine/format';
 import * as G from '@/engine/game';
@@ -186,7 +186,9 @@ export default function GameScreen() {
       const cost = G.upgradeCostOf(game, n.id, hire) ?? 0;
       // short enough to fit beside the amount (D338): "Waterfront: hire Finn (prep)"
       const label = G.isHeadUpgrade(hire) ? `${n.name}: hire ${HEADS[n.id][G.headOf(hire)]} (${HEAD_ROLE[G.headOf(hire)]})` : `${n.name}: hire a manager`;
-      candidates.push({ label, current: game.cash, target: cost, ratio: (G.shopEarnings(game, n.id) / Math.max(1, cost)) * 3, onPress: () => {
+      // D477: the bar beside the HUD's chips is narrow: the same goal without the shop's name
+      const short = G.isHeadUpgrade(hire) ? `Hire ${HEADS[n.id][G.headOf(hire)]} (${HEAD_ROLE[G.headOf(hire)]})` : 'Hire a manager';
+      candidates.push({ label, short, current: game.cash, target: cost, ratio: (G.shopEarnings(game, n.id) / Math.max(1, cost)) * 3, onPress: () => {
         if (game.active !== n.id) setActive(n.id);
         return useGame.getState().buy(hire);
       } });
@@ -194,12 +196,12 @@ export default function GameScreen() {
   }
   const next = G.nextToBuild(game);
   // a locked build (Nonna's takeover, an unbuilt neighbour) is not a goal: its tap would do nothing (B2)
-  if (next && !G.buildLock(game, next.id)) candidates.push({ label: `Build a pizzeria in ${next.name}`, current: game.cash, target: next.buildCost, ratio: G.buildGain(game, next.id) / G.buildAllIn(next.id), onPress: () => build(next.id) });
+  if (next && !G.buildLock(game, next.id)) candidates.push({ label: `Build a pizzeria in ${next.name}`, short: `Build in ${next.name}`, current: game.cash, target: next.buildCost, ratio: G.buildGain(game, next.id) / G.buildAllIn(next.id), onPress: () => build(next.id) });
   const vg = G.vehicleGain(game);
-  if (vg && vg > 0) candidates.push({ label: `Upgrade fleet to ${VEHICLES[v + 1].name}s · ${plus(vg)}`, current: game.cash, target: VEHICLES[v + 1].cost, ratio: vg / VEHICLES[v + 1].cost, onPress: buyFleet });
+  if (vg && vg > 0) candidates.push({ label: `Upgrade fleet to ${VEHICLES[v + 1].name}s · ${plus(vg)}`, short: `${VEHICLES[v + 1].name}s ${plus(vg)}`, current: game.cash, target: VEHICLES[v + 1].cost, ratio: vg / VEHICLES[v + 1].cost, onPress: buyFleet });
   candidates.sort((a, b) => b.ratio - a.ratio);
   // Waterfront's finale is a purchase, so it leads the goal bar while it's on offer
-  if (G.pier9Available(game)) candidates.unshift({ label: 'Bid on Pier 9 to save Marisol’s dock', current: game.cash, target: PIER9_BID.cost, ratio: Number.MAX_VALUE, onPress: bidPier9 });
+  if (G.pier9Available(game)) candidates.unshift({ label: 'Bid on Pier 9 to save Marisol’s dock', short: 'Bid on Pier 9', current: game.cash, target: G.pier9Price(game), ratio: Number.MAX_VALUE, onPress: bidPier9 });
   // viewing an unmanaged shop: its next hire is the goal
   // while the sidewalk offers a head, the goal bar moves on to the next goal (D341); the GM hire is offered in both places until it is hired (B1).
   // Downtown's sidewalk shows its stations instead, so there the hire leads the goal bar
@@ -216,18 +218,19 @@ export default function GameScreen() {
       const cost = G.upgradeCostOf(game, id, what);
       if (cost !== null && !G.upgradeLock(game, id, what)) {
         const gain = G.upgradeGain(game, id, what) ?? 0;
-        big.push({ label: what === 'expand' ? `Expand ${nd.name} · ${FOOTPRINTS[shop.footprint + 1]?.name ?? ''}` : `${OVEN_GRADES[shop.grade + 1]?.name ?? ''} ovens in ${nd.name}`, current: game.cash, target: cost, ratio: (gain + 1e-6) / cost, onPress: () => buy(what) });
+        big.push({ label: what === 'expand' ? `Expand ${nd.name} · ${FOOTPRINTS[shop.footprint + 1]?.name ?? ''}` : `${OVEN_GRADES[shop.grade + 1]?.name ?? ''} ovens in ${nd.name}`, short: what === 'expand' ? `Expand · ${FOOTPRINTS[shop.footprint + 1]?.name ?? ''}` : `${OVEN_GRADES[shop.grade + 1]?.name ?? ''} ovens`, current: game.cash, target: cost, ratio: (gain + 1e-6) / cost, onPress: () => buy(what) });
       }
     }
     for (const kind of DECOR_KINDS) {
       const cost = G.decorCost(game, id, kind);
-      if (cost !== null) big.push({ label: `${DECOR[kind].tiers[shop.decor[kind] + 1]} in ${nd.name}`, current: game.cash, target: cost, ratio: ((G.decorGain(game, id, kind) ?? 0) + 1e-6) / cost, onPress: () => buyDecor(kind) });
+      if (cost !== null) big.push({ label: `${DECOR[kind].tiers[shop.decor[kind] + 1]} in ${nd.name}`, short: `${DECOR[kind].tiers[shop.decor[kind] + 1]}`, current: game.cash, target: cost, ratio: ((G.decorGain(game, id, kind) ?? 0) + 1e-6) / cost, onPress: () => buyDecor(kind) });
     }
     big.sort((a, b) => b.ratio - a.ratio);
     goal = big[0] ?? null;
   }
   if (!goal) {
-    goal = { label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : `Story ${game.seenScenes.length}/24`, current: game.seenScenes.length, target: 24, icon: <TrophyIcon size={22} /> };
+    const story = storyGoal(game.seenScenes.length);
+    goal = { label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : story.label, current: story.current, target: STORY_TOTAL, icon: <TrophyIcon size={22} /> };
   }
 
   // the HUD names the next station to tap (prep → oven → counter) until a GM runs the shop
@@ -354,6 +357,8 @@ export default function GameScreen() {
                     <Text style={styles.bannerText}>{drawer.perkBanner}</Text>
                   </View>
                 )}
+                {/* v5.16 (T1b): why this neighbourhood's next story is held, with the other notices at the top */}
+                <StoryWaitBanner />
                 {drawer.bundle && (
                   // D304: the tied stations' bundle is a button, not a label: it buys every step through the ordinary buy path
                   <View style={styles.bundleRow}>

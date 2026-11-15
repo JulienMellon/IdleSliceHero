@@ -11,6 +11,7 @@ import { CITY_NAME, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES } from '@/content/tun
 import { money } from '@/engine/format';
 import * as G from '@/engine/game';
 import { useGame } from '@/store/game-store';
+import { TAP } from '@/components/tap-targets';
 import { C, F } from '@/theme';
 
 export default function City() {
@@ -26,11 +27,11 @@ export default function City() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={{ width: 70 }} testID="back">
+        <Pressable onPress={() => router.back()} style={styles.back} testID="back">
           <Text style={styles.backText}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>{CITY_NAME}</Text>
-        <Pressable onPress={() => router.push('/settings')} hitSlop={12} style={{ width: 70, alignItems: 'flex-end' }} testID="open-settings">
+        <Pressable onPress={() => router.push('/settings')} style={styles.settings} testID="open-settings">
           <Text style={{ fontSize: 24, color: '#FFF4E0', fontFamily: F.bold }}>⚙︎</Text>
         </Pressable>
       </View>
@@ -104,7 +105,10 @@ export default function City() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   listWrap: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 4, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark },
+  // U5: Back and Settings are drawn 44 pt tall, the label in the middle of it
+  back: { width: 70, minHeight: TAP.min, justifyContent: 'center' },
+  settings: { width: 70, minHeight: TAP.min, alignItems: 'flex-end', justifyContent: 'center' },
   backText: { fontFamily: F.bold, color: '#fff', fontSize: 18 },
   title: { fontFamily: F.bold, color: '#fff', fontSize: 22 },
   count: { width: 70, textAlign: 'right', fontFamily: F.semi, color: '#FFE7C2', fontSize: 16 },

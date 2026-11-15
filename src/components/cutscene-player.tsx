@@ -13,6 +13,7 @@ import { Backdrop } from './backdrop';
 import { canAdvance, sceneHeading } from '../engine/cutscene-input';
 import { CAPTION, cardHolder, PANEL_BORDER, hasCaptionBar, panelSize, poseFor, stageLayout, tailShare } from './cutscene/staging';
 import { Portrait } from './portrait';
+import { TAP } from './tap-targets';
 
 const native = Platform.OS !== 'web';
 const REWARD_TEXT: Record<string, string> = {
@@ -117,7 +118,6 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
               emitAudio({ type: 'scene-skip' });
               onDone();
             }}
-            hitSlop={12}
             style={styles.skip}
             testID="skip-scene">
             <Text style={styles.skipText}>Skip ▸▸</Text>
@@ -203,9 +203,10 @@ const CREAM = '#FFF4E0';
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#1E0E08', alignItems: 'center' },
-  topRow: { width: '100%', maxWidth: 540, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 10 },
+  topRow: { width: '100%', maxWidth: 540, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 0 },
   title: { color: C.cheese, fontFamily: F.bold, fontSize: 22 },
-  skip: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16 },
+  // U5: drawn 44 pt tall (the pill itself is a 31 pt one; the label stays in the middle)
+  skip: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 14, minHeight: TAP.min, justifyContent: 'center', borderRadius: 22 },
   skipText: { color: '#fff', fontFamily: F.semi, fontSize: 15 },
   // comic panel: ink border, a cream keyline just inside it, and a drop shadow under the whole panel
   frameShadow: { borderRadius: 12, backgroundColor: C.ink, boxShadow: '0 8px 18px rgba(0,0,0,0.6)' } as object,

@@ -1,7 +1,10 @@
 // Does it fit an iPhone SE (320 pt)? Plain arithmetic for the HUD's top row and the sidewalk's cards (G101, G102). React Native Web
 // does not shrink text to fit (adjustsFontSizeToFit is native only), so a long price or title would clip: every text that can be long
 // gets its size from `fitFont` and the width its row really leaves it. Pure: unit-tested in node, at 320 and 393.
-import { SIDEWALK_ROW, STATION_CARD } from '../tap-targets';
+import { HUD_GAP, HUD_ICON, HUD_PAD, SIDEWALK_ROW, STATION_CARD } from '../tap-targets';
+
+// the HUD's constants live with the tap-target proof (tap-targets.ts); re-exported for the callers that know them from here
+export { HUD_GAP, HUD_ICON, HUD_PAD };
 
 /** Bold text's width per em, padded (the Fredoka face runs ~0.52-0.58): the check errs wide, never narrow. */
 export const FIT_EM = 0.6;
@@ -38,24 +41,25 @@ export function cardTextWidths(screenW: number, spans: readonly number[], { chip
   return spans.map((s) => (inner * s) / total - buttonChrome);
 }
 
-/** The station icon beside a card's title takes 14 pt of the line; a card narrower than this much text drops it (at 320 pt with the amount chip every card does). */
-export const iconWidth = (textW: number): number => (textW >= 44 ? 14 : 0);
+/** No text is under this (pt): the fit arithmetic below shrinks a line only down to it, and the layout makes room first (U5). */
+export const MIN_FONT = 10;
 
-/** The sizes a station card's three lines take for the width it has: the price (15 pt at most), the small title and the foot line. */
+/**
+ * The station icon beside a card's title takes 14 pt of the line. A card narrower than 44 pt of text drops it, and so does one whose title would
+ * not fit at 10 pt beside it ("COUNTER" does not in a 50 pt card): room is made by losing the icon, never by shrinking the title under 10 pt.
+ */
+export const iconWidth = (textW: number, sub?: string | null): number => (textW >= 44 && (!sub || fits(sub, textW - 14, MIN_FONT)) ? 14 : 0);
+
+/** The sizes a station card's three lines take for the width it has: the price (15 pt at most), the small title and the foot line (10 pt each; they never shrink under it). */
 export function cardFonts(textW: number, { label, sub, foot, iconW = 0 }: { label: string; sub?: string | null; foot?: string | null; iconW?: number }) {
   return {
-    label: fitFont(label, textW, 15, 9),
-    sub: sub ? fitFont(sub, textW - iconW, 10, 7) : 10,
-    foot: foot ? fitFont(foot, textW, 9, 7) : 9,
+    label: fitFont(label, textW, 15, MIN_FONT),
+    sub: sub ? fitFont(sub, textW - iconW, 10, MIN_FONT) : 10,
+    foot: foot ? fitFont(foot, textW, 10, MIN_FONT) : 10,
   };
 }
 
 // ---------- the HUD's top row ----------
-
-/** The HUD's round buttons are drawn this big (pt), with this gap between them. */
-export const HUD_ICON = 40;
-export const HUD_GAP = 6;
-export const HUD_PAD = 12;
 
 /** The width the cash pill gets: the row minus its round buttons (book and map always; the clipboard and gift once rewards unlock; the top-row chips). */
 export function cashWidth(screenW: number, { tasks, gift, topChips }: { tasks: boolean; gift: boolean; topChips: number }): number {

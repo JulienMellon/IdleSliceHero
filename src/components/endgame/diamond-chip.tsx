@@ -1,4 +1,4 @@
-// The HUD chip with the player's diamonds (HUD_CHIPS): a 44 pt round chip that opens the Shop screen. Shows once rewards unlock.
+// The HUD chip with the player's diamonds (HUD_CHIPS): a 40 pt round chip (a 44 pt touch area: HUD_BUTTON_SLOP) that opens the Shop screen. Shows once rewards unlock.
 // A string selector: it repaints when the diamond count changes, never per game tick.
 import { router } from 'expo-router';
 import { memo } from 'react';
@@ -10,13 +10,13 @@ import { useGame } from '../../store/game-store';
 import { F } from '../../theme';
 import { haptic } from '../game-ui';
 import { DiamondIcon } from '../icons';
-import { HUD_ICON } from './fit-model';
+import { HUD_BUTTON_SLOP, HUD_ICON } from '../tap-targets';
 
 export const DiamondChip = memo(function DiamondChip() {
   const text = useGame((s) => (rewardsUnlocked(s.game) ? count(Math.floor(s.game.rewards.diamonds)) : ''));
   if (!text) return null;
   return (
-    <Pressable testID="shop-chip" hitSlop={4} accessibilityRole="button" accessibilityLabel={`Shop: ${text} diamonds`} onPress={() => { haptic(); router.push('/shop'); }} style={styles.chip}>
+    <Pressable testID="shop-chip" hitSlop={HUD_BUTTON_SLOP.shop} accessibilityRole="button" accessibilityLabel={`Shop: ${text} diamonds`} onPress={() => { haptic(); router.push('/shop'); }} style={styles.chip}>
       <DiamondIcon size={16} />
       <Text style={styles.text} numberOfLines={1} maxFontSizeMultiplier={1.1}>
         {text}

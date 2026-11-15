@@ -1,21 +1,23 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { chapterScenes, storiesCount, tileLabel } from '@/components/cutscene/scrapbook-model';
-import { SCRAPBOOK_HEAD } from '@/components/endgame/fit-model';
+import { fitFont, MIN_FONT, SCRAPBOOK_HEAD } from '@/components/endgame/fit-model';
 import { recipeGroups } from '@/components/endgame/recipes-model';
 import { RecipesSection } from '@/components/endgame/recipes-section';
 import { DISPLAY_NAMES, Portrait } from '@/components/portrait';
 import { NEIGHBORHOODS } from '@/content/tuning';
 import { collectionView } from '@/engine/features/recipes';
 import { nextSceneTeaser } from '@/engine/teaser';
+import { TAP } from '@/components/tap-targets';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
 
 export default function Scrapbook() {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const seen = useGame((s) => s.game.seenScenes);
   const replay = useGame((s) => s.replayScene);
   const markViewed = useGame((s) => s.markScrapbookViewed);
@@ -40,13 +42,14 @@ export default function Scrapbook() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <View style={styles.headRow}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back} testID="back">
+          <Pressable onPress={() => router.back()} style={styles.back} testID="back">
             <Text style={styles.backText}>‹ Back</Text>
           </Pressable>
           <Text style={styles.title}>Scrapbook</Text>
           <Text style={styles.count}>{storiesCount(seen.length)}</Text>
         </View>
-        <Text style={styles.teaser} testID="scrapbook-teaser">
+        // D476: one line when it can be: the size shrinks to the header's width, never under 10 pt
+        <Text style={[styles.teaser, { fontSize: fitFont(teaser, width - 28, 14, MIN_FONT) }]} testID="scrapbook-teaser">
           {teaser}
         </Text>
       </View>
@@ -101,7 +104,7 @@ export default function Scrapbook() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  header: { paddingHorizontal: 14, paddingVertical: 10, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark, gap: 4 },
+  header: { paddingHorizontal: 14, paddingVertical: 4, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark, gap: 4 },
   headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   teaser: { fontFamily: F.semi, fontSize: 14, color: '#FFE7C2', textAlign: 'center' },
   tabs: { flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingTop: 10 },
@@ -109,7 +112,7 @@ const styles = StyleSheet.create({
   tabOn: { backgroundColor: C.tomato, borderColor: C.tomatoDark },
   tabText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   tabTextOn: { color: '#fff' },
-  back: { width: 70 },
+  back: { width: 70, minHeight: TAP.min, justifyContent: 'center' },
   backText: { fontFamily: F.bold, color: '#fff', fontSize: 18 },
   title: { fontFamily: F.bold, color: '#fff', fontSize: SCRAPBOOK_HEAD.title },
   count: { minWidth: 70, textAlign: 'right', fontFamily: F.semi, color: '#FFE7C2', fontSize: SCRAPBOOK_HEAD.count },

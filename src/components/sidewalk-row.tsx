@@ -11,10 +11,10 @@ import { rewardsUnlocked } from '../engine/rewards';
 import { useGame } from '../store/game-store';
 import { C, F } from '../theme';
 import { BuyButton, haptic } from './game-ui';
-import { cardFonts, cardTextWidths, fitFont, iconWidth } from './endgame/fit-model';
+import { cardFonts, cardTextWidths, fitFont, iconWidth, MIN_FONT } from './endgame/fit-model';
 import { DriverIcon, FlameIcon, PrepIcon, RegisterIcon } from './icons';
 import { amountCard, amountLabel, type BuyAmount, cardLook, effectFoot, type MergedSlot, needLine, nextAmount, sidewalkSlots, stationTitle, type StationKey, type StationView } from './sidewalk-model';
-import { COMPACT_FONT_MAX_SCALE, IDLE_STACK_GAP, SIDEWALK_ROW, STATION_CARD, TAP } from './tap-targets';
+import { COMPACT_FONT_MAX_SCALE, IDLE_STACK_GAP, SIDEWALK_ROW, SIDEWALK_SLOP, STATION_CARD } from './tap-targets';
 
 // static icon elements: built once, not per render (M24)
 const ICON: Record<StationKey, React.ReactNode> = {
@@ -27,7 +27,7 @@ const ICON: Record<StationKey, React.ReactNode> = {
 /** D456: the amount is one 44 pt chip at the row's left end: a tap cycles x1 -> x10 -> MAX (a three-way toggle that takes no space over the street). */
 function AmountChip({ amount, onPick }: { amount: BuyAmount; onPick: (a: BuyAmount) => void }) {
   return (
-    <Pressable testID="buy-amount" accessibilityRole="button" accessibilityLabel={`Buy ${amount === 'max' ? 'as many as you can afford' : `${amount} at a time`}. Tap to change`} onPress={() => { haptic(); onPick(nextAmount(amount)); }} style={[styles.amountChip, amount !== 1 && styles.amountOn]}>
+    <Pressable testID="buy-amount" accessibilityRole="button" accessibilityLabel={`Buy ${amount === 'max' ? 'as many as you can afford' : `${amount} at a time`}. Tap to change`} onPress={() => { haptic(); onPick(nextAmount(amount)); }} hitSlop={SIDEWALK_SLOP.amount} style={[styles.amountChip, amount !== 1 && styles.amountOn]}>
       <Text style={[styles.amountText, amount !== 1 && styles.amountTextOn]} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
         {amountLabel(amount)}
       </Text>
@@ -48,9 +48,10 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
     const need = many ? null : needLine(v, framed);
     // v5.16: after the tutorial a card says what it does (the gain a minute and the payback), ahead of "need $X"
     const effect = many ? null : effectFoot(game, v, textW, framed);
-    const fonts = cardFonts(textW, { label: many?.label ?? v.label, sub: stationTitle(v), foot: many?.foot ?? effect ?? need, iconW: iconWidth(textW) });
+    const iconW = iconWidth(textW, stationTitle(v));
+    const fonts = cardFonts(textW, { label: many?.label ?? v.label, sub: stationTitle(v), foot: many?.foot ?? effect ?? need, iconW });
     const button = (
-      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={iconWidth(textW) ? ICON[v.key] : undefined} sub={stationTitle(v)} need={need} foot={many?.foot ?? effect} labelSize={fonts.label} subSize={fonts.sub} footSize={fonts.foot} tone={v.tone} label={many?.label ?? v.label} enabled={many ? many.enabled : v.affordable} saving={framed && v.frame === 'waiting'} progress={v.progress} onPress={() => (many ? useGame.getState().buyStation(v.what) : onBuy(v.what))} />
+      <BuyButton compact testID={framed ? `walk-${v.key}` : `mini-${v.key}`} icon={iconW ? ICON[v.key] : undefined} sub={stationTitle(v)} need={need} foot={many?.foot ?? effect} labelSize={fonts.label} subSize={fonts.sub} footSize={fonts.foot} tone={v.tone} label={many?.label ?? v.label} enabled={many ? many.enabled : v.affordable} saving={framed && v.frame === 'waiting'} progress={v.progress} onPress={() => (many ? useGame.getState().buyStation(v.what) : onBuy(v.what))} />
     );
     const badge = (
       <View style={[styles.level, v.frame === 'hot' && styles.levelHot]} pointerEvents="none">
@@ -107,12 +108,12 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
         <View style={styles.idleStack}>
           <View style={styles.chipRow}>{cards(false)}</View>
           {/* what you get on top, the price below (D310, D311) */}
-          <BuyButton compact testID="walk-manager" subSize={fitFont(hireLabel, screenW - 2 * SIDEWALK_ROW.edge - SIDEWALK_ROW.allWidth - (toggleOn ? SIDEWALK_ROW.amountWidth : 0) - SIDEWALK_ROW.gap * (toggleOn ? 2 : 1) - 24, 10, 7)} sub={hireLabel} label={money(hireCost ?? 0)} enabled={hireCost !== null && !G.upgradeLock(game, id, hire) && game.cash >= hireCost} onPress={() => onBuy(hire)} />
+          <BuyButton compact testID="walk-manager" subSize={fitFont(hireLabel, screenW - 2 * SIDEWALK_ROW.edge - SIDEWALK_ROW.allWidth - (toggleOn ? SIDEWALK_ROW.amountWidth : 0) - SIDEWALK_ROW.gap * (toggleOn ? 2 : 1) - 24, 10, MIN_FONT)} sub={hireLabel} label={money(hireCost ?? 0)} enabled={hireCost !== null && !G.upgradeLock(game, id, hire) && game.cash >= hireCost} onPress={() => onBuy(hire)} />
         </View>
       ) : (
         cards(true)
       )}
-      <Pressable testID="open-upgrades" onPress={onOpen} style={[styles.all, idleShop && styles.allIdle]}>
+      <Pressable testID="open-upgrades" onPress={onOpen} hitSlop={SIDEWALK_SLOP.all} style={[styles.all, idleShop && styles.allIdle]}>
         <Text style={styles.allIcon} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
           ☰
         </Text>
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
   allIdle: { height: 44 },
   allIcon: { color: '#fff', fontSize: 16, lineHeight: 18 },
   allText: { color: '#fff', fontFamily: F.bold, fontSize: 12 },
-  // G102: 36 pt wide (the cards need the room) and the row's full 55 pt tall
+  // G102: 40 pt wide (the cards need the room; 4 pt more reach into the gap on its right, SIDEWALK_SLOP) and the row's full 55 pt tall
   amountChip: { width: SIDEWALK_ROW.amountWidth, height: SIDEWALK_ROW.cardHeight, borderRadius: 14, backgroundColor: C.ink, alignItems: 'center', justifyContent: 'center', ...shadow },
   amountOn: { backgroundColor: C.basil },
   amountText: { fontFamily: F.bold, fontSize: 14, color: '#FFE7C2' },

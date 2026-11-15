@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   cardMuted: { opacity: 0.6 },
   cardHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
   neckChip: { alignSelf: 'flex-start', backgroundColor: C.tomato, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1, marginVertical: 1 },
-  neckText: { fontFamily: F.bold, fontSize: 8.5, letterSpacing: 0.6, color: '#fff' },
+  neckText: { fontFamily: F.bold, fontSize: 10, letterSpacing: 0.4, color: '#fff' },
   cardHead: { flexDirection: 'row', gap: 6, alignItems: 'flex-start', flex: 1 },
   icon: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FFE9C7', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: C.cheeseDark },
   iconText: { fontSize: 19 },

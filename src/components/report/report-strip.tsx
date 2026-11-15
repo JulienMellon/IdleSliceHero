@@ -7,6 +7,8 @@ import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-na
 import Svg from 'react-native-svg';
 import { useShallow } from 'zustand/react/shallow';
 
+import { MANAGERS } from '../../content/tuning';
+import type { NeighborhoodId } from '../../content/types';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { Portrait } from '../portrait';
@@ -17,11 +19,11 @@ import { openReport } from './sheet-state';
 const DOTS = ['prep', 'ovens', 'counter', 'floor'] as const;
 
 /** The manager's face: Nonna's portrait in Downtown, otherwise the head-face drawing the drawer uses (same name, same face). */
-function ManagerBadge({ hood }: { hood: string }) {
+function ManagerBadge({ hood }: { hood: NeighborhoodId }) {
   if (hood === 'downtown') return <Portrait id="nonna-rosa" mood="happy" size={STRIP.badge} />;
   return (
     <Svg width={STRIP.badge} height={STRIP.badge} viewBox="-20 -24 40 44">
-      <HeadFace kind="gm" name={`${hood}-gm`} size={40} />
+      <HeadFace kind="gm" name={MANAGERS[hood].id} size={40} />
     </Svg>
   );
 }
