@@ -47,6 +47,7 @@ import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEAD_BARKS } from '../content/heads';
 import { getFeature } from '../engine/features';
 import { counterattack } from '../engine/features/counterattack';
+import { slammedAsks } from '../engine/features/service';
 import { heads as headsFeature, newBarkMem, nextBark, rankOf, speakerFor, stationLevel, weekStation, type BarkAsk, type BarkMem } from '../engine/features/heads';
 import { HEADS } from '../content/tuning';
 import { BadgeRail, CameoBubble, CameoTag, DeparturePops, HireBubble, MilestoneBadge, RushPill, StationBadge, rushPillWidth } from './scene/kitchen-hud';
@@ -338,6 +339,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       const sp = speakerFor(shop, atk.seenWeek);
       if (sp) asks.push({ trigger: 'attack', station: sp, key: `attack-${atk.seenWeek}` });
     }
+    // a station Slammed for 20 s in a shop with no manager: its head asks for help (features/service.ts; P1 step 6)
+    asks.push(...slammedAsks(g.game, id));
     // a rush combo: three quick taps inside the window (rush-model.ts), whether or not the kitchen could still go faster (so the pill may be a hint)
     const combo = rushCombo(rushTaps, Date.now()).n >= 3;
     if (combo && !m.combo) {

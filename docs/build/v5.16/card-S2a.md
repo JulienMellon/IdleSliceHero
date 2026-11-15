@@ -11,10 +11,10 @@
 - Do not touch: `src/engine/**`, `src/app/**`, `src/components/layers/university|industrial|uptown/**` (card S2b).
 
 ## Steps
-- [ ] **1. Suburbs, Game Day.** HUD chip counting down to the next game. During the rush: a banner, a visible wave of family groups entering (reuse the people builders; respect the crowd budgets), free seats highlighted, a whistle pulse for the audio lane (`pulse-bus`, name it `gameday`). After: "+$X from Game Day" pop.
-- [ ] **2. Waterfront.** A boat that arrives in the harbour backdrop, docks for 30 s and leaves, as a `SCENE_OVERLAYS` entry. The warming rack drawn by the counter with its fill level in four visible steps; a drawer card to buy its tiers. During the Pier 9 auction: the bid card shows the current price, "MegaSlice raised it" with the time to the next raise, and the cap.
-- [ ] **3. The rival.** While `rivalOpen`: a MegaSlice storefront across the street in the shop scene (small, behind the sidewalk, never over the WELCOME mat or the caption zone) and a "−20% sales" tag on the HUD. When the challenge is offered: a Defend-style button and the challenge chip from v5.15 with this layer's copy. On a win: the rival's shutters come down, a coin burst, and the tag goes.
-- [ ] **4. Info sheets.** One sheet per layer from a HUD chip tap: what it is, the numbers, what to buy to do better.
+- [x] **1. Suburbs, Game Day.** HUD chip counting down to the next game. During the rush: a banner, a visible wave of family groups entering (reuse the people builders; respect the crowd budgets), free seats highlighted, a whistle pulse for the audio lane (`pulse-bus`, name it `gameday`). After: "+$X from Game Day" pop.
+- [x] **2. Waterfront.** A boat that arrives in the harbour backdrop, docks for 30 s and leaves, as a `SCENE_OVERLAYS` entry. The warming rack drawn by the counter with its fill level in four visible steps; a drawer card to buy its tiers. During the Pier 9 auction: the bid card shows the current price, "MegaSlice raised it" with the time to the next raise, and the cap.
+- [x] **3. The rival.** While `rivalOpen`: a MegaSlice storefront across the street in the shop scene (small, behind the sidewalk, never over the WELCOME mat or the caption zone) and a "−20% sales" tag on the HUD. When the challenge is offered: a Defend-style button and the challenge chip from v5.15 with this layer's copy. On a win: the rival's shutters come down, a coin burst, and the tag goes.
+- [x] **4. Info sheets.** One sheet per layer from a HUD chip tap: what it is, the numbers, what to buy to do better.
 - [ ] **5. Carried.** Rows with owner S or U that name these neighbourhoods in the carried-notes file from your spawn prompt.
 
 ## Fixtures (`scripts/fixtures/74_s2a.py`, shots 74–81)

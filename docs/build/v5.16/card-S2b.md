@@ -11,11 +11,11 @@
 - Do not touch: `src/engine/**`, `src/app/**`, `src/components/layers/suburbs|waterfront|rival/**` (card S2a).
 
 ## Steps
-- [ ] **1. University.** A menu sheet: three recipes with their price and time effects and a three-way mix control built from taps only (no sliders or drags: plus and minus buttons in 10% steps). A zones strip: Dorms, Library, Stadium with distance, share, lock state, and the trip time for the current vehicle; drones show "ignores distance". A small drone flight over the scene once drones are owned.
-- [ ] **2. Industrial.** A shift clock chip showing the current shift and the time to the next; the night shift tints the scene and shows "×2". An oven jam: smoke on one oven and a wrench button at 44 pt on it; "Head Baker fixing… {n}s" when the head is hired; a `jam` and a `jamfixed` pulse for the audio lane.
-- [ ] **3. Uptown.** The star rating on the storefront sign and the HUD. A stars sheet: the three inputs (oven grade, decor, Ingredients) with what the next point costs, and the pay rule (below 3 stars half pay; 5 stars double). An Ingredients drawer card. The critic: a figure who walks in, a target chip, and a pass or fail moment with the copy lines.
-- [ ] **4. Info sheets.** One per layer from its HUD chip.
-- [ ] **5. Carried.** Rows with owner S or U that name these neighbourhoods in the carried-notes file from your spawn prompt.
+- [x] **1. University.** A menu sheet: three recipes with their price and time effects and a three-way mix control built from taps only (no sliders or drags: plus and minus buttons in 10% steps). A zones strip: Dorms, Library, Stadium with distance, share, lock state, and the trip time for the current vehicle; drones show "ignores distance". A small drone flight over the scene once drones are owned.
+- [x] **2. Industrial.** A shift clock chip showing the current shift and the time to the next; the night shift tints the scene and shows "×2". An oven jam: smoke on one oven and a wrench button at 44 pt on it; "Head Baker fixing… {n}s" when the head is hired; a `jam` and a `jamfixed` pulse for the audio lane.
+- [x] **3. Uptown.** The star rating on the storefront sign and the HUD. A stars sheet: the three inputs (oven grade, decor, Ingredients) with what the next point costs, and the pay rule (below 3 stars half pay; 5 stars double). An Ingredients drawer card. The critic: a figure who walks in, a target chip, and a pass or fail moment with the copy lines.
+- [x] **4. Info sheets.** One per layer from its HUD chip.
+- [x] **5. Carried.** Rows with owner S or U that name these neighbourhoods in the carried-notes file from your spawn prompt.
 
 ## Fixtures (`scripts/fixtures/82_s2b.py`, shots 82–89)
 82 menu sheet at 50/30/20; 83 zones strip with Stadium locked; 84 zones with drones; 85 night shift; 86 jammed oven with the wrench; 87 Uptown at 2 stars with the half-pay tag; 88 stars sheet at 4 stars; 89 critic pass moment. Seeded saves, plausible numbers.

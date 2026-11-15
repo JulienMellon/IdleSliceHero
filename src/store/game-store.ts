@@ -5,7 +5,7 @@ import { emitAudio, type AudioEvent } from '../audio/bus';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
 import { HOME_SCENES } from '../content/scenes/home';
-import { PIER9_BID, TUNING, type DecorKind } from '../content/tuning';
+import { TUNING, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
 import * as B from '../engine/bonus';
@@ -15,8 +15,13 @@ import * as N from '../engine/night-oven';
 import * as O from '../engine/orders';
 import '../engine/features'; // registers the features before any game is made
 import { ackAttack, startChallenge } from '../engine/features/counterattack';
+import { startRivalChallenge } from '../engine/features/layers/rival';
+import { buyRack as buyRackTier, rackPrice } from '../engine/features/layers/waterfront-boats';
 import { ackMastery } from '../engine/features/mastery';
 import { ackRecipes } from '../engine/features/recipes';
+import { fixJam as fixOvenJam } from '../engine/features/layers/industrial-shifts';
+import { setMenu as setUniversityMenu } from '../engine/features/layers/university-menu';
+import { ackCritic as ackUptownCritic, buyIngredients as buyUptownIngredients, ingredientsPrice } from '../engine/features/layers/uptown-stars';
 import * as R from '../engine/rewards';
 import { tutorialAdvance, tutorialHoldsStory } from '../engine/tutorial';
 import { buyCosmetic as buyVanity } from '../engine/vanity';
@@ -71,12 +76,24 @@ interface Store {
   buyStation: (what: G.Upgrade) => boolean;
   /** Victor's attack: start the defence challenge. */
   defend: () => boolean;
+  /** v5.16 (S2a): the rival's challenge in a shop: outsell MegaSlice. */
+  startRival: (id: NeighborhoodId) => boolean;
+  /** v5.16 (S2a): Waterfront's warming rack: buy the next tier. */
+  buyRack: () => boolean;
   /** Put an owned cosmetic on (`on`) or take it off. */
   equip: (id: string, on: boolean) => void;
   /** The vanity shop: buy a cosmetic with diamonds (it is worn at once). */
   buyCosmetic: (id: string) => boolean;
   /** The UI has shown the endgame news: `news` = stars and recipe cards, `attack` = how the last attack ended. Clears it; not saved. */
   ackEndgame: (part: 'news' | 'attack') => void;
+  /** v5.16 (S2b): University's menu mix, in whole percents of Pepperoni and Garlic Knots (Cheese is the rest). One save per change. */
+  setMenu: (pepperoni: number, knots: number) => boolean;
+  /** v5.16 (S2b): Industrial's wrench: fix the jammed oven. */
+  fixJam: () => boolean;
+  /** v5.16 (S2b): Uptown's Ingredients drawer card: buy the next tier. */
+  buyIngredients: () => boolean;
+  /** v5.16 (S2b): the UI has shown how the critic's visit went. Clears it; saved with the game. */
+  ackCritic: () => void;
   /** Short-lived message, e.g. "Not enough cash". */
   /** `need`: a need-cash toast clears itself once the player can afford it. */
   toast: { text: string; at: number; need?: number } | null;
@@ -356,6 +373,14 @@ export const useGame = create<Store>((set, get) => {
       return commit(r);
     },
 
+    startRival: (id) => {
+      const r = startRivalChallenge(get().game, id, Date.now());
+      if (r.ok) emitAudio({ type: 'click' });
+      return commit(r);
+    },
+
+    buyRack: () => commit(buyRackTier(get().game), { name: 'Warming rack', cost: rackPrice(get().game) }, plain('grade')),
+
     equip: (id, on) => {
       const g = get().game;
       const next = on ? R.wear(g, id) : R.unwear(g, id);
@@ -373,6 +398,20 @@ export const useGame = create<Store>((set, get) => {
       if (next !== g) set({ game: next });
     },
 
+    setMenu: (pepperoni, knots) => commit(setUniversityMenu(get().game, pepperoni, knots), undefined, () => ({ type: 'click' })),
+
+    fixJam: () => commit(fixOvenJam(get().game), undefined, () => ({ type: 'click' })),
+
+    buyIngredients: () => commit(buyUptownIngredients(get().game), { name: 'Ingredients', cost: ingredientsPrice(get().game) }, plain('decor')),
+
+    ackCritic: () => {
+      const g = get().game;
+      const next = ackUptownCritic(g);
+      if (next === g) return;
+      set({ game: next });
+      void get().save();
+    },
+
     buyFleet: () => commit(G.buyVehicle(get().game), undefined, (next) => ({ type: 'buy', what: 'fleet', vehicle: next.vehicle, sting: purchaseSting('fleet', { vehicle: next.vehicle }) })),
 
     buyDecor: (kind) => commit(G.buyDecor(get().game, get().game.active, kind), { name: kind[0].toUpperCase() + kind.slice(1), cost: G.decorCost(get().game, get().game.active, kind) }, plain('decor')),
@@ -383,7 +422,7 @@ export const useGame = create<Store>((set, get) => {
       return commit(N.buyNightOven(g), { name: 'Night oven', cost: nt === null ? null : N.nightOvenPrice(g, nt) }, plain('grade'));
     },
 
-    bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: PIER9_BID.cost }, plain('bid')),
+    bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: G.pier9Price(get().game) }, plain('bid')),
 
     build: (id) => commit(G.buildShop(get().game, id), { name: `Build ${G.def(id).name}`, cost: G.def(id).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id })),
 
