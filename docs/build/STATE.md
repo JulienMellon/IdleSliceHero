@@ -45,3 +45,4 @@ next: v5.16 fix round r2 in progress (step fix, round r2). Done this round: E0 E
 - 2026-11-15 15:15 UTC r2 gate not met (critic maj2 D481 D482, minor 12; story maj1 S47; code APPROVED). Fix round r3.
 - 2026-11-15 18:24 UTC Julien: S47 -> 'Two thousand deliveries'. r3 S2a (D481 D482) + W2 (S47 copy) launched; then T1a+S2b, U5+E2a, T1b+P1.
 - 2026-11-15 18:27 UTC r3 W2 done (S47 copy, Raj head line). T1a launched. W2 card Protected list still names the old downtown-4 line (fix after close).
+- 2026-11-15 18:28 UTC r3 T1a done (S47 scene, Raj line; golden re-recorded; 639 pass; sim 40/40). S2b launched.
