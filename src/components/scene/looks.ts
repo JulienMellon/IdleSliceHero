@@ -105,3 +105,28 @@ export interface PersonProps {
   peelK?: number;
   o?: number;
 }
+
+// ---------- the five General Managers (v5.16, card T1b) ----------
+// One fixed look each, from the copy's look lines (docs/story/COPY-v5.16.md section 6). The cut-scene portrait (portrait.tsx) and the shop's
+// badge face (head-face.tsx) both read this table, so a manager has the same hair and the same signature item everywhere.
+
+export type ManagerId = 'deb' | 'skip' | 'noor' | 'dee' | 'anton';
+export type ManagerHair = 'perm' | 'crew' | 'bun' | 'crop' | 'slick';
+export type ManagerItem = 'whistle' | 'purser-cap' | 'stopwatch' | 'armband' | 'napkin';
+export interface ManagerLook {
+  skin: string;
+  hair: string;
+  hairStyle: ManagerHair;
+  /** What you know them by: Deb's whistle, Skip's purser's cap, Noor's stopwatch (and pencilled bun), Dee's armband, Anton's napkin. */
+  item: ManagerItem;
+  /** The jacket, vest or blouse the portrait wears and the badge's shoulders take. */
+  shirt: string;
+}
+export const MANAGER_LOOKS: Readonly<Record<ManagerId, ManagerLook>> = {
+  deb: { skin: '#EDC4A1', hair: '#EBD79A', hairStyle: 'perm', item: 'whistle', shirt: '#2A9D8F' },
+  skip: { skin: '#D2996E', hair: '#F4F1EC', hairStyle: 'crew', item: 'purser-cap', shirt: '#56687C' },
+  noor: { skin: '#9C6644', hair: '#1B1414', hairStyle: 'bun', item: 'stopwatch', shirt: '#E3A72F' },
+  dee: { skin: '#F0C7A4', hair: '#C8442B', hairStyle: 'crop', item: 'armband', shirt: '#D5E04A' },
+  anton: { skin: '#E6C2A4', hair: '#C9CED6', hairStyle: 'slick', item: 'napkin', shirt: '#F4F1EC' },
+};
+export const isManagerId = (id: string): id is ManagerId => Object.prototype.hasOwnProperty.call(MANAGER_LOOKS, id);

@@ -172,6 +172,29 @@ export const VISITOR_LINES: Readonly<Record<string, string>> = {
   genevieve: 'Thirty days, darling. Do try to keep up.',
 };
 
+/**
+ * What a later-cycle visitor says in the shop while the visit's boost runs: six lines each (COPY-v5.16 section 5), by visitor id. Cycle 2's visitor is
+ * Big Sal and cycle 3's Genevieve (VISITORS, by cycle); cycle 1's Nonna keeps her six in content/heads.ts (CAMEO_NONNA_LINES).
+ */
+export const VISITOR_CAMEO_LINES: Readonly<Record<string, readonly string[]>> = {
+  'big-sal': [
+    'Who put pineapple on this? …Good man.',
+    'This oven’s slow. I hate slow.',
+    'I’m not inspecting. I’m just large.',
+    'Hot by midnight. I got a watch.',
+    'Rosie says eat. I’m just the messenger.',
+    'Crew’s good. Don’t tell ’em I said so.',
+  ],
+  genevieve: [
+    'The basil looks brave today. Good.',
+    'Croissant approves. I reserve judgment.',
+    'I am not reviewing. I am… chewing.',
+    'The crust is humming. Close enough.',
+    'A napkin, darling. Folded, please.',
+    'Still my favorite. Do not tell anyone.',
+  ],
+};
+
 // ---------- Limits ----------
 
 /** A boost's `until` is never more than this far past now (a load cap against a corrupt save). */

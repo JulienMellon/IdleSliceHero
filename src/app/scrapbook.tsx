@@ -3,11 +3,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { chapterScenes, storiesCount, tileLabel } from '@/components/cutscene/scrapbook-model';
 import { SCRAPBOOK_HEAD } from '@/components/endgame/fit-model';
 import { recipeGroups } from '@/components/endgame/recipes-model';
 import { RecipesSection } from '@/components/endgame/recipes-section';
 import { DISPLAY_NAMES, Portrait } from '@/components/portrait';
-import { HOME_SCENES } from '@/content/scenes/home';
 import { NEIGHBORHOODS } from '@/content/tuning';
 import { collectionView } from '@/engine/features/recipes';
 import { nextSceneTeaser } from '@/engine/teaser';
@@ -44,9 +44,7 @@ export default function Scrapbook() {
             <Text style={styles.backText}>‹ Back</Text>
           </Pressable>
           <Text style={styles.title}>Scrapbook</Text>
-          <Text style={styles.count}>
-            {`Stories ${seen.length}/${HOME_SCENES.length}`}
-          </Text>
+          <Text style={styles.count}>{storiesCount(seen.length)}</Text>
         </View>
         <Text style={styles.teaser} testID="scrapbook-teaser">
           {teaser}
@@ -66,7 +64,7 @@ export default function Scrapbook() {
       ) : (
       <ScrollView contentContainerStyle={{ padding: 14, gap: 16, paddingBottom: insets.bottom + 24 }}>
         {NEIGHBORHOODS.map((n) => {
-          const scenes = HOME_SCENES.filter((s) => s.neighborhood === n.id);
+          const scenes = chapterScenes(n.id);
           const character = scenes[0].character;
           const met = scenes.some((s) => seen.includes(s.id));
           return (
@@ -83,7 +81,7 @@ export default function Scrapbook() {
                   const open = seen.includes(s.id);
                   return (
                     <Pressable key={s.id} disabled={!open} onPress={() => replay(s)} style={[styles.tile, !open && styles.tileLocked]} testID={`scene-${s.id}`}>
-                      <Text style={styles.tileNum}>{s.beat}</Text>
+                      <Text style={[styles.tileNum, s.beat === 'interlude' && styles.tileInterlude]}>{tileLabel(s)}</Text>
                       <Text style={[styles.tileTitle, !open && { color: C.inkSoft }]} numberOfLines={2}>
                         {open ? s.title : '???'}
                       </Text>
@@ -125,6 +123,7 @@ const styles = StyleSheet.create({
   tile: { width: '48%', flexGrow: 1, minHeight: 74, borderRadius: 12, backgroundColor: '#FFF4E0', borderWidth: 2, borderColor: C.cheeseDark, padding: 8 },
   tileLocked: { backgroundColor: '#F1ECE7', borderColor: C.locked },
   tileNum: { fontFamily: F.bold, fontSize: 12, color: C.inkSoft },
+  tileInterlude: { color: C.tomato },
   tileTitle: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   play: { fontFamily: F.semi, fontSize: 12, color: C.tomato, marginTop: 2 },
 });

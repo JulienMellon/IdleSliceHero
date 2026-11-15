@@ -11,7 +11,7 @@ import { memo, useEffect, useMemo, useRef, useState, type ComponentRef, type Rea
 import { Pressable, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { F } from '../theme';
-import { FOOTPRINTS, NEIGHBORHOODS } from '../content/tuning';
+import { FOOTPRINTS, MANAGERS, NEIGHBORHOODS } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import * as Game from '../engine/game';
 import { useGame } from '../store/game-store';
@@ -485,7 +485,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           {/* the ticket rail the badges hang on (D346) */}
           {/* D415: the whole chip row dims while a milestone badge is up */}
           <G opacity={hudOpacity(mileAge)}>
-            <BadgeRail x0={bxs.prep - BADGE_R - 8} x1={bxs.counter + BADGE_R + 40} y={by} gm={shop.managed && id !== 'downtown' ? `${id}-gm` : shop.managed ? 'nonna' : null} />
+            <BadgeRail x0={bxs.prep - BADGE_R - 8} x1={bxs.counter + BADGE_R + 40} y={by} gm={shop.managed && id !== 'downtown' ? MANAGERS[id].id : shop.managed ? 'nonna' : null} />
             {badges.map((b) => (
               <StationBadge
                 key={b.st}
@@ -498,7 +498,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 pulse={b.ready ? pulse : 0}
                 nudge={b.ready ? nudge : 0}
                 face={b.runner === 'head' ? b.st : null}
-                faceName={b.runner === 'gm' ? `${id}-gm` : HEADS[id][b.st]}
+                faceName={b.runner === 'gm' ? MANAGERS[id].id : HEADS[id][b.st]}
                 jump={line[b.st] ? rushJump : 0}
                 rank={shop.heads[b.st] ? rankOf(stationLevel(shop, b.st)) : 0}
                 star={weekSt === b.st}

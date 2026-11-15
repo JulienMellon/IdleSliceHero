@@ -128,7 +128,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
         <Animated.View style={[styles.frameShadow, { width: frameW, height: frameH, transform: [{ translateX: slide }] }]}>
           <View style={styles.frame}>
             <Animated.View style={{ position: 'absolute', inset: 0, transform: [{ scale: zoom }] } as never}>
-              <Backdrop id={p.backdrop} width={innerW} height={innerH} prop={p.prop === 'vending-machine' || p.prop === 'sold-sign' ? p.prop : undefined} captioned={captionBar} />
+              <Backdrop id={p.backdrop} width={innerW} height={innerH} prop={p.prop === 'recipe-card' ? undefined : p.prop} propText={p.propText} hood={scene.neighborhood} captioned={captionBar} />
             </Animated.View>
             {p.cast.map((c, i) => {
               const s = stage[i];

@@ -1,5 +1,6 @@
 // The goal bar's numbers and colours as plain data (D297). The label is drawn twice: dark ink over the cream track,
 // and a cream copy clipped to the fill's width, so it stays readable at every fill fraction. Pure: unit-tested in node.
+import { HOME_SCENES } from '../content/scenes/home';
 import { finaleSeen } from '../engine/features/counterattack';
 import { MASTERY_MAX, masteryTotal, nextStar } from '../engine/features/mastery';
 import { def, type GameState } from '../engine/game';
@@ -101,6 +102,15 @@ export function goalLabelFit(label: string, amount: string, barW: number): GoalF
   return { amountW, labelW, wordsRoom, fits: amountW <= inner && wordsRoom >= Math.min(labelW, GOAL_MIN_WORDS_W) };
 }
 export const goalLabelFits = (label: string, amount: string, barW: number): boolean => goalLabelFit(label, amount, barW).fits;
+
+// ---------- the story count (v5.16) ----------
+
+/** Every scene of the home city: the bar's total (40 with Todd's interludes and the hire scenes), never a number typed in a screen. */
+export const STORY_TOTAL = HOME_SCENES.length;
+/** The completed-city fallback goal: "Story 12/40", the bar filling as scenes are seen. */
+export function storyGoal(seen: number): { label: string; current: number; target: number } {
+  return { label: `Story ${seen}/${STORY_TOTAL}`, current: seen, target: STORY_TOTAL };
+}
 
 // ---------- the post-story goal (v5.15, D427) ----------
 
