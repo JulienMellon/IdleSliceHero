@@ -163,11 +163,23 @@ describe('G98: the mastery goal line beside the oven chip and the event chip', (
   test('with the event chip at 320 the amount goes and the short line has the whole bar', () => {
     const g = masteryGoal(city())!;
     const line = goalLine(g, barSEEvent);
-    expect(line.label).toBe(g.short);
+    // U5: the whole short line no longer fits there by the estimate, so the tiny one ("\u260510/18 \u00B7 Flagship") leads; it never ellipsizes
+    expect(line.label).toBe(g.tiny);
     expect(line.text).toBe('');
+    expect(goalLabelFit(g.tiny, '', barSEEvent).labelW).toBeLessThanOrEqual(goalLabelFit(g.tiny, '', barSEEvent).wordsRoom);
     // the count and the first word of the star's name are inside the bar's text room: never clipped to "Fla" (the r2 shot)
     const room = barSEEvent - 4 - 24;
     expect(room / (14 * 0.56)).toBeGreaterThan(`\u260510/18 \u00B7 Flagship`.length);
+  });
+
+  test('three chips beside the bar (oven, rush, game day) at 393: the short line does not fit, the tiny one does (62-event-countdown-chip)', () => {
+    const g = masteryGoal(city())!;
+    const bar = BIG - 24 - 44 - 56 - 44 - 3 * 8;
+    const line = goalLine(g, bar);
+    expect(line.label).toBe(g.tiny);
+    expect(line.text).toBe('');
+    const fit = goalLabelFit(line.label, '', bar);
+    expect(fit.labelW).toBeLessThanOrEqual(fit.wordsRoom);
   });
 
   test('at 393 the short line fits whole, with or without the amount', () => {

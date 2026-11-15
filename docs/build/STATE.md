@@ -39,3 +39,4 @@ next: fresh session; read docs/build/sessions/S3-v5.16-second-half.md (wave 6: S
 - 2026-11-15 01:01 UTC U5 partial (9 steps; tsc ok, components 716; allowlist 33->9; 2 layout new). Sent back: slots dup banner, strip clipping 15/15a/16, compactEffect 10. Open: 00_boot cash $0 after 20s (E?); settings.tsx /24 carries.
 - 2026-11-15 01:27 UTC Verify v5.16 FAIL: tsc ok, 1381/1381 tests, export ok; report True 3 errors (boot cash $0, recipe+perk cutscene timeouts) -> E0 lane programmer; layout 3 new (perk banner, rack card, goal Waterfront) -> U5. Shots 36 new 87 changed.
 - 2026-11-15 01:31 UTC E-lane diag: 3 verify errors are fixture bugs (00_boot buy clicks spend cash; 19_story_props old sold triggers for downtown-4 2217 + suburbs-4 rival win). Same agent given fixture edits + sweep of other old-trigger fixtures.
+- 2026-11-15 01:33 UTC U5 fixed 3 layout clips (no allowlist adds; dev layout 0 new). Waiting on fixture fixes.
