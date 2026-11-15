@@ -4,6 +4,7 @@
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { fill } from '../../report/report-model';
 import { money } from '../../../engine/format';
 import { useGame } from '../../../store/game-store';
 import { C, F } from '../../../theme';
@@ -30,7 +31,7 @@ function Sheet() {
         <View key={r.key} style={styles.row} testID={`input-${r.key}`}>
           <View style={styles.rowText}>
             <Text style={styles.name} numberOfLines={1}>{`${r.title} · ${r.value}`}</Text>
-            <Text style={styles.small} numberOfLines={2}>{`Next point: ${r.next}`}</Text>
+            <Text style={styles.small} numberOfLines={2}>{fill(COPY['layer.uptown.stars.next'], { cost: r.next })}</Text>
           </View>
           <Text style={styles.points}>{r.points}</Text>
           {r.key === 'ingredients' && m.ingredients.name !== null ? (

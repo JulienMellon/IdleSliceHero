@@ -22,6 +22,8 @@ export const COPY = {
   "zone.library.line": "Across the quad. Orders in a whisper.",
   "zone.stadium.name": "Stadium",
   "zone.stadium.line": "The far end. Big orders, long rides.",
+  "zone.locked": "Expand to open",
+  "zone.drone.trip": "ignores distance",
   "layer.university.drones.banner": "Drones are flying!",
   "layer.university.drones.chip": "{n} drones up",
   "layer.university.drones.info": "Drones fly straight. Every zone is next door.",

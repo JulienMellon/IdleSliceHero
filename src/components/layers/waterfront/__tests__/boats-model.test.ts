@@ -134,18 +134,18 @@ describe('the Pier 9 auction', () => {
   test('the bid card shows the price, the raise with the time to the next, and the cap', () => {
     const g = auctionGame(100 + 2 * AUCTION.stepSeconds + 10, 100, 135_000_000);
     const c = auctionCard(auctionStatus(g), g.cash);
-    expect(c.raised).toBe('MegaSlice raised its bid to $132M');
+    expect(c.raised).toBe('MegaSlice raised it. $132M wins Pier 9');
     expect(c.next).toBe('Next raise 1:50');
-    expect(c.cap).toBe('Cap $180M');
+    expect(c.cap).toBe('Bid cap $180M');
     expect(c.canBuy).toBe(true);
     expect(auctionCard(auctionStatus(g), 1e6).canBuy).toBe(false);
     expect(auctionCard(auctionStatus(auctionGame(120)), 0).raised).toBe('');
     expect(auctionCard(auctionStatus(auctionGame(100 + 20 * AUCTION.stepSeconds)), 0).next).toBe('');
   });
   test('a raise that puts the bid out of reach says "Outbid!"', () => {
-    expect(raiseNotice(120e6, 126e6, 125e6)).toBe('Outbid! MegaSlice at $126M');
-    expect(raiseNotice(120e6, 126e6, 10e6)).toBe('MegaSlice raised its bid to $126M');
-    expect(raiseNotice(120e6, 126e6, 130e6)).toBe('MegaSlice raised its bid to $126M');
+    expect(raiseNotice(120e6, 126e6, 125e6)).toBe('Outbid! You need $126M for Pier 9');
+    expect(raiseNotice(120e6, 126e6, 10e6)).toBe('MegaSlice raised it. $126M wins Pier 9');
+    expect(raiseNotice(120e6, 126e6, 130e6)).toBe('MegaSlice raised it. $126M wins Pier 9');
     expect(raiseNotice(126e6, 126e6, 0)).toBe('');
   });
 });

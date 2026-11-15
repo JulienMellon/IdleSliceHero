@@ -195,5 +195,5 @@ export const floorPt = (x: number, y: number): [number, number] => P(x, y);
 /** "+$1.23K from Game Day": the pies the rush sold, at what a pie pays. */
 export function gameDayPopText(soldBefore: number, soldAfter: number, valuePerPie: number): string {
   const pies = Math.max(0, Math.floor(soldAfter) - Math.floor(soldBefore));
-  return `+${money(pies * Math.max(0, valuePerPie))} ${LABELS.fromGameDay}`;
+  return lc('layer.suburbs.gameday.pop', { cash: money(pies * Math.max(0, valuePerPie)) });
 }

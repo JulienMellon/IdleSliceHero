@@ -18,7 +18,7 @@ describe('the zones strip', () => {
     const cells = zoneCells(view({ footprint: 1, vehicle: 2 }));
     expect(cells.map((c) => c.name)).toEqual(['Dorms', 'Library', 'Stadium']);
     expect(cells.map((c) => c.locked)).toEqual([false, false, true]);
-    expect(cells[2]).toMatchObject({ mid: 'Locked', foot: 'Opens at Double storefront' });
+    expect(cells[2]).toMatchObject({ mid: 'Locked', foot: 'Expand to open' });
     // the two open zones split the demand 50 : 30 -> 63% and 38%
     expect(cells[0].mid).toMatch(/^6\d% · \d/);
     expect(cells[1].mid).toMatch(/^3\d% · \d/);

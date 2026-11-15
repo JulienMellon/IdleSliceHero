@@ -4,6 +4,7 @@ import { BUTTON_H } from '../university/layer-model';
 import type { JamView } from '../../../engine/features/layers/industrial-shifts';
 import type { Layout } from '../../scene/layout';
 import { D, P } from '../../scene/projection';
+import { fill } from '../../report/report-model';
 import { COPY } from './copy';
 
 /** The wrench button is a 44 pt target. */
@@ -12,7 +13,7 @@ export const WRENCH = BUTTON_H;
 /** The label by the wrench: the Head Baker's countdown when one is hired ("Head Baker fixing… 12s"), else the alert; null with no jam. */
 export function jamLabel(v: Pick<JamView, 'jammed' | 'autoFixIn'>): string | null {
   if (!v.jammed) return null;
-  return v.autoFixIn !== null ? `Head Baker fixing… ${v.autoFixIn}s` : COPY['layer.industrial.jam.alert'];
+  return v.autoFixIn !== null ? fill(COPY['layer.industrial.jam.headfix'], { n: v.autoFixIn }) : COPY['layer.industrial.jam.alert'];
 }
 
 /**

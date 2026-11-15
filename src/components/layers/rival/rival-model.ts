@@ -9,7 +9,7 @@ import type { RivalView } from '../../../engine/features/layers/rival';
 import { behindPace } from '../../order-model';
 import { CURB_Y, SCENE_W } from '../../scene/projection';
 import { mmss, step5 } from '../layer-model';
-import { LABELS, rivalLine, rivalSpeaker } from '../layer-text';
+import { LABELS, lc, rivalLine, rivalSpeaker } from '../layer-text';
 
 // ---------- the tag ----------
 
@@ -17,7 +17,7 @@ import { LABELS, rivalLine, rivalSpeaker } from '../layer-text';
 export const rivalPercent = (valueMult: number = RIVAL.valueMult): number => Math.round((1 - valueMult) * 100);
 
 /** The HUD tag's text ("−20% sales", with the real minus sign), or '' when no rival is open here. */
-export const rivalTagText = (v: Pick<RivalView, 'open' | 'valueMult'>): string => (v.open ? `−${rivalPercent(v.valueMult)}% sales` : '');
+export const rivalTagText = (v: Pick<RivalView, 'open' | 'valueMult'>): string => (v.open ? lc('rival.tag') : '');
 
 // ---------- the storefront across the street ----------
 

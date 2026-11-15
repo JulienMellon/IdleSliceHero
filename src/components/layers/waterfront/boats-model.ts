@@ -174,11 +174,11 @@ export function auctionStatus(g: GameState): AuctionStatus {
 
 export interface AuctionCard {
   title: string;
-  /** "MegaSlice raised its bid to $126M": none before the first raise. */
+  /** "MegaSlice raised it. $126M wins Pier 9": none before the first raise. */
   raised: string;
   /** "Next raise 1:42" (none at the cap). */
   next: string;
-  /** "Cap $180M". */
+  /** "Bid cap $180M". */
   cap: string;
   price: number;
   canBuy: boolean;
