@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
@@ -15,13 +15,14 @@ import { coachStep } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
+import { fitFont, MIN_FONT } from '@/components/endgame/fit-model';
 import { masteryGoal, STORY_TOTAL, storyGoal } from '@/components/goal-model';
 import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots, StoryWaitBanner } from '@/components/slots';
 import { type DrawerIcon, type DrawerView, drawerCards, tiedBundle } from '@/components/drawer-model';
 import { buttonTone, buyBundle, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
 import { STRIP } from '@/components/report/report-model';
-import { CLOSE_SLOP, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
+import { CLOSE_SLOP, DRAWER_CLOSE_W, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait';
 import { HeadFace } from '@/components/scene/head-face';
@@ -79,6 +80,7 @@ type DrawerCardView = DrawerView['cards'][number];
 
 export default function GameScreen() {
   const insets = useSafeAreaInsets();
+  const { width: screenW } = useWindowDimensions();
   const game = useGame((s) => s.game);
   // the offline popup waits for the title card
   const offline = useGame((s) => (s.titleDone ? s.offline : null));
@@ -340,7 +342,8 @@ export default function GameScreen() {
               <View style={styles.drawerHead}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.drawerTitle}>{drawer.title}</Text>
-                  <Text style={styles.drawerSub} numberOfLines={1}>{drawer.bottleneck}</Text>
+                  {/* the manager's line is long: it shrinks (never under 10 pt) to the room beside Close, then wraps rather than clip */}
+                  <Text style={[styles.drawerSub, { fontSize: fitFont(drawer.bottleneck, screenW - 2 * DRAWER_HEAD.padX - DRAWER_CLOSE_W, 12, MIN_FONT) }]} numberOfLines={2}>{drawer.bottleneck}</Text>
                 </View>
                 <Pressable testID="close-upgrades" onPress={() => setDrawerOpen(false)} style={styles.closeBtn} hitSlop={CLOSE_SLOP}>
                   <Text style={styles.closeText}>Close ▼</Text>

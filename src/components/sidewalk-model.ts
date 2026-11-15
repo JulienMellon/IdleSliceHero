@@ -7,7 +7,6 @@ import { BUY_AMOUNTS, buyPlan, isLevelUpgrade, type BuyAmount } from '../engine/
 import { bonusUnlocked } from '../engine/bonus';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
-import { MIN_FONT } from './endgame/fit-model';
 import { compactEffect } from './report/report-model';
 
 /** The look of a purchase button: `expand` is the amber Expand buy, which never reads as a station buy (D407). */
@@ -182,8 +181,7 @@ export function stationViews(s: G.GameState, id: NeighborhoodId): StationView[] 
  */
 export function effectFoot(s: G.GameState, v: Pick<StationView, 'gain' | 'cost' | 'lock' | 'expand'>, width: number, running: boolean): string | null {
   if (!running || !bonusUnlocked(s) || v.expand || v.lock || v.cost === null) return null;
-  // compactEffect picks the longest line that fits at 8 pt; the card sets it at 10 pt (U5: no text under 10), so give it the width an 8 pt line would have
-  return compactEffect(v.gain, v.cost, (width * 8) / MIN_FONT) ?? 'No gain';
+  return compactEffect(v.gain, v.cost, width) ?? 'No gain';
 }
 
 /**

@@ -4,13 +4,13 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.16
-step: waves                    # setup | waves | verify | review | fix | close
+step: verify                   # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.15-loop      # label of the last screenshot set that passed verify
 codecritic_range_start: f83d281
 cards:                 # todo | running | done | partial | blocked
   W2 done  E0 done  E2a done  P1 partial  E2b done  T1a done
-  S2a partial  S2b done  T1b partial  U5 running
+  S2a partial  S2b done  T1b partial  U5 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.15/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 8; U5 S3; carried)
   code:   docs/build/v5.15/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 16; E8 U4 S4 A2; C116/C117 carry)

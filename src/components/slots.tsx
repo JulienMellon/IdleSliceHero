@@ -207,7 +207,6 @@ export const SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] = [
 // v5.16 (S2a): Waterfront's Pier 9 bid card (while the auction is live) and its warming rack
 export const DRAWER_CARDS: SlotEntry[] = [
   // v5.16 (T1b): why this neighbourhood's next story is held, as one line
-  { id: 'story-wait-hint', order: 5, Component: StoryWaitBanner },
   { id: 'auction-card', order: 10, Component: AuctionCardSlot },
   { id: 'rack-card', order: 20, Component: RackCardSlot },
   // v5.16 (S2b): Uptown's Ingredients track

@@ -53,6 +53,8 @@ export const BUTTON_H = 44;
 export const STATION_CARD = { border: 2.5, padding: 3 } as const;
 /** The drawer header around the title and Close. */
 export const DRAWER_HEAD = { padTop: 10, padBottom: 4, padX: 14 } as const;
+/** The width Close and its gap take from the drawer header's line (pt): the title and the line under it share the rest. */
+export const DRAWER_CLOSE_W = 100;
 /** Gap between the chip row and the manager button on a shop with no manager. */
 export const IDLE_STACK_GAP = 5;
 /** Text in the fixed 44 pt buttons may grow with iOS Larger Text only this much before it would overflow (C50). */

@@ -210,5 +210,5 @@ export function compactEffect(gain: number | null, cost: number | null, width: n
   if (gain === null || !(gain > 1e-9)) return null;
   const g = `+${money(gain * 60)}/min`;
   const candidates = cost !== null && cost > 0 ? [`${g} · ${duration(Math.max(1, Math.ceil(cost / gain)))}`, g, `+${money(gain * 60)}/m`] : [g, `+${money(gain * 60)}/m`];
-  return candidates.find((c) => fits(c, width, 8)) ?? candidates[candidates.length - 1];
+  return candidates.find((c) => fits(c, width, 10)) ?? candidates[candidates.length - 1];
 }
