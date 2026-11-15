@@ -260,7 +260,7 @@ export const UPTOWN_SCENES: Scene[] = [
         backdrop: 'uptown',
         cue: 'triumph',
         cast: [{ id: 'genevieve', mood: 'happy' }],
-        caption: 'Front page: five stars. Page 2: MEGASLICE YACHT WAS A RENTAL.',
+        caption: 'Front page: five stars. Page 2: MEGASLICE YACHT WAS A RENTAL. The marble boutique has a For Lease sign.',
         lines: [
           { speaker: 'Genevieve', text: '"The best pizza in Port Marinara is not on a yacht. It is on a bike. Lately, a drone."' },
           { speaker: 'Genevieve', text: 'I returned the yacht. Croissant was seasick anyway.' },

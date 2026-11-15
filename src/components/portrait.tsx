@@ -5,7 +5,7 @@ import { memo, useId } from 'react';
 import Svg, { ClipPath, Circle, Defs, Ellipse, G, Path, Rect, Text } from 'react-native-svg';
 
 import type { CharacterId, Mood } from '../content/types';
-import { ARMBAND, ARM_FORE, ARM_INK, ARM_SLEEVE, ARM_UPPER, BLUSH, BUN_KNOT, FEDORA, HAIR_BACK_INK, HAIR_BACK_STAGE, HAIR_FRONT, EARS, EAR_INNER, FACES, FOLDS, GROUND, HEAD_CLIP, HEAD_SHIFT, LIGHT_RIM, LIGHT_SHADE_HEAD, LIGHT_SHADE_TORSO, MARKER_MUSTACHE, NAPKIN, NECK, NECK_SHADOW, NOSE, OUTFIT, SHOULDERS_INK, SHOULDERS_SLEEVE, SLICEY, STRANDS, TORSO, gestureFor, type HairStyle } from './cutscene/figure-art';
+import { ARMBAND, ARM_FORE, CLIPBOARD, ARM_INK, ARM_SLEEVE, ARM_UPPER, BLUSH, BUN_KNOT, FEDORA, HAIR_BACK_INK, HAIR_BACK_STAGE, HAIR_FRONT, EARS, EAR_INNER, FACES, FOLDS, GROUND, HEAD_CLIP, HEAD_SHIFT, LIGHT_RIM, LIGHT_SHADE_HEAD, LIGHT_SHADE_TORSO, MARKER_MUSTACHE, NAPKIN, NECK, NECK_SHADOW, NOSE, OUTFIT, SHOULDERS_INK, SHOULDERS_SLEEVE, SLICEY, STRANDS, TORSO, gestureFor, type HairStyle } from './cutscene/figure-art';
 import { STAGE_VB, poseFor, type Pose } from './cutscene/staging';
 import { F } from '../theme';
 import { MANAGER_LOOKS, type ManagerId, type ManagerItem } from './scene/looks';
@@ -586,6 +586,18 @@ function ArmWear({ gear, pose, tone }: { gear: ManagerItem | undefined; pose: Po
   return null;
 }
 
+/** The clipboard the 'clipboard' pose holds (drawn in the figure's own frame, so a flipped figure holds it mirrored). Under the fist and thumb. */
+function HeldClipboard() {
+  return (
+    <G>
+      <Path d={CLIPBOARD.board} fill="#B98550" stroke={INK} strokeWidth={2} strokeLinejoin="round" />
+      <Path d={CLIPBOARD.paper} fill="#FFFDF5" stroke={INK} strokeWidth={0.8} />
+      <Path d={CLIPBOARD.lines} stroke="#9AA3AE" strokeWidth={1.1} strokeLinecap="round" />
+      <Path d={CLIPBOARD.clip} fill="#B8C0CA" stroke={INK} strokeWidth={1.4} strokeLinejoin="round" />
+    </G>
+  );
+}
+
 /** The recipe card Rosa holds up at chest height (drawn un-mirrored even in a flipped figure; it is symmetric about x = 60). */
 function HeldCard({ flip }: { flip: boolean }) {
   return (
@@ -643,6 +655,7 @@ function Stage({ id, mood, size, flip, dim, holding }: { id: CharacterId; mood: 
         {/* the card's palms sit behind it, its thumbs come over its top corners */}
         {g.back ? <Path d={g.back} fill={skin} stroke={INK} strokeWidth={1.6} strokeLinejoin="round" /> : null}
         {holding === 'recipe-card' ? <HeldCard flip={flip} /> : null}
+        {pose === 'clipboard' ? <HeldClipboard /> : null}
         <Path d={g.hands} fill={skin} stroke={INK} strokeWidth={1.6} strokeLinejoin="round" />
         <Path d={g.creases} stroke={skinShade} strokeWidth={1.2} fill="none" strokeLinecap="round" />
         <G transform={HEAD_SHIFT}>

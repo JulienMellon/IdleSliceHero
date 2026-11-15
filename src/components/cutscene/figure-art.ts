@@ -44,6 +44,8 @@ interface Gesture {
   hands: string;
   /** Finger and knuckle creases. */
   creases: string;
+  /** The outline of a held object (the clipboard's board and clip), drawn by Portrait between `back` and `hands`; measured into the limb boxes. */
+  prop?: string;
 }
 
 const knuckles = (cx: number, cy: number) => `M${cx - 3} ${cy - 1.6}q3 1.6 6 0M${cx - 3} ${cy + 1.6}q3 1.6 6 0`;
@@ -122,6 +124,14 @@ function fingerGaps(cx: number, cy: number, thumb: 1 | -1) {
 }
 const n = (v: number) => Math.round(v * 10) / 10;
 
+/** The clipboard the 'clipboard' pose holds (figure units): a board, its metal clip, the paper and its lines. */
+export const CLIPBOARD = {
+  board: 'M70 84 H96 V118 H70 Z',
+  clip: 'M77 81 H89 V87 H77 Z',
+  paper: 'M73 90 H93 V114 H73 Z',
+  lines: 'M76 97 H90 M76 102 H90 M76 107 H86',
+} as const;
+
 export const GESTURES: Record<Pose, Gesture> = {
   down: { arms: 'M34 86 Q25 112 27 134 M86 86 Q95 112 93 134', hands: mittenDown(27, 134) + mittenDown(93, 134), creases: 'M30.6 129.5q2.6 3.5 0.6 8M89.4 129.5q-2.6 3.5 -0.6 8' },
   thumb: { arms: 'M34 86 Q25 112 27 134 M86 86 L96 108 L96 82', hands: mittenDown(27, 134) + thumbUp(96, 82), creases: 'M30.6 129.5q2.6 3.5 0.6 8' + knuckles(97, 83) },
@@ -137,6 +147,19 @@ export const GESTURES: Record<Pose, Gesture> = {
   'hands-up': { arms: 'M34 86 L23 86 L21 65 M86 86 L97 86 L99 65', hands: palm(21, 57.5, 1) + palm(99, 57.5, -1), creases: fingerGaps(21, 57.5, 1) + fingerGaps(99, 57.5, -1) },
   // worried: one open hand laid at the collar (fingers toward the neck, thumb up), the other hanging
   collar: { arms: 'M34 86 Q25 112 27 134 M86 86 L98 101 L72 90', hands: mittenDown(27, 134) + COLLAR_HAND.hand, creases: 'M30.6 129.5q2.6 3.5 0.6 8' + COLLAR_HAND.crease },
+  // D490: a salute. The inner hand stands flat at the brow (the head is drawn over its tips), the elbow out; the other arm hangs
+  salute: {
+    arms: 'M34 86 Q25 112 27 134 M86 86 L103 79 L91 47',
+    hands: mittenDown(27, 134) + ell(91, 45, 6, 7) + capsule(88.5, 39.5, 81.5, 34, 2.8),
+    creases: 'M30.6 129.5q2.6 3.5 0.6 8M94.6 41.4q1.6 3.4 0.4 7',
+  },
+  // D490: a clipboard held up on the inner side, its board and clip behind the fist and thumb; the other arm hangs
+  clipboard: {
+    arms: 'M34 86 Q25 112 27 134 M86 86 Q95 103 72 108',
+    hands: mittenDown(27, 134) + ell(72, 108, 7, 7) + capsule(74.5, 103, 81.5, 97, 2.3),
+    creases: 'M30.6 129.5q2.6 3.5 0.6 8' + knuckles(72, 108),
+    prop: CLIPBOARD.board + CLIPBOARD.clip,
+  },
   // holding a card at chest height by its side edges (the card itself is drawn by Portrait between `back` and `hands`): palms behind the
   // card's edges, fingers hidden behind it, a thumb over each top corner
   card: {
@@ -331,6 +354,8 @@ export const ARM_UPPER: Readonly<Record<Pose, ArmSpot>> = {
   'hands-up': { x: 28, y: 86, deg: 90 },
   clasp: { x: 33.3, y: 95.8, deg: -3.3 },
   card: { x: 32.4, y: 91.2, deg: 8.4 },
+  salute: { x: 31.1, y: 95.2, deg: 15.5 },
+  clipboard: { x: 31.1, y: 95.2, deg: 15.5 },
 };
 export const ARM_FORE: Readonly<Record<Pose, ArmSpot>> = {
   down: { x: 27.1, y: 116.7, deg: 5.3 },
@@ -340,6 +365,8 @@ export const ARM_FORE: Readonly<Record<Pose, ArmSpot>> = {
   'hands-up': { x: 22, y: 75.5, deg: -5.5 },
   clasp: { x: 42.4, y: 114.6, deg: -49 },
   card: { x: 36.8, y: 102, deg: -53.4 },
+  salute: { x: 27.1, y: 116.7, deg: 5.3 },
+  clipboard: { x: 27.1, y: 116.7, deg: 5.3 },
 };
 /** The armband and the napkin, drawn about their own origin (the arm is 12 wide there; both are a little wider so they wrap it). */
 export const ARMBAND = { d: 'M-7.2 -3.4 h14.4 v6.8 h-14.4 Z', stripe: 'M-7.2 -0.9 h14.4 v1.8 h-14.4 Z' } as const;

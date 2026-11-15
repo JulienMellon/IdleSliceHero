@@ -181,7 +181,7 @@ export const VISITOR_CAMEO_LINES: Readonly<Record<string, readonly string[]>> = 
     'Who put pineapple on this? …Good man.',
     'This oven’s slow. I hate slow.',
     'I’m not inspecting. I’m just large.',
-    'Hot by midnight. I got a watch.',
+    'Hot by midnight. I checked. Hmph. Good.',
     'Rosie says eat. I’m just the messenger.',
     'Crew’s good. Don’t tell ’em I said so.',
   ],

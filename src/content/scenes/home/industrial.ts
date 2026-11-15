@@ -117,7 +117,7 @@ export const INDUSTRIAL_SCENES: Scene[] = [
         cast: [{ id: 'big-sal', mood: 'happy' }],
         lines: [
           { speaker: 'Big Sal', text: 'Kid. A man who hides from his job needs a new job.' },
-          { speaker: 'Big Sal', text: "Also your mustache is on upside down. Don't tell me why. I hate why." },
+          { speaker: 'Big Sal', text: "Also you drew your mustache on upside down. Don't tell me why. I hate why." },
         ],
       },
     ],
@@ -128,7 +128,7 @@ export const INDUSTRIAL_SCENES: Scene[] = [
     character: 'big-sal',
     neighborhood: 'industrial',
     beat: 'interlude',
-    title: 'Breaks on Time',
+    title: 'Nobody Yells at Ox',
     trigger: { kind: 'manager', neighborhood: 'industrial' },
     panels: [
       {
@@ -149,7 +149,7 @@ export const INDUSTRIAL_SCENES: Scene[] = [
         cast: [{ id: 'dee', mood: 'happy' }],
         lines: [
           { speaker: 'Dee', text: 'Rules, kid. Breaks on time. Ovens hot. Nobody yells at Ox.' },
-          { speaker: 'Dee', text: 'Ask me what Sal keeps in his locker sometime. Never ask Sal.' },
+          { speaker: 'Dee', text: 'Rule one: nobody opens Sal’s locker. Rule two: I have the key.' },
         ],
       },
     ],
@@ -301,6 +301,7 @@ export const INDUSTRIAL_SCENES: Scene[] = [
         lines: [
           { speaker: 'Nonna Rosa', text: 'Come here, you big meatball.' },
           { speaker: 'Big Sal', text: "Kid, you brought my family back. Industrial's yours. And so's my Thursday." },
+          { speaker: 'Big Sal', text: "Your mustache kid came by. Says he's off to Uptown. Wouldn't say as what." },
         ],
       },
     ],

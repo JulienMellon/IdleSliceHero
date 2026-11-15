@@ -11,6 +11,7 @@
 | `layer.suburbs.gameday.info.title` | — | Game Day |
 | `layer.suburbs.gameday.info.body` | — | After every Mudhens game, families pour in for a little while. They only sit in free seats, so more seating means more pies. |
 | `layer.suburbs.gameday.start` | Dale | Final whistle, pal! Here come the minivans. Seats ready? |
+| `layer.suburbs.gameday.pop` | — | +{cash} from Game Day |
 
 ### Waterfront · Boats
 
@@ -43,8 +44,8 @@
 | `layer.waterfront.auction.info.title` | — | The Pier 9 Auction |
 | `layer.waterfront.auction.info.body` | — | MegaSlice raises its bid every few minutes while the auction is open. Have the cash before they raise again, and Pier 9 stays a pier. |
 | `layer.waterfront.auction.start` | Captain Marisol | Auction’s open. They’ll keep raising. So we keep selling. |
-| `layer.waterfront.auction.raise` | — | MegaSlice raised its bid to {bid} |
-| `layer.waterfront.auction.outbid` | — | Outbid! MegaSlice at {bid} |
+| `layer.waterfront.auction.raise` | — | MegaSlice raised it. {bid} wins Pier 9 |
+| `layer.waterfront.auction.outbid` | — | Outbid! You need {bid} for Pier 9 |
 | `layer.waterfront.auction.outbid.line` | Captain Marisol | They topped us, kid. Sell faster. Pier 9 won’t save itself. |
 
 ### University · Menu
@@ -75,6 +76,8 @@
 | `zone.library.line` | — | Across the quad. Orders in a whisper. |
 | `zone.stadium.name` | — | Stadium |
 | `zone.stadium.line` | — | The far end. Big orders, long rides. |
+| `zone.locked` | — | Expand to open |
+| `zone.drone.trip` | — | ignores distance |
 
 ### University · Drones (after `university-4`)
 
@@ -99,6 +102,7 @@
 | `layer.industrial.shift.start` | Big Sal | Whistle blows, crews eat. Miss a shift, you hear from me. |
 | `layer.industrial.shift.night.line` | Big Sal | Night shift. My guys. Best pay, worst moods. Feed ’em. |
 | `layer.industrial.jam.alert` | — | Oven jammed! Tap the wrench. |
+| `layer.industrial.jam.headfix` | — | Head Baker fixing… {n}s |
 | `layer.industrial.jam.line` | Big Sal | Oven’s jammed. Get a wrench on it. Now. |
 | `layer.industrial.jam.fixed` | Ox | (Ox taps it once. It purrs.) |
 
@@ -110,6 +114,11 @@
 | `layer.uptown.stars.chip` | — | Rating {n}★ |
 | `layer.uptown.stars.info.title` | — | Stars |
 | `layer.uptown.stars.info.body` | — | Uptown pays by your star rating. Oven grade, decor and Ingredients earn stars. Few stars pay less. A full sign pays the most. |
+| `layer.uptown.stars.payrule` | — | Below 3★: half pay. 3–4★: full pay. 5★: double pay. |
+| `layer.uptown.stars.pay.half` | — | Half pay |
+| `layer.uptown.stars.pay.full` | — | Full pay |
+| `layer.uptown.stars.pay.double` | — | Double pay |
+| `layer.uptown.stars.next` | — | Next point: {cost} |
 | `upgrade.uptown.ingredients.name` | — | Ingredients |
 | `upgrade.uptown.ingredients.tier.1` | — | Store-brand |
 | `upgrade.uptown.ingredients.tier.2` | — | Imported |
@@ -124,10 +133,44 @@
 | `layer.uptown.critic.pass` | Genevieve | My colleague said ‘sublime.’ How irritating. How correct. |
 | `layer.uptown.critic.fail` | Genevieve | My colleague left early. Croissant stayed. Small mercies. |
 
+### Sheet and card labels (`LABELS`, `src/components/layers/layer-text.ts`)
+
+| Key | Text |
+| --- | --- |
+| `label.nextGame` | Next game |
+| `label.seatsFree` | Seats free |
+| `label.rushLeft` | Rush ends in |
+| `label.nextBoat` | Next boat |
+| `label.boatLeft` | Boat leaves in |
+| `label.rack` | Warming rack |
+| `label.rackEmpty` | No rack yet |
+| `label.bidNow` | Current bid |
+| `label.bidBase` | Starting bid |
+| `label.bidCap` | Bid cap |
+| `label.nextRaise` | Next raise |
+| `label.raises` | Raises so far |
+| `label.sales` | Sales here |
+| `label.target` | To win |
+| `label.timeLeft` | Time left |
+| `label.retryIn` | Try again in |
+| `label.buyBetter` | To do better |
+| `label.close` | Close |
+| `label.bid` | Bid |
+| `label.buy` | Buy |
+| `label.start` | Start |
+| `label.maxed` | Biggest rack |
+| `label.challenge` | Challenge |
+| `label.soon` | Soon |
+| `label.fromGameDay` | from Game Day |
+| `label.sold` | sold |
+
 ## 2. The rival opens
 
 | Key | Speaker | Text |
 | --- | --- | --- |
+| `rival.tag` | — | −20% sales |
+| `rival.info.title` | — | The MegaSlice Next Door |
+| `rival.info.body` | — | MegaSlice opened across the street and takes 20% of your sales here. Win the 5-minute challenge to close it for good. Lose, and retry in 2 minutes. |
 | `rival.downtown.open` | Todd | Grand opening across the street! I’m supposed to say it’s better. It’s just bigger. |
 | `rival.downtown.title` | — | Bake Them Out: {n} pies in 5 minutes |
 | `rival.downtown.win` | Nonna Rosa | Their sign is coming down! Cara mia, bring me a chair. I want to watch. |
@@ -137,7 +180,7 @@
 | `rival.suburbs.win` | Dale | They’re packing up the balloons! That’s game, pal! Somebody dump the cooler on me! |
 | `rival.suburbs.lose` | Dale | They got us this time, pal. Shake it off. Water break, then we go again! |
 | `rival.waterfront.open` | Victor Crust | A MegaSlice on the boardwalk, facing your door. Every boat will see us first. |
-| `rival.waterfront.title` | — | Hold the Pier: {n} pies in 5 minutes |
+| `rival.waterfront.title` | — | Hold the Boardwalk: {n} pies in 5 minutes |
 | `rival.waterfront.win` | Captain Marisol | Their lights are out and their sign’s in the harbor. The gulls are sitting on it. |
 | `rival.waterfront.lose` | Captain Marisol | They held the boardwalk this tide. Mend the nets, kid. We sail again. |
 | `rival.university.open` | Todd | MegaSlice opens across the quad! Free Wi-Fi! The pizza is… also there. |
@@ -155,14 +198,15 @@
 
 ### Beat-4 lines after a won challenge
 
-| Key | Scene · panel | Old | New |
-| --- | --- | --- | --- |
-| `beat4.downtown-4` | downtown-4 · P1 caption | 150 deliveries. Downtown smells like Rosa's again. | keep (protected) |
-| `beat4.suburbs-4` | suburbs-4 | none | — |
-| `beat4.waterfront-4` | waterfront-4 | none | — |
-| `beat4.university-4` | university-4 | none | — |
-| `beat4.industrial-4` | industrial-4 | none | — |
-| `beat4.uptown-4` | uptown-4 | none | — |
+| Key | Scene · panel · slot | Speaker | Old | New |
+| --- | --- | --- | --- | --- |
+| `beat4.downtown-4` | downtown-4 · P1 caption | caption | A hundred and fifty deliveries. Downtown smells like Rosa’s again. | keep (protected; see `held.downtown-4.p1`) |
+| `beat4.suburbs-4.p1` | suburbs-4 · new P1, caption only · backdrop suburbs · no cast | caption | none | Across the street, the MegaSlice balloons are gone. One drifts past the window. |
+| `beat4.waterfront-4` | waterfront-4 | — | none | — |
+| `beat4.university-4` | university-4 | — | none | — |
+| `beat4.industrial-4.p1` | industrial-4 · new P1, caption only · backdrop industrial · no cast (scene goes to 5 panels) | caption | none | Across the street, the all-night MegaSlice is dark. The door finally closed. |
+| `beat4.uptown-4.drop` | uptown-4 · the caption-only P1 the scene file added | caption | The marble boutique has a For Lease sign. The doorman stays at his post. | remove (6 panels breaks the 3–5 rule); `beat4.uptown-4.p2.l1` replaces it |
+| `beat4.uptown-4.p2.l1` | uptown-4 · P2 (megaslice-hq) · new line 1, before “A RENTAL?” | Victor Crust | none | My boutique has a For Lease sign. And now THIS? |
 
 ## 3. Text fixes held for the rebalance
 
@@ -170,6 +214,26 @@
 | --- | --- | --- | --- |
 | `fix.uptown-4.p1.drone` | uptown-4 · P1 · Genevieve | "The best pizza in Port Marinara is not on a yacht. It is on a bike. Lately, a drone." | keep as is |
 | `fix.uptown-4.p5.boston` | uptown-4 · P5 caption (last panel) | Port Marinara is yours. Next stop: Boston. | keep (protected) |
+
+### Added lines (review r1)
+
+| Key | Scene · panel · slot | Speaker | Line |
+| --- | --- | --- | --- |
+| `add.suburbs-4.p4.l3` | suburbs-4 · P4 (script P3, the win) · line 3 | Dale | Poor Todd lost the ‘Senior.’ Wonder what they make him do next. |
+| `add.industrial-4.p5.l3` | industrial-4 · P5 (script P4) · line 3 | Big Sal | Your mustache kid came by. Says he’s off to Uptown. Wouldn’t say as what. |
+
+### Script lines held for Julien (protected: the copy keeps the script text until he approves the proposal)
+
+| Key | Scene · panel · slot | Speaker | Script (current copy) | Proposed | Why |
+| --- | --- | --- | --- | --- | --- |
+| `held.downtown-2.p1` | downtown-2 · P1 caption | caption | Twelve deliveries. The phone is actually ringing. | Four hundred deliveries. The phone is actually ringing. | trigger is 424 |
+| `held.downtown-2.p3.l3` | downtown-2 · P3 · line 3 | Nonna Rosa | Twelve pizzas. Is small. Is a start. Keep going, eh? | Four hundred pizzas. Is small. Is a start. Keep going, eh? | trigger is 424 |
+| `held.downtown-4.p1` | downtown-4 · P1 caption | caption | A hundred and fifty deliveries. Downtown smells like Rosa’s again. | A hundred and fifty deliveries. Before lunch. Downtown smells like Rosa’s again. | trigger is 2,217; keeps the protected sentence |
+| `held.waterfront-3.p3.l1` | waterfront-3 · P3 · line 1 | Victor Crust | The auction closes soon. Outbid MegaSlice? With pizza money? Ha! | An auction? Against MegaSlice? With pizza money? Ha! | the live auction never closes |
+| `held.waterfront-3b.p4.l1` | waterfront-3b · P4 · line 1 | Captain Marisol | The auction’s open, kid. Bid two million and Pier 9 stays a pier. | Auction’s open, kid. They raise every two minutes. Beat ’em to it. | the bid is not two million; raises every 2 min |
+| `held.university-3c.p2` | university-3c · P2 caption | caption | A MegaSlice stairwell. A man peels off a mustache. | A MegaSlice stairwell. A man wipes off his mustache. With a napkin. | the mustache is drawn on (downtown-5) |
+| `held.industrial-2b.p3.l2` | industrial-2b · P3 · line 2 | Big Sal | Also your mustache is on upside down. Don’t tell me why. I hate why. | Also you drew your mustache on upside down. Don’t tell me why. I hate why. | the mustache is drawn on |
+| `held.university-4.p3.l3` | university-4 · P3 · line 3 | Priya | University is officially Team You. Now… about those unlimited slices. | Now, about those unlimited slices. I brought a list. It has tabs. | a pull forward |
 
 ## 4. Head story lines
 
@@ -193,7 +257,7 @@
 | `cameo.big-sal.1` | Big Sal | Who put pineapple on this? …Good man. |
 | `cameo.big-sal.2` | Big Sal | This oven’s slow. I hate slow. |
 | `cameo.big-sal.3` | Big Sal | I’m not inspecting. I’m just large. |
-| `cameo.big-sal.4` | Big Sal | Hot by midnight. I got a watch. |
+| `cameo.big-sal.4` | Big Sal | Hot by midnight. I checked. Hmph. Good. |
 | `cameo.big-sal.5` | Big Sal | Rosie says eat. I’m just the messenger. |
 | `cameo.big-sal.6` | Big Sal | Crew’s good. Don’t tell ’em I said so. |
 
@@ -234,7 +298,7 @@
 | `scene.suburbs-hire.p1.l2` | P1 | | Dale | She runs the Mudhens snack bar. Nobody’s ever cut her line. Nobody’s ever tried. |
 | `scene.suburbs-hire.p2.l1` | P2 | shop (Suburbs) · Deb (neutral), Dale (surprised) | Deb | Coach. Out of my kitchen. |
 | `scene.suburbs-hire.p2.l2` | P2 | | Dale | Yes, ma’am. |
-| `scene.suburbs-hire.p2.l3` | P2 | | Deb | Shop’s mine now. Ask me about the bake sale sometime. Dale knows which one. |
+| `scene.suburbs-hire.p2.l3` | P2 | | Deb | Counter’s mine now. Ask me about the bake sale sometime. Dale knows which one. |
 
 ### `waterfront-hire`
 
@@ -265,7 +329,7 @@
 | `scene.industrial-hire.p1.l2` | P1 | | Big Sal | My shift steward. Runs every shift on the line. And me. Mostly me. |
 | `scene.industrial-hire.p1.l3` | P1 | | Dee | Mostly. |
 | `scene.industrial-hire.p2.l1` | P2 | shop (Industrial) · Dee (happy) | Dee | Rules, kid. Breaks on time. Ovens hot. Nobody yells at Ox. |
-| `scene.industrial-hire.p2.l2` | P2 | | Dee | Ask me what Sal keeps in his locker sometime. Never ask Sal. |
+| `scene.industrial-hire.p2.l2` | P2 | | Dee | Rule one: nobody opens Sal’s locker. Rule two: I have the key. |
 
 ### `uptown-hire`
 
@@ -282,11 +346,21 @@
 
 | Key | Scene · panel · slot | Plays if | Speaker | Line |
 | --- | --- | --- | --- | --- |
-| `gm.deb.beat` | suburbs-4 · P1 · line 2 | `suburbs-hire` seen; else panel plays without it | Deb | He tried my snack bar, too. He won’t try it twice. |
+| `gm.deb.beat` | suburbs-4 · P2 · line 2 (script P1) | `suburbs-hire` seen; else panel plays without it | Deb | He tried my snack bar, too. He won’t try it twice. |
 | `gm.skip.beat` | waterfront-3 · P1 · line 2 | `waterfront-hire` seen; else panel plays without it | Skip | Counted the board’s books twice. Broke both times. |
 | `gm.noor.beat` | university-4 · P3 · line 2 (between Priya’s two lines) | `university-hire` seen; else panel plays without it | Noor | No queue at all. My thesis is ruined. I’ve never been happier. |
 | `gm.dee.beat` | industrial-3 · P4 · line 2 | `industrial-hire` seen; else panel plays without it | Dee | The steward didn’t hear that, Sal. The steward is looking at a wall. |
 | `gm.anton.beat` | uptown-3 · P3 · line 2 | `uptown-hire` seen; else panel plays without it | Anton | I know Madame. Nobody is ever ‘pretty sure’ what she will write. |
+
+### Payoffs for the hire-scene threads
+
+| Key | Thread (opened in) | Plays | Speaker | Line |
+| --- | --- | --- | --- | --- |
+| `payoff.deb` | the bake sale (`suburbs-hire` P2) | in-shop line, cycle 2, Suburbs, after `suburbs-4` | Deb | Bake sale? Dale entered my pie. As his. |
+| `payoff.skip` | the ferry log (`waterfront-hire` P2) | in-shop line, cycle 2, Waterfront, after `waterfront-4` | Skip | The log’s off by one lobster. Still out. |
+| `payoff.noor` | the chapter title (`university-hire` P2) | in-shop line, cycle 2, University, after `university-4` | Noor | Title: ‘A Study in Avoidable Waiting.’ |
+| `payoff.dee` | Sal’s locker (`industrial-hire` P2) | in-shop line, cycle 2, Industrial, after `industrial-4` | Dee | The locker? Pineapple. Floor to ceiling. |
+| `payoff.anton` | why he was fired (`uptown-hire` P2) | in-shop line, cycle 2, Uptown, after `uptown-4` | Anton | Fired for refolding Madame’s napkin. |
 
 ### Scrapbook tiles
 
@@ -295,7 +369,7 @@
 | `scrapbook.suburbs-hire` | Deb Takes the Counter |
 | `scrapbook.waterfront-hire` | Counted Twice |
 | `scrapbook.university-hire` | A Chapter About You |
-| `scrapbook.industrial-hire` | Breaks on Time |
+| `scrapbook.industrial-hire` | Nobody Yells at Ox |
 | `scrapbook.uptown-hire` | A Napkin, Folded |
 
 ## 7. The shop report
@@ -308,6 +382,8 @@
 | `report.quiet` | — | Kitchen could do {could} a minute. Only {wanted} come in. |
 | `report.tipping` | — | Fast service. Customers are tipping 10% extra. |
 | `report.cold` | — | Service went cold. Income −10% until it recovers. |
+| `report.label.tipping` | — | Tipping |
+| `report.label.cold` | — | Cold |
 | `report.nonna.kitchen` | Nonna Rosa | {served} of {wanted} a minute, cara. {lost} walks out the door! |
 | `report.nonna.quiet` | Nonna Rosa | We bake {could}, they want {wanted}. Go find me hungry people! |
 | `report.nonna.tipping` | Nonna Rosa | Fast and hot! They tip 10% more. Of course they do. |
@@ -320,7 +396,7 @@
 | `report.skip.quiet` | Skip | We can do {could}. Only {wanted} came aboard. I checked twice. |
 | `report.skip.tipping` | Skip | Tips up 10%. Counted twice. Then once more, for joy. |
 | `report.skip.cold` | Skip | Service is slipping. −10% till we mend it. Recounting. |
-| `report.noor.kitchen` | Noor | Queue: {served} of {wanted} a minute. {lost} lost to balking. |
+| `report.noor.kitchen` | Noor | Queue: {served} of {wanted} a minute. {lost} gave up and left. |
 | `report.noor.quiet` | Noor | Capacity {could}, arrivals {wanted}. Idle servers. Fascinating. |
 | `report.noor.tipping` | Noor | Barely any wait. Tips up 10%. This is publishable. |
 | `report.noor.cold` | Noor | Queue’s unstable. Word spread. −10% until it settles. |
@@ -372,7 +448,7 @@
 | Key | Speaker | Text |
 | --- | --- | --- |
 | `bark.downtown.prep.slammed` | Marco | Dough’s piling up! I need more arms! |
-| `bark.downtown.oven.slammed` | Lucia | Oven’s full! Upgrade it. Don’t touch it. |
+| `bark.downtown.oven.slammed` | Lucia | Oven’s full! Upgrade it. Not my dial. |
 | `bark.downtown.counter.slammed` | Benny | Even Mrs. Russo is waiting. Help! |
 | `bark.suburbs.prep.slammed` | Patty | Out of labels! OUT OF LABELS! |
 | `bark.suburbs.oven.slammed` | Hank | Even a patient fire has limits, sport. |

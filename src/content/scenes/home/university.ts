@@ -190,7 +190,7 @@ export const UNIVERSITY_SCENES: Scene[] = [
         backdrop: 'university',
         prop: 'phone-footage',
         cast: [{ id: 'priya', mood: 'surprised' }],
-        caption: 'A MegaSlice stairwell. A man peels off a mustache.',
+        caption: 'A MegaSlice stairwell. A man wipes off his mustache. With a napkin.',
         lines: [
           { speaker: 'Priya', text: "That's the career-fair guy. The ladder guy. Todd." },
         ],
@@ -276,7 +276,7 @@ export const UNIVERSITY_SCENES: Scene[] = [
         lines: [
           { speaker: 'Priya', text: 'Drones are live! No traffic, no parking, no excuses. Only pizza.' },
           { speaker: 'Noor', text: 'No queue at all. My thesis is ruined. I’ve never been happier.', ifSeen: 'university-hire' },
-          { speaker: 'Priya', text: 'University is officially Team You. Now... about those unlimited slices.' },
+          { speaker: 'Priya', text: 'Now, about those unlimited slices. I brought a list. It has tabs.' },
         ],
       },
     ],

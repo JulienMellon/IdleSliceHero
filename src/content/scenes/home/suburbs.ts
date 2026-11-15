@@ -197,7 +197,7 @@ export const SUBURBS_SCENES: Scene[] = [
         lines: [
           { speaker: 'Deb', text: 'Coach. Out of my kitchen.' },
           { speaker: 'Dale', text: 'Yes, ma’am.' },
-          { speaker: 'Deb', text: 'Shop’s mine now. Ask me about the bake sale sometime. Dale knows which one.' },
+          { speaker: 'Deb', text: 'Counter’s mine now. Ask me about the bake sale sometime. Dale knows which one.' },
         ],
       },
     ],
@@ -213,6 +213,12 @@ export const SUBURBS_SCENES: Scene[] = [
     requires: ['suburbs-3b'],
     perk: true,
     panels: [
+      {
+        backdrop: 'suburbs',
+        cast: [],
+        caption: 'Across the street, the MegaSlice balloons are gone. One drifts past the window.',
+        lines: [],
+      },
       {
         backdrop: 'suburbs',
         cast: [{ id: 'dale', mood: 'neutral' }],
@@ -241,7 +247,7 @@ export const SUBURBS_SCENES: Scene[] = [
         lines: [
           { speaker: 'Dale', text: "Champions! The Mudhens are champions! I'm gonna cry. I'm crying." },
           { speaker: 'Dale', text: "Whole Suburbs is eating at your shop now, pal. You're family." },
-          { speaker: 'Dale', text: "Hey, pal, some sailor lady's been asking about you. Says it's urgent." },
+          { speaker: 'Dale', text: "Poor Todd lost the 'Senior.' Wonder what they make him do next." },
         ],
       },
     ],
