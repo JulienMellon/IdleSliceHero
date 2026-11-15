@@ -36,3 +36,5 @@ next: v5.16 fix round r2 in progress (step fix, round r2). Done this round: E0 E
 - 2026-11-15 14:02 UTC r2 T1a partial (S37 S38 S39 S27 S28 S35 S36 S41-S43 fixed; tsc ok, engine+content 639 pass; sim 40/40, max gap 11.0 min). D493 not fixed: needs Julien's call. Needs T1b: scrapbook-model.test.ts:12 'Nobody Yells at Ox'. T1b launched.
 - 2026-11-15 14:23 UTC r2 W2 partial (copy rows added; S37 S38 S41 S43 held), T1b partial (D490 fixed, scrapbook test). Julien: D493 carry; Todd rewrites approved. W2 + T1a relaunched to promote held rows and match scenes.
 - 2026-11-15 14:26 UTC r2 T1a done (held lines applied, uptown-4 5p, industrial-4 5p; tsc ok, engine+content pass, sim 40/40).
+- 2026-11-15 14:26 UTC r2 W2 done (8 held rows official). All r2 cards in; verify v5.16-r2.
+- 2026-11-15 14:29 UTC verify r2: tsc ok; 4 red (layer copy tests vs new copy rows) -> S2a + S2b.
