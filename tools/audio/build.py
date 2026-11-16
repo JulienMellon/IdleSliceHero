@@ -29,9 +29,10 @@ MIDI = os.path.join(HERE, 'build', 'midi')
 ASSETS = os.path.join(ROOT, 'assets', 'audio')
 
 LOUD = dict(music=-20.0, story=-16.0, sting=-18.0)  # AU22; the lofi loops sit 2 LU lower (2026-10-31)
-HQ_LUFS = -19.0  # AU70: the MegaSlice HQ loop sits 1 LU under its old master, with a 10 kHz roll-off and no tape chain
 LOOP_CEILING = -6.0
-LOOP_LUFS = {'downtown_sparse': -22.0}  # AU67: Nonna's takeover (sparse -> full) lifts by 2 LU
+# AU67: Nonna's takeover (sparse -> full) lifts by 2 LU. AU70, card M1c: the MegaSlice HQ loop keeps its own tier, 1 LU above the
+# other loops, and now goes through the same lofi chain.
+LOOP_LUFS = {'downtown_sparse': -22.0, 'megaslice_hq': -19.0}
 # AU64: the cues that sit over a lofi loop come down from -16 to -18 and get the story master (tape_sat, 10 kHz)
 STORY_MASTER = {'megaslice_rep': -18.0, 'megaslice_rep_dock': -18.0, 'city_theme': -18.0,
                 **{f'triumph_{h}': -18.0 for h in ('downtown', 'suburbs', 'waterfront', 'university', 'industrial', 'uptown')}}
@@ -92,11 +93,8 @@ def main(only: set[str] | None = None):
         a = post.render_midi(os.path.join(MIDI, name + '.mid'), tail=2.5 if cue.get('lofi') and cue['kind'] == 'stinger' else 4.0)
         if cue['kind'] == 'loop':
             a = post.wrap_loop(a, cue['seconds'])
-            if cue.get('lofi'):
-                a = post.lofi_loop(a, seed=sum(map(ord, name)))
-                a = post.normalize(a, LOOP_LUFS.get(name, LOUD['music']), ceiling_db=LOOP_CEILING)
-            else:
-                a = post.normalize(post.rolloff(a, 10000.0, circular=True), HQ_LUFS, ceiling_db=LOOP_CEILING)
+            a = post.lofi_loop(a, seed=sum(map(ord, name)))
+            a = post.normalize(a, LOOP_LUFS.get(name, LOUD['music']), ceiling_db=LOOP_CEILING)
             join, p99 = post.seam_step(a)
             if join > p99:  # the loop seam must be no bigger than an ordinary sample step
                 raise SystemExit(f'{name}: loop seam step {join:.5f} > 99th-percentile step {p99:.5f}')

@@ -8,6 +8,7 @@ Instruments are General MIDI programs, 0-based here (the cue sheet lists them 1-
 """
 from __future__ import annotations
 
+import dataclasses
 import json
 import math
 import os
@@ -17,6 +18,8 @@ from mlib import (Song, Track, deg, p, MAJOR, MIXO, MINOR, KICK, SNARE, RIM, CLA
                   TAMB, SHAKER, COWBELL, TOM_LO, TOM_MID, TOM_HI, CONGA_LO, CONGA_HI, CLAVES, TRIANGLE_OPEN, CABASA,
                   SPLASH)
 import material as M
+import jazz
+import palette
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), 'build', 'midi')
 os.makedirs(OUT, exist_ok=True)
@@ -26,7 +29,7 @@ GM = dict(piano=0, celesta=8, glock=9, vibes=11, marimba=12, bells=14, organ=16,
           nylon=24, steel=25, jazz_gtr=26, clean_gtr=27, ac_bass=32, fing_bass=33, fretless=34, syn_bass=38, strings=48,
           slow_strings=49, pizz=45, harp=46, timpani=47, trumpet=56, trombone=57, tuba=58, mute_tpt=59, horn=60,
           brass=61, tenor_sax=66, bassoon=70, clarinet=71, flute=73, whistle=78, square=80, fiddle=110,
-          steel_drums=114, rhodes=4, choir=52, oohs=53)
+          steel_drums=114, rhodes=4, choir=52, oohs=53, warm_pad=89, kalimba=108)
 BRUSH = 40  # GM drum kit program 40 = "Brush": the soft kit under every lofi loop
 BRUSH_TAP, BRUSH_SWIRL = 38, 40  # in the brush kit, the "snare" notes are brushes
 
@@ -35,9 +38,9 @@ BRUSH_TAP, BRUSH_SWIRL = 38, 40  # in the brush kit, the "snare" notes are brush
 # its 6/8 lilt). Downtown's bpm is the quarter note: dotted quarter = 66.
 HOODS = {
     'downtown': dict(root='F4', mode=MAJOR, bpm=99, bar=3, ts=(6, 8), lead=GM['accordion'], swing=0.0),
-    'suburbs': dict(root='G4', mode=MAJOR, bpm=86, bar=4, ts=(4, 4), lead=GM['mute_tpt'], swing=0.58),
-    'waterfront': dict(root='D4', mode=MIXO, bpm=80, bar=4, ts=(4, 4), lead=GM['fiddle'], swing=0.56),
-    'university': dict(root='Bb4', mode=MAJOR, bpm=76, bar=4, ts=(4, 4), lead=GM['square'], swing=0.58),
+    'suburbs': dict(root='G4', mode=MAJOR, bpm=86, bar=4, ts=(4, 4), lead=GM['vibes'], swing=0.58),
+    'waterfront': dict(root='D4', mode=MIXO, bpm=80, bar=4, ts=(4, 4), lead=GM['marimba'], swing=0.56),
+    'university': dict(root='Bb4', mode=MAJOR, bpm=76, bar=4, ts=(4, 4), lead=GM['vibes'], swing=0.58),
     'industrial': dict(root='A3', mode=MIXO, bpm=76, bar=4, ts=(4, 4), lead=GM['tenor_sax'], swing=0.667),
     'uptown': dict(root='Eb4', mode=MAJOR, bpm=84, bar=4, ts=(4, 4), lead=GM['clarinet'], swing=0.6),
 }
@@ -51,6 +54,10 @@ LEGACY = {
     'uptown': dict(root='Eb4', mode=MAJOR, bpm=104, bar=4, ts=(4, 4), lead=GM['clarinet'], swing=0.6),
 }
 LEAD_CAP = 80  # leads never play louder than this (after humanising)
+# The cues rewritten as lofi jazz so far. `finish()` runs the palette check (palette.py) on each; later cards add theirs,
+# card M2c makes it every cue.
+JAZZ = {'downtown', 'downtown_sparse', 'suburbs', 'waterfront', 'university', 'industrial', 'uptown', 'megaslice_hq'}
+PALETTE_CHECKED: list[str] = []
 
 
 # ------------------------------------------------------------------------------------------------ helpers
@@ -166,8 +173,19 @@ def lofi_finish(s: Song, ratio: float, leads=(), straight=()):
     s.humanize_ms(8, 8, 10, cap={n: LEAD_CAP for n in leads})
 
 
+def jazz_finish(s: Song, ratio: float, leads=(), lead_cap: int = 56, laid_ms: float = 15.0, straight=()):
+    """The jazz loop finish, in this order: swing every subdivision (`swing_smooth`, none at ratio 0), humanise (timing
+    +-6 ms, velocity +-10, kit velocity +-12, leads capped at `lead_cap`), then lay the kit and bass back (`jazz.laid_back`)."""
+    swing_smooth([tr for tr in s.tracks if tr.name not in straight], ratio)
+    s.humanize_ms(6, 10, 12, cap={n: lead_cap for n in leads})
+    jazz.laid_back(s.tracks, laid_ms, s.bpm)
+
+
 def finish(song: Song, name: str, bars: int, bar_beats: float, ts, kind: str, extra=None):
     beats = bars * bar_beats
+    if name in JAZZ:
+        palette.check(song, name)
+        PALETTE_CHECKED.append(name)
     secs = song.save(os.path.join(OUT, f'{name}.mid'), beats, ts)
     roots = getattr(song, 'bar_roots', None)
     if roots:  # the chord degree on each bar's downbeat, so stingers can wait for the tonic (AU47)
@@ -179,76 +197,91 @@ def finish(song: Song, name: str, bars: int, bar_beats: float, ts, kind: str, ex
 
 
 # ================================================================================================ DOWNTOWN
+def downtown_chart() -> list:
+    """Downtown's harmony, one entry per section: (section, Harmony, melody bars | None). F major, 6/8 (3 beats a bar).
+    Written with the jazz helpers; every melody bar is checked against the chord under it (see AUDIOLOG M1a)."""
+    K, B = 'F', 3.0
+    hold, bars, ii_V_I = jazz.hold, jazz.bars, jazz.ii_V_I
+    intro = hold(K, B, 'I', 'maj9') + hold(K, B, 'I', '6/9') + jazz.i_vi_ii_V(K, B)           # home, then I vi | ii V
+    a_m = hold(K, B, 'I', 'maj9') + ii_V_I(K, B) + hold(K, B, 'I', '6/9')                     # Fmaj9 | Gm9 C13 | Fmaj9 | F6/9
+    a_ans = (hold(K, B, 'IV', 'maj9') + ii_V_I(K, B, resolve=False, v_q='dom7b9') + hold(K, B, 'I', 'maj9')
+             + ii_V_I(K, B, 'IV', resolve=False))                                              # Bbmaj9 | Gm9 C7b9 | Fmaj9 | Cm9 F13
+    a_dev = bars(K, B, [('IV', '6/9', 3)], [('I', 'maj9', 3)], [('ii', 'min11', 3)], [('vi', 'sus13', 3)])
+    a_close = ii_V_I(K, B, shape='bar') + jazz.backdoor(K, B, resolve=False)                  # Gm9 | C13 | Fmaj9 | Bbm9 Eb13
+    bed1 = (hold(K, B, 'I', 'maj9') + hold(K, B, 'IV', 'maj9') + ii_V_I(K, B, resolve=False)
+            + bars(K, B, [('I', 'maj9', 1.5), ('iii', 'dom7b9', 1.5)]))                       # ... Fmaj9 A7b9 into Dm
+    b1 = bars(K, B, [('vi', 'min9', 3)], [('ii', 'min11', 3)], [('iii', 'min9', 1.5), ('iii', 'dom7b9', 1.5)],
+              [('vi', 'min11', 1.5), ('IV', 'maj7s11', 1.5)], [('vi', 'min9', 3)], [('IV', 'maj7s11', 3)],
+              [('V', 'dom9', 3)], [('ii', 'min9', 1.5), ('iii', 'dom7b9', 1.5)])
+    b2 = bars(K, B, [('vi', 'min9', 3)], [('ii', 'min11', 3)], [('iii', 'min9', 1.5), ('bvii', 'dom13', 1.5)],
+              [('vi', 'min11', 1.5), ('iii', 'sus13', 1.5)], [('vi', 'min9', 3)], [('IV', 'maj7s11', 3)],
+              [('V', 'dom9', 3)], [('ii', 'min9', 1.5), ('V', 'dom7b9', 1.5)])
+    a2 = ii_V_I(K, B, shape='bar') + ii_V_I(K, B, resolve=False, tritone=True)               # Gm9 | C13 | Fmaj9 | Gm9 Gb13
+    bed2 = (hold(K, B, 'I', 'maj9') + hold(K, B, 'I', '6/9')
+            + bars(K, B, [('I', 'maj9', 1.5), ('#iv', 'dim7', 1.5)]) + ii_V_I(K, B, resolve=False))
+    # The melody of each 4-bar phrase and which chart bars it sits on. The A phrases are M, ANS, DEV, CLOSE.
+    return [('intro', intro, None), ('A', a_m, M.M68), ('A', a_ans, M.ANS68), ('A', a_dev, M.DEV68),
+            ('A', a_close, M.CLOSE68), ('bed', bed1, None), ('B', b1, M.B68), ('B', b2, M.B68),
+            ('A2', a_m, M.M68), ('A2', a2, M.CLOSE68), ('bed', bed2, None)]
+
+
 def downtown(sparse=False):
+    """Downtown, lofi jazz (card M1a). F major, 6/8, dotted quarter = 66, 52 bars. Rhodes comping is the centre; the nylon
+    guitar plays every line the accordion had (an octave lower: the old lines reached G5), a warm pad sits very low, an
+    upright bass plays the 6/8 two-feel, brushes keep the 6/8 long-short ride. The sparse chart (AU20) is the nylon
+    guitar and Rhodes on the same timeline and the same barRoots."""
     h = HOODS['downtown']
     R, md, B = h['root'], h['mode'], h['bar']
-    s = Song(h['bpm'], B, seed=11 + sparse)
-    lead = s.track('accordion', 0, GM['accordion'], volume=75, pan=58, reverb=45)
-    gtr = s.track('nylon guitar', 1, GM['nylon'], volume=92, pan=80, reverb=40)
-    rh = s.track('rhodes', 4, GM['rhodes'], volume=88, pan=48, reverb=45, chorus=40)
-    pizz = s.track('pizzicato', 2, GM['pizz'], volume=66, pan=44, reverb=50)
-    bass = s.track('bass', 3, GM['ac_bass'], volume=96, pan=64, reverb=20)
-    perc = s.track('soft kit', 9, BRUSH, volume=96, pan=70, reverb=30)
+    s = Song(h['bpm'], B, seed=11)
+    lead = s.track('nylon melody', 0, GM['nylon'], volume=109 if not sparse else 87, pan=80, reverb=40)
+    arp = s.track('nylon arpeggio', 1, GM['nylon'], volume=96, pan=76, reverb=40)
+    rh = s.track('rhodes', 4, GM['rhodes'], volume=72, pan=48, reverb=45, chorus=40)
+    pad = s.track('warm pad', 5, GM['warm_pad'], volume=36, pan=64, reverb=55)
+    bass = s.track('bass', 3, GM['ac_bass'], volume=84, pan=64, reverb=20)
+    perc = s.track('soft kit', 9, BRUSH, volume=78, pan=70, reverb=30)
 
-    plan = [  # (section, harmony key, melody bars | None, melody track)
-        ('intro', ['M'], None, None),
-        ('A', ['M'], M.M68, 'lead'), ('A', ['ANS'], M.ANS68, 'lead'),
-        ('A', ['DEV'], M.DEV68, 'pizz'), ('A', ['CLOSE'], M.CLOSE68, 'lead'),
-        ('bed', ['ANS'], None, None),
-        ('B', ['B'], M.B68, 'gtr'), ('B', ['B'], M.B68, 'lead_low'),
-        ('A2', ['M'], M.M68, 'lead'), ('A2', ['CLOSE'], M.CLOSE68, 'lead'),
-        ('bed', ['M'], None, None),
-    ]
+    sections = downtown_chart()
+    full = jazz.Harmony('F', B)
+    for (_, hm, _m) in sections:
+        full = full + hm
+    s.bar_roots = full.roots
     t = 0.0
-    s.bar_roots = [bar[0][0] for (_, hkeys, _m, _w) in plan for k in hkeys for bar in M.H68[k]]
-    for sec, hkeys, mel, who in plan:
-        harm = [bar for k in hkeys for bar in M.H68[k]]
-        nb = len(harm)
+    bar_i = 0
+    for sec, hm, mel in sections:
+        nb = len(hm)
         quiet = sec in ('intro', 'bed')
-        for (u, beats, d, size) in segs(harm, t, B):
-            ch = cn(R, d, size, md, -1)
-            # slow nylon-guitar arpeggio, one soft tone a beat (replaces the 16th-note mandolin tremolo)
-            if not (who == 'gtr' and not quiet):
-                tones = [ch[1], ch[2], ch[-1] if size == 4 else ch[0] + 12]
-                for k in range(min(3, int(math.ceil(beats)))):
-                    gtr.n(u + k, 1.1, tones[k], 36 if quiet else 42)
-            if sparse:
-                continue
-            rh_comp(rh, u, beats, d, R, md, vel=44 if quiet else 48, answer=False)
-            if beats >= 3:
-                rh_hit(rh, u + 1.5, rh_voicing(R, d, md)[1:], 1.2, 32)
-            # warm round bass: the tarantella's dotted-quarter lilt, root then fifth, long and soft
-            for k in range(int(beats // 1.5)):
-                b = bass_root(R, d, md, -2) + (7 if k % 2 else 0)
-                bass.n(u + 1.5 * k, 1.35, b, 62 if k == 0 else 50)
-            if who != 'pizz' and not quiet:  # one pizzicato off-beat a bar, very light
-                for k in range(int(beats // 1.5)):
-                    pizz.n(u + 1.5 * k + 1.0, 0.3, ch[1:], 34)
+        jazz.comp(rh, hm, jazz.F68, start=t, seed=11 + bar_i, vel=40 if quiet else 44)
         if not sparse:
-            for b_ in range(nb):  # soft kit: kick on 1, side stick on the second pulse, lazy hats
-                tb = t + b_ * B
-                g = 0.85 if quiet else 1.0
-                perc.n(tb, 0.4, KICK, int(54 * g))
-                perc.n(tb + 1.5, 0.2, RIM, int(42 * g))
-                hats(perc, tb, 6, 0.5, int(38 * g), int(26 * g))
+            jazz.bass_two_feel(bass, hm, jazz.F68, start=t, vel=58 if quiet else 62)
+            jazz.brushes(perc, nb, jazz.F68, start=t, seed=21 + bar_i, scale=0.85 if quiet else 1.0, bar0=bar_i)
+            for (u, ch) in hm.chords(t):  # the pad: the voicing's lower three notes, one slow chord per chord
+                vc = jazz.voicing_off(R, ch.off, ch.q)[:3]
+                for q in vc:
+                    pad.n(u, ch.beats * 1.02, q, 30)
+        if quiet:  # slow nylon arpeggio, one soft tone a beat, only while no line is playing
+            for (u, ch) in hm.chords(t):
+                vc = jazz.voicing_off(R, ch.off, ch.q)
+                tones = [vc[0], vc[1], vc[2], vc[1]]
+                for k in range(int(math.ceil(ch.beats))):
+                    arp.n(u + k, 1.1, tones[k % 4], 34)
         if mel:
-            if who == 'lead':
-                if sec in ('A', 'A2') and mel is M.M68:
-                    pickup(lead, R, md, t, 60)
-                melody(lead, R, mel, md, t, B, vel=66)
-            elif who == 'lead_low':
-                melody(lead, R, mel, md, t, B, vel=58, shift=-12)
-            elif who == 'pizz':
-                melody(pizz, R, mel, md, t, B, vel=64, legato=0.5, shift=12)
-                melody(lead, R, mel, md, t, B, vel=46, shift=-12)  # accordion shadows it an octave down
-            elif who == 'gtr':
-                melody(gtr, R, mel, md, t, B, vel=60, legato=0.95)
+            if sec in ('A', 'A2') and mel is M.M68:
+                pickup(lead, R, md, t, 44, shift=-12)
+            melody(lead, R, mel, md, t, B, vel=44 if sec != 'B' else 42, shift=-12)
         t += nb * B
-    if sparse:  # AU20: before Nonna takes over, just accordion and guitar
-        s.tracks = [lead, gtr]
-    lofi_finish(s, 0.0, leads=('accordion', 'pizzicato'))
+        bar_i += nb
+    if sparse:  # AU20: before Nonna takes over, just the nylon guitar and the Rhodes
+        s.tracks = [lead, arp, rh]
+    jazz_finish(s, 0.0, leads=('nylon melody',))
     name = 'downtown_sparse' if sparse else 'downtown'
-    return finish(s, name, int(t // B), B, h['ts'], 'loop', dict(hood='downtown', lofi=True))
+    secs = finish(s, name, int(t // B), B, h['ts'], 'loop', dict(hood='downtown', lofi=True))
+    if sparse:  # Nonna's takeover swaps one chart for the other at the same position
+        if 'downtown' not in MANIFEST:
+            downtown()
+        full_m, sp_m = MANIFEST['downtown'], MANIFEST['downtown_sparse']
+        assert sp_m['barRoots'] == full_m['barRoots'], 'downtown_sparse barRoots differ from downtown'
+        assert (sp_m['bars'], sp_m['seconds'], sp_m['bpm']) == (full_m['bars'], full_m['seconds'], full_m['bpm'])
+    return secs
 
 
 # ================================================================================================ 4/4 shared
@@ -278,350 +311,425 @@ def play_sections(s: Song, h: dict, plan, comp, bassf, drums, leads: dict, remap
     return int(round(t / B))
 
 
+# ================================================================================================ 4/4 jazz shared
+def walk_into(bass: Track, hm, nxt, feel, start: float, seed: int, vel: int = 60):
+    """`jazz.bass_walk` over `hm`, with the last quarter approaching the first chord of `nxt` (the bar that follows) instead
+    of the first chord of `hm`. Only the notes of `hm` are kept."""
+    scratch = Track('scratch', bass.channel)
+    jazz.bass_walk(scratch, hm + nxt, feel, start=start, seed=seed, vel=vel)
+    end = start + hm.beats
+    bass.events += [e for e in scratch.events if e[0] < end - 1e-9]
+
+
+def kick_late(perc: Track, ms: float, bpm: float):
+    """Kick (36) `ms` later than the rest of the kit: the lofi hip-hop pocket."""
+    d = ms / 1000.0 * bpm / 60.0
+    perc.events = [(t + d if pi == KICK else t, du, pi, v) for (t, du, pi, v) in perc.events]
+
+
+def stabs(track: Track, hm, start: float, positions=(1.0, 3.0), vel: int = 32, dur: float = 0.3, near: float = 58,
+          skip_bars=()):
+    """A short chord on each of `positions` (beats in the bar; 1 and 3 are beats 2 and 4) of every bar of `hm`, voiced on the
+    chord sounding there (`jazz.voicing_off`, nearest `near`). Bars listed in `skip_bars` get none."""
+    chords = hm.chords(start)
+    for b in range(len(hm)):
+        if b in skip_bars:
+            continue
+        for pos in positions:
+            at = start + b * hm.bar_beats + pos
+            u, ch = next((u, c) for (u, c) in reversed(chords) if u <= at + 1e-9)
+            for q in jazz.voicing_off(hm.key, ch.off, ch.q, near):
+                track.n(at, dur, q, vel)
+
+
+def major_b(K, B: float = 4.0) -> jazz.Harmony:
+    """The 8-bar B of a major-key 4/4 loop, written to carry `material.B_BARS` (vi | ii | IV | I V | vi | ii | IV ii | V).
+    Each chord holds every melody note of its bar as a chord tone, the 9th, 11th or 13th (checked against the chord under it: docs/build/music/reports/M1b.md)."""
+    return jazz.bars(K, B,
+                     [('vi', 'min9', 4)], [('ii', 'min11', 4)], [('IV', '6/9', 4)], [('I', 'maj9', 2), ('V', 'dom13', 2)],
+                     [('vi', 'min11', 4)], [('ii', 'min9', 4)], [('IV', 'maj9', 2), ('ii', 'min9', 2)], [('V', 'dom13', 4)])
+
+
 # ================================================================================================ SUBURBS
+def suburbs_chart() -> list:
+    """Suburbs, one entry per section: (section, Harmony, melody bars | None, who plays it). G major, 4/4, 32 bars."""
+    K, B = 'G', 4.0
+    hold, bars = jazz.hold, jazz.bars
+    intro = jazz.i_vi_ii_V(K, B) + hold(K, B, 'I', 'maj9') + hold(K, B, 'I', '6/9')           # Gmaj9 Em9 | Am9 D13 | Gmaj9 | G6/9
+    a_h = (hold(K, B, 'I', '6/9') + bars(K, B, [('V', 'dom13', 2), ('I', 'maj9', 2)])
+           + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]) + hold(K, B, 'I', 'maj9'))
+    bed1 = (hold(K, B, 'I', 'maj9') + hold(K, B, 'IV', 'maj7s11') + bars(K, B, [('iii', 'min9', 2), ('vi', 'dom7b9', 2)])
+            + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]))                              # ... D13 falls to the B's Em9
+    bed2 = (hold(K, B, 'I', 'maj9') + hold(K, B, 'IV', 'maj7s11') + bars(K, B, [('iii', 'min9', 2), ('vi', 'dom7b9', 2)])
+            + bars(K, B, [('ii', 'min9', 2), ('bii', 'dom13', 2)]))                            # ... Am9 Db13 into the loop's Gmaj9
+    march = (bars(K, B, [('IV', 'maj9', 2), ('iii', 'min9', 2)], [('V', 'dom13', 2), ('I', 'maj9', 2)],
+                  [('ii', 'min9', 2), ('V', 'dom13', 2)], [('V', 'dom9', 4)]))
+    return [('intro', intro, None, None), ('A', a_h, M.A2_BARS, 'vib'), ('bed', bed1, None, None),
+            ('B', major_b(K, B), M.B_BARS, 'gtr'),
+            ('march', march, [M.ANSWER_1, M.ANSWER_2, M.CADENCE_1, [(5, 3), (None, 1)]], 'vib'),
+            ('A', a_h, M.A2_BARS, 'vib'), ('bed', bed2, None, None)]
+
+
 def suburbs():
+    """Suburbs, lofi jazz (card M1b). G major, 86 bpm, 58% swing, 32 bars. A vibraphone carries the A and the march, a clean
+    jazz guitar the B, over Rhodes comping; the glockenspiel is down to single notes at velocity 40 or under. Upright bass
+    in a two-feel, walking through the B and the march. The kit is the swung backbeat: cross-stick on 2 and 4, ride, feathered
+    kick, no snare march figure."""
     h = HOODS['suburbs']
     R, md, B = h['root'], h['mode'], h['bar']
     s = Song(h['bpm'], B, seed=21)
-    tpt = s.track('muted trumpet', 0, h['lead'], volume=88, pan=60, reverb=42)
-    gtr = s.track('steel guitar', 1, GM['steel'], volume=66, pan=84, reverb=32)
-    glk = s.track('glockenspiel', 2, GM['glock'], volume=60, pan=40, reverb=55)
-    rh = s.track('rhodes', 4, GM['rhodes'], volume=88, pan=50, reverb=45, chorus=40)
-    bass = s.track('bass', 3, GM['ac_bass'], volume=94, reverb=15)
-    drm = s.track('soft kit', 9, BRUSH, volume=93, reverb=25)
-    clp = s.track('soft claps', 9, BRUSH, volume=93, reverb=25)
+    vib = s.track('vibraphone', 0, GM['vibes'], volume=110, pan=60, reverb=45)
+    gtr = s.track('clean guitar', 1, GM['jazz_gtr'], volume=110, pan=84, reverb=32)
+    glk = s.track('glockenspiel', 2, GM['glock'], volume=50, pan=40, reverb=55)
+    rh = s.track('rhodes', 4, GM['rhodes'], volume=82, pan=50, reverb=45, chorus=40)
+    bass = s.track('bass', 3, GM['ac_bass'], volume=88, reverb=15)
+    perc = s.track('soft kit', 9, BRUSH, volume=84, pan=64, reverb=25)
+    who = dict(vib=vib, gtr=gtr)
 
-    def comp(u, beats, d, size, sec):
-        ch = cn(R, d, 3, md, -1)
-        rh_comp(rh, u, beats, d, R, md, vel=48 if sec != 'intro' else 44)
-        if sec != 'intro':  # a soft down-strum on the backbeat (2 and 4) instead of the bright country strum
-            for off in (1, 3):
-                if off < beats:
-                    for i, q in enumerate(ch + [ch[0] + 12]):
-                        gtr.n(u + off + i * 0.025, 0.6, q, 30)
-        if sec in ('intro', 'bed'):
-            for k in range(int(beats)):  # glock arpeggio, a note a beat
-                glk.n(u + k, 0.8, ch[k % 3] + 24, 32)
-
-    def bassf(u, beats, d, size, sec):
-        r = bass_root(R, d, md, -2)
-        bass.n(u, 1.6, r, 64)
-        if beats >= 4:
-            bass.n(u + 2.5, 0.9, r + 7, 48)
-        elif beats >= 2:
-            bass.n(u + 1, 0.9, r + 7, 48)
-
-    def drums(t, k, nb, sec):
-        last = k == nb - 1
-        if sec == 'march':  # the marching cadence, brushed: taps on the eighths, a soft crescendo roll at the turn
-            for i in range(8):
-                drm.n(t + 0.5 * i, 0.2, BRUSH_TAP, 66 if i % 4 == 0 else (52 if i % 2 == 0 else 38))
-            drm.n(t, 0.5, KICK, 52)
-            drm.n(t + 2, 0.5, KICK, 46)
-            if last:
-                for i in range(8):
-                    drm.n(t + 2 + 0.25 * i, 0.15, BRUSH_TAP, 34 + 5 * i)
-            return
-        drm.n(t, 0.5, KICK, 58)
-        drm.n(t + 2.5, 0.5, KICK, 42)
-        drm.n(t + 1, 0.3, RIM, 48)
-        drm.n(t + 3, 0.3, RIM, 52)
-        hats(drm, t, 8, 0.5, 40, 28)
-
-    def go_mudhens(t, nb):  # "Go, Mud-hens!": three soft claps answering the muted trumpet in the last bar's rest
-        soft_claps(clp, t + (nb - 1) * B + 3.0, 46)
-
-    H = M.A_HARM
-    A2 = M.A2_HARM
-    plan = [
-        ('intro', A2, None, None, {}),
-        ('A', A2, M.A2_BARS, 'tpt', dict(pickup=True, hook=go_mudhens, vel=66)),
-        ('bed', [H[0], H[1], H[2], H[3]], None, None, {}),
-        ('B', M.B_HARM, M.B_BARS, 'glk', dict(shift=12, vel=60, double=('gtr', 0, 40))),
-        ('march', [H[2], H[3], H[6], [(5, 4, 4)]],
-         [M.ANSWER_1, M.ANSWER_2, M.CADENCE_1, [(5, 3), (None, 1)]], 'glk', dict(shift=12, vel=58)),
-        ('A', A2, M.A2_BARS, 'tpt', dict(pickup=True, hook=go_mudhens, vel=64)),
-        ('bed', [H[0], H[1], [(2, 4, 4)], [(5, 4, 4)]], None, None, {}),
-    ]
-    bars = play_sections(s, h, plan, comp, bassf, drums, dict(tpt=tpt, glk=glk, gtr=gtr))
-    lofi_finish(s, h['swing'], leads=('muted trumpet', 'glockenspiel'), straight=('soft claps',))
-    return finish(s, 'suburbs', bars, B, h['ts'], 'loop', dict(hood='suburbs', lofi=True))
+    sections = suburbs_chart()
+    full = jazz.Harmony('G', B)
+    for (_, hm, _m, _w) in sections:
+        full = full + hm
+    s.bar_roots = full.roots
+    a_first = jazz.Harmony('G', B, sections[1][1][:1])
+    t, bar_i = 0.0, 0
+    walk_from = None
+    for k, (sec, hm, mel, w) in enumerate(sections):
+        nb = len(hm)
+        quiet = sec in ('intro', 'bed')
+        jazz.comp(rh, hm, jazz.SWING44, start=t, seed=21 + bar_i, vel=40 if quiet else 46)
+        jazz.brushes(perc, nb, jazz.SWING44, start=t, seed=31 + bar_i, scale=0.85 if quiet else 1.0, bar0=bar_i)
+        if sec in ('B', 'march'):
+            walk_from = t if walk_from is None else walk_from
+        else:
+            jazz.bass_two_feel(bass, hm, jazz.SWING44, start=t, vel=58 if quiet else 62)
+        if quiet:  # glockenspiel: single notes only, one in each bar, the top of the chord
+            for i, (u, ch) in enumerate(hm.chords(t)):
+                if ch.beats >= 2:
+                    vc = jazz.voicing_off('G', ch.off, ch.q)
+                    glk.n(u + (1.5 if i % 2 else 0.0), 1.2, vc[-1 - (i % 2)] + 12, 34)
+        if mel:
+            vel = {'vib': 46, 'gtr': 44}[w]
+            if sec == 'A':
+                pickup(who[w], R, md, t, 40)
+            melody(who[w], R, mel, md, t, B, vel=vel, legato=0.9 if w == 'vib' else 0.8)
+            if sec == 'B':  # the vibraphone doubles the guitar, very soft
+                melody(vib, R, mel, md, t, B, vel=30, legato=0.85)
+        t += nb * B
+        bar_i += nb
+    bm = jazz.Harmony('G', B)
+    for (sec, hm, _m, _w) in sections:
+        if sec in ('B', 'march'):
+            bm = bm + hm
+    walk_into(bass, bm, a_first, jazz.SWING44, walk_from, seed=5, vel=62)
+    jazz_finish(s, h['swing'], leads=('vibraphone', 'clean guitar'))
+    glk.events = [(u, d, pi, min(v, 40)) for (u, d, pi, v) in glk.events]
+    return finish(s, 'suburbs', int(t // B), B, h['ts'], 'loop', dict(hood='suburbs', lofi=True))
 
 
 # ================================================================================================ WATERFRONT
+def waterfront_chart() -> list:
+    """Waterfront: (section, Harmony, melody bars | None, who). D Mixolydian, 4/4, 32 bars. Tonic chords are dominant (D9, D13,
+    Dsus13), the minor v and the bVII (Cmaj9) are the Mixolydian colours; the loop turns round on Gm9 | Cmaj9 into D."""
+    K, B = 'D', 4.0
+    hold, bars = jazz.hold, jazz.bars
+    intro = (hold(K, B, 'I', 'dom9') + hold(K, B, 'IV', 'maj9') + bars(K, B, [('v', 'min9', 2), ('bvii', 'maj9', 2)])
+             + hold(K, B, 'I', 'dom13'))
+    a_h = (hold(K, B, 'I', 'dom13') + bars(K, B, [('IV', 'maj9', 2), ('I', 'dom9', 2)])
+           + bars(K, B, [('ii', 'min9', 2), ('v', 'min9', 2)]) + hold(K, B, 'I', 'sus13'))
+    bed1 = (bars(K, B, [('IV', 'maj9', 2), ('I', 'sus13', 2)], [('v', 'min9', 2), ('I', 'dom9', 2)])
+            + hold(K, B, 'bvii', 'maj9') + hold(K, B, 'v', 'min9'))
+    b_h = bars(K, B, [('bvii', 'maj9', 4)], [('ii', 'min11', 4)], [('IV', '6/9', 4)], [('I', 'dom13', 2), ('v', 'min9', 2)],
+               [('bvii', 'maj7s11', 4)], [('ii', 'min9', 4)], [('IV', 'maj9', 2), ('ii', 'min9', 2)], [('v', 'min11', 4)])
+    bed2 = bars(K, B, [('I', 'dom9', 4)], [('v', 'min9', 2), ('I', 'dom13', 2)], [('IV', 'maj9', 2), ('I', 'sus13', 2)],
+                [('bvii', 'maj9', 4)], [('v', 'min9', 2), ('I', 'dom9', 2)], [('IV', '6/9', 4)],
+                [('IV', 'maj9', 2), ('ii', 'min9', 2)], [('iv', 'min9', 2), ('bvii', 'maj9', 2)])
+    return [('intro', intro, None, None), ('A', a_h, M.A2_BARS, 'harp'), ('bed', bed1, None, None),
+            ('B', b_h, M.B_BARS, 'mar'), ('A2', a_h, M.A2_BARS, 'harp'), ('bed', bed2, None, None)]
+
+
 def waterfront():
+    """Waterfront, lofi jazz (card M1b). D Mixolydian, 80 bpm, 56% swing, 32 bars. A harp carries the A, a marimba the B,
+    over Rhodes comping and a soft marimba arpeggio; the bass is a half-note two-feel that plays the habanera's dotted figure
+    in the first half of every second bar; shaker and brushes, no congas, no fiddle, no accordion."""
     h = HOODS['waterfront']
     R, md, B = h['root'], h['mode'], h['bar']
-    remap = {3: ['C4', 'E4', 'G4']}  # iii in Mixolydian is diminished: use bVII (C) instead
-    ext = {3: ['E4', 'G4', 'B4', 'D5']}  # ...and the Rhodes plays it as Cmaj9 (no root)
     s = Song(h['bpm'], B, seed=31)
-    fid = s.track('fiddle', 0, GM['fiddle'], volume=65, pan=50, reverb=52)
-    acc = s.track('accordion', 1, GM['accordion'], volume=56, pan=76, reverb=45)
-    mar = s.track('marimba', 2, GM['marimba'], volume=91, pan=36, reverb=40)
-    rh = s.track('rhodes', 4, GM['rhodes'], volume=88, pan=60, reverb=45, chorus=40)
-    bass = s.track('bass', 3, GM['ac_bass'], volume=85, reverb=20)
-    drm = s.track('soft perc', 9, BRUSH, volume=64, reverb=32)
+    harp = s.track('harp', 0, GM['harp'], volume=112, pan=44, reverb=48)
+    mar = s.track('marimba', 1, GM['marimba'], volume=112, pan=36, reverb=40)
+    arp = s.track('marimba arpeggio', 2, GM['marimba'], volume=84, pan=30, reverb=40)
+    rh = s.track('rhodes', 4, GM['rhodes'], volume=80, pan=60, reverb=45, chorus=40)
+    bass = s.track('bass', 3, GM['ac_bass'], volume=88, reverb=20)
+    perc = s.track('soft kit', 9, BRUSH, volume=80, pan=64, reverb=32)
 
-    def comp(u, beats, d, size, sec):
-        ch = cn(R, d, 3, md, -1, remap)
-        rh_comp(rh, u, beats, d, R, md, vel=46 if sec in ('intro', 'bed') else 50, ext=ext)
-        acc.n(u, beats * 0.98, ch, 30 if sec in ('intro', 'bed') else 36)  # squeezebox pad, very soft
-        if sec != 'B':
+    sections = waterfront_chart()
+    full = jazz.Harmony('D', B)
+    for (_, hm, _m, _w) in sections:
+        full = full + hm
+    s.bar_roots = full.roots
+    t, bar_i = 0.0, 0
+    for sec, hm, mel, w in sections:
+        nb = len(hm)
+        quiet = sec in ('intro', 'bed')
+        jazz.comp(rh, hm, jazz.SWING44, start=t, seed=31 + bar_i, vel=40 if quiet else 46)
+        jazz.bass_two_feel(bass, hm, jazz.SWING44, start=t, vel=58 if quiet else 62)
+        for i, bar in enumerate(hm):  # the habanera: dotted eighth, sixteenth, eighth, eighth, in every second bar's first half
+            u = t + i * B
+            if (bar_i + i) % 2 == 0 and len(bar) == 1:
+                r = next(e[2] for e in bass.events if abs(e[0] - u) < 1e-6)
+                bass.events = [e for e in bass.events if not (u - 1e-6 <= e[0] < u + 2.0 - 1e-6)]
+                for off, dur, iv, v in ((0, .7, 0, 62), (.75, .2, 7, 42), (1, .45, 12, 50), (1.5, .45, 7, 46)):
+                    bass.n(u + off, dur, r + iv, v)
+        jazz.brushes(perc, nb, jazz.SWING44, start=t, seed=41 + bar_i, scale=0.85 if quiet else 1.0, bar0=bar_i)
+        for i in range(nb * 8):  # shaker: soft eighths, the off-beats a little lighter
+            perc.n(t + 0.5 * i, 0.15, SHAKER, 24 if i % 2 == 0 else 17)
+        if sec != 'B':  # marimba: a soft arpeggio, one note a beat, under everything but the B
             pat = [0, 1, 2, 1]
-            for k in range(int(beats)):  # marimba: a soft arpeggio, a note a beat
-                mar.n(u + k, 0.9, ch[pat[k % 4]] + 12, 42 if k % 2 == 0 else 34)
-
-    def bassf(u, beats, d, size, sec):
-        r = bass_root(R, d, md, -2, remap)
-        for half in range(int(beats // 2)):  # habanera: dotted-eighth, sixteenth, eighth, eighth (gentle)
-            b = u + 2 * half
-            for off, dur, iv, v in ((0, .7, 0, 64), (.75, .2, 7, 44), (1, .45, 12, 54), (1.5, .45, 7, 48)):
-                bass.n(b + off, dur, r + iv, v)
-
-    def drums(t, k, nb, sec):
-        drm.n(t, 0.4, KICK, 54)
-        drm.n(t + 2, 0.4, KICK, 44)
-        hats(drm, t, 8, 0.5, 34, 26, SHAKER)
-        drm.n(t + 1.75, 0.2, CONGA_HI, 34)
-        drm.n(t + 3, 0.3, CONGA_LO, 40)
-        drm.n(t + 3, 0.2, RIM, 38)
-
-    H = M.A_HARM
-    A2 = M.A2_HARM
-    BH = [[(6, 3, 4)], [(7, 3, 4)], [(4, 3, 4)], [(1, 3, 2), (7, 3, 2)], [(6, 3, 4)], [(2, 3, 4)], [(4, 3, 2), (7, 3, 2)], [(5, 3, 4)]]
-    plan = [
-        ('intro', A2, None, None, {}),
-        ('A', A2, M.A2_BARS, 'fid', dict(pickup=True, vel=64)),
-        ('bed', [H[2], H[3], [(7, 3, 4)], [(5, 3, 4)]], None, None, {}),
-        ('B', BH, M.B_BARS, 'mar', dict(shift=12, vel=62, legato=0.6)),
-        ('A', A2, M.A2_BARS, 'fid', dict(pickup=True, double=('acc', 0, 44), vel=62)),
-        ('bed', H, None, None, {}),
-    ]
-    bars = play_sections(s, h, plan, comp, bassf, drums, dict(fid=fid, mar=mar, acc=acc), remap)
-    lofi_finish(s, h['swing'], leads=('fiddle', 'marimba'))
-    return finish(s, 'waterfront', bars, B, h['ts'], 'loop', dict(hood='waterfront', lofi=True))
+            for (u, ch) in hm.chords(t):
+                vc = jazz.voicing_off(R, ch.off, ch.q)
+                for k in range(int(ch.beats)):
+                    arp.n(u + k, 0.9, vc[pat[k % 4]] + 12, 36 if k % 2 == 0 else 28)
+        if mel:
+            if w == 'harp':
+                pickup(harp, R, md, t, 38)
+                melody(harp, R, mel, md, t, B, vel=48, legato=0.9)
+                if sec == 'A2':  # a marimba an octave up, very soft, doubles the return
+                    melody(mar, R, mel, md, t, B, vel=30, shift=12)
+            else:
+                melody(mar, R, mel, md, t, B, vel=46, legato=0.6)
+        t += nb * B
+        bar_i += nb
+    jazz_finish(s, h['swing'], leads=('harp', 'marimba'))
+    return finish(s, 'waterfront', int(t // B), B, h['ts'], 'loop', dict(hood='waterfront', lofi=True))
 
 
 # ================================================================================================ UNIVERSITY
+HIPHOP = jazz.Feel('hip-hop', 4.0, 2.0, 0.60,
+                   ride=((0, 34), (0.5, 22), (1, 32), (1.5, 22), (2, 34), (2.5, 22), (3, 32), (3.5, 24)),
+                   cross=(1, 3), pedal=(), kick=((0, 1.0), (1.5, 0.55), (2.5, 0.75)), ghosts=(0.5, 3.5), answer=(1.5,))
+
+
+def university_chart() -> list:
+    """University: (section, Harmony, melody bars | None, who). B-flat major, 4/4, 32 bars. maj9 and min9 chords throughout;
+    the loop turns round on Ebm9 | Ab13 (backdoor) in the intro and on Cm9 F13 in the tail."""
+    K, B = 'Bb', 4.0
+    hold, bars = jazz.hold, jazz.bars
+    intro = jazz.i_vi_ii_V(K, B) + hold(K, B, 'IV', 'maj9') + bars(K, B, [('iv', 'min9', 2), ('bvii', 'dom13', 2)])
+    a_h = (hold(K, B, 'I', '6/9') + bars(K, B, [('V', 'dom13', 2), ('I', 'maj9', 2)])
+           + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]) + hold(K, B, 'I', 'maj9'))
+    bed1 = (hold(K, B, 'IV', 'maj9') + bars(K, B, [('iii', 'min9', 2), ('vi', 'dom7b9', 2)])
+            + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]) + hold(K, B, 'I', 'maj9'))
+    half = (hold(K, B, 'I', 'maj9') + hold(K, B, 'vi', 'min9') + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)])
+            + hold(K, B, 'I', 'maj9'))                                    # under the Rhodes' half-speed motif
+    bed2 = (half + hold(K, B, 'IV', 'maj7s11') + bars(K, B, [('iii', 'min9', 2), ('vi', 'dom7b9', 2)])
+            + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]) + hold(K, B, 'vi', 'min9'))
+    tail = (hold(K, B, 'I', 'maj9') + hold(K, B, 'vi', 'min9') + hold(K, B, 'IV', 'maj9')
+            + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]))
+    a_mel = M.A2_BARS[:3] + [[(1, 2), (None, 2)]]
+    return [('intro', intro, None, None), ('A', a_h, a_mel, 'kal'), ('bed', bed1, None, None),
+            ('B', major_b(K, B), M.B_BARS, 'vib'), ('bed', bed2, None, None), ('tail', tail, None, None)]
+
+
 def university():
+    """University, lofi jazz (card M1b). B-flat major, 76 bpm, 60% swing, 32 bars. Rhodes with maj9 and min9 chords, a
+    vibraphone on top in the B, the chip arpeggios (note, octave, fifth) on a soft kalimba at velocity 50 or under. A round
+    electric bass; the kit is a lofi hip-hop pocket: kick 10 ms later than the rest of the kit, swing a touch heavier."""
     h = HOODS['university']
     R, md, B = h['root'], h['mode'], h['bar']
     s = Song(h['bpm'], B, seed=41)
-    sq = s.track('square lead', 0, GM['square'], volume=85, pan=56, reverb=38)
-    rh = s.track('rhodes', 1, GM['rhodes'], volume=91, pan=70, reverb=50, chorus=50)
-    vib = s.track('vibraphone', 2, GM['vibes'], volume=70, pan=40, reverb=55)
-    bass = s.track('synth bass', 3, GM['syn_bass'], volume=92, reverb=10)
-    drm = s.track('soft kit', 9, BRUSH, volume=93, reverb=22)
+    kal = s.track('kalimba', 0, GM['kalimba'], volume=127, pan=60, reverb=45)
+    rh = s.track('rhodes', 1, GM['rhodes'], volume=60, pan=70, reverb=50, chorus=50)
+    vib = s.track('vibraphone', 2, GM['vibes'], volume=127, pan=40, reverb=55)
+    shim = s.track('vibes shimmer', 5, GM['vibes'], volume=35, pan=44, reverb=55)
+    bass = s.track('bass', 3, GM['fing_bass'], volume=63, reverb=10)
+    perc = s.track('soft kit', 9, BRUSH, volume=60, pan=64, reverb=22)
 
-    def comp(u, beats, d, size, sec):
-        # the deepest Rhodes bed: a wide maj9 / min9 voicing, a long chord and a late answer, plus a soft vibes shimmer
-        rh_comp(rh, u, beats, d, R, md, vel=54, answer=True)
-        notes = rh_voicing(R, d, md)
-        if sec != 'intro' and beats >= 4:
-            vib.n(u, beats * 0.9, notes[-1] + 12, 26)
-
-    def bassf(u, beats, d, size, sec):
-        r = bass_root(R, d, md, -2)
-        bass.n(u, 1.5, r, 66)
-        if beats >= 4:
-            bass.n(u + 2.5, 0.9, r + 7, 50)
-            bass.n(u + 3.5, 0.4, r + 12, 38)
-
-    def drums(t, k, nb, sec):
-        drm.n(t, 0.4, KICK, 58)
-        drm.n(t + 1.5, 0.3, KICK, 34)
-        drm.n(t + 2.5, 0.4, KICK, 46)
-        drm.n(t + 1, 0.3, RIM, 50)
-        drm.n(t + 3, 0.3, RIM if sec == 'intro' else BRUSH_TAP, 52 if sec == 'intro' else 62)
-        hats(drm, t, 8, 0.5, 40, 28)
-
-    def chip(t, nb, bars):  # chiptune: 16th arpeggios that keep the melody note on top of every other step (AU33)
-        for (u, d, pi) in M.bar_melody(R, bars, md, t, B, 0):
-            k = 0
-            while k * 0.25 < d * 0.95:
-                iv, v = ((0, 60), (12, 34), (0, 52), (7, 34))[k % 4]
-                sq.n(u + 0.25 * k, 0.22, pi + iv, v)
-                k += 1
-
-    def chip_chords(t, nb):  # the tail: soft chord-tone arpeggios, no motif
-        for (u, beats, d, size) in segs([[(1, 3, 4)], [(6, 3, 4)], [(4, 3, 4)], [(5, 4, 4)]], t, B):
-            tones = M.chord_notes(R, d, 3, md, 0)
-            for k in range(int(beats * 2)):
-                sq.n(u + 0.5 * k, 0.4, tones[k % 3] + (12 if k % 4 == 3 else 0), 44 if k % 2 == 0 else 30)
-
-    H = M.A_HARM
+    sections = university_chart()
+    full = jazz.Harmony('Bb', B)
+    for (_, hm, _m, _w) in sections:
+        full = full + hm
+    s.bar_roots = full.roots
     half_speed = [[(1, 2), (3, 1), (5, 1)], [(6, 3), (5, 1)], [(4, 1), (3, 1), (2, 1), (3, 1)], [(1, 4)]]
-    plan = [
-        ('intro', H[:4], None, None, {}),
-        ('A', M.A2_HARM, None, None, dict(hook=lambda t, nb: chip(t, nb, M.A2_BARS[:3] + [[(1, 2), (None, 2)]]))),  # motif, 1st
-        ('bed', [H[2], H[3], H[6], H[7]], None, None, {}),
-        ('B', M.B_HARM, M.B_BARS, 'vib', dict(vel=60, legato=0.85)),
-        ('bed', [H[0], H[1], H[0], [(5, 4, 4)], H[2], H[3], H[6], H[7]], None, None,
-         dict(hook=lambda t, nb: melody(rh, R, half_speed, md, t + 0, B, vel=68, shift=0))),  # motif, 2nd (Rhodes, half speed)
-        ('tail', [H[0], H[1], H[6], [(5, 4, 4)]], None, None, dict(hook=chip_chords)),
-    ]
-    bars = play_sections(s, h, plan, comp, bassf, drums, dict(vib=vib, sq=sq, rh=rh))
-    lofi_finish(s, h['swing'], leads=('square lead', 'vibraphone'))
-    return finish(s, 'university', bars, B, h['ts'], 'loop', dict(hood='university', lofi=True))
+    t, bar_i = 0.0, 0
+    for sec, hm, mel, w in sections:
+        nb = len(hm)
+        quiet = sec in ('intro', 'bed', 'tail')
+        jazz.comp(rh, hm, HIPHOP, start=t, seed=41 + bar_i, vel=44 if quiet else 50, strum=0.045)
+        jazz.bass_two_feel(bass, hm, HIPHOP, start=t, vel=58 if quiet else 62)
+        jazz.brushes(perc, nb, HIPHOP, start=t, seed=51 + bar_i, scale=0.85 if quiet else 1.0, bar0=bar_i)
+        if sec != 'intro':  # a soft vibraphone shimmer, the top note of each whole-bar chord
+            for (u, ch) in hm.chords(t):
+                if ch.beats >= 4:
+                    shim.n(u, ch.beats * 0.9, jazz.voicing_off(R, ch.off, ch.q)[-1] + 12, 24)
+        if sec == 'A':  # the motif, first statement: kalimba arpeggios, note on top of every other step
+            for (u, d, pi) in M.bar_melody(R, mel, md, t, B, -12):
+                k = 0
+                while k * 0.5 < d * 0.95:
+                    iv, v = ((0, 46), (12, 30), (0, 40), (7, 30))[k % 4]
+                    kal.n(u + 0.5 * k, 0.45, pi + iv, v)
+                    k += 1
+        elif sec == 'B':
+            melody(vib, R, mel, md, t, B, vel=46, legato=0.85)
+        elif sec == 'tail':  # chord-tone arpeggios, no motif
+            for (u, ch) in hm.chords(t):
+                vc = jazz.voicing_off(R, ch.off, ch.q)
+                tones = [vc[0], vc[1], vc[2], vc[3], vc[2], vc[1]]
+                for k in range(int(ch.beats * 2)):
+                    kal.n(u + 0.5 * k, 0.45, tones[k % 6] + 12, 44 if k % 2 == 0 else 30)
+        elif sec == 'bed' and hm.beats == 32.0:  # the second statement: the Rhodes at half speed over the bed's first 4 bars
+            melody(rh, R, half_speed, md, t, B, vel=52, shift=0)
+        t += nb * B
+        bar_i += nb
+    jazz_finish(s, 0.60, leads=('kalimba', 'vibraphone'), lead_cap=50, laid_ms=18.0)  # 60%: the HOODS 58% stays for the stingers
+    kick_late(perc, 10.0, s.bpm)
+    return finish(s, 'university', int(t // B), B, h['ts'], 'loop', dict(hood='university', lofi=True))
 
 
 # ================================================================================================ INDUSTRIAL
+def industrial_chart() -> jazz.Harmony:
+    """One chorus of Industrial's jazz blues: 12 bars in A, dominant 9ths and 13ths on the I and IV, an Em9 A7b9 into the IV
+    in bar 4, a sharp-IV diminished passing chord in bar 6 (D13 | D#dim7), and ii-V turnarounds in bars 9-12 (Bm9 E13 |
+    Dm9 G13 backdoor | A9 F#7b9 | Bm9 E7b9). The loop plays it three times."""
+    K, B = 'A', 4.0
+    return jazz.bars(K, B,
+                     [('I', 'dom9', 4)], [('I', 'dom13', 4)], [('I', 'dom9', 4)], [('v', 'min9', 2), ('I', 'dom7b9', 2)],
+                     [('IV', 'dom9', 4)], [('IV', 'dom13', 2), ('#iv', 'dim7', 2)], [('I', 'dom9', 4)],
+                     [('I', 'dom13', 2), ('vi', 'dom7b9', 2)],
+                     [('ii', 'min9', 2), ('V', 'dom13', 2)], [('iv', 'min9', 2), ('bvii', 'dom13', 2)],
+                     [('I', 'dom9', 2), ('vi', 'dom7b9', 2)], [('ii', 'min9', 2), ('V', 'dom7b9', 2)])
+
+
 def industrial():
+    """Industrial, lofi jazz (card M1c). A, 76 bpm, triplet shuffle (66.7%), 36 bars = three 12-bar choruses of a jazz blues.
+    A muted Rhodes and a clean guitar comp; the vibraphone carries the motif (the flute states it again in chorus 3 at
+    velocity 50 or under), each third with a blue flat-3 grace. Brushes and a ride in the shuffle, the rim click on 2 and 4;
+    the upright bass is in a two-feel in chorus 1 and walks in 2 and 3. Chorus 1 has no lead."""
     h = HOODS['industrial']
     R, md, B = h['root'], h['mode'], h['bar']
     s = Song(h['bpm'], B, seed=51)
-    sax = s.track('tenor sax', 0, GM['tenor_sax'], volume=80, pan=56, reverb=42)
-    org = s.track('drawbar organ pad', 1, GM['organ'], volume=50, pan=74, reverb=40)
-    gtr = s.track('clean guitar', 2, GM['clean_gtr'], volume=62, pan=36, reverb=32)
-    rh = s.track('rhodes', 5, GM['rhodes'], volume=105, pan=64, reverb=45, chorus=40)
-    bass = s.track('finger bass', 3, GM['fing_bass'], volume=85, reverb=10)
-    acc = s.track('ghost accordion', 4, GM['accordion'], volume=44, pan=64, reverb=60)
-    drm = s.track('soft kit', 9, BRUSH, volume=93, reverb=22)
+    vib = s.track('vibraphone', 0, GM['vibes'], volume=110, pan=56, reverb=42)
+    flt = s.track('flute', 1, GM['flute'], volume=110, pan=70, reverb=45)
+    gtr = s.track('clean guitar', 2, GM['clean_gtr'], volume=70, pan=36, reverb=32)
+    rh = s.track('rhodes', 5, GM['rhodes'], volume=80, pan=64, reverb=45, chorus=40)
+    bass = s.track('upright bass', 3, GM['ac_bass'], volume=86, reverb=15)
+    pad = s.track('warm pad', 4, GM['warm_pad'], volume=40, pan=74, reverb=55)
+    perc = s.track('brushes', 9, BRUSH, volume=84, reverb=24)
 
-    # 12-bar blues in A with true dominant sevenths
-    D7 = {'I': ['A2', 'C#3', 'E3', 'G3'], 'IV': ['D3', 'F#3', 'A3', 'C4'], 'V': ['E3', 'G#3', 'B3', 'D4']}
-    NINTH = {'I': 'B3', 'IV': 'E4', 'V': 'F#4'}  # dominant 9ths for the Rhodes
-    FORM = ['I', 'I', 'I', 'I', 'IV', 'IV', 'I', 'I', 'V', 'IV', 'I', 'V']
+    one = industrial_chart()
+    full = one + one + one
+    s.bar_roots = full.roots
 
-    def bar_chord(c):
-        return [p(x) for x in D7[c]]
-
-    def boogie(t, c, k, vel=62):  # a sparse, round shuffle bass: root-fifth on 1, root-sixth on 3
-        r = bar_chord(c)[0] - 12 if c != 'I' else p('A1')
-        for beat, iv in ((0, 7), (2, 9 if k != 11 else 10)):
-            bass.n(t + beat, 0.55, r, vel)
-            bass.n(t + beat + 0.5, 0.45, r + iv, vel - 16)
-
-    def keys(t, c, vel):  # Rhodes dominant-9th on 1, an answer on the swung 'and' of 2
-        notes = sorted([q for q in bar_chord(c)[1:]] + [p(NINTH[c])])
-        while min(notes) < p('Bb3'):
-            notes = [x + 12 for x in notes]
-        while min(notes) >= p('Bb3') + 12:
-            notes = [x - 12 for x in notes]
-        rh_hit(rh, t, notes, 2.4, vel)
-        rh_hit(rh, t + 2.5, notes[1:], 1.2, vel - 12)
-
-    def kit(t, chorus, k):
-        drm.n(t, 0.3, KICK, 56)
-        drm.n(t + 2.5, 0.3, KICK, 38)
-        drm.n(t + 1, 0.3, RIM, 52)  # the anvil is now a rim click on 2 and 4
-        drm.n(t + 3, 0.3, RIM, 58)
-        hats(drm, t, 8, 0.5, 52 if chorus else 40, 38 if chorus else 28, RIDE if chorus else CHH)
-        if k == 11:  # turnaround: a soft brush crescendo
-            for i in range(4):
-                drm.n(t + 2 + 0.5 * i, 0.3, BRUSH_TAP, 44 + 6 * i)
-
-    def blues_motif(t, bars, vel=70, track=None, shift=0):
-        # the city motif with a blue flat-3 grace before each 3rd (swing_smooth moves the grace with its note)
-        tr = track or sax
+    def blue_motif(tr, t, bars, vel, shift=0):  # the city motif with a blue flat-3 grace before each 3rd
         for (u, d, pi) in M.bar_melody(R, bars, md, t, B, shift):
-            if (pi - p(R)) % 12 == 4 and d >= 0.5:
+            if (pi - shift - p(R)) % 12 == 4 and d >= 0.5:
                 tr.n(u - 0.08, 0.08, pi - 1, vel - 18)
             tr.n(u, d * 0.9, pi, vel)
 
-    t = 0.0
-    s.bar_roots = [{'I': 1, 'IV': 4, 'V': 5}[c] for c in FORM] * 3
+    dev = [[(4, 1), (6, .5), (8, .5), (9, 1.5), (8, .5)], [(6, .5), (4, .5), (3, .5), (4, .5), (1, 2)]]
+    turn = [M.ANSWER_1, [(4, 1), (2, 1), (1, 1), (0, 1)]]  # F# E D C# B | D B A G over Bm9 E13 | Dm9 G13
+    riff_bars = (0, 4)
     for chorus in range(3):
-        for k, c in enumerate(FORM):
-            boogie(t + k * B, c, k)
-            keys(t + k * B, c, 40 if chorus == 0 else 46)
-            kit(t + k * B, chorus, k)
-        if chorus == 0:  # chorus 1: guitar riff call-and-response, no lead
-            for k in (0, 4, 8):
-                r = bar_chord(FORM[k])[0] + 12
+        t = chorus * 12 * B
+        quiet = chorus == 0
+        jazz.comp(rh, one, jazz.SHUFFLE, start=t, seed=51 + 12 * chorus, vel=40 if quiet else 44)
+        stabs(gtr, one, t, vel=28 if quiet else 32, skip_bars=riff_bars if quiet else ())
+        if quiet:
+            jazz.bass_two_feel(bass, one, jazz.SHUFFLE, start=t, vel=56)
+            for k in riff_bars:  # chorus 1: a six-note guitar riff on the I and the IV, no lead
+                ch = one[k][0]
+                r = 57 + (((p(h['root']) + ch.off) - 57) % 12)
                 for i, iv in enumerate((0, 3, 4, 7, 9, 7)):
-                    gtr.n(t + k * B + 0.5 * i, 0.4, r + iv, 48)
-        elif chorus == 1:  # chorus 2: the sax states the motif (once)
-            pickup(sax, R, md, t, 58, 0)
-            blues_motif(t, [M.MOTIF, M.CLOSE])
-            blues_motif(t + 4 * B, [[(4, 1), (6, .5), (8, .5), (9, 1.5), (8, .5)], [(6, .5), (4, .5), (3, .5), (4, .5), (1, 2)]], 66)
-            blues_motif(t + 8 * B, [M.ANSWER_1, M.ANSWER_2], 68)
-        else:  # chorus 3: a soft organ pad, then the sax closes with the ghost accordion doubling the last 4 bars
-            for k in range(0, 8, 2):
-                ch = bar_chord(FORM[k])
-                org.n(t + k * B, 7.8, [q + 12 for q in ch], 32)
-            pickup(sax, R, md, t + 8 * B, 58, 0)
-            blues_motif(t + 8 * B, [M.MOTIF, M.CLOSE, M.CADENCE_1, [(1, 2), (None, 2)]], 70)
-            blues_motif(t + 8 * B, [M.MOTIF, M.CLOSE, M.CADENCE_1, [(1, 2), (None, 2)]], 42, acc, shift=12)
-        t += 12 * B
-    lofi_finish(s, h['swing'], leads=('tenor sax',))
+                    gtr.n(t + k * B + 0.5 * i, 0.4, r + iv, 40)
+        jazz.brushes(perc, 12, jazz.SHUFFLE, start=t, seed=61 + 12 * chorus, scale=0.85 if quiet else 1.0, bar0=12 * chorus)
+        if chorus == 1:  # chorus 2: the vibraphone states the motif, develops it on the IV, answers over the turnaround
+            pickup(vib, R, md, t, 44)
+            blue_motif(vib, t, [M.MOTIF, M.CLOSE], 44)
+            blue_motif(vib, t + 4 * B, dev, 42)
+            blue_motif(vib, t + 8 * B, turn, 44)
+        elif chorus == 2:  # chorus 3: a warm pad under 8 bars, the flute states the motif, the vibraphone closes
+            for (u, ch) in one.chords(t):
+                if u < t + 8 * B:
+                    for q in jazz.voicing_off(R, ch.off, ch.q)[:3]:
+                        pad.n(u, ch.beats * 1.02, q, 28)
+            pickup(flt, R, md, t, 42, 12)
+            blue_motif(flt, t, [M.MOTIF, M.CLOSE], 44, 12)
+            blue_motif(vib, t + 4 * B, dev, 42)
+            blue_motif(vib, t + 8 * B, turn + [[(1, 2), (None, 2)]], 44)
+    walk = one + one
+    walk_start = 12 * B
+    jazz.bass_walk(bass, walk, jazz.SHUFFLE, start=walk_start, seed=5, vel=60)
+    jazz_finish(s, h['swing'], leads=('vibraphone', 'flute'), lead_cap=50)
     return finish(s, 'industrial', 36, B, h['ts'], 'loop', dict(hood='industrial', lofi=True))
 
 
 # ================================================================================================ UPTOWN
+def uptown_chart() -> list:
+    """Uptown: (section, Harmony, melody bars | None). E-flat, 4/4, 32 bars: intro 4, A 4, B 8, bed 4, A 4, tag 8. The A and the B
+    sit on the chords the University and Suburbs charts use for the same melody bars; the tag turns round on a backdoor and
+    a tritone substitution (Fm9 E13) into the intro's Ebmaj9."""
+    K, B = 'Eb', 4.0
+    hold, bars = jazz.hold, jazz.bars
+    intro = hold(K, B, 'I', 'maj9') + jazz.i_vi_ii_V(K, B) + hold(K, B, 'I', '6/9')
+    a_h = (hold(K, B, 'I', '6/9') + bars(K, B, [('V', 'dom13', 2), ('I', 'maj9', 2)])
+           + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]) + hold(K, B, 'I', 'maj9'))
+    bed = (hold(K, B, 'I', 'maj9') + hold(K, B, 'IV', 'maj7s11') + bars(K, B, [('iii', 'min9', 2), ('vi', 'dom7b9', 2)])
+           + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]))
+    tag = bars(K, B, [('vi', 'min9', 4)], [('ii', 'min11', 4)], [('iii', 'min9', 2), ('vi', 'dom7b9', 2)],
+               [('ii', 'min9', 2), ('V', 'dom13', 2)], [('IV', 'maj7s11', 4)], [('iv', 'min9', 2), ('bvii', 'dom13', 2)],
+               [('I', 'maj9', 4)], [('ii', 'min9', 2), ('bii', 'dom13', 2)])
+    return [('intro', intro, None), ('A', a_h, M.A2_BARS), ('B', major_b(K, B), M.B_BARS), ('bed', bed, None),
+            ('A', a_h, M.A2_BARS), ('tag', tag, None)]
+
+
 def uptown():
+    """Uptown, lofi jazz (card M1c). E-flat, 84 bpm, 60% swing, 32 bars. A nylon guitar plays the melody (the clarinet's chromatic
+    approach notes stay), a piano comps, and the manouche "pompe" is a jazz guitar on 2 and 4 at velocity 42 or under. A walking
+    upright bass and brushes; a harp plays the tag."""
     h = HOODS['uptown']
     R, md, B = h['root'], h['mode'], h['bar']
     s = Song(h['bpm'], B, seed=61)
-    cla = s.track('clarinet', 0, GM['clarinet'], volume=72, pan=56, reverb=48)
-    pno = s.track('piano', 1, GM['piano'], volume=60, pan=72, reverb=40)
-    gtr = s.track('jazz guitar (pompe)', 2, GM['jazz_gtr'], volume=54, pan=40, reverb=30)
-    rh = s.track('rhodes', 5, GM['rhodes'], volume=88, pan=62, reverb=45, chorus=40)
-    bass = s.track('upright bass', 3, GM['ac_bass'], volume=85, reverb=20)
-    acc = s.track('musette accordion', 4, GM['accordion'], volume=52, pan=84, reverb=55)
-    drm = s.track('brushes', 9, BRUSH, volume=96, pan=64, reverb=30)
+    mel = s.track('nylon melody', 0, GM['nylon'], volume=100, pan=56, reverb=42)
+    pno = s.track('piano', 1, GM['piano'], volume=80, pan=72, reverb=40)
+    pompe = s.track('jazz guitar (pompe)', 2, GM['jazz_gtr'], volume=70, pan=40, reverb=30)
+    harp = s.track('harp', 4, GM['harp'], volume=84, pan=84, reverb=55)
+    bass = s.track('upright bass', 3, GM['ac_bass'], volume=86, reverb=20)
+    perc = s.track('brushes', 9, BRUSH, volume=84, pan=64, reverb=30)
 
-    def comp(u, beats, d, size, sec):
-        ch = cn(R, d, 4, md, -1)
-        rh_comp(rh, u, beats, d, R, md, vel=46)
-        for i in (1, 3):  # the pompe, softened to the backbeat: a short chord on 2 and 4 only
-            if i < beats:
-                gtr.n(u + i, 0.22, ch, 34)
-        if sec in ('bed', 'tag'):  # piano takes the bed with rolled tenths
-            pno.n(u, 0.9, ch[0] - 12, 52)
-            for i, q in enumerate(ch[1:]):
-                pno.n(u + 1 + 0.05 * i, 0.8, q + 12, 42)
-        if sec == 'B':
-            acc.n(u, beats * 0.95, [q + 12 for q in ch[1:]], 38)
+    sections = uptown_chart()
+    full = jazz.Harmony('Eb', B)
+    for (_, hm, _m) in sections:
+        full = full + hm
+    s.bar_roots = full.roots
 
-    nxt = {}
-
-    def bassf(u, beats, d, size, sec):  # walking quarters with a chromatic approach to the next bar
-        r = bass_root(R, d, md, -2)
-        ch = M.chord_notes(R, d, 4, md, -2)
-        # beat 4 walks a semitone into the next chord's root (AU34; was a natural 7th against the flat-7 pompe)
-        nr = nxt.get(round(u, 3), r)
-        app = nr - 1 if nr - 1 > r else nr + 1
-        line = [r, ch[1], ch[2], app][:int(beats)] if beats >= 4 else [r, app][:int(beats)]
-        for i, q in enumerate(line):
-            bass.n(u + i, 0.85, q, 66 if i == 0 else 54)
-
-    def drums(t, k, nb, sec):
-        for i in range(4):  # brushed ride: a ding on every beat and the swung skip note after 2 and 4
-            drm.n(t + i, 0.3, RIDE, 46 if i % 2 else 36)
-        for i in (1, 3):
-            drm.n(t + i + 0.5, 0.2, RIDE, 28)
-            drm.n(t + i, 0.3, BRUSH_TAP, 60)  # the brush tap lands on 2 and 4
-            drm.n(t + i, 0.3, PEDAL, 40)
-        drm.n(t, 0.4, KICK, 30)  # feathered kick
-        drm.n(t + 2, 0.4, KICK, 26)
-
-    def clarinet(t, bars, vel=68):  # chromatic approach notes into long notes
-        for (u, d, pi) in M.bar_melody(R, bars, md, t, B, 0):
+    def guitar_line(t, bars, vel):  # chromatic approach notes into the long notes, an octave down
+        for (u, d, pi) in M.bar_melody(R, bars, md, t, B, -12):
             if d >= 1.5:
-                cla.n(u - 0.12, 0.12, pi - 1, vel - 20)
-            cla.n(u, d * 0.9, pi, vel)
+                mel.n(u - 0.12, 0.12, pi - 1, vel - 14)
+            mel.n(u, d * 0.9, pi, vel)
 
-    H = M.A_HARM
-    plan = [
-        ('intro', [H[0], H[1], H[6], H[7]], None, None, {}),
-        ('A', M.A2_HARM, None, None, dict(hook=lambda t, nb: (pickup(cla, R, md, t, 56), clarinet(t, M.A2_BARS)))),
-        ('B', M.B_HARM, M.B_BARS, 'cla', dict(shift=-12, vel=60)),
-        ('bed', [H[0], H[1], H[2], H[3]], None, None, {}),
-        ('A', M.A2_HARM, None, None, dict(hook=lambda t, nb: (pickup(cla, R, md, t, 56), clarinet(t, M.A2_BARS, 66)))),
-        ('tag', M.B_HARM, None, None, {}),
-    ]
-    tt = 0.0
-    seq = []
-    for (_, harm, *_r) in plan:
-        for (u, _b, d, _z) in segs(harm, tt, B):
-            seq.append((u, d))
-        tt += len(harm) * B
-    for i, (u, d) in enumerate(seq):
-        nxt[round(u, 3)] = bass_root(R, seq[(i + 1) % len(seq)][1], md, -2)
-    bars = play_sections(s, h, plan, comp, bassf, drums, dict(cla=cla))
-    lofi_finish(s, h['swing'], leads=('clarinet',))
-    return finish(s, 'uptown', bars, B, h['ts'], 'loop', dict(hood='uptown', lofi=True))
+    t, bar_i = 0.0, 0
+    for sec, hm, ml in sections:
+        nb = len(hm)
+        quiet = sec in ('intro', 'bed', 'tag')
+        jazz.comp(pno, hm, jazz.SWING44, start=t, seed=61 + bar_i, vel=38 if quiet else 44)
+        stabs(pompe, hm, t, vel=30 if quiet else 32, dur=0.3, near=58)
+        jazz.brushes(perc, nb, jazz.SWING44, start=t, seed=71 + bar_i, scale=0.85 if quiet else 1.0, bar0=bar_i)
+        if sec == 'A':
+            pickup(mel, R, md, t, 40, shift=-12)
+            guitar_line(t, ml, 44)
+        elif sec == 'B':
+            melody(mel, R, ml, md, t, B, vel=44, legato=0.85, shift=-12)
+        elif sec == 'tag':  # the harp: each chord rolled up its voicing, one tone a beat (two a beat on a half bar's chord)
+            for (u, ch) in hm.chords(t):
+                vc = jazz.voicing_off(R, ch.off, ch.q)
+                step = 1.0 if ch.beats >= 4 else 0.5
+                for k, q in enumerate(vc):
+                    harp.n(u + k * step, 1.6, q + 12, 34 if k % 2 == 0 else 28)
+        t += nb * B
+        bar_i += nb
+    jazz.bass_walk(bass, full, jazz.SWING44, start=0.0, seed=7, vel=60)
+    jazz_finish(s, h['swing'], leads=('nylon melody',))
+    return finish(s, 'uptown', int(t // B), B, h['ts'], 'loop', dict(hood='uptown', lofi=True))
 
 
 # ================================================================================================ STINGERS (AU14)
@@ -946,20 +1054,32 @@ def triumph(hood: str):
 
 
 # ================================================================================================ STORY CUES
+def hq_chart() -> jazz.Harmony:
+    """MegaSlice HQ's 17 bars in C minor. Bar 0 is the bass-only vamp. The motif sits on Cm(maj7) | Fm9 (bars 1-2 and 9-10);
+    C#dim7 and Eb dim7 are passing chords; Dm7b5 | Db13 (bars 7 and 15) is the tritone substitution for Dm7b5 | G7b9."""
+    K, B = 'C', 4.0
+    return jazz.bars(K, B,
+                     [('i', 'min9', 4)],
+                     [('i', 'min(maj7)', 4)], [('iv', 'min9', 4)], [('i', 'min9', 2), ('bii', 'dim7', 2)],
+                     [('ii', 'min7b5', 2), ('v', 'dom7b9', 2)],
+                     [('bvi', 'maj7s11', 4)], [('iv', 'min11', 4)], [('ii', 'min7b5', 2), ('bii', 'dom13', 2)],
+                     [('i', 'min(maj7)', 2), ('biii', 'dim7', 2)],
+                     [('i', 'min(maj7)', 4)], [('iv', 'min9', 4)], [('i', 'min9', 2), ('bii', 'dim7', 2)],
+                     [('ii', 'min7b5', 2), ('v', 'dom7b9', 2)],
+                     [('bvi', 'maj7s11', 4)], [('iv', 'min11', 4)], [('ii', 'min7b5', 2), ('bii', 'dom13', 2)],
+                     [('i', 'min9', 2), ('bii', 'dim7', 2)])
+
+
 def megaslice():
-    """AU18: comic villainy. C minor sneaky march, staccato tuba/bassoon, muted-trumpet stabs, pizzicato, timpani."""
+    """Card M1c: HQ is a sneaky, slightly comic jazz walk (the rep stings and Victor's exit below are card M2b). C minor, 76 bpm,
+    17 bars, restart. A dark Rhodes plays the villain motif low, a second Rhodes comps, an upright bass walks with a pizzicato
+    doubling it an octave up, brushes keep a side stick on 2 and 4 at velocity 40 or under."""
     R, md = 'C4', MINOR
     bpm = 76
-    s = Song(bpm, 4, seed=81)
-    tuba = s.track('tuba', 0, GM['tuba'], volume=104, reverb=30)
-    bsn = s.track('bassoon', 1, GM['bassoon'], volume=96, pan=44, reverb=35)
-    mt = s.track('trombone (staccato)', 2, GM['trombone'], volume=88, pan=84, reverb=40)  # AU69: Suburbs owns the muted trumpet
-    pz = s.track('pizzicato', 3, GM['pizz'], volume=88, pan=30, reverb=40)
-    tim = s.track('timpani', 4, GM['timpani'], volume=100, reverb=45)
-    drm = s.track('perc', 9, 0, volume=70, reverb=30)
     # villain motif: 5, | 1 b3 b5 b6. 5 | b6 5 b5 4 1
     V1 = [(1, 1), (3, .5), ('b5', .5), (6, 1.5), (5, .5)]
     V2 = [(6, .5), (5, .5), ('b5', .5), (4, .5), (1, 2)]
+    W = [(6, .5), (5, .5), ('b5', .5), (4, .5), (2, 1), (0, 1)]  # the motif's answer, into the turnaround
 
     def vline(tr, t, bars, vel, shift=0, legato=0.45):
         u = t
@@ -970,30 +1090,27 @@ def megaslice():
                     tr.n(u, dur * legato, pi + shift, vel)
                 u += dur
 
-    # bar 0 is a tuba-only vamp, so the villain motif's pickup has room and every entry starts the same way (AU29)
-    for bar in range(17):
-        t = 4 * bar
-        root = deg(R, 1 if (max(0, bar - 1) // 2) % 4 != 3 else 5, md) - 24
-        for i in range(4):  # sneaky staccato march bass
-            tuba.n(t + i, 0.3, root + (0 if i % 2 == 0 else 7), 92 if i % 2 == 0 else 74)
-        if bar == 0:
-            tim.n(t, 0.5, deg(R, 1, md) - 24, 80)
-            continue
-        for i in range(8):
-            pz.n(t + 0.5 * i, 0.15, deg(R, (1, 3, 5, 3)[i % 4], md) - 12, 58)
-        tim.n(t, 0.5, deg(R, 1, md) - 24, 70 if bar % 4 else 92)
-        drm.n(t + 1, 0.2, SNARE, 44)
-        drm.n(t + 3, 0.2, SNARE, 50)
-        if bar % 2 == 1:
-            mt.n(t + 3.5, 0.2, M.chord_notes(R, 5, 3, md, -1), 84)  # stab (trombone, an octave down)
+    hm = hq_chart()
+    s = Song(bpm, 4, seed=81)
+    vil = s.track('rhodes villain', 0, GM['rhodes'], volume=110, pan=56, reverb=35, chorus=30)
+    rh = s.track('rhodes', 1, GM['rhodes'], volume=70, pan=72, reverb=40, chorus=40)
+    bass = s.track('upright bass', 3, GM['ac_bass'], volume=88, reverb=20)
+    pz = s.track('bass pizzicato', 4, GM['pizz'], volume=70, pan=34, reverb=35)
+    perc = s.track('soft kit', 9, BRUSH, volume=80, pan=64, reverb=28)
+    jazz.comp(rh, jazz.Harmony('C', 4.0, list(hm)[1:]), jazz.SWING44, start=4.0, seed=81, vel=36)  # bar 0 is the bass alone
+    jazz.bass_walk(bass, hm, jazz.SWING44, start=0.0, seed=9, vel=62)
+    pz.events = [(t, 0.4, pi + 12, 36) for (t, _d, pi, _v) in bass.events]
+    snaps = dataclasses.replace(jazz.SWING44, cross=())  # the side stick is written by hand, at velocity 28 (40 after humanising)
+    jazz.brushes(perc, 17, snaps, start=0.0, seed=71, scale=0.85)
+    for b in range(17):
+        for pos in (1, 3):
+            perc.n(4 * b + pos, 0.2, 37, 28)
     for sec in (1, 9):
-        pickup(bsn, R, md, 4 * sec)
-        vline(bsn, 4 * sec, [V1, V2], 96, 0)
-        vline(mt, 4 * sec + 8, [V1, V2], 80, 0, 0.35)
-        vline(bsn, 4 * sec + 16, [V1, [(6, .5), (5, .5), ('b5', .5), (4, .5), (2, 1), (0, 1)]], 92, -12)
-    s.humanize(0.008, 4)
-    s.save(os.path.join(OUT, 'megaslice_hq.mid'), 68)
-    MANIFEST['megaslice_hq'] = dict(kind='loop', bpm=bpm, beatsPerBar=4, bars=17, seconds=round(68 * 60 / bpm, 4), restart=True)
+        pickup(vil, R, md, 4 * sec, 40, shift=-12)
+        vline(vil, 4 * sec, [V1, V2], 44, -12, 0.6)
+        vline(vil, 4 * sec + 12, [W], 42, -12, 0.6)
+    jazz_finish(s, 0.58, leads=('rhodes villain',))
+    finish(s, 'megaslice_hq', 17, 4, (4, 4), 'loop', dict(lofi=True, restart=True))
 
     # Rep sting: the villain motif at double speed with a trombone glissando
     s = Song(152, 4, seed=82)
@@ -1178,3 +1295,4 @@ if __name__ == '__main__':
         if v['kind'] == 'loop':
             print(f"{k:18s} {v['bars']:3d} bars {v['seconds']:7.2f}s")
     print(len(MANIFEST), 'cues')
+    print(f'palette: {len(PALETTE_CHECKED)} cues checked ({", ".join(PALETTE_CHECKED)}), 0 errors')

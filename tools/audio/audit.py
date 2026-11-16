@@ -4,9 +4,8 @@
     python3 audit.py --bank banks/GeneralUser-GS.sf2 downtown
 
 For each loop it splits build/midi/<loop>.mid by track name into the lead tracks and everything else (the kit, bass,
-comping, any other melody), renders each alone, wraps and masters each as the build does (`post.lofi_loop` or, for the HQ
-cue, the 10 kHz roll-off) without normalising, and prints integrated LUFS for each and lead minus bed. The leads come from the
-chart: the `leads=` tuple that the loop's function passes to `lofi_finish` in compose.py. Integrated loudness is gated, so a
+comping, any other melody), renders each alone, wraps and masters each as the build does (`post.lofi_loop`) without normalising, and prints integrated LUFS for each and lead minus bed. The leads come from the
+chart: the `leads=` tuple that the loop's function passes to `lofi_finish` or `jazz_finish` in compose.py. Integrated loudness is gated, so a
 lead that is silent for part of the loop is measured over the bars where it plays. A second pair of columns repeats
 the measure on the raw render, before mastering. Reusable: `audit(loop, bank=None)` returns the numbers as a dict.
 """
@@ -32,11 +31,11 @@ def leads_of(loop: str) -> tuple[str, ...]:
     found: list[str] = []
     for fn in (n for n in tree.body if isinstance(n, ast.FunctionDef)):
         for call in (c for c in ast.walk(fn) if isinstance(c, ast.Call)):
-            if getattr(call.func, 'id', '') == 'lofi_finish':
+            if getattr(call.func, 'id', '') in ('lofi_finish', 'jazz_finish'):
                 for kw in call.keywords:
                     if kw.arg == 'leads':
                         names = tuple(ast.literal_eval(kw.value))
-                        if fn.name == loop or (loop == 'downtown_sparse' and fn.name == 'downtown'):
+                        if fn.name == loop or (loop, fn.name) in (('downtown_sparse', 'downtown'), ('megaslice_hq', 'megaslice')):
                             found = list(names)
     if not found:
         raise SystemExit(f'{loop}: no leads= found in compose.py')
@@ -71,7 +70,7 @@ def audit(loop: str, bank: str | None = None) -> dict:
     for part, path in paths.items():
         a = post.wrap_loop(post.render_midi(path, tail=4.0, bank=bank), man['seconds'])
         res[part + '_raw'] = post.lufs(a)
-        m = post.lofi_loop(a, seed=sum(map(ord, loop))) if man.get('lofi') else post.rolloff(a, 10000.0, circular=True)
+        m = post.lofi_loop(a, seed=sum(map(ord, loop)))
         res[part] = post.lufs(m)
     res['diff'] = res['lead'] - res['bed']
     res['diff_raw'] = res['lead_raw'] - res['bed_raw']
