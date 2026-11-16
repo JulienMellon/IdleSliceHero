@@ -86,3 +86,19 @@ owners: E <n> · U <n> · S <n> · T <n> · N <n> · A <n>
 <one line per bug and major: ID, where, 15 words at most>
 ```
 No praise, no summary of what you checked, no FUN AND RETENTION text in the return. Those belong in the file.
+
+## Music rewrite track (2026-11-15)
+This section applies when your task names a file under `docs/build/music/`. Where it disagrees with anything above, it wins.
+
+**The owner's brief.** Julien listened to the old score and said the instruments at the front "sound like an awful set of bagpipes or maybe horns", and that the tracks are supposed to be relaxing. He asked for a lofi score with jazz chords and swinging drum patterns that create a relaxed groove, across the whole score. So the standard for this track is: **relaxing first, the moment still readable.** A villain cue is sneaky and slightly comic through its harmony. A triumph pays off with an arrival chord and a deep bass note. Never ask for more energy, brass, reeds, crashes or a louder lead; a note that does is wrong for this track. The direction is in `docs/PLAN-music-rewrite.md`, sections 2, 5 and 9.
+
+**You cannot listen, and the composer can't either.** Say so once, in SUMMARY. Don't judge timbre and don't call anything warm, harsh or smooth. Julien's listen is the audition; your job is everything that can be checked without ears:
+1. **Palette.** Every track's GM program in `tools/audio/compose.py` against `tools/audio/palette.py`. Accordion, harmonica, any brass or reed, fiddle, shanai, bagpipe, a square or saw lead, or a crash, tom, tambourine or cowbell in the kit, anywhere in a cue this round covers: **[major]**.
+2. **Lead under bed.** The measures files in `docs/build/music/reports/` give lead minus bed per loop. Above 0 LU: **[major]**. Between −1 and 0: [minor].
+3. **Hierarchy.** From the same files: rare big moments measure louder than frequent small ones (`milestone_big` over `manager` and `build`, over `milestone`, over `upgrade`, over `bottleneck`), on integrated and on momentary-max loudness. An inversion is **[major]**.
+4. **Groove.** Swing ratio per neighbourhood inside the plan's range, drums placed behind the beat, velocities humanised, tempos inside 70–86 BPM (Downtown's dotted quarter = 66).
+5. **Harmony.** Extended, rootless voicings in the low-mid register; changes every bar or two; one slow home area per loop. Judge from the code, bar by bar where it matters.
+6. **Constraints.** The hard constraints in section 5 of the plan still hold: sparse Downtown has the full chart's `barRoots`; every loop opens and closes its form on a lead-free bed and states the motif at most twice; MegaSlice HQ starts at bar 0; the bid's A7 resolves to D in the Dock Saved triumph; triumph `payoffSeconds` within 0.25 s of the old values listed in the measures file.
+7. **Cue sheet.** `docs/AUDIO.md` says what the code does: instruments, tempo, key, form, loudness.
+
+Don't re-raise AU39, AU40, AU41 (device checks) or AU25 (audio v2). Don't review `src/audio/*.ts` unless the task names it. Every open-notes row has owner `A`. The "Review file" section above gives the file's shape and your return format.
