@@ -57,3 +57,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (
 - 2026-11-16 19:24 UTC r2 E done (C127 C129 C116 C117 + 12 more; 1502 pass). Left: A32 medium (too wide), lows A34 A33 C107 U17 M62 U12 T94 T97. S+T launched on v5.16 card-S2a.
 - 2026-11-16 19:27 UTC r2 U3 partial (G108 D496 C128 C130 D497 D498 D502 D504; 884 pass). Needs: services/index.ts export isOptedOut for C133 (-> N1, then U3 settings). Left: D499 (content/rewards.ts), D500 D501 D503 D478 -> U4. U4 launched.
 - 2026-11-16 19:29 UTC r2 S+T partial (D481; layers 155 pass; D482 D490 already fixed). Needs: D475 D450 + A28 A29 M60 U10 U11 in scene/** -> P1 launched (v5.16 card-P1). C133 (low) carried: needs services isOptedOut export.
+- 2026-11-16 19:31 UTC r2 U4 done (D500 D501 D503 D478 D499 M63 U9; U19 partly; 840/841, the failure is in scene/** under P1). Carried: day-30 name 'Nonna's Golden Oven' to check with writer. Waiting P1.

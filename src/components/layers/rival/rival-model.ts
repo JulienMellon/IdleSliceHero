@@ -17,7 +17,7 @@ import { LABELS, lc, rivalLine, rivalSpeaker } from '../layer-text';
 export const rivalPercent = (valueMult: number = RIVAL.valueMult): number => Math.round((1 - valueMult) * 100);
 
 /** The HUD tag's text ("−20% sales", with the real minus sign), or '' when no rival is open here. */
-export const rivalTagText = (v: Pick<RivalView, 'open' | 'valueMult'>): string => (v.open ? lc('rival.tag') : '');
+export const rivalTagText = (v: Pick<RivalView, 'open'>): string => (v.open ? lc('rival.tag') : '');
 
 // ---------- the storefront across the street ----------
 

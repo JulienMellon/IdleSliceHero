@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,7 +17,11 @@ import { C, F } from '@/theme';
 export default function City() {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const game = useGame((s) => s.game);
+  // U9: the city is drawn from a snapshot that moves once a second (or when rewards change), not on every 200 ms tick
+  // the screen subscribes to the second only; the snapshot is read from the store when it changes
+  const sec = useGame((s) => Math.floor(s.tickAt / 1000));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `sec` is the key: the game is read when the second moves
+  const game = useMemo(() => useGame.getState().game, [sec]);
   const toast = useGame((s) => s.toast);
   const { setActive, build } = useGame.getState();
   // G94: leaving the City takes its toast with it
