@@ -438,7 +438,8 @@ def suburbs():
     for k, (sec, hm, mel, w) in enumerate(sections):
         nb = len(hm)
         quiet = sec in ('intro', 'bed')
-        jazz.comp(rh, hm, jazz.SWING44, start=t, seed=21 + bar_i, vel=40 if quiet else 46)
+        jazz.comp(rh, hm, jazz.SWING44, start=t, seed=21 + bar_i, vel=40 if quiet else 46,
+                  antic_p=0.12, answer_p=0.35)  # notes R1: "too busy at times"
         jazz.brushes(perc, nb, jazz.SWING44, start=t, seed=31 + bar_i, scale=0.85 if quiet else 1.0, bar0=bar_i)
         if sec in ('B', 'march'):
             walk_from = t if walk_from is None else walk_from
@@ -483,12 +484,18 @@ def waterfront_chart() -> list:
     bed1 = (bars(K, B, [('IV', 'maj9', 2), ('I', 'sus13', 2)], [('v', 'min9', 2), ('I', 'dom9', 2)])
             + hold(K, B, 'bvii', 'maj9') + hold(K, B, 'v', 'min9'))
     b_h = bars(K, B, [('bvii', 'maj9', 4)], [('ii', 'min11', 4)], [('IV', '6/9', 4)], [('I', 'dom13', 2), ('v', 'min9', 2)],
-               [('bvii', 'maj7s11', 4)], [('ii', 'min9', 4)], [('IV', 'maj9', 2), ('ii', 'min9', 2)], [('v', 'min11', 4)])
+               [('bvii', 'maj7s11', 4)], [('ii', 'min9', 4)], [('IV', 'maj9', 2), ('ii', 'min9', 2)], [('v', 'min11', 2), ('bii', 'dom13', 2)])  # the B's last bar leans on Eb13 and lets go into D9
     bed2 = bars(K, B, [('I', 'dom9', 4)], [('v', 'min9', 2), ('I', 'dom13', 2)], [('IV', 'maj9', 2), ('I', 'sus13', 2)],
                 [('bvii', 'maj9', 4)], [('v', 'min9', 2), ('I', 'dom9', 2)], [('IV', '6/9', 4)],
                 [('IV', 'maj9', 2), ('ii', 'min9', 2)], [('iv', 'min9', 2), ('bvii', 'maj9', 2)])
     return [('intro', intro, None, None), ('A', a_h, M.A2_BARS, 'harp'), ('bed', bed1, None, None),
             ('B', b_h, M.B_BARS, 'mar'), ('A2', a_h, M.A2_BARS, 'harp'), ('bed', bed2, None, None)]
+
+
+# notes R1: "give the chord progression a little build and release". Rhodes velocity offset by loop bar (intro 0-3, A 4-7,
+# bed 8-11, B 12-19, A2 20-23, bed 24-31): each A rises into its last bar, the beds fall away, the B climbs for eight bars
+# to its crest and lets go at the A2.
+WATERFRONT_ARC = [(0, -4), (3, -1), (4, 0), (7, 3), (8, -3), (11, -4), (12, -1), (19, 6), (20, 2), (23, 3), (24, -3), (31, -5)]
 
 
 def waterfront():
@@ -514,7 +521,8 @@ def waterfront():
     for sec, hm, mel, w in sections:
         nb = len(hm)
         quiet = sec in ('intro', 'bed')
-        jazz.comp(rh, hm, jazz.SWING44, start=t, seed=31 + bar_i, vel=40 if quiet else 46)
+        jazz.comp(rh, hm, jazz.SWING44, start=t, seed=31 + bar_i, vel=40 if quiet else 46,
+                  arc_fn=jazz.arc(WATERFRONT_ARC, B, bar_i))
         jazz.bass_two_feel(bass, hm, jazz.SWING44, start=t, vel=58 if quiet else 62)
         for i, bar in enumerate(hm):  # the habanera: dotted eighth, sixteenth, eighth, eighth, in every second bar's first half
             u = t + i * B

@@ -1,0 +1,33 @@
+# NOTES-R1: Julien's notes on the R1 reel, turned into changes
+
+Reel offsets: the R1 preset in `tools/audio/reel.py` is 8 clips of 30 s with 0.7 s silence between them, so clip n starts at (n-1) x 30.7 s: 0:00 downtown, 0:30 downtown_sparse, 1:01 suburbs, 1:32 waterfront, 2:03 university. His "101-1:33" is read as 1:01-1:33. He said "six tracks"; the reel has eight clips (industrial, uptown, megaslice_hq come after 2:30 and have no note).
+
+Measurement method (all from the final `build/midi/<cue>.mid`, Rhodes track; Uptown's is the piano, program 1): a chord change is the next cluster of onsets whose pitch classes are not a subset of the chord before. "Still sounding" = the old chord has a note that ends less than 50 ms before that onset, or after it. Gap = next onset minus the last note-off of the old chord. Before = the committed R1 score, after = this round.
+
+| # | His words (in full) | Cues | What I changed | Measured result |
+|---|---|---|---|---|
+| 1 | "0:00 I like this excerpt, it might be my favorite of the six tracks" | downtown | Nothing aimed at it: arrangement, leads, bass, pad, kit, bars, barRoots untouched. It gets the shared Rhodes fix of notes 2, 5 and 6 (same helper), so its Rhodes chords now end before the next chord. | lead minus bed -2.9 -> -2.6 LU; seconds 94.55, barRoots unchanged; chord changes with the old chord still sounding 44 of 68 -> 0 |
+| 2 | "0:30-1:01 this track seems to have a ln electric piano whose chords have a bit of a drone to them that is creating a similar problem as what I described as bagpipes albeit in a different timbre and frequency range- a muddy droning set of chords" | downtown_sparse (same Rhodes as downtown) | Droning: `jazz.comp` held each chord to 92% of its length (up to 2.1 s, past the next chord). Now a chord rings at most `Feel.hold` (1.4 beats in 6/8, 1.8 in 4/4) and ends 0.15 beat before the next hit. Muddy: comp voicings sit in E-flat3..E4 centred on A3 instead of C3..E4 centred on 53 (`COMP_LOW`, `COMP_NEAR`). Timbre-table check (reports/M0.md, bank C): Rhodes has centroid 447 Hz, 0.0% of energy at 2-5 kHz, sustain ratio 0.70, so the cause is low-mid weight plus a flat sustain, not a harsh band. I kept the program (he asked for the electric piano's chords not to drone, not for another instrument) and changed note length and register. | still sounding 44 of 68 -> 0; mean note 1.19 -> 0.74 s; longest 2.09 -> 0.85 s; smallest gap before the next chord -331 ms -> +51 ms (mean -16 -> +319 ms); Rhodes notes below E3 17% -> 1%; mean pitch 55.2 -> 57.8; lead minus bed -2.4 LU |
+| 3 | "101-1:33 I rather like the swinging hi hats and brushed snare in the drum kit. The piano chords don't feel quite as muddy in this section of the audition but feel like they are too busy at times" | suburbs | Kit untouched. Comping thinned in Suburbs only: the answer chord on 1.5 from probability 0.7 to 0.35 and anticipated chords from 0.3 to 0.12. The shared release/register change applies too. | Rhodes onsets per loop 60 -> 53; still sounding 34 of 45 -> 0; smallest gap -326 -> +106 ms; lead minus bed -3.1 LU |
+| 4 | "1:33-2:02 droning piano again. Give the chord progression a little build and release" | waterfront | Shared release change. Build and release, two parts. Dynamics: `jazz.arc` / `WATERFRONT_ARC` offsets the Rhodes velocity by loop bar: each A rises to +3 at its last bar, the beds fall to -3/-4, the B climbs from -1 to +6 over eight bars and lets go at the A2, bed 2 falls to -5. Harmony: the B's last bar is Am11 for two beats then Eb13 (bII dominant, a tritone substitution for A7) for two, which falls to the D9 that opens the bed. No barRoots change (the bar still starts on degree 5; `src/audio/manifest.ts` unchanged), the clash check against the B melody passes. | Rhodes mean velocity: B bars 1-4 40.0, B bars 5-8 45.0, A2 43.7, bed 2 first half 30.2 (build +5, release -15 against the B crest); still sounding 22 of 42 -> 0; smallest gap -370 -> +117 ms; lead minus bed -3.1 LU |
+| 5 | "2:03-2:30 the droning piano again. I think the piano issues in the whole file stem from the unnatural sound of the piano sustain not releasing just before the next chord begins" | university, and every Rhodes comp | The same helper fix as 2, so it holds in all loops, not only the four he named. | university: still sounding 33 of 46 -> 2 (both in bed 2, where the Rhodes plays the half-speed motif as a lead, legato; left alone); smallest comping gap -1464 -> +41 ms (the two exceptions); lead minus bed -2.7 LU |
+| 6 | (note 5 applies to "the whole file") | industrial, uptown, megaslice_hq (second Rhodes), and all of the above | One helper in `jazz.py` (`comp`, `Feel.hold`, `RELEASE_GAP`, `COMP_LOW`, `COMP_NEAR`), nothing per chart except notes 3 and 4. | still sounding: industrial 45 of 56 -> 0, uptown piano 0 of 45 (after), megaslice_hq comping 13 of 23 -> 0; lead minus bed -3.0 to -3.5 LU |
+
+Not touched on purpose: the stingers (they use `rh_comp`, another helper, and he gave no note on them); the instruments, bank, drums, bass, pad and arpeggios of every loop; megaslice_hq's villain Rhodes (the lead).
+
+## Built (full build, 8 loops and the rest unchanged in content)
+
+Lead minus bed from `python3 audit.py` (stem audit), the rest from `tools/audio/build/report.json`.
+
+| Cue | Seconds | LUFS (tier) | Peak dBFS | Seam step / 99th pct | KB | GM programs in front | Lead minus bed (LU) |
+|---|---|---|---|---|---|---|---|
+| downtown | 94.55 | -20.0 (-20.0) | -7.7 | 0.00214 / 0.02287 | 1145.0 | nylon 25, Rhodes 5, warm pad 90, upright bass 33 | -2.6 |
+| downtown_sparse | 94.55 | -22.0 (-22.0) | -11.8 | 0.00161 / 0.01199 | 1130.2 | nylon 25, Rhodes 5 | -2.4 |
+| suburbs | 89.30 | -20.0 (-20.0) | -8.0 | 0.00008 / 0.02435 | 1086.3 | vibraphone 12, jazz guitar 27, glockenspiel 10, Rhodes 5, upright bass 33 | -3.1 |
+| waterfront | 96.00 | -20.0 (-20.0) | -7.5 | 0.00029 / 0.02539 | 1168.5 | harp 47, marimba 13, Rhodes 5, upright bass 33 | -3.1 |
+| university | 101.05 | -20.0 (-20.0) | -7.8 | 0.00145 / 0.02248 | 1227.1 | kalimba 109, vibraphone 12, Rhodes 5, finger bass 34 | -2.7 |
+| industrial | 113.68 | -20.0 (-20.0) | -7.9 | 0.00319 / 0.02787 | 1377.1 | vibraphone 12, flute 74, clean guitar 28, Rhodes 5, warm pad 90, upright bass 33 | -3.5 |
+| uptown | 91.43 | -20.0 (-20.0) | -7.3 | 0.00189 / 0.02566 | 1113.8 | nylon 25, piano 1, jazz guitar 27, harp 47, upright bass 33 | -3.0 |
+| megaslice_hq | 53.68 | -19.0 (-19.0) | -7.1 | 0.00012 / 0.02155 | 652.0 | Rhodes 5, upright bass 33, pizzicato 46 | -3.3 |
+
+Audio total: 13.88 MB of 14 (`du -sb assets/audio` = 13,875,021 bytes, limit 14,680,064; margin 0.8 MB, no bars trimmed). Sound effects restored with `git checkout -- assets/audio/sfx`.

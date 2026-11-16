@@ -27,6 +27,7 @@ from dataclasses import dataclass
 from mlib import Track, p, MAJOR, KICK, RIM, PEDAL, RIDE
 
 LOW, HIGH = 48, 64  # C3 and E4: every voicing sits in here
+COMP_LOW, COMP_NEAR = 51, 57  # the comping keys sit a little higher (notes R1: "muddy"): Eb3..E4, centred on A3
 
 # --- the chord vocabulary: intervals above the chord root, bottom to top, root left out ---------------------------
 QUALITIES: dict[str, list[int]] = {
@@ -68,21 +69,23 @@ def offset(degree) -> int:
     return MAJOR[(degree - 1) % 7]
 
 
-def voicing_off(root, off: int, quality: str, near: float | None = None) -> list[int]:
+def voicing_off(root, off: int, quality: str, near: float | None = None, low: int | None = None) -> list[int]:
     """Rootless voicing of the chord whose root is `off` semitones above `root`. The octave that puts every note in
-    C3..E4 is chosen among the inversions; the one whose centre is nearest `near` (default 53, low in the window) wins."""
+    C3..E4 (`low`..E4 when `low` is given) is chosen among the inversions; the one whose centre is nearest `near`
+    (default 53, low in the window) wins."""
+    low = LOW if low is None else low
     base = [(tonic(root) + off) % 12 + i for i in QUALITIES[quality]]
     fits = []
     for rot in range(len(base)):  # every inversion: the lowest notes move up an octave
         inv = base[rot:] + [x + 12 for x in base[:rot]]
-        shift = 12 * math.ceil((LOW - inv[0]) / 12)
+        shift = 12 * math.ceil((low - inv[0]) / 12)
         while inv[0] + shift <= HIGH:
             v = [x + shift for x in inv]
-            if min(v) >= LOW and max(v) <= HIGH:
+            if min(v) >= low and max(v) <= HIGH:
                 fits.append(v)
             shift += 12
     if not fits:
-        raise ValueError(f'no voicing of {quality} on offset {off} fits C3..E4')
+        raise ValueError(f'no voicing of {quality} on offset {off} fits {low}..{HIGH}')
     target = 53 if near is None else near
     return min(fits, key=lambda v: abs(sum(v) / len(v) - target))
 
@@ -216,11 +219,12 @@ class Feel:
     ghosts: tuple                 # ghost-tap positions
     answer: tuple                 # where the comping answers the downbeat chord
     antic: float = 0.5            # how early an anticipated chord lands (an eighth, swung later in 4/4)
+    hold: float = 1.8             # the longest a comped chord rings, in beats (then the keys are up: no drone)
 
 
 F68 = Feel('6/8', 3.0, 1.5, 0.0,
            ride=((0, 40), (1.0, 28), (1.5, 34), (2.5, 26)), cross=(1.5,), pedal=(1.5,),
-           kick=((0, 1.0), (2.0, 0.25)), ghosts=(0.5, 2.0), answer=(1.5,))
+           kick=((0, 1.0), (2.0, 0.25)), ghosts=(0.5, 2.0), answer=(1.5,), hold=1.4)
 SWING44 = Feel('swing', 4.0, 2.0, 0.58,
                ride=((0, 40), (1, 38), (1.5, 28), (2, 40), (3, 38), (3.5, 28)), cross=(1, 3), pedal=(1, 3),
                kick=((0, 1.0), (2, 0.35)), ghosts=(0.5, 2.5), answer=(1.5,))
@@ -234,38 +238,63 @@ def _pc(key, ch: Ch) -> int:
 
 
 def comp_voicings(h: Harmony, near: float | None = None) -> list[list[int]]:
-    """The voicing `comp` plays for each chord of `h`, in order: each follows the nearest octave to the one before it."""
-    out, prev = [], near
+    """The voicing `comp` plays for each chord of `h`, in order: each follows the nearest octave to the one before it,
+    the first nearest `near` (default COMP_NEAR), all of them inside COMP_LOW..E4."""
+    out, prev = [], COMP_NEAR if near is None else near
     for (_t, ch) in h.chords(0.0):
-        v = voicing_off(h.key, ch.off, ch.q, prev)
+        v = voicing_off(h.key, ch.off, ch.q, prev, COMP_LOW)
         prev = sum(v) / len(v)
         out.append(v)
     return out
 
 
 # --- keys -------------------------------------------------------------------------------------------------------------
+def arc(points, bar_beats: float, bar0: float = 0.0):
+    """A build-and-release curve for `comp`: `points` is [(bar, velocity offset)], bars counted from the start of the
+    loop, linear in between and flat outside. Returns f(beats from the start of the chart given to comp) -> offset."""
+    pts = sorted(points)
+
+    def f(beat: float) -> float:
+        x = bar0 + beat / bar_beats
+        if x <= pts[0][0]:
+            return pts[0][1]
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+            if x <= x1:
+                return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+        return pts[-1][1]
+    return f
+
+
+RELEASE_GAP = 0.15  # beats of silence between the last note of one hit and the next hit (notes R1: sustain must release)
+
+
 def comp(track: Track, h: Harmony, feel: Feel, start: float = 0.0, seed: int = 1, vel: int = 46, strum: float = 0.03,
-         antic_p: float = 0.3, answer_p: float = 0.7, near: float | None = None) -> None:
-    """Comping: a long chord on the chord's downbeat (rolled up, upper notes a hair later and quieter); on a whole-bar
-    chord a quieter answer at `feel.answer`; with probability `antic_p` a chord that follows a chord of at least a
-    pulse is struck `feel.antic` early (and not re-struck on its downbeat). Voicings follow the nearest octave."""
+         antic_p: float = 0.3, answer_p: float = 0.7, near: float | None = None, arc_fn=None) -> None:
+    """Comping: a chord on the chord's downbeat (rolled up, upper notes a hair later and quieter), held at most `feel.hold`
+    beats; on a whole-bar chord a quieter answer at `feel.answer`; with probability `antic_p` a chord that follows a chord
+    of at least a pulse is struck `feel.antic` early (and not re-struck on its downbeat). Voicings follow the nearest
+    octave. Every hit ends `RELEASE_GAP` beats before the next hit begins (the next hit's first note, strum included),
+    so no key of one chord is down when the next chord sounds. `arc_fn` (see `arc`) adds a velocity offset per hit."""
     rng = random.Random(seed)
     chords = h.chords(start)
-
-    def hit(t, notes, dur, v):
-        for i, q in enumerate(notes):
-            track.n(t + strum * i, dur, q, v - 2 * i)
+    hits = []  # (onset, notes, longest allowed, velocity)
 
     for i, ((t, ch), v) in enumerate(zip(chords, comp_voicings(h, near))):
         early = i > 0 and chords[i - 1][1].beats >= feel.pulse and rng.random() < antic_p
-        if early:
-            hit(t - feel.antic, v, ch.beats + feel.antic * 0.9, vel - 4)
-        else:
-            hit(t, v, ch.beats * 0.92, vel)
+        at = t - feel.antic if early else t
+        hits.append((at, v, min(ch.beats + (feel.antic if early else 0.0), feel.hold), vel - 4 if early else vel))
         if ch.beats >= feel.bar_beats - 1e-9:
             for a in feel.answer:
                 if rng.random() < answer_p:
-                    hit(t + a, v[1:], min(1.0, ch.beats - a), vel - 12)
+                    hits.append((t + a, v[1:], min(1.0, ch.beats - a), vel - 12))
+    hits.sort(key=lambda x: x[0])
+    for k, (at, notes, dur, v) in enumerate(hits):
+        if k + 1 < len(hits):
+            dur = min(dur, hits[k + 1][0] - at - RELEASE_GAP)
+        dur = max(dur, 0.2)
+        v += int(round(arc_fn(at - start))) if arc_fn else 0
+        for n, q in enumerate(notes):
+            track.n(at + strum * n, dur - strum * n, q, max(1, v - 2 * n))  # every key of the chord comes up together
 
 
 # --- bass -------------------------------------------------------------------------------------------------------------
