@@ -12,8 +12,7 @@ import { DECOR_KINDS } from '../../content/tuning';
 import type { BuyResult, GameState, Task } from '../../engine/game';
 import { nextHire, SHOP_IDS } from '../../engine/game';
 import * as R from '../../engine/rewards';
-import { EVENTS } from '../../services/events';
-import type { AdPlacement, AdResult, Props } from '../../services/types';
+import type { AdPlacement, AdResult } from '../../services/types';
 
 // ---------- the one rule ----------
 
@@ -23,17 +22,15 @@ export interface AdDeps {
   /** The player owns Nonna's Plus. */
   plus: boolean;
   show: (p: AdPlacement) => Promise<AdResult>;
-  track: (event: string, props?: Props) => void;
 }
 
 /**
  * The one rule behind every ad button. Nonna's Plus: the benefit is given at once and no ad is shown or counted. Otherwise the ad is
  * shown: `rewarded` gives the benefit; `dismissed` and `unavailable` give nothing and are not an error, the player just goes on.
- * Events: `ad_started` when the ad is asked for, `ad_completed` when it paid (`ad_offered` is tracked when the button appears).
+ * Events: none here. The services index sends `ad_started` and `ad_completed` from `ads.show` (C128); the button sends `ad_offered` when it appears.
  */
 export async function runAd(placement: AdPlacement, deps: AdDeps): Promise<AdOutcome> {
   if (deps.plus) return 'plus';
-  deps.track(EVENTS.adStarted, { placement });
   let result: AdResult = 'unavailable';
   try {
     result = await deps.show(placement);
@@ -41,9 +38,11 @@ export async function runAd(placement: AdPlacement, deps: AdDeps): Promise<AdOut
     /* `show` never throws; if a stub does, it is the same as no ad */
   }
   if (result !== 'rewarded') return 'skipped';
-  deps.track(EVENTS.adCompleted, { placement });
   return 'rewarded';
 }
+
+/** How often a mounted ad button asks the service whether an ad could be shown now, so it comes back after a stale or unfilled ad with no app restart. */
+export const READY_CHECK_MS = 4000;
 
 /** The benefit is given for these outcomes. */
 export const gives = (o: AdOutcome): boolean => o !== 'skipped';
@@ -193,6 +192,16 @@ export interface ClaimInfo {
   doubled: boolean;
   /** Ms; the sheet's key. */
   at: number;
+}
+
+/** The double button's words (D497): what it adds when that is one thing ("Double it · +$81.2K"), "×2" when the claim paid cash and diamonds. */
+export function doubleLabel(d: ClaimDelta, money: (n: number) => string): string {
+  const cash = d.cash >= 1;
+  const dia = d.diamonds >= 1;
+  if (cash && dia) return 'Double it · ×2';
+  if (cash) return `Double it · +${money(d.cash)}`;
+  if (dia) return `Double it · +${d.diamonds} ${d.diamonds === 1 ? 'diamond' : 'diamonds'}`;
+  return 'Double it';
 }
 
 /** "+$1.2K and 20 diamonds": the claim's size in words (`money` formats the cash). */

@@ -55,3 +55,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (
 - 2026-11-16 19:14 UTC r2 N1 done (K1 C126-layout C131; services 56 pass). Needs -> U3: index.tsx:133 must not reload on active; UI must re-check ads.ready(). U3 launched.
 - 2026-11-16 19:15 UTC r2 A1 done (AU78-AU81 C132 U20 T80 M67; audio 59 pass). E launched on v5.16 card-E0.
 - 2026-11-16 19:24 UTC r2 E done (C127 C129 C116 C117 + 12 more; 1502 pass). Left: A32 medium (too wide), lows A34 A33 C107 U17 M62 U12 T94 T97. S+T launched on v5.16 card-S2a.
+- 2026-11-16 19:27 UTC r2 U3 partial (G108 D496 C128 C130 D497 D498 D502 D504; 884 pass). Needs: services/index.ts export isOptedOut for C133 (-> N1, then U3 settings). Left: D499 (content/rewards.ts), D500 D501 D503 D478 -> U4. U4 launched.

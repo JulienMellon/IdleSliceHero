@@ -3,9 +3,8 @@ import { MAX_BOOSTERS, STREAK_SAVE_DIAMONDS } from '../../../content/rewards';
 import { NONNA_TAKEOVER } from '../../../content/tuning';
 import * as G from '../../../engine/game';
 import { claimDaily, dayKey, giftStatus, refreshRewards } from '../../../engine/rewards';
-import { EVENTS } from '../../../services/events';
 import type { AdPlacement, AdResult } from '../../../services/types';
-import { adLabel, applyDouble, boosterAdOffer, buttonShown, canReroll, claimDelta, claimOffer, DAILY_BOOSTER, deltaText, grantDailyBooster, gives, offlineBoost, offlineExtra, offlineFactor, offlineOffer, repairByAd, rerollDaily, rerollTask, runAd, streakSaveOffer } from '../ad-model';
+import { adLabel, applyDouble, boosterAdOffer, buttonShown, canReroll, claimDelta, claimOffer, DAILY_BOOSTER, deltaText, doubleLabel, grantDailyBooster, gives, offlineBoost, offlineExtra, offlineFactor, offlineOffer, repairByAd, rerollDaily, rerollTask, runAd, streakSaveOffer } from '../ad-model';
 
 const NOW = new Date(2026, 10, 11, 12, 0, 0).getTime(); // a Wednesday
 const DAY = 86_400_000;
@@ -18,10 +17,8 @@ function base(): G.GameState {
 const withR = (s: G.GameState, p: Partial<G.Rewards>): G.GameState => ({ ...s, rewards: { ...s.rewards, ...p } });
 
 function deps(plus: boolean, answer: AdResult) {
-  const events: [string, unknown][] = [];
   const shown: AdPlacement[] = [];
   return {
-    events,
     shown,
     d: {
       plus,
@@ -29,7 +26,6 @@ function deps(plus: boolean, answer: AdResult) {
         shown.push(p);
         return answer;
       },
-      track: (e: string, props?: unknown) => void events.push([e, props]),
     },
   };
 }
@@ -41,25 +37,23 @@ describe('the one rule', () => {
     expect(o).toBe('plus');
     expect(gives(o)).toBe(true);
     expect(t.shown).toEqual([]);
-    expect(t.events).toEqual([]);
   });
-  test('a finished ad gives the benefit and is counted as started and completed', async () => {
+  test('a finished ad gives the benefit (the services index counts ad_started and ad_completed, C128)', async () => {
     const t = deps(false, 'rewarded');
     const o = await runAd('reroll_task', t.d);
     expect(o).toBe('rewarded');
     expect(gives(o)).toBe(true);
     expect(t.shown).toEqual(['reroll_task']);
-    expect(t.events).toEqual([[EVENTS.adStarted, { placement: 'reroll_task' }], [EVENTS.adCompleted, { placement: 'reroll_task' }]]);
   });
   test.each<AdResult>(['dismissed', 'unavailable'])('%s: no benefit, no completion, nothing thrown', async (answer) => {
     const t = deps(false, answer);
     const o = await runAd('offline_2x', t.d);
     expect(o).toBe('skipped');
     expect(gives(o)).toBe(false);
-    expect(t.events.map((e) => e[0])).toEqual([EVENTS.adStarted]);
+    expect(t.shown).toEqual(['offline_2x']);
   });
   test('an ad service that throws is the same as no ad', async () => {
-    const o = await runAd('streak_save', { plus: false, show: async () => Promise.reject(new Error('boom')), track: () => {} });
+    const o = await runAd('streak_save', { plus: false, show: async () => Promise.reject(new Error('boom')) });
     expect(o).toBe('skipped');
   });
   test('the button shows for a Plus owner always and for anyone else only when an ad could play; its words follow', () => {
@@ -68,6 +62,16 @@ describe('the one rule', () => {
     expect(buttonShown(false, false)).toBe(false);
     expect(adLabel(true, 'Double it', 'Double it · Plus')).toBe('Double it · Plus');
     expect(adLabel(false, 'Double it', 'Double it · Plus')).toBe('Double it');
+  });
+});
+
+describe("the double button's words (D497)", () => {
+  const m = (n: number) => `$${n}`;
+  test('it names what it adds; both cash and diamonds say ×2', () => {
+    expect(doubleLabel({ cash: 81200, diamonds: 0 }, m)).toBe('Double it · +$81200');
+    expect(doubleLabel({ cash: 0, diamonds: 20 }, m)).toBe('Double it · +20 diamonds');
+    expect(doubleLabel({ cash: 0, diamonds: 1 }, m)).toBe('Double it · +1 diamond');
+    expect(doubleLabel({ cash: 5, diamonds: 20 }, m)).toBe('Double it · ×2');
   });
 });
 

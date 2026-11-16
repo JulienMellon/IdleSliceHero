@@ -1,7 +1,8 @@
-// One purchase at a time, shared by the store tab and the Starter Pack sheet: buy, count it, say how it went.
+// One purchase at a time, shared by the store tab and the Starter Pack sheet: buy, say how it went. The services index counts iap_purchased.
 import { useCallback, useState } from 'react';
 
-import { analytics, EVENTS, purchases, type ProductId } from '../../services';
+import { purchases, type ProductId } from '../../services';
+import { createBuyGuard, guardedBuy } from './buy-guard';
 import { buyLine } from './store-model';
 
 export interface PurchaseState {
@@ -18,18 +19,21 @@ export function usePurchase(): PurchaseState {
   const [busy, setBusy] = useState<ProductId | null>(null);
   const [line, setLine] = useState('');
   const [owned, setOwned] = useState<ProductId[]>(() => purchases.owned());
-  const buy = useCallback((id: ProductId) => {
-    setBusy((b) => {
-      if (b) return b;
+  const [guard] = useState(createBuyGuard);
+  const buy = useCallback(
+    (id: ProductId) => {
+      // purchases.buy is called here, outside any state updater (an updater may run twice), and only when the guard lets it
+      if (guard.busy()) return;
+      setBusy(id);
       setLine('');
-      void purchases.buy(id).then((r) => {
-        if (r === 'purchased') analytics.track(EVENTS.iapPurchased, { product: id });
+      void guardedBuy(guard, (p) => purchases.buy(p), id).then((r) => {
+        if (r === null) return;
         setOwned(purchases.owned());
         setLine(buyLine(r));
         setBusy(null);
       });
-      return id;
-    });
-  }, []);
+    },
+    [guard],
+  );
   return { busy, line, owned, buy };
 }

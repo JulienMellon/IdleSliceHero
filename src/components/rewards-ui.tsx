@@ -88,7 +88,7 @@ const TaskItem = memo(function TaskItem({ index, title, starred, progress, pill,
         </Text>
         <View style={styles.barTrack}>
           <View style={[styles.barFill, { width: `${Math.round(pct * 100)}%` }, state !== 'todo' && { backgroundColor: C.basil }]} />
-          <Text style={styles.barText}>{progress}</Text>
+          {state !== 'todo' && <Text style={styles.barText}>{progress}</Text>}
         </View>
         <Text style={styles.taskReward} numberOfLines={1}>
           {reward}
@@ -105,7 +105,7 @@ const TaskItem = memo(function TaskItem({ index, title, starred, progress, pill,
           // U4: an unfinished task shows how far it is ("3 / 5"), not a padlock: the list reads as things to do, and Claim appears when one is done
           <>
             <View style={styles.lockPill} testID={`progress-${claimId}`} accessible accessibilityLabel={pillLabel}>
-              <Text style={[styles.pillText, pill.length > 8 ? styles.pillTextSmall : pill.length > 6 ? styles.pillTextMid : null]} numberOfLines={1} maxFontSizeMultiplier={1.1}>
+              <Text style={styles.pillText} numberOfLines={1} maxFontSizeMultiplier={1.1}>
                 {pill}
               </Text>
             </View>
@@ -461,10 +461,9 @@ const styles = StyleSheet.create({
   barTrack: { height: 16, borderRadius: 8, backgroundColor: '#F1E4D3', overflow: 'hidden', justifyContent: 'center' },
   barFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: C.cheese },
   barText: { fontFamily: F.semi, fontSize: 11, color: C.ink, textAlign: 'center' },
-  lockPill: { width: 60, height: 36, borderRadius: 12, backgroundColor: '#E2D9CE', alignItems: 'center', justifyContent: 'center' },
-  pillText: { fontFamily: F.bold, fontSize: 13, color: C.inkSoft },
-  pillTextMid: { fontSize: 11.5 },
-  pillTextSmall: { fontSize: 10 },
+  // D498: a plain cream label (the bar no longer repeats it), one size, and not button-shaped: no fill edge, no raised look
+  lockPill: { width: 84, height: 24, borderRadius: 12, backgroundColor: '#FFF4E0', alignItems: 'center', justifyContent: 'center' },
+  pillText: { fontFamily: F.bold, fontSize: 12, color: C.inkSoft },
   claimSlot: { width: 84, alignItems: 'center', justifyContent: 'center', gap: 4 },
   tick: { fontFamily: F.bold, fontSize: 26, color: C.basilDark },
   points: { backgroundColor: C.panel, borderRadius: 16, padding: 12, borderWidth: 3, borderColor: C.ink, gap: 4, ...shadow },

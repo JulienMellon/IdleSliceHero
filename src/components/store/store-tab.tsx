@@ -7,8 +7,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { analytics, EVENTS, purchases, type ProductId } from '../../services';
 import { queryFlag } from '../../services/query';
 import { C, F } from '../../theme';
-import { DiamondIcon, GiftIcon, StarIcon } from '../icons';
-import { pricesFrom, productRows, type Prices, type ProductRow } from './store-model';
+import { DiamondIcon } from '../icons';
+import { Portrait } from '../portrait';
+import { pricesFrom, productChips, PRODUCT_RIBBON, productRows, type Prices, type ProductRow } from './store-model';
+import { ChipRow, FounderAwning, Ribbon } from './store-art';
 import { usePurchase } from './use-purchase';
 
 /** The prices from the store, `null` while it is asked. */
@@ -33,25 +35,35 @@ export function usePrices(): Prices {
   return prices;
 }
 
-function ProductIcon({ id }: { id: ProductId }) {
-  return id === 'starter_pack' ? <GiftIcon size={40} /> : id === 'nonnas_plus' ? <StarIcon size={40} /> : <DiamondIcon size={40} />;
+/** The card's picture: the Founder awning over the Starter Pack, Nonna on her Plus, a diamond on a pack of them. */
+function ProductArt({ id }: { id: ProductId }) {
+  if (id === 'nonnas_plus') return <Portrait id="nonna-rosa" size={56} />;
+  if (id === 'starter_pack') return null;
+  return <DiamondIcon size={40} />;
 }
 
 const ProductCard = memo(function ProductCard({ id, title, blurb, label, state, enabled, busy, onBuy }: { id: ProductId; title: string; blurb: string; label: string; state: ProductRow['state']; enabled: boolean; busy: boolean; onBuy: (id: ProductId) => void }) {
   const press = useCallback(() => onBuy(id), [onBuy, id]);
+  const chips = productChips(id);
+  const ribbon = state === 'owned' ? undefined : PRODUCT_RIBBON[id];
   return (
     <View testID={`product-${id}`} style={styles.card}>
+      {id === 'starter_pack' && <FounderAwning height={52} />}
       <View style={styles.top}>
-        <ProductIcon id={id} />
+        <ProductArt id={id} />
         <View style={styles.text}>
-          <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.15}>
-            {title}
-          </Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.15}>
+              {title}
+            </Text>
+            {ribbon !== undefined && <Ribbon inline text={ribbon} />}
+          </View>
           <Text style={styles.desc} numberOfLines={3} maxFontSizeMultiplier={1.15}>
             {blurb}
           </Text>
         </View>
       </View>
+      <ChipRow chips={chips} />
       <Pressable
         testID={`buy-${id}`}
         accessibilityRole="button"
@@ -95,13 +107,14 @@ export function StoreTab() {
 const styles = StyleSheet.create({
   list: { gap: 10 },
   note: { fontFamily: F.semi, fontSize: 13, color: C.inkSoft, textAlign: 'center' },
-  card: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 2.5, borderColor: C.ink, padding: 10, gap: 8 },
+  card: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 2.5, borderColor: C.ink, padding: 10, paddingTop: 12, gap: 8, overflow: 'hidden' },
   top: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   text: { flex: 1 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   name: { fontFamily: F.bold, fontSize: 16, color: C.ink },
   desc: { fontFamily: F.regular, fontSize: 13, lineHeight: 16, color: C.inkSoft },
   btn: { minHeight: 44, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderBottomWidth: 4 },
-  btnBuy: { backgroundColor: '#2D8FD9', borderBottomColor: '#1D5F9A' },
+  btnBuy: { backgroundColor: C.basil, borderBottomColor: C.basilDark },
   btnOff: { backgroundColor: '#E2D9CE', borderBottomColor: '#C9BCAD' },
   btnOwned: { backgroundColor: '#fff', borderBottomColor: C.basil, borderWidth: 2, borderColor: C.basil },
   busy: { opacity: 0.6 },

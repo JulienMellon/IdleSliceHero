@@ -6,7 +6,8 @@ import { analytics, EVENTS, purchases } from '../../services';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { GiftIcon } from '../icons';
-import { PRODUCTS, productRows, starterShows } from './store-model';
+import { ChipRow, FounderAwning, Ribbon } from './store-art';
+import { PRODUCT_RIBBON, PRODUCTS, productChips, productRows, starterShows } from './store-model';
 import { usePrices } from './store-tab';
 import { usePurchase } from './use-purchase';
 
@@ -46,9 +47,14 @@ function StarterCard({ onClose }: { onClose: () => void }) {
   return (
     <View style={styles.overlay} testID="starter-sheet">
       <View style={styles.modal}>
-        <GiftIcon size={56} />
+        <Ribbon text={PRODUCT_RIBBON.starter_pack ?? ''} />
+        <FounderAwning height={64} />
+        <View style={styles.gift}>
+          <GiftIcon size={40} />
+        </View>
         <Text style={styles.head}>{PRODUCTS.starter_pack.title}</Text>
         <Text style={styles.body}>{bought ? line || 'Thank you! It’s yours.' : PRODUCTS.starter_pack.blurb}</Text>
+        {!bought && <ChipRow chips={productChips('starter_pack')} />}
         {!bought && row && (
           <Pressable
             testID="starter-buy"
@@ -74,11 +80,12 @@ function StarterCard({ onClose }: { onClose: () => void }) {
 
 const styles = StyleSheet.create({
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  modal: { backgroundColor: C.bg, borderRadius: 24, borderWidth: 4, borderColor: C.ink, padding: 18, alignItems: 'stretch', width: '100%', maxWidth: 360, gap: 10 },
+  modal: { backgroundColor: C.bg, borderRadius: 24, borderWidth: 4, borderColor: C.ink, padding: 18, paddingTop: 22, alignItems: 'stretch', width: '100%', maxWidth: 360, gap: 8 },
+  gift: { alignSelf: 'center' },
   head: { fontFamily: F.bold, fontSize: 24, color: C.ink, textAlign: 'center' },
   body: { fontFamily: F.semi, fontSize: 15, color: C.inkSoft, textAlign: 'center' },
   btn: { minHeight: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderBottomWidth: 4 },
-  btnBuy: { backgroundColor: '#2D8FD9', borderBottomColor: '#1D5F9A' },
+  btnBuy: { backgroundColor: C.basil, borderBottomColor: C.basilDark },
   btnOff: { backgroundColor: '#E2D9CE', borderBottomColor: '#C9BCAD' },
   btnText: { fontFamily: F.bold, fontSize: 17, color: '#fff' },
   line: { fontFamily: F.semi, fontSize: 13, color: C.ink, textAlign: 'center' },
