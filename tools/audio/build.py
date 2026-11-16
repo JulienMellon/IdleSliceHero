@@ -47,6 +47,30 @@ STING_LUFS = {'bottleneck': -22, 'upgrade': -20, 'fleet': -20, 'drone': -20, 'mi
 LUFS_OVERRIDE = {'reunion': -23.0, 'recipe': -21.0, 'offline_open': -20.0}
 
 
+def current_bank() -> str:
+    """The soundfont render.mjs will use: SF2 env, else the line in tools/audio/BANK, else TimGM6mb."""
+    if os.environ.get('SF2'):
+        return os.environ['SF2']
+    bf = os.path.join(HERE, 'BANK')
+    if os.path.exists(bf):
+        line = open(bf).read().split('\n')[0].strip()
+        if line:
+            return os.path.abspath(os.path.join(HERE, line))
+    return '/usr/share/sounds/sf2/TimGM6mb.sf2'
+
+
+def write_bank_json():
+    """build/bank.json: which soundfont this build rendered through. A separate file: write_manifest iterates report.json."""
+    import hashlib
+    path = current_bank()
+    h = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(1 << 20), b''):
+            h.update(chunk)
+    os.makedirs(os.path.join(HERE, 'build'), exist_ok=True)
+    json.dump({'name': os.path.basename(path), 'sha256': h.hexdigest()}, open(os.path.join(HERE, 'build', 'bank.json'), 'w'), indent=1)
+
+
 def tier_ok(info: dict, target: float) -> bool:
     """AU51/AU62: a file lands within 0.5 LU of its tier, unless the -6 dBFS ceiling stopped it (then quieter, never louder)."""
     return abs(info['lufs'] - target) <= 0.5 or (info['lufs'] < target and info['peak_dbfs'] >= CEILING - 0.6)
@@ -59,7 +83,9 @@ def main(only: set[str] | None = None):
     subprocess.run([sys.executable, os.path.join(HERE, 'compose.py'), MIDI], check=True, stdout=subprocess.DEVNULL)
     man = json.load(open(os.path.join(MIDI, 'manifest.json')))
     rp = os.path.join(HERE, 'build', 'report.json')
-    report = json.load(open(rp)) if only and os.path.exists(rp) else {}
+    if only and not os.path.exists(rp):  # a partial build would write a manifest holding only these cues
+        raise SystemExit('build/report.json is missing: run one full `python3 build.py` before a partial build.')
+    report = json.load(open(rp)) if only else {}
     for name, cue in man.items():
         if cue['kind'] == 'stem' or (only and name not in only):  # stems are rendered with the cue that owns them
             continue
@@ -111,6 +137,7 @@ def main(only: set[str] | None = None):
                 raise SystemExit(f'sfx {name}_{i}: {info["lufs"]} LUFS, tier {target} (peak {info["peak_dbfs"]})')
     os.makedirs(os.path.join(HERE, 'build'), exist_ok=True)
     post.write_report(os.path.join(HERE, 'build', 'report.json'), report)
+    write_bank_json()
     write_manifest(report)
     tot = {}
     for r in report.values():

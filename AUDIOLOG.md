@@ -40,3 +40,8 @@ Fixed (in code; not auditioned): AU73, AU74, AU75, AU60, AU61. The lofi loop is 
 5. Fast buying + rush + a milestone: nothing clips or blurs; then a daily claim and the offline Collect: you hear Collect every time (AU76).
 
 **Next ID:** AU78.
+
+## Music rewrite (2026-11-15)
+- R0 (the sound source): the Downtown chart can now be rendered through four soundfonts: A TimGM6mb (today's), B Fluid R3, C MuseScore General, D GeneralUser GS; `render.mjs` takes the bank from `SF2`, `tools/audio/BANK` or A, and `build/bank.json` records it. By the timbre proxy (2-5 kHz share, sustain ratio), D measures lowest on the front instruments; nothing was rendered into the app.
+- Stem audit on today's Downtown, Suburbs and Industrial through A: lead minus bed is -5.2, -6.7 and -1.2 LU, so the leads already sit at or below their beds (the plan's guess of +2 to +3 LU is not what these measure).
+- Not auditioned yet: `build/reel/R0.mp3` (one nylon-guitar sketch through each bank) is waiting for Julien's listen; no bank is chosen and no asset changed.

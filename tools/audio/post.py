@@ -12,10 +12,12 @@ SR = 44100
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
-def render_midi(mid_path: str, tail: float = 2.0) -> np.ndarray:
+def render_midi(mid_path: str, tail: float = 2.0, bank: str | None = None) -> np.ndarray:
+    """Render through the soundfont render.mjs picks (SF2 env, else tools/audio/BANK, else TimGM6mb); `bank` overrides it."""
     raw = mid_path + '.f32'
+    env = {**os.environ, 'SF2': bank} if bank else None
     subprocess.run(['node', os.path.join(HERE, 'render.mjs'), mid_path, raw, str(tail)], check=True,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=HERE)
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=HERE, env=env)
     a = np.fromfile(raw, dtype=np.float32).reshape(-1, 2).astype(np.float64)
     os.remove(raw)
     return a
