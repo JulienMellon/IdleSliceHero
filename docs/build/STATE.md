@@ -53,3 +53,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (
 - 2026-11-16 19:08 UTC Verify v5.17 PASS: True 0 [], layout 0 new; 13 new 77 changed. r1 reviews launched: critic, codecritic, audiocritic.
 - 2026-11-16 19:12 UTC v5.17 r1 reviews in: critic NOT SATISFIED (G108 bug, D496 major), code CHANGES REQUESTED (K1, C126 high), audio AU78 major. Fix round r2 pair 1: N1 + A1; then U3 + E, U4 + S, L1 + T.
 - 2026-11-16 19:14 UTC r2 N1 done (K1 C126-layout C131; services 56 pass). Needs -> U3: index.tsx:133 must not reload on active; UI must re-check ads.ready(). U3 launched.
+- 2026-11-16 19:15 UTC r2 A1 done (AU78-AU81 C132 U20 T80 M67; audio 59 pass). E launched on v5.16 card-E0.
