@@ -4,8 +4,8 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.17
-step: review                    # setup | waves | verify | review | fix | close
-round: r1              # r1 | r2 | r3
+step: fix                       # setup | waves | verify | review | fix | close
+round: r2              # r1 | r2 | r3
 last_shots: v5.17              # label of the last screenshot set that passed verify
 codecritic_range_start: aff34d1
 cards:                 # todo | running | done | partial | blocked
@@ -13,7 +13,7 @@ cards:                 # todo | running | done | partial | blocked
   N1 done  A1 done  U3 done  L1 done  U4 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.17/review-r1-critic.md (r1 NOT SATISFIED; bug 1 major 1 minor 17; E2 U12 S4 T1; G108 bug, D496 major)
-  code:   docs/build/v5.16/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 3 low 23; E16 U5 S3 A2)
+  code:   docs/build/v5.17/review-r1-code.md (r1 CHANGES REQUESTED; blocker/high 2 medium 7 low 30; E20 U9 S3 N3 A5; K1 C126 high)
   story:  docs/build/v5.16/review-r3-story.md (r3 SATISFIED; bug 0 major 0 minor 1; U1)
   audio:  docs/build/v5.17/review-r1-audio.md (r1 NOT SATISFIED, advisory; bug 0 major 1 minor 6; N1 A7; AU78 major; next ID AU82)
 open: v5.16 carried: critic minors (docs/build/v5.16/review-r3-critic.md: D481 D482 D489 D490 D493 D495 D475 D450 D462 D478); story S48 (docs/build/v5.16/review-r3-story.md); code C116 C117 A32 + lows (docs/build/v5.16/review-r2-code.md). W2 card Protected list still names old downtown-4 line (now "Two thousand deliveries", Julien 2026-11-15). Julien approved Todd rewrites S37 S38 S41 S43; D493 carried by choice. loop_stats.py cannot read loop: commits. Programmer cards: --only takes the fixture name without .py.
@@ -51,3 +51,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (
 - 2026-11-16 18:44 UTC v5.17 r1 new session: npm ci + playwright installed; N1 launched for tracking prompt (Julien YES). Verify waits for N1.
 - 2026-11-16 18:45 UTC v5.17 r1 N1 done (tracking prompt wired, manifest tracking on; services 49 pass). Carried for Julien: App Store privacy label must show Tracking = Yes. Verify v5.17 started.
 - 2026-11-16 19:08 UTC Verify v5.17 PASS: True 0 [], layout 0 new; 13 new 77 changed. r1 reviews launched: critic, codecritic, audiocritic.
+- 2026-11-16 19:12 UTC v5.17 r1 reviews in: critic NOT SATISFIED (G108 bug, D496 major), code CHANGES REQUESTED (K1, C126 high), audio AU78 major. Fix round r2 pair 1: N1 + A1; then U3 + E, U4 + S, L1 + T.
