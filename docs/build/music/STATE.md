@@ -4,15 +4,15 @@ Keep this file under 30 lines. It is the only file the music orchestrator edits 
 
 ```
 round: R1              # R0 | R1 | R2 | done
-step: cards            # cards | verify | review | fix | reel | listen
+step: listen           # cards | verify | review | fix | reel | listen
 bank: C MuseScore_General_Full.sf3      # letter and file name once Julien picks (R0)
 cards:                 # todo | running | done | partial | blocked
   M0 done, M1a done, M1b done, M1c done
 review: docs/build/music/review-R1-audio.md NOT SATISFIED, bugs 0 major 1 (AU78 fixed) minor 6 open (AU79-AU84), next ID AU85
-last_reel: tools/audio/build/reel/R1.mp3 (2026-11-16, sent)
+last_reel: tools/audio/build/reel/R1.mp3 (2026-11-16, after notes round 1, sent)
 heard: R0 → "C"           # round → Julien's verdict in five words
 open: none
-next: notes round 1 on R1 running (card-NOTES.md, notes/R1.md); then verify, commit, reel R1, stop
+next: await Julien (notes round 1 of R1 done): do the piano chords still drone, are the loops relaxing enough? "go" starts R2 (default: build nothing). A second notes round without a yes → ask about bank or instrument change before a third
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
@@ -26,3 +26,4 @@ next: notes round 1 on R1 running (card-NOTES.md, notes/R1.md); then verify, com
 - 2026-11-16 R1 verified and committed e950b8f; review NOT SATISFIED (0/1/6), AU78 major: motif tonic held over I maj9; fix pass launched.
 - 2026-11-16 R1 fix pass DONE (AU78: 6/9 voicings, clash check in build). Built: 5 cues, audio 13.87 MB of 14 (13866695 B), lead minus bed -2.9 to -3.6 LU. Verified (1581 tests); reel R1 sent; step listen.
 - 2026-11-16 Julien heard R1: notes, no yes (droning sustained piano chords on 4 loops; likes track 1 and the swung hats). Notes round 1 launched.
+- 2026-11-16 R1 notes round 1 DONE. Built: 8 loops, audio 13.88 MB of 14 (13875021 B), lead minus bed -2.4 to -3.5 LU; chords overlapping the next change 22-45 per loop → 0 (university 2). Verified (1581 tests), committed c647b26; reel R1 sent; step listen. Needs: nothing (fresh container needs apt-get update before fetch_bank.sh).
