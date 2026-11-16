@@ -5,16 +5,16 @@ Numbers come from `tools/audio/build/report.json` of the full build (seam, LUFS,
 
 | Cue | Seconds | LUFS (tier) | Peak dBFS | Seam step / 99th pct | KB | GM programs in front | Lead minus bed (LU) |
 |---|---|---|---|---|---|---|---|
-| downtown | 94.55 | -20.0 (-20.0) | -7.8 | 0.0013 / 0.02217 | 1144.7 | nylon 25 (lead), Rhodes 5, warm pad 90, upright bass 33, brush kit | -3.0 |
-| downtown_sparse | 94.55 | -22.0 (-22.0) | -12.0 | 0.00046 / 0.01114 | 1129.8 | nylon 25 (lead and arpeggio), Rhodes 5 | -3.1 |
-| suburbs | 89.30 | -20.0 (-20.0) | -7.5 | 0.00044 / 0.0248 | 1085.6 | vibraphone 12 and jazz guitar 27 (leads), glockenspiel 10 (velocity 40 max), Rhodes 5, upright bass 33, brush kit | -3.1 |
+| downtown | 94.55 | -20.0 (-20.0) | -7.9 | 0.00131 / 0.02227 | 1145.2 | nylon 25 (lead), Rhodes 5, warm pad 90, upright bass 33, brush kit | -2.9 |
+| downtown_sparse | 94.55 | -22.0 (-22.0) | -12.0 | 0.00046 / 0.01122 | 1130.0 | nylon 25 (lead and arpeggio), Rhodes 5 | -3.0 |
+| suburbs | 89.30 | -20.0 (-20.0) | -7.5 | 0.00044 / 0.02481 | 1084.1 | vibraphone 12 and jazz guitar 27 (leads), glockenspiel 10 (velocity 40 max), Rhodes 5, upright bass 33, brush kit | -3.1 |
 | waterfront | 96.00 | -20.0 (-20.0) | -7.4 | 0.00062 / 0.02544 | 1165.9 | harp 47 and marimba 13 (leads and arpeggio), Rhodes 5, upright bass 33, brush kit with shaker | -3.1 |
-| university | 101.05 | -20.0 (-20.0) | -7.8 | 0.00158 / 0.02193 | 1226.0 | kalimba 109 and vibraphone 12 (leads, velocity 50 max), Rhodes 5, finger bass 34, brush kit | -3.0 |
+| university | 101.05 | -20.0 (-20.0) | -7.8 | 0.00158 / 0.02196 | 1226.4 | kalimba 109 and vibraphone 12 (leads, velocity 50 max), Rhodes 5, finger bass 34, brush kit | -3.0 |
 | industrial | 113.68 | -20.0 (-20.0) | -7.7 | 0.00253 / 0.02764 | 1375.1 | vibraphone 12 (lead), flute 74 (lead, chorus 3), clean guitar 28, Rhodes 5, warm pad 90, upright bass 33, brush kit | -3.6 |
-| uptown | 91.43 | -20.0 (-20.0) | -7.2 | 0.0017 / 0.02559 | 1113.3 | nylon 25 (lead), piano 1, jazz guitar 27 (pompe), harp 47 (tag), upright bass 33, brush kit | -3.0 |
+| uptown | 91.43 | -20.0 (-20.0) | -7.2 | 0.00169 / 0.02558 | 1113.2 | nylon 25 (lead), piano 1, jazz guitar 27 (pompe), harp 47 (tag), upright bass 33, brush kit | -3.0 |
 | megaslice_hq | 53.68 | -19.0 (-19.0) | -7.1 | 0.00013 / 0.02129 | 652.0 | Rhodes 5 (villain motif and comping), upright bass 33, pizzicato 46, brush kit | -3.4 |
 
-Audio total: 13.22 MB of 14 (`du -sb assets/audio` = 13,867,227 bytes, limit 14,680,064; build summary in MiB: loops 8.68, stingers 2.95, story 1.43, sfx 0.17). Margin 0.78 MB, so no bars were trimmed. Sound effects restored with `git checkout -- assets/audio/sfx` (`git status` there is empty).
+Audio total: 13.22 MB of 14 (`du -sb assets/audio` = 13,866,695 bytes, limit 14,680,064; build summary in MiB: loops 8.68, stingers 2.95, story 1.43, sfx 0.17). Margin 0.78 MB, so no bars were trimmed. Sound effects restored with `git checkout -- assets/audio/sfx` (`git status` there is empty).
 
 ## What was done
 - **Industrial** (A, 76 bpm, triplet shuffle 66.7%, 36 bars, 113.68 s, same as before). `industrial_chart()` is one 12-bar jazz blues played three times: A9 | A13 | A9 | Em9 A7b9 | D9 | D13 D#dim7 | A9 | A13 F#7b9 | Bm9 E13 | Dm9 G13 | A9 F#7b9 | Bm9 E7b9. `barRoots` come from `Harmony.roots` (36 entries). Chorus 1 has no lead (a six-note guitar riff on bars 1 and 5). Chorus 2: vibraphone states the motif (bars 1-2), develops it on the IV (bars 5-6), answers over the turnaround (bars 9-10). Chorus 3: the flute (velocity 50 max, an octave up) states it, the vibraphone develops and answers; no lead in bar 12. Each third carries a flat-3 grace note. Motif statements: 2. The organ pad is now a warm pad 90 (velocity 28, 8 bars of chorus 3); the ghost accordion and the tenor sax are gone. Bass: two-feel in chorus 1, walking in 2 and 3.
@@ -27,3 +27,10 @@ Audio total: 13.22 MB of 14 (`du -sb assets/audio` = 13,867,227 bytes, limit 14,
 
 ## Code
 `tools/audio/compose.py`: `industrial_chart`/`industrial`, `uptown_chart`/`uptown`, `hq_chart` and the HQ part of `megaslice` rewritten; new helper `stabs`; `JAZZ` holds all eight loops. `tools/audio/build.py`, `tools/audio/audit.py` as above. The rep stings and Victor's exit inside `megaslice` are untouched.
+
+## Fix pass on review R1 (AU78)
+- AU78 (major): where a lead holds degree 1 for a beat or more, the I chord is now 6/9 instead of maj9. Suburbs, University and Uptown `a_h`: bar 2 beats 3-4 and bar 4. Downtown `a_m`, `a_close`, `a2`: the I bars after the ii-V and the A's first bar (`target_q='6/9'`). University `half` (bed2, under the half-speed Rhodes motif): bars 1 and 4.
+- Beyond the note, the new check also found Downtown B: A held over A7b9 (b1 bar 3, now A9) and F held over Bb maj7#11 (b1 and b2 bar 6, now Bb 6/9). Those two are chord changes the review did not list.
+- Check: `compose.clash_scan` and `clash_assert` (new, run in the loops of Suburbs, University, Downtown and Uptown) fail the build when a lead note of one beat or more (kalimba arpeggio steps: 0.4 beat) lies 1 or 13 semitones from a note of the chord under it. The chords tested are the Rhodes comp voicings (`jazz.comp_voicings`, new: `comp` now reads its voicings from it, output unchanged) and the default low voicing the pad and arpeggios use. A lead note whose pitch class is already in the voicing is not counted: a min9's 9th and 3rd are a semitone apart by definition. Before the fix: 12 hits in Suburbs under the first rule, 4 once doubled notes were excluded; the final scan finds 0 in all four loops.
+- Rebuilt: downtown, downtown_sparse, suburbs, university, uptown (partial build). `barRoots` and seconds are unchanged, so `src/audio/manifest.ts` did not change; `downtown_sparse` still asserts the same roots as `downtown`. Rows above are from the new `report.json`. Audit lead minus bed re-run on all eight: -2.9 to -3.6 LU. tsc clean, jest 53 passed, `du -sb assets/audio` 13,866,695 (under 14,680,064), `git status assets/audio/sfx` empty, reel R1 -16.0 LUFS peak -2.1 dBFS.
+- Not touched (minor notes AU79-AU84 are not in this pass).

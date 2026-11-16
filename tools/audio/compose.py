@@ -181,6 +181,45 @@ def jazz_finish(s: Song, ratio: float, leads=(), lead_cap: int = 56, laid_ms: fl
     jazz.laid_back(s.tracks, laid_ms, s.bpm)
 
 
+CLASH_INTERVALS = (1, 13)  # a semitone or a minor ninth between a held lead note and a note of the chord under it
+
+
+def clash_scan(hm: jazz.Harmony, t0: float, notes, min_beats: float = 1.0, also_default: bool = True) -> list:
+    """AU78: every held lead note (`notes`: (start, beats, pitch) events of one section that starts at beat `t0`) that sits a
+    semitone or a minor ninth from a note of a chord it overlaps for `min_beats` or more. The chords are the voicings the Rhodes
+    comp plays (`jazz.comp_voicings`) and, with `also_default`, the nearest-the-low-register voicing the pads and arpeggios use.
+    Returns (beat, lead pitch, chord note, chord degree, quality) tuples; an empty list is a pass."""
+    comp_v = jazz.comp_voicings(hm)
+    out = []
+    for (u, d, pi) in notes:
+        if d < min_beats - 1e-9:
+            continue
+        # a lead note that doubles a note of the voicing is the chord's own interval (a min9's 9th and 3rd, say): not a clash
+        for ((c0, ch), cv) in zip(hm.chords(t0), comp_v):
+            if min(u + d, c0 + ch.beats) - max(u, c0) < min_beats - 1e-9:
+                continue
+            voicings = [cv] + ([jazz.voicing_off(hm.key, ch.off, ch.q)] if also_default else [])
+            for v in voicings:
+                if pi % 12 in {q % 12 for q in v}:
+                    continue
+                for q in v:
+                    if abs(pi - q) in CLASH_INTERVALS:
+                        out.append((round(u, 2), pi, q, ch.off, ch.q))
+    return sorted(set(out))
+
+
+def lead_mark(*tracks) -> list:
+    """Remember where each lead track's events stand, so `clash_assert` can look at just the notes a section added."""
+    return [(tr, len(tr.events)) for tr in tracks]
+
+
+def clash_assert(name: str, hm: jazz.Harmony, t0: float, mark: list, min_beats: float = 1.0) -> None:
+    """AU78 build check: no lead note added since `mark` may sit a semitone or a minor ninth from the chord under it."""
+    notes = [(u, d, pi) for (tr, n) in mark for (u, d, pi, _v) in tr.events[n:]]
+    bad = clash_scan(hm, t0, notes, min_beats)
+    assert not bad, f'{name}: lead clashes with its chord (beat, lead, chord note, root offset, quality): {bad}'
+
+
 def finish(song: Song, name: str, bars: int, bar_beats: float, ts, kind: str, extra=None):
     beats = bars * bar_beats
     if name in JAZZ:
@@ -203,20 +242,20 @@ def downtown_chart() -> list:
     K, B = 'F', 3.0
     hold, bars, ii_V_I = jazz.hold, jazz.bars, jazz.ii_V_I
     intro = hold(K, B, 'I', 'maj9') + hold(K, B, 'I', '6/9') + jazz.i_vi_ii_V(K, B)           # home, then I vi | ii V
-    a_m = hold(K, B, 'I', 'maj9') + ii_V_I(K, B) + hold(K, B, 'I', '6/9')                     # Fmaj9 | Gm9 C13 | Fmaj9 | F6/9
+    a_m = hold(K, B, 'I', '6/9') + ii_V_I(K, B, target_q='6/9') + hold(K, B, 'I', '6/9')      # F6/9 | Gm9 C13 | F6/9 | F6/9 (AU78: the lead holds F)
     a_ans = (hold(K, B, 'IV', 'maj9') + ii_V_I(K, B, resolve=False, v_q='dom7b9') + hold(K, B, 'I', 'maj9')
              + ii_V_I(K, B, 'IV', resolve=False))                                              # Bbmaj9 | Gm9 C7b9 | Fmaj9 | Cm9 F13
     a_dev = bars(K, B, [('IV', '6/9', 3)], [('I', 'maj9', 3)], [('ii', 'min11', 3)], [('vi', 'sus13', 3)])
-    a_close = ii_V_I(K, B, shape='bar') + jazz.backdoor(K, B, resolve=False)                  # Gm9 | C13 | Fmaj9 | Bbm9 Eb13
+    a_close = ii_V_I(K, B, target_q='6/9', shape='bar') + jazz.backdoor(K, B, resolve=False)                  # Gm9 | C13 | F6/9 | Bbm9 Eb13
     bed1 = (hold(K, B, 'I', 'maj9') + hold(K, B, 'IV', 'maj9') + ii_V_I(K, B, resolve=False)
             + bars(K, B, [('I', 'maj9', 1.5), ('iii', 'dom7b9', 1.5)]))                       # ... Fmaj9 A7b9 into Dm
-    b1 = bars(K, B, [('vi', 'min9', 3)], [('ii', 'min11', 3)], [('iii', 'min9', 1.5), ('iii', 'dom7b9', 1.5)],
-              [('vi', 'min11', 1.5), ('IV', 'maj7s11', 1.5)], [('vi', 'min9', 3)], [('IV', 'maj7s11', 3)],
+    b1 = bars(K, B, [('vi', 'min9', 3)], [('ii', 'min11', 3)], [('iii', 'min9', 1.5), ('iii', 'dom9', 1.5)],
+              [('vi', 'min11', 1.5), ('IV', 'maj7s11', 1.5)], [('vi', 'min9', 3)], [('IV', '6/9', 3)],
               [('V', 'dom9', 3)], [('ii', 'min9', 1.5), ('iii', 'dom7b9', 1.5)])
     b2 = bars(K, B, [('vi', 'min9', 3)], [('ii', 'min11', 3)], [('iii', 'min9', 1.5), ('bvii', 'dom13', 1.5)],
-              [('vi', 'min11', 1.5), ('iii', 'sus13', 1.5)], [('vi', 'min9', 3)], [('IV', 'maj7s11', 3)],
+              [('vi', 'min11', 1.5), ('iii', 'sus13', 1.5)], [('vi', 'min9', 3)], [('IV', '6/9', 3)],
               [('V', 'dom9', 3)], [('ii', 'min9', 1.5), ('V', 'dom7b9', 1.5)])
-    a2 = ii_V_I(K, B, shape='bar') + ii_V_I(K, B, resolve=False, tritone=True)               # Gm9 | C13 | Fmaj9 | Gm9 Gb13
+    a2 = ii_V_I(K, B, target_q='6/9', shape='bar') + ii_V_I(K, B, resolve=False, tritone=True)  # Gm9 | C13 | F6/9 | Gm9 Gb13
     bed2 = (hold(K, B, 'I', 'maj9') + hold(K, B, 'I', '6/9')
             + bars(K, B, [('I', 'maj9', 1.5), ('#iv', 'dim7', 1.5)]) + ii_V_I(K, B, resolve=False))
     # The melody of each 4-bar phrase and which chart bars it sits on. The A phrases are M, ANS, DEV, CLOSE.
@@ -265,9 +304,11 @@ def downtown(sparse=False):
                 for k in range(int(math.ceil(ch.beats))):
                     arp.n(u + k, 1.1, tones[k % 4], 34)
         if mel:
+            mark = lead_mark(lead)
             if sec in ('A', 'A2') and mel is M.M68:
                 pickup(lead, R, md, t, 44, shift=-12)
             melody(lead, R, mel, md, t, B, vel=44 if sec != 'B' else 42, shift=-12)
+            clash_assert('downtown', hm, t, mark)
         t += nb * B
         bar_i += nb
     if sparse:  # AU20: before Nonna takes over, just the nylon guitar and the Rhodes
@@ -356,8 +397,8 @@ def suburbs_chart() -> list:
     K, B = 'G', 4.0
     hold, bars = jazz.hold, jazz.bars
     intro = jazz.i_vi_ii_V(K, B) + hold(K, B, 'I', 'maj9') + hold(K, B, 'I', '6/9')           # Gmaj9 Em9 | Am9 D13 | Gmaj9 | G6/9
-    a_h = (hold(K, B, 'I', '6/9') + bars(K, B, [('V', 'dom13', 2), ('I', 'maj9', 2)])
-           + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]) + hold(K, B, 'I', 'maj9'))
+    a_h = (hold(K, B, 'I', '6/9') + bars(K, B, [('V', 'dom13', 2), ('I', '6/9', 2)])
+           + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]) + hold(K, B, 'I', '6/9'))     # AU78: the lead holds degree 1
     bed1 = (hold(K, B, 'I', 'maj9') + hold(K, B, 'IV', 'maj7s11') + bars(K, B, [('iii', 'min9', 2), ('vi', 'dom7b9', 2)])
             + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]))                              # ... D13 falls to the B's Em9
     bed2 = (hold(K, B, 'I', 'maj9') + hold(K, B, 'IV', 'maj7s11') + bars(K, B, [('iii', 'min9', 2), ('vi', 'dom7b9', 2)])
@@ -410,11 +451,13 @@ def suburbs():
                     glk.n(u + (1.5 if i % 2 else 0.0), 1.2, vc[-1 - (i % 2)] + 12, 34)
         if mel:
             vel = {'vib': 46, 'gtr': 44}[w]
+            mark = lead_mark(vib, gtr)
             if sec == 'A':
                 pickup(who[w], R, md, t, 40)
             melody(who[w], R, mel, md, t, B, vel=vel, legato=0.9 if w == 'vib' else 0.8)
             if sec == 'B':  # the vibraphone doubles the guitar, very soft
                 melody(vib, R, mel, md, t, B, vel=30, legato=0.85)
+            clash_assert('suburbs', hm, t, mark)
         t += nb * B
         bar_i += nb
     bm = jazz.Harmony('G', B)
@@ -515,12 +558,12 @@ def university_chart() -> list:
     K, B = 'Bb', 4.0
     hold, bars = jazz.hold, jazz.bars
     intro = jazz.i_vi_ii_V(K, B) + hold(K, B, 'IV', 'maj9') + bars(K, B, [('iv', 'min9', 2), ('bvii', 'dom13', 2)])
-    a_h = (hold(K, B, 'I', '6/9') + bars(K, B, [('V', 'dom13', 2), ('I', 'maj9', 2)])
-           + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]) + hold(K, B, 'I', 'maj9'))
+    a_h = (hold(K, B, 'I', '6/9') + bars(K, B, [('V', 'dom13', 2), ('I', '6/9', 2)])
+           + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]) + hold(K, B, 'I', '6/9'))     # AU78: the lead holds degree 1
     bed1 = (hold(K, B, 'IV', 'maj9') + bars(K, B, [('iii', 'min9', 2), ('vi', 'dom7b9', 2)])
             + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]) + hold(K, B, 'I', 'maj9'))
-    half = (hold(K, B, 'I', 'maj9') + hold(K, B, 'vi', 'min9') + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)])
-            + hold(K, B, 'I', 'maj9'))                                    # under the Rhodes' half-speed motif
+    half = (hold(K, B, 'I', '6/9') + hold(K, B, 'vi', 'min9') + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)])
+            + hold(K, B, 'I', '6/9'))                                    # under the Rhodes' half-speed motif
     bed2 = (half + hold(K, B, 'IV', 'maj7s11') + bars(K, B, [('iii', 'min9', 2), ('vi', 'dom7b9', 2)])
             + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]) + hold(K, B, 'vi', 'min9'))
     tail = (hold(K, B, 'I', 'maj9') + hold(K, B, 'vi', 'min9') + hold(K, B, 'IV', 'maj9')
@@ -561,6 +604,7 @@ def university():
             for (u, ch) in hm.chords(t):
                 if ch.beats >= 4:
                     shim.n(u, ch.beats * 0.9, jazz.voicing_off(R, ch.off, ch.q)[-1] + 12, 24)
+        mark = lead_mark(kal, vib, rh)
         if sec == 'A':  # the motif, first statement: kalimba arpeggios, note on top of every other step
             for (u, d, pi) in M.bar_melody(R, mel, md, t, B, -12):
                 k = 0
@@ -578,6 +622,9 @@ def university():
                     kal.n(u + 0.5 * k, 0.45, tones[k % 6] + 12, 44 if k % 2 == 0 else 30)
         elif sec == 'bed' and hm.beats == 32.0:  # the second statement: the Rhodes at half speed over the bed's first 4 bars
             melody(rh, R, half_speed, md, t, B, vel=52, shift=0)
+        if sec in ('A', 'B') or (sec == 'bed' and hm.beats == 32.0):
+            # the kalimba's arpeggio steps are half a beat long: hold them to the same test as a sustained lead note
+            clash_assert('university', hm, t, mark, 0.4 if sec == 'A' else 1.0)
         t += nb * B
         bar_i += nb
     jazz_finish(s, 0.60, leads=('kalimba', 'vibraphone'), lead_cap=50, laid_ms=18.0)  # 60%: the HOODS 58% stays for the stingers
@@ -670,8 +717,8 @@ def uptown_chart() -> list:
     K, B = 'Eb', 4.0
     hold, bars = jazz.hold, jazz.bars
     intro = hold(K, B, 'I', 'maj9') + jazz.i_vi_ii_V(K, B) + hold(K, B, 'I', '6/9')
-    a_h = (hold(K, B, 'I', '6/9') + bars(K, B, [('V', 'dom13', 2), ('I', 'maj9', 2)])
-           + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]) + hold(K, B, 'I', 'maj9'))
+    a_h = (hold(K, B, 'I', '6/9') + bars(K, B, [('V', 'dom13', 2), ('I', '6/9', 2)])
+           + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]) + hold(K, B, 'I', '6/9'))     # AU78: the lead holds degree 1
     bed = (hold(K, B, 'I', 'maj9') + hold(K, B, 'IV', 'maj7s11') + bars(K, B, [('iii', 'min9', 2), ('vi', 'dom7b9', 2)])
            + bars(K, B, [('ii', 'min9', 2), ('V', 'dom13', 2)]))
     tag = bars(K, B, [('vi', 'min9', 4)], [('ii', 'min11', 4)], [('iii', 'min9', 2), ('vi', 'dom7b9', 2)],
@@ -714,11 +761,14 @@ def uptown():
         jazz.comp(pno, hm, jazz.SWING44, start=t, seed=61 + bar_i, vel=38 if quiet else 44)
         stabs(pompe, hm, t, vel=30 if quiet else 32, dur=0.3, near=58)
         jazz.brushes(perc, nb, jazz.SWING44, start=t, seed=71 + bar_i, scale=0.85 if quiet else 1.0, bar0=bar_i)
+        mark = lead_mark(mel)
         if sec == 'A':
             pickup(mel, R, md, t, 40, shift=-12)
             guitar_line(t, ml, 44)
         elif sec == 'B':
             melody(mel, R, ml, md, t, B, vel=44, legato=0.85, shift=-12)
+        if sec in ('A', 'B'):
+            clash_assert('uptown', hm, t, mark)
         elif sec == 'tag':  # the harp: each chord rolled up its voicing, one tone a beat (two a beat on a half bar's chord)
             for (u, ch) in hm.chords(t):
                 vc = jazz.voicing_off(R, ch.off, ch.q)

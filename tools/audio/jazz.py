@@ -233,6 +233,16 @@ def _pc(key, ch: Ch) -> int:
     return (tonic(key) + ch.off) % 12
 
 
+def comp_voicings(h: Harmony, near: float | None = None) -> list[list[int]]:
+    """The voicing `comp` plays for each chord of `h`, in order: each follows the nearest octave to the one before it."""
+    out, prev = [], near
+    for (_t, ch) in h.chords(0.0):
+        v = voicing_off(h.key, ch.off, ch.q, prev)
+        prev = sum(v) / len(v)
+        out.append(v)
+    return out
+
+
 # --- keys -------------------------------------------------------------------------------------------------------------
 def comp(track: Track, h: Harmony, feel: Feel, start: float = 0.0, seed: int = 1, vel: int = 46, strum: float = 0.03,
          antic_p: float = 0.3, answer_p: float = 0.7, near: float | None = None) -> None:
@@ -241,15 +251,12 @@ def comp(track: Track, h: Harmony, feel: Feel, start: float = 0.0, seed: int = 1
     pulse is struck `feel.antic` early (and not re-struck on its downbeat). Voicings follow the nearest octave."""
     rng = random.Random(seed)
     chords = h.chords(start)
-    prev = near
 
     def hit(t, notes, dur, v):
         for i, q in enumerate(notes):
             track.n(t + strum * i, dur, q, v - 2 * i)
 
-    for i, (t, ch) in enumerate(chords):
-        v = voicing_off(h.key, ch.off, ch.q, prev)
-        prev = sum(v) / len(v)
+    for i, ((t, ch), v) in enumerate(zip(chords, comp_voicings(h, near))):
         early = i > 0 and chords[i - 1][1].beats >= feel.pulse and rng.random() < antic_p
         if early:
             hit(t - feel.antic, v, ch.beats + feel.antic * 0.9, vel - 4)
