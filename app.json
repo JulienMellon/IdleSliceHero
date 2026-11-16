@@ -16,13 +16,15 @@
         "GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511"
       },
       "privacyManifests": {
-        "NSPrivacyTracking": false,
-        "NSPrivacyTrackingDomains": [],
+        "NSPrivacyTracking": true,
+        "NSPrivacyTrackingDomains": [
+          "googleads.g.doubleclick.net"
+        ],
         "NSPrivacyCollectedDataTypes": [
           {
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeDeviceID",
             "NSPrivacyCollectedDataTypeLinked": true,
-            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypeTracking": true,
             "NSPrivacyCollectedDataTypePurposes": [
               "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising",
               "NSPrivacyCollectedDataTypePurposeAnalytics"
@@ -40,7 +42,7 @@
           {
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeAdvertisingData",
             "NSPrivacyCollectedDataTypeLinked": true,
-            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypeTracking": true,
             "NSPrivacyCollectedDataTypePurposes": [
               "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising",
               "NSPrivacyCollectedDataTypePurposeAnalytics"
@@ -49,7 +51,7 @@
           {
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
             "NSPrivacyCollectedDataTypeLinked": true,
-            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypeTracking": true,
             "NSPrivacyCollectedDataTypePurposes": [
               "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising",
               "NSPrivacyCollectedDataTypePurposeAnalytics"
@@ -58,7 +60,7 @@
           {
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePerformanceData",
             "NSPrivacyCollectedDataTypeLinked": true,
-            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypeTracking": true,
             "NSPrivacyCollectedDataTypePurposes": [
               "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising",
               "NSPrivacyCollectedDataTypePurposeAnalytics"
@@ -76,7 +78,7 @@
           {
             "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeCoarseLocation",
             "NSPrivacyCollectedDataTypeLinked": true,
-            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypeTracking": true,
             "NSPrivacyCollectedDataTypePurposes": [
               "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising",
               "NSPrivacyCollectedDataTypePurposeAnalytics"
@@ -159,6 +161,12 @@
           ]
         }
       ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "Slice Empire uses this to show ads that suit you. You can say no and still play."
+        }
+      ],
       "@sentry/react-native/expo",
       [
         "react-native-audio-api",
@@ -179,7 +187,7 @@
         "keys": "SDK keys are read in code from EXPO_PUBLIC_ADMOB_REWARDED_IOS, EXPO_PUBLIC_REVENUECAT_IOS_KEY, EXPO_PUBLIC_POSTHOG_KEY, EXPO_PUBLIC_POSTHOG_HOST and EXPO_PUBLIC_SENTRY_DSN; all default to empty (the service is then off). None is committed.",
         "sentry": "Set SENTRY_DISABLE_AUTO_UPLOAD=true for builds without SENTRY_AUTH_TOKEN.",
         "privacy": "ios.privacyManifests follows docs/specs/APP-PRIVACY-LABEL-AND-AGE-RATING.md for linked flags and purposes (Crash Data is not linked: Sentry has no user set). Re-check against the SDK versions on the day of submission.",
-        "tracking": "TRACKING IS OFF TODAY: NSPrivacyTracking is false, NSPrivacyTrackingDomains is empty and every NSPrivacyCollectedDataTypeTracking is false, because the ATT prompt is stubbed (ads.native.ts) and AdMob serves non-personalised ads. When expo-tracking-transparency lands and the prompt is wired: set NSPrivacyTracking true, add googleads.g.doubleclick.net to NSPrivacyTrackingDomains, and set NSPrivacyCollectedDataTypeTracking true on Device ID, Advertising Data, Product Interaction, Performance Data and Coarse Location (the spec's Tracking = Yes rows)."
+        "tracking": "TRACKING IS ON: the ATT prompt is wired in ads.native.ts (expo-tracking-transparency), shown after the tutorial and before the first ad. NSPrivacyTracking is true, NSPrivacyTrackingDomains lists googleads.g.doubleclick.net and NSPrivacyCollectedDataTypeTracking is true on Device ID, Advertising Data, Product Interaction, Performance Data and Coarse Location (the spec's Tracking = Yes rows). A refused prompt still gets a non-personalised ad. Decided 2026-11-16."
       }
     }
   }

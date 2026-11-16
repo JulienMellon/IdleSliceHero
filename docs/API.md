@@ -438,7 +438,10 @@
 - coachStep(s: G.GameState): CoachStep | null — src/engine/tutorial.ts:38 — The current step, or null when the tutorial isn't running (not started, done, or a GM already runs …
 - tutorialAdvance(s: G.GameState): G.GameState — src/engine/tutorial.ts:85 — Move past every finished step (several can finish at once).
 - tutorialHoldsStory(s: G.GameState) — src/engine/tutorial.ts:93 — Story scenes wait while Nonna is showing the first batch (steps 1–6).
-- types: CoachTarget, CoachStep
+- HINTS: readonly Hint[] — src/engine/tutorial.ts:97
+- hintsAllowed(s: G.GameState): Record<Hint, boolean> — src/engine/tutorial.ts:104 — v5.17 (U4): one instruction at a time.
+- showLockedTabs(s: G.GameState): boolean — src/engine/tutorial.ts:113 — v5.17 (U4): the padlocked tabs of neighbourhoods that cannot be built yet only mean something once …
+- types: CoachTarget, CoachStep, Hint
 
 ## src/engine/vanity.ts
 - SOLD_SKIN_BASE (re-export) — src/engine/vanity.ts:7
@@ -459,7 +462,7 @@ BONUS, LUCKY_MULT, BONUS_VIEW, ORDER, ORDER_FAIL_LINE, OrderCast, ORDER_CAST, OR
 CITY_NAME, TUNING, STATIONS, OvenGrade, OVEN_GRADES, NONNA_TAKEOVER, FootprintTier, FOOTPRINTS, VehicleDef, VEHICLES, HEAD_COST_DOWNTOWN, NeighborhoodDef, NEIGHBORHOODS, SHOP_POS, MAP_VIEWBOX, DecorKind, DECOR_KINDS, DECOR_BOOST, DECOR_TIER_COST, DecorDef, DECOR, STORY_PACING, PIER9_BID, PerkDef, PERKS, HeadKind, HEAD_KINDS, HEAD_SHARE, GM_BOOST, HEADS_OFFLINE_SHARE, BATCH_GROWTH, HEADS, MANAGERS, HEAD_TITLE, HEAD_ROLE
 
 ## src/components/coin-layer.tsx
-- CoinLayer — src/components/coin-layer.tsx:28
+- CoinLayer — src/components/coin-layer.tsx:31
 
 ## src/components/pulse-bus.ts
 - onPayout(fn: Listener) — src/components/pulse-bus.ts:6
@@ -478,18 +481,18 @@ CITY_NAME, TUNING, STATIONS, OvenGrade, OVEN_GRADES, NONNA_TAKEOVER, FootprintTi
 - types: CoinLaunch
 
 ## src/components/slots.tsx
-- onOvenAsk(fn: () => void) — src/components/slots.tsx:75 — The screen listens here; returns the unsubscribe.
-- askOven() — src/components/slots.tsx:82 — Ask the screen to open Nonna's night-oven sheet (it also closes the drawer, tasks and calendar).
-- inOrder<P>(items: readonly SlotEntry<P>[]): readonly SlotEntry<P>[] — src/components/slots.tsx:87 — The entries in `order` (ascending, stable).
-- Slots({ items }: { items: readonly SlotEntry[] }) — src/components/slots.tsx:92 — Renders every entry of a prop-less slot.
-- SceneSlots({ items, shopId, width, height }: { items: readonly SlotEntry<SceneSlotProps>[]; shopId: string; w… — src/components/slots.tsx:104 — Renders every scene overlay with the shop and the scene size.
-- ReportSlots({ items, bottom }: { items: readonly SlotEntry<ShopReportSlotProps>[]; bottom: number }) — src/components/slots.tsx:116 — Renders every shop-report entry with the strip's `bottom`.
-- StoryWaitBanner — src/components/slots.tsx:162 — v5.16 (T1b): "Win over Industrial to continue Uptown’s story" (storyWaitHint), one line at the top …
-- HUD_CHIPS: SlotEntry[] — src/components/slots.tsx:175
-- HUD_TOP_CHIPS: SlotEntry[] — src/components/slots.tsx:189
-- BANNERS: SlotEntry[] — src/components/slots.tsx:191
-- SHEETS: SlotEntry[] — src/components/slots.tsx:203
-- SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] — src/components/slots.tsx:215
-- DRAWER_CARDS: SlotEntry[] — src/components/slots.tsx:217
-- SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] — src/components/slots.tsx:225
+- onOvenAsk(fn: () => void) — src/components/slots.tsx:77 — The screen listens here; returns the unsubscribe.
+- askOven() — src/components/slots.tsx:84 — Ask the screen to open Nonna's night-oven sheet (it also closes the drawer, tasks and calendar).
+- inOrder<P>(items: readonly SlotEntry<P>[]): readonly SlotEntry<P>[] — src/components/slots.tsx:89 — The entries in `order` (ascending, stable).
+- Slots({ items }: { items: readonly SlotEntry[] }) — src/components/slots.tsx:94 — Renders every entry of a prop-less slot.
+- SceneSlots({ items, shopId, width, height }: { items: readonly SlotEntry<SceneSlotProps>[]; shopId: string; w… — src/components/slots.tsx:106 — Renders every scene overlay with the shop and the scene size.
+- ReportSlots({ items, bottom }: { items: readonly SlotEntry<ShopReportSlotProps>[]; bottom: number }) — src/components/slots.tsx:118 — Renders every shop-report entry with the strip's `bottom`.
+- StoryWaitBanner — src/components/slots.tsx:164 — v5.16 (T1b): "Win over Industrial to continue Uptown’s story" (storyWaitHint), one line at the top …
+- HUD_CHIPS: SlotEntry[] — src/components/slots.tsx:177
+- HUD_TOP_CHIPS: SlotEntry[] — src/components/slots.tsx:191
+- BANNERS: SlotEntry[] — src/components/slots.tsx:193
+- SHEETS: SlotEntry[] — src/components/slots.tsx:205
+- SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] — src/components/slots.tsx:220
+- DRAWER_CARDS: SlotEntry[] — src/components/slots.tsx:222
+- SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] — src/components/slots.tsx:230
 - types: SlotProps, SceneSlotProps, ShopReportSlotProps, SlotEntry

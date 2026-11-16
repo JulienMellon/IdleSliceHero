@@ -1,4 +1,5 @@
 // iOS: Google AdMob rewarded video through react-native-google-mobile-ads. The flow (consent order, one ad at a time) is ad-flow.ts.
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import mobileAds, { AdEventType, AdsConsent, RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
 
 import { createAdFlow } from './ad-flow';
@@ -80,11 +81,15 @@ const flow = createAdFlow({
     const info = await AdsConsent.gatherConsent();
     return { canRequestAds: info.canRequestAds };
   },
-  /**
-   * The iOS tracking prompt. Needs `expo-tracking-transparency` (requestTrackingPermissionsAsync), which is not installed yet:
-   * until it is, report 'unsupported' and AdMob serves non-personalised ads. NSUserTrackingUsageDescription is already in app.json.
-   */
-  tracking: async () => 'unsupported',
+  /** The iOS tracking prompt (shown once by the OS; later calls return the stored answer). A refusal still gets a non-personalised ad. */
+  async tracking() {
+    try {
+      const r = await requestTrackingPermissionsAsync();
+      return r.granted ? 'granted' : 'denied';
+    } catch {
+      return 'unsupported';
+    }
+  },
   async showAd() {
     await initSdk();
     const slot = fresh() ? cached : await loadSlot();

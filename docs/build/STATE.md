@@ -49,3 +49,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (
 - 2026-11-15 v5.17 r1 U3 offer hold + 148 README row done (820 pass). All cards in. Verify v5.17: tsc pass; npm test running.
 - 2026-11-16 Session stopped by Julien (usage limit) during verify; next: resume verify.
 - 2026-11-16 18:44 UTC v5.17 r1 new session: npm ci + playwright installed; N1 launched for tracking prompt (Julien YES). Verify waits for N1.
+- 2026-11-16 18:45 UTC v5.17 r1 N1 done (tracking prompt wired, manifest tracking on; services 49 pass). Carried for Julien: App Store privacy label must show Tracking = Yes. Verify v5.17 started.
