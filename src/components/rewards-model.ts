@@ -223,10 +223,12 @@ export function giftText(g: GiftDef, cycle = 0): string {
   return parts.join(' · ');
 }
 
-export type GiftIconKind = 'coin' | 'bolt' | 'gem' | 'star';
+export type GiftIconKind = 'coin' | 'bolt' | 'gem' | 'star' | 'oven';
 
-/** The tile's icon: coin for cash, bolt for boosters and boosts, gem for diamonds, star for skins and the visit. */
+/** The tile's icon: coin for cash, bolt for boosters and boosts, gem for diamonds, star for skins, the gold oven for the day-30 prize (D499).
+ */
 export function giftIcon(g: GiftDef): GiftIconKind {
+  if (g.cosmetic === 'oven-gold') return 'oven';
   if (g.visit || g.cosmetic) return 'star';
   if (g.boostNow || g.boosters?.length) return 'bolt';
   if (g.diamonds) return 'gem';
@@ -266,7 +268,7 @@ export function giftTiles(s: GameState, now: number): GiftTile[] {
     else if (st.kind === 'save') state = day < st.day ? 'claimed' : day === st.day ? 'missed' : 'future';
     else state = day < st.day ? 'claimed' : day === st.day ? 'today' : 'future';
     const last = day === GIFT_LENGTH;
-    return { day, label: giftShort(g), icon: giftIcon(g), big: day in GIFT_MILESTONES, state, name: last ? g.name ?? 'Day 30 prize' : '', what: last ? giftText(g, st.cycle) : '' };
+    return { day, label: giftShort(g), icon: giftIcon(g), big: day in GIFT_MILESTONES, state, name: last ? g.name ?? 'Golden Oven' : '', what: last ? giftText(g, st.cycle) : '' };
   });
 }
 

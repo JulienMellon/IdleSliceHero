@@ -4,7 +4,7 @@ import * as G from '../../../engine/game';
 import { TAP } from '../../tap-targets';
 import { BONUS_VIEW } from '../../../content/hooks';
 import { bonusScale } from '../../../engine/bonus';
-import { EVENT_STRIP_SECONDS, flightBounds, holdsBonus, offerWaits, SKY_PRIORITY, type SkyItem, skyFirst, skyOf, skyPresence, skyShown, STACK, stackTop } from '../stack-model';
+import { EVENT_STRIP_SECONDS, flightBounds, holdsBonus, laneBottom, offerWaits, SIGN_GAP, SKY_PRIORITY, type SkyItem, skyFirst, skyOf, skyPresence, skyShown, STACK, stackTop } from '../stack-model';
 
 const base = (): G.GameState => G.newGame(1_700_000_000_000);
 const withAttack = (patch: Record<string, unknown>): G.GameState => {
@@ -141,5 +141,14 @@ describe('U4: one sky event at a time', () => {
         expect(side(to)[1]).toBeLessThanOrEqual(width - edge);
       }
     }
+  });
+});
+
+describe('the golden pizza and the roof sign (D501)', () => {
+  test('the lane floor is 24 pt above the band the sign leaves, and unknown stays unknown', () => {
+    expect(SIGN_GAP).toBe(24);
+    expect(laneBottom(200)).toBe(200 - 24);
+    expect(laneBottom(0)).toBe(0);
+    expect(laneBottom(10)).toBeGreaterThan(0);
   });
 });

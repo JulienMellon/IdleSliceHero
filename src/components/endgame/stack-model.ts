@@ -109,3 +109,9 @@ export function flightBounds(width: number, boxW: number, labelW = 0, edge: numb
 
 /** The box fades in over the first and out over the last of its flight (a share of the 0..1 flight), so it never pops at a stand-still. */
 export const FLIGHT_FADE = 0.06;
+
+/** D501: the golden box's lane ends this far above the roof sign (the sign's top, minus the band's own 5 pt), so the box never sits on the sign. */
+export const SIGN_GAP = 24;
+
+/** The sky band's bottom with the sign gap taken off; 0 (unknown) stays 0, and a band too short for the gap keeps 1 pt. */
+export const laneBottom = (bandBottom: number): number => (bandBottom > 0 ? Math.max(1, bandBottom - SIGN_GAP) : 0);

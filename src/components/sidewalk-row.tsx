@@ -35,7 +35,7 @@ function AmountChip({ amount, onPick }: { amount: BuyAmount; onPick: (a: BuyAmou
   );
 }
 
-export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlight = null, bundle = null, onBundle }: { game: G.GameState; id: NeighborhoodId; /** The hire stack replaces the framed cards: `hireOnSidewalk` (sidewalk-model.ts). */ idleShop: boolean; bottom: number; onBuy: (what: G.Upgrade) => boolean; onOpen: () => void; highlight?: StationKey | null; /** The tied stations' bundle: their cards merge into one "Buy both" card; null keeps them apart. */ bundle?: G.BundleHint | null; onBundle?: () => boolean }) {
+export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlight = null, bundle = null, onBundle, quiet = false }: { game: G.GameState; id: NeighborhoodId; /** The hire stack replaces the framed cards: `hireOnSidewalk` (sidewalk-model.ts). */ idleShop: boolean; bottom: number; onBuy: (what: G.Upgrade) => boolean; onOpen: () => void; highlight?: StationKey | null; /** The tied stations' bundle: their cards merge into one "Buy both" card; null keeps them apart. */ bundle?: G.BundleHint | null; onBundle?: () => boolean; /** D500: before the first roll the row steps back (faded, still tappable) so the hand on the prep table is the one cue. */ quiet?: boolean }) {
   // v5.15: the amount the player chose (not saved); a primitive, so the row repaints only when it changes
   const amount = useGame((s) => s.buyAmount);
   const toggleOn = rewardsUnlocked(game);
@@ -102,7 +102,7 @@ export function SidewalkRow({ game, id, idleShop, bottom, onBuy, onOpen, highlig
   const hireLabel = G.isHeadUpgrade(hire) ? `HIRE ${HEADS[id][G.headOf(hire)].toUpperCase()} · RUNS ${HEAD_ROLE[G.headOf(hire)].toUpperCase()} FOR YOU` : `HIRE A MANAGER · ×2 INCOME + EARNS AWAY`;
   return (
     <>
-    <View style={[styles.row, { bottom }]} pointerEvents="box-none">
+    <View style={[styles.row, { bottom }, quiet && styles.quiet]} pointerEvents="box-none">
       {toggleOn && <AmountChip amount={picked} onPick={useGame.getState().setBuyAmount} />}
       {idleShop ? (
         <View style={styles.idleStack}>
@@ -135,6 +135,7 @@ const look = (frame: 'hot' | 'waiting' | null, affordable: boolean) => {
 const shadow = { boxShadow: '0 4px 0 rgba(59,31,20,0.25)' } as object;
 const styles = StyleSheet.create({
   row: { position: 'absolute', left: SIDEWALK_ROW.edge, right: SIDEWALK_ROW.edge, flexDirection: 'row', gap: SIDEWALK_ROW.gap, alignItems: 'flex-end' },
+  quiet: { opacity: 0.5 },
   card: { flex: 1, height: SIDEWALK_ROW.cardHeight, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 12, borderWidth: STATION_CARD.border, borderColor: C.ink, padding: STATION_CARD.padding, ...shadow },
   // Nonna's tutorial points here: a gold frame
   cardCoach: { borderColor: '#FFC531', borderWidth: 4, borderStyle: 'solid' },

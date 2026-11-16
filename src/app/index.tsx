@@ -79,6 +79,19 @@ function drawerIcon(icon: DrawerIcon): React.ReactNode {
   }
 }
 
+/** M63: one element per icon, so the memoised StationCard sees the same prop on every tick. */
+const ICONS = new Map<string, React.ReactNode>();
+function cachedIcon(icon: DrawerIcon): React.ReactNode {
+  const k = icon.t === 'head' ? `head:${icon.kind}:${icon.name}` : icon.t === 'gm' ? `gm:${icon.name}` : icon.t === 'station' ? `st:${icon.what}` : icon.t === 'decor' ? `decor:${icon.kind}` : 'nonna';
+  let el = ICONS.get(k);
+  if (el === undefined) {
+    el = drawerIcon(icon);
+    ICONS.set(k, el);
+  }
+  return el;
+}
+const MOON_ICON = <MoonIcon size={26} />;
+
 type DrawerCardView = DrawerView['cards'][number];
 
 /** D494: a goal further than this many seconds of the city's income is skipped for a nearer one. */
@@ -96,6 +109,11 @@ export default function GameScreen() {
   const { tapShop, buy, buyFleet, buyDecor, build, setActive, dismissOffline, bidPier9, claimDaily, claimWeekly, claimChest, claimWeeklyChest, startBooster, claimGift, markGiftShown, buyNightOven } = useGame.getState();
   // stable (the store's actions never change), so the memoised drawer and calendar aren't re-rendered by them
   const taskActions = useMemo(() => ({ claimDaily, claimWeekly, claimChest, claimWeeklyChest, startBooster }), [claimDaily, claimWeekly, claimChest, claimWeeklyChest, startBooster]);
+  // M63: one stable buy handler for the drawer's cards; each card passes its own key ('fleet', 'decor:<kind>', 'up:<upgrade>')
+  const onDrawerBuy = useCallback((key: string) => {
+    const [t, arg] = key.split(':');
+    return t === 'fleet' ? buyFleet() : t === 'decor' ? buyDecor(arg as Parameters<typeof buyDecor>[0]) : buy(arg as Parameters<typeof buy>[0]);
+  }, [buy, buyFleet, buyDecor]);
   const onClaimGift = useCallback((repair: boolean) => claimGift(repair), [claimGift]);
   const titleDone = useGame((s) => s.titleDone);
   // stable, so the memoised scene isn't re-rendered by every 200 ms game tick
@@ -287,7 +305,7 @@ export default function GameScreen() {
     <StationCard
       key={c.key}
       testID={c.testID}
-      icon={drawerIcon(c.icon)}
+      icon={cachedIcon(c.icon)}
       title={c.title}
       level={c.level}
       detail={c.detail}
@@ -299,7 +317,8 @@ export default function GameScreen() {
       buyLabel={c.buyLabel}
       costLabel={c.costLabel}
       canBuy={c.canBuy}
-      onBuy={() => (c.buy.t === 'fleet' ? buyFleet() : c.buy.t === 'decor' ? buyDecor(c.buy.kind) : buy(c.buy.what))}
+      buyKey={c.buy.t === 'fleet' ? 'fleet' : c.buy.t === 'decor' ? `decor:${c.buy.kind}` : `up:${c.buy.what}`}
+      onBuyKey={onDrawerBuy}
     />
   );
 
@@ -340,7 +359,7 @@ export default function GameScreen() {
           />
         )}
         {/* upgrade row standing on the sidewalk */}
-        <SidewalkRow game={game} id={id} idleShop={idleShopHere} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} highlight={coach?.target === 'walk-ovens' ? 'ovens' : null}
+        <SidewalkRow game={game} id={id} idleShop={idleShopHere} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} highlight={coach?.target === 'walk-ovens' ? 'ovens' : null} quiet={coach?.id === 1}
           // the tied stations merge into one "Buy both" card in the row; kept apart while Nonna's coach is up
           bundle={showBundlePill(bundle, !!coach) ? bundle : null} onBundle={bundle ? () => buyBundle(bundle.steps, buy) : undefined} />
         {/* v5.16 (P1): the shop report's strip, one 44 pt row directly above the sidewalk row */}
@@ -395,7 +414,7 @@ export default function GameScreen() {
                 {ovenView && (
                   <StationCard
                     testID="buy-night-oven"
-                    icon={<MoonIcon size={26} />}
+                    icon={MOON_ICON}
                     // D487: "Night oven · 8 h" is short enough for one line, and the unit never breaks off the number
                     title={`Night oven · ${(ovenView.next ? ovenView.next.hours : ovenView.hours).replace(/(\d) h$/, '$1\u00A0h')}`}
                     detail={ovenView.next ? ovenView.next.lock ?? `Nonna keeps baking while you're away · now ${ovenView.hours}` : 'Biggest it gets'}

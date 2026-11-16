@@ -116,7 +116,7 @@ export interface GiftDef {
   cosmetic?: string;
   /** Day 30: the cycle's visitor (VISITORS) comes by. */
   visit?: boolean;
-  /** The prize's own name, for the calendar's big last cell (v5.17). PLACEHOLDER on day 30 until the writer names it. */
+  /** The prize's own name, for the calendar's big last cell (v5.17). Day 30: Nonna’s Golden Oven (D499; the writer may reword it). */
   name?: string;
 }
 
@@ -133,7 +133,7 @@ export const GIFT_MILESTONES: Readonly<Record<number, GiftDef>> = {
   14: { label: '3 boosters · 2× · 30 min', boosters: [{ mult: 2, minutes: 30 }, { mult: 2, minutes: 30 }, { mult: 2, minutes: 30 }] },
   21: { label: '2× income for 24 h', boostNow: { mult: 2, minutes: 24 * 60 } },
   28: { label: 'Storefront skin', cosmetic: 'storefront-skin-{cycle}' },
-  30: { label: 'Visit: 2× for 7 days', boostNow: { mult: 2, minutes: 7 * 24 * 60 }, diamonds: 300, cosmetic: 'oven-gold', visit: true, name: 'Day 30 prize' },
+  30: { label: 'Visit: 2× for 7 days', boostNow: { mult: 2, minutes: 7 * 24 * 60 }, diamonds: 300, cosmetic: 'oven-gold', visit: true, name: 'Nonna’s Golden Oven' },
 };
 
 /** The 30 gifts, day 1 first. */

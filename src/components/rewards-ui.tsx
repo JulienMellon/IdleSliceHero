@@ -3,7 +3,7 @@
 import { router } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
 import { DAILY_CHESTS, STREAK_SAVE_DIAMONDS } from '../content/rewards';
 import type { GameState } from '../engine/game';
@@ -56,7 +56,20 @@ function Diamonds({ n }: { n: number }) {
 const DIAMOND_INK = '#3B2A20';
 const MILESTONE_GOLD = '#F5B700';
 
+/** D499: the day-30 prize, a gold oven: arched mouth, a glowing fire and a chimney. */
+function GoldOvenIcon({ size }: { size: number }) {
+  return (
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={size} height={size} viewBox="0 0 32 32">
+      <Rect x={22} y={2} width={5} height={9} rx={1.5} fill="#B8860B" stroke="#3B1F14" strokeWidth={1.5} />
+      <Path d="M3 28 V16 A13 13 0 0 1 29 16 V28 Z" fill="#F5B700" stroke="#3B1F14" strokeWidth={2} strokeLinejoin="round" />
+      <Path d="M10 28 V21 A6 6 0 0 1 22 21 V28 Z" fill="#3B1F14" />
+      <Path d="M16 27 C12.5 27 12.5 22.5 16 19 C19.5 22.5 19.5 27 16 27 Z" fill="#FF7A1A" />
+    </Svg>
+  );
+}
+
 function KindIcon({ kind, size }: { kind: GiftIconKind; size: number }) {
+  if (kind === 'oven') return <GoldOvenIcon size={size} />;
   return kind === 'coin' ? <CoinIcon size={size} /> : kind === 'bolt' ? <BoostIcon size={size} /> : kind === 'gem' ? <DiamondIcon size={size} /> : <StarIcon size={size} />;
 }
 

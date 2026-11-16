@@ -31,8 +31,9 @@ const MegaShop = memo(function MegaShop({ shut }: { shut: number }) {
   const slats = Math.floor((winH * shut) / 4);
   return (
     <G>
-      {/* the far kerb it stands on, a little wider than the shop */}
-      <Rect x={-3} y={h * scale} width={w + 6} height={kerb} rx={1.5} fill="#9B9386" stroke={INK} strokeWidth={0.8} />
+      {/* the far kerb it stands on (D481): a pavement slab wider than the shop, drawn behind it so it reads as on the kerb, not on the asphalt */}
+      <Rect x={-RIVAL_SHOP.slab} y={h * scale - RIVAL_SHOP.slabRise} width={w + 2 * RIVAL_SHOP.slab} height={kerb + RIVAL_SHOP.slabRise} rx={2} fill="#D3CCBD" stroke={INK} strokeWidth={0.8} />
+      <Rect x={-RIVAL_SHOP.slab} y={h * scale + kerb - 2} width={w + 2 * RIVAL_SHOP.slab} height={2} fill="#9B9386" />
       <G transform={`scale(${scale})`}>
         <Rect x={0} y={6} width={aw} height={h - 6} rx={4} fill={PURPLE} stroke={INK} strokeWidth={1.8} />
         <Rect x={0} y={0} width={aw} height={19} rx={4} fill={YELLOW} stroke={INK} strokeWidth={1.8} />
