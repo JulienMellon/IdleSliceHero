@@ -38,3 +38,8 @@ The wishlist's launch items that no agent can do, with the version each one bloc
 | Support plan | before the wider launch | Who answers the support address, and how a data request with an Install ID is handled |
 
 I'm not a lawyer: treat the trademark, privacy-policy and consent items as things to confirm with one.
+
+## Added 2026-11-16: site details only Julien can fill (from v5.17 card L1)
+- [ ] Fill the placeholders shown on the support and privacy pages in `site/`: `COMPANY_NAME`, `COMPANY_LOCATION`, `SUPPORT_EMAIL`, `EFFECTIVE_DATE`, `RETENTION_MONTHS`.
+- [ ] Turn on GitHub Pages once: repo Settings, Pages, Source: GitHub Actions.
+- [ ] Decide the store title and the home-city name (both marked open in `docs/STORE-LISTING.md`).

@@ -4,20 +4,20 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.17
-step: waves                     # setup | waves | verify | review | fix | close
+step: verify                    # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.16-r3           # label of the last screenshot set that passed verify
 codecritic_range_start: aff34d1
 cards:                 # todo | running | done | partial | blocked
   (v5.17 cards: see docs/build/v5.17/VERSION.md)
-  N1 done  A1 done  U3 done  L1 done  U4 partial
+  N1 done  A1 done  U3 done  L1 done  U4 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.16/review-r3-critic.md (r3 NOT SATISFIED, minors only -> close; bug 0 major 0 minor 10; E2 U3 S4 T1)
   code:   docs/build/v5.16/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 3 low 23; E16 U5 S3 A2)
   story:  docs/build/v5.16/review-r3-story.md (r3 SATISFIED; bug 0 major 0 minor 1; U1)
   audio:  AUDIOLOG.md (next ID AU78)
 open: v5.16 carried: critic minors (docs/build/v5.16/review-r3-critic.md: D481 D482 D489 D490 D493 D495 D475 D450 D462 D478); story S48 (docs/build/v5.16/review-r3-story.md); code C116 C117 A32 + lows (docs/build/v5.16/review-r2-code.md). W2 card Protected list still names old downtown-4 line (now "Two thousand deliveries", Julien 2026-11-15). Julien approved Todd rewrites S37 S38 S41 S43; D493 carried by choice. loop_stats.py cannot read loop: commits. Programmer cards: --only takes the fixture name without .py.
-next: fresh session; read docs/build/sessions/S4-v5.17.md
+next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (README s5) for v5.17 r1: all cards done, version.ts set, tsc passed; npm test was killed twice (stopped by the session, not a failure) -> rerun with npx jest --maxWorkers=2, then export + screenshots v5.17, commit, r1 reviews. Python playwright 1.63 needs pip install in a fresh container. Before verify, Julien 2026-11-16: (a) tracking prompt YES -> send N1 programmer (card-N1): install expo-tracking-transparency, wire ads.native.ts tracking, set manifest/NSPrivacyTracking per spec, see extra.configNotes.tracking; (b) audio items (SliceAudioSession native module, AU41) are NOT for this session: carry to the next version; (c) site placeholders are in LAUNCH-TRACK.md, not a blocker.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
@@ -47,3 +47,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md
 - 2026-11-15 v5.17 r1 awning-founder done (facade/storefront/rewards/shop-model; 183 pass). Carried: vanity-art icon fallback, copy key.
 - 2026-11-15 v5.17 r1 U4 partial (focus, sky queue, task pills, day-30; 828 pass; 148_u4 0 err). Needs: offer clock hold (-> U3). Kept U4 default: event holds strip 15 s. Carried: day-30 name placeholder (writer).
 - 2026-11-15 v5.17 r1 U3 offer hold + 148 README row done (820 pass). All cards in. Verify v5.17: tsc pass; npm test running.
+- 2026-11-16 Session stopped by Julien (usage limit) during verify; next: resume verify.
