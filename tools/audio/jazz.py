@@ -4,8 +4,8 @@ What is here, all of it deterministic (every random choice comes from a `seed` y
   voicing / voicing_off   rootless close voicings, every note between C3 (48) and E4 (64)
   Harmony + helpers       bar-by-bar chord lists that also know their barRoots: bars, hold, i_vi_ii_V, ii_V_I
                           (with a tritone option), tritone, backdoor
-  comp                    Rhodes (or any keys) comping: a long chord on 1, a quieter answer, now and then the next
-                          chord anticipated by an eighth
+  comp                    Rhodes (or any keys) comping: a chord on 1, a quieter answer, now and then the next
+                          chord anticipated by an eighth; every hit is released RELEASE_GAP beats before the next
   bass_two_feel/bass_walk upright bass: roots and fifths in half notes, or quarter-note walking with chromatic
                           approach tones
   brushes                 the kit: spang-a-lang ride, feathered kick, ghosted taps, cross-stick and pedal hat on 2
@@ -27,6 +27,7 @@ from dataclasses import dataclass
 from mlib import Track, p, MAJOR, KICK, RIM, PEDAL, RIDE
 
 LOW, HIGH = 48, 64  # C3 and E4: every voicing sits in here
+RELEASE_GAP = 0.4  # beats of silence the keys leave before the next chord (swing can shorten it to about 0.27)
 
 # --- the chord vocabulary: intervals above the chord root, bottom to top, root left out ---------------------------
 QUALITIES: dict[str, list[int]] = {
@@ -245,27 +246,42 @@ def comp_voicings(h: Harmony, near: float | None = None) -> list[list[int]]:
 
 # --- keys -------------------------------------------------------------------------------------------------------------
 def comp(track: Track, h: Harmony, feel: Feel, start: float = 0.0, seed: int = 1, vel: int = 46, strum: float = 0.03,
-         antic_p: float = 0.3, answer_p: float = 0.7, near: float | None = None) -> None:
+         antic_p: float = 0.3, answer_p: float = 0.7, near: float | None = None, gap: float = RELEASE_GAP,
+         hold: float = 1.25, answer_len: float = 1.0) -> None:
     """Comping: a long chord on the chord's downbeat (rolled up, upper notes a hair later and quieter); on a whole-bar
     chord a quieter answer at `feel.answer`; with probability `antic_p` a chord that follows a chord of at least a
-    pulse is struck `feel.antic` early (and not re-struck on its downbeat). Voicings follow the nearest octave."""
+    pulse is struck `feel.antic` early (and not re-struck on its downbeat). Voicings follow the nearest octave.
+
+    Every note is released before the next hit begins (notes round R1): no note of a hit sounds within `gap` beats of
+    the next hit's first note (an anticipated chord counts from its early onset), no hit is held longer than `hold`
+    pulses (`feel.pulse`), the downbeat chord lets go `gap` beats before its own answer, and a hit's notes all end
+    together (the strum delays the attacks, not the releases). The last hit of the chart ends `gap` before its last bar."""
     rng = random.Random(seed)
     chords = h.chords(start)
-
-    def hit(t, notes, dur, v):
-        for i, q in enumerate(notes):
-            track.n(t + strum * i, dur, q, v - 2 * i)
-
-    for i, ((t, ch), v) in enumerate(zip(chords, comp_voicings(h, near))):
-        early = i > 0 and chords[i - 1][1].beats >= feel.pulse and rng.random() < antic_p
-        if early:
-            hit(t - feel.antic, v, ch.beats + feel.antic * 0.9, vel - 4)
-        else:
-            hit(t, v, ch.beats * 0.92, vel)
+    early = [False] * len(chords)
+    answer = [False] * len(chords)
+    for i, (t, ch) in enumerate(chords):
+        early[i] = i > 0 and chords[i - 1][1].beats >= feel.pulse and rng.random() < antic_p
         if ch.beats >= feel.bar_beats - 1e-9:
-            for a in feel.answer:
-                if rng.random() < answer_p:
-                    hit(t + a, v[1:], min(1.0, ch.beats - a), vel - 12)
+            answer[i] = [rng.random() < answer_p for _a in feel.answer]
+    onsets = [t - (feel.antic if early[i] else 0.0) for i, (t, _c) in enumerate(chords)]
+    voicings = comp_voicings(h, near)
+
+    def hit(t, end, notes, v):
+        for i, q in enumerate(notes):
+            track.n(t + strum * i, max(0.2, end - t - strum * i), q, v - 2 * i)
+
+    for i, ((t, ch), v) in enumerate(zip(chords, voicings)):
+        limit = (onsets[i + 1] if i + 1 < len(chords) else t + ch.beats) - gap
+        on = onsets[i]
+        end = min(on + hold * feel.pulse, limit)
+        plays = [a for a, p in zip(feel.answer, answer[i] or []) if p]
+        if plays:
+            end = min(end, t + plays[0] - gap)
+        hit(on, end, v, vel - 4 if early[i] else vel)
+        for k, a in enumerate(plays):
+            nxt = t + plays[k + 1] - gap if k + 1 < len(plays) else limit
+            hit(t + a, min(t + a + answer_len, nxt, limit), v[1:], vel - 12)
 
 
 # --- bass -------------------------------------------------------------------------------------------------------------
