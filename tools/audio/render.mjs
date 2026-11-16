@@ -1,17 +1,23 @@
 // Render a .mid to a stereo 44.1 kHz WAV with spessasynth_core and a General MIDI soundfont.
 // usage: node render.mjs in.mid out.wav [tailSeconds]
-// SF2 env var picks the soundfont (default: TimGM6mb).
+// Soundfont: the SF2 env var, else the path on the one line of tools/audio/BANK (relative to tools/audio/), else TimGM6mb.
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
-  SoundBankLoader, BasicMIDI, SpessaSynthProcessor, SpessaSynthSequencer, audioToWav, SpessaLog,
+  SoundBankLoader, BasicSoundBank, BasicMIDI, SpessaSynthProcessor, SpessaSynthSequencer, audioToWav, SpessaLog,
 } from 'spessasynth_core';
 
 const [, , inPath, outPath, tailArg] = process.argv;
-const SF = process.env.SF2 || '/usr/share/sounds/sf2/TimGM6mb.sf2';
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const bankFile = path.join(HERE, 'BANK');
+const fromFile = fs.existsSync(bankFile) ? fs.readFileSync(bankFile, 'utf8').split('\n')[0].trim() : '';
+const SF = process.env.SF2 || (fromFile ? path.resolve(HERE, fromFile) : '/usr/share/sounds/sf2/TimGM6mb.sf2');
 const SR = 44100;
 const tail = Number(tailArg ?? 1.5);
 
 try { SpessaLog.setLogging?.(false, false, false); } catch {}
+await BasicSoundBank.ready; // the SF3 (Ogg Vorbis) decoder loads asynchronously
 const toAB = (b) => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
 const bank = SoundBankLoader.fromArrayBuffer(toAB(fs.readFileSync(SF)));
 const midi = BasicMIDI.fromArrayBuffer(toAB(fs.readFileSync(inPath)), inPath);

@@ -59,3 +59,7 @@ screenshots/*-b/
 saves/
 vis/
 seeded/
+
+# music pipeline scratch (card M0): renders and soundfonts are not in git
+tools/audio/build/
+tools/audio/banks/
