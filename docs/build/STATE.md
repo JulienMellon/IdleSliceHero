@@ -48,3 +48,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (
 - 2026-11-15 v5.17 r1 U4 partial (focus, sky queue, task pills, day-30; 828 pass; 148_u4 0 err). Needs: offer clock hold (-> U3). Kept U4 default: event holds strip 15 s. Carried: day-30 name placeholder (writer).
 - 2026-11-15 v5.17 r1 U3 offer hold + 148 README row done (820 pass). All cards in. Verify v5.17: tsc pass; npm test running.
 - 2026-11-16 Session stopped by Julien (usage limit) during verify; next: resume verify.
+- 2026-11-16 18:44 UTC v5.17 r1 new session: npm ci + playwright installed; N1 launched for tracking prompt (Julien YES). Verify waits for N1.
