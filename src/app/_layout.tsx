@@ -12,6 +12,7 @@ import { TitleCard } from '@/components/title-card';
 import { TUNING } from '@/content/tuning';
 import { TUTORIAL_DONE } from '@/engine/game';
 import { adsTutorialDone, analytics, EVENTS, startServices } from '@/services';
+import { createLifecycle } from '@/services/lifecycle';
 import { useGame } from '@/store/game-store';
 import { C } from '@/theme';
 
@@ -42,11 +43,17 @@ function GameRunner() {
   useEffect(() => {
     void load();
     const saveTimer = setInterval(() => void useGame.getState().save(), TUNING.saveIntervalSeconds * 1000);
+    // The one AppState owner. Only a real background counts as leaving: the tracking prompt and other system sheets
+    // make the app inactive and active again, and must not reload the game (that closed the offline popup and voided its 2x ad).
+    const life = createLifecycle();
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'background' || state === 'inactive') void useGame.getState().save();
-      if (state === 'active') {
+      const t = life.next(state);
+      if (t === 'left') analytics.track(EVENTS.sessionEnd);
+      if (t === 'returned') {
         lastTick.current = Date.now();
         void useGame.getState().load();
+        analytics.track(EVENTS.sessionStart);
       }
     });
     return () => {
@@ -57,16 +64,12 @@ function GameRunner() {
   return null;
 }
 
-/** Starts the four services (opt-out first, no prompts), counts sessions, and tells the ads when the tutorial is over. */
+/** Starts the four services (opt-out first, no prompts), counts the first session, and tells the ads when the tutorial is over. */
 function ServicesRunner() {
   const tutorialDone = useGame((s) => s.game.tutorial >= TUTORIAL_DONE);
   useEffect(() => {
+    // later sessions (after a real background) are counted by GameRunner's one AppState listener
     void startServices().then(() => analytics.track(EVENTS.sessionStart));
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'background') analytics.track(EVENTS.sessionEnd);
-      if (state === 'active') analytics.track(EVENTS.sessionStart);
-    });
-    return () => sub.remove();
   }, []);
   useEffect(() => {
     if (tutorialDone) adsTutorialDone();

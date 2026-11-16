@@ -11,19 +11,36 @@ export interface AdPorts {
   showAd(p: AdPlacement): Promise<AdResult>;
   /** An ad is loaded and waiting. */
   loaded(): boolean;
+  /** Start loading the next ad in the background; the port keeps its own retry floor, so calling it often is fine. Only called once consent allows ads. */
+  preload(): void;
 }
 
 export function createAdFlow(ports: AdPorts) {
   let state: ConsentState = initialConsent();
   let busy = false;
+  /** Consent is settled and allows ads: the next ad may load. */
+  const mayLoad = (): boolean => state.umpDone && state.canRequestAds;
+  const preload = (): void => {
+    if (!mayLoad()) return;
+    try {
+      ports.preload();
+    } catch {
+      /* a failed preload only means no ad yet; the next call retries */
+    }
+  };
   return {
     state: (): ConsentState => state,
     setTutorialDone(v = true): void {
       if (v) state = consentReduce(state, { type: 'tutorial_done' });
+      preload();
     },
+    /** Before consent the button shows (the first tap asks); after it, only while an ad is loaded, and a missing one is asked for again. */
     ready(): boolean {
       if (!mayOfferAd(state)) return false;
-      return !state.umpDone || ports.loaded();
+      if (!state.umpDone) return true;
+      const loaded = ports.loaded();
+      if (!loaded) preload();
+      return loaded;
     },
     async show(p: AdPlacement): Promise<AdResult> {
       if (busy) return 'unavailable';
@@ -58,6 +75,8 @@ export function createAdFlow(ports: AdPorts) {
         return 'unavailable';
       } finally {
         busy = false;
+        // every exit (rewarded, dismissed, unfilled, failed) leaves the next ad loading, so the button comes back
+        preload();
       }
     },
   };
