@@ -4,15 +4,15 @@ Keep this file under 30 lines. It is the only file the music orchestrator edits 
 
 ```
 round: R1              # R0 | R1 | R2 | done
-step: review           # cards | verify | review | fix | reel | listen
+step: fix              # cards | verify | review | fix | reel | listen
 bank: C MuseScore_General_Full.sf3      # letter and file name once Julien picks (R0)
 cards:                 # todo | running | done | partial | blocked
   M0 done, M1a done, M1b done, M1c done
-review: AUDIOLOG.md (next ID AU78)      # latest audio review file, verdict and counts
+review: docs/build/music/review-R1-audio.md NOT SATISFIED, bugs 0 major 1 minor 6
 last_reel: tools/audio/build/reel/R0.mp3 (2026-11-16, sent)
 heard: R0 → "C"           # round → Julien's verdict in five words
 open: none
-next: review R1 (full effort) running; then one fix pass, reel R1, stop
+next: fix pass (AU78) running; then verify, commit, reel R1, stop. No second review.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
@@ -23,3 +23,4 @@ next: review R1 (full effort) running; then one fix pass, reel R1, stop
 - 2026-11-16 M1a DONE. Built: 2 cues (downtown, downtown_sparse), audio 13.37 MB of 14, full build pass on bank C. Needs: fetch_bank.sh needs bash; all cues re-rendered through bank C (large diff, expected).
 - 2026-11-16 M1b DONE. Built: 3 loops plus 37 stingers, audio 13.87 MB of 14, full build pass. Needs: nothing (note: Suburbs walking bass also under the march; a stray full build wiped assets, restored, sfx checked out again).
 - 2026-11-16 M1c DONE. Built: 8 loops, audio 13.87 MB of 14 (13867227 B), full build pass, lead minus bed -3.0 to -3.6 LU. Needs: nothing (judgement calls: HQ motif twice per loop; Industrial lead vibes then flute).
+- 2026-11-16 R1 verified and committed e950b8f; review NOT SATISFIED (0/1/6), AU78 major: motif tonic held over I maj9; fix pass launched.
