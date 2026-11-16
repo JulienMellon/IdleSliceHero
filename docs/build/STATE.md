@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.17
-step: verify                    # setup | waves | verify | review | fix | close
+step: review                    # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
-last_shots: v5.16-r3           # label of the last screenshot set that passed verify
+last_shots: v5.17              # label of the last screenshot set that passed verify
 codecritic_range_start: aff34d1
 cards:                 # todo | running | done | partial | blocked
   (v5.17 cards: see docs/build/v5.17/VERSION.md)
@@ -50,3 +50,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (
 - 2026-11-16 Session stopped by Julien (usage limit) during verify; next: resume verify.
 - 2026-11-16 18:44 UTC v5.17 r1 new session: npm ci + playwright installed; N1 launched for tracking prompt (Julien YES). Verify waits for N1.
 - 2026-11-16 18:45 UTC v5.17 r1 N1 done (tracking prompt wired, manifest tracking on; services 49 pass). Carried for Julien: App Store privacy label must show Tracking = Yes. Verify v5.17 started.
+- 2026-11-16 19:08 UTC Verify v5.17 PASS: True 0 [], layout 0 new; 13 new 77 changed. r1 reviews launched: critic, codecritic, audiocritic.
