@@ -81,9 +81,17 @@ describe('feature registry', () => {
     });
   });
 
-  it('migrate: a save from a feature that is no longer registered drops its slice', () => {
+  it('migrate: a save from a feature that is not registered keeps its slice as it was (C117)', () => {
     const saved = { ...G.newGame(T0), x: { gone: { n: 1 } } };
-    withFeatures([], () => expect(G.migrate(JSON.parse(JSON.stringify(saved)), T0).x).toEqual({}));
+    withFeatures([], () => expect(G.migrate(JSON.parse(JSON.stringify(saved)), T0).x).toEqual({ gone: { n: 1 } }));
+  });
+  it('migrate: a registered feature still migrates its own key beside the kept ones', () => {
+    const saved = { ...G.newGame(T0), x: { gone: { n: 1 }, probe: { n: 'junk' } } };
+    const probe: Feature<{ n: number }> = { key: 'probe', init: () => ({ n: 0 }), migrate: (raw) => ({ n: typeof (raw as { n?: unknown } | undefined)?.n === 'number' ? (raw as { n: number }).n : 0 }) };
+    withFeatures([probe], () => expect(G.migrate(JSON.parse(JSON.stringify(saved)), T0).x).toEqual({ gone: { n: 1 }, probe: { n: 0 } }));
+  });
+  it('jest setup: the real registry is live in a test that imports only the engine (C117)', () => {
+    expect(FEATURES.length).toBeGreaterThan(0);
   });
 
   it('tick: runs after the ordinary body, once per playTick, in registry order', () => {

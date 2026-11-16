@@ -6,7 +6,7 @@ import { HOME_SCENES } from '../content/scenes/home';
 import { PIER9_BID } from '../content/tuning';
 import type { CharacterId, Scene } from '../content/types';
 import { count } from './format';
-import { buildLock, def, pier9Available, sceneTriggered, type GameState } from './game';
+import { buildLock, def, pier9Available, pier9Price, sceneTriggered, type GameState } from './game';
 
 /** The name the story line uses for each character (the character only, no scene content). */
 const WHO: Record<CharacterId, string> = {
@@ -72,7 +72,7 @@ function teaserWith(s: GameState, scenes: readonly Scene[], make: Make): Teaser 
   // the shop isn't there yet: whatever the scene waits for, the player's next move is to build it
   if (!shop.built) return make('unlock', () => `${who()} when you build ${hood.name}`, buildLock(s, sc.neighborhood) ? 0 : ratio(s.cash, hood.buildCost));
   const tr = sc.trigger;
-  if (tr.kind === 'bid') return make('bid', () => `${who()} when you bid on Pier 9`, pier9Available(s) ? ratio(s.cash, PIER9_BID.cost) : ratio(shop.sold, PIER9_BID.unlockPizzas));
+  if (tr.kind === 'bid') return make('bid', () => `${who()} when you bid on Pier 9`, pier9Available(s) ? ratio(s.cash, pier9Price(s)) : ratio(shop.sold, PIER9_BID.unlockPizzas));
   if (tr.kind === 'after') return make('soon', () => `${who()} soon`, 0);
   if (tr.kind === 'challenge') return make('soon', () => `${who()} when you outsell MegaSlice`, 0);
   if (tr.kind === 'deliveries') {

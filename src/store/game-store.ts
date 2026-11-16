@@ -30,6 +30,7 @@ import * as R from '../engine/rewards';
 import { tutorialAdvance, tutorialHoldsStory } from '../engine/tutorial';
 import { buyCosmetic as buyVanity } from '../engine/vanity';
 import { analytics, EVENTS, onGrant, purchases, startServices, type Grant } from '../services';
+import { standingGrants } from './standing';
 import type { Station } from '../engine/pipeline';
 
 const SAVE_KEY = 'slice-empire/save/v1';
@@ -171,7 +172,7 @@ interface Store {
 /** A scene, the return popup or the title card is up: the orders' clocks stop and no offer appears. */
 export const gameCovered = (s: Pick<Store, 'playing' | 'offline' | 'titleDone'>): boolean => !!s.playing || !!s.offline || !s.titleDone;
 /** The golden pizza also waits behind a drawer or another screen. */
-export const bonusBlocked = (s: Pick<Store, 'playing' | 'offline' | 'titleDone' | 'bonusHold'> & { layerHold?: boolean }): boolean => s.bonusHold || !!s.layerHold || gameCovered(s);
+export const bonusBlocked = (s: Pick<Store, 'playing' | 'offline' | 'titleDone' | 'bonusHold' | 'layerHold'>): boolean => s.bonusHold || s.layerHold || gameCovered(s);
 
 const UPGRADE_NAMES: Record<string, string> = { prep: 'Prep', ovens: 'Ovens', counter: 'Counter', drivers: 'Drivers', tables: 'Seating', grade: 'Oven grade', expand: 'Expand', manager: 'Manager', headPrep: 'Head Prep Cook', headOven: 'Head Baker', headCounter: 'Head Cashier' };
 
@@ -181,6 +182,20 @@ let pendingSave: Promise<void> = Promise.resolve();
 let lastRewardsRefresh = 0;
 /** The services' grants are wired to the game once, after the first load (a grant made earlier is held by the bus). */
 let grantsWired = false;
+/** Loads running now (C127). While one reads the save, a grant or an ad benefit waits: the load would put the older save over it. */
+let loading = 0;
+const afterLoad: (() => void)[] = [];
+/** Run `fn` now, or when the load in flight has put its game in place (C127). */
+const whenLoaded = (fn: () => void): void => {
+  if (loading > 0) afterLoad.push(fn);
+  else fn();
+};
+/** An ad benefit the player has already earned: it lands when the load has finished, and says yes now (the ad was watched). */
+const benefit = (fn: () => boolean): boolean => {
+  if (loading === 0) return fn();
+  afterLoad.push(() => void fn());
+  return true;
+};
 
 export const useGame = create<Store>((set, get) => {
   /** After any state change, queue the next story scene if one has triggered. */
@@ -224,7 +239,11 @@ export const useGame = create<Store>((set, get) => {
     const before = get().game;
     if (!claim(run)) return false;
     const delta = claimDelta(before, get().game);
-    if (claimOffer(delta)) set({ claimed: { kind, delta, doubled: false, at: Date.now() } });
+    if (claimOffer(delta)) {
+      set({ claimed: { kind, delta, doubled: false, at: Date.now() } });
+      // D504: a Nonna's Plus owner is paid double at once; the sheet only says so
+      if (get().plus) get().doubleClaim();
+    }
     return true;
   };
   const setPrefs = (patch: Partial<StorePrefs>) => {
@@ -257,6 +276,44 @@ export const useGame = create<Store>((set, get) => {
     return commit(result, { name: UPGRADE_NAMES[what] ?? what, cost, hint }, sound);
   };
 
+  /** Read the save, pay the time away and put the game in place (the body of `load`). */
+  const loadSave = async () => {
+    const now = Date.now();
+    // On resume, keep in-memory progress if the save can't be read.
+    const wasLoaded = get().loaded;
+    let game = wasLoaded ? get().game : G.newGame(now);
+    let offline: OfflineSummary | null = null;
+    // a cold launch is always a return; on resume, measure from the last save even if this load fails (C48)
+    let awaySeconds = wasLoaded ? Math.max(0, (now - get().game.lastSavedAt) / 1000) : Number.POSITIVE_INFINITY;
+    try {
+      await pendingSave;
+      const raw = await AsyncStorage.getItem(SAVE_KEY);
+      if (raw) {
+        const saved = G.migrate(JSON.parse(raw), now);
+        const r = G.applyOffline(saved, now);
+        // an order that ran out while away is over (silently); the pies sold meanwhile don't count toward one that didn't
+        game = R.refreshRewards(B.bonusAway(O.returnFromAway(saved, r.state, r.awaySeconds), r.awaySeconds), now);
+        awaySeconds = r.awaySeconds;
+        if (r.earned >= 1 && r.seconds >= TUNING.offlinePopupSeconds) {
+          // Hold the cash back until the player taps Collect.
+          offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed, headsOnly: b.headsOnly, pies: b.pies })), idle: r.idle.map((id) => G.def(id).name), boost: offlineBoost(saved.rewards.boosts, saved.lastSavedAt, r.seconds) };
+          game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
+        }
+      }
+    } catch {
+      // Corrupt or unreadable save: start fresh rather than crash.
+    }
+    // a launch or a real return may play one waiting story beat straight away; a short interruption keeps the gap (C39)
+    set({ game, loaded: true, offline, lastSceneEndPlay: resumeSceneEnd(wasLoaded ? get().lastSceneEndPlay : null, awaySeconds, game.playSeconds) });
+    if (!grantsWired) {
+      grantsWired = true;
+      onGrant((grant) => get().receiveGrant(grant));
+      void startServices().then(() => get().syncPlus());
+      void AsyncStorage.getItem(PREFS_KEY).then((raw) => set({ prefs: parsePrefs(raw) })).catch(() => {});
+    }
+    if (!offline) queueScene();
+  };
+
   return {
     game: G.newGame(Date.now()),
     loaded: false,
@@ -283,40 +340,13 @@ export const useGame = create<Store>((set, get) => {
     },
 
     load: async () => {
-      const now = Date.now();
-      // On resume, keep in-memory progress if the save can't be read.
-      const wasLoaded = get().loaded;
-      let game = wasLoaded ? get().game : G.newGame(now);
-      let offline: OfflineSummary | null = null;
-      // a cold launch is always a return; on resume, measure from the last save even if this load fails (C48)
-      let awaySeconds = wasLoaded ? Math.max(0, (now - get().game.lastSavedAt) / 1000) : Number.POSITIVE_INFINITY;
+      loading++;
       try {
-        await pendingSave;
-        const raw = await AsyncStorage.getItem(SAVE_KEY);
-        if (raw) {
-          const saved = G.migrate(JSON.parse(raw), now);
-          const r = G.applyOffline(saved, now);
-          // an order that ran out while away is over (silently); the pies sold meanwhile don't count toward one that didn't
-          game = R.refreshRewards(B.bonusAway(O.returnFromAway(saved, r.state, r.awaySeconds), r.awaySeconds), now);
-          awaySeconds = r.awaySeconds;
-          if (r.earned >= 1 && r.seconds >= TUNING.offlinePopupSeconds) {
-            // Hold the cash back until the player taps Collect.
-            offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed, headsOnly: b.headsOnly, pies: b.pies })), idle: r.idle.map((id) => G.def(id).name), boost: offlineBoost(saved.rewards.boosts, saved.lastSavedAt, r.seconds) };
-            game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
-          }
-        }
-      } catch {
-        // Corrupt or unreadable save: start fresh rather than crash.
+        await loadSave();
+      } finally {
+        loading--;
+        if (loading === 0) for (const fn of afterLoad.splice(0)) fn();
       }
-      // a launch or a real return may play one waiting story beat straight away; a short interruption keeps the gap (C39)
-      set({ game, loaded: true, offline, lastSceneEndPlay: resumeSceneEnd(wasLoaded ? get().lastSceneEndPlay : null, awaySeconds, game.playSeconds) });
-      if (!grantsWired) {
-        grantsWired = true;
-        onGrant((grant) => get().receiveGrant(grant));
-        void startServices().then(() => get().syncPlus());
-        void AsyncStorage.getItem(PREFS_KEY).then((raw) => set({ prefs: parsePrefs(raw) })).catch(() => {});
-      }
-      if (!offline) queueScene();
     },
 
     save: async () => {
@@ -562,47 +592,60 @@ export const useGame = create<Store>((set, get) => {
       if (plus !== get().plus) set({ plus });
     },
 
-    receiveGrant: (grant) => {
-      set({ game: applyGrant(get().game, grant, Date.now()), ...(grant.plus ? { plus: true } : {}) });
-      emitAudio({ type: 'click' });
-      void get().save();
-    },
+    receiveGrant: (grant) =>
+      // C127: a load in flight would put the older save over paid diamonds; the grant lands after it
+      whenLoaded(() => {
+        set({ game: applyGrant(get().game, grant, Date.now()), ...(grant.plus ? { plus: true } : {}) });
+        emitAudio({ type: 'click' });
+        void get().save();
+      }),
 
     dismissClaim: () => {
       if (get().claimed) set({ claimed: null });
     },
 
+    // C127: the ad benefits below wait for a load in flight, like a grant
     doubleClaim: () => {
-      const c = get().claimed;
-      if (!c || c.doubled) return false;
-      const g = get().game;
-      emitAudio({ type: 'collect', size: collectSize(c.delta.cash, g.cash) });
-      set({ game: applyDouble(g, c.delta), claimed: { ...c, doubled: true } });
-      void get().save();
-      return true;
+      if (!get().claimed || get().claimed?.doubled) return false;
+      return benefit(() => {
+        const c = get().claimed;
+        if (!c || c.doubled) return false;
+        const g = get().game;
+        emitAudio({ type: 'collect', size: collectSize(c.delta.cash, g.cash) });
+        set({ game: applyDouble(g, c.delta), claimed: { ...c, doubled: true } });
+        void get().save();
+        return true;
+      });
     },
 
-    rerollDaily: (i) => commit(rerollDailyTask(get().game, i, Date.now()), undefined, () => ({ type: 'click' })),
+    rerollDaily: (i) => benefit(() => commit(rerollDailyTask(get().game, i, Date.now()), undefined, () => ({ type: 'click' }))),
 
-    repairGiftByAd: () => {
-      const g = get().game;
-      return commit(repairByAd(g, Date.now()), undefined, claimSound(g));
-    },
+    repairGiftByAd: () =>
+      benefit(() => {
+        const g = get().game;
+        return commit(repairByAd(g, Date.now()), undefined, claimSound(g));
+      }),
 
-    freeBooster: () => {
-      const now = Date.now();
-      const ok = commit(grantDailyBooster(get().game, now), undefined, () => ({ type: 'click' }));
-      if (ok) setPrefs({ boosterAdDay: R.dayKey(now) });
-      return ok;
-    },
+    freeBooster: () =>
+      benefit(() => {
+        const now = Date.now();
+        const ok = commit(grantDailyBooster(get().game, now), undefined, () => ({ type: 'click' }));
+        if (ok) setPrefs({ boosterAdDay: R.dayKey(now) });
+        return ok;
+      }),
 
     doubleOffline: () => {
       const o = get().offline;
       if (!o || o.doubled) return false;
-      const f = offlineFactor(o.boost);
-      if (f <= 1) return false;
-      set({ offline: { ...o, doubled: true, earned: o.earned + offlineExtra(o.earned, o.boost), byShop: o.byShop.map((b) => ({ ...b, earned: b.earned * f })) } });
-      return true;
+      if (offlineFactor(o.boost) <= 1) return false;
+      return benefit(() => {
+        const o2 = get().offline;
+        if (!o2 || o2.doubled) return false;
+        const f = offlineFactor(o2.boost);
+        if (f <= 1) return false;
+        set({ offline: { ...o2, doubled: true, earned: o2.earned + offlineExtra(o2.earned, o2.boost), byShop: o2.byShop.map((b) => ({ ...b, earned: b.earned * f })) } });
+        return true;
+      });
     },
 
     markStarterOffered: () => {
@@ -611,8 +654,12 @@ export const useGame = create<Store>((set, get) => {
 
     resetGame: async () => {
       await AsyncStorage.removeItem(SAVE_KEY).catch(() => {});
-      set({ game: G.newGame(Date.now()), offline: null, playing: null, lastSceneEndPlay: null, claimed: null, starterAt: null });
+      const now = Date.now();
+      // C129: what the player paid for is theirs after a reset (the Founder awning; Plus is the store's own flag): the standing part of each owned product
+      const game = standingGrants(purchases.owned()).reduce((g, grant) => applyGrant(g, grant, now), G.newGame(now));
+      set({ game, offline: null, playing: null, lastSceneEndPlay: null, claimed: null, starterAt: null });
       queueScene();
+      void get().save();
     },
   };
 });

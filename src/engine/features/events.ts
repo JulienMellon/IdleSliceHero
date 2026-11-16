@@ -82,8 +82,14 @@ export const events: Feature<EventsState> = {
     return { ...g, x: { ...g.x, [KEY]: { id: e.id, at: now } } };
   },
   shopKey(g, id) {
-    const e = defOf(read(g).id);
-    return e && hits(e, id) ? e.id : '';
+    const st = read(g);
+    const e = defOf(st.id);
+    // the boost is in the key too: the event's share of the value is (b + e - 1) / b, so a boost starting or ending moves it (C116)
+    return e && hits(e, id) ? `${e.id}:${boostMult(g, st.at)}` : '';
+  },
+  readoutNow(g) {
+    const st = read(g);
+    return st.id === null ? null : st.at;
   },
   shopValueMult(g, id, now) {
     const e = runningFor(g, id, now);

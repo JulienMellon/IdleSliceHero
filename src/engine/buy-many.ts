@@ -1,7 +1,7 @@
 // ×1 / ×10 / MAX (v5.15; A30): the one rule for how many levels a station buy takes, and the all-or-nothing buy of that many.
 // The store calls these; the sidewalk's views (components/sidewalk-model.ts) only read `buyPlan` to label a card.
 import type { NeighborhoodId } from '../content/types';
-import { buyUpgrade, shopLevelKey, upgradeCostOf, upgradeLock, type BuyResult, type GameState, type Upgrade } from './game';
+import { buyUpgrade, shopBuildKey, upgradeCostOf, upgradeLock, type BuyResult, type GameState, type Upgrade } from './game';
 
 /** How many levels one tap on a station card buys: one, ten, or as many as the cash pays for. */
 export type BuyAmount = 1 | 10 | 'max';
@@ -17,10 +17,10 @@ const ladders = new Map<string, number[]>();
 
 /**
  * What the next levels cost in all: entry i is the price of i+1 levels. It ends where the upgrade is locked (the level cap).
- * Cached on the shop's levels, like the station models: cash is not part of it.
+ * Cached on the shop's levels (no feature part: M65, a price never depends on one), like the station models: cash is not part of it.
  */
 export function costLadder(s: GameState, id: NeighborhoodId, what: LevelUpgrade): number[] {
-  const key = `${id}|${shopLevelKey(s, id)}|${what}`;
+  const key = `${shopBuildKey(s, id)}|${what}`;
   const hit = ladders.get(key);
   if (hit) return hit;
   // an endless purse, so the engine's own buy rule (cost, cap, perks) walks the levels and nothing here repeats it

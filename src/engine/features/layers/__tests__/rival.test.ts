@@ -132,6 +132,9 @@ describe('the challenge', () => {
       const early = at(100 + gap - 1);
       expect(rivalOpen(early, ID)).toBe(true); // the x0.8 is on from beat 3
       expect(rivalView(early, ID, NOW)).toMatchObject({ open: true, phase: 'waiting' });
+      // C125: the waiting view carries the real target, the one the card will ask
+      expect(rivalView(early, ID, NOW).target).toBe(rivalTarget(early, ID, NOW));
+      expect(rivalView(early, ID, NOW).target).toBeGreaterThan(0);
       expect(startRivalChallenge(early, ID, NOW).ok).toBe(false);
       expect(rivalView(at(100 + gap), ID, NOW).phase).toBe('available');
       expect(startRivalChallenge(at(100 + gap), ID, NOW).ok).toBe(true);

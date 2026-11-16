@@ -4,6 +4,7 @@
 /// <reference types="jest" />
 import * as G from '../game';
 import * as R from '../rewards';
+import { withFeatures } from '../features';
 import { advanceLine, emptyLine, AUTOMATIC } from '../pipeline';
 import {
   DAILY_CHESTS,
@@ -295,6 +296,20 @@ describe('claims', () => {
     s = { ...s, rewards: { ...s.rewards, boosts: [{ mult: 5, until: T + HOUR, source: 'x' }] } };
     expect(R.rewardIncome(s)).toBe(plain);
   });
+  test('an earn task is sized on reward income: an event running does not swell it (C118)', () => {
+    const plain = unlocked();
+    const during = { ...plain, x: { ...plain.x, events: { id: 'friday-rush', at: T } } } as G.GameState;
+    let earns = 0;
+    for (let w = 0; w < 12; w++) {
+      const now = T + w * 7 * 24 * HOUR;
+      const a = R.refreshRewards(plain, now).rewards;
+      const b = R.refreshRewards({ ...during, x: { ...during.x, events: { id: 'friday-rush', at: now } } } as G.GameState, now).rewards;
+      expect(b.weekly.map((t) => t.target)).toEqual(a.weekly.map((t) => t.target));
+      expect(b.daily.map((t) => t.target)).toEqual(a.daily.map((t) => t.target));
+      earns += [...a.weekly, ...a.daily].filter((t) => t.kind === 'earn').length;
+    }
+    expect(earns).toBeGreaterThan(0);
+  });
   test('points open the chests in order; each only once', () => {
     let s = ready();
     for (let i = 0; i < 3; i++) {
@@ -378,7 +393,8 @@ describe('boosts in the economy', () => {
     const shop = unlocked().shops.downtown;
     expect(G.lineRates('downtown', shop, 0, 3).price).toBeCloseTo(3 * G.lineRates('downtown', shop, 0).price);
   });
-  test('playTick pays boosted cash only while the boost runs, and old call signatures still work', () => {
+  // no features (C117): the service tip moves with the clock, and this test is about the boost alone
+  test('playTick pays boosted cash only while the boost runs, and old call signatures still work', () => withFeatures([], () => {
     let s = ready();
     s = { ...s, rewards: { ...s.rewards, boosts: [{ mult: 2, until: T + 600_000, source: 'x' }] } };
     const plain = G.playTick(G.playTick(s, 60), 60);
@@ -386,7 +402,7 @@ describe('boosts in the economy', () => {
     const after = G.playTick(G.playTick(s, 60, T + 700_000), 60, T + 760_000);
     expect(boosted.cash).toBeCloseTo(2 * plain.cash);
     expect(after.cash).toBeCloseTo(plain.cash);
-  });
+  }));
   test('offline: each boost pays (mult − 1) over the share of the window it covers', () => {
     const base = { ...unlocked(), lastSavedAt: T };
     const away = (s: G.GameState, hours = 1) => G.applyOffline(s, T + hours * HOUR);

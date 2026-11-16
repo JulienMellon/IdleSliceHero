@@ -54,7 +54,7 @@ export interface RivalView {
   won: boolean;
   /** 'waiting' = open, but the finale wait after beat 3 is not over (`challengeOffered`): no card yet; 'available' = may start; 'running'; 'retry' = lost, waiting; 'none' = no rival here (not open, or another challenge is running). */
   phase: RivalPhase;
-  /** Pies asked: fixed while it runs, otherwise what it would ask now. */
+  /** Pies asked: fixed while it runs, otherwise what it would ask now (0 only with no rival open). */
   target: number;
   progress: number;
   /** Seconds of the challenge left (running only). */
@@ -74,7 +74,8 @@ export function rivalView(g: GameState, id: NeighborhoodId, now: number): RivalV
   const st = read(g);
   const c = st.challenge;
   if (c && c.hood === id) return { ...base, phase: 'running', target: c.target, progress: progressOf(g, c), secondsLeft: Math.max(0, Math.ceil(c.left)), retryIn: 0 };
-  if (!challengeOffered(g, id)) return { ...base, phase: 'waiting', target: 0, progress: 0, secondsLeft: 0, retryIn: 0 };
+  // C125: the real target while it waits, so a sheet never recomputes it
+  if (!challengeOffered(g, id)) return { ...base, phase: 'waiting', target: rivalTarget(g, id, now), progress: 0, secondsLeft: 0, retryIn: 0 };
   const wait = Math.max(0, Math.ceil((st.retryAt[id] ?? 0) - g.playSeconds));
   return { ...base, phase: wait > 0 ? 'retry' : 'available', target: rivalTarget(g, id, now), progress: 0, secondsLeft: 0, retryIn: wait };
 }
