@@ -515,6 +515,7 @@ export function createMixer(deps: MixerDeps) {
     const was = appActive;
     appActive = active;
     if (was === active) return;
+    out.setActive?.(active); // U20: an output with a clock of its own suspends it in the background
     if (!active) {
       if (current) out.stop(musicId(current), 0);
       if (storyNow) {
@@ -534,6 +535,8 @@ export function createMixer(deps: MixerDeps) {
           cue.startedAt = now() - played * 1000;
           cue.pausedAt = null;
           out.resume(storyId(cue.id));
+          // AU80: a perk duck that fell due while the app was away was skipped (paused): the cue comes back to full
+          out.fade(storyId(cue.id), 1, DUCK_UP_MS);
           armStoryEnd(left * 1000);
         } else stopStory(0);
       }

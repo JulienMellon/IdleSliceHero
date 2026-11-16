@@ -445,6 +445,13 @@ export function waitTagAt(lay: Pick<Layout, 'waitTag' | 'tagLeft'>, text: string
   const x = Math.min(SCENE_W - TAG_MARGIN - w / 2, Math.max(TAG_MARGIN + w / 2, lay.tagLeft + w / 2, sx));
   return { x, y: sy, w, tail: sx - x };
 }
+/** An umbrella canopy's screen box (street.tsx `PatioTable`: ±UMBRELLA_R wide, from the finial 68.7 up to the rim 47.5 up, at table scale kAt × 1.1), and the air a pill keeps from it. */
+export const CANOPY_AIR = 4;
+export function canopyBox(x: number, y: number) {
+  const [sx, sy] = P(x, y);
+  const k = kAt(y) * 1.1;
+  return { x0: sx - 24 * k, x1: sx + 24 * k, y0: sy - 68.7 * k, y1: sy - 47.5 * k };
+}
 /** The chin-to-eye-line band of a diner seated at a table's chair (screen units): what a pill hung there would cover. */
 function seatedFace(tb: { x: number; y: number }, dx: number) {
   const [sx, sy] = P(tb.x + dx, tb.y);
@@ -458,7 +465,7 @@ function seatedFace(tb: { x: number; y: number }, dx: number) {
  * until it clears the nearest idle driver and then, if it can, until it covers no seated diner's face behind the glass (D450).
  * storefront.tsx draws both pills on the layer above the patio's umbrellas.
  */
-export function moreTagAt(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue' | 'tables'>, text: string): { x: number; y: number; w: number } {
+export function moreTagAt(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue' | 'tables' | 'patio'>, text: string): { x: number; y: number; w: number } {
   const alone = lay.queue.length === 0;
   const [sx, sy] = P(lay.queueTag[0], lay.queueTag[1], alone ? MORE_TAG_Z_ALONE : MORE_TAG_Z);
   const w = waitTagWidth(text);
@@ -469,6 +476,10 @@ export function moreTagAt(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue'
   const start = Math.min(hi, Math.max(lo, Math.min(sx, driverX - MORE_TAG_DRIVER_AIR - w / 2)));
   const faces = lay.tables.flatMap((tb) => [seatedFace(tb, -SEAT), seatedFace(tb, SEAT)]);
   const clear = (x: number) => faces.every((f) => x + w / 2 <= f.x0 || x - w / 2 >= f.x1 || sy + 8.7 <= f.y0 || sy - 9.7 >= f.y1);
+  // v5.17 D450: and off every umbrella canopy (the pill sat on the canopy band; r2: it must not touch one), so it hangs on the bare sill left of the patio
+  const canopies = lay.patio.map((p) => canopyBox(p.x, p.y));
+  const offCanopies = (x: number) => canopies.every((c) => x + w / 2 + CANOPY_AIR <= c.x0 || x - w / 2 - CANOPY_AIR >= c.x1 || sy + 8.7 <= c.y0 || sy - 9.7 >= c.y1);
+  for (let x = start; x >= lo; x -= 2) if (clear(x) && offCanopies(x)) return { x, y: sy, w };
   for (let x = start; x >= lo; x -= 2) if (clear(x)) return { x, y: sy, w };
   return { x: start, y: sy, w };
 }
@@ -481,7 +492,7 @@ export function waitTagRect(lay: Pick<Layout, 'waitTag' | 'tagLeft'>, text: stri
   return pillRect(t.x, t.y, t.w);
 }
 /** The "+N" pill's screen rect. */
-export function moreTagRect(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue' | 'tables'>, text: string) {
+export function moreTagRect(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue' | 'tables' | 'patio'>, text: string) {
   const t = moreTagAt(lay, text);
   return pillRect(t.x, t.y, t.w);
 }

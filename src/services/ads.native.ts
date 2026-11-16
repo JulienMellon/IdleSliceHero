@@ -1,4 +1,5 @@
 // iOS: Google AdMob rewarded video through react-native-google-mobile-ads. The flow (consent order, one ad at a time) is ad-flow.ts.
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import mobileAds, { AdEventType, AdsConsent, RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
 
 import { createAdFlow } from './ad-flow';
@@ -7,6 +8,8 @@ import type { AdResult, Ads } from './types';
 const LOAD_TIMEOUT_MS = 10_000;
 /** A loaded ad goes stale after an hour; drop ours a little before. */
 const STALE_MS = 50 * 60_000;
+/** After a failed or unfilled load, ask again no sooner than this. */
+const RETRY_FLOOR_MS = 30_000;
 
 /** Google's test unit in development; the real rewarded unit comes from the environment and is empty (no ads) if unset. */
 const unitId = (): string => (__DEV__ ? TestIds.REWARDED : (process.env.EXPO_PUBLIC_ADMOB_REWARDED_IOS ?? ''));
@@ -61,12 +64,23 @@ function loadSlot(): Promise<Slot | null> {
 let cached: Slot | null = null;
 let loading: Promise<void> | null = null;
 let sdkReady: Promise<void> | null = null;
+let lastTry = 0;
 
 const fresh = (): boolean => !!cached && Date.now() - cached.at < STALE_MS;
-const initSdk = () => (sdkReady ??= mobileAds().initialize().then(() => {}));
+/** A failed init is forgotten, so the next ask tries again instead of failing for the whole session. */
+const initSdk = () =>
+  (sdkReady ??= mobileAds()
+    .initialize()
+    .then(() => {})
+    .catch((e) => {
+      sdkReady = null;
+      throw e;
+    }));
 
 function preload(): void {
   if (fresh() || loading) return;
+  if (Date.now() - lastTry < RETRY_FLOOR_MS) return;
+  lastTry = Date.now();
   loading = initSdk()
     .then(loadSlot)
     .then((s) => void (cached = s))
@@ -80,26 +94,32 @@ const flow = createAdFlow({
     const info = await AdsConsent.gatherConsent();
     return { canRequestAds: info.canRequestAds };
   },
-  /**
-   * The iOS tracking prompt. Needs `expo-tracking-transparency` (requestTrackingPermissionsAsync), which is not installed yet:
-   * until it is, report 'unsupported' and AdMob serves non-personalised ads. NSUserTrackingUsageDescription is already in app.json.
-   */
-  tracking: async () => 'unsupported',
+  /** The iOS tracking prompt (shown once by the OS; later calls return the stored answer). A refusal still gets a non-personalised ad. */
+  async tracking() {
+    try {
+      const r = await requestTrackingPermissionsAsync();
+      return r.granted ? 'granted' : 'denied';
+    } catch {
+      return 'unsupported';
+    }
+  },
   async showAd() {
     await initSdk();
+    if (loading) await loading;
     const slot = fresh() ? cached : await loadSlot();
     cached = null;
+    // a shown ad is spent: the next one may load at once; a failed one waits out the floor
+    lastTry = slot ? 0 : Date.now();
     if (!slot) return 'unavailable';
     try {
       await slot.ad.show();
     } catch {
       return 'unavailable';
     }
-    const result = await slot.finished;
-    preload();
-    return result;
+    return slot.finished;
   },
   loaded: fresh,
+  preload,
 });
 
 export const ads: Ads = {
@@ -107,7 +127,7 @@ export const ads: Ads = {
   show: (p) => flow.show(p),
 };
 
-/** The tutorial is over: from now on the first ad request may ask for consent, and the next ad loads in the background. */
+/** The tutorial is over: from now on the first ad request may ask for consent, and the next ad loads in the background once consent is known. */
 export function adsTutorialDone(): void {
   flow.setTutorialDone(true);
 }

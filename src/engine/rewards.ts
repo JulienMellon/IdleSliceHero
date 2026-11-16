@@ -187,7 +187,7 @@ const sig2 = (x: number) => (x > 0 && Number.isFinite(x) ? Number(x.toPrecision(
 function targetOf(s: GameState, p: PoolEntry, mult: number): number {
   if ('fixed' in p.scale) return Math.max(1, Math.round(p.scale.fixed * mult));
   const rates = cityRates(s);
-  const perSecond = p.scale.rate === 'income' ? earningsPerSecond(s) : rates[p.scale.rate];
+  const perSecond = p.scale.rate === 'income' ? rewardIncome(s) : rates[p.scale.rate];
   const raw = sig2(perSecond * p.scale.seconds * mult);
   return TASK_TEXT[p.kind].unit === 'cash' ? Math.max(MIN_CASH_TARGET, raw) : Math.max(MIN_COUNT_TARGET, Math.round(raw));
 }

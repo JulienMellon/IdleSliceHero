@@ -4,7 +4,7 @@ import * as G from '../../../engine/game';
 import { GRANTS } from '../../../services/grants';
 import { PRODUCT_IDS } from '../../../services/types';
 import { ANALYTICS_LABEL, analyticsNote, analyticsSwitchText, copyLine, installIdText, restoreResult } from '../settings-model';
-import { applyGrant, buyLine, NO_PREFS, parsePrefs, PRODUCT_ORDER, PRODUCTS, pricesFrom, productRows, restoreLine, STARTER_DELAY, starterShows } from '../store-model';
+import { applyGrant, buyLine, productChips, PRODUCT_RIBBON, NO_PREFS, parsePrefs, PRODUCT_ORDER, PRODUCTS, pricesFrom, productRows, restoreLine, STARTER_DELAY, starterShows } from '../store-model';
 
 const NOW = 1_800_000_000_000;
 
@@ -122,5 +122,19 @@ describe('Settings words', () => {
     expect(copyLine('copied')).toBe('Copied.');
     expect(copyLine('shared')).toMatch(/Copy/);
     expect(copyLine('failed')).toMatch(/Couldn/);
+  });
+});
+
+describe('the pack art (D496)', () => {
+  test('the Starter Pack shows three chips taken from its grant; the others show none', () => {
+    const chips = productChips('starter_pack');
+    expect(chips.map((c) => c.kind)).toEqual(['diamonds', 'boost', 'awning']);
+    expect(chips[0].title).toBe(String(GRANTS.starter_pack.diamonds));
+    expect(chips[1].title).toBe(`${GRANTS.starter_pack.boost!.mult}×`);
+    expect(productChips('nonnas_plus')).toEqual([]);
+    expect(productChips('diamonds_500')).toEqual([]);
+  });
+  test('the ribbon is on the Starter Pack only', () => {
+    expect(Object.keys(PRODUCT_RIBBON)).toEqual(['starter_pack']);
   });
 });

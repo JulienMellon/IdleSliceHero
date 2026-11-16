@@ -3,7 +3,7 @@
 import { MAX_CONCURRENT_BOOSTS } from '../../content/rewards';
 import type { Boost, GameState } from '../../engine/game';
 import { grantCosmetic } from '../../engine/rewards';
-import type { Grant } from '../../services/grants';
+import { GRANTS, type Grant } from '../../services/grants';
 import { PRODUCT_IDS, type BuyResult, type ProductId } from '../../services/types';
 
 // ---------- products ----------
@@ -27,6 +27,27 @@ export const PRODUCTS: Readonly<Record<ProductId, ProductInfo>> = {
 
 /** The order the tab lists them in. */
 export const PRODUCT_ORDER: readonly ProductId[] = ['starter_pack', 'nonnas_plus', 'diamonds_80', 'diamonds_500', 'diamonds_1200'];
+
+/** What a pack holds, shown as a small card (D496): the numbers come from the grant itself, so the art can't drift from what is paid. */
+export interface Chip {
+  kind: 'diamonds' | 'boost' | 'awning';
+  title: string;
+  sub: string;
+}
+
+/** The content chips of a bundle: one per thing it gives. A plain diamond pack or Plus has none (its title already says it). */
+export function productChips(id: ProductId): Chip[] {
+  const g = GRANTS[id];
+  if (!g.boost && !g.cosmetic) return [];
+  const out: Chip[] = [];
+  if (g.diamonds > 0) out.push({ kind: 'diamonds', title: String(g.diamonds), sub: 'diamonds' });
+  if (g.boost) out.push({ kind: 'boost', title: `${g.boost.mult}×`, sub: `income ${g.boost.hours} h` });
+  if (g.cosmetic) out.push({ kind: 'awning', title: 'Founder', sub: 'awning' });
+  return out;
+}
+
+/** The ribbon on a card, if it has one: the Starter Pack is a one-time deal (it leaves the tab once bought). */
+export const PRODUCT_RIBBON: Readonly<Partial<Record<ProductId, string>>> = { starter_pack: 'ONE-TIME DEAL' };
 
 export type RowState = 'owned' | 'buy' | 'loading' | 'unpriced';
 

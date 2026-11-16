@@ -16,7 +16,7 @@ import { bonusPath, bonusScale, flightX, laneY, skyBottom, isFirstGift, pipsLabe
 import { money } from '../engine/format';
 import { bonusBlocked, useGame } from '../store/game-store';
 import { F } from '../theme';
-import { FLIGHT_FADE, flightBounds } from './endgame/stack-model';
+import { FLIGHT_FADE, flightBounds, laneBottom } from './endgame/stack-model';
 import { haptic } from './game-ui';
 import { emitCheer, emitCoin, emitPayout } from './pulse-bus';
 import { useMotion } from './scene/clock';
@@ -126,7 +126,8 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
   const gift = isFirstGift(n, taps);
   // G95: the lane stays in the sky band above the roof sign; the gift label sits over the pizza, so its lane starts lower to leave it room
   const fit = sceneFit(width, height || 1);
-  const bandBottom = height > 0 ? skyBottom(fit.oy, fit.s, P(0, 0, FRONT_TOP)[1]) : 0;
+  // D501: the lane's floor is 24 pt above the sign, so the box never sits on it
+  const bandBottom = height > 0 ? laneBottom(skyBottom(fit.oy, fit.s, P(0, 0, FRONT_TOP)[1])) : 0;
   // G95 (card up): an order or perk card, or the endgame notices, can push `top` below the sky band's bottom. laneY would then return its
   // top, which is on the roof sign. With no room under the cards the pizza flies at the band's own bottom limit instead (over the cards,
   // above the sign), with the gift label's room kept above it.

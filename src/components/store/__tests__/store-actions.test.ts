@@ -14,7 +14,7 @@ import { GRANTS } from '../../../services/grants';
 import { useGame } from '../../../store/game-store';
 import { analytics } from '../../../services';
 import { setBannerOpen } from '../../endgame/banner-state';
-import { adOffering, boosterAdOffer } from '../ad-model';
+import { adOffering, boosterAdOffer, READY_CHECK_MS } from '../ad-model';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -48,6 +48,14 @@ describe('a claim and its double', () => {
     // a second double is refused
     expect(st().doubleClaim()).toBe(false);
     expect(st().game.cash - before).toBeCloseTo(2 * paid, 6);
+  });
+  test('a Nonna\'s Plus owner is paid double at once, with no prompt (D504)', () => {
+    useGame.setState({ game: done(st().game), plus: true });
+    const before = st().game.cash;
+    expect(st().claimDaily(0)).toBe(true);
+    const c = st().claimed!;
+    expect(c.doubled).toBe(true);
+    expect(st().game.cash - before).toBeCloseTo(2 * c.delta.cash, 6);
   });
   test('a refused claim leaves no sheet; dismissing clears it; a new claim replaces the old', () => {
     expect(st().claimDaily(0)).toBe(false);
@@ -177,6 +185,20 @@ describe('analytics events (card N1)', () => {
     const src = fs.readFileSync(path.join(__dirname, '..', 'ad-button.tsx'), 'utf8');
     expect(src).toMatch(/analytics\.track\(EVENTS\.adOffered/);
     expect(src).toMatch(/adOffering\(plus, ready\)/);
+  });
+
+  test('the ad button asks ads.ready() again on mount, every few seconds and after each ad, so it returns with no restart (N1 note)', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'ad-button.tsx'), 'utf8');
+    expect(READY_CHECK_MS).toBeLessThanOrEqual(5000);
+    expect(src).toMatch(/setInterval\(\(\) => setReady\(ads\.ready\(placement\)\), READY_CHECK_MS\)/);
+    expect(src.match(/setReady\(ads\.ready\(placement\)\)/g)!.length).toBeGreaterThanOrEqual(3);
+  });
+
+  test('the services index counts ad_started, ad_completed and iap_purchased: the callers do not (C128)', () => {
+    for (const f of ['ad-button.tsx', 'ad-model.ts', 'use-purchase.ts']) {
+      const src = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+      expect(src).not.toMatch(/EVENTS\.(adStarted|adCompleted|iapPurchased)/);
+    }
   });
 
   test('iap_viewed is sent by the Store tab and by the Starter Pack sheet', () => {

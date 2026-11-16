@@ -8,9 +8,12 @@ import { requireOptionalNativeModule } from 'expo';
 import { AudioContext, AudioManager, type AudioBuffer, type GainNode } from 'react-native-audio-api';
 
 import { createExpoOutput, sourceOf } from './expo-output';
-import { busOf, limiterCurve, type AudioOutput, type Bus, type PlayOpts } from './output-core';
+import {
+  DECODED_BYTES_BUDGET, Epochs, LIMITER_RANGE, busOf, decodedBytes, limiterCurve, voiceToSteal,
+  type AudioOutput, type Bus, type PlayOpts,
+} from './output-core';
 
-/** Sources sounding at once, over all effects and stingers: past this the oldest is stopped. */
+/** Sources sounding at once, over all effects and stingers: past this the oldest effect is stopped (a stinger never is). */
 export const MAX_VOICES = 24;
 
 interface Voice {
@@ -35,6 +38,7 @@ export function createOutput(): AudioOutput {
     const shaper = ctx.createWaveShaper();
     shaper.curve = limiterCurve();
     master = ctx.createGain();
+    master.gain.value = 1 / LIMITER_RANGE; // the curve is laid out over ±LIMITER_RANGE (AU78)
     master.connect(shaper);
     shaper.connect(ctx.destination);
     for (const b of ['sfx', 'sting'] as const) {
@@ -49,6 +53,25 @@ export function createOutput(): AudioOutput {
   const buffers = new Map<string, AudioBuffer>();
   const loading = new Map<string, Promise<AudioBuffer | null>>();
   const voices = new Set<Voice>();
+  /** C132: a stop or an unload overtakes a play still decoding; an unload overtakes a decode (AU81). */
+  const playEpoch = new Epochs();
+  const loadEpoch = new Epochs();
+  let bytes = 0;
+  const sized = new Map<string, number>();
+  // U20: the context is suspended in the background and while both of its buses are silent
+  const busLevel: Partial<Record<Bus, number>> = { sfx: 1, sting: 1 };
+  let appOn = true;
+  let suspended = false;
+  const syncClock = () => {
+    const want = appOn && ((busLevel.sfx ?? 0) > 0 || (busLevel.sting ?? 0) > 0);
+    if (want === !suspended) return;
+    suspended = !want;
+    try {
+      void (want ? ctx.resume() : ctx.suspend()).catch(() => {});
+    } catch {
+      /* the clock stays as it was */
+    }
+  };
   const viaExpo = (id: string) => busOf(id) === 'music' || busOf(id) === 'story';
 
   function decode(id: string): Promise<AudioBuffer | null> {
@@ -57,19 +80,27 @@ export function createOutput(): AudioOutput {
     let p = loading.get(id);
     if (!p) {
       const src = sourceOf(id);
-      p = src === null
+      const epoch = loadEpoch.get(id);
+      // unloaded while decoding: the result is dropped, not kept untracked (AU81)
+      const mine = () => loadEpoch.get(id) === epoch;
+      const mark: Promise<AudioBuffer | null> = src === null
         ? Promise.resolve(null)
         : ctx.decodeAudioData(src).then(
             (b) => {
-              loading.delete(id);
+              if (loading.get(id) === mark) loading.delete(id);
+              if (!mine()) return null;
               buffers.set(id, b);
+              const n = decodedBytes(b.length, b.numberOfChannels);
+              sized.set(id, n);
+              bytes += n;
               return b;
             },
             () => {
-              loading.delete(id);
+              if (loading.get(id) === mark) loading.delete(id);
               return null;
             },
           );
+      p = mark;
       loading.set(id, p);
     }
     return p;
@@ -86,9 +117,11 @@ export function createOutput(): AudioOutput {
     gain.connect(bus);
     const voice: Voice = { id, src, gain, startAt: when };
     voices.add(voice);
-    if (voices.size > MAX_VOICES) {
-      const oldest = voices.values().next().value as Voice | undefined;
-      if (oldest && oldest !== voice) oldest.src.stop();
+    const live = [...voices];
+    const victim = voiceToSteal(live.map((v) => v.id), MAX_VOICES);
+    if (victim >= 0 && live[victim] !== voice) {
+      voices.delete(live[victim]); // out of the count at once; its onended only disconnects
+      live[victim].src.stop();
     }
     src.onended = () => {
       voices.delete(voice);
@@ -110,25 +143,44 @@ export function createOutput(): AudioOutput {
   return {
     load(id) {
       if (viaExpo(id)) return expo.load(id);
+      // M67: past the budget a stinger set is no longer decoded ahead of time; its play decodes it when it is needed
+      if (busOf(id) === 'sting' && bytes > DECODED_BYTES_BUDGET && !buffers.has(id)) return;
       void decode(id);
     },
     unload(id) {
       if (viaExpo(id)) return expo.unload(id);
+      loadEpoch.bump(id);
+      playEpoch.bump(id);
       buffers.delete(id);
       loading.delete(id);
+      bytes -= sized.get(id) ?? 0;
+      sized.delete(id);
     },
     isLoaded: (id) => (viaExpo(id) ? expo.isLoaded(id) : buffers.has(id) || loading.has(id)),
     loadedCount: () => buffers.size + expo.loadedCount(),
     play(id, o) {
       if (viaExpo(id)) return expo.play(id, o);
+      if (suspended && appOn) {
+        suspended = false; // a play wakes the clock before it is placed on it
+        try {
+          void ctx.resume().catch(() => {});
+        } catch {
+          /* ignore */
+        }
+      }
       const when = now() + (o.at ?? 0);
       const buf = buffers.get(id);
       if (buf) return start(id, buf, o, when);
-      void decode(id).then((b) => (b ? start(id, b, o, when) : o.onEnd?.()));
+      const epoch = playEpoch.get(id);
+      void decode(id).then((b) => {
+        if (b && playEpoch.get(id) === epoch) start(id, b, o, when);
+        else o.onEnd?.();
+      });
     },
     loop: (id, o) => expo.loop(id, o),
     stop(id, fadeMs = 0) {
       if (viaExpo(id)) return expo.stop(id, fadeMs);
+      playEpoch.bump(id);
       for (const v of [...voices]) {
         if (v.id !== id) continue;
         if (fadeMs > 0 && v.startAt <= now()) {
@@ -161,6 +213,14 @@ export function createOutput(): AudioOutput {
       expo.setBus(bus, gain);
       const node = buses[bus];
       if (node) node.gain.setTargetAtTime(gain, now(), 0.01);
+      if (bus === 'sfx' || bus === 'sting') {
+        busLevel[bus] = gain;
+        syncClock();
+      }
+    },
+    setActive(active) {
+      appOn = active;
+      syncClock();
     },
     otherAudio: () => {
       try {

@@ -35,6 +35,12 @@ describe('the shop across the street', () => {
     expect(RIVAL_SHOP.h).toBeCloseTo(RIVAL_SHOP.art.h * RIVAL_SHOP.scale, 0);
     expect(r.y1).toBeLessThanOrEqual(SCENE_H - 6);
     expect(RIVAL_SHOP.signFont).toBeGreaterThanOrEqual(10);
+    // D481: it stands on a pavement slab (the far kerb) wider than the shop that rises behind its foot, whole inside the scene
+    expect(RIVAL_SHOP.slab).toBeGreaterThanOrEqual(6);
+    expect(RIVAL_SHOP.slabRise).toBeGreaterThan(0);
+    expect(RIVAL_SHOP.x - RIVAL_SHOP.slab).toBeGreaterThanOrEqual(0);
+    expect(RIVAL_SHOP.x + RIVAL_SHOP.w + RIVAL_SHOP.slab).toBeLessThanOrEqual(SCENE_W);
+    expect(RIVAL_SHOP.kerb).toBeGreaterThanOrEqual(5);
     for (let fp = 0; fp < 5; fp++) {
       const lay = layout(fp, 2, 2, 2, 4, 3, 1);
       // the doormat is on the sidewalk, over 100 scene units above the road

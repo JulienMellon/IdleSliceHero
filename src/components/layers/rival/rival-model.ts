@@ -17,7 +17,7 @@ import { LABELS, lc, rivalLine, rivalSpeaker } from '../layer-text';
 export const rivalPercent = (valueMult: number = RIVAL.valueMult): number => Math.round((1 - valueMult) * 100);
 
 /** The HUD tag's text ("−20% sales", with the real minus sign), or '' when no rival is open here. */
-export const rivalTagText = (v: Pick<RivalView, 'open' | 'valueMult'>): string => (v.open ? lc('rival.tag') : '');
+export const rivalTagText = (v: Pick<RivalView, 'open'>): string => (v.open ? lc('rival.tag') : '');
 
 // ---------- the storefront across the street ----------
 
@@ -36,10 +36,13 @@ export const RIVAL_SHOP = {
   w: 65,
   h: 31,
   /** Left edge and top. */
-  x: 10,
-  top: 637,
+  x: 12,
+  top: 635,
   /** The far kerb it stands on, under its foot. */
-  kerb: 4,
+  kerb: 6,
+  /** The pavement slab under it: how far it reaches past the shop on each side, and how far up the shop's foot it rises. */
+  slab: 8,
+  slabRise: 5,
   /** The sign's text is never drawn under this size, whatever the shop's scale. */
   signFont: 10,
 } as const;

@@ -4,7 +4,9 @@ import { dbToGain, quantizeDelay, stingTiming, stingUnit } from '../logic';
 import {
   COMMON_SFX, DOWNTOWN_SET, LAUNCH_PLAYER_BUDGET, OtherAudioRule, RARE, STING_PRELOAD, TITLE_SET, createMixer, launchPlan, type Catalog,
 } from '../mixer';
-import { busOf, limiterCurve, type AudioOutput, type Bus, type LoopOpts, type PlayOpts } from '../output-core';
+import {
+  DECODED_BYTES_BUDGET, Epochs, LIMITER_RANGE, busOf, decodedBytes, limiterCurve, voiceToSteal, type AudioOutput, type Bus, type LoopOpts, type PlayOpts,
+} from '../output-core';
 
 const SFX_COUNT: Record<string, number> = {
   tap: 4, cash: 5, buy: 8, rush: 4, bubble: 3, full: 2, refused: 2, click: 1, sparkle: 1, milestone: 1, fleet: 5,
@@ -55,6 +57,7 @@ class FakeOut implements AudioOutput {
   position(id: string) { return this.pos.get(id) ?? NaN; }
   setBus(bus: Bus, gain: number) { this.calls.push(`bus ${bus} ${gain}`); this.bus[bus] = gain; }
   otherAudio() { return this.other; }
+  setActive(active: boolean) { this.calls.push(`active ${active}`); }
   /** The nth play of `id` finishes. */
   end(id: string, nth = 0) {
     const p = this.plays.filter((x) => x.id === id)[nth];
@@ -346,14 +349,76 @@ describe('the suppressed flag for Settings', () => {
 
 describe('the master limiter curve', () => {
   const c = limiterCurve();
-  it('is linear below the knee, odd, monotonic and never reaches 1', () => {
+  /** The curve at a signal level (the master gain in front of it is 1 / LIMITER_RANGE, so input x is the signal x * range). */
+  const atSignal = (signal: number) => {
+    const x = signal / LIMITER_RANGE;
+    return c[Math.round(((x + 1) / 2) * (c.length - 1))];
+  };
+  it('is the same level below the knee, odd, monotonic and never reaches 1', () => {
     const n = c.length;
-    const at = (x: number) => c[Math.round(((x + 1) / 2) * (n - 1))];
-    expect(at(0)).toBe(0);
-    expect(at(0.5)).toBeCloseTo(0.5, 3);
-    expect(at(-0.5)).toBeCloseTo(-0.5, 3);
+    expect(atSignal(0)).toBe(0);
+    expect(atSignal(0.5)).toBeCloseTo(0.5, 2);
+    expect(atSignal(-0.5)).toBeCloseTo(-0.5, 2);
     for (let i = 1; i < n; i++) expect(c[i]).toBeGreaterThanOrEqual(c[i - 1]);
     for (let i = 0; i < n; i++) expect(Math.abs(c[i])).toBeLessThan(1);
-    expect(at(1)).toBeLessThan(0.96); // the worst case of the mix table (1.25 summed) is clamped here
+  });
+
+  it('keeps rising above 1.0: sums of 1.0 to 1.25 are not hard-clipped (AU78)', () => {
+    let last = atSignal(1);
+    for (const sum of [1.05, 1.1, 1.15, 1.2, 1.25]) {
+      expect(atSignal(sum)).toBeGreaterThan(last);
+      last = atSignal(sum);
+    }
+    expect(atSignal(1.25)).toBeGreaterThan(0.99);
+    expect(atSignal(1.25)).toBeLessThan(1);
+    // the old curve ended at 0.952 for an input of 1: the curve's last point is now well above it
+    expect(c[c.length - 1]).toBeGreaterThan(0.99);
+  });
+});
+
+describe('the voice cap (AU79)', () => {
+  it('steals the oldest effect, never a stinger, and nothing under the cap', () => {
+    expect(voiceToSteal(['sfx:a/0', 'sfx:b/0'], 2)).toBe(-1);
+    expect(voiceToSteal(['sting:x', 'sfx:a/0', 'sfx:b/0'], 2)).toBe(1);
+    expect(voiceToSteal(['sting:x', 'sting:y', 'sting:z'], 2)).toBe(-1);
+  });
+});
+
+describe('plays and decodes overtaken by a stop or an unload (AU81, C132)', () => {
+  it('an epoch moves only for its own id', () => {
+    const e = new Epochs();
+    const a = e.get('sfx:a/0');
+    e.bump('sfx:a/0');
+    expect(e.get('sfx:a/0')).not.toBe(a);
+    expect(e.get('sfx:b/0')).toBe(0);
+  });
+
+  it('counts a decoded buffer in float32 bytes against a 20 MB budget', () => {
+    expect(decodedBytes(44100, 2)).toBe(352800);
+    expect(DECODED_BYTES_BUDGET).toBe(20 * 1024 * 1024);
+  });
+});
+
+describe('the app in the background (U20, AU80)', () => {
+  it('tells the output when the app goes away and comes back, once each', () => {
+    const { out, mixer } = setup();
+    mixer.setAppActive(false);
+    mixer.setAppActive(false);
+    mixer.setAppActive(true);
+    expect(out.calls.filter((c) => c.startsWith('active '))).toEqual(['active false', 'active true']);
+  });
+
+  it('a perk duck that fell due while the app was away does not leave the triumph at -6 dB', () => {
+    const { out, mixer } = setup();
+    mixer.story('triumph_downtown', true);
+    mixer.perk('downtown');
+    jest.advanceTimersByTime(3200); // the perk fires at 3 s and ducks the cue for about 0.4 s
+    expect(out.calls).toContain('fade story:triumph_downtown 0.501 80');
+    mixer.setAppActive(false);
+    jest.advanceTimersByTime(1000); // the duck's restore falls due while paused: it is skipped
+    mixer.setAppActive(true);
+    const from = out.calls.lastIndexOf('resume story:triumph_downtown');
+    expect(from).toBeGreaterThan(-1);
+    expect(out.calls.slice(from)).toContain('fade story:triumph_downtown 1.000 400');
   });
 });

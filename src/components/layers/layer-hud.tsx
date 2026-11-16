@@ -4,7 +4,7 @@ import { memo } from 'react';
 
 import { gameDayView } from '../../engine/features/layers/suburbs-gameday';
 import { boatsView } from '../../engine/features/layers/waterfront-boats';
-import { rivalView } from '../../engine/features/layers/rival';
+import { rivalOpen } from '../../engine/features/layers/rival';
 import { useGame } from '../../store/game-store';
 import { LayerChip } from './layer-chip';
 import { gameDayChipShown, gameDayChipText } from './suburbs/gameday-model';
@@ -35,6 +35,7 @@ export const HarbourChip = memo(function HarbourChip() {
 
 /** "-20% sales": the rival's tag, while a MegaSlice shop is open across from the shop on screen. */
 export const RivalTag = memo(function RivalTag() {
-  const text = useGame((s) => rivalTagText(rivalView(s.game, s.game.active, Date.now())));
+  // U19: the tag needs only whether the rival is open; rivalView would also price the challenge (a featureMults pass) on every 5 Hz set
+  const text = useGame((s) => rivalTagText({ open: rivalOpen(s.game, s.game.active) }));
   return <LayerChip id="rival-tag" text={text} hot sheet="rival" />;
 });

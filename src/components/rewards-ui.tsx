@@ -3,7 +3,7 @@
 import { router } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
 import { DAILY_CHESTS, STREAK_SAVE_DIAMONDS } from '../content/rewards';
 import type { GameState } from '../engine/game';
@@ -56,7 +56,20 @@ function Diamonds({ n }: { n: number }) {
 const DIAMOND_INK = '#3B2A20';
 const MILESTONE_GOLD = '#F5B700';
 
+/** D499: the day-30 prize, a gold oven: arched mouth, a glowing fire and a chimney. */
+function GoldOvenIcon({ size }: { size: number }) {
+  return (
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={size} height={size} viewBox="0 0 32 32">
+      <Rect x={22} y={2} width={5} height={9} rx={1.5} fill="#B8860B" stroke="#3B1F14" strokeWidth={1.5} />
+      <Path d="M3 28 V16 A13 13 0 0 1 29 16 V28 Z" fill="#F5B700" stroke="#3B1F14" strokeWidth={2} strokeLinejoin="round" />
+      <Path d="M10 28 V21 A6 6 0 0 1 22 21 V28 Z" fill="#3B1F14" />
+      <Path d="M16 27 C12.5 27 12.5 22.5 16 19 C19.5 22.5 19.5 27 16 27 Z" fill="#FF7A1A" />
+    </Svg>
+  );
+}
+
 function KindIcon({ kind, size }: { kind: GiftIconKind; size: number }) {
+  if (kind === 'oven') return <GoldOvenIcon size={size} />;
   return kind === 'coin' ? <CoinIcon size={size} /> : kind === 'bolt' ? <BoostIcon size={size} /> : kind === 'gem' ? <DiamondIcon size={size} /> : <StarIcon size={size} />;
 }
 
@@ -88,7 +101,7 @@ const TaskItem = memo(function TaskItem({ index, title, starred, progress, pill,
         </Text>
         <View style={styles.barTrack}>
           <View style={[styles.barFill, { width: `${Math.round(pct * 100)}%` }, state !== 'todo' && { backgroundColor: C.basil }]} />
-          <Text style={styles.barText}>{progress}</Text>
+          {state !== 'todo' && <Text style={styles.barText}>{progress}</Text>}
         </View>
         <Text style={styles.taskReward} numberOfLines={1}>
           {reward}
@@ -105,7 +118,7 @@ const TaskItem = memo(function TaskItem({ index, title, starred, progress, pill,
           // U4: an unfinished task shows how far it is ("3 / 5"), not a padlock: the list reads as things to do, and Claim appears when one is done
           <>
             <View style={styles.lockPill} testID={`progress-${claimId}`} accessible accessibilityLabel={pillLabel}>
-              <Text style={[styles.pillText, pill.length > 8 ? styles.pillTextSmall : pill.length > 6 ? styles.pillTextMid : null]} numberOfLines={1} maxFontSizeMultiplier={1.1}>
+              <Text style={styles.pillText} numberOfLines={1} maxFontSizeMultiplier={1.1}>
                 {pill}
               </Text>
             </View>
@@ -461,10 +474,9 @@ const styles = StyleSheet.create({
   barTrack: { height: 16, borderRadius: 8, backgroundColor: '#F1E4D3', overflow: 'hidden', justifyContent: 'center' },
   barFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: C.cheese },
   barText: { fontFamily: F.semi, fontSize: 11, color: C.ink, textAlign: 'center' },
-  lockPill: { width: 60, height: 36, borderRadius: 12, backgroundColor: '#E2D9CE', alignItems: 'center', justifyContent: 'center' },
-  pillText: { fontFamily: F.bold, fontSize: 13, color: C.inkSoft },
-  pillTextMid: { fontSize: 11.5 },
-  pillTextSmall: { fontSize: 10 },
+  // D498: a plain cream label (the bar no longer repeats it), one size, and not button-shaped: no fill edge, no raised look
+  lockPill: { width: 84, height: 24, borderRadius: 12, backgroundColor: '#FFF4E0', alignItems: 'center', justifyContent: 'center' },
+  pillText: { fontFamily: F.bold, fontSize: 12, color: C.inkSoft },
   claimSlot: { width: 84, alignItems: 'center', justifyContent: 'center', gap: 4 },
   tick: { fontFamily: F.bold, fontSize: 26, color: C.basilDark },
   points: { backgroundColor: C.panel, borderRadius: 16, padding: 12, borderWidth: 3, borderColor: C.ink, gap: 4, ...shadow },

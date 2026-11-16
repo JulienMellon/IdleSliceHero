@@ -2,8 +2,9 @@ import { createAdFlow, type AdPorts } from '../ad-flow';
 import { consentReduce, initialConsent, mayOfferAd, nextStep } from '../consent';
 import type { AdResult } from '../types';
 
-function ports(o: { ump?: () => Promise<{ canRequestAds: boolean }>; tracking?: () => Promise<'granted' | 'denied' | 'unsupported'>; ad?: AdResult | (() => Promise<AdResult>); loaded?: boolean } = {}) {
+function ports(o: { loadedFn?: () => boolean; ump?: () => Promise<{ canRequestAds: boolean }>; tracking?: () => Promise<'granted' | 'denied' | 'unsupported'>; ad?: AdResult | (() => Promise<AdResult>); loaded?: boolean } = {}) {
   const calls: string[] = [];
+  const preloads = { n: 0 };
   const p: AdPorts = {
     ump: async () => {
       calls.push('ump');
@@ -17,9 +18,12 @@ function ports(o: { ump?: () => Promise<{ canRequestAds: boolean }>; tracking?: 
       calls.push('ad');
       return typeof o.ad === 'function' ? o.ad() : (o.ad ?? 'rewarded');
     },
-    loaded: () => o.loaded ?? false,
+    loaded: () => (o.loadedFn ? o.loadedFn() : (o.loaded ?? false)),
+    preload: () => {
+      preloads.n++;
+    },
   };
-  return { p, calls };
+  return { p, calls, preloads };
 }
 
 describe('consent state machine', () => {
@@ -140,5 +144,54 @@ describe('ad flow', () => {
     expect(f.ready()).toBe(false);
     o.loaded = true;
     expect(f.ready()).toBe(true);
+  });
+});
+
+describe('ad flow keeps an ad loading (K1)', () => {
+  it('asks for the next ad on every exit of show: rewarded, dismissed and unfilled', async () => {
+    for (const ad of ['rewarded', 'dismissed', 'unavailable'] as const) {
+      const { p, preloads } = ports({ ad });
+      const f = createAdFlow(p);
+      f.setTutorialDone();
+      expect(preloads.n).toBe(0); // consent not known yet: nothing may load
+      await f.show('double_claim');
+      expect(preloads.n).toBe(1);
+    }
+  });
+
+  it('a button that went away (stale or unfilled ad) asks for a reload whenever it is checked', async () => {
+    let loaded = true;
+    const { p, preloads } = ports({ loadedFn: () => loaded });
+    const f = createAdFlow(p);
+    f.setTutorialDone();
+    await f.show('double_claim');
+    const after = preloads.n;
+    expect(f.ready()).toBe(true);
+    expect(preloads.n).toBe(after);
+    loaded = false; // the ad went stale
+    expect(f.ready()).toBe(false);
+    expect(preloads.n).toBe(after + 1);
+    loaded = true; // the retry filled
+    expect(f.ready()).toBe(true);
+  });
+
+  it('never loads before consent says ads are allowed', async () => {
+    const { p, preloads } = ports({ ump: async () => ({ canRequestAds: false }) });
+    const f = createAdFlow(p);
+    f.setTutorialDone();
+    await f.show('double_claim');
+    f.ready();
+    expect(preloads.n).toBe(0);
+  });
+
+  it('a preload that throws does not break show or ready', async () => {
+    const { p } = ports();
+    p.preload = () => {
+      throw new Error('x');
+    };
+    const f = createAdFlow(p);
+    f.setTutorialDone();
+    expect(await f.show('double_claim')).toBe('rewarded');
+    expect(f.ready()).toBe(false);
   });
 });

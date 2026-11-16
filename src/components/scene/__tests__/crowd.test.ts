@@ -4,7 +4,7 @@
 import { buildCast, sidewalkOf, type CastMember } from '../cast';
 import { alongDist, emptyCrew, routesFor, stepCrew, type CrewState } from '../crew';
 import { advanceLine, AUTOMATIC, emptyLine, type Line, type LineRates } from '../../../engine/pipeline';
-import { BACK_ROW_Y, DRIVER_QUEUE_PITCH, MORE_TAG_DRIVER_AIR, MORE_TAG_GAP, MORE_TAG_Z, MORE_TAG_Z_ALONE, PATIO_Y, PILL_LAYER_Y, SIGN_Y, DRIVER_SPOTS, FEET_IN, NEAR_ROW_Y, PATIO_HALF_W, PATIO_SEAT, PROP_Y, QUEUE_PITCH, QUEUE_Y, SEAT, TABLE_SET_HALF, TAG_MARGIN, TREE_Y, VEHICLE_HALF_W, WAIT_TAG_Z, layout, moreTagAt, moreTagRect, waitTagAt, waitTagRect, waitTagWidth } from '../layout';
+import { BACK_ROW_Y, DRIVER_QUEUE_PITCH, MORE_TAG_DRIVER_AIR, MORE_TAG_GAP, MORE_TAG_Z, MORE_TAG_Z_ALONE, PATIO_Y, PILL_LAYER_Y, SIGN_Y, DRIVER_SPOTS, FEET_IN, NEAR_ROW_Y, PATIO_HALF_W, PATIO_SEAT, PROP_Y, QUEUE_PITCH, QUEUE_Y, SEAT, TABLE_SET_HALF, TAG_MARGIN, TREE_Y, VEHICLE_HALF_W, WAIT_TAG_Z, canopyBox, layout, moreTagAt, moreTagRect, waitTagAt, waitTagRect, waitTagWidth } from '../layout';
 import { driverCast, hash32, lookFor } from '../looks';
 import { driverFigures, queueLabel, queueOverflow, waitingText } from '../waiting';
 import { seatPalette } from '../palette';
@@ -1095,6 +1095,23 @@ describe('the waiting pill over the patio (D450)', () => {
           expect([sh.name, text, more, m.y0 - (w.y1 - 4) >= MORE_TAG_GAP - 1e-9]).toEqual([sh.name, text, more, true]);
         }
     expect(n).toBeGreaterThan(20);
+  });
+  test('v5.17 D450: the "N waiting" pill touches no umbrella canopy (its screen box, 4 pt of air), at every footprint with a patio', () => {
+    const bad: string[] = [];
+    let near = 0;
+    for (const sh of ALONE())
+      for (const more of ['3 waiting', '12 waiting', '120 waiting']) {
+        const m = moreTagRect(sh.lay, more);
+        const pill = { x0: m.x0, x1: m.x1, y0: m.y0, y1: m.y1 - 4 }; // the body (the rect holds the tail)
+        for (const p of sh.lay.patio) {
+          const c = canopyBox(p.x, p.y);
+          const canopy = { x0: c.x0 - 4, x1: c.x1 + 4, y0: c.y0 - 4, y1: c.y1 + 4 };
+          near++;
+          if (touches(canopy, pill)) bad.push(`${sh.name} "${more}"`);
+        }
+      }
+    expect(near).toBeGreaterThan(5);
+    expect(bad).toEqual([]);
   });
   test('the check can fail: at the old height (MORE_TAG_Z) the pill overlapped the drivers\' pill by about 4 pt', () => {
     expect(MORE_TAG_Z_ALONE).toBeLessThan(MORE_TAG_Z);

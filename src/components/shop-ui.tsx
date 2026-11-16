@@ -1,5 +1,5 @@
 // Neighborhood tabs and the compact upgrade cards under the pizzeria cutaway.
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { memo, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { emitAudio } from '../audio/bus';
@@ -65,7 +65,8 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
                 <View key={n.id} onLayout={onTab(i)} testID={`build-${n.id}`} accessibilityState={{ disabled: true }} style={[styles.tab, styles.tabBuild, styles.tabHeld]}>
                   <Text style={[styles.tabName, { color: C.inkSoft }]}>+ {n.name}</Text>
                   <Text style={[styles.tabSub, { color: C.inkSoft }]} numberOfLines={1}>
-                    {lot.pin}
+                    {/* D503: "2.21K pies to go", not "Nonna in 2.21K" (in what?) */}
+                    {lot.kind === 'nonna' && lot.pin.startsWith('Nonna in ') ? `${lot.pin.slice('Nonna in '.length)} pies to go` : lot.pin}
                   </Text>
                 </View>
               );
@@ -126,7 +127,10 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
   );
 }
 
-export function StationCard(props: {
+/** M63: memoised on primitive props; `icon` must be a cached element and the buy handler stable (use `buyKey` + one `onBuyKey` for a list). */
+export const StationCard = memo(StationCardView);
+
+function StationCardView(props: {
   icon: ReactNode;
   title: string;
   level?: string;
@@ -136,7 +140,10 @@ export function StationCard(props: {
   canBuy: boolean;
   hot?: boolean;
   /** Opened from its sidewalk card: highlight in cheese yellow (distinct from the red bottleneck). */
-  onBuy: () => boolean | void;
+  onBuy?: () => boolean | void;
+  /** A list passes one stable handler and each card's key, instead of a new closure per card per render. */
+  buyKey?: string;
+  onBuyKey?: (key: string) => boolean | void;
   testID?: string;
   wide?: boolean;
   muted?: boolean;
@@ -147,6 +154,8 @@ export function StationCard(props: {
 }) {
   // D419: a card you can afford has the 2 pt crust-brown outline on a solid face (the bottleneck's signal is its tint and chip, not a pale outline)
   const look = cardLook(props.hot && !props.muted ? 'hot' : null, props.canBuy);
+  const { onBuy, onBuyKey, buyKey } = props;
+  const press = useCallback(() => (onBuyKey && buyKey !== undefined ? onBuyKey(buyKey) : onBuy?.()), [onBuy, onBuyKey, buyKey]);
   return (
     <View style={[styles.card, props.wide && styles.cardWide, props.canBuy ? { borderColor: look.borderColor, borderWidth: look.borderWidth, backgroundColor: look.backgroundColor, padding: 5 + (2.5 - look.borderWidth) } : props.hot && styles.cardHot, props.muted && !props.canBuy && styles.cardMuted]}>
       <View style={styles.cardHead}>
@@ -168,7 +177,7 @@ export function StationCard(props: {
         </View>
       </View>
       <View style={props.wide ? { width: 96 } : undefined}>
-        <BuyButton compact name={props.title} tone={props.tone} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : props.buyLabel ?? money(props.cost)} sub={props.tone === 'nogain' ? 'no gain now' : undefined} enabled={props.canBuy} onPress={props.onBuy} />
+        <BuyButton compact name={props.title} tone={props.tone} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : props.buyLabel ?? money(props.cost)} sub={props.tone === 'nogain' ? 'no gain now' : undefined} enabled={props.canBuy} onPress={press} />
       </View>
     </View>
   );

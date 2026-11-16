@@ -61,6 +61,15 @@ describe('nextSceneTeaser: one test per trigger kind', () => {
     expect(t.progress).toBeCloseTo(0.5);
   });
 
+  test('bid (C122, T95): once on offer, the ring is cash over the price the bid costs now, the auction included', () => {
+    const base = withShop(before('waterfront-4', { cash: PIER9_BID.cost / 2 }), 'waterfront', { built: true, sold: PIER9_BID.unlockPizzas, perk: false });
+    const s = { ...base, seenScenes: [...base.seenScenes, 'waterfront-3b'], playSeconds: 10_000, x: { ...base.x, waterfrontBoats: { ...(base.x.waterfrontBoats as object), openedAt: 0 } } };
+    expect(G.pier9Available(s)).toBe(true);
+    const price = G.pier9Price(s);
+    expect(price).toBeGreaterThan(PIER9_BID.cost);
+    expect(nextSceneTeaser(s).progress).toBeCloseTo(Math.min(1, s.cash / price));
+  });
+
   test('a scene already due is "in a moment" at a full ring', () => {
     const s = withShop(before('suburbs-2'), 'suburbs', { built: true, sold: countOf('suburbs-2') + 5000 });
     const t = nextSceneTeaser(s);

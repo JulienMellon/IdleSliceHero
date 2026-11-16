@@ -18,6 +18,8 @@ export interface Feature<S> {
   shopValueMult?(g: GameState, id: NeighborhoodId, now: number): number;
   /** What this feature changes about one shop's value (an event running, an attack on, cards owned), as a short string. `shopLevelKey` appends it, so the caches of "+$X/s" readouts refresh when it changes (C112). Empty = nothing. */
   shopKey?(g: GameState, id: NeighborhoodId): string;
+  /** The wall ms a readout with no clock (`shopEarnings(s, id)`) should price at, or null for none: the events give the stamp of the last foreground tick, so a readout shows the event for as long as it runs, not only after a save (C116). */
+  readoutNow?(g: GameState): number | null;
   /** Multiplies the demand rate (drivers + walk-ins) in this shop. */
   shopDemandMult?(g: GameState, id: NeighborhoodId, now: number): number;
   /** Runs after the offline catch-up has been applied; `seconds` is the paid time away. */

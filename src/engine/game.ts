@@ -534,9 +534,12 @@ export function migrate(raw: unknown, now: number): GameState {
   game.order = migrateOrders(r.order, game.playSeconds, now, game.shops);
   // saves from before the night oven have none: the base cap
   game.nightOven = int(r.nightOven, 0, 0, NIGHT_OVEN.capSeconds.length - 1);
-  // feature slices: a save without `x` (or without a feature's key) gets that feature's defaults; keys of features no longer registered are dropped
-  const savedX = (r.x && typeof r.x === 'object' ? r.x : {}) as Record<string, unknown>;
-  game.x = Object.fromEntries(FEATURES.map((f) => [f.key, f.migrate(savedX[f.key], now)]));
+  // feature slices: a save without `x` (or without a feature's key) gets that feature's defaults. A key no feature owns is kept as it
+  // was (C117): a registry that is empty or short (a module loaded in the wrong order, a feature behind a flag) must not delete a
+  // player's saved layer state at the next save.
+  const savedX = (r.x && typeof r.x === 'object' && !Array.isArray(r.x) ? r.x : {}) as Record<string, unknown>;
+  if (!FEATURES.length && typeof __DEV__ !== 'undefined' && __DEV__) console.warn('migrate: no features are registered (import engine/features before loading a game)');
+  game.x = { ...savedX, ...Object.fromEntries(FEATURES.map((f) => [f.key, f.migrate(savedX[f.key], now)])) };
   return migrateStory(game, num(r.saveVersion, 0));
 }
 
@@ -580,8 +583,8 @@ const NO_FX: FeatureMults = Object.freeze({ value: 1, demand: 1 });
 /**
  * The product of every feature's multipliers for one shop (1 and 1 with no features). `now` is wall ms and is required (C111): a
  * hook such as the events' decides by it whether the app has been open. The readouts that have no clock (`shopEarnings(s, id)`)
- * pass the save time, which is behind the last foreground tick's stamp in play, so they show the price without the event; a
- * screen that wants the event in its number passes the store's `tickAt`.
+ * pass `readoutNow`: the event's stamp while one runs (so they show it steadily), else the save time; a screen that wants a later
+ * clock in its number passes the store's `tickAt`.
  */
 export function featureMults(s: GameState, id: NeighborhoodId, now: number): FeatureMults {
   if (!FEATURES.length) return NO_FX;
@@ -672,8 +675,21 @@ export function valuePerPizza(id: NeighborhoodId, shop: Shop, vehicle: number, f
   return sold > 0 ? shopRevenue(id, shop, vehicle, fx) / sold : def(id).orderValue * (perkOf(id, shop)?.priceMult ?? 1) * decorMult(shop, id) * gmMult(shop) * fx.value;
 }
 
+/**
+ * The clock of a readout that has none (C116): a feature's stamp (an event running: the last foreground tick) or else the save time.
+ * It used to be the save time alone, which jumps ahead of the stamp at every save, so an event's x1.5 showed after each save and
+ * went again a moment later.
+ */
+function readoutNow(s: GameState): number {
+  for (const f of FEATURES) {
+    const at = f.readoutNow?.(s);
+    if (at != null) return at;
+  }
+  return s.lastSavedAt;
+}
+
 /** Cash per second this pizzeria makes while running (managed, or while you keep tapping). */
-export function shopEarnings(s: GameState, id: NeighborhoodId, now: number = s.lastSavedAt): number {
+export function shopEarnings(s: GameState, id: NeighborhoodId, now: number = readoutNow(s)): number {
   const shop = s.shops[id];
   if (!shop.built) return 0;
   return shopRevenue(id, shop, s.vehicle, featureMults(s, id, now));
@@ -1152,9 +1168,14 @@ export function sceneTriggered(s: GameState, scene: Scene): boolean {
 /** Unseen scenes whose triggers pass, in story order (earliest first); main beats come before interludes when both are ready. */
 export function pendingScenes(s: GameState, scenes: Scene[]): Scene[] {
   const seen = new Set(s.seenScenes);
-  const ready = scenes.filter((sc) => !seen.has(sc.id) && sceneTriggered(s, sc));
-  return [...ready.filter((sc) => sc.beat !== 'interlude'), ...ready.filter((sc) => sc.beat === 'interlude')];
+  const main: Scene[] = [];
+  const interludes: Scene[] = [];
+  for (const sc of scenes) if (!seen.has(sc.id) && sceneTriggered(s, sc)) (sc.beat === 'interlude' ? interludes : main).push(sc);
+  return interludes.length ? main.concat(interludes) : main;
 }
+
+/** The home scenes by id, built once (M66): the goal bar asks `storyWaitHint` often. */
+const HOME_BY_ID: ReadonlyMap<string, Scene> = new Map(HOME_SCENES.map((sc) => [sc.id, sc]));
 
 const capital = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 
@@ -1164,7 +1185,7 @@ const capital = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
  */
 export function storyWaitHint(s: GameState, scenes: readonly Scene[] = HOME_SCENES): string | null {
   const seen = new Set(s.seenScenes);
-  const byId = new Map(scenes.map((sc) => [sc.id, sc]));
+  const byId = scenes === HOME_SCENES ? HOME_BY_ID : new Map(scenes.map((sc) => [sc.id, sc]));
   const unseenBehind = (sc: Scene, out: Set<string> = new Set()): Set<string> => {
     for (const id of prerequisites(sc)) {
       const p = byId.get(id);
@@ -1340,12 +1361,17 @@ export interface BundleHint {
   affordable: boolean;
 }
 
+/** One key for what a shop's levels, fleet and decor decide, and nothing a feature adds: a price ladder keys on it (M65). */
+export function shopBuildKey(s: GameState, id: NeighborhoodId): string {
+  const sh = s.shops[id];
+  return `${id}|${sh.built}|${sh.managed}|${sh.heads.prep}${sh.heads.oven}${sh.heads.counter}|${sh.prep}|${sh.ovens}|${sh.counter}|${sh.drivers}|${sh.tables}|${sh.grade}|${sh.footprint}|${sh.perk}|${s.vehicle}|${Object.values(sh.decor).join(',')}`;
+}
+
 /** One key for everything a shop's upgrade levels decide (not cash, sales or the line): shared caches key on it (A18). */
 export function shopLevelKey(s: GameState, id: NeighborhoodId): string {
-  const sh = s.shops[id];
   // the features' part (an event running, an attack on this shop, recipe cards owned) moves every "+$X/s" without a purchase (C112)
   const fx = FEATURES.map((f) => f.shopKey?.(s, id) ?? '').join(',');
-  return `${id}|${sh.built}|${sh.managed}|${sh.heads.prep}${sh.heads.oven}${sh.heads.counter}|${sh.prep}|${sh.ovens}|${sh.counter}|${sh.drivers}|${sh.tables}|${sh.grade}|${sh.footprint}|${sh.perk}|${s.vehicle}|${Object.values(sh.decor).join(',')}|${fx}`;
+  return `${shopBuildKey(s, id)}|${fx}`;
 }
 
 let hintKey = '';

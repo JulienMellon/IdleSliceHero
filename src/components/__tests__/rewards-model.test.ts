@@ -272,7 +272,7 @@ describe('gift calendar', () => {
     expect(h.caption).toBe(`Nonna Rosa drops by. \u201C${VISITOR_LINES.nonna}\u201D`);
     expect(h.caption).toBe(visitCaption('nonna'));
     expect(h.prize).toBe('2× income for 7 days · 300 diamonds · Gold oven');
-    expect(h.prizeIcon).toBe('star');
+    expect(h.prizeIcon).toBe('oven');
   });
   test('gift text covers every kind', () => {
     expect(giftText(GIFT_DAYS[0])).toBe(`${minText(GIFT_DAYS[0].minutes!)} of income`);
@@ -292,8 +292,8 @@ describe('gift calendar', () => {
     expect(t[13]).toMatchObject({ icon: 'bolt', label: '3 boosts' });
     expect(t[20]).toMatchObject({ icon: 'bolt', label: '1 day' });
     expect(t[27]).toMatchObject({ icon: 'star', label: 'Skin' });
-    expect(t[29]).toMatchObject({ icon: 'star', label: 'Visit' });
-    expect(giftIcon(GIFT_DAYS[29])).toBe('star');
+    expect(t[29]).toMatchObject({ icon: 'oven', label: 'Visit' });
+    expect(giftIcon(GIFT_DAYS[29])).toBe('oven');
   });
 });
 

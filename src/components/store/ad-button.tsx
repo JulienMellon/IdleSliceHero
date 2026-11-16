@@ -9,7 +9,7 @@ import { ads, analytics, EVENTS, type AdPlacement } from '../../services';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { StarIcon } from '../icons';
-import { adLabel, adOffering, buttonShown, gives, runAd } from './ad-model';
+import { adLabel, adOffering, buttonShown, gives, READY_CHECK_MS, runAd } from './ad-model';
 
 /** The film-strip icon of every ad button. */
 export function FilmIcon({ size = 20, color = C.ink }: { size?: number; color?: string }) {
@@ -26,9 +26,6 @@ export function FilmIcon({ size = 20, color = C.ink }: { size?: number; color?: 
     </Svg>
   );
 }
-
-/** How often a mounted button asks whether an ad could be shown now (a button that appears or goes away between taps). */
-const READY_CHECK_MS = 4000;
 
 export interface AdButtonProps {
   placement: AdPlacement;
@@ -52,6 +49,8 @@ export const AdButton = memo(function AdButton({ placement, label, plusLabel, te
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
   useEffect(() => {
+    // asks again now and every few seconds: after a stale or unfilled ad the service loads another, and the button returns on its own
+    setReady(ads.ready(placement));
     const t = setInterval(() => setReady(ads.ready(placement)), READY_CHECK_MS);
     return () => clearInterval(t);
   }, [placement]);
@@ -65,8 +64,10 @@ export const AdButton = memo(function AdButton({ placement, label, plusLabel, te
     if (busy) return;
     setBusy(true);
     setNote('');
-    void runAd(placement, { plus, show: ads.show, track: analytics.track }).then((outcome) => {
+    void runAd(placement, { plus, show: ads.show }).then((outcome) => {
       setBusy(false);
+      // the ad is spent: ask again, so a failed show hides the button until the next one has loaded and a good one brings it back
+      setReady(ads.ready(placement));
       if (gives(outcome)) {
         if (Platform.OS !== 'web') void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         onBenefit();

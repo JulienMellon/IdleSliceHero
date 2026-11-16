@@ -210,6 +210,30 @@ describe('never offline', () => {
   });
 });
 
+describe('a readout with no clock (C116, T90)', () => {
+  it('shows the event steadily: the same before and after a save, which moves lastSavedAt past the stamp', () => {
+    const now = FRI(18);
+    const g = running(now);
+    const saved = { ...g, lastSavedAt: now + 40_000 };
+    const quiet = G.shopEarnings(base(now), 'uptown', now);
+    expect(G.shopEarnings(g, 'uptown') / quiet).toBeCloseTo(1.5, 9);
+    expect(G.shopEarnings(saved, 'uptown')).toBeCloseTo(G.shopEarnings(g, 'uptown'), 9);
+  });
+
+  it('is the save-time price when no event runs', () => {
+    const now = at(2026, 11, 12, 18);
+    const g = running(now);
+    expect(G.shopEarnings(g, 'uptown')).toBe(G.shopEarnings(g, 'uptown', g.lastSavedAt));
+  });
+
+  it('keys the shop on the boost too, so a cache of "+$X/s" refreshes when a boost starts during an event', () => {
+    const now = FRI(18);
+    const g = running(now);
+    const boosted: G.GameState = { ...g, rewards: { ...g.rewards, boosts: [{ mult: 2, until: now + 3_600_000, source: 't' }], lastSeen: now } };
+    expect(G.shopLevelKey(boosted, 'uptown')).not.toBe(G.shopLevelKey(g, 'uptown'));
+  });
+});
+
 describe('the state', () => {
   it('stays still between stamps and while no event runs', () => {
     const a = running(FRI(18));

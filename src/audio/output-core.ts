@@ -59,6 +59,8 @@ export interface AudioOutput {
   /** Seconds into a loop or cue, or into the latest play of a one-shot; NaN when it isn't sounding. */
   position(id: string): number;
   setBus(bus: Bus, gain: number): void;
+  /** U20: the app is in the foreground (true) or not. An output with an audio clock suspends it in the background; optional. */
+  setActive?(active: boolean): void;
   /**
    * AU41: does the audio session say another app is playing? `null` = this output can't tell.
    * Read once at launch.
@@ -86,19 +88,49 @@ export function createSilentOutput(): AudioOutput {
   };
 }
 
+/** The largest sum of buses the mix table allows (1.25 of full scale): the limiter is shaped to carry it without a hard clip (AU78). */
+export const LIMITER_RANGE = 1.25;
+
 /**
  * A soft-knee limiter curve for a WaveShaper: linear to `knee`, then bent so the output never passes 1.
  * react-native-audio-api 1.0 has no compressor node, so the native master limiter is this static curve.
- * `n` points over input −1..1 (odd, so 0 maps to 0).
+ * A WaveShaper only sees −1..1 and clips what is beyond, so the master gain in front of it is `1 / range` and the
+ * curve is laid out over −range..range: a signal sum of 1.25 reaches the end of the curve instead of clipping at 0.95.
+ * `n` points over input −1..1 (odd, so 0 maps to 0); the output is the same level as the input below the knee.
  */
-export function limiterCurve(n = 2049, knee = 0.8): Float32Array {
+export function limiterCurve(n = 2049, knee = 0.8, range = LIMITER_RANGE): Float32Array {
   const out = new Float32Array(n);
   const room = 1 - knee;
   for (let i = 0; i < n; i++) {
-    const x = (i / (n - 1)) * 2 - 1;
+    const x = ((i / (n - 1)) * 2 - 1) * range;
     const a = Math.abs(x);
     const y = a <= knee ? a : knee + room * Math.tanh((a - knee) / room);
     out[i] = Math.sign(x) * y;
   }
   return out;
 }
+
+/** AU79: the voice cap is full: which of the live voices (oldest first) to cut for the new one. Only effects are cut, never a stinger; -1 = none. */
+export function voiceToSteal(ids: readonly string[], cap: number): number {
+  if (ids.length <= cap) return -1;
+  return ids.findIndex((id) => busOf(id) === 'sfx');
+}
+
+/**
+ * C132: a count per id that a stop or an unload bumps, so a play or a decode still in flight when it happens can see
+ * it has been overtaken and drop its result instead of sounding (or being kept) after the fact.
+ */
+export class Epochs {
+  private n = new Map<string, number>();
+  get(id: string): number {
+    return this.n.get(id) ?? 0;
+  }
+  bump(id: string): void {
+    this.n.set(id, this.get(id) + 1);
+  }
+}
+
+/** M67: decoded sound resident at once before the optional preloads (stinger sets) stop being created ahead of time. */
+export const DECODED_BYTES_BUDGET = 20 * 1024 * 1024;
+/** Bytes of a decoded buffer: 32-bit floats per sample per channel. */
+export const decodedBytes = (length: number, channels: number) => length * channels * 4;
