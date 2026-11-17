@@ -1,5 +1,6 @@
 // Pure audio rules (no expo-audio): which music plays, which cue a moment gets, beat quantisation, voice limits.
 // The director (director.ts) does the playing; everything it decides comes from here so it can be tested in Node.
+import { HOME_ID, CITIES, hoodIds } from '../content/cities';
 import { TUNING } from '../content/tuning';
 import type { NeighborhoodId, PanelCue, Scene } from '../content/types';
 
@@ -12,6 +13,19 @@ export interface MusicContext {
   /** Nonna has taken over Downtown (downtown-4 seen): the full band plays there (AU20). */
   downtownFull: boolean;
   scene: { neighborhood: NeighborhoodId; panelCue: PanelCue; beat?: number } | null;
+}
+
+/**
+ * The neighbourhood whose sounds `hood` plays in `cityId`. The home city's neighbourhoods play their own loops, stingers and triumphs;
+ * another city plays the home neighbourhood at the same place in its build order until it has a set of its own (v5.18, card A2),
+ * so a save in Boston never asks the manifest for a cue it lacks. Resolved here, once, at the director's edge.
+ */
+export function audioHood(hood: NeighborhoodId, cityId: string | undefined): NeighborhoodId {
+  const home = hoodIds(CITIES[HOME_ID]);
+  if (home.includes(hood)) return hood;
+  const city = CITIES[cityId ?? HOME_ID];
+  const at = city ? hoodIds(city).indexOf(hood) : -1;
+  return home[at < 0 ? 0 : at % home.length];
 }
 
 /** The loop that should be playing: a scene plays its own neighbourhood; MegaSlice panels play the HQ march. */

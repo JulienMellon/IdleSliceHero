@@ -6,8 +6,9 @@ const fs: { readFileSync(p: string, e: string): string; existsSync(p: string): b
 const path: { join(...p: string[]): string } = require('path');
 
 import { HOME_SCENES } from '../../content/scenes/home';
+import { CITIES, hoodIds } from '../../content/cities';
 import { NEIGHBORHOODS } from '../../content/tuning';
-import { stingTiming, MAX_TONIC_WAIT_SECONDS, perkDuckSeconds, RarePlays, shouldReleaseWarmCollect, DUCK, stingDuck, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
+import { audioHood, stingTiming, MAX_TONIC_WAIT_SECONDS, perkDuckSeconds, RarePlays, shouldReleaseWarmCollect, DUCK, stingDuck, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const MANIFEST = fs.readFileSync(path.join(__dirname, '..', 'manifest.ts'), 'utf8');
@@ -142,6 +143,22 @@ describe('music and story cues (AU12, AU13, AU20)', () => {
     expect(musicFor({ active: 'downtown', downtownFull: true, scene: null })).toBe('downtown');
     expect(musicFor({ active: 'suburbs', downtownFull: true, scene: { neighborhood: 'waterfront', panelCue: 'none' } })).toBe('waterfront');
     expect(musicFor({ active: 'suburbs', downtownFull: true, scene: { neighborhood: 'waterfront', panelCue: 'megaslice' } })).toBe('megaslice_hq');
+  });
+  it('plays a home neighbourhood in its own key and a Boston one in the home neighbourhood at the same place (a Boston save never asks for a cue the manifest lacks)', () => {
+    const home = hoodIds(CITIES.home);
+    for (const id of home) expect(audioHood(id, 'home')).toBe(id);
+    const boston = hoodIds(CITIES.boston);
+    boston.forEach((id, i) => {
+      const h = audioHood(id, 'boston');
+      expect(home).toContain(h);
+      expect(h).toBe(home[i % home.length]);
+      // the loop, its stingers and its triumph all exist
+      expect(MANIFEST).toMatch(new RegExp(`\\n  ${h}: \\{ src: require\\('../../assets/audio/music/`));
+      expect(MANIFEST).toContain(`triumph_${h}:`);
+      expect(MANIFEST).toContain(`${h}_milestone: { src:`);
+    });
+    expect(audioHood('no-such-hood', 'boston')).toBe(home[0]);
+    expect(audioHood('north-end', undefined)).toBe(home[0]);
   });
   it('gives every scene a cue, every beat 3 its villain, every beat 4 a win', () => {
     for (const s of HOME_SCENES) {
