@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.17-r3           # label of the last screenshot set that passed verify
 codecritic_range_start: 229f874
 cards:                 # todo | running | done | partial | blocked
-  K1: running  W3: running  V1: todo  E3: todo  T2: todo  A2: todo  V2: todo
+  K1: running  W3: done  V1: todo  E3: todo  T2: todo  A2: todo  V2: todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.17/review-r3-critic.md (r3 SATISFIED; bug 0 major 0 minor 4; E2 U1 S1; D481 D493 D495 D505)
   code:   docs/build/v5.17/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 20; E10 U3 S3 N3 A2; M68 A32 medium carried)
@@ -31,3 +31,4 @@ next: S5-v5.18.md wave 1 running (K1 + W3, then V1, then seam verify v5.18-seam)
 - 2026-11-17 02:06 UTC Verify v5.17-r3 PASS: 1625 tests, True 0 [], layout 0 new; 10 changed. r3 re-check: critic (sonnet). Codecritic not re-run: r3 touched only components outside its paths.
 - 2026-11-17 02:07 UTC v5.17 closed: r3 critic SATISFIED (4 minors carry), code APPROVED (r2), audio SATISFIED (r2). Next v5.18.
 - 2026-11-17 S5 start: v5.18 wave 1 launched (K1 programmer, W3 writer).
+- 2026-11-17 W3 done (docs/story/BOSTON-SCRIPT.md, 32 scenes). Writer asks: confirm speaker name 'Kayla Dunn'; next city unnamed. K1 running.
