@@ -20,7 +20,6 @@ next: S5-v5.18.md: seam verify v5.18-seam running + r0 story doc review; then wa
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-17 W3 done (docs/story/BOSTON-SCRIPT.md, 32 scenes). Writer asks: confirm speaker name 'Kayla Dunn'; next city unnamed. K1 running.
 - 2026-11-17 K1 partial: built, no behaviour change claimed; real jest not run (node_modules was absent -> npm ci). Needs (out of scope, home-only): .hood fields in content/layers.ts + ~15 component sites; shop-only helpers on home fit tables; ORDER_CAST, endgame events, NIGHT_OVEN, tutorial copy, audio director, art ids. V1 launched.
 - 2026-11-17 K1 tree: tsc clean, 1633 tests pass (real jest).
 - 2026-11-17 V1 done (frame + scroll container, 17 new tests). Needs for V2: thread frame through ~200 P() calls or translate by (width-393)/2; widen Backdrop art, clouds, rival-shop position. Seam verify v5.18-seam started (APP_VERSION left at 5.17 so shots compare).
@@ -30,3 +29,4 @@ next: S5-v5.18.md: seam verify v5.18-seam running + r0 story doc review; then wa
 - 2026-11-17 W3 pass 1 done (S49-S62 fixed; S48 U-owned, carried for Julien). Needs: next city name; props pretzel, phone (T2). Re-check r0b story (sonnet) launched.
 - 2026-11-17 K1 fixture fix done (90_t1b SCENES_DIR; tsc + 1650 tests). Seam shots re-run v5.18-seam.
 - 2026-11-17 r0b story re-check SATISFIED (S49-S62 fixed; new minors S63 S64 -> W3 pass 2 of 2; S48 carried).
+- 2026-11-17 W3 pass 2 done (S63 S64). Script final; S48 carried. Wave 2 complete. Waiting seam shots, then wave 3 (E3 + T2).

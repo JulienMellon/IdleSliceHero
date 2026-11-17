@@ -1,6 +1,6 @@
 # Slice Empire — Boston Script (City 2)
 
-2026-11-17 · card W3 · review r0 notes S49–S62 folded in
+2026-11-17 · card W3 · review notes S49–S64 folded in
 
 > Format matches `docs/story/STORY-v4-final.md`. Each line below is `**Speaker:** text`; italic lines are captions. The number before each scene heading is play order; minutes come from the pacing sim. Every scene is ★ NEW.
 
@@ -167,9 +167,9 @@
 **Panel 2** — southie · Kayla Dunn (neutral)
 > **Kayla Dunn:** Kayla Dunn. I run Dunn's. My dad ran Dunn's. His dad ran it into the ground.
 > **Kayla Dunn:** Both names, always. I hear you've already got a Kayla.
-> **Kayla Dunn:** You're the pizza people? Where's your flour from?
 
 **Panel 3** — southie · Kayla Dunn (angry)
+> **Kayla Dunn:** You're the pizza people? Where's your flour from?
 > **You:** A big warehouse. Somewhere. Far?
 > **Kayla Dunn:** "Somewhere far." Wrong answer. My bar serves food from here. From HERE.
 
@@ -387,11 +387,11 @@
 
 **Panel 3** — megaslice-hq · Victor Crust (happy), Trish (happy) · prop: phone
 > **Victor Crust:** Trish! Don't tell me. The ballpark is mine.
-> **Trish:** Great news, Victor. I've seen the envelope.
+> **Trish:** Great news, Victor. I've seen the bids.
 > **Victor Crust:** If only I'd had you instead of... Todd. See? I know it now. Too late.
 
 **Panel 4** — fenway · Manny (neutral)
-> **Manny:** Park can't choose. So the fans pick, game day. Loudest cheer wins.
+> **Manny:** Park's board is tied. So the fans pick, game day. Loudest cheer wins.
 > **Manny:** So we feed every fan in the park. And then we make them LOUD.
 
 ### 19 — Fenway · Interlude · "The Scorecard" `fenway-5` · ★ NEW
