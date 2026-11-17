@@ -1,21 +1,22 @@
 import { useState } from 'react';
-import { Modal } from 'react-native';
 import { lotView } from './city-model';
 import { LOOKS } from './scene/identity';
 // City overview: every neighborhood and its pizzeria at a glance. Tap one to visit it (or build it).
 import Svg, { Circle, Ellipse, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
-import { MAP_VIEWBOX, NEIGHBORHOODS } from '../content/tuning';
+import { cityOf, hoodIds } from '../content/cities';
+import { HOME_CITY } from '../content/cities/home';
+import { MAP_VIEWBOX } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
 import * as Game from '../engine/game';
-import { finaleSeen } from '../engine/features/counterattack';
+import { canFranchise } from '../engine/features/franchise';
 import { C, F } from '../theme';
 import { attackLite } from './endgame/attack-model';
-import { copy } from './endgame/copy-text';
 import { pipBits, showPips, starPips } from './endgame/mastery-model';
 import { MapStars } from './endgame/star-pips';
-import { SoonCard } from './title-card';
+import { FranchiseFlow } from './franchise/flow';
+import { lotLabel } from './franchise/franchise-model';
 
 const INK = '#3B1F14';
 /** D463: the bottom row's label cards have a third row of stars now: the view is this much taller, so the list panel below never cuts them. */
@@ -36,12 +37,12 @@ const ROADS: [number, number, number, number][] = [
 
 /** A built lot: a tiny Rosa's storefront in the neighbourhood's wall colour, with a striped awning. */
 /** A pizzeria pin in its own neighbourhood's colours (D365): facade, pilasters and awning from identity.ts. */
-function MiniShop({ x, y, id, color }: { x: number; y: number; id: NeighborhoodId; color: string }) {
-  const look = LOOKS[id];
+function MiniShop({ x, y, id, color, wall, lookId }: { x: number; y: number; id: NeighborhoodId; color: string; wall: string; lookId: NeighborhoodId }) {
+  const look = LOOKS[lookId] ?? LOOKS[id];
   return (
     <G>
       <Rect x={x - 9} y={y - 5.5} width={18} height={12} rx={1.2} fill="rgba(59,31,20,0.25)" transform="translate(0 1)" />
-      <Rect x={x - 9} y={y - 6.5} width={18} height={12.5} rx={1.2} fill={look.facade === 'clapboard' ? '#F7F3EA' : NEIGHBORHOODS.find((n) => n.id === id)!.wall} stroke={INK} strokeWidth={0.6} />
+      <Rect x={x - 9} y={y - 6.5} width={18} height={12.5} rx={1.2} fill={look.facade === 'clapboard' ? '#F7F3EA' : wall} stroke={INK} strokeWidth={0.6} />
       <Rect x={x - 9} y={y - 6.5} width={2.2} height={12.5} fill={look.pilaster} stroke={INK} strokeWidth={0.3} />
       <Rect x={x + 6.8} y={y - 6.5} width={2.2} height={12.5} fill={look.pilaster} stroke={INK} strokeWidth={0.3} />
       <Rect x={x - 9.6} y={y - 8.5} width={19.2} height={3} rx={0.8} fill={color} stroke={INK} strokeWidth={0.5} />
@@ -81,30 +82,32 @@ function BuildSite({ x, y, next }: { x: number; y: number; next: boolean }) {
 /** Where the locked seventh tile stands: the open lot between the avenues, clear of the piazza and the water. */
 const BOSTON = { x: 77, y: 40 };
 
-/** v5.15: a padlocked lot for the next city. Its label is the copy file's "Coming soon: Boston", split at the colon. */
-function BostonLot({ onPress }: { onPress: () => void }) {
-  const [soon, city] = copy('soon.boston.title').split(': ');
+/** The lot for the next city (v5.18): the "Coming soon: Boston" card is the franchise offer now. Its label is the model's, two lines: "Franchise" and the city. */
+function FranchiseLot({ label, onPress }: { label: [string, string]; onPress: () => void }) {
   const { x, y } = BOSTON;
   return (
-    <G testID="city-boston" onPress={onPress} opacity={0.85}>
-      <BuildSite x={x} y={y} next={false} />
+    <G testID="city-boston" onPress={onPress} opacity={0.95}>
+      <BuildSite x={x} y={y} next />
       <Rect x={x - 11} y={y + 8.5} width={22} height={8.5} rx={2.2} fill="rgba(59,31,20,0.25)" />
-      <Rect x={x - 11} y={y + 7.5} width={22} height={8.5} rx={2.2} fill="#FFFFFF" stroke={INK} strokeWidth={0.45} strokeDasharray="1.2 0.8" />
+      <Rect x={x - 11} y={y + 7.5} width={22} height={8.5} rx={2.2} fill="#FFFFFF" stroke={C.cheeseDark} strokeWidth={0.6} />
       <SvgText x={x} y={y + 11} fontSize={3} fontFamily={F.bold} fill={INK} textAnchor="middle">
-        {city ?? soon}
+        {label[1]}
       </SvgText>
-      <SvgText x={x} y={y + 14.6} fontSize={2.8} fontFamily={F.bold} fill={C.inkSoft} textAnchor="middle">
-        {city ? soon : ''}
+      <SvgText x={x} y={y + 14.6} fontSize={2.8} fontFamily={F.bold} fill={C.tomato} textAnchor="middle">
+        {label[0]}
       </SvgText>
     </G>
   );
 }
 
-export function CityMap({ game, width, height, onPress }: { game: Game.GameState; width: number; height: number; onPress: (id: NeighborhoodId) => void }) {
+export function CityMap({ game, width, height, onPress, onFranchised }: { game: Game.GameState; width: number; height: number; onPress: (id: NeighborhoodId) => void; /** The franchise went through: the screen leaves the old city. */ onFranchised?: () => void }) {
   // v5.15: the shop under attack is marked; Boston's card opens from its locked tile
   const attack = attackLite(game);
   const attacked = attack.face === 'banner' || attack.face === 'running' ? attack.shopId : null;
-  const [soon, setSoon] = useState(false);
+  const [flow, setFlow] = useState(false);
+  const city = cityOf(game);
+  const ids = hoodIds(city);
+  const franchiseLabel = lotLabel(game);
   return (
     <>
     <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} viewBox={`0 0 ${MAP_VIEWBOX.w} ${MAP_VIEWBOX.h + MAP_PAD_BOTTOM}`} preserveAspectRatio="xMidYMid meet">
@@ -131,7 +134,7 @@ export function CityMap({ game, width, height, onPress }: { game: Game.GameState
           <Circle cx={x - 0.7} cy={y - 1.3} r={0.9} fill="#86CF6E" />
         </G>
       ))}
-      {NEIGHBORHOODS.map((n) => {
+      {city.neighbourhoods.map((n) => {
         const shop = game.shops[n.id];
         // D305: a lot held back by Nonna's takeover is a dim padlock with the countdown, not a live "Build $"
         const lot = lotView(game, n);
@@ -144,7 +147,7 @@ export function CityMap({ game, width, height, onPress }: { game: Game.GameState
           <G key={n.id} onPress={() => onPress(n.id)} opacity={lot.dim ? 0.7 : 1}>
             {active && <Circle cx={n.x} cy={n.y} r={12} fill={C.cheese} opacity={0.55} />}
             {attacked === n.id && <Circle testID={`city-attack-${n.id}`} cx={n.x} cy={n.y} r={12} fill="none" stroke={C.tomato} strokeWidth={0.9} strokeDasharray="2 1.4" />}
-            {shop.built ? <MiniShop x={n.x} y={n.y} id={n.id} color={n.color} /> : <BuildSite x={n.x} y={n.y} next={isNext} />}
+            {shop.built ? <MiniShop x={n.x} y={n.y} id={n.id} color={n.color} wall={n.wall} lookId={HOME_CITY.neighbourhoods[ids.indexOf(n.id)]?.id ?? n.id} /> : <BuildSite x={n.x} y={n.y} next={isNext} />}
             {attacked === n.id && (
               <G>
                 <Circle cx={n.x + 9.5} cy={n.y - 8} r={2.8} fill={C.tomato} stroke="#fff" strokeWidth={0.5} />
@@ -166,13 +169,9 @@ export function CityMap({ game, width, height, onPress }: { game: Game.GameState
           </G>
         );
       })}
-      {finaleSeen(game) && <BostonLot onPress={() => setSoon(true)} />}
+      {franchiseLabel && canFranchise(game) && <FranchiseLot label={franchiseLabel} onPress={() => setFlow(true)} />}
     </Svg>
-    {soon && (
-      <Modal transparent animationType="fade" statusBarTranslucent onRequestClose={() => setSoon(false)}>
-        <SoonCard onDone={() => setSoon(false)} />
-      </Modal>
-    )}
+    {flow && <FranchiseFlow game={game} onClose={() => setFlow(false)} onDone={() => { setFlow(false); onFranchised?.(); }} />}
     </>
   );
 }

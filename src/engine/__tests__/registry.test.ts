@@ -66,9 +66,9 @@ describe('T88 module order', () => {
       const game = require('../game');
       expect(game.newGame(0).x).toEqual({});
       require('../features');
-      expect(Object.keys(game.newGame(0).x)).toEqual(['mastery', 'counterattack', 'events', 'recipes', 'heads', 'service', 'suburbsGameDay', 'waterfrontBoats', 'rival', 'universityMenu', 'industrialShifts', 'uptownStars']);
+      expect(Object.keys(game.newGame(0).x)).toEqual(['mastery', 'counterattack', 'events', 'recipes', 'heads', 'service', 'suburbsGameDay', 'waterfrontBoats', 'rival', 'universityMenu', 'industrialShifts', 'uptownStars', 'franchise']);
       require('../features');
-      expect(Object.keys(game.newGame(0).x)).toHaveLength(12);
+      expect(Object.keys(game.newGame(0).x)).toHaveLength(13);
     });
   });
 
@@ -76,8 +76,8 @@ describe('T88 module order', () => {
     jest.isolateModules(() => {
       const f = require('../features');
       const game = require('../game');
-      expect(f.FEATURES).toHaveLength(12);
-      expect(Object.keys(game.newGame(0).x)).toHaveLength(12);
+      expect(f.FEATURES).toHaveLength(13);
+      expect(Object.keys(game.newGame(0).x)).toHaveLength(13);
     });
   });
 });

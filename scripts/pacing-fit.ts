@@ -3,7 +3,8 @@
 //
 //   npx tsx scripts/pacing-fit.ts                 fit build costs (and Uptown's cost multiplier) to the targets below
 //   npx tsx scripts/pacing-fit.ts check           just print the unlock days of the current tuning, all four sim rows
-//   npx tsx scripts/pacing-fit.ts session1        v5.16: the first 40 minutes (continuous, rewards on) against SESSION1
+//   npx tsx scripts/pacing-fit.ts franchise       v5.18: the home clear's Stars, then Boston's day table against the home targets
+//   npx tsx scripts/pacing-fit.ts session1       v5.16: the first 40 minutes (continuous, rewards on) against SESSION1
 //   npx tsx scripts/pacing-fit.ts managers        v5.16: when each shop's heads and manager arrive (check-in player, rewards on) and the reward rules
 //   OV=3,10,27,75,200,550 CM=1,4.5,12,34,90,250 MCR=0.5 npx tsx scripts/pacing-fit.ts
 //   K=300 RHO=0.45 MCR=0.5 npx tsx scripts/pacing-fit.ts fit3   v5.13: proportional costs. Per pizzeria one free number (its order value):
@@ -13,7 +14,9 @@
 // (OG, FP, DC, VC, PB, PP, CAP, EFF as in scripts/review/sim2.ts) are chosen by hand; the fitter bisects each later pizzeria's
 // buildCost so its first scene lands on the target day, one stage at a time (a stage only depends on earlier ones), then
 // bisects Uptown's cost multiplier so the finale lands on its target. Round the printed numbers by hand and run `check`.
-import { FOOTPRINTS, HEAD_KINDS, NEIGHBORHOODS, OVEN_GRADES, VEHICLES } from '../src/content/tuning';
+import { FOOTPRINTS, HEAD_COST_DOWNTOWN, HEAD_KINDS, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES } from '../src/content/tuning';
+import { FRANCHISE, cityNumbers, type CityNumbers } from '../src/content/franchise';
+import { canFranchise, franchise, franchiseGain } from '../src/engine/features/franchise';
 import { COUNTERATTACK } from '../src/content/endgame';
 import * as G from '../src/engine/game';
 import { getFeature } from '../src/engine/features';
@@ -645,6 +648,103 @@ function polish(seed: number, iters: number) {
   }
 }
 
+// ---- v5.18 (card E3): the franchise. The check-in player finishes the home city, franchises, and plays Boston. ----
+// sim2 plays the home city's story (its scenes, its layers, its bid), so Boston is played on that stand-in: the home tables are swapped for
+// Boston's numbers (content/franchise.ts `cityNumbers(1)`, which cities/boston/ is to read) with the Franchise multiplier on every
+// pizza's value, exactly what the engine's feature does. The story chain is the home one; Boston's own scenes (card T2) change
+// the order of its beats, not the economy that this fits.
+
+/** Boston's story takes about as many days as the home city's, given the multiplier: each of its beats lands within this many days of the home targets. */
+export const BOSTON_TOLERANCE = 0.4;
+
+/** Run `fn` with the home tables replaced by Boston's (every value times `mult`), then put them back. */
+export function withBostonTables<T>(mult: number, fn: () => T, nums: CityNumbers = cityNumbers(1)): T {
+  const saved = {
+    hoods: NEIGHBORHOODS.map((n) => ({ ...n })),
+    heads: { ...HEAD_COST_DOWNTOWN },
+    vehicles: VEHICLES.map((v) => v.cost),
+    bid: PIER9_BID.cost,
+  };
+  NEIGHBORHOODS.forEach((n, i) => Object.assign(n, { ...nums.hoods[i], orderValue: nums.hoods[i].orderValue * mult }));
+  Object.assign(HEAD_COST_DOWNTOWN, nums.headCostFirst);
+  VEHICLES.forEach((v, i) => { if (i > 0) v.cost = nums.vehicleCosts[i - 1]; });
+  (PIER9_BID as { cost: number }).cost = nums.bid.cost;
+  try {
+    return fn();
+  } finally {
+    saved.hoods.forEach((n, i) => Object.assign(NEIGHBORHOODS[i], n));
+    Object.assign(HEAD_COST_DOWNTOWN, saved.heads);
+    VEHICLES.forEach((v, i) => { v.cost = saved.vehicles[i]; });
+    (PIER9_BID as { cost: number }).cost = saved.bid;
+  }
+}
+
+export interface FranchiseDays {
+  /** The home clear: the days of each beat, cash earned in the city, and what the franchise offers then. */
+  home: { days: Record<Key, number>; earned: number; offered: boolean; stars: number; multiplier: number };
+  /** Boston, played with that multiplier. */
+  boston: { days: Record<Key, number>; done: boolean; startedWith: { city: string; cash: number } };
+}
+
+const daysOf = (r: ReturnType<typeof run>): Record<Key, number> => Object.fromEntries(KEYS.map((k) => [k, (r.scenes.find((x) => x.id === SCENE[k])?.wall ?? NaN) / 86400])) as Record<Key, number>;
+
+/** The check-in player: finish the home city, franchise when it can, play Boston. */
+export function franchiseRun(): FranchiseDays {
+  applyCfg({ ...base });
+  const home = run('checkin', SESSION, AWAY);
+  const at = INSTALL + home.wall * 1000;
+  const gain = franchiseGain(home.s);
+  const offered = canFranchise(home.s);
+  const into = franchise(home.s, at);
+  const mult = gain.multiplierAfter;
+  const boston = withBostonTables(mult, () => run('checkin', SESSION, AWAY));
+  return {
+    home: { days: daysOf(home), earned: gain.earned, offered, stars: gain.stars, multiplier: mult },
+    boston: { days: daysOf(boston), done: boston.s.cityComplete, startedWith: { city: into.city, cash: into.cash } },
+  };
+}
+
+/** Print the day table: the targets, the home city's days, Boston's. */
+function franchiseCheck() {
+  const f = franchiseRun();
+  const d = (x: number) => (Number.isFinite(x) ? x.toFixed(2) : 'n/a').padStart(6);
+  console.log(`home clear: ${f.home.earned.toExponential(3)} earned -> ${f.home.stars} Stars (target ${FRANCHISE.starsPerClear}), x${f.home.multiplier}; franchise on offer: ${f.home.offered}; Boston starts as ${f.boston.startedWith.city} with $${f.boston.startedWith.cash}`);
+  console.log('day table (check-in player, 5 min every 4 h)');
+  console.log('            target   home  boston');
+  for (const k of KEYS) console.log(`${k.padEnd(10)} ${d(TARGETS[k])} ${d(f.home.days[k])} ${d(f.boston.days[k])}`);
+  console.log(`Boston finished: ${f.boston.done}`);
+}
+
+/**
+ * Fit Boston's one price factor (PRICE_FIT in content/franchise.ts) so the check-in player's five beats land on the days the home city's do,
+ * given the multiplier (least squares on the log of the ratios). Prints the table to paste.
+ */
+function fitBoston() {
+  applyCfg({ ...base });
+  const home = run('checkin', SESSION, AWAY);
+  const target = daysOf(home);
+  const mult = franchiseGain(home.s).multiplierAfter;
+  const plain = cityNumbers(1, false);
+  const scale = (c: number): CityNumbers => ({
+    ...plain,
+    hoods: plain.hoods.map((h) => ({ ...h, buildCost: h.buildCost * c, costMult: h.costMult * c, managerCost: h.managerCost * c, headsCost: h.headsCost * c })),
+    vehicleCosts: plain.vehicleCosts.map((x) => x * c),
+    headCostFirst: Object.fromEntries(HEAD_KINDS.map((k) => [k, plain.headCostFirst[k] * c])) as CityNumbers['headCostFirst'],
+    bid: { ...plain.bid, cost: plain.bid.cost * c },
+  });
+  let best = { c: 1, loss: Infinity, days: {} as Record<Key, number> };
+  for (let c = 0.5; c <= 1.5001; c += 0.025) {
+    applyCfg({ ...base });
+    const r = withBostonTables(mult, () => run('checkin', SESSION, AWAY, undefined, { maxWall: 9 * 86400 }), scale(c));
+    const d = daysOf(r);
+    const loss = KEYS.reduce((t, k) => t + Math.pow(Math.log((Number.isFinite(d[k]) ? d[k] : 12) / target[k]), 2), 0);
+    console.log(`c ${c.toFixed(3)}: ${KEYS.map((k) => d[k].toFixed(2)).join(' / ')} loss ${loss.toFixed(4)}`);
+    if (loss < best.loss) best = { c, loss, days: d };
+  }
+  console.log(`home ${KEYS.map((k) => target[k].toFixed(2)).join(' / ')}`);
+  console.log(`PRICE_FIT[1] = ${+best.c.toFixed(3)} -> ${KEYS.map((k) => best.days[k].toFixed(2)).join(' / ')}`);
+}
+
 // (a test imports `endgame` and the targets above, so the commands only run when this file is the entry point)
 if (require.main === module) {
   if (process.argv[2] === 'endgame') endgameCheck();
@@ -655,6 +755,8 @@ if (require.main === module) {
   else if (process.argv[2] === 'fit2') fit2();
   else if (process.argv[2] === 'fit3') fit3();
   else if (process.argv[2] === 'fit4') fit4();
+  else if (process.argv[2] === 'franchise') franchiseCheck();
+  else if (process.argv[2] === 'fitboston') fitBoston();
   else if (process.argv[2] === 'check') check();
   else if (process.argv[2] === 'search') {
     const start: Vec = process.env.START ? JSON.parse(process.env.START) : { bc: [0, 450, 5e7, 1.75e8, 5.5e8, 5.4e9], cm: [1, 4.5, 12, 34, 90, 250], mcr: 0.5, ovg: 2.7, og: 1, fp: 1 };

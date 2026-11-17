@@ -1,6 +1,6 @@
 // Pure scene geometry: where every station, table, lane and person stands for a given shop size.
 // No React here, so it is unit-tested directly (src/components/scene/__tests__/scene.test.ts).
-import { P, SC, SCENE_W, kAt, unprojectX } from './projection';
+import { P, SC, kAt, sceneFrame, unprojectX, type SceneFrame } from './projection';
 
 export const ROOM_W = [270, 295, 320, 340, 358];
 
@@ -101,7 +101,7 @@ const PATIO_AIR = 2;
 export const PILASTER_RIGHT = 8;
 /** The potted tree's depth and where it stands: fully on screen (its pot is ~14 wide), at the left. */
 export const TREE_Y = -40;
-const PLANTER_X = (L: number) => Math.max(L + 8, unprojectX(20, TREE_Y));
+const PLANTER_X = (L: number, frame: SceneFrame) => Math.max(L + 8, unprojectX(20, TREE_Y, frame));
 /** Depths of the neighbourhood's signature prop and of the chalkboard, and the screen half-widths the packing keeps free for them (the widest prop is the bike rack's ±33). */
 export const PROP_Y = -36;
 export const SIGN_Y = -34;
@@ -211,6 +211,8 @@ export interface DoorLanes {
 export interface Layout {
   /** footprint index (0 = starter … 4 = flagship) */
   fp: number;
+  /** The drawing the room stands in: its width bounds the pills and the walkers' lanes, its vanishing point is the room's centre. */
+  frame: SceneFrame;
   L: number;
   R: number;
   prep: { x0: number; x1: number };
@@ -251,9 +253,9 @@ export interface Layout {
   tagLeft: number;
 }
 
-export function layout(fp: number, ovenCount: number, cookCount: number, staffCount: number, tableCount: number, driverSlots: number, plants = 0): Layout {
+export function layout(fp: number, ovenCount: number, cookCount: number, staffCount: number, tableCount: number, driverSlots: number, plants = 0, frame: SceneFrame = sceneFrame(fp)): Layout {
   const RW = ROOM_W[fp];
-  const L = 196.5 - RW / 2;
+  const L = frame.vanishX - RW / 2;
   const R = L + RW;
   const cw = 56 + COUNTER_STAFF_STEP * (staffCount - 1);
   const counter = { x0: R - 60 - cw, x1: R - 60 };
@@ -343,12 +345,12 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   const lx1 = d0 - 12;
   const ledge = lx1 - lx0 > 30 ? { x0: lx0, x1: lx1 } : null;
   // v5.13: the sidewalk lane, in screen units from the door leftwards: the drivers first (they wait at the door), a gap, then the diners
-  const sxQ = (x: number, y = QUEUE_Y) => P(x, y)[0];
+  const sxQ = (x: number, y = QUEUE_Y) => P(x, y, 0, frame)[0];
   const q0 = sxQ(d0 - QUEUE_FIRST);
   // each driver at its own height (D430), turned back into room units at that height so the screen spacing is exact
   const driverQueue: Pt[] = Array.from({ length: DRIVER_SPOTS }, (_, j) => {
     const y = QUEUE_Y - DRIVER_DROP_PT[j % DRIVER_DROP_PT.length] / PT_PER_Y;
-    return [unprojectX(q0 - DRIVER_QUEUE_PITCH * j, y), y] as Pt;
+    return [unprojectX(q0 - DRIVER_QUEUE_PITCH * j, y, frame), y] as Pt;
   });
   const dq0 = q0;
   const lastDriver = q0 - DRIVER_QUEUE_PITCH * (DRIVER_SPOTS - 1);
@@ -373,21 +375,21 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
         nDiners = n;
         break;
       }
-  const queue: Pt[] = Array.from({ length: nDiners }, (_, i) => [unprojectX(dinerX(i), QUEUE_Y), QUEUE_Y] as Pt);
-  const queueTag: Pt = queue[nDiners - 1] ?? ([unprojectX(dinerX(0), QUEUE_Y), QUEUE_Y] as Pt);
+  const queue: Pt[] = Array.from({ length: nDiners }, (_, i) => [unprojectX(dinerX(i), QUEUE_Y, frame), QUEUE_Y] as Pt);
+  const queueTag: Pt = queue[nDiners - 1] ?? ([unprojectX(dinerX(0), QUEUE_Y, frame), QUEUE_Y] as Pt);
   // the patio takes the room between the left pilaster and the last diner (or driver): whole sets only, nearest the diners first, none straddling the wall line
   const patioRight = (nDiners ? dinerX(nDiners - 1) - FIGURE_HALF_W : lastDriver - FIGURE_HALF_W) - PATIO_AIR;
   const centreLo = laneLeft + PATIO_HALF_W;
   const patio: Layout['patio'] = [];
-  for (let c = patioRight - PATIO_HALF_W; patio.length < 2 && c >= centreLo - 1e-6; c -= 2 * PATIO_HALF_W + PATIO_AIR) patio.push({ x: unprojectX(c, PATIO_Y), y: PATIO_Y });
+  for (let c = patioRight - PATIO_HALF_W; patio.length < 2 && c >= centreLo - 1e-6; c -= 2 * PATIO_HALF_W + PATIO_AIR) patio.push({ x: unprojectX(c, PATIO_Y, frame), y: PATIO_Y });
   // the tag hangs over the driver group's middle
-  const waitTag: Pt = [unprojectX(dq0 - (DRIVER_QUEUE_PITCH * (DRIVER_SPOTS - 1)) / 2, QUEUE_Y), QUEUE_Y];
+  const waitTag: Pt = [unprojectX(dq0 - (DRIVER_QUEUE_PITCH * (DRIVER_SPOTS - 1)) / 2, QUEUE_Y, frame), QUEUE_Y];
   // the pill's body is ~84 up from the feet, level with the back row's seated faces: it keeps right of the right-most seat (a diner's head is ±8 wide)
   const tagLeft = Math.max(0, ...tables.filter((tb) => tb.y >= BACK_ROW_Y).map((tb) => sxQ(tb.x + SEAT, tb.y) + 8 * kAt(tb.y) * 1.14 + 3));
   // the sidewalk's props stand in the front row of the sidewalk (−34 … −40): the potted tree is fixed, then the neighbourhood's signature
   // prop and the chalkboard take the first room that is clear of the tree, of the patio guests' way to their chairs and of the parked vehicle
   const scooter = { x: d0 - 60, y: -30 };
-  const treeX = sxQ(PLANTER_X(L), TREE_Y);
+  const treeX = sxQ(PLANTER_X(L, frame), TREE_Y);
   const patioWayOf = (t: { x: number; y: number }): [number, number] => {
     const cx = sxQ(t.x + PATIO_SEAT, PATIO_Y);
     return [cx - CHAIR_WAY_HALF_W, cx + CHAIR_WAY_HALF_W];
@@ -428,9 +430,9 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
     packed = packFor(patio.slice(0, nPatio).map(patioWayOf));
   }
   patio.length = nPatio;
-  const propX = unprojectX(packed.prop, PROP_Y);
-  const signX = unprojectX(packed.sign, SIGN_Y);
-  return { fp, L, R, prep, cooks, ovens, bay: { x0: bay.x0, x1: bay.x1 }, ovenCols, counter, staff, door, spots, orderSpots, tables, bakers, ledge, // D282: the vehicle parks well left of the walk-ins' turn-in (guestPauseX = d0 − 6)
+  const propX = unprojectX(packed.prop, PROP_Y, frame);
+  const signX = unprojectX(packed.sign, SIGN_Y, frame);
+  return { fp, frame, L, R, prep, cooks, ovens, bay: { x0: bay.x0, x1: bay.x1 }, ovenCols, counter, staff, door, spots, orderSpots, tables, bakers, ledge, // D282: the vehicle parks well left of the walk-ins' turn-in (guestPauseX = d0 − 6)
     scooter, sign: { x: signX }, prop: { x: propX }, patio, queue, queueTag, driverQueue, waitTag, tagLeft };
 }
 
@@ -439,22 +441,22 @@ export const TAG_MARGIN = 12;
 /** Width of a pill for its text (10 pt bold: ~5.8 per character plus the padding). */
 export const waitTagWidth = (text: string) => text.length * 5.8 + 14;
 /** Where the pill's centre sits (screen), over the idle drivers' group, kept TAG_MARGIN inside the screen edges. */
-export function waitTagAt(lay: Pick<Layout, 'waitTag' | 'tagLeft'>, text: string): { x: number; y: number; w: number; tail: number } {
-  const [sx, sy] = P(lay.waitTag[0], lay.waitTag[1], WAIT_TAG_Z);
+export function waitTagAt(lay: Pick<Layout, 'waitTag' | 'tagLeft' | 'frame'>, text: string): { x: number; y: number; w: number; tail: number } {
+  const [sx, sy] = P(lay.waitTag[0], lay.waitTag[1], WAIT_TAG_Z, lay.frame);
   const w = waitTagWidth(text);
-  const x = Math.min(SCENE_W - TAG_MARGIN - w / 2, Math.max(TAG_MARGIN + w / 2, lay.tagLeft + w / 2, sx));
+  const x = Math.min(lay.frame.width - TAG_MARGIN - w / 2, Math.max(TAG_MARGIN + w / 2, lay.tagLeft + w / 2, sx));
   return { x, y: sy, w, tail: sx - x };
 }
 /** An umbrella canopy's screen box (street.tsx `PatioTable`: ±UMBRELLA_R wide, from the finial 68.7 up to the rim 47.5 up, at table scale kAt × 1.1), and the air a pill keeps from it. */
 export const CANOPY_AIR = 4;
-export function canopyBox(x: number, y: number) {
-  const [sx, sy] = P(x, y);
+export function canopyBox(x: number, y: number, frame?: SceneFrame) {
+  const [sx, sy] = P(x, y, 0, frame);
   const k = kAt(y) * 1.1;
   return { x0: sx - 24 * k, x1: sx + 24 * k, y0: sy - 68.7 * k, y1: sy - 47.5 * k };
 }
 /** The chin-to-eye-line band of a diner seated at a table's chair (screen units): what a pill hung there would cover. */
-function seatedFace(tb: { x: number; y: number }, dx: number) {
-  const [sx, sy] = P(tb.x + dx, tb.y);
+function seatedFace(tb: { x: number; y: number }, dx: number, frame: SceneFrame) {
+  const [sx, sy] = P(tb.x + dx, tb.y, 0, frame);
   const k = kAt(tb.y) * 1.14;
   return { x0: sx - 7 * k, x1: sx + 7 * k, y0: sy - 31 * k, y1: sy - 22 * k };
 }
@@ -465,19 +467,19 @@ function seatedFace(tb: { x: number; y: number }, dx: number) {
  * until it clears the nearest idle driver and then, if it can, until it covers no seated diner's face behind the glass (D450).
  * storefront.tsx draws both pills on the layer above the patio's umbrellas.
  */
-export function moreTagAt(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue' | 'tables' | 'patio'>, text: string): { x: number; y: number; w: number } {
+export function moreTagAt(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue' | 'tables' | 'patio' | 'frame'>, text: string): { x: number; y: number; w: number } {
   const alone = lay.queue.length === 0;
-  const [sx, sy] = P(lay.queueTag[0], lay.queueTag[1], alone ? MORE_TAG_Z_ALONE : MORE_TAG_Z);
+  const [sx, sy] = P(lay.queueTag[0], lay.queueTag[1], alone ? MORE_TAG_Z_ALONE : MORE_TAG_Z, lay.frame);
   const w = waitTagWidth(text);
   const lo = TAG_MARGIN + w / 2;
-  const hi = SCENE_W - TAG_MARGIN - w / 2;
+  const hi = lay.frame.width - TAG_MARGIN - w / 2;
   if (!alone) return { x: Math.min(hi, Math.max(lo, sx)), y: sy, w };
-  const driverX = P(...lay.driverQueue[lay.driverQueue.length - 1])[0];
+  const driverX = P(...lay.driverQueue[lay.driverQueue.length - 1], 0, lay.frame)[0];
   const start = Math.min(hi, Math.max(lo, Math.min(sx, driverX - MORE_TAG_DRIVER_AIR - w / 2)));
-  const faces = lay.tables.flatMap((tb) => [seatedFace(tb, -SEAT), seatedFace(tb, SEAT)]);
+  const faces = lay.tables.flatMap((tb) => [seatedFace(tb, -SEAT, lay.frame), seatedFace(tb, SEAT, lay.frame)]);
   const clear = (x: number) => faces.every((f) => x + w / 2 <= f.x0 || x - w / 2 >= f.x1 || sy + 8.7 <= f.y0 || sy - 9.7 >= f.y1);
   // v5.17 D450: and off every umbrella canopy (the pill sat on the canopy band; r2: it must not touch one), so it hangs on the bare sill left of the patio
-  const canopies = lay.patio.map((p) => canopyBox(p.x, p.y));
+  const canopies = lay.patio.map((p) => canopyBox(p.x, p.y, lay.frame));
   const offCanopies = (x: number) => canopies.every((c) => x + w / 2 + CANOPY_AIR <= c.x0 || x - w / 2 - CANOPY_AIR >= c.x1 || sy + 8.7 <= c.y0 || sy - 9.7 >= c.y1);
   for (let x = start; x >= lo; x -= 2) if (clear(x) && offCanopies(x)) return { x, y: sy, w };
   for (let x = start; x >= lo; x -= 2) if (clear(x)) return { x, y: sy, w };
@@ -487,12 +489,12 @@ export function moreTagAt(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue'
 /** What a pill covers on screen, tail included (the pill is 17 tall from 9 above its anchor; the tail reaches 12 below it). */
 const pillRect = (x: number, y: number, w: number) => ({ x0: x - w / 2, x1: x + w / 2, y0: y - 9 - 0.7, y1: y + 12 + 0.7 });
 /** The drivers' "N drivers idle · buy …" pill's screen rect (G91: pops keep off it, so the station it names is never covered). */
-export function waitTagRect(lay: Pick<Layout, 'waitTag' | 'tagLeft'>, text: string) {
+export function waitTagRect(lay: Pick<Layout, 'waitTag' | 'tagLeft' | 'frame'>, text: string) {
   const t = waitTagAt(lay, text);
   return pillRect(t.x, t.y, t.w);
 }
 /** The "+N" pill's screen rect. */
-export function moreTagRect(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue' | 'tables' | 'patio'>, text: string) {
+export function moreTagRect(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue' | 'tables' | 'patio' | 'frame'>, text: string) {
   const t = moreTagAt(lay, text);
   return pillRect(t.x, t.y, t.w);
 }

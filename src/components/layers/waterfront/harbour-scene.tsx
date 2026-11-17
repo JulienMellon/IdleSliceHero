@@ -11,6 +11,7 @@ import { boatsView } from '../../../engine/features/layers/waterfront-boats';
 import { useGame } from '../../../store/game-store';
 import { useClock } from '../../scene/clock';
 import { INK, P, sceneFit } from '../../scene/projection';
+import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
 import { layoutOfShop } from '../shop-layout';
 import { BOAT, BOAT_ART, RACK_STEPS, RACK_W, boatDock, boatPose, rackBox, rackStep, untilNextBoat } from './boats-model';
@@ -71,6 +72,7 @@ const RackArt = memo(function RackArt({ step, tier }: { step: number; tier: numb
 export const HarbourScene = memo(function HarbourScene({ shopId, width, height }: SceneSlotProps) {
   // Reads the live store on its own clock while the boat moves: React Compiler must not cache that.
   'use no memo';
+  const frame = useShopFrame(shopId);
   const here = shopId === BOATS.hood;
   // the rack's look: tier and fill step, two numbers in one (a repaint only when a step changes)
   const rackKey = useGame((s) => {
@@ -101,7 +103,7 @@ export const HarbourScene = memo(function HarbourScene({ shopId, width, height }
   const shop = g.shops[BOATS.hood];
   if (!shop.built) return null;
   const lay = layoutOfShop(shop);
-  const fit = sceneFit(width, height);
+  const fit = sceneFit(width, height, frame);
   const wallLeft = P(lay.L, 0)[0];
   const sinceTick = Math.max(0, (Date.now() - st.tickAt) / 1000);
   const pose = boatPose({ active: true, docked, untilNext: untilNextBoat(g, sinceTick) }, leftAt === null ? -1 : (Date.now() - leftAt) / 1000);

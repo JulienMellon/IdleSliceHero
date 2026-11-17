@@ -55,7 +55,8 @@ describe('golden run', () => {
     // the timestamps we set ourselves are not part of the state hash; the run touches nothing else of wall time
     const { lastSavedAt: _t, ...rest } = state;
     void _t;
-    const json = JSON.stringify(rest, (k, v) => (k === 'x' ? undefined : v));
+    // v5.18 (card K1): `city` ('home') is new on GameState and, like `x`, not part of the recorded hash; the constant below is unchanged.
+    const json = JSON.stringify(rest, (k, v) => (k === 'x' || k === 'city' ? undefined : v));
     // v5.16 re-record 2 (card E2b's refit): Downtown's head prices, Suburbs' build and manager, Waterfront's manager, University's build, Uptown's build and manager, and the Golden oven and Flagship prices changed. v5.16 re-record: ECONOMY 3, the heads/manager/station prices and the offline share changed the run. (v5.15 re-record: the save gained `economy` (C106) and `rewards.worn` (worn cosmetics). The golden run itself earns the same cash and buys the same things.)
     expect(sha1(json)).toBe('031a4fadab26d2b4ae9363582d52d877ecf680b3');
   });

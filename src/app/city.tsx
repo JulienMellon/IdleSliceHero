@@ -7,7 +7,8 @@ import { CityMap } from '@/components/city-map';
 import { Toast } from '@/components/game-ui';
 import { lotView } from '@/components/city-model';
 import { LockIcon } from '@/components/icons';
-import { CITY_NAME, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES } from '@/content/tuning';
+import { cityOf } from '@/content/cities';
+import { CityPicker } from '@/components/franchise/city-picker';
 import { money } from '@/engine/format';
 import * as G from '@/engine/game';
 import { useGame } from '@/store/game-store';
@@ -26,6 +27,8 @@ export default function City() {
   const { setActive, build } = useGame.getState();
   // G94: leaving the City takes its toast with it
   useFocusEffect(useCallback(() => () => useGame.setState({ toast: null }), []));
+  const city = cityOf(game);
+  const { neighbourhoods: NEIGHBORHOODS, fit } = city;
   const built = NEIGHBORHOODS.filter((n) => game.shops[n.id].built).length;
   const mapH = Math.min(height * 0.6, width * 0.84);
   return (
@@ -34,7 +37,7 @@ export default function City() {
         <Pressable accessibilityRole="button" accessibilityLabel="Back to the shop" onPress={() => router.back()} style={styles.back} testID="back">
           <Text style={styles.backText}>‹ Back</Text>
         </Pressable>
-        <Text style={styles.title}>{CITY_NAME}</Text>
+        <Text style={styles.title}>{city.name}</Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Settings" onPress={() => router.push('/settings')} style={styles.settings} testID="open-settings">
           <Text style={{ fontSize: 24, color: '#FFF4E0', fontFamily: F.bold }}>⚙︎</Text>
         </Pressable>
@@ -44,6 +47,7 @@ export default function City() {
           game={game}
           width={width}
           height={mapH}
+          onFranchised={() => router.back()}
           onPress={(id) => {
             if (game.shops[id].built) {
               setActive(id);
@@ -56,7 +60,7 @@ export default function City() {
       <View style={styles.listWrap}>
         <ScrollView contentContainerStyle={styles.summary}>
           <Text style={styles.big}>{money(G.earningsPerSecond(game))}/sec</Text>
-          <Text style={styles.small}>{built}/6 pizzerias built · {NEIGHBORHOODS.filter((n) => game.shops[n.id].managed).length} with managers · tap one to visit</Text>
+          <Text style={styles.small}>{built}/{NEIGHBORHOODS.length} pizzerias built · {NEIGHBORHOODS.filter((n) => game.shops[n.id].managed).length} with managers · tap one to visit</Text>
           {NEIGHBORHOODS.map((n) => {
             const sh = game.shops[n.id];
             const lot = lotView(game, n);
@@ -97,13 +101,14 @@ export default function City() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rowName}>{n.name}</Text>
                   <Text style={styles.rowSub}>
-                    {FOOTPRINTS[sh.footprint].name} · {OVEN_GRADES[sh.grade].name} ovens · {sh.drivers} driver{sh.drivers === 1 ? '' : 's'}
+                    {fit.footprints[sh.footprint].name} · {fit.ovenGrades[sh.grade].name} ovens · {sh.drivers} driver{sh.drivers === 1 ? '' : 's'}
                   </Text>
                 </View>
                 <Text style={[styles.rowEps, !sh.managed && { color: C.tomato }]}>{sh.managed ? `${money(G.shopEarnings(game, n.id))}/s` : 'no manager'}</Text>
               </Pressable>
             );
           })}
+          <CityPicker game={game} />
         </ScrollView>
         {toast && <Toast compact text={toast.text} top={6} />}
       </View>

@@ -12,6 +12,8 @@ import { GAME_DAY, LAYER_KEYS } from '../../../content/layers';
 import { seededUnit } from '../../bonus';
 import { deliveryRate, patioTables, tablesShown, walkInRate, type GameState, type Shop } from '../../game';
 import type { Feature } from '../types';
+import { cityOf, layerHood } from '../../../content/cities';
+import type { NeighborhoodId } from '../../../content/types';
 
 /** The schedule every timed layer keeps (boats use it too). Times are play seconds; `nextAt` below 0 = not scheduled yet. */
 export interface Timed {
@@ -79,7 +81,8 @@ export const timedOn = (t: Timed, play: number, now: number): boolean => t.until
 
 const spec: TimedSpec = GAME_DAY;
 const read = (g: GameState): Timed => (g.x?.[LAYER_KEYS.gameDay] as Timed | undefined) ?? freshTimed(0);
-const built = (g: GameState): boolean => !!g.shops[GAME_DAY.hood]?.built;
+const hoodOf = (g: GameState): NeighborhoodId => layerHood(cityOf(g), 'gameDay') ?? '';
+const built = (g: GameState): boolean => !!g.shops[hoodOf(g)]?.built;
 
 /** Seats in the shop: the tables drawn (and the sidewalk's) times the seats at each. */
 export const seatsOf = (shop: Shop): number => GAME_DAY.seatsPerTable * (tablesShown(shop) + patioTables(shop));
@@ -125,7 +128,7 @@ export interface GameDayView {
 
 /** Everything the Game Day banner needs, pure. */
 export function gameDayView(g: GameState, now: number): GameDayView {
-  const shop = g.shops[GAME_DAY.hood];
+  const shop = g.shops[hoodOf(g)];
   if (!shop?.built) return { active: false, rush: false, nextIn: 0, left: 0, seatsFree: 0, seats: 0 };
   const t = read(g);
   const rush = timedOn(t, g.playSeconds, now);
@@ -150,10 +153,10 @@ export const suburbsGameDay: Feature<Timed> = {
     return next === t ? g : { ...g, x: { ...g.x, [LAYER_KEYS.gameDay]: next } };
   },
   shopDemandMult(g, id, now) {
-    if (id !== GAME_DAY.hood || !built(g) || !timedOn(read(g), g.playSeconds, now)) return 1;
+    if (id !== hoodOf(g) || !built(g) || !timedOn(read(g), g.playSeconds, now)) return 1;
     return rushDemandMult(g.shops[id], g.vehicle);
   },
   shopKey(g, id) {
-    return id === GAME_DAY.hood && built(g) && read(g).until > g.playSeconds ? 'gameday' : '';
+    return id === hoodOf(g) && built(g) && read(g).until > g.playSeconds ? 'gameday' : '';
   },
 };

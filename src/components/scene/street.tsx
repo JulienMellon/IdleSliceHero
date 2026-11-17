@@ -6,7 +6,7 @@ import { PATIO_SEAT, PILL_LAYER_Y, moreTagAt, waitTagAt, type Layout } from './l
 import { DECK_COLOR, DECK_LINE, RAIL_PT, patioDeck, patioSortYs } from './patio-deck';
 import { MINT } from './cosmetics';
 import { TABLE_STYLE } from './props';
-import { INK, SCENE_W, CURB_Y, P, kAt, shade } from './projection';
+import { INK, ONE_SCREEN, CURB_Y, P, kAt, shade } from './projection';
 
 // ---------- street + traffic ----------
 export { CARS } from './street-props';
@@ -91,28 +91,29 @@ export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v, mint = false
   );
 });
 
-export const Street = memo(function Street() {
+/** `w`: the drawing's width (its frame's), so the road and the pavement run the whole way across a wide shop. */
+export const Street = memo(function Street({ w = ONE_SCREEN.width }: { w?: number }) {
   return (
     <G>
-      <Rect x={-20} y={CURB_Y} width={SCENE_W + 40} height={8} fill="#9B9386" stroke={INK} strokeWidth={0.8} />
-      <Rect x={-20} y={CURB_Y + 8} width={SCENE_W + 40} height={120} fill="#4C5056" />
-      <Rect x={-20} y={CURB_Y + 8} width={SCENE_W + 40} height={10} fill="#000" opacity={0.15} />
-      {Array.from({ length: 10 }).map((_, i) => (
+      <Rect x={-20} y={CURB_Y} width={w + 40} height={8} fill="#9B9386" stroke={INK} strokeWidth={0.8} />
+      <Rect x={-20} y={CURB_Y + 8} width={w + 40} height={120} fill="#4C5056" />
+      <Rect x={-20} y={CURB_Y + 8} width={w + 40} height={10} fill="#000" opacity={0.15} />
+      {Array.from({ length: Math.ceil((w + 20) / 48) + 1 }).map((_, i) => (
         <Rect key={i} x={i * 48 - 20} y={CURB_Y + 40} width={26} height={3.5} rx={1.5} fill="#F2D15C" />
       ))}
     </G>
   );
 });
 
-export const Sidewalk = memo(function Sidewalk({ frontY }: { frontY: number }) {
+export const Sidewalk = memo(function Sidewalk({ frontY, w = ONE_SCREEN.width }: { frontY: number; w?: number }) {
   return (
     <G>
-      <Rect x={-20} y={frontY} width={SCENE_W + 40} height={CURB_Y - frontY} fill="#D3CCC0" />
-      <Rect x={-20} y={frontY} width={SCENE_W + 40} height={16} fill="#000" opacity={0.06} />
-      {Array.from({ length: 12 }).map((_, i) => (
+      <Rect x={-20} y={frontY} width={w + 40} height={CURB_Y - frontY} fill="#D3CCC0" />
+      <Rect x={-20} y={frontY} width={w + 40} height={16} fill="#000" opacity={0.06} />
+      {Array.from({ length: Math.ceil((w + 40) / 40) + 1 }).map((_, i) => (
         <Path key={i} d={`M${i * 40 - 6} ${frontY + 8} L${i * 40 - 32} ${CURB_Y}`} stroke="#B5AD9F" strokeWidth={1.1} />
       ))}
-      <Path d={`M-20 ${frontY + 62} H${SCENE_W + 20}`} stroke="#B5AD9F" strokeWidth={1.1} />
+      <Path d={`M-20 ${frontY + 62} H${w + 20}`} stroke="#B5AD9F" strokeWidth={1.1} />
     </G>
   );
 });

@@ -333,7 +333,7 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
         </G>
       )}
       {lights.length > 0 && (
-        <Path d={`M${P(L + 10, D, WH - 18).join(' ')} Q${P(196.5, D, WH - 38).join(' ')} ${P(R - 10, D, WH - 18).join(' ')}`} stroke={INK} strokeWidth={1} fill="none" />
+        <Path d={`M${P(L + 10, D, WH - 18, lay.frame).join(' ')} Q${P(lay.frame.vanishX, D, WH - 38, lay.frame).join(' ')} ${P(R - 10, D, WH - 18, lay.frame).join(' ')}`} stroke={INK} strokeWidth={1} fill="none" />
       )}
       {lights}
       {/* wall decor (decor): posters → framed photos → hand-painted mural */}

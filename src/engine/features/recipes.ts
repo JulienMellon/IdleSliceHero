@@ -5,9 +5,10 @@
 // summary, and play after that shows each card as it drops (`fresh`, drained by `ackRecipes`).
 import { RECIPE, recipeId } from '../../content/endgame';
 import type { NeighborhoodId } from '../../content/types';
-import { finaleId, SHOP_IDS, type GameState, type Shop } from '../game';
+import { finaleId, type GameState, type Shop } from '../game';
 import { defendedHoods } from './counterattack';
-import type { Feature } from './types';
+import { savedHoods, type Feature } from './types';
+import { cityOf, hoodIds } from '../../content/cities';
 
 export interface RecipesState {
   /** Card ids owned. */
@@ -62,17 +63,18 @@ export interface Collection {
 /** Owned and total cards, overall and per shop, for the scrapbook. */
 export function collectionView(g: GameState): Collection {
   const have = read(g).owned;
-  const shops = SHOP_IDS.map((id) => {
+  const ids = hoodIds(cityOf(g));
+  const shops = ids.map((id) => {
     const cards = CARDS.map((n) => ({ id: recipeId(id, n), n, owned: have.includes(recipeId(id, n)) }));
     return { id, owned: cards.filter((c) => c.owned).length, total: RECIPE.perShop, cards };
   });
-  return { owned: shops.reduce((t, s) => t + s.owned, 0), total: SHOP_IDS.length * RECIPE.perShop, shops };
+  return { owned: shops.reduce((t, s) => t + s.owned, 0), total: ids.length * RECIPE.perShop, shops };
 }
 
 function settle(g: GameState): GameState {
   const st = read(g);
   const due: string[] = [];
-  for (const id of SHOP_IDS) for (const n of CARDS) if (!st.owned.includes(recipeId(id, n)) && cardEarned(g, id, n)) due.push(recipeId(id, n));
+  for (const id of hoodIds(cityOf(g))) for (const n of CARDS) if (!st.owned.includes(recipeId(id, n)) && cardEarned(g, id, n)) due.push(recipeId(id, n));
   if (st.synced && !due.length) return g;
   const silent = !st.synced;
   return write(g, {
@@ -92,10 +94,10 @@ export function ackRecipes(g: GameState): GameState {
 export const recipes: Feature<RecipesState> = {
   key: KEY,
   init: () => empty(),
-  migrate(raw) {
+  migrate(raw, _now, city) {
     if (!raw || typeof raw !== 'object') return empty();
     const r = raw as Record<string, unknown>;
-    const valid = new Set(SHOP_IDS.flatMap((id) => CARDS.map((n) => recipeId(id, n))));
+    const valid = new Set(savedHoods(city).flatMap((id) => CARDS.map((n) => recipeId(id, n))));
     const owned = Array.isArray(r.owned) ? [...new Set((r.owned as unknown[]).filter((x): x is string => typeof x === 'string' && valid.has(x)))] : [];
     const sum = r.summary && typeof r.summary === 'object' ? (r.summary as Record<string, unknown>) : null;
     return { owned, fresh: [], synced: r.synced === true, summary: sum && typeof sum.cards === 'number' ? { cards: Math.max(0, Math.floor(sum.cards)) } : null };

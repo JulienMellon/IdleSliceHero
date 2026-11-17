@@ -4,7 +4,7 @@ import { memo } from 'react';
 import type { NeighborhoodId } from '../../content/types';
 import { F } from '../../theme';
 import { Circle, Ellipse, G, Path, Polygon, Rect, Text as SvgText } from 'react-native-svg';
-import { INK, SCENE_W, FRONT_TOP, P, pts } from './projection';
+import { INK, FRONT_TOP, P, pts } from './projection';
 import type { Layout } from './layout';
 import { GoldPlaque } from './cosmetic-props';
 import { dressedLook, plaqueRect } from './cosmetics';
@@ -183,8 +183,9 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
             <Path d={`M${(jax + kbx) / 2 + 4} ${(bTop + gTop) / 2 - 14} V${(bTop + gTop) / 2 + 2} M${(jax + kbx) / 2 - 4} ${(bTop + gTop) / 2 - 6} H${(jax + kbx) / 2 + 12}`} stroke="#6B4330" strokeWidth={1.4} />
             {(() => {
               // hangs over the sidewalk off the right pilaster; on the widest shop (no room) it sits on the brick header
-              const outside = P(R + 6, 0)[0] + 26 <= SCENE_W - 4;
-              const sx = outside ? P(R + 6, 0)[0] + 26 : (jax + kbx) / 2 + 14;
+              const edgeX = P(R + 6, 0, 0, lay.frame)[0] + 26;
+              const outside = edgeX <= lay.frame.width - 4;
+              const sx = outside ? edgeX : (jax + kbx) / 2 + 14;
               const sy = outside ? gTop - 22 : (bTop + gTop) / 2 + 14;
               return (
                 <G>

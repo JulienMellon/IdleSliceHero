@@ -6,9 +6,10 @@ import { MASTERY, MASTERY_STARS, type MasteryStar } from '../../content/endgame'
 import { WEEKLY_COSMETICS } from '../../content/rewards';
 import { FOOTPRINTS, HEAD_KINDS, NEIGHBORHOODS, OVEN_GRADES } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
-import { allHeadsHired, SHOP_IDS, type GameState, type Shop } from '../game';
+import { allHeadsHired, type GameState, type Shop } from '../game';
 import { grantCosmetic } from '../rewards';
 import type { Feature } from './types';
+import { cityOf, hoodIds } from '../../content/cities';
 
 /** One thing the UI should celebrate once: a star just earned, or a cosmetic a milestone just gave. */
 export type MasteryNews = { kind: 'star'; shopId: NeighborhoodId; star: MasteryStar } | { kind: 'cosmetic'; id: string };
@@ -51,7 +52,7 @@ export const shopStars = (shop: Shop): number => MASTERY_STARS.filter((k) => mas
 
 /** Stars in the whole city, 0..18. */
 export function masteryTotal(g: GameState): number {
-  return SHOP_IDS.reduce((t, id) => t + shopStars(g.shops[id]), 0);
+  return hoodIds(cityOf(g)).reduce((t, id) => t + shopStars(g.shops[id]), 0);
 }
 
 // from the tuning list, not SHOP_IDS: game.ts loads this file while it is still being evaluated
@@ -79,7 +80,7 @@ export interface NextStar {
 export function nextStar(g: GameState): NextStar | null {
   let best: NextStar | null = null;
   let bestShare = -1;
-  for (const shopId of SHOP_IDS) {
+  for (const shopId of hoodIds(cityOf(g))) {
     const shop = g.shops[shopId];
     if (!shop.built) continue;
     const have = masteryStars(shop);
@@ -106,7 +107,7 @@ const write = (g: GameState, s: MasteryState): GameState => ({ ...g, x: { ...g.x
 /** Every star the shops have right now, as keys. */
 function earnedKeys(g: GameState): { key: string; shopId: NeighborhoodId; star: MasteryStar }[] {
   const out: { key: string; shopId: NeighborhoodId; star: MasteryStar }[] = [];
-  for (const shopId of SHOP_IDS) {
+  for (const shopId of hoodIds(cityOf(g))) {
     const have = masteryStars(g.shops[shopId]);
     for (const star of MASTERY_STARS) if (have[star]) out.push({ key: starKey(shopId, star), shopId, star });
   }

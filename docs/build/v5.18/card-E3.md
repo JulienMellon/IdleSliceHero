@@ -19,11 +19,11 @@
 - The reset is one pure function, `franchise(g, now): GameState`, and it is not undoable; the UI (card T2) confirms twice.
 
 ## Steps
-- [ ] **1. `franchise.ts`:** `canFranchise(g)`, `franchiseGain(g)` (what the player would get, for the confirm sheet), `franchise(g, now)`. Saves made before this version migrate to "home city, no franchises".
-- [ ] **2. The number ceiling.** `number-ceiling.test.ts`: for each of the five planned cities, using the fitted set of each city pack that exists and the growth rule of the spec for those that don't yet, compute the largest cash, cost and income a player can reach with every upgrade bought and 30 days of offline earnings. Assert each is below 1e300 with a factor of 1e20 to spare, and that `format.ts` has a suffix or scientific form for every magnitude reached. If this can't pass with resets, stop and report: the fallback is a big-number library, which is a separate card.
+- [x] **1. `franchise.ts`:** `canFranchise(g)`, `franchiseGain(g)` (what the player would get, for the confirm sheet), `franchise(g, now)`. Saves made before this version migrate to "home city, no franchises".
+- [x] **2. The number ceiling.** `number-ceiling.test.ts`: for each of the five planned cities, using the fitted set of each city pack that exists and the growth rule of the spec for those that don't yet, compute the largest cash, cost and income a player can reach with every upgrade bought and 30 days of offline earnings. Assert each is below 1e300 with a factor of 1e20 to spare, and that `format.ts` has a suffix or scientific form for every magnitude reached. If this can't pass with resets, stop and report: the fallback is a big-number library, which is a separate card.
 - [ ] **3. `format.ts`:** make sure numbers past the last named suffix print in a readable form. Test the boundaries.
-- [ ] **4. Sim and fit.** The check-in player franchises when it can. Fit Boston's set (card T2 fills in the pack; you own the numbers) so that Boston's story takes about the same days as the home city's, given the multiplier. Put the targets in a pacing test.
-- [ ] **5. Counter-attack and mastery after a franchise:** stars already earned stay counted; the new city's shops earn their own. The weekly attack targets the current city's shops only.
+- [x] **4. Sim and fit.** The check-in player franchises when it can. Fit Boston's set (card T2 fills in the pack; you own the numbers) so that Boston's story takes about the same days as the home city's, given the multiplier. Put the targets in a pacing test.
+- [x] **5. Counter-attack and mastery after a franchise:** stars already earned stay counted; the new city's shops earn their own. The weekly attack targets the current city's shops only.
 
 ## Tests that must exist
 The reset keeps and resets exactly the lists above (one assertion per field group, so a new save field added later fails the test until someone decides which list it is in); `franchiseGain` equals what `franchise` gives; migrate; the ceiling test; format boundaries.

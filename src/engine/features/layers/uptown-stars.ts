@@ -15,6 +15,8 @@ import { DECOR_KINDS } from '../../../content/tuning';
 import { shopRevenue, type BuyResult, type GameState, type Shop } from '../../game';
 import { minutesToCash } from '../../rewards';
 import type { Feature } from '../types';
+import { cityOf, layerHood } from '../../../content/cities';
+import type { NeighborhoodId } from '../../../content/types';
 import { freshTimed, gapOf, type TimedSpec } from './suburbs-gameday';
 
 /** How the last visit went; the UI shows it until `ackCritic`. */
@@ -40,13 +42,13 @@ export interface StarsState {
   result: CriticResult | null;
 }
 
-const HOOD = STARS.hood;
+const hoodOf = (g: GameState): NeighborhoodId => layerHood(cityOf(g), 'stars') ?? '';
 const MAX_TIER = STARS.ingredients.length - 1;
 const spec: TimedSpec = { ...CRITIC, rushSeconds: 0 };
 const fresh = (now: number): StarsState => ({ seed: freshTimed(now).seed, n: 0, nextAt: -1, tier: 0, sign: 0, result: null });
 const read = (g: GameState): StarsState => (g.x?.[LAYER_KEYS.stars] as StarsState | undefined) ?? fresh(0);
 const write = (g: GameState, s: StarsState): GameState => ({ ...g, x: { ...g.x, [LAYER_KEYS.stars]: s } });
-const built = (g: GameState): boolean => !!g.shops[HOOD]?.built;
+const built = (g: GameState): boolean => !!g.shops[hoodOf(g)]?.built;
 
 // ---------- the rating ----------
 
@@ -73,7 +75,7 @@ export const starsOf = (points: number): number => 1 + Math.floor((Math.max(0, M
 export const payMult = (stars: number): number => (stars >= STARS.maxStars ? STARS.pay.top : stars >= 3 ? STARS.pay.mid : STARS.pay.low);
 
 /** Uptown's stars right now (1 for a game that has no Uptown yet). */
-export const starsNow = (g: GameState): number => starsOf(pointsOf(g.shops[HOOD], read(g).tier).total);
+export const starsNow = (g: GameState): number => starsOf(pointsOf(g.shops[hoodOf(g)], read(g).tier).total);
 
 // ---------- Ingredients ----------
 
@@ -84,7 +86,7 @@ export const ingredientsTier = (g: GameState): number => read(g).tier;
 export function ingredientsPrice(g: GameState): number | null {
   const tier = read(g).tier;
   if (tier >= MAX_TIER) return null;
-  return Math.max(1, Math.ceil(STARS.ingredients[tier + 1].minutes * 60 * shopRevenue(HOOD, g.shops[HOOD], g.vehicle)));
+  return Math.max(1, Math.ceil(STARS.ingredients[tier + 1].minutes * 60 * shopRevenue(hoodOf(g), g.shops[hoodOf(g)], g.vehicle, undefined, cityOf(g))));
 }
 
 /** Why the next tier can't be bought yet (other than cash), or null. */
@@ -137,7 +139,7 @@ export interface StarsView {
 /** What the rating card needs, pure. */
 export function starsView(g: GameState): StarsView {
   const st = read(g);
-  const points = pointsOf(g.shops[HOOD], st.tier);
+  const points = pointsOf(g.shops[hoodOf(g)], st.tier);
   const stars = starsOf(points.total);
   return {
     active: built(g),
@@ -186,7 +188,7 @@ export function criticView(g: GameState): CriticView {
 function visit(g: GameState, st: StarsState): GameState {
   const n = st.n + 1;
   const target = criticTarget(st.seed, n);
-  const stars = starsOf(pointsOf(g.shops[HOOD], st.tier).total);
+  const stars = starsOf(pointsOf(g.shops[hoodOf(g)], st.tier).total);
   const hit = stars >= target;
   const cash = hit ? minutesToCash(g, CRITIC.rewardMinutes) : 0;
   const next: StarsState = { ...st, n, sign: st.sign + (hit ? 1 : 0), result: { target, stars, hit, cash } };
@@ -222,9 +224,9 @@ export const uptownStars: Feature<StarsState> = {
     return out;
   },
   shopValueMult(g, id) {
-    return id === HOOD && built(g) ? payMult(starsNow(g)) : 1;
+    return id === hoodOf(g) && built(g) ? payMult(starsNow(g)) : 1;
   },
   shopKey(g, id) {
-    return id === HOOD && built(g) ? `stars${starsNow(g)}` : '';
+    return id === hoodOf(g) && built(g) ? `stars${starsNow(g)}` : '';
   },
 };

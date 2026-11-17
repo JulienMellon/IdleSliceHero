@@ -5,8 +5,8 @@
 // challenge won (read from the seen scenes, so no migration has to guess). Inactive until the shop is built.
 import { LAYER_KEYS, RIVAL } from '../../../content/layers';
 import type { NeighborhoodId } from '../../../content/types';
-import { challengeOffered, featureMults, finaleId, sceneId, shopRate, SHOP_IDS, type BuyResult, type GameState } from '../../game';
-import type { Feature } from '../types';
+import { challengeOffered, featureMults, finaleId, sceneId, shopRate, type BuyResult, type GameState } from '../../game';
+import { savedHoods, type Feature } from '../types';
 
 export interface RivalChallenge {
   hood: NeighborhoodId;
@@ -106,16 +106,16 @@ function challengeTick(g: GameState, dt: number): GameState {
 export const rival: Feature<RivalState> = {
   key: LAYER_KEYS.rival,
   init: fresh,
-  migrate(raw) {
+  migrate(raw, _now, city) {
     if (!raw || typeof raw !== 'object') return fresh();
     const r = raw as Record<string, unknown>;
-    const hood = (v: unknown) => (SHOP_IDS.includes(v as NeighborhoodId) ? (v as NeighborhoodId) : null);
+    const hood = (v: unknown) => (savedHoods(city).includes(v as NeighborhoodId) ? (v as NeighborhoodId) : null);
     const nat = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0);
     const won = Array.isArray(r.won) ? [...new Set((r.won as unknown[]).map(hood).filter((x): x is NeighborhoodId => x !== null))] : [];
     const c = r.challenge && typeof r.challenge === 'object' ? (r.challenge as Record<string, unknown>) : null;
     const ch = c && hood(c.hood) && nat(c.target) >= 1 && typeof c.left === 'number' && c.left > 0 ? { hood: hood(c.hood) as NeighborhoodId, target: nat(c.target), startSold: nat(c.startSold), left: Math.min(RIVAL.challengeSeconds, c.left) } : null;
     const retryAt: Partial<Record<NeighborhoodId, number>> = {};
-    if (r.retryAt && typeof r.retryAt === 'object') for (const id of SHOP_IDS) if (typeof (r.retryAt as Record<string, unknown>)[id] === 'number') retryAt[id] = nat((r.retryAt as Record<string, unknown>)[id]);
+    if (r.retryAt && typeof r.retryAt === 'object') for (const id of savedHoods(city)) if (typeof (r.retryAt as Record<string, unknown>)[id] === 'number') retryAt[id] = nat((r.retryAt as Record<string, unknown>)[id]);
     return { won, challenge: ch, retryAt };
   },
   tick(g, dt) {

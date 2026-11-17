@@ -9,7 +9,8 @@ import { criticView } from '../../../engine/features/layers/uptown-stars';
 import { useGame } from '../../../store/game-store';
 import { C, F } from '../../../theme';
 import { Person } from '../../scene/people';
-import { P, kAt, sceneFit } from '../../scene/projection';
+import { P, kAt, sceneFit, type SceneFrame } from '../../scene/projection';
+import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
 import { toWindow } from '../layer-geometry';
 import { pillBox } from '../industrial/jam-model';
@@ -25,10 +26,10 @@ interface Door {
   x0: number;
 }
 
-function Figure({ door, p, mood, act, width, height, target }: { door: Door; p: number; mood: 'focus' | 'happy' | 'o'; act: 'phone' | 'none'; width: number; height: number; target: number }) {
+function Figure({ door, p, mood, act, width, height, target, frame }: { door: Door; p: number; mood: 'focus' | 'happy' | 'o'; act: 'phone' | 'none'; width: number; height: number; target: number; frame: SceneFrame }) {
   const at = criticPath(p, door.cx, door.x0);
-  const f = sceneFit(width, height);
-  const [sx, sy] = P(at.x, at.y);
+  const f = sceneFit(width, height, frame);
+  const [sx, sy] = P(at.x, at.y, 0, frame);
   const k = kAt(at.y) * 1.14;
   const text = targetChip(target);
   const head = toWindow(f, sx, sy - 62 * k);
@@ -50,17 +51,18 @@ function Figure({ door, p, mood, act, width, height, target }: { door: Door; p: 
 }
 
 /** The walk: progress from `e0` seconds in, moving on real time every 100 ms until the walk is done. Mounted only while walking. */
-function Walker({ door, e0, target, width, height }: { door: Door; e0: number; target: number; width: number; height: number }) {
+function Walker({ door, e0, target, width, height, frame }: { door: Door; e0: number; target: number; width: number; height: number; frame: SceneFrame }) {
   const [t0] = useState(() => Date.now());
   const [p, setP] = useState(() => Math.min(1, e0 / WALK_SECONDS));
   useEffect(() => {
     const h = setInterval(() => setP(Math.min(1, (e0 + (Date.now() - t0) / 1000) / WALK_SECONDS)), 100);
     return () => clearInterval(h);
   }, [e0, t0]);
-  return <Figure door={door} p={p} mood="focus" act="none" width={width} height={height} target={target} />;
+  return <Figure door={door} p={p} mood="focus" act="none" width={width} height={height} target={target} frame={frame} />;
 }
 
 export const CriticScene = memo(function CriticScene({ shopId, width, height }: SceneSlotProps) {
+  const frame = useShopFrame(shopId);
   // one string: the phase, the target on the chip, how the visit went, and (walking) the seconds already walked
   const key = useGame((s) => {
     if (shopId !== 'uptown' || !s.game.shops.uptown.built) return '';
@@ -73,9 +75,9 @@ export const CriticScene = memo(function CriticScene({ shopId, width, height }: 
   if (!key || !(width > 0)) return null;
   const [phase, target, hit, elapsed, cx, x0] = key.split('|');
   const door: Door = { cx: Number(cx), x0: Number(x0) };
-  if (phase === 'walking') return <Walker key="walk" door={door} e0={Number(elapsed)} target={Number(target)} width={width} height={height} />;
-  if (phase === 'result') return <Figure door={door} p={1} mood={hit === '1' ? 'happy' : 'o'} act="none" width={width} height={height} target={Number(target)} />;
-  return <Figure door={door} p={1} mood="focus" act="phone" width={width} height={height} target={Number(target)} />;
+  if (phase === 'walking') return <Walker key="walk" door={door} e0={Number(elapsed)} target={Number(target)} width={width} height={height} frame={frame} />;
+  if (phase === 'result') return <Figure door={door} p={1} mood={hit === '1' ? 'happy' : 'o'} act="none" width={width} height={height} target={Number(target)} frame={frame} />;
+  return <Figure door={door} p={1} mood="focus" act="phone" width={width} height={height} target={Number(target)} frame={frame} />;
 });
 
 const styles = StyleSheet.create({

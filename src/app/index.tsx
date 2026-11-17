@@ -28,7 +28,7 @@ import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, PrepIcon, Reg
 import { Portrait } from '@/components/portrait';
 import { HeadFace } from '@/components/scene/head-face';
 import Svg from 'react-native-svg';
-import { CURB_Y, SCENE_H, sceneFit, Storefront } from '@/components/storefront';
+import { CURB_Y, SCENE_H, sceneFrame, sceneView, Storefront } from '@/components/storefront';
 import { isForeground } from '@/components/app-state-model';
 import { usePerfMarks } from '@/components/scene/clock';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
@@ -323,7 +323,8 @@ export default function GameScreen() {
   );
 
   // ---- sidewalk row: the four stations (or the manager, on a shop that needs one) + "All"
-  const fit = sceneFit(area.w || 1, area.h || 1);
+  // the same fit the scene itself uses (a wide shop scales by one screen's width or the height, like every shop: only its drawing is wider)
+  const fit = sceneView(area.w || 1, area.h || 1, sceneFrame(game.shops[id].footprint)).fit;
   // the row's foot sits above the kerb line; see SIDEWALK_ROW for why each mode uses its height
   const rowBottom = (SCENE_H - CURB_Y) * fit.s + (idleShopHere ? SIDEWALK_ROW.raiseIdle : SIDEWALK_ROW.raiseManaged);
   const openDrawer = () => {

@@ -20,7 +20,7 @@ import { FLIGHT_FADE, flightBounds, laneBottom } from './endgame/stack-model';
 import { haptic } from './game-ui';
 import { emitCheer, emitCoin, emitPayout } from './pulse-bus';
 import { useMotion } from './scene/clock';
-import { FRONT_TOP, P, sceneFit } from './scene/projection';
+import { FRONT_TOP, P, sceneView } from './scene/projection';
 
 const { width: W, height: H } = BONUS_VIEW;
 const INK = '#3B1F14';
@@ -125,7 +125,8 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
   const g = BONUS_VIEW.glowPx;
   const gift = isFirstGift(n, taps);
   // G95: the lane stays in the sky band above the roof sign; the gift label sits over the pizza, so its lane starts lower to leave it room
-  const fit = sceneFit(width, height || 1);
+  // screen-fixed: the golden pizza flies over the screen, not over the shop, so it never scrolls with a wide shop (projection.ts `sceneToScreen`); only the sky band's height comes from the fit
+  const fit = sceneView(width, height || 1).fit;
   // D501: the lane's floor is 24 pt above the sign, so the box never sits on it
   const bandBottom = height > 0 ? laneBottom(skyBottom(fit.oy, fit.s, P(0, 0, FRONT_TOP)[1])) : 0;
   // G95 (card up): an order or perk card, or the endgame notices, can push `top` below the sky band's bottom. laneY would then return its

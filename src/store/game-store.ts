@@ -8,7 +8,7 @@ import { applyDouble, claimDelta, claimOffer, grantDailyBooster, offlineBoost, o
 import { applyGrant, NO_PREFS, parsePrefs, PREFS_KEY, type StorePrefs } from '../components/store/store-model';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
-import { HOME_SCENES } from '../content/scenes/home';
+import { cityOf } from '../content/cities';
 import { TUNING, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
@@ -19,6 +19,7 @@ import * as N from '../engine/night-oven';
 import * as O from '../engine/orders';
 import '../engine/features'; // registers the features before any game is made
 import { ackAttack, startChallenge } from '../engine/features/counterattack';
+import { canFranchise, franchise as franchiseCity } from '../engine/features/franchise';
 import { startRivalChallenge } from '../engine/features/layers/rival';
 import { buyRack as buyRackTier, rackPrice } from '../engine/features/layers/waterfront-boats';
 import { ackMastery } from '../engine/features/mastery';
@@ -61,6 +62,10 @@ interface Store {
   lastKitchenTap: number;
   /** Wall-clock ms of the last (up to RUSH_TAPS_KEPT) rush taps on a managed pizzeria, newest last. Replaced, never mutated. Not saved. */
   rushTaps: number[];
+  /** Where each shop's wide drawing was last scrolled to (scene px from its left edge), kept for the session so a shop reopens where it was left. Replaced, never mutated. Not saved. */
+  sceneScroll: Partial<Record<string, number>>;
+  /** Remember a shop's scroll position (no-op when unchanged). */
+  setSceneScroll: (id: string, x: number) => void;
   /** Play time (s) when the last story scene ended this session; null after a launch or return (v3.7 pacing). Not saved. */
   lastSceneEndPlay: number | null;
   /** Scene currently playing (or replaying from the Scrapbook). */
@@ -129,6 +134,8 @@ interface Store {
   build: (id: NeighborhoodId) => boolean;
   /** Waterfront's finale: bid on Pier 9. */
   bidPier9: () => boolean;
+  /** v5.18 (E3): sell the city for Franchise Stars and start the next one. Not undoable; the confirm sheet (card T2) asks twice. False when no franchise is on offer. */
+  franchise: () => boolean;
   setActive: (id: NeighborhoodId) => void;
   finishScene: () => void;
   replayScene: (scene: Scene) => void;
@@ -203,7 +210,7 @@ export const useGame = create<Store>((set, get) => {
     const { game, playing, lastKitchenTap, lastSceneEndPlay } = get();
     // the title card is still up, or Nonna is walking the player through the first batch: the story waits
     if (!get().titleDone || tutorialHoldsStory(game)) return;
-    const next = pickScene(game, HOME_SCENES, Date.now(), lastKitchenTap, !!playing, lastSceneEndPlay);
+    const next = pickScene(game, cityOf(game).scenes, Date.now(), lastKitchenTap, !!playing, lastSceneEndPlay);
     if (next) set({ playing: { scene: next, replay: false } });
   };
 
@@ -296,7 +303,7 @@ export const useGame = create<Store>((set, get) => {
         awaySeconds = r.awaySeconds;
         if (r.earned >= 1 && r.seconds >= TUNING.offlinePopupSeconds) {
           // Hold the cash back until the player taps Collect.
-          offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed, headsOnly: b.headsOnly, pies: b.pies })), idle: r.idle.map((id) => G.def(id).name), boost: offlineBoost(saved.rewards.boosts, saved.lastSavedAt, r.seconds) };
+          offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id, cityOf(saved)).name, earned: b.earned, managed: b.managed, headsOnly: b.headsOnly, pies: b.pies })), idle: r.idle.map((id) => G.def(id, cityOf(saved)).name), boost: offlineBoost(saved.rewards.boosts, saved.lastSavedAt, r.seconds) };
           game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
         }
       }
@@ -320,6 +327,10 @@ export const useGame = create<Store>((set, get) => {
     offline: null,
     lastKitchenTap: 0,
     rushTaps: [],
+    sceneScroll: {},
+    setSceneScroll: (id, x) => {
+      if (get().sceneScroll[id] !== x) set({ sceneScroll: { ...get().sceneScroll, [id]: x } });
+    },
     lastSceneEndPlay: null,
     playing: null,
     toast: null,
@@ -528,8 +539,19 @@ export const useGame = create<Store>((set, get) => {
 
     bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: G.pier9Price(get().game) }, plain('bid')),
 
+    franchise: () => {
+      const g = get().game;
+      if (!canFranchise(g)) return false;
+      emitAudio({ type: 'click' });
+      // the new city's story starts at once (no wait left over from the last scene), and the offline summary of the old one is moot
+      set({ game: franchiseCity(g, Date.now()), lastSceneEndPlay: null, offline: null });
+      queueScene();
+      void get().save();
+      return true;
+    },
+
     build: (id) => {
-      const ok = commit(G.buildShop(get().game, id), { name: `Build ${G.def(id).name}`, cost: G.def(id).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id }));
+      const ok = commit(G.buildShop(get().game, id), { name: `Build ${G.def(id, cityOf(get().game)).name}`, cost: G.def(id, cityOf(get().game)).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id }));
       if (ok) analytics.track(EVENTS.shopBuilt, { shop: id });
       return ok;
     },

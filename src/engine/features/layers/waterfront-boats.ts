@@ -24,6 +24,8 @@ import {
   type GameState,
 } from '../../game';
 import type { Feature } from '../types';
+import { cityOf, layerHood } from '../../../content/cities';
+import type { NeighborhoodId } from '../../../content/types';
 import { freshTimed, migrateTimed, stepTimed, timedOn, type Timed, type TimedSpec } from './suburbs-gameday';
 
 export interface BoatsState extends Timed {
@@ -38,12 +40,12 @@ export interface BoatsState extends Timed {
 }
 
 const spec: TimedSpec = BOATS;
-const HOOD = BOATS.hood;
+const hoodOf = (g: GameState): NeighborhoodId => layerHood(cityOf(g), 'boats') ?? '';
 const MAX_TIER = BOATS.rack.capacity.length;
 const fresh = (now: number): BoatsState => ({ ...freshTimed(now), tier: 0, rack: 0, carry: 0, openedAt: -1 });
 const read = (g: GameState): BoatsState => (g.x?.[LAYER_KEYS.boats] as BoatsState | undefined) ?? fresh(0);
 const write = (g: GameState, s: BoatsState): GameState => ({ ...g, x: { ...g.x, [LAYER_KEYS.boats]: s } });
-const built = (g: GameState): boolean => !!g.shops[HOOD]?.built;
+const built = (g: GameState): boolean => !!g.shops[hoodOf(g)]?.built;
 
 /** The Pier 9 price multiplier right now (1 while the bid is not open). Export for game.ts's bid price and the UI. */
 export const pier9AuctionMult = (g: GameState): number => auctionMult(read(g).openedAt, g.playSeconds);
@@ -58,7 +60,7 @@ export const rackCapacity = (tier: number): number => (tier > 0 ? BOATS.rack.cap
 export function rackPrice(g: GameState): number | null {
   const tier = read(g).tier;
   if (tier >= MAX_TIER) return null;
-  return Math.max(1, Math.ceil(BOATS.rack.minutes[tier] * 60 * shopRevenue(HOOD, g.shops[HOOD], g.vehicle)));
+  return Math.max(1, Math.ceil(BOATS.rack.minutes[tier] * 60 * shopRevenue(hoodOf(g), g.shops[hoodOf(g)], g.vehicle, undefined, cityOf(g))));
 }
 
 /** Why the next tier can't be bought yet (other than cash), or null. */
@@ -121,9 +123,9 @@ export function boatsView(g: GameState, now: number): BoatsView {
  */
 function rackStep(g: GameState, st: BoatsState, dt: number, now: number): BoatsState {
   const cap = rackCapacity(st.tier);
-  const shop = g.shops[HOOD];
+  const shop = g.shops[hoodOf(g)];
   if (cap <= 0 || !runsItself(shop)) return st;
-  const fx = featureMults(g, HOOD, now);
+  const fx = featureMults(g, hoodOf(g), now);
   const sold = shopRate(shop, g.vehicle, fx);
   if (!timedOn(st, g.playSeconds, now)) {
     const spare = Math.max(0, Math.min(prepRate(shop), ovenRate(shop)) - sold);
@@ -162,18 +164,18 @@ export const waterfrontBoats: Feature<BoatsState> = {
     const whole = Math.floor(next.carry);
     if (whole > 0) {
       // the pies the rack sold pay like any other of the shop's pies (at the boosted price while a boost runs)
-      const shop = g.shops[HOOD];
-      const cash = whole * valuePerPizza(HOOD, shop, g.vehicle, featureMults(g, HOOD, now)) * boostMult(g, now);
-      out = { ...g, cash: g.cash + cash, totalEarned: g.totalEarned + cash, shops: { ...g.shops, [HOOD]: { ...shop, sold: shop.sold + whole } } };
+      const shop = g.shops[hoodOf(g)];
+      const cash = whole * valuePerPizza(hoodOf(g), shop, g.vehicle, featureMults(g, hoodOf(g), now), cityOf(g)) * boostMult(g, now);
+      out = { ...g, cash: g.cash + cash, totalEarned: g.totalEarned + cash, shops: { ...g.shops, [hoodOf(g)]: { ...shop, sold: shop.sold + whole } } };
       next = { ...next, carry: next.carry - whole };
     }
     const same = (Object.keys(next) as (keyof BoatsState)[]).every((k) => next[k] === st[k]);
     return same ? out : write(out, next);
   },
   shopDemandMult(g, id, now) {
-    return id === HOOD && built(g) && timedOn(read(g), g.playSeconds, now) ? BOATS.demandMult : 1;
+    return id === hoodOf(g) && built(g) && timedOn(read(g), g.playSeconds, now) ? BOATS.demandMult : 1;
   },
   shopKey(g, id) {
-    return id === HOOD && built(g) && read(g).until > g.playSeconds ? 'boat' : '';
+    return id === hoodOf(g) && built(g) && read(g).until > g.playSeconds ? 'boat' : '';
   },
 };

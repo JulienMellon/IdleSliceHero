@@ -28,6 +28,8 @@ import {
   type Shop,
 } from '../../game';
 import type { Feature } from '../types';
+import { cityOf, layerHood } from '../../../content/cities';
+import type { NeighborhoodId } from '../../../content/types';
 
 export interface MenuState {
   /** Percent of the pies that are Pepperoni, a whole number 0..100. */
@@ -36,11 +38,11 @@ export interface MenuState {
   knots: number;
 }
 
-const HOOD = MENU.hood;
+const hoodOf = (g: GameState): NeighborhoodId => layerHood(cityOf(g), 'menu') ?? '';
 const fresh = (): MenuState => ({ pepperoni: 0, knots: 0 });
 const read = (g: GameState): MenuState => (g.x?.[LAYER_KEYS.menu] as MenuState | undefined) ?? fresh();
 const write = (g: GameState, s: MenuState): GameState => ({ ...g, x: { ...g.x, [LAYER_KEYS.menu]: s } });
-const built = (g: GameState): boolean => !!g.shops[HOOD]?.built;
+const built = (g: GameState): boolean => !!g.shops[hoodOf(g)]?.built;
 const recipe = (id: 'cheese' | 'pepperoni' | 'knots') => MENU.recipes.find((r) => r.id === id)!;
 
 // ---------- the menu ----------
@@ -162,7 +164,7 @@ export interface ZonesView {
 
 /** What the campus map shows, pure. */
 export function zonesView(g: GameState): ZonesView {
-  const shop = g.shops[HOOD];
+  const shop = g.shops[hoodOf(g)];
   const drones = isDrones(g.vehicle);
   const open = openZones(shop);
   const openShare = open.reduce((t, z) => t + z.share, 0);
@@ -193,13 +195,13 @@ export function zonesView(g: GameState): ZonesView {
  * keeps the plain menu). Pure; the sim's player sets it, and the menu card can offer it.
  */
 export function bestMix(g: GameState, now: number = g.lastSavedAt): MenuState {
-  const shop = g.shops[HOOD];
+  const shop = g.shops[hoodOf(g)];
   let best = fresh();
   let bestRate = -1;
   for (let p = 0; p <= 100; p += MENU.searchStep) {
     for (let k = 0; p + k <= 100; k += MENU.searchStep) {
       const t = write(g, { pepperoni: p, knots: k });
-      const rate = shopRevenue(HOOD, shop, g.vehicle, featureMults(t, HOOD, now));
+      const rate = shopRevenue(hoodOf(g), shop, g.vehicle, featureMults(t, hoodOf(g), now), cityOf(g));
       if (rate > bestRate + 1e-9) {
         best = { pepperoni: p, knots: k };
         bestRate = rate;
@@ -220,13 +222,13 @@ export const universityMenu: Feature<MenuState> = {
     return { pepperoni, knots: Math.min(100 - pepperoni, pct(r.knots)) };
   },
   shopValueMult(g, id) {
-    return id === HOOD && built(g) ? menuFactors(read(g)).value : 1;
+    return id === hoodOf(g) && built(g) ? menuFactors(read(g)).value : 1;
   },
   shopDemandMult(g, id) {
-    return id === HOOD && built(g) ? demandFactor(g.shops[id], g.vehicle, read(g)) : 1;
+    return id === hoodOf(g) && built(g) ? demandFactor(g.shops[id], g.vehicle, read(g)) : 1;
   },
   shopKey(g, id) {
-    if (id !== HOOD || !built(g)) return '';
+    if (id !== hoodOf(g) || !built(g)) return '';
     const m = read(g);
     return `menu${m.pepperoni}-${m.knots}`;
   },

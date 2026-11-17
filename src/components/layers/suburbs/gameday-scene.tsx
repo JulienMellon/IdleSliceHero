@@ -12,6 +12,7 @@ import { useGame } from '../../../store/game-store';
 import { useClock } from '../../scene/clock';
 import { Person } from '../../scene/people';
 import { kAt, P, sceneFit } from '../../scene/projection';
+import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
 import { layoutOfShop } from '../shop-layout';
 import { BURST_SECONDS, chairsOf, familiesFor, freeChairs, glowing, seatedFamilies, waveFigures } from './gameday-model';
@@ -19,6 +20,7 @@ import { BURST_SECONDS, chairsOf, familiesFor, freeChairs, glowing, seatedFamili
 export const GameDayScene = memo(function GameDayScene({ shopId, width, height }: SceneSlotProps) {
   // Reads the live store on its own 15 fps clock: React Compiler must not cache that.
   'use no memo';
+  const frame = useShopFrame(shopId);
   const on = useGame((s) => shopId === GAME_DAY.hood && gameDayView(s.game, Date.now()).rush);
   const clock = useClock(15, !on);
   if (!on) return null;
@@ -36,7 +38,7 @@ export const GameDayScene = memo(function GameDayScene({ shopId, width, height }
   const free = freeChairs(chairs.length, v);
   const families = familiesFor(v.seatsFree, lay);
   const open = glowing(free, t, families, lay);
-  const fit = sceneFit(width, height);
+  const fit = sceneFit(width, height, frame);
   const pulse = 0.5 + 0.5 * Math.sin(clock * 5);
   const figures = waveFigures(lay, t, families, clock).sort((a, b) => b.y - a.y);
   const seated = seatedFamilies(lay, chairs, free, t, families);

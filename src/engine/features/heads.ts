@@ -8,9 +8,9 @@
 import { BARKS, HEAD_BARKS, STATION_TASKS, type BarkStation, type BarkTrigger } from '../../content/heads';
 import type { NeighborhoodId } from '../../content/types';
 import { seededUnit } from '../bonus';
-import { SHOP_IDS, type GameState, type Shop } from '../game';
+import { type GameState, type Shop } from '../game';
 import { weekNumber } from './counterattack';
-import type { Feature } from './types';
+import { savedHoods, type Feature } from './types';
 
 export const KEY = 'heads';
 export const STATIONS: readonly BarkStation[] = ['prep', 'oven', 'counter'];
@@ -34,7 +34,7 @@ const write = (g: GameState, s: HeadsState): GameState => ({ ...g, x: { ...g.x, 
 /** Every hired head in a built shop, in shop then station order. */
 export function hiredHeads(g: Pick<GameState, 'shops'>): HeadPick[] {
   const out: HeadPick[] = [];
-  for (const shopId of SHOP_IDS) {
+  for (const shopId of Object.keys(g.shops)) {
     const shop = g.shops[shopId];
     if (!shop.built) continue;
     for (const station of STATIONS) if (shop.heads[station]) out.push({ shopId, station });
@@ -88,12 +88,12 @@ function roll(g: GameState, now: number): GameState {
 export const heads: Feature<HeadsState> = {
   key: KEY,
   init: () => fresh(),
-  migrate(raw) {
+  migrate(raw, _now, city) {
     if (!raw || typeof raw !== 'object') return fresh();
     const r = raw as Record<string, unknown>;
     const week = typeof r.week === 'number' && Number.isFinite(r.week) ? Math.max(0, Math.floor(r.week)) : 0;
     const p = r.pick && typeof r.pick === 'object' ? (r.pick as Record<string, unknown>) : null;
-    const pick = p && SHOP_IDS.includes(p.shopId as NeighborhoodId) && STATIONS.includes(p.station as BarkStation) ? { shopId: p.shopId as NeighborhoodId, station: p.station as BarkStation } : null;
+    const pick = p && savedHoods(city).includes(p.shopId as NeighborhoodId) && STATIONS.includes(p.station as BarkStation) ? { shopId: p.shopId as NeighborhoodId, station: p.station as BarkStation } : null;
     return { week, pick };
   },
   tick: (g, _dt, now) => roll(g, now),

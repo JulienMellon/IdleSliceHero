@@ -11,7 +11,7 @@ import re
 
 from shots_lib import *  # noqa: F401,F403  (seeded_page, settle, shot, tid, expect, advance, hood_save, report, ROOT, ...)
 
-SCENES_DIR = os.path.join(ROOT, "src", "content", "scenes", "home")
+SCENES_DIR = os.path.join(ROOT, "src", "content", "cities", "home", "scenes")
 
 
 def all_scene_ids():

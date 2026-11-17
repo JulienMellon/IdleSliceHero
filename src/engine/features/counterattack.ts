@@ -7,10 +7,11 @@
 import { COUNTERATTACK } from '../../content/endgame';
 import type { NeighborhoodId } from '../../content/types';
 import { seededUnit } from '../bonus';
-import { featureMults, finaleId, shopRate, SHOP_IDS, def, type BuyResult, type GameState } from '../game';
+import { featureMults, finaleId, shopRate, def, type BuyResult, type GameState } from '../game';
 import { minutesToCash, resetCountdown, weekKey } from '../rewards';
 import { withoutEvent } from './events';
-import type { Feature } from './types';
+import { savedHoods, type Feature } from './types';
+import { cityOf, hoodIds } from '../../content/cities';
 
 export interface ChallengeState {
   /** Pies to sell, fixed when it starts. */
@@ -55,14 +56,14 @@ const read = (g: GameState): AttackState => (g.x?.[KEY] as AttackState | undefin
 const write = (g: GameState, s: AttackState): GameState => ({ ...g, x: { ...g.x, [KEY]: s } });
 
 /** The last finale (the last neighbourhood's beat 4) has played: the attacks may start. */
-export const finaleSeen = (g: GameState): boolean => g.seenScenes.includes(finaleId(SHOP_IDS[SHOP_IDS.length - 1]));
+export const finaleSeen = (g: GameState): boolean => g.seenScenes.includes(finaleId(hoodIds(cityOf(g)).at(-1)!));
 
 /** Shops that have been attacked and defended. */
 export const defendedHoods = (g: GameState): readonly NeighborhoodId[] => read(g).defended;
 
 /** This week's target: seeded by the week number, a built shop, never the previous target (unless it is the only one built). */
 export function pickTarget(g: GameState, week: number, previous: NeighborhoodId | null): NeighborhoodId | null {
-  const built = SHOP_IDS.filter((id) => g.shops[id].built);
+  const built = hoodIds(cityOf(g)).filter((id) => g.shops[id].built);
   const pool = built.filter((id) => id !== previous);
   const from = pool.length ? pool : built;
   if (!from.length) return null;
@@ -118,7 +119,7 @@ export function attackView(g: GameState, now: number): AttackView {
   const id = st.open ? st.target : null;
   const base = { weekEndsIn: resetCountdown(now, 'week'), rewardDiamonds: COUNTERATTACK.rewardDiamonds, valueMult: COUNTERATTACK.valueMult, news: st.news };
   if (!id) return { ...base, phase: 'none', shopId: null, name: '', target: 0, progress: 0, secondsLeft: 0, retryIn: 0, rewardCash: 0 };
-  const common = { ...base, shopId: id, name: def(id).name, rewardCash: winCash(g) };
+  const common = { ...base, shopId: id, name: def(id, cityOf(g)).name, rewardCash: winCash(g) };
   if (st.challenge) return { ...common, phase: 'running', target: st.challenge.target, progress: challengeProgress(g, id, st.challenge), secondsLeft: Math.max(0, Math.ceil(st.challenge.left)), retryIn: 0 };
   const wait = Math.max(0, Math.ceil((st.retryAt - now) / 1000));
   return { ...common, phase: wait > 0 ? 'retry' : 'open', target: challengeTarget(g, id, now), progress: 0, secondsLeft: 0, retryIn: wait };
@@ -180,11 +181,11 @@ function challenge(g: GameState, dt: number, now: number): GameState {
 export const counterattack: Feature<AttackState> = {
   key: KEY,
   init: () => fresh(),
-  migrate(raw) {
+  migrate(raw, _now, city) {
     if (!raw || typeof raw !== 'object') return fresh();
     const r = raw as Record<string, unknown>;
     const nat = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0);
-    const hood = (v: unknown) => (SHOP_IDS.includes(v as NeighborhoodId) ? (v as NeighborhoodId) : null);
+    const hood = (v: unknown) => (savedHoods(city).includes(v as NeighborhoodId) ? (v as NeighborhoodId) : null);
     const target = hood(r.target);
     const c = r.challenge && typeof r.challenge === 'object' ? (r.challenge as Record<string, unknown>) : null;
     const defended = Array.isArray(r.defended) ? [...new Set((r.defended as unknown[]).map(hood).filter((x): x is NeighborhoodId => x !== null))] : [];

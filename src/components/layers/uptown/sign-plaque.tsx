@@ -9,14 +9,16 @@ import { starsView } from '../../../engine/features/layers/uptown-stars';
 import { useGame } from '../../../store/game-store';
 import { C, F } from '../../../theme';
 import { INK, sceneFit } from '../../scene/projection';
+import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
 import { toWindow } from '../layer-geometry';
 import { PAY_WORDS, payTagOf, type PayTag } from './stars-model';
-import { PIN, PLAQUE, PLAQUE_W, pinXs, plaqueBox, plaqueStars, STAR, TAG } from './sign-model';
+import { PIN, PLAQUE, PLAQUE_W, pinXs, plaqueBox, plaqueStars, signOf, STAR, TAG } from './sign-model';
 
 const STAR_PATH = 'M10 1.8 L12.4 7 L18 7.6 L13.8 11.4 L15 17 L10 14.1 L5 17 L6.2 11.4 L2 7.6 L7.6 7 Z';
 
 export const SignPlaque = memo(function SignPlaque({ shopId, width, height }: SceneSlotProps) {
+  const frame = useShopFrame(shopId);
   const key = useGame((s) => {
     if (shopId !== 'uptown' || !s.game.shops.uptown.built) return '';
     const v = starsView(s.game);
@@ -25,8 +27,9 @@ export const SignPlaque = memo(function SignPlaque({ shopId, width, height }: Sc
   if (!key || !(width > 0)) return null;
   const [st, tag, pins] = key.split('|');
   const stars = Number(st);
-  const f = sceneFit(width, height);
-  const box = plaqueBox(f.s, tag !== 'full');
+  const f = sceneFit(width, height, frame);
+  const sign = signOf(frame);
+  const box = plaqueBox(f.s, tag !== 'full', sign);
   const tagAt = toWindow(f, box.tagX, box.tagY);
   return (
     <View testID="sign-rating" accessibilityLabel={`Rating ${stars} stars. ${PAY_WORDS[tag as PayTag]}`} pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -40,7 +43,7 @@ export const SignPlaque = memo(function SignPlaque({ shopId, width, height }: Sc
               </G>
             ))}
           </G>
-          {pinXs(Number(pins)).map((x, i) => (
+          {pinXs(Number(pins), sign).map((x, i) => (
             <G key={`pin${i}`} transform={`translate(${x} ${box.pinY}) scale(${PIN.size / 20})`}>
               <Path d={STAR_PATH} fill="#FFD54A" stroke={INK} strokeWidth={1.6} strokeLinejoin="round" />
             </G>

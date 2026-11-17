@@ -7,7 +7,8 @@ import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 import { shiftView } from '../../../engine/features/layers/industrial-shifts';
 import { useGame } from '../../../store/game-store';
 import { C, F } from '../../../theme';
-import { FRONT_TOP, INK, P, SCENE_W, sceneFit } from '../../scene/projection';
+import { FRONT_TOP, INK, P, sceneFit } from '../../scene/projection';
+import { useShopFrame } from '../../scene/use-frame';
 import { layoutOfShop } from '../shop-layout';
 import { toWindow } from '../layer-geometry';
 import type { SceneSlotProps } from '../../slots';
@@ -20,6 +21,7 @@ const ROOF_Y = P(0, 0, FRONT_TOP)[1] - 62;
 const BADGE = { x: 312, y: 139, size: 34 } as const;
 
 export const NightTint = memo(function NightTint({ shopId, width, height }: SceneSlotProps) {
+  const frame = useShopFrame(shopId);
   const key = useGame((s) => {
     if (shopId !== 'industrial' || !s.game.shops.industrial.built) return '';
     const v = shiftView(s.game);
@@ -30,8 +32,8 @@ export const NightTint = memo(function NightTint({ shopId, width, height }: Scen
   const [shift, value, L, R] = key.split('|');
   const tint = shiftTint(shift);
   if (!tint) return null;
-  const f = sceneFit(width, height);
-  const shape = nightShape({ L: Number(L), R: Number(R) }, SCENE_W, P(0, 0)[1], ROOF_Y);
+  const f = sceneFit(width, height, frame);
+  const shape = nightShape({ L: Number(L), R: Number(R) }, frame.width, P(0, 0)[1], ROOF_Y);
   const night = shift === 'night';
   const tag = payTag(Number(value));
   const at = toWindow(f, BADGE.x, BADGE.y);

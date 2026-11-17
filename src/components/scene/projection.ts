@@ -6,10 +6,68 @@ export const SCENE_H = 680;
 /** y (scene units) of the street curb; the sidewalk runs from the shop front down to here. */
 export const CURB_Y = 590;
 
-/** How the 393×680 scene maps onto a w×h area (cover, bottom-anchored). */
-export function sceneFit(w: number, h: number) {
-  const s = Math.max(w / SCENE_W, h / SCENE_H);
-  return { s, ox: (w - SCENE_W * s) / 2, oy: h - SCENE_H * s };
+// ---------- the frame (v5.18, card V1) ----------
+/** The shop's drawing as data: how wide it is, how tall, and where the perspective's vanishing point stands. Every footprint asks for one screen's width today. */
+export interface SceneFrame {
+  readonly width: number;
+  readonly height: number;
+  /** x (scene units) of the perspective's vanishing point and of the room's centre: half the width. */
+  readonly vanishX: number;
+}
+const frames = new Map<number, SceneFrame>();
+/** The frame `width` units wide (one shared object per width, so memo deps and `===` hold). */
+export function makeFrame(width: number): SceneFrame {
+  let f = frames.get(width);
+  if (!f) {
+    f = Object.freeze({ width, height: SCENE_H, vanishX: width / 2 });
+    frames.set(width, f);
+  }
+  return f;
+}
+/** The one-screen frame: what every shop is drawn in until card V2 widens the two largest. */
+export const ONE_SCREEN = makeFrame(SCENE_W);
+/** Frame width by footprint (0 = starter … 4 = flagship). All one screen for now. */
+export const FRAME_WIDTH: readonly number[] = [SCENE_W, SCENE_W, SCENE_W, SCENE_W, SCENE_W];
+export const sceneFrame = (footprint: number): SceneFrame => makeFrame(FRAME_WIDTH[Math.max(0, Math.min(FRAME_WIDTH.length - 1, footprint))]);
+/** The frame is wider than one screen, so its drawing sits in a horizontal scroll view. */
+export const isWide = (frame: SceneFrame): boolean => frame.width > ONE_SCREEN.width;
+
+export interface SceneFit {
+  s: number;
+  ox: number;
+  oy: number;
+}
+/** How the frame maps onto a w×h area (cover, bottom-anchored, centred across). Pass the area the frame is drawn in: the screen for a one-screen frame, the scroll content for a wide one. */
+export function sceneFit(w: number, h: number, frame: SceneFrame = ONE_SCREEN): SceneFit {
+  const s = Math.max(w / frame.width, h / frame.height);
+  return { s, ox: (w - frame.width * s) / 2, oy: h - frame.height * s };
+}
+
+/**
+ * How a frame sits on a w×h screen. A one-screen frame is covered and cropped exactly as before (`fit` = `sceneFit(w, h)`, no scroll). A wider frame
+ * is scaled the same way (by one screen's width, or the height) and is `contentW` wide: the area its scroll view holds, in which `fit.ox` is 0.
+ */
+export function sceneView(w: number, h: number, frame: SceneFrame = ONE_SCREEN): { scrolls: boolean; contentW: number; maxScroll: number; fit: SceneFit } {
+  const wide = isWide(frame);
+  const s = Math.max(w / ONE_SCREEN.width, h / frame.height);
+  const contentW = wide ? frame.width * s : w;
+  return { scrolls: wide, contentW, maxScroll: wide ? Math.max(0, contentW - w) : 0, fit: sceneFit(contentW, h, frame) };
+}
+
+/**
+ * Where a place in the shop is on the screen, across: `x` (scene units) through the content's fit, less how far the view has scrolled.
+ * Everything anchored to a place in the shop uses this: station tags and badges, head bubbles, coin origins, and the scene overlays (the harbour's
+ * boats, the rival's storefront, the layer props, the cosmetics), which are drawn inside the scrolling content and so move with it.
+ * Screen-fixed, and never put through it: the HUD chips, the banners, the order chip, the shop report strip, the sidewalk row, and the golden
+ * pizza's lane (floating-bonus.tsx: it flies over the screen, not over the shop).
+ */
+export const sceneToScreen = (x: number, scrollX: number, fit: Pick<SceneFit, 's' | 'ox'>): number => fit.ox + x * fit.s - scrollX;
+/** The inverse of `sceneToScreen`: the scene x under screen x `sx`. */
+export const screenToScene = (sx: number, scrollX: number, fit: Pick<SceneFit, 's' | 'ox'>): number => (sx + scrollX - fit.ox) / fit.s;
+
+/** Where a shop opens: the scroll position (px) that puts the scene x `focusX` mid-screen, kept inside the content. 0 for a one-screen frame. */
+export function openScroll(focusX: number, s: number, screenW: number, maxScroll: number): number {
+  return Math.max(0, Math.min(maxScroll, focusX * s - screenW / 2));
 }
 
 // ---------- projection ----------
@@ -19,16 +77,16 @@ export const D = 110;
 export const WH = 300;
 // v2.1: the shop fills the screen — sky band above the back wall is ~95 units.
 export const SC = 0.98;
-export const TX = 196.5 * (1 - SC);
 export const TY = -20;
 /** Height of the side walls / front fascia at the street edge. */
 export const FRONT_TOP = WH + 40;
-export function P(x: number, y: number, z = 0): [number, number] {
+export function P(x: number, y: number, z = 0, frame: SceneFrame = ONE_SCREEN): [number, number] {
+  const v = frame.vanishX;
   const f = 1 - y / 520;
-  return [TX + (196.5 + (x - 196.5) * f) * SC, TY + (492 - y * 1.25 - z * f) * SC];
+  return [v * (1 - SC) + (v + (x - v) * f) * SC, TY + (492 - y * 1.25 - z * f) * SC];
 }
 /** Inverse of P's x at depth y (z = 0): the room x that lands at screen x `sx`. */
-export const unprojectX = (sx: number, y: number) => 196.5 + ((sx - TX) / SC - 196.5) / (1 - y / 520);
+export const unprojectX = (sx: number, y: number, frame: SceneFrame = ONE_SCREEN) => frame.vanishX + ((sx - frame.vanishX * (1 - SC)) / SC - frame.vanishX) / (1 - y / 520);
 export const kAt = (y: number) => (1 - y / 520) * SC;
 export const pts = (list: [number, number][]) => list.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
 

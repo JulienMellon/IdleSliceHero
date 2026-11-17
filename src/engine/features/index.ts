@@ -2,6 +2,7 @@
 import type { GameState } from '../game';
 import { counterattack } from './counterattack';
 import { events } from './events';
+import { franchiseFeature } from './franchise';
 import { heads } from './heads';
 import { mastery } from './mastery';
 import { industrialShifts } from './layers/industrial-shifts';
@@ -20,7 +21,7 @@ export { FEATURES };
 
 // Importing this file registers every feature, in the order their hooks run (the array itself is registry.ts, so game.ts needs
 // no feature: A31). A module is evaluated once, so this runs once.
-FEATURES.push(mastery, counterattack, events, recipes, heads, service, suburbsGameDay, waterfrontBoats, rival, universityMenu, industrialShifts, uptownStars);
+FEATURES.push(mastery, counterattack, events, recipes, heads, service, suburbsGameDay, waterfrontBoats, rival, universityMenu, industrialShifts, uptownStars, franchiseFeature);
 
 /** A feature's state. Before the feature has ever saved, this is whatever `init`/`migrate` gave it. */
 export function getFeature<S>(g: GameState, f: Feature<S>): S {
