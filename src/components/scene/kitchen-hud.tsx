@@ -177,16 +177,16 @@ export const CameoTag = memo(function CameoTag({ x0, x1, y0, y1, text }: { x0: n
 
 /**
  * A visitor's line over their tag (cameo.ts `sayLines`: `text` holds one or two lines, split by "\n"). The pill sits above `y` (its bottom edge),
- * clamped inside the walls like every bubble (D440); the tail points down at `tail`, the head.
+ * clamped inside the walls like every bubble (D440); the tail points down at `tail`, the head, `drop` long (D475: the pill rides above the cashiers' faces).
  */
-export const CameoBubble = memo(function CameoBubble({ tail, y, text, wall0, wall1 }: { tail: number; y: number; text: string; wall0: number; wall1: number }) {
+export const CameoBubble = memo(function CameoBubble({ tail, y, text, wall0, wall1, drop = 5 }: { tail: number; y: number; text: string; wall0: number; wall1: number; drop?: number }) {
   const lines = text.split('\n');
   const w = Math.max(...lines.map(bubbleWidth));
   const h = 6 + 12 * lines.length;
   const px = bubbleX(tail, w, { x0: wall0, x1: wall1 });
   return (
     <G transform={`translate(${px} ${y})`}>
-      <Path d={`M${tail - px - 4} -1 L${tail - px} 5 L${tail - px + 4} -1 Z`} fill="#fff" stroke={INK} strokeWidth={1.2} strokeLinejoin="round" />
+      <Path d={`M${tail - px - 4} -1 L${tail - px} ${drop} L${tail - px + 4} -1 Z`} fill="#fff" stroke={INK} strokeWidth={1.2} strokeLinejoin="round" />
       <Rect x={-w / 2} y={-h} width={w} height={h} rx={9} fill="#fff" stroke={INK} strokeWidth={1.2} />
       <Rect x={tail - px - 3} y={-2} width={6} height={2.4} fill="#fff" />
       {lines.map((l, i) => (

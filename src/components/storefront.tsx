@@ -33,10 +33,10 @@ import { DuskTint, StringLights } from './scene/event-props';
 import { eventLook } from './scene/event-look';
 import { activeEvent } from '../engine/features/events';
 import { NeonCounterSign } from './scene/cosmetic-props';
-import { VISITOR_LOOK, cameoGeom, sayLines, visitLine, visitOf, visitTag } from './scene/cameo';
+import { VISITOR_LOOK, cameoGeom, sayLines, visitLine, visitOf, visitTagLabel } from './scene/cameo';
 import {
-  CHIP_RISE, CHIP_SECONDS, MILESTONE_LINES, bounceStep, bounceTransforms, clearPillX, confettiStep, crossedMilestone,
-  ladderProps, menuRect, milestoneSpeaker, wallRects, type Placed,
+  CHIP_RISE, CHIP_SECONDS, bounceStep, bounceTransforms, clearPillX, confettiStep,
+  ladderProps, menuRect, wallRects, type Placed,
 } from './scene/ladder';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverlays, StreetProp } from './scene/room';
 import { trafficFor } from './scene/street-props';
@@ -54,7 +54,7 @@ import { slammedAsks } from '../engine/features/service';
 import { heads as headsFeature, newBarkMem, nextBark, rankOf, speakerFor, stationLevel, weekStation, type BarkAsk, type BarkMem } from '../engine/features/heads';
 import { HEADS } from '../content/tuning';
 import { BadgeRail, CameoBubble, CameoTag, DeparturePops, HireBubble, MilestoneBadge, RushPill, StationBadge, rushPillWidth } from './scene/kitchen-hud';
-import { CHIP_ROW_HALF, MILE_SECONDS, ROW_AIR, STATION_LABEL, bubbleWalls, chipAt, hidesWaitingPill, hudOpacity, mileAnchor, mileOpacity, mileScale, mileSpeechY, mileSub, stationHatTop } from './scene/moments';
+import { CHIP_ROW_HALF, MILE_SECONDS, stepMoments, type Bounced, type Moments, ROW_AIR, STATION_LABEL, bubbleWalls, chipAt, hidesWaitingPill, hudOpacity, mileAnchor, mileOpacity, mileScale, mileSpeechY, mileSub, stationHatTop } from './scene/moments';
 import { rushCombo, rushPill } from './rush-model';
 import { emptyCrew, stepCrew, type CrewState } from './scene/crew';
 import { emitCoin } from './pulse-bus';
@@ -96,9 +96,6 @@ const CLOUDS = [
 ] as const;
 const DRIFT_SPAN = SCENE_W + 200;
 
-/** The four stations whose level buys bounce their furniture (v5.11); ovens are 'oven' as everywhere else. */
-type Bounced = Station | 'drivers';
-const BOUNCED: readonly Bounced[] = ['prep', 'oven', 'counter', 'drivers'];
 
 const STAGE_STATION: Record<Game.Stage, Station> = { prep: 'prep', ovens: 'oven', counter: 'counter', customers: 'counter' };
 const HIRE_LINE: Record<Station, string> = { prep: 'I got the dough, boss!', oven: 'Ovens are mine now.', counter: 'Next customer, please!' };
@@ -156,14 +153,14 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     /** A baked batch sliding out of the oven onto the pass. */
     slide: null as null | { at: number; n: number },
     /** Station speeds last frame, to show what an upgrade did (P5). */
-    speeds: null as null | { prep: number; oven: number; counter: number; drivers: number },
-    flash: null as null | { st: Station | 'door'; at: number; text: string },
+    speeds: null as Moments['speeds'],
+    flash: null as Moments['flash'],
     /** Station levels last frame (ovens under 'oven'), to spot a buy: the furniture bounces and a "Lv N" chip rises (v5.11). */
-    levels: null as null | Record<Bounced, number>,
-    bounce: null as null | { st: Bounced; at: number },
-    chip: null as null | { st: Bounced; at: number; text: string },
+    levels: null as Moments['levels'],
+    bounce: null as Moments['bounce'],
+    chip: null as Moments['chip'],
     /** A station just reached Lv 25 / 50 / 100: confetti for 1.5 s and the head's line (null text: nobody to say it). */
-    mile: null as null | { st: Station; at: number; text: string | null; level: number },
+    mile: null as Moments['mile'],
     /** A head's bark (features/heads.ts): which station speaks, the line and the wall second it began. */
     bark: null as null | { st: Station; text: string; at: number },
     /** The rush pill was a combo last frame: a bark asks when one starts. */
@@ -198,7 +195,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   type Item = { y: number; el: ReactElement };
   // the day-30 visitor (cameo.ts): in the shop on screen while the visit's boost runs, with a tag of the time left and a line every few minutes
   const visit = visitOf(game.rewards.boosts, Date.now());
-  const visitTagText = visit ? visitTag(visit.left) : '';
+  const visitTagText = visit ? visitTagLabel(visit) : '';
   const visitLineNow = visit ? visitLine(visit.visitor, Date.now() / 1000) : null;
   const cameo = visit ? cameoGeom(lay, visitTagText) : null;
   // drivers and walk-ins follow the departures (crew.ts). The fold is idempotent for the same inputs, so writing the
@@ -229,8 +226,11 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const nowSec = Math.floor(Date.now() / 1000);
   if (eventAt.current.sec !== nowSec) eventAt.current = { sec: nowSec, ev: activeEvent(nowSec * 1000, game) };
   const evLook = eventLook(eventAt.current.ev, id, running);
-  const q0 = running ? Game.queueSizes(shop, game.vehicle) : undefined;
-  const queue = q0 && evLook.extraDiners ? { ...q0, diners: q0.diners + evLook.extraDiners } : q0;
+  // M60/U10/U11: the queue sizes are a function of the levels, grade, seating and vehicle, all in `key`: computed per upgrade, not 15 times a second
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers every input of queueSizes
+  const q0 = useMemo(() => (running ? Game.queueSizes(shop, game.vehicle) : undefined), [key, running]);
+  const extraDiners = evLook.extraDiners;
+  const queue = useMemo(() => (q0 && extraDiners ? { ...q0, diners: q0.diners + extraDiners } : q0), [q0, extraDiners]);
   const cheer = Date.now() / 1000 - m0.cheerAt < CHEER_SECONDS;
   const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cheer });
   const side = sidewalkOf(lay, crew, queue);
@@ -242,9 +242,12 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const popRects = placePops(line.departures, (d) => Math.max(0, d.left - tickSince), (d) => carriers.get(d.id) ?? null, P(lay.staff[0] + 12, 70, 78), SCENE_W).map((q) => q.rect);
   // U4: while Nonna's coach is up the scene says nothing else (tutorial.ts `hintsAllowed`)
   const hints = hintsAllowed(game);
-  const waitRaw = hints.waiting && side.waiting > 0 && !(m0.mile && hidesWaitingPill(clock - m0.mile.at)) ? waitingText(side.waiting, slowest) : null;
+  // the pills' words change with the counts and the bottleneck only (U10/U11), not with the clock
+  const waitWords = useMemo(() => (side.waiting > 0 ? waitingText(side.waiting, slowest) : null), [side.waiting, slowest]);
+  const moreWords = useMemo(() => (side.more > 0 ? queueLabel(side.more, side.diners) : null), [side.more, side.diners]);
+  const waitRaw = hints.waiting && waitWords && !(m0.mile && hidesWaitingPill(clock - m0.mile.at)) ? waitWords : null;
   const waitText = waitRaw && !popsCover(popRects, waitTagRect(lay, waitRaw)) ? waitRaw : null;
-  const moreRaw = hints.more && side.more > 0 ? queueLabel(side.more, side.diners) : null;
+  const moreRaw = hints.more ? moreWords : null;
   const moreText = moreRaw && !popsCover(popRects, moreTagRect(lay, moreRaw)) ? moreRaw : null;
   const fin = furnitureInputs({ id, name: nd.name, shop, running, rate, vehicle: game.vehicle, worn: game.rewards.worn });
   // Furniture only changes with upgrades and the dough/box counts, so it is built once per change (M12), not 15 times a second.
@@ -304,31 +307,20 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     const prevLeft = m.ovenLeft;
     m.ovenLeft = ov ? ov.left : -1;
     if (!paused && prevLeft >= 0 && (!ov || ov.left > prevLeft + 1e-6)) m.slide = { at: clock, n: line.baked + (line.counter?.n ?? 0) };
-    // an upgrade sped a station up: say by how much over its badge (drivers: over the door)
-    const sp = { prep: Game.prepRate(shop), oven: Game.ovenRate(shop), counter: Game.counterRate(shop), drivers: shop.drivers };
-    if (m.speeds) {
-      const pct = (a: number, b: number) => Math.round((b / a - 1) * 100);
-      if (sp.drivers > m.speeds.drivers) m.flash = { st: 'door', at: clock, text: `+${sp.drivers - m.speeds.drivers} driver${sp.drivers - m.speeds.drivers > 1 ? 's' : ''}` };
-      for (const st of STATIONS_IN_ORDER) if (sp[st] > m.speeds[st] * (1 + 1e-9)) m.flash = { st, at: clock, text: `+${pct(m.speeds[st], sp[st])}% faster` };
-    }
-    m.speeds = sp;
-    // a station's level went up: its furniture bounces and a "Lv N" chip rises; a milestone adds confetti and a line (v5.11)
-    const lv = { prep: shop.prep, oven: shop.ovens, counter: shop.counter, drivers: shop.drivers };
-    if (m.levels) {
-      for (const st of BOUNCED) {
-        if (lv[st] <= m.levels[st]) continue;
-        m.bounce = { st, at: clock };
-        m.chip = { st, at: clock, text: `Lv ${lv[st]}` };
-        const hit = st === 'drivers' ? null : crossedMilestone(m.levels[st], lv[st]);
-        if (hit && st !== 'drivers') {
-          const who = milestoneSpeaker(shop.heads[st], HEADS[id][st], id === 'downtown');
-          // a hired head speaks the copy's milestone bark (decided below, if the shop's one bubble is free); Nonna, with no head hired Downtown, keeps her own line
-          m.mile = { st, at: clock, text: who && !shop.heads[st] ? `${who}: ${MILESTONE_LINES[st][hit]}` : null, level: lv[st] };
-          if (shop.heads[st]) asks.push({ trigger: 'milestone', station: st });
-        }
-      }
-    }
-    m.levels = lv;
+    // an upgrade sped a station up, or a level went up: flash, bounce, chip and milestone (moments.ts `stepMoments`; A28)
+    const step = stepMoments(
+      { speeds: m.speeds, levels: m.levels, flash: m.flash, bounce: m.bounce, chip: m.chip, mile: m.mile },
+      {
+        speeds: { prep: Game.prepRate(shop), oven: Game.ovenRate(shop), counter: Game.counterRate(shop), drivers: shop.drivers },
+        levels: { prep: shop.prep, oven: shop.ovens, counter: shop.counter, drivers: shop.drivers },
+        hired: shop.heads,
+        headNames: HEADS[id],
+        downtown: id === 'downtown',
+      },
+      clock,
+    );
+    ({ speeds: m.speeds, levels: m.levels, flash: m.flash, bounce: m.bounce, chip: m.chip, mile: m.mile } = step.moments);
+    for (const st of step.asks) asks.push({ trigger: 'milestone', station: st });
     // a head just hired says hello over their station; several at once (Nonna brings all three) queue up (C77)
     const heads = shop.heads;
     if (m.heads) for (const st of STATIONS_IN_ORDER) if (heads[st] && !m.heads[st]) m.hires.push({ st, text: `${HEADS[id][st]}: ${HIRE_LINE[st]}` });
@@ -488,7 +480,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           {fin.neon && (() => { const n = neonSpot(lay); return <G transform={`translate(${n.cx} ${n.rect.y1 - 1.2}) scale(${NEON_W / 38})`}><NeonCounterSign /></G>; })()}
           {/* the day-30 visitor's tag over their head, and their line above it (cameo.ts), over the front wall */}
           {visit && cameo && <CameoTag x0={cameo.tag.x0} x1={cameo.tag.x1} y0={cameo.tag.y0} y1={cameo.tag.y1} text={visitTagText} />}
-          {cameo && visitSays && !mileLine && <CameoBubble tail={cameo.tailX} y={cameo.sayY} text={sayLines(visitSays).join('\n')} wall0={walls.x0} wall1={walls.x1} />}
+          {cameo && visitSays && !mileLine && <CameoBubble tail={cameo.tailX} y={cameo.sayY} drop={cameo.tailDrop} text={sayLines(visitSays).join('\n')} wall0={walls.x0} wall1={walls.x1} />}
           {/* station badges: ring timer, pies in the job, a hand on the station to tap, the head who runs it */}
           {/* a miss outlines the station to tap for a moment (G79) */}
           {flash && <Rect x={flash.x0} y={flash.y0} width={flash.x1 - flash.x0} height={flash.y1 - flash.y0} rx={8} fill="none" stroke="#fff" strokeWidth={2.5} opacity={0.9} />}

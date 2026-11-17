@@ -1,6 +1,7 @@
 // The scene's big moments as plain data (D415, D418): where the milestone badge and the rising "Lv N" chip go, and how
 // long the chip row dims. Pure, so the budgets are tested in node (the drawing lives in kitchen-hud.tsx).
-import type { Station } from '../../engine/pipeline';
+import { STATIONS_IN_ORDER, type Station } from '../../engine/pipeline';
+import { MILESTONE_LINES, crossedMilestone, milestoneSpeaker } from './ladder';
 import type { Layout } from './layout';
 import { P, SCENE_W, kAt } from './projection';
 import type { Rect } from './stations';
@@ -87,4 +88,63 @@ export const mileSub = (flash: string | null) => (flash ? flash.replace(/\s*fast
 export function chipAt(rect: Rect, rowY: number, r: number, k: number, rise: number): { x: number; y: number } {
   const start = (rect.y0 + rect.y1) / 2;
   return { x: (rect.x0 + rect.x1) / 2, y: Math.max(rowY + CHIP_ROW_HALF + ROW_AIR + r, start - k * rise) };
+}
+
+// ---------- A28: the level-up state machine, out of the storefront's effect ----------
+/** The four stations whose level buys bounce their furniture (v5.11); ovens are 'oven' as everywhere else. */
+export type Bounced = Station | 'drivers';
+export const BOUNCED: readonly Bounced[] = ['prep', 'oven', 'counter', 'drivers'];
+export type PerStation = Record<Bounced, number>;
+
+/** What the scene remembers between frames about upgrades: last frame's speeds and levels, and the moments they started. */
+export interface Moments {
+  speeds: PerStation | null;
+  levels: PerStation | null;
+  /** What an upgrade did, over the station's badge (or over the door for drivers). */
+  flash: { st: Station | 'door'; at: number; text: string } | null;
+  bounce: { st: Bounced; at: number } | null;
+  chip: { st: Bounced; at: number; text: string } | null;
+  /** A station just reached Lv 25 / 50 / 100 (null text: nobody to say it). */
+  mile: { st: Station; at: number; text: string | null; level: number } | null;
+}
+export const newMoments = (): Moments => ({ speeds: null, levels: null, flash: null, bounce: null, chip: null, mile: null });
+
+/** What this frame shows: station speeds (per minute; drivers = their count), levels, which heads are hired and their names. */
+export interface MomentsInput {
+  speeds: PerStation;
+  levels: PerStation;
+  hired: Record<Station, boolean>;
+  headNames: Record<Station, string>;
+  downtown: boolean;
+}
+
+/**
+ * One frame of the upgrade moments: an upgrade that sped a station up flashes by how much; a level that went up bounces the furniture and
+ * raises a "Lv N" chip; a Lv 25 / 50 / 100 adds the milestone (D415) and, for a hired head, asks the head to speak (`asks`: those stations).
+ * The first frame (no previous speeds or levels) starts nothing. Pure: `prev` is not changed.
+ */
+export function stepMoments(prev: Moments, now: MomentsInput, clock: number): { moments: Moments; asks: Station[] } {
+  const next: Moments = { ...prev, speeds: now.speeds, levels: now.levels };
+  const asks: Station[] = [];
+  if (prev.speeds) {
+    const pct = (a: number, b: number) => Math.round((b / a - 1) * 100);
+    const added = now.speeds.drivers - prev.speeds.drivers;
+    if (added > 0) next.flash = { st: 'door', at: clock, text: `+${added} driver${added > 1 ? 's' : ''}` };
+    for (const st of STATIONS_IN_ORDER) if (now.speeds[st] > prev.speeds[st] * (1 + 1e-9)) next.flash = { st, at: clock, text: `+${pct(prev.speeds[st], now.speeds[st])}% faster` };
+  }
+  if (prev.levels) {
+    for (const st of BOUNCED) {
+      if (now.levels[st] <= prev.levels[st]) continue;
+      next.bounce = { st, at: clock };
+      next.chip = { st, at: clock, text: `Lv ${now.levels[st]}` };
+      if (st === 'drivers') continue;
+      const hit = crossedMilestone(prev.levels[st], now.levels[st]);
+      if (!hit) continue;
+      // a hired head speaks the copy's milestone bark (decided by the caller, if the shop's one bubble is free); Nonna, with no head hired Downtown, keeps her own line
+      const who = milestoneSpeaker(now.hired[st], now.headNames[st], now.downtown);
+      next.mile = { st, at: clock, text: who && !now.hired[st] ? `${who}: ${MILESTONE_LINES[st][hit]}` : null, level: now.levels[st] };
+      if (now.hired[st]) asks.push(st);
+    }
+  }
+  return { moments: next, asks };
 }

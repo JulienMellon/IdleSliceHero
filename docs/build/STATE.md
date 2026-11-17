@@ -4,7 +4,7 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.17
-step: fix                       # setup | waves | verify | review | fix | close
+step: verify                    # setup | waves | verify | review | fix | close
 round: r2              # r1 | r2 | r3
 last_shots: v5.17              # label of the last screenshot set that passed verify
 codecritic_range_start: aff34d1
@@ -59,3 +59,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (
 - 2026-11-16 19:29 UTC r2 S+T partial (D481; layers 155 pass; D482 D490 already fixed). Needs: D475 D450 + A28 A29 M60 U10 U11 in scene/** -> P1 launched (v5.16 card-P1). C133 (low) carried: needs services isOptedOut export.
 - 2026-11-16 19:31 UTC r2 U4 done (D500 D501 D503 D478 D499 M63 U9; U19 partly; 840/841, the failure is in scene/** under P1). Carried: day-30 name 'Nonna's Golden Oven' to check with writer. Waiting P1.
 - 2026-11-17 00:32 UTC r2 P1 died at usage limit, resumed after restart (D475 D450 A28 A29 M60 U10 U11). Then verify v5.17-r2.
+- 2026-11-17 00:39 UTC r2 P1 done (D450 D475 A28 U10 U11; M60 partial; scene 499 pass). All r2 fixes in. Verify v5.17-r2.

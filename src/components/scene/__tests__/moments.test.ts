@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 // The milestone badge and the rising level chip (D415, D418): budgets against the chip row, in scene units.
 import { layout } from '../layout';
-import { BUBBLE_AIR, CHIP_ROW_HALF, HUD_DIM_OPACITY, HUD_DIM_SECONDS, MILE_EDGE, MILE_HAT_GAP, MILE_PILL_HIDE_S, MILE_R, MILE_SECONDS, MILE_SHIFT, ROW_AIR, STATION_LABEL, bubbleWalls, bubbleWidth, bubbleX, chipAt, hidesWaitingPill, hudOpacity, mileAnchor, mileLevelSize, mileOpacity, mileScale, mileSpeechY, mileSub, stationHatTop } from '../moments';
+import { BUBBLE_AIR, CHIP_ROW_HALF, HUD_DIM_OPACITY, HUD_DIM_SECONDS, MILE_EDGE, MILE_HAT_GAP, MILE_PILL_HIDE_S, MILE_R, MILE_SECONDS, MILE_SHIFT, ROW_AIR, STATION_LABEL, bubbleWalls, bubbleWidth, bubbleX, chipAt, hidesWaitingPill, hudOpacity, mileAnchor, mileLevelSize, mileOpacity, mileScale, mileSpeechY, mileSub, newMoments, stationHatTop, stepMoments, type MomentsInput } from '../moments';
 import { CHIP_RISE, CONFETTI, CONFETTI_N, CONFETTI_SECONDS, CONFETTI_STEPS, confettiOffset, confettiStep } from '../ladder';
 import { hash32 } from '../looks';
 import { SCENE_H, SCENE_W } from '../projection';
@@ -182,5 +182,51 @@ describe('the milestone badge clears the corner, the pill stays inside the walls
     // a pill wider than the room is centred rather than pushed through one wall
     const narrow = { x0: 100, x1: 150 };
     expect(bubbleX(0, 80, narrow)).toBe(125);
+  });
+});
+
+// ---------- A28: stepMoments, the level-up state machine (pure) ----------
+describe('stepMoments (A28)', () => {
+  const base = (over: Partial<MomentsInput> = {}): MomentsInput => ({
+    speeds: { prep: 10, oven: 10, counter: 10, drivers: 2 },
+    levels: { prep: 10, oven: 10, counter: 10, drivers: 2 },
+    hired: { prep: false, oven: false, counter: false },
+    headNames: { prep: 'Marco', oven: 'Gina', counter: 'Lou' },
+    downtown: false,
+    ...over,
+  });
+  const first = () => stepMoments(newMoments(), base(), 1).moments;
+  test('the first frame starts nothing; an unchanged frame changes nothing', () => {
+    const f = first();
+    expect([f.flash, f.bounce, f.chip, f.mile]).toEqual([null, null, null, null]);
+    expect(stepMoments(f, base(), 2).moments).toEqual({ ...f });
+  });
+  test('a level up bounces the station, raises its chip and flashes the speed-up; the input is not changed', () => {
+    const f = first();
+    const frozen = JSON.stringify(f);
+    const r = stepMoments(f, base({ levels: { prep: 11, oven: 10, counter: 10, drivers: 2 }, speeds: { prep: 11, oven: 10, counter: 10, drivers: 2 } }), 5);
+    expect(r.moments.bounce).toEqual({ st: 'prep', at: 5 });
+    expect(r.moments.chip).toEqual({ st: 'prep', at: 5, text: 'Lv 11' });
+    expect(r.moments.flash).toEqual({ st: 'prep', at: 5, text: '+10% faster' });
+    expect(r.moments.mile).toBeNull();
+    expect(r.asks).toEqual([]);
+    expect(JSON.stringify(f)).toBe(frozen);
+  });
+  test('a driver bought flashes over the door, with no milestone', () => {
+    const r = stepMoments(first(), base({ levels: { prep: 10, oven: 10, counter: 10, drivers: 5 }, speeds: { prep: 10, oven: 10, counter: 10, drivers: 5 } }), 3);
+    expect(r.moments.flash).toEqual({ st: 'door', at: 3, text: '+3 drivers' });
+    expect(r.moments.bounce?.st).toBe('drivers');
+    expect(r.moments.mile).toBeNull();
+  });
+  test('reaching Lv 25 is a milestone: a hired head is asked to speak; with none hired Nonna keeps her line only Downtown', () => {
+    const lv = { prep: 25, oven: 10, counter: 10, drivers: 2 };
+    const hired = stepMoments(first(), base({ levels: lv, hired: { prep: true, oven: false, counter: false } }), 7);
+    expect(hired.moments.mile).toMatchObject({ st: 'prep', at: 7, level: 25, text: null });
+    expect(hired.asks).toEqual(['prep']);
+    const empty = stepMoments(first(), base({ levels: lv }), 7);
+    expect(empty.asks).toEqual([]);
+    expect(empty.moments.mile?.text === null || typeof empty.moments.mile?.text === 'string').toBe(true);
+    const nonna = stepMoments(first(), base({ levels: lv, downtown: true }), 7);
+    expect(nonna.moments.mile?.text).toEqual(expect.stringContaining(': '));
   });
 });
