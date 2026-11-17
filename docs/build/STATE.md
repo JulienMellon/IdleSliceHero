@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.18-seam         # label of the last screenshot set that passed verify
 codecritic_range_start: 229f874
 cards:                 # todo | running | done | partial | blocked
-  K1: done  W3: done  V1: done  E3: running  T2: partial  A2: todo  V2: todo
+  K1: done  W3: done  V1: done  E3: partial  T2: running  A2: todo  V2: todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.17/review-r3-critic.md (r3 SATISFIED; bug 0 major 0 minor 4; E2 U1 S1; D481 D493 D495 D505)
   code:   docs/build/v5.17/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 20; E10 U3 S3 N3 A2; M68 A32 medium carried)
@@ -20,7 +20,6 @@ next: S5-v5.18.md wave 3 running (E3 + T2); then wave 4 (A2 + V2; V1 Needs to V2
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-17 Seam v5.18-seam FAIL: tsc + 1650 tests pass, layout 0 new; fixture 90_t1b broke on moved scene path (11 shots removed) -> K1; 4 changed (00 title, 24/104/105 settings, ~0.4%) -> V1 to diagnose. r0 storycritic hit the usage limit, resumed. pip playwright 1.63.0 needed for screenshots.py.
 - 2026-11-17 r0 story (script doc): NOT SATISFIED, major 2 (S49 S50) minor 13; Kayla Dunn approved. Sent to W3 writer, pass 1 of 2.
 - 2026-11-17 Seam: the 4 changed shots (00, 24, 104, 105) also differ v5.17-r2 -> r3 (random install id + title ray animation): noise, not the seam. Fixture to pin them is a later-card item. Waiting on K1 for fixture 90_t1b, then re-run shots.
 - 2026-11-17 W3 pass 1 done (S49-S62 fixed; S48 U-owned, carried for Julien). Needs: next city name; props pretzel, phone (T2). Re-check r0b story (sonnet) launched.
@@ -30,3 +29,4 @@ next: S5-v5.18.md wave 3 running (E3 + T2); then wave 4 (A2 + V2; V1 Needs to V2
 - 2026-11-17 Seam re-run: True 0 [], layout 0, 0 new, 8 changed: 24/104/105 noise; 29 hud-rewards + 30/30b/31/31b tasks changed (same r2->r3) -> K1 to diagnose (K1 data, V1 frame, or wall clock).
 - 2026-11-17 Seam PASS: 29-31b re-shot pixel-identical (load jitter), rest noise. Wave 1 committed. Wave 3 launched: E3 + T2.
 - 2026-11-17 T2 partial (steps 1-2: boston data + 32 scenes). Needs: types.ts ids patch + teaser.ts -> sent to E3 (E owns). cutscene-player BackdropProp is T's own. 3 picks taken as defaults, flagged for Julien.
+- 2026-11-17 E3 partial: franchise feature + Stars + ceiling 2.4e38; Boston days 0.85/2.04/3.23/4.42/5.45 (finale target 4.8). Sent back: format.ts sci form, migrate by city shops. T2 resumed (types patch in).
