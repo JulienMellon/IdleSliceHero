@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.18-seam         # label of the last screenshot set that passed verify
 codecritic_range_start: 229f874
 cards:                 # todo | running | done | partial | blocked
-  K1: done  W3: done  V1: done  E3: running  T2: running  A2: todo  V2: todo
+  K1: done  W3: done  V1: done  E3: partial  T2: running  A2: todo  V2: todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.17/review-r3-critic.md (r3 SATISFIED; bug 0 major 0 minor 4; E2 U1 S1; D481 D493 D495 D505)
   code:   docs/build/v5.17/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 20; E10 U3 S3 N3 A2; M68 A32 medium carried)
@@ -31,3 +31,4 @@ next: fresh session; read docs/build/sessions/S5-v5.18.md, resume at wave 3 fix 
 - 2026-11-17 E3 done (format sci from 999.5e33; migrate by savedHoods(city) incl. rival.ts; 724 engine/content tests). Waiting T2.
 - 2026-11-17 T2 partial (steps 1-5: boston data on BOSTON_NUMBERS, portraits, backdrops, franchise UI, city picker; 106_t2 fixture, shots 108-117 crash on Boston save in buildLock). Wave 3 checks: tsc pass, 1718 tests pass. Session ended early (context), per S5 step 2.
 - 2026-11-17 S5 resumed: E3 sent buildLock Boston crash (106_t2); T2 resumed at step 6 + U-lane shell leftovers (index, shop-ui, layers, scrapbook).
+- 2026-11-17 E3 partial: buildLock/buildShop city guard + boston-load test; no node_modules -> npm ci run, E3 re-running checks. Cause: audio/director.ts:126 iterates home NEIGHBORHOODS -> A2 (use hoodIds(cityOf)).
