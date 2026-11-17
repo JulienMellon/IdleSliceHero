@@ -42,13 +42,13 @@ export const RecipeReveal = memo(function RecipeReveal() {
       <Animated.View ref={root} testID="recipe-reveal" style={{ transform: [{ scaleX: flip.interpolate({ inputRange: [0, 1], outputRange: [0.04, 1] }) }, { scale: flip.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.8, 1.06, 1] }) }] }}>
         <Pressable accessibilityRole="button" accessibilityLabel={`${RECIPE_HEADER}: ${head.text}. ${head.sub}. Dismiss`} onPress={() => setQueue((q) => q.slice(1))} style={[styles.card, { width: revealWidth(width) }]}>
           {/* D478: picture left, words right: the card is about 100 pt tall, so it stays in the sky band and the kitchen shows */}
-          <RecipeArt hood={head.hood} n={head.n} owned size={72} />
+          <RecipeArt hood={head.hood} n={head.n} owned size={64} />
           <View style={styles.words}>
             <Text style={styles.header}>{RECIPE_HEADER}</Text>
             <Text style={styles.name} numberOfLines={2} maxFontSizeMultiplier={1.15}>
               {head.text}
             </Text>
-            <Text style={styles.line} numberOfLines={3} maxFontSizeMultiplier={1.15}>
+            <Text style={styles.line} numberOfLines={4} maxFontSizeMultiplier={1.15}>
               {head.sub}
             </Text>
           </View>
