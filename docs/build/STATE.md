@@ -12,7 +12,7 @@ cards:                 # todo | running | done | partial | blocked
   (v5.17 cards: see docs/build/v5.17/VERSION.md)
   N1 done  A1 done  U3 done  L1 done  U4 done
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.17/review-r1-critic.md (r1 NOT SATISFIED; bug 1 major 1 minor 17; E2 U12 S4 T1; G108 bug, D496 major)
+  critic: docs/build/v5.17/review-r2-critic.md (r2 NOT SATISFIED, minors only; bug 0 major 0 minor 6; E2 U1 S2 T1; D478 D481 D482 D490 D493 D495)
   code:   docs/build/v5.17/review-r1-code.md (r1 CHANGES REQUESTED; blocker/high 2 medium 7 low 30; E20 U9 S3 N3 A5; K1 C126 high)
   story:  docs/build/v5.16/review-r3-story.md (r3 SATISFIED; bug 0 major 0 minor 1; U1)
   audio:  docs/build/v5.17/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 2; A5; carried AU41 AU39 AU40 AU82 AU25)
