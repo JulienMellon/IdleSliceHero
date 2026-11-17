@@ -19,6 +19,7 @@ import * as N from '../engine/night-oven';
 import * as O from '../engine/orders';
 import '../engine/features'; // registers the features before any game is made
 import { ackAttack, startChallenge } from '../engine/features/counterattack';
+import { canFranchise, franchise as franchiseCity } from '../engine/features/franchise';
 import { startRivalChallenge } from '../engine/features/layers/rival';
 import { buyRack as buyRackTier, rackPrice } from '../engine/features/layers/waterfront-boats';
 import { ackMastery } from '../engine/features/mastery';
@@ -133,6 +134,8 @@ interface Store {
   build: (id: NeighborhoodId) => boolean;
   /** Waterfront's finale: bid on Pier 9. */
   bidPier9: () => boolean;
+  /** v5.18 (E3): sell the city for Franchise Stars and start the next one. Not undoable; the confirm sheet (card T2) asks twice. False when no franchise is on offer. */
+  franchise: () => boolean;
   setActive: (id: NeighborhoodId) => void;
   finishScene: () => void;
   replayScene: (scene: Scene) => void;
@@ -535,6 +538,17 @@ export const useGame = create<Store>((set, get) => {
     },
 
     bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: G.pier9Price(get().game) }, plain('bid')),
+
+    franchise: () => {
+      const g = get().game;
+      if (!canFranchise(g)) return false;
+      emitAudio({ type: 'click' });
+      // the new city's story starts at once (no wait left over from the last scene), and the offline summary of the old one is moot
+      set({ game: franchiseCity(g, Date.now()), lastSceneEndPlay: null, offline: null });
+      queueScene();
+      void get().save();
+      return true;
+    },
 
     build: (id) => {
       const ok = commit(G.buildShop(get().game, id), { name: `Build ${G.def(id, cityOf(get().game)).name}`, cost: G.def(id, cityOf(get().game)).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id }));

@@ -2,13 +2,14 @@
 import type { NeighborhoodId } from '../types';
 import type { CityDef, LayerKind } from './types';
 import { HOME_CITY } from './home';
+import { BOSTON_CITY } from './boston';
 
 export type { CityDef, CityFit, LayerKind } from './types';
 
 /** The id of the city a new game starts in, and the one an old save (from before cities) belongs to. */
 export const HOME_ID = 'home';
 
-export const CITIES: Record<string, CityDef> = { [HOME_CITY.id]: HOME_CITY };
+export const CITIES: Record<string, CityDef> = { [HOME_CITY.id]: HOME_CITY, [BOSTON_CITY.id]: BOSTON_CITY };
 
 /** The city a game is in: `GameState.city`, falling back to the home city for an id this build does not know. */
 export const cityOf = (g: { city?: string }): CityDef => CITIES[g.city ?? HOME_ID] ?? HOME_CITY;

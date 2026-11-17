@@ -26,6 +26,13 @@ const WHO: Record<CharacterId, string> = {
   noor: 'Noor',
   dee: 'Dee',
   anton: 'Anton',
+  'father-dom': 'Father Dom',
+  'kayla-dunn': 'Kayla Dunn',
+  preston: 'Preston',
+  manny: 'Manny',
+  'lena-ko': 'Dr. Ko',
+  'grandma-bea': 'Grandma Bea',
+  'trish-vance': 'Trish Vance',
 };
 
 export type TeaserKind = 'deliveries' | 'unlock' | 'bid' | 'soon' | 'complete';

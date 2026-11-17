@@ -154,7 +154,7 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
               const s = stage[i];
               return (
                 <View key={c.id} style={[styles.figure, { left: s.left, width: s.width, height: s.height, zIndex: s.z, transform: [{ scale: s.scale }] }]}>
-                  <Portrait id={c.id} mood={c.mood} size={s.height} flip={s.flip} dim={s.dim} variant="stage" holding={i === holder ? 'recipe-card' : undefined} />
+                  <Portrait id={c.id} mood={c.mood} size={s.height} flip={s.flip} dim={s.dim} variant="stage" holding={i === holder ? 'recipe-card' : undefined} city={scene.city} />
                 </View>
               );
             })}

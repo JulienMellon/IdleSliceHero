@@ -7,6 +7,7 @@ import { NEIGHBORHOODS } from '../src/content/tuning';
 import * as G from '../src/engine/game';
 import { masteryTotal } from '../src/engine/features/mastery';
 import { applyCfg, options, reportLines, run } from './review/sim2';
+import { BOSTON_TOLERANCE, franchiseRun } from './pacing-fit';
 
 const r = run('continuous');
 const s = r.s;
@@ -33,6 +34,20 @@ const played = new Set(r.scenes.map((x) => x.id));
 const missing = HOME_SCENES.filter((x) => !played.has(x.id)).map((x) => x.id);
 console.log(`scenes ${played.size}/${HOME_SCENES.length} · longest scene gap ${(maxGap / 60).toFixed(1)} min · $/s ${G.earningsPerSecond(s).toFixed(0)} · mastery stars at the finale ${masteryTotal(s)}/18 (the check-in player's days after the story: scripts/pacing-fit.ts check)`);
 console.log(reportLines(r).join('\n'));
+
+// ---- v5.18 (card E3): the franchise. The check-in player finishes the home city, franchises when it can, and plays Boston (pacing-fit.ts `franchiseRun`). ----
+// Run before the EAGER player below, which changes the home tables for good.
+{
+  const f = franchiseRun();
+  const d = (x: number) => (Number.isFinite(x) ? x.toFixed(2) : 'n/a').padStart(6);
+  console.log(`\nfranchise: ${f.home.earned.toExponential(2)} earned in ${f.home.offered ? 'Port Marinara' : '(not on offer)'} -> ${f.home.stars} Stars, x${f.home.multiplier}; Boston starts as ${f.boston.startedWith.city} with $${f.boston.startedWith.cash}`);
+  console.log('day table (check-in player)  home  boston');
+  for (const k of Object.keys(f.home.days) as (keyof typeof f.home.days)[]) console.log(`  ${k.padEnd(10)} ${d(f.home.days[k])} ${d(f.boston.days[k])}`);
+  if (!f.boston.done || Object.keys(f.home.days).some((k) => Math.abs(f.boston.days[k as keyof typeof f.boston.days] - f.home.days[k as keyof typeof f.home.days]) > BOSTON_TOLERANCE)) {
+    console.error(`BOSTON IS OFF THE HOME CITY'S DAYS BY MORE THAN ${BOSTON_TOLERANCE}`);
+    process.exitCode = 1;
+  }
+}
 
 // ---- v5.16 (card T1a): the story, all of it ----
 // Every scene must play; the gaps are listed by what ends them. A timer gap (an `after` interlude) is the only one `after` delays change: the others wait

@@ -553,7 +553,7 @@ export function migrate(raw: unknown, now: number): GameState {
   // player's saved layer state at the next save.
   const savedX = (r.x && typeof r.x === 'object' && !Array.isArray(r.x) ? r.x : {}) as Record<string, unknown>;
   if (!FEATURES.length && typeof __DEV__ !== 'undefined' && __DEV__) console.warn('migrate: no features are registered (import engine/features before loading a game)');
-  game.x = { ...savedX, ...Object.fromEntries(FEATURES.map((f) => [f.key, f.migrate(savedX[f.key], now)])) };
+  game.x = { ...savedX, ...Object.fromEntries(FEATURES.map((f) => [f.key, f.migrate(savedX[f.key], now, city)])) };
   return migrateStory(game, num(r.saveVersion, 0));
 }
 

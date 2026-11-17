@@ -60,6 +60,25 @@ export const LOOKS: Record<CharacterId, Look> = {
   noor: managerLook('noor', '#3A2416'),
   dee: managerLook('dee', '#3F6B3A'),
   anton: managerLook('anton', '#5F87A3'),
+  // v5.18 (card T2): Boston's cast. Variants of existing busts where a build and hairline fit: Dom is a bald Big Sal in black, Manny is Dale in a green cap,
+  // Preston is the rep's slick hair in navy, Bea is Nonna's bun in grey, Trish is a bob in MegaSlice purple.
+  'father-dom': { skin: '#EBC09A', hair: '#D9D9D9', shirt: '#1B1B22', eye: '#5A4630', hairStyle: 'bald', extra: 'glasses' },
+  'kayla-dunn': { skin: '#F3D2B8', hair: '#B5502A', shirt: '#2F6B4A', eye: '#3F7A52', hairStyle: 'crop' },
+  preston: { skin: '#F6DCC8', hair: '#D8C28A', shirt: '#1F2A44', eye: '#4F7DB5', hairStyle: 'slick', extra: 'tie' },
+  manny: { skin: '#C98F63', hair: '#2A1A12', shirt: '#2E6B3E', eye: '#4A2C1A', hairStyle: 'short', hat: 'cap', extra: 'mustache' },
+  'lena-ko': { skin: '#EBC9A0', hair: '#161616', shirt: '#F2F4F6', eye: '#2A1A12', hairStyle: 'bob', extra: 'glasses' },
+  'grandma-bea': { skin: '#F0C8A6', hair: '#C9CED6', shirt: '#4F7FA8', eye: '#4A5F7A', hairStyle: 'bun', extra: 'pearls' },
+  'trish-vance': { skin: '#F0C8A8', hair: '#8A3B2A', shirt: '#7B2CBF', eye: '#3F5E3A', hairStyle: 'bob', extra: 'tie' },
+};
+
+/** Time has passed in Boston: Priya leads a team now (her hair up, a deeper purple cardigan) and Nonna has taken to reading glasses. One changed detail each, only in the Boston pack's scenes. */
+const AGED: Readonly<Record<string, Partial<Record<CharacterId, Partial<Look>>>>> = {
+  boston: { priya: { hairStyle: 'bun', shirt: '#7A3FC0' }, 'nonna-rosa': { extra: 'glasses' } },
+};
+/** A character's look in a city (the home look unless the city's pack ages them). */
+export const lookFor = (id: CharacterId, city?: string): Look => {
+  const patch = city ? AGED[city]?.[id] : undefined;
+  return patch ? { ...LOOKS[id], ...patch } : LOOKS[id];
 };
 
 export const DISPLAY_NAMES: Record<CharacterId, string> = {
@@ -79,6 +98,13 @@ export const DISPLAY_NAMES: Record<CharacterId, string> = {
   noor: 'Noor',
   dee: 'Dee',
   anton: 'Anton',
+  'father-dom': 'Father Dom',
+  'kayla-dunn': 'Kayla Dunn',
+  preston: 'Preston',
+  manny: 'Manny',
+  'lena-ko': 'Dr. Ko',
+  'grandma-bea': 'Grandma Bea',
+  'trish-vance': 'Trish Vance',
 };
 
 const INK = '#3B1F14';
@@ -616,8 +642,8 @@ function HeldCard({ flip }: { flip: boolean }) {
   );
 }
 
-function Stage({ id, mood, size, flip, dim, holding }: { id: CharacterId; mood: Mood; size: number; flip: boolean; dim: boolean; holding?: 'recipe-card' }) {
-  const L = LOOKS[id];
+function Stage({ id, mood, size, flip, dim, holding, city }: { id: CharacterId; mood: Mood; size: number; flip: boolean; dim: boolean; holding?: 'recipe-card'; city?: string }) {
+  const L = lookFor(id, city);
   const tone = (c: string) => (dim ? shade(c, -0.2) : c);
   const skin = tone(L.skin);
   const hair = tone(L.hair);
@@ -708,6 +734,7 @@ export const Portrait = memo(function Portrait({
   variant = 'bust',
   dim = false,
   holding,
+  city,
 }: {
   id: CharacterId;
   mood?: Mood;
@@ -717,7 +744,9 @@ export const Portrait = memo(function Portrait({
   dim?: boolean;
   /** Stage only: a prop the figure holds up at chest height. */
   holding?: 'recipe-card';
+  /** The city the scene is in: it ages a character the way its pack says (Priya and Nonna in Boston). */
+  city?: string;
 }) {
-  const L = LOOKS[id];
-  return variant === 'stage' ? <Stage id={id} mood={mood} size={size} flip={flip} dim={dim} holding={holding} /> : <Bust L={L} mood={mood} size={size} flip={flip} />;
+  const L = lookFor(id, city);
+  return variant === 'stage' ? <Stage id={id} mood={mood} size={size} flip={flip} dim={dim} holding={holding} city={city} /> : <Bust L={L} mood={mood} size={size} flip={flip} />;
 });

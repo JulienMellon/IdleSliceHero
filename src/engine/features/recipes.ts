@@ -5,9 +5,9 @@
 // summary, and play after that shows each card as it drops (`fresh`, drained by `ackRecipes`).
 import { RECIPE, recipeId } from '../../content/endgame';
 import type { NeighborhoodId } from '../../content/types';
-import { finaleId, SHOP_IDS, type GameState, type Shop } from '../game';
+import { finaleId, type GameState, type Shop } from '../game';
 import { defendedHoods } from './counterattack';
-import type { Feature } from './types';
+import { savedHoods, type Feature } from './types';
 import { cityOf, hoodIds } from '../../content/cities';
 
 export interface RecipesState {
@@ -94,10 +94,10 @@ export function ackRecipes(g: GameState): GameState {
 export const recipes: Feature<RecipesState> = {
   key: KEY,
   init: () => empty(),
-  migrate(raw) {
+  migrate(raw, _now, city) {
     if (!raw || typeof raw !== 'object') return empty();
     const r = raw as Record<string, unknown>;
-    const valid = new Set(SHOP_IDS.flatMap((id) => CARDS.map((n) => recipeId(id, n))));
+    const valid = new Set(savedHoods(city).flatMap((id) => CARDS.map((n) => recipeId(id, n))));
     const owned = Array.isArray(r.owned) ? [...new Set((r.owned as unknown[]).filter((x): x is string => typeof x === 'string' && valid.has(x)))] : [];
     const sum = r.summary && typeof r.summary === 'object' ? (r.summary as Record<string, unknown>) : null;
     return { owned, fresh: [], synced: r.synced === true, summary: sum && typeof sum.cards === 'number' ? { cards: Math.max(0, Math.floor(sum.cards)) } : null };

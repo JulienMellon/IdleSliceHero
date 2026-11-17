@@ -7,10 +7,10 @@
 import { COUNTERATTACK } from '../../content/endgame';
 import type { NeighborhoodId } from '../../content/types';
 import { seededUnit } from '../bonus';
-import { featureMults, finaleId, shopRate, SHOP_IDS, def, type BuyResult, type GameState } from '../game';
+import { featureMults, finaleId, shopRate, def, type BuyResult, type GameState } from '../game';
 import { minutesToCash, resetCountdown, weekKey } from '../rewards';
 import { withoutEvent } from './events';
-import type { Feature } from './types';
+import { savedHoods, type Feature } from './types';
 import { cityOf, hoodIds } from '../../content/cities';
 
 export interface ChallengeState {
@@ -181,11 +181,11 @@ function challenge(g: GameState, dt: number, now: number): GameState {
 export const counterattack: Feature<AttackState> = {
   key: KEY,
   init: () => fresh(),
-  migrate(raw) {
+  migrate(raw, _now, city) {
     if (!raw || typeof raw !== 'object') return fresh();
     const r = raw as Record<string, unknown>;
     const nat = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0);
-    const hood = (v: unknown) => (SHOP_IDS.includes(v as NeighborhoodId) ? (v as NeighborhoodId) : null);
+    const hood = (v: unknown) => (savedHoods(city).includes(v as NeighborhoodId) ? (v as NeighborhoodId) : null);
     const target = hood(r.target);
     const c = r.challenge && typeof r.challenge === 'object' ? (r.challenge as Record<string, unknown>) : null;
     const defended = Array.isArray(r.defended) ? [...new Set((r.defended as unknown[]).map(hood).filter((x): x is NeighborhoodId => x !== null))] : [];
