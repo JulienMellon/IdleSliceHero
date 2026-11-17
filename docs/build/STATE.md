@@ -4,8 +4,8 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.17
-step: review                    # setup | waves | verify | review | fix | close
-round: r2              # r1 | r2 | r3
+step: fix                       # setup | waves | verify | review | fix | close
+round: r3              # r1 | r2 | r3
 last_shots: v5.17-r2           # label of the last screenshot set that passed verify
 codecritic_range_start: aff34d1
 cards:                 # todo | running | done | partial | blocked
@@ -13,7 +13,7 @@ cards:                 # todo | running | done | partial | blocked
   N1 done  A1 done  U3 done  L1 done  U4 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.17/review-r2-critic.md (r2 NOT SATISFIED, minors only; bug 0 major 0 minor 6; E2 U1 S2 T1; D478 D481 D482 D490 D493 D495)
-  code:   docs/build/v5.17/review-r1-code.md (r1 CHANGES REQUESTED; blocker/high 2 medium 7 low 30; E20 U9 S3 N3 A5; K1 C126 high)
+  code:   docs/build/v5.17/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 20; E10 U3 S3 N3 A2; M68 A32 medium carried)
   story:  docs/build/v5.16/review-r3-story.md (r3 SATISFIED; bug 0 major 0 minor 1; U1)
   audio:  docs/build/v5.17/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 2; A5; carried AU41 AU39 AU40 AU82 AU25)
 open: v5.16 carried: critic minors (docs/build/v5.16/review-r3-critic.md: D481 D482 D489 D490 D493 D495 D475 D450 D462 D478); story S48 (docs/build/v5.16/review-r3-story.md); code C116 C117 A32 + lows (docs/build/v5.16/review-r2-code.md). W2 card Protected list still names old downtown-4 line (now "Two thousand deliveries", Julien 2026-11-15). Julien approved Todd rewrites S37 S38 S41 S43; D493 carried by choice. loop_stats.py cannot read loop: commits. Programmer cards: --only takes the fixture name without .py.
@@ -62,3 +62,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (
 - 2026-11-17 00:39 UTC r2 P1 done (D450 D475 A28 U10 U11; M60 partial; scene 499 pass). All r2 fixes in. Verify v5.17-r2.
 - 2026-11-17 01:01 UTC Verify v5.17-r2: tsc + 1624 tests pass, True 0 [], layout 1 new (recipe-reveal clip, shot 136) -> U4. Re-run shots after its fix.
 - 2026-11-17 01:33 UTC Verify v5.17-r2 PASS: True 0 [], layout 0 new; 91 changed. r2 re-checks: critic (sonnet), codecritic, audiocritic (sonnet).
+- 2026-11-17 01:37 UTC r2 re-checks: critic minors only (6 > 3), code APPROVED, audio SATISFIED. Fix round r3 (minors): S2a D481 D482 D490 + U4 D478; then E D495. D493 carried by Julien's choice.
