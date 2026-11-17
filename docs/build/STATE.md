@@ -20,7 +20,6 @@ next: S5-v5.18.md: seam verify v5.18-seam running + r0 story doc review; then wa
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-17 01:38 UTC r3 U4 done (D478 card shorter and wider; endgame 89 pass; shot 136 layout to confirm in verify). E launched for D495; S2a running.
 - 2026-11-17 01:38 UTC r3 E blocked on D495 (no edits): first goal under $50 needs content/tuning.ts head prices + pacing refit + a UI pop; a pacing decision for Julien -> carried. Waiting S2a.
 - 2026-11-17 01:45 UTC r3 S2a done (D482 boat on sea, D490 more poses; 206 pass; D481 in code since r2). Verify v5.17-r3.
 - 2026-11-17 02:06 UTC Verify v5.17-r3 PASS: 1625 tests, True 0 [], layout 0 new; 10 changed. r3 re-check: critic (sonnet). Codecritic not re-run: r3 touched only components outside its paths.
@@ -30,3 +29,4 @@ next: S5-v5.18.md: seam verify v5.18-seam running + r0 story doc review; then wa
 - 2026-11-17 K1 partial: built, no behaviour change claimed; real jest not run (node_modules was absent -> npm ci). Needs (out of scope, home-only): .hood fields in content/layers.ts + ~15 component sites; shop-only helpers on home fit tables; ORDER_CAST, endgame events, NIGHT_OVEN, tutorial copy, audio director, art ids. V1 launched.
 - 2026-11-17 K1 tree: tsc clean, 1633 tests pass (real jest).
 - 2026-11-17 V1 done (frame + scroll container, 17 new tests). Needs for V2: thread frame through ~200 P() calls or translate by (width-393)/2; widen Backdrop art, clouds, rival-shop position. Seam verify v5.18-seam started (APP_VERSION left at 5.17 so shots compare).
+- 2026-11-17 Seam v5.18-seam FAIL: tsc + 1650 tests pass, layout 0 new; fixture 90_t1b broke on moved scene path (11 shots removed) -> K1; 4 changed (00 title, 24/104/105 settings, ~0.4%) -> V1 to diagnose. r0 storycritic hit the usage limit, resumed. pip playwright 1.63.0 needed for screenshots.py.
