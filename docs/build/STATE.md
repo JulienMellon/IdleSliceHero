@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.17
-step: verify                    # setup | waves | verify | review | fix | close
+step: review                    # setup | waves | verify | review | fix | close
 round: r3              # r1 | r2 | r3
-last_shots: v5.17-r2           # label of the last screenshot set that passed verify
+last_shots: v5.17-r3           # label of the last screenshot set that passed verify
 codecritic_range_start: aff34d1
 cards:                 # todo | running | done | partial | blocked
   (v5.17 cards: see docs/build/v5.17/VERSION.md)
@@ -66,3 +66,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (
 - 2026-11-17 01:38 UTC r3 U4 done (D478 card shorter and wider; endgame 89 pass; shot 136 layout to confirm in verify). E launched for D495; S2a running.
 - 2026-11-17 01:38 UTC r3 E blocked on D495 (no edits): first goal under $50 needs content/tuning.ts head prices + pacing refit + a UI pop; a pacing decision for Julien -> carried. Waiting S2a.
 - 2026-11-17 01:45 UTC r3 S2a done (D482 boat on sea, D490 more poses; 206 pass; D481 in code since r2). Verify v5.17-r3.
+- 2026-11-17 02:06 UTC Verify v5.17-r3 PASS: 1625 tests, True 0 [], layout 0 new; 10 changed. r3 re-check: critic (sonnet). Codecritic not re-run: r3 touched only components outside its paths.
