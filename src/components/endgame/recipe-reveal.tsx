@@ -1,6 +1,6 @@
 // A recipe card turns over at the top of the scene, in the sky band, so the kitchen stays in view (BANNERS slot; D478): D469. It flips open from its edge onto the card's picture, a "NEW RECIPE"
 // header, the name and the line; coins fly from it to the cash and the cooks cheer. A tap closes it (or it closes by itself after 4 s). The
-// cards of one batch show one after another. Primitive state only; the card is drawn at about 100 pt tall, so it fits an iPhone SE.
+// cards of one batch show one after another. Primitive state only; the card is drawn at about 90 pt tall, wide so the words take few lines, so it fits an iPhone SE.
 import { memo, useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
@@ -40,15 +40,15 @@ export const RecipeReveal = memo(function RecipeReveal() {
   return (
     <View pointerEvents="box-none" style={styles.layer}>
       <Animated.View ref={root} testID="recipe-reveal" style={{ transform: [{ scaleX: flip.interpolate({ inputRange: [0, 1], outputRange: [0.04, 1] }) }, { scale: flip.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.8, 1.06, 1] }) }] }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={`${RECIPE_HEADER}: ${head.text}. ${head.sub}. Dismiss`} onPress={() => setQueue((q) => q.slice(1))} style={[styles.card, { width: revealWidth(width) }]}>
-          {/* D478: picture left, words right: the card is about 100 pt tall, so it stays in the sky band and the kitchen shows */}
-          <RecipeArt hood={head.hood} n={head.n} owned size={64} />
+        <Pressable accessibilityRole="button" accessibilityLabel={`${RECIPE_HEADER}: ${head.text}. ${head.sub}. Dismiss`} onPress={() => setQueue((q) => q.slice(1))} style={[styles.card, { width: Math.max(revealWidth(width), Math.min(width - 24, 340)) }]}>
+          {/* D478: picture left, words right: the card is about 90 pt tall, wide so the words take few lines, so it stays in the sky band and the kitchen shows */}
+          <RecipeArt hood={head.hood} n={head.n} owned size={52} />
           <View style={styles.words}>
             <Text style={styles.header}>{RECIPE_HEADER}</Text>
             <Text style={styles.name} numberOfLines={2} maxFontSizeMultiplier={1.15}>
               {head.text}
             </Text>
-            <Text style={styles.line} numberOfLines={4} maxFontSizeMultiplier={1.15}>
+            <Text style={styles.line} numberOfLines={3} maxFontSizeMultiplier={1.15}>
               {head.sub}
             </Text>
           </View>
@@ -60,9 +60,9 @@ export const RecipeReveal = memo(function RecipeReveal() {
 
 const styles = StyleSheet.create({
   layer: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'flex-start', paddingTop: 8 },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 18, borderWidth: 3, borderColor: C.cheeseDark, backgroundColor: '#FFF9EC', boxShadow: '0 6px 0 rgba(59,31,20,0.3)' } as object,
+  card: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 18, borderWidth: 3, borderColor: C.cheeseDark, backgroundColor: '#FFF9EC', boxShadow: '0 6px 0 rgba(59,31,20,0.3)' } as object,
   words: { flex: 1, gap: 2 },
   header: { fontFamily: F.bold, fontSize: 12, letterSpacing: 1.5, color: C.tomato },
-  name: { fontFamily: F.bold, fontSize: 18, lineHeight: 21, color: C.ink, textAlign: 'left' },
+  name: { fontFamily: F.bold, fontSize: 16, lineHeight: 19, color: C.ink, textAlign: 'left' },
   line: { fontFamily: F.semi, fontSize: 12, lineHeight: 15, color: C.inkSoft, textAlign: 'left' },
 });

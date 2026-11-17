@@ -63,3 +63,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (
 - 2026-11-17 01:01 UTC Verify v5.17-r2: tsc + 1624 tests pass, True 0 [], layout 1 new (recipe-reveal clip, shot 136) -> U4. Re-run shots after its fix.
 - 2026-11-17 01:33 UTC Verify v5.17-r2 PASS: True 0 [], layout 0 new; 91 changed. r2 re-checks: critic (sonnet), codecritic, audiocritic (sonnet).
 - 2026-11-17 01:37 UTC r2 re-checks: critic minors only (6 > 3), code APPROVED, audio SATISFIED. Fix round r3 (minors): S2a D481 D482 D490 + U4 D478; then E D495. D493 carried by Julien's choice.
+- 2026-11-17 01:38 UTC r3 U4 done (D478 card shorter and wider; endgame 89 pass; shot 136 layout to confirm in verify). E launched for D495; S2a running.
