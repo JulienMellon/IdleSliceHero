@@ -15,13 +15,15 @@ const DX = WIDE.vanishX - ONE_SCREEN.vanishX;
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 
 describe('the frame', () => {
-  test('every footprint asks for one screen today: 393 wide, the vanishing point in the middle', () => {
+  test('the first three footprints ask for one screen (393 wide, the vanishing point in the middle); the Restaurant and the Flagship are 520 and 640 wide (card V2)', () => {
     for (let fp = 0; fp < 5; fp++) {
       const f = sceneFrame(fp);
-      expect(f.width).toBe(393);
+      expect(f.width).toBe([393, 393, 393, 520, 640][fp]);
       expect(f.height).toBe(SCENE_H);
-      expect(f.vanishX).toBe(196.5);
-      expect(f).toBe(ONE_SCREEN);
+      expect(f.vanishX).toBe(f.width / 2);
+      expect(f.x0).toBe(0);
+      expect(isWide(f)).toBe(fp >= 3);
+      if (fp < 3) expect(f).toBe(ONE_SCREEN);
     }
     expect(FRAME_WIDTH).toHaveLength(5);
     expect(isWide(ONE_SCREEN)).toBe(false);
@@ -136,8 +138,11 @@ function* shops(frame: typeof WIDE) {
 }
 
 describe('a layout in a 640 frame', () => {
-  test('the default frame is the footprint\'s: layout() with no frame is layout() in one screen', () => {
-    for (const s of shops(ONE_SCREEN)) expect(s.lay).toEqual(layout(...s.args));
+  test('the default frame is the footprint\'s: layout() with no frame is layout() in one screen for the first three footprints, in the footprint\'s own frame after', () => {
+    for (const s of shops(ONE_SCREEN)) {
+      if (s.fp < 3) expect(s.lay).toEqual(layout(...s.args));
+      else expect(layout(...s.args).frame).toBe(sceneFrame(s.fp));
+    }
   });
   test('the room is centred on the vanishing point and nothing in it is placed outside the room', () => {
     for (const { name, lay } of shops(WIDE)) {
@@ -151,13 +156,14 @@ describe('a layout in a 640 frame', () => {
       }
     }
   });
-  test('it is the one-screen shop shifted across, field by field (fp 0 to 3; the flagship\'s potted tree is the one thing the screen edge moves)', () => {
+  test('it is the one-screen shop shifted across, field by field (fp 0 to 2: the wide tiers\' rooms are planned for their own width)', () => {
     for (const { name, fp, args, lay } of shops(WIDE)) {
+      if (fp >= 3) continue;
       const one = layout(...args);
       // tagLeft is 0 (a floor, not a place) while no table stands in the back row
       const tl = (l: Layout) => (l.tagLeft > 0 ? [l.tagLeft] : []);
-      const shiftable = fp < 4 ? [...roomXs(lay), ...sidewalkXs(lay), ...tl(lay)] : roomXs(lay);
-      const base = fp < 4 ? [...roomXs(one), ...sidewalkXs(one), ...tl(one)] : roomXs(one);
+      const shiftable = [...roomXs(lay), ...sidewalkXs(lay), ...tl(lay)];
+      const base = [...roomXs(one), ...sidewalkXs(one), ...tl(one)];
       expect(shiftable).toHaveLength(base.length);
       base.forEach((v, i) => expect([name, i, shiftable[i]]).toEqual([name, i, expect.closeTo(v + DX, 6)]));
       expect(lay.tables.map((t) => t.y)).toEqual(one.tables.map((t) => t.y));
@@ -184,7 +190,7 @@ describe('a layout in a 640 frame', () => {
       // the idle drivers' pill rides over the drivers: where one screen's width does not clamp it, it is the same pill shifted across
       const one = layout(...args);
       const [w1, w2] = [waitTagAt(one, 'x'), waitTagAt(lay, 'x')];
-      if (fp < 4 && w1.tail === 0 && one.tagLeft === 0) expect([name, w2.x]).toEqual([name, expect.closeTo(w1.x + DX, 6)]);
+      if (fp < 3 && w1.tail === 0 && one.tagLeft === 0) expect([name, w2.x]).toEqual([name, expect.closeTo(w1.x + DX, 6)]);
     }
   });
 });

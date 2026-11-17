@@ -22,7 +22,7 @@ export const RackCardSlot = memo(function RackCardSlot() {
   });
   if (!key) return null;
   const v = boatsView(useGame.getState().game, Date.now());
-  const c = rackCard(v);
+  const c = rackCard(v, useGame.getState().game.city);
   const canBuy = key.endsWith('|1');
   return (
     <StationCard

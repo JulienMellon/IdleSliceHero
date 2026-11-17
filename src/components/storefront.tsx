@@ -12,6 +12,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { F } from '../theme';
 import { FOOTPRINTS, MANAGERS, NEIGHBORHOODS } from '../content/tuning';
+import { isMirrored } from '../content/shop-layout';
 import type { NeighborhoodId } from '../content/types';
 import * as Game from '../engine/game';
 import { useGame } from '../store/game-store';
@@ -23,7 +24,11 @@ import { SceneDefs } from './scene/defs';
 import { FRONT_ROW_Y, LEDGE_Y, PROP_Y, SIGN_Y, STOOL_Y, TREE_Y, layout, moreTagRect, waitTagRect, type Layout } from './scene/layout';
 import { seatPalette } from './scene/palette';
 import { GUEST_SHIRTS, HAIR_COLORS, hash32, Person } from './scene/people';
-import { CURB_Y, D, INK, P, sceneToScreen, sceneView, screenToScene, unprojectX } from './scene/projection';
+import { CURB_Y, D, INK, P, drawShift, openScroll, sceneToScreen, sceneView, screenToScene } from './scene/projection';
+import { plainOf, toDrawSpace } from './scene/layout-space';
+import { Flip } from './scene/primitives';
+import { ScrollCues } from './scroll-cues';
+import { cuesFor, onScrollAsk, queueShown, wantsOf, type KitchenSpot, type ScrollTarget } from './scroll-cues-model';
 import { isTap, shopOpenScroll } from './scene/scroll';
 import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Rug, Stools, Table, WallPlanter } from './scene/props';
 import { ovenTier } from './scene/geometry';
@@ -51,7 +56,8 @@ import { HEAD_BARKS } from '../content/heads';
 import { getFeature } from '../engine/features';
 import { counterattack } from '../engine/features/counterattack';
 import { hintsAllowed } from '../engine/tutorial';
-import { slammedAsks } from '../engine/features/service';
+import { reportView, slammedAsks } from '../engine/features/service';
+import { jamView } from '../engine/features/layers/industrial-shifts';
 import { heads as headsFeature, newBarkMem, nextBark, rankOf, speakerFor, stationLevel, weekStation, type BarkAsk, type BarkMem } from '../engine/features/heads';
 import { HEADS } from '../content/tuning';
 import { BadgeRail, CameoBubble, CameoTag, DeparturePops, HireBubble, MilestoneBadge, RushPill, StationBadge, rushPillWidth } from './scene/kitchen-hud';
@@ -172,6 +178,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     combo: false,
   });
   const eventAt = useRef({ sec: -1, ev: null as ReturnType<typeof activeEvent> });
+  const repAt = useRef({ sec: -1, view: null as ReturnType<typeof reportView> | null });
   // wall ms when this shop's scene was opened (the scene remounts per shop): the rush hint shows for the start of a visit
   const [visitAt] = useState(() => Date.now());
 
@@ -183,16 +190,24 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const plants = shop.decor.plants;
   // geometry only changes with upgrades, so the layout object stays identical across frames and the
   // memoised layers that take `lay` (room shell, front wall, door, mat, hood) skip re-rendering
-  const lay = useMemo(() => layout(fp, ovenCount, cookCount, staffCount, tablesShown, driverSlots, plants), [fp, ovenCount, cookCount, staffCount, tablesShown, driverSlots, plants]);
+  // the second floor plan (content/shop-layout.ts): kitchen on the right, door on the left, mirrored inside the layout itself (scene/layout-space.ts)
+  const mirrored = isMirrored(id);
+  const roomLay = useMemo(() => layout(fp, ovenCount, cookCount, staffCount, tablesShown, driverSlots, plants, undefined, mirrored), [fp, ovenCount, cookCount, staffCount, tablesShown, driverSlots, plants, mirrored]);
+  // …and in the draw space the drawing code's default `P` expects (`drawFrame`): everything below the sky and the street is drawn in a group moved right by `shift`
+  const lay = useMemo(() => toDrawSpace(roomLay), [roomLay]);
   const running = shop.managed || Game.lineBusy(shop.line);
   const rate = Game.shopRate(shop, game.vehicle);
   const pace = running ? Math.min(2.6, 0.8 + Math.log10(1 + rate)) : 0;
+  // `frame` is the draw space's (its edges are x0 and x0 + width); `sceneFrame` is the drawing's own, which the scroll view, the sky and the street are laid out in
   const frame = lay.frame;
-  const view = sceneView(width, height, frame);
+  const sceneFrame = roomLay.frame;
+  const shift = drawShift(sceneFrame);
+  const worldT = shift ? `translate(${shift} 0)` : undefined;
+  const view = sceneView(width, height, sceneFrame);
   const fit = view.fit;
   // the drawing's own width on the screen: the screen's, unless the frame is wider (then it sits in a scroll view this wide)
   const cw = view.contentW;
-  const driftSpan = frame.width + 200;
+  const driftSpan = sceneFrame.width + 200;
   const frontY = P(0, 0)[1];
   const shopSeed = seedFor(id);
   const nIdx = Math.max(0, NEIGHBORHOODS.findIndex((n) => n.id === id));
@@ -236,11 +251,16 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const nowSec = Math.floor(Date.now() / 1000);
   if (eventAt.current.sec !== nowSec) eventAt.current = { sec: nowSec, ev: activeEvent(nowSec * 1000, game) };
   const evLook = eventLook(eventAt.current.ev, id, running);
+  // the shop report once a second too: the cold line's share (step 4) and the Slammed lamps (the off-screen cues)
+  if (repAt.current.sec !== nowSec) repAt.current = { sec: nowSec, view: reportView(game, id, game.lastSavedAt) };
+  const rep = repAt.current.view!;
   // M60/U10/U11: the queue sizes are a function of the levels, grade, seating and vehicle, all in `key`: computed per upgrade, not 15 times a second
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers every input of queueSizes
   const q0 = useMemo(() => (running ? Game.queueSizes(shop, game.vehicle) : undefined), [key, running]);
   const extraDiners = evLook.extraDiners;
-  const queue = useMemo(() => (q0 && extraDiners ? { ...q0, diners: q0.diners + extraDiners } : q0), [q0, extraDiners]);
+  // v5.16: while the shop's line has gone cold the street draws only `queueShare` of it (the report's; scroll-cues-model.ts `queueShown`)
+  const queueShare = rep.queueShare;
+  const queue = useMemo(() => (q0 ? { diners: queueShown(q0.diners + extraDiners, queueShare), drivers: queueShown(q0.drivers, queueShare) } : q0), [q0, extraDiners, queueShare]);
   const cheer = Date.now() / 1000 - m0.cheerAt < CHEER_SECONDS;
   const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cheer });
   const side = sidewalkOf(lay, crew, queue);
@@ -249,7 +269,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   carriers.clear();
   for (const c of cast) if (c.deps) for (const dep of c.deps) carriers.set(dep, P(c.props.x, c.props.y, 52, frame));
   // the pills over the sidewalk queues; the drivers' one hides while a milestone badge and its confetti are up (D429), and either fades while a "+$" pop would land on it (D439: the pop used to lift above the pill and sit across the faces)
-  const popRects = placePops(line.departures, (d) => Math.max(0, d.left - tickSince), (d) => carriers.get(d.id) ?? null, P(lay.staff[0] + 12, 70, 78, frame), frame.width).map((q) => q.rect);
+  const popRects = placePops(line.departures, (d) => Math.max(0, d.left - tickSince), (d) => carriers.get(d.id) ?? null, P(lay.staff[0] + 12, 70, 78, frame), frame.x0 + frame.width, [], frame.x0).map((q) => q.rect);
   // U4: while Nonna's coach is up the scene says nothing else (tutorial.ts `hintsAllowed`)
   const hints = hintsAllowed(game);
   // the pills' words change with the counts and the bottleneck only (U10/U11), not with the clock
@@ -301,7 +321,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         m.launched.add(d.id);
         if (m.launched.size > 12) m.launched.delete(m.launched.values().next().value as number);
         const [sx, sy] = carriers.get(d.id) ?? geoRegister;
-        emitCoin({ x: origin.current.x + sceneToScreen(sx, scrollX.current, fit), y: origin.current.y + fit.oy + (sy - 40) * fit.s, ms: l * 1000 });
+        emitCoin({ x: origin.current.x + sceneToScreen(sx + shift, scrollX.current, fit), y: origin.current.y + fit.oy + (sy - 40) * fit.s, ms: l * 1000 });
       }
     // someone paid: the shop's whole-number sold count went up (C80: departures don't pay in id order). The first
     // frame after a pause skips the emit, so closing the drawer doesn't replay a stale cash sound (C75)
@@ -396,10 +416,12 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const by = badgeRowY();
   const walls = useMemo(() => bubbleWalls(lay), [lay]);
   const geoRegister = useMemo(() => P(lay.staff[0] + 12, 70, 78, frame), [lay, frame]);
-  const geoPass = useMemo(() => P(lay.counter.x0 + 8, 70, 40, frame), [lay, frame]);
+  // the pass is the counter's end nearest the ovens, and the "ding!" bubble stands on the counter's side of the bank: the other way round in the mirrored plan
+  const geoPass = useMemo(() => P(lay.mirrored ? lay.counter.x1 - 8 : lay.counter.x0 + 8, 70, 40, frame), [lay, frame]);
   const dingAt = useMemo(() => {
     const top = Math.max(...lay.ovens.map((o) => o.z + o.h));
-    return P(lay.ovenCols[lay.ovenCols.length - 1].x1 + 2, D, top * 0.55, frame).map((v, i) => (i === 0 ? v + 22 : v)) as [number, number];
+    const bank = lay.mirrored ? lay.ovenCols[0].x0 - 2 : lay.ovenCols[lay.ovenCols.length - 1].x1 + 2;
+    return P(bank, D, top * 0.55, frame).map((v, i) => (i === 0 ? v + (lay.mirrored ? -22 : 22) : v)) as [number, number];
   }, [lay]);
   const flicker = running ? Math.sin(clock * 9) * 1.4 : 0;
   const rushK = (clock - m.rushAt) / 0.6;
@@ -410,12 +432,42 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const mileAge = m.mile ? clock - m.mile.at : -1;
   const mileLine = m.mile?.text && mileAge < 2.5 ? m.mile.text : null;
   // D415: the badge's centre (over the station's furniture, below the chip row), and the speed-up pill that rides in it instead of rising over the chips
-  const mileAt = m.mile && mileAge < MILE_SECONDS ? mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st), frame.width) : null;
+  const mileAt = m.mile && mileAge < MILE_SECONDS ? mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st), frame.x0 + frame.width) : null;
   const mileFlash = m.mile && m.flash && m.flash.st === m.mile.st && m.flash.at === m.mile.at ? m.flash : null;
   const flash = next && clock - m.hintAt < 0.3 ? rects[next] : null;
 
+  // ---- off-screen cues (scroll-cues-model.ts): what wants the player, where it is in the shop, and which side of the screen it is off
+  const spotOf = (st: Station): KitchenSpot => (st === 'oven' ? 'ovens' : st);
+  const stationXs: Record<KitchenSpot, number> = { prep: bxs.prep + shift, ovens: bxs.oven + shift, counter: bxs.counter + shift };
+  const lastOven = lay.ovens[lay.ovens.length - 1];
+  const bubbleSt = refusal ? refusal.st : mileLine && m.mile ? m.mile.st : m.hire && clock - m.hire.at < 2.5 ? m.hire.st : barkOn ? barkOn.st : null;
+  const wants = view.scrolls
+    ? wantsOf({
+        slammed: (['prep', 'ovens', 'counter'] as const).filter((k) => rep.lamps[k] === 'slammed'),
+        jam: id === 'industrial' && jamView(game).jammed,
+        bubble: bubbleSt ? spotOf(bubbleSt) : null,
+        tap: next ? spotOf(next) : null,
+        xs: stationXs,
+        jamX: P((lastOven.x0 + lastOven.x1) / 2, D - 6, 0, frame)[0] + shift,
+      })
+    : [];
+  const cues = cuesFor(wants, scrollX.current, width, fit, view.maxScroll);
+  // scroll the shop (a tap on a cue, or on a lamp of the shop report: `askScroll`); the position is kept for the session like a drag's
+  const goTo = (x: number) => {
+    const to = Math.max(0, Math.min(view.maxScroll, x));
+    scroller.current?.scrollTo({ x: to, y: 0, animated: true });
+    useGame.getState().setSceneScroll(id, to);
+  };
+  const askRef = useRef<(t: ScrollTarget) => void>(() => {});
+  askRef.current = (t) => {
+    if (!view.scrolls) return;
+    const tablesX = lay.tables.length ? lay.tables.reduce((a, tb) => a + tb.x, 0) / lay.tables.length : frame.vanishX;
+    const x = t === 'floor' ? P(tablesX, 20, 0, frame)[0] + shift : t === 'door' ? P(lay.door.cx, 0, 0, frame)[0] + shift : stationXs[t];
+    goTo(openScroll(x, fit.s, width, view.maxScroll));
+  };
+  useEffect(() => onScrollAsk((t) => askRef.current(t)), []);
   // where a wide shop opens: the counter in view, or where the player left it (the scroll position is kept in the store for the session, not saved)
-  const [startX] = useState(() => shopOpenScroll(useGame.getState().sceneScroll[id], P((lay.counter.x0 + lay.counter.x1) / 2, 74, 0, frame)[0], fit.s, width, view.maxScroll));
+  const [startX] = useState(() => shopOpenScroll(useGame.getState().sceneScroll[id], P((lay.counter.x0 + lay.counter.x1) / 2, 74, 0, frame)[0] + shift, fit.s, width, view.maxScroll));
   const drawing = (
     <>
       <Pressable
@@ -438,7 +490,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           if (view.scrolls && isNum(ne?.pageX) && isNum(ne?.pageY) && !isTap(touchAt.current, { x: ne.pageX, y: ne.pageY })) return;
           const lx = isNum(ne?.pageX) ? ne.pageX - origin.current.x : ne?.locationX;
           const ly = isNum(ne?.pageY) ? ne.pageY - origin.current.y : ne?.locationY;
-          const x = isNum(lx) ? screenToScene(lx, scrollX.current, fit) : frame.vanishX;
+          const x = isNum(lx) ? screenToScene(lx, scrollX.current, fit) - shift : frame.vanishX;
           const y = isNum(ly) ? (ly - fit.oy) / fit.s : 300;
           // a GM shop: any tap is a rush (every running job finishes sooner); otherwise the station under the finger
           if (shop.managed) {
@@ -461,14 +513,19 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         {/* the drawing is decoration for a screen reader: the pizzeria's name and what a tap does are the Pressable's label */}
         <Svg width={cw} height={height} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${cw / fit.s} ${height / fit.s}`}>
           <SceneDefs />
-          <Backdrop id={id} L={lay.L} R={lay.R} w={frame.width} />
+          <Backdrop id={id} L={roomLay.L} R={roomLay.R} w={sceneFrame.width} />
           {CLOUDS.map((c, i) => (
             <Cloud key={i} x={((c.x0 + clock * c.v) % driftSpan) - 100} y={c.y} k={c.k} dusk={id === 'uptown'} />
           ))}
           {evLook.dusk && <DuskTint x={-fit.ox / fit.s} y={-fit.oy / fit.s} w={cw / fit.s} h={frontY + fit.oy / fit.s} />}
-          <Sidewalk frontY={frontY} w={frame.width} />
-          <Street w={frame.width} />
-          <RoomShell id={id} lay={lay} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
+          <Sidewalk frontY={frontY} w={sceneFrame.width} />
+          <Street w={sceneFrame.width} />
+          {/* everything in the room and on the sidewalk is drawn in the draw space (a wide shop's group is moved right by its shift) */}
+          <G transform={worldT}>
+          {/* the room's walls are handed (the menu board, the window, the pantry): the mirrored plan draws the plain plan's and flips it, its lettering kept upright */}
+          <Flip on={lay.mirrored} axis={frame.vanishX}>
+            <RoomShell id={id} lay={plainOf(lay)} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
+          </Flip>
           <OvenHood lay={lay} grade={shop.grade} mural={shop.decor.walls >= 3} tier={ovenTier(shop.ovens)} />
           {/* rush tap: the oven bank pulses (the jobs finish sooner; cash still waits for the pies to leave) */}
           {(() => {
@@ -482,29 +539,32 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             );
           })()}
           {items.map((it) => it.el)}
+          </G>
           {trafficFor(CARS, rivalOpen(game, id)).map((c, i) => {
             const dir = c.lane === 0 ? -1 : 1;
             const raw = (c.offset + clock * c.speed) % driftSpan;
-            const x = dir === 1 ? raw - 100 : frame.width + 100 - raw;
+            const x = dir === 1 ? raw - 100 : sceneFrame.width + 100 - raw;
             return (
               <G key={i} transform={`translate(${x} ${c.lane === 0 ? CURB_Y + 30 : CURB_Y + 70}) scale(0.86)`}>
                 <Car x={0} y={0} color={c.color} kind={c.kind} dir={dir as 1 | -1} />
               </G>
             );
           })}
-          {evLook.lights && <StringLights x0={8} x1={frame.width - 8} y={104} />}
+          {evLook.lights && <StringLights x0={8} x1={sceneFrame.width - 8} y={104} />}
+          {/* the badges, bubbles, pops and the tutorial's spotlight sit over the room: the same moved group */}
+          <G transform={worldT}>
           {/* the neon counter sign hangs over the register, in front of the wall (cosmetics.ts `neonSpot`; G99) */}
           {fin.neon && (() => { const n = neonSpot(lay); return <G transform={`translate(${n.cx} ${n.rect.y1 - 1.2}) scale(${NEON_W / 38})`}><NeonCounterSign /></G>; })()}
           {/* the day-30 visitor's tag over their head, and their line above it (cameo.ts), over the front wall */}
           {visit && cameo && <CameoTag x0={cameo.tag.x0} x1={cameo.tag.x1} y0={cameo.tag.y0} y1={cameo.tag.y1} text={visitTagText} />}
-          {cameo && visitSays && !mileLine && <CameoBubble sceneW={frame.width} tail={cameo.tailX} y={cameo.sayY} drop={cameo.tailDrop} text={sayLines(visitSays).join('\n')} wall0={walls.x0} wall1={walls.x1} />}
+          {cameo && visitSays && !mileLine && <CameoBubble sceneW={frame.x0 + frame.width} x0={frame.x0} tail={cameo.tailX} y={cameo.sayY} drop={cameo.tailDrop} text={sayLines(visitSays).join('\n')} wall0={walls.x0} wall1={walls.x1} />}
           {/* station badges: ring timer, pies in the job, a hand on the station to tap, the head who runs it */}
           {/* a miss outlines the station to tap for a moment (G79) */}
           {flash && <Rect x={flash.x0} y={flash.y0} width={flash.x1 - flash.x0} height={flash.y1 - flash.y0} rx={8} fill="none" stroke="#fff" strokeWidth={2.5} opacity={0.9} />}
           {/* the ticket rail the badges hang on (D346) */}
           {/* D415: the whole chip row dims while a milestone badge is up */}
           <G opacity={hudOpacity(mileAge)}>
-            <BadgeRail x0={bxs.prep - BADGE_R - 8} x1={bxs.counter + BADGE_R + 40} y={by} gm={shop.managed && id !== 'downtown' ? MANAGERS[id].id : shop.managed ? 'nonna' : null} />
+            <BadgeRail x0={lay.mirrored ? bxs.counter - BADGE_R - 40 : bxs.prep - BADGE_R - 8} x1={lay.mirrored ? bxs.prep + BADGE_R + 8 : bxs.counter + BADGE_R + 40} y={by} gm={shop.managed && id !== 'downtown' ? MANAGERS[id].id : shop.managed ? 'nonna' : null} />
             {badges.map((b) => (
               <StationBadge
                 key={b.st}
@@ -525,17 +585,17 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             ))}
           </G>
           {/* a refused tap says why, just under the station's badge (D348) */}
-          {refusal && <HireBubble sceneW={frame.width} x={bxs[refusal.st]} y={by + 40} text={refusal.text} wall0={walls.x0} wall1={walls.x1} tone="refusal" />}
+          {refusal && <HireBubble sceneW={frame.x0 + frame.width} x0={frame.x0} x={bxs[refusal.st]} y={by + 40} text={refusal.text} wall0={walls.x0} wall1={walls.x1} tone="refusal" />}
           {/* a milestone line (Lv 25 / 50 / 100) from the station's head beats a hello and the rush pill */}
           {/* D415: directly under the badge, over the station's furniture, never over the chip row */}
-          {!refusal && mileLine && m.mile && (() => { const a = mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st), frame.width); return <HireBubble sceneW={frame.width} x={a.cx} y={mileSpeechY(a.cy)} text={mileLine} wall0={walls.x0} wall1={walls.x1} />; })()}
-          {!refusal && !mileLine && m.hire && clock - m.hire.at < 2.5 && <HireBubble sceneW={frame.width} x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} wall0={walls.x0} wall1={walls.x1} />}
+          {!refusal && mileLine && m.mile && (() => { const a = mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st), frame.x0 + frame.width); return <HireBubble sceneW={frame.x0 + frame.width} x0={frame.x0} x={a.cx} y={mileSpeechY(a.cy)} text={mileLine} wall0={walls.x0} wall1={walls.x1} />; })()}
+          {!refusal && !mileLine && m.hire && clock - m.hire.at < 2.5 && <HireBubble sceneW={frame.x0 + frame.width} x0={frame.x0} x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} wall0={walls.x0} wall1={walls.x1} />}
           {/* a head's bark takes the same spot under its badge, clamped inside the walls (D440); the rush pill gives way to it */}
-          {!refusal && !mileLine && !(m.hire && clock - m.hire.at < 2.5) && barkOn && <HireBubble sceneW={frame.width} x={bxs[barkOn.st]} y={by + 44} text={barkOn.text} wall0={walls.x0} wall1={walls.x1} />}
+          {!refusal && !mileLine && !(m.hire && clock - m.hire.at < 2.5) && barkOn && <HireBubble sceneW={frame.x0 + frame.width} x0={frame.x0} x={bxs[barkOn.st]} y={by + 44} text={barkOn.text} wall0={walls.x0} wall1={walls.x1} />}
           {/* a General Manager shop: "Tap to rush!" until the first tap, then the combo; a head's hello takes the spot while it shows */}
           {/* D406: under the oven chip, ≤ 120 wide, moved clear of the menu board and the ladder's wall props */}
           {rushModel && !refusal && !mileLine && !barkOn && !(m.hire && clock - m.hire.at < 2.5) && (
-            <RushPill sceneW={frame.width} x={clearPillX(bxs.oven, rushPillWidth(rushModel.text), by + 26, by + 44, pillAvoid, frame.width)} y={by + 40} kind={rushModel.kind} text={rushModel.text} pulse={rushModel.pulse ? pulse : 0} />
+            <RushPill sceneW={frame.x0 + frame.width} x0={frame.x0} x={clearPillX(bxs.oven, rushPillWidth(rushModel.text), by + 26, by + 44, pillAvoid, frame.x0 + frame.width, frame.x0)} y={by + 40} kind={rushModel.kind} text={rushModel.text} pulse={rushModel.pulse ? pulse : 0} />
           )}
           {/* a finished bake: "ding!" at the oven and the pies slide onto the pass (P3) */}
           {m.slide && clock - m.slide.at < 0.7 && (() => {
@@ -552,7 +612,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 <Circle cx={x + 2.2} cy={y + 1.4} r={1.2} fill="#E8432E" />
                 {/* D371: beside the oven bank, its tail pointing at it, never over an oven door */}
                 <G transform={`translate(${dingAt[0]} ${dingAt[1] - k * 6})`}>
-                  <Path d="M-17 -2 L-23 1 L-17 4 Z" fill="#fff" stroke={INK} strokeWidth={1.1} strokeLinejoin="round" />
+                  <Path d="M-17 -2 L-23 1 L-17 4 Z" fill="#fff" stroke={INK} strokeWidth={1.1} strokeLinejoin="round" transform={lay.mirrored ? 'scale(-1 1)' : undefined} />
                   <Rect x={-17} y={-9} width={34} height={16} rx={8} fill="#fff" stroke={INK} strokeWidth={1.1} />
                   <SvgText x={0} y={3} fontFamily={F.bold} fontSize={11} fill={INK} textAnchor="middle">
                     ding!
@@ -567,7 +627,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             const fx = m.flash.st === 'door' ? P(lay.door.cx, 0, 80, frame)[0] : bxs[m.flash.st];
             const fy = m.flash.st === 'door' ? P(lay.door.cx, 0, 80, frame)[1] : by + 34 + CHIP_ROW_HALF + ROW_AIR - 4;
             const w = m.flash.text.length * 7 + 16;
-            const px = Math.min(frame.width - 4 - w / 2, Math.max(4 + w / 2, fx));
+            const px = Math.min(frame.x0 + frame.width - 4 - w / 2, Math.max(frame.x0 + 4 + w / 2, fx));
             return (
               <G transform={`translate(${px} ${fy - k * (m.flash.st === 'door' ? 24 : 14) - (spotlight ? 28 : 0)})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
                 <Rect x={-w / 2} y={-11} width={w} height={20} rx={10} fill="#2E8B3E" stroke="#fff" strokeWidth={1.4} />
@@ -587,7 +647,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             const rect = m.chip.st === 'drivers' ? { x0: door[0], x1: door[0], y0: door[1], y1: door[1] } : rects[m.chip.st];
             const at = chipAt(rect, by, r, k, CHIP_RISE);
             return (
-              <G transform={`translate(${Math.min(frame.width - 4 - r, Math.max(4 + r, at.x))} ${at.y})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
+              <G transform={`translate(${Math.min(frame.x0 + frame.width - 4 - r, Math.max(frame.x0 + 4 + r, at.x))} ${at.y})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
                 <Circle cx={0} cy={0} r={r} fill="#FFF8EA" stroke={INK} strokeWidth={1.1} />
                 <SvgText x={0} y={3.8} fontFamily={F.bold} fontSize={11} fill={INK} textAnchor="middle">
                   {text}
@@ -616,7 +676,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
               const r = rects[spotlight];
               const { x0, y0, x1, y1 } = spotlightCutout(r);
               const rr = 12;
-              const vb = { x: -fit.ox / fit.s, y: -fit.oy / fit.s, w: cw / fit.s, h: height / fit.s };
+              const vb = { x: -fit.ox / fit.s - shift, y: -fit.oy / fit.s, w: cw / fit.s, h: height / fit.s };
               const hole = `M${x0 + rr} ${y0} H${x1 - rr} Q${x1} ${y0} ${x1} ${y0 + rr} V${y1 - rr} Q${x1} ${y1} ${x1 - rr} ${y1} H${x0 + rr} Q${x0} ${y1} ${x0} ${y1 - rr} V${y0 + rr} Q${x0} ${y0} ${x0 + rr} ${y0} Z`;
               const glow = 0.55 + 0.45 * pulse;
               const { hx, hy, rot, scale: hs } = tutorialHand({ x0, y0, x1, y1 }, spotlightWait ? 0 : 4 * pulse);
@@ -634,7 +694,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 </G>
               );
             })()}
-          <DeparturePops sceneW={frame.width} deps={line.departures} left={(d) => leftNow(d.left)} anchor={(d) => carriers.get(d.id) ?? null} register={geoRegister} />
+          <DeparturePops sceneW={frame.x0 + frame.width} x0={frame.x0} deps={line.departures} left={(d) => leftNow(d.left)} anchor={(d) => carriers.get(d.id) ?? null} register={geoRegister} />
+          </G>
         </Svg>
       </Pressable>
       {/* the SCENE_OVERLAYS slot: above the floor and furniture, below the HUD; nothing while the slot is empty */}
@@ -673,6 +734,20 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       ) : (
         drawing
       )}
+      {view.scrolls && (
+        <ScrollCues
+          leftKind={cues.left?.kind ?? ''}
+          leftWord={cues.left?.word ?? ''}
+          leftLabel={cues.left?.label ?? ''}
+          leftScroll={cues.left?.scrollTo ?? 0}
+          rightKind={cues.right?.kind ?? ''}
+          rightWord={cues.right?.word ?? ''}
+          rightLabel={cues.right?.label ?? ''}
+          rightScroll={cues.right?.scrollTo ?? 0}
+          top={Math.round(fit.oy + (by + 56) * fit.s)}
+          onGo={goTo}
+        />
+      )}
     </View>
   );
 });
@@ -691,29 +766,34 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
     f.push({ y: tb.y - 0.6, el: <Table key={`tf${i}`} x={tb.x} y={tb.y} tier={fin.tableTier} part="front" /> });
   });
   // potted plants (plants decor); the corner fern only stands in a starter room, before a front row of tables
-  if (fin.plants >= 1 && !lay.tables.some((tb) => tb.y === FRONT_ROW_Y)) f.push({ y: 2, el: <FloorPlant key="pp1" x={lay.L + 4} y={2} k={0.8} /> });
+  // (the mirrored plan stands its corner props at the wall far from the door too: that is the right wall there)
+  const farWall = (dx: number) => (lay.mirrored ? lay.R - dx : lay.L + dx);
+  if (fin.plants >= 1 && !lay.tables.some((tb) => tb.y === FRONT_ROW_Y)) f.push({ y: 2, el: <FloorPlant key="pp1" x={farWall(4)} y={2} k={0.8} /> });
   if (fin.plants >= 3) f.push({ y: 112, el: <WallPlanter key="pp4" lay={lay} /> });
   f.push({ y: 66, st: 'prep', el: <PrepBench key="prep" lay={lay} prep={fin.prep} dough={fin.dough} /> });
+  // the wide tiers' second prep table, beside the first: the same bench with no dough and nobody at it (the layout's `prep2` stands where the first one would)
+  if (lay.prep2) f.push({ y: 66, st: 'prep', el: <PrepBench key="prep2" lay={{ ...lay, prep: lay.prep2, cooks: [] }} prep={fin.prep} dough={0} /> });
   f.push({ y: 64, st: 'counter', el: <Counter key="counter" lay={lay} boxes={fin.boxes} /> });
   // the visual ladder: bench, counter and street props bounce with their station; the wall ones stay put
   for (const p of ladder)
     f.push({ y: p.sortY, st: p.mount === 'wall' ? undefined : p.station === 'drivers' ? 'drivers' : p.station === 'prep' ? 'prep' : 'counter', el: <LadderPiece key={`lp-${p.id}`} id={p.id} ax={p.ax} ay={p.ay} k={p.k} n={p.n} v={fin.vehicle} mint={fin.scooterMint} /> });
   // front of the shop + sidewalk props
-  f.push({ y: 0, el: <FrontWall key="front" lay={lay} name={fin.name} signage={fin.signageTier} plants={fin.plants} id={fin.id} facadeSkin={fin.facadeSkin} awningGold={fin.awningGold} awningFounder={!!fin.awningFounder} plaque={fin.plaque} /> });
+  // the facade is handed (the doorway's post and brick, the hanging sign): the mirrored plan draws the plain plan's and flips it, its lettering kept upright
+  const flip = { on: lay.mirrored, axis: lay.frame.vanishX };
+  f.push({ y: 0, el: <Flip key="front" {...flip}><FrontWall lay={plainOf(lay)} name={fin.name} signage={fin.signageTier} plants={fin.plants} id={fin.id} facadeSkin={fin.facadeSkin} awningGold={fin.awningGold} awningFounder={!!fin.awningFounder} plaque={fin.plaque} /></Flip> });
   f.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
   if (lay.ledge) {
     f.push({ y: STOOL_Y, el: <Stools key="stools" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
     f.push({ y: LEDGE_Y, el: <LedgeBar key="ledge" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
   }
-  if (fin.fp === 0) f.push({ y: 8, el: <FloorProp key="fprop" id={fin.id} x={lay.L + 22} y={8} /> });
+  if (fin.fp === 0) f.push({ y: 8, el: <FloorProp key="fprop" id={fin.id} x={farWall(22)} y={8} /> });
   // a shop with no manager has a taller sidewalk row: its sidewalk props would stand on the front sill (D356), so
   // the sidewalk there stays clear apart from the mat (the hire bar is the focus)
   if (!fin.idleShop) f.push({ y: SIGN_Y, el: <ChalkSign key="sign" x={lay.sign.x} y={SIGN_Y} k={1} /> });
-  f.push({ y: 16, el: <DoorLeaf key="leaf" lay={lay} /> });
+  f.push({ y: 16, el: <Flip key="leaf" {...flip}><DoorLeaf lay={plainOf(lay)} /></Flip> });
   if (!fin.idleShop) {
     // the potted tree stays fully on screen (its pot is ~14 wide) in the widest rooms
-    const plx = Math.max(lay.L + 8, unprojectX(20, TREE_Y, lay.frame));
-    f.push({ y: TREE_Y, el: <Planter key="pl" x={plx} y={TREE_Y} /> });
+    f.push({ y: TREE_Y, el: <Planter key="pl" x={lay.tree.x} y={TREE_Y} /> });
     // the neighbourhood's sidewalk signature (v5.0): always drawn now, in the room layout.ts keeps clear for it (D414)
     const [qx, qy] = P(lay.prop.x, PROP_Y, 0, lay.frame);
     f.push({ y: PROP_Y, el: <StreetProp key="street" id={fin.id} x={qx} y={qy} /> });

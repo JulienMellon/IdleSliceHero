@@ -10,7 +10,7 @@ import {
   type LadderInput, type Placed, type PropId,
 } from '../ladder';
 import { ladderInput, furnitureInputs, furnitureDeps, type FurnitureSource } from '../furniture-inputs';
-import { SEAT, layout, type Layout } from '../layout';
+import { SEAT, layout, type Layout } from './draw-layout';
 import { D, P, kAt } from '../projection';
 import { BADGE_R, badgeRowY, badgeXs, doorwaySignRect, stationRects, type Rect } from '../stations';
 
@@ -133,10 +133,9 @@ describe('ladder budget', () => {
   // each footprint's reachable levels decide which steps can show; where the room is too tight a prop is skipped
   // Waterfront: the porthole's net hangs to the staff's heads, so the belt along the counter wall (Lv 120) is skipped there.
   // The Corner shop (fp 2): its patio chair-way, the neighbourhood prop and the chalkboard fill the sidewalk left of the parked vehicle, so the second vehicle (Lv 30) has no room beside the board (D432).
-  // The Restaurant (fp 3): its two-column oven bay (52 pt a column, D417) leaves a 66 pt bench, which is too short for the floor strip's mixer and the wall bins (Lv 60 / 80).
+  // v5.18: the Restaurant used to skip the mixer and the wall bins (its 66 pt bench was too short for them); its room is wider now (450), the bench is 84 pt and nothing is skipped.
   const SKIPPED: Record<string, PropId[]> = {
     'waterfront:4': ['passBelt'],
-    'downtown:3': ['mixer', 'toppings'], 'waterfront:3': ['mixer', 'toppings'], 'uptown:3': ['mixer', 'toppings'],
   };
   test('every reachable step shows at its footprint, except the listed skips', () => {
     const missing: Record<string, PropId[]> = {};

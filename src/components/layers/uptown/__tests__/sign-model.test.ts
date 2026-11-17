@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 import { FRONT_TOP, P } from '../../../scene/projection';
-import { PIN, PLAQUE, PLAQUE_W, SIGN, STAR, TAG, pinXs, plaqueBox, plaqueStars } from '../sign-model';
+import { PIN, PLAQUE, PLAQUE_W, SIGN, STAMP, STAR, TAG, pinXs, plaqueBox, plaqueStars } from '../sign-model';
 
 describe('the rating on the sign', () => {
   it('hangs in the sky strip above the sign plate, clear of the station badges under it', () => {
@@ -14,6 +14,22 @@ describe('the rating on the sign', () => {
       expect(b.tagY + TAG.h / s / 2).toBeCloseTo(b.y + PLAQUE.height / 2, 6);
       expect(plaqueBox(s, false).x + PLAQUE_W / 2).toBeCloseTo(SIGN.cx, 6);
     }
+  });
+
+  it('Southie\u2019s local stamp stands left of the plaque, level with it, and the whole row stays on the 393 pt scene', () => {
+    for (const s of [0.8, 1, 1.2]) {
+      for (const tag of [false, true]) {
+        const b = plaqueBox(s, tag, SIGN, true);
+        expect(b.stampX + STAMP.w / s + STAMP.gap / s).toBeCloseTo(b.x, 6);
+        expect(b.stampY + STAMP.h / s / 2).toBeCloseTo(b.y + PLAQUE.height / 2, 6);
+        expect(b.stampX).toBeGreaterThanOrEqual(0);
+        expect(tag ? b.tagX + TAG.w / s : b.x + PLAQUE_W).toBeLessThanOrEqual(393);
+        // the row (stamp, plaque, tag) is centred on the sign
+        const right = tag ? b.tagX + TAG.w / s : b.x + PLAQUE_W;
+        expect((b.stampX + right) / 2).toBeCloseTo(SIGN.cx, 6);
+      }
+    }
+    expect(STAMP.h).toBeGreaterThanOrEqual(18);
   });
 
   it('sits on the sign\u2019s plate, centred on the shop', () => {

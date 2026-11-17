@@ -1,4 +1,5 @@
 
+import { SCENE_WIDTH } from '../../content/shop-layout';
 
 export const INK = '#3B1F14';
 export const SCENE_W = 393;
@@ -7,30 +8,54 @@ export const SCENE_H = 680;
 export const CURB_Y = 590;
 
 // ---------- the frame (v5.18, card V1) ----------
-/** The shop's drawing as data: how wide it is, how tall, and where the perspective's vanishing point stands. Every footprint asks for one screen's width today. */
+/** The shop's drawing as data: how wide it is, how tall, and where the perspective's vanishing point stands. The first three footprints ask for one screen's width; the Restaurant and the Flagship are wider (content/shop-layout.ts). */
 export interface SceneFrame {
   readonly width: number;
   readonly height: number;
   /** x (scene units) of the perspective's vanishing point and of the room's centre: half the width. */
   readonly vanishX: number;
+  /**
+   * x of the drawing's left edge, in the space the frame's own coordinates are in: 0 for a real frame; negative for the frame of the draw space
+   * (`drawFrame`: the same drawing seen from the one-screen vanishing point, so the drawing code's default `P` stands on the right place).
+   */
+  readonly x0: number;
 }
 const frames = new Map<number, SceneFrame>();
 /** The frame `width` units wide (one shared object per width, so memo deps and `===` hold). */
 export function makeFrame(width: number): SceneFrame {
   let f = frames.get(width);
   if (!f) {
-    f = Object.freeze({ width, height: SCENE_H, vanishX: width / 2 });
+    f = Object.freeze({ width, height: SCENE_H, vanishX: width / 2, x0: 0 });
     frames.set(width, f);
   }
   return f;
 }
-/** The one-screen frame: what every shop is drawn in until card V2 widens the two largest. */
+/** The one-screen frame: what the first three footprints are drawn in. */
 export const ONE_SCREEN = makeFrame(SCENE_W);
-/** Frame width by footprint (0 = starter … 4 = flagship). All one screen for now. */
-export const FRAME_WIDTH: readonly number[] = [SCENE_W, SCENE_W, SCENE_W, SCENE_W, SCENE_W];
+/** Frame width by footprint (0 = starter … 4 = flagship): content/shop-layout.ts (one screen for the first three, wider for the Restaurant and the Flagship). */
+export const FRAME_WIDTH: readonly number[] = SCENE_WIDTH;
 export const sceneFrame = (footprint: number): SceneFrame => makeFrame(FRAME_WIDTH[Math.max(0, Math.min(FRAME_WIDTH.length - 1, footprint))]);
 /** The frame is wider than one screen, so its drawing sits in a horizontal scroll view. */
 export const isWide = (frame: SceneFrame): boolean => frame.width > ONE_SCREEN.width;
+/** How far the frame's vanishing point is right of the one-screen one: the shift between the frame's space and the draw space. 0 for a one-screen frame. */
+export const drawShift = (frame: SceneFrame): number => frame.vanishX - ONE_SCREEN.vanishX;
+const draws = new Map<SceneFrame, SceneFrame>();
+/**
+ * The frame of the draw space: the room and everything in it, in the coordinates the drawing code's default `P` expects (the vanishing point at
+ * the one-screen 196.5), so the drawing code never has to be told the frame. `Svg` draws that space inside a group moved right by `drawShift`.
+ * A one-screen frame is its own draw space. Everything in a draw-space frame is `x - drawShift` of the frame's own space; its edges are x0 and x0 + width.
+ */
+export function drawFrame(frame: SceneFrame): SceneFrame {
+  if (drawShift(frame) === 0) return frame;
+  let f = draws.get(frame);
+  if (!f) {
+    f = Object.freeze({ width: frame.width, height: frame.height, vanishX: ONE_SCREEN.vanishX, x0: -drawShift(frame) });
+    draws.set(frame, f);
+  }
+  return f;
+}
+/** The drawing's right edge, in the frame's own space. */
+export const frameRight = (frame: SceneFrame): number => frame.x0 + frame.width;
 
 export interface SceneFit {
   s: number;

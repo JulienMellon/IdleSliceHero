@@ -85,6 +85,9 @@ export function askOven() {
   ovenAsks.forEach((fn) => fn());
 }
 
+// v5.18 (V2): a tap on a lamp of the shop report scrolls a wide shop to that station (`askScroll('ovens')`); the scene listens (scroll-cues-model.ts)
+export { askScroll, onScrollAsk } from './scroll-cues-model';
+
 /** The entries in `order` (ascending, stable). Returns the array itself when it holds fewer than two. */
 export function inOrder<P>(items: readonly SlotEntry<P>[]): readonly SlotEntry<P>[] {
   return items.length < 2 ? items : [...items].sort((a, b) => a.order - b.order);

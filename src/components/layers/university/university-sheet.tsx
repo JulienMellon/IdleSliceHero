@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { menuView, zonesView } from '../../../engine/features/layers/university-menu';
 import { useGame } from '../../../store/game-store';
 import { C, F } from '../../../theme';
+import { dressed } from '../city-dress';
 import { COPY } from './copy';
 import { BUTTON_H } from './layer-model';
 import { LayerSheet } from './layer-ui';
@@ -19,13 +20,13 @@ function Sheet() {
   const mv = menuView(game);
   const zv = zonesView(game);
   const mix = mixOfView(mv);
-  const rows = recipeRows(mix);
+  const rows = recipeRows(mix, game.city);
   const tap = (id: RecipeId, dir: 1 | -1) => {
     const next = stepMix(mix, id, dir);
     if (next) setMenu(next.pepperoni, next.knots);
   };
   return (
-    <LayerSheet testID="university-sheet" title={COPY['layer.university.menu.info.title']} onClose={universitySheet.close}>
+    <LayerSheet testID="university-sheet" title={dressed(game.city, 'layer.university.menu.info.title', COPY['layer.university.menu.info.title'])} onClose={universitySheet.close}>
       <Text style={styles.body}>{COPY['layer.university.menu.info.body']}</Text>
       {rows.map((r) => (
         <View key={r.id} style={styles.row} testID={`recipe-${r.id}`}>
@@ -47,9 +48,9 @@ function Sheet() {
         <Text style={styles.totalHead}>{`Mix ${mixText(mix)}`}</Text>
         <Text style={styles.small}>{effectLine(mv)}</Text>
       </View>
-      <Text style={styles.head}>{COPY['layer.university.zones.info.title']}</Text>
-      <Text style={styles.body}>{COPY['layer.university.zones.info.body']}</Text>
-      {zoneCells(zv).map((z) => (
+      <Text style={styles.head}>{dressed(game.city, 'layer.university.zones.info.title', COPY['layer.university.zones.info.title'])}</Text>
+      <Text style={styles.body}>{dressed(game.city, 'layer.university.zones.info.body', COPY['layer.university.zones.info.body'])}</Text>
+      {zoneCells(zv, game.city).map((z) => (
         <View key={z.id} style={[styles.zone, z.locked && styles.zoneLocked]} testID={`zone-row-${z.id}`}>
           <Text style={styles.zoneName} numberOfLines={1}>{z.name}</Text>
           <Text style={styles.zoneMid} numberOfLines={1}>{z.mid}</Text>

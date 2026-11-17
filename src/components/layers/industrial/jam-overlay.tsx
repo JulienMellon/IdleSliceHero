@@ -7,6 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { jamView } from '../../../engine/features/layers/industrial-shifts';
 import { useGame } from '../../../store/game-store';
+import { builtHood } from '../city-layers';
 import { C, F } from '../../../theme';
 import { useMotion } from '../../scene/clock';
 import { INK, sceneFit } from '../../scene/projection';
@@ -48,10 +49,10 @@ export const JamOverlay = memo(function JamOverlay({ shopId, width, height }: Sc
   const frame = useShopFrame(shopId);
   // one string: the label (it changes once a second under a Head Baker), then the jammed oven's place; '' for no jam
   const key = useGame((s) => {
-    if (shopId !== 'industrial' || !s.game.shops.industrial.built) return '';
-    const label = jamLabel(jamView(s.game));
+    if (shopId !== builtHood(s.game, 'shifts')) return '';
+    const label = jamLabel(jamView(s.game), s.game.city);
     if (!label) return '';
-    const at = ovenSpot(layoutOfShop(s.game.shops.industrial));
+    const at = ovenSpot(layoutOfShop(s.game.shops[shopId]));
     return `${label}~${at.x.toFixed(1)}~${at.y.toFixed(1)}~${at.top.toFixed(1)}`;
   });
   const fixJam = useGame((s) => s.fixJam);

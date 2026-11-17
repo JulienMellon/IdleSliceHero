@@ -1,7 +1,7 @@
 // The shop report as plain data (card P1): the strip above the sidewalk, its sheet, the cards' effect lines. Pure: unit-tested in node.
 // All text is the copy's, by key (content/service.ts COPY); nothing here is drawn. The strip and the sheet pass the primitives they need.
 import { COPY, FIX_ROWS, LAMP_INITIAL, MANAGER_COPY_KEY, SERVICE, type CopyKey } from '../../content/service';
-import { MANAGERS } from '../../content/tuning';
+import { cityOf } from '../../content/cities';
 import type { NeighborhoodId } from '../../content/types';
 import { count, duration, money } from '../../engine/format';
 import type { GameState } from '../../engine/game';
@@ -43,9 +43,10 @@ export function stripKind(v: ReportView): StripKind | null {
 
 /** The strip's line for a shop: the manager's when one is hired (their `report.<id>.*` copy), else the neutral copy. */
 export function stripLine(v: ReportView, id: NeighborhoodId, managed: boolean): { kind: StripKind; text: string } | null {
+  // a manager with no `report.<id>.*` copy (another city's: the script writes none) says the neutral line
   const kind = stripKind(v);
   if (!kind) return null;
-  const key = (managed ? `report.${MANAGER_COPY_KEY[id]}.${kind}` : `report.${kind}`) as CopyKey;
+  const key = (managed && MANAGER_COPY_KEY[id] ? `report.${MANAGER_COPY_KEY[id]}.${kind}` : `report.${kind}`) as CopyKey;
   const vars = {
     served: count(Math.max(0, Math.round(v.perMin.sold))),
     wanted: count(Math.max(0, Math.round(v.perMin.wanted))),
@@ -83,7 +84,7 @@ export function stripModel(g: GameState, id: NeighborhoodId, now: number): Strip
     show: true,
     kind: line.kind,
     text: line.text,
-    manager: managed ? MANAGERS[id].id : '',
+    manager: managed ? cityOf(g).managers[id]?.id ?? '' : '',
     prep: v.lamps.prep,
     ovens: v.lamps.ovens,
     counter: v.lamps.counter,

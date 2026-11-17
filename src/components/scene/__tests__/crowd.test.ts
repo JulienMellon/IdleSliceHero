@@ -4,7 +4,7 @@
 import { buildCast, sidewalkOf, type CastMember } from '../cast';
 import { alongDist, emptyCrew, routesFor, stepCrew, type CrewState } from '../crew';
 import { advanceLine, AUTOMATIC, emptyLine, type Line, type LineRates } from '../../../engine/pipeline';
-import { BACK_ROW_Y, DRIVER_QUEUE_PITCH, MORE_TAG_DRIVER_AIR, MORE_TAG_GAP, MORE_TAG_Z, MORE_TAG_Z_ALONE, PATIO_Y, PILL_LAYER_Y, SIGN_Y, DRIVER_SPOTS, FEET_IN, NEAR_ROW_Y, PATIO_HALF_W, PATIO_SEAT, PROP_Y, QUEUE_PITCH, QUEUE_Y, SEAT, TABLE_SET_HALF, TAG_MARGIN, TREE_Y, VEHICLE_HALF_W, WAIT_TAG_Z, canopyBox, layout, moreTagAt, moreTagRect, waitTagAt, waitTagRect, waitTagWidth } from '../layout';
+import { BACK_ROW_Y, DRIVER_QUEUE_PITCH, MORE_TAG_DRIVER_AIR, MORE_TAG_GAP, MORE_TAG_Z, MORE_TAG_Z_ALONE, PATIO_Y, PILL_LAYER_Y, SIGN_Y, DRIVER_SPOTS, FEET_IN, NEAR_ROW_Y, PATIO_HALF_W, PATIO_SEAT, PROP_Y, QUEUE_PITCH, QUEUE_Y, SEAT, TABLE_SET_HALF, TAG_MARGIN, TREE_Y, VEHICLE_HALF_W, WAIT_TAG_Z, canopyBox, layout, moreTagAt, moreTagRect, waitTagAt, waitTagRect, waitTagWidth } from './draw-layout';
 import { driverCast, hash32, lookFor } from '../looks';
 import { driverFigures, queueLabel, queueOverflow, waitingText } from '../waiting';
 import { seatPalette } from '../palette';
@@ -356,7 +356,7 @@ describe('the doorway sign (D377)', () => {
       const at = (x: number, y: number, role: 'walkin' | 'driver'): CastMember => ({ key: 'p', sortY: y, role, props: { x, y, kind: role === 'driver' ? 'driver' : 'guest', step: 0 } });
       for (const [x, y] of shop.lay.orderSpots.slice(0, 1)) expect([shop.name, 'order', hits(headOf(at(x, y, 'walkin')), sign)]).toEqual([shop.name, 'order', false]);
       for (const sp of shop.lay.spots) expect([shop.name, 'pickup', hits(headOf(at(sp.x, sp.y, 'driver')), sign)]).toEqual([shop.name, 'pickup', false]);
-      expect(hits(headOf(at(shop.lay.counter.x1 + 4, 60, 'walkin')), sign)).toBe(true); // the v5.2 spot, at the counter's right end by the door
+      expect(hits(headOf(at(unprojectX((sign.x0 + sign.x1) / 2, 60), 60, 'walkin')), sign)).toBe(true); // the control: a figure standing at the door (the v5.2 spot, the counter's right end, was one until the wide tiers moved the counter away from it)
     }
   });
 });
@@ -565,7 +565,7 @@ describe('the sidewalk queues', () => {
       for (const cast of sideFrames(sh).filter((_, f) => f % 7 === 0)) {
         const q = queuers(cast).map((c) => ({ c, b: box(c) }));
         for (const a of q) {
-          expect([sh.name, a.c.key, a.b.x0 >= 0 && a.b.x1 <= SCENE_W]).toEqual([sh.name, a.c.key, true]);
+          expect([sh.name, a.c.key, a.b.x0 >= sh.lay.frame.x0 && a.b.x1 <= sh.lay.frame.x0 + sh.lay.frame.width]).toEqual([sh.name, a.c.key, true]);
           expect([sh.name, a.c.key, overlap(a.b, mat) <= 0.2]).toEqual([sh.name, a.c.key, true]);
           for (const o of q) if (a !== o) expect([sh.name, a.c.key, o.c.key, overlap(a.b, o.b) < 0.3]).toEqual([sh.name, a.c.key, o.c.key, true]);
         }
@@ -599,7 +599,7 @@ describe('the sidewalk queues', () => {
     for (const sh of sideShops())
       for (const text of texts) {
         const t = waitTagAt(sh.lay, text);
-        expect([sh.name, text, t.x - t.w / 2 >= TAG_MARGIN - 1e-6, t.x + t.w / 2 <= SCENE_W - TAG_MARGIN + 1e-6, t.w === waitTagWidth(text)]).toEqual([sh.name, text, true, true, true]);
+        expect([sh.name, text, t.x - t.w / 2 >= sh.lay.frame.x0 + TAG_MARGIN - 1e-6, t.x + t.w / 2 <= sh.lay.frame.x0 + sh.lay.frame.width - TAG_MARGIN + 1e-6, t.w === waitTagWidth(text)]).toEqual([sh.name, text, true, true, true]);
         expect(Math.abs(t.x + t.tail - P(sh.lay.waitTag[0], sh.lay.waitTag[1])[0])).toBeLessThan(0.01);
       }
     for (const sh of sideShops()) {

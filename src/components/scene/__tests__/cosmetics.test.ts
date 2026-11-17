@@ -8,7 +8,7 @@ import { AWNING_GOLD, MINT, NO_DRESS, SKINS, dressOf, dressedLook, isDressed, ne
 import { furnitureDeps, furnitureInputs, type FurnitureSource } from '../furniture-inputs';
 import { LOOKS } from '../identity';
 import { candidates, fixedPeople, hits, obstacles } from '../ladder';
-import { layout, secondVehicleShift } from '../layout';
+import { layout, secondVehicleShift } from './draw-layout';
 import { SCENE_W, P } from '../projection';
 import { doorwaySignRect, staffFaces } from '../stations';
 
@@ -137,9 +137,9 @@ describe('the plaque (budget; D458)', () => {
       const r = plaqueRect(lay);
       expect(r.x1 - r.x0).toBe(34);
       expect(r.y1 - r.y0).toBe(22);
-      expect(r.x0).toBeGreaterThanOrEqual(P(lay.door.x0 - 8, 0)[0]);
-      expect(r.x1).toBeLessThanOrEqual(P(lay.R - 8, 0)[0]);
-      expect(r.x1).toBeLessThanOrEqual(SCENE_W);
+      expect(r.x0).toBeGreaterThanOrEqual(P(lay.jamb.x0, 0)[0]);
+      expect(r.x1).toBeLessThanOrEqual(P(lay.jamb.x1, 0)[0]);
+      expect(r.x1).toBeLessThanOrEqual(lay.frame.x0 + lay.frame.width);
       expect(r.y0).toBeGreaterThanOrEqual(190);
       expect(r.y1).toBeLessThanOrEqual(P(0, 0, 196)[1]);
       expect(hits(r, doorwaySignRect(lay))).toBe(false);

@@ -7,6 +7,7 @@ import Svg, { G } from 'react-native-svg';
 
 import { criticView } from '../../../engine/features/layers/uptown-stars';
 import { useGame } from '../../../store/game-store';
+import { builtHood } from '../city-layers';
 import { C, F } from '../../../theme';
 import { Person } from '../../scene/people';
 import { P, kAt, sceneFit, type SceneFrame } from '../../scene/projection';
@@ -65,11 +66,11 @@ export const CriticScene = memo(function CriticScene({ shopId, width, height }: 
   const frame = useShopFrame(shopId);
   // one string: the phase, the target on the chip, how the visit went, and (walking) the seconds already walked
   const key = useGame((s) => {
-    if (shopId !== 'uptown' || !s.game.shops.uptown.built) return '';
+    if (shopId !== builtHood(s.game, 'stars')) return '';
     const v = criticView(s.game);
     const phase = criticPhase(v);
     if (phase === 'away') return '';
-    const door = layoutOfShop(s.game.shops.uptown).door;
+    const door = layoutOfShop(s.game.shops[shopId]).door;
     return `${phase}|${v.last ? v.last.target : v.target}|${v.last ? (v.last.hit ? 1 : 0) : 0}|${phase === 'walking' ? Math.max(0, CRITIC_LEAD - v.nextIn) : 0}|${door.cx.toFixed(1)}|${door.x0.toFixed(1)}`;
   });
   if (!key || !(width > 0)) return null;

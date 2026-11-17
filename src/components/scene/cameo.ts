@@ -5,6 +5,7 @@ import { CAMEO, CAMEO_NONNA_LINES } from '../../content/heads';
 import { VISITOR_LINES, VISITOR_NAMES, VISITORS } from '../../content/rewards';
 import type { Boost } from '../../engine/game';
 import type { Layout } from './layout';
+import { flipRect, plainOf } from './layout-space';
 import type { PersonProps } from './looks';
 import { figureBox, fixedPeople, hits } from './ladder';
 import { P } from './projection';
@@ -122,7 +123,22 @@ const TAG_AIR = 1;
 export const BUBBLE_FACE_AIR = 3;
 
 /** Where the figure, its tag and its speech pill go, in scene units (the figure's box is the crowd budget's: 22 wide, 56 tall at its depth). */
-export function cameoGeom(lay: Layout, tag: string): { spot: { x: number; y: number }; body: Rect; tag: Rect; sayY: number; tailDrop: number; tailX: number } {
+export function cameoGeom(lay: Layout, tag: string): CameoGeom {
+  if (!lay.mirrored) return cameoGeomPlain(lay, tag);
+  // the mirrored plan: the visitor's spot is found by the plain plan's rules (the doorway's jamb is the far limit of her tag) and reflected
+  const a = 2 * lay.frame.vanishX;
+  const g = cameoGeomPlain(plainOf(lay), tag);
+  return { ...g, spot: { ...g.spot, x: a - g.spot.x }, body: flipRect(g.body, a), tag: flipRect(g.tag, a), tailX: a - g.tailX };
+}
+interface CameoGeom {
+  spot: { x: number; y: number };
+  body: Rect;
+  tag: Rect;
+  sayY: number;
+  tailDrop: number;
+  tailX: number;
+}
+function cameoGeomPlain(lay: Layout, tag: string): { spot: { x: number; y: number }; body: Rect; tag: Rect; sayY: number; tailDrop: number; tailX: number } {
   const w = tagWidth(tag);
   const spot = cameoSpot(lay, w);
   const body = figureBox(spot.x, spot.y, 56 * VISITOR_SCALE);

@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 // Event-driven drivers and walk-ins, synced with the engine's carriers (v4.9 / v5.0).
 import { advanceLine, AUTOMATIC, emptyLine, LINE, type Line, type LineRates } from '../../../engine/pipeline';
-import { layout } from '../layout';
+import { layout } from './draw-layout';
 import { SCENE_W } from '../projection';
 import { alongDist, driverPoseAt, emptyCrew, guestLeg, guestPoseAt, guestSchedule, routesFor, seatFor, stepCrew, WALK, type CrewState } from '../crew';
 

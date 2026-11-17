@@ -54,8 +54,8 @@ export function bubbleWalls(lay: Pick<Layout, 'L' | 'R' | 'frame'>): { x0: numbe
   return { x0: P(lay.L + 8, 0, 0, lay.frame)[0], x1: P(lay.R - 8, 0, 0, lay.frame)[0] };
 }
 /** The pill's centre x: its anchor, moved to keep the whole pill inside the walls (and the scene), whichever is tighter. */
-export function bubbleX(x: number, w: number, walls: { x0: number; x1: number }, sceneW: number = ONE_SCREEN.width): number {
-  const lo = Math.max(walls.x0 + BUBBLE_AIR, 4) + w / 2;
+export function bubbleX(x: number, w: number, walls: { x0: number; x1: number }, sceneW: number = ONE_SCREEN.width, x0 = 0): number {
+  const lo = Math.max(walls.x0 + BUBBLE_AIR, x0 + 4) + w / 2;
   const hi = Math.min(walls.x1 - BUBBLE_AIR, sceneW - 4) - w / 2;
   return lo > hi ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, x));
 }

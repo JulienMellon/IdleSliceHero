@@ -14,6 +14,7 @@ import { Person } from '../../scene/people';
 import { kAt, P, sceneFit } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
+import { hoodOf } from '../city-layers';
 import { layoutOfShop } from '../shop-layout';
 import { BURST_SECONDS, chairsOf, familiesFor, freeChairs, glowing, seatedFamilies, waveFigures } from './gameday-model';
 
@@ -21,12 +22,12 @@ export const GameDayScene = memo(function GameDayScene({ shopId, width, height }
   // Reads the live store on its own 15 fps clock: React Compiler must not cache that.
   'use no memo';
   const frame = useShopFrame(shopId);
-  const on = useGame((s) => shopId === GAME_DAY.hood && gameDayView(s.game, Date.now()).rush);
+  const on = useGame((s) => shopId === hoodOf(s.game, 'gameDay') && gameDayView(s.game, Date.now()).rush);
   const clock = useClock(15, !on);
   if (!on) return null;
   const st = useGame.getState();
   const g = st.game;
-  const shop = g.shops[GAME_DAY.hood];
+  const shop = g.shops[shopId];
   const v = gameDayView(g, Date.now());
   if (!v.rush) return null;
   const lay = layoutOfShop(shop);

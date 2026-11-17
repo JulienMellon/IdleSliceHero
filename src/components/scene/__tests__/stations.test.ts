@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 // Station tap targets and the badge row (playtest 2, v4.8).
-import { layout } from '../layout';
+import { layout } from './draw-layout';
 import { badgeRowY, badgeXs, BADGE_R, HIT_ORDER, MIN_TAP_PT, progressStep, stationAt, stationRects } from '../stations';
 import { P, FRONT_TOP, D } from '../projection';
 
@@ -122,8 +122,8 @@ describe('codecritic round 16', () => {
   test('T55: every badge and the counter pill stay on screen', () => {
     for (const lay of shops) {
       const x = badgeXs(lay);
-      expect(x.prep - BADGE_R).toBeGreaterThanOrEqual(0);
-      expect(x.counter + BADGE_R + 3 + 40).toBeLessThanOrEqual(SCENE_W);
+      expect(x.prep - BADGE_R).toBeGreaterThanOrEqual(lay.frame.x0);
+      expect(x.counter + BADGE_R + 3 + 40).toBeLessThanOrEqual(lay.frame.x0 + lay.frame.width);
     }
   });
 });

@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 // The milestone badge and the rising level chip (D415, D418): budgets against the chip row, in scene units.
-import { layout } from '../layout';
+import { layout } from './draw-layout';
 import { BUBBLE_AIR, CHIP_ROW_HALF, HUD_DIM_OPACITY, HUD_DIM_SECONDS, MILE_EDGE, MILE_HAT_GAP, MILE_PILL_HIDE_S, MILE_R, MILE_SECONDS, MILE_SHIFT, ROW_AIR, STATION_LABEL, bubbleWalls, bubbleWidth, bubbleX, chipAt, hidesWaitingPill, hudOpacity, mileAnchor, mileLevelSize, mileOpacity, mileScale, mileSpeechY, mileSub, newMoments, stationHatTop, stepMoments, type MomentsInput } from '../moments';
 import { CHIP_RISE, CONFETTI, CONFETTI_N, CONFETTI_SECONDS, CONFETTI_STEPS, confettiOffset, confettiStep } from '../ladder';
 import { hash32 } from '../looks';
@@ -9,6 +9,9 @@ import { badgeRowY, stationRects } from '../stations';
 
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 const STATIONS = ['prep', 'oven', 'counter'] as const;
+/** The drawing's edges (a wide shop's draw space starts left of 0). */
+const edgeL = (lay: { frame: { x0: number } }) => lay.frame.x0;
+const edgeR = (lay: { frame: { x0: number; width: number } }) => lay.frame.x0 + lay.frame.width;
 const shops = () => [0, 1, 2, 3, 4].map((fp) => ({ fp, lay: layout(fp, Math.min(fp + 1, 6), Math.min(3, fp + 1), 2, 6, DRIVER_SLOTS[fp], 1) }));
 
 describe('the milestone badge (D415)', () => {
@@ -19,11 +22,11 @@ describe('the milestone badge (D415)', () => {
       for (const scale of [1.6, 1, 0.9]) {
         const rects = stationRects(lay, 44 / scale);
         for (const st of STATIONS) {
-          const { cx, cy } = mileAnchor(rects[st], by, stationHatTop(lay, st));
-          expect([fp, st, cx - MILE_R >= 0, cx + MILE_R <= SCENE_W]).toEqual([fp, st, true, true]);
+          const { cx, cy } = mileAnchor(rects[st], by, stationHatTop(lay, st), edgeR(lay));
+          expect([fp, st, cx - MILE_R >= edgeL(lay), cx + MILE_R <= edgeR(lay)]).toEqual([fp, st, true, true]);
           expect([fp, st, cy - MILE_R >= by + CHIP_ROW_HALF + ROW_AIR - 1e-9]).toEqual([fp, st, true]);
           // D440: 20 right of the station's middle, unless that would leave the screen
-          expect(cx).toBeCloseTo(Math.min(SCENE_W - MILE_R - MILE_EDGE, (rects[st].x0 + rects[st].x1) / 2 + MILE_SHIFT), 6);
+          expect(cx).toBeCloseTo(Math.min(edgeR(lay) - MILE_R - MILE_EDGE, (rects[st].x0 + rects[st].x1) / 2 + MILE_SHIFT), 6);
         }
       }
   });
@@ -59,14 +62,14 @@ describe('the milestone badge (D415)', () => {
     expect(s).toBeGreaterThanOrEqual(0);
     expect(CONFETTI.length).toBe(CONFETTI_N);
     const by = badgeRowY();
-    const visible = (cx: number, cy: number, step: number, offset: (st: number, i: number) => { dx: number; dy: number }) => {
+    const visible = (cx: number, cy: number, step: number, offset: (st: number, i: number) => { dx: number; dy: number }, lo = 0, hi = SCENE_W) => {
       let n = 0;
       for (let i = 0; i < CONFETTI_N; i++) {
         const { dx, dy } = offset(step, i);
         const x = cx + dx;
         const y = cy + dy;
         // clear of the disc (at its biggest pop-in, ×1.12) and inside the scene
-        if (Math.hypot(dx, dy) > MILE_R * 1.12 + 5 && x >= 0 && x <= SCENE_W && y >= 0 && y <= SCENE_H) n++;
+        if (Math.hypot(dx, dy) > MILE_R * 1.12 + 5 && x >= lo && x <= hi && y >= 0 && y <= SCENE_H) n++;
       }
       return n;
     };
@@ -80,9 +83,9 @@ describe('the milestone badge (D415)', () => {
     let oldWorst = Infinity;
     for (const { fp, lay } of shops())
       for (const st of STATIONS) {
-        const { cx, cy } = mileAnchor(stationRects(lay, 44)[st], by, stationHatTop(lay, st));
-        expect([fp, st, visible(cx, cy, s, confettiOffset) >= 10]).toEqual([fp, st, true]);
-        oldWorst = Math.min(oldWorst, visible(cx, cy, s, oldOffset));
+        const { cx, cy } = mileAnchor(stationRects(lay, 44)[st], by, stationHatTop(lay, st), edgeR(lay));
+        expect([fp, st, visible(cx, cy, s, confettiOffset, edgeL(lay), edgeR(lay)) >= 10]).toEqual([fp, st, true]);
+        oldWorst = Math.min(oldWorst, visible(cx, cy, s, oldOffset, edgeL(lay), edgeR(lay)));
       }
     expect(oldWorst).toBeLessThan(6);
   });
@@ -146,12 +149,12 @@ describe('the milestone badge clears the corner, the pill stays inside the walls
       for (const st of STATIONS) {
         const rect = stationRects(lay, 44)[st];
         const hat = stationHatTop(lay, st);
-        const { cx, cy } = mileAnchor(rect, by, hat);
+        const { cx, cy } = mileAnchor(rect, by, hat, edgeR(lay));
         const mid = (rect.y0 + rect.y1) / 2;
         const oldCy = Math.max(by + CHIP_ROW_HALF + ROW_AIR + MILE_R, Math.min(mid, hat - MILE_HAT_GAP - MILE_R));
         const oldCx = (rect.x0 + rect.x1) / 2;
         expect([fp, st, cy]).toEqual([fp, st, oldCy + MILE_SHIFT]);
-        expect([fp, st, cx > oldCx || cx + MILE_R >= SCENE_W - MILE_EDGE - 1e-9, cx + MILE_R <= SCENE_W, cx - MILE_R >= 0]).toEqual([fp, st, true, true, true]);
+        expect([fp, st, cx > oldCx || cx + MILE_R >= edgeR(lay) - MILE_EDGE - 1e-9, cx + MILE_R <= edgeR(lay), cx - MILE_R >= edgeL(lay)]).toEqual([fp, st, true, true, true]);
         if (cx > oldCx) right++;
       }
     expect(right).toBeGreaterThan(8);

@@ -3,6 +3,8 @@
 // the words are the copy table (`rival.<hood>.*`). Pure: unit-tested in node.
 import { RIVAL } from '../../../content/layers';
 import { ORDER } from '../../../content/hooks';
+import { cityOf } from '../../../content/cities';
+import type { CityDef } from '../../../content/cities/types';
 import { castOf } from '../../../engine/orders';
 import type { CharacterId, NeighborhoodId } from '../../../content/types';
 import type { RivalView } from '../../../engine/features/layers/rival';
@@ -90,12 +92,27 @@ export interface RivalCardModel {
   canStart: boolean;
 }
 
+const HOME = cityOf({});
+
 const NONE = (hood: NeighborhoodId): RivalCardModel => ({ face: 'none', hood, who: 'todd-coat', speaker: '', line: '', title: '', progress: '', fillStep: 0, drainStep: 0, clock: '', urgent: false, behind: false, button: '', canStart: false });
 
 /** Todd opens the rival in most places; Victor Crust on the boardwalk and the avenue (the copy file's speakers). */
-export function opener(hood: NeighborhoodId): CharacterId {
+export function opener(hood: NeighborhoodId, city: CityDef = HOME): CharacterId {
+  // another city's rival is opened by its own lieutenant (Boston: Trish Vance)
+  if (city !== HOME) return city.lieutenant.id;
   return rivalSpeaker(hood, 'open') === 'Victor Crust' ? 'victor-crust' : 'todd-coat';
 }
+
+/** The character who answers the rival in a shop: the home city's cast table, else the neighbourhood's own character from the city's story. */
+function answerer(hood: NeighborhoodId, city: CityDef): { who: CharacterId; name: string } {
+  const cast = city === HOME ? castOf(hood) : undefined;
+  if (cast) return { who: cast.who, name: cast.name };
+  const first = city.scenes.find((sc) => sc.neighborhood === hood && sc.beat === 1);
+  return { who: first?.character ?? city.lieutenant.id, name: city.managers[hood]?.name ?? 'MegaSlice' };
+}
+
+/** The name the opener signs a line with. */
+const openerName = (hood: NeighborhoodId, city: CityDef): string => (city === HOME ? rivalSpeaker(hood, 'open') ?? 'MegaSlice' : city.lieutenant.name);
 
 const URGENT = 15;
 
@@ -103,11 +120,12 @@ const URGENT = 15;
  * The card for one shop. `result` is a win or a loss just seen (set by the card's own watcher when a running challenge ends), so the card
  * can say how it ended once; otherwise it shows the offer or the running chip.
  */
-export function rivalCard(v: RivalView, hood: NeighborhoodId, result: 'won' | 'lost' | null = null): RivalCardModel {
-  const title = rivalLine(hood, 'title', { n: v.target });
-  const cast = castOf(hood);
-  if (result === 'won') return { ...NONE(hood), face: 'won', who: cast.who, speaker: rivalSpeaker(hood, 'win') ?? cast.name, line: rivalLine(hood, 'win') };
-  if (result === 'lost' && v.open) return { ...NONE(hood), face: 'lost', who: cast.who, speaker: rivalSpeaker(hood, 'lose') ?? cast.name, line: rivalLine(hood, 'lose') };
+export function rivalCard(v: RivalView, hood: NeighborhoodId, result: 'won' | 'lost' | null = null, city: CityDef = HOME): RivalCardModel {
+  const id = city.id;
+  const title = rivalLine(hood, 'title', { n: v.target }, id);
+  const cast = answerer(hood, city);
+  if (result === 'won') return { ...NONE(hood), face: 'won', who: cast.who, speaker: rivalSpeaker(hood, 'win') ?? cast.name, line: rivalLine(hood, 'win', {}, id) };
+  if (result === 'lost' && v.open) return { ...NONE(hood), face: 'lost', who: cast.who, speaker: rivalSpeaker(hood, 'lose') ?? cast.name, line: rivalLine(hood, 'lose', {}, id) };
   // 'waiting': the rival is open but the finale wait is not over (engine `challengeOffered`): nothing to start, nothing to show
   if (!v.open || v.phase === 'waiting') return NONE(hood);
   if (v.phase === 'running') {
@@ -115,8 +133,8 @@ export function rivalCard(v: RivalView, hood: NeighborhoodId, result: 'won' | 'l
     return {
       ...NONE(hood),
       face: 'running',
-      who: opener(hood),
-      speaker: rivalSpeaker(hood, 'open') ?? 'MegaSlice',
+      who: opener(hood, city),
+      speaker: openerName(hood, city),
       title,
       progress: `${Math.floor(v.progress)} / ${v.target} pies`,
       fillStep: step5(v.target > 0 ? v.progress / v.target : 0),
@@ -130,9 +148,9 @@ export function rivalCard(v: RivalView, hood: NeighborhoodId, result: 'won' | 'l
   return {
     ...NONE(hood),
     face: 'offer',
-    who: opener(hood),
-    speaker: rivalSpeaker(hood, 'open') ?? 'MegaSlice',
-    line: rivalLine(hood, 'open'),
+    who: opener(hood, city),
+    speaker: openerName(hood, city),
+    line: rivalLine(hood, 'open', {}, id),
     title,
     button: wait ? `${LABELS.retryIn} ${mmss(v.retryIn)}` : LABELS.start,
     canStart: !wait,

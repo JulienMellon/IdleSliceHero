@@ -7,7 +7,8 @@ import { money } from '../../../engine/format';
 import { pier9Available, pier9Price, type GameState } from '../../../engine/game';
 import type { BoatsView } from '../../../engine/features/layers/waterfront-boats';
 import { mmss } from '../layer-model';
-import { LABELS, lc } from '../layer-text';
+import { dressed } from '../city-dress';
+import { LABELS, lc, lcc } from '../layer-text';
 import type { Layout } from '../../scene/layout';
 import { P, kAt } from '../../scene/projection';
 
@@ -78,15 +79,18 @@ export interface HarbourChip {
 }
 
 /** The chip: the boat's stay while it is docked, the auction's next raise while the auction is live, else the next boat; only beside the Waterfront shop (a docked boat shows anywhere). */
-export function harbourChip(v: BoatsView, a: AuctionStatus, active: string): HarbourChip | null {
+export function harbourChip(v: BoatsView, a: AuctionStatus, active: string, city?: string, hood: string = BOATS.hood): HarbourChip | null {
   if (!v.active) return null;
-  if (v.boat) return { text: lc('layer.waterfront.boat.chip', { time: mmss(v.left) }), hot: true, sheet: 'boat' };
-  if (active !== BOATS.hood) return null;
+  if (v.boat) return { text: lcc(city, 'layer.waterfront.boat.chip', { time: mmss(v.left) }), hot: true, sheet: 'boat' };
+  if (active !== hood) return null;
   if (a.live && !a.maxed) return { text: lc('layer.waterfront.auction.chip', { time: mmss(a.nextIn) }), hot: false, sheet: 'auction' };
-  return { text: `${LABELS.nextBoat} ${mmss(v.nextIn)}`, hot: false, sheet: 'boat' };
+  return { text: `${label(city, 'nextBoat')} ${mmss(v.nextIn)}`, hot: false, sheet: 'boat' };
 }
 
-export const boatBanner = (v: BoatsView): string => (v.active && v.boat ? lc('layer.waterfront.boat.banner') : '');
+export const boatBanner = (v: BoatsView, city?: string): string => (v.active && v.boat ? lcc(city, 'layer.waterfront.boat.banner') : '');
+
+/** A caption of the layer in a city (the supper orders say "Next order" where the harbour says "Next boat"). */
+export const label = (city: string | undefined, key: 'nextBoat' | 'boatLeft' | 'rack' | 'rackEmpty' | 'maxed'): string => dressed(city, `label.${key}`, LABELS[key]);
 
 // ---------- the warming rack ----------
 
@@ -137,17 +141,17 @@ export interface RackCard {
 const TIER_KEYS = ['upgrade.waterfront.rack.tier.1', 'upgrade.waterfront.rack.tier.2', 'upgrade.waterfront.rack.tier.3', 'upgrade.waterfront.rack.tier.4'] as const;
 
 /** The name of a tier (1..4). */
-export const tierName = (tier: number): string => (tier >= 1 && tier <= 4 ? lc(TIER_KEYS[tier - 1]) : '');
+export const tierName = (tier: number, city?: string): string => (tier >= 1 && tier <= 4 ? lcc(city, TIER_KEYS[tier - 1]) : '');
 
-export function rackCard(v: BoatsView): RackCard {
+export function rackCard(v: BoatsView, city?: string): RackCard {
   const next = v.rackTier + 1;
-  const owned = v.rackTier > 0 ? `${tierName(v.rackTier)}: holds ${v.rackCapacity}` : LABELS.rackEmpty;
-  const nextName = v.rackPrice !== null ? ` · next ${tierName(next)}: ${BOATS.rack.capacity[next - 1]}` : '';
+  const owned = v.rackTier > 0 ? `${tierName(v.rackTier, city)}: holds ${v.rackCapacity}` : label(city, 'rackEmpty');
+  const nextName = v.rackPrice !== null ? ` · next ${tierName(next, city)}: ${BOATS.rack.capacity[next - 1]}` : '';
   return {
-    title: lc('upgrade.waterfront.rack.name'),
+    title: lcc(city, 'upgrade.waterfront.rack.name'),
     detail: `${owned}${nextName}`,
     cost: v.rackPrice,
-    costLabel: LABELS.maxed,
+    costLabel: label(city, 'maxed'),
     tier: v.rackTier,
   };
 }

@@ -12,6 +12,7 @@ import { LOOKS } from './identity';
 import { doorwaySignRect } from './stations';
 import { Sidewalk } from './street';
 import { PICKET } from './street-props';
+import { Upright } from './primitives';
 
 /**
  * The street face of the shop: brick pilasters at both corners, a fascia beam across the top
@@ -160,7 +161,7 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
               const r = (kbx - jax) * 0.55;
               const word = 'ROSA’S';
               return (
-                <G>
+                <Upright cx={cx}>
                   {word.split('').map((ch, i) => {
                     const ang = (-26 + (52 * i) / (word.length - 1)) * (Math.PI / 180);
                     const x = cx + Math.sin(ang) * r;
@@ -171,7 +172,7 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
                       </SvgText>
                     );
                   })}
-                </G>
+                </Upright>
               );
             })()}
             <Rect x={jax + 2} y={gTop + 2} width={kbx - jax - 4} height={lTop - gTop - 2} fill="none" stroke="#6B4330" strokeWidth={4.5} />
@@ -184,7 +185,7 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
             {(() => {
               // hangs over the sidewalk off the right pilaster; on the widest shop (no room) it sits on the brick header
               const edgeX = P(R + 6, 0, 0, lay.frame)[0] + 26;
-              const outside = edgeX <= lay.frame.width - 4;
+              const outside = edgeX <= lay.frame.x0 + lay.frame.width - 4;
               const sx = outside ? edgeX : (jax + kbx) / 2 + 14;
               const sy = outside ? gTop - 22 : (bTop + gTop) / 2 + 14;
               return (
@@ -198,9 +199,11 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
                   )}
                   <Circle cx={sx - 14} cy={sy} r={10.5} fill="#D9443A" stroke={INK} strokeWidth={1.2} />
                   <Circle cx={sx - 14} cy={sy} r={8.4} fill="none" stroke="#FFF4E0" strokeWidth={0.8} />
-                  <SvgText x={sx - 14} y={sy + 2} fontFamily={F.bold} fontSize={5.6} fill="#FFF4E0" textAnchor="middle">
-                    PIZZA
-                  </SvgText>
+                  <Upright cx={sx - 14}>
+                    <SvgText x={sx - 14} y={sy + 2} fontFamily={F.bold} fontSize={5.6} fill="#FFF4E0" textAnchor="middle">
+                      PIZZA
+                    </SvgText>
+                  </Upright>
                   <Path d={`M${sx - 21} ${sy - 4} A8 8 0 0 1 ${sx - 10} ${sy - 7.5}`} stroke="#fff" strokeWidth={1.2} opacity={0.5} fill="none" strokeLinecap="round" />
                 </G>
               );
@@ -208,9 +211,11 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
             <Path d={`M${jax} ${lTop - 12} H${kbx}`} stroke="#6B4330" strokeWidth={2.4} />
             {/* C91: the plank is drawn from the rect the crowd budget (D377) guards */}
             <Rect x={sign.x0} y={sign.y0 + 1} width={sign.x1 - sign.x0} height={sign.y1 - sign.y0 - 1} fill="#3B1F14" opacity={0.85} />
-            <SvgText x={(sign.x0 + sign.x1) / 2} y={sign.y1 - 2.4} fontFamily={F.bold} fontSize={6.5} fill="#E0B000" textAnchor="middle" letterSpacing={1}>
-              PIZZERIA
-            </SvgText>
+            <Upright cx={(sign.x0 + sign.x1) / 2}>
+              <SvgText x={(sign.x0 + sign.x1) / 2} y={sign.y1 - 2.4} fontFamily={F.bold} fontSize={6.5} fill="#E0B000" textAnchor="middle" letterSpacing={1}>
+                PIZZERIA
+              </SvgText>
+            </Upright>
             {/* jambs + lintel */}
             {/* the doorway's left side is a slim wooden post, so people walking in aren't hidden behind brick */}
             <Rect x={jbx - 3.2} y={lTop} width={3.2} height={jay + 6 - lTop} fill="#6B4330" stroke={INK} strokeWidth={0.9} />
@@ -225,9 +230,11 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
               return (
                 <G>
                   <Rect x={cx - 11} y={(lTop + lBot) / 2 - 4.5} width={22} height={9} rx={2.2} fill="#E8432E" stroke="#fff" strokeWidth={0.9} />
-                  <SvgText x={cx} y={(lTop + lBot) / 2 + 2.4} fontFamily={F.bold} fontSize={6.4} fill="#fff" textAnchor="middle">
-                    OPEN
-                  </SvgText>
+                  <Upright cx={cx}>
+                    <SvgText x={cx} y={(lTop + lBot) / 2 + 2.4} fontFamily={F.bold} fontSize={6.4} fill="#fff" textAnchor="middle">
+                      OPEN
+                    </SvgText>
+                  </Upright>
                 </G>
               );
             })()}
@@ -240,9 +247,11 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
       {plaque && (() => {
         const r = plaqueRect(lay);
         return (
-          <G transform={`translate(${(r.x0 + r.x1) / 2} ${(r.y0 + r.y1) / 2})`}>
-            <GoldPlaque />
-          </G>
+          <Upright cx={(r.x0 + r.x1) / 2}>
+            <G transform={`translate(${(r.x0 + r.x1) / 2} ${(r.y0 + r.y1) / 2})`}>
+              <GoldPlaque />
+            </G>
+          </Upright>
         );
       })()}
       {/* awning under the fascia: each neighbourhood's colours and shape; red stays as the first stripe or the piping */}
@@ -323,9 +332,11 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
           const x = fcx - signW / 2 + 8 + (i % 9) * ((signW - 16) / 8);
           return <Circle key={i} cx={x} cy={top ? fTop - 5 : fBot + 5} r={2.2} fill="#FFF3B0" stroke="#E0B000" strokeWidth={0.6} />;
         })}
-      <SvgText x={fcx} y={(fTop + fBot) / 2 + 5.5} fontFamily={F.bold} fontSize={16} fill={text} stroke={signage === 0 ? '#3B1F14' : undefined} strokeWidth={signage === 0 ? 0.4 : 0} textAnchor="middle">
-        {`Rosa’s · ${name}`}
-      </SvgText>
+      <Upright cx={fcx}>
+        <SvgText x={fcx} y={(fTop + fBot) / 2 + 5.5} fontFamily={F.bold} fontSize={16} fill={text} stroke={signage === 0 ? '#3B1F14' : undefined} strokeWidth={signage === 0 ? 0.4 : 0} textAnchor="middle">
+          {`Rosa’s · ${name}`}
+        </SvgText>
+      </Upright>
     </G>
   );
 });

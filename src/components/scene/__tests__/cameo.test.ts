@@ -7,7 +7,7 @@ import { neonSpot } from '../cosmetics';
 import { staffFaces } from '../stations';
 import { SAY_MAX_CHARS, TAG_H, VISITOR_LOOK, cameoGeom, sayHeight, sayLines, cameoSpot, linesOf, tagWidth, visitLine, visitOf, visitTag, visitTagLabel } from '../cameo';
 import { candidates, fixedPeople, hits, obstacles } from '../ladder';
-import { layout } from '../layout';
+import { layout } from './draw-layout';
 import { BUBBLE_AIR, bubbleWalls, bubbleWidth, bubbleX } from '../moments';
 import { SCENE_W } from '../projection';
 

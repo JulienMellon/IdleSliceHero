@@ -116,7 +116,7 @@ function buildRoutes(lay: Layout, sceneW: number, idle: boolean, patio: number):
   const at: Pt = [spot.x, spot.y];
   const inside: Pt = [driverX, DOOR_IN_Y];
   const outside: Pt = [driverPauseX, outY];
-  const street: Pt = [sceneW + 50, idle ? IDLE_WALK_Y : -30];
+  const street: Pt = [lay.walk.away, idle ? IDLE_WALK_Y : -30];
   // walk the exit lane (behind the front diners' heads, D353) to the counter's end, then step forward to the
   // doorway lane before reaching the walk-in waiting beside the counter (D336), and out
   // v5.3: step straight forward from the pickup spot to the doorway lane, then across in front of the walk-in
@@ -134,7 +134,7 @@ function buildRoutes(lay: Layout, sceneW: number, idle: boolean, patio: number):
   const orderAt = lay.orderSpots[0];
   const gIn: Pt = [guestX, DOOR_IN_Y];
   const gOut: Pt = [guestPauseX, outY];
-  const start: Pt = [-30, walkY];
+  const start: Pt = [lay.walk.from, walkY];
   const seats = [...lay.tables.map((t) => ({ x: t.x, y: t.y, seat: SEAT, out: false })), ...lay.patio.slice(0, idle ? 0 : patio).map((t) => ({ x: t.x, y: t.y, seat: PATIO_SEAT, out: true }))];
   const eat = seats.length >= 2 ? EAT_S : EAT_S_SOLO;
   const guests = seats.map((table, n) => {
@@ -147,12 +147,12 @@ function buildRoutes(lay: Layout, sceneW: number, idle: boolean, patio: number):
     // a patio guest goes out the door and along the curb lane (in front of the vehicle and the queue), then straight
     // up to their chair; leaving is the same way back
     const leave = table.out
-      ? route([seat, [seat[0], walkY], [sceneW + 50, walkY]])
-      : route([seat, aisleS, [gIn[0], DINING_AISLE_Y], gIn, gOut, [gOut[0], walkY], [sceneW + 50, walkY]]);
+      ? route([seat, [seat[0], walkY], [lay.walk.away, walkY]])
+      : route([seat, aisleS, [gIn[0], DINING_AISLE_Y], gIn, gOut, [gOut[0], walkY], [lay.walk.away, walkY]]);
     const toSeat = table.out
       ? route([orderAt, aisleR, [gIn[0], DINING_AISLE_Y], gIn, gOut, [gOut[0], walkY], [seat[0], walkY], seat])
       : route([orderAt, aisleR, aisleS, seat]);
-    const giveUp = route([orderAt, [orderAt[0], DINING_AISLE_Y], [gIn[0], DINING_AISLE_Y], gIn, gOut, [gOut[0], walkY], [sceneW + 50, walkY]]);
+    const giveUp = route([orderAt, [orderAt[0], DINING_AISLE_Y], [gIn[0], DINING_AISLE_Y], gIn, gOut, [gOut[0], walkY], [lay.walk.away, walkY]]);
     const arriveSpeed = Math.max(WALK, arrive.len / Math.max(0.5, LINE.walkinLap - LINE.handoffSeconds - 0.1));
     return { arrive, toSeat, leave, giveUp, arriveSpeed, seat, orderAt, table: n, patio: table.out, eat };
   });

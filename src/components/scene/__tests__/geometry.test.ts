@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 import { CHEER_HAND, bodyBy, boxOvenGeom, domeGeom, flameBox, isBoxOven, limbGeom, ovenFrame } from '../geometry';
-import { layout } from '../layout';
+import { layout } from './draw-layout';
 import type { Act, Kind } from '../looks';
 import { bobFor } from '../quantise';
 
