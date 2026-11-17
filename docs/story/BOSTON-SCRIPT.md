@@ -1,6 +1,6 @@
 # Slice Empire — Boston Script (City 2)
 
-2026-11-17 · card W3
+2026-11-17 · card W3 · review r0 notes S49–S62 folded in
 
 > Format matches `docs/story/STORY-v4-final.md`. Each line below is `**Speaker:** text`; italic lines are captions. The number before each scene heading is play order; minutes come from the pacing sim. Every scene is ★ NEW.
 
@@ -24,9 +24,9 @@
 
 - "Great news." Trish opens every bad report with it. Bea's interlude reveals it was her line as a child. Her last line makes it true.
 - Name-tag promotions: REGIONAL VP → SENIOR VP → EXECUTIVE VP → PRESIDENT, BOSTON → PRESIDENT, NEW ENGLAND → HEIR APPARENT → PATRICIA · POTS.
-- Victor gets her name right every time and still can't remember Todd's.
+- Victor gets her name right every time. In Fenway he finally gets Todd's right too, and admits it's too late.
 
-**Clues, in order:** the squeaky pew and the "P." envelope (North End), "wicked" and the kid's drink from a Dorchester supper (Southie), the bus to Dorchester (Back Bay), the stars on her scorecard (Fenway), the oven that explodes when she's asked about family (Cambridge), Bea's fridge and "great news" (Dorchester).
+**Clues, in order:** the squeaky pew and the "P." envelope (North End), "wicked" and the church-supper kid's drink (Southie), the bus to Dorchester (Back Bay), the stars on her scorecard (Fenway), the thermometer that pops when she's asked about family (Cambridge), Bea's fridge and "great news" (Dorchester).
 
 ## Interludes
 
@@ -55,7 +55,7 @@
 
 **Panel 3** — north-end · no one
 > *Boston. Snow on old brick. Church bells. A new sign: Rosa's North End.*
-> **You:** New city. New shop. Same sauce.
+> **You:** New city. Same sauce. Ugly sweater.
 
 **Panel 4** — megaslice-hq · Victor Crust (neutral), Trish (happy) · prop: name-tag (TRISH VANCE · REGIONAL VP)
 > *MegaSlice Boston. Top floor. The blinds are closed. They are always closed.*
@@ -101,7 +101,7 @@
 > *Under every windshield wiper: a glossy coupon. FREE MEGASLICE WITH ANY PRAYER.*
 > **Father Dom:** They're on every car. In every pew. Somebody put one in the holy water.
 
-### 03 — North End · "Great News" `north-end-3` · ★ NEW
+### 03 — North End · "Very Visible. Very Holy." `north-end-3` · ★ NEW
 *Plays: North End complication (count set by the pacing sim) · the rival opens across the street*
 
 **Panel 1** — north-end · Trish (happy) · prop: name-tag (TRISH VANCE · REGIONAL VP)
@@ -166,6 +166,7 @@
 
 **Panel 2** — southie · Kayla Dunn (neutral)
 > **Kayla Dunn:** Kayla Dunn. I run Dunn's. My dad ran Dunn's. His dad ran it into the ground.
+> **Kayla Dunn:** Both names, always. I hear you've already got a Kayla.
 > **Kayla Dunn:** You're the pizza people? Where's your flour from?
 
 **Panel 3** — southie · Kayla Dunn (angry)
@@ -181,12 +182,12 @@
 
 **Panel 1** — southie · Kayla Dunn (surprised)
 > *Kayla tastes your pizza. Then she reads the box. Then she reads the flour sack.*
-> **Kayla Dunn:** Local tomatoes. Local cheese. Who taught you this?
+> **Kayla Dunn:** Huh. Closer to home than I figured. Who taught you this?
 
 **Panel 2** — southie · Kayla Dunn (happy)
 > **Kayla Dunn:** You're on my menu. My regulars cleared the plate before I set it down.
 > **You:** So we passed the rating?
-> **Kayla Dunn:** You moved UP the rating. Nobody passes. Keep climbing.
+> **Kayla Dunn:** Nobody passes. You're climbing. Keep climbing.
 
 **Panel 3** — southie · Kayla Dunn (sad)
 > **Kayla Dunn:** Problem. My fish guy's selling his boat. My cheese lady's thinking about it.
@@ -220,7 +221,7 @@
 > **Trish:** Ginger ale. Extra cherries. Stirred with a pretzel.
 
 **Panel 2** — southie · Kayla Dunn (surprised), Trish (neutral)
-> **Kayla Dunn:** That's a kid's order. A church-supper kid's order. From Dorchester.
+> **Kayla Dunn:** That's a kid's order. A church-supper kid's order. From around here.
 > **Trish:** Never been. I'm from out of town. Wicked far out of town.
 
 **Panel 3** — southie · Kayla Dunn (neutral)
@@ -234,13 +235,17 @@
 > *Across from Dunn's, the LOCALLY SOURCED sign comes down. Underneath, it says SHIPPED IN.*
 
 **Panel 2** — southie · Kayla Dunn (happy)
-> *Every topping on Dunn's menu now comes from down the street.*
+> *Your pizza is at the top of Dunn's menu now. In pen.*
 > **Kayla Dunn:** My fish guy bought his boat back. My cheese lady hired her cousin.
 > **Kayla Dunn:** You did that. With pizza. I don't say this. Thank you.
 
 **Panel 3** — southie · Kayla Dunn (happy)
-> **Kayla Dunn:** Top of my rating. Nobody's been there. Not even my mother. She's furious.
+> **Kayla Dunn:** Most local thing on my menu. My mother's furious.
 > **Kayla Dunn:** Southie's yours. We don't say that to outsiders. You're not an outsider.
+
+**Panel 4** — southie · Kayla Dunn (neutral) · prop: pretzel
+> *Closing time. On the end stool: a pretzel chewed to a stub, and a very big tip.*
+> **Kayla Dunn:** If she's from out of town, I'm from Back Bay.
 
 *Ends with:* perk card
 
@@ -380,12 +385,13 @@
 > **Trish:** ...Your shortstop drops his elbow on the swing, by the way.
 > **Manny:** Lady. How do you know that?
 
-**Panel 3** — megaslice-hq · Victor Crust (happy), Trish (happy)
-> **Trish:** Great news, Victor. The ballpark contract is ours. I've seen the envelope.
-> **Victor Crust:** President of Boston! If only I'd had you instead of... Tad? Rod? Whoever.
+**Panel 3** — megaslice-hq · Victor Crust (happy), Trish (happy) · prop: phone
+> **Victor Crust:** Trish! Don't tell me. The ballpark is mine.
+> **Trish:** Great news, Victor. I've seen the envelope.
+> **Victor Crust:** If only I'd had you instead of... Todd. See? I know it now. Too late.
 
 **Panel 4** — fenway · Manny (neutral)
-> **Manny:** The fans pick the vendor on game day. Loudest cheer wins.
+> **Manny:** Park can't choose. So the fans pick, game day. Loudest cheer wins.
 > **Manny:** So we feed every fan in the park. And then we make them LOUD.
 
 ### 19 — Fenway · Interlude · "The Scorecard" `fenway-5` · ★ NEW
@@ -400,7 +406,7 @@
 > **Manny:** They came every Sunday. Split a hot dog. The kid kept score.
 
 **Panel 3** — fenway · Manny (surprised), Trish (sad)
-> **Trish:** Cute photo. Never seen them before in my life.
+> **Trish:** Cute photo.
 > **Manny:** She draws a little star for every run. Just like that kid did.
 
 ### 20 — Fenway · "Loudest Cheer" `fenway-4` · ★ NEW
@@ -415,8 +421,8 @@
 
 **Panel 3** — fenway · Manny (happy)
 > *Bottom of the last inning. The Chowderheads win. Fans throw crusts like confetti.*
-> **Manny:** Contract's ours, partner! Every slice in the park is Rosa's now!
-> **Manny:** Fenway's yours. And the Chowderheads won! Same day! Somebody pinch me!
+> **Manny:** Contract's ours, partner! Fenway's yours! Every slice in the park is Rosa's!
+> **Manny:** And the Chowderheads won. I didn't know the scoreboard went that high.
 
 **Panel 4** — fenway · Trish (sad)
 > *In the emptied stands, Trish keeps score anyway. She draws a star for the Chowderheads.*
@@ -446,15 +452,15 @@
 *Plays: first Cambridge milestone (count set by the pacing sim)*
 
 **Panel 1** — cambridge · Dr. Ko (sad)
-> *BOOM. Again. The dean has left a note on the lab door.*
-> **Dr. Ko:** Next explosion, they close my lab. The dean underlined "next."
+> *BOOM. Again. The dean has banned explosions on campus.*
+> **Dr. Ko:** No more booms on campus. So the experiment moves to your kitchen. Congratulations.
 
-**Panel 2** — cambridge · Priya (happy), Dr. Ko (surprised)
-> *A familiar face at the lab door, with a laptop. A whole team waves from the screen.*
-> **Priya:** Hi! Priya. I lead a tech team now. They call me "boss." I'm still getting used to it.
+**Panel 2** — shop · Priya (happy), Dr. Ko (surprised)
+> *Your kitchen. A familiar face at the back door, with a laptop and a team on screen.*
+> **Priya:** Hi! Priya. I lead a tech team now. I made them a list. It has tabs.
 > **Dr. Ko:** The drone girl. I read your code. It made me jealous.
 
-**Panel 3** — cambridge · Priya (neutral), Dr. Ko (neutral)
+**Panel 3** — shop · Priya (neutral), Dr. Ko (neutral)
 > **Priya:** Your oven's code is perfect. Your oven's metal hates it.
 > **Dr. Ko:** Can you fix it?
 > **Priya:** Give me some time. And a fire extinguisher. Possibly several.
@@ -463,7 +469,7 @@
 *Plays: Cambridge complication (count set by the pacing sim) · the rival opens across the street*
 
 **Panel 1** — cambridge · Trish (happy) · prop: name-tag (TRISH VANCE · PRESIDENT, NEW ENGLAND)
-> *Across from the lab, a MegaSlice opens. Name tag: PRESIDENT, NEW ENGLAND.*
+> *Across from your shop, a MegaSlice opens. Name tag: PRESIDENT, NEW ENGLAND.*
 > **Trish:** Great news, Doctor. MegaSlice will fund your lab. All of it. Forever.
 
 **Panel 2** — cambridge · Dr. Ko (neutral), Trish (neutral)
@@ -471,33 +477,33 @@
 > **Dr. Ko:** I'll review it. Peer review. You won't enjoy my peers.
 
 **Panel 3** — megaslice-hq · Victor Crust (happy), Trish (happy)
-> **Trish:** Great news, Victor. The scientist joined us. Her oven is our oven.
+> **Trish:** Great news, Victor. We have her oven plans. Every page.
 > **Victor Crust:** President of New England. Keep this up, Trish, and I'll make you my heir.
 
-**Panel 4** — cambridge · Dr. Ko (surprised)
-> *Across the street, a familiar BOOM. MegaSlice built ovens from Dr. Ko's old blueprints.*
+**Panel 4** — shop · Dr. Ko (surprised)
+> *Across the street, a familiar BOOM. MegaSlice built ovens from Dr. Ko's old plans.*
 > **Dr. Ko:** They stole my old design. The one that explodes. ...They all explode.
-> **Dr. Ko:** Priya. We need the new one working before the dean blames me for theirs.
+> **Dr. Ko:** Priya. We need the new one working before they blame us for theirs.
 
 ### 24 — Cambridge · Interlude · "Lie Detector" `cambridge-5` · ★ NEW
 *Plays: after `cambridge-3` · 360 s · holds back `cambridge-4`*
 
-**Panel 1** — cambridge · Dr. Ko (neutral), Trish (neutral) · prop: thermometer
-> *After hours. Trish came for a signature. Dr. Ko wired a thermometer to her chair.*
+**Panel 1** — shop · Dr. Ko (neutral), Trish (neutral) · prop: thermometer
+> *After hours. Your kitchen. Dr. Ko has wired a thermometer to Trish's chair.*
 > **Dr. Ko:** Quick questions. For science. Is MegaSlice pizza good?
 > **Trish:** Delicious.
 
-**Panel 2** — cambridge · Dr. Ko (surprised), Trish (neutral) · prop: thermometer
+**Panel 2** — shop · Dr. Ko (surprised), Trish (neutral) · prop: thermometer
 > *The needle doesn't move. Not for the pizza, the profits or "never been to Boston."*
 > **Dr. Ko:** You're the steadiest liar I've ever measured. It's beautiful. Last question.
 
-**Panel 3** — cambridge · Dr. Ko (neutral), Trish (sad) · prop: thermometer
+**Panel 3** — shop · Dr. Ko (neutral), Trish (sad) · prop: thermometer
 > **Dr. Ko:** Do you have family in Boston?
 > **Trish:** No.
 
-**Panel 4** — cambridge · Dr. Ko (happy)
-> *BOOM. When the smoke clears, Trish's chair is empty.*
-> **Dr. Ko:** Off the chart. Then the chart caught fire. Best data I've had all year.
+**Panel 4** — shop · Dr. Ko (happy) · prop: thermometer
+> *POP. The thermometer bursts. When Dr. Ko looks up, Trish's chair is empty.*
+> **Dr. Ko:** Off the chart. Then off the thermometer. Best data I've had all year.
 
 ### 25 — Cambridge · "Perfect" `cambridge-4` · ★ NEW
 *Plays: player wins the Cambridge challenge*
@@ -505,12 +511,12 @@
 **Panel 1** — cambridge · no one
 > *Across the street, the stolen ovens finally gave up. MegaSlice's windows are boarded.*
 
-**Panel 2** — cambridge · Priya (happy), Dr. Ko (neutral)
-> *Dr. Ko's oven. Priya's code. The dean in the doorway, holding an extinguisher.*
+**Panel 2** — shop · Priya (happy), Dr. Ko (neutral)
+> *Dr. Ko's oven, in your kitchen. Priya's code. Wren, holding an extinguisher.*
 > **Priya:** My team says it's ready. My team also says stand back.
 > **Dr. Ko:** Standing back is just good science.
 
-**Panel 3** — cambridge · Dr. Ko (surprised)
+**Panel 3** — shop · Dr. Ko (surprised)
 > *Ding. No boom. A pizza slides out. It is perfect.*
 > **Dr. Ko:** It didn't explode. I don't know how to feel. I think I feel... hungry.
 > **Dr. Ko:** Cambridge is yours. The lab voted. I abstained so I could eat.
@@ -549,7 +555,7 @@
 
 **Panel 2** — dorchester · Nonna Rosa (neutral), Grandma Bea (surprised)
 > *The hall door opens. A small woman, a big suitcase. It smells like garlic.*
-> **Nonna Rosa:** I took an airplane. Modern idea. I hated it. Hello, Beatrice.
+> **Nonna Rosa:** The bus was full. So: an airplane. Modern idea. I hated it. Hello, Beatrice.
 > **Grandma Bea:** Rosa.
 
 **Panel 3** — dorchester · Nonna Rosa (angry), Grandma Bea (angry) · prop: half-ladle
@@ -794,7 +800,7 @@
 | --- | --- |
 | `layer.north-end.line.label` | The After-Mass Line |
 | `layer.north-end.line.chip` | Line's out the church door |
-| `layer.north-end.line.empty` | No line. Ring a bell. |
+| `layer.north-end.line.empty` | No line. Mass isn't out yet. |
 | `layer.north-end.rush.banner` | The bells! Sunday rush! |
 | `layer.north-end.rush.chip` | Feed them before the bakery does |
 | `layer.north-end.rush.end` | Rush over. Father Dom says amen. |
