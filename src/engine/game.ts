@@ -864,6 +864,8 @@ export function nextToBuild(s: GameState): NeighborhoodDef | null {
 export function buildLock(s: GameState, id: NeighborhoodId): string | null {
   const hoods = cityOf(s).neighbourhoods;
   const idx = hoods.findIndex((n) => n.id === id);
+  // an id from another city (a caller that walks the home list with a Boston save in hand) has no shop here: it is not buildable, and must not throw
+  if (idx < 0) return 'Not in this city';
   if (s.shops[id].built) return 'Built';
   if (idx > 0 && !s.shops[hoods[idx - 1].id].built) return `Build in ${hoods[idx - 1].name} first`;
   // The first shop stops earning once the founder's tutorial is skipped past; keep the player there until she takes over (the second shop is the one that waits).
