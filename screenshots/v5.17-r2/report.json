@@ -152,9 +152,9 @@
   "loaded": true,
   "audio": {
     "opening": [
-      "downtown_sparse.m4a @2.5",
-      "bubble_1.m4a @2.7",
-      "bubble_0.m4a @3.8"
+      "downtown_sparse.m4a @2.6",
+      "bubble_0.m4a @2.8",
+      "bubble_2.m4a @3.9"
     ],
     "offline": [
       "suburbs.m4a @2.2"
@@ -162,7 +162,7 @@
     "recipe": [
       "downtown_sparse.m4a @2.2",
       "downtown.m4a @2.5",
-      "bubble_0.m4a @2.5",
+      "bubble_1.m4a @2.5",
       "triumph_downtown.m4a @5.5",
       "bubble_2.m4a @5.5",
       "bubble_0.m4a @6.8",
@@ -173,14 +173,14 @@
     "session": [
       "suburbs.m4a @2.2",
       "rush_0.m4a @6.1",
-      "rush_3.m4a @6.4",
-      "rush_0.m4a @6.6",
-      "rush_3.m4a @6.9",
+      "rush_2.m4a @6.4",
+      "rush_1.m4a @6.6",
+      "rush_2.m4a @6.9",
       "rush_0.m4a @7.1",
-      "rush_3.m4a @7.4",
+      "rush_2.m4a @7.4",
       "click_0.m4a @8.6",
       "downtown.m4a @8.6",
-      "cash_1.m4a @10.2"
+      "cash_3.m4a @10.2"
     ]
   },
   "cash_after_play": "$0",

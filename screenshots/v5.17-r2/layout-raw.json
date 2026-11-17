@@ -1012,11 +1012,6 @@
  ],
  "136-tutorial-frame": [
   {
-   "kind": "clip",
-   "key": "recipe-reveal | Nonna approved the new manager. She chec",
-   "detail": "text 60.0 px high in 45.0 px (3 lines)"
-  },
-  {
    "kind": "tap",
    "key": "open-scrapbook",
    "detail": "40x40"

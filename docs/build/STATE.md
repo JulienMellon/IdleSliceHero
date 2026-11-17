@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.17
-step: verify                    # setup | waves | verify | review | fix | close
+step: review                    # setup | waves | verify | review | fix | close
 round: r2              # r1 | r2 | r3
-last_shots: v5.17              # label of the last screenshot set that passed verify
+last_shots: v5.17-r2           # label of the last screenshot set that passed verify
 codecritic_range_start: aff34d1
 cards:                 # todo | running | done | partial | blocked
   (v5.17 cards: see docs/build/v5.17/VERSION.md)
@@ -61,3 +61,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (
 - 2026-11-17 00:32 UTC r2 P1 died at usage limit, resumed after restart (D475 D450 A28 A29 M60 U10 U11). Then verify v5.17-r2.
 - 2026-11-17 00:39 UTC r2 P1 done (D450 D475 A28 U10 U11; M60 partial; scene 499 pass). All r2 fixes in. Verify v5.17-r2.
 - 2026-11-17 01:01 UTC Verify v5.17-r2: tsc + 1624 tests pass, True 0 [], layout 1 new (recipe-reveal clip, shot 136) -> U4. Re-run shots after its fix.
+- 2026-11-17 01:33 UTC Verify v5.17-r2 PASS: True 0 [], layout 0 new; 91 changed. r2 re-checks: critic (sonnet), codecritic, audiocritic (sonnet).
