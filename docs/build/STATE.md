@@ -32,3 +32,4 @@ next: fresh session; read docs/build/sessions/S5-v5.18.md, resume at wave 3 fix 
 - 2026-11-17 T2 partial (steps 1-5: boston data on BOSTON_NUMBERS, portraits, backdrops, franchise UI, city picker; 106_t2 fixture, shots 108-117 crash on Boston save in buildLock). Wave 3 checks: tsc pass, 1718 tests pass. Session ended early (context), per S5 step 2.
 - 2026-11-17 S5 resumed: E3 sent buildLock Boston crash (106_t2); T2 resumed at step 6 + U-lane shell leftovers (index, shop-ui, layers, scrapbook).
 - 2026-11-17 E3 partial: buildLock/buildShop city guard + boston-load test; no node_modules -> npm ci run, E3 re-running checks. Cause: audio/director.ts:126 iterates home NEIGHBORHOODS -> A2 (use hoodIds(cityOf)).
+- 2026-11-17 E3 fix verified: tsc pass, 1721 tests pass, boston-load test. pip playwright 1.63.0 installed (uses /opt/pw-browsers); E3 running 106_t2 fixture.
