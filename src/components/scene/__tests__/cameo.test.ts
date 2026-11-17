@@ -5,7 +5,7 @@ import { FOOTPRINTS, NEIGHBORHOODS } from '../../../content/tuning';
 import { VISITORS } from '../../../content/rewards';
 import { neonSpot } from '../cosmetics';
 import { staffFaces } from '../stations';
-import { SAY_MAX_CHARS, TAG_H, VISITOR_LOOK, cameoGeom, sayHeight, sayLines, cameoSpot, linesOf, tagWidth, visitLine, visitOf, visitTag } from '../cameo';
+import { SAY_MAX_CHARS, TAG_H, VISITOR_LOOK, cameoGeom, sayHeight, sayLines, cameoSpot, linesOf, tagWidth, visitLine, visitOf, visitTag, visitTagLabel } from '../cameo';
 import { candidates, fixedPeople, hits, obstacles } from '../ladder';
 import { layout } from '../layout';
 import { BUBBLE_AIR, bubbleWalls, bubbleWidth, bubbleX } from '../moments';
@@ -47,6 +47,14 @@ describe('the tag', () => {
   });
 });
 
+describe('the tag names her (D475)', () => {
+  test('"Nonna · 6d 4h": the short name, a dot, the time left', () => {
+    expect(visitTagLabel({ visitor: 'nonna', left: 6 * 86_400 + 4 * 3600 + 59 })).toBe('Nonna · 6d 4h');
+    expect(visitTagLabel({ visitor: 'big-sal', left: 42 * 60 - 5 })).toBe('Sal · 42m');
+    expect(visitTagLabel({ visitor: 'genevieve', left: 5 * 3600 + 12 * 60 })).toBe('Gen · 5h 12m');
+  });
+});
+
 describe('the lines', () => {
   test('Nonna has her six; the others the line they gave on the gift card', () => {
     expect(linesOf('nonna')).toEqual(CAMEO_NONNA_LINES);
@@ -80,12 +88,17 @@ describe('the lines', () => {
 
 describe('where the visitor stands (budget; G100)', () => {
   test('at every footprint and counter crew she stands in front of the counter, clear of the order spot and the pickup spots, and her tag sits on her head, clear of faces, badges, the doorway, the neon sign and the wall gear', () => {
+    const offCentre: string[] = [];
+    let cases = 0;
     for (let fp = 0; fp < FOOTPRINTS.length; fp++)
       for (const staff of [1, 2, 3])
-        for (const tagText of ['7d 0h', '6d 23h', '5h 12m']) {
+        for (const tagText of ['Nonna · 7d 0h', 'Sal · 6d 23h', 'Gen · 5h 12m']) {
           const lay = shopAt(fp, staff);
           const g = cameoGeom(lay, tagText);
-          expect(g.spot).toEqual(cameoSpot(lay));
+          expect(g.spot).toEqual(cameoSpot(lay, tagWidth(tagText)));
+          // D475: the tag is centred on her where the room allows (below)
+          cases++;
+          if (Math.abs((g.tag.x0 + g.tag.x1) / 2 - g.tailX) > 1e-6) offCentre.push(`staff${staff} ${Math.round(Math.abs((g.tag.x0 + g.tag.x1) / 2 - g.tailX))}`);
           // in FRONT of the counter (it stands at 64 … 84): the box stack cannot hide her
           expect(g.spot.y).toBeLessThan(64);
           expect(g.spot.x).toBeGreaterThan(lay.counter.x0);
@@ -116,12 +129,18 @@ describe('where the visitor stands (budget; G100)', () => {
           // (the cashiers' shoulders: she is 1.1x and stands in front of them; their faces are checked above)
           for (const p of fixedPeople(lay)) expect(hits(g.tag, { ...p.head, y1: p.head.y0 + (p.head.y1 - p.head.y0) * 0.6 })).toBe(false);
         }
+    // only the one-cashier counter (56 wide, her spot beside the doorway) holds the tag off her head, and by 20 pt at most (her head stays under it)
+    expect(cases).toBe(45);
+    for (const o of offCentre) {
+      expect(o.startsWith('staff1 ')).toBe(true);
+      expect(Number(o.split(' ')[1])).toBeLessThanOrEqual(20);
+    }
   });
   test('every line fits the walls at every footprint, under the tag', () => {
     for (let fp = 0; fp < FOOTPRINTS.length; fp++) {
       const lay = shopAt(fp, 2);
       const walls = bubbleWalls(lay);
-      const g = cameoGeom(lay, '7d 0h');
+      const g = cameoGeom(lay, 'Nonna · 7d 0h');
       for (const id of VISITORS)
         for (const line of linesOf(id).flatMap(sayLines)) {
           expect(line.length).toBeLessThanOrEqual(SAY_MAX_CHARS + 2);
@@ -130,6 +149,9 @@ describe('where the visitor stands (budget; G100)', () => {
           expect(cx - w / 2).toBeGreaterThanOrEqual(walls.x0 + BUBBLE_AIR - 1e-9);
           expect(cx + w / 2).toBeLessThanOrEqual(walls.x1 - BUBBLE_AIR + 1e-9);
           expect(cx + w / 2).toBeLessThanOrEqual(SCENE_W);
+          // D475: the pill's body is above every cashier's face (it hung over them), and its tail reaches her tag
+          for (const f of staffFaces(lay)) expect(g.sayY).toBeLessThanOrEqual(f.y0 - 3 + 1e-9);
+          expect(g.sayY + g.tailDrop).toBeCloseTo(g.tag.y0, 6);
           // under the chip row (the badge band ends at y 186)
           expect(g.sayY - 20 - 12).toBeGreaterThan(186);
         }

@@ -86,11 +86,18 @@ describe('the boat', () => {
       const lay = layout(fp, 2, 2, 2, 4, 3, 1);
       const wall = P(lay.L, 0)[0];
       const d = boatDock(wall);
-      expect(d.left).toBeGreaterThanOrEqual(BOAT_PAD);
-      expect(d.right).toBeLessThanOrEqual(wall - BOAT_PAD + 1e-9);
+      expect(d.left).toBeGreaterThanOrEqual(2.4 - 1e-9);
+      expect(d.right).toBeLessThanOrEqual(wall - 2.4 + 1e-9);
       expect(d.scale).toBeGreaterThanOrEqual(BOAT_ART.minScale);
       // still a boat, not a speck
       expect(d.right - d.left).toBeGreaterThanOrEqual(16);
+    }
+    // D482: it floats on the sea band: hull and wake end above the beach, the waterline is below the horizon, and a gap is left to the wall
+    for (const wall of [21, 40, 64, 120]) {
+      const d = boatDock(wall);
+      expect(BOAT_ART.waterline + BOAT_ART.wake * d.scale).toBeLessThan(BOAT_ART.sandTop);
+      expect(BOAT_ART.waterline).toBeGreaterThan(BOAT_ART.seaTop);
+      if (wall >= 40) expect(wall - d.right).toBeGreaterThanOrEqual(BOAT_PAD - 1e-9);
     }
     // a wide margin gets the full-size boat; a narrow one a smaller boat in the middle of the strip
     expect(boatDock(120).scale).toBe(BOAT_ART.scale);

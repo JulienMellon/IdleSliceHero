@@ -44,11 +44,16 @@ export function untilNextBoat(g: GameState, sinceTick = 0): number {
   return st.nextAt - g.playSeconds - sinceTick;
 }
 
-/** The boat's art: hull half-length 27 at scale 1, drawn at most at 0.85 and at least at 0.3 (a far boat), waterline y 231 in the sea band. */
-export const BOAT_ART = { half: 27, scale: 0.85, minScale: 0.3, waterline: 231 } as const;
+/**
+ * The boat's art: hull half-length 27 at scale 1, drawn at most at 0.85 and at least at 0.3 (a far boat). D482: the waterline is y 190, in
+ * the sea band (the backdrop's sea runs from y 176 down to where the beach starts, which in the strip beside the shop is never above
+ * y `sandTop` 198), and the wake under the hull reaches `wake` art units below it, so the whole boat floats on water, not on the sand
+ * (it used to sit at y 231, on the beach).
+ */
+export const BOAT_ART = { half: 27, scale: 0.85, minScale: 0.3, waterline: 190, wake: 9, seaTop: 176, sandTop: 198 } as const;
 
-/** Sea left clear on each side of the docked boat, scene units. */
-export const BOAT_PAD = 2;
+/** Sea left clear on each side of the docked boat, scene units (D482: it touched the wall at 2; the narrowest strip, 21 wide, still leaves 2.4 either side at the smallest boat). */
+export const BOAT_PAD = 4;
 
 /**
  * Where the boat docks, and how big it is there (D482). The only sea the backdrop shows is the strip left of the shop's side wall, between

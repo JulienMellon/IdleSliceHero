@@ -6,9 +6,9 @@ import { VISITOR_LINES, VISITOR_NAMES, VISITORS } from '../../content/rewards';
 import type { Boost } from '../../engine/game';
 import type { Layout } from './layout';
 import type { PersonProps } from './looks';
-import { figureBox } from './ladder';
+import { figureBox, fixedPeople, hits } from './ladder';
 import { P } from './projection';
-import type { Rect } from './stations';
+import { staffFaces, type Rect } from './stations';
 
 export interface Visit {
   /** A VISITORS id: 'nonna', 'big-sal', 'genevieve'. */
@@ -36,6 +36,10 @@ export function visitTag(left: number): string {
   const m = mins % 60;
   return d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
+
+/** D475: the tag names who it belongs to, so it is not read as the cashier's: "Nonna · 6d 4h". The short names keep it 13 characters at most, so it fits the room beside the doorway. */
+const TAG_NAMES: Readonly<Record<string, string>> = { nonna: 'Nonna', 'big-sal': 'Sal', genevieve: 'Gen' };
+export const visitTagLabel = (v: Pick<Visit, 'visitor' | 'left'>): string => `${TAG_NAMES[v.visitor] ?? v.visitor} · ${visitTag(v.left)}`;
 
 /** What a visitor can say: Nonna her six lines (COPY section 8); the others the one line they gave on the gift card. */
 export const linesOf = (visitor: string): readonly string[] => (visitor === 'nonna' ? CAMEO_NONNA_LINES : [VISITOR_LINES[visitor] ?? '']).filter(Boolean);
@@ -77,17 +81,36 @@ export const VISITOR_LOOK: Readonly<Record<string, Pick<PersonProps, 'seed' | 's
 
 /** The depth the visitor stands at: in front of the counter (G100: behind it she was hidden by the box stack), clear of the register queue. */
 export const CAMEO_Y = 58;
+/** The room (on-screen units, depth stretched 1.2x) she keeps from the walk-in's order spot and the pickup spots. */
+export const CAMEO_CLEAR = 20;
 /**
  * Where the visitor stands, in room units: in FRONT of the counter, at the x along it that is furthest from the walk-in's order spot and the
  * drivers' pickup spots (the only people who stand there). With one cashier the counter is 56 wide and the best x leaves 22 to each.
  */
-export function cameoSpot(lay: Pick<Layout, 'counter' | 'spots' | 'orderSpots'>): { x: number; y: number } {
+export function cameoSpot(lay: Layout, tagW = 0): { x: number; y: number } {
   const others: [number, number][] = [...lay.spots.map((s): [number, number] => [s.x, s.y]), ...lay.orderSpots];
-  let best = { x: (lay.counter.x0 + lay.counter.x1) / 2, d: -1 };
-  for (let x = lay.counter.x0 + 6; x <= lay.counter.x1 - 6; x += 1) {
-    const d = Math.min(...others.map(([ox, oy]) => Math.hypot(x - ox, (CAMEO_Y - oy) * 1.2)));
-    if (d > best.d + 1e-9) best = { x, d };
-  }
+  // D475: her tag is centred on her, so she stands where the whole tag fits between the left wall and the doorway's jamb
+  const left = P(lay.L + 8, 0)[0];
+  const right = P(lay.door.x0 - 8, 0)[0] - 2;
+  const heads = fixedPeople(lay).map((p) => ({ ...p.head, y1: p.head.y0 + (p.head.y1 - p.head.y0) * 0.6 }));
+  const fits = (x: number) => {
+    const b = figureBox(x, CAMEO_Y, 56 * VISITOR_SCALE);
+    const cx = (b.x0 + b.x1) / 2;
+    const tag = { x0: cx - tagW / 2, x1: cx + tagW / 2, y0: b.y0 - TAG_AIR - TAG_H, y1: b.y0 - TAG_AIR };
+    return tag.x0 >= left && tag.x1 <= right && !heads.some((h) => hits(tag, h));
+  };
+  const pick = (only: boolean) => {
+    let best = { x: (lay.counter.x0 + lay.counter.x1) / 2, d: -1 };
+    for (let x = lay.counter.x0 + 6; x <= lay.counter.x1 - 6; x += 1) {
+      if (only && !fits(x)) continue;
+      const d = Math.min(...others.map(([ox, oy]) => Math.hypot(x - ox, (CAMEO_Y - oy) * 1.2)));
+      if (d > best.d + 1e-9) best = { x, d };
+    }
+    return best;
+  };
+  // ... when that costs her no room from the walk-in and the drivers (CAMEO_CLEAR); otherwise the roomiest spot, the tag held off the doorway
+  const fit = pick(true);
+  const best = fit.d >= CAMEO_CLEAR ? fit : pick(false);
   return { x: best.x, y: CAMEO_Y };
 }
 
@@ -95,15 +118,19 @@ export function cameoSpot(lay: Pick<Layout, 'counter' | 'spots' | 'orderSpots'>)
 export const TAG_H = 13;
 export const tagWidth = (text: string) => text.length * 5.6 + 12;
 const TAG_AIR = 1;
+/** Air between the speech pill's bottom edge and the top of the cashiers' faces. */
+export const BUBBLE_FACE_AIR = 3;
 
 /** Where the figure, its tag and its speech pill go, in scene units (the figure's box is the crowd budget's: 22 wide, 56 tall at its depth). */
-export function cameoGeom(lay: Pick<Layout, 'counter' | 'door' | 'R' | 'spots' | 'orderSpots'>, tag: string): { spot: { x: number; y: number }; body: Rect; tag: Rect; sayY: number; tailX: number } {
-  const spot = cameoSpot(lay);
-  const body = figureBox(spot.x, spot.y, 56 * VISITOR_SCALE);
+export function cameoGeom(lay: Layout, tag: string): { spot: { x: number; y: number }; body: Rect; tag: Rect; sayY: number; tailDrop: number; tailX: number } {
   const w = tagWidth(tag);
+  const spot = cameoSpot(lay, w);
+  const body = figureBox(spot.x, spot.y, 56 * VISITOR_SCALE);
   const cx = (body.x0 + body.x1) / 2;
   const y1 = body.y0 - TAG_AIR;
   // the tag stays left of the doorway's left jamb (the door's window starts at 270 and the tag is 272 up)
   const x1 = Math.min(cx + w / 2, P(lay.door.x0 - 8, 0)[0] - 2);
-  return { spot, body, tag: { x0: x1 - w, x1, y0: y1 - TAG_H, y1 }, sayY: y1 - TAG_H - 6, tailX: cx };
+  // D475: the line's pill rides above the cashiers' faces (it hung over them), its tail reaching down to her tag
+  const sayY = Math.min(y1 - TAG_H - 6, Math.min(...staffFaces(lay).map((f) => f.y0)) - BUBBLE_FACE_AIR);
+  return { spot, body, tag: { x0: x1 - w, x1, y0: y1 - TAG_H, y1 }, sayY, tailDrop: y1 - TAG_H - sayY, tailX: cx };
 }

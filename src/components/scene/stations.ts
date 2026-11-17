@@ -253,7 +253,7 @@ export function placePops<D extends { kind: 'driver' | 'walkin'; n: number; cash
 export const popsCover = (pops: readonly Rect[], pill: Rect): boolean => pops.some((r) => r.x0 < pill.x1 && r.x1 > pill.x0 && r.y0 < pill.y1 && r.y1 > pill.y0);
 
 /** The counter staff's faces (scene units), for keeping pops off them. */
-export function staffFaces(lay: Layout): Rect[] {
+export function staffFaces(lay: Pick<Layout, 'staff'>): Rect[] {
   return lay.staff.map((x) => bounds([P(x - 8, 92, 44), P(x + 8, 92, 44), P(x - 8, 92, 64), P(x + 8, 92, 64)]));
 }
 
