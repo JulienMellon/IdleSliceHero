@@ -60,3 +60,4 @@ next: fresh session; read docs/build/sessions/S4-v5.17.md and resume at Verify (
 - 2026-11-16 19:31 UTC r2 U4 done (D500 D501 D503 D478 D499 M63 U9; U19 partly; 840/841, the failure is in scene/** under P1). Carried: day-30 name 'Nonna's Golden Oven' to check with writer. Waiting P1.
 - 2026-11-17 00:32 UTC r2 P1 died at usage limit, resumed after restart (D475 D450 A28 A29 M60 U10 U11). Then verify v5.17-r2.
 - 2026-11-17 00:39 UTC r2 P1 done (D450 D475 A28 U10 U11; M60 partial; scene 499 pass). All r2 fixes in. Verify v5.17-r2.
+- 2026-11-17 01:01 UTC Verify v5.17-r2: tsc + 1624 tests pass, True 0 [], layout 1 new (recipe-reveal clip, shot 136) -> U4. Re-run shots after its fix.

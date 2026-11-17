@@ -1,0 +1,17 @@
+{
+ "new": 1,
+ "findings": [
+  {
+   "kind": "clip",
+   "key": "recipe-reveal | Nonna approved the new manager. She chec",
+   "shots": [
+    "136-tutorial-frame"
+   ],
+   "detail": [
+    "text 60.0 px high in 45.0 px (3 lines)"
+   ]
+  }
+ ],
+ "allowed": 9,
+ "stale": []
+}
