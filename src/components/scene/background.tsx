@@ -1,7 +1,7 @@
 import { memo, type ReactElement } from 'react';
 import type { NeighborhoodId } from '../../content/types';
 import { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
-import { INK, SCENE_W, shade } from './projection';
+import { INK, ONE_SCREEN, shade } from './projection';
 
 // ---------- background: sky, skyline, trees ----------
 export function Tree({ x, y, k, c = '#4FA048', palm = false }: { x: number; y: number; k: number; c?: string; palm?: boolean }) {
@@ -169,7 +169,7 @@ export function Fence({ x0, x1, y }: { x0: number; x1: number; y: number }) {
 }
 
 /** `L`/`R`: the room's side walls; edge props only appear where they show whole beside the shop. */
-export const Backdrop = memo(function Backdrop({ id, L = 0, R = SCENE_W }: { id: NeighborhoodId; L?: number; R?: number }) {
+export const Backdrop = memo(function Backdrop({ id, L = 0, R = ONE_SCREEN.width, w = ONE_SCREEN.width }: { id: NeighborhoodId; L?: number; R?: number; /** The drawing's width (its frame's): the sky's. */ w?: number }) {
   const look = LOOK[id];
   const palm = id === 'waterfront';
   const treeC = id === 'uptown' ? '#3F8F4A' : '#4FA048';
@@ -183,7 +183,7 @@ export const Backdrop = memo(function Backdrop({ id, L = 0, R = SCENE_W }: { id:
           <Stop offset="1" stopColor={look.sky[2]} />
         </LinearGradient>
       </Defs>
-      <Rect x={-20} y={-400} width={SCENE_W + 40} height={1100} fill="url(#sky)" />
+      <Rect x={-20} y={-400} width={w + 40} height={1100} fill="url(#sky)" />
       {id === 'uptown' && <Circle cx={60} cy={150} r={26} fill="#FFD8A0" opacity={0.85} />}
       {SKYLINE[id]()}
       <Path d={`M-10 214 Q60 186 130 206 Q200 180 270 204 Q330 184 403 202 L403 700 L-10 700 Z`} fill={look.ground} />

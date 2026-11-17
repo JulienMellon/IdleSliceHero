@@ -7,7 +7,7 @@ import { castOf } from '../../../engine/orders';
 import type { CharacterId, NeighborhoodId } from '../../../content/types';
 import type { RivalView } from '../../../engine/features/layers/rival';
 import { behindPace } from '../../order-model';
-import { CURB_Y, SCENE_W } from '../../scene/projection';
+import { CURB_Y } from '../../scene/projection';
 import { mmss, step5 } from '../layer-model';
 import { LABELS, lc, rivalLine, rivalSpeaker } from '../layer-text';
 
@@ -52,7 +52,6 @@ export const rivalRect = () => ({ x0: RIVAL_SHOP.x, x1: RIVAL_SHOP.x + RIVAL_SHO
 
 /** The road's lower edge is the screen's foot; the rival must stay below the curb. */
 export const RIVAL_BELOW = CURB_Y;
-export const RIVAL_SCENE_W = SCENE_W;
 
 // ---------- the shutters ----------
 

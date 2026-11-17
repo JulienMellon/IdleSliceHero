@@ -10,6 +10,7 @@ import { useGame } from '../../../store/game-store';
 import { C, F } from '../../../theme';
 import { useMotion } from '../../scene/clock';
 import { INK, sceneFit } from '../../scene/projection';
+import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
 import { layoutOfShop } from '../shop-layout';
 import { jamLabel, ovenSpot, pillBox, WRENCH } from './jam-model';
@@ -44,6 +45,7 @@ function WrenchArt() {
 }
 
 export const JamOverlay = memo(function JamOverlay({ shopId, width, height }: SceneSlotProps) {
+  const frame = useShopFrame(shopId);
   // one string: the label (it changes once a second under a Head Baker), then the jammed oven's place; '' for no jam
   const key = useGame((s) => {
     if (shopId !== 'industrial' || !s.game.shops.industrial.built) return '';
@@ -55,7 +57,7 @@ export const JamOverlay = memo(function JamOverlay({ shopId, width, height }: Sc
   const fixJam = useGame((s) => s.fixJam);
   if (!key || !(width > 0)) return null;
   const [label, px, py, ptop] = key.split('~');
-  const f = sceneFit(width, height);
+  const f = sceneFit(width, height, frame);
   const spot = { x: Number(px), y: Number(py), top: Number(ptop) };
   const cx = f.ox + spot.x * f.s;
   const cy = f.oy + spot.y * f.s;

@@ -7,7 +7,7 @@ import type { GameDayView } from '../../../engine/features/layers/suburbs-gameda
 import type { PersonProps } from '../../scene/looks';
 import { PATIO_SEAT, SEAT, type Layout } from '../../scene/layout';
 import { STEP_FRAMES } from '../../scene/quantise';
-import { P, SCENE_W, unprojectX } from '../../scene/projection';
+import { P, unprojectX } from '../../scene/projection';
 import { LABELS, lc } from '../layer-text';
 import { mmss } from '../layer-model';
 
@@ -81,31 +81,31 @@ export const WAVE = {
 export const FAMILY_AIR = 30;
 
 /** The straight walk from beyond the right edge to the door, in room units along x. */
-export const walkLength = (lay: Pick<Layout, 'door'>): number => unprojectX(SCENE_W + 26, WAVE.laneY) - lay.door.lanes.guestX;
+export const walkLength = (lay: Pick<Layout, 'door' | 'frame'>): number => unprojectX(lay.frame.width + 26, WAVE.laneY, lay.frame) - lay.door.lanes.guestX;
 
 /** Seconds a family takes from the screen edge to the door: the way over the pace. The flagship's door is near the edge, so its walk is short. */
-export const walkTime = (lay: Pick<Layout, 'door'>): number => Math.max(1, walkLength(lay)) / WAVE.speed;
+export const walkTime = (lay: Pick<Layout, 'door' | 'frame'>): number => Math.max(1, walkLength(lay)) / WAVE.speed;
 
 /**
  * Seconds between one family appearing and the next: long enough that the next adult stays FAMILY_AIR clear of the last family's child
  * at the same pace, and never more than `maxGroups` families on a walk at once.
  */
-export const waveGap = (lay: Pick<Layout, 'door'>): number => Math.max(walkTime(lay) / WAVE.maxGroups, (WAVE.kidLag + FAMILY_AIR) / WAVE.speed);
+export const waveGap = (lay: Pick<Layout, 'door' | 'frame'>): number => Math.max(walkTime(lay) / WAVE.maxGroups, (WAVE.kidLag + FAMILY_AIR) / WAVE.speed);
 
 /** Seats a family fills (an adult and a child): half a table's four, so one chair of the two at a table. */
 export const FAMILY_SEATS = 2;
 
 /** Families the rush brings: one per two free seats, to what fits in the rush at the walking gap and walk. */
-export function familiesFor(seatsFree: number, lay: Pick<Layout, 'door'>): number {
+export function familiesFor(seatsFree: number, lay: Pick<Layout, 'door' | 'frame'>): number {
   const fit = Math.floor((GAME_DAY.rushSeconds - walkTime(lay)) / waveGap(lay)) + 1;
   return Math.max(0, Math.min(fit, Math.ceil(seatsFree / FAMILY_SEATS)));
 }
 
 /** Seconds between families when `families` come: spread over the rush (the wave lasts as long as the rush does), never closer than `waveGap`. */
-export const spreadGap = (lay: Pick<Layout, 'door'>, families: number): number => Math.max(waveGap(lay), (GAME_DAY.rushSeconds - walkTime(lay)) / Math.max(1, families));
+export const spreadGap = (lay: Pick<Layout, 'door' | 'frame'>, families: number): number => Math.max(waveGap(lay), (GAME_DAY.rushSeconds - walkTime(lay)) / Math.max(1, families));
 
 /** Families that have reached the door by `t` seconds into the rush (the chairs they fill). */
-export function arrived(t: number, families: number, lay: Pick<Layout, 'door'>): number {
+export function arrived(t: number, families: number, lay: Pick<Layout, 'door' | 'frame'>): number {
   const gap = spreadGap(lay, families);
   const walk = walkTime(lay);
   let n = 0;
@@ -114,7 +114,7 @@ export function arrived(t: number, families: number, lay: Pick<Layout, 'door'>):
 }
 
 /** The chairs still glowing `t` seconds into the rush: the free ones less one for each family that has come in. */
-export const glowing = (free: number, t: number, families: number, lay: Pick<Layout, 'door'>): number => Math.max(0, free - arrived(t, families, lay));
+export const glowing = (free: number, t: number, families: number, lay: Pick<Layout, 'door' | 'frame'>): number => Math.max(0, free - arrived(t, families, lay));
 
 export interface WaveFigure {
   key: string;
@@ -131,11 +131,11 @@ const smooth = (a: number, b: number, k: number) => a + (b - a) * k;
  * Where each figure of the wave stands `t` seconds into the rush (the rush's clock, not the scene's), `free` chairs being open.
  * A family walks in a straight line from beyond the right edge to the door and fades there. Figures are listed adult then child.
  */
-export function waveFigures(lay: Pick<Layout, 'door'>, t: number, families: number, clock: number): WaveFigure[] {
+export function waveFigures(lay: Pick<Layout, 'door' | 'frame'>, t: number, families: number, clock: number): WaveFigure[] {
   const out: WaveFigure[] = [];
   const gap = spreadGap(lay, families);
   const walk = walkTime(lay);
-  const startX = unprojectX(SCENE_W + 26, WAVE.laneY);
+  const startX = unprojectX(lay.frame.width + 26, WAVE.laneY, lay.frame);
   const doorX = lay.door.lanes.guestX;
   const pose = Math.floor(clock * STEP_FRAMES);
   for (let i = 0; i < families; i++) {
@@ -172,7 +172,7 @@ export const BURST_SECONDS = 0.9;
  * Who is seated `t` seconds into the rush: the family that has come in sits in the next free chair (the order `chairsOf` gives), and
  * stays for the rest of the rush. At most `free` chairs fill, and never more than there are families.
  */
-export function seatedFamilies(lay: Pick<Layout, 'door'>, chairs: readonly Chair[], free: number, t: number, families: number): SeatedFamily[] {
+export function seatedFamilies(lay: Pick<Layout, 'door' | 'frame'>, chairs: readonly Chair[], free: number, t: number, families: number): SeatedFamily[] {
   const gap = spreadGap(lay, families);
   const walk = walkTime(lay);
   const out: SeatedFamily[] = [];

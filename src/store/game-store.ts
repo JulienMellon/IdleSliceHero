@@ -61,6 +61,10 @@ interface Store {
   lastKitchenTap: number;
   /** Wall-clock ms of the last (up to RUSH_TAPS_KEPT) rush taps on a managed pizzeria, newest last. Replaced, never mutated. Not saved. */
   rushTaps: number[];
+  /** Where each shop's wide drawing was last scrolled to (scene px from its left edge), kept for the session so a shop reopens where it was left. Replaced, never mutated. Not saved. */
+  sceneScroll: Partial<Record<string, number>>;
+  /** Remember a shop's scroll position (no-op when unchanged). */
+  setSceneScroll: (id: string, x: number) => void;
   /** Play time (s) when the last story scene ended this session; null after a launch or return (v3.7 pacing). Not saved. */
   lastSceneEndPlay: number | null;
   /** Scene currently playing (or replaying from the Scrapbook). */
@@ -320,6 +324,10 @@ export const useGame = create<Store>((set, get) => {
     offline: null,
     lastKitchenTap: 0,
     rushTaps: [],
+    sceneScroll: {},
+    setSceneScroll: (id, x) => {
+      if (get().sceneScroll[id] !== x) set({ sceneScroll: { ...get().sceneScroll, [id]: x } });
+    },
     lastSceneEndPlay: null,
     playing: null,
     toast: null,

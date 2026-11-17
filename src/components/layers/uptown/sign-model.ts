@@ -1,15 +1,17 @@
-// The star rating on the storefront sign, as geometry in scene units. The sign's plate is centred on the shop (x 196.5) between y 129 and 149
+// The star rating on the storefront sign, as geometry in scene units. The sign's plate is centred on the shop (the frame middle) between y 129 and 149
 // (facade.tsx: P(·, 0, FRONT_TOP) .. P(·, 0, FRONT_TOP − 20)); the rating hangs under it and the critic's passes sit on its top edge.
 // Pure: unit-tested in node.
 import { STARS } from '../../../content/layers';
-import { FRONT_TOP, P } from '../../scene/projection';
+import { FRONT_TOP, ONE_SCREEN, P, type SceneFrame } from '../../scene/projection';
 
-/** The plate's centre x and its top and bottom, in scene units (the same projection the facade uses). */
-export const SIGN = (() => {
-  const [cx, top] = P(196.5, 0, FRONT_TOP);
-  const [, bottom] = P(196.5, 0, FRONT_TOP - 20);
+/** The plate's centre x and its top and bottom, in scene units (the same projection the facade uses), in `frame`: the plate is centred on the shop, the frame's middle. */
+export const signOf = (frame: SceneFrame = ONE_SCREEN) => {
+  const [cx, top] = P(frame.vanishX, 0, FRONT_TOP, frame);
+  const [, bottom] = P(frame.vanishX, 0, FRONT_TOP - 20, frame);
   return { cx, top, bottom };
-})();
+};
+/** The plate in the one-screen frame. */
+export const SIGN = signOf();
 
 /** One star glyph on the plaque (scene units), and the gap between neighbours. */
 export const STAR = { size: 13, gap: 1.5 } as const;
@@ -24,11 +26,11 @@ export const TAG = { w: 72, h: 18, gap: 4 } as const;
  * sky strip just above the sign's plate (under the plate are the station badges), the tag to its right (the pair is centred on the sign
  * when there is a tag), and the pins hang on the plate's lower edge.
  */
-export function plaqueBox(s: number, tag: boolean): { x: number; y: number; tagX: number; tagY: number; pinY: number } {
+export function plaqueBox(s: number, tag: boolean, sign: typeof SIGN = SIGN): { x: number; y: number; tagX: number; tagY: number; pinY: number } {
   const shift = tag ? (TAG.w + TAG.gap) / s / 2 : 0;
-  const x = SIGN.cx - PLAQUE_W / 2 - shift;
-  const y = SIGN.top - PLAQUE.height - 3;
-  return { x, y, tagX: x + PLAQUE_W + TAG.gap / s, tagY: y + (PLAQUE.height - TAG.h / s) / 2, pinY: SIGN.bottom - PIN.size / 2 };
+  const x = sign.cx - PLAQUE_W / 2 - shift;
+  const y = sign.top - PLAQUE.height - 3;
+  return { x, y, tagX: x + PLAQUE_W + TAG.gap / s, tagY: y + (PLAQUE.height - TAG.h / s) / 2, pinY: sign.bottom - PIN.size / 2 };
 }
 
 /** The gold pins on the sign's lower edge (one for every critic pass), at most this many. */
@@ -46,8 +48,8 @@ export function plaqueStars(stars: number): PlaqueStar[] {
 }
 
 /** The pins' left edges, centred on the sign: min(passes, PIN.max) of them. */
-export function pinXs(passes: number): number[] {
+export function pinXs(passes: number, sign: typeof SIGN = SIGN): number[] {
   const n = Math.max(0, Math.min(PIN.max, Math.floor(passes)));
   const w = n * PIN.size + Math.max(0, n - 1) * PIN.gap;
-  return Array.from({ length: n }, (_, i) => SIGN.cx - w / 2 + i * (PIN.size + PIN.gap));
+  return Array.from({ length: n }, (_, i) => sign.cx - w / 2 + i * (PIN.size + PIN.gap));
 }

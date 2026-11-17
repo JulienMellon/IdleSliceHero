@@ -10,7 +10,7 @@ import type { NeighborhoodId } from '../../content/types';
 import type { Station } from '../../engine/pipeline';
 import { PROP_HALF_W, PROP_Y, type Layout, SEAT, secondVehicleShift, SIGN_HALF_W, SIGN_Y } from './layout';
 import { hash32 } from './looks';
-import { D, P, SCENE_W, kAt, shade } from './projection';
+import { D, ONE_SCREEN, P, kAt, shade } from './projection';
 import { BADGE_R, badgeRowY, badgeXs, doorwaySignRect, stationRects, type Rect } from './stations';
 
 export type LadderStation = 'prep' | 'counter' | 'drivers';
@@ -369,9 +369,9 @@ export const wallRects = (placed: readonly Placed[]): Rect[] => placed.filter((p
  * Centre x for a pill `w` wide at screen rows y0..y1 that stays on screen and off every `avoid` rect: the nearest
  * clear x to `x`, or `x` clamped to the screen when nothing is clear.
  */
-export function clearPillX(x: number, w: number, y0: number, y1: number, avoid: readonly Rect[]): number {
+export function clearPillX(x: number, w: number, y0: number, y1: number, avoid: readonly Rect[], sceneW: number = ONE_SCREEN.width): number {
   const lo = 4 + w / 2;
-  const hi = SCENE_W - 4 - w / 2;
+  const hi = sceneW - 4 - w / 2;
   const clamp = (v: number) => Math.min(hi, Math.max(lo, v));
   const blocked = (c: number) => avoid.some((r) => c - w / 2 < r.x1 && c + w / 2 > r.x0 && y0 < r.y1 && y1 > r.y0);
   const start = clamp(x);

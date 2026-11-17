@@ -11,6 +11,7 @@ import { useGame } from '../../../store/game-store';
 import type { SceneSlotProps } from '../../slots';
 import { useMotion } from '../../scene/clock';
 import { FRONT_TOP, INK, P, sceneFit } from '../../scene/projection';
+import { useShopFrame } from '../../scene/use-frame';
 import { campusOut, droneCount, droneLane, droneX, type DroneLane } from './zones-model';
 
 const W = 30;
@@ -53,9 +54,10 @@ const Drone = memo(function Drone({ lane, width, top }: { lane: DroneLane; width
 });
 
 export const DroneFlight = memo(function DroneFlight({ shopId, width, height }: SceneSlotProps) {
+  const frame = useShopFrame(shopId);
   const count = useGame((s) => (shopId === 'university' && s.game.shops.university.built && isDrones(s.game.vehicle) ? droneCount(campusOut(s.game)) : 0));
   if (count === 0 || !(width > 0)) return null;
-  const f = sceneFit(width, height);
+  const f = sceneFit(width, height, frame);
   const band = Math.max(40, skyBottom(f.oy, f.s, P(0, 0, FRONT_TOP)[1]));
   return (
     <View testID="drone-flight" pointerEvents="none" style={StyleSheet.absoluteFill}>

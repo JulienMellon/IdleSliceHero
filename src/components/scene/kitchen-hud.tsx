@@ -9,7 +9,7 @@ import { BADGE_R, placePops, POP_H, type BadgeTone, type Rect as ScreenRect } fr
 import { HeadFace } from './head-face';
 import { HEAD_BARKS } from '../../content/heads';
 import type { HeadKind } from '../../content/tuning';
-import { INK, SCENE_W } from './projection';
+import { INK, ONE_SCREEN } from './projection';
 import { CONFETTI, CONFETTI_FRAMES, CONFETTI_OPACITY, confettiFills } from './ladder';
 import { MILE_R, bubbleWidth, bubbleX, mileLevelSize } from './moments';
 
@@ -122,10 +122,10 @@ type Pt = [number, number];
  * register for a walk-in with nobody to hand it to), drifting up and fading over its last 0.2 s before it becomes
  * a coin (the coin itself flies in the screen overlay, `CoinLayer`). Nothing is mounted at opacity 0 (M38).
  */
-export function DeparturePops({ deps, left, anchor, register, keepOff = [] }: { deps: readonly Departure[]; left: (d: Departure) => number; anchor: (d: Departure) => Pt | null; register: Pt; /** Rects a pop must be lifted clear of (none in the scene since D439: the sidewalk pills fade instead). */ keepOff?: readonly ScreenRect[] }) {
+export function DeparturePops({ deps, left, anchor, register, keepOff = [], sceneW = ONE_SCREEN.width }: { deps: readonly Departure[]; left: (d: Departure) => number; anchor: (d: Departure) => Pt | null; register: Pt; /** The drawing's width (its frame's): the pops stay inside it. */ sceneW?: number; /** Rects a pop must be lifted clear of (none in the scene since D439: the sidewalk pills fade instead). */ keepOff?: readonly ScreenRect[] }) {
   if (deps.length === 0) return null;
   // beside the carrier's head, away from the cashiers (D368), kept on screen (stations.ts `placePops`, shared with the pills that fade for a pop)
-  const shown = placePops(deps, left, anchor, register, SCENE_W, keepOff);
+  const shown = placePops(deps, left, anchor, register, sceneW, keepOff);
   return (
     <G>
       {shown.map(({ dep: d, text, w, x: px, y: py, rest }) => {
@@ -148,9 +148,9 @@ export function DeparturePops({ deps, left, anchor, register, keepOff = [] }: { 
  * Speech pill under a station's badge: a newly hired head's hello, or (tone "refusal") why a tap didn't start.
  * Clamped to the screen like the pops (C77); the tail points up at the badge.
  */
-export const HireBubble = memo(function HireBubble({ x, y, text, wall0, wall1, tone = 'hire' }: { x: number; y: number; text: string; /** The side walls' inner edges (moments.ts `bubbleWalls`): the pill stays between them (D440). */ wall0: number; wall1: number; tone?: 'hire' | 'refusal' }) {
+export const HireBubble = memo(function HireBubble({ x, y, text, wall0, wall1, tone = 'hire', sceneW = ONE_SCREEN.width }: { x: number; y: number; text: string; sceneW?: number; /** The side walls' inner edges (moments.ts `bubbleWalls`): the pill stays between them (D440). */ wall0: number; wall1: number; tone?: 'hire' | 'refusal' }) {
   const w = bubbleWidth(text);
-  const px = bubbleX(x, w, { x0: wall0, x1: wall1 });
+  const px = bubbleX(x, w, { x0: wall0, x1: wall1 }, sceneW);
   const fill = tone === 'refusal' ? DISC : '#fff';
   return (
     <G transform={`translate(${px} ${y})`}>
@@ -179,11 +179,11 @@ export const CameoTag = memo(function CameoTag({ x0, x1, y0, y1, text }: { x0: n
  * A visitor's line over their tag (cameo.ts `sayLines`: `text` holds one or two lines, split by "\n"). The pill sits above `y` (its bottom edge),
  * clamped inside the walls like every bubble (D440); the tail points down at `tail`, the head, `drop` long (D475: the pill rides above the cashiers' faces).
  */
-export const CameoBubble = memo(function CameoBubble({ tail, y, text, wall0, wall1, drop = 5 }: { tail: number; y: number; text: string; wall0: number; wall1: number; drop?: number }) {
+export const CameoBubble = memo(function CameoBubble({ tail, y, text, wall0, wall1, drop = 5, sceneW = ONE_SCREEN.width }: { tail: number; y: number; text: string; wall0: number; wall1: number; drop?: number; sceneW?: number }) {
   const lines = text.split('\n');
   const w = Math.max(...lines.map(bubbleWidth));
   const h = 6 + 12 * lines.length;
-  const px = bubbleX(tail, w, { x0: wall0, x1: wall1 });
+  const px = bubbleX(tail, w, { x0: wall0, x1: wall1 }, sceneW);
   return (
     <G transform={`translate(${px} ${y})`}>
       <Path d={`M${tail - px - 4} -1 L${tail - px} ${drop} L${tail - px + 4} -1 Z`} fill="#fff" stroke={INK} strokeWidth={1.2} strokeLinejoin="round" />
@@ -204,9 +204,9 @@ export const CameoBubble = memo(function CameoBubble({ tail, y, text, wall0, wal
  * where a head's hello would be; it never touches the sign above or the badges. Memoised on primitives: it only re-renders
  * when the text or the kind changes.
  */
-export const RushPill = memo(function RushPill({ x, y, kind, text, pulse = 0 }: { x: number; y: number; kind: 'hint' | 'combo'; text: string; pulse?: number }) {
+export const RushPill = memo(function RushPill({ x, y, kind, text, pulse = 0, sceneW = ONE_SCREEN.width }: { x: number; y: number; kind: 'hint' | 'combo'; text: string; pulse?: number; sceneW?: number }) {
   const w = rushPillWidth(text);
-  const px = Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, x));
+  const px = Math.min(sceneW - 4 - w / 2, Math.max(4 + w / 2, x));
   const combo = kind === 'combo';
   // D406: the hint breathes 1.0 → 1.08 while it shows (`pulse` is 0..1 in fifths, from the scene's pose clock)
   const s = combo ? 1 : 1 + 0.08 * pulse;

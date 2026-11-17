@@ -12,6 +12,7 @@ import { F } from '../../../theme';
 import { emitCheer, emitCoin, emitPayout } from '../../pulse-bus';
 import { useClock } from '../../scene/clock';
 import { INK, sceneFit } from '../../scene/projection';
+import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
 import { RIVAL_SHOP, SHUTTERS_TOTAL, shutterShare } from './rival-model';
 
@@ -67,6 +68,7 @@ const MegaShop = memo(function MegaShop({ shut }: { shut: number }) {
 export const RivalScene = memo(function RivalScene({ shopId, width, height }: SceneSlotProps) {
   // Reads the live store: React Compiler must not cache that.
   'use no memo';
+  const frame = useShopFrame(shopId);
   const open = useGame((s) => rivalOpen(s.game, shopId as never));
   const wasOpen = useRef(open);
   const [closedAt, setClosedAt] = useState<number | null>(null);
@@ -78,7 +80,7 @@ export const RivalScene = memo(function RivalScene({ shopId, width, height }: Sc
   useEffect(() => {
     if (wasOpen.current && !open && challengeWon(useGame.getState().game, shopId as never)) {
       setClosedAt(Date.now());
-      const fit = sceneFit(width, height);
+      const fit = sceneFit(width, height, frame);
       root.current?.measureInWindow((x: number, y: number) => {
         const cx = x + (RIVAL_SHOP.x + RIVAL_SHOP.w / 2) * fit.s;
         const cy = y + (RIVAL_SHOP.top + 10) * fit.s;
@@ -88,14 +90,14 @@ export const RivalScene = memo(function RivalScene({ shopId, width, height }: Sc
       });
     }
     wasOpen.current = open;
-  }, [open, shopId, width, height]);
+  }, [open, shopId, width, height, frame]);
   useEffect(() => {
     if (closedAt === null) return;
     const t = setTimeout(() => setClosedAt(null), SHUTTERS_TOTAL * 1000);
     return () => clearTimeout(t);
   }, [closedAt]);
 
-  const fit = sceneFit(width, height);
+  const fit = sceneFit(width, height, frame);
   const shown = open || closedAt !== null;
   if (!shown) return <View ref={root} pointerEvents="none" style={StyleSheet.absoluteFill} />;
   const shut = closedAt === null ? 0 : shutterShare((Date.now() - closedAt) / 1000);

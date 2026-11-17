@@ -1,15 +1,17 @@
 import { Ellipse, G, Polygon } from 'react-native-svg';
-import { INK, P, kAt, pts, shade } from './projection';
+import { INK, ONE_SCREEN, P, kAt, pts, shade, type SceneFrame } from './projection';
 
 // ---------- drawing primitives ----------
 /** A solid box: side face (towards the centre), front face, top face. */
-export function Box({ x0, x1, y0, y1, h, z = 0, color, top }: { x0: number; x1: number; y0: number; y1: number; h: number; z?: number; color: string; top?: string }) {
-  const sideX = (x0 + x1) / 2 > 196.5 ? x0 : x1;
+/** `frame`: the drawing it stands in: its vanishing point says which side faces the room's centre. */
+export function Box({ x0, x1, y0, y1, h, z = 0, color, top, frame = ONE_SCREEN }: { x0: number; x1: number; y0: number; y1: number; h: number; z?: number; color: string; top?: string; frame?: SceneFrame }) {
+  const sideX = (x0 + x1) / 2 > frame.vanishX ? x0 : x1;
+  const p = (x: number, y: number, zz: number) => P(x, y, zz, frame);
   return (
     <G>
-      <Polygon points={pts([P(sideX, y0, z), P(sideX, y1, z), P(sideX, y1, z + h), P(sideX, y0, z + h)])} fill={shade(color, -0.25)} stroke={INK} strokeWidth={1} strokeLinejoin="round" />
-      <Polygon points={pts([P(x0, y0, z), P(x1, y0, z), P(x1, y0, z + h), P(x0, y0, z + h)])} fill={color} stroke={INK} strokeWidth={1} strokeLinejoin="round" />
-      <Polygon points={pts([P(x0, y0, z + h), P(x1, y0, z + h), P(x1, y1, z + h), P(x0, y1, z + h)])} fill={top ?? shade(color, 0.28)} stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+      <Polygon points={pts([p(sideX, y0, z), p(sideX, y1, z), p(sideX, y1, z + h), p(sideX, y0, z + h)])} fill={shade(color, -0.25)} stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+      <Polygon points={pts([p(x0, y0, z), p(x1, y0, z), p(x1, y0, z + h), p(x0, y0, z + h)])} fill={color} stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+      <Polygon points={pts([p(x0, y0, z + h), p(x1, y0, z + h), p(x1, y1, z + h), p(x0, y1, z + h)])} fill={top ?? shade(color, 0.28)} stroke={INK} strokeWidth={1} strokeLinejoin="round" />
     </G>
   );
 }

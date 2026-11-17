@@ -8,7 +8,7 @@
 // Everything is drawn in a 393×680 "scene" box that is scaled to cover the available area,
 // anchored to the bottom so the sidewalk and street are always visible (taller screens show more sky).
 import { memo, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactElement } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { F } from '../theme';
 import { FOOTPRINTS, MANAGERS, NEIGHBORHOODS } from '../content/tuning';
@@ -23,7 +23,8 @@ import { SceneDefs } from './scene/defs';
 import { FRONT_ROW_Y, LEDGE_Y, PROP_Y, SIGN_Y, STOOL_Y, TREE_Y, layout, moreTagRect, waitTagRect, type Layout } from './scene/layout';
 import { seatPalette } from './scene/palette';
 import { GUEST_SHIRTS, HAIR_COLORS, hash32, Person } from './scene/people';
-import { CURB_Y, D, INK, P, SCENE_W, sceneFit, unprojectX } from './scene/projection';
+import { CURB_Y, D, INK, P, sceneToScreen, sceneView, screenToScene, unprojectX } from './scene/projection';
+import { isTap, shopOpenScroll } from './scene/scroll';
 import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Rug, Stools, Table, WallPlanter } from './scene/props';
 import { ovenTier } from './scene/geometry';
 import { furnitureDeps, furnitureInputs, ladderInput, type FurnitureInputs } from './scene/furniture-inputs';
@@ -60,7 +61,7 @@ import { emptyCrew, stepCrew, type CrewState } from './scene/crew';
 import { emitCoin } from './pulse-bus';
 import { BADGE_R, COIN_FLIGHT, badgeAt, badgeModels, badgeRowY, badgeXs, MIN_TAP_PT, placePops, popsCover, spotlightCutout, stationAt, stationRects, tutorialHand } from './scene/stations';
 
-export { CURB_Y, SCENE_H, SCENE_W, sceneFit } from './scene/projection';
+export { CURB_Y, SCENE_H, sceneFit, sceneFrame, sceneView } from './scene/projection';
 
 export type StationKey = 'prep' | 'ovens' | 'counter' | 'drivers';
 
@@ -94,7 +95,6 @@ const CLOUDS = [
   { x0: 260, y: 20, k: 1.0, v: 3 },
   { x0: 360, y: 70, k: 0.6, v: 5 },
 ] as const;
-const DRIFT_SPAN = SCENE_W + 200;
 
 
 const STAGE_STATION: Record<Game.Stage, Station> = { prep: 'prep', ovens: 'oven', counter: 'counter', customers: 'counter' };
@@ -131,6 +131,11 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const measureOrigin = () => viewRef.current?.measureInWindow((x: number, y: number) => {
     origin.current = { x, y };
   });
+  // a wide shop scrolls sideways (scene/scroll.ts): how far it has gone, where the finger went down (a drag past TAP_SLOP is a scroll, never a tap), and the view
+  const scrollX = useRef(0);
+  const touchAt = useRef({ x: 0, y: 0 });
+  const scroller = useRef<ComponentRef<typeof ScrollView>>(null);
+  const opened = useRef(false);
   // Mutable per-mount scratch that does not drive rendering on its own: the crew, coin launches, the last
   // departure seen, rush/miss/refusal moments (tap handler) and the queue of hire bubbles (effect).
   const mem = useRef({
@@ -182,7 +187,12 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const running = shop.managed || Game.lineBusy(shop.line);
   const rate = Game.shopRate(shop, game.vehicle);
   const pace = running ? Math.min(2.6, 0.8 + Math.log10(1 + rate)) : 0;
-  const fit = sceneFit(width, height);
+  const frame = lay.frame;
+  const view = sceneView(width, height, frame);
+  const fit = view.fit;
+  // the drawing's own width on the screen: the screen's, unless the frame is wider (then it sits in a scroll view this wide)
+  const cw = view.contentW;
+  const driftSpan = frame.width + 200;
   const frontY = P(0, 0)[1];
   const shopSeed = seedFor(id);
   const nIdx = Math.max(0, NEIGHBORHOODS.findIndex((n) => n.id === id));
@@ -214,7 +224,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const tickSince = paused ? 0 : Math.max(0, (Date.now() - useGame.getState().tickAt) / 1000);
   // `idle`: the sidewalk shows the hire stack exactly when the shop has no GM (D408: a shop with all three heads but no GM
   // still stacks it, so the old `runsItself` test let walkers stand behind the stack); that shop keeps the sidewalk clear
-  const crew = paused ? m0.crew : stepCrew(m0.crew, { lay, walkins, idle: hireOnSidewalk(shop, id), patio: Game.patioTables(shop), departures: line.departures, since: tickSince }, clock, SCENE_W);
+  const crew = paused ? m0.crew : stepCrew(m0.crew, { lay, walkins, idle: hireOnSidewalk(shop, id), patio: Game.patioTables(shop), departures: line.departures, since: tickSince }, clock, frame.width);
   m0.crew = crew;
   // the stations tied for the bottleneck only change with upgrades: memo on the scene key (G80, M44); the idle drivers' pill names them (D421)
   const key = sceneKey(game, id);
@@ -237,9 +247,9 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // each pop rides over the figure carrying its departure (one Map reused per mount, M48)
   const carriers = m0.carriers;
   carriers.clear();
-  for (const c of cast) if (c.deps) for (const dep of c.deps) carriers.set(dep, P(c.props.x, c.props.y, 52));
+  for (const c of cast) if (c.deps) for (const dep of c.deps) carriers.set(dep, P(c.props.x, c.props.y, 52, frame));
   // the pills over the sidewalk queues; the drivers' one hides while a milestone badge and its confetti are up (D429), and either fades while a "+$" pop would land on it (D439: the pop used to lift above the pill and sit across the faces)
-  const popRects = placePops(line.departures, (d) => Math.max(0, d.left - tickSince), (d) => carriers.get(d.id) ?? null, P(lay.staff[0] + 12, 70, 78), SCENE_W).map((q) => q.rect);
+  const popRects = placePops(line.departures, (d) => Math.max(0, d.left - tickSince), (d) => carriers.get(d.id) ?? null, P(lay.staff[0] + 12, 70, 78, frame), frame.width).map((q) => q.rect);
   // U4: while Nonna's coach is up the scene says nothing else (tutorial.ts `hintsAllowed`)
   const hints = hintsAllowed(game);
   // the pills' words change with the counts and the bottleneck only (U10/U11), not with the clock
@@ -260,10 +270,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const bounceT = useMemo(() => {
     const [ox0, ox1] = [lay.ovenCols[0].x0, lay.ovenCols[lay.ovenCols.length - 1].x1];
     return {
-      prep: bounceTransforms(P((lay.prep.x0 + lay.prep.x1) / 2, 75)),
-      oven: bounceTransforms(P((ox0 + ox1) / 2, D - 6)),
-      counter: bounceTransforms(P((lay.counter.x0 + lay.counter.x1) / 2, 74)),
-      drivers: bounceTransforms(P(lay.scooter.x, lay.scooter.y)),
+      prep: bounceTransforms(P((lay.prep.x0 + lay.prep.x1) / 2, 75, 0, frame)),
+      oven: bounceTransforms(P((ox0 + ox1) / 2, D - 6, 0, frame)),
+      counter: bounceTransforms(P((lay.counter.x0 + lay.counter.x1) / 2, 74, 0, frame)),
+      drivers: bounceTransforms(P(lay.scooter.x, lay.scooter.y, 0, frame)),
     } satisfies Record<Bounced, string[]>;
   }, [lay]);
   const bounceNow = mem.current.bounce ? bounceStep(clock - mem.current.bounce.at) : -1;
@@ -291,7 +301,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         m.launched.add(d.id);
         if (m.launched.size > 12) m.launched.delete(m.launched.values().next().value as number);
         const [sx, sy] = carriers.get(d.id) ?? geoRegister;
-        emitCoin({ x: origin.current.x + fit.ox + sx * fit.s, y: origin.current.y + fit.oy + (sy - 40) * fit.s, ms: l * 1000 });
+        emitCoin({ x: origin.current.x + sceneToScreen(sx, scrollX.current, fit), y: origin.current.y + fit.oy + (sy - 40) * fit.s, ms: l * 1000 });
       }
     // someone paid: the shop's whole-number sold count went up (C80: departures don't pay in id order). The first
     // frame after a pause skips the emit, so closing the drawer doesn't replay a stale cash sound (C75)
@@ -385,43 +395,50 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const bxs = useMemo(() => badgeXs(lay), [lay]);
   const by = badgeRowY();
   const walls = useMemo(() => bubbleWalls(lay), [lay]);
-  const geoRegister = useMemo(() => P(lay.staff[0] + 12, 70, 78), [lay]);
-  const geoPass = useMemo(() => P(lay.counter.x0 + 8, 70, 40), [lay]);
+  const geoRegister = useMemo(() => P(lay.staff[0] + 12, 70, 78, frame), [lay, frame]);
+  const geoPass = useMemo(() => P(lay.counter.x0 + 8, 70, 40, frame), [lay, frame]);
   const dingAt = useMemo(() => {
     const top = Math.max(...lay.ovens.map((o) => o.z + o.h));
-    return P(lay.ovenCols[lay.ovenCols.length - 1].x1 + 2, D, top * 0.55).map((v, i) => (i === 0 ? v + 22 : v)) as [number, number];
+    return P(lay.ovenCols[lay.ovenCols.length - 1].x1 + 2, D, top * 0.55, frame).map((v, i) => (i === 0 ? v + 22 : v)) as [number, number];
   }, [lay]);
   const flicker = running ? Math.sin(clock * 9) * 1.4 : 0;
   const rushK = (clock - m.rushAt) / 0.6;
-  const rushC = useMemo(() => P((lay.ovenCols[0].x0 + lay.ovenCols[lay.ovenCols.length - 1].x1) / 2, D - 6, 50), [lay]);
+  const rushC = useMemo(() => P((lay.ovenCols[0].x0 + lay.ovenCols[lay.ovenCols.length - 1].x1) / 2, D - 6, 50, frame), [lay, frame]);
   const refusal = hints.refusal && m.refusal && clock - m.refusal.at < 1.6 ? m.refusal : null;
   // the visitor's line shows only while no head's bubble does (one bubble per shop)
   const visitSays = visitLineNow && !barkOn && !refusal && !(m.hire && clock - m.hire.at < 2.5) ? visitLineNow : null;
   const mileAge = m.mile ? clock - m.mile.at : -1;
   const mileLine = m.mile?.text && mileAge < 2.5 ? m.mile.text : null;
   // D415: the badge's centre (over the station's furniture, below the chip row), and the speed-up pill that rides in it instead of rising over the chips
-  const mileAt = m.mile && mileAge < MILE_SECONDS ? mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st)) : null;
+  const mileAt = m.mile && mileAge < MILE_SECONDS ? mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st), frame.width) : null;
   const mileFlash = m.mile && m.flash && m.flash.st === m.mile.st && m.flash.at === m.mile.at ? m.flash : null;
   const flash = next && clock - m.hintAt < 0.3 ? rects[next] : null;
 
-  return (
-    <View ref={viewRef} onLayout={measureOrigin} style={{ width, height, overflow: 'hidden' }}>
+  // where a wide shop opens: the counter in view, or where the player left it (the scroll position is kept in the store for the session, not saved)
+  const [startX] = useState(() => shopOpenScroll(useGame.getState().sceneScroll[id], P((lay.counter.x0 + lay.counter.x1) / 2, 74, 0, frame)[0], fit.s, width, view.maxScroll));
+  const drawing = (
+    <>
       <Pressable
         testID="shop"
         accessibilityRole="button"
         accessibilityLabel={`${nd.name} pizzeria`}
         accessibilityHint={shop.managed ? 'Double tap to rush the kitchen' : 'Double tap to make the next batch'}
-        style={{ position: 'absolute', left: 0, top: 0, width, height }}
+        style={{ position: 'absolute', left: 0, top: 0, width: cw, height }}
         // re-measure on every touch: an ancestor can move without this view's own layout changing (C76)
-        onPressIn={measureOrigin}
+        onPressIn={(e) => {
+          measureOrigin();
+          touchAt.current = { x: e?.nativeEvent?.pageX ?? 0, y: e?.nativeEvent?.pageY ?? 0 };
+        }}
         onPress={(e) => {
           // page coordinates minus the view's measured origin: `locationX` is relative to whichever SVG child was
           // hit on web, so it can't place a tap on a station (every tap used to land on the oven)
           const ne = e?.nativeEvent;
           const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+          // a drag that moved the finger TAP_SLOP or more was a scroll of the wide shop, not a tap on it
+          if (view.scrolls && isNum(ne?.pageX) && isNum(ne?.pageY) && !isTap(touchAt.current, { x: ne.pageX, y: ne.pageY })) return;
           const lx = isNum(ne?.pageX) ? ne.pageX - origin.current.x : ne?.locationX;
           const ly = isNum(ne?.pageY) ? ne.pageY - origin.current.y : ne?.locationY;
-          const x = isNum(lx) ? (lx - fit.ox) / fit.s : SCENE_W / 2;
+          const x = isNum(lx) ? screenToScene(lx, scrollX.current, fit) : frame.vanishX;
           const y = isNum(ly) ? (ly - fit.oy) / fit.s : 300;
           // a GM shop: any tap is a rush (every running job finishes sooner); otherwise the station under the finger
           if (shop.managed) {
@@ -442,15 +459,15 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           }
         }}>
         {/* the drawing is decoration for a screen reader: the pizzeria's name and what a tap does are the Pressable's label */}
-        <Svg width={width} height={height} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
+        <Svg width={cw} height={height} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${cw / fit.s} ${height / fit.s}`}>
           <SceneDefs />
-          <Backdrop id={id} L={lay.L} R={lay.R} />
+          <Backdrop id={id} L={lay.L} R={lay.R} w={frame.width} />
           {CLOUDS.map((c, i) => (
-            <Cloud key={i} x={((c.x0 + clock * c.v) % DRIFT_SPAN) - 100} y={c.y} k={c.k} dusk={id === 'uptown'} />
+            <Cloud key={i} x={((c.x0 + clock * c.v) % driftSpan) - 100} y={c.y} k={c.k} dusk={id === 'uptown'} />
           ))}
-          {evLook.dusk && <DuskTint x={-fit.ox / fit.s} y={-fit.oy / fit.s} w={width / fit.s} h={frontY + fit.oy / fit.s} />}
-          <Sidewalk frontY={frontY} />
-          <Street />
+          {evLook.dusk && <DuskTint x={-fit.ox / fit.s} y={-fit.oy / fit.s} w={cw / fit.s} h={frontY + fit.oy / fit.s} />}
+          <Sidewalk frontY={frontY} w={frame.width} />
+          <Street w={frame.width} />
           <RoomShell id={id} lay={lay} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
           <OvenHood lay={lay} grade={shop.grade} mural={shop.decor.walls >= 3} tier={ovenTier(shop.ovens)} />
           {/* rush tap: the oven bank pulses (the jobs finish sooner; cash still waits for the pies to leave) */}
@@ -467,20 +484,20 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           {items.map((it) => it.el)}
           {trafficFor(CARS, rivalOpen(game, id)).map((c, i) => {
             const dir = c.lane === 0 ? -1 : 1;
-            const raw = (c.offset + clock * c.speed) % DRIFT_SPAN;
-            const x = dir === 1 ? raw - 100 : SCENE_W + 100 - raw;
+            const raw = (c.offset + clock * c.speed) % driftSpan;
+            const x = dir === 1 ? raw - 100 : frame.width + 100 - raw;
             return (
               <G key={i} transform={`translate(${x} ${c.lane === 0 ? CURB_Y + 30 : CURB_Y + 70}) scale(0.86)`}>
                 <Car x={0} y={0} color={c.color} kind={c.kind} dir={dir as 1 | -1} />
               </G>
             );
           })}
-          {evLook.lights && <StringLights x0={8} x1={SCENE_W - 8} y={104} />}
+          {evLook.lights && <StringLights x0={8} x1={frame.width - 8} y={104} />}
           {/* the neon counter sign hangs over the register, in front of the wall (cosmetics.ts `neonSpot`; G99) */}
           {fin.neon && (() => { const n = neonSpot(lay); return <G transform={`translate(${n.cx} ${n.rect.y1 - 1.2}) scale(${NEON_W / 38})`}><NeonCounterSign /></G>; })()}
           {/* the day-30 visitor's tag over their head, and their line above it (cameo.ts), over the front wall */}
           {visit && cameo && <CameoTag x0={cameo.tag.x0} x1={cameo.tag.x1} y0={cameo.tag.y0} y1={cameo.tag.y1} text={visitTagText} />}
-          {cameo && visitSays && !mileLine && <CameoBubble tail={cameo.tailX} y={cameo.sayY} drop={cameo.tailDrop} text={sayLines(visitSays).join('\n')} wall0={walls.x0} wall1={walls.x1} />}
+          {cameo && visitSays && !mileLine && <CameoBubble sceneW={frame.width} tail={cameo.tailX} y={cameo.sayY} drop={cameo.tailDrop} text={sayLines(visitSays).join('\n')} wall0={walls.x0} wall1={walls.x1} />}
           {/* station badges: ring timer, pies in the job, a hand on the station to tap, the head who runs it */}
           {/* a miss outlines the station to tap for a moment (G79) */}
           {flash && <Rect x={flash.x0} y={flash.y0} width={flash.x1 - flash.x0} height={flash.y1 - flash.y0} rx={8} fill="none" stroke="#fff" strokeWidth={2.5} opacity={0.9} />}
@@ -508,17 +525,17 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             ))}
           </G>
           {/* a refused tap says why, just under the station's badge (D348) */}
-          {refusal && <HireBubble x={bxs[refusal.st]} y={by + 40} text={refusal.text} wall0={walls.x0} wall1={walls.x1} tone="refusal" />}
+          {refusal && <HireBubble sceneW={frame.width} x={bxs[refusal.st]} y={by + 40} text={refusal.text} wall0={walls.x0} wall1={walls.x1} tone="refusal" />}
           {/* a milestone line (Lv 25 / 50 / 100) from the station's head beats a hello and the rush pill */}
           {/* D415: directly under the badge, over the station's furniture, never over the chip row */}
-          {!refusal && mileLine && m.mile && (() => { const a = mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st)); return <HireBubble x={a.cx} y={mileSpeechY(a.cy)} text={mileLine} wall0={walls.x0} wall1={walls.x1} />; })()}
-          {!refusal && !mileLine && m.hire && clock - m.hire.at < 2.5 && <HireBubble x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} wall0={walls.x0} wall1={walls.x1} />}
+          {!refusal && mileLine && m.mile && (() => { const a = mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st), frame.width); return <HireBubble sceneW={frame.width} x={a.cx} y={mileSpeechY(a.cy)} text={mileLine} wall0={walls.x0} wall1={walls.x1} />; })()}
+          {!refusal && !mileLine && m.hire && clock - m.hire.at < 2.5 && <HireBubble sceneW={frame.width} x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} wall0={walls.x0} wall1={walls.x1} />}
           {/* a head's bark takes the same spot under its badge, clamped inside the walls (D440); the rush pill gives way to it */}
-          {!refusal && !mileLine && !(m.hire && clock - m.hire.at < 2.5) && barkOn && <HireBubble x={bxs[barkOn.st]} y={by + 44} text={barkOn.text} wall0={walls.x0} wall1={walls.x1} />}
+          {!refusal && !mileLine && !(m.hire && clock - m.hire.at < 2.5) && barkOn && <HireBubble sceneW={frame.width} x={bxs[barkOn.st]} y={by + 44} text={barkOn.text} wall0={walls.x0} wall1={walls.x1} />}
           {/* a General Manager shop: "Tap to rush!" until the first tap, then the combo; a head's hello takes the spot while it shows */}
           {/* D406: under the oven chip, ≤ 120 wide, moved clear of the menu board and the ladder's wall props */}
           {rushModel && !refusal && !mileLine && !barkOn && !(m.hire && clock - m.hire.at < 2.5) && (
-            <RushPill x={clearPillX(bxs.oven, rushPillWidth(rushModel.text), by + 26, by + 44, pillAvoid)} y={by + 40} kind={rushModel.kind} text={rushModel.text} pulse={rushModel.pulse ? pulse : 0} />
+            <RushPill sceneW={frame.width} x={clearPillX(bxs.oven, rushPillWidth(rushModel.text), by + 26, by + 44, pillAvoid, frame.width)} y={by + 40} kind={rushModel.kind} text={rushModel.text} pulse={rushModel.pulse ? pulse : 0} />
           )}
           {/* a finished bake: "ding!" at the oven and the pies slide onto the pass (P3) */}
           {m.slide && clock - m.slide.at < 0.7 && (() => {
@@ -547,10 +564,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           {/* what an upgrade did: "+50% faster" rising from the station's badge (P5) */}
           {m.flash && clock - m.flash.at < 0.9 && m.flash !== mileFlash && (() => {
             const k = (clock - m.flash.at) / 0.9;
-            const fx = m.flash.st === 'door' ? P(lay.door.cx, 0, 80)[0] : bxs[m.flash.st];
-            const fy = m.flash.st === 'door' ? P(lay.door.cx, 0, 80)[1] : by + 34 + CHIP_ROW_HALF + ROW_AIR - 4;
+            const fx = m.flash.st === 'door' ? P(lay.door.cx, 0, 80, frame)[0] : bxs[m.flash.st];
+            const fy = m.flash.st === 'door' ? P(lay.door.cx, 0, 80, frame)[1] : by + 34 + CHIP_ROW_HALF + ROW_AIR - 4;
             const w = m.flash.text.length * 7 + 16;
-            const px = Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, fx));
+            const px = Math.min(frame.width - 4 - w / 2, Math.max(4 + w / 2, fx));
             return (
               <G transform={`translate(${px} ${fy - k * (m.flash.st === 'door' ? 24 : 14) - (spotlight ? 28 : 0)})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
                 <Rect x={-w / 2} y={-11} width={w} height={20} rx={10} fill="#2E8B3E" stroke="#fff" strokeWidth={1.4} />
@@ -566,11 +583,11 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             const k = (clock - m.chip.at) / CHIP_SECONDS;
             const text = m.chip.text;
             const r = Math.max(13, text.length * 3.4 + 4);
-            const door = [P(lay.door.cx, 0, 80)[0] - 34, P(lay.door.cx, 0, 80)[1] - 18] as const;
+            const door = [P(lay.door.cx, 0, 80, frame)[0] - 34, P(lay.door.cx, 0, 80, frame)[1] - 18] as const;
             const rect = m.chip.st === 'drivers' ? { x0: door[0], x1: door[0], y0: door[1], y1: door[1] } : rects[m.chip.st];
             const at = chipAt(rect, by, r, k, CHIP_RISE);
             return (
-              <G transform={`translate(${Math.min(SCENE_W - 4 - r, Math.max(4 + r, at.x))} ${at.y})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
+              <G transform={`translate(${Math.min(frame.width - 4 - r, Math.max(4 + r, at.x))} ${at.y})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
                 <Circle cx={0} cy={0} r={r} fill="#FFF8EA" stroke={INK} strokeWidth={1.1} />
                 <SvgText x={0} y={3.8} fontFamily={F.bold} fontSize={11} fill={INK} textAnchor="middle">
                   {text}
@@ -599,7 +616,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
               const r = rects[spotlight];
               const { x0, y0, x1, y1 } = spotlightCutout(r);
               const rr = 12;
-              const vb = { x: -fit.ox / fit.s, y: -fit.oy / fit.s, w: width / fit.s, h: height / fit.s };
+              const vb = { x: -fit.ox / fit.s, y: -fit.oy / fit.s, w: cw / fit.s, h: height / fit.s };
               const hole = `M${x0 + rr} ${y0} H${x1 - rr} Q${x1} ${y0} ${x1} ${y0 + rr} V${y1 - rr} Q${x1} ${y1} ${x1 - rr} ${y1} H${x0 + rr} Q${x0} ${y1} ${x0} ${y1 - rr} V${y0 + rr} Q${x0} ${y0} ${x0 + rr} ${y0} Z`;
               const glow = 0.55 + 0.45 * pulse;
               const { hx, hy, rot, scale: hs } = tutorialHand({ x0, y0, x1, y1 }, spotlightWait ? 0 : 4 * pulse);
@@ -617,11 +634,45 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 </G>
               );
             })()}
-          <DeparturePops deps={line.departures} left={(d) => leftNow(d.left)} anchor={(d) => carriers.get(d.id) ?? null} register={geoRegister} />
+          <DeparturePops sceneW={frame.width} deps={line.departures} left={(d) => leftNow(d.left)} anchor={(d) => carriers.get(d.id) ?? null} register={geoRegister} />
         </Svg>
       </Pressable>
       {/* the SCENE_OVERLAYS slot: above the floor and furniture, below the HUD; nothing while the slot is empty */}
-      <SceneOverlays shopId={id} width={width} height={height} />
+      <SceneOverlays shopId={id} width={cw} height={height} />
+    </>
+  );
+  return (
+    <View ref={viewRef} onLayout={measureOrigin} style={{ width, height, overflow: 'hidden' }}>
+      {view.scrolls ? (
+        // a wide shop: the drawing (and every overlay anchored to a place in it) sits in a sideways scroll view; no vertical scroll, no zoom
+        <ScrollView
+          ref={scroller}
+          horizontal
+          testID="shop-scroll"
+          showsHorizontalScrollIndicator={false}
+          bounces={false}
+          alwaysBounceVertical={false}
+          scrollEventThrottle={16}
+          contentOffset={{ x: startX, y: 0 }}
+          onLayout={() => {
+            // once, on web (which ignores `contentOffset`): never again, so a later layout cannot pull the shop back from where the player scrolled it
+            if (opened.current) return;
+            opened.current = true;
+            scrollX.current = startX;
+            scroller.current?.scrollTo({ x: startX, y: 0, animated: false });
+          }}
+          onScroll={(e) => {
+            scrollX.current = e.nativeEvent.contentOffset.x;
+          }}
+          onScrollEndDrag={(e) => useGame.getState().setSceneScroll(id, e.nativeEvent.contentOffset.x)}
+          onMomentumScrollEnd={(e) => useGame.getState().setSceneScroll(id, e.nativeEvent.contentOffset.x)}
+          style={{ width, height }}
+          contentContainerStyle={{ width: cw, height }}>
+          {drawing}
+        </ScrollView>
+      ) : (
+        drawing
+      )}
     </View>
   );
 });
@@ -661,14 +712,14 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
   f.push({ y: 16, el: <DoorLeaf key="leaf" lay={lay} /> });
   if (!fin.idleShop) {
     // the potted tree stays fully on screen (its pot is ~14 wide) in the widest rooms
-    const plx = Math.max(lay.L + 8, unprojectX(20, TREE_Y));
+    const plx = Math.max(lay.L + 8, unprojectX(20, TREE_Y, lay.frame));
     f.push({ y: TREE_Y, el: <Planter key="pl" x={plx} y={TREE_Y} /> });
     // the neighbourhood's sidewalk signature (v5.0): always drawn now, in the room layout.ts keeps clear for it (D414)
-    const [qx, qy] = P(lay.prop.x, PROP_Y);
+    const [qx, qy] = P(lay.prop.x, PROP_Y, 0, lay.frame);
     f.push({ y: PROP_Y, el: <StreetProp key="street" id={fin.id} x={qx} y={qy} /> });
   }
   if (!fin.idleShop) {
-    const [scx, scy] = P(lay.scooter.x, lay.scooter.y);
+    const [scx, scy] = P(lay.scooter.x, lay.scooter.y, 0, lay.frame);
     f.push({ y: lay.scooter.y, st: 'drivers', el: <ParkedVehicle key="scooter" x={scx} y={scy} v={fin.vehicle} mint={fin.scooterMint} /> });
   }
   return f;

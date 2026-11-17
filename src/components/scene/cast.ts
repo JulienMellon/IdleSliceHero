@@ -5,7 +5,7 @@ import { PATIO_SEAT, SEAT, type Layout } from './layout';
 import { GUEST_SHIRTS, HAIR_COLORS, driverCast, hash32, type Act, type Mood, type PersonProps } from './looks';
 import { driverFigures, queueOverflow } from './waiting';
 import type { SeatPalette } from './palette';
-import { P, SCENE_W } from './projection';
+import { ONE_SCREEN, P } from './projection';
 import { STEP_FRAMES } from './quantise';
 import { driverPoseAt, guestLeg, guestPoseAt, guestSchedule, type CrewState } from './crew';
 
@@ -75,7 +75,7 @@ const EDGE_HOLD = 14;
 /** …then fades out over this many units (D284: it used to fade over the last 30 on screen and read as a ghost). */
 const EDGE_FADE = 8;
 /** Opacity for a figure at screen x. */
-export const edgeFade = (sx: number) => Math.max(0, Math.min(1, (SCENE_W + EDGE_HOLD - sx) / EDGE_FADE, (sx + EDGE_HOLD) / EDGE_FADE));
+export const edgeFade = (sx: number, width: number = ONE_SCREEN.width) => Math.max(0, Math.min(1, (width + EDGE_HOLD - sx) / EDGE_FADE, (sx + EDGE_HOLD) / EDGE_FADE));
 
 /**
  * Builds this frame's cast. Two clocks drive it:
@@ -99,10 +99,10 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
   // drivers and walk-ins follow the engine's departures (crew.ts): one driver per pickup spot, out the door with
   // each order and back again; walk-ins wait at their own order spot for a pie, eat, and leave
   {
-    const dp = driverPoseAt(lay, crew.driver, clock, SCENE_W, crew.idle);
+    const dp = driverPoseAt(lay, crew.driver, clock, lay.frame.width, crew.idle);
     if (dp) {
       const [x, y] = dp.pos;
-      const o = edgeFade(P(x, y)[0]);
+      const o = edgeFade(P(x, y, 0, lay.frame)[0], lay.frame.width);
       const sd = shopSeed + 10;
       // off-screen: don't keep an invisible figure mounted
       if (o > 0)
@@ -120,12 +120,12 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
   // keeps the left chair, and a companion takes the right one only while no walk-in has the table
   const claimed = new Set<number>();
   for (const slot of crew.guests) {
-    const L = guestLeg(lay, SCENE_W, slot, crew.idle, crew.patio);
+    const L = guestLeg(lay, lay.frame.width, slot, crew.idle, crew.patio);
     if (clock < guestSchedule(slot, L).done) claimed.add(L.table);
   }
   const fixedFill = Math.min(1, 0.4 + shop.tables / 40);
   for (const slot of crew.guests) {
-    const g = guestPoseAt(lay, slot, clock, SCENE_W, crew.idle, crew.patio);
+    const g = guestPoseAt(lay, slot, clock, lay.frame.width, crew.idle, crew.patio);
     if (!g) continue;
     const i = slot.visit;
     // a different customer every visit, and different crowds in every shop
@@ -133,7 +133,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
     const seated = g.stage === 'seated';
     const bite = Math.abs(Math.sin(poseClock * 2 + i));
     const mood: Mood = seated ? (bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile') : 'smile';
-    const o = edgeFade(P(g.pos[0], g.pos[1])[0]);
+    const o = edgeFade(P(g.pos[0], g.pos[1], 0, lay.frame)[0], lay.frame.width);
     if (o <= 0) continue;
     cast.push({
       key: `g${i % 8}`,
@@ -187,7 +187,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `q${q}`,
       sortY: y,
       role: 'queue',
-      props: { x, y, kind: 'guest', seed: sd, shirt: GUEST_SHIRTS[pal.walkShirt(q, 7)], hair: HAIR_COLORS[pal.walkHair(q, 7)], flip: false, blink: blinkAt(sd), mood: 'smile', o: edgeFade(P(x, y)[0]) },
+      props: { x, y, kind: 'guest', seed: sd, shirt: GUEST_SHIRTS[pal.walkShirt(q, 7)], hair: HAIR_COLORS[pal.walkHair(q, 7)], flip: false, blink: blinkAt(sd), mood: 'smile', o: edgeFade(P(x, y, 0, lay.frame)[0], lay.frame.width) },
     });
   }
   // D416: a varied cast of drivers (skin, hair, build; one moustache at most), one of them checking a phone
@@ -200,7 +200,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `w${q}`,
       sortY: y,
       role: 'queue',
-      props: { x, y, kind: 'driver', seed: d.seed, act: d.phone ? 'phone' : 'none', flip: false, blink: blinkAt(d.seed), mood: d.phone ? 'focus' : 'smile', o: edgeFade(P(x, y)[0]) },
+      props: { x, y, kind: 'driver', seed: d.seed, act: d.phone ? 'phone' : 'none', flip: false, blink: blinkAt(d.seed), mood: d.phone ? 'focus' : 'smile', o: edgeFade(P(x, y, 0, lay.frame)[0], lay.frame.width) },
     });
   }
 
