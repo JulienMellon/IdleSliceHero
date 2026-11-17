@@ -7,7 +7,7 @@ version: 5.18
 step: waves                     # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.17-r3           # label of the last screenshot set that passed verify
-codecritic_range_start: aff34d1
+codecritic_range_start: 229f874
 cards:                 # todo | running | done | partial | blocked
   (v5.18 cards: see docs/build/v5.18/VERSION.md)
 reviews:               # latest review file per critic, with verdict and counts
