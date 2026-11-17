@@ -3,6 +3,7 @@
 // 8 pt clear of each other and of the other figure, nothing is cropped by the panel edge, and the gestures are distinct.
 import { CHEST_BOX, FACE_BOX, HANDS_BOX, LIMBS_BOX, LIMB_CLEARANCE, POSE, boxInPanel, panelSize, poseFor, stageLayout, type Box, type Pose } from '../cutscene/staging';
 import { ARM_INK, FACES, GESTURES, HAIR_FRONT, BUN_KNOT, STRANDS } from '../cutscene/figure-art';
+import { HOME_SCENES } from '../../content/scenes/home';
 import { boundsOf, pathPoints } from './path-bounds';
 
 // iPhone SE, 13 mini, 15, 15 Pro Max, iPad mini portrait, a landscape-ish web window
@@ -196,6 +197,19 @@ describe('D490 more arm poses', () => {
     expect(poseFor('dee', 'neutral')).toBe('point');
     // the others keep the mood's gesture
     expect(poseFor('nonna-rosa', 'neutral')).toBe(POSE.neutral);
+  });
+
+  test('the shot scenes (92-94, 97, 138) show at least five different arm poses between them (r2: only hands-up and thumbs-up)', () => {
+    const ids = ['downtown-5', 'university-3c', 'uptown-2b', 'waterfront-hire', 'university-hire'];
+    const used = new Set<Pose>();
+    for (const id of ids) {
+      const sc = HOME_SCENES.find((x) => x.id === id)!;
+      for (const p of sc.panels) for (const c of p.cast) used.add(poseFor(c.id, c.mood, undefined));
+    }
+    expect(used.size).toBeGreaterThanOrEqual(5);
+    expect(used.has('salute') || used.has('clipboard')).toBe(true);
+    expect(poseFor('skip', 'neutral')).toBe('clipboard');
+    expect(poseFor('slicey', 'surprised')).toBe('point');
   });
 
   test('the clipboard is held in the inner hand, with a board and a clip that reach the hand box', () => {

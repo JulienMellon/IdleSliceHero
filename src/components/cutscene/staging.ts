@@ -33,11 +33,14 @@ const POSE_OVERRIDE: Partial<Record<CharacterId, Partial<Record<Mood, Pose>>>> =
   'megaslice-rep': { neutral: 'clipboard' },
   'mr-smith': { neutral: 'clipboard' },
   'todd-coat': { neutral: 'clipboard' },
-  noor: { neutral: 'clipboard' },
+  noor: { neutral: 'clipboard', happy: 'salute' },
   'big-sal': { happy: 'salute' },
   dee: { happy: 'salute', neutral: 'point' },
-  skip: { happy: 'salute' },
   'victor-crust': { neutral: 'point' },
+  // D490 (r2): the shots of the interludes and hire scenes (92-94, 97, 138) showed only hands-up and thumbs-up, so their cast gestures too
+  skip: { happy: 'salute', neutral: 'clipboard' },
+  genevieve: { neutral: 'clipboard' },
+  slicey: { surprised: 'point' },
 };
 
 /** The pose for a character in a mood; a character holding a prop (the recipe card) holds it at chest height whatever the mood. */
