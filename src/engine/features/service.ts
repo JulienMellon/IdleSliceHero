@@ -16,6 +16,7 @@ import { counterRate, featureMults, ovenRate, prepRate, runsItself, SHOP_IDS, de
 import type { BarkAsk } from './heads';
 import { FEATURES } from './registry';
 import type { Feature } from './types';
+import { cityOf, hoodIds } from '../../content/cities';
 
 export const KEY = 'service';
 
@@ -167,7 +168,7 @@ export function reportView(g: GameState, id: NeighborhoodId, now: number): Repor
   const lamps = { prep: lampOf(loads.prep), ovens: lampOf(loads.ovens), counter: lampOf(loads.counter), floor: floorOf(flow) };
   const floorRatio = flow.kitchen > 0 ? flow.wanted / flow.kitchen : 1;
   const lost = flow.wanted - flow.sold;
-  const lostPerMinute = lost > 1e-12 ? lost * valuePerPizza(id, shop, g.vehicle, featureMults(g, id, now)) * 60 : 0;
+  const lostPerMinute = lost > 1e-12 ? lost * valuePerPizza(id, shop, g.vehicle, featureMults(g, id, now), cityOf(g)) * 60 : 0;
   const kitchenLimits = lamps.floor === 'full';
   // the worst lamp: the most loaded station (ties go to the pipeline's order) while the kitchen limits; the floor while it is Quiet
   let worst: ReportView['worst'] = null;
@@ -234,7 +235,7 @@ export const service: Feature<ServiceStateSlice> = {
     const st = read(g);
     const stale = !stampFresh(st, now);
     let shops = st.shops;
-    for (const id of SHOP_IDS) {
+    for (const id of hoodIds(cityOf(g))) {
       const cur = st.shops[id] ?? zeroShop();
       let next: ShopService;
       if (!reportActive(g, id)) next = zeroShop();

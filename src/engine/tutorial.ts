@@ -2,6 +2,7 @@
 // Pure: one step at a time, each with a line from Nonna, a target to point at and a condition that ends it.
 // The step number is saved (GameState.tutorial); an existing player who has already sold pizza starts at "done".
 import { HEADS } from '../content/tuning';
+import { cityOf } from '../content/cities';
 import * as G from './game';
 
 export type CoachTarget = 'prep' | 'oven' | 'counter' | 'cash' | 'walk-ovens' | 'goal';
@@ -19,6 +20,8 @@ export interface CoachStep {
 export const TUTORIAL_DONE = G.TUTORIAL_DONE;
 
 const marco = HEADS.downtown.prep;
+/** The neighbourhood the tutorial is played in: the city's first (card K1). */
+const first = (s: G.GameState) => G.firstHood(cityOf(s));
 
 /** Every step, in order (1-based ids; 0 = not started, before the opening scene ends). */
 export const STEPS: readonly CoachStep[] = [
@@ -36,16 +39,16 @@ export const STEPS: readonly CoachStep[] = [
 
 /** The current step, or null when the tutorial isn't running (not started, done, or a GM already runs Downtown). */
 export function coachStep(s: G.GameState): CoachStep | null {
-  if (s.tutorial < 1 || s.tutorial >= TUTORIAL_DONE || s.shops.downtown.managed) return null;
+  if (s.tutorial < 1 || s.tutorial >= TUTORIAL_DONE || s.shops[first(s)].managed) return null;
   let step = STEPS[s.tutorial - 1];
   // D374: the Ovens cash went elsewhere (drivers, say): back to "save up" until it's there again
   if (step.id === 8) {
-    const cost = G.upgradeCostOf(s, 'downtown', 'ovens');
+    const cost = G.upgradeCostOf(s, first(s), 'ovens');
     if (cost !== null && s.cash < cost) step = STEPS[6];
   }
   // step 7: point at whichever station is next, so the hand follows the rhythm
   if (step.id === 7) {
-    const next = G.nextStation(s.shops.downtown);
+    const next = G.nextStation(s.shops[first(s)]);
     return { ...step, target: next ?? 'prep' };
   }
   return step;
@@ -53,7 +56,7 @@ export function coachStep(s: G.GameState): CoachStep | null {
 
 /** Whether step `id` is finished in this state. */
 function done(s: G.GameState, id: number): boolean {
-  const d = s.shops.downtown;
+  const d = s.shops[first(s)];
   const l = d.line;
   switch (id) {
     case 1:
@@ -69,7 +72,7 @@ function done(s: G.GameState, id: number): boolean {
     case 6:
       return d.sold > 0;
     case 7: {
-      const cost = G.upgradeCostOf(s, 'downtown', 'ovens');
+      const cost = G.upgradeCostOf(s, first(s), 'ovens');
       return d.ovens > 1 || (cost !== null && s.cash >= cost);
     }
     case 8:
@@ -84,13 +87,13 @@ function done(s: G.GameState, id: number): boolean {
 /** Move past every finished step (several can finish at once). Starts once the opening scene has played. */
 export function tutorialAdvance(s: G.GameState): G.GameState {
   let t = s.tutorial;
-  if (t === 0 && s.seenScenes.includes('downtown-1')) t = 1;
+  if (t === 0 && s.seenScenes.includes(G.sceneId(first(s), 1))) t = 1;
   while (t >= 1 && t < TUTORIAL_DONE && done(s, t)) t++;
   return t === s.tutorial ? s : { ...s, tutorial: t };
 }
 
 /** Story scenes wait while Nonna is showing the first batch (steps 1–6). */
-export const tutorialHoldsStory = (s: G.GameState) => s.tutorial >= 1 && s.tutorial <= 6 && !s.shops.downtown.managed;
+export const tutorialHoldsStory = (s: G.GameState) => s.tutorial >= 1 && s.tutorial <= 6 && !s.shops[first(s)].managed;
 
 /** The small notes the screen can show besides Nonna's card: a refused tap's reason, the idle-drivers pill, the queue count, a refused buy's toast. */
 export type Hint = 'refusal' | 'waiting' | 'more' | 'toast';

@@ -16,6 +16,8 @@ import { JAMS, LAYER_KEYS, SHIFTS } from '../../../content/layers';
 import { FOOTPRINTS } from '../../../content/tuning';
 import { deliveryRate, ovenRate, walkInRate, type BuyResult, type GameState, type Shop } from '../../game';
 import type { Feature } from '../types';
+import { cityOf, layerHood } from '../../../content/cities';
+import type { NeighborhoodId } from '../../../content/types';
 import { freshTimed, gapOf, type TimedSpec } from './suburbs-gameday';
 
 export interface ShiftsState {
@@ -32,12 +34,12 @@ export interface ShiftsState {
   at: number;
 }
 
-const HOOD = SHIFTS.hood;
+const hoodOf = (g: GameState): NeighborhoodId => layerHood(cityOf(g), 'shifts') ?? '';
 const spec: TimedSpec = { ...JAMS, rushSeconds: 0 };
 const fresh = (now: number): ShiftsState => ({ seed: freshTimed(now).seed, n: 0, nextAt: -1, jam: -1, startAt: -1, at: 0 });
 const read = (g: GameState): ShiftsState => (g.x?.[LAYER_KEYS.shifts] as ShiftsState | undefined) ?? fresh(0);
 const write = (g: GameState, s: ShiftsState): GameState => ({ ...g, x: { ...g.x, [LAYER_KEYS.shifts]: s } });
-const built = (g: GameState): boolean => !!g.shops[HOOD]?.built;
+const built = (g: GameState): boolean => !!g.shops[hoodOf(g)]?.built;
 const SHIFT_SECONDS = SHIFTS.cycleSeconds / SHIFTS.shifts.length;
 const night = SHIFTS.shifts.find((s) => s.id === SHIFTS.offlineShift)!;
 
@@ -78,7 +80,7 @@ export function fixJam(g: GameState): BuyResult {
 /** Seconds until a jam fixes itself, or null when there is no Head Baker (or no jam). */
 export function autoFixIn(g: GameState): number | null {
   const st = read(g);
-  if (!jammed(st) || !hasBaker(g.shops[HOOD])) return null;
+  if (!jammed(st) || !hasBaker(g.shops[hoodOf(g)])) return null;
   return Math.max(0, Math.ceil(st.jam + JAMS.autoFixSeconds - g.playSeconds));
 }
 
@@ -123,13 +125,13 @@ export interface JamView {
 export function jamView(g: GameState): JamView {
   const st = read(g);
   const on = built(g) && jammed(st);
-  const lost = on ? jamShare(g.shops[HOOD]) : 0;
+  const lost = on ? jamShare(g.shops[hoodOf(g)]) : 0;
   return { active: built(g), jammed: on, lost, ovenMult: 1 - lost, nextIn: st.nextAt < 0 ? JAMS.everySeconds : Math.max(0, Math.ceil(st.nextAt - g.playSeconds)), autoFixIn: on ? autoFixIn(g) : null };
 }
 
 /** The whole-demand ratio: the shift's demand, and no more than the jammed oven's rate. */
 function demandFactor(g: GameState, now: number): number {
-  const shop = g.shops[HOOD];
+  const shop = g.shops[hoodOf(g)];
   const st = read(g);
   const shift = ruling(g, now);
   if (awayNow(st, now) || !jammed(st)) return shift.demand;
@@ -160,18 +162,18 @@ export const industrialShifts: Feature<ShiftsState> = {
       const n = s.n + 1;
       s = { ...s, n, nextAt: start + gapOf(s, n, spec), jam: jammed(s) ? s.jam : start };
     }
-    if (jammed(s) && hasBaker(g.shops[HOOD]) && play >= s.jam + JAMS.autoFixSeconds) s = { ...s, jam: -1 };
+    if (jammed(s) && hasBaker(g.shops[hoodOf(g)]) && play >= s.jam + JAMS.autoFixSeconds) s = { ...s, jam: -1 };
     if (now < s.at || now - s.at >= EVENT_STAMP_MS) s = { ...s, at: now };
     return s === st ? g : write(g, s);
   },
   shopValueMult(g, id, now) {
-    return id === HOOD && built(g) ? ruling(g, now).value : 1;
+    return id === hoodOf(g) && built(g) ? ruling(g, now).value : 1;
   },
   shopDemandMult(g, id, now) {
-    return id === HOOD && built(g) ? demandFactor(g, now) : 1;
+    return id === hoodOf(g) && built(g) ? demandFactor(g, now) : 1;
   },
   shopKey(g, id) {
-    if (id !== HOOD || !built(g)) return '';
+    if (id !== hoodOf(g) || !built(g)) return '';
     const st = read(g);
     return `${SHIFTS.shifts[shiftAt(st, g.playSeconds).index].id}${jammed(st) ? '-jam' : ''}`;
   },

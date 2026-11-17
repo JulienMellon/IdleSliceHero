@@ -1,39 +1,43 @@
 // Shared content types. Content (tuning + scenes) lives in data files, separate from logic.
 
-export type NeighborhoodId =
-  | 'downtown'
-  | 'suburbs'
-  | 'waterfront'
-  | 'university'
-  | 'industrial'
-  | 'uptown';
+/** A neighbourhood's id. v5.18 (card K1): a plain string, checked against the current city (`cityOf(g).neighbourhoods`; src/content/__tests__/city-schema.test.ts), not a closed union: a second city is a second folder. */
+export type NeighborhoodId = string;
+
+/** The home city's six ids, for the home pack's own tables (scenes, art) where a typo should still fail to compile. */
+export type HomeNeighborhoodId = 'downtown' | 'suburbs' | 'waterfront' | 'university' | 'industrial' | 'uptown';
 
 export type VehicleId = 'bike' | 'scooter' | 'car' | 'van' | 'drone';
 
-export type CharacterId =
-  | 'nonna-rosa'
-  | 'dale'
-  | 'marisol'
-  | 'priya'
-  | 'big-sal'
-  | 'genevieve'
-  | 'victor-crust'
-  | 'megaslice-rep'
+/** Every character a scene can put on stage, as data (the schema test checks a city's scenes against it) and as a type. A new city's characters are added here. */
+export const CHARACTER_IDS = [
+  'nonna-rosa',
+  'dale',
+  'marisol',
+  'priya',
+  'big-sal',
+  'genevieve',
+  'victor-crust',
+  'megaslice-rep',
   // Todd, three ways (all variants of the megaslice-rep bust; card T1b draws them)
-  | 'mr-smith' // the trench coat with the mustache drawn on in marker
-  | 'todd-coat' // the same coat, no mustache
-  | 'slicey' // the foam pizza-slice mascot costume
+  'mr-smith', // the trench coat with the mustache drawn on in marker
+  'todd-coat', // the same coat, no mustache
+  'slicey', // the foam pizza-slice mascot costume
   // the five General Managers (MANAGERS in tuning.ts); each appears in their shop's hire scene
-  | 'deb'
-  | 'skip'
-  | 'noor'
-  | 'dee'
-  | 'anton';
+  'deb',
+  'skip',
+  'noor',
+  'dee',
+  'anton',
+] as const;
+export type CharacterId = (typeof CHARACTER_IDS)[number];
+
+/** Speaker names that are not a character, a head, a manager or a lieutenant of the city: the player, and Todd's unnamed disguise. */
+export const NARRATOR_SPEAKERS: readonly string[] = ['You', 'Trench Coat'];
 
 export type Mood = 'neutral' | 'happy' | 'sad' | 'angry' | 'surprised';
 
 /** Backdrop for a panel: a neighborhood, the player's shop, or MegaSlice HQ. */
-export type Backdrop = NeighborhoodId | 'shop' | 'megaslice-hq' | 'downtown-rain';
+export type Backdrop = NeighborhoodId | (typeof FIXED_BACKDROPS)[number];
 
 export interface SceneLine {
   /** Display name shown on the speech bubble, e.g. "Nonna Rosa". Use "You" for the player. */
@@ -51,13 +55,19 @@ export interface CastMember {
 /** 0–2 characters, left to right: the stage has two slots, so a third figure is a type error rather than a crash (C100). */
 export type Cast = readonly [] | readonly [CastMember] | readonly [CastMember, CastMember];
 
+export const PROP_IDS = ['vending-machine', 'sold-sign', 'recipe-card', 'order-slip', 'name-tag', 'phone-footage'] as const;
+export type PropId = (typeof PROP_IDS)[number];
+
+/** The backdrops that belong to no neighbourhood. */
+export const FIXED_BACKDROPS = ['shop', 'megaslice-hq', 'downtown-rain'] as const;
+
 export interface ScenePanel {
   backdrop: Backdrop;
   cast: Cast;
   /** Optional narration box at the top of the panel. */
   caption?: string;
-  /** Optional foreground prop drawn into the scene. */
-  prop?: 'vending-machine' | 'sold-sign' | 'recipe-card' | 'order-slip' | 'name-tag' | 'phone-footage';
+  /** Optional foreground prop drawn into the scene (PROP_IDS). */
+  prop?: PropId;
   /** Text drawn on the prop (a name tag: "SENIOR ASSOCIATE", "TODD · ROSA'S"). */
   propText?: string;
   /** 0–3 speech bubbles, shown in order. */
@@ -87,7 +97,8 @@ export type SceneReward = 'auto-bake' | 'drones' | 'city-complete';
 
 export interface Scene {
   id: string; // e.g. "waterfront-3"
-  city: 'home';
+  /** The id of the city this scene belongs to (CityDef.id). */
+  city: string;
   character: CharacterId;
   neighborhood: NeighborhoodId;
   /** 1 = unlock, 2 = first milestone, 3 = complication (MegaSlice moves in), 4 = resolution; 'interlude' = a Todd scene or a manager's hire scene between beats (id is not `<neighbourhood>-<beat>`). */
@@ -98,7 +109,7 @@ export interface Scene {
   requires?: string[];
   /** Gameplay unlock granted when the scene finishes. */
   reward?: SceneReward;
-  /** Grants this neighbourhood's perk (PERKS) when the scene finishes. */
+  /** Grants this neighbourhood's perk (CityDef.perks) when the scene finishes. */
   perk?: true;
   /** 3–5 panels */
   panels: ScenePanel[];

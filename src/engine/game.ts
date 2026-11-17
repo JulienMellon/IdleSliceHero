@@ -3,13 +3,14 @@
 // Every neighborhood has its own pizzeria. Each pizzeria is a pipeline:
 //   Prep → Ovens → Counter → customers (delivery drivers + walk-ins at the tables)
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
-import { HEADS, BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEADS_OFFLINE_SHARE, HEAD_COST_DOWNTOWN, HEAD_KINDS, HEAD_SHARE, NEIGHBORHOODS, NONNA_TAKEOVER, OVEN_GRADES, PERKS, PIER9_BID, STATIONS, STORY_PACING, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
+import { BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEADS_OFFLINE_SHARE, HEAD_KINDS, HEAD_SHARE, OVEN_GRADES, STATIONS, STORY_PACING, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
+import { CITIES, cityOf, hoodIds, HOME_ID, type CityDef } from '../content/cities';
+import { HOME_CITY } from '../content/cities/home';
 import { BOOST_MAX_AHEAD_MS, DAILY_CHESTS, DAILY_TASK_COUNT, MAX_BOOSTERS, MAX_CONCURRENT_BOOSTS, TASK_KINDS, WEEKLY_TASK_COUNT, type TaskKind } from '../content/rewards';
 import { BONUS, NIGHT_OVEN, ORDER } from '../content/hooks';
 import { auctionMult, LAYER_KEYS } from '../content/layers';
 import { cosmeticPart } from '../content/endgame';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
-import { HOME_SCENES } from '../content/scenes/home';
 import { pizzasLeft } from './format';
 import { FEATURES } from './features/registry';
 import { challengeWon, rivalOpen } from './features/layers/rival';
@@ -17,7 +18,8 @@ import { advanceLine, clampWalkInDebt, emptyLine, LINE, nextTap, piesInFlight, r
 
 /** v6 (Todd's story): 40 scenes, interludes that hold main beats back, manager hire scenes; the migration marks skipped scenes seen. v5 was rewards: daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. */
 export const SAVE_VERSION = 6;
-export const SHOP_IDS = NEIGHBORHOODS.map((n) => n.id);
+/** The HOME city's neighbourhood ids (card K1). Engine code that has a game in hand reads `hoodIds(cityOf(g))`; this stays for the feature `init`/`migrate` hooks (no game yet) and the ~50 call sites that read the home city. */
+export const SHOP_IDS: NeighborhoodId[] = [...hoodIds(HOME_CITY)];
 /**
  * C106: the economy marker. 2 = the v5.13 retune (costMult = orderValue, 4 h offline cap, Pier 9 $120M); 3 = the v5.16 rules
  * (managers and heads priced apart, three heads sell half speed while you are away, station prices grow at their own rates,
@@ -51,12 +53,14 @@ export interface Shop {
   sold: number;
   /** Decor tier (0–3) per category; each tier owned adds DECOR_BOOST to prices here. */
   decor: Record<DecorKind, number>;
-  /** This neighbourhood's finale perk (PERKS) has been earned. */
+  /** This neighbourhood's finale perk (CityDef.perks) has been earned. */
   perk: boolean;
 }
 
 export interface GameState {
   saveVersion: number;
+  /** Which city this save is in (CityDef.id, src/content/cities): every engine function reads its tables with `cityOf(g)`. Saves from before cities are 'home'. */
+  city: string;
   /** C106: which economy this save was made under (ECONOMY). */
   economy: number;
   cash: number;
@@ -262,16 +266,22 @@ export function newShop(built = false): Shop {
   return { built, managed: false, heads: noHeads(), prep: 1, ovens: 1, grade: 0, counter: 1, drivers: 1, tables: 1, footprint: 0, line: emptyLine(), sold: 0, decor: newDecor(), perk: false };
 }
 
-export function newGame(now: number): GameState {
-  const shops = Object.fromEntries(SHOP_IDS.map((id) => [id, newShop(id === 'downtown')])) as Record<NeighborhoodId, Shop>;
+/** The first neighbourhood of a city: built from the start, its founder takes over in the tutorial. */
+export const firstHood = (city: CityDef): NeighborhoodId => city.neighbourhoods[0].id;
+
+export function newGame(now: number, cityId: string = HOME_ID): GameState {
+  const city = cityOf({ city: cityId });
+  const first = firstHood(city);
+  const shops = Object.fromEntries(hoodIds(city).map((id) => [id, newShop(id === first)])) as Record<NeighborhoodId, Shop>;
   return {
     saveVersion: SAVE_VERSION,
+    city: city.id,
     economy: ECONOMY,
     cash: 0,
     totalEarned: 0,
     vehicle: 0,
     shops,
-    active: 'downtown',
+    active: first,
     dronesUnlocked: false,
     cityComplete: false,
     seenScenes: [],
@@ -426,7 +436,7 @@ function migrateBonus(raw: unknown, play: number, now: number): BonusState {
 function migrateOrders(raw: unknown, play: number, now: number, shops: Record<NeighborhoodId, Shop>): OrderState {
   const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   const obj = (v: unknown) => (v && typeof v === 'object' ? (v as Record<string, unknown>) : null);
-  const hoodOf = (v: unknown) => (SHOP_IDS.includes(v as NeighborhoodId) ? (v as NeighborhoodId) : null);
+  const hoodOf = (v: unknown) => (typeof v === 'string' && Object.prototype.hasOwnProperty.call(shops, v) ? v : null);
   const variantOf = (v: unknown): 0 | 1 => (v === 1 ? 1 : 0);
   const offerRaw = obj(o.offer);
   const activeRaw = obj(o.active);
@@ -460,9 +470,13 @@ function migrateOrders(raw: unknown, play: number, now: number, shops: Record<Ne
 
 /** Load any save (v1 single-shop, v2, v3, v4, v5 or v6) over a fresh game so missing fields get defaults. */
 export function migrate(raw: unknown, now: number): GameState {
-  const base = newGame(now);
-  if (!raw || typeof raw !== 'object') return base;
+  if (!raw || typeof raw !== 'object') return newGame(now);
   const r = raw as Record<string, unknown>;
+  // a save from before cities has no `city`: it is the home city's. An id this build does not know loads as home too.
+  const city = cityOf({ city: typeof r.city === 'string' && Object.prototype.hasOwnProperty.call(CITIES, r.city) ? r.city : HOME_ID });
+  const base = newGame(now, city.id);
+  const ids = hoodIds(city);
+  const first = firstHood(city);
   const seen = Array.isArray(r.seenScenes) ? (r.seenScenes as unknown[]).filter((x): x is string => typeof x === 'string') : [];
   const game: GameState = {
     ...base,
@@ -470,8 +484,8 @@ export function migrate(raw: unknown, now: number): GameState {
     economy: int(r.economy, ECONOMY_BEFORE_MARKER, 0),
     cash: Math.max(0, num(r.cash, 0)),
     totalEarned: Math.max(0, num(r.totalEarned, 0)),
-    vehicle: int(r.vehicle, 0, 0, VEHICLES.length - 1),
-    active: SHOP_IDS.includes(r.active as NeighborhoodId) ? (r.active as NeighborhoodId) : 'downtown',
+    vehicle: int(r.vehicle, 0, 0, city.fit.vehicles.length - 1),
+    active: ids.includes(r.active as NeighborhoodId) ? (r.active as NeighborhoodId) : first,
     dronesUnlocked: !!r.dronesUnlocked,
     cityComplete: !!r.cityComplete,
     seenScenes: seen,
@@ -487,28 +501,28 @@ export function migrate(raw: unknown, now: number): GameState {
     stats: migrateStats(r.stats),
   };
   if (r.shops && typeof r.shops === 'object') {
-    for (const id of SHOP_IDS) {
+    for (const id of ids) {
       const s = (r.shops as Record<string, Record<string, unknown>>)[id];
       if (!s || typeof s !== 'object') continue;
       const managed = !!s.managed;
       const h = (s.heads ?? {}) as Record<string, unknown>;
       game.shops[id] = {
-        built: id === 'downtown' || !!s.built,
+        built: id === first || !!s.built,
         managed,
         // v3 saves: a managed shop already ran every station, so it keeps all three heads
         heads: managed ? allHeads() : { prep: !!h.prep, oven: !!h.oven, counter: !!h.counter },
         prep: int(s.prep, 1, 1),
         ovens: int(s.ovens, 1, 1),
-        grade: int(s.grade, 0, 0, OVEN_GRADES.length - 1),
+        grade: int(s.grade, 0, 0, city.fit.ovenGrades.length - 1),
         counter: int(s.counter, 1, 1),
         drivers: int(s.drivers, 1, 1),
         tables: int(s.tables, 1, 1),
-        footprint: int(s.footprint, 0, 0, FOOTPRINTS.length - 1),
+        footprint: int(s.footprint, 0, 0, city.fit.footprints.length - 1),
         line: migrateLine(s.line, Math.max(0, num(s.queued, 0))),
         decor: Object.fromEntries(DECOR_KINDS.map((k) => [k, int((s.decor as Record<string, unknown> | undefined)?.[k], 0, 0, 3)])) as Record<DecorKind, number>,
         sold: Math.floor(Math.max(0, num(s.sold, 0))),
         // v2 saves: a finale already seen earns its perk (v3.7)
-        perk: !!s.perk || (!!PERKS[id] && seen.includes(finaleId(id))),
+        perk: !!s.perk || (!!city.perks[id] && seen.includes(finaleId(id))),
       };
     }
   } else {
@@ -516,19 +530,19 @@ export function migrate(raw: unknown, now: number): GameState {
     // and every neighborhood it delivered to gets a starter pizzeria.
     const unlocked = Array.isArray(r.unlocked) ? (r.unlocked as string[]) : [];
     const delivered = (r.delivered ?? {}) as Record<string, number>;
-    for (const id of SHOP_IDS) {
-      if (id === 'downtown' || unlocked.includes(id)) game.shops[id] = { ...newShop(true), sold: Math.floor(Math.max(0, num(delivered[id], 0))) };
+    for (const id of ids) {
+      if (id === first || unlocked.includes(id)) game.shops[id] = { ...newShop(true), sold: Math.floor(Math.max(0, num(delivered[id], 0))) };
     }
-    const d = game.shops.downtown;
+    const d = game.shops[first];
     d.ovens = Math.min(levelCap(d), int(r.ovenLevel, 1, 1));
     d.drivers = int(r.drivers, 1, 1);
     d.managed = !!r.autoBake;
     if (d.managed) d.heads = allHeads();
   }
-  game.shops.downtown.built = true;
-  if (!game.shops[game.active].built) game.active = 'downtown';
+  game.shops[first].built = true;
+  if (!game.shops[game.active].built) game.active = first;
   // saves from before the tutorial: anyone who has sold pizza (or has Nonna running Downtown) skips it
-  const veteran = game.shops.downtown.sold > 0 || game.shops.downtown.managed;
+  const veteran = game.shops[first].sold > 0 || game.shops[first].managed;
   game.tutorial = int(r.tutorial, veteran ? TUTORIAL_DONE : 0, 0, TUTORIAL_DONE);
   game.bonus = migrateBonus(r.bonus, game.playSeconds, now);
   game.order = migrateOrders(r.order, game.playSeconds, now, game.shops);
@@ -554,8 +568,8 @@ export function upgradeCost(baseCost: number, timesBought: number, growth: numbe
 }
 
 /** A station's price for its next level: its base cost × the shop's cost multiplier, growing by the station's own `growth` per level bought (STATIONS; else TUNING.costGrowth). */
-export const stationCost = (id: NeighborhoodId, key: keyof typeof STATIONS, timesBought: number): number =>
-  upgradeCost(STATIONS[key].cost * def(id).costMult, timesBought, STATIONS[key].growth ?? TUNING.costGrowth);
+export const stationCost = (id: NeighborhoodId, key: keyof typeof STATIONS, timesBought: number, city: CityDef = HOME_CITY): number =>
+  upgradeCost(STATIONS[key].cost * def(id, city).costMult, timesBought, STATIONS[key].growth ?? TUNING.costGrowth);
 
 export function milestoneMultiplier(level: number): number {
   return TUNING.milestones.reduce((m, at) => (level >= at ? m * 2 : m), 1);
@@ -566,7 +580,8 @@ export function nextMilestone(level: number): number | null {
   return TUNING.milestones.find((at) => at > level) ?? null;
 }
 
-export const def = (id: NeighborhoodId): NeighborhoodDef => NEIGHBORHOODS.find((n) => n.id === id)!;
+/** A neighbourhood's tables in `city` (the home city unless a game's city is passed: `def(id, cityOf(g))`). */
+export const def = (id: NeighborhoodId, city: CityDef = HOME_CITY): NeighborhoodDef => city.neighbourhoods.find((n) => n.id === id)!;
 
 /** Prep, ovens and counter can't level past this until the footprint grows. */
 export const levelCap = (shop: Shop) => TUNING.levelsPerFootprint * (shop.footprint + 1);
@@ -653,26 +668,26 @@ export const patioTables = (shop: Shop) => Math.max(0, Math.min(2, 1 + Math.floo
  * Cash per second a running pizzeria makes. Walk-ins get the kitchen's pies first, up to the seating rate
  * (they pay walkInShare of the price, 1.0 by default); drivers deliver the rest at full price.
  */
-export function shopRevenue(id: NeighborhoodId, shop: Shop, vehicle: number, fx: FeatureMults = NO_FX): number {
+export function shopRevenue(id: NeighborhoodId, shop: Shop, vehicle: number, fx: FeatureMults = NO_FX, city: CityDef = HOME_CITY): number {
   const { walkIns, delivered } = pieSplit(shop, vehicle, fx);
-  const perk = perkOf(id, shop);
-  return def(id).orderValue * (perk?.priceMult ?? 1) * decorMult(shop, id) * gmMult(shop) * fx.value * (delivered + walkIns * (perk?.walkInShare ?? TUNING.walkInShare));
+  const perk = perkOf(id, shop, city);
+  return def(id, city).orderValue * (perk?.priceMult ?? 1) * decorMult(shop, id, city) * gmMult(shop) * fx.value * (delivered + walkIns * (perk?.walkInShare ?? TUNING.walkInShare));
 }
 
 /** The General Manager's neighbourhood boost. */
 export const gmMult = (shop: Shop) => (shop.managed ? GM_BOOST : 1);
 
 /** This pizzeria's finale perk, once earned. */
-export const perkOf = (id: NeighborhoodId, shop: Shop) => (shop.perk ? PERKS[id] : undefined);
+export const perkOf = (id: NeighborhoodId, shop: Shop, city: CityDef = HOME_CITY) => (shop.perk ? city.perks[id] : undefined);
 
 /** Nicer places charge more: +DECOR_BOOST per decor tier owned (Genevieve's perk raises it in Uptown). */
-export const decorMult = (shop: Shop, id?: NeighborhoodId) =>
-  1 + ((id && perkOf(id, shop)?.decorBoost) ?? DECOR_BOOST) * DECOR_KINDS.reduce((t, k) => t + (shop.decor?.[k] ?? 0), 0);
+export const decorMult = (shop: Shop, id?: NeighborhoodId, city: CityDef = HOME_CITY) =>
+  1 + ((id ? perkOf(id, shop, city)?.decorBoost : undefined) ?? DECOR_BOOST) * DECOR_KINDS.reduce((t, k) => t + (shop.decor?.[k] ?? 0), 0);
 
 /** Average cash per pizza sold right now. */
-export function valuePerPizza(id: NeighborhoodId, shop: Shop, vehicle: number, fx: FeatureMults = NO_FX): number {
+export function valuePerPizza(id: NeighborhoodId, shop: Shop, vehicle: number, fx: FeatureMults = NO_FX, city: CityDef = HOME_CITY): number {
   const sold = shopRate(shop, vehicle, fx);
-  return sold > 0 ? shopRevenue(id, shop, vehicle, fx) / sold : def(id).orderValue * (perkOf(id, shop)?.priceMult ?? 1) * decorMult(shop, id) * gmMult(shop) * fx.value;
+  return sold > 0 ? shopRevenue(id, shop, vehicle, fx, city) / sold : def(id, city).orderValue * (perkOf(id, shop, city)?.priceMult ?? 1) * decorMult(shop, id, city) * gmMult(shop) * fx.value;
 }
 
 /**
@@ -692,7 +707,7 @@ function readoutNow(s: GameState): number {
 export function shopEarnings(s: GameState, id: NeighborhoodId, now: number = readoutNow(s)): number {
   const shop = s.shops[id];
   if (!shop.built) return 0;
-  return shopRevenue(id, shop, s.vehicle, featureMults(s, id, now));
+  return shopRevenue(id, shop, s.vehicle, featureMults(s, id, now), cityOf(s));
 }
 
 /** Every station runs on its own (a GM, or all three heads): the shop earns in the foreground without taps. */
@@ -700,7 +715,7 @@ export const runsItself = (shop: Shop) => shop.managed || allHeadsHired(shop);
 
 /** Cash per second the city earns on its own in the foreground (pizzerias with a GM or all three heads, C68). */
 export function earningsPerSecond(s: GameState): number {
-  return SHOP_IDS.reduce((t, id) => t + (s.shops[id].built && runsItself(s.shops[id]) ? shopEarnings(s, id) : 0), 0);
+  return hoodIds(cityOf(s)).reduce((t, id) => t + (s.shops[id].built && runsItself(s.shops[id]) ? shopEarnings(s, id) : 0), 0);
 }
 
 export type Stage = 'prep' | 'ovens' | 'counter' | 'customers';
@@ -737,35 +752,37 @@ export const isHeadUpgrade = (u: Upgrade): u is HeadUpgrade => u in HEAD_OF;
 export const headOf = (u: HeadUpgrade): HeadKind => HEAD_OF[u];
 
 /** What hiring a station head costs in this pizzeria. */
-export const headCost = (id: NeighborhoodId, k: HeadKind) => (id === 'downtown' ? HEAD_COST_DOWNTOWN[k] : Math.ceil(def(id).headsCost * HEAD_SHARE[k]));
+export const headCost = (id: NeighborhoodId, k: HeadKind, city: CityDef = HOME_CITY) => (id === firstHood(city) ? city.fit.headCostFirst[k] : Math.ceil(def(id, city).headsCost * HEAD_SHARE[k]));
 export const allHeadsHired = (shop: Shop) => HEAD_KINDS.every((k) => shop.heads[k]);
 export type BuyResult = { ok: true; state: GameState } | { ok: false; reason: string };
 
 /** Cost of an upgrade in a pizzeria, or null when it's maxed/not available. */
 export function upgradeCostOf(s: GameState, id: NeighborhoodId, what: Upgrade): number | null {
   const shop = s.shops[id];
-  const m = def(id).costMult;
+  const city = cityOf(s);
+  const m = def(id, city).costMult;
+  const { ovenGrades, footprints } = city.fit;
   switch (what) {
     case 'prep':
-      return stationCost(id, 'prep', shop.prep - 1);
+      return stationCost(id, 'prep', shop.prep - 1, city);
     case 'ovens':
-      return stationCost(id, 'ovens', shop.ovens - 1);
+      return stationCost(id, 'ovens', shop.ovens - 1, city);
     case 'counter':
-      return stationCost(id, 'counter', shop.counter - 1);
+      return stationCost(id, 'counter', shop.counter - 1, city);
     case 'drivers':
-      return Math.ceil(stationCost(id, 'drivers', shop.drivers - 1) * (perkOf(id, shop)?.driversCostMult ?? 1));
+      return Math.ceil(stationCost(id, 'drivers', shop.drivers - 1, city) * (perkOf(id, shop, city)?.driversCostMult ?? 1));
     case 'tables':
-      return stationCost(id, 'tables', shop.tables - 1);
+      return stationCost(id, 'tables', shop.tables - 1, city);
     case 'grade':
-      return shop.grade + 1 < OVEN_GRADES.length ? Math.ceil(OVEN_GRADES[shop.grade + 1].cost * m) : null;
+      return shop.grade + 1 < ovenGrades.length ? Math.ceil(ovenGrades[shop.grade + 1].cost * m) : null;
     case 'expand':
-      return shop.footprint + 1 < FOOTPRINTS.length ? Math.ceil(FOOTPRINTS[shop.footprint + 1].cost * m) : null;
+      return shop.footprint + 1 < footprints.length ? Math.ceil(footprints[shop.footprint + 1].cost * m) : null;
     case 'manager':
-      return shop.managed ? null : def(id).managerCost;
+      return shop.managed ? null : def(id, city).managerCost;
     case 'headPrep':
     case 'headOven':
     case 'headCounter':
-      return shop.heads[HEAD_OF[what]] ? null : headCost(id, HEAD_OF[what]);
+      return shop.heads[HEAD_OF[what]] ? null : headCost(id, HEAD_OF[what], city);
   }
 }
 
@@ -774,19 +791,21 @@ export function upgradeLock(s: GameState, id: NeighborhoodId, what: Upgrade): st
   const shop = s.shops[id];
   if (!shop.built) return 'Build this pizzeria first';
   const cap = levelCap(shop);
+  const city = cityOf(s);
+  const { ovenGrades, footprints } = city.fit;
   switch (what) {
     case 'prep':
     case 'ovens':
     case 'counter':
     case 'tables':
-      return shop[what] >= cap ? (shop.footprint + 1 < FOOTPRINTS.length ? `Expand to go past Lv\u00A0${cap}` : 'Max level') : null;
+      return shop[what] >= cap ? (shop.footprint + 1 < footprints.length ? `Expand to go past Lv\u00A0${cap}` : 'Max level') : null;
     case 'grade':
-      return shop.grade + 1 >= OVEN_GRADES.length ? 'Finest ovens in town' : null;
+      return shop.grade + 1 >= ovenGrades.length ? 'Finest ovens in town' : null;
     case 'expand':
-      return shop.footprint + 1 >= FOOTPRINTS.length ? 'Biggest it gets' : null;
+      return shop.footprint + 1 >= footprints.length ? 'Biggest it gets' : null;
     case 'manager':
       if (shop.managed) return 'Hired';
-      if (id === 'downtown') return nonnaCountdownText(s);
+      if (id === firstHood(city)) return nonnaCountdownText(s);
       return allHeadsHired(shop) ? null : 'Hire all three heads first';
     case 'headPrep':
     case 'headOven':
@@ -794,7 +813,7 @@ export function upgradeLock(s: GameState, id: NeighborhoodId, what: Upgrade): st
       return shop.heads[HEAD_OF[what]] ? 'Hired' : null;
     case 'drivers':
       // a save that already went past the cap (before the cap existed) quotes its own level, not the lower cap
-      return shop.drivers >= cap ? (shop.footprint + 1 < FOOTPRINTS.length ? `Expand to hire past\u00A0${shop.drivers}` : 'Max drivers') : null;
+      return shop.drivers >= cap ? (shop.footprint + 1 < footprints.length ? `Expand to hire past\u00A0${shop.drivers}` : 'Max drivers') : null;
   }
 }
 
@@ -839,24 +858,25 @@ export function buyUpgrade(s: GameState, id: NeighborhoodId, what: Upgrade): Buy
 }
 
 export function nextToBuild(s: GameState): NeighborhoodDef | null {
-  return NEIGHBORHOODS.find((n) => !s.shops[n.id].built) ?? null;
+  return cityOf(s).neighbourhoods.find((n) => !s.shops[n.id].built) ?? null;
 }
 
 export function buildLock(s: GameState, id: NeighborhoodId): string | null {
-  const idx = NEIGHBORHOODS.findIndex((n) => n.id === id);
+  const hoods = cityOf(s).neighbourhoods;
+  const idx = hoods.findIndex((n) => n.id === id);
   if (s.shops[id].built) return 'Built';
-  if (idx > 0 && !s.shops[NEIGHBORHOODS[idx - 1].id].built) return `Build in ${NEIGHBORHOODS[idx - 1].name} first`;
-  // Downtown stops earning once Nonna's tutorial is skipped past; keep the player here until she takes over.
-  if (id === 'suburbs' && !s.seenScenes.includes(NONNA_SCENE_ID)) return nonnaCountdownText(s);
+  if (idx > 0 && !s.shops[hoods[idx - 1].id].built) return `Build in ${hoods[idx - 1].name} first`;
+  // The first shop stops earning once the founder's tutorial is skipped past; keep the player there until she takes over (the second shop is the one that waits).
+  if (idx === 1 && !s.seenScenes.includes(cityOf(s).fit.takeover.sceneId)) return nonnaCountdownText(s);
   return null;
 }
 
-const NONNA_SCENE_ID = NONNA_TAKEOVER.sceneId;
-
-/** Pizzas Downtown still has to deliver before Nonna takes over the kitchen (0 once it's due or seen). */
+/** Pizzas the first shop still has to deliver before Nonna takes over the kitchen (0 once it's due or seen). */
 export function nonnaPizzasLeft(s: GameState): number {
-  if (s.seenScenes.includes(NONNA_SCENE_ID)) return 0;
-  return Math.max(0, NONNA_TAKEOVER.pizzas - s.shops.downtown.sold);
+  const city = cityOf(s);
+  const { sceneId: scene, pizzas } = city.fit.takeover;
+  if (s.seenScenes.includes(scene)) return 0;
+  return Math.max(0, pizzas - s.shops[firstHood(city)].sold);
 }
 
 export function nonnaCountdownText(s: GameState): string {
@@ -868,7 +888,7 @@ export function nonnaCountdownText(s: GameState): string {
 export function buildShop(s: GameState, id: NeighborhoodId): BuyResult {
   const lock = buildLock(s, id);
   if (lock) return { ok: false, reason: lock };
-  const r = spend(s, def(id).buildCost);
+  const r = spend(s, def(id, cityOf(s)).buildCost);
   if (!r.ok) return r;
   return { ok: true, state: bump({ ...withShop(r.state, id, { built: true }), active: id }, { builds: 1 }) };
 }
@@ -877,19 +897,23 @@ export function buildShop(s: GameState, id: NeighborhoodId): BuyResult {
 
 /** The Pier 9 bid is on offer once "Man Overboard" (waterfront-3b, which plays at the same pizza count) has played and Waterfront has sold enough pizzas. */
 export function pier9Available(s: GameState): boolean {
-  const w = s.shops.waterfront;
-  return w.built && !w.perk && s.seenScenes.includes('waterfront-3b') && w.sold >= PIER9_BID.unlockPizzas;
+  const bid = cityOf(s).bid;
+  if (!bid) return false;
+  const w = s.shops[bid.hood];
+  return w.built && !w.perk && s.seenScenes.includes(bid.afterScene) && w.sold >= bid.unlockPizzas;
 }
 
 /** What the Pier 9 bid costs now: the base bid times the live auction's multiplier (features/layers/waterfront-boats.ts `pier9AuctionMult`, the same number from the saved state: content/layers.ts). */
-export const pier9Price = (s: GameState): number => Math.ceil(PIER9_BID.cost * auctionMult((s.x?.[LAYER_KEYS.boats] as { openedAt?: number } | undefined)?.openedAt ?? -1, s.playSeconds));
+export const pier9Price = (s: GameState): number => Math.ceil((cityOf(s).bid?.cost ?? 0) * auctionMult((s.x?.[LAYER_KEYS.boats] as { openedAt?: number } | undefined)?.openedAt ?? -1, s.playSeconds));
 
 /** Win the dock for Marisol: spends the bid and earns Waterfront's perk, which plays the finale. */
 export function bidPier9(s: GameState): BuyResult {
-  if (s.shops.waterfront.perk) return { ok: false, reason: 'Pier 9 is already saved' };
+  const bid = cityOf(s).bid;
+  if (!bid) return { ok: false, reason: 'There is no auction in this city' };
+  if (s.shops[bid.hood].perk) return { ok: false, reason: 'Pier 9 is already saved' };
   if (!pier9Available(s)) return { ok: false, reason: 'The Pier 9 auction hasn’t opened yet' };
   const r = spend(s, pier9Price(s));
-  return r.ok ? { ok: true, state: withShop(r.state, 'waterfront', { perk: true }) } : r;
+  return r.ok ? { ok: true, state: withShop(r.state, bid.hood, { perk: true }) } : r;
 }
 
 /** Why the next delivery vehicle can't be bought yet (other than cash), or null when it can. */
@@ -897,8 +921,9 @@ export type VehicleLock = { kind: 'maxed' } | { kind: 'story'; storyOf: 'priya' 
 
 export function nextVehicleLock(s: GameState): VehicleLock | null {
   const next = s.vehicle + 1;
-  if (next >= VEHICLES.length) return { kind: 'maxed' };
-  if (VEHICLES[next].id === 'drone' && !s.dronesUnlocked) return { kind: 'story', storyOf: 'priya' };
+  const vehicles = cityOf(s).fit.vehicles;
+  if (next >= vehicles.length) return { kind: 'maxed' };
+  if (vehicles[next].id === 'drone' && !s.dronesUnlocked) return { kind: 'story', storyOf: 'priya' };
   return null;
 }
 
@@ -910,7 +935,7 @@ export function vehicleLockLabel(lock: VehicleLock) {
 export function buyVehicle(s: GameState): BuyResult {
   const lock = nextVehicleLock(s);
   if (lock) return { ok: false, reason: vehicleLockLabel(lock) };
-  const r = spend(s, VEHICLES[s.vehicle + 1].cost);
+  const r = spend(s, cityOf(s).fit.vehicles[s.vehicle + 1].cost);
   return r.ok ? { ok: true, state: bump({ ...r.state, vehicle: s.vehicle + 1 }, { fleet: 1 }) } : r;
 }
 
@@ -950,16 +975,16 @@ export const FIRST_BATCH_SPEED = 2.5;
  * the steady state matches `shopRate`; a tapped counter hands over at the counter's own speed (the player is
  * already the slow part of a serial prep → bake → serve).
  */
-export function lineRates(id: NeighborhoodId, shop: Shop, vehicle: number, mult = 1, fx: FeatureMults = NO_FX): LineRates {
+export function lineRates(id: NeighborhoodId, shop: Shop, vehicle: number, mult = 1, fx: FeatureMults = NO_FX, city: CityDef = HOME_CITY): LineRates {
   // the very first batch Downtown is quick, so Nonna's "watch the timer" step lasts seconds, not half a minute
-  const first = id === 'downtown' && shop.sold === 0 && !shop.managed ? FIRST_BATCH_SPEED : 1;
+  const first = id === firstHood(city) && shop.sold === 0 && !shop.managed ? FIRST_BATCH_SPEED : 1;
   return {
     prep: prepRate(shop) * first,
     oven: ovenRate(shop) * first,
     serve: (automationOf(shop).counter ? Math.min(counterRate(shop), demandRate(shop, vehicle, fx)) : counterRate(shop)) * first,
     shop: shopRate(shop, vehicle, fx),
     // a running boost raises what every pie pays, so departures, pops and revenue agree
-    price: valuePerPizza(id, shop, vehicle, fx) * mult,
+    price: valuePerPizza(id, shop, vehicle, fx, city) * mult,
     walkInFraction: walkInFraction(shop, vehicle, fx),
     tapBatch: tapBatch(shop),
   };
@@ -971,8 +996,9 @@ export type TapOutcome = { ok: true; state: GameState } | { ok: false; reason: s
 export function tapStation(s: GameState, id: NeighborhoodId, st: Station): TapOutcome {
   const shop = s.shops[id];
   if (!shop.built) return { ok: false, reason: 'Build this pizzeria first' };
-  if (automationOf(shop)[st]) return { ok: false, reason: shop.managed ? 'Your manager has it covered' : `${HEADS[id][st]} has it covered` };
-  const r = lineTap(shop.line, st, lineRates(id, shop, s.vehicle, 1, featureMults(s, id, s.lastSavedAt)), automationOf(shop));
+  const city = cityOf(s);
+  if (automationOf(shop)[st]) return { ok: false, reason: shop.managed ? 'Your manager has it covered' : `${city.heads[id][st]} has it covered` };
+  const r = lineTap(shop.line, st, lineRates(id, shop, s.vehicle, 1, featureMults(s, id, s.lastSavedAt), city), automationOf(shop));
   return r.ok ? { ok: true, state: withShop(s, id, { line: r.line }) } : r;
 }
 
@@ -1013,7 +1039,8 @@ export function lineTick(s: GameState, dt: number, now?: number): GameState {
   let earned = 0;
   const add = { walkins: 0, deliveries: 0, baked: 0 };
   let shops: Record<NeighborhoodId, Shop> | null = null;
-  for (const id of SHOP_IDS) {
+  const city = cityOf(s);
+  for (const id of hoodIds(city)) {
     const shop = s.shops[id];
     if (!shop.built) continue;
     const auto = automationOf(shop);
@@ -1021,7 +1048,7 @@ export function lineTick(s: GameState, dt: number, now?: number): GameState {
     // an idle manual line with nobody walking can't change: skip the allocation
     // (carrier laps keep counting down while pies wait or a carrier is still out)
     if (!auto.prep && !auto.oven && !auto.counter && !l.prep && !l.oven && !l.counter && l.departures.length === 0 && l.boxed === 0 && l.driverBusy <= 0 && l.walkinBusy <= 0) continue;
-    const a = advanceLine(l, dt, lineRates(id, shop, s.vehicle, mult, featureMults(s, id, now ?? s.lastSavedAt)), auto);
+    const a = advanceLine(l, dt, lineRates(id, shop, s.vehicle, mult, featureMults(s, id, now ?? s.lastSavedAt), city), auto);
     shops ??= { ...s.shops };
     shops[id] = { ...shop, line: a.line, sold: shop.sold + a.sold };
     cash += a.paid;
@@ -1064,7 +1091,8 @@ export function offlineTick(s: GameState, seconds: number, boost = 1, now?: numb
   const rows: { id: NeighborhoodId; pies: number; base: number; extra: number }[] = [];
   let cash = s.cash;
   let earned = 0;
-  for (const id of SHOP_IDS) {
+  const city = cityOf(s);
+  for (const id of hoodIds(city)) {
     const shop = s.shops[id];
     if (!shop.built) continue;
     let pies: number;
@@ -1080,7 +1108,7 @@ export function offlineTick(s: GameState, seconds: number, boost = 1, now?: numb
       const rest = Math.floor(shopRate(shop, s.vehicle, fx) * share * seconds) + inFlight - carriedPies;
       pies = carriedPies + rest;
       // `carried` was already boosted when it left the shop: only the rest takes the boost
-      paid = carried + rest * valuePerPizza(id, shop, s.vehicle, fx) * boost;
+      paid = carried + rest * valuePerPizza(id, shop, s.vehicle, fx, city) * boost;
       // closed form: the walk-in share of the steady state decides the split
       const walk = Math.round(pies * walkInFraction(shop, s.vehicle, fx));
       add.walkins += walk;
@@ -1088,7 +1116,7 @@ export function offlineTick(s: GameState, seconds: number, boost = 1, now?: numb
       add.baked += pies;
       line = { ...emptyLine(), walkInDebt: shop.line.walkInDebt, nextId: shop.line.nextId };
     } else {
-      const a = advanceLine(shop.line, seconds, lineRates(id, shop, s.vehicle, 1, fx), { prep: false, oven: false, counter: false });
+      const a = advanceLine(shop.line, seconds, lineRates(id, shop, s.vehicle, 1, fx, city), { prep: false, oven: false, counter: false });
       pies = a.sold;
       paid = a.paid * boost;
       line = a.line;
@@ -1097,7 +1125,7 @@ export function offlineTick(s: GameState, seconds: number, boost = 1, now?: numb
       add.baked += a.baked;
     }
     // a perk can raise what a pizzeria earns while away (Big Sal's, in Industrial)
-    const extra = paid * ((perkOf(id, shop)?.offlineMult ?? 1) - 1);
+    const extra = paid * ((perkOf(id, shop, city)?.offlineMult ?? 1) - 1);
     shops[id] = { ...shop, line, sold: shop.sold + pies };
     cash += paid + extra;
     earned += paid + extra;
@@ -1123,7 +1151,7 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
   for (const f of FEATURES) if (f.onOffline) state = f.onOffline(state, seconds, now, s);
   const rows = byShop.map((r) => ({ id: r.id, managed: s.shops[r.id].managed, headsOnly: !s.shops[r.id].managed && runsItself(s.shops[r.id]), earned: r.base + r.extra, pies: r.pies })).filter((x) => x.earned > 0);
   // Downtown's manager is Nonna's story beat, not a hire the player can make, so it is never named as idle
-  const idle = SHOP_IDS.filter((id) => id !== 'downtown' && s.shops[id].built && !runsItself(s.shops[id]));
+  const idle = hoodIds(cityOf(s)).filter((id) => id !== firstHood(cityOf(s)) && s.shops[id].built && !runsItself(s.shops[id]));
   return { state: { ...state, lastSavedAt: now }, seconds, cap, capped: elapsed - cap >= CAPPED_SLACK_SECONDS, awaySeconds: elapsed, earned: state.cash - s.cash, byShop: rows, idle };
 }
 
@@ -1174,8 +1202,13 @@ export function pendingScenes(s: GameState, scenes: Scene[]): Scene[] {
   return interludes.length ? main.concat(interludes) : main;
 }
 
-/** The home scenes by id, built once (M66): the goal bar asks `storyWaitHint` often. */
-const HOME_BY_ID: ReadonlyMap<string, Scene> = new Map(HOME_SCENES.map((sc) => [sc.id, sc]));
+/** A story's scenes by id, built once per list (M66): the goal bar asks `storyWaitHint` often. */
+const BY_ID = new WeakMap<readonly Scene[], ReadonlyMap<string, Scene>>();
+const scenesById = (scenes: readonly Scene[]): ReadonlyMap<string, Scene> => {
+  let m = BY_ID.get(scenes);
+  if (!m) BY_ID.set(scenes, (m = new Map(scenes.map((sc) => [sc.id, sc]))));
+  return m;
+};
 
 const capital = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 
@@ -1183,9 +1216,9 @@ const capital = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
  * A line for the goal bar when a main beat has triggered but is held behind a finale the player still has to earn (Uptown behind
  * Industrial's, University behind the Pier 9 bid). Holds that clear with play time return null: they clear on their own.
  */
-export function storyWaitHint(s: GameState, scenes: readonly Scene[] = HOME_SCENES): string | null {
+export function storyWaitHint(s: GameState, scenes: readonly Scene[] = cityOf(s).scenes): string | null {
   const seen = new Set(s.seenScenes);
-  const byId = scenes === HOME_SCENES ? HOME_BY_ID : new Map(scenes.map((sc) => [sc.id, sc]));
+  const byId = scenesById(scenes);
   const unseenBehind = (sc: Scene, out: Set<string> = new Set()): Set<string> => {
     for (const id of prerequisites(sc)) {
       const p = byId.get(id);
@@ -1214,7 +1247,7 @@ export function storyWaitHint(s: GameState, scenes: readonly Scene[] = HOME_SCEN
 export function challengeOffered(s: GameState, id: NeighborhoodId): boolean {
   if (!rivalOpen(s, id)) return false;
   const beat3 = s.sceneAt[sceneId(id, 3)];
-  const gap = id === 'downtown' ? STORY_PACING.downtownBeat4GapSeconds : STORY_PACING.beat4GapSeconds;
+  const gap = id === firstHood(cityOf(s)) ? STORY_PACING.downtownBeat4GapSeconds : STORY_PACING.beat4GapSeconds;
   return beat3 === undefined || s.playSeconds - beat3 >= gap;
 }
 
@@ -1225,7 +1258,8 @@ export function challengeOffered(s: GameState, id: NeighborhoodId): boolean {
  * them: its hire scene is seen. A v6 save keeps a hire scene pending until it plays (C121: it used to be marked seen on the next load).
  */
 function migrateStory(game: GameState, fromVersion: number): GameState {
-  const byId = new Map(HOME_SCENES.map((sc) => [sc.id, sc]));
+  const scenes = cityOf(game).scenes;
+  const byId = scenesById(scenes);
   const seen = new Set(game.seenScenes);
   const sceneAt = { ...game.sceneAt };
   const mark = (id: string, at: number | undefined) => {
@@ -1239,7 +1273,7 @@ function migrateStory(game: GameState, fromVersion: number): GameState {
       mark(pre, at);
     }
   };
-  if (fromVersion < 6) for (const sc of HOME_SCENES) if (sc.trigger.kind === 'manager' && game.shops[sc.trigger.neighborhood].managed) seen.add(sc.id);
+  if (fromVersion < 6) for (const sc of scenes) if (sc.trigger.kind === 'manager' && game.shops[sc.trigger.neighborhood].managed) seen.add(sc.id);
   for (const id of [...seen]) mark(id, sceneAt[id]);
   if (seen.size === game.seenScenes.length) return game;
   const seenScenes = [...game.seenScenes, ...[...seen].filter((id) => !game.seenScenes.includes(id))];
@@ -1250,7 +1284,7 @@ export function applyReward(s: GameState, reward: SceneReward | undefined): Game
   switch (reward) {
     case 'auto-bake':
       // Nonna becomes Downtown's General Manager and brings any heads not yet hired.
-      return withShop(s, 'downtown', { managed: true, heads: allHeads() });
+      return withShop(s, firstHood(cityOf(s)), { managed: true, heads: allHeads() });
     case 'drones':
       return { ...s, dronesUnlocked: true };
     case 'city-complete':
@@ -1283,7 +1317,7 @@ export function upgradeGain(s: GameState, id: NeighborhoodId, what: Upgrade): nu
 export function vehicleGain(s: GameState): number | null {
   const r = buyVehicle({ ...s, cash: WHAT_IF_CASH });
   if (!r.ok) return null;
-  return SHOP_IDS.reduce((t, id) => t + (s.shops[id].built ? shopEarnings(r.state, id) - shopEarnings(s, id) : 0), 0);
+  return hoodIds(cityOf(s)).reduce((t, id) => t + (s.shops[id].built ? shopEarnings(r.state, id) - shopEarnings(s, id) : 0), 0);
 }
 
 /** A starting pizzeria's earnings once it runs itself (heads + a GM, so with the GM boost). */
@@ -1293,7 +1327,7 @@ export function buildGain(s: GameState, id: NeighborhoodId): number {
 }
 
 /** Everything it takes to get a new pizzeria running itself: the build, three heads and a GM. */
-export const buildAllIn = (id: NeighborhoodId) => def(id).buildCost + def(id).headsCost + def(id).managerCost;
+export const buildAllIn = (id: NeighborhoodId, city: CityDef = HOME_CITY) => def(id, city).buildCost + def(id, city).headsCost + def(id, city).managerCost;
 
 export interface Bundle {
   /** Upgrades to buy, in order (may repeat, may include an expansion). */
@@ -1393,7 +1427,7 @@ export function bundleHint(s: GameState, id: NeighborhoodId): BundleHint | null 
 
 export function decorCost(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null {
   const tier = s.shops[id].decor[kind];
-  return tier >= 3 ? null : Math.ceil(DECOR_TIER_COST[tier] * def(id).costMult);
+  return tier >= 3 ? null : Math.ceil(DECOR_TIER_COST[tier] * def(id, cityOf(s)).costMult);
 }
 
 export function buyDecor(s: GameState, id: NeighborhoodId, kind: DecorKind): BuyResult {

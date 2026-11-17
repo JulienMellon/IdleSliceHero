@@ -44,7 +44,6 @@ import {
   nextVehicleLock,
   runsItself,
   shopRate,
-  SHOP_IDS,
   walkInFraction,
   type Boost,
   type BuyResult,
@@ -53,6 +52,7 @@ import {
   type Task,
 } from './game';
 import { DECOR_KINDS } from '../content/tuning';
+import { cityOf, hoodIds } from '../content/cities';
 
 export { boostMult };
 
@@ -140,7 +140,7 @@ function seeded(key: string): () => number {
 export function cityRates(s: GameState): { city: number; walkin: number; driver: number } {
   let city = 0;
   let walkin = 0;
-  for (const id of SHOP_IDS) {
+  for (const id of hoodIds(cityOf(s))) {
     const shop = s.shops[id];
     if (!shop.built || !runsItself(shop)) continue;
     const rate = shopRate(shop, s.vehicle);
@@ -156,8 +156,8 @@ const ELIGIBLE: Record<Eligibility, (s: GameState) => boolean> = {
   // v5.10: walk-ins are seated first, so a shop whose kitchen is slower than its seats sends no drivers out
   deliveries: (s) => cityRates(s).driver > 1e-9,
   booster: (s) => s.rewards.boosters.length > 0,
-  hire: (s) => SHOP_IDS.some((id) => s.shops[id].built && nextHire(s.shops[id]) !== null),
-  decor: (s) => SHOP_IDS.some((id) => s.shops[id].built && DECOR_KINDS.some((k) => s.shops[id].decor[k] < 3)),
+  hire: (s) => hoodIds(cityOf(s)).some((id) => s.shops[id].built && nextHire(s.shops[id]) !== null),
+  decor: (s) => hoodIds(cityOf(s)).some((id) => s.shops[id].built && DECOR_KINDS.some((k) => s.shops[id].decor[k] < 3)),
   build: (s) => {
     const n = nextToBuild(s);
     return !!n && buildLock(s, n.id) === null;

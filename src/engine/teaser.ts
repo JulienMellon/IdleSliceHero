@@ -2,8 +2,7 @@
 // "Next: Dale's story continues after 1,200 more Suburbs pies", "…when you build Waterfront", "…when you bid on Pier 9".
 // A ring on the HUD's scrapbook button shows the progress toward it, in RING_STEP steps so it never repaints on a tick.
 import { RING_STEP } from '../content/hooks';
-import { HOME_SCENES } from '../content/scenes/home';
-import { PIER9_BID } from '../content/tuning';
+import { cityOf } from '../content/cities';
 import type { CharacterId, Scene } from '../content/types';
 import { count } from './format';
 import { buildLock, def, pier9Available, pier9Price, sceneTriggered, type GameState } from './game';
@@ -55,7 +54,7 @@ export function commas(n: number): string {
 const ratio = (a: number, b: number) => (b > 0 ? Math.max(0, Math.min(1, a / b)) : 0);
 
 /** The first scene not yet seen, in story order (an already-triggered one is only waiting for its moment). A hire scene waits for the player's hire, not for the story, so it is never "next". */
-export function nextScene(s: GameState, scenes: readonly Scene[] = HOME_SCENES): Scene | null {
+export function nextScene(s: GameState, scenes: readonly Scene[] = cityOf(s).scenes): Scene | null {
   const seen = new Set(s.seenScenes);
   return scenes.find((sc) => !seen.has(sc.id) && sc.trigger.kind !== 'manager') ?? null;
 }
@@ -66,13 +65,13 @@ function teaserWith(s: GameState, scenes: readonly Scene[], make: Make): Teaser 
   const sc = nextScene(s, scenes);
   if (!sc) return make('complete', TEASER_COMPLETE, 1);
   const who = () => `Next: ${WHO[sc.character]}'s story continues`;
-  const hood = def(sc.neighborhood);
+  const hood = def(sc.neighborhood, cityOf(s));
   const shop = s.shops[sc.neighborhood];
   if (sceneTriggered(s, sc)) return make('soon', () => `${who()} in a moment`, 1);
   // the shop isn't there yet: whatever the scene waits for, the player's next move is to build it
   if (!shop.built) return make('unlock', () => `${who()} when you build ${hood.name}`, buildLock(s, sc.neighborhood) ? 0 : ratio(s.cash, hood.buildCost));
   const tr = sc.trigger;
-  if (tr.kind === 'bid') return make('bid', () => `${who()} when you bid on Pier 9`, pier9Available(s) ? ratio(s.cash, pier9Price(s)) : ratio(shop.sold, PIER9_BID.unlockPizzas));
+  if (tr.kind === 'bid') return make('bid', () => `${who()} when you bid on Pier 9`, pier9Available(s) ? ratio(s.cash, pier9Price(s)) : ratio(shop.sold, cityOf(s).bid?.unlockPizzas ?? 0));
   if (tr.kind === 'after') return make('soon', () => `${who()} soon`, 0);
   if (tr.kind === 'challenge') return make('soon', () => `${who()} when you outsell MegaSlice`, 0);
   if (tr.kind === 'deliveries') {
@@ -85,11 +84,11 @@ function teaserWith(s: GameState, scenes: readonly Scene[], make: Make): Teaser 
   return make('soon', () => `${who()} in a moment`, 1);
 }
 
-export function nextSceneTeaser(s: GameState, scenes: readonly Scene[] = HOME_SCENES): Teaser {
+export function nextSceneTeaser(s: GameState, scenes: readonly Scene[] = cityOf(s).scenes): Teaser {
   return teaserWith(s, scenes, (kind, text, progress) => ({ kind, text: typeof text === 'string' ? text : text(), progress, step: kind === 'complete' ? 0 : ringStep(progress) }));
 }
 
 /** U13: only the ring's step of `nextSceneTeaser` (the HUD asks five times a second): no text is built, the same answer. */
-export function teaserStep(s: GameState, scenes: readonly Scene[] = HOME_SCENES): number {
+export function teaserStep(s: GameState, scenes: readonly Scene[] = cityOf(s).scenes): number {
   return teaserWith(s, scenes, (kind, _text, progress) => ({ kind, text: '', progress, step: kind === 'complete' ? 0 : ringStep(progress) })).step;
 }

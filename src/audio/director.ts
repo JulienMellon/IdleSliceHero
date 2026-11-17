@@ -23,7 +23,7 @@ const SCENES = new Map(HOME_SCENES.map((s) => [s.id, s]));
 
 const CATALOG: Catalog = {
   sfxCount: (id) => SFX[id as SfxId].length,
-  music: (t) => MUSIC[t] as unknown as ReturnType<Catalog['music']>,
+  music: (t) => MUSIC[t as keyof typeof MUSIC] as unknown as ReturnType<Catalog['music']>,
   sting: (k) => STINGS[k as keyof typeof STINGS],
   story: (id) => STORY[id as StoryCueId],
 };

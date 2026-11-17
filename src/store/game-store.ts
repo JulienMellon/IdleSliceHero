@@ -8,7 +8,7 @@ import { applyDouble, claimDelta, claimOffer, grantDailyBooster, offlineBoost, o
 import { applyGrant, NO_PREFS, parsePrefs, PREFS_KEY, type StorePrefs } from '../components/store/store-model';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
-import { HOME_SCENES } from '../content/scenes/home';
+import { cityOf } from '../content/cities';
 import { TUNING, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
@@ -203,7 +203,7 @@ export const useGame = create<Store>((set, get) => {
     const { game, playing, lastKitchenTap, lastSceneEndPlay } = get();
     // the title card is still up, or Nonna is walking the player through the first batch: the story waits
     if (!get().titleDone || tutorialHoldsStory(game)) return;
-    const next = pickScene(game, HOME_SCENES, Date.now(), lastKitchenTap, !!playing, lastSceneEndPlay);
+    const next = pickScene(game, cityOf(game).scenes, Date.now(), lastKitchenTap, !!playing, lastSceneEndPlay);
     if (next) set({ playing: { scene: next, replay: false } });
   };
 
@@ -296,7 +296,7 @@ export const useGame = create<Store>((set, get) => {
         awaySeconds = r.awaySeconds;
         if (r.earned >= 1 && r.seconds >= TUNING.offlinePopupSeconds) {
           // Hold the cash back until the player taps Collect.
-          offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id).name, earned: b.earned, managed: b.managed, headsOnly: b.headsOnly, pies: b.pies })), idle: r.idle.map((id) => G.def(id).name), boost: offlineBoost(saved.rewards.boosts, saved.lastSavedAt, r.seconds) };
+          offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id, cityOf(saved)).name, earned: b.earned, managed: b.managed, headsOnly: b.headsOnly, pies: b.pies })), idle: r.idle.map((id) => G.def(id, cityOf(saved)).name), boost: offlineBoost(saved.rewards.boosts, saved.lastSavedAt, r.seconds) };
           game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
         }
       }
@@ -529,7 +529,7 @@ export const useGame = create<Store>((set, get) => {
     bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: G.pier9Price(get().game) }, plain('bid')),
 
     build: (id) => {
-      const ok = commit(G.buildShop(get().game, id), { name: `Build ${G.def(id).name}`, cost: G.def(id).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id }));
+      const ok = commit(G.buildShop(get().game, id), { name: `Build ${G.def(id, cityOf(get().game)).name}`, cost: G.def(id, cityOf(get().game)).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id }));
       if (ok) analytics.track(EVENTS.shopBuilt, { shop: id });
       return ok;
     },

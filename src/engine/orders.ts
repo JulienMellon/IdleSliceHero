@@ -5,16 +5,17 @@ import { ORDER, ORDER_CAST, type OrderCast } from '../content/hooks';
 import type { NeighborhoodId } from '../content/types';
 import { seededUnit } from './bonus';
 import { pizzas } from './format';
-import { sceneId, runsItself, shopRate, SHOP_IDS, type ActiveOrder, type GameState, type OrderOffer, type OrderState, type Shop } from './game';
+import { sceneId, runsItself, shopRate, type ActiveOrder, type GameState, type OrderOffer, type OrderState, type Shop } from './game';
 import { LINE } from './pipeline';
 import { minutesToCash, rewardsUnlocked } from './rewards';
+import { cityOf, hoodIds } from '../content/cities';
 
 /** Orders start when the Suburbs shop is built (which needs Nonna's takeover, so never during the tutorial). */
-export const ordersUnlocked = (s: GameState): boolean => rewardsUnlocked(s) && s.shops.suburbs.built;
+export const ordersUnlocked = (s: GameState): boolean => rewardsUnlocked(s) && s.shops[cityOf(s).neighbourhoods[1].id].built;
 
 /** Neighbourhoods whose character may ask: the shop is built and the character's first scene has been seen. */
 export function metHoods(s: GameState): NeighborhoodId[] {
-  return SHOP_IDS.filter((id) => s.shops[id].built && s.seenScenes.includes(sceneId(id, 1)));
+  return hoodIds(cityOf(s)).filter((id) => s.shops[id].built && s.seenScenes.includes(sceneId(id, 1)));
 }
 
 /** A round number to ask for: whole fives under 100, then two significant figures (144 → 140, 1,234 → 1,200). */

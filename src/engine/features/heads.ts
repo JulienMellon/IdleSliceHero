@@ -34,7 +34,7 @@ const write = (g: GameState, s: HeadsState): GameState => ({ ...g, x: { ...g.x, 
 /** Every hired head in a built shop, in shop then station order. */
 export function hiredHeads(g: Pick<GameState, 'shops'>): HeadPick[] {
   const out: HeadPick[] = [];
-  for (const shopId of SHOP_IDS) {
+  for (const shopId of Object.keys(g.shops)) {
     const shop = g.shops[shopId];
     if (!shop.built) continue;
     for (const station of STATIONS) if (shop.heads[station]) out.push({ shopId, station });

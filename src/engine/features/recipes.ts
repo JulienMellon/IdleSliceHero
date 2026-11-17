@@ -8,6 +8,7 @@ import type { NeighborhoodId } from '../../content/types';
 import { finaleId, SHOP_IDS, type GameState, type Shop } from '../game';
 import { defendedHoods } from './counterattack';
 import type { Feature } from './types';
+import { cityOf, hoodIds } from '../../content/cities';
 
 export interface RecipesState {
   /** Card ids owned. */
@@ -62,17 +63,18 @@ export interface Collection {
 /** Owned and total cards, overall and per shop, for the scrapbook. */
 export function collectionView(g: GameState): Collection {
   const have = read(g).owned;
-  const shops = SHOP_IDS.map((id) => {
+  const ids = hoodIds(cityOf(g));
+  const shops = ids.map((id) => {
     const cards = CARDS.map((n) => ({ id: recipeId(id, n), n, owned: have.includes(recipeId(id, n)) }));
     return { id, owned: cards.filter((c) => c.owned).length, total: RECIPE.perShop, cards };
   });
-  return { owned: shops.reduce((t, s) => t + s.owned, 0), total: SHOP_IDS.length * RECIPE.perShop, shops };
+  return { owned: shops.reduce((t, s) => t + s.owned, 0), total: ids.length * RECIPE.perShop, shops };
 }
 
 function settle(g: GameState): GameState {
   const st = read(g);
   const due: string[] = [];
-  for (const id of SHOP_IDS) for (const n of CARDS) if (!st.owned.includes(recipeId(id, n)) && cardEarned(g, id, n)) due.push(recipeId(id, n));
+  for (const id of hoodIds(cityOf(g))) for (const n of CARDS) if (!st.owned.includes(recipeId(id, n)) && cardEarned(g, id, n)) due.push(recipeId(id, n));
   if (st.synced && !due.length) return g;
   const silent = !st.synced;
   return write(g, {

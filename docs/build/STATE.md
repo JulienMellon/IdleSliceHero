@@ -9,14 +9,14 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.17-r3           # label of the last screenshot set that passed verify
 codecritic_range_start: 229f874
 cards:                 # todo | running | done | partial | blocked
-  K1: running  W3: done  V1: todo  E3: todo  T2: todo  A2: todo  V2: todo
+  K1: partial  W3: done  V1: running  E3: todo  T2: todo  A2: todo  V2: todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.17/review-r3-critic.md (r3 SATISFIED; bug 0 major 0 minor 4; E2 U1 S1; D481 D493 D495 D505)
   code:   docs/build/v5.17/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 20; E10 U3 S3 N3 A2; M68 A32 medium carried)
   story:  docs/build/v5.16/review-r3-story.md (r3 SATISFIED; bug 0 major 0 minor 1; U1)
   audio:  docs/build/v5.17/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 2; A5; carried AU41 AU39 AU40 AU82 AU25)
 open: v5.17 carried: critic minors D481 D493 (by choice) D495 D505 (docs/build/v5.17/review-r3-critic.md); code mediums M68 A32 + lows, C133 needs services isOptedOut export (docs/build/v5.17/review-r2-code.md); audio AU41 AU39 AU40 AU82 AU25 (docs/build/v5.17/review-r2-audio.md), SliceAudioSession native module not built. For Julien: D495 is a pacing decision (first hire under $50 vs the 2/5/8 min head targets, content/tuning.ts + pacing refit); day-30 name 'Nonna's Golden Oven' to check with the writer; App Store privacy label must say Tracking = Yes; native paths unverified until DEVICE-CHECKLIST. expo install is refused by the proxy: use npm install with the version from node_modules/expo/bundledNativeModules.json. loop_stats.py cannot read loop: commits. Programmer cards: --only takes the fixture name without .py.
-next: S5-v5.18.md wave 1 running (K1 + W3, then V1, then seam verify v5.18-seam)
+next: S5-v5.18.md wave 1: V1 running, then seam verify v5.18-seam; K1 leftovers go to E3/T2 as extra
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
@@ -32,3 +32,5 @@ next: S5-v5.18.md wave 1 running (K1 + W3, then V1, then seam verify v5.18-seam)
 - 2026-11-17 02:07 UTC v5.17 closed: r3 critic SATISFIED (4 minors carry), code APPROVED (r2), audio SATISFIED (r2). Next v5.18.
 - 2026-11-17 S5 start: v5.18 wave 1 launched (K1 programmer, W3 writer).
 - 2026-11-17 W3 done (docs/story/BOSTON-SCRIPT.md, 32 scenes). Writer asks: confirm speaker name 'Kayla Dunn'; next city unnamed. K1 running.
+- 2026-11-17 K1 partial: built, no behaviour change claimed; real jest not run (node_modules was absent -> npm ci). Needs (out of scope, home-only): .hood fields in content/layers.ts + ~15 component sites; shop-only helpers on home fit tables; ORDER_CAST, endgame events, NIGHT_OVEN, tutorial copy, audio director, art ids. V1 launched.
+- 2026-11-17 K1 tree: tsc clean, 1633 tests pass (real jest).
