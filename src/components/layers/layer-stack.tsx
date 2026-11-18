@@ -16,6 +16,7 @@ import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { attackLite } from '../endgame/attack-model';
 import { useBannerOpen } from '../endgame/banner-state';
+import { useRevealUp } from '../endgame/reveal-bus';
 import { eventBannerView, eventViewNow } from '../endgame/event-model';
 import { STACK } from '../endgame/stack-model';
 import { haptic } from '../game-ui';
@@ -130,6 +131,7 @@ const RivalCard = memo(function RivalCard() {
   // Reads the live store below (like the order chip): React Compiler must not cache that.
   'use no memo';
   const hood = useGame((s) => s.game.active);
+  const revealUp = useRevealUp();
   // the face and what changes under a running chip (whole seconds left, the pies bar's 5% step), in one string
   const key = useGame((s) => rivalLite(rivalView(s.game, s.game.active, gameNow())));
   const phase = key.split('|')[1];
@@ -167,7 +169,8 @@ const RivalCard = memo(function RivalCard() {
   const g = useGame.getState().game;
   const shown = result && result.hood === hood ? result.kind : null;
   const m: RivalCardModel = rivalCard(rivalView(g, hood, gameNow()), hood, shown, cityOf(g));
-  const up = m.face === 'running' || m.face === 'won' || m.face === 'lost';
+  // D505: a recipe card is dismissed first; the rival's row waits behind it
+  const up = (m.face === 'running' || m.face === 'won' || m.face === 'lost') && !revealUp;
   useHold('rival', up);
   if (!up) return null;
   if (m.face === 'running') {
@@ -221,7 +224,8 @@ export const LayerStack = memo(function LayerStack() {
     return gameDayBanner(gameDayView(g, gameNow()), g.city) || boatBanner(boatsView(g, gameNow()), g.city);
   });
   const transient = useTransientNotice();
-  const text = transient?.text ?? base;
+  // D505: the notice waits while a recipe card is up (its title would be covered)
+  const text = useRevealUp() ? '' : transient?.text ?? base;
   useHold('notice', !!text);
   return (
     <View testID="layer-stack" pointerEvents="box-none" style={[styles.stack, { top }]}>

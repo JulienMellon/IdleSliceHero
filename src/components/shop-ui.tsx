@@ -68,8 +68,8 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
                 <View key={n.id} onLayout={onTab(i)} testID={`build-${n.id}`} accessibilityState={{ disabled: true }} style={[styles.tab, styles.tabBuild, styles.tabHeld]}>
                   <Text style={[styles.tabName, { color: C.inkSoft }]}>+ {n.name}</Text>
                   <Text style={[styles.tabSub, { color: C.inkSoft }]} numberOfLines={1}>
-                    {/* D503: "2.21K pies to go", not "Nonna in 2.21K" (in what?) */}
-                    {lot.kind === 'nonna' && lot.pin.startsWith('Nonna in ') ? `${lot.pin.slice('Nonna in '.length)} pies to go` : lot.pin}
+                    {/* D503: the lot's own "N pies to go" (city-model lotView), not a slice of the pin */}
+                    {lot.piesToGo ?? lot.pin}
                   </Text>
                 </View>
               );

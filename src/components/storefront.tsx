@@ -52,6 +52,7 @@ import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverl
 import { FasciaSign } from './scene/facade';
 import { fasciaSignBox, overlaySpan, slideInto, visibleSpan } from './scene/viewport';
 import { SceneViewContext } from './scene/view-context';
+import { gameNow } from '../engine/clock';
 import { floorYFor, liftLayout, stripTop } from './scene/strip-clear';
 import { trafficFor } from './scene/street-props';
 import { rivalOpen } from '../engine/features/layers/rival';
@@ -136,7 +137,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const rushTaps = useGame((s) => s.rushTaps);
   const game = useGame.getState().game;
   // the wall clock, read once for this render (U23): every time-of-render use below shares it
-  const nowMs = Date.now();
+  const nowMs = gameNow();
   const shop = game.shops[id];
   const city = cityOf(game);
   const nd = Game.def(id, city);
@@ -337,7 +338,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   ];
   items.sort((a, b) => b.y - a.y);
 
-  useEffect(() => onCheer(() => { mem.current.cheerAt = Date.now() / 1000; }), []);
+  useEffect(() => onCheer(() => { mem.current.cheerAt = gameNow() / 1000; }), []);
   // ---- departures: a carrier that paid this frame bumps the HUD cash (its coin just landed). Detected after
   // commit; ids only grow, so a remount or the end of a pause never replays old ones.
   useEffect(() => {
@@ -346,7 +347,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     // a departure about to pay launches its coin from the carrier to the HUD cash, timed to land with the cash
     if (!paused)
       for (const d of line.departures) {
-        const l = Math.max(0, d.left - Math.max(0, (Date.now() - useGame.getState().tickAt) / 1000));
+        const l = Math.max(0, d.left - Math.max(0, (gameNow() - useGame.getState().tickAt) / 1000));
         if (m.launched.has(d.id) || l > COIN_FLIGHT) continue;
         m.launched.add(d.id);
         if (m.launched.size > 12) m.launched.delete(m.launched.values().next().value as number);
@@ -394,7 +395,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     // ---- head barks (features/heads.ts): a milestone, a rush combo, an attack on this shop, being Head of the Week. One bubble per shop, so
     // nothing starts while a refusal, a hello or a milestone line is up (or a cut-scene plays); the rest of the rules are `nextBark`'s
     const g = useGame.getState();
-    const wall = Date.now() / 1000;
+    const wall = gameNow() / 1000;
     const week = weekStation(g.game, id);
     if (week) asks.push({ trigger: 'week', station: week, key: `week-${getFeature(g.game, headsFeature)?.week ?? 0}` });
     const atk = getFeature(g.game, counterattack) as ReturnType<typeof counterattack.init> | undefined;
@@ -405,13 +406,13 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     // a station Slammed for 20 s in a shop with no manager: its head asks for help (features/service.ts; P1 step 6)
     asks.push(...slammedAsks(g.game, id));
     // a rush combo: three quick taps inside the window (rush-model.ts), whether or not the kitchen could still go faster (so the pill may be a hint)
-    const combo = rushCombo(rushTaps, Date.now()).n >= 3;
+    const combo = rushCombo(rushTaps, gameNow()).n >= 3;
     if (combo && !m.combo) {
       const sp = speakerFor(shop, Math.floor(wall / 7));
       if (sp) asks.push({ trigger: 'rush', station: sp });
     }
     m.combo = combo;
-    const cv = visitOf(g.game.rewards.boosts, Date.now());
+    const cv = visitOf(g.game.rewards.boosts, gameNow());
     const cameoSpeaking = !!cv && visitLine(cv.visitor, wall) !== null;
     const otherBubble = cameoSpeaking || !!(m.refusal && clock - m.refusal.at < 1.6) || !!(m.hire && clock - m.hire.at < 2.5) || m.hires.length > 0 || !!(m.mile?.text && m.mile.at !== clock && clock - m.mile.at < 2.5);
     const before = barkMemory.get(id) ?? newBarkMem();
