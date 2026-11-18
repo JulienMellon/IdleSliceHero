@@ -17,23 +17,24 @@ import type { SceneSlotProps } from '../../slots';
 import { hoodOf } from '../city-layers';
 import { layoutOfShop } from '../shop-layout';
 import { BURST_SECONDS, chairsOf, familiesFor, freeChairs, glowing, seatedFamilies, waveFigures } from './gameday-model';
+import { gameNow } from '../../../engine/clock';
 
 export const GameDayScene = memo(function GameDayScene({ shopId, width, height }: SceneSlotProps) {
   // Reads the live store on its own 15 fps clock: React Compiler must not cache that.
   'use no memo';
   const frame = useShopFrame(shopId);
-  const on = useGame((s) => shopId === hoodOf(s.game, 'gameDay') && gameDayView(s.game, Date.now()).rush);
+  const on = useGame((s) => shopId === hoodOf(s.game, 'gameDay') && gameDayView(s.game, gameNow()).rush);
   const clock = useClock(15, !on);
   if (!on) return null;
   const st = useGame.getState();
   const g = st.game;
   const shop = g.shops[shopId];
-  const v = gameDayView(g, Date.now());
+  const v = gameDayView(g, gameNow());
   if (!v.rush) return null;
   const lay = layoutOfShop(shop);
   const until = (g.x?.[LAYER_KEYS.gameDay] as Timed | undefined)?.until ?? 0;
   // seconds into the rush, smooth between the 200 ms game ticks
-  const since = Math.max(0, (Date.now() - st.tickAt) / 1000);
+  const since = Math.max(0, (gameNow() - st.tickAt) / 1000);
   const t = Math.max(0, Math.min(GAME_DAY.rushSeconds, GAME_DAY.rushSeconds - (until - g.playSeconds) + since));
   const chairs = chairsOf(lay, patioTables(shop));
   const free = freeChairs(chairs.length, v);

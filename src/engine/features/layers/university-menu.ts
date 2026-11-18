@@ -9,17 +9,15 @@
 // and Stadium at footprint 2. A trip to a zone takes distance x the normal round trip, so the fleet's deliveries per second are the
 // nominal rate divided by the average distance (the share-weighted distance of the zones that are open). Drones ignore distance.
 //
-// How it reaches the engine: through the two hooks the registry has. The value is `shopValueMult`. Everything about speed is one
-// number in `shopDemandMult`: the whole-demand ratio that makes the engine's demand equal the walk-ins plus the delivery rate with the
-// zones' longer trips, and, when the mix makes prep slower, no more than the slower prep rate. A faster oven (Garlic Knots) can only
-// help where the oven is the lone slowest stage, and the engine's min() has no hook to lift a station's own rate: the menu view
-// still shows it, the shop's rate does not (see the report of card E2b).
+// How it reaches the engine: the value is `shopValueMult`; the zones' longer trips are `shopDemandMult`, the whole-demand ratio that
+// makes the engine's demand equal the walk-ins plus the delivery rate with those trips; a slower prep is `stationMult` (the prep
+// station's own rate, A32). A faster oven (Garlic Knots) is left out on purpose: lifting it changes pacing, so the menu view shows it and
+// the shop's rate does not until the owner decides.
 import { LAYER_KEYS, MENU, ZONES } from '../../../content/layers';
 import { VEHICLES } from '../../../content/tuning';
 import {
   deliveryRate,
   featureMults,
-  prepRate,
   shopRevenue,
   tripSeconds,
   walkInRate,
@@ -108,11 +106,11 @@ export function demandFactor(shop: Shop, vehicle: number, m: MenuState): number 
   const walk = walkInRate(shop);
   const total = walk + deliveryRate(shop, vehicle);
   if (!(total > 0)) return 1;
-  const f = menuFactors(m);
-  let wanted = walk + zoneDeliveryRate(shop, vehicle);
-  if (f.prepTime > 1) wanted = Math.min(wanted, prepRate(shop) / f.prepTime);
-  return Math.min(1, wanted / total);
+  return Math.min(1, (walk + zoneDeliveryRate(shop, vehicle)) / total);
 }
+
+/** The prep rate's ratio when the mix makes prep slower (1 / the prep time factor); 1 otherwise. */
+export const prepFactor = (m: MenuState): number => Math.min(1, 1 / menuFactors(m).prepTime);
 
 // ---------- views ----------
 
@@ -226,6 +224,11 @@ export const universityMenu: Feature<MenuState> = {
   },
   shopDemandMult(g, id) {
     return id === hoodOf(g) && built(g) ? demandFactor(g.shops[id], g.vehicle, read(g)) : 1;
+  },
+  stationMult(g, id) {
+    if (id !== hoodOf(g) || !built(g)) return undefined;
+    const prep = prepFactor(read(g));
+    return prep === 1 ? undefined : { prep };
   },
   shopKey(g, id) {
     if (id !== hoodOf(g) || !built(g)) return '';

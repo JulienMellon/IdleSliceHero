@@ -190,7 +190,7 @@ describe('whole pizza numbers (P7)', () => {
   test('no player-facing count shows a long decimal', () => {
     for (const sold of [0, 0.5, 79.9998, 80.0002, 149.99]) {
       const s = withShop(G.newGame(0), 'downtown', { sold });
-      expect(G.nonnaCountdownText(s)).not.toMatch(/\d\.\d+(?![\dKMB])/); // "2.22K" is a short count, "70.0002" is not
+      expect(G.founderCountdownText(s)).not.toMatch(/\d\.\d+(?![\dKMB])/); // "2.22K" is a short count, "70.0002" is not
     }
   });
   test('Downtown heads have their fixed prices; other shops split their own heads price', () => {

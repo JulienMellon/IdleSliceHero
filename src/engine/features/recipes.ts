@@ -47,10 +47,15 @@ const empty = (): RecipesState => ({ owned: [], fresh: [], synced: false, summar
 const read = (g: GameState): RecipesState => (g.x?.[KEY] as RecipesState | undefined) ?? empty();
 const write = (g: GameState, s: RecipesState): GameState => ({ ...g, x: { ...g.x, [KEY]: s } });
 
-/** Cards owned in one shop, 0..4. */
+const COUNTS = new WeakMap<readonly string[], Map<NeighborhoodId, number>>();
+/** Cards owned in one shop, 0..4. Counted once per `owned` list (U12): it is read by every price and key of the shop, many times a second. */
 export const ownedIn = (g: GameState, id: NeighborhoodId): number => {
   const have = read(g).owned;
-  return CARDS.reduce((n, c) => n + (have.includes(recipeId(id, c)) ? 1 : 0), 0);
+  let per = COUNTS.get(have);
+  if (!per) COUNTS.set(have, (per = new Map()));
+  let n = per.get(id);
+  if (n === undefined) per.set(id, (n = CARDS.reduce((t, c) => t + (have.includes(recipeId(id, c)) ? 1 : 0), 0)));
+  return n;
 };
 
 export interface Collection {
@@ -71,11 +76,29 @@ export function collectionView(g: GameState): Collection {
   return { owned: shops.reduce((t, s) => t + s.owned, 0), total: ids.length * RECIPE.perShop, shops };
 }
 
+/** Which cards the shops have earned, as one number (four bits a shop): the same number as last time means nothing new can be due (M62). */
+function earnedFingerprint(g: GameState): number {
+  let fp = 0;
+  for (const id of hoodIds(cityOf(g))) {
+    let bits = 0;
+    for (const n of CARDS) if (cardEarned(g, id, n)) bits |= 1 << (n - 1);
+    fp = fp * 16 + bits;
+  }
+  return fp;
+}
+/** The fingerprint each owned-state was last settled at with nothing due. */
+const SETTLED = new WeakMap<RecipesState, number>();
+
 function settle(g: GameState): GameState {
   const st = read(g);
+  const fp = earnedFingerprint(g);
+  if (st.synced && SETTLED.get(st) === fp) return g;
   const due: string[] = [];
   for (const id of hoodIds(cityOf(g))) for (const n of CARDS) if (!st.owned.includes(recipeId(id, n)) && cardEarned(g, id, n)) due.push(recipeId(id, n));
-  if (st.synced && !due.length) return g;
+  if (st.synced && !due.length) {
+    SETTLED.set(st, fp);
+    return g;
+  }
   const silent = !st.synced;
   return write(g, {
     owned: [...st.owned, ...due],

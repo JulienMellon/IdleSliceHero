@@ -4,7 +4,7 @@
 import { layout } from '../layout';
 import { toDrawSpace } from '../layout-space';
 import { drawFrame, drawShift, sceneFrame, sceneToScreen, sceneView } from '../projection';
-import { fasciaSignBox, slideInto, visibleSpan, VIEW_MARGIN } from '../viewport';
+import { fasciaSignBox, overlaySpan, slideInto, visibleSpan, VIEW_MARGIN } from '../viewport';
 
 const W = 393;
 const frame = sceneFrame(4);
@@ -46,5 +46,29 @@ describe('the sign stays on screen while a wide shop scrolls', () => {
   });
   test('a plate wider than the screen is centred on it', () => {
     expect(slideInto(0, 500, { x0: 100, x1: 300 }, { x0: -1000, x1: 1000 })).toBe(200);
+  });
+});
+
+describe('overlaySpan: what the scene overlays may use of a scrolled shop (T110, C149)', () => {
+  const cw = view.contentW;
+  test('null when the shop does not scroll: the overlay keeps its whole width', () => {
+    expect(overlaySpan(false, 120, W, cw)).toBeNull();
+    expect(overlaySpan(false, 0, W, W)).toBeNull();
+  });
+  test('12 pt in from each screen edge, in the overlay own pt', () => {
+    const s = overlaySpan(true, 100, W, cw)!;
+    expect(s).toEqual({ x0: 100 + VIEW_MARGIN, x1: 100 + W - VIEW_MARGIN });
+    expect(s.x1 - s.x0).toBe(W - 2 * VIEW_MARGIN);
+  });
+  test('inside [0, contentW] at both ends, and it only moves by whole points', () => {
+    const lo = overlaySpan(true, 0, W, cw)!;
+    const hi = overlaySpan(true, view.maxScroll, W, cw)!;
+    expect(lo.x0).toBeGreaterThanOrEqual(0);
+    expect(hi.x1).toBeLessThanOrEqual(cw);
+    expect(hi.x1).toBeCloseTo(cw - VIEW_MARGIN, 0);
+    // a rubber-band overshoot is held inside as well
+    expect(overlaySpan(true, -40, W, cw)!.x0).toBeGreaterThanOrEqual(0);
+    expect(overlaySpan(true, view.maxScroll + 40, W, cw)!.x1).toBe(cw);
+    expect(overlaySpan(true, 10.4, W, cw)).toEqual(overlaySpan(true, 10.2, W, cw));
   });
 });

@@ -13,6 +13,7 @@ import { TAP } from '../tap-targets';
 import { attackLite, bannerView } from './attack-model';
 import { BANNER_OPEN_MS, setBannerOpen } from './banner-state';
 import { STACK } from './stack-model';
+import { gameNow } from '../../engine/clock';
 
 /** `shown`: the sky strip's queue gave the open banner the strip (stack-model.ts); the collapsed badge takes no room and always draws. */
 export const AttackBanner = memo(function AttackBanner({ shown = true }: { shown?: boolean }) {
@@ -23,9 +24,9 @@ export const AttackBanner = memo(function AttackBanner({ shown = true }: { shown
     return l.face === 'banner' ? l.shopId : null;
   });
   // C114: the Defend button re-enables the moment the retry wait ends: a boolean that flips when `retryAt` passes
-  useGame((s) => ((s.game.x?.[ATTACK_KEY] as AttackState | undefined)?.retryAt ?? 0) <= Date.now());
+  useGame((s) => ((s.game.x?.[ATTACK_KEY] as AttackState | undefined)?.retryAt ?? 0) <= gameNow());
   // the words under it change by the minute
-  useGame((s) => (attackLite(s.game).face === 'banner' ? Math.floor(Math.max(Date.now(), s.tickAt) / 60_000) : 0));
+  useGame((s) => (attackLite(s.game).face === 'banner' ? Math.floor(Math.max(gameNow(), s.tickAt) / 60_000) : 0));
   const [victor, setVictor] = useState(false);
   // G95: open in full for its first 10 s (the golden pizza waits), then a 44 pt badge; a tap on the badge opens it again
   const [st, setSt] = useState<{ announced: string | null; open: boolean; n: number }>({ announced: null, open: false, n: 0 });
@@ -46,7 +47,7 @@ export const AttackBanner = memo(function AttackBanner({ shown = true }: { shown
   if (!shop) return null;
   if (open && !shown) return null;
   const g = useGame.getState().game;
-  const b = bannerView(attackView(g, Date.now()));
+  const b = bannerView(attackView(g, gameNow()));
   if (!b) return null;
   const defend = () => {
     const ok = useGame.getState().defend();

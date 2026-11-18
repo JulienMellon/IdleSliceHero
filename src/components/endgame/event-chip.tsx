@@ -6,9 +6,10 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { eventChipText, eventViewNow } from './event-model';
+import { gameNow } from '../../engine/clock';
 
 export const EventChip = memo(function EventChip() {
-  const text = useGame((s) => eventChipText(eventViewNow(Date.now(), s.game)));
+  const text = useGame((s) => eventChipText(eventViewNow(gameNow(), s.game)));
   if (!text) return null;
   return (
     <View testID="event-chip" accessibilityLabel={text} style={styles.chip}>

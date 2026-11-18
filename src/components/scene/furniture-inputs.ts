@@ -33,13 +33,13 @@ export interface FurnitureSource {
   running: boolean;
   rate: number;
   vehicle: number;
-  /** `rewards.worn`: the cosmetics on (city-wide). Absent: none. */
-  worn?: readonly string[];
-  /** The city's first shop: its sidewalk is never covered by the chip strip, managed or not (Downtown, North End). Absent: Downtown only. */
-  first?: boolean;
+  /** `rewards.worn`: the cosmetics on (city-wide). */
+  worn: readonly string[];
+  /** The city's first shop: its sidewalk is never covered by the chip strip, managed or not (Downtown, North End). */
+  first: boolean;
 }
 
-export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn = [], first = id === 'downtown' }: FurnitureSource): FurnitureInputs {
+export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn, first }: FurnitureSource): FurnitureInputs {
   return {
     id,
     name,

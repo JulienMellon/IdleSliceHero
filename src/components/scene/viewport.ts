@@ -22,6 +22,18 @@ export function visibleSpan(scrolls: boolean, scrollX: number, viewW: number, fi
 }
 
 /**
+ * What a scene overlay may use of a scrolled wide shop (D512, C149, U25): the part of the scene `contentW` wide that is on screen, in the same pt as the overlay (the overlay
+ * fills the content), `margin` in from each screen edge and inside [0, contentW]. `scrollX` is rounded so the span only changes when the shop moves a whole point. Null when
+ * the shop does not scroll: the overlay then has the whole width.
+ */
+export function overlaySpan(scrolls: boolean, scrollX: number, viewW: number, contentW: number, margin = VIEW_MARGIN): Span | null {
+  if (!scrolls) return null;
+  const at = Math.round(scrollX);
+  const clamp = (x: number) => Math.max(0, Math.min(contentW, x));
+  return { x0: clamp(at + margin), x1: clamp(at + viewW - margin) };
+}
+
+/**
  * How far (dx, whole units) a thing `width` wide centred at `centre` slides to lie inside `span` and inside `limit` (the beam it hangs on). A thing wider than the span is centred
  * on it. Zero when it already fits.
  */

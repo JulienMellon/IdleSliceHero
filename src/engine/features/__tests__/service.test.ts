@@ -116,6 +116,17 @@ describe('the cost of the hook (U17)', () => {
       expect(calls).toBe(2);
     });
   });
+
+  test('one featureMults pass runs the other features demand hooks once, and prices the tip from what they gave (U17)', () => {
+    let calls = 0;
+    const counting = { key: 'cnt', init: () => 0, migrate: () => 0, shopDemandMult: () => (calls++, 1) };
+    withFeatures([counting, service], () => {
+      const g = TIPPING();
+      const fx = G.featureMults(g, 'downtown', T0 + 1000);
+      expect(calls).toBe(1);
+      expect(fx.value).toBe(view(g).state === 'tipping' ? SERVICE.tipMult : 1);
+    });
+  });
 });
 
 describe('who takes part', () => {

@@ -29,10 +29,15 @@ export function ovenSpot(lay: Pick<Layout, 'ovens'>): { x: number; y: number; to
   return { x, y, top };
 }
 
-/** A pill over the scene (the jam's label, the critic's chip): `text` at 10 pt in a box centred on `cx`, kept `edge` pt inside a scene `width` wide. */
-export function pillBox(width: number, cx: number, text: string, edge = 8): { left: number; width: number } {
-  const w = Math.min(width - 2 * edge, Math.ceil(text.length * 6.2 + 16));
-  return { left: Math.max(edge, Math.min(width - edge - w, cx - w / 2)), width: w };
+/**
+ * A pill over the scene (the jam's label, the critic's chip): `text` at 10 pt in a box centred on `cx`, kept `edge` pt inside a scene `width` wide. In a scrolled wide shop `view`
+ * (the part on screen, already 12 pt in from the screen's edges: `overlaySpan`) replaces the edges, so the pill slides inside what the player sees (D512).
+ */
+export function pillBox(width: number, cx: number, text: string, edge = 8, view: { x0: number; x1: number } | null = null): { left: number; width: number } {
+  const lo = view ? Math.max(0, view.x0) : edge;
+  const hi = view ? Math.min(width, view.x1) : width - edge;
+  const w = Math.min(hi - lo, Math.ceil(text.length * 6.2 + 16));
+  return { left: Math.max(lo, Math.min(hi - w, cx - w / 2)), width: w };
 }
 
 /** Which pulse a change of the jam flag makes: null the first time it is seen (a save that loads jammed is not a new jam). */

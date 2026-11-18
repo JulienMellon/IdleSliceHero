@@ -8,15 +8,16 @@ import { C, F } from '../../theme';
 import { FlameIcon } from '../icons';
 import { eventBannerView, eventViewNow } from './event-model';
 import { STACK } from './stack-model';
+import { gameNow } from '../../engine/clock';
 
 /** `shown`: the sky strip's queue gave the banner the strip (stack-model.ts `skyShown`). */
 export const EventBanner = memo(function EventBanner({ shown = true }: { shown?: boolean }) {
   // a string: the banner repaints when the event or the minutes left change
   const key = useGame((s) => {
-    const b = eventBannerView(eventViewNow(Date.now(), s.game));
+    const b = eventBannerView(eventViewNow(gameNow(), s.game));
     return b ? `${b.id}|${b.left}` : '';
   });
-  const b = key && shown ? eventBannerView(eventViewNow(Date.now(), useGame.getState().game)) : null;
+  const b = key && shown ? eventBannerView(eventViewNow(gameNow(), useGame.getState().game)) : null;
   if (!b) return null;
   return (
     <View testID="event-banner" accessibilityLabel={`${b.title} ${b.mult} income, ${b.left} left`} style={styles.banner} pointerEvents="none">

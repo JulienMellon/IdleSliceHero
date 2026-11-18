@@ -4,7 +4,7 @@
 import { AUCTION, BOATS, LAYER_KEYS, auctionMult } from '../../../content/layers';
 import { PIER9_BID } from '../../../content/tuning';
 import { money } from '../../../engine/format';
-import { pier9Available, pier9Price, type GameState } from '../../../engine/game';
+import { canAfford, pier9Available, pier9Price, type GameState } from '../../../engine/game';
 import type { BoatsView } from '../../../engine/features/layers/waterfront-boats';
 import { mmss } from '../layer-model';
 import { dressed } from '../city-dress';
@@ -208,7 +208,7 @@ export function auctionCard(a: AuctionStatus, cash: number): AuctionCard {
     next: a.maxed ? '' : lc('layer.waterfront.auction.chip', { time: mmss(a.nextIn) }),
     cap: `${LABELS.bidCap} ${money(a.cap)}`,
     price: a.price,
-    canBuy: cash >= a.price,
+    canBuy: canAfford({ cash }, a.price),
   };
 }
 

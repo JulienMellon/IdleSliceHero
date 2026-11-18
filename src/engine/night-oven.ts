@@ -4,7 +4,7 @@
 // The numbers are NIGHT_OVEN in content/hooks.ts; the owned tier is `GameState.nightOven` and the offline tick reads it
 // (game.ts `offlineCapOf`).
 import { NIGHT_OVEN } from '../content/hooks';
-import { def, offlineCapOf, type BuyResult, type GameState } from './game';
+import { def, offlineCapOf, pay, type BuyResult, type GameState } from './game';
 import { money } from './format';
 import { minutesToCash } from './rewards';
 import { cityOf, hoodIds } from '../content/cities';
@@ -94,6 +94,6 @@ export function buyNightOven(s: GameState): BuyResult {
   const lock = nightOvenLock(s, tier);
   if (lock) return { ok: false, reason: lock };
   const price = nightOvenPrice(s, tier);
-  if (s.cash < price) return { ok: false, reason: 'Not enough cash' };
-  return { ok: true, state: { ...s, cash: s.cash - price, nightOven: tier } };
+  const paid = pay(s, price);
+  return paid.ok ? { ok: true, state: { ...paid.state, nightOven: tier } } : paid;
 }

@@ -293,7 +293,7 @@ describe('milestone moments', () => {
 
 describe('ladder inputs on the furniture memo', () => {
   const src = (over: Partial<FurnitureSource['shop']> = {}): FurnitureSource => ({
-    id: 'suburbs', name: 'Suburbs', running: true, rate: 4, vehicle: 1,
+    id: 'suburbs', name: 'Suburbs', running: true, rate: 4, vehicle: 1, worn: [], first: false,
     shop: { footprint: 2, prep: 1, counter: 1, drivers: 1, managed: true, line: { prepped: 0 }, decor: { plants: 0, tables: 0, signage: 0 }, ...over },
   });
   const deps = (o: Partial<FurnitureSource['shop']>) => JSON.stringify(furnitureDeps(furnitureInputs(src(o))));

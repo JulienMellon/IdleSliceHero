@@ -13,6 +13,7 @@ import { eventBannerView, eventViewNow } from '../../endgame/event-model';
 import { chipPhase } from '../../order-model';
 import { CHIP_H, layerTop } from '../layer-model';
 import { BUTTON_H, chipPillWidth, isNews, TOAST_H, TOAST_MS } from './layer-model';
+import { gameNow } from '../../../engine/clock';
 
 /** A HUD chip (HUD_CHIPS slot): two short rows (model `twoRows`, or the rows the model gives), a 44 pt pill. */
 export function LayerChip({ testID, rows, label, onPress }: { testID: string; rows: readonly [string, string]; label: string; onPress: () => void }) {
@@ -61,7 +62,7 @@ export interface ToastText {
 /** Where the notice goes now: where S2a's layer column starts (under the order chip, the event banner and the attack's row). Primitive selectors only. */
 function useToastTop(): number {
   const bannerOpen = useBannerOpen();
-  return useGame((s) => layerTop({ orderUp: chipPhase(s.game) !== 'none', eventUp: !!eventBannerView(eventViewNow(Date.now(), s.game)), attack: attackLite(s.game).face, collapsed: !bannerOpen }));
+  return useGame((s) => layerTop({ orderUp: chipPhase(s.game) !== 'none', eventUp: !!eventBannerView(eventViewNow(gameNow(), s.game)), attack: attackLite(s.game).face, collapsed: !bannerOpen }));
 }
 
 /** A notice in the endgame stack's column. It takes no touches. */

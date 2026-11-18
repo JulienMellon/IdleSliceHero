@@ -254,7 +254,7 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
   };
 }
 
-const withCash = (c: DrawerCard, cash: number) => ({ ...c, canBuy: c.cost !== null && cash >= c.cost });
+const withCash = (c: DrawerCard, cash: number) => ({ ...c, canBuy: G.canAfford({ cash }, c.cost) });
 
 /** The drawer's whole model for one shop: the cached level part plus what cash decides (`canBuy`, the bundle button). */
 export function drawerCards(input: DrawerInput): DrawerView {

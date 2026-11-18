@@ -821,3 +821,32 @@ describe('S9/S10 copy', () => {
     expect(R.CLOCK_REASON).toBe("Your phone's clock looks off. Rewards resume once it catches up.");
   });
 });
+
+describe('upgrade tasks only where a level is a quick buy (C107)', () => {
+  /** Downtown with every kitchen station at `lv`: the income stays low (its seats and drivers do not grow) while a level costs more. */
+  const at_ = (lv: number): G.GameState => {
+    const g = unlocked();
+    return { ...g, shops: { ...g.shops, downtown: { ...g.shops.downtown, prep: lv, ovens: lv, counter: lv, footprint: 3 } } };
+  };
+  const slowLevel = (() => {
+    for (let lv = 1; lv < 400; lv++) if (!R.upgradesAreQuick(at_(lv))) return lv;
+    return -1;
+  })();
+
+  test('early on a level is a quick buy; further in it is not', () => {
+    expect(R.upgradesAreQuick(at_(1))).toBe(true);
+    expect(slowLevel).toBeGreaterThan(1);
+  });
+
+  test('a day and a week rolled where levels take hours never carry an "upgrades" task (and early on they do)', () => {
+    const slow = at_(slowLevel);
+    for (let d = 0; d < 40; d++) {
+      const r = R.refreshRewards({ ...slow, rewards: { ...slow.rewards, day: '', week: '' } }, at(2026, 11, 1 + d));
+      expect([...r.rewards.daily, ...r.rewards.weekly].some((t) => t.kind === 'upgrades')).toBe(false);
+    }
+    const quick = at_(1);
+    let seen = false;
+    for (let d = 0; d < 60 && !seen; d++) seen = R.refreshRewards({ ...quick, rewards: { ...quick.rewards, day: '' } }, at(2026, 11, 1 + d)).rewards.daily.some((t) => t.kind === 'upgrades');
+    expect(seen).toBe(true);
+  });
+});

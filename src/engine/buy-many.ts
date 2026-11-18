@@ -1,7 +1,7 @@
 // ×1 / ×10 / MAX (v5.15; A30): the one rule for how many levels a station buy takes, and the all-or-nothing buy of that many.
 // The store calls these; the sidewalk's views (components/sidewalk-model.ts) only read `buyPlan` to label a card.
 import type { NeighborhoodId } from '../content/types';
-import { buyUpgrade, shopBuildKey, upgradeCostOf, upgradeLock, type BuyResult, type GameState, type Upgrade } from './game';
+import { buyUpgrade, canAfford, shopBuildKey, upgradeCostOf, upgradeLock, type BuyResult, type GameState, type Upgrade } from './game';
 
 /** How many levels one tap on a station card buys: one, ten, or as many as the cash pays for. */
 export type BuyAmount = 1 | 10 | 'max';
@@ -52,7 +52,7 @@ export interface BuyPlan {
 export function buyPlan(s: GameState, id: NeighborhoodId, what: Upgrade, amount: BuyAmount): BuyPlan {
   if (!isLevelUpgrade(what)) {
     const cost = upgradeCostOf(s, id, what);
-    return cost === null ? { count: 0, total: 0, affordable: false } : { count: 1, total: cost, affordable: s.cash >= cost };
+    return cost === null ? { count: 0, total: 0, affordable: false } : { count: 1, total: cost, affordable: canAfford(s, cost) };
   }
   const ladder = costLadder(s, id, what);
   if (!ladder.length) return { count: 0, total: 0, affordable: false };
@@ -62,7 +62,7 @@ export function buyPlan(s: GameState, id: NeighborhoodId, what: Upgrade, amount:
     while (count < ladder.length && ladder[count] <= s.cash) count++;
     count = Math.max(1, count);
   } else count = Math.min(amount, ladder.length);
-  return { count, total: ladder[count - 1], affordable: s.cash >= ladder[count - 1] };
+  return { count, total: ladder[count - 1], affordable: canAfford(s, ladder[count - 1]) };
 }
 
 /** Buy `count` levels of one upgrade through the engine's own buy, all or nothing: one new state, so one save and one sound. */

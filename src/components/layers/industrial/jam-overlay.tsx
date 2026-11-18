@@ -1,7 +1,7 @@
 // Industrial's oven jam (SCENE_OVERLAYS slot): smoke over the oven bank, a 44 pt wrench button on it and a label by it ("Oven jammed! Tap the
 // wrench." / "Head Baker fixing… 12s"). A tap on the wrench fixes the jam. The smoke is three puffs on the native driver; nothing re-renders
 // per frame. Only in the Industrial scene, only while an oven is jammed.
-import { memo, useEffect, useState } from 'react';
+import { memo, useContext, useEffect, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
@@ -12,6 +12,7 @@ import { C, F } from '../../../theme';
 import { useMotion } from '../../scene/clock';
 import { INK, sceneFit } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
+import { SceneViewContext } from '../../scene/view-context';
 import type { SceneSlotProps } from '../../slots';
 import { layoutOfShop } from '../shop-layout';
 import { jamLabel, ovenSpot, pillBox, WRENCH } from './jam-model';
@@ -47,6 +48,8 @@ function WrenchArt() {
 
 export const JamOverlay = memo(function JamOverlay({ shopId, width, height }: SceneSlotProps) {
   const frame = useShopFrame(shopId);
+  // a scrolled wide shop: the label slides inside the part on screen (D512)
+  const view = useContext(SceneViewContext);
   // one string: the label (it changes once a second under a Head Baker), then the jammed oven's place; '' for no jam
   const key = useGame((s) => {
     if (shopId !== builtHood(s.game, 'shifts')) return '';
@@ -63,7 +66,7 @@ export const JamOverlay = memo(function JamOverlay({ shopId, width, height }: Sc
   const cx = f.ox + spot.x * f.s;
   const cy = f.oy + spot.y * f.s;
   const topY = f.oy + spot.top * f.s;
-  const box = pillBox(width, cx, label);
+  const box = pillBox(width, cx, label, 8, view);
   return (
     <View testID="jam-overlay" pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       {Array.from({ length: PUFFS }, (_, i) => (

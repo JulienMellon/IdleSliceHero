@@ -1,5 +1,6 @@
 // Industrial, shifts and breakdowns (v5.16): the shift cycle, the night rate for time away, the jam, the wrench and the Head Baker.
 import { JAMS, SHIFTS } from '../../../../content/layers';
+import { HOME_CITY } from '../../../../content/cities/home';
 import { FOOTPRINTS, PERKS } from '../../../../content/tuning';
 import { getFeature, withFeatures } from '../../index';
 import * as G from '../../../game';
@@ -160,7 +161,7 @@ describe('breakdowns', () => {
   it('a jam takes one oven’s share of the oven rate', () => {
     run(() => {
       const g = ovenBound();
-      expect(jamShare(g.shops[HOOD])).toBe(1 / FOOTPRINTS[2].ovenSlots);
+      expect(jamShare(g.shops[HOOD], HOME_CITY)).toBe(1 / FOOTPRINTS[2].ovenSlots);
       const sound = G.shopRate(g.shops[HOOD], g.vehicle, fx(g));
       expect(sound).toBeCloseTo(G.ovenRate(g.shops[HOOD]), 9);
       const jammed = withState(g, { jam: 0 });

@@ -24,7 +24,7 @@ describe('city lots held back by Nonna (D305)', () => {
   });
   test('the row uses the very countdown the refusal toast shows', () => {
     const s = withSold(40);
-    expect(lotView(s, n('suburbs')).rowSub).toBe(G.nonnaCountdownText(s));
+    expect(lotView(s, n('suburbs')).rowSub).toBe(G.founderCountdownText(s));
     const refusal = G.buildShop({ ...s, cash: 1e9 }, 'suburbs');
     expect(refusal.ok).toBe(false);
     if (!refusal.ok) expect(refusal.reason).toBe(lotView(s, n('suburbs')).rowSub);

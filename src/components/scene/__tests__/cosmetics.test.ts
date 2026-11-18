@@ -83,13 +83,13 @@ describe('the furniture memo sees what is worn', () => {
     rate: 4,
     vehicle: 1,
     worn,
+    first: false,
   });
   const deps = (worn: string[]) => JSON.stringify(furnitureDeps(furnitureInputs(base(worn))));
-  test('each cosmetic changes the deps; wearing nothing equals not passing worn', () => {
+  test('each cosmetic changes the deps; wearing nothing is the plain deps', () => {
     const d0 = deps([]);
     for (const id of ['oven-gold', 'oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold', 'plaque-master', 'storefront-skin-1', 'storefront-skin-2']) expect(deps([id])).not.toBe(d0);
     expect(deps(['oven-gold'])).not.toBe(deps(['oven-woodfired']));
-    expect(JSON.stringify(furnitureDeps(furnitureInputs({ ...base([]), worn: undefined })))).toBe(d0);
   });
   test('a skin of the next cycle that looks the same does not rebuild (skin 4 is skin 1)', () => {
     expect(deps([`storefront-skin-${SKINS.length + 1}`])).toBe(deps(['storefront-skin-1']));

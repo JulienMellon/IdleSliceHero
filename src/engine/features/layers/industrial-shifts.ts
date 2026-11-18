@@ -9,14 +9,13 @@
 //
 // Breakdowns: every 5 minutes of play (seeded gaps) one oven jams and the shop's oven rate falls by one oven's share (1 / the footprint's
 // oven slots) until the player taps the wrench (`fixJam`), or after 30 seconds if the Head Baker (the oven head) is hired. The jam
-// reaches the engine as a cap on the demand ratio (the engine's min() has no hook for a station's own rate); play time only, so
+// reaches the engine as the oven's own rate (`stationMult`, A32); play time only, so
 // a jam never happens while the app is closed.
 import { EVENT_FRESH_MS, EVENT_STAMP_MS } from '../../../content/endgame';
 import { JAMS, LAYER_KEYS, SHIFTS } from '../../../content/layers';
-import { deliveryRate, ovenRate, walkInRate, type BuyResult, type GameState, type Shop } from '../../game';
+import { type BuyResult, type GameState, type Shop } from '../../game';
 import type { Feature } from '../types';
 import { cityOf, layerHood, type CityDef } from '../../../content/cities';
-import { HOME_CITY } from '../../../content/cities/home';
 import type { NeighborhoodId } from '../../../content/types';
 import { freshTimed, gapOf, type TimedSpec } from './suburbs-gameday';
 
@@ -63,7 +62,7 @@ function ruling(g: GameState, now: number): ShiftDef {
 }
 
 /** The share of the oven rate one jammed oven takes: 1 / the footprint's oven slots. */
-export const jamShare = (shop: Pick<Shop, 'footprint'>, city: CityDef = HOME_CITY): number => 1 / city.fit.footprints[shop.footprint].ovenSlots;
+export const jamShare = (shop: Pick<Shop, 'footprint'>, city: CityDef): number => 1 / city.fit.footprints[shop.footprint].ovenSlots;
 
 const jammed = (st: ShiftsState): boolean => st.jam >= 0;
 /** Whether a jam fixes itself: the Head Baker (or the General Manager, who has them all) is there. */
@@ -129,14 +128,15 @@ export function jamView(g: GameState): JamView {
   return { active: built(g), jammed: on, lost, ovenMult: 1 - lost, nextIn: st.nextAt < 0 ? JAMS.everySeconds : Math.max(0, Math.ceil(st.nextAt - g.playSeconds)), autoFixIn: on ? autoFixIn(g) : null };
 }
 
-/** The whole-demand ratio: the shift's demand, and no more than the jammed oven's rate. */
+/** The shift's demand ratio (the jam is a station rate now: `stationMult`). */
 function demandFactor(g: GameState, now: number): number {
-  const shop = g.shops[hoodOf(g)];
+  return ruling(g, now).demand;
+}
+
+/** The jammed oven's rate: one oven's share less, while a jam runs in the foreground (never while away). */
+function ovenFactor(g: GameState, now: number): number {
   const st = read(g);
-  const shift = ruling(g, now);
-  if (awayNow(st, now) || !jammed(st)) return shift.demand;
-  const total = walkInRate(shop) + deliveryRate(shop, g.vehicle);
-  return total > 0 ? Math.min(shift.demand, (ovenRate(shop) * (1 - jamShare(shop, cityOf(g)))) / total) : shift.demand;
+  return awayNow(st, now) || !jammed(st) ? 1 : 1 - jamShare(g.shops[hoodOf(g)], cityOf(g));
 }
 
 export const industrialShifts: Feature<ShiftsState> = {
@@ -171,6 +171,11 @@ export const industrialShifts: Feature<ShiftsState> = {
   },
   shopDemandMult(g, id, now) {
     return id === hoodOf(g) && built(g) ? demandFactor(g, now) : 1;
+  },
+  stationMult(g, id, now) {
+    if (id !== hoodOf(g) || !built(g)) return undefined;
+    const oven = ovenFactor(g, now);
+    return oven === 1 ? undefined : { oven };
   },
   shopKey(g, id) {
     if (id !== hoodOf(g) || !built(g)) return '';

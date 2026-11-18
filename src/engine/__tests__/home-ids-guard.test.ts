@@ -1,5 +1,6 @@
 // T107: the engine and the store read "the current city" from the save. No file under src/engine or src/store may name the home city's
 // neighbourhood list (`HOME_HOOD_IDS`) or a home neighbourhood id as a string literal, except the files listed here (and why).
+// T109: the models the screens read the city through (drawer, goal, city, ad and mastery) are held to the same rule.
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -18,8 +19,10 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-describe('no home-city constants in the engine or the store', () => {
-  const files = [...walk(path.join(ROOT, 'engine')), ...walk(path.join(ROOT, 'store'))].map((f) => [path.relative(ROOT, f).split(path.sep).join('/'), f]);
+const MODELS = ['components/drawer-model.ts', 'components/goal-model.ts', 'components/city-model.ts', 'components/store/ad-model.ts', 'components/endgame/mastery-model.ts'].map((m) => path.join(ROOT, m));
+
+describe('no home-city constants in the engine, the store or the screens\' models', () => {
+  const files = [...walk(path.join(ROOT, 'engine')), ...walk(path.join(ROOT, 'store')), ...MODELS].map((f) => [path.relative(ROOT, f).split(path.sep).join('/'), f]);
   test.each(files.filter(([rel]) => !ALLOW.has(rel)))('%s', (_rel, file) => {
     const src = fs.readFileSync(file, 'utf8').split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
     expect(src).not.toMatch(/\bHOME_HOOD_IDS\b/);

@@ -251,7 +251,7 @@ describe('the mirrored floor plan (card V2 step 3)', () => {
       const plain = toDrawSpace(build(fp, false));
       const m = toDrawSpace(build(fp, true));
       const a = 2 * plain.frame.vanishX;
-      const inp = ladderInput(furnitureInputs({ id: 'waterfront', name: 'Waterfront', shop: { footprint: fp, prep: 120, counter: 120, drivers: 40, managed: true, line: { prepped: 3 }, decor: { tables: 2, plants: 1, signage: 0 } }, running: true, rate: 3, vehicle: 2, worn: [] }));
+      const inp = ladderInput(furnitureInputs({ id: 'waterfront', name: 'Waterfront', shop: { footprint: fp, prep: 120, counter: 120, drivers: 40, managed: true, line: { prepped: 3 }, decor: { tables: 2, plants: 1, signage: 0 } }, running: true, rate: 3, vehicle: 2, worn: [], first: false }));
       const pp = ladderProps(plain, inp);
       const mm = ladderProps(m, inp);
       expect(mm.map((p) => p.id)).toEqual(pp.map((p) => p.id));

@@ -12,7 +12,8 @@
 import { SERVICE } from '../../content/service';
 import type { NeighborhoodId } from '../../content/types';
 import { bonusUnlocked } from '../bonus';
-import { counterRate, featureMults, ovenRate, prepRate, runsItself, HOME_HOOD_IDS, demandRate, valuePerPizza, type GameState } from '../game';
+import type { Seen } from './types';
+import { counterRate, featureMults, ovenRate, prepRate, runsItself, stationMults, HOME_HOOD_IDS, demandRate, valuePerPizza, type GameState } from '../game';
 import type { BarkAsk } from './heads';
 import { FEATURES } from './registry';
 import type { Feature } from './types';
@@ -58,19 +59,25 @@ export interface Flow {
   sold: number;
 }
 
+/** The flow from demand and station multipliers somebody has already worked out (no hook runs here). */
+function flowFrom(g: GameState, id: NeighborhoodId, seen: Seen): Flow {
+  const shop = g.shops[id];
+  const fx = { value: 1, demand: seen.demand, stations: seen.stations };
+  const prep = prepRate(shop, fx);
+  const ovens = ovenRate(shop, fx);
+  const counter = counterRate(shop, fx);
+  const kitchen = Math.min(prep, ovens, counter);
+  const wanted = demandRate(shop, g.vehicle, fx);
+  return { prep, ovens, counter, kitchen, wanted, sold: Math.min(wanted, kitchen) };
+}
+
 /** The shop's flow right now. `now` only reaches the other features' demand hooks. */
 export function flowOf(g: GameState, id: NeighborhoodId, now: number): Flow {
   const hit = flowCache.get(g)?.[id];
   if (hit && hit.now === now && sameRegistry(hit.list)) return hit.flow;
-  const shop = g.shops[id];
   let demand = 1;
   for (const f of FEATURES) if (f.key !== KEY && f.shopDemandMult) demand *= f.shopDemandMult(g, id, now);
-  const prep = prepRate(shop);
-  const ovens = ovenRate(shop);
-  const counter = counterRate(shop);
-  const kitchen = Math.min(prep, ovens, counter);
-  const wanted = demandRate(shop, g.vehicle, { value: 1, demand });
-  const flow = { prep, ovens, counter, kitchen, wanted, sold: Math.min(wanted, kitchen) };
+  const flow = flowFrom(g, id, { demand, stations: stationMults(g, id, now) });
   let per = flowCache.get(g);
   if (!per) flowCache.set(g, (per = {}));
   per[id] = { now, list: FEATURES.slice(), flow };
@@ -105,11 +112,11 @@ export const reportActive = (g: GameState, id: NeighborhoodId): boolean => {
 const stampFresh = (st: ServiceStateSlice, now: number): boolean => st.at > 0 && now - st.at <= SERVICE.freshMs;
 
 /** The state and the multiplier on the shop's pizzas, from the rates alone (plus the cold flag). */
-function effectOf(g: GameState, id: NeighborhoodId, now: number, f?: Flow): { state: ServiceState; mult: number } {
+function effectOf(g: GameState, id: NeighborhoodId, now: number, f?: Flow, seen?: Seen): { state: ServiceState; mult: number } {
   if (!reportActive(g, id)) return { state: 'inactive', mult: 1 };
   const st = read(g);
   if (!stampFresh(st, now)) return { state: 'normal', mult: 1 };
-  const service = serviceOf(f ?? flowOf(g, id, now));
+  const service = serviceOf(f ?? (seen ? flowFrom(g, id, seen) : flowOf(g, id, now)));
   if (st.shops[id]?.cold && service < SERVICE.coldBelow - 1e-9) return { state: 'cold', mult: SERVICE.coldMult };
   if (service >= SERVICE.tipAt - 1e-9) return { state: 'tipping', mult: SERVICE.tipMult };
   return { state: 'normal', mult: 1 };
@@ -269,7 +276,8 @@ export const service: Feature<ServiceStateSlice> = {
   },
   // the caches of "+$X/s" readouts refresh when the app first ticks (the tip needs a fresh stamp) and when the cold flag moves (the tip follows the levels, which are in the key already)
   shopKey: (g, id) => `${read(g).at > 0 ? 'f' : ''}${read(g).shops[id]?.cold ? 'c' : ''}`,
-  shopValueMult: (g, id, now) => effectOf(g, id, now).mult,
+  // `seen` is the demand and station multipliers `featureMults` has already collected: no other feature's hook runs again (U17)
+  shopValueMult: (g, id, now, seen) => effectOf(g, id, now, undefined, seen).mult,
 };
 
 /**

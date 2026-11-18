@@ -50,7 +50,8 @@ import {
 } from './scene/ladder';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverlays, StreetProp } from './scene/room';
 import { FasciaSign } from './scene/facade';
-import { fasciaSignBox, slideInto, VIEW_MARGIN, visibleSpan } from './scene/viewport';
+import { fasciaSignBox, overlaySpan, slideInto, visibleSpan } from './scene/viewport';
+import { SceneViewContext } from './scene/view-context';
 import { trafficFor } from './scene/street-props';
 import { rivalOpen } from '../engine/features/layers/rival';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, sidewalkItems, Street } from './scene/street';
@@ -316,6 +317,9 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const bouncing = bounceNow >= 0 ? mem.current.bounce!.st : null;
   // what is on screen of a wide shop's drawing (scene/viewport.ts): the shop's bubbles and its name plate stay inside it, 12 pt from the edge (D511, D512)
   const span = visibleSpan(view.scrolls, scrollX.current, width, fit, shift, { x0: frame.x0, x1: frame.x0 + frame.width });
+  // the overlays' own span (viewport.ts `overlaySpan`): a context object that changes only when the shop moves a whole point, read by the jam's label alone (U25)
+  const ovSpan = overlaySpan(view.scrolls, scrollX.current, width, cw);
+  const overlayView = useMemo(() => (ovSpan ? { x0: ovSpan.x0, x1: ovSpan.x1 } : null), [ovSpan?.x0, ovSpan?.x1]); // eslint-disable-line react-hooks/exhaustive-deps -- the primitives are the deps
   const signBox = fasciaSignBox(plainOf(lay), nd.name);
   const signC = lay.mirrored ? 2 * frame.vanishX - signBox.fcx : signBox.fcx;
   const signDraw = view.scrolls ? slideInto(signC, signBox.signW, span, lay.mirrored ? { x0: 2 * frame.vanishX - signBox.fx1, x1: 2 * frame.vanishX - signBox.fx0 } : { x0: signBox.fx0, x1: signBox.fx1 }) : 0;
@@ -738,7 +742,9 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         </Svg>
       </Pressable>
       {/* the SCENE_OVERLAYS slot: above the floor and furniture, below the HUD; nothing while the slot is empty */}
-      <SceneOverlays shopId={id} width={cw} height={height} viewX0={view.scrolls ? Math.round(scrollX.current) + VIEW_MARGIN : undefined} viewX1={view.scrolls ? Math.round(scrollX.current) + width - VIEW_MARGIN : undefined} />
+      <SceneViewContext.Provider value={overlayView}>
+        <SceneOverlays shopId={id} width={cw} height={height} />
+      </SceneViewContext.Provider>
     </>
   );
   return (

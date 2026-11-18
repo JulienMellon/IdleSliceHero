@@ -19,6 +19,7 @@ import { emitCheer, emitCoin, emitPayout } from './pulse-bus';
 import { chipPhase, chipView, RUSH_HINT } from './order-model';
 import { Portrait } from './portrait';
 import { TAP } from './tap-targets';
+import { gameNow } from '../engine/clock';
 
 const FLASH_MS = 260;
 
@@ -28,7 +29,7 @@ export const OrderChip = memo(function OrderChip({ top, onShop }: { top: number;
   const phase = useGame((s) => chipPhase(s.game));
   // U4: an offer waits while the attack's banner or challenge shows (stack-model.ts: one sky event at a time); a running order always shows
   const bannerOpen = useBannerOpen();
-  const behind = useGame((s) => phase === 'offer' && skyOf(s.game, bannerOpen, Date.now()) !== 'offer');
+  const behind = useGame((s) => phase === 'offer' && skyOf(s.game, bannerOpen, gameNow()) !== 'offer');
   // whole seconds left on the active order or the offer: the one thing that changes under the chip while it is up
   useGame((s) => Math.ceil(s.game.order.active?.left ?? s.game.order.offer?.left ?? 0));
   const [flash] = useState(() => new Animated.Value(0));

@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { canAfford } from '../../engine/game';
 import { money } from '../../engine/format';
 import { boatsView } from '../../engine/features/layers/waterfront-boats';
 import { useGame } from '../../store/game-store';
@@ -12,16 +13,17 @@ import { StationCard } from '../shop-ui';
 import { buttonTone } from '../sidewalk-model';
 import { auctionCard, auctionStatus, rackCard } from './waterfront/boats-model';
 import { LABELS } from './layer-text';
+import { gameNow } from '../../engine/clock';
 
 /** The warming rack's card: the tier it holds, what the next one holds and costs. Shown once the Waterfront shop is built. */
 export const RackCardSlot = memo(function RackCardSlot() {
   // "tier|price": the card repaints on a purchase or a price change, never on a game tick
   const key = useGame((s) => {
-    const v = boatsView(s.game, Date.now());
-    return v.active ? `${v.rackTier}|${v.rackPrice ?? ''}|${s.game.cash >= (v.rackPrice ?? Infinity) ? 1 : 0}` : '';
+    const v = boatsView(s.game, gameNow());
+    return v.active ? `${v.rackTier}|${v.rackPrice ?? ''}|${canAfford(s.game, v.rackPrice) ? 1 : 0}` : '';
   });
   if (!key) return null;
-  const v = boatsView(useGame.getState().game, Date.now());
+  const v = boatsView(useGame.getState().game, gameNow());
   const c = rackCard(v, useGame.getState().game.city);
   const canBuy = key.endsWith('|1');
   return (
@@ -45,7 +47,7 @@ export const AuctionCardSlot = memo(function AuctionCardSlot() {
   // "price|raises|nextIn|can": changes at each raise, each second of the raise clock, and when the cash crosses the price
   const key = useGame((s) => {
     const a = auctionStatus(s.game);
-    return a.live ? `${a.price}|${a.raises}|${a.nextIn}|${s.game.cash >= a.price ? 1 : 0}` : '';
+    return a.live ? `${a.price}|${a.raises}|${a.nextIn}|${canAfford(s.game, a.price) ? 1 : 0}` : '';
   });
   if (!key) return null;
   const g = useGame.getState().game;

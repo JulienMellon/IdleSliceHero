@@ -4,8 +4,9 @@ import { create } from 'zustand';
 import { emitAudio, type AudioEvent } from '../audio/bus';
 import { getBannerOpen } from '../components/endgame/banner-state';
 import { offerWaits } from '../components/endgame/stack-model';
-import { applyDouble, claimDelta, claimOffer, grantDailyBooster, offlineBoost, offlineExtra, offlineFactor, repairByAd, rerollDaily as rerollDailyTask, type ClaimInfo, type ClaimKind } from '../components/store/ad-model';
-import { applyGrant, NO_PREFS, parsePrefs, PREFS_KEY, type StorePrefs } from '../components/store/store-model';
+import type { ClaimInfo, ClaimKind } from '../components/store/ad-model';
+import { applyDouble, applyGrant, claimDelta, claimOffer, grantDailyBooster, offlineBoost, offlineExtra, offlineFactor, repairByAd, rerollDaily as rerollDailyTask } from '../engine/offers';
+import { NO_PREFS, parsePrefs, PREFS_KEY, type StorePrefs } from '../components/store/store-model';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
 import { cityOf } from '../content/cities';
@@ -33,6 +34,7 @@ import { buyCosmetic as buyVanity } from '../engine/vanity';
 import { analytics, EVENTS, onGrant, purchases, startServices, type Grant } from '../services';
 import { standingGrants } from './standing';
 import type { Station } from '../engine/pipeline';
+import { gameNow } from '../engine/clock';
 
 const SAVE_KEY = 'slice-empire/save/v1';
 
@@ -210,7 +212,7 @@ export const useGame = create<Store>((set, get) => {
     const { game, playing, lastKitchenTap, lastSceneEndPlay } = get();
     // the title card is still up, or Nonna is walking the player through the first batch: the story waits
     if (!get().titleDone || tutorialHoldsStory(game)) return;
-    const next = pickScene(game, cityOf(game).scenes, Date.now(), lastKitchenTap, !!playing, lastSceneEndPlay);
+    const next = pickScene(game, cityOf(game).scenes, gameNow(), lastKitchenTap, !!playing, lastSceneEndPlay);
     if (next) set({ playing: { scene: next, replay: false } });
   };
 
@@ -218,7 +220,7 @@ export const useGame = create<Store>((set, get) => {
   const commit = (result: G.BuyResult, item?: { name: string; cost: number | null; hint?: string }, sound?: (next: G.GameState) => AudioEvent) => {
     if (!result.ok) {
       emitAudio({ type: 'refused' });
-      const at = Date.now();
+      const at = gameNow();
       // name what the player tapped
       const needCash = result.reason === 'Not enough cash' && item && item.cost !== null ? item.cost : undefined;
       const text = needCash !== undefined && item ? `${item.name}: need ${money(needCash)}${item.hint ?? ''}` : result.reason;
@@ -238,7 +240,7 @@ export const useGame = create<Store>((set, get) => {
   const claimSound = (before: G.GameState) => (next: G.GameState): AudioEvent => (next.cash > before.cash ? { type: 'collect', size: collectSize(next.cash - before.cash, before.cash) } : { type: 'click' });
   const claim = (run: (g: G.GameState, now: number) => G.BuyResult) => {
     const g = get().game;
-    return commit(run(g, Date.now()), undefined, claimSound(g));
+    return commit(run(g, gameNow()), undefined, claimSound(g));
   };
   const plain = (what: Purchase) => (): AudioEvent => ({ type: 'buy', what, sting: purchaseSting(what, {}) });
   /** v5.17 (U3): a claim that paid cash or diamonds is remembered for the "double it" sheet. */
@@ -247,7 +249,7 @@ export const useGame = create<Store>((set, get) => {
     if (!claim(run)) return false;
     const delta = claimDelta(before, get().game);
     if (claimOffer(delta)) {
-      set({ claimed: { kind, delta, doubled: false, at: Date.now() } });
+      set({ claimed: { kind, delta, doubled: false, at: gameNow() } });
       // D504: a Nonna's Plus owner is paid double at once; the sheet only says so
       if (get().plus) get().doubleClaim();
     }
@@ -285,7 +287,7 @@ export const useGame = create<Store>((set, get) => {
 
   /** Read the save, pay the time away and put the game in place (the body of `load`). */
   const loadSave = async () => {
-    const now = Date.now();
+    const now = gameNow();
     // On resume, keep in-memory progress if the save can't be read.
     const wasLoaded = get().loaded;
     let game = wasLoaded ? get().game : G.newGame(now);
@@ -331,7 +333,7 @@ export const useGame = create<Store>((set, get) => {
   };
 
   return {
-    game: G.newGame(Date.now()),
+    game: G.newGame(gameNow()),
     loaded: false,
     offline: null,
     lastKitchenTap: 0,
@@ -346,7 +348,7 @@ export const useGame = create<Store>((set, get) => {
     bonusHold: false,
     layerHold: false,
     background: false,
-    tickAt: Date.now(),
+    tickAt: gameNow(),
     titleDone: false,
     buyAmount: 1,
     plus: false,
@@ -378,7 +380,7 @@ export const useGame = create<Store>((set, get) => {
     },
 
     save: async () => {
-      const game = { ...get().game, lastSavedAt: Date.now() };
+      const game = { ...get().game, lastSavedAt: gameNow() };
       set({ game });
       // Uncollected offline cash is still the player's: include it in the save.
       const pending = get().offline?.earned ?? 0;
@@ -393,7 +395,7 @@ export const useGame = create<Store>((set, get) => {
 
     tick: (dt) => {
       if (!get().loaded || get().background) return;
-      const now = Date.now();
+      const now = gameNow();
       let g = get().game;
       if (now - lastRewardsRefresh >= 1000 || now < lastRewardsRefresh) {
         lastRewardsRefresh = now;
@@ -414,14 +416,14 @@ export const useGame = create<Store>((set, get) => {
       }
       const toast = get().toast;
       const tickAt = now;
-      set(toast?.need !== undefined && game.cash >= toast.need ? { game, toast: null, tickAt } : { game, tickAt });
+      set(toast?.need !== undefined && G.canAfford(game, toast.need) ? { game, toast: null, tickAt } : { game, tickAt });
       queueScene();
     },
 
     tapShop: () => {
       const g = get().game;
       const next = G.tapShop(g, g.active);
-      const at = Date.now();
+      const at = gameNow();
       if (g.shops[g.active].managed) {
         // a rush: remember when (for the HUD), but it isn't a manual station tap
         set({ game: next, rushTaps: [...get().rushTaps, at].slice(-RUSH_TAPS_KEPT) });
@@ -435,7 +437,7 @@ export const useGame = create<Store>((set, get) => {
       const g = get().game;
       const r = G.tapStation(g, g.active, st);
       if (r.ok) {
-        set({ game: tutorialAdvance(r.state), lastKitchenTap: Date.now() });
+        set({ game: tutorialAdvance(r.state), lastKitchenTap: gameNow() });
         return null;
       }
       return r.reason;
@@ -500,13 +502,13 @@ export const useGame = create<Store>((set, get) => {
 
     defend: () => {
       const g = get().game;
-      const r = startChallenge(g, Date.now());
+      const r = startChallenge(g, gameNow());
       if (r.ok) emitAudio({ type: 'click' });
       return commit(r);
     },
 
     startRival: (id) => {
-      const r = startRivalChallenge(get().game, id, Date.now());
+      const r = startRivalChallenge(get().game, id, gameNow());
       if (r.ok) emitAudio({ type: 'click' });
       return commit(r);
     },
@@ -556,18 +558,25 @@ export const useGame = create<Store>((set, get) => {
 
     bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: G.pier9Price(get().game) }, plain('bid')),
 
-    franchise: () =>
-      // C144: a load in flight would put the older (old-city) save over the new city; the franchise lands after it and says yes now
-      benefit(() => {
+    franchise: () => {
+      const run = (): boolean => {
         const g = get().game;
         if (!canFranchise(g)) return false;
         emitAudio({ type: 'click' });
         // the new city's story starts at once (no wait left over from the last scene, no old city's taps or toast), and the offline summary of the old one is moot
-        set({ game: franchiseCity(g, Date.now()), lastSceneEndPlay: null, offline: null, rushTaps: [], lastKitchenTap: 0, toast: null });
+        set({ game: franchiseCity(g, gameNow()), lastSceneEndPlay: null, offline: null, rushTaps: [], lastKitchenTap: 0, toast: null });
         queueScene();
         void get().save();
         return true;
-      }),
+      };
+      // C144, C148: a load in flight would put the older (old-city) save over the new city, so the franchise lands after it; and says no
+      // for now, so the flow stays on its screen until the new city is really there
+      if (loading > 0) {
+        whenLoaded(() => void run());
+        return false;
+      }
+      return run();
+    },
 
     build: (id) => {
       const ok = commit(G.buildShop(get().game, id), { name: `Build ${G.def(id, cityOf(get().game)).name}`, cost: G.def(id, cityOf(get().game)).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id }));
@@ -613,7 +622,7 @@ export const useGame = create<Store>((set, get) => {
     claimGift: (repair = false) => claimTracked('gift', (g, now) => R.claimGift(g, now, { repair })),
     markGiftShown: () => {
       const g = get().game;
-      const next = R.markGiftShown(g, Date.now());
+      const next = R.markGiftShown(g, gameNow());
       if (next !== g) {
         set({ game: next });
         void get().save();
@@ -636,7 +645,7 @@ export const useGame = create<Store>((set, get) => {
     receiveGrant: (grant) =>
       // C127: a load in flight would put the older save over paid diamonds; the grant lands after it
       whenLoaded(() => {
-        set({ game: applyGrant(get().game, grant, Date.now()), ...(grant.plus ? { plus: true } : {}) });
+        set({ game: applyGrant(get().game, grant, gameNow()), ...(grant.plus ? { plus: true } : {}) });
         emitAudio({ type: 'click' });
         void get().save();
       }),
@@ -659,17 +668,17 @@ export const useGame = create<Store>((set, get) => {
       });
     },
 
-    rerollDaily: (i) => benefit(() => commit(rerollDailyTask(get().game, i, Date.now()), undefined, () => ({ type: 'click' }))),
+    rerollDaily: (i) => benefit(() => commit(rerollDailyTask(get().game, i, gameNow()), undefined, () => ({ type: 'click' }))),
 
     repairGiftByAd: () =>
       benefit(() => {
         const g = get().game;
-        return commit(repairByAd(g, Date.now()), undefined, claimSound(g));
+        return commit(repairByAd(g, gameNow()), undefined, claimSound(g));
       }),
 
     freeBooster: () =>
       benefit(() => {
-        const now = Date.now();
+        const now = gameNow();
         const ok = commit(grantDailyBooster(get().game, now), undefined, () => ({ type: 'click' }));
         if (ok) setPrefs({ boosterAdDay: R.dayKey(now) });
         return ok;
@@ -695,7 +704,7 @@ export const useGame = create<Store>((set, get) => {
 
     resetGame: async () => {
       await AsyncStorage.removeItem(SAVE_KEY).catch(() => {});
-      const now = Date.now();
+      const now = gameNow();
       // C129: what the player paid for is theirs after a reset (the Founder awning; Plus is the store's own flag): the standing part of each owned product
       const game = standingGrants(purchases.owned()).reduce((g, grant) => applyGrant(g, grant, now), G.newGame(now));
       set({ game, offline: null, playing: null, lastSceneEndPlay: null, claimed: null, starterAt: null });

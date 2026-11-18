@@ -12,11 +12,12 @@ import { ChallengeChip } from './challenge-chip';
 import { EventBanner } from './event-banner';
 import { NewsToast } from './news-toast';
 import { skyOf, STACK, stackTop } from './stack-model';
+import { gameNow } from '../../engine/clock';
 
 export const BannerStack = memo(function BannerStack() {
   // one sky event at a time (stack-model.ts): a string, so this repaints only when the front item changes
   const bannerOpen = useBannerOpen();
-  const first = useGame((s) => skyOf(s.game, bannerOpen, Date.now()));
+  const first = useGame((s) => skyOf(s.game, bannerOpen, gameNow()));
   // the order chip (or offer) is drawn by OrderChip at the top; the news toast stacks under it
   const orderUp = first === 'order' || first === 'offer';
   return (

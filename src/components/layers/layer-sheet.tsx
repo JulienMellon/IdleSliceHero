@@ -7,10 +7,11 @@ import { C, F } from '../../theme';
 import { LABELS } from './layer-text';
 import { sheetModel } from './sheet-model';
 import { closeLayerSheet, useLayerSheet, type SheetKind } from './sheet-state';
+import { gameNow } from '../../engine/clock';
 
 function Sheet({ kind }: { kind: SheetKind }) {
   const game = useGame((s) => s.game);
-  const m = sheetModel(kind, game, Date.now());
+  const m = sheetModel(kind, game, gameNow());
   return (
     <View style={styles.overlay} testID={`layer-sheet-${kind}`}>
       <Pressable style={StyleSheet.absoluteFill} onPress={closeLayerSheet} accessibilityRole="button" accessibilityLabel="Close" />

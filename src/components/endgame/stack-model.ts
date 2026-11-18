@@ -7,6 +7,7 @@ import type { GameState } from '../../engine/game';
 import { chipPhase } from '../order-model';
 import { attackLite } from './attack-model';
 import { eventViewNow } from './event-model';
+import { gameNow } from '../../engine/clock';
 
 export const STACK = {
   gap: 6,
@@ -51,7 +52,7 @@ export const EVENT_STRIP_SECONDS = 15;
 export const goldenPending = (g: GameState): boolean => bonusUnlocked(g) && (g.bonus.until > g.playSeconds || g.playSeconds >= g.bonus.next);
 
 /** Who wants the strip in this state. `bannerOpen`: the attack banner is open in full (banner-state.ts). `now`: wall ms (the event's clock). */
-export function skyPresence(g: GameState, bannerOpen = false, now: number = Date.now()): SkyPresence {
+export function skyPresence(g: GameState, bannerOpen = false, now: number = gameNow()): SkyPresence {
   const phase = chipPhase(g);
   const face = attackLite(g).face;
   // an event runs for hours: its banner holds the strip for its first moments, then yields to a golden pizza that is due
@@ -78,19 +79,19 @@ export function skyShown(p: SkyPresence): Record<SkyItem, boolean> {
 }
 
 /** The item showing in this state. */
-export const skyOf = (g: GameState, bannerOpen = false, now: number = Date.now()): SkyItem | null => skyFirst(skyPresence(g, bannerOpen, now));
+export const skyOf = (g: GameState, bannerOpen = false, now: number = gameNow()): SkyItem | null => skyFirst(skyPresence(g, bannerOpen, now));
 
 /**
  * G95: the golden pizza waits while anything ahead of it shows: the order chip (any face), the challenge chip, the open attack banner, an
  * offer, or the event banner in its first moments. A collapsed banner is a 44 pt badge and flies under the pizza, so it holds nothing.
  */
-export function holdsBonus(g: GameState, bannerOpen = false, now: number = Date.now()): boolean {
+export function holdsBonus(g: GameState, bannerOpen = false, now: number = gameNow()): boolean {
   const first = skyOf(g, bannerOpen, now);
   return first !== null && first !== 'golden';
 }
 
 /** An order offer is on the table but something ahead of it shows: its 45 s wait must not run down unseen. */
-export const offerWaits = (g: GameState, bannerOpen = false, now: number = Date.now()): boolean => {
+export const offerWaits = (g: GameState, bannerOpen = false, now: number = gameNow()): boolean => {
   const p = skyPresence(g, bannerOpen, now);
   return p.offer && skyFirst(p) !== 'offer';
 };

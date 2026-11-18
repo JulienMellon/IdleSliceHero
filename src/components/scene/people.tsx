@@ -3,7 +3,7 @@ import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { bodyBy, isWorker, limbGeom } from './geometry';
 import { bobFor, quantArm, quantStep } from './quantise';
 import { INK, P, kAt, shade } from './projection';
-import { HAIR_COLORS, type Act, type Kind, type Look, type Mood, type PersonProps, lookFor } from './looks';
+import { DRIVER_CAPS, HAIR_COLORS, type Act, type Kind, type Look, type Mood, type PersonProps, lookFor } from './looks';
 
 export { GUEST_SHIRTS, HAIR_COLORS, PANTS, SKINS, hash32, lookFor, type Act, type Kind, type Look, type Mood, type PersonProps } from './looks';
 
@@ -87,7 +87,7 @@ export function Headwear({ kind, hy, front = false, alt = false, dot = '#D9443A'
     );
   }
   if (kind === 'staff' || kind === 'driver') {
-    const c = kind === 'staff' ? cap ?? '#F5C33B' : cap ?? '#D9443A';
+    const c = kind === 'staff' ? cap ?? '#F5C33B' : cap ?? DRIVER_CAPS[0];
     return (
       <G>
         <Path d={`M-9.2 ${hy - 3} Q-9.2 ${hy - 12.6} 0.5 ${hy - 12.6} Q10 ${hy - 12.6} 10 ${hy - 4} Z`} fill={c} {...OUT} />
