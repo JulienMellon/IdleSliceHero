@@ -1,8 +1,10 @@
 /// <reference types="jest" />
 // v5.18 card V2 step 5: the off-screen cues of a wide shop, and the cold line's short queue (step 4).
-import { askScroll, CUE_EDGE, CUE_H, CUE_URGENCY, CUE_W, cueLabel, cuesFor, offScreen, onScrollAsk, queueShown, wantsOf, type KitchenSpot, type Want } from '../scroll-cues-model';
+import { askScroll, clearCueTop, CUE_EDGE, CUE_GAP, cueWord, wrenchRect, CUE_H, CUE_URGENCY, CUE_W, cueLabel, cuesFor, offScreen, onScrollAsk, queueShown, wantsOf, type KitchenSpot, type Want } from '../scroll-cues-model';
 import { sceneView, sceneFrame, sceneToScreen } from '../scene/projection';
 import { controlPasses } from '../tap-targets';
+import { layout } from '../scene/layout';
+import { ovenSpot, WRENCH } from '../layers/industrial/jam-model';
 
 const W = 393;
 const H = 852;
@@ -122,5 +124,38 @@ describe('the cold line (card V2 step 4)', () => {
     for (let n = 0; n < 40; n++) for (const share of [0.25, 0.4, 0.5, 0.75, 1]) expect(queueShown(n, share)).toBeLessThanOrEqual(n);
     // the check can fail: drawing the whole line while the report says cold would show more than the share
     expect(queueShown(10, 0.4)).toBeLessThan(10);
+  });
+});
+
+describe('G111: a cue keeps 8 pt clear of the tappables on screen', () => {
+  // shot 145: the mirrored Industrial Flagship at scroll 0, the jam's wrench on its oven, the right cue at the default top
+  const lay = layout(4, 6, 3, 2, 6, 4, 0, undefined, true);
+  const o = ovenSpot(lay);
+  const wrench = wrenchRect(fit.ox + o.x * fit.s, fit.oy + o.y * fit.s, WRENCH, 0);
+  const H_VIEW = 560;
+  const defaultTop = Math.round(wrench.y0 + 4);
+  const overlaps = (side: 'left' | 'right', top: number, r: typeof wrench, gap: number) => {
+    const x0 = side === 'left' ? 0 : W - CUE_W;
+    return x0 < r.x1 + gap && x0 + CUE_W > r.x0 - gap && top < r.y1 + gap && top + CUE_H > r.y0 - gap;
+  };
+  test('the setup is the bug: at its default top the right cue sits on the wrench', () => {
+    expect(overlaps('right', defaultTop, wrench, 0)).toBe(true);
+  });
+  test('the cue slides to a place 8 pt clear of the wrench, inside the view, and the wrench stays whole on screen', () => {
+    const top = clearCueTop('right', defaultTop, W, H_VIEW, [wrench]);
+    expect(overlaps('right', top, wrench, CUE_GAP)).toBe(false);
+    expect(top).toBeGreaterThanOrEqual(0);
+    expect(top + CUE_H).toBeLessThanOrEqual(H_VIEW);
+  });
+  test('a free cue stays where it is; the other side is not moved by a wrench it does not meet', () => {
+    expect(clearCueTop('right', 10, W, H_VIEW, [{ x0: 100, y0: 200, x1: 144, y1: 244 }])).toBe(10);
+    expect(clearCueTop('left', defaultTop, W, H_VIEW, [wrench])).toBe(defaultTop);
+  });
+  test('with no room anywhere it keeps the asked-for top', () => {
+    expect(clearCueTop('right', 40, W, 60, [{ x0: W - 60, y0: 0, x1: W, y1: 60 }])).toBe(40);
+  });
+  test('the word names the station, 7 letters at most', () => {
+    expect([cueWord('slammed', 'ovens'), cueWord('tap', 'prep'), cueWord('bubble', 'counter'), cueWord('jam', 'ovens')]).toEqual(['Ovens', 'Prep', 'Counter', 'Jam!']);
+    for (const k of ['jam', 'slammed', 'bubble', 'tap'] as const) for (const at of ['prep', 'ovens', 'counter', 'floor', 'door'] as const) expect(cueWord(k, at).length).toBeLessThanOrEqual(7);
   });
 });

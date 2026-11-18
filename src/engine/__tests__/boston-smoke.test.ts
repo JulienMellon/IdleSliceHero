@@ -29,7 +29,7 @@ describe('a Boston game never reads a home id', () => {
     test(`${n} shops: night oven, teaser, mastery and ticks`, () => {
       expect(() => nightOvenView(g)).not.toThrow();
       expect(nightOvenLock(g, 1)).toBe(n >= 3 ? null : `Unlocks when you build ${G.def(BOSTON[2]).name}`);
-      expect(nightOvenLock(g, 2)).toBe(n >= 5 ? null : expect.stringContaining(`build ${G.def(BOSTON[4]).name}`) && (n >= 5 ? null : nightOvenLock(g, 2)));
+      expect(nightOvenLock(g, 2)).toBe(n >= 5 ? "Needs the 8 h oven first" : `Unlocks when you build ${G.def(BOSTON[4]).name}`);
       expect(() => nextSceneTeaser(g)).not.toThrow();
       expect(masteryTotal(g)).toBeGreaterThanOrEqual(0);
       const ns = nextStar(g);

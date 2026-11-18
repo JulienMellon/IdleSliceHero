@@ -53,8 +53,9 @@ export interface ScrollCuesProps {
   rightWord: string;
   rightLabel: string;
   rightScroll: number;
-  /** Distance of the chevrons' top from the top of the shop view (pt). */
-  top: number;
+  /** Distance of each chevron's top from the top of the shop view (pt): the two may differ, each keeps clear of the tappables on its side (G111). */
+  leftTop: number;
+  rightTop: number;
   onGo: (scrollTo: number) => void;
 }
 
@@ -62,8 +63,8 @@ export const ScrollCues = memo(function ScrollCues(p: ScrollCuesProps) {
   if (!p.leftKind && !p.rightKind) return null;
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      {p.leftKind ? <Cue side="left" kind={p.leftKind} word={p.leftWord} label={p.leftLabel} scrollTo={p.leftScroll} top={p.top} onGo={p.onGo} /> : null}
-      {p.rightKind ? <Cue side="right" kind={p.rightKind} word={p.rightWord} label={p.rightLabel} scrollTo={p.rightScroll} top={p.top} onGo={p.onGo} /> : null}
+      {p.leftKind ? <Cue side="left" kind={p.leftKind} word={p.leftWord} label={p.leftLabel} scrollTo={p.leftScroll} top={p.leftTop} onGo={p.onGo} /> : null}
+      {p.rightKind ? <Cue side="right" kind={p.rightKind} word={p.rightWord} label={p.rightLabel} scrollTo={p.rightScroll} top={p.rightTop} onGo={p.onGo} /> : null}
     </View>
   );
 });

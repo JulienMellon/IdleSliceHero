@@ -193,7 +193,7 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
       card('manager', {
         icon: first && city.managers[id].id === 'nonna-rosa' ? { t: 'nonna' } : { t: 'gm', name: city.managers[id].id },
         title: first ? `Manager: ${city.managers[id].name}` : `Hire ${aOrAn(nd.name)} ${nd.name} manager`,
-        detail: first ? `Keep baking — ${G.nonnaCountdownText(game)}` : after ? managerEffect() : `General Manager: ×2 income here, and it earns while you're away (${plus(G.shopEarnings(game, id))})`,
+        detail: first ? `Keep baking — ${G.founderCountdownText(game)}` : after ? managerEffect() : `General Manager: ×2 income here, and it earns while you're away (${plus(G.shopEarnings(game, id))})`,
         wide: true,
         costLabel: first ? 'Soon' : undefined,
       }),

@@ -29,7 +29,8 @@ import { CURB_Y, D, INK, P, drawShift, openScroll, sceneToScreen, sceneView, scr
 import { plainOf, toDrawSpace } from './scene/layout-space';
 import { Flip } from './scene/primitives';
 import { ScrollCues } from './scroll-cues';
-import { cuesFor, onScrollAsk, queueShown, wantsOf, type KitchenSpot, type ScrollTarget } from './scroll-cues-model';
+import { clearCueTop, cuesFor, onScrollAsk, queueShown, wantsOf, wrenchRect, type KitchenSpot, type PtRect, type ScrollTarget } from './scroll-cues-model';
+import { ovenSpot, WRENCH } from './layers/industrial/jam-model';
 import { isTap, shopOpenScroll } from './scene/scroll';
 import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Rug, Stools, Table, WallPlanter } from './scene/props';
 import { ovenTier } from './scene/geometry';
@@ -444,10 +445,11 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const stationXs: Record<KitchenSpot, number> = { prep: bxs.prep + shift, ovens: bxs.oven + shift, counter: bxs.counter + shift };
   const lastOven = lay.ovens[lay.ovens.length - 1];
   const bubbleSt = refusal ? refusal.st : mileLine && m.mile ? m.mile.st : m.hire && clock - m.hire.at < 2.5 ? m.hire.st : barkOn ? barkOn.st : null;
+  const jamOn = id === 'industrial' && jamView(game).jammed;
   const wants = view.scrolls
     ? wantsOf({
         slammed: (['prep', 'ovens', 'counter'] as const).filter((k) => rep.lamps[k] === 'slammed'),
-        jam: id === 'industrial' && jamView(game).jammed,
+        jam: jamOn,
         bubble: bubbleSt ? spotOf(bubbleSt) : null,
         tap: next ? spotOf(next) : null,
         xs: stationXs,
@@ -455,6 +457,15 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       })
     : [];
   const cues = cuesFor(wants, scrollX.current, width, fit, view.maxScroll);
+  // G111: a cue keeps 8 pt clear of the tappables on screen; the jam's wrench (the jam overlay's 44 pt button, on the true oven place of this plan) is the one a cue met
+  const avoid: PtRect[] = [];
+  if (jamOn) {
+    const o = ovenSpot(roomLay);
+    avoid.push(wrenchRect(fit.ox + o.x * fit.s, fit.oy + o.y * fit.s, WRENCH, scrollX.current));
+  }
+  const cueTop = Math.round(fit.oy + (by + 56) * fit.s);
+  const leftTop = cues.left ? clearCueTop('left', cueTop, width, height, avoid) : cueTop;
+  const rightTop = cues.right ? clearCueTop('right', cueTop, width, height, avoid) : cueTop;
   // scroll the shop (a tap on a cue, or on a lamp of the shop report: `askScroll`); the position is kept for the session like a drag's
   const goTo = (x: number) => {
     const to = Math.max(0, Math.min(view.maxScroll, x));
@@ -747,7 +758,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           rightWord={cues.right?.word ?? ''}
           rightLabel={cues.right?.label ?? ''}
           rightScroll={cues.right?.scrollTo ?? 0}
-          top={Math.round(fit.oy + (by + 56) * fit.s)}
+          leftTop={leftTop}
+          rightTop={rightTop}
           onGo={goTo}
         />
       )}
