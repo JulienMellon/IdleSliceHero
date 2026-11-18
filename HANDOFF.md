@@ -105,5 +105,5 @@ For a fresh session. Read this file first, then `CRITICLOG.md` and `CODELOG.md` 
 - **Fix one note, open another:** removing the struck price (D359) replaced the station name with "need $X" (D402). Check that a fix keeps what the element already told the player.
 
 ## Outside the loop
-- **Screenshots** from v5.0 on are committed (`screenshots/`). The 51 folders from before v5.0 (v0.1 to v4.9) were moved on 2026-11-13 to the private repo `JulienMellon/idleslicearchive`, at the same paths; this repo's git history still holds them. Ask Julien before pruning anything else.
+- **Screenshots** from v5.16 on are committed (`screenshots/`). The rest are in the private repo `JulienMellon/idleslicearchive`, at the same paths: the 51 folders from before v5.0 (v0.1 to v4.9), moved on 2026-11-13, and the 22 folders v5.0 to v5.15-r3, moved on 2026-11-18. This repo's git history still holds them all. Ask Julien before pruning anything else.
 - The one-time playtest of v3.0–v3.2 has been acted on (v3.4–v3.7); its dead-zone, endgame and University-chip-during-the-bid items are still open.
