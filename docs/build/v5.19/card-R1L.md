@@ -20,7 +20,7 @@
   - Feature files: `suburbs-gameday.ts` becomes `game-day.ts`, `waterfront-boats.ts` becomes `boats.ts`, `university-menu.ts` becomes `menu.ts`, `industrial-shifts.ts` becomes `shifts.ts`, and `uptown-stars.ts` becomes `stars.ts`.
   - Component folders: `suburbs/` becomes `game-day/`, `waterfront/` becomes `boats/`, `university/` becomes `menu/`, `industrial/` becomes `shifts/`, and `uptown/` becomes `stars/`.
   - Exported names that carry a home hood (`suburbsGameDay`, `waterfrontBoats`, …) are renamed by kind as well. User-facing strings don't change.
-- [ ] **3. One shop layout. Do this step only if VERSION.md Defaults names Julien's pick; otherwise skip it and report `Needs: layout pick`.**
+- [ ] **3. One shop layout: option C** (Julien picked it on 2026-11-18). Option B below is kept only as the record of what was weighed.
   - **Option C (the plan's recommendation):**
     - Add `plan?: 'standard' | 'mirrored'` to `NeighborhoodDef`, set to `'mirrored'` on home `waterfront` and `industrial` only. `isMirrored(id)` reads the def.
     - Add `scene/shop-layout.ts` `shopLayout(id, shop, city)`. It derives `ovenCount`, `cookCount`, `staffCount`, `tablesShown`, `driverSlots` and `plants` from `city.fit` (moved from `storefront.tsx:193-198`), calls `layout(…, mirrored)` and returns `{ room, draw }` (`draw = toDrawSpace(room)`). It is cached by key.

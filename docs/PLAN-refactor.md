@@ -48,7 +48,7 @@ Status: **plan only, nothing built.** The phases are now loop cards in `docs/bui
 - **Home-id checks become data:** `id === 'downtown'` becomes `id === firstHood(city)`. The `'industrial'` jam check becomes `layerOf(city, id) === 'shifts'`. Director `'waterfront'` becomes `city.bid.hood`.
 - **Layers by kind, not by hood:** remove `hood` from `GAME_DAY`, `BOATS`, … in `content/layers.ts`. Callers use `layerHood(city, kind)`. Rename the feature and component folders by kind: `features/layers/suburbs-gameday.ts` becomes `game-day.ts`, and `components/layers/suburbs/` becomes `layers/game-day/`, and so on. `LAYER_KEYS` values stay.
 - **Per-city voice into `CityDef`:** `BARKS`/`HEAD_BARKS` (Boston heads are silent today: T2's open need), `ORDER_CAST`, night-oven and tutorial lines, and the founder's name.
-- **One shop layout (needs-owner: option C in "The layout fix, explained"):** add `plan: 'standard' | 'mirrored'` to `NeighborhoodDef` (or a `CityDef.mirrored` set). Then one `shopLayout(id, shop, city)` in `scene/` returns the draw-space layout. The storefront and the 5 overlays (jam-overlay, night-tint, critic-scene, gameday-scene, harbour-scene) all call it. `components/layers/shop-layout.ts` goes away. *Note: this is the one card in the plan that changes pixels, in mirrored shops. Get Julien's go first and review it as a fix, not a refactor.*
+- **One shop layout (option C, decided by Julien 2026-11-18; see "The layout fix, explained"):** add `plan: 'standard' | 'mirrored'` to `NeighborhoodDef` (or a `CityDef.mirrored` set). Then one `shopLayout(id, shop, city)` in `scene/` returns the draw-space layout. The storefront and the 5 overlays (jam-overlay, night-tint, critic-scene, gameday-scene, harbour-scene) all call it. `components/layers/shop-layout.ts` goes away. *Note: this is the one card in the plan that changes pixels, in mirrored shops. Get Julien's go first and review it as a fix, not a refactor.*
 - Acceptance: the P0 test-city smoke test passes, the home-ids-guard allowlist is down to the art modules only, and there are 0 changed shots outside the mirrored-shop fixtures.
 
 ### P2: Split `engine/game.ts`
@@ -127,9 +127,9 @@ P1 closes C146, C147, U24, T109, the K1 leftovers and the layoutOfShop question.
 - **Slot: interleaved with v5.19** (Julien, 2026-11-18). See "Order and sizing".
 - **Prettier: yes** (Julien, 2026-11-18). One formatting-only commit before v5.19 wave 1, its hash in `.git-blame-ignore-revs`, then `prettier --check` in CI.
 - **Screenshots: move `v5.0`–`v5.15*` to `JulienMellon/idleslicearchive`** at the same paths (Julien, 2026-11-18). That is 22 folders and 455 MB: v5.0–v5.13, the four v5.14 folders (v5.14, -r2, -r3, -seam) and the four v5.15 folders (v5.15, -loop, -r2, -r3). v5.16 and later stay (330 MB). Only the working tree shrinks: git history keeps the files, so a fresh clone is still about 1 GB unless history is rewritten, which is not planned.
-- **Open: the layout fix** (below).
+- **Layout fix: option C** (Julien, 2026-11-18). See below.
 
-## The layout fix, explained (open for Julien)
+## The layout fix, explained (decided: option C)
 **What's wrong.** A shop's room is planned by `layout()`. Two home shops use the mirrored plan (kitchen on the right, door on the left): Waterfront, because the harbour is across the street, and Industrial, for the loading dock. The storefront asks for the mirrored plan and draws it correctly. The layer overlays drawn on top of the room don't: the jam wrench and puffs, the warming rack, the night tint, the Game Day seats and the critic at the door. They get their room from a second function, `components/layers/shop-layout.ts` `layoutOfShop(shop)`, which has no shop id. So it can't know the shop is mirrored, and it always returns the standard plan.
 - **Industrial:** the jam wrench is placed over where the oven would be in the standard plan, not where it's drawn (shot 145: wrench at x330, oven at x256). It's a tap target, so the player taps empty wall. The scroll-cue code avoids the same wrong spot (storefront.tsx:487).
 - **Waterfront:** the warming rack is placed from the standard plan's walls.

@@ -69,7 +69,7 @@ At most two programmers or writers at once (README section 3). In this table, `�
 - **Layers:** each city reuses the existing layer kinds by data, with one neighbourhood that has none.
 - **Fits:** each city takes about the same days as the home city, given the franchise multiplier; the number-ceiling test from v5.18 stays green.
 - **Showdown:** five rounds, one per city, each a rush challenge at 1.5 × the rival formula; the reward is the ending, a cosmetic and the credits; the weekly counter-attack continues afterwards.
-- **Layout pick (card R1L step 3): waiting for Julien** (options A, B, C and C+ in `docs/PLAN-refactor.md`, "The layout fix, explained"). Until he picks, R1L skips step 3 and reports `Needs: layout pick`; send the pick back to the same programmer when it comes.
+- **Layout pick (card R1L step 3): option C** (Julien, 2026-11-18). Mirroring becomes city data (`plan: 'mirrored'` on home Waterfront and Industrial only), and one `shopLayout(id, shop, city)` serves the storefront and every overlay. Boston stays standard. Review the moved overlays in home Industrial and Waterfront as a bug fix.
 - **Comments:** every card strips review IDs (D477, G95, C112…) and version tags from the comments on lines it edits, and keeps the reason. It does no sweep of lines it doesn't edit.
 - **Refactor cards change no behaviour.** A refactor card that finds a bug reports it as `Needs:` with the fix, unless its card names the bug as a note to fix.
 
