@@ -60,7 +60,7 @@ export const BACK_BAY_SCENES: Scene[] = [
     panels: [
       panel('back-bay', [['trish-vance', 'happy']], `Across the avenue, a MegaSlice opens. Tablecloths. Candles. Name tag: EXECUTIVE VP.`, [
         ['Trish', `Great news! MegaSlice Reserve. Same pizza, smaller, with a candle. The candle is extra.`],
-      ], { prop: 'name-tag', propText: 'TRISH VANCE · EXECUTIVE VP' }),
+      ], { prop: 'name-tag', propText: 'TRISH VANCE EXECUTIVE VP' }),
       panel('back-bay', [['preston', 'surprised'], ['trish-vance', 'neutral']], null, [
         ['Trish', `Your mother adores us. And she'd adore a Whitmore chef. Our head chef.`],
         ['Preston', `You'd let me cook?`],

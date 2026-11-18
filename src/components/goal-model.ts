@@ -3,6 +3,7 @@
 import { HOME_SCENES } from '../content/scenes/home';
 import { finaleSeen } from '../engine/features/counterattack';
 import { MASTERY_MAX, masteryTotal, nextStar } from '../engine/features/mastery';
+import { cityOf } from '../content/cities';
 import { def, type GameState } from '../engine/game';
 import { C } from '../theme';
 import { copy } from './endgame/copy-text';
@@ -138,7 +139,7 @@ export function masteryGoal(g: GameState): MasteryGoal | null {
   const n = masteryTotal(g);
   const next = nextStar(g);
   const count = copy('goal.mastery', { n });
-  const short = next ? `\u2605${n}/18 \u00B7 ${starName(next.star)}: ${def(next.shopId).name}` : `\u2605${n}/18`;
+  const short = next ? `\u2605${n}/18 \u00B7 ${starName(next.star)}: ${def(next.shopId, cityOf(g)).name}` : `\u2605${n}/18`;
   const tiny = next ? `\u2605${n}/18 \u00B7 ${starName(next.star)}` : `\u2605${n}/18`;
   return { label: next ? `${count} \u00B7 ${nextStarLine(next)}` : count, short, tiny, text: next ? `${next.have}/${next.need} ${STAR_UNIT[next.star]}` : '\u2605', current: n, target: MASTERY_MAX };
 }

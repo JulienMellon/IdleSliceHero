@@ -90,7 +90,7 @@ export const DORCHESTER_SCENES: Scene[] = [
     panels: [
       panel('dorchester', [['trish-vance', 'happy']], `Across from the church hall, a MegaSlice opens. Name tag: TRISH VANCE, HEIR APPARENT.`, [
         ['Trish', `Great news, Dorchester! MegaSlice is donating to your pantry. Coupons! So many coupons!`],
-      ], { prop: 'name-tag', propText: 'TRISH VANCE · HEIR APPARENT' }),
+      ], { prop: 'name-tag', propText: 'TRISH VANCE HEIR APPARENT' }),
       panel('dorchester', [['grandma-bea', 'surprised'], ['trish-vance', 'surprised']], `Bea comes out of the hall holding a ladle. Trish stops smiling.`, [
         ['Grandma Bea', `Patricia Anne Vance.`],
         ['Trish', `I'm sorry, ma'am. Have we met?`],

@@ -21,7 +21,7 @@ describe('Nonna’s night oven: the tiers', () => {
     expect(NIGHT_OVEN.capSeconds).toEqual([TUNING.offlineCapSeconds, 8 * H, 12 * H]);
     expect(TUNING.offlineCapSeconds).toBe(4 * H);
     expect(NIGHT_OVEN.priceMinutes).toEqual([0, 20, 60]);
-    expect(NIGHT_OVEN.needsBuilt).toEqual([null, 'waterfront', 'industrial']);
+    expect(NIGHT_OVEN.needsBuilt).toEqual([null, 2, 4]);
   });
 
   test('hoursText and the chip', () => {

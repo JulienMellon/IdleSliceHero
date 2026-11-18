@@ -9,6 +9,8 @@ import { lotView } from '@/components/city-model';
 import { LockIcon } from '@/components/icons';
 import { cityOf } from '@/content/cities';
 import { CityPicker } from '@/components/franchise/city-picker';
+import { managersText } from '@/components/franchise/franchise-model';
+import { mapArtFor } from '@/components/franchise/map-art';
 import { money } from '@/engine/format';
 import * as G from '@/engine/game';
 import { useGame } from '@/store/game-store';
@@ -42,7 +44,7 @@ export default function City() {
           <Text style={{ fontSize: 24, color: '#FFF4E0', fontFamily: F.bold }}>⚙︎</Text>
         </Pressable>
       </View>
-      <View style={{ height: mapH + 14, paddingTop: 14, backgroundColor: C.map }}>
+      <View style={{ height: mapH + 14, paddingTop: 14, backgroundColor: mapArtFor(city.id).ground }}>
         <CityMap
           game={game}
           width={width}
@@ -60,7 +62,7 @@ export default function City() {
       <View style={styles.listWrap}>
         <ScrollView contentContainerStyle={styles.summary}>
           <Text style={styles.big}>{money(G.earningsPerSecond(game))}/sec</Text>
-          <Text style={styles.small}>{built}/{NEIGHBORHOODS.length} pizzerias built · {NEIGHBORHOODS.filter((n) => game.shops[n.id].managed).length} with managers · tap one to visit</Text>
+          <Text style={styles.small}>{built}/{NEIGHBORHOODS.length} pizzerias built · {managersText(NEIGHBORHOODS.filter((n) => game.shops[n.id].managed).length)} · tap one to visit</Text>
           {NEIGHBORHOODS.map((n) => {
             const sh = game.shops[n.id];
             const lot = lotView(game, n);

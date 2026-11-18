@@ -1,15 +1,19 @@
 // The franchise flow (card T2): the confirm sheet (what you keep, what you give up, the multiplier; two confirmations), then the franchise
 // moment. The franchise itself happens when the moment's button is pressed, so a player who has said yes twice can still see the send-off.
 import { useEffect, useState } from 'react';
-import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { GameState } from '../../engine/game';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { Portrait } from '../portrait';
+import { useReducedMotion } from '../scene/clock';
 import { TAP } from '../tap-targets';
-import { advance, momentView, retreat, sheetView, type FlowStep } from './franchise-model';
+import { advance, confettiPieces, countUp, momentView, retreat, sheetView, type FlowStep } from './franchise-model';
+
+const CONFETTI = confettiPieces(18);
+const COUNT_MS = 1400;
 
 function List({ title, items, mark, color }: { title: string; items: string[]; mark: string; color: string }) {
   return (
@@ -27,10 +31,24 @@ function List({ title, items, mark, color }: { title: string; items: string[]; m
 function Moment({ game, onGo }: { game: GameState; onGo: () => void }) {
   const m = momentView(game);
   const insets = useSafeAreaInsets();
+  const reduced = useReducedMotion();
   const [rise] = useState(() => new Animated.Value(0));
+  const [burst] = useState(() => new Animated.Value(0));
+  const [count] = useState(() => new Animated.Value(0));
+  const target = m?.stars ?? 0;
+  const [shown, setShown] = useState(reduced ? target : 0);
   useEffect(() => {
+    if (reduced) {
+      rise.setValue(1);
+      setShown(target);
+      return;
+    }
+    const id = count.addListener(({ value }) => setShown(countUp(target, value)));
     Animated.timing(rise, { toValue: 1, duration: 700, useNativeDriver: true }).start();
-  }, [rise]);
+    Animated.timing(count, { toValue: 1, duration: COUNT_MS, delay: 400, easing: Easing.linear, useNativeDriver: false }).start();
+    Animated.timing(burst, { toValue: 1, duration: 1100, delay: 400 + COUNT_MS - 200, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    return () => count.removeListener(id);
+  }, [rise, burst, count, reduced, target]);
   if (!m) return null;
   return (
     <View style={[styles.moment, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]} testID="franchise-moment">
@@ -39,7 +57,30 @@ function Moment({ game, onGo }: { game: GameState; onGo: () => void }) {
         <Text style={styles.momentTitle} accessibilityRole="header">
           {m.title}
         </Text>
-        <Text style={styles.stars}>★ {m.stars}</Text>
+        <View style={styles.starsWrap}>
+          <Text style={styles.stars} accessibilityLabel={`${m.stars} Franchise Stars`}>
+            ★ {shown}
+          </Text>
+          {!reduced &&
+            CONFETTI.map((c, i) => (
+              <Animated.View
+                key={i}
+                pointerEvents="none"
+                style={[
+                  styles.confetti,
+                  {
+                    backgroundColor: c.color,
+                    opacity: burst.interpolate({ inputRange: [0, 0.05, 0.75, 1], outputRange: [0, 1, 1, 0] }),
+                    transform: [
+                      { translateX: burst.interpolate({ inputRange: [0, 1], outputRange: [0, Math.cos(c.angle) * c.dist] }) },
+                      { translateY: burst.interpolate({ inputRange: [0, 1], outputRange: [0, Math.sin(c.angle) * c.dist * 0.8 + 30] }) },
+                      { rotate: burst.interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${c.turns * 360}deg`] }) },
+                    ],
+                  },
+                ]}
+              />
+            ))}
+        </View>
         <Text style={styles.starsSub}>Franchise Stars · {m.multiplier} on every pizza</Text>
         <View style={styles.nonna}>
           <Portrait id="nonna-rosa" mood="happy" size={88} />
@@ -50,6 +91,15 @@ function Moment({ game, onGo }: { game: GameState; onGo: () => void }) {
               </Text>
             ))}
           </View>
+        </View>
+        <View style={styles.postcard} testID="franchise-postcard" accessibilityLabel={`${m.postcard.title}. ${m.postcard.line}`}>
+          <View style={styles.stripe}>
+            {m.postcard.colors.map((c) => (
+              <View key={c} style={{ flex: 1, backgroundColor: c }} />
+            ))}
+          </View>
+          <Text style={styles.postTitle}>{m.postcard.title}</Text>
+          <Text style={styles.postLine}>{m.postcard.line}</Text>
         </View>
       </Animated.View>
       <Pressable testID="franchise-moment-go" accessibilityRole="button" accessibilityLabel={m.button} onPress={onGo} style={[styles.go, styles.goGold, styles.goSolo]}>
@@ -141,7 +191,13 @@ const styles = StyleSheet.create({
   momentBody: { alignItems: 'center', gap: 10 },
   momentSign: { fontFamily: F.bold, fontSize: 14, letterSpacing: 4, color: '#FFE7C2' },
   momentTitle: { fontFamily: F.bold, fontSize: 28, color: '#fff', textAlign: 'center' },
+  starsWrap: { alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' },
   stars: { fontFamily: F.bold, fontSize: 64, color: '#FFD23F' },
+  confetti: { position: 'absolute', width: 8, height: 12, borderRadius: 2 },
+  postcard: { alignSelf: 'stretch', backgroundColor: '#FFF4E0', borderRadius: 10, borderWidth: 2.5, borderColor: C.ink, padding: 10, gap: 4, marginTop: 10, transform: [{ rotate: '-1.5deg' }] },
+  stripe: { flexDirection: 'row', height: 8, borderRadius: 4, overflow: 'hidden', borderWidth: 1.5, borderColor: C.ink },
+  postTitle: { fontFamily: F.bold, fontSize: 16, color: C.tomato },
+  postLine: { fontFamily: F.semi, fontSize: 13, color: C.ink },
   starsSub: { fontFamily: F.semi, fontSize: 16, color: '#FFE7C2', textAlign: 'center' },
   nonna: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 18 },
   bubble: { flex: 1, backgroundColor: '#FFF4E0', borderRadius: 16, borderWidth: 2.5, borderColor: C.ink, padding: 12, gap: 6 },

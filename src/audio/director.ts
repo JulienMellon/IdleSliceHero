@@ -5,13 +5,12 @@
 import { setAudioModeAsync } from 'expo-audio';
 import { AppState, Platform } from 'react-native';
 
-import { HOME_SCENES } from '../content/scenes/home';
 import { cityOf, hoodIds } from '../content/cities';
 import type { NeighborhoodId, PanelCue } from '../content/types';
 import * as G from '../engine/game';
 import { useGame } from '../store/game-store';
 import { onAudio, type AudioEvent } from './bus';
-import { DUCK, EXCLUSIVE_CUES, PurchaseChain, VoiceLimiter, audioHood, collectSize, musicFor, panelCue } from './logic';
+import { DUCK, EXCLUSIVE_CUES, PurchaseChain, VoiceLimiter, audioHood, collectSize, musicFor, panelCue, SCENE_INDEX } from './logic';
 import { MUSIC, SFX, STINGS, STORY, type SfxId, type StoryCueId } from './manifest';
 import { createMixer, type Catalog, type Mixer } from './mixer';
 import { createOutput } from './output';
@@ -19,7 +18,6 @@ import { useAudioPrefs } from './prefs';
 
 const SKIP_FADE_MS = 400;
 const STING_OUT_MS = 150; // a scene's first panel clears gameplay stingers (AU27)
-const SCENES = new Map(HOME_SCENES.map((s) => [s.id, s]));
 
 const CATALOG: Catalog = {
   sfxCount: (id) => SFX[id as SfxId].length,
@@ -50,26 +48,33 @@ const chain = new PurchaseChain();
 let scenePanelCue: PanelCue = 'none';
 let lastScenePanel = '';
 
-/** The neighbourhood whose sounds `hood` plays in the open game's city (see `audioHood`). */
-function soundOf(hood: NeighborhoodId): NeighborhoodId {
-  return audioHood(hood, useGame.getState().game.city);
+/** The neighbourhood whose sounds `hood` plays in `city` (default: the open game's city; see `audioHood`). */
+function soundOf(hood: NeighborhoodId, city?: string): NeighborhoodId {
+  return audioHood(hood, city ?? useGame.getState().game.city);
+}
+
+/** The city a scene belongs to: its own, so a replay of a home scene from a Boston save still plays home sounds (AU87). */
+function cityOfScene(scene: { id: string }): string | undefined {
+  return SCENE_INDEX.get(scene.id)?.city;
 }
 
 /** Where the stingers' key is: the open scene's neighbourhood, else the active one. */
 function whereNow(): NeighborhoodId {
   const st = useGame.getState();
-  return soundOf(st.playing ? st.playing.scene.neighborhood : st.game.active);
+  return st.playing ? soundOf(st.playing.scene.neighborhood, cityOfScene(st.playing.scene)) : soundOf(st.game.active);
 }
 
 function refreshMusic() {
   const s = useGame.getState();
   if (!s.loaded) return; // no Downtown blip before the save says where the player is (AU44)
   const scene = s.playing ? s.playing.scene : null;
-  const home = cityOf(s.game).id === 'home'; // Downtown's sparse chart is the home city's opening only
+  // Downtown's sparse chart is the home city's opening only: a scene's own city decides for a replay (AU87)
+  const sceneCity = scene ? cityOfScene(scene) : undefined;
+  const home = (sceneCity ?? cityOf(s.game).id) === 'home';
   const track = musicFor({
     active: soundOf(s.game.active),
-    downtownFull: !home || s.game.seenScenes.includes('downtown-4'),
-    scene: scene ? { neighborhood: soundOf(scene.neighborhood), panelCue: scenePanelCue, beat: home && typeof scene.beat === 'number' ? scene.beat : undefined } : null,
+    downtownFull: cityOf(s.game).id !== 'home' || s.game.seenScenes.includes('downtown-4'),
+    scene: scene ? { neighborhood: soundOf(scene.neighborhood, sceneCity), panelCue: scenePanelCue, beat: home && typeof scene.beat === 'number' ? scene.beat : undefined } : null,
   });
   mixer.setTrack(track);
   mixer.duck('scene', scene ? DUCK.scene : null);
@@ -80,8 +85,9 @@ function refreshMusic() {
 
 // ------------------------------------------------------------------------------------------------ story panels
 function onPanel(sceneId: string, panel: number) {
-  const scene = SCENES.get(sceneId);
-  if (!scene) return;
+  const found = SCENE_INDEX.get(sceneId);
+  if (!found) return;
+  const scene = found.scene;
   const key = `${sceneId}/${panel}`;
   if (key === lastScenePanel) return;
   lastScenePanel = key;
@@ -92,7 +98,7 @@ function onPanel(sceneId: string, panel: number) {
   const cue = panelCue(scene, panel);
   scenePanelCue = cue;
   refreshMusic();
-  const hood = soundOf(scene.neighborhood);
+  const hood = soundOf(scene.neighborhood, found.city);
   const here = () => lastScenePanel === key;
   switch (cue) {
     case 'welcome':
@@ -125,12 +131,30 @@ function onPanel(sceneId: string, panel: number) {
  * gavel once the Pier 9 bid is on offer. A play releases its sound; this runs on every store update, so a build
  * that is still on offer is warmed again, and an unused Collect is released once the popup is gone.
  */
+let buildCity = '';
+let buildCount = -1;
+let buildSeen = -1;
+let buildAny = false;
+/** U8: whether any pizzeria can be built, remembered per city, built count and seen-scene count (what `buildLock` reads), not recomputed on every tick. */
+function canBuildSomewhere(game: ReturnType<typeof useGame.getState>['game']): boolean {
+  const city = cityOf(game);
+  let built = 0;
+  for (const id of hoodIds(city)) if (game.shops[id]?.built) built++;
+  if (city.id !== buildCity || built !== buildCount || game.seenScenes.length !== buildSeen) {
+    buildCity = city.id;
+    buildCount = built;
+    buildSeen = game.seenScenes.length;
+    buildAny = hoodIds(city).some((id) => !G.buildLock(game, id));
+  }
+  return buildAny;
+}
+
 function warmRare(s: ReturnType<typeof useGame.getState>) {
   if (!s.loaded) return;
   mixer.sweepWarm(!!s.offline);
   if (!useAudioPrefs.getState().sound) return;
   if (s.offline) mixer.warm('collect', collectSize(s.offline.earned, s.game.cash), true);
-  if (!mixer.loaded('build', 0) && hoodIds(cityOf(s.game)).some((id) => !G.buildLock(s.game, id))) mixer.warm('build', 0);
+  if (!mixer.loaded('build', 0) && canBuildSomewhere(s.game)) mixer.warm('build', 0);
   if (!mixer.loaded('gavel', 0) && G.pier9Available(s.game)) mixer.warm('gavel', 0);
 }
 
@@ -138,7 +162,7 @@ function warmRare(s: ReturnType<typeof useGame.getState>) {
 function handle(e: AudioEvent) {
   const g = useGame.getState();
   const active = soundOf(g.game.active);
-  const sceneHood = g.playing ? soundOf(g.playing.scene.neighborhood) : active;
+  const sceneHood = g.playing ? soundOf(g.playing.scene.neighborhood, cityOfScene(g.playing.scene)) : active;
   const now = Date.now();
   switch (e.type) {
     case 'tap':

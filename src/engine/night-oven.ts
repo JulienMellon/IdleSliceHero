@@ -7,7 +7,7 @@ import { NIGHT_OVEN } from '../content/hooks';
 import { def, offlineCapOf, type BuyResult, type GameState } from './game';
 import { money } from './format';
 import { minutesToCash } from './rewards';
-import { cityOf } from '../content/cities';
+import { cityOf, hoodIds } from '../content/cities';
 
 /** The highest tier index. */
 export const MAX_TIER = NIGHT_OVEN.capSeconds.length - 1;
@@ -30,8 +30,10 @@ export const nightOvenPrice = (s: GameState, tier: number): number => Math.max(N
 
 /** Why a tier can't be bought yet (other than cash), or null. */
 export function nightOvenLock(s: GameState, tier: number): string | null {
-  const hood = NIGHT_OVEN.needsBuilt[tier];
-  if (hood && !s.shops[hood].built) return `Unlocks when you build ${def(hood, cityOf(s)).name}`;
+  const at = NIGHT_OVEN.needsBuilt[tier];
+  const city = cityOf(s);
+  const hood = at === null || at === undefined ? undefined : hoodIds(city)[Math.min(at, hoodIds(city).length - 1)];
+  if (hood && !s.shops[hood]?.built) return `Unlocks when you build ${def(hood, city).name}`;
   if (tier > s.nightOven + 1) return `Needs the ${hoursText(NIGHT_OVEN.capSeconds[tier - 1])} oven first`;
   return null;
 }

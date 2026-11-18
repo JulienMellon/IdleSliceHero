@@ -1,6 +1,6 @@
 // What each lot on the City map and list says, as plain data (D305). A lot that is next in line but still held back
 // by Nonna's takeover is a padlock with the countdown, not a live "Build $300" the player can't act on. The countdown
-// is the same source the build refusal's toast uses (`G.nonnaCountdownText`). Pure: unit-tested in node.
+// is the same source the build refusal's toast uses (`G.founderCountdownText`). Pure: unit-tested in node.
 import type { NeighborhoodDef } from '../content/tuning';
 import { money, pizzasLeft } from '../engine/format';
 import * as G from '../engine/game';
@@ -29,7 +29,7 @@ export function lotView(s: G.GameState, n: NeighborhoodDef): LotView {
   // the only lock the next lot can have is Nonna's takeover (the previous lot is built by definition)
   if (G.buildLock(s, n.id) !== null) {
     const left = G.nonnaPizzasLeft(s);
-    return { kind: 'nonna', pin: left > 0 ? `Nonna in ${pizzasLeft(left)}` : 'Nonna soon', rowSub: G.nonnaCountdownText(s), rowRight: null, locked: true, dim: true, tappable: false };
+    return { kind: 'nonna', pin: left > 0 ? `Nonna in ${pizzasLeft(left)}` : 'Nonna soon', rowSub: G.founderCountdownText(s), rowRight: null, locked: true, dim: true, tappable: false };
   }
   return { kind: 'buildable', pin: `Build ${money(n.buildCost)}`, rowSub: `Pays ${money(n.orderValue)} a pizza · manager ${money(n.managerCost)}`, rowRight: `Build ${money(n.buildCost)}`, locked: false, dim: false, tappable: true };
 }

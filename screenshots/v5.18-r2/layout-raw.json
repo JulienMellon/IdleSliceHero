@@ -1,0 +1,346 @@
+{
+ "106-franchise-confirm": [],
+ "107-franchise-moment": [],
+ "108-boston-city": [],
+ "109-north-end": [],
+ "110-southie": [],
+ "111-back-bay": [],
+ "112-fenway": [],
+ "113-cambridge": [],
+ "114-dorchester": [],
+ "115-trish-hq": [],
+ "116-boston-shop-layer": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "40x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "117-home-scrapbook-from-boston": [],
+ "140-restaurant-kitchen": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "40x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "141-restaurant-dining": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "40x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "142-flagship-centre": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "40x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "143-flagship-rush-cue": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "40x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "144-waterfront-mirrored": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "40x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "145-industrial-jam-cue": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "40x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x44"
+  }
+ ],
+ "146-cold-short-queue": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "40x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "147-corner-unchanged": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "40x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ]
+}

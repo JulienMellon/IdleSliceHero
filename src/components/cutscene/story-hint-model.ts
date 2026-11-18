@@ -2,8 +2,10 @@
 // neighbourhood whose story is held: "Win over Industrial to continue Uptown’s story". This picks the drawer it belongs to and sizes the
 // text to one line. Pure, so node tests pin both.
 import type { NeighborhoodId } from '../../content/types';
+import { def } from '../../engine/game';
 
-const capital = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
+/** The same display name `storyWaitHint` prints ("North End", not "North-end"). */
+const capital = (id: string) => (def(id) as { name: string } | undefined)?.name ?? id.charAt(0).toUpperCase() + id.slice(1);
 
 /** The hint when it is about `hood` (the neighbourhood whose story waits), else null: only that shop's drawer shows it. */
 export function hintForHood(hint: string | null, hood: NeighborhoodId): string | null {

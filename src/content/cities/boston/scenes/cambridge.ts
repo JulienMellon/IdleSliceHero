@@ -62,7 +62,7 @@ export const CAMBRIDGE_SCENES: Scene[] = [
     panels: [
       panel('cambridge', [['trish-vance', 'happy']], `Across from your shop, a MegaSlice opens. Name tag: PRESIDENT, NEW ENGLAND.`, [
         ['Trish', `Great news, Doctor. MegaSlice will fund your lab. All of it. Forever.`],
-      ], { prop: 'name-tag', propText: 'VANCE · PRESIDENT, NEW ENGLAND' }),
+      ], { prop: 'name-tag', propText: 'TRISH VANCE PRES., NEW ENGLAND' }),
       panel('cambridge', [['lena-ko', 'neutral'], ['trish-vance', 'neutral']], null, [
         ['Trish', `We'd just own the oven. And the name. And you. Lightly.`],
         ['Dr. Ko', `I'll review it. Peer review. You won't enjoy my peers.`],

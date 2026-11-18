@@ -51,8 +51,8 @@ describe('opening and the x0.8', () => {
   it('opens in every neighbourhood once its own beat 3 is seen', () => {
     run(() => {
       let g = G.newGame(NOW);
-      for (const id of G.SHOP_IDS) g = shopOf(g, id, { built: true });
-      for (const id of G.SHOP_IDS) {
+      for (const id of G.HOME_HOOD_IDS) g = shopOf(g, id, { built: true });
+      for (const id of G.HOME_HOOD_IDS) {
         expect(rivalOpen(g, id)).toBe(false);
         g = { ...g, seenScenes: [...g.seenScenes, `${id}-3`] };
         expect(rivalOpen(g, id)).toBe(true);

@@ -63,7 +63,7 @@ export const SOUTHIE_SCENES: Scene[] = [
     panels: [
       panel('southie', [['trish-vance', 'happy']], `Across from Dunn's, a MegaSlice opens. Its sign: LOCALLY SOURCED. Name tag: SENIOR VP.`, [
         ['Trish', `Great news! MegaSlice is a local business now. We put "local" on the sign.`],
-      ], { prop: 'name-tag', propText: 'TRISH VANCE · SENIOR VP' }),
+      ], { prop: 'name-tag', propText: 'TRISH VANCE SENIOR VP' }),
       panel('southie', [['kayla-dunn', 'angry'], ['trish-vance', 'neutral']], null, [
         ['Kayla Dunn', `Where's your cheese from?`],
         ['Trish', `Right here. Locally. In the truck. Which is parked locally.`],

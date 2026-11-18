@@ -8,7 +8,7 @@ const path: { join(...p: string[]): string } = require('path');
 import { HOME_SCENES } from '../../content/scenes/home';
 import { CITIES, hoodIds } from '../../content/cities';
 import { NEIGHBORHOODS } from '../../content/tuning';
-import { audioHood, stingTiming, MAX_TONIC_WAIT_SECONDS, perkDuckSeconds, RarePlays, shouldReleaseWarmCollect, DUCK, stingDuck, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
+import { SCENE_INDEX, audioHood, stingTiming, MAX_TONIC_WAIT_SECONDS, perkDuckSeconds, RarePlays, shouldReleaseWarmCollect, DUCK, stingDuck, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const MANIFEST = fs.readFileSync(path.join(__dirname, '..', 'manifest.ts'), 'utf8');
@@ -159,6 +159,25 @@ describe('music and story cues (AU12, AU13, AU20)', () => {
     });
     expect(audioHood('no-such-hood', 'boston')).toBe(home[0]);
     expect(audioHood('north-end', undefined)).toBe(home[0]);
+  });
+  it('finds every scene of every city, and maps its cues to the manifest (AU85)', () => {
+    for (const c of Object.values(CITIES)) {
+      expect(c.scenes.length).toBeGreaterThan(0);
+      for (const scene of c.scenes) {
+        expect(SCENE_INDEX.get(scene.id)).toEqual({ scene, city: c.id });
+        const hood = audioHood(scene.neighborhood, c.id);
+        scene.panels.forEach((_, i) => {
+          const cue = panelCue(scene, i);
+          if (cue === 'triumph') expect(MANIFEST).toContain(`triumph_${hood}:`);
+          if (cue === 'bell-triumph') expect(MANIFEST).toContain('triumph_waterfront:');
+          if (cue === 'megaslice') expect(MANIFEST).toContain('megaslice_hq:');
+        });
+        if (scene.beat === 4) expect(scene.panels.some((_, i) => EXCLUSIVE_CUES.has(panelCue(scene, i)))).toBe(true);
+      }
+    }
+    const ids = Object.values(CITIES).flatMap((c) => c.scenes.map((s) => s.id));
+    expect(SCENE_INDEX.size).toBe(ids.length); // no id shared between cities
+    expect(SCENE_INDEX.get('north-end-1')?.city).toBe('boston');
   });
   it('gives every scene a cue, every beat 3 its villain, every beat 4 a win', () => {
     for (const s of HOME_SCENES) {

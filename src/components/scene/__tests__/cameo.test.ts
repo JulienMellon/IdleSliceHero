@@ -167,3 +167,23 @@ describe('where the visitor stands (budget; G100)', () => {
     for (const id of VISITORS) for (const l of linesOf(id)) expect(sayLines(l).length).toBeLessThanOrEqual(2);
   });
 });
+
+describe('the geometry is memoisable (M68, T105)', () => {
+  test('cameoGeom is a pure function of the layout and the tag text: the same inputs give the same boxes, a longer tag gives a wider one', () => {
+    const lay = shopAt(2, 3);
+    const label = visitTagLabel({ visitor: 'nonna', left: 6 * 86_400 });
+    expect(cameoGeom(lay, label)).toEqual(cameoGeom(lay, label));
+    const wide = cameoGeom(lay, 'Nonna · 6d 4h and a bit more');
+    expect(wide.tag.x1 - wide.tag.x0).toBeGreaterThan(cameoGeom(lay, label).tag.x1 - cameoGeom(lay, label).tag.x0);
+  });
+  test('the tag text (the memo key) changes once a minute at most, not with every 15 fps frame', () => {
+    let changes = 0;
+    let last = visitTagLabel({ visitor: 'nonna', left: 3 * 3600 });
+    for (let i = 1; i <= 60 * 15; i++) {
+      const t = visitTagLabel({ visitor: 'nonna', left: 3 * 3600 - i / 15 });
+      if (t !== last) changes++;
+      last = t;
+    }
+    expect(changes).toBeLessThanOrEqual(1);
+  });
+});

@@ -5,6 +5,7 @@ import type { NeighborhoodId } from '../../content/types';
 import { F } from '../../theme';
 import { Circle, Ellipse, G, Path, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 import { INK, FRONT_TOP, P, pts } from './projection';
+import { fasciaSignBox } from './viewport';
 import type { Layout } from './layout';
 import { GoldPlaque } from './cosmetic-props';
 import { dressedLook, plaqueRect } from './cosmetics';
@@ -95,9 +96,6 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
   const [fx0, fTop] = P(L - 6, 0, FRONT_TOP);
   const [fx1, fBot] = P(R + 6, 0, FRONT_TOP - 20);
   const fcx = (fx0 + fx1) / 2;
-  const signW = Math.min(fx1 - fx0 - 40, 34 + name.length * 9.6 + 54);
-  const board = signage === 0 ? '#8E5A3C' : signage === 1 ? '#1E1630' : '#D9443A';
-  const text = signage === 0 ? '#FFF4E0' : signage === 1 ? '#FF8FB8' : '#fff';
   // awning valance under the fascia
   const n = 12;
   const aw = (fx1 - fx0 + 12) / n;
@@ -322,6 +320,21 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
           <Path d={`M${fcx - 20} ${fTop - 74} A26 26 0 0 1 ${fcx + 4} ${fTop - 82}`} stroke="#fff" strokeWidth={2.4} opacity={0.5} fill="none" strokeLinecap="round" />
         </G>
       )}
+    </G>
+  );
+});
+
+/**
+ * The shop's name plate on the fascia: painted board, neon or marquee bulbs. It is its own part so a wide shop can slide it along the beam by `dx` (draw units)
+ * to stay inside the screen while the shop scrolls (D511); the rest of the front wall is static and does not redraw for it.
+ */
+export const FasciaSign = memo(function FasciaSign({ lay, name, signage, dx = 0 }: { lay: Layout; name: string; signage: number; dx?: number }) {
+  const { fTop, fBot, fcx: cx0, signW } = fasciaSignBox(lay, name);
+  const fcx = cx0 + dx;
+  const board = signage === 0 ? '#8E5A3C' : signage === 1 ? '#1E1630' : '#D9443A';
+  const text = signage === 0 ? '#FFF4E0' : signage === 1 ? '#FF8FB8' : '#fff';
+  return (
+    <G>
       {/* sign plate: painted board → neon → marquee bulbs */}
       {signage === 1 && <Rect x={fcx - signW / 2 - 6} y={fTop - 8} width={signW + 12} height={fBot - fTop + 16} rx={12} fill="#FF5E9A" opacity={0.28} />}
       <Rect x={fcx - signW / 2} y={fTop - 5} width={signW} height={fBot - fTop + 10} rx={6} fill={board} stroke={signage === 1 ? '#FF5E9A' : INK} strokeWidth={signage === 1 ? 2 : 1.4} />

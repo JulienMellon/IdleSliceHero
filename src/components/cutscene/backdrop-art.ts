@@ -129,9 +129,9 @@ export function rain(count: number, x0: number, x1: number, y0: number, y1: numb
   return d;
 }
 
-/** A puffy cloud bank as one outline (circles unioned by the nonzero fill). */
+/** A puffy cloud bank as one outline (circles unioned by the nonzero fill). The base is wound the circles' way (counter-clockwise): `rect` runs clockwise, so overlapping it would cancel to winding 0 and cut sky-coloured bites out of the cloud (D510). */
 export function cloud(x: number, y: number, k: number) {
-  return circle(x, y, 13 * k) + circle(x + 16 * k, y - 7 * k, 18 * k) + circle(x + 35 * k, y - 1 * k, 14 * k) + circle(x + 50 * k, y + 3 * k, 10 * k) + rect(x, y, 50 * k, 13 * k);
+  return circle(x, y, 13 * k) + circle(x + 16 * k, y - 7 * k, 18 * k) + circle(x + 35 * k, y - 1 * k, 14 * k) + circle(x + 50 * k, y + 3 * k, 10 * k) + `M${n(x)} ${n(y)}v${n(13 * k)}h${n(50 * k)}v${n(-13 * k)}Z`;
 }
 
 /** A far skyline: tower outlines (with the odd spire/stepped crown) from the horizon up. */

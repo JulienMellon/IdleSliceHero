@@ -62,6 +62,41 @@ export interface MomentView {
   stars: number;
   multiplier: string;
   button: string;
+  /** The teaser under Rosa's bubble (D506): a postcard from the city ahead, its neighbourhoods named and coloured. */
+  postcard: { title: string; line: string; colors: string[] };
+}
+
+/** The postcard from the next city: "Greetings from Boston", then its neighbourhoods in build order; one colour stripe each. */
+function postcardOf(city: { neighbourhoods: { name: string; color: string }[] } | undefined, to: string): MomentView['postcard'] {
+  const hoods = city?.neighbourhoods ?? [];
+  return { title: `Greetings from ${to}`, line: hoods.map((h) => h.name).join(' · '), colors: hoods.map((h) => h.color) };
+}
+
+/** The Stars the count-up shows `t` (0 to 1) of the way through: whole numbers, rising at first fast and then slowly, ending exactly on `target`. */
+export function countUp(target: number, t: number): number {
+  if (t >= 1 || target <= 0) return Math.max(0, target);
+  const eased = 1 - (1 - Math.max(0, t)) ** 2;
+  return Math.min(target, Math.floor(eased * target));
+}
+
+export interface ConfettiPiece {
+  /** Radians out from the burst's centre. */
+  angle: number;
+  /** Points travelled. */
+  dist: number;
+  color: string;
+  /** Spin, in turns, over the burst. */
+  turns: number;
+}
+const CONFETTI_COLORS = ['#FFD23F', '#E8432E', '#FFFFFF', '#6FCF97', '#56CCF2'] as const;
+/** `n` pieces of confetti, evenly spread around the circle with a steady jitter in distance, colour and spin (no randomness: the same every time). */
+export function confettiPieces(n: number): ConfettiPiece[] {
+  return Array.from({ length: n }, (_, i) => ({
+    angle: (i / n) * Math.PI * 2 + (i % 2 ? 0.12 : -0.12),
+    dist: 90 + ((i * 37) % 60),
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    turns: 1 + (i % 3),
+  }));
 }
 
 /** The franchise moment: shown after the second yes, before the new city opens (the story's `boston-0` plays right after it). */
@@ -75,6 +110,7 @@ export function momentView(g: GameState): MomentView | null {
     stars: gain.stars,
     multiplier: times(gain.multiplierAfter),
     button: `On to ${sheet.to}`,
+    postcard: postcardOf(gain.next ? CITIES[gain.next] : undefined, sheet.to),
   };
 }
 
@@ -108,3 +144,6 @@ export function starsSummary(g: GameState): string | null {
   if (franchiseCount(g) === 0 && stars === 0) return null;
   return `★ ${stars} Franchise Star${stars === 1 ? '' : 's'} · ${times(multiplierNow(g))} on every pizza`;
 }
+
+/** "no manager yet", "1 with a manager", "3 with managers" (D516). */
+export const managersText = (n: number): string => (n === 0 ? 'no managers yet' : n === 1 ? '1 with a manager' : `${n} with managers`);

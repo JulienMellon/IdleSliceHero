@@ -162,7 +162,7 @@ describe('analytics events (card N1)', () => {
     expect(st().build('suburbs')).toBe(false);
     expect(track).not.toHaveBeenCalledWith('shop_built', expect.anything());
     useGame.setState({ game: { ...g, cash: 1e15, shops: { ...g.shops, suburbs: { ...g.shops.suburbs, built: false } } } });
-    const id = G.SHOP_IDS.find((i) => !st().game.shops[i].built && G.buildLock(st().game, i) === null);
+    const id = G.HOME_HOOD_IDS.find((i) => !st().game.shops[i].built && G.buildLock(st().game, i) === null);
     expect(id).toBeDefined();
     expect(st().build(id!)).toBe(true);
     expect(track).toHaveBeenCalledWith('shop_built', { shop: id });

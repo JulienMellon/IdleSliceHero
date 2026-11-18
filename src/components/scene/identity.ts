@@ -34,3 +34,14 @@ export const LOOKS: Record<NeighborhoodId, ShopLook> = {
   industrial: { facade: 'steel', pilaster: '#5E6670', seam: '#454C55', plinth: '#4A4F54', awning: ['#E8742A', '#3A3A3A'], piping: RED, shape: 'box', band: 'ducts', floor: '#CFC6B8', street: 'barrel' },
   uptown: { facade: 'tile', pilaster: '#1F4D3A', seam: '#163A2B', plinth: '#D4A84A', awning: ['#7B1E3A', '#FFF4E0'], piping: '#D4A84A', shape: 'dome', band: 'none', floor: '#F4F1EC', street: 'topiary' },
 };
+
+// Boston's six pizzerias (D508): each its own awning, from the neighbourhood's colour (content/cities/boston/data.ts; scene.test.ts checks they agree), not the
+// home city's art. Shapes and facades follow the place: North End's brick and scallops, Southie's clapboard, Back Bay's brownstone and dome, Fenway's green wall.
+Object.assign(LOOKS, {
+  'north-end': { facade: 'brick', pilaster: '#B4573F', seam: '#7A3520', plinth: '#7A3520', awning: ['#C0504D', '#FFF4E0'], piping: null, shape: 'scallop', band: 'subway', floor: '#E7D7BE', street: 'newsbox' },
+  southie: { facade: 'clapboard', pilaster: '#6F8FB5', seam: '#4F6F95', plinth: '#3E4A58', awning: ['#4F81BD', '#FFF4E0'], piping: RED, shape: 'straight', band: 'shiplap', floor: '#CFC6B8', street: 'bollard' },
+  'back-bay': { facade: 'brick', pilaster: '#7A4A3A', seam: '#4F2C22', plinth: '#2A1D1A', awning: ['#8C6A4A', '#FFF4E0'], piping: '#D4A84A', shape: 'dome', band: 'panelling', floor: '#E2D6C4', street: 'topiary' },
+  fenway: { facade: 'planks', pilaster: '#2F7A4A', seam: '#1F4A30', plinth: '#1F4A30', awning: ['#3E9B62', '#FFF4E0'], piping: RED, shape: 'box', band: 'beadboard', floor: '#E8CFA6', street: 'bikerack' },
+  cambridge: { facade: 'collegiate', pilaster: '#9C5A45', seam: '#6E3A2C', plinth: '#E8E0CC', awning: ['#8E5BB5', '#FFC531'], piping: RED, shape: 'straight', band: 'panelling', floor: '#C8A27A', street: 'bikerack' },
+  dorchester: { facade: 'clapboard', pilaster: '#E8B84A', seam: '#B58A2A', plinth: '#B9AE9C', awning: ['#E0A030', '#FFF4E0'], piping: RED, shape: 'scallop', band: 'beadboard', floor: '#E8CFA6', street: 'picket' },
+} satisfies Record<string, ShopLook>);
