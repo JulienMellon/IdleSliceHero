@@ -3,6 +3,7 @@ import { MASTERY } from '../../content/endgame';
 import { WEEKLY_COSMETICS } from '../../content/rewards';
 import { FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
+import { HOME_CITY } from '../../content/cities/home';
 import { getFeature } from '../features';
 import { ackMastery, mastery, masteryStars, masteryTotal, nextStar, shopStars } from '../features/mastery';
 import * as G from '../game';
@@ -21,14 +22,14 @@ const state = (g: G.GameState) => getFeature(g, mastery);
 describe('star rules', () => {
   it('a star each for three heads, the top footprint and the top oven grade', () => {
     const shop = G.newShop(true);
-    expect(masteryStars(shop)).toEqual({ heads: false, flagship: false, golden: false });
-    expect(masteryStars({ ...shop, heads: { ...G.allHeads(), counter: false } }).heads).toBe(false);
-    expect(masteryStars({ ...shop, heads: G.allHeads() }).heads).toBe(true);
-    expect(masteryStars({ ...shop, footprint: topFootprint - 1 }).flagship).toBe(false);
-    expect(masteryStars({ ...shop, footprint: topFootprint }).flagship).toBe(true);
-    expect(masteryStars({ ...shop, grade: topGrade - 1 }).golden).toBe(false);
-    expect(masteryStars({ ...shop, grade: topGrade }).golden).toBe(true);
-    expect(shopStars({ ...shop, heads: G.allHeads(), footprint: topFootprint, grade: topGrade })).toBe(3);
+    expect(masteryStars(shop, HOME_CITY)).toEqual({ heads: false, flagship: false, golden: false });
+    expect(masteryStars({ ...shop, heads: { ...G.allHeads(), counter: false } }, HOME_CITY).heads).toBe(false);
+    expect(masteryStars({ ...shop, heads: G.allHeads() }, HOME_CITY).heads).toBe(true);
+    expect(masteryStars({ ...shop, footprint: topFootprint - 1 }, HOME_CITY).flagship).toBe(false);
+    expect(masteryStars({ ...shop, footprint: topFootprint }, HOME_CITY).flagship).toBe(true);
+    expect(masteryStars({ ...shop, grade: topGrade - 1 }, HOME_CITY).golden).toBe(false);
+    expect(masteryStars({ ...shop, grade: topGrade }, HOME_CITY).golden).toBe(true);
+    expect(shopStars({ ...shop, heads: G.allHeads(), footprint: topFootprint, grade: topGrade }, HOME_CITY)).toBe(3);
   });
 
   it('the city total runs 0..18', () => {

@@ -16,6 +16,7 @@ import { isDressed } from '../city-dress';
 import { hoodOf } from '../city-layers';
 import { layoutOfShop } from '../shop-layout';
 import { BOAT, BOAT_ART, RACK_STEPS, RACK_W, boatDock, boatPose, rackBox, rackStep, untilNextBoat } from './boats-model';
+import { gameNow } from '../../../engine/clock';
 
 /** The boat, drawn at the origin on its waterline, bow to the left; the scene mirrors it so the bow leads (it sails in from the left). */
 const BoatArt = memo(function BoatArt({ docked }: { docked: boolean }) {
@@ -105,11 +106,11 @@ export const HarbourScene = memo(function HarbourScene({ shopId, width, height }
   // the rack's look: tier and fill step, two numbers in one (a repaint only when a step changes)
   const rackKey = useGame((s) => {
     if (!here) return 0;
-    const v = boatsView(s.game, Date.now());
+    const v = boatsView(s.game, gameNow());
     return v.rackTier * 10 + rackStep(v.rackPies, v.rackCapacity);
   });
   // the boat: docked, or sailing within BOAT.sailIn / sailOut seconds of it
-  const docked = useGame((s) => here && boatsView(s.game, Date.now()).boat);
+  const docked = useGame((s) => here && boatsView(s.game, gameNow()).boat);
   const nearDock = useGame((s) => here && !pantry && s.game.shops[shopId]?.built && untilNextBoat(s.game, 0) <= BOAT.sailIn + 1);
   const [leftAt, setLeftAt] = useState<number | null>(null);
   const was = useRef(docked);
@@ -133,7 +134,7 @@ export const HarbourScene = memo(function HarbourScene({ shopId, width, height }
   const lay = layoutOfShop(shop);
   const fit = sceneFit(width, height, frame);
   const wallLeft = P(lay.L, 0)[0];
-  const sinceTick = Math.max(0, (Date.now() - st.tickAt) / 1000);
+  const sinceTick = Math.max(0, (gameNow() - st.tickAt) / 1000);
   const pose = boatPose({ active: true, docked, untilNext: untilNextBoat(g, sinceTick) }, leftAt === null ? -1 : (Date.now() - leftAt) / 1000);
   const dock = boatDock(wallLeft);
   // sails in from beyond the left edge (and out the same way)

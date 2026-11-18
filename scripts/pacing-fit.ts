@@ -22,6 +22,7 @@ import * as G from '../src/engine/game';
 import { getFeature } from '../src/engine/features';
 import { ackAttack, counterattack, attackView, startChallenge } from '../src/engine/features/counterattack';
 import { masteryStars, masteryTotal } from '../src/engine/features/mastery';
+import { cityOf } from '../src/content/cities';
 import { applyCfg, decisionMetric, endSummary, INSTALL, options, reportLines, rewardRules, run, sessionStats, type Cfg } from './review/sim2';
 
 
@@ -340,7 +341,7 @@ function starSteps(s: G.GameState): ReturnType<typeof options> {
   for (const n of NEIGHBORHOODS) {
     const shop = s.shops[n.id];
     if (!shop.built) continue;
-    const have = masteryStars(shop);
+    const have = masteryStars(shop, cityOf(s));
     const want: G.Upgrade[] = [];
     if (!have.heads) for (const k of HEAD_KINDS) if (!shop.heads[k]) want.push(G.HEAD_UPGRADE[k]);
     if (shop.footprint < TOP_FOOTPRINT) want.push('expand');

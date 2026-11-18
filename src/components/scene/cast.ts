@@ -4,7 +4,7 @@
 import { PATIO_SEAT, SEAT, type Layout } from './layout';
 import { GUEST_SHIRTS, HAIR_COLORS, driverCast, hash32, type Act, type Mood, type PersonProps } from './looks';
 import { driverFigures, queueOverflow } from './waiting';
-import type { SeatPalette } from './palette';
+import { frostTint, type SeatPalette } from './palette';
 import { ONE_SCREEN, P } from './projection';
 import { STEP_FRAMES } from './quantise';
 import { driverPoseAt, guestLeg, guestPoseAt, guestSchedule, type CrewState } from './crew';
@@ -44,6 +44,8 @@ export interface CastInput {
   crew: CrewState;
   /** Who is waiting outside (`Game.queueSizes`): hungry diners and, left of them, the idle drivers (one figure per ten). Absent: nobody. */
   queue?: { diners: number; drivers: number };
+  /** The shop's line is cold (the report's state): a waiting guest, in the queue or at the door, is tinted with frost (D514). */
+  cold?: boolean;
   /** The `cheer` pulse is up (pulse-bus.ts, D444): the cooks raise both arms. */
   cheer?: boolean;
 }
@@ -84,7 +86,7 @@ export const edgeFade = (sx: number, width: number = ONE_SCREEN.width) => Math.m
  *   - a 7.5 Hz pose clock for arm work and eating, so a worker's limbs keep identical props for two
  *     frames and their memo holds.
  */
-export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cheer = false }: CastInput): { cast: CastMember[] } {
+export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cold = false, cheer = false }: CastInput): { cast: CastMember[] } {
   const t = clock * pace;
   const poseClock = Math.floor(clock * 7.5) / 7.5;
   const pt = poseClock * pace;
@@ -99,6 +101,8 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
   const fadeAt = (x: number, y: number) => edgeFade(P(x, y, 0, lay.frame)[0] - lay.frame.x0, lay.frame.width);
   // (a diner in a chair keeps facing the table: the chairs stand either side of it in both plans)
   const fl = (flip: boolean) => flip !== lay.mirrored;
+  // a waiting guest while the line is cold: frost on the shirt, the hair and the cap (D514)
+  const ice = (hex: string, waiting = true) => (cold && waiting ? frostTint(hex) : hex);
 
   // drivers and walk-ins follow the engine's departures (crew.ts): one driver per pickup spot, out the door with
   // each order and back again; walk-ins wait at their own order spot for a pie, eat, and leave
@@ -143,7 +147,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `g${i % 8}`,
       sortY: g.pos[1] - 0.3,
       role: 'walkin',
-      props: { x: g.pos[0], y: g.pos[1], kind: seated ? 'sit' : 'guest', seed: gSeed, shirt: GUEST_SHIRTS[pal.walkShirt(i % 4, Math.floor(i / 4))], hair: HAIR_COLORS[pal.walkHair(i % 4, Math.floor(i / 4))], o, flip: seated ? g.face : fl(g.face), step: g.walking ? walkStep((i % 4) + 3) : 0, talk: g.stage === 'order' && Math.sin(poseClock * 9) > -0.2, mood, blink: blinkAt(gSeed), arm: seated ? bite * 2 : 0 },
+      props: { x: g.pos[0], y: g.pos[1], kind: seated ? 'sit' : 'guest', seed: gSeed, shirt: ice(GUEST_SHIRTS[pal.walkShirt(i % 4, Math.floor(i / 4))], g.stage === 'arrive' || g.stage === 'order'), hair: ice(HAIR_COLORS[pal.walkHair(i % 4, Math.floor(i / 4))], g.stage === 'arrive' || g.stage === 'order'), o, flip: seated ? g.face : fl(g.face), step: g.walking ? walkStep((i % 4) + 3) : 0, talk: g.stage === 'order' && Math.sin(poseClock * 9) > -0.2, mood, blink: blinkAt(gSeed), arm: seated ? bite * 2 : 0 },
       deps: g.deps,
     });
   }
@@ -191,7 +195,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `q${q}`,
       sortY: y,
       role: 'queue',
-      props: { x, y, kind: 'guest', seed: sd, shirt: GUEST_SHIRTS[pal.walkShirt(q, 7)], hair: HAIR_COLORS[pal.walkHair(q, 7)], flip: fl(false), blink: blinkAt(sd), mood: 'smile', o: fadeAt(x, y) },
+      props: { x, y, kind: 'guest', seed: sd, shirt: ice(GUEST_SHIRTS[pal.walkShirt(q, 7)]), hair: ice(HAIR_COLORS[pal.walkHair(q, 7)]), flip: fl(false), blink: blinkAt(sd), mood: 'smile', o: fadeAt(x, y) },
     });
   }
   // D416: a varied cast of drivers (skin, hair, build; one moustache at most), one of them checking a phone
@@ -204,7 +208,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `w${q}`,
       sortY: y,
       role: 'queue',
-      props: { x, y, kind: 'driver', seed: d.seed, cap: d.cap, act: d.phone ? 'phone' : 'none', flip: fl(false), blink: blinkAt(d.seed), mood: d.phone ? 'focus' : 'smile', o: fadeAt(x, y) },
+      props: { x, y, kind: 'driver', seed: d.seed, cap: ice(d.cap), act: d.phone ? 'phone' : 'none', flip: fl(false), blink: blinkAt(d.seed), mood: d.phone ? 'focus' : 'smile', o: fadeAt(x, y) },
     });
   }
 

@@ -40,6 +40,19 @@ describe('a pill stays on the screen', () => {
       }
     }
   });
+  // D512: in a wide shop that is scrolled, the pill slides inside the part on screen (12 pt in), not inside the whole drawing
+  it.each([0, 150, 247])('stays inside the part of a 640 pt shop on screen at scroll %i', (scroll) => {
+    const view = { x0: scroll + 12, x1: scroll + 393 - 12 };
+    for (const text of [INDUSTRIAL['layer.industrial.jam.alert'], 'Head Baker fixing… 30s']) {
+      for (const cx of [0, 60, scroll + 5, scroll + 196, scroll + 390, 600, 700]) {
+        const b = pillBox(640, cx, text, 8, view);
+        expect(b.left).toBeGreaterThanOrEqual(view.x0);
+        expect(b.left + b.width).toBeLessThanOrEqual(view.x1);
+        // the old box, centred on cx inside the whole drawing, left the screen for a centre near its edge
+      }
+    }
+    expect(pillBox(640, scroll + 393, 'Oven jammed! Tap the wrench.', 8).left + 200).toBeGreaterThan(scroll + 393 - 12);
+  });
   it('says "Head Baker fixing…" with a count, and the alert without one', () => {
     expect(jamLabel({ jammed: true, autoFixIn: 7 })).toBe('Head Baker fixing… 7s');
     expect(jamLabel({ jammed: true, autoFixIn: null })).toBe('Oven jammed! Tap the wrench.');

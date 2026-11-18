@@ -37,7 +37,7 @@ describe('the first three tiers do not change by a pixel', () => {
   // the digest of every v5.17 layout (and its two pills) over a grid of kitchens, taken from the code before this card: the numbers, field by field
   test('the layout and the pills of the Hole-in-the-wall, the Corner shop and the Double storefront are the v5.17 ones', () => {
     const h = createHash('sha1');
-    const added = ['prep2', 'jamb', 'walk', 'tree', 'mirrored', 'frame'];
+    const added = ['prep2', 'jamb', 'walk', 'tree', 'mirrored', 'frame', 'floorY'];
     for (let fp = 0; fp < 3; fp++)
       for (const o of [1, 2, 3, 4, 6])
         for (const c of [1, 2, 3])
@@ -251,7 +251,7 @@ describe('the mirrored floor plan (card V2 step 3)', () => {
       const plain = toDrawSpace(build(fp, false));
       const m = toDrawSpace(build(fp, true));
       const a = 2 * plain.frame.vanishX;
-      const inp = ladderInput(furnitureInputs({ id: 'waterfront', name: 'Waterfront', shop: { footprint: fp, prep: 120, counter: 120, drivers: 40, managed: true, line: { prepped: 3 }, decor: { tables: 2, plants: 1, signage: 0 } }, running: true, rate: 3, vehicle: 2, worn: [] }));
+      const inp = ladderInput(furnitureInputs({ id: 'waterfront', name: 'Waterfront', shop: { footprint: fp, prep: 120, counter: 120, drivers: 40, managed: true, line: { prepped: 3 }, decor: { tables: 2, plants: 1, signage: 0 } }, running: true, rate: 3, vehicle: 2, worn: [], first: false }));
       const pp = ladderProps(plain, inp);
       const mm = ladderProps(m, inp);
       expect(mm.map((p) => p.id)).toEqual(pp.map((p) => p.id));

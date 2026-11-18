@@ -19,6 +19,7 @@ import { emitCheer, emitCoin, emitPayout } from '../pulse-bus';
 import { TAP } from '../tap-targets';
 import { attackLite, barPct, challengeView, RESULT_MS, resultView, winDiamondsText } from './attack-model';
 import { STACK } from './stack-model';
+import { gameNow } from '../../engine/clock';
 
 const FLASH_MS = 260;
 
@@ -66,7 +67,7 @@ export const ChallengeChip = memo(function ChallengeChip({ shown = true }: { sho
 
   if ((face !== 'running' && !done) || !shown) return null;
   const g = useGame.getState().game;
-  const view = attackView(g, Date.now());
+  const view = attackView(g, gameNow());
   const run = challengeView(view);
   const result = resultView(view);
   if (face === 'running' && run) {

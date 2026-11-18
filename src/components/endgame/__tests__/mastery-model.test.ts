@@ -2,6 +2,7 @@
 import { MASTERY_STARS } from '../../../content/endgame';
 import { FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES } from '../../../content/tuning';
 import type { NeighborhoodId } from '../../../content/types';
+import { HOME_CITY } from '../../../content/cities/home';
 import * as G from '../../../engine/game';
 import { masteryTotal, nextStar } from '../../../engine/features/mastery';
 import { masteryGoal, goalLabelFit, STAR_UNIT } from '../../goal-model';
@@ -63,9 +64,9 @@ describe('star names, toasts and pips', () => {
 
   test('pips: heads, Flagship, golden, in that order', () => {
     const g = withShop(city(true), 'downtown', { heads: G.noHeads(), footprint: FOOTPRINTS.length - 1, grade: 0 });
-    expect(starPips(g.shops.downtown)).toEqual([false, true, false]);
-    expect(pipBits(starPips(g.shops.downtown))).toBe(2);
-    expect(pipBits(starPips(withShop(g, 'downtown', top).shops.downtown))).toBe(7);
+    expect(starPips(g.shops.downtown, HOME_CITY)).toEqual([false, true, false]);
+    expect(pipBits(starPips(g.shops.downtown, HOME_CITY))).toBe(2);
+    expect(pipBits(starPips(withShop(g, 'downtown', top).shops.downtown, HOME_CITY))).toBe(7);
   });
 
   test('a star path is a closed ten-point outline', () => {

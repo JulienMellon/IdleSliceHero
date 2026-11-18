@@ -10,6 +10,8 @@ export interface LotView {
   kind: 'built' | 'buildable' | 'nonna' | 'queued';
   /** The caption on the map pin ("" for a built lot, which shows its income instead). */
   pin: string;
+  /** C146: the countdown as plain words for a tab ("2.21K pies to go"); null unless the lot is held by the founder's takeover. */
+  piesToGo: string | null;
   /** The list row's second line (unbuilt lots only). */
   rowSub: string;
   /** The list row's right-hand text; null shows the padlock instead. */
@@ -23,13 +25,14 @@ export interface LotView {
 }
 
 export function lotView(s: G.GameState, n: NeighborhoodDef): LotView {
-  if (s.shops[n.id].built) return { kind: 'built', pin: '', rowSub: '', rowRight: null, locked: false, dim: false, tappable: true };
+  if (s.shops[n.id].built) return { kind: 'built', pin: '', piesToGo: null, rowSub: '', rowRight: null, locked: false, dim: false, tappable: true };
   const isNext = G.nextToBuild(s)?.id === n.id;
-  if (!isNext) return { kind: 'queued', pin: '???', rowSub: 'Build the previous pizzeria first', rowRight: null, locked: true, dim: false, tappable: false };
+  if (!isNext) return { kind: 'queued', pin: '???', piesToGo: null, rowSub: 'Build the previous pizzeria first', rowRight: null, locked: true, dim: false, tappable: false };
   // the only lock the next lot can have is Nonna's takeover (the previous lot is built by definition)
   if (G.buildLock(s, n.id) !== null) {
     const left = G.nonnaPizzasLeft(s);
-    return { kind: 'nonna', pin: left > 0 ? `Nonna in ${pizzasLeft(left)}` : 'Nonna soon', rowSub: G.founderCountdownText(s), rowRight: null, locked: true, dim: true, tappable: false };
+    const who = G.founderName(s);
+    return { kind: 'nonna', pin: left > 0 ? `${who} in ${pizzasLeft(left)}` : `${who} soon`, piesToGo: left > 0 ? `${pizzasLeft(left)} pie${left <= 1 ? '' : 's'} to go` : null, rowSub: G.founderCountdownText(s), rowRight: null, locked: true, dim: true, tappable: false };
   }
-  return { kind: 'buildable', pin: `Build ${money(n.buildCost)}`, rowSub: `Pays ${money(n.orderValue)} a pizza · manager ${money(n.managerCost)}`, rowRight: `Build ${money(n.buildCost)}`, locked: false, dim: false, tappable: true };
+  return { kind: 'buildable', pin: `Build ${money(n.buildCost)}`, piesToGo: null, rowSub: `Pays ${money(n.orderValue)} a pizza · manager ${money(n.managerCost)}`, rowRight: `Build ${money(n.buildCost)}`, locked: false, dim: false, tappable: true };
 }

@@ -313,7 +313,6 @@ describe('Boston reads its own tables (A35, C141, T108)', () => {
     expect(b.city).toBe('boston');
     expect(G.founderCountdownText(b)).toMatch(/^Father Dom takes over/);
     expect(G.founderCountdownText(G.newGame(WED))).toMatch(/^Nonna takes over/);
-    expect(G.nonnaCountdownText(b)).toBe(G.founderCountdownText(b));
   });
   it('def, perkOf and the price helpers find a Boston neighbourhood without a city argument', () => {
     for (const n of BOSTON_CITY.neighbourhoods) {

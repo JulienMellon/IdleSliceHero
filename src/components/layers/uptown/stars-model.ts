@@ -4,7 +4,7 @@
 import { STARS } from '../../../content/layers';
 import { DECOR_KINDS, OVEN_GRADES, type DecorKind } from '../../../content/tuning';
 import { money } from '../../../engine/format';
-import { buyDecor, buyUpgrade, decorCost, upgradeCostOf, type GameState } from '../../../engine/game';
+import { buyDecor, buyUpgrade, canAfford, decorCost, upgradeCostOf, type GameState } from '../../../engine/game';
 import { criticView, ingredientsLock, pointsOf, starsOf, starsView, type StarsView } from '../../../engine/features/layers/uptown-stars';
 import { fill } from '../../report/report-model';
 import { dressed } from '../city-dress';
@@ -144,7 +144,7 @@ export const tierName = (tier: number): string => COPY[`upgrade.uptown.ingredien
 
 function ingredientsCard(g: GameState, v: StarsView): StarsSheet['ingredients'] {
   const lock = ingredientsLock(g);
-  return { name: v.nextTierName === null ? null : tierName(v.tier + 1), price: v.nextPrice, canBuy: !lock && v.nextPrice !== null && g.cash >= v.nextPrice, lock };
+  return { name: v.nextTierName === null ? null : tierName(v.tier + 1), price: v.nextPrice, canBuy: !lock && canAfford(g, v.nextPrice), lock };
 }
 
 // ---------- the drawer card ----------

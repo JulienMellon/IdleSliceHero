@@ -64,18 +64,34 @@ function whereNow(): NeighborhoodId {
   return st.playing ? soundOf(st.playing.scene.neighborhood, cityOfScene(st.playing.scene)) : soundOf(st.game.active);
 }
 
+/** U8: the track `musicFor` picks, remembered against the scene keys it reads (the store updates every tick; these change a few times a session). */
+let trackKey = '';
+let trackMemo: ReturnType<typeof musicFor> | null = null;
+function trackNow(s: ReturnType<typeof useGame.getState>) {
+  const scene = s.playing ? s.playing.scene : null;
+  // Downtown's sparse chart is the home city's opening only: a scene's own city decides for a replay (AU87)
+  const sceneCity = scene ? cityOfScene(scene) : undefined;
+  const cityId = cityOf(s.game).id;
+  const home = (sceneCity ?? cityId) === 'home';
+  const downtownFull = cityId !== 'home' || s.game.seenScenes.includes('downtown-4');
+  const beat = home && scene && typeof scene.beat === 'number' ? scene.beat : undefined;
+  const key = `${s.game.active}|${cityId}|${downtownFull}|${scene ? `${scene.id}|${scene.neighborhood}|${sceneCity}|${scenePanelCue}|${beat}` : '-'}`;
+  if (key !== trackKey || !trackMemo) {
+    trackKey = key;
+    trackMemo = musicFor({
+      active: soundOf(s.game.active),
+      downtownFull,
+      scene: scene ? { neighborhood: soundOf(scene.neighborhood, sceneCity), panelCue: scenePanelCue, beat } : null,
+    });
+  }
+  return trackMemo;
+}
+
 function refreshMusic() {
   const s = useGame.getState();
   if (!s.loaded) return; // no Downtown blip before the save says where the player is (AU44)
   const scene = s.playing ? s.playing.scene : null;
-  // Downtown's sparse chart is the home city's opening only: a scene's own city decides for a replay (AU87)
-  const sceneCity = scene ? cityOfScene(scene) : undefined;
-  const home = (sceneCity ?? cityOf(s.game).id) === 'home';
-  const track = musicFor({
-    active: soundOf(s.game.active),
-    downtownFull: cityOf(s.game).id !== 'home' || s.game.seenScenes.includes('downtown-4'),
-    scene: scene ? { neighborhood: soundOf(scene.neighborhood, sceneCity), panelCue: scenePanelCue, beat: home && typeof scene.beat === 'number' ? scene.beat : undefined } : null,
-  });
+  const track = trackNow(s);
   mixer.setTrack(track);
   mixer.duck('scene', scene ? DUCK.scene : null);
   mixer.duck('popup', s.offline && !scene ? DUCK.popup : null);

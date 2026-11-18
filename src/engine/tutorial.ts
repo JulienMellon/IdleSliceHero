@@ -44,7 +44,7 @@ export function coachStep(s: G.GameState): CoachStep | null {
   // D374: the Ovens cash went elsewhere (drivers, say): back to "save up" until it's there again
   if (step.id === 8) {
     const cost = G.upgradeCostOf(s, first(s), 'ovens');
-    if (cost !== null && s.cash < cost) step = STEPS[6];
+    if (cost !== null && !G.canAfford(s, cost)) step = STEPS[6];
   }
   // step 7: point at whichever station is next, so the hand follows the rhythm
   if (step.id === 7) {
@@ -73,7 +73,7 @@ function done(s: G.GameState, id: number): boolean {
       return d.sold > 0;
     case 7: {
       const cost = G.upgradeCostOf(s, first(s), 'ovens');
-      return d.ovens > 1 || (cost !== null && s.cash >= cost);
+      return d.ovens > 1 || G.canAfford(s, cost);
     }
     case 8:
       return d.ovens > 1;

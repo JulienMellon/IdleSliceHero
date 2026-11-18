@@ -12,7 +12,7 @@
 import { seededUnit } from '../../bonus';
 import { CRITIC, LAYER_KEYS, STARS } from '../../../content/layers';
 import { DECOR_KINDS } from '../../../content/tuning';
-import { shopRevenue, type BuyResult, type GameState, type Shop } from '../../game';
+import { pay, shopRevenue, type BuyResult, type GameState, type Shop } from '../../game';
 import { minutesToCash } from '../../rewards';
 import type { Feature } from '../types';
 import { cityOf, layerHood } from '../../../content/cities';
@@ -101,9 +101,10 @@ export function buyIngredients(g: GameState): BuyResult {
   if (lock) return { ok: false, reason: lock };
   const price = ingredientsPrice(g);
   if (price === null) return { ok: false, reason: 'The best ingredients there are' };
-  if (g.cash < price) return { ok: false, reason: 'Not enough cash' };
+  const paid = pay(g, price);
+  if (!paid.ok) return paid;
   const st = read(g);
-  return { ok: true, state: write({ ...g, cash: g.cash - price }, { ...st, tier: st.tier + 1 }) };
+  return { ok: true, state: write(paid.state, { ...st, tier: st.tier + 1 }) };
 }
 
 // ---------- the critic ----------

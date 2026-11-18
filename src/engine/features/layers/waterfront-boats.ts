@@ -14,6 +14,7 @@ import {
   demandRate,
   featureMults,
   ovenRate,
+  pay,
   pier9Available,
   prepRate,
   runsItself,
@@ -75,9 +76,10 @@ export function buyRack(g: GameState): BuyResult {
   if (lock) return { ok: false, reason: lock };
   const price = rackPrice(g);
   if (price === null) return { ok: false, reason: 'Biggest rack there is' };
-  if (g.cash < price) return { ok: false, reason: 'Not enough cash' };
+  const paid = pay(g, price);
+  if (!paid.ok) return paid;
   const st = read(g);
-  return { ok: true, state: write({ ...g, cash: g.cash - price }, { ...st, tier: st.tier + 1 }) };
+  return { ok: true, state: write(paid.state, { ...st, tier: st.tier + 1 }) };
 }
 
 export interface BoatsView {

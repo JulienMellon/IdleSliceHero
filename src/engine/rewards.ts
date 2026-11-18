@@ -29,6 +29,7 @@ import {
   type GiftDef,
   type PoolEntry,
   type TaskKind,
+  UPGRADE_TASK_MAX_SECONDS,
 } from '../content/rewards';
 import { cosmeticPart } from '../content/endgame';
 import { NONNA_TAKEOVER } from '../content/tuning';
@@ -43,6 +44,7 @@ import {
   nextToBuild,
   nextVehicleLock,
   runsItself,
+  upgradeCostOf,
   shopRate,
   walkInFraction,
   type Boost,
@@ -150,6 +152,21 @@ export function cityRates(s: GameState): { city: number; walkin: number; driver:
   return { city, walkin, driver: city - walkin };
 }
 
+/** C107: the cheapest next kitchen level in a built shop costs at most `UPGRADE_TASK_MAX_SECONDS` of income (always true while there is no income to measure by). Used by the task pool and the reroll. */
+export function upgradesAreQuick(s: GameState): boolean {
+  const income = rewardIncome(s);
+  if (!(income > 0)) return true;
+  let cheapest = Infinity;
+  for (const id of hoodIds(cityOf(s))) {
+    if (!s.shops[id].built) continue;
+    for (const what of ['prep', 'ovens', 'counter'] as const) {
+      const cost = upgradeCostOf(s, id, what);
+      if (cost !== null && cost < cheapest) cheapest = cost;
+    }
+  }
+  return cheapest <= income * UPGRADE_TASK_MAX_SECONDS;
+}
+
 const ELIGIBLE: Record<Eligibility, (s: GameState) => boolean> = {
   always: () => true,
   walkins: (s) => cityRates(s).walkin > 0,
@@ -162,6 +179,7 @@ const ELIGIBLE: Record<Eligibility, (s: GameState) => boolean> = {
     const n = nextToBuild(s);
     return !!n && buildLock(s, n.id) === null;
   },
+  upgrades: (s) => upgradesAreQuick(s),
   fleet: (s) => nextVehicleLock(s) === null,
 };
 

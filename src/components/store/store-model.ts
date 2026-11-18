@@ -1,9 +1,6 @@
 // The store's pure parts (card U3): the five products as rows with their price state, what a paid-out grant does to the game, the
 // Starter Pack's one-time offer and the small saved prefs. The tab (store-tab.tsx), the sheet (starter-sheet.tsx) and Settings only draw this.
-import { MAX_CONCURRENT_BOOSTS } from '../../content/rewards';
-import type { Boost, GameState } from '../../engine/game';
-import { grantCosmetic } from '../../engine/rewards';
-import { GRANTS, type Grant } from '../../services/grants';
+import { GRANTS } from '../../services/grants';
 import { PRODUCT_IDS, type BuyResult, type ProductId } from '../../services/types';
 
 // ---------- products ----------
@@ -102,17 +99,8 @@ export function restoreLine(ids: readonly ProductId[]): string {
 
 // ---------- a paid-out grant ----------
 
-/** What a grant does to the game: diamonds, a running boost (added like the engine adds one), a cosmetic (worn at once). `plus` is the store's own flag, not a field of the game. */
-export function applyGrant(g: GameState, grant: Grant, now: number): GameState {
-  const r = g.rewards;
-  let boosts: Boost[] = r.boosts;
-  if (grant.boost) {
-    const b: Boost = { mult: grant.boost.mult, until: now + grant.boost.hours * 3_600_000, source: 'purchase' };
-    boosts = [...boosts, b].sort((x, y) => y.until - x.until).slice(0, MAX_CONCURRENT_BOOSTS);
-  }
-  const dressed = grant.cosmetic ? grantCosmetic(r, grant.cosmetic) : { cosmetics: r.cosmetics, worn: r.worn };
-  return { ...g, rewards: { ...r, diamonds: r.diamonds + Math.max(0, grant.diamonds), boosts, ...dressed } };
-}
+// Moved to engine/offers.ts (A34); re-exported for the screens and tests.
+export { applyGrant } from '../../engine/offers';
 
 // ---------- the Starter Pack's offer ----------
 

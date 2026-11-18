@@ -54,7 +54,7 @@ export const stationTone = (lock: string | null, gain: number | null): 'normal' 
  * player has enough, or there is nothing to buy (a locked or maxed upgrade has no cost).
  */
 export function needText(cost: number | null, cash: number): string | null {
-  if (cost === null || !Number.isFinite(cost) || cash >= cost) return null;
+  if (cost === null || !Number.isFinite(cost) || G.canAfford({ cash }, cost)) return null;
   return `need ${money(Math.max(1, Math.ceil(cost - cash - 1e-9)))}`;
 }
 
@@ -167,7 +167,7 @@ export const stationTitle = (v: Pick<StationModel, 'name' | 'expand'>): string =
 /** Add the cash-dependent part. */
 export function stationViews(s: G.GameState, id: NeighborhoodId): StationView[] {
   return stationModels(s, id).map((m) => {
-    const affordable = !m.lock && m.cost !== null && s.cash >= m.cost;
+    const affordable = !m.lock && G.canAfford(s, m.cost);
     const frame = !bonusUnlocked(s) && m.neck ? (affordable ? 'hot' : 'waiting') : null;
     const progress = frame === 'waiting' && m.cost ? Math.min(1, Math.max(0, s.cash / m.cost)) : 0;
     return { ...m, affordable, need: m.lock || s.cash <= 0 ? null : needText(m.cost, s.cash), frame, progress };
@@ -300,7 +300,7 @@ export function sidewalkSlots(s: G.GameState, id: NeighborhoodId, bundle: G.Bund
       title: `EXPAND \u00B7 ${next.name.split(' ')[0]}`, // G102: "EXPAND · Double", one word of the tier's name
       label: money(cost),
       foot: `Lv cap ${G.levelCap(shop)} → ${G.levelCap({ ...shop, footprint: shop.footprint + 1 })}`,
-      enabled: s.cash >= cost,
+      enabled: G.canAfford(s, cost),
       steps: ['expand'],
       frame: null,
     });

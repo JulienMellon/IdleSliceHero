@@ -181,7 +181,7 @@ export function CityMap({ game, width, height, onPress, onFranchised }: { game: 
             {/* a built pizzeria's card has a third row: its three mastery stars (heads, Flagship, golden ovens) */}
             <Rect x={n.x - 11} y={n.y + 8.5} width={22} height={pips ? 11.5 : 8.5} rx={2.2} fill="rgba(59,31,20,0.25)" />
             <Rect x={n.x - 11} y={n.y + 7.5} width={22} height={pips ? 11.5 : 8.5} rx={2.2} fill="#FFFFFF" stroke={attacked === n.id ? C.tomato : isNext ? C.cheeseDark : INK} strokeWidth={attacked === n.id ? 0.8 : 0.45} />
-            {pips && <MapStars x={n.x} y={n.y + 16.9} bits={pipBits(starPips(shop))} r={1.8} />}
+            {pips && <MapStars x={n.x} y={n.y + 16.9} bits={pipBits(starPips(shop, city))} r={1.8} />}
             <SvgText x={n.x} y={n.y + 11} fontSize={3} fontFamily={F.bold} fill={INK} textAnchor="middle">
               {n.name}
             </SvgText>

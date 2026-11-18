@@ -8,6 +8,8 @@ const base = (over: Partial<FurnitureSource['shop']> = {}): FurnitureSource => (
   running: true,
   rate: 4,
   vehicle: 1,
+  worn: [],
+  first: false,
 });
 const deps = (s: FurnitureSource) => JSON.stringify(furnitureDeps(furnitureInputs(s)));
 
@@ -50,6 +52,6 @@ describe('furniture memo inputs (T24)', () => {
     const f = furnitureInputs(base({ managed: false, line: { prepped: 9 } }));
     expect(f.dough).toBe(6);
     expect(f.idleShop).toBe(true);
-    expect(furnitureInputs({ ...base({ managed: false }), id: 'downtown' }).idleShop).toBe(false);
+    expect(furnitureInputs({ ...base({ managed: false }), id: 'downtown', first: true }).idleShop).toBe(false);
   });
 });

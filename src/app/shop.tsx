@@ -18,6 +18,7 @@ import { BoostIcon, DiamondIcon } from '@/components/icons';
 import { TAP } from '@/components/tap-targets';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
+import { gameNow } from '../engine/clock';
 
 type Tab = 0 | 1 | 2;
 
@@ -67,7 +68,7 @@ export default function Shop() {
   // primitives: the screen repaints when a diamond, a cosmetic or a booster changes, not on every game tick
   const wardrobe = useGame((s) => `${s.game.rewards.cosmetics.join(',')}|${s.game.rewards.worn.join(',')}|${Math.floor(s.game.rewards.diamonds)}`);
   const shelfKey = useGame((s) => s.game.rewards.boosters.map((b) => `${b.mult}:${b.seconds}`).join(','));
-  const boosterAd = useGame((s) => boosterAdOffer(s.game, Date.now(), s.prefs.boosterAdDay));
+  const boosterAd = useGame((s) => boosterAdOffer(s.game, gameNow(), s.prefs.boosterAdDay));
   const [tab, setTab] = useState<Tab>(0);
   // G94: leaving the screen takes its toast with it
   useFocusEffect(useCallback(() => () => useGame.setState({ toast: null }), []));

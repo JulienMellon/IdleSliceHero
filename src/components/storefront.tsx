@@ -50,7 +50,10 @@ import {
 } from './scene/ladder';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverlays, StreetProp } from './scene/room';
 import { FasciaSign } from './scene/facade';
-import { fasciaSignBox, slideInto, VIEW_MARGIN, visibleSpan } from './scene/viewport';
+import { fasciaSignBox, overlaySpan, slideInto, visibleSpan } from './scene/viewport';
+import { SceneViewContext } from './scene/view-context';
+import { gameNow } from '../engine/clock';
+import { floorYFor, liftLayout, stripTop } from './scene/strip-clear';
 import { trafficFor } from './scene/street-props';
 import { rivalOpen } from '../engine/features/layers/rival';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, sidewalkItems, Street } from './scene/street';
@@ -134,7 +137,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const rushTaps = useGame((s) => s.rushTaps);
   const game = useGame.getState().game;
   // the wall clock, read once for this render (U23): every time-of-render use below shares it
-  const nowMs = Date.now();
+  const nowMs = gameNow();
   const shop = game.shops[id];
   const city = cityOf(game);
   const nd = Game.def(id, city);
@@ -206,7 +209,9 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const mirrored = isMirrored(id);
   const roomLay = useMemo(() => layout(fp, ovenCount, cookCount, staffCount, tablesShown, driverSlots, plants, undefined, mirrored), [fp, ovenCount, cookCount, staffCount, tablesShown, driverSlots, plants, mirrored]);
   // …and in the draw space the drawing code's default `P` expects (`drawFrame`): everything below the sky and the street is drawn in a group moved right by `shift`
-  const lay = useMemo(() => toDrawSpace(roomLay), [roomLay]);
+  // …and lifted clear of the shop report's strip, which hides what stands lower on the sidewalk (strip-clear.ts, D514): the same fit the strip's `bottom` is computed from (app/index.tsx)
+  const stripFloor = floorYFor(stripTop(sceneView(width, height, roomLay.frame).fit.s, hireOnSidewalk(shop, id)));
+  const lay = useMemo(() => liftLayout(toDrawSpace(roomLay), stripFloor), [roomLay, stripFloor]);
   const running = shop.managed || Game.lineBusy(shop.line);
   const rate = Game.shopRate(shop, game.vehicle);
   const pace = running ? Math.min(2.6, 0.8 + Math.log10(1 + rate)) : 0;
@@ -275,7 +280,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const queueShare = rep.queueShare;
   const queue = useMemo(() => (q0 ? { diners: queueShown(q0.diners + extraDiners, queueShare), drivers: queueShown(q0.drivers, queueShare) } : q0), [q0, extraDiners, queueShare]);
   const cheer = nowMs / 1000 - m0.cheerAt < CHEER_SECONDS;
-  const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cheer });
+  const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cold: rep.state === 'cold', cheer });
   const side = sidewalkOf(lay, crew, queue);
   // each pop rides over the figure carrying its departure (one Map reused per mount, M48)
   const carriers = m0.carriers;
@@ -316,6 +321,9 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const bouncing = bounceNow >= 0 ? mem.current.bounce!.st : null;
   // what is on screen of a wide shop's drawing (scene/viewport.ts): the shop's bubbles and its name plate stay inside it, 12 pt from the edge (D511, D512)
   const span = visibleSpan(view.scrolls, scrollX.current, width, fit, shift, { x0: frame.x0, x1: frame.x0 + frame.width });
+  // the overlays' own span (viewport.ts `overlaySpan`): a context object that changes only when the shop moves a whole point, read by the jam's label alone (U25)
+  const ovSpan = overlaySpan(view.scrolls, scrollX.current, width, cw);
+  const overlayView = useMemo(() => (ovSpan ? { x0: ovSpan.x0, x1: ovSpan.x1 } : null), [ovSpan?.x0, ovSpan?.x1]); // eslint-disable-line react-hooks/exhaustive-deps -- the primitives are the deps
   const signBox = fasciaSignBox(plainOf(lay), nd.name);
   const signC = lay.mirrored ? 2 * frame.vanishX - signBox.fcx : signBox.fcx;
   const signDraw = view.scrolls ? slideInto(signC, signBox.signW, span, lay.mirrored ? { x0: 2 * frame.vanishX - signBox.fx1, x1: 2 * frame.vanishX - signBox.fx0 } : { x0: signBox.fx0, x1: signBox.fx1 }) : 0;
@@ -330,7 +338,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   ];
   items.sort((a, b) => b.y - a.y);
 
-  useEffect(() => onCheer(() => { mem.current.cheerAt = Date.now() / 1000; }), []);
+  useEffect(() => onCheer(() => { mem.current.cheerAt = gameNow() / 1000; }), []);
   // ---- departures: a carrier that paid this frame bumps the HUD cash (its coin just landed). Detected after
   // commit; ids only grow, so a remount or the end of a pause never replays old ones.
   useEffect(() => {
@@ -339,7 +347,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     // a departure about to pay launches its coin from the carrier to the HUD cash, timed to land with the cash
     if (!paused)
       for (const d of line.departures) {
-        const l = Math.max(0, d.left - Math.max(0, (Date.now() - useGame.getState().tickAt) / 1000));
+        const l = Math.max(0, d.left - Math.max(0, (gameNow() - useGame.getState().tickAt) / 1000));
         if (m.launched.has(d.id) || l > COIN_FLIGHT) continue;
         m.launched.add(d.id);
         if (m.launched.size > 12) m.launched.delete(m.launched.values().next().value as number);
@@ -387,7 +395,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     // ---- head barks (features/heads.ts): a milestone, a rush combo, an attack on this shop, being Head of the Week. One bubble per shop, so
     // nothing starts while a refusal, a hello or a milestone line is up (or a cut-scene plays); the rest of the rules are `nextBark`'s
     const g = useGame.getState();
-    const wall = Date.now() / 1000;
+    const wall = gameNow() / 1000;
     const week = weekStation(g.game, id);
     if (week) asks.push({ trigger: 'week', station: week, key: `week-${getFeature(g.game, headsFeature)?.week ?? 0}` });
     const atk = getFeature(g.game, counterattack) as ReturnType<typeof counterattack.init> | undefined;
@@ -398,13 +406,13 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     // a station Slammed for 20 s in a shop with no manager: its head asks for help (features/service.ts; P1 step 6)
     asks.push(...slammedAsks(g.game, id));
     // a rush combo: three quick taps inside the window (rush-model.ts), whether or not the kitchen could still go faster (so the pill may be a hint)
-    const combo = rushCombo(rushTaps, Date.now()).n >= 3;
+    const combo = rushCombo(rushTaps, gameNow()).n >= 3;
     if (combo && !m.combo) {
       const sp = speakerFor(shop, Math.floor(wall / 7));
       if (sp) asks.push({ trigger: 'rush', station: sp });
     }
     m.combo = combo;
-    const cv = visitOf(g.game.rewards.boosts, Date.now());
+    const cv = visitOf(g.game.rewards.boosts, gameNow());
     const cameoSpeaking = !!cv && visitLine(cv.visitor, wall) !== null;
     const otherBubble = cameoSpeaking || !!(m.refusal && clock - m.refusal.at < 1.6) || !!(m.hire && clock - m.hire.at < 2.5) || m.hires.length > 0 || !!(m.mile?.text && m.mile.at !== clock && clock - m.mile.at < 2.5);
     const before = barkMemory.get(id) ?? newBarkMem();
@@ -738,7 +746,9 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         </Svg>
       </Pressable>
       {/* the SCENE_OVERLAYS slot: above the floor and furniture, below the HUD; nothing while the slot is empty */}
-      <SceneOverlays shopId={id} width={cw} height={height} viewX0={view.scrolls ? Math.round(scrollX.current) + VIEW_MARGIN : undefined} viewX1={view.scrolls ? Math.round(scrollX.current) + width - VIEW_MARGIN : undefined} />
+      <SceneViewContext.Provider value={overlayView}>
+        <SceneOverlays shopId={id} width={cw} height={height} />
+      </SceneViewContext.Provider>
     </>
   );
   return (

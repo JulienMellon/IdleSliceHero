@@ -68,13 +68,13 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
                 <View key={n.id} onLayout={onTab(i)} testID={`build-${n.id}`} accessibilityState={{ disabled: true }} style={[styles.tab, styles.tabBuild, styles.tabHeld]}>
                   <Text style={[styles.tabName, { color: C.inkSoft }]}>+ {n.name}</Text>
                   <Text style={[styles.tabSub, { color: C.inkSoft }]} numberOfLines={1}>
-                    {/* D503: "2.21K pies to go", not "Nonna in 2.21K" (in what?) */}
-                    {lot.kind === 'nonna' && lot.pin.startsWith('Nonna in ') ? `${lot.pin.slice('Nonna in '.length)} pies to go` : lot.pin}
+                    {/* D503: the lot's own "N pies to go" (city-model lotView), not a slice of the pin */}
+                    {lot.piesToGo ?? lot.pin}
                   </Text>
                 </View>
               );
             }
-            const can = game.cash >= n.buildCost;
+            const can = Game.canAfford(game, n.buildCost);
             // while the Pier 9 bid is on offer, building spends the cash saved for it: say so beside the price
             const warn = buildChipHint(game);
             return (
@@ -100,14 +100,14 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
           }
           const eps = Game.shopEarnings(game, n.id) * boostMult;
           return (
-            <Pressable key={n.id} onLayout={onTab(i)} testID={`tab-${n.id}`} accessibilityRole="tab" accessibilityLabel={`${n.name}, ${Game.runsItself(shop) ? `${money(eps)} a second` : 'you run it'}${showPips(shop) ? `, ${shopStars(shop)} of 3 stars` : ''}`} accessibilityState={{ selected: active }} onPress={() => {
+            <Pressable key={n.id} onLayout={onTab(i)} testID={`tab-${n.id}`} accessibilityRole="tab" accessibilityLabel={`${n.name}, ${Game.runsItself(shop) ? `${money(eps)} a second` : 'you run it'}${showPips(shop) ? `, ${shopStars(shop, cityOf(game))} of 3 stars` : ''}`} accessibilityState={{ selected: active }} onPress={() => {
                 if (!active) emitAudio({ type: 'click' });
                 onSelect(n.id);
               }} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
               <Text style={styles.tabName}>{n.name}</Text>
               <Text style={[styles.tabSub, active && { color: C.ink }, !Game.runsItself(shop) && !active && { color: C.tomato }]}>{Game.runsItself(shop) ? `${money(eps)}/s` : 'you run it'}</Text>
               {/* v5.15: the shop's three mastery stars (heads, Flagship, golden ovens) */}
-              {showPips(shop) && <StarPips testID={`stars-${n.id}`} bits={pipBits(starPips(shop))} size={10} />}
+              {showPips(shop) && <StarPips testID={`stars-${n.id}`} bits={pipBits(starPips(shop, cityOf(game)))} size={10} />}
             </Pressable>
           );
         })}

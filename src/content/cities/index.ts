@@ -14,6 +14,25 @@ export const CITIES: Record<string, CityDef> = { [HOME_CITY.id]: HOME_CITY, [BOS
 /** The city a game is in: `GameState.city`, falling back to the home city for an id this build does not know. */
 export const cityOf = (g: { city?: string }): CityDef => CITIES[g.city ?? HOME_ID] ?? HOME_CITY;
 
+let OWNERS: Map<NeighborhoodId, CityDef> | undefined;
+/** The city that has neighbourhood `id` (ids are unique across cities), or undefined for an id no pack has. One lazy Map over CITIES, so the lookup is O(1) (U24). */
+export function cityHolding(id: NeighborhoodId): CityDef | undefined {
+  if (!OWNERS) {
+    OWNERS = new Map();
+    for (const c of Object.values(CITIES)) for (const n of c.neighbourhoods) OWNERS.set(n.id, c);
+  }
+  return OWNERS.get(id);
+}
+
+const DEFS = new WeakMap<CityDef, Map<NeighborhoodId, CityDef['neighbourhoods'][number]>>();
+/** A neighbourhood's tables in `city` (default: the city that has the id), or undefined for an id that isn't there (C147: a stale or foreign id is a miss, not a crash). */
+export function findHood(id: NeighborhoodId, city: CityDef | undefined = cityHolding(id)): CityDef['neighbourhoods'][number] | undefined {
+  if (!city) return undefined;
+  let per = DEFS.get(city);
+  if (!per) DEFS.set(city, (per = new Map(city.neighbourhoods.map((n) => [n.id, n] as const))));
+  return per.get(id);
+}
+
 const IDS = new WeakMap<CityDef, readonly NeighborhoodId[]>();
 /** The city's neighbourhood ids, in build order (one array per city, so a per-frame loop allocates nothing). */
 export function hoodIds(city: CityDef): readonly NeighborhoodId[] {

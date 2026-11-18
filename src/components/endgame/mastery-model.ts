@@ -2,6 +2,7 @@
 // Pure: unit-tested in node.
 import { MASTERY_STARS, type MasteryStar } from '../../content/endgame';
 import type { NeighborhoodId } from '../../content/types';
+import type { CityDef } from '../../content/cities';
 import { def, type Shop } from '../../engine/game';
 import { masteryStars, shopStars, type MasteryNews, type NextStar } from '../../engine/features/mastery';
 import { copy } from './copy-text';
@@ -19,8 +20,8 @@ export const starToast = (shopId: NeighborhoodId, star: MasteryStar): string => 
 export const nextStarLine = (n: Pick<NextStar, 'shopId' | 'star'>): string => copy('goal.mastery.next', { star: starName(n.star), shop: def(n.shopId).name });
 
 /** A shop's three pips, in star order (heads, Flagship, golden ovens): lit or not. */
-export const starPips = (shop: Shop): boolean[] => {
-  const have = masteryStars(shop);
+export const starPips = (shop: Shop, city: CityDef): boolean[] => {
+  const have = masteryStars(shop, city);
   return MASTERY_STARS.map((k) => have[k]);
 };
 

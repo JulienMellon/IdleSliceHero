@@ -3,6 +3,7 @@ import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import mobileAds, { AdEventType, AdsConsent, RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
 
 import { createAdFlow } from './ad-flow';
+import { createSlotCache } from './ad-slot-cache';
 import type { AdResult, Ads } from './types';
 
 const LOAD_TIMEOUT_MS = 10_000;
@@ -16,7 +17,6 @@ const unitId = (): string => (__DEV__ ? TestIds.REWARDED : (process.env.EXPO_PUB
 
 interface Slot {
   ad: RewardedAd;
-  at: number;
   finished: Promise<AdResult>;
 }
 
@@ -46,7 +46,7 @@ function loadSlot(): Promise<Slot | null> {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        resolve({ ad, at: Date.now(), finished });
+        resolve({ ad, finished });
       }),
       ad.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
         earned = true;
@@ -61,12 +61,8 @@ function loadSlot(): Promise<Slot | null> {
   });
 }
 
-let cached: Slot | null = null;
-let loading: Promise<void> | null = null;
 let sdkReady: Promise<void> | null = null;
-let lastTry = 0;
 
-const fresh = (): boolean => !!cached && Date.now() - cached.at < STALE_MS;
 /** A failed init is forgotten, so the next ask tries again instead of failing for the whole session. */
 const initSdk = () =>
   (sdkReady ??= mobileAds()
@@ -77,16 +73,7 @@ const initSdk = () =>
       throw e;
     }));
 
-function preload(): void {
-  if (fresh() || loading) return;
-  if (Date.now() - lastTry < RETRY_FLOOR_MS) return;
-  lastTry = Date.now();
-  loading = initSdk()
-    .then(loadSlot)
-    .then((s) => void (cached = s))
-    .catch(() => {})
-    .finally(() => void (loading = null));
-}
+const cache = createSlotCache<Slot>({ init: initSdk, load: loadSlot, now: Date.now, staleMs: STALE_MS, retryFloorMs: RETRY_FLOOR_MS });
 
 const flow = createAdFlow({
   async ump() {
@@ -104,12 +91,7 @@ const flow = createAdFlow({
     }
   },
   async showAd() {
-    await initSdk();
-    if (loading) await loading;
-    const slot = fresh() ? cached : await loadSlot();
-    cached = null;
-    // a shown ad is spent: the next one may load at once; a failed one waits out the floor
-    lastTry = slot ? 0 : Date.now();
+    const slot = await cache.take();
     if (!slot) return 'unavailable';
     try {
       await slot.ad.show();
@@ -118,8 +100,9 @@ const flow = createAdFlow({
     }
     return slot.finished;
   },
-  loaded: fresh,
-  preload,
+  loaded: cache.fresh,
+  preload: cache.preload,
+  hasUnit: () => !!unitId(),
 });
 
 export const ads: Ads = {

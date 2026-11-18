@@ -16,6 +16,7 @@ import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { attackLite } from '../endgame/attack-model';
 import { useBannerOpen } from '../endgame/banner-state';
+import { useRevealUp } from '../endgame/reveal-bus';
 import { eventBannerView, eventViewNow } from '../endgame/event-model';
 import { STACK } from '../endgame/stack-model';
 import { haptic } from '../game-ui';
@@ -29,6 +30,7 @@ import { auctionStatus, boatBanner, raiseNotice } from './waterfront/boats-model
 import { RESULT_MS, rivalCard, rivalLite, type RivalCardModel } from './rival/rival-model';
 import { hoodOf } from './city-layers';
 import { lc } from './layer-text';
+import { gameNow } from '../../engine/clock';
 
 const NOTICE_MS = 3600;
 const AUCTION_OPEN_MS = 8000;
@@ -49,7 +51,7 @@ function useTransientNotice(): Notice | null {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setNotice(null), ms);
   };
-  const rush = useGame((s) => gameDayView(s.game, Date.now()).rush);
+  const rush = useGame((s) => gameDayView(s.game, gameNow()).rush);
   const live = useGame((s) => auctionStatus(s.game).live);
   const price = useGame((s) => auctionStatus(s.game).price);
   const sold0 = useRef<number | null>(null);
@@ -66,7 +68,7 @@ function useTransientNotice(): Notice | null {
     if (!rush && wasRush.current && sold0.current !== null) {
       const hood = hoodOf(g, 'gameDay');
       const shop = g.shops[hood];
-      const text = gameDayPopText(sold0.current, shop.sold, valuePerPizza(hood, shop, g.vehicle, featureMults(g, hood, Date.now()), cityOf(g)));
+      const text = gameDayPopText(sold0.current, shop.sold, valuePerPizza(hood, shop, g.vehicle, featureMults(g, hood, gameNow()), cityOf(g)));
       sold0.current = null;
       show({ text, good: true }, NOTICE_MS);
       emitPayout();
@@ -129,8 +131,9 @@ const RivalCard = memo(function RivalCard() {
   // Reads the live store below (like the order chip): React Compiler must not cache that.
   'use no memo';
   const hood = useGame((s) => s.game.active);
+  const revealUp = useRevealUp();
   // the face and what changes under a running chip (whole seconds left, the pies bar's 5% step), in one string
-  const key = useGame((s) => rivalLite(rivalView(s.game, s.game.active, Date.now())));
+  const key = useGame((s) => rivalLite(rivalView(s.game, s.game.active, gameNow())));
   const phase = key.split('|')[1];
   const [result, setResult] = useState<{ kind: 'won' | 'lost'; hood: typeof hood } | null>(null);
   const prev = useRef({ phase, hood });
@@ -165,8 +168,9 @@ const RivalCard = memo(function RivalCard() {
 
   const g = useGame.getState().game;
   const shown = result && result.hood === hood ? result.kind : null;
-  const m: RivalCardModel = rivalCard(rivalView(g, hood, Date.now()), hood, shown, cityOf(g));
-  const up = m.face === 'running' || m.face === 'won' || m.face === 'lost';
+  const m: RivalCardModel = rivalCard(rivalView(g, hood, gameNow()), hood, shown, cityOf(g));
+  // D505: a recipe card is dismissed first; the rival's row waits behind it
+  const up = (m.face === 'running' || m.face === 'won' || m.face === 'lost') && !revealUp;
   useHold('rival', up);
   if (!up) return null;
   if (m.face === 'running') {
@@ -211,16 +215,17 @@ export const LayerStack = memo(function LayerStack() {
   const bannerOpen = useBannerOpen();
   const top = useGame((s) => layerTop({
     orderUp: chipPhase(s.game) !== 'none',
-    eventUp: !!eventBannerView(eventViewNow(Date.now(), s.game)),
+    eventUp: !!eventBannerView(eventViewNow(gameNow(), s.game)),
     attack: attackLite(s.game).face,
     collapsed: !bannerOpen,
   }));
   const base = useGame((s) => {
     const g = s.game;
-    return gameDayBanner(gameDayView(g, Date.now()), g.city) || boatBanner(boatsView(g, Date.now()), g.city);
+    return gameDayBanner(gameDayView(g, gameNow()), g.city) || boatBanner(boatsView(g, gameNow()), g.city);
   });
   const transient = useTransientNotice();
-  const text = transient?.text ?? base;
+  // D505: the notice waits while a recipe card is up (its title would be covered)
+  const text = useRevealUp() ? '' : transient?.text ?? base;
   useHold('notice', !!text);
   return (
     <View testID="layer-stack" pointerEvents="box-none" style={[styles.stack, { top }]}>

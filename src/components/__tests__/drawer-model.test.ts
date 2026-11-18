@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 import { DECOR_KINDS } from '../../content/tuning';
 import * as G from '../../engine/game';
-import { drawerCards, drawerKey } from '../drawer-model';
+import { buyKeyOf, drawerCards, drawerKey, parseBuyKey, type DrawerBuy } from '../drawer-model';
 
 const base = (cash = 0): G.GameState => ({ ...G.newGame(0), cash });
 const withShop = (s: G.GameState, id: 'downtown' | 'suburbs', patch: Partial<G.Shop>): G.GameState => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } } });
@@ -151,5 +151,21 @@ describe('the drawer after the tutorial (P1)', () => {
   test('the cache key knows the tutorial has ended', () => {
     const s = after();
     expect(drawerKey({ game: s, id: 'downtown' })).not.toBe(drawerKey({ game: { ...s, seenScenes: [] }, id: 'downtown' }));
+  });
+});
+
+describe('C137: the card buy key round-trips to the typed buy', () => {
+  test('every card the drawer lists parses back to its own buy', () => {
+    const v = drawerCards({ game: base(), id: 'downtown' });
+    for (const c of [...v.cards, ...v.decor]) expect(parseBuyKey(buyKeyOf(c.buy))).toEqual(c.buy);
+  });
+  test('the three shapes, and keys that were never written', () => {
+    const fleet: DrawerBuy = { t: 'fleet' };
+    expect(buyKeyOf(fleet)).toBe('fleet');
+    expect(parseBuyKey('up:expand')).toEqual({ t: 'upgrade', what: 'expand' });
+    expect(parseBuyKey('decor:nope')).toBeNull();
+    expect(parseBuyKey('decor:')).toBeNull();
+    expect(parseBuyKey('prep')).toBeNull();
+    expect(parseBuyKey('')).toBeNull();
   });
 });

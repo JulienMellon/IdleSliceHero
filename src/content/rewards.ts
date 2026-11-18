@@ -6,7 +6,7 @@ export type TaskKind = 'upgrades' | 'walkins' | 'deliveries' | 'baked' | 'earn' 
 export const TASK_KINDS: readonly TaskKind[] = ['upgrades', 'walkins', 'deliveries', 'baked', 'earn', 'offline', 'booster', 'hire', 'decor', 'dailyDone', 'days', 'build', 'ovens', 'fleet', 'bonusTaps'];
 
 /** When a task may be generated. The engine maps each key to a check on the game state. */
-export type Eligibility = 'always' | 'walkins' | 'deliveries' | 'booster' | 'hire' | 'decor' | 'build' | 'fleet';
+export type Eligibility = 'always' | 'upgrades' | 'walkins' | 'deliveries' | 'booster' | 'hire' | 'decor' | 'build' | 'fleet';
 
 /** How a target is set: a fixed number, or a rate (pies or cash per second) × seconds, rounded to 2 significant figures. */
 export type TaskScale = { fixed: number } | { rate: 'walkin' | 'driver' | 'city' | 'income'; seconds: number };
@@ -74,8 +74,11 @@ export const WEEKLY_CHEST_DIAMONDS = 8;
 /** The final weekly chest's cosmetic, rotating by ISO week number. */
 export const WEEKLY_COSMETICS: readonly string[] = ['oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold'];
 
+/** C107: an "upgrades x N" task is offered only while the cheapest next level costs no more than this many seconds of the city's income: late in the game (Uptown) one level can take days, and ten of them in a day can't be done. */
+export const UPGRADE_TASK_MAX_SECONDS = 3600;
+
 export const DAILY_POOL: readonly PoolEntry[] = [
-  { kind: 'upgrades', scale: { fixed: 10 }, eligible: 'always' },
+  { kind: 'upgrades', scale: { fixed: 10 }, eligible: 'upgrades' },
   { kind: 'walkins', scale: { rate: 'walkin', seconds: 600 }, eligible: 'walkins' },
   { kind: 'deliveries', scale: { rate: 'driver', seconds: 600 }, eligible: 'deliveries' },
   { kind: 'baked', scale: { rate: 'city', seconds: 600 }, eligible: 'always' },
@@ -96,7 +99,7 @@ export const WEEKLY_POOL: readonly PoolEntry[] = [
   { kind: 'ovens', scale: { fixed: 5 }, eligible: 'always' },
   { kind: 'earn', scale: { rate: 'income', seconds: 3 * 3600 }, eligible: 'always' },
   { kind: 'fleet', scale: { fixed: 1 }, eligible: 'fleet' },
-  { kind: 'upgrades', scale: { fixed: 60 }, eligible: 'always' },
+  { kind: 'upgrades', scale: { fixed: 60 }, eligible: 'upgrades' },
   { kind: 'deliveries', scale: { rate: 'driver', seconds: 3600 }, eligible: 'deliveries' },
 ];
 

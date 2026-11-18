@@ -15,6 +15,7 @@ import { eventNews, NEWS_MS, newsItems, newsKey, RECIPE_HEADER, type NewsItem } 
 import { RecipeArt } from './recipe-art';
 import { emitReveal } from './reveal-bus';
 import { STACK } from './stack-model';
+import { gameNow } from '../../engine/clock';
 
 const COINS = 8;
 
@@ -24,7 +25,7 @@ export const NewsToast = memo(function NewsToast() {
   // the batch is taken when something is waiting and nothing covers the screen (a scene, the return popup, the title card)
   const key = useGame((s) => (gameCovered(s) ? '' : newsKey(s.game)));
   // an event that is running: its start line is a toast too, once per event per launch
-  const eventId = useGame((s) => eventBannerView(eventViewNow(Date.now(), s.game))?.id ?? '');
+  const eventId = useGame((s) => eventBannerView(eventViewNow(gameNow(), s.game))?.id ?? '');
   const told = useRef('');
   const [queue, setQueue] = useState<NewsItem[]>([]);
   const [pop] = useState(() => new Animated.Value(0));
@@ -42,7 +43,7 @@ export const NewsToast = memo(function NewsToast() {
   useEffect(() => {
     if (!eventId || told.current === eventId) return;
     told.current = eventId;
-    const b = eventBannerView(eventViewNow(Date.now(), useGame.getState().game));
+    const b = eventBannerView(eventViewNow(gameNow(), useGame.getState().game));
     if (b) setQueue((q) => [...q, eventNews(b)]);
   }, [eventId]);
 

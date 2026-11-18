@@ -10,7 +10,6 @@ import { allHeadsHired, type GameState, type Shop } from '../game';
 import { grantCosmetic } from '../rewards';
 import type { Feature } from './types';
 import { cityOf, hoodIds, type CityDef } from '../../content/cities';
-import { HOME_CITY } from '../../content/cities/home';
 
 /** One thing the UI should celebrate once: a star just earned, or a cosmetic a milestone just gave. */
 export type MasteryNews = { kind: 'star'; shopId: NeighborhoodId; star: MasteryStar } | { kind: 'cosmetic'; id: string };
@@ -45,12 +44,12 @@ const topGrade = (city: CityDef): number => city.fit.ovenGrades.length - 1;
 export const starKey = (shopId: NeighborhoodId, star: MasteryStar) => `${shopId}:${star}`;
 
 /** Which of a shop's three stars it has. */
-export function masteryStars(shop: Shop, city: CityDef = HOME_CITY): Record<MasteryStar, boolean> {
+export function masteryStars(shop: Shop, city: CityDef): Record<MasteryStar, boolean> {
   return { heads: allHeadsHired(shop), flagship: shop.footprint >= topFootprint(city), golden: shop.grade >= topGrade(city) };
 }
 
 /** Stars a shop has, 0..3. */
-export const shopStars = (shop: Shop, city: CityDef = HOME_CITY): number => MASTERY_STARS.filter((k) => masteryStars(shop, city)[k]).length;
+export const shopStars = (shop: Shop, city: CityDef): number => MASTERY_STARS.filter((k) => masteryStars(shop, city)[k]).length;
 
 /** Stars in the whole city, 0..18. */
 export function masteryTotal(g: GameState): number {
@@ -126,13 +125,31 @@ function milestoneCosmetic(g: GameState, total: number): string | null {
  * Pay every star not yet paid, then every milestone not yet given. `silent`: the first catch-up on a save from before the
  * feature (no news, one summary). Returns `g` itself when nothing is owed.
  */
+/** The stars the shops have, as one number (three bits a shop): the same number as last time, with nothing owed then, means nothing is owed now (M62). */
+function starsFingerprint(g: GameState): number {
+  const city = cityOf(g);
+  let fp = 0;
+  for (const id of hoodIds(city)) {
+    const shop = g.shops[id];
+    fp = fp * 8 + (allHeadsHired(shop) ? 1 : 0) + (shop.footprint >= topFootprint(city) ? 2 : 0) + (shop.grade >= topGrade(city) ? 4 : 0);
+  }
+  return fp;
+}
+/** The fingerprint each mastery state was last settled at with nothing owed. */
+const SETTLED = new WeakMap<MasteryState, number>();
+
 function settle(g: GameState): GameState {
   const st = read(g);
+  const fp = starsFingerprint(g);
+  if (st.synced && SETTLED.get(st) === fp) return g;
   const earned = earnedKeys(g);
   const fresh = earned.filter((e) => !st.announced.includes(e.key));
   const total = earned.length;
   const owed = MILESTONES.filter((t) => total >= t && !st.granted.includes(t));
-  if (st.synced && !fresh.length && !owed.length) return g;
+  if (st.synced && !fresh.length && !owed.length) {
+    SETTLED.set(st, fp);
+    return g;
+  }
   const silent = !st.synced;
   let rewards = g.rewards;
   const news: MasteryNews[] = [];

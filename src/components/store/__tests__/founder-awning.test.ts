@@ -34,7 +34,7 @@ describe('the founder awning (the Starter Pack\'s cosmetic)', () => {
   });
 
   test('worn, it reaches the FrontWall props (what storefront.tsx passes) and the look it draws', () => {
-    const src = { id: 'downtown' as const, name: 'Main', shop: { footprint: 0, prep: 1, counter: 1, drivers: 0, managed: false, line: { prepped: 0 }, decor: { plants: 0, tables: 0, signage: 0 } }, running: false, rate: 0, vehicle: 0 };
+    const src = { id: 'downtown' as const, name: 'Main', shop: { footprint: 0, prep: 1, counter: 1, drivers: 0, managed: false, line: { prepped: 0 }, decor: { plants: 0, tables: 0, signage: 0 } }, running: false, rate: 0, vehicle: 0, worn: [] as string[], first: true };
     const off = furnitureInputs(src);
     const on = furnitureInputs({ ...src, worn: ['awning-founder'] });
     expect(off.awningFounder).toBeFalsy();

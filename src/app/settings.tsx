@@ -13,8 +13,7 @@ import { copyText } from '@/components/store/copy-text';
 import { PRIVACY_URL, SUPPORT_URL } from '@/components/store/links';
 import { analyticsNote, analyticsSwitchText, copyLine, INSTALL_ID_NOTE, installIdText, RESTORING, restoreResult } from '@/components/store/settings-model';
 import { money } from '@/engine/format';
-import { analytics, purchases } from '@/services';
-import { privacy } from '@/services/runtime';
+import { analytics, isOptedOut, purchases } from '@/services';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
 
@@ -38,7 +37,7 @@ export default function Settings() {
     } else prefs.setMusic(!music);
   };
   // the opt-out is saved by the privacy service; the switch shows what it holds now
-  const [shareOn, setShareOn] = useState(() => !privacy.isOptedOut());
+  const [shareOn, setShareOn] = useState(() => !isOptedOut());
   const [installId] = useState(() => installIdText(analytics.installId()));
   const [copied, setCopied] = useState('');
   const [restoring, setRestoring] = useState(false);

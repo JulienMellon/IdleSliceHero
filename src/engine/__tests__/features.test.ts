@@ -129,6 +129,32 @@ describe('feature registry', () => {
     });
   });
 
+  it('station rates (A32, T94): a stationMult hook scales one station, takes the shop below its kitchen cap, and leaves demand alone', () => {
+    const ovenHalf: Feature<number> = { key: 'ovenHalf', init: () => 0, migrate: () => 0, stationMult: (_g, id) => (id === 'downtown' ? { oven: 0.5 } : undefined) };
+    const prepSlow: Feature<number> = { key: 'prepSlow', init: () => 0, migrate: () => 0, stationMult: () => ({ prep: 0.8, counter: 2 }) };
+    // a crowd the kitchen can't feed: the slowest station decides
+    const kitchenBound = (g: G.GameState): G.GameState => ({ ...g, shops: { ...g.shops, downtown: { ...g.shops.downtown, prep: 5, ovens: 5, counter: 5, drivers: 50, tables: 50, footprint: 3 } } });
+    const plain = kitchenBound(G.newGame(T0));
+    const sh = plain.shops.downtown;
+    const slowest = Math.min(G.prepRate(sh), G.ovenRate(sh), G.counterRate(sh));
+    expect(G.shopRate(sh, plain.vehicle)).toBeCloseTo(slowest, 9);
+    withFeatures([ovenHalf], () => {
+      const g = kitchenBound(G.newGame(T0));
+      const fx = G.featureMults(g, 'downtown', T0);
+      expect(fx).toEqual({ value: 1, demand: 1, stations: { prep: 1, oven: 0.5, counter: 1 } });
+      expect(G.ovenRate(sh, fx)).toBeCloseTo(G.ovenRate(sh) * 0.5, 9);
+      expect(G.shopRate(sh, g.vehicle, fx)).toBeCloseTo(Math.min(G.prepRate(sh), G.ovenRate(sh) * 0.5, G.counterRate(sh)), 9);
+      expect(G.demandRate(sh, g.vehicle, fx)).toBeCloseTo(G.demandRate(sh, g.vehicle), 9);
+      expect(G.lineRates('downtown', { ...sh, sold: 9 }, g.vehicle, 1, fx).oven).toBeCloseTo(G.ovenRate(sh) * 0.5, 9);
+      // another shop is untouched
+      expect(G.featureMults(g, 'uptown', T0)).toEqual({ value: 1, demand: 1 });
+    });
+    withFeatures([ovenHalf, prepSlow], () => {
+      const fx = G.featureMults(kitchenBound(G.newGame(T0)), 'downtown', T0);
+      expect(fx.stations).toEqual({ prep: 0.8, oven: 0.5, counter: 2 });
+    });
+  });
+
   it('multipliers: a running line pays the multiplied price', () => {
     const run = () => {
       let g = demandBound(G.newGame(T0));

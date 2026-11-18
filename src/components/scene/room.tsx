@@ -561,6 +561,6 @@ export { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, StreetProp } from './
  * Where new features draw inside the shop scene: above the floor and furniture, below the HUD. The storefront mounts it once
  * over the scene (an absolute-fill layer is the overlay's own job). With no entries it renders nothing and adds no view.
  */
-export const SceneOverlays = memo(function SceneOverlays({ shopId, width, height, viewX0, viewX1 }: { shopId: string; width: number; height: number; viewX0?: number; viewX1?: number }) {
-  return <SceneSlots items={SCENE_OVERLAYS} shopId={shopId} width={width} height={height} viewX0={viewX0} viewX1={viewX1} />;
+export const SceneOverlays = memo(function SceneOverlays({ shopId, width, height }: { shopId: string; width: number; height: number }) {
+  return <SceneSlots items={SCENE_OVERLAYS} shopId={shopId} width={width} height={height} />;
 });
