@@ -6,7 +6,7 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 version: 5.19                   # scope: a city is only a content pack (Julien 2026-11-18); cities beyond Boston on hold
 step: verify                     # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
-last_shots: v5.18-r3           # label of the last screenshot set that passed verify
+last_shots: v5.19                # verify r1: 9 changed (seam 00 24 104 105; R1L 145 86 86b 76; 116 under check)
 codecritic_range_start: eafbb5a
 cards:                 # todo | running | done | partial | blocked
   R0: done  R0p: done  R1: done  R6: done  R1L: done  R5c: done  R7a: done  R7b: done
