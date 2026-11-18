@@ -38,3 +38,4 @@ next: fresh session; read docs/build/sessions/S5-v5.18.md, resume wave 4 fixes (
 - 2026-11-17 Julien: A2 steps carried to v5.19 (music STATE R1); Boston uses home stand-in tracks.
 - 2026-11-17 Restart. T2 partial (shell city-aware, report-model fixed; step 6 open: 106_t2 Boston load "reading 'name'"). V2 steps 1-6 done (140_v2, tiers 1-3 pixel-identical). tsc pass; 2 fails shift-model.test.ts footprint 3/4 (D484) -> V2. Relaunched T2 + V2.
 - 2026-11-17 Both relaunched agents hit the 5h limit; session ended. WIP committed (tsc pass, 1764/1766 tests).
+- 2026-11-18 S5 resumed (npm ci, playwright, tsc pass). Relaunched T2 (step 6) + V2 (night tint, D484).
