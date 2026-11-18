@@ -45,7 +45,8 @@ type Ids = { glow: string; oak: string; lights: ReturnType<typeof lightsFor>; /*
 // ---------------------------------------------------------------------------------------------------------------
 // Shared pieces
 
-const CLOUDS = cloud(40, -62, 1) + cloud(250, -78, 1.25) + cloud(330, -20, 0.8);
+// Both banks sit inside x 106..274 and below y -92, so every panel crop (narrowest: a tall frame shows about x 103..297 and y -100..200) holds them whole: a cloud cut by the frame edge read as a pale rectangle or a stray dot (D510).
+const CLOUDS = cloud(118, -52, 0.9) + cloud(214, -66, 1);
 
 const FAR_CITY = skyline(140, [
   [-10, 34, 150], [22, 26, 196], [46, 30, 170], [74, 22, 214], [94, 34, 160], [126, 28, 230], [152, 30, 190], [180, 24, 240], [202, 34, 176],

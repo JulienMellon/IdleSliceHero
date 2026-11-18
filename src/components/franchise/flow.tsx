@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   goGhost: { backgroundColor: '#fff' },
   goText: { fontFamily: F.bold, fontSize: 16, color: '#fff', textAlign: 'center' },
   moment: { flex: 1, backgroundColor: '#8F2216', justifyContent: 'space-between', paddingHorizontal: 22 },
-  momentBody: { alignItems: 'center', gap: 10 },
+  momentBody: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingBottom: 16 },
   momentSign: { fontFamily: F.bold, fontSize: 14, letterSpacing: 4, color: '#FFE7C2' },
   momentTitle: { fontFamily: F.bold, fontSize: 28, color: '#fff', textAlign: 'center' },
   starsWrap: { alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' },
