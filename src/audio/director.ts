@@ -5,7 +5,7 @@
 import { setAudioModeAsync } from 'expo-audio';
 import { AppState, Platform } from 'react-native';
 
-import { cityOf, hoodIds } from '../content/cities';
+import { CITIES, HOME_ID, cityOf, hoodIds } from '../content/cities';
 import type { NeighborhoodId, PanelCue } from '../content/types';
 import * as G from '../engine/game';
 import { useGame } from '../store/game-store';
@@ -51,6 +51,13 @@ let lastScenePanel = '';
 /** The neighbourhood whose sounds `hood` plays in `city` (default: the open game's city; see `audioHood`). */
 function soundOf(hood: NeighborhoodId, city?: string): NeighborhoodId {
   return audioHood(hood, city ?? useGame.getState().game.city);
+}
+
+/** The neighbourhood whose sounds the bid plays in `city` (default: the open game's): its bid's neighbourhood, else the home city's bid neighbourhood (card R7a). */
+function bidSound(city?: string): NeighborhoodId {
+  const id = city ?? useGame.getState().game.city;
+  const hood = (CITIES[id ?? HOME_ID]?.bid ?? CITIES[HOME_ID].bid)?.hood;
+  return hood === undefined ? soundOf(useGame.getState().game.active) : soundOf(hood, id);
 }
 
 /** The city a scene belongs to: its own, so a replay of a home scene from a Boston save still plays home sounds (AU87). */
@@ -128,7 +135,7 @@ function onPanel(sceneId: string, panel: number) {
     case 'triumph':
       return mixer.story(`triumph_${hood}`, true);
     case 'bell-triumph':
-      return mixer.story('triumph_waterfront', true);
+      return mixer.story(`triumph_${bidSound(found.city)}`, true);
     case 'recipe':
       return mixer.story('recipe', true);
     case 'reunion':
@@ -212,7 +219,7 @@ function handle(e: AudioEvent) {
       if (e.what === 'decor') mixer.sfx('sparkle', { jitter: 0.5 });
       if (e.sting === 'milestone' || e.sting === 'milestone_big') mixer.sfx('milestone', { jitter: 0 });
       // the bid holds a tension chord the Dock Saved scene resolves; a new pizzeria plays its own neighbourhood's motif
-      if (e.what === 'bid') return mixer.sting('waterfront', 'bid', { immediate: true });
+      if (e.what === 'bid') return mixer.sting(bidSound(), 'bid', { immediate: true });
       if (e.what === 'build' && e.hood) return mixer.sting(soundOf(e.hood), 'build', { immediate: true });
       if (e.sting) mixer.sting(active, e.sting);
       return;

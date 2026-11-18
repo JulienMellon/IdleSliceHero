@@ -87,6 +87,3 @@ export function cityNumbers(index: number, adjust = true): CityNumbers {
     bid: { cost: round3(PIER9_BID.cost * p), unlockPizzas: PIER9_BID.unlockPizzas },
   };
 }
-
-/** Boston, the card T2 pack's numbers (src/content/cities/boston/ reads these: it owns the names, the scenes and the layout, this owns the prices). */
-export const BOSTON_NUMBERS: CityNumbers = cityNumbers(1);

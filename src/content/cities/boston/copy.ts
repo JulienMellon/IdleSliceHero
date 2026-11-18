@@ -1,6 +1,8 @@
 // Boston's copy that is not a scene (docs/story/BOSTON-SCRIPT.md, "Per neighbourhood"), as plain data keyed exactly as the script keys it. Card T2 wrote the
 // text; the screens that show it (the recipe cards, the heads' bubbles, the finale perk card, each layer's strings) read it by key when the
 // components under src/components/{endgame,layers}/ are made city-aware (they read the home city's tables today).
+import type { CityTeaser } from '../types';
+
 export interface NamedLine {
   name: string;
   line: string;
@@ -261,4 +263,12 @@ export const BOSTON_COPY: Readonly<Record<string, string>> = {
   'layer.industrial.shift.night': B['layer.cambridge.shift.night'],
   'layer.industrial.shift.info.title': B['layer.cambridge.shifts.title'],
   'layer.industrial.jam.alert': B['layer.cambridge.breakdown.banner'],
+};
+
+/** What the home city says about Boston before the player gets there (the "Coming soon: Boston" card; `teaserFor` in ../index.ts reads it). Nonna signs it. */
+export const BOSTON_TEASER: CityTeaser = {
+  title: 'Coming soon: Boston',
+  lines: ['Victor Crust is waiting in Boston. So is the cold.', 'Your crew is packing the sauce. Keep the ovens hot.'],
+  signoff: 'I knit you a sweater. Is ugly. Wear it anyway.',
+  from: 'Nonna Rosa',
 };

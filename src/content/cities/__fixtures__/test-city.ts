@@ -1,8 +1,9 @@
-// A test city (card R0, docs/PLAN-refactor.md P0). It is NOT in CITIES: a test registers it locally (see test-city-smoke.test.ts).
+// A test city (card R0, docs/PLAN-refactor.md P0; a full pack since card R7a: a cast, a teaser and copy overrides beside its scenes). It is NOT in CITIES:
+// a test registers it locally (see test-city-smoke.test.ts and content/__tests__/city-schema.test.ts).
 // Every number in its fit differs from the home city's on purpose, so an engine path that still reads the home tables (OVEN_GRADES, FOOTPRINTS,
 // VEHICLES in tuning.ts) gives a different answer from the city's own fit, and the smoke test says so.
 import type { CharacterId, Scene } from '../../types';
-import type { CityBid, CityDef, CityFit, LayerKind, NeighborhoodDef } from '../types';
+import type { CityBid, CityDef, CityFit, CityTeaser, LayerKind, NeighborhoodDef } from '../types';
 import type { HeadKind } from '../../tuning';
 
 export const TEST_CITY_ID = 'test-city';
@@ -116,9 +117,27 @@ const TEST_SCENES: Scene[] = TEST_IDS.flatMap((h, i) => [
     : scene(h, 4, { kind: 'challenge', neighborhood: h }, { perk: true, ...(i === TEST_IDS.length - 1 ? { reward: 'city-complete' as const } : {}) }),
 ]);
 
+/** Its characters: a pack can only name ids the shared cast knows, so this one stages two of the returning characters (the home cast). */
+export const TEST_CAST: readonly CharacterId[] = ['nonna-rosa', 'victor-crust'];
+
+/** What the city before it would say (the test registers nothing in CITY_ORDER, so `teaserFor` never reads it: the schema test checks its shape). */
+export const TEST_TEASER: CityTeaser = {
+  title: 'Coming soon: Testville',
+  lines: ['Testville is waiting.', 'Pack your ovens.'],
+  signoff: 'See you there.',
+  from: 'Nonna Rosa',
+};
+
+/** Its own words for two home keys (a pack's `copy` is keyed by the home keys; the schema test checks the keys and the placeholders). */
+export const TEST_COPY: Readonly<Record<string, string>> = {
+  'goal.mastery': 'Testing {n}/18',
+  'goal.mastery.next': 'Next test: {star} in {shop}',
+};
+
 export const TEST_CITY: CityDef = {
   id: TEST_CITY_ID,
   name: 'Testville',
+  cast: TEST_CAST,
   neighbourhoods: TEST_NEIGHBOURHOODS,
   scenes: TEST_SCENES,
   perks: Object.fromEntries(TEST_IDS.map((h) => [h, { who: 'Tester', text: `${h} perk`, priceMult: 1.1 }])),
@@ -127,6 +146,8 @@ export const TEST_CITY: CityDef = {
   managers: Object.fromEntries(TEST_IDS.map((h) => [h, { id: 'nonna-rosa', name: 'Tess', title: 'General Manager' as const }])),
   lieutenant: { id: 'megaslice-rep', name: 'Todd' },
   bid: TEST_BID,
+  teaser: TEST_TEASER,
+  copy: TEST_COPY,
   theme: 'city_theme',
   fit: TEST_FIT,
 };

@@ -125,9 +125,19 @@ export interface NightOvenLines {
   body: string;
 }
 
+/** What the city before this one says about it (the "Coming soon" card of the city ahead): a title, two lines, a sign-off and who signs it. Read by `teaserFor` (./index.ts). */
+export interface CityTeaser {
+  title: string;
+  lines: [string, string];
+  signoff: string;
+  from: string;
+}
+
 export interface CityDef {
   id: string;
   name: string;
+  /** The characters this city adds (its pack's cast.ts, one line in content/cast.ts). Its scenes may also use the home cast, the returning characters. */
+  cast: readonly CharacterId[];
   /** In build order: the first is built from the start, each next one after the one before. */
   neighbourhoods: NeighborhoodDef[];
   /** The whole story in play order. */
@@ -142,6 +152,8 @@ export interface CityDef {
   /** The local MegaSlice lieutenant, defeated in the city's finale. */
   lieutenant: Lieutenant;
   bid?: CityBid;
+  /** What the city before this one says about it: the next city's card reads it (`teaserFor`). Absent for a city nobody announces. */
+  teaser?: CityTeaser;
   /**
    * The city's voice (card R1). Every field is optional: a city without one is silent or generic, never the home city's, and the readers
    * take `cityOf(g).barks ?? {}`. A city pack fills them in (the home city's are in home/voice.ts).

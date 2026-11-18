@@ -24,18 +24,18 @@
 - Read-only: `src/content/cities/__fixtures__/test-city.ts` (R0), `src/engine/__tests__/home-ids-guard.test.ts` (the pattern).
 
 ## Steps
-- [ ] **1. Cast per pack.**
+- [x] **1. Cast per pack.**
   - Each pack has a `cast.ts` that imports nothing and exports its ids `as const`: home's sixteen, and Boston's seven.
   - `src/content/cast.ts` concatenates them (one line per city) and exports `CHARACTER_IDS` and `CharacterId`. `content/types.ts` re-exports both, so no importer changes.
   - `CityDef` gets `cast: readonly CharacterId[]`. The schema test checks that every scene's cast and the lieutenant are in the city's cast or the home cast. The home cast is the returning characters.
   - The array order must stay the same as today's `CHARACTER_IDS`: a test compares the two lists.
-- [ ] **2. Numbers in the pack.** `content/franchise.ts` keeps the scaling rule (`cityNumbers`, `PRICE_FIT`, `CITY_ORDER`). `BOSTON_NUMBERS` moves to `boston/fit.ts` as `cityNumbers(cityIndex('boston'))`, beside `BOSTON_FIT` (moved out of `data.ts`). The prices must stay identical: `economy.test.ts` and `number-ceiling.test.ts` pass unchanged.
-- [ ] **3. The teaser in the pack.**
+- [x] **2. Numbers in the pack.** `content/franchise.ts` keeps the scaling rule (`cityNumbers`, `PRICE_FIT`, `CITY_ORDER`). `BOSTON_NUMBERS` moves to `boston/fit.ts` as `cityNumbers(cityIndex('boston'))`, beside `BOSTON_FIT` (moved out of `data.ts`). The prices must stay identical: `economy.test.ts` and `number-ceiling.test.ts` pass unchanged.
+- [x] **3. The teaser in the pack.**
   - `CityDef` gets `teaser?: { title: string; lines: [string, string]; signoff: string; from: string }`: what the city before this one says about it.
   - Boston's comes from the `soon.boston.*` lines, word for word.
   - Add `teaserFor(g)`, which returns the next city's teaser, or null (next city by `CITY_ORDER`, through `cityOf`). Card R7b's sheet reads it.
   - Leave the `soon.boston.*` keys in the home table until R7b has switched its reader. R7b deletes them.
-- [ ] **4. Audio bid line.**
+- [x] **4. Audio bid line.**
   - `'waterfront'` in the bid stinger becomes `soundOf(cityOf(game).bid?.hood ?? <the home bid hood>)`.
   - `triumph_waterfront` keeps its cue name, but is chosen through the same lookup.
   - Same sound at home; Boston has no bid.
@@ -44,7 +44,7 @@
   - `franchise/map-art.ts`, `city-map.tsx`;
   - `endgame/boston-sheet.tsx`, `title-card.tsx`, `slots.tsx`.
   Comments don't count.
-- [ ] **6. A fresh pack plays.**
+- [x] **6. A fresh pack plays.**
   - Promote R0's test city to a full pack: a `cast`, a `teaser`, `copy` overrides, one scene per beat.
   - `problemsOf(testCity)` from the schema test returns `[]`.
   - The smoke test plays it from its opening to its last finale.

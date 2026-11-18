@@ -1,10 +1,11 @@
 // Every city the game has (card K1). The engine never imports a city's tables directly: it asks `cityOf(game)`.
 import type { NeighborhoodId } from '../types';
-import type { CityDef, LayerKind, NeighborhoodDef } from './types';
+import { CITY_ORDER } from '../franchise';
+import type { CityDef, CityTeaser, LayerKind, NeighborhoodDef } from './types';
 import { HOME_CITY } from './home';
 import { BOSTON_CITY } from './boston';
 
-export type { CityDef, CityFit, LayerKind } from './types';
+export type { CityDef, CityFit, CityTeaser, LayerKind } from './types';
 
 /** The id of the city a new game starts in, and the one an old save (from before cities) belongs to. */
 export const HOME_ID = 'home';
@@ -13,6 +14,17 @@ export const CITIES: Record<string, CityDef> = { [HOME_CITY.id]: HOME_CITY, [BOS
 
 /** The city a game is in: `GameState.city`, falling back to the home city for an id this build does not know. */
 export const cityOf = (g: { city?: string }): CityDef => CITIES[g.city ?? HOME_ID] ?? HOME_CITY;
+
+/**
+ * What the city after this one says about itself (card R7a: the "Coming soon" card of the city ahead), or null: the next city in CITY_ORDER that
+ * this build has a pack for, and only when that pack has a teaser. A city that is not in CITY_ORDER (a pack under test) announces nobody.
+ */
+export function teaserFor(g: { city?: string }): CityTeaser | null {
+  const at = CITY_ORDER.indexOf(cityOf(g).id as (typeof CITY_ORDER)[number]);
+  if (at < 0) return null;
+  const next = CITY_ORDER.slice(at + 1).find((id) => id in CITIES);
+  return (next !== undefined ? cityOf({ city: next }).teaser : undefined) ?? null;
+}
 
 type HoodEntry = { city: CityDef; def: NeighborhoodDef };
 let HOODS: Map<NeighborhoodId, HoodEntry> | undefined;

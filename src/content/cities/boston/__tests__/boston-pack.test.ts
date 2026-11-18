@@ -1,7 +1,7 @@
 // Boston's pack beyond the schema (card T2): the story's size and order, the numbers coming from the fit, the copy tables matching the data, and the
 // interlude chain that holds each beat 4 (and Dorchester's beat 3) back. The schema itself is src/content/__tests__/city-schema.test.ts.
 import { HEAD_KINDS } from '../../../tuning';
-import { BOSTON_NUMBERS } from '../../../franchise';
+import { BOSTON_NUMBERS } from '../fit';
 import { BOSTON_CITY } from '..';
 import { BOSTON_IDS } from '../data';
 import { BOSTON_BARKS, BOSTON_HEADS, BOSTON_LAYER_COPY, BOSTON_PERKS, BOSTON_RECIPES } from '../copy';

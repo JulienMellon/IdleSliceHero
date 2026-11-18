@@ -1,10 +1,9 @@
 // Boston, city 2: its neighbourhoods, perks, heads and managers, and the layer each neighbourhood plays (docs/story/BOSTON-SCRIPT.md, card W3).
-// The prices and values come from BOSTON_NUMBERS (src/content/franchise.ts, card E3), shop for shop in build order (North End = Downtown ... Dorchester = Uptown).
+// The prices and values come from BOSTON_NUMBERS (./fit.ts: the scaling rule is src/content/franchise.ts, card E3), shop for shop in build order (North End = Downtown ... Dorchester = Uptown).
 import type { HeadKind } from '../../tuning';
-import type { CityFit, LayerKind, NeighborhoodDef, PerkDef } from '../types';
+import type { LayerKind, NeighborhoodDef, PerkDef } from '../types';
 import type { NeighborhoodId } from '../../types';
-import { HOME_FIT } from '../home/fit';
-import { BOSTON_NUMBERS } from '../../franchise';
+import { BOSTON_NUMBERS } from './fit';
 
 export const CITY_NAME = 'Boston';
 
@@ -76,16 +75,4 @@ export const BOSTON_LAYERS: Record<BostonHoodId, LayerKind | null> = {
   fenway: 'gameDay',
   cambridge: 'shifts',
   dorchester: 'boats',
-};
-
-/**
- * Boston's fit: oven grades and footprints are the home city's (they are priced as multiples of the shop's cost multiplier, so they scale by
- * themselves); the fleet and the first shop's heads are the fit's. The takeover scene must be one of Boston's own, so the second shop opens
- * after North End's second beat, at the count that beat plays at.
- */
-export const BOSTON_FIT: CityFit = {
-  ...HOME_FIT,
-  vehicles: HOME_FIT.vehicles.map((v, i) => (i === 0 ? v : { ...v, cost: BOSTON_NUMBERS.vehicleCosts[i - 1] })),
-  headCostFirst: BOSTON_NUMBERS.headCostFirst,
-  takeover: { sceneId: 'north-end-2', pizzas: 424 },
 };

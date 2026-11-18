@@ -1,7 +1,9 @@
 // Boston, city 2 (card T2): a second folder like ../home, added to CITIES in ../index.ts. Story: docs/story/BOSTON-SCRIPT.md.
 import type { CityDef } from '../types';
-import { BOSTON_COPY } from './copy';
-import { BOSTON_FIT, BOSTON_LAYERS, CITY_NAME, HEADS, MANAGERS, NEIGHBORHOODS, PERKS } from './data';
+import { BOSTON_CAST } from './cast';
+import { BOSTON_COPY, BOSTON_TEASER } from './copy';
+import { BOSTON_LAYERS, CITY_NAME, HEADS, MANAGERS, NEIGHBORHOODS, PERKS } from './data';
+import { BOSTON_FIT } from './fit';
 import { BOSTON_SCENES } from './scenes';
 import { HOME_CITY } from '../home';
 import { HEADS as HOME_HEADS } from '../home/data';
@@ -10,6 +12,7 @@ import { HOME_NIGHT_OVEN_LINES } from '../home/voice';
 export const BOSTON_CITY: CityDef = {
   id: 'boston',
   name: CITY_NAME,
+  cast: BOSTON_CAST,
   neighbourhoods: NEIGHBORHOODS,
   scenes: BOSTON_SCENES,
   perks: PERKS,
@@ -18,6 +21,7 @@ export const BOSTON_CITY: CityDef = {
   managers: MANAGERS,
   // Trish Vance, MegaSlice regional VP: she loses by telling the truth, not by being caught (the Dorchester finale). Victor Crust is still the CEO.
   lieutenant: { id: 'trish-vance', name: 'Trish' },
+  teaser: BOSTON_TEASER,
   // no bid: Boston's finale is a challenge win like the other five, there is no Pier 9
   theme: 'city_theme',
   // the lines Boston says in place of the home city's, by the same keys (card R5c; content/copy/index.ts `t` reads them first)
