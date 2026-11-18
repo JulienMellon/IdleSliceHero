@@ -306,3 +306,24 @@ describe('a Boston save keeps its own shops’ slices across a reload', () => {
     expect((g.x.rival as { won: unknown[] }).won).toEqual([]);
   });
 });
+
+describe('Boston reads its own tables (A35, C141, T108)', () => {
+  it('the founder countdown names Father Dom in Boston and Nonna at home', () => {
+    const b = after();
+    expect(b.city).toBe('boston');
+    expect(G.founderCountdownText(b)).toMatch(/^Father Dom takes over/);
+    expect(G.founderCountdownText(G.newGame(WED))).toMatch(/^Nonna takes over/);
+    expect(G.nonnaCountdownText(b)).toBe(G.founderCountdownText(b));
+  });
+  it('def, perkOf and the price helpers find a Boston neighbourhood without a city argument', () => {
+    for (const n of BOSTON_CITY.neighbourhoods) {
+      expect(G.def(n.id)).toBe(n);
+      expect(G.headCost(n.id, 'prep')).toBe(G.headCost(n.id, 'prep', BOSTON_CITY));
+      expect(G.buildAllIn(n.id)).toBe(G.buildAllIn(n.id, BOSTON_CITY));
+      expect(G.stationCost(n.id, 'prep', 3)).toBe(G.stationCost(n.id, 'prep', 3, BOSTON_CITY));
+    }
+    const shop = { ...G.newGame(WED).shops[HOME[0]], perk: true };
+    expect(G.perkOf(BOSTON[1], shop)).toBe(BOSTON_CITY.perks[BOSTON[1]]);
+    expect(G.def(HOME[1])).toBe(HOME_CITY.neighbourhoods[1]);
+  });
+});

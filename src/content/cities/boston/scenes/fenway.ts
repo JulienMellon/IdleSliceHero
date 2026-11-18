@@ -61,7 +61,7 @@ export const FENWAY_SCENES: Scene[] = [
     panels: [
       panel('fenway', [['trish-vance', 'happy']], `Across from the ballpark, a MegaSlice opens. Name tag: PRESIDENT, BOSTON.`, [
         ['Trish', `Great news! MegaSlice is bidding on the ballpark. Our pizza tastes like winning.`],
-      ], { prop: 'name-tag', propText: 'TRISH VANCE · PRESIDENT, BOSTON' }),
+      ], { prop: 'name-tag', propText: 'TRISH VANCE PRESIDENT, BOSTON' }),
       panel('fenway', [['manny', 'angry'], ['trish-vance', 'neutral']], null, [
         ['Trish', `I've never seen a game. Sports aren't my thing.`],
         ['Trish', `...Your shortstop drops his elbow on the swing, by the way.`],

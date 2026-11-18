@@ -539,16 +539,18 @@ export const useGame = create<Store>((set, get) => {
 
     bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: G.pier9Price(get().game) }, plain('bid')),
 
-    franchise: () => {
-      const g = get().game;
-      if (!canFranchise(g)) return false;
-      emitAudio({ type: 'click' });
-      // the new city's story starts at once (no wait left over from the last scene), and the offline summary of the old one is moot
-      set({ game: franchiseCity(g, Date.now()), lastSceneEndPlay: null, offline: null });
-      queueScene();
-      void get().save();
-      return true;
-    },
+    franchise: () =>
+      // C144: a load in flight would put the older (old-city) save over the new city; the franchise lands after it and says yes now
+      benefit(() => {
+        const g = get().game;
+        if (!canFranchise(g)) return false;
+        emitAudio({ type: 'click' });
+        // the new city's story starts at once (no wait left over from the last scene, no old city's taps or toast), and the offline summary of the old one is moot
+        set({ game: franchiseCity(g, Date.now()), lastSceneEndPlay: null, offline: null, rushTaps: [], lastKitchenTap: 0, toast: null });
+        queueScene();
+        void get().save();
+        return true;
+      }),
 
     build: (id) => {
       const ok = commit(G.buildShop(get().game, id), { name: `Build ${G.def(id, cityOf(get().game)).name}`, cost: G.def(id, cityOf(get().game)).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id }));

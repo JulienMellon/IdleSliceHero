@@ -26,7 +26,7 @@ export const NORTH_END_SCENES: Scene[] = [
       panel('megaslice-hq', [['victor-crust', 'neutral'], ['trish-vance', 'happy']], `MegaSlice Boston. Top floor. The blinds are closed. They are always closed.`, [
         ['Trish', `Great news, Victor. The pizza person is in Boston. It's already handled.`],
         ['Victor Crust', `Trish. Finally, somebody who brings me great news.`],
-      ], { prop: 'name-tag', propText: 'TRISH VANCE · REGIONAL VP' }),
+      ], { prop: 'name-tag', propText: 'TRISH VANCE REGIONAL VP' }),
       panel('megaslice-hq', [['trish-vance', 'neutral']], `She closes the blinds a little more.`, [
         ['Trish', `Lovely city, Boston. I've never been here before in my life.`],
       ]),
@@ -90,7 +90,7 @@ export const NORTH_END_SCENES: Scene[] = [
     panels: [
       panel('north-end', [['trish-vance', 'happy']], `Overnight, a MegaSlice opens across the square. Name tag: TRISH VANCE, REGIONAL VP.`, [
         ['Trish', `Father! Great news. MegaSlice is sponsoring your bake sale. Forever.`],
-      ], { prop: 'name-tag', propText: 'TRISH VANCE · REGIONAL VP' }),
+      ], { prop: 'name-tag', propText: 'TRISH VANCE REGIONAL VP' }),
       panel('north-end', [['father-dom', 'surprised'], ['trish-vance', 'neutral']], null, [
         ['Father Dom', `Sponsoring how?`],
         ['Trish', `Your table moves inside our store. Next to the soda machine. Very visible. Very holy.`],
