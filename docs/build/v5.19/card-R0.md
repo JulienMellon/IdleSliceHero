@@ -10,7 +10,7 @@
 
 ## Steps
 - [x] **1. CI.** `ci.yml` runs on push and pull_request: checkout, setup-node (the version in `package.json` engines, or 22), `npm ci`, `npx tsc --noEmit`, `npm test`. Do not deploy anything.
-- [ ] **2. Lint.** Flat config with `eslint-config-expo`. The `expo install` command is refused by the proxy: use `npm install -D` with the version from `node_modules/expo/bundledNativeModules.json`, or the latest that `expo lint` accepts. Rules:
+- [x] **2. Lint.** Flat config with `eslint-config-expo`. The `expo install` command is refused by the proxy: use `npm install -D` with the version from `node_modules/expo/bundledNativeModules.json`, or the latest that `expo lint` accepts. Rules:
   - `import/no-cycle`: warn.
   - `no-restricted-imports`, error: `src/engine/**` and `src/content/**` may not import from `components`, `store`, `audio` or `services`.
   - `no-restricted-imports`, warn for now: `src/store/**` may not import from `components`. A later card (R3, in `later/`) turns it to error.
