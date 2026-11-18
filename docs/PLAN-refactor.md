@@ -1,6 +1,6 @@
 # Refactoring plan (review of 2026-11-18, at `e0100e1`)
 
-Status: **plan only, nothing built.** This came from a read-only review: `node_modules` was not installed, so tsc and jest were not run. Every number below comes from grep or `wc` on the tree.
+Status: **plan only, nothing built.** The phases are now loop cards in `docs/build/v5.19/` (`card-R*.md`), scheduled in `docs/build/v5.19/VERSION.md`. This came from a read-only review: `node_modules` was not installed, so tsc and jest were not run. Every number below comes from grep or `wc` on the tree.
 
 ## What is already sound (leave it alone)
 - **Layering at the bottom is clean.** `src/engine` and `src/content` import nothing from `components`, `store`, `audio` or `services`. The engine is pure and node-tested: 20.5k lines of tests against 39.8k of source.
