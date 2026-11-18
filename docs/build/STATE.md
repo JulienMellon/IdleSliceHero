@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.18
-step: fix                       # setup | waves | verify | review | fix | close
-round: r1              # r1 | r2 | r3
-last_shots: v5.18              # label of the last screenshot set that passed verify
+step: review                    # setup | waves | verify | review | fix | close
+round: r2              # r1 | r2 | r3
+last_shots: v5.18-r2           # label of the last screenshot set that passed verify
 codecritic_range_start: 229f874
 cards:                 # todo | running | done | partial | blocked
   K1: done  W3: done  V1: done  E3: done  T2: done  A2: carried  V2: done
@@ -48,3 +48,5 @@ next: fresh session; read docs/build/sessions/S5-v5.18.md, resume wave 4 fixes (
 - 2026-11-18 Fix r1: K1 done (K2 K3 K4 A35 C141 C143 C135 C139 U22 G109 S65 T106 T107 C140; tsc pass, 1664 tests). Not fixed, need decision/card: A32-A37 U17 M62 U12 C107 D493 D495 D517 T94 T104. A2 launched (AU85).
 - 2026-11-18 Fix r1: A2 done (AU85 AU86 AU87 AU82 U8 C138; tsc pass, 61 audio tests). AU41 native module, AU39 AU40 device pass carried. V1 launched.
 - 2026-11-18 Fix r1: V1 partial (M68 U23 U21 T105; D508 already in tree; A29 carried, needs founder-awning.test.ts). tsc red only from V2's unfinished sign-clamp edit. Waiting V2, then verify r2.
+- 2026-11-18 Fix r1: V2 partial (G111 D511 D515 fixed; D508 D512 D514 partly; D513 A29 not). layoutOfShop mirror: no owner card (V2 lists it read-only) -> ask Julien. Round r2 verify.
+- 2026-11-18 Verify r2: tsc pass, 1830/1830, --only 106_t2,140_v2: 0 errors, 13 changed 7 same. r2 re-checks launched.

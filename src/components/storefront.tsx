@@ -32,13 +32,14 @@ import { Flip } from './scene/primitives';
 import { ScrollCues } from './scroll-cues';
 import { clearCueTop, cuesFor, onScrollAsk, queueShown, wantsOf, wrenchRect, type KitchenSpot, type PtRect, type ScrollTarget } from './scroll-cues-model';
 import { ovenSpot, WRENCH } from './layers/industrial/jam-model';
+import { layoutOfShop } from './layers/shop-layout';
 import { isTap, shopOpenScroll } from './scene/scroll';
 import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Rug, Stools, Table, WallPlanter } from './scene/props';
 import { ovenTier } from './scene/geometry';
 import { furnitureDeps, furnitureInputs, ladderInput, type FurnitureInputs } from './scene/furniture-inputs';
 import { LadderPiece } from './scene/ladder-props';
 import { NEON_W, neonSpot } from './scene/cosmetics';
-import { DuskTint, StringLights } from './scene/event-props';
+import { ColdFrost, DuskTint, StringLights } from './scene/event-props';
 import { eventLook } from './scene/event-look';
 import { activeEvent } from '../engine/features/events';
 import { NeonCounterSign } from './scene/cosmetic-props';
@@ -480,10 +481,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       })
     : [];
   const cues = cuesFor(wants, scrollX.current, width, fit, view.maxScroll);
-  // G111: a cue keeps 8 pt clear of the tappables on screen; the jam's wrench (the jam overlay's 44 pt button, on the true oven place of this plan) is the one a cue met
+  // G111: a cue keeps 8 pt clear of the tappables on screen; the jam's wrench (the jam overlay's 44 pt button, placed from the same `layoutOfShop` the overlay uses, so the two agree wherever it puts it) is the one a cue met
   const avoid: PtRect[] = [];
   if (jamOn) {
-    const o = ovenSpot(roomLay);
+    const o = ovenSpot(layoutOfShop(shop));
     avoid.push(wrenchRect(fit.ox + o.x * fit.s, fit.oy + o.y * fit.s, WRENCH, scrollX.current));
   }
   const cueTop = Math.round(fit.oy + (by + 56) * fit.s);
@@ -576,6 +577,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             );
           })()}
           {items.map((it) => it.el)}
+          {rep.state === 'cold' && <ColdFrost x={frame.x0 - 20} w={frame.width + 40} frontY={frontY} />}
           </G>
           {trafficFor(CARS, rivalOpen(game, id)).map((c, i) => {
             const dir = c.lane === 0 ? -1 : 1;
