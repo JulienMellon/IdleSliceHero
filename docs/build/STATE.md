@@ -35,3 +35,4 @@ next: v5.19 is outside the 11-13 handoff plan; ask Julien before starting it. v5
 - 2026-11-18 Fix r4: T2 partial (C146/C137 city-model halves; 1855 tests). Leftovers (founderName export, index.tsx goal cap + C137, D505, C134 C136 C133 T103) -> widened-scope programmer. shop-ui.tsx:71 piesToGo + storefront A37 -> V2 after it reports.
 - 2026-11-18 Fix r4: leftover U/N done (C107 bar, C137, D505 endgame banners, C134 C136 C133 T103; 1919 tests). Left for V2: shop-ui.tsx:72 piesToGo, storefront A37, layer-stack wait-for-reveal (D505).
 - 2026-11-18 Fix r4: A2 U8 fixed (director trackNow memo; 1919 tests). A2 card itself still carried (music STATE round R1).
+- 2026-11-18 Fix r4: V2 done (D512 D514 lift+frost C149 U25 A29 U21 T110; D481 already in HEAD; 45 strip-clear tests). Leftovers sent to V2: shop-ui piesToGo, storefront A37, layer-stack D505.
