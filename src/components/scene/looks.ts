@@ -37,7 +37,9 @@ export function lookFor(seed: number, worker = false): Look {
 }
 
 /** One idle driver of the sidewalk lane: the seed that draws their face, and whether they are checking a phone. */
-export interface DriverCast { seed: number; phone: boolean }
+export interface DriverCast { seed: number; phone: boolean; cap: string }
+/** The brand's cap, one colour per slot (D513: four drivers in one red cap read as clones): red, mustard, teal, plum; the jacket stays the brand's blue. */
+export const DRIVER_CAPS = ['#D9443A', '#E9A23B', '#2F9E8F', '#8B5FBF'] as const;
 const driverCastCache = new Map<number, DriverCast[]>();
 /**
  * The four idle drivers a shop shows (D416): a cast, not clones. The uniform stays the brand's (red cap, blue jacket), so the
@@ -62,7 +64,7 @@ export function driverCast(shopSeed: number): DriverCast[] {
       }
     }
     looks.push(lookFor(seed, true));
-    picked.push({ seed, phone: q === 1 });
+    picked.push({ seed, phone: q === 1, cap: DRIVER_CAPS[q] });
   }
   driverCastCache.set(shopSeed, picked);
   return picked;

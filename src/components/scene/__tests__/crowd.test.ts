@@ -506,11 +506,13 @@ describe('the sidewalk queues', () => {
       expect([seed, looks.filter((l) => l.trait === 2).length <= 1]).toEqual([seed, true]);
       expect([seed, looks.slice(0, 3).filter((l) => l.trait === 2).length <= 1]).toEqual([seed, true]); // no moustache on at least two of three
       expect([seed, cast.filter((c) => c.phone).length]).toEqual([seed, 1]);
+      expect([seed, new Set(cast.map((c) => c.cap)).size]).toEqual([seed, 4]); // D513: four caps, not four red clones
       expect(driverCast(seed)).toBe(cast); // stable
     }
     const sh = [...sideShops()].find((x) => x.name === 'fp3 full')!;
     const w = queuers(sideFrames(sh)[100]).filter((c) => c.props.kind === 'driver');
     expect(w.filter((c) => c.props.act === 'phone')).toHaveLength(1);
+    expect(new Set(w.map((c) => c.props.cap)).size).toBe(w.length); // D513: no two queued drivers share a cap
     expect(new Set(w.map((c) => Math.round(P(c.props.x, c.props.y)[1] / 2))).size).toBeGreaterThanOrEqual(3); // at three or more heights (D430)
   });
   // D430: the queued drivers overlapped ~40% at one height, feet on the sill. v5.14: the real silhouette (torso, cap and its brim) is what is measured,

@@ -50,7 +50,7 @@ import {
 } from './scene/ladder';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverlays, StreetProp } from './scene/room';
 import { FasciaSign } from './scene/facade';
-import { fasciaSignBox, slideInto, visibleSpan } from './scene/viewport';
+import { fasciaSignBox, slideInto, VIEW_MARGIN, visibleSpan } from './scene/viewport';
 import { trafficFor } from './scene/street-props';
 import { rivalOpen } from '../engine/features/layers/rival';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, sidewalkItems, Street } from './scene/street';
@@ -738,7 +738,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         </Svg>
       </Pressable>
       {/* the SCENE_OVERLAYS slot: above the floor and furniture, below the HUD; nothing while the slot is empty */}
-      <SceneOverlays shopId={id} width={cw} height={height} />
+      <SceneOverlays shopId={id} width={cw} height={height} viewX0={view.scrolls ? Math.round(scrollX.current) + VIEW_MARGIN : undefined} viewX1={view.scrolls ? Math.round(scrollX.current) + width - VIEW_MARGIN : undefined} />
     </>
   );
   return (
