@@ -1,6 +1,6 @@
 // The home city, Port Marinara, as one CityDef (card K1). A second city is a second folder like this one, added to CITIES in ../index.ts.
 import type { CityDef } from '../types';
-import { HOME_CAST } from './cast';
+import { HOME_CAST, HOME_NAMES } from './cast';
 import { CITY_NAME, HEADS, HOME_BID, HOME_LAYERS, MANAGERS, NEIGHBORHOODS, PERKS } from './data';
 import { HOME_FIT } from './fit';
 import { HOME_SCENES } from './scenes';
@@ -10,6 +10,7 @@ export const HOME_CITY: CityDef = {
   id: 'home',
   name: CITY_NAME,
   cast: HOME_CAST,
+  names: HOME_NAMES,
   neighbourhoods: NEIGHBORHOODS,
   scenes: HOME_SCENES,
   perks: PERKS,

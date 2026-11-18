@@ -138,6 +138,8 @@ export interface CityDef {
   name: string;
   /** The characters this city adds (its pack's cast.ts, one line in content/cast.ts). Its scenes may also use the home cast, the returning characters. */
   cast: readonly CharacterId[];
+  /** What the next-scene teaser calls this city's own characters (cast.ts, `<ID>_NAMES`); the home cast's names are the home pack's. A character with no name is called by its id. */
+  names?: Readonly<Partial<Record<CharacterId, string>>>;
   /** In build order: the first is built from the start, each next one after the one before. */
   neighbourhoods: NeighborhoodDef[];
   /** The whole story in play order. */

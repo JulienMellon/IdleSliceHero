@@ -1,5 +1,7 @@
 // Boston's pack beyond the schema (card T2): the story's size and order, the numbers coming from the fit, the copy tables matching the data, and the
 // interlude chain that holds each beat 4 (and Dorchester's beat 3) back. The schema itself is src/content/__tests__/city-schema.test.ts.
+import '../../../../engine/features';
+import { migrate } from '../../../../engine/game';
 import { HEAD_KINDS } from '../../../tuning';
 import { BOSTON_NUMBERS } from '../fit';
 import { BOSTON_CITY } from '..';
@@ -122,5 +124,18 @@ describe('the Boston pack', () => {
     }
     for (const h of BOSTON_IDS) if (BOSTON_CITY.layers[h]) expect(Object.keys(BOSTON_LAYER_COPY).some((k) => k.startsWith(`layer.${h}.`))).toBe(true);
     expect(Object.keys(BOSTON_LAYER_COPY).some((k) => k.startsWith('layer.north-end.'))).toBe(true);
+  });
+});
+
+// R7a: the pack moved its cast, numbers and teaser into its own files; none of it may change a save. `v5.18-save.json` is a Boston game (four shops built,
+// 60 s played) as the v5.18 build wrote it, and `v5.18-loaded.json` is what that build's `migrate` made of it at 2026-11-11 12:01:30 local time.
+describe('a v5.18 Boston save', () => {
+  it('loads to the identical state', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const save = require('./fixtures/v5.18-save.json');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const loaded = require('./fixtures/v5.18-loaded.json');
+    const now = new Date(2026, 10, 11, 12, 0, 0).getTime() + 90_000;
+    expect(JSON.parse(JSON.stringify(migrate(save, now)))).toEqual(loaded);
   });
 });

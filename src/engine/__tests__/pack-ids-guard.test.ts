@@ -21,9 +21,8 @@ const ALLOW: Record<string, string> = {
   'components/endgame/boston-sheet.tsx': "the Boston finale sheet is Boston's own screen (R7b moves it into its art folder)",
   'components/title-card.tsx': 'the "Coming soon" card reads the soon.boston.* copy keys (R7b switches it to teaserFor and deletes them)',
   'components/slots.tsx': "the slot table mounts Boston's sheet by name (R7b moves it behind the pack's art registry)",
-  // found by this guard, outside R7a's files: each needs a small edit by whoever owns it (reported under Needs:)
+  // found by this guard, outside R7a's files: needs a small edit by whoever owns it (card R7b)
   'components/layers/city-dress.ts': "a dead re-export of BOSTON_ASKS (nothing imports it from here): delete the line, then this entry",
-  'engine/teaser.ts': "the story line's `WHO` table names every character id, Boston's seven included: split it per pack (a `names` in each cast.ts), then delete this entry",
 };
 
 /** The files that are the registry itself: the lines a new city adds (cities/README.md lists them). They name the pack once, by design. */
@@ -49,14 +48,21 @@ function walk(dir: string, out: string[] = []): string[] {
 const rel = (f: string) => path.relative(ROOT, f).split(path.sep).join('/');
 
 const packs = Object.values(CITIES).filter((c) => c.id !== HOME_ID);
-const packFolders = Object.values(CITIES).flatMap((c) => [`content/cities/${c.id}/`, `components/cities/${c.id}/`]);
+/**
+ * A pack's own folders. The home city's words also live in content/copy/home/ (card R5c): the home city names the city after it in its own voice
+ * ("To Boston.", and the soon.boston.* lines until card R7b deletes them), so that folder is home's.
+ */
+const packFolders = [...Object.values(CITIES).flatMap((c) => [`content/cities/${c.id}/`, `components/cities/${c.id}/`]), 'content/copy/home/'];
 
 /** Every way a pack can be named: its id and display names as string literals, and its `BOSTON_`-style identifier prefix. */
 function namesOf(city: (typeof packs)[number]): { literals: string[]; prefix: RegExp } {
   const literals = new Set<string>([city.id, city.name]);
   for (const n of city.neighbourhoods) literals.add(n.id), literals.add(n.name);
   for (const c of city.cast) if (!(HOME_CAST as readonly string[]).includes(c)) literals.add(c);
-  return { literals: [...literals], prefix: new RegExp(`\\b${city.id.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_[A-Z0-9_]+`) };
+  // the city's id as a word in an identifier or a key, in any of its cases: BOSTON_FIT, BostonSheet, 'city-boston', 'soon.boston.title'
+  const word = city.id.replace(/[^a-z0-9]/gi, '');
+  const cased = [word.toLowerCase(), word.toUpperCase(), word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()];
+  return { literals: [...literals], prefix: new RegExp(`(?<![A-Za-z])(${cased.join('|')})(?![a-z])`) };
 }
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -72,8 +78,8 @@ export function packNames(src: string): string[] {
   const out: string[] = [];
   for (const city of packs) {
     const { literals, prefix } = namesOf(city);
-    const m = code.match(prefix);
-    if (m) out.push(m[0]);
+    const m = code.match(new RegExp(prefix.source, 'g'));
+    if (m) out.push(...new Set(m));
     for (const l of literals) if (new RegExp(`(['"\`])${escape(l)}\\1`).test(code)) out.push(`'${l}'`);
   }
   return out;
@@ -95,12 +101,14 @@ describe('no city pack is named outside its own folders', () => {
   });
 
   test('the checker sees a pack by id, by display name and by identifier, and not in a comment', () => {
-    expect(packNames("const a = 'boston';")).toEqual(["'boston'"]);
+    expect(packNames("const a = 'boston';")).toContain("'boston'");
     expect(packNames('const a = "North End";')).toEqual(["'North End'"]);
-    expect(packNames('import { BOSTON_FIT } from "./x";')).toEqual(['BOSTON_FIT']);
+    expect(packNames('import { BOSTON_FIT } from "./x";')).toEqual(['BOSTON']);
+    expect(packNames('<BostonSheet />')).toEqual(['Boston']);
+    expect(packNames("copy('soon.boston.title')")).toEqual(['boston']);
     expect(packNames("const a = 'father-dom';")).toEqual(["'father-dom'"]);
     expect(packNames("// 'boston' and BOSTON_FIT\n/** 'southie' */\n * 'fenway'\nconst a = 1; // 'boston'")).toEqual([]);
-    expect(packNames("import { x } from './cities/boston/cast';")).toEqual([]);
+    expect(packNames("import { x } from './cities/boston/cast';")).toEqual(['boston']); // an import of a pack is a naming too
     expect(packNames("const a = 'downtown';")).toEqual([]);
   });
 

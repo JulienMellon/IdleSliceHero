@@ -39,7 +39,7 @@
   - `'waterfront'` in the bid stinger becomes `soundOf(cityOf(game).bid?.hood ?? <the home bid hood>)`.
   - `triumph_waterfront` keeps its cue name, but is chosen through the same lookup.
   - Same sound at home; Boston has no bid.
-- [ ] **5. Pack guard.** `pack-ids-guard.test.ts` uses the rule of the home-ids guard. It walks `src/**` outside `src/content/cities/<id>/` and `src/components/cities/<id>/` (R6's art folder), and fails on any id, display name or `BOSTON_`-style identifier of a pack that isn't home. Leave an explicit `ALLOW` list, each entry with a reason, for the art files R7b moves:
+- [x] **5. Pack guard.** `pack-ids-guard.test.ts` uses the rule of the home-ids guard. It walks `src/**` outside `src/content/cities/<id>/` and `src/components/cities/<id>/` (R6's art folder), and fails on any id, display name or `BOSTON_`-style identifier of a pack that isn't home. Leave an explicit `ALLOW` list, each entry with a reason, for the art files R7b moves:
   - `scene/identity.ts`, `scene/background.tsx`, `cutscene/backdrop-art.ts`;
   - `franchise/map-art.ts`, `city-map.tsx`;
   - `endgame/boston-sheet.tsx`, `title-card.tsx`, `slots.tsx`.
@@ -49,7 +49,7 @@
   - `problemsOf(testCity)` from the schema test returns `[]`.
   - The smoke test plays it from its opening to its last finale.
   - Register it only inside the test. It is never in `CITIES`.
-- [ ] **7. The pack contract.** `src/content/cities/README.md`, under 80 lines:
+- [x] **7. The pack contract.** `src/content/cities/README.md`, under 80 lines:
   - what a pack folder holds (`index.ts`, `data.ts`, `fit.ts`, `cast.ts`, `copy.ts`, `scenes/`);
   - what its art folder holds (`src/components/cities/<id>/`, after R6 and R7b);
   - the registry lines a new city adds (`cities/index.ts`, `content/cast.ts`, `components/cities/index.ts`, `CITY_ORDER`), and that the pack `id` must be its `CITY_ORDER` entry;

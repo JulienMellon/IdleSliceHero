@@ -5,7 +5,7 @@ import '../../engine/features';
 import { CITIES, teaserFor } from '../cities';
 import { BOSTON_CAST } from '../cities/boston/cast';
 import { BOSTON_TEASER } from '../cities/boston/copy';
-import { HOME_CAST } from '../cities/home/cast';
+import { HOME_CAST, HOME_NAMES } from '../cities/home/cast';
 import { TEST_CITY, TEST_IDS } from '../cities/__fixtures__/test-city';
 import { FIT_KEYS, LAYER_KINDS, type CityDef } from '../cities/types';
 import { HOME_COPY, t } from '../copy';
@@ -240,6 +240,17 @@ describe('the cast, per pack', () => {
     expect([...HOME_CAST, ...BOSTON_CAST]).toEqual(OLD_CHARACTER_IDS);
     expect([HOME_CAST.length, BOSTON_CAST.length]).toEqual([16, 7]);
     expect(new Set(CHARACTER_IDS).size).toBe(CHARACTER_IDS.length);
+  });
+  it('names every character as the teaser did before the table was split (home names plus the pack\'s own)', () => {
+    const was: Record<string, string> = {
+      'nonna-rosa': 'Nonna Rosa', dale: 'Dale', marisol: 'Marisol', priya: 'Priya', 'big-sal': 'Big Sal', genevieve: 'Genevieve', 'victor-crust': 'Victor Crust',
+      'megaslice-rep': 'the MegaSlice rep', 'mr-smith': 'Mr. Smith', 'todd-coat': 'Todd', slicey: 'Slicey', deb: 'Deb', skip: 'Skip', noor: 'Noor', dee: 'Dee',
+      anton: 'Anton', 'father-dom': 'Father Dom', 'kayla-dunn': 'Kayla Dunn', preston: 'Preston', manny: 'Manny', 'lena-ko': 'Dr. Ko',
+      'grandma-bea': 'Grandma Bea', 'trish-vance': 'Trish Vance',
+    }; // prettier-ignore
+    expect({ ...HOME_NAMES, ...CITIES.boston.names }).toEqual(was);
+    expect(Object.keys(CITIES.home.names ?? {})).toEqual([...HOME_CAST]);
+    expect(Object.keys(CITIES.boston.names ?? {})).toEqual([...BOSTON_CAST]);
   });
   it("is each city's own `cast`: home's sixteen and Boston's seven", () => {
     expect(CITIES.home.cast).toBe(HOME_CAST);

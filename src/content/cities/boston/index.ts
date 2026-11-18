@@ -1,6 +1,6 @@
 // Boston, city 2 (card T2): a second folder like ../home, added to CITIES in ../index.ts. Story: docs/story/BOSTON-SCRIPT.md.
 import type { CityDef } from '../types';
-import { BOSTON_CAST } from './cast';
+import { BOSTON_CAST, BOSTON_NAMES } from './cast';
 import { BOSTON_COPY, BOSTON_TEASER } from './copy';
 import { BOSTON_LAYERS, CITY_NAME, HEADS, MANAGERS, NEIGHBORHOODS, PERKS } from './data';
 import { BOSTON_FIT } from './fit';
@@ -13,6 +13,7 @@ export const BOSTON_CITY: CityDef = {
   id: 'boston',
   name: CITY_NAME,
   cast: BOSTON_CAST,
+  names: BOSTON_NAMES,
   neighbourhoods: NEIGHBORHOODS,
   scenes: BOSTON_SCENES,
   perks: PERKS,

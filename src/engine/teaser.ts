@@ -3,37 +3,13 @@
 // A ring on the HUD's scrapbook button shows the progress toward it, in RING_STEP steps so it never repaints on a tick.
 import { RING_STEP } from '../content/hooks';
 import { cityOf } from '../content/cities';
+import { HOME_NAMES } from '../content/cities/home/cast';
 import type { CharacterId, Scene } from '../content/types';
 import { count } from './format';
 import { buildLock, def, bidAvailable, bidPrice, sceneTriggered, type GameState } from './game';
 
-/** The name the story line uses for each character (the character only, no scene content). */
-const WHO: Record<CharacterId, string> = {
-  'nonna-rosa': 'Nonna Rosa',
-  dale: 'Dale',
-  marisol: 'Marisol',
-  priya: 'Priya',
-  'big-sal': 'Big Sal',
-  genevieve: 'Genevieve',
-  'victor-crust': 'Victor Crust',
-  'megaslice-rep': 'the MegaSlice rep',
-  // a scene's `character` is the neighbourhood's lead; these only appear on stage, but the table covers every id
-  'mr-smith': 'Mr. Smith',
-  'todd-coat': 'Todd',
-  slicey: 'Slicey',
-  deb: 'Deb',
-  skip: 'Skip',
-  noor: 'Noor',
-  dee: 'Dee',
-  anton: 'Anton',
-  'father-dom': 'Father Dom',
-  'kayla-dunn': 'Kayla Dunn',
-  preston: 'Preston',
-  manny: 'Manny',
-  'lena-ko': 'Dr. Ko',
-  'grandma-bea': 'Grandma Bea',
-  'trish-vance': 'Trish Vance',
-};
+/** The name the story line uses for a character (the character only, no scene content): the city's own names, then the home cast's (the returning characters). */
+const whoName = (s: GameState, id: CharacterId): string => cityOf(s).names?.[id] ?? HOME_NAMES[id as keyof typeof HOME_NAMES] ?? id;
 
 export type TeaserKind = 'deliveries' | 'unlock' | 'bid' | 'soon' | 'complete';
 
@@ -71,7 +47,7 @@ type Make = (kind: TeaserKind, text: (() => string) | string, progress: number) 
 function teaserWith(s: GameState, scenes: readonly Scene[], make: Make): Teaser {
   const sc = nextScene(s, scenes);
   if (!sc) return make('complete', TEASER_COMPLETE, 1);
-  const who = () => `Next: ${WHO[sc.character]}'s story continues`;
+  const who = () => `Next: ${whoName(s, sc.character)}'s story continues`;
   const hood = def(sc.neighborhood, cityOf(s));
   const shop = s.shops[sc.neighborhood];
   if (sceneTriggered(s, sc)) return make('soon', () => `${who()} in a moment`, 1);
