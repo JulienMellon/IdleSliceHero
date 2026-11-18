@@ -3,11 +3,11 @@
 import { BOATS, RIVAL } from '../../content/layers';
 import { money } from '../../engine/format';
 import { upgradeCostOf, type GameState } from '../../engine/game';
-import { gameDayView } from '../../engine/features/layers/suburbs-gameday';
-import { boatsView } from '../../engine/features/layers/waterfront-boats';
+import { gameDayView } from '../../engine/features/layers/game-day';
+import { boatsView } from '../../engine/features/layers/boats';
 import { rivalTarget, rivalView } from '../../engine/features/layers/rival';
 import type { NeighborhoodId } from '../../content/types';
-import { auctionStatus, label, tierName } from './waterfront/boats-model';
+import { auctionStatus, label, tierName } from './boats/boats-model';
 import { rivalCard, rivalPercent } from './rival/rival-model';
 import { cityOf } from '../../content/cities';
 import { isDressed } from './city-dress';

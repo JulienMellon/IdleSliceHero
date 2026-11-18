@@ -12,11 +12,11 @@ import { ORDER } from '../../src/content/hooks';
 import type { NeighborhoodId } from '../../src/content/types';
 import { pickScene, scenePacesGap } from '../../src/engine/cutscene-input';
 import * as G from '../../src/engine/game';
-import { buyRack, rackLock, rackPrice } from '../../src/engine/features/layers/waterfront-boats';
+import { buyRack, rackLock, rackPrice } from '../../src/engine/features/layers/boats';
 import { rivalView, startRivalChallenge } from '../../src/engine/features/layers/rival';
-import { bestMix, mixOf, setMenu } from '../../src/engine/features/layers/university-menu';
-import { fixJam, jamView } from '../../src/engine/features/layers/industrial-shifts';
-import { buyIngredients, ingredientsLock, ingredientsPrice, type StarsState } from '../../src/engine/features/layers/uptown-stars';
+import { bestMix, mixOf, setMenu } from '../../src/engine/features/layers/menu';
+import { fixJam, jamView } from '../../src/engine/features/layers/shifts';
+import { buyIngredients, ingredientsLock, ingredientsPrice, type StarsState } from '../../src/engine/features/layers/stars';
 import { LAYER_KEYS } from '../../src/content/layers';
 import '../../src/engine/features'; // the registry must be live (mastery, heads, recipes, ...): without this import no feature hook runs
 import * as B from '../../src/engine/bonus';

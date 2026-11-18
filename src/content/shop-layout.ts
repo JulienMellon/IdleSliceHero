@@ -1,5 +1,7 @@
-// The shop's floor plan as numbers (v5.18, card V2): how wide each footprint's drawing and room are, and which neighbourhoods use the mirrored plan.
+// The shop's floor plan as numbers (v5.18, card V2): how wide each footprint's drawing and room are, and which neighbourhoods use the mirrored plan (the plan itself is data on the neighbourhood).
 // Pure data, so the layout module (src/components/scene/layout.ts) and its tests read the same table. Index = footprint (0 starter … 4 flagship).
+import { findHood } from './cities';
+import type { NeighborhoodDef } from './cities/types';
 
 /** Width of the drawing (scene units) by footprint: one screen for the first three tiers (393: they must not change by a pixel), wider for the Restaurant and the Flagship. */
 export const SCENE_WIDTH: readonly number[] = [393, 393, 393, 520, 640];
@@ -10,11 +12,12 @@ export const ROOM_WIDTH: readonly number[] = [270, 295, 320, 450, 570];
 export const FIRST_WIDE_FOOTPRINT = 3;
 
 /**
- * The second floor plan: kitchen on the right, door on the left. Waterfront (the harbour is on the other side of the street) and Industrial (the
- * loading dock). Keyed by neighbourhood id; the home city's ids are the only ones with a mirrored plan.
+ * The second floor plan: kitchen on the right, door on the left. It is data on the neighbourhood (`NeighborhoodDef.plan`): home Waterfront (the harbour is on
+ * the other side of the street) and Industrial (the loading dock) are the ones that choose it; a city picks its own. `isMirrored(id)` looks the id up in
+ * whichever city has it; `mirroredIn(def)` is the same rule on a def already in hand (a city under test is not in CITIES).
  */
-const MIRRORED: ReadonlySet<string> = new Set(['waterfront', 'industrial']);
-export const isMirrored = (id: string): boolean => MIRRORED.has(id);
+export const mirroredIn = (def: NeighborhoodDef | undefined): boolean => def?.plan === 'mirrored';
+export const isMirrored = (id: string): boolean => mirroredIn(findHood(id));
 
 /** What the two wide tiers add to the plan (index = footprint). Narrow tiers have none. */
 export interface WidePlan {

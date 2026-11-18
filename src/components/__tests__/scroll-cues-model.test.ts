@@ -22,7 +22,7 @@ import {
 import { sceneView, sceneFrame, sceneToScreen } from '../scene/projection';
 import { controlPasses } from '../tap-targets';
 import { layout } from '../scene/layout';
-import { ovenSpot, WRENCH } from '../layers/industrial/jam-model';
+import { ovenSpot, WRENCH } from '../layers/shifts/jam-model';
 
 const W = 393;
 const H = 852;

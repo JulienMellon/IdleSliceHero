@@ -64,6 +64,7 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
     y: 67,
     color: '#56CCF2',
     wall: '#D6EEF8',
+    plan: 'mirrored',
   },
   {
     id: 'university',
@@ -90,6 +91,7 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
     y: 9,
     color: '#A0826D',
     wall: '#C4BCAE',
+    plan: 'mirrored',
   },
   {
     id: 'uptown',

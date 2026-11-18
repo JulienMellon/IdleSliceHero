@@ -15,19 +15,19 @@
 - Read-only: `src/components/scene/layout.ts`.
 
 ## Steps
-- [ ] **1. Hood fields out.** Remove `hood` from `GAME_DAY`, `BOATS` and the other layer tables in `content/layers.ts`. Every reader uses `layerHood(cityOf(g), kind)`; `gameDayChipShown` and `harbourChip` take the hood from their caller, with no default. `jamShare` loses its `HOME_CITY` default. `LAYER_KEYS` **values** do not change (they are save keys).
-- [ ] **2. Rename by kind.** Use `git mv`, so history follows the files.
+- [x] **1. Hood fields out.** Remove `hood` from `GAME_DAY`, `BOATS` and the other layer tables in `content/layers.ts`. Every reader uses `layerHood(cityOf(g), kind)`; `gameDayChipShown` and `harbourChip` take the hood from their caller, with no default. `jamShare` loses its `HOME_CITY` default. `LAYER_KEYS` **values** do not change (they are save keys).
+- [x] **2. Rename by kind.** Use `git mv`, so history follows the files.
   - Feature files: `suburbs-gameday.ts` becomes `game-day.ts`, `waterfront-boats.ts` becomes `boats.ts`, `university-menu.ts` becomes `menu.ts`, `industrial-shifts.ts` becomes `shifts.ts`, and `uptown-stars.ts` becomes `stars.ts`.
   - Component folders: `suburbs/` becomes `game-day/`, `waterfront/` becomes `boats/`, `university/` becomes `menu/`, `industrial/` becomes `shifts/`, and `uptown/` becomes `stars/`.
   - Exported names that carry a home hood (`suburbsGameDay`, `waterfrontBoats`, …) are renamed by kind as well. User-facing strings don't change.
-- [ ] **3. One shop layout: option C** (Julien picked it on 2026-11-18). Option B below is kept only as the record of what was weighed.
+- [x] **3. One shop layout: option C** (Julien picked it on 2026-11-18). Option B below is kept only as the record of what was weighed.
   - **Option C (the plan's recommendation):**
     - Add `plan?: 'standard' | 'mirrored'` to `NeighborhoodDef`, set to `'mirrored'` on home `waterfront` and `industrial` only. `isMirrored(id)` reads the def.
     - Add `scene/shop-layout.ts` `shopLayout(id, shop, city)`. It derives `ovenCount`, `cookCount`, `staffCount`, `tablesShown`, `driverSlots` and `plants` from `city.fit` (moved from `storefront.tsx:193-198`), calls `layout(…, mirrored)` and returns `{ room, draw }` (`draw = toDrawSpace(room)`). It is cached by key.
     - The storefront uses it.
     - `components/layers/shop-layout.ts` is deleted. Its 5 callers (jam-overlay, night-tint, critic-scene, gameday-scene, harbour-scene), and the storefront's wrench `avoid` block, call `shopLayout` and use the space their drawing expects. Night-tint's own `isMirrored(shopId)` patch goes.
   - **Option B:** `layoutOfShop(id, shop)` reads `isMirrored(id)`, uses `cityOf` for the footprints, and returns the same draw space as the storefront. Mirroring stays keyed by id.
-- [ ] **4. Guard.** Shrink the `home-ids-guard` `ALLOW` list for every file this card cleaned.
+- [x] **4. Guard.** Shrink the `home-ids-guard` `ALLOW` list for every file this card cleaned.
 
 ## Tests that must exist
 - Each layer runs in the R0 test city, on the hood `layerHood` gives it.

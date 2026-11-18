@@ -29,23 +29,23 @@ import { GameDayChip, HarbourChip, RivalTag } from './layers/layer-hud';
 import { LayerSheet } from './layers/layer-sheet';
 import { LayerStack } from './layers/layer-stack';
 import { RivalScene } from './layers/rival/rival-scene';
-import { GameDayScene } from './layers/suburbs/gameday-scene';
-import { HarbourScene } from './layers/waterfront/harbour-scene';
-import { CriticBanner } from './layers/uptown/critic-banner';
-import { CriticScene } from './layers/uptown/critic-scene';
-import { IndustrialSheet } from './layers/industrial/industrial-sheet';
-import { IngredientsCard } from './layers/uptown/ingredients-card';
-import { JamOverlay } from './layers/industrial/jam-overlay';
-import { JamPulses } from './layers/industrial/jam-pulses';
-import { NightTint } from './layers/industrial/night-tint';
-import { ShiftBanner } from './layers/industrial/shift-banner';
-import { ShiftChip } from './layers/industrial/shift-chip';
-import { SignPlaque } from './layers/uptown/sign-plaque';
-import { StarsChip } from './layers/uptown/stars-chip';
-import { StarsSheet } from './layers/uptown/stars-sheet';
-import { DroneFlight } from './layers/university/drone-flight';
-import { UniversityChip } from './layers/university/university-chip';
-import { UniversitySheet } from './layers/university/university-sheet';
+import { GameDayScene } from './layers/game-day/gameday-scene';
+import { HarbourScene } from './layers/boats/harbour-scene';
+import { CriticBanner } from './layers/stars/critic-banner';
+import { CriticScene } from './layers/stars/critic-scene';
+import { ShiftsSheet } from './layers/shifts/shifts-sheet';
+import { IngredientsCard } from './layers/stars/ingredients-card';
+import { JamOverlay } from './layers/shifts/jam-overlay';
+import { JamPulses } from './layers/shifts/jam-pulses';
+import { NightTint } from './layers/shifts/night-tint';
+import { ShiftBanner } from './layers/shifts/shift-banner';
+import { ShiftChip } from './layers/shifts/shift-chip';
+import { SignPlaque } from './layers/stars/sign-plaque';
+import { StarsChip } from './layers/stars/stars-chip';
+import { StarsSheet } from './layers/stars/stars-sheet';
+import { DroneFlight } from './layers/menu/drone-flight';
+import { MenuChip } from './layers/menu/menu-chip';
+import { MenuSheet } from './layers/menu/menu-sheet';
 import { ReportSheet } from './report/report-sheet';
 import { ReportStrip } from './report/report-strip';
 import { ClaimSheet } from './store/claim-sheet';
@@ -193,7 +193,7 @@ export const HUD_CHIPS: SlotEntry[] = [
   { id: 'harbour-chip', order: 25, Component: HarbourChip },
   { id: 'rival-tag', order: 30, Component: RivalTag },
   // v5.16 (S2b): University's campus count, Industrial's shift clock and Uptown's rating (a tap opens the layer's sheet)
-  { id: 'university-chip', order: 40, Component: UniversityChip },
+  { id: 'university-chip', order: 40, Component: MenuChip },
   { id: 'shift-chip', order: 45, Component: ShiftChip },
   { id: 'stars-chip', order: 50, Component: StarsChip },
 ];
@@ -219,8 +219,8 @@ export const SHEETS: SlotEntry[] = [
   // v5.16 (S2a): the layers' info sheets, opened from their HUD chips
   { id: 'layer-sheet', order: 30, Component: LayerSheet },
   // v5.16 (S2b): University's menu and zones, Industrial's shifts and jams, Uptown's stars and critic
-  { id: 'university-sheet', order: 40, Component: UniversitySheet },
-  { id: 'industrial-sheet', order: 50, Component: IndustrialSheet },
+  { id: 'university-sheet', order: 40, Component: MenuSheet },
+  { id: 'industrial-sheet', order: 50, Component: ShiftsSheet },
   { id: 'stars-sheet', order: 60, Component: StarsSheet },
   // v5.17 (U3): what a claim paid with its "double it" ad button, and the Starter Pack offered once after the tutorial
   { id: 'claim-sheet', order: 70, Component: ClaimSheet },

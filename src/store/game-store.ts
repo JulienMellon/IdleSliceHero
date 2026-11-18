@@ -33,12 +33,12 @@ import '../engine/features'; // registers the features before any game is made
 import { ackAttack, startChallenge } from '../engine/features/counterattack';
 import { canFranchise, franchise as franchiseCity } from '../engine/features/franchise';
 import { startRivalChallenge } from '../engine/features/layers/rival';
-import { buyRack as buyRackTier, rackPrice } from '../engine/features/layers/waterfront-boats';
+import { buyRack as buyRackTier, rackPrice } from '../engine/features/layers/boats';
 import { ackMastery } from '../engine/features/mastery';
 import { ackRecipes } from '../engine/features/recipes';
-import { fixJam as fixOvenJam } from '../engine/features/layers/industrial-shifts';
-import { setMenu as setUniversityMenu } from '../engine/features/layers/university-menu';
-import { ackCritic as ackUptownCritic, buyIngredients as buyUptownIngredients, ingredientsPrice } from '../engine/features/layers/uptown-stars';
+import { fixJam as fixOvenJam } from '../engine/features/layers/shifts';
+import { setMenu as setUniversityMenu } from '../engine/features/layers/menu';
+import { ackCritic as ackUptownCritic, buyIngredients as buyUptownIngredients, ingredientsPrice } from '../engine/features/layers/stars';
 import * as R from '../engine/rewards';
 import { tutorialAdvance, tutorialHoldsStory } from '../engine/tutorial';
 import { buyCosmetic as buyVanity } from '../engine/vanity';

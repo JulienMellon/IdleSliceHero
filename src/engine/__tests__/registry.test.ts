@@ -62,12 +62,12 @@ describe('T88 module order', () => {
     'events',
     'heads',
     'service',
-    'layers/suburbs-gameday',
-    'layers/waterfront-boats',
+    'layers/game-day',
+    'layers/boats',
     'layers/rival',
-    'layers/university-menu',
-    'layers/industrial-shifts',
-    'layers/uptown-stars',
+    'layers/menu',
+    'layers/shifts',
+    'layers/stars',
   ];
   for (const f of features) {
     it(`importing features/${f} before the game does not throw`, () => {

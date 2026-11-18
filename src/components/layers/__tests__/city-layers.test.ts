@@ -4,12 +4,12 @@ import { BOSTON_LAYER_COPY } from '../../../content/cities/boston/copy';
 import { BOSTON_CITY } from '../../../content/cities/boston';
 import { builtHood, hoodOf } from '../city-layers';
 import { dressed, isDressed } from '../city-dress';
-import { gameDayBanner, gameDayChipShown, gameDayChipText } from '../suburbs/gameday-model';
-import { harbourChip, rackCard, tierName } from '../waterfront/boats-model';
-import { chipText } from '../uptown/stars-model';
-import { shiftRows, whistle } from '../industrial/shift-model';
-import { jamLabel } from '../industrial/jam-model';
-import { zoneCells } from '../university/zones-model';
+import { gameDayBanner, gameDayChipShown, gameDayChipText } from '../game-day/gameday-model';
+import { harbourChip, rackCard, tierName } from '../boats/boats-model';
+import { chipText } from '../stars/stars-model';
+import { shiftRows, whistle } from '../shifts/shift-model';
+import { jamLabel } from '../shifts/jam-model';
+import { zoneCells } from '../menu/zones-model';
 import { rivalCard } from '../rival/rival-model';
 import { rivalLine } from '../layer-text';
 import { gameDaySheet, boatSheet } from '../sheet-model';
@@ -43,7 +43,6 @@ describe('the layers read the current city', () => {
     const v = { active: true, rush: false } as Parameters<typeof gameDayChipShown>[0];
     expect(gameDayChipShown(v, 'fenway', 'fenway')).toBe(true);
     expect(gameDayChipShown(v, 'suburbs', 'fenway')).toBe(false);
-    expect(gameDayChipShown(v, 'suburbs')).toBe(true);
   });
 });
 

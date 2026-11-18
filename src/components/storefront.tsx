@@ -11,7 +11,6 @@ import { memo, useEffect, useMemo, useRef, useState, type ComponentRef, type Rea
 import { Pressable, ScrollView, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { F } from '../theme';
-import { isMirrored } from '../content/shop-layout';
 import { cityOf, hoodIds, layerOf, sceneHood } from '../content/cities';
 import { LOOKS } from './scene/identity';
 import type { NeighborhoodId } from '../content/types';
@@ -22,16 +21,16 @@ import { CHEER_SECONDS, emitPayout, onCheer } from './pulse-bus';
 import { Backdrop } from './scene/background';
 import { useClock, usePerfMarks } from './scene/clock';
 import { SceneDefs } from './scene/defs';
-import { FRONT_ROW_Y, LEDGE_Y, PROP_Y, SIGN_Y, STOOL_Y, TREE_Y, layout, moreTagRect, waitTagRect, type Layout } from './scene/layout';
+import { FRONT_ROW_Y, LEDGE_Y, PROP_Y, SIGN_Y, STOOL_Y, TREE_Y, moreTagRect, waitTagRect, type Layout } from './scene/layout';
 import { seatPalette } from './scene/palette';
 import { GUEST_SHIRTS, HAIR_COLORS, hash32, Person } from './scene/people';
 import { CURB_Y, D, INK, P, drawShift, openScroll, sceneToScreen, sceneView, screenToScene } from './scene/projection';
-import { plainOf, toDrawSpace } from './scene/layout-space';
+import { plainOf } from './scene/layout-space';
 import { Flip } from './scene/primitives';
 import { ScrollCues } from './scroll-cues';
 import { clearCueTop, cuesFor, onScrollAsk, queueShown, wantsOf, wrenchRect, type KitchenSpot, type PtRect, type ScrollTarget } from './scroll-cues-model';
-import { ovenSpot, WRENCH } from './layers/industrial/jam-model';
-import { layoutOfShop } from './layers/shop-layout';
+import { wrenchSpot, WRENCH } from './layers/shifts/jam-model';
+import { shopLayout } from './scene/shop-layout';
 import { isTap, shopOpenScroll } from './scene/scroll';
 import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Rug, Stools, Table, WallPlanter } from './scene/props';
 import { ovenTier } from './scene/geometry';
@@ -62,7 +61,7 @@ import { getFeature } from '../engine/features';
 import { counterattack } from '../engine/features/counterattack';
 import { hintsAllowed } from '../engine/tutorial';
 import { reportView, slammedAsks } from '../engine/features/service';
-import { jamView } from '../engine/features/layers/industrial-shifts';
+import { jamView } from '../engine/features/layers/shifts';
 import {
   heads as headsFeature,
   newBarkMem,
@@ -231,24 +230,14 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // wall ms when this shop's scene was opened (the scene remounts per shop): the rush hint shows for the start of a visit
   const [visitAt] = useState(() => Date.now());
 
-  const ovenCount = Math.min(city.fit.footprints[fp].ovenSlots, 1 + Math.floor((shop.ovens - 1) / 8));
-  const cookCount = Math.min(3, 1 + Math.floor((shop.prep - 1) / 15));
-  const staffCount = Math.min(2, 1 + Math.floor((shop.counter - 1) / 15));
-  const driverSlots = [2, 2, 3, 3, 4][fp];
-  const tablesShown = Game.tablesShown(shop, city.fit);
-  const plants = shop.decor.plants;
-  // geometry only changes with upgrades, so the layout object stays identical across frames and the
-  // memoised layers that take `lay` (room shell, front wall, door, mat, hood) skip re-rendering
-  // the second floor plan (content/shop-layout.ts): kitchen on the right, door on the left, mirrored inside the layout itself (scene/layout-space.ts)
-  const mirrored = isMirrored(id);
-  const roomLay = useMemo(
-    () => layout(fp, ovenCount, cookCount, staffCount, tablesShown, driverSlots, plants, undefined, mirrored),
-    [fp, ovenCount, cookCount, staffCount, tablesShown, driverSlots, plants, mirrored],
-  );
+  // one room for the storefront and every overlay (scene/shop-layout.ts): geometry only changes with upgrades, so `roomLay` stays identical across frames and the
+  // memoised layers that take `lay` (room shell, front wall, door, mat, hood) skip re-rendering. A shop on the second floor plan (`NeighborhoodDef.plan`: kitchen on
+  // the right, door on the left) is mirrored inside the layout itself (scene/layout-space.ts)
+  const { room: roomLay, draw: drawLay } = shopLayout(id, shop, city);
   // …and in the draw space the drawing code's default `P` expects (`drawFrame`): everything below the sky and the street is drawn in a group moved right by `shift`
   // …and lifted clear of the shop report's strip, which hides what stands lower on the sidewalk (strip-clear.ts, D514): the same fit the strip's `bottom` is computed from (app/index.tsx)
   const stripFloor = floorYFor(stripTop(sceneView(width, height, roomLay.frame).fit.s, hireOnSidewalk(shop, id, city)));
-  const lay = useMemo(() => liftLayout(toDrawSpace(roomLay), stripFloor), [roomLay, stripFloor]);
+  const lay = useMemo(() => liftLayout(drawLay, stripFloor), [drawLay, stripFloor]);
   const running = shop.managed || Game.lineBusy(shop.line);
   const rate = Game.shopRate(shop, game.vehicle, city.fit);
   const pace = running ? Math.min(2.6, 0.8 + Math.log10(1 + rate)) : 0;
@@ -616,10 +605,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       })
     : [];
   const cues = cuesFor(wants, scrollX.current, width, fit, view.maxScroll);
-  // G111: a cue keeps 8 pt clear of the tappables on screen; the jam's wrench (the jam overlay's 44 pt button, placed from the same `layoutOfShop` the overlay uses, so the two agree wherever it puts it) is the one a cue met
+  // G111: a cue keeps 8 pt clear of the tappables on screen; the jam's wrench (the jam overlay's 44 pt button, placed by the same `wrenchSpot` from the same `shopLayout` the overlay uses, so the two agree wherever it puts it) is the one a cue met
   const avoid: PtRect[] = [];
   if (jamOn) {
-    const o = ovenSpot(layoutOfShop(shop, city.fit));
+    const o = wrenchSpot(drawLay);
     avoid.push(wrenchRect(fit.ox + o.x * fit.s, fit.oy + o.y * fit.s, WRENCH, scrollX.current));
   }
   const cueTop = Math.round(fit.oy + (by + 56) * fit.s);

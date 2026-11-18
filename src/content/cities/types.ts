@@ -24,6 +24,8 @@ export interface NeighborhoodDef {
   color: string;
   /** Cutaway wall color. */
   wall: string;
+  /** The shop's floor plan (content/shop-layout.ts): 'standard' (kitchen left, door right; the default) or 'mirrored' (kitchen right, door left). Home Waterfront and Industrial are mirrored. */
+  plan?: 'standard' | 'mirrored';
 }
 
 /** A small permanent perk from each neighbourhood's finale. It only applies to that neighbourhood's pizzeria. */

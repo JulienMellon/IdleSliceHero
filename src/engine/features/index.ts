@@ -5,12 +5,12 @@ import { events } from './events';
 import { franchiseFeature } from './franchise';
 import { heads } from './heads';
 import { mastery } from './mastery';
-import { industrialShifts } from './layers/industrial-shifts';
+import { shiftsLayer } from './layers/shifts';
 import { rival } from './layers/rival';
-import { suburbsGameDay } from './layers/suburbs-gameday';
-import { universityMenu } from './layers/university-menu';
-import { uptownStars } from './layers/uptown-stars';
-import { waterfrontBoats } from './layers/waterfront-boats';
+import { gameDayLayer } from './layers/game-day';
+import { menuLayer } from './layers/menu';
+import { starsLayer } from './layers/stars';
+import { boatsLayer } from './layers/boats';
 import { recipes } from './recipes';
 import { FEATURES } from './registry';
 import { service } from './service';
@@ -28,12 +28,12 @@ FEATURES.push(
   recipes,
   heads,
   service,
-  suburbsGameDay,
-  waterfrontBoats,
+  gameDayLayer,
+  boatsLayer,
   rival,
-  universityMenu,
-  industrialShifts,
-  uptownStars,
+  menuLayer,
+  shiftsLayer,
+  starsLayer,
   franchiseFeature,
 );
 

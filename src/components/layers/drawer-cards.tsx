@@ -5,13 +5,13 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { canAfford } from '../../engine/game';
 import { money } from '../../engine/format';
-import { boatsView } from '../../engine/features/layers/waterfront-boats';
+import { boatsView } from '../../engine/features/layers/boats';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { BuyButton } from '../game-ui';
 import { StationCard } from '../shop-ui';
 import { buttonTone } from '../sidewalk-model';
-import { auctionCard, auctionStatus, rackCard } from './waterfront/boats-model';
+import { auctionCard, auctionStatus, rackCard } from './boats/boats-model';
 import { LABELS } from './layer-text';
 import { gameNow } from '../../engine/clock';
 

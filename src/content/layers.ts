@@ -2,7 +2,6 @@
 // rival (docs/REVIEW-v5.9-playthrough.md, the layer table). Card E2b's layers (University, Industrial, Uptown) are at the end.
 // All times are PLAY seconds (`GameState.playSeconds`): they pause while the app is closed, so they never re-roll when the clock
 // or the time zone changes.
-import type { NeighborhoodId } from './types';
 
 /** Where each layer keeps its state, `GameState.x[key]`. game.ts reads the boats' key (the auction), so it lives here, not in a feature. */
 export const LAYER_KEYS = {
@@ -15,7 +14,6 @@ export const LAYER_KEYS = {
 } as const;
 
 export const GAME_DAY = {
-  hood: 'suburbs' as NeighborhoodId,
   /** A game every this many play seconds (each gap moves by up to `jitter`, seeded). */
   everySeconds: 8 * 60,
   /** The rush after the game lasts this long. */
@@ -30,7 +28,6 @@ export const GAME_DAY = {
 } as const;
 
 export const BOATS = {
-  hood: 'waterfront' as NeighborhoodId,
   everySeconds: 3 * 60,
   /** A boat's rush lasts this long… */
   rushSeconds: 30,
@@ -67,7 +64,6 @@ export const RIVAL = {
 
 /** University, the menu: the mix is whole percents of the pies (Cheese is the rest). A recipe's price multiplies the value per pizza; its prep and bake factors multiply the time a pizza takes at that station. */
 export const MENU = {
-  hood: 'university' as NeighborhoodId,
   recipes: [
     { id: 'cheese', name: 'Cheese', price: 1, prep: 1, bake: 1 },
     { id: 'pepperoni', name: 'Pepperoni', price: 1.4, prep: 1.3, bake: 1 },
@@ -79,7 +75,6 @@ export const MENU = {
 
 /** University, the campus zones. `distance` multiplies the round trip; `share` is the percent of the demand; a zone opens at `footprint`. Drones (vehicle id below) ignore distance. */
 export const ZONES = {
-  hood: 'university' as NeighborhoodId,
   droneId: 'drone',
   zones: [
     { id: 'dorms', name: 'Dorms', distance: 1, share: 50, footprint: 0 },
@@ -90,7 +85,6 @@ export const ZONES = {
 
 /** Industrial, the shifts: a cycle of play seconds cut into equal shifts, in order from the moment the shop is first seen built. */
 export const SHIFTS = {
-  hood: 'industrial' as NeighborhoodId,
   cycleSeconds: 20 * 60,
   shifts: [
     { id: 'day', name: 'Day', demand: 1, value: 1 },
@@ -112,7 +106,6 @@ export const JAMS = {
 
 /** Uptown, the star rating: stars = 1 + floor(points x 4 / maxPoints). */
 export const STARS = {
-  hood: 'uptown' as NeighborhoodId,
   /** Points from the oven grade: grade index 0 gives 0, 1-2 give 1, 3 and up give 2. */
   ovenPoints: [0, 1, 1, 2, 2] as readonly number[],
   /** Points from decor: tiers owned in all (of 15) at which the first and second point are earned. */
