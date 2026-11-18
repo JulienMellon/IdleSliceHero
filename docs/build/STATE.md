@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.18-r3           # label of the last screenshot set that passed verify
 codecritic_range_start: eafbb5a
 cards:                 # todo | running | done | partial | blocked
-  R0: done  R0p: done  R1: done  R6: done  R1L: todo  R5c: todo  R7a: todo  R7b: todo
+  R0: done  R0p: done  R1: done  R6: done  R1L: running  R5c: todo  R7a: todo  R7b: todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.18/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 6; E2 U1 S3; D512 D514 D481 D493 D495 D505 carry)
   code:   docs/build/v5.18/review-r3-code.md (r3 APPROVED; blocker/high 0 medium 2 low 26; E15 U4 S5 N3 A1)
