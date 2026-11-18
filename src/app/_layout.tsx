@@ -11,6 +11,7 @@ import { CutscenePlayer } from '@/components/cutscene-player';
 import { TitleCard } from '@/components/title-card';
 import { TUNING } from '@/content/tuning';
 import { TUTORIAL_DONE } from '@/engine/game';
+import { gameNow } from '@/engine/clock';
 import { adsTutorialDone, analytics, EVENTS, startServices } from '@/services';
 import { createLifecycle } from '@/services/lifecycle';
 import { useGame } from '@/store/game-store';
@@ -24,14 +25,14 @@ startAudio();
 function GameRunner() {
   const load = useGame((s) => s.load);
   const background = useGame((s) => s.background);
-  const lastTick = useRef(Date.now());
+  const lastTick = useRef(gameNow());
 
   // The tick timer only runs in the foreground: nothing fires every 200 ms while the app is in the background.
   useEffect(() => {
     if (background) return;
-    lastTick.current = Date.now();
+    lastTick.current = gameNow();
     const tickTimer = setInterval(() => {
-      const now = Date.now();
+      const now = gameNow();
       // Clamp so a stalled JS thread can't produce a giant step; long gaps go through offline catch-up.
       const dt = Math.min(2, (now - lastTick.current) / 1000);
       lastTick.current = now;
@@ -51,7 +52,7 @@ function GameRunner() {
       const t = life.next(state);
       if (t === 'left') analytics.track(EVENTS.sessionEnd);
       if (t === 'returned') {
-        lastTick.current = Date.now();
+        lastTick.current = gameNow();
         void useGame.getState().load();
         analytics.track(EVENTS.sessionStart);
       }

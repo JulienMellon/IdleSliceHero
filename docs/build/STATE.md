@@ -31,3 +31,4 @@ next: v5.19 is outside the 11-13 handoff plan; ask Julien before starting it. v5
 - 2026-11-18 Verify r3: tsc pass, 1830/1830, --only 106_t2,140_v2: 0 errors, 7 changed 13 same (loaded/layout need a full run). r3 re-checks launched.
 - 2026-11-18 v5.18 closed at r3: critic 0/0/6 minors carried, codecritic APPROVED (medium 2). Next: v5.19 after Julien.
 - 2026-11-18 Julien: finish v5.18 open notes before v5.19 (fix round r4). E3 (E rows) + V2 (S rows, D512 jam scope, D514 lift+frost) running; U/N/A rows next.
+- 2026-11-18 Fix r4: E3 partial (all E rows fixed; tsc pass, 1853 tests). Left: C107 goal-bar half -> T2; A37 Date.now in storefront.tsx 138/346/411 -> V2. T2 launched on U/N rows + D505 + C107 bar.
