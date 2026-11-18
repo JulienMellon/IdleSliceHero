@@ -12,7 +12,7 @@ import { patioTables } from '../../../engine/game';
 import { useGame } from '../../../store/game-store';
 import { useClock } from '../../scene/clock';
 import { Person } from '../../scene/people';
-import { drawShift, kAt, P, sceneFit } from '../../scene/projection';
+import { kAt, P, sceneFit } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
 import { hoodOf } from '../city-layers';
@@ -32,8 +32,8 @@ export const GameDayScene = memo(function GameDayScene({ shopId, width, height }
   const shop = g.shops[shopId];
   const v = gameDayView(g, gameNow());
   if (!v.rush) return null;
-  // the room the storefront draws, in its draw space: everything below is drawn in a group moved right by `shift` (a wide shop)
-  const lay = shopLayout(shopId, shop, cityOf(g)).draw;
+  // the room in the frame's own space, as this overlay has always drawn it (a wide non-mirrored shop is not shifted: that is a separate fix, see card R1L report)
+  const lay = shopLayout(shopId, shop, cityOf(g)).room;
   const until = (g.x?.[LAYER_KEYS.gameDay] as Timed | undefined)?.until ?? 0;
   // seconds into the rush, smooth between the 200 ms game ticks
   const since = Math.max(0, (gameNow() - st.tickAt) / 1000);
@@ -43,7 +43,6 @@ export const GameDayScene = memo(function GameDayScene({ shopId, width, height }
   const families = familiesFor(v.seatsFree, lay);
   const open = glowing(free, t, families, lay);
   const fit = sceneFit(width, height, frame);
-  const shift = drawShift(frame);
   const pulse = 0.5 + 0.5 * Math.sin(clock * 5);
   const figures = waveFigures(lay, t, families, clock).sort((a, b) => b.y - a.y);
   const seated = seatedFamilies(lay, chairs, free, t, families);
@@ -56,46 +55,44 @@ export const GameDayScene = memo(function GameDayScene({ shopId, width, height }
         height={height}
         viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}
       >
-        <G transform={shift ? `translate(${shift} 0)` : undefined}>
-          {chairs.slice(0, open).map((c, i) => {
-            const [x, y] = P(c.x, c.y);
-            const k = kAt(c.y) * (c.patio ? 1.1 : 1);
+        {chairs.slice(0, open).map((c, i) => {
+          const [x, y] = P(c.x, c.y);
+          const k = kAt(c.y) * (c.patio ? 1.1 : 1);
+          return (
+            <G key={i}>
+              <Ellipse cx={x} cy={y + 2} rx={13 * k} ry={5 * k} fill="#6FE08A" opacity={0.28 + 0.3 * pulse} />
+              <Ellipse cx={x} cy={y + 2} rx={13 * k} ry={5 * k} fill="none" stroke="#2E9B4E" strokeWidth={1.6} opacity={0.55 + 0.4 * pulse} />
+            </G>
+          );
+        })}
+        {seated.map((f) => (
+          <Person key={f.key} x={f.x} y={f.y} kind="sit" flip={f.flip} seed={f.seed} act="slice" mood="happy" />
+        ))}
+        {seated
+          .filter((f) => f.age < BURST_SECONDS)
+          .map((f) => {
+            const [x, y] = P(f.x, f.y, 30);
+            const k = f.age / BURST_SECONDS;
             return (
-              <G key={i}>
-                <Ellipse cx={x} cy={y + 2} rx={13 * k} ry={5 * k} fill="#6FE08A" opacity={0.28 + 0.3 * pulse} />
-                <Ellipse cx={x} cy={y + 2} rx={13 * k} ry={5 * k} fill="none" stroke="#2E9B4E" strokeWidth={1.6} opacity={0.55 + 0.4 * pulse} />
+              <G key={`b${f.key}`} opacity={1 - k}>
+                {[0, 1, 2, 3, 4, 5].map((i) => {
+                  const a = (i / 6) * Math.PI * 2 + 0.4;
+                  return (
+                    <Circle
+                      key={i}
+                      cx={x + Math.cos(a) * (6 + 22 * k)}
+                      cy={y + Math.sin(a) * (6 + 22 * k) - 8 * k}
+                      r={2.6}
+                      fill={['#FFC531', '#E8432E', '#3FAE5A'][i % 3]}
+                    />
+                  );
+                })}
               </G>
             );
           })}
-          {seated.map((f) => (
-            <Person key={f.key} x={f.x} y={f.y} kind="sit" flip={f.flip} seed={f.seed} act="slice" mood="happy" />
-          ))}
-          {seated
-            .filter((f) => f.age < BURST_SECONDS)
-            .map((f) => {
-              const [x, y] = P(f.x, f.y, 30);
-              const k = f.age / BURST_SECONDS;
-              return (
-                <G key={`b${f.key}`} opacity={1 - k}>
-                  {[0, 1, 2, 3, 4, 5].map((i) => {
-                    const a = (i / 6) * Math.PI * 2 + 0.4;
-                    return (
-                      <Circle
-                        key={i}
-                        cx={x + Math.cos(a) * (6 + 22 * k)}
-                        cy={y + Math.sin(a) * (6 + 22 * k) - 8 * k}
-                        r={2.6}
-                        fill={['#FFC531', '#E8432E', '#3FAE5A'][i % 3]}
-                      />
-                    );
-                  })}
-                </G>
-              );
-            })}
-          {figures.map((f) => (
-            <Person key={f.key} x={f.x} y={f.y} {...f.props} />
-          ))}
-        </G>
+        {figures.map((f) => (
+          <Person key={f.key} x={f.x} y={f.y} {...f.props} />
+        ))}
       </Svg>
     </View>
   );

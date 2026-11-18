@@ -10,7 +10,7 @@ import { useGame } from '../../../store/game-store';
 import { builtHood } from '../city-layers';
 import { C, F } from '../../../theme';
 import { Person } from '../../scene/people';
-import { P, drawShift, kAt, sceneFit, type SceneFrame } from '../../scene/projection';
+import { P, kAt, sceneFit, type SceneFrame } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
 import { toWindow } from '../layer-geometry';
@@ -22,7 +22,7 @@ import { CRITIC_LEAD, criticPath, criticPhase, targetChip, WALK_SECONDS } from '
 /** The critic's look: a black polo, grey hair, a notebook (the phone pose). */
 const LOOK = { seed: 7, shirt: '#2B2B3A', hair: '#8F8A86' } as const;
 const CHIP_H = 20;
-/** The shop door: its centre and left jamb in draw-space room units (`shopLayout(...).draw`). */
+/** The shop door: its centre and left jamb in room units (`shopLayout(...).room`). */
 interface Door {
   cx: number;
   x0: number;
@@ -49,20 +49,16 @@ function Figure({
 }) {
   const at = criticPath(p, door.cx, door.x0);
   const f = sceneFit(width, height, frame);
-  // the path is in the draw space (the room the storefront draws, and `Person`'s own space): the figure stands in a group moved right by `shift`
-  const shift = drawShift(frame);
-  const [dx, sy] = P(at.x, at.y);
+  const [sx, sy] = P(at.x, at.y, 0, frame);
   const k = kAt(at.y) * 1.14;
   const text = targetChip(target);
-  const head = toWindow(f, dx + shift, sy - 62 * k);
+  const head = toWindow(f, sx, sy - 62 * k);
   const box = pillBox(width, head.left, text, 4);
   return (
     <View testID="critic" pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} style={StyleSheet.absoluteFill}>
         <G transform={`translate(${f.ox} ${f.oy}) scale(${f.s})`}>
-          <G transform={shift ? `translate(${shift} 0)` : undefined}>
-            <Person x={at.x} y={at.y} kind="guest" front={false} flip={at.flip && p < 1} step={at.step} act={act} mood={mood} {...LOOK} />
-          </G>
+          <Person x={at.x} y={at.y} kind="guest" front={false} flip={at.flip && p < 1} step={at.step} act={act} mood={mood} {...LOOK} />
         </G>
       </Svg>
       <View testID="critic-target" style={[styles.chip, { width: box.width, left: box.left, top: head.top - CHIP_H - 2 }]}>
@@ -93,7 +89,7 @@ export const CriticScene = memo(function CriticScene({ shopId, width, height }: 
     const v = criticView(s.game);
     const phase = criticPhase(v);
     if (phase === 'away') return '';
-    const door = shopLayout(shopId, s.game.shops[shopId], cityOf(s.game)).draw.door;
+    const door = shopLayout(shopId, s.game.shops[shopId], cityOf(s.game)).room.door;
     return `${phase}|${v.last ? v.last.target : v.target}|${v.last ? (v.last.hit ? 1 : 0) : 0}|${phase === 'walking' ? Math.max(0, CRITIC_LEAD - v.nextIn) : 0}|${door.cx.toFixed(1)}|${door.x0.toFixed(1)}`;
   });
   if (!key || !(width > 0)) return null;
