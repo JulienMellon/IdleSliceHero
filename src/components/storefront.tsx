@@ -13,7 +13,8 @@ import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { F } from '../theme';
 import { FOOTPRINTS } from '../content/tuning';
 import { isMirrored } from '../content/shop-layout';
-import { cityOf, sceneHood } from '../content/cities';
+import { cityOf, hoodIds, sceneHood } from '../content/cities';
+import { LOOKS } from './scene/identity';
 import type { NeighborhoodId } from '../content/types';
 import * as Game from '../engine/game';
 import { useGame } from '../store/game-store';
@@ -132,8 +133,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const shop = game.shops[id];
   const city = cityOf(game);
   const nd = Game.def(id, city);
-  // the shop art is the home city's until Boston has its own: paint reads `art`, the game reads `id`
-  const art = sceneHood(city, id);
+  // the shop art: a shop with a look of its own (identity.ts: the home city's and Boston's) wears it; any other falls back to the home hood at its build position. Paint reads `art`, the game reads `id`
+  const art = LOOKS[id] ? id : sceneHood(city, id);
   const fp = shop.footprint;
   // where this view sits on the page, for turning a tap's pageX/pageY into scene coordinates
   const viewRef = useRef<ComponentRef<typeof View>>(null);
@@ -283,7 +284,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const waitText = waitRaw && !popsCover(popRects, waitTagRect(lay, waitRaw)) ? waitRaw : null;
   const moreRaw = hints.more ? moreWords : null;
   const moreText = moreRaw && !popsCover(popRects, moreTagRect(lay, moreRaw)) ? moreRaw : null;
-  const fin = furnitureInputs({ id: art, name: nd.name, shop, running, rate, vehicle: game.vehicle, worn: game.rewards.worn });
+  const fin = furnitureInputs({ id: art, name: nd.name, shop, running, rate, vehicle: game.vehicle, worn: game.rewards.worn, first: id === hoodIds(city)[0] });
   // Furniture only changes with upgrades and the dough/box counts, so it is built once per change (M12), not 15 times a second.
   // The visual ladder (v5.11): the props this shop's levels have earned, placed from the layout; built once per upgrade like the furniture
   // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are lay + every value of `fin`, the builder's only inputs

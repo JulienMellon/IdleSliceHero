@@ -35,9 +35,11 @@ export interface FurnitureSource {
   vehicle: number;
   /** `rewards.worn`: the cosmetics on (city-wide). Absent: none. */
   worn?: readonly string[];
+  /** The city's first shop: its sidewalk is never covered by the chip strip, managed or not (Downtown, North End). Absent: Downtown only. */
+  first?: boolean;
 }
 
-export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn = [] }: FurnitureSource): FurnitureInputs {
+export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn = [], first = id === 'downtown' }: FurnitureSource): FurnitureInputs {
   return {
     id,
     name,
@@ -54,7 +56,7 @@ export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn =
     dough: shop.managed ? 3 : Math.max(2, Math.min(8, Math.ceil(shop.line.prepped / 1.5))),
     boxes: running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0,
     // an unmanaged shop's chip strip covers the kerb, so its sidewalk props move up and the vehicle stays home
-    idleShop: !shop.managed && id !== 'downtown',
+    idleShop: !shop.managed && !first,
     vehicle,
     ...dressOf(worn),
   };

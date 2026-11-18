@@ -117,14 +117,17 @@ export function createOutput(): AudioOutput {
     gain.connect(bus);
     const voice: Voice = { id, src, gain, startAt: when };
     voices.add(voice);
-    const live = [...voices];
-    const victim = voiceToSteal(live.map((v) => v.id), MAX_VOICES);
-    if (victim >= 0 && live[victim] !== voice) {
-      voices.delete(live[victim]); // out of the count at once; its onended only disconnects
-      live[victim].src.stop();
+    if (voices.size > MAX_VOICES) {
+      const live = [...voices];
+      const victim = voiceToSteal(live.map((v) => v.id), MAX_VOICES);
+      if (victim >= 0 && live[victim] !== voice) {
+        voices.delete(live[victim]); // out of the count at once; its onended only disconnects
+        live[victim].src.stop();
+      }
     }
     src.onended = () => {
       voices.delete(voice);
+      if (voices.size === 0) syncClock(); // C138: the last voice is out, so a clock that should be asleep goes to sleep
       gain.disconnect();
       o.onEnd?.();
     };

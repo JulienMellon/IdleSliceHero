@@ -302,8 +302,11 @@ export const WallPlanter = memo(function WallPlanter({ lay }: { lay: Layout }) {
   );
 });
 
+const HOME_FLOOR_PROPS: ReadonlySet<string> = new Set(['downtown', 'suburbs', 'waterfront', 'university', 'industrial', 'uptown']);
 /** A small floor prop that makes each starter shop its own place. */
 export const FloorProp = memo(function FloorProp({ id, x, y }: { id: NeighborhoodId; x: number; y: number }) {
+  // only the home city's shops have one (Boston's draw none: no bare shadow)
+  if (!HOME_FLOOR_PROPS.has(id)) return null;
   const [px, py] = P(x, y);
   const k = kAt(y) * 1.4;
   return (

@@ -28,6 +28,11 @@ export function audioHood(hood: NeighborhoodId, cityId: string | undefined): Nei
   return home[at < 0 ? 0 : at % home.length];
 }
 
+/** Every city's scenes by id, each with the city it belongs to (AU85: Boston's story cues and its HQ bed need their scene found). */
+export const SCENE_INDEX: ReadonlyMap<string, { scene: Scene; city: string }> = new Map(
+  Object.values(CITIES).flatMap((c) => c.scenes.map((scene) => [scene.id, { scene, city: c.id }] as const)),
+);
+
 /** The loop that should be playing: a scene plays its own neighbourhood; MegaSlice panels play the HQ march. */
 export function musicFor(c: MusicContext): MusicTrack {
   if (c.scene?.panelCue === 'megaslice') return 'megaslice_hq';
