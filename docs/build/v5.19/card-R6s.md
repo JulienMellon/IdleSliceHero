@@ -6,6 +6,8 @@
 - **U21** [low]: storefront.tsx:311, :251. Run `stepMoments` only on a key change, and memo `moreTagAt`.
 - **A29** [low]: scene `FurnitureSource`. Make the remaining optional fields required.
 
+**Status at the plan check (2026-11-18):** v5.18 r4 already fixed U21 (`momentsKey` gates `stepMoments`) and A29 (`furniture-inputs.ts` has no optional fields left). Steps 2 and 3 become: verify and tick. The hooks extraction (step 1) and the measurement (step 4) remain.
+
 ## Files
 - Own: `src/components/storefront.tsx`; new `src/components/scene/use-barks.ts`, `use-crew-step.ts`, `use-moments.ts`, `use-cues.ts`; `src/components/scene/furniture-inputs.ts` (A29).
 - Read-only: `scene/moments.ts`, `scene/crew.ts`, `engine/features/heads.ts`, `scroll-cues-model.ts`.

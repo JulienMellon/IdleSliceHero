@@ -1,5 +1,7 @@
 # Card R2b: callers off the barrels (v5.19, lane E; this card's Files override OWNERS)
 
+**Run last and alone** (VERSION.md wave 12). Every other card's files import these shims, so nothing else may be in flight.
+
 **Goal:** every importer of `engine/game`, the old `backdrop.tsx` and `portrait.tsx` paths, and `components/layers/university/sheet-state` (if card R5f left it) imports the real module. The re-export shims are then deleted. Import lines only.
 
 ## Files

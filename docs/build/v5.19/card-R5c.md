@@ -6,6 +6,8 @@
 - **C146** [medium]: `city-model.ts:32` `lotView` hard-codes `Nonna in ${…}` / 'Nonna soon' (and `kind: 'nonna'`). The Boston City-map pin reads "Nonna in 424". Fix: `pinsLeft: number | null` plus `founder` from `founderName` (exported by card R1). shop-ui formats from the number.
 - **C137** [low]: shop-ui.tsx:69, app/index.tsx:113, city.tsx:21. `lotView` returns pies-to-go text, and the buy handler should be typed. This card takes the `lotView` half; card R4 takes the handler.
 
+**Status at the plan check (2026-11-18):** v5.18 r4 already fixed C146 and the `lotView` half of C137: `city-model.ts` has no "Nonna in" literal, and `founderName` is exported. Step 4 is then only the remaining literals in `ad-model.ts` and `rewards-model.ts` that name the founder (for example "Unlocks when Nonna takes over"; "Nonna's Plus" is a product name and stays) and the step 5 guard. Card CITY dresses new cities through this card's `t()` and override tables: keep the home keys as they are, so a city's overrides use them.
+
 ## Files
 - Own: new `src/content/copy/` (`fill.ts`, `home/*.ts`, `boston.ts`, `index.ts`) and `scripts/gen-copy.ts`.
 - Moved there, with a re-export left at the old path: `components/endgame/copy.ts`, `copy-text.ts`, `components/layers/layer-copy.ts`, `layer-text.ts`, `city-dress.ts`, and the menu, shifts and stars `copy.ts` tables.

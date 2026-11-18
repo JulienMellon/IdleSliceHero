@@ -1,5 +1,7 @@
 # Card R6: cut-scene art by city (v5.19, lanes S and T; this card's Files override OWNERS)
 
+(Updated 2026-11-18 by the plan check: Boston's portraits register per city, for card CITY.)
+
 **Goal:** `backdrop.tsx` (1,808 lines) and `portrait.tsx` (834) split so that a new city's art is one new file plus one registry line. Card CITY then adds Chicago, New York and Los Angeles without editing shared art. **Pixel-identical.**
 
 **Why:** `docs/PLAN-refactor.md`, phase P6 (the first two bullets).
@@ -22,10 +24,16 @@
   - `look.ts`: `Look`, `LOOKS`, `AGED`, `lookFor`, `DISPLAY_NAMES`, `managerLook`.
   - `hair.tsx`, `hats.tsx` (`Hat`, `Glasses`, `Mustache`, …) and `face.tsx`.
   - `bust.tsx` (`Bust`, `BustGear`) and `stage.tsx` (`Stage`, `ArmWear`, `HeldClipboard`, `HeldCard`).
-  - `outfits/index.tsx` (`Outfit`), `outfits/boston.ts` (`BOSTON_OUTFIT`).
+  - `outfits/index.tsx` (`Outfit`: the home characters' cases and the merge), and `outfits/boston.tsx`.
   - `index.tsx` (`Portrait`).
 
-  An outfit table per city is registered the same way as the backdrops.
+  **Per-city registration** (so card CITY adds a city as one new file plus one registry line). `outfits/boston.tsx` holds everything that is Boston's:
+  - `BOSTON_OUTFIT`;
+  - Boston's `LOOKS` and `DISPLAY_NAMES` entries;
+  - its `AGED` row;
+  - its characters' `Outfit` cases, as a `Partial<Record<CharacterId, OutfitFn>>`.
+
+  It exports these as one `CityPortraits` object. `look.ts` and `outfits/index.tsx` merge every registered city's object over the home tables. Today the Boston entries sit inline in `LOOKS`, `DISPLAY_NAMES`, `AGED` and the `Outfit` switch (`case 'father-dom'` …); they move. Keep the same output: a test asserts that `lookFor` and `DISPLAY_NAMES` return the same values for every `CharacterId` before and after.
 - [ ] **3. Same output.** For each `BackdropId` × prop × hood combination the tests already cover, and each `CharacterId` × mood, the rendered element tree must be unchanged. Use the existing cutscene tests; if none covers the `.tsx` output, rely on the fixtures below.
 
 ## Fixtures

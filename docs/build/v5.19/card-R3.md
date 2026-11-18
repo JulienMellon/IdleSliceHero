@@ -2,7 +2,9 @@
 
 **Goal:** `store/game-store.ts` imports nothing from `components/`, and its 712 lines become slice files composed in one `create()`. The `Store` type and every action's behaviour stay the same.
 
-**Run after E4** (E4 adds one store action).
+**Run after E4.** E4 adds one store action, `startShowdownRound`, beside `startRival`. It goes in the `layers` slice with `startRival`.
+
+**Status at the plan check (2026-11-18):** v5.18 r4 already fixed C148 (the `franchise` action no longer goes through `benefit()`), C134 (one AppState listener, in `_layout.tsx`) and T104 (`store/__tests__/offline-popup.test.ts`). Verify them; don't redo them. A34 is still open: the store imports `endgame/banner-state`, `endgame/stack-model`, `store/ad-model` and `store/store-model`.
 
 **Why:** `docs/PLAN-refactor.md`, phase P3. Notes to fix:
 - **A34** [low]: game-store.ts, store/standing.ts imports. Move the grant, double, reroll, booster and offline maths to the engine.
@@ -16,7 +18,7 @@
 
 ## Steps
 - [ ] **1. Maths to the engine.** Move `claimDelta`, `applyDouble`, `offlineBoost`, `offlineExtra`, `offlineFactor`, `repairByAd`, `rerollDaily`, `grantDailyBooster`, `claimOffer`, `applyGrant`, `parsePrefs`, `NO_PREFS` and `PREFS_KEY` into `engine/monetization.ts`. The banner's open flag becomes store state, or a getter the store receives at startup; pick whichever keeps the banner's timing identical.
-- [ ] **2. Slices.** Split into `store/slices/{core,shop,rewards,monetization,layers,story}.ts`, each `(set, get) => Partial<Store>`, with `game-store.ts` composing them. The load/save, `whenLoaded` and `benefit` helpers live in `core`. Persistence goes through `services/kv.ts`.
+- [ ] **2. Slices.** Split into `store/slices/{core,shop,rewards,monetization,layers,story}.ts`, each `(set, get) => Partial<Store>`, with `game-store.ts` composing them. `layers` holds the rival, the showdown (`startShowdownRound`, from E4), and the rack, menu, jam, ingredients, critic and defend actions. The load/save, `whenLoaded` and `benefit` helpers live in `core`. Persistence goes through `services/kv.ts`.
 - [ ] **3. C148, C134.**
 - [ ] **4. Rename** `components/store/` to `components/monetization/`.
 - [ ] **5. Lint.** The `store → components` rule is now an error and passes.

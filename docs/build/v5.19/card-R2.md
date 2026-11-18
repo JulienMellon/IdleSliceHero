@@ -8,6 +8,12 @@
 - **A37** [low]: store and view `Date.now` game-time sites. Add `engine/clock.ts` `gameNow()`; animation keeps `Date.now`.
 - **M62 / U12** [low]: `features/mastery.ts:107`, `recipes.ts:259`, game.ts tick. Early-out settle on a per-shop fingerprint, and cache the recipe count on owned identity.
 
+**Status at the plan check (2026-11-18):** v5.18 r4 already did part of this.
+- A33: `challengeOffered` and `migrateStory` are in `src/engine/story.ts`, and game.ts no longer imports rival or scenes.
+- A36: `canAfford` and `pay` exist in game.ts. Move them to `purchases.ts` and convert the remaining raw sites (`grep -rn "cash >=\|\.cash -=" src/engine src/components`).
+- A37: `src/engine/clock.ts` `gameNow()` exists. Add `setGameClock` and convert the remaining game-time `Date.now()` calls.
+Card E4, which runs after the checkpoint, imports these modules directly.
+
 ## Files
 - Own: `src/engine/game.ts` (the barrel), and new `src/engine/{state,migrate,economy,purchases,offline,story,hints,clock}.ts`; `src/engine/night-oven.ts`, `vanity.ts`, `features/mastery.ts`, `features/recipes.ts`, and the spend sites in `features/layers/*.ts`, which use `canAfford` and `pay`.
 - Shared: `src/store/game-store.ts` and the view files that read game time. Only `Date.now()` becomes `gameNow()`, and only where the value is game time, not animation.
