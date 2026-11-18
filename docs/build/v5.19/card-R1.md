@@ -1,6 +1,6 @@
 # Card R1: the city-generic engine (v5.19, lane E; this card's Files override OWNERS)
 
-**Goal:** nothing outside a city pack reads the home city's tables or ids, so Chicago, New York and Los Angeles (cards E4 and CITY) can't inherit home numbers by accident. Behaviour-preserving for home and Boston.
+**Goal:** nothing outside a city pack reads the home city's tables or ids, so a new city pack can't inherit home numbers by accident. Behaviour-preserving for home and Boston.
 
 **Why:** `docs/PLAN-refactor.md`, phase P1 (the first six bullets; the layer and layout bullets are card R1L).
 
@@ -26,7 +26,7 @@
   - `sidewalk-model.ts:340` `id !== 'downtown'` becomes `id !== firstHood(city)` (the caller passes the city).
   - `storefront.tsx:375` `downtown: id === 'downtown'` becomes `id === firstHood(city)`.
   - `storefront.tsx:480` `jamOn = id === 'industrial' && …` becomes `layerOf(city, id) === 'shifts' && …` (the plan's `'industrial'` jam check; the line numbers have moved since, so grep).
-  - `audio/director.ts:199` `'waterfront'`: report only (lane A, card A3 takes it).
+  - `audio/director.ts` `'waterfront'` (the bid stinger, about line 215): report only. Card R7a takes it.
 - [ ] **6. Per-city voice into `CityDef`:** add optional `barks`, `headBarks`, `orderCast`, `nightOvenLines` and `founder: { id, name }` fields. Move the home values from `content/heads.ts` and `content/hooks.ts` into `cities/home/`. Readers use `cityOf(g).barks ?? {}`. Boston gets **no** new lines in this card. Its heads stay silent until the CITY or T2 follow-up writes them. Just make the code ready (STATE: "engine heads.ts barkText/nextBark read home BARKS").
 - [ ] **7. Guard.** Shrink the `home-ids-guard` `ALLOW` list. Every entry left must be an art module (`scene/**`, `backdrop.tsx`, `cutscene/**`), each with a reason.
 
