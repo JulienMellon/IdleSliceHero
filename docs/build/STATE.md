@@ -7,7 +7,7 @@ version: 5.19                   # scope: a city is only a content pack (Julien 2
 step: waves                     # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.18-r3           # label of the last screenshot set that passed verify
-codecritic_range_start: (set to HEAD at wave 0)
+codecritic_range_start: eafbb5a
 cards:                 # todo | running | done | partial | blocked
   R0: todo  R0p: todo  R1: todo  R6: todo  R1L: todo  R5c: todo  R7a: todo  R7b: todo
 reviews:               # latest review file per critic, with verdict and counts
