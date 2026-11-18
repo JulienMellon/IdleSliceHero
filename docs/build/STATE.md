@@ -11,7 +11,7 @@ codecritic_range_start: 229f874
 cards:                 # todo | running | done | partial | blocked
   K1: done  W3: done  V1: partial  E3: carried  T2: done  A2: carried  V2: partial
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.18/review-r2-critic.md (r2 NOT SATISFIED; bug 0 major 0 minor 9; E2 U2 S4 T1; D506 D510 D512-D514 D481 D493 D495 D505)
+  critic: docs/build/v5.18/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 6; E2 U1 S3; D512 D514 D481 D493 D495 D505 carry)
   code:   docs/build/v5.18/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 23; E14 U5 S2 N3 A1)
   story:  docs/build/v5.18/review-r2-story.md (r2 SATISFIED; bug 0 major 0 minor 2; U1 T1; S67 S48 carried)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
