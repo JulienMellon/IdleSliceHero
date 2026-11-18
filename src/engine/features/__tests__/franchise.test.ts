@@ -32,6 +32,7 @@ import {
 import { masteryTotal, mastery } from '../mastery';
 import { recipes } from '../recipes';
 
+import { HOME_FIT } from '../../../content/cities/home/fit';
 const at = (y: number, m: number, d: number, h = 0) => new Date(y, m - 1, d, h).getTime();
 const WED = at(2026, 11, 11, 12);
 const MON = at(2026, 11, 16);
@@ -228,7 +229,7 @@ describe('the multiplier', () => {
     expect(e2).toBeCloseTo(e1 * 2, 6);
     // the kitchen's rate (pizzas per second) is the same
     const shop = n.shops[id];
-    expect(G.shopRate(shop, n.vehicle, G.featureMults(n, id, MON))).toBe(G.shopRate(shop, plain.vehicle, G.featureMults(plain, id, MON)));
+    expect(G.shopRate(shop, n.vehicle, HOME_FIT, G.featureMults(n, id, MON))).toBe(G.shopRate(shop, plain.vehicle, HOME_FIT, G.featureMults(plain, id, MON)));
   });
   it('is 1 in a game that has never franchised', () => {
     expect(multiplierNow(G.newGame(WED))).toBe(1);

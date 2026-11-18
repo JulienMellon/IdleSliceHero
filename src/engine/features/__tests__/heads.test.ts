@@ -3,8 +3,7 @@
  */
 // Station heads (v5.15): barks (one bubble per shop, 2.5 s, 20 s apart, never in a cut-scene), the copy for every line, rank pins and
 // the Head of the Week (seeded by the week number, rolled only when it rises, no income effect).
-import { BARKS, CAMEO_NONNA_LINES, HEAD_BARKS, STATION_TASKS, type BarkTrigger } from '../../../content/heads';
-import { HEADS, NEIGHBORHOODS } from '../../../content/tuning';
+import { CAMEO_NONNA_LINES, HEAD_BARKS, STATION_TASKS, type BarkTrigger } from '../../../content/heads';
 import type { NeighborhoodId } from '../../../content/types';
 import * as G from '../../game';
 import { FEATURES, getFeature, withFeatures } from '..';
@@ -27,6 +26,9 @@ import {
   type BarkAsk,
 } from '../heads';
 
+import { HOME_BARKS } from '../../../content/cities/home/voice';
+import { HEADS, NEIGHBORHOODS } from '../../../content/cities/home/data';
+import { HOME_BARKS as BARKS } from '../../../content/cities/home/voice';
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const at = (y: number, m: number, d: number, h = 0) => new Date(y, m - 1, d, h).getTime();
 const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
@@ -51,7 +53,7 @@ describe('the copy', () => {
         for (const t of triggers) {
           const text = BARKS[id][st][t];
           expect(text.length).toBeGreaterThan(5);
-          expect(barkText(id, st, t)).toBe(text);
+          expect(barkText(HOME_BARKS, id, st, t)).toBe(text);
           expect(text.length * 5.6 + 16).toBeLessThanOrEqual(240);
         }
   });
@@ -66,23 +68,23 @@ describe('barks', () => {
   const ask = (trigger: BarkTrigger, station: 'prep' | 'oven' | 'counter' = 'prep', key?: string): BarkAsk => ({ trigger, station, key });
 
   test('a bubble speaks the copy line for its shop, station and trigger', () => {
-    const r = nextBark(newBarkMem(), 'suburbs', [ask('milestone', 'oven')], 100, false);
+    const r = nextBark(newBarkMem(), 'suburbs', [ask('milestone', 'oven')], 100, false, HOME_BARKS);
     expect(r.bark?.text).toBe(BARKS.suburbs.oven.milestone);
   });
   test('never during a cut-scene', () => {
-    const r = nextBark(newBarkMem(), 'suburbs', [ask('rush')], 100, true);
+    const r = nextBark(newBarkMem(), 'suburbs', [ask('rush')], 100, true, HOME_BARKS);
     expect(r.bark).toBeNull();
     expect(r.mem.at).toBe(Number.NEGATIVE_INFINITY);
   });
   test('at least 20 s apart, and only one at a time', () => {
     let mem = newBarkMem();
-    const first = nextBark(mem, 'downtown', [ask('rush')], 100, false);
+    const first = nextBark(mem, 'downtown', [ask('rush')], 100, false, HOME_BARKS);
     mem = first.mem;
     expect(first.bark).not.toBeNull();
     expect(barkShowing(mem, 101)).toBe(true);
     expect(barkShowing(mem, 100 + HEAD_BARKS.seconds + 0.01)).toBe(false);
-    expect(nextBark(mem, 'downtown', [ask('rush')], 100 + HEAD_BARKS.gap - 0.1, false).bark).toBeNull();
-    expect(nextBark(mem, 'downtown', [ask('rush')], 100 + HEAD_BARKS.gap, false).bark).not.toBeNull();
+    expect(nextBark(mem, 'downtown', [ask('rush')], 100 + HEAD_BARKS.gap - 0.1, false, HOME_BARKS).bark).toBeNull();
+    expect(nextBark(mem, 'downtown', [ask('rush')], 100 + HEAD_BARKS.gap, false, HOME_BARKS).bark).not.toBeNull();
   });
   test('a bubble is shorter than the gap, so two never show together', () => {
     expect(HEAD_BARKS.seconds).toBe(2.5);
@@ -91,7 +93,7 @@ describe('barks', () => {
   });
   test('an attack outranks a milestone, which outranks the week and a rush', () => {
     const asks = [ask('rush', 'prep'), ask('week', 'oven'), ask('milestone', 'counter'), ask('attack', 'prep')];
-    expect(nextBark(newBarkMem(), 'uptown', asks, 50, false).bark?.trigger).toBe('attack');
+    expect(nextBark(newBarkMem(), 'uptown', asks, 50, false, HOME_BARKS).bark?.trigger).toBe('attack');
     expect(
       nextBark(
         newBarkMem(),
@@ -99,20 +101,21 @@ describe('barks', () => {
         asks.filter((a) => a.trigger !== 'attack'),
         50,
         false,
+        HOME_BARKS,
       ).bark?.trigger,
     ).toBe('milestone');
-    expect(nextBark(newBarkMem(), 'uptown', [ask('rush'), ask('week')], 50, false).bark?.trigger).toBe('week');
+    expect(nextBark(newBarkMem(), 'uptown', [ask('rush'), ask('week')], 50, false, HOME_BARKS).bark?.trigger).toBe('week');
   });
   test('a keyed ask is spoken once; one that waited its turn still speaks', () => {
     let mem = newBarkMem();
     const w = ask('week', 'prep', 'week-3');
-    const blocked = nextBark(mem, 'uptown', [w], 10, true);
+    const blocked = nextBark(mem, 'uptown', [w], 10, true, HOME_BARKS);
     expect(blocked.mem).toBe(mem);
-    const spoken = nextBark(mem, 'uptown', [w], 11, false);
+    const spoken = nextBark(mem, 'uptown', [w], 11, false, HOME_BARKS);
     expect(spoken.bark).not.toBeNull();
     mem = spoken.mem;
-    expect(nextBark(mem, 'uptown', [w], 500, false).bark).toBeNull();
-    expect(nextBark(mem, 'uptown', [ask('week', 'prep', 'week-4')], 500, false).bark).not.toBeNull();
+    expect(nextBark(mem, 'uptown', [w], 500, false, HOME_BARKS).bark).toBeNull();
+    expect(nextBark(mem, 'uptown', [ask('week', 'prep', 'week-4')], 500, false, HOME_BARKS).bark).not.toBeNull();
   });
   test('rush and attack speak with a hired head, rotated', () => {
     const shop = G.newShop(true);

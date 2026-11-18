@@ -171,7 +171,7 @@ function warmRare(s: ReturnType<typeof useGame.getState>) {
   if (!useAudioPrefs.getState().sound) return;
   if (s.offline) mixer.warm('collect', collectSize(s.offline.earned, s.game.cash), true);
   if (!mixer.loaded('build', 0) && canBuildSomewhere(s.game)) mixer.warm('build', 0);
-  if (!mixer.loaded('gavel', 0) && G.pier9Available(s.game)) mixer.warm('gavel', 0);
+  if (!mixer.loaded('gavel', 0) && G.bidAvailable(s.game)) mixer.warm('gavel', 0);
 }
 
 // ------------------------------------------------------------------------------------------------ events

@@ -7,6 +7,7 @@
 import { memo, useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { cityOf } from '../../content/cities';
 import { ORDER_VIEW } from '../../content/hooks';
 import { money } from '../../engine/format';
 import { attackView } from '../../engine/features/counterattack';
@@ -69,7 +70,7 @@ export const ChallengeChip = memo(function ChallengeChip({ shown = true }: { sho
   const g = useGame.getState().game;
   const view = attackView(g, gameNow());
   const run = challengeView(view);
-  const result = resultView(view);
+  const result = resultView(view, cityOf(g));
   if (face === 'running' && run) {
     const { setActive } = useGame.getState();
     return (

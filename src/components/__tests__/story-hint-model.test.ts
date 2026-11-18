@@ -1,10 +1,10 @@
 /// <reference types="jest" />
 // v5.16 (T1b): the story wait hint is a one-line banner in the waiting neighbourhood's drawer, and only there.
-import { NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import * as G from '../../engine/game';
 import { HINT_FONT, hintFit, hintForHood } from '../cutscene/story-hint-model';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const HOODS = NEIGHBORHOODS.map((n) => n.id) as NeighborhoodId[];
 const name = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 /** Every sentence the engine can say: a finale to win over, or the Pier 9 dock, for each neighbourhood waiting. */

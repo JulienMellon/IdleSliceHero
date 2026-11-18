@@ -5,6 +5,7 @@ import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Ellipse, G } from 'react-native-svg';
 
+import { cityOf } from '../../../content/cities';
 import { GAME_DAY, LAYER_KEYS } from '../../../content/layers';
 import { gameDayView, type Timed } from '../../../engine/features/layers/suburbs-gameday';
 import { patioTables } from '../../../engine/game';
@@ -31,12 +32,12 @@ export const GameDayScene = memo(function GameDayScene({ shopId, width, height }
   const shop = g.shops[shopId];
   const v = gameDayView(g, gameNow());
   if (!v.rush) return null;
-  const lay = layoutOfShop(shop);
+  const lay = layoutOfShop(shop, cityOf(g).fit);
   const until = (g.x?.[LAYER_KEYS.gameDay] as Timed | undefined)?.until ?? 0;
   // seconds into the rush, smooth between the 200 ms game ticks
   const since = Math.max(0, (gameNow() - st.tickAt) / 1000);
   const t = Math.max(0, Math.min(GAME_DAY.rushSeconds, GAME_DAY.rushSeconds - (until - g.playSeconds) + since));
-  const chairs = chairsOf(lay, patioTables(shop));
+  const chairs = chairsOf(lay, patioTables(shop, cityOf(g).fit));
   const free = freeChairs(chairs.length, v);
   const families = familiesFor(v.seatsFree, lay);
   const open = glowing(free, t, families, lay);

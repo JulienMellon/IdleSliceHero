@@ -2,7 +2,6 @@
 // v5.16 (T1b): each neighbourhood's shop interior. The five other shops have a palette, a window and one signature object of their own;
 // none hangs in the caption zone, runs off the panel edge or comes within 8 pt of a figure's head.
 import { HOME_SCENES } from '../../content/scenes/home';
-import { NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import {
   BULB_INSET_PT,
@@ -19,6 +18,7 @@ import {
 } from '../cutscene/backdrop-art';
 import { FACE_BOX, LIMB_CLEARANCE, boxInPanel, panelSize, stageLayout } from '../cutscene/staging';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const WINDOWS: [number, number, number][] = [
   [320, 568, 20],
   [375, 812, 47],

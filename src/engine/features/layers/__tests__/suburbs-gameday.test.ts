@@ -4,6 +4,7 @@ import { getFeature, withFeatures } from '../../index';
 import * as G from '../../../game';
 import { freshTimed, gameDayView, gapOf, rushDemandMult, seatsFree, seatsOf, stepTimed, suburbsGameDay, walkInFactor, type Timed } from '../suburbs-gameday';
 
+import { HOME_FIT } from '../../../../content/cities/home/fit';
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 const HOOD = GAME_DAY.hood;
 const patch = (g: G.GameState, p: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [HOOD]: { ...g.shops[HOOD], ...p } } });
@@ -106,16 +107,16 @@ describe('the rush', () => {
       const g = onRush();
       const shop = g.shops[HOOD];
       const w = G.walkInRate(shop);
-      const d = G.deliveryRate(shop, g.vehicle);
+      const d = G.deliveryRate(shop, g.vehicle, HOME_FIT);
       const m = suburbsGameDay.shopDemandMult!(g, HOOD, NOW);
-      const demand = G.demandRate(shop, g.vehicle, { value: 1, demand: m });
+      const demand = G.demandRate(shop, g.vehicle, HOME_FIT, { value: 1, demand: m });
       // demand = drivers + walk-ins x the factor: the drivers are not multiplied
-      expect(demand).toBeCloseTo(d + w * walkInFactor(shop, g.vehicle), 6);
-      expect(walkInFactor(shop, g.vehicle)).toBeLessThanOrEqual(GAME_DAY.walkInMult);
-      expect(walkInFactor(shop, g.vehicle)).toBeGreaterThan(1);
+      expect(demand).toBeCloseTo(d + w * walkInFactor(shop, g.vehicle, HOME_FIT), 6);
+      expect(walkInFactor(shop, g.vehicle, HOME_FIT)).toBeLessThanOrEqual(GAME_DAY.walkInMult);
+      expect(walkInFactor(shop, g.vehicle, HOME_FIT)).toBeGreaterThan(1);
       // the extra walk-ins never exceed 6x, and a rush fills at most the share of seats that are free
-      const extra = w * (walkInFactor(shop, g.vehicle) - 1);
-      expect(extra).toBeLessThanOrEqual(w * (GAME_DAY.walkInMult - 1) * (seatsFree(shop, g.vehicle) / seatsOf(shop)) + 1e-9);
+      const extra = w * (walkInFactor(shop, g.vehicle, HOME_FIT) - 1);
+      expect(extra).toBeLessThanOrEqual(w * (GAME_DAY.walkInMult - 1) * (seatsFree(shop, g.vehicle, HOME_FIT) / seatsOf(shop, HOME_FIT)) + 1e-9);
       // the other shops are untouched
       expect(suburbsGameDay.shopDemandMult!(g, 'downtown', NOW)).toBe(1);
     });
@@ -124,10 +125,14 @@ describe('the rush', () => {
   it('gives more with more free seats: a shop that is all seating has no room for the rush', () => {
     const roomy = game(0, { drivers: 60, tables: 2 });
     const packed = game(0, { drivers: 1, tables: 60 });
-    expect(seatsFree(roomy.shops[HOOD], 0) / seatsOf(roomy.shops[HOOD])).toBeGreaterThan(seatsFree(packed.shops[HOOD], 0) / seatsOf(packed.shops[HOOD]));
-    expect(walkInFactor(roomy.shops[HOOD], 0)).toBeGreaterThan(walkInFactor(packed.shops[HOOD], 0));
+    expect(seatsFree(roomy.shops[HOOD], 0, HOME_FIT) / seatsOf(roomy.shops[HOOD], HOME_FIT)).toBeGreaterThan(
+      seatsFree(packed.shops[HOOD], 0, HOME_FIT) / seatsOf(packed.shops[HOOD], HOME_FIT),
+    );
+    expect(walkInFactor(roomy.shops[HOOD], 0, HOME_FIT)).toBeGreaterThan(walkInFactor(packed.shops[HOOD], 0, HOME_FIT));
     // more tables and the patio mean more seats
-    expect(seatsOf(game(0, { footprint: 4, tables: 40 }).shops[HOOD])).toBeGreaterThan(seatsOf(game(0, { footprint: 0, tables: 1 }).shops[HOOD]));
+    expect(seatsOf(game(0, { footprint: 4, tables: 40 }).shops[HOOD], HOME_FIT)).toBeGreaterThan(
+      seatsOf(game(0, { footprint: 0, tables: 1 }).shops[HOOD], HOME_FIT),
+    );
   });
 
   it('raises what a demand-limited shop sells, and Dale’s perk pays more for the walk-ins in it', () => {
@@ -177,5 +182,5 @@ describe('old saves', () => {
 });
 
 it('a rush never lowers demand', () => {
-  expect(rushDemandMult(G.newShop(true), 0)).toBeGreaterThanOrEqual(1);
+  expect(rushDemandMult(G.newShop(true), 0, HOME_FIT)).toBeGreaterThanOrEqual(1);
 });

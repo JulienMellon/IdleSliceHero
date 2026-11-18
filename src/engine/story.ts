@@ -1,11 +1,11 @@
 // The story's rules, as pure functions of a game (A33): when a scene's trigger has passed, which scenes are pending, the goal bar's wait hint,
 // when a rival challenge is offered and the load-time story migration. They were in game.ts, which then had to import the rival layer and the
 // scene lists; game.ts re-exports the readers for the callers that still say `G.pendingScenes`.
-import { cityOf } from '../content/cities';
+import { cityOf, findHood } from '../content/cities';
 import { STORY_PACING } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { challengeWon, rivalOpen } from './features/layers/rival';
-import { def, firstHood, sceneId, type GameState } from './game';
+import { firstHood, sceneId, type GameState } from './game';
 
 /** Every scene a scene waits for: its `requires`, and the scene an `after` trigger counts from. */
 export function prerequisites(scene: Scene): string[] {
@@ -60,7 +60,7 @@ export const scenesById = (scenes: readonly Scene[]): ReadonlyMap<string, Scene>
   return m;
 };
 
-const capital = (id: string) => (def(id) as { name: string } | undefined)?.name ?? id.charAt(0).toUpperCase() + id.slice(1);
+const capital = (id: string) => findHood(id)?.name ?? id.charAt(0).toUpperCase() + id.slice(1);
 
 /**
  * A line for the goal bar when a main beat has triggered but is held behind a finale the player still has to earn (Uptown behind
@@ -99,7 +99,7 @@ export function storyWaitHint(s: GameState, scenes: readonly Scene[] = cityOf(s)
 export function challengeOffered(s: GameState, id: NeighborhoodId): boolean {
   if (!rivalOpen(s, id)) return false;
   const beat3 = s.sceneAt[sceneId(id, 3)];
-  const gap = id === firstHood(cityOf(s)) ? STORY_PACING.downtownBeat4GapSeconds : STORY_PACING.beat4GapSeconds;
+  const gap = id === firstHood(cityOf(s)) ? STORY_PACING.firstHoodBeat4GapSeconds : STORY_PACING.beat4GapSeconds;
   return beat3 === undefined || s.playSeconds - beat3 >= gap;
 }
 

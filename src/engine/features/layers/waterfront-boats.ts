@@ -4,7 +4,7 @@
 // shop's income at purchase time.
 //
 // Live auction: while the Pier 9 bid is open and unpaid, MegaSlice raises its price by 5% of the base every 2 minutes of play, to
-// +50% (`pier9AuctionMult`; game.ts's `pier9Price` reads the same number from the saved `openedAt`, content/layers.ts).
+// +50% (`pier9AuctionMult`; game.ts's `bidPrice` reads the same number from the saved `openedAt`, content/layers.ts).
 // Play time only; the schedule replays from the saved seed; inactive until the Waterfront shop is built; old saves load as
 // "inactive, the schedule starts now". The rack and the rush earn only while the app is open.
 import { BOATS, LAYER_KEYS, auctionMult } from '../../../content/layers';
@@ -15,7 +15,7 @@ import {
   featureMults,
   ovenRate,
   pay,
-  pier9Available,
+  bidAvailable,
   prepRate,
   runsItself,
   shopRate,
@@ -139,13 +139,14 @@ function rackStep(g: GameState, st: BoatsState, dt: number, now: number): BoatsS
   const shop = g.shops[hoodOf(g)];
   if (cap <= 0 || !runsItself(shop)) return st;
   const fx = featureMults(g, hoodOf(g), now);
-  const sold = shopRate(shop, g.vehicle, fx);
+  const fit = cityOf(g).fit;
+  const sold = shopRate(shop, g.vehicle, fit, fx);
   if (!timedOn(st, g.playSeconds, now)) {
-    const spare = Math.max(0, Math.min(prepRate(shop), ovenRate(shop)) - sold);
+    const spare = Math.max(0, Math.min(prepRate(shop), ovenRate(shop, fit)) - sold);
     const rack = Math.min(cap, st.rack + spare * dt);
     return rack === st.rack ? st : { ...st, rack };
   }
-  const unmet = Math.max(0, demandRate(shop, g.vehicle, fx) - sold);
+  const unmet = Math.max(0, demandRate(shop, g.vehicle, fit, fx) - sold);
   const room = Math.max(0, counterRate(shop) - sold);
   const drained = Math.min(st.rack, Math.min(unmet, room) * dt);
   return drained > 0 ? { ...st, rack: st.rack - drained, carry: st.carry + drained } : st;
@@ -171,7 +172,7 @@ export const waterfrontBoats: Feature<BoatsState> = {
     const st = read(g);
     let next = stepTimed(st, g.playSeconds, now, spec);
     // the auction opens the first time a tick sees the bid on offer; the clock runs in play seconds from then
-    if (next.openedAt < 0 && pier9Available(g)) next = { ...next, openedAt: g.playSeconds };
+    if (next.openedAt < 0 && bidAvailable(g)) next = { ...next, openedAt: g.playSeconds };
     next = rackStep(g, next, dt, now);
     let out = g;
     const whole = Math.floor(next.carry);

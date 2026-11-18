@@ -4,8 +4,10 @@
 import * as G from '../game';
 import { pizzas, pizzasLeft } from '../format';
 import { advanceLine, AUTOMATIC, emptyLine, LINE, MANUAL, piesInFlight, tapStation, type LineRates } from '../pipeline';
-import { GM_BOOST, HEADS_OFFLINE_SHARE, NEIGHBORHOODS } from '../../content/tuning';
+import { GM_BOOST, HEADS_OFFLINE_SHARE } from '../../content/tuning';
 
+import { HOME_FIT } from '../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const rates = (over: Partial<LineRates> = {}): LineRates => ({ prep: 2, oven: 1.5, serve: 3, shop: 1.5, price: 5, walkInFraction: 0.3, tapBatch: 4, ...over });
 const withShop = (s: G.GameState, id: G.GameState['active'], patch: Partial<G.Shop>): G.GameState => ({
   ...s,
@@ -96,7 +98,7 @@ describe('offline settles the line', () => {
     const sec = 600;
     const r = G.offlineTick(s, sec);
     const pies = r.state.shops.downtown.sold - s.shops.downtown.sold;
-    expect(pies).toBe(Math.floor(G.shopRate(s.shops.downtown, 0) * sec) + inFlight);
+    expect(pies).toBe(Math.floor(G.shopRate(s.shops.downtown, 0, HOME_FIT) * sec) + inFlight);
     expect(piesInFlight(r.state.shops.downtown.line)).toBe(0);
     expect(r.state.shops.downtown.line.nextId).toBe(s.shops.downtown.line.nextId);
   });
@@ -141,7 +143,7 @@ describe('offline settles the line', () => {
     const shop = before.shops.downtown;
     const inFlight = piesInFlight(shop.line);
     const pies = after.state.shops.downtown.sold - shop.sold;
-    expect(pies).toBe(Math.floor(G.shopRate(shop, 0) * HEADS_OFFLINE_SHARE * 3600) + inFlight);
+    expect(pies).toBe(Math.floor(G.shopRate(shop, 0, HOME_FIT) * HEADS_OFFLINE_SHARE * 3600) + inFlight);
     expect(after.state.cash - before.cash).toBeCloseTo(after.byShop[0].base, 6);
     // the same shop with a GM sells the full rate at twice the price per pie
     const full = away(withShop(G.newGame(0), 'downtown', { ...levelled, managed: true, heads: G.allHeads() }), 3600);

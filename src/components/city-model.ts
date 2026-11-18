@@ -40,7 +40,7 @@ export function lotView(s: G.GameState, n: NeighborhoodDef): LotView {
     };
   // the only lock the next lot can have is Nonna's takeover (the previous lot is built by definition)
   if (G.buildLock(s, n.id) !== null) {
-    const left = G.nonnaPizzasLeft(s);
+    const left = G.founderPizzasLeft(s);
     const who = G.founderName(s);
     return {
       kind: 'nonna',

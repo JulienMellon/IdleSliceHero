@@ -1,13 +1,14 @@
 // Shop mastery (v5.15): star rules, one-time pay, the milestone cosmetics and the catch-up on a v5.14 save.
 import { MASTERY } from '../../content/endgame';
 import { WEEKLY_COSMETICS } from '../../content/rewards';
-import { FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { HOME_CITY } from '../../content/cities/home';
 import { getFeature } from '../features';
 import { ackMastery, mastery, masteryStars, masteryTotal, nextStar, shopStars } from '../features/mastery';
 import * as G from '../game';
 
+import { FOOTPRINTS, OVEN_GRADES } from '../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const T0 = 1_700_000_000_000;
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({

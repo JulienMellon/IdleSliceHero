@@ -1,6 +1,5 @@
 /// <reference types="jest" />
 import { MAX_BOOSTERS, STREAK_SAVE_DIAMONDS } from '../../../content/rewards';
-import { NONNA_TAKEOVER } from '../../../content/tuning';
 import * as G from '../../../engine/game';
 import { claimDaily, dayKey, giftStatus, refreshRewards } from '../../../engine/rewards';
 import type { AdPlacement, AdResult } from '../../../services/types';
@@ -28,6 +27,7 @@ import {
   streakSaveOffer,
 } from '../ad-model';
 
+import { NONNA_TAKEOVER } from '../../../content/cities/home/fit';
 const NOW = new Date(2026, 10, 11, 12, 0, 0).getTime(); // a Wednesday
 const DAY = 86_400_000;
 

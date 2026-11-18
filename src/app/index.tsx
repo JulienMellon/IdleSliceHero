@@ -120,7 +120,7 @@ export default function GameScreen() {
     build,
     setActive,
     dismissOffline,
-    bidPier9,
+    placeBid,
     claimDaily,
     claimWeekly,
     claimChest,
@@ -252,7 +252,7 @@ export default function GameScreen() {
   const bundle = tiedBundle(game, id);
 
   // the sidewalk offers the next hire (each head, then the GM) here; see hireOnSidewalk (B1)
-  const idleShopHere = hireOnSidewalk(shop, id);
+  const idleShopHere = hireOnSidewalk(shop, id, city);
   // Goal bar: the big purchase worth saving for, by cash/sec per dollar.
   const candidates: (Goal & { ratio: number })[] = [];
   for (const n of NEIGHBORHOODS) {
@@ -301,20 +301,20 @@ export default function GameScreen() {
     });
   candidates.sort((a, b) => b.ratio - a.ratio);
   // Waterfront's finale is a purchase, so it leads the goal bar while it's on offer
-  if (G.pier9Available(game))
+  if (G.bidAvailable(game))
     candidates.unshift({
       label: 'Bid on Pier 9 to save Marisol’s dock',
       short: 'Bid on Pier 9',
       current: game.cash,
-      target: G.pier9Price(game),
+      target: G.bidPrice(game),
       ratio: Number.MAX_VALUE,
-      onPress: bidPier9,
+      onPress: placeBid,
     });
   // viewing an unmanaged shop: its next hire is the goal
   // while the sidewalk offers a head, the goal bar moves on to the next goal (D341); the GM hire is offered in both places until it is hired (B1).
   // Downtown's sidewalk shows its stations instead, so there the hire leads the goal bar
   const mine = (c: Goal) => c.label.startsWith(`${nd.name}: hire`);
-  const shown = goalHidesOwnHire(shop, id)
+  const shown = goalHidesOwnHire(shop, id, city)
     ? candidates.filter((c) => !mine(c))
     : !shop.managed
       ? [...candidates.filter(mine), ...candidates.filter((c) => !mine(c))]

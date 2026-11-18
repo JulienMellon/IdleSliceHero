@@ -1,11 +1,12 @@
 /// <reference types="jest" />
-import { FOOTPRINTS, NEIGHBORHOODS } from '../../../content/tuning';
 import * as G from '../../../engine/game';
 import { money } from '../../../engine/format';
 import { goalLine, goalLabelFit, masteryGoal } from '../../goal-model';
 import { SIDEWALK_ROW, TAP } from '../../tap-targets';
 import { cardFonts, cardTextWidths, cashFont, cashWidth, fits, fitFont, HUD_ICON, iconWidth, MIN_FONT, rateLine, SCRAPBOOK_HEAD } from '../fit-model';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../../content/cities/home/data';
 // iPhone SE (320 pt) and a 393 pt phone. Plain arithmetic: nothing here can be seen in a screenshot, so it is proved here.
 const SE = 320;
 const BIG = 393;

@@ -1,8 +1,8 @@
 // Pure helpers for the cut-scene player and the store's scene gate (kept in .ts so they are unit-testable in node).
 import type { Scene, SceneLine } from '../content/types';
 import { STORY_PACING } from '../content/tuning';
-import { cityOf } from '../content/cities';
-import { def, pendingScenes, sceneId, type GameState } from './game';
+import { cityOf, findHood } from '../content/cities';
+import { pendingScenes, sceneId, type GameState } from './game';
 
 /** Taps are ignored for this long after a line appears, so a tapping player can't blow past it. */
 export const LINE_LOCKOUT_MS = 450;
@@ -22,7 +22,7 @@ export function sceneMayOpen(nowMs: number, lastKitchenTapMs: number): boolean {
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 /** The neighbourhood's display name ("North End", "Back Bay"); an id no city has falls back to the capitalised slug. */
-const hoodName = (id: string): string => (def(id) as { name: string } | undefined)?.name ?? cap(id);
+const hoodName = (id: string): string => findHood(id)?.name ?? cap(id);
 
 /**
  * The heading shown while a scene plays. Titles such as "Brother Sal" or "Dock Saved" give the twist
@@ -54,7 +54,7 @@ export function sceneReady(game: GameState, scene: Scene, lastSceneEndPlay: numb
   if (lastSceneEndPlay !== null && game.playSeconds - lastSceneEndPlay < STORY_PACING.gapSeconds) return false;
   if (scene.beat === 4) {
     const beat3 = game.sceneAt[sceneId(scene.neighborhood, 3)];
-    const gap = scene.neighborhood === cityOf(game).neighbourhoods[0].id ? STORY_PACING.downtownBeat4GapSeconds : STORY_PACING.beat4GapSeconds;
+    const gap = scene.neighborhood === cityOf(game).neighbourhoods[0].id ? STORY_PACING.firstHoodBeat4GapSeconds : STORY_PACING.beat4GapSeconds;
     if (beat3 !== undefined && game.playSeconds - beat3 < gap) return false;
   }
   return true;

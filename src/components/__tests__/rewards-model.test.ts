@@ -2,7 +2,6 @@
 import { DAILY_CHESTS, DAILY_TASK_REWARD, GIFT_DAYS, GIFT_MILESTONES, VISITOR_LINES, WEEKLY_FALLBACK, WEEKLY_TASK_REWARD } from '../../content/rewards';
 import * as G from '../../engine/game';
 import { dayKey, refreshRewards, taskDone } from '../../engine/rewards';
-import { NONNA_TAKEOVER } from '../../content/tuning';
 import {
   BOOST_STRIP,
   boostFadeShown,
@@ -36,6 +35,7 @@ import {
   weeklyRows,
 } from '../rewards-model';
 
+import { NONNA_TAKEOVER } from '../../content/cities/home/fit';
 const NOW = new Date(2026, 9, 28, 13, 7, 41, 333).getTime(); // a Wednesday
 const DAY = 86_400_000;
 const NO_FLOAT = /\d\.\d{3,}/;

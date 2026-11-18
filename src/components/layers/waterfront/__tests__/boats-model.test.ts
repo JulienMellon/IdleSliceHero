@@ -1,6 +1,5 @@
 /// <reference types="jest" />
 import { AUCTION, BOATS, LAYER_KEYS } from '../../../../content/layers';
-import { PIER9_BID } from '../../../../content/tuning';
 import '../../../../engine/features';
 import * as G from '../../../../engine/game';
 import type { BoatsView } from '../../../../engine/features/layers/waterfront-boats';
@@ -25,6 +24,7 @@ import {
   untilNextBoat,
 } from '../boats-model';
 
+import { PIER9_BID } from '../../../../content/cities/home/data';
 const view = (o: Partial<BoatsView> = {}): BoatsView => ({
   active: true,
   boat: false,

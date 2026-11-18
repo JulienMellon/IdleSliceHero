@@ -4,13 +4,13 @@
 // Friday Night Rush and Big Game Day (v5.15): on and off at the boundaries, who they apply to, never offline, and how they
 // combine with boosts (docs/REWARDS.md: boosts add).
 import { EVENTS } from '../../content/endgame';
-import { NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { getFeature } from '../features';
 import { activeEvent, events, eventView, withoutEvent } from '../features/events';
 import * as G from '../game';
 import * as R from '../rewards';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const at = (y: number, m: number, d: number, h = 0, mi = 0, s = 0) => new Date(y, m - 1, d, h, mi, s).getTime();
 // 2026-11-13 is a Friday, 11-14 a Saturday, 11-15 a Sunday

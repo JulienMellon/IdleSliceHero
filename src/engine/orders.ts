@@ -1,21 +1,22 @@
 // Special orders from the cast (v5.13): once the Suburbs shop is built, a character the player has met now and then asks for
 // N pies from their shop within two minutes. Pure rules: when an offer comes, how big the order is, progress, and how it ends.
 // The chip is components/order-chip.tsx. Times are play seconds; one order at a time; a failure costs nothing.
-import { ORDER, ORDER_CAST, type OrderCast } from '../content/hooks';
+import { ORDER, type OrderCast } from '../content/hooks';
 import type { NeighborhoodId } from '../content/types';
 import { seededUnit } from './bonus';
 import { pizzas } from './format';
 import { sceneId, runsItself, shopRate, type ActiveOrder, type GameState, type OrderOffer, type OrderState, type Shop } from './game';
 import { LINE } from './pipeline';
 import { minutesToCash, rewardsUnlocked } from './rewards';
-import { cityOf, hoodIds } from '../content/cities';
+import { cityOf, hoodIds, type CityDef, type CityFit } from '../content/cities';
 
 /** Orders start when the Suburbs shop is built (which needs Nonna's takeover, so never during the tutorial). */
 export const ordersUnlocked = (s: GameState): boolean => rewardsUnlocked(s) && s.shops[cityOf(s).neighbourhoods[1].id].built;
 
-/** Neighbourhoods whose character may ask: the shop is built and the character's first scene has been seen. */
+/** Neighbourhoods whose character may ask: the city has a cast for it (`CityDef.orderCast`), the shop is built and the character's first scene has been seen. */
 export function metHoods(s: GameState): NeighborhoodId[] {
-  return hoodIds(cityOf(s)).filter((id) => s.shops[id].built && s.seenScenes.includes(sceneId(id, 1)));
+  const city = cityOf(s);
+  return hoodIds(city).filter((id) => !!city.orderCast?.[id] && s.shops[id].built && s.seenScenes.includes(sceneId(id, 1)));
 }
 
 /** A round number to ask for: whole fives under 100, then two significant figures (144 → 140, 1,234 → 1,200). */
@@ -31,8 +32,8 @@ export function friendlyTarget(raw: number): number {
  * demand) included, runs that much faster. Measured on the engine (orders.test.ts) in kitchen- and demand-limited shops alike.
  * Only a shop with a General Manager can rush (three heads alone have nothing to tap); any other sells at its plain rate.
  */
-export function rushedRate(shop: Shop, vehicle: number): number {
-  const rate = shopRate(shop, vehicle);
+export function rushedRate(shop: Shop, vehicle: number, fit: CityFit): number {
+  const rate = shopRate(shop, vehicle, fit);
   return shop.managed ? rate * (1 + LINE.rushSeconds * ORDER.rushTapsPerSecond) : rate;
 }
 
@@ -45,7 +46,7 @@ export function rushedRate(shop: Shop, vehicle: number): number {
 export function orderTarget(s: GameState, hood: NeighborhoodId): number {
   const shop: Shop = s.shops[hood];
   if (!runsItself(shop)) return ORDER.unmanagedTarget;
-  return friendlyTarget(rushedRate(shop, s.vehicle) * ORDER.windowSeconds * ORDER.targetMargin);
+  return friendlyTarget(rushedRate(shop, s.vehicle, cityOf(s).fit) * ORDER.windowSeconds * ORDER.targetMargin);
 }
 
 /** Pies sold toward an order so far, 0..target. */
@@ -57,7 +58,8 @@ export const orderReward = (s: GameState): number => minutesToCash(s, ORDER.rewa
 /** A character's offer line with the pie count filled in. */
 export const offerLine = (cast: OrderCast, variant: 0 | 1, target: number): string => cast.offers[variant].replace('{n}', pizzas(target));
 
-export const castOf = (hood: NeighborhoodId): OrderCast => ORDER_CAST[hood];
+/** Who asks for orders in a neighbourhood's shop, from the city's own cast; undefined when the city has none for it. */
+export const castOf = (city: CityDef, hood: NeighborhoodId): OrderCast | undefined => city.orderCast?.[hood];
 
 const end = (o: OrderState, play: number, patch: Partial<OrderState>): OrderState => ({ ...o, ...patch, nextAt: play + ORDER.gapSeconds });
 

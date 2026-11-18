@@ -1,7 +1,6 @@
 /// <reference types="jest" />
 // v5.18 card V2: the Restaurant and the Flagship are wider than the screen, two neighbourhoods use the mirrored floor plan, and the first three tiers do not change.
 import { createHash } from 'crypto';
-import { FOOTPRINTS } from '../../../content/tuning';
 import { FIRST_WIDE_FOOTPRINT, ROOM_WIDTH, SCENE_WIDTH, WIDE_PLAN, isMirrored } from '../../../content/shop-layout';
 import { buildCast, type CastMember } from '../cast';
 import { emptyCrew, routesFor, stepCrew, type CrewState } from '../crew';
@@ -15,6 +14,7 @@ import { P, drawFrame, drawShift, frameRight, kAt, makeFrame, sceneFrame } from 
 import { doorwaySignRect, badgeXs, stationRects } from '../stations';
 import { ladderInput, furnitureInputs } from '../furniture-inputs';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 
 describe('the widths (content/shop-layout.ts)', () => {

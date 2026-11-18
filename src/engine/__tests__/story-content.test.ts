@@ -1,10 +1,10 @@
 // The shape of the 40-scene script (v5.16, docs/specs/PLAN-v4.4-todd-interludes.md section 7): limits per scene, panel and bubble,
 // references between scenes, and the order the Todd name tag climbs down. Pure data checks: nothing here plays the game.
 import { HOME_SCENES } from '../../content/scenes/home';
-import { MANAGERS, NEIGHBORHOODS } from '../../content/tuning';
 import type { Scene } from '../../content/types';
 import { prerequisites } from '../game';
 
+import { MANAGERS, NEIGHBORHOODS } from '../../content/cities/home/data';
 const byId = new Map(HOME_SCENES.map((s) => [s.id, s]));
 const hire = (s: Scene) => s.trigger.kind === 'manager';
 const interludes = HOME_SCENES.filter((s) => s.beat === 'interlude' && !hire(s));

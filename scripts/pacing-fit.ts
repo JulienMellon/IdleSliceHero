@@ -14,7 +14,7 @@
 // (OG, FP, DC, VC, PB, PP, CAP, EFF as in scripts/review/sim2.ts) are chosen by hand; the fitter bisects each later pizzeria's
 // buildCost so its first scene lands on the target day, one stage at a time (a stage only depends on earlier ones), then
 // bisects Uptown's cost multiplier so the finale lands on its target. Round the printed numbers by hand and run `check`.
-import { FOOTPRINTS, HEAD_COST_DOWNTOWN, HEAD_KINDS, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES } from '../src/content/tuning';
+import { HEAD_KINDS } from '../src/content/tuning';
 import { FRANCHISE, cityNumbers, type CityNumbers } from '../src/content/franchise';
 import { canFranchise, franchise, franchiseGain } from '../src/engine/features/franchise';
 import { COUNTERATTACK } from '../src/content/endgame';
@@ -25,6 +25,8 @@ import { masteryStars, masteryTotal } from '../src/engine/features/mastery';
 import { cityOf } from '../src/content/cities';
 import { applyCfg, decisionMetric, endSummary, INSTALL, options, reportLines, rewardRules, run, sessionStats, type Cfg } from './review/sim2';
 
+import { FOOTPRINTS, HEAD_COST_DOWNTOWN, OVEN_GRADES, VEHICLES } from '../src/content/cities/home/fit';
+import { NEIGHBORHOODS, PIER9_BID } from '../src/content/cities/home/data';
 // ---- v5.16 (card E0): the economy rules after playtest 3. Every target the tests pin is a named constant here, so the version's final
 // refit (card E2b) changes numbers and not tests. ----
 

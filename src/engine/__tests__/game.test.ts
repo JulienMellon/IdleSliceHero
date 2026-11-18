@@ -1,9 +1,12 @@
 /// <reference types="jest" />
 import * as G from '../game';
-import { DECOR_BOOST, DECOR_TIER_COST, HEAD_COST_DOWNTOWN, NEIGHBORHOODS, TUNING } from '../../content/tuning';
+import { DECOR_BOOST, DECOR_TIER_COST, TUNING } from '../../content/tuning';
 import { duration, money } from '../format';
 import { piesInFlight } from '../pipeline';
 
+import { HOME_FIT } from '../../content/cities/home/fit';
+import { HEAD_COST_DOWNTOWN } from '../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const fresh = () => G.newGame(1_000_000);
 const managed = (s: G.GameState, id: G.GameState['active'] = 'downtown') => ({
   ...s,
@@ -21,9 +24,9 @@ describe('formulas', () => {
   });
   test('a pizzeria sells at the rate of its slowest stage', () => {
     const shop = G.newShop(true);
-    const expected = Math.min(G.prepRate(shop), G.ovenRate(shop), G.counterRate(shop), G.demandRate(shop, 0));
-    expect(G.shopRate(shop, 0)).toBeCloseTo(expected);
-    expect(G.bottleneck(shop, 0)).toBe('customers'); // one bike driver + one table at the start
+    const expected = Math.min(G.prepRate(shop), G.ovenRate(shop, HOME_FIT), G.counterRate(shop), G.demandRate(shop, 0, HOME_FIT));
+    expect(G.shopRate(shop, 0, HOME_FIT)).toBeCloseTo(expected);
+    expect(G.bottleneck(shop, 0, HOME_FIT)).toBe('customers'); // one bike driver + one table at the start
   });
   test('walk-ins pay full price by default, so a pie is worth the same either way', () => {
     expect(TUNING.walkInShare).toBe(1);
@@ -34,20 +37,20 @@ describe('formulas', () => {
     // a fast kitchen with 20 seats and 3 drivers: the kitchen outruns the tables, so drivers get the rest
     const busy = { ...G.newShop(true), prep: 60, ovens: 60, counter: 60, footprint: 4, grade: 4, drivers: 3, tables: 5 };
     test('walk-ins take pies up to the seating rate and the drivers deliver the rest', () => {
-      const sold = G.shopRate(busy, 0);
+      const sold = G.shopRate(busy, 0, HOME_FIT);
       expect(sold).toBeGreaterThan(G.walkInRate(busy)); // the kitchen is the faster side
-      expect(G.walkInFraction(busy, 0)).toBeCloseTo(G.walkInRate(busy) / sold, 9);
-      expect(G.walkInFraction(busy, 0)).toBeLessThan(1);
+      expect(G.walkInFraction(busy, 0, HOME_FIT)).toBeCloseTo(G.walkInRate(busy) / sold, 9);
+      expect(G.walkInFraction(busy, 0, HOME_FIT)).toBeLessThan(1);
       // the drivers only get what the seats can't take
-      expect(sold - G.walkInRate(busy)).toBeLessThanOrEqual(G.deliveryRate(busy, 0) + 1e-9);
+      expect(sold - G.walkInRate(busy)).toBeLessThanOrEqual(G.deliveryRate(busy, 0, HOME_FIT) + 1e-9);
     });
     test('when the kitchen is slower than the seating, every pie is a walk-in', () => {
       const slow = { ...G.newShop(true), tables: 60, drivers: 3 };
-      expect(G.shopRate(slow, 0)).toBeLessThan(G.walkInRate(slow));
-      expect(G.walkInFraction(slow, 0)).toBe(1);
+      expect(G.shopRate(slow, 0, HOME_FIT)).toBeLessThan(G.walkInRate(slow));
+      expect(G.walkInFraction(slow, 0, HOME_FIT)).toBe(1);
     });
     test('revenue splits walk-ins first: price × (walk-ins + delivered)', () => {
-      const sold = G.shopRate(busy, 0);
+      const sold = G.shopRate(busy, 0, HOME_FIT);
       const walk = Math.min(sold, G.walkInRate(busy));
       const price = G.def('downtown').orderValue * G.decorMult(busy, 'downtown') * G.gmMult(busy);
       expect(G.shopRevenue('downtown', busy, 0)).toBeCloseTo(price * sold, 9); // both at full price
@@ -58,13 +61,13 @@ describe('formulas', () => {
       for (const sh of [busy, { ...G.newShop(true), tables: 60, drivers: 3 }]) {
         const r = G.lineRates('suburbs', sh, 0);
         expect(r.price * r.shop).toBeCloseTo(G.shopRevenue('suburbs', sh, 0), 9);
-        expect(r.walkInFraction).toBe(G.walkInFraction(sh, 0));
+        expect(r.walkInFraction).toBe(G.walkInFraction(sh, 0, HOME_FIT));
       }
     });
     test('Suburbs perk: walk-in pies pay x1.15, delivered pies stay at full price', () => {
       const plain = { ...busy, perk: false };
       const perked = { ...busy, perk: true };
-      const sold = G.shopRate(busy, 0);
+      const sold = G.shopRate(busy, 0, HOME_FIT);
       const walk = G.walkInRate(busy);
       const price = G.def('suburbs').orderValue * G.decorMult(busy, 'suburbs') * G.gmMult(busy);
       expect(G.shopRevenue('suburbs', plain, 0)).toBeCloseTo(price * sold, 9);
@@ -85,33 +88,33 @@ describe('formulas', () => {
       expect((s.cash - c0) / 600 / G.shopEarnings(s, 'downtown')).toBeLessThan(1.01);
       const walks = s.stats.walkins - w0;
       const drives = s.stats.deliveries - d0;
-      expect(walks / (walks + drives)).toBeGreaterThan(G.walkInFraction(busy, 0) - 0.03);
-      expect(walks / (walks + drives)).toBeLessThan(G.walkInFraction(busy, 0) + 0.03);
+      expect(walks / (walks + drives)).toBeGreaterThan(G.walkInFraction(busy, 0, HOME_FIT) - 0.03);
+      expect(walks / (walks + drives)).toBeLessThan(G.walkInFraction(busy, 0, HOME_FIT) + 0.03);
     });
   });
   describe('queues and the patio (v5.11)', () => {
     const base = G.newShop(true);
     test('a kitchen that keeps up with the seats leaves no diner waiting', () => {
       // one bike driver + one table: the seats (0.3/s) are all served, the one driver is busy
-      expect(G.queueSizes(base, 0)).toEqual({ diners: 0, drivers: 0 });
+      expect(G.queueSizes(base, 0, HOME_FIT)).toEqual({ diners: 0, drivers: 0 });
       const fastKitchen = { ...G.newShop(true), prep: 60, ovens: 60, counter: 60, footprint: 4, grade: 4, drivers: 3, tables: 5 };
-      expect(G.queueSizes(fastKitchen, 0).diners).toBe(0);
+      expect(G.queueSizes(fastKitchen, 0, HOME_FIT).diners).toBe(0);
     });
     test('diners queue in quarters of the unmet seating rate, ceiling, 0..4', () => {
       const slow = { ...base, tables: 60, drivers: 3 }; // 36 seats/s against a 0.7/s kitchen
-      expect(G.queueSizes(slow, 0).diners).toBe(4);
+      expect(G.queueSizes(slow, 0, HOME_FIT).diners).toBe(4);
       // seats 0.75/s (level 4) against a 0.7/s kitchen: a sliver unmet still shows one diner
       const sliver = { ...base, tables: 4, drivers: 0 };
       const seats = G.walkInRate(sliver);
-      const sold = G.shopRate(sliver, 0);
+      const sold = G.shopRate(sliver, 0, HOME_FIT);
       expect(sold).toBeLessThan(seats);
-      expect(G.queueSizes(sliver, 0).diners).toBe(1);
-      expect(G.queueSizes(sliver, 0).diners).toBe(Math.ceil((4 * (seats - sold)) / seats));
+      expect(G.queueSizes(sliver, 0, HOME_FIT).diners).toBe(1);
+      expect(G.queueSizes(sliver, 0, HOME_FIT).diners).toBe(Math.ceil((4 * (seats - sold)) / seats));
       // every count is within 0..4 across a sweep of kitchens and seatings
       for (const prep of [1, 5, 30, 80])
         for (const tables of [1, 4, 10, 40, 90])
           for (const drivers of [0, 1, 4, 20]) {
-            const q = G.queueSizes({ ...base, prep, ovens: prep, counter: prep, tables, drivers }, 0);
+            const q = G.queueSizes({ ...base, prep, ovens: prep, counter: prep, tables, drivers }, 0, HOME_FIT);
             expect(q.diners).toBeGreaterThanOrEqual(0);
             expect(q.diners).toBeLessThanOrEqual(4);
           }
@@ -119,32 +122,32 @@ describe('formulas', () => {
     test('drivers wait when the walk-ins and the kitchen leave their capacity idle; the count is not capped', () => {
       // a kitchen as fast as its seats leaves the whole fleet idle only when nothing is left to deliver
       const idleFleet = { ...base, prep: 1, ovens: 1, counter: 1, tables: 60, drivers: 3 }; // kitchen 0.7/s, all walk-ins
-      expect(G.queueSizes(idleFleet, 0).drivers).toBe(3);
+      expect(G.queueSizes(idleFleet, 0, HOME_FIT).drivers).toBe(3);
       const many = { ...idleFleet, drivers: 12 };
-      expect(G.queueSizes(many, 0).drivers).toBe(12); // > 3: the scene adds a "×N waiting" tag
-      expect(G.queueSizes({ ...base, drivers: 0 }, 0).drivers).toBe(0);
+      expect(G.queueSizes(many, 0, HOME_FIT).drivers).toBe(12); // > 3: the scene adds a "×N waiting" tag
+      expect(G.queueSizes({ ...base, drivers: 0 }, 0, HOME_FIT).drivers).toBe(0);
     });
     test('both counts come from the same split: idle drivers = drivers × (1 − delivered / fleet)', () => {
       for (const drivers of [1, 2, 5, 9])
         for (const tables of [1, 7, 19, 40]) {
           const shop = { ...base, prep: 30, ovens: 30, counter: 30, footprint: 3, drivers, tables };
-          const sold = G.shopRate(shop, 1);
+          const sold = G.shopRate(shop, 1, HOME_FIT);
           const walk = Math.min(sold, G.walkInRate(shop));
-          const expected = Math.max(0, Math.round(drivers * (1 - (sold - walk) / G.deliveryRate(shop, 1))));
-          expect(G.queueSizes(shop, 1).drivers).toBe(expected);
-          expect(G.queueSizes(shop, 1).diners).toBe(Math.max(0, Math.min(4, Math.ceil((4 * (G.walkInRate(shop) - walk)) / G.walkInRate(shop)))));
+          const expected = Math.max(0, Math.round(drivers * (1 - (sold - walk) / G.deliveryRate(shop, 1, HOME_FIT))));
+          expect(G.queueSizes(shop, 1, HOME_FIT).drivers).toBe(expected);
+          expect(G.queueSizes(shop, 1, HOME_FIT).diners).toBe(Math.max(0, Math.min(4, Math.ceil((4 * (G.walkInRate(shop) - walk)) / G.walkInRate(shop)))));
         }
     });
     test("patio tables: levels past the footprint's indoor cap, 0..2, and never a change to the seating rate", () => {
       const at = (footprint: number, tables: number) => ({ ...base, footprint, tables });
       // footprint 0 holds 2 indoors: level 13 is the third table, level 19 the fourth
-      expect([1, 7, 12, 13, 18, 19, 25].map((t) => G.patioTables(at(0, t)))).toEqual([0, 0, 0, 1, 1, 2, 2]);
-      expect(G.patioTables(at(4, 25))).toBe(0); // 5 shown, 6 indoors fit
-      expect(G.patioTables(at(4, 37))).toBe(1);
-      expect(G.patioTables(at(4, 125))).toBe(2);
+      expect([1, 7, 12, 13, 18, 19, 25].map((t) => G.patioTables(at(0, t), HOME_FIT))).toEqual([0, 0, 0, 1, 1, 2, 2]);
+      expect(G.patioTables(at(4, 25), HOME_FIT)).toBe(0); // 5 shown, 6 indoors fit
+      expect(G.patioTables(at(4, 37), HOME_FIT)).toBe(1);
+      expect(G.patioTables(at(4, 125), HOME_FIT)).toBe(2);
       for (let fp = 0; fp < 5; fp++)
         for (const t of [1, 6, 7, 30, 60, 125])
-          expect(G.patioTables(at(fp, t))).toBe(Math.max(0, Math.min(2, 1 + Math.floor((t - 1) / 6) - [2, 3, 4, 5, 6][fp])));
+          expect(G.patioTables(at(fp, t), HOME_FIT)).toBe(Math.max(0, Math.min(2, 1 + Math.floor((t - 1) / 6) - [2, 3, 4, 5, 6][fp])));
       expect(G.walkInRate(at(0, 19))).toBe(G.walkInRate({ ...base, tables: 19 }));
     });
   });
@@ -164,11 +167,11 @@ describe('formulas', () => {
     const big = { ...shop, footprint: 2 };
     expect(G.prepRate(big) / G.prepRate(shop)).toBeCloseTo(TUNING.footprintBoost ** 2);
     expect(G.counterRate(big) / G.counterRate(shop)).toBeCloseTo(TUNING.footprintBoost ** 2);
-    expect(G.ovenRate(big)).toBeCloseTo(G.ovenRate(shop));
+    expect(G.ovenRate(big, HOME_FIT)).toBeCloseTo(G.ovenRate(shop, HOME_FIT));
   });
   test('oven grades multiply bake speed', () => {
     const shop = G.newShop(true);
-    expect(G.ovenRate({ ...shop, grade: 2 }) / G.ovenRate(shop)).toBeCloseTo(4);
+    expect(G.ovenRate({ ...shop, grade: 2 }, HOME_FIT) / G.ovenRate(shop, HOME_FIT)).toBeCloseTo(4);
   });
 });
 
@@ -398,7 +401,7 @@ describe('offline and saves', () => {
     const now = s.lastSavedAt + seconds * 1000;
     const boosted = { ...s, rewards: { ...s.rewards, boosts: [{ mult, until: now + 1e6, source: 'x' }] } };
     const inFlight = piesInFlight(shop.line);
-    const rest = Math.floor(G.shopRate(shop, s.vehicle) * seconds) + inFlight - 3;
+    const rest = Math.floor(G.shopRate(shop, s.vehicle, HOME_FIT) * seconds) + inFlight - 3;
     const value = G.valuePerPizza('downtown', shop, s.vehicle);
     const plain = G.applyOffline(s, now).state.cash;
     expect(plain).toBeCloseTo(600 + rest * value, 3);

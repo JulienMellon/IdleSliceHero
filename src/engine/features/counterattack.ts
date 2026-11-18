@@ -75,7 +75,7 @@ export function pickTarget(g: GameState, week: number, previous: NeighborhoodId 
 
 /** Pies the challenge asks for in `id` right now: ceil(5 min x the shop's current pizza rate x 1.25), at least 1. */
 export function challengeTarget(g: GameState, id: NeighborhoodId, now: number): number {
-  const rate = shopRate(g.shops[id], g.vehicle, featureMults(g, id, now));
+  const rate = shopRate(g.shops[id], g.vehicle, cityOf(g).fit, featureMults(g, id, now));
   return Math.max(1, Math.ceil(COUNTERATTACK.challengeSeconds * rate * COUNTERATTACK.targetMargin));
 }
 

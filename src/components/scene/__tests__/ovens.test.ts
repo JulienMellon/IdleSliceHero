@@ -1,9 +1,9 @@
 /// <reference types="jest" />
 // The oven ladder (D417): at every step the bank is wider in total, every oven keeps a fire window, Lv 25 / 50 add trim and a taller hood.
-import { FOOTPRINTS } from '../../../content/tuning';
 import { HOOD_EXTRA, isBoxOven, ovenFrame, ovenOpening, ovenTier } from '../geometry';
 import { BAY_COL_MIN, COUNTER_STAFF_STEP, MIN_OVEN_W, OVEN_BAY, ROOM_W, layout, ovenPlan } from './draw-layout';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 
 function* banks() {

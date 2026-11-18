@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { emitAudio } from '../audio/bus';
 import { panelCue } from '../audio/logic';
 import { STORY } from '../audio/manifest';
-import { PERKS } from '../content/tuning';
+import { HOME_CITY } from '../content/cities/home';
 import type { Scene } from '../content/types';
 import { C, F } from '../theme';
 import { Backdrop } from './backdrop';
@@ -43,7 +43,8 @@ export function CutscenePlayer({ scene, onDone }: { scene: Scene; onDone: () => 
   }, [scene.id]);
 
   // the closing card: a gameplay unlock and/or this neighbourhood's perk
-  const perk = scene.perk ? PERKS[scene.neighborhood] : undefined;
+  // v5.18 reads the home city's perks for every scene, so a Boston finale shows no perk card (BUG, reported with R1: fix is the city that has the neighbourhood, `cityHolding(id)?.perks[id]`)
+  const perk = scene.perk ? HOME_CITY.perks[scene.neighborhood] : undefined;
   const hasCard = !!scene.reward || !!perk;
   const p = scene.panels[panel];
   const captionBar = hasCaptionBar(p);

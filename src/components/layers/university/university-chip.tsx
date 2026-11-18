@@ -2,6 +2,7 @@
 // repaints only when the words change, never on a game tick; nothing in any other shop.
 import { memo } from 'react';
 
+import { cityOf } from '../../../content/cities';
 import { isDrones } from '../../../engine/features/layers/university-menu';
 import { useGame } from '../../../store/game-store';
 import { builtHood } from '../city-layers';
@@ -11,7 +12,9 @@ import { campusChipText, campusOut } from './zones-model';
 import { universitySheet } from './university-state';
 
 export const UniversityChip = memo(function UniversityChip() {
-  const text = useGame((s) => (s.game.active === builtHood(s.game, 'menu') ? campusChipText(campusOut(s.game), isDrones(s.game.vehicle)) : ''));
+  const text = useGame((s) =>
+    s.game.active === builtHood(s.game, 'menu') ? campusChipText(campusOut(s.game), isDrones(s.game.vehicle, cityOf(s.game).fit)) : '',
+  );
   if (!text) return null;
   return <LayerChip testID="university-chip" rows={twoRows(text)} label={`${text}. Open the menu and campus zones`} onPress={universitySheet.open} />;
 });

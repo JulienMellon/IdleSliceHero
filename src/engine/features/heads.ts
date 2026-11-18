@@ -5,7 +5,8 @@
 //   - Each week one hired head is Head of the Week: seeded by the week number, rolled only when the week number rises (the same rule
 //     as counterattack.ts; lesson C94). It wears a gold star and its station's daily tasks are starred (`starredKinds`).
 //   No income effect: this feature has no value or demand hook.
-import { BARKS, HEAD_BARKS, STATION_TASKS, type BarkStation, type BarkTrigger } from '../../content/heads';
+import type { BarkTable } from '../../content/cities/types';
+import { HEAD_BARKS, STATION_TASKS, type BarkStation, type BarkTrigger } from '../../content/heads';
 import type { NeighborhoodId } from '../../content/types';
 import { seededUnit } from '../bonus';
 import { type GameState, type Shop } from '../game';
@@ -105,8 +106,9 @@ export const heads: Feature<HeadsState> = {
 
 // ---------- barks ----------
 
-/** What a head says: the copy's line for the shop, station and trigger. */
-export const barkText = (shopId: NeighborhoodId, station: BarkStation, trigger: BarkTrigger): string => BARKS[shopId][station][trigger];
+/** What a head says: the city's line (`CityDef.barks`, `cityOf(g).barks ?? {}`) for the shop, station and trigger; undefined when the city has none, and its heads are silent. */
+export const barkText = (barks: Partial<BarkTable>, shopId: NeighborhoodId, station: BarkStation, trigger: BarkTrigger): string | undefined =>
+  barks[shopId]?.[station]?.[trigger];
 
 /** One request to speak. `key` makes it once-only (a week's star, an attack's first day); moments carry no key. */
 export interface BarkAsk {
@@ -129,17 +131,27 @@ export interface Bark extends BarkAsk {
 }
 
 /**
- * Decide this frame's bubble for one shop. Nothing while a cut-scene plays (`blocked`) or within HEAD_BARKS.gap of the last bubble
+ * Decide this frame's bubble for one shop. Nothing while a cut-scene plays (`blocked`), within HEAD_BARKS.gap of the last bubble, or when the city
+ * has no lines for the shop (`barks`: a city without them has silent heads)
  * (so two never overlap: the gap is longer than a bubble's life); otherwise the best ask by priority, whose key (if any) is then spent.
  * Asks that arrive while it is too soon are dropped, except keyed ones, which the caller offers again every frame.
  */
-export function nextBark(mem: BarkMem, shopId: NeighborhoodId, asks: readonly BarkAsk[], now: number, blocked: boolean): { mem: BarkMem; bark: Bark | null } {
-  if (blocked || now - mem.at < HEAD_BARKS.gap) return { mem, bark: null };
+export function nextBark(
+  mem: BarkMem,
+  shopId: NeighborhoodId,
+  asks: readonly BarkAsk[],
+  now: number,
+  blocked: boolean,
+  barks: Partial<BarkTable>,
+): { mem: BarkMem; bark: Bark | null } {
+  if (blocked || !barks[shopId] || now - mem.at < HEAD_BARKS.gap) return { mem, bark: null };
   const open = asks.filter((a) => !a.key || !mem.seen.includes(a.key));
   if (!open.length) return { mem, bark: null };
   const best = open.reduce((b, a) => (HEAD_BARKS.priority.indexOf(a.trigger) < HEAD_BARKS.priority.indexOf(b.trigger) ? a : b));
   const seen = best.key ? [...mem.seen, best.key].slice(-16) : mem.seen;
-  return { mem: { at: now, seen }, bark: { ...best, text: barkText(shopId, best.station, best.trigger) } };
+  const text = barkText(barks, shopId, best.station, best.trigger);
+  if (text === undefined) return { mem, bark: null };
+  return { mem: { at: now, seen }, bark: { ...best, text } };
 }
 
 /** The bubble is up for HEAD_BARKS.seconds after it starts. */

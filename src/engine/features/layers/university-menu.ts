@@ -14,10 +14,9 @@
 // station's own rate, A32). A faster oven (Garlic Knots) is left out on purpose: lifting it changes pacing, so the menu view shows it and
 // the shop's rate does not until the owner decides.
 import { LAYER_KEYS, MENU, ZONES } from '../../../content/layers';
-import { VEHICLES } from '../../../content/tuning';
 import { deliveryRate, featureMults, shopRevenue, tripSeconds, walkInRate, type BuyResult, type GameState, type Shop } from '../../game';
 import type { Feature } from '../types';
-import { cityOf, layerHood } from '../../../content/cities';
+import { cityOf, layerHood, type CityFit } from '../../../content/cities';
 import type { NeighborhoodId } from '../../../content/types';
 
 export interface MenuState {
@@ -74,31 +73,31 @@ export function setMenu(g: GameState, pepperoni: number, knots: number): BuyResu
 // ---------- the zones ----------
 
 /** Drones fly: a trip takes the same time wherever it goes. */
-export const isDrones = (vehicle: number): boolean => VEHICLES[vehicle]?.id === ZONES.droneId;
+export const isDrones = (vehicle: number, fit: CityFit): boolean => fit.vehicles[vehicle]?.id === ZONES.droneId;
 
 /** The zones open at a footprint. */
 export const openZones = (shop: Pick<Shop, 'footprint'>) => ZONES.zones.filter((z) => z.footprint <= shop.footprint);
 
 /** The average distance of a delivery: the open zones' distances weighted by their demand shares (1 for drones). */
-export function averageDistance(shop: Pick<Shop, 'footprint'>, vehicle: number): number {
-  if (isDrones(vehicle)) return 1;
+export function averageDistance(shop: Pick<Shop, 'footprint'>, vehicle: number, fit: CityFit): number {
+  if (isDrones(vehicle, fit)) return 1;
   const open = openZones(shop);
   const total = open.reduce((t, z) => t + z.share, 0);
   return total > 0 ? open.reduce((t, z) => t + z.share * z.distance, 0) / total : 1;
 }
 
 /** Deliveries per second with the zones' trips: the fleet's nominal rate over the average distance. */
-export const zoneDeliveryRate = (shop: Shop, vehicle: number): number => deliveryRate(shop, vehicle) / averageDistance(shop, vehicle);
+export const zoneDeliveryRate = (shop: Shop, vehicle: number, fit: CityFit): number => deliveryRate(shop, vehicle, fit) / averageDistance(shop, vehicle, fit);
 
 /**
  * The demand ratio the engine multiplies by: (walk-ins + the zones' delivery rate) / (walk-ins + the nominal delivery rate), and no more
  * than the prep rate when the mix slows prep. 1 for a mix of Cheese with drones (or the first zone only).
  */
-export function demandFactor(shop: Shop, vehicle: number, m: MenuState): number {
+export function demandFactor(shop: Shop, vehicle: number, m: MenuState, fit: CityFit): number {
   const walk = walkInRate(shop);
-  const total = walk + deliveryRate(shop, vehicle);
+  const total = walk + deliveryRate(shop, vehicle, fit);
   if (!(total > 0)) return 1;
-  return Math.min(1, (walk + zoneDeliveryRate(shop, vehicle)) / total);
+  return Math.min(1, (walk + zoneDeliveryRate(shop, vehicle, fit)) / total);
 }
 
 /** The prep rate's ratio when the mix makes prep slower (1 / the prep time factor); 1 otherwise. */
@@ -163,14 +162,15 @@ export interface ZonesView {
 /** What the campus map shows, pure. */
 export function zonesView(g: GameState): ZonesView {
   const shop = g.shops[hoodOf(g)];
-  const drones = isDrones(g.vehicle);
+  const fit = cityOf(g).fit;
+  const drones = isDrones(g.vehicle, fit);
   const open = openZones(shop);
   const openShare = open.reduce((t, z) => t + z.share, 0);
-  const rate = zoneDeliveryRate(shop, g.vehicle);
+  const rate = zoneDeliveryRate(shop, g.vehicle, fit);
   return {
     active: !!shop?.built,
     drones,
-    averageDistance: averageDistance(shop, g.vehicle),
+    averageDistance: averageDistance(shop, g.vehicle, fit),
     deliveryRate: rate,
     zones: ZONES.zones.map((z) => {
       const isOpen = z.footprint <= shop.footprint;
@@ -181,7 +181,7 @@ export function zonesView(g: GameState): ZonesView {
         share: isOpen && openShare > 0 ? Math.round((100 * z.share) / openShare) : 0,
         open: isOpen,
         opensAt: z.footprint,
-        tripSeconds: tripSeconds(g.vehicle) * (drones ? 1 : z.distance),
+        tripSeconds: tripSeconds(g.vehicle, fit) * (drones ? 1 : z.distance),
         perSecond: isOpen && openShare > 0 ? (rate * z.share) / openShare : 0,
       };
     }),
@@ -223,7 +223,7 @@ export const universityMenu: Feature<MenuState> = {
     return id === hoodOf(g) && built(g) ? menuFactors(read(g)).value : 1;
   },
   shopDemandMult(g, id) {
-    return id === hoodOf(g) && built(g) ? demandFactor(g.shops[id], g.vehicle, read(g)) : 1;
+    return id === hoodOf(g) && built(g) ? demandFactor(g.shops[id], g.vehicle, read(g), cityOf(g).fit) : 1;
   },
   stationMult(g, id) {
     if (id !== hoodOf(g) || !built(g)) return undefined;

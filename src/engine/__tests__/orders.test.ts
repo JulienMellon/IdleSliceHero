@@ -1,11 +1,13 @@
 /// <reference types="jest" />
-import { ORDER, ORDER_CAST, ORDER_FAIL_LINE } from '../../content/hooks';
-import { NEIGHBORHOODS } from '../../content/tuning';
+import { ORDER, ORDER_FAIL_LINE } from '../../content/hooks';
 import type { NeighborhoodId } from '../../content/types';
 import * as G from '../game';
 import * as O from '../orders';
 import * as R from '../rewards';
 
+import { HOME_FIT } from '../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
+import { HOME_ORDER_CAST as ORDER_CAST } from '../../content/cities/home/voice';
 const T0 = 1_700_000_000_000;
 
 /** The Suburbs shop built and run by its heads, Nonna in charge Downtown, both characters met. */
@@ -191,7 +193,12 @@ describe('how big an order is', () => {
     const s = ready();
     const at = (lv: number) => {
       const t = { ...s, shops: { ...s.shops, suburbs: { ...s.shops.suburbs, prep: lv, ovens: lv, counter: lv, drivers: lv + 2, tables: lv } } };
-      return { t, target: O.orderTarget(t, 'suburbs'), pps: G.shopRate(t.shops.suburbs, t.vehicle), rushed: O.rushedRate(t.shops.suburbs, t.vehicle) };
+      return {
+        t,
+        target: O.orderTarget(t, 'suburbs'),
+        pps: G.shopRate(t.shops.suburbs, t.vehicle, HOME_FIT),
+        rushed: O.rushedRate(t.shops.suburbs, t.vehicle, HOME_FIT),
+      };
     };
     const lo = at(5);
     const mid = at(12);
@@ -210,8 +217,8 @@ describe('how big an order is', () => {
   test('a shop with three heads and no GM has no rush: its target is the plain rate’s', () => {
     const s = ready();
     const heads = { ...s, shops: { ...s.shops, suburbs: { ...s.shops.suburbs, managed: false } } };
-    const rate = G.shopRate(heads.shops.suburbs, heads.vehicle);
-    expect(O.rushedRate(heads.shops.suburbs, heads.vehicle)).toBe(rate);
+    const rate = G.shopRate(heads.shops.suburbs, heads.vehicle, HOME_FIT);
+    expect(O.rushedRate(heads.shops.suburbs, heads.vehicle, HOME_FIT)).toBe(rate);
     expect(O.orderTarget(heads, 'suburbs')).toBe(O.friendlyTarget(rate * ORDER.windowSeconds * ORDER.targetMargin));
   });
 
@@ -261,8 +268,8 @@ describe('an order can be won by playing (v5.16)', () => {
   test('the demand-limited shops are limited by demand, the kitchen-limited ones by the kitchen', () => {
     for (const [name, lv, drivers, tables] of SHOPS) {
       const sh = { ...ready().shops.suburbs, prep: lv, ovens: lv, counter: lv, drivers, tables, footprint: 3 };
-      const kitchen = Math.min(G.prepRate(sh), G.ovenRate(sh), G.counterRate(sh));
-      expect([name, G.demandRate(sh, 0) < kitchen]).toEqual([name, name.startsWith('demand')]);
+      const kitchen = Math.min(G.prepRate(sh), G.ovenRate(sh, HOME_FIT), G.counterRate(sh));
+      expect([name, G.demandRate(sh, 0, HOME_FIT) < kitchen]).toEqual([name, name.startsWith('demand')]);
     }
   });
 });

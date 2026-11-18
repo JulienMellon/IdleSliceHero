@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { OVEN_GRADES } from '../../content/tuning';
+import type { OvenGrade } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { INK, D, WH, P, kAt, shade } from './projection';
@@ -41,9 +41,12 @@ export function Oven({
   hot = false,
   tier = 0,
   skin = 0,
+  grades,
 }: {
   o: OvenSpec;
   grade: number;
+  /** The city's oven grades (`fit.ovenGrades`): the body is painted in the grade's colour. */
+  grades: readonly OvenGrade[];
   lit: boolean;
   flicker: number;
   hot?: boolean;
@@ -55,7 +58,7 @@ export function Oven({
   const fb = useMemo(() => flameBox(o, paint), [o, paint]);
   return (
     <G>
-      <OvenBody o={o} grade={paint} lit={lit} tier={trim} />
+      <OvenBody o={o} grade={paint} base={grades[paint].color} lit={lit} tier={trim} />
       {lit && <Flame {...fb} flicker={flicker} hot={hot} />}
       {!isBoxOven(o, paint) && <DomeFront o={o} gold={paint >= 3} wood={paint === 2} tier={trim} />}
       {skin === 2 && <WoodExtras o={o} lit={lit} tier={trim} />}
@@ -91,9 +94,8 @@ const WoodExtras = memo(function WoodExtras({ o, lit, tier }: { o: OvenSpec; lit
 const BRASS = '#D4A84A';
 const BRASS_DARK = '#8A6A1E';
 
-const OvenBody = memo(function OvenBody({ o, grade, lit, tier }: { o: OvenSpec; grade: number; lit: boolean; tier: 0 | 1 | 2 }) {
+const OvenBody = memo(function OvenBody({ o, grade, base, lit, tier }: { o: OvenSpec; grade: number; base: string; lit: boolean; tier: 0 | 1 | 2 }) {
   const { ax, ay, bx, w, cx, k, top } = ovenFrame(o);
-  const base = OVEN_GRADES[grade].color;
   const dark = shade(base, -0.4);
   // never a black window: an oven with no pie in it still glows with banked coals (D417)
   const fire = lit ? 'url(#ember)' : 'url(#emberDim)';

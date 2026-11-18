@@ -120,7 +120,7 @@ export function opener(hood: NeighborhoodId, city: CityDef = HOME): CharacterId 
 
 /** The character who answers the rival in a shop: the home city's cast table, else the neighbourhood's own character from the city's story. */
 function answerer(hood: NeighborhoodId, city: CityDef): { who: CharacterId; name: string } {
-  const cast = city === HOME ? castOf(hood) : undefined;
+  const cast = castOf(city, hood);
   if (cast) return { who: cast.who, name: cast.name };
   const first = city.scenes.find((sc) => sc.neighborhood === hood && sc.beat === 1);
   return { who: first?.character ?? city.lieutenant.id, name: city.managers[hood]?.name ?? 'MegaSlice' };

@@ -7,11 +7,11 @@ import { CITIES, hoodIds, type CityDef } from '../../content/cities';
 import { HOME_CITY } from '../../content/cities/home';
 import { CITY_ORDER, cityNumbers } from '../../content/franchise';
 import { DECOR_KINDS, DECOR_TIER_COST, STATIONS, TUNING } from '../../content/tuning';
-import { NEIGHBORHOODS } from '../../content/tuning';
 import { starsFor, multiplierOf } from '../features/franchise';
 import { count, money, shownValue } from '../format';
 import * as G from '../game';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const CEILING = 1e300;
 const SPARE = 1e20;
 const LIMIT = CEILING / SPARE;

@@ -1,10 +1,12 @@
 // University, the menu and the campus zones (v5.16): the mix's arithmetic, the zones' trips with and without drones, and old saves.
 import { MENU, ZONES } from '../../../../content/layers';
-import { TUNING, VEHICLES } from '../../../../content/tuning';
+import { TUNING } from '../../../../content/tuning';
 import { getFeature, withFeatures } from '../../index';
 import * as G from '../../../game';
 import { averageDistance, bestMix, demandFactor, menuFactors, menuView, mixOf, setMenu, universityMenu, zoneDeliveryRate, zonesView } from '../university-menu';
 
+import { HOME_FIT } from '../../../../content/cities/home/fit';
+import { VEHICLES } from '../../../../content/cities/home/fit';
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 const HOOD = MENU.hood;
 const DRONE = VEHICLES.findIndex((v) => v.id === 'drone');
@@ -18,7 +20,7 @@ const mix = (g: G.GameState, pepperoni: number, knots: number): G.GameState => {
   return r.state;
 };
 const fxOf = (g: G.GameState) => G.featureMults(g, HOOD, NOW);
-const rateOf = (g: G.GameState) => G.shopRate(g.shops[HOOD], g.vehicle, fxOf(g));
+const rateOf = (g: G.GameState) => G.shopRate(g.shops[HOOD], g.vehicle, HOME_FIT, fxOf(g));
 const cashOf = (g: G.GameState) => G.shopEarnings(g, HOOD, NOW);
 
 /** University built; the kitchen far faster than the deliveries (so the fleet is the slow stage), few seats. */
@@ -72,7 +74,7 @@ describe('the menu', () => {
     run(() => {
       const g = kitchenBound();
       const prep = G.prepRate(g.shops[HOOD]);
-      expect(prep).toBeLessThan(G.demandRate(g.shops[HOOD], g.vehicle));
+      expect(prep).toBeLessThan(G.demandRate(g.shops[HOOD], g.vehicle, HOME_FIT));
       expect(rateOf(g)).toBeCloseTo(prep, 9);
       const pep = mix(g, 100, 0);
       expect(rateOf(pep)).toBeCloseTo(prep / 1.3, 9);
@@ -148,10 +150,10 @@ describe('the zones', () => {
 
   it('the average distance is the share-weighted one: 1, 1.375, 1.7, and 1 with drones', () => {
     const shop = (fp: number) => ({ footprint: fp });
-    expect(averageDistance(shop(0), CAR)).toBe(1);
-    expect(averageDistance(shop(1), CAR)).toBeCloseTo(1.375, 12);
-    expect(averageDistance(shop(2), CAR)).toBeCloseTo(1.7, 12);
-    for (const fp of [0, 1, 2]) expect(averageDistance(shop(fp), DRONE)).toBe(1);
+    expect(averageDistance(shop(0), CAR, HOME_FIT)).toBe(1);
+    expect(averageDistance(shop(1), CAR, HOME_FIT)).toBeCloseTo(1.375, 12);
+    expect(averageDistance(shop(2), CAR, HOME_FIT)).toBeCloseTo(1.7, 12);
+    for (const fp of [0, 1, 2]) expect(averageDistance(shop(fp), DRONE, HOME_FIT)).toBe(1);
   });
 
   it('with drones the far zones cost nothing; without them every far zone slows the fleet', () => {
@@ -162,9 +164,9 @@ describe('the zones', () => {
       expect(rate(CAR, 1) / rate(CAR, 0)).toBeLessThan(1);
       expect(rate(CAR, 2) / rate(CAR, 1)).toBeLessThan(1);
       const g = campus(CAR, 2);
-      expect(zoneDeliveryRate(g.shops[HOOD], CAR)).toBeCloseTo(G.deliveryRate(g.shops[HOOD], CAR) / 1.7, 9);
-      expect(demandFactor(g.shops[HOOD], CAR, mixOf(g))).toBeLessThan(1);
-      expect(demandFactor(campus(DRONE, 2).shops[HOOD], DRONE, mixOf(g))).toBe(1);
+      expect(zoneDeliveryRate(g.shops[HOOD], CAR, HOME_FIT)).toBeCloseTo(G.deliveryRate(g.shops[HOOD], CAR, HOME_FIT) / 1.7, 9);
+      expect(demandFactor(g.shops[HOOD], CAR, mixOf(g), HOME_FIT)).toBeLessThan(1);
+      expect(demandFactor(campus(DRONE, 2).shops[HOOD], DRONE, mixOf(g), HOME_FIT)).toBe(1);
     });
   });
 
@@ -189,8 +191,8 @@ describe('the zones', () => {
   it('the far zones are worth serving with drones: they add pies per second only there', () => {
     run(() => {
       const perSecond = (v: number, fp: number) => zonesView(campus(v, fp)).zones.reduce((t, z) => t + z.perSecond, 0);
-      expect(perSecond(DRONE, 2)).toBeCloseTo(G.deliveryRate(campus(DRONE, 2).shops[HOOD], DRONE), 9);
-      expect(perSecond(CAR, 2)).toBeLessThan(G.deliveryRate(campus(CAR, 2).shops[HOOD], CAR));
+      expect(perSecond(DRONE, 2)).toBeCloseTo(G.deliveryRate(campus(DRONE, 2).shops[HOOD], DRONE, HOME_FIT), 9);
+      expect(perSecond(CAR, 2)).toBeLessThan(G.deliveryRate(campus(CAR, 2).shops[HOOD], CAR, HOME_FIT));
       const view = zonesView(campus(DRONE, 2));
       expect(view.zones.map((z) => Math.round((100 * z.perSecond) / view.deliveryRate))).toEqual([50, 30, 20]);
     });

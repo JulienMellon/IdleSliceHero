@@ -1,12 +1,12 @@
 // T87 (C112): the "+$X/s" caches refresh when an event, an attack or a recipe card moves a shop's value.
 // T88 (A31): a feature can be imported before the game, and only importing the features registers them.
-import { NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { getFeature } from '../features';
 import { counterattack } from '../features/counterattack';
 import { recipes } from '../features/recipes';
 import * as G from '../game';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const at = (y: number, m: number, d: number, h = 0) => new Date(y, m - 1, d, h).getTime();
 const FRI = at(2026, 11, 13, 18);

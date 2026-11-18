@@ -1,7 +1,6 @@
 /// <reference types="jest" />
 // The day-30 visitor's cameo (v5.15, S1): who is in the shop, the tag, the line schedule and a budget on where it all stands.
 import { CAMEO, CAMEO_NONNA_LINES } from '../../../content/heads';
-import { FOOTPRINTS, NEIGHBORHOODS } from '../../../content/tuning';
 import { VISITORS } from '../../../content/rewards';
 import { neonSpot } from '../cosmetics';
 import { staffFaces } from '../stations';
@@ -25,6 +24,8 @@ import { layout } from './draw-layout';
 import { BUBBLE_AIR, bubbleWalls, bubbleWidth, bubbleX } from '../moments';
 import { SCENE_W } from '../projection';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../../content/cities/home/data';
 const NOW = 1_800_000_000_000;
 const DAY = 86_400_000;
 const DS = [2, 2, 3, 3, 4];

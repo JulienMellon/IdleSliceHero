@@ -6,9 +6,9 @@ import { panelSpeech, panelText, sceneTexts } from '../cutscene/panel-speech';
 import { drawerCards } from '../drawer-model';
 import { motionPlan } from '../motion-model';
 import { HOME_SCENES } from '../../content/scenes/home';
-import { NEIGHBORHOODS } from '../../content/tuning';
 import * as G from '../../engine/game';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const game = (cash: number): G.GameState => ({ ...G.newGame(0), cash });
 
 describe('buy buttons', () => {

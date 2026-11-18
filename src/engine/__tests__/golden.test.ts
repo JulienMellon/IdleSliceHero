@@ -4,9 +4,9 @@
 import { createHash } from 'crypto';
 import '../features'; // the registry is filled by importing it (A31): the recorded hash is with the shipped features
 import * as G from '../game';
-import { NONNA_TAKEOVER } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 
+import { NONNA_TAKEOVER } from '../../content/cities/home/fit';
 const T0 = 1_700_000_000_000;
 const THREE_HOURS_MS = 3 * 3600 * 1000;
 

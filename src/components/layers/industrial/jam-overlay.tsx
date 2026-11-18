@@ -14,6 +14,7 @@ import { INK, sceneFit } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
 import { SceneViewContext } from '../../scene/view-context';
 import type { SceneSlotProps } from '../../slots';
+import { cityOf } from '../../../content/cities';
 import { layoutOfShop } from '../shop-layout';
 import { jamLabel, ovenSpot, pillBox, WRENCH } from './jam-model';
 
@@ -83,7 +84,7 @@ export const JamOverlay = memo(function JamOverlay({ shopId, width, height }: Sc
     if (shopId !== builtHood(s.game, 'shifts')) return '';
     const label = jamLabel(jamView(s.game), s.game.city);
     if (!label) return '';
-    const at = ovenSpot(layoutOfShop(s.game.shops[shopId]));
+    const at = ovenSpot(layoutOfShop(s.game.shops[shopId], cityOf(s.game).fit));
     return `${label}~${at.x.toFixed(1)}~${at.y.toFixed(1)}~${at.top.toFixed(1)}`;
   });
   const fixJam = useGame((s) => s.fixJam);

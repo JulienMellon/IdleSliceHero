@@ -3,7 +3,9 @@ import * as G from '../../engine/game';
 import { costLadder } from '../../engine/buy-many';
 import { stationCost } from '../../engine/game';
 import { money } from '../../engine/format';
-import { FOOTPRINTS, NEIGHBORHOODS, STATIONS, TUNING } from '../tuning';
+import { STATIONS, TUNING } from '../tuning';
+import { FOOTPRINTS } from '../cities/home/fit';
+import { NEIGHBORHOODS } from '../cities/home/data';
 
 const READABLE = /^\$\d+(\.\d+)?[A-Za-z]*$/;
 const STATION_KEYS = ['prep', 'ovens', 'counter', 'drivers', 'tables'] as const;

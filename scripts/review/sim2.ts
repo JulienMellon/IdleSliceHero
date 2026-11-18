@@ -6,7 +6,7 @@
 // Env: REWARDS=0 · POLICY=top|smart|casual · NOTAP=1 · NOCACHE=1 (the 'top' player re-decides every second instead of only when something but cash changed).
 import { writeFileSync, mkdirSync } from 'fs';
 import { HOME_SCENES } from '../../src/content/scenes/home';
-import { DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES, TUNING } from '../../src/content/tuning';
+import { DECOR_KINDS, DECOR_TIER_COST, TUNING } from '../../src/content/tuning';
 import { DAILY_CHESTS } from '../../src/content/rewards';
 import { ORDER } from '../../src/content/hooks';
 import type { NeighborhoodId } from '../../src/content/types';
@@ -25,6 +25,9 @@ import * as N from '../../src/engine/night-oven';
 import * as R from '../../src/engine/rewards';
 import { money } from '../../src/engine/format';
 
+import { HOME_FIT } from '../../src/content/cities/home/fit';
+import { FOOTPRINTS, OVEN_GRADES, VEHICLES } from '../../src/content/cities/home/fit';
+import { NEIGHBORHOODS, PIER9_BID } from '../../src/content/cities/home/data';
 // Every run is played in one time zone, so day and week keys (and so the daily sets) come out the same wherever it runs.
 if (!process.env.TZ) process.env.TZ = 'America/New_York';
 /** The install moment of every simulated player: a Monday morning, local time. The wall clock of a run is this plus the seconds since install. */
@@ -67,7 +70,7 @@ export function options(s: G.GameState): Option[] {
         },
       });
     if (!G.upgradeLock(s, n.id, 'expand')) {
-      const stage = G.bottleneck(shop, s.vehicle);
+      const stage = G.bottleneck(shop, s.vehicle, HOME_FIT);
       const what: G.Upgrade = stage === 'customers' ? 'tables' : stage;
       if (G.upgradeLock(s, n.id, what)) {
         const after = G.buyUpgrade({ ...s, cash: 1e300 }, n.id, 'expand');
@@ -374,14 +377,14 @@ export function run(
       }
       if (cfg.rewards) rewardSecond();
       stop.onSecond?.(s, wall);
-      if (!pier9Open && G.pier9Available(s)) {
+      if (!pier9Open && G.bidAvailable(s)) {
         const eps = G.earningsPerSecond(s);
         pier9Open = { wall, eps, minutes: PIER9_BID.cost / eps / 60 };
       }
       // the bid is a live auction (card E2a): the price is the base times the auction's multiplier
-      if (G.pier9Available(s) && s.cash >= G.pier9Price(s)) {
+      if (G.bidAvailable(s) && s.cash >= G.bidPrice(s)) {
         const before = s.cash;
-        const r = G.bidPier9(s);
+        const r = G.placeBid(s);
         if (r.ok) {
           s = r.state;
           buys.push({ t: s.playSeconds, wall, label: 'pier9', cost: before - s.cash, session: sessions, cashBefore: before });
@@ -395,7 +398,7 @@ export function run(
         if (!stop.keepGoing) break outer;
       }
       // EAGER=1: a human who builds the next neighbourhood the moment they can afford it (the default greedy waits until the build also beats every upgrade per dollar)
-      if (cfg.eager && !G.pier9Available(s)) {
+      if (cfg.eager && !G.bidAvailable(s)) {
         const nb = G.nextToBuild(s);
         if (nb && !G.buildLock(s, nb.id) && s.cash >= nb.buildCost) {
           const r = G.buildShop(s, nb.id);
@@ -409,7 +412,7 @@ export function run(
           }
         }
       }
-      for (let q = 0; q < 30 && !G.pier9Available(s); q++) {
+      for (let q = 0; q < 30 && !G.bidAvailable(s); q++) {
         // POLICY=top picks the same item until something other than cash changes (a purchase, a scene): while the cash is short of it, skip the work
         if (cfg.policy === 'top' && !process.env.NOCACHE && s.cash < waitCash && scenes.length === waitScenes) break;
         const opts = options(s).sort((a, b) => b.gain / b.cost - a.gain / a.cost);

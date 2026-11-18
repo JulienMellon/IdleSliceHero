@@ -16,7 +16,7 @@
 - Read-only: `src/components/cutscene/backdrop-art.ts`, `figure-art.ts`, `staging.ts`, `src/components/scene/looks.ts`.
 
 ## Steps
-- [ ] **1. Backdrops.** Split `backdrop.tsx` into these files under `cutscene/backdrops/`:
+- [x] **1. Backdrops.** Split `backdrop.tsx` into these files under `cutscene/backdrops/`:
   - `index.tsx`: the `Backdrop` component, `SCENES` and `SCENE_ZOOM`.
   - `shared.tsx`: `INK`, `SKY`, `GLOW`, `Ground`, `Billboard`, clouds, `FAR_CITY`.
   - `shop.tsx`: `ShopScene`, `ShopWindow`, `ShopObject`, `UniLights`.
@@ -25,7 +25,7 @@
   - `props.tsx`: `SoldSign`, `VendingMachine`, `OrderSlip`, `NameTag`, `PhoneFootage`, `IconProp` and the `BackdropProp` type.
 
   Registration: each city's `backdrops.tsx` exports a `Partial<Record<BackdropId, SceneFn>>` and its window/object lookups. `src/components/cities/index.ts` lists each city's art in one line (`boston: BOSTON_ART`), and `index.tsx` merges them over home. `BOSTON_LOOKS` stays in `backdrop-art.ts` for now (R7b moves it). No import cycles: city files import from `shared.tsx`/`props.tsx`, never from `index.tsx` (lint `import/no-cycle`). Move code verbatim; rename nothing, and change no number.
-- [ ] **2. Portraits.** Split `portrait.tsx` into these files under `portrait/`:
+- [x] **2. Portraits.** Split `portrait.tsx` into these files under `portrait/`:
   - `look.ts`: `Look`, `LOOKS`, `AGED`, `lookFor`, `DISPLAY_NAMES`, `managerLook`.
   - `hair.tsx`, `hats.tsx` (`Hat`, `Glasses`, `Mustache`, …) and `face.tsx`.
   - `bust.tsx` (`Bust`, `BustGear`) and `stage.tsx` (`Stage`, `ArmWear`, `HeldClipboard`, `HeldCard`).
@@ -39,7 +39,7 @@
   - its characters' `Outfit` cases, as a `Partial<Record<CharacterId, OutfitFn>>`.
 
   It exports these as one `CityPortraits` object, registered in `src/components/cities/index.ts`. `look.ts` and `outfits/index.tsx` merge every registered city's object over the home tables. Today the Boston entries sit inline in `LOOKS`, `DISPLAY_NAMES`, `AGED` and the `Outfit` switch (`case 'father-dom'` …); they move. Keep the same output: a test asserts that `lookFor` and `DISPLAY_NAMES` return the same values for every `CharacterId` before and after.
-- [ ] **3. Same output.** For each `BackdropId` × prop × hood combination the tests already cover, and each `CharacterId` × mood, the rendered element tree must be unchanged. Use the existing cutscene tests; if none covers the `.tsx` output, rely on the fixtures below.
+- [x] **3. Same output.** For each `BackdropId` × prop × hood combination the tests already cover, and each `CharacterId` × mood, the rendered element tree must be unchanged. Use the existing cutscene tests; if none covers the `.tsx` output, rely on the fixtures below.
 
 ## Fixtures
 Run `--only 19_story_props,90_t1b,106_t2,06_scrapbook_offline` and compare with the same fixtures in the v5.19 baseline (`python3 scripts/review_shots.py dev v5.19-base | tail -3`). **0 changed** is the gate.

@@ -6,6 +6,9 @@ import { getFeature, withFeatures } from '../../index';
 import * as G from '../../../game';
 import { challengeWon, rival, rivalOpen, rivalTarget, rivalView, startRivalChallenge } from '../rival';
 
+import { HOME_FIT } from '../../../../content/cities/home/fit';
+import { hoodIds } from '../../../../content/cities';
+import { HOME_CITY } from '../../../../content/cities/home';
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 const ID: NeighborhoodId = 'university';
 const run = <T>(fn: () => T): T => withFeatures([rival], fn);
@@ -54,8 +57,8 @@ describe('opening and the x0.8', () => {
   it('opens in every neighbourhood once its own beat 3 is seen', () => {
     run(() => {
       let g = G.newGame(NOW);
-      for (const id of G.HOME_HOOD_IDS) g = shopOf(g, id, { built: true });
-      for (const id of G.HOME_HOOD_IDS) {
+      for (const id of hoodIds(HOME_CITY)) g = shopOf(g, id, { built: true });
+      for (const id of hoodIds(HOME_CITY)) {
         expect(rivalOpen(g, id)).toBe(false);
         g = { ...g, seenScenes: [...g.seenScenes, `${id}-3`] };
         expect(rivalOpen(g, id)).toBe(true);
@@ -68,7 +71,7 @@ describe('the challenge', () => {
   it('asks ceil(5 min x the shop’s current pizza rate x 1.2)', () => {
     run(() => {
       const g = open();
-      const rate = G.shopRate(g.shops[ID], g.vehicle);
+      const rate = G.shopRate(g.shops[ID], g.vehicle, HOME_FIT);
       expect(rivalTarget(g, ID, NOW)).toBe(Math.ceil(300 * rate * 1.2));
       expect(rivalView(g, ID, NOW)).toMatchObject({ phase: 'available', target: Math.ceil(300 * rate * 1.2) });
       // a faster shop asks for more
@@ -147,7 +150,7 @@ describe('the challenge', () => {
       const dt: G.GameState = {
         ...shopOf(open(['downtown-3']), 'downtown', { built: true }),
         sceneAt: { 'downtown-3': 100 },
-        playSeconds: 100 + STORY_PACING.downtownBeat4GapSeconds - 1,
+        playSeconds: 100 + STORY_PACING.firstHoodBeat4GapSeconds - 1,
       };
       expect(rivalView(dt, 'downtown', NOW).phase).toBe('waiting');
       expect(rivalView({ ...dt, playSeconds: dt.playSeconds + 1 }, 'downtown', NOW).phase).toBe('available');

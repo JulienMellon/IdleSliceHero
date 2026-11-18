@@ -146,7 +146,7 @@ interface Store {
   buyNightOven: () => boolean;
   build: (id: NeighborhoodId) => boolean;
   /** Waterfront's finale: bid on Pier 9. */
-  bidPier9: () => boolean;
+  placeBid: () => boolean;
   /** v5.18 (E3): sell the city for Franchise Stars and start the next one. Not undoable; the confirm sheet (card T2) asks twice. False when no franchise is on offer. */
   franchise: () => boolean;
   setActive: (id: NeighborhoodId) => void;
@@ -294,7 +294,8 @@ export const useGame = create<Store>((set, get) => {
     // when the tapped station isn't what's holding the shop back, the toast says so
     const STAGE_UPGRADE: Record<G.Stage, string> = { prep: 'prep', ovens: 'ovens', counter: 'counter', customers: 'drivers' };
     const shop = g.shops[g.active];
-    const neck = STAGE_UPGRADE[G.bottleneck(shop, g.vehicle)];
+    const fit = cityOf(g).fit;
+    const neck = STAGE_UPGRADE[G.bottleneck(shop, g.vehicle, fit)];
     const hint = ['prep', 'ovens', 'counter', 'drivers'].includes(what) && what !== neck ? ` · ${UPGRADE_NAMES[neck]} is the bottleneck` : '';
     // a station level crossing 25/50/100 gets the milestone stinger; a fixed bottleneck gets its own (AU14)
     const sound = (next: G.GameState): AudioEvent => {
@@ -304,8 +305,8 @@ export const useGame = create<Store>((set, get) => {
       const sting = purchaseSting(kind, {
         levelBefore: level ? shop[level] : undefined,
         levelAfter: level ? after[level] : undefined,
-        bottleneckBefore: G.bottleneck(shop, g.vehicle),
-        bottleneckAfter: G.bottleneck(after, next.vehicle),
+        bottleneckBefore: G.bottleneck(shop, g.vehicle, fit),
+        bottleneckAfter: G.bottleneck(after, next.vehicle, fit),
       });
       return { type: 'buy', what: kind, sting };
     };
@@ -610,7 +611,7 @@ export const useGame = create<Store>((set, get) => {
       return commit(N.buyNightOven(g), { name: 'Night oven', cost: nt === null ? null : N.nightOvenPrice(g, nt) }, plain('grade'));
     },
 
-    bidPier9: () => commit(G.bidPier9(get().game), { name: 'Bid on Pier 9', cost: G.pier9Price(get().game) }, plain('bid')),
+    placeBid: () => commit(G.placeBid(get().game), { name: 'Bid on Pier 9', cost: G.bidPrice(get().game) }, plain('bid')),
 
     franchise: () => {
       const run = (): boolean => {

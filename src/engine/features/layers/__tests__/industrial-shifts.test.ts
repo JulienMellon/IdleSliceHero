@@ -1,12 +1,14 @@
 // Industrial, shifts and breakdowns (v5.16): the shift cycle, the night rate for time away, the jam, the wrench and the Head Baker.
 import { JAMS, SHIFTS } from '../../../../content/layers';
 import { HOME_CITY } from '../../../../content/cities/home';
-import { FOOTPRINTS, PERKS } from '../../../../content/tuning';
 import { getFeature, withFeatures } from '../../index';
 import * as G from '../../../game';
 import { autoFixIn, awayNow, fixJam, industrialShifts, jamShare, jamView, shiftAt, shiftView, type ShiftsState } from '../industrial-shifts';
 import { freshTimed, gapOf } from '../suburbs-gameday';
 
+import { HOME_FIT } from '../../../../content/cities/home/fit';
+import { FOOTPRINTS } from '../../../../content/cities/home/fit';
+import { PERKS } from '../../../../content/cities/home/data';
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 const HOOD = SHIFTS.hood;
 const SHIFT = SHIFTS.cycleSeconds / 3;
@@ -91,7 +93,7 @@ describe('the shifts', () => {
         { value: 1, demand: 0.8 },
         { value: 2, demand: 1.2 },
       ]);
-      const sales = [0, 1, 2].map((i) => G.shopRate(g.shops[HOOD], g.vehicle, fx(onShift(g, i))));
+      const sales = [0, 1, 2].map((i) => G.shopRate(g.shops[HOOD], g.vehicle, HOME_FIT, fx(onShift(g, i))));
       expect(sales[1] / sales[0]).toBeCloseTo(0.8, 12);
       expect(sales[2] / sales[0]).toBeCloseTo(1.2, 12);
       const cash = [0, 1, 2].map((i) => G.shopEarnings(onShift(g, i), HOOD, NOW));
@@ -185,10 +187,10 @@ describe('breakdowns', () => {
     run(() => {
       const g = ovenBound();
       expect(jamShare(g.shops[HOOD], HOME_CITY)).toBe(1 / FOOTPRINTS[2].ovenSlots);
-      const sound = G.shopRate(g.shops[HOOD], g.vehicle, fx(g));
-      expect(sound).toBeCloseTo(G.ovenRate(g.shops[HOOD]), 9);
+      const sound = G.shopRate(g.shops[HOOD], g.vehicle, HOME_FIT, fx(g));
+      expect(sound).toBeCloseTo(G.ovenRate(g.shops[HOOD], HOME_FIT), 9);
       const jammed = withState(g, { jam: 0 });
-      expect(G.shopRate(g.shops[HOOD], g.vehicle, fx(jammed))).toBeCloseTo(sound * 0.75, 9);
+      expect(G.shopRate(g.shops[HOOD], g.vehicle, HOME_FIT, fx(jammed))).toBeCloseTo(sound * 0.75, 9);
       expect(jamView(jammed)).toMatchObject({ jammed: true, lost: 0.25, ovenMult: 0.75 });
       expect(jamView(g)).toMatchObject({ jammed: false, lost: 0, ovenMult: 1 });
     });
@@ -201,7 +203,7 @@ describe('breakdowns', () => {
       expect(jamView(g).nextIn).toBeGreaterThan(JAMS.everySeconds * 0.85);
       g = play({ ...g, playSeconds: due - 1 }, 3);
       expect(jamView(g).jammed).toBe(true);
-      expect(G.shopRate(g.shops[HOOD], g.vehicle, fx(g))).toBeLessThan(G.ovenRate(g.shops[HOOD]));
+      expect(G.shopRate(g.shops[HOOD], g.vehicle, HOME_FIT, fx(g))).toBeLessThan(G.ovenRate(g.shops[HOOD], HOME_FIT));
     });
   });
 
@@ -212,7 +214,7 @@ describe('breakdowns', () => {
       expect(r.ok).toBe(true);
       const fixed = (r as { state: G.GameState }).state;
       expect(jamView(fixed).jammed).toBe(false);
-      expect(G.shopRate(fixed.shops[HOOD], fixed.vehicle, fx(fixed))).toBeCloseTo(G.ovenRate(fixed.shops[HOOD]), 9);
+      expect(G.shopRate(fixed.shops[HOOD], fixed.vehicle, HOME_FIT, fx(fixed))).toBeCloseTo(G.ovenRate(fixed.shops[HOOD], HOME_FIT), 9);
       expect(fixJam(fixed)).toEqual({ ok: false, reason: 'No oven is jammed' });
     });
   });
@@ -246,7 +248,7 @@ describe('breakdowns', () => {
       g = play(g, 40);
       expect(state(g).n).toBe(5);
       expect(state(g).jam).toBe(100);
-      expect(G.shopRate(g.shops[HOOD], g.vehicle, fx(g))).toBeCloseTo(G.ovenRate(g.shops[HOOD]) * 0.75, 9);
+      expect(G.shopRate(g.shops[HOOD], g.vehicle, HOME_FIT, fx(g))).toBeCloseTo(G.ovenRate(g.shops[HOOD], HOME_FIT) * 0.75, 9);
     });
   });
 });

@@ -3,7 +3,8 @@
 // Tied stations and capped stations merge into one wider card in their slots (sidewalk-model.ts `sidewalkSlots`).
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { HEAD_ROLE, HEADS } from '../content/tuning';
+import { cityOf } from '../content/cities';
+import { HEAD_ROLE } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
@@ -177,7 +178,7 @@ export function SidewalkRow({
   const hireCost = G.upgradeCostOf(game, id, hire);
   // say what the hire does, not just who (D341)
   const hireLabel = G.isHeadUpgrade(hire)
-    ? `HIRE ${HEADS[id][G.headOf(hire)].toUpperCase()} · RUNS ${HEAD_ROLE[G.headOf(hire)].toUpperCase()} FOR YOU`
+    ? `HIRE ${cityOf(game).heads[id][G.headOf(hire)].toUpperCase()} · RUNS ${HEAD_ROLE[G.headOf(hire)].toUpperCase()} FOR YOU`
     : `HIRE A MANAGER · ×2 INCOME + EARNS AWAY`;
   return (
     <>

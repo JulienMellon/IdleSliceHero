@@ -14,7 +14,6 @@ jest.mock('@react-native-async-storage/async-storage', () => {
 jest.useFakeTimers();
 
 import { HOME_SCENES } from '../../../content/scenes/home';
-import { NONNA_TAKEOVER } from '../../../content/tuning';
 import * as G from '../../../engine/game';
 import { dayKey, refreshRewards } from '../../../engine/rewards';
 import { GRANTS } from '../../../services/grants';
@@ -25,6 +24,9 @@ import { adOffering, boosterAdOffer, READY_CHECK_MS } from '../ad-model';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { NONNA_TAKEOVER } from '../../../content/cities/home/fit';
+import { hoodIds } from '../../../content/cities';
+import { HOME_CITY } from '../../../content/cities/home';
 function fresh(): G.GameState {
   const now = Date.now();
   const s = G.newGame(now);
@@ -190,7 +192,7 @@ describe('analytics events (card N1)', () => {
     expect(st().build('suburbs')).toBe(false);
     expect(track).not.toHaveBeenCalledWith('shop_built', expect.anything());
     useGame.setState({ game: { ...g, cash: 1e15, shops: { ...g.shops, suburbs: { ...g.shops.suburbs, built: false } } } });
-    const id = G.HOME_HOOD_IDS.find((i) => !st().game.shops[i].built && G.buildLock(st().game, i) === null);
+    const id = hoodIds(HOME_CITY).find((i) => !st().game.shops[i].built && G.buildLock(st().game, i) === null);
     expect(id).toBeDefined();
     expect(st().build(id!)).toBe(true);
     expect(track).toHaveBeenCalledWith('shop_built', { shop: id });

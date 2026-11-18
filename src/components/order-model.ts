@@ -1,4 +1,5 @@
 // What the order chip shows, as plain data (the chip is components/order-chip.tsx). Kept in .ts so it is tested in node.
+import { cityOf } from '../content/cities';
 import { ORDER, ORDER_FAIL_LINE, ORDER_VIEW } from '../content/hooks';
 import type { CharacterId, NeighborhoodId } from '../content/types';
 import { money, pizzas } from '../engine/format';
@@ -70,7 +71,8 @@ export function chipView(s: GameState): ChipView | null {
   const base = { done: 0, target: 0, fill: 0, progress: '', clock: '', urgent: false, behind: false, expiry: 0, reward: '', line: '' };
   if (phase === 'active' && o.active) {
     const a = o.active;
-    const cast = castOf(a.hood);
+    const cast = castOf(cityOf(s), a.hood);
+    if (!cast) return null;
     const done = orderProgress(s, a);
     return {
       ...base,
@@ -90,7 +92,8 @@ export function chipView(s: GameState): ChipView | null {
   }
   if (phase === 'offer' && o.offer) {
     const f = o.offer;
-    const cast = castOf(f.hood);
+    const cast = castOf(cityOf(s), f.hood);
+    if (!cast) return null;
     return {
       ...base,
       phase,
@@ -105,7 +108,8 @@ export function chipView(s: GameState): ChipView | null {
   }
   const r = o.result;
   if (!r) return null;
-  const cast = castOf(r.hood);
+  const cast = castOf(cityOf(s), r.hood);
+  if (!cast) return null;
   return {
     ...base,
     phase: r.kind,

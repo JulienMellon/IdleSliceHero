@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import { CITY_NAME, DECOR, DECOR_KINDS, FOOTPRINTS, HEAD_ROLE, HEADS, NEIGHBORHOODS, OVEN_GRADES, VEHICLES } from '../../content/tuning';
+import { DECOR, DECOR_KINDS, HEAD_ROLE } from '../../content/tuning';
 import { UPGRADE_TASK_MAX_SECONDS } from '../../content/rewards';
 import { goalAmount, money } from '../../engine/format';
 import {
@@ -16,6 +16,8 @@ import {
   snapSeam,
 } from '../goal-model';
 
+import { FOOTPRINTS, OVEN_GRADES, VEHICLES } from '../../content/cities/home/fit';
+import { CITY_NAME, HEADS, NEIGHBORHOODS } from '../../content/cities/home/data';
 const lum = (hex: string) => {
   const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
   return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];

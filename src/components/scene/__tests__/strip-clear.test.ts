@@ -1,6 +1,5 @@
 /// <reference types="jest" />
 // D514: the shop report's strip hides what stands lower on the sidewalk, so the queue is lifted above it in every layout (home, wide, mirrored), at every screen fit.
-import { FOOTPRINTS } from '../../../content/tuning';
 import { buildCast } from '../cast';
 import { emptyCrew, routesFor } from '../crew';
 import { frostTint, FROST, seatPalette } from '../palette';
@@ -10,6 +9,7 @@ import { floorYFor, liftLayout, STRIP_AIR, stripTop } from '../strip-clear';
 import { STRIP } from '../../report/report-model';
 import { SIDEWALK_ROW } from '../../tap-targets';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 const BOB = 0.8; // the queue's one-pixel bob (cast.ts)
 const plans = [0, 1, 2, 3, 4].flatMap((fp) => [false, true].map((mirrored) => ({ fp, mirrored })));

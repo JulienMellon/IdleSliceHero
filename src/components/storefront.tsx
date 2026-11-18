@@ -11,9 +11,8 @@ import { memo, useEffect, useMemo, useRef, useState, type ComponentRef, type Rea
 import { Pressable, ScrollView, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { F } from '../theme';
-import { FOOTPRINTS } from '../content/tuning';
 import { isMirrored } from '../content/shop-layout';
-import { cityOf, hoodIds, sceneHood } from '../content/cities';
+import { cityOf, hoodIds, layerOf, sceneHood } from '../content/cities';
 import { LOOKS } from './scene/identity';
 import type { NeighborhoodId } from '../content/types';
 import * as Game from '../engine/game';
@@ -58,7 +57,7 @@ import { buildCast, sidewalkOf } from './scene/cast';
 import { queueLabel, waitingText } from './scene/waiting';
 import { hireOnSidewalk } from './sidewalk-model';
 import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
-import { BARKS, HEAD_BARKS } from '../content/heads';
+import { HEAD_BARKS } from '../content/heads';
 import { getFeature } from '../engine/features';
 import { counterattack } from '../engine/features/counterattack';
 import { hintsAllowed } from '../engine/tutorial';
@@ -232,11 +231,11 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // wall ms when this shop's scene was opened (the scene remounts per shop): the rush hint shows for the start of a visit
   const [visitAt] = useState(() => Date.now());
 
-  const ovenCount = Math.min(FOOTPRINTS[fp].ovenSlots, 1 + Math.floor((shop.ovens - 1) / 8));
+  const ovenCount = Math.min(city.fit.footprints[fp].ovenSlots, 1 + Math.floor((shop.ovens - 1) / 8));
   const cookCount = Math.min(3, 1 + Math.floor((shop.prep - 1) / 15));
   const staffCount = Math.min(2, 1 + Math.floor((shop.counter - 1) / 15));
   const driverSlots = [2, 2, 3, 3, 4][fp];
-  const tablesShown = Game.tablesShown(shop);
+  const tablesShown = Game.tablesShown(shop, city.fit);
   const plants = shop.decor.plants;
   // geometry only changes with upgrades, so the layout object stays identical across frames and the
   // memoised layers that take `lay` (room shell, front wall, door, mat, hood) skip re-rendering
@@ -248,10 +247,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   );
   // …and in the draw space the drawing code's default `P` expects (`drawFrame`): everything below the sky and the street is drawn in a group moved right by `shift`
   // …and lifted clear of the shop report's strip, which hides what stands lower on the sidewalk (strip-clear.ts, D514): the same fit the strip's `bottom` is computed from (app/index.tsx)
-  const stripFloor = floorYFor(stripTop(sceneView(width, height, roomLay.frame).fit.s, hireOnSidewalk(shop, id)));
+  const stripFloor = floorYFor(stripTop(sceneView(width, height, roomLay.frame).fit.s, hireOnSidewalk(shop, id, city)));
   const lay = useMemo(() => liftLayout(toDrawSpace(roomLay), stripFloor), [roomLay, stripFloor]);
   const running = shop.managed || Game.lineBusy(shop.line);
-  const rate = Game.shopRate(shop, game.vehicle);
+  const rate = Game.shopRate(shop, game.vehicle, city.fit);
   const pace = running ? Math.min(2.6, 0.8 + Math.log10(1 + rate)) : 0;
   // `frame` is the draw space's (its edges are x0 and x0 + width); `sceneFrame` is the drawing's own, which the scroll view, the sky and the street are laid out in
   const frame = lay.frame;
@@ -301,7 +300,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     m0.lastSold = shop.sold;
   }
   // walk-ins come in while the engine sends them sales (one waits at the register at a time: D336)
-  const walkins = Game.walkInFraction(shop, game.vehicle) > LINE.minWalkInShare;
+  const walkins = Game.walkInFraction(shop, game.vehicle, city.fit) > LINE.minWalkInShare;
   const tickSince = paused ? 0 : Math.max(0, (nowMs - useGame.getState().tickAt) / 1000);
   // `idle`: the sidewalk shows the hire stack exactly when the shop has no GM (D408: a shop with all three heads but no GM
   // still stacks it, so the old `runsItself` test let walkers stand behind the stack); that shop keeps the sidewalk clear
@@ -309,7 +308,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     ? m0.crew
     : stepCrew(
         m0.crew,
-        { lay, walkins, idle: hireOnSidewalk(shop, id), patio: Game.patioTables(shop), departures: line.departures, since: tickSince },
+        { lay, walkins, idle: hireOnSidewalk(shop, id, city), patio: Game.patioTables(shop, city.fit), departures: line.departures, since: tickSince },
         clock,
         frame.width,
       );
@@ -317,7 +316,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // the stations tied for the bottleneck only change with upgrades: memo on the scene key (G80, M44); the idle drivers' pill names them (D421)
   const key = sceneKey(game, id);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers every level the tie depends on
-  const slowest = useMemo(() => Game.tiedStages(shop, game.vehicle), [key]);
+  const slowest = useMemo(() => Game.tiedStages(shop, game.vehicle, city.fit), [key]);
   // who waits outside: hungry diners and idle drivers (steady state, so only while the shop runs); the patio's tables
   // a running weekly event (D470): the sky goes to dusk, string lights come on, and two more hungry diners stand in the lane while the shop sells
   // (activeEvent is looked up once a second, not on every 15 fps frame: U15)
@@ -329,7 +328,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const rep = repAt.current.view!;
   // M60/U10/U11: the queue sizes are a function of the levels, grade, seating and vehicle, all in `key`: computed per upgrade, not 15 times a second
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers every input of queueSizes
-  const q0 = useMemo(() => (running ? Game.queueSizes(shop, game.vehicle) : undefined), [key, running]);
+  const q0 = useMemo(() => (running ? Game.queueSizes(shop, game.vehicle, city.fit) : undefined), [key, running]);
   const extraDiners = evLook.extraDiners;
   // v5.16: while the shop's line has gone cold the street draws only `queueShare` of it (the report's; scroll-cues-model.ts `queueShown`)
   const queueShare = rep.queueShare;
@@ -491,11 +490,11 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       const step = stepMoments(
         { speeds: m.speeds, levels: m.levels, flash: m.flash, bounce: m.bounce, chip: m.chip, mile: m.mile },
         {
-          speeds: { prep: Game.prepRate(shop), oven: Game.ovenRate(shop), counter: Game.counterRate(shop), drivers: shop.drivers },
+          speeds: { prep: Game.prepRate(shop), oven: Game.ovenRate(shop, city.fit), counter: Game.counterRate(shop), drivers: shop.drivers },
           levels: { prep: shop.prep, oven: shop.ovens, counter: shop.counter, drivers: shop.drivers },
           hired: shop.heads,
           headNames: city.heads[id],
-          downtown: id === 'downtown',
+          downtown: id === Game.founderHood(city),
         },
         clock,
       );
@@ -536,7 +535,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       m.hires.length > 0 ||
       !!(m.mile?.text && m.mile.at !== clock && clock - m.mile.at < 2.5);
     const before = barkMemory.get(id) ?? newBarkMem();
-    const { mem: after, bark } = nextBark(before, id, asks, wall, paused || !!g.playing || otherBubble || !(id in BARKS)); // BARKS has the home city's shops only: Boston's heads stay quiet until the engine reads its numbered lines (copy.ts BOSTON_BARKS);
+    const { mem: after, bark } = nextBark(before, id, asks, wall, paused || !!g.playing || otherBubble, city.barks ?? {}); // a city without lines for the shop has silent heads (Boston's wait for the writer pass, copy.ts BOSTON_BARKS);
     if (after !== before) barkMemory.set(id, after);
     if (bark) {
       if (bark.trigger === 'milestone' && m.mile && m.mile.at === clock) m.mile.text = bark.text;
@@ -562,8 +561,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         taps: rushTaps,
         now: rushBucket * 200,
         visitAt,
-        kitchenRate: Math.min(Game.prepRate(shop), Game.ovenRate(shop), Game.counterRate(shop)),
-        demandRate: Game.demandRate(shop, game.vehicle),
+        kitchenRate: Math.min(Game.prepRate(shop), Game.ovenRate(shop, city.fit), Game.counterRate(shop)),
+        demandRate: Game.demandRate(shop, game.vehicle, city.fit),
       }),
     [key, rushTaps, rushBucket, visitAt],
   );
@@ -605,7 +604,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const stationXs: Record<KitchenSpot, number> = { prep: bxs.prep + shift, ovens: bxs.oven + shift, counter: bxs.counter + shift };
   const lastOven = lay.ovens[lay.ovens.length - 1];
   const bubbleSt = refusal ? refusal.st : mileLine && m.mile ? m.mile.st : m.hire && clock - m.hire.at < 2.5 ? m.hire.st : barkOn ? barkOn.st : null;
-  const jamOn = id === 'industrial' && jamView(game).jammed;
+  const jamOn = layerOf(city, id) === 'shifts' && jamView(game).jammed;
   const wants = view.scrolls
     ? wantsOf({
         slammed: (['prep', 'ovens', 'counter'] as const).filter((k) => rep.lamps[k] === 'slammed'),
@@ -620,7 +619,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // G111: a cue keeps 8 pt clear of the tappables on screen; the jam's wrench (the jam overlay's 44 pt button, placed from the same `layoutOfShop` the overlay uses, so the two agree wherever it puts it) is the one a cue met
   const avoid: PtRect[] = [];
   if (jamOn) {
-    const o = ovenSpot(layoutOfShop(shop));
+    const o = ovenSpot(layoutOfShop(shop, city.fit));
     avoid.push(wrenchRect(fit.ox + o.x * fit.s, fit.oy + o.y * fit.s, WRENCH, scrollX.current));
   }
   const cueTop = Math.round(fit.oy + (by + 56) * fit.s);
@@ -695,7 +694,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           importantForAccessibility="no-hide-descendants"
           viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${cw / fit.s} ${height / fit.s}`}
         >
-          <SceneDefs />
+          <SceneDefs grades={city.fit.ovenGrades} />
           <Backdrop id={art} L={roomLay.L} R={roomLay.R} w={sceneFrame.width} />
           {CLOUDS.map((c, i) => (
             <Cloud key={i} x={((c.x0 + clock * c.v) % driftSpan) - 100} y={c.y} k={c.k} dusk={art === 'uptown'} />
@@ -737,6 +736,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                       key={i}
                       o={o}
                       grade={shop.grade}
+                      grades={city.fit.ovenGrades}
                       lit={shop.managed ? running : !!line.oven}
                       hot={!!line.oven}
                       flicker={flicker * (i % 2 ? -1 : 1)}

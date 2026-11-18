@@ -1,7 +1,7 @@
 // Session hooks (v5.13): the golden pizza and the special orders. Numbers and copy only; the rules live in
 // src/engine/bonus.ts and src/engine/orders.ts. Balancing is an edit to this file.
 import { TUNING } from './tuning';
-import type { CharacterId, NeighborhoodId } from './types';
+export type { OrderCast } from './cities/types';
 
 // ---------- The golden pizza (floating bonus) ----------
 
@@ -100,56 +100,6 @@ export const ORDER = {
 } as const;
 
 export const ORDER_FAIL_LINE = 'So close — next time!';
-
-export interface OrderCast {
-  who: CharacterId;
-  /** As the HUD and the Scrapbook name them. */
-  name: string;
-  /** Two offers; `{n}` is the number of pies. At most 60 characters once `{n}` is filled in. */
-  offers: readonly [string, string];
-  /** Two thank-yous for a finished order. */
-  thanks: readonly [string, string];
-}
-
-/** Who asks, by neighbourhood (the shop the pies are sold in). */
-export const ORDER_CAST: Record<NeighborhoodId, OrderCast> = {
-  downtown: {
-    who: 'nonna-rosa',
-    name: 'Nonna Rosa',
-    offers: ['“{n} pies, caro. Two minutes. Fast hands!”', '“Soup’s cooling… {n} pies before the clock, eh?”'],
-    thanks: ['“Bravo! Now eat something, you’re too thin.”', '“That’s my pizza! Rosa’s proud of you.”'],
-  },
-  suburbs: {
-    who: 'dale',
-    name: 'Coach Dale',
-    offers: ['“{n} pies for the Mudhens. Two minutes. Go!”', '“Team’s starving! {n} pies, two minutes, move!”'],
-    thanks: ['“That’s a W! The Mudhens owe you big.”', '“Hustle! Team’s fed and happy, champ.”'],
-  },
-  waterfront: {
-    who: 'marisol',
-    name: 'Captain Marisol',
-    offers: ['“{n} pies for the crew before the tide turns!”', '“All hands hungry. {n} pies in two minutes, sailor!”'],
-    thanks: ['“Fair winds! The crew’s fed. Well done.”', '“Well done, sailor. Even the gulls approve.”'],
-  },
-  university: {
-    who: 'priya',
-    name: 'Priya',
-    offers: ['“Study group needs {n} pies. Two minutes. Please?”', '“Finals week… {n} pies, fast? I’ll owe you.”'],
-    thanks: ['“You’re a lifesaver. Finals survived. Mostly.”', '“Thank you!! The study group lives to debug.”'],
-  },
-  industrial: {
-    who: 'big-sal',
-    name: 'Big Sal',
-    offers: ['“Night shift wants {n} pies. Two minutes, kid.”', '“{n} pies for the crew. Clock’s ticking, kid.”'],
-    thanks: ['“Solid work, kid. Union’d be proud.”', '“Shift’s fed. Don’t tell the foreman I smiled.”'],
-  },
-  uptown: {
-    who: 'genevieve',
-    name: 'Genevieve',
-    offers: ['“{n} pies for the gala, darling. Two minutes.”', '“Do be quick, darling: {n} pies in two minutes.”'],
-    thanks: ['“Divine, darling. Keep the change.”', '“Perfection. I shall tell absolutely everyone.”'],
-  },
-};
 
 /** Layout of the order chip (pt). */
 export const ORDER_VIEW = {

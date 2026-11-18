@@ -22,7 +22,7 @@ export const CHARACTER_IDS = [
   'mr-smith', // the trench coat with the mustache drawn on in marker
   'todd-coat', // the same coat, no mustache
   'slicey', // the foam pizza-slice mascot costume
-  // the five General Managers (MANAGERS in tuning.ts); each appears in their shop's hire scene
+  // the five General Managers (the city pack's `managers`); each appears in their shop's hire scene
   'deb',
   'skip',
   'noor',

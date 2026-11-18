@@ -12,7 +12,7 @@ import { GAME_DAY, LAYER_KEYS } from '../../../content/layers';
 import { seededUnit } from '../../bonus';
 import { deliveryRate, patioTables, tablesShown, walkInRate, type GameState, type Shop } from '../../game';
 import type { Feature } from '../types';
-import { cityOf, layerHood } from '../../../content/cities';
+import { cityOf, layerHood, type CityFit } from '../../../content/cities';
 import type { NeighborhoodId } from '../../../content/types';
 
 /** The schedule every timed layer keeps (boats use it too). Times are play seconds; `nextAt` below 0 = not scheduled yet. */
@@ -85,31 +85,31 @@ const hoodOf = (g: GameState): NeighborhoodId => layerHood(cityOf(g), 'gameDay')
 const built = (g: GameState): boolean => !!g.shops[hoodOf(g)]?.built;
 
 /** Seats in the shop: the tables drawn (and the sidewalk's) times the seats at each. */
-export const seatsOf = (shop: Shop): number => GAME_DAY.seatsPerTable * (tablesShown(shop) + patioTables(shop));
+export const seatsOf = (shop: Shop, fit: CityFit): number => GAME_DAY.seatsPerTable * (tablesShown(shop, fit) + patioTables(shop, fit));
 
 /**
  * Seats the rush can fill: the ones the regulars don't hold. Regulars are the walk-in share of the shop's demand (a shop that
  * mostly delivers has empty chairs; one that is all seating has none to spare).
  */
-export function seatsFree(shop: Shop, vehicle: number): number {
-  const seats = seatsOf(shop);
+export function seatsFree(shop: Shop, vehicle: number, fit: CityFit): number {
+  const seats = seatsOf(shop, fit);
   const walk = walkInRate(shop);
-  const total = walk + deliveryRate(shop, vehicle);
+  const total = walk + deliveryRate(shop, vehicle, fit);
   const held = total > 0 ? Math.min(seats, Math.ceil((seats * walk) / total)) : 0;
   return seats - held;
 }
 
 /** What the rush multiplies the walk-in demand by: 1 with no free seat, up to GAME_DAY.walkInMult with every seat free. */
-export function walkInFactor(shop: Shop, vehicle: number): number {
-  const seats = seatsOf(shop);
-  return seats > 0 ? 1 + (GAME_DAY.walkInMult - 1) * (seatsFree(shop, vehicle) / seats) : 1;
+export function walkInFactor(shop: Shop, vehicle: number, fit: CityFit): number {
+  const seats = seatsOf(shop, fit);
+  return seats > 0 ? 1 + (GAME_DAY.walkInMult - 1) * (seatsFree(shop, vehicle, fit) / seats) : 1;
 }
 
 /** The whole-demand multiplier that adds the rush's extra walk-ins and leaves the drivers alone. */
-export function rushDemandMult(shop: Shop, vehicle: number): number {
+export function rushDemandMult(shop: Shop, vehicle: number, fit: CityFit): number {
   const walk = walkInRate(shop);
-  const drive = deliveryRate(shop, vehicle);
-  return walk + drive > 0 ? (drive + walk * walkInFactor(shop, vehicle)) / (drive + walk) : 1;
+  const drive = deliveryRate(shop, vehicle, fit);
+  return walk + drive > 0 ? (drive + walk * walkInFactor(shop, vehicle, fit)) / (drive + walk) : 1;
 }
 
 export interface GameDayView {
@@ -137,8 +137,8 @@ export function gameDayView(g: GameState, now: number): GameDayView {
     rush,
     nextIn: t.nextAt < 0 ? GAME_DAY.everySeconds : Math.max(0, Math.ceil(t.nextAt - g.playSeconds)),
     left: rush ? Math.max(0, Math.ceil(t.until - g.playSeconds)) : 0,
-    seatsFree: seatsFree(shop, g.vehicle),
-    seats: seatsOf(shop),
+    seatsFree: seatsFree(shop, g.vehicle, cityOf(g).fit),
+    seats: seatsOf(shop, cityOf(g).fit),
   };
 }
 
@@ -154,7 +154,7 @@ export const suburbsGameDay: Feature<Timed> = {
   },
   shopDemandMult(g, id, now) {
     if (id !== hoodOf(g) || !built(g) || !timedOn(read(g), g.playSeconds, now)) return 1;
-    return rushDemandMult(g.shops[id], g.vehicle);
+    return rushDemandMult(g.shops[id], g.vehicle, cityOf(g).fit);
   },
   shopKey(g, id) {
     return id === hoodOf(g) && built(g) && read(g).until > g.playSeconds ? 'gameday' : '';

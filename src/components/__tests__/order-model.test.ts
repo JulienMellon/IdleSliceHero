@@ -1,10 +1,11 @@
 /// <reference types="jest" />
-import { ORDER, ORDER_CAST, ORDER_FAIL_LINE, ORDER_VIEW } from '../../content/hooks';
+import { ORDER, ORDER_FAIL_LINE, ORDER_VIEW } from '../../content/hooks';
 import { money } from '../../engine/format';
 import * as G from '../../engine/game';
 import * as O from '../../engine/orders';
 import { behindPace, chipPhase, chipView, clockText, offerExpiry, progressText } from '../order-model';
 
+import { HOME_ORDER_CAST as ORDER_CAST } from '../../content/cities/home/voice';
 const T0 = 1_700_000_000_000;
 const ready = (): G.GameState => {
   const s = G.newGame(T0);

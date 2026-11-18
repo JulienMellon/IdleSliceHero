@@ -29,8 +29,10 @@ import {
   WEEKLY_TASK_COUNT,
   WEEKLY_TASK_REWARD,
 } from '../../content/rewards';
-import { NEIGHBORHOODS, TUNING, VEHICLES } from '../../content/tuning';
+import { TUNING } from '../../content/tuning';
 
+import { VEHICLES } from '../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 // Local times, so the tests hold in any time zone.
 const at = (y: number, m: number, d: number, h = 12, min = 0, sec = 0) => new Date(y, m - 1, d, h, min, sec).getTime();
 const T = at(2026, 10, 30); // a Friday

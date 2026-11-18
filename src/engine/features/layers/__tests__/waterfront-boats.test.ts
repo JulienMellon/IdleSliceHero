@@ -1,11 +1,12 @@
 // Waterfront, boats and the warming rack (v5.16): the schedule, the rack's fill and drain, its prices, the Pier 9 live auction and old saves.
 import { AUCTION, BOATS, auctionMult } from '../../../../content/layers';
-import { PIER9_BID } from '../../../../content/tuning';
 import { getFeature, withFeatures } from '../../index';
 import * as G from '../../../game';
 import { freshTimed, gapOf, stepTimed, type Timed } from '../suburbs-gameday';
 import { boatsView, buyRack, pier9AuctionMult, rackCapacity, rackLock, rackPrice, waterfrontBoats } from '../waterfront-boats';
 
+import { HOME_FIT } from '../../../../content/cities/home/fit';
+import { PIER9_BID } from '../../../../content/cities/home/data';
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 const HOOD = BOATS.hood;
 const patch = (g: G.GameState, p: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [HOOD]: { ...g.shops[HOOD], ...p } } });
@@ -26,15 +27,15 @@ function dock(tier = 0): G.GameState {
   for (let prep = 1; prep <= 60; prep++) {
     for (let tables = 1; tables <= 60; tables++) {
       const shop = { ...g.shops[HOOD], prep, tables };
-      const ratio = G.prepRate(shop) / G.demandRate(shop, g.vehicle);
+      const ratio = G.prepRate(shop) / G.demandRate(shop, g.vehicle, HOME_FIT);
       if (ratio > 1.5 && ratio < 2.5) return withState(patch(g, { prep, tables }), { tier });
     }
   }
   throw new Error('no levels fit the fixture');
 }
 const rates = (g: G.GameState) => ({
-  sold: G.shopRate(g.shops[HOOD], g.vehicle),
-  demand: G.demandRate(g.shops[HOOD], g.vehicle),
+  sold: G.shopRate(g.shops[HOOD], g.vehicle, HOME_FIT),
+  demand: G.demandRate(g.shops[HOOD], g.vehicle, HOME_FIT),
   kitchen: G.prepRate(g.shops[HOOD]),
 });
 /** Put a boat at the dock now. */
@@ -144,7 +145,7 @@ describe('the warming rack', () => {
       const g0 = boatIn(withState(dock(4), { rack: 100, nextAt: 1e9 }));
       const g = G.playTick(g0, 1, NOW);
       const fx = G.featureMults(g0, HOOD, NOW);
-      const unmet = G.demandRate(g0.shops[HOOD], g0.vehicle, fx) - G.shopRate(g0.shops[HOOD], g0.vehicle, fx);
+      const unmet = G.demandRate(g0.shops[HOOD], g0.vehicle, HOME_FIT, fx) - G.shopRate(g0.shops[HOOD], g0.vehicle, HOME_FIT, fx);
       expect(unmet).toBeGreaterThan(0);
       expect(100 - state(g).rack - state(g).carry).toBeGreaterThan(0);
       const drained = 100 - state(g).rack;
@@ -199,9 +200,9 @@ describe('the Pier 9 live auction', () => {
   it('opens when the bid does, runs on play seconds, and the bid price follows it', () => {
     run(() => {
       let g = bidding();
-      expect(G.pier9Available(g)).toBe(true);
+      expect(G.bidAvailable(g)).toBe(true);
       expect(pier9AuctionMult(g)).toBe(1);
-      expect(G.pier9Price(g)).toBe(PIER9_BID.cost);
+      expect(G.bidPrice(g)).toBe(PIER9_BID.cost);
       g = play(g, 1);
       expect(state(g).openedAt).toBe(g.playSeconds);
       // the clock changing changes nothing
@@ -209,15 +210,15 @@ describe('the Pier 9 live auction', () => {
       expect(pier9AuctionMult(g)).toBe(1);
       g = { ...g, playSeconds: g.playSeconds + 300 };
       expect(pier9AuctionMult(g)).toBeCloseTo(1.1, 10);
-      expect(G.pier9Price(g)).toBe(Math.ceil(PIER9_BID.cost * 1.1));
-      const paid = G.bidPier9(g);
+      expect(G.bidPrice(g)).toBe(Math.ceil(PIER9_BID.cost * 1.1));
+      const paid = G.placeBid(g);
       if (!paid.ok) throw new Error(paid.reason);
       expect(g.cash - paid.state.cash).toBe(Math.ceil(PIER9_BID.cost * 1.1));
       expect(paid.state.shops[HOOD].perk).toBe(true);
       // capped at +50%, and the bid needs the raised price
       const late = { ...g, playSeconds: g.playSeconds + 10_000 };
-      expect(G.pier9Price(late)).toBe(Math.ceil(PIER9_BID.cost * 1.5));
-      expect(G.bidPier9({ ...late, cash: PIER9_BID.cost * 1.2 }).ok).toBe(false);
+      expect(G.bidPrice(late)).toBe(Math.ceil(PIER9_BID.cost * 1.5));
+      expect(G.placeBid({ ...late, cash: PIER9_BID.cost * 1.2 }).ok).toBe(false);
     });
   });
 
@@ -225,10 +226,10 @@ describe('the Pier 9 live auction', () => {
     run(() => {
       const g = play(patch(G.newGame(NOW), { built: true, sold: 10 }), 3000);
       expect(state(g).openedAt).toBe(-1);
-      expect(G.pier9Price(g)).toBe(PIER9_BID.cost);
+      expect(G.bidPrice(g)).toBe(PIER9_BID.cost);
     });
     // no feature registered at all: the plain bid
-    withFeatures([], () => expect(G.pier9Price(bidding())).toBe(PIER9_BID.cost));
+    withFeatures([], () => expect(G.bidPrice(bidding())).toBe(PIER9_BID.cost));
   });
 });
 

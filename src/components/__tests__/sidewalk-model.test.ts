@@ -1,4 +1,3 @@
-import { NEIGHBORHOODS } from '../../content/tuning';
 /// <reference types="jest" />
 import { money } from '../../engine/format';
 import * as G from '../../engine/game';
@@ -33,6 +32,8 @@ import {
 } from '../sidewalk-model';
 import { BUTTON_H, SIDEWALK_ROW, TAP } from '../tap-targets';
 
+import { HOME_CITY } from '../../content/cities/home';
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const shopState = (patch: Partial<G.Shop>, cash = 0): G.GameState => {
   const s = G.newGame(0);
   return { ...s, cash, shops: { ...s.shops, downtown: { ...s.shops.downtown, managed: true, ...patch } } };
@@ -237,7 +238,7 @@ describe('Pier 9 warning on the build chip', () => {
   });
   test('shown only while the bid is on offer and not yet won', () => {
     expect(buildChipHint(base)).toBeNull();
-    expect(G.pier9Available(open())).toBe(true);
+    expect(G.bidAvailable(open())).toBe(true);
     expect(buildChipHint(open())).toBe('uses bid cash'); // a cost, not a reward; never claims to reset progress
     expect(buildChipHint(open({ perk: true }))).toBeNull(); // won
   });
@@ -254,19 +255,19 @@ describe('who is offered the next hire (B1)', () => {
   const sh = (patch: Partial<G.Shop>): G.Shop => ({ ...G.newGame(0).shops.suburbs, built: true, managed: false, ...patch });
   const heads = { prep: true, oven: true, counter: true };
   test('the sidewalk offers hires on every shop without a GM except Downtown, whose GM is Nonna', () => {
-    expect(hireOnSidewalk(sh({}), 'suburbs')).toBe(true);
-    expect(hireOnSidewalk(sh({ heads }), 'suburbs')).toBe(true); // all three heads: the GM is still on offer
-    expect(hireOnSidewalk(sh({ managed: true, heads }), 'suburbs')).toBe(false);
-    expect(hireOnSidewalk(sh({}), 'downtown')).toBe(false);
+    expect(hireOnSidewalk(sh({}), 'suburbs', HOME_CITY)).toBe(true);
+    expect(hireOnSidewalk(sh({ heads }), 'suburbs', HOME_CITY)).toBe(true); // all three heads: the GM is still on offer
+    expect(hireOnSidewalk(sh({ managed: true, heads }), 'suburbs', HOME_CITY)).toBe(false);
+    expect(hireOnSidewalk(sh({}), 'downtown', HOME_CITY)).toBe(false);
   });
   test('the goal bar steps aside for a head, but keeps the GM hire until it is bought', () => {
-    expect(goalHidesOwnHire(sh({}), 'suburbs')).toBe(true);
-    expect(goalHidesOwnHire(sh({ heads: { prep: true, oven: true, counter: false } }), 'suburbs')).toBe(true);
-    expect(goalHidesOwnHire(sh({ heads }), 'suburbs')).toBe(false);
-    expect(goalHidesOwnHire(sh({ managed: true, heads }), 'suburbs')).toBe(false);
+    expect(goalHidesOwnHire(sh({}), 'suburbs', HOME_CITY)).toBe(true);
+    expect(goalHidesOwnHire(sh({ heads: { prep: true, oven: true, counter: false } }), 'suburbs', HOME_CITY)).toBe(true);
+    expect(goalHidesOwnHire(sh({ heads }), 'suburbs', HOME_CITY)).toBe(false);
+    expect(goalHidesOwnHire(sh({ managed: true, heads }), 'suburbs', HOME_CITY)).toBe(false);
   });
   test("Downtown's goal bar keeps its heads", () => {
-    expect(goalHidesOwnHire(sh({}), 'downtown')).toBe(false);
+    expect(goalHidesOwnHire(sh({}), 'downtown', HOME_CITY)).toBe(false);
   });
 });
 

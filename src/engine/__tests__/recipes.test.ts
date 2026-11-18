@@ -1,11 +1,11 @@
 // Recipe cards (v5.15): each drop, the 1.01 multiplier, play-only sources and the catch-up on a v5.14 save.
 import { RECIPE, recipeId } from '../../content/endgame';
-import { NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { getFeature } from '../features';
 import { ackRecipes, cardEarned, collectionView, ownedIn, recipes } from '../features/recipes';
 import * as G from '../game';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const T0 = 1_700_000_000_000;
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({

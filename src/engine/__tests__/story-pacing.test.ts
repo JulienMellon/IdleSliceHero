@@ -1,10 +1,12 @@
 import { LAYER_KEYS } from '../../content/layers';
 import { HOME_SCENES } from '../../content/scenes/home';
-import { PERKS, PIER9_BID, STORY_PACING } from '../../content/tuning';
+import { STORY_PACING } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { pickScene, resolveScene, resumeSceneEnd, sceneHeading, sceneReady, scenePacesGap } from '../cutscene-input';
 import * as G from '../game';
 
+import { HOME_FIT } from '../../content/cities/home/fit';
+import { PERKS, PIER9_BID } from '../../content/cities/home/data';
 const scene = (id: string) => HOME_SCENES.find((s) => s.id === id)!;
 /** The pizzas a count-triggered scene waits for (v5.16: fitted in scripts/pacing-fit.ts session1, so the tests read them). */
 const countOf = (id: string): number => (scene(id).trigger as { count: number }).count;
@@ -42,8 +44,8 @@ describe('story pacing (v3.7)', () => {
   });
   it('Downtown’s beat 4 (a pizza count) waits 120 s of play after beat 3 (S45)', () => {
     const dt = withShop(seenUpTo(['downtown-1', 'downtown-2', 'downtown-3'], 500, { 'downtown-3': 400 }), 'downtown', { sold: countOf('downtown-4') });
-    expect(pickScene({ ...dt, playSeconds: 400 + STORY_PACING.downtownBeat4GapSeconds - 10 }, HOME_SCENES, LATE, 0, false, null)).toBeNull();
-    expect(pickScene({ ...dt, playSeconds: 400 + STORY_PACING.downtownBeat4GapSeconds + 10 }, HOME_SCENES, LATE, 0, false, null)?.id).toBe('downtown-4');
+    expect(pickScene({ ...dt, playSeconds: 400 + STORY_PACING.firstHoodBeat4GapSeconds - 10 }, HOME_SCENES, LATE, 0, false, null)).toBeNull();
+    expect(pickScene({ ...dt, playSeconds: 400 + STORY_PACING.firstHoodBeat4GapSeconds + 10 }, HOME_SCENES, LATE, 0, false, null)?.id).toBe('downtown-4');
   });
   it('the count-triggered scenes wait for more pizzas, beat after beat', () => {
     const c = [2, 3, 4].map((n) => countOf(`downtown-${n}`));
@@ -127,24 +129,24 @@ describe('Pier 9 bid (v3.7)', () => {
     });
   it('costs $120M (about 4–5 minutes of income when it opens, v5.13)', () => expect(PIER9_BID.cost).toBe(120_000_000));
   it('opens after "Man Overboard" and 50,000 Waterfront pizzas', () => {
-    expect(G.pier9Available(ready())).toBe(true);
-    expect(G.pier9Available(withShop(ready(), 'waterfront', { sold: PIER9_BID.unlockPizzas - 1 }))).toBe(false);
-    expect(G.pier9Available({ ...ready(), seenScenes: ['waterfront-1', 'waterfront-2'] })).toBe(false);
+    expect(G.bidAvailable(ready())).toBe(true);
+    expect(G.bidAvailable(withShop(ready(), 'waterfront', { sold: PIER9_BID.unlockPizzas - 1 }))).toBe(false);
+    expect(G.bidAvailable({ ...ready(), seenScenes: ['waterfront-1', 'waterfront-2'] })).toBe(false);
   });
   it('"For Sale" alone is not enough: the bid needs waterfront-3b, which plays at the same pizza count', () => {
-    expect(G.pier9Available({ ...ready(), seenScenes: ['waterfront-1', 'waterfront-2', 'waterfront-3'] })).toBe(false);
+    expect(G.bidAvailable({ ...ready(), seenScenes: ['waterfront-1', 'waterfront-2', 'waterfront-3'] })).toBe(false);
     expect(scene('waterfront-3b').trigger).toEqual({ kind: 'deliveries', neighborhood: 'waterfront', count: PIER9_BID.unlockPizzas });
     expect(scene('waterfront-3b').requires).toEqual(['waterfront-3']);
     expect(scene('waterfront-4').requires).toEqual(['waterfront-3b']);
   });
   it('winning it spends the bid, grants the perk and plays the finale', () => {
-    const r = G.bidPier9(ready());
+    const r = G.placeBid(ready());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.state.cash).toBe(PIER9_BID.cost * 0.5);
     expect(r.state.shops.waterfront.perk).toBe(true);
     expect(G.pendingScenes(r.state, HOME_SCENES).map((x) => x.id)).toContain('waterfront-4');
-    expect(G.bidPier9(r.state).ok).toBe(false);
+    expect(G.placeBid(r.state).ok).toBe(false);
   });
   it('the finale no longer plays from a pizza count alone', () => {
     const s = withShop(ready(), 'waterfront', { sold: 1e7 });
@@ -221,7 +223,7 @@ describe('perk scope (T31)', () => {
     // plenty of seats: nearly every sale is a walk-in, so revenue = price × (delivered + walkIns × share)
     const s = managed('suburbs', false);
     const sh = s.shops.suburbs;
-    const sold = G.shopRate(sh, s.vehicle);
+    const sold = G.shopRate(sh, s.vehicle, HOME_FIT);
     const walkIns = Math.min(sold, G.walkInRate(sh));
     const price = G.def('suburbs').orderValue * G.decorMult(sh, 'suburbs') * G.gmMult(sh);
     expect(G.shopEarnings(managed('suburbs', true), 'suburbs')).toBeCloseTo(price * (sold - walkIns + walkIns * 1.15), 6);
@@ -310,8 +312,8 @@ describe('beat 4 is won (v5.16)', () => {
     expect(G.challengeOffered(beat3(800 + STORY_PACING.beat4GapSeconds - 1), 'suburbs')).toBe(false);
     expect(G.challengeOffered(beat3(800 + STORY_PACING.beat4GapSeconds), 'suburbs')).toBe(true);
     const dt = withShop(seenUpTo(['downtown-1', 'downtown-2', 'downtown-3'], 0, { 'downtown-3': 400 }), 'downtown', {});
-    expect(G.challengeOffered({ ...dt, playSeconds: 400 + STORY_PACING.downtownBeat4GapSeconds - 1 }, 'downtown')).toBe(false);
-    expect(G.challengeOffered({ ...dt, playSeconds: 400 + STORY_PACING.downtownBeat4GapSeconds }, 'downtown')).toBe(true);
+    expect(G.challengeOffered({ ...dt, playSeconds: 400 + STORY_PACING.firstHoodBeat4GapSeconds - 1 }, 'downtown')).toBe(false);
+    expect(G.challengeOffered({ ...dt, playSeconds: 400 + STORY_PACING.firstHoodBeat4GapSeconds }, 'downtown')).toBe(true);
   });
   it('the challenge is not offered with no rival: beat 3 unseen, the shop unbuilt, or the challenge already won', () => {
     expect(G.challengeOffered(withShop(seenUpTo(['suburbs-1', 'suburbs-2'], 1e6), 'suburbs', { built: true }), 'suburbs')).toBe(false);

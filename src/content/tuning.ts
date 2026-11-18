@@ -1,10 +1,8 @@
 // All balancing numbers live here so tuning never touches game logic.
-// v5.18 (card K1): everything that is specific to the home city now lives in ./cities/home/ (a city is a folder; the engine reads the
-// current one with `cityOf(game)`). The names below are thin re-exports of the HOME city's tables, kept because dozens of call sites (components,
-// tests, scripts) read the home city directly; engine code that has a game in hand reads `cityOf(g)` instead.
+// A city's own tables (neighbourhoods, perks, heads, managers, the fit: oven grades, footprints, fleet, takeover and the bid) live in
+// ./cities/<id>/ and are read with `cityOf(game)` (card R1: tuning.ts no longer re-exports the home city's). Tests and scripts that mean the
+// home city import it from ./cities/home.
 export type { FootprintTier, NeighborhoodDef, OvenGrade, PerkDef, VehicleDef } from './cities/types';
-export { HEAD_COST_DOWNTOWN, NONNA_TAKEOVER, FOOTPRINTS, OVEN_GRADES, VEHICLES } from './cities/home/fit';
-export { CITY_NAME, HEADS, MANAGERS, NEIGHBORHOODS, PERKS, PIER9_BID } from './cities/home/data';
 
 export const TUNING = {
   costGrowth: 1.15,
@@ -78,7 +76,7 @@ export const DECOR: Record<DecorKind, DecorDef> = {
 export const STORY_PACING = {
   gapSeconds: 90,
   beat4GapSeconds: 300,
-  downtownBeat4GapSeconds: 120,
+  firstHoodBeat4GapSeconds: 120,
   /** Away at least this long counts as a return. iOS also fires "active" after Control Center, a banner or the app switcher. */
   returnSeconds: 60,
 } as const;

@@ -15,6 +15,7 @@ import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
 import { toWindow } from '../layer-geometry';
 import { pillBox } from '../industrial/jam-model';
+import { cityOf } from '../../../content/cities';
 import { layoutOfShop } from '../shop-layout';
 import { CRITIC_LEAD, criticPath, criticPhase, targetChip, WALK_SECONDS } from './critic-model';
 
@@ -88,7 +89,7 @@ export const CriticScene = memo(function CriticScene({ shopId, width, height }: 
     const v = criticView(s.game);
     const phase = criticPhase(v);
     if (phase === 'away') return '';
-    const door = layoutOfShop(s.game.shops[shopId]).door;
+    const door = layoutOfShop(s.game.shops[shopId], cityOf(s.game).fit).door;
     return `${phase}|${v.last ? v.last.target : v.target}|${v.last ? (v.last.hit ? 1 : 0) : 0}|${phase === 'walking' ? Math.max(0, CRITIC_LEAD - v.nextIn) : 0}|${door.cx.toFixed(1)}|${door.x0.toFixed(1)}`;
   });
   if (!key || !(width > 0)) return null;

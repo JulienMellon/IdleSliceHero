@@ -12,7 +12,6 @@ const path: { join(...p: string[]): string } = require('path');
 
 import { HOME_SCENES } from '../../content/scenes/home';
 import { CITIES, hoodIds } from '../../content/cities';
-import { NEIGHBORHOODS } from '../../content/tuning';
 import {
   SCENE_INDEX,
   audioHood,
@@ -40,6 +39,7 @@ import {
   type StingKind,
 } from '../logic';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const ROOT = path.join(__dirname, '..', '..', '..');
 const MANIFEST = fs.readFileSync(path.join(__dirname, '..', 'manifest.ts'), 'utf8');
 

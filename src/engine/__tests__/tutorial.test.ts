@@ -1,8 +1,10 @@
 /// <reference types="jest" />
 // Nonna's guided tutorial (P2).
 import * as G from '../game';
-import { coachStep, HINTS, hintsAllowed, showLockedTabs, STEPS, TUTORIAL_DONE, tutorialAdvance, tutorialHoldsStory } from '../tutorial';
+import { HOME_CITY } from '../../content/cities/home';
+import { coachStep, HINTS, hintsAllowed, showLockedTabs, stepsFor, TUTORIAL_DONE, tutorialAdvance, tutorialHoldsStory } from '../tutorial';
 
+const STEPS = stepsFor(HOME_CITY);
 const opened = () => tutorialAdvance({ ...G.newGame(0), seenScenes: ['downtown-1'] });
 const tap = (s: G.GameState, st: 'prep' | 'oven' | 'counter') => {
   const r = G.tapStation(s, 'downtown', st);

@@ -2,7 +2,7 @@
 // and a cream copy clipped to the fill's width, so it stays readable at every fill fraction. Pure: unit-tested in node.
 import { HOME_SCENES } from '../content/scenes/home';
 import { finaleSeen } from '../engine/features/counterattack';
-import { MASTERY_MAX, masteryTotal, nextStar } from '../engine/features/mastery';
+import { masteryMax, masteryTotal, nextStar } from '../engine/features/mastery';
 import { cityOf } from '../content/cities';
 import { def, type GameState } from '../engine/game';
 import { UPGRADE_TASK_MAX_SECONDS } from '../content/rewards';
@@ -148,7 +148,7 @@ export function masteryGoal(g: GameState): MasteryGoal | null {
     tiny,
     text: next ? `${next.have}/${next.need} ${STAR_UNIT[next.star]}` : '\u2605',
     current: n,
-    target: MASTERY_MAX,
+    target: masteryMax(g),
   };
 }
 

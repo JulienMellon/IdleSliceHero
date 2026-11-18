@@ -1,10 +1,10 @@
 /// <reference types="jest" />
 import { AUCTION, LAYER_KEYS } from '../../../content/layers';
-import { PIER9_BID } from '../../../content/tuning';
 import '../../../engine/features';
 import * as G from '../../../engine/game';
 import { auctionSheet, boatSheet, gameDaySheet, rivalSheet, sheetModel } from '../sheet-model';
 
+import { PIER9_BID } from '../../../content/cities/home/data';
 const NOW = new Date(2026, 10, 11, 12, 0, 0).getTime();
 const base = (): G.GameState => {
   const g = G.newGame(NOW);

@@ -1,9 +1,9 @@
 /// <reference types="jest" />
 import { RECIPE_DROPS, recipeId } from '../../../content/endgame';
-import { NEIGHBORHOODS } from '../../../content/tuning';
 import * as G from '../../../engine/game';
 import { collectionLine, recipeGroups } from '../recipes-model';
 
+import { NEIGHBORHOODS } from '../../../content/cities/home/data';
 const NINE = ['downtown', 'suburbs'].flatMap((h) => [1, 2, 3, 4].map((n) => recipeId(h as 'downtown', n as 1))).concat([recipeId('waterfront', 1)]);
 const withOwned = (owned: string[]): G.GameState => {
   const g = G.newGame(1_700_000_000_000);

@@ -1,9 +1,9 @@
 /// <reference types="jest" />
 import { HOME_SCENES } from '../../content/scenes/home';
-import { PIER9_BID } from '../../content/tuning';
 import * as G from '../game';
 import { commas, nextSceneTeaser, ringStep, TEASER_COMPLETE, teaserStep } from '../teaser';
 
+import { PIER9_BID } from '../../content/cities/home/data';
 const T0 = new Date(2026, 10, 11, 12, 0, 0).getTime();
 /** The pizzas a count-triggered scene waits for (fitted in v5.16, so read from the scene). */
 const countOf = (id: string): number => (HOME_SCENES.find((s) => s.id === id)!.trigger as { count: number }).count;
@@ -72,8 +72,8 @@ describe('nextSceneTeaser: one test per trigger kind', () => {
       playSeconds: 10_000,
       x: { ...base.x, waterfrontBoats: { ...(base.x.waterfrontBoats as object), openedAt: 0 } },
     };
-    expect(G.pier9Available(s)).toBe(true);
-    const price = G.pier9Price(s);
+    expect(G.bidAvailable(s)).toBe(true);
+    const price = G.bidPrice(s);
     expect(price).toBeGreaterThan(PIER9_BID.cost);
     expect(nextSceneTeaser(s).progress).toBeCloseTo(Math.min(1, s.cash / price));
   });

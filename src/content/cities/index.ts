@@ -1,6 +1,6 @@
 // Every city the game has (card K1). The engine never imports a city's tables directly: it asks `cityOf(game)`.
 import type { NeighborhoodId } from '../types';
-import type { CityDef, LayerKind } from './types';
+import type { CityDef, LayerKind, NeighborhoodDef } from './types';
 import { HOME_CITY } from './home';
 import { BOSTON_CITY } from './boston';
 
@@ -14,23 +14,29 @@ export const CITIES: Record<string, CityDef> = { [HOME_CITY.id]: HOME_CITY, [BOS
 /** The city a game is in: `GameState.city`, falling back to the home city for an id this build does not know. */
 export const cityOf = (g: { city?: string }): CityDef => CITIES[g.city ?? HOME_ID] ?? HOME_CITY;
 
-let OWNERS: Map<NeighborhoodId, CityDef> | undefined;
-/** The city that has neighbourhood `id` (ids are unique across cities), or undefined for an id no pack has. One lazy Map over CITIES, so the lookup is O(1) (U24). */
-export function cityHolding(id: NeighborhoodId): CityDef | undefined {
-  if (!OWNERS) {
-    OWNERS = new Map();
-    for (const c of Object.values(CITIES)) for (const n of c.neighbourhoods) OWNERS.set(n.id, c);
+type HoodEntry = { city: CityDef; def: NeighborhoodDef };
+let HOODS: Map<NeighborhoodId, HoodEntry> | undefined;
+/** One lazy Map over every city's neighbourhoods (ids are unique across cities): the one lookup `cityHolding`, `findHood` and the engine's `def` read, so each is O(1) (U24). */
+function hoods(): Map<NeighborhoodId, HoodEntry> {
+  if (!HOODS) {
+    HOODS = new Map();
+    for (const city of Object.values(CITIES)) for (const def of city.neighbourhoods) HOODS.set(def.id, { city, def });
   }
-  return OWNERS.get(id);
+  return HOODS;
 }
 
-const DEFS = new WeakMap<CityDef, Map<NeighborhoodId, CityDef['neighbourhoods'][number]>>();
-/** A neighbourhood's tables in `city` (default: the city that has the id), or undefined for an id that isn't there (C147: a stale or foreign id is a miss, not a crash). */
-export function findHood(id: NeighborhoodId, city: CityDef | undefined = cityHolding(id)): CityDef['neighbourhoods'][number] | undefined {
-  if (!city) return undefined;
-  let per = DEFS.get(city);
-  if (!per) DEFS.set(city, (per = new Map(city.neighbourhoods.map((n) => [n.id, n] as const))));
-  return per.get(id);
+/** The city that has neighbourhood `id`, or undefined for an id no pack has. */
+export const cityHolding = (id: NeighborhoodId): CityDef | undefined => hoods().get(id)?.city;
+
+/**
+ * A neighbourhood's tables, or undefined for an id that isn't there (C147: a stale or foreign id is a miss, not a crash). With `city`, the miss
+ * includes an id that another city has.
+ */
+export function findHood(id: NeighborhoodId, city?: CityDef): NeighborhoodDef | undefined {
+  const hit = hoods().get(id);
+  if (!city || hit?.city === city) return hit?.def;
+  // a city that is not in CITIES (a pack under test): its own list is the answer
+  return city.neighbourhoods.find((n) => n.id === id);
 }
 
 const IDS = new WeakMap<CityDef, readonly NeighborhoodId[]>();

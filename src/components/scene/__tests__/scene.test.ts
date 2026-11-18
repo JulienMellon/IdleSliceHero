@@ -29,10 +29,10 @@ import {
   type Layout,
 } from './draw-layout';
 import { P, unprojectX } from '../projection';
-import { FOOTPRINTS } from '../../../content/tuning';
 import { pickAvoid, seatPalette } from '../palette';
 import { DRIVER_PAYOUT, GUEST_WALK_Y, along, driverPhase, driverPose, guestPose, payoutCrossed } from '../timelines';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
 const SCENE_W = 393;
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 

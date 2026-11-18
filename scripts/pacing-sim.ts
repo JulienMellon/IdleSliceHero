@@ -3,12 +3,13 @@
 // pizzerias until it has a manager. v5.16: this is scripts/review/sim2.ts's `run('continuous')` (one player, one set of rules: it also plays
 // the rewards, REWARDS=0 turns them off), printed as the scene table it always was. NOTAP=1: a casual player who only taps Downtown.
 import { HOME_SCENES } from '../src/content/scenes/home';
-import { NEIGHBORHOODS } from '../src/content/tuning';
 import * as G from '../src/engine/game';
 import { masteryTotal } from '../src/engine/features/mastery';
 import { applyCfg, options, reportLines, run } from './review/sim2';
 import { BOSTON_TOLERANCE, franchiseRun } from './pacing-fit';
 
+import { HOME_FIT } from '../src/content/cities/home/fit';
+import { NEIGHBORHOODS } from '../src/content/cities/home/data';
 const r = run('continuous');
 const s = r.s;
 /** What starts each scene, as the table prints it (v5.16, card T1a: the story models `after`, `requires`, the rival `challenge` and the hired `manager`). */
@@ -137,9 +138,11 @@ if (process.env.DEBUG) {
       n.id,
       JSON.stringify({ ...sh, line: undefined }),
       'bottleneck',
-      G.bottleneck(sh, s.vehicle),
+      G.bottleneck(sh, s.vehicle, HOME_FIT),
       'rates',
-      [G.prepRate(sh), G.ovenRate(sh), G.counterRate(sh), G.deliveryRate(sh, s.vehicle), G.walkInRate(sh)].map((x) => x.toFixed(1)).join('/'),
+      [G.prepRate(sh), G.ovenRate(sh, HOME_FIT), G.counterRate(sh), G.deliveryRate(sh, s.vehicle, HOME_FIT), G.walkInRate(sh)]
+        .map((x) => x.toFixed(1))
+        .join('/'),
     );
   }
   console.log(

@@ -14,6 +14,7 @@ import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
 import { isDressed } from '../city-dress';
 import { hoodOf } from '../city-layers';
+import { cityOf } from '../../../content/cities';
 import { layoutOfShop } from '../shop-layout';
 import { BOAT, BOAT_ART, RACK_STEPS, RACK_W, boatDock, boatPose, rackBox, rackStep, untilNextBoat } from './boats-model';
 import { gameNow } from '../../../engine/clock';
@@ -131,7 +132,7 @@ export const HarbourScene = memo(function HarbourScene({ shopId, width, height }
   const g = st.game;
   const shop = g.shops[shopId];
   if (!shop.built) return null;
-  const lay = layoutOfShop(shop);
+  const lay = layoutOfShop(shop, cityOf(g).fit);
   const fit = sceneFit(width, height, frame);
   const wallLeft = P(lay.L, 0)[0];
   const sinceTick = Math.max(0, (gameNow() - st.tickAt) / 1000);

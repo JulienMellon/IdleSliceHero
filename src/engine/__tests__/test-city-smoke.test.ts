@@ -1,7 +1,6 @@
 // R0: the refactor's safety net. A synthetic city (content/cities/__fixtures__/test-city.ts) with a fit that differs from the home city's everywhere
-// is played the way boston-smoke.test.ts plays Boston. The first block passes today. The second block asserts that the rates come from THE CITY'S fit;
-// they fail today (game.ts reads the home tables OVEN_GRADES, VEHICLES and FOOTPRINTS from tuning.ts), so they are `it.failing`: card R1 makes the
-// engine read `cityOf(s).fit` and flips each one to `it`. Until then a green run of this file means the engine is still home-bound, on purpose.
+// is played the way boston-smoke.test.ts plays Boston. The first block checks the engine can play it. The second block asserts that the rates come
+// from THE CITY'S fit (`cityOf(s).fit`), which card R1 made true: a regression to the home tables fails it.
 import '../features';
 import * as G from '../game';
 import { withFeatures } from '../features';
@@ -87,25 +86,24 @@ describe('the test city is a city the engine can play', () => {
       shops: { ...g.shops, [bid.hood]: { ...g.shops[bid.hood], built: true, sold: bid.unlockPizzas } },
       seenScenes: [...g.seenScenes, bid.afterScene],
     };
-    expect(G.pier9Available(g)).toBe(false);
-    expect(G.pier9Available(open)).toBe(true);
+    expect(G.bidAvailable(g)).toBe(false);
+    expect(G.bidAvailable(open)).toBe(true);
   });
 });
 
-// ---------- the rates must come from the city's fit: they do not yet (R1 flips these to `it`) ----------
+// ---------- the rates come from the city's fit (card R1 flipped these from `it.failing`) ----------
 
 const levelSpeed1 = (base: number) => base * G.milestoneMultiplier(1);
 const HOOD = IDS[1];
 
 describe("the rates read the city's fit (R1)", () => {
-  // card R1: when the rate helpers take the city, the two direct calls below (`G.tablesShown`, `G.patioTables`) take it too
-  it.failing("the oven rate of a shop at grade 1 is the level speed times the test fit's grade-1 mult", () => {
+  it("the oven rate of a shop at grade 1 is the level speed times the test fit's grade-1 mult", () => {
     const g = game(2, HOOD, { ovens: 1, grade: 1 });
     const rates = G.lineRates(HOOD, g.shops[HOOD], g.vehicle, 1, undefined, TEST_CITY);
     expect(rates.oven).toBeCloseTo(levelSpeed1(STATIONS.ovens.speed) * TEST_FIT.ovenGrades[1].mult, 9);
   });
 
-  it.failing('the oven grade sets what the shop earns when the oven is the slowest station', () => {
+  it('the oven grade sets what the shop earns when the oven is the slowest station', () => {
     const g = game(2, HOOD, { ovens: 1, grade: 2, prep: 60, counter: 60, drivers: 60, tables: 60 });
     const expected = TEST_CITY.neighbourhoods[1].orderValue * levelSpeed1(STATIONS.ovens.speed) * TEST_FIT.ovenGrades[2].mult;
     withFeatures([], () =>
@@ -113,7 +111,7 @@ describe("the rates read the city's fit (R1)", () => {
     );
   });
 
-  it.failing("the fleet's speed and capacity decide the delivery rate and so the earnings", () => {
+  it("the fleet's speed and capacity decide the delivery rate and so the earnings", () => {
     // kitchen far faster than demand: the pies sold are walk-ins plus what the fleet carries
     const g = game(2, HOOD, { prep: 90, ovens: 90, counter: 90, drivers: 1, tables: 1, managed: false });
     const v = TEST_FIT.vehicles[g.vehicle];
@@ -123,13 +121,13 @@ describe("the rates read the city's fit (R1)", () => {
     withFeatures([], () => expect(G.shopEarnings(g, HOOD)).toBeCloseTo(expected, 6));
   });
 
-  it.failing("the footprint's maxTables decides the tables drawn", () => {
+  it("the footprint's maxTables decides the tables drawn", () => {
     const shop = game(2, HOOD, { footprint: 0, tables: 30 }).shops[HOOD];
-    expect(G.tablesShown(shop)).toBe(Math.min(TEST_FIT.footprints[0].maxTables, 1 + Math.floor((shop.tables - 1) / 6)));
+    expect(G.tablesShown(shop, TEST_FIT)).toBe(Math.min(TEST_FIT.footprints[0].maxTables, 1 + Math.floor((shop.tables - 1) / 6)));
   });
 
-  it.failing("the footprint's maxTables decides the tables out on the sidewalk", () => {
+  it("the footprint's maxTables decides the tables out on the sidewalk", () => {
     const shop = game(2, HOOD, { footprint: 0, tables: 13 }).shops[HOOD];
-    expect(G.patioTables(shop)).toBe(1 + Math.floor((shop.tables - 1) / 6) - TEST_FIT.footprints[0].maxTables);
+    expect(G.patioTables(shop, TEST_FIT)).toBe(1 + Math.floor((shop.tables - 1) / 6) - TEST_FIT.footprints[0].maxTables);
   });
 });

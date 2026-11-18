@@ -73,7 +73,7 @@ export const AuctionCardSlot = memo(function AuctionCardSlot() {
           label={money(c.price)}
           sub={LABELS.bid}
           enabled={c.canBuy}
-          onPress={() => useGame.getState().bidPier9()}
+          onPress={() => useGame.getState().placeBid()}
         />
       </View>
     </View>

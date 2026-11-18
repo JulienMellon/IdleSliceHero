@@ -4,6 +4,7 @@ import { ORDER } from '../../content/hooks';
 import { COUNTERATTACK } from '../../content/endgame';
 import type { CharacterId, NeighborhoodId } from '../../content/types';
 import { challengeProgress, KEY as ATTACK_KEY, type AttackState, type AttackView } from '../../engine/features/counterattack';
+import type { CityDef } from '../../content/cities';
 import type { GameState } from '../../engine/game';
 import { castOf } from '../../engine/orders';
 import { behindPace, clockText, progressText, URGENT_SECONDS } from '../order-model';
@@ -127,16 +128,16 @@ export interface ResultView {
 }
 
 /** How the last attack ended, for the chip to show once: the shop's character's win or lose line. Null for no news, and for an attack that expired unpaid (no line is written for it). */
-export function resultView(v: AttackView): ResultView | null {
+export function resultView(v: AttackView, city: CityDef): ResultView | null {
   const n = v.news;
   if (!n || n.kind === 'expired') return null;
   const key = `attack.${n.shopId}.${n.kind === 'won' ? 'win' : 'lose'}`;
-  const cast = castOf(n.shopId);
+  const cast = castOf(city, n.shopId);
   return {
     kind: n.kind,
     shopId: n.shopId,
-    who: cast.who,
-    speaker: speakerOf(key) ?? cast.name,
+    who: cast?.who ?? city.lieutenant.id,
+    speaker: speakerOf(key) ?? cast?.name ?? city.managers[n.shopId]?.name ?? '',
     line: copyOr(key) ?? '',
     cash: n.kind === 'won' ? n.cash : 0,
     diamonds: n.kind === 'won' ? n.diamonds : 0,

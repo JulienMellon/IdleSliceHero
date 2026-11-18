@@ -2,7 +2,7 @@
 // The visual ladder's budgets (v5.11, D2): at every footprint no ladder prop covers a badge, a head, the doorway, the
 // mat, the doorway plank, the menu, the window, the oven bank or a pickup spot, and none sits in another station's tap area.
 // Checked here from the pure modules (layout, stations, projection) only, independently of ladder.ts's own placement test.
-import { FOOTPRINTS, HEADS, NEIGHBORHOODS, TUNING } from '../../../content/tuning';
+import { TUNING } from '../../../content/tuning';
 import { levelCap } from '../../../engine/game';
 import {
   BOUNCE_SECONDS,
@@ -36,6 +36,8 @@ import { SEAT, layout, type Layout } from './draw-layout';
 import { D, P, kAt } from '../projection';
 import { BADGE_R, badgeRowY, badgeXs, doorwaySignRect, stationRects, type Rect } from '../stations';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
+import { HEADS, NEIGHBORHOODS } from '../../../content/cities/home/data';
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 type Box = Rect;
 const hit = (a: Box, b: Box) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;

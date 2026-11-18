@@ -5,6 +5,7 @@ import { memo, useEffect, useState } from 'react';
 import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Ellipse, Path, Rect } from 'react-native-svg';
 
+import { cityOf } from '../../../content/cities';
 import { isDrones } from '../../../engine/features/layers/university-menu';
 import { skyBottom } from '../../../engine/bonus';
 import { useGame } from '../../../store/game-store';
@@ -60,7 +61,7 @@ const Drone = memo(function Drone({ lane, width, top }: { lane: DroneLane; width
 
 export const DroneFlight = memo(function DroneFlight({ shopId, width, height }: SceneSlotProps) {
   const frame = useShopFrame(shopId);
-  const count = useGame((s) => (shopId === builtHood(s.game, 'menu') && isDrones(s.game.vehicle) ? droneCount(campusOut(s.game)) : 0));
+  const count = useGame((s) => (shopId === builtHood(s.game, 'menu') && isDrones(s.game.vehicle, cityOf(s.game).fit) ? droneCount(campusOut(s.game)) : 0));
   if (count === 0 || !(width > 0)) return null;
   const f = sceneFit(width, height, frame);
   const band = Math.max(40, skyBottom(f.oy, f.s, P(0, 0, FRONT_TOP)[1]));

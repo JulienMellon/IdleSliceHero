@@ -106,7 +106,7 @@ describe('U4: one sky event at a time', () => {
   });
 
   test('for every pair of the five, exactly one is visible and it is the one first in priority', () => {
-    const takeover = require('../../../content/tuning').NONNA_TAKEOVER.sceneId as string;
+    const takeover = require('../../../content/cities/home/fit').NONNA_TAKEOVER.sceneId as string;
     let pairs = 0;
     for (let i = 0; i < SKY_PRIORITY.length; i++) {
       for (let j = i + 1; j < SKY_PRIORITY.length; j++) {
@@ -142,7 +142,7 @@ describe('U4: one sky event at a time', () => {
   });
 
   test('an event runs for hours: after its first moments a golden pizza that is due goes first, and the banner returns after it', () => {
-    const takeover = require('../../../content/tuning').NONNA_TAKEOVER.sceneId as string;
+    const takeover = require('../../../content/cities/home/fit').NONNA_TAKEOVER.sceneId as string;
     const { g } = stateWith(['golden']);
     const due = { ...g, seenScenes: [takeover, ...g.seenScenes] };
     const start = new Date(2026, 10, 13, 17).getTime();

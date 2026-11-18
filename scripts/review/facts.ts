@@ -1,13 +1,15 @@
 /// <reference types="node" />
 import { readFileSync } from 'fs';
 import * as G from '../../src/engine/game';
-import { NEIGHBORHOODS, VEHICLES } from '../../src/content/tuning';
+import { HOME_FIT } from '../../src/content/cities/home/fit';
+import { VEHICLES } from '../../src/content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../src/content/cities/home/data';
 for (const name of ['at-suburbs-2', 'at-suburbs-4', 'at-university-4', 'at-waterfront-2', 'at-university-2', 'at-industrial-2', 'at-uptown-2', 'end']) {
   const s = G.migrate(JSON.parse(readFileSync(`saves/${name}.json`, 'utf8')), 0);
   const eps = G.earningsPerSecond(s);
   const walk = NEIGHBORHOODS.filter((n) => s.shops[n.id].built).map((n) => {
     const sh = s.shops[n.id];
-    return `${n.id.slice(0, 4)} walk ${(100 * G.walkInFraction(sh, s.vehicle)).toFixed(1)}% drv/kitchen ${(G.deliveryRate(sh, s.vehicle) / Math.min(G.prepRate(sh), G.ovenRate(sh), G.counterRate(sh))).toFixed(1)}x`;
+    return `${n.id.slice(0, 4)} walk ${(100 * G.walkInFraction(sh, s.vehicle, HOME_FIT)).toFixed(1)}% drv/kitchen ${(G.deliveryRate(sh, s.vehicle, HOME_FIT) / Math.min(G.prepRate(sh), G.ovenRate(sh, HOME_FIT), G.counterRate(sh))).toFixed(1)}x`;
   });
   const vg = G.vehicleGain(s);
   console.log(

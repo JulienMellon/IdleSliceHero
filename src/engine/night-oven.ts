@@ -8,6 +8,13 @@ import { def, offlineCapOf, pay, type BuyResult, type GameState } from './game';
 import { money } from './format';
 import { minutesToCash } from './rewards';
 import { cityOf, hoodIds } from '../content/cities';
+import type { NightOvenLines } from '../content/cities/types';
+
+/** What a city's night oven is called and says when its pack has no `nightOvenLines`. */
+const GENERIC_LINES: NightOvenLines = {
+  name: 'The night oven',
+  body: "While you're away, the night oven keeps baking for up to {hours}. Come back before it's full!",
+};
 
 /** The highest tier index. */
 export const MAX_TIER = NIGHT_OVEN.capSeconds.length - 1;
@@ -52,6 +59,8 @@ export interface NightOvenView {
   chip: string;
   /** The oven's size now: "4 h". */
   hours: string;
+  /** The oven's name in this city (`CityDef.nightOvenLines`). */
+  name: string;
   /** The info sheet's text. */
   body: string;
   /** "Leave now and it's full in 4 h." */
@@ -63,6 +72,7 @@ export interface NightOvenView {
 
 export function nightOvenView(s: GameState): NightOvenView {
   const hours = hoursText(offlineCapOf(s));
+  const lines = cityOf(s).nightOvenLines ?? GENERIC_LINES;
   const nt = nextTier(s);
   const tiers: NightOvenTier[] = NIGHT_OVEN.capSeconds.map((cap, tier) => {
     const lock = tier > s.nightOven ? nightOvenLock(s, tier) : null;
@@ -88,7 +98,8 @@ export function nightOvenView(s: GameState): NightOvenView {
   return {
     chip: nightOvenChip(s),
     hours,
-    body: `While you're away, Nonna's night oven keeps baking for up to ${hours}. Come back before it's full!`,
+    name: lines.name,
+    body: lines.body.replace('{hours}', hours),
     leaveLine: `Leave now and it's full in ${hours}.`,
     tiers,
     next,

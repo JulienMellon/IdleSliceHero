@@ -11,6 +11,7 @@ import { C, F } from '../../../theme';
 import { isMirrored } from '../../../content/shop-layout';
 import { drawShift, FRONT_TOP, INK, P, sceneFit } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
+import { cityOf } from '../../../content/cities';
 import { layoutOfShop } from '../shop-layout';
 import { toWindow } from '../layer-geometry';
 import type { SceneSlotProps } from '../../slots';
@@ -27,7 +28,7 @@ export const NightTint = memo(function NightTint({ shopId, width, height }: Scen
   const key = useGame((s) => {
     if (shopId !== builtHood(s.game, 'shifts')) return '';
     const v = shiftView(s.game);
-    const lay = layoutOfShop(s.game.shops[shopId]);
+    const lay = layoutOfShop(s.game.shops[shopId], cityOf(s.game).fit);
     return `${v.shift}|${v.valueMult}|${lay.L}|${lay.R}`;
   });
   if (!key || !(width > 0)) return null;

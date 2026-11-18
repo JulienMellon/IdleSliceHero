@@ -1,7 +1,6 @@
 // The shop report as data (card P1): which line the strip shows, whose voice, that it fits an iPhone SE beside the manager's face, the
 // sheet, and the cards' effect lines.
 import { COPY, MANAGER_COPY_KEY, type CopyKey } from '../../../content/service';
-import { MANAGERS, NONNA_TAKEOVER } from '../../../content/tuning';
 import type { NeighborhoodId } from '../../../content/types';
 import { withFeatures } from '../../../engine/features';
 import { reportView, service } from '../../../engine/features/service';
@@ -27,6 +26,8 @@ import {
   wrapLines,
 } from '../report-model';
 
+import { NONNA_TAKEOVER } from '../../../content/cities/home/fit';
+import { MANAGERS } from '../../../content/cities/home/data';
 const T0 = 1_800_000_000_000;
 const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
   ...g,

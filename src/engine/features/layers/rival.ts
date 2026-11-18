@@ -5,6 +5,7 @@
 // challenge won (read from the seen scenes, so no migration has to guess). Inactive until the shop is built.
 import { LAYER_KEYS, RIVAL } from '../../../content/layers';
 import type { NeighborhoodId } from '../../../content/types';
+import { cityOf } from '../../../content/cities';
 import { challengeOffered, featureMults, finaleId, sceneId, shopRate, type BuyResult, type GameState } from '../../game';
 import { savedHoods, type Feature } from '../types';
 
@@ -40,7 +41,7 @@ export const rivalOpen = (g: GameState, id: NeighborhoodId): boolean => !!g.shop
 
 /** Pies the challenge asks for in `id` right now: ceil(5 min x the shop's current pizza rate x 1.2), at least 1. */
 export function rivalTarget(g: GameState, id: NeighborhoodId, now: number): number {
-  const rate = shopRate(g.shops[id], g.vehicle, featureMults(g, id, now));
+  const rate = shopRate(g.shops[id], g.vehicle, cityOf(g).fit, featureMults(g, id, now));
   return Math.max(1, Math.ceil(RIVAL.challengeSeconds * rate * RIVAL.targetMargin));
 }
 

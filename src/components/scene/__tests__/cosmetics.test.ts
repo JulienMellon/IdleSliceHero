@@ -2,7 +2,6 @@
 // Cosmetics (v5.15, S1): every cosmetic the game gives out dresses something, a skin per cycle (repeating), the furniture memo sees what
 // is worn, and the two things that are drawn on the wall (the neon sign, the plaque) clear everything the ladder budget guards.
 import { cosmeticPart } from '../../../content/endgame';
-import { FOOTPRINTS, NEIGHBORHOODS } from '../../../content/tuning';
 import { WEEKLY_COSMETICS } from '../../../content/rewards';
 import { AWNING_GOLD, MINT, NO_DRESS, SKINS, dressOf, dressedLook, isDressed, neonSpot, ovenPaint, ovenTrim, plaqueRect, skinNumber } from '../cosmetics';
 import { furnitureDeps, furnitureInputs, type FurnitureSource } from '../furniture-inputs';
@@ -12,6 +11,8 @@ import { layout, secondVehicleShift } from './draw-layout';
 import { SCENE_W, P } from '../projection';
 import { doorwaySignRect, staffFaces } from '../stations';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../../content/cities/home/data';
 const DS = [2, 2, 3, 3, 4];
 const shopAt = (fp: number, staff = 2) => layout(fp, FOOTPRINTS[fp].ovenSlots, fp === 0 ? 2 : 3, staff, 8, DS[fp], 1);
 

@@ -2,9 +2,9 @@
 // engine/features/layers/waterfront-boats.ts (`boatsView`, `rackPrice`) and content/layers.ts (`auctionMult`); the words are the copy table.
 // Pure: unit-tested in node.
 import { AUCTION, BOATS, LAYER_KEYS, auctionMult } from '../../../content/layers';
-import { PIER9_BID } from '../../../content/tuning';
+import { HOME_BID } from '../../../content/cities/home/data';
 import { money } from '../../../engine/format';
-import { canAfford, pier9Available, pier9Price, type GameState } from '../../../engine/game';
+import { canAfford, bidAvailable, bidPrice, type GameState } from '../../../engine/game';
 import type { BoatsView } from '../../../engine/features/layers/waterfront-boats';
 import { mmss } from '../layer-model';
 import { dressed } from '../city-dress';
@@ -185,16 +185,17 @@ const openedAtOf = (g: GameState): number => (g.x?.[LAYER_KEYS.boats] as { opene
 
 export function auctionStatus(g: GameState): AuctionStatus {
   const openedAt = openedAtOf(g);
-  const live = pier9Available(g) && openedAt >= 0;
-  const base = PIER9_BID.cost;
+  const live = bidAvailable(g) && openedAt >= 0;
+  // v5.18 shows the home bid's cost as the base in every city (BUG, reported with R1: fix is the city's own, `cityOf(g).bid?.cost ?? 0`)
+  const base = HOME_BID.cost;
   const cap = Math.ceil(base * (1 + AUCTION.maxShare));
-  if (!live) return { live: false, price: pier9Price(g), base, cap, raises: 0, maxed: false, nextIn: 0 };
+  if (!live) return { live: false, price: bidPrice(g), base, cap, raises: 0, maxed: false, nextIn: 0 };
   const since = Math.max(0, g.playSeconds - openedAt);
   const raises = Math.min(Math.round(AUCTION.maxShare / AUCTION.stepShare), Math.floor(since / AUCTION.stepSeconds));
   const maxed = auctionMult(openedAt, g.playSeconds) >= 1 + AUCTION.maxShare - 1e-9;
   return {
     live,
-    price: pier9Price(g),
+    price: bidPrice(g),
     base,
     cap,
     raises,

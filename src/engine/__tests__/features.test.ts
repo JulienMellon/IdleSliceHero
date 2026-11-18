@@ -2,6 +2,7 @@ import * as G from '../game';
 import { FEATURES, getFeature, setFeature, withFeatures } from '../features';
 import type { Feature } from '../features/types';
 
+import { HOME_FIT } from '../../content/cities/home/fit';
 const T0 = 1_700_000_000_000;
 const calls: string[] = [];
 
@@ -169,16 +170,16 @@ describe('feature registry', () => {
     });
     const plain = kitchenBound(G.newGame(T0));
     const sh = plain.shops.downtown;
-    const slowest = Math.min(G.prepRate(sh), G.ovenRate(sh), G.counterRate(sh));
-    expect(G.shopRate(sh, plain.vehicle)).toBeCloseTo(slowest, 9);
+    const slowest = Math.min(G.prepRate(sh), G.ovenRate(sh, HOME_FIT), G.counterRate(sh));
+    expect(G.shopRate(sh, plain.vehicle, HOME_FIT)).toBeCloseTo(slowest, 9);
     withFeatures([ovenHalf], () => {
       const g = kitchenBound(G.newGame(T0));
       const fx = G.featureMults(g, 'downtown', T0);
       expect(fx).toEqual({ value: 1, demand: 1, stations: { prep: 1, oven: 0.5, counter: 1 } });
-      expect(G.ovenRate(sh, fx)).toBeCloseTo(G.ovenRate(sh) * 0.5, 9);
-      expect(G.shopRate(sh, g.vehicle, fx)).toBeCloseTo(Math.min(G.prepRate(sh), G.ovenRate(sh) * 0.5, G.counterRate(sh)), 9);
-      expect(G.demandRate(sh, g.vehicle, fx)).toBeCloseTo(G.demandRate(sh, g.vehicle), 9);
-      expect(G.lineRates('downtown', { ...sh, sold: 9 }, g.vehicle, 1, fx).oven).toBeCloseTo(G.ovenRate(sh) * 0.5, 9);
+      expect(G.ovenRate(sh, HOME_FIT, fx)).toBeCloseTo(G.ovenRate(sh, HOME_FIT) * 0.5, 9);
+      expect(G.shopRate(sh, g.vehicle, HOME_FIT, fx)).toBeCloseTo(Math.min(G.prepRate(sh), G.ovenRate(sh, HOME_FIT) * 0.5, G.counterRate(sh)), 9);
+      expect(G.demandRate(sh, g.vehicle, HOME_FIT, fx)).toBeCloseTo(G.demandRate(sh, g.vehicle, HOME_FIT), 9);
+      expect(G.lineRates('downtown', { ...sh, sold: 9 }, g.vehicle, 1, fx).oven).toBeCloseTo(G.ovenRate(sh, HOME_FIT) * 0.5, 9);
       // another shop is untouched
       expect(G.featureMults(g, 'uptown', T0)).toEqual({ value: 1, demand: 1 });
     });

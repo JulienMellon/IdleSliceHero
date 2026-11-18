@@ -5,7 +5,7 @@ import { RING_STEP } from '../content/hooks';
 import { cityOf } from '../content/cities';
 import type { CharacterId, Scene } from '../content/types';
 import { count } from './format';
-import { buildLock, def, pier9Available, pier9Price, sceneTriggered, type GameState } from './game';
+import { buildLock, def, bidAvailable, bidPrice, sceneTriggered, type GameState } from './game';
 
 /** The name the story line uses for each character (the character only, no scene content). */
 const WHO: Record<CharacterId, string> = {
@@ -82,7 +82,7 @@ function teaserWith(s: GameState, scenes: readonly Scene[], make: Make): Teaser 
     return make(
       'bid',
       () => `${who()} when you bid on Pier 9`,
-      pier9Available(s) ? ratio(s.cash, pier9Price(s)) : ratio(shop.sold, cityOf(s).bid?.unlockPizzas ?? 0),
+      bidAvailable(s) ? ratio(s.cash, bidPrice(s)) : ratio(shop.sold, cityOf(s).bid?.unlockPizzas ?? 0),
     );
   if (tr.kind === 'after') return make('soon', () => `${who()} soon`, 0);
   if (tr.kind === 'challenge') return make('soon', () => `${who()} when you outsell MegaSlice`, 0);

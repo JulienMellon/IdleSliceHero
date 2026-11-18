@@ -4,13 +4,14 @@
 // Victor's weekly counter-attack (v5.15): when it starts, the week roll (increase only, time zones included), the target, the
 // challenge, the x0.8 while it is open, the win and the loss, and the week's end.
 import { COUNTERATTACK } from '../../content/endgame';
-import { NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { getFeature } from '../features';
 import { ackAttack, attackView, challengeTarget, counterattack, pickTarget, startChallenge, weekNumber } from '../features/counterattack';
 import { recipes } from '../features/recipes';
 import * as G from '../game';
 
+import { HOME_FIT } from '../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const at = (y: number, m: number, d: number, h = 0, mi = 0, s = 0) => new Date(y, m - 1, d, h, mi, s).getTime();
 const state = (g: G.GameState) => getFeature(g, counterattack);
@@ -175,7 +176,7 @@ describe('the challenge', () => {
   it('asks for ceil(5 min x the shop rate x 1.25) pies', () => {
     const a = attacked();
     const t = state(a).target!;
-    const rate = G.shopRate(a.shops[t], a.vehicle);
+    const rate = G.shopRate(a.shops[t], a.vehicle, HOME_FIT);
     expect(challengeTarget(a, t, MON)).toBe(Math.ceil(300 * rate * 1.25));
     const started = ok(startChallenge(a, MON));
     expect(state(started).challenge).toMatchObject({ target: Math.ceil(300 * rate * 1.25), left: 300, startSold: a.shops[t].sold });

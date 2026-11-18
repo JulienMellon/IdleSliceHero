@@ -1,9 +1,9 @@
 // Worn cosmetics (v5.15): a new cosmetic is worn at once, one per part, wear/unwear, and the safe default for old saves.
 import { cosmeticPart } from '../../content/endgame';
-import { NONNA_TAKEOVER } from '../../content/tuning';
 import * as G from '../game';
 import * as R from '../rewards';
 
+import { NONNA_TAKEOVER } from '../../content/cities/home/fit';
 const T0 = 1_700_000_000_000;
 const ok = (r: G.BuyResult): G.GameState => {
   if (!r.ok) throw new Error(r.reason);

@@ -32,7 +32,6 @@ import {
   UPGRADE_TASK_MAX_SECONDS,
 } from '../content/rewards';
 import { cosmeticPart } from '../content/endgame';
-import { NONNA_TAKEOVER } from '../content/tuning';
 import { withoutEvent } from './features/events';
 import { withoutService } from './features/service';
 import { count, money } from './format';
@@ -100,8 +99,11 @@ export function resetCountdown(now: number, kind: 'day' | 'week'): number {
 
 // ---------- Gates ----------
 
-/** Rewards unlock once Nonna's takeover scene has been seen (the tutorial is done). */
-export const rewardsUnlocked = (s: GameState): boolean => s.seenScenes.includes(NONNA_TAKEOVER.sceneId);
+/** Rewards unlock once the founder's takeover scene has been seen (the tutorial is done): the city's `fit.takeover` (or its `rewardsScene`). */
+export const rewardsUnlocked = (s: GameState): boolean => {
+  const city = cityOf(s);
+  return s.seenScenes.includes(city.rewardsScene ?? city.fit.takeover.sceneId);
+};
 
 /** The device clock is behind the highest time seen: claims and resets wait. */
 export const clockBehind = (s: GameState, now: number): boolean => now < s.rewards.lastSeen;
@@ -145,12 +147,13 @@ function seeded(key: string): () => number {
 export function cityRates(s: GameState): { city: number; walkin: number; driver: number } {
   let city = 0;
   let walkin = 0;
+  const fit = cityOf(s).fit;
   for (const id of hoodIds(cityOf(s))) {
     const shop = s.shops[id];
     if (!shop.built || !runsItself(shop)) continue;
-    const rate = shopRate(shop, s.vehicle);
+    const rate = shopRate(shop, s.vehicle, fit);
     city += rate;
-    walkin += rate * walkInFraction(shop, s.vehicle);
+    walkin += rate * walkInFraction(shop, s.vehicle, fit);
   }
   return { city, walkin, driver: city - walkin };
 }

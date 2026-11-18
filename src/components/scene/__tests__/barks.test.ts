@@ -1,13 +1,14 @@
 /// <reference types="jest" />
 // Head barks in the scene (v5.15, S1; D440): every bubble, at every station's badge, in every footprint, stays inside the shop's walls
 // and the scene, and sits under the chip row, not over it. (The rules for when a head speaks are in features/__tests__/heads.test.ts.)
-import { BARKS } from '../../../content/heads';
-import { FOOTPRINTS, NEIGHBORHOODS } from '../../../content/tuning';
 import { layout } from './draw-layout';
 import { BUBBLE_AIR, CHIP_ROW_HALF, ROW_AIR, bubbleWalls, bubbleWidth, bubbleX } from '../moments';
 import { SCENE_W } from '../projection';
 import { badgeRowY, badgeXs } from '../stations';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../../content/cities/home/data';
+import { HOME_BARKS as BARKS } from '../../../content/cities/home/voice';
 const DS = [2, 2, 3, 3, 4];
 
 describe('head barks stay inside the walls', () => {

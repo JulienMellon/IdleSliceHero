@@ -1,12 +1,17 @@
 // Pure scene geometry: where every station, table, lane and person stands for a given shop size.
 // No React here, so it is unit-tested directly (src/components/scene/__tests__/scene.test.ts).
-import { FOOTPRINTS } from '../../content/tuning';
 import { ROOM_WIDTH, WIDE_PLAN } from '../../content/shop-layout';
 import { reflectLayout } from './layout-space';
 import { P, SC, kAt, sceneFrame, unprojectX, type SceneFrame } from './projection';
 
 /** The room's width by footprint (content/shop-layout.ts): the first three tiers are the same 270 / 295 / 320 as ever; the Restaurant and the Flagship are wider than the screen. */
 export const ROOM_W: readonly number[] = ROOM_WIDTH;
+
+/**
+ * The tables each footprint's room is planned for, by footprint index (the wide tiers' rows are laid out for that many). A city's `fit.footprints[i].maxTables`
+ * (what the engine's `tablesShown` caps at) must equal it: scene/__tests__/planned-tables.test.ts checks every city pack against this list.
+ */
+export const PLANNED_TABLES: readonly number[] = [2, 3, 4, 5, 6];
 
 /** Chairs sit ±SEAT from a table's centre; with a 78 pitch and a quarter-pitch back-row offset every seat interleaves. */
 export const SEAT = 19.5;
@@ -394,8 +399,8 @@ function planRoom(
   // the tables go to the back row (as many as it holds, at most half): the six tables of a Flagship stand in two rows, not one long one
   const dine = (asked: number): Layout['tables'] => {
     const out: Layout['tables'] = [];
-    // (a footprint never shows more than its maxTables: the engine's `tablesShown`; the wide tiers' rows are planned for that many)
-    const count = wide ? Math.min(asked, FOOTPRINTS[fp].maxTables) : asked;
+    // (a footprint never shows more than its planned tables: the engine's `tablesShown`, whose cap is the fit's `maxTables`, the same list; the wide tiers' rows are planned for that many)
+    const count = wide ? Math.min(asked, PLANNED_TABLES[fp]) : asked;
     const nBack = wide ? Math.min(backCols, Math.floor(count / 2)) : backCols;
     const nFront = wide ? Math.min(frontCols, count - nBack) : frontCols;
     for (let f = 0; f < nFront && out.length < count; f++) out.push({ x: t0 + TABLE_PITCH * f, y: FRONT_ROW_Y });
@@ -437,7 +442,7 @@ function planRoom(
   const dinerX = (i: number) => lastDriver - GROUP_GAP - QUEUE_PITCH * i;
   // the sets the glass front shows nearest the sill: a diner standing in front of one would cover its table or a seated diner
   // the wide tiers keep the lane for the footprint's full dining room, so a table bought later never moves a diner or a patio set that is already out there (T84)
-  const laneTables = wide ? dine(FOOTPRINTS[fp].maxTables) : tables;
+  const laneTables = wide ? dine(PLANNED_TABLES[fp]) : tables;
   const sets = laneTables
     .filter((tb) => tb.y <= NEAR_ROW_Y)
     .map((tb): [number, number] => {

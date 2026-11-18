@@ -1,6 +1,5 @@
 /// <reference types="jest" />
 import { COUNTERATTACK } from '../../../content/endgame';
-import { NEIGHBORHOODS } from '../../../content/tuning';
 import type { NeighborhoodId } from '../../../content/types';
 import '../../../engine/features'; // registers the features (A31)
 import * as G from '../../../engine/game';
@@ -20,6 +19,8 @@ import {
   winDiamondsText,
 } from '../attack-model';
 
+import { HOME_CITY } from '../../../content/cities/home';
+import { NEIGHBORHOODS } from '../../../content/cities/home/data';
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const at = (y: number, m: number, d: number, h = 0, mi = 0, s = 0) => new Date(y, m - 1, d, h, mi, s).getTime();
 const WED = at(2026, 11, 11, 12);
@@ -76,7 +77,7 @@ describe('which face the attack shows', () => {
     g = tick(g, MON + 1000, COUNTERATTACK.challengeSeconds + 1);
     const v = attackView(g, MON + 1000);
     expect(attackFace(v)).toBe('lost');
-    expect(resultView(v)).toMatchObject({ kind: 'lost' });
+    expect(resultView(v, HOME_CITY)).toMatchObject({ kind: 'lost' });
     expect(attackLite(g).face).toBe('lost');
   });
 });
@@ -148,7 +149,7 @@ describe('how it ends', () => {
     g = tick(g, MON + 1000, 0.2);
     const end = attackView(g, MON + 1000);
     expect(attackFace(end)).toBe('won');
-    const r = resultView(end)!;
+    const r = resultView(end, HOME_CITY)!;
     expect(r.kind).toBe('won');
     expect(r.diamonds).toBe(COUNTERATTACK.rewardDiamonds);
     expect(r.cash).toBeGreaterThan(0);
@@ -160,20 +161,23 @@ describe('how it ends', () => {
     const lines = new Set<string>();
     for (const id of IDS) {
       for (const kind of ['won', 'lost'] as const) {
-        const r = resultView({ ...attackView(attacked(), MON), news: kind === 'won' ? { kind, shopId: id, cash: 5, diamonds: 15 } : { kind, shopId: id } })!;
+        const r = resultView(
+          { ...attackView(attacked(), MON), news: kind === 'won' ? { kind, shopId: id, cash: 5, diamonds: 15 } : { kind, shopId: id } },
+          HOME_CITY,
+        )!;
         expect(r.line).toMatch(/\S/);
         lines.add(r.line);
       }
     }
     expect(lines.size).toBe(12);
-    expect(resultView({ ...attackView(attacked(), MON), news: { kind: 'won', shopId: 'suburbs', cash: 1, diamonds: 15 } })).toMatchObject({
+    expect(resultView({ ...attackView(attacked(), MON), news: { kind: 'won', shopId: 'suburbs', cash: 1, diamonds: 15 } }, HOME_CITY)).toMatchObject({
       speaker: 'Dale',
       who: 'dale',
     });
   });
 
   test('an attack that expired unpaid has no line to show', () => {
-    expect(resultView({ ...attackView(attacked(), MON), news: { kind: 'expired', shopId: 'suburbs' } })).toBeNull();
+    expect(resultView({ ...attackView(attacked(), MON), news: { kind: 'expired', shopId: 'suburbs' } }, HOME_CITY)).toBeNull();
   });
 });
 

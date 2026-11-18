@@ -2,7 +2,8 @@
 // Every cost is asked of the engine (buyUpgrade / buyDecor on a copy of the game with cash to spare), never re-derived. Text is the copy's, by
 // key. Pure: unit-tested in node.
 import { STARS } from '../../../content/layers';
-import { DECOR_KINDS, OVEN_GRADES, type DecorKind } from '../../../content/tuning';
+import { DECOR_KINDS, type DecorKind } from '../../../content/tuning';
+import { cityOf } from '../../../content/cities';
 import { money } from '../../../engine/format';
 import { buyDecor, buyUpgrade, canAfford, decorCost, upgradeCostOf, type GameState } from '../../../engine/game';
 import { criticView, ingredientsLock, pointsOf, starsOf, starsView, type StarsView } from '../../../engine/features/layers/uptown-stars';
@@ -49,13 +50,14 @@ export function ovenNext(g: GameState): { to: string; cost: number; steps: numbe
   const HOOD = hoodOf(g, 'stars');
   const start = pointsOf(s.shops[HOOD], 0).oven;
   let cost = 0;
-  for (let steps = 1; steps <= OVEN_GRADES.length; steps++) {
+  const grades = cityOf(g).fit.ovenGrades;
+  for (let steps = 1; steps <= grades.length; steps++) {
     const c = upgradeCostOf(s, HOOD, 'grade');
     const r = c === null ? null : buyUpgrade(s, HOOD, 'grade');
     if (c === null || !r || !r.ok) return null;
     cost += c;
     s = r.state;
-    if (pointsOf(s.shops[HOOD], 0).oven > start) return { to: OVEN_GRADES[s.shops[HOOD].grade].name, cost, steps };
+    if (pointsOf(s.shops[HOOD], 0).oven > start) return { to: grades[s.shops[HOOD].grade].name, cost, steps };
   }
   return null;
 }
@@ -133,7 +135,7 @@ export function starsSheet(g: GameState): StarsSheet {
       {
         key: 'oven',
         title: 'Oven grade',
-        value: OVEN_GRADES[shop.grade].name,
+        value: cityOf(g).fit.ovenGrades[shop.grade].name,
         points: `${v.points.oven}/${STARS.ovenPoints[STARS.ovenPoints.length - 1]}`,
         next: oven ? `${oven.to} · ${money(oven.cost)}${oven.steps > 1 ? ` (${oven.steps} grades)` : ''}` : 'Maxed',
       },

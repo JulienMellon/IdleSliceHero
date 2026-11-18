@@ -4,7 +4,7 @@
 // gives the master plaque. Pure rules: the state is only what has been paid, the stars themselves are read off the shops.
 import { MASTERY, MASTERY_STARS, type MasteryStar } from '../../content/endgame';
 import { WEEKLY_COSMETICS } from '../../content/rewards';
-import { HEAD_KINDS, NEIGHBORHOODS } from '../../content/tuning';
+import { HEAD_KINDS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { allHeadsHired, type GameState, type Shop } from '../game';
 import { grantCosmetic } from '../rewards';
@@ -37,7 +37,7 @@ export interface MasteryState {
 export const KEY = 'mastery';
 
 const MILESTONES: readonly number[] = [...MASTERY.cosmeticTotals, MASTERY.masterTotal];
-/** The top footprint and oven grade of a city (C143: its own fit; the home city's when a caller has no game to name one). */
+/** The top footprint and oven grade of a city (C143: its own fit). */
 const topFootprint = (city: CityDef): number => city.fit.footprints.length - 1;
 const topGrade = (city: CityDef): number => city.fit.ovenGrades.length - 1;
 
@@ -56,8 +56,8 @@ export function masteryTotal(g: GameState): number {
   return hoodIds(cityOf(g)).reduce((t, id) => t + shopStars(g.shops[id], cityOf(g)), 0);
 }
 
-// from the tuning list, not HOME_HOOD_IDS: game.ts loads this file while it is still being evaluated
-export const MASTERY_MAX = NEIGHBORHOODS.length * MASTERY_STARS.length;
+/** The most stars the city holds: three a shop. */
+export const masteryMax = (g: Pick<GameState, 'city'>): number => hoodIds(cityOf(g)).length * MASTERY_STARS.length;
 
 /** How far a star is: `have` of `need` steps (heads hired, footprint tier, oven grade), for "2 of 3 heads". */
 function starProgress(shop: Shop, star: MasteryStar, city: CityDef): { have: number; need: number } {

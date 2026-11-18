@@ -3,10 +3,11 @@
 // purchases that must be possible before Suburbs opens, and Suburbs locked until Nonna. Every target is a constant in
 // scripts/pacing-fit.ts (SESSION1): card E2b's refit changes numbers there, not here. Check it with `npx tsx scripts/pacing-fit.ts session1`.
 import { HOME_SCENES } from '../../content/scenes/home';
-import { HEAD_COST_DOWNTOWN, NEIGHBORHOODS, NONNA_TAKEOVER } from '../../content/tuning';
 import * as G from '../game';
 import { SESSION1, SESSION1_MISSES, session1 } from '../../../scripts/pacing-fit';
 
+import { HEAD_COST_DOWNTOWN, NONNA_TAKEOVER } from '../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 jest.setTimeout(120_000);
 
 describe('session 1: the first 40 minutes (rewards on)', () => {
