@@ -58,6 +58,9 @@ export interface SceneSlotProps {
   shopId: string;
   width: number;
   height: number;
+  /** A scrolled wide shop only (D512): the part of the scene `width` that is on screen, in the same pt, already 12 pt in from each edge. A bubble or label clamps to it; absent: the whole width. */
+  viewX0?: number;
+  viewX1?: number;
 }
 
 /** What the shop report's strip is told: its foot's distance from the scene area's bottom, just above the sidewalk row. */
@@ -106,12 +109,12 @@ export function Slots({ items }: { items: readonly SlotEntry[] }) {
 }
 
 /** Renders every scene overlay with the shop and the scene size. Nothing (no wrapper) when the array is empty. */
-export function SceneSlots({ items, shopId, width, height }: { items: readonly SlotEntry<SceneSlotProps>[]; shopId: string; width: number; height: number }) {
+export function SceneSlots({ items, shopId, width, height, viewX0, viewX1 }: { items: readonly SlotEntry<SceneSlotProps>[]; shopId: string; width: number; height: number; viewX0?: number; viewX1?: number }) {
   if (items.length === 0) return null;
   return (
     <>
       {inOrder(items).map(({ id, Component }) => (
-        <Component key={id} shopId={shopId} width={width} height={height} />
+        <Component key={id} shopId={shopId} width={width} height={height} viewX0={viewX0} viewX1={viewX1} />
       ))}
     </>
   );

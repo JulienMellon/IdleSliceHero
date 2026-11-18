@@ -204,7 +204,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `w${q}`,
       sortY: y,
       role: 'queue',
-      props: { x, y, kind: 'driver', seed: d.seed, act: d.phone ? 'phone' : 'none', flip: fl(false), blink: blinkAt(d.seed), mood: d.phone ? 'focus' : 'smile', o: fadeAt(x, y) },
+      props: { x, y, kind: 'driver', seed: d.seed, cap: d.cap, act: d.phone ? 'phone' : 'none', flip: fl(false), blink: blinkAt(d.seed), mood: d.phone ? 'focus' : 'smile', o: fadeAt(x, y) },
     });
   }
 
