@@ -30,3 +30,14 @@ export function layerHood(city: CityDef, kind: LayerKind): NeighborhoodId | null
 
 /** The layer a neighbourhood plays in this city, or null. */
 export const layerOf = (city: CityDef, id: NeighborhoodId): LayerKind | null => city.layers[id] ?? null;
+
+/**
+ * The home neighbourhood whose shop art (sky, front, room, street prop) draws a shop in `city`: the home city's own for itself, and for another
+ * city the home neighbourhood at the same build position, until that city has shop art of its own. Only paint reads it; the game state keeps the real id.
+ */
+export function sceneHood(city: CityDef, id: NeighborhoodId): NeighborhoodId {
+  if (city === HOME_CITY) return id;
+  const home = hoodIds(HOME_CITY);
+  const at = hoodIds(city).indexOf(id);
+  return home[at < 0 ? 0 : Math.min(at, home.length - 1)];
+}

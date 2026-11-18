@@ -11,8 +11,9 @@ import { memo, useEffect, useMemo, useRef, useState, type ComponentRef, type Rea
 import { Pressable, ScrollView, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { F } from '../theme';
-import { FOOTPRINTS, MANAGERS, NEIGHBORHOODS } from '../content/tuning';
+import { FOOTPRINTS } from '../content/tuning';
 import { isMirrored } from '../content/shop-layout';
+import { cityOf, sceneHood } from '../content/cities';
 import type { NeighborhoodId } from '../content/types';
 import * as Game from '../engine/game';
 import { useGame } from '../store/game-store';
@@ -52,14 +53,13 @@ import { buildCast, sidewalkOf } from './scene/cast';
 import { queueLabel, waitingText } from './scene/waiting';
 import { hireOnSidewalk } from './sidewalk-model';
 import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
-import { HEAD_BARKS } from '../content/heads';
+import { BARKS, HEAD_BARKS } from '../content/heads';
 import { getFeature } from '../engine/features';
 import { counterattack } from '../engine/features/counterattack';
 import { hintsAllowed } from '../engine/tutorial';
 import { reportView, slammedAsks } from '../engine/features/service';
 import { jamView } from '../engine/features/layers/industrial-shifts';
 import { heads as headsFeature, newBarkMem, nextBark, rankOf, speakerFor, stationLevel, weekStation, type BarkAsk, type BarkMem } from '../engine/features/heads';
-import { HEADS } from '../content/tuning';
 import { BadgeRail, CameoBubble, CameoTag, DeparturePops, HireBubble, MilestoneBadge, RushPill, StationBadge, rushPillWidth } from './scene/kitchen-hud';
 import { CHIP_ROW_HALF, MILE_SECONDS, stepMoments, type Bounced, type Moments, ROW_AIR, STATION_LABEL, bubbleWalls, chipAt, hidesWaitingPill, hudOpacity, mileAnchor, mileOpacity, mileScale, mileSpeechY, mileSub, stationHatTop } from './scene/moments';
 import { rushCombo, rushPill } from './rush-model';
@@ -129,7 +129,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const rushTaps = useGame((s) => s.rushTaps);
   const game = useGame.getState().game;
   const shop = game.shops[id];
-  const nd = Game.def(id);
+  const city = cityOf(game);
+  const nd = Game.def(id, city);
+  // the shop art is the home city's until Boston has its own: paint reads `art`, the game reads `id`
+  const art = sceneHood(city, id);
   const fp = shop.footprint;
   // where this view sits on the page, for turning a tap's pageX/pageY into scene coordinates
   const viewRef = useRef<ComponentRef<typeof View>>(null);
@@ -210,7 +213,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const driftSpan = sceneFrame.width + 200;
   const frontY = P(0, 0)[1];
   const shopSeed = seedFor(id);
-  const nIdx = Math.max(0, NEIGHBORHOODS.findIndex((n) => n.id === id));
+  const nIdx = Math.max(0, city.neighbourhoods.findIndex((n) => n.id === id));
   const pal = useMemo(
     () => seatPalette(hash32(shopSeed) % GUEST_SHIRTS.length, hash32(shopSeed + 9) % HAIR_COLORS.length, GUEST_SHIRTS.length, HAIR_COLORS.length, lay.tables.length),
     [shopSeed, lay.tables.length],
@@ -279,7 +282,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const waitText = waitRaw && !popsCover(popRects, waitTagRect(lay, waitRaw)) ? waitRaw : null;
   const moreRaw = hints.more ? moreWords : null;
   const moreText = moreRaw && !popsCover(popRects, moreTagRect(lay, moreRaw)) ? moreRaw : null;
-  const fin = furnitureInputs({ id, name: nd.name, shop, running, rate, vehicle: game.vehicle, worn: game.rewards.worn });
+  const fin = furnitureInputs({ id: art, name: nd.name, shop, running, rate, vehicle: game.vehicle, worn: game.rewards.worn });
   // Furniture only changes with upgrades and the dough/box counts, so it is built once per change (M12), not 15 times a second.
   // The visual ladder (v5.11): the props this shop's levels have earned, placed from the layout; built once per upgrade like the furniture
   // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are lay + every value of `fin`, the builder's only inputs
@@ -344,7 +347,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         speeds: { prep: Game.prepRate(shop), oven: Game.ovenRate(shop), counter: Game.counterRate(shop), drivers: shop.drivers },
         levels: { prep: shop.prep, oven: shop.ovens, counter: shop.counter, drivers: shop.drivers },
         hired: shop.heads,
-        headNames: HEADS[id],
+        headNames: city.heads[id],
         downtown: id === 'downtown',
       },
       clock,
@@ -353,7 +356,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     for (const st of step.asks) asks.push({ trigger: 'milestone', station: st });
     // a head just hired says hello over their station; several at once (Nonna brings all three) queue up (C77)
     const heads = shop.heads;
-    if (m.heads) for (const st of STATIONS_IN_ORDER) if (heads[st] && !m.heads[st]) m.hires.push({ st, text: `${HEADS[id][st]}: ${HIRE_LINE[st]}` });
+    if (m.heads) for (const st of STATIONS_IN_ORDER) if (heads[st] && !m.heads[st]) m.hires.push({ st, text: `${city.heads[id][st]}: ${HIRE_LINE[st]}` });
     m.heads = heads;
     if ((!m.hire || clock - m.hire.at >= 2.5) && m.hires.length) m.hire = { ...m.hires.shift()!, at: clock };
     // ---- head barks (features/heads.ts): a milestone, a rush combo, an attack on this shop, being Head of the Week. One bubble per shop, so
@@ -380,7 +383,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     const cameoSpeaking = !!cv && visitLine(cv.visitor, wall) !== null;
     const otherBubble = cameoSpeaking || !!(m.refusal && clock - m.refusal.at < 1.6) || !!(m.hire && clock - m.hire.at < 2.5) || m.hires.length > 0 || !!(m.mile?.text && m.mile.at !== clock && clock - m.mile.at < 2.5);
     const before = barkMemory.get(id) ?? newBarkMem();
-    const { mem: after, bark } = nextBark(before, id, asks, wall, paused || !!g.playing || otherBubble);
+    const { mem: after, bark } = nextBark(before, id, asks, wall, paused || !!g.playing || otherBubble || !(id in BARKS)) // BARKS has the home city's shops only: Boston's heads stay quiet until the engine reads its numbered lines (copy.ts BOSTON_BARKS);
     if (after !== before) barkMemory.set(id, after);
     if (bark) {
       if (bark.trigger === 'milestone' && m.mile && m.mile.at === clock) m.mile.text = bark.text;
@@ -513,9 +516,9 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         {/* the drawing is decoration for a screen reader: the pizzeria's name and what a tap does are the Pressable's label */}
         <Svg width={cw} height={height} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${cw / fit.s} ${height / fit.s}`}>
           <SceneDefs />
-          <Backdrop id={id} L={roomLay.L} R={roomLay.R} w={sceneFrame.width} />
+          <Backdrop id={art} L={roomLay.L} R={roomLay.R} w={sceneFrame.width} />
           {CLOUDS.map((c, i) => (
-            <Cloud key={i} x={((c.x0 + clock * c.v) % driftSpan) - 100} y={c.y} k={c.k} dusk={id === 'uptown'} />
+            <Cloud key={i} x={((c.x0 + clock * c.v) % driftSpan) - 100} y={c.y} k={c.k} dusk={art === 'uptown'} />
           ))}
           {evLook.dusk && <DuskTint x={-fit.ox / fit.s} y={-fit.oy / fit.s} w={cw / fit.s} h={frontY + fit.oy / fit.s} />}
           <Sidewalk frontY={frontY} w={sceneFrame.width} />
@@ -524,7 +527,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           <G transform={worldT}>
           {/* the room's walls are handed (the menu board, the window, the pantry): the mirrored plan draws the plain plan's and flips it, its lettering kept upright */}
           <Flip on={lay.mirrored} axis={frame.vanishX}>
-            <RoomShell id={id} lay={plainOf(lay)} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
+            <RoomShell id={art} lay={plainOf(lay)} wall={nd.wall} fp={fp} flooring={shop.decor.flooring} walls={shop.decor.walls} signage={shop.decor.signage} plants={shop.decor.plants} />
           </Flip>
           <OvenHood lay={lay} grade={shop.grade} mural={shop.decor.walls >= 3} tier={ovenTier(shop.ovens)} />
           {/* rush tap: the oven bank pulses (the jobs finish sooner; cash still waits for the pies to leave) */}
@@ -564,7 +567,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           {/* the ticket rail the badges hang on (D346) */}
           {/* D415: the whole chip row dims while a milestone badge is up */}
           <G opacity={hudOpacity(mileAge)}>
-            <BadgeRail x0={lay.mirrored ? bxs.counter - BADGE_R - 40 : bxs.prep - BADGE_R - 8} x1={lay.mirrored ? bxs.prep + BADGE_R + 8 : bxs.counter + BADGE_R + 40} y={by} gm={shop.managed && id !== 'downtown' ? MANAGERS[id].id : shop.managed ? 'nonna' : null} />
+            <BadgeRail x0={lay.mirrored ? bxs.counter - BADGE_R - 40 : bxs.prep - BADGE_R - 8} x1={lay.mirrored ? bxs.prep + BADGE_R + 8 : bxs.counter + BADGE_R + 40} y={by} gm={shop.managed && id !== 'downtown' ? city.managers[id].id : shop.managed ? 'nonna' : null} />
             {badges.map((b) => (
               <StationBadge
                 key={b.st}
@@ -577,7 +580,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 pulse={b.ready ? pulse : 0}
                 nudge={b.ready ? nudge : 0}
                 face={b.runner === 'head' ? b.st : null}
-                faceName={b.runner === 'gm' ? MANAGERS[id].id : HEADS[id][b.st]}
+                faceName={b.runner === 'gm' ? city.managers[id].id : city.heads[id][b.st]}
                 jump={line[b.st] ? rushJump : 0}
                 rank={shop.heads[b.st] ? rankOf(stationLevel(shop, b.st)) : 0}
                 star={weekSt === b.st}
@@ -666,7 +669,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
               scale={mileScale(mileAge)}
               opacity={mileOpacity(mileAge)}
               step={confettiStep(mileAge)}
-              color={NEIGHBORHOODS[nIdx].color}
+              color={city.neighbourhoods[nIdx].color}
             />
           )}
           {/* D367: Nonna's tutorial spotlights its station: a dark scrim with a rounded cut-out, a pulsing gold outline

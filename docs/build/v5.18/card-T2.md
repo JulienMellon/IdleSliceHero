@@ -17,7 +17,7 @@ This is a large card. Work in the order below and tick each step; if you run out
 - [x] **3. Portraits:** the six characters and Trish Vance, as variants of existing busts where a build and hairline fit, new shapes only where they don't. Priya and Nonna get one changed detail each to show time has passed.
 - [x] **4. Backdrops:** one exterior and one shop interior per neighbourhood, by palette, skyline and one signature object each (North End: church steeple; Southie: bar sign; Back Bay: brownstones; Fenway: light towers; Cambridge: lab windows; Dorchester: triple-deckers). Keep the 61 pt caption zone clear.
 - [x] **5. Screens:** the franchise offer on the "Coming soon: Boston" card (which now opens the confirm sheet: what you keep, what you give up, the multiplier, two confirmations); the franchise moment; the City screen for the current city, with a way to read earlier cities' Scrapbooks.
-- [ ] **6. Layer dressing:** each Boston layer uses its neighbourhood's copy and one re-dressed overlay element (a "local" badge for Southie's stars, a pantry shelf for Dorchester's rack, and so on). No new layer logic.
+- [x] **6. Layer dressing:** each Boston layer uses its neighbourhood's copy and one re-dressed overlay element (a "local" badge for Southie's stars, a pantry shelf for Dorchester's rack, and so on). No new layer logic.
 
 ## Fixtures (`scripts/fixtures/106_t2.py`, shots 106–117)
 106 franchise confirm sheet; 107 the franchise moment; 108 Boston's City screen at the start; 109–114 one cut-scene panel per neighbourhood, each showing its character and backdrop; 115 Trish Vance at HQ; 116 a Boston shop with its layer running; 117 an earlier city's Scrapbook opened from Boston.

@@ -4,8 +4,9 @@
 //
 // The cache key covers everything the drawer reads from the game except cash. A new feature that moves a gain with some other state
 // must add that state to `drawerKey` (the same rule as `stationModels`).
-import { DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEAD_TITLE, HEADS, MANAGERS, OVEN_GRADES, VEHICLES, type DecorKind, type HeadKind } from '../content/tuning';
+import { DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEAD_TITLE, OVEN_GRADES, VEHICLES, type DecorKind, type HeadKind } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
+import { cityOf } from '../content/cities';
 import { bonusUnlocked } from '../engine/bonus';
 import { money, rate } from '../engine/format';
 import * as G from '../engine/game';
@@ -105,7 +106,8 @@ function levelPart(input: DrawerInput): LevelPart {
 
 function buildLevelPart({ game, id }: DrawerInput): LevelPart {
   const shop = game.shops[id];
-  const nd = G.def(id);
+  const city = cityOf(game);
+  const nd = G.def(id, city);
   const v = game.vehicle;
   const rates = stageRateMap(shop, v);
   const minRate = Math.min(...Object.values(rates));
@@ -177,8 +179,8 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
     for (const k of HEAD_KINDS) {
       cards.push(
         card(G.HEAD_UPGRADE[k], {
-          icon: { t: 'head', kind: k, name: HEADS[id][k] },
-          title: `${HEAD_TITLE[k]}: ${HEADS[id][k]}`,
+          icon: { t: 'head', kind: k, name: city.heads[id][k] },
+          title: `${HEAD_TITLE[k]}: ${city.heads[id][k]}`,
           // short enough not to leave a word alone on its last line (D358)
           detail: after ? headEffect() : `Runs the ${k === 'prep' ? 'prep table' : k === 'oven' ? 'ovens' : 'counter'} for you`,
           wide: true,
@@ -188,7 +190,7 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
     }
     cards.push(
       card('manager', {
-        icon: id === 'downtown' ? { t: 'nonna' } : { t: 'gm', name: MANAGERS[id].id },
+        icon: id === 'downtown' ? { t: 'nonna' } : { t: 'gm', name: city.managers[id].id },
         title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire ${aOrAn(nd.name)} ${nd.name} manager`,
         detail: id === 'downtown' ? `Keep baking — ${G.nonnaCountdownText(game)}` : after ? managerEffect() : `General Manager: ×2 income here, and it earns while you're away (${plus(G.shopEarnings(game, id))})`,
         wide: true,
