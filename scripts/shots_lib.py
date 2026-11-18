@@ -503,6 +503,21 @@ def tap_station(page, st):
 def tid(page, t):
     return page.locator(f'[data-testid="{t}"]').first
 
+def scroll_shop(page, where):
+    """Scroll a wide shop (card V2): `where` is "start" (the left edge of its drawing), "end" (the right edge), "middle", or a share 0..1 of the way along.
+    A tap-only player has the chevron cues; this moves the drawing the way a drag does, then lets the game run a moment so the cues catch up."""
+    ratio = {"start": 0.0, "middle": 0.5, "end": 1.0}.get(where, where) if isinstance(where, str) else where
+    ok = page.evaluate("""(ratio) => {
+        const el = document.querySelector('[data-testid="shop-scroll"]');
+        if (!el) return false;
+        el.scrollLeft = ratio * (el.scrollWidth - el.clientWidth);
+        return true;
+    }""", ratio)
+    if not ok:
+        report["errors"].append(f"scroll_shop({where}): no wide shop on this page (testid shop-scroll)")
+    advance(page, 800)
+    return ok
+
 # ---- save builders and page helpers shared by the shots (moved out of the run loop) ----
 def day_str(offset=0):
     """The date `offset` days from T0, as the game writes it (YYYY-MM-DD)."""

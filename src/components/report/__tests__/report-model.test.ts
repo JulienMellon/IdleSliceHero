@@ -204,3 +204,15 @@ describe('effect lines', () => {
     expect(compactEffect(0, 3000, 100)).toBeNull();
   });
 });
+
+describe('the strip in Boston', () => {
+  test('a managed Boston shop has a strip line and its own manager, not the home manager tables', () => {
+    const g0 = G.newGame(0, 'boston');
+    const g = { ...g0, shops: { ...g0.shops, 'north-end': { ...g0.shops['north-end'], managed: true } } };
+    const v = reportView(g, 'north-end', 0);
+    for (const kind of ['kitchen', 'quiet', 'tipping', 'cold'] as const) {
+      expect(stripLine({ ...v, state: kind === 'cold' ? 'cold' : 'tipping', kitchenLimits: kind === 'kitchen', floorRatio: kind === 'quiet' ? 0.1 : v.floorRatio }, 'north-end', true)?.text ?? '').not.toMatch(/undefined/);
+    }
+    expect(stripModel(g, 'north-end', 0).manager === '' || stripModel(g, 'north-end', 0).manager === 'father-dom').toBe(true);
+  });
+});

@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 // D428: the patio reads as outdoor growth: a plank deck (#C99A6B) one 10 pt step down from the shop front, a low rail round it.
-import { CHAIR_WAY_HALF_W, PATIO_HALF_W, PATIO_SEAT, PILASTER_RIGHT, layout } from '../layout';
+import { CHAIR_WAY_HALF_W, PATIO_HALF_W, PATIO_SEAT, PILASTER_RIGHT, layout } from './draw-layout';
 import { DECK_BACK_Y, DECK_CLEARS_QUEUE, DECK_COLOR, DECK_FRONT_Y, RAIL_PT, STEP_PT, deckBox, patioDeck } from '../patio-deck';
 import { P, SCENE_W, kAt } from '../projection';
 import { figureBox } from '../ladder';

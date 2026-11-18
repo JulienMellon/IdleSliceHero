@@ -7,7 +7,7 @@ import { memo, useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ORDER_VIEW } from '../../content/hooks';
-import { GAME_DAY } from '../../content/layers';
+import { cityOf } from '../../content/cities';
 import { valuePerPizza, featureMults } from '../../engine/game';
 import { gameDayView } from '../../engine/features/layers/suburbs-gameday';
 import { boatsView } from '../../engine/features/layers/waterfront-boats';
@@ -27,6 +27,7 @@ import { layerTop, pct5, ROWS } from './layer-model';
 import { gameDayBanner, gameDayPopText } from './suburbs/gameday-model';
 import { auctionStatus, boatBanner, raiseNotice } from './waterfront/boats-model';
 import { RESULT_MS, rivalCard, rivalLite, type RivalCardModel } from './rival/rival-model';
+import { hoodOf } from './city-layers';
 import { lc } from './layer-text';
 
 const NOTICE_MS = 3600;
@@ -59,12 +60,13 @@ function useTransientNotice(): Notice | null {
   useEffect(() => {
     const g = useGame.getState().game;
     if (rush && !wasRush.current) {
-      sold0.current = g.shops[GAME_DAY.hood].sold;
+      sold0.current = g.shops[hoodOf(g, 'gameDay')].sold;
       emitGameDay();
     }
     if (!rush && wasRush.current && sold0.current !== null) {
-      const shop = g.shops[GAME_DAY.hood];
-      const text = gameDayPopText(sold0.current, shop.sold, valuePerPizza(GAME_DAY.hood, shop, g.vehicle, featureMults(g, GAME_DAY.hood, Date.now())));
+      const hood = hoodOf(g, 'gameDay');
+      const shop = g.shops[hood];
+      const text = gameDayPopText(sold0.current, shop.sold, valuePerPizza(hood, shop, g.vehicle, featureMults(g, hood, Date.now()), cityOf(g)));
       sold0.current = null;
       show({ text, good: true }, NOTICE_MS);
       emitPayout();
@@ -163,7 +165,7 @@ const RivalCard = memo(function RivalCard() {
 
   const g = useGame.getState().game;
   const shown = result && result.hood === hood ? result.kind : null;
-  const m: RivalCardModel = rivalCard(rivalView(g, hood, Date.now()), hood, shown);
+  const m: RivalCardModel = rivalCard(rivalView(g, hood, Date.now()), hood, shown, cityOf(g));
   const up = m.face === 'running' || m.face === 'won' || m.face === 'lost';
   useHold('rival', up);
   if (!up) return null;
@@ -215,7 +217,7 @@ export const LayerStack = memo(function LayerStack() {
   }));
   const base = useGame((s) => {
     const g = s.game;
-    return gameDayBanner(gameDayView(g, Date.now())) || boatBanner(boatsView(g, Date.now()));
+    return gameDayBanner(gameDayView(g, Date.now()), g.city) || boatBanner(boatsView(g, Date.now()), g.city);
   });
   const transient = useTransientNotice();
   const text = transient?.text ?? base;

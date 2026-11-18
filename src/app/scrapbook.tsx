@@ -3,12 +3,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { chapterScenes, storiesCount, tileLabel } from '@/components/cutscene/scrapbook-model';
+import { chapterScenes, tileLabel } from '@/components/cutscene/scrapbook-model';
+import { seenCount } from '@/components/franchise/scrapbook-view';
 import { fitFont, MIN_FONT, SCRAPBOOK_HEAD } from '@/components/endgame/fit-model';
 import { recipeGroups } from '@/components/endgame/recipes-model';
 import { RecipesSection } from '@/components/endgame/recipes-section';
 import { DISPLAY_NAMES, Portrait } from '@/components/portrait';
-import { NEIGHBORHOODS } from '@/content/tuning';
+import { cityOf } from '@/content/cities';
 import { collectionView } from '@/engine/features/recipes';
 import { nextSceneTeaser } from '@/engine/teaser';
 import { TAP } from '@/components/tap-targets';
@@ -19,6 +20,9 @@ export default function Scrapbook() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const seen = useGame((s) => s.game.seenScenes);
+  // v5.18: the Scrapbook tells the CURRENT city's story (Boston's after the franchise); earlier cities are read from the City screen
+  const cityId = useGame((s) => s.game.city);
+  const city = cityOf({ city: cityId });
   const replay = useGame((s) => s.replayScene);
   const markViewed = useGame((s) => s.markScrapbookViewed);
   // one line on whose story is next and what it waits for (a string, so the screen re-renders only when it changes)
@@ -33,7 +37,7 @@ export default function Scrapbook() {
   // M64: one primitive selector (the key), the count is read off it
   const ownedKey = useGame((s) => collectionView(s.game).shops.map((x) => x.cards.map((c) => (c.owned ? 1 : 0)).join('')).join('|'));
   const owned = ownedKey.split('1').length - 1;
-  const groups = useMemo(() => recipeGroups(useGame.getState().game), [ownedKey]); // eslint-disable-line react-hooks/exhaustive-deps -- `ownedKey` is what the groups depend on
+  const groups = useMemo(() => (tab === 'recipes' ? recipeGroups(useGame.getState().game) : []), [ownedKey, tab]); // eslint-disable-line react-hooks/exhaustive-deps -- `ownedKey` is what the groups depend on
   useEffect(() => {
     markViewed();
   }, [markViewed, seen.length]);
@@ -46,7 +50,7 @@ export default function Scrapbook() {
             <Text style={styles.backText}>‹ Back</Text>
           </Pressable>
           <Text style={styles.title}>Scrapbook</Text>
-          <Text style={styles.count}>{storiesCount(seen.length)}</Text>
+          <Text style={styles.count}>{seenCount(seen, city.scenes)}</Text>
         </View>
         {/* D476: one line when it can be: the size shrinks to the header's width, never under 10 pt */}
         <Text style={[styles.teaser, { fontSize: fitFont(teaser, width - 28, 14, MIN_FONT) }]} testID="scrapbook-teaser">
@@ -66,8 +70,8 @@ export default function Scrapbook() {
         </ScrollView>
       ) : (
       <ScrollView contentContainerStyle={{ padding: 14, gap: 16, paddingBottom: insets.bottom + 24 }}>
-        {NEIGHBORHOODS.map((n) => {
-          const scenes = chapterScenes(n.id);
+        {city.neighbourhoods.map((n) => {
+          const scenes = chapterScenes(n.id, city.scenes);
           const character = scenes[0].character;
           const met = scenes.some((s) => seen.includes(s.id));
           return (

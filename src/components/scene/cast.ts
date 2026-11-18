@@ -95,6 +95,10 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
   // a short blink every few seconds per person
   const blinkAt = (sd: number) => (clock + (sd % 37) * 0.31) % 3.7 < 0.13;
   const cast: CastMember[] = [];
+  // the drawing's edges are where figures fade (its left edge is x0, not 0, in a wide frame's draw space), and the mirrored plan turns every figure round
+  const fadeAt = (x: number, y: number) => edgeFade(P(x, y, 0, lay.frame)[0] - lay.frame.x0, lay.frame.width);
+  // (a diner in a chair keeps facing the table: the chairs stand either side of it in both plans)
+  const fl = (flip: boolean) => flip !== lay.mirrored;
 
   // drivers and walk-ins follow the engine's departures (crew.ts): one driver per pickup spot, out the door with
   // each order and back again; walk-ins wait at their own order spot for a pie, eat, and leave
@@ -102,7 +106,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
     const dp = driverPoseAt(lay, crew.driver, clock, lay.frame.width, crew.idle);
     if (dp) {
       const [x, y] = dp.pos;
-      const o = edgeFade(P(x, y, 0, lay.frame)[0], lay.frame.width);
+      const o = fadeAt(x, y);
       const sd = shopSeed + 10;
       // off-screen: don't keep an invisible figure mounted
       if (o > 0)
@@ -110,7 +114,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
           key: 'd0',
           sortY: y,
           role: 'driver',
-          props: { x, y, kind: 'driver', seed: sd, blink: blinkAt(sd), carry: dp.carry, carryWalk: dp.carry && dp.walking, step: dp.walking ? walkStep(0) : 0, arm: 0, flip: dp.face, o, mood: dp.leaving ? 'o' : 'smile' },
+          props: { x, y, kind: 'driver', seed: sd, blink: blinkAt(sd), carry: dp.carry, carryWalk: dp.carry && dp.walking, step: dp.walking ? walkStep(0) : 0, arm: 0, flip: fl(dp.face), o, mood: dp.leaving ? 'o' : 'smile' },
           deps: dp.deps,
         });
     }
@@ -133,13 +137,13 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
     const seated = g.stage === 'seated';
     const bite = Math.abs(Math.sin(poseClock * 2 + i));
     const mood: Mood = seated ? (bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile') : 'smile';
-    const o = edgeFade(P(g.pos[0], g.pos[1], 0, lay.frame)[0], lay.frame.width);
+    const o = fadeAt(g.pos[0], g.pos[1]);
     if (o <= 0) continue;
     cast.push({
       key: `g${i % 8}`,
       sortY: g.pos[1] - 0.3,
       role: 'walkin',
-      props: { x: g.pos[0], y: g.pos[1], kind: seated ? 'sit' : 'guest', seed: gSeed, shirt: GUEST_SHIRTS[pal.walkShirt(i % 4, Math.floor(i / 4))], hair: HAIR_COLORS[pal.walkHair(i % 4, Math.floor(i / 4))], o, flip: g.face, step: g.walking ? walkStep((i % 4) + 3) : 0, talk: g.stage === 'order' && Math.sin(poseClock * 9) > -0.2, mood, blink: blinkAt(gSeed), arm: seated ? bite * 2 : 0 },
+      props: { x: g.pos[0], y: g.pos[1], kind: seated ? 'sit' : 'guest', seed: gSeed, shirt: GUEST_SHIRTS[pal.walkShirt(i % 4, Math.floor(i / 4))], hair: HAIR_COLORS[pal.walkHair(i % 4, Math.floor(i / 4))], o, flip: seated ? g.face : fl(g.face), step: g.walking ? walkStep((i % 4) + 3) : 0, talk: g.stage === 'order' && Math.sin(poseClock * 9) > -0.2, mood, blink: blinkAt(gSeed), arm: seated ? bite * 2 : 0 },
       deps: g.deps,
     });
   }
@@ -187,7 +191,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `q${q}`,
       sortY: y,
       role: 'queue',
-      props: { x, y, kind: 'guest', seed: sd, shirt: GUEST_SHIRTS[pal.walkShirt(q, 7)], hair: HAIR_COLORS[pal.walkHair(q, 7)], flip: false, blink: blinkAt(sd), mood: 'smile', o: edgeFade(P(x, y, 0, lay.frame)[0], lay.frame.width) },
+      props: { x, y, kind: 'guest', seed: sd, shirt: GUEST_SHIRTS[pal.walkShirt(q, 7)], hair: HAIR_COLORS[pal.walkHair(q, 7)], flip: fl(false), blink: blinkAt(sd), mood: 'smile', o: fadeAt(x, y) },
     });
   }
   // D416: a varied cast of drivers (skin, hair, build; one moustache at most), one of them checking a phone
@@ -200,7 +204,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `w${q}`,
       sortY: y,
       role: 'queue',
-      props: { x, y, kind: 'driver', seed: d.seed, act: d.phone ? 'phone' : 'none', flip: false, blink: blinkAt(d.seed), mood: d.phone ? 'focus' : 'smile', o: edgeFade(P(x, y, 0, lay.frame)[0], lay.frame.width) },
+      props: { x, y, kind: 'driver', seed: d.seed, act: d.phone ? 'phone' : 'none', flip: fl(false), blink: blinkAt(d.seed), mood: d.phone ? 'focus' : 'smile', o: fadeAt(x, y) },
     });
   }
 

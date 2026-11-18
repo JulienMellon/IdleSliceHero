@@ -2,6 +2,8 @@
 // the drones' flight lanes. Text is the copy's, by key. Pure: unit-tested in node.
 import type { GameState } from '../../../engine/game';
 import type { ZonesView } from '../../../engine/features/layers/university-menu';
+import { dressed } from '../city-dress';
+import { hoodOf } from '../city-layers';
 import { fill } from '../../report/report-model';
 import { COPY } from './copy';
 
@@ -25,9 +27,9 @@ export interface ZoneCell {
   label: string;
 }
 
-export function zoneCells(v: ZonesView): ZoneCell[] {
+export function zoneCells(v: ZonesView, city?: string): ZoneCell[] {
   return v.zones.map((z) => {
-    const name = COPY[`zone.${z.id}.name` as "zone.dorms.name"];
+    const name = dressed(city, `zone.${z.id}.name`, COPY[`zone.${z.id}.name` as "zone.dorms.name"]);
     const mid = z.open ? `${z.share}% · ${tripText(z.tripSeconds)}` : 'Locked';
     const open = v.drones ? DRONES_NOTE : `distance ${z.distance}`;
     const foot = z.open ? open : COPY['zone.locked'];
@@ -36,7 +38,7 @@ export function zoneCells(v: ZonesView): ZoneCell[] {
 }
 
 /** Drivers out on campus right now: the university line's departures that are drivers (walk-ins stay in the shop). */
-export const campusOut = (g: Pick<GameState, 'shops'>): number => g.shops.university.line.departures.filter((d) => d.kind === 'driver').length;
+export const campusOut = (g: { city?: string } & Pick<GameState, 'shops'>): number => g.shops[hoodOf(g, 'menu')]?.line.departures.filter((d) => d.kind === 'driver').length ?? 0;
 
 /** The chip's text: "3 out on campus", or "3 drones up" once drones are the fleet; one drone is "1 drone up" (G107). */
 export const campusChipText = (out: number, drones: boolean): string => {

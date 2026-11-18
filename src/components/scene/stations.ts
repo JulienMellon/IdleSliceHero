@@ -83,8 +83,10 @@ export function badgeXs(lay: Layout): Record<Station, number> {
   };
   // a badge plus its count pill is ~2 rings wide; push neighbours apart from the oven outwards
   const gap = BADGE_R * 4.6;
-  if (xs.oven - xs.prep < gap) xs.prep = xs.oven - gap;
-  if (xs.counter - xs.oven < gap) xs.counter = xs.oven + gap;
+  // the mirrored plan has the kitchen the other way round: the counter is left of the ovens and the bench right of them, so "outwards" is the other way
+  const s = lay.mirrored ? -1 : 1;
+  if (s * (xs.oven - xs.prep) < gap) xs.prep = xs.oven - s * gap;
+  if (s * (xs.counter - xs.oven) < gap) xs.counter = xs.oven + s * gap;
   return xs;
 }
 
@@ -198,9 +200,9 @@ export const popWidth = (text: string) => Math.min(POP_MAX_W, text.length * 6.1 
  * `keepOff` are rects the pop must not cover (the waiting pill, whose last word names the station to buy): a pop that would
  * land on one lifts to sit 4 above it, so the instruction is never cut.
  */
-export function popPlace(at: [number, number], w: number, opts: { walkin: boolean; rideAlong: boolean; k: number; keepOff?: readonly Rect[]; sceneW: number }): { x: number; y: number; rect: Rect } {
+export function popPlace(at: [number, number], w: number, opts: { walkin: boolean; rideAlong: boolean; k: number; keepOff?: readonly Rect[]; sceneW: number; /** The drawing's left edge (0 unless the draw space of a wide frame). */ x0?: number }): { x: number; y: number; rect: Rect } {
   const r = popRect(at, w);
-  const x = opts.rideAlong ? (r.x0 + r.x1) / 2 : Math.min(opts.sceneW - 4 - w / 2, Math.max(4 + w / 2, at[0]));
+  const x = opts.rideAlong ? (r.x0 + r.x1) / 2 : Math.min(opts.sceneW - 4 - w / 2, Math.max((opts.x0 ?? 0) + 4 + w / 2, at[0]));
   let y = (opts.rideAlong ? r.y1 : at[1] - (opts.walkin ? 58 : 30)) - opts.k * 6;
   // lifting clear of one rect can land on the next, so repeat until nothing is touched (each pass moves up, so it ends)
   const off = opts.keepOff ?? [];
@@ -230,7 +232,7 @@ export interface PlacedPop<D> {
  * any more: a pop that would land on a sidewalk pill used to jump above it and sit across the faces behind (a 45 pt band), so the pill gives way instead
  * (`popsCover`). `keepOff` is still honoured for a caller that wants a pop lifted.
  */
-export function placePops<D extends { kind: 'driver' | 'walkin'; n: number; cash: number }>(deps: readonly D[], left: (d: D) => number, anchor: (d: D) => [number, number] | null, register: [number, number], sceneW: number, keepOff: readonly Rect[] = []): PlacedPop<D>[] {
+export function placePops<D extends { kind: 'driver' | 'walkin'; n: number; cash: number }>(deps: readonly D[], left: (d: D) => number, anchor: (d: D) => [number, number] | null, register: [number, number], sceneW: number, keepOff: readonly Rect[] = [], x0 = 0): PlacedPop<D>[] {
   if (deps.length === 0) return [];
   return popModels(deps, left).map(({ dep: d, n, cash }) => {
     const l = left(d);
@@ -244,7 +246,7 @@ export function placePops<D extends { kind: 'driver' | 'walkin'; n: number; cash
     const text = n > 1 ? `×${n} · +${money(cash)}` : `+${money(cash)}`;
     // D379: a pill never grows past 80 pt (11 pt text), however long the "×n · +$X" is
     const w = popWidth(text);
-    const { x, y, rect } = popPlace(at, w, { walkin, rideAlong: !walkin && !!carrier, k, keepOff, sceneW });
+    const { x, y, rect } = popPlace(at, w, { walkin, rideAlong: !walkin && !!carrier, k, keepOff, sceneW, x0 });
     return { dep: d, text, w, x, y, rest, rect };
   });
 }
@@ -263,8 +265,8 @@ export function staffFaces(lay: Pick<Layout, 'staff'>): Rect[] {
  * keeps every standing head off it.
  */
 export function doorwaySignRect(lay: Layout): Rect {
-  const x0 = P(lay.door.x0 - 8, 0, 0)[0] + 2;
-  const x1 = P(lay.R - 8, 0, 0)[0] - 2;
+  const x0 = P(lay.jamb.x0, 0, 0)[0] + 2;
+  const x1 = P(lay.jamb.x1, 0, 0)[0] - 2;
   const lTop = P(0, 0, 122)[1];
   return { x0, y0: lTop - 12, x1, y1: lTop - 1 };
 }

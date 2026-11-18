@@ -4,13 +4,14 @@ import { memo } from 'react';
 
 import { shiftView } from '../../../engine/features/layers/industrial-shifts';
 import { useGame } from '../../../store/game-store';
+import { builtHood } from '../city-layers';
 import { LayerToast, useChangeToast } from '../university/layer-ui';
 import { whistle } from './shift-model';
 
 export const ShiftBanner = memo(function ShiftBanner() {
-  const shift = useGame((s) => (s.game.shops.industrial.built ? shiftView(s.game).shift : ''));
+  const shift = useGame((s) => (builtHood(s.game, 'shifts') ? shiftView(s.game).shift : ''));
   const toast = useChangeToast(shift, (k) => {
-    const w = whistle(k);
+    const w = whistle(k, useGame.getState().game.city);
     return w ? { text: w.text, line: w.line, speaker: w.speaker } : null;
   });
   return toast ? <LayerToast testID="shift-banner" toast={toast} tone={shift === 'night' ? 'plain' : 'cheese'} /> : null;

@@ -6,12 +6,12 @@ import { setAudioModeAsync } from 'expo-audio';
 import { AppState, Platform } from 'react-native';
 
 import { HOME_SCENES } from '../content/scenes/home';
-import { NEIGHBORHOODS } from '../content/tuning';
+import { cityOf, hoodIds } from '../content/cities';
 import type { NeighborhoodId, PanelCue } from '../content/types';
 import * as G from '../engine/game';
 import { useGame } from '../store/game-store';
 import { onAudio, type AudioEvent } from './bus';
-import { DUCK, EXCLUSIVE_CUES, PurchaseChain, VoiceLimiter, collectSize, musicFor, panelCue } from './logic';
+import { DUCK, EXCLUSIVE_CUES, PurchaseChain, VoiceLimiter, audioHood, collectSize, musicFor, panelCue } from './logic';
 import { MUSIC, SFX, STINGS, STORY, type SfxId, type StoryCueId } from './manifest';
 import { createMixer, type Catalog, type Mixer } from './mixer';
 import { createOutput } from './output';
@@ -23,7 +23,8 @@ const SCENES = new Map(HOME_SCENES.map((s) => [s.id, s]));
 
 const CATALOG: Catalog = {
   sfxCount: (id) => SFX[id as SfxId].length,
-  music: (t) => MUSIC[t as keyof typeof MUSIC] as unknown as ReturnType<Catalog['music']>,
+  // a track this build lacks plays the Downtown bed rather than throwing (a city's own set comes with its bundle)
+  music: (t) => (MUSIC[t as keyof typeof MUSIC] ?? MUSIC.downtown) as unknown as ReturnType<Catalog['music']>,
   sting: (k) => STINGS[k as keyof typeof STINGS],
   story: (id) => STORY[id as StoryCueId],
 };
@@ -49,26 +50,32 @@ const chain = new PurchaseChain();
 let scenePanelCue: PanelCue = 'none';
 let lastScenePanel = '';
 
+/** The neighbourhood whose sounds `hood` plays in the open game's city (see `audioHood`). */
+function soundOf(hood: NeighborhoodId): NeighborhoodId {
+  return audioHood(hood, useGame.getState().game.city);
+}
+
 /** Where the stingers' key is: the open scene's neighbourhood, else the active one. */
 function whereNow(): NeighborhoodId {
   const st = useGame.getState();
-  return st.playing ? st.playing.scene.neighborhood : st.game.active;
+  return soundOf(st.playing ? st.playing.scene.neighborhood : st.game.active);
 }
 
 function refreshMusic() {
   const s = useGame.getState();
   if (!s.loaded) return; // no Downtown blip before the save says where the player is (AU44)
   const scene = s.playing ? s.playing.scene : null;
+  const home = cityOf(s.game).id === 'home'; // Downtown's sparse chart is the home city's opening only
   const track = musicFor({
-    active: s.game.active,
-    downtownFull: s.game.seenScenes.includes('downtown-4'),
-    scene: scene ? { neighborhood: scene.neighborhood, panelCue: scenePanelCue, beat: typeof scene.beat === 'number' ? scene.beat : undefined } : null,
+    active: soundOf(s.game.active),
+    downtownFull: !home || s.game.seenScenes.includes('downtown-4'),
+    scene: scene ? { neighborhood: soundOf(scene.neighborhood), panelCue: scenePanelCue, beat: home && typeof scene.beat === 'number' ? scene.beat : undefined } : null,
   });
   mixer.setTrack(track);
   mixer.duck('scene', scene ? DUCK.scene : null);
   mixer.duck('popup', s.offline && !scene ? DUCK.popup : null);
   // a scene's stingers are in its own key; preload there while it plays (AU43)
-  mixer.scheduleStingPreload(scene ? scene.neighborhood : s.game.active, whereNow);
+  mixer.scheduleStingPreload(whereNow(), whereNow);
 }
 
 // ------------------------------------------------------------------------------------------------ story panels
@@ -85,7 +92,7 @@ function onPanel(sceneId: string, panel: number) {
   const cue = panelCue(scene, panel);
   scenePanelCue = cue;
   refreshMusic();
-  const hood = scene.neighborhood;
+  const hood = soundOf(scene.neighborhood);
   const here = () => lastScenePanel === key;
   switch (cue) {
     case 'welcome':
@@ -123,15 +130,15 @@ function warmRare(s: ReturnType<typeof useGame.getState>) {
   mixer.sweepWarm(!!s.offline);
   if (!useAudioPrefs.getState().sound) return;
   if (s.offline) mixer.warm('collect', collectSize(s.offline.earned, s.game.cash), true);
-  if (!mixer.loaded('build', 0) && NEIGHBORHOODS.some((n) => !G.buildLock(s.game, n.id))) mixer.warm('build', 0);
+  if (!mixer.loaded('build', 0) && hoodIds(cityOf(s.game)).some((id) => !G.buildLock(s.game, id))) mixer.warm('build', 0);
   if (!mixer.loaded('gavel', 0) && G.pier9Available(s.game)) mixer.warm('gavel', 0);
 }
 
 // ------------------------------------------------------------------------------------------------ events
 function handle(e: AudioEvent) {
   const g = useGame.getState();
-  const active = g.game.active;
-  const sceneHood = g.playing?.scene.neighborhood ?? active;
+  const active = soundOf(g.game.active);
+  const sceneHood = g.playing ? soundOf(g.playing.scene.neighborhood) : active;
   const now = Date.now();
   switch (e.type) {
     case 'tap':
@@ -166,7 +173,7 @@ function handle(e: AudioEvent) {
       if (e.sting === 'milestone' || e.sting === 'milestone_big') mixer.sfx('milestone', { jitter: 0 });
       // the bid holds a tension chord the Dock Saved scene resolves; a new pizzeria plays its own neighbourhood's motif
       if (e.what === 'bid') return mixer.sting('waterfront', 'bid', { immediate: true });
-      if (e.what === 'build' && e.hood) return mixer.sting(e.hood, 'build', { immediate: true });
+      if (e.what === 'build' && e.hood) return mixer.sting(soundOf(e.hood), 'build', { immediate: true });
       if (e.sting) mixer.sting(active, e.sting);
       return;
     }
@@ -241,7 +248,7 @@ export function startAudio() {
     }
     if (s.game.active !== lastActive || s.game.seenScenes.length !== lastSeen || s.offline !== lastOffline) {
       // the popup's celesta in the saved neighbourhood's key, once the save is in (AU44)
-      if (s.offline && !lastOffline && s.loaded) mixer.sting(s.game.active, 'offline', { immediate: true, gated: false, duck: 1 });
+      if (s.offline && !lastOffline && s.loaded) mixer.sting(soundOf(s.game.active), 'offline', { immediate: true, gated: false, duck: 1 });
       lastActive = s.game.active;
       lastSeen = s.game.seenScenes.length;
       lastOffline = s.offline;

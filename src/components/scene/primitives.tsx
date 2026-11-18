@@ -1,3 +1,4 @@
+import { createContext, useContext, type ReactNode } from 'react';
 import { Ellipse, G, Polygon } from 'react-native-svg';
 import { INK, ONE_SCREEN, P, kAt, pts, shade, type SceneFrame } from './projection';
 
@@ -20,4 +21,25 @@ export function FloorShadow({ x, y, r }: { x: number; y: number; r: number }) {
   const [sx, sy] = P(x, y);
   const k = kAt(y);
   return <Ellipse cx={sx} cy={sy} rx={r * k} ry={r * k * 0.3} fill="rgba(59,31,20,0.22)" />;
+}
+
+// ---------- the mirrored plan's architecture ----------
+// The mirrored floor plan reflects the layout itself (layout-space.ts), so everything that stands on a place (people, tables, the counter) is just placed there.
+// The few pieces of architecture with a handed shape (the room's walls and back-wall decor, the facade and its doorway, the door leaf) are instead drawn from the
+// plain plan and flipped, and their signs and lettering are `Upright`: the flip moves a sign to its mirrored place without turning its letters round.
+const FlipContext = createContext(false);
+/** Draws its children as their mirror image about the vertical line at screen x `axis` (the room's centre: the frame's vanishing point). Off: the children as they are. */
+export function Flip({ on, axis, children }: { on: boolean; axis: number; children: ReactNode }) {
+  if (!on) return <>{children}</>;
+  return (
+    <FlipContext.Provider value>
+      <G transform={`translate(${2 * axis} 0) scale(-1 1)`}>{children}</G>
+    </FlipContext.Provider>
+  );
+}
+/** Inside a `Flip`: mirrors its children about their own centre `cx` (screen x, in the plain plan), so a sign lands where the flip puts it but reads the right way round. Outside one: nothing. */
+export function Upright({ cx, children }: { cx: number; children: ReactNode }) {
+  const flipped = useContext(FlipContext);
+  if (!flipped) return <>{children}</>;
+  return <G transform={`translate(${2 * cx} 0) scale(-1 1)`}>{children}</G>;
 }

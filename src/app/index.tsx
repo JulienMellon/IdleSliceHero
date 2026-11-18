@@ -32,7 +32,8 @@ import { CURB_Y, SCENE_H, sceneFrame, sceneView, Storefront } from '@/components
 import { isForeground } from '@/components/app-state-model';
 import { usePerfMarks } from '@/components/scene/clock';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
-import { CITY_NAME, DECOR, DECOR_KINDS, FOOTPRINTS, HEAD_ROLE, HEADS, type HeadKind, NEIGHBORHOODS, OVEN_GRADES, VEHICLES } from '@/content/tuning';
+import { cityOf } from '@/content/cities';
+import { DECOR, DECOR_KINDS, HEAD_ROLE, type HeadKind } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
 import { money, pizzas } from '@/engine/format';
 import * as G from '@/engine/game';
@@ -200,7 +201,12 @@ export default function GameScreen() {
 
   const id = game.active;
   const shop = game.shops[id];
-  const nd = G.def(id);
+  // v5.18: every table below is the CURRENT city's (Boston after the franchise), never the home constants
+  const city = cityOf(game);
+  const { neighbourhoods: NEIGHBORHOODS, heads: HEADS, name: CITY_NAME } = city;
+  const { footprints: FOOTPRINTS, ovenGrades: OVEN_GRADES, vehicles: VEHICLES } = city.fit;
+  const first = G.firstHood(city);
+  const nd = G.def(id, city);
   const v = game.vehicle;
   const plus = (x: number) => `+${money(x)}/s`;
   const newScenes = Math.max(0, game.seenScenes.length - game.scrapbookViewed);
@@ -217,7 +223,7 @@ export default function GameScreen() {
     const sh = game.shops[n.id];
     // the next hire in a shop without a GM: each head, then the GM (Downtown's GM is Nonna, via the story)
     const hire = sh.built ? G.nextHire(sh) : null;
-    if (hire && !(hire === 'manager' && n.id === 'downtown')) {
+    if (hire && !(hire === 'manager' && n.id === first)) {
       const cost = G.upgradeCostOf(game, n.id, hire) ?? 0;
       // short enough to fit beside the amount (D338): "Waterfront: hire Finn (prep)"
       const label = G.isHeadUpgrade(hire) ? `${n.name}: hire ${HEADS[n.id][G.headOf(hire)]} (${HEAD_ROLE[G.headOf(hire)]})` : `${n.name}: hire a manager`;
@@ -231,7 +237,7 @@ export default function GameScreen() {
   }
   const next = G.nextToBuild(game);
   // a locked build (Nonna's takeover, an unbuilt neighbour) is not a goal: its tap would do nothing (B2)
-  if (next && !G.buildLock(game, next.id)) candidates.push({ label: `Build a pizzeria in ${next.name}`, short: `Build in ${next.name}`, current: game.cash, target: next.buildCost, ratio: G.buildGain(game, next.id) / G.buildAllIn(next.id), onPress: () => build(next.id) });
+  if (next && !G.buildLock(game, next.id)) candidates.push({ label: `Build a pizzeria in ${next.name}`, short: `Build in ${next.name}`, current: game.cash, target: next.buildCost, ratio: G.buildGain(game, next.id) / G.buildAllIn(next.id, city), onPress: () => build(next.id) });
   const vg = G.vehicleGain(game);
   if (vg && vg > 0) candidates.push({ label: `Upgrade fleet to ${VEHICLES[v + 1].name}s · ${plus(vg)}`, short: `${VEHICLES[v + 1].name}s ${plus(vg)}`, current: game.cash, target: VEHICLES[v + 1].cost, ratio: vg / VEHICLES[v + 1].cost, onPress: buyFleet });
   candidates.sort((a, b) => b.ratio - a.ratio);
@@ -334,7 +340,7 @@ export default function GameScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Hud cash={game.cash} subtitle={coach && id === 'downtown' ? '' : subtitle} boostText={boost?.text} goal={goal} newScenes={newScenes} onScrapbook={onScrapbook} onCity={onCity}
+      <Hud cash={game.cash} subtitle={coach && id === first ? '' : subtitle} boostText={boost?.text} goal={goal} newScenes={newScenes} onScrapbook={onScrapbook} onCity={onCity}
         onTasks={rewardsOn ? onTasks : undefined}
         tasksBadge={hud.badge}
         onGift={rewardsOn ? onGift : undefined}
@@ -355,7 +361,7 @@ export default function GameScreen() {
             paused={covered || drawerOpen || tasksOpen || giftOpen}
             onTap={onShopTap}
             onStation={onStationTap}
-            spotlight={coach && id === 'downtown' && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') ? coach.target : null}
+            spotlight={coach && id === first && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') ? coach.target : null}
             spotlightWait={!!coach?.wait}
           />
         )}
@@ -366,12 +372,12 @@ export default function GameScreen() {
         {/* v5.16 (P1): the shop report's strip, one 44 pt row directly above the sidewalk row */}
         <ReportSlots items={SHOP_REPORT} bottom={rowBottom + (idleShopHere ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + STRIP.above} />
         {/* D378: the tutorial scrim carries on over the sidewalk row (same 60% tone as the scene's), touches pass through */}
-        {coach && id === 'downtown' && !drawerOpen && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') && (
+        {coach && id === first && !drawerOpen && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') && (
           <View pointerEvents="none" testID="coach-row-scrim" style={[styles.rowScrim, { bottom: rowBottom - 6, height: (idleShopHere ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + 12 }]} />
         )}
         {/* Nonna's tutorial (P2) */}
         {/* D366: docked over the street band (decoration only), clear of the seating area */}
-        {coach && id === 'downtown' && !drawerOpen && <CoachCard step={coach} low={Math.max(8, insets.bottom)} high={12} />}
+        {coach && id === first && !drawerOpen && <CoachCard step={coach} low={Math.max(8, insets.bottom)} high={12} />}
         {/* v5.13: the special-order chip under the goal bar, and the golden pizza in the sky (both sit under the drawers) */}
         <OrderChip top={ORDER_VIEW.top} onShop={setActive} />
         {/* the BANNERS slot: notices over the scene, under the drawers */}
@@ -431,7 +437,7 @@ export default function GameScreen() {
                 <Text style={styles.section}>{drawer.decorTitle}</Text>
                 {drawer.decor.map(drawerCard)}
                 <Text style={styles.footer}>
-                  {CITY_NAME} · {drawer.built}/6 pizzerias · v{APP_VERSION}
+                  {CITY_NAME} · {drawer.built}/{NEIGHBORHOODS.length} pizzerias · v{APP_VERSION}
                 </Text>
               </ScrollView>
             </View>

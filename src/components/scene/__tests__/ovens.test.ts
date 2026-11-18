@@ -2,7 +2,7 @@
 // The oven ladder (D417): at every step the bank is wider in total, every oven keeps a fire window, Lv 25 / 50 add trim and a taller hood.
 import { FOOTPRINTS } from '../../../content/tuning';
 import { HOOD_EXTRA, isBoxOven, ovenFrame, ovenOpening, ovenTier } from '../geometry';
-import { BAY_COL_MIN, COUNTER_STAFF_STEP, MIN_OVEN_W, OVEN_BAY, ROOM_W, layout, ovenPlan } from '../layout';
+import { BAY_COL_MIN, COUNTER_STAFF_STEP, MIN_OVEN_W, OVEN_BAY, ROOM_W, layout, ovenPlan } from './draw-layout';
 
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 
@@ -115,10 +115,11 @@ describe('the oven bay (D417, round 60)', () => {
     expect(bad.slice(0, 6)).toEqual([]);
   });
   test('the check can fail: the v5.12 zone (the bench and the counter set the ovens\' room) shrank with the crew and fell below the bay\'s 52 at every footprint', () => {
+    const OLD_ROOM_W = [270, 295, 320, 340, 358]; // (the room widths of the v5.12 geometry: the Restaurant and the Flagship have been widened since, v5.18)
     // the old geometry, from layout.ts before the bay: bench ends at min(counter.x0 − 16 − 36, …), the ovens fill bench + 8 … counter.x0 − 8
     const oldZone = (fp: number, cooks: number, staff: number) => {
-      const L = 196.5 - ROOM_W[fp] / 2;
-      const R = L + ROOM_W[fp];
+      const L = 196.5 - OLD_ROOM_W[fp] / 2;
+      const R = L + OLD_ROOM_W[fp];
       const counterX0 = R - 60 - (56 + 26 * (staff - 1));
       const prepMax = counterX0 - 16 - 36;
       const prepX1 = cooks === 1 ? Math.min(prepMax, L + 22 + 54) : Math.min(prepMax, L + 6 + 30 + cooks * 24);

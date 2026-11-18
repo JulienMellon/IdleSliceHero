@@ -1,8 +1,12 @@
 // Pure scene geometry: where every station, table, lane and person stands for a given shop size.
 // No React here, so it is unit-tested directly (src/components/scene/__tests__/scene.test.ts).
+import { FOOTPRINTS } from '../../content/tuning';
+import { ROOM_WIDTH, WIDE_PLAN } from '../../content/shop-layout';
+import { reflectLayout } from './layout-space';
 import { P, SC, kAt, sceneFrame, unprojectX, type SceneFrame } from './projection';
 
-export const ROOM_W = [270, 295, 320, 340, 358];
+/** The room's width by footprint (content/shop-layout.ts): the first three tiers are the same 270 / 295 / 320 as ever; the Restaurant and the Flagship are wider than the screen. */
+export const ROOM_W: readonly number[] = ROOM_WIDTH;
 
 /** Chairs sit ±SEAT from a table's centre; with a 78 pitch and a quarter-pitch back-row offset every seat interleaves. */
 export const SEAT = 19.5;
@@ -135,9 +139,13 @@ export const OVEN_BAY = [
   { cols: 1, w: 52 },
   { cols: 1, w: 60 },
   { cols: 1, w: 60 },
-  { cols: 2, w: 110 },
-  { cols: 2, w: 118 },
+  { cols: 2, w: WIDE_PLAN[3].bayW },
+  { cols: 3, w: WIDE_PLAN[4].bayW },
 ] as const;
+/** The floor between the counter's end and the door's wall: 60 on the narrow tiers; the wide ones set more aside for the layer props (WIDE_PLAN.doorGap). */
+export const DOOR_GAP = 60;
+/** The floor between a prep bench and the second one beside it on the wide tiers. */
+const BENCH_GAP = 14;
 /** A counter is 56 wide with one cashier and this much wider for each further one. */
 export const COUNTER_STAFF_STEP = 26;
 /** The gap between the bay and the bench / the counter. */
@@ -215,7 +223,11 @@ export interface Layout {
   frame: SceneFrame;
   L: number;
   R: number;
+  /** The room is the mirrored plan (v5.18): kitchen on the right, door on the left. Everything below is already reflected; only the sidewalk's pills, which work from the plain plan, ask. */
+  mirrored: boolean;
   prep: { x0: number; x1: number };
+  /** The wide tiers' second prep table, beside the first (null on the narrow tiers). */
+  prep2: { x0: number; x1: number } | null;
   cooks: number[];
   /** `chimney`: the topmost oven of its column (drawn as the dome); `stacked`: the bank is more than one deck high (it carries a hood instead of per-oven chimneys). */
   ovens: { x0: number; x1: number; z: number; h: number; chimney: boolean; stacked: boolean }[];
@@ -225,6 +237,10 @@ export interface Layout {
   counter: { x0: number; x1: number };
   staff: number[];
   door: { x0: number; x1: number; cx: number; lanes: DoorLanes };
+  /** The entrance's brick jambs, the outer one at the wall corner (plain plan: door.x0 − 8 … R − 8); the facade draws the doorway between them. */
+  jamb: { x0: number; x1: number };
+  /** Where walkers come in and go off (room x): the drawing's edge at 30 / 50 past it, the door's far side. The mirrored plan has them the other way round. */
+  walk: { from: number; away: number };
   /** Driver pickup spots along the counter front. */
   spots: { x: number; y: number }[];
   /** Where walk-in i orders (alternating front/back of a short queue). */
@@ -237,6 +253,8 @@ export interface Layout {
   scooter: { x: number; y: number };
   /** The sidewalk chalkboard (room x at depth SIGN_Y): clear of the tree, the prop, the vehicle and the patio guests' way. */
   sign: { x: number };
+  /** The potted tree at the far end of the sidewalk from the door (room x at depth TREE_Y): fully on screen. */
+  tree: { x: number };
   /** The neighbourhood's signature sidewalk prop (room x at depth PROP_Y); always drawn. */
   prop: { x: number };
   /** Up to two patio tables on the sidewalk, right of the left pilaster and left of the drivers: only as many whole sets as fit (0 on the narrowest shops). */
@@ -253,19 +271,33 @@ export interface Layout {
   tagLeft: number;
 }
 
-export function layout(fp: number, ovenCount: number, cookCount: number, staffCount: number, tableCount: number, driverSlots: number, plants = 0, frame: SceneFrame = sceneFrame(fp)): Layout {
+/**
+ * The room for a footprint, in the frame's space. `mirrored` is the second floor plan (v5.18): the layout is planned as usual (door on the right, kitchen on the
+ * left) and its last step reflects every x about the room's centre, so the routes, tags and budgets mirror with it.
+ */
+export function layout(fp: number, ovenCount: number, cookCount: number, staffCount: number, tableCount: number, driverSlots: number, plants = 0, frame: SceneFrame = sceneFrame(fp), mirrored = false): Layout {
+  const plain = planRoom(fp, ovenCount, cookCount, staffCount, tableCount, driverSlots, plants, frame);
+  return mirrored ? reflectLayout(plain) : plain;
+}
+
+function planRoom(fp: number, ovenCount: number, cookCount: number, staffCount: number, tableCount: number, driverSlots: number, plants: number, frame: SceneFrame): Layout {
   const RW = ROOM_W[fp];
+  const wide = WIDE_PLAN[fp];
   const L = frame.vanishX - RW / 2;
   const R = L + RW;
   const cw = 56 + COUNTER_STAFF_STEP * (staffCount - 1);
-  const counter = { x0: R - 60 - cw, x1: R - 60 };
+  const doorGap = wide ? wide.doorGap : DOOR_GAP;
+  const counter = { x0: R - doorGap - cw, x1: R - doorGap };
   // the oven bay is fixed per footprint, from the counter's widest end (D417); the bench grows toward it and stops at its edge
   const bayDef = OVEN_BAY[Math.max(0, Math.min(OVEN_BAY.length - 1, fp))];
-  const bay = { x1: R - 60 - (56 + COUNTER_STAFF_STEP) - BAY_AIR, x0: 0 };
+  const bay = { x1: R - doorGap - (56 + COUNTER_STAFF_STEP) - BAY_AIR - (wide?.counterAir ?? 0), x0: 0 };
   bay.x0 = bay.x1 - bayDef.w;
-  const prepMax = bay.x0 - BAY_AIR;
+  // the wide tiers keep a second prep table against the bay (fixed, so it does not move when a cook is hired); the first bench stops short of it
+  const prep2 = wide ? { x0: bay.x0 - BAY_AIR - wide.bench2W, x1: bay.x0 - BAY_AIR } : null;
+  const prepMax = prep2 ? prep2.x0 - BENCH_GAP : bay.x0 - BAY_AIR;
+  const benchLen = (cooks: number) => (wide ? Math.min(wide.benchMax, 30 + cooks * 24) : 30 + cooks * 24);
   // a lone cook stands beside the bench's left end so the whole figure shows
-  const prep = cookCount === 1 ? { x0: L + 22, x1: Math.min(prepMax, L + 22 + 54) } : { x0: L + 6, x1: Math.min(prepMax, L + 6 + 30 + cookCount * 24) };
+  const prep = cookCount === 1 ? { x0: L + 22, x1: Math.min(prepMax, L + 22 + 54) } : { x0: L + 6, x1: Math.min(prepMax, L + 6 + benchLen(cookCount)) };
   const cooks = cookCount === 1 ? [prep.x0 - 9] : Array.from({ length: cookCount }, (_, i) => prep.x0 + 10 + (i * (prep.x1 - prep.x0 - 20)) / Math.max(1, cookCount - 1));
   const staff = Array.from({ length: staffCount }, (_, i) => counter.x0 + 16 + i * 28);
   // Ovens along the back wall in the bay; stack decks rather than squeeze them thin.
@@ -315,18 +347,27 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   // Dining: two rows in front of the prep/oven area, clear of the left pilaster (and a floor plant).
   const t0 = L + 44 + (plants >= 1 ? 10 : 0);
   const frontCols = Math.max(1, Math.floor((counter.x1 - 30 - SEAT - t0) / TABLE_PITCH) + 1);
-  // the back row starts right of the prep bench, so diners' heads never poke into it
+  // the back row starts right of the prep bench (and of the second one), so diners' heads never poke into it
   // …and its seats interleave with the front row's: each back seat falls midway between two front seats
-  const b0raw = Math.max(t0 + SEAT, prep.x1 + 4 + SEAT);
+  const b0raw = Math.max(t0 + SEAT, (prep2 ?? prep).x1 + 4 + SEAT);
   const backColsAt = (b: number) => Math.max(0, Math.floor((counter.x0 - 40 - SEAT - b) / TABLE_PITCH) + 1);
   const b0snap = t0 + SEAT + Math.ceil((b0raw - t0 - SEAT) / (2 * SEAT)) * (2 * SEAT);
   // C19: snap to the interleave grid only when no column is lost; otherwise keep the unsnapped start
   const b0 = backColsAt(b0snap) >= backColsAt(b0raw) ? b0snap : b0raw;
   const backCols = backColsAt(b0);
-  const tables: Layout['tables'] = [];
-  // fill the front row first, so a small dining room spreads out instead of stacking
-  for (let f = 0; f < frontCols && tables.length < tableCount; f++) tables.push({ x: t0 + TABLE_PITCH * f, y: FRONT_ROW_Y });
-  for (let b = 0; b < backCols && tables.length < tableCount; b++) tables.push({ x: b0 + TABLE_PITCH * b, y: BACK_ROW_Y });
+  // the tables for `count` of them: the front row first, so a small dining room spreads out instead of stacking; the wide tiers have the depth for two rows, so half
+  // the tables go to the back row (as many as it holds, at most half): the six tables of a Flagship stand in two rows, not one long one
+  const dine = (asked: number): Layout['tables'] => {
+    const out: Layout['tables'] = [];
+    // (a footprint never shows more than its maxTables: the engine's `tablesShown`; the wide tiers' rows are planned for that many)
+    const count = wide ? Math.min(asked, FOOTPRINTS[fp].maxTables) : asked;
+    const nBack = wide ? Math.min(backCols, Math.floor(count / 2)) : backCols;
+    const nFront = wide ? Math.min(frontCols, count - nBack) : frontCols;
+    for (let f = 0; f < nFront && out.length < count; f++) out.push({ x: t0 + TABLE_PITCH * f, y: FRONT_ROW_Y });
+    for (let b = 0; b < nBack && out.length < count; b++) out.push({ x: b0 + TABLE_PITCH * b, y: BACK_ROW_Y });
+    return out;
+  };
+  const tables = dine(tableCount);
   if (tables.length === 1) tables[0] = { x: (L + counter.x0) / 2, y: STARTER_Y };
   // Bakers stand in front of the oven bank, one per ~40 units, alternating depth.
   const bk0 = ovenCols[0].x0;
@@ -360,7 +401,9 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   const setsLeft = (rightEdge: number) => Math.max(0, Math.min(2, Math.floor((rightEdge - laneLeft + PATIO_AIR) / setSpan)));
   const dinerX = (i: number) => lastDriver - GROUP_GAP - QUEUE_PITCH * i;
   // the sets the glass front shows nearest the sill: a diner standing in front of one would cover its table or a seated diner
-  const sets = tables.filter((tb) => tb.y <= NEAR_ROW_Y).map((tb): [number, number] => {
+  // the wide tiers keep the lane for the footprint's full dining room, so a table bought later never moves a diner or a patio set that is already out there (T84)
+  const laneTables = wide ? dine(FOOTPRINTS[fp].maxTables) : tables;
+  const sets = laneTables.filter((tb) => tb.y <= NEAR_ROW_Y).map((tb): [number, number] => {
     const c = sxQ(tb.x, tb.y);
     const h = TABLE_SET_HALF * kAt(tb.y) * 1.1;
     return [c - h, c + h];
@@ -432,20 +475,27 @@ export function layout(fp: number, ovenCount: number, cookCount: number, staffCo
   patio.length = nPatio;
   const propX = unprojectX(packed.prop, PROP_Y, frame);
   const signX = unprojectX(packed.sign, SIGN_Y, frame);
-  return { fp, frame, L, R, prep, cooks, ovens, bay: { x0: bay.x0, x1: bay.x1 }, ovenCols, counter, staff, door, spots, orderSpots, tables, bakers, ledge, // D282: the vehicle parks well left of the walk-ins' turn-in (guestPauseX = d0 − 6)
-    scooter, sign: { x: signX }, prop: { x: propX }, patio, queue, queueTag, driverQueue, waitTag, tagLeft };
+  // the walkers come in from the drawing's left edge (30 past it) and go off past its right (50): the plain plan has the door on the right
+  const walk = { from: frame.x0 - 30, away: frame.x0 + frame.width + 50 };
+  return { fp, frame, mirrored: false, L, R, prep, prep2, cooks, ovens, bay: { x0: bay.x0, x1: bay.x1 }, ovenCols, counter, staff, door, jamb: { x0: d0 - 8, x1: R - 8 }, spots, orderSpots, tables, bakers, ledge, // D282: the vehicle parks well left of the walk-ins' turn-in (guestPauseX = d0 − 6)
+    scooter, tree: { x: PLANTER_X(L, frame) }, sign: { x: signX }, prop: { x: propX }, patio, queue, queueTag, driverQueue, waitTag, tagLeft, walk };
 }
 
 /** The pills keep this far (screen) from the screen edge (D420: the "×11 waiting" pill used to end 3 pt from it). */
 export const TAG_MARGIN = 12;
 /** Width of a pill for its text (10 pt bold: ~5.8 per character plus the padding). */
 export const waitTagWidth = (text: string) => text.length * 5.8 + 14;
-/** Where the pill's centre sits (screen), over the idle drivers' group, kept TAG_MARGIN inside the screen edges. */
-export function waitTagAt(lay: Pick<Layout, 'waitTag' | 'tagLeft' | 'frame'>, text: string): { x: number; y: number; w: number; tail: number } {
-  const [sx, sy] = P(lay.waitTag[0], lay.waitTag[1], WAIT_TAG_Z, lay.frame);
+/**
+ * Where the pill's centre sits (screen), over the idle drivers' group, kept TAG_MARGIN inside the drawing's edges. The pill rules are written for the plain plan (door on
+ * the right); the mirrored plan runs them on its reflection (the drawing's edges are symmetric about the vanishing point, as is `P`) and reflects the answer back.
+ */
+export function waitTagAt(lay: Pick<Layout, 'waitTag' | 'tagLeft' | 'frame' | 'mirrored'>, text: string): { x: number; y: number; w: number; tail: number } {
+  const a = 2 * lay.frame.vanishX;
+  const [rsx, sy] = P(lay.waitTag[0], lay.waitTag[1], WAIT_TAG_Z, lay.frame);
+  const sx = lay.mirrored ? a - rsx : rsx;
   const w = waitTagWidth(text);
-  const x = Math.min(lay.frame.width - TAG_MARGIN - w / 2, Math.max(TAG_MARGIN + w / 2, lay.tagLeft + w / 2, sx));
-  return { x, y: sy, w, tail: sx - x };
+  const x = Math.min(lay.frame.x0 + lay.frame.width - TAG_MARGIN - w / 2, Math.max(lay.frame.x0 + TAG_MARGIN + w / 2, lay.tagLeft + w / 2, sx));
+  return lay.mirrored ? { x: a - x, y: sy, w, tail: x - sx } : { x, y: sy, w, tail: sx - x };
 }
 /** An umbrella canopy's screen box (street.tsx `PatioTable`: ±UMBRELLA_R wide, from the finial 68.7 up to the rim 47.5 up, at table scale kAt × 1.1), and the air a pill keeps from it. */
 export const CANOPY_AIR = 4;
@@ -461,18 +511,45 @@ function seatedFace(tb: { x: number; y: number }, dx: number, frame: SceneFrame)
   return { x0: sx - 7 * k, x1: sx + 7 * k, y0: sy - 31 * k, y1: sy - 22 * k };
 }
 
+type MoreLay = Pick<Layout, 'queueTag' | 'queue' | 'driverQueue' | 'tables' | 'patio' | 'frame' | 'mirrored'>;
+const plainViews = new WeakMap<object, MoreLay>();
+/** The plain plan's view of a mirrored layout: the places the "+N" pill reads, reflected back (`P` is symmetric about the vanishing point, so are the screen coordinates). */
+function plainView(lay: MoreLay): MoreLay {
+  if (!lay.mirrored) return lay;
+  let v = plainViews.get(lay);
+  if (!v) {
+    const a = 2 * lay.frame.vanishX;
+    v = {
+      frame: lay.frame,
+      mirrored: false,
+      queueTag: [a - lay.queueTag[0], lay.queueTag[1]],
+      queue: lay.queue,
+      driverQueue: lay.driverQueue.map(([x, y]) => [a - x, y] as [number, number]),
+      tables: lay.tables.map((t) => ({ ...t, x: a - t.x })),
+      patio: lay.patio.map((t) => ({ ...t, x: a - t.x })),
+    };
+    plainViews.set(lay, v);
+  }
+  return v;
+}
+
 /**
  * The "+N" pill over the last diner: higher than that figure's head and lower than the drivers' pill, so the two never meet. With no diner figure
  * (`lay.queue` is empty) it reads "N waiting" instead: it hangs MORE_TAG_Z_ALONE (a full MORE_TAG_GAP under the drivers' pill's body), moves left
  * until it clears the nearest idle driver and then, if it can, until it covers no seated diner's face behind the glass (D450).
- * storefront.tsx draws both pills on the layer above the patio's umbrellas.
+ * storefront.tsx draws both pills on the layer above the patio's umbrellas. The mirrored plan runs the same rules on its reflection (`plainView`).
  */
-export function moreTagAt(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue' | 'tables' | 'patio' | 'frame'>, text: string): { x: number; y: number; w: number } {
+export function moreTagAt(layIn: MoreLay, text: string): { x: number; y: number; w: number } {
+  const lay = plainView(layIn);
+  const t = moreTagPlain(lay, text);
+  return layIn.mirrored ? { ...t, x: 2 * lay.frame.vanishX - t.x } : t;
+}
+function moreTagPlain(lay: MoreLay, text: string): { x: number; y: number; w: number } {
   const alone = lay.queue.length === 0;
   const [sx, sy] = P(lay.queueTag[0], lay.queueTag[1], alone ? MORE_TAG_Z_ALONE : MORE_TAG_Z, lay.frame);
   const w = waitTagWidth(text);
-  const lo = TAG_MARGIN + w / 2;
-  const hi = lay.frame.width - TAG_MARGIN - w / 2;
+  const lo = lay.frame.x0 + TAG_MARGIN + w / 2;
+  const hi = lay.frame.x0 + lay.frame.width - TAG_MARGIN - w / 2;
   if (!alone) return { x: Math.min(hi, Math.max(lo, sx)), y: sy, w };
   const driverX = P(...lay.driverQueue[lay.driverQueue.length - 1], 0, lay.frame)[0];
   const start = Math.min(hi, Math.max(lo, Math.min(sx, driverX - MORE_TAG_DRIVER_AIR - w / 2)));
@@ -489,12 +566,12 @@ export function moreTagAt(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue'
 /** What a pill covers on screen, tail included (the pill is 17 tall from 9 above its anchor; the tail reaches 12 below it). */
 const pillRect = (x: number, y: number, w: number) => ({ x0: x - w / 2, x1: x + w / 2, y0: y - 9 - 0.7, y1: y + 12 + 0.7 });
 /** The drivers' "N drivers idle · buy …" pill's screen rect (G91: pops keep off it, so the station it names is never covered). */
-export function waitTagRect(lay: Pick<Layout, 'waitTag' | 'tagLeft' | 'frame'>, text: string) {
+export function waitTagRect(lay: Pick<Layout, 'waitTag' | 'tagLeft' | 'frame' | 'mirrored'>, text: string) {
   const t = waitTagAt(lay, text);
   return pillRect(t.x, t.y, t.w);
 }
 /** The "+N" pill's screen rect. */
-export function moreTagRect(lay: Pick<Layout, 'queueTag' | 'queue' | 'driverQueue' | 'tables' | 'patio' | 'frame'>, text: string) {
+export function moreTagRect(lay: MoreLay, text: string) {
   const t = moreTagAt(lay, text);
   return pillRect(t.x, t.y, t.w);
 }

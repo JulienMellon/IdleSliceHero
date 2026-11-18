@@ -1,6 +1,7 @@
 /// <reference types="jest" />
-import { BACK_ROW_Y, COUNTER_LANE_Y, DRIVER_DROP_PT, DRIVER_NEAR_X, DRIVER_QUEUE_PITCH, DRIVER_SPOTS, FEET_IN, FIGURE_HALF_W, FRONT_ROW_Y, GROUP_GAP, LEDGE_Y, PATIO_SEAT, PROP_HALF_W, PROP_Y, QUEUE_PITCH, QUEUE_Y, QUEUE_SPOTS, ROOM_W, SEAT, SIGN_Y, STOOL_Y, SIGN_HALF_W, TABLE_PITCH, TREE_Y, VEHICLE_HALF_W, layout, type Layout } from '../layout';
+import { BACK_ROW_Y, COUNTER_LANE_Y, DRIVER_DROP_PT, DRIVER_NEAR_X, DRIVER_QUEUE_PITCH, DRIVER_SPOTS, FEET_IN, FIGURE_HALF_W, FRONT_ROW_Y, GROUP_GAP, LEDGE_Y, PATIO_SEAT, PROP_HALF_W, PROP_Y, QUEUE_PITCH, QUEUE_Y, QUEUE_SPOTS, ROOM_W, SEAT, SIGN_Y, STOOL_Y, SIGN_HALF_W, TABLE_PITCH, TREE_Y, VEHICLE_HALF_W, layout, type Layout } from './draw-layout';
 import { P, unprojectX } from '../projection';
+import { FOOTPRINTS } from '../../../content/tuning';
 import { pickAvoid, seatPalette } from '../palette';
 import { DRIVER_PAYOUT, GUEST_WALK_Y, along, driverPhase, driverPose, guestPose, payoutCrossed } from '../timelines';
 
@@ -240,7 +241,7 @@ describe('back row keeps its columns (C19 / T16)', () => {
   function capacity(lay: Layout, plants: number) {
     const t0 = lay.L + 44 + (plants >= 1 ? 10 : 0);
     const frontCols = Math.max(1, Math.floor((lay.counter.x1 - 30 - SEAT - t0) / TABLE_PITCH) + 1);
-    const b0raw = Math.max(t0 + SEAT, lay.prep.x1 + 4 + SEAT);
+    const b0raw = Math.max(t0 + SEAT, (lay.prep2 ?? lay.prep).x1 + 4 + SEAT);
     const backCols = Math.max(0, Math.floor((lay.counter.x0 - 40 - SEAT - b0raw) / TABLE_PITCH) + 1);
     return frontCols + backCols;
   }
@@ -252,7 +253,7 @@ describe('back row keeps its columns (C19 / T16)', () => {
           for (const ovens of [1, 2, 3, 4, 6])
             for (const plants of [0, 1, 3]) {
               const lay = layout(fp, ovens, cooks, staff, 8, DRIVER_SLOTS[fp], plants);
-              const cap = Math.min(8, capacity(lay, plants));
+              const cap = Math.min(8, capacity(lay, plants), FOOTPRINTS[fp].maxTables); // a footprint never shows more tables than its maxTables (the wide tiers plan their rows for that many)
               if (lay.tables.length < cap) lost.push(`fp${fp} o${ovens} c${cooks} s${staff} p${plants}: ${lay.tables.length} < ${cap}`);
             }
     expect(lost.slice(0, 6)).toEqual([]);
@@ -340,7 +341,7 @@ describe('the sidewalk lane (v5.12: D414, G90, D416)', () => {
     for (const [name, lay] of allLayouts()) {
       const signC = sx(lay.sign.x, SIGN_Y);
       const propC = sx(lay.prop.x, PROP_Y);
-      const treeC = sx(Math.max(lay.L + 8, unprojectX(20, TREE_Y)), TREE_Y);
+      const treeC = sx(lay.tree.x, TREE_Y);
       expect([name, propC - PROP_HALF_W > treeC + 14 - 4]).toEqual([name, true]);
       expect([name, Math.abs(signC - propC) >= PROP_HALF_W + 16]).toEqual([name, true]);
       const vehicleL = sx(lay.scooter.x, lay.scooter.y) - 25;

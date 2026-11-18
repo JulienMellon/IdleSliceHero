@@ -5,10 +5,12 @@
 // Placement is relative to the Layout (prep, counter, spots, scooter, door, back wall) and self-checking: a prop
 // whose spot would cover a badge, a head, the menu, the window, the door or the mat in this footprint is dropped
 // (`ladderProps` returns only what fits), and the budget in __tests__/ladder.test.ts re-checks it independently.
+import { FIRST_WIDE_FOOTPRINT } from '../../content/shop-layout';
 import { TUNING } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import type { Station } from '../../engine/pipeline';
 import { PROP_HALF_W, PROP_Y, type Layout, SEAT, secondVehicleShift, SIGN_HALF_W, SIGN_Y } from './layout';
+import { flipRect, plainOf } from './layout-space';
 import { hash32 } from './looks';
 import { D, ONE_SCREEN, P, kAt, shade } from './projection';
 import { BADGE_R, badgeRowY, badgeXs, doorwaySignRect, stationRects, type Rect } from './stations';
@@ -151,12 +153,16 @@ export function matRect(lay: Layout): Rect {
 
 /** The entrance on the front plane: jambs, the glazed leaf and the shop window above it, down to the floor. */
 export function doorRect(lay: Layout): Rect {
-  return { x0: P(lay.door.x0 - 8, 0)[0], x1: P(lay.R - 8, 0)[0], y0: P(0, 0, 196)[1], y1: P(0, 0)[1] + 8 };
+  return { x0: P(lay.jamb.x0, 0)[0], x1: P(lay.jamb.x1, 0)[0], y0: P(0, 0, 196)[1], y1: P(0, 0)[1] + 8 };
 }
 
 /** The menu board (shops from the Corner shop up): room.tsx clamps it between the oven hood and the brick pier. */
 export function menuRect(lay: Layout): Rect | null {
   if (lay.fp < 1) return null;
+  if (lay.mirrored) {
+    const r = menuRect(plainOf(lay));
+    return r && flipRect(r, 2 * lay.frame.vanishX);
+  }
   const [mx0, my] = P(lay.counter.x0 + 4, D, 180);
   const hoodRight = P(lay.ovenCols[lay.ovenCols.length - 1].x1 + 6, D - 6)[0];
   const pierLeft = P(lay.door.x0 - 8, 0)[0];
@@ -206,10 +212,12 @@ export const spotBoxes = (lay: Layout): Rect[] => lay.spots.map((s) => figureBox
 function wallZones(lay: Layout) {
   const [wx] = P(lay.counter.x1 - 50, D, 132);
   const hoodRight = P(lay.ovenCols[lay.ovenCols.length - 1].x1 + 6, D - 6)[0];
-  const pierLeft = P(lay.door.x0 - 8, 0)[0];
+  const pierLeft = P(lay.jamb.x0, 0)[0];
+  // far from the room's centre (the wide tiers) the oven's tap area, drawn at the bank's front, leans out past the hood: the wall props start right of it
+  const tapRight = lay.fp >= FIRST_WIDE_FOOTPRINT ? stationRects(lay, 44).oven.x1 + 1 : -Infinity;
   return {
     right: { x0: wx + 43, x1: P(lay.R, D)[0] - 4 },
-    left: { x0: hoodRight + 3.2, x1: wx - 4 },
+    left: { x0: Math.max(hoodRight + 3.2, tapRight), x1: wx - 4 },
     /** The belt along the wall above the counter runs to the doorway window's left edge. */
     passX1: pierLeft - 3,
   };
@@ -348,6 +356,11 @@ export function obstacles(lay: Layout, id: NeighborhoodId): { all: Rect[]; wall:
 
 /** The props to draw for these ladder steps in this layout, back to front by `sortY` is the caller's job. */
 export function ladderProps(lay: Layout, inp: LadderInput): Placed[] {
+  // the mirrored plan places its props by the plain plan's wall zones and flips the places (the drawings themselves are not turned round)
+  if (lay.mirrored) {
+    const a = 2 * lay.frame.vanishX;
+    return ladderProps(plainOf(lay), inp).map((p) => ({ ...p, ax: a - p.ax, rect: flipRect(p.rect, a) }));
+  }
   const placed: Placed[] = [];
   for (const c of candidates(lay, inp)) {
     const def = STEPS.find((s) => s.id === c.id)!;
@@ -369,8 +382,8 @@ export const wallRects = (placed: readonly Placed[]): Rect[] => placed.filter((p
  * Centre x for a pill `w` wide at screen rows y0..y1 that stays on screen and off every `avoid` rect: the nearest
  * clear x to `x`, or `x` clamped to the screen when nothing is clear.
  */
-export function clearPillX(x: number, w: number, y0: number, y1: number, avoid: readonly Rect[], sceneW: number = ONE_SCREEN.width): number {
-  const lo = 4 + w / 2;
+export function clearPillX(x: number, w: number, y0: number, y1: number, avoid: readonly Rect[], sceneW: number = ONE_SCREEN.width, x0 = 0): number {
+  const lo = x0 + 4 + w / 2;
   const hi = sceneW - 4 - w / 2;
   const clamp = (v: number) => Math.min(hi, Math.max(lo, v));
   const blocked = (c: number) => avoid.some((r) => c - w / 2 < r.x1 && c + w / 2 > r.x0 && y0 < r.y1 && y1 > r.y0);

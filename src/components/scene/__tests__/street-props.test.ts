@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 // D432: the Suburbs' picket fence was an orphan fragment (rails and pickets floating, cut off at both ends, nothing behind it).
-import { PROP_HALF_W } from '../layout';
+import { PROP_HALF_W } from './draw-layout';
 import { CARS, PICKET, trafficFor } from '../street-props';
 
 describe('the picket fence (D432)', () => {

@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-na
 import Svg from 'react-native-svg';
 import { useShallow } from 'zustand/react/shallow';
 
-import { MANAGERS } from '../../content/tuning';
+import { cityOf } from '../../content/cities';
 import type { NeighborhoodId } from '../../content/types';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
@@ -20,10 +20,11 @@ const CHIPS = ['prep', 'ovens', 'counter', 'floor'] as const;
 
 /** The manager's face: Nonna's portrait in Downtown, otherwise the head-face drawing the drawer uses (same name, same face). */
 function ManagerBadge({ hood }: { hood: NeighborhoodId }) {
+  const city = useGame((s) => s.game.city);
   if (hood === 'downtown') return <Portrait id="nonna-rosa" mood="happy" size={STRIP.badge} />;
   return (
     <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={STRIP.badge} height={STRIP.badge} viewBox="-20 -24 40 44">
-      <HeadFace kind="gm" name={MANAGERS[hood].id} size={40} />
+      <HeadFace kind="gm" name={cityOf({ city }).managers[hood]?.id ?? hood} size={40} />
     </Svg>
   );
 }

@@ -7,30 +7,35 @@ import Svg, { G, Path, Rect } from 'react-native-svg';
 
 import { starsView } from '../../../engine/features/layers/uptown-stars';
 import { useGame } from '../../../store/game-store';
+import { builtHood } from '../city-layers';
 import { C, F } from '../../../theme';
 import { INK, sceneFit } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
 import { toWindow } from '../layer-geometry';
-import { PAY_WORDS, payTagOf, type PayTag } from './stars-model';
-import { PIN, PLAQUE, PLAQUE_W, pinXs, plaqueBox, plaqueStars, signOf, STAR, TAG } from './sign-model';
+import { isDressed } from '../city-dress';
+import { chipText, PAY_WORDS, payTagOf, type PayTag } from './stars-model';
+import { PIN, PLAQUE, PLAQUE_W, pinXs, plaqueBox, plaqueStars, signOf, STAMP, STAR, TAG } from './sign-model';
 
 const STAR_PATH = 'M10 1.8 L12.4 7 L18 7.6 L13.8 11.4 L15 17 L10 14.1 L5 17 L6.2 11.4 L2 7.6 L7.6 7 Z';
 
 export const SignPlaque = memo(function SignPlaque({ shopId, width, height }: SceneSlotProps) {
   const frame = useShopFrame(shopId);
   const key = useGame((s) => {
-    if (shopId !== 'uptown' || !s.game.shops.uptown.built) return '';
+    if (shopId !== builtHood(s.game, 'stars')) return '';
     const v = starsView(s.game);
-    return `${v.stars}|${payTagOf(v.payMult)}|${v.sign}`;
+    // a city that dresses the stars as a local rating (Southie) adds its stamp: the rating's name from the script, in the key so it repaints with it
+    const local = isDressed(s.game.city, 'rating.1') ? chipText(v.stars, s.game.city) : '';
+    return `${v.stars}|${payTagOf(v.payMult)}|${v.sign}|${local}`;
   });
   if (!key || !(width > 0)) return null;
-  const [st, tag, pins] = key.split('|');
+  const [st, tag, pins, local] = key.split('|');
   const stars = Number(st);
   const f = sceneFit(width, height, frame);
   const sign = signOf(frame);
-  const box = plaqueBox(f.s, tag !== 'full', sign);
+  const box = plaqueBox(f.s, tag !== 'full', sign, !!local);
   const tagAt = toWindow(f, box.tagX, box.tagY);
+  const stampAt = toWindow(f, box.stampX, box.stampY);
   return (
     <View testID="sign-rating" accessibilityLabel={`Rating ${stars} stars. ${PAY_WORDS[tag as PayTag]}`} pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} style={StyleSheet.absoluteFill}>
@@ -50,6 +55,13 @@ export const SignPlaque = memo(function SignPlaque({ shopId, width, height }: Sc
           ))}
         </G>
       </Svg>
+      {local ? (
+        <View testID="local-stamp" style={[styles.stamp, Number(st) >= 4 && styles.stampTop, { left: stampAt.left, top: stampAt.top }]}>
+          <Text style={styles.stampText} numberOfLines={1} maxFontSizeMultiplier={1.1}>
+            {local}
+          </Text>
+        </View>
+      ) : null}
       {tag !== 'full' ? (
         <View testID="pay-tag" style={[styles.tag, tag === 'half' ? styles.tagHalf : styles.tagDouble, { left: tagAt.left, top: tagAt.top }]}>
           <Text style={[styles.tagText, tag === 'half' && styles.tagTextHalf]} maxFontSizeMultiplier={1.1}>
@@ -63,6 +75,9 @@ export const SignPlaque = memo(function SignPlaque({ shopId, width, height }: Sc
 
 const styles = StyleSheet.create({
   tag: { position: 'absolute', width: TAG.w, height: TAG.h, borderRadius: 9, borderWidth: 1.5, borderColor: C.ink, alignItems: 'center', justifyContent: 'center' },
+  stamp: { position: 'absolute', width: STAMP.w, height: STAMP.h, borderRadius: 9, borderWidth: 1.5, borderColor: C.ink, backgroundColor: '#FFF4E0', alignItems: 'center', justifyContent: 'center' },
+  stampTop: { backgroundColor: '#CDEFC9', borderColor: C.basilDark },
+  stampText: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: C.ink },
   tagHalf: { backgroundColor: C.tomato },
   tagDouble: { backgroundColor: C.cheese },
   tagText: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: C.ink },

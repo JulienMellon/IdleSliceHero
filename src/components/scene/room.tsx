@@ -5,6 +5,7 @@ import { Circle, Defs, Ellipse, G, LinearGradient, Path, Polygon, Rect, Stop, Te
 import { INK, D, WH, FRONT_TOP, P, pts, shade } from './projection';
 import type { Layout } from './layout';
 import { LOOKS } from './identity';
+import { Upright } from './primitives';
 import { hash32 } from './people';
 import { SCENE_OVERLAYS, SceneSlots } from '../slots';
 
@@ -310,7 +311,7 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
       )}
       {/* menu board: header, slices and prices */}
       {fp >= 1 && (
-        <G>
+        <Upright cx={mx + mw / 2}>
           <G transform={`translate(${mx} ${my}) scale(${mw / 56})`}>
           <Rect x={2} y={2} width={56} height={40} rx={4} fill="rgba(59,31,20,0.25)" />
           <Rect x={0} y={0} width={56} height={40} rx={4} fill="#2F3B33" stroke="#8E5A3C" strokeWidth={2.4} />
@@ -330,7 +331,7 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
             </G>
           ))}
           </G>
-        </G>
+        </Upright>
       )}
       {lights.length > 0 && (
         <Path d={`M${P(L + 10, D, WH - 18, lay.frame).join(' ')} Q${P(lay.frame.vanishX, D, WH - 38, lay.frame).join(' ')} ${P(R - 10, D, WH - 18, lay.frame).join(' ')}`} stroke={INK} strokeWidth={1} fill="none" />
@@ -370,7 +371,7 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
           const [bx, by] = P(Math.min(lay.prep.x1 + 6, lay.counter.x0 - 40), D, 140);
           const w = Math.min(46, bx - ax);
           return (
-            <G>
+            <Upright cx={ax + w / 2}>
               <Rect x={ax} y={ay} width={w} height={by - ay} fill="#FFF4E0" stroke={INK} strokeWidth={1.2} />
               <Circle cx={ax + w / 2} cy={ay + (by - ay) * 0.45} r={w * 0.3} fill="#FFC531" stroke={INK} strokeWidth={0.8} />
               {[[-0.1, -0.05], [0.12, 0.02], [0, 0.12]].map(([dx, dy], i) => (
@@ -379,7 +380,7 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
               <SvgText x={ax + w / 2} y={by - 5} fontFamily={F.bold} fontSize={7} fill="#D9443A" textAnchor="middle">
                 PIZZA!
               </SvgText>
-            </G>
+            </Upright>
           );
         })()}
       {walls === 2 &&
@@ -429,13 +430,13 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
               <Rect x={ax} y={ay} width={w} height={4} rx={1} fill="#8E5A3C" stroke={INK} strokeWidth={0.9} />
               {[0.08, 0.5].map((f) => <Path key={f} d={`M${ax + w * f} ${ay + 4} l4 7 M${ax + w * f} ${ay + 4} v8`} stroke="#5E3A26" strokeWidth={1.4} strokeLinecap="round" />)}
               {[0.14, 0.38].map((f, i) => (
-                <G key={i}>
+                <Upright key={i} cx={ax + w * f}>
                   <Path d={`M${ax + w * f - 8} ${ay} Q${ax + w * f - 9} ${ay - 16} ${ax + w * f - 4} ${ay - 19} L${ax + w * f + 4} ${ay - 19} Q${ax + w * f + 9} ${ay - 16} ${ax + w * f + 8} ${ay} Z`} fill="#F3ECE2" stroke={INK} strokeWidth={0.9} />
                   <Path d={`M${ax + w * f - 4} ${ay - 19} q4 -3 8 0`} stroke={INK} strokeWidth={0.9} fill="none" />
                   <SvgText x={ax + w * f} y={ay - 6} fontFamily={F.bold} fontSize={4.5} fill="#C8463A" textAnchor="middle">
                     FLOUR
                   </SvgText>
-                </G>
+                </Upright>
               ))}
               {[0.6, 0.74, 0.88].map((f, i) => (
                 <G key={f}>
@@ -448,7 +449,7 @@ export const RoomShell = memo(function RoomShell({ lay, wall, fp, flooring, wall
         })()}
       {walls === 0 && (() => {
         const [px, py] = P(L + 22, D, 168);
-        return <LocalProp id={id} x={px} y={py} />;
+        return <Upright cx={px}><LocalProp id={id} x={px} y={py} /></Upright>;
       })()}
       {/* back window: a brass porthole + fishing net at the Waterfront, trees elsewhere */}
       {id === 'uptown' ? (

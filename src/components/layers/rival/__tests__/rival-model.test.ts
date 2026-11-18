@@ -98,7 +98,7 @@ describe('the challenge card', () => {
   });
   test('Victor opens the boardwalk and the avenue, Todd the rest', () => {
     const hoods: NeighborhoodId[] = ['downtown', 'suburbs', 'waterfront', 'university', 'industrial', 'uptown'];
-    expect(hoods.map(opener)).toEqual(['todd-coat', 'todd-coat', 'victor-crust', 'todd-coat', 'todd-coat', 'victor-crust']);
+    expect(hoods.map((h) => opener(h))).toEqual(['todd-coat', 'todd-coat', 'victor-crust', 'todd-coat', 'todd-coat', 'victor-crust']);
   });
   test('a win shows the character’s line even though the rival is gone; a loss shows theirs', () => {
     const won = rivalCard(view({ open: false, won: true, phase: 'none', valueMult: 1 }), 'suburbs', 'won');

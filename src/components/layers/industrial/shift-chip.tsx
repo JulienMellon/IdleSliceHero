@@ -5,13 +5,14 @@ import { memo } from 'react';
 
 import { shiftView } from '../../../engine/features/layers/industrial-shifts';
 import { useGame } from '../../../store/game-store';
+import { builtHood } from '../city-layers';
 import { LayerChip } from '../university/layer-ui';
 import { industrialSheet } from './industrial-state';
 import { shiftChip } from './shift-model';
 
 export const ShiftChip = memo(function ShiftChip() {
   const key = useGame((s) => {
-    if (s.game.active !== 'industrial' || !s.game.shops.industrial.built) return '';
+    if (s.game.active !== builtHood(s.game, 'shifts')) return '';
     const c = shiftChip(shiftView(s.game));
     return `${c.rows[0]}|${c.rows[1]}|${c.label}`;
   });

@@ -2,6 +2,7 @@
 // 10% steps; no sliders, no drags) and the mix's total effect. Text is the copy's, by key. Pure: unit-tested in node.
 import { MENU } from '../../../content/layers';
 import type { MenuView } from '../../../engine/features/layers/university-menu';
+import { dressed } from '../city-dress';
 import { COPY } from './copy';
 
 export type RecipeId = 'cheese' | 'pepperoni' | 'knots';
@@ -54,14 +55,14 @@ export interface RecipeRow {
   canMinus: boolean;
 }
 
-export function recipeRows(m: Mix): RecipeRow[] {
+export function recipeRows(m: Mix, city?: string): RecipeRow[] {
   return RECIPE_ORDER.map((id) => {
     const r = MENU.recipes.find((x) => x.id === id)!;
     const effects = [timeEffect(r.prep, 'prep time'), timeEffect(r.bake, 'oven time')].filter(Boolean);
     return {
       id,
       name: COPY[`menu.${id}.name` as const],
-      line: COPY[`menu.${id}.line` as const],
+      line: dressed(city, `menu.${id}.line`, COPY[`menu.${id}.line` as const]),
       pct: m[id],
       price: `Pays ×${r.price}`,
       time: effects.length ? effects.join(' · ') : 'Steady',

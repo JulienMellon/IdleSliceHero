@@ -8,22 +8,26 @@ import type { PersonProps } from '../../scene/looks';
 import { PATIO_SEAT, SEAT, type Layout } from '../../scene/layout';
 import { STEP_FRAMES } from '../../scene/quantise';
 import { P, unprojectX } from '../../scene/projection';
-import { LABELS, lc } from '../layer-text';
+import { dressed } from '../city-dress';
+import { fillText, LABELS, lc, lcc } from '../layer-text';
 import { mmss } from '../layer-model';
 
 // ---------- the HUD chip and the banner ----------
 
 /** The chip's text ("Game Day 7:42" counting down to the next game; during the rush, the rush's seconds left), or '' when the layer is not live. */
-export function gameDayChipText(v: GameDayView): string {
+export function gameDayChipText(v: GameDayView, city?: string): string {
   if (!v.active) return '';
-  return lc('layer.suburbs.gameday.chip', { time: mmss(v.rush ? v.left : v.nextIn) });
+  const time = mmss(v.rush ? v.left : v.nextIn);
+  // a city may word the rush itself ("Fans flood Fenway 0:31"); before it, every city says "Game Day 7:42"
+  const rush = v.rush ? dressed(city, 'layer.suburbs.gameday.chip.rush', '') : '';
+  return rush ? fillText(rush, { time }) : lc('layer.suburbs.gameday.chip', { time });
 }
 
-/** The chip shows beside the Suburbs shop, and anywhere while the rush runs (it is over in 45 s: the player should know). */
-export const gameDayChipShown = (v: GameDayView, active: string): boolean => v.active && (v.rush || active === GAME_DAY.hood);
+/** The chip shows beside the game-day shop (`hood`: Suburbs at home, `hoodOf(g, 'gameDay')`), and anywhere while the rush runs (it is over in 45 s: the player should know). */
+export const gameDayChipShown = (v: GameDayView, active: string, hood: string = GAME_DAY.hood): boolean => v.active && (v.rush || active === hood);
 
 /** The banner while the rush runs. */
-export const gameDayBanner = (v: GameDayView): string => (v.active && v.rush ? lc('layer.suburbs.gameday.banner') : '');
+export const gameDayBanner = (v: GameDayView, city?: string): string => (v.active && v.rush ? lcc(city, 'layer.suburbs.gameday.banner') : '');
 
 // ---------- free seats ----------
 

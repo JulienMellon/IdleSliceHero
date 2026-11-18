@@ -1,16 +1,19 @@
 // The layers' info sheets as plain data (v5.16 S2a): one per layer, opened from its HUD chip. What it is (the copy file's info body), the
 // numbers right now, and what to buy to do better (real purchases with their prices). Pure: unit-tested in node.
-import { BOATS, GAME_DAY, RIVAL } from '../../content/layers';
+import { BOATS, RIVAL } from '../../content/layers';
 import { money } from '../../engine/format';
 import { upgradeCostOf, type GameState } from '../../engine/game';
 import { gameDayView } from '../../engine/features/layers/suburbs-gameday';
 import { boatsView } from '../../engine/features/layers/waterfront-boats';
 import { rivalTarget, rivalView } from '../../engine/features/layers/rival';
 import type { NeighborhoodId } from '../../content/types';
-import { auctionStatus, tierName } from './waterfront/boats-model';
+import { auctionStatus, label, tierName } from './waterfront/boats-model';
 import { rivalCard, rivalPercent } from './rival/rival-model';
+import { cityOf } from '../../content/cities';
+import { isDressed } from './city-dress';
+import { hoodOf } from './city-layers';
 import { mmss } from './layer-model';
-import { LABELS, lc } from './layer-text';
+import { LABELS, lc, lcc } from './layer-text';
 import type { SheetKind } from './sheet-state';
 
 export interface SheetRow {
@@ -42,11 +45,11 @@ const price = (g: GameState, id: NeighborhoodId, what: 'tables' | 'ovens' | 'cou
 
 export function gameDaySheet(g: GameState, now: number): SheetModel {
   const v = gameDayView(g, now);
-  const id = GAME_DAY.hood;
+  const id = hoodOf(g, 'gameDay');
   return {
     kind: 'gameday',
-    title: lc('layer.suburbs.gameday.info.title'),
-    body: lc('layer.suburbs.gameday.info.body'),
+    title: lcc(g.city, 'layer.suburbs.gameday.info.title'),
+    body: lcc(g.city, 'layer.suburbs.gameday.info.body'),
     speaker: '',
     action: null,
     rows: [
@@ -62,15 +65,16 @@ export function gameDaySheet(g: GameState, now: number): SheetModel {
 
 export function boatSheet(g: GameState, now: number): SheetModel {
   const v = boatsView(g, now);
-  const id = BOATS.hood;
+  const id = hoodOf(g, 'boats');
+  const city = g.city;
   const rows: SheetRow[] = [
-    { key: 'next', label: v.boat ? LABELS.boatLeft : LABELS.nextBoat, value: mmss(v.boat ? v.left : v.nextIn) },
-    { key: 'rack', label: LABELS.rack, value: v.rackTier > 0 ? `${v.rackPies} / ${v.rackCapacity} · ${tierName(v.rackTier)}` : LABELS.rackEmpty },
+    { key: 'next', label: v.boat ? label(city, 'boatLeft') : label(city, 'nextBoat'), value: mmss(v.boat ? v.left : v.nextIn) },
+    { key: 'rack', label: label(city, 'rack'), value: v.rackTier > 0 ? `${v.rackPies} / ${v.rackCapacity} · ${tierName(v.rackTier, city)}` : label(city, 'rackEmpty') },
   ];
   const buys: SheetBuy[] = [];
-  if (v.rackPrice !== null) buys.push({ key: 'rack', title: `${tierName(v.rackTier + 1)} · ${money(v.rackPrice)}`, line: `Holds ${BOATS.rack.capacity[v.rackTier]} pies between boats.` });
+  if (v.rackPrice !== null) buys.push({ key: 'rack', title: `${tierName(v.rackTier + 1, city)} · ${money(v.rackPrice)}`, line: `Holds ${BOATS.rack.capacity[v.rackTier]} pies ${isDressed(city, 'label.nextBoat') ? 'between orders' : 'between boats'}.` });
   buys.push({ key: 'counter', title: `Counter · ${price(g, id, 'counter')}`, line: 'A faster counter empties the rack faster.' });
-  return { kind: 'boat', title: lc('layer.waterfront.boat.info.title'), body: `${lc('layer.waterfront.boat.info.body')} ${lc('upgrade.waterfront.rack.info.body')}`, speaker: '', rows, buys, action: null };
+  return { kind: 'boat', title: lcc(city, 'layer.waterfront.boat.info.title'), body: `${lcc(city, 'layer.waterfront.boat.info.body')} ${lcc(city, 'upgrade.waterfront.rack.info.body')}`, speaker: '', rows, buys, action: null };
 }
 
 export function auctionSheet(g: GameState): SheetModel {
@@ -90,8 +94,8 @@ export function auctionSheet(g: GameState): SheetModel {
     action: null,
     rows,
     buys: [
-      { key: 'ovens', title: `Ovens · ${price(g, BOATS.hood, 'ovens')}`, line: lc('layer.waterfront.auction.outbid.line') },
-      { key: 'drivers', title: `Drivers · ${price(g, BOATS.hood, 'drivers')}`, line: 'More sales means the cash is there before the next raise.' },
+      { key: 'ovens', title: `Ovens · ${price(g, hoodOf(g, 'boats'), 'ovens')}`, line: lc('layer.waterfront.auction.outbid.line') },
+      { key: 'drivers', title: `Drivers · ${price(g, hoodOf(g, 'boats'), 'drivers')}`, line: 'More sales means the cash is there before the next raise.' },
     ],
   };
 }
@@ -107,7 +111,7 @@ export function rivalSheet(g: GameState, id: NeighborhoodId, now: number): Sheet
   ];
   if (v.phase === 'waiting') rows.push({ key: 'time', label: LABELS.challenge, value: LABELS.soon });
   else rows.push({ key: 'time', label: timeLabel, value: mmss(v.phase === 'running' ? v.secondsLeft : v.phase === 'retry' ? v.retryIn : RIVAL.challengeSeconds) });
-  const card = rivalCard(v, id);
+  const card = rivalCard(v, id, null, cityOf(g));
   return {
     kind: 'rival',
     title: lc('rival.info.title'),

@@ -5,15 +5,16 @@ import { memo, useEffect } from 'react';
 
 import { criticView } from '../../../engine/features/layers/uptown-stars';
 import { useGame } from '../../../store/game-store';
+import { builtHood } from '../city-layers';
 import { emitCheer } from '../../pulse-bus';
 import { LayerToast, useChangeToast } from '../university/layer-ui';
 import { arrival, criticPhase, moment, MOMENT_MS } from './critic-model';
 
 export const CriticBanner = memo(function CriticBanner() {
-  const walking = useGame((s) => (s.game.shops.uptown.built ? criticPhase(criticView(s.game)) === 'walking' : false));
+  const walking = useGame((s) => (builtHood(s.game, 'stars') ? criticPhase(criticView(s.game)) === 'walking' : false));
   // the finished visit as a string (target, stars, hit, cash), or '' for none
   const lastKey = useGame((s) => {
-    const l = s.game.shops.uptown.built ? criticView(s.game).last : null;
+    const l = builtHood(s.game, 'stars') ? criticView(s.game).last : null;
     return l ? `${l.target}|${l.stars}|${l.hit ? 1 : 0}|${l.cash}` : '';
   });
   const ack = useGame((s) => s.ackCritic);

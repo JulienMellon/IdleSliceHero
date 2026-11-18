@@ -3,7 +3,7 @@
 // and the scene, and sits under the chip row, not over it. (The rules for when a head speaks are in features/__tests__/heads.test.ts.)
 import { BARKS } from '../../../content/heads';
 import { FOOTPRINTS, NEIGHBORHOODS } from '../../../content/tuning';
-import { layout } from '../layout';
+import { layout } from './draw-layout';
 import { BUBBLE_AIR, CHIP_ROW_HALF, ROW_AIR, bubbleWalls, bubbleWidth, bubbleX } from '../moments';
 import { SCENE_W } from '../projection';
 import { badgeRowY, badgeXs } from '../stations';

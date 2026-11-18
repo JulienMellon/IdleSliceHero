@@ -3,7 +3,8 @@ import { memo, type ReactNode, useCallback, useEffect, useRef, useState } from '
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { emitAudio } from '../audio/bus';
-import { NEIGHBORHOODS } from '../content/tuning';
+import { cityOf } from '../content/cities';
+import type { NeighborhoodDef } from '../content/cities/types';
 import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
 import * as Game from '../engine/game';
@@ -19,6 +20,8 @@ import { pipBits, showPips, starPips } from './endgame/mastery-model';
 import { StarPips } from './endgame/star-pips';
 
 export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Game.GameState; /** The running income boost: the chips show what the shop earns now. */ boostMult?: number; onSelect: (id: NeighborhoodId) => void; onBuild: (id: NeighborhoodId) => boolean }) {
+  // v5.18: the tabs are the current city's neighbourhoods
+  const NEIGHBORHOODS = cityOf(game).neighbourhoods;
   const next = Game.nextToBuild(game);
   const scroller = useRef<{ scrollTo: (o: { x: number; animated: boolean }) => void } | null>(null);
   const activeIdx = NEIGHBORHOODS.findIndex((n) => n.id === game.active);
@@ -27,7 +30,7 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
   const [offsets, setOffsets] = useState<number[]>([]);
   // U4: no padlocked tabs before the first head is hired (the built shops, the active one and the next to build stay)
   const lockedShown = showLockedTabs(game);
-  const hidden = (n: (typeof NEIGHBORHOODS)[number]) => !lockedShown && !game.shops[n.id].built && next?.id !== n.id && game.active !== n.id;
+  const hidden = (n: NeighborhoodDef) => !lockedShown && !game.shops[n.id].built && next?.id !== n.id && game.active !== n.id;
   const tabCount = NEIGHBORHOODS.filter((n) => !hidden(n)).length;
   const onTab = (i: number) => (e: { nativeEvent: { layout: { x: number } } }) => {
     xs.current[i] = e.nativeEvent.layout.x;

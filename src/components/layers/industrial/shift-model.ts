@@ -2,6 +2,7 @@
 import type { ShiftView } from '../../../engine/features/layers/industrial-shifts';
 import { fill } from '../../report/report-model';
 import { mmss } from '../layer-model';
+import { dressed } from '../city-dress';
 import { COPY } from './copy';
 
 type ShiftId = 'day' | 'swing' | 'night';
@@ -25,11 +26,14 @@ export function shiftTint(shift: string): { color: string; opacity: number } | n
 }
 
 /** The whistle's banner: "Whistle! Night Shift is on", and Big Sal's line on the night. */
-export function whistle(shift: string): { text: string; line: string | null; speaker: string | null } | null {
+export function whistle(shift: string, city?: string): { text: string; line: string | null; speaker: string | null } | null {
   if (!(shift in NAME)) return null;
-  const text = fill(COPY['layer.industrial.shift.banner'], { shift: NAME[shift as ShiftId] });
+  const text = fill(COPY['layer.industrial.shift.banner'], { shift: shiftName(shift as ShiftId, city) });
   return shift === 'night' ? { text, line: COPY['layer.industrial.shift.night.line'], speaker: 'Big Sal' } : { text, line: null, speaker: null };
 }
+
+/** A shift's name in a city (Cambridge: Morning, Afternoon and Night Lab). */
+export const shiftName = (id: ShiftId, city?: string): string => dressed(city, `layer.industrial.shift.${id}`, NAME[id]);
 
 export interface ShiftRow {
   id: ShiftId;
@@ -42,8 +46,8 @@ export interface ShiftRow {
 const x = (n: number) => `×${Math.round(n * 100) / 100}`;
 
 /** The sheet's three shift rows in order, the one on the clock marked. */
-export function shiftRows(current: string, shifts: readonly { id: ShiftId; demand: number; value: number }[]): ShiftRow[] {
-  return shifts.map((s) => ({ id: s.id, name: NAME[s.id], effect: `demand ${x(s.demand)} · pays ${x(s.value)}`, now: s.id === current }));
+export function shiftRows(current: string, shifts: readonly { id: ShiftId; demand: number; value: number }[], city?: string): ShiftRow[] {
+  return shifts.map((s) => ({ id: s.id, name: shiftName(s.id, city), effect: `demand ${x(s.demand)} · pays ${x(s.value)}`, now: s.id === current }));
 }
 
 // ---------- the tint's shape (D484) ----------

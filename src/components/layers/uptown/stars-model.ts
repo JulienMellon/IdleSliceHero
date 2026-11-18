@@ -7,10 +7,11 @@ import { money } from '../../../engine/format';
 import { buyDecor, buyUpgrade, decorCost, upgradeCostOf, type GameState } from '../../../engine/game';
 import { criticView, ingredientsLock, pointsOf, starsOf, starsView, type StarsView } from '../../../engine/features/layers/uptown-stars';
 import { fill } from '../../report/report-model';
+import { dressed } from '../city-dress';
+import { hoodOf } from '../city-layers';
 import { mmss } from '../layer-model';
 import { COPY } from './copy';
 
-const HOOD = STARS.hood;
 /** A game with cash to spare: asking the engine what a purchase costs does not need the player to afford it. */
 const RICH = 1e300;
 
@@ -35,7 +36,7 @@ export function pointsForStar(stars: number): number {
 // ---------- the chip ----------
 
 /** "Rating 4★" split over the chip's two rows. */
-export const chipText = (stars: number): string => fill(COPY['layer.uptown.stars.chip'], { n: stars });
+export const chipText = (stars: number, city?: string): string => dressed(city, `rating.${Math.max(1, Math.min(5, Math.round(stars)))}`, fill(COPY['layer.uptown.stars.chip'], { n: stars }));
 
 // ---------- the next point of each input ----------
 
@@ -44,6 +45,7 @@ const rich = (g: GameState): GameState => ({ ...g, cash: RICH });
 /** The cheapest way to the next oven-grade point: the grades to buy and what they cost together, or null at the top. */
 export function ovenNext(g: GameState): { to: string; cost: number; steps: number } | null {
   let s = rich(g);
+  const HOOD = hoodOf(g, 'stars');
   const start = pointsOf(s.shops[HOOD], 0).oven;
   let cost = 0;
   for (let steps = 1; steps <= OVEN_GRADES.length; steps++) {
@@ -60,6 +62,7 @@ export function ovenNext(g: GameState): { to: string; cost: number; steps: numbe
 /** The cheapest way to the next decor point: how many tiers, and what the cheapest ones cost together, or null at the top. */
 export function decorNext(g: GameState): { tiers: number; cost: number } | null {
   let s = rich(g);
+  const HOOD = hoodOf(g, 'stars');
   const tiersOwned = (st: GameState) => DECOR_KINDS.reduce((t, k) => t + st.shops[HOOD].decor[k], 0);
   const start = pointsOf(s.shops[HOOD], 0).decor;
   const first = tiersOwned(s);
@@ -114,7 +117,7 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 export function starsSheet(g: GameState): StarsSheet {
   const v = starsView(g);
   const c = criticView(g);
-  const shop = g.shops[HOOD];
+  const shop = g.shops[hoodOf(g, 'stars')];
   const oven = ovenNext(g);
   const decor = decorNext(g);
   const tiers = DECOR_KINDS.reduce((t, k) => t + shop.decor[k], 0);

@@ -10,6 +10,7 @@ import { C, F } from '../../../theme';
 import { fill } from '../../report/report-model';
 import { mmss } from '../layer-model';
 import { LayerSheet } from '../university/layer-ui';
+import { dressed } from '../city-dress';
 import { COPY } from './copy';
 import { industrialSheet, useIndustrialSheet } from './industrial-state';
 import { jamLabel } from './jam-model';
@@ -19,11 +20,11 @@ function Sheet() {
   const game = useGame((s) => s.game);
   const sv = shiftView(game);
   const jv = jamView(game);
-  const label = jamLabel(jv);
+  const label = jamLabel(jv, game.city);
   return (
-    <LayerSheet testID="industrial-sheet" title={COPY['layer.industrial.shift.info.title']} onClose={industrialSheet.close}>
-      <Text style={styles.body}>{COPY['layer.industrial.shift.info.body']}</Text>
-      {shiftRows(sv.shift, SHIFTS.shifts).map((r) => (
+    <LayerSheet testID="industrial-sheet" title={dressed(game.city, 'layer.industrial.shift.info.title', COPY['layer.industrial.shift.info.title'])} onClose={industrialSheet.close}>
+      <Text style={styles.body}>{dressed(game.city, 'layer.industrial.shift.info.body', COPY['layer.industrial.shift.info.body'])}</Text>
+      {shiftRows(sv.shift, SHIFTS.shifts, game.city).map((r) => (
         <View key={r.id} style={[styles.row, r.now && styles.rowNow]} testID={`shift-row-${r.id}`}>
           <Text style={styles.name} numberOfLines={1}>{r.name}</Text>
           <Text style={styles.effect} numberOfLines={1}>{r.effect}</Text>

@@ -6,13 +6,14 @@ import { memo, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { ClipPath, Defs, G, Circle, Path, Rect } from 'react-native-svg';
 
-import { BOATS } from '../../../content/layers';
 import { boatsView } from '../../../engine/features/layers/waterfront-boats';
 import { useGame } from '../../../store/game-store';
 import { useClock } from '../../scene/clock';
 import { INK, P, sceneFit } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
+import { isDressed } from '../city-dress';
+import { hoodOf } from '../city-layers';
 import { layoutOfShop } from '../shop-layout';
 import { BOAT, BOAT_ART, RACK_STEPS, RACK_W, boatDock, boatPose, rackBox, rackStep, untilNextBoat } from './boats-model';
 
@@ -69,11 +70,38 @@ const RackArt = memo(function RackArt({ step, tier }: { step: number; tier: numb
   );
 });
 
+/** Dorchester's pantry shelf (the warming rack in a city with no harbour): four wooden boards on a plank back, a covered pie on each board that holds one. */
+const ShelfArt = memo(function ShelfArt({ step, tier }: { step: number; tier: number }) {
+  const w = RACK_W * (0.8 + tier * 0.1);
+  const trayH = 9;
+  return (
+    <G>
+      <Rect x={-w / 2} y={-RACK_STEPS * trayH - 4} width={w} height={RACK_STEPS * trayH + 4} rx={1.5} fill="#B98A52" stroke={INK} strokeWidth={1.1} />
+      {Array.from({ length: RACK_STEPS }).map((_, i) => {
+        const y = -(i + 1) * trayH;
+        return (
+          <G key={i}>
+            <Rect x={-w / 2 - 1} y={y + trayH - 2.5} width={w + 2} height={3} fill="#7A4A26" stroke={INK} strokeWidth={0.7} />
+            {i < step && (
+              <G>
+                <Path d={`M${-w / 2 + 4} ${y + trayH - 2.5} a${w / 2 - 4} 5.5 0 0 1 ${w - 8} 0 Z`} fill="#F4F1EC" stroke={INK} strokeWidth={0.8} />
+                <Circle cx={0} cy={y + trayH - 9.2} r={1.1} fill="#D9443A" stroke={INK} strokeWidth={0.4} />
+              </G>
+            )}
+          </G>
+        );
+      })}
+    </G>
+  );
+});
+
 export const HarbourScene = memo(function HarbourScene({ shopId, width, height }: SceneSlotProps) {
   // Reads the live store on its own clock while the boat moves: React Compiler must not cache that.
   'use no memo';
   const frame = useShopFrame(shopId);
-  const here = shopId === BOATS.hood;
+  const here = useGame((s) => shopId === hoodOf(s.game, 'boats'));
+  // a city that dresses the rack (Boston: the pantry shelf) has no harbour: no boat, and the rack is a wooden shelf
+  const pantry = useGame((s) => isDressed(s.game.city, 'upgrade.waterfront.rack.name'));
   // the rack's look: tier and fill step, two numbers in one (a repaint only when a step changes)
   const rackKey = useGame((s) => {
     if (!here) return 0;
@@ -82,7 +110,7 @@ export const HarbourScene = memo(function HarbourScene({ shopId, width, height }
   });
   // the boat: docked, or sailing within BOAT.sailIn / sailOut seconds of it
   const docked = useGame((s) => here && boatsView(s.game, Date.now()).boat);
-  const nearDock = useGame((s) => here && s.game.shops[BOATS.hood].built && untilNextBoat(s.game, 0) <= BOAT.sailIn + 1);
+  const nearDock = useGame((s) => here && !pantry && s.game.shops[shopId]?.built && untilNextBoat(s.game, 0) <= BOAT.sailIn + 1);
   const [leftAt, setLeftAt] = useState<number | null>(null);
   const was = useRef(docked);
   useEffect(() => {
@@ -100,7 +128,7 @@ export const HarbourScene = memo(function HarbourScene({ shopId, width, height }
   if (!here) return null;
   const st = useGame.getState();
   const g = st.game;
-  const shop = g.shops[BOATS.hood];
+  const shop = g.shops[shopId];
   if (!shop.built) return null;
   const lay = layoutOfShop(shop);
   const fit = sceneFit(width, height, frame);
@@ -121,7 +149,7 @@ export const HarbourScene = memo(function HarbourScene({ shopId, width, height }
             <Rect x={-120} y={0} width={120 + dock.clipX} height={BOAT_ART.waterline + 20} />
           </ClipPath>
         </Defs>
-        {pose.phase !== 'away' && (
+        {!pantry && pose.phase !== 'away' && (
           <G clipPath="url(#harbour-clip)">
             <G testID="boat" transform={`translate(${boatX.toFixed(1)} ${BOAT_ART.waterline}) scale(${-dock.scale} ${dock.scale})`}>
               <BoatArt docked={pose.phase === 'docked'} />
@@ -130,7 +158,7 @@ export const HarbourScene = memo(function HarbourScene({ shopId, width, height }
         )}
         {rb && (
           <G testID="warming-rack" transform={`translate(${rb.x.toFixed(1)} ${rb.y.toFixed(1)}) scale(${rb.k.toFixed(3)})`}>
-            <RackArt step={step} tier={tier} />
+            {pantry ? <ShelfArt step={step} tier={tier} /> : <RackArt step={step} tier={tier} />}
           </G>
         )}
       </Svg>

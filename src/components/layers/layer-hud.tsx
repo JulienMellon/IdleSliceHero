@@ -6,6 +6,7 @@ import { gameDayView } from '../../engine/features/layers/suburbs-gameday';
 import { boatsView } from '../../engine/features/layers/waterfront-boats';
 import { rivalOpen } from '../../engine/features/layers/rival';
 import { useGame } from '../../store/game-store';
+import { hoodOf } from './city-layers';
 import { LayerChip } from './layer-chip';
 import { gameDayChipShown, gameDayChipText } from './suburbs/gameday-model';
 import { auctionStatus, harbourChip } from './waterfront/boats-model';
@@ -15,7 +16,7 @@ import { rivalTagText } from './rival/rival-model';
 export const GameDayChip = memo(function GameDayChip() {
   const text = useGame((s) => {
     const v = gameDayView(s.game, Date.now());
-    return gameDayChipShown(v, s.game.active) ? gameDayChipText(v) : '';
+    return gameDayChipShown(v, s.game.active, hoodOf(s.game, 'gameDay')) ? gameDayChipText(v, s.game.city) : '';
   });
   const hot = useGame((s) => gameDayView(s.game, Date.now()).rush);
   return <LayerChip id="gameday-chip" text={text} hot={hot} sheet="gameday" />;
@@ -25,7 +26,7 @@ export const GameDayChip = memo(function GameDayChip() {
 export const HarbourChip = memo(function HarbourChip() {
   // "sheet|hot|text" in one string, so one selector keeps the three in step
   const key = useGame((s) => {
-    const c = harbourChip(boatsView(s.game, Date.now()), auctionStatus(s.game), s.game.active);
+    const c = harbourChip(boatsView(s.game, Date.now()), auctionStatus(s.game), s.game.active, s.game.city, hoodOf(s.game, 'boats'));
     return c ? `${c.sheet}|${c.hot ? 1 : 0}|${c.text}` : '';
   });
   if (!key) return null;

@@ -4,13 +4,14 @@
 import { memo } from 'react';
 
 import { useGame } from '../../../store/game-store';
+import { builtHood } from '../city-layers';
 import { StarIcon } from '../../icons';
 import { StationCard } from '../../shop-ui';
 import { buttonTone } from '../../sidewalk-model';
 import { ingredientsCardModel } from './stars-model';
 
 export const IngredientsCard = memo(function IngredientsCard() {
-  const key = useGame((s) => (s.game.active === 'uptown' && s.game.shops.uptown.built ? JSON.stringify(ingredientsCardModel(s.game)) : ''));
+  const key = useGame((s) => (s.game.active === builtHood(s.game, 'stars') ? JSON.stringify(ingredientsCardModel(s.game)) : ''));
   const buy = useGame((s) => s.buyIngredients);
   if (!key) return null;
   const m = JSON.parse(key) as ReturnType<typeof ingredientsCardModel>;

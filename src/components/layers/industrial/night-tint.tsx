@@ -6,6 +6,7 @@ import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
 import { shiftView } from '../../../engine/features/layers/industrial-shifts';
 import { useGame } from '../../../store/game-store';
+import { builtHood } from '../city-layers';
 import { C, F } from '../../../theme';
 import { FRONT_TOP, INK, P, sceneFit } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
@@ -23,9 +24,9 @@ const BADGE = { x: 312, y: 139, size: 34 } as const;
 export const NightTint = memo(function NightTint({ shopId, width, height }: SceneSlotProps) {
   const frame = useShopFrame(shopId);
   const key = useGame((s) => {
-    if (shopId !== 'industrial' || !s.game.shops.industrial.built) return '';
+    if (shopId !== builtHood(s.game, 'shifts')) return '';
     const v = shiftView(s.game);
-    const lay = layoutOfShop(s.game.shops.industrial);
+    const lay = layoutOfShop(s.game.shops[shopId]);
     return `${v.shift}|${v.valueMult}|${lay.L}|${lay.R}`;
   });
   if (!key || !(width > 0)) return null;

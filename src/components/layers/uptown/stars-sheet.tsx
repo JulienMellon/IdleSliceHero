@@ -10,6 +10,7 @@ import { useGame } from '../../../store/game-store';
 import { C, F } from '../../../theme';
 import { BUTTON_H } from '../university/layer-model';
 import { LayerSheet } from '../university/layer-ui';
+import { dressed } from '../city-dress';
 import { COPY } from './copy';
 import { PAY_RULE, starsSheet } from './stars-model';
 import { uptownSheet, useUptownSheet } from './uptown-state';
@@ -19,13 +20,13 @@ function Sheet() {
   const buy = useGame((s) => s.buyIngredients);
   const m = starsSheet(game);
   return (
-    <LayerSheet testID="uptown-sheet" title={COPY['layer.uptown.stars.info.title']} onClose={uptownSheet.close}>
+    <LayerSheet testID="uptown-sheet" title={dressed(game.city, 'layer.uptown.stars.info.title', COPY['layer.uptown.stars.info.title'])} onClose={uptownSheet.close}>
       <View style={styles.head} testID="stars-head">
         <Text style={styles.rating}>{m.rating}</Text>
         <Text style={[styles.pay, m.pay === 'half' && styles.payHalf]} testID="pay-word">{m.payWord}</Text>
       </View>
       <Text style={styles.small}>{m.progress}</Text>
-      <Text style={styles.body}>{COPY['layer.uptown.stars.info.body']}</Text>
+      <Text style={styles.body}>{dressed(game.city, 'layer.uptown.stars.info.body', COPY['layer.uptown.stars.info.body'])}</Text>
       <Text style={styles.rule} testID="pay-rule">{PAY_RULE}</Text>
       {m.rows.map((r) => (
         <View key={r.key} style={styles.row} testID={`input-${r.key}`}>
