@@ -1,7 +1,7 @@
 import { memo, type ReactElement } from 'react';
 import type { NeighborhoodId } from '../../content/types';
 import { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
-import { BOSTON_LOOKS } from '../cutscene/backdrop-art';
+import { CITIES, CITY_DATA } from '../cities';
 import { INK, ONE_SCREEN, shade } from './projection';
 
 // ---------- background: sky, skyline, trees ----------
@@ -44,13 +44,8 @@ export const LOOK: Record<NeighborhoodId, { sky: [string, string, string]; groun
   // D364: a warm hazy sky and lighter hills so the steel shop stands out (was grey on grey)
   industrial: { sky: ['#C9D3DC', '#E4D6C4', '#F2C99B'], ground: '#B7B0A0', ground2: '#A59E8E' },
   uptown: { sky: ['#3E4A8C', '#C98BA8', '#FBD3AE'], ground: '#8FBF7E', ground2: '#78AA6B' },
-  // Boston's own sky and ground (D508): the cut-scenes' palettes (cutscene/backdrop-art.ts BOSTON_LOOKS), so the shop and its story share a sky
-  ...Object.fromEntries(
-    Object.entries(BOSTON_LOOKS).map(([id, l]) => [
-      id,
-      { sky: [l.sky[0], shade(l.sky[0], 0.5), l.sky[1]] as [string, string, string], ground: '#9CC48A', ground2: '#86B374' },
-    ]),
-  ),
+  // each registered city's own sky and ground (cities/<id>/shop.ts), so the shop and its story share a sky
+  ...Object.assign({}, ...Object.values(CITY_DATA).map((c) => c.shop.street)),
 };
 
 export function Windows({ x, y, w, h, c }: { x: number; y: number; w: number; h: number; c: string }) {
@@ -209,52 +204,8 @@ export const SKYLINE: Record<NeighborhoodId, () => ReactElement> = {
   ),
 };
 
-/** A Boston neighbourhood's skyline: its building colours and heights (BOSTON_LOOKS), three beside the shop on each side, and its signature piece (the church steeple, the ballpark's light towers). */
-const BOSTON_SKYLINE =
-  (id: string): (() => ReactElement) =>
-  () => {
-    const L = BOSTON_LOOKS[id];
-    const slots: [number, number][] = [
-      [-6, 36],
-      [30, 34],
-      [64, 30],
-      [288, 34],
-      [322, 36],
-      [358, 40],
-    ];
-    return (
-      <G>
-        {slots.map(([x, w], i) => {
-          const [, , top, c] = L.buildings[i % L.buildings.length];
-          const h = 140 - top - (i % 3) * 10;
-          return (
-            <G key={i}>
-              <Rect x={x} y={200 - h} width={w} height={h} fill={c} stroke={L.trim} strokeWidth={0.8} />
-              <Windows x={x} y={200 - h} w={w} h={h} c={L.glass} />
-              {L.sig === 'steeple' && i === 1 && (
-                <Path
-                  d={`M${x + 4} ${200 - h} L${x + w / 2} ${200 - h - 34} L${x + w - 4} ${200 - h} Z`}
-                  fill={L.trim}
-                  stroke={INK}
-                  strokeWidth={0.8}
-                  strokeLinejoin="round"
-                />
-              )}
-              {L.sig === 'towers' && (i === 2 || i === 3) && (
-                <Path
-                  d={`M${x + w / 2} ${200 - h} V${200 - h - 28} M${x + w / 2 - 8} ${200 - h - 28} H${x + w / 2 + 8}`}
-                  stroke={L.glass}
-                  strokeWidth={2.4}
-                  strokeLinecap="round"
-                />
-              )}
-            </G>
-          );
-        })}
-      </G>
-    );
-  };
-for (const id of Object.keys(BOSTON_LOOKS)) SKYLINE[id] = BOSTON_SKYLINE(id);
+// each registered city draws the skyline behind its own shops
+for (const c of Object.values(CITIES)) Object.assign(SKYLINE, c.skylines({ Windows }));
 
 /** Chain-link fence segment (Industrial). */
 export function Fence({ x0, x1, y }: { x0: number; x1: number; y: number }) {

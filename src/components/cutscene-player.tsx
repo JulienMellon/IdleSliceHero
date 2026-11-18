@@ -9,11 +9,11 @@ import { STORY } from '../audio/manifest';
 import { HOME_CITY } from '../content/cities/home';
 import type { Scene } from '../content/types';
 import { C, F } from '../theme';
-import { Backdrop } from './backdrop';
+import { Backdrop } from './cutscene/backdrops';
 import { canAdvance, sceneHeading } from '../engine/cutscene-input';
 import { CAPTION, cardHolder, PANEL_BORDER, hasCaptionBar, panelSize, poseFor, stageLayout, tailShare } from './cutscene/staging';
 import { panelSpeech, sceneLabel } from './cutscene/panel-speech';
-import { Portrait } from './portrait';
+import { Portrait } from './portrait/index';
 import { useReducedMotion } from './scene/clock';
 import { TAP } from './tap-targets';
 

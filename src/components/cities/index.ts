@@ -4,11 +4,14 @@ import type { ReactElement } from 'react';
 
 import { BOSTON_BACKDROPS } from './boston/backdrops';
 import { BOSTON_PORTRAITS } from './boston/portraits';
+import { BOSTON_SKYLINES, BOSTON_TEASER_SKYLINE } from './boston/skyline';
 import type { CityArt } from './types';
 
-/** Every registered city, by its pack id (the id the scenes pass as `city`). */
+export { CITY_DATA } from './data';
+
+/** Every registered city's drawn art, by its pack id (the id the scenes pass as `city`). Its pure half (shop paint, map) is the same id in data.ts. */
 export const CITIES: Readonly<Record<string, CityArt>> = {
-  boston: { backdrops: BOSTON_BACKDROPS, portraits: BOSTON_PORTRAITS },
+  boston: { backdrops: BOSTON_BACKDROPS, portraits: BOSTON_PORTRAITS, skylines: BOSTON_SKYLINES, teaserSkyline: BOSTON_TEASER_SKYLINE },
 };
 
 /** The registered cities in registry order. */

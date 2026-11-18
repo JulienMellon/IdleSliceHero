@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { GameState } from '../../engine/game';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
-import { Portrait } from '../portrait';
+import { Portrait } from '../portrait/index';
 import { useReducedMotion } from '../scene/clock';
 import { TAP } from '../tap-targets';
 import { advance, confettiPieces, countUp, momentView, retreat, sheetView, type FlowStep } from './franchise-model';

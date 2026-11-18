@@ -2,9 +2,10 @@ import type { ReactElement } from 'react';
 import { Circle, Ellipse, G, Path, Rect, Text } from 'react-native-svg';
 
 import { F } from '../../../theme';
-import { BOSTON_LOOKS, type BostonLook, bricks, circle, gridLines, mullions, rect, windows } from '../../cutscene/backdrop-art';
+import { bricks, circle, gridLines, mullions, rect, windows } from '../../cutscene/backdrop-art';
 import { CLOUDS, FAR_CITY, Ground, INK, type Ids } from '../../cutscene/backdrops/shared';
 import type { CityBackdrops } from '../types';
+import { BOSTON_LOOKS, type BostonLook } from './shop';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Boston (card T2). Exteriors: one near row of buildings per neighbourhood from BOSTON_LOOKS (palette in cutscene/backdrop-art.ts) and the

@@ -7,7 +7,7 @@ import { CITIES } from '../../content/cities';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { chapterScenes, tileLabel } from '../cutscene/scrapbook-model';
-import { DISPLAY_NAMES, Portrait } from '../portrait';
+import { DISPLAY_NAMES, Portrait } from '../portrait/index';
 import { TAP } from '../tap-targets';
 import { seenCount } from './scrapbook-view';
 

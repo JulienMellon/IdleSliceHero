@@ -17,12 +17,18 @@ the engine name no pack but home. A new city is one folder plus the registry lin
 A pack never imports `content/copy` (no cycle) and never changes a shared library.
 
 ## What its art folder holds (`src/components/cities/<id>/`)
-Backdrops, portraits and looks for its characters, and its sheets. Core art files read cities only through `components/cities/index.ts`.
+- `backdrops.tsx`: its cut-scene scenes, their sky and glow, and the shop-interior window and shelf object (`CityBackdrops`).
+- `portraits.tsx` and `looks.ts`: the looks, names and outfits of the characters it adds, and who ages there (`looks.ts` is pure data, so tests import it).
+- `shop.ts` (pure): how its pizzerias are painted on the street, the street's sky and ground, its cut-scene exteriors and tall pieces, its interior rooms (`CityShopArt`).
+- `skyline.tsx`: the skyline behind each shop, and the one along the foot of the "Coming soon" card that announces it.
+- `map.ts` (pure): its City-screen map, as a function of the home map (`MapArt`).
+Core art files read cities only through the registry; none names a pack. The "Coming soon" card is core (`endgame/next-city-sheet.tsx`): it shows the next pack's teaser and skyline.
 
 ## The registry lines a new city adds
 1. `src/content/cities/index.ts`: import the pack and add it to `CITIES`.
 2. `src/content/cast.ts`: one import and one line in `CHARACTER_IDS` (this is the only place a character id is added).
-3. `src/components/cities/index.ts`: one entry in `CITIES` for the art.
+3. `src/components/cities/index.ts`: one entry in `CITIES` for the drawn art (backdrops, portraits, skylines, teaser skyline), and `src/components/cities/data.ts`: one entry in
+   `CITY_DATA` for the pure art (shop, map). Two files because node tests can import the second but not the first (it draws with React Native SVG).
 4. `src/content/franchise.ts`: the id in `CITY_ORDER`. **The pack `id` must be its `CITY_ORDER` entry** (`cityIndex`, `nextCity` and `teaserFor` read it).
 
 ## Rules the tests hold a pack to
@@ -35,7 +41,7 @@ Backdrops, portraits and looks for its characters, and its sheets. Core art file
 ## The tests that gate a pack
 - `src/content/__tests__/city-schema.test.ts`: `problemsOf(city)` must return `[]` (ids, cast, beats, speakers, bubbles, fit, bid, teaser, cycles); a
   fresh test pack (`__fixtures__/test-city.ts`, registered only inside the test) plays from its opening to its last finale.
-- `src/engine/__tests__/pack-ids-guard.test.ts`: no pack is named outside its folders (its `ALLOW` list shrinks as the art moves into pack folders).
+- `src/engine/__tests__/pack-ids-guard.test.ts`: no pack is named outside its folders (its `ALLOW` list is empty and stays so).
 - `src/engine/__tests__/home-ids-guard.test.ts`: the engine, the store and the components name no home id.
 - `src/engine/__tests__/test-city-smoke.test.ts`: the engine reads the city's fit, never the home tables.
 - `src/content/cities/<id>/__tests__/`: the pack's own tests; `economy.test.ts` and `number-ceiling.test.ts` pin the prices.

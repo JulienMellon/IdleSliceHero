@@ -8,7 +8,7 @@ import { attackView, KEY as ATTACK_KEY, type AttackState } from '../../engine/fe
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { haptic } from '../game-ui';
-import { Portrait } from '../portrait';
+import { Portrait } from '../portrait/index';
 import { TAP } from '../tap-targets';
 import { attackLite, bannerView } from './attack-model';
 import { BANNER_OPEN_MS, setBannerOpen } from './banner-state';

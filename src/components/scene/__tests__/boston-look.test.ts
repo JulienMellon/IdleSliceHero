@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 // D508: Boston's shops wear Boston's colours, not the home city's art at the same build position.
 import { NEIGHBORHOODS } from '../../../content/cities/boston/data';
-import { BOSTON_LOOKS } from '../../cutscene/backdrop-art';
+import { BOSTON_LOOKS } from '../../cities/boston/shop';
 import { furnitureInputs, type FurnitureSource } from '../furniture-inputs';
 import { LOOKS } from '../identity';
 

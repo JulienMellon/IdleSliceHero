@@ -11,7 +11,7 @@ import { cityOf } from '../../content/cities';
 import type { NeighborhoodId } from '../../content/types';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
-import { Portrait } from '../portrait';
+import { Portrait } from '../portrait/index';
 import { HeadFace } from '../scene/head-face';
 import { LAMP_COLOR, LAMP_INK, lampInitial, STRIP, stripFont, stripLineHeight, stripModel, stripTextWidth, type LampTone } from './report-model';
 import { openReport } from './sheet-state';

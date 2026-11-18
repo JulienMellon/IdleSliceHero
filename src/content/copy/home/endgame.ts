@@ -62,10 +62,6 @@ export const COPY = {
   'mastery.all': 'Eighteen stars, cara mia. Every shop, every oven. Now I sit down. On the bus. To Boston.',
   'goal.mastery': 'Mastery {n}/18',
   'goal.mastery.next': 'Next: {star} in {shop}',
-  'soon.boston.title': 'Coming soon: Boston',
-  'soon.boston.line.1': 'Victor Crust is waiting in Boston. So is the cold.',
-  'soon.boston.line.2': 'Your crew is packing the sauce. Keep the ovens hot.',
-  'soon.boston.signoff': 'I knit you a sweater. Is ugly. Wear it anyway.',
   'shop.item.oven-gold.name': 'Golden Oven',
   'shop.item.oven-gold.desc': 'Gold-trimmed bricks. The pizza notices.',
   'shop.item.storefront-skin.name': 'Fresh Storefront',
@@ -110,7 +106,6 @@ export const SPEAKERS: Readonly<Record<string, string>> = {
   'rush.friday.start': 'Captain Marisol',
   'rush.gameday.start': 'Dale',
   'mastery.all': 'Nonna Rosa',
-  'soon.boston.signoff': 'Nonna Rosa',
 };
 
 /** A recipe card's name, by `recipe.<hood>.<1-4>`. */

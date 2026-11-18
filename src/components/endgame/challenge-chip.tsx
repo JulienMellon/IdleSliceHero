@@ -15,7 +15,7 @@ import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { haptic } from '../game-ui';
 import { RUSH_HINT } from '../order-model';
-import { Portrait } from '../portrait';
+import { Portrait } from '../portrait/index';
 import { emitCheer, emitCoin, emitPayout } from '../pulse-bus';
 import { TAP } from '../tap-targets';
 import { attackLite, barPct, challengeView, RESULT_MS, resultView, winDiamondsText } from './attack-model';

@@ -15,21 +15,21 @@
   - `src/engine/__tests__/pack-ids-guard.test.ts` (the `ALLOW` list only).
 
 ## Steps
-- [ ] **1. Shop looks and sky.**
+- [x] **1. Shop looks and sky.**
   - Move these into `cities/boston/shop.ts`:
     - Boston's `Object.assign(LOOKS, {...})` block in `identity.ts`;
     - its sky and ground entries and the Boston skyline in `background.tsx`;
     - `BOSTON_LOOKS` (the cut-scene palette) from `backdrop-art.ts`.
   - The shared files read the registry, so the city's look falls back to the home neighbourhood at the same build position (`sceneHood`), as today.
   - `scene.test.ts` still checks Boston's awnings against its pack colours.
-- [ ] **2. Map art.** `map-art.ts` `BOSTON_ART` moves to `cities/boston/map.ts`, and `ARTS` comes from the registry. The `OPEN_LOT` constant in `city-map.tsx` loses its `BOSTON` alias. **Keep the `testID` `city-boston`**: fixtures press it.
-- [ ] **3. The next-city card.**
+- [x] **2. Map art.** `map-art.ts` `BOSTON_ART` moves to `cities/boston/map.ts`, and `ARTS` comes from the registry. The `OPEN_LOT` constant in `city-map.tsx` loses its `BOSTON` alias. **Keep the `testID` `city-boston`**: fixtures press it.
+- [x] **3. The next-city card.**
   - `next-city-sheet.tsx` shows the next pack's teaser (`teaserFor`, card R7a) on the `SoonCard`. The card draws the skyline that the next city's art registers (Boston's D460 skyline moves to `cities/boston/`). With no next pack, the card doesn't show.
   - Keep `SEEN_KEY` byte-identical (`'slice-empire/boston-seen'`: it is a device key), the slot id `'boston-card'` and the `testID`s.
   - Then delete the `soon.boston.*` keys.
-- [ ] **4. Shims gone.** Every importer of `components/backdrop` and `components/portrait` now imports `components/cutscene/backdrops` and `components/portrait/`. Delete the two shim files; `npx tsc --noEmit` proves nothing names them. Change import lines only. Card R2b, in a later version, does the same for `engine/game`.
-- [ ] **5. Guard.** The pack guard's `ALLOW` list is empty and the test passes. The home-ids guard's list still holds only art modules (R1's rule).
-- [ ] **6. Contract.** Add the art folder's files and the registry line to `src/content/cities/README.md` (R7a wrote it), checked against what you built.
+- [x] **4. Shims gone.** Every importer of `components/backdrop` and `components/portrait` now imports `components/cutscene/backdrops` and `components/portrait/`. Delete the two shim files; `npx tsc --noEmit` proves nothing names them. Change import lines only. Card R2b, in a later version, does the same for `engine/game`.
+- [x] **5. Guard.** The pack guard's `ALLOW` list is empty and the test passes. The home-ids guard's list still holds only art modules (R1's rule).
+- [x] **6. Contract.** Add the art folder's files and the registry line to `src/content/cities/README.md` (R7a wrote it), checked against what you built.
 
 ## Checks
 `npx tsc --noEmit`; `npx expo lint`; `npm test` (full).

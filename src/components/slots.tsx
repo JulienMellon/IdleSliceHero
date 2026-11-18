@@ -19,9 +19,9 @@ import { useGame } from '../store/game-store';
 import { C, F } from '../theme';
 import { hintFit, hintForHood } from './cutscene/story-hint-model';
 import { BannerStack } from './endgame/banner-stack';
-import { BostonSheet } from './endgame/boston-sheet';
 import { DiamondChip } from './endgame/diamond-chip';
 import { EventChip } from './endgame/event-chip';
+import { NextCitySheet } from './endgame/next-city-sheet';
 import { RecipeReveal } from './endgame/recipe-reveal';
 import { MoonIcon } from './game-ui';
 import { AuctionCardSlot, RackCardSlot } from './layers/drawer-cards';
@@ -211,9 +211,9 @@ export const BANNERS: SlotEntry[] = [
   { id: 'jam-pulses', order: 41, Component: JamPulses },
   { id: 'critic-banner', order: 42, Component: CriticBanner },
 ];
-// v5.15 (U1): "Coming soon: Boston", once, after the last finale
+// v5.15 (U1): "Coming soon" with the next city's teaser, once, after the last finale
 export const SHEETS: SlotEntry[] = [
-  { id: 'boston-card', order: 10, Component: BostonSheet },
+  { id: 'next-city-card', order: 10, Component: NextCitySheet },
   // v5.16 (P1): the shop report's sheet, opened by a tap on its strip
   { id: 'shop-report', order: 20, Component: ReportSheet },
   // v5.16 (S2a): the layers' info sheets, opened from their HUD chips

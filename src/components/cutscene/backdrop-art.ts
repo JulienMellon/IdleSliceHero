@@ -3,6 +3,7 @@
 // Art space: 400 wide, ground at the bottom (y 200), up to 110 units of wall/sky above y 0 (the panel shows y -100…200).
 
 import type { NeighborhoodId } from '../../content/types';
+import { CITY_DATA } from '../cities/data';
 import { captionBottom } from './staging';
 
 export const n = (v: number) => Math.round(v * 10) / 10;
@@ -299,118 +300,6 @@ export const NAME_TAG_FIELD = { x: 8, y: 30, w: 116, h: 38 } as const;
 /** The order slip's printed lines (spec section 6) and the room each has, in the slip's own coordinates. */
 export const ORDER_SLIP = { lines: ['MR. SMITH', '1 LG PEPPERONI'], x: 8, w: 94 } as const;
 
-/**
- * Boston's tall or lettered pieces, art units, for the layout tests: each stays under the caption zone and inside the panel's side insets
- * (x 104 to 296, like the shop signs) so no phone crops or covers it.
- */
-export const BOSTON_SIGNS = {
-  'north-end-steeple': { x0: 240, y0: -46, x1: 284, y1: 20 },
-  'southie-bar-sign': { x0: 112, y0: -46, x1: 196, y1: -12 },
-  'fenway-tower-left': { x0: 112, y0: -46, x1: 144, y1: 20 },
-  'fenway-tower-right': { x0: 256, y0: -46, x1: 288, y1: 20 },
-  'cambridge-lab': { x0: 128, y0: -46, x1: 272, y1: 0 },
-} as const satisfies Record<string, Box>;
-
-/**
- * Boston's exteriors, one per neighbourhood: sky, light, a far skyline tint and the near row of buildings ([x0, x1, top, colour]), plus the
- * one signature object each has (a steeple, a bar sign, brownstone stoops, light towers, lab windows, triple-decker porches).
- */
-export interface BostonLook {
-  sky: [string, string];
-  glow: string;
-  far: string;
-  trim: string;
-  glass: string;
-  buildings: [number, number, number, string][];
-  sig: 'steeple' | 'bar' | 'brownstones' | 'towers' | 'lab' | 'deckers';
-}
-export const BOSTON_LOOKS: Readonly<Record<string, BostonLook>> = {
-  'north-end': {
-    sky: ['#B5C8E4', '#F4E2D0'],
-    glow: '#FFE6B0',
-    far: '#C3B5B0',
-    trim: '#5A3426',
-    glass: '#F4D58A',
-    sig: 'steeple',
-    buildings: [
-      [-20, 70, 6, '#B4573F'],
-      [70, 150, -24, '#C26E4F'],
-      [150, 232, -4, '#A94E3A'],
-      [232, 336, 16, '#E4D3B8'],
-      [336, 420, -8, '#B8644A'],
-    ],
-  },
-  southie: {
-    sky: ['#9FB8D0', '#E5EAF0'],
-    glow: '#FFDCA0',
-    far: '#A7B6C6',
-    trim: '#3E4A58',
-    glass: '#F4D58A',
-    sig: 'bar',
-    buildings: [
-      [-20, 92, -6, '#6F8FB5'],
-      [92, 204, 6, '#8B2F2F'],
-      [204, 308, -16, '#D7C7A5'],
-      [308, 420, -8, '#7C9C7C'],
-    ],
-  },
-  'back-bay': {
-    sky: ['#C9B7D9', '#F6E7DA'],
-    glow: '#FFD98A',
-    far: '#B9A8B8',
-    trim: '#2A1D1A',
-    glass: '#F4D58A',
-    sig: 'brownstones',
-    buildings: [
-      [-20, 64, -16, '#7A4A3A'],
-      [64, 148, -34, '#8A5642'],
-      [148, 232, -20, '#6F4034'],
-      [232, 316, -38, '#935E48'],
-      [316, 420, -14, '#7A4A3A'],
-    ],
-  },
-  fenway: {
-    sky: ['#7EC8E3', '#E9F6E0'],
-    glow: '#FFF3B0',
-    far: '#9DBFC0',
-    trim: '#1F4A30',
-    glass: '#F7E08A',
-    sig: 'towers',
-    buildings: [
-      [-20, 100, -10, '#B0593F'],
-      [100, 300, 20, '#2F7A4A'],
-      [300, 420, -10, '#B0593F'],
-    ],
-  },
-  cambridge: {
-    sky: ['#B5C7E0', '#EEF0F5'],
-    glow: '#FFF1C2',
-    far: '#AEB9C8',
-    trim: '#4A2A22',
-    glass: '#9FE3E8',
-    sig: 'lab',
-    buildings: [
-      [-20, 110, -30, '#9C5A45'],
-      [110, 290, -44, '#B26A52'],
-      [290, 420, -20, '#8E5444'],
-    ],
-  },
-  dorchester: {
-    sky: ['#F5C98C', '#FCEBD0'],
-    glow: '#FFD27A',
-    far: '#D2B79A',
-    trim: '#4A3426',
-    glass: '#BFE3F2',
-    sig: 'deckers',
-    buildings: [
-      [-20, 100, -24, '#E8B84A'],
-      [100, 200, -34, '#7BA7C9'],
-      [200, 300, -28, '#D78C8C'],
-      [300, 420, -22, '#8DB27E'],
-    ],
-  },
-};
-
 const rectBox = (r: { x: number; y: number; w: number; h: number }): Box => ({ x0: r.x, y0: r.y, x1: r.x + r.w, y1: r.y + r.h });
 /** Every sign-like board per backdrop (and per prop), for the layout tests. */
 export const SIGN_BOXES: Record<string, Box> = {
@@ -426,7 +315,8 @@ export const SIGN_BOXES: Record<string, Box> = {
   'prop/name-tag': rectBox(PROP_BOXES['name-tag']),
   'prop/phone-footage': rectBox(PROP_BOXES['phone-footage']),
   'prop/icon': rectBox(ICON_PROP_BOX),
-  ...Object.fromEntries(Object.entries(BOSTON_SIGNS).map(([k, b]) => [`boston/${k}`, b])),
+  // each registered city's tall or lettered pieces, as `<city id>/<name>`
+  ...Object.fromEntries(Object.entries(CITY_DATA).flatMap(([id, c]) => Object.entries(c.shop.signs).map(([k, b]) => [`${id}/${k}`, b]))),
 };
 
 /** A point on a quadratic curve. */
@@ -484,7 +374,7 @@ export interface ShopLook {
   floorLine: string;
   floorGrain: string;
 }
-export const SHOP_LOOKS: Readonly<Record<NeighborhoodId, ShopLook>> = {
+const HOME_SHOP_LOOKS: Readonly<Record<NeighborhoodId, ShopLook>> = {
   downtown: {
     wall: ['#F3CB94', '#F2B880'],
     stripe: '#C8925E',
@@ -562,84 +452,11 @@ export const SHOP_LOOKS: Readonly<Record<NeighborhoodId, ShopLook>> = {
     floorLine: '#B8AFC0',
     floorGrain: '#ECE8F0',
   },
-  // Boston (card T2). North End: cream plaster, an oxblood band, dark parish oak
-  'north-end': {
-    wall: ['#E9D2B0', '#F4E4C8'],
-    stripe: '#C9A872',
-    tile: '#F8F1E4',
-    grout: '#DCCDB0',
-    band: '#8C2F2F',
-    rail: '#6B3A22',
-    baseboard: '#4A2A18',
-    floor: '#9C6B3E',
-    floorLine: '#744A28',
-    floorGrain: '#C0905C',
-  },
-  // Southie: harbour blue clapboard, a pub-green band, dark bar wood
-  southie: {
-    wall: ['#8FA9C4', '#CBD8E5'],
-    stripe: '#6E8CAE',
-    tile: '#EEF2F5',
-    grout: '#BCC8D3',
-    band: '#2E5D3A',
-    rail: '#4A3426',
-    baseboard: '#33241A',
-    floor: '#7B5B3E',
-    floorLine: '#563C26',
-    floorGrain: '#9D7A58',
-  },
-  // Back Bay: brownstone walls, a navy band, brass rail, a mahogany floor
-  'back-bay': {
-    wall: ['#A97C5E', '#D9BFA2'],
-    stripe: '#8A5A40',
-    tile: '#F3EADB',
-    grout: '#D6C5AA',
-    band: '#2C3E5C',
-    rail: '#CDA64B',
-    baseboard: '#3A2A20',
-    floor: '#5E3F2A',
-    floorLine: '#3F2A1B',
-    floorGrain: '#8A6446',
-  },
-  // Fenway: ballpark green, a red band, a pale ash rail
-  fenway: {
-    wall: ['#5FA77A', '#CFE8D5'],
-    stripe: '#3E8A5C',
-    tile: '#F2F7F1',
-    grout: '#B9D2BF',
-    band: '#C03A2B',
-    rail: '#E8E1CC',
-    baseboard: '#2F5A3E',
-    floor: '#A8845A',
-    floorLine: '#7D5E3A',
-    floorGrain: '#C9A57A',
-  },
-  // Cambridge: lab white-blue, a teal band, steel rail, a grey epoxy floor
-  cambridge: {
-    wall: ['#D8E3E6', '#F2F6F7'],
-    stripe: '#A9C0C6',
-    tile: '#FFFFFF',
-    grout: '#C5D3D6',
-    band: '#2A8F9C',
-    rail: '#8E9AA3',
-    baseboard: '#5C6870',
-    floor: '#B9BDBF',
-    floorLine: '#8E9396',
-    floorGrain: '#D5D8DA',
-  },
-  // Dorchester: church-hall butter yellow, a spruce band, honey boards
-  dorchester: {
-    wall: ['#F2D78C', '#FAEBC0'],
-    stripe: '#DDB75A',
-    tile: '#FFF9EA',
-    grout: '#E6D5A8',
-    band: '#4F8A6B',
-    rail: '#9A6A3A',
-    baseboard: '#6A4526',
-    floor: '#C79B5F',
-    floorLine: '#966E3A',
-    floorGrain: '#E3BE82',
-  },
+};
+/** The home rooms, then each registered city's own (cities/<id>/shop.ts, read through cities/data.ts). */
+export const SHOP_LOOKS: Readonly<Record<NeighborhoodId, ShopLook>> = {
+  ...HOME_SHOP_LOOKS,
+  ...Object.assign({}, ...Object.values(CITY_DATA).map((c) => c.shop.rooms)),
 };
 
 /**

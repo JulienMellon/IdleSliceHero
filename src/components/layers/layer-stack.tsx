@@ -21,7 +21,7 @@ import { eventBannerView, eventViewNow } from '../endgame/event-model';
 import { STACK } from '../endgame/stack-model';
 import { haptic } from '../game-ui';
 import { chipPhase } from '../order-model';
-import { Portrait } from '../portrait';
+import { Portrait } from '../portrait/index';
 import { emitCheer, emitCoin, emitGameDay, emitPayout } from '../pulse-bus';
 import { TAP } from '../tap-targets';
 import { layerTop, pct5, ROWS } from './layer-model';

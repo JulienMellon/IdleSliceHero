@@ -273,12 +273,8 @@ describe('the next city\'s teaser (teaserFor)', () => {
       signoff: 'I knit you a sweater. Is ugly. Wear it anyway.',
       from: 'Nonna Rosa',
     });
-    // the home words are still in the home table until card R7b has switched the reader and deletes them
-    expect([t('soon.boston.title'), t('soon.boston.line.1'), t('soon.boston.line.2'), t('soon.boston.signoff')]).toEqual([
-      BOSTON_TEASER.title,
-      ...BOSTON_TEASER.lines,
-      BOSTON_TEASER.signoff,
-    ]);
+    // the home table no longer holds the card's words (card R7b): the pack's teaser is the one place they live
+    expect(t('soon.boston.title')).toBe('soon.boston.title');
   });
   it('is null where no pack follows, and for a city that is not in the order', () => {
     expect(teaserFor({ city: 'boston' })).toBeNull(); // Chicago has no pack yet

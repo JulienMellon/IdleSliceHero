@@ -5,9 +5,8 @@
 import { BOSTON_CITY } from '../../content/cities/boston';
 import { BOSTON_IDS } from '../../content/cities/boston/data';
 import { PROP_IDS } from '../../content/types';
+import { BOSTON_LOOKS, BOSTON_SIGNS } from '../cities/boston/shop';
 import {
-  BOSTON_LOOKS,
-  BOSTON_SIGNS,
   CAPTION_ZONE_PT,
   ICON_PROP_BOX,
   ICON_PROP_IDS,

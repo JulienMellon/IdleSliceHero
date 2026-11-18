@@ -25,7 +25,7 @@ import { STRIP, stripKind } from '@/components/report/report-model';
 import { reportView } from '@/engine/features/service';
 import { CLOSE_SLOP, DRAWER_CLOSE_W, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
-import { Portrait } from '@/components/portrait';
+import { Portrait } from '@/components/portrait/index';
 import { HeadFace } from '@/components/scene/head-face';
 import Svg from 'react-native-svg';
 import { CURB_Y, SCENE_H, sceneFrame, sceneView, Storefront } from '@/components/storefront';

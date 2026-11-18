@@ -13,7 +13,7 @@ import { GOAL_BAR, GOAL_FONT_MAX_SCALE, GOAL_GAP, GOAL_LAYOUT, GOAL_PAD, goalBar
 import { buyLabelText } from './a11y-labels';
 import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, SliceIcon, StarIcon } from './icons';
 import { countUpValue, offlineGiftView, type GiftSummary } from './offline-model';
-import { Portrait } from './portrait';
+import { Portrait } from './portrait/index';
 import { emitCoin, emitPayout, onPayout, setCoinTarget } from './pulse-bus';
 import { AdButton } from './store/ad-button';
 import { offlineOffer } from './store/ad-model';

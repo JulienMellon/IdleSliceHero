@@ -11,19 +11,8 @@ import { HOME_CAST } from '../../content/cities/home/cast';
 
 const ROOT = path.resolve(__dirname, '../..');
 
-/** Art files that still draw a pack by id (card R7b moves them into src/components/cities/<id>/ and deletes the entry), by path from src/. */
-const ALLOW: Record<string, string> = {
-  'components/scene/identity.ts': "art module: the shop looks and signage are drawn per neighbourhood id (R7b moves Boston's into its art folder)",
-  'components/scene/background.tsx': "art module: the street backdrops are picked per neighbourhood id (R7b moves Boston's into its art folder)",
-  'components/cutscene/backdrop-art.ts': "art module: the scene backdrops are drawn per neighbourhood id (R7b moves Boston's into its art folder)",
-  'components/franchise/map-art.ts': "art module: the city map's skyline is drawn per city and neighbourhood id (R7b)",
-  'components/city-map.tsx': 'art module: the map reads the per-city drawing by id (R7b)',
-  'components/endgame/boston-sheet.tsx': "the Boston finale sheet is Boston's own screen (R7b moves it into its art folder)",
-  'components/title-card.tsx': 'the "Coming soon" card reads the soon.boston.* copy keys (R7b switches it to teaserFor and deletes them)',
-  'components/slots.tsx': "the slot table mounts Boston's sheet by name (R7b moves it behind the pack's art registry)",
-  // found by this guard, outside R7a's files: needs a small edit by whoever owns it (card R7b)
-  'components/layers/city-dress.ts': "a dead re-export of BOSTON_ASKS (nothing imports it from here): delete the line, then this entry",
-};
+/** Files that still name a pack, each with its reason. Empty since card R7b moved the art into src/components/cities/<id>/; it only shrinks, so it stays empty. */
+const ALLOW: Record<string, string> = {};
 
 /** The files that are the registry itself: the lines a new city adds (cities/README.md lists them). They name the pack once, by design. */
 const REGISTRY: Record<string, string> = {
@@ -31,6 +20,7 @@ const REGISTRY: Record<string, string> = {
   'content/cast.ts': 'CHARACTER_IDS: one import and one line per city',
   'content/franchise.ts': 'CITY_ORDER: the order cities are franchised in',
   'components/cities/index.ts': 'CITY_ART: one import and one entry per city (R6)',
+  'components/cities/data.ts': 'CITY_DATA: the pure half of the art registry, one import per art file and one entry per city (R7b)',
 };
 
 const isSource = (name: string) => /\.tsx?$/.test(name) && !/\.(test|d)\.tsx?$/.test(name);

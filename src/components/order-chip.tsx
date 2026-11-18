@@ -17,7 +17,7 @@ import { skyOf } from './endgame/stack-model';
 import { haptic } from './game-ui';
 import { emitCheer, emitCoin, emitPayout } from './pulse-bus';
 import { chipPhase, chipView, RUSH_HINT } from './order-model';
-import { Portrait } from './portrait';
+import { Portrait } from './portrait/index';
 import { TAP } from './tap-targets';
 import { gameNow } from '../engine/clock';
 

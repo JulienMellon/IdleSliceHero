@@ -169,10 +169,6 @@
 | --- | --- | --- |
 | `goal.mastery` | — | Mastery {n}/18 |
 | `goal.mastery.next` | — | Next: {star} in {shop} |
-| `soon.boston.title` | — | Coming soon: Boston |
-| `soon.boston.line.1` | — | Victor Crust is waiting in Boston. So is the cold. |
-| `soon.boston.line.2` | — | Your crew is packing the sauce. Keep the ovens hot. |
-| `soon.boston.signoff` | Nonna Rosa | I knit you a sweater. Is ugly. Wear it anyway. |
 
 ## 7. Shop text
 

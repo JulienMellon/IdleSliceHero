@@ -8,7 +8,7 @@ import { seenCount } from '@/components/franchise/scrapbook-view';
 import { fitFont, MIN_FONT, SCRAPBOOK_HEAD } from '@/components/endgame/fit-model';
 import { recipeGroups } from '@/components/endgame/recipes-model';
 import { RecipesSection } from '@/components/endgame/recipes-section';
-import { DISPLAY_NAMES, Portrait } from '@/components/portrait';
+import { DISPLAY_NAMES, Portrait } from '@/components/portrait/index';
 import { cityOf } from '@/content/cities';
 import { collectionView } from '@/engine/features/recipes';
 import { nextSceneTeaser } from '@/engine/teaser';

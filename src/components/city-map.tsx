@@ -10,7 +10,7 @@ import { MAP_VIEWBOX } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
 import * as Game from '../engine/game';
-import { canFranchise } from '../engine/features/franchise';
+import { canFranchise, nextCity } from '../engine/features/franchise';
 import { C, F } from '../theme';
 import { attackLite } from './endgame/attack-model';
 import { pipBits, showPips, starPips } from './endgame/mastery-model';
@@ -89,8 +89,6 @@ function BuildSite({ x, y, next }: { x: number; y: number; next: boolean }) {
   );
 }
 
-const BOSTON = OPEN_LOT;
-
 /** Fenway's block in the open lot: a green field, the diamond inside it and a light tower at each corner. */
 function Ballpark({ x, y }: { x: number; y: number }) {
   return (
@@ -110,11 +108,11 @@ function Ballpark({ x, y }: { x: number; y: number }) {
   );
 }
 
-/** The lot for the next city (v5.18): the "Coming soon: Boston" card is the franchise offer now. Its label is the model's, two lines: "Franchise" and the city. */
-function FranchiseLot({ label, onPress }: { label: [string, string]; onPress: () => void }) {
-  const { x, y } = BOSTON;
+/** The lot for the next city (v5.18): the "Coming soon" card is the franchise offer now. Its label is the model's, two lines: "Franchise" and the city. `city` is the next city's id (the testID is `city-<id>`: fixtures press it). */
+function FranchiseLot({ city, label, onPress }: { city: string; label: [string, string]; onPress: () => void }) {
+  const { x, y } = OPEN_LOT;
   return (
-    <G testID="city-boston" onPress={onPress} opacity={0.95}>
+    <G testID={`city-${city}`} onPress={onPress} opacity={0.95}>
       <BuildSite x={x} y={y} next />
       <Rect x={x - 11} y={y + 8.5} width={22} height={8.5} rx={2.2} fill="rgba(59,31,20,0.25)" />
       <Rect x={x - 11} y={y + 7.5} width={22} height={8.5} rx={2.2} fill="#FFFFFF" stroke={C.cheeseDark} strokeWidth={0.6} />
@@ -141,7 +139,7 @@ export function CityMap({
   onPress: (id: NeighborhoodId) => void;
   /** The franchise went through: the screen leaves the old city. */ onFranchised?: () => void;
 }) {
-  // v5.15: the shop under attack is marked; Boston's card opens from its locked tile
+  // v5.15: the shop under attack is marked
   const attack = attackLite(game);
   const attacked = attack.face === 'banner' || attack.face === 'running' ? attack.shopId : null;
   const [flow, setFlow] = useState(false);
@@ -149,6 +147,7 @@ export function CityMap({
   const ids = hoodIds(city);
   const franchiseLabel = lotLabel(game);
   const art = mapArtFor(city.id);
+  const next = nextCity(game);
   const offered = !!franchiseLabel && canFranchise(game);
   return (
     <>
@@ -258,7 +257,7 @@ export function CityMap({
             </G>
           );
         })}
-        {franchiseLabel && offered && <FranchiseLot label={franchiseLabel} onPress={() => setFlow(true)} />}
+        {franchiseLabel && offered && next && <FranchiseLot city={next} label={franchiseLabel} onPress={() => setFlow(true)} />}
       </Svg>
       {flow && (
         <FranchiseFlow

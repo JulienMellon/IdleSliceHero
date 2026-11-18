@@ -8,7 +8,7 @@ import { analytics, EVENTS, purchases, type ProductId } from '../../services';
 import { queryFlag } from '../../services/query';
 import { C, F } from '../../theme';
 import { DiamondIcon } from '../icons';
-import { Portrait } from '../portrait';
+import { Portrait } from '../portrait/index';
 import { pricesFrom, productChips, PRODUCT_RIBBON, productRows, type Prices, type ProductRow } from './store-model';
 import { ChipRow, FounderAwning, Ribbon } from './store-art';
 import { usePurchase } from './use-purchase';
