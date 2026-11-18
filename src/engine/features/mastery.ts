@@ -4,12 +4,13 @@
 // gives the master plaque. Pure rules: the state is only what has been paid, the stars themselves are read off the shops.
 import { MASTERY, MASTERY_STARS, type MasteryStar } from '../../content/endgame';
 import { WEEKLY_COSMETICS } from '../../content/rewards';
-import { FOOTPRINTS, HEAD_KINDS, NEIGHBORHOODS, OVEN_GRADES } from '../../content/tuning';
+import { HEAD_KINDS, NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { allHeadsHired, type GameState, type Shop } from '../game';
 import { grantCosmetic } from '../rewards';
 import type { Feature } from './types';
-import { cityOf, hoodIds } from '../../content/cities';
+import { cityOf, hoodIds, type CityDef } from '../../content/cities';
+import { HOME_CITY } from '../../content/cities/home';
 
 /** One thing the UI should celebrate once: a star just earned, or a cosmetic a milestone just gave. */
 export type MasteryNews = { kind: 'star'; shopId: NeighborhoodId; star: MasteryStar } | { kind: 'cosmetic'; id: string };
@@ -37,32 +38,33 @@ export interface MasteryState {
 export const KEY = 'mastery';
 
 const MILESTONES: readonly number[] = [...MASTERY.cosmeticTotals, MASTERY.masterTotal];
-const TOP_FOOTPRINT = FOOTPRINTS.length - 1;
-const TOP_GRADE = OVEN_GRADES.length - 1;
+/** The top footprint and oven grade of a city (C143: its own fit; the home city's when a caller has no game to name one). */
+const topFootprint = (city: CityDef): number => city.fit.footprints.length - 1;
+const topGrade = (city: CityDef): number => city.fit.ovenGrades.length - 1;
 
 export const starKey = (shopId: NeighborhoodId, star: MasteryStar) => `${shopId}:${star}`;
 
 /** Which of a shop's three stars it has. */
-export function masteryStars(shop: Shop): Record<MasteryStar, boolean> {
-  return { heads: allHeadsHired(shop), flagship: shop.footprint >= TOP_FOOTPRINT, golden: shop.grade >= TOP_GRADE };
+export function masteryStars(shop: Shop, city: CityDef = HOME_CITY): Record<MasteryStar, boolean> {
+  return { heads: allHeadsHired(shop), flagship: shop.footprint >= topFootprint(city), golden: shop.grade >= topGrade(city) };
 }
 
 /** Stars a shop has, 0..3. */
-export const shopStars = (shop: Shop): number => MASTERY_STARS.filter((k) => masteryStars(shop)[k]).length;
+export const shopStars = (shop: Shop, city: CityDef = HOME_CITY): number => MASTERY_STARS.filter((k) => masteryStars(shop, city)[k]).length;
 
 /** Stars in the whole city, 0..18. */
 export function masteryTotal(g: GameState): number {
-  return hoodIds(cityOf(g)).reduce((t, id) => t + shopStars(g.shops[id]), 0);
+  return hoodIds(cityOf(g)).reduce((t, id) => t + shopStars(g.shops[id], cityOf(g)), 0);
 }
 
-// from the tuning list, not SHOP_IDS: game.ts loads this file while it is still being evaluated
+// from the tuning list, not HOME_HOOD_IDS: game.ts loads this file while it is still being evaluated
 export const MASTERY_MAX = NEIGHBORHOODS.length * MASTERY_STARS.length;
 
 /** How far a star is: `have` of `need` steps (heads hired, footprint tier, oven grade), for "2 of 3 heads". */
-function starProgress(shop: Shop, star: MasteryStar): { have: number; need: number } {
+function starProgress(shop: Shop, star: MasteryStar, city: CityDef): { have: number; need: number } {
   if (star === 'heads') return { have: HEAD_KINDS.filter((k) => shop.heads[k]).length, need: HEAD_KINDS.length };
-  if (star === 'flagship') return { have: shop.footprint, need: TOP_FOOTPRINT };
-  return { have: shop.grade, need: TOP_GRADE };
+  if (star === 'flagship') return { have: shop.footprint, need: topFootprint(city) };
+  return { have: shop.grade, need: topGrade(city) };
 }
 
 export interface NextStar {
@@ -83,10 +85,10 @@ export function nextStar(g: GameState): NextStar | null {
   for (const shopId of hoodIds(cityOf(g))) {
     const shop = g.shops[shopId];
     if (!shop.built) continue;
-    const have = masteryStars(shop);
+    const have = masteryStars(shop, cityOf(g));
     for (const star of MASTERY_STARS) {
       if (have[star]) continue;
-      const p = starProgress(shop, star);
+      const p = starProgress(shop, star, cityOf(g));
       const share = p.have / p.need;
       if (share > bestShare + 1e-12) {
         best = { shopId, star, ...p };
@@ -108,7 +110,7 @@ const write = (g: GameState, s: MasteryState): GameState => ({ ...g, x: { ...g.x
 function earnedKeys(g: GameState): { key: string; shopId: NeighborhoodId; star: MasteryStar }[] {
   const out: { key: string; shopId: NeighborhoodId; star: MasteryStar }[] = [];
   for (const shopId of hoodIds(cityOf(g))) {
-    const have = masteryStars(g.shops[shopId]);
+    const have = masteryStars(g.shops[shopId], cityOf(g));
     for (const star of MASTERY_STARS) if (have[star]) out.push({ key: starKey(shopId, star), shopId, star });
   }
   return out;

@@ -44,3 +44,4 @@ next: fresh session; read docs/build/sessions/S5-v5.18.md, resume wave 4 fixes (
 - 2026-11-18 Verify r1: tsc pass, 1768/1768 tests, shots --only 106_t2,140_v2: 0 errors, 20 new (loaded/layout need a full run). Committed; r1 reviews launched.
 - 2026-11-18 r1 gate not met (critic 3 bugs 4 major; code 4 high; story S65, audio AU85 majors). Fix round r1: E3 + T2 first, then V2 + A2, then V1.
 - 2026-11-18 Fix r1: E3 partial (A35 partly, C141 C144 T108; tsc pass, 1 schema fail = S67 -> T2). K2 K3 K4 -> K1 launched; founderCountdownText rename + schema fail sent to T2.
+- 2026-11-18 Fix r1: T2 partial (G110 S66 D506 D507 D509 D510 D516 fixed; tsc pass, 963 tests). G109/S65/S67 heading + C141 callers -> K1. V2 launched (G111, layoutOfShop mirror). Next: A2, V1.

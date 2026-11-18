@@ -290,6 +290,9 @@ export const useGame = create<Store>((set, get) => {
     const wasLoaded = get().loaded;
     let game = wasLoaded ? get().game : G.newGame(now);
     let offline: OfflineSummary | null = null;
+    /** C135: the popup open when the app went to the background; its cash is held back from `game` and was saved with it. */
+    const open = wasLoaded ? get().offline : null;
+    let read = false;
     // a cold launch is always a return; on resume, measure from the last save even if this load fails (C48)
     let awaySeconds = wasLoaded ? Math.max(0, (now - get().game.lastSavedAt) / 1000) : Number.POSITIVE_INFINITY;
     try {
@@ -306,9 +309,15 @@ export const useGame = create<Store>((set, get) => {
           offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id, cityOf(saved)).name, earned: b.earned, managed: b.managed, headsOnly: b.headsOnly, pies: b.pies })), idle: r.idle.map((id) => G.def(id, cityOf(saved)).name), boost: offlineBoost(saved.rewards.boosts, saved.lastSavedAt, r.seconds) };
           game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
         }
+        read = true;
       }
     } catch {
       // Corrupt or unreadable save: start fresh rather than crash.
+    }
+    // C135: a short background keeps the popup the player had not collected yet (the save carried its cash, so hold it back again)
+    if (open && read && !offline) {
+      offline = open;
+      game = { ...game, cash: game.cash - open.earned, totalEarned: game.totalEarned - open.earned };
     }
     // a launch or a real return may play one waiting story beat straight away; a short interruption keeps the gap (C39)
     set({ game, loaded: true, offline, lastSceneEndPlay: resumeSceneEnd(wasLoaded ? get().lastSceneEndPlay : null, awaySeconds, game.playSeconds) });
@@ -356,7 +365,15 @@ export const useGame = create<Store>((set, get) => {
         await loadSave();
       } finally {
         loading--;
-        if (loading === 0) for (const fn of afterLoad.splice(0)) fn();
+        // C139: one callback that throws must not strand the rest (a grant, an ad benefit) behind it
+        if (loading === 0)
+          for (const fn of afterLoad.splice(0)) {
+            try {
+              fn();
+            } catch {
+              // that callback is lost; the next one still runs
+            }
+          }
       }
     },
 

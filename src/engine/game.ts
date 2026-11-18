@@ -18,8 +18,8 @@ import { advanceLine, clampWalkInDebt, emptyLine, LINE, nextTap, piesInFlight, r
 
 /** v6 (Todd's story): 40 scenes, interludes that hold main beats back, manager hire scenes; the migration marks skipped scenes seen. v5 was rewards: daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. */
 export const SAVE_VERSION = 6;
-/** The HOME city's neighbourhood ids (card K1). Engine code that has a game in hand reads `hoodIds(cityOf(g))`; this stays for the feature `init`/`migrate` hooks (no game yet) and the ~50 call sites that read the home city. */
-export const SHOP_IDS: NeighborhoodId[] = [...hoodIds(HOME_CITY)];
+/** The HOME city's neighbourhood ids (card K1). For feature `init`/`migrate` hooks that have no game yet (A35); with a game in hand read `hoodIds(cityOf(g))`. */
+export const HOME_HOOD_IDS: NeighborhoodId[] = [...hoodIds(HOME_CITY)];
 /**
  * C106: the economy marker. 2 = the v5.13 retune (costMult = orderValue, 4 h offline cap, Pier 9 $120M); 3 = the v5.16 rules
  * (managers and heads priced apart, three heads sell half speed while you are away, station prices grow at their own rates,
@@ -1227,7 +1227,7 @@ const scenesById = (scenes: readonly Scene[]): ReadonlyMap<string, Scene> => {
   return m;
 };
 
-const capital = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
+const capital = (id: string) => (def(id) as { name: string } | undefined)?.name ?? id.charAt(0).toUpperCase() + id.slice(1);
 
 /**
  * A line for the goal bar when a main beat has triggered but is held behind a finale the player still has to earn (Uptown behind

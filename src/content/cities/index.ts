@@ -24,9 +24,16 @@ export function hoodIds(city: CityDef): readonly NeighborhoodId[] {
 
 /** The neighbourhood that plays a layer in this city, or null when none does. */
 export function layerHood(city: CityDef, kind: LayerKind): NeighborhoodId | null {
-  for (const n of city.neighbourhoods) if (city.layers[n.id] === kind) return n.id;
-  return null;
+  let per = LAYER_HOODS.get(city);
+  if (!per) LAYER_HOODS.set(city, (per = new Map()));
+  const hit = per.get(kind);
+  if (hit !== undefined) return hit;
+  let found: NeighborhoodId | null = null;
+  for (const n of city.neighbourhoods) if (city.layers[n.id] === kind) { found = n.id; break; }
+  per.set(kind, found);
+  return found;
 }
+const LAYER_HOODS = new WeakMap<CityDef, Map<LayerKind, NeighborhoodId | null>>();
 
 /** The layer a neighbourhood plays in this city, or null. */
 export const layerOf = (city: CityDef, id: NeighborhoodId): LayerKind | null => city.layers[id] ?? null;

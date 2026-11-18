@@ -2,7 +2,7 @@
 import type { Scene, SceneLine } from '../content/types';
 import { STORY_PACING } from '../content/tuning';
 import { cityOf } from '../content/cities';
-import { pendingScenes, sceneId, type GameState } from './game';
+import { def, pendingScenes, sceneId, type GameState } from './game';
 
 /** Taps are ignored for this long after a line appears, so a tapping player can't blow past it. */
 export const LINE_LOCKOUT_MS = 450;
@@ -21,6 +21,8 @@ export function sceneMayOpen(nowMs: number, lastKitchenTapMs: number): boolean {
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+/** The neighbourhood's display name ("North End", "Back Bay"); an id no city has falls back to the capitalised slug. */
+const hoodName = (id: string): string => (def(id) as { name: string } | undefined)?.name ?? cap(id);
 
 /**
  * The heading shown while a scene plays. Titles such as "Brother Sal" or "Dock Saved" give the twist
@@ -28,7 +30,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
  */
 export function sceneHeading(scene: Pick<Scene, 'title' | 'neighborhood' | 'beat' | 'panels'>, panel: number, showReward: boolean): string {
   if (showReward || panel >= scene.panels.length - 1) return scene.title;
-  return `${cap(scene.neighborhood)} · ${scene.beat === 'interlude' ? 'Interlude' : `Act ${scene.beat}`}`;
+  return `${hoodName(scene.neighborhood)} · ${scene.beat === 'interlude' ? 'Interlude' : `Act ${scene.beat}`}`;
 }
 
 /** The scene as it plays for this save: a line that waits on another scene (`ifSeen`: a manager speaking before their hire scene) is left out until that scene has been seen. */

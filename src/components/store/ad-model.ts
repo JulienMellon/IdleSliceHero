@@ -10,7 +10,8 @@
 import { MAX_BOOSTERS, STREAK_SAVE_DIAMONDS } from '../../content/rewards';
 import { DECOR_KINDS } from '../../content/tuning';
 import type { BuyResult, GameState, Task } from '../../engine/game';
-import { nextHire, SHOP_IDS } from '../../engine/game';
+import { nextHire } from '../../engine/game';
+import { cityOf, hoodIds } from '../../content/cities';
 import * as R from '../../engine/rewards';
 import type { AdPlacement, AdResult } from '../../services/types';
 
@@ -94,8 +95,8 @@ const REROLL_POOL: readonly { kind: Task['kind']; target: number; ok: (g: GameSt
   { kind: 'upgrades', target: 10, ok: () => true },
   { kind: 'bonusTaps', target: 3, ok: () => true },
   { kind: 'booster', target: 1, ok: (g) => g.rewards.boosters.length > 0 },
-  { kind: 'hire', target: 1, ok: (g) => SHOP_IDS.some((id) => g.shops[id].built && nextHire(g.shops[id]) !== null) },
-  { kind: 'decor', target: 1, ok: (g) => SHOP_IDS.some((id) => g.shops[id].built && DECOR_KINDS.some((k) => g.shops[id].decor[k] < 3)) },
+  { kind: 'hire', target: 1, ok: (g) => hoodIds(cityOf(g)).some((id) => g.shops[id].built && nextHire(g.shops[id]) !== null) },
+  { kind: 'decor', target: 1, ok: (g) => hoodIds(cityOf(g)).some((id) => g.shops[id].built && DECOR_KINDS.some((k) => g.shops[id].decor[k] < 3)) },
 ];
 
 /** A small repeatable hash (FNV-1a), so the replacement is the same on every device for the same day and row. */

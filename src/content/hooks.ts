@@ -173,8 +173,8 @@ export const NIGHT_OVEN = {
   capSeconds: [TUNING.offlineCapSeconds, 8 * 3600, 12 * 3600],
   /** Price of each tier in minutes of citywide income (the rewards' income, boosts ignored). Tier 0 is free. */
   priceMinutes: [0, 20, 60],
-  /** The shop that must be built before the tier can be bought. */
-  needsBuilt: [null, 'waterfront', 'industrial'] as readonly (NeighborhoodId | null)[],
+  /** The build position (index into the city's neighbourhoods) that must be built before the tier can be bought: 2 and 4 are Waterfront and Industrial at home, and the third and fifth shops anywhere else. */
+  needsBuilt: [null, 2, 4] as readonly (number | null)[],
   /** A tier never costs less than this (a city with no income yet would otherwise get it free). */
   minPrice: 500,
 } as const;

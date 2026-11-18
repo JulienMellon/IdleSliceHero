@@ -13,10 +13,10 @@
 // a jam never happens while the app is closed.
 import { EVENT_FRESH_MS, EVENT_STAMP_MS } from '../../../content/endgame';
 import { JAMS, LAYER_KEYS, SHIFTS } from '../../../content/layers';
-import { FOOTPRINTS } from '../../../content/tuning';
 import { deliveryRate, ovenRate, walkInRate, type BuyResult, type GameState, type Shop } from '../../game';
 import type { Feature } from '../types';
-import { cityOf, layerHood } from '../../../content/cities';
+import { cityOf, layerHood, type CityDef } from '../../../content/cities';
+import { HOME_CITY } from '../../../content/cities/home';
 import type { NeighborhoodId } from '../../../content/types';
 import { freshTimed, gapOf, type TimedSpec } from './suburbs-gameday';
 
@@ -63,7 +63,7 @@ function ruling(g: GameState, now: number): ShiftDef {
 }
 
 /** The share of the oven rate one jammed oven takes: 1 / the footprint's oven slots. */
-export const jamShare = (shop: Pick<Shop, 'footprint'>): number => 1 / FOOTPRINTS[shop.footprint].ovenSlots;
+export const jamShare = (shop: Pick<Shop, 'footprint'>, city: CityDef = HOME_CITY): number => 1 / city.fit.footprints[shop.footprint].ovenSlots;
 
 const jammed = (st: ShiftsState): boolean => st.jam >= 0;
 /** Whether a jam fixes itself: the Head Baker (or the General Manager, who has them all) is there. */
@@ -125,7 +125,7 @@ export interface JamView {
 export function jamView(g: GameState): JamView {
   const st = read(g);
   const on = built(g) && jammed(st);
-  const lost = on ? jamShare(g.shops[hoodOf(g)]) : 0;
+  const lost = on ? jamShare(g.shops[hoodOf(g)], cityOf(g)) : 0;
   return { active: built(g), jammed: on, lost, ovenMult: 1 - lost, nextIn: st.nextAt < 0 ? JAMS.everySeconds : Math.max(0, Math.ceil(st.nextAt - g.playSeconds)), autoFixIn: on ? autoFixIn(g) : null };
 }
 
@@ -136,7 +136,7 @@ function demandFactor(g: GameState, now: number): number {
   const shift = ruling(g, now);
   if (awayNow(st, now) || !jammed(st)) return shift.demand;
   const total = walkInRate(shop) + deliveryRate(shop, g.vehicle);
-  return total > 0 ? Math.min(shift.demand, (ovenRate(shop) * (1 - jamShare(shop))) / total) : shift.demand;
+  return total > 0 ? Math.min(shift.demand, (ovenRate(shop) * (1 - jamShare(shop, cityOf(g)))) / total) : shift.demand;
 }
 
 export const industrialShifts: Feature<ShiftsState> = {

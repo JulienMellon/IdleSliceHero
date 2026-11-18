@@ -6,7 +6,7 @@
 // must add that state to `drawerKey` (the same rule as `stationModels`).
 import { DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEAD_TITLE, OVEN_GRADES, VEHICLES, type DecorKind, type HeadKind } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
-import { cityOf } from '../content/cities';
+import { cityOf, hoodIds } from '../content/cities';
 import { bonusUnlocked } from '../engine/bonus';
 import { money, rate } from '../engine/format';
 import * as G from '../engine/game';
@@ -83,7 +83,7 @@ const stageRateMap = (shop: G.Shop, v: number): Record<G.Stage, number> => ({ pr
 /** Everything the drawer reads from the game except cash: the cache's key, derived from the one input object. */
 export function drawerKey({ game, id }: DrawerInput): string {
   // `bonusUnlocked`: the tutorial's end turns the frames off and the effect lines on (v5.16)
-  return [id, bonusUnlocked(game) ? 'a' : '-', ...G.SHOP_IDS.map((i) => G.shopLevelKey(game, i)), game.dronesUnlocked ? 'd' : '-', id === 'downtown' && !game.shops.downtown.managed ? G.nonnaPizzasLeft(game) : ''].join('#');
+  return [id, bonusUnlocked(game) ? 'a' : '-', ...hoodIds(cityOf(game)).map((i) => G.shopLevelKey(game, i)), game.dronesUnlocked ? 'd' : '-', id === G.firstHood(cityOf(game)) && !game.shops[id].managed ? G.nonnaPizzasLeft(game) : ''].join('#');
 }
 
 interface LevelPart extends Omit<DrawerView, 'bundle' | 'cards' | 'decor'> {
@@ -112,9 +112,10 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
   const rates = stageRateMap(shop, v);
   const minRate = Math.min(...Object.values(rates));
   const tied = (st: G.Stage) => rates[st] <= minRate * (1 + 1e-9);
-  const perk = G.perkOf(id, shop);
+  const perk = G.perkOf(id, shop, city);
   // Until the stations run themselves, upgrades here only pay while you tap: mute them so the hires stand out (C68).
-  const idleShop = !G.runsItself(shop) && id !== 'downtown';
+  const first = id === G.firstHood(city);
+  const idleShop = !G.runsItself(shop) && !first;
   // Expand is still worth it when a station is stuck at its level cap.
   const atCap = (['prep', 'ovens', 'counter', 'tables'] as const).some((w) => shop[w] >= G.levelCap(shop));
   const plus = gainText;
@@ -137,7 +138,7 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
       key: what,
       testID: `buy-${what}`,
       ...props,
-      detail: lock && what !== 'manager' ? lock : lock && what === 'manager' && id !== 'downtown' ? `${lock} · then ×2 income here, and it earns while you're away` : props.detail,
+      detail: lock && what !== 'manager' ? lock : lock && what === 'manager' && !first ? `${lock} · then ×2 income here, and it earns while you're away` : props.detail,
       hot: muted ? false : props.hot,
       muted,
       tone: expandCost !== null ? 'expand' : buttonTone({ lock, gain, muted }),
@@ -190,11 +191,11 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
     }
     cards.push(
       card('manager', {
-        icon: id === 'downtown' ? { t: 'nonna' } : { t: 'gm', name: city.managers[id].id },
-        title: id === 'downtown' ? 'Manager: Nonna Rosa' : `Hire ${aOrAn(nd.name)} ${nd.name} manager`,
-        detail: id === 'downtown' ? `Keep baking — ${G.nonnaCountdownText(game)}` : after ? managerEffect() : `General Manager: ×2 income here, and it earns while you're away (${plus(G.shopEarnings(game, id))})`,
+        icon: first && city.managers[id].id === 'nonna-rosa' ? { t: 'nonna' } : { t: 'gm', name: city.managers[id].id },
+        title: first ? `Manager: ${city.managers[id].name}` : `Hire ${aOrAn(nd.name)} ${nd.name} manager`,
+        detail: first ? `Keep baking — ${G.nonnaCountdownText(game)}` : after ? managerEffect() : `General Manager: ×2 income here, and it earns while you're away (${plus(G.shopEarnings(game, id))})`,
         wide: true,
-        costLabel: id === 'downtown' ? 'Soon' : undefined,
+        costLabel: first ? 'Soon' : undefined,
       }),
     );
   }
@@ -249,7 +250,7 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
     cards,
     decorTitle: `Decor · each tier: +${Math.round((perk?.decorBoost ?? DECOR_BOOST) * 100)}% pizza price in this shop`,
     decor,
-    built: G.SHOP_IDS.filter((i) => game.shops[i].built).length,
+    built: hoodIds(city).filter((i) => game.shops[i].built).length,
   };
 }
 

@@ -4,7 +4,7 @@
 import { HOME_CITY } from '../../../content/cities/home';
 import { finaleId, newGame, TUTORIAL_DONE, type GameState } from '../../../engine/game';
 import { franchise, franchiseGain } from '../../../engine/features/franchise';
-import { advance, cityRows, lotLabel, momentView, retreat, sheetView, starsSummary, times } from '../franchise-model';
+import { advance, cityRows, confettiPieces, countUp, managersText, lotLabel, momentView, retreat, sheetView, starsSummary, times } from '../franchise-model';
 import { seenCount } from '../scrapbook-view';
 
 const NOW = new Date(2026, 10, 11, 12).getTime();
@@ -64,5 +64,36 @@ describe('in Boston', () => {
   });
   it('counts a city\'s own seen scenes in its Scrapbook header', () => {
     expect(seenCount(['downtown-1', 'north-end-1'], HOME_CITY.scenes)).toBe(`Stories 1/${HOME_CITY.scenes.length}`);
+  });
+});
+
+describe('the franchise moment (D506)', () => {
+  it('counts the Stars up to exactly what the franchise pays, never past it, never backwards', () => {
+    expect(countUp(40, 0)).toBe(0);
+    expect(countUp(40, 1)).toBe(40);
+    let last = 0;
+    for (let i = 0; i <= 20; i++) {
+      const v = countUp(40, i / 20);
+      expect(v).toBeGreaterThanOrEqual(last);
+      expect(v).toBeLessThanOrEqual(40);
+      last = v;
+    }
+    expect(countUp(0, 0.5)).toBe(0);
+  });
+  it('has a confetti burst that is the same every time, spread all round, in more than one colour', () => {
+    const a = confettiPieces(18);
+    expect(a).toEqual(confettiPieces(18));
+    expect(new Set(a.map((p) => p.color)).size).toBeGreaterThan(2);
+    expect(Math.max(...a.map((p) => Math.cos(p.angle)))).toBeGreaterThan(0.9);
+    expect(Math.min(...a.map((p) => Math.cos(p.angle)))).toBeLessThan(-0.9);
+  });
+  it('shows a postcard from Boston naming its six neighbourhoods, one colour each', () => {
+    const m = momentView(cleared())!;
+    expect(m.postcard.title).toBe('Greetings from Boston');
+    expect(m.postcard.line).toBe('North End · Southie · Back Bay · Fenway · Cambridge · Dorchester');
+    expect(m.postcard.colors).toHaveLength(6);
+  });
+  it('says "1 with a manager", not "1 with managers" (D516)', () => {
+    expect([0, 1, 4].map(managersText)).toEqual(['no managers yet', '1 with a manager', '4 with managers']);
   });
 });

@@ -12,7 +12,7 @@
 import { SERVICE } from '../../content/service';
 import type { NeighborhoodId } from '../../content/types';
 import { bonusUnlocked } from '../bonus';
-import { counterRate, featureMults, ovenRate, prepRate, runsItself, SHOP_IDS, demandRate, valuePerPizza, type GameState } from '../game';
+import { counterRate, featureMults, ovenRate, prepRate, runsItself, HOME_HOOD_IDS, demandRate, valuePerPizza, type GameState } from '../game';
 import type { BarkAsk } from './heads';
 import { FEATURES } from './registry';
 import type { Feature } from './types';
@@ -40,7 +40,7 @@ export interface ServiceStateSlice {
 }
 
 const zeroShop = (): ShopService => ({ below: 0, cold: false, tip: false, slam: { prep: 0, oven: 0, counter: 0 } });
-const fresh = (): ServiceStateSlice => ({ at: 0, shops: Object.fromEntries(SHOP_IDS.map((id) => [id, zeroShop()])) as Record<NeighborhoodId, ShopService> });
+const fresh = (): ServiceStateSlice => ({ at: 0, shops: Object.fromEntries(HOME_HOOD_IDS.map((id) => [id, zeroShop()])) as Record<NeighborhoodId, ShopService> });
 const read = (g: GameState): ServiceStateSlice => (g.x?.[KEY] as ServiceStateSlice | undefined) ?? fresh();
 
 // ---------- the numbers ----------
@@ -110,7 +110,7 @@ function effectOf(g: GameState, id: NeighborhoodId, now: number, f?: Flow): { st
   const st = read(g);
   if (!stampFresh(st, now)) return { state: 'normal', mult: 1 };
   const service = serviceOf(f ?? flowOf(g, id, now));
-  if (st.shops[id].cold && service < SERVICE.coldBelow - 1e-9) return { state: 'cold', mult: SERVICE.coldMult };
+  if (st.shops[id]?.cold && service < SERVICE.coldBelow - 1e-9) return { state: 'cold', mult: SERVICE.coldMult };
   if (service >= SERVICE.tipAt - 1e-9) return { state: 'tipping', mult: SERVICE.tipMult };
   return { state: 'normal', mult: 1 };
 }
