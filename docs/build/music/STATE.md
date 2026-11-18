@@ -9,14 +9,13 @@ bank: C MuseScore_General_Full.sf3      # letter and file name once Julien picks
 cards:                 # todo | running | done | partial | blocked
   M0 done, M1a done, M1b done, M1c done
 review: docs/build/music/review-R1-audio.md NOT SATISFIED, bugs 0 major 1 (AU78 fixed) minor 6 open (AU79-AU84), next ID AU85
-last_reel: tools/audio/build/reel/R1.mp3 (2026-11-16, sent)
+last_reel: tools/audio/build/reel/R1.mp3 (2026-11-16, notes round 1, sent)
 heard: R0 → "C"           # round → Julien's verdict in five words
-open: none
-next: await Julien: are the loops relaxing enough, anything bagpipe- or horn-like? "go" starts R2 (default: build nothing)
+open: growth eval docs/build/music/notes/R1-growth-eval.md awaits Julien (stems need +1.5 MB and src/audio director changes); lead minus bed -1.7 LU on one loop (D5 default is -2 to -4)
+next: await Julien (after notes round 1 of R1): is the piano drone gone, are the loops relaxing enough? "go" starts R2; a second set of notes is notes round 2 (default: build nothing)
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-15 track set up from docs/PLAN-music-rewrite.md. Nothing built.
 - 2026-11-16 M0 DONE. Built: 0 cues shipped, audio 13.28 MB of 14 unchanged, reel R0.mp3 62.85 s. Needs: recommend D (2–5 kHz share 1.9%, sustain ratio 0.59); D licence notes uncertain sample origin.
 - 2026-11-16 R0 verified (jest src\/audio 53 pass, assets\/audio + src untouched); reel sent; step listen.
 - 2026-11-16 Julien heard R0: "C". Round R1 started; M1a launched.
@@ -25,3 +24,5 @@ next: await Julien: are the loops relaxing enough, anything bagpipe- or horn-lik
 - 2026-11-16 M1c DONE. Built: 8 loops, audio 13.87 MB of 14 (13867227 B), full build pass, lead minus bed -3.0 to -3.6 LU. Needs: nothing (judgement calls: HQ motif twice per loop; Industrial lead vibes then flute).
 - 2026-11-16 R1 verified and committed e950b8f; review NOT SATISFIED (0/1/6), AU78 major: motif tonic held over I maj9; fix pass launched.
 - 2026-11-16 R1 fix pass DONE (AU78: 6/9 voicings, clash check in build). Built: 5 cues, audio 13.87 MB of 14 (13866695 B), lead minus bed -2.9 to -3.6 LU. Verified (1581 tests); reel R1 sent; step listen.
+- 2026-11-16 Julien heard R1: notes, no yes (droning sustained piano chords on tracks 2, 4, 5; track 3 comping too busy; asks to evaluate music that builds as the restaurant grows). Notes round 1 launched.
+- 2026-11-16 Notes round 1 DONE. Built: 8 loops, audio 13877074 B of 14680064, chord overlaps 0 on 6 loops (University 2, melody grace notes), lead minus bed -1.7 to -3.2 LU. Verified (1581 tests); reel R1 sent; step listen. Needs: growth eval choice (trim loops ~20 s or raise cap; director changes outside lane).

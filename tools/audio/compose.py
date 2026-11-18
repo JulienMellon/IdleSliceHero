@@ -438,7 +438,7 @@ def suburbs():
     for k, (sec, hm, mel, w) in enumerate(sections):
         nb = len(hm)
         quiet = sec in ('intro', 'bed')
-        jazz.comp(rh, hm, jazz.SWING44, start=t, seed=21 + bar_i, vel=40 if quiet else 46)
+        jazz.comp(rh, hm, jazz.SWING44, start=t, seed=21 + bar_i, vel=40 if quiet else 46, antic_p=0.15, answer_p=0.4)  # R1 note: too busy
         jazz.brushes(perc, nb, jazz.SWING44, start=t, seed=31 + bar_i, scale=0.85 if quiet else 1.0, bar0=bar_i)
         if sec in ('B', 'march'):
             walk_from = t if walk_from is None else walk_from
