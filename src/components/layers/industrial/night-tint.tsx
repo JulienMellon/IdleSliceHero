@@ -8,7 +8,8 @@ import { shiftView } from '../../../engine/features/layers/industrial-shifts';
 import { useGame } from '../../../store/game-store';
 import { builtHood } from '../city-layers';
 import { C, F } from '../../../theme';
-import { FRONT_TOP, INK, P, sceneFit } from '../../scene/projection';
+import { isMirrored } from '../../../content/shop-layout';
+import { drawShift, FRONT_TOP, INK, P, sceneFit } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
 import { layoutOfShop } from '../shop-layout';
 import { toWindow } from '../layer-geometry';
@@ -18,7 +19,7 @@ import { MOON, nightShape, payTag, shiftTint, WARM } from './shift-model';
 /** The pizzeria's roof edge in scene units (the pitched roof's peak sits above the fascia's top). */
 const ROOF_Y = P(0, 0, FRONT_TOP)[1] - 62;
 
-/** Where the ×2 badge hangs, in scene units: right of the sign's plate. */
+/** Where the ×2 badge hangs, in the one-screen scene's units (a wider frame moves it by `drawShift`, the sign stands at the frame's centre): right of the sign's plate. */
 const BADGE = { x: 312, y: 139, size: 34 } as const;
 
 export const NightTint = memo(function NightTint({ shopId, width, height }: SceneSlotProps) {
@@ -34,10 +35,10 @@ export const NightTint = memo(function NightTint({ shopId, width, height }: Scen
   const tint = shiftTint(shift);
   if (!tint) return null;
   const f = sceneFit(width, height, frame);
-  const shape = nightShape({ L: Number(L), R: Number(R) }, frame.width, P(0, 0)[1], ROOF_Y);
+  const shape = nightShape({ L: Number(L), R: Number(R) }, frame.width, P(0, 0)[1], ROOF_Y, isMirrored(shopId));
   const night = shift === 'night';
   const tag = payTag(Number(value));
-  const at = toWindow(f, BADGE.x, BADGE.y);
+  const at = toWindow(f, BADGE.x + drawShift(frame), BADGE.y);
   return (
     <View testID="shift-tint" pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} style={StyleSheet.absoluteFill}>

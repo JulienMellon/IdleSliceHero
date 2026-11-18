@@ -5,7 +5,7 @@ import { industrialShifts, shiftView, type ShiftsState } from '../../../../engin
 import { newGame, type GameState } from '../../../../engine/game';
 import { chipPillWidth } from '../../university/layer-model';
 import { layout } from '../../../scene/layout';
-import { FRONT_TOP, P, SCENE_W } from '../../../scene/projection';
+import { FRONT_TOP, P, sceneFrame } from '../../../scene/projection';
 import { MOON, nightShape, payTag, shiftChip, shiftRows, shiftTint, whistle } from '../shift-model';
 
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
@@ -70,15 +70,25 @@ describe('the night falls on the sky, not on the pizzeria (D484)', () => {
   const roofY = P(0, 0, FRONT_TOP)[1] - 62;
   it.each([0, 1, 2, 3, 4])('at footprint %i the shop\u2019s box is cut out of the tint, inside the scene', (fp) => {
     const lay = layout(fp, 1, 1, 1, 0, 2, 0);
-    const { sky, house, path } = nightShape(lay, SCENE_W, frontY, roofY);
+    const W = sceneFrame(fp).width;
+    const { sky, house, path } = nightShape(lay, W, frontY, roofY);
+    expect(sky.x1).toBe(W);
     expect(house.x0).toBeGreaterThanOrEqual(0);
-    expect(house.x1).toBeLessThanOrEqual(SCENE_W);
+    expect(house.x1).toBeLessThanOrEqual(W);
     expect(house.x0).toBeLessThan(lay.L);
     expect(house.x1).toBeGreaterThan(lay.R);
     // the box lies inside the tinted area, so the cut-out leaves sky on every side but the bottom
     expect(house.y0).toBeGreaterThan(sky.y0);
     expect(house.y1).toBe(sky.y1);
     expect((path.match(/M/g) ?? []).length).toBe(2);
+  });
+  it.each([3, 4])('the mirrored plan\u2019s box is the plain one reflected about the frame\u2019s centre, at footprint %i', (fp) => {
+    const lay = layout(fp, 1, 1, 1, 0, 2, 0);
+    const W = sceneFrame(fp).width;
+    const plain = nightShape(lay, W, frontY, roofY).house;
+    const flipped = nightShape(lay, W, frontY, roofY, true).house;
+    expect(flipped.x0).toBeCloseTo(W - plain.x1, 6);
+    expect(flipped.x1).toBeCloseTo(W - plain.x0, 6);
   });
   it('keeps the moon in the visible sky, clear of the roof', () => {
     expect(MOON.cx - MOON.r).toBeGreaterThan(0);

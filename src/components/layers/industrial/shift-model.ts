@@ -63,10 +63,13 @@ export interface Box {
 /**
  * Where the night falls: the sky and the skyline are tinted, the pizzeria is not (a flat wash over the whole scene greyed every face). The
  * building's box is the front wall's width at the front line (`frontY`) up to the roof; the tint covers the scene's width down to the front line
- * except that box. `roofY` is the roof's top edge in scene units. The street below the front line keeps its colours (street lamps).
+ * except that box (`mirrored`: the second floor plan, the room reflected about the frame's centre). `roofY` is the roof's top edge in scene units. The street below the front line keeps its colours (street lamps).
  */
-export function nightShape(lay: { L: number; R: number }, sceneW: number, frontY: number, roofY: number): { sky: Box; house: Box; path: string } {
-  const house: Box = { x0: Math.max(0, lay.L - 12), y0: roofY, x1: Math.min(sceneW, lay.R + 12), y1: frontY };
+export function nightShape(lay: { L: number; R: number }, sceneW: number, frontY: number, roofY: number, mirrored = false): { sky: Box; house: Box; path: string } {
+  // `lay` is the plain plan's room in the frame's space (`sceneW` wide, v5.18: wider than a screen for the two big tiers); the mirrored plan reflects it about the frame's centre
+  const L = mirrored ? sceneW - lay.R : lay.L;
+  const R = mirrored ? sceneW - lay.L : lay.R;
+  const house: Box = { x0: Math.max(0, L - 12), y0: roofY, x1: Math.min(sceneW, R + 12), y1: frontY };
   const sky: Box = { x0: 0, y0: 0, x1: sceneW, y1: frontY };
   const r = (b: Box) => `M${b.x0} ${b.y0} H${b.x1} V${b.y1} H${b.x0} Z`;
   return { sky, house, path: `${r(sky)} ${r(house)}` };
