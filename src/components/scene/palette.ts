@@ -43,7 +43,7 @@ export function seatPalette(shirtBase: number, hairBase: number, nShirts: number
 /** The ice the cold line's waiting guests are tinted with (D514). */
 export const FROST = '#BFE3F7';
 /** `hex` mixed `k` of the way to FROST: a waiting guest's shirt, hair or cap while the line is cold (cast.ts). The same colour back for k = 0. */
-export function frostTint(hex: string, k = 0.5): string {
+export function frostTint(hex: string, k = 0.6): string {
   const a = parseInt(hex.slice(1), 16);
   const b = parseInt(FROST.slice(1), 16);
   const mix = (sh: number) => Math.round(((a >> sh) & 255) * (1 - k) + ((b >> sh) & 255) * k);
