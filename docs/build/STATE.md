@@ -37,3 +37,4 @@ next: v5.19 is outside the 11-13 handoff plan; ask Julien before starting it. v5
 - 2026-11-18 Fix r4: A2 U8 fixed (director trackNow memo; 1919 tests). A2 card itself still carried (music STATE round R1).
 - 2026-11-18 Fix r4: V2 done (D512 D514 lift+frost C149 U25 A29 U21 T110; D481 already in HEAD; 45 strip-clear tests). Leftovers sent to V2: shop-ui piesToGo, storefront A37, layer-stack D505.
 - 2026-11-18 Fix r4 closed: V2 leftovers done (C137 shop-ui, A37 storefront, D505 layer-stack; 146 shot frost ok). tsc pass, 1919/1919.
+- 2026-11-18 Julien decisions: D493 gate rival until Suburbs 2 stars; hire-stack walkers behind strip stay (closed); D495 refit first goal <$50 AND start with one pizza at a time not four, slow money velocity overall (cost estimate asked); v5.19: write VERSION.md + cards for approval first.
