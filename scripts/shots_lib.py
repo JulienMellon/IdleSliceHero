@@ -384,7 +384,7 @@ def _open(browser, save, when, ahead_ms, storage):
     c.clock.pause_at(start + datetime.timedelta(seconds=1))
     pg = c.new_page()
     pg.on("console", lambda m: m.type == "error" and report["errors"].append(f"console: {m.text}"))
-    pg.on("pageerror", lambda e: report["errors"].append(f"pageerror: {e}"))
+    pg.on("pageerror", lambda e: report["errors"].append(f"pageerror: {e} STACK={getattr(e,"stack",None)}"))
     _hold_network(pg)
     first_load(pg, start + datetime.timedelta(seconds=1))
     _holding(pg)

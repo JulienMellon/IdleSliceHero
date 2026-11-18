@@ -16,7 +16,7 @@
 - [x] **4. The cold line.** While `reportView(...).state` is `cold`, draw the queue at `queueShare` of its length (carried from v5.16).
 - [x] **5. Off-screen cues.** (cues, the tap-to-scroll and the `askScroll` bus are in; a tap on a report lamp needs report-strip / report-sheet to call `askScroll`: see the report) A chevron at the screen edge when something that wants attention is off screen: a Slammed station (from the report's lamps), a jammed oven, a head's bubble, a tappable station in a hand-run shop. One cue per side, the most urgent. Tapping a cue scrolls there, and tapping a lamp in the shop report scrolls to its station: every place stays reachable by taps alone (Julien's October rule was taps only; the drag is an addition, never a requirement).
 - [x] **6. Cost check.** (Flagship 2936 -> 3425 SVG nodes, +17%) Count the SVG nodes of a Flagship before and after and report both. If the count grows by more than 50%, say which group grew and stop before step 7.
-- [ ] **7. Carried.** Rows with owner S in the carried-notes file from your spawn prompt.
+- [x] **7. Carried.** (night tint follows the wide and mirrored frame, D484) Rows with owner S in the carried-notes file from your spawn prompt.
 
 ## Fixtures (`scripts/fixtures/140_v2.py`, shots 140–147)
 140 a Restaurant, scrolled to the kitchen; 141 the same, scrolled to the dining room; 142 a Flagship, centre; 143 a Flagship during a rush with a cue pointing at the Slammed ovens; 144 Waterfront mirrored; 145 Industrial mirrored with a jam off screen and its cue; 146 a cold line with the short queue; 147 a Corner shop, unchanged, for comparison.
