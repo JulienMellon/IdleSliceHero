@@ -1,0 +1,31 @@
+{
+  "version": "v5.18-r3",
+  "errors": [],
+  "shots": [
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/106-franchise-confirm.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/107-franchise-moment.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/108-boston-city.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/109-north-end.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/110-southie.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/111-back-bay.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/112-fenway.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/113-cambridge.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/114-dorchester.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/115-trish-hq.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/116-boston-shop-layer.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/117-home-scrapbook-from-boston.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/140-restaurant-kitchen.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/141-restaurant-dining.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/142-flagship-centre.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/143-flagship-rush-cue.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/144-waterfront-mirrored.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/145-industrial-jam-cue.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/146-cold-short-queue.png",
+    "/home/user/IdleSliceHero/screenshots/v5.18-r3/147-corner-unchanged.png"
+  ],
+  "loaded": false,
+  "only": [
+    "106_t2",
+    "140_v2"
+  ]
+}

@@ -4,12 +4,12 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.18
-step: fix                       # setup | waves | verify | review | fix | close
-round: r2              # r1 | r2 | r3
-last_shots: v5.18-r2           # label of the last screenshot set that passed verify
+step: review                    # setup | waves | verify | review | fix | close
+round: r3              # r1 | r2 | r3
+last_shots: v5.18-r3           # label of the last screenshot set that passed verify
 codecritic_range_start: 229f874
 cards:                 # todo | running | done | partial | blocked
-  K1: done  W3: done  V1: running  E3: carried  T2: done  A2: carried  V2: partial
+  K1: done  W3: done  V1: partial  E3: carried  T2: done  A2: carried  V2: partial
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.18/review-r2-critic.md (r2 NOT SATISFIED; bug 0 major 0 minor 9; E2 U2 S4 T1; D506 D510 D512-D514 D481 D493 D495 D505)
   code:   docs/build/v5.18/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 23; E14 U5 S2 N3 A1)
@@ -33,3 +33,5 @@ next: fresh session; read docs/build/sessions/S5-v5.18.md. Fix round r2 (README 
 - 2026-11-18 Fix r2: E3 blocked, nothing in its files; D493 D495 carried (v5.17 choice / Julien pacing decision). V2 launched.
 - 2026-11-18 Fix r2: T2 done (D506 D510; tsc pass, 935 component tests). V1 launched.
 - 2026-11-18 Fix r2: V2 partial (D513 fixed; viewX0/viewX1 plumbed). Needs: D512 clamp in layers/industrial/jam-overlay.tsx + jam-model.ts pillBox (no card in scope) -> carried; D514 report strip vs cold guest = decision for Julien, carried.
+- 2026-11-18 Fix r2: V1 partial (no new edits; D513 confirmed; D512 D514 as V2 said). Round r3 verify.
+- 2026-11-18 Verify r3: tsc pass, 1830/1830, --only 106_t2,140_v2: 0 errors, 7 changed 13 same (loaded/layout need a full run). r3 re-checks launched.
