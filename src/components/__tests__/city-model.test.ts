@@ -2,6 +2,7 @@
 import { NEIGHBORHOODS, NONNA_TAKEOVER } from '../../content/tuning';
 import * as G from '../../engine/game';
 import { money, pizzasLeft } from '../../engine/format';
+import { cityOf } from '../../content/cities';
 import { lotView } from '../city-model';
 
 const n = (id: string) => NEIGHBORHOODS.find((x) => x.id === id)!;
@@ -46,5 +47,25 @@ describe('city lots held back by Nonna (D305)', () => {
     expect(q.locked).toBe(true);
     expect(q.dim).toBe(false);
     expect(lotView(s, n('downtown')).kind).toBe('built');
+  });
+});
+
+describe('C146: the pin names the own-city founder, and the tab gets its words without slicing', () => {
+  test('home: "Nonna in 60" and "60 pies to go"', () => {
+    const s = withSold(40);
+    const left = G.nonnaPizzasLeft(s);
+    const v = lotView(s, n('suburbs'));
+    expect(v.piesToGo).toBe(`${pizzasLeft(left)} pies to go`);
+    expect(lotView(withSold(5000), n('suburbs')).piesToGo).toBeNull();
+  });
+  test('Boston: the pin says Father Dom, never Nonna', () => {
+    const city = cityOf({ city: 'boston' });
+    const s = G.newGame(0, 'boston');
+    const next = city.neighbourhoods[1];
+    const v = lotView(s, next);
+    expect(v.kind).toBe('nonna');
+    expect(v.pin).not.toMatch(/Nonna/);
+    expect(v.pin).toMatch(/^Father Dom in /);
+    expect(v.piesToGo).toMatch(/pies to go$/);
   });
 });

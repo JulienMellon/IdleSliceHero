@@ -109,14 +109,16 @@ const routeCache = new WeakMap<Layout, Map<string, Routes>>();
 export const IDLE_WALK_Y = -16;
 
 function buildRoutes(lay: Layout, sceneW: number, idle: boolean, patio: number): Routes {
-  const walkY = idle ? IDLE_WALK_Y : GUEST_WALK_Y;
-  const outY = idle ? IDLE_WALK_Y : DOOR_OUT_Y;
+  // the managed lanes stay above the shop report's strip (D514: a walk-in used to cross behind it): `lay.floorY`, none in the plain layout. An unmanaged shop's lane is already the raised one (D352).
+  const above = (y: number) => Math.max(y, lay.floorY);
+  const walkY = idle ? IDLE_WALK_Y : above(GUEST_WALK_Y);
+  const outY = idle ? IDLE_WALK_Y : above(DOOR_OUT_Y);
   const spot = lay.spots[0];
   const { driverX, driverPauseX, guestX, guestPauseX } = lay.door.lanes;
   const at: Pt = [spot.x, spot.y];
   const inside: Pt = [driverX, DOOR_IN_Y];
   const outside: Pt = [driverPauseX, outY];
-  const street: Pt = [lay.walk.away, idle ? IDLE_WALK_Y : -30];
+  const street: Pt = [lay.walk.away, idle ? IDLE_WALK_Y : above(-30)];
   // walk the exit lane (behind the front diners' heads, D353) to the counter's end, then step forward to the
   // doorway lane before reaching the walk-in waiting beside the counter (D336), and out
   // v5.3: step straight forward from the pickup spot to the doorway lane, then across in front of the walk-in

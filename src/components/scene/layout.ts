@@ -267,6 +267,8 @@ export interface Layout {
   driverQueue: Pt[];
   /** Where the "N drivers idle" tag hangs: over the middle of the driver group. */
   waitTag: Pt;
+  /** The lowest depth (room y, smaller = nearer the viewer) a standing or walking figure's feet may take: the shop report's strip hides what is lower (strip-clear.ts `liftLayout`, D514). No floor: -Infinity. */
+  floorY: number;
   /** The pill's left edge never goes left of this screen x: the back row's seated faces end here (D439: the long pill grazed the walk-in at the right-hand back table). */
   tagLeft: number;
 }
@@ -478,7 +480,7 @@ function planRoom(fp: number, ovenCount: number, cookCount: number, staffCount: 
   // the walkers come in from the drawing's left edge (30 past it) and go off past its right (50): the plain plan has the door on the right
   const walk = { from: frame.x0 - 30, away: frame.x0 + frame.width + 50 };
   return { fp, frame, mirrored: false, L, R, prep, prep2, cooks, ovens, bay: { x0: bay.x0, x1: bay.x1 }, ovenCols, counter, staff, door, jamb: { x0: d0 - 8, x1: R - 8 }, spots, orderSpots, tables, bakers, ledge, // D282: the vehicle parks well left of the walk-ins' turn-in (guestPauseX = d0 − 6)
-    scooter, tree: { x: PLANTER_X(L, frame) }, sign: { x: signX }, prop: { x: propX }, patio, queue, queueTag, driverQueue, waitTag, tagLeft, walk };
+    scooter, tree: { x: PLANTER_X(L, frame) }, sign: { x: signX }, prop: { x: propX }, patio, queue, queueTag, driverQueue, waitTag, tagLeft, walk, floorY: -Infinity };
 }
 
 /** The pills keep this far (screen) from the screen edge (D420: the "×11 waiting" pill used to end 3 pt from it). */

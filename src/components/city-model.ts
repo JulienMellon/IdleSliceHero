@@ -4,12 +4,15 @@
 import type { NeighborhoodDef } from '../content/tuning';
 import { money, pizzasLeft } from '../engine/format';
 import * as G from '../engine/game';
+import { cityOf } from '../content/cities';
 
 export interface LotView {
   /** built: a pizzeria; buildable: next in line and free to build; nonna: next in line, held until Nonna takes over; queued: waiting for the lot before it. */
   kind: 'built' | 'buildable' | 'nonna' | 'queued';
   /** The caption on the map pin ("" for a built lot, which shows its income instead). */
   pin: string;
+  /** C146: the countdown as plain words for a tab ("2.21K pies to go"); null unless the lot is held by the founder's takeover. */
+  piesToGo: string | null;
   /** The list row's second line (unbuilt lots only). */
   rowSub: string;
   /** The list row's right-hand text; null shows the padlock instead. */
@@ -22,14 +25,22 @@ export interface LotView {
   tappable: boolean;
 }
 
+/** The first shop's founder as the pin names her: the city's own manager ("Father Dom" in Boston), "Nonna" at home. Same rule as the countdown text's (engine `founderName`, private). */
+function founderShort(s: G.GameState): string {
+  const city = cityOf(s);
+  const name = city.managers[G.firstHood(city)]?.name ?? 'The founder';
+  return name.startsWith('Nonna ') ? 'Nonna' : name;
+}
+
 export function lotView(s: G.GameState, n: NeighborhoodDef): LotView {
-  if (s.shops[n.id].built) return { kind: 'built', pin: '', rowSub: '', rowRight: null, locked: false, dim: false, tappable: true };
+  if (s.shops[n.id].built) return { kind: 'built', pin: '', piesToGo: null, rowSub: '', rowRight: null, locked: false, dim: false, tappable: true };
   const isNext = G.nextToBuild(s)?.id === n.id;
-  if (!isNext) return { kind: 'queued', pin: '???', rowSub: 'Build the previous pizzeria first', rowRight: null, locked: true, dim: false, tappable: false };
+  if (!isNext) return { kind: 'queued', pin: '???', piesToGo: null, rowSub: 'Build the previous pizzeria first', rowRight: null, locked: true, dim: false, tappable: false };
   // the only lock the next lot can have is Nonna's takeover (the previous lot is built by definition)
   if (G.buildLock(s, n.id) !== null) {
     const left = G.nonnaPizzasLeft(s);
-    return { kind: 'nonna', pin: left > 0 ? `Nonna in ${pizzasLeft(left)}` : 'Nonna soon', rowSub: G.founderCountdownText(s), rowRight: null, locked: true, dim: true, tappable: false };
+    const who = founderShort(s);
+    return { kind: 'nonna', pin: left > 0 ? `${who} in ${pizzasLeft(left)}` : `${who} soon`, piesToGo: left > 0 ? `${pizzasLeft(left)} pie${left <= 1 ? '' : 's'} to go` : null, rowSub: G.founderCountdownText(s), rowRight: null, locked: true, dim: true, tappable: false };
   }
-  return { kind: 'buildable', pin: `Build ${money(n.buildCost)}`, rowSub: `Pays ${money(n.orderValue)} a pizza · manager ${money(n.managerCost)}`, rowRight: `Build ${money(n.buildCost)}`, locked: false, dim: false, tappable: true };
+  return { kind: 'buildable', pin: `Build ${money(n.buildCost)}`, piesToGo: null, rowSub: `Pays ${money(n.orderValue)} a pizza · manager ${money(n.managerCost)}`, rowRight: `Build ${money(n.buildCost)}`, locked: false, dim: false, tappable: true };
 }

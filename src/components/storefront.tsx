@@ -52,6 +52,7 @@ import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverl
 import { FasciaSign } from './scene/facade';
 import { fasciaSignBox, overlaySpan, slideInto, visibleSpan } from './scene/viewport';
 import { SceneViewContext } from './scene/view-context';
+import { floorYFor, liftLayout, stripTop } from './scene/strip-clear';
 import { trafficFor } from './scene/street-props';
 import { rivalOpen } from '../engine/features/layers/rival';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, sidewalkItems, Street } from './scene/street';
@@ -207,7 +208,9 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const mirrored = isMirrored(id);
   const roomLay = useMemo(() => layout(fp, ovenCount, cookCount, staffCount, tablesShown, driverSlots, plants, undefined, mirrored), [fp, ovenCount, cookCount, staffCount, tablesShown, driverSlots, plants, mirrored]);
   // …and in the draw space the drawing code's default `P` expects (`drawFrame`): everything below the sky and the street is drawn in a group moved right by `shift`
-  const lay = useMemo(() => toDrawSpace(roomLay), [roomLay]);
+  // …and lifted clear of the shop report's strip, which hides what stands lower on the sidewalk (strip-clear.ts, D514): the same fit the strip's `bottom` is computed from (app/index.tsx)
+  const stripFloor = floorYFor(stripTop(sceneView(width, height, roomLay.frame).fit.s, hireOnSidewalk(shop, id)));
+  const lay = useMemo(() => liftLayout(toDrawSpace(roomLay), stripFloor), [roomLay, stripFloor]);
   const running = shop.managed || Game.lineBusy(shop.line);
   const rate = Game.shopRate(shop, game.vehicle);
   const pace = running ? Math.min(2.6, 0.8 + Math.log10(1 + rate)) : 0;
