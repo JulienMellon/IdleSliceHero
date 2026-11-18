@@ -1,5 +1,6 @@
 // Boston, city 2 (card T2): a second folder like ../home, added to CITIES in ../index.ts. Story: docs/story/BOSTON-SCRIPT.md.
 import type { CityDef } from '../types';
+import { BOSTON_COPY } from './copy';
 import { BOSTON_FIT, BOSTON_LAYERS, CITY_NAME, HEADS, MANAGERS, NEIGHBORHOODS, PERKS } from './data';
 import { BOSTON_SCENES } from './scenes';
 import { HOME_CITY } from '../home';
@@ -19,6 +20,8 @@ export const BOSTON_CITY: CityDef = {
   lieutenant: { id: 'trish-vance', name: 'Trish' },
   // no bid: Boston's finale is a challenge win like the other five, there is no Pier 9
   theme: 'city_theme',
+  // the lines Boston says in place of the home city's, by the same keys (card R5c; content/copy/index.ts `t` reads them first)
+  copy: BOSTON_COPY,
   fit: BOSTON_FIT,
   // v5.18 behaviour kept while the engine went city-generic (card R1 changes no behaviour). Each line below is a known bug, reported under Needs: in the R1
   // card report with its fix; a later version replaces these with Boston's own values and deletes the CityDef fields.

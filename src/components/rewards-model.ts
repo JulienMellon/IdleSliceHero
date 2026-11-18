@@ -20,7 +20,8 @@ import {
   type GiftDef,
 } from '../content/rewards';
 import { count, money, pizzas } from '../engine/format';
-import type { Booster, GameState, Task } from '../engine/game';
+import { founderName, type Booster, type GameState, type Task } from '../engine/game';
+import { t } from '../content/copy';
 import * as R from '../engine/rewards';
 import { isStarredTask } from '../engine/features/heads';
 
@@ -328,7 +329,7 @@ export function giftHeader(s: GameState, now: number): GiftHeader {
   const prizeIcon = giftIcon(st.gift);
   const title = st.day === GIFT_LENGTH ? `Day ${GIFT_LENGTH} \u00B7 ${who} visits` : `Day ${st.day} of ${GIFT_LENGTH}`;
   if (st.kind === 'claimed') return { title, caption: `Claimed. Next gift in ${spanText(R.resetCountdown(now, 'day'))}`, prize: '', prizeIcon };
-  if (st.kind === 'locked') return { title, caption: 'Unlocks when Nonna takes over', prize: '', prizeIcon };
+  if (st.kind === 'locked') return { title, caption: t('rewards.gift.locked', { founder: founderName(s) }, s.city), prize: '', prizeIcon };
   if (st.kind === 'save') {
     return {
       title,

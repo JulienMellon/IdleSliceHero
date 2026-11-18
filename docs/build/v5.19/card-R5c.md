@@ -15,11 +15,11 @@
 - Read-only: `docs/story/COPY-*.md`.
 
 ## Steps
-- [ ] **1. One `fill(template, vars)`.** It replaces `copy()`'s, `lc()`'s and `fillText`'s three bodies. A placeholder with no value is left as written, as today.
-- [ ] **2. Generator.** `scripts/gen-copy.ts` reads `docs/story/COPY-v5.15.md` and `COPY-v5.16.md` (the sections each current header names) and writes the `.ts` tables byte-for-byte as they are now. Run it and confirm `git diff --stat` shows no change to the tables. Every header then names the command. The compare tests stay as they are.
-- [ ] **3. One lookup.** `t(key, vars, city)` looks in the city pack's `copy` first (`CITIES[city]?.copy`, today's `city-dress.ts` `BOSTON` plus `BOSTON_ASKS`), then in home. `city-dress.ts`'s `dressed` and `isDressed` become wrappers over that lookup, so their callers don't change. `copy()` and `lc()` become thin wrappers over `t`, so the components don't change.
-- [ ] **4. C146 and the literals.** `lotView` returns `{ kind: 'founder', pinsLeft, founder }`. `shop-ui` formats from the number (no string slicing). Move the "Nonna …" literals in `city-model.ts`, `ad-model.ts` and `rewards-model.ts` to copy keys with `{founder}`, resolved through `cityOf(g).founder.name` (card R1 adds `founder`).
-- [ ] **5. Guard.** Add a test that, for the Boston fixture save, no string the models in step 4 return contains "Nonna".
+- [x] **1. One `fill(template, vars)`.** It replaces `copy()`'s, `lc()`'s and `fillText`'s three bodies. A placeholder with no value is left as written, as today.
+- [x] **2. Generator.** `scripts/gen-copy.ts` reads `docs/story/COPY-v5.15.md` and `COPY-v5.16.md` (the sections each current header names) and writes the `.ts` tables byte-for-byte as they are now. Run it and confirm `git diff --stat` shows no change to the tables. Every header then names the command. The compare tests stay as they are.
+- [x] **3. One lookup.** `t(key, vars, city)` looks in the city pack's `copy` first (`CITIES[city]?.copy`, today's `city-dress.ts` `BOSTON` plus `BOSTON_ASKS`), then in home. `city-dress.ts`'s `dressed` and `isDressed` become wrappers over that lookup, so their callers don't change. `copy()` and `lc()` become thin wrappers over `t`, so the components don't change.
+- [x] **4. C146 and the literals.** `lotView` returns `{ kind: 'founder', pinsLeft, founder }`. `shop-ui` formats from the number (no string slicing). Move the "Nonna …" literals in `city-model.ts`, `ad-model.ts` and `rewards-model.ts` to copy keys with `{founder}`, resolved through `cityOf(g).founder.name` (card R1 adds `founder`).
+- [x] **5. Guard.** Add a test that, for the Boston fixture save, no string the models in step 4 return contains "Nonna".
 
 ## Checks
 `npx tsc --noEmit`; `npx expo lint`; `npx jest src/components src/content`; `npx tsx scripts/gen-copy.ts && git diff --stat -- src | tail -3` (no change).

@@ -168,6 +168,8 @@ export interface CityDef {
   tutorialHead?: string;
   /** The shops the shop-service slice starts with a row for (default: this city's own). */
   serviceRows?: readonly NeighborhoodId[];
+  /** The city's own lines, by the home copy keys (content/copy/home): `t(key, vars, city)` says this line when the city has one and the home line otherwise. Keep a city's words here, in its own folder. */
+  copy?: Readonly<Record<string, string>>;
   /** The story-music key of the city theme (src/audio/manifest.ts `story` table). */
   theme: string;
   fit: CityFit;

@@ -2,7 +2,7 @@
 import * as G from '../../engine/game';
 import { money, pizzasLeft } from '../../engine/format';
 import { cityOf } from '../../content/cities';
-import { lotView } from '../city-model';
+import { lotView, piesToGo } from '../city-model';
 
 import { NONNA_TAKEOVER } from '../../content/cities/home/fit';
 import { NEIGHBORHOODS } from '../../content/cities/home/data';
@@ -16,7 +16,7 @@ describe('city lots held back by Nonna (D305)', () => {
   test('Suburbs, next in line but locked, is a padlock with the countdown, not "Build $"', () => {
     const s = withSold(40);
     const v = lotView(s, n('suburbs'));
-    expect(v.kind).toBe('nonna');
+    expect(v.kind).toBe('founder');
     expect(v.locked).toBe(true);
     expect(v.dim).toBe(true);
     expect(v.tappable).toBe(false);
@@ -56,17 +56,22 @@ describe('C146: the pin names the own-city founder, and the tab gets its words w
     const s = withSold(40);
     const left = G.founderPizzasLeft(s);
     const v = lotView(s, n('suburbs'));
-    expect(v.piesToGo).toBe(`${pizzasLeft(left)} pies to go`);
-    expect(lotView(withSold(5000), n('suburbs')).piesToGo).toBeNull();
+    expect(v.pinsLeft).toBe(left);
+    expect(v.founder).toBe('Nonna');
+    expect(piesToGo(left)).toBe(`${pizzasLeft(left)} pies to go`);
+    expect(piesToGo(1)).toBe('1 pie to go');
+    expect(lotView(withSold(5000), n('suburbs')).pinsLeft).toBeNull();
   });
   test('Boston: the pin says Father Dom, never Nonna', () => {
     const city = cityOf({ city: 'boston' });
     const s = G.newGame(0, 'boston');
     const next = city.neighbourhoods[1];
     const v = lotView(s, next);
-    expect(v.kind).toBe('nonna');
+    expect(v.kind).toBe('founder');
     expect(v.pin).not.toMatch(/Nonna/);
     expect(v.pin).toMatch(/^Father Dom in /);
-    expect(v.piesToGo).toMatch(/pies to go$/);
+    expect(v.founder).toBe('Father Dom');
+    expect(v.pinsLeft).toBeGreaterThan(0);
+    expect(piesToGo(v.pinsLeft!, 'boston')).toMatch(/pies to go$/);
   });
 });

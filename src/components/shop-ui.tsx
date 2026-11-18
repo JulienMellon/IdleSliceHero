@@ -10,7 +10,7 @@ import { money } from '../engine/format';
 import * as Game from '../engine/game';
 import { C, F } from '../theme';
 import { LockIcon } from './icons';
-import { lotView } from './city-model';
+import { lotView, piesToGo } from './city-model';
 import { buildChipHint, buildChipSub, cardLook, type ButtonTone } from './sidewalk-model';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BuyButton, haptic } from './game-ui';
@@ -95,8 +95,8 @@ export function ShopTabs({
                 >
                   <Text style={[styles.tabName, { color: C.inkSoft }]}>+ {n.name}</Text>
                   <Text style={[styles.tabSub, { color: C.inkSoft }]} numberOfLines={1}>
-                    {/* D503: the lot's own "N pies to go" (city-model lotView), not a slice of the pin */}
-                    {lot.piesToGo ?? lot.pin}
+                    {/* D503: "N pies to go" formatted from the lot's own count (city-model lotView.pinsLeft), not a slice of the pin */}
+                    {lot.pinsLeft !== null ? piesToGo(lot.pinsLeft, game.city) : lot.pin}
                   </Text>
                 </View>
               );
