@@ -9,7 +9,7 @@ round: r2              # r1 | r2 | r3
 last_shots: v5.18-r2           # label of the last screenshot set that passed verify
 codecritic_range_start: 229f874
 cards:                 # todo | running | done | partial | blocked
-  K1: done  W3: done  V1: done  E3: done  T2: done  A2: carried  V2: done
+  K1: done  W3: done  V1: done  E3: running  T2: running  A2: carried  V2: done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.18/review-r2-critic.md (r2 NOT SATISFIED; bug 0 major 0 minor 9; E2 U2 S4 T1; D506 D510 D512-D514 D481 D493 D495 D505)
   code:   docs/build/v5.18/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 23; E14 U5 S2 N3 A1)
@@ -22,7 +22,6 @@ next: fresh session; read docs/build/sessions/S5-v5.18.md. Fix round r2 (README 
 ## Log (one line per event, newest last; trim to the last 10)
 - 2026-11-18 Verify r1: tsc pass, 1768/1768 tests, shots --only 106_t2,140_v2: 0 errors, 20 new (loaded/layout need a full run). Committed; r1 reviews launched.
 - 2026-11-18 r1 gate not met (critic 3 bugs 4 major; code 4 high; story S65, audio AU85 majors). Fix round r1: E3 + T2 first, then V2 + A2, then V1.
-- 2026-11-18 Fix r1: E3 partial (A35 partly, C141 C144 T108; tsc pass, 1 schema fail = S67 -> T2). K2 K3 K4 -> K1 launched; founderCountdownText rename + schema fail sent to T2.
 - 2026-11-18 Fix r1: T2 partial (G110 S66 D506 D507 D509 D510 D516 fixed; tsc pass, 963 tests). G109/S65/S67 heading + C141 callers -> K1. V2 launched (G111, layoutOfShop mirror). Next: A2, V1.
 - 2026-11-18 Fix r1: K1 done (K2 K3 K4 A35 C141 C143 C135 C139 U22 G109 S65 T106 T107 C140; tsc pass, 1664 tests). Not fixed, need decision/card: A32-A37 U17 M62 U12 C107 D493 D495 D517 T94 T104. A2 launched (AU85).
 - 2026-11-18 Fix r1: A2 done (AU85 AU86 AU87 AU82 U8 C138; tsc pass, 61 audio tests). AU41 native module, AU39 AU40 device pass carried. V1 launched.
@@ -30,3 +29,4 @@ next: fresh session; read docs/build/sessions/S5-v5.18.md. Fix round r2 (README 
 - 2026-11-18 Fix r1: V2 partial (G111 D511 D515 fixed; D508 D512 D514 partly; D513 A29 not). layoutOfShop mirror: no owner card (V2 lists it read-only) -> ask Julien. Round r2 verify.
 - 2026-11-18 Verify r2: tsc pass, 1830/1830, --only 106_t2,140_v2: 0 errors, 13 changed 7 same. r2 re-checks launched.
 - 2026-11-18 r2: code APPROVED, story/audio SATISFIED, critic 0/0/9 (minors over gate). Context summarised: session ended, fix round r2 next.
+- 2026-11-18 Fix r2 (new session): E3 (E rows) + T2 (T/U/S rows) launched; V2 + V1 next.
