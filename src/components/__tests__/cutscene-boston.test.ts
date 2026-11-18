@@ -5,7 +5,18 @@
 import { BOSTON_CITY } from '../../content/cities/boston';
 import { BOSTON_IDS } from '../../content/cities/boston/data';
 import { PROP_IDS } from '../../content/types';
-import { BOSTON_LOOKS, BOSTON_SIGNS, CAPTION_ZONE_PT, ICON_PROP_BOX, ICON_PROP_IDS, NAME_TAG_FIELD, SHOP_LOOKS, SHOP_OBJECT, SIGN_INSET_PT, backdropView } from '../cutscene/backdrop-art';
+import {
+  BOSTON_LOOKS,
+  BOSTON_SIGNS,
+  CAPTION_ZONE_PT,
+  ICON_PROP_BOX,
+  ICON_PROP_IDS,
+  NAME_TAG_FIELD,
+  SHOP_LOOKS,
+  SHOP_OBJECT,
+  SIGN_INSET_PT,
+  backdropView,
+} from '../cutscene/backdrop-art';
 import { PROP_FONT, fitPropText } from '../cutscene/prop-text';
 import { FACE_BOX, LIMB_CLEARANCE, boxInPanel, panelSize, stageLayout } from '../cutscene/staging';
 
@@ -51,7 +62,7 @@ describe('Boston backdrops and props', () => {
     }
   });
 
-  test("a Boston prop sits under the caption zone, inside the panel and 8 pt above the heads of one or two figures", () => {
+  test('a Boston prop sits under the caption zone, inside the panel and 8 pt above the heads of one or two figures', () => {
     const b = ICON_PROP_BOX;
     for (const [w, h, top] of WINDOWS) {
       const { innerW, innerH } = panelSize(w, h, top);
@@ -62,7 +73,7 @@ describe('Boston backdrops and props', () => {
         for (const speaker of [0, count - 1]) {
           for (const p of stageLayout(count, innerW, innerH, speaker)) {
             const face = boxInPanel(p, FACE_BOX, innerH);
-            expect([w, count, ((b.y + b.h + 4 - v.y0) * v.scale) + LIMB_CLEARANCE <= face.y0]).toEqual([w, count, true]);
+            expect([w, count, (b.y + b.h + 4 - v.y0) * v.scale + LIMB_CLEARANCE <= face.y0]).toEqual([w, count, true]);
           }
         }
       }

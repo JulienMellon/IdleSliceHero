@@ -20,7 +20,10 @@ describe('the city maps', () => {
     expect(mapArtFor('chicago')).toBe(mapArtFor('home'));
   });
   it('no tree stands inside a label card, or on the river', () => {
-    for (const [id, city] of [['home', HOME_CITY], ['boston', BOSTON_CITY]] as const) {
+    for (const [id, city] of [
+      ['home', HOME_CITY],
+      ['boston', BOSTON_CITY],
+    ] as const) {
       const art = mapArtFor(id);
       for (const [x, y] of art.trees) {
         for (const n of city.neighbourhoods) {

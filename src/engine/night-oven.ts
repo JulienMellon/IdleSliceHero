@@ -26,7 +26,8 @@ export const nightOvenChip = (s: Pick<GameState, 'nightOven'>): string => `🌙 
 export const nextTier = (s: Pick<GameState, 'nightOven'>): number | null => (s.nightOven < MAX_TIER ? s.nightOven + 1 : null);
 
 /** What a tier costs now: its minutes of citywide income, never less than NIGHT_OVEN.minPrice. */
-export const nightOvenPrice = (s: GameState, tier: number): number => Math.max(NIGHT_OVEN.minPrice, Math.ceil(minutesToCash(s, NIGHT_OVEN.priceMinutes[tier] ?? 0)));
+export const nightOvenPrice = (s: GameState, tier: number): number =>
+  Math.max(NIGHT_OVEN.minPrice, Math.ceil(minutesToCash(s, NIGHT_OVEN.priceMinutes[tier] ?? 0)));
 
 /** Why a tier can't be bought yet (other than cash), or null. */
 export function nightOvenLock(s: GameState, tier: number): string | null {
@@ -66,7 +67,7 @@ export function nightOvenView(s: GameState): NightOvenView {
   const tiers: NightOvenTier[] = NIGHT_OVEN.capSeconds.map((cap, tier) => {
     const lock = tier > s.nightOven ? nightOvenLock(s, tier) : null;
     const state = tier <= s.nightOven ? 'owned' : tier === nt ? 'next' : 'later';
-    const note = state === 'owned' ? 'Owned' : lock ?? money(nightOvenPrice(s, tier));
+    const note = state === 'owned' ? 'Owned' : (lock ?? money(nightOvenPrice(s, tier)));
     return { tier, hours: hoursText(cap), state, note };
   });
   const next =
@@ -75,7 +76,14 @@ export function nightOvenView(s: GameState): NightOvenView {
       : (() => {
           const price = nightOvenPrice(s, nt);
           const lock = nightOvenLock(s, nt);
-          return { tier: nt, title: `Night oven: holds ${hoursText(NIGHT_OVEN.capSeconds[nt])}`, hours: hoursText(NIGHT_OVEN.capSeconds[nt]), price, lock, canBuy: !lock && s.cash >= price };
+          return {
+            tier: nt,
+            title: `Night oven: holds ${hoursText(NIGHT_OVEN.capSeconds[nt])}`,
+            hours: hoursText(NIGHT_OVEN.capSeconds[nt]),
+            price,
+            lock,
+            canBuy: !lock && s.cash >= price,
+          };
         })();
   return {
     chip: nightOvenChip(s),

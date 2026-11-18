@@ -4,8 +4,22 @@
 // Rules live in logic.ts (tested); cue data comes in through the Catalog (the generated manifest, in the app).
 import type { NeighborhoodId } from '../content/types';
 import {
-  DUCK, RarePlays, StingGate, RESTART_TRACKS, beatUnit, dbToGain, nextVariant, perkDuckSeconds, quantizeDelay,
-  sharedTimeline, shouldReleaseWarmCollect, stingDuck, stingTiming, stingUnit, type MusicTrack, type StingKind,
+  DUCK,
+  RarePlays,
+  StingGate,
+  RESTART_TRACKS,
+  beatUnit,
+  dbToGain,
+  nextVariant,
+  perkDuckSeconds,
+  quantizeDelay,
+  sharedTimeline,
+  shouldReleaseWarmCollect,
+  stingDuck,
+  stingTiming,
+  stingUnit,
+  type MusicTrack,
+  type StingKind,
 } from './logic';
 import { musicId, sfxId, stingId, storyId, type AudioOutput } from './output-core';
 
@@ -84,7 +98,12 @@ export interface MixerDeps {
   random?: () => number;
 }
 
-interface StoryNow { id: string; startedAt: number; pausedAt: number | null; exclusive: boolean }
+interface StoryNow {
+  id: string;
+  startedAt: number;
+  pausedAt: number | null;
+  exclusive: boolean;
+}
 type Timer = ReturnType<typeof setTimeout>;
 
 export function createMixer(deps: MixerDeps) {
@@ -213,7 +232,11 @@ export function createMixer(deps: MixerDeps) {
     if (gain === null) ducks.delete(reason);
     else ducks.set(reason, gain);
     applyMusic(musicGain() < before ? DUCK_DOWN_MS : DUCK_UP_MS);
-    if (gain !== null && holdMs) duckTimers.set(reason, setTimeout(() => duck(reason, null), holdMs));
+    if (gain !== null && holdMs)
+      duckTimers.set(
+        reason,
+        setTimeout(() => duck(reason, null), holdMs),
+      );
   }
 
   function setTrack(next: MusicTrack) {
@@ -312,10 +335,13 @@ export function createMixer(deps: MixerDeps) {
       if (out.playing(id)) {
         const left = Math.max(0, catalog.sting(key).seconds - num(out.position(id), 0));
         orphans.set(id, key);
-        setTimeout(() => {
-          orphans.delete(id);
-          if (!stingLoaded.has(key)) out.unload(id); // it may have come back as the active key since
-        }, left * 1000 + 200);
+        setTimeout(
+          () => {
+            orphans.delete(id);
+            if (!stingLoaded.has(key)) out.unload(id); // it may have come back as the active key since
+          },
+          left * 1000 + 200,
+        );
       } else out.unload(id);
       stingLoaded.delete(key);
     }
@@ -481,14 +507,17 @@ export function createMixer(deps: MixerDeps) {
     const payoffAt = sn && cue && cue.payoffSeconds !== undefined ? sn.startedAt + cue.payoffSeconds * 1000 : 0;
     if (sn && payoffAt > t0) {
       const info = catalog.sting(`${hood}_perk`);
-      const t = setTimeout(() => {
-        pendingPerks.delete(t);
-        if (storyNow === sn && sn.pausedAt === null && payoffAt > now()) {
-          const len = perkDuckSeconds(info.musicSeconds ?? info.seconds, payoffAt, now(), DUCK_UP_MS);
-          if (len > 0) duckStory(sn, len); // AU77: back up before the payoff crash
-        }
-        sting(hood, 'perk', { immediate: true, gated: false, duck: 1 });
-      }, Math.min(3000, payoffAt - t0));
+      const t = setTimeout(
+        () => {
+          pendingPerks.delete(t);
+          if (storyNow === sn && sn.pausedAt === null && payoffAt > now()) {
+            const len = perkDuckSeconds(info.musicSeconds ?? info.seconds, payoffAt, now(), DUCK_UP_MS);
+            if (len > 0) duckStory(sn, len); // AU77: back up before the payoff crash
+          }
+          sting(hood, 'perk', { immediate: true, gated: false, duck: 1 });
+        },
+        Math.min(3000, payoffAt - t0),
+      );
       pendingPerks.add(t);
       return;
     }
@@ -554,16 +583,44 @@ export function createMixer(deps: MixerDeps) {
   }
 
   return {
-    boot, afterFirstFrame, unlock, setAppActive, prefsChanged,
-    musicOn, setTrack, duck, applyMusic,
-    sfx, warm, loaded, sweepWarm,
-    sting, stopStings, scheduleStingPreload, afterHeld, clearPendingCues,
-    story, stopStory, perk, skip, musicOff,
-    get storyNow() { return storyNow; },
-    get held() { return { kind: heldKind, until: heldUntil }; },
-    get otherAudioSuppressed() { return rule.suppressed; },
-    get appActive() { return appActive; },
-    get track() { return current; },
+    boot,
+    afterFirstFrame,
+    unlock,
+    setAppActive,
+    prefsChanged,
+    musicOn,
+    setTrack,
+    duck,
+    applyMusic,
+    sfx,
+    warm,
+    loaded,
+    sweepWarm,
+    sting,
+    stopStings,
+    scheduleStingPreload,
+    afterHeld,
+    clearPendingCues,
+    story,
+    stopStory,
+    perk,
+    skip,
+    musicOff,
+    get storyNow() {
+      return storyNow;
+    },
+    get held() {
+      return { kind: heldKind, until: heldUntil };
+    },
+    get otherAudioSuppressed() {
+      return rule.suppressed;
+    },
+    get appActive() {
+      return appActive;
+    },
+    get track() {
+      return current;
+    },
   };
 }
 

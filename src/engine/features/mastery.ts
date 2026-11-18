@@ -100,7 +100,8 @@ export function nextStar(g: GameState): NextStar | null {
 
 const empty = (): MasteryState => ({ announced: [], granted: [], fresh: [], synced: false, summary: null });
 
-const strings = (v: unknown, max: number): string[] => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= 60))].slice(0, max) : []);
+const strings = (v: unknown, max: number): string[] =>
+  Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= 60))].slice(0, max) : [];
 
 const read = (g: GameState): MasteryState => (g.x?.[KEY] as MasteryState | undefined) ?? empty();
 const write = (g: GameState, s: MasteryState): GameState => ({ ...g, x: { ...g.x, [KEY]: s } });
@@ -196,7 +197,10 @@ export const mastery: Feature<MasteryState> = {
       // news is a moment, not a record: it isn't kept across a reload
       fresh: [],
       synced: r.synced === true,
-      summary: sum && typeof sum.stars === 'number' && typeof sum.diamonds === 'number' ? { stars: Math.max(0, sum.stars), diamonds: Math.max(0, sum.diamonds), cosmetics: strings(sum.cosmetics, 8) } : null,
+      summary:
+        sum && typeof sum.stars === 'number' && typeof sum.diamonds === 'number'
+          ? { stars: Math.max(0, sum.stars), diamonds: Math.max(0, sum.diamonds), cosmetics: strings(sum.cosmetics, 8) }
+          : null,
     };
   },
   tick: (g) => settle(g),

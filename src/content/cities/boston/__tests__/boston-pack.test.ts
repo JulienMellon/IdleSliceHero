@@ -13,14 +13,49 @@ describe('the Boston story', () => {
   it('is the bridge, 24 main beats and 7 interludes, in play order', () => {
     expect(scenes).toHaveLength(32);
     expect(scenes.filter((s) => s.beat !== 'interlude')).toHaveLength(24);
-    expect(scenes.filter((s) => s.beat === 'interlude').map((s) => s.id)).toEqual(['boston-0', 'north-end-5', 'southie-5', 'back-bay-5', 'fenway-5', 'cambridge-5', 'dorchester-5', 'dorchester-6']);
+    expect(scenes.filter((s) => s.beat === 'interlude').map((s) => s.id)).toEqual([
+      'boston-0',
+      'north-end-5',
+      'southie-5',
+      'back-bay-5',
+      'fenway-5',
+      'cambridge-5',
+      'dorchester-5',
+      'dorchester-6',
+    ]);
     expect(scenes.map((s) => s.id)).toEqual([
-      'boston-0', 'north-end-1', 'north-end-2', 'north-end-3', 'north-end-5', 'north-end-4',
-      'southie-1', 'southie-2', 'southie-3', 'southie-5', 'southie-4',
-      'back-bay-1', 'back-bay-2', 'back-bay-3', 'back-bay-5', 'back-bay-4',
-      'fenway-1', 'fenway-2', 'fenway-3', 'fenway-5', 'fenway-4',
-      'cambridge-1', 'cambridge-2', 'cambridge-3', 'cambridge-5', 'cambridge-4',
-      'dorchester-1', 'dorchester-2', 'dorchester-5', 'dorchester-3', 'dorchester-6', 'dorchester-4',
+      'boston-0',
+      'north-end-1',
+      'north-end-2',
+      'north-end-3',
+      'north-end-5',
+      'north-end-4',
+      'southie-1',
+      'southie-2',
+      'southie-3',
+      'southie-5',
+      'southie-4',
+      'back-bay-1',
+      'back-bay-2',
+      'back-bay-3',
+      'back-bay-5',
+      'back-bay-4',
+      'fenway-1',
+      'fenway-2',
+      'fenway-3',
+      'fenway-5',
+      'fenway-4',
+      'cambridge-1',
+      'cambridge-2',
+      'cambridge-3',
+      'cambridge-5',
+      'cambridge-4',
+      'dorchester-1',
+      'dorchester-2',
+      'dorchester-5',
+      'dorchester-3',
+      'dorchester-6',
+      'dorchester-4',
     ]);
   });
   it('holds each beat 4 behind its interlude (and Dorchester beat 3 behind "Great News"), and each interlude plays after the beat it follows', () => {
@@ -31,8 +66,24 @@ describe('the Boston story', () => {
     }
     expect(byId.get('dorchester-3')!.requires).toEqual(['dorchester-5']);
     const after = (id: string) => byId.get(id)!.trigger as { kind: string; scene: string; seconds: number };
-    expect([after('north-end-5'), after('southie-5'), after('back-bay-5'), after('fenway-5'), after('cambridge-5'), after('dorchester-5'), after('dorchester-6')].map((t) => [t.scene, t.seconds])).toEqual([
-      ['north-end-3', 300], ['southie-3', 300], ['back-bay-3', 300], ['fenway-3', 360], ['cambridge-3', 360], ['dorchester-2', 300], ['dorchester-3', 360],
+    expect(
+      [
+        after('north-end-5'),
+        after('southie-5'),
+        after('back-bay-5'),
+        after('fenway-5'),
+        after('cambridge-5'),
+        after('dorchester-5'),
+        after('dorchester-6'),
+      ].map((t) => [t.scene, t.seconds]),
+    ).toEqual([
+      ['north-end-3', 300],
+      ['southie-3', 300],
+      ['back-bay-3', 300],
+      ['fenway-3', 360],
+      ['cambridge-3', 360],
+      ['dorchester-2', 300],
+      ['dorchester-3', 360],
     ]);
   });
   it('opens after the franchise (boston-0 first), every finale grants its perk, and only the last ends the city', () => {
@@ -45,7 +96,10 @@ describe('the Boston story', () => {
 describe('the Boston pack', () => {
   it('takes its prices and values from the fit, shop for shop', () => {
     BOSTON_CITY.neighbourhoods.forEach((n, i) => {
-      expect([n.id, n.orderValue, n.buildCost, n.costMult, n.managerCost, n.headsCost]).toEqual([n.id, ...[BOSTON_NUMBERS.hoods[i]].map((h) => [h.orderValue, h.buildCost, h.costMult, h.managerCost, h.headsCost]).flat()]);
+      expect([n.id, n.orderValue, n.buildCost, n.costMult, n.managerCost, n.headsCost]).toEqual([
+        n.id,
+        ...[BOSTON_NUMBERS.hoods[i]].map((h) => [h.orderValue, h.buildCost, h.costMult, h.managerCost, h.headsCost]).flat(),
+      ]);
     });
     expect(BOSTON_CITY.fit.headCostFirst).toEqual(BOSTON_NUMBERS.headCostFirst);
     expect(BOSTON_CITY.fit.vehicles.slice(1).map((v) => v.cost)).toEqual(BOSTON_NUMBERS.vehicleCosts);

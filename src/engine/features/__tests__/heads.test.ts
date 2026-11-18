@@ -9,11 +9,30 @@ import type { NeighborhoodId } from '../../../content/types';
 import * as G from '../../game';
 import { FEATURES, getFeature, withFeatures } from '..';
 import { weekNumber } from '../counterattack';
-import { barkShowing, barkText, headOfWeek, heads, hiredHeads, isStarredTask, newBarkMem, nextBark, pickHead, rankOf, speakerFor, stationLevel, starredKinds, weekStation, type BarkAsk } from '../heads';
+import {
+  barkShowing,
+  barkText,
+  headOfWeek,
+  heads,
+  hiredHeads,
+  isStarredTask,
+  newBarkMem,
+  nextBark,
+  pickHead,
+  rankOf,
+  speakerFor,
+  stationLevel,
+  starredKinds,
+  weekStation,
+  type BarkAsk,
+} from '../heads';
 
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const at = (y: number, m: number, d: number, h = 0) => new Date(y, m - 1, d, h).getTime();
-const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
+const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } },
+});
 const WEEK = 7 * 86_400_000;
 const MON = at(2026, 11, 16);
 
@@ -27,12 +46,14 @@ const tick = (g: G.GameState, now: number) => G.playTick(g, 1, now);
 describe('the copy', () => {
   test('every shop, station and trigger has a line, and every line fits the narrowest room', () => {
     const triggers: BarkTrigger[] = ['milestone', 'rush', 'attack', 'week'];
-    for (const id of IDS) for (const st of ['prep', 'oven', 'counter'] as const) for (const t of triggers) {
-      const text = BARKS[id][st][t];
-      expect(text.length).toBeGreaterThan(5);
-      expect(barkText(id, st, t)).toBe(text);
-      expect(text.length * 5.6 + 16).toBeLessThanOrEqual(240);
-    }
+    for (const id of IDS)
+      for (const st of ['prep', 'oven', 'counter'] as const)
+        for (const t of triggers) {
+          const text = BARKS[id][st][t];
+          expect(text.length).toBeGreaterThan(5);
+          expect(barkText(id, st, t)).toBe(text);
+          expect(text.length * 5.6 + 16).toBeLessThanOrEqual(240);
+        }
   });
   test('the copy names the heads the game has (the first line of each station is theirs)', () => {
     expect(BARKS.downtown.prep.week).toMatch(/Nonna/);
@@ -71,7 +92,15 @@ describe('barks', () => {
   test('an attack outranks a milestone, which outranks the week and a rush', () => {
     const asks = [ask('rush', 'prep'), ask('week', 'oven'), ask('milestone', 'counter'), ask('attack', 'prep')];
     expect(nextBark(newBarkMem(), 'uptown', asks, 50, false).bark?.trigger).toBe('attack');
-    expect(nextBark(newBarkMem(), 'uptown', asks.filter((a) => a.trigger !== 'attack'), 50, false).bark?.trigger).toBe('milestone');
+    expect(
+      nextBark(
+        newBarkMem(),
+        'uptown',
+        asks.filter((a) => a.trigger !== 'attack'),
+        50,
+        false,
+      ).bark?.trigger,
+    ).toBe('milestone');
     expect(nextBark(newBarkMem(), 'uptown', [ask('rush'), ask('week')], 50, false).bark?.trigger).toBe('week');
   });
   test('a keyed ask is spoken once; one that waited its turn still speaks', () => {

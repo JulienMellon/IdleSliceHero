@@ -67,4 +67,3 @@ describe('the cheer pose (D444)', () => {
     expect(toss.backHand[1]).toBeGreaterThan(toss.hand[1]);
   });
 });
-

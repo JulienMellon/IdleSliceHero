@@ -14,7 +14,10 @@ const run = <T>(fn: () => T): T => withFeatures([industrialShifts], fn);
 function jammed(heads: boolean, secondsIn = 0): GameState {
   return run(() => {
     const g = newGame(NOW);
-    const shops = { ...g.shops, industrial: { ...g.shops.industrial, built: true, managed: heads, footprint: 2, heads: heads ? allHeads() : g.shops.industrial.heads } };
+    const shops = {
+      ...g.shops,
+      industrial: { ...g.shops.industrial, built: true, managed: heads, footprint: 2, heads: heads ? allHeads() : g.shops.industrial.heads },
+    };
     const st: ShiftsState = { ...getFeature(g, industrialShifts), startAt: 0, at: NOW, nextAt: 99999, jam: 100 };
     return { ...g, shops, playSeconds: 100 + secondsIn, x: { ...g.x, [industrialShifts.key]: st } };
   });

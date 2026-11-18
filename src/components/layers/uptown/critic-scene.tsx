@@ -27,7 +27,25 @@ interface Door {
   x0: number;
 }
 
-function Figure({ door, p, mood, act, width, height, target, frame }: { door: Door; p: number; mood: 'focus' | 'happy' | 'o'; act: 'phone' | 'none'; width: number; height: number; target: number; frame: SceneFrame }) {
+function Figure({
+  door,
+  p,
+  mood,
+  act,
+  width,
+  height,
+  target,
+  frame,
+}: {
+  door: Door;
+  p: number;
+  mood: 'focus' | 'happy' | 'o';
+  act: 'phone' | 'none';
+  width: number;
+  height: number;
+  target: number;
+  frame: SceneFrame;
+}) {
   const at = criticPath(p, door.cx, door.x0);
   const f = sceneFit(width, height, frame);
   const [sx, sy] = P(at.x, at.y, 0, frame);
@@ -77,11 +95,21 @@ export const CriticScene = memo(function CriticScene({ shopId, width, height }: 
   const [phase, target, hit, elapsed, cx, x0] = key.split('|');
   const door: Door = { cx: Number(cx), x0: Number(x0) };
   if (phase === 'walking') return <Walker key="walk" door={door} e0={Number(elapsed)} target={Number(target)} width={width} height={height} frame={frame} />;
-  if (phase === 'result') return <Figure door={door} p={1} mood={hit === '1' ? 'happy' : 'o'} act="none" width={width} height={height} target={Number(target)} frame={frame} />;
+  if (phase === 'result')
+    return <Figure door={door} p={1} mood={hit === '1' ? 'happy' : 'o'} act="none" width={width} height={height} target={Number(target)} frame={frame} />;
   return <Figure door={door} p={1} mood="focus" act="phone" width={width} height={height} target={Number(target)} frame={frame} />;
 });
 
 const styles = StyleSheet.create({
-  chip: { position: 'absolute', height: CHIP_H, borderRadius: CHIP_H / 2, borderWidth: 1.5, borderColor: C.ink, backgroundColor: C.cheese, alignItems: 'center', justifyContent: 'center' },
+  chip: {
+    position: 'absolute',
+    height: CHIP_H,
+    borderRadius: CHIP_H / 2,
+    borderWidth: 1.5,
+    borderColor: C.ink,
+    backgroundColor: C.cheese,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   chipText: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: C.ink },
 });

@@ -34,4 +34,5 @@ export function twoRows(text: string): [string, string] {
 }
 
 /** The width of a two-row chip (pt): its longest row at S2a's measured character width (../layer-model.ts CHAR_W) plus the border and padding, between 44 and the cap. */
-export const chipPillWidth = (rows: readonly string[]): number => Math.min(CHIP_MAX, Math.max(CHIP_H, Math.ceil(Math.max(0, ...rows.map((r) => r.length)) * CHAR_W) + 12));
+export const chipPillWidth = (rows: readonly string[]): number =>
+  Math.min(CHIP_MAX, Math.max(CHIP_H, Math.ceil(Math.max(0, ...rows.map((r) => r.length)) * CHAR_W) + 12));

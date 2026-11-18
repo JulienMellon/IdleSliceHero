@@ -14,7 +14,10 @@ import * as G from '../game';
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const at = (y: number, m: number, d: number, h = 0, mi = 0, s = 0) => new Date(y, m - 1, d, h, mi, s).getTime();
 const state = (g: G.GameState) => getFeature(g, counterattack);
-const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
+const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } },
+});
 const ok = (r: G.BuyResult): G.GameState => {
   if (!r.ok) throw new Error(r.reason);
   return r.state;
@@ -178,7 +181,9 @@ describe('the challenge', () => {
     expect(state(started).challenge).toMatchObject({ target: Math.ceil(300 * rate * 1.25), left: 300, startSold: a.shops[t].sold });
     expect(attackView(started, MON)).toMatchObject({ phase: 'running', shopId: t, target: Math.ceil(300 * rate * 1.25), secondsLeft: 300 });
     // an upgrade made after the start does not move the goal
-    expect(state(ok(startChallenge(withShop(a, t, { prep: 99, ovens: 99, counter: 99, tables: 99, drivers: 40 }), MON))).challenge!.target).toBeGreaterThan(state(started).challenge!.target);
+    expect(state(ok(startChallenge(withShop(a, t, { prep: 99, ovens: 99, counter: 99, tables: 99, drivers: 40 }), MON))).challenge!.target).toBeGreaterThan(
+      state(started).challenge!.target,
+    );
   });
 
   it('cannot start without an attack or twice', () => {
@@ -304,7 +309,11 @@ describe('saving', () => {
 
   it('junk loads as a fresh state', () => {
     expect(counterattack.migrate('junk', 0)).toEqual(counterattack.init(0));
-    expect(counterattack.migrate({ target: 'nowhere', open: true, defended: ['uptown', 'x'] }, 0)).toMatchObject({ target: null, open: false, defended: ['uptown'] });
+    expect(counterattack.migrate({ target: 'nowhere', open: true, defended: ['uptown', 'x'] }, 0)).toMatchObject({
+      target: null,
+      open: false,
+      defended: ['uptown'],
+    });
   });
 });
 

@@ -104,7 +104,18 @@ export function shiftView(g: GameState): ShiftView {
   const { index, left } = shiftAt(read(g), g.playSeconds);
   const cur = SHIFTS.shifts[index];
   const nxt = SHIFTS.shifts[(index + 1) % SHIFTS.shifts.length];
-  return { active: built(g), shift: cur.id, name: cur.name, demandMult: cur.demand, valueMult: cur.value, left: Math.ceil(left), next: nxt.id, nextDemandMult: nxt.demand, nextValueMult: nxt.value, awayMult: night.demand * night.value };
+  return {
+    active: built(g),
+    shift: cur.id,
+    name: cur.name,
+    demandMult: cur.demand,
+    valueMult: cur.value,
+    left: Math.ceil(left),
+    next: nxt.id,
+    nextDemandMult: nxt.demand,
+    nextValueMult: nxt.value,
+    awayMult: night.demand * night.value,
+  };
 }
 
 export interface JamView {
@@ -125,7 +136,14 @@ export function jamView(g: GameState): JamView {
   const st = read(g);
   const on = built(g) && jammed(st);
   const lost = on ? jamShare(g.shops[hoodOf(g)], cityOf(g)) : 0;
-  return { active: built(g), jammed: on, lost, ovenMult: 1 - lost, nextIn: st.nextAt < 0 ? JAMS.everySeconds : Math.max(0, Math.ceil(st.nextAt - g.playSeconds)), autoFixIn: on ? autoFixIn(g) : null };
+  return {
+    active: built(g),
+    jammed: on,
+    lost,
+    ovenMult: 1 - lost,
+    nextIn: st.nextAt < 0 ? JAMS.everySeconds : Math.max(0, Math.ceil(st.nextAt - g.playSeconds)),
+    autoFixIn: on ? autoFixIn(g) : null,
+  };
 }
 
 /** The shift's demand ratio (the jam is a station rate now: `stationMult`). */
@@ -147,7 +165,14 @@ export const industrialShifts: Feature<ShiftsState> = {
     if (!raw || typeof raw !== 'object') return f;
     const r = raw as Record<string, unknown>;
     const num = (v: unknown, d: number, min: number) => (typeof v === 'number' && Number.isFinite(v) && v >= min ? v : d);
-    return { seed: Math.floor(num(r.seed, f.seed, 0)), n: Math.floor(num(r.n, 0, 0)), nextAt: num(r.nextAt, -1, 0), jam: num(r.jam, -1, 0), startAt: num(r.startAt, -1, 0), at: num(r.at, 0, 0) };
+    return {
+      seed: Math.floor(num(r.seed, f.seed, 0)),
+      n: Math.floor(num(r.n, 0, 0)),
+      nextAt: num(r.nextAt, -1, 0),
+      jam: num(r.jam, -1, 0),
+      startAt: num(r.startAt, -1, 0),
+      at: num(r.at, 0, 0),
+    };
   },
   tick(g, _dt, now) {
     if (!built(g)) return g;

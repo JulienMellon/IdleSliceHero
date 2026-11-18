@@ -21,7 +21,7 @@ describe('loading a Boston save', () => {
     expect(g.shops[BOSTON[1]].built).toBe(true);
     expect(g.active).toBe(BOSTON[1]);
   });
-  it('buildLock answers for the city the save is in, and never throws for another city\'s id', () => {
+  it("buildLock answers for the city the save is in, and never throws for another city's id", () => {
     const g = G.migrate(bostonSave([BOSTON[0]]), NOW);
     expect(G.buildLock(g, BOSTON[0])).toBe('Built');
     expect(typeof G.buildLock(g, BOSTON[2])).toBe('string');

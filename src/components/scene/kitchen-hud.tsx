@@ -55,7 +55,35 @@ export const BadgeRail = memo(function BadgeRail({ x0, x1, y, gm }: { x0: number
  * "×4" for the next prep batch); `ready` pulses with a hand (tap me), and `nudge` bounces it after a missed tap;
  * `face` is the head (or GM) who runs the station, drawn as a small bust (D345), or null when the player taps it.
  */
-export const StationBadge = memo(function StationBadge({ x, y, step, count, tone, ready, pulse, nudge, face, faceName, jump, rank = 0, star = false }: { x: number; y: number; step: number; count: string; tone: BadgeTone; ready: boolean; pulse: number; nudge: number; face: HeadKind | 'gm' | null; faceName: string; jump: number; /** The head's rank pin: 0 none, 1-3 at station Lv 25 / 50 / 100 (features/heads.ts `rankOf`). */ rank?: number; /** The head is Head of the Week: a gold star pin. */ star?: boolean }) {
+export const StationBadge = memo(function StationBadge({
+  x,
+  y,
+  step,
+  count,
+  tone,
+  ready,
+  pulse,
+  nudge,
+  face,
+  faceName,
+  jump,
+  rank = 0,
+  star = false,
+}: {
+  x: number;
+  y: number;
+  step: number;
+  count: string;
+  tone: BadgeTone;
+  ready: boolean;
+  pulse: number;
+  nudge: number;
+  face: HeadKind | 'gm' | null;
+  faceName: string;
+  jump: number;
+  /** The head's rank pin: 0 none, 1-3 at station Lv 25 / 50 / 100 (features/heads.ts `rankOf`). */ rank?: number;
+  /** The head is Head of the Week: a gold star pin. */ star?: boolean;
+}) {
   const s = (ready ? 1 + 0.12 * pulse : 1) * (1 + 0.18 * jump);
   const r = BADGE_R;
   const pillW = Math.max(18, count.length * 6.2 + 10);
@@ -78,7 +106,13 @@ export const StationBadge = memo(function StationBadge({ x, y, step, count, tone
       {ready && (
         // a pointing hand on the ring's lower left: tap this station (bounces 1.4× after a missed tap)
         <G transform={`translate(${-r + 1} ${r - 2}) rotate(-30) scale(${1 + 0.4 * nudge})`}>
-          <Path d="M0 -7 Q1.6 -7 1.6 -5 L1.6 -1 L5 -0.4 Q6.6 0 6.2 2 L5 6 Q4.4 7.4 3 7.4 L-2.4 7.4 Q-4 7.4 -4.4 6 L-5.6 1.6 Q-5.8 0 -4.2 0.2 L-1.6 1 L-1.6 -5 Q-1.6 -7 0 -7 Z" fill="#fff" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+          <Path
+            d="M0 -7 Q1.6 -7 1.6 -5 L1.6 -1 L5 -0.4 Q6.6 0 6.2 2 L5 6 Q4.4 7.4 3 7.4 L-2.4 7.4 Q-4 7.4 -4.4 6 L-5.6 1.6 Q-5.8 0 -4.2 0.2 L-1.6 1 L-1.6 -5 Q-1.6 -7 0 -7 Z"
+            fill="#fff"
+            stroke={INK}
+            strokeWidth={1}
+            strokeLinejoin="round"
+          />
         </G>
       )}
       {face && (
@@ -111,7 +145,13 @@ const RankPin = ({ x, y, rank }: { x: number; y: number; rank: number }) => {
 const StarPin = ({ x, y }: { x: number; y: number }) => (
   <G transform={`translate(${x} ${y})`}>
     <Circle cx={0} cy={0} r={7.4} fill="#fff" stroke={INK} strokeWidth={1.2} />
-    <Path d="M0 -5.6 L1.6 -1.8 L5.6 -1.5 L2.5 1.2 L3.4 5.2 L0 3 L-3.4 5.2 L-2.5 1.2 L-5.6 -1.5 L-1.6 -1.8 Z" fill="#FFC531" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+    <Path
+      d="M0 -5.6 L1.6 -1.8 L5.6 -1.5 L2.5 1.2 L3.4 5.2 L0 3 L-3.4 5.2 L-2.5 1.2 L-5.6 -1.5 L-1.6 -1.8 Z"
+      fill="#FFC531"
+      stroke={INK}
+      strokeWidth={0.9}
+      strokeLinejoin="round"
+    />
   </G>
 );
 
@@ -122,7 +162,23 @@ type Pt = [number, number];
  * register for a walk-in with nobody to hand it to), drifting up and fading over its last 0.2 s before it becomes
  * a coin (the coin itself flies in the screen overlay, `CoinLayer`). Nothing is mounted at opacity 0 (M38).
  */
-export function DeparturePops({ deps, left, anchor, register, keepOff = [], sceneW = ONE_SCREEN.width, x0 = 0 }: { /** The drawing's left edge (the draw space of a wide frame starts left of 0). */ x0?: number; deps: readonly Departure[]; left: (d: Departure) => number; anchor: (d: Departure) => Pt | null; register: Pt; /** The drawing's width (its frame's): the pops stay inside it. */ sceneW?: number; /** Rects a pop must be lifted clear of (none in the scene since D439: the sidewalk pills fade instead). */ keepOff?: readonly ScreenRect[] }) {
+export function DeparturePops({
+  deps,
+  left,
+  anchor,
+  register,
+  keepOff = [],
+  sceneW = ONE_SCREEN.width,
+  x0 = 0,
+}: {
+  /** The drawing's left edge (the draw space of a wide frame starts left of 0). */ x0?: number;
+  deps: readonly Departure[];
+  left: (d: Departure) => number;
+  anchor: (d: Departure) => Pt | null;
+  register: Pt;
+  /** The drawing's width (its frame's): the pops stay inside it. */ sceneW?: number;
+  /** Rects a pop must be lifted clear of (none in the scene since D439: the sidewalk pills fade instead). */ keepOff?: readonly ScreenRect[];
+}) {
   if (deps.length === 0) return null;
   // beside the carrier's head, away from the cashiers (D368), kept on screen (stations.ts `placePops`, shared with the pills that fade for a pop)
   const shown = placePops(deps, left, anchor, register, sceneW, keepOff, x0);
@@ -148,7 +204,25 @@ export function DeparturePops({ deps, left, anchor, register, keepOff = [], scen
  * Speech pill under a station's badge: a newly hired head's hello, or (tone "refusal") why a tap didn't start.
  * Clamped to the screen like the pops (C77); the tail points up at the badge.
  */
-export const HireBubble = memo(function HireBubble({ x, y, text, wall0, wall1, tone = 'hire', sceneW = ONE_SCREEN.width, x0 = 0 }: { x0?: number; x: number; y: number; text: string; sceneW?: number; /** The side walls' inner edges (moments.ts `bubbleWalls`): the pill stays between them (D440). */ wall0: number; wall1: number; tone?: 'hire' | 'refusal' }) {
+export const HireBubble = memo(function HireBubble({
+  x,
+  y,
+  text,
+  wall0,
+  wall1,
+  tone = 'hire',
+  sceneW = ONE_SCREEN.width,
+  x0 = 0,
+}: {
+  x0?: number;
+  x: number;
+  y: number;
+  text: string;
+  sceneW?: number;
+  /** The side walls' inner edges (moments.ts `bubbleWalls`): the pill stays between them (D440). */ wall0: number;
+  wall1: number;
+  tone?: 'hire' | 'refusal';
+}) {
   const w = bubbleWidth(text);
   const px = bubbleX(x, w, { x0: wall0, x1: wall1 }, sceneW, x0);
   const fill = tone === 'refusal' ? DISC : '#fff';
@@ -179,7 +253,25 @@ export const CameoTag = memo(function CameoTag({ x0, x1, y0, y1, text }: { x0: n
  * A visitor's line over their tag (cameo.ts `sayLines`: `text` holds one or two lines, split by "\n"). The pill sits above `y` (its bottom edge),
  * clamped inside the walls like every bubble (D440); the tail points down at `tail`, the head, `drop` long (D475: the pill rides above the cashiers' faces).
  */
-export const CameoBubble = memo(function CameoBubble({ tail, y, text, wall0, wall1, drop = 5, sceneW = ONE_SCREEN.width, x0 = 0 }: { x0?: number; tail: number; y: number; text: string; wall0: number; wall1: number; drop?: number; sceneW?: number }) {
+export const CameoBubble = memo(function CameoBubble({
+  tail,
+  y,
+  text,
+  wall0,
+  wall1,
+  drop = 5,
+  sceneW = ONE_SCREEN.width,
+  x0 = 0,
+}: {
+  x0?: number;
+  tail: number;
+  y: number;
+  text: string;
+  wall0: number;
+  wall1: number;
+  drop?: number;
+  sceneW?: number;
+}) {
   const lines = text.split('\n');
   const w = Math.max(...lines.map(bubbleWidth));
   const h = 6 + 12 * lines.length;
@@ -204,7 +296,23 @@ export const CameoBubble = memo(function CameoBubble({ tail, y, text, wall0, wal
  * where a head's hello would be; it never touches the sign above or the badges. Memoised on primitives: it only re-renders
  * when the text or the kind changes.
  */
-export const RushPill = memo(function RushPill({ x, y, kind, text, pulse = 0, sceneW = ONE_SCREEN.width, x0 = 0 }: { x0?: number; x: number; y: number; kind: 'hint' | 'combo'; text: string; pulse?: number; sceneW?: number }) {
+export const RushPill = memo(function RushPill({
+  x,
+  y,
+  kind,
+  text,
+  pulse = 0,
+  sceneW = ONE_SCREEN.width,
+  x0 = 0,
+}: {
+  x0?: number;
+  x: number;
+  y: number;
+  kind: 'hint' | 'combo';
+  text: string;
+  pulse?: number;
+  sceneW?: number;
+}) {
   const w = rushPillWidth(text);
   const px = Math.min(sceneW - 4 - w / 2, Math.max(x0 + 4 + w / 2, x));
   const combo = kind === 'combo';
@@ -229,7 +337,27 @@ export const rushPillWidth = (text: string) => Math.min(120, Math.max(70, text.l
  * the disc and never covers the text (it used to land on its own "Lv 25"). `step` is the confetti step (−1: none),
  * `scale` / `opacity` come from moments.ts (quantised, so the memo holds), `color` is the neighbourhood's.
  */
-export const MilestoneBadge = memo(function MilestoneBadge({ x, y, level, label, sub, scale, opacity, step, color }: { x: number; y: number; level: string; label: string; sub: string | null; scale: number; opacity: number; step: number; color: string }) {
+export const MilestoneBadge = memo(function MilestoneBadge({
+  x,
+  y,
+  level,
+  label,
+  sub,
+  scale,
+  opacity,
+  step,
+  color,
+}: {
+  x: number;
+  y: number;
+  level: string;
+  label: string;
+  sub: string | null;
+  scale: number;
+  opacity: number;
+  step: number;
+  color: string;
+}) {
   const fills = confettiFills(color);
   const subW = Math.min(48, Math.max(34, (sub?.length ?? 0) * 6.4 + 8));
   return (
@@ -237,7 +365,18 @@ export const MilestoneBadge = memo(function MilestoneBadge({ x, y, level, label,
       {step >= 0 && (
         <G opacity={CONFETTI_OPACITY[step]}>
           {CONFETTI.map((c, i) => (
-            <Rect key={i} x={-c.w / 2} y={-c.h / 2} width={c.w} height={c.h} rx={0.8} fill={fills[c.tone]} stroke={INK} strokeWidth={0.5} transform={CONFETTI_FRAMES[step][i]} />
+            <Rect
+              key={i}
+              x={-c.w / 2}
+              y={-c.h / 2}
+              width={c.w}
+              height={c.h}
+              rx={0.8}
+              fill={fills[c.tone]}
+              stroke={INK}
+              strokeWidth={0.5}
+              transform={CONFETTI_FRAMES[step][i]}
+            />
           ))}
         </G>
       )}

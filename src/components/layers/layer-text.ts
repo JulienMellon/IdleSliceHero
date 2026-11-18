@@ -13,7 +13,8 @@ export function lc(key: LayerCopyKey, vars: CopyVars = {}): string {
 }
 
 /** A template with each `{name}` replaced by `vars.name` (a placeholder with no value is left as written). */
-export const fillText = (text: string, vars: CopyVars = {}): string => text.replace(/\{(\w+)\}/g, (whole, name: string) => (name in vars ? String(vars[name]) : whole));
+export const fillText = (text: string, vars: CopyVars = {}): string =>
+  text.replace(/\{(\w+)\}/g, (whole, name: string) => (name in vars ? String(vars[name]) : whole));
 
 /** `lc` in a city: the city's own line for the key when it dresses it (city-dress.ts), else the home line. */
 export const lcc = (city: string | undefined, key: LayerCopyKey, vars: CopyVars = {}): string => fillText(dressed(city, key, LAYER_COPY[key]), vars);

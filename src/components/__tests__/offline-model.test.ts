@@ -107,7 +107,10 @@ describe('the news line', () => {
   });
 
   test('S33: a heads-only shop says why it sold less', () => {
-    const rows = [{ name: 'Waterfront', earned: 5, managed: false, headsOnly: true, pies: 40 }, { name: 'Suburbs', earned: 9, managed: true, pies: 90 }];
+    const rows = [
+      { name: 'Waterfront', earned: 5, managed: false, headsOnly: true, pies: 40 },
+      { name: 'Suburbs', earned: 9, managed: true, pies: 90 },
+    ];
     expect(offlineNews(rows, [])).toBe('No manager, so your head cooks kept the shop at half\u00A0speed.');
   });
 

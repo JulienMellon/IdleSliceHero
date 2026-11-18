@@ -7,7 +7,23 @@ import { advanceLine, AUTOMATIC, emptyLine, type Line, type LineRates } from '..
 import { layout, moreTagAt, waitTagAt, QUEUE_PITCH, type Layout } from '../layout';
 import { seatPalette } from '../palette';
 import { hash32 } from '../looks';
-import { FRAME_WIDTH, ONE_SCREEN, P, SCENE_H, SCENE_W, isWide, kAt, makeFrame, openScroll, sceneFit, sceneFrame, sceneToScreen, sceneView, screenToScene, unprojectX } from '../projection';
+import {
+  FRAME_WIDTH,
+  ONE_SCREEN,
+  P,
+  SCENE_H,
+  SCENE_W,
+  isWide,
+  kAt,
+  makeFrame,
+  openScroll,
+  sceneFit,
+  sceneFrame,
+  sceneToScreen,
+  sceneView,
+  screenToScene,
+  unprojectX,
+} from '../projection';
 import { TAP_SLOP, isTap, shopOpenScroll } from '../scroll';
 
 const WIDE = makeFrame(640);
@@ -34,7 +50,12 @@ describe('the frame', () => {
     expect(makeFrame(640).vanishX).toBe(320);
   });
   test('P and unprojectX slide with the vanishing point: the same drawing, shifted', () => {
-    for (const [x, y, z] of [[30, 0, 0], [196, 40, 12], [350, -30, 0], [100, 110, 80]]) {
+    for (const [x, y, z] of [
+      [30, 0, 0],
+      [196, 40, 12],
+      [350, -30, 0],
+      [100, 110, 80],
+    ]) {
       const [a, ay] = P(x, y, z);
       const [b, by] = P(x + DX, y, z, WIDE);
       expect(b).toBeCloseTo(a + DX, 9);
@@ -45,7 +66,12 @@ describe('the frame', () => {
 });
 
 describe('the fit and the scroll view', () => {
-  const screens: [number, number][] = [[393, 852], [390, 700], [430, 932], [375, 667]];
+  const screens: [number, number][] = [
+    [393, 852],
+    [390, 700],
+    [430, 932],
+    [375, 667],
+  ];
   test('a one-screen frame is fitted exactly as before and never scrolls', () => {
     for (const [w, h] of screens) {
       const v = sceneView(w, h, ONE_SCREEN);
@@ -118,12 +144,37 @@ describe('the fit and the scroll view', () => {
 /** Every x-position field of a layout that stands in the room (room units), with the screen ones after. */
 function roomXs(lay: Layout): number[] {
   return [
-    lay.L, lay.R, lay.prep.x0, lay.prep.x1, ...lay.cooks, ...lay.ovens.flatMap((o) => [o.x0, o.x1]), lay.bay.x0, lay.bay.x1, lay.counter.x0, lay.counter.x1, ...lay.staff,
-    lay.door.x0, lay.door.x1, lay.door.cx, ...lay.spots.map((s) => s.x), ...lay.orderSpots.map((s) => s[0]), ...lay.tables.map((t) => t.x), ...lay.bakers.map((b) => b.x),
-    ...(lay.ledge ? [lay.ledge.x0, lay.ledge.x1] : []), lay.scooter.x,
+    lay.L,
+    lay.R,
+    lay.prep.x0,
+    lay.prep.x1,
+    ...lay.cooks,
+    ...lay.ovens.flatMap((o) => [o.x0, o.x1]),
+    lay.bay.x0,
+    lay.bay.x1,
+    lay.counter.x0,
+    lay.counter.x1,
+    ...lay.staff,
+    lay.door.x0,
+    lay.door.x1,
+    lay.door.cx,
+    ...lay.spots.map((s) => s.x),
+    ...lay.orderSpots.map((s) => s[0]),
+    ...lay.tables.map((t) => t.x),
+    ...lay.bakers.map((b) => b.x),
+    ...(lay.ledge ? [lay.ledge.x0, lay.ledge.x1] : []),
+    lay.scooter.x,
   ];
 }
-const sidewalkXs = (lay: Layout): number[] => [lay.sign.x, lay.prop.x, ...lay.patio.map((p) => p.x), ...lay.queue.map((q) => q[0]), ...lay.driverQueue.map((q) => q[0]), lay.queueTag[0], lay.waitTag[0]];
+const sidewalkXs = (lay: Layout): number[] => [
+  lay.sign.x,
+  lay.prop.x,
+  ...lay.patio.map((p) => p.x),
+  ...lay.queue.map((q) => q[0]),
+  ...lay.driverQueue.map((q) => q[0]),
+  lay.queueTag[0],
+  lay.waitTag[0],
+];
 
 function* shops(frame: typeof WIDE) {
   for (let fp = 0; fp < 5; fp++)
@@ -133,12 +184,17 @@ function* shops(frame: typeof WIDE) {
           for (const tables of [1, 3, 6, 8])
             for (const plants of [0, 1]) {
               if (fp === 0 && cooks === 3) continue;
-              yield { name: `fp${fp} o${ovens} c${cooks} s${staff} t${tables} p${plants}`, fp, args: [fp, ovens, cooks, staff, tables, DRIVER_SLOTS[fp], plants] as const, lay: layout(fp, ovens, cooks, staff, tables, DRIVER_SLOTS[fp], plants, frame) };
+              yield {
+                name: `fp${fp} o${ovens} c${cooks} s${staff} t${tables} p${plants}`,
+                fp,
+                args: [fp, ovens, cooks, staff, tables, DRIVER_SLOTS[fp], plants] as const,
+                lay: layout(fp, ovens, cooks, staff, tables, DRIVER_SLOTS[fp], plants, frame),
+              };
             }
 }
 
 describe('a layout in a 640 frame', () => {
-  test('the default frame is the footprint\'s: layout() with no frame is layout() in one screen for the first three footprints, in the footprint\'s own frame after', () => {
+  test("the default frame is the footprint's: layout() with no frame is layout() in one screen for the first three footprints, in the footprint's own frame after", () => {
     for (const s of shops(ONE_SCREEN)) {
       if (s.fp < 3) expect(s.lay).toEqual(layout(...s.args));
       else expect(layout(...s.args).frame).toBe(sceneFrame(s.fp));
@@ -156,7 +212,7 @@ describe('a layout in a 640 frame', () => {
       }
     }
   });
-  test('it is the one-screen shop shifted across, field by field (fp 0 to 2: the wide tiers\' rooms are planned for their own width)', () => {
+  test("it is the one-screen shop shifted across, field by field (fp 0 to 2: the wide tiers' rooms are planned for their own width)", () => {
     for (const { name, fp, args, lay } of shops(WIDE)) {
       if (fp >= 3) continue;
       const one = layout(...args);
@@ -183,7 +239,10 @@ describe('a layout in a 640 frame', () => {
       for (const text of ['×11 waiting', '3 drivers idle · buy Ovens']) {
         const w = waitTagAt(lay, text);
         const m = moreTagAt(lay, text);
-        for (const [label, x, wid] of [['wait', w.x, w.w], ['more', m.x, m.w]] as const) {
+        for (const [label, x, wid] of [
+          ['wait', w.x, w.w],
+          ['more', m.x, m.w],
+        ] as const) {
           expect([name, label, x - wid / 2 >= 0, x + wid / 2 <= WIDE.width]).toEqual([name, label, true, true]);
         }
       }
@@ -229,7 +288,12 @@ function simulate(fp: number, tables: number, frame: typeof WIDE, pace: number) 
 }
 
 describe('the crowd in a 640 frame', () => {
-  const cases = [[0, 1], [2, 6], [3, 8], [4, 8]] as const;
+  const cases = [
+    [0, 1],
+    [2, 6],
+    [3, 8],
+    [4, 8],
+  ] as const;
   test('nobody walks in front of a baker or cook covering more than 35% of their torso', () => {
     const bad: string[] = [];
     for (const [fp, tables] of cases) {
@@ -252,7 +316,12 @@ describe('the crowd in a 640 frame', () => {
     for (const [fp, tables] of cases) {
       const { lay, frames } = simulate(fp, tables, WIDE, 1.5);
       const c4 = [P(lay.door.x0 + 2, -8, 0, WIDE), P(lay.door.x1 - 2, -8, 0, WIDE), P(lay.door.x1 + 1, -22, 0, WIDE), P(lay.door.x0 - 1, -22, 0, WIDE)];
-      const mat = { x0: Math.min(...c4.map((p) => p[0])), x1: Math.max(...c4.map((p) => p[0])), y0: Math.min(...c4.map((p) => p[1])), y1: Math.max(...c4.map((p) => p[1])) };
+      const mat = {
+        x0: Math.min(...c4.map((p) => p[0])),
+        x1: Math.max(...c4.map((p) => p[0])),
+        y0: Math.min(...c4.map((p) => p[1])),
+        y1: Math.max(...c4.map((p) => p[1])),
+      };
       for (const cast of frames) {
         for (const c of cast) {
           const still = !c.props.step && c.props.kind !== 'sit';
@@ -267,7 +336,7 @@ describe('the crowd in a 640 frame', () => {
       }
     }
   });
-  test('everyone drawn stands inside the drawing, and the walkers come in from its right edge, not one screen\'s', () => {
+  test("everyone drawn stands inside the drawing, and the walkers come in from its right edge, not one screen's", () => {
     for (const [fp, tables] of cases) {
       const { frames } = simulate(fp, tables, WIDE, 1.5);
       let farRight = 0;

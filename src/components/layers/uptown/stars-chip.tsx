@@ -19,5 +19,12 @@ export const StarsChip = memo(function StarsChip() {
   if (!key) return null;
   const [stars, tag] = key.split('|');
   const text = chipText(Number(stars), useGame.getState().game.city);
-  return <LayerChip testID="stars-chip" rows={twoRows(text)} label={`${text}. ${PAY_WORDS[tag as 'half' | 'full' | 'double']}. Open the stars sheet`} onPress={uptownSheet.open} />;
+  return (
+    <LayerChip
+      testID="stars-chip"
+      rows={twoRows(text)}
+      label={`${text}. ${PAY_WORDS[tag as 'half' | 'full' | 'double']}. Open the stars sheet`}
+      onPress={uptownSheet.open}
+    />
+  );
 });

@@ -37,4 +37,5 @@ export interface Seen {
 }
 
 /** The neighbourhood ids a saved slice may name: the save's own city's (`migrate`'s third argument), or, called without one, every city's (ids are unique across cities). */
-export const savedHoods = (city?: CityDef): readonly NeighborhoodId[] => (city ? hoodIds(city) : [...new Set(Object.values(CITIES).flatMap((c) => hoodIds(c)))]);
+export const savedHoods = (city?: CityDef): readonly NeighborhoodId[] =>
+  city ? hoodIds(city) : [...new Set(Object.values(CITIES).flatMap((c) => hoodIds(c)))];

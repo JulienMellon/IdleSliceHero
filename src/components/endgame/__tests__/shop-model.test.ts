@@ -15,7 +15,15 @@ describe('tab 1: Shop Style, the seven cosmetics', () => {
   test('the seven, in order, with their copy', () => {
     const v = vanityViews(base());
     expect(v.map((x) => x.id)).toEqual([...VANITY_IDS]);
-    expect(v.map((x) => x.name)).toEqual(['Golden Oven', 'Fresh Storefront', 'Wood-Fired Oven', 'Mint Scooter', 'Neon Counter', 'Golden Awning', 'Master’s Plaque']);
+    expect(v.map((x) => x.name)).toEqual([
+      'Golden Oven',
+      'Fresh Storefront',
+      'Wood-Fired Oven',
+      'Mint Scooter',
+      'Neon Counter',
+      'Golden Awning',
+      'Master’s Plaque',
+    ]);
     expect(v[0].desc).toBe('Gold-trimmed bricks. The pizza notices.');
   });
 
@@ -92,11 +100,30 @@ describe('tab 2: the booster shelf', () => {
   });
 
   test('the inventory, one row each, with the index startBooster takes; no price anywhere', () => {
-    const g: G.GameState = { ...base(), rewards: { ...base().rewards, boosters: [{ mult: 2, seconds: 900 }, { mult: 3, seconds: 1800 }] } };
+    const g: G.GameState = {
+      ...base(),
+      rewards: {
+        ...base().rewards,
+        boosters: [
+          { mult: 2, seconds: 900 },
+          { mult: 3, seconds: 1800 },
+        ],
+      },
+    };
     const rows = boosterShelf(g);
     expect(rows.map((r) => r.index)).toEqual([0, 1]);
     expect(rows.map((r) => r.label)).toEqual(['2× income · 15 m', '3× income · 30 m']);
-    const hour: G.GameState = { ...g, rewards: { ...g.rewards, boosters: [{ mult: 2, seconds: 3600 }, { mult: 2, seconds: 86400 }, { mult: 1.5, seconds: 5400 }] } };
+    const hour: G.GameState = {
+      ...g,
+      rewards: {
+        ...g.rewards,
+        boosters: [
+          { mult: 2, seconds: 3600 },
+          { mult: 2, seconds: 86400 },
+          { mult: 1.5, seconds: 5400 },
+        ],
+      },
+    };
     expect(boosterShelf(hour).map((r) => r.label)).toEqual(['2× income · 1 h', '2× income · 1 d', '1.5× income · 1 h 30 m']);
     expect(Object.keys(rows[0])).toEqual(['index', 'label']);
   });

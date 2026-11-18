@@ -20,7 +20,7 @@ describe('later-cycle visitors', () => {
     }
   });
 
-  test('every line sets on at most two lines in the shop (the pill\'s two-line limit)', () => {
+  test("every line sets on at most two lines in the shop (the pill's two-line limit)", () => {
     for (const v of VISITORS.slice(1, 3)) for (const line of VISITOR_CAMEO_LINES[v]) expect([line, sayLines(line).length <= 2]).toEqual([line, true]);
   });
 });

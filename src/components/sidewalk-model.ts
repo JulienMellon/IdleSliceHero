@@ -16,7 +16,15 @@ export type ButtonTone = 'normal' | 'neutral' | 'nogain' | 'expand';
  * The one rule for a purchase button's tone, shared by the sidewalk and the drawer (C60/G75): a locked or maxed
  * upgrade is never "no gain" (it shows its reason or MAX), and a muted (unmanaged) card stays neutral.
  */
-export function buttonTone({ lock, gain, muted = false }: { lock: string | null | boolean; gain: number | null; muted?: boolean }): Exclude<ButtonTone, 'expand'> {
+export function buttonTone({
+  lock,
+  gain,
+  muted = false,
+}: {
+  lock: string | null | boolean;
+  gain: number | null;
+  muted?: boolean;
+}): Exclude<ButtonTone, 'expand'> {
   if (muted) return 'neutral';
   if (lock) return 'normal';
   return (gain ?? 0) > 1e-9 ? 'normal' : 'nogain';
@@ -37,9 +45,17 @@ export interface CardLook {
   labelOpacity: number;
 }
 export function cardLook(frame: 'hot' | 'waiting' | null, affordable: boolean): CardLook {
-  if (affordable) return { borderColor: AFFORDABLE_OUTLINE.color, borderWidth: AFFORDABLE_OUTLINE.width, borderStyle: 'solid', backgroundColor: frame === 'hot' ? '#FFD9CF' : '#FFFFFF', labelOpacity: 1 };
+  if (affordable)
+    return {
+      borderColor: AFFORDABLE_OUTLINE.color,
+      borderWidth: AFFORDABLE_OUTLINE.width,
+      borderStyle: 'solid',
+      backgroundColor: frame === 'hot' ? '#FFD9CF' : '#FFFFFF',
+      labelOpacity: 1,
+    };
   // not affordable: saving for it is a dashed basil outline, anything else the quiet card
-  if (frame === 'waiting') return { borderColor: 'rgba(46,125,62,0.6)', borderWidth: 2.5, borderStyle: 'dashed', backgroundColor: 'rgba(255,255,255,0.95)', labelOpacity: 1 };
+  if (frame === 'waiting')
+    return { borderColor: 'rgba(46,125,62,0.6)', borderWidth: 2.5, borderStyle: 'dashed', backgroundColor: 'rgba(255,255,255,0.95)', labelOpacity: 1 };
   return { borderColor: '#3B1F14', borderWidth: 2.5, borderStyle: 'solid', backgroundColor: 'rgba(255,255,255,0.95)', labelOpacity: 1 };
 }
 /** The border of a button's face: dark and 2 pt whenever the buy can be made (any tone but the flat "no gain"), else none. */
@@ -122,7 +138,12 @@ export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[
   const key = levelKey(s, id);
   if (key === cacheKey) return cacheVal;
   const shop = s.shops[id];
-  const rates: Record<G.Stage, number> = { prep: G.prepRate(shop), ovens: G.ovenRate(shop), counter: G.counterRate(shop), customers: G.demandRate(shop, s.vehicle) };
+  const rates: Record<G.Stage, number> = {
+    prep: G.prepRate(shop),
+    ovens: G.ovenRate(shop),
+    counter: G.counterRate(shop),
+    customers: G.demandRate(shop, s.vehicle),
+  };
   const min = Math.min(...Object.values(rates));
   cacheVal = STATION_KEYS.map((k) => {
     const { what, name, stage } = STATION[k];
@@ -267,7 +288,10 @@ export type SidewalkSlot = StationSlot | MergedSlot;
  * expand group; the tied stations make the bundle group only when a bundle exists, two or more are tied, and none of
  * them is capped (the bundle's steps would start with an expansion, which the Expand card already sells).
  */
-export function mergeGroups(views: readonly Pick<StationView, 'key' | 'expand' | 'tied'>[], hasBundle: boolean): { expand: StationKey[] | null; bundle: StationKey[] | null } {
+export function mergeGroups(
+  views: readonly Pick<StationView, 'key' | 'expand' | 'tied'>[],
+  hasBundle: boolean,
+): { expand: StationKey[] | null; bundle: StationKey[] | null } {
   const capped = views.filter((v) => v.expand).map((v) => v.key);
   const tied = views.filter((v) => v.tied);
   return {
@@ -375,7 +399,12 @@ export const amountLabel = (a: BuyAmount): string => (a === 'max' ? 'MAX' : `×$
  * How a station card reads for the chosen amount: the total price and the levels gained ("+10 lv"), enabled when the cash covers it.
  * Null leaves the card as it is: ×1, the Expand buy, a locked or maxed station, and every single buy.
  */
-export function amountCard(s: G.GameState, id: NeighborhoodId, v: Pick<StationView, 'what' | 'expand'>, amount: BuyAmount): { label: string; foot: string; enabled: boolean; count: number } | null {
+export function amountCard(
+  s: G.GameState,
+  id: NeighborhoodId,
+  v: Pick<StationView, 'what' | 'expand'>,
+  amount: BuyAmount,
+): { label: string; foot: string; enabled: boolean; count: number } | null {
   if (amount === 1 || v.expand || !isLevelUpgrade(v.what)) return null;
   const plan = buyPlan(s, id, v.what, amount);
   if (plan.count === 0) return null;

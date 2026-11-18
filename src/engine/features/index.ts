@@ -21,7 +21,21 @@ export { FEATURES };
 
 // Importing this file registers every feature, in the order their hooks run (the array itself is registry.ts, so game.ts needs
 // no feature: A31). A module is evaluated once, so this runs once.
-FEATURES.push(mastery, counterattack, events, recipes, heads, service, suburbsGameDay, waterfrontBoats, rival, universityMenu, industrialShifts, uptownStars, franchiseFeature);
+FEATURES.push(
+  mastery,
+  counterattack,
+  events,
+  recipes,
+  heads,
+  service,
+  suburbsGameDay,
+  waterfrontBoats,
+  rival,
+  universityMenu,
+  industrialShifts,
+  uptownStars,
+  franchiseFeature,
+);
 
 /** A feature's state. Before the feature has ever saved, this is whatever `init`/`migrate` gave it. */
 export function getFeature<S>(g: GameState, f: Feature<S>): S {
@@ -34,7 +48,8 @@ export function setFeature<S>(g: GameState, f: Feature<S>, s: S): GameState {
 }
 
 /** Test helper: run `fn` with `list` as the registry, then put the real one back (even if `fn` throws). */
-export function withFeatures<T>(list: Feature<any>[], fn: () => T): T { // eslint-disable-line @typescript-eslint/no-explicit-any
+export function withFeatures<T>(list: Feature<any>[], fn: () => T): T {
+  // eslint-disable-line @typescript-eslint/no-explicit-any
   const saved = FEATURES.slice();
   FEATURES.splice(0, FEATURES.length, ...list);
   try {

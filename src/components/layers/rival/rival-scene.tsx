@@ -33,7 +33,16 @@ const MegaShop = memo(function MegaShop({ shut }: { shut: number }) {
   return (
     <G>
       {/* the far kerb it stands on (D481): a pavement slab wider than the shop, drawn behind it so it reads as on the kerb, not on the asphalt */}
-      <Rect x={-RIVAL_SHOP.slab} y={h * scale - RIVAL_SHOP.slabRise} width={w + 2 * RIVAL_SHOP.slab} height={kerb + RIVAL_SHOP.slabRise} rx={2} fill="#D3CCBD" stroke={INK} strokeWidth={0.8} />
+      <Rect
+        x={-RIVAL_SHOP.slab}
+        y={h * scale - RIVAL_SHOP.slabRise}
+        width={w + 2 * RIVAL_SHOP.slab}
+        height={kerb + RIVAL_SHOP.slabRise}
+        rx={2}
+        fill="#D3CCBD"
+        stroke={INK}
+        strokeWidth={0.8}
+      />
       <Rect x={-RIVAL_SHOP.slab} y={h * scale + kerb - 2} width={w + 2 * RIVAL_SHOP.slab} height={2} fill="#9B9386" />
       <G transform={`scale(${scale})`}>
         <Rect x={0} y={6} width={aw} height={h - 6} rx={4} fill={PURPLE} stroke={INK} strokeWidth={1.8} />
@@ -103,7 +112,13 @@ export const RivalScene = memo(function RivalScene({ shopId, width, height }: Sc
   const shut = closedAt === null ? 0 : shutterShare((Date.now() - closedAt) / 1000);
   return (
     <View ref={root} testID="rival-shop" pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
+      <Svg
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        width={width}
+        height={height}
+        viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}
+      >
         <G transform={`translate(${RIVAL_SHOP.x} ${RIVAL_SHOP.top})`}>
           <MegaShop shut={shut} />
         </G>

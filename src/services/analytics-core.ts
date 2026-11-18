@@ -20,7 +20,10 @@ export interface AnalyticsDeps {
 
 const newId = (random: () => number): string => {
   let s = '';
-  for (let i = 0; i < 4; i++) s += Math.floor(random() * 0x100000000).toString(16).padStart(8, '0');
+  for (let i = 0; i < 4; i++)
+    s += Math.floor(random() * 0x100000000)
+      .toString(16)
+      .padStart(8, '0');
   return s;
 };
 

@@ -14,10 +14,7 @@ export interface ConsentState {
 
 export const initialConsent = (): ConsentState => ({ tutorialDone: false, umpDone: false, canRequestAds: false, tracking: 'unknown' });
 
-export type ConsentEvent =
-  | { type: 'tutorial_done' }
-  | { type: 'ump'; canRequestAds: boolean }
-  | { type: 'tracking'; status: TrackingStatus };
+export type ConsentEvent = { type: 'tutorial_done' } | { type: 'ump'; canRequestAds: boolean } | { type: 'tracking'; status: TrackingStatus };
 
 export function consentReduce(s: ConsentState, e: ConsentEvent): ConsentState {
   switch (e.type) {

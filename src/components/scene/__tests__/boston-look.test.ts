@@ -22,7 +22,16 @@ describe('Boston looks', () => {
     for (const n of NEIGHBORHOODS) expect(HOME).not.toContain(n.id);
   });
   test('the first shop of a city has a free sidewalk, whichever city: Downtown, and North End', () => {
-    const src = (id: string, first?: boolean): FurnitureSource => ({ id, name: 'x', shop: { footprint: 0, prep: 1, counter: 1, drivers: 1, managed: false, line: { prepped: 0 }, decor: { plants: 0, tables: 0, signage: 0 } }, running: false, rate: 0, vehicle: 0, worn: [], first: first ?? id === 'downtown' });
+    const src = (id: string, first?: boolean): FurnitureSource => ({
+      id,
+      name: 'x',
+      shop: { footprint: 0, prep: 1, counter: 1, drivers: 1, managed: false, line: { prepped: 0 }, decor: { plants: 0, tables: 0, signage: 0 } },
+      running: false,
+      rate: 0,
+      vehicle: 0,
+      worn: [],
+      first: first ?? id === 'downtown',
+    });
     expect(furnitureInputs(src('north-end', true)).idleShop).toBe(false);
     expect(furnitureInputs(src('southie', false)).idleShop).toBe(true);
     expect(furnitureInputs(src('downtown')).idleShop).toBe(false);

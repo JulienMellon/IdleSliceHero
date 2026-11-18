@@ -14,7 +14,9 @@ export const WRENCH = BUTTON_H;
 /** The label by the wrench: the Head Baker's countdown when one is hired ("Head Baker fixing… 12s"), else the alert; null with no jam. */
 export function jamLabel(v: Pick<JamView, 'jammed' | 'autoFixIn'>, city?: string): string | null {
   if (!v.jammed) return null;
-  return v.autoFixIn !== null ? fill(COPY['layer.industrial.jam.headfix'], { n: v.autoFixIn }) : dressed(city, 'layer.industrial.jam.alert', COPY['layer.industrial.jam.alert']);
+  return v.autoFixIn !== null
+    ? fill(COPY['layer.industrial.jam.headfix'], { n: v.autoFixIn })
+    : dressed(city, 'layer.industrial.jam.alert', COPY['layer.industrial.jam.alert']);
 }
 
 /**

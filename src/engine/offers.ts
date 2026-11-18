@@ -14,7 +14,10 @@ import * as R from './rewards';
 const gateOpen = (g: GameState, now: number): boolean => R.rewardsUnlocked(g) && !R.clockBehind(g, now);
 
 /** Pay a reward patch: rewards.lastSeen moves up like every claim's. */
-const withRewards = (g: GameState, patch: Partial<GameState['rewards']>, now: number): GameState => ({ ...g, rewards: { ...g.rewards, ...patch, lastSeen: Math.max(g.rewards.lastSeen, now) } });
+const withRewards = (g: GameState, patch: Partial<GameState['rewards']>, now: number): GameState => ({
+  ...g,
+  rewards: { ...g.rewards, ...patch, lastSeen: Math.max(g.rewards.lastSeen, now) },
+});
 
 // -- double a claim --
 
@@ -101,7 +104,8 @@ export const streakSaveOffer = (g: GameState, now: number): boolean => gateOpen(
 export const DAILY_BOOSTER = { mult: 2, seconds: 15 * 60 } as const;
 
 /** The shelf's ad is on offer: rewards are unlocked, and none was taken today (`day` is the local date, `dayKey(now)`). */
-export const boosterAdOffer = (g: GameState, now: number, takenDay: string): boolean => gateOpen(g, now) && takenDay !== R.dayKey(now) && g.rewards.boosters.length < MAX_BOOSTERS;
+export const boosterAdOffer = (g: GameState, now: number, takenDay: string): boolean =>
+  gateOpen(g, now) && takenDay !== R.dayKey(now) && g.rewards.boosters.length < MAX_BOOSTERS;
 
 export function grantDailyBooster(g: GameState, now: number): BuyResult {
   if (!gateOpen(g, now)) return { ok: false, reason: R.rewardsUnlocked(g) ? R.CLOCK_REASON : 'Rewards unlock when Nonna takes over' };

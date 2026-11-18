@@ -123,7 +123,12 @@ export const recipes: Feature<RecipesState> = {
     const valid = new Set(savedHoods(city).flatMap((id) => CARDS.map((n) => recipeId(id, n))));
     const owned = Array.isArray(r.owned) ? [...new Set((r.owned as unknown[]).filter((x): x is string => typeof x === 'string' && valid.has(x)))] : [];
     const sum = r.summary && typeof r.summary === 'object' ? (r.summary as Record<string, unknown>) : null;
-    return { owned, fresh: [], synced: r.synced === true, summary: sum && typeof sum.cards === 'number' ? { cards: Math.max(0, Math.floor(sum.cards)) } : null };
+    return {
+      owned,
+      fresh: [],
+      synced: r.synced === true,
+      summary: sum && typeof sum.cards === 'number' ? { cards: Math.max(0, Math.floor(sum.cards)) } : null,
+    };
   },
   tick: (g) => settle(g),
   onOffline: (g) => settle(g),

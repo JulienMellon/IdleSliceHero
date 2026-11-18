@@ -69,12 +69,29 @@ export function boatSheet(g: GameState, now: number): SheetModel {
   const city = g.city;
   const rows: SheetRow[] = [
     { key: 'next', label: v.boat ? label(city, 'boatLeft') : label(city, 'nextBoat'), value: mmss(v.boat ? v.left : v.nextIn) },
-    { key: 'rack', label: label(city, 'rack'), value: v.rackTier > 0 ? `${v.rackPies} / ${v.rackCapacity} · ${tierName(v.rackTier, city)}` : label(city, 'rackEmpty') },
+    {
+      key: 'rack',
+      label: label(city, 'rack'),
+      value: v.rackTier > 0 ? `${v.rackPies} / ${v.rackCapacity} · ${tierName(v.rackTier, city)}` : label(city, 'rackEmpty'),
+    },
   ];
   const buys: SheetBuy[] = [];
-  if (v.rackPrice !== null) buys.push({ key: 'rack', title: `${tierName(v.rackTier + 1, city)} · ${money(v.rackPrice)}`, line: `Holds ${BOATS.rack.capacity[v.rackTier]} pies ${isDressed(city, 'label.nextBoat') ? 'between orders' : 'between boats'}.` });
+  if (v.rackPrice !== null)
+    buys.push({
+      key: 'rack',
+      title: `${tierName(v.rackTier + 1, city)} · ${money(v.rackPrice)}`,
+      line: `Holds ${BOATS.rack.capacity[v.rackTier]} pies ${isDressed(city, 'label.nextBoat') ? 'between orders' : 'between boats'}.`,
+    });
   buys.push({ key: 'counter', title: `Counter · ${price(g, id, 'counter')}`, line: 'A faster counter empties the rack faster.' });
-  return { kind: 'boat', title: lcc(city, 'layer.waterfront.boat.info.title'), body: `${lcc(city, 'layer.waterfront.boat.info.body')} ${lcc(city, 'upgrade.waterfront.rack.info.body')}`, speaker: '', rows, buys, action: null };
+  return {
+    kind: 'boat',
+    title: lcc(city, 'layer.waterfront.boat.info.title'),
+    body: `${lcc(city, 'layer.waterfront.boat.info.body')} ${lcc(city, 'upgrade.waterfront.rack.info.body')}`,
+    speaker: '',
+    rows,
+    buys,
+    action: null,
+  };
 }
 
 export function auctionSheet(g: GameState): SheetModel {
@@ -110,7 +127,8 @@ export function rivalSheet(g: GameState, id: NeighborhoodId, now: number): Sheet
     { key: 'target', label: LABELS.target, value: `${target} pies` },
   ];
   if (v.phase === 'waiting') rows.push({ key: 'time', label: LABELS.challenge, value: LABELS.soon });
-  else rows.push({ key: 'time', label: timeLabel, value: mmss(v.phase === 'running' ? v.secondsLeft : v.phase === 'retry' ? v.retryIn : RIVAL.challengeSeconds) });
+  else
+    rows.push({ key: 'time', label: timeLabel, value: mmss(v.phase === 'running' ? v.secondsLeft : v.phase === 'retry' ? v.retryIn : RIVAL.challengeSeconds) });
   const card = rivalCard(v, id, null, cityOf(g));
   return {
     kind: 'rival',

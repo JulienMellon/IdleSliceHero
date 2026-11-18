@@ -43,14 +43,35 @@ export function vanityViews(g: GameState): VanityView[] {
     const have = idsOf(id, cosmetics);
     const wornId = have.find((h) => worn.includes(h)) ?? null;
     const base = { id, name: copy(`shop.item.${id}.name`), desc: copy(`shop.item.${id}.desc`) };
-    if (have.length) return { ...base, state: wornId ? 'worn' : 'owned', label: wornId ? 'Worn' : 'Wear', wearId: wornId ?? have[have.length - 1], buyId: null } satisfies VanityView;
+    if (have.length)
+      return {
+        ...base,
+        state: wornId ? 'worn' : 'owned',
+        label: wornId ? 'Worn' : 'Wear',
+        wearId: wornId ?? have[have.length - 1],
+        buyId: null,
+      } satisfies VanityView;
     if (id === 'plaque-master') return { ...base, state: 'earn', label: `earn ${MASTERY.masterTotal} stars`, wearId: null, buyId: null } satisfies VanityView;
-    return { ...base, state: diamonds >= VANITY_PRICE ? 'buy' : 'poor', label: `${VANITY_PRICE} diamonds`, wearId: null, buyId: id === 'storefront-skin' ? nextSkin(cosmetics) : id } satisfies VanityView;
+    return {
+      ...base,
+      state: diamonds >= VANITY_PRICE ? 'buy' : 'poor',
+      label: `${VANITY_PRICE} diamonds`,
+      wearId: null,
+      buyId: id === 'storefront-skin' ? nextSkin(cosmetics) : id,
+    } satisfies VanityView;
   });
   // the founder awning: only when owned, with wear and take-off like the rest
   if (cosmetics.includes(FOUNDER_ID)) {
     const on = worn.includes(FOUNDER_ID);
-    rows.push({ id: FOUNDER_ID, name: cosmeticName(FOUNDER_ID), desc: FOUNDER_DESC, state: on ? 'worn' : 'owned', label: on ? 'Worn' : 'Wear', wearId: FOUNDER_ID, buyId: null });
+    rows.push({
+      id: FOUNDER_ID,
+      name: cosmeticName(FOUNDER_ID),
+      desc: FOUNDER_DESC,
+      state: on ? 'worn' : 'owned',
+      label: on ? 'Worn' : 'Wear',
+      wearId: FOUNDER_ID,
+      buyId: null,
+    });
   }
   return rows;
 }
@@ -66,7 +87,8 @@ export interface ShelfRow {
 export const boosterShelf = (g: GameState): ShelfRow[] => g.rewards.boosters.map((b, index) => ({ index, label: shelfLabel(b.mult, b.seconds) }));
 
 /** "2× income · 1 h": the shelf's own wording; whole hours and days drop their zero minutes and hours. */
-export const shelfLabel = (mult: number, seconds: number): string => `${Number.isInteger(mult) ? mult : Math.round(mult * 10) / 10}\u00D7 income \u00B7 ${spanText(seconds).replace(/ 0 m$/, '').replace(/ 0 h$/, '')}`;
+export const shelfLabel = (mult: number, seconds: number): string =>
+  `${Number.isInteger(mult) ? mult : Math.round(mult * 10) / 10}\u00D7 income \u00B7 ${spanText(seconds).replace(/ 0 m$/, '').replace(/ 0 h$/, '')}`;
 
 export const SHELF_EMPTY = (): string => copy('shop.boosters.empty');
 

@@ -1,4 +1,3 @@
-
 import { SCENE_WIDTH } from '../../content/shop-layout';
 
 export const INK = '#3B1F14';
@@ -111,7 +110,8 @@ export function P(x: number, y: number, z = 0, frame: SceneFrame = ONE_SCREEN): 
   return [v * (1 - SC) + (v + (x - v) * f) * SC, TY + (492 - y * 1.25 - z * f) * SC];
 }
 /** Inverse of P's x at depth y (z = 0): the room x that lands at screen x `sx`. */
-export const unprojectX = (sx: number, y: number, frame: SceneFrame = ONE_SCREEN) => frame.vanishX + ((sx - frame.vanishX * (1 - SC)) / SC - frame.vanishX) / (1 - y / 520);
+export const unprojectX = (sx: number, y: number, frame: SceneFrame = ONE_SCREEN) =>
+  frame.vanishX + ((sx - frame.vanishX * (1 - SC)) / SC - frame.vanishX) / (1 - y / 520);
 export const kAt = (y: number) => (1 - y / 520) * SC;
 export const pts = (list: [number, number][]) => list.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
 

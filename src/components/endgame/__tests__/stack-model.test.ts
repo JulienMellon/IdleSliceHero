@@ -4,12 +4,33 @@ import * as G from '../../../engine/game';
 import { TAP } from '../../tap-targets';
 import { BONUS_VIEW } from '../../../content/hooks';
 import { bonusScale } from '../../../engine/bonus';
-import { EVENT_STRIP_SECONDS, flightBounds, holdsBonus, laneBottom, offerWaits, SIGN_GAP, SKY_PRIORITY, type SkyItem, skyFirst, skyOf, skyPresence, skyShown, STACK, stackTop } from '../stack-model';
+import {
+  EVENT_STRIP_SECONDS,
+  flightBounds,
+  holdsBonus,
+  laneBottom,
+  offerWaits,
+  SIGN_GAP,
+  SKY_PRIORITY,
+  type SkyItem,
+  skyFirst,
+  skyOf,
+  skyPresence,
+  skyShown,
+  STACK,
+  stackTop,
+} from '../stack-model';
 
 const base = (): G.GameState => G.newGame(1_700_000_000_000);
 const withAttack = (patch: Record<string, unknown>): G.GameState => {
   const g = base();
-  return { ...g, x: { ...g.x, counterattack: { armedWeek: 1, seenWeek: 1, target: 'downtown', open: true, defended: [], challenge: null, retryAt: 0, news: null, ...patch } } };
+  return {
+    ...g,
+    x: {
+      ...g.x,
+      counterattack: { armedWeek: 1, seenWeek: 1, target: 'downtown', open: true, defended: [], challenge: null, retryAt: 0, news: null, ...patch },
+    },
+  };
 };
 
 describe('the notices at the top of the scene area', () => {
@@ -45,7 +66,10 @@ describe('the notices at the top of the scene area', () => {
 
 // ---- v5.17 (U4): one sky event at a time ----
 const FRIDAY_6PM = new Date(2026, 10, 13, 18).getTime();
-const SHOPS_BUILT = (g: G.GameState): G.GameState => ({ ...g, shops: { ...g.shops, waterfront: { ...g.shops.waterfront, built: true }, suburbs: { ...g.shops.suburbs, built: true } } });
+const SHOPS_BUILT = (g: G.GameState): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, waterfront: { ...g.shops.waterfront, built: true }, suburbs: { ...g.shops.suburbs, built: true } },
+});
 /** A state in which exactly the given items want the strip. */
 function stateWith(items: SkyItem[]): { g: G.GameState; open: boolean } {
   let g = SHOPS_BUILT(base());
@@ -53,14 +77,18 @@ function stateWith(items: SkyItem[]): { g: G.GameState; open: boolean } {
   if (items.includes('order')) g = { ...g, order: { ...g.order, active: { hood: 'suburbs', target: 40, startSold: 0, left: 100, variant: 0 } } };
   if (items.includes('offer')) g = { ...g, order: { ...g.order, offer: { hood: 'suburbs', target: 40, left: 45, variant: 0 } } };
   if (items.includes('attack')) {
-    g = { ...g, x: { ...g.x, counterattack: { armedWeek: 1, seenWeek: 1, target: 'downtown', open: true, defended: [], challenge: null, retryAt: 0, news: null } } };
+    g = {
+      ...g,
+      x: { ...g.x, counterattack: { armedWeek: 1, seenWeek: 1, target: 'downtown', open: true, defended: [], challenge: null, retryAt: 0, news: null } },
+    };
     open = true;
   }
   if (items.includes('golden')) g = { ...g, seenScenes: ['downtown-2', ...g.seenScenes], bonus: { ...g.bonus, next: 0, until: 0 } };
   return { g, open };
 }
 // a golden pizza that is due takes the strip from an event banner after its first moments, so a pair with both is taken inside them
-const NOW = (items: SkyItem[]) => (items.includes('event') ? (items.includes('golden') ? new Date(2026, 10, 13, 17).getTime() + 5_000 : FRIDAY_6PM) : new Date(2026, 10, 11, 12).getTime());
+const NOW = (items: SkyItem[]) =>
+  items.includes('event') ? (items.includes('golden') ? new Date(2026, 10, 13, 17).getTime() + 5_000 : FRIDAY_6PM) : new Date(2026, 10, 11, 12).getTime();
 
 describe('U4: one sky event at a time', () => {
   test('the fixed priority is the running order, the attack, an offer, the event, the golden pizza', () => {
@@ -129,7 +157,11 @@ describe('U4: one sky event at a time', () => {
   test('the golden box and its label stay fully inside the screen at 375 and 393 pt, every flight, normal and lucky', () => {
     const edge = BONUS_VIEW.popEdge;
     for (const width of [375, 393]) {
-      for (const [lucky, labelW] of [[false, 0], [false, BONUS_VIEW.giftWidth], [true, BONUS_VIEW.tagWidth]] as const) {
+      for (const [lucky, labelW] of [
+        [false, 0],
+        [false, BONUS_VIEW.giftWidth],
+        [true, BONUS_VIEW.tagWidth],
+      ] as const) {
         const bw = BONUS_VIEW.width * bonusScale(lucky);
         const { from, to } = flightBounds(width, bw, labelW);
         expect(from).toBeGreaterThanOrEqual(edge);

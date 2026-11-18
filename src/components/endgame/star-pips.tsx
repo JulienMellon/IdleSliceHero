@@ -21,9 +21,28 @@ export const StarPips = memo(function StarPips({ bits, size = 14, testID }: { bi
   const w = size * 3 + gap * 2;
   return (
     <Svg testID={testID} width={w} height={size} viewBox={`0 0 ${w} ${size}`} accessibilityLabel={`${[0, 1, 2].filter((i) => lit(bits, i)).length} of 3 stars`}>
-      {[0, 1, 2].map((i) => lit(bits, i) && <Path key={`h${i}`} d={starPath(size / 2 + i * (size + gap), size / 2 + 0.5, size / 2 - 0.5)} fill={HALO} stroke={HALO} strokeWidth={size * 0.22} strokeLinejoin="round" />)}
+      {[0, 1, 2].map(
+        (i) =>
+          lit(bits, i) && (
+            <Path
+              key={`h${i}`}
+              d={starPath(size / 2 + i * (size + gap), size / 2 + 0.5, size / 2 - 0.5)}
+              fill={HALO}
+              stroke={HALO}
+              strokeWidth={size * 0.22}
+              strokeLinejoin="round"
+            />
+          ),
+      )}
       {[0, 1, 2].map((i) => (
-        <Path key={i} d={starPath(size / 2 + i * (size + gap), size / 2 + 0.5, size / 2 - 0.5)} fill={lit(bits, i) ? GOLD : DIM} stroke={lit(bits, i) ? GOLD_EDGE : DIM_EDGE} strokeWidth={size * 0.07} strokeLinejoin="round" />
+        <Path
+          key={i}
+          d={starPath(size / 2 + i * (size + gap), size / 2 + 0.5, size / 2 - 0.5)}
+          fill={lit(bits, i) ? GOLD : DIM}
+          stroke={lit(bits, i) ? GOLD_EDGE : DIM_EDGE}
+          strokeWidth={size * 0.07}
+          strokeLinejoin="round"
+        />
       ))}
     </Svg>
   );
@@ -35,7 +54,14 @@ export function MapStars({ x, y, bits, r = 2.1 }: { x: number; y: number; bits: 
   return (
     <G>
       {[0, 1, 2].map((i) => (
-        <Path key={i} d={starPath(x + (i - 1) * step, y, r)} fill={lit(bits, i) ? GOLD : '#E7DDD0'} stroke={lit(bits, i) ? GOLD_EDGE : '#B5A99C'} strokeWidth={0.3} strokeLinejoin="round" />
+        <Path
+          key={i}
+          d={starPath(x + (i - 1) * step, y, r)}
+          fill={lit(bits, i) ? GOLD : '#E7DDD0'}
+          stroke={lit(bits, i) ? GOLD_EDGE : '#B5A99C'}
+          strokeWidth={0.3}
+          strokeLinejoin="round"
+        />
       ))}
     </G>
   );

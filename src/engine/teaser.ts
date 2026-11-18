@@ -78,7 +78,12 @@ function teaserWith(s: GameState, scenes: readonly Scene[], make: Make): Teaser 
   // the shop isn't there yet: whatever the scene waits for, the player's next move is to build it
   if (!shop.built) return make('unlock', () => `${who()} when you build ${hood.name}`, buildLock(s, sc.neighborhood) ? 0 : ratio(s.cash, hood.buildCost));
   const tr = sc.trigger;
-  if (tr.kind === 'bid') return make('bid', () => `${who()} when you bid on Pier 9`, pier9Available(s) ? ratio(s.cash, pier9Price(s)) : ratio(shop.sold, cityOf(s).bid?.unlockPizzas ?? 0));
+  if (tr.kind === 'bid')
+    return make(
+      'bid',
+      () => `${who()} when you bid on Pier 9`,
+      pier9Available(s) ? ratio(s.cash, pier9Price(s)) : ratio(shop.sold, cityOf(s).bid?.unlockPizzas ?? 0),
+    );
   if (tr.kind === 'after') return make('soon', () => `${who()} soon`, 0);
   if (tr.kind === 'challenge') return make('soon', () => `${who()} when you outsell MegaSlice`, 0);
   if (tr.kind === 'deliveries') {
@@ -92,7 +97,12 @@ function teaserWith(s: GameState, scenes: readonly Scene[], make: Make): Teaser 
 }
 
 export function nextSceneTeaser(s: GameState, scenes: readonly Scene[] = cityOf(s).scenes): Teaser {
-  return teaserWith(s, scenes, (kind, text, progress) => ({ kind, text: typeof text === 'string' ? text : text(), progress, step: kind === 'complete' ? 0 : ringStep(progress) }));
+  return teaserWith(s, scenes, (kind, text, progress) => ({
+    kind,
+    text: typeof text === 'string' ? text : text(),
+    progress,
+    step: kind === 'complete' ? 0 : ringStep(progress),
+  }));
 }
 
 /** U13: only the ring's step of `nextSceneTeaser` (the HUD asks five times a second): no text is built, the same answer. */

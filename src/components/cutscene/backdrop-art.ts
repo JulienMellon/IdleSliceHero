@@ -49,14 +49,34 @@ export function gridLines(x0: number, y0: number, x1: number, y1: number, sx: nu
 }
 
 /** Window panes: `cols`×`rows` rectangles of w×h on a pitch of px×py. */
-export function windows(x0: number, y0: number, cols: number, rows: number, w: number, h: number, px: number, py: number, skip?: (c: number, r: number) => boolean) {
+export function windows(
+  x0: number,
+  y0: number,
+  cols: number,
+  rows: number,
+  w: number,
+  h: number,
+  px: number,
+  py: number,
+  skip?: (c: number, r: number) => boolean,
+) {
   let d = '';
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (!skip?.(c, r)) d += rect(x0 + c * px, y0 + r * py, w, h);
   return d;
 }
 
 /** Mullions (a cross in each pane) for the same grid. */
-export function mullions(x0: number, y0: number, cols: number, rows: number, w: number, h: number, px: number, py: number, skip?: (c: number, r: number) => boolean) {
+export function mullions(
+  x0: number,
+  y0: number,
+  cols: number,
+  rows: number,
+  w: number,
+  h: number,
+  px: number,
+  py: number,
+  skip?: (c: number, r: number) => boolean,
+) {
   let d = '';
   for (let r = 0; r < rows; r++)
     for (let c = 0; c < cols; c++) {
@@ -98,7 +118,7 @@ export function planks(x0: number, x1: number, y0: number, y1: number, vpX: numb
   let i = 0;
   for (let x = x0; x <= x1; x += pitch, i++) {
     lines += `M${n(x)} ${y0}L${n(vpX + (x - vpX) * k)} ${y1}`;
-    const yj = y0 + ((i * 37) % 100) / 100 * (y1 - y0);
+    const yj = y0 + (((i * 37) % 100) / 100) * (y1 - y0);
     joints += `M${n(at(x, yj))} ${n(yj)}L${n(at(x + pitch, yj))} ${n(yj)}`;
     if (i % 2 === 0) {
       const yg = y0 + (((i * 53) % 100) / 100) * (y1 - y0) * 0.8 + 3;
@@ -131,7 +151,13 @@ export function rain(count: number, x0: number, x1: number, y0: number, y1: numb
 
 /** A puffy cloud bank as one outline (circles unioned by the nonzero fill). The base is wound the circles' way (counter-clockwise): `rect` runs clockwise, so overlapping it would cancel to winding 0 and cut sky-coloured bites out of the cloud (D510). */
 export function cloud(x: number, y: number, k: number) {
-  return circle(x, y, 13 * k) + circle(x + 16 * k, y - 7 * k, 18 * k) + circle(x + 35 * k, y - 1 * k, 14 * k) + circle(x + 50 * k, y + 3 * k, 10 * k) + `M${n(x)} ${n(y)}v${n(13 * k)}h${n(50 * k)}v${n(-13 * k)}Z`;
+  return (
+    circle(x, y, 13 * k) +
+    circle(x + 16 * k, y - 7 * k, 18 * k) +
+    circle(x + 35 * k, y - 1 * k, 14 * k) +
+    circle(x + 50 * k, y + 3 * k, 10 * k) +
+    `M${n(x)} ${n(y)}v${n(13 * k)}h${n(50 * k)}v${n(-13 * k)}Z`
+  );
 }
 
 /** A far skyline: tower outlines (with the odd spire/stepped crown) from the horizon up. */
@@ -197,12 +223,29 @@ export const UPTOWN_BILLBOARD = { x: 196, y: -30, w: 74, h: 30 } as const;
 export const PIER_PLAQUE = { x: 232, y: 20, w: 60, h: 26 } as const;
 export const HQ_PLATE = { x: 150, y: -46, w: 100, h: 18 } as const;
 /** Scale a [cx, cy, r] circle about (146, -14), then shift it by (dx, dy). */
-const oakCircle = ([cx, cy, r]: readonly [number, number, number], k: number, dx: number, dy: number): [number, number, number] => [n(146 + (cx - 146) * k + dx), n(-14 + (cy + 14) * k + dy), n(r * k)];
+const oakCircle = ([cx, cy, r]: readonly [number, number, number], k: number, dx: number, dy: number): [number, number, number] => [
+  n(146 + (cx - 146) * k + dx),
+  n(-14 + (cy + 14) * k + dy),
+  n(r * k),
+];
 /** The canopy as drawn in the original art (cut-scene 22 round 54): five puffs, three shading puffs, two highlights. */
 const OAK_ORIGINAL = {
-  canopy: [[146, -40, 34], [116, -10, 28], [176, -6, 30], [144, 14, 30], [170, -54, 22]],
-  shade: [[182, 0, 22], [160, 26, 18], [178, -40, 14]],
-  light: [[124, -34, 12], [134, -60, 9]],
+  canopy: [
+    [146, -40, 34],
+    [116, -10, 28],
+    [176, -6, 30],
+    [144, 14, 30],
+    [170, -54, 22],
+  ],
+  shade: [
+    [182, 0, 22],
+    [160, 26, 18],
+    [178, -40, 14],
+  ],
+  light: [
+    [124, -34, 12],
+    [134, -60, 9],
+  ],
 } as const;
 /** D398: the canopy shrunk 15 % and sat 6 units right of, 10 units lower than, the old one so it clears the caption and the left roof's ridge. */
 export const OAK_FIT = { k: 0.85, dx: 6, dy: 10, outline: 4 } as const;
@@ -235,7 +278,21 @@ export const PROP_BOXES = {
   'phone-footage': { x: 172, y: -42, w: 56, h: 80 },
 } as const;
 /** Boston's props (card T2): small objects held up in one shared box, tilted a little like the name tag; drawn from `ICON_PROPS` in backdrop.tsx. */
-export const ICON_PROP_IDS = ['coupon', 'envelope', 'apron', 'contract', 'clipboard', 'phone', 'photo', 'thermometer', 'pantry-shelf', 'half-ladle', 'scorecard', 'golden-ladle', 'pretzel'] as const;
+export const ICON_PROP_IDS = [
+  'coupon',
+  'envelope',
+  'apron',
+  'contract',
+  'clipboard',
+  'phone',
+  'photo',
+  'thermometer',
+  'pantry-shelf',
+  'half-ladle',
+  'scorecard',
+  'golden-ladle',
+  'pretzel',
+] as const;
 export const ICON_PROP_BOX = { x: 150, y: -40, w: 100, h: 72 } as const;
 /** The name tag's white field, under its red HELLO band, in the tag's own coordinates: `propText` is fitted into it. */
 export const NAME_TAG_FIELD = { x: 8, y: 30, w: 116, h: 38 } as const;
@@ -268,12 +325,90 @@ export interface BostonLook {
   sig: 'steeple' | 'bar' | 'brownstones' | 'towers' | 'lab' | 'deckers';
 }
 export const BOSTON_LOOKS: Readonly<Record<string, BostonLook>> = {
-  'north-end': { sky: ['#B5C8E4', '#F4E2D0'], glow: '#FFE6B0', far: '#C3B5B0', trim: '#5A3426', glass: '#F4D58A', sig: 'steeple', buildings: [[-20, 70, 6, '#B4573F'], [70, 150, -24, '#C26E4F'], [150, 232, -4, '#A94E3A'], [232, 336, 16, '#E4D3B8'], [336, 420, -8, '#B8644A']] },
-  southie: { sky: ['#9FB8D0', '#E5EAF0'], glow: '#FFDCA0', far: '#A7B6C6', trim: '#3E4A58', glass: '#F4D58A', sig: 'bar', buildings: [[-20, 92, -6, '#6F8FB5'], [92, 204, 6, '#8B2F2F'], [204, 308, -16, '#D7C7A5'], [308, 420, -8, '#7C9C7C']] },
-  'back-bay': { sky: ['#C9B7D9', '#F6E7DA'], glow: '#FFD98A', far: '#B9A8B8', trim: '#2A1D1A', glass: '#F4D58A', sig: 'brownstones', buildings: [[-20, 64, -16, '#7A4A3A'], [64, 148, -34, '#8A5642'], [148, 232, -20, '#6F4034'], [232, 316, -38, '#935E48'], [316, 420, -14, '#7A4A3A']] },
-  fenway: { sky: ['#7EC8E3', '#E9F6E0'], glow: '#FFF3B0', far: '#9DBFC0', trim: '#1F4A30', glass: '#F7E08A', sig: 'towers', buildings: [[-20, 100, -10, '#B0593F'], [100, 300, 20, '#2F7A4A'], [300, 420, -10, '#B0593F']] },
-  cambridge: { sky: ['#B5C7E0', '#EEF0F5'], glow: '#FFF1C2', far: '#AEB9C8', trim: '#4A2A22', glass: '#9FE3E8', sig: 'lab', buildings: [[-20, 110, -30, '#9C5A45'], [110, 290, -44, '#B26A52'], [290, 420, -20, '#8E5444']] },
-  dorchester: { sky: ['#F5C98C', '#FCEBD0'], glow: '#FFD27A', far: '#D2B79A', trim: '#4A3426', glass: '#BFE3F2', sig: 'deckers', buildings: [[-20, 100, -24, '#E8B84A'], [100, 200, -34, '#7BA7C9'], [200, 300, -28, '#D78C8C'], [300, 420, -22, '#8DB27E']] },
+  'north-end': {
+    sky: ['#B5C8E4', '#F4E2D0'],
+    glow: '#FFE6B0',
+    far: '#C3B5B0',
+    trim: '#5A3426',
+    glass: '#F4D58A',
+    sig: 'steeple',
+    buildings: [
+      [-20, 70, 6, '#B4573F'],
+      [70, 150, -24, '#C26E4F'],
+      [150, 232, -4, '#A94E3A'],
+      [232, 336, 16, '#E4D3B8'],
+      [336, 420, -8, '#B8644A'],
+    ],
+  },
+  southie: {
+    sky: ['#9FB8D0', '#E5EAF0'],
+    glow: '#FFDCA0',
+    far: '#A7B6C6',
+    trim: '#3E4A58',
+    glass: '#F4D58A',
+    sig: 'bar',
+    buildings: [
+      [-20, 92, -6, '#6F8FB5'],
+      [92, 204, 6, '#8B2F2F'],
+      [204, 308, -16, '#D7C7A5'],
+      [308, 420, -8, '#7C9C7C'],
+    ],
+  },
+  'back-bay': {
+    sky: ['#C9B7D9', '#F6E7DA'],
+    glow: '#FFD98A',
+    far: '#B9A8B8',
+    trim: '#2A1D1A',
+    glass: '#F4D58A',
+    sig: 'brownstones',
+    buildings: [
+      [-20, 64, -16, '#7A4A3A'],
+      [64, 148, -34, '#8A5642'],
+      [148, 232, -20, '#6F4034'],
+      [232, 316, -38, '#935E48'],
+      [316, 420, -14, '#7A4A3A'],
+    ],
+  },
+  fenway: {
+    sky: ['#7EC8E3', '#E9F6E0'],
+    glow: '#FFF3B0',
+    far: '#9DBFC0',
+    trim: '#1F4A30',
+    glass: '#F7E08A',
+    sig: 'towers',
+    buildings: [
+      [-20, 100, -10, '#B0593F'],
+      [100, 300, 20, '#2F7A4A'],
+      [300, 420, -10, '#B0593F'],
+    ],
+  },
+  cambridge: {
+    sky: ['#B5C7E0', '#EEF0F5'],
+    glow: '#FFF1C2',
+    far: '#AEB9C8',
+    trim: '#4A2A22',
+    glass: '#9FE3E8',
+    sig: 'lab',
+    buildings: [
+      [-20, 110, -30, '#9C5A45'],
+      [110, 290, -44, '#B26A52'],
+      [290, 420, -20, '#8E5444'],
+    ],
+  },
+  dorchester: {
+    sky: ['#F5C98C', '#FCEBD0'],
+    glow: '#FFD27A',
+    far: '#D2B79A',
+    trim: '#4A3426',
+    glass: '#BFE3F2',
+    sig: 'deckers',
+    buildings: [
+      [-20, 100, -24, '#E8B84A'],
+      [100, 200, -34, '#7BA7C9'],
+      [200, 300, -28, '#D78C8C'],
+      [300, 420, -22, '#8DB27E'],
+    ],
+  },
 };
 
 const rectBox = (r: { x: number; y: number; w: number; h: number }): Box => ({ x0: r.x, y0: r.y, x1: r.x + r.w, y1: r.y + r.h });
@@ -306,8 +441,16 @@ export function quadAt(p0: [number, number], c: [number, number], p1: [number, n
  */
 export const STRING_LIGHTS = (() => {
   const swags: [[number, number], [number, number], [number, number]][] = [
-    [[-10, -102], [100, -66], [200, -96]],
-    [[200, -96], [300, -66], [410, -102]],
+    [
+      [-10, -102],
+      [100, -66],
+      [200, -96],
+    ],
+    [
+      [200, -96],
+      [300, -66],
+      [410, -102],
+    ],
   ];
   const ts = [0.15, 0.25, 0.35, 0.6, 0.7, 0.8, 0.9];
   const bulbs = swags.flatMap(([p0, c, p1], s) => ts.map((t) => quadAt(p0, c, p1, s === 0 ? t : 1 - t)));
@@ -342,29 +485,161 @@ export interface ShopLook {
   floorGrain: string;
 }
 export const SHOP_LOOKS: Readonly<Record<NeighborhoodId, ShopLook>> = {
-  downtown: { wall: ['#F3CB94', '#F2B880'], stripe: '#C8925E', tile: '#F6EEE2', grout: '#D9C7AE', band: '#C8483A', rail: '#8E5A3C', baseboard: '#6B3A22', floor: '#B8743F', floorLine: '#8A5129', floorGrain: '#D49A62' },
+  downtown: {
+    wall: ['#F3CB94', '#F2B880'],
+    stripe: '#C8925E',
+    tile: '#F6EEE2',
+    grout: '#D9C7AE',
+    band: '#C8483A',
+    rail: '#8E5A3C',
+    baseboard: '#6B3A22',
+    floor: '#B8743F',
+    floorLine: '#8A5129',
+    floorGrain: '#D49A62',
+  },
   // light blue clapboard, a team-blue band, pale oak
-  suburbs: { wall: ['#B9E0F2', '#E6F5FC'], stripe: '#86BEDD', tile: '#FFF8E8', grout: '#E3D6BC', band: '#2F80ED', rail: '#C9A06A', baseboard: '#8A5A32', floor: '#C99458', floorLine: '#9C6B38', floorGrain: '#E2B880' },
+  suburbs: {
+    wall: ['#B9E0F2', '#E6F5FC'],
+    stripe: '#86BEDD',
+    tile: '#FFF8E8',
+    grout: '#E3D6BC',
+    band: '#2F80ED',
+    rail: '#C9A06A',
+    baseboard: '#8A5A32',
+    floor: '#C99458',
+    floorLine: '#9C6B38',
+    floorGrain: '#E2B880',
+  },
   // sea-green wall, a navy band, driftwood rail and weathered boards
-  waterfront: { wall: ['#8FD0DC', '#E8F4EC'], stripe: '#52A6B8', tile: '#E3F1F1', grout: '#B4D3D6', band: '#1F6F8B', rail: '#5E4630', baseboard: '#3F2E1F', floor: '#97724A', floorLine: '#6E4E2C', floorGrain: '#B89468' },
+  waterfront: {
+    wall: ['#8FD0DC', '#E8F4EC'],
+    stripe: '#52A6B8',
+    tile: '#E3F1F1',
+    grout: '#B4D3D6',
+    band: '#1F6F8B',
+    rail: '#5E4630',
+    baseboard: '#3F2E1F',
+    floor: '#97724A',
+    floorLine: '#6E4E2C',
+    floorGrain: '#B89468',
+  },
   // lilac wall, a violet band, a study-room oak floor
-  university: { wall: ['#C6B6F0', '#EFE8FF'], stripe: '#9A84D8', tile: '#F4F0FB', grout: '#D5CCE8', band: '#6C4BC4', rail: '#7A5A3A', baseboard: '#4E3A28', floor: '#A9835A', floorLine: '#7E5C3A', floorGrain: '#C9A27A' },
+  university: {
+    wall: ['#C6B6F0', '#EFE8FF'],
+    stripe: '#9A84D8',
+    tile: '#F4F0FB',
+    grout: '#D5CCE8',
+    band: '#6C4BC4',
+    rail: '#7A5A3A',
+    baseboard: '#4E3A28',
+    floor: '#A9835A',
+    floorLine: '#7E5C3A',
+    floorGrain: '#C9A27A',
+  },
   // concrete wall, steel-panel band, a safety-yellow stripe and a poured floor
-  industrial: { wall: ['#8E94A3', '#C9C3B8'], stripe: '#6D7384', tile: '#C5CAD0', grout: '#8E949C', band: '#F2A41B', rail: '#3E4552', baseboard: '#2F333A', floor: '#7A7E83', floorLine: '#585C61', floorGrain: '#979CA1' },
+  industrial: {
+    wall: ['#8E94A3', '#C9C3B8'],
+    stripe: '#6D7384',
+    tile: '#C5CAD0',
+    grout: '#8E949C',
+    band: '#F2A41B',
+    rail: '#3E4552',
+    baseboard: '#2F333A',
+    floor: '#7A7E83',
+    floorLine: '#585C61',
+    floorGrain: '#979CA1',
+  },
   // deep plum wall with gold pinstripes, a marble band, a brass rail and a pale marble floor
-  uptown: { wall: ['#3A3258', '#5C4C7C'], stripe: '#D4B35A', tile: '#F2EFF3', grout: '#CFC8D6', band: '#B08D3C', rail: '#CDA64B', baseboard: '#2A2440', floor: '#D9D3DD', floorLine: '#B8AFC0', floorGrain: '#ECE8F0' },
+  uptown: {
+    wall: ['#3A3258', '#5C4C7C'],
+    stripe: '#D4B35A',
+    tile: '#F2EFF3',
+    grout: '#CFC8D6',
+    band: '#B08D3C',
+    rail: '#CDA64B',
+    baseboard: '#2A2440',
+    floor: '#D9D3DD',
+    floorLine: '#B8AFC0',
+    floorGrain: '#ECE8F0',
+  },
   // Boston (card T2). North End: cream plaster, an oxblood band, dark parish oak
-  'north-end': { wall: ['#E9D2B0', '#F4E4C8'], stripe: '#C9A872', tile: '#F8F1E4', grout: '#DCCDB0', band: '#8C2F2F', rail: '#6B3A22', baseboard: '#4A2A18', floor: '#9C6B3E', floorLine: '#744A28', floorGrain: '#C0905C' },
+  'north-end': {
+    wall: ['#E9D2B0', '#F4E4C8'],
+    stripe: '#C9A872',
+    tile: '#F8F1E4',
+    grout: '#DCCDB0',
+    band: '#8C2F2F',
+    rail: '#6B3A22',
+    baseboard: '#4A2A18',
+    floor: '#9C6B3E',
+    floorLine: '#744A28',
+    floorGrain: '#C0905C',
+  },
   // Southie: harbour blue clapboard, a pub-green band, dark bar wood
-  southie: { wall: ['#8FA9C4', '#CBD8E5'], stripe: '#6E8CAE', tile: '#EEF2F5', grout: '#BCC8D3', band: '#2E5D3A', rail: '#4A3426', baseboard: '#33241A', floor: '#7B5B3E', floorLine: '#563C26', floorGrain: '#9D7A58' },
+  southie: {
+    wall: ['#8FA9C4', '#CBD8E5'],
+    stripe: '#6E8CAE',
+    tile: '#EEF2F5',
+    grout: '#BCC8D3',
+    band: '#2E5D3A',
+    rail: '#4A3426',
+    baseboard: '#33241A',
+    floor: '#7B5B3E',
+    floorLine: '#563C26',
+    floorGrain: '#9D7A58',
+  },
   // Back Bay: brownstone walls, a navy band, brass rail, a mahogany floor
-  'back-bay': { wall: ['#A97C5E', '#D9BFA2'], stripe: '#8A5A40', tile: '#F3EADB', grout: '#D6C5AA', band: '#2C3E5C', rail: '#CDA64B', baseboard: '#3A2A20', floor: '#5E3F2A', floorLine: '#3F2A1B', floorGrain: '#8A6446' },
+  'back-bay': {
+    wall: ['#A97C5E', '#D9BFA2'],
+    stripe: '#8A5A40',
+    tile: '#F3EADB',
+    grout: '#D6C5AA',
+    band: '#2C3E5C',
+    rail: '#CDA64B',
+    baseboard: '#3A2A20',
+    floor: '#5E3F2A',
+    floorLine: '#3F2A1B',
+    floorGrain: '#8A6446',
+  },
   // Fenway: ballpark green, a red band, a pale ash rail
-  fenway: { wall: ['#5FA77A', '#CFE8D5'], stripe: '#3E8A5C', tile: '#F2F7F1', grout: '#B9D2BF', band: '#C03A2B', rail: '#E8E1CC', baseboard: '#2F5A3E', floor: '#A8845A', floorLine: '#7D5E3A', floorGrain: '#C9A57A' },
+  fenway: {
+    wall: ['#5FA77A', '#CFE8D5'],
+    stripe: '#3E8A5C',
+    tile: '#F2F7F1',
+    grout: '#B9D2BF',
+    band: '#C03A2B',
+    rail: '#E8E1CC',
+    baseboard: '#2F5A3E',
+    floor: '#A8845A',
+    floorLine: '#7D5E3A',
+    floorGrain: '#C9A57A',
+  },
   // Cambridge: lab white-blue, a teal band, steel rail, a grey epoxy floor
-  cambridge: { wall: ['#D8E3E6', '#F2F6F7'], stripe: '#A9C0C6', tile: '#FFFFFF', grout: '#C5D3D6', band: '#2A8F9C', rail: '#8E9AA3', baseboard: '#5C6870', floor: '#B9BDBF', floorLine: '#8E9396', floorGrain: '#D5D8DA' },
+  cambridge: {
+    wall: ['#D8E3E6', '#F2F6F7'],
+    stripe: '#A9C0C6',
+    tile: '#FFFFFF',
+    grout: '#C5D3D6',
+    band: '#2A8F9C',
+    rail: '#8E9AA3',
+    baseboard: '#5C6870',
+    floor: '#B9BDBF',
+    floorLine: '#8E9396',
+    floorGrain: '#D5D8DA',
+  },
   // Dorchester: church-hall butter yellow, a spruce band, honey boards
-  dorchester: { wall: ['#F2D78C', '#FAEBC0'], stripe: '#DDB75A', tile: '#FFF9EA', grout: '#E6D5A8', band: '#4F8A6B', rail: '#9A6A3A', baseboard: '#6A4526', floor: '#C79B5F', floorLine: '#966E3A', floorGrain: '#E3BE82' },
+  dorchester: {
+    wall: ['#F2D78C', '#FAEBC0'],
+    stripe: '#DDB75A',
+    tile: '#FFF9EA',
+    grout: '#E6D5A8',
+    band: '#4F8A6B',
+    rail: '#9A6A3A',
+    baseboard: '#6A4526',
+    floor: '#C79B5F',
+    floorLine: '#966E3A',
+    floorGrain: '#E3BE82',
+  },
 };
 
 /**

@@ -28,7 +28,13 @@ export const CHARACTER_IDS = [
   'noor',
   'dee',
   'anton',
-  'father-dom','kayla-dunn','preston','manny','lena-ko','grandma-bea','trish-vance',
+  'father-dom',
+  'kayla-dunn',
+  'preston',
+  'manny',
+  'lena-ko',
+  'grandma-bea',
+  'trish-vance',
 ] as const;
 export type CharacterId = (typeof CHARACTER_IDS)[number];
 
@@ -56,7 +62,27 @@ export interface CastMember {
 /** 0–2 characters, left to right: the stage has two slots, so a third figure is a type error rather than a crash (C100). */
 export type Cast = readonly [] | readonly [CastMember] | readonly [CastMember, CastMember];
 
-export const PROP_IDS = ['vending-machine', 'sold-sign', 'recipe-card', 'order-slip', 'name-tag', 'phone-footage', 'coupon','envelope','apron','contract','clipboard','phone','photo','thermometer','pantry-shelf','half-ladle','scorecard','golden-ladle','pretzel'] as const;
+export const PROP_IDS = [
+  'vending-machine',
+  'sold-sign',
+  'recipe-card',
+  'order-slip',
+  'name-tag',
+  'phone-footage',
+  'coupon',
+  'envelope',
+  'apron',
+  'contract',
+  'clipboard',
+  'phone',
+  'photo',
+  'thermometer',
+  'pantry-shelf',
+  'half-ladle',
+  'scorecard',
+  'golden-ladle',
+  'pretzel',
+] as const;
 export type PropId = (typeof PROP_IDS)[number];
 
 /** The backdrops that belong to no neighbourhood. */

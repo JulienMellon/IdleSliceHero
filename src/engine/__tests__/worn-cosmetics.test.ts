@@ -62,7 +62,16 @@ describe('earning one wears it', () => {
 
   it('the weekly chest', () => {
     let g = ready();
-    g = { ...g, rewards: { ...g.rewards, week: '2026-11-09', weekly: [{ kind: 'upgrades', target: 1, base: 0, claimed: true }], weeklyChest: false, ...R.grantCosmetic(g.rewards, 'oven-woodfired') } };
+    g = {
+      ...g,
+      rewards: {
+        ...g.rewards,
+        week: '2026-11-09',
+        weekly: [{ kind: 'upgrades', target: 1, base: 0, claimed: true }],
+        weeklyChest: false,
+        ...R.grantCosmetic(g.rewards, 'oven-woodfired'),
+      },
+    };
     const prize = R.weeklyChestPrize(g);
     const done = ok(R.claimWeeklyChest(g, T0));
     expect(done.rewards.cosmetics).toContain(prize.kind === 'cosmetic' ? prize.id : 'oven-woodfired');
@@ -71,7 +80,15 @@ describe('earning one wears it', () => {
 
   it('the day-28 storefront skin of the gift calendar replaces the old one', () => {
     let g = ready();
-    g = { ...g, rewards: { ...g.rewards, cosmetics: ['storefront-skin-1'], worn: ['storefront-skin-1'], gift: { streak: 27, last: R.dayKey(T0 - 86_400_000), saveUsed: false, cycle: 1 } } };
+    g = {
+      ...g,
+      rewards: {
+        ...g.rewards,
+        cosmetics: ['storefront-skin-1'],
+        worn: ['storefront-skin-1'],
+        gift: { streak: 27, last: R.dayKey(T0 - 86_400_000), saveUsed: false, cycle: 1 },
+      },
+    };
     const done = ok(R.claimGift(g, T0));
     expect(done.rewards.cosmetics).toEqual(['storefront-skin-1', 'storefront-skin-2']);
     expect(done.rewards.worn).toEqual(['storefront-skin-2']);

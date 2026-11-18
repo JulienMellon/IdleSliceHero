@@ -66,9 +66,7 @@ export const SUBURBS_SCENES: Scene[] = [
         backdrop: 'suburbs',
         cast: [{ id: 'dale', mood: 'surprised' }],
         caption: 'A kid named Tater kicks the ball. It goes in the RIGHT goal.',
-        lines: [
-          { speaker: 'Dale', text: 'Was that... the correct net? Somebody check! Somebody check the net!' },
-        ],
+        lines: [{ speaker: 'Dale', text: 'Was that... the correct net? Somebody check! Somebody check the net!' }],
       },
       {
         backdrop: 'suburbs',
@@ -94,9 +92,7 @@ export const SUBURBS_SCENES: Scene[] = [
         backdrop: 'suburbs',
         cast: [{ id: 'megaslice-rep', mood: 'happy' }],
         caption: 'The Mudhens are winning. Someone has noticed.',
-        lines: [
-          { speaker: 'Todd', text: 'Free jerseys for the team! All you gotta do is say "MegaSlice" a lot.' },
-        ],
+        lines: [{ speaker: 'Todd', text: 'Free jerseys for the team! All you gotta do is say "MegaSlice" a lot.' }],
       },
       {
         backdrop: 'suburbs',
@@ -120,9 +116,7 @@ export const SUBURBS_SCENES: Scene[] = [
       {
         backdrop: 'suburbs',
         cast: [{ id: 'dale', mood: 'neutral' }],
-        lines: [
-          { speaker: 'Dale', text: "Lemme think on it, pal. Championship's coming up. We need every edge." },
-        ],
+        lines: [{ speaker: 'Dale', text: "Lemme think on it, pal. Championship's coming up. We need every edge." }],
       },
     ],
   },
@@ -139,9 +133,7 @@ export const SUBURBS_SCENES: Scene[] = [
         backdrop: 'suburbs',
         cast: [{ id: 'megaslice-rep', mood: 'happy' }],
         caption: "The Thunder Llamas' practice. New sponsor. New assistant coach.",
-        lines: [
-          { speaker: 'Todd', text: "Llamas! MegaSlice believes in you! Mostly because you're undefeated!" },
-        ],
+        lines: [{ speaker: 'Todd', text: "Llamas! MegaSlice believes in you! Mostly because you're undefeated!" }],
       },
       {
         backdrop: 'suburbs',
@@ -161,9 +153,7 @@ export const SUBURBS_SCENES: Scene[] = [
         propText: 'SENIOR ASSOCIATE',
         cast: [{ id: 'megaslice-rep', mood: 'sad' }],
         caption: "Todd's name tag now reads: SENIOR ASSOCIATE.",
-        lines: [
-          { speaker: 'Todd', text: 'If the Llamas lose the final, I lose the "Senior."' },
-        ],
+        lines: [{ speaker: 'Todd', text: 'If the Llamas lose the final, I lose the "Senior."' }],
       },
     ],
   },
@@ -232,9 +222,7 @@ export const SUBURBS_SCENES: Scene[] = [
         backdrop: 'suburbs',
         cast: [{ id: 'dale', mood: 'surprised' }],
         caption: 'Final seconds. Tied 2-2. Tater has the ball.',
-        lines: [
-          { speaker: 'Dale', text: 'Go, Tater, go! Not that way! THAT way! Yes! YES!' },
-        ],
+        lines: [{ speaker: 'Dale', text: 'Go, Tater, go! Not that way! THAT way! Yes! YES!' }],
       },
       {
         backdrop: 'suburbs',
@@ -265,9 +253,7 @@ export const SUBURBS_SCENES: Scene[] = [
         backdrop: 'suburbs',
         cast: [{ id: 'dale', mood: 'happy' }],
         caption: 'Team photo day. The Mudhens are still champions. Dale still cries.',
-        lines: [
-          { speaker: 'Dale', text: 'Everybody squeeze in! Tater, the trophy is not a hat!' },
-        ],
+        lines: [{ speaker: 'Dale', text: 'Everybody squeeze in! Tater, the trophy is not a hat!' }],
       },
       {
         backdrop: 'suburbs',

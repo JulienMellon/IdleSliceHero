@@ -42,8 +42,22 @@ export const TEST_FIT: CityFit = {
 };
 
 const LOOK = ['#C0504D', '#4F81BD', '#8C6A4A', '#3E9B62', '#8E5BB5', '#E0A030'];
-const POSITIONS = [[22, 39], [30, 67], [76, 67], [18, 9], [50, 9], [82, 9]] as const;
-const HEADS_COST = [HEAD_COST_FIRST.prep + HEAD_COST_FIRST.oven + HEAD_COST_FIRST.counter, 90_000, 1_500_000_000, 50_000_000_000, 900_000_000_000, 60_000_000_000_000];
+const POSITIONS = [
+  [22, 39],
+  [30, 67],
+  [76, 67],
+  [18, 9],
+  [50, 9],
+  [82, 9],
+] as const;
+const HEADS_COST = [
+  HEAD_COST_FIRST.prep + HEAD_COST_FIRST.oven + HEAD_COST_FIRST.counter,
+  90_000,
+  1_500_000_000,
+  50_000_000_000,
+  900_000_000_000,
+  60_000_000_000_000,
+];
 const BUILD = [0, 200_000, 400_000_000, 6_000_000_000, 900_000_000_000, 8_000_000_000_000];
 const MANAGER = [0, 3_000_000, 6_000_000_000, 250_000_000_000, 40_000_000_000_000, 2_000_000_000_000_000];
 const VALUE = [2, 40, 1_800, 150_000, 4_500_000, 45_000_000];
@@ -75,9 +89,21 @@ export const TEST_LAYERS: Record<TestId, LayerKind | null> = {
 
 export const TEST_BID: CityBid = { hood: 'tc-charlie', name: 'Test Pier', cost: 90_000_000, unlockPizzas: 5_000, afterScene: 'tc-charlie-3' };
 
-const panel = (hood: string): Scene['panels'][number] => ({ backdrop: hood, cast: [{ id: 'nonna-rosa', mood: 'neutral' }], lines: [{ speaker: 'Nonna Rosa', text: 'A test line.' }] });
+const panel = (hood: string): Scene['panels'][number] => ({
+  backdrop: hood,
+  cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
+  lines: [{ speaker: 'Nonna Rosa', text: 'A test line.' }],
+});
 const scene = (hood: string, beat: 1 | 2 | 3 | 4, trigger: Scene['trigger'], more: Partial<Scene> = {}): Scene => ({
-  id: `${hood}-${beat}`, city: TEST_CITY_ID, character: 'nonna-rosa' as CharacterId, neighborhood: hood, beat, title: `${hood} ${beat}`, trigger, panels: [panel(hood)], ...more,
+  id: `${hood}-${beat}`,
+  city: TEST_CITY_ID,
+  character: 'nonna-rosa' as CharacterId,
+  neighborhood: hood,
+  beat,
+  title: `${hood} ${beat}`,
+  trigger,
+  panels: [panel(hood)],
+  ...more,
 });
 
 /** Four beats a neighbourhood, the finale of the bid's shop a `bid` scene; just enough story for the takeover scene and the bid to exist. */

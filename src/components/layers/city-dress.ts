@@ -11,7 +11,8 @@ type Table = Readonly<Record<string, string>>;
  * and listed in the card report as copy asks, so the writer can replace them in one place.
  */
 export const BOSTON_ASKS = {
-  'layer.suburbs.gameday.info.body': 'After every Chowderheads game, fans pour in for a little while. They only sit in free seats, so more seating means more pies.',
+  'layer.suburbs.gameday.info.body':
+    'After every Chowderheads game, fans pour in for a little while. They only sit in free seats, so more seating means more pies.',
   'upgrade.waterfront.rack.tier.1': 'Corner Shelf',
   'upgrade.waterfront.rack.tier.2': 'Wide Shelf',
   'upgrade.waterfront.rack.tier.3': 'Pantry Wall',
@@ -20,7 +21,8 @@ export const BOSTON_ASKS = {
   'label.boatLeft': 'Order due in',
   'label.rackEmpty': 'No shelf yet',
   'label.maxed': 'Biggest shelf',
-  'layer.industrial.shift.info.body': 'Lab crews eat between experiments. Night lab pays best. Ovens blow now and then: tap the wrench, or your Head Baker fixes it in time.',
+  'layer.industrial.shift.info.body':
+    'Lab crews eat between experiments. Night lab pays best. Ovens blow now and then: tap the wrench, or your Head Baker fixes it in time.',
   'menu.cheese.line': 'Hollis’s order. Steady. Never wrong.',
   'rival.open': 'MegaSlice just opened across the street. Show the block who really feeds it.',
   'rival.title': 'Beat Them: {n} pies in 5 minutes',

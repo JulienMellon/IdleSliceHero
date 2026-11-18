@@ -29,7 +29,11 @@ export function sourceOf(id: string): number | null {
   return ((table as Record<string, { src: number }> | null)?.[rest]?.src as number | undefined) ?? null;
 }
 
-interface Slot { p: AudioPlayer; id: string | null; used: number }
+interface Slot {
+  p: AudioPlayer;
+  id: string | null;
+  used: number;
+}
 
 export function createExpoOutput(): AudioOutput {
   const busGain: Record<Bus, number> = { music: 1, story: 1, sting: 1, sfx: 1 };
@@ -125,10 +129,20 @@ export function createExpoOutput(): AudioOutput {
       safe(() => p.play());
       timer = setTimeout(done, (seconds / rate) * 1000 + (onEnd ? 300 : 60));
     };
-    if (onEnd) sub = safe(() => p.addListener('playbackStatusUpdate', (st) => { if (st.didJustFinish) done(); }));
+    if (onEnd)
+      sub = safe(() =>
+        p.addListener('playbackStatusUpdate', (st) => {
+          if (st.didJustFinish) done();
+        }),
+      );
     const at = safe(() => p.currentTime, 0);
     if (at > 0.01) {
-      void p.seekTo(0).then(start).catch(() => { if (onEnd) done(); });
+      void p
+        .seekTo(0)
+        .then(start)
+        .catch(() => {
+          if (onEnd) done();
+        });
     } else start();
   }
 
@@ -144,7 +158,8 @@ export function createExpoOutput(): AudioOutput {
     }
     const src = sourceOf(id);
     if (src === null) return null;
-    let slot: Slot | undefined = pool.length < 2 ? undefined : pool.find((s) => !safe(() => s.p.playing, false)) ?? [...pool].sort((a, b) => a.used - b.used)[0];
+    let slot: Slot | undefined =
+      pool.length < 2 ? undefined : (pool.find((s) => !safe(() => s.p.playing, false)) ?? [...pool].sort((a, b) => a.used - b.used)[0]);
     if (!slot) {
       slot = { p: make(null, bus), id: null, used: 0 };
       pool.push(slot);

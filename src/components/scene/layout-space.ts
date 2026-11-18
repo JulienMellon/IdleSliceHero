@@ -44,7 +44,14 @@ function mapLayout(lay: Layout, m: Mapping, tagLeft: number): Layout {
     door: {
       ...span(door, m),
       cx: f(door.cx),
-      lanes: { guestPauseX: f(ls.guestPauseX), driverPauseX: f(ls.driverPauseX), guestX: f(ls.guestX), guestVia: pt(ls.guestVia, m), driverX: f(ls.driverX), driverVia: pt(ls.driverVia, m) },
+      lanes: {
+        guestPauseX: f(ls.guestPauseX),
+        driverPauseX: f(ls.driverPauseX),
+        guestX: f(ls.guestX),
+        guestVia: pt(ls.guestVia, m),
+        driverX: f(ls.driverX),
+        driverVia: pt(ls.driverVia, m),
+      },
     },
     jamb: span(lay.jamb, m),
     spots: lay.spots.map((s) => ({ ...s, x: f(s.x) })),

@@ -134,7 +134,16 @@ describe('opt-out', () => {
 
   it('a sink that throws never reaches the game', async () => {
     const kv = memoryKV();
-    const a = createAnalytics({ kv, privacy: createPrivacy(kv), sink: { capture: () => { throw new Error('x'); }, optOut() {} } });
+    const a = createAnalytics({
+      kv,
+      privacy: createPrivacy(kv),
+      sink: {
+        capture: () => {
+          throw new Error('x');
+        },
+        optOut() {},
+      },
+    });
     await a.start();
     expect(() => a.track('session_start')).not.toThrow();
   });
@@ -148,6 +157,16 @@ describe('props carry no personal data', () => {
   });
 
   it('defines the nine events', () => {
-    expect(Object.values(EVENTS).sort()).toEqual(['ad_completed', 'ad_offered', 'ad_started', 'iap_purchased', 'iap_viewed', 'scene_seen', 'session_end', 'session_start', 'shop_built']);
+    expect(Object.values(EVENTS).sort()).toEqual([
+      'ad_completed',
+      'ad_offered',
+      'ad_started',
+      'iap_purchased',
+      'iap_viewed',
+      'scene_seen',
+      'session_end',
+      'session_start',
+      'shop_built',
+    ]);
   });
 });

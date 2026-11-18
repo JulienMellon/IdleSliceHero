@@ -40,7 +40,11 @@ const Drone = memo(function Drone({ lane, width, top }: { lane: DroneLane; width
     p.setValue(0);
     if (!loops) return;
     const loop = Animated.loop(
-      Animated.sequence([Animated.delay(lane.delay), Animated.timing(p, { toValue: 1, duration: lane.ms, easing: Easing.linear, useNativeDriver: native }), Animated.timing(p, { toValue: 0, duration: 0, useNativeDriver: native })]),
+      Animated.sequence([
+        Animated.delay(lane.delay),
+        Animated.timing(p, { toValue: 1, duration: lane.ms, easing: Easing.linear, useNativeDriver: native }),
+        Animated.timing(p, { toValue: 0, duration: 0, useNativeDriver: native }),
+      ]),
     );
     loop.start();
     return () => loop.stop();

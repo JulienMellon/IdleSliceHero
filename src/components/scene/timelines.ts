@@ -122,7 +122,8 @@ export function guestPose(lay: Layout, i: number, p: number, sceneW: number): Gu
   if (p < 0.42) return { p, pos: orderAt, stage: 'order', walking: false, face: true };
   if (p < 0.5) return { p, pos: along([orderAt, ...behindPickup, aisle, seat], (p - 0.42) / 0.08), stage: 'toSeat', walking: true, face: true };
   if (p < 0.8) return { p, pos: seat, stage: 'seated', walking: false, face: true };
-  if (p < 0.88) return { p, pos: along([seat, aisle, ...behindPickup.slice().reverse(), guestVia, gIn], (p - 0.8) / 0.08), stage: 'leave', walking: true, face: false };
+  if (p < 0.88)
+    return { p, pos: along([seat, aisle, ...behindPickup.slice().reverse(), guestVia, gIn], (p - 0.8) / 0.08), stage: 'leave', walking: true, face: false };
   if (p < 0.92) return { p, pos: along([gIn, gOut], (p - 0.88) / 0.04), stage: 'leave', walking: true, face: false };
   return { p, pos: along([gOut, [gOut[0], GUEST_WALK_Y], [sceneW + 50, GUEST_WALK_Y]], (p - 0.92) / 0.08), stage: 'leave', walking: true, face: false };
 }

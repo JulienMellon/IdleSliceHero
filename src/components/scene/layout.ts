@@ -201,7 +201,6 @@ export function ovenPlan(zone: number, n: number): OvenPlan {
   return chain[Math.min(count, MAX_OVENS) - 1];
 }
 
-
 type Pt = [number, number];
 
 export interface DoorLanes {
@@ -277,12 +276,31 @@ export interface Layout {
  * The room for a footprint, in the frame's space. `mirrored` is the second floor plan (v5.18): the layout is planned as usual (door on the right, kitchen on the
  * left) and its last step reflects every x about the room's centre, so the routes, tags and budgets mirror with it.
  */
-export function layout(fp: number, ovenCount: number, cookCount: number, staffCount: number, tableCount: number, driverSlots: number, plants = 0, frame: SceneFrame = sceneFrame(fp), mirrored = false): Layout {
+export function layout(
+  fp: number,
+  ovenCount: number,
+  cookCount: number,
+  staffCount: number,
+  tableCount: number,
+  driverSlots: number,
+  plants = 0,
+  frame: SceneFrame = sceneFrame(fp),
+  mirrored = false,
+): Layout {
   const plain = planRoom(fp, ovenCount, cookCount, staffCount, tableCount, driverSlots, plants, frame);
   return mirrored ? reflectLayout(plain) : plain;
 }
 
-function planRoom(fp: number, ovenCount: number, cookCount: number, staffCount: number, tableCount: number, driverSlots: number, plants: number, frame: SceneFrame): Layout {
+function planRoom(
+  fp: number,
+  ovenCount: number,
+  cookCount: number,
+  staffCount: number,
+  tableCount: number,
+  driverSlots: number,
+  plants: number,
+  frame: SceneFrame,
+): Layout {
   const RW = ROOM_W[fp];
   const wide = WIDE_PLAN[fp];
   const L = frame.vanishX - RW / 2;
@@ -300,7 +318,8 @@ function planRoom(fp: number, ovenCount: number, cookCount: number, staffCount: 
   const benchLen = (cooks: number) => (wide ? Math.min(wide.benchMax, 30 + cooks * 24) : 30 + cooks * 24);
   // a lone cook stands beside the bench's left end so the whole figure shows
   const prep = cookCount === 1 ? { x0: L + 22, x1: Math.min(prepMax, L + 22 + 54) } : { x0: L + 6, x1: Math.min(prepMax, L + 6 + benchLen(cookCount)) };
-  const cooks = cookCount === 1 ? [prep.x0 - 9] : Array.from({ length: cookCount }, (_, i) => prep.x0 + 10 + (i * (prep.x1 - prep.x0 - 20)) / Math.max(1, cookCount - 1));
+  const cooks =
+    cookCount === 1 ? [prep.x0 - 9] : Array.from({ length: cookCount }, (_, i) => prep.x0 + 10 + (i * (prep.x1 - prep.x0 - 20)) / Math.max(1, cookCount - 1));
   const staff = Array.from({ length: staffCount }, (_, i) => counter.x0 + 16 + i * 28);
   // Ovens along the back wall in the bay; stack decks rather than squeeze them thin.
   const zone0 = bay.x0;
@@ -321,7 +340,14 @@ function planRoom(fp: number, ovenCount: number, cookCount: number, staffCount: 
     if (decks === 1) ovens.push({ ...ovenCols[c], z: 0, h: deckH, chimney: true, stacked: false });
     else {
       const dx = deck === decks - 1 ? topShift : 0;
-      ovens.push({ x0: ovenCols[c].x0 + dx, x1: ovenCols[c].x1 + dx, z: deck * (deckH + 4), h: deckH, chimney: deck === decks - 1 || i + cols >= ovenCount, stacked: true });
+      ovens.push({
+        x0: ovenCols[c].x0 + dx,
+        x1: ovenCols[c].x1 + dx,
+        z: deck * (deckH + 4),
+        h: deckH,
+        chimney: deck === decks - 1 || i + cols >= ovenCount,
+        stacked: true,
+      });
     }
   }
   // A 46-wide entrance with two lanes, so walk-ins and drivers never walk through each other.
@@ -331,7 +357,14 @@ function planRoom(fp: number, ovenCount: number, cookCount: number, staffCount: 
     x0: d0,
     x1: d1,
     cx: (d0 + d1) / 2,
-    lanes: { guestPauseX: d0 - 6, driverPauseX: d1 + 4, guestX: d0 + 13, guestVia: [d0 + 16, COUNTER_AISLE_Y] as Pt, driverX: d1 - 6, driverVia: [d1 - 8, COUNTER_AISLE_Y] as Pt },
+    lanes: {
+      guestPauseX: d0 - 6,
+      driverPauseX: d1 + 4,
+      guestX: d0 + 13,
+      guestVia: [d0 + 16, COUNTER_AISLE_Y] as Pt,
+      driverX: d1 - 6,
+      driverVia: [d1 - 8, COUNTER_AISLE_Y] as Pt,
+    },
   };
   // Drivers pick up along the counter's left; walk-ins order at its right end, away from the pickup line.
   const spotCols = Math.max(1, Math.floor((counter.x1 - 46 - (counter.x0 + 12)) / 28) + 1);
@@ -405,11 +438,13 @@ function planRoom(fp: number, ovenCount: number, cookCount: number, staffCount: 
   // the sets the glass front shows nearest the sill: a diner standing in front of one would cover its table or a seated diner
   // the wide tiers keep the lane for the footprint's full dining room, so a table bought later never moves a diner or a patio set that is already out there (T84)
   const laneTables = wide ? dine(FOOTPRINTS[fp].maxTables) : tables;
-  const sets = laneTables.filter((tb) => tb.y <= NEAR_ROW_Y).map((tb): [number, number] => {
-    const c = sxQ(tb.x, tb.y);
-    const h = TABLE_SET_HALF * kAt(tb.y) * 1.1;
-    return [c - h, c + h];
-  });
+  const sets = laneTables
+    .filter((tb) => tb.y <= NEAR_ROW_Y)
+    .map((tb): [number, number] => {
+      const c = sxQ(tb.x, tb.y);
+      const h = TABLE_SET_HALF * kAt(tb.y) * 1.1;
+      return [c - h, c + h];
+    });
   const dinerClear = (x: number) => sets.every(([a, b]) => x + FIGURE_HALF_W <= a || x - FIGURE_HALF_W >= b);
   let nDiners = 0;
   while (nDiners < QUEUE_SPOTS && dinerX(nDiners) - FIGURE_HALF_W >= laneLeft && dinerClear(dinerX(nDiners))) nDiners++;
@@ -426,7 +461,8 @@ function planRoom(fp: number, ovenCount: number, cookCount: number, staffCount: 
   const patioRight = (nDiners ? dinerX(nDiners - 1) - FIGURE_HALF_W : lastDriver - FIGURE_HALF_W) - PATIO_AIR;
   const centreLo = laneLeft + PATIO_HALF_W;
   const patio: Layout['patio'] = [];
-  for (let c = patioRight - PATIO_HALF_W; patio.length < 2 && c >= centreLo - 1e-6; c -= 2 * PATIO_HALF_W + PATIO_AIR) patio.push({ x: unprojectX(c, PATIO_Y, frame), y: PATIO_Y });
+  for (let c = patioRight - PATIO_HALF_W; patio.length < 2 && c >= centreLo - 1e-6; c -= 2 * PATIO_HALF_W + PATIO_AIR)
+    patio.push({ x: unprojectX(c, PATIO_Y, frame), y: PATIO_Y });
   // the tag hangs over the driver group's middle
   const waitTag: Pt = [unprojectX(dq0 - (DRIVER_QUEUE_PITCH * (DRIVER_SPOTS - 1)) / 2, QUEUE_Y, frame), QUEUE_Y];
   // the pill's body is ~84 up from the feet, level with the back row's seated faces: it keeps right of the right-most seat (a diner's head is ±8 wide)
@@ -461,7 +497,8 @@ function planRoom(fp: number, ovenCount: number, cookCount: number, staffCount: 
     const sign = free(SIGN_SCREEN_HALF_W);
     return { prop, sign };
   };
-  const fits = (pk: { prop: number; sign: number }) => pk.prop + PROP_HALF_W + PROP_AIR <= vehicle1[0] && pk.sign + SIGN_SCREEN_HALF_W + PROP_AIR <= vehicle1[0];
+  const fits = (pk: { prop: number; sign: number }) =>
+    pk.prop + PROP_HALF_W + PROP_AIR <= vehicle1[0] && pk.sign + SIGN_SCREEN_HALF_W + PROP_AIR <= vehicle1[0];
   const packFor = (ways: [number, number][]) => {
     const wide = pack(vehicle2, ways);
     if (fits(wide)) return wide;
@@ -479,8 +516,40 @@ function planRoom(fp: number, ovenCount: number, cookCount: number, staffCount: 
   const signX = unprojectX(packed.sign, SIGN_Y, frame);
   // the walkers come in from the drawing's left edge (30 past it) and go off past its right (50): the plain plan has the door on the right
   const walk = { from: frame.x0 - 30, away: frame.x0 + frame.width + 50 };
-  return { fp, frame, mirrored: false, L, R, prep, prep2, cooks, ovens, bay: { x0: bay.x0, x1: bay.x1 }, ovenCols, counter, staff, door, jamb: { x0: d0 - 8, x1: R - 8 }, spots, orderSpots, tables, bakers, ledge, // D282: the vehicle parks well left of the walk-ins' turn-in (guestPauseX = d0 − 6)
-    scooter, tree: { x: PLANTER_X(L, frame) }, sign: { x: signX }, prop: { x: propX }, patio, queue, queueTag, driverQueue, waitTag, tagLeft, walk, floorY: -Infinity };
+  return {
+    fp,
+    frame,
+    mirrored: false,
+    L,
+    R,
+    prep,
+    prep2,
+    cooks,
+    ovens,
+    bay: { x0: bay.x0, x1: bay.x1 },
+    ovenCols,
+    counter,
+    staff,
+    door,
+    jamb: { x0: d0 - 8, x1: R - 8 },
+    spots,
+    orderSpots,
+    tables,
+    bakers,
+    ledge, // D282: the vehicle parks well left of the walk-ins' turn-in (guestPauseX = d0 − 6)
+    scooter,
+    tree: { x: PLANTER_X(L, frame) },
+    sign: { x: signX },
+    prop: { x: propX },
+    patio,
+    queue,
+    queueTag,
+    driverQueue,
+    waitTag,
+    tagLeft,
+    walk,
+    floorY: -Infinity,
+  };
 }
 
 /** The pills keep this far (screen) from the screen edge (D420: the "×11 waiting" pill used to end 3 pt from it). */
@@ -559,7 +628,8 @@ function moreTagPlain(lay: MoreLay, text: string): { x: number; y: number; w: nu
   const clear = (x: number) => faces.every((f) => x + w / 2 <= f.x0 || x - w / 2 >= f.x1 || sy + 8.7 <= f.y0 || sy - 9.7 >= f.y1);
   // v5.17 D450: and off every umbrella canopy (the pill sat on the canopy band; r2: it must not touch one), so it hangs on the bare sill left of the patio
   const canopies = lay.patio.map((p) => canopyBox(p.x, p.y, lay.frame));
-  const offCanopies = (x: number) => canopies.every((c) => x + w / 2 + CANOPY_AIR <= c.x0 || x - w / 2 - CANOPY_AIR >= c.x1 || sy + 8.7 <= c.y0 || sy - 9.7 >= c.y1);
+  const offCanopies = (x: number) =>
+    canopies.every((c) => x + w / 2 + CANOPY_AIR <= c.x0 || x - w / 2 - CANOPY_AIR >= c.x1 || sy + 8.7 <= c.y0 || sy - 9.7 >= c.y1);
   for (let x = start; x >= lo; x -= 2) if (clear(x) && offCanopies(x)) return { x, y: sy, w };
   for (let x = start; x >= lo; x -= 2) if (clear(x)) return { x, y: sy, w };
   return { x: start, y: sy, w };

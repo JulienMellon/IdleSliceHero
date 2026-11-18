@@ -47,7 +47,14 @@ export const NightTint = memo(function NightTint({ shopId, width, height }: Scen
           <Path d={shape.path} fillRule="evenodd" fill={tint.color} opacity={tint.opacity} />
           {night && (
             <G>
-              <Rect x={shape.house.x0} y={shape.house.y0} width={shape.house.x1 - shape.house.x0} height={shape.house.y1 - shape.house.y0} fill={WARM.color} opacity={WARM.opacity} />
+              <Rect
+                x={shape.house.x0}
+                y={shape.house.y0}
+                width={shape.house.x1 - shape.house.x0}
+                height={shape.house.y1 - shape.house.y0}
+                fill={WARM.color}
+                opacity={WARM.opacity}
+              />
               <Circle cx={MOON.cx} cy={MOON.cy} r={MOON.r} fill="#FFF6D6" stroke={INK} strokeWidth={1.2} />
               <Circle cx={MOON.cx + MOON.bite.dx} cy={MOON.cy + MOON.bite.dy} r={MOON.bite.r} fill="#2B3F73" />
             </G>
@@ -66,6 +73,16 @@ export const NightTint = memo(function NightTint({ shopId, width, height }: Scen
 });
 
 const styles = StyleSheet.create({
-  badge: { position: 'absolute', width: BADGE.size, height: BADGE.size, borderRadius: BADGE.size / 2, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.ink, alignItems: 'center', justifyContent: 'center' },
+  badge: {
+    position: 'absolute',
+    width: BADGE.size,
+    height: BADGE.size,
+    borderRadius: BADGE.size / 2,
+    backgroundColor: C.cheese,
+    borderWidth: 2,
+    borderColor: C.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   badgeText: { fontFamily: F.bold, fontSize: 14, lineHeight: 17, color: C.ink },
 });

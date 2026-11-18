@@ -18,14 +18,14 @@ describe('the picket fence (D432)', () => {
     expect(PICKET.pickets[0] - (p0 + PICKET.postW / 2)).toBeGreaterThan(0);
     expect(Math.abs(PICKET.pickets[0] - p0) - Math.abs(PICKET.pickets[PICKET.pickets.length - 1] - p1)).toBe(0);
   });
-  test('it fits the room layout.ts keeps for a prop (the bike rack\'s ±33 is the widest) and stays under the 22 pt budget the crowd tests assume', () => {
+  test("it fits the room layout.ts keeps for a prop (the bike rack's ±33 is the widest) and stays under the 22 pt budget the crowd tests assume", () => {
     expect(PICKET.halfW).toBeLessThanOrEqual(PROP_HALF_W);
     expect(PICKET.height).toBe(22);
   });
 });
 
 describe('the front yard (v5.14, D432)', () => {
-  test('a lawn strip runs past both end posts and sits behind the fence\'s foot, deep enough to read as a yard', () => {
+  test("a lawn strip runs past both end posts and sits behind the fence's foot, deep enough to read as a yard", () => {
     const edge = PICKET.posts[1] + PICKET.postW / 2;
     expect(PICKET.bed.x1 - edge).toBeGreaterThanOrEqual(4);
     expect(-PICKET.bed.x0 - edge).toBeGreaterThanOrEqual(4);
@@ -33,7 +33,7 @@ describe('the front yard (v5.14, D432)', () => {
     expect(PICKET.bed.y1).toBeGreaterThan(0); // the fence stands on it (the baseline is y 0)
     expect(PICKET.bed.x1).toBeLessThanOrEqual(PROP_HALF_W - 3);
   });
-  test('two shrubs are planted in it: each wholly inside the lawn\'s x range, its foot on the grass and its top under the pickets\' cap', () => {
+  test("two shrubs are planted in it: each wholly inside the lawn's x range, its foot on the grass and its top under the pickets' cap", () => {
     expect(PICKET.shrubs).toHaveLength(2);
     for (const b of PICKET.shrubs) {
       expect(b.cx - b.r).toBeGreaterThanOrEqual(PICKET.bed.x0);
@@ -46,7 +46,6 @@ describe('the front yard (v5.14, D432)', () => {
     expect(Math.abs(a.cx - b.cx)).toBeGreaterThanOrEqual(a.r + b.r - 2); // two bushes, not one blob
   });
 });
-
 
 describe('the MegaSlice van (D491)', () => {
   test('it is not on the street until the rival is open, and then it is; the other traffic never changes', () => {

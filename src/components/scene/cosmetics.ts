@@ -80,7 +80,8 @@ export function dressOf(worn: readonly string[]): Dress {
 }
 
 /** Whether anything at all is worn (the "nothing worn" shop is the plain one). */
-export const isDressed = (d: Dress): boolean => d.ovenSkin !== 0 || d.awningGold || !!d.awningFounder || d.facadeSkin !== 0 || d.scooterMint || d.neon || d.plaque;
+export const isDressed = (d: Dress): boolean =>
+  d.ovenSkin !== 0 || d.awningGold || !!d.awningFounder || d.facadeSkin !== 0 || d.scooterMint || d.neon || d.plaque;
 
 /** OVEN_GRADES index an oven is painted with: a skin overrides the grade bought (gold = Golden, 4; wood-fired = 2). */
 export const ovenPaint = (grade: number, skin: OvenSkin): number => (skin === 1 ? 4 : skin === 2 ? 2 : grade);

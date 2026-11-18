@@ -22,21 +22,40 @@ const fx = (g: G.GameState, now = NOW) => G.featureMults(g, HOOD, now);
 
 /** Industrial built and running, demand the slow stage (so a shift's demand moves the sales) and a Double storefront (4 oven slots). */
 function plant(): G.GameState {
-  return run(() => patch(G.newGame(NOW), { built: true, managed: true, heads: G.allHeads(), footprint: 2, prep: 200, ovens: 200, counter: 200, tables: 4, drivers: 4 }));
+  return run(() =>
+    patch(G.newGame(NOW), { built: true, managed: true, heads: G.allHeads(), footprint: 2, prep: 200, ovens: 200, counter: 200, tables: 4, drivers: 4 }),
+  );
 }
 /** The oven the slow stage, the rest far faster than the demand: a jam shows in the sales. */
 function ovenBound(g = plant()): G.GameState {
   return patch(g, { prep: 200, ovens: 10, counter: 200, tables: 60, drivers: 60 });
 }
 /** The shift on the clock, set by moving the cycle's start. */
-const onShift = (g: G.GameState, index: number, startedAt = 0): G.GameState => withState({ ...g, playSeconds: startedAt + index * SHIFT + 5 }, { startAt: startedAt, at: NOW });
+const onShift = (g: G.GameState, index: number, startedAt = 0): G.GameState =>
+  withState({ ...g, playSeconds: startedAt + index * SHIFT + 5 }, { startAt: startedAt, at: NOW });
 
 describe('the shifts', () => {
   it('a 20-minute cycle of day, swing and night, each a third of it', () => {
     expect(SHIFTS.cycleSeconds).toBe(1200);
-    expect(SHIFTS.shifts.map((s) => [s.id, s.demand, s.value])).toEqual([['day', 1, 1], ['swing', 0.8, 1], ['night', 1.2, 2]]);
+    expect(SHIFTS.shifts.map((s) => [s.id, s.demand, s.value])).toEqual([
+      ['day', 1, 1],
+      ['swing', 0.8, 1],
+      ['night', 1.2, 2],
+    ]);
     const at = (play: number) => SHIFTS.shifts[shiftAt({ startAt: 0 }, play).index].id;
-    expect([0, 399, 400, 799, 800, 1199, 1200, 1599, 1600, 2399, 2400].map(at)).toEqual(['day', 'day', 'swing', 'swing', 'night', 'night', 'day', 'day', 'swing', 'night', 'day']);
+    expect([0, 399, 400, 799, 800, 1199, 1200, 1599, 1600, 2399, 2400].map(at)).toEqual([
+      'day',
+      'day',
+      'swing',
+      'swing',
+      'night',
+      'night',
+      'day',
+      'day',
+      'swing',
+      'night',
+      'day',
+    ]);
     expect(shiftAt({ startAt: 0 }, 100).left).toBe(300);
     expect(shiftAt({ startAt: 50 }, 50).index).toBe(0);
     expect(shiftAt({ startAt: -1 }, 99999).index).toBe(0);
@@ -67,7 +86,11 @@ describe('the shifts', () => {
     run(() => {
       const g = plant();
       const mults = [0, 1, 2].map((i) => fx(onShift(g, i)));
-      expect(mults).toEqual([{ value: 1, demand: 1 }, { value: 1, demand: 0.8 }, { value: 2, demand: 1.2 }]);
+      expect(mults).toEqual([
+        { value: 1, demand: 1 },
+        { value: 1, demand: 0.8 },
+        { value: 2, demand: 1.2 },
+      ]);
       const sales = [0, 1, 2].map((i) => G.shopRate(g.shops[HOOD], g.vehicle, fx(onShift(g, i))));
       expect(sales[1] / sales[0]).toBeCloseTo(0.8, 12);
       expect(sales[2] / sales[0]).toBeCloseTo(1.2, 12);
@@ -248,7 +271,13 @@ describe('old saves', () => {
   it('keeps a saved schedule, jam and stamp and drops garbage', () => {
     const saved = { seed: 7, n: 3, nextAt: 2000.5, jam: 1990, startAt: 12, at: 99 };
     expect(industrialShifts.migrate(saved, NOW)).toEqual(saved);
-    expect(industrialShifts.migrate({ seed: 'x', n: -2, nextAt: NaN, jam: -4, startAt: 'a', at: Infinity }, NOW)).toMatchObject({ n: 0, nextAt: -1, jam: -1, startAt: -1, at: 0 });
+    expect(industrialShifts.migrate({ seed: 'x', n: -2, nextAt: NaN, jam: -4, startAt: 'a', at: Infinity }, NOW)).toMatchObject({
+      n: 0,
+      nextAt: -1,
+      jam: -1,
+      startAt: -1,
+      at: 0,
+    });
     expect(industrialShifts.migrate(undefined, NOW)).toMatchObject({ nextAt: -1, jam: -1, startAt: -1 });
   });
 });

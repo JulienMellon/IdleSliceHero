@@ -42,7 +42,25 @@ function ProductArt({ id }: { id: ProductId }) {
   return <DiamondIcon size={40} />;
 }
 
-const ProductCard = memo(function ProductCard({ id, title, blurb, label, state, enabled, busy, onBuy }: { id: ProductId; title: string; blurb: string; label: string; state: ProductRow['state']; enabled: boolean; busy: boolean; onBuy: (id: ProductId) => void }) {
+const ProductCard = memo(function ProductCard({
+  id,
+  title,
+  blurb,
+  label,
+  state,
+  enabled,
+  busy,
+  onBuy,
+}: {
+  id: ProductId;
+  title: string;
+  blurb: string;
+  label: string;
+  state: ProductRow['state'];
+  enabled: boolean;
+  busy: boolean;
+  onBuy: (id: ProductId) => void;
+}) {
   const press = useCallback(() => onBuy(id), [onBuy, id]);
   const chips = productChips(id);
   const ribbon = state === 'owned' ? undefined : PRODUCT_RIBBON[id];
@@ -71,8 +89,19 @@ const ProductCard = memo(function ProductCard({ id, title, blurb, label, state, 
         accessibilityState={{ disabled: !enabled || busy, busy }}
         disabled={!enabled || busy}
         onPress={press}
-        style={({ pressed }) => [styles.btn, enabled ? styles.btnBuy : state === 'owned' ? styles.btnOwned : styles.btnOff, busy && styles.busy, pressed && enabled && { transform: [{ translateY: 2 }] }]}>
-        <Text style={[styles.btnText, !enabled && (state === 'owned' ? styles.btnTextOwned : styles.btnTextOff)]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.15}>
+        style={({ pressed }) => [
+          styles.btn,
+          enabled ? styles.btnBuy : state === 'owned' ? styles.btnOwned : styles.btnOff,
+          busy && styles.busy,
+          pressed && enabled && { transform: [{ translateY: 2 }] },
+        ]}
+      >
+        <Text
+          style={[styles.btnText, !enabled && (state === 'owned' ? styles.btnTextOwned : styles.btnTextOff)]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          maxFontSizeMultiplier={1.15}
+        >
           {busy ? 'One moment…' : label}
         </Text>
       </Pressable>
@@ -93,7 +122,17 @@ export function StoreTab() {
         Every pack gives exactly what it says. Nothing here is a random prize.
       </Text>
       {rows.map((r) => (
-        <ProductCard key={r.id} id={r.id} title={r.title} blurb={r.blurb} label={r.label} state={r.state} enabled={r.enabled} busy={busy === r.id} onBuy={buy} />
+        <ProductCard
+          key={r.id}
+          id={r.id}
+          title={r.title}
+          blurb={r.blurb}
+          label={r.label}
+          state={r.state}
+          enabled={r.enabled}
+          busy={busy === r.id}
+          onBuy={buy}
+        />
       ))}
       {line !== '' && (
         <Text style={styles.line} testID="store-line" accessibilityLiveRegion="polite">

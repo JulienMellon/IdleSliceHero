@@ -10,12 +10,33 @@ import { PAY_RULE, PAY_WORDS, chipText, decorNext, ingredientsCardModel, ovenNex
 
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 const run = <T>(fn: () => T): T => withFeatures([uptownStars], fn);
-const DECOR = (n: number) => ({ plants: Math.min(3, n), flooring: Math.min(3, Math.max(0, n - 3)), tables: Math.min(3, Math.max(0, n - 6)), walls: Math.min(3, Math.max(0, n - 9)), signage: Math.min(3, Math.max(0, n - 12)) });
+const DECOR = (n: number) => ({
+  plants: Math.min(3, n),
+  flooring: Math.min(3, Math.max(0, n - 3)),
+  tables: Math.min(3, Math.max(0, n - 6)),
+  walls: Math.min(3, Math.max(0, n - 9)),
+  signage: Math.min(3, Math.max(0, n - 12)),
+});
 function uptown(p: Partial<Shop> & { tier?: number; cash?: number; tiers?: number }): GameState {
   return run(() => {
     const g = newGame(NOW);
     const { tier = 0, cash = 1e30, tiers = 0, ...shop } = p;
-    const shops = { ...g.shops, uptown: { ...g.shops.uptown, built: true, managed: true, prep: 40, ovens: 40, counter: 40, drivers: 20, tables: 20, footprint: 2, decor: DECOR(tiers), ...shop } };
+    const shops = {
+      ...g.shops,
+      uptown: {
+        ...g.shops.uptown,
+        built: true,
+        managed: true,
+        prep: 40,
+        ovens: 40,
+        counter: 40,
+        drivers: 20,
+        tables: 20,
+        footprint: 2,
+        decor: DECOR(tiers),
+        ...shop,
+      },
+    };
     const st: StarsState = { ...getFeature(g, uptownStars), tier, nextAt: 99999 };
     return { ...g, cash, shops, x: { ...g.x, [uptownStars.key]: st } };
   });
@@ -23,7 +44,13 @@ function uptown(p: Partial<Shop> & { tier?: number; cash?: number; tiers?: numbe
 
 describe('the pay rule', () => {
   it('names half pay under 3 stars, full pay at 3 and 4, double pay at 5', () => {
-    expect([1, 2, 3, 4, 5].map((n) => PAY_WORDS[payTagOf(n === 5 ? STARS.pay.top : n >= 3 ? STARS.pay.mid : STARS.pay.low)])).toEqual(['Half pay', 'Half pay', 'Full pay', 'Full pay', 'Double pay']);
+    expect([1, 2, 3, 4, 5].map((n) => PAY_WORDS[payTagOf(n === 5 ? STARS.pay.top : n >= 3 ? STARS.pay.mid : STARS.pay.low)])).toEqual([
+      'Half pay',
+      'Half pay',
+      'Full pay',
+      'Full pay',
+      'Double pay',
+    ]);
     expect(PAY_RULE).toBe('Below 3★: half pay. 3–4★: full pay. 5★: double pay.');
   });
 
@@ -49,7 +76,11 @@ describe('the sheet at 2 stars', () => {
   });
 
   it('lists the three inputs with their points and what the next point costs', () => {
-    expect(m.rows.map((r) => [r.key, r.points])).toEqual([['oven', '1/2'], ['decor', '1/2'], ['ingredients', '0/3']]);
+    expect(m.rows.map((r) => [r.key, r.points])).toEqual([
+      ['oven', '1/2'],
+      ['decor', '1/2'],
+      ['ingredients', '0/3'],
+    ]);
     expect(m.rows[0].value).toBe('Stone');
     expect(m.rows[0].next).toMatch(/^Copper · \$/);
     expect(m.rows[0].next).toContain('(2 grades)');

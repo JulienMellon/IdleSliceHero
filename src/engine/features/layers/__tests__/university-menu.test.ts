@@ -50,7 +50,11 @@ describe('the menu', () => {
   });
 
   it('the recipes are the card’s: x1.0, x1.4 with +30% prep, x0.6 with half the bake', () => {
-    expect(MENU.recipes.map((r) => [r.id, r.price, r.prep, r.bake])).toEqual([['cheese', 1, 1, 1], ['pepperoni', 1.4, 1.3, 1], ['knots', 0.6, 1, 0.5]]);
+    expect(MENU.recipes.map((r) => [r.id, r.price, r.prep, r.bake])).toEqual([
+      ['cheese', 1, 1, 1],
+      ['pepperoni', 1.4, 1.3, 1],
+      ['knots', 0.6, 1, 0.5],
+    ]);
   });
 
   it('the mix changes the value per pizza', () => {
@@ -109,12 +113,19 @@ describe('the menu', () => {
 
 describe('the zones', () => {
   it('Dorms, Library and Stadium at distances 1 / 2 / 3 with shares 50 / 30 / 20', () => {
-    expect(ZONES.zones.map((z) => [z.id, z.distance, z.share])).toEqual([['dorms', 1, 50], ['library', 2, 30], ['stadium', 3, 20]]);
+    expect(ZONES.zones.map((z) => [z.id, z.distance, z.share])).toEqual([
+      ['dorms', 1, 50],
+      ['library', 2, 30],
+      ['stadium', 3, 20],
+    ]);
   });
 
   it('the Library opens at footprint 1 and the Stadium at footprint 2', () => {
     run(() => {
-      const open = (fp: number) => zonesView(campus(CAR, fp)).zones.filter((z) => z.open).map((z) => z.id);
+      const open = (fp: number) =>
+        zonesView(campus(CAR, fp))
+          .zones.filter((z) => z.open)
+          .map((z) => z.id);
       expect(open(0)).toEqual(['dorms']);
       expect(open(1)).toEqual(['dorms', 'library']);
       expect(open(2)).toEqual(['dorms', 'library', 'stadium']);

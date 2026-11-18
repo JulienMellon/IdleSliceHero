@@ -55,7 +55,10 @@ export const CoinLayer = memo(function CoinLayer() {
             ty: k.interpolate({ inputRange: [0, 1], outputRange: [c.y - SIZE / 2, t.y - SIZE / 2] }),
             sparkle: k.interpolate({ inputRange: [0, 0.85, 1], outputRange: [0, 0, 1] }),
             opacity: 1,
-            dots: SPARK.map(([sx, sy]) => ({ x: k.interpolate({ inputRange: [0.85, 1], outputRange: [0, sx], extrapolate: 'clamp' }), y: k.interpolate({ inputRange: [0.85, 1], outputRange: [0, sy], extrapolate: 'clamp' }) })),
+            dots: SPARK.map(([sx, sy]) => ({
+              x: k.interpolate({ inputRange: [0.85, 1], outputRange: [0, sx], extrapolate: 'clamp' }),
+              y: k.interpolate({ inputRange: [0.85, 1], outputRange: [0, sy], extrapolate: 'clamp' }),
+            })),
           }
         : {
             key,
@@ -101,7 +104,16 @@ export const CoinLayer = memo(function CoinLayer() {
 
 const styles = StyleSheet.create({
   coinBox: { position: 'absolute', left: 0, top: 0, width: SIZE, height: SIZE },
-  coin: { width: SIZE, height: SIZE, borderRadius: SIZE / 2, backgroundColor: '#F6C343', borderWidth: 1.5, borderColor: '#8A5A00', alignItems: 'center', justifyContent: 'center' },
+  coin: {
+    width: SIZE,
+    height: SIZE,
+    borderRadius: SIZE / 2,
+    backgroundColor: '#F6C343',
+    borderWidth: 1.5,
+    borderColor: '#8A5A00',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   inner: { width: SIZE - 8, height: SIZE - 8, borderRadius: (SIZE - 8) / 2, borderWidth: 1, borderColor: '#B8860B' },
   shine: { position: 'absolute', left: 3.5, top: 3, width: 4, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.8)' },
   dot: { position: 'absolute', left: SIZE / 2 - 2, top: SIZE / 2 - 2, width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFE27A' },

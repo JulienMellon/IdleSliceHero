@@ -8,7 +8,44 @@ import Svg, { Circle, ClipPath, Defs, Ellipse, G, LinearGradient, Path, RadialGr
 import type { Backdrop as BackdropId, NeighborhoodId } from '../content/types';
 import { F } from '../theme';
 import { PROP_FONT, fitPropText, lineFont } from './cutscene/prop-text';
-import { BOSTON_LOOKS, ICON_PROP_BOX, ICON_PROP_IDS, type BostonLook, NAME_TAG_FIELD, ORDER_SLIP, PROP_BOXES, SHOP_WINDOW, UNI_LIGHTS, shopLookFor, HQ_PLATE, INDUSTRIAL_BILLBOARD, INDUSTRIAL_POSTS, LEFT_HOUSE, OAK, PIER_PLAQUE, SHOP_SIGNS, SUN, STRING_LIGHTS, UPTOWN_BILLBOARD, alongQuad, backdropView, quadAt, brickPatch, n as n1, bricks, circle, cloud, gridLines, lightsFor, mullions, planks, rain, rect, skyline, windows } from './cutscene/backdrop-art';
+import {
+  BOSTON_LOOKS,
+  ICON_PROP_BOX,
+  ICON_PROP_IDS,
+  type BostonLook,
+  NAME_TAG_FIELD,
+  ORDER_SLIP,
+  PROP_BOXES,
+  SHOP_WINDOW,
+  UNI_LIGHTS,
+  shopLookFor,
+  HQ_PLATE,
+  INDUSTRIAL_BILLBOARD,
+  INDUSTRIAL_POSTS,
+  LEFT_HOUSE,
+  OAK,
+  PIER_PLAQUE,
+  SHOP_SIGNS,
+  SUN,
+  STRING_LIGHTS,
+  UPTOWN_BILLBOARD,
+  alongQuad,
+  backdropView,
+  quadAt,
+  brickPatch,
+  n as n1,
+  bricks,
+  circle,
+  cloud,
+  gridLines,
+  lightsFor,
+  mullions,
+  planks,
+  rain,
+  rect,
+  skyline,
+  windows,
+} from './cutscene/backdrop-art';
 
 const INK = '#3B1F14';
 
@@ -40,7 +77,12 @@ const GLOW: Record<BackdropId, string> = {
   ...Object.fromEntries(Object.entries(BOSTON_LOOKS).map(([id, l]) => [id, l.glow])),
 };
 
-type Ids = { glow: string; oak: string; lights: ReturnType<typeof lightsFor>; /** The neighbourhood a shop-interior panel is set in (its room, window and signature object). */ hood?: NeighborhoodId };
+type Ids = {
+  glow: string;
+  oak: string;
+  lights: ReturnType<typeof lightsFor>;
+  /** The neighbourhood a shop-interior panel is set in (its room, window and signature object). */ hood?: NeighborhoodId;
+};
 
 // ---------------------------------------------------------------------------------------------------------------
 // Shared pieces
@@ -49,11 +91,30 @@ type Ids = { glow: string; oak: string; lights: ReturnType<typeof lightsFor>; /*
 const CLOUDS = cloud(118, -52, 0.9) + cloud(214, -66, 1);
 
 const FAR_CITY = skyline(140, [
-  [-10, 34, 150], [22, 26, 196], [46, 30, 170], [74, 22, 214], [94, 34, 160], [126, 28, 230], [152, 30, 190], [180, 24, 240], [202, 34, 176],
-  [234, 26, 226], [258, 32, 200], [288, 24, 248], [310, 34, 186], [342, 28, 216], [368, 40, 170],
+  [-10, 34, 150],
+  [22, 26, 196],
+  [46, 30, 170],
+  [74, 22, 214],
+  [94, 34, 160],
+  [126, 28, 230],
+  [152, 30, 190],
+  [180, 24, 240],
+  [202, 34, 176],
+  [234, 26, 226],
+  [258, 32, 200],
+  [288, 24, 248],
+  [310, 34, 186],
+  [342, 28, 216],
+  [368, 40, 170],
 ]);
 const FAR_CITY_WINDOWS = [
-  [26, 196], [78, 214], [130, 230], [184, 240], [238, 226], [292, 248], [346, 216],
+  [26, 196],
+  [78, 214],
+  [130, 230],
+  [184, 240],
+  [238, 226],
+  [292, 248],
+  [346, 216],
 ]
   .map(([x, h]) => windows(x + 4, 140 - h + 14, 2, Math.floor((h - 40) / 16), 4, 6, 9, 16, (c, r) => (c + r + x) % 3 === 0))
   .join('');
@@ -193,52 +254,52 @@ function ShopScene({ glow, lights, hood }: Ids) {
       {own ? (
         <ShopWindow hood={hood} />
       ) : (
-      <G transform={`translate(${SHOP_SIGNS.frame.x} ${SHOP_SIGNS.frame.y}) scale(${SHOP_SIGNS.frame.k})`}>
-        <Path d="M16 0 L33 -14 L50 0" stroke={INK} strokeWidth={1.2} fill="none" />
-        <Rect x={0} y={0} width={66} height={58} rx={3} fill="#C98F63" stroke={INK} strokeWidth={2.4} />
-        <Rect x={6} y={6} width={54} height={36} fill="#EED9B0" />
-        <Path d="M39 42 L39 30 Q48 19 57 30 L57 42 Z" fill="#B8784F" />
-        <Path d={circle(22, 22, 6.5) + 'M12 42 Q22 30 32 42 Z'} fill="#A0664A" />
-        <Path d="M6 6h54v36h-54Z" fill="#8E5A3C" opacity={0.12} />
-        <Text x={33} y={54} fontSize={8} fontFamily={F.bold} fill="#FFF4E0" textAnchor="middle">
-          EST. 1974
-        </Text>
-      </G>
+        <G transform={`translate(${SHOP_SIGNS.frame.x} ${SHOP_SIGNS.frame.y}) scale(${SHOP_SIGNS.frame.k})`}>
+          <Path d="M16 0 L33 -14 L50 0" stroke={INK} strokeWidth={1.2} fill="none" />
+          <Rect x={0} y={0} width={66} height={58} rx={3} fill="#C98F63" stroke={INK} strokeWidth={2.4} />
+          <Rect x={6} y={6} width={54} height={36} fill="#EED9B0" />
+          <Path d="M39 42 L39 30 Q48 19 57 30 L57 42 Z" fill="#B8784F" />
+          <Path d={circle(22, 22, 6.5) + 'M12 42 Q22 30 32 42 Z'} fill="#A0664A" />
+          <Path d="M6 6h54v36h-54Z" fill="#8E5A3C" opacity={0.12} />
+          <Text x={33} y={54} fontSize={8} fontFamily={F.bold} fill="#FFF4E0" textAnchor="middle">
+            EST. 1974
+          </Text>
+        </G>
       )}
       {own ? (
         <ShopObject hood={hood} glow={glow} />
       ) : (
         <G>
-      <Path d={S.jarGlass} fill="#E6F2F2" stroke={INK} strokeWidth={1.3} />
-      {S.jarFill.map((j) => (
-        <Path key={j.c} d={j.d} fill={j.c} />
-      ))}
-      <Path d={S.jarLabels} fill="#FFF8E8" stroke={INK} strokeWidth={0.7} />
-      <Path d={S.jarInk} stroke="#C8483A" strokeWidth={1.1} />
-      <Path d={S.jarGlints} stroke="#fff" strokeWidth={1.6} opacity={0.7} strokeLinecap="round" />
-      <Path d={S.jarLids} fill="#7A4A26" stroke={INK} strokeWidth={1} />
-      <Rect x={100} y={30} width={98} height={5} fill="#8E5A3C" stroke={INK} strokeWidth={1.3} />
-      <Path d="M110 35l5 7M188 35l-5 7" stroke="#5E3A26" strokeWidth={2} strokeLinecap="round" />
+          <Path d={S.jarGlass} fill="#E6F2F2" stroke={INK} strokeWidth={1.3} />
+          {S.jarFill.map((j) => (
+            <Path key={j.c} d={j.d} fill={j.c} />
+          ))}
+          <Path d={S.jarLabels} fill="#FFF8E8" stroke={INK} strokeWidth={0.7} />
+          <Path d={S.jarInk} stroke="#C8483A" strokeWidth={1.1} />
+          <Path d={S.jarGlints} stroke="#fff" strokeWidth={1.6} opacity={0.7} strokeLinecap="round" />
+          <Path d={S.jarLids} fill="#7A4A26" stroke={INK} strokeWidth={1} />
+          <Rect x={100} y={30} width={98} height={5} fill="#8E5A3C" stroke={INK} strokeWidth={1.3} />
+          <Path d="M110 35l5 7M188 35l-5 7" stroke="#5E3A26" strokeWidth={2} strokeLinecap="round" />
         </G>
       )}
       {hood === 'university' && <UniLights />}
       {/* brick oven under a pendant lamp */}
       <G transform="translate(-16 0)">
-      <Path d="M288 -22 L232 42 L368 42 L312 -22 Z" fill="#FFE7A0" opacity={0.2} />
-      <Ellipse cx={300} cy={-18} rx={40} ry={30} fill={`url(#${glow})`} opacity={0.9} />
-      <Path d="M300 -112V-38" stroke={INK} strokeWidth={1.4} />
-      <Path d="M285 -22 Q285 -40 300 -40 Q315 -40 315 -22 Z" fill="#2E6B4F" stroke={INK} strokeWidth={1.8} />
-      <Ellipse cx={300} cy={-21} rx={6} ry={3} fill="#FFF6C8" />
-      <Path d="M248 140 L248 60 Q300 10 352 60 L352 140 Z" fill="#B85C38" stroke={INK} strokeWidth={2.4} />
-      <Path d={S.ovenBricks} stroke="#8A3F22" strokeWidth={1} opacity={0.75} />
-      <Path d="M330 60 Q340 72 340 140 L352 140 L352 60 Q345 50 336 44 Z" fill="#000" opacity={0.14} />
-      <Path d="M266 140 L266 100 Q300 64 334 100 L334 140" stroke="#D88A5A" strokeWidth={7} fill="none" />
-      <Path d="M266 140 L266 100 Q300 64 334 100 L334 140" stroke={INK} strokeWidth={7} strokeDasharray="1.2 7" fill="none" />
-      <Path d="M270 140 L270 102 Q300 72 330 102 L330 140 Z" fill="#2B1A12" />
-      <Ellipse cx={300} cy={124} rx={34} ry={22} fill={`url(#${glow})`} />
-      <Path d="M276 138 L282 116 L290 128 L298 104 L306 126 L314 112 L322 138 Z" fill="#FF9F1C" />
-      <Path d="M288 138 L292 124 L298 132 L303 118 L309 138 Z" fill="#FFE066" />
-      <Rect x={258} y={134} width={84} height={7} fill="#8C8C8C" stroke={INK} strokeWidth={1.4} />
+        <Path d="M288 -22 L232 42 L368 42 L312 -22 Z" fill="#FFE7A0" opacity={0.2} />
+        <Ellipse cx={300} cy={-18} rx={40} ry={30} fill={`url(#${glow})`} opacity={0.9} />
+        <Path d="M300 -112V-38" stroke={INK} strokeWidth={1.4} />
+        <Path d="M285 -22 Q285 -40 300 -40 Q315 -40 315 -22 Z" fill="#2E6B4F" stroke={INK} strokeWidth={1.8} />
+        <Ellipse cx={300} cy={-21} rx={6} ry={3} fill="#FFF6C8" />
+        <Path d="M248 140 L248 60 Q300 10 352 60 L352 140 Z" fill="#B85C38" stroke={INK} strokeWidth={2.4} />
+        <Path d={S.ovenBricks} stroke="#8A3F22" strokeWidth={1} opacity={0.75} />
+        <Path d="M330 60 Q340 72 340 140 L352 140 L352 60 Q345 50 336 44 Z" fill="#000" opacity={0.14} />
+        <Path d="M266 140 L266 100 Q300 64 334 100 L334 140" stroke="#D88A5A" strokeWidth={7} fill="none" />
+        <Path d="M266 140 L266 100 Q300 64 334 100 L334 140" stroke={INK} strokeWidth={7} strokeDasharray="1.2 7" fill="none" />
+        <Path d="M270 140 L270 102 Q300 72 330 102 L330 140 Z" fill="#2B1A12" />
+        <Ellipse cx={300} cy={124} rx={34} ry={22} fill={`url(#${glow})`} />
+        <Path d="M276 138 L282 116 L290 128 L298 104 L306 126 L314 112 L322 138 Z" fill="#FF9F1C" />
+        <Path d="M288 138 L292 124 L298 132 L303 118 L309 138 Z" fill="#FFE066" />
+        <Rect x={258} y={134} width={84} height={7} fill="#8C8C8C" stroke={INK} strokeWidth={1.4} />
       </G>
       {/* near: baseboard, plank floor, warm spill from the oven, pizza boxes */}
       <Rect x={-20} y={134} width={440} height={8} fill={L.baseboard} />
@@ -261,7 +322,11 @@ function ShopScene({ glow, lights, hood }: Ids) {
 
 const SHOPX = (() => {
   // pennants hang from a rope across the shelf wall
-  const rope: [[number, number], [number, number], [number, number]] = [[102, -6], [151, 10], [200, -6]];
+  const rope: [[number, number], [number, number], [number, number]] = [
+    [102, -6],
+    [151, 10],
+    [200, -6],
+  ];
   const pennants = [0.1, 0.26, 0.42, 0.58, 0.74, 0.9].map((t, i) => {
     const [x, y] = quadAt(rope[0], rope[1], rope[2], t);
     return { d: `M${n1(x - 4.5)} ${n1(y)}h9l-4.5 12Z`, c: ['#D9443A', '#FFC531', '#2F80ED'][i % 3] };
@@ -311,7 +376,13 @@ function UniLights() {
       <Path d={bulbs.map(([x, y]) => circle(x, y + 3, 9)).join('')} fill="#FFE7A0" opacity={0.28} />
       <Path d={UNI_LIGHTS.wire} stroke={INK} strokeWidth={1.4} fill="none" />
       {bulbs.map(([x, y], i) => (
-        <Path key={i} d={circle(x, y + 3, UNI_LIGHTS.radius, UNI_LIGHTS.radius + 1)} fill={['#FFC531', '#E8432E', '#3FAE5A'][i % 3]} stroke={INK} strokeWidth={1} />
+        <Path
+          key={i}
+          d={circle(x, y + 3, UNI_LIGHTS.radius, UNI_LIGHTS.radius + 1)}
+          fill={['#FFC531', '#E8432E', '#3FAE5A'][i % 3]}
+          stroke={INK}
+          strokeWidth={1}
+        />
       ))}
     </G>
   );
@@ -345,7 +416,10 @@ function ShopWindow({ hood }: { hood: NeighborhoodId | undefined }) {
         <Path d="M16 38q4 -2 8 0t8 0t8 0t8 0M22 44q4 -2 8 0t8 0" stroke="#BFE8F2" strokeWidth={1.2} fill="none" strokeLinecap="round" />
         <Path d="M31 32V19L39 32Z" fill="#FFFFFF" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
         <Path d="M25 33H40L37 37H28Z" fill="#8E3B2E" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
-        <Path d={[0, 1, 2, 3, 4, 5, 6, 7].map((i) => circle(33 + 24 * Math.cos((i * Math.PI) / 4), 29 + 24 * Math.sin((i * Math.PI) / 4), 1.6)).join('')} fill="#8A6A22" />
+        <Path
+          d={[0, 1, 2, 3, 4, 5, 6, 7].map((i) => circle(33 + 24 * Math.cos((i * Math.PI) / 4), 29 + 24 * Math.sin((i * Math.PI) / 4), 1.6)).join('')}
+          fill="#8A6A22"
+        />
       </G>
     );
   } else if (hood === 'university') {
@@ -380,12 +454,19 @@ function ShopWindow({ hood }: { hood: NeighborhoodId | undefined }) {
         <Path d="M5 53V23Q5 5 33 5Q61 5 61 23V53Z" fill="#1D2350" />
         <Circle cx={49} cy={17} r={5} fill="#F4EFC8" />
         <Path d={rect(9, 30, 10, 23) + rect(21, 22, 9, 31) + rect(34, 34, 12, 19) + rect(48, 28, 10, 25)} fill="#2C3470" />
-        <Path d={windows(11, 33, 2, 5, 2.4, 2.8, 5, 4.6) + windows(23, 25, 2, 6, 2.4, 2.8, 4.6, 4.6) + windows(37, 37, 3, 3, 2.4, 2.8, 3.8, 4.6) + windows(50, 31, 2, 4, 2.4, 2.8, 4.6, 4.8)} fill="#FFD76A" />
+        <Path
+          d={
+            windows(11, 33, 2, 5, 2.4, 2.8, 5, 4.6) +
+            windows(23, 25, 2, 6, 2.4, 2.8, 4.6, 4.6) +
+            windows(37, 37, 3, 3, 2.4, 2.8, 3.8, 4.6) +
+            windows(50, 31, 2, 4, 2.4, 2.8, 4.6, 4.8)
+          }
+          fill="#FFD76A"
+        />
         <Path d="M33 5V53" stroke="#CDA64B" strokeWidth={2.2} />
       </G>
     );
-  }
-  else if (hood && BOSTON_LOOKS[hood]) art = <BostonWindow hood={hood} />;
+  } else if (hood && BOSTON_LOOKS[hood]) art = <BostonWindow hood={hood} />;
   return (
     <G transform={`translate(${f.x} ${f.y}) scale(${f.k})`}>
       <Path d="M16 0 L33 -14 L50 0" stroke={INK} strokeWidth={1.2} fill="none" />
@@ -505,7 +586,11 @@ const DT = (() => {
     const rows = Math.floor((90 - top - 10) / 24);
     const left = x0 + (x1 - x0 - (cols * 22 - 8)) / 2;
     const skip = i === 2 ? (c: number) => c === cols - 1 : undefined; // fire-escape bay
-    return { glass: windows(left, top + 14, cols, rows, 14, 16, 22, 24, skip), bars: mullions(left, top + 14, cols, rows, 14, 16, 22, 24, skip), sills: windows(left - 2, top + 30, cols, rows, 18, 3, 22, 24, skip) };
+    return {
+      glass: windows(left, top + 14, cols, rows, 14, 16, 22, 24, skip),
+      bars: mullions(left, top + 14, cols, rows, 14, 16, 22, 24, skip),
+      sills: windows(left - 2, top + 30, cols, rows, 18, 3, 22, 24, skip),
+    };
   });
   return {
     B,
@@ -521,7 +606,12 @@ const DT = (() => {
       'M222 -46h26M222 -10h26M222 26h26M222 62h26' +
       'M222 -46v8M248 -46v8M222 -10v8M248 -10v8M222 26v8M248 26v8M222 62v8M248 62v8' +
       'M226 -38L244 -2M226 -2L244 34M226 34L244 70',
-    tower: { legs: 'M276 -26L280 -50M312 -26L308 -50M294 -26V-50M278 -38H310', tank: 'M272 -82h44v32q-22 6 -44 0Z', bands: 'M272 -72q22 5 44 0M272 -61q22 5 44 0', roof: 'M270 -82L294 -102L318 -82Z' },
+    tower: {
+      legs: 'M276 -26L280 -50M312 -26L308 -50M294 -26V-50M278 -38H310',
+      tank: 'M272 -82h44v32q-22 6 -44 0Z',
+      bands: 'M272 -72q22 5 44 0M272 -61q22 5 44 0',
+      roof: 'M270 -82L294 -102L318 -82Z',
+    },
     awningG: 'M68 96H148L152 112H64Z',
     awningR: 'M156 96H248L252 112H152Z',
     awningB: 'M256 96H332L336 112H252Z',
@@ -595,9 +685,33 @@ const SUB = (() => {
     roofB: 'M222 32 L290 -26 L358 32 Z',
     shingles: shingles(46, 186, 116, -40, 22) + shingles(222, 358, 290, -26, 32),
     chimney: `M${LEFT_HOUSE.chimney.x} ${LEFT_HOUSE.chimney.base}h${LEFT_HOUSE.chimney.w}V${LEFT_HOUSE.chimney.top}h${-LEFT_HOUSE.chimney.w}Z`,
-    glass: rect(72, 34, 26, 30) + rect(134, 34, 26, 30) + rect(66, 86, 26, 30) + rect(248, 44, 26, 28) + rect(306, 44, 26, 28) + rect(306, 92, 26, 28) + rect(103, -14, 26, 22) + rect(277, -6, 26, 20),
-    bars: mullions(72, 34, 1, 1, 26, 30, 0, 0) + mullions(134, 34, 1, 1, 26, 30, 0, 0) + mullions(66, 86, 1, 1, 26, 30, 0, 0) + mullions(248, 44, 1, 1, 26, 28, 0, 0) + mullions(306, 44, 1, 1, 26, 28, 0, 0) + mullions(306, 92, 1, 1, 26, 28, 0, 0) + mullions(103, -14, 1, 1, 26, 22, 0, 0) + mullions(277, -6, 1, 1, 26, 20, 0, 0),
-    shutters: rect(64, 34, 7, 30) + rect(99, 34, 7, 30) + rect(126, 34, 7, 30) + rect(161, 34, 7, 30) + rect(240, 44, 7, 28) + rect(275, 44, 7, 28) + rect(298, 44, 7, 28) + rect(333, 44, 7, 28),
+    glass:
+      rect(72, 34, 26, 30) +
+      rect(134, 34, 26, 30) +
+      rect(66, 86, 26, 30) +
+      rect(248, 44, 26, 28) +
+      rect(306, 44, 26, 28) +
+      rect(306, 92, 26, 28) +
+      rect(103, -14, 26, 22) +
+      rect(277, -6, 26, 20),
+    bars:
+      mullions(72, 34, 1, 1, 26, 30, 0, 0) +
+      mullions(134, 34, 1, 1, 26, 30, 0, 0) +
+      mullions(66, 86, 1, 1, 26, 30, 0, 0) +
+      mullions(248, 44, 1, 1, 26, 28, 0, 0) +
+      mullions(306, 44, 1, 1, 26, 28, 0, 0) +
+      mullions(306, 92, 1, 1, 26, 28, 0, 0) +
+      mullions(103, -14, 1, 1, 26, 22, 0, 0) +
+      mullions(277, -6, 1, 1, 26, 20, 0, 0),
+    shutters:
+      rect(64, 34, 7, 30) +
+      rect(99, 34, 7, 30) +
+      rect(126, 34, 7, 30) +
+      rect(161, 34, 7, 30) +
+      rect(240, 44, 7, 28) +
+      rect(275, 44, 7, 28) +
+      rect(298, 44, 7, 28) +
+      rect(333, 44, 7, 28),
     doors: 'M106 140V98q0 -10 10 -10h6q10 0 10 10V140Z M250 140V102q0 -9 9 -9h6q9 0 9 9V140Z',
     sides: rect(168, 22, 6, 118) + rect(340, 32, 6, 108),
     canopy: OAK.canopy.map(([cx, cy, r]) => circle(cx, cy, r)).join(''),
@@ -671,11 +785,34 @@ const WF = (() => {
   const dock = planks(-20, 420, 146, 212, 200, 10, 26);
   const flags = alongQuad([96, -34], [190, 0], [276, -24], 9);
   return {
-    shore: skyline(70, [[-10, 22, 30], [14, 14, 44], [40, 18, 26], [150, 16, 30], [168, 12, 48], [182, 18, 26], [204, 14, 56], [220, 20, 34], [244, 12, 40], [262, 18, 24], [340, 20, 34], [362, 14, 46], [380, 24, 28]]),
+    shore: skyline(70, [
+      [-10, 22, 30],
+      [14, 14, 44],
+      [40, 18, 26],
+      [150, 16, 30],
+      [168, 12, 48],
+      [182, 18, 26],
+      [204, 14, 56],
+      [220, 20, 34],
+      [244, 12, 40],
+      [262, 18, 24],
+      [340, 20, 34],
+      [362, 14, 46],
+      [380, 24, 28],
+    ]),
     water: 'M-20 70H420V150H-20Z',
-    waves: Array.from({ length: 9 }, (_, i) => `M${-20 + ((i * 61) % 60)} ${80 + i * 8}` + Array.from({ length: 8 }, () => 'q12 -3 24 0t24 0').join('')).join(''),
+    waves: Array.from({ length: 9 }, (_, i) => `M${-20 + ((i * 61) % 60)} ${80 + i * 8}` + Array.from({ length: 8 }, () => 'q12 -3 24 0t24 0').join('')).join(
+      '',
+    ),
     glitter: Array.from({ length: 9 }, (_, i) => `M${132 + ((i * 17) % 30) - 15} ${76 + i * 7}h${14 - (i % 3) * 4}`).join(''),
-    boat: { hull: 'M100 104 L162 104 L152 118 L110 118 Z', stripe: 'M103 108 L159 108', mast: 'M132 104 V0', sail: 'M134 6 L134 100 L166 100 Z', jib: 'M130 12 L130 100 L106 100 Z', wake: 'M108 121 h46 l-6 4 h-34 Z' },
+    boat: {
+      hull: 'M100 104 L162 104 L152 118 L110 118 Z',
+      stripe: 'M103 108 L159 108',
+      mast: 'M132 104 V0',
+      sail: 'M134 6 L134 100 L166 100 Z',
+      jib: 'M130 12 L130 100 L106 100 Z',
+      wake: 'M108 121 h46 l-6 4 h-34 Z',
+    },
     warehouse: 'M222 146 V10 L276 -24 L330 10 V146 Z',
     corrugated: Array.from({ length: 13 }, (_, i) => {
       const x = 226 + i * 8;
@@ -684,8 +821,14 @@ const WF = (() => {
     door: rect(236, 70, 52, 76),
     doorSlats: gridLines(236, 70, 288, 146, 400, 6),
     bunting: 'M96 -34 Q190 0 276 -24',
-    flagsA: flags.filter((_, i) => i % 2 === 0).map(([x, y]) => `M${n1(x - 5)} ${n1(y)}l10 0l-5 9Z`).join(''),
-    flagsB: flags.filter((_, i) => i % 2 === 1).map(([x, y]) => `M${n1(x - 5)} ${n1(y)}l10 0l-5 9Z`).join(''),
+    flagsA: flags
+      .filter((_, i) => i % 2 === 0)
+      .map(([x, y]) => `M${n1(x - 5)} ${n1(y)}l10 0l-5 9Z`)
+      .join(''),
+    flagsB: flags
+      .filter((_, i) => i % 2 === 1)
+      .map(([x, y]) => `M${n1(x - 5)} ${n1(y)}l10 0l-5 9Z`)
+      .join(''),
     gulls: 'M176 -72 q5 -5 10 0 q5 -5 10 0 M206 -88 q4 -4 8 0 q4 -4 8 0 M236 -60 q3 -3 6 0 q3 -3 6 0',
     dock,
     bollard: 'M286 146 v-14 q0 -5 8 -5 q8 0 8 5 v14 Z',
@@ -767,7 +910,15 @@ const UNI = (() => {
     tower: rect(178, -70, 44, 48),
     towerTop: 'M172 -70 L200 -104 L228 -70 Z',
     steps: rect(140, 132, 120, 4) + rect(134, 136, 132, 4),
-    ivy: circle(50, 60, 9) + circle(44, 76, 10) + circle(54, 90, 8) + circle(350, 70, 9) + circle(354, 88, 10) + circle(344, 104, 8) + circle(130, 34, 6) + circle(126, 46, 7),
+    ivy:
+      circle(50, 60, 9) +
+      circle(44, 76, 10) +
+      circle(54, 90, 8) +
+      circle(350, 70, 9) +
+      circle(354, 88, 10) +
+      circle(344, 104, 8) +
+      circle(130, 34, 6) +
+      circle(126, 46, 7),
     walk: 'M176 140 L224 140 L262 202 L138 202 Z',
     lawnTufts: Array.from({ length: 16 }, (_, i) => `M${(i * 53) % 400} ${152 + ((i * 29) % 40)}l3 -6l2 5l3 -7l2 8`).join(''),
     shadows: 'M360 140 L396 140 L380 150 L346 150 Z',
@@ -824,7 +975,17 @@ function UniversityScene() {
 const IND = (() => {
   const saw = 'M24 140 V26 ' + Array.from({ length: 6 }, (_, i) => `L${60 + i * 36} -6 V26 `).join('') + 'V140 Z';
   return {
-    farFactories: skyline(140, [[-10, 40, 120], [30, 24, 150], [70, 36, 110], [120, 20, 190], [150, 44, 130], [214, 30, 170], [260, 40, 140], [320, 22, 200], [350, 50, 120]]),
+    farFactories: skyline(140, [
+      [-10, 40, 120],
+      [30, 24, 150],
+      [70, 36, 110],
+      [120, 20, 190],
+      [150, 44, 130],
+      [214, 30, 170],
+      [260, 40, 140],
+      [320, 22, 200],
+      [350, 50, 120],
+    ]),
     crane:
       'M64 140 V-74 M76 140 V-74 M64 -74 H76 M70 -74 V-98 M70 -98 L260 -84 M70 -98 L36 -84 M70 -74 L260 -84' +
       Array.from({ length: 13 }, (_, i) => `M64 ${124 - i * 15}L76 ${110 - i * 15}`).join('') +
@@ -840,7 +1001,15 @@ const IND = (() => {
     shutter: gridLines(96, 104, 148, 140, 400, 4),
     chimneys: 'M108 30 V-62 h18 V30 Z M140 30 V-34 h14 V30 Z',
     chimneyBands: 'M108 -54h18M108 -46h18M140 -28h14',
-    steam: circle(120, -72, 8) + circle(131, -81, 10) + circle(146, -87, 9) + circle(160, -90, 8) + circle(141, -92, 5.5) + circle(148, -44, 6) + circle(157, -52, 7) + circle(168, -57, 6),
+    steam:
+      circle(120, -72, 8) +
+      circle(131, -81, 10) +
+      circle(146, -87, 9) +
+      circle(160, -90, 8) +
+      circle(141, -92, 5.5) +
+      circle(148, -44, 6) +
+      circle(157, -52, 7) +
+      circle(168, -57, 6),
     tower: { legs: 'M254 66L260 18M290 66L284 18M272 66V18M256 44H288', tank: 'M248 18 q0 -36 24 -36 q24 0 24 36 Z', bands: 'M250 6h44M252 -6h40' },
     shed: rect(244, 66, 176, 74),
     shedRibs: gridLines(244, 66, 420, 140, 7, 400),
@@ -910,13 +1079,25 @@ const UP = (() => {
     const cols = Math.floor((x1 - x0 - 10) / 14);
     const left = x0 + (x1 - x0 - (cols * 14 - 6)) / 2;
     const rows = Math.floor((96 - top - 10) / 16);
-    return { on: windows(left, top + 12, cols, rows, 8, 10, 14, 16, (c, r) => !lit(c + x0, r)), off: windows(left, top + 12, cols, rows, 8, 10, 14, 16, (c, r) => lit(c + x0, r)) };
+    return {
+      on: windows(left, top + 12, cols, rows, 8, 10, 14, 16, (c, r) => !lit(c + x0, r)),
+      off: windows(left, top + 12, cols, rows, 8, 10, 14, 16, (c, r) => lit(c + x0, r)),
+    };
   });
   let stars = '';
   for (let i = 0; i < 18; i++) stars += circle((i * 83) % 400, -108 + ((i * 47) % 70), i % 3 ? 1 : 1.6);
   return {
     B,
-    far: skyline(140, [[-10, 30, 200], [40, 24, 230], [90, 34, 210], [150, 26, 250], [210, 30, 230], [250, 24, 260], [300, 34, 215], [360, 30, 240]]),
+    far: skyline(140, [
+      [-10, 30, 200],
+      [40, 24, 230],
+      [90, 34, 210],
+      [150, 26, 250],
+      [210, 30, 230],
+      [250, 24, 260],
+      [300, 34, 215],
+      [360, 30, 240],
+    ]),
     on: grids.map((g) => g.on).join(''),
     off: grids.map((g) => g.off).join(''),
     crown: 'M136 -76 L136 -86 L146 -86 L146 -94 L156 -94 L163 -112 L170 -94 L180 -94 L180 -86 L190 -86 L190 -76 Z',
@@ -973,7 +1154,14 @@ function UptownScene({ glow }: Ids) {
 
 const HQ = (() => ({
   beams: 'M180 -20 L60 -130 L100 -130 Z M220 -20 L340 -130 L300 -130 Z',
-  far: skyline(140, [[-10, 40, 160], [36, 30, 200], [74, 30, 150], [300, 30, 190], [336, 34, 160], [376, 40, 210]]),
+  far: skyline(140, [
+    [-10, 40, 160],
+    [36, 30, 200],
+    [74, 30, 150],
+    [300, 30, 190],
+    [336, 34, 160],
+    [376, 40, 210],
+  ]),
   tower: 'M110 140 V-80 L200 -112 L290 -80 V140 Z',
   side: 'M290 -80 L306 -74 V140 H290 Z',
   glass: windows(118, -64, 8, 9, 18, 14, 21.4, 18, (c, r) => (c + r * 3) % 7 === 0),
@@ -1021,8 +1209,28 @@ function HqScene({ glow }: Ids) {
 // the rain, a wet kerb that reflects the window glow.
 
 const RAIN = (() => ({
-  far: skyline(120, [[0, 30, 70], [34, 30, 95], [62, 30, 60], [96, 30, 120], [130, 30, 80], [168, 30, 105], [210, 30, 70], [246, 30, 130], [282, 30, 85], [318, 30, 110], [356, 30, 75]]),
-  farLit: [[34, 95], [96, 120], [168, 105], [246, 130], [318, 110]].map(([x, h]) => windows(x + 6, 120 - h + 8, 2, Math.floor((h - 12) / 16), 6, 7, 12, 16, (c, r) => (c + r + x) % 3 === 1)).join(''),
+  far: skyline(120, [
+    [0, 30, 70],
+    [34, 30, 95],
+    [62, 30, 60],
+    [96, 30, 120],
+    [130, 30, 80],
+    [168, 30, 105],
+    [210, 30, 70],
+    [246, 30, 130],
+    [282, 30, 85],
+    [318, 30, 110],
+    [356, 30, 75],
+  ]),
+  farLit: [
+    [34, 95],
+    [96, 120],
+    [168, 105],
+    [246, 130],
+    [318, 110],
+  ]
+    .map(([x, h]) => windows(x + 6, 120 - h + 8, 2, Math.floor((h - 12) / 16), 6, 7, 12, 16, (c, r) => (c + r + x) % 3 === 1))
+    .join(''),
   neighbours: rect(98, 28, 60, 172) + rect(242, 38, 60, 162),
   neighbourWin: windows(104, 36, 4, 10, 6, 8, 12, 14) + windows(248, 46, 4, 10, 6, 8, 12, 14),
   neighbourGlow: windows(102, 34, 4, 10, 10, 12, 12, 14) + windows(246, 44, 4, 10, 10, 12, 12, 14),
@@ -1179,7 +1387,15 @@ function NameTag({ text }: { text: string }) {
         HELLO
       </Text>
       {fit.lines.map((line, i) => (
-        <Text key={i} x={b.w / 2} y={top + i * fit.fontSize * 1.18 + fit.fontSize * 0.92} fontSize={fit.fontSize} fontFamily={F.bold} fill="#1E2A5A" textAnchor="middle">
+        <Text
+          key={i}
+          x={b.w / 2}
+          y={top + i * fit.fontSize * 1.18 + fit.fontSize * 0.92}
+          fontSize={fit.fontSize}
+          fontFamily={F.bold}
+          fill="#1E2A5A"
+          textAnchor="middle"
+        >
           {line}
         </Text>
       ))}
@@ -1235,16 +1451,36 @@ const BOS = (() => {
       const cols = Math.floor((x1 - x0 - 12) / 22);
       const rows = Math.floor((90 - top - 10) / 24);
       const left = x0 + (x1 - x0 - (cols * 22 - 8)) / 2;
-      return { glass: windows(left, top + 14, cols, rows, 14, 16, 22, 24), bars: mullions(left, top + 14, cols, rows, 14, 16, 22, 24), sills: windows(left - 2, top + 30, cols, rows, 18, 3, 22, 24) };
+      return {
+        glass: windows(left, top + 14, cols, rows, 14, 16, 22, 24),
+        bars: mullions(left, top + 14, cols, rows, 14, 16, 22, 24),
+        sills: windows(left - 2, top + 30, cols, rows, 18, 3, 22, 24),
+      };
     });
     const doors = B.map(([x0, x1], i) => (L.sig === 'towers' && i === 1 ? '' : rect((x0 + x1) / 2 - 10, 114, 20, 26))).join('');
     const glassFront = B.map(([x0, x1], i) => (L.sig === 'towers' && i === 1 ? '' : rect(x0 + 8, 116, Math.max(0, (x1 - x0) / 2 - 22), 22))).join('');
-    const awnings = L.sig === 'brownstones' || L.sig === 'deckers' || L.sig === 'towers' ? [] : B.map(([x0, x1], i) => ({ d: `M${x0 + 4} 96H${x1 - 4}L${x1} 112H${x0}Z`, c: ['#E8432E', '#3FAE5A', '#2F80ED', '#F2C94C', '#9B51E0'][i % 5] }));
+    const awnings =
+      L.sig === 'brownstones' || L.sig === 'deckers' || L.sig === 'towers'
+        ? []
+        : B.map(([x0, x1], i) => ({ d: `M${x0 + 4} 96H${x1 - 4}L${x1} 112H${x0}Z`, c: ['#E8432E', '#3FAE5A', '#2F80ED', '#F2C94C', '#9B51E0'][i % 5] }));
     const cornices = B.map(([x0, x1, top]) => rect(x0 - 3, top - 6, x1 - x0 + 6, 7)).join('');
     const brick = B.map(([x0, x1, top], i) => (plain(i) && L.sig !== 'deckers' ? bricks(x0, top + 2, x1, 94, 6, 14) : '')).join('');
     const paving = gridLines(-20, 140, 420, 200, 40, 22);
     const far = FAR_CITY;
-    return { L, win, doors, glassFront, awnings, cornices, brick, paving, far, glassAll: win.map((w) => w.glass).join(''), barsAll: win.map((w) => w.bars).join(''), sillsAll: win.map((w) => w.sills).join('') };
+    return {
+      L,
+      win,
+      doors,
+      glassFront,
+      awnings,
+      cornices,
+      brick,
+      paving,
+      far,
+      glassAll: win.map((w) => w.glass).join(''),
+      barsAll: win.map((w) => w.bars).join(''),
+      sillsAll: win.map((w) => w.sills).join(''),
+    };
   }
   for (const id of Object.keys(BOSTON_LOOKS)) out[id] = buildBoston(id);
   return out;
@@ -1266,7 +1502,10 @@ const TOWER = (() => {
     bank: rect(x - 16, -46, 32, 18),
     bulbs: [0, 1, 2, 3].map((c) => circle(x - 11.5 + c * 7.7, -40, 2.8) + circle(x - 11.5 + c * 7.7, -33, 2.8)).join(''),
   });
-  return { towers: [tower(128), tower(272)], panels: ['#F2C94C', '#E8432E', '#FFFFFF', '#2F80ED', '#F2C94C'].map((c, i) => [118 + i * 36, 34, 28, 22, c] as const) };
+  return {
+    towers: [tower(128), tower(272)],
+    panels: ['#F2C94C', '#E8432E', '#FFFFFF', '#2F80ED', '#F2C94C'].map((c, i) => [118 + i * 36, 34, 28, 22, c] as const),
+  };
 })();
 
 /** Cambridge's lab: a grid of lit windows, alternating cool and warm; and the smoking basement window. */
@@ -1496,7 +1735,12 @@ function BostonObject({ hood }: { hood: string }): ReactElement | null {
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <G key={i}>
               <Path d={rect(114 + i * 13, 14, 8, 12)} fill="#C8483A" stroke={INK} strokeWidth={1} />
-              <Path d={`M${118 + i * 13} 5Q${121 + i * 13} 10 ${118 + i * 13} 13Q${115 + i * 13} 10 ${118 + i * 13} 5Z`} fill="#FFC531" stroke={INK} strokeWidth={0.8} />
+              <Path
+                d={`M${118 + i * 13} 5Q${121 + i * 13} 10 ${118 + i * 13} 13Q${115 + i * 13} 10 ${118 + i * 13} 5Z`}
+                fill="#FFC531"
+                stroke={INK}
+                strokeWidth={0.8}
+              />
             </G>
           ))}
           <Path d="M108 32v8M186 32v8" stroke="#5E3A26" strokeWidth={2} strokeLinecap="round" />
@@ -1508,7 +1752,13 @@ function BostonObject({ hood }: { hood: string }): ReactElement | null {
         <G>
           <Rect x={104} y={14} width={92} height={4} fill="#4A3426" stroke={INK} strokeWidth={1} />
           {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-            <Path key={i} d={`M${110 + i * 12} 14V2Q${110 + i * 12} -2 ${112 + i * 12} -4V-8h3V-4Q${117 + i * 12} -2 ${117 + i * 12} 2V14Z`} fill={['#3E7A4A', '#C9A24A', '#7A4A26', '#2F5E8A'][i % 4]} stroke={INK} strokeWidth={0.9} />
+            <Path
+              key={i}
+              d={`M${110 + i * 12} 14V2Q${110 + i * 12} -2 ${112 + i * 12} -4V-8h3V-4Q${117 + i * 12} -2 ${117 + i * 12} 2V14Z`}
+              fill={['#3E7A4A', '#C9A24A', '#7A4A26', '#2F5E8A'][i % 4]}
+              stroke={INK}
+              strokeWidth={0.9}
+            />
           ))}
           <Rect x={104} y={30} width={92} height={4} fill="#4A3426" stroke={INK} strokeWidth={1} />
           <Path d="M118 30V20H128V30ZM140 30V18H152V30Z" fill="#FFD98A" stroke={INK} strokeWidth={1} />
@@ -1532,7 +1782,14 @@ function BostonObject({ hood }: { hood: string }): ReactElement | null {
         <G>
           <Path d="M104 -6L150 -2L196 -6" stroke={INK} strokeWidth={1.2} fill="none" />
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <Path key={i} d={`M${108 + i * 15} -5.5h11l-5.5 14Z`} fill={['#C03A2B', '#FFFFFF', '#2F7A4A'][i % 3]} stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+            <Path
+              key={i}
+              d={`M${108 + i * 15} -5.5h11l-5.5 14Z`}
+              fill={['#C03A2B', '#FFFFFF', '#2F7A4A'][i % 3]}
+              stroke={INK}
+              strokeWidth={0.9}
+              strokeLinejoin="round"
+            />
           ))}
           <Path d="M130 36V22L120 18L126 10H140Q150 16 160 10H174L180 18L170 22V36Z" fill="#FFFFFF" stroke={INK} strokeWidth={1.2} strokeLinejoin="round" />
           <Path d="M148 20V30" stroke="#C03A2B" strokeWidth={3} />
@@ -1727,14 +1984,26 @@ function IconProp({ id }: { id: (typeof ICON_PROP_IDS)[number] }) {
           <Rect x={10} y={4} width={80} height={64} rx={2} fill="#FFFDF5" stroke={INK} strokeWidth={2.2} />
           <Path d={gridLines(10, 4, 90, 68, 16, 14)} stroke="#9AA3AE" strokeWidth={1.2} />
           <Path d="M10 18H90" stroke={INK} strokeWidth={1.6} />
-          <Path d={star5(26, 32, 5) + star5(42, 32, 5) + star5(58, 46, 5) + star5(74, 32, 5) + star5(26, 60, 5)} fill="#D9443A" stroke={INK} strokeWidth={0.8} strokeLinejoin="round" />
+          <Path
+            d={star5(26, 32, 5) + star5(42, 32, 5) + star5(58, 46, 5) + star5(74, 32, 5) + star5(26, 60, 5)}
+            fill="#D9443A"
+            stroke={INK}
+            strokeWidth={0.8}
+            strokeLinejoin="round"
+          />
         </G>
       );
       break;
     default:
       art = (
         <G>
-          <Path d="M50 62C26 62 14 46 20 32C26 18 40 24 50 36C60 24 74 18 80 32C86 46 74 62 50 62Z" fill="none" stroke="#B87428" strokeWidth={9} strokeLinejoin="round" />
+          <Path
+            d="M50 62C26 62 14 46 20 32C26 18 40 24 50 36C60 24 74 18 80 32C86 46 74 62 50 62Z"
+            fill="none"
+            stroke="#B87428"
+            strokeWidth={9}
+            strokeLinejoin="round"
+          />
           <Path d="M50 62C26 62 14 46 20 32C26 18 40 24 50 36C60 24 74 18 80 32C86 46 74 62 50 62Z" fill="none" stroke={INK} strokeWidth={1.2} opacity={0.5} />
           <Path d={circle(26, 40, 1.2) + circle(34, 28, 1.2) + circle(70, 28, 1.2) + circle(76, 42, 1.2) + circle(50, 52, 1.2)} fill="#FFFFFF" />
         </G>
@@ -1764,7 +2033,23 @@ const SCENES: Record<BackdropId, (ids: Ids) => ReactElement> = {
 /** Per-scene zoom on the scenery, anchored at the kerb (the rainy opening shot frames Rosa's front). */
 const SCENE_ZOOM: Partial<Record<BackdropId, number>> = { 'downtown-rain': 1.15 };
 
-export const Backdrop = memo(function Backdrop({ id, width, height, prop, propText, hood, captioned = false }: { id: BackdropId; width: number; height: number; prop?: BackdropProp; /** The text on a name tag. */ propText?: string; /** The neighbourhood a shop-interior panel is set in: it picks the room (Downtown's when absent). */ hood?: NeighborhoodId; captioned?: boolean }) {
+export const Backdrop = memo(function Backdrop({
+  id,
+  width,
+  height,
+  prop,
+  propText,
+  hood,
+  captioned = false,
+}: {
+  id: BackdropId;
+  width: number;
+  height: number;
+  prop?: BackdropProp;
+  /** The text on a name tag. */ propText?: string;
+  /** The neighbourhood a shop-interior panel is set in: it picks the room (Downtown's when absent). */ hood?: NeighborhoodId;
+  captioned?: boolean;
+}) {
   const [top, bottom] = id === 'shop' ? shopLookFor(hood).wall : SKY[id];
   // unique per instance: two backdrops on screen (a panel sliding in over the last) never share gradient ids
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
@@ -1774,7 +2059,14 @@ export const Backdrop = memo(function Backdrop({ id, width, height, prop, propTe
   const Scene = SCENES[id];
   const zoom = SCENE_ZOOM[id];
   return (
-    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} viewBox={`0 ${200 - vbH} 400 ${vbH}`} preserveAspectRatio="xMidYMax slice">
+    <Svg
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      width={width}
+      height={height}
+      viewBox={`0 ${200 - vbH} 400 ${vbH}`}
+      preserveAspectRatio="xMidYMax slice"
+    >
       <Defs>
         <LinearGradient id={ids.sky} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={top} />

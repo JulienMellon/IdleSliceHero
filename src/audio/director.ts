@@ -241,7 +241,10 @@ export function startAudio() {
   void setAudioModeAsync({ playsInSilentMode: false, interruptionMode: 'mixWithOthers', shouldPlayInBackground: false }).catch(() => {});
   void useAudioPrefs.getState().load();
   try {
-    mixer = createMixer({ out: createOutput(), catalog: CATALOG, prefs: () => useAudioPrefs.getState(),
+    mixer = createMixer({
+      out: createOutput(),
+      catalog: CATALOG,
+      prefs: () => useAudioPrefs.getState(),
       onSuppressed: (v) => {
         suppressed = v;
         for (const cb of [...suppressedListeners]) cb(v);

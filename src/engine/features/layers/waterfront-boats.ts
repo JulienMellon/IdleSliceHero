@@ -104,7 +104,18 @@ export interface BoatsView {
 /** Everything the harbour readout and the rack's card need, pure. */
 export function boatsView(g: GameState, now: number): BoatsView {
   const st = read(g);
-  if (!built(g)) return { active: false, boat: false, nextIn: 0, left: 0, rackTier: st.tier, rackPies: 0, rackCapacity: rackCapacity(st.tier), rackPrice: null, auctionMult: 1 };
+  if (!built(g))
+    return {
+      active: false,
+      boat: false,
+      nextIn: 0,
+      left: 0,
+      rackTier: st.tier,
+      rackPies: 0,
+      rackCapacity: rackCapacity(st.tier),
+      rackPrice: null,
+      auctionMult: 1,
+    };
   const boat = timedOn(st, g.playSeconds, now);
   return {
     active: true,

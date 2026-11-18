@@ -72,15 +72,47 @@ export function chipView(s: GameState): ChipView | null {
     const a = o.active;
     const cast = castOf(a.hood);
     const done = orderProgress(s, a);
-    return { ...base, phase, hood: a.hood, who: cast.who, name: cast.name, done, target: a.target, fill: a.target > 0 ? done / a.target : 0, progress: progressText(done, a.target), clock: clockText(a.left), urgent: a.left <= URGENT_SECONDS, behind: behindPace(done, a.target, a.left), reward: `+${money(orderReward(s))}` };
+    return {
+      ...base,
+      phase,
+      hood: a.hood,
+      who: cast.who,
+      name: cast.name,
+      done,
+      target: a.target,
+      fill: a.target > 0 ? done / a.target : 0,
+      progress: progressText(done, a.target),
+      clock: clockText(a.left),
+      urgent: a.left <= URGENT_SECONDS,
+      behind: behindPace(done, a.target, a.left),
+      reward: `+${money(orderReward(s))}`,
+    };
   }
   if (phase === 'offer' && o.offer) {
     const f = o.offer;
     const cast = castOf(f.hood);
-    return { ...base, phase, hood: f.hood, who: cast.who, name: cast.name, line: offerLine(cast, f.variant, f.target), target: f.target, expiry: offerExpiry(f.left), reward: `+${money(orderReward(s))}` };
+    return {
+      ...base,
+      phase,
+      hood: f.hood,
+      who: cast.who,
+      name: cast.name,
+      line: offerLine(cast, f.variant, f.target),
+      target: f.target,
+      expiry: offerExpiry(f.left),
+      reward: `+${money(orderReward(s))}`,
+    };
   }
   const r = o.result;
   if (!r) return null;
   const cast = castOf(r.hood);
-  return { ...base, phase: r.kind, hood: r.hood, who: cast.who, name: cast.name, line: r.kind === 'done' ? cast.thanks[r.variant] : ORDER_FAIL_LINE, reward: r.kind === 'done' ? `+${money(r.reward)}` : '' };
+  return {
+    ...base,
+    phase: r.kind,
+    hood: r.hood,
+    who: cast.who,
+    name: cast.name,
+    line: r.kind === 'done' ? cast.thanks[r.variant] : ORDER_FAIL_LINE,
+    reward: r.kind === 'done' ? `+${money(r.reward)}` : '',
+  };
 }

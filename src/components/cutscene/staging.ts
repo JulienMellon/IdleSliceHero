@@ -147,7 +147,16 @@ export function stageLayout(count: number, w: number, h: number, speaker: number
   const width = height * aspect;
   return SLOTS[n].map((share, i) => {
     const cx = share * w;
-    return { left: cx - width / 2, width, height, cx, scale: talking(i) ? 1 : LISTENER_SCALE, dim: !talking(i), flip: n === 2 && i === 1, z: talking(i) ? 2 : 1 };
+    return {
+      left: cx - width / 2,
+      width,
+      height,
+      cx,
+      scale: talking(i) ? 1 : LISTENER_SCALE,
+      dim: !talking(i),
+      flip: n === 2 && i === 1,
+      z: talking(i) ? 2 : 1,
+    };
   });
 }
 

@@ -90,7 +90,8 @@ export function harbourChip(v: BoatsView, a: AuctionStatus, active: string, city
 export const boatBanner = (v: BoatsView, city?: string): string => (v.active && v.boat ? lcc(city, 'layer.waterfront.boat.banner') : '');
 
 /** A caption of the layer in a city (the supper orders say "Next order" where the harbour says "Next boat"). */
-export const label = (city: string | undefined, key: 'nextBoat' | 'boatLeft' | 'rack' | 'rackEmpty' | 'maxed'): string => dressed(city, `label.${key}`, LABELS[key]);
+export const label = (city: string | undefined, key: 'nextBoat' | 'boatLeft' | 'rack' | 'rackEmpty' | 'maxed'): string =>
+  dressed(city, `label.${key}`, LABELS[key]);
 
 // ---------- the warming rack ----------
 
@@ -138,7 +139,12 @@ export interface RackCard {
   tier: number;
 }
 
-const TIER_KEYS = ['upgrade.waterfront.rack.tier.1', 'upgrade.waterfront.rack.tier.2', 'upgrade.waterfront.rack.tier.3', 'upgrade.waterfront.rack.tier.4'] as const;
+const TIER_KEYS = [
+  'upgrade.waterfront.rack.tier.1',
+  'upgrade.waterfront.rack.tier.2',
+  'upgrade.waterfront.rack.tier.3',
+  'upgrade.waterfront.rack.tier.4',
+] as const;
 
 /** The name of a tier (1..4). */
 export const tierName = (tier: number, city?: string): string => (tier >= 1 && tier <= 4 ? lcc(city, TIER_KEYS[tier - 1]) : '');
@@ -175,7 +181,7 @@ export interface AuctionStatus {
   nextIn: number;
 }
 
-const openedAtOf = (g: GameState): number => ((g.x?.[LAYER_KEYS.boats] as { openedAt?: number } | undefined)?.openedAt ?? -1);
+const openedAtOf = (g: GameState): number => (g.x?.[LAYER_KEYS.boats] as { openedAt?: number } | undefined)?.openedAt ?? -1;
 
 export function auctionStatus(g: GameState): AuctionStatus {
   const openedAt = openedAtOf(g);
@@ -186,7 +192,15 @@ export function auctionStatus(g: GameState): AuctionStatus {
   const since = Math.max(0, g.playSeconds - openedAt);
   const raises = Math.min(Math.round(AUCTION.maxShare / AUCTION.stepShare), Math.floor(since / AUCTION.stepSeconds));
   const maxed = auctionMult(openedAt, g.playSeconds) >= 1 + AUCTION.maxShare - 1e-9;
-  return { live, price: pier9Price(g), base, cap, raises, maxed, nextIn: maxed ? 0 : Math.max(0, Math.ceil(AUCTION.stepSeconds - (since % AUCTION.stepSeconds))) };
+  return {
+    live,
+    price: pier9Price(g),
+    base,
+    cap,
+    raises,
+    maxed,
+    nextIn: maxed ? 0 : Math.max(0, Math.ceil(AUCTION.stepSeconds - (since % AUCTION.stepSeconds))),
+  };
 }
 
 export interface AuctionCard {
@@ -215,5 +229,7 @@ export function auctionCard(a: AuctionStatus, cash: number): AuctionCard {
 /** The notice for a raise just seen: "Outbid!" when the player could have paid the old price and cannot pay the new one. */
 export function raiseNotice(before: number, after: number, cash: number): string {
   if (!(after > before)) return '';
-  return cash >= before && cash < after ? lc('layer.waterfront.auction.outbid', { bid: money(after) }) : lc('layer.waterfront.auction.raise', { bid: money(after) });
+  return cash >= before && cash < after
+    ? lc('layer.waterfront.auction.outbid', { bid: money(after) })
+    : lc('layer.waterfront.auction.raise', { bid: money(after) });
 }

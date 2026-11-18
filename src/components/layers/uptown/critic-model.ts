@@ -58,4 +58,8 @@ export function moment(last: NonNullable<CriticView['last']>): Moment {
 }
 
 /** The arrival notice: "A critic is dining here!" with Genevieve's warning. */
-export const arrival = (): { text: string; line: string; speaker: string } => ({ text: COPY['layer.uptown.critic.banner'], line: COPY['layer.uptown.critic.start'], speaker: SPEAKERS['layer.uptown.critic.start'] ?? '' });
+export const arrival = (): { text: string; line: string; speaker: string } => ({
+  text: COPY['layer.uptown.critic.banner'],
+  line: COPY['layer.uptown.critic.start'],
+  speaker: SPEAKERS['layer.uptown.critic.start'] ?? '',
+});

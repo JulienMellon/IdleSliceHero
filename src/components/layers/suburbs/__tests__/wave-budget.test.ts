@@ -9,7 +9,12 @@ import { WAVE, familiesFor, waveFigures, type WaveFigure } from '../gameday-mode
 const FPS = 15;
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 
-interface Box { x0: number; x1: number; y0: number; y1: number }
+interface Box {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+}
 function box(x: number, y: number, scale = 1): Box {
   const [sx, sy] = P(x, y);
   const k = kAt(y) * 1.14 * scale;
@@ -29,7 +34,9 @@ function matBox(lay: Layout): Box {
 }
 
 function* shops() {
-  for (let fp = 0; fp < 5; fp++) for (const tables of [1, 3, 6, 8]) yield { name: `fp${fp} t${tables}`, lay: layout(fp, Math.min(fp + 1, 6), fp === 0 ? 2 : 3, 2, tables, DRIVER_SLOTS[fp], 1) };
+  for (let fp = 0; fp < 5; fp++)
+    for (const tables of [1, 3, 6, 8])
+      yield { name: `fp${fp} t${tables}`, lay: layout(fp, Math.min(fp + 1, 6), fp === 0 ? 2 : 3, 2, tables, DRIVER_SLOTS[fp], 1) };
 }
 
 describe('Game Day wave budget', () => {

@@ -5,7 +5,10 @@ import { duration, money } from '../format';
 import { piesInFlight } from '../pipeline';
 
 const fresh = () => G.newGame(1_000_000);
-const managed = (s: G.GameState, id: G.GameState['active'] = 'downtown') => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], built: true, managed: true, heads: G.allHeads() } } });
+const managed = (s: G.GameState, id: G.GameState['active'] = 'downtown') => ({
+  ...s,
+  shops: { ...s.shops, [id]: { ...s.shops[id], built: true, managed: true, heads: G.allHeads() } },
+});
 
 describe('formulas', () => {
   test('cost grows 15% per level', () => {
@@ -132,14 +135,16 @@ describe('formulas', () => {
           expect(G.queueSizes(shop, 1).diners).toBe(Math.max(0, Math.min(4, Math.ceil((4 * (G.walkInRate(shop) - walk)) / G.walkInRate(shop)))));
         }
     });
-    test('patio tables: levels past the footprint\'s indoor cap, 0..2, and never a change to the seating rate', () => {
+    test("patio tables: levels past the footprint's indoor cap, 0..2, and never a change to the seating rate", () => {
       const at = (footprint: number, tables: number) => ({ ...base, footprint, tables });
       // footprint 0 holds 2 indoors: level 13 is the third table, level 19 the fourth
       expect([1, 7, 12, 13, 18, 19, 25].map((t) => G.patioTables(at(0, t)))).toEqual([0, 0, 0, 1, 1, 2, 2]);
       expect(G.patioTables(at(4, 25))).toBe(0); // 5 shown, 6 indoors fit
       expect(G.patioTables(at(4, 37))).toBe(1);
       expect(G.patioTables(at(4, 125))).toBe(2);
-      for (let fp = 0; fp < 5; fp++) for (const t of [1, 6, 7, 30, 60, 125]) expect(G.patioTables(at(fp, t))).toBe(Math.max(0, Math.min(2, 1 + Math.floor((t - 1) / 6) - [2, 3, 4, 5, 6][fp])));
+      for (let fp = 0; fp < 5; fp++)
+        for (const t of [1, 6, 7, 30, 60, 125])
+          expect(G.patioTables(at(fp, t))).toBe(Math.max(0, Math.min(2, 1 + Math.floor((t - 1) / 6) - [2, 3, 4, 5, 6][fp])));
       expect(G.walkInRate(at(0, 19))).toBe(G.walkInRate({ ...base, tables: 19 }));
     });
   });
@@ -377,7 +382,15 @@ describe('offline and saves', () => {
   });
   test('C97: a GM shop boosts only the rest, not the cash already carried by departures', () => {
     const base = managed(fresh());
-    const line = { ...base.shops.downtown.line, boxed: 0, departures: [{ id: 1, kind: 'driver' as const, n: 2, cash: 500, left: 5 }, { id: 2, kind: 'walkin' as const, n: 1, cash: 100, left: 3 }], nextId: 3 };
+    const line = {
+      ...base.shops.downtown.line,
+      boxed: 0,
+      departures: [
+        { id: 1, kind: 'driver' as const, n: 2, cash: 500, left: 5 },
+        { id: 2, kind: 'walkin' as const, n: 1, cash: 100, left: 3 },
+      ],
+      nextId: 3,
+    };
     const s = { ...base, cash: 0, shops: { ...base.shops, downtown: { ...base.shops.downtown, line } } };
     const shop = s.shops.downtown;
     const seconds = 1000;
@@ -396,7 +409,16 @@ describe('offline and saves', () => {
     expect(G.applyOffline(s, s.lastSavedAt - 5000).earned).toBe(0);
   });
   test('v1 saves migrate into Downtown plus starter pizzerias', () => {
-    const v1 = { cash: 500, ovenLevel: 18, drivers: 9, vehicle: 1, autoBake: true, unlocked: ['downtown', 'suburbs', 'atlantis'], delivered: { suburbs: 620 }, seenScenes: ['a', 'b'] };
+    const v1 = {
+      cash: 500,
+      ovenLevel: 18,
+      drivers: 9,
+      vehicle: 1,
+      autoBake: true,
+      unlocked: ['downtown', 'suburbs', 'atlantis'],
+      delivered: { suburbs: 620 },
+      seenScenes: ['a', 'b'],
+    };
     const m = G.migrate(v1, 5);
     expect(m.cash).toBe(500);
     expect(m.shops.downtown.ovens).toBe(18);

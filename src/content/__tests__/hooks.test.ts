@@ -3,11 +3,32 @@ import { BONUS, BONUS_VIEW, LUCKY_MULT, ORDER, ORDER_VIEW } from '../hooks';
 
 describe('session hook constants (the v5.13 spec)', () => {
   test('golden pizza', () => {
-    expect(BONUS).toMatchObject({ firstAtPlay: 20, gapMin: 75, gapMax: 120, visibleSeconds: 12, incomeSeconds: 5, minPayout: 5, luckyEvery: 5, luckyIncomeSeconds: 20 }); // v5.16: cash rewards cut (was 45 s and 180 s)
+    expect(BONUS).toMatchObject({
+      firstAtPlay: 20,
+      gapMin: 75,
+      gapMax: 120,
+      visibleSeconds: 12,
+      incomeSeconds: 5,
+      minPayout: 5,
+      luckyEvery: 5,
+      luckyIncomeSeconds: 20,
+    }); // v5.16: cash rewards cut (was 45 s and 180 s)
     expect(LUCKY_MULT).toBe(4);
   });
   test('special orders', () => {
-    expect(ORDER).toMatchObject({ firstOfferAtPlay: 60, gapSeconds: 240, offerWaitSeconds: 45, windowSeconds: 120, targetMargin: 0.9, rushTapsPerSecond: 3, minTarget: 20, unmanagedTarget: 24, rewardMinutes: 0.5, doneShowSeconds: 2.5, failShowSeconds: 2 });
+    expect(ORDER).toMatchObject({
+      firstOfferAtPlay: 60,
+      gapSeconds: 240,
+      offerWaitSeconds: 45,
+      windowSeconds: 120,
+      targetMargin: 0.9,
+      rushTapsPerSecond: 3,
+      minTarget: 20,
+      unmanagedTarget: 24,
+      rewardMinutes: 0.5,
+      doneShowSeconds: 2.5,
+      failShowSeconds: 2,
+    });
   });
   test('tap targets are drawn at 44 pt or more', () => {
     expect(BONUS_VIEW.height).toBeGreaterThanOrEqual(44);

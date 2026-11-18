@@ -27,12 +27,40 @@ export interface LotView {
 export function lotView(s: G.GameState, n: NeighborhoodDef): LotView {
   if (s.shops[n.id].built) return { kind: 'built', pin: '', piesToGo: null, rowSub: '', rowRight: null, locked: false, dim: false, tappable: true };
   const isNext = G.nextToBuild(s)?.id === n.id;
-  if (!isNext) return { kind: 'queued', pin: '???', piesToGo: null, rowSub: 'Build the previous pizzeria first', rowRight: null, locked: true, dim: false, tappable: false };
+  if (!isNext)
+    return {
+      kind: 'queued',
+      pin: '???',
+      piesToGo: null,
+      rowSub: 'Build the previous pizzeria first',
+      rowRight: null,
+      locked: true,
+      dim: false,
+      tappable: false,
+    };
   // the only lock the next lot can have is Nonna's takeover (the previous lot is built by definition)
   if (G.buildLock(s, n.id) !== null) {
     const left = G.nonnaPizzasLeft(s);
     const who = G.founderName(s);
-    return { kind: 'nonna', pin: left > 0 ? `${who} in ${pizzasLeft(left)}` : `${who} soon`, piesToGo: left > 0 ? `${pizzasLeft(left)} pie${left <= 1 ? '' : 's'} to go` : null, rowSub: G.founderCountdownText(s), rowRight: null, locked: true, dim: true, tappable: false };
+    return {
+      kind: 'nonna',
+      pin: left > 0 ? `${who} in ${pizzasLeft(left)}` : `${who} soon`,
+      piesToGo: left > 0 ? `${pizzasLeft(left)} pie${left <= 1 ? '' : 's'} to go` : null,
+      rowSub: G.founderCountdownText(s),
+      rowRight: null,
+      locked: true,
+      dim: true,
+      tappable: false,
+    };
   }
-  return { kind: 'buildable', pin: `Build ${money(n.buildCost)}`, piesToGo: null, rowSub: `Pays ${money(n.orderValue)} a pizza · manager ${money(n.managerCost)}`, rowRight: `Build ${money(n.buildCost)}`, locked: false, dim: false, tappable: true };
+  return {
+    kind: 'buildable',
+    pin: `Build ${money(n.buildCost)}`,
+    piesToGo: null,
+    rowSub: `Pays ${money(n.orderValue)} a pizza · manager ${money(n.managerCost)}`,
+    rowRight: `Build ${money(n.buildCost)}`,
+    locked: false,
+    dim: false,
+    tappable: true,
+  };
 }

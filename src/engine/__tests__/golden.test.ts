@@ -26,20 +26,48 @@ export function goldenRun(): { state: G.GameState; offline: G.OfflineResult } {
     g = { ...b.state, cash: g.cash };
   }
   const script: [NeighborhoodId, G.Upgrade][] = [
-    ['downtown', 'prep'], ['downtown', 'ovens'], ['downtown', 'counter'], ['downtown', 'drivers'], ['downtown', 'tables'],
-    ['downtown', 'prep'], ['downtown', 'ovens'], ['downtown', 'counter'], ['downtown', 'headPrep'], ['downtown', 'headOven'],
-    ['suburbs', 'prep'], ['suburbs', 'ovens'], ['suburbs', 'counter'], ['suburbs', 'drivers'], ['suburbs', 'tables'],
-    ['suburbs', 'prep'], ['suburbs', 'ovens'], ['suburbs', 'counter'], ['suburbs', 'headPrep'], ['suburbs', 'headOven'],
-    ['suburbs', 'headCounter'], ['suburbs', 'manager'], ['downtown', 'headCounter'], ['downtown', 'grade'], ['suburbs', 'grade'],
-    ['waterfront', 'prep'], ['waterfront', 'ovens'], ['waterfront', 'counter'], ['waterfront', 'drivers'], ['waterfront', 'tables'],
-    ['waterfront', 'headPrep'], ['waterfront', 'headOven'], ['downtown', 'expand'], ['suburbs', 'expand'], ['downtown', 'drivers'],
+    ['downtown', 'prep'],
+    ['downtown', 'ovens'],
+    ['downtown', 'counter'],
+    ['downtown', 'drivers'],
+    ['downtown', 'tables'],
+    ['downtown', 'prep'],
+    ['downtown', 'ovens'],
+    ['downtown', 'counter'],
+    ['downtown', 'headPrep'],
+    ['downtown', 'headOven'],
+    ['suburbs', 'prep'],
+    ['suburbs', 'ovens'],
+    ['suburbs', 'counter'],
+    ['suburbs', 'drivers'],
+    ['suburbs', 'tables'],
+    ['suburbs', 'prep'],
+    ['suburbs', 'ovens'],
+    ['suburbs', 'counter'],
+    ['suburbs', 'headPrep'],
+    ['suburbs', 'headOven'],
+    ['suburbs', 'headCounter'],
+    ['suburbs', 'manager'],
+    ['downtown', 'headCounter'],
+    ['downtown', 'grade'],
+    ['suburbs', 'grade'],
+    ['waterfront', 'prep'],
+    ['waterfront', 'ovens'],
+    ['waterfront', 'counter'],
+    ['waterfront', 'drivers'],
+    ['waterfront', 'tables'],
+    ['waterfront', 'headPrep'],
+    ['waterfront', 'headOven'],
+    ['downtown', 'expand'],
+    ['suburbs', 'expand'],
+    ['downtown', 'drivers'],
   ];
   for (const [id, what] of script) g = buy(g, id, what);
   const v = G.buyVehicle({ ...g, cash: 1e12 });
   if (v.ok) g = { ...v.state, cash: g.cash };
   const d = G.buyDecor({ ...g, cash: 1e12 }, 'downtown', 'plants');
   if (d.ok) g = { ...d.state, cash: g.cash };
-    for (let i = 0; i < 900; i++) {
+  for (let i = 0; i < 900; i++) {
     if (i % 7 === 0) g = G.tapShop(g, 'downtown');
     g = G.playTick(g, 1, T0 + i * 1000);
   }

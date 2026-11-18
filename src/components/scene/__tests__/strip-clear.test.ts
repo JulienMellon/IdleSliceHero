@@ -48,7 +48,9 @@ describe('no queued guest overlaps the strip (D514)', () => {
       const sx = (l: typeof plain) => (p: [number, number]) => P(p[0], p[1], 0, l.frame)[0];
       lay.queue.forEach((p, i) => expect(sx(lay)(p)).toBeCloseTo(sx(plain)(plain.queue[i]), 6));
       expect(lay.queue.length).toBe(plain.queue.length);
-      lay.driverQueue.forEach((p, i) => expect(P(p[0], p[1], 0, lay.frame)[0]).toBeCloseTo(P(plain.driverQueue[i][0], plain.driverQueue[i][1], 0, plain.frame)[0], 6));
+      lay.driverQueue.forEach((p, i) =>
+        expect(P(p[0], p[1], 0, lay.frame)[0]).toBeCloseTo(P(plain.driverQueue[i][0], plain.driverQueue[i][1], 0, plain.frame)[0], 6),
+      );
       const gaps = (l: typeof plain) => l.driverQueue.map(([, y]) => feetY(y) - feetY(l.driverQueue[0][1]));
       gaps(lay).forEach((g, i) => expect(g).toBeCloseTo(gaps(plain)[i], 6));
     });
@@ -67,7 +69,7 @@ describe('no queued guest overlaps the strip (D514)', () => {
   });
 });
 
-describe('a managed shop\'s walkers keep above the strip too', () => {
+describe("a managed shop's walkers keep above the strip too", () => {
   for (const { fp, mirrored } of plans) {
     test(`footprint ${fp}${mirrored ? ' mirrored' : ''}: every point of every route`, () => {
       for (const s of fits) {
@@ -90,7 +92,20 @@ describe('a managed shop\'s walkers keep above the strip too', () => {
 describe('a waiting guest wears frost while the line is cold (D514)', () => {
   const lay = build(2, false);
   const pal = seatPalette(1, 2, 8, 8, lay.tables.length);
-  const cast = (cold: boolean) => buildCast({ lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace: 1, clock: 3, shopSeed: 7, nIdx: 1, pal, crew: emptyCrew(), queue: { diners: 3, drivers: 3 }, cold }).cast.filter((c) => c.role === 'queue');
+  const cast = (cold: boolean) =>
+    buildCast({
+      lay,
+      shop: { drivers: 12, tables: 40, prep: 120 },
+      running: true,
+      pace: 1,
+      clock: 3,
+      shopSeed: 7,
+      nIdx: 1,
+      pal,
+      crew: emptyCrew(),
+      queue: { diners: 3, drivers: 3 },
+      cold,
+    }).cast.filter((c) => c.role === 'queue');
   test('the mix is a tint toward ice, and no tint at 0', () => {
     expect(frostTint('#D9443A', 0)).toBe('#d9443a');
     expect(frostTint('#000000', 1)).toBe(FROST.toLowerCase());

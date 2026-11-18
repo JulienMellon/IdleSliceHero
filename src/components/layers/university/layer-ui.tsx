@@ -62,14 +62,26 @@ export interface ToastText {
 /** Where the notice goes now: where S2a's layer column starts (under the order chip, the event banner and the attack's row). Primitive selectors only. */
 function useToastTop(): number {
   const bannerOpen = useBannerOpen();
-  return useGame((s) => layerTop({ orderUp: chipPhase(s.game) !== 'none', eventUp: !!eventBannerView(eventViewNow(gameNow(), s.game)), attack: attackLite(s.game).face, collapsed: !bannerOpen }));
+  return useGame((s) =>
+    layerTop({
+      orderUp: chipPhase(s.game) !== 'none',
+      eventUp: !!eventBannerView(eventViewNow(gameNow(), s.game)),
+      attack: attackLite(s.game).face,
+      collapsed: !bannerOpen,
+    }),
+  );
 }
 
 /** A notice in the endgame stack's column. It takes no touches. */
 export function LayerToast({ testID, toast, tone = 'cheese' }: { testID: string; toast: ToastText; tone?: 'cheese' | 'basil' | 'plain' }) {
   const top = useToastTop();
   return (
-    <View testID={testID} pointerEvents="none" accessibilityLabel={toast.line ? `${toast.text}. ${toast.line}` : toast.text} style={[styles.toast, { top }, tone === 'basil' && styles.toastBasil, tone === 'plain' && styles.toastPlain]}>
+    <View
+      testID={testID}
+      pointerEvents="none"
+      accessibilityLabel={toast.line ? `${toast.text}. ${toast.line}` : toast.text}
+      style={[styles.toast, { top }, tone === 'basil' && styles.toastBasil, tone === 'plain' && styles.toastPlain]}
+    >
       <Text style={styles.toastText} numberOfLines={1} maxFontSizeMultiplier={1.15}>
         {toast.text}
       </Text>
@@ -106,15 +118,48 @@ export function useChangeToast(key: string, make: (key: string) => ToastText | n
 }
 
 const styles = StyleSheet.create({
-  toast: { position: 'absolute', left: ORDER_VIEW.side, right: ORDER_VIEW.side, minHeight: TOAST_H, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 15, borderWidth: 2, borderColor: C.cheeseDark, backgroundColor: C.cheese, justifyContent: 'center', gap: 1 },
+  toast: {
+    position: 'absolute',
+    left: ORDER_VIEW.side,
+    right: ORDER_VIEW.side,
+    minHeight: TOAST_H,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: C.cheeseDark,
+    backgroundColor: C.cheese,
+    justifyContent: 'center',
+    gap: 1,
+  },
   toastBasil: { borderColor: C.basilDark, backgroundColor: '#DDF3E2' },
   toastPlain: { borderColor: C.ink, backgroundColor: '#fff' },
   toastText: { fontFamily: F.bold, fontSize: 13, lineHeight: 16, color: C.ink, textAlign: 'center' },
   toastLine: { fontFamily: F.semi, fontSize: 11, lineHeight: 13, color: C.ink, textAlign: 'center' },
-  chip: { minWidth: CHIP_H, height: CHIP_H, borderRadius: CHIP_H / 2, paddingHorizontal: 4, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.cheeseDark, alignItems: 'center', justifyContent: 'center' },
+  chip: {
+    minWidth: CHIP_H,
+    height: CHIP_H,
+    borderRadius: CHIP_H / 2,
+    paddingHorizontal: 4,
+    backgroundColor: C.cheese,
+    borderWidth: 2,
+    borderColor: C.cheeseDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   text: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: C.ink, textAlign: 'center' },
   time: { fontSize: 11, lineHeight: 13 },
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.6)', alignItems: 'center', justifyContent: 'center', padding: 16 },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(30,14,8,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
   card: { backgroundColor: C.bg, borderRadius: 20, borderWidth: 4, borderColor: C.ink, padding: 14, width: '100%', maxWidth: 360, maxHeight: '88%', gap: 8 },
   title: { fontFamily: F.bold, fontSize: 22, color: C.ink, textAlign: 'center' },
   scroll: { flexGrow: 0 },

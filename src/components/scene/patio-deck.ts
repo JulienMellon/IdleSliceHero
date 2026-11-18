@@ -64,7 +64,12 @@ export function patioDeck(p: { x: number; y: number }): Deck {
 /** The deck's screen box (top and riser), for the crowd budgets. */
 export function deckBox(d: Deck) {
   const all = [...d.top, ...d.riser];
-  return { x0: Math.min(...all.map((q) => q[0])), x1: Math.max(...all.map((q) => q[0])), y0: Math.min(...all.map((q) => q[1])), y1: Math.max(...all.map((q) => q[1])) + 0.5 };
+  return {
+    x0: Math.min(...all.map((q) => q[0])),
+    x1: Math.max(...all.map((q) => q[0])),
+    y0: Math.min(...all.map((q) => q[1])),
+    y1: Math.max(...all.map((q) => q[1])) + 0.5,
+  };
 }
 
 /** Where the deck's back edge stands relative to the queue's feet: the deck starts below the lane so figures never stand on it. */

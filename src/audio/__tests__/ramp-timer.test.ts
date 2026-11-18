@@ -1,6 +1,18 @@
 // 4c: the 30 ms ramp timer in the expo output runs only while a ramp does. An idle app has no audio timer.
 jest.mock('expo-audio', () => ({
-  createAudioPlayer: () => ({ volume: 1, playing: false, currentTime: 0, loop: false, play() {}, pause() {}, remove() {}, replace() {}, seekTo: async () => {}, setPlaybackRate() {}, addListener: () => ({ remove() {} }) }),
+  createAudioPlayer: () => ({
+    volume: 1,
+    playing: false,
+    currentTime: 0,
+    loop: false,
+    play() {},
+    pause() {},
+    remove() {},
+    replace() {},
+    seekTo: async () => {},
+    setPlaybackRate() {},
+    addListener: () => ({ remove() {} }),
+  }),
 }));
 jest.mock('../manifest', () => ({ MUSIC: { downtown: { src: 1 }, uptown: { src: 2 } }, STINGS: {}, STORY: {}, SFX: {} }));
 

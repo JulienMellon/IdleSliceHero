@@ -22,8 +22,21 @@ const LOOK: Record<BostonHoodId, { name: string; color: string; wall: string }> 
 };
 
 /** Map positions are the home city's (the same 100x76 layout); every price and the pizza value is the fit's. */
-const POSITIONS = [[22, 39], [30, 67], [76, 67], [18, 9], [50, 9], [82, 9]] as const;
-export const NEIGHBORHOODS: NeighborhoodDef[] = BOSTON_IDS.map((id, i) => ({ ...BOSTON_NUMBERS.hoods[i], id, x: POSITIONS[i][0], y: POSITIONS[i][1], ...LOOK[id] }));
+const POSITIONS = [
+  [22, 39],
+  [30, 67],
+  [76, 67],
+  [18, 9],
+  [50, 9],
+  [82, 9],
+] as const;
+export const NEIGHBORHOODS: NeighborhoodDef[] = BOSTON_IDS.map((id, i) => ({
+  ...BOSTON_NUMBERS.hoods[i],
+  id,
+  x: POSITIONS[i][0],
+  y: POSITIONS[i][1],
+  ...LOOK[id],
+}));
 
 /** The three finale perks (docs/story/BOSTON-SCRIPT.md names them), each for its own shop only and sized like the home city's. */
 export const PERKS: Partial<Record<NeighborhoodId, PerkDef>> = {

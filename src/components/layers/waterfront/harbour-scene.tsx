@@ -144,7 +144,13 @@ export const HarbourScene = memo(function HarbourScene({ shopId, width, height }
   const step = rackKey % 10;
   return (
     <View testID="harbour-scene" pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
+      <Svg
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        width={width}
+        height={height}
+        viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}
+      >
         <Defs>
           <ClipPath id="harbour-clip">
             <Rect x={-120} y={0} width={120 + dock.clipX} height={BOAT_ART.waterline + 20} />

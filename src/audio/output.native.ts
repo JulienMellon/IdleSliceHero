@@ -9,8 +9,16 @@ import { AudioContext, AudioManager, type AudioBuffer, type GainNode } from 'rea
 
 import { createExpoOutput, sourceOf } from './expo-output';
 import {
-  DECODED_BYTES_BUDGET, Epochs, LIMITER_RANGE, busOf, decodedBytes, limiterCurve, voiceToSteal,
-  type AudioOutput, type Bus, type PlayOpts,
+  DECODED_BYTES_BUDGET,
+  Epochs,
+  LIMITER_RANGE,
+  busOf,
+  decodedBytes,
+  limiterCurve,
+  voiceToSteal,
+  type AudioOutput,
+  type Bus,
+  type PlayOpts,
 } from './output-core';
 
 /** Sources sounding at once, over all effects and stingers: past this the oldest effect is stopped (a stinger never is). */
@@ -24,7 +32,9 @@ interface Voice {
 }
 
 /** An optional native `SliceAudioSession.isOtherAudioPlaying()` (AVAudioSession's hint); absent until the app ships one. */
-interface SessionProbe { isOtherAudioPlaying?: () => boolean }
+interface SessionProbe {
+  isOtherAudioPlaying?: () => boolean;
+}
 
 export function createOutput(): AudioOutput {
   const expo = createExpoOutput();
@@ -83,23 +93,24 @@ export function createOutput(): AudioOutput {
       const epoch = loadEpoch.get(id);
       // unloaded while decoding: the result is dropped, not kept untracked (AU81)
       const mine = () => loadEpoch.get(id) === epoch;
-      const mark: Promise<AudioBuffer | null> = src === null
-        ? Promise.resolve(null)
-        : ctx.decodeAudioData(src).then(
-            (b) => {
-              if (loading.get(id) === mark) loading.delete(id);
-              if (!mine()) return null;
-              buffers.set(id, b);
-              const n = decodedBytes(b.length, b.numberOfChannels);
-              sized.set(id, n);
-              bytes += n;
-              return b;
-            },
-            () => {
-              if (loading.get(id) === mark) loading.delete(id);
-              return null;
-            },
-          );
+      const mark: Promise<AudioBuffer | null> =
+        src === null
+          ? Promise.resolve(null)
+          : ctx.decodeAudioData(src).then(
+              (b) => {
+                if (loading.get(id) === mark) loading.delete(id);
+                if (!mine()) return null;
+                buffers.set(id, b);
+                const n = decodedBytes(b.length, b.numberOfChannels);
+                sized.set(id, n);
+                bytes += n;
+                return b;
+              },
+              () => {
+                if (loading.get(id) === mark) loading.delete(id);
+                return null;
+              },
+            );
       p = mark;
       loading.set(id, p);
     }
@@ -119,7 +130,10 @@ export function createOutput(): AudioOutput {
     voices.add(voice);
     if (voices.size > MAX_VOICES) {
       const live = [...voices];
-      const victim = voiceToSteal(live.map((v) => v.id), MAX_VOICES);
+      const victim = voiceToSteal(
+        live.map((v) => v.id),
+        MAX_VOICES,
+      );
       if (victim >= 0 && live[victim] !== voice) {
         voices.delete(live[victim]); // out of the count at once; its onended only disconnects
         live[victim].src.stop();

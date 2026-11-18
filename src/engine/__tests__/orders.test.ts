@@ -11,7 +11,17 @@ const T0 = 1_700_000_000_000;
 /** The Suburbs shop built and run by its heads, Nonna in charge Downtown, both characters met. */
 const ready = (): G.GameState => {
   const s = G.newGame(T0);
-  const run = (id: NeighborhoodId, lv: number) => ({ ...s.shops[id], built: true, managed: true, heads: G.allHeads(), prep: lv, ovens: lv, counter: lv, drivers: lv + 2, tables: lv });
+  const run = (id: NeighborhoodId, lv: number) => ({
+    ...s.shops[id],
+    built: true,
+    managed: true,
+    heads: G.allHeads(),
+    prep: lv,
+    ovens: lv,
+    counter: lv,
+    drivers: lv + 2,
+    tables: lv,
+  });
   return {
     ...s,
     tutorial: G.TUTORIAL_DONE,
@@ -36,7 +46,10 @@ const untilOffer = (s: G.GameState, limit = 900): G.GameState => {
   return s;
 };
 /** The same shop having sold `n` more pies. */
-const sold = (s: G.GameState, id: NeighborhoodId, n: number): G.GameState => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], sold: s.shops[id].sold + n } } });
+const sold = (s: G.GameState, id: NeighborhoodId, n: number): G.GameState => ({
+  ...s,
+  shops: { ...s.shops, [id]: { ...s.shops[id], sold: s.shops[id].sold + n } },
+});
 
 describe('when an offer comes', () => {
   test('never before the Suburbs shop is built, and never during the tutorial', () => {
@@ -44,7 +57,12 @@ describe('when an offer comes', () => {
     expect(O.ordersUnlocked(noShop)).toBe(false);
     expect(run(noShop, 900).order.offer).toBeNull();
     // Suburbs built by a hand-edited save, but Nonna has not taken over: still the tutorial
-    const tutorial = { ...ready(), seenScenes: ['downtown-1'], tutorial: 4, shops: { ...ready().shops, downtown: { ...ready().shops.downtown, managed: false, heads: G.noHeads() } } };
+    const tutorial = {
+      ...ready(),
+      seenScenes: ['downtown-1'],
+      tutorial: 4,
+      shops: { ...ready().shops, downtown: { ...ready().shops.downtown, managed: false, heads: G.noHeads() } },
+    };
     expect(O.ordersUnlocked(tutorial)).toBe(false);
     expect(run(tutorial, 900).order.offer).toBeNull();
     expect(run(tutorial, 900).order.made).toBe(0);
@@ -140,9 +158,13 @@ describe('when an offer comes', () => {
         }
       } else if (cur.order.offer && cur.order.offer.left > ORDER.offerWaitSeconds - 0.3) {
         const k = cur.order.made % 3;
-        if (k === 0) { cur = O.acceptOrder(cur); accepted++; }
-        else if (k === 1) { cur = O.declineOrder(cur); declined++; }
-        else ignored++;
+        if (k === 0) {
+          cur = O.acceptOrder(cur);
+          accepted++;
+        } else if (k === 1) {
+          cur = O.declineOrder(cur);
+          declined++;
+        } else ignored++;
       }
       expect(cur.order.offer !== null && cur.order.active !== null).toBe(false);
     }
@@ -278,7 +300,10 @@ describe('an order from accept to the end', () => {
     expect(done.order.result!.reward).toBeCloseTo(reward, 6);
     expect(done.order.nextAt).toBeCloseTo(done.playSeconds + ORDER.gapSeconds, 6);
     // paid on the income of the day (a better shop pays more), not the one at accept time
-    const richer = { ...partway, shops: { ...partway.shops, downtown: { ...partway.shops.downtown, prep: 60, ovens: 60, counter: 60, drivers: 60, tables: 60 } } };
+    const richer = {
+      ...partway,
+      shops: { ...partway.shops, downtown: { ...partway.shops.downtown, prep: 60, ovens: 60, counter: 60, drivers: 60, tables: 60 } },
+    };
     expect(step(sold(richer, a.hood, 1)).cash - richer.cash).toBeGreaterThan(reward);
     // the flash lasts 2.5 s
     expect(run(done, 2.3).order.result).not.toBeNull();

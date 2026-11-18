@@ -41,7 +41,16 @@ export const SignPlaque = memo(function SignPlaque({ shopId, width, height }: Sc
       <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} style={StyleSheet.absoluteFill}>
         <G transform={`translate(${f.ox} ${f.oy}) scale(${f.s})`}>
           <G transform={`translate(${box.x} ${box.y})`}>
-            <Rect x={0.7} y={0.7} width={PLAQUE_W - 1.4} height={PLAQUE.height - 1.4} rx={(PLAQUE.height - 1.4) / 2} fill="#FFF4E0" stroke={INK} strokeWidth={1.4} />
+            <Rect
+              x={0.7}
+              y={0.7}
+              width={PLAQUE_W - 1.4}
+              height={PLAQUE.height - 1.4}
+              rx={(PLAQUE.height - 1.4) / 2}
+              fill="#FFF4E0"
+              stroke={INK}
+              strokeWidth={1.4}
+            />
             {plaqueStars(stars).map((p, i) => (
               <G key={i} transform={`translate(${p.x} ${PLAQUE.padY}) scale(${STAR.size / 20})`}>
                 <Path d={STAR_PATH} fill={p.filled ? '#FFC531' : '#E6DDD5'} stroke={INK} strokeWidth={1.3} strokeLinejoin="round" />
@@ -74,8 +83,27 @@ export const SignPlaque = memo(function SignPlaque({ shopId, width, height }: Sc
 });
 
 const styles = StyleSheet.create({
-  tag: { position: 'absolute', width: TAG.w, height: TAG.h, borderRadius: 9, borderWidth: 1.5, borderColor: C.ink, alignItems: 'center', justifyContent: 'center' },
-  stamp: { position: 'absolute', width: STAMP.w, height: STAMP.h, borderRadius: 9, borderWidth: 1.5, borderColor: C.ink, backgroundColor: '#FFF4E0', alignItems: 'center', justifyContent: 'center' },
+  tag: {
+    position: 'absolute',
+    width: TAG.w,
+    height: TAG.h,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: C.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stamp: {
+    position: 'absolute',
+    width: STAMP.w,
+    height: STAMP.h,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: C.ink,
+    backgroundColor: '#FFF4E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   stampTop: { backgroundColor: '#CDEFC9', borderColor: C.basilDark },
   stampText: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: C.ink },
   tagHalf: { backgroundColor: C.tomato },

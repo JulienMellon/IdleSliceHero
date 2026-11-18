@@ -7,8 +7,12 @@ import { advanceLine, AUTOMATIC, emptyLine, LINE, MANUAL, piesInFlight, tapStati
 import { GM_BOOST, HEADS_OFFLINE_SHARE, NEIGHBORHOODS } from '../../content/tuning';
 
 const rates = (over: Partial<LineRates> = {}): LineRates => ({ prep: 2, oven: 1.5, serve: 3, shop: 1.5, price: 5, walkInFraction: 0.3, tapBatch: 4, ...over });
-const withShop = (s: G.GameState, id: G.GameState['active'], patch: Partial<G.Shop>): G.GameState => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } } });
-const gm = (s: G.GameState, id: G.GameState['active'], patch: Partial<G.Shop> = {}) => withShop(s, id, { built: true, managed: true, heads: G.allHeads(), ...patch });
+const withShop = (s: G.GameState, id: G.GameState['active'], patch: Partial<G.Shop>): G.GameState => ({
+  ...s,
+  shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } },
+});
+const gm = (s: G.GameState, id: G.GameState['active'], patch: Partial<G.Shop> = {}) =>
+  withShop(s, id, { built: true, managed: true, heads: G.allHeads(), ...patch });
 
 describe('advanceLine', () => {
   test('results do not depend on tick size', () => {
@@ -55,11 +59,12 @@ describe('advanceLine', () => {
     let seen = 0;
     for (let i = 0; i < 2000; i++) {
       const a = advanceLine(l, 0.2, rates({ walkInFraction: 0.3 }), AUTOMATIC);
-      for (const d of a.line.departures) if (d.id > seen) {
-        seen = d.id;
-        all += d.n;
-        if (d.kind === 'walkin') walk += d.n;
-      }
+      for (const d of a.line.departures)
+        if (d.id > seen) {
+          seen = d.id;
+          all += d.n;
+          if (d.kind === 'walkin') walk += d.n;
+        }
       paid += a.paid;
       if (a.sold) expect(a.paid / a.sold).toBeCloseTo(5);
       l = a.line;
@@ -118,7 +123,16 @@ describe('offline settles the line', () => {
     const { before, after } = away(s, 3600);
     expect(after.state.shops.downtown.sold - before.shops.downtown.sold).toBeLessThanOrEqual(piesInFlight(before.shops.downtown.line));
     expect(after.state.shops.downtown.line.prep).toBeNull();
-    const idle = G.applyOffline({ ...withShop(withShop(G.newGame(0), 'suburbs', { ...levelled, built: true, heads: { prep: true, oven: true, counter: false } }), 'downtown', { managed: true, heads: G.allHeads() }), lastSavedAt: 0 }, 3600_000);
+    const idle = G.applyOffline(
+      {
+        ...withShop(withShop(G.newGame(0), 'suburbs', { ...levelled, built: true, heads: { prep: true, oven: true, counter: false } }), 'downtown', {
+          managed: true,
+          heads: G.allHeads(),
+        }),
+        lastSavedAt: 0,
+      },
+      3600_000,
+    );
     expect(idle.idle).toEqual(['suburbs']);
   });
   test('with all three heads and no GM it sells HEADS_OFFLINE_SHARE of its rate, at the plain price (no GM boost)', () => {
@@ -135,11 +149,18 @@ describe('offline settles the line', () => {
     expect(fullPies / pies).toBeCloseTo(1 / HEADS_OFFLINE_SHARE, 1);
     expect(full.after.byShop[0].base / after.byShop[0].base).toBeCloseTo((fullPies / pies) * GM_BOOST, 1);
     // S33: the result says which rows ran on heads alone
-    const rowOf = (sh: Partial<G.Shop>) => G.applyOffline({ ...withShop(G.newGame(0), 'downtown', { ...levelled, ...sh }), lastSavedAt: 0 }, 3600_000).byShop[0];
+    const rowOf = (sh: Partial<G.Shop>) =>
+      G.applyOffline({ ...withShop(G.newGame(0), 'downtown', { ...levelled, ...sh }), lastSavedAt: 0 }, 3600_000).byShop[0];
     expect(rowOf({ heads: G.allHeads() }).headsOnly).toBe(true);
     expect(rowOf({ managed: true, heads: G.allHeads() }).headsOnly).toBe(false);
     // all three heads: not idle
-    const r = G.applyOffline({ ...withShop(withShop(G.newGame(0), 'suburbs', { ...levelled, built: true, heads: G.allHeads() }), 'downtown', { managed: true, heads: G.allHeads() }), lastSavedAt: 0 }, 3600_000);
+    const r = G.applyOffline(
+      {
+        ...withShop(withShop(G.newGame(0), 'suburbs', { ...levelled, built: true, heads: G.allHeads() }), 'downtown', { managed: true, heads: G.allHeads() }),
+        lastSavedAt: 0,
+      },
+      3600_000,
+    );
     expect(r.idle).toEqual([]);
   });
   test('applyOffline never pays twice: a second load right after pays nothing', () => {
@@ -199,7 +220,7 @@ describe('whole pizza numbers (P7)', () => {
 });
 
 describe('codecritic round 15', () => {
-  const deepFreeze = <T,>(o: T): T => {
+  const deepFreeze = <T>(o: T): T => {
     if (o && typeof o === 'object') {
       Object.values(o as object).forEach(deepFreeze);
       Object.freeze(o);

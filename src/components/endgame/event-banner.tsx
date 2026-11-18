@@ -33,7 +33,19 @@ export const EventBanner = memo(function EventBanner({ shown = true }: { shown?:
 });
 
 const styles = StyleSheet.create({
-  banner: { height: STACK.event, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 12, borderRadius: 15, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.cheeseDark, boxShadow: '0 2px 0 rgba(59,31,20,0.25)' } as object,
+  banner: {
+    height: STACK.event,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    borderRadius: 15,
+    backgroundColor: C.cheese,
+    borderWidth: 2,
+    borderColor: C.cheeseDark,
+    boxShadow: '0 2px 0 rgba(59,31,20,0.25)',
+  } as object,
   title: { flexShrink: 1, fontFamily: F.bold, fontSize: 13, color: C.ink },
   meta: { fontFamily: F.bold, fontSize: 12, color: C.tomatoDark },
 });

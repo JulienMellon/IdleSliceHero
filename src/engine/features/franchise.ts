@@ -78,7 +78,14 @@ export function franchiseGain(g: GameState): FranchiseGain {
   const st = read(g);
   const earned = cityEarned(g);
   const stars = starsFor(earned, cityIndex(g.city));
-  return { next: nextCity(g), earned, stars, totalStars: st.stars + stars, multiplierBefore: multiplierOf(st.stars), multiplierAfter: multiplierOf(st.stars + stars) };
+  return {
+    next: nextCity(g),
+    earned,
+    stars,
+    totalStars: st.stars + stars,
+    multiplierBefore: multiplierOf(st.stars),
+    multiplierAfter: multiplierOf(st.stars + stars),
+  };
 }
 
 // ---------- the reset ----------
@@ -116,7 +123,18 @@ export const SET_FIELDS = ['saveVersion', 'city', 'lastSavedAt', 'x'] as const;
 export const KEPT_FEATURES = ['mastery', 'recipes', KEY] as const;
 
 /** Feature slices a franchise starts over: the weekly counter-attack, the shops' service, the heads' pick, a running event, every layer. */
-export const RESET_FEATURES = ['counterattack', 'events', 'heads', 'service', 'suburbsGameDay', 'waterfrontBoats', 'rival', 'universityMenu', 'industrialShifts', 'uptownStars'] as const;
+export const RESET_FEATURES = [
+  'counterattack',
+  'events',
+  'heads',
+  'service',
+  'suburbsGameDay',
+  'waterfrontBoats',
+  'rival',
+  'universityMenu',
+  'industrialShifts',
+  'uptownStars',
+] as const;
 
 /**
  * Sell the current city and start the next, for the Stars its earnings pay. Cash, shops, upgrade levels, the fleet, layer state, the night
@@ -164,7 +182,12 @@ export const franchiseFeature: Feature<FranchiseState> = {
     if (!raw || typeof raw !== 'object') return fresh();
     const r = raw as Record<string, unknown>;
     const nat = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0);
-    return { count: nat(r.count), stars: nat(r.stars), cityStart: typeof r.cityStart === 'number' && Number.isFinite(r.cityStart) ? Math.max(0, r.cityStart) : 0, masteryBanked: nat(r.masteryBanked) };
+    return {
+      count: nat(r.count),
+      stars: nat(r.stars),
+      cityStart: typeof r.cityStart === 'number' && Number.isFinite(r.cityStart) ? Math.max(0, r.cityStart) : 0,
+      masteryBanked: nat(r.masteryBanked),
+    };
   },
   /** The one place the multiplier reaches a pizza's value. */
   shopValueMult: (g) => multiplierNow(g),

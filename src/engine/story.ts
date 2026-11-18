@@ -10,7 +10,7 @@ import { def, firstHood, sceneId, type GameState } from './game';
 /** Every scene a scene waits for: its `requires`, and the scene an `after` trigger counts from. */
 export function prerequisites(scene: Scene): string[] {
   const tr = scene.trigger;
-  return tr.kind === 'after' ? [...(scene.requires ?? []), tr.scene] : scene.requires ?? [];
+  return tr.kind === 'after' ? [...(scene.requires ?? []), tr.scene] : (scene.requires ?? []);
 }
 
 /** The scene's own trigger, ignoring `requires`. */
@@ -84,7 +84,9 @@ export function storyWaitHint(s: GameState, scenes: readonly Scene[] = cityOf(s)
       const f = byId.get(id)!;
       // a finale of its own that nobody has earned yet (a finale that has been earned is only waiting its turn)
       if (f.beat !== 4 || triggerPasses(s, f)) continue;
-      return f.trigger.kind === 'bid' ? `Save Marisol’s dock to continue ${capital(sc.neighborhood)}’s story` : `Win over ${capital(f.neighborhood)} to continue ${capital(sc.neighborhood)}’s story`;
+      return f.trigger.kind === 'bid'
+        ? `Save Marisol’s dock to continue ${capital(sc.neighborhood)}’s story`
+        : `Win over ${capital(f.neighborhood)} to continue ${capital(sc.neighborhood)}’s story`;
     }
   }
   return null;

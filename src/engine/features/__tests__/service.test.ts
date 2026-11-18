@@ -8,7 +8,10 @@ import { getFeature, withFeatures } from '..';
 import { onServicePulse, quantise, reportView, service, slammedAsks, type ServicePulse } from '../service';
 
 const T0 = 1_800_000_000_000;
-const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
+const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } },
+});
 
 /** Downtown after the tutorial, run by Nonna, with a kitchen of one level `lv`, `d` drivers and `t` seating. */
 function shop(lv: number, d: number, t: number, patch: Partial<G.Shop> = {}): G.GameState {
@@ -90,7 +93,7 @@ describe('what is measured', () => {
     });
   });
 
-  test('wanted keeps the other features demand multipliers, before this feature\'s own effect', () => {
+  test("wanted keeps the other features demand multipliers, before this feature's own effect", () => {
     const doubling = { key: 'dbl', init: () => 0, migrate: () => 0, shopDemandMult: () => 2 };
     withFeatures([doubling, service], () => {
       const v = view(SLOW());
@@ -315,9 +318,27 @@ describe('the slammed bark (step 6)', () => {
   test('a slammed ask speaks through the ordinary ask rules and loses to an attack', () => {
     const { nextBark, newBarkMem } = jest.requireActual('../heads');
     const { BARKS } = jest.requireActual('../../../content/heads');
-    const r = nextBark(newBarkMem(), 'downtown', [{ trigger: 'milestone', station: 'prep' }, { trigger: 'slammed', station: 'oven' }], 100, false);
+    const r = nextBark(
+      newBarkMem(),
+      'downtown',
+      [
+        { trigger: 'milestone', station: 'prep' },
+        { trigger: 'slammed', station: 'oven' },
+      ],
+      100,
+      false,
+    );
     expect(r.bark.text).toBe(BARKS.downtown.oven.slammed);
-    const a = nextBark(newBarkMem(), 'downtown', [{ trigger: 'slammed', station: 'oven' }, { trigger: 'attack', station: 'prep', key: 'x' }], 100, false);
+    const a = nextBark(
+      newBarkMem(),
+      'downtown',
+      [
+        { trigger: 'slammed', station: 'oven' },
+        { trigger: 'attack', station: 'prep', key: 'x' },
+      ],
+      100,
+      false,
+    );
     expect(a.bark.trigger).toBe('attack');
   });
 });

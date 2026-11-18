@@ -13,7 +13,10 @@ function before(id: string, patch: Partial<G.GameState> = {}): G.GameState {
   const idx = HOME_SCENES.findIndex((s) => s.id === id);
   return { ...G.newGame(T0), seenScenes: HOME_SCENES.slice(0, idx).map((s) => s.id), ...patch };
 }
-const withShop = (s: G.GameState, id: G.GameState['active'], patch: Partial<G.Shop>): G.GameState => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } } });
+const withShop = (s: G.GameState, id: G.GameState['active'], patch: Partial<G.Shop>): G.GameState => ({
+  ...s,
+  shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } },
+});
 
 describe('nextSceneTeaser: one test per trigger kind', () => {
   test('deliveries: the character and the pies to go, never the scene', () => {
@@ -63,7 +66,12 @@ describe('nextSceneTeaser: one test per trigger kind', () => {
 
   test('bid (C122, T95): once on offer, the ring is cash over the price the bid costs now, the auction included', () => {
     const base = withShop(before('waterfront-4', { cash: PIER9_BID.cost / 2 }), 'waterfront', { built: true, sold: PIER9_BID.unlockPizzas, perk: false });
-    const s = { ...base, seenScenes: [...base.seenScenes, 'waterfront-3b'], playSeconds: 10_000, x: { ...base.x, waterfrontBoats: { ...(base.x.waterfrontBoats as object), openedAt: 0 } } };
+    const s = {
+      ...base,
+      seenScenes: [...base.seenScenes, 'waterfront-3b'],
+      playSeconds: 10_000,
+      x: { ...base.x, waterfrontBoats: { ...(base.x.waterfrontBoats as object), openedAt: 0 } },
+    };
     expect(G.pier9Available(s)).toBe(true);
     const price = G.pier9Price(s);
     expect(price).toBeGreaterThan(PIER9_BID.cost);

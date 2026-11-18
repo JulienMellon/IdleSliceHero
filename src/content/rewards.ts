@@ -2,8 +2,39 @@
 // Balancing is an edit to this file; the rules live in src/engine/rewards.ts.
 
 /** Every kind of task. Progress reads a lifetime counter (`stats`, or `totalEarned` for 'earn'). */
-export type TaskKind = 'upgrades' | 'walkins' | 'deliveries' | 'baked' | 'earn' | 'offline' | 'booster' | 'hire' | 'decor' | 'dailyDone' | 'days' | 'build' | 'ovens' | 'fleet' | 'bonusTaps';
-export const TASK_KINDS: readonly TaskKind[] = ['upgrades', 'walkins', 'deliveries', 'baked', 'earn', 'offline', 'booster', 'hire', 'decor', 'dailyDone', 'days', 'build', 'ovens', 'fleet', 'bonusTaps'];
+export type TaskKind =
+  | 'upgrades'
+  | 'walkins'
+  | 'deliveries'
+  | 'baked'
+  | 'earn'
+  | 'offline'
+  | 'booster'
+  | 'hire'
+  | 'decor'
+  | 'dailyDone'
+  | 'days'
+  | 'build'
+  | 'ovens'
+  | 'fleet'
+  | 'bonusTaps';
+export const TASK_KINDS: readonly TaskKind[] = [
+  'upgrades',
+  'walkins',
+  'deliveries',
+  'baked',
+  'earn',
+  'offline',
+  'booster',
+  'hire',
+  'decor',
+  'dailyDone',
+  'days',
+  'build',
+  'ovens',
+  'fleet',
+  'bonusTaps',
+];
 
 /** When a task may be generated. The engine maps each key to a check on the game state. */
 export type Eligibility = 'always' | 'upgrades' | 'walkins' | 'deliveries' | 'booster' | 'hire' | 'decor' | 'build' | 'fleet';
@@ -133,10 +164,24 @@ export const GIFT_SMALL: readonly GiftDef[] = [
 /** Milestone days (1-based). */
 export const GIFT_MILESTONES: Readonly<Record<number, GiftDef>> = {
   7: { label: '50 diamonds', diamonds: 50 },
-  14: { label: '3 boosters · 2× · 30 min', boosters: [{ mult: 2, minutes: 30 }, { mult: 2, minutes: 30 }, { mult: 2, minutes: 30 }] },
+  14: {
+    label: '3 boosters · 2× · 30 min',
+    boosters: [
+      { mult: 2, minutes: 30 },
+      { mult: 2, minutes: 30 },
+      { mult: 2, minutes: 30 },
+    ],
+  },
   21: { label: '2× income for 24 h', boostNow: { mult: 2, minutes: 24 * 60 } },
   28: { label: 'Storefront skin', cosmetic: 'storefront-skin-{cycle}' },
-  30: { label: 'Visit: 2× for 7 days', boostNow: { mult: 2, minutes: 7 * 24 * 60 }, diamonds: 300, cosmetic: 'oven-gold', visit: true, name: 'Nonna’s Golden Oven' },
+  30: {
+    label: 'Visit: 2× for 7 days',
+    boostNow: { mult: 2, minutes: 7 * 24 * 60 },
+    diamonds: 300,
+    cosmetic: 'oven-gold',
+    visit: true,
+    name: 'Nonna’s Golden Oven',
+  },
 };
 
 /** The 30 gifts, day 1 first. */

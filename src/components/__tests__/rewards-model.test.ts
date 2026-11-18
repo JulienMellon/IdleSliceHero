@@ -3,7 +3,38 @@ import { DAILY_CHESTS, DAILY_TASK_REWARD, GIFT_DAYS, GIFT_MILESTONES, VISITOR_LI
 import * as G from '../../engine/game';
 import { dayKey, refreshRewards, taskDone } from '../../engine/rewards';
 import { NONNA_TAKEOVER } from '../../content/tuning';
-import { BOOST_STRIP, boostFadeShown, boostChip, boosterLabel, boosterStartLabel, boostOnText, boostRingPct, boostedRate, boostSummary, chestRows, collectionText, compactSpan, countdownText, dailyRows, progressPill, giftHeader, giftIcon, giftShort, giftText, giftTiles, hudBoostText, citywideText, hudRateText, pointsPct, TAP_PREP_TEXT, rewardsHud, spanText, visitCaption, weeklyChestView, weeklyRows } from '../rewards-model';
+import {
+  BOOST_STRIP,
+  boostFadeShown,
+  boostChip,
+  boosterLabel,
+  boosterStartLabel,
+  boostOnText,
+  boostRingPct,
+  boostedRate,
+  boostSummary,
+  chestRows,
+  collectionText,
+  compactSpan,
+  countdownText,
+  dailyRows,
+  progressPill,
+  giftHeader,
+  giftIcon,
+  giftShort,
+  giftText,
+  giftTiles,
+  hudBoostText,
+  citywideText,
+  hudRateText,
+  pointsPct,
+  TAP_PREP_TEXT,
+  rewardsHud,
+  spanText,
+  visitCaption,
+  weeklyChestView,
+  weeklyRows,
+} from '../rewards-model';
 
 const NOW = new Date(2026, 9, 28, 13, 7, 41, 333).getTime(); // a Wednesday
 const DAY = 86_400_000;
@@ -18,7 +49,8 @@ function base(): G.GameState {
   return refreshRewards(g, NOW);
 }
 const withR = (s: G.GameState, p: Partial<G.Rewards>): G.GameState => ({ ...s, rewards: { ...s.rewards, ...p } });
-const strings = (x: unknown): string[] => (typeof x === 'string' ? [x] : Array.isArray(x) ? x.flatMap(strings) : x && typeof x === 'object' ? Object.values(x).flatMap(strings) : []);
+const strings = (x: unknown): string[] =>
+  typeof x === 'string' ? [x] : Array.isArray(x) ? x.flatMap(strings) : x && typeof x === 'object' ? Object.values(x).flatMap(strings) : [];
 
 describe('time text', () => {
   test('spans use whole numbers of the two biggest units', () => {
@@ -59,7 +91,12 @@ describe('time text', () => {
     expect(TAP_PREP_TEXT.length).toBeLessThanOrEqual(22);
   });
   test('boost summary adds the multipliers and counts down to the first end', () => {
-    const s = withR(base(), { boosts: [{ mult: 2, until: NOW + 840_500, source: 'a' }, { mult: 2, until: NOW + 9e6, source: 'b' }] });
+    const s = withR(base(), {
+      boosts: [
+        { mult: 2, until: NOW + 840_500, source: 'a' },
+        { mult: 2, until: NOW + 9e6, source: 'b' },
+      ],
+    });
     expect(boostSummary(s, NOW)).toEqual({ mult: 3, seconds: 841 });
     expect(boostSummary(base(), NOW)).toBeNull();
   });
@@ -111,7 +148,7 @@ describe('task rows', () => {
     }
     expect(t0.kind).toBeTruthy();
   });
-  test('v5.15: the daily tasks of Head of the Week\'s station wear a star; weekly rows and an empty pick never do', () => {
+  test("v5.15: the daily tasks of Head of the Week's station wear a star; weekly rows and an empty pick never do", () => {
     const g = base();
     const daily = (kinds: string[]): G.GameState => withR(g, { daily: kinds.map((kind) => ({ ...g.rewards.daily[0], kind: kind as never })) });
     const pick = (station: 'prep' | 'oven' | 'counter' | null) => ({ ...g.x, heads: { week: 5, pick: station ? { shopId: 'downtown', station } : null } });
@@ -126,7 +163,11 @@ describe('task rows', () => {
   test('a finished task is ready and its bar is full', () => {
     let s = base();
     const t = s.rewards.daily[0];
-    s = { ...s, stats: { ...s.stats, upgrades: 1e6, walkins: 1e6, deliveries: 1e6, baked: 1e6, hires: 1e6, decor: 1e6, offline: 1e6, boosters: 1e6 }, totalEarned: s.totalEarned + 1e9 };
+    s = {
+      ...s,
+      stats: { ...s.stats, upgrades: 1e6, walkins: 1e6, deliveries: 1e6, baked: 1e6, hires: 1e6, decor: 1e6, offline: 1e6, boosters: 1e6 },
+      totalEarned: s.totalEarned + 1e9,
+    };
     const r = dailyRows(s)[0];
     expect(r.state).toBe('ready');
     expect(r.pct).toBe(1);
@@ -149,7 +190,13 @@ describe('task rows', () => {
 describe('U4: an unfinished task shows its progress where the padlock was', () => {
   test('"3 / 5" with the label "In progress, 3 of 5"; a finished or claimed task has no pill', () => {
     let s = base();
-    s = withR(s, { daily: [{ kind: 'walkins', target: 5, base: 0, claimed: false }, { kind: 'walkins', target: 5, base: 0, claimed: false }, { kind: 'walkins', target: 5, base: 0, claimed: true }] });
+    s = withR(s, {
+      daily: [
+        { kind: 'walkins', target: 5, base: 0, claimed: false },
+        { kind: 'walkins', target: 5, base: 0, claimed: false },
+        { kind: 'walkins', target: 5, base: 0, claimed: true },
+      ],
+    });
     s = { ...s, stats: { ...s.stats, walkins: 3 } };
     const rows = dailyRows(s);
     expect(rows[0].state).toBe('todo');
@@ -232,7 +279,8 @@ describe('chests', () => {
 });
 
 describe('gift calendar', () => {
-  const gift = (streak: number, lastDaysAgo: number, extra: Partial<G.Rewards['gift']> = {}) => withR(base(), { gift: { streak, last: dayKey(NOW - lastDaysAgo * DAY), saveUsed: false, cycle: 0, ...extra } });
+  const gift = (streak: number, lastDaysAgo: number, extra: Partial<G.Rewards['gift']> = {}) =>
+    withR(base(), { gift: { streak, last: dayKey(NOW - lastDaysAgo * DAY), saveUsed: false, cycle: 0, ...extra } });
   test('30 tiles, five milestones drawn big', () => {
     const t = giftTiles(base(), NOW);
     expect(t).toHaveLength(30);
@@ -300,9 +348,26 @@ describe('gift calendar', () => {
 describe('no raw floats in any string', () => {
   test('fractional state', () => {
     let s = base();
-    s = { ...s, cash: 123456.789123, totalEarned: 98765.4321987, stats: { ...s.stats, upgrades: 7.123456, walkins: 3.987654, deliveries: 9.55555, baked: 11.11111 } };
+    s = {
+      ...s,
+      cash: 123456.789123,
+      totalEarned: 98765.4321987,
+      stats: { ...s.stats, upgrades: 7.123456, walkins: 3.987654, deliveries: 9.55555, baked: 11.11111 },
+    };
     s = withR(s, { points: 33.333333, boosts: [{ mult: 2, until: NOW + 123456.789, source: 'x' }], diamonds: 12.5, cosmetics: ['oven-gold'] });
-    const all = [dailyRows(s), weeklyRows(s), chestRows(s), weeklyChestView(s), giftTiles(s, NOW), giftHeader(s, NOW), collectionText(s), boostSummary(s, NOW), boostChip(2, 123456.789), hudBoostText(2, 99.999), countdownText(12345.6789)];
+    const all = [
+      dailyRows(s),
+      weeklyRows(s),
+      chestRows(s),
+      weeklyChestView(s),
+      giftTiles(s, NOW),
+      giftHeader(s, NOW),
+      collectionText(s),
+      boostSummary(s, NOW),
+      boostChip(2, 123456.789),
+      hudBoostText(2, 99.999),
+      countdownText(12345.6789),
+    ];
     for (const x of strings(all)) expect([x, NO_FLOAT.test(x)]).toEqual([x, false]);
   });
 });

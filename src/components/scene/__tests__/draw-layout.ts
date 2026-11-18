@@ -6,6 +6,16 @@ import { toDrawSpace } from '../layout-space';
 import type { SceneFrame } from '../projection';
 
 export * from '../layout';
-export function layout(fp: number, ovenCount: number, cookCount: number, staffCount: number, tableCount: number, driverSlots: number, plants = 0, frame?: SceneFrame, mirrored = false): Layout {
+export function layout(
+  fp: number,
+  ovenCount: number,
+  cookCount: number,
+  staffCount: number,
+  tableCount: number,
+  driverSlots: number,
+  plants = 0,
+  frame?: SceneFrame,
+  mirrored = false,
+): Layout {
   return toDrawSpace(plan(fp, ovenCount, cookCount, staffCount, tableCount, driverSlots, plants, frame, mirrored));
 }

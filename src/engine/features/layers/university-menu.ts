@@ -15,16 +15,7 @@
 // the shop's rate does not until the owner decides.
 import { LAYER_KEYS, MENU, ZONES } from '../../../content/layers';
 import { VEHICLES } from '../../../content/tuning';
-import {
-  deliveryRate,
-  featureMults,
-  shopRevenue,
-  tripSeconds,
-  walkInRate,
-  type BuyResult,
-  type GameState,
-  type Shop,
-} from '../../game';
+import { deliveryRate, featureMults, shopRevenue, tripSeconds, walkInRate, type BuyResult, type GameState, type Shop } from '../../game';
 import type { Feature } from '../types';
 import { cityOf, layerHood } from '../../../content/cities';
 import type { NeighborhoodId } from '../../../content/types';
@@ -62,7 +53,8 @@ export interface MenuFactors {
 /** What a mix does to price and to the two stations' times. */
 export function menuFactors(m: MenuState): MenuFactors {
   const s = shares(m);
-  const mix = (pick: (r: (typeof MENU.recipes)[number]) => number) => s.cheese * pick(recipe('cheese')) + s.pepperoni * pick(recipe('pepperoni')) + s.knots * pick(recipe('knots'));
+  const mix = (pick: (r: (typeof MENU.recipes)[number]) => number) =>
+    s.cheese * pick(recipe('cheese')) + s.pepperoni * pick(recipe('pepperoni')) + s.knots * pick(recipe('knots'));
   return { value: mix((r) => r.price), prepTime: mix((r) => r.prep), bakeTime: mix((r) => r.bake) };
 }
 
@@ -132,7 +124,15 @@ export interface MenuView {
 export function menuView(g: GameState): MenuView {
   const m = read(g);
   const f = menuFactors(m);
-  return { active: built(g), cheese: 100 - m.pepperoni - m.knots, pepperoni: m.pepperoni, knots: m.knots, valueMult: f.value, prepRate: 1 / f.prepTime, ovenRate: 1 / f.bakeTime };
+  return {
+    active: built(g),
+    cheese: 100 - m.pepperoni - m.knots,
+    pepperoni: m.pepperoni,
+    knots: m.knots,
+    valueMult: f.value,
+    prepRate: 1 / f.prepTime,
+    ovenRate: 1 / f.bakeTime,
+  };
 }
 
 export interface ZoneRow {

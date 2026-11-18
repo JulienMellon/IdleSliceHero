@@ -21,10 +21,18 @@ function Sheet() {
           {m.rows.map((r) => (
             <View key={r.key} style={styles.row} testID={`report-row-${r.key}`}>
               <View style={[styles.dot, { backgroundColor: LAMP_COLOR[r.tone] }]} />
-              <Text style={styles.name} numberOfLines={1}>{r.name}</Text>
-              <Text style={styles.rate} numberOfLines={1}>{r.rate}</Text>
-              <Text style={styles.load} numberOfLines={1}>{r.load}</Text>
-              <Text style={styles.word} numberOfLines={1}>{r.word}</Text>
+              <Text style={styles.name} numberOfLines={1}>
+                {r.name}
+              </Text>
+              <Text style={styles.rate} numberOfLines={1}>
+                {r.rate}
+              </Text>
+              <Text style={styles.load} numberOfLines={1}>
+                {r.load}
+              </Text>
+              <Text style={styles.word} numberOfLines={1}>
+                {r.word}
+              </Text>
             </View>
           ))}
           <View style={styles.service} testID="report-service">
@@ -55,7 +63,17 @@ export const ReportSheet = memo(function ReportSheet() {
 });
 
 const styles = StyleSheet.create({
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.6)', alignItems: 'center', justifyContent: 'center', padding: 16 },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(30,14,8,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
   card: { backgroundColor: C.bg, borderRadius: 20, borderWidth: 4, borderColor: C.ink, padding: 14, width: '100%', maxWidth: 360, maxHeight: '88%', gap: 8 },
   title: { fontFamily: F.bold, fontSize: 22, color: C.ink, textAlign: 'center' },
   scroll: { flexGrow: 0 },

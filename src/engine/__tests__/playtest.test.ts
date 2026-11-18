@@ -77,7 +77,11 @@ describe('frugal path (playtest UX)', () => {
     expect(G.nonnaPizzasLeft({ ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, sold: NONNA_TAKEOVER.pizzas - 30 } } })).toBe(30);
   });
   it("the tuning constant matches downtown-4's trigger", () => {
-    expect(HOME_SCENES.find((x) => x.id === NONNA_TAKEOVER.sceneId)?.trigger).toMatchObject({ kind: 'deliveries', neighborhood: 'downtown', count: NONNA_TAKEOVER.pizzas });
+    expect(HOME_SCENES.find((x) => x.id === NONNA_TAKEOVER.sceneId)?.trigger).toMatchObject({
+      kind: 'deliveries',
+      neighborhood: 'downtown',
+      count: NONNA_TAKEOVER.pizzas,
+    });
   });
   it('a save already past the trigger counts as done (no soft-lock)', () => {
     const s = rich(G.newGame(0));

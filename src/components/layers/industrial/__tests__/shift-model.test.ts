@@ -54,13 +54,21 @@ describe('the tint and the whistle', () => {
   it('blows the whistle with the copy: Big Sal speaks on the night', () => {
     expect(whistle('day')).toEqual({ text: 'Whistle! Day Shift is on', line: null, speaker: null });
     expect(whistle('swing')?.text).toBe('Whistle! Swing Shift is on');
-    expect(whistle('night')).toMatchObject({ text: 'Whistle! Night Shift is on', speaker: 'Big Sal', line: 'Night shift. My guys. Best pay, worst moods. Feed ’em.' });
+    expect(whistle('night')).toMatchObject({
+      text: 'Whistle! Night Shift is on',
+      speaker: 'Big Sal',
+      line: 'Night shift. My guys. Best pay, worst moods. Feed ’em.',
+    });
     expect(whistle('lunch')).toBeNull();
   });
 
   it('lists the three shifts with the one on the clock marked', () => {
     const rows = shiftRows('swing', SHIFTS.shifts);
-    expect(rows.map((r) => [r.name, r.now])).toEqual([['Day Shift', false], ['Swing Shift', true], ['Night Shift', false]]);
+    expect(rows.map((r) => [r.name, r.now])).toEqual([
+      ['Day Shift', false],
+      ['Swing Shift', true],
+      ['Night Shift', false],
+    ]);
     expect(rows[2].effect).toBe('demand ×1.2 · pays ×2');
   });
 });

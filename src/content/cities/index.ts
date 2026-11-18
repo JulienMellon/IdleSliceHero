@@ -48,7 +48,11 @@ export function layerHood(city: CityDef, kind: LayerKind): NeighborhoodId | null
   const hit = per.get(kind);
   if (hit !== undefined) return hit;
   let found: NeighborhoodId | null = null;
-  for (const n of city.neighbourhoods) if (city.layers[n.id] === kind) { found = n.id; break; }
+  for (const n of city.neighbourhoods)
+    if (city.layers[n.id] === kind) {
+      found = n.id;
+      break;
+    }
   per.set(kind, found);
   return found;
 }

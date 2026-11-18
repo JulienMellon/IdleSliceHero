@@ -63,20 +63,31 @@ export function limbGeom({ kind, act, carry, carryWalk, step, arm, tall }: LimbG
           : [12 + arm, by + 9 - arm]
       : act === 'cheer'
         ? CHEER_HAND(hy)
-      : act === 'toss'
-        ? [5, hy - 14 - arm]
-        : act === 'ladle'
-          ? [10, by + 11 - arm]
-          : act === 'phone'
-            ? PHONE_HAND(by)
-            : pin
-            ? [6 + arm, by + 13 - arm * 1.2]
-            : worker && arm > 0
-              ? [10 + arm, by + 13 - arm * 2]
-              : [9 + sw * 2.5, by + 16];
+        : act === 'toss'
+          ? [5, hy - 14 - arm]
+          : act === 'ladle'
+            ? [10, by + 11 - arm]
+            : act === 'phone'
+              ? PHONE_HAND(by)
+              : pin
+                ? [6 + arm, by + 13 - arm * 1.2]
+                : worker && arm > 0
+                  ? [10 + arm, by + 13 - arm * 2]
+                  : [9 + sw * 2.5, by + 16];
   // a walking carrier holds the box centred in front, both hands on it
   const bx = carryWalk ? 10 : 3;
-  const backHand: [number, number] = act === 'cheer' && !sitting ? [-CHEER_HAND(hy)[0], CHEER_HAND(hy)[1]] : carry && carryWalk ? [-4, by + 10] : pin ? [hand[0] - 9, hand[1]] : sitting ? (act === 'lean' ? [-12, by + 3] : [-7, by + 15]) : [-8.5 - sw * 2.5, by + 15.5];
+  const backHand: [number, number] =
+    act === 'cheer' && !sitting
+      ? [-CHEER_HAND(hy)[0], CHEER_HAND(hy)[1]]
+      : carry && carryWalk
+        ? [-4, by + 10]
+        : pin
+          ? [hand[0] - 9, hand[1]]
+          : sitting
+            ? act === 'lean'
+              ? [-12, by + 3]
+              : [-7, by + 15]
+            : [-8.5 - sw * 2.5, by + 15.5];
   return { pin, sitting, walking, sw, by, hand, bx, backHand, peel: kind === 'baker' };
 }
 

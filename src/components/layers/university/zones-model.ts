@@ -29,7 +29,7 @@ export interface ZoneCell {
 
 export function zoneCells(v: ZonesView, city?: string): ZoneCell[] {
   return v.zones.map((z) => {
-    const name = dressed(city, `zone.${z.id}.name`, COPY[`zone.${z.id}.name` as "zone.dorms.name"]);
+    const name = dressed(city, `zone.${z.id}.name`, COPY[`zone.${z.id}.name` as 'zone.dorms.name']);
     const mid = z.open ? `${z.share}% · ${tripText(z.tripSeconds)}` : 'Locked';
     const open = v.drones ? DRONES_NOTE : `distance ${z.distance}`;
     const foot = z.open ? open : COPY['zone.locked'];
@@ -38,7 +38,8 @@ export function zoneCells(v: ZonesView, city?: string): ZoneCell[] {
 }
 
 /** Drivers out on campus right now: the university line's departures that are drivers (walk-ins stay in the shop). */
-export const campusOut = (g: { city?: string } & Pick<GameState, 'shops'>): number => g.shops[hoodOf(g, 'menu')]?.line.departures.filter((d) => d.kind === 'driver').length ?? 0;
+export const campusOut = (g: { city?: string } & Pick<GameState, 'shops'>): number =>
+  g.shops[hoodOf(g, 'menu')]?.line.departures.filter((d) => d.kind === 'driver').length ?? 0;
 
 /** The chip's text: "3 out on campus", or "3 drones up" once drones are the fleet; one drone is "1 drone up" (G107). */
 export const campusChipText = (out: number, drones: boolean): string => {

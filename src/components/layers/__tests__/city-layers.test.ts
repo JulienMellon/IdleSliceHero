@@ -77,14 +77,27 @@ describe('Boston’s layers speak the script’s words', () => {
   });
 
   test('Cambridge: lab hours and the exploding oven', () => {
-    expect(shiftRows('day', [{ id: 'day', demand: 1, value: 1 }, { id: 'swing', demand: 1, value: 1 }, { id: 'night', demand: 1, value: 2 }], 'boston').map((r) => r.name)).toEqual(['Morning Lab', 'Afternoon Lab', 'Night Lab']);
+    expect(
+      shiftRows(
+        'day',
+        [
+          { id: 'day', demand: 1, value: 1 },
+          { id: 'swing', demand: 1, value: 1 },
+          { id: 'night', demand: 1, value: 2 },
+        ],
+        'boston',
+      ).map((r) => r.name),
+    ).toEqual(['Morning Lab', 'Afternoon Lab', 'Night Lab']);
     expect(whistle('night', 'boston')?.text).toBe('Whistle! Night Lab is on');
     expect(jamLabel({ jammed: true, autoFixIn: null }, 'boston')).toBe(BOSTON_LAYER_COPY['layer.cambridge.breakdown.banner']);
     expect(jamLabel({ jammed: true, autoFixIn: null })).toBe('Oven jammed! Tap the wrench.');
   });
 
   test('Back Bay: the zones are its own streets', () => {
-    const cells = zoneCells({ drones: false, zones: [{ id: 'dorms', open: true, share: 50, tripSeconds: 6, distance: 1 }] } as unknown as Parameters<typeof zoneCells>[0], 'boston');
+    const cells = zoneCells(
+      { drones: false, zones: [{ id: 'dorms', open: true, share: 50, tripSeconds: 6, distance: 1 }] } as unknown as Parameters<typeof zoneCells>[0],
+      'boston',
+    );
     expect(cells[0].name).toBe('Brownstone Row');
   });
 

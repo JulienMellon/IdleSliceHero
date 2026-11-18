@@ -15,7 +15,10 @@ export const payTag = (valueMult: number): string => (valueMult > 1 ? `×${Math.
 export function shiftChip(v: Pick<ShiftView, 'name' | 'valueMult' | 'left'>): { rows: [string, string]; label: string } {
   const tag = payTag(v.valueMult);
   const time = mmss(v.left);
-  return { rows: [tag ? `${v.name} ${tag}` : v.name, time], label: `${fill(COPY['layer.industrial.shift.chip'], { time })}. ${v.name} shift${tag ? `, pays ${tag}` : ''}` };
+  return {
+    rows: [tag ? `${v.name} ${tag}` : v.name, time],
+    label: `${fill(COPY['layer.industrial.shift.chip'], { time })}. ${v.name} shift${tag ? `, pays ${tag}` : ''}`,
+  };
 }
 
 /** The scene's tint for a shift: the night is a deep blue wash; the swing a faint amber; the day none. */
@@ -65,7 +68,13 @@ export interface Box {
  * building's box is the front wall's width at the front line (`frontY`) up to the roof; the tint covers the scene's width down to the front line
  * except that box (`mirrored`: the second floor plan, the room reflected about the frame's centre). `roofY` is the roof's top edge in scene units. The street below the front line keeps its colours (street lamps).
  */
-export function nightShape(lay: { L: number; R: number }, sceneW: number, frontY: number, roofY: number, mirrored = false): { sky: Box; house: Box; path: string } {
+export function nightShape(
+  lay: { L: number; R: number },
+  sceneW: number,
+  frontY: number,
+  roofY: number,
+  mirrored = false,
+): { sky: Box; house: Box; path: string } {
   // `lay` is the plain plan's room in the frame's space (`sceneW` wide, v5.18: wider than a screen for the two big tiers); the mirrored plan reflects it about the frame's centre
   const L = mirrored ? sceneW - lay.R : lay.L;
   const R = mirrored ? sceneW - lay.L : lay.R;

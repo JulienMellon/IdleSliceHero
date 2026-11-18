@@ -22,15 +22,25 @@ function Sheet() {
   const jv = jamView(game);
   const label = jamLabel(jv, game.city);
   return (
-    <LayerSheet testID="industrial-sheet" title={dressed(game.city, 'layer.industrial.shift.info.title', COPY['layer.industrial.shift.info.title'])} onClose={industrialSheet.close}>
+    <LayerSheet
+      testID="industrial-sheet"
+      title={dressed(game.city, 'layer.industrial.shift.info.title', COPY['layer.industrial.shift.info.title'])}
+      onClose={industrialSheet.close}
+    >
       <Text style={styles.body}>{dressed(game.city, 'layer.industrial.shift.info.body', COPY['layer.industrial.shift.info.body'])}</Text>
       {shiftRows(sv.shift, SHIFTS.shifts, game.city).map((r) => (
         <View key={r.id} style={[styles.row, r.now && styles.rowNow]} testID={`shift-row-${r.id}`}>
-          <Text style={styles.name} numberOfLines={1}>{r.name}</Text>
-          <Text style={styles.effect} numberOfLines={1}>{r.effect}</Text>
+          <Text style={styles.name} numberOfLines={1}>
+            {r.name}
+          </Text>
+          <Text style={styles.effect} numberOfLines={1}>
+            {r.effect}
+          </Text>
         </View>
       ))}
-      <Text style={styles.line} testID="shift-left">{fill(COPY['layer.industrial.shift.chip'], { time: mmss(sv.left) })}</Text>
+      <Text style={styles.line} testID="shift-left">
+        {fill(COPY['layer.industrial.shift.chip'], { time: mmss(sv.left) })}
+      </Text>
       <View style={styles.jam} testID="jam-status">
         <Text style={styles.jamHead}>{label ?? `Next jam in ${mmss(jv.nextIn)}`}</Text>
       </View>
@@ -44,7 +54,18 @@ export const IndustrialSheet = memo(function IndustrialSheet() {
 
 const styles = StyleSheet.create({
   body: { fontFamily: F.regular, fontSize: 13, lineHeight: 17, color: C.inkSoft },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, minHeight: 36, backgroundColor: '#fff', borderRadius: 10, borderWidth: 1.5, borderColor: C.lockedDark, paddingHorizontal: 10 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    minHeight: 36,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: C.lockedDark,
+    paddingHorizontal: 10,
+  },
   rowNow: { borderColor: C.ink, borderWidth: 2.5, backgroundColor: '#FFF1C9' },
   name: { fontFamily: F.bold, fontSize: 14, color: C.ink },
   effect: { fontFamily: F.semi, fontSize: 12, color: C.inkSoft },

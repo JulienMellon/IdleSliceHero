@@ -7,16 +7,49 @@ import type { BoatsView } from '../../../../engine/features/layers/waterfront-bo
 import { layout } from '../../../scene/layout';
 import { P } from '../../../scene/projection';
 import {
-  BOAT, BOAT_ART, BOAT_PAD, RACK_STEPS, auctionCard, auctionStatus, boatBanner, boatDock, boatPose, harbourChip, rackBox, rackCard, rackStep, raiseNotice, tierName, untilNextBoat,
+  BOAT,
+  BOAT_ART,
+  BOAT_PAD,
+  RACK_STEPS,
+  auctionCard,
+  auctionStatus,
+  boatBanner,
+  boatDock,
+  boatPose,
+  harbourChip,
+  rackBox,
+  rackCard,
+  rackStep,
+  raiseNotice,
+  tierName,
+  untilNextBoat,
 } from '../boats-model';
 
-const view = (o: Partial<BoatsView> = {}): BoatsView => ({ active: true, boat: false, nextIn: 130, left: 0, rackTier: 0, rackPies: 0, rackCapacity: 0, rackPrice: 5000, auctionMult: 1, ...o });
+const view = (o: Partial<BoatsView> = {}): BoatsView => ({
+  active: true,
+  boat: false,
+  nextIn: 130,
+  left: 0,
+  rackTier: 0,
+  rackPies: 0,
+  rackCapacity: 0,
+  rackPrice: 5000,
+  auctionMult: 1,
+  ...o,
+});
 
 /** A Waterfront shop with the Pier 9 bid on offer, the auction opened at play second 100. */
 function auctionGame(playSeconds: number, openedAt = 100, cash = 0): G.GameState {
   const g = G.newGame(1);
   const wf = { ...g.shops.waterfront, built: true, perk: false, sold: PIER9_BID.unlockPizzas + 10 };
-  return { ...g, cash, playSeconds, seenScenes: [...g.seenScenes, 'waterfront-3b'], shops: { ...g.shops, waterfront: wf }, x: { ...g.x, [LAYER_KEYS.boats]: { seed: 1, n: 0, nextAt: 400, until: 0, at: 0, tier: 0, rack: 0, carry: 0, openedAt } } };
+  return {
+    ...g,
+    cash,
+    playSeconds,
+    seenScenes: [...g.seenScenes, 'waterfront-3b'],
+    shops: { ...g.shops, waterfront: wf },
+    x: { ...g.x, [LAYER_KEYS.boats]: { seed: 1, n: 0, nextAt: 400, until: 0, at: 0, tier: 0, rack: 0, carry: 0, openedAt } },
+  };
 }
 
 describe('the warming rack in four steps', () => {

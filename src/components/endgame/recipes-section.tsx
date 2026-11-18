@@ -9,7 +9,11 @@ import { RecipeArt } from './recipe-art';
 
 function Tile({ t, hood }: { t: RecipeTile; hood: NeighborhoodId }) {
   return (
-    <View testID={`recipe-${t.id}`} accessibilityLabel={t.owned ? `${t.name}. ${t.line}` : `Recipe not found yet. ${t.drop}`} style={[styles.tile, !t.owned && styles.tileLocked]}>
+    <View
+      testID={`recipe-${t.id}`}
+      accessibilityLabel={t.owned ? `${t.name}. ${t.line}` : `Recipe not found yet. ${t.drop}`}
+      style={[styles.tile, !t.owned && styles.tileLocked]}
+    >
       <RecipeArt hood={hood} n={t.n} owned={t.owned} />
       <Text style={[styles.name, !t.owned && styles.nameLocked]} numberOfLines={2} maxFontSizeMultiplier={1.15}>
         {t.name}
@@ -43,11 +47,30 @@ export function RecipesSection({ groups, bottom }: { groups: RecipeGroup[]; bott
 
 const styles = StyleSheet.create({
   chapter: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 3, borderColor: C.ink, overflow: 'hidden' },
-  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 3, borderColor: C.ink },
+  head: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 3,
+    borderColor: C.ink,
+  },
   shop: { fontFamily: F.bold, fontSize: 18, color: C.ink },
   count: { fontFamily: F.bold, fontSize: 16, color: C.ink },
   grid: { flexDirection: 'row', flexWrap: 'wrap', padding: 8, gap: 8 },
-  tile: { width: '48%', flexGrow: 1, minHeight: 130, borderRadius: 12, backgroundColor: '#FFF4E0', borderWidth: 2, borderColor: C.cheeseDark, padding: 8, alignItems: 'center', gap: 2 },
+  tile: {
+    width: '48%',
+    flexGrow: 1,
+    minHeight: 130,
+    borderRadius: 12,
+    backgroundColor: '#FFF4E0',
+    borderWidth: 2,
+    borderColor: C.cheeseDark,
+    padding: 8,
+    alignItems: 'center',
+    gap: 2,
+  },
   tileLocked: { backgroundColor: '#F1ECE7', borderColor: C.locked },
   name: { fontFamily: F.bold, fontSize: 14, lineHeight: 16, color: C.ink, textAlign: 'center' },
   nameLocked: { color: C.inkSoft },

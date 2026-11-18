@@ -4,12 +4,28 @@ import * as G from '../../engine/game';
 import { buyKeyOf, drawerCards, drawerKey, parseBuyKey, type DrawerBuy } from '../drawer-model';
 
 const base = (cash = 0): G.GameState => ({ ...G.newGame(0), cash });
-const withShop = (s: G.GameState, id: 'downtown' | 'suburbs', patch: Partial<G.Shop>): G.GameState => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } } });
+const withShop = (s: G.GameState, id: 'downtown' | 'suburbs', patch: Partial<G.Shop>): G.GameState => ({
+  ...s,
+  shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } },
+});
 
 describe('drawerCards', () => {
   it('lists heads and a manager for an unmanaged shop, then the stations and the fleet', () => {
     const v = drawerCards({ game: base(), id: 'downtown' });
-    expect(v.cards.map((c) => c.key)).toEqual(['headPrep', 'headOven', 'headCounter', 'manager', 'prep', 'ovens', 'counter', 'drivers', 'tables', 'grade', 'expand', 'fleet']);
+    expect(v.cards.map((c) => c.key)).toEqual([
+      'headPrep',
+      'headOven',
+      'headCounter',
+      'manager',
+      'prep',
+      'ovens',
+      'counter',
+      'drivers',
+      'tables',
+      'grade',
+      'expand',
+      'fleet',
+    ]);
     expect(v.decor.map((c) => c.testID)).toEqual(DECOR_KINDS.map((k) => `decor-${k}`));
     expect(v.title).toBe('Rosa’s · Downtown');
     expect(v.bottleneck.startsWith('Bottleneck: ')).toBe(true);

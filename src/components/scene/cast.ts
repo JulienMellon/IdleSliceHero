@@ -77,7 +77,8 @@ const EDGE_HOLD = 14;
 /** …then fades out over this many units (D284: it used to fade over the last 30 on screen and read as a ghost). */
 const EDGE_FADE = 8;
 /** Opacity for a figure at screen x. */
-export const edgeFade = (sx: number, width: number = ONE_SCREEN.width) => Math.max(0, Math.min(1, (width + EDGE_HOLD - sx) / EDGE_FADE, (sx + EDGE_HOLD) / EDGE_FADE));
+export const edgeFade = (sx: number, width: number = ONE_SCREEN.width) =>
+  Math.max(0, Math.min(1, (width + EDGE_HOLD - sx) / EDGE_FADE, (sx + EDGE_HOLD) / EDGE_FADE));
 
 /**
  * Builds this frame's cast. Two clocks drive it:
@@ -86,7 +87,9 @@ export const edgeFade = (sx: number, width: number = ONE_SCREEN.width) => Math.m
  *   - a 7.5 Hz pose clock for arm work and eating, so a worker's limbs keep identical props for two
  *     frames and their memo holds.
  */
-export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cold = false, cheer = false }: CastInput): { cast: CastMember[] } {
+export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cold = false, cheer = false }: CastInput): {
+  cast: CastMember[];
+} {
   const t = clock * pace;
   const poseClock = Math.floor(clock * 7.5) / 7.5;
   const pt = poseClock * pace;
@@ -118,7 +121,20 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
           key: 'd0',
           sortY: y,
           role: 'driver',
-          props: { x, y, kind: 'driver', seed: sd, blink: blinkAt(sd), carry: dp.carry, carryWalk: dp.carry && dp.walking, step: dp.walking ? walkStep(0) : 0, arm: 0, flip: fl(dp.face), o, mood: dp.leaving ? 'o' : 'smile' },
+          props: {
+            x,
+            y,
+            kind: 'driver',
+            seed: sd,
+            blink: blinkAt(sd),
+            carry: dp.carry,
+            carryWalk: dp.carry && dp.walking,
+            step: dp.walking ? walkStep(0) : 0,
+            arm: 0,
+            flip: fl(dp.face),
+            o,
+            mood: dp.leaving ? 'o' : 'smile',
+          },
           deps: dp.deps,
         });
     }
@@ -147,14 +163,31 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `g${i % 8}`,
       sortY: g.pos[1] - 0.3,
       role: 'walkin',
-      props: { x: g.pos[0], y: g.pos[1], kind: seated ? 'sit' : 'guest', seed: gSeed, shirt: ice(GUEST_SHIRTS[pal.walkShirt(i % 4, Math.floor(i / 4))], g.stage === 'arrive' || g.stage === 'order'), hair: ice(HAIR_COLORS[pal.walkHair(i % 4, Math.floor(i / 4))], g.stage === 'arrive' || g.stage === 'order'), o, flip: seated ? g.face : fl(g.face), step: g.walking ? walkStep((i % 4) + 3) : 0, talk: g.stage === 'order' && Math.sin(poseClock * 9) > -0.2, mood, blink: blinkAt(gSeed), arm: seated ? bite * 2 : 0 },
+      props: {
+        x: g.pos[0],
+        y: g.pos[1],
+        kind: seated ? 'sit' : 'guest',
+        seed: gSeed,
+        shirt: ice(GUEST_SHIRTS[pal.walkShirt(i % 4, Math.floor(i / 4))], g.stage === 'arrive' || g.stage === 'order'),
+        hair: ice(HAIR_COLORS[pal.walkHair(i % 4, Math.floor(i / 4))], g.stage === 'arrive' || g.stage === 'order'),
+        o,
+        flip: seated ? g.face : fl(g.face),
+        step: g.walking ? walkStep((i % 4) + 3) : 0,
+        talk: g.stage === 'order' && Math.sin(poseClock * 9) > -0.2,
+        mood,
+        blink: blinkAt(gSeed),
+        arm: seated ? bite * 2 : 0,
+      },
       deps: g.deps,
     });
   }
 
   // seated regulars (someone is always eating) and, in a busy room, a companion opposite
   const side = sidewalkOf(lay, crew, queue);
-  const seats = [...lay.tables.map((t) => ({ ...t, seat: SEAT, outside: false })), ...lay.patio.slice(0, side.patio).map((t) => ({ ...t, seat: PATIO_SEAT, outside: true }))];
+  const seats = [
+    ...lay.tables.map((t) => ({ ...t, seat: SEAT, outside: false })),
+    ...lay.patio.slice(0, side.patio).map((t) => ({ ...t, seat: PATIO_SEAT, outside: true })),
+  ];
   const regulars = running ? Math.max(1, Math.round(seats.length * fixedFill)) : 1;
   seats.forEach((tb, i) => {
     if (i >= regulars) return;
@@ -168,10 +201,23 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `s${i}`,
       sortY: tb.y,
       role: 'diner',
-      props: { x: tb.x + sx, y: tb.y, kind: 'sit', flip: false, seed: dSeed, act, shirt: GUEST_SHIRTS[pal.shirt(i)], hair: HAIR_COLORS[pal.hair(i)], blink: blinkAt(dSeed), arm: bite * 2, mood: act === 'slice' || bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile' },
+      props: {
+        x: tb.x + sx,
+        y: tb.y,
+        kind: 'sit',
+        flip: false,
+        seed: dSeed,
+        act,
+        shirt: GUEST_SHIRTS[pal.shirt(i)],
+        hair: HAIR_COLORS[pal.hair(i)],
+        blink: blinkAt(dSeed),
+        arm: bite * 2,
+        mood: act === 'slice' || bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile',
+      },
     });
     const cx = tb.x - sx;
-    const crowded = !tb.outside && lay.tables.some((o) => o !== tb && Math.abs(o.y - tb.y) < 32 && (Math.abs(o.x - SEAT - cx) < 18 || Math.abs(o.x + SEAT - cx) < 18));
+    const crowded =
+      !tb.outside && lay.tables.some((o) => o !== tb && Math.abs(o.y - tb.y) < 32 && (Math.abs(o.x - SEAT - cx) < 18 || Math.abs(o.x + SEAT - cx) < 18));
     if (running && !tb.outside && !claimed.has(i) && !crowded && (shop.tables >= 13 ? i % 2 === 0 : fixedFill >= 0.6 && hash32(dSeed + 1) % 3 !== 0)) {
       const cSeed = dSeed + 501;
       const cb = Math.abs(Math.sin(poseClock * 2 + i + 1.7));
@@ -179,7 +225,19 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
         key: `s2${i}`,
         sortY: tb.y - 0.1,
         role: 'companion',
-        props: { x: cx, y: tb.y, kind: 'sit', flip: true, seed: cSeed, act: COMPANION_ACTS[(hash32(cSeed) >>> 3) % 4], shirt: GUEST_SHIRTS[pal.companionShirt(i)], hair: HAIR_COLORS[pal.companionHair(i)], blink: blinkAt(cSeed), arm: cb * 2, mood: cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile' },
+        props: {
+          x: cx,
+          y: tb.y,
+          kind: 'sit',
+          flip: true,
+          seed: cSeed,
+          act: COMPANION_ACTS[(hash32(cSeed) >>> 3) % 4],
+          shirt: GUEST_SHIRTS[pal.companionShirt(i)],
+          hair: HAIR_COLORS[pal.companionHair(i)],
+          blink: blinkAt(cSeed),
+          arm: cb * 2,
+          mood: cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile',
+        },
       });
     }
   });
@@ -195,7 +253,18 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `q${q}`,
       sortY: y,
       role: 'queue',
-      props: { x, y, kind: 'guest', seed: sd, shirt: ice(GUEST_SHIRTS[pal.walkShirt(q, 7)]), hair: ice(HAIR_COLORS[pal.walkHair(q, 7)]), flip: fl(false), blink: blinkAt(sd), mood: 'smile', o: fadeAt(x, y) },
+      props: {
+        x,
+        y,
+        kind: 'guest',
+        seed: sd,
+        shirt: ice(GUEST_SHIRTS[pal.walkShirt(q, 7)]),
+        hair: ice(HAIR_COLORS[pal.walkHair(q, 7)]),
+        flip: fl(false),
+        blink: blinkAt(sd),
+        mood: 'smile',
+        o: fadeAt(x, y),
+      },
     });
   }
   // D416: a varied cast of drivers (skin, hair, build; one moustache at most), one of them checking a phone
@@ -208,7 +277,18 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `w${q}`,
       sortY: y,
       role: 'queue',
-      props: { x, y, kind: 'driver', seed: d.seed, cap: ice(d.cap), act: d.phone ? 'phone' : 'none', flip: fl(false), blink: blinkAt(d.seed), mood: d.phone ? 'focus' : 'smile', o: fadeAt(x, y) },
+      props: {
+        x,
+        y,
+        kind: 'driver',
+        seed: d.seed,
+        cap: ice(d.cap),
+        act: d.phone ? 'phone' : 'none',
+        flip: fl(false),
+        blink: blinkAt(d.seed),
+        mood: d.phone ? 'focus' : 'smile',
+        o: fadeAt(x, y),
+      },
     });
   }
 
@@ -221,7 +301,19 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `c${i}`,
       sortY: y,
       role: 'cook',
-      props: { x, y, kind: 'cook', variant: i, gold: shop.prep >= 100, front: true, act: cheer ? 'cheer' : COOK_ACTS[i % 3], mood: cheer ? 'happy' : running && Math.floor(poseClock / 1.5 + i) % 2 === 0 ? 'focus' : 'smile', seed: sd, blink: blinkAt(sd), arm: running ? Math.abs(Math.sin(pt * 4 + i)) * 3 : 0 },
+      props: {
+        x,
+        y,
+        kind: 'cook',
+        variant: i,
+        gold: shop.prep >= 100,
+        front: true,
+        act: cheer ? 'cheer' : COOK_ACTS[i % 3],
+        mood: cheer ? 'happy' : running && Math.floor(poseClock / 1.5 + i) % 2 === 0 ? 'focus' : 'smile',
+        seed: sd,
+        blink: blinkAt(sd),
+        arm: running ? Math.abs(Math.sin(pt * 4 + i)) * 3 : 0,
+      },
     });
   });
   // bakers in front of the oven bank; the one by the counter holds the peel upright so it clears the counter
@@ -233,7 +325,18 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `b${i}`,
       sortY: b.y,
       role: 'baker',
-      props: { x: b.x, y: b.y, shirt: BAKER_SHIRTS[ci], kind: 'baker', seed: sd, blink: blinkAt(sd), arm: running ? Math.abs(Math.sin(pt * 3 + i)) * 2.5 : 0, peelK: b.nearCounter ? 0.7 : 1, act: b.nearCounter ? 'peel' : BAKER_ACTS[(i + bBase) % 3], dot: BAKER_DOTS[(ci + 1) % 3] },
+      props: {
+        x: b.x,
+        y: b.y,
+        shirt: BAKER_SHIRTS[ci],
+        kind: 'baker',
+        seed: sd,
+        blink: blinkAt(sd),
+        arm: running ? Math.abs(Math.sin(pt * 3 + i)) * 2.5 : 0,
+        peelK: b.nearCounter ? 0.7 : 1,
+        act: b.nearCounter ? 'peel' : BAKER_ACTS[(i + bBase) % 3],
+        dot: BAKER_DOTS[(ci + 1) % 3],
+      },
     });
   });
   lay.staff.forEach((x, i) => {
@@ -242,7 +345,17 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
       key: `st${i}`,
       sortY: 92,
       role: 'staff',
-      props: { x, y: 92, kind: 'staff', front: true, alt: i === 1, cap: STAFF_CAPS[nIdx], seed: sd, blink: blinkAt(sd), arm: running ? Math.abs(Math.sin(pt * 5 + i * 2)) * 2 : 0 },
+      props: {
+        x,
+        y: 92,
+        kind: 'staff',
+        front: true,
+        alt: i === 1,
+        cap: STAFF_CAPS[nIdx],
+        seed: sd,
+        blink: blinkAt(sd),
+        arm: running ? Math.abs(Math.sin(pt * 5 + i * 2)) * 2 : 0,
+      },
     });
   });
   return { cast };

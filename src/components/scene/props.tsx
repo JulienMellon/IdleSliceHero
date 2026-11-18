@@ -20,7 +20,11 @@ function Flame({ mx, my, mw, mh, flicker, hot }: { mx: number; my: number; mw: n
       {/* a pie in the oven: the mouth glows brighter and wider (P3) */}
       {hot && <Ellipse cx={mx} cy={my - mh * 0.3} rx={mw * 0.85} ry={mh * 0.85} fill="#FFB347" opacity={0.28} />}
       <Ellipse cx={mx} cy={my - mh * 0.35} rx={mw * 0.5} ry={mh * 0.5} fill="#FFD166" opacity={hot ? 0.55 : 0.35} />
-      <Path d={`M${mx - mw * 0.38} ${my} L${mx - mw * 0.22} ${my - mh * 0.55 - flicker} L${mx - mw * 0.06} ${my - mh * 0.3} L${mx + mw * 0.06} ${my - mh * 0.78 + flicker} L${mx + mw * 0.2} ${my - mh * 0.32} L${mx + mw * 0.32} ${my - mh * 0.55} L${mx + mw * 0.38} ${my} Z`} fill="#FFE08A" opacity={0.9} />
+      <Path
+        d={`M${mx - mw * 0.38} ${my} L${mx - mw * 0.22} ${my - mh * 0.55 - flicker} L${mx - mw * 0.06} ${my - mh * 0.3} L${mx + mw * 0.06} ${my - mh * 0.78 + flicker} L${mx + mw * 0.2} ${my - mh * 0.32} L${mx + mw * 0.32} ${my - mh * 0.55} L${mx + mw * 0.38} ${my} Z`}
+        fill="#FFE08A"
+        opacity={0.9}
+      />
     </G>
   );
 }
@@ -29,7 +33,23 @@ function Flame({ mx, my, mw, mh, flicker, hot }: { mx: number; my: number; mw: n
  * One oven: a memoised body (re-rendered only on upgrades) plus a per-frame flame. `skin` is the worn oven cosmetic (cosmetics.ts):
  * 1 paints it as the Golden grade with brass trim, 2 as the wood-fired grade with its log pile and a wisp of smoke; 0 is the grade bought.
  */
-export function Oven({ o, grade, lit, flicker, hot = false, tier = 0, skin = 0 }: { o: OvenSpec; grade: number; lit: boolean; flicker: number; hot?: boolean; tier?: 0 | 1 | 2; skin?: OvenSkin }) {
+export function Oven({
+  o,
+  grade,
+  lit,
+  flicker,
+  hot = false,
+  tier = 0,
+  skin = 0,
+}: {
+  o: OvenSpec;
+  grade: number;
+  lit: boolean;
+  flicker: number;
+  hot?: boolean;
+  tier?: 0 | 1 | 2;
+  skin?: OvenSkin;
+}) {
   const paint = ovenPaint(grade, skin);
   const trim = ovenTrim(tier, skin);
   const fb = useMemo(() => flameBox(o, paint), [o, paint]);
@@ -51,7 +71,11 @@ const WoodExtras = memo(function WoodExtras({ o, lit, tier }: { o: OvenSpec; lit
   const box = isBoxOven(o);
   return (
     <G>
-      {box && o.z === 0 && [0, 1, 2].map((i) => <Circle key={`wl${i}`} cx={bx + 4 + (i % 2) * 5} cy={ay - 3 - Math.floor(i / 2) * 5} r={2.8} fill="#9C6B3F" stroke={INK} strokeWidth={0.7} />)}
+      {box &&
+        o.z === 0 &&
+        [0, 1, 2].map((i) => (
+          <Circle key={`wl${i}`} cx={bx + 4 + (i % 2) * 5} cy={ay - 3 - Math.floor(i / 2) * 5} r={2.8} fill="#9C6B3F" stroke={INK} strokeWidth={0.7} />
+        ))}
       {o.chimney && !o.stacked && lit && (
         <G>
           <Circle cx={cx + 1} cy={cap} r={3.2 * k} fill="#E5E1DA" opacity={0.7} />
@@ -78,7 +102,8 @@ const OvenBody = memo(function OvenBody({ o, grade, lit, tier }: { o: OvenSpec; 
     const { legs, bTop, bBot, bh, dw, dh, dy } = boxOvenGeom(o);
     return (
       <G>
-        {legs > 0 && [0.12, 0.88].map((f) => <Rect key={f} x={ax + w * f - 2} y={bBot - 1} width={4} height={legs + 1} fill="#4A4F57" stroke={INK} strokeWidth={0.8} />)}
+        {legs > 0 &&
+          [0.12, 0.88].map((f) => <Rect key={f} x={ax + w * f - 2} y={bBot - 1} width={4} height={legs + 1} fill="#4A4F57" stroke={INK} strokeWidth={0.8} />)}
         <Rect x={ax + 3} y={bTop + 3} width={w} height={bh} rx={5} fill={dark} />
         <Rect x={ax} y={bTop} width={w} height={bh} rx={5} fill={`url(#oven${grade})`} stroke={INK} strokeWidth={1.3} />
         <Rect x={ax + 3} y={bTop + 3} width={w - 6} height={bh * 0.18} rx={3} fill="#fff" opacity={0.22} />
@@ -97,7 +122,9 @@ const OvenBody = memo(function OvenBody({ o, grade, lit, tier }: { o: OvenSpec; 
           <G>
             {/* Lv 50: a second brass band below the door, and studs on the corners */}
             <Rect x={ax + 1} y={dy + dh + 3} width={w - 2} height={2.8} rx={1.2} fill={BRASS} stroke={INK} strokeWidth={0.6} />
-            {[ax + 4, ax + w - 4].map((sx) => <Circle key={sx} cx={sx} cy={bTop + 7} r={1.5} fill={BRASS_DARK} stroke={BRASS} strokeWidth={0.8} />)}
+            {[ax + 4, ax + w - 4].map((sx) => (
+              <Circle key={sx} cx={sx} cy={bTop + 7} r={1.5} fill={BRASS_DARK} stroke={BRASS} strokeWidth={0.8} />
+            ))}
           </G>
         )}
         <Circle cx={ax + w - 6} cy={bTop + bh * 0.22} r={2.2} fill={lit ? '#7FE0A0' : '#9A958E'} stroke={INK} strokeWidth={0.6} />
@@ -112,26 +139,76 @@ const OvenBody = memo(function OvenBody({ o, grade, lit, tier }: { o: OvenSpec; 
     <G>
       {o.chimney && !o.stacked && (
         <G>
-          <Rect x={cx - w * 0.09} y={top - (16 + HOOD_EXTRA[tier]) * k} width={w * 0.18} height={(20 + HOOD_EXTRA[tier]) * k} fill={grade >= 3 ? shade(base, -0.1) : '#8C7B6A'} stroke={INK} strokeWidth={1} />
-          <Rect x={cx - w * 0.12} y={top - (19 + HOOD_EXTRA[tier]) * k} width={w * 0.24} height={4 * k} rx={1} fill={tier >= 1 ? BRASS : grade >= 3 ? shade(base, -0.25) : '#6E5F51'} stroke={INK} strokeWidth={0.8} />
+          <Rect
+            x={cx - w * 0.09}
+            y={top - (16 + HOOD_EXTRA[tier]) * k}
+            width={w * 0.18}
+            height={(20 + HOOD_EXTRA[tier]) * k}
+            fill={grade >= 3 ? shade(base, -0.1) : '#8C7B6A'}
+            stroke={INK}
+            strokeWidth={1}
+          />
+          <Rect
+            x={cx - w * 0.12}
+            y={top - (19 + HOOD_EXTRA[tier]) * k}
+            width={w * 0.24}
+            height={4 * k}
+            rx={1}
+            fill={tier >= 1 ? BRASS : grade >= 3 ? shade(base, -0.25) : '#6E5F51'}
+            stroke={INK}
+            strokeWidth={0.8}
+          />
         </G>
       )}
       <Path d={dome(3)} fill={dark} />
       <Path d={dome(0)} fill={`url(#oven${grade})`} stroke={INK} strokeWidth={1.3} />
       {/* brick courses on brick/wood-fired domes, rivet band on copper/gold */}
-      {grade <= 2
-        ? [0.3, 0.55].map((f) => <Path key={f} d={`M${ax + 2} ${pTop - (pTop - top) * f} Q${cx} ${pTop - (pTop - top) * f - 4} ${bx - 2} ${pTop - (pTop - top) * f}`} stroke={dark} strokeWidth={0.9} fill="none" opacity={0.55} />)
-        : (
-          <G>
-            <Path d={`M${ax + 1} ${shoulder + 4} H${bx - 1}`} stroke={shade(base, -0.3)} strokeWidth={3} />
-            {Array.from({ length: 5 }).map((_, i) => <Circle key={i} cx={ax + w * (0.14 + i * 0.18)} cy={shoulder + 4} r={1.1} fill={shade(base, 0.5)} />)}
-          </G>
-        )}
-      <Path d={`M${ax + w * 0.18} ${shoulder} A${w * 0.34} ${ry * 0.72} 0 0 1 ${cx + w * 0.06} ${top + ry * 0.22}`} stroke="#fff" strokeWidth={2.4} fill="none" opacity={0.4} strokeLinecap="round" />
+      {grade <= 2 ? (
+        [0.3, 0.55].map((f) => (
+          <Path
+            key={f}
+            d={`M${ax + 2} ${pTop - (pTop - top) * f} Q${cx} ${pTop - (pTop - top) * f - 4} ${bx - 2} ${pTop - (pTop - top) * f}`}
+            stroke={dark}
+            strokeWidth={0.9}
+            fill="none"
+            opacity={0.55}
+          />
+        ))
+      ) : (
+        <G>
+          <Path d={`M${ax + 1} ${shoulder + 4} H${bx - 1}`} stroke={shade(base, -0.3)} strokeWidth={3} />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Circle key={i} cx={ax + w * (0.14 + i * 0.18)} cy={shoulder + 4} r={1.1} fill={shade(base, 0.5)} />
+          ))}
+        </G>
+      )}
+      <Path
+        d={`M${ax + w * 0.18} ${shoulder} A${w * 0.34} ${ry * 0.72} 0 0 1 ${cx + w * 0.06} ${top + ry * 0.22}`}
+        stroke="#fff"
+        strokeWidth={2.4}
+        fill="none"
+        opacity={0.4}
+        strokeLinecap="round"
+      />
       {/* arched mouth with a brick ring and keystone */}
-      <Path d={`M${cx - mw / 2 - 3} ${pTop} L${cx - mw / 2 - 3} ${mTop + mw * 0.3} A${mw / 2 + 3} ${mw * 0.34} 0 0 1 ${cx + mw / 2 + 3} ${mTop + mw * 0.3} L${cx + mw / 2 + 3} ${pTop} Z`} fill={shade(base, -0.3)} stroke={INK} strokeWidth={1} />
-      <Path d={`M${cx - mw / 2} ${pTop} L${cx - mw / 2} ${mTop + mw * 0.3} A${mw / 2} ${mw * 0.3} 0 0 1 ${cx + mw / 2} ${mTop + mw * 0.3} L${cx + mw / 2} ${pTop} Z`} fill={fire} />
-      {tier >= 1 && <Path d={`M${cx - mw / 2 - 1.5} ${pTop} L${cx - mw / 2 - 1.5} ${mTop + mw * 0.3} A${mw / 2 + 1.5} ${mw * 0.32} 0 0 1 ${cx + mw / 2 + 1.5} ${mTop + mw * 0.3} L${cx + mw / 2 + 1.5} ${pTop}`} fill="none" stroke={BRASS} strokeWidth={1.8} />}
+      <Path
+        d={`M${cx - mw / 2 - 3} ${pTop} L${cx - mw / 2 - 3} ${mTop + mw * 0.3} A${mw / 2 + 3} ${mw * 0.34} 0 0 1 ${cx + mw / 2 + 3} ${mTop + mw * 0.3} L${cx + mw / 2 + 3} ${pTop} Z`}
+        fill={shade(base, -0.3)}
+        stroke={INK}
+        strokeWidth={1}
+      />
+      <Path
+        d={`M${cx - mw / 2} ${pTop} L${cx - mw / 2} ${mTop + mw * 0.3} A${mw / 2} ${mw * 0.3} 0 0 1 ${cx + mw / 2} ${mTop + mw * 0.3} L${cx + mw / 2} ${pTop} Z`}
+        fill={fire}
+      />
+      {tier >= 1 && (
+        <Path
+          d={`M${cx - mw / 2 - 1.5} ${pTop} L${cx - mw / 2 - 1.5} ${mTop + mw * 0.3} A${mw / 2 + 1.5} ${mw * 0.32} 0 0 1 ${cx + mw / 2 + 1.5} ${mTop + mw * 0.3} L${cx + mw / 2 + 1.5} ${pTop}`}
+          fill="none"
+          stroke={BRASS}
+          strokeWidth={1.8}
+        />
+      )}
       {tier >= 2 && <Path d={`M${ax + 2} ${shoulder + 9} H${bx - 2}`} stroke={BRASS} strokeWidth={2.2} />}
       {grade >= 4 && (
         <G>
@@ -149,16 +226,29 @@ const DomeFront = memo(function DomeFront({ o, gold, wood, tier }: { o: OvenSpec
   const { plinth, pTop, mTop } = domeGeom(o);
   return (
     <G>
-      <Path d={`M${cx - 3.5} ${mTop - 2} L${cx + 3.5} ${mTop - 2} L${cx + 2.5} ${mTop + 5} L${cx - 2.5} ${mTop + 5} Z`} fill={gold ? '#FFF3B0' : '#E9C9A0'} stroke={INK} strokeWidth={0.8} />
+      <Path
+        d={`M${cx - 3.5} ${mTop - 2} L${cx + 3.5} ${mTop - 2} L${cx + 2.5} ${mTop + 5} L${cx - 2.5} ${mTop + 5} Z`}
+        fill={gold ? '#FFF3B0' : '#E9C9A0'}
+        stroke={INK}
+        strokeWidth={0.8}
+      />
       {/* plinth */}
       <Rect x={ax - 3} y={pTop} width={w + 6} height={plinth} rx={1.5} fill="#A24B2C" stroke={INK} strokeWidth={1.1} />
       <Path d={`M${ax - 3} ${pTop + plinth / 2} H${bx + 3}`} stroke="#7A3520" strokeWidth={0.8} />
       {tier >= 1 && <Rect x={ax - 3} y={pTop - 1.2} width={w + 6} height={2.6} rx={1} fill={BRASS} stroke={INK} strokeWidth={0.6} />}
       {Array.from({ length: Math.max(2, Math.floor((w + 6) / 12)) }).map((_, i) => (
-        <Path key={i} d={`M${ax + 3 + i * 12 + (i % 2) * 6} ${pTop} v${plinth / 2} M${ax + 9 + i * 12} ${pTop + plinth / 2} v${plinth / 2}`} stroke="#7A3520" strokeWidth={0.8} />
+        <Path
+          key={i}
+          d={`M${ax + 3 + i * 12 + (i % 2) * 6} ${pTop} v${plinth / 2} M${ax + 9 + i * 12} ${pTop + plinth / 2} v${plinth / 2}`}
+          stroke="#7A3520"
+          strokeWidth={0.8}
+        />
       ))}
       {/* the wood-fired grade's log pile stands beside the plinth, so it is drawn after (over) it */}
-      {wood && [0, 1, 2].map((i) => <Circle key={`w${i}`} cx={bx + 4 + (i % 2) * 5} cy={ay - 3 - Math.floor(i / 2) * 5} r={2.8} fill="#9C6B3F" stroke={INK} strokeWidth={0.7} />)}
+      {wood &&
+        [0, 1, 2].map((i) => (
+          <Circle key={`w${i}`} cx={bx + 4 + (i % 2) * 5} cy={ay - 3 - Math.floor(i / 2) * 5} r={2.8} fill="#9C6B3F" stroke={INK} strokeWidth={0.7} />
+        ))}
     </G>
   );
 });
@@ -192,7 +282,6 @@ export const OvenHood = memo(function OvenHood({ lay, grade, mural, tier = 0 }: 
   );
 });
 
-
 export const TABLE_STYLE = [
   { top: '#FFFFFF', rim: '#E0DAD2', chair: '#C89B6D', chairDark: '#8E5A3C', leg: '#9A958E' }, // plain wood
   { top: '#FFFFFF', rim: '#D9443A', chair: '#D9443A', chairDark: '#B23A30', leg: INK }, // checked tablecloth
@@ -215,7 +304,9 @@ export const Table = memo(function Table({ x, y, tier, part }: { x: number; y: n
       <G key={dx} transform={`translate(${px} ${py}) scale(${k})`}>
         <Ellipse cx={0} cy={0} rx={8} ry={2.2} fill="rgba(59,31,20,0.18)" />
         {/* legs: two front, two back (the back pair under the backrest) */}
-        {[-6, 6].map((lx) => <Rect key={lx} x={lx - 1} y={-4} width={2} height={4} rx={0.6} fill={st.chairDark} stroke={INK} strokeWidth={0.6} />)}
+        {[-6, 6].map((lx) => (
+          <Rect key={lx} x={lx - 1} y={-4} width={2} height={4} rx={0.6} fill={st.chairDark} stroke={INK} strokeWidth={0.6} />
+        ))}
         {/* backrest rising from the seat's rear edge: two posts, top rail and a slat */}
         {(() => {
           const cb = chairBack(out < 0 ? -1 : 1);
@@ -225,7 +316,16 @@ export const Table = memo(function Table({ x, y, tier, part }: { x: number; y: n
             <G>
               <Rect x={x0} y={cb.top} width={1.8} height={h} rx={0.8} fill={st.chairDark} stroke={INK} strokeWidth={0.7} />
               <Rect x={x0 + 4.2} y={cb.top} width={1.8} height={h} rx={0.8} fill={st.chairDark} stroke={INK} strokeWidth={0.7} />
-              <Rect x={cb.rail.x0} y={cb.rail.y0} width={cb.rail.x1 - cb.rail.x0} height={cb.rail.y1 - cb.rail.y0} rx={1.8} fill={st.chair} stroke={INK} strokeWidth={1.1} />
+              <Rect
+                x={cb.rail.x0}
+                y={cb.rail.y0}
+                width={cb.rail.x1 - cb.rail.x0}
+                height={cb.rail.y1 - cb.rail.y0}
+                rx={1.8}
+                fill={st.chair}
+                stroke={INK}
+                strokeWidth={1.1}
+              />
               <Rect x={x0 + 0.3} y={cb.top + 0.6} width={5.4} height={1.3} rx={0.6} fill="#fff" opacity={0.3} />
               <Rect x={x0 + 0.2} y={cb.top + 9} width={5.6} height={2.4} rx={1} fill={st.chair} stroke={INK} strokeWidth={0.8} />
             </G>
@@ -253,8 +353,7 @@ export const Table = memo(function Table({ x, y, tier, part }: { x: number; y: n
         <Ellipse cx={0} cy={-1} rx={6} ry={2} fill={st.leg} />
         <Ellipse cx={0} cy={-15} rx={14} ry={5} fill={st.rim} stroke={INK} strokeWidth={1.1} />
         <Ellipse cx={0} cy={-16} rx={14} ry={5} fill={st.top} stroke={INK} strokeWidth={1.1} />
-        {tier === 1 &&
-          [-8, -3, 2, 7].map((dx, i) => <Rect key={dx} x={dx} y={-19 + (i % 2) * 2} width={3} height={2} fill="#D9443A" opacity={0.85} />)}
+        {tier === 1 && [-8, -3, 2, 7].map((dx, i) => <Rect key={dx} x={dx} y={-19 + (i % 2) * 2} width={3} height={2} fill="#D9443A" opacity={0.85} />)}
         {tier === 3 && <Path d="M-10 -17 Q0 -19 10 -15" stroke="#C9C3BA" strokeWidth={0.8} fill="none" />}
         <Ellipse cx={-3} cy={-16.5} rx={5} ry={1.8} fill="#FFC531" stroke={INK} strokeWidth={0.6} />
         <Circle cx={-4} cy={-16.8} r={0.8} fill="#E8432E" />
@@ -293,10 +392,27 @@ export const WallPlanter = memo(function WallPlanter({ lay }: { lay: Layout }) {
       <Path d="M0 -4 H14 V-1 H0 Z" fill="#5E3A26" stroke={INK} strokeWidth={0.8} />
       <Path d="M2 -16 L16 -16 L14 -4 L4 -4 Z" fill="#C2693E" stroke={INK} strokeWidth={1} />
       {[-30, -5, 20, 45].map((a, i) => (
-        <Ellipse key={a} cx={9 + Math.sin((a * Math.PI) / 180) * 7} cy={-24 - Math.cos((a * Math.PI) / 180) * 5} rx={4} ry={8} fill={i % 2 ? '#3F8A3E' : '#4FA048'} stroke={INK} strokeWidth={0.7} transform={`rotate(${a} ${9 + Math.sin((a * Math.PI) / 180) * 7} ${-24 - Math.cos((a * Math.PI) / 180) * 5})`} />
+        <Ellipse
+          key={a}
+          cx={9 + Math.sin((a * Math.PI) / 180) * 7}
+          cy={-24 - Math.cos((a * Math.PI) / 180) * 5}
+          rx={4}
+          ry={8}
+          fill={i % 2 ? '#3F8A3E' : '#4FA048'}
+          stroke={INK}
+          strokeWidth={0.7}
+          transform={`rotate(${a} ${9 + Math.sin((a * Math.PI) / 180) * 7} ${-24 - Math.cos((a * Math.PI) / 180) * 5})`}
+        />
       ))}
       {[4, 10, 15].map((dx, i) => (
-        <Path key={dx} d={`M${dx} -5 q${i % 2 ? 4 : -3} 10 ${i % 2 ? 1 : 0} ${18 + i * 5}`} stroke="#4FA048" strokeWidth={2.4} fill="none" strokeLinecap="round" />
+        <Path
+          key={dx}
+          d={`M${dx} -5 q${i % 2 ? 4 : -3} 10 ${i % 2 ? 1 : 0} ${18 + i * 5}`}
+          stroke="#4FA048"
+          strokeWidth={2.4}
+          fill="none"
+          strokeLinecap="round"
+        />
       ))}
     </G>
   );
@@ -336,7 +452,9 @@ export const FloorProp = memo(function FloorProp({ id, x, y }: { id: Neighborhoo
       )}
       {id === 'university' && (
         <G>
-          {['#7B2CBF', '#2D9CDB', '#E8432E'].map((c, i) => <Rect key={c} x={-8 + i} y={-4 - i * 4} width={15 - i * 2} height={4} rx={0.6} fill={c} stroke={INK} strokeWidth={0.7} />)}
+          {['#7B2CBF', '#2D9CDB', '#E8432E'].map((c, i) => (
+            <Rect key={c} x={-8 + i} y={-4 - i * 4} width={15 - i * 2} height={4} rx={0.6} fill={c} stroke={INK} strokeWidth={0.7} />
+          ))}
         </G>
       )}
       {id === 'industrial' && (
@@ -360,7 +478,9 @@ export const FloorProp = memo(function FloorProp({ id, x, y }: { id: Neighborhoo
 export const LedgeBar = memo(function LedgeBar({ x0, x1 }: { x0: number; x1: number }) {
   return (
     <G>
-      {[x0 + 3, x1 - 5].map((lx) => <Box key={lx} x0={lx} x1={lx + 2} y0={4} y1={6} h={20} color="#5E3A26" />)}
+      {[x0 + 3, x1 - 5].map((lx) => (
+        <Box key={lx} x0={lx} x1={lx + 2} y0={4} y1={6} h={20} color="#5E3A26" />
+      ))}
       <Box x0={x0} x1={x1} y0={2} y1={9} h={4} z={20} color="#5E3A26" top="#8E5A3C" />
       <Path d={`M${P(x0, 2, 24).join(' ')} L${P(x1, 2, 24).join(' ')}`} stroke="#B07A50" strokeWidth={1} />
     </G>
@@ -395,7 +515,17 @@ export const FloorPlant = memo(function FloorPlant({ x, y, big = false, k: kk = 
       <Path d="M-8 -14 L8 -14 L6 0 L-6 0 Z" fill="#C2693E" stroke={INK} strokeWidth={1} />
       <Rect x={-9} y={-16} width={18} height={4} rx={1.5} fill="#A8552F" stroke={INK} strokeWidth={0.9} />
       {[-40, -15, 10, 35, 60].map((a, i) => (
-        <Ellipse key={a} cx={Math.sin((a * Math.PI) / 180) * 9} cy={-26 - Math.cos((a * Math.PI) / 180) * 8} rx={4.5} ry={10} fill={i % 2 ? '#3F9A48' : '#5DBB5A'} stroke={INK} strokeWidth={0.8} transform={`rotate(${a} ${Math.sin((a * Math.PI) / 180) * 9} ${-26 - Math.cos((a * Math.PI) / 180) * 8})`} />
+        <Ellipse
+          key={a}
+          cx={Math.sin((a * Math.PI) / 180) * 9}
+          cy={-26 - Math.cos((a * Math.PI) / 180) * 8}
+          rx={4.5}
+          ry={10}
+          fill={i % 2 ? '#3F9A48' : '#5DBB5A'}
+          stroke={INK}
+          strokeWidth={0.8}
+          transform={`rotate(${a} ${Math.sin((a * Math.PI) / 180) * 9} ${-26 - Math.cos((a * Math.PI) / 180) * 8})`}
+        />
       ))}
     </G>
   );
@@ -422,29 +552,34 @@ export const Register = memo(function Register({ x, y, z }: { x: number; y: numb
 /** Steel-topped wooden prep bench with legs, an undershelf, tools that unlock with prep level, and dough balls. */
 export const PrepBench = memo(function PrepBench({ lay, prep, dough }: { lay: Layout; prep: number; dough: number }) {
   return (
-      <G>
-        <FloorShadow x={(lay.prep.x0 + lay.prep.x1) / 2} y={64} r={(lay.prep.x1 - lay.prep.x0) * 0.6} />
-        {/* steel-topped wooden prep bench with legs and an undershelf of flour sacks */}
-        {(() => {
-          const { x0, x1 } = lay.prep;
-          const [fa, fb] = [P(x0, 66, 18), P(x1, 66, 25)];
-          const planks = Math.max(2, Math.floor((x1 - x0) / 14));
-          return (
-            <G>
-              {[x0 + 1, x1 - 4].map((lx) => <Box key={`bl${lx}`} x0={lx} x1={lx + 3} y0={81} y1={84} h={18} color="#6B4330" />)}
-              <Box x0={x0 + 2} x1={x1 - 2} y0={68} y1={82} h={2} z={4} color="#8E5A3C" />
-              {[x0 + 1, x1 - 4].map((lx) => <Box key={`fl${lx}`} x0={lx} x1={lx + 3} y0={66} y1={69} h={18} color="#7A4A26" />)}
-              <Box x0={x0} x1={x1} y0={66} y1={84} h={7} z={18} color="#9A6A44" top="#B07A50" />
-              {Array.from({ length: planks - 1 }).map((_, i) => {
-                const x = x0 + ((x1 - x0) * (i + 1)) / planks;
-                const [px, py0] = P(x, 66, 18);
-                const [, py1] = P(x, 66, 25);
-                return <Path key={`pl${i}`} d={`M${px} ${py0} V${py1}`} stroke="#6B4330" strokeWidth={0.8} />;
-              })}
-              <Path d={`M${fa[0]} ${fa[1] - 3.4} H${fb[0]}`} stroke="#7A4A26" strokeWidth={0.6} opacity={0.6} />
-              <Box x0={x0 - 1} x1={x1 + 1} y0={65} y1={85} h={3} z={25} color="#AEB4BB" top="#DDE2E7" />
-              <Path d={`M${P(x0, 65, 28).join(' ')} L${P(x1, 65, 28).join(' ')}`} stroke="#fff" strokeWidth={1.4} opacity={0.8} />
-              {(prep >= 25 || lay.cooks.length === 1) && (() => {
+    <G>
+      <FloorShadow x={(lay.prep.x0 + lay.prep.x1) / 2} y={64} r={(lay.prep.x1 - lay.prep.x0) * 0.6} />
+      {/* steel-topped wooden prep bench with legs and an undershelf of flour sacks */}
+      {(() => {
+        const { x0, x1 } = lay.prep;
+        const [fa, fb] = [P(x0, 66, 18), P(x1, 66, 25)];
+        const planks = Math.max(2, Math.floor((x1 - x0) / 14));
+        return (
+          <G>
+            {[x0 + 1, x1 - 4].map((lx) => (
+              <Box key={`bl${lx}`} x0={lx} x1={lx + 3} y0={81} y1={84} h={18} color="#6B4330" />
+            ))}
+            <Box x0={x0 + 2} x1={x1 - 2} y0={68} y1={82} h={2} z={4} color="#8E5A3C" />
+            {[x0 + 1, x1 - 4].map((lx) => (
+              <Box key={`fl${lx}`} x0={lx} x1={lx + 3} y0={66} y1={69} h={18} color="#7A4A26" />
+            ))}
+            <Box x0={x0} x1={x1} y0={66} y1={84} h={7} z={18} color="#9A6A44" top="#B07A50" />
+            {Array.from({ length: planks - 1 }).map((_, i) => {
+              const x = x0 + ((x1 - x0) * (i + 1)) / planks;
+              const [px, py0] = P(x, 66, 18);
+              const [, py1] = P(x, 66, 25);
+              return <Path key={`pl${i}`} d={`M${px} ${py0} V${py1}`} stroke="#6B4330" strokeWidth={0.8} />;
+            })}
+            <Path d={`M${fa[0]} ${fa[1] - 3.4} H${fb[0]}`} stroke="#7A4A26" strokeWidth={0.6} opacity={0.6} />
+            <Box x0={x0 - 1} x1={x1 + 1} y0={65} y1={85} h={3} z={25} color="#AEB4BB" top="#DDE2E7" />
+            <Path d={`M${P(x0, 65, 28).join(' ')} L${P(x1, 65, 28).join(' ')}`} stroke="#fff" strokeWidth={1.4} opacity={0.8} />
+            {(prep >= 25 || lay.cooks.length === 1) &&
+              (() => {
                 const [rx, ry] = P(x1 - 14, 70, 28);
                 const kk = kAt(70);
                 return (
@@ -455,14 +590,21 @@ export const PrepBench = memo(function PrepBench({ lay, prep, dough }: { lay: La
                   </G>
                 );
               })()}
-              {prep >= 75 && (() => {
+            {prep >= 75 &&
+              (() => {
                 const [rx, ry] = P(x0 + (x1 - x0) * 0.72, 80, 28);
                 const kk = kAt(80) * 1.1;
                 return (
                   <G transform={`translate(${rx} ${ry}) scale(${kk})`}>
                     {/* solid stand mixer: base, column, head, steel bowl */}
                     <Rect x={-7} y={-3.5} width={14} height={3.5} rx={1.2} fill="#D9443A" stroke={INK} strokeWidth={0.8} />
-                    <Path d="M-6 -3.5 L-6 -17 Q-6 -21 -2 -21 L8 -21 Q10 -21 10 -18.5 L10 -15 L-1 -15 L-1 -3.5 Z" fill="#D9443A" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+                    <Path
+                      d="M-6 -3.5 L-6 -17 Q-6 -21 -2 -21 L8 -21 Q10 -21 10 -18.5 L10 -15 L-1 -15 L-1 -3.5 Z"
+                      fill="#D9443A"
+                      stroke={INK}
+                      strokeWidth={0.9}
+                      strokeLinejoin="round"
+                    />
                     <Path d="M-4.6 -5 L-4.6 -17 Q-4.6 -19.4 -2.4 -19.6" stroke="#F26B5E" strokeWidth={1.4} fill="none" strokeLinecap="round" />
                     <Path d="M1 -3.5 Q1 -11 5.5 -11 Q10 -11 10 -3.5 Z" fill="#AEB6BE" stroke="#7C858E" strokeWidth={1} />
                     <Path d="M2.5 -5 Q3 -9 5.5 -9.4" stroke="#fff" strokeWidth={0.9} fill="none" strokeLinecap="round" />
@@ -470,7 +612,8 @@ export const PrepBench = memo(function PrepBench({ lay, prep, dough }: { lay: La
                   </G>
                 );
               })()}
-              {prep >= 50 && (() => {
+            {prep >= 50 &&
+              (() => {
                 const [rx, ry] = P(x0 + 9, 80, 28);
                 const kk = kAt(80);
                 return (
@@ -481,35 +624,35 @@ export const PrepBench = memo(function PrepBench({ lay, prep, dough }: { lay: La
                   </G>
                 );
               })()}
-            </G>
-          );
-        })()}
-        {Array.from({ length: dough }).map((_, i) => {
-          const [px, py] = P(lay.prep.x0 + 10 + (i % 4) * ((lay.prep.x1 - lay.prep.x0 - 20) / 3), 72 + Math.floor(i / 4) * 8, 28);
-          return <Ellipse key={i} cx={px} cy={py} rx={7} ry={2.8} fill="#FBEFD6" stroke={INK} strokeWidth={0.8} />;
-        })}
-      </G>
+          </G>
+        );
+      })()}
+      {Array.from({ length: dough }).map((_, i) => {
+        const [px, py] = P(lay.prep.x0 + 10 + (i % 4) * ((lay.prep.x1 - lay.prep.x0 - 20) / 3), 72 + Math.floor(i / 4) * 8, 28);
+        return <Ellipse key={i} cx={px} cy={py} rx={7} ry={2.8} fill="#FBEFD6" stroke={INK} strokeWidth={0.8} />;
+      })}
+    </G>
   );
 });
 
 /** Service counter with its register and a stack of boxes that grows with throughput. */
 export const Counter = memo(function Counter({ lay, boxes }: { lay: Layout; boxes: number }) {
   return (
-      <G>
-        <FloorShadow x={(lay.counter.x0 + lay.counter.x1) / 2} y={62} r={(lay.counter.x1 - lay.counter.x0) * 0.6} />
-        <Box x0={lay.counter.x0} x1={lay.counter.x1} y0={64} y1={84} h={38} color="#B0653A" top="#E9DCC8" />
-        {/* front panel trim */}
-        {(() => {
-          const [ax, ay] = P(lay.counter.x0 + 3, 64, 6);
-          const [bx, by] = P(lay.counter.x1 - 3, 64, 32);
-          return <Rect x={ax} y={by} width={bx - ax} height={ay - by} rx={3} fill="none" stroke="#8C4A26" strokeWidth={1.2} />;
-        })()}
-        {lay.staff.slice(0, 1).map((x, i) => (
-          <Register key={i} x={x + 12} y={70} z={38} />
-        ))}
-        {Array.from({ length: boxes }).map((_, i) => (
-          <Box key={`bx${i}`} x0={lay.counter.x1 - 24} x1={lay.counter.x1 - 6} y0={68} y1={80} h={5} z={38 + i * 6} color="#F6E7C1" top="#FFF6E5" />
-        ))}
-      </G>
+    <G>
+      <FloorShadow x={(lay.counter.x0 + lay.counter.x1) / 2} y={62} r={(lay.counter.x1 - lay.counter.x0) * 0.6} />
+      <Box x0={lay.counter.x0} x1={lay.counter.x1} y0={64} y1={84} h={38} color="#B0653A" top="#E9DCC8" />
+      {/* front panel trim */}
+      {(() => {
+        const [ax, ay] = P(lay.counter.x0 + 3, 64, 6);
+        const [bx, by] = P(lay.counter.x1 - 3, 64, 32);
+        return <Rect x={ax} y={by} width={bx - ax} height={ay - by} rx={3} fill="none" stroke="#8C4A26" strokeWidth={1.2} />;
+      })()}
+      {lay.staff.slice(0, 1).map((x, i) => (
+        <Register key={i} x={x + 12} y={70} z={38} />
+      ))}
+      {Array.from({ length: boxes }).map((_, i) => (
+        <Box key={`bx${i}`} x0={lay.counter.x1 - 24} x1={lay.counter.x1 - 6} y0={68} y1={80} h={5} z={38 + i * 6} color="#F6E7C1" top="#FFF6E5" />
+      ))}
+    </G>
   );
 });

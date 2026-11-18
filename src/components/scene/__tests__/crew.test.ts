@@ -16,7 +16,14 @@ describe('walking speed (P6)', () => {
         [R.driver.toDoor.pts, R.driver.toDoor.len / LINE.departSeconds],
         [R.driver.away.pts, R.driver.speed],
         [R.driver.back.pts, R.driver.speed],
-        ...R.guests.flatMap((g) => [[g.arrive.pts, g.arriveSpeed], [g.toSeat.pts, WALK], [g.leave.pts, WALK]] as [readonly [number, number][], number][]),
+        ...R.guests.flatMap(
+          (g) =>
+            [
+              [g.arrive.pts, g.arriveSpeed],
+              [g.toSeat.pts, WALK],
+              [g.leave.pts, WALK],
+            ] as [readonly [number, number][], number][],
+        ),
       ];
       for (const [pts, v] of legs) {
         const dt = 1 / 15;
@@ -68,14 +75,33 @@ describe('stepCrew', () => {
     const mid = (S.seated + S.eaten) / 2;
     c = stepCrew(c, { lay, walkins: false, departures: [] }, mid, SCENE_W);
     expect(c.guests.some((g) => g.visit === eater.visit)).toBe(true);
-    expect(guestPoseAt(lay, c.guests.find((g) => g.visit === eater.visit)!, mid, SCENE_W)?.stage).toBe('seated');
+    expect(
+      guestPoseAt(
+        lay,
+        c.guests.find((g) => g.visit === eater.visit)!,
+        mid,
+        SCENE_W,
+      )?.stage,
+    ).toBe('seated');
     const before = c.nextVisit;
     c = stepCrew(c, { lay, walkins: true, departures: [] }, S.done + 30, SCENE_W);
     expect(c.nextVisit).toBeGreaterThan(before);
   });
   test('T58: a driver sale while he is still out joins his trip; nothing throws and seenId advances', () => {
     let c = stepCrew(emptyCrew(), { lay, walkins: false, departures: [{ id: 1, kind: 'driver', left: LINE.departSeconds }] }, 0, SCENE_W);
-    c = stepCrew(c, { lay, walkins: false, departures: [{ id: 1, kind: 'driver', left: LINE.departSeconds }, { id: 2, kind: 'driver', left: LINE.departSeconds }] }, 0.5, SCENE_W);
+    c = stepCrew(
+      c,
+      {
+        lay,
+        walkins: false,
+        departures: [
+          { id: 1, kind: 'driver', left: LINE.departSeconds },
+          { id: 2, kind: 'driver', left: LINE.departSeconds },
+        ],
+      },
+      0.5,
+      SCENE_W,
+    );
     expect(c.seenId).toBe(2);
     expect(c.driver.deps).toEqual([1, 2]);
   });
@@ -132,7 +158,7 @@ describe('walk-ins at every table (v5.11)', () => {
     const solo = layout(0, 1, 1, 1, 1, 2, 0);
     const g = routesFor(solo, SCENE_W).guests;
     expect(g.length).toBe(1);
-    const sit = (LINE.handoffSeconds + g[0].toSeat.len / WALK);
+    const sit = LINE.handoffSeconds + g[0].toSeat.len / WALK;
     // the next walk-in is served LINE.walkinLap after this one and walks the same way: the first has stood up by then
     expect(sit + g[0].eat).toBeLessThan(LINE.walkinLap + sit);
   });
@@ -149,7 +175,8 @@ describe('a walk-in keeps their table when the shop grows (C108, T84)', () => {
     // visit 4 sat at table 1 of 3, but 4 mod 4 is table 0
     const seat = seatFor(small, SCENE_W, 4, false, 0);
     expect(seat).toEqual({ table: 1, patio: false });
-    const oldRule = (lay: ReturnType<typeof layout>, visit: number) => routesFor(lay, SCENE_W, false, 0).guests[visit % routesFor(lay, SCENE_W, false, 0).guests.length].seat;
+    const oldRule = (lay: ReturnType<typeof layout>, visit: number) =>
+      routesFor(lay, SCENE_W, false, 0).guests[visit % routesFor(lay, SCENE_W, false, 0).guests.length].seat;
     expect(oldRule(big, 4)).not.toEqual(oldRule(small, 4));
     expect(place(big, seat)).toEqual(place(small, seat));
     expect(place(big, seat)).toEqual([small.tables[1].x + 19.5, small.tables[1].y]);

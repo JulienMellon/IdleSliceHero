@@ -43,7 +43,28 @@ const EARNED = 2.79e15;
 /** A cleared home city: every shop built and running, the finale seen, an attack open, a night oven, a fleet, diamonds and cosmetics. */
 function cleared(): G.GameState {
   let g = G.newGame(WED);
-  for (const id of HOME) g = { ...g, shops: { ...g.shops, [id]: { ...g.shops[id], built: true, managed: true, heads: G.allHeads(), prep: 30, ovens: 30, counter: 30, tables: 30, drivers: 5, grade: 2, footprint: 1, sold: 1000, perk: true } } };
+  for (const id of HOME)
+    g = {
+      ...g,
+      shops: {
+        ...g.shops,
+        [id]: {
+          ...g.shops[id],
+          built: true,
+          managed: true,
+          heads: G.allHeads(),
+          prep: 30,
+          ovens: 30,
+          counter: 30,
+          tables: 30,
+          drivers: 5,
+          grade: 2,
+          footprint: 1,
+          sold: 1000,
+          perk: true,
+        },
+      },
+    };
   g = {
     ...g,
     cash: 5e9,
@@ -237,7 +258,11 @@ describe('the counter-attack and the mastery stars in the new city', () => {
   it('the weekly attack waits for the new city’s finale, then targets the new city’s shops only', () => {
     let n = after();
     const built = BOSTON.slice(0, 3);
-    for (const id of built) n = { ...n, shops: { ...n.shops, [id]: { ...n.shops[id], built: true, managed: true, heads: G.allHeads(), prep: 10, ovens: 10, counter: 10, tables: 10 } } };
+    for (const id of built)
+      n = {
+        ...n,
+        shops: { ...n.shops, [id]: { ...n.shops[id], built: true, managed: true, heads: G.allHeads(), prep: 10, ovens: 10, counter: 10, tables: 10 } },
+      };
     const week = 7 * 86_400_000;
     // the home finale is still in the Scrapbook, but it is not this city's
     expect(getFeature(tick(tick(n, MON + week), MON + 2 * week), counterattack).open).toBe(false);
@@ -270,7 +295,11 @@ describe('a second franchise', () => {
     try {
       const first = after();
       const stars1 = starsOf(first);
-      const bost = { ...first, totalEarned: first.totalEarned + starDivisor(1) * 400, seenScenes: [...first.seenScenes, G.finaleId(BOSTON[BOSTON.length - 1])] };
+      const bost = {
+        ...first,
+        totalEarned: first.totalEarned + starDivisor(1) * 400,
+        seenScenes: [...first.seenScenes, G.finaleId(BOSTON[BOSTON.length - 1])],
+      };
       const gain = franchiseGain(bost);
       expect(gain.stars).toBe(20);
       const second = franchise(bost, MON + 5000);
@@ -288,7 +317,17 @@ describe('a Boston save keeps its own shops’ slices across a reload', () => {
   const id = BOSTON[3];
   const saved = (city: string): G.GameState => {
     const n = after();
-    const g = { ...n, city, x: { ...n.x, counterattack: { ...getFeature(n, counterattack), armedWeek: 5, seenWeek: 5, target: id, open: true }, recipes: { ...getFeature(n, recipes), owned: [recipeId(id, 1)] }, heads: { week: 3, pick: { shopId: id, station: 'prep' } }, rival: { won: [id], challenge: null, retryAt: { [id]: 77 } } } };
+    const g = {
+      ...n,
+      city,
+      x: {
+        ...n.x,
+        counterattack: { ...getFeature(n, counterattack), armedWeek: 5, seenWeek: 5, target: id, open: true },
+        recipes: { ...getFeature(n, recipes), owned: [recipeId(id, 1)] },
+        heads: { week: 3, pick: { shopId: id, station: 'prep' } },
+        rival: { won: [id], challenge: null, retryAt: { [id]: 77 } },
+      },
+    };
     return G.migrate(JSON.parse(JSON.stringify(g)), MON);
   };
   it('the attack target, recipe cards, Head of the Week and won rivals survive', () => {

@@ -11,7 +11,23 @@ import { INK, ONE_SCREEN, CURB_Y, P, kAt, shade } from './projection';
 // ---------- street + traffic ----------
 export { CARS } from './street-props';
 
-export const Car = memo(function Car({ x, y, color, kind, dir, label = 'MEGASLICE', labelColor = '#FFC531' }: { x: number; y: number; color: string; kind: 'car' | 'van' | 'taxi'; dir: 1 | -1; label?: string; labelColor?: string }) {
+export const Car = memo(function Car({
+  x,
+  y,
+  color,
+  kind,
+  dir,
+  label = 'MEGASLICE',
+  labelColor = '#FFC531',
+}: {
+  x: number;
+  y: number;
+  color: string;
+  kind: 'car' | 'van' | 'taxi';
+  dir: 1 | -1;
+  label?: string;
+  labelColor?: string;
+}) {
   const len = kind === 'van' ? 74 : 56;
   const h = kind === 'van' ? 30 : 22;
   return (
@@ -22,8 +38,18 @@ export const Car = memo(function Car({ x, y, color, kind, dir, label = 'MEGASLIC
       <Rect x={2} y={-10} width={len - 4} height={5} rx={2} fill="#000" opacity={0.15} />
       {kind !== 'van' ? (
         <G>
-          <Path d={`M${len * 0.2} ${-h - 3} L${len * 0.3} ${-h - 15} L${len * 0.72} ${-h - 15} L${len * 0.86} ${-h - 3} Z`} fill={shade(color, 0.1)} stroke={INK} strokeWidth={1.2} />
-          <Path d={`M${len * 0.32} ${-h - 4} L${len * 0.38} ${-h - 12} L${len * 0.5} ${-h - 12} L${len * 0.5} ${-h - 4} Z M${len * 0.55} ${-h - 4} L${len * 0.55} ${-h - 12} L${len * 0.68} ${-h - 12} L${len * 0.78} ${-h - 4} Z`} fill="#BFE3F5" stroke={INK} strokeWidth={0.8} />
+          <Path
+            d={`M${len * 0.2} ${-h - 3} L${len * 0.3} ${-h - 15} L${len * 0.72} ${-h - 15} L${len * 0.86} ${-h - 3} Z`}
+            fill={shade(color, 0.1)}
+            stroke={INK}
+            strokeWidth={1.2}
+          />
+          <Path
+            d={`M${len * 0.32} ${-h - 4} L${len * 0.38} ${-h - 12} L${len * 0.5} ${-h - 12} L${len * 0.5} ${-h - 4} Z M${len * 0.55} ${-h - 4} L${len * 0.55} ${-h - 12} L${len * 0.68} ${-h - 12} L${len * 0.78} ${-h - 4} Z`}
+            fill="#BFE3F5"
+            stroke={INK}
+            strokeWidth={0.8}
+          />
         </G>
       ) : (
         <G>
@@ -52,7 +78,15 @@ export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v, mint = false
   if (v >= 2 && v <= 3) {
     return (
       <G transform={`translate(${x} ${y + 2}) scale(0.62)`}>
-        <Car x={0} y={0} color={mint ? MINT.body : v === 3 ? '#D9443A' : '#E8432E'} kind={v === 3 ? 'van' : 'car'} dir={1} label="ROSA’S" labelColor="#FFF4E0" />
+        <Car
+          x={0}
+          y={0}
+          color={mint ? MINT.body : v === 3 ? '#D9443A' : '#E8432E'}
+          kind={v === 3 ? 'van' : 'car'}
+          dir={1}
+          label="ROSA’S"
+          labelColor="#FFF4E0"
+        />
       </G>
     );
   }
@@ -61,7 +95,9 @@ export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v, mint = false
       <G transform={`translate(${x} ${y - 18})`}>
         <Ellipse cx={0} cy={20} rx={14} ry={3} fill="rgba(59,31,20,0.2)" />
         <Path d="M-18 -4 H18" stroke={INK} strokeWidth={2} />
-        {[-18, 18].map((dx) => <Ellipse key={dx} cx={dx} cy={-6} rx={9} ry={2} fill="#BFE3F5" stroke={INK} strokeWidth={0.8} />)}
+        {[-18, 18].map((dx) => (
+          <Ellipse key={dx} cx={dx} cy={-6} rx={9} ry={2} fill="#BFE3F5" stroke={INK} strokeWidth={0.8} />
+        ))}
         <Rect x={-10} y={-4} width={20} height={10} rx={4} fill={mint ? MINT.body : '#9B51E0'} stroke={INK} strokeWidth={1} />
         <Rect x={-6} y={6} width={12} height={8} rx={1} fill="#F6E7C1" stroke={INK} strokeWidth={0.8} />
       </G>
@@ -78,7 +114,14 @@ export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v, mint = false
         </G>
       ))}
       {bike ? (
-        <Path d="M-12 -7 L-2 -18 L8 -18 L12 -7 M-2 -18 L2 -7 L8 -18 M8 -18 L6 -24 M-4 -20 H2" stroke={mint ? MINT.dark : '#E8432E'} strokeWidth={2.2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+        <Path
+          d="M-12 -7 L-2 -18 L8 -18 L12 -7 M-2 -18 L2 -7 L8 -18 M8 -18 L6 -24 M-4 -20 H2"
+          stroke={mint ? MINT.dark : '#E8432E'}
+          strokeWidth={2.2}
+          fill="none"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
       ) : (
         <G>
           <Path d="M-16 -9 Q-16 -20 -4 -20 L6 -20 L10 -10 L14 -10 L12 -5 L-16 -5 Z" fill={mint ? MINT.body : '#FFC531'} stroke={INK} strokeWidth={1.1} />
@@ -141,10 +184,21 @@ export const PatioTable = memo(function PatioTable({ x, y, part }: { x: number; 
       return (
         <G key={dx} transform={`translate(${px} ${py}) scale(${k})`}>
           <Ellipse cx={0} cy={0} rx={8} ry={2.2} fill="rgba(59,31,20,0.18)" />
-          {[-6, 6].map((lx) => <Rect key={lx} x={lx - 1} y={-4} width={2} height={4} rx={0.6} fill={st.chairDark} stroke={INK} strokeWidth={0.6} />)}
+          {[-6, 6].map((lx) => (
+            <Rect key={lx} x={lx - 1} y={-4} width={2} height={4} rx={0.6} fill={st.chairDark} stroke={INK} strokeWidth={0.6} />
+          ))}
           <Rect x={cb.x0} y={cb.top} width={1.8} height={cb.bottom - cb.top} rx={0.8} fill={st.chairDark} stroke={INK} strokeWidth={0.7} />
           <Rect x={cb.x0 + 4.2} y={cb.top} width={1.8} height={cb.bottom - cb.top} rx={0.8} fill={st.chairDark} stroke={INK} strokeWidth={0.7} />
-          <Rect x={cb.rail.x0} y={cb.rail.y0} width={cb.rail.x1 - cb.rail.x0} height={cb.rail.y1 - cb.rail.y0} rx={1.8} fill={st.chair} stroke={INK} strokeWidth={1.1} />
+          <Rect
+            x={cb.rail.x0}
+            y={cb.rail.y0}
+            width={cb.rail.x1 - cb.rail.x0}
+            height={cb.rail.y1 - cb.rail.y0}
+            rx={1.8}
+            fill={st.chair}
+            stroke={INK}
+            strokeWidth={1.1}
+          />
           <Rect x={out < 0 ? -13 : -7.5} y={-6.4} width={20.5} height={3.8} rx={1.6} fill={st.chair} stroke={INK} strokeWidth={1.2} />
           <Rect x={out < 0 ? -13 : -7.5} y={-3.8} width={20.5} height={1.2} rx={0.6} fill={st.chairDark} />
         </G>
@@ -177,7 +231,16 @@ export const PatioTable = memo(function PatioTable({ x, y, part }: { x: number; 
       {[0, 1, 2, 3].map((n) => {
         const x0 = -UMBRELLA_R + n * (UMBRELLA_R / 2);
         const w = UMBRELLA_R / 2;
-        return <Path key={n} d={`M0 -66 L${x0} -51 Q${x0 + w / 4} -47.5 ${x0 + w / 2} -51 Q${x0 + (3 * w) / 4} -47.5 ${x0 + w} -51 Z`} fill={UMBRELLA[n % 2]} stroke={INK} strokeWidth={1} strokeLinejoin="round" />;
+        return (
+          <Path
+            key={n}
+            d={`M0 -66 L${x0} -51 Q${x0 + w / 4} -47.5 ${x0 + w / 2} -51 Q${x0 + (3 * w) / 4} -47.5 ${x0 + w} -51 Z`}
+            fill={UMBRELLA[n % 2]}
+            stroke={INK}
+            strokeWidth={1}
+            strokeLinejoin="round"
+          />
+        );
       })}
       <Circle cx={0} cy={-67} r={1.7} fill={INK} />
     </G>
@@ -197,14 +260,40 @@ const PatioDeck = memo(function PatioDeck({ x, y, part }: { x: number; y: number
       <G>
         <Polygon points={toPts(d.riser)} fill="#9C7149" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
         <Polygon points={toPts(d.top)} fill={DECK_COLOR} stroke={INK} strokeWidth={1} strokeLinejoin="round" />
-        {d.planks.map(([a, b], i) => <Path key={i} d={`M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${b[0].toFixed(1)} ${b[1].toFixed(1)}`} stroke={DECK_LINE} strokeWidth={0.8} opacity={0.8} />)}
+        {d.planks.map(([a, b], i) => (
+          <Path
+            key={i}
+            d={`M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${b[0].toFixed(1)} ${b[1].toFixed(1)}`}
+            stroke={DECK_LINE}
+            strokeWidth={0.8}
+            opacity={0.8}
+          />
+        ))}
       </G>
     );
   return (
     <G>
-      {d.rail.posts.map(([px, py], i) => <Rect key={`p${i}`} x={px - 1.1} y={py - RAIL_PT} width={2.2} height={RAIL_PT} rx={0.6} fill={RAIL_COLOR} stroke={INK} strokeWidth={0.8} />)}
-      {d.rail.bars.map(([a, b], i) => <Path key={`b${i}`} d={`M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${b[0].toFixed(1)} ${b[1].toFixed(1)}`} stroke={INK} strokeWidth={3.4} strokeLinecap="round" />)}
-      {d.rail.bars.map(([a, b], i) => <Path key={`c${i}`} d={`M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${b[0].toFixed(1)} ${b[1].toFixed(1)}`} stroke={RAIL_COLOR} strokeWidth={1.8} strokeLinecap="round" />)}
+      {d.rail.posts.map(([px, py], i) => (
+        <Rect key={`p${i}`} x={px - 1.1} y={py - RAIL_PT} width={2.2} height={RAIL_PT} rx={0.6} fill={RAIL_COLOR} stroke={INK} strokeWidth={0.8} />
+      ))}
+      {d.rail.bars.map(([a, b], i) => (
+        <Path
+          key={`b${i}`}
+          d={`M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${b[0].toFixed(1)} ${b[1].toFixed(1)}`}
+          stroke={INK}
+          strokeWidth={3.4}
+          strokeLinecap="round"
+        />
+      ))}
+      {d.rail.bars.map(([a, b], i) => (
+        <Path
+          key={`c${i}`}
+          d={`M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${b[0].toFixed(1)} ${b[1].toFixed(1)}`}
+          stroke={RAIL_COLOR}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+        />
+      ))}
     </G>
   );
 });

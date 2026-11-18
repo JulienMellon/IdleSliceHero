@@ -25,7 +25,6 @@ export const FOOTPRINTS: FootprintTier[] = [
   { name: 'Flagship', cost: 2_500_000_000, maxTables: 6, ovenSlots: 6 },
 ];
 
-
 export const VEHICLES: VehicleDef[] = [
   { id: 'bike', name: 'Bike', emoji: '🚲', speed: 0.5, capacity: 2, cost: 0 },
   { id: 'scooter', name: 'Scooter', emoji: '🛵', speed: 0.9, capacity: 3, cost: 1_500 },
@@ -36,7 +35,6 @@ export const VEHICLES: VehicleDef[] = [
 
 /** Downtown has no manager price (Nonna is its GM via the story), so its heads have fixed prices. */
 export const HEAD_COST_DOWNTOWN: Record<HeadKind, number> = { prep: 400, oven: 800, counter: 950 };
-
 
 export const HOME_FIT: CityFit = {
   ovenGrades: OVEN_GRADES,

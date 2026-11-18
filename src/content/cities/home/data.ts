@@ -26,22 +26,97 @@ export const CITY_NAME = 'Port Marinara';
  * and the Flagship 2.5B (all 18 stars on day 11.7). The finale comes 0.006 days past its band: see STORY_TOLERANCES in scripts/pacing-fit.ts.
  */
 export const NEIGHBORHOODS: NeighborhoodDef[] = [
-  { id: 'downtown', name: 'Downtown', orderValue: 3, buildCost: 0, costMult: 1, managerCost: 0, headsCost: HEAD_COST_DOWNTOWN.prep + HEAD_COST_DOWNTOWN.oven + HEAD_COST_DOWNTOWN.counter, x: 22, y: 39, color: '#F2994A', wall: '#F7D9A8' },
-  { id: 'suburbs', name: 'Suburbs', orderValue: 60, buildCost: 270_000, costMult: 18, managerCost: 4_600_000, headsCost: 400_000, x: 30, y: 67, color: '#6FCF97', wall: '#DDF2D2' },
-  { id: 'waterfront', name: 'Waterfront', orderValue: 2_500, buildCost: 600_000_000, costMult: 2_500, managerCost: 8_000_000_000, headsCost: 2_000_000_000, x: 76, y: 67, color: '#56CCF2', wall: '#D6EEF8' },
-  { id: 'university', name: 'University', orderValue: 200_000, buildCost: 8_000_000_000, costMult: 200_000, managerCost: 350_000_000_000, headsCost: 80_000_000_000, x: 18, y: 9, color: '#BB6BD9', wall: '#EADCF5' },
-  { id: 'industrial', name: 'Industrial', orderValue: 6_000_000, buildCost: 1_200_000_000_000, costMult: 6_000_000, managerCost: 60_000_000_000_000, headsCost: 1_200_000_000_000, x: 50, y: 9, color: '#A0826D', wall: '#C4BCAE' },
-  { id: 'uptown', name: 'Uptown', orderValue: 60_000_000, buildCost: 10_000_000_000_000, costMult: 60_000_000, managerCost: 2_600_000_000_000_000, headsCost: 80_000_000_000_000, x: 82, y: 9, color: '#EB5757', wall: '#F6D6D6' },
+  {
+    id: 'downtown',
+    name: 'Downtown',
+    orderValue: 3,
+    buildCost: 0,
+    costMult: 1,
+    managerCost: 0,
+    headsCost: HEAD_COST_DOWNTOWN.prep + HEAD_COST_DOWNTOWN.oven + HEAD_COST_DOWNTOWN.counter,
+    x: 22,
+    y: 39,
+    color: '#F2994A',
+    wall: '#F7D9A8',
+  },
+  {
+    id: 'suburbs',
+    name: 'Suburbs',
+    orderValue: 60,
+    buildCost: 270_000,
+    costMult: 18,
+    managerCost: 4_600_000,
+    headsCost: 400_000,
+    x: 30,
+    y: 67,
+    color: '#6FCF97',
+    wall: '#DDF2D2',
+  },
+  {
+    id: 'waterfront',
+    name: 'Waterfront',
+    orderValue: 2_500,
+    buildCost: 600_000_000,
+    costMult: 2_500,
+    managerCost: 8_000_000_000,
+    headsCost: 2_000_000_000,
+    x: 76,
+    y: 67,
+    color: '#56CCF2',
+    wall: '#D6EEF8',
+  },
+  {
+    id: 'university',
+    name: 'University',
+    orderValue: 200_000,
+    buildCost: 8_000_000_000,
+    costMult: 200_000,
+    managerCost: 350_000_000_000,
+    headsCost: 80_000_000_000,
+    x: 18,
+    y: 9,
+    color: '#BB6BD9',
+    wall: '#EADCF5',
+  },
+  {
+    id: 'industrial',
+    name: 'Industrial',
+    orderValue: 6_000_000,
+    buildCost: 1_200_000_000_000,
+    costMult: 6_000_000,
+    managerCost: 60_000_000_000_000,
+    headsCost: 1_200_000_000_000,
+    x: 50,
+    y: 9,
+    color: '#A0826D',
+    wall: '#C4BCAE',
+  },
+  {
+    id: 'uptown',
+    name: 'Uptown',
+    orderValue: 60_000_000,
+    buildCost: 10_000_000_000_000,
+    costMult: 60_000_000,
+    managerCost: 2_600_000_000_000_000,
+    headsCost: 80_000_000_000_000,
+    x: 82,
+    y: 9,
+    color: '#EB5757',
+    wall: '#F6D6D6',
+  },
 ];
-
 
 /** Waterfront's finale is a purchase: bid on Pier 9 once "For Sale" has played and Waterfront has sold this many pizzas. ~4.4 min of income at that moment in the pacing sim (v5.13 retune). */
 export const PIER9_BID = { cost: 120_000_000, unlockPizzas: 50_000 } as const;
 
 /** The bid as the city schema has it: Waterfront's finale is the Pier 9 purchase, open once "Man Overboard" (waterfront-3b) has played. */
-export const HOME_BID: CityBid = { hood: 'waterfront', name: 'Pier 9', cost: PIER9_BID.cost, unlockPizzas: PIER9_BID.unlockPizzas, afterScene: 'waterfront-3b' };
-
-
+export const HOME_BID: CityBid = {
+  hood: 'waterfront',
+  name: 'Pier 9',
+  cost: PIER9_BID.cost,
+  unlockPizzas: PIER9_BID.unlockPizzas,
+  afterScene: 'waterfront-3b',
+};
 
 export const PERKS: Partial<Record<NeighborhoodId, PerkDef>> = {
   suburbs: { who: 'Coach Dale', text: 'Suburbs walk-ins pay 15% extra', walkInShare: 1.15 },
@@ -50,7 +125,6 @@ export const PERKS: Partial<Record<NeighborhoodId, PerkDef>> = {
   industrial: { who: 'Big Sal', text: 'Industrial earns 25% more while you’re away', offlineMult: 1.25 },
   uptown: { who: 'Genevieve', text: 'Each Uptown decor tier adds 6% to prices (was 4%)', decorBoost: 0.06 },
 };
-
 
 /** The heads are supporting characters (docs/story/CAST.md). */
 export const HEADS: Record<NeighborhoodId, Record<HeadKind, string>> = {

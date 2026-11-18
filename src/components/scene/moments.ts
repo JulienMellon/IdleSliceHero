@@ -73,7 +73,8 @@ export function mileScale(age: number): number {
   return Math.round((k < 0.6 ? 0.5 + (k / 0.6) * 0.62 : 1.12 - ((k - 0.6) / 0.4) * 0.12) * 10) / 10;
 }
 /** Badge opacity: full, then fading over its last 0.3 s (in fifths). */
-export const mileOpacity = (age: number) => (age < 0 || age >= MILE_SECONDS ? 0 : age > MILE_SECONDS - 0.3 ? Math.round(((MILE_SECONDS - age) / 0.3) * 5) / 5 : 1);
+export const mileOpacity = (age: number) =>
+  age < 0 || age >= MILE_SECONDS ? 0 : age > MILE_SECONDS - 0.3 ? Math.round(((MILE_SECONDS - age) / 0.3) * 5) / 5 : 1;
 /** The chip row's opacity `age` seconds after a milestone began (1 outside the dim). */
 export const hudOpacity = (age: number) => (age >= 0 && age < HUD_DIM_SECONDS ? HUD_DIM_OPACITY : 1);
 /** Font size of "Lv 25" / "Lv 100" so the level fits the disc's chord. */
@@ -130,7 +131,8 @@ export function stepMoments(prev: Moments, now: MomentsInput, clock: number): { 
     const pct = (a: number, b: number) => Math.round((b / a - 1) * 100);
     const added = now.speeds.drivers - prev.speeds.drivers;
     if (added > 0) next.flash = { st: 'door', at: clock, text: `+${added} driver${added > 1 ? 's' : ''}` };
-    for (const st of STATIONS_IN_ORDER) if (now.speeds[st] > prev.speeds[st] * (1 + 1e-9)) next.flash = { st, at: clock, text: `+${pct(prev.speeds[st], now.speeds[st])}% faster` };
+    for (const st of STATIONS_IN_ORDER)
+      if (now.speeds[st] > prev.speeds[st] * (1 + 1e-9)) next.flash = { st, at: clock, text: `+${pct(prev.speeds[st], now.speeds[st])}% faster` };
   }
   if (prev.levels) {
     for (const st of BOUNCED) {

@@ -133,8 +133,16 @@ export const CLIPBOARD = {
 } as const;
 
 export const GESTURES: Record<Pose, Gesture> = {
-  down: { arms: 'M34 86 Q25 112 27 134 M86 86 Q95 112 93 134', hands: mittenDown(27, 134) + mittenDown(93, 134), creases: 'M30.6 129.5q2.6 3.5 0.6 8M89.4 129.5q-2.6 3.5 -0.6 8' },
-  thumb: { arms: 'M34 86 Q25 112 27 134 M86 86 L96 108 L96 82', hands: mittenDown(27, 134) + thumbUp(96, 82), creases: 'M30.6 129.5q2.6 3.5 0.6 8' + knuckles(97, 83) },
+  down: {
+    arms: 'M34 86 Q25 112 27 134 M86 86 Q95 112 93 134',
+    hands: mittenDown(27, 134) + mittenDown(93, 134),
+    creases: 'M30.6 129.5q2.6 3.5 0.6 8M89.4 129.5q-2.6 3.5 -0.6 8',
+  },
+  thumb: {
+    arms: 'M34 86 Q25 112 27 134 M86 86 L96 108 L96 82',
+    hands: mittenDown(27, 134) + thumbUp(96, 82),
+    creases: 'M30.6 129.5q2.6 3.5 0.6 8' + knuckles(97, 83),
+  },
   // hands clasped at the belt: two overlapping hands (the seam between them reads), finger lines on each, and two short round-tipped
   // thumbs crossed on top: the back one (drawn under the hands) leans left, the front one leans right across it
   clasp: {
@@ -144,9 +152,17 @@ export const GESTURES: Record<Pose, Gesture> = {
     creases: 'M50.8 118q2 3.8 0 7.6M54.2 117q2 4.4 0 8.6M69.2 118q-2 3.8 0 7.6M65.8 117q-2 4.4 0 8.6',
   },
   point: { arms: 'M34 86 L19 110 L33 132 M86 86 Q91 99 94 91', hands: fist(33, 132) + pointRight(94, 91), creases: knuckles(33, 132) + 'M92 92.5q3 1.6 6 0' },
-  'hands-up': { arms: 'M34 86 L23 86 L21 65 M86 86 L97 86 L99 65', hands: palm(21, 57.5, 1) + palm(99, 57.5, -1), creases: fingerGaps(21, 57.5, 1) + fingerGaps(99, 57.5, -1) },
+  'hands-up': {
+    arms: 'M34 86 L23 86 L21 65 M86 86 L97 86 L99 65',
+    hands: palm(21, 57.5, 1) + palm(99, 57.5, -1),
+    creases: fingerGaps(21, 57.5, 1) + fingerGaps(99, 57.5, -1),
+  },
   // worried: one open hand laid at the collar (fingers toward the neck, thumb up), the other hanging
-  collar: { arms: 'M34 86 Q25 112 27 134 M86 86 L98 101 L72 90', hands: mittenDown(27, 134) + COLLAR_HAND.hand, creases: 'M30.6 129.5q2.6 3.5 0.6 8' + COLLAR_HAND.crease },
+  collar: {
+    arms: 'M34 86 Q25 112 27 134 M86 86 L98 101 L72 90',
+    hands: mittenDown(27, 134) + COLLAR_HAND.hand,
+    creases: 'M30.6 129.5q2.6 3.5 0.6 8' + COLLAR_HAND.crease,
+  },
   // D490: a salute. The inner hand stands flat at the brow (the head is drawn over its tips), the elbow out; the other arm hangs
   salute: {
     arms: 'M34 86 Q25 112 27 134 M86 86 L103 79 L91 47',
@@ -310,7 +326,15 @@ export const OUTFIT = {
   whistle: 'M55 96 h11 a3 3 0 0 1 3 3 v1 a3 3 0 0 1 -3 3 h-11 Z M52 98 h4 v3 h-4 Z',
   shirtV: 'M51 73.5 L60 90 L69 73.5 Z',
   jacketLine: 'M60 90 L60 151',
-  brass: [ell(52, 100, 1.9), ell(68, 100, 1.9), ell(52, 116, 1.9), ell(68, 116, 1.9), ell(52, 132, 1.9), ell(68, 132, 1.9), 'M29 79 l12 -3 l1 4.5 l-12 3 Z M91 79 l-12 -3 l-1 4.5 l12 3 Z'].join(''),
+  brass: [
+    ell(52, 100, 1.9),
+    ell(68, 100, 1.9),
+    ell(52, 116, 1.9),
+    ell(68, 116, 1.9),
+    ell(52, 132, 1.9),
+    ell(68, 132, 1.9),
+    'M29 79 l12 -3 l1 4.5 l-12 3 Z M91 79 l-12 -3 l-1 4.5 l12 3 Z',
+  ].join(''),
   teeStrip: 'M51 73.5 L69 73.5 L67 151 L53 151 Z',
   badgeCord: 'M52 76 L57 108 M68 76 L63 108',
   badge: 'M53 107 h14 v14 h-14 Z',

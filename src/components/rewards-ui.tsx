@@ -2,7 +2,19 @@
 // All text and state come from rewards-model.ts; this file only lays them out. v5.17 (U3): a task row's Swap and the missed day's Save streak are ad buttons (store/ad-button.tsx).
 import { router } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
 import { DAILY_CHESTS, STREAK_SAVE_DIAMONDS } from '../content/rewards';
@@ -15,7 +27,25 @@ import { BoostIcon, CoinIcon, DiamondIcon, GiftIcon, StarIcon } from './icons';
 import { useMotion } from './scene/clock';
 import { AdButton } from './store/ad-button';
 import { canReroll } from './store/ad-model';
-import { BOOST_STRIP, boostFadeShown, boosterLabel, boosterStartLabel, boostOnText, boostRingPct, chestRows, collectionText, countdownText, dailyRows, giftHeader, giftTiles, pointsPct, weeklyChestView, weeklyRows, type GiftIconKind, type TaskState } from './rewards-model';
+import {
+  BOOST_STRIP,
+  boostFadeShown,
+  boosterLabel,
+  boosterStartLabel,
+  boostOnText,
+  boostRingPct,
+  chestRows,
+  collectionText,
+  countdownText,
+  dailyRows,
+  giftHeader,
+  giftTiles,
+  pointsPct,
+  weeklyChestView,
+  weeklyRows,
+  type GiftIconKind,
+  type TaskState,
+} from './rewards-model';
 import { CLOSE_SLOP, DRAWER_HEAD, TAP } from './tap-targets';
 
 const native = Platform.OS !== 'web';
@@ -70,7 +100,15 @@ function GoldOvenIcon({ size }: { size: number }) {
 
 function KindIcon({ kind, size }: { kind: GiftIconKind; size: number }) {
   if (kind === 'oven') return <GoldOvenIcon size={size} />;
-  return kind === 'coin' ? <CoinIcon size={size} /> : kind === 'bolt' ? <BoostIcon size={size} /> : kind === 'gem' ? <DiamondIcon size={size} /> : <StarIcon size={size} />;
+  return kind === 'coin' ? (
+    <CoinIcon size={size} />
+  ) : kind === 'bolt' ? (
+    <BoostIcon size={size} />
+  ) : kind === 'gem' ? (
+    <DiamondIcon size={size} />
+  ) : (
+    <StarIcon size={size} />
+  );
 }
 
 /** The running boost's chip: a ring around the bolt drains as the boost runs out. */
@@ -79,9 +117,26 @@ function BoostRing({ seconds }: { seconds: number }) {
   const c = 2 * Math.PI * r;
   return (
     <View style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={28} height={28} viewBox="0 0 28 28" style={StyleSheet.absoluteFill}>
+      <Svg
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        width={28}
+        height={28}
+        viewBox="0 0 28 28"
+        style={StyleSheet.absoluteFill}
+      >
         <Circle cx={14} cy={14} r={r} stroke="rgba(255,255,255,0.35)" strokeWidth={3} fill="none" />
-        <Circle cx={14} cy={14} r={r} stroke="#fff" strokeWidth={3} fill="none" strokeLinecap="round" strokeDasharray={`${c * boostRingPct(seconds)} ${c}`} transform="rotate(-90 14 14)" />
+        <Circle
+          cx={14}
+          cy={14}
+          r={r}
+          stroke="#fff"
+          strokeWidth={3}
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={`${c * boostRingPct(seconds)} ${c}`}
+          transform="rotate(-90 14 14)"
+        />
       </Svg>
       <BoostIcon size={14} />
     </View>
@@ -89,14 +144,46 @@ function BoostRing({ seconds }: { seconds: number }) {
 }
 
 // Memoised on primitives, with ONE stable handler bound by index, so a 1 Hz refresh re-renders only the rows that changed (U1, M56).
-const TaskItem = memo(function TaskItem({ index, title, starred, progress, pill, pillLabel, pct, state, reward, claimId, canSwap, onClaim, onSwap }: { index: number; title: string; starred: boolean; progress: string; /** U4: the in-progress pill (rewards-model.ts `progressPill`). */ pill: string; pillLabel: string; pct: number; state: TaskState; reward: string; claimId: string; /** The day's swap is still free and this row can use it (store/ad-model.ts `canReroll`). */ canSwap: boolean; onClaim: (i: number) => boolean; onSwap: (i: number) => void }) {
+const TaskItem = memo(function TaskItem({
+  index,
+  title,
+  starred,
+  progress,
+  pill,
+  pillLabel,
+  pct,
+  state,
+  reward,
+  claimId,
+  canSwap,
+  onClaim,
+  onSwap,
+}: {
+  index: number;
+  title: string;
+  starred: boolean;
+  progress: string;
+  /** U4: the in-progress pill (rewards-model.ts `progressPill`). */ pill: string;
+  pillLabel: string;
+  pct: number;
+  state: TaskState;
+  reward: string;
+  claimId: string;
+  /** The day's swap is still free and this row can use it (store/ad-model.ts `canReroll`). */ canSwap: boolean;
+  onClaim: (i: number) => boolean;
+  onSwap: (i: number) => void;
+}) {
   const press = useCallback(() => onClaim(index), [onClaim, index]);
   const swap = useCallback(() => onSwap(index), [onSwap, index]);
   return (
     <View style={[styles.task, state === 'ready' && styles.taskReady, state === 'claimed' && styles.taskClaimed]}>
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={styles.taskTitle} numberOfLines={2}>
-          {starred ? <Text testID="task-star" accessibilityLabel="Head of the Week task" style={styles.taskStar}>{'\u2605 '}</Text> : null}
+          {starred ? (
+            <Text testID="task-star" accessibilityLabel="Head of the Week task" style={styles.taskStar}>
+              {'\u2605 '}
+            </Text>
+          ) : null}
           {title}
         </Text>
         <View style={styles.barTrack}>
@@ -122,7 +209,9 @@ const TaskItem = memo(function TaskItem({ index, title, starred, progress, pill,
                 {pill}
               </Text>
             </View>
-            {canSwap && <AdButton compact placement="reroll_task" label="Swap" plusLabel="Swap" testID={`swap-${claimId.replace('claim-', '')}`} onBenefit={swap} />}
+            {canSwap && (
+              <AdButton compact placement="reroll_task" label="Swap" plusLabel="Swap" testID={`swap-${claimId.replace('claim-', '')}`} onBenefit={swap} />
+            )}
           </>
         )}
       </View>
@@ -130,7 +219,17 @@ const TaskItem = memo(function TaskItem({ index, title, starred, progress, pill,
   );
 });
 
-const ChestButton = memo(function ChestButton({ index, points, state, onPress }: { index: number; points: number; state: 'locked' | 'ready' | 'opened'; onPress: (i: number) => boolean }) {
+const ChestButton = memo(function ChestButton({
+  index,
+  points,
+  state,
+  onPress,
+}: {
+  index: number;
+  points: number;
+  state: 'locked' | 'ready' | 'opened';
+  onPress: (i: number) => boolean;
+}) {
   const press = useCallback(() => onPress(index), [onPress, index]);
   return (
     <Pressable
@@ -140,7 +239,8 @@ const ChestButton = memo(function ChestButton({ index, points, state, onPress }:
       onPress={press}
       disabled={state === 'opened'}
       accessibilityLabel={`${points} point chest, ${state}`}
-      style={[styles.chest, state === 'ready' && styles.chestReady, state === 'opened' && styles.chestOpened, { left: `${points}%`, marginLeft: -22 }]}>
+      style={[styles.chest, state === 'ready' && styles.chestReady, state === 'opened' && styles.chestOpened, { left: `${points}%`, marginLeft: -22 }]}
+    >
       <View style={state === 'locked' ? { opacity: 0.45 } : null}>
         <GiftIcon size={28} />
       </View>
@@ -153,7 +253,25 @@ const ChestButton = memo(function ChestButton({ index, points, state, onPress }:
  * The tasks sheet over the shop (same frame as the upgrades drawer). Memoised: the screen feeds it a 1 Hz `now` and a game
  * snapshot that only moves when the second, the rewards or the stats do (U1), plus stable handlers.
  */
-export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bottomInset, tab, onTab, onClose, actions }: { game: GameState; now: number; clockOff: boolean; bottomInset: number; tab: 'daily' | 'weekly'; onTab: (t: 'daily' | 'weekly') => void; onClose: () => void; actions: TaskActions }) {
+export const TasksDrawer = memo(function TasksDrawer({
+  game,
+  now,
+  clockOff,
+  bottomInset,
+  tab,
+  onTab,
+  onClose,
+  actions,
+}: {
+  game: GameState;
+  now: number;
+  clockOff: boolean;
+  bottomInset: number;
+  tab: 'daily' | 'weekly';
+  onTab: (t: 'daily' | 'weekly') => void;
+  onClose: () => void;
+  actions: TaskActions;
+}) {
   const r = game.rewards;
   const rows = tab === 'daily' ? dailyRows(game) : weeklyRows(game);
   const chests = chestRows(game);
@@ -202,7 +320,14 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
             <Text style={styles.title}>Tasks</Text>
             <Diamonds n={r.diamonds} />
           </View>
-          <Pressable testID="close-tasks" accessibilityRole="button" accessibilityLabel="Close the tasks" onPress={onClose} style={styles.closeBtn} hitSlop={CLOSE_SLOP}>
+          <Pressable
+            testID="close-tasks"
+            accessibilityRole="button"
+            accessibilityLabel="Close the tasks"
+            onPress={onClose}
+            style={styles.closeBtn}
+            hitSlop={CLOSE_SLOP}
+          >
             <Text style={styles.closeText}>Close ▼</Text>
           </Pressable>
         </View>
@@ -216,7 +341,8 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
               scrollEventThrottle={32}
               onLayout={onStripLayout}
               onContentSizeChange={onStripContent}
-              onScroll={onStripScroll}>
+              onScroll={onStripScroll}
+            >
               {running.map((b, i) => (
                 <View key={`run-${i}`} style={[styles.chip, styles.chipRunning]} testID={`boost-running-${i}`}>
                   <BoostRing seconds={Math.max(0, Math.ceil((b.until - now) / 1000))} />
@@ -224,7 +350,14 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
                 </View>
               ))}
               {r.boosters.map((b, i) => (
-                <Pressable key={`inv-${i}`} testID={`booster-${i}`} accessibilityRole="button" onPress={() => actions.startBooster(i)} style={styles.chip} accessibilityLabel={`${boosterStartLabel(b)} booster`}>
+                <Pressable
+                  key={`inv-${i}`}
+                  testID={`booster-${i}`}
+                  accessibilityRole="button"
+                  onPress={() => actions.startBooster(i)}
+                  style={styles.chip}
+                  accessibilityLabel={`${boosterStartLabel(b)} booster`}
+                >
                   <BoostIcon size={18} />
                   <Text style={styles.chipText}>{boosterStartLabel(b)}</Text>
                 </Pressable>
@@ -232,7 +365,17 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
               {!running.length && !r.boosters.length && <Text style={styles.empty}>None yet. Chests and gifts drop them.</Text>}
             </ScrollView>
             {fade && (
-              <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" testID="boost-fade" width={BOOST_STRIP.fade} height="100%" style={styles.boostFade} viewBox="0 0 24 10" preserveAspectRatio="none" pointerEvents="none">
+              <Svg
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                testID="boost-fade"
+                width={BOOST_STRIP.fade}
+                height="100%"
+                style={styles.boostFade}
+                viewBox="0 0 24 10"
+                preserveAspectRatio="none"
+                pointerEvents="none"
+              >
                 <Defs>
                   <LinearGradient id="boost-fade-grad" x1="0" y1="0" x2="1" y2="0">
                     <Stop offset="0" stopColor={C.bg} stopOpacity={0} />
@@ -251,7 +394,14 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
         )}
         <View style={styles.tabs}>
           {(['daily', 'weekly'] as const).map((t) => (
-            <Pressable key={t} testID={`tab-${t}`} accessibilityRole="tab" accessibilityState={{ selected: tab === t }} onPress={() => onTab(t)} style={[styles.tab, tab === t && styles.tabOn]}>
+            <Pressable
+              key={t}
+              testID={`tab-${t}`}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: tab === t }}
+              onPress={() => onTab(t)}
+              style={[styles.tab, tab === t && styles.tabOn]}
+            >
               <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>{t === 'daily' ? 'Daily' : 'Weekly'}</Text>
             </Pressable>
           ))}
@@ -262,13 +412,30 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
         <ScrollView contentContainerStyle={[styles.list, { paddingBottom: bottomInset + 20 }]}>
           {rows.length === 0 && <Text style={styles.empty}>New tasks arrive in a moment.</Text>}
           {rows.map((row) => (
-            <TaskItem key={`${tab}-${row.index}`} index={row.index} title={row.title} starred={row.starred} progress={row.progress} pill={row.pill} pillLabel={row.pillLabel} pct={row.pct} state={row.state} reward={row.reward} claimId={`claim-${tab}-${row.index}`} canSwap={tab === 'daily' && row.state === 'todo' && canReroll(game, row.index)} onClaim={claimTask} onSwap={swapDaily} />
+            <TaskItem
+              key={`${tab}-${row.index}`}
+              index={row.index}
+              title={row.title}
+              starred={row.starred}
+              progress={row.progress}
+              pill={row.pill}
+              pillLabel={row.pillLabel}
+              pct={row.pct}
+              state={row.state}
+              reward={row.reward}
+              claimId={`claim-${tab}-${row.index}`}
+              canSwap={tab === 'daily' && row.state === 'todo' && canReroll(game, row.index)}
+              onClaim={claimTask}
+              onSwap={swapDaily}
+            />
           ))}
           {tab === 'daily' ? (
             <View style={styles.points} testID="points-track">
               <View style={styles.pointsHead}>
                 <Text style={styles.pointsTitle}>Slice Points</Text>
-                <Text style={styles.pointsCount}>{`${Math.min(DAILY_CHESTS[DAILY_CHESTS.length - 1].points, Math.floor(r.points))} / ${DAILY_CHESTS[DAILY_CHESTS.length - 1].points}`}</Text>
+                <Text
+                  style={styles.pointsCount}
+                >{`${Math.min(DAILY_CHESTS[DAILY_CHESTS.length - 1].points, Math.floor(r.points))} / ${DAILY_CHESTS[DAILY_CHESTS.length - 1].points}`}</Text>
               </View>
               <View style={styles.trackWrap}>
                 <View style={styles.track}>
@@ -279,11 +446,22 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
                 ))}
               </View>
               {chests.map((c) => (
-                <Text key={c.index} style={[styles.chestCaption, c.state === 'opened' && { opacity: 0.5 }]}>{`${c.points} pts · ${c.label}${c.state === 'opened' ? ' ✓' : ''}`}</Text>
+                <Text
+                  key={c.index}
+                  style={[styles.chestCaption, c.state === 'opened' && { opacity: 0.5 }]}
+                >{`${c.points} pts · ${c.label}${c.state === 'opened' ? ' ✓' : ''}`}</Text>
               ))}
             </View>
           ) : (
-            <Pressable testID="weekly-chest" accessibilityRole="button" accessibilityLabel={`Weekly chest, ${week.state === 'opened' ? 'opened' : week.state === 'ready' ? 'ready to open' : 'locked'}`} accessibilityState={{ disabled: week.state === 'opened' }} onPress={() => actions.claimWeeklyChest()} disabled={week.state === 'opened'} style={[styles.weekChest, week.state === 'ready' && styles.chestReady, week.state === 'opened' && styles.chestOpened]}>
+            <Pressable
+              testID="weekly-chest"
+              accessibilityRole="button"
+              accessibilityLabel={`Weekly chest, ${week.state === 'opened' ? 'opened' : week.state === 'ready' ? 'ready to open' : 'locked'}`}
+              accessibilityState={{ disabled: week.state === 'opened' }}
+              onPress={() => actions.claimWeeklyChest()}
+              disabled={week.state === 'opened'}
+              style={[styles.weekChest, week.state === 'ready' && styles.chestReady, week.state === 'opened' && styles.chestOpened]}
+            >
               <View style={week.state === 'locked' ? { opacity: 0.45 } : null}>
                 <GiftIcon size={34} />
               </View>
@@ -295,7 +473,16 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
             </Pressable>
           )}
           {/* v5.15: the recipe count; a tap opens the Scrapbook on its Recipes tab */}
-          <Pressable testID="collection" accessibilityRole="link" accessibilityLabel={`${collectionText(game)}. Open the Scrapbook`} style={styles.collectionRow} onPress={() => { onClose(); router.push({ pathname: '/scrapbook', params: { section: 'recipes' } }); }}>
+          <Pressable
+            testID="collection"
+            accessibilityRole="link"
+            accessibilityLabel={`${collectionText(game)}. Open the Scrapbook`}
+            style={styles.collectionRow}
+            onPress={() => {
+              onClose();
+              router.push({ pathname: '/scrapbook', params: { section: 'recipes' } });
+            }}
+          >
             <Text style={styles.collection}>{collectionText(game)}</Text>
             <Text style={styles.collectionGo}>{'\u203A'}</Text>
           </Pressable>
@@ -308,7 +495,29 @@ export const TasksDrawer = memo(function TasksDrawer({ game, now, clockOff, bott
 /** The missed day is saved after an ad, with no diamonds spent. The engine offers the repair once per 30-day cycle (`gift.saveUsed`). */
 const saveByAd = (): void => void useGame.getState().repairGiftByAd();
 
-const Tile = memo(function Tile({ day, label, icon, big, name, what, state, w, pulse, onClaim }: { day: number; label: string; icon: GiftIconKind; big: boolean; /** U4: day 30's name and what it is: the cell is drawn the grid's full width. */ name: string; what: string; state: 'claimed' | 'today' | 'future' | 'missed'; w: number; pulse: Animated.Value; onClaim: () => void }) {
+const Tile = memo(function Tile({
+  day,
+  label,
+  icon,
+  big,
+  name,
+  what,
+  state,
+  w,
+  pulse,
+  onClaim,
+}: {
+  day: number;
+  label: string;
+  icon: GiftIconKind;
+  big: boolean;
+  /** U4: day 30's name and what it is: the cell is drawn the grid's full width. */ name: string;
+  what: string;
+  state: 'claimed' | 'today' | 'future' | 'missed';
+  w: number;
+  pulse: Animated.Value;
+  onClaim: () => void;
+}) {
   const today = state === 'today';
   const done = state === 'claimed';
   const wide = name !== '';
@@ -342,11 +551,29 @@ const Tile = memo(function Tile({ day, label, icon, big, name, what, state, w, p
       {big && !done && <View style={styles.ribbon} pointerEvents="none" />}
     </>
   );
-  const style = [styles.tile, wide ? styles.tileWide : { width: w, height: Math.max(44, w + 8) }, big && styles.tileBig, today && styles.tileToday, state === 'missed' && styles.tileMissed, done && styles.tileDone];
-  if (!today) return <View style={style} testID={`gift-tile-${day}`} accessible={wide} accessibilityLabel={wide ? `Day ${day}: ${name}. ${what}` : undefined}>{body}</View>;
+  const style = [
+    styles.tile,
+    wide ? styles.tileWide : { width: w, height: Math.max(44, w + 8) },
+    big && styles.tileBig,
+    today && styles.tileToday,
+    state === 'missed' && styles.tileMissed,
+    done && styles.tileDone,
+  ];
+  if (!today)
+    return (
+      <View style={style} testID={`gift-tile-${day}`} accessible={wide} accessibilityLabel={wide ? `Day ${day}: ${name}. ${what}` : undefined}>
+        {body}
+      </View>
+    );
   return (
     <Animated.View style={[{ transform: [{ scale: pulse }] }, wide && { alignSelf: 'stretch' }]}>
-      <Pressable testID="gift-claim" onPress={onClaim} style={style} accessibilityRole="button" accessibilityLabel={wide ? `Claim day ${day}: ${name}. ${what}` : `Claim day ${day}`}>
+      <Pressable
+        testID="gift-claim"
+        onPress={onClaim}
+        style={style}
+        accessibilityRole="button"
+        accessibilityLabel={wide ? `Claim day ${day}: ${name}. ${what}` : `Claim day ${day}`}
+      >
         {body}
       </Pressable>
     </Animated.View>
@@ -357,7 +584,17 @@ const Tile = memo(function Tile({ day, label, icon, big, name, what, state, w, p
  * The 30-day gift calendar, a modal over the whole screen (like the offline popup). Memoised: the screen passes a
  * 1 Hz `now` and stable handlers. The pulse only runs while a gift is ready to claim (U5).
  */
-export const GiftCalendar = memo(function GiftCalendar({ game, now, onClaim, onClose }: { game: GameState; now: number; onClaim: (repair: boolean) => boolean; onClose: () => void }) {
+export const GiftCalendar = memo(function GiftCalendar({
+  game,
+  now,
+  onClaim,
+  onClose,
+}: {
+  game: GameState;
+  now: number;
+  onClaim: (repair: boolean) => boolean;
+  onClose: () => void;
+}) {
   const [pop] = useState(() => new Animated.Value(0.7));
   const [pulse] = useState(() => new Animated.Value(1));
   const [gridW, setGridW] = useState(0);
@@ -408,7 +645,22 @@ export const GiftCalendar = memo(function GiftCalendar({ game, now, onClaim, onC
           </View>
         )}
         <View style={[styles.grid, { gap }]} onLayout={(e: LayoutChangeEvent) => setGridW(e.nativeEvent.layout.width)}>
-          {w > 0 && tiles.map((t) => <Tile key={t.day} day={t.day} label={t.label} icon={t.icon} big={t.big} name={t.name} what={t.what} state={t.state} w={w} pulse={pulse} onClaim={claim} />)}
+          {w > 0 &&
+            tiles.map((t) => (
+              <Tile
+                key={t.day}
+                day={t.day}
+                label={t.label}
+                icon={t.icon}
+                big={t.big}
+                name={t.name}
+                what={t.what}
+                state={t.state}
+                w={w}
+                pulse={pulse}
+                onClaim={claim}
+              />
+            ))}
         </View>
         <View style={styles.actions}>
           {st.kind === 'ready' && <BuyButton testID="gift-claim-btn" label={`Claim day ${st.day}`} enabled onPress={claim} />}
@@ -416,7 +668,13 @@ export const GiftCalendar = memo(function GiftCalendar({ game, now, onClaim, onC
             <>
               <Text style={styles.caption}>{`You have ${Math.floor(diamonds)} diamonds`}</Text>
               <BuyButton testID="gift-repair" label={`Repair streak · ${STREAK_SAVE_DIAMONDS} 💎`} enabled={canRepair} onPress={repair} />
-              <AdButton placement="streak_save" label="Save streak · watch an ad" plusLabel="Save streak · Nonna’s Plus" testID="gift-repair-ad" onBenefit={saveByAd} />
+              <AdButton
+                placement="streak_save"
+                label="Save streak · watch an ad"
+                plusLabel="Save streak · Nonna’s Plus"
+                testID="gift-repair-ad"
+                onBenefit={saveByAd}
+              />
             </>
           )}
           <Pressable testID="gift-close" accessibilityRole="button" onPress={onClose} style={styles.closeWide}>
@@ -440,33 +698,107 @@ const shadow = Platform.select({
 
 const styles = StyleSheet.create({
   dim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.4)' },
-  drawer: { position: 'absolute', left: 0, right: 0, bottom: 0, top: '14%', backgroundColor: C.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderTopWidth: 3, borderColor: C.ink },
-  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: DRAWER_HEAD.padX, paddingTop: DRAWER_HEAD.padTop, paddingBottom: DRAWER_HEAD.padBottom },
+  drawer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: '14%',
+    backgroundColor: C.bg,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 3,
+    borderColor: C.ink,
+  },
+  head: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: DRAWER_HEAD.padX,
+    paddingTop: DRAWER_HEAD.padTop,
+    paddingBottom: DRAWER_HEAD.padBottom,
+  },
   title: { fontFamily: F.bold, fontSize: 17, color: C.ink },
   diamonds: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   diamondsText: { fontFamily: F.bold, fontSize: 15, color: DIAMOND_INK },
-  closeBtn: { backgroundColor: '#fff', borderWidth: 2, borderColor: C.ink, borderRadius: 12, paddingHorizontal: 12, height: TAP.controls.closeButton.height, justifyContent: 'center' },
-  closeWide: { backgroundColor: '#fff', borderWidth: 2, borderColor: C.ink, borderRadius: 14, height: 44, justifyContent: 'center', alignItems: 'center', alignSelf: 'stretch' },
+  closeBtn: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: C.ink,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: TAP.controls.closeButton.height,
+    justifyContent: 'center',
+  },
+  closeWide: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: C.ink,
+    borderRadius: 14,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+  },
   closeText: { fontFamily: F.bold, fontSize: 14, color: C.ink },
   boosters: { paddingLeft: DRAWER_HEAD.padX, gap: 4, paddingBottom: 6 },
   boostLabel: { fontFamily: F.bold, fontSize: 13, color: C.inkSoft },
   boostRow: { gap: 8, alignItems: 'center', paddingRight: BOOST_STRIP.rightInset },
   boostFade: { position: 'absolute', right: 0, top: 0, bottom: 0 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 44, paddingHorizontal: 12, borderRadius: 14, backgroundColor: '#FFE7C2', borderWidth: 2, borderColor: C.cheeseDark },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    height: 44,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    backgroundColor: '#FFE7C2',
+    borderWidth: 2,
+    borderColor: C.cheeseDark,
+  },
   chipRunning: { backgroundColor: '#3E9B4F', borderColor: C.basilDark },
   chipTextRunning: { color: '#fff' },
   chipText: { fontFamily: F.bold, fontSize: 14, color: C.ink },
   empty: { fontFamily: F.regular, fontSize: 13, color: C.inkSoft, paddingVertical: 4 },
-  banner: { marginHorizontal: 10, marginBottom: 6, backgroundColor: '#FFE7C2', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10, borderWidth: 1.5, borderColor: C.cheeseDark },
+  banner: {
+    marginHorizontal: 10,
+    marginBottom: 6,
+    backgroundColor: '#FFE7C2',
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1.5,
+    borderColor: C.cheeseDark,
+  },
   bannerText: { fontFamily: F.semi, fontSize: 12.5, color: C.ink, textAlign: 'center' },
   tabs: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10, paddingBottom: 8 },
-  tab: { height: 44, minWidth: 88, paddingHorizontal: 16, borderRadius: 14, backgroundColor: '#fff', borderWidth: 2, borderColor: C.ink, alignItems: 'center', justifyContent: 'center' },
+  tab: {
+    height: 44,
+    minWidth: 88,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: C.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tabOn: { backgroundColor: C.ink },
   tabText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   tabTextOn: { color: '#fff' },
   reset: { flex: 1, textAlign: 'right', fontFamily: F.semi, fontSize: 12.5, color: C.tomatoDark },
   list: { padding: 10, gap: 8 },
-  task: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.panel, borderRadius: 16, padding: 9, borderWidth: 3, borderColor: C.ink, ...shadow },
+  task: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: C.panel,
+    borderRadius: 16,
+    padding: 9,
+    borderWidth: 3,
+    borderColor: C.ink,
+    ...shadow,
+  },
   taskReady: { borderColor: C.basilDark, backgroundColor: '#F1FFF0' },
   taskClaimed: { opacity: 0.6 },
   taskTitle: { fontFamily: F.bold, fontSize: 15, color: C.ink },
@@ -486,24 +818,75 @@ const styles = StyleSheet.create({
   trackWrap: { height: 52, marginHorizontal: 22, justifyContent: 'center' },
   track: { height: 14, borderRadius: 7, backgroundColor: '#F1E4D3', overflow: 'hidden' },
   trackFill: { height: 14, backgroundColor: C.cheese },
-  chest: { position: 'absolute', top: 4, width: 44, height: 44, borderRadius: 14, backgroundColor: '#fff', borderWidth: 2.5, borderColor: C.lockedDark, alignItems: 'center', justifyContent: 'center' },
+  chest: {
+    position: 'absolute',
+    top: 4,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#fff',
+    borderWidth: 2.5,
+    borderColor: C.lockedDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   chestReady: { borderColor: C.basilDark, backgroundColor: '#F1FFF0' },
   chestOpened: { backgroundColor: '#EFE6D8', borderColor: '#CFC3B2' },
   chestTick: { position: 'absolute', right: -2, bottom: -4, fontFamily: F.bold, fontSize: 16, color: C.basilDark },
   chestCaption: { fontFamily: F.semi, fontSize: 12, color: C.inkSoft },
-  weekChest: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, backgroundColor: C.panel, borderRadius: 16, padding: 10, borderWidth: 3, borderColor: C.ink, ...shadow },
+  weekChest: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 56,
+    backgroundColor: C.panel,
+    borderRadius: 16,
+    padding: 10,
+    borderWidth: 3,
+    borderColor: C.ink,
+    ...shadow,
+  },
   taskStar: { color: '#E09B00' },
   collectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: TAP.min, marginTop: 4 },
   collection: { fontFamily: F.semi, fontSize: 12.5, color: C.inkSoft, textAlign: 'center' },
   collectionGo: { fontFamily: F.bold, fontSize: 20, lineHeight: 22, color: C.tomato },
 
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  modal: { backgroundColor: C.bg, borderRadius: 24, borderWidth: 4, borderColor: C.ink, padding: 18, alignItems: 'center', width: '100%', maxWidth: 360, gap: 8 },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(30,14,8,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modal: {
+    backgroundColor: C.bg,
+    borderRadius: 24,
+    borderWidth: 4,
+    borderColor: C.ink,
+    padding: 18,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 360,
+    gap: 8,
+  },
   giftHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   modalHead: { fontFamily: F.bold, fontSize: 22, color: C.ink, flexShrink: 1, textAlign: 'center' },
   caption: { fontFamily: F.semi, fontSize: 13.5, color: C.inkSoft, textAlign: 'center' },
   grid: { alignSelf: 'stretch', flexDirection: 'row', flexWrap: 'wrap', minHeight: 4 },
-  tile: { borderRadius: 10, backgroundColor: '#fff', borderWidth: 2, borderColor: '#D9C4AB', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 1, gap: 1 },
+  tile: {
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#D9C4AB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 1,
+    gap: 1,
+  },
   // U4: day 30, the grid's full width: the cycle's best prize, named
   tileWide: { alignSelf: 'stretch', width: '100%', minHeight: 56, flexDirection: 'row', gap: 10, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 3 },
   wideText: { flex: 1, gap: 1 },
@@ -517,7 +900,16 @@ const styles = StyleSheet.create({
   tileDayBig: { color: C.ink },
   tileLabel: { fontFamily: F.semi, fontSize: 10, color: C.ink, alignSelf: 'stretch', textAlign: 'center' },
   tileTick: { position: 'absolute', right: 2, top: -2, fontFamily: F.bold, fontSize: 13, color: C.basilDark },
-  ribbon: { position: 'absolute', right: -2, top: -2, width: 16, height: 16, backgroundColor: MILESTONE_GOLD, borderTopRightRadius: 9, borderBottomLeftRadius: 12 },
+  ribbon: {
+    position: 'absolute',
+    right: -2,
+    top: -2,
+    width: 16,
+    height: 16,
+    backgroundColor: MILESTONE_GOLD,
+    borderTopRightRadius: 9,
+    borderBottomLeftRadius: 12,
+  },
   prizeLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   prizeText: { fontFamily: F.bold, fontSize: 16, color: C.ink, flexShrink: 1, textAlign: 'center' },
   startOver: { height: 44, alignItems: 'center', justifyContent: 'center' },

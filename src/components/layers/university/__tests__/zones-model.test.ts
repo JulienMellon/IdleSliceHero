@@ -58,7 +58,14 @@ describe('the chip', () => {
 
   it('counts only drivers on the university line', () => {
     const g = uni({ footprint: 0, vehicle: 2 });
-    const line = { ...g.shops.university.line, departures: [{ id: 1, kind: 'driver' as const, n: 2, cash: 5, left: 3 }, { id: 2, kind: 'walkin' as const, n: 1, cash: 2, left: 1 }, { id: 3, kind: 'driver' as const, n: 2, cash: 5, left: 4 }] };
+    const line = {
+      ...g.shops.university.line,
+      departures: [
+        { id: 1, kind: 'driver' as const, n: 2, cash: 5, left: 3 },
+        { id: 2, kind: 'walkin' as const, n: 1, cash: 2, left: 1 },
+        { id: 3, kind: 'driver' as const, n: 2, cash: 5, left: 4 },
+      ],
+    };
     expect(campusOut({ shops: { ...g.shops, university: { ...g.shops.university, line } } })).toBe(2);
   });
 });

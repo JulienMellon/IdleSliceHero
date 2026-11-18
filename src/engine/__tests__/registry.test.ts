@@ -10,7 +10,10 @@ import * as G from '../game';
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const at = (y: number, m: number, d: number, h = 0) => new Date(y, m - 1, d, h).getTime();
 const FRI = at(2026, 11, 13, 18);
-const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
+const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } },
+});
 /** A running Downtown whose stations are tied, so the bundle hint exists. */
 const city = (now: number): G.GameState => {
   let g = G.newGame(now);
@@ -52,7 +55,20 @@ describe('T87 shopLevelKey follows the features', () => {
 });
 
 describe('T88 module order', () => {
-  const features = ['recipes', 'mastery', 'counterattack', 'events', 'heads', 'service', 'layers/suburbs-gameday', 'layers/waterfront-boats', 'layers/rival', 'layers/university-menu', 'layers/industrial-shifts', 'layers/uptown-stars'];
+  const features = [
+    'recipes',
+    'mastery',
+    'counterattack',
+    'events',
+    'heads',
+    'service',
+    'layers/suburbs-gameday',
+    'layers/waterfront-boats',
+    'layers/rival',
+    'layers/university-menu',
+    'layers/industrial-shifts',
+    'layers/uptown-stars',
+  ];
   for (const f of features) {
     it(`importing features/${f} before the game does not throw`, () => {
       jest.isolateModules(() => {
@@ -66,7 +82,21 @@ describe('T88 module order', () => {
       const game = require('../game');
       expect(game.newGame(0).x).toEqual({});
       require('../features');
-      expect(Object.keys(game.newGame(0).x)).toEqual(['mastery', 'counterattack', 'events', 'recipes', 'heads', 'service', 'suburbsGameDay', 'waterfrontBoats', 'rival', 'universityMenu', 'industrialShifts', 'uptownStars', 'franchise']);
+      expect(Object.keys(game.newGame(0).x)).toEqual([
+        'mastery',
+        'counterattack',
+        'events',
+        'recipes',
+        'heads',
+        'service',
+        'suburbsGameDay',
+        'waterfrontBoats',
+        'rival',
+        'universityMenu',
+        'industrialShifts',
+        'uptownStars',
+        'franchise',
+      ]);
       require('../features');
       expect(Object.keys(game.newGame(0).x)).toHaveLength(13);
     });

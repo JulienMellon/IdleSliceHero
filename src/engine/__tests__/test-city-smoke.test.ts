@@ -25,7 +25,9 @@ type Levels = Partial<G.Shop>;
 function game(built: number, id?: string, levels?: Levels): G.GameState {
   const g = G.newGame(NOW, TEST_CITY.id);
   const shops = { ...g.shops };
-  IDS.slice(0, built).forEach((h) => (shops[h] = { ...shops[h], built: true, managed: true, heads: G.allHeads(), prep: 5, ovens: 5, counter: 5, drivers: 4, tables: 4 }));
+  IDS.slice(0, built).forEach(
+    (h) => (shops[h] = { ...shops[h], built: true, managed: true, heads: G.allHeads(), prep: 5, ovens: 5, counter: 5, drivers: 4, tables: 4 }),
+  );
   if (id && levels) shops[id] = { ...shops[id], built: true, ...levels };
   return { ...g, shops, cash: 1e15, active: IDS[0], tutorial: G.TUTORIAL_DONE, seenScenes: [...g.seenScenes, cityOf(g).fit.takeover.sceneId] };
 }
@@ -40,7 +42,7 @@ describe('the test city is a city the engine can play', () => {
     expect(TEST_CITY.bid?.hood).toBe(layerHood(TEST_CITY, 'boats'));
   });
 
-  test('its fit differs from the home city\'s in the numbers the rates read', () => {
+  test("its fit differs from the home city's in the numbers the rates read", () => {
     expect(TEST_FIT.ovenGrades.map((o) => o.mult)).not.toEqual(HOME_FIT.ovenGrades.map((o) => o.mult));
     expect(TEST_FIT.vehicles.map((v) => [v.speed, v.capacity])).not.toEqual(HOME_FIT.vehicles.map((v) => [v.speed, v.capacity]));
     expect(TEST_FIT.footprints.map((f) => f.maxTables)).not.toEqual(HOME_FIT.footprints.map((f) => f.maxTables));
@@ -80,7 +82,11 @@ describe('the test city is a city the engine can play', () => {
     expect(v.ok && g.cash - v.state.cash).toBe(TEST_FIT.vehicles[1].cost);
     // the bid opens in the bid's shop once its scene was seen and the shop sold enough
     const bid = TEST_CITY.bid!;
-    const open = { ...g, shops: { ...g.shops, [bid.hood]: { ...g.shops[bid.hood], built: true, sold: bid.unlockPizzas } }, seenScenes: [...g.seenScenes, bid.afterScene] };
+    const open = {
+      ...g,
+      shops: { ...g.shops, [bid.hood]: { ...g.shops[bid.hood], built: true, sold: bid.unlockPizzas } },
+      seenScenes: [...g.seenScenes, bid.afterScene],
+    };
     expect(G.pier9Available(g)).toBe(false);
     expect(G.pier9Available(open)).toBe(true);
   });
@@ -91,9 +97,9 @@ describe('the test city is a city the engine can play', () => {
 const levelSpeed1 = (base: number) => base * G.milestoneMultiplier(1);
 const HOOD = IDS[1];
 
-describe('the rates read the city\'s fit (R1)', () => {
+describe("the rates read the city's fit (R1)", () => {
   // card R1: when the rate helpers take the city, the two direct calls below (`G.tablesShown`, `G.patioTables`) take it too
-  it.failing('the oven rate of a shop at grade 1 is the level speed times the test fit\'s grade-1 mult', () => {
+  it.failing("the oven rate of a shop at grade 1 is the level speed times the test fit's grade-1 mult", () => {
     const g = game(2, HOOD, { ovens: 1, grade: 1 });
     const rates = G.lineRates(HOOD, g.shops[HOOD], g.vehicle, 1, undefined, TEST_CITY);
     expect(rates.oven).toBeCloseTo(levelSpeed1(STATIONS.ovens.speed) * TEST_FIT.ovenGrades[1].mult, 9);
@@ -102,10 +108,12 @@ describe('the rates read the city\'s fit (R1)', () => {
   it.failing('the oven grade sets what the shop earns when the oven is the slowest station', () => {
     const g = game(2, HOOD, { ovens: 1, grade: 2, prep: 60, counter: 60, drivers: 60, tables: 60 });
     const expected = TEST_CITY.neighbourhoods[1].orderValue * levelSpeed1(STATIONS.ovens.speed) * TEST_FIT.ovenGrades[2].mult;
-    withFeatures([], () => expect(G.shopEarnings({ ...g, shops: { ...g.shops, [HOOD]: { ...g.shops[HOOD], managed: false } } }, HOOD)).toBeCloseTo(expected, 6));
+    withFeatures([], () =>
+      expect(G.shopEarnings({ ...g, shops: { ...g.shops, [HOOD]: { ...g.shops[HOOD], managed: false } } }, HOOD)).toBeCloseTo(expected, 6),
+    );
   });
 
-  it.failing('the fleet\'s speed and capacity decide the delivery rate and so the earnings', () => {
+  it.failing("the fleet's speed and capacity decide the delivery rate and so the earnings", () => {
     // kitchen far faster than demand: the pies sold are walk-ins plus what the fleet carries
     const g = game(2, HOOD, { prep: 90, ovens: 90, counter: 90, drivers: 1, tables: 1, managed: false });
     const v = TEST_FIT.vehicles[g.vehicle];
@@ -115,12 +123,12 @@ describe('the rates read the city\'s fit (R1)', () => {
     withFeatures([], () => expect(G.shopEarnings(g, HOOD)).toBeCloseTo(expected, 6));
   });
 
-  it.failing('the footprint\'s maxTables decides the tables drawn', () => {
+  it.failing("the footprint's maxTables decides the tables drawn", () => {
     const shop = game(2, HOOD, { footprint: 0, tables: 30 }).shops[HOOD];
     expect(G.tablesShown(shop)).toBe(Math.min(TEST_FIT.footprints[0].maxTables, 1 + Math.floor((shop.tables - 1) / 6)));
   });
 
-  it.failing('the footprint\'s maxTables decides the tables out on the sidewalk', () => {
+  it.failing("the footprint's maxTables decides the tables out on the sidewalk", () => {
     const shop = game(2, HOOD, { footprint: 0, tables: 13 }).shops[HOOD];
     expect(G.patioTables(shop)).toBe(1 + Math.floor((shop.tables - 1) / 6) - TEST_FIT.footprints[0].maxTables);
   });

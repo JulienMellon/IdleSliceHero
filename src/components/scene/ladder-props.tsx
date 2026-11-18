@@ -40,7 +40,11 @@ const sack = (cx: number, base: number, w: number, h: number) =>
 const Sacks = () => (
   <G>
     <Shadow rx={12} />
-    {[[-5.4, 0], [5.4, 0], [0, -10.5]].map(([cx, b], i) => (
+    {[
+      [-5.4, 0],
+      [5.4, 0],
+      [0, -10.5],
+    ].map(([cx, b], i) => (
       <G key={i}>
         <Path d={sack(cx, b, 10.6, 11)} fill="#F3ECE2" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
         <Path d={`M${cx - 3.6} ${b - 11} q3.6 -2.4 7.2 0`} fill="none" stroke={INK} strokeWidth={0.8} />
@@ -111,10 +115,7 @@ const Belt = ({ n, discs, tone }: { n: number; discs: boolean; tone: string }) =
       ))}
       <Circle cx={-n + 2.5} cy={-3.5} r={2.2} fill={STEEL} stroke={INK} strokeWidth={0.7} />
       <Circle cx={n - 2.5} cy={-3.5} r={2.2} fill={STEEL} stroke={INK} strokeWidth={0.7} />
-      {discs &&
-        [0.3, 0.62].map((f) => (
-          <Ellipse key={f} cx={-n + 2 * n * f} cy={-6.8} rx={4} ry={1.6} fill="#FBEFD6" stroke={INK} strokeWidth={0.7} />
-        ))}
+      {discs && [0.3, 0.62].map((f) => <Ellipse key={f} cx={-n + 2 * n * f} cy={-6.8} rx={4} ry={1.6} fill="#FBEFD6" stroke={INK} strokeWidth={0.7} />)}
       {!discs &&
         [0.3, 0.64].map((f) => (
           <G key={f}>
@@ -137,7 +138,13 @@ const BoxStack = () => (
       return (
         <G key={i}>
           <Path d={`M${-8 + dx} ${b} H${8 + dx} V${b - 4.6} H${-8 + dx} Z`} fill={CREAM} stroke={INK} strokeWidth={1} strokeLinejoin="round" />
-          <Path d={`M${-8 + dx} ${b - 4.6} L${-6 + dx} ${b - 6.2} L${10 + dx} ${b - 6.2} L${8 + dx} ${b - 4.6} Z`} fill="#FFF6E5" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+          <Path
+            d={`M${-8 + dx} ${b - 4.6} L${-6 + dx} ${b - 6.2} L${10 + dx} ${b - 6.2} L${8 + dx} ${b - 4.6} Z`}
+            fill="#FFF6E5"
+            stroke={INK}
+            strokeWidth={0.9}
+            strokeLinejoin="round"
+          />
           <Path d={`M${-8 + dx} ${b - 2.4} H${8 + dx}`} stroke={TOMATO} strokeWidth={1.1} />
           <Rect x={-8 + dx + 1} y={b - 4} width={3} height={1} rx={0.5} fill="#fff" opacity={0.6} />
         </G>
@@ -252,7 +259,13 @@ const Hooks = () => (
       return (
         <G key={c}>
           <Circle cx={x} cy={-22} r={1} fill={STEEL} stroke={INK} strokeWidth={0.5} />
-          <Path d={`M${x - 3.4} -22 L${x + 3.4} -22 L${x + 6} -18.6 L${x + 5.2} -2.6 L${x - 5.2} -2.6 L${x - 6} -18.6 Z`} fill={c} stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+          <Path
+            d={`M${x - 3.4} -22 L${x + 3.4} -22 L${x + 6} -18.6 L${x + 5.2} -2.6 L${x - 5.2} -2.6 L${x - 6} -18.6 Z`}
+            fill={c}
+            stroke={INK}
+            strokeWidth={0.9}
+            strokeLinejoin="round"
+          />
           <Path d={`M${x - 3.4} -22 L${x} -17.6 L${x + 3.4} -22`} fill="#FFF4E0" stroke={INK} strokeWidth={0.6} strokeLinejoin="round" />
           <Path d={`M${x} -17.6 V-2.8`} stroke={INK} strokeWidth={0.6} opacity={0.6} />
           <Rect x={x - 4.4} y={-20} width={1.4} height={9} rx={0.7} fill="#fff" opacity={0.28} />
@@ -269,7 +282,13 @@ const Photo = () => (
     <Rect x={-4.8} y={-16.8} width={9.6} height={10.6} fill="#BFE3F5" />
     <Circle cx={0} cy={-12.6} r={2.4} fill="#F2C9A0" stroke={INK} strokeWidth={0.5} />
     <Path d="M-4.2 -6.2 Q-4 -9.6 0 -9.6 Q4 -9.6 4.2 -6.2 Z" fill={TOMATO} stroke={INK} strokeWidth={0.5} />
-    <Path d="M0 -19.6 l1 2 l2.2 .3 l-1.6 1.5 l.4 2.2 l-2 -1.1 l-2 1.1 l.4 -2.2 l-1.6 -1.5 l2.2 -.3 Z" fill="#FFD54A" stroke={INK} strokeWidth={0.5} strokeLinejoin="round" />
+    <Path
+      d="M0 -19.6 l1 2 l2.2 .3 l-1.6 1.5 l.4 2.2 l-2 -1.1 l-2 1.1 l.4 -2.2 l-1.6 -1.5 l2.2 -.3 Z"
+      fill="#FFD54A"
+      stroke={INK}
+      strokeWidth={0.5}
+      strokeLinejoin="round"
+    />
     <Rect x={-4.8} y={-4.8} width={9.6} height={3} rx={0.6} fill="#2B2F35" />
     <Path d="M-3.4 -3.9 h6.8 M-2.4 -2.8 h4.8" stroke="#FFD76A" strokeWidth={0.5} />
   </G>
@@ -302,7 +321,9 @@ const Wrap = ({ v }: { v: number }) => {
     return (
       <G transform="translate(0 -18)">
         <Rect x={-10} y={-2} width={20} height={3} fill="#FFF4E0" stroke={INK} strokeWidth={0.8} />
-        {[-8, -2, 4].map((x) => <Rect key={x} x={x} y={-2} width={3} height={1.5} fill={TOMATO} />)}
+        {[-8, -2, 4].map((x) => (
+          <Rect key={x} x={x} y={-2} width={3} height={1.5} fill={TOMATO} />
+        ))}
       </G>
     );
   }
@@ -318,7 +339,9 @@ const Wrap = ({ v }: { v: number }) => {
   return (
     <G>
       <Rect x={-16} y={-14} width={26} height={3.4} fill="#FFF4E0" stroke={INK} strokeWidth={0.8} />
-      {[-14, -8, -2, 4].map((x) => <Rect key={x} x={x} y={-14} width={3} height={1.7} fill={TOMATO} />)}
+      {[-14, -8, -2, 4].map((x) => (
+        <Rect key={x} x={x} y={-14} width={3} height={1.7} fill={TOMATO} />
+      ))}
     </G>
   );
 };

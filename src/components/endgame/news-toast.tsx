@@ -74,21 +74,51 @@ export const NewsToast = memo(function NewsToast() {
   const scaleX = pop.interpolate({ inputRange: [0, 1], outputRange: [recipe ? 0.04 : 0.9, 1] });
   const scaleY = pop.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] });
   return (
-    <Animated.View ref={root} testID={`news-${head.kind}`} pointerEvents="none" style={[styles.toast, recipe && styles.toastRecipe, star && styles.toastStar, { opacity: recipe ? 1 : pop, transform: [{ scaleX }, { scaleY }] }]}>
-      <View style={[styles.icon, recipe && styles.iconRecipe]}>{star ? <StarIcon size={26} /> : recipe ? <RecipeArt hood={recipe.hood} n={recipe.n} owned size={52} /> : null}</View>
+    <Animated.View
+      ref={root}
+      testID={`news-${head.kind}`}
+      pointerEvents="none"
+      style={[styles.toast, recipe && styles.toastRecipe, star && styles.toastStar, { opacity: recipe ? 1 : pop, transform: [{ scaleX }, { scaleY }] }]}
+    >
+      <View style={[styles.icon, recipe && styles.iconRecipe]}>
+        {star ? <StarIcon size={26} /> : recipe ? <RecipeArt hood={recipe.hood} n={recipe.n} owned size={52} /> : null}
+      </View>
       <View style={styles.text}>
-        {recipe ? <Text testID="news-recipe-header" style={styles.header}>{RECIPE_HEADER}</Text> : head.sub ? <Text style={styles.who} numberOfLines={1}>{head.sub}</Text> : null}
+        {recipe ? (
+          <Text testID="news-recipe-header" style={styles.header}>
+            {RECIPE_HEADER}
+          </Text>
+        ) : head.sub ? (
+          <Text style={styles.who} numberOfLines={1}>
+            {head.sub}
+          </Text>
+        ) : null}
         <Text style={styles.line} numberOfLines={recipe ? 1 : 2} maxFontSizeMultiplier={1.15}>
           {head.text}
         </Text>
-        {recipe ? <Text style={styles.sub} numberOfLines={2}>{head.sub}</Text> : null}
+        {recipe ? (
+          <Text style={styles.sub} numberOfLines={2}>
+            {head.sub}
+          </Text>
+        ) : null}
       </View>
     </Animated.View>
   );
 });
 
 const styles = StyleSheet.create({
-  toast: { height: STACK.toast, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10, borderRadius: 16, borderWidth: 2, borderColor: '#5A2E1A', backgroundColor: '#FFF4DC', boxShadow: '0 3px 0 rgba(59,31,20,0.25)' } as object,
+  toast: {
+    height: STACK.toast,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#5A2E1A',
+    backgroundColor: '#FFF4DC',
+    boxShadow: '0 3px 0 rgba(59,31,20,0.25)',
+  } as object,
   toastRecipe: { height: STACK.recipe, backgroundColor: '#FFF9EC', borderColor: C.cheeseDark },
   iconRecipe: { width: 52 },
   header: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, letterSpacing: 1, color: C.tomato },

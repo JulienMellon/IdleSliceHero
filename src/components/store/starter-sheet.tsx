@@ -63,7 +63,8 @@ function StarterCard({ onClose }: { onClose: () => void }) {
             accessibilityState={{ disabled: !row.enabled || busy !== null, busy: busy !== null }}
             disabled={!row.enabled || busy !== null}
             onPress={press}
-            style={[styles.btn, row.enabled ? styles.btnBuy : styles.btnOff, busy !== null && { opacity: 0.6 }]}>
+            style={[styles.btn, row.enabled ? styles.btnBuy : styles.btnOff, busy !== null && { opacity: 0.6 }]}
+          >
             <Text style={[styles.btnText, !row.enabled && { color: '#665A4F' }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.15}>
               {busy !== null ? 'One moment…' : row.label}
             </Text>
@@ -79,8 +80,29 @@ function StarterCard({ onClose }: { onClose: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  modal: { backgroundColor: C.bg, borderRadius: 24, borderWidth: 4, borderColor: C.ink, padding: 18, paddingTop: 22, alignItems: 'stretch', width: '100%', maxWidth: 360, gap: 8 },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(30,14,8,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modal: {
+    backgroundColor: C.bg,
+    borderRadius: 24,
+    borderWidth: 4,
+    borderColor: C.ink,
+    padding: 18,
+    paddingTop: 22,
+    alignItems: 'stretch',
+    width: '100%',
+    maxWidth: 360,
+    gap: 8,
+  },
   gift: { alignSelf: 'center' },
   head: { fontFamily: F.bold, fontSize: 24, color: C.ink, textAlign: 'center' },
   body: { fontFamily: F.semi, fontSize: 15, color: C.inkSoft, textAlign: 'center' },

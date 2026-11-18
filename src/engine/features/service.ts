@@ -41,7 +41,10 @@ export interface ServiceStateSlice {
 }
 
 const zeroShop = (): ShopService => ({ below: 0, cold: false, tip: false, slam: { prep: 0, oven: 0, counter: 0 } });
-const fresh = (): ServiceStateSlice => ({ at: 0, shops: Object.fromEntries(HOME_HOOD_IDS.map((id) => [id, zeroShop()])) as Record<NeighborhoodId, ShopService> });
+const fresh = (): ServiceStateSlice => ({
+  at: 0,
+  shops: Object.fromEntries(HOME_HOOD_IDS.map((id) => [id, zeroShop()])) as Record<NeighborhoodId, ShopService>,
+});
 const read = (g: GameState): ServiceStateSlice => (g.x?.[KEY] as ServiceStateSlice | undefined) ?? fresh();
 
 // ---------- the numbers ----------
@@ -188,7 +191,14 @@ export function reportView(g: GameState, id: NeighborhoodId, now: number): Repor
   const counting = service < SERVICE.coldBelow - 1e-9 && !st.cold && stampFresh(read(g), now);
   return {
     state,
-    perMin: { prep: flow.prep * 60, ovens: flow.ovens * 60, counter: flow.counter * 60, kitchen: flow.kitchen * 60, wanted: flow.wanted * 60, sold: flow.sold * 60 },
+    perMin: {
+      prep: flow.prep * 60,
+      ovens: flow.ovens * 60,
+      counter: flow.counter * 60,
+      kitchen: flow.kitchen * 60,
+      wanted: flow.wanted * 60,
+      sold: flow.sold * 60,
+    },
     loads,
     lamps,
     floorRatio,
@@ -226,12 +236,20 @@ export function slammedAsks(g: GameState, id: NeighborhoodId): BarkAsk[] {
   if (shop.managed || !reportActive(g, id)) return [];
   const slam = read(g).shops[id]?.slam;
   if (!slam) return [];
-  return (['prep', 'oven', 'counter'] as const).filter((st) => shop.heads[st] && slam[st] >= SERVICE.slammedBarkSeconds).map((station) => ({ trigger: 'slammed' as const, station }));
+  return (['prep', 'oven', 'counter'] as const)
+    .filter((st) => shop.heads[st] && slam[st] >= SERVICE.slammedBarkSeconds)
+    .map((station) => ({ trigger: 'slammed' as const, station }));
 }
 
 // ---------- the feature ----------
 
-const sameShop = (a: ShopService, b: ShopService) => a.below === b.below && a.cold === b.cold && a.tip === b.tip && a.slam.prep === b.slam.prep && a.slam.oven === b.slam.oven && a.slam.counter === b.slam.counter;
+const sameShop = (a: ShopService, b: ShopService) =>
+  a.below === b.below &&
+  a.cold === b.cold &&
+  a.tip === b.tip &&
+  a.slam.prep === b.slam.prep &&
+  a.slam.oven === b.slam.oven &&
+  a.slam.counter === b.slam.counter;
 
 export const service: Feature<ServiceStateSlice> = {
   key: KEY,
@@ -256,7 +274,12 @@ export const service: Feature<ServiceStateSlice> = {
           const below = under ? Math.min(SERVICE.coldSeconds, cur.below + dt) : 0;
           const cold = cur.cold ? under : below >= SERVICE.coldSeconds;
           const slam = (v: number, rate: number) => (loadOf(f, rate) >= SERVICE.slammedAt - 1e-9 ? Math.min(SERVICE.slammedBarkSeconds, v + dt) : 0);
-          next = { below, cold, tip, slam: { prep: slam(cur.slam.prep, f.prep), oven: slam(cur.slam.oven, f.ovens), counter: slam(cur.slam.counter, f.counter) } };
+          next = {
+            below,
+            cold,
+            tip,
+            slam: { prep: slam(cur.slam.prep, f.prep), oven: slam(cur.slam.oven, f.ovens), counter: slam(cur.slam.counter, f.counter) },
+          };
           if (next.tip && !cur.tip) emitPulse({ type: 'service-up', shopId: id });
           if (next.cold && !cur.cold) emitPulse({ type: 'service-down', shopId: id });
         }

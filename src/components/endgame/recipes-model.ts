@@ -42,7 +42,14 @@ export function recipeGroups(g: GameState): RecipeGroup[] {
       color: n.color,
       owned: s.owned,
       total: s.total,
-      tiles: s.cards.map((c) => ({ id: c.id, n: c.n, owned: c.owned, name: c.owned ? recipeName(c.id) : '???', line: c.owned ? recipeLine(c.id) : '', drop: RECIPE_DROPS[c.n - 1] })),
+      tiles: s.cards.map((c) => ({
+        id: c.id,
+        n: c.n,
+        owned: c.owned,
+        name: c.owned ? recipeName(c.id) : '???',
+        line: c.owned ? recipeLine(c.id) : '',
+        drop: RECIPE_DROPS[c.n - 1],
+      })),
     };
   });
 }

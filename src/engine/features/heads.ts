@@ -71,7 +71,8 @@ export const isStarredTask = (g: GameState, kind: string): boolean => starredKin
 export const rankOf = (level: number): 0 | 1 | 2 | 3 => HEAD_BARKS.rankLevels.filter((l) => level >= l).length as 0 | 1 | 2 | 3;
 
 /** A station's level in a shop (ovens are `ovens`). */
-export const stationLevel = (shop: Pick<Shop, 'prep' | 'ovens' | 'counter'>, st: BarkStation): number => (st === 'prep' ? shop.prep : st === 'oven' ? shop.ovens : shop.counter);
+export const stationLevel = (shop: Pick<Shop, 'prep' | 'ovens' | 'counter'>, st: BarkStation): number =>
+  st === 'prep' ? shop.prep : st === 'oven' ? shop.ovens : shop.counter;
 
 /** Roll on a new week; while the week has no pick (nobody hired yet) look again. `g` itself when nothing changed. */
 function roll(g: GameState, now: number): GameState {
@@ -93,7 +94,10 @@ export const heads: Feature<HeadsState> = {
     const r = raw as Record<string, unknown>;
     const week = typeof r.week === 'number' && Number.isFinite(r.week) ? Math.max(0, Math.floor(r.week)) : 0;
     const p = r.pick && typeof r.pick === 'object' ? (r.pick as Record<string, unknown>) : null;
-    const pick = p && savedHoods(city).includes(p.shopId as NeighborhoodId) && STATIONS.includes(p.station as BarkStation) ? { shopId: p.shopId as NeighborhoodId, station: p.station as BarkStation } : null;
+    const pick =
+      p && savedHoods(city).includes(p.shopId as NeighborhoodId) && STATIONS.includes(p.station as BarkStation)
+        ? { shopId: p.shopId as NeighborhoodId, station: p.station as BarkStation }
+        : null;
     return { week, pick };
   },
   tick: (g, _dt, now) => roll(g, now),

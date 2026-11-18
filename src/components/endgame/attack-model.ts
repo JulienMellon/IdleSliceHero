@@ -93,7 +93,8 @@ export interface ChallengeView {
  * D442's pace rule (order-model `behindPace`, one rule in one place) on the challenge's own clock: the seconds left are scaled to
  * the order window the rule is written for, so "behind" means the same share of the time used in both.
  */
-export const behindChallenge = (done: number, target: number, secondsLeft: number): boolean => behindPace(done, target, (secondsLeft * ORDER.windowSeconds) / COUNTERATTACK.challengeSeconds);
+export const behindChallenge = (done: number, target: number, secondsLeft: number): boolean =>
+  behindPace(done, target, (secondsLeft * ORDER.windowSeconds) / COUNTERATTACK.challengeSeconds);
 
 /** The running challenge's chip; null unless a challenge is running. */
 export function challengeView(v: AttackView): ChallengeView | null {
@@ -131,7 +132,15 @@ export function resultView(v: AttackView): ResultView | null {
   if (!n || n.kind === 'expired') return null;
   const key = `attack.${n.shopId}.${n.kind === 'won' ? 'win' : 'lose'}`;
   const cast = castOf(n.shopId);
-  return { kind: n.kind, shopId: n.shopId, who: cast.who, speaker: speakerOf(key) ?? cast.name, line: copyOr(key) ?? '', cash: n.kind === 'won' ? n.cash : 0, diamonds: n.kind === 'won' ? n.diamonds : 0 };
+  return {
+    kind: n.kind,
+    shopId: n.shopId,
+    who: cast.who,
+    speaker: speakerOf(key) ?? cast.name,
+    line: copyOr(key) ?? '',
+    cash: n.kind === 'won' ? n.cash : 0,
+    diamonds: n.kind === 'won' ? n.diamonds : 0,
+  };
 }
 
 /** The "+15 diamonds" line of a win. */
@@ -150,7 +159,8 @@ export function attackLite(g: GameState): { face: AttackFace; shopId: Neighborho
   const none = { face: 'none' as AttackFace, shopId: null, left: 0, step: 0 };
   if (!st) return none;
   const c = st.challenge;
-  if (id && c) return { face: 'running', shopId: id, left: Math.max(0, Math.ceil(c.left)), step: barStep(c.target > 0 ? challengeProgress(g, id, c) / c.target : 0) };
+  if (id && c)
+    return { face: 'running', shopId: id, left: Math.max(0, Math.ceil(c.left)), step: barStep(c.target > 0 ? challengeProgress(g, id, c) / c.target : 0) };
   if (st.news?.kind === 'won' || st.news?.kind === 'lost') return { face: st.news.kind, shopId: st.news.shopId, left: 0, step: 0 };
   return id ? { face: 'banner', shopId: id, left: 0, step: 0 } : none;
 }

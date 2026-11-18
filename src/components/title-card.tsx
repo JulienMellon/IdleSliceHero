@@ -35,9 +35,7 @@ export function TitleCard({ onDone }: { onDone: () => void }) {
     Animated.timing(fade, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => onDone());
   };
   useEffect(() => {
-    const anims = [
-      Animated.spring(drop, { toValue: 1, friction: 5, tension: 70, useNativeDriver: true }),
-    ];
+    const anims = [Animated.spring(drop, { toValue: 1, friction: 5, tension: 70, useNativeDriver: true })];
     anims.forEach((a) => a.start());
     let timer: ReturnType<typeof setTimeout> | null = null;
     let alive = true;
@@ -61,8 +59,18 @@ export function TitleCard({ onDone }: { onDone: () => void }) {
     if (!loops) return;
     const anims = [
       Animated.loop(Animated.timing(spin, { toValue: 1, duration: 9000, easing: Easing.linear, useNativeDriver: true })),
-      Animated.loop(Animated.sequence([Animated.timing(wave, { toValue: 1, duration: 260, useNativeDriver: true }), Animated.timing(wave, { toValue: 0, duration: 260, useNativeDriver: true })])),
-      Animated.loop(Animated.sequence([Animated.timing(blink, { toValue: 0.45, duration: 600, useNativeDriver: true }), Animated.timing(blink, { toValue: 1, duration: 600, useNativeDriver: true })])),
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(wave, { toValue: 1, duration: 260, useNativeDriver: true }),
+          Animated.timing(wave, { toValue: 0, duration: 260, useNativeDriver: true }),
+        ]),
+      ),
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(blink, { toValue: 0.45, duration: 600, useNativeDriver: true }),
+          Animated.timing(blink, { toValue: 1, duration: 600, useNativeDriver: true }),
+        ]),
+      ),
     ];
     anims.forEach((a) => a.start());
     return () => anims.forEach((a) => a.stop());
@@ -72,7 +80,13 @@ export function TitleCard({ onDone }: { onDone: () => void }) {
   const tilt = wave.interpolate({ inputRange: [0, 1], outputRange: ['-8deg', '8deg'] });
   return (
     <Animated.View style={[StyleSheet.absoluteFill, styles.root, { opacity: fade }]} onLayout={() => SplashScreen.hideAsync().catch(() => {})}>
-      <Pressable testID="title-card" accessibilityRole="button" accessibilityLabel="Slice Empire. Tap to start" style={StyleSheet.absoluteFill} onPress={finish}>
+      <Pressable
+        testID="title-card"
+        accessibilityRole="button"
+        accessibilityLabel="Slice Empire. Tap to start"
+        style={StyleSheet.absoluteFill}
+        onPress={finish}
+      >
         <View style={styles.center}>
           {/* D369: the rays turn about the logo's own centre and fade out towards the edges */}
           <View style={styles.logoBox}>
@@ -114,19 +128,56 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 120 },
   logoBox: { width: 250, height: 250, alignItems: 'center', justifyContent: 'center' },
   rays: { position: 'absolute', width: 640, height: 640, left: -195, top: -195 },
-  name: { marginTop: 14, fontFamily: F.bold, fontSize: 44, color: '#FFFFFF', letterSpacing: 1, textShadowColor: '#3B1F14', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 },
+  name: {
+    marginTop: 14,
+    fontFamily: F.bold,
+    fontSize: 44,
+    color: '#FFFFFF',
+    letterSpacing: 1,
+    textShadowColor: '#3B1F14',
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 0,
+  },
   sub: { marginTop: 4, fontFamily: F.semi, fontSize: 15, color: '#FFE7C2' },
   nonnaRow: { position: 'absolute', left: 0, right: 0, bottom: 78, alignItems: 'center' },
-  nonnaRing: { width: 104, height: 104, borderRadius: 52, backgroundColor: '#FFF4DC', borderWidth: 2, borderColor: '#5A2E1A', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  nonnaRing: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    backgroundColor: '#FFF4DC',
+    borderWidth: 2,
+    borderColor: '#5A2E1A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
   skip: { position: 'absolute', bottom: 34, alignSelf: 'center', fontFamily: F.bold, fontSize: 15, color: '#FFF4DC' },
   skyline: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   soonCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 90, paddingHorizontal: 24, gap: 14 },
   soonLogo: { width: 130, height: 130, alignItems: 'center', justifyContent: 'center' },
   soonText: { alignItems: 'center', gap: 6 },
-  soonTitle: { fontFamily: F.bold, fontSize: 30, lineHeight: 34, color: '#FFFFFF', textAlign: 'center', textWrap: 'balance', textShadowColor: '#3B1F14', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 } as object,
+  soonTitle: {
+    fontFamily: F.bold,
+    fontSize: 30,
+    lineHeight: 34,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textWrap: 'balance',
+    textShadowColor: '#3B1F14',
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 0,
+  } as object,
   soonLine: { fontFamily: F.semi, fontSize: 15, lineHeight: 20, color: '#FFE7C2', textAlign: 'center', maxWidth: 260, textWrap: 'balance' } as object,
   soonNonna: { alignItems: 'center', gap: 8 },
-  soonBubble: { backgroundColor: '#FFF4DC', borderWidth: 2, borderColor: '#5A2E1A', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8, maxWidth: 320 },
+  soonBubble: {
+    backgroundColor: '#FFF4DC',
+    borderWidth: 2,
+    borderColor: '#5A2E1A',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    maxWidth: 320,
+  },
   soonSign: { fontFamily: F.semi, fontSize: 14, lineHeight: 18, color: '#3B1F14', textAlign: 'center', textWrap: 'balance' } as object,
   soonClose: { position: 'absolute', bottom: 34, alignSelf: 'center', minHeight: 44, justifyContent: 'center' },
   skip2: { fontFamily: F.bold, fontSize: 15, color: '#FFF4DC' },
@@ -150,7 +201,12 @@ export function SoonCard({ onDone }: { onDone: () => void }) {
     if (!loops) return;
     const anims = [
       Animated.loop(Animated.timing(spin, { toValue: 1, duration: 9000, easing: Easing.linear, useNativeDriver: true })),
-      Animated.loop(Animated.sequence([Animated.timing(blink, { toValue: 0.45, duration: 600, useNativeDriver: true }), Animated.timing(blink, { toValue: 1, duration: 600, useNativeDriver: true })])),
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(blink, { toValue: 0.45, duration: 600, useNativeDriver: true }),
+          Animated.timing(blink, { toValue: 1, duration: 600, useNativeDriver: true }),
+        ]),
+      ),
     ];
     anims.forEach((a) => a.start());
     return () => anims.forEach((a) => a.stop());
@@ -159,10 +215,28 @@ export function SoonCard({ onDone }: { onDone: () => void }) {
   const y = rise.interpolate({ inputRange: [0, 1], outputRange: [40, 0] });
   return (
     <View style={[StyleSheet.absoluteFill, styles.root]}>
-      <Pressable testID="soon-card" accessibilityRole="button" accessibilityLabel={`${copy('soon.boston.title')}. Tap to close`} style={StyleSheet.absoluteFill} onPress={onDone}>
+      <Pressable
+        testID="soon-card"
+        accessibilityRole="button"
+        accessibilityLabel={`${copy('soon.boston.title')}. Tap to close`}
+        style={StyleSheet.absoluteFill}
+        onPress={onDone}
+      >
         {/* D460: Boston's skyline stands along the foot of the card (a tower, the dome of a statehouse, brownstones), behind everything */}
-        <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.skyline} width="100%" height={110} viewBox="0 0 200 60" preserveAspectRatio="xMidYMax slice" pointerEvents="none">
-          <Path d="M0 60 V44 H10 V36 H18 V44 H26 V30 H30 V20 L33 12 L36 20 V30 H40 V40 H52 V26 H62 V40 H70 V34 H78 V44 H88 V38 Q96 22 104 38 V44 H112 V32 H120 V14 H126 V32 H134 V42 H146 V28 H158 V42 H168 V36 H178 V44 H188 V38 H200 V60 Z" fill="#8F2216" />
+        <Svg
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={styles.skyline}
+          width="100%"
+          height={110}
+          viewBox="0 0 200 60"
+          preserveAspectRatio="xMidYMax slice"
+          pointerEvents="none"
+        >
+          <Path
+            d="M0 60 V44 H10 V36 H18 V44 H26 V30 H30 V20 L33 12 L36 20 V30 H40 V40 H52 V26 H62 V40 H70 V34 H78 V44 H88 V38 Q96 22 104 38 V44 H112 V32 H120 V14 H126 V32 H134 V42 H146 V28 H158 V42 H168 V36 H178 V44 H188 V38 H200 V60 Z"
+            fill="#8F2216"
+          />
           <Path d="M0 60 V50 H14 V46 H24 V50 H44 V44 H58 V50 H90 V46 H106 V50 H140 V45 H152 V50 H176 V47 H200 V60 Z" fill="#6F1A10" />
         </Svg>
         <View style={styles.soonCenter}>

@@ -1,7 +1,20 @@
 /// <reference types="jest" />
 // T76 (C101, D392): the hands. The staging boxes match the art, every pair of poses stood side by side keeps its hands and arms
 // 8 pt clear of each other and of the other figure, nothing is cropped by the panel edge, and the gestures are distinct.
-import { CHEST_BOX, FACE_BOX, HANDS_BOX, LIMBS_BOX, LIMB_CLEARANCE, POSE, boxInPanel, panelSize, poseFor, stageLayout, type Box, type Pose } from '../cutscene/staging';
+import {
+  CHEST_BOX,
+  FACE_BOX,
+  HANDS_BOX,
+  LIMBS_BOX,
+  LIMB_CLEARANCE,
+  POSE,
+  boxInPanel,
+  panelSize,
+  poseFor,
+  stageLayout,
+  type Box,
+  type Pose,
+} from '../cutscene/staging';
 import { ARM_INK, FACES, GESTURES, HAIR_FRONT, BUN_KNOT, STRANDS } from '../cutscene/figure-art';
 import { HOME_SCENES } from '../../content/scenes/home';
 import { boundsOf, pathPoints } from './path-bounds';
@@ -30,8 +43,18 @@ describe('T76 hands and limbs', () => {
       const hands = boundsOf(GESTURES[pose].hands + (GESTURES[pose].back ?? '') + (GESTURES[pose].prop ?? ''), 0.8); // ink outline (a held prop and its palms included)
       const arms = boundsOf(GESTURES[pose].arms, ARM_INK / 2);
       const limbs = { x0: Math.min(hands.x0, arms.x0), y0: Math.min(hands.y0, arms.y0), x1: Math.max(hands.x1, arms.x1), y1: Math.max(hands.y1, arms.y1) };
-      for (const [name, box, art] of [['hands', HANDS_BOX[pose], hands], ['limbs', LIMBS_BOX[pose], limbs]] as const) {
-        expect([pose, name, box.x0 <= art.x0 + 0.05, box.x1 >= art.x1 - 0.05, box.y0 <= art.y0 + 0.05, box.y1 >= art.y1 - 0.05]).toEqual([pose, name, true, true, true, true]);
+      for (const [name, box, art] of [
+        ['hands', HANDS_BOX[pose], hands],
+        ['limbs', LIMBS_BOX[pose], limbs],
+      ] as const) {
+        expect([pose, name, box.x0 <= art.x0 + 0.05, box.x1 >= art.x1 - 0.05, box.y0 <= art.y0 + 0.05, box.y1 >= art.y1 - 0.05]).toEqual([
+          pose,
+          name,
+          true,
+          true,
+          true,
+          true,
+        ]);
         expect(art.x0 - box.x0).toBeLessThan(0.2);
         expect(box.x1 - art.x1).toBeLessThan(0.2);
         expect(art.y0 - box.y0).toBeLessThan(0.2);
@@ -51,7 +74,10 @@ describe('T76 hands and limbs', () => {
             const body = (p: typeof pa) => [at(p, FACE_BOX), at(p, CHEST_BOX)];
             const label = `${ww}px ${a}+${b} speaker ${speaker}`;
             // hands and arms of each figure against the other's hands/arms, head and chest
-            for (const [p, q, pose, other] of [[pa, pb, a, b], [pb, pa, b, a]] as const) {
+            for (const [p, q, pose, other] of [
+              [pa, pb, a, b],
+              [pb, pa, b, a],
+            ] as const) {
               const limbs = at(p, LIMBS_BOX[pose]);
               const hands = at(p, HANDS_BOX[pose]);
               for (const target of [at(q, LIMBS_BOX[other]), ...body(q)]) {
@@ -173,7 +199,13 @@ describe('D393 / D395 face art', () => {
       };
       // sample along each stroke; a 0.7 unit halo (half the stroke) must stay inside too
       for (const [x, y] of pathPoints(STRANDS[style])) {
-        for (const [dx, dy] of [[0, 0], [0.7, 0], [-0.7, 0], [0, 0.7], [0, -0.7]]) {
+        for (const [dx, dy] of [
+          [0, 0],
+          [0.7, 0],
+          [-0.7, 0],
+          [0, 0.7],
+          [0, -0.7],
+        ]) {
           expect([style, x, y, dx, dy, inside(x + dx, y + dy)]).toEqual([style, x, y, dx, dy, true]);
         }
       }

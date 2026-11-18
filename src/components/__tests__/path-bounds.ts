@@ -83,7 +83,8 @@ export function pathPoints(d: string): [number, number][] {
       pts.push([x, y]);
     } else if (up === 'Q') {
       const [cx, cy, ex, ey] = [a[0] + ox, a[1] + oy, a[2] + ox, a[3] + oy];
-      for (let t = 0; t <= 1.0001; t += 0.05) pts.push([(1 - t) ** 2 * x + 2 * (1 - t) * t * cx + t * t * ex, (1 - t) ** 2 * y + 2 * (1 - t) * t * cy + t * t * ey]);
+      for (let t = 0; t <= 1.0001; t += 0.05)
+        pts.push([(1 - t) ** 2 * x + 2 * (1 - t) * t * cx + t * t * ex, (1 - t) ** 2 * y + 2 * (1 - t) * t * cy + t * t * ey]);
       x = ex;
       y = ey;
     } else if (up === 'A') {

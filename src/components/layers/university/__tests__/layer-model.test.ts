@@ -28,7 +28,12 @@ describe('the shared sizes', () => {
     expect(twoRows('3 drones up')).toEqual(['3 drones', 'up']);
     expect(twoRows('Rating 4\u2605')).toEqual(['Rating', '4\u2605']);
     expect(twoRows('Day')).toEqual(['Day', '']);
-    for (const rows of [['Night \u00D72', '6:40'], ['Swing', '0:01'], ['Rating', '4\u2605'], ['3 out on', 'campus']]) {
+    for (const rows of [
+      ['Night \u00D72', '6:40'],
+      ['Swing', '0:01'],
+      ['Rating', '4\u2605'],
+      ['3 out on', 'campus'],
+    ]) {
       const w = chipPillWidth(rows);
       expect(w).toBeLessThanOrEqual(CHIP_MAX);
       expect(w).toBeGreaterThanOrEqual(CHIP_H);

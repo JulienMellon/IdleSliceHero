@@ -73,7 +73,11 @@ export function offlineGiftView(summary: GiftSummary, nightOven: number): GiftVi
     fullLine: full ? `The night oven was full — it holds ${clock(cap)}` : null,
     upgradeLine: full && bigger !== undefined ? `Upgrade it to hold ${clock(bigger)}` : null,
     total: summary.byShop.length ? summary.byShop.reduce((t, b) => t + shownValue(b.earned), 0) : summary.earned,
-    rows: summary.byShop.map((b) => ({ name: b.name, earned: b.earned, note: b.managed ? '' : b.headsOnly ? ' (half speed)' : ' (orders already in the oven)' })),
+    rows: summary.byShop.map((b) => ({
+      name: b.name,
+      earned: b.earned,
+      note: b.managed ? '' : b.headsOnly ? ' (half speed)' : ' (orders already in the oven)',
+    })),
     news: offlineNews(summary.byShop, summary.idle),
   };
 }

@@ -106,7 +106,8 @@ export function familiesFor(seatsFree: number, lay: Pick<Layout, 'door' | 'frame
 }
 
 /** Seconds between families when `families` come: spread over the rush (the wave lasts as long as the rush does), never closer than `waveGap`. */
-export const spreadGap = (lay: Pick<Layout, 'door' | 'frame'>, families: number): number => Math.max(waveGap(lay), (GAME_DAY.rushSeconds - walkTime(lay)) / Math.max(1, families));
+export const spreadGap = (lay: Pick<Layout, 'door' | 'frame'>, families: number): number =>
+  Math.max(waveGap(lay), (GAME_DAY.rushSeconds - walkTime(lay)) / Math.max(1, families));
 
 /** Families that have reached the door by `t` seconds into the rush (the chairs they fill). */
 export function arrived(t: number, families: number, lay: Pick<Layout, 'door' | 'frame'>): number {
@@ -118,7 +119,8 @@ export function arrived(t: number, families: number, lay: Pick<Layout, 'door' | 
 }
 
 /** The chairs still glowing `t` seconds into the rush: the free ones less one for each family that has come in. */
-export const glowing = (free: number, t: number, families: number, lay: Pick<Layout, 'door' | 'frame'>): number => Math.max(0, free - arrived(t, families, lay));
+export const glowing = (free: number, t: number, families: number, lay: Pick<Layout, 'door' | 'frame'>): number =>
+  Math.max(0, free - arrived(t, families, lay));
 
 export interface WaveFigure {
   key: string;
@@ -153,7 +155,12 @@ export function waveFigures(lay: Pick<Layout, 'door' | 'frame'>, t: number, fami
     const o = p > WAVE.fadeFrom ? Math.max(0, 1 - (p - WAVE.fadeFrom) / (1 - WAVE.fadeFrom)) : 1;
     const walkStep = (k: number) => (((pose + k) % STEP_FRAMES) + 0.5) * ((Math.PI * 2) / STEP_FRAMES);
     out.push({ key: `w${i}a`, x: ax, y: ay, props: { kind: 'guest', seed: 7100 + i * 2, step: walkStep(i), flip: true, o, mood: 'happy' } });
-    out.push({ key: `w${i}k`, x: ax + WAVE.kidLag, y: ay, props: { kind: 'guest', seed: 7101 + i * 2, step: walkStep(i + 3), flip: true, scale: WAVE.kidScale, o, mood: 'happy' } });
+    out.push({
+      key: `w${i}k`,
+      x: ax + WAVE.kidLag,
+      y: ay,
+      props: { kind: 'guest', seed: 7101 + i * 2, step: walkStep(i + 3), flip: true, scale: WAVE.kidScale, o, mood: 'happy' },
+    });
   }
   return out;
 }

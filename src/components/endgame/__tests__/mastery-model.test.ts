@@ -9,7 +9,10 @@ import { masteryGoal, goalLabelFit, STAR_UNIT } from '../../goal-model';
 import { masteryNewsText, nextStarLine, pipBits, starName, starPath, starPips, starToast } from '../mastery-model';
 
 const IDS = NEIGHBORHOODS.map((n) => n.id);
-const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
+const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } },
+});
 const city = (finale: boolean): G.GameState => {
   let g = G.newGame(1_700_000_000_000);
   for (const id of IDS) g = withShop(g, id, { built: true, managed: true, heads: G.noHeads(), prep: 10, ovens: 10, counter: 10 });

@@ -9,7 +9,15 @@ const tap = (m: Mix, id: RecipeId, dir: 1 | -1): Mix => stepMix(m, id, dir) ?? m
 describe('the mix control is taps in 10% steps', () => {
   it('moves 10 points at a time and always adds to 100', () => {
     let m = cheese;
-    for (const [id, dir] of [['pepperoni', 1], ['pepperoni', 1], ['knots', 1], ['knots', -1], ['cheese', 1], ['pepperoni', -1], ['knots', 1]] as const) {
+    for (const [id, dir] of [
+      ['pepperoni', 1],
+      ['pepperoni', 1],
+      ['knots', 1],
+      ['knots', -1],
+      ['cheese', 1],
+      ['pepperoni', -1],
+      ['knots', 1],
+    ] as const) {
       const next = stepMix(m, id, dir);
       if (next) {
         for (const r of RECIPE_ORDER) expect(Math.abs(next[r] - m[r])).toBeLessThanOrEqual(MIX_STEP);
@@ -53,7 +61,11 @@ describe('the recipe rows', () => {
     expect(rows[1]).toMatchObject({ name: 'Pepperoni', price: 'Pays ×1.4', time: '+30% prep time' });
     expect(rows[2]).toMatchObject({ name: 'Garlic Knots', price: 'Pays ×0.6', time: '−50% oven time' });
     expect(rows.every((r) => r.canPlus && r.canMinus)).toBe(true);
-    expect(recipeRows(cheese).map((r) => [r.canPlus, r.canMinus])).toEqual([[false, true], [true, false], [true, false]]);
+    expect(recipeRows(cheese).map((r) => [r.canPlus, r.canMinus])).toEqual([
+      [false, true],
+      [true, false],
+      [true, false],
+    ]);
   });
 
   it('uses the content table: one row per recipe, in the copy words', () => {

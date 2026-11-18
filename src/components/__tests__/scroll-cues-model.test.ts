@@ -1,6 +1,24 @@
 /// <reference types="jest" />
 // v5.18 card V2 step 5: the off-screen cues of a wide shop, and the cold line's short queue (step 4).
-import { askScroll, clearCueTop, CUE_EDGE, CUE_GAP, cueWord, wrenchRect, CUE_H, CUE_URGENCY, CUE_W, cueLabel, cuesFor, offScreen, onScrollAsk, queueShown, wantsOf, type KitchenSpot, type Want } from '../scroll-cues-model';
+import {
+  askScroll,
+  clearCueTop,
+  CUE_EDGE,
+  CUE_GAP,
+  cueWord,
+  wrenchRect,
+  CUE_H,
+  CUE_URGENCY,
+  CUE_W,
+  cueLabel,
+  cuesFor,
+  offScreen,
+  onScrollAsk,
+  queueShown,
+  wantsOf,
+  type KitchenSpot,
+  type Want,
+} from '../scroll-cues-model';
 import { sceneView, sceneFrame, sceneToScreen } from '../scene/projection';
 import { controlPasses } from '../tap-targets';
 import { layout } from '../scene/layout';
@@ -29,13 +47,13 @@ describe('what is off screen', () => {
 
 describe('one cue per side, the most urgent', () => {
   const view = (scrollX: number, wants: Want[]) => cuesFor(wants, scrollX, W, fit, flagship.maxScroll);
-  test('scrolled to the kitchen\'s left end, the counter is off the right edge and a Slammed counter says so', () => {
+  test("scrolled to the kitchen's left end, the counter is off the right edge and a Slammed counter says so", () => {
     const left = view(0, mk({ slammed: ['counter'] }));
     expect(left.left).toBeNull();
     expect(left.right).toMatchObject({ side: 'right', kind: 'slammed', at: 'counter' });
     expect(sceneToScreen(560, 0, fit)).toBeGreaterThan(W);
   });
-  test('the order is a jam, then a Slammed station, then a head\'s bubble, then a tap; the first off screen on a side wins', () => {
+  test("the order is a jam, then a Slammed station, then a head's bubble, then a tap; the first off screen on a side wins", () => {
     expect(CUE_URGENCY.jam).toBeGreaterThan(CUE_URGENCY.slammed);
     expect(CUE_URGENCY.slammed).toBeGreaterThan(CUE_URGENCY.bubble);
     expect(CUE_URGENCY.bubble).toBeGreaterThan(CUE_URGENCY.tap);
@@ -90,7 +108,12 @@ describe('the cue itself', () => {
   test('it is drawn 52 by 44 pt: a tap target at 44 pt both ways, with no help from a hit slop', () => {
     expect(CUE_W).toBeGreaterThanOrEqual(44);
     expect(CUE_H).toBeGreaterThanOrEqual(44);
-    expect(controlPasses({ drawn: CUE_W, slopBefore: 0, slopAfter: 0, roomBefore: 0, roomAfter: 0 }, { drawn: CUE_H, slopBefore: 0, slopAfter: 0, roomBefore: 0, roomAfter: 0 })).toBe(true);
+    expect(
+      controlPasses(
+        { drawn: CUE_W, slopBefore: 0, slopAfter: 0, roomBefore: 0, roomAfter: 0 },
+        { drawn: CUE_H, slopBefore: 0, slopAfter: 0, roomBefore: 0, roomAfter: 0 },
+      ),
+    ).toBe(true);
   });
   test('a screen reader hears which way, what and where', () => {
     expect(cueLabel('jam', 'ovens', 'right')).toBe('Scroll right: An oven is jammed at the ovens');
@@ -155,7 +178,13 @@ describe('G111: a cue keeps 8 pt clear of the tappables on screen', () => {
     expect(clearCueTop('right', 40, W, 60, [{ x0: W - 60, y0: 0, x1: W, y1: 60 }])).toBe(40);
   });
   test('the word names the station, 7 letters at most', () => {
-    expect([cueWord('slammed', 'ovens'), cueWord('tap', 'prep'), cueWord('bubble', 'counter'), cueWord('jam', 'ovens')]).toEqual(['Ovens', 'Prep', 'Counter', 'Jam!']);
-    for (const k of ['jam', 'slammed', 'bubble', 'tap'] as const) for (const at of ['prep', 'ovens', 'counter', 'floor', 'door'] as const) expect(cueWord(k, at).length).toBeLessThanOrEqual(7);
+    expect([cueWord('slammed', 'ovens'), cueWord('tap', 'prep'), cueWord('bubble', 'counter'), cueWord('jam', 'ovens')]).toEqual([
+      'Ovens',
+      'Prep',
+      'Counter',
+      'Jam!',
+    ]);
+    for (const k of ['jam', 'slammed', 'bubble', 'tap'] as const)
+      for (const at of ['prep', 'ovens', 'counter', 'floor', 'door'] as const) expect(cueWord(k, at).length).toBeLessThanOrEqual(7);
   });
 });

@@ -53,7 +53,13 @@ describe('tap targets', () => {
   });
 });
 
-const axis = (drawn: number, slopBefore: number, slopAfter: number, roomBefore: number, roomAfter: number): Axis => ({ drawn, slopBefore, slopAfter, roomBefore, roomAfter });
+const axis = (drawn: number, slopBefore: number, slopAfter: number, roomBefore: number, roomAfter: number): Axis => ({
+  drawn,
+  slopBefore,
+  slopAfter,
+  roomBefore,
+  roomAfter,
+});
 
 describe('the rule (U5): 44 pt drawn, or 40 pt drawn and a slop that reaches 44 pt inside the parent', () => {
   test('the numbers', () => {

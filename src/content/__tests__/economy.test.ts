@@ -81,7 +81,10 @@ describe('T83 economy tables', () => {
     for (const k of ['prep', 'ovens', 'counter', 'drivers'] as const) {
       const ladder = costLadder(t, 'suburbs', k);
       let sum = 0;
-      for (let i = 0; i < 12; i++) { sum += stationCost('suburbs', k, shop[k] - 1 + i); expect(ladder[i]).toBe(sum); }
+      for (let i = 0; i < 12; i++) {
+        sum += stationCost('suburbs', k, shop[k] - 1 + i);
+        expect(ladder[i]).toBe(sum);
+      }
     }
   });
 

@@ -5,7 +5,44 @@ import { memo, useId } from 'react';
 import Svg, { ClipPath, Circle, Defs, Ellipse, G, Path, Rect, Text } from 'react-native-svg';
 
 import type { CharacterId, Mood } from '../content/types';
-import { ARMBAND, ARM_FORE, CLIPBOARD, ARM_INK, ARM_SLEEVE, ARM_UPPER, BLUSH, BUN_KNOT, FEDORA, HAIR_BACK_INK, HAIR_BACK_STAGE, HAIR_FRONT, EARS, EAR_INNER, FACES, FOLDS, GROUND, HEAD_CLIP, HEAD_SHIFT, LIGHT_RIM, LIGHT_SHADE_HEAD, LIGHT_SHADE_TORSO, MARKER_MUSTACHE, NAPKIN, NECK, NECK_SHADOW, NOSE, OUTFIT, SHOULDERS_INK, SHOULDERS_SLEEVE, SLICEY, STRANDS, TORSO, ell, gestureFor, type HairStyle } from './cutscene/figure-art';
+import {
+  ARMBAND,
+  ARM_FORE,
+  CLIPBOARD,
+  ARM_INK,
+  ARM_SLEEVE,
+  ARM_UPPER,
+  BLUSH,
+  BUN_KNOT,
+  FEDORA,
+  HAIR_BACK_INK,
+  HAIR_BACK_STAGE,
+  HAIR_FRONT,
+  EARS,
+  EAR_INNER,
+  FACES,
+  FOLDS,
+  GROUND,
+  HEAD_CLIP,
+  HEAD_SHIFT,
+  LIGHT_RIM,
+  LIGHT_SHADE_HEAD,
+  LIGHT_SHADE_TORSO,
+  MARKER_MUSTACHE,
+  NAPKIN,
+  NECK,
+  NECK_SHADOW,
+  NOSE,
+  OUTFIT,
+  SHOULDERS_INK,
+  SHOULDERS_SLEEVE,
+  SLICEY,
+  STRANDS,
+  TORSO,
+  ell,
+  gestureFor,
+  type HairStyle,
+} from './cutscene/figure-art';
 import { STAGE_VB, poseFor, type Pose } from './cutscene/staging';
 import { F } from '../theme';
 import { MANAGER_LOOKS, type ManagerId, type ManagerItem } from './scene/looks';
@@ -413,7 +450,14 @@ function BustGear({ L }: { L: Look }) {
 
 function Bust({ L, mood, size, flip }: { L: Look; mood: Mood; size: number; flip: boolean }) {
   return (
-    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={size} height={size} viewBox="0 0 100 100" style={flip ? { transform: [{ scaleX: -1 }] } : undefined}>
+    <Svg
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      style={flip ? { transform: [{ scaleX: -1 }] } : undefined}
+    >
       <HairBack style={L.hairStyle} hair={L.hair} />
       {/* body */}
       <Path d="M18 100 Q20 74 50 72 Q80 74 82 100 Z" fill={L.shirt} stroke={INK} strokeWidth={1.8} />
@@ -718,7 +762,23 @@ function HeldCard({ flip }: { flip: boolean }) {
   );
 }
 
-function Stage({ id, mood, size, flip, dim, holding, city }: { id: CharacterId; mood: Mood; size: number; flip: boolean; dim: boolean; holding?: 'recipe-card'; city?: string }) {
+function Stage({
+  id,
+  mood,
+  size,
+  flip,
+  dim,
+  holding,
+  city,
+}: {
+  id: CharacterId;
+  mood: Mood;
+  size: number;
+  flip: boolean;
+  dim: boolean;
+  holding?: 'recipe-card';
+  city?: string;
+}) {
   const L = lookFor(id, city);
   const tone = (c: string) => (dim ? shade(c, -0.2) : c);
   const skin = tone(L.skin);
@@ -731,7 +791,13 @@ function Stage({ id, mood, size, flip, dim, holding, city }: { id: CharacterId; 
   // light shade and rim are clipped to the head (unique per instance, like the backdrop's gradients)
   const clipId = `head${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
-    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={(size * STAGE_VB.w) / STAGE_VB.h} height={size} viewBox={`0 0 ${STAGE_VB.w} ${STAGE_VB.h}`}>
+    <Svg
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      width={(size * STAGE_VB.w) / STAGE_VB.h}
+      height={size}
+      viewBox={`0 0 ${STAGE_VB.w} ${STAGE_VB.h}`}
+    >
       <Defs>
         <ClipPath id={clipId}>
           <Ellipse {...HEAD_CLIP} />
@@ -747,7 +813,9 @@ function Stage({ id, mood, size, flip, dim, holding, city }: { id: CharacterId; 
               <Path d={BOSTON_OUTFIT.ponytailBand} fill={tone('#F2C94C')} stroke={INK} strokeWidth={1.2} strokeLinejoin="round" />
             </G>
           ) : null}
-          {L.hairStyle === 'long' || L.hairStyle === 'bob' ? <HairBackStage style={L.hairStyle} hair={hair} shadeColor={tone(L.hairShade ?? shade(L.hair, -0.14))} /> : null}
+          {L.hairStyle === 'long' || L.hairStyle === 'bob' ? (
+            <HairBackStage style={L.hairStyle} hair={hair} shadeColor={tone(L.hairShade ?? shade(L.hair, -0.14))} />
+          ) : null}
         </G>
         <Path d={NECK} fill={skin} />
         <Path d={NECK_SHADOW} fill={skinShade} />
@@ -773,7 +841,9 @@ function Stage({ id, mood, size, flip, dim, holding, city }: { id: CharacterId; 
           <Path d={EAR_INNER} stroke={skinShade} strokeWidth={1.4} fill="none" strokeLinecap="round" />
           {L.foam ? null : <HairFront style={L.hairStyle} hair={hair} />}
           {L.gear === 'stopwatch' ? <Pencils /> : null}
-          {!L.foam && STRANDS[L.hairStyle] ? <Path d={STRANDS[L.hairStyle]} stroke={strandColor(hair)} strokeWidth={1.3} fill="none" strokeLinecap="round" /> : null}
+          {!L.foam && STRANDS[L.hairStyle] ? (
+            <Path d={STRANDS[L.hairStyle]} stroke={strandColor(hair)} strokeWidth={1.3} fill="none" strokeLinecap="round" />
+          ) : null}
           <Path d={BLUSH} fill="#F28B82" opacity={mood === 'happy' || mood === 'angry' ? 0.55 : 0.32} />
           <Path d={face.brows} stroke={INK} strokeWidth={face.browW} strokeLinecap="round" fill="none" />
           {face.sclera ? (
@@ -786,7 +856,14 @@ function Stage({ id, mood, size, flip, dim, holding, city }: { id: CharacterId; 
           ) : null}
           <Path d={face.lids} stroke={INK} strokeWidth={face.lidW ?? 1.9} strokeLinecap="round" fill="none" />
           <Path d={NOSE} stroke={skinShade} strokeWidth={1.7} strokeLinecap="round" fill="none" />
-          <Path d={face.mouth} fill={face.mouthFill ? '#8E2A1E' : 'none'} stroke={INK} strokeWidth={face.mouthFill ? 2 : 2.6} strokeLinecap="round" strokeLinejoin="round" />
+          <Path
+            d={face.mouth}
+            fill={face.mouthFill ? '#8E2A1E' : 'none'}
+            stroke={INK}
+            strokeWidth={face.mouthFill ? 2 : 2.6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
           {face.tongue ? <Path d={face.tongue} fill="#E8766A" /> : null}
           {L.extra === 'glasses' && <Glasses stage />}
           {L.extra === 'mustache' && <Mustache hair={hair} />}
@@ -830,5 +907,9 @@ export const Portrait = memo(function Portrait({
   city?: string;
 }) {
   const L = lookFor(id, city);
-  return variant === 'stage' ? <Stage id={id} mood={mood} size={size} flip={flip} dim={dim} holding={holding} city={city} /> : <Bust L={L} mood={mood} size={size} flip={flip} />;
+  return variant === 'stage' ? (
+    <Stage id={id} mood={mood} size={size} flip={flip} dim={dim} holding={holding} city={city} />
+  ) : (
+    <Bust L={L} mood={mood} size={size} flip={flip} />
+  );
 });

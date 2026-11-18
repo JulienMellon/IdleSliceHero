@@ -123,7 +123,12 @@ describe('backdrop layout', () => {
   test('D394: the sunset sun sits below the caption zone', () => {
     for (const { v } of views) expect(SUN.cy - SUN.r).toBeGreaterThanOrEqual(v.y0 + CAPTION_ZONE_PT / v.scale);
     // and is not hidden behind the SOLD SOON board
-    expect(overlap({ x0: SUN.cx - SUN.r, y0: SUN.cy - SUN.r, x1: SUN.cx + SUN.r, y1: SUN.cy + SUN.r }, { x0: SOLD_SIGN.x, y0: SOLD_SIGN.y, x1: SOLD_SIGN.x + SOLD_SIGN.w, y1: SOLD_SIGN.y + SOLD_SIGN.h })).toBe(false);
+    expect(
+      overlap(
+        { x0: SUN.cx - SUN.r, y0: SUN.cy - SUN.r, x1: SUN.cx + SUN.r, y1: SUN.cy + SUN.r },
+        { x0: SOLD_SIGN.x, y0: SOLD_SIGN.y, x1: SOLD_SIGN.x + SOLD_SIGN.w, y1: SOLD_SIGN.y + SOLD_SIGN.h },
+      ),
+    ).toBe(false);
   });
 
   test('D395: the oak trunk stands clear of a centred figure, and its canopy stays above the head', () => {
@@ -162,7 +167,9 @@ describe('backdrop layout', () => {
 
   test('D398: the shaded puffs would have spilled without the clip (the old art put them past the outline)', () => {
     // the clip is what keeps them in: at least one shading puff reaches past the canopy's union
-    const spill = OAK.shade.some(([cx, cy, r]) => [0, 1, 2, 3, 4, 5, 6, 7].some((i) => !inCanopy(cx + r * Math.cos((i * Math.PI) / 4), cy + r * Math.sin((i * Math.PI) / 4), -OAK_FIT.outline / 2)));
+    const spill = OAK.shade.some(([cx, cy, r]) =>
+      [0, 1, 2, 3, 4, 5, 6, 7].some((i) => !inCanopy(cx + r * Math.cos((i * Math.PI) / 4), cy + r * Math.sin((i * Math.PI) / 4), -OAK_FIT.outline / 2)),
+    );
     expect(spill).toBe(true);
   });
 });

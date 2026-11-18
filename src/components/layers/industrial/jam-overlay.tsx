@@ -26,7 +26,13 @@ function Puff({ i, left, top, s }: { i: number; left: number; top: number; s: nu
   useEffect(() => {
     t.setValue(0);
     if (!loops) return;
-    const loop = Animated.loop(Animated.sequence([Animated.delay(i * 520), Animated.timing(t, { toValue: 1, duration: 1560, easing: Easing.out(Easing.quad), useNativeDriver: native }), Animated.timing(t, { toValue: 0, duration: 0, useNativeDriver: native })]));
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(i * 520),
+        Animated.timing(t, { toValue: 1, duration: 1560, easing: Easing.out(Easing.quad), useNativeDriver: native }),
+        Animated.timing(t, { toValue: 0, duration: 0, useNativeDriver: native }),
+      ]),
+    );
     loop.start();
     return () => loop.stop();
   }, [t, i, loops]);
@@ -35,13 +41,35 @@ function Puff({ i, left, top, s }: { i: number; left: number; top: number; s: nu
   const drift = t.interpolate({ inputRange: [0, 1], outputRange: [0, (i - 1) * 8 * s] });
   const fade = t.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 0.8, 0] });
   const grow = t.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.5] });
-  return <Animated.View pointerEvents="none" style={[styles.puff, { left: left - size / 2, top: top - size / 2, width: size, height: size, borderRadius: size / 2, opacity: fade, transform: [{ translateY: rise }, { translateX: drift }, { scale: grow }] }]} />;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.puff,
+        {
+          left: left - size / 2,
+          top: top - size / 2,
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          opacity: fade,
+          transform: [{ translateY: rise }, { translateX: drift }, { scale: grow }],
+        },
+      ]}
+    />
+  );
 }
 
 function WrenchArt() {
   return (
     <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={26} height={26} viewBox="0 0 26 26">
-      <Path d="M17.5 3.5 A6 6 0 0 0 11 10.5 L3.8 17.7 A2.6 2.6 0 0 0 8.3 22.2 L15.5 15 A6 6 0 0 0 22.5 8.5 L18.6 12.4 L14 11.8 L13.4 7.2 Z" fill="#E8EEF2" stroke={INK} strokeWidth={1.6} strokeLinejoin="round" />
+      <Path
+        d="M17.5 3.5 A6 6 0 0 0 11 10.5 L3.8 17.7 A2.6 2.6 0 0 0 8.3 22.2 L15.5 15 A6 6 0 0 0 22.5 8.5 L18.6 12.4 L14 11.8 L13.4 7.2 Z"
+        fill="#E8EEF2"
+        stroke={INK}
+        strokeWidth={1.6}
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 }
@@ -72,7 +100,13 @@ export const JamOverlay = memo(function JamOverlay({ shopId, width, height }: Sc
       {Array.from({ length: PUFFS }, (_, i) => (
         <Puff key={i} i={i} left={cx + (i - 1) * 6 * f.s} top={topY} s={f.s} />
       ))}
-      <Pressable testID="fix-jam" accessibilityRole="button" accessibilityLabel="Fix the jammed oven" onPress={fixJam} style={[styles.wrench, { left: cx - WRENCH / 2, top: cy - WRENCH / 2 }]}>
+      <Pressable
+        testID="fix-jam"
+        accessibilityRole="button"
+        accessibilityLabel="Fix the jammed oven"
+        onPress={fixJam}
+        style={[styles.wrench, { left: cx - WRENCH / 2, top: cy - WRENCH / 2 }]}
+      >
         <WrenchArt />
       </Pressable>
       <View testID="jam-label" pointerEvents="none" style={[styles.label, { left: box.left, width: box.width, top: cy + WRENCH / 2 + 4 }]}>
@@ -86,7 +120,26 @@ export const JamOverlay = memo(function JamOverlay({ shopId, width, height }: Sc
 
 const styles = StyleSheet.create({
   puff: { position: 'absolute', backgroundColor: '#8D8780' },
-  wrench: { position: 'absolute', width: WRENCH, height: WRENCH, borderRadius: WRENCH / 2, backgroundColor: C.cheese, borderWidth: 3, borderColor: C.ink, alignItems: 'center', justifyContent: 'center' },
-  label: { position: 'absolute', height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: C.ink, backgroundColor: 'rgba(255,255,255,0.96)', alignItems: 'center', justifyContent: 'center' },
+  wrench: {
+    position: 'absolute',
+    width: WRENCH,
+    height: WRENCH,
+    borderRadius: WRENCH / 2,
+    backgroundColor: C.cheese,
+    borderWidth: 3,
+    borderColor: C.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  label: {
+    position: 'absolute',
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: C.ink,
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   labelText: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: C.tomatoDark },
 });

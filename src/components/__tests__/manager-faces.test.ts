@@ -68,7 +68,11 @@ describe('what a manager wears on an arm follows the arm', () => {
     expect(Object.keys(ARM_UPPER).sort()).toEqual([...poses].sort());
     expect(Object.keys(ARM_FORE).sort()).toEqual([...poses].sort());
     for (const pose of poses) {
-      for (const [name, spot] of [['upper', ARM_UPPER[pose]], ['fore', ARM_FORE[pose]]] as const) expect([pose, name, dist(pose, spot.x, spot.y) <= 1.5]).toEqual([pose, name, true]);
+      for (const [name, spot] of [
+        ['upper', ARM_UPPER[pose]],
+        ['fore', ARM_FORE[pose]],
+      ] as const)
+        expect([pose, name, dist(pose, spot.x, spot.y) <= 1.5]).toEqual([pose, name, true]);
     }
   });
 

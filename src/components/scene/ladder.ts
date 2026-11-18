@@ -25,11 +25,31 @@ export const LADDER_LEVELS = [10, 20, 30, 40, 60, 80, 100, 120] as const;
 export const ladderStep = (level: number) => LADDER_LEVELS.filter((l) => level >= l).length;
 
 export type PropId =
-  | 'pin2' | 'sacks' | 'sheeter' | 'mixer' | 'toppings' | 'prepBelt'
-  | 'boxStack' | 'warmer' | 'tickets' | 'screen' | 'register2' | 'neon' | 'passBelt'
-  | 'board' | 'hooks' | 'vehicle2' | 'wrap' | 'photo';
+  | 'pin2'
+  | 'sacks'
+  | 'sheeter'
+  | 'mixer'
+  | 'toppings'
+  | 'prepBelt'
+  | 'boxStack'
+  | 'warmer'
+  | 'tickets'
+  | 'screen'
+  | 'register2'
+  | 'neon'
+  | 'passBelt'
+  | 'board'
+  | 'hooks'
+  | 'vehicle2'
+  | 'wrap'
+  | 'photo';
 
-export interface StepDef { id: PropId; station: LadderStation; level: number; mount: Mount }
+export interface StepDef {
+  id: PropId;
+  station: LadderStation;
+  level: number;
+  mount: Mount;
+}
 
 /**
  * The ladder. Steps the game already shows are not here: prep Lv 30 (3rd cook, from 31) and Lv 100 (gold hats), counter
@@ -75,7 +95,8 @@ export interface LadderInput {
   outside: boolean;
 }
 
-export const stepOf = (inp: LadderInput, station: LadderStation) => (station === 'prep' ? inp.prepStep : station === 'counter' ? inp.counterStep : inp.driverStep);
+export const stepOf = (inp: LadderInput, station: LadderStation) =>
+  station === 'prep' ? inp.prepStep : station === 'counter' ? inp.counterStep : inp.driverStep;
 
 export interface Placed {
   id: PropId;
@@ -95,24 +116,40 @@ export interface Placed {
 /** Each drawing's local bounding box (x right, y down; the anchor is the bottom centre). Belts take their length from `n`. */
 export function bboxOf(id: PropId, n = 0): Rect {
   switch (id) {
-    case 'pin2': return { x0: -12, y0: -4, x1: 12, y1: 1 };
-    case 'sacks': return { x0: -11, y0: -23, x1: 11, y1: 2 };
-    case 'sheeter': return { x0: -14, y0: -23, x1: 14, y1: 2 };
-    case 'mixer': return { x0: -10, y0: -32, x1: 10, y1: 2 };
-    case 'toppings': return { x0: -26, y0: -14, x1: 26, y1: 1 };
+    case 'pin2':
+      return { x0: -12, y0: -4, x1: 12, y1: 1 };
+    case 'sacks':
+      return { x0: -11, y0: -23, x1: 11, y1: 2 };
+    case 'sheeter':
+      return { x0: -14, y0: -23, x1: 14, y1: 2 };
+    case 'mixer':
+      return { x0: -10, y0: -32, x1: 10, y1: 2 };
+    case 'toppings':
+      return { x0: -26, y0: -14, x1: 26, y1: 1 };
     case 'prepBelt':
-    case 'passBelt': return { x0: -n, y0: -8.6, x1: n, y1: 0 };
-    case 'boxStack': return { x0: -7.5, y0: -15, x1: 7.5, y1: 1 };
-    case 'warmer': return { x0: -9, y0: -13.5, x1: 9, y1: 1 };
-    case 'tickets': return { x0: -9, y0: -12, x1: 9, y1: 1 };
-    case 'screen': return { x0: -9, y0: -13.5, x1: 9, y1: 1 };
-    case 'register2': return { x0: -11, y0: -23, x1: 11, y1: 1 };
-    case 'neon': return { x0: -19, y0: -12, x1: 19, y1: 2 };
-    case 'board': return { x0: -11, y0: -23, x1: 11, y1: 1 };
-    case 'hooks': return { x0: -18, y0: -26, x1: 18, y1: 1 };
-    case 'photo': return { x0: -7, y0: -19, x1: 7, y1: 1 };
+    case 'passBelt':
+      return { x0: -n, y0: -8.6, x1: n, y1: 0 };
+    case 'boxStack':
+      return { x0: -7.5, y0: -15, x1: 7.5, y1: 1 };
+    case 'warmer':
+      return { x0: -9, y0: -13.5, x1: 9, y1: 1 };
+    case 'tickets':
+      return { x0: -9, y0: -12, x1: 9, y1: 1 };
+    case 'screen':
+      return { x0: -9, y0: -13.5, x1: 9, y1: 1 };
+    case 'register2':
+      return { x0: -11, y0: -23, x1: 11, y1: 1 };
+    case 'neon':
+      return { x0: -19, y0: -12, x1: 19, y1: 2 };
+    case 'board':
+      return { x0: -11, y0: -23, x1: 11, y1: 1 };
+    case 'hooks':
+      return { x0: -18, y0: -26, x1: 18, y1: 1 };
+    case 'photo':
+      return { x0: -7, y0: -19, x1: 7, y1: 1 };
     case 'vehicle2':
-    case 'wrap': return { x0: -24, y0: -30, x1: 24, y1: 4 };
+    case 'wrap':
+      return { x0: -24, y0: -30, x1: 24, y1: 4 };
   }
 }
 
@@ -166,7 +203,7 @@ export function menuRect(lay: Layout): Rect | null {
   const [mx0, my] = P(lay.counter.x0 + 4, D, 180);
   const hoodRight = P(lay.ovenCols[lay.ovenCols.length - 1].x1 + 6, D - 6)[0];
   const pierLeft = P(lay.door.x0 - 8, 0)[0];
-  const mw = Math.max(40, Math.min(56, pierLeft - 6 - (hoodRight + 6) ));
+  const mw = Math.max(40, Math.min(56, pierLeft - 6 - (hoodRight + 6)));
   const mx = Math.min(Math.max(mx0 - 24, hoodRight + 6), pierLeft - 6 - mw);
   return { x0: mx, y0: my, x1: mx + mw, y1: my + (40 * mw) / 56 };
 }
@@ -297,7 +334,15 @@ export function candidates(lay: Layout, inp: Pick<LadderInput, 'id' | 'pins' | '
   const rects = stationRects(lay, 44);
   const strip = { x0: P(prep.x0, STRIP_Y)[0] - 3, x1: P(prep.x1 + 4, STRIP_Y)[0] + 3 };
   const w = wallZones(lay);
-  const zoneOf: Partial<Record<PropId, { x0: number; x1: number }>> = { screen: w.left, warmer: w.left, tickets: w.left, neon: w.right, board: w.right, hooks: w.right, photo: w.right };
+  const zoneOf: Partial<Record<PropId, { x0: number; x1: number }>> = {
+    screen: w.left,
+    warmer: w.left,
+    tickets: w.left,
+    neon: w.right,
+    board: w.right,
+    hooks: w.right,
+    photo: w.right,
+  };
   const spots = spotBoxes(lay);
   for (const c of out) {
     const why: string[] = [];
@@ -308,7 +353,12 @@ export function candidates(lay: Layout, inp: Pick<LadderInput, 'id' | 'pins' | '
     const own = c.station === 'drivers' ? '' : c.station;
     for (const st of ['prep', 'oven', 'counter'] as const) if (st !== own && hits(c.rect, rects[st])) why.push(`${st} rect`);
     // street gear (the second vehicle, the wrap) never stands over the chalkboard or the neighbourhood's prop (D432)
-    if (c.mount === 'street') for (const [name, b] of [['sign', signRect(lay)], ['prop', propRect(lay)]] as const) hits(c.rect, b) && why.push(name);
+    if (c.mount === 'street')
+      for (const [name, b] of [
+        ['sign', signRect(lay)],
+        ['prop', propRect(lay)],
+      ] as const)
+        hits(c.rect, b) && why.push(name);
     if (c.mount === 'wall') {
       blockers.wall.forEach((b, i) => hits(c.rect, b) && why.push(`wall ${i}`));
       const zn = zoneOf[c.id];
@@ -405,7 +455,10 @@ export const bounceScale = (step: number) => 1 + 0.06 * Math.sin(Math.PI * ((ste
 /** One transform string per step about the screen point `base`, built once per layout (never per frame). */
 export function bounceTransforms(base: readonly [number, number]): string[] {
   const [bx, by] = base;
-  return Array.from({ length: BOUNCE_STEPS }, (_, i) => `translate(${bx.toFixed(1)} ${by.toFixed(1)}) scale(${bounceScale(i).toFixed(4)}) translate(${(-bx).toFixed(1)} ${(-by).toFixed(1)})`);
+  return Array.from(
+    { length: BOUNCE_STEPS },
+    (_, i) => `translate(${bx.toFixed(1)} ${by.toFixed(1)}) scale(${bounceScale(i).toFixed(4)}) translate(${(-bx).toFixed(1)} ${(-by).toFixed(1)})`,
+  );
 }
 
 /** The "Lv N" chip rises this far over this long. */
@@ -437,7 +490,11 @@ export function milestoneSpeaker(hired: boolean, headName: string, downtown: boo
 export const CONFETTI_N = 14;
 export const CONFETTI_SECONDS = 1.5;
 export const CONFETTI_STEPS = 12;
-export interface ConfettiPiece { w: number; h: number; tone: 0 | 1 | 2 }
+export interface ConfettiPiece {
+  w: number;
+  h: number;
+  tone: 0 | 1 | 2;
+}
 /** Seeded once: the same fourteen pieces every burst (size and tone). */
 export const CONFETTI: readonly ConfettiPiece[] = Array.from({ length: CONFETTI_N }, (_, i) => ({
   w: 2.6 + (hash32(i * 17 + 3) % 3),

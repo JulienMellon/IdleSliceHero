@@ -10,7 +10,10 @@ const patch = (g: G.GameState, p: Partial<G.Shop>): G.GameState => ({ ...g, shop
 const run = <T>(fn: () => T): T => withFeatures([suburbsGameDay], fn);
 const state = (g: G.GameState) => getFeature(g, suburbsGameDay);
 /** A game with Suburbs built and running itself, the clock at play second `play`. */
-const game = (play = 0, p: Partial<G.Shop> = {}): G.GameState => ({ ...patch(G.newGame(NOW), { built: true, managed: true, heads: G.allHeads(), prep: 30, ovens: 30, counter: 30, tables: 6, drivers: 3, footprint: 2, ...p }), playSeconds: play });
+const game = (play = 0, p: Partial<G.Shop> = {}): G.GameState => ({
+  ...patch(G.newGame(NOW), { built: true, managed: true, heads: G.allHeads(), prep: 30, ovens: 30, counter: 30, tables: 6, drivers: 3, footprint: 2, ...p }),
+  playSeconds: play,
+});
 /** Play `seconds` one second at a time from `g`. */
 function play(g: G.GameState, seconds: number, now = NOW): G.GameState {
   for (let i = 0; i < seconds; i++) g = G.playTick(g, 1, now);
@@ -34,7 +37,8 @@ describe('the schedule', () => {
     // 8 minutes apart, within the jitter, and a first game one gap after the start
     const a = starts(123);
     expect(a.length).toBeGreaterThanOrEqual(6);
-    for (let i = 1; i < a.length; i++) expect(Math.abs(a[i] - a[i - 1] - GAME_DAY.everySeconds)).toBeLessThanOrEqual(GAME_DAY.everySeconds * GAME_DAY.jitter * 2 + 1);
+    for (let i = 1; i < a.length; i++)
+      expect(Math.abs(a[i] - a[i - 1] - GAME_DAY.everySeconds)).toBeLessThanOrEqual(GAME_DAY.everySeconds * GAME_DAY.jitter * 2 + 1);
     expect(a[0]).toBeGreaterThanOrEqual(GAME_DAY.everySeconds * (1 - GAME_DAY.jitter) - 1);
   });
 
@@ -68,7 +72,11 @@ describe('the schedule', () => {
       const DAY = 86_400_000;
       const clocks = [NOW, NOW - 5 * DAY, NOW + 90 * DAY, NOW - 3600_000, NOW + 7 * DAY];
       for (let i = 0; i < 700; i++) jumpy = G.playTick(jumpy, 1, clocks[i % clocks.length]);
-      expect({ n: state(jumpy).n, nextAt: state(jumpy).nextAt, seed: state(jumpy).seed }).toEqual({ n: state(steady).n, nextAt: state(steady).nextAt, seed: state(steady).seed });
+      expect({ n: state(jumpy).n, nextAt: state(jumpy).nextAt, seed: state(jumpy).seed }).toEqual({
+        n: state(steady).n,
+        nextAt: state(steady).nextAt,
+        seed: state(steady).seed,
+      });
     });
   });
 });

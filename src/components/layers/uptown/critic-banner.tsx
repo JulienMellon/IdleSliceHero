@@ -29,7 +29,13 @@ export const CriticBanner = memo(function CriticBanner() {
   if (lastKey) {
     const [target, stars, hit, cash] = lastKey.split('|');
     const m = moment({ target: Number(target), stars: Number(stars), hit: hit === '1', cash: Number(cash) });
-    return <LayerToast testID={m.hit ? 'critic-pass' : 'critic-fail'} toast={{ text: m.headline, line: m.line, speaker: m.speaker }} tone={m.hit ? 'basil' : 'plain'} />;
+    return (
+      <LayerToast
+        testID={m.hit ? 'critic-pass' : 'critic-fail'}
+        toast={{ text: m.headline, line: m.line, speaker: m.speaker }}
+        tone={m.hit ? 'basil' : 'plain'}
+      />
+    );
   }
   return arrive ? <LayerToast testID="critic-arrives" toast={arrive} /> : null;
 });

@@ -61,7 +61,14 @@ export function sceneReady(game: GameState, scene: Scene, lastSceneEndPlay: numb
 }
 
 /** The scene to open now, or null while one is playing, the player is still tapping the kitchen, or pacing holds it back. */
-export function pickScene(game: GameState, scenes: Scene[], nowMs: number, lastKitchenTapMs: number, playing: boolean, lastSceneEndPlay: number | null): Scene | null {
+export function pickScene(
+  game: GameState,
+  scenes: Scene[],
+  nowMs: number,
+  lastKitchenTapMs: number,
+  playing: boolean,
+  lastSceneEndPlay: number | null,
+): Scene | null {
   if (playing || !sceneMayOpen(nowMs, lastKitchenTapMs)) return null;
   const next = pendingScenes(game, scenes).find((sc) => sceneReady(game, sc, lastSceneEndPlay));
   return next ? resolveScene(next, game.seenScenes) : null;

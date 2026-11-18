@@ -3,10 +3,36 @@
 // Every neighborhood has its own pizzeria. Each pizzeria is a pipeline:
 //   Prep → Ovens → Counter → customers (delivery drivers + walk-ins at the tables)
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
-import { BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEADS_OFFLINE_SHARE, HEAD_KINDS, HEAD_SHARE, OVEN_GRADES, STATIONS, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
+import {
+  BATCH_GROWTH,
+  DECOR_BOOST,
+  DECOR_KINDS,
+  DECOR_TIER_COST,
+  FOOTPRINTS,
+  GM_BOOST,
+  HEADS_OFFLINE_SHARE,
+  HEAD_KINDS,
+  HEAD_SHARE,
+  OVEN_GRADES,
+  STATIONS,
+  TUNING,
+  VEHICLES,
+  type DecorKind,
+  type HeadKind,
+  type NeighborhoodDef,
+} from '../content/tuning';
 import { CITIES, cityHolding, cityOf, findHood, hoodIds, HOME_ID, type CityDef } from '../content/cities';
 import { HOME_CITY } from '../content/cities/home';
-import { BOOST_MAX_AHEAD_MS, DAILY_CHESTS, DAILY_TASK_COUNT, MAX_BOOSTERS, MAX_CONCURRENT_BOOSTS, TASK_KINDS, WEEKLY_TASK_COUNT, type TaskKind } from '../content/rewards';
+import {
+  BOOST_MAX_AHEAD_MS,
+  DAILY_CHESTS,
+  DAILY_TASK_COUNT,
+  MAX_BOOSTERS,
+  MAX_CONCURRENT_BOOSTS,
+  TASK_KINDS,
+  WEEKLY_TASK_COUNT,
+  type TaskKind,
+} from '../content/rewards';
 import { BONUS, NIGHT_OVEN, ORDER } from '../content/hooks';
 import { auctionMult, LAYER_KEYS } from '../content/layers';
 import { cosmeticPart } from '../content/endgame';
@@ -14,7 +40,20 @@ import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
 import { migrateStory } from './story';
 import { FEATURES } from './features/registry';
-import { advanceLine, clampWalkInDebt, emptyLine, LINE, nextTap, piesInFlight, rushLine, tapStation as lineTap, type Automation, type Line, type LineRates, type Station } from './pipeline';
+import {
+  advanceLine,
+  clampWalkInDebt,
+  emptyLine,
+  LINE,
+  nextTap,
+  piesInFlight,
+  rushLine,
+  tapStation as lineTap,
+  type Automation,
+  type Line,
+  type LineRates,
+  type Station,
+} from './pipeline';
 
 /** v6 (Todd's story): 40 scenes, interludes that hold main beats back, manager hire scenes; the migration marks skipped scenes seen. v5 was rewards: daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. */
 export const SAVE_VERSION = 6;
@@ -217,14 +256,53 @@ export interface Stats {
   /** Special orders finished in time. */
   ordersDone: number;
 }
-export const STAT_KEYS: readonly (keyof Stats)[] = ['upgrades', 'ovens', 'hires', 'builds', 'fleet', 'decor', 'walkins', 'deliveries', 'baked', 'offline', 'boosters', 'dailyDone', 'days', 'bonusTaps', 'ordersDone'];
+export const STAT_KEYS: readonly (keyof Stats)[] = [
+  'upgrades',
+  'ovens',
+  'hires',
+  'builds',
+  'fleet',
+  'decor',
+  'walkins',
+  'deliveries',
+  'baked',
+  'offline',
+  'boosters',
+  'dailyDone',
+  'days',
+  'bonusTaps',
+  'ordersDone',
+];
 
-export const newStats = (): Stats => ({ upgrades: 0, ovens: 0, hires: 0, builds: 0, fleet: 0, decor: 0, walkins: 0, deliveries: 0, baked: 0, offline: 0, boosters: 0, dailyDone: 0, days: 0, bonusTaps: 0, ordersDone: 0 });
+export const newStats = (): Stats => ({
+  upgrades: 0,
+  ovens: 0,
+  hires: 0,
+  builds: 0,
+  fleet: 0,
+  decor: 0,
+  walkins: 0,
+  deliveries: 0,
+  baked: 0,
+  offline: 0,
+  boosters: 0,
+  dailyDone: 0,
+  days: 0,
+  bonusTaps: 0,
+  ordersDone: 0,
+});
 
 /** A starting seed from the clock (a save keeps its own). */
 const seedOf = (now: number) => Math.abs(Math.floor(now)) % 2147483647;
 export const newBonus = (now: number): BonusState => ({ seed: seedOf(now), spawned: 0, next: BONUS.firstAtPlay, until: 0 });
-export const newOrders = (now: number): OrderState => ({ seed: seedOf(now + 7919), made: 0, nextAt: ORDER.firstOfferAtPlay, offer: null, active: null, result: null });
+export const newOrders = (now: number): OrderState => ({
+  seed: seedOf(now + 7919),
+  made: 0,
+  nextAt: ORDER.firstOfferAtPlay,
+  offer: null,
+  active: null,
+  result: null,
+});
 export const newRewards = (): Rewards => ({
   day: '',
   daily: [],
@@ -263,7 +341,22 @@ export const noHeads = (): Record<HeadKind, boolean> => ({ prep: false, oven: fa
 export const allHeads = (): Record<HeadKind, boolean> => ({ prep: true, oven: true, counter: true });
 
 export function newShop(built = false): Shop {
-  return { built, managed: false, heads: noHeads(), prep: 1, ovens: 1, grade: 0, counter: 1, drivers: 1, tables: 1, footprint: 0, line: emptyLine(), sold: 0, decor: newDecor(), perk: false };
+  return {
+    built,
+    managed: false,
+    heads: noHeads(),
+    prep: 1,
+    ovens: 1,
+    grade: 0,
+    counter: 1,
+    drivers: 1,
+    tables: 1,
+    footprint: 0,
+    line: emptyLine(),
+    sold: 0,
+    decor: newDecor(),
+    perk: false,
+  };
 }
 
 /** The first neighbourhood of a city: built from the start, its founder takes over in the tutorial. */
@@ -378,9 +471,19 @@ function migrateRewards(raw: unknown, now: number): Rewards {
   const boosts = (Array.isArray(r.boosts) ? (r.boosts as unknown[]) : []).slice(0, MAX_CONCURRENT_BOOSTS).flatMap((x) => {
     const b = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
     const until = num(b.until, 0);
-    return until > 0 ? [{ mult: Math.min(MAX_MULT, Math.max(1, num(b.mult, 1))), until: Math.min(until, now + BOOST_MAX_AHEAD_MS), source: typeof b.source === 'string' ? b.source.slice(0, 40) : 'boost' }] : [];
+    return until > 0
+      ? [
+          {
+            mult: Math.min(MAX_MULT, Math.max(1, num(b.mult, 1))),
+            until: Math.min(until, now + BOOST_MAX_AHEAD_MS),
+            source: typeof b.source === 'string' ? b.source.slice(0, 40) : 'boost',
+          },
+        ]
+      : [];
   });
-  const cosmetics = Array.isArray(r.cosmetics) ? [...new Set((r.cosmetics as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= 40))].slice(0, 200) : [];
+  const cosmetics = Array.isArray(r.cosmetics)
+    ? [...new Set((r.cosmetics as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= 40))].slice(0, 200)
+    : [];
   // worn: a save from before worn cosmetics wore everything it owned, so it keeps doing so (the latest of each part)
   const savedWorn = Array.isArray(r.worn) ? (r.worn as unknown[]).filter((x): x is string => typeof x === 'string' && cosmetics.includes(x)) : cosmetics;
   const worn: string[] = [];
@@ -444,7 +547,12 @@ function migrateOrders(raw: unknown, play: number, now: number, shops: Record<Ne
   const activeHood = activeRaw ? hoodOf(activeRaw.hood) : null;
   const offer: OrderOffer | null =
     offerRaw && offerHood && shops[offerHood].built && num(offerRaw.left, 0) > 0 && int(offerRaw.target, 0, 0) >= 1
-      ? { hood: offerHood, target: int(offerRaw.target, 0, 0, 1e15), left: Math.min(ORDER.offerWaitSeconds, num(offerRaw.left, 0)), variant: variantOf(offerRaw.variant) }
+      ? {
+          hood: offerHood,
+          target: int(offerRaw.target, 0, 0, 1e15),
+          left: Math.min(ORDER.offerWaitSeconds, num(offerRaw.left, 0)),
+          variant: variantOf(offerRaw.variant),
+        }
       : null;
   const active: ActiveOrder | null =
     activeRaw && activeHood && shops[activeHood].built && num(activeRaw.left, 0) > 0 && int(activeRaw.target, 0, 0) >= 1
@@ -495,7 +603,9 @@ export function migrate(raw: unknown, now: number): GameState {
     playSeconds: Math.max(0, num(r.playSeconds, 0)),
     sceneAt:
       r.sceneAt && typeof r.sceneAt === 'object'
-        ? Object.fromEntries(Object.entries(r.sceneAt as Record<string, unknown>).filter((e): e is [string, number] => typeof e[1] === 'number' && Number.isFinite(e[1])))
+        ? Object.fromEntries(
+            Object.entries(r.sceneAt as Record<string, unknown>).filter((e): e is [string, number] => typeof e[1] === 'number' && Number.isFinite(e[1])),
+          )
         : {},
     rewards: migrateRewards(r.rewards, now),
     stats: migrateStats(r.stats),
@@ -519,7 +629,10 @@ export function migrate(raw: unknown, now: number): GameState {
         tables: int(s.tables, 1, 1),
         footprint: int(s.footprint, 0, 0, city.fit.footprints.length - 1),
         line: migrateLine(s.line, Math.max(0, num(s.queued, 0))),
-        decor: Object.fromEntries(DECOR_KINDS.map((k) => [k, int((s.decor as Record<string, unknown> | undefined)?.[k], 0, 0, 3)])) as Record<DecorKind, number>,
+        decor: Object.fromEntries(DECOR_KINDS.map((k) => [k, int((s.decor as Record<string, unknown> | undefined)?.[k], 0, 0, 3)])) as Record<
+          DecorKind,
+          number
+        >,
         sold: Math.floor(Math.max(0, num(s.sold, 0))),
         // v2 saves: a finale already seen earns its perk (v3.7)
         perk: !!s.perk || (!!city.perks[id] && seen.includes(finaleId(id))),
@@ -552,7 +665,8 @@ export function migrate(raw: unknown, now: number): GameState {
   // was (C117): a registry that is empty or short (a module loaded in the wrong order, a feature behind a flag) must not delete a
   // player's saved layer state at the next save.
   const savedX = (r.x && typeof r.x === 'object' && !Array.isArray(r.x) ? r.x : {}) as Record<string, unknown>;
-  if (!FEATURES.length && typeof __DEV__ !== 'undefined' && __DEV__) console.warn('migrate: no features are registered (import engine/features before loading a game)');
+  if (!FEATURES.length && typeof __DEV__ !== 'undefined' && __DEV__)
+    console.warn('migrate: no features are registered (import engine/features before loading a game)');
   game.x = { ...savedX, ...Object.fromEntries(FEATURES.map((f) => [f.key, f.migrate(savedX[f.key], now, city)])) };
   return migrateStory(game, num(r.saveVersion, 0));
 }
@@ -641,8 +755,10 @@ const levelSpeed = (base: number, level: number) => base * (1 + TUNING.speedPerL
 /** Room to work: each expansion speeds up prep and the counter. */
 export const footprintMult = (shop: Shop) => Math.pow(TUNING.footprintBoost, shop.footprint);
 export const prepRate = (shop: Shop, fx: FeatureMults = NO_FX) => levelSpeed(STATIONS.prep.speed, shop.prep) * footprintMult(shop) * (fx.stations?.prep ?? 1);
-export const ovenRate = (shop: Shop, fx: FeatureMults = NO_FX) => levelSpeed(STATIONS.ovens.speed, shop.ovens) * OVEN_GRADES[shop.grade].mult * (fx.stations?.oven ?? 1);
-export const counterRate = (shop: Shop, fx: FeatureMults = NO_FX) => levelSpeed(STATIONS.counter.speed, shop.counter) * footprintMult(shop) * (fx.stations?.counter ?? 1);
+export const ovenRate = (shop: Shop, fx: FeatureMults = NO_FX) =>
+  levelSpeed(STATIONS.ovens.speed, shop.ovens) * OVEN_GRADES[shop.grade].mult * (fx.stations?.oven ?? 1);
+export const counterRate = (shop: Shop, fx: FeatureMults = NO_FX) =>
+  levelSpeed(STATIONS.counter.speed, shop.counter) * footprintMult(shop) * (fx.stations?.counter ?? 1);
 export const tripSeconds = (vehicle: number) => TUNING.deliveryRoundTrip / VEHICLES[vehicle].speed;
 export const tripCapacity = (shop: Shop, vehicle: number) => VEHICLES[vehicle].capacity * milestoneMultiplier(shop.drivers);
 export const deliveryRate = (shop: Shop, vehicle: number) => (shop.drivers * tripCapacity(shop, vehicle)) / tripSeconds(vehicle);
@@ -695,7 +811,14 @@ export const patioTables = (shop: Shop) => Math.max(0, Math.min(2, 1 + Math.floo
 export function shopRevenue(id: NeighborhoodId, shop: Shop, vehicle: number, fx: FeatureMults = NO_FX, city: CityDef = cityOfHood(id)): number {
   const { walkIns, delivered } = pieSplit(shop, vehicle, fx);
   const perk = perkOf(id, shop, city);
-  return def(id, city).orderValue * (perk?.priceMult ?? 1) * decorMult(shop, id, city) * gmMult(shop) * fx.value * (delivered + walkIns * (perk?.walkInShare ?? TUNING.walkInShare));
+  return (
+    def(id, city).orderValue *
+    (perk?.priceMult ?? 1) *
+    decorMult(shop, id, city) *
+    gmMult(shop) *
+    fx.value *
+    (delivered + walkIns * (perk?.walkInShare ?? TUNING.walkInShare))
+  );
 }
 
 /** The General Manager's neighbourhood boost. */
@@ -711,7 +834,9 @@ export const decorMult = (shop: Shop, id: NeighborhoodId, city: CityDef = cityOf
 /** Average cash per pizza sold right now. */
 export function valuePerPizza(id: NeighborhoodId, shop: Shop, vehicle: number, fx: FeatureMults = NO_FX, city: CityDef = cityOfHood(id)): number {
   const sold = shopRate(shop, vehicle, fx);
-  return sold > 0 ? shopRevenue(id, shop, vehicle, fx, city) / sold : def(id, city).orderValue * (perkOf(id, shop, city)?.priceMult ?? 1) * decorMult(shop, id, city) * gmMult(shop) * fx.value;
+  return sold > 0
+    ? shopRevenue(id, shop, vehicle, fx, city) / sold
+    : def(id, city).orderValue * (perkOf(id, shop, city)?.priceMult ?? 1) * decorMult(shop, id, city) * gmMult(shop) * fx.value;
 }
 
 /**
@@ -776,7 +901,8 @@ export const isHeadUpgrade = (u: Upgrade): u is HeadUpgrade => u in HEAD_OF;
 export const headOf = (u: HeadUpgrade): HeadKind => HEAD_OF[u];
 
 /** What hiring a station head costs in this pizzeria. */
-export const headCost = (id: NeighborhoodId, k: HeadKind, city: CityDef = cityOfHood(id)) => (id === firstHood(city) ? city.fit.headCostFirst[k] : Math.ceil(def(id, city).headsCost * HEAD_SHARE[k]));
+export const headCost = (id: NeighborhoodId, k: HeadKind, city: CityDef = cityOfHood(id)) =>
+  id === firstHood(city) ? city.fit.headCostFirst[k] : Math.ceil(def(id, city).headsCost * HEAD_SHARE[k]);
 export const allHeadsHired = (shop: Shop) => HEAD_KINDS.every((k) => shop.heads[k]);
 export type BuyResult = { ok: true; state: GameState } | { ok: false; reason: string };
 
@@ -942,7 +1068,8 @@ export function pier9Available(s: GameState): boolean {
 }
 
 /** What the Pier 9 bid costs now: the base bid times the live auction's multiplier (features/layers/waterfront-boats.ts `pier9AuctionMult`, the same number from the saved state: content/layers.ts). */
-export const pier9Price = (s: GameState): number => Math.ceil((cityOf(s).bid?.cost ?? 0) * auctionMult((s.x?.[LAYER_KEYS.boats] as { openedAt?: number } | undefined)?.openedAt ?? -1, s.playSeconds));
+export const pier9Price = (s: GameState): number =>
+  Math.ceil((cityOf(s).bid?.cost ?? 0) * auctionMult((s.x?.[LAYER_KEYS.boats] as { openedAt?: number } | undefined)?.openedAt ?? -1, s.playSeconds));
 
 /** Win the dock for Marisol: spends the bid and earns Waterfront's perk, which plays the finale. */
 export function bidPier9(s: GameState): BuyResult {
@@ -1085,7 +1212,19 @@ export function lineTick(s: GameState, dt: number, now?: number): GameState {
     const l = shop.line;
     // an idle manual line with nobody walking can't change: skip the allocation
     // (carrier laps keep counting down while pies wait or a carrier is still out)
-    if (!auto.prep && !auto.oven && !auto.counter && !l.prep && !l.oven && !l.counter && l.departures.length === 0 && l.boxed === 0 && l.driverBusy <= 0 && l.walkinBusy <= 0) continue;
+    if (
+      !auto.prep &&
+      !auto.oven &&
+      !auto.counter &&
+      !l.prep &&
+      !l.oven &&
+      !l.counter &&
+      l.departures.length === 0 &&
+      l.boxed === 0 &&
+      l.driverBusy <= 0 &&
+      l.walkinBusy <= 0
+    )
+      continue;
     const a = advanceLine(l, dt, lineRates(id, shop, s.vehicle, mult, featureMults(s, id, now ?? s.lastSavedAt), city), auto);
     shops ??= { ...s.shops };
     shops[id] = { ...shop, line: a.line, sold: shop.sold + a.sold };
@@ -1099,7 +1238,8 @@ export function lineTick(s: GameState, dt: number, now?: number): GameState {
 }
 
 /** How many seconds away the player is paid for: the night oven's owned cap. */
-export const offlineCapOf = (s: Pick<GameState, 'nightOven'>): number => NIGHT_OVEN.capSeconds[Math.min(NIGHT_OVEN.capSeconds.length - 1, Math.max(0, s.nightOven | 0))];
+export const offlineCapOf = (s: Pick<GameState, 'nightOven'>): number =>
+  NIGHT_OVEN.capSeconds[Math.min(NIGHT_OVEN.capSeconds.length - 1, Math.max(0, s.nightOven | 0))];
 
 export interface OfflineResult {
   state: GameState;
@@ -1123,7 +1263,12 @@ export interface OfflineResult {
  * at half speed). One missing a head only finishes the jobs already running and pays the carriers already walking out.
  * Each line is settled, so nothing is paid twice.
  */
-export function offlineTick(s: GameState, seconds: number, boost = 1, now?: number): { state: GameState; byShop: { id: NeighborhoodId; pies: number; base: number; extra: number }[] } {
+export function offlineTick(
+  s: GameState,
+  seconds: number,
+  boost = 1,
+  now?: number,
+): { state: GameState; byShop: { id: NeighborhoodId; pies: number; base: number; extra: number }[] } {
   const shops = { ...s.shops };
   const add = { walkins: 0, deliveries: 0, baked: 0 };
   const rows: { id: NeighborhoodId; pies: number; base: number; extra: number }[] = [];
@@ -1182,15 +1327,35 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
   const seconds = Math.min(elapsed, cap);
   // each running boost adds (mult − 1) over the part of the offline window it covers
   const from = s.lastSavedAt;
-  const boost = seconds > 0 ? s.rewards.boosts.reduce((m, b) => m + (b.mult - 1) * Math.max(0, Math.min(b.until, from + seconds * 1000) - from) / (seconds * 1000), 1) : 1;
+  const boost =
+    seconds > 0
+      ? s.rewards.boosts.reduce((m, b) => m + ((b.mult - 1) * Math.max(0, Math.min(b.until, from + seconds * 1000) - from)) / (seconds * 1000), 1)
+      : 1;
   const { state: ticked, byShop } = offlineTick(s, seconds, boost, now);
   let state = ticked;
   // feature slices settle after the ordinary catch-up, in registry order
   for (const f of FEATURES) if (f.onOffline) state = f.onOffline(state, seconds, now, s);
-  const rows = byShop.map((r) => ({ id: r.id, managed: s.shops[r.id].managed, headsOnly: !s.shops[r.id].managed && runsItself(s.shops[r.id]), earned: r.base + r.extra, pies: r.pies })).filter((x) => x.earned > 0);
+  const rows = byShop
+    .map((r) => ({
+      id: r.id,
+      managed: s.shops[r.id].managed,
+      headsOnly: !s.shops[r.id].managed && runsItself(s.shops[r.id]),
+      earned: r.base + r.extra,
+      pies: r.pies,
+    }))
+    .filter((x) => x.earned > 0);
   // Downtown's manager is Nonna's story beat, not a hire the player can make, so it is never named as idle
   const idle = hoodIds(cityOf(s)).filter((id) => id !== firstHood(cityOf(s)) && s.shops[id].built && !runsItself(s.shops[id]));
-  return { state: { ...state, lastSavedAt: now }, seconds, cap, capped: elapsed - cap >= CAPPED_SLACK_SECONDS, awaySeconds: elapsed, earned: state.cash - s.cash, byShop: rows, idle };
+  return {
+    state: { ...state, lastSavedAt: now },
+    seconds,
+    cap,
+    capped: elapsed - cap >= CAPPED_SLACK_SECONDS,
+    awaySeconds: elapsed,
+    earned: state.cash - s.cash,
+    byShop: rows,
+    idle,
+  };
 }
 
 // ---------- Story ----------

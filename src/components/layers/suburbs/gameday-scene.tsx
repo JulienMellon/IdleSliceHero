@@ -46,7 +46,13 @@ export const GameDayScene = memo(function GameDayScene({ shopId, width, height }
   const seated = seatedFamilies(lay, chairs, free, t, families);
   return (
     <View testID="gameday-scene" pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}>
+      <Svg
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        width={width}
+        height={height}
+        viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}
+      >
         {chairs.slice(0, open).map((c, i) => {
           const [x, y] = P(c.x, c.y);
           const k = kAt(c.y) * (c.patio ? 1.1 : 1);
@@ -60,18 +66,28 @@ export const GameDayScene = memo(function GameDayScene({ shopId, width, height }
         {seated.map((f) => (
           <Person key={f.key} x={f.x} y={f.y} kind="sit" flip={f.flip} seed={f.seed} act="slice" mood="happy" />
         ))}
-        {seated.filter((f) => f.age < BURST_SECONDS).map((f) => {
-          const [x, y] = P(f.x, f.y, 30);
-          const k = f.age / BURST_SECONDS;
-          return (
-            <G key={`b${f.key}`} opacity={1 - k}>
-              {[0, 1, 2, 3, 4, 5].map((i) => {
-                const a = (i / 6) * Math.PI * 2 + 0.4;
-                return <Circle key={i} cx={x + Math.cos(a) * (6 + 22 * k)} cy={y + Math.sin(a) * (6 + 22 * k) - 8 * k} r={2.6} fill={['#FFC531', '#E8432E', '#3FAE5A'][i % 3]} />;
-              })}
-            </G>
-          );
-        })}
+        {seated
+          .filter((f) => f.age < BURST_SECONDS)
+          .map((f) => {
+            const [x, y] = P(f.x, f.y, 30);
+            const k = f.age / BURST_SECONDS;
+            return (
+              <G key={`b${f.key}`} opacity={1 - k}>
+                {[0, 1, 2, 3, 4, 5].map((i) => {
+                  const a = (i / 6) * Math.PI * 2 + 0.4;
+                  return (
+                    <Circle
+                      key={i}
+                      cx={x + Math.cos(a) * (6 + 22 * k)}
+                      cy={y + Math.sin(a) * (6 + 22 * k) - 8 * k}
+                      r={2.6}
+                      fill={['#FFC531', '#E8432E', '#3FAE5A'][i % 3]}
+                    />
+                  );
+                })}
+              </G>
+            );
+          })}
         {figures.map((f) => (
           <Person key={f.key} x={f.x} y={f.y} {...f.props} />
         ))}

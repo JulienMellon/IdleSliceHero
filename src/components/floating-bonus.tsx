@@ -82,7 +82,23 @@ export const FloatingBonus = memo(function FloatingBonus({ width, height, top }:
 });
 
 /** One golden pizza's flight. Mounted when it appears (or when a drawer closes on it) and keyed by its number. */
-function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed: number; taps: number; width: number; height: number; top: number; onTap: (pageX: number, pageY: number) => void }) {
+function Golden({
+  n,
+  seed,
+  taps,
+  width,
+  height,
+  top,
+  onTap,
+}: {
+  n: number;
+  seed: number;
+  taps: number;
+  width: number;
+  height: number;
+  top: number;
+  onTap: (pageX: number, pageY: number) => void;
+}) {
   const path = bonusPath(seed, n);
   const pips = streakPips(taps);
   const k = bonusScale(pips.lucky);
@@ -94,7 +110,14 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
     const g = useGame.getState().game;
     const left = Math.max(0.1, g.bonus.until - g.playSeconds);
     const p0 = Math.min(1, Math.max(0, 1 - left / BONUS.visibleSeconds));
-    return { x: new Animated.Value(flightX(path, p0)), toX: flightX(path, 1), ms: left * 1000, bob: new Animated.Value(path.phase), flap: new Animated.Value(0), spin: new Animated.Value(0) };
+    return {
+      x: new Animated.Value(flightX(path, p0)),
+      toX: flightX(path, 1),
+      ms: left * 1000,
+      bob: new Animated.Value(path.phase),
+      flap: new Animated.Value(0),
+      spin: new Animated.Value(0),
+    };
   });
   useEffect(() => {
     const run = Animated.timing(fly.x, { toValue: fly.toX, duration: fly.ms, easing: Easing.linear, useNativeDriver: true });
@@ -160,14 +183,33 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
             { translateY: fly.bob.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: [0, -b, 0, b, 0] }) },
           ],
         },
-      ]}>
+      ]}
+    >
       {pips.lucky && (
-        <Animated.View pointerEvents="none" style={{ position: 'absolute', left: (bw - rays) / 2, top: (bh - rays) / 2, width: rays, height: rays, transform: [{ rotate: fly.spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}>
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: (bw - rays) / 2,
+            top: (bh - rays) / 2,
+            width: rays,
+            height: rays,
+            transform: [{ rotate: fly.spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }],
+          }}
+        >
           <Rays size={rays} />
         </Animated.View>
       )}
       {/* the glow, 10 pt past the box all round */}
-      <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none" width={bw + 2 * g} height={bh + 2 * g} viewBox={`0 0 ${bw + 2 * g} ${bh + 2 * g}`} style={{ position: 'absolute', left: -g, top: -g }}>
+      <Svg
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        pointerEvents="none"
+        width={bw + 2 * g}
+        height={bh + 2 * g}
+        viewBox={`0 0 ${bw + 2 * g} ${bh + 2 * g}`}
+        style={{ position: 'absolute', left: -g, top: -g }}
+      >
         <Defs>
           <RadialGradient id="gpGlow" cx="50%" cy="50%" rx="50%" ry="50%">
             <Stop offset="0.55" stopColor="#FFE27A" stopOpacity={pips.lucky ? 0.9 : 0.75} />
@@ -187,7 +229,10 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
       <Animated.View pointerEvents="none" style={[styles.wing, { top: 7 * k, width: 20 * k, height: 26 * k, left: 0, transform: [{ scaleY: flapScale }] }]}>
         <Wing k={k} />
       </Animated.View>
-      <Animated.View pointerEvents="none" style={[styles.wing, { top: 7 * k, width: 20 * k, height: 26 * k, right: 0, transform: [{ scaleY: flapScale }, { scaleX: -1 }] }]}>
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.wing, { top: 7 * k, width: 20 * k, height: 26 * k, right: 0, transform: [{ scaleY: flapScale }, { scaleX: -1 }] }]}
+      >
         <Wing k={k} />
       </Animated.View>
       <Pressable
@@ -195,7 +240,8 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
         accessibilityRole="button"
         accessibilityLabel={pips.lucky ? 'Lucky golden pizza. Tap for a big bonus' : 'Golden pizza. Tap for a bonus'}
         onPress={(e) => onTap(e.nativeEvent.pageX, e.nativeEvent.pageY)}
-        style={{ width: bw, height: bh }}>
+        style={{ width: bw, height: bh }}
+      >
         <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={bw} height={bh} viewBox="0 0 60 44">
           <Box />
         </Svg>
@@ -223,7 +269,8 @@ function Golden({ n, seed, taps, width, height, top, onTap }: { n: number; seed:
 }
 
 /** A four-point star centred on (x, y), radius r, in the box's 60 x 44 units. */
-const sparkle = (x: number, y: number, r: number): string => `M${x} ${y - r} L${x + r * 0.3} ${y - r * 0.3} L${x + r} ${y} L${x + r * 0.3} ${y + r * 0.3} L${x} ${y + r} L${x - r * 0.3} ${y + r * 0.3} L${x - r} ${y} L${x - r * 0.3} ${y - r * 0.3} Z`;
+const sparkle = (x: number, y: number, r: number): string =>
+  `M${x} ${y - r} L${x + r * 0.3} ${y - r * 0.3} L${x + r} ${y} L${x + r * 0.3} ${y + r * 0.3} L${x} ${y + r} L${x - r * 0.3} ${y + r * 0.3} L${x - r} ${y} L${x - r * 0.3} ${y - r * 0.3} Z`;
 
 /** The box: a lid, a front with a slice on it, a shine, in a #F6C343 to #FFB300 gradient. 60 x 44; the wings sit behind it. */
 function Box() {
@@ -280,7 +327,13 @@ function PipSlice({ on, last, lucky }: { on: boolean; last: boolean; lucky: bool
   const isLucky = last && lucky;
   return (
     <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={8} height={8} viewBox="0 0 8 8">
-      <Path d="M0.7 1.2 H7.3 L4 7.4 Z" fill={isLucky ? '#FFF6C2' : on ? '#FFC531' : 'rgba(255,255,255,0.55)'} stroke={isLucky ? '#E8432E' : GOLD_DARK} strokeWidth={0.9} strokeLinejoin="round" />
+      <Path
+        d="M0.7 1.2 H7.3 L4 7.4 Z"
+        fill={isLucky ? '#FFF6C2' : on ? '#FFC531' : 'rgba(255,255,255,0.55)'}
+        stroke={isLucky ? '#E8432E' : GOLD_DARK}
+        strokeWidth={0.9}
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 }
@@ -312,9 +365,13 @@ function PopText({ pop, onDone }: { pop: Pop; onDone: (key: number) => void }) {
           left: pop.left,
           top: pop.top,
           opacity: t.interpolate({ inputRange: [0, 0.12, 0.7, 1], outputRange: [0, 1, 1, 0] }),
-          transform: [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [0, -BONUS_VIEW.popRisePx] }) }, { scale: t.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0.6, pop.lucky ? 1.25 : 1.1, 1] }) }],
+          transform: [
+            { translateY: t.interpolate({ inputRange: [0, 1], outputRange: [0, -BONUS_VIEW.popRisePx] }) },
+            { scale: t.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0.6, pop.lucky ? 1.25 : 1.1, 1] }) },
+          ],
         },
-      ]}>
+      ]}
+    >
       <Text style={[styles.popText, pop.lucky && styles.popTextLucky]}>{pop.text}</Text>
       <Text testID="golden-pop-sub" style={styles.popSub}>
         {pop.sub}
@@ -341,7 +398,8 @@ function LuckyBanner({ id, top, onDone }: { id: number; top: number; onDone: (ke
             opacity: t.interpolate({ inputRange: [0, 0.08, 0.8, 1], outputRange: [0, 1, 1, 0] }),
             transform: [{ scale: t.interpolate({ inputRange: [0, 0.12, 0.25, 1], outputRange: [0.6, 1.12, 1, 1] }) }],
           },
-        ]}>
+        ]}
+      >
         <Text testID="golden-lucky" style={styles.bannerText} adjustsFontSizeToFit numberOfLines={1}>
           {`LUCKY SLICE ×${LUCKY_MULT}!`}
         </Text>
@@ -358,16 +416,66 @@ const styles = StyleSheet.create({
   box: { position: 'absolute', left: 0 },
   wing: { position: 'absolute' },
   pips: { height: PIPS_H, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 2 },
-  pipsLabel: { marginLeft: 3, fontFamily: F.bold, fontSize: 10, color: '#fff', textShadowColor: INK, textShadowRadius: 2, textShadowOffset: { width: 0, height: 1 } },
-  tag: { position: 'absolute', top: -8, left: 0, width: BONUS_VIEW.tagWidth, alignItems: 'center', paddingVertical: 1, borderRadius: 8, backgroundColor: '#E8432E', borderWidth: 1.5, borderColor: '#fff' },
+  pipsLabel: {
+    marginLeft: 3,
+    fontFamily: F.bold,
+    fontSize: 10,
+    color: '#fff',
+    textShadowColor: INK,
+    textShadowRadius: 2,
+    textShadowOffset: { width: 0, height: 1 },
+  },
+  tag: {
+    position: 'absolute',
+    top: -8,
+    left: 0,
+    width: BONUS_VIEW.tagWidth,
+    alignItems: 'center',
+    paddingVertical: 1,
+    borderRadius: 8,
+    backgroundColor: '#E8432E',
+    borderWidth: 1.5,
+    borderColor: '#fff',
+  },
   tagText: { fontFamily: F.bold, fontSize: 10, letterSpacing: 0.8, color: '#fff' },
-  gift: { position: 'absolute', top: -GIFT_H - 4, left: 0, width: BONUS_VIEW.giftWidth, height: GIFT_H, justifyContent: 'center', alignItems: 'center', paddingVertical: 3, paddingHorizontal: 6, borderRadius: 10, backgroundColor: '#FFF4DC', borderWidth: 1.5, borderColor: INK },
+  gift: {
+    position: 'absolute',
+    top: -GIFT_H - 4,
+    left: 0,
+    width: BONUS_VIEW.giftWidth,
+    height: GIFT_H,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+    backgroundColor: '#FFF4DC',
+    borderWidth: 1.5,
+    borderColor: INK,
+  },
   giftText: { fontFamily: F.bold, fontSize: 12, color: INK },
   pop: { position: 'absolute', width: BONUS_VIEW.popWidth, alignItems: 'center' },
   popText: { fontFamily: F.bold, fontSize: 20, color: '#FFE27A', textShadowColor: INK, textShadowRadius: 3, textShadowOffset: { width: 0, height: 1 } },
   popTextLucky: { fontSize: 26 },
   popSub: { fontFamily: F.semi, fontSize: 12, color: '#fff', textShadowColor: INK, textShadowRadius: 3, textShadowOffset: { width: 0, height: 1 } },
   bannerWrap: { position: 'absolute', left: 0, right: 0, height: BONUS_VIEW.bannerHeight, justifyContent: 'center' },
-  banner: { alignSelf: 'stretch', paddingVertical: 8, paddingHorizontal: 12, alignItems: 'center', backgroundColor: 'rgba(192,57,43,0.94)', borderTopWidth: 2, borderBottomWidth: 2, borderColor: '#FFE27A' },
-  bannerText: { fontFamily: F.bold, fontSize: 30, letterSpacing: 0.5, color: '#fff', textShadowColor: INK, textShadowRadius: 4, textShadowOffset: { width: 0, height: 2 } },
+  banner: {
+    alignSelf: 'stretch',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    backgroundColor: 'rgba(192,57,43,0.94)',
+    borderTopWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: '#FFE27A',
+  },
+  bannerText: {
+    fontFamily: F.bold,
+    fontSize: 30,
+    letterSpacing: 0.5,
+    color: '#fff',
+    textShadowColor: INK,
+    textShadowRadius: 4,
+    textShadowOffset: { width: 0, height: 2 },
+  },
 });

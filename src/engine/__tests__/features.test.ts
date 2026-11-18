@@ -41,7 +41,10 @@ const fakeB: Feature<{ seen: boolean }> = {
 };
 
 /** A kitchen that out-runs its customers, so demand decides the rate. */
-const demandBound = (g: G.GameState): G.GameState => ({ ...g, shops: { ...g.shops, downtown: { ...g.shops.downtown, prep: 40, ovens: 40, counter: 40, footprint: 3 } } });
+const demandBound = (g: G.GameState): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, downtown: { ...g.shops.downtown, prep: 40, ovens: 40, counter: 40, footprint: 3 } },
+});
 
 beforeEach(() => {
   calls.length = 0;
@@ -49,7 +52,21 @@ beforeEach(() => {
 
 describe('feature registry', () => {
   it('ships the four endgame features (v5.15) and the heads feature (v5.15 S1), and with none registered nothing changes', () => {
-    expect(FEATURES.map((f) => f.key)).toEqual(['mastery', 'counterattack', 'events', 'recipes', 'heads', 'service', 'suburbsGameDay', 'waterfrontBoats', 'rival', 'universityMenu', 'industrialShifts', 'uptownStars', 'franchise']);
+    expect(FEATURES.map((f) => f.key)).toEqual([
+      'mastery',
+      'counterattack',
+      'events',
+      'recipes',
+      'heads',
+      'service',
+      'suburbsGameDay',
+      'waterfrontBoats',
+      'rival',
+      'universityMenu',
+      'industrialShifts',
+      'uptownStars',
+      'franchise',
+    ]);
     withFeatures([], () => {
       expect(G.newGame(T0).x).toEqual({});
       expect(G.featureMults(G.newGame(T0), 'downtown', T0)).toEqual({ value: 1, demand: 1 });
@@ -61,7 +78,11 @@ describe('feature registry', () => {
   it('withFeatures swaps the registry for the call and puts it back, even on a throw', () => {
     const shipped = FEATURES.length;
     withFeatures([fakeA], () => expect(FEATURES).toHaveLength(1));
-    expect(() => withFeatures([fakeA], () => { throw new Error('boom'); })).toThrow('boom');
+    expect(() =>
+      withFeatures([fakeA], () => {
+        throw new Error('boom');
+      }),
+    ).toThrow('boom');
     expect(FEATURES).toHaveLength(shipped);
   });
 
@@ -87,7 +108,11 @@ describe('feature registry', () => {
   });
   it('migrate: a registered feature still migrates its own key beside the kept ones', () => {
     const saved = { ...G.newGame(T0), x: { gone: { n: 1 }, probe: { n: 'junk' } } };
-    const probe: Feature<{ n: number }> = { key: 'probe', init: () => ({ n: 0 }), migrate: (raw) => ({ n: typeof (raw as { n?: unknown } | undefined)?.n === 'number' ? (raw as { n: number }).n : 0 }) };
+    const probe: Feature<{ n: number }> = {
+      key: 'probe',
+      init: () => ({ n: 0 }),
+      migrate: (raw) => ({ n: typeof (raw as { n?: unknown } | undefined)?.n === 'number' ? (raw as { n: number }).n : 0 }),
+    };
     withFeatures([probe], () => expect(G.migrate(JSON.parse(JSON.stringify(saved)), T0).x).toEqual({ gone: { n: 1 }, probe: { n: 0 } }));
   });
   it('jest setup: the real registry is live in a test that imports only the engine (C117)', () => {
@@ -130,10 +155,18 @@ describe('feature registry', () => {
   });
 
   it('station rates (A32, T94): a stationMult hook scales one station, takes the shop below its kitchen cap, and leaves demand alone', () => {
-    const ovenHalf: Feature<number> = { key: 'ovenHalf', init: () => 0, migrate: () => 0, stationMult: (_g, id) => (id === 'downtown' ? { oven: 0.5 } : undefined) };
+    const ovenHalf: Feature<number> = {
+      key: 'ovenHalf',
+      init: () => 0,
+      migrate: () => 0,
+      stationMult: (_g, id) => (id === 'downtown' ? { oven: 0.5 } : undefined),
+    };
     const prepSlow: Feature<number> = { key: 'prepSlow', init: () => 0, migrate: () => 0, stationMult: () => ({ prep: 0.8, counter: 2 }) };
     // a crowd the kitchen can't feed: the slowest station decides
-    const kitchenBound = (g: G.GameState): G.GameState => ({ ...g, shops: { ...g.shops, downtown: { ...g.shops.downtown, prep: 5, ovens: 5, counter: 5, drivers: 50, tables: 50, footprint: 3 } } });
+    const kitchenBound = (g: G.GameState): G.GameState => ({
+      ...g,
+      shops: { ...g.shops, downtown: { ...g.shops.downtown, prep: 5, ovens: 5, counter: 5, drivers: 50, tables: 50, footprint: 3 } },
+    });
     const plain = kitchenBound(G.newGame(T0));
     const sh = plain.shops.downtown;
     const slowest = Math.min(G.prepRate(sh), G.ovenRate(sh), G.counterRate(sh));

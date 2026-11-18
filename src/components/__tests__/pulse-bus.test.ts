@@ -26,7 +26,9 @@ describe('the cheer pulse', () => {
   test('while it is up every cook cheers (primitive props: act and mood) and nobody else changes; when it is over they work again', () => {
     const lay = layout(3, 4, 3, 2, 6, 3, 1);
     const pal = seatPalette(hash32(1) % 8, hash32(2) % 6, 8, 6, lay.tables.length);
-    const at = (cheer: boolean) => buildCast({ lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace: 1, clock: 3, shopSeed: 7, nIdx: 1, pal, crew: emptyCrew(), cheer }).cast;
+    const at = (cheer: boolean) =>
+      buildCast({ lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace: 1, clock: 3, shopSeed: 7, nIdx: 1, pal, crew: emptyCrew(), cheer })
+        .cast;
     const on = at(true);
     const off = at(false);
     const cooks = (cast: ReturnType<typeof at>) => cast.filter((c) => c.role === 'cook');

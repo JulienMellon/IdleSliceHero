@@ -45,7 +45,19 @@ export interface Line {
   nextId: number;
 }
 
-export const emptyLine = (): Line => ({ prep: null, oven: null, counter: null, prepped: 0, baked: 0, boxed: 0, driverBusy: 0, walkinBusy: 0, departures: [], walkInDebt: 0, nextId: 1 });
+export const emptyLine = (): Line => ({
+  prep: null,
+  oven: null,
+  counter: null,
+  prepped: 0,
+  baked: 0,
+  boxed: 0,
+  driverBusy: 0,
+  walkinBusy: 0,
+  departures: [],
+  walkInDebt: 0,
+  nextId: 1,
+});
 
 export const LINE = {
   /** A managed job lasts about this long at the shop's rate, so high levels move big stacks, not a strobe. */
@@ -118,7 +130,8 @@ export function tapStation(line: Line, st: Station, r: LineRates, auto: Automati
   }
   if (st === 'oven') {
     if (line.oven) return { ok: false, reason: `Oven busy · ${secs(line.oven.left)}` };
-    if (line.prepped <= 0) return { ok: false, reason: line.prep ? `Dough’s still prepping · ${secs(line.prep.left)}` : 'Nothing prepped yet — tap the prep table' };
+    if (line.prepped <= 0)
+      return { ok: false, reason: line.prep ? `Dough’s still prepping · ${secs(line.prep.left)}` : 'Nothing prepped yet — tap the prep table' };
     return { ok: true, line: { ...line, prepped: 0, oven: job(line.prepped, r.oven) } };
   }
   if (line.counter) return { ok: false, reason: `Serving · ${secs(line.counter.left)}` };
@@ -293,11 +306,25 @@ export function advanceLine(line: Line, dt: number, r: LineRates, auto: Automati
   }
   if (k >= MAX_EVENTS && t > 1e-9 && typeof __DEV__ !== 'undefined' && __DEV__) console.warn(`advanceLine: event cap hit, ${t.toFixed(2)} s dropped`); // C70
   const { paid, sold, walkins, deliveries, bakedOut } = w;
-  const next: Line = { prep: w.prep, oven: w.oven, counter: w.counter, prepped: w.prepped, baked: w.baked, boxed: w.boxed, driverBusy: w.driverBusy, walkinBusy: w.walkinBusy, departures: w.departures, walkInDebt: w.walkInDebt, nextId: w.nextId };
+  const next: Line = {
+    prep: w.prep,
+    oven: w.oven,
+    counter: w.counter,
+    prepped: w.prepped,
+    baked: w.baked,
+    boxed: w.boxed,
+    driverBusy: w.driverBusy,
+    walkinBusy: w.walkinBusy,
+    departures: w.departures,
+    walkInDebt: w.walkInDebt,
+    nextId: w.nextId,
+  };
   return { line: next, paid, sold, walkins, deliveries, baked: bakedOut };
 }
 
 /** Whole pies anywhere on the line (prepping, on the bench, baking, on the pass, serving, walking out). */
 export function piesInFlight(line: Line): number {
-  return (line.prep?.n ?? 0) + line.prepped + (line.oven?.n ?? 0) + line.baked + (line.counter?.n ?? 0) + line.boxed + line.departures.reduce((t, d) => t + d.n, 0);
+  return (
+    (line.prep?.n ?? 0) + line.prepped + (line.oven?.n ?? 0) + line.baked + (line.counter?.n ?? 0) + line.boxed + line.departures.reduce((t, d) => t + d.n, 0)
+  );
 }

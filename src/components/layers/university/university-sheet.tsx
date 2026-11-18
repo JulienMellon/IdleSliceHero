@@ -26,20 +26,42 @@ function Sheet() {
     if (next) setMenu(next.pepperoni, next.knots);
   };
   return (
-    <LayerSheet testID="university-sheet" title={dressed(game.city, 'layer.university.menu.info.title', COPY['layer.university.menu.info.title'])} onClose={universitySheet.close}>
+    <LayerSheet
+      testID="university-sheet"
+      title={dressed(game.city, 'layer.university.menu.info.title', COPY['layer.university.menu.info.title'])}
+      onClose={universitySheet.close}
+    >
       <Text style={styles.body}>{COPY['layer.university.menu.info.body']}</Text>
       {rows.map((r) => (
         <View key={r.id} style={styles.row} testID={`recipe-${r.id}`}>
           <View style={styles.rowText}>
-            <Text style={styles.name} numberOfLines={1}>{r.name}</Text>
-            <Text style={styles.small} numberOfLines={2}>{r.line}</Text>
+            <Text style={styles.name} numberOfLines={1}>
+              {r.name}
+            </Text>
+            <Text style={styles.small} numberOfLines={2}>
+              {r.line}
+            </Text>
             <Text style={styles.effect} numberOfLines={1}>{`${r.price} · ${r.time}`}</Text>
           </View>
-          <Pressable testID={`mix-minus-${r.id}`} accessibilityRole="button" accessibilityLabel={`Less ${r.name}`} disabled={!r.canMinus} onPress={() => tap(r.id, -1)} style={[styles.step, !r.canMinus && styles.stepOff]}>
+          <Pressable
+            testID={`mix-minus-${r.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Less ${r.name}`}
+            disabled={!r.canMinus}
+            onPress={() => tap(r.id, -1)}
+            style={[styles.step, !r.canMinus && styles.stepOff]}
+          >
             <Text style={styles.stepText}>{'−'}</Text>
           </Pressable>
           <Text testID={`mix-pct-${r.id}`} style={styles.pct}>{`${r.pct}%`}</Text>
-          <Pressable testID={`mix-plus-${r.id}`} accessibilityRole="button" accessibilityLabel={`More ${r.name}`} disabled={!r.canPlus} onPress={() => tap(r.id, 1)} style={[styles.step, !r.canPlus && styles.stepOff]}>
+          <Pressable
+            testID={`mix-plus-${r.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={`More ${r.name}`}
+            disabled={!r.canPlus}
+            onPress={() => tap(r.id, 1)}
+            style={[styles.step, !r.canPlus && styles.stepOff]}
+          >
             <Text style={styles.stepText}>+</Text>
           </Pressable>
         </View>
@@ -52,9 +74,15 @@ function Sheet() {
       <Text style={styles.body}>{dressed(game.city, 'layer.university.zones.info.body', COPY['layer.university.zones.info.body'])}</Text>
       {zoneCells(zv, game.city).map((z) => (
         <View key={z.id} style={[styles.zone, z.locked && styles.zoneLocked]} testID={`zone-row-${z.id}`}>
-          <Text style={styles.zoneName} numberOfLines={1}>{z.name}</Text>
-          <Text style={styles.zoneMid} numberOfLines={1}>{z.mid}</Text>
-          <Text style={styles.zoneFoot} numberOfLines={1}>{z.foot}</Text>
+          <Text style={styles.zoneName} numberOfLines={1}>
+            {z.name}
+          </Text>
+          <Text style={styles.zoneMid} numberOfLines={1}>
+            {z.mid}
+          </Text>
+          <Text style={styles.zoneFoot} numberOfLines={1}>
+            {z.foot}
+          </Text>
         </View>
       ))}
       {zv.drones ? <Text style={styles.drones}>{COPY['layer.university.drones.info']}</Text> : null}
@@ -69,18 +97,46 @@ export const UniversitySheet = memo(function UniversitySheet() {
 const styles = StyleSheet.create({
   body: { fontFamily: F.regular, fontSize: 13, lineHeight: 17, color: C.inkSoft },
   head: { fontFamily: F.bold, fontSize: 17, color: C.ink, marginTop: 4 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5, borderColor: C.lockedDark, padding: 6 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: C.lockedDark,
+    padding: 6,
+  },
   rowText: { flex: 1, gap: 1 },
   name: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   small: { fontFamily: F.regular, fontSize: 12, lineHeight: 15, color: C.inkSoft },
   effect: { fontFamily: F.semi, fontSize: 11, color: C.basilDark },
-  step: { width: BUTTON_H, height: BUTTON_H, borderRadius: 12, borderWidth: 2, borderColor: C.ink, backgroundColor: C.cheese, alignItems: 'center', justifyContent: 'center' },
+  step: {
+    width: BUTTON_H,
+    height: BUTTON_H,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: C.ink,
+    backgroundColor: C.cheese,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   stepOff: { backgroundColor: C.locked, borderColor: C.lockedDark, opacity: 0.6 },
   stepText: { fontFamily: F.bold, fontSize: 24, lineHeight: 28, color: C.ink },
   pct: { width: 42, fontFamily: F.bold, fontSize: 15, color: C.ink, textAlign: 'center' },
   total: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 2, borderColor: C.ink, padding: 8, gap: 2 },
   totalHead: { fontFamily: F.bold, fontSize: 15, color: C.ink },
-  zone: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32, backgroundColor: '#fff', borderRadius: 10, borderWidth: 1.5, borderColor: C.lockedDark, paddingHorizontal: 8 },
+  zone: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 32,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: C.lockedDark,
+    paddingHorizontal: 8,
+  },
   zoneLocked: { opacity: 0.6 },
   zoneName: { width: 70, fontFamily: F.bold, fontSize: 13, color: C.ink },
   zoneMid: { width: 76, fontFamily: F.semi, fontSize: 12, color: C.ink },

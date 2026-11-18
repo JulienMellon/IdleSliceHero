@@ -14,7 +14,15 @@ function rows(hood: string): string[][] {
   for (const part of sec1.split(/^### /m).slice(1)) {
     const [head, ...body] = part.split('\n');
     if (head.split(' · ')[0].toLowerCase() !== hood) continue;
-    for (const line of body) if (line.startsWith('| `')) out.push(line.trim().replace(/^\||\|$/g, '').split(' | ').map((c) => c.trim()));
+    for (const line of body)
+      if (line.startsWith('| `'))
+        out.push(
+          line
+            .trim()
+            .replace(/^\||\|$/g, '')
+            .split(' | ')
+            .map((c) => c.trim()),
+        );
   }
   return out;
 }

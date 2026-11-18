@@ -94,7 +94,11 @@ export function orderTick(s: GameState, dt: number, covered: boolean): GameState
     }
     if (covered) return s;
     const left = a.left - dt;
-    if (left <= 0) return { ...s, order: end(cur, play, { active: null, result: { kind: 'failed', hood: a.hood, reward: 0, left: ORDER.failShowSeconds, variant: a.variant } }) };
+    if (left <= 0)
+      return {
+        ...s,
+        order: end(cur, play, { active: null, result: { kind: 'failed', hood: a.hood, reward: 0, left: ORDER.failShowSeconds, variant: a.variant } }),
+      };
     return { ...s, order: { ...cur, active: { ...a, left } } };
   }
   if (covered) return s;

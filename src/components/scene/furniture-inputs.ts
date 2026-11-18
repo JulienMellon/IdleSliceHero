@@ -29,7 +29,15 @@ export interface FurnitureInputs extends Dress {
 export interface FurnitureSource {
   id: NeighborhoodId;
   name: string;
-  shop: { footprint: number; prep: number; counter: number; drivers: number; managed: boolean; line: { prepped: number }; decor: { plants: number; tables: number; signage: number } };
+  shop: {
+    footprint: number;
+    prep: number;
+    counter: number;
+    drivers: number;
+    managed: boolean;
+    line: { prepped: number };
+    decor: { plants: number; tables: number; signage: number };
+  };
   running: boolean;
   rate: number;
   vehicle: number;
@@ -66,4 +74,12 @@ export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn, 
 export const furnitureDeps = (f: FurnitureInputs): (string | number | boolean)[] => Object.values(f);
 
 /** What the visual ladder reads (ladder.ts), taken from the furniture inputs so it memoises on the same values. */
-export const ladderInput = (f: FurnitureInputs): LadderInput => ({ id: f.id, prepStep: f.prepStep, counterStep: f.counterStep, driverStep: f.driverStep, pins: f.pins, vehicle: f.vehicle, outside: !f.idleShop });
+export const ladderInput = (f: FurnitureInputs): LadderInput => ({
+  id: f.id,
+  prepStep: f.prepStep,
+  counterStep: f.counterStep,
+  driverStep: f.driverStep,
+  pins: f.pins,
+  vehicle: f.vehicle,
+  outside: !f.idleShop,
+});

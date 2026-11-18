@@ -138,7 +138,13 @@ const NightOvenChip = memo(function NightOvenChip() {
   const hours = useGame((s) => (rewardsUnlocked(s.game) ? hoursText(offlineCapOf(s.game)) : ''));
   if (!hours) return null;
   return (
-    <Pressable testID="night-oven-chip" onPress={askOven} style={styles.ovenChip} accessibilityRole="button" accessibilityLabel={`Nonna's night oven: full in ${hours}`}>
+    <Pressable
+      testID="night-oven-chip"
+      onPress={askOven}
+      style={styles.ovenChip}
+      accessibilityRole="button"
+      accessibilityLabel={`Nonna's night oven: full in ${hours}`}
+    >
       <MoonIcon size={16} />
       <Text style={styles.ovenPillText} numberOfLines={1} maxFontSizeMultiplier={1.1}>
         {hours}
@@ -246,6 +252,14 @@ export const SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] = [
 const styles = StyleSheet.create({
   ovenChip: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
   ovenPillText: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: '#fff' },
-  waitHint: { width: '100%', backgroundColor: '#FFE7C2', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10, borderWidth: 1.5, borderColor: C.cheeseDark },
+  waitHint: {
+    width: '100%',
+    backgroundColor: '#FFE7C2',
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1.5,
+    borderColor: C.cheeseDark,
+  },
   waitHintText: { fontFamily: F.semi, color: C.ink, textAlign: 'center' },
 });

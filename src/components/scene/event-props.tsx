@@ -45,7 +45,16 @@ export const ColdFrost = memo(function ColdFrost({ x, w, frontY }: { x: number; 
       {Array.from({ length: Math.max(3, Math.floor(w / 60)) }, (_, i) => {
         const cx = x + 22 + i * 60 + (i % 2) * 14;
         const cy = frontY + 18 + (i % 3) * 14;
-        return <Path key={i} d={`M${cx - 4} ${cy} H${cx + 4} M${cx} ${cy - 4} V${cy + 4} M${cx - 3} ${cy - 3} L${cx + 3} ${cy + 3} M${cx + 3} ${cy - 3} L${cx - 3} ${cy + 3}`} stroke="#fff" strokeWidth={1.2} strokeLinecap="round" opacity={0.8} />;
+        return (
+          <Path
+            key={i}
+            d={`M${cx - 4} ${cy} H${cx + 4} M${cx} ${cy - 4} V${cy + 4} M${cx - 3} ${cy - 3} L${cx + 3} ${cy + 3} M${cx + 3} ${cy - 3} L${cx - 3} ${cy + 3}`}
+            stroke="#fff"
+            strokeWidth={1.2}
+            strokeLinecap="round"
+            opacity={0.8}
+          />
+        );
       })}
     </G>
   );

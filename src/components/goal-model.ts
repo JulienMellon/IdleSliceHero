@@ -142,7 +142,14 @@ export function masteryGoal(g: GameState): MasteryGoal | null {
   const count = copy('goal.mastery', { n });
   const short = next ? `\u2605${n}/18 \u00B7 ${starName(next.star)}: ${def(next.shopId, cityOf(g)).name}` : `\u2605${n}/18`;
   const tiny = next ? `\u2605${n}/18 \u00B7 ${starName(next.star)}` : `\u2605${n}/18`;
-  return { label: next ? `${count} \u00B7 ${nextStarLine(next)}` : count, short, tiny, text: next ? `${next.have}/${next.need} ${STAR_UNIT[next.star]}` : '\u2605', current: n, target: MASTERY_MAX };
+  return {
+    label: next ? `${count} \u00B7 ${nextStarLine(next)}` : count,
+    short,
+    tiny,
+    text: next ? `${next.have}/${next.need} ${STAR_UNIT[next.star]}` : '\u2605',
+    current: n,
+    target: MASTERY_MAX,
+  };
 }
 
 /** The line and its amount both show whole in a bar `barW` wide (no word clipped): the strict form of `goalLabelFits`. */

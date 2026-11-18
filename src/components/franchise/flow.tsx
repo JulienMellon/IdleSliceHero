@@ -52,7 +52,9 @@ function Moment({ game, onGo }: { game: GameState; onGo: () => void }) {
   if (!m) return null;
   return (
     <View style={[styles.moment, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]} testID="franchise-moment">
-      <Animated.View style={[styles.momentBody, { opacity: rise, transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}>
+      <Animated.View
+        style={[styles.momentBody, { opacity: rise, transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}
+      >
         <Text style={styles.momentSign}>FRANCHISE</Text>
         <Text style={styles.momentTitle} accessibilityRole="header">
           {m.title}
@@ -102,7 +104,13 @@ function Moment({ game, onGo }: { game: GameState; onGo: () => void }) {
           <Text style={styles.postLine}>{m.postcard.line}</Text>
         </View>
       </Animated.View>
-      <Pressable testID="franchise-moment-go" accessibilityRole="button" accessibilityLabel={m.button} onPress={onGo} style={[styles.go, styles.goGold, styles.goSolo]}>
+      <Pressable
+        testID="franchise-moment-go"
+        accessibilityRole="button"
+        accessibilityLabel={m.button}
+        onPress={onGo}
+        style={[styles.go, styles.goGold, styles.goSolo]}
+      >
         <Text style={styles.goText}>{m.button} ▸</Text>
       </Pressable>
     </View>
@@ -156,10 +164,22 @@ export function FranchiseFlow({ game, onClose, onDone }: { game: GameState; onCl
               </View>
             )}
             <View style={styles.buttons}>
-              <Pressable testID="franchise-back" accessibilityRole="button" accessibilityLabel={step === 'ask' ? s.cancel : 'Go back'} onPress={back} style={[styles.go, styles.goGhost]}>
+              <Pressable
+                testID="franchise-back"
+                accessibilityRole="button"
+                accessibilityLabel={step === 'ask' ? s.cancel : 'Go back'}
+                onPress={back}
+                style={[styles.go, styles.goGhost]}
+              >
                 <Text style={[styles.goText, { color: C.ink }]}>{step === 'ask' ? s.cancel : 'Go back'}</Text>
               </Pressable>
-              <Pressable testID="franchise-go" accessibilityRole="button" accessibilityLabel={step === 'ask' ? s.go[0] : s.go[1]} onPress={go} style={[styles.go, step === 'ask' ? styles.goGold : styles.goRed]}>
+              <Pressable
+                testID="franchise-go"
+                accessibilityRole="button"
+                accessibilityLabel={step === 'ask' ? s.go[0] : s.go[1]}
+                onPress={go}
+                style={[styles.go, step === 'ask' ? styles.goGold : styles.goRed]}
+              >
                 <Text style={styles.goText}>{step === 'ask' ? s.go[0] : s.go[1]}</Text>
               </Pressable>
             </View>
@@ -181,7 +201,16 @@ const styles = StyleSheet.create({
   gainStars: { fontFamily: F.bold, fontSize: 17, color: C.ink, textAlign: 'center' },
   gainMult: { fontFamily: F.semi, fontSize: 14, color: C.inkSoft, textAlign: 'center' },
   buttons: { flexDirection: 'row', gap: 10 },
-  go: { flex: 1, minHeight: TAP.min + 4, borderRadius: 16, borderWidth: 3, borderColor: C.ink, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
+  go: {
+    flex: 1,
+    minHeight: TAP.min + 4,
+    borderRadius: 16,
+    borderWidth: 3,
+    borderColor: C.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
   goGold: { backgroundColor: C.cheese },
   goRed: { backgroundColor: C.tomato },
   goSolo: { flex: 0, alignSelf: 'stretch' },
@@ -194,7 +223,17 @@ const styles = StyleSheet.create({
   starsWrap: { alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' },
   stars: { fontFamily: F.bold, fontSize: 64, color: '#FFD23F' },
   confetti: { position: 'absolute', width: 8, height: 12, borderRadius: 2 },
-  postcard: { alignSelf: 'stretch', backgroundColor: '#FFF4E0', borderRadius: 10, borderWidth: 2.5, borderColor: C.ink, padding: 10, gap: 4, marginTop: 10, transform: [{ rotate: '-1.5deg' }] },
+  postcard: {
+    alignSelf: 'stretch',
+    backgroundColor: '#FFF4E0',
+    borderRadius: 10,
+    borderWidth: 2.5,
+    borderColor: C.ink,
+    padding: 10,
+    gap: 4,
+    marginTop: 10,
+    transform: [{ rotate: '-1.5deg' }],
+  },
   stripe: { flexDirection: 'row', height: 8, borderRadius: 4, overflow: 'hidden', borderWidth: 1.5, borderColor: C.ink },
   postTitle: { fontFamily: F.bold, fontSize: 16, color: C.tomato },
   postLine: { fontFamily: F.semi, fontSize: 13, color: C.ink },

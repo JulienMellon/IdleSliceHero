@@ -5,7 +5,18 @@ import { emitAudio, type AudioEvent } from '../audio/bus';
 import { getBannerOpen } from '../components/endgame/banner-state';
 import { offerWaits } from '../components/endgame/stack-model';
 import type { ClaimInfo, ClaimKind } from '../components/store/ad-model';
-import { applyDouble, applyGrant, claimDelta, claimOffer, grantDailyBooster, offlineBoost, offlineExtra, offlineFactor, repairByAd, rerollDaily as rerollDailyTask } from '../engine/offers';
+import {
+  applyDouble,
+  applyGrant,
+  claimDelta,
+  claimOffer,
+  grantDailyBooster,
+  offlineBoost,
+  offlineExtra,
+  offlineFactor,
+  repairByAd,
+  rerollDaily as rerollDailyTask,
+} from '../engine/offers';
 import { NO_PREFS, parsePrefs, PREFS_KEY, type StorePrefs } from '../components/store/store-model';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
@@ -181,9 +192,22 @@ interface Store {
 /** A scene, the return popup or the title card is up: the orders' clocks stop and no offer appears. */
 export const gameCovered = (s: Pick<Store, 'playing' | 'offline' | 'titleDone'>): boolean => !!s.playing || !!s.offline || !s.titleDone;
 /** The golden pizza also waits behind a drawer or another screen. */
-export const bonusBlocked = (s: Pick<Store, 'playing' | 'offline' | 'titleDone' | 'bonusHold' | 'layerHold'>): boolean => s.bonusHold || s.layerHold || gameCovered(s);
+export const bonusBlocked = (s: Pick<Store, 'playing' | 'offline' | 'titleDone' | 'bonusHold' | 'layerHold'>): boolean =>
+  s.bonusHold || s.layerHold || gameCovered(s);
 
-const UPGRADE_NAMES: Record<string, string> = { prep: 'Prep', ovens: 'Ovens', counter: 'Counter', drivers: 'Drivers', tables: 'Seating', grade: 'Oven grade', expand: 'Expand', manager: 'Manager', headPrep: 'Head Prep Cook', headOven: 'Head Baker', headCounter: 'Head Cashier' };
+const UPGRADE_NAMES: Record<string, string> = {
+  prep: 'Prep',
+  ovens: 'Ovens',
+  counter: 'Counter',
+  drivers: 'Drivers',
+  tables: 'Seating',
+  grade: 'Oven grade',
+  expand: 'Expand',
+  manager: 'Manager',
+  headPrep: 'Head Prep Cook',
+  headOven: 'Head Baker',
+  headCounter: 'Head Cashier',
+};
 
 /** Serialises saves so a resume never reads a save that is still being written. */
 let pendingSave: Promise<void> = Promise.resolve();
@@ -237,7 +261,10 @@ export const useGame = create<Store>((set, get) => {
     return true;
   };
   /** Cash claims sound like collecting; the rest just click. */
-  const claimSound = (before: G.GameState) => (next: G.GameState): AudioEvent => (next.cash > before.cash ? { type: 'collect', size: collectSize(next.cash - before.cash, before.cash) } : { type: 'click' });
+  const claimSound =
+    (before: G.GameState) =>
+    (next: G.GameState): AudioEvent =>
+      next.cash > before.cash ? { type: 'collect', size: collectSize(next.cash - before.cash, before.cash) } : { type: 'click' };
   const claim = (run: (g: G.GameState, now: number) => G.BuyResult) => {
     const g = get().game;
     return commit(run(g, gameNow()), undefined, claimSound(g));
@@ -308,7 +335,21 @@ export const useGame = create<Store>((set, get) => {
         awaySeconds = r.awaySeconds;
         if (r.earned >= 1 && r.seconds >= TUNING.offlinePopupSeconds) {
           // Hold the cash back until the player taps Collect.
-          offline = { seconds: r.seconds, capped: r.capped, awaySeconds: r.awaySeconds, earned: r.earned, byShop: r.byShop.map((b) => ({ name: G.def(b.id, cityOf(saved)).name, earned: b.earned, managed: b.managed, headsOnly: b.headsOnly, pies: b.pies })), idle: r.idle.map((id) => G.def(id, cityOf(saved)).name), boost: offlineBoost(saved.rewards.boosts, saved.lastSavedAt, r.seconds) };
+          offline = {
+            seconds: r.seconds,
+            capped: r.capped,
+            awaySeconds: r.awaySeconds,
+            earned: r.earned,
+            byShop: r.byShop.map((b) => ({
+              name: G.def(b.id, cityOf(saved)).name,
+              earned: b.earned,
+              managed: b.managed,
+              headsOnly: b.headsOnly,
+              pies: b.pies,
+            })),
+            idle: r.idle.map((id) => G.def(id, cityOf(saved)).name),
+            boost: offlineBoost(saved.rewards.boosts, saved.lastSavedAt, r.seconds),
+          };
           game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
         }
         read = true;
@@ -327,7 +368,9 @@ export const useGame = create<Store>((set, get) => {
       grantsWired = true;
       onGrant((grant) => get().receiveGrant(grant));
       void startServices().then(() => get().syncPlus());
-      void AsyncStorage.getItem(PREFS_KEY).then((raw) => set({ prefs: parsePrefs(raw) })).catch(() => {});
+      void AsyncStorage.getItem(PREFS_KEY)
+        .then((raw) => set({ prefs: parsePrefs(raw) }))
+        .catch(() => {});
     }
     if (!offline) queueScene();
   };
@@ -546,9 +589,20 @@ export const useGame = create<Store>((set, get) => {
       void get().save();
     },
 
-    buyFleet: () => commit(G.buyVehicle(get().game), undefined, (next) => ({ type: 'buy', what: 'fleet', vehicle: next.vehicle, sting: purchaseSting('fleet', { vehicle: next.vehicle }) })),
+    buyFleet: () =>
+      commit(G.buyVehicle(get().game), undefined, (next) => ({
+        type: 'buy',
+        what: 'fleet',
+        vehicle: next.vehicle,
+        sting: purchaseSting('fleet', { vehicle: next.vehicle }),
+      })),
 
-    buyDecor: (kind) => commit(G.buyDecor(get().game, get().game.active, kind), { name: kind[0].toUpperCase() + kind.slice(1), cost: G.decorCost(get().game, get().game.active, kind) }, plain('decor')),
+    buyDecor: (kind) =>
+      commit(
+        G.buyDecor(get().game, get().game.active, kind),
+        { name: kind[0].toUpperCase() + kind.slice(1), cost: G.decorCost(get().game, get().game.active, kind) },
+        plain('decor'),
+      ),
 
     buyNightOven: () => {
       const g = get().game;
@@ -579,7 +633,11 @@ export const useGame = create<Store>((set, get) => {
     },
 
     build: (id) => {
-      const ok = commit(G.buildShop(get().game, id), { name: `Build ${G.def(id, cityOf(get().game)).name}`, cost: G.def(id, cityOf(get().game)).buildCost }, () => ({ type: 'buy', what: 'build', sting: 'build', hood: id }));
+      const ok = commit(
+        G.buildShop(get().game, id),
+        { name: `Build ${G.def(id, cityOf(get().game)).name}`, cost: G.def(id, cityOf(get().game)).buildCost },
+        () => ({ type: 'buy', what: 'build', sting: 'build', hood: id }),
+      );
       if (ok) analytics.track(EVENTS.shopBuilt, { shop: id });
       return ok;
     },
@@ -609,7 +667,10 @@ export const useGame = create<Store>((set, get) => {
       if (!o) return;
       const g = get().game;
       emitAudio({ type: 'collect', size: collectSize(o.earned, g.cash) });
-      set({ offline: null, game: { ...g, cash: g.cash + o.earned, totalEarned: g.totalEarned + o.earned, stats: { ...g.stats, offline: g.stats.offline + 1 } } });
+      set({
+        offline: null,
+        game: { ...g, cash: g.cash + o.earned, totalEarned: g.totalEarned + o.earned, stats: { ...g.stats, offline: g.stats.offline + 1 } },
+      });
       void get().save();
       queueScene();
     },
@@ -693,7 +754,14 @@ export const useGame = create<Store>((set, get) => {
         if (!o2 || o2.doubled) return false;
         const f = offlineFactor(o2.boost);
         if (f <= 1) return false;
-        set({ offline: { ...o2, doubled: true, earned: o2.earned + offlineExtra(o2.earned, o2.boost), byShop: o2.byShop.map((b) => ({ ...b, earned: b.earned * f })) } });
+        set({
+          offline: {
+            ...o2,
+            doubled: true,
+            earned: o2.earned + offlineExtra(o2.earned, o2.boost),
+            byShop: o2.byShop.map((b) => ({ ...b, earned: b.earned * f })),
+          },
+        });
         return true;
       });
     },

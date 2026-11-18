@@ -137,7 +137,14 @@ export function badgeModels(b: BadgeInput): BadgeModel[] {
       step = Math.round((Math.floor(p * n) * 24) / n);
     }
     const count = job ? pizzas(job.n) : st === 'prep' && !b.auto.prep ? `×${pizzas(b.tapBatch)}` : pizzas(waiting[st]);
-    return { st, step, count, tone: b.neck.has(st) ? 'tomato' : 'basil', ready: !b.auto[st] && b.next === st, runner: b.auto[st] ? (b.managed ? 'gm' : 'head') : null };
+    return {
+      st,
+      step,
+      count,
+      tone: b.neck.has(st) ? 'tomato' : 'basil',
+      ready: !b.auto[st] && b.next === st,
+      runner: b.auto[st] ? (b.managed ? 'gm' : 'head') : null,
+    };
   });
 }
 
@@ -200,7 +207,18 @@ export const popWidth = (text: string) => Math.min(POP_MAX_W, text.length * 6.1 
  * `keepOff` are rects the pop must not cover (the waiting pill, whose last word names the station to buy): a pop that would
  * land on one lifts to sit 4 above it, so the instruction is never cut.
  */
-export function popPlace(at: [number, number], w: number, opts: { walkin: boolean; rideAlong: boolean; k: number; keepOff?: readonly Rect[]; sceneW: number; /** The drawing's left edge (0 unless the draw space of a wide frame). */ x0?: number }): { x: number; y: number; rect: Rect } {
+export function popPlace(
+  at: [number, number],
+  w: number,
+  opts: {
+    walkin: boolean;
+    rideAlong: boolean;
+    k: number;
+    keepOff?: readonly Rect[];
+    sceneW: number;
+    /** The drawing's left edge (0 unless the draw space of a wide frame). */ x0?: number;
+  },
+): { x: number; y: number; rect: Rect } {
   const r = popRect(at, w);
   const x = opts.rideAlong ? (r.x0 + r.x1) / 2 : Math.min(opts.sceneW - 4 - w / 2, Math.max((opts.x0 ?? 0) + 4 + w / 2, at[0]));
   let y = (opts.rideAlong ? r.y1 : at[1] - (opts.walkin ? 58 : 30)) - opts.k * 6;
@@ -232,7 +250,15 @@ export interface PlacedPop<D> {
  * any more: a pop that would land on a sidewalk pill used to jump above it and sit across the faces behind (a 45 pt band), so the pill gives way instead
  * (`popsCover`). `keepOff` is still honoured for a caller that wants a pop lifted.
  */
-export function placePops<D extends { kind: 'driver' | 'walkin'; n: number; cash: number }>(deps: readonly D[], left: (d: D) => number, anchor: (d: D) => [number, number] | null, register: [number, number], sceneW: number, keepOff: readonly Rect[] = [], x0 = 0): PlacedPop<D>[] {
+export function placePops<D extends { kind: 'driver' | 'walkin'; n: number; cash: number }>(
+  deps: readonly D[],
+  left: (d: D) => number,
+  anchor: (d: D) => [number, number] | null,
+  register: [number, number],
+  sceneW: number,
+  keepOff: readonly Rect[] = [],
+  x0 = 0,
+): PlacedPop<D>[] {
   if (deps.length === 0) return [];
   return popModels(deps, left).map(({ dep: d, n, cash }) => {
     const l = left(d);
@@ -242,7 +268,7 @@ export function placePops<D extends { kind: 'driver' | 'walkin'; n: number; cash
     // D410: a walk-in's pop hangs over the register, not over their own head (it used to cover the face of the one at the counter)
     const walkin = d.kind === 'walkin';
     const carrier = anchor(d);
-    const at = walkin ? register : carrier ?? register;
+    const at = walkin ? register : (carrier ?? register);
     const text = n > 1 ? `×${n} · +${money(cash)}` : `+${money(cash)}`;
     // D379: a pill never grows past 80 pt (11 pt text), however long the "×n · +$X" is
     const w = popWidth(text);

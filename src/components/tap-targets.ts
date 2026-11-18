@@ -126,7 +126,13 @@ export const HUD_SLOP = {
 } as const;
 
 export type HudKey = 'scrapbook' | 'tasks' | 'gift' | 'shop' | 'city';
-export const HUD_BUTTON_SLOP = { scrapbook: HUD_SLOP.first, tasks: HUD_SLOP.middle, gift: HUD_SLOP.middle, shop: HUD_SLOP.middle, city: HUD_SLOP.last } as const satisfies Record<HudKey, object>;
+export const HUD_BUTTON_SLOP = {
+  scrapbook: HUD_SLOP.first,
+  tasks: HUD_SLOP.middle,
+  gift: HUD_SLOP.middle,
+  shop: HUD_SLOP.middle,
+  city: HUD_SLOP.last,
+} as const satisfies Record<HudKey, object>;
 
 export interface HudButton {
   key: HudKey;
@@ -142,7 +148,14 @@ export interface HudButton {
  */
 export function hudRow(screenW: number, { tasks, gift, topChips }: { tasks: boolean; gift: boolean; topChips: number }) {
   const rowW = screenW - 2 * HUD_PAD;
-  const keys: (HudKey | 'cash')[] = ['scrapbook', ...(tasks ? (['tasks'] as const) : []), 'cash', ...(gift ? (['gift'] as const) : []), ...Array.from({ length: topChips }, () => 'shop' as const), 'city'];
+  const keys: (HudKey | 'cash')[] = [
+    'scrapbook',
+    ...(tasks ? (['tasks'] as const) : []),
+    'cash',
+    ...(gift ? (['gift'] as const) : []),
+    ...Array.from({ length: topChips }, () => 'shop' as const),
+    'city',
+  ];
   const icons = keys.length - 1;
   const cashW = rowW - icons * HUD_ICON - (keys.length - 1) * HUD_GAP;
   let x = 0;

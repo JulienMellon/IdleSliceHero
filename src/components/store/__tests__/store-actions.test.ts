@@ -1,7 +1,14 @@
 // The store's U3 actions on the real game store: what a claim leaves for the sheet, the double, a grant, the offline 2x, the shelf's booster.
 jest.mock('@react-native-async-storage/async-storage', () => {
   const mem: Record<string, string> = {};
-  return { __esModule: true, default: { getItem: async (k: string) => mem[k] ?? null, setItem: async (k: string, v: string) => void (mem[k] = v), removeItem: async (k: string) => void delete mem[k] } };
+  return {
+    __esModule: true,
+    default: {
+      getItem: async (k: string) => mem[k] ?? null,
+      setItem: async (k: string, v: string) => void (mem[k] = v),
+      removeItem: async (k: string) => void delete mem[k],
+    },
+  };
 });
 
 jest.useFakeTimers();
@@ -24,11 +31,24 @@ function fresh(): G.GameState {
   const shops = { ...s.shops, downtown: { ...s.shops.downtown, prep: 22, ovens: 20, counter: 18, drivers: 14, managed: true } };
   return refreshRewards({ ...s, shops, seenScenes: [NONNA_TAKEOVER.sceneId], cash: 1000, totalEarned: 15000, tutorial: G.TUTORIAL_DONE }, now);
 }
-const done = (g: G.GameState, i = 0): G.GameState => ({ ...g, rewards: { ...g.rewards, daily: g.rewards.daily.map((t, k) => (k === i ? { ...t, target: 0 } : t)) } });
+const done = (g: G.GameState, i = 0): G.GameState => ({
+  ...g,
+  rewards: { ...g.rewards, daily: g.rewards.daily.map((t, k) => (k === i ? { ...t, target: 0 } : t)) },
+});
 const st = () => useGame.getState();
 
 beforeEach(() => {
-  useGame.setState({ game: fresh(), loaded: true, titleDone: true, offline: null, claimed: null, plus: false, starterAt: null, prefs: { starterOffered: false, boosterAdDay: '' }, toast: null });
+  useGame.setState({
+    game: fresh(),
+    loaded: true,
+    titleDone: true,
+    offline: null,
+    claimed: null,
+    plus: false,
+    starterAt: null,
+    prefs: { starterOffered: false, boosterAdDay: '' },
+    toast: null,
+  });
 });
 
 describe('a claim and its double', () => {
@@ -49,7 +69,7 @@ describe('a claim and its double', () => {
     expect(st().doubleClaim()).toBe(false);
     expect(st().game.cash - before).toBeCloseTo(2 * paid, 6);
   });
-  test('a Nonna\'s Plus owner is paid double at once, with no prompt (D504)', () => {
+  test("a Nonna's Plus owner is paid double at once, with no prompt (D504)", () => {
     useGame.setState({ game: done(st().game), plus: true });
     const before = st().game.cash;
     expect(st().claimDaily(0)).toBe(true);
@@ -96,7 +116,7 @@ describe('the shelf booster', () => {
 });
 
 describe('the daily swap', () => {
-  test('swaps one row and uses the day\'s swap', () => {
+  test("swaps one row and uses the day's swap", () => {
     const kinds = st().game.rewards.daily.map((t) => t.kind);
     expect(st().rerollDaily(0)).toBe(true);
     expect(st().game.rewards.rerollUsed).toBe(true);
@@ -106,7 +126,15 @@ describe('the daily swap', () => {
 });
 
 describe('2x offline earnings', () => {
-  const summary = (boost: number) => ({ seconds: 3600, capped: false, awaySeconds: 3600, earned: 100, byShop: [{ name: 'Downtown', earned: 100, managed: true, headsOnly: false, pies: 10 }], idle: [], boost });
+  const summary = (boost: number) => ({
+    seconds: 3600,
+    capped: false,
+    awaySeconds: 3600,
+    earned: 100,
+    byShop: [{ name: 'Downtown', earned: 100, managed: true, headsOnly: false, pies: 10 }],
+    idle: [],
+    boost,
+  });
   test('doubles the held-back total once', () => {
     useGame.setState({ offline: summary(1) });
     expect(st().doubleOffline()).toBe(true);
@@ -212,7 +240,9 @@ describe('analytics events (card N1)', () => {
 describe("an order offer's wait holds while something ahead of it hides it", () => {
   const withOffer = (attack: boolean): G.GameState => {
     const g = fresh();
-    const x = attack ? { ...g.x, counterattack: { armedWeek: 1, seenWeek: 1, target: 'downtown', open: true, defended: [], challenge: null, retryAt: 0, news: null } } : g.x;
+    const x = attack
+      ? { ...g.x, counterattack: { armedWeek: 1, seenWeek: 1, target: 'downtown', open: true, defended: [], challenge: null, retryAt: 0, news: null } }
+      : g.x;
     return {
       ...g,
       x,

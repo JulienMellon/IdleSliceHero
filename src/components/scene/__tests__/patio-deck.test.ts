@@ -7,7 +7,8 @@ import { figureBox } from '../ladder';
 
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 const lays = () => [0, 1, 2, 3, 4].map((fp) => ({ fp, lay: layout(fp, Math.min(fp + 1, 6), 3, 2, 6, DRIVER_SLOTS[fp], 1) }));
-const hit = (a: { x0: number; x1: number; y0: number; y1: number }, b: { x0: number; x1: number; y0: number; y1: number }) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+const hit = (a: { x0: number; x1: number; y0: number; y1: number }, b: { x0: number; x1: number; y0: number; y1: number }) =>
+  a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
 
 describe('the patio deck (D428)', () => {
   test('it is plank-coloured, one 10 pt step down, with an 8 pt rail, and it stands behind the queue lane', () => {
@@ -19,7 +20,7 @@ describe('the patio deck (D428)', () => {
     expect(d.riser[0][1] - d.top[0][1]).toBeCloseTo(-STEP_PT, 0); // lifted 10 pt (the depth scale is ~0.99 there: within half a point)
     expect(d.planks.length).toBeGreaterThan(2);
   });
-  test('every patio set stands wholly on its deck (chairs, table, umbrella), the deck is wholly on screen and right of the wall\'s left pilaster', () => {
+  test("every patio set stands wholly on its deck (chairs, table, umbrella), the deck is wholly on screen and right of the wall's left pilaster", () => {
     let sets = 0;
     for (const { fp, lay } of lays())
       for (const p of lay.patio) {
@@ -33,7 +34,7 @@ describe('the patio deck (D428)', () => {
       }
     expect(sets).toBeGreaterThanOrEqual(2); // the roomier shops have a set to test
   });
-  test('no queued diner or driver stands on a deck, and the rail leaves the guest\'s way to the right-hand chair open', () => {
+  test("no queued diner or driver stands on a deck, and the rail leaves the guest's way to the right-hand chair open", () => {
     for (const { fp, lay } of lays()) {
       const figures = [...lay.queue, ...lay.driverQueue].map(([x, y]) => figureBox(x, y));
       for (const p of lay.patio) {
@@ -51,7 +52,7 @@ describe('the patio deck (D428)', () => {
       }
     }
   });
-  test('the rail stands below the seated diners\' laps, so it never hides a face', () => {
+  test("the rail stands below the seated diners' laps, so it never hides a face", () => {
     for (const { fp, lay } of lays())
       for (const p of lay.patio) {
         const d = patioDeck(p);

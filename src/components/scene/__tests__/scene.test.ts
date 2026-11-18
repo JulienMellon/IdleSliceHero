@@ -1,5 +1,33 @@
 /// <reference types="jest" />
-import { BACK_ROW_Y, COUNTER_LANE_Y, DRIVER_DROP_PT, DRIVER_NEAR_X, DRIVER_QUEUE_PITCH, DRIVER_SPOTS, FEET_IN, FIGURE_HALF_W, FRONT_ROW_Y, GROUP_GAP, LEDGE_Y, PATIO_SEAT, PROP_HALF_W, PROP_Y, QUEUE_PITCH, QUEUE_Y, QUEUE_SPOTS, ROOM_W, SEAT, SIGN_Y, STOOL_Y, SIGN_HALF_W, TABLE_PITCH, TREE_Y, VEHICLE_HALF_W, layout, type Layout } from './draw-layout';
+import {
+  BACK_ROW_Y,
+  COUNTER_LANE_Y,
+  DRIVER_DROP_PT,
+  DRIVER_NEAR_X,
+  DRIVER_QUEUE_PITCH,
+  DRIVER_SPOTS,
+  FEET_IN,
+  FIGURE_HALF_W,
+  FRONT_ROW_Y,
+  GROUP_GAP,
+  LEDGE_Y,
+  PATIO_SEAT,
+  PROP_HALF_W,
+  PROP_Y,
+  QUEUE_PITCH,
+  QUEUE_Y,
+  QUEUE_SPOTS,
+  ROOM_W,
+  SEAT,
+  SIGN_Y,
+  STOOL_Y,
+  SIGN_HALF_W,
+  TABLE_PITCH,
+  TREE_Y,
+  VEHICLE_HALF_W,
+  layout,
+  type Layout,
+} from './draw-layout';
 import { P, unprojectX } from '../projection';
 import { FOOTPRINTS } from '../../../content/tuning';
 import { pickAvoid, seatPalette } from '../palette';
@@ -15,7 +43,8 @@ function* allLayouts(): Generator<[string, Layout]> {
       for (const cooks of [1, 2, 3])
         for (const staff of [1, 2])
           for (const tables of [1, 2, 3, 4, 6, 8])
-            for (const plants of [0, 1, 3]) yield [`fp${fp} o${ovens} c${cooks} s${staff} t${tables} p${plants}`, layout(fp, ovens, cooks, staff, tables, DRIVER_SLOTS[fp], plants)];
+            for (const plants of [0, 1, 3])
+              yield [`fp${fp} o${ovens} c${cooks} s${staff} t${tables} p${plants}`, layout(fp, ovens, cooks, staff, tables, DRIVER_SLOTS[fp], plants)];
 }
 
 describe('layout invariants (T1)', () => {
@@ -165,9 +194,12 @@ describe('driver and walk-in timelines (T6)', () => {
       const drivers = Math.min(n, lay.spots.length * 3);
       for (let f = 0; f < 600; f++) {
         const t = f / 15;
-        const standing = Array.from({ length: drivers }, (_, i) => driverPose(lay, i, driverPhase(i, drivers, t, (i * 7) % 4 / 100), SCENE_W)).filter((d) => !d.walking);
+        const standing = Array.from({ length: drivers }, (_, i) => driverPose(lay, i, driverPhase(i, drivers, t, ((i * 7) % 4) / 100), SCENE_W)).filter(
+          (d) => !d.walking,
+        );
         for (let a = 0; a < standing.length; a++)
-          for (let b = a + 1; b < standing.length; b++) expect(Math.hypot(standing[a].pos[0] - standing[b].pos[0], standing[a].pos[1] - standing[b].pos[1])).toBeGreaterThan(10);
+          for (let b = a + 1; b < standing.length; b++)
+            expect(Math.hypot(standing[a].pos[0] - standing[b].pos[0], standing[a].pos[1] - standing[b].pos[1])).toBeGreaterThan(10);
       }
     }
   });
@@ -337,7 +369,7 @@ describe('the sidewalk lane (v5.12: D414, G90, D416)', () => {
     expect(wide.patio.length).toBeGreaterThanOrEqual(1);
     expect(layout(2, 3, 2, 2, 6, 3, 1).patio.length).toBeGreaterThanOrEqual(1); // the Corner shop kept its set when the lane was re-ordered
   });
-  test('the chalkboard and the signature prop both stand clear of the tree, each other, the vehicle and the patio guests\' way up to their chairs', () => {
+  test("the chalkboard and the signature prop both stand clear of the tree, each other, the vehicle and the patio guests' way up to their chairs", () => {
     for (const [name, lay] of allLayouts()) {
       const signC = sx(lay.sign.x, SIGN_Y);
       const propC = sx(lay.prop.x, PROP_Y);

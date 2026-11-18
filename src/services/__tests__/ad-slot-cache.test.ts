@@ -95,7 +95,11 @@ describe('T103: the one-ad cache', () => {
 
   it('a failed init loses nothing: preload swallows it, take rejects, and a later preload retries after the floor', async () => {
     let fail = true;
-    const { cache, clock, loads, settle } = make({ init: async () => { if (fail) throw new Error('sdk'); } });
+    const { cache, clock, loads, settle } = make({
+      init: async () => {
+        if (fail) throw new Error('sdk');
+      },
+    });
     cache.preload();
     await settle();
     expect(cache.fresh()).toBe(false);

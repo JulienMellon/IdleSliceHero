@@ -14,7 +14,14 @@ const STRIPES = awningStripes();
 export function FounderAwning({ height = 56 }: { height?: number }) {
   const width = (height * AWNING_VIEW.w) / AWNING_VIEW.h;
   return (
-    <Svg width={width} height={height} viewBox={`0 0 ${AWNING_VIEW.w} ${AWNING_VIEW.h}`} style={styles.awning} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <Svg
+      width={width}
+      height={height}
+      viewBox={`0 0 ${AWNING_VIEW.w} ${AWNING_VIEW.h}`}
+      style={styles.awning}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
       {STRIPES.map((s) => (
         <Path key={s.x} d={s.d} fill={s.fill} stroke={INK} strokeWidth={3} strokeLinejoin="round" />
       ))}
@@ -27,7 +34,13 @@ export function FounderAwning({ height = 56 }: { height?: number }) {
 function AwningGlyph({ size }: { size: number }) {
   const w = 120;
   return (
-    <Svg width={(size * w) / AWNING_VIEW.h} height={size} viewBox={`${AWNING_VIEW.w / 2 - w / 2} 0 ${w} ${AWNING_VIEW.h}`} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <Svg
+      width={(size * w) / AWNING_VIEW.h}
+      height={size}
+      viewBox={`${AWNING_VIEW.w / 2 - w / 2} 0 ${w} ${AWNING_VIEW.h}`}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
       {STRIPES.map((s) => (
         <Path key={s.x} d={s.d} fill={s.fill} stroke={INK} strokeWidth={3} strokeLinejoin="round" />
       ))}
@@ -76,10 +89,41 @@ export function Ribbon({ text, inline = false }: { text: string; inline?: boolea
 const styles = StyleSheet.create({
   awning: { alignSelf: 'center' },
   row: { flexDirection: 'row', gap: 6 },
-  chip: { flex: 1, minWidth: 0, alignItems: 'center', gap: 2, paddingVertical: 6, paddingHorizontal: 4, borderRadius: 12, backgroundColor: '#FFF4E0', borderWidth: 2, borderColor: C.cheeseDark },
+  chip: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    borderRadius: 12,
+    backgroundColor: '#FFF4E0',
+    borderWidth: 2,
+    borderColor: C.cheeseDark,
+  },
   chipTitle: { fontFamily: F.bold, fontSize: 14, color: C.ink, alignSelf: 'stretch', textAlign: 'center' },
   chipSub: { fontFamily: F.semi, fontSize: 11, color: C.inkSoft, alignSelf: 'stretch', textAlign: 'center' },
-  ribbon: { position: 'absolute', top: -2, right: 14, backgroundColor: C.tomato, borderBottomLeftRadius: 8, borderBottomRightRadius: 8, borderWidth: 2, borderTopWidth: 0, borderColor: C.tomatoDark, paddingHorizontal: 10, paddingVertical: 3 },
-  tag: { alignSelf: 'flex-start', backgroundColor: C.tomato, borderRadius: 8, borderWidth: 2, borderColor: C.tomatoDark, paddingHorizontal: 8, paddingVertical: 2 },
+  ribbon: {
+    position: 'absolute',
+    top: -2,
+    right: 14,
+    backgroundColor: C.tomato,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    borderWidth: 2,
+    borderTopWidth: 0,
+    borderColor: C.tomatoDark,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  tag: {
+    alignSelf: 'flex-start',
+    backgroundColor: C.tomato,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: C.tomatoDark,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
   ribbonText: { fontFamily: F.bold, fontSize: 11, color: '#fff', letterSpacing: 0.5 },
 });

@@ -5,7 +5,21 @@ import { FOOTPRINTS, NEIGHBORHOODS } from '../../../content/tuning';
 import { VISITORS } from '../../../content/rewards';
 import { neonSpot } from '../cosmetics';
 import { staffFaces } from '../stations';
-import { SAY_MAX_CHARS, TAG_H, VISITOR_LOOK, cameoGeom, sayHeight, sayLines, cameoSpot, linesOf, tagWidth, visitLine, visitOf, visitTag, visitTagLabel } from '../cameo';
+import {
+  SAY_MAX_CHARS,
+  TAG_H,
+  VISITOR_LOOK,
+  cameoGeom,
+  sayHeight,
+  sayLines,
+  cameoSpot,
+  linesOf,
+  tagWidth,
+  visitLine,
+  visitOf,
+  visitTag,
+  visitTagLabel,
+} from '../cameo';
 import { candidates, fixedPeople, hits, obstacles } from '../ladder';
 import { layout } from './draw-layout';
 import { BUBBLE_AIR, bubbleWalls, bubbleWidth, bubbleX } from '../moments';
@@ -31,7 +45,15 @@ describe('who is visiting', () => {
   test('nobody once the boost ends, for other boosts and for an unknown visitor', () => {
     expect(visitOf([], NOW)).toBeNull();
     expect(visitOf([{ source: 'visit-nonna', until: NOW }], NOW)).toBeNull();
-    expect(visitOf([{ source: 'gift-day-7', until: NOW + DAY }, { source: 'booster', until: NOW + DAY }], NOW)).toBeNull();
+    expect(
+      visitOf(
+        [
+          { source: 'gift-day-7', until: NOW + DAY },
+          { source: 'booster', until: NOW + DAY },
+        ],
+        NOW,
+      ),
+    ).toBeNull();
     expect(visitOf([{ source: 'visit-mickey', until: NOW + DAY }], NOW)).toBeNull();
   });
 });
@@ -98,13 +120,15 @@ describe('where the visitor stands (budget; G100)', () => {
           expect(g.spot).toEqual(cameoSpot(lay, tagWidth(tagText)));
           // D475: the tag is centred on her where the room allows (below)
           cases++;
-          if (Math.abs((g.tag.x0 + g.tag.x1) / 2 - g.tailX) > 1e-6) offCentre.push(`staff${staff} ${Math.round(Math.abs((g.tag.x0 + g.tag.x1) / 2 - g.tailX))}`);
+          if (Math.abs((g.tag.x0 + g.tag.x1) / 2 - g.tailX) > 1e-6)
+            offCentre.push(`staff${staff} ${Math.round(Math.abs((g.tag.x0 + g.tag.x1) / 2 - g.tailX))}`);
           // in FRONT of the counter (it stands at 64 … 84): the box stack cannot hide her
           expect(g.spot.y).toBeLessThan(64);
           expect(g.spot.x).toBeGreaterThan(lay.counter.x0);
           expect(g.spot.x).toBeLessThan(lay.counter.x1);
           // a body apart from the walk-in's order spot and the drivers' pickup spots (the only people who stand in front of the counter)
-          for (const [x, y] of [...lay.orderSpots, ...lay.spots.map((s): [number, number] => [s.x, s.y])]) expect(Math.hypot(g.spot.x - x, (g.spot.y - y) * 1.2)).toBeGreaterThanOrEqual(20);
+          for (const [x, y] of [...lay.orderSpots, ...lay.spots.map((s): [number, number] => [s.x, s.y])])
+            expect(Math.hypot(g.spot.x - x, (g.spot.y - y) * 1.2)).toBeGreaterThanOrEqual(20);
           // the tag is as wide as its text needs and floats a hand over the head (not over nobody)
           expect(g.tag.x1 - g.tag.x0).toBeCloseTo(tagWidth(tagText), 6);
           expect(g.tag.y1 - g.tag.y0).toBe(TAG_H);

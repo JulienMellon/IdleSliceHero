@@ -4,7 +4,22 @@ import { DECOR_KINDS } from '../../../../content/tuning';
 import { getFeature, withFeatures } from '../../index';
 import * as G from '../../../game';
 import * as R from '../../../rewards';
-import { ackCritic, buyIngredients, criticReward, criticTarget, criticView, ingredientsLock, ingredientsPrice, payMult, pointsOf, starsNow, starsOf, starsView, uptownStars, type StarsState } from '../uptown-stars';
+import {
+  ackCritic,
+  buyIngredients,
+  criticReward,
+  criticTarget,
+  criticView,
+  ingredientsLock,
+  ingredientsPrice,
+  payMult,
+  pointsOf,
+  starsNow,
+  starsOf,
+  starsView,
+  uptownStars,
+  type StarsState,
+} from '../uptown-stars';
 
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 const HOOD = STARS.hood;
@@ -16,7 +31,23 @@ const decorAll = (tier: number) => Object.fromEntries(DECOR_KINDS.map((k) => [k,
 
 /** Uptown built and running with a given oven grade, decor tier on every kind and Ingredients tier. */
 function uptown(grade = 0, decor = 0, tier = 0): G.GameState {
-  return run(() => withState(patch(G.newGame(NOW), { built: true, managed: true, heads: G.allHeads(), grade, decor: decorAll(decor), prep: 40, ovens: 40, counter: 40, tables: 20, drivers: 20 }), { tier }));
+  return run(() =>
+    withState(
+      patch(G.newGame(NOW), {
+        built: true,
+        managed: true,
+        heads: G.allHeads(),
+        grade,
+        decor: decorAll(decor),
+        prep: 40,
+        ovens: 40,
+        counter: 40,
+        tables: 20,
+        drivers: 20,
+      }),
+      { tier },
+    ),
+  );
 }
 /** Move the play clock and run the layer's own tick (no kitchen: the cash change is only the layer's). */
 const visitAt = (g: G.GameState, play: number): G.GameState => uptownStars.tick!({ ...g, playSeconds: play }, 1, NOW);
@@ -72,7 +103,12 @@ describe('the rating', () => {
 
 describe('the Ingredients track', () => {
   it('four tiers, the first the starting stock; the others 30 / 120 / 480 minutes of Uptown’s income', () => {
-    expect(STARS.ingredients.map((t) => [t.name, t.minutes])).toEqual([['Store-brand', 0], ['Imported', 30], ['Farm', 120], ['Truffle', 480]]);
+    expect(STARS.ingredients.map((t) => [t.name, t.minutes])).toEqual([
+      ['Store-brand', 0],
+      ['Imported', 30],
+      ['Farm', 120],
+      ['Truffle', 480],
+    ]);
     run(() => {
       let g = uptown();
       for (const [i, minutes] of [30, 120, 480].entries()) {
@@ -113,7 +149,17 @@ describe('the Ingredients track', () => {
   it('the rating card has the numbers', () => {
     run(() => {
       const g = uptown(3, 0, 2);
-      expect(starsView(g)).toMatchObject({ active: true, stars: 3, payMult: 1, tier: 2, tierName: 'Farm', nextTierName: 'Truffle', sign: 0, maxPoints: 7, points: { oven: 2, decor: 0, ingredients: 2, total: 4 } });
+      expect(starsView(g)).toMatchObject({
+        active: true,
+        stars: 3,
+        payMult: 1,
+        tier: 2,
+        tierName: 'Farm',
+        nextTierName: 'Truffle',
+        sign: 0,
+        maxPoints: 7,
+        points: { oven: 2, decor: 0, ingredients: 2, total: 4 },
+      });
       expect(starsView(g).nextPrice).toBe(ingredientsPrice(g));
       // C123: the price is minutes of the shop's own revenue (shopRevenue, no feature multipliers), as the boats' rack is
       expect(ingredientsPrice(g)).toBe(Math.max(1, Math.ceil(STARS.ingredients[3].minutes * 60 * G.shopRevenue(HOOD, g.shops[HOOD], g.vehicle))));
@@ -157,7 +203,8 @@ describe('the critic', () => {
     expect(visits(9)).toEqual(a);
     expect(visits(10)).not.toEqual(a);
     expect(a.length).toBeGreaterThanOrEqual(14);
-    for (let i = 1; i < a.length; i++) expect(Math.abs(a[i].at - a[i - 1].at - CRITIC.everySeconds)).toBeLessThanOrEqual(CRITIC.everySeconds * CRITIC.jitter * 2 + 1);
+    for (let i = 1; i < a.length; i++)
+      expect(Math.abs(a[i].at - a[i - 1].at - CRITIC.everySeconds)).toBeLessThanOrEqual(CRITIC.everySeconds * CRITIC.jitter * 2 + 1);
     expect(a.map((v) => v.target)).toEqual(a.map((_, i) => criticTarget(9, i + 1)));
   });
 
@@ -248,7 +295,13 @@ describe('old saves', () => {
   it('keeps a saved track, sign and schedule and drops garbage', () => {
     const saved = { seed: 7, n: 3, nextAt: 2000.5, tier: 2, sign: 1, result: { target: 3, stars: 4, hit: true, cash: 12 } };
     expect(uptownStars.migrate(saved, NOW)).toEqual(saved);
-    expect(uptownStars.migrate({ seed: 'x', n: -2, nextAt: NaN, tier: 9, sign: -1, result: { hit: 'yes' } }, NOW)).toMatchObject({ n: 0, nextAt: -1, tier: 3, sign: 0, result: null });
+    expect(uptownStars.migrate({ seed: 'x', n: -2, nextAt: NaN, tier: 9, sign: -1, result: { hit: 'yes' } }, NOW)).toMatchObject({
+      n: 0,
+      nextAt: -1,
+      tier: 3,
+      sign: 0,
+      result: null,
+    });
     expect(uptownStars.migrate(undefined, NOW)).toMatchObject({ nextAt: -1, tier: 0, sign: 0, result: null });
   });
 });

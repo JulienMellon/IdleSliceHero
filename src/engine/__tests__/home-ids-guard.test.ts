@@ -10,11 +10,12 @@ const ROOT = path.resolve(__dirname, '../..');
 const DIRS = ['engine', 'store', 'components'];
 /** Today's offenders, by path from src/, each with the reason it is allowed (and the card that removes it). */
 const ALLOW: Record<string, string> = {
-  'engine/game.ts': 'defines HOME_HOOD_IDS (the home city\'s ids) for the old-save migration and the feature `init` hooks, which run before any game exists',
-  'engine/features/service.ts': '`init` has no game yet, so it seeds its slice from HOME_HOOD_IDS; `migrate` fills the rest from the save\'s own city',
-  'components/cutscene/backdrop-art.ts': 'art module: the shop looks are drawn per home neighbourhood, with Downtown as the fallback look (stays until the per-city look registry, plan P6)',
-  'components/scene/ladder.ts': 'art module: the ladder\'s height for the Waterfront and Uptown fronts (stays until the shared shop layout, plan P1)',
-  'components/sidewalk-model.ts': 'the hire spot is not drawn in the first shop: `id !== \'downtown\'` becomes `id !== firstHood(city)` (card R1L)',
+  'engine/game.ts': "defines HOME_HOOD_IDS (the home city's ids) for the old-save migration and the feature `init` hooks, which run before any game exists",
+  'engine/features/service.ts': "`init` has no game yet, so it seeds its slice from HOME_HOOD_IDS; `migrate` fills the rest from the save's own city",
+  'components/cutscene/backdrop-art.ts':
+    'art module: the shop looks are drawn per home neighbourhood, with Downtown as the fallback look (stays until the per-city look registry, plan P6)',
+  'components/scene/ladder.ts': "art module: the ladder's height for the Waterfront and Uptown fronts (stays until the shared shop layout, plan P1)",
+  'components/sidewalk-model.ts': "the hire spot is not drawn in the first shop: `id !== 'downtown'` becomes `id !== firstHood(city)` (card R1L)",
 };
 const HOME_IDS = ['downtown', 'suburbs', 'waterfront', 'university', 'industrial', 'uptown'];
 
@@ -49,7 +50,14 @@ describe('no home-city constants in the engine, the store or the components', ()
   test('the walk covers the engine, the store and the components, and drawer, goal, city, ad and mastery models', () => {
     const rels = files.map(([rel]) => rel);
     for (const d of DIRS) expect(rels.some((r) => r.startsWith(`${d}/`))).toBe(true);
-    for (const m of ['components/drawer-model.ts', 'components/goal-model.ts', 'components/city-model.ts', 'components/store/ad-model.ts', 'components/endgame/mastery-model.ts']) expect(rels).toContain(m);
+    for (const m of [
+      'components/drawer-model.ts',
+      'components/goal-model.ts',
+      'components/city-model.ts',
+      'components/store/ad-model.ts',
+      'components/endgame/mastery-model.ts',
+    ])
+      expect(rels).toContain(m);
     expect(rels.some((r) => /\.test\.ts$/.test(r) || r.includes('__tests__'))).toBe(false);
   });
 

@@ -4,7 +4,21 @@ import * as G from '../../../engine/game';
 import { GRANTS } from '../../../services/grants';
 import { PRODUCT_IDS } from '../../../services/types';
 import { ANALYTICS_LABEL, analyticsNote, analyticsSwitchText, copyLine, installIdText, restoreResult } from '../settings-model';
-import { applyGrant, buyLine, productChips, PRODUCT_RIBBON, NO_PREFS, parsePrefs, PRODUCT_ORDER, PRODUCTS, pricesFrom, productRows, restoreLine, STARTER_DELAY, starterShows } from '../store-model';
+import {
+  applyGrant,
+  buyLine,
+  productChips,
+  PRODUCT_RIBBON,
+  NO_PREFS,
+  parsePrefs,
+  PRODUCT_ORDER,
+  PRODUCTS,
+  pricesFrom,
+  productRows,
+  restoreLine,
+  STARTER_DELAY,
+  starterShows,
+} from '../store-model';
 
 const NOW = 1_800_000_000_000;
 
@@ -15,7 +29,7 @@ describe('the products tab', () => {
     expect(Object.keys(PRODUCTS).sort()).toEqual([...PRODUCT_IDS].sort());
     expect(productRows(prices, []).map((r) => r.id)).toEqual(['starter_pack', 'nonnas_plus', 'diamonds_80', 'diamonds_500', 'diamonds_1200']);
   });
-  test('prices are the store\'s own text, and a buyable button needs one', () => {
+  test("prices are the store's own text, and a buyable button needs one", () => {
     const rows = productRows(prices, []);
     expect(rows.map((r) => r.price)).toEqual(['$2.99', '$4.99', '$0.99', '$4.99', '$9.99']);
     expect(rows.every((r) => r.enabled && r.state === 'buy' && r.label === r.price)).toBe(true);
@@ -44,10 +58,18 @@ describe('the products tab', () => {
     expect(rows.slice(1).every((r) => r.enabled)).toBe(true);
   });
   test('the store list becomes a price map; unknown ids and empty prices are dropped', () => {
-    expect(pricesFrom([{ id: 'diamonds_80', price: '$0.99' }, { id: 'nonnas_plus', price: '' }, { id: 'bogus' as never, price: '$1' }])).toEqual({ diamonds_80: '$0.99' });
+    expect(
+      pricesFrom([
+        { id: 'diamonds_80', price: '$0.99' },
+        { id: 'nonnas_plus', price: '' },
+        { id: 'bogus' as never, price: '$1' },
+      ]),
+    ).toEqual({ diamonds_80: '$0.99' });
   });
   test('nothing in the tab is a random reward', () => {
-    const words = Object.values(PRODUCTS).flatMap((p) => [p.title, p.blurb]).join(' ');
+    const words = Object.values(PRODUCTS)
+      .flatMap((p) => [p.title, p.blurb])
+      .join(' ');
     expect(words).not.toMatch(/random|chance|mystery|spin|lucky|loot/i);
     // and the grants are fixed amounts
     for (const id of PRODUCT_IDS) expect(Number.isInteger(GRANTS[id].diamonds)).toBe(true);

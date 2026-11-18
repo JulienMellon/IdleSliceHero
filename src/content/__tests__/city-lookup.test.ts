@@ -13,7 +13,7 @@ describe('which city has a neighbourhood', () => {
     }
   });
 
-  test('an id nobody has is a miss, and another city\'s id is a miss in this one', () => {
+  test("an id nobody has is a miss, and another city's id is a miss in this one", () => {
     expect(cityHolding('atlantis')).toBeUndefined();
     expect(findHood('atlantis')).toBeUndefined();
     const other = Object.values(CITIES).find((c) => c !== HOME_CITY)!;

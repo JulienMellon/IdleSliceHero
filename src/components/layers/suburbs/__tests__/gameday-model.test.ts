@@ -5,7 +5,24 @@ import { layout } from '../../../scene/layout';
 import { SEAT } from '../../../scene/layout';
 import { P, SCENE_W } from '../../../scene/projection';
 import {
-  WAVE, arrived, chairsOf, familiesFor, freeChairs, gameDayBanner, gameDayChipShown, gameDayChipText, gameDayPopText, glowing, seatedFamilies, waveFigures, waveGap, walkLength, walkTime, spreadGap, FAMILY_AIR, FAMILY_SEATS,
+  WAVE,
+  arrived,
+  chairsOf,
+  familiesFor,
+  freeChairs,
+  gameDayBanner,
+  gameDayChipShown,
+  gameDayChipText,
+  gameDayPopText,
+  glowing,
+  seatedFamilies,
+  waveFigures,
+  waveGap,
+  walkLength,
+  walkTime,
+  spreadGap,
+  FAMILY_AIR,
+  FAMILY_SEATS,
 } from '../gameday-model';
 
 const view = (o: Partial<GameDayView> = {}): GameDayView => ({ active: true, rush: false, nextIn: 187, left: 0, seatsFree: 16, seats: 32, ...o });

@@ -4,13 +4,7 @@ import { layout } from './draw-layout';
 import { badgeRowY, badgeXs, BADGE_R, HIT_ORDER, MIN_TAP_PT, progressStep, stationAt, stationRects } from '../stations';
 import { P, FRONT_TOP, D } from '../projection';
 
-const shops = [
-  layout(0, 1, 1, 1, 1, 2),
-  layout(1, 2, 2, 1, 3, 2),
-  layout(2, 3, 2, 2, 4, 3),
-  layout(3, 4, 3, 2, 5, 3),
-  layout(4, 6, 3, 2, 6, 4),
-];
+const shops = [layout(0, 1, 1, 1, 1, 2), layout(1, 2, 2, 1, 3, 2), layout(2, 3, 2, 2, 4, 3), layout(3, 4, 3, 2, 5, 3), layout(4, 6, 3, 2, 6, 4)];
 // iPhone SE-ish (smallest fit) through Pro Max
 const fits = [0.86, 1, 1.12];
 

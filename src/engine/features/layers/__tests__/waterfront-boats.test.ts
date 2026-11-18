@@ -32,7 +32,11 @@ function dock(tier = 0): G.GameState {
   }
   throw new Error('no levels fit the fixture');
 }
-const rates = (g: G.GameState) => ({ sold: G.shopRate(g.shops[HOOD], g.vehicle), demand: G.demandRate(g.shops[HOOD], g.vehicle), kitchen: G.prepRate(g.shops[HOOD]) });
+const rates = (g: G.GameState) => ({
+  sold: G.shopRate(g.shops[HOOD], g.vehicle),
+  demand: G.demandRate(g.shops[HOOD], g.vehicle),
+  kitchen: G.prepRate(g.shops[HOOD]),
+});
 /** Put a boat at the dock now. */
 const boatIn = (g: G.GameState, left = BOATS.rushSeconds): G.GameState => withState(g, { nextAt: g.playSeconds + 1000, until: g.playSeconds + left, at: NOW });
 

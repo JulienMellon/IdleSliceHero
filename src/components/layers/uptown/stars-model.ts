@@ -36,7 +36,8 @@ export function pointsForStar(stars: number): number {
 // ---------- the chip ----------
 
 /** "Rating 4★" split over the chip's two rows. */
-export const chipText = (stars: number, city?: string): string => dressed(city, `rating.${Math.max(1, Math.min(5, Math.round(stars)))}`, fill(COPY['layer.uptown.stars.chip'], { n: stars }));
+export const chipText = (stars: number, city?: string): string =>
+  dressed(city, `rating.${Math.max(1, Math.min(5, Math.round(stars)))}`, fill(COPY['layer.uptown.stars.chip'], { n: stars }));
 
 // ---------- the next point of each input ----------
 
@@ -129,9 +130,27 @@ export function starsSheet(g: GameState): StarsSheet {
     rating: chipText(v.stars),
     progress: `${v.points.total} of ${v.maxPoints} points${nextStar !== null ? ` · next star at ${nextStar}` : ''}`,
     rows: [
-      { key: 'oven', title: 'Oven grade', value: OVEN_GRADES[shop.grade].name, points: `${v.points.oven}/${STARS.ovenPoints[STARS.ovenPoints.length - 1]}`, next: oven ? `${oven.to} · ${money(oven.cost)}${oven.steps > 1 ? ` (${oven.steps} grades)` : ''}` : 'Maxed' },
-      { key: 'decor', title: 'Decor', value: `${tiers} of ${DECOR_KINDS.length * 3} tiers`, points: `${v.points.decor}/${STARS.decorTiersForPoint.length}`, next: decor ? `${decor.tiers} more ${plural(decor.tiers, 'tier', 'tiers')} · ${money(decor.cost)}` : 'Maxed' },
-      { key: 'ingredients', title: COPY['upgrade.uptown.ingredients.name'], value: tierName(v.tier), points: `${v.points.ingredients}/${STARS.ingredients.length - 1}`, next: v.nextTierName !== null && v.nextPrice !== null ? `${tierName(v.tier + 1)} · ${money(v.nextPrice)}` : 'Maxed' },
+      {
+        key: 'oven',
+        title: 'Oven grade',
+        value: OVEN_GRADES[shop.grade].name,
+        points: `${v.points.oven}/${STARS.ovenPoints[STARS.ovenPoints.length - 1]}`,
+        next: oven ? `${oven.to} · ${money(oven.cost)}${oven.steps > 1 ? ` (${oven.steps} grades)` : ''}` : 'Maxed',
+      },
+      {
+        key: 'decor',
+        title: 'Decor',
+        value: `${tiers} of ${DECOR_KINDS.length * 3} tiers`,
+        points: `${v.points.decor}/${STARS.decorTiersForPoint.length}`,
+        next: decor ? `${decor.tiers} more ${plural(decor.tiers, 'tier', 'tiers')} · ${money(decor.cost)}` : 'Maxed',
+      },
+      {
+        key: 'ingredients',
+        title: COPY['upgrade.uptown.ingredients.name'],
+        value: tierName(v.tier),
+        points: `${v.points.ingredients}/${STARS.ingredients.length - 1}`,
+        next: v.nextTierName !== null && v.nextPrice !== null ? `${tierName(v.tier + 1)} · ${money(v.nextPrice)}` : 'Maxed',
+      },
     ],
     criticNext: fill(COPY['layer.uptown.critic.chip.next'], { time: mmss(c.nextIn) }),
     criticTarget: fill(COPY['layer.uptown.critic.chip.target'], { n: c.target }),
@@ -140,7 +159,8 @@ export function starsSheet(g: GameState): StarsSheet {
 }
 
 /** The Ingredients tier's name, 0 = Store-brand … 3 = Truffle (copy tier.1 … tier.4). */
-export const tierName = (tier: number): string => COPY[`upgrade.uptown.ingredients.tier.${Math.min(4, Math.max(1, tier + 1))}` as 'upgrade.uptown.ingredients.tier.1'];
+export const tierName = (tier: number): string =>
+  COPY[`upgrade.uptown.ingredients.tier.${Math.min(4, Math.max(1, tier + 1))}` as 'upgrade.uptown.ingredients.tier.1'];
 
 function ingredientsCard(g: GameState, v: StarsView): StarsSheet['ingredients'] {
   const lock = ingredientsLock(g);
@@ -163,6 +183,9 @@ export function ingredientsCardModel(g: GameState): IngredientsCardModel {
   const v = starsView(g);
   const card = ingredientsCard(g, v);
   const nextStar = v.stars < STARS.maxStars ? pointsForStar(v.stars + 1) - v.points.total : null;
-  const detail = card.name === null ? `Truffle on everything · ${PAY_WORDS[payTagOf(v.payMult)]}` : `${card.name} · +1 point${nextStar === 1 ? ' · earns the next star' : ''}`;
+  const detail =
+    card.name === null
+      ? `Truffle on everything · ${PAY_WORDS[payTagOf(v.payMult)]}`
+      : `${card.name} · +1 point${nextStar === 1 ? ' · earns the next star' : ''}`;
   return { title: COPY['upgrade.uptown.ingredients.name'], level: tierName(v.tier), detail, cost: card.price, canBuy: card.canBuy, lock: card.lock };
 }

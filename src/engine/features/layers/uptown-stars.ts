@@ -205,8 +205,18 @@ export const uptownStars: Feature<StarsState> = {
     const r = raw as Record<string, unknown>;
     const num = (v: unknown, d: number, min: number) => (typeof v === 'number' && Number.isFinite(v) && v >= min ? v : d);
     const res = r.result && typeof r.result === 'object' ? (r.result as Record<string, unknown>) : null;
-    const result: CriticResult | null = res && typeof res.hit === 'boolean' ? { target: Math.floor(num(res.target, 2, 1)), stars: Math.floor(num(res.stars, 1, 1)), hit: res.hit, cash: num(res.cash, 0, 0) } : null;
-    return { seed: Math.floor(num(r.seed, f.seed, 0)), n: Math.floor(num(r.n, 0, 0)), nextAt: num(r.nextAt, -1, 0), tier: Math.min(MAX_TIER, Math.floor(num(r.tier, 0, 0))), sign: Math.floor(num(r.sign, 0, 0)), result };
+    const result: CriticResult | null =
+      res && typeof res.hit === 'boolean'
+        ? { target: Math.floor(num(res.target, 2, 1)), stars: Math.floor(num(res.stars, 1, 1)), hit: res.hit, cash: num(res.cash, 0, 0) }
+        : null;
+    return {
+      seed: Math.floor(num(r.seed, f.seed, 0)),
+      n: Math.floor(num(r.n, 0, 0)),
+      nextAt: num(r.nextAt, -1, 0),
+      tier: Math.min(MAX_TIER, Math.floor(num(r.tier, 0, 0))),
+      sign: Math.floor(num(r.sign, 0, 0)),
+      result,
+    };
   },
   tick(g, _dt) {
     if (!built(g)) return g;

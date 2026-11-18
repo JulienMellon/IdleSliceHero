@@ -25,7 +25,12 @@ describe('the main screen models, walked', () => {
     const cards = [...v.cards, ...v.decor];
     expect(cards.length).toBeGreaterThan(10);
     for (const c of cards) {
-      const label = buyLabelText(c.title, c.cost === null ? c.costLabel : (c.buyLabel ?? String(c.cost)), c.tone === 'nogain' ? 'no gain now' : undefined, null);
+      const label = buyLabelText(
+        c.title,
+        c.cost === null ? c.costLabel : (c.buyLabel ?? String(c.cost)),
+        c.tone === 'nogain' ? 'no gain now' : undefined,
+        null,
+      );
       expect(c.title.trim()).not.toBe('');
       expect(c.detail.trim()).not.toBe('');
       expect(label.startsWith(c.title)).toBe(true);
@@ -55,7 +60,13 @@ describe('cut-scenes expose their lines as text', () => {
   });
 
   it('a beat reads its speaker and its line; a caption comes first', () => {
-    const p = { caption: 'Later that week', lines: [{ speaker: 'Nonna Rosa', text: 'Ciao!' }, { speaker: 'You', text: 'Hi.' }] };
+    const p = {
+      caption: 'Later that week',
+      lines: [
+        { speaker: 'Nonna Rosa', text: 'Ciao!' },
+        { speaker: 'You', text: 'Hi.' },
+      ],
+    };
     expect(panelSpeech(p, 0)).toBe('Later that week. Nonna Rosa: Ciao!');
     expect(panelSpeech(p, 1)).toBe('Later that week. You: Hi.');
     expect(panelSpeech({ lines: [], propText: 'SOLD' }, 0)).toBe('Sign: SOLD');

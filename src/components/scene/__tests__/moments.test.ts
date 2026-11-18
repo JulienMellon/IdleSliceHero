@@ -1,7 +1,36 @@
 /// <reference types="jest" />
 // The milestone badge and the rising level chip (D415, D418): budgets against the chip row, in scene units.
 import { layout } from './draw-layout';
-import { BUBBLE_AIR, CHIP_ROW_HALF, HUD_DIM_OPACITY, HUD_DIM_SECONDS, MILE_EDGE, MILE_HAT_GAP, MILE_PILL_HIDE_S, MILE_R, MILE_SECONDS, MILE_SHIFT, ROW_AIR, STATION_LABEL, bubbleWalls, bubbleWidth, bubbleX, chipAt, hidesWaitingPill, hudOpacity, mileAnchor, mileLevelSize, mileOpacity, mileScale, mileSpeechY, mileSub, newMoments, stationHatTop, stepMoments, type MomentsInput } from '../moments';
+import {
+  BUBBLE_AIR,
+  CHIP_ROW_HALF,
+  HUD_DIM_OPACITY,
+  HUD_DIM_SECONDS,
+  MILE_EDGE,
+  MILE_HAT_GAP,
+  MILE_PILL_HIDE_S,
+  MILE_R,
+  MILE_SECONDS,
+  MILE_SHIFT,
+  ROW_AIR,
+  STATION_LABEL,
+  bubbleWalls,
+  bubbleWidth,
+  bubbleX,
+  chipAt,
+  hidesWaitingPill,
+  hudOpacity,
+  mileAnchor,
+  mileLevelSize,
+  mileOpacity,
+  mileScale,
+  mileSpeechY,
+  mileSub,
+  newMoments,
+  stationHatTop,
+  stepMoments,
+  type MomentsInput,
+} from '../moments';
 import { CHIP_RISE, CONFETTI, CONFETTI_N, CONFETTI_SECONDS, CONFETTI_STEPS, confettiOffset, confettiStep } from '../ladder';
 import { hash32 } from '../looks';
 import { SCENE_H, SCENE_W } from '../projection';
@@ -52,7 +81,7 @@ describe('the milestone badge (D415)', () => {
       }
     expect(oldCovered).toBeGreaterThan(6);
   });
-  test('D429: the waiting pill is hidden for the moment\'s 1.5 s and back after', () => {
+  test("D429: the waiting pill is hidden for the moment's 1.5 s and back after", () => {
     expect(MILE_PILL_HIDE_S).toBe(1.5);
     expect([-1, 0, 0.7, 1.49, 1.5, 3].map(hidesWaitingPill)).toEqual([false, true, true, true, false, false]);
   });
@@ -89,7 +118,7 @@ describe('the milestone badge (D415)', () => {
       }
     expect(oldWorst).toBeLessThan(6);
   });
-  test('the head\'s line hangs directly under the badge: its tail tip is the disc\'s lower edge, and it is nowhere near the chip row', () => {
+  test("the head's line hangs directly under the badge: its tail tip is the disc's lower edge, and it is nowhere near the chip row", () => {
     const by = badgeRowY();
     for (const { lay } of shops())
       for (const st of STATIONS) {
@@ -104,7 +133,7 @@ describe('the milestone badge (D415)', () => {
     expect([-0.1, 0, 0.6, 1.19, 1.2, 2].map(hudOpacity)).toEqual([1, HUD_DIM_OPACITY, HUD_DIM_OPACITY, HUD_DIM_OPACITY, 1, 1]);
     expect(HUD_DIM_OPACITY).toBeLessThan(0.5);
   });
-  test('the badge pops in, holds and fades inside the confetti\'s life; the level fits the disc', () => {
+  test("the badge pops in, holds and fades inside the confetti's life; the level fits the disc", () => {
     expect(MILE_SECONDS).toBeGreaterThanOrEqual(CONFETTI_SECONDS);
     expect(mileScale(0)).toBeLessThan(1);
     expect(Math.max(...[0.05, 0.1, 0.15, 0.2].map(mileScale))).toBeGreaterThan(1);
@@ -121,7 +150,7 @@ describe('the milestone badge (D415)', () => {
 
 describe('the rising "Lv N" chip (D418)', () => {
   const by = badgeRowY();
-  test('it starts on the station\'s furniture and never goes up into the chip row, at every footprint and every chip size', () => {
+  test("it starts on the station's furniture and never goes up into the chip row, at every footprint and every chip size", () => {
     for (const { fp, lay } of shops())
       for (const scale of [1.6, 1, 0.9]) {
         const rects = stationRects(lay, 44 / scale);
@@ -129,7 +158,8 @@ describe('the rising "Lv N" chip (D418)', () => {
           for (const r of [13, 21]) {
             const start = chipAt(rects[st], by, r, 0, CHIP_RISE);
             expect([fp, st, start.y]).toEqual([fp, st, Math.max(by + CHIP_ROW_HALF + ROW_AIR + r, (rects[st].y0 + rects[st].y1) / 2)]);
-            for (let k = 0; k <= 1.0001; k += 0.1) expect([fp, st, r, k, chipAt(rects[st], by, r, k, CHIP_RISE).y - r >= by + CHIP_ROW_HALF + ROW_AIR]).toEqual([fp, st, r, k, true]);
+            for (let k = 0; k <= 1.0001; k += 0.1)
+              expect([fp, st, r, k, chipAt(rects[st], by, r, k, CHIP_RISE).y - r >= by + CHIP_ROW_HALF + ROW_AIR]).toEqual([fp, st, r, k, true]);
           }
       }
   });
@@ -154,17 +184,23 @@ describe('the milestone badge clears the corner, the pill stays inside the walls
         const oldCy = Math.max(by + CHIP_ROW_HALF + ROW_AIR + MILE_R, Math.min(mid, hat - MILE_HAT_GAP - MILE_R));
         const oldCx = (rect.x0 + rect.x1) / 2;
         expect([fp, st, cy]).toEqual([fp, st, oldCy + MILE_SHIFT]);
-        expect([fp, st, cx > oldCx || cx + MILE_R >= edgeR(lay) - MILE_EDGE - 1e-9, cx + MILE_R <= edgeR(lay), cx - MILE_R >= edgeL(lay)]).toEqual([fp, st, true, true, true]);
+        expect([fp, st, cx > oldCx || cx + MILE_R >= edgeR(lay) - MILE_EDGE - 1e-9, cx + MILE_R <= edgeR(lay), cx - MILE_R >= edgeL(lay)]).toEqual([
+          fp,
+          st,
+          true,
+          true,
+          true,
+        ]);
         if (cx > oldCx) right++;
       }
     expect(right).toBeGreaterThan(8);
   });
-  test('a speech pill keeps its whole width between the walls at every footprint, for every station chip and the badge, and the old clamp let Marco\'s poke out', () => {
+  test("a speech pill keeps its whole width between the walls at every footprint, for every station chip and the badge, and the old clamp let Marco's poke out", () => {
     const lines = ['Marco: Tomatoes crushed, boss!', 'Marco: More dough, more dough!', 'Hello!', 'Nonna: Lv 25, bellissima, keep going!'];
     let oldOut = 0;
     for (const { fp, lay } of shops()) {
       const walls = bubbleWalls(lay);
-      expect(walls.x0).toBeCloseTo(((lay.L + 8) * 0.98) + 196.5 * 0.02, 6);
+      expect(walls.x0).toBeCloseTo((lay.L + 8) * 0.98 + 196.5 * 0.02, 6);
       for (const st of STATIONS) {
         const rect = stationRects(lay, 44)[st];
         const xs = [(rect.x0 + rect.x1) / 2, mileAnchor(rect, badgeRowY(), stationHatTop(lay, st)).cx, 22, 5, SCENE_W - 5];
@@ -172,7 +208,14 @@ describe('the milestone badge clears the corner, the pill stays inside the walls
           for (const x of xs) {
             const w = bubbleWidth(text);
             const px = bubbleX(x, w, walls);
-            expect([fp, st, text, x, px - w / 2 >= walls.x0 + BUBBLE_AIR - 1e-9, px + w / 2 <= walls.x1 - BUBBLE_AIR + 1e-9]).toEqual([fp, st, text, x, true, true]);
+            expect([fp, st, text, x, px - w / 2 >= walls.x0 + BUBBLE_AIR - 1e-9, px + w / 2 <= walls.x1 - BUBBLE_AIR + 1e-9]).toEqual([
+              fp,
+              st,
+              text,
+              x,
+              true,
+              true,
+            ]);
             const old = Math.min(SCENE_W - 4 - w / 2, Math.max(4 + w / 2, x));
             if (old - w / 2 < walls.x0) oldOut++;
           }
@@ -216,7 +259,11 @@ describe('stepMoments (A28)', () => {
     expect(JSON.stringify(f)).toBe(frozen);
   });
   test('a driver bought flashes over the door, with no milestone', () => {
-    const r = stepMoments(first(), base({ levels: { prep: 10, oven: 10, counter: 10, drivers: 5 }, speeds: { prep: 10, oven: 10, counter: 10, drivers: 5 } }), 3);
+    const r = stepMoments(
+      first(),
+      base({ levels: { prep: 10, oven: 10, counter: 10, drivers: 5 }, speeds: { prep: 10, oven: 10, counter: 10, drivers: 5 } }),
+      3,
+    );
     expect(r.moments.flash).toEqual({ st: 'door', at: 3, text: '+3 drivers' });
     expect(r.moments.bounce?.st).toBe('drivers');
     expect(r.moments.mile).toBeNull();

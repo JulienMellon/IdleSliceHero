@@ -4,7 +4,8 @@ import { HOME_ID, CITIES, hoodIds } from '../content/cities';
 import { TUNING } from '../content/tuning';
 import type { NeighborhoodId, PanelCue, Scene } from '../content/types';
 
-export type StingKind = 'bottleneck' | 'milestone' | 'milestone_big' | 'manager' | 'upgrade' | 'fleet' | 'drone' | 'welcome' | 'warmth' | 'build' | 'perk' | 'offline';
+export type StingKind =
+  'bottleneck' | 'milestone' | 'milestone_big' | 'manager' | 'upgrade' | 'fleet' | 'drone' | 'welcome' | 'warmth' | 'build' | 'perk' | 'offline';
 export type MusicTrack = NeighborhoodId | 'downtown_sparse' | 'megaslice_hq';
 
 /** Everything the director needs to pick the music bed. */
@@ -68,7 +69,14 @@ function firstCastPanel(scene: Scene) {
 export const EXCLUSIVE_CUES: ReadonlySet<PanelCue> = new Set(['triumph', 'bell-triumph', 'recipe', 'reunion', 'city-theme', 'rep']);
 
 /** Loop volume during a cut-scene (AU22: −8 dB) and under stingers. */
-export const DUCK = { scene: dbToGain(-8), popup: dbToGain(-8), stinger: dbToGain(-6), bottleneck: dbToGain(-3), bid: dbToGain(-10), big: dbToGain(-9) } as const;
+export const DUCK = {
+  scene: dbToGain(-8),
+  popup: dbToGain(-8),
+  stinger: dbToGain(-6),
+  bottleneck: dbToGain(-3),
+  bid: dbToGain(-10),
+  big: dbToGain(-9),
+} as const;
 
 export function dbToGain(db: number) {
   return Math.pow(10, db / 20);
@@ -98,7 +106,14 @@ export function quantizeDelay(pos: number, bpm: number, unitBeats: number, downb
 /** A stinger never waits longer than this for a tonic bar (AU74; AU63 capped it by bar length only). */
 export const MAX_TONIC_WAIT_SECONDS = 2.5;
 
-export function stingTiming(pos: number, bpm: number, beatsPerBar: number, barRoots: readonly number[] | undefined, downbeat: number, maxBars = 2): { delay: number; extraDuck: number } {
+export function stingTiming(
+  pos: number,
+  bpm: number,
+  beatsPerBar: number,
+  barRoots: readonly number[] | undefined,
+  downbeat: number,
+  maxBars = 2,
+): { delay: number; extraDuck: number } {
   const first = quantizeDelay(pos, bpm, beatsPerBar, downbeat);
   if (!barRoots || barRoots.length === 0) return { delay: first, extraDuck: 1 };
   const bar = (60 / bpm) * beatsPerBar;
@@ -123,7 +138,11 @@ export function beatUnit(track: MusicTrack): number {
  */
 export class VoiceLimiter {
   private times: number[] = [];
-  constructor(private readonly maxVoices = 3, private readonly minGapMs = 60, private readonly windowMs = 300) {}
+  constructor(
+    private readonly maxVoices = 3,
+    private readonly minGapMs = 60,
+    private readonly windowMs = 300,
+  ) {}
   hit(now: number): number {
     this.times = this.times.filter((t) => now - t < this.windowMs);
     const last = this.times[this.times.length - 1];
@@ -139,7 +158,10 @@ export class VoiceLimiter {
 export class PurchaseChain {
   private step = -1;
   private last = -Infinity;
-  constructor(private readonly steps = 8, private readonly windowMs = 2000) {}
+  constructor(
+    private readonly steps = 8,
+    private readonly windowMs = 2000,
+  ) {}
   next(now: number): number {
     this.step = now - this.last <= this.windowMs ? Math.min(this.steps - 1, this.step + 1) : 0;
     this.last = now;
@@ -170,7 +192,10 @@ export function milestoneCrossed(before: number, after: number): StingKind | nul
 export type Purchase = 'prep' | 'ovens' | 'counter' | 'drivers' | 'tables' | 'grade' | 'expand' | 'manager' | 'head' | 'fleet' | 'decor' | 'build' | 'bid';
 
 /** A successful purchase → the stinger that rides over the loop, if any (AU14). Milestone beats bottleneck. */
-export function purchaseSting(what: Purchase, o: { levelBefore?: number; levelAfter?: number; bottleneckBefore?: string; bottleneckAfter?: string; vehicle?: number }): StingKind | null {
+export function purchaseSting(
+  what: Purchase,
+  o: { levelBefore?: number; levelAfter?: number; bottleneckBefore?: string; bottleneckAfter?: string; vehicle?: number },
+): StingKind | null {
   if (o.levelBefore !== undefined && o.levelAfter !== undefined) {
     const m = milestoneCrossed(o.levelBefore, o.levelAfter);
     if (m) return m;
@@ -192,7 +217,18 @@ export function stingUnit(kind: StingKind, beatsPerBar: number, track: MusicTrac
 
 /** Priority when stingers compete (AU32): a lower one never interrupts or overlaps a higher one. */
 export const STING_PRIORITY: Record<StingKind, number> = {
-  bottleneck: 1, upgrade: 2, fleet: 2, drone: 2, perk: 2, offline: 2, milestone: 3, welcome: 3, warmth: 3, manager: 4, build: 4, milestone_big: 5,
+  bottleneck: 1,
+  upgrade: 2,
+  fleet: 2,
+  drone: 2,
+  perk: 2,
+  offline: 2,
+  milestone: 3,
+  welcome: 3,
+  warmth: 3,
+  manager: 4,
+  build: 4,
+  milestone_big: 5,
 };
 
 /**
