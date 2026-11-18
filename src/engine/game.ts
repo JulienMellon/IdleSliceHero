@@ -910,7 +910,7 @@ export function nonnaPizzasLeft(s: GameState): number {
 }
 
 /** The first shop's founder by the name the countdown uses: the city's own manager ("Father Dom" in Boston), Nonna at home (C141). */
-function founderName(s: GameState): string {
+export function founderName(s: GameState): string {
   const city = cityOf(s);
   const name = city.managers[firstHood(city)]?.name ?? 'The founder';
   return name.startsWith('Nonna ') ? 'Nonna' : name;

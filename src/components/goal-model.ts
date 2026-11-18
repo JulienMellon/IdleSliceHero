@@ -5,6 +5,7 @@ import { finaleSeen } from '../engine/features/counterattack';
 import { MASTERY_MAX, masteryTotal, nextStar } from '../engine/features/mastery';
 import { cityOf } from '../content/cities';
 import { def, type GameState } from '../engine/game';
+import { UPGRADE_TASK_MAX_SECONDS } from '../content/rewards';
 import { C } from '../theme';
 import { copy } from './endgame/copy-text';
 import { nextStarLine, starName } from './endgame/mastery-model';
@@ -163,4 +164,21 @@ export function goalLine(goal: { label: string; short?: string; tiny?: string; t
   // the narrowest bars (three chips beside it): the short line alone may still not fit whole, so the tiny one, if it has one
   if (goal.tiny && !goalFitsWhole(goal.short, '', barW)) return { label: goal.tiny, text: '' };
   return { label: goal.short, text: '' };
+}
+
+/** D494: a goal further than this many seconds of the city's income is skipped for a nearer one. */
+export const GOAL_FAR_SECONDS = 1800;
+
+/**
+ * C107: the goal the bar shows. The first candidate within `GOAL_FAR_SECONDS` of income (lists in order, each a thunk so a late list is built only if needed);
+ * failing that, the first within `UPGRADE_TASK_MAX_SECONDS` (the same ceiling the "upgrades x N" tasks use); failing that none, so the bar never
+ * targets a multi-day buy and the caller falls through to the mastery or story goal.
+ */
+export function pickGoal<T extends { current: number; target: number }>(eps: number, ...lists: (() => readonly T[])[]): T | null {
+  const rate = Math.max(1, eps);
+  const within = (c: T, secs: number) => c.target - c.current <= secs * rate;
+  const all = lists.map((l) => l());
+  for (const list of all) for (const c of list) if (within(c, GOAL_FAR_SECONDS)) return c;
+  for (const list of all) for (const c of list) if (within(c, UPGRADE_TASK_MAX_SECONDS)) return c;
+  return null;
 }
