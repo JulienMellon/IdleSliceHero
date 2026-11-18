@@ -8,6 +8,9 @@ import { grantBus, privacy } from './runtime';
 import type { Ads, Purchases } from './types';
 
 export { analytics, crash, adsTutorialDone };
+
+/** C133: whether the player has opted out of analytics and crash reports (the one synchronous answer; the settings switch reads it here, not from `runtime`). */
+export const isOptedOut = (): boolean => privacy.isOptedOut();
 export { EVENTS };
 export type { EventName } from './events';
 export type { Grant } from './grants';

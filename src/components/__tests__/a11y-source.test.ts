@@ -105,7 +105,9 @@ describe('motion', () => {
 
   it('the scene clock and the game tick stop in the background', () => {
     expect(read('components/scene/clock.ts')).toMatch(/useAppActive\(\)/);
-    expect(read('app/index.tsx')).toMatch(/setBackground\(/);
+    // C134: the one AppState owner (GameRunner) sets it; the game screen subscribes to nothing of its own
+    expect(read('app/_layout.tsx')).toMatch(/setBackground\(!isForeground\(/);
+    expect(read('app/index.tsx')).not.toMatch(/AppState/);
   });
 });
 

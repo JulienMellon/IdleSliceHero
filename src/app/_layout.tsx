@@ -7,6 +7,7 @@ import { AppState, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { startAudio } from '@/audio/director';
+import { isForeground } from '@/components/app-state-model';
 import { CutscenePlayer } from '@/components/cutscene-player';
 import { TitleCard } from '@/components/title-card';
 import { TUNING } from '@/content/tuning';
@@ -48,6 +49,8 @@ function GameRunner() {
     // make the app inactive and active again, and must not reload the game (that closed the offline popup and voided its 2x ad).
     const life = createLifecycle();
     const sub = AppState.addEventListener('change', (state) => {
+      // C134: the game tick stops in the background (the animation loops and the scene clock follow AppState themselves); the time away is paid when it returns
+      useGame.getState().setBackground(!isForeground(state));
       if (state === 'background' || state === 'inactive') void useGame.getState().save();
       const t = life.next(state);
       if (t === 'left') analytics.track(EVENTS.sessionEnd);

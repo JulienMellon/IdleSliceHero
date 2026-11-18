@@ -1,5 +1,6 @@
 /// <reference types="jest" />
-import { emitReveal, onReveal, revealWidth, type RecipeNews } from '../reveal-bus';
+import { skyBehindReveal } from '../stack-model';
+import { emitReveal, getRevealUp, onReveal, revealWidth, setRevealUp, type RecipeNews } from '../reveal-bus';
 
 const item: RecipeNews = { key: 'recipe:recipe.suburbs.4', kind: 'recipe', text: 'Home Field Deep Dish', sub: 'Nobody beats the Mudhens at home. Not anymore.', hood: 'suburbs', n: 4 };
 
@@ -23,5 +24,18 @@ describe('D469: the recipe reveal', () => {
     expect(revealWidth(393)).toBe(220);
     expect(revealWidth(240)).toBe(192);
     expect(320 - revealWidth(320)).toBeGreaterThanOrEqual(48);
+  });
+});
+
+describe('D505: the banner waits behind the recipe card', () => {
+  test('the flag follows the card, and the sky strip is empty while it is up', () => {
+    expect(getRevealUp()).toBe(false);
+    expect(skyBehindReveal('attack', getRevealUp())).toBe('attack');
+    setRevealUp(true);
+    expect(getRevealUp()).toBe(true);
+    expect(skyBehindReveal('attack', getRevealUp())).toBeNull();
+    expect(skyBehindReveal('order', true)).toBeNull();
+    setRevealUp(false);
+    expect(skyBehindReveal('event', getRevealUp())).toBe('event');
   });
 });

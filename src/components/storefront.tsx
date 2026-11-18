@@ -279,7 +279,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const queueShare = rep.queueShare;
   const queue = useMemo(() => (q0 ? { diners: queueShown(q0.diners + extraDiners, queueShare), drivers: queueShown(q0.drivers, queueShare) } : q0), [q0, extraDiners, queueShare]);
   const cheer = nowMs / 1000 - m0.cheerAt < CHEER_SECONDS;
-  const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cheer });
+  const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cold: rep.state === 'cold', cheer });
   const side = sidewalkOf(lay, crew, queue);
   // each pop rides over the figure carrying its departure (one Map reused per mount, M48)
   const carriers = m0.carriers;

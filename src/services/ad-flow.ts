@@ -13,15 +13,18 @@ export interface AdPorts {
   loaded(): boolean;
   /** Start loading the next ad in the background; the port keeps its own retry floor, so calling it often is fine. Only called once consent allows ads. */
   preload(): void;
+  /** C136: an ad unit is configured. Without one there is never an ad, so no button, no consent form and no tracking prompt. Default true. */
+  hasUnit?(): boolean;
 }
 
 export function createAdFlow(ports: AdPorts) {
   let state: ConsentState = initialConsent();
   let busy = false;
+  const hasUnit = (): boolean => ports.hasUnit?.() ?? true;
   /** Consent is settled and allows ads: the next ad may load. */
   const mayLoad = (): boolean => state.umpDone && state.canRequestAds;
   const preload = (): void => {
-    if (!mayLoad()) return;
+    if (!hasUnit() || !mayLoad()) return;
     try {
       ports.preload();
     } catch {
@@ -36,14 +39,14 @@ export function createAdFlow(ports: AdPorts) {
     },
     /** Before consent the button shows (the first tap asks); after it, only while an ad is loaded, and a missing one is asked for again. */
     ready(): boolean {
-      if (!mayOfferAd(state)) return false;
+      if (!hasUnit() || !mayOfferAd(state)) return false;
       if (!state.umpDone) return true;
       const loaded = ports.loaded();
       if (!loaded) preload();
       return loaded;
     },
     async show(p: AdPlacement): Promise<AdResult> {
-      if (busy) return 'unavailable';
+      if (busy || !hasUnit()) return 'unavailable';
       busy = true;
       try {
         // at most ump, tracking, ad

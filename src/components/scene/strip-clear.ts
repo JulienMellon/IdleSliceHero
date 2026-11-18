@@ -40,5 +40,6 @@ export function liftLayout(lay: Layout, floorY: number): Layout {
     const sx = vanishX * (1 - SC) + (vanishX + (x - vanishX) * (1 - y / 520)) * SC; // the screen x at the old depth, kept at the new one
     return [unprojectX(sx, y + d, lay.frame), y + d];
   };
-  return { ...lay, floorY, queue: lay.queue.map(lift(dDiners)), queueTag: lift(dDiners)(lay.queueTag), driverQueue: lay.driverQueue.map(lift(dDrivers)), waitTag: lift(dDrivers)(lay.waitTag) };
+  const all = (pts: Pt[], d: number) => (d === 0 ? pts : pts.map(lift(d)));
+  return { ...lay, floorY, queue: all(lay.queue, dDiners), queueTag: lift(dDiners)(lay.queueTag), driverQueue: all(lay.driverQueue, dDrivers), waitTag: lift(dDrivers)(lay.waitTag) };
 }

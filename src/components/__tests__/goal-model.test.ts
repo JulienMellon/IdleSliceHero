@@ -1,7 +1,8 @@
 /// <reference types="jest" />
 import { CITY_NAME, DECOR, DECOR_KINDS, FOOTPRINTS, HEAD_ROLE, HEADS, NEIGHBORHOODS, OVEN_GRADES, VEHICLES } from '../../content/tuning';
+import { UPGRADE_TASK_MAX_SECONDS } from '../../content/rewards';
 import { goalAmount, money } from '../../engine/format';
-import { aOrAn, GOAL_BAR, GOAL_LAYOUT, goalBarLayout, goalLabelFit, goalLabelFits, goalTextW, goalWords, snapSeam } from '../goal-model';
+import { aOrAn, GOAL_BAR, GOAL_LAYOUT, goalBarLayout, goalLabelFit, goalLabelFits, goalTextW, goalWords, pickGoal, GOAL_FAR_SECONDS, snapSeam } from '../goal-model';
 
 const lum = (hex: string) => {
   const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
@@ -129,5 +130,31 @@ describe('the goal line fits (C105, T81)', () => {
   test('the layout contract: the words are one row that shrinks and clips, the amount sits outside it and never shrinks', () => {
     expect(GOAL_LAYOUT.words).toEqual({ flexShrink: 1, overflow: 'hidden' });
     expect(GOAL_LAYOUT.amount.flexShrink).toBe(0);
+  });
+});
+
+describe('C107: the goal never targets a multi-day buy', () => {
+  const at = (secs: number) => ({ current: 0, target: secs * 10 });
+  const eps = 10;
+  test('the first near goal wins, else the first within the upgrade-task hour', () => {
+    const near = at(GOAL_FAR_SECONDS - 1);
+    const hour = at(UPGRADE_TASK_MAX_SECONDS - 1);
+    expect(pickGoal(eps, () => [at(GOAL_FAR_SECONDS + 5), near])).toBe(near);
+    expect(pickGoal(eps, () => [at(UPGRADE_TASK_MAX_SECONDS * 24), hour])).toBe(hour);
+  });
+  test('only multi-day buys on offer: no goal (the old fallback returned the far one)', () => {
+    expect(pickGoal(eps, () => [at(86400 * 3)], () => [at(86400 * 5)])).toBeNull();
+  });
+  test('a later list is built only when the earlier ones have nothing near', () => {
+    let built = 0;
+    const near = at(5);
+    const later = () => { built++; return []; };
+    expect(pickGoal(eps, () => [near], later)).toBe(near);
+    expect(built).toBe(0);
+    expect(pickGoal(eps, () => [], () => [near])).toBe(near);
+  });
+  test('a goal already paid for is always reachable', () => {
+    const paid = { current: 500, target: 400 };
+    expect(pickGoal(1, () => [paid])).toBe(paid);
   });
 });

@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AppState, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
@@ -16,9 +16,9 @@ import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePop
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
 import { fitFont, MIN_FONT } from '@/components/endgame/fit-model';
-import { masteryGoal, STORY_TOTAL, storyGoal } from '@/components/goal-model';
+import { masteryGoal, pickGoal, STORY_TOTAL, storyGoal } from '@/components/goal-model';
 import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots, StoryWaitBanner } from '@/components/slots';
-import { type DrawerIcon, type DrawerView, drawerCards, tiedBundle } from '@/components/drawer-model';
+import { buyKeyOf, type DrawerIcon, type DrawerView, drawerCards, parseBuyKey, tiedBundle } from '@/components/drawer-model';
 import { buttonTone, buyBundle, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
 import { STRIP, stripKind } from '@/components/report/report-model';
@@ -29,7 +29,6 @@ import { Portrait } from '@/components/portrait';
 import { HeadFace } from '@/components/scene/head-face';
 import Svg from 'react-native-svg';
 import { CURB_Y, SCENE_H, sceneFrame, sceneView, Storefront } from '@/components/storefront';
-import { isForeground } from '@/components/app-state-model';
 import { usePerfMarks } from '@/components/scene/clock';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
 import { cityOf } from '@/content/cities';
@@ -95,9 +94,6 @@ const MOON_ICON = <MoonIcon size={26} />;
 
 type DrawerCardView = DrawerView['cards'][number];
 
-/** D494: a goal further than this many seconds of the city's income is skipped for a nearer one. */
-const GOAL_FAR_SECONDS = 1800;
-
 export default function GameScreen() {
   usePerfMarks('GameScreen');
   const insets = useSafeAreaInsets();
@@ -112,8 +108,8 @@ export default function GameScreen() {
   const taskActions = useMemo(() => ({ claimDaily, claimWeekly, claimChest, claimWeeklyChest, startBooster }), [claimDaily, claimWeekly, claimChest, claimWeeklyChest, startBooster]);
   // M63: one stable buy handler for the drawer's cards; each card passes its own key ('fleet', 'decor:<kind>', 'up:<upgrade>')
   const onDrawerBuy = useCallback((key: string) => {
-    const [t, arg] = key.split(':');
-    return t === 'fleet' ? buyFleet() : t === 'decor' ? buyDecor(arg as Parameters<typeof buyDecor>[0]) : buy(arg as Parameters<typeof buy>[0]);
+    const b = parseBuyKey(key);
+    return !b ? false : b.t === 'fleet' ? buyFleet() : b.t === 'decor' ? buyDecor(b.kind) : buy(b.what);
   }, [buy, buyFleet, buyDecor]);
   const onClaimGift = useCallback((repair: boolean) => claimGift(repair), [claimGift]);
   const titleDone = useGame((s) => s.titleDone);
@@ -147,12 +143,6 @@ export default function GameScreen() {
     }, []),
   );
   const setBonusHold = useGame((s) => s.setBonusHold);
-  // the app goes to the background: the game tick stops (the animation loops and the scene clock follow AppState themselves); the time away is paid when it returns
-  const setBackground = useGame((s) => s.setBackground);
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (st) => setBackground(!isForeground(st)));
-    return () => sub.remove();
-  }, [setBackground]);
   // G95: the golden pizza also waits while a card is up (an order, or Victor's challenge): the sky has no room beside it
   const bannerOpen = useBannerOpen();
   const cardUp = holdsBonus(game, bannerOpen);
@@ -264,15 +254,11 @@ export default function GameScreen() {
     }
     return big.sort((a, b) => b.ratio - a.ratio);
   };
-  let goal: Goal | null = shown[0] ?? null;
-  // D494: a goal more than about half an hour of income away is not a goal ("Hire a manager $68.3K / $8.00B"): lead with the nearest one that is reachable
-  const farAway = (c: Goal) => c.target - c.current > GOAL_FAR_SECONDS * Math.max(1, eps);
-  if (goal && farAway(goal)) goal = shown.find((c) => !farAway(c)) ?? bigGoals().find((c) => !farAway(c)) ?? goal;
+  // D494 + C107: the nearest goal within about half an hour of income, else one within the hour the upgrade tasks use, else none (never a multi-day buy)
+  let goal: Goal | null = pickGoal<Goal>(eps, () => shown, bigGoals);
   // v5.15 (D427): once the story is told and nothing else is worth saving for, the bar shows the city's mastery stars
   const mg = goal ? null : masteryGoal(game);
   if (mg) goal = { label: mg.label, short: mg.short, tiny: mg.tiny, text: mg.text, current: mg.current, target: mg.target };
-  // Late game: fall back to the best big buy in this shop before the story count.
-  if (!goal) goal = bigGoals()[0] ?? null;
   if (!goal) {
     const story = storyGoal(game.seenScenes.length);
     goal = { label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : story.label, current: story.current, target: STORY_TOTAL, icon: <TrophyIcon size={22} /> };
@@ -323,7 +309,7 @@ export default function GameScreen() {
       buyLabel={c.buyLabel}
       costLabel={c.costLabel}
       canBuy={c.canBuy}
-      buyKey={c.buy.t === 'fleet' ? 'fleet' : c.buy.t === 'decor' ? `decor:${c.buy.kind}` : `up:${c.buy.what}`}
+      buyKey={buyKeyOf(c.buy)}
       onBuyKey={onDrawerBuy}
     />
   );

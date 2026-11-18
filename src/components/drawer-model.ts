@@ -31,6 +31,22 @@ export type DrawerIcon =
 /** What a card's buy button does, through the ordinary buy path. */
 export type DrawerBuy = { t: 'upgrade'; what: G.Upgrade } | { t: 'fleet' } | { t: 'decor'; kind: DecorKind };
 
+/** C137: a card's buy as the one string the memoised card carries ('fleet', 'decor:<kind>', 'up:<upgrade>'), and back to the typed buy. */
+export function buyKeyOf(b: DrawerBuy): string {
+  return b.t === 'fleet' ? 'fleet' : b.t === 'decor' ? `decor:${b.kind}` : `up:${b.what}`;
+}
+
+/** The typed buy a key stands for; null for a key `buyKeyOf` would never write (an unknown decor kind is not guessed). */
+export function parseBuyKey(key: string): DrawerBuy | null {
+  if (key === 'fleet') return { t: 'fleet' };
+  const i = key.indexOf(':');
+  const arg = key.slice(i + 1);
+  if (i < 0 || !arg) return null;
+  if (key.startsWith('decor:')) return (DECOR_KINDS as readonly string[]).includes(arg) ? { t: 'decor', kind: arg as DecorKind } : null;
+  if (key.startsWith('up:')) return { t: 'upgrade', what: arg as G.Upgrade };
+  return null;
+}
+
 export interface DrawerCard {
   key: string;
   testID: string;

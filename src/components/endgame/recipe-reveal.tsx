@@ -9,7 +9,7 @@ import { haptic } from '../game-ui';
 import { emitCheer, emitCoin, emitPayout } from '../pulse-bus';
 import { NEWS_MS, RECIPE_HEADER } from './news-model';
 import { RecipeArt } from './recipe-art';
-import { onReveal, revealWidth, type RecipeNews } from './reveal-bus';
+import { onReveal, revealWidth, setRevealUp, type RecipeNews } from './reveal-bus';
 
 const COINS = 8;
 export const REVEAL_MS = NEWS_MS + 800;
@@ -22,6 +22,12 @@ export const RecipeReveal = memo(function RecipeReveal() {
   useEffect(() => onReveal((item) => setQueue((q) => [...q, item])), []);
   const head = queue[0];
   const key = head?.key ?? '';
+  const showing = !!head;
+  // D505: the banners wait while a card is up
+  useEffect(() => {
+    setRevealUp(showing);
+    return () => setRevealUp(false);
+  }, [showing]);
   useEffect(() => {
     if (!key) return;
     flip.setValue(0);

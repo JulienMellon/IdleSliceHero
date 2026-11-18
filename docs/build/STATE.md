@@ -33,3 +33,4 @@ next: v5.19 is outside the 11-13 handoff plan; ask Julien before starting it. v5
 - 2026-11-18 Julien: finish v5.18 open notes before v5.19 (fix round r4). E3 (E rows) + V2 (S rows, D512 jam scope, D514 lift+frost) running; U/N/A rows next.
 - 2026-11-18 Fix r4: E3 partial (all E rows fixed; tsc pass, 1853 tests). Left: C107 goal-bar half -> T2; A37 Date.now in storefront.tsx 138/346/411 -> V2. T2 launched on U/N rows + D505 + C107 bar.
 - 2026-11-18 Fix r4: T2 partial (C146/C137 city-model halves; 1855 tests). Leftovers (founderName export, index.tsx goal cap + C137, D505, C134 C136 C133 T103) -> widened-scope programmer. shop-ui.tsx:71 piesToGo + storefront A37 -> V2 after it reports.
+- 2026-11-18 Fix r4: leftover U/N done (C107 bar, C137, D505 endgame banners, C134 C136 C133 T103; 1919 tests). Left for V2: shop-ui.tsx:72 piesToGo, storefront A37, layer-stack wait-for-reveal (D505).

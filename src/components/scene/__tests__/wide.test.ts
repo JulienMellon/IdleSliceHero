@@ -37,7 +37,7 @@ describe('the first three tiers do not change by a pixel', () => {
   // the digest of every v5.17 layout (and its two pills) over a grid of kitchens, taken from the code before this card: the numbers, field by field
   test('the layout and the pills of the Hole-in-the-wall, the Corner shop and the Double storefront are the v5.17 ones', () => {
     const h = createHash('sha1');
-    const added = ['prep2', 'jamb', 'walk', 'tree', 'mirrored', 'frame'];
+    const added = ['prep2', 'jamb', 'walk', 'tree', 'mirrored', 'frame', 'floorY'];
     for (let fp = 0; fp < 3; fp++)
       for (const o of [1, 2, 3, 4, 6])
         for (const c of [1, 2, 3])

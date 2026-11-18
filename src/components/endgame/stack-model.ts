@@ -78,6 +78,9 @@ export function skyShown(p: SkyPresence): Record<SkyItem, boolean> {
   return { order: first === 'order', attack: first === 'attack', offer: first === 'offer', event: first === 'event', golden: first === 'golden' };
 }
 
+/** D505: a recipe card in the middle of the sky takes the strip: whatever was first waits until it is dismissed. */
+export const skyBehindReveal = (first: SkyItem | null, revealUp: boolean): SkyItem | null => (revealUp ? null : first);
+
 /** The item showing in this state. */
 export const skyOf = (g: GameState, bannerOpen = false, now: number = gameNow()): SkyItem | null => skyFirst(skyPresence(g, bannerOpen, now));
 

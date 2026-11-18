@@ -11,15 +11,18 @@ import { useBannerOpen } from './banner-state';
 import { ChallengeChip } from './challenge-chip';
 import { EventBanner } from './event-banner';
 import { NewsToast } from './news-toast';
-import { skyOf, STACK, stackTop } from './stack-model';
+import { useRevealUp } from './reveal-bus';
+import { skyBehindReveal, skyOf, STACK, stackTop } from './stack-model';
 import { gameNow } from '../../engine/clock';
 
 export const BannerStack = memo(function BannerStack() {
   // one sky event at a time (stack-model.ts): a string, so this repaints only when the front item changes
   const bannerOpen = useBannerOpen();
-  const first = useGame((s) => skyOf(s.game, bannerOpen, gameNow()));
+  const sky = useGame((s) => skyOf(s.game, bannerOpen, gameNow()));
+  // D505: the recipe card is dismissed first; the banner is queued behind it
+  const first = skyBehindReveal(sky, useRevealUp());
   // the order chip (or offer) is drawn by OrderChip at the top; the news toast stacks under it
-  const orderUp = first === 'order' || first === 'offer';
+  const orderUp = sky === 'order' || sky === 'offer';
   return (
     <View testID="endgame-stack" pointerEvents="box-none" style={[styles.stack, { top: stackTop(orderUp) }]}>
       <EventBanner shown={first === 'event'} />

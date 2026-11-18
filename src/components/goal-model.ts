@@ -177,8 +177,9 @@ export const GOAL_FAR_SECONDS = 1800;
 export function pickGoal<T extends { current: number; target: number }>(eps: number, ...lists: (() => readonly T[])[]): T | null {
   const rate = Math.max(1, eps);
   const within = (c: T, secs: number) => c.target - c.current <= secs * rate;
-  const all = lists.map((l) => l());
-  for (const list of all) for (const c of list) if (within(c, GOAL_FAR_SECONDS)) return c;
-  for (const list of all) for (const c of list) if (within(c, UPGRADE_TASK_MAX_SECONDS)) return c;
+  const built: (readonly T[])[] = [];
+  const at = (i: number) => (built[i] ??= lists[i]());
+  for (let i = 0; i < lists.length; i++) for (const c of at(i)) if (within(c, GOAL_FAR_SECONDS)) return c;
+  for (let i = 0; i < lists.length; i++) for (const c of at(i)) if (within(c, UPGRADE_TASK_MAX_SECONDS)) return c;
   return null;
 }

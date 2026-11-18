@@ -195,3 +195,23 @@ describe('ad flow keeps an ad loading (K1)', () => {
     expect(f.ready()).toBe(false);
   });
 });
+
+describe('C136: no ad unit, no ad, no prompts', () => {
+  it('ready is false and show asks for nothing, before or after consent', async () => {
+    const { p, calls, preloads } = ports({ loaded: true });
+    const f = createAdFlow({ ...p, hasUnit: () => false });
+    f.setTutorialDone();
+    expect(f.ready()).toBe(false);
+    expect(await f.show('double_claim')).toBe('unavailable');
+    expect(calls).toEqual([]);
+    expect(preloads.n).toBe(0);
+  });
+  it('with a unit it works as before', async () => {
+    const { p, calls } = ports();
+    const f = createAdFlow({ ...p, hasUnit: () => true });
+    f.setTutorialDone();
+    expect(f.ready()).toBe(true);
+    expect(await f.show('double_claim')).toBe('rewarded');
+    expect(calls).toEqual(['ump', 'tracking', 'ad']);
+  });
+});
