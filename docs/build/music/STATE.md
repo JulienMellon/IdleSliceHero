@@ -3,16 +3,16 @@
 Keep this file under 30 lines. It is the only file the music orchestrator edits by hand.
 
 ```
-round: R1              # R0 | R1 | R2 | done
-step: listen           # cards | verify | review | fix | reel | listen
+round: R2              # R0 | R1 | R2 | done
+step: cards            # cards | verify | review | fix | reel | listen
 bank: C MuseScore_General_Full.sf3      # letter and file name once Julien picks (R0)
 cards:                 # todo | running | done | partial | blocked
   M0 done, M1a done, M1b done, M1c done
 review: docs/build/music/review-R1-audio.md NOT SATISFIED, bugs 0 major 1 (AU78 fixed) minor 6 open (AU79-AU84), next ID AU85
 last_reel: tools/audio/build/reel/R1.mp3 (2026-11-19, notes round 2, sent)
-heard: R0 → "C"           # round → Julien's verdict in five words
+heard: R0 → "C"; R1 → "Go"           # round → Julien's verdict in five words
 open: growth eval docs/build/music/notes/R1-growth-eval.md awaits Julien (stems need +1.5 MB and src/audio director changes); lead minus bed -1.7 LU on one loop (D5 default is -2 to -4)
-next: await Julien (after notes round 2 of R1): are the loops crisp and articulate now, Rhodes clear? "go" starts R2; a third set of notes: ask first whether bank or instruments change
+next: R2 cards running
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
