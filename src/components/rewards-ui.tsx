@@ -18,7 +18,7 @@ import {
 import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
 import { DAILY_CHESTS, STREAK_SAVE_DIAMONDS } from '../content/rewards';
-import type { GameState } from '../engine/game';
+import { canAffordDiamonds, type GameState } from '../engine/game';
 import * as R from '../engine/rewards';
 import { useGame } from '../store/game-store';
 import { C, F } from '../theme';
@@ -625,7 +625,7 @@ export const GiftCalendar = memo(function GiftCalendar({
   const gap = 5;
   const w = gridW > 0 ? Math.floor((gridW - gap * 5) / 6) : 0;
   const diamonds = game.rewards.diamonds;
-  const canRepair = diamonds >= STREAK_SAVE_DIAMONDS;
+  const canRepair = canAffordDiamonds(game, STREAK_SAVE_DIAMONDS);
   return (
     <View style={styles.overlay} testID="gift-calendar">
       <Animated.View style={[styles.modal, { transform: [{ scale: pop }] }]}>

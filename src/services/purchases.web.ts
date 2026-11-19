@@ -13,11 +13,21 @@ const flagOwned = (): ProductId[] =>
     .split(',')
     .filter((s): s is ProductId => (PRODUCT_IDS as readonly string[]).includes(s));
 
+/**
+ * X2 (v5.19-test): the test panel's "Store purchases succeed" answer, in memory (the artifact host strips `?buy=`). Null = ask the query string as before.
+ * The setter does nothing unless the test build's switch is on (written out in full so the normal build folds it away).
+ */
+let testBuyAnswer: 'purchased' | null = null;
+export function setTestBuyAnswer(answer: 'purchased' | null): void {
+  if (process.env.EXPO_PUBLIC_TEST_MODE === '1') testBuyAnswer = answer;
+}
+export const testBuyAnswerOn = (): boolean => testBuyAnswer === 'purchased';
+
 let n = 0;
 const backend: PurchaseBackend = {
   products: async (ids) => ids.map((id) => ({ id, price: PRICES[id] })),
   purchase: async () => {
-    const v = queryFlag('buy');
+    const v = testBuyAnswer ?? queryFlag('buy');
     return v === 'purchased' ? { status: 'purchased', transactionId: `web-${Date.now()}-${n++}` } : { status: v === 'failed' ? 'failed' : 'cancelled' };
   },
   restore: async () => flagOwned(),

@@ -3,7 +3,7 @@
 // wearing are engine/rewards.ts (`wear`, `unwear`, `grantCosmetic`); the names and lines are the copy table. Pure: unit-tested in node.
 import { MASTERY, VANITY_IDS, VANITY_PRICE, type VanityId as SoldId } from '../../content/endgame';
 import { cosmeticName } from '../../content/rewards';
-import type { GameState } from '../../engine/game';
+import { canAffordDiamonds, type GameState } from '../../engine/game';
 import { isSkin, nextSkin } from '../../engine/vanity';
 import { spanText } from '../rewards-model';
 import { copy } from './copy-text';
@@ -38,7 +38,7 @@ export interface VanityView {
 }
 
 export function vanityViews(g: GameState): VanityView[] {
-  const { cosmetics, worn, diamonds } = g.rewards;
+  const { cosmetics, worn } = g.rewards;
   const rows = VANITY_IDS.map((id): VanityView => {
     const have = idsOf(id, cosmetics);
     const wornId = have.find((h) => worn.includes(h)) ?? null;
@@ -54,7 +54,7 @@ export function vanityViews(g: GameState): VanityView[] {
     if (id === 'plaque-master') return { ...base, state: 'earn', label: `earn ${MASTERY.masterTotal} stars`, wearId: null, buyId: null } satisfies VanityView;
     return {
       ...base,
-      state: diamonds >= VANITY_PRICE ? 'buy' : 'poor',
+      state: canAffordDiamonds(g, VANITY_PRICE) ? 'buy' : 'poor',
       label: `${VANITY_PRICE} diamonds`,
       wearId: null,
       buyId: id === 'storefront-skin' ? nextSkin(cosmetics) : id,

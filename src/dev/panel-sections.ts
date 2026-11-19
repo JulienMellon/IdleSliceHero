@@ -2,6 +2,9 @@
 // until then a block is just its title. Nothing here may be imported from outside src/dev/ (src/dev/README.md).
 import type { ComponentType } from 'react';
 
+import { JumpsBody } from './jumps-section';
+import { MoneyBody, TimeBody } from './x2-sections';
+
 export interface PanelSection {
   id: string;
   title: string;
@@ -10,8 +13,8 @@ export interface PanelSection {
 }
 
 export const PANEL_SECTIONS: PanelSection[] = [
-  { id: 'money', title: 'Money' },
-  { id: 'hoods', title: 'Neighbourhoods' },
-  { id: 'time', title: 'Time' },
+  { id: 'money', title: 'Money', Body: MoneyBody },
+  { id: 'hoods', title: 'Neighbourhoods', Body: JumpsBody },
+  { id: 'time', title: 'Time', Body: TimeBody },
   { id: 'story', title: 'Story & save' },
 ];

@@ -42,6 +42,7 @@ import {
   nextHire,
   nextToBuild,
   nextVehicleLock,
+  payDiamonds,
   runsItself,
   upgradeCostOf,
   shopRate,
@@ -498,12 +499,14 @@ export function claimGift(s: GameState, now: number, opts: { repair?: boolean } 
   const st = giftStatus(s, now);
   if (st.kind === 'claimed') return { ok: false, reason: 'Come back tomorrow' };
   const repairing = st.kind === 'save' && !!opts.repair;
-  if (repairing && s.rewards.diamonds < STREAK_SAVE_DIAMONDS) return { ok: false, reason: 'Not enough diamonds' };
+  // X2: through the diamonds' one rule (free buys in the test build)
+  const spent = repairing ? payDiamonds(s, STREAK_SAVE_DIAMONDS) : null;
+  if (spent && !spent.ok) return spent;
   const day = st.kind === 'save' && !repairing ? 1 : st.day;
   const gift = GIFT_DAYS[day - 1];
   const r = s.rewards;
   const cycle = r.gift.cycle;
-  const diamonds = Math.max(0, r.diamonds - (repairing ? STREAK_SAVE_DIAMONDS : 0) + (gift.diamonds ?? 0));
+  const diamonds = Math.max(0, (spent?.ok ? spent.state.rewards.diamonds : r.diamonds) + (gift.diamonds ?? 0));
   const boosters = addBoosters(r.boosters, (gift.boosters ?? []).map(boosterOf));
   let boosts = r.boosts;
   if (gift.boostNow)

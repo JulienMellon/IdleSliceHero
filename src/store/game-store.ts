@@ -46,13 +46,23 @@ import { buyCosmetic as buyVanity } from '../engine/vanity';
 import { analytics, EVENTS, onGrant, purchases, startServices, type Grant } from '../services';
 import { standingGrants } from './standing';
 import type { Station } from '../engine/pipeline';
-import { gameNow } from '../engine/clock';
+import { gameNow, gameSpeed } from '../engine/clock';
 
 // X1 (v5.19-test): the test build saves under its own keys, so a cheated save can never become a real one. The comparison is written out
 // in full on purpose (src/dev/README.md): the normal build folds it to the v1 keys.
 const SAVE_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? 'slice-empire/save/test-v1' : 'slice-empire/save/v1';
 const PREFS_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? TEST_PREFS_KEY : NORMAL_PREFS_KEY;
 // end X1
+
+// X2 (v5.19-test): the test cheats (free buys, clock offset, speed, store answer) saved on the last visit are put back before the first save loads.
+// The require is inside the literal env check (src/dev/README.md): the normal build folds it away. The game speed is applied in `tick` below
+// (`gameSpeed()` is 1 in the normal build); Away for / Play forward / Next day use the public `save`, `load` and `tick` (src/dev/time.ts).
+let restoreTestCheats: () => Promise<void> = async () => {};
+if (process.env.EXPO_PUBLIC_TEST_MODE === '1') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  restoreTestCheats = require('../dev/cheat-prefs').restoreCheats;
+}
+// end X2
 
 export interface OfflineSummary {
   seconds: number;
@@ -413,6 +423,7 @@ export const useGame = create<Store>((set, get) => {
     load: async () => {
       loading++;
       try {
+        if (!get().loaded) await restoreTestCheats(); // X2
         await loadSave();
       } finally {
         loading--;
@@ -442,8 +453,9 @@ export const useGame = create<Store>((set, get) => {
       await pendingSave;
     },
 
-    tick: (dt) => {
+    tick: (realDt) => {
       if (!get().loaded || get().background) return;
+      const dt = realDt * gameSpeed(); // X2: 1 in the normal build
       const now = gameNow();
       let g = get().game;
       if (now - lastRewardsRefresh >= 1000 || now < lastRewardsRefresh) {

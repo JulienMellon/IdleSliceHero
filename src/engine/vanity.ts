@@ -1,7 +1,7 @@
 // The vanity shop's rules (A30): what a cosmetic costs and what buying one does. The store calls this; the Shop screen's
 // views (components/endgame/shop-model.ts) only read the same constants and the helpers below.
 import { SOLD_SKIN_BASE, VANITY_IDS, VANITY_PRICE } from '../content/endgame';
-import type { BuyResult, GameState } from './game';
+import { payDiamonds, type BuyResult, type GameState } from './game';
 import { grantCosmetic } from './rewards';
 
 export { SOLD_SKIN_BASE, VANITY_IDS, VANITY_PRICE };
@@ -27,6 +27,8 @@ export function buyCosmetic(g: GameState, id: string): BuyResult {
   if (!item || item === 'plaque-master') return { ok: false, reason: 'Not for sale' };
   const r = g.rewards;
   if (r.cosmetics.includes(id)) return { ok: false, reason: 'Already yours' };
-  if (r.diamonds < VANITY_PRICE) return { ok: false, reason: 'Not enough diamonds' };
-  return { ok: true, state: { ...g, rewards: { ...r, ...grantCosmetic(r, id), diamonds: r.diamonds - VANITY_PRICE } } };
+  const paid = payDiamonds(g, VANITY_PRICE);
+  if (!paid.ok) return paid;
+  const pr = paid.state.rewards;
+  return { ok: true, state: { ...paid.state, rewards: { ...pr, ...grantCosmetic(pr, id) } } };
 }
