@@ -4,14 +4,14 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.19-test              # the test build (docs/PLAN-test-mode.md); back to 5.20 at close. v5.19 closed 2026-11-19
-step: verify                      # setup | waves | verify | review | fix | close
+step: review                      # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.19-test             # normal verify: 0 new, 30 changed (0.24-1.36%), True 0 [], layout 0; changed sent to X1
 codecritic_range_start: 20b3797   # v5.19 approved at r2; set at v5.19-test planning (main after v5.19 close)
 cards:                 # todo | running | done | partial | blocked
   X1: done  X2: done  X3: done  X4: done
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.19/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 4 incl. D493 D495 parked; E2 S2)
+  critic: docs/build/v5.19-test/review-r1-critic.md (r1 SATISFIED; bug 0 major 0 minor 4 = carried D481 D519 + parked D493 D495; E2 S2)
   code:   docs/build/v5.19/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 1 low 6; E1 U3 S3; C156 open)
   story:  docs/build/v5.18/review-r2-story.md (r2 SATISFIED; bug 0 major 0 minor 2; U1 T1; S67 S48 carried)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
