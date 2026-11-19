@@ -33,10 +33,8 @@ def leads_of(loop: str) -> tuple[str, ...]:
         for call in (c for c in ast.walk(fn) if isinstance(c, ast.Call)):
             if getattr(call.func, 'id', '') in ('lofi_finish', 'jazz_finish'):
                 for kw in call.keywords:
-                    if kw.arg == 'leads':
-                        names = tuple(ast.literal_eval(kw.value))
-                        if fn.name == loop or (loop, fn.name) in (('downtown_sparse', 'downtown'), ('megaslice_hq', 'megaslice')):
-                            found = list(names)
+                    if kw.arg == 'leads' and (fn.name == loop or (loop, fn.name) in (('downtown_sparse', 'downtown'), ('megaslice_hq', 'megaslice'))):
+                        found = list(ast.literal_eval(kw.value))  # only the loop's own function: the story cues build their leads in code
     if not found:
         raise SystemExit(f'{loop}: no leads= found in compose.py')
     return tuple(found)
