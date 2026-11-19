@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.19-r2             # verify r2: 47 changed (~3.3%: R1L far kerb D481, night tint 85), 3 noted; True 0 [], layout 0
 codecritic_range_start: 20b3797   # v5.19 approved at r2; set at v5.19-test planning (main after v5.19 close)
 cards:                 # todo | running | done | partial | blocked
-  X1: running  X2: todo  X3: todo  X4: todo
+  X1: partial  X2: todo  X3: todo  X4: todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.19/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 4 incl. D493 D495 parked; E2 S2)
   code:   docs/build/v5.19/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 1 low 6; E1 U3 S3; C156 open)
@@ -36,3 +36,4 @@ next: run docs/build/sessions/S6-v5.19-test.md (VERSION docs/build/v5.19-test/VE
 - 2026-11-19 v5.19-test planned (cards X1-X4, session S6). C155 already fixed in v5.19 r2, so no card for it. Next: S6.
 - 2026-11-19 S6 wave 1: X1 written but unchecked (no node_modules); orchestrator ran npm ci, X1 resumed to run its checks.
 - 2026-11-19 S6 wave 1: X1 checks pass (tsc, jest dev/store, lint, both exports + greps, check:no-test-mode) except full npm test (a11y-source: dev/panel.tsx Pressable role), sent back. Python playwright not installed and pip install was denied in this session: fixture and every screenshot verify blocked.
+- 2026-11-19 S6 wave 1 done: X1 partial (all checks pass, 2522/2522; fixture x1_panel unrun: no Python playwright). Wave 2: X2 + X3.
