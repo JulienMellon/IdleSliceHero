@@ -1,0 +1,9 @@
+# Python tools: screenshots and review (scripts/*.py) and the audio build (tools/audio/*.py).
+#   pip install -r requirements.txt
+# The audio build also needs ffmpeg on PATH. Playwright must match the npm playwright the browser was installed with.
+playwright==1.63.0
+pillow==12.3.0
+numpy==2.5.3
+scipy==1.18.1
+mido==1.3.3
+pyloudnorm==0.2.0
