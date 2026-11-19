@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.19-r2             # verify r2: 47 changed (~3.3%: R1L far kerb D481, night tint 85), 3 noted; True 0 [], layout 0
 codecritic_range_start: 20b3797   # v5.19 approved at r2; set at v5.19-test planning (main after v5.19 close)
 cards:                 # todo | running | done | partial | blocked
-  X1: todo  X2: todo  X3: todo  X4: todo
+  X1: running  X2: todo  X3: todo  X4: todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.19/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 4 incl. D493 D495 parked; E2 S2)
   code:   docs/build/v5.19/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 1 low 6; E1 U3 S3; C156 open)
