@@ -34,3 +34,4 @@ next: run docs/build/sessions/S6-v5.19-test.md (VERSION docs/build/v5.19-test/VE
 - 2026-11-19 Fix r2 done: R1 (C150 C152 A39 T111-T113), R1L (D518 D481 U26 C155 C154), R0 (A38), R5c (A40); R6 R7a R7b no rows. C151 C153 M69 carry (no v5.19 card owns the files). tsc pass, 2501/2501.
 - 2026-11-19 v5.19 closed at r2: critic SATISFIED (minor 4, D493 D495 parked), codecritic APPROVED (medium 1: C156). Pack guard ALLOW 0. Pack contract: src/content/cities/README.md.
 - 2026-11-19 v5.19-test planned (cards X1-X4, session S6). C155 already fixed in v5.19 r2, so no card for it. Next: S6.
+- 2026-11-19 S6 wave 1: X1 written but unchecked (no node_modules); orchestrator ran npm ci, X1 resumed to run its checks.
