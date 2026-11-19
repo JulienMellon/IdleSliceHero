@@ -19,5 +19,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsc --noEmit
+      - run: npx expo lint
       - run: npx prettier --check "src/**/*.{ts,tsx}" "scripts/**/*.ts" "*.js" "*.ts"
       - run: npm test
