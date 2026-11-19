@@ -66,9 +66,9 @@ du -sb assets/audio | cut -f1
 git status --short | grep -v ' assets/audio/\| tools/audio/\| docs/\| src/audio/manifest.ts\| AUDIOLOG.md\| \.claude/\| \.gitignore\| marketing/ad/README.md' | head -5
 git status --short assets/audio/sfx | head -3
 ```
-- `tsc` and the tests pass (the full suite includes the 14 MB audio cap and the stinger timing tests).
+- `tsc` and the tests pass (the full suite includes the 25 MB audio cap and the stinger timing tests).
 - The manifest's first line starts `// GENERATED`.
-- The byte count is under 14680064.
+- The byte count is under 26214400.
 - The last two commands print nothing: no file outside the audio lane changed, and the sound effects are byte-identical.
 
 Do not edit `src/content/version.ts`. This track bumps no version; the version loop's next build stamps it.
@@ -111,7 +111,7 @@ Two notes rounds on one round without a yes: in your message, ask Julien whether
 
 ## 10. Message to Julien at each stop (8 lines at most, then the track list)
 1. What was built, in one line.
-2. The evidence, as numbers: audio total in MB of 14; lead minus bed range in LU (R1 on); checks passed or the one that failed.
+2. The evidence, as numbers: audio total in MB of 25; lead minus bed range in LU (R1 on); checks passed or the one that failed.
 3. The audiocritic's verdict line and one line per bug or major (if a review ran). Say it reviewed code and measurements, not sound.
 4. **The question** from the round file, with the default you will take.
 5. The pull request link, and: "Merge it, then paste the start prompt with your answer on its last line. If you want this round thrown away, close the pull request instead and say so."

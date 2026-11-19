@@ -4,7 +4,7 @@
     python3 keys_release.py downtown suburbs
 
 For each loop it reads build/midi/<loop>.mid (the file the render uses, after swing, humanising and laid-back) and takes
-the keyboard comping tracks (names 'rhodes' and 'piano'). Notes that start within 150 ms of each other form one hit; a hit of three or more notes is a chord (University's
+the keyboard comping tracks (names 'rhodes' and 'piano'). Notes that start within 150 ms of each other form one hit; a hit of two or more notes is a chord (University's
 Rhodes also plays one single-note melody statement, which is not counted).
 For every hit it finds the next hit and prints, over the whole loop:
   hits/bar    chord hits per bar (the busyness)
@@ -62,7 +62,7 @@ def hits(loop: str):
                 cur = [a, b, 1]
         if cur:
             out.append(tuple(cur))
-    out = sorted((a, b) for (a, b, n) in out if n >= 3)  # a hit of fewer than three notes is a melody note, not a chord
+    out = sorted((a, b) for (a, b, n) in out if n >= 2)  # a hit of one note is a melody note, not a chord (comping is two or three notes since 2026-11-19)
     return out, man['seconds'], man['bars']
 
 

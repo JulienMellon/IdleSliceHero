@@ -50,3 +50,36 @@ Loops rebuilt (partial build of all eight, then `git checkout -- assets/audio/sf
 Seconds, barRoots and tiers did not change, so `src/audio/manifest.ts` is unchanged. Audio total: 13.24 MB of 14 (`du -sb assets/audio` = 13,877,074 bytes, limit 14,680,064). Checks: `python3 -m py_compile tools/audio/*.py` pass; `npx jest src/audio` 53 passed; `npx tsc --noEmit` clean; sound effects byte-identical (`git status assets/audio/sfx` empty).
 
 Code: `tools/audio/jazz.py` `comp` (new `gap`, `hold`, `answer_len`; `RELEASE_GAP`), `tools/audio/compose.py` (Suburbs' `comp` call: `antic_p=0.15, answer_p=0.4`), `tools/audio/keys_release.py` (new measure).
+
+# Round R1, second note (2026-11-19)
+
+His words: "I would like the timbre of the instruments to be more articulate and overall the sound needs less smearing. Overall I want crisper, simpler phrasing with less complex chords on the Rhodes piano because it sounds muddy and has poor articulation. Increase the memory allotment for audio to 25MB". The cap itself was raised by the orchestrator (`src/audio/__tests__/logic.test.ts`, 25 MB); I used some of the room for bitrate.
+
+## Table first
+
+| # | His words | Cues | What I changed | How it shows in a measurement | Measured result |
+|---|---|---|---|---|---|
+| 1 | "less complex chords on the Rhodes piano because it sounds muddy" | all eight loops (every `jazz.comp`; the keys are Rhodes GM 5, and GM 1 piano in uptown) | `jazz.py`: new `SIMPLE` table, guide tones only: a dyad of 3rd and 7th, a triad on major, 6/9 and diminished chords, no 9th, 11th or 13th. Three exceptions, because the build's lead-clash check (AU78) fails otherwise: min11 keeps the 9th and dom13 keeps the 13th (a held lead note sits on it), dom13 is b7-3-13. Register moved up from C3..E4 (centre 53) to G3..Bb4 (centre 60), above the bass (C2..G3), so the keys stop sharing the 130-250 Hz band with the bass and the pad. | Notes per hit 4 (3 on answers) -> 2.3-2.5; lowest keys note 48 -> 55; median keys pitch 60-62 | Notes per hit: downtown 2.47, suburbs 2.54, waterfront 2.36, university 2.55, industrial 2.27, uptown 2.47, megaslice_hq 2.43. Lowest note 55 (G3) in all eight; median 60-62. |
+| 2 | "crisper, simpler phrasing" | all eight | `jazz.comp` defaults: hold 1.25 -> 0.75 pulse (2.5 -> 1.5 beats in 4/4, 1.9 -> 1.1 in 6/8); answer 1.0 -> 0.6 beat; strum 30 -> 18 ms (University 45 -> 30 ms); anticipation odds 0.3 -> 0.15 and answer odds 0.7 -> 0.5 (Suburbs keeps its 0.15 / 0.4). | Hits per bar and longest hold, from `keys_release.py` (it now counts two-note hits) | Hits/bar (before -> after): downtown 1.75 -> 1.63, suburbs 1.69 -> 1.69, waterfront 1.97 -> 1.81, university 1.88 -> 1.75, industrial 1.92 -> 1.86, uptown 1.97 -> 1.84, megaslice_hq 1.82 -> 1.65. Longest hold: 2.15 -> 0.69 s (downtown), 3.30 -> 1.18 (waterfront), 3.46 -> 1.33 (industrial), 3.11 -> 1.15 (uptown). Chord overlap 0 in each loop (University 2, melody clusters, as before). Gap between hits, median: 0.25-0.38 s. |
+| 3 | "the sound needs less smearing" / "more articulate" | all eight | `compose.jazz_finish`, once: every pitched track keeps 0.5 of its reverb send (CC91) and 0.25 of its chorus send (CC93) (`WET_REVERB`, `WET_CHORUS`). The Rhodes goes from reverb 32-50 / chorus 30-50 to roughly half / a quarter of that. The kit keeps its sends: he named the brushes as something he likes. The 7 kHz tape roll-off in `post.py` is untouched (the Rhodes attack sits below it, and the stingers share it). | Reverb and chorus CC values in each loop's MIDI | Reverb send of the Rhodes in downtown 45 -> 22, chorus 40 -> 10 (same factors in every cue). Not measured: the audible tail. |
+| 4 | "the timbre of the instruments to be more articulate" | all eight | `build.py`: loops encoded at 128 kbps instead of 96 (stereo AAC), to keep the attacks the codec was smoothing. This is what the extra room is spent on. | `kbps` in `report.json`; bytes | 96 -> 128 in all eight; music folder 8.69 -> 11.77 MB. |
+| 5 | "Increase the memory allotment for audio to 25MB" | none of mine | Already done by the orchestrator in the test. I updated the size table in `docs/AUDIO.md`. | `du -sb assets/audio` | 17,099,115 bytes = 16.31 MB of 25. |
+
+Sound-cause choice: no program changed. The muddy-Rhodes cause I chose is the voicing (four notes with the 9th/11th/13th in the 130-330 Hz band, next to the upright bass and the pad), the long holds and the chorus/reverb sends, because those are the things that change with what he asked for (fewer notes, shorter, drier). I did not lower the pad: he did not name it.
+
+## Results
+
+| Cue | Seconds | LUFS (tier) | Peak dBFS | Seam step / 99th pct | KB (before) | GM programs in front | Lead minus bed (LU) (before) |
+|---|---|---|---|---|---|---|---|
+| downtown | 94.55 | -20.0 (-20) | -7.4 | 0.00369 / 0.02357 | 1551.7 (1145.5) | nylon 25, Rhodes 5, warm pad 90, upright 33 | -2.2 (-2.4) |
+| downtown_sparse | 94.55 | -22.0 (-22) | -10.9 | 0.00043 / 0.01293 | 1513.3 (1130.5) | nylon 25, Rhodes 5 | -1.2 (-1.7) |
+| suburbs | 89.30 | -20.0 (-20) | -8.0 | 0.00014 / 0.02585 | 1472.4 (1086.4) | vibraphone 12, jazz guitar 27, glockenspiel 10, Rhodes 5, upright 33 | -2.2 (-2.8) |
+| waterfront | 96.00 | -20.0 (-20) | -7.4 | 0.00050 / 0.02824 | 1588.0 (1167.7) | harp 47, marimba 13, Rhodes 5, upright 33 | -2.2 (-2.7) |
+| university | 101.05 | -20.0 (-20) | -7.6 | 0.00065 / 0.02400 | 1666.6 (1228.3) | kalimba 109, vibraphone 12, Rhodes 5, finger bass 34 | -2.0 (-2.4) |
+| industrial | 113.68 | -20.0 (-20) | -7.5 | 0.00515 / 0.02937 | 1871.8 (1377.9) | vibraphone 12, flute 74, clean guitar 28, Rhodes 5, warm pad 90, upright 33 | -3.0 (-3.2) |
+| uptown | 91.43 | -20.0 (-20) | -7.3 | 0.00099 / 0.02583 | 1501.0 (1113.9) | nylon 25, piano 1, jazz guitar 27, harp 47, upright 33 | -3.1 (-3.0) |
+| megaslice_hq | 53.68 | -19.0 (-19) | -6.9 | 0.00233 / 0.02273 | 883.7 (651.9) | Rhodes 5, upright 33, pizzicato 46 | -3.1 (-3.2) |
+
+Downtown_sparse's lead sits only 1.2 LU under its bed (the aim is -2 to -4, the rule is 0 or less): its bed is the Rhodes alone and it is now fewer notes. Seconds, bars and `barRoots` are unchanged, so `src/audio/manifest.ts` did not change. Audio total 16.31 MB of 25 (14 MB was the old cap; the card's 14,680,064 B line no longer applies).
+
+Not touched: the kit, the pad, the leads' notes and the charts, the stingers and story cues (their keyboards use `rh_hit`, not `comp`), `post.py`.

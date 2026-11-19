@@ -18,7 +18,7 @@ Notation: scale degrees, with a comma marking the octave below. Durations are e 
 Every loop opens with a bed with no lead, states the motif at most twice, and has a bed with no lead before it returns.
 
 ## Neighbourhood loops (AU17)
-GM programs are 1-based here (`compose.py` uses 0-based numbers). The score is lofi jazz (Julien, 2026-11-15; see the end of this file): jazz chords, swung brushes, a walking or two-feel upright bass, a Rhodes or piano comping, soft front instruments only. The eight loops (six neighbourhoods, Downtown's sparse chart and MegaSlice HQ) are rendered through bank C (`MuseScore_General_Full.sf3`, the line in `tools/audio/BANK`; fetch it with `bash tools/audio/fetch_bank.sh`) and all go through the lofi chain in `post.lofi_loop`: tape wow (±6 cents, two slow sines whose periods divide the loop), soft tanh tape saturation, gentle vinyl crackle, and a 7 kHz low-pass, all circular so the seam holds. Tiers: the six neighbourhood loops −20 LUFS, `downtown_sparse` −22 (so Nonna's takeover lifts), `megaslice_hq` −19; every loop peaks at −6 dBFS or lower (measured −7.1 to −12.0), and is encoded as stereo AAC at 96 kbps. Each loop's manifest entry carries `barRoots`, the chord degree on every bar's downbeat, written from the chart (`jazz.Harmony.roots`), so stingers can wait for the tonic; the HQ loop has none and carries `restart`. Nobody has listened to these loops yet.
+GM programs are 1-based here (`compose.py` uses 0-based numbers). The score is lofi jazz (Julien, 2026-11-15; see the end of this file): jazz chords, swung brushes, a walking or two-feel upright bass, a Rhodes or piano comping, soft front instruments only. Notes round R1 (Julien, 2026-11-19: crisper, simpler Rhodes, less smearing): the keys comp is two or three notes per hit (guide tones, `jazz.SIMPLE`, G3 to Bb4), a hit is held 0.75 pulse, the pitched tracks keep half their reverb send and a quarter of their chorus send (`compose.WET_REVERB`, `WET_CHORUS`; the kit keeps its sends), and the loops are encoded at 128 kbps. The eight loops (six neighbourhoods, Downtown's sparse chart and MegaSlice HQ) are rendered through bank C (`MuseScore_General_Full.sf3`, the line in `tools/audio/BANK`; fetch it with `bash tools/audio/fetch_bank.sh`) and all go through the lofi chain in `post.lofi_loop`: tape wow (±6 cents, two slow sines whose periods divide the loop), soft tanh tape saturation, gentle vinyl crackle, and a 7 kHz low-pass, all circular so the seam holds. Tiers: the six neighbourhood loops −20 LUFS, `downtown_sparse` −22 (so Nonna's takeover lifts), `megaslice_hq` −19; every loop peaks at −6 dBFS or lower (measured −6.9 to −10.9), and is encoded as stereo AAC at 96 kbps. Each loop's manifest entry carries `barRoots`, the chord degree on every bar's downbeat, written from the chart (`jazz.Harmony.roots`), so stingers can wait for the tonic; the HQ loop has none and carries `restart`. Nobody has listened to these loops yet.
 
 | Area | Blend | Tempo, meter | Key | Instruments (GM) | Loop | Form |
 |---|---|---|---|---|---|---|
@@ -140,11 +140,11 @@ The rest of this section: They are synthesised in `sfx.py` from one palette of w
 
 | Group | Size |
 |---|---|
-| Music | 8.7 MB (8 lofi jazz loops; slower tempos, so the bars were trimmed) |
+| Music | 11.8 MB (8 lofi jazz loops at 128 kbps stereo; was 8.7 MB at 96 kbps) |
 | Stingers | 3.0 MB (73) |
 | Story | 1.4 MB |
 | SFX | 0.17 MB |
-| **Total** | **13.2 MB** (13,867,227 bytes in `assets/audio`; the test caps it at 14 MB) |
+| **Total** | **16.3 MB** (17,099,115 bytes in `assets/audio`; the test caps it at 25 MB) |
 
 - **Web.** Nothing plays until the first pointer press, because browsers block autoplay. `scripts/screenshots.py` logs every `play()` into `report.json` under `audio`.
 
