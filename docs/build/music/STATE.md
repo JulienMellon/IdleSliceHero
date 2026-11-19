@@ -7,7 +7,7 @@ round: R2              # R0 | R1 | R2 | done
 step: cards            # cards | verify | review | fix | reel | listen
 bank: C MuseScore_General_Full.sf3      # letter and file name once Julien picks (R0)
 cards:                 # todo | running | done | partial | blocked
-  M0 done, M1a done, M1b done, M1c done
+  M0 M1a M1b M1c done; M2a done, M2b running, M2c todo
 review: docs/build/music/review-R1-audio.md NOT SATISFIED, bugs 0 major 1 (AU78 fixed) minor 6 open (AU79-AU84), next ID AU85
 last_reel: tools/audio/build/reel/R1.mp3 (2026-11-19, notes round 2, sent)
 heard: R0 → "C"; R1 → "Go"           # round → Julien's verdict in five words
@@ -27,3 +27,4 @@ next: R2 cards running
 - 2026-11-16 Julien heard R1: notes, no yes (droning sustained piano chords on tracks 2, 4, 5; track 3 comping too busy; asks to evaluate music that builds as the restaurant grows). Notes round 1 launched.
 - 2026-11-16 Notes round 1 DONE. Built: 8 loops, audio 13877074 B of 14680064, chord overlaps 0 on 6 loops (University 2, melody grace notes), lead minus bed -1.7 to -3.2 LU. Verified (1581 tests); reel R1 sent; step listen. Needs: growth eval choice (trim loops ~20 s or raise cap; director changes outside lane).
 - 2026-11-19 Notes round 2 DONE (crisper: 2-3 note Rhodes voicings, half reverb, quarter chorus, 128 kbps loops; cap raised to 25 MB per Julien). Built: 8 loops, audio 17099115 B of 26214400, lead minus bed -1.2 to -3.1 LU. Verified (2501 tests); reel R1 sent; step listen.
+- 2026-11-19 M2a DONE. Built: 73 stingers, audio 17077484 B of 32 MB, all within 0.3 s of old length. Needs: Julien — Waterfront/Industrial tags dom9 not maj9; warm-pad tail rings out plucked tags.

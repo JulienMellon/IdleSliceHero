@@ -792,13 +792,39 @@ def uptown():
 
 
 # ================================================================================================ STINGERS (AU14)
+# R2, card M2a (2026-11-19): every gameplay stinger is a short jazz tag in the loop language: the city motif swung over one
+# maj9 voicing of the neighbourhood's tonic (dom9 where the loop's tonic chord is a dominant), on that neighbourhood's R1
+# front instruments, with a celesta bell colour at velocity 60 or under (its own stem, as before). Kinds differ by length,
+# register and how much of the band plays; the lengths and `T0` are the ones the director and the tests expect.
 STING_KINDS = ['bottleneck', 'milestone', 'milestone_big', 'manager', 'upgrade', 'fleet', 'drone', 'welcome', 'warmth',
                'build', 'perk', 'offline']
 T0 = 1.0  # beat 1 of every stinger: a whole beat in, so swing() treats its eighths like the loop's (AU31b)
+FULL_BED = ('milestone_big', 'manager', 'build')
+BELL_MAX = 60  # bell velocity ceiling after humanising
+STING_LEAD_CAP = 58
+# The tag's front instruments per neighbourhood (the loops' R1 leads) and the kit feel its band plays: Downtown's is the 6/8 one.
+# `shift` moves the lead's register in semitones from the neighbourhood's root octave (the nylon guitar sits an octave low).
+STING_FRONT = {
+    'downtown': dict(lead=GM['nylon'], shift=-12, feel=jazz.F68),
+    'suburbs': dict(lead=GM['vibes'], shift=0, feel=jazz.SWING44),
+    'waterfront': dict(lead=GM['marimba'], shift=0, feel=jazz.SWING44),
+    'university': dict(lead=GM['kalimba'], shift=0, feel=HIPHOP),
+    'industrial': dict(lead=GM['vibes'], shift=0, feel=jazz.SHUFFLE),
+    'uptown': dict(lead=GM['nylon'], shift=-12, feel=jazz.SWING44),
+}
+# How long the tag's warm pad rings, per (neighbourhood, kind). The struck and plucked instruments die away quickly, so a soft
+# pad chord rings out the end of the tag and keeps each file as long as the one the director and its timing tests were written
+# against (within 0.5 s). Found by building and measuring. A kind with no entry has no afterglow. Beats from the last lead
+# note's onset; in the full-band kinds (FULL_BED) the bed's pad runs from beat 1 and the value is its end in beats from `end`
+# (default -0.4).
+STING_RING = {('downtown', 'bottleneck'): 0.8, ('downtown', 'build'): -0.91, ('downtown', 'fleet'): 0.8, ('downtown', 'perk'): 0.8, ('downtown', 'upgrade'): 0.8, ('downtown', 'welcome'): 1.5, ('industrial', 'bottleneck'): 1.71, ('industrial', 'drone'): 1.6, ('industrial', 'fleet'): 2.01, ('industrial', 'milestone'): 1.67, ('industrial', 'offline'): 1.5, ('industrial', 'upgrade'): 2.02, ('industrial', 'warmth'): 1.5, ('industrial', 'welcome'): 2.44, ('suburbs', 'bottleneck'): 1.73, ('suburbs', 'build'): -0.99, ('suburbs', 'drone'): 1.71, ('suburbs', 'fleet'): 0.8, ('suburbs', 'manager'): -0.92, ('suburbs', 'milestone'): 1.5, ('suburbs', 'offline'): 0.8, ('suburbs', 'upgrade'): 0.45, ('suburbs', 'warmth'): 0.8, ('suburbs', 'welcome'): 0.8, ('university', 'bottleneck'): 1.78, ('university', 'build'): -1.1, ('university', 'drone'): 1.9, ('university', 'fleet'): 1.5, ('university', 'manager'): -1.01, ('university', 'milestone'): 1.5, ('university', 'milestone_big'): -0.76, ('university', 'offline'): 0.45, ('university', 'perk'): 0.3, ('university', 'upgrade'): 0.3, ('university', 'warmth'): 0.8, ('university', 'welcome'): 0.8, ('uptown', 'bottleneck'): 1.85, ('uptown', 'drone'): 1.78, ('uptown', 'fleet'): 1.92, ('uptown', 'offline'): 1.5, ('uptown', 'perk'): 0.32, ('uptown', 'upgrade'): 1.93, ('uptown', 'welcome'): 2.42, ('waterfront', 'bottleneck'): 1.82, ('waterfront', 'build'): -1.01, ('waterfront', 'drone'): 1.75, ('waterfront', 'fleet'): 1.5, ('waterfront', 'manager'): -0.99, ('waterfront', 'milestone'): 1.5, ('waterfront', 'offline'): 1.03, ('waterfront', 'perk'): 0.35, ('waterfront', 'warmth'): 1.5}  # RING-TABLE
+JAZZ |= ({f'sting_{h}_{k}' for h in HOODS for k in STING_KINDS}
+         | {f'sting_{h}_{k}__bell' for h in HOODS for k in STING_KINDS} | {'sting_waterfront_bid'})
 
 
 def phrases(h):
-    """The neighbourhood's own meter (AU31a): opening bar, opening+closing, cadence, and their harmony."""
+    """The neighbourhood's own meter (AU31a): opening bar, opening+closing, cadence, and their harmony (the harmony is
+    read by `triumph`; the tags play one chord)."""
     if h['bar'] == 3:
         return dict(B=3, open=[M.M68[0]], motif=[M.M68[0], M.M68[1], [(1, 3)]], cad=M.CLOSE68[:2] + [[(1, 3)]],
                     harm_motif=[[(1, 3, 3)], [(5, 4, 3)], [(1, 3, 3)]], harm_cad=[[(2, 3, 3)], [(5, 4, 3)], [(1, 3, 3)]])
@@ -811,188 +837,228 @@ def phrases(h):
                 harm_cad=[[(2, 4, 2), (5, 4, 2)], [(5, 4, 2), (1, 3, 2)], [(1, 3, 4)]])
 
 
-def rh_bed(rh, R, md, harm, t0, B, vel):
-    """Rhodes chords under a stinger: one rolled chord per harmony segment (a held voicing, not a strum)."""
-    for (u, beats, d, size) in segs(harm, t0, B):
-        rh_hit(rh, u, rh_voicing(R, d, md), beats * 0.95, vel)
+def tag_voicing(R, md, near: float = 62) -> list[int]:
+    """The tag's one chord: the maj9 voicing of the tonic (7 9 3 5, rootless; dom9 3 5 b7 9 in a Mixolydian key, where the
+    loop's tonic chord is a dominant), in the keys' window G3..Bb4, the inversion nearest `near`. The bass plays the root."""
+    return jazz.voicing_off(R, 0, 'dom9' if md == MIXO else 'maj9', near, None, jazz.KEYS_LOW, jazz.KEYS_HIGH)
 
 
-def mallet_swell(s: Song, R, md, t_from, t_to, peak=96):
-    """A soft mallet swell (replaces the timpani roll): vibraphone root and fifth held under a rising expression
-    curve, then a single low, soft timpani thump on the arrival."""
-    vib = s.track('swell', 6, GM['vibes'], volume=84, reverb=40)
+def rh_bed(rh, V, hits, strum: float = 0.018):
+    """Rhodes under a stinger: the voicing `V` struck once per hit, (start, held beats, velocity), upper notes a hair later and
+    quieter, every note let go together. Short holds: the chord never drones into the next sound (notes round R1)."""
+    for (t, hold, vel) in hits:
+        for k, q in enumerate(V):
+            rh.n(t + strum * k, hold - strum * k, q, vel - 2 * k)
+
+
+def tonic_bass(R) -> int:
+    """The tonic as an upright-bass note in C2..B2."""
+    return jazz._bass_root(jazz.tonic(R) % 12)
+
+
+def mallet_swell(s: Song, R, md, t_from, t_to, peak=84):
+    """A soft mallet swell: vibraphone root and fifth held under a rising expression curve into the arrival (the bass
+    note under the arrival is the caller's)."""
+    vib = s.track('swell', 6, GM['vibes'], volume=76, reverb=30)
     root = deg(R, 1, md) - 12
     n_ = max(2, int((t_to - t_from) * 4))
-    vib.n(t_from, t_to - t_from + 1.2, [root, root + 7], 46)
+    vib.n(t_from, t_to - t_from + 1.2, [root, root + 7], 44)
     for i in range(n_ + 1):
         vib.ccs.append((t_from + (t_to - t_from) * i / n_, 11, int(30 + (peak - 30) * (i / n_) ** 1.5)))
     vib.ccs.append((t_to + 0.6, 11, 60))
-    tim = s.track('thump', 7, GM['timpani'], volume=80, reverb=40)
-    tim.n(t_to, 1.5, deg(R, 1, md) - 24, 54)
 
 
-def brush_swirl(s: Song, t_from, t_to, v0=60, v1=104):
+def brush_swirl(s: Song, t_from, t_to, v0=24, v1=64):
     """A brush-swirl crescendo into the arrival bar: a swirl every half beat, rising. Its own track, so it stays even."""
-    sw = s.track('swirl', 9, BRUSH, volume=93, reverb=30)
+    sw = s.track('swirl', 9, BRUSH, volume=80, reverb=30)
     n_ = max(2, int(round((t_to - t_from) * 2)))
     for i in range(n_):
         sw.n(t_from + (t_to - t_from) * i / n_, 0.5, BRUSH_SWIRL, int(v0 + (v1 - v0) * i / (n_ - 1)))
 
 
 def bell_program(hood: str) -> int:
-    """The bell colour the bed lacks: glockenspiel, except in Suburbs, whose loop already has one (then celesta)."""
-    return GM['celesta'] if hood == 'suburbs' else GM['glock']
+    """The bell colour the bed lacks: celesta in every neighbourhood (softer than the glockenspiel; Suburbs' loop already
+    carries a glockenspiel, Downtown's, Waterfront's and Uptown's have no bell)."""
+    return GM['celesta']
+
+
+def sting_save(s: Song, name: str, end: float, ts) -> dict:
+    """Palette-check the stinger and write it; the bell tracks go to their own stem (AU73: build.py saturates the body and
+    mixes the bell in afterwards, so a bass or Rhodes peak can't drive the tanh through the bell). Returns the manifest extras."""
+    palette.check(s, name)
+    PALETTE_CHECKED.append(name)
+    for tr in s.tracks:  # humanising can lift a bell past its ceiling
+        if tr.name.startswith('bell') or tr.name == 'celesta':
+            tr.events = [(t, d, pi, min(v, BELL_MAX)) for (t, d, pi, v) in tr.events]
+    bells = [tr for tr in s.tracks if tr.name.startswith('bell')]
+    if not bells:
+        s.save(os.path.join(OUT, f'{name}.mid'), end, ts)
+        return {}
+    s.tracks = [tr for tr in s.tracks if tr not in bells]
+    s.save(os.path.join(OUT, f'{name}.mid'), end, ts)
+    s.tracks = bells
+    s.save(os.path.join(OUT, f'{name}__bell.mid'), end, ts)
+    PALETTE_CHECKED.append(f'{name}__bell')
+    MANIFEST[f'{name}__bell'] = dict(kind='stem', of=name)
+    return dict(bellStem=f'{name}__bell')
 
 
 def stingers(hood: str):
     h = HOODS[hood]
+    fr = STING_FRONT[hood]
     R, md, bpm = h['root'], h['mode'], h['bpm']
     ph = phrases(h)
     B = ph['B']
     bellp = bell_program(hood)
+    feel, sh = fr['feel'], fr['shift']
+    V = tag_voicing(R, md)
     for kind in STING_KINDS:
         s = Song(bpm, B, seed=sum(map(ord, kind)))
-        ld = s.track('lead', 0, h['lead'], volume=96, reverb=38)
-        rh = s.track('rhodes', 4, GM['rhodes'], volume=88, pan=56, reverb=32, chorus=30)
+        ld = s.track('lead', 0, fr['lead'], volume=100 if kind in FULL_BED else 80, reverb=30)  # a lead sits at or under its bed
+        rh = s.track('rhodes', 1, GM['rhodes'], volume=100 if kind not in FULL_BED else 88, pan=56, reverb=26, chorus=20)
         t0 = T0
 
-        def bell_double(bars, vel=50, legato=0.8, pick=True):
-            """AU62: a bell an octave above the lead at ~velocity 50, a colour the loop's bed doesn't have."""
-            bl = s.track('bell', 5, bellp, volume=84, reverb=40)
+        def bell_double(bars, vel=44, legato=0.8, pick=True):
+            """AU62: a bell an octave above the lead, a colour the loop's bed doesn't have (velocity 60 or under)."""
+            bl = s.track('bell', 2, bellp, volume=84, reverb=40)
             if pick:
-                pickup(bl, R, md, t0, vel, 12)
-            melody(bl, R, bars, md, t0, B, vel=vel, legato=legato, shift=12)
+                pickup(bl, R, md, t0, vel, sh + 12)
+            melody(bl, R, bars, md, t0, B, vel=vel, legato=legato, shift=sh + 12)
             return bl
 
-        if kind == 'bottleneck':  # 1 bar: just the opening phrase and a bell (no Rhodes chord: it only waits a beat, so it
-            s.tracks.remove(rh)   # would often land on the loop's IV or V chord: AU62)
-            pickup(ld, R, md, t0, 54)
-            melody(ld, R, ph['open'], md, t0, B, vel=62, legato=0.8)
-            bell_double(ph['open'], 46)
+        def full_bed(nb, kit_bars, arrive, swirl_from=None):
+            """The band for the big kinds: a warm pad under the phrase, an upright bass note on the first beat and a longer one
+            under the arrival, brushes on the bars `kit_bars`, a brush swirl rising into the arrival bar."""
+            end_ = t0 + nb * B
+            pad = s.track('pad', 3, GM['warm_pad'], volume=72, reverb=30)
+            pad.n(t0, end_ - t0 + STING_RING.get((hood, kind), -0.4), V, 30)
+            bs = s.track('bass', 4, GM['ac_bass'], volume=96, reverb=12)
+            bs.n(t0, B * 0.4, tonic_bass(R), 54)
+            bs.n(arrive, 2.5, tonic_bass(R), 68)
+            drm = s.track('kit', 9, BRUSH, volume=78, reverb=22)
+            for b in kit_bars:
+                jazz.brushes(drm, 1, feel, start=t0 + b * B, seed=11 + b, scale=0.85, swirl_every=0)
+            if swirl_from is not None:
+                brush_swirl(s, swirl_from, arrive, 24, 70 if kind == 'milestone_big' else 60)
+
+        if kind == 'bottleneck':  # 3 notes of the motif and a bell; no Rhodes chord (it only waits a beat, so it would often
+            s.tracks.remove(rh)   # land on the loop's IV or V chord: AU62)
+            opening = [ph['open'][0][:3]]
+            melody(ld, R, opening, md, t0, B, vel=54, legato=1.0, shift=sh)
+            bell_double(opening, 40, 1.0, pick=False)
             end = t0 + B + 1
-        elif kind in ('milestone', 'milestone_big'):  # opening + closing as a cadence over a I–V–I Rhodes bed
-            pickup(ld, R, md, t0, 58)
-            melody(ld, R, ph['motif'], md, t0, B, vel=70)
-            rh_bed(rh, R, md, ph['harm_motif'], t0, B, 50)
-            bell_double(ph['motif'])
+        elif kind in ('milestone', 'milestone_big'):  # opening + closing as a cadence over the tag chord
+            pickup(ld, R, md, t0, 52, sh)
+            melody(ld, R, ph['motif'], md, t0, B, vel=54, shift=sh)
             nb = len(ph['motif'])
             arrive = t0 + (nb - 1) * B
             roll_from = t0 + (nb - 2) * B + (B / 2 if nb == 2 else 0)
-            if kind == 'milestone_big':  # a longer, louder brush crescendo, a mallet swell, then bass root and celesta on arrival (AU65)
-                brush_swirl(s, t0 + (nb - 2) * B, arrive, 64, 112)
+            rh_bed(rh, V, [(t0, B * 0.4, 46), (arrive, B * 0.7, 42)])
+            bell_double(ph['motif'])
+            if kind == 'milestone_big':  # a longer brush crescendo, a mallet swell, a bass root and a celesta chord on arrival (AU65)
+                full_bed(nb, [b for b in range(nb - 2)] + [nb - 1], arrive, t0 + (nb - 2) * B)
                 mallet_swell(s, R, md, roll_from, arrive)
-                bs = s.track('bass', 3, GM['ac_bass'], volume=96, reverb=20)
-                bs.n(arrive, 2.5, deg(R, 1, md) - 24, 72)
-                ce = s.track('bell arrival', 8, GM['celesta'], volume=88, reverb=45)
-                ce.n(arrive, 2.5, [deg(R, 1, md) + 12, deg(R, 5, md) + 12], 66)
+                ce = s.track('bell arrival', 8, GM['celesta'], volume=84, reverb=40)
+                ce.n(arrive, 2.5, [deg(R, 1, md) + 12, deg(R, 5, md) + 12], 54)
             else:
-                brush_swirl(s, roll_from, arrive)
+                brush_swirl(s, roll_from, arrive, 24, 54)
             end = t0 + nb * B
-        elif kind == 'manager':  # warm, resolving: cadence then closing phrase over Rhodes (ii–V–I)
-            melody(ld, R, ph['cad'], md, t0, B, vel=64)
-            rh_bed(rh, R, md, ph['harm_cad'], t0, B, 46)
-            bell_double(ph['cad'], 46, pick=False)
+        elif kind == 'manager':  # resolving: the cadence then the closing phrase, the full band
+            melody(ld, R, ph['cad'], md, t0, B, vel=52, shift=sh)
             nb = len(ph['cad'])
-            rh_hit(rh, t0 + (nb - 1) * B, [deg(R, 1, md) - 12] + rh_voicing(R, 1, md), B, 40)
-            brush_swirl(s, t0 + (nb - 2) * B + (B / 2 if nb == 2 else 0), t0 + (nb - 1) * B)
+            arrive = t0 + (nb - 1) * B
+            rh_bed(rh, V, [(t0, B * 0.4, 42), (arrive, B * 0.7, 40)])
+            bell_double(ph['cad'], 40, pick=False)
+            full_bed(nb, [b for b in range(nb - 2)] + [nb - 1], arrive, t0 + (nb - 2) * B + (B / 2 if nb == 2 else 0))
             end = t0 + nb * B
-        elif kind in ('upgrade', 'fleet', 'drone'):  # opening phrase with a rising Rhodes lift; fleet horn; drone square
-            if kind == 'drone':
-                s.tracks.remove(ld)
-                ld = s.track('lead', 0, GM['square'], volume=80, reverb=38)
-            pickup(ld, R, md, t0, 56)
-            melody(ld, R, ph['open'], md, t0, B, vel=64, legato=0.8)
-            ld.n(t0 + B, B * 0.6, deg(R, 5, md), 60)
-            bl = bell_double(ph['open'], 48)
-            bl.n(t0 + B, B * 0.6, deg(R, 5, md) + 12, 46)
-            for i, q in enumerate(M.chord_notes(R, 1, 3, md, -1) + [deg(R, 1, md)]):  # the lift: a rising arpeggio
-                rh.n(t0 + 0.5 * i, 0.9, q, 38 + 3 * i)
-            if kind == 'fleet':
-                hn = s.track('horn', 2, GM['horn'], volume=84, reverb=40)
-                hn.n(t0 + B, 0.25, deg(R, 5, md) - 12, 62)  # beep
-                hn.n(t0 + B + 0.5, 0.8, deg(R, 5, md) - 12, 66)  # beeeep
-            if kind == 'drone':
-                arp = s.track('arp', 3, GM['square'], volume=70, reverb=38)
-                for i in range(8):
-                    arp.n(t0 + B + 0.125 * i, 0.1, deg(R, 1 + (i % 4) * 2, md) + 12, 44)
+        elif kind in ('upgrade', 'fleet', 'drone'):  # opening phrase with a rising Rhodes lift
+            pickup(ld, R, md, t0, 52, sh)
+            melody(ld, R, ph['open'], md, t0, B, vel=54, legato=0.8, shift=sh)
+            ld.n(t0 + B, B * 0.6, deg(R, 5, md) + sh, 52)
+            bl = bell_double(ph['open'], 42)
+            bl.n(t0 + B, B * 0.6, deg(R, 5, md) + sh + 12, 40)
+            for i, q in enumerate(V):  # the lift: the tag chord rising, each note let go before the next lands
+                rh.n(t0 + 0.5 * i, 0.45, q, 38 + 3 * i)
+            if kind == 'fleet':  # two short low marimba notes where the horn was: a beep and a longer beep
+                bp = s.track('beep', 5, GM['marimba'], volume=84, reverb=20)
+                bp.n(t0 + B, 0.25, deg(R, 5, md) - 12, 50)
+                bp.n(t0 + B + 0.5, 0.8, deg(R, 5, md) - 12, 54)
+            if kind == 'drone':  # a quick harp flutter up the chord, straight eighths of a sixteenth apart
+                arp = s.track('arp', 7, GM['harp'], volume=72, reverb=24)
+                for i in range(6):
+                    arp.n(t0 + B + 0.125 * i, 0.3, V[i % len(V)] + 12 * (i // len(V)), 36 + 2 * i)
             end = t0 + 2 * B
-        elif kind == 'build':  # a new pizzeria opens: its neighbourhood's lead states the motif with soft claps
-            pickup(ld, R, md, t0, 58)
-            melody(ld, R, ph['motif'], md, t0, B, vel=70)
-            hp = s.track('bell', 1, bellp, volume=64, reverb=50)
-            melody(hp, R, ph['open'], md, t0, B, vel=46, shift=12)
-            rh_bed(rh, R, md, ph['harm_motif'], t0, B, 46)
+        elif kind == 'build':  # a new pizzeria opens: the motif over the full band, brushes all the way
+            pickup(ld, R, md, t0, 52, sh)
+            melody(ld, R, ph['motif'], md, t0, B, vel=54, shift=sh)
             nb = len(ph['motif'])
-            clp = s.track('soft claps', 9, BRUSH, volume=70, reverb=25)
-            for k in range(int((nb - 1) * B)):
-                clp.n(t0 + k, 0.1, CLAP, 42 if k % 2 == 0 else 34)
-                clp.n(t0 + k, 0.06, RIM, 28)
+            arrive = t0 + (nb - 1) * B
+            bell_double(ph['open'], 40, pick=False)
+            rh_bed(rh, V, [(t0, B * 0.4, 44), (arrive, B * 0.7, 42)])
+            full_bed(nb, list(range(nb)), arrive)
             end = t0 + nb * B
         elif kind == 'welcome':  # character sting (story beat 1)
-            pickup(ld, R, md, t0, 54)
-            melody(ld, R, ph['open'] + [[(5, B - 1), (None, 1)]], md, t0, B, vel=66)
-            bell_double(ph['open'] + [[(5, B - 1), (None, 1)]], 44)
-            for i, q in enumerate(M.chord_notes(R, 1, 3, md, -1) + M.chord_notes(R, 1, 3, md, 0)):  # the roll, on Rhodes
-                rh.n(t0 + 0.1 * i, 2, q, 40)
+            welcome = ph['open'] + [[(5, B - 1), (None, 1)]]
+            pickup(ld, R, md, t0, 52, sh)
+            melody(ld, R, welcome, md, t0, B, vel=54, shift=sh)
+            bell_double(welcome, 40)
+            for i, q in enumerate(V):  # the roll, on Rhodes: the tag chord rising, left to ring
+                rh.n(t0 + 0.1 * i, 1.6, q, 40)
             end = t0 + 2 * B + 1
-        elif kind == 'warmth':  # beat 2: the closing phrase, softer, over a Rhodes pad
-            melody(ld, R, ph['cad'], md, t0, B, vel=58)
-            bell_double(ph['cad'], 40, pick=False)
-            rh_bed(rh, R, md, ph['harm_cad'], t0, B, 40)
+        elif kind == 'warmth':  # beat 2: the closing phrase, softer, over the tag chord
+            melody(ld, R, ph['cad'], md, t0, B, vel=48, shift=sh)
+            bell_double(ph['cad'], 38, pick=False)
+            rh_bed(rh, V, [(t0, B * 0.4, 38), (t0 + (len(ph['cad']) - 1) * B, B * 0.7, 36)])
             end = t0 + len(ph['cad']) * B
-        elif kind == 'perk':  # perk card (AU13): the opening phrase on a bell and Rhodes, in this key (AU26)
+        elif kind == 'perk':  # perk card (AU13): the opening phrase on a celesta over the tag chord, in this key (AU26)
             s.tracks.remove(ld)
-            gl = s.track('glock', 0, bellp, volume=90, reverb=50)
-            pickup(gl, R, md, t0, 54, 12)
-            for tr, v, sh in ((gl, 68, 12), (rh, 46, 0)):
-                melody(tr, R, ph['open'], md, t0, B, vel=v, legato=1.2, shift=sh)
+            gl = s.track('celesta', 0, bellp, volume=88, reverb=40)
+            pickup(gl, R, md, t0, 50, 12)
+            melody(gl, R, ph['open'], md, t0, B, vel=56, legato=1.0, shift=12)
+            rh_bed(rh, V, [(t0, B * 0.5, 40)])
             end = t0 + B + 1
-        else:  # offline popup opens (AU15/AU30): the closing phrase on celesta over a soft Rhodes chord
+        else:  # offline popup opens (AU15/AU30): the closing phrase on celesta over a soft tag chord
             s.tracks.remove(ld)
-            ce = s.track('celesta', 0, GM['celesta'], volume=88, reverb=50)
-            melody(ce, R, ph['cad'][1:2], md, t0, B, vel=54, legato=1.1, shift=12)
-            rh_hit(rh, t0, rh_voicing(R, 1, md), B, 36)
+            ce = s.track('celesta', 0, GM['celesta'], volume=84, reverb=40)
+            melody(ce, R, ph['cad'][1:2], md, t0, B, vel=52, legato=1.1, shift=12)
+            rh_bed(rh, V, [(t0, B * 0.6, 34)])
             end = t0 + B + 1
-        swing_smooth([tr for tr in s.tracks if tr.name not in ('arp', 'swell', 'thump', 'swirl', 'soft claps')], h['swing'])  # rolls stay even (AU48)
-        s.humanize_ms(5, 4, 6, cap={'lead': LEAD_CAP})
+        if (hood, kind) in STING_RING and kind not in FULL_BED:  # the afterglow: a soft pad chord from the last lead note
+            lead_tr = next((tr for tr in s.tracks if tr.name in ('lead', 'celesta')), None)
+            at = max(t_ for (t_, _d, _p, _v) in lead_tr.events)
+            pad = s.track('pad', 3, GM['warm_pad'], volume=72, reverb=30)
+            pad.n(at, STING_RING[(hood, kind)], V, 28)
+        jazz_finish(s, h['swing'], leads=('lead',), lead_cap=STING_LEAD_CAP, straight=('arp', 'swell', 'swirl', 'beep'))
         name = f'sting_{hood}_{kind}'
-        # AU73: the bell (glockenspiel / celesta) is its own stem. build.py saturates the body and mixes the bell in
-        # afterwards, so a bass or Rhodes peak can't drive the tanh through the bell, and the bell keeps its top end.
-        bells = [tr for tr in s.tracks if tr.name.startswith('bell')]
-        extra = {}
-        if bells:
-            s.tracks = [tr for tr in s.tracks if tr not in bells]
-            s.save(os.path.join(OUT, f'{name}.mid'), end, h['ts'])
-            s.tracks = bells
-            s.save(os.path.join(OUT, f'{name}__bell.mid'), end, h['ts'])
-            MANIFEST[f'{name}__bell'] = dict(kind='stem', of=name)
-            extra['bellStem'] = f'{name}__bell'
-        else:
-            s.save(os.path.join(OUT, f'{name}.mid'), end, h['ts'])
+        # AU73: the bell is its own stem (see sting_save).
+        extra = sting_save(s, name, end, h['ts'])
         # musicSeconds: where the music ends (the duck and the gate hold this long, not the reverb tail: AU53)
         MANIFEST[name] = dict(kind='stinger', hood=hood, cue=kind, bpm=bpm, downbeatSeconds=round(t0 * 60 / bpm, 4),
                               seconds=round(end * 60 / bpm, 3), musicSeconds=round(end * 60 / bpm, 3), lofi=True, **extra)
 
 
 def bid_sting():
-    """AU27: Pier 9 bid. A held V7 on Rhodes under a soft mallet swell, no resolution: waterfront-4 resolves it."""
+    """AU27: Pier 9 bid. A held A7 (an A9 voicing: C# E G B on the Rhodes, the root A on the upright bass, root and octave on
+    a soft vibraphone swell), no resolution and nothing after it: waterfront-4 resolves it to D."""
     h = HOODS['waterfront']
     R, md = h['root'], MAJOR  # a true dominant 7th, not Mixolydian's minor v
     s = Song(h['bpm'], 4, seed=5)
     rh = s.track('rhodes', 0, GM['rhodes'], volume=92, reverb=40, chorus=30)
-    v7 = M.chord_notes(R, 5, 4, md, -1)
-    rh_hit(rh, 0.6, v7 + [deg(R, 2, md)], 3.4, 56, strum=0.06)
-    vib = s.track('swell', 1, GM['vibes'], volume=84, reverb=40)
+    v9 = jazz.voicing_off(R, 7, 'dom9', 62, None, jazz.KEYS_LOW, jazz.KEYS_HIGH)  # rootless A9: C# E G B, in G3..Bb4
+    rh_hit(rh, 0.6, v9, 3.4, 56, strum=0.06)
+    bs = s.track('bass', 3, GM['ac_bass'], volume=96, reverb=12)
+    bs.n(0.6, 3.4, deg(R, 5, md) - 24, 62)  # the root, A2
+    vib = s.track('swell', 1, GM['vibes'], volume=76, reverb=30)
     vib.n(0.6, 3.6, [deg(R, 5, md) - 12, deg(R, 5, md)], 44)
     for i in range(12):
         vib.ccs.append((0.6 + 0.2 * i, 11, int(30 + 70 * (i / 11) ** 1.5)))
-    tim = s.track('thump', 2, GM['timpani'], volume=80, reverb=40)
-    tim.n(0.6, 2.0, deg(R, 5, md) - 24, 52)
+    jazz_finish(s, 0.0, straight=('swell',))
+    palette.check(s, 'sting_waterfront_bid')
+    PALETTE_CHECKED.append('sting_waterfront_bid')
     s.save(os.path.join(OUT, 'sting_waterfront_bid.mid'), 4.2)
     # musicSeconds: Dock Saved's villain sting comes in as the A7 hangs, not after the whole ring-out (AU57)
     MANIFEST['sting_waterfront_bid'] = dict(kind='stinger', hood='waterfront', cue='bid', bpm=h['bpm'], downbeatSeconds=0.0,
                                             seconds=round(4.2 * 60 / h['bpm'], 3), musicSeconds=2.6, lofi=True)
-
 
 
 

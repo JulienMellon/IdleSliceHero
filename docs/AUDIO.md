@@ -144,7 +144,7 @@ The rest of this section: They are synthesised in `sfx.py` from one palette of w
 | Stingers | 3.0 MB (73) |
 | Story | 1.4 MB |
 | SFX | 0.17 MB |
-| **Total** | **16.3 MB** (17,099,115 bytes in `assets/audio`; the test caps it at 25 MB) |
+| **Total** | **16.3 MB** (17,099,115 bytes in `assets/audio`; the test caps it at 32 MB) |
 
 - **Web.** Nothing plays until the first pointer press, because browsers block autoplay. `scripts/screenshots.py` logs every `play()` into `report.json` under `audio`.
 
