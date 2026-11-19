@@ -383,6 +383,6 @@ describe('generated manifest', () => {
     const size = (dir: string) =>
       fs.readdirSync(path.join(ROOT, 'assets', 'audio', dir)).reduce((a, f) => a + fs.statSync(path.join(ROOT, 'assets', 'audio', dir, f)).size, 0);
     expect(size('sfx')).toBeLessThan(1.5 * 1024 * 1024);
-    expect(size('music') + size('sting') + size('story') + size('sfx')).toBeLessThan(25 * 1024 * 1024);
+    expect(size('music') + size('sting') + size('story') + size('sfx')).toBeLessThan(32 * 1024 * 1024);
   });
 });

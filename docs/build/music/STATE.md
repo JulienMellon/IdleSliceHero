@@ -11,7 +11,7 @@ cards:                 # todo | running | done | partial | blocked
 review: docs/build/music/review-R1-audio.md NOT SATISFIED, bugs 0 major 1 (AU78 fixed) minor 6 open (AU79-AU84), next ID AU85
 last_reel: tools/audio/build/reel/R1.mp3 (2026-11-19, notes round 2, sent)
 heard: R0 → "C"; R1 → "Go"           # round → Julien's verdict in five words
-open: growth eval docs/build/music/notes/R1-growth-eval.md awaits Julien (stems need +1.5 MB and src/audio director changes); lead minus bed -1.7 LU on one loop (D5 default is -2 to -4)
+open: full-score reel for Julien at end of R2 (every cue, full length, 320 kbps, from uncompressed renders if present); growth eval docs/build/music/notes/R1-growth-eval.md awaits Julien (stems need +1.5 MB and src/audio director changes); lead minus bed -1.7 LU on one loop (D5 default is -2 to -4)
 next: R2 cards running
 ```
 
