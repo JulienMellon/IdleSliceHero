@@ -15,6 +15,11 @@ export function setGameClockOffset(ms: number): void {
   if (process.env.EXPO_PUBLIC_TEST_MODE === '1' && Number.isFinite(ms) && ms >= offsetMs) offsetMs = ms;
 }
 
+/** Put the game clock back on the wall clock (offset 0): only for "Reset test save" (card X4), which starts over. Ignored outside the test build. */
+export function resetGameClockOffset(): void {
+  if (process.env.EXPO_PUBLIC_TEST_MODE === '1') offsetMs = 0;
+}
+
 /** How far ahead of the wall clock the game clock is (0 in the normal build). */
 export const gameClockOffset = (): number => offsetMs;
 

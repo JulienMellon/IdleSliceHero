@@ -133,6 +133,17 @@ describe('the clock (step 6)', () => {
     clock.setGameClockOffset(Number.NaN);
     expect(clock.gameClockOffset()).toBe(5 * HOUR);
   });
+  it('resetGameClockOffset puts it back to 0 in the test build, and does nothing in the normal one', () => {
+    const { clock } = modules();
+    clock.setGameClockOffset(5 * HOUR);
+    delete process.env[SWITCH];
+    clock.resetGameClockOffset();
+    expect(clock.gameClockOffset()).toBe(5 * HOUR);
+    process.env[SWITCH] = '1';
+    clock.resetGameClockOffset();
+    expect(clock.gameClockOffset()).toBe(0);
+    expect(clock.gameNow()).toBe(T);
+  });
   it('is saved with the test cheats and restored before the save loads', async () => {
     const a = modules();
     mem[SAVE] = JSON.stringify(baseGame(a, T));
