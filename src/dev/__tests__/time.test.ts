@@ -73,7 +73,15 @@ function baseGame(m: Modules, stamp: number) {
   const { G } = m;
   const g = G.newGame(stamp);
   const downtown = { ...g.shops.downtown, built: true, managed: true, heads: G.allHeads(), prep: 8, ovens: 8, counter: 8, drivers: 4, tables: 5, sold: 50 };
-  return { ...g, cash: 1000, totalEarned: 1000, tutorial: G.TUTORIAL_DONE, seenScenes: ['downtown-1', 'downtown-4'], shops: { ...g.shops, downtown }, lastSavedAt: stamp };
+  return {
+    ...g,
+    cash: 1000,
+    totalEarned: 1000,
+    tutorial: G.TUTORIAL_DONE,
+    seenScenes: ['downtown-1', 'downtown-4'],
+    shops: { ...g.shops, downtown },
+    lastSavedAt: stamp,
+  };
 }
 const claimedToday = (m: Modules, stamp: number) => {
   const g = m.R.refreshRewards(baseGame(m, stamp), stamp);

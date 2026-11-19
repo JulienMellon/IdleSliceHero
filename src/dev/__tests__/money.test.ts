@@ -48,7 +48,13 @@ const T = at(2026, 11, 11);
 /** Downtown running itself, `cash` in the till. */
 const shopState = (cash = 0, patch: Partial<G.Shop> = {}): G.GameState => {
   const s = G.newGame(T);
-  return { ...s, cash, tutorial: G.TUTORIAL_DONE, seenScenes: ['downtown-4'], shops: { ...s.shops, downtown: { ...s.shops.downtown, managed: true, ...patch } } };
+  return {
+    ...s,
+    cash,
+    tutorial: G.TUTORIAL_DONE,
+    seenScenes: ['downtown-4'],
+    shops: { ...s.shops, downtown: { ...s.shops.downtown, managed: true, ...patch } },
+  };
 };
 const withDiamonds = (s: G.GameState, n: number): G.GameState => ({ ...s, rewards: { ...s.rewards, diamonds: n } });
 
@@ -249,7 +255,11 @@ describe('the Money rows', () => {
   };
   const rich = (): G.GameState => {
     const s = shopState(100);
-    return { ...s, totalEarned: 100, shops: { ...s.shops, downtown: { ...s.shops.downtown, heads: G.allHeads(), prep: 10, ovens: 10, counter: 10, drivers: 5, tables: 5 } } };
+    return {
+      ...s,
+      totalEarned: 100,
+      shops: { ...s.shops, downtown: { ...s.shops.downtown, heads: G.allHeads(), prep: 10, ovens: 10, counter: 10, drivers: 5, tables: 5 } },
+    };
   };
   it('+10 min and +1 h add $/s x seconds to cash and totalEarned', () => {
     const { store, money } = load();
