@@ -1,0 +1,15 @@
+{
+ "new": 0,
+ "findings": [],
+ "allowed": 7,
+ "stale": [
+  {
+   "kind": "tap",
+   "key": "close-tasks"
+  },
+  {
+   "kind": "tap",
+   "key": "close-upgrades"
+  }
+ ]
+}

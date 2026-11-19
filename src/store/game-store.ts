@@ -427,7 +427,8 @@ export const useGame = create<Store>((set, get) => {
     load: async () => {
       loading++;
       try {
-        if (!get().loaded) await restoreTestCheats(); // X2
+        // X2: the literal check folds the whole line away in a normal build, so its load awaits nothing extra (an extra await moved the boot a tick)
+        if (process.env.EXPO_PUBLIC_TEST_MODE === '1' && !get().loaded) await restoreTestCheats();
         await loadSave();
       } finally {
         loading--;

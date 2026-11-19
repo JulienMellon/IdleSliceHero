@@ -65,6 +65,8 @@ function TestSheet({ onClose }: { onClose: () => void }) {
 const styles = StyleSheet.create({
   pill: {
     position: 'absolute',
+    zIndex: 10,
+    elevation: 10,
     right: TEST_PILL.right,
     bottom: TEST_PILL.bottom,
     width: TEST_PILL.width,

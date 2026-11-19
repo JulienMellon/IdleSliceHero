@@ -409,8 +409,6 @@ export function Hud({
           <MapIcon size={32} />
         </Pressable>
       </View>
-      {/* X1: overlaid on the HUD's lower right, so the row keeps its height */}
-      {TestPill && <TestPill />}
       {goal && (
         <View style={styles.goalRow}>
           <Pressable
@@ -450,6 +448,8 @@ export function Hud({
           {chips}
         </View>
       )}
+      {/* X1: overlaid on the HUD's lower right, so the row keeps its height; last in the HUD so it paints over the goal row's chips ("sales" tag) and takes the tap */}
+      {TestPill && <TestPill />}
     </View>
   );
 }
