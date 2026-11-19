@@ -973,13 +973,35 @@ export function upgradeLock(s: GameState, id: NeighborhoodId, what: Upgrade): st
   }
 }
 
-/** A36: the one affordability rule, for every model and view. A null cost (maxed, locked, nothing to buy) is never affordable. */
-export const canAfford = (s: Pick<GameState, 'cash'>, cost: number | null | undefined): boolean => cost != null && s.cash >= cost;
+/**
+ * X2 (v5.19-test): free buys. Module state like the clock offset: `setFreeBuys` does nothing unless the test build's switch is on (written out in
+ * full so the normal build folds it to a no-op), so in the normal build the flag is always false and `canAfford`/`pay` are exactly the A36 rule.
+ */
+let freeBuys = false;
+export function setFreeBuys(on: boolean): void {
+  if (process.env.EXPO_PUBLIC_TEST_MODE === '1') freeBuys = on;
+}
+/** Whether free buys are on (the test panel's toggle reads it; always false in the normal build). */
+export const freeBuysOn = (): boolean => freeBuys;
 
-/** A36: the one way cash is spent: the state with the price taken out, or the refusal. */
+/** A36: the one affordability rule, for every model and view. A null cost (maxed, locked, nothing to buy) is never affordable. With free buys on (test build) any cost is. */
+export const canAfford = (s: Pick<GameState, 'cash'>, cost: number | null | undefined): boolean => cost != null && (freeBuys || s.cash >= cost);
+
+/** A36: the one way cash is spent: the state with the price taken out, or the refusal. With free buys on, the state comes back as it was (`totalEarned` and `stats` are never touched either way). */
 export function pay(s: GameState, cost: number): BuyResult {
   if (!canAfford(s, cost)) return { ok: false, reason: 'Not enough cash' };
+  if (freeBuys) return { ok: true, state: s };
   return { ok: true, state: { ...s, cash: s.cash - cost } };
+}
+
+/** X2: the diamonds' affordability rule, beside the cash one (diamonds live at `rewards.diamonds`); free buys apply to it too. */
+export const canAffordDiamonds = (s: Pick<GameState, 'rewards'>, n: number | null | undefined): boolean => n != null && (freeBuys || s.rewards.diamonds >= n);
+
+/** X2: spend `n` diamonds: the state with them taken out, or the refusal. With free buys on, the state comes back as it was. */
+export function payDiamonds(s: GameState, n: number): BuyResult {
+  if (!canAffordDiamonds(s, n)) return { ok: false, reason: 'Not enough diamonds' };
+  if (freeBuys) return { ok: true, state: s };
+  return { ok: true, state: { ...s, rewards: { ...s.rewards, diamonds: s.rewards.diamonds - n } } };
 }
 
 /** Add to the lifetime counters. When every count is 0 the `stats` object is kept as is (a quiet tick must not look like a change). */

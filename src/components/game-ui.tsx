@@ -22,6 +22,14 @@ import { useMotion } from './scene/clock';
 import { buttonOutline, type ButtonTone } from './sidewalk-model';
 import { BUTTON_H, COMPACT_FONT_MAX_SCALE, GOAL_BAR_H, GOAL_TAP_H, GOAL_TAP_ROOM, HUD_BUTTON_SLOP, HUD_ROW_H, HUD_STACK } from './tap-targets';
 
+// X1 (v5.19-test): the red TEST pill and its panel. The require sits inside the literal env check, so the normal export folds it away and
+// never collects src/dev/panel (src/dev/README.md; `npm run check:no-test-mode` proves it).
+let TestPill: (() => React.JSX.Element) | null = null;
+if (process.env.EXPO_PUBLIC_TEST_MODE === '1') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  TestPill = require('../dev/panel').TestPill;
+}
+
 const native = Platform.OS !== 'web';
 
 /** The Expand buy's amber (D407): a shop-wide purchase that must not read as a station buy. */
@@ -401,6 +409,8 @@ export function Hud({
           <MapIcon size={32} />
         </Pressable>
       </View>
+      {/* X1: overlaid on the HUD's lower right, so the row keeps its height */}
+      {TestPill && <TestPill />}
       {goal && (
         <View style={styles.goalRow}>
           <Pressable

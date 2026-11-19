@@ -204,7 +204,7 @@ export function SidewalkRow({
               )}
               sub={hireLabel}
               label={money(hireCost ?? 0)}
-              enabled={hireCost !== null && !G.upgradeLock(game, id, hire) && game.cash >= hireCost}
+              enabled={hireCost !== null && !G.upgradeLock(game, id, hire) && G.canAfford(game, hireCost)}
               onPress={() => onBuy(hire)}
             />
           </View>

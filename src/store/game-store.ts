@@ -17,7 +17,7 @@ import {
   repairByAd,
   rerollDaily as rerollDailyTask,
 } from '../engine/offers';
-import { NO_PREFS, parsePrefs, PREFS_KEY, type StorePrefs } from '../components/store/store-model';
+import { NO_PREFS, parsePrefs, PREFS_KEY as NORMAL_PREFS_KEY, TEST_PREFS_KEY, type StorePrefs } from '../components/store/store-model';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
 import { cityOf } from '../content/cities';
@@ -46,9 +46,23 @@ import { buyCosmetic as buyVanity } from '../engine/vanity';
 import { analytics, EVENTS, onGrant, purchases, startServices, type Grant } from '../services';
 import { standingGrants } from './standing';
 import type { Station } from '../engine/pipeline';
-import { gameNow } from '../engine/clock';
+import { gameNow, gameSpeed } from '../engine/clock';
 
-const SAVE_KEY = 'slice-empire/save/v1';
+// X1 (v5.19-test): the test build saves under its own keys, so a cheated save can never become a real one. The comparison is written out
+// in full on purpose (src/dev/README.md): the normal build folds it to the v1 keys.
+const SAVE_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? 'slice-empire/save/test-v1' : 'slice-empire/save/v1';
+const PREFS_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? TEST_PREFS_KEY : NORMAL_PREFS_KEY;
+// end X1
+
+// X2 (v5.19-test): the test cheats (free buys, clock offset, speed, store answer) saved on the last visit are put back before the first save loads.
+// The require is inside the literal env check (src/dev/README.md): the normal build folds it away. The game speed is applied in `tick` below
+// (`gameSpeed()` is 1 in the normal build); Away for / Play forward / Next day use the public `save`, `load` and `tick` (src/dev/time.ts).
+let restoreTestCheats: () => Promise<void> = async () => {};
+if (process.env.EXPO_PUBLIC_TEST_MODE === '1') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  restoreTestCheats = require('../dev/cheat-prefs').restoreCheats;
+}
+// end X2
 
 export interface OfflineSummary {
   seconds: number;
@@ -188,6 +202,10 @@ interface Store {
   starterAt: number | null;
   markStarterOffered: () => void;
   resetGame: () => Promise<void>;
+  // X4 (v5.19-test): the Test panel's story and save tools. Does nothing in a normal build.
+  /** Put `game` in place as if it had just been loaded: the popups and the scene of the old one are gone, the story gap and the kitchen-tap gate are open (a waiting beat plays at once), and it is saved. */
+  testSetGame: (game: G.GameState) => void;
+  // end X4
 }
 
 /** A scene, the return popup or the title card is up: the orders' clocks stop and no offer appears. */
@@ -409,6 +427,7 @@ export const useGame = create<Store>((set, get) => {
     load: async () => {
       loading++;
       try {
+        if (!get().loaded) await restoreTestCheats(); // X2
         await loadSave();
       } finally {
         loading--;
@@ -438,8 +457,9 @@ export const useGame = create<Store>((set, get) => {
       await pendingSave;
     },
 
-    tick: (dt) => {
+    tick: (realDt) => {
       if (!get().loaded || get().background) return;
+      const dt = realDt * gameSpeed(); // X2: 1 in the normal build
       const now = gameNow();
       let g = get().game;
       if (now - lastRewardsRefresh >= 1000 || now < lastRewardsRefresh) {
@@ -784,6 +804,15 @@ export const useGame = create<Store>((set, get) => {
       queueScene();
       void get().save();
     },
+
+    // X4 (v5.19-test): the literal check folds the body away in a normal build (src/dev/README.md)
+    testSetGame: (game) => {
+      if (process.env.EXPO_PUBLIC_TEST_MODE !== '1') return;
+      set({ game, offline: null, playing: null, claimed: null, lastSceneEndPlay: null, lastKitchenTap: 0 });
+      queueScene();
+      void get().save();
+    },
+    // end X4
   };
 });
 

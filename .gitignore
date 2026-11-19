@@ -6,6 +6,7 @@ node_modules
 # Expo
 .expo/
 dist/
+dist-test/
 web-build/
 expo-env.d.ts
 
@@ -30,7 +31,9 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# local env files: no .env at all (X1: the test switch must never come from a file), the local ones stay ignored too
+.env
+.env.*
 .env*.local
 
 # typescript
