@@ -59,6 +59,7 @@ Writer cards use `subagent_type: writer` with the same prompt, minus the API lin
 ```
 sed -i "s/APP_VERSION = '.*'/APP_VERSION = '$V'/" src/content/version.ts
 npx tsc --noEmit 2>&1 | tail -5
+npm run format:check 2>&1 | tail -3   # CI fails on any unformatted file; npm run format fixes
 npm test 2>&1 | tail -6
 [ -f scripts/api-digest.ts ] && npx tsx scripts/api-digest.ts 2>&1 | tail -1
 npx expo export --platform web > /tmp/export.log 2>&1; tail -2 /tmp/export.log
