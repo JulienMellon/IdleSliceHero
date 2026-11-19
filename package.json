@@ -58,6 +58,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
+    "export:test": "EXPO_PUBLIC_TEST_MODE=1 npx expo export --platform web --output-dir dist-test",
+    "check:no-test-mode": "bash scripts/check-no-test-mode.sh",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"scripts/**/*.ts\" \"*.js\" \"*.ts\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"scripts/**/*.ts\" \"*.js\" \"*.ts\""
   },

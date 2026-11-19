@@ -136,6 +136,8 @@ export interface StorePrefs {
   boosterAdDay: string;
 }
 export const PREFS_KEY = 'slice-empire/store/v1';
+/** X1: the test build's prefs key (src/store/game-store.ts picks it when EXPO_PUBLIC_TEST_MODE is on). */
+export const TEST_PREFS_KEY = 'slice-empire/store/test-v1';
 export const NO_PREFS: StorePrefs = { starterOffered: false, boosterAdDay: '' };
 
 export function parsePrefs(raw: string | null): StorePrefs {

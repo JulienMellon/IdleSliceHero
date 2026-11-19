@@ -12,7 +12,8 @@ from playwright.sync_api import sync_playwright
 
 VERSION = sys.argv[1] if len(sys.argv) > 1 else "dev"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DIST = os.path.join(ROOT, "dist")
+# X1: a test build (npm run export:test) is shot with SHOTS_DIST=dist-test SHOTS_FIXTURES=scripts/fixtures/test-mode; both default to the normal build
+DIST = os.path.join(ROOT, os.environ.get("SHOTS_DIST") or "dist")
 
 def _viewport_arg(argv):
     """`--viewport 375x667` / `--viewport=375x667` from the command line (Q3): the phone size to run at; None = the default iPhone 15 (393x852)."""
@@ -578,7 +579,7 @@ FRUGAL_SAVE = dict(MID_SAVE, cash=1000, vehicle=0, active="downtown", seenScenes
                           "industrial": shop(built=False, managed=False), "uptown": shop(built=False, managed=False)})
 
 # ---- per-card fixtures: scripts/fixtures/NN_card.py, each with run(ctx) ----
-FIXTURES = os.path.join(ROOT, "scripts", "fixtures")
+FIXTURES = os.path.join(ROOT, os.environ.get("SHOTS_FIXTURES") or os.path.join("scripts", "fixtures"))
 
 def fixture_files():
     return sorted(f for f in os.listdir(FIXTURES) if f.endswith(".py") and not f.startswith("_")) if os.path.isdir(FIXTURES) else []

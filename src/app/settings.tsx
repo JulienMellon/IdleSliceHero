@@ -17,6 +17,9 @@ import { analytics, isOptedOut, purchases } from '@/services';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
 
+// X1 (v5.19-test): the test build says so. The comparison is written out in full (src/dev/README.md): the normal build folds it to the plain line.
+const versionLine = `Slice Empire v${APP_VERSION}${process.env.EXPO_PUBLIC_TEST_MODE === '1' ? ' · TEST' : ''}`;
+
 export default function Settings() {
   const insets = useSafeAreaInsets();
   const game = useGame((s) => s.game);
@@ -171,7 +174,9 @@ export default function Settings() {
             )}
           </View>
         </View>
-        <Text style={styles.version}>Slice Empire v{APP_VERSION}</Text>
+        <Text style={styles.version} testID="settings-version">
+          {versionLine}
+        </Text>
       </ScrollView>
     </View>
   );

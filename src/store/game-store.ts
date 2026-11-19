@@ -17,7 +17,7 @@ import {
   repairByAd,
   rerollDaily as rerollDailyTask,
 } from '../engine/offers';
-import { NO_PREFS, parsePrefs, PREFS_KEY, type StorePrefs } from '../components/store/store-model';
+import { NO_PREFS, parsePrefs, PREFS_KEY as NORMAL_PREFS_KEY, TEST_PREFS_KEY, type StorePrefs } from '../components/store/store-model';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
 import { cityOf } from '../content/cities';
@@ -48,7 +48,11 @@ import { standingGrants } from './standing';
 import type { Station } from '../engine/pipeline';
 import { gameNow } from '../engine/clock';
 
-const SAVE_KEY = 'slice-empire/save/v1';
+// X1 (v5.19-test): the test build saves under its own keys, so a cheated save can never become a real one. The comparison is written out
+// in full on purpose (src/dev/README.md): the normal build folds it to the v1 keys.
+const SAVE_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? 'slice-empire/save/test-v1' : 'slice-empire/save/v1';
+const PREFS_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? TEST_PREFS_KEY : NORMAL_PREFS_KEY;
+// end X1
 
 export interface OfflineSummary {
   seconds: number;

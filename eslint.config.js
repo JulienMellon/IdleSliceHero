@@ -20,7 +20,7 @@ const TESTS = ['**/__tests__/**', '**/__fixtures__/**'];
 
 module.exports = defineConfig([
   ...softened,
-  { ignores: ['dist/**', 'node_modules/**', '.expo/**', 'site/**', 'tools/**', 'scripts/**', 'marketing/**'] },
+  { ignores: ['dist/**', 'dist-test/**', 'node_modules/**', '.expo/**', 'site/**', 'tools/**', 'scripts/**', 'marketing/**'] },
   { rules: { 'import/no-cycle': 'warn' } },
   {
     // the engine and the content are the game's rules: they may not reach up into the screens, the store, the audio or the services
