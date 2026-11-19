@@ -91,17 +91,17 @@ export const STINGS = {
 } as const;
 
 export const STORY = {
-  city_theme: { src: require('../../assets/audio/story/city_theme.m4a'), seconds: 26.733, bpm: 104, beatsPerBar: 4, downbeatSeconds: 0.5769, payoffSeconds: 23.654 },
+  city_theme: { src: require('../../assets/audio/story/city_theme.m4a'), seconds: 26.516, bpm: 84, beatsPerBar: 4, downbeatSeconds: 0.7143, payoffSeconds: 23.571 },
   megaslice_rep: { src: require('../../assets/audio/story/megaslice_rep.m4a'), seconds: 4.89 },
   megaslice_rep_dock: { src: require('../../assets/audio/story/megaslice_rep_dock.m4a'), seconds: 5.06 },
   recipe: { src: require('../../assets/audio/story/recipe.m4a'), seconds: 9.944 },
   reunion: { src: require('../../assets/audio/story/reunion.m4a'), seconds: 16.933 },
-  triumph_downtown: { src: require('../../assets/audio/story/triumph_downtown.m4a'), seconds: 6.433, bpm: 126, beatsPerBar: 3, downbeatSeconds: 0.9524, payoffSeconds: 3.81 },
-  triumph_industrial: { src: require('../../assets/audio/story/triumph_industrial.m4a'), seconds: 9.703, bpm: 92, beatsPerBar: 4, downbeatSeconds: 1.3043, payoffSeconds: 6.522 },
-  triumph_suburbs: { src: require('../../assets/audio/story/triumph_suburbs.m4a'), seconds: 8.109, bpm: 112, beatsPerBar: 4, downbeatSeconds: 1.0714, payoffSeconds: 5.357 },
-  triumph_university: { src: require('../../assets/audio/story/triumph_university.m4a'), seconds: 10.546, bpm: 84, beatsPerBar: 4, downbeatSeconds: 1.4286, payoffSeconds: 7.143 },
-  triumph_uptown: { src: require('../../assets/audio/story/triumph_uptown.m4a'), seconds: 8.732, bpm: 104, beatsPerBar: 4, downbeatSeconds: 1.1538, payoffSeconds: 5.769 },
-  triumph_waterfront: { src: require('../../assets/audio/story/triumph_waterfront.m4a'), seconds: 10.527, bpm: 96, beatsPerBar: 4, downbeatSeconds: 2.5, payoffSeconds: 7.5 },
+  triumph_downtown: { src: require('../../assets/audio/story/triumph_downtown.m4a'), seconds: 6.614, bpm: 99, beatsPerBar: 3, downbeatSeconds: 0.303, payoffSeconds: 3.939 },
+  triumph_industrial: { src: require('../../assets/audio/story/triumph_industrial.m4a'), seconds: 9.562, bpm: 76, beatsPerBar: 4, downbeatSeconds: 0.0, payoffSeconds: 6.316 },
+  triumph_suburbs: { src: require('../../assets/audio/story/triumph_suburbs.m4a'), seconds: 8.418, bpm: 86, beatsPerBar: 4, downbeatSeconds: 0.0, payoffSeconds: 5.581 },
+  triumph_university: { src: require('../../assets/audio/story/triumph_university.m4a'), seconds: 10.396, bpm: 76, beatsPerBar: 4, downbeatSeconds: 0.7895, payoffSeconds: 7.105 },
+  triumph_uptown: { src: require('../../assets/audio/story/triumph_uptown.m4a'), seconds: 8.676, bpm: 84, beatsPerBar: 4, downbeatSeconds: 0.0, payoffSeconds: 5.714 },
+  triumph_waterfront: { src: require('../../assets/audio/story/triumph_waterfront.m4a'), seconds: 10.539, bpm: 80, beatsPerBar: 4, downbeatSeconds: 1.5, payoffSeconds: 7.5 },
   victor_exit: { src: require('../../assets/audio/story/victor_exit.m4a'), seconds: 3.483 },
 } as const;
 

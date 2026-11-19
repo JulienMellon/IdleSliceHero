@@ -44,15 +44,6 @@ HOODS = {
     'industrial': dict(root='A3', mode=MIXO, bpm=76, bar=4, ts=(4, 4), lead=GM['tenor_sax'], swing=0.667),
     'uptown': dict(root='Eb4', mode=MAJOR, bpm=84, bar=4, ts=(4, 4), lead=GM['clarinet'], swing=0.6),
 }
-# The win triumphs keep their shape and energy this round (owner, 2026-10-31): they stay in the old tempos and leads.
-LEGACY = {
-    'downtown': dict(root='F4', mode=MAJOR, bpm=126, bar=3, ts=(6, 8), lead=GM['accordion'], swing=0.0),
-    'suburbs': dict(root='G4', mode=MAJOR, bpm=112, bar=4, ts=(4, 4), lead=GM['trumpet'], swing=0.0),
-    'waterfront': dict(root='D4', mode=MIXO, bpm=96, bar=4, ts=(4, 4), lead=GM['fiddle'], swing=0.0),
-    'university': dict(root='Bb4', mode=MAJOR, bpm=84, bar=4, ts=(4, 4), lead=GM['square'], swing=0.58),
-    'industrial': dict(root='A3', mode=MIXO, bpm=92, bar=4, ts=(4, 4), lead=GM['tenor_sax'], swing=0.667),
-    'uptown': dict(root='Eb4', mode=MAJOR, bpm=104, bar=4, ts=(4, 4), lead=GM['clarinet'], swing=0.6),
-}
 LEAD_CAP = 80  # leads never play louder than this (after humanising)
 # The cues rewritten as lofi jazz so far. `finish()` runs the palette check (palette.py) on each; later cards add theirs,
 # card M2c makes it every cue.
@@ -1062,120 +1053,164 @@ def bid_sting():
 
 
 
-def groove(hood: str, s: Song, harm, t0: float, B: float, bars: int):
-    """Each neighbourhood's own rhythm section under the triumph's brass (AU35)."""
-    h = LEGACY[hood]  # the triumphs keep the old tempo and lead (lofi round 1 leaves them alone)
-    R, md = h['root'], h['mode']
-    bass = s.track('groove bass', 6, GM['fing_bass'] if hood == 'industrial' else GM['syn_bass'] if hood == 'university' else GM['ac_bass'], volume=100, reverb=20)
-    drm = s.track('groove kit', 9, 0, volume=96, reverb=40)
-    seg = list(segs(harm, t0, B))
-    for (u, beats, d, size) in seg:
-        r = deg(R, d, md) - 24
-        if hood == 'downtown':
-            for k in range(int(beats // 1.5)):
-                bass.n(u + 1.5 * k, 1.3, r + (7 if k % 2 else 0), 96)
-        elif hood == 'waterfront':
-            for half in range(int(beats // 2)):
-                for off, dur, iv, v in ((0, .7, 0, 96), (.75, .2, 7, 70), (1, .45, 12, 82), (1.5, .45, 7, 76)):
-                    bass.n(u + 2 * half + off, dur, r + iv, v)
-        elif hood == 'industrial':
-            for i, iv in enumerate([0, 4, 7, 9, 10, 9, 7, 4][:int(beats * 2)]):
-                bass.n(u + 0.5 * i, 0.42, r + iv, 92 - (10 if i % 2 else 0))
-        elif hood == 'uptown':
-            ch = M.chord_notes(R, d, 4, md, -2)
-            for i, q in enumerate([r, ch[1], ch[2], r + 7][:int(beats)]):
-                bass.n(u + i, 0.85, q, 88)
-        else:
-            for i in range(int(beats)):
-                bass.n(u + i, 0.8, r + (7 if i % 2 else 0), 92 if i % 2 == 0 else 78)
-    for b in range(bars):
-        t = t0 + b * B
-        if hood == 'downtown':
-            for k in range(6):
-                drm.n(t + 0.5 * k, 0.2, TAMB, 92 if k % 3 == 0 else 58)
-        elif hood == 'suburbs':
-            for i in range(8):
-                drm.n(t + 0.5 * i, 0.2, SNARE, 70 + (24 if i % 4 == 0 else 0))
-            drm.n(t, 0.5, KICK, 104)
-            drm.n(t + 2, 0.5, KICK, 96)
-        elif hood == 'waterfront':
-            for i in range(8):
-                drm.n(t + 0.5 * i, 0.2, SHAKER, 70)
-            drm.n(t + 1.75, 0.2, CONGA_HI, 80)
-            drm.n(t + 3, 0.3, CONGA_LO, 86)
-        elif hood == 'university':
-            for off, k, v in ((0, KICK, 100), (1, SNARE, 84), (2.5, KICK, 92), (3, SNARE, 88)):
-                drm.n(t + off, 0.3, k, v)
-            for i in range(8):
-                drm.n(t + 0.5 * i, 0.15, CHH, 62)
-            rh = s.track('rhodes', 7, GM['rhodes'], volume=84, reverb=50) if b == 0 else [tr for tr in s.tracks if tr.name == 'rhodes'][0]
-            for (u, beats, d, size) in seg:
-                if t <= u < t + B:
-                    rh.n(u, beats * 0.9, M.chord_notes(R, d, 4, md, -1), 66)
-        elif hood == 'industrial':
-            for off, k, v in ((0, KICK, 100), (1, SNARE, 90), (2, KICK, 96), (3, SNARE, 94)):
-                drm.n(t + off, 0.3, k, v)
-            for i in range(8):
-                drm.n(t + 0.5 * i, 0.15, RIDE, 70)
-            org = s.track('organ', 7, GM['organ'], volume=72, reverb=30) if b == 0 else [tr for tr in s.tracks if tr.name == 'organ'][0]
-            for (u, beats, d, size) in seg:
-                if t <= u < t + B:
-                    org.n(u + 1.5, 0.35, M.chord_notes(R, d, 4, md, 0)[1:], 66)
-        else:  # uptown: pompe guitar and ride
-            gt = s.track('pompe', 7, GM['jazz_gtr'], volume=76, reverb=30) if b == 0 else [tr for tr in s.tracks if tr.name == 'pompe'][0]
-            for (u, beats, d, size) in seg:
-                if t <= u < t + B:
-                    for i in range(int(beats)):
-                        gt.n(u + i, 0.22, M.chord_notes(R, d, 4, md, -1), 66 if i % 2 else 54)
-            for i in range(4):
-                drm.n(t + i, 0.3, RIDE, 60)
+# ================================================================================================ THE WIN MOMENTS
+# Card M2b (2026-11-19). The six triumphs and the city theme in the loops' language: swung brushes, a Rhodes and a vibraphone
+# rising through the voicing, a slow-string swell, the closing phrase of the motif on the neighbourhood's front instrument over
+# ii-V, then one arrival chord for all seven cues: a wide maj9 of the tonic (upright bass an octave under the loop's bass, Rhodes
+# 7-9-3-5, strings root-5th-9th, vibraphone, a celesta bell) under a brush swirl that ends on it. No cymbal, no timpani, no brass.
+# Each cue plays at its neighbourhood's loop tempo and swing (`HOODS`); the arrival lands where the old payoff crash did.
+# (t0, P): the beat the first bar starts and the beat of the arrival, picked so P in seconds is within 0.25 s of the old payoff.
+TRIUMPH_TIMING = {'downtown': (0.5, 6.5), 'suburbs': (0.0, 8.0), 'waterfront': (2.0, 10.0), 'university': (1.0, 9.0),
+                  'industrial': (0.0, 8.0), 'uptown': (0.0, 8.0)}
+# Where the music ends, in beats from the arrival (tuned so the encoded file is within 1.0 s of the old file's length).
+TRIUMPH_TAIL = {'downtown': 4.4, 'suburbs': 4.0, 'waterfront': 4.0, 'university': 4.2, 'industrial': 4.0, 'uptown': 4.0}
+# The lead's (track volume, velocity before humanising) per cue, found by measuring lead minus bed on the stems (aim -2 to -4 LU;
+# the kalimba and the marimba are the quietest voices at the same velocity). The lead's velocity cap is STORY_LEAD_CAP.
+STORY_LEAD = {'triumph_downtown': (116, 54), 'triumph_suburbs': (118, 54), 'triumph_waterfront': (127, 60),
+              'triumph_university': (127, 70), 'triumph_industrial': (124, 56), 'triumph_uptown': (106, 54),
+              'city_theme': (112, 54)}
+STORY_LEAD_CAP = 72
+STORY_BELL_VEL = 56  # arrival bell
+JAZZ |= {f'triumph_{h}' for h in HOODS} | {'city_theme'}
+
+
+def arrival_chord(s: Song, R, P: float, tail: float, pulse: float, vel: float = 1.0) -> None:
+    """The arrival, the same for every cue in its own key: a maj9 of the tonic, wide. Bass an octave under the loops' bass
+    (and the loops' own octave, softer), Rhodes 7-9-3-5 rootless, strings on root, fifth and ninth, vibraphone on the ninth
+    and fifth an octave up, a celesta bell on the root and fifth two octaves above the Rhodes' floor, a feathered kick and a
+    soft brush tap where the swirl ends. Every note lets go by `tail` beats."""
+    tn = jazz.tonic(R)
+    b = jazz._bass_root(tn % 12)  # the loops' bass root, C2..B2
+    V = jazz.voicing_off(R, 0, 'maj9', 62, None, jazz.KEYS_LOW, jazz.KEYS_HIGH)
+    bs = [t for t in s.tracks if t.name == 'bass'][0]
+    bs.n(P, tail * 0.92, b - 12, int(86 * vel))
+    bs.n(P + 0.02, tail * 0.8, b, int(56 * vel))
+    rh = [t for t in s.tracks if t.name == 'rhodes'][0]
+    for k, q in enumerate(V):
+        rh.n(P + 0.02 * k, tail * 0.85 - 0.02 * k, q, int(64 * vel) - 2 * k)
+    st = [t for t in s.tracks if t.name == 'strings'][0]
+    st.n(P, tail * 0.95, [b + 12, b + 19, b + 26], int(62 * vel))
+    vb = [t for t in s.tracks if t.name == 'vibes'][0]
+    vb.n(P + 0.03, tail * 0.7, [V[1] + 12, V[3] + 12], int(46 * vel))
+    bl = s.track('bell', 5, GM['celesta'], volume=84, reverb=40)
+    bl.n(P + 0.01, tail * 0.65, [tn + 12, tn + 19], STORY_BELL_VEL)
+    dr = [t for t in s.tracks if t.name == 'kit'][0]
+    dr.n(P, 0.3, KICK, 52)
+    dr.n(P, 0.3, 38, 46)
+
+
+def story_cue(name: str, R, md, bpm: float, B: float, feel, swing: float, ts, P: float, n_pre: int, tail: float, leads: list,
+              seed: int, front=None, opener=None) -> float:
+    """One win moment. `n_pre` bars of ii-V-I (the city theme's hand-offs) then two bars of build, ii and then V (sus13, then
+    13), the last one ending at the arrival beat `P`. `leads`: dicts with name, program, shift, pan, volume, phrases: a list of
+    (bars, start beat, velocity). `opener(s, tb)` adds what only this cue has (the waterfront's ship's bell and D)."""
+    pulse = feel.pulse
+    tc = P - 2 * B                      # the first of the two build bars
+    t_first = tc - n_pre * B
+    s = Song(bpm, B, seed=seed)
+    lead_ch = (0, 1, 2, 3, 10, 11)  # channels 4-9 are the bass, bell, keys, vibes, strings and kit
+    lead_tr = [s.track(L['name'], lead_ch[i], L['program'], volume=L['volume'], pan=L['pan'], reverb=30) for i, L in enumerate(leads)]
+    rh = s.track('rhodes', 6, GM['rhodes'], volume=100, pan=56, reverb=26, chorus=20)
+    vb = s.track('vibes', 7, GM['vibes'], volume=80, pan=44, reverb=30)
+    st = s.track('strings', 8, GM['slow_strings'], volume=70, reverb=40)
+    bs = s.track('bass', 4, GM['ac_bass'], volume=96, reverb=12)
+    dr = s.track('kit', 9, BRUSH, volume=78, reverb=22)
+    for L, tr in zip(leads, lead_tr):
+        for (bars_, start, vel) in L['phrases']:
+            melody(tr, R, bars_, md, start, B, vel=vel, shift=L['shift'])
+        if L.get('pickup') is not None:
+            pickup(tr, R, md, L['pickup'], vel=L.get('pickup_vel', 48), shift=L['shift'])
+    # the harmony: ii-V-I per pre bar (4/4), then ii | V sus13, V 13
+    pre = jazz.bars(R, B, *([[(2, 'min9', B / 2), (5, 'dom13', B / 4), (1, 'maj9', B / 4)]] * n_pre)) if n_pre else None
+    close = jazz.bars(R, B, [(2, 'min9', B)], [(5, 'sus13', B / 2), (5, 'dom13', B / 2)])
+    hm = (pre + close) if pre else close
+    chords = hm.chords(t_first)
+    # keys: one soft strike per chord (two on a whole-bar chord), each voicing a little higher than the one before
+    for i, (t, ch) in enumerate(chords):
+        v = jazz.voicing_off(R, ch.off, ch.q, 57 + 8.0 * i / max(1, len(chords) - 1), jazz.SIMPLE, jazz.KEYS_LOW, jazz.KEYS_HIGH)
+        hold = min(1.6, ch.beats - 0.45) if ch.beats >= 2 else 0.5
+        for k, q in enumerate(v):
+            rh.n(t + 0.018 * k, hold - 0.018 * k, q, 42 + int(6 * i / max(1, len(chords) - 1)) - 2 * k)
+        if ch.beats >= B - 1e-9 and B == 4:
+            for k, q in enumerate(v[1:] if len(v) > 2 else v):
+                rh.n(t + 2 + 0.018 * k, 0.5, q, 32)
+    # vibraphone: the last chord's voicing rising, four notes up the chord an octave above the keys, quieter than the keys
+    last_t, last_ch = chords[-1]
+    vv = jazz.voicing_off(R, last_ch.off, last_ch.q, 55)
+    for k in range(4):
+        vb.n(last_t + k * last_ch.beats / 4, last_ch.beats / 4 * 0.9, vv[k % len(vv)] + 12 + 12 * (k // len(vv)), 30 + 6 * k)
+    # strings: guide tones of each chord of the build, one note group per chord, joined; a swell under them
+    for (t, ch) in chords[-3:]:
+        sv = jazz.voicing_off(R, ch.off, ch.q, 55, jazz.SIMPLE, 48, 64)
+        st.n(t, ch.beats + 0.05, sv, 40)
+    ramp0 = P - 2 * B
+    for i in range(0, int(4 * (P - ramp0)) + 1):
+        x = ramp0 + i / 4.0
+        st.ccs.append((x, 11, int(34 + 66 * (i / (4 * (P - ramp0))) ** 1.4)))
+    st.ccs.append((P + tail * 0.55, 11, 100))
+    st.ccs.append((P + tail * 0.95, 11, 36))
+    # bass: walking in 4/4 (two-feel in 6/8) from the first bar to the beat before the arrival
+    full = hm + jazz.hold(R, B, 1, 'maj9')
+    if feel.bar_beats == 4.0:
+        jazz.bass_walk(bs, full, feel, start=t_first, seed=seed, vel=56)
+    else:
+        jazz.bass_two_feel(bs, full, feel, start=t_first, vel=52)
+    bs.events = [e for e in bs.events if e[0] < P - 0.01]
+    # brushes: the ride and feathered kick to the swirl, which ends on the arrival
+    nb = n_pre + 1
+    jazz.brushes(dr, nb, feel, start=t_first, seed=seed + 3, scale=0.8, swirl_every=0)
+    jazz.brushes(dr, 1, feel, start=tc + B, seed=seed + 4, scale=0.8, swirl_every=0)
+    dr.events = [e for e in dr.events if e[0] < P - pulse - 0.01]
+    brush_swirl(s, P - pulse, P, 22, 62)
+    arrival_chord(s, R, P, tail, pulse)
+    if opener:
+        opener(s)
+    end = P + tail
+    jazz_finish(s, swing, leads=tuple(L['name'] for L in leads), lead_cap=STORY_LEAD_CAP, straight=('swirl', 'strings', 'ship bell'))
+    for tr in s.tracks:  # humanising can lift a bell past its ceiling
+        if tr.name in ('bell',):
+            tr.events = [(t, d, pi, min(v, BELL_MAX)) for (t, d, pi, v) in tr.events]
+    palette.check(s, name)
+    PALETTE_CHECKED.append(name)
+    s.save(os.path.join(OUT, f'{name}.mid'), end, ts)
+    MANIFEST[name] = dict(kind='story', hood=name.removeprefix('triumph_') if name.startswith('triumph_') else None,
+                          seconds=round(end * 60 / bpm, 3), bpm=bpm, beatsPerBar=int(B) if B == int(B) else B,
+                          downbeatSeconds=round(t_first * 60 / bpm, 4), payoffSeconds=round(P * 60 / bpm, 3))
+    if MANIFEST[name]['hood'] is None:
+        del MANIFEST[name]['hood']
+    return end
 
 
 def triumph(hood: str):
-    """Beat-4 win (AU4/AU12/AU26): snare pickup, motif + closing phrase, the crash by ~6 s, in the
-    neighbourhood's key, tempo and meter, over its own rhythm section (AU35)."""
-    h = LEGACY[hood]  # the triumphs keep the old tempo and lead (lofi round 1 leaves them alone)
-    R, md = h['root'], h['mode']
-    ph = phrases(h)
-    B = ph['B']
-    bpm = h['bpm']
-    s = Song(bpm, B, seed=71)
-    ld = s.track('lead', 0, h['lead'], volume=110, reverb=50)
-    br = s.track('brass', 1, GM['brass'], volume=100, reverb=55)
-    st = s.track('strings', 2, GM['strings'], volume=96, reverb=65)
-    tim = s.track('timpani', 3, GM['timpani'], volume=110, reverb=50)
-    lead_in = 2.0
-    if hood == 'waterfront':  # the ship's bell (AU13) rings first
-        bell = s.track('ship bell', 4, GM['bells'], volume=110, reverb=80)
-        for i in range(3):
-            bell.n(0.6 * i, 2, deg(R, 5, md), 110 - 10 * i)
-        lead_in = 4.0
-    t0 = lead_in
-    drm0 = s.track('swell', 9, 0, volume=96, reverb=45)
-    for i in range(8):  # snare-roll swell into the downbeat
-        drm0.n(t0 - 2 + 0.25 * i, 0.2, SNARE, 50 + 8 * i)
-    tim.n(t0 - 2, 2, deg(R, 5, md) - 24, 70)
-    pickup(ld, R, md, t0, 96)
-    mel = ph['motif'][:2]
-    harm = ph['harm_motif'][:2]
-    melody(ld, R, mel, md, t0, B, vel=112)
-    melody(br, R, mel, md, t0, B, vel=96, shift=-12)
-    for (u, beats, d, size) in segs(harm, t0, B):
-        st.n(u, beats * 0.98, M.chord_notes(R, d, 3, md, 0), 84)
-        tim.n(u, 0.6, deg(R, d, md) - 24, 100)
-    groove(hood, s, harm, t0, B, 2)
-    drm0.n(t0, 1, CRASH, 96)
-    end_ = t0 + 2 * B  # the payoff: tutti tonic with a big crash
-    drm0.n(end_, 3, CRASH, 96)  # AU64: was 124; the lofi loop underneath is 12 LU quieter
-    tim.n(end_, 3, deg(R, 1, md) - 24, 100)
-    br.n(end_, 3, M.chord_notes(R, 1, 3, md, -1) + [deg(R, 1, md) + 12], 108)
-    ld.n(end_, 3, deg(R, 1, md) + 12, 108)
-    st.n(end_, 3, M.chord_notes(R, 1, 3, md, 0), 96)
-    swing(s, h['swing'], [tr for tr in s.tracks if tr.name not in ('swell', 'timpani')])  # rolls stay even (AU48)
-    name = f'triumph_{hood}'
-    s.save(os.path.join(OUT, f'{name}.mid'), end_ + 3, h['ts'])
-    MANIFEST[name] = dict(kind='story', hood=hood, seconds=round((end_ + 3) * 60 / bpm, 3), bpm=bpm, beatsPerBar=B,
-                          downbeatSeconds=round(t0 * 60 / bpm, 4), payoffSeconds=round(end_ * 60 / bpm, 3))
+    """Beat-4 win (AU4/AU12/AU26): the closing phrase of the motif on the neighbourhood's front instrument over ii-V, the
+    arrival chord where the old payoff was, in the neighbourhood's key, loop tempo, swing and meter."""
+    h = HOODS[hood]
+    R, md, bpm, B = h['root'], h['mode'], h['bpm'], float(h['bar'])
+    fr = STING_FRONT[hood]
+    t0, P = TRIUMPH_TIMING[hood]
+    tail = TRIUMPH_TAIL[hood]
+    sh = fr['shift']
+    lvol, lvel = STORY_LEAD[f'triumph_{hood}']
+    if B == 3:  # 6/8: CLOSE68's two bars over ii and V, its tonic on the arrival
+        phrases_ = [(M.CLOSE68[:3], t0, lvel)]
+    else:       # 4/4: the cadence over ii, then the closing phrase so that its tonic is the arrival
+        phrases_ = [([M.CADENCE_1], t0, lvel), ([M.CLOSE], P - 2, lvel)]
+    leads = [dict(name='lead', program=fr['lead'], shift=sh, pan=64, volume=lvol, phrases=phrases_,
+                  pickup=t0 if t0 >= 0.5 else None)]
+    opener = None
+    if hood == 'waterfront':  # the ship's bell (AU13) rings first, over the D that the bid's held A7 resolves to (AU77)
+        def opener(s):
+            bell = s.track('ship bell', 12, GM['bells'], volume=90, reverb=70)
+            for i, v in enumerate((92, 82, 72)):
+                bell.n(0.5 * i, 1.3, deg(R, 5, md), v)
+            V = jazz.voicing_off(R, 0, 'maj9', 62, None, jazz.KEYS_LOW, jazz.KEYS_HIGH)
+            rh = [t for t in s.tracks if t.name == 'rhodes'][0]
+            for k, q in enumerate(V):
+                rh.n(0.018 * k, 1.7, q, 40 - 2 * k)
+            bs = [t for t in s.tracks if t.name == 'bass'][0]
+            bs.n(0.0, 1.7, jazz._bass_root(jazz.tonic(R) % 12), 58)
+    story_cue(f'triumph_{hood}', R, md, bpm, B, fr['feel'], h['swing'], h['ts'], P, 0, tail, leads, seed=71 + sum(map(ord, hood)) % 17,
+              opener=opener)
 
 
 # ================================================================================================ STORY CUES
@@ -1337,65 +1372,23 @@ def recipe():
 
 
 def city_theme():
-    """AU26: the six leads enter one bar apart in build order (each adds the opening phrase over a rising tonic
-    bed), then the whole band plays the A′ phrase with fiddle and clarinet a third above (AU34). ~24 s, once."""
-    R, md = 'Eb4', MAJOR
-    bpm = 104
-    s = Song(bpm, 4, seed=95)
-    order = ['accordion', 'trumpet', 'fiddle', 'square', 'tenor_sax', 'clarinet']
-    leads = [s.track(n, i, GM[n], volume=96, pan=20 + 18 * i, reverb=55) for i, n in enumerate(order)]
-    st = s.track('strings', 6, GM['strings'], volume=90, reverb=65)
-    bs = s.track('bass', 7, GM['ac_bass'], volume=100, reverb=25)
-    br = s.track('brass', 8, GM['brass'], volume=92, reverb=55)
-    drm = s.track('kit', 9, 0, volume=88, reverb=40)
-    tim = s.track('timpani', 10, GM['timpani'], volume=100, reverb=50)
-    octave = {'tenor_sax': -12, 'trumpet': 0, 'square': 12}
-    t = 1.0
-    entry_harm = [(1, 3, 4)] * 4 + [(4, 3, 4), (5, 4, 4)]
-    for i, tr in enumerate(leads):
-        u = t + 4 * i
-        pickup(tr, R, md, u, 84, octave.get(order[i], 0))
-        melody(tr, R, [M.MOTIF], md, u, 4, vel=96, shift=octave.get(order[i], 0))
-        # the earlier leads hold a chord tone under the newcomer
-        d, size, _ = entry_harm[i]
-        tones = M.chord_notes(R, d, 4 if size == 4 else 3, md, 0)
-        for j, held in enumerate(leads[:i]):
-            q = tones[j % len(tones)] + 12 * (j // len(tones))
-            held.n(u, 3.8, q + octave.get(order[j], 0) - 12, 46)
-        st.n(u, 3.9, M.chord_notes(R, d, 3, md, -1), 46 + 6 * i)
-        bs.n(u, 3.6, deg(R, d, md) - 24, 70 + 5 * i)
-        for k in range(4):
-            if i >= 2:
-                drm.n(u + k, 0.2, KICK if k % 2 == 0 else CHH, 50 + 8 * i)
-    for i in range(8):  # swell into the tutti
-        drm.n(t + 24 - 2 + 0.25 * i, 0.2, SNARE, 60 + 7 * i)
-    t += 24
-    third = {'fiddle': 2, 'clarinet': 2}
-    for i, tr in enumerate(leads):
-        if third.get(order[i]):
-            for (u, d, pi) in M.bar_melody(R, M.A2_BARS, md, t, 4, 0):
-                tr.n(u, d * 0.92, M.material_third(R, pi, md), 86)
-        else:
-            melody(tr, R, M.A2_BARS, md, t, 4, vel=90, shift=octave.get(order[i], 0))
-    pickup(leads[1], R, md, t, 90)
-    melody(br, R, M.A2_BARS, md, t, 4, vel=84, shift=-12)
-    for (u, beats, d, size) in segs(M.A2_HARM, t, 4):
-        st.n(u, beats, M.chord_notes(R, d, 3, md, 0), 84)
-        bs.n(u, beats * 0.9, deg(R, d, md) - 24, 100)
-        tim.n(u, 0.5, deg(R, d, md) - 24, 90)
-    for k in range(4):
-        drm.n(t + 4 * k, 1, CRASH if k % 2 == 0 else RIDE, 92)
-        for i in range(4):
-            drm.n(t + 4 * k + i, 0.3, KICK if i % 2 == 0 else SNARE, 92)
-    end_ = t + 16
-    drm.n(end_, 4, CRASH, 96)  # AU64
-    tim.n(end_, 3, deg(R, 1, md) - 24, 100)
-    for tr in leads + [br]:
-        tr.n(end_, 3.5, deg(R, 1, md), 100)
-    st.n(end_, 3.5, M.chord_notes(R, 1, 3, md, 0), 96)
-    s.save(os.path.join(OUT, 'city_theme.mid'), end_ + 4)
-    MANIFEST['city_theme'] = dict(kind='story', seconds=round((end_ + 4) * 60 / bpm, 3), bpm=bpm, beatsPerBar=4,
-                                  downbeatSeconds=round(1.0 * 60 / bpm, 4), payoffSeconds=round(end_ * 60 / bpm, 3))
+    """AU26, card M2b: the six neighbourhoods' front instruments take the motif in turn, a bar each, every bar its own ii-V-I,
+    at Uptown's tempo and key (84 bpm, Eb), then all six play the cadence and the closing phrase over ii and V into the same
+    arrival chord as the triumphs. Beat 33 is the old payoff second (23.65 s) to within 0.1 s."""
+    h = HOODS['uptown']
+    R, md, bpm, B = h['root'], h['mode'], h['bpm'], 4.0
+    P, n_pre = 33.0, 6
+    tc = P - 2 * B
+    t_first = tc - n_pre * B
+    order = list(HOODS)  # the build order: downtown, suburbs, waterfront, university, industrial, uptown
+    leads = []
+    lvol, lvel = STORY_LEAD['city_theme']
+    for i, hd in enumerate(order):
+        fr = STING_FRONT[hd]
+        leads.append(dict(name=f'lead {hd}', program=fr['lead'], shift=fr['shift'], pan=18 + 18 * i, volume=lvol,
+                          phrases=[([M.MOTIF], t_first + B * i, lvel), ([M.CADENCE_1], tc, 30), ([M.CLOSE], P - 2, 30)],
+                          pickup=t_first if i == 0 else None))
+    story_cue('city_theme', R, md, bpm, B, jazz.SWING44, h['swing'], h['ts'], P, n_pre, 4.0, leads, seed=95)
 
 
 if __name__ == '__main__':
