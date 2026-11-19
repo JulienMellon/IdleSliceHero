@@ -6,16 +6,7 @@ import { BOSTON_CITY } from '../../content/cities/boston';
 import { BOSTON_IDS } from '../../content/cities/boston/data';
 import { PROP_IDS } from '../../content/types';
 import { BOSTON_LOOKS, BOSTON_SIGNS } from '../cities/boston/shop';
-import {
-  CAPTION_ZONE_PT,
-  ICON_PROP_BOX,
-  ICON_PROP_IDS,
-  NAME_TAG_FIELD,
-  SHOP_LOOKS,
-  SHOP_OBJECT,
-  SIGN_INSET_PT,
-  backdropView,
-} from '../cutscene/backdrop-art';
+import { CAPTION_ZONE_PT, ICON_PROP_BOX, ICON_PROP_IDS, NAME_TAG_FIELD, SHOP_LOOKS, SHOP_OBJECT, SIGN_INSET_PT, backdropView } from '../cutscene/backdrop-art';
 import { PROP_FONT, fitPropText } from '../cutscene/prop-text';
 import { FACE_BOX, LIMB_CLEARANCE, boxInPanel, panelSize, stageLayout } from '../cutscene/staging';
 

@@ -45,7 +45,12 @@
 - types: BuyAmount, LevelUpgrade, BuyPlan
 
 ## src/engine/clock.ts
-- gameNow(): number — src/engine/clock.ts:6 — Wall-clock milliseconds, as the game counts them.
+- setGameClockOffset(ms: number): void — src/engine/clock.ts:14 — Move the game clock forward to `ms` ahead of the wall clock.
+- resetGameClockOffset(): void — src/engine/clock.ts:19 — Put the game clock back on the wall clock (offset 0): only for "Reset test save" (card X4), which s…
+- gameClockOffset(): number — src/engine/clock.ts:24 — How far ahead of the wall clock the game clock is (0 in the normal build).
+- setGameSpeed(x: number): void — src/engine/clock.ts:27 — Game speed: the foreground tick's `dt` is multiplied by it.
+- gameSpeed(): number — src/engine/clock.ts:32 — The foreground tick's speed multiplier (1 in the normal build).
+- gameNow(): number — src/engine/clock.ts:35 — Wall-clock milliseconds, as the game counts them.
 
 ## src/engine/cutscene-input.ts
 - LINE_LOCKOUT_MS — src/engine/cutscene-input.ts:8 — Taps are ignored for this long after a line appears, so a tapping player can't blow past it.
@@ -323,56 +328,60 @@
 - allHeadsHired(shop: Shop) — src/engine/game.ts:912
 - upgradeCostOf(s: GameState, id: NeighborhoodId, what: Upgrade): number | null — src/engine/game.ts:916 — Cost of an upgrade in a pizzeria, or null when it's maxed/not available.
 - upgradeLock(s: GameState, id: NeighborhoodId, what: Upgrade): string | null — src/engine/game.ts:946 — Why an upgrade can't be bought right now (ignoring cash), or null if it can.
-- canAfford(s: Pick<GameState, 'cash'>, cost: number | null | undefined): boolean — src/engine/game.ts:977 — A36: the one affordability rule, for every model and view.
-- pay(s: GameState, cost: number): BuyResult — src/engine/game.ts:980 — A36: the one way cash is spent: the state with the price taken out, or the refusal.
-- buyUpgrade(s: GameState, id: NeighborhoodId, what: Upgrade): BuyResult — src/engine/game.ts:998
-- nextToBuild(s: GameState): NeighborhoodDef | null — src/engine/game.ts:1020
-- buildLock(s: GameState, id: NeighborhoodId): string | null — src/engine/game.ts:1024
-- founderPizzasLeft(s: GameState): number — src/engine/game.ts:1037 — Pizzas the first shop still has to deliver before Nonna takes over the kitchen (0 once it's due or …
-- founderName(s: GameState): string — src/engine/game.ts:1045 — The first shop's founder by the name the countdown uses: the city's `founder` (Nonna at home), else…
-- founderCountdownText(s: GameState): string — src/engine/game.ts:1050
-- buildShop(s: GameState, id: NeighborhoodId): BuyResult — src/engine/game.ts:1057
-- bidAvailable(s: GameState): boolean — src/engine/game.ts:1068 — The bid is on offer once "Man Overboard" (waterfront-3b, which plays at the same pizza count) has p…
-- bidPrice(s: GameState): number — src/engine/game.ts:1076 — What the bid costs now: the base bid times the live auction's multiplier (features/layers/waterfron…
-- placeBid(s: GameState): BuyResult — src/engine/game.ts:1080 — Place the bid (Pier 9: win the dock for Marisol): spends it and earns the bid shop's perk, which pl…
-- nextVehicleLock(s: GameState): VehicleLock | null — src/engine/game.ts:1093
-- vehicleLockLabel(lock: VehicleLock) — src/engine/game.ts:1102 — Player-facing text for a vehicle lock.
-- buyVehicle(s: GameState): BuyResult — src/engine/game.ts:1106
-- tapBatch(shop: Shop) — src/engine/game.ts:1116 — Pies per tapped prep batch: +BATCH_GROWTH.step every BATCH_GROWTH.every prep levels (4 → 6 at Lv 20…
-- nextBatchLevel(shop: Shop) — src/engine/game.ts:1118 — Prep level at which the batch next grows.
-- nextHire(shop: Shop): Upgrade | null — src/engine/game.ts:1121 — The next hire for a pizzeria without a GM: the first head not hired, then the GM; null with a GM.
-- lineBusy(l: Line) — src/engine/game.ts:1128 — The line has something happening: a job running or a carrier walking out.
-- automationOf(shop: Shop): Automation — src/engine/game.ts:1133 — One frozen object for GM shops, so the scene doesn't allocate it every frame (M44).
-- walkInFraction(shop: Shop, vehicle: number, fit: CityFit, fx: FeatureMults = NO_FX): number — src/engine/game.ts:1136 — Share of pies that go to walk-ins at the steady state (walk-ins are seated first, up to walkInRate).
-- FIRST_BATCH_SPEED — src/engine/game.ts:1142 — The first Downtown batch runs this much faster (tutorial pacing).
-- lineRates(id: NeighborhoodId, shop: Shop, vehicle: number, mult = 1, fx: FeatureMults = NO_FX, city: CityDef … — src/engine/game.ts:1149 — Everything the kitchen line needs from one pizzeria.
-- tapStation(s: GameState, id: NeighborhoodId, st: Station): TapOutcome — src/engine/game.ts:1167 — Tap one station of a pizzeria (prep → oven → counter).
-- nextStation(shop: Shop): Station | null — src/engine/game.ts:1177 — The station a tap on the shop should run next (null when nothing can start).
-- tapShop(s: GameState, id: NeighborhoodId): GameState — src/engine/game.ts:1183 — A tap on the whole pizzeria.
-- playTick(s: GameState, dt: number, now?: number): GameState — src/engine/game.ts:1194 — Foreground play: run every kitchen line and count the seconds toward story pacing.
-- lineTick(s: GameState, dt: number, now?: number): GameState — src/engine/game.ts:1206 — Advance every pizzeria's kitchen line by dt seconds (foreground).
-- offlineCapOf(s: Pick<GameState, 'nightOven'>): number — src/engine/game.ts:1247 — How many seconds away the player is paid for: the night oven's owned cap.
-- offlineTick(s: GameState, seconds: number, boost = 1, now?: number): { state: GameState; byShop: { id: Neighb… — src/engine/game.ts:1272 — Closed-form catch-up for time away.
-- CAPPED_SLACK_SECONDS — src/engine/game.ts:1327 — Away longer than the offline cap by less than this is not "capped": the popup would say "Capped at …
-- applyOffline(s: GameState, now: number): OfflineResult — src/engine/game.ts:1330 — Catch up after the app was closed: GM shops run, three-head shops run at half speed, the others fin…
-- challengeOffered (re-export) — src/engine/game.ts:1369
-- pendingScenes (re-export) — src/engine/game.ts:1369
-- prerequisites (re-export) — src/engine/game.ts:1369
-- sceneTriggered (re-export) — src/engine/game.ts:1369
-- storyWaitHint (re-export) — src/engine/game.ts:1369
-- applyReward(s: GameState, reward: SceneReward | undefined): GameState — src/engine/game.ts:1371
-- markSceneSeen(s: GameState, scene: Scene): GameState — src/engine/game.ts:1385
-- upgradeGain(s: GameState, id: NeighborhoodId, what: Upgrade): number | null — src/engine/game.ts:1395 — Cash/sec this pizzeria gains from an upgrade (counting it as running), or null if unavailable.
-- vehicleGain(s: GameState): number | null — src/engine/game.ts:1405 — Cash/sec the whole city gains from the next fleet tier.
-- buildGain(s: GameState, id: NeighborhoodId): number — src/engine/game.ts:1412 — A starting pizzeria's earnings once it runs itself (heads + a GM, so with the GM boost).
-- buildAllIn(id: NeighborhoodId, city: CityDef = cityOfHood(id)) — src/engine/game.ts:1418 — Everything it takes to get a new pizzeria running itself: the build, three heads and a GM.
-- bottleneckBundle(s: GameState, id: NeighborhoodId, maxSteps = 8): Bundle | null — src/engine/game.ts:1432 — The cheapest set of upgrades that actually raises a pizzeria's output.
-- shopBuildKey(s: GameState, id: NeighborhoodId): string — src/engine/game.ts:1488 — One key for what a shop's levels, fleet and decor decide, and nothing a feature adds: a price ladde…
-- shopLevelKey(s: GameState, id: NeighborhoodId): string — src/engine/game.ts:1494 — One key for everything a shop's upgrade levels decide (not cash, sales or the line): shared caches …
-- bundleHint(s: GameState, id: NeighborhoodId): BundleHint | null — src/engine/game.ts:1504 — "Upgrade prep + ovens · $X": the tied-station bundle, ready to show in the UI.
-- decorCost(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null — src/engine/game.ts:1517
-- buyDecor(s: GameState, id: NeighborhoodId, kind: DecorKind): BuyResult — src/engine/game.ts:1522
-- decorGain(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null — src/engine/game.ts:1533 — Cash/sec this pizzeria gains from the next decor tier (counting it as running).
+- setFreeBuys(on: boolean): void — src/engine/game.ts:981
+- freeBuysOn(): boolean — src/engine/game.ts:985 — Whether free buys are on (the test panel's toggle reads it; always false in the normal build).
+- canAfford(s: Pick<GameState, 'cash'>, cost: number | null | undefined): boolean — src/engine/game.ts:988 — A36: the one affordability rule, for every model and view.
+- pay(s: GameState, cost: number): BuyResult — src/engine/game.ts:991 — A36: the one way cash is spent: the state with the price taken out, or the refusal.
+- canAffordDiamonds(s: Pick<GameState, 'rewards'>, n: number | null | undefined): boolean — src/engine/game.ts:998 — X2: the diamonds' affordability rule, beside the cash one (diamonds live at `rewards.diamonds`); fr…
+- payDiamonds(s: GameState, n: number): BuyResult — src/engine/game.ts:1001 — X2: spend `n` diamonds: the state with them taken out, or the refusal.
+- buyUpgrade(s: GameState, id: NeighborhoodId, what: Upgrade): BuyResult — src/engine/game.ts:1020
+- nextToBuild(s: GameState): NeighborhoodDef | null — src/engine/game.ts:1042
+- buildLock(s: GameState, id: NeighborhoodId): string | null — src/engine/game.ts:1046
+- founderPizzasLeft(s: GameState): number — src/engine/game.ts:1059 — Pizzas the first shop still has to deliver before Nonna takes over the kitchen (0 once it's due or …
+- founderName(s: GameState): string — src/engine/game.ts:1067 — The first shop's founder by the name the countdown uses: the city's `founder` (Nonna at home), else…
+- founderCountdownText(s: GameState): string — src/engine/game.ts:1072
+- buildShop(s: GameState, id: NeighborhoodId): BuyResult — src/engine/game.ts:1079
+- bidAvailable(s: GameState): boolean — src/engine/game.ts:1090 — The bid is on offer once "Man Overboard" (waterfront-3b, which plays at the same pizza count) has p…
+- bidPrice(s: GameState): number — src/engine/game.ts:1098 — What the bid costs now: the base bid times the live auction's multiplier (features/layers/waterfron…
+- placeBid(s: GameState): BuyResult — src/engine/game.ts:1102 — Place the bid (Pier 9: win the dock for Marisol): spends it and earns the bid shop's perk, which pl…
+- nextVehicleLock(s: GameState): VehicleLock | null — src/engine/game.ts:1115
+- vehicleLockLabel(lock: VehicleLock) — src/engine/game.ts:1124 — Player-facing text for a vehicle lock.
+- buyVehicle(s: GameState): BuyResult — src/engine/game.ts:1128
+- tapBatch(shop: Shop) — src/engine/game.ts:1138 — Pies per tapped prep batch: +BATCH_GROWTH.step every BATCH_GROWTH.every prep levels (4 → 6 at Lv 20…
+- nextBatchLevel(shop: Shop) — src/engine/game.ts:1140 — Prep level at which the batch next grows.
+- nextHire(shop: Shop): Upgrade | null — src/engine/game.ts:1143 — The next hire for a pizzeria without a GM: the first head not hired, then the GM; null with a GM.
+- lineBusy(l: Line) — src/engine/game.ts:1150 — The line has something happening: a job running or a carrier walking out.
+- automationOf(shop: Shop): Automation — src/engine/game.ts:1155 — One frozen object for GM shops, so the scene doesn't allocate it every frame (M44).
+- walkInFraction(shop: Shop, vehicle: number, fit: CityFit, fx: FeatureMults = NO_FX): number — src/engine/game.ts:1158 — Share of pies that go to walk-ins at the steady state (walk-ins are seated first, up to walkInRate).
+- FIRST_BATCH_SPEED — src/engine/game.ts:1164 — The first Downtown batch runs this much faster (tutorial pacing).
+- lineRates(id: NeighborhoodId, shop: Shop, vehicle: number, mult = 1, fx: FeatureMults = NO_FX, city: CityDef … — src/engine/game.ts:1171 — Everything the kitchen line needs from one pizzeria.
+- tapStation(s: GameState, id: NeighborhoodId, st: Station): TapOutcome — src/engine/game.ts:1189 — Tap one station of a pizzeria (prep → oven → counter).
+- nextStation(shop: Shop): Station | null — src/engine/game.ts:1199 — The station a tap on the shop should run next (null when nothing can start).
+- tapShop(s: GameState, id: NeighborhoodId): GameState — src/engine/game.ts:1205 — A tap on the whole pizzeria.
+- playTick(s: GameState, dt: number, now?: number): GameState — src/engine/game.ts:1216 — Foreground play: run every kitchen line and count the seconds toward story pacing.
+- lineTick(s: GameState, dt: number, now?: number): GameState — src/engine/game.ts:1228 — Advance every pizzeria's kitchen line by dt seconds (foreground).
+- offlineCapOf(s: Pick<GameState, 'nightOven'>): number — src/engine/game.ts:1269 — How many seconds away the player is paid for: the night oven's owned cap.
+- offlineTick(s: GameState, seconds: number, boost = 1, now?: number): { state: GameState; byShop: { id: Neighb… — src/engine/game.ts:1294 — Closed-form catch-up for time away.
+- CAPPED_SLACK_SECONDS — src/engine/game.ts:1349 — Away longer than the offline cap by less than this is not "capped": the popup would say "Capped at …
+- applyOffline(s: GameState, now: number): OfflineResult — src/engine/game.ts:1352 — Catch up after the app was closed: GM shops run, three-head shops run at half speed, the others fin…
+- challengeOffered (re-export) — src/engine/game.ts:1391
+- pendingScenes (re-export) — src/engine/game.ts:1391
+- prerequisites (re-export) — src/engine/game.ts:1391
+- sceneTriggered (re-export) — src/engine/game.ts:1391
+- storyWaitHint (re-export) — src/engine/game.ts:1391
+- applyReward(s: GameState, reward: SceneReward | undefined): GameState — src/engine/game.ts:1393
+- markSceneSeen(s: GameState, scene: Scene): GameState — src/engine/game.ts:1407
+- upgradeGain(s: GameState, id: NeighborhoodId, what: Upgrade): number | null — src/engine/game.ts:1417 — Cash/sec this pizzeria gains from an upgrade (counting it as running), or null if unavailable.
+- vehicleGain(s: GameState): number | null — src/engine/game.ts:1427 — Cash/sec the whole city gains from the next fleet tier.
+- buildGain(s: GameState, id: NeighborhoodId): number — src/engine/game.ts:1434 — A starting pizzeria's earnings once it runs itself (heads + a GM, so with the GM boost).
+- buildAllIn(id: NeighborhoodId, city: CityDef = cityOfHood(id)) — src/engine/game.ts:1440 — Everything it takes to get a new pizzeria running itself: the build, three heads and a GM.
+- bottleneckBundle(s: GameState, id: NeighborhoodId, maxSteps = 8): Bundle | null — src/engine/game.ts:1454 — The cheapest set of upgrades that actually raises a pizzeria's output.
+- shopBuildKey(s: GameState, id: NeighborhoodId): string — src/engine/game.ts:1510 — One key for what a shop's levels, fleet and decor decide, and nothing a feature adds: a price ladde…
+- shopLevelKey(s: GameState, id: NeighborhoodId): string — src/engine/game.ts:1516 — One key for everything a shop's upgrade levels decide (not cash, sales or the line): shared caches …
+- bundleHint(s: GameState, id: NeighborhoodId): BundleHint | null — src/engine/game.ts:1526 — "Upgrade prep + ovens · $X": the tied-station bundle, ready to show in the UI.
+- decorCost(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null — src/engine/game.ts:1539
+- buyDecor(s: GameState, id: NeighborhoodId, kind: DecorKind): BuyResult — src/engine/game.ts:1544
+- decorGain(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null — src/engine/game.ts:1555 — Cash/sec this pizzeria gains from the next decor tier (counting it as running).
 - types: Shop, GameState, BonusState, OrderOffer, ActiveOrder, OrderResult, OrderState, Task, Booster, Boost, Rewards, Stats, FeatureMults, StationMults, Stage, HeadUpgrade, Upgrade, BuyResult, VehicleLock, TapOutcome, OfflineResult, Bundle, BundleHint
 
 ## src/engine/night-oven.ts
@@ -438,41 +447,41 @@
 - types: StageJob, Station, Departure, Line, LineRates, Automation, TapResult, Advance
 
 ## src/engine/rewards.ts
-- boostMult (re-export) — src/engine/rewards.ts:58
-- CLOCK_REASON — src/engine/rewards.ts:60
-- dayKey(ms: number): string — src/engine/rewards.ts:69 — The device's local date, `YYYY-MM-DD`.
-- weekKey(ms: number): string — src/engine/rewards.ts:72 — The Monday (local) of the week `ms` falls in, `YYYY-MM-DD`.
-- isoWeek(key: string): number — src/engine/rewards.ts:84 — ISO week number of a `YYYY-MM-DD` date.
-- resetCountdown(now: number, kind: 'day' | 'week'): number — src/engine/rewards.ts:93 — Seconds until the next local midnight ('day') or the next Monday midnight ('week').
-- rewardsUnlocked(s: GameState): boolean — src/engine/rewards.ts:103 — Rewards unlock once the founder's takeover scene has been seen (the tutorial is done): the city's `…
-- clockBehind(s: GameState, now: number): boolean — src/engine/rewards.ts:109 — The device clock is behind the highest time seen: claims and resets wait.
-- cityRates(s: GameState): { city: number; walkin: number; driver: number } — src/engine/rewards.ts:147 — Pies per second the city sells on its own: all, by walk-ins, by drivers.
-- upgradesAreQuick(s: GameState): boolean — src/engine/rewards.ts:162 — C107: the cheapest next kitchen level in a built shop costs at most `UPGRADE_TASK_MAX_SECONDS` of i…
-- taskCounter(s: GameState, kind: TaskKind): number — src/engine/rewards.ts:193 — The counter a kind's progress is measured on.
-- refreshRewards(s: GameState, now: number): GameState — src/engine/rewards.ts:250 — Keep rewards current: raise `lastSeen`, drop ended boosts, roll a new daily set when the local day …
-- taskTitle(task: Task): string — src/engine/rewards.ts:293 — "Serve 40 walk-ins": the pool's title with `{n}` filled in.
-- taskProgress(s: GameState, task: Task): number — src/engine/rewards.ts:299 — Progress toward a task, clamped to 0..target.
-- taskDone(s: GameState, task: Task): boolean — src/engine/rewards.ts:303
-- rewardIncome(s: GameState): number — src/engine/rewards.ts:306 — Reward income: cash per second with no boosts, no event (C111) and no service tip (v5.16), so none …
-- minutesToCash(s: GameState, minutes: number): number — src/engine/rewards.ts:309 — Cash a "N minutes of income" reward pays right now.
-- claimDaily(s: GameState, i: number, now: number): BuyResult — src/engine/rewards.ts:315
-- chestReady(s: GameState, i: number): boolean — src/engine/rewards.ts:328
-- claimChest(s: GameState, i: number, now: number): BuyResult — src/engine/rewards.ts:335
-- claimWeekly(s: GameState, i: number, now: number): BuyResult — src/engine/rewards.ts:358
-- grantCosmetic(r: Rewards, id: string): Pick<Rewards, 'cosmetics' | 'worn'> — src/engine/rewards.ts:381 — The rewards patch for earning a cosmetic: it is owned and, being new, worn at once (replacing what …
-- wear(g: GameState, id: string): GameState — src/engine/rewards.ts:387 — Put an owned cosmetic on; the one worn for the same part comes off.
-- unwear(g: GameState, id: string): GameState — src/engine/rewards.ts:394 — Take a cosmetic off.
-- weeklyChestPrize(s: GameState): WeeklyChestPrize — src/engine/rewards.ts:408 — What the weekly chest gives: the first cosmetic the player doesn't own, in rotation order from this…
-- weeklyCosmetic(s: GameState): string — src/engine/rewards.ts:418 — This week's rotation cosmetic, or the next unowned one (see weeklyChestPrize).
-- weeklyChestReady(s: GameState): boolean — src/engine/rewards.ts:423
-- claimWeeklyChest(s: GameState, now: number): BuyResult — src/engine/rewards.ts:425
-- runningBoosts(s: GameState, now: number): Boost[] — src/engine/rewards.ts:442 — Boosts running at `now`, soonest to end first.
-- startBooster(s: GameState, i: number, now: number): BuyResult — src/engine/rewards.ts:445 — Start a booster from the inventory; it adds to any boost already running.
-- giftStatus(s: GameState, now: number): GiftStatus — src/engine/rewards.ts:475
-- claimGift(s: GameState, now: number, opts: { repair?: boolean } = {}): BuyResult — src/engine/rewards.ts:495 — Claim today's gift.
-- shouldAutoOpenGift(s: GameState, now: number): boolean — src/engine/rewards.ts:528 — The gift calendar should pop open by itself: unlocked, something to claim, and not shown yet today.
-- markGiftShown(s: GameState, now: number): GameState — src/engine/rewards.ts:535 — Remember the calendar has opened today.
-- claimableCount(s: GameState, now: number): number — src/engine/rewards.ts:543 — Things to claim in the tasks drawer (finished tasks, ready chests): the clipboard's badge.
+- boostMult (re-export) — src/engine/rewards.ts:59
+- CLOCK_REASON — src/engine/rewards.ts:61
+- dayKey(ms: number): string — src/engine/rewards.ts:70 — The device's local date, `YYYY-MM-DD`.
+- weekKey(ms: number): string — src/engine/rewards.ts:73 — The Monday (local) of the week `ms` falls in, `YYYY-MM-DD`.
+- isoWeek(key: string): number — src/engine/rewards.ts:85 — ISO week number of a `YYYY-MM-DD` date.
+- resetCountdown(now: number, kind: 'day' | 'week'): number — src/engine/rewards.ts:94 — Seconds until the next local midnight ('day') or the next Monday midnight ('week').
+- rewardsUnlocked(s: GameState): boolean — src/engine/rewards.ts:104 — Rewards unlock once the founder's takeover scene has been seen (the tutorial is done): the city's `…
+- clockBehind(s: GameState, now: number): boolean — src/engine/rewards.ts:110 — The device clock is behind the highest time seen: claims and resets wait.
+- cityRates(s: GameState): { city: number; walkin: number; driver: number } — src/engine/rewards.ts:148 — Pies per second the city sells on its own: all, by walk-ins, by drivers.
+- upgradesAreQuick(s: GameState): boolean — src/engine/rewards.ts:163 — C107: the cheapest next kitchen level in a built shop costs at most `UPGRADE_TASK_MAX_SECONDS` of i…
+- taskCounter(s: GameState, kind: TaskKind): number — src/engine/rewards.ts:194 — The counter a kind's progress is measured on.
+- refreshRewards(s: GameState, now: number): GameState — src/engine/rewards.ts:251 — Keep rewards current: raise `lastSeen`, drop ended boosts, roll a new daily set when the local day …
+- taskTitle(task: Task): string — src/engine/rewards.ts:294 — "Serve 40 walk-ins": the pool's title with `{n}` filled in.
+- taskProgress(s: GameState, task: Task): number — src/engine/rewards.ts:300 — Progress toward a task, clamped to 0..target.
+- taskDone(s: GameState, task: Task): boolean — src/engine/rewards.ts:304
+- rewardIncome(s: GameState): number — src/engine/rewards.ts:307 — Reward income: cash per second with no boosts, no event (C111) and no service tip (v5.16), so none …
+- minutesToCash(s: GameState, minutes: number): number — src/engine/rewards.ts:310 — Cash a "N minutes of income" reward pays right now.
+- claimDaily(s: GameState, i: number, now: number): BuyResult — src/engine/rewards.ts:316
+- chestReady(s: GameState, i: number): boolean — src/engine/rewards.ts:329
+- claimChest(s: GameState, i: number, now: number): BuyResult — src/engine/rewards.ts:336
+- claimWeekly(s: GameState, i: number, now: number): BuyResult — src/engine/rewards.ts:359
+- grantCosmetic(r: Rewards, id: string): Pick<Rewards, 'cosmetics' | 'worn'> — src/engine/rewards.ts:382 — The rewards patch for earning a cosmetic: it is owned and, being new, worn at once (replacing what …
+- wear(g: GameState, id: string): GameState — src/engine/rewards.ts:388 — Put an owned cosmetic on; the one worn for the same part comes off.
+- unwear(g: GameState, id: string): GameState — src/engine/rewards.ts:395 — Take a cosmetic off.
+- weeklyChestPrize(s: GameState): WeeklyChestPrize — src/engine/rewards.ts:409 — What the weekly chest gives: the first cosmetic the player doesn't own, in rotation order from this…
+- weeklyCosmetic(s: GameState): string — src/engine/rewards.ts:419 — This week's rotation cosmetic, or the next unowned one (see weeklyChestPrize).
+- weeklyChestReady(s: GameState): boolean — src/engine/rewards.ts:424
+- claimWeeklyChest(s: GameState, now: number): BuyResult — src/engine/rewards.ts:426
+- runningBoosts(s: GameState, now: number): Boost[] — src/engine/rewards.ts:443 — Boosts running at `now`, soonest to end first.
+- startBooster(s: GameState, i: number, now: number): BuyResult — src/engine/rewards.ts:446 — Start a booster from the inventory; it adds to any boost already running.
+- giftStatus(s: GameState, now: number): GiftStatus — src/engine/rewards.ts:476
+- claimGift(s: GameState, now: number, opts: { repair?: boolean } = {}): BuyResult — src/engine/rewards.ts:496 — Claim today's gift.
+- shouldAutoOpenGift(s: GameState, now: number): boolean — src/engine/rewards.ts:531 — The gift calendar should pop open by itself: unlocked, something to claim, and not shown yet today.
+- markGiftShown(s: GameState, now: number): GameState — src/engine/rewards.ts:538 — Remember the calendar has opened today.
+- claimableCount(s: GameState, now: number): number — src/engine/rewards.ts:546 — Things to claim in the tasks drawer (finished tasks, ready chests): the clipboard's badge.
 - types: WeeklyChestPrize, GiftStatus
 
 ## src/engine/story.ts

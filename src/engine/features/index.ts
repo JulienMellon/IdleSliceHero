@@ -21,21 +21,7 @@ export { FEATURES };
 
 // Importing this file registers every feature, in the order their hooks run (the array itself is registry.ts, so game.ts needs
 // no feature: A31). A module is evaluated once, so this runs once.
-FEATURES.push(
-  mastery,
-  counterattack,
-  events,
-  recipes,
-  heads,
-  service,
-  gameDayLayer,
-  boatsLayer,
-  rival,
-  menuLayer,
-  shiftsLayer,
-  starsLayer,
-  franchiseFeature,
-);
+FEATURES.push(mastery, counterattack, events, recipes, heads, service, gameDayLayer, boatsLayer, rival, menuLayer, shiftsLayer, starsLayer, franchiseFeature);
 
 /** A feature's state. Before the feature has ever saved, this is whatever `init`/`migrate` gave it. */
 export function getFeature<S>(g: GameState, f: Feature<S>): S {

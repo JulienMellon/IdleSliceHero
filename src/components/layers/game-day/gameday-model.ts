@@ -85,7 +85,8 @@ export const WAVE = {
 export const FAMILY_AIR = 30;
 
 /** The straight walk from beyond the right edge to the door, in room units along x. */
-export const walkLength = (lay: Pick<Layout, 'door' | 'frame'>): number => unprojectX(frameRight(lay.frame) + 26, WAVE.laneY, lay.frame) - lay.door.lanes.guestX;
+export const walkLength = (lay: Pick<Layout, 'door' | 'frame'>): number =>
+  unprojectX(frameRight(lay.frame) + 26, WAVE.laneY, lay.frame) - lay.door.lanes.guestX;
 
 /** Seconds a family takes from the screen edge to the door: the way over the pace. The flagship's door is near the edge, so its walk is short. */
 export const walkTime = (lay: Pick<Layout, 'door' | 'frame'>): number => Math.max(1, walkLength(lay)) / WAVE.speed;

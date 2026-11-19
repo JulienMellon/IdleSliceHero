@@ -4,15 +4,7 @@
 import { cityOf } from '../content/cities';
 import { STORY_PACING } from '../content/tuning';
 import { TEST_PREFS_KEY } from '../components/store/store-model';
-import {
-  challengeOffered,
-  firstHood,
-  markSceneSeen,
-  migrate,
-  sceneId,
-  TUTORIAL_DONE,
-  type GameState,
-} from '../engine/game';
+import { challengeOffered, firstHood, markSceneSeen, migrate, sceneId, TUTORIAL_DONE, type GameState } from '../engine/game';
 import { rivalOpen } from '../engine/features/layers/rival';
 import { sceneTriggered } from '../engine/story';
 import { CHEATS_KEY } from './cheat-prefs';
@@ -30,7 +22,13 @@ function assertTestKey(saveKey: string): void {
 // ---------- Play next story beat now ----------
 
 export type NextBeat =
-  | { ok: true; state: GameState; kind: 'scene' | 'challenge'; /** The scene that is due now, or the shop whose challenge is on offer. */ id: string; label: string }
+  | {
+      ok: true;
+      state: GameState;
+      kind: 'scene' | 'challenge';
+      /** The scene that is due now, or the shop whose challenge is on offer. */ id: string;
+      label: string;
+    }
   | { ok: false; reason: string };
 
 /**

@@ -70,7 +70,13 @@ export function problemsOf(city: CityDef): string[] {
   // the teaser: what the city before this one says about it
   if (city.teaser) {
     const { title, lines, signoff, from } = city.teaser;
-    for (const [f, v] of [['title', title], ['lines[0]', lines[0]], ['lines[1]', lines[1]], ['signoff', signoff], ['from', from]] as const)
+    for (const [f, v] of [
+      ['title', title],
+      ['lines[0]', lines[0]],
+      ['lines[1]', lines[1]],
+      ['signoff', signoff],
+      ['from', from],
+    ] as const)
       if (!v) at(null, `teaser.${f}`, 'is empty');
   }
 
@@ -241,7 +247,7 @@ describe('the cast, per pack', () => {
     expect([HOME_CAST.length, BOSTON_CAST.length]).toEqual([16, 7]);
     expect(new Set(CHARACTER_IDS).size).toBe(CHARACTER_IDS.length);
   });
-  it('names every character as the teaser did before the table was split (home names plus the pack\'s own)', () => {
+  it("names every character as the teaser did before the table was split (home names plus the pack's own)", () => {
     const was: Record<string, string> = {
       'nonna-rosa': 'Nonna Rosa', dale: 'Dale', marisol: 'Marisol', priya: 'Priya', 'big-sal': 'Big Sal', genevieve: 'Genevieve', 'victor-crust': 'Victor Crust',
       'megaslice-rep': 'the MegaSlice rep', 'mr-smith': 'Mr. Smith', 'todd-coat': 'Todd', slicey: 'Slicey', deb: 'Deb', skip: 'Skip', noor: 'Noor', dee: 'Dee',
@@ -257,13 +263,18 @@ describe('the cast, per pack', () => {
     expect(CITIES.boston.cast).toBe(BOSTON_CAST);
   });
   it("catches a character that is neither the city's nor a returning one", () => {
-    const stray: CityDef = { ...CITIES.home, scenes: CITIES.home.scenes.map((s) => (s.id === 'waterfront-1' ? { ...s, character: 'trish-vance' as const } : s)) };
+    const stray: CityDef = {
+      ...CITIES.home,
+      scenes: CITIES.home.scenes.map((s) => (s.id === 'waterfront-1' ? { ...s, character: 'trish-vance' as const } : s)),
+    };
     expect(problemsOf(stray).join('\n')).toMatch(/scene "waterfront-1" · character: "trish-vance" is not a character id of this city's cast/);
-    expect(problemsOf({ ...CITIES.home, lieutenant: { id: 'trish-vance', name: 'Trish' } }).join('\n')).toMatch(/lieutenant\.id: "trish-vance" is not a character id/);
+    expect(problemsOf({ ...CITIES.home, lieutenant: { id: 'trish-vance', name: 'Trish' } }).join('\n')).toMatch(
+      /lieutenant\.id: "trish-vance" is not a character id/,
+    );
   });
 });
 
-describe('the next city\'s teaser (teaserFor)', () => {
+describe("the next city's teaser (teaserFor)", () => {
   it('says what Boston is, word for word, to a home game', () => {
     expect(teaserFor({ city: 'home' })).toBe(BOSTON_TEASER);
     expect(teaserFor({})).toBe(BOSTON_TEASER);
@@ -310,9 +321,17 @@ function playThrough(city: CityDef): { game: G.GameState; order: string[] } {
     const upNext = G.nextToBuild(g);
     if (upNext) {
       const r = G.buildShop(g, upNext.id);
-      if (r.ok) g = { ...r.state, shops: { ...r.state.shops, [upNext.id]: { ...r.state.shops[upNext.id], managed: true, heads: G.allHeads(), prep: 5, ovens: 5, counter: 5, drivers: 4, tables: 4 } } };
+      if (r.ok)
+        g = {
+          ...r.state,
+          shops: {
+            ...r.state.shops,
+            [upNext.id]: { ...r.state.shops[upNext.id], managed: true, heads: G.allHeads(), prep: 5, ovens: 5, counter: 5, drivers: 4, tables: 4 },
+          },
+        };
     }
-    if (!g.shops[city.neighbourhoods[0].id].managed) g = { ...g, shops: { ...g.shops, [city.neighbourhoods[0].id]: { ...g.shops[city.neighbourhoods[0].id], managed: true, heads: G.allHeads() } } };
+    if (!g.shops[city.neighbourhoods[0].id].managed)
+      g = { ...g, shops: { ...g.shops, [city.neighbourhoods[0].id]: { ...g.shops[city.neighbourhoods[0].id], managed: true, heads: G.allHeads() } } };
     g = G.playTick(g, 30, PLAY_START + step * 30_000);
     // a challenge won once its beat 3 has played
     const won = city.neighbourhoods.map((n) => n.id).filter((h) => g.seenScenes.includes(sceneId(h, 3)));

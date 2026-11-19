@@ -47,7 +47,7 @@ const packFolders = [...Object.values(CITIES).flatMap((c) => [`content/cities/${
 /** Every way a pack can be named: its id and display names as string literals, and its `BOSTON_`-style identifier prefix. */
 function namesOf(city: (typeof packs)[number]): { literals: string[]; prefix: RegExp } {
   const literals = new Set<string>([city.id, city.name]);
-  for (const n of city.neighbourhoods) literals.add(n.id), literals.add(n.name);
+  for (const n of city.neighbourhoods) (literals.add(n.id), literals.add(n.name));
   for (const c of city.cast) if (!(HOME_CAST as readonly string[]).includes(c)) literals.add(c);
   // the city's id as a word in an identifier or a key, in any of its cases: BOSTON_FIT, BostonSheet, 'city-boston', 'soon.boston.title'
   const word = city.id.replace(/[^a-z0-9]/gi, '');
