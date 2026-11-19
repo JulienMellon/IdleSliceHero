@@ -6,10 +6,10 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 version: 5.19-test              # the test build (docs/PLAN-test-mode.md); back to 5.20 at close. v5.19 closed 2026-11-19
 step: verify                      # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
-last_shots: v5.19-r2             # verify r2: 47 changed (~3.3%: R1L far kerb D481, night tint 85), 3 noted; True 0 [], layout 0
+last_shots: v5.19-test             # normal verify: 0 new, 30 changed (0.24-1.36%), True 0 [], layout 0; changed sent to X1
 codecritic_range_start: 20b3797   # v5.19 approved at r2; set at v5.19-test planning (main after v5.19 close)
 cards:                 # todo | running | done | partial | blocked
-  X1: partial  X2: done  X3: done  X4: done
+  X1: done  X2: done  X3: done  X4: done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.19/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 4 incl. D493 D495 parked; E2 S2)
   code:   docs/build/v5.19/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 1 low 6; E1 U3 S3; C156 open)
@@ -30,3 +30,9 @@ next: run docs/build/sessions/S6-v5.19-test.md from Do step 3 (verify; waves 1-3
 - 2026-11-19 S6 wave 3: X4 partial (story & save tools built, 138 tests); needs clock reset, sent to X2 (owner of clock.ts), then X4 wires it.
 - 2026-11-19 S6 wave 3: X2 added resetGameClockOffset (1406 tests pass); X4 resumed to wire it and drop the reload.
 - 2026-11-19 S6 waves 1-3 done: X1 partial (fixture only) X2 X3 X4 done. tsc pass, 2639/2639, lint 0 errors, normal dist grep clean, dist-test has the panel. Stopped at verify: no Python playwright (install denied), so no shots, reviews or close.
+- 2026-11-19 S6 verify: playwright + npm ci ok. Normal checks: tsc 0, format ok, 2639/2639, dist guard clean; normal shots v5.19-test running. Test-mode fixtures x1-x4 all FAIL (TEST pill under HUD 'sales' row); sent to X1 programmer.
+- 2026-11-19 S6 verify: X1 done (pill drawn last in Hud, zIndex 10; x1 x3 x4 pass). x2 fails: second Welcome back popup after Away 8 h, clock readout off; sent to X2.
+- 2026-11-19 S6 verify: X2 done (no engine bug: two-step gift; fixture helper, readout rounds). Panel run errors [] but loaded False (no boot fixture) and layout 1 new (test-pill 56x40); both back to X1. Normal shots rerun (first run died at 38 shots).
+- 2026-11-19 S6 verify: X1 done (pill 56x44, test-mode 00_boot.py sets loaded). Panel run True 0 [], layout 0 new per X1.
+- 2026-11-19 S6 verify: normal shots v5.19-test True 0 [], layout 0, 0 new 30 changed (max 1.36%); sent to X1 to classify noise vs leak.
+- 2026-11-19 S6 verify done: 30 changed = baseline noise (20b3797 build differs from v5.19-r2 images; current vs 20b3797 0 px but build-hash line); X1 put restoreTestCheats behind env check. Panel True 0 [], layout 0; dist guard + check:no-test-mode clean; 2639/2639.

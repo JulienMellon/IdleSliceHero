@@ -1,0 +1,20 @@
+{
+  "version": "v5.19-test-panel",
+  "errors": [],
+  "shots": [
+    "/home/claude/idleslicehero/screenshots/v5.19-test-panel/x1-hud-pill.png",
+    "/home/claude/idleslicehero/screenshots/v5.19-test-panel/x1-panel-open.png",
+    "/home/claude/idleslicehero/screenshots/v5.19-test-panel/x1-settings-version.png",
+    "/home/claude/idleslicehero/screenshots/v5.19-test-panel/x2-free-buys-cash0.png",
+    "/home/claude/idleslicehero/screenshots/v5.19-test-panel/x2-away-8h-popup.png",
+    "/home/claude/idleslicehero/screenshots/v5.19-test-panel/x2-next-day-gift.png",
+    "/home/claude/idleslicehero/screenshots/v5.19-test-panel/x2-time-readout.png",
+    "/home/claude/idleslicehero/screenshots/v5.19-test-panel/x3-jump-list.png",
+    "/home/claude/idleslicehero/screenshots/v5.19-test-panel/x3-after-jump-undo-enabled.png",
+    "/home/claude/idleslicehero/screenshots/v5.19-test-panel/x3-boston-shop.png",
+    "/home/claude/idleslicehero/screenshots/v5.19-test-panel/x4-story-section.png",
+    "/home/claude/idleslicehero/screenshots/v5.19-test-panel/x4-import-error.png",
+    "/home/claude/idleslicehero/screenshots/v5.19-test-panel/x4-next-beat-scene.png"
+  ],
+  "loaded": true
+}

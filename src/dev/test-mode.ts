@@ -4,16 +4,16 @@
 export const TEST_MODE = process.env.EXPO_PUBLIC_TEST_MODE === '1';
 
 /**
- * The red TEST pill's geometry (pt): drawn 40 tall, overlaid on the HUD's lower right (position: absolute, so the HUD row keeps its height),
- * with a 2 pt hitSlop all round for a 44 pt touch area. `room*` is the space the HUD owns round it (the hitSlop must fit inside it:
+ * The red TEST pill's geometry (pt): drawn 44 tall (the probe's 44 px rule, so no allowlist entry), overlaid on the HUD's lower right (position: absolute, so the HUD row keeps its height),
+ * so it needs no hitSlop. `room*` is the space the HUD owns round it (any hitSlop must fit inside it:
  * `src/dev/__tests__/test-mode.test.ts` proves it with `controlPasses` from the tap-target rule).
  */
 export const TEST_PILL = {
   width: 56,
-  height: 40,
+  height: 44,
   right: 6,
   bottom: 2,
-  slop: 2,
+  slop: 0,
   roomTop: 4,
   roomBottom: 2,
   roomLeft: 6,

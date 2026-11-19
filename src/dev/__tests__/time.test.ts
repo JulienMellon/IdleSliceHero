@@ -120,6 +120,8 @@ describe('the pure helpers', () => {
     expect(clockReadout(15 * 60_000)).toBe('Test clock +15 min');
     expect(clockReadout(72 * HOUR)).toBe('Test clock +3 d');
     expect(clockReadout(HOUR + 15 * 60_000)).toBe('Test clock +1 h 15 min');
+    // a Next day made a few seconds after the page started is a few seconds short of whole minutes: it reads to the nearest minute
+    expect(clockReadout(12 * HOUR + 48_376)).toBe('Test clock +12 h 1 min');
   });
 });
 

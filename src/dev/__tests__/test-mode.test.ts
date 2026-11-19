@@ -99,8 +99,10 @@ describe('save keys', () => {
 describe('the TEST pill (X1 step 3)', () => {
   const x = { drawn: TEST_PILL.width, slopBefore: TEST_PILL.slop, slopAfter: TEST_PILL.slop, roomBefore: TEST_PILL.roomLeft, roomAfter: TEST_PILL.roomRight };
   const y = { drawn: TEST_PILL.height, slopBefore: TEST_PILL.slop, slopAfter: TEST_PILL.slop, roomBefore: TEST_PILL.roomTop, roomAfter: TEST_PILL.roomBottom };
-  it('is drawn 40 pt tall with a 44 pt touch area inside space the HUD owns', () => {
-    expect(TEST_PILL.height).toBe(MIN_DRAWN);
+  it('is drawn 44 pt tall and 56 wide: the screenshot probe 44 px rule with no hitSlop', () => {
+    expect(TEST_PILL.height).toBeGreaterThanOrEqual(MIN_HIT);
+    expect(TEST_PILL.width).toBeGreaterThanOrEqual(MIN_HIT);
+    expect(TEST_PILL.height).toBeGreaterThanOrEqual(MIN_DRAWN);
     expect(TEST_PILL.height + 2 * TEST_PILL.slop).toBeGreaterThanOrEqual(MIN_HIT);
     expect(controlPasses(x, y)).toBe(true);
     expect(

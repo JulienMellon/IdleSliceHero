@@ -7,3 +7,4 @@ SHOTS_DIST=dist-test SHOTS_FIXTURES=scripts/fixtures/test-mode python3 scripts/s
 ```
 `SHOTS_DIST` (default `dist`) is the export the static server serves; `SHOTS_FIXTURES` (default `scripts/fixtures`) is the folder whose `*.py` run.
 The test build saves under `slice-empire/save/test-v1`, so a fixture here seeds that key (see how `x1_panel.py` sets `shots_lib.KEY`).
+`00_boot.py` here boots a fresh test build and sets `report["loaded"]`, so a test-mode run prints `True 0 []` like the normal one.

@@ -1,0 +1,123 @@
+{
+ "x1-hud-pill": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "40x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "x1-panel-open": [],
+ "x1-settings-version": [],
+ "x2-free-buys-cash0": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "40x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "x2-away-8h-popup": [],
+ "x2-next-day-gift": [],
+ "x2-time-readout": [],
+ "x3-jump-list": [],
+ "x3-after-jump-undo-enabled": [],
+ "x3-boston-shop": [
+  {
+   "kind": "tap",
+   "key": "open-scrapbook",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-tasks",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-gift",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "shop-chip",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "open-city",
+   "detail": "40x40"
+  },
+  {
+   "kind": "tap",
+   "key": "buy-amount",
+   "detail": "40x55"
+  },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "x4-story-section": [],
+ "x4-import-error": [],
+ "x4-next-beat-scene": []
+}

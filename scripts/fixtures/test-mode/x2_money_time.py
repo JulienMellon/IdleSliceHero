@@ -18,6 +18,15 @@ def close_panel(page):
     advance(page, 600)
 
 
+def collect_offline(page):
+    """The welcome-back gift takes two taps by design (Open the oven, then Collect): open it, let the total count up, collect."""
+    for _ in range(2):
+        if not is_up(page, "collect-offline"):
+            return
+        tid(page, "collect-offline").click()
+        advance(page, 3000)
+
+
 def run(ctx):
     old_key = shots_lib.KEY
     shots_lib.KEY = TEST_KEY
@@ -40,16 +49,12 @@ def run(ctx):
         shot(page, "x2-away-8h-popup", 0.4)
 
         # 3. Next day: 00:01 tomorrow, a new daily gift
-        tid(page, "collect-offline").click()
-        advance(page, 600)
+        collect_offline(page)
         open_panel(page)
         tid(page, "test-next-day").click()
         advance(page, 1200)
         close_panel(page)
-        for _ in range(2):   # the welcome-back popup, then the gift calendar the new day opens by itself
-            if is_up(page, "collect-offline"):
-                tid(page, "collect-offline").click()
-                advance(page, 600)
+        collect_offline(page)   # the welcome-back popup first, then the gift calendar the new day opens by itself
         expect(page, "gift-calendar")
         shot(page, "x2-next-day-gift", 0.4)
 
@@ -58,6 +63,8 @@ def run(ctx):
         advance(page, 600)
         open_panel(page)
         expect_text(page, "test-clock-readout", r"Test clock \+12 h 1 min")
+        tid(page, "test-clock-readout").scroll_into_view_if_needed()   # the Time section sits below Money and the jump list
+        advance(page, 300)
         shot(page, "x2-time-readout", 0.4)
     except Exception as e:
         report["errors"].append(f"x2 money and time shots failed: {e}")

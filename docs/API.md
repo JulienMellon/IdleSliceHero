@@ -129,9 +129,9 @@
 ## src/engine/features/index.ts
 - Feature (re-export) — src/engine/features/index.ts:19
 - FEATURES (re-export) — src/engine/features/index.ts:20
-- getFeature<S>(g: GameState, f: Feature<S>): S — src/engine/features/index.ts:41 — A feature's state.
-- setFeature<S>(g: GameState, f: Feature<S>, s: S): GameState — src/engine/features/index.ts:46 — A copy of `g` with the feature's state replaced.
-- withFeatures<T>(list: Feature<any>[], fn: () => T): T — src/engine/features/index.ts:51 — Test helper: run `fn` with `list` as the registry, then put the real one back (even if `fn` throws).
+- getFeature<S>(g: GameState, f: Feature<S>): S — src/engine/features/index.ts:27 — A feature's state.
+- setFeature<S>(g: GameState, f: Feature<S>, s: S): GameState — src/engine/features/index.ts:32 — A copy of `g` with the feature's state replaced.
+- withFeatures<T>(list: Feature<any>[], fn: () => T): T — src/engine/features/index.ts:37 — Test helper: run `fn` with `list` as the registry, then put the real one back (even if `fn` throws).
 
 ## src/engine/features/layers/boats.ts
 - pier9AuctionMult(g: GameState): number — src/engine/features/layers/boats.ts:52 — The Pier 9 price multiplier right now (1 while the bid is not open).
@@ -547,9 +547,9 @@
 ## src/content/types.ts
 - CHARACTER_IDS (re-export) — src/content/types.ts:5
 - CharacterId (re-export) — src/content/types.ts:6
-- NARRATOR_SPEAKERS: readonly string[] — src/content/types.ts:18 — Speaker names that are not a character, a head, a manager or a lieutenant of the city: the player, …
-- PROP_IDS — src/content/types.ts:41
-- FIXED_BACKDROPS — src/content/types.ts:65 — The backdrops that belong to no neighbourhood.
+- NARRATOR_SPEAKERS: readonly string[] — src/content/types.ts:17 — Speaker names that are not a character, a head, a manager or a lieutenant of the city: the player, …
+- PROP_IDS — src/content/types.ts:40
+- FIXED_BACKDROPS — src/content/types.ts:64 — The backdrops that belong to no neighbourhood.
 - types: NeighborhoodId, HomeNeighborhoodId, VehicleId, Mood, Backdrop, SceneLine, CastMember, Cast, PropId, ScenePanel, PanelCue, SceneTrigger, SceneReward, Scene
 
 ## src/content/hooks.ts

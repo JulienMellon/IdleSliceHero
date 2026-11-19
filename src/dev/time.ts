@@ -43,9 +43,9 @@ export function nextMondayAt(now: number): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate() + add, 0, 1).getTime();
 }
 
-/** "Test clock +1 d 8 h": the offset in its two largest units; only ever forward. */
+/** "Test clock +1 d 8 h": the offset to the nearest minute, in its two largest units; only ever forward. (Next day lands on 00:01 by the wall clock, which has moved on since, so the offset is a little under whole minutes.) */
 export function clockReadout(offsetMs: number): string {
-  const total = Math.max(0, Math.floor(offsetMs / MIN));
+  const total = Math.max(0, Math.round(offsetMs / MIN));
   const d = Math.floor(total / 1440);
   const h = Math.floor((total % 1440) / 60);
   const m = total % 60;
