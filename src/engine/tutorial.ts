@@ -23,7 +23,7 @@ const first = (s: G.GameState) => G.firstHood(cityOf(s));
 
 /** Every step of a city's tutorial, in order (1-based ids; 0 = not started, before the opening scene ends). The last one names the first shop's prep head. */
 const buildSteps = (city: CityDef): readonly CoachStep[] => {
-  const marco = city.tutorialHead ?? city.heads[G.firstHood(city)].prep;
+  const marco = city.heads[G.firstHood(city)].prep;
   return [
     { id: 1, text: 'Tap the prep table to roll your first pizzas!', target: 'prep', dock: 'low' },
     // G82: the oven only takes dough once it's rolled, so Nonna waits with you first

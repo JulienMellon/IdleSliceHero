@@ -2,7 +2,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { LAYER_COPY, LAYER_SPEAKERS } from '../layer-copy';
+import { LAYER_COPY, LAYER_SPEAKERS } from '../../../content/copy/home/layers';
 import { LABELS, lc, rivalKey, rivalLine, rivalSpeaker, speakerOf } from '../layer-text';
 
 /** The copy file's rows for Suburbs, Waterfront (section 1) and the rival (section 2), as cells. */
@@ -28,7 +28,7 @@ function rows(): string[][] {
   return out;
 }
 
-describe('layer-copy.ts is the copy file, by key', () => {
+describe('content/copy/home/layers.ts is the copy file, by key', () => {
   test('every row of Suburbs, Waterfront and the rival is in the table with the same words and speaker', () => {
     const all = rows();
     expect(all).toHaveLength(Object.keys(LAYER_COPY).length);

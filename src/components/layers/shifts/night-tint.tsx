@@ -14,7 +14,7 @@ import { cityOf } from '../../../content/cities';
 import { shopLayout } from '../../scene/shop-layout';
 import { toWindow } from '../layer-geometry';
 import type { SceneSlotProps } from '../../slots';
-import { MOON, nightShape, payTag, shiftTint, WARM } from './shift-model';
+import { featherOpacity, MOON, nightFeather, nightShape, payTag, shiftTint, WARM } from './shift-model';
 
 /** The pizzeria's roof edge in scene units (the pitched roof's peak sits above the fascia's top). */
 const ROOF_Y = P(0, 0, FRONT_TOP)[1] - 62;
@@ -44,8 +44,10 @@ export const NightTint = memo(function NightTint({ shopId, width, height }: Scen
     <View testID="shift-tint" pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={width} height={height} style={StyleSheet.absoluteFill}>
         <G transform={`translate(${f.ox} ${f.oy}) scale(${f.s})`}>
-          {/* the sky and the skyline: the tint, with the pizzeria's box cut out */}
-          <Path d={shape.path} fillRule="evenodd" fill={tint.color} opacity={tint.opacity} />
+          {/* the sky and the skyline: the tint, with the pizzeria's box cut out; the cut-out's top and sides fade in over 12 units (D518) */}
+          {nightFeather(shape).map((d, i) => (
+            <Path key={i} d={d} fillRule="evenodd" fill={tint.color} opacity={featherOpacity(tint.opacity)} />
+          ))}
           {night && (
             <G>
               <Rect

@@ -170,18 +170,8 @@ export interface CityDef {
   nightOvenLines?: NightOvenLines;
   /** The first neighbourhood's founder, by the name the takeover countdown uses; without it the first manager's name is used. */
   founder?: { id: CharacterId; name: string };
-  /**
-   * v5.18 behaviour a pack can keep while the engine is generic (card R1 is behaviour-preserving). Each is absent for a new city, and each Boston value
-   * below is a known bug carried over on purpose (see the card report); a later version deletes the field and the Boston value.
-   */
-  /** The scene whose being seen unlocks the rewards (default: the takeover scene, `fit.takeover.sceneId`). */
+  /** The scene whose being seen unlocks the rewards (default: the takeover scene, `fit.takeover.sceneId`). Boston keeps the home one on purpose: franchising carries `seenScenes`, so the rewards a player unlocked at home stay unlocked. */
   rewardsScene?: string;
-  /** The neighbourhood whose shop shows its stations on the sidewalk instead of a hire stack, and whose moments speak as the founder's (default: the first; `null`: none). */
-  founderHood?: NeighborhoodId | null;
-  /** The prep head the tutorial's last step names (default: the first neighbourhood's prep head). */
-  tutorialHead?: string;
-  /** The shops the shop-service slice starts with a row for (default: this city's own). */
-  serviceRows?: readonly NeighborhoodId[];
   /** The city's own lines, by the home copy keys (content/copy/home): `t(key, vars, city)` says this line when the city has one and the home line otherwise. Keep a city's words here, in its own folder. */
   copy?: Readonly<Record<string, string>>;
   /** The story-music key of the city theme (src/audio/manifest.ts `story` table). */

@@ -44,7 +44,7 @@ const zeroShop = (): ShopService => ({ below: 0, cold: false, tip: false, slam: 
 /** A zeroed slice with a row for each of `city`'s shops (none without a city: every reader takes a missing row as zero, and `tick` adds it). */
 const fresh = (city?: CityDef): ServiceStateSlice => ({
   at: 0,
-  shops: Object.fromEntries((city ? (city.serviceRows ?? hoodIds(city)) : []).map((id) => [id, zeroShop()])) as Record<NeighborhoodId, ShopService>,
+  shops: Object.fromEntries((city ? hoodIds(city) : []).map((id) => [id, zeroShop()])) as Record<NeighborhoodId, ShopService>,
 });
 const read = (g: GameState): ServiceStateSlice => (g.x?.[KEY] as ServiceStateSlice | undefined) ?? fresh(cityOf(g));
 

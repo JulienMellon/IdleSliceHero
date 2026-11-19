@@ -8,7 +8,7 @@ import type { PersonProps } from '../../scene/looks';
 import { PATIO_SEAT, SEAT, type Layout } from '../../scene/layout';
 import { STEP_FRAMES } from '../../scene/quantise';
 import { P, frameRight, unprojectX } from '../../scene/projection';
-import { dressed } from '../city-dress';
+import { dressed } from '../../../content/copy';
 import { fillText, LABELS, lc, lcc } from '../layer-text';
 import { mmss } from '../layer-model';
 

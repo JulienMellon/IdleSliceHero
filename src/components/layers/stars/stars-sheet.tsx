@@ -10,7 +10,7 @@ import { useGame } from '../../../store/game-store';
 import { C, F } from '../../../theme';
 import { BUTTON_H } from '../menu/layer-model';
 import { LayerSheet } from '../menu/layer-ui';
-import { dressed } from '../city-dress';
+import { dressed } from '../../../content/copy';
 import { COPY } from './copy';
 import { PAY_RULE, starsSheet } from './stars-model';
 import { starsSheetState, useStarsSheetOpen } from './stars-state';

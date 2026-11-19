@@ -2,7 +2,7 @@
 // 10% steps; no sliders, no drags) and the mix's total effect. Text is the copy's, by key. Pure: unit-tested in node.
 import { MENU } from '../../../content/layers';
 import type { MenuView } from '../../../engine/features/layers/menu';
-import { dressed } from '../city-dress';
+import { dressed } from '../../../content/copy';
 import { COPY } from './copy';
 
 export type RecipeId = 'cheese' | 'pepperoni' | 'knots';

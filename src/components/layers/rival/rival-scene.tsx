@@ -14,7 +14,7 @@ import { useClock } from '../../scene/clock';
 import { INK, sceneFit } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
-import { RIVAL_SHOP, SHUTTERS_TOTAL, shutterShare } from './rival-model';
+import { FAR_KERB, RIVAL_SHOP, SHUTTERS_TOTAL, shutterShare } from './rival-model';
 
 const PURPLE = '#7B2CBF';
 const YELLOW = '#FFC531';
@@ -119,6 +119,9 @@ export const RivalScene = memo(function RivalScene({ shopId, width, height }: Sc
         height={height}
         viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}
       >
+        {/* the far pavement across the whole foot of the scene: the road ends at its kerb line, the shop stands on it (D481) */}
+        <Rect x={-20} y={FAR_KERB.top} width={frame.width + 40} height={700 - FAR_KERB.top} fill="#D3CCC0" />
+        <Rect x={-20} y={FAR_KERB.top} width={frame.width + 40} height={FAR_KERB.height} fill="#9B9386" stroke={INK} strokeWidth={0.8} />
         <G transform={`translate(${RIVAL_SHOP.x} ${RIVAL_SHOP.top})`}>
           <MegaShop shut={shut} />
         </G>

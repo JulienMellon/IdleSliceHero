@@ -12,6 +12,11 @@ export const LINES = {
   'lot.piesToGo.one': '{n} pie to go',
   /** The daily gift's caption before the rewards unlock. */
   'rewards.gift.locked': 'Unlocks when {founder} takes over',
+  /** The bid's refusals and toast (C150): `{bid}` is `cityOf(g).bid.name` ("Pier 9" at home). */
+  'bid.refused.saved': '{bid} is already saved',
+  'bid.refused.closed': 'The {bid} auction hasn’t opened yet',
+  'bid.refused.none': 'There is no auction in this city',
+  'bid.toast': 'Bid on {bid}',
 } as const;
 
 export type LineKey = keyof typeof LINES;

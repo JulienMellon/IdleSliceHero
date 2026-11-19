@@ -3,20 +3,20 @@
 Keep this file under 40 lines. It is the only file the orchestrator edits by hand.
 
 ```
-version: 5.19                   # scope: a city is only a content pack (Julien 2026-11-18); cities beyond Boston on hold
-step: verify                     # setup | waves | verify | review | fix | close
+version: 5.20                   # scope: Julien's call (later/README.md lists candidates); v5.19 closed 2026-11-19
+step: waves                      # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
-last_shots: v5.19                # verify r1: 9 changed (seam 00 24 104 105; R1L 145 86 86b 76; 116 under check)
+last_shots: v5.19-r2             # verify r2: 47 changed (~3.3%: R1L far kerb D481, night tint 85), 3 noted; True 0 [], layout 0
 codecritic_range_start: eafbb5a
 cards:                 # todo | running | done | partial | blocked
-  R0: done  R0p: done  R1: done  R6: done  R1L: done  R5c: done  R7a: done  R7b: done
+  R0: done  R0p: done  R1: done  R6: done  R1L: done  R5c: done  R7a: done  R7b: done   # r2 fix: R1 R6 R1L R0 R7a R7b R5c
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.18/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 6; E2 U1 S3; D512 D514 D481 D493 D495 D505 carry)
-  code:   docs/build/v5.18/review-r3-code.md (r3 APPROVED; blocker/high 0 medium 2 low 26; E15 U4 S5 N3 A1)
+  critic: docs/build/v5.19/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 4 incl. D493 D495 parked; E2 S2)
+  code:   docs/build/v5.19/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 1 low 6; E1 U3 S3; C156 open)
   story:  docs/build/v5.18/review-r2-story.md (r2 SATISFIED; bug 0 major 0 minor 2; U1 T1; S67 S48 carried)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
 open: ON HOLD (Julien 2026-11-18): every city beyond Boston; cards in docs/build/v5.19/later/ (W4b W4s E4 E4f CITY A3) and the deferred refactor (R2 R2b R3 R4 R5f R6s) are not launched. PARKED for Julien, not in v5.19: economy refit (one pizza per tap +1/10 prep lv, home tops out ~$10M with Suburbs ~$30K, first goal <$50, ECONOMY 3->4 with old saves reset, D493 rival gated at Suburbs 2 stars, D495); don't ask about it during v5.19. Carried: A2 + audio notes AU41 AU39 AU40 AU25 AU82 (music round waits on Julien's R1 listen), SliceAudioSession native module not built; Boston heads need a writer pass (5 barks per head, one per trigger; their script has 4 numbered); Boston GMs placeholder; v5.17/v5.18 critic minors D481 D493 D495 D505 D512 D514. Tools: expo install is refused by the proxy (use npm install with the version from node_modules/expo/bundledNativeModules.json); loop_stats.py cannot read loop: commits; programmer --only takes the fixture name without .py; seam-noise shots 00/24/104/105 and 29-31b. App Store privacy label must say Tracking = Yes; native paths unverified until DEVICE-CHECKLIST.
-next: v5.19 r1 verify, open item: 116-boston-shop-layer changed 5.1% vs v5.19-base (cash/clock/gift only; identical on a pre-R1 build at 979eb27). Bisect eafbb5a vs R0 76dabc5 vs R0p 0d84ea2 in worktrees (lane E, R0p programmer); baseline flake -> re-shoot base 116, else fix. Then commit, r1 reviews per VERSION.md (codecritic medium range eafbb5a..HEAD paths src scripts .github; critic medium on R1L shots 145 86 86b 76 only), fix rounds, close.
+next: wait for Julien to set v5.20 scope and write docs/build/v5.20/VERSION.md. Carried from v5.19: C156 (Boston North End milestones speak as Nonna after founderHood removal; storefront.tsx/ladder.ts), C151 C153 M69 (no v5.19 card owned the files), D481 (reduced) D519, home-ids guard ALLOW 9 (report-strip, city-map need P6).
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
@@ -31,3 +31,6 @@ next: v5.19 r1 verify, open item: 116-boston-shop-layer changed 5.1% vs v5.19-ba
 - 2026-11-18 Julien: hold every city beyond Boston; v5.19 = city is only a content pack. VERSION.md rewritten (R0 R0p R1 R6 R1L R5c + new R7a R7b); held and deferred cards moved to v5.19/later/. Next: wave 0.
 
 - 2026-11-19 v5.19 waves 0-7 done (R0 R0p R1 R6 R1L R5c R7a R7b; dev deps eslint/prettier approved by Julien). Verify: True 0 [], layout 0, 9 changed = seam 00 24 104 105 + R1L 145 86 86b 76 + 116 (open). Pack guard ALLOW 0. Session ended by Julien before reviews.
+- 2026-11-19 116 bisect: eafbb5a, R0, R0p all give the new 116 (deterministic) -> baseline flake; v5.19-base 116 re-shot at eafbb5a. review_shots: 8 changed (seam + R1L only), gate met.
+- 2026-11-19 Fix r2 done: R1 (C150 C152 A39 T111-T113), R1L (D518 D481 U26 C155 C154), R0 (A38), R5c (A40); R6 R7a R7b no rows. C151 C153 M69 carry (no v5.19 card owns the files). tsc pass, 2501/2501.
+- 2026-11-19 v5.19 closed at r2: critic SATISFIED (minor 4, D493 D495 parked), codecritic APPROVED (medium 1: C156). Pack guard ALLOW 0. Pack contract: src/content/cities/README.md.

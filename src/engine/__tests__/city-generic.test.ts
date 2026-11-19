@@ -37,7 +37,7 @@ describe('a save from v5.18 migrates to the state it always did', () => {
       const g = G.newGame(NOW, city.id);
       expect(Object.keys(g.shops)).toEqual([...hoodIds(city)]);
       expect(g.active).toBe(G.firstHood(city));
-      expect(Object.keys((g.x.service as { shops: object }).shops)).toEqual([...hoodIds(city.serviceRows ? HOME_CITY : city)]);
+      expect(Object.keys((g.x.service as { shops: object }).shops)).toEqual([...hoodIds(city)]);
     }
   });
 });
@@ -82,11 +82,13 @@ describe('a city with no voice is silent or generic, never the home city', () =>
     expect(metHoods(built)).toEqual([]);
   });
 
-  test("the night oven's name and line: the city's own, else a generic one without Nonna (Boston keeps the home line, a reported v5.18 bug)", () => {
+  test("the night oven's name and line: the city's own, else a generic one without Nonna (Boston has none yet: C152)", () => {
     const home = nightOvenView(G.newGame(NOW));
     expect(home.name).toBe("Nonna's night oven");
     expect(home.body).toBe("While you're away, Nonna's night oven keeps baking for up to 4 h. Come back before it's full!");
-    expect(nightOvenView(G.newGame(NOW, BOSTON_CITY.id)).body).toBe(home.body);
+    const bostonOven = nightOvenView(G.newGame(NOW, BOSTON_CITY.id));
+    expect(bostonOven.body).toContain('up to 4 h');
+    expect(bostonOven.name + bostonOven.body).not.toMatch(/Nonna/);
     const bare = { ...BOSTON_CITY, nightOvenLines: undefined };
     CITIES.bare = bare;
     try {
@@ -104,23 +106,26 @@ describe('a city with no voice is silent or generic, never the home city', () =>
   });
 });
 
-describe('Boston keeps its v5.18 behaviour while the engine is generic (each a reported bug, carried in the pack)', () => {
+describe("Boston's own first shop, tutorial and rewards (C152: the v5.18 bugs are gone)", () => {
   const boston = G.newGame(NOW, BOSTON_CITY.id);
 
-  test('rewards wait for the home takeover scene, not for north-end-2', () => {
+  test('rewards stay unlocked by the home takeover scene Boston inherits on franchising (a decision, see boston/index.ts)', () => {
     expect(rewardsUnlocked({ ...boston, seenScenes: [BOSTON_CITY.fit.takeover.sceneId] })).toBe(false);
     expect(rewardsUnlocked({ ...boston, seenScenes: ['downtown-4'] })).toBe(true);
     expect(rewardsUnlocked({ ...G.newGame(NOW), seenScenes: ['downtown-4'] })).toBe(true);
   });
 
-  test('every shop, the first included, gets the sidewalk hire stack; at home the first does not', () => {
-    const shop = boston.shops[G.firstHood(BOSTON_CITY)];
-    expect(hireOnSidewalk(shop, G.firstHood(BOSTON_CITY), BOSTON_CITY)).toBe(true);
-    expect(hireOnSidewalk(shop, G.firstHood(HOME_CITY), HOME_CITY)).toBe(false);
+  test('the first shop shows its stations on the sidewalk, in Boston as at home', () => {
+    for (const city of [BOSTON_CITY, HOME_CITY]) {
+      const first = G.firstHood(city);
+      expect(hireOnSidewalk(G.newGame(NOW, city.id).shops[first], first, city)).toBe(false);
+      expect(hireOnSidewalk({ managed: false }, hoodIds(city)[1], city)).toBe(true);
+    }
   });
 
-  test("the tutorial's last step names the home prep head", () => {
+  test("the tutorial's last step names the city's own prep head", () => {
     const text = (c: CityDef) => stepsFor(c)[8].text;
-    expect(text(BOSTON_CITY)).toBe(text(HOME_CITY));
+    expect(text(BOSTON_CITY)).toContain(BOSTON_CITY.heads[G.firstHood(BOSTON_CITY)].prep);
+    expect(text(BOSTON_CITY)).not.toContain(HOME_CITY.heads[G.firstHood(HOME_CITY)].prep);
   });
 });

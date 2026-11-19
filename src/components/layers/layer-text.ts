@@ -1,9 +1,9 @@
-// Reads the layer copy table (layer-copy.ts, generated from docs/story/COPY-v5.16.md): a line by its key, with {placeholders} filled.
+// Reads the layer copy table (content/copy/home/layers.ts, generated from docs/story/COPY-v5.16.md): a line by its key, with {placeholders} filled.
 // No string of the layer screens is written in a component: it is a key here, or one of the few labels in `LABELS` below (numbers' captions
 // the copy file has no row for: listed in the card report as a copy ask). Pure: unit-tested in node.
 import { dressed, fill, t, type CopyVars } from '../../content/copy';
 import type { NeighborhoodId } from '../../content/types';
-import { LAYER_COPY, LAYER_SPEAKERS, type LayerCopyKey } from './layer-copy';
+import { LAYER_COPY, LAYER_SPEAKERS, type LayerCopyKey } from '../../content/copy/home/layers';
 
 export type { CopyVars };
 

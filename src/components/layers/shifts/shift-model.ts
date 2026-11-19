@@ -2,7 +2,7 @@
 import type { ShiftView } from '../../../engine/features/layers/shifts';
 import { fill } from '../../report/report-model';
 import { mmss } from '../layer-model';
-import { dressed } from '../city-dress';
+import { dressed } from '../../../content/copy';
 import { COPY } from './copy';
 
 type ShiftId = 'day' | 'swing' | 'night';
@@ -80,6 +80,28 @@ export function nightShape(
   const r = (b: Box) => `M${b.x0} ${b.y0} H${b.x1} V${b.y1} H${b.x0} Z`;
   return { sky, house, path: `${r(sky)} ${r(house)}` };
 }
+
+/** How far the cut-out's top and side edges fade into the tint (scene units, D518), and in how many steps. */
+export const FEATHER = { span: 12, steps: 4 } as const;
+
+/**
+ * The tint as `FEATHER.steps` stacked washes, so the cut-out's hard top and side edges (D518) fade over `FEATHER.span` units instead of ending in a seam: layer k
+ * covers the sky except the box shrunk by `span * k / steps` on its top and sides (the foot stays on the front line), so the tint deepens toward the edge. Each
+ * layer takes `featherOpacity(a)` of the tint's own opacity `a`, so the layers compound to exactly `a` outside the box.
+ */
+export function nightFeather(shape: { sky: Box; house: Box }): string[] {
+  const { sky, house } = shape;
+  const r = (b: Box) => `M${b.x0} ${b.y0} H${b.x1} V${b.y1} H${b.x0} Z`;
+  const out: string[] = [];
+  for (let k = 1; k <= FEATHER.steps; k++) {
+    const e = Math.min((FEATHER.span * k) / FEATHER.steps, (house.x1 - house.x0) / 2 - 1, (house.y1 - house.y0) / 2 - 1);
+    out.push(`${r(sky)} ${r({ x0: house.x0 + e, y0: house.y0 + e, x1: house.x1 - e, y1: house.y1 })}`);
+  }
+  return out;
+}
+
+/** One feather layer's opacity: `FEATHER.steps` layers of it stack to `a`. */
+export const featherOpacity = (a: number): number => 1 - Math.pow(1 - a, 1 / FEATHER.steps);
 
 /** The moon in the sky, in scene units: a crescent (a disc and a smaller disc of the sky's colour biting it). */
 export const MOON = { cx: 60, cy: 36, r: 11, bite: { dx: 5, dy: -3, r: 9.5 } } as const;

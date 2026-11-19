@@ -5,9 +5,6 @@ import { BOSTON_COPY, BOSTON_TEASER } from './copy';
 import { BOSTON_LAYERS, CITY_NAME, HEADS, MANAGERS, NEIGHBORHOODS, PERKS } from './data';
 import { BOSTON_FIT } from './fit';
 import { BOSTON_SCENES } from './scenes';
-import { HOME_CITY } from '../home';
-import { HEADS as HOME_HEADS } from '../home/data';
-import { HOME_NIGHT_OVEN_LINES } from '../home/voice';
 
 export const BOSTON_CITY: CityDef = {
   id: 'boston',
@@ -28,16 +25,7 @@ export const BOSTON_CITY: CityDef = {
   // the lines Boston says in place of the home city's, by the same keys (card R5c; content/copy/index.ts `t` reads them first)
   copy: BOSTON_COPY,
   fit: BOSTON_FIT,
-  // v5.18 behaviour kept while the engine went city-generic (card R1 changes no behaviour). Each line below is a known bug, reported under Needs: in the R1
-  // card report with its fix; a later version replaces these with Boston's own values and deletes the CityDef fields.
-  // BUG: the rewards read the home takeover scene, which a Boston game never sees, so they never unlock (fix: delete `rewardsScene`; `fit.takeover` is north-end-2).
+  // Decision (C152): the rewards stay unlocked in a franchised Boston. Franchising keeps `seenScenes`, so the home takeover scene is already seen on tick 1
+  // (it is not a bug that they never unlock). Delete this line to gate them on Boston's own takeover (north-end-2) instead; the owner decides.
   rewardsScene: 'downtown-4',
-  // BUG: the first shop (North End) gets the hire stack and not the founder's stations on the sidewalk (fix: delete `founderHood`).
-  founderHood: null,
-  // BUG: the tutorial's last step names the home prep head (fix: delete `tutorialHead`).
-  tutorialHead: HOME_HEADS[HOME_CITY.neighbourhoods[0].id].prep,
-  // BUG: the night oven speaks of Nonna (fix: write Boston's `nightOvenLines`).
-  nightOvenLines: HOME_NIGHT_OVEN_LINES,
-  // BUG: the shop-service slice starts with the home city's rows (fix: delete `serviceRows`).
-  serviceRows: HOME_CITY.neighbourhoods.map((n) => n.id),
 };

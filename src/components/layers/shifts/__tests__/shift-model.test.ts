@@ -6,7 +6,7 @@ import { newGame, type GameState } from '../../../../engine/game';
 import { chipPillWidth } from '../../menu/layer-model';
 import { layout } from '../../../scene/layout';
 import { FRONT_TOP, P, sceneFrame } from '../../../scene/projection';
-import { MOON, nightShape, payTag, shiftChip, shiftRows, shiftTint, whistle } from '../shift-model';
+import { FEATHER, featherOpacity, MOON, nightFeather, nightShape, payTag, shiftChip, shiftRows, shiftTint, whistle } from '../shift-model';
 
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 const SHIFT = SHIFTS.cycleSeconds / 3;
@@ -96,6 +96,19 @@ describe('the night falls on the sky, not on the pizzeria (D484)', () => {
     const flipped = nightShape(layout(fp, 1, 1, 1, 0, 2, 0, undefined, true), W, frontY, roofY).house;
     expect(flipped.x0).toBeCloseTo(W - plain.x1, 6);
     expect(flipped.x1).toBeCloseTo(W - plain.x0, 6);
+  });
+  it.each([0, 2, 4])('the cut-out fades in over 12 units on its top and sides, and the layers stack to the tint (D518), at footprint %i', (fp) => {
+    const shape = nightShape(layout(fp, 1, 1, 1, 0, 2, 0), sceneFrame(fp).width, frontY, roofY);
+    const layers = nightFeather(shape);
+    expect(layers).toHaveLength(FEATHER.steps);
+    expect(FEATHER.span).toBe(12);
+    // the layers' holes are nested: each shrinks the box a step more, on the top and sides only; the outermost hole is `span` in
+    const holes = layers.map((d) => d.split('M').slice(2).join('M'));
+    expect(new Set(holes).size).toBe(FEATHER.steps);
+    expect(layers[FEATHER.steps - 1]).toContain(`M${shape.house.x0 + 12} ${shape.house.y0 + 12} H${shape.house.x1 - 12} V${shape.house.y1}`);
+    for (const d of layers) expect(d).toContain(`V${shape.house.y1} H`);
+    const a = 0.3;
+    expect(1 - Math.pow(1 - featherOpacity(a), FEATHER.steps)).toBeCloseTo(a, 9);
   });
   it('keeps the moon in the visible sky, clear of the roof', () => {
     expect(MOON.cx - MOON.r).toBeGreaterThan(0);

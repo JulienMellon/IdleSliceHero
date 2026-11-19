@@ -2,7 +2,7 @@
 // the drones' flight lanes. Text is the copy's, by key. Pure: unit-tested in node.
 import type { GameState } from '../../../engine/game';
 import type { ZonesView } from '../../../engine/features/layers/menu';
-import { dressed } from '../city-dress';
+import { dressed } from '../../../content/copy';
 import { hoodOf } from '../city-layers';
 import { fill } from '../../report/report-model';
 import { COPY } from './copy';

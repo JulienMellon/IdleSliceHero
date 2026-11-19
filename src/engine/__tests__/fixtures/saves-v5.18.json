@@ -1952,7 +1952,7 @@
     "service": {
      "at": 0,
      "shops": {
-      "downtown": {
+      "north-end": {
        "below": 0,
        "cold": false,
        "tip": false,
@@ -1962,7 +1962,7 @@
         "counter": 0
        }
       },
-      "suburbs": {
+      "southie": {
        "below": 0,
        "cold": false,
        "tip": false,
@@ -1972,7 +1972,7 @@
         "counter": 0
        }
       },
-      "waterfront": {
+      "back-bay": {
        "below": 0,
        "cold": false,
        "tip": false,
@@ -1982,7 +1982,7 @@
         "counter": 0
        }
       },
-      "university": {
+      "fenway": {
        "below": 0,
        "cold": false,
        "tip": false,
@@ -1992,7 +1992,7 @@
         "counter": 0
        }
       },
-      "industrial": {
+      "cambridge": {
        "below": 0,
        "cold": false,
        "tip": false,
@@ -2002,7 +2002,7 @@
         "counter": 0
        }
       },
-      "uptown": {
+      "dorchester": {
        "below": 0,
        "cold": false,
        "tip": false,

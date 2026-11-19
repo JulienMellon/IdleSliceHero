@@ -6,7 +6,7 @@ import { CURB_Y, SCENE_H, SCENE_W, P } from '../../../scene/projection';
 import { layout } from '../../../scene/layout';
 import { SIDEWALK_ROW, TAP } from '../../../tap-targets';
 import { STRIP } from '../../../report/report-model';
-import { RIVAL_SHOP, SHUTTERS, SHUTTERS_TOTAL, opener, rivalCard, rivalLite, rivalPercent, rivalRect, rivalTagText, shutterShare } from '../rival-model';
+import { FAR_KERB, RIVAL_SHOP, SHUTTERS, SHUTTERS_TOTAL, opener, rivalCard, rivalLite, rivalPercent, rivalRect, rivalTagText, shutterShare } from '../rival-model';
 
 const view = (o: Partial<RivalView> = {}): RivalView => ({
   open: true,
@@ -49,6 +49,10 @@ describe('the shop across the street', () => {
     expect(RIVAL_SHOP.x - RIVAL_SHOP.slab).toBeGreaterThanOrEqual(0);
     expect(RIVAL_SHOP.x + RIVAL_SHOP.w + RIVAL_SHOP.slab).toBeLessThanOrEqual(SCENE_W);
     expect(RIVAL_SHOP.kerb).toBeGreaterThanOrEqual(5);
+    // D481: the shop's foot is on the far pavement band, which starts below the near road's lane line and above the shop's top
+    expect(FAR_KERB.top).toBeGreaterThan(CURB_Y + 40);
+    expect(FAR_KERB.top).toBeLessThan(RIVAL_SHOP.top + RIVAL_SHOP.h);
+    expect(FAR_KERB.top + FAR_KERB.height).toBeLessThanOrEqual(RIVAL_SHOP.top + RIVAL_SHOP.h);
     for (let fp = 0; fp < 5; fp++) {
       const lay = layout(fp, 2, 2, 2, 4, 3, 1);
       // the doormat is on the sidewalk, over 100 scene units above the road
