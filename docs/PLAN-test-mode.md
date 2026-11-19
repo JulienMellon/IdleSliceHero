@@ -2,11 +2,13 @@
 
 > Copy of the project doc `claude/PLAN-test-mode.md` (2026-11-19), so agents can read it from the repo. This repo copy is the one to keep current; the loop files it leads to will live in `docs/build/v5.19-test/`.
 
-Status: **approved design, not built.** Written 2026-11-17; updated 2026-11-18 at v5.19's close (main `1fa9ffd`). Next: a planning session turns it into loop files (kickoff prompt in section 7), then the usual orchestrator prompt builds it.
+Status: **cards written** (2026-11-19: `docs/build/v5.19-test/`, session `docs/build/sessions/S6-v5.19-test.md`; C155 was already fixed, see VERSION.md "What the code says"). Approved design, not built yet. Written 2026-11-17; updated 2026-11-18 at v5.19's close (main `1fa9ffd`). Next: merge the planning pull request, then the orchestrator prompt in `docs/build/sessions/README.md` runs S6.
 
 ## 0. Slot and code as of v5.19's close
 
 **Slot:** its own tooling step, `version: 5.19-test`, folder `docs/build/v5.19-test/`, like `v5.15-loop` was. STATE currently says `version: 5.20` with scope unset; at this step's close STATE goes back to that. Cost estimate: 4 cards, about one session.
+
+**Re-checked 2026-11-19 on `20b3797` (planning session):** where the code differs, the cards follow the code. C155 is already fixed (`storefront.tsx:231` reads `gameNow()`, v5.19 r2), so no card fixes it. 66 `gameNow()` sites and 25 `Date.now()`. `rewards.ts:311` has a local `pay` that *gives* cash (not a spend). Settings prints `Slice Empire v{APP_VERSION}`, so the test label is `Slice Empire v5.19 · TEST`. `screenshots.py` only reads `dist/`; card X1 adds `SHOTS_DIST` / `SHOTS_FIXTURES`. A `require` behind an imported `TEST_MODE` would still be bundled by Metro, so guarded sites use the literal env check (VERSION.md Defaults).
 
 **What already exists** (checked on `1fa9ffd`; the planning session re-checks by grep):
 - `canAfford(s, cost)` (null-safe) and `pay(s, cost)` in `src/engine/game.ts` (~line 977), 16 call sites (A36, v5.18 r4). Bypasses left: `sidewalk-row.tsx` (~207) and `night-oven.ts` (~95). Diamond checks don't use it: `rewards.ts`, `vanity.ts`, `rewards-ui.tsx`, `endgame/shop-model.ts`. (Codecritic, `docs/build/v5.19/review-r1-code.md`, JULIEN section.)

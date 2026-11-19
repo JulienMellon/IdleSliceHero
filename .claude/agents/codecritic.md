@@ -63,12 +63,6 @@ STILL OPEN FROM LAST REVIEW: <ids not resolved, or "none">
 Rules: CHANGES REQUESTED if there is any blocker, any [high] issue, [high] architecture item, [high] memory item or [high] CPU item, or more than three [medium] items across ISSUES + MEMORY + CPU. APPROVED only when the remaining items are [low] or at most three [medium]. Number IDs continuing from CODELOG (K for blockers, C for issues, A for architecture, M for memory, U for CPU, T for tests). Keep it under ~900 words.
 
 
-## Julien's questions (one time)
-Added 2026-11-17 while planning a test build (project doc `claude/PLAN-test-mode.md`). First run `grep -l '^JULIEN' docs/build/*/review-*-code.md`: if it lists a file, these are already answered; skip this section. Otherwise answer both in a **JULIEN** section of your review file, placed after CPU, under 200 words in all. These two look at the whole of `src/`, not only your git range; use the greps given and read only the hits. Put any fix you recommend in ISSUES, ARCHITECTURE or CPU with an ID as usual; the answers themselves don't count toward the verdict.
-
-1. **"The game checks whether you can afford something in about 15 places. Is this appropriate?"** Find them with `grep -rnE "cash *>=|cash *<|>= *[A-Za-z.]*[cC]ost|[Pp]rice *[<>]=?|diamonds *(>=|<)" src --include=*.ts --include=*.tsx | grep -v __tests__`. Is the duplication a real risk (checks that disagree on `null` cost, `Infinity`, locks, or diamonds vs cash) or harmless? Should there be one `canAfford(s, cost)` in the engine that every model and view uses? Say so plainly: if yes, the test build's "bottomless wallet" (the plan pins cash at a ceiling to avoid touching these sites) could become a one-line free-buy switch instead.
-2. **"The game checks the clock in about 100 places. Is this good for performance?"** Find them with `grep -rn "Date.now()" src --include=*.ts --include=*.tsx | grep -v __tests__`. Separate the per-call cost of `Date.now()` from how often each site runs (per 15 fps frame, per 200 ms tick, per user action), and give numbers. Also say which sites read **game time** (compared against saved timestamps: boosts, events, offline, rewards) and which are **animation time** only, because the test build's time skip will route the game-time ones through one `gameNow()`. Is a single clock module worth having anyway?
-
 ## Review file (build-plan rule)
 This section overrides any earlier instruction about where your critique goes and about never writing files.
 
