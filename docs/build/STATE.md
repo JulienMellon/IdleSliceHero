@@ -11,7 +11,7 @@ codecritic_range_start: eafbb5a
 cards:                 # todo | running | done | partial | blocked
   R0: done  R0p: done  R1: done  R6: done  R1L: done  R5c: done  R7a: done  R7b: done   # r2 fix: R1 R6 R1L R0 R7a R7b R5c
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.19/review-r1-critic.md (r1 NOT SATISFIED; bug 0 major 0 minor 6; E2 U2 S2)
+  critic: docs/build/v5.19/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 4 incl. D493 D495 parked; E2 S2)
   code:   docs/build/v5.19/review-r1-code.md (r1 APPROVED; blocker/high 0 medium 3 low 11; E8 U1 S4 T1)
   story:  docs/build/v5.18/review-r2-story.md (r2 SATISFIED; bug 0 major 0 minor 2; U1 T1; S67 S48 carried)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
