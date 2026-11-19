@@ -69,12 +69,7 @@ export interface Box {
  * except that box. `roofY` is the roof's top edge in scene units. The street below the front line keeps its colours (street lamps).
  * `lay` is the room in the frame's own space, `sceneW` wide (`shopLayout(...).room`: wider than a screen for the two big tiers, and already reflected in a mirrored shop).
  */
-export function nightShape(
-  lay: { L: number; R: number },
-  sceneW: number,
-  frontY: number,
-  roofY: number,
-): { sky: Box; house: Box; path: string } {
+export function nightShape(lay: { L: number; R: number }, sceneW: number, frontY: number, roofY: number): { sky: Box; house: Box; path: string } {
   const house: Box = { x0: Math.max(0, lay.L - 12), y0: roofY, x1: Math.min(sceneW, lay.R + 12), y1: frontY };
   const sky: Box = { x0: 0, y0: 0, x1: sceneW, y1: frontY };
   const r = (b: Box) => `M${b.x0} ${b.y0} H${b.x1} V${b.y1} H${b.x0} Z`;

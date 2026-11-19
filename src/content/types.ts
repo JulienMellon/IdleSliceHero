@@ -13,7 +13,6 @@ export type HomeNeighborhoodId = 'downtown' | 'suburbs' | 'waterfront' | 'univer
 
 export type VehicleId = 'bike' | 'scooter' | 'car' | 'van' | 'drone';
 
-
 /** Speaker names that are not a character, a head, a manager or a lieutenant of the city: the player, and Todd's unnamed disguise. */
 export const NARRATOR_SPEAKERS: readonly string[] = ['You', 'Trench Coat', 'Todd'];
 

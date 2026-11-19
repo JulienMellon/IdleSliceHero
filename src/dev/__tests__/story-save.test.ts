@@ -25,7 +25,18 @@ import { CITIES, cityOf } from '../../content/cities';
 import { STORY_PACING } from '../../content/tuning';
 import { TEST_PREFS_KEY } from '../../components/store/store-model';
 import { gameClockOffset, gameSpeed, resetGameClockOffset, setGameClockOffset, setGameSpeed } from '../../engine/clock';
-import { challengeOffered, firstHood, freeBuysOn, migrate, newGame, pendingScenes, setFreeBuys, sceneId, TUTORIAL_DONE, type GameState } from '../../engine/game';
+import {
+  challengeOffered,
+  firstHood,
+  freeBuysOn,
+  migrate,
+  newGame,
+  pendingScenes,
+  setFreeBuys,
+  sceneId,
+  TUTORIAL_DONE,
+  type GameState,
+} from '../../engine/game';
 import { coachStep, tutorialAdvance } from '../../engine/tutorial';
 import { CHEATS_KEY } from '../cheat-prefs';
 import { BACKUP_KEY, REAL_SAVE_KEY, TEST_SAVE_KEY, type JumpHost, type KeyValue } from '../jumps';
@@ -137,7 +148,12 @@ describe('Play next story beat now (step 1)', () => {
     const hood = firstHood(city);
     const at = 1000;
     // beat 3 seen just now, the shop built: the rival is open and the 120 s gap is running
-    const g: GameState = { ...base, playSeconds: at + 10, seenScenes: [sceneId(hood, 1), sceneId(hood, 2), sceneId(hood, 3)], sceneAt: { [sceneId(hood, 3)]: at } };
+    const g: GameState = {
+      ...base,
+      playSeconds: at + 10,
+      seenScenes: [sceneId(hood, 1), sceneId(hood, 2), sceneId(hood, 3)],
+      sceneAt: { [sceneId(hood, 3)]: at },
+    };
     expect(challengeOffered(g, hood)).toBe(false);
     const r = nextBeatNow(g);
     expect(r.ok && r.kind).toBe('challenge');

@@ -52,8 +52,7 @@ const skylineOf =
     );
   };
 
-export const BOSTON_SKYLINES: CityArt['skylines'] = ({ Windows }) =>
-  Object.fromEntries(Object.keys(BOSTON_LOOKS).map((id) => [id, skylineOf(id, Windows)]));
+export const BOSTON_SKYLINES: CityArt['skylines'] = ({ Windows }) => Object.fromEntries(Object.keys(BOSTON_LOOKS).map((id) => [id, skylineOf(id, Windows)]));
 
 /** D460: along the foot of the "Coming soon" card, a tower, the dome of a statehouse and brownstones (a viewBox 0 0 200 60 drawing). */
 export const BOSTON_TEASER_SKYLINE = (

@@ -15,10 +15,14 @@ const ALLOW: Record<string, string> = {
   'components/scene/background.tsx': 'art module: the Uptown look of the shop backdrop (stays until the per-city look registry, plan P6)',
   'components/scene/props.tsx': 'art module: the floor props are drawn per home neighbourhood (stays until the per-city look registry, plan P6)',
   'components/scene/room.tsx': 'art module: the shop rooms are drawn per home neighbourhood (stays until the per-city look registry, plan P6)',
-  'components/cutscene/backdrops/shop.tsx': 'art module: the cutscene shop looks are drawn per home neighbourhood (stays until the per-city look registry, plan P6)',
-  'components/storefront.tsx': "painter: the Uptown dusk sky is chosen by the look id `art === 'uptown'` (stays until the per-city look registry, plan P6; its other home ids are gone)",
-  'components/city-map.tsx': "painter: a Boston lot's mini shop borrows the home look by index (`lookId`, stays until the per-city look registry, plan P6). NOT an art module: R1L/P6 moves it",
-  'components/report/report-strip.tsx': "painter: Nonna's portrait on the Downtown report strip (outside card R1's files; fix is `firstHood(city)` and the city's founder portrait)",
+  'components/cutscene/backdrops/shop.tsx':
+    'art module: the cutscene shop looks are drawn per home neighbourhood (stays until the per-city look registry, plan P6)',
+  'components/storefront.tsx':
+    "painter: the Uptown dusk sky is chosen by the look id `art === 'uptown'` (stays until the per-city look registry, plan P6; its other home ids are gone)",
+  'components/city-map.tsx':
+    "painter: a Boston lot's mini shop borrows the home look by index (`lookId`, stays until the per-city look registry, plan P6). NOT an art module: R1L/P6 moves it",
+  'components/report/report-strip.tsx':
+    "painter: Nonna's portrait on the Downtown report strip (outside card R1's files; fix is `firstHood(city)` and the city's founder portrait)",
   'components/scene/ladder.ts': "art module: the ladder's height for the Waterfront and Uptown fronts (stays until the shared shop layout, plan P1)",
 };
 const HOME_IDS = ['downtown', 'suburbs', 'waterfront', 'university', 'industrial', 'uptown'];
