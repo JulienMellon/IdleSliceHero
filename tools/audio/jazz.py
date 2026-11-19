@@ -28,6 +28,7 @@ from mlib import Track, p, MAJOR, KICK, RIM, PEDAL, RIDE
 
 LOW, HIGH = 48, 64  # C3 and E4: every voicing sits in here
 RELEASE_GAP = 0.4  # beats of silence the keys leave before the next chord (swing can shorten it to about 0.27)
+KEYS_LOW, KEYS_HIGH, KEYS_NEAR = 55, 70, 60# the keys' comping window (G3..Bb4), above the bass (C2..G3)
 
 # --- the chord vocabulary: intervals above the chord root, bottom to top, root left out ---------------------------
 QUALITIES: dict[str, list[int]] = {
@@ -46,6 +47,13 @@ QUALITIES: dict[str, list[int]] = {
     'dom7b9': [4, 7, 10, 13],          # altered: 3 5 b7 b9
     'dom7s11': [4, 10, 14, 18],        # altered: 3 b7 9 #11
     'alt7': [4, 10, 13, 18],           # altered: 3 b7 b9 #11
+}
+# What the keys comp plays (notes 2026-11-19: "less complex chords on the Rhodes"): the guide tones, a dyad of 3rd and
+# 7th, and a triad only on major and diminished chords. No 9th, 11th or 13th, so each hit is two or three notes.
+SIMPLE: dict[str, list[int]] = {
+    'maj7': [4, 7, 11], 'maj9': [4, 7, 11], 'maj7s11': [4, 11], '6/9': [4, 7, 9],
+    'min9': [3, 10], 'min11': [3, 10, 14], 'min(maj7)': [3, 11], 'dim7': [3, 6, 9], 'min7b5': [3, 6, 10],
+    'dom9': [4, 10], 'dom13': [10, 16, 21], 'sus13': [5, 10], 'dom7b9': [4, 10], 'dom7s11': [4, 10], 'alt7': [4, 10],
 }
 MINOR_THIRD = {'min9', 'min11', 'dim7', 'min(maj7)', 'min7b5'}
 FLAT_FIFTH = {'dim7', 'min7b5'}
@@ -69,21 +77,23 @@ def offset(degree) -> int:
     return MAJOR[(degree - 1) % 7]
 
 
-def voicing_off(root, off: int, quality: str, near: float | None = None) -> list[int]:
+def voicing_off(root, off: int, quality: str, near: float | None = None, table=None, low: int = LOW,
+                high: int = HIGH) -> list[int]:
     """Rootless voicing of the chord whose root is `off` semitones above `root`. The octave that puts every note in
-    C3..E4 is chosen among the inversions; the one whose centre is nearest `near` (default 53, low in the window) wins."""
-    base = [(tonic(root) + off) % 12 + i for i in QUALITIES[quality]]
+    `low`..`high` (C3..E4) is chosen among the inversions; the one whose centre is nearest `near` (default 53, low in the
+    window) wins. `table` is the interval table (QUALITIES, or SIMPLE for the keys comp)."""
+    base = [(tonic(root) + off) % 12 + i for i in (table or QUALITIES)[quality]]
     fits = []
     for rot in range(len(base)):  # every inversion: the lowest notes move up an octave
         inv = base[rot:] + [x + 12 for x in base[:rot]]
-        shift = 12 * math.ceil((LOW - inv[0]) / 12)
-        while inv[0] + shift <= HIGH:
+        shift = 12 * math.ceil((low - inv[0]) / 12)
+        while inv[0] + shift <= high:
             v = [x + shift for x in inv]
-            if min(v) >= LOW and max(v) <= HIGH:
+            if min(v) >= low and max(v) <= high:
                 fits.append(v)
             shift += 12
     if not fits:
-        raise ValueError(f'no voicing of {quality} on offset {off} fits C3..E4')
+        raise ValueError(f'no voicing of {quality} on offset {off} fits {low}..{high}')
     target = 53 if near is None else near
     return min(fits, key=lambda v: abs(sum(v) / len(v) - target))
 
@@ -234,20 +244,24 @@ def _pc(key, ch: Ch) -> int:
     return (tonic(key) + ch.off) % 12
 
 
-def comp_voicings(h: Harmony, near: float | None = None) -> list[list[int]]:
-    """The voicing `comp` plays for each chord of `h`, in order: each follows the nearest octave to the one before it."""
-    out, prev = [], near
+def comp_voicings(h: Harmony, near: float | None = None, simple: bool = True) -> list[list[int]]:
+    """The voicing `comp` plays for each chord of `h`, in order: each follows the nearest octave to the one before it.
+    `simple` (the default) is the two- or three-note guide-tone voicing in G3..Bb4; False is the old four-note C3..E4 one."""
+    out, prev = [], near if near is not None or not simple else KEYS_NEAR
     for (_t, ch) in h.chords(0.0):
-        v = voicing_off(h.key, ch.off, ch.q, prev)
+        if simple:
+            v = voicing_off(h.key, ch.off, ch.q, prev, SIMPLE, KEYS_LOW, KEYS_HIGH)
+        else:
+            v = voicing_off(h.key, ch.off, ch.q, prev)
         prev = sum(v) / len(v)
         out.append(v)
     return out
 
 
 # --- keys -------------------------------------------------------------------------------------------------------------
-def comp(track: Track, h: Harmony, feel: Feel, start: float = 0.0, seed: int = 1, vel: int = 46, strum: float = 0.03,
-         antic_p: float = 0.3, answer_p: float = 0.7, near: float | None = None, gap: float = RELEASE_GAP,
-         hold: float = 1.25, answer_len: float = 1.0) -> None:
+def comp(track: Track, h: Harmony, feel: Feel, start: float = 0.0, seed: int = 1, vel: int = 46, strum: float = 0.018,
+         antic_p: float = 0.15, answer_p: float = 0.5, near: float | None = None, gap: float = RELEASE_GAP,
+         hold: float = 0.75, answer_len: float = 0.6, simple: bool = True) -> None:
     """Comping: a long chord on the chord's downbeat (rolled up, upper notes a hair later and quieter); on a whole-bar
     chord a quieter answer at `feel.answer`; with probability `antic_p` a chord that follows a chord of at least a
     pulse is struck `feel.antic` early (and not re-struck on its downbeat). Voicings follow the nearest octave.
@@ -255,7 +269,11 @@ def comp(track: Track, h: Harmony, feel: Feel, start: float = 0.0, seed: int = 1
     Every note is released before the next hit begins (notes round R1): no note of a hit sounds within `gap` beats of
     the next hit's first note (an anticipated chord counts from its early onset), no hit is held longer than `hold`
     pulses (`feel.pulse`), the downbeat chord lets go `gap` beats before its own answer, and a hit's notes all end
-    together (the strum delays the attacks, not the releases). The last hit of the chart ends `gap` before its last bar."""
+    together (the strum delays the attacks, not the releases). The last hit of the chart ends `gap` before its last bar.
+
+    Notes round R1, 2026-11-19 (crisper, simpler Rhodes): the voicing is the two- or three-note guide-tone voicing of
+    `SIMPLE` in G3..Bb4 (`simple=False` is the old four-note one), a hit is held 0.75 pulse (it was 1.25) and an answer 0.6
+    beat (it was 1.0), the strum is 18 ms (it was 30), and the answer and anticipation odds are 0.5 and 0.15 (0.7 and 0.3)."""
     rng = random.Random(seed)
     chords = h.chords(start)
     early = [False] * len(chords)
@@ -265,7 +283,7 @@ def comp(track: Track, h: Harmony, feel: Feel, start: float = 0.0, seed: int = 1
         if ch.beats >= feel.bar_beats - 1e-9:
             answer[i] = [rng.random() < answer_p for _a in feel.answer]
     onsets = [t - (feel.antic if early[i] else 0.0) for i, (t, _c) in enumerate(chords)]
-    voicings = comp_voicings(h, near)
+    voicings = comp_voicings(h, near, simple)
 
     def hit(t, end, notes, v):
         for i, q in enumerate(notes):
@@ -281,7 +299,7 @@ def comp(track: Track, h: Harmony, feel: Feel, start: float = 0.0, seed: int = 1
         hit(on, end, v, vel - 4 if early[i] else vel)
         for k, a in enumerate(plays):
             nxt = t + plays[k + 1] - gap if k + 1 < len(plays) else limit
-            hit(t + a, min(t + a + answer_len, nxt, limit), v[1:], vel - 12)
+            hit(t + a, min(t + a + answer_len, nxt, limit), v[1:] if len(v) > 2 else v, vel - 12)
 
 
 # --- bass -------------------------------------------------------------------------------------------------------------

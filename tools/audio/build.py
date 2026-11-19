@@ -4,7 +4,7 @@
     python3 build.py
 
 Outputs:
-  assets/audio/music/*.m4a   stereo AAC 96 kbps, loops cut to exact bar length with the tail folded onto the start
+  assets/audio/music/*.m4a   stereo AAC 128 kbps (96 before 2026-11-19: crisper attacks), loops cut to exact bar length with the tail folded onto the start
   assets/audio/sting/*.m4a   mono AAC 64 kbps, beat 1 at `downbeatSeconds`
   assets/audio/story/*.m4a   stereo AAC 96 kbps
   assets/audio/sfx/*.m4a     mono AAC 64 kbps, peaks at -9 dBFS
@@ -29,6 +29,7 @@ MIDI = os.path.join(HERE, 'build', 'midi')
 ASSETS = os.path.join(ROOT, 'assets', 'audio')
 
 LOUD = dict(music=-20.0, story=-16.0, sting=-18.0)  # AU22; the lofi loops sit 2 LU lower (2026-10-31)
+LOOP_KBPS = 128  # the lofi loops: more bits for the attacks (notes round R1, 2026-11-19; was 96)
 LOOP_CEILING = -6.0
 # AU67: Nonna's takeover (sparse -> full) lifts by 2 LU. AU70, card M1c: the MegaSlice HQ loop keeps its own tier, 1 LU above the
 # other loops, and now goes through the same lofi chain.
@@ -98,7 +99,7 @@ def main(only: set[str] | None = None):
             join, p99 = post.seam_step(a)
             if join > p99:  # the loop seam must be no bigger than an ordinary sample step
                 raise SystemExit(f'{name}: loop seam step {join:.5f} > 99th-percentile step {p99:.5f}')
-            info = post.encode(a, os.path.join(ASSETS, 'music', name + '.m4a'), 96, mono=False)
+            info = post.encode(a, os.path.join(ASSETS, 'music', name + '.m4a'), LOOP_KBPS, mono=False)
             info['seam'] = [round(join, 5), round(p99, 5)]
         elif cue['kind'] == 'stinger':
             if cue.get('lofi'):  # shorter tails: trim at -46 dBFS and fade the last 0.3 s

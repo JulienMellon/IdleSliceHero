@@ -173,9 +173,18 @@ def lofi_finish(s: Song, ratio: float, leads=(), straight=()):
     s.humanize_ms(8, 8, 10, cap={n: LEAD_CAP for n in leads})
 
 
+WET_REVERB, WET_CHORUS = 0.5, 0.25  # share of the chart's reverb and chorus sends the pitched tracks keep (R1, 2026-11-19)
+
+
 def jazz_finish(s: Song, ratio: float, leads=(), lead_cap: int = 56, laid_ms: float = 15.0, straight=()):
     """The jazz loop finish, in this order: swing every subdivision (`swing_smooth`, none at ratio 0), humanise (timing
-    +-6 ms, velocity +-10, kit velocity +-12, leads capped at `lead_cap`), then lay the kit and bass back (`jazz.laid_back`)."""
+    +-6 ms, velocity +-10, kit velocity +-12, leads capped at `lead_cap`), then lay the kit and bass back (`jazz.laid_back`).
+    Notes round R1, 2026-11-19 (less smearing): every pitched track's reverb send is cut to `WET_REVERB` and its chorus
+    send to `WET_CHORUS` of what the chart set. The kit keeps its sends (he likes the brushes)."""
+    for tr in s.tracks:
+        if tr.channel != 9:
+            tr.reverb = int(round(tr.reverb * WET_REVERB))
+            tr.chorus = int(round(tr.chorus * WET_CHORUS))
     swing_smooth([tr for tr in s.tracks if tr.name not in straight], ratio)
     s.humanize_ms(6, 10, 12, cap={n: lead_cap for n in leads})
     jazz.laid_back(s.tracks, laid_ms, s.bpm)
@@ -597,7 +606,7 @@ def university():
     for sec, hm, mel, w in sections:
         nb = len(hm)
         quiet = sec in ('intro', 'bed', 'tail')
-        jazz.comp(rh, hm, HIPHOP, start=t, seed=41 + bar_i, vel=44 if quiet else 50, strum=0.045)
+        jazz.comp(rh, hm, HIPHOP, start=t, seed=41 + bar_i, vel=44 if quiet else 50, strum=0.03)
         jazz.bass_two_feel(bass, hm, HIPHOP, start=t, vel=58 if quiet else 62)
         jazz.brushes(perc, nb, HIPHOP, start=t, seed=51 + bar_i, scale=0.85 if quiet else 1.0, bar0=bar_i)
         if sec != 'intro':  # a soft vibraphone shimmer, the top note of each whole-bar chord
