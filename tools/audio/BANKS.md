@@ -2,7 +2,7 @@
 
 None of these ship in the app: they only change how the MIDI is rendered before it is encoded. Files live in
 `tools/audio/banks/` (git-ignored); `./fetch_bank.sh <letter>` fetches or links one and prints its size and sha256.
-`tools/audio/BANK` (one line, a path relative to `tools/audio/`, e.g. `banks/GeneralUser-GS.sf2`) picks the bank the
+`tools/audio/BANK` (first line: a path relative to `tools/audio/`, e.g. `banks/GeneralUser-GS.sf2`; optional second line: its expected sha256, which `fetch_bank.sh` checks) picks the bank the
 build uses; the `SF2` environment variable overrides it; with neither, the build uses A. Each build writes the bank's
 name and sha256 to `build/bank.json`. Each fetch also saves the licence text it read next to the file as `<file>.licence`.
 
