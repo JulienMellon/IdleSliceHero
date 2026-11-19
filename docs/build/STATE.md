@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.19-r2             # verify r2: 47 changed (~3.3%: R1L far kerb D481, night tint 85), 3 noted; True 0 [], layout 0
 codecritic_range_start: 20b3797   # v5.19 approved at r2; set at v5.19-test planning (main after v5.19 close)
 cards:                 # todo | running | done | partial | blocked
-  X1: partial  X2: done  X3: done  X4: running
+  X1: partial  X2: done  X3: done  X4: partial
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.19/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 4 incl. D493 D495 parked; E2 S2)
   code:   docs/build/v5.19/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 1 low 6; E1 U3 S3; C156 open)
@@ -39,3 +39,4 @@ next: run docs/build/sessions/S6-v5.19-test.md (VERSION docs/build/v5.19-test/VE
 - 2026-11-19 S6 wave 1 done: X1 partial (all checks pass, 2522/2522; fixture x1_panel unrun: no Python playwright). Wave 2: X2 + X3.
 - 2026-11-19 S6 wave 2: X3 done (14 snapshots, jumps + undo + build next; fixture x3_jumps unrun). Waiting on X2.
 - 2026-11-19 S6 wave 2 done: X2 done (free buys, diamonds, clock offset/speed; cheats key slice-empire/store/test-cheats-v1; repairByAd nets +20 diamonds with free buys, offers.ts unowned; fixture unrun). tsc pass, 2603/2603. Wave 3: X4.
+- 2026-11-19 S6 wave 3: X4 partial (story & save tools built, 138 tests); needs clock reset, sent to X2 (owner of clock.ts), then X4 wires it.

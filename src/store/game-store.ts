@@ -202,6 +202,10 @@ interface Store {
   starterAt: number | null;
   markStarterOffered: () => void;
   resetGame: () => Promise<void>;
+  // X4 (v5.19-test): the Test panel's story and save tools. Does nothing in a normal build.
+  /** Put `game` in place as if it had just been loaded: the popups and the scene of the old one are gone, the story gap and the kitchen-tap gate are open (a waiting beat plays at once), and it is saved. */
+  testSetGame: (game: G.GameState) => void;
+  // end X4
 }
 
 /** A scene, the return popup or the title card is up: the orders' clocks stop and no offer appears. */
@@ -800,6 +804,15 @@ export const useGame = create<Store>((set, get) => {
       queueScene();
       void get().save();
     },
+
+    // X4 (v5.19-test): the literal check folds the body away in a normal build (src/dev/README.md)
+    testSetGame: (game) => {
+      if (process.env.EXPO_PUBLIC_TEST_MODE !== '1') return;
+      set({ game, offline: null, playing: null, claimed: null, lastSceneEndPlay: null, lastKitchenTap: 0 });
+      queueScene();
+      void get().save();
+    },
+    // end X4
   };
 });
 

@@ -11,11 +11,11 @@
 - Do not touch: `src/content/**`, `src/engine/**` (call their exports only), anything X1 to X3 own.
 
 ## Steps
-- [ ] **1. Play next story beat now.** Make the next scene `pendingScenes` would give due now, skipping the play-time gap (`beat4GapSeconds` / `firstHoodBeat4GapSeconds`), and play it through the store's normal scene path. Do it by moving `playSeconds` or the beat stamp in the test state, never by editing `STORY_PACING`. Disabled with a reason when no beat is waiting on a gap.
-- [ ] **2. Skip tutorial.** Set `tutorial` to `TUTORIAL_DONE` with whatever the coach steps would have granted (read `tutorialAdvance` at `tutorial.ts:96`), so the game is in the state a player who finished it is in.
-- [ ] **3. Export save.** Copy the current test save JSON to the clipboard (the web clipboard API; show "Copied" for 2 s). Fallback when the clipboard is refused: show the JSON in a selectable text box.
-- [ ] **4. Import save.** A paste box and an Import button: parse, `migrate`, back up the current save to the X3 backup slot first, then load. A bad paste shows the parse error and changes nothing.
-- [ ] **5. Reset test save.** Confirm, then clear `slice-empire/save/test-v1`, the backup slot and the test prefs (free buys back to ON, speed 1×, clock offset 0) and start a new game. Never touches the v1 keys.
+- [x] **1. Play next story beat now.** Make the next scene `pendingScenes` would give due now, skipping the play-time gap (`beat4GapSeconds` / `firstHoodBeat4GapSeconds`), and play it through the store's normal scene path. Do it by moving `playSeconds` or the beat stamp in the test state, never by editing `STORY_PACING`. Disabled with a reason when no beat is waiting on a gap.
+- [x] **2. Skip tutorial.** Set `tutorial` to `TUTORIAL_DONE` with whatever the coach steps would have granted (read `tutorialAdvance` at `tutorial.ts:96`), so the game is in the state a player who finished it is in.
+- [x] **3. Export save.** Copy the current test save JSON to the clipboard (the web clipboard API; show "Copied" for 2 s). Fallback when the clipboard is refused: show the JSON in a selectable text box.
+- [x] **4. Import save.** A paste box and an Import button: parse, `migrate`, back up the current save to the X3 backup slot first, then load. A bad paste shows the parse error and changes nothing.
+- [x] **5. Reset test save.** Confirm, then clear `slice-empire/save/test-v1`, the backup slot and the test prefs (free buys back to ON, speed 1×, clock offset 0) and start a new game. Never touches the v1 keys.
 
 ## Tests that must exist
 Next beat: with a beat waiting on the gap, it plays and the story moves one beat; with none, the row is refused. Skip tutorial leaves `coachStep(s)` null. Export then import gives back the same state. A bad import changes nothing. Reset clears the three test keys, puts the offset at 0, and leaves `slice-empire/save/v1` untouched.

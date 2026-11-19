@@ -3,6 +3,7 @@
 import type { ComponentType } from 'react';
 
 import { JumpsBody } from './jumps-section';
+import { StorySaveBody } from './story-save-section';
 import { MoneyBody, TimeBody } from './x2-sections';
 
 export interface PanelSection {
@@ -16,5 +17,5 @@ export const PANEL_SECTIONS: PanelSection[] = [
   { id: 'money', title: 'Money', Body: MoneyBody },
   { id: 'hoods', title: 'Neighbourhoods', Body: JumpsBody },
   { id: 'time', title: 'Time', Body: TimeBody },
-  { id: 'story', title: 'Story & save' },
+  { id: 'story', title: 'Story & save', Body: StorySaveBody },
 ];
