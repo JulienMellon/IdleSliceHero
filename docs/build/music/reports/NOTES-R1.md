@@ -50,3 +50,42 @@ Loops rebuilt (partial build of all eight, then `git checkout -- assets/audio/sf
 Seconds, barRoots and tiers did not change, so `src/audio/manifest.ts` is unchanged. Audio total: 13.24 MB of 14 (`du -sb assets/audio` = 13,877,074 bytes, limit 14,680,064). Checks: `python3 -m py_compile tools/audio/*.py` pass; `npx jest src/audio` 53 passed; `npx tsc --noEmit` clean; sound effects byte-identical (`git status assets/audio/sfx` empty).
 
 Code: `tools/audio/jazz.py` `comp` (new `gap`, `hold`, `answer_len`; `RELEASE_GAP`), `tools/audio/compose.py` (Suburbs' `comp` call: `antic_p=0.15, answer_p=0.4`), `tools/audio/keys_release.py` (new measure).
+
+# Notes round 2 (2026-11-19)
+
+## Table
+
+| # | His words | Cues | What I changed | How it shows in a measurement | Measured |
+|---|---|---|---|---|---|
+| 8 | "I would like the timbre of the instruments to be more articulate and overall the sound needs less smearing." | the eight loops (not on the R1 reel's stingers and story, which he did not name and which are not yet rewritten) | (a) Release: every pitched channel sends CC72 = 36 (pads CC73 attack 60, CC72 44). Chosen because a tail after note-off is what runs notes together, and the bank honours CC72. (b) Reverb and chorus sends halved (`mlib.TIGHT_SEND`). (c) `jazz.articulate`: every pitched note cut to 0.75 of its written length (pads 0.9), one rule in `jazz_finish`. (d) Loop master: low-pass 7 -> 9 kHz, tape wow 6 -> 3 cents, saturation drive 5x -> 7x RMS (`post.LOOP_*`). | CC72 effect, one C4 note, dry, bank C (time for the level to fall 20 dB after note-off): vibraphone 0.24 -> 0.10 s, marimba 0.70 -> 0.10 s, Rhodes 0.025 -> 0.012 s. Pad attack to peak 0.88 -> 0.15 s (CC73 60); pad release 0.88 -> 0.52 s. | Table A below. Comping hold median 0.67-1.37 s -> 0.51-1.04 s; longest hold 1.15-2.96 s -> 0.87-2.22 s; shortest chord gap 0.199-0.257 s -> 0.311-0.554 s (University one melody cluster, 1 overlap, was 2). |
+| 9 | "Increase the memory allotment for audio to 20MB if that will help and make each note more distinct" | the eight loops | Loops encoded at 144 kbps stereo AAC (were 96). Cap raised 14 -> 20 MB (20,971,520 B) in `src/audio/__tests__/logic.test.ts`, the only place that enforces it (`build.py` has no size check). Stingers, story and sfx keep their bitrates (sfx byte-identical). | Bytes per loop +52% | Audio total 18,586,494 B = 17.73 MB of 20 (2.27 MB left). |
+
+## Table A: decoded loop, old committed file against new (stereo folded to mono)
+
+Crest: peak over RMS in dB. 3-9 kHz: share of spectral power. Valley depth: median over one-second windows of the 10th percentile over the 90th percentile of the 20 ms RMS, in dB (deeper = more silence between notes). Scratch script, not in the repo.
+
+| Loop | Crest dB | 3-9 kHz share % | Valley depth dB |
+|---|---|---|---|
+| downtown | 14.2 -> 15.7 | 0.81 -> 1.01 | -8.6 -> -14.3 |
+| downtown_sparse | 12.9 -> 14.4 | 0.00 -> 0.00 | -9.6 -> -22.5 |
+| suburbs | 14.3 -> 15.9 | 0.94 -> 1.18 | -9.7 -> -16.2 |
+| waterfront | 14.9 -> 16.1 | 1.06 -> 1.29 | -10.8 -> -15.2 |
+| university | 15.2 -> 16.4 | 0.59 -> 0.75 | -6.8 -> -21.7 |
+| industrial | 14.5 -> 16.1 | 1.26 -> 1.56 | -9.2 -> -14.1 |
+| uptown | 14.4 -> 15.6 | 1.15 -> 1.45 | -7.8 -> -17.7 |
+| megaslice_hq | 13.4 -> 14.3 | 0.51 -> 0.65 | -9.1 -> -24.0 |
+
+## Loops rebuilt (full build, then `git checkout -- assets/audio/sfx`; programs in front unchanged from the table above)
+
+| Cue | Seconds | LUFS | Peak dBFS | Seam step / 99th pct | KB (before) | Lead minus bed (LU) (before) |
+|---|---|---|---|---|---|---|
+| downtown | 94.55 | -20.0 | -6.0 | 0.0002 / 0.02899 | 1742.8 (1145.5) | -2.7 (-2.4) |
+| downtown_sparse | 94.55 | -22.0 | -10.1 | 0.00027 / 0.01346 | 1714.8 (1130.5) | -1.4 (-1.7) |
+| suburbs | 89.30 | -20.0 | -6.0 | 0.00043 / 0.03107 | 1642.2 (1086.4) | -2.9 (-2.8) |
+| waterfront | 96.00 | -20.0 | -6.0 | 0.00037 / 0.03338 | 1784.9 (1167.7) | -2.2 (-2.7) |
+| university | 101.05 | -20.0 | -6.0 | 0.0018 / 0.02647 | 1864.3 (1228.3) | -1.6 (-2.4) |
+| industrial | 113.68 | -20.0 | -6.0 | 0.00192 / 0.034 | 2090.2 (1377.9) | -3.5 (-3.2) |
+| uptown | 91.43 | -20.0 | -6.0 | 0.00039 / 0.03296 | 1680.7 (1113.9) | -3.4 (-3.0) |
+| megaslice_hq | 53.68 | -19.0 | -6.0 | 0.00099 / 0.02804 | 981.2 (651.9) | -3.9 (-3.2) |
+
+Peaks now sit on the -6 dBFS ceiling (were -7.1 to -7.9): the 9 kHz roll-off and the gentler saturation let more of the attack through, so the limiter touches the loudest hits. Seconds, tiers, barRoots and manifest unchanged (`src/audio/manifest.ts` not modified). I did not render a stem alone to measure the Rhodes tail inside the mix. Checks: `py_compile` pass; `npx jest src/audio` 61 passed; `npx tsc --noEmit` clean; sfx byte-identical (`git status assets/audio/sfx` empty); `du -sb assets/audio` 18,586,494.

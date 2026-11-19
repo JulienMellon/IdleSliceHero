@@ -175,9 +175,11 @@ def lofi_finish(s: Song, ratio: float, leads=(), straight=()):
 
 def jazz_finish(s: Song, ratio: float, leads=(), lead_cap: int = 56, laid_ms: float = 15.0, straight=()):
     """The jazz loop finish, in this order: swing every subdivision (`swing_smooth`, none at ratio 0), humanise (timing
-    +-6 ms, velocity +-10, kit velocity +-12, leads capped at `lead_cap`), then lay the kit and bass back (`jazz.laid_back`)."""
+    +-6 ms, velocity +-10, kit velocity +-12, leads capped at `lead_cap`), cut the notes short (`jazz.articulate`), then lay the kit
+    and bass back (`jazz.laid_back`)."""
     swing_smooth([tr for tr in s.tracks if tr.name not in straight], ratio)
     s.humanize_ms(6, 10, 12, cap={n: lead_cap for n in leads})
+    jazz.articulate(s.tracks)  # notes round R1-2: shorter notes
     jazz.laid_back(s.tracks, laid_ms, s.bpm)
 
 
@@ -223,6 +225,7 @@ def clash_assert(name: str, hm: jazz.Harmony, t0: float, mark: list, min_beats: 
 def finish(song: Song, name: str, bars: int, bar_beats: float, ts, kind: str, extra=None):
     beats = bars * bar_beats
     if name in JAZZ:
+        song.tight = True  # notes round R1-2: short releases, half the reverb and chorus sends (mlib.Song.save)
         palette.check(song, name)
         PALETTE_CHECKED.append(name)
     secs = song.save(os.path.join(OUT, f'{name}.mid'), beats, ts)

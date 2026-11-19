@@ -169,12 +169,19 @@ def tape_sat(a: np.ndarray, headroom: float = 5.0) -> np.ndarray:
     return np.tanh(a * k) / k
 
 
+# Notes round R1-2 (2026-11-19, "more articulate, less smearing"): the loop master lets attacks through. Roll-off 7 -> 9 kHz,
+# wow 6 -> 3 cents (a steadier pitch on held notes), saturation drive set from 5x to 7x the programme's RMS (less rounding of attacks).
+LOOP_CUTOFF = 9000.0
+LOOP_WOW_CENTS = 3.0
+LOOP_SAT_HEADROOM = 7.0
+
+
 def lofi_loop(a: np.ndarray, seed: int) -> np.ndarray:
-    """Loop master: tape wow, soft saturation, vinyl crackle, then the 7 kHz roll-off over everything (circular, so
+    """Loop master: tape wow, soft saturation, vinyl crackle, then the 9 kHz roll-off over everything (circular, so
     the seam holds)."""
-    a = tape_sat(tape_wow(a))
+    a = tape_sat(tape_wow(a, LOOP_WOW_CENTS), LOOP_SAT_HEADROOM)
     a = vinyl(a, seed)
-    return _lowpass(a, circular=True)
+    return _lowpass(a, LOOP_CUTOFF, circular=True)
 
 
 def lofi_sting(a: np.ndarray, bell: np.ndarray | None = None) -> np.ndarray:

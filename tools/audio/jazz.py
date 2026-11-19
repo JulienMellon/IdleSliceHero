@@ -10,6 +10,7 @@ What is here, all of it deterministic (every random choice comes from a `seed` y
                           approach tones
   brushes                 the kit: spang-a-lang ride, feathered kick, ghosted taps, cross-stick and pedal hat on 2
                           and 4, a swirl every N bars; feels F68 (6/8), SWING44 (swung 4/4), SHUFFLE (triplet shuffle)
+  articulate              every pitched note cut to 0.75 of its written length (pads 0.9), so notes don't run together
   laid_back               kit 12-18 ms late, bass 5-8 ms late, kick and snare off the grid by their own +-6 ms
 
 Swing itself is not here: `compose.swing_smooth` swings the straight-eighth positions these helpers write (the kit
@@ -369,6 +370,21 @@ def brushes(drm: Track, nbars: int, feel: Feel, start: float = 0.0, seed: int = 
         for pos in feel.ghosts:
             if rng.random() < 0.45:
                 drm.n(t0 + pos, 0.15, 38, v(rng.randint(16, 26)))
+
+
+ARTICULATE = 0.75  # notes round R1-2: every pitched note sounds for this share of the length it was written with
+ARTICULATE_PAD = 0.9
+
+
+def articulate(tracks, scale: float = ARTICULATE, pad_scale: float = ARTICULATE_PAD, floor: float = 0.15) -> None:
+    """Shorter notes, so each one is heard on its own (notes round R1-2): every pitched note (not the kit) is cut to `scale` of
+    its length (`pad_scale` on a track whose name contains 'pad'); a note already shorter than `floor` beats is left alone,
+    and none goes below `floor`. One rule for every part, so the charts keep the lengths they were written with."""
+    for tr in tracks:
+        if tr.channel == 9:
+            continue
+        k = pad_scale if 'pad' in tr.name.lower() else scale
+        tr.events = [(t, d if d <= floor else max(floor, d * k), pi, v) for (t, d, pi, v) in tr.events]
 
 
 def laid_back(tracks, ms: float, bpm: float, seed: int = 5) -> None:

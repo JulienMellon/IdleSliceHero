@@ -95,8 +95,17 @@ class Track:
         return self
 
 
+# Notes round R1-2 (2026-11-19, "more articulate, less smearing"). A song with `tight` set (compose.finish does this for
+# the jazz loops) sends each pitched channel with a short release (CC72), the pads with a quicker attack (CC73), and
+# only TIGHT_SEND of the reverb and chorus sends its tracks ask for.
+TIGHT_RELEASE = 36    # CC72 on pitched channels: the MuseScore vibraphone's tail after note-off falls 20 dB in 0.08 s (default 0.24 s)
+TIGHT_PAD = (60, 44)  # (CC73 attack, CC72 release) on the pad programs 88..95
+TIGHT_SEND = 0.5
+
+
 class Song:
     def __init__(self, bpm: float, beats_per_bar: int = 4, seed: int = 1):
+        self.tight = False
         self.bpm = bpm
         self.bpb = beats_per_bar
         self.tracks: list[Track] = []
@@ -159,8 +168,13 @@ class Song:
                 msgs.append((0, 0, mido.Message('program_change', channel=ch, program=tr.program)))
             else:
                 msgs.append((0, 0, mido.Message('program_change', channel=ch, program=tr.program)))
-            for cc, val in ((7, tr.volume), (10, tr.pan), (91, tr.reverb), (93, tr.chorus), (11, 127)):
+            send = TIGHT_SEND if self.tight else 1.0
+            for cc, val in ((7, tr.volume), (10, tr.pan), (91, int(round(tr.reverb * send))), (93, int(round(tr.chorus * send))), (11, 127)):
                 msgs.append((0, 1, mido.Message('control_change', channel=ch, control=cc, value=val)))
+            if self.tight and ch != 9:
+                pad = 88 <= tr.program <= 95
+                for cc, val in ((72, TIGHT_PAD[1] if pad else TIGHT_RELEASE),) + (((73, TIGHT_PAD[0]),) if pad else ()):
+                    msgs.append((0, 1, mido.Message('control_change', channel=ch, control=cc, value=val)))
             for (bt, cc, val) in tr.ccs:
                 msgs.append((int(round(bt * TPB)), 1, mido.Message('control_change', channel=ch, control=cc, value=val)))
             for (bt, val) in tr.bends:
