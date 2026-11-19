@@ -8,7 +8,7 @@ step: cards            # cards | verify | review | fix | reel | listen
 bank: C MuseScore_General_Full.sf3      # letter and file name once Julien picks (R0)
 cards:                 # todo | running | done | partial | blocked
   M0 M1a M1b M1c done; M2a done, M2b done, M2c done
-review: docs/build/music/review-R1-audio.md NOT SATISFIED, bugs 0 major 1 (AU78 fixed) minor 6 open (AU79-AU84), next ID AU85
+review: docs/build/music/review-R2-audio.md NOT SATISFIED, bugs 0 major 1 (AU85) minor 10
 last_reel: tools/audio/build/reel/R1.mp3 (2026-11-19, notes round 2, sent)
 heard: R0 → "C"; R1 → "Go"           # round → Julien's verdict in five words
 open: M2c extra: encode all music/sting/story at 256 kbps, 24-bit/float renders and source WAVs where the codec allows, under 32 MB; full-score reel for Julien at end of R2 (every cue, full length, 320 kbps, from uncompressed renders if present); growth eval docs/build/music/notes/R1-growth-eval.md awaits Julien (stems need +1.5 MB and src/audio director changes); lead minus bed -1.7 LU on one loop (D5 default is -2 to -4)
