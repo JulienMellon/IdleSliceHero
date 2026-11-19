@@ -12,7 +12,7 @@ import { useClock } from '../../scene/clock';
 import { INK, P, drawShift, sceneFit } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
-import { isDressed } from '../city-dress';
+import { isDressed } from '../../../content/copy';
 import { hoodOf } from '../city-layers';
 import { cityOf } from '../../../content/cities';
 import { shopLayout } from '../../scene/shop-layout';

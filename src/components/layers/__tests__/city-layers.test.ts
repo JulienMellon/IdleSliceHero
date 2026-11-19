@@ -3,7 +3,7 @@ import { newGame } from '../../../engine/game';
 import { BOSTON_LAYER_COPY } from '../../../content/cities/boston/copy';
 import { BOSTON_CITY } from '../../../content/cities/boston';
 import { builtHood, hoodOf } from '../city-layers';
-import { dressed, isDressed } from '../city-dress';
+import { dressed, isDressed } from '../../../content/copy';
 import { gameDayBanner, gameDayChipShown, gameDayChipText } from '../game-day/gameday-model';
 import { harbourChip, rackCard, tierName } from '../boats/boats-model';
 import { chipText } from '../stars/stars-model';

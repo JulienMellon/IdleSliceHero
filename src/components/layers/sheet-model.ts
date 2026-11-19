@@ -10,7 +10,7 @@ import type { NeighborhoodId } from '../../content/types';
 import { auctionStatus, label, tierName } from './boats/boats-model';
 import { rivalCard, rivalPercent } from './rival/rival-model';
 import { cityOf } from '../../content/cities';
-import { isDressed } from './city-dress';
+import { isDressed } from '../../content/copy';
 import { hoodOf } from './city-layers';
 import { mmss } from './layer-model';
 import { LABELS, lc, lcc } from './layer-text';

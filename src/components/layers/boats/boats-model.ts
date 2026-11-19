@@ -7,7 +7,7 @@ import { money } from '../../../engine/format';
 import { canAfford, bidAvailable, bidPrice, type GameState } from '../../../engine/game';
 import type { BoatsView } from '../../../engine/features/layers/boats';
 import { mmss } from '../layer-model';
-import { dressed } from '../city-dress';
+import { dressed } from '../../../content/copy';
 import { LABELS, lc, lcc } from '../layer-text';
 import type { Layout } from '../../scene/layout';
 import { plainOf } from '../../scene/layout-space';

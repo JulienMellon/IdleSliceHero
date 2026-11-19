@@ -5,7 +5,7 @@ import type { JamView } from '../../../engine/features/layers/shifts';
 import type { Layout } from '../../scene/layout';
 import { D, P } from '../../scene/projection';
 import { fill } from '../../report/report-model';
-import { dressed } from '../city-dress';
+import { dressed } from '../../../content/copy';
 import { COPY } from './copy';
 
 /** The wrench button is a 44 pt target. */

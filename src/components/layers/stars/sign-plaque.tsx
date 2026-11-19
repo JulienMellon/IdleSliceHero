@@ -13,7 +13,7 @@ import { INK, sceneFit } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
 import type { SceneSlotProps } from '../../slots';
 import { toWindow } from '../layer-geometry';
-import { isDressed } from '../city-dress';
+import { isDressed } from '../../../content/copy';
 import { chipText, PAY_WORDS, payTagOf, type PayTag } from './stars-model';
 import { PIN, PLAQUE, PLAQUE_W, pinXs, plaqueBox, plaqueStars, signOf, STAMP, STAR, TAG } from './sign-model';
 

@@ -8,7 +8,7 @@ import { money } from '../../../engine/format';
 import { buyDecor, buyUpgrade, canAfford, decorCost, upgradeCostOf, type GameState } from '../../../engine/game';
 import { criticView, ingredientsLock, pointsOf, starsOf, starsView, type StarsView } from '../../../engine/features/layers/stars';
 import { fill } from '../../report/report-model';
-import { dressed } from '../city-dress';
+import { dressed } from '../../../content/copy';
 import { hoodOf } from '../city-layers';
 import { mmss } from '../layer-model';
 import { COPY } from './copy';

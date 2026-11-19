@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { menuView, zonesView } from '../../../engine/features/layers/menu';
 import { useGame } from '../../../store/game-store';
 import { C, F } from '../../../theme';
-import { dressed } from '../city-dress';
+import { dressed } from '../../../content/copy';
 import { COPY } from './copy';
 import { BUTTON_H } from './layer-model';
 import { LayerSheet } from './layer-ui';

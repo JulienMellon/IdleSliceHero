@@ -2,7 +2,7 @@
 import type { ShiftView } from '../../../engine/features/layers/shifts';
 import { fill } from '../../report/report-model';
 import { mmss } from '../layer-model';
-import { dressed } from '../city-dress';
+import { dressed } from '../../../content/copy';
 import { COPY } from './copy';
 
 type ShiftId = 'day' | 'swing' | 'night';
