@@ -9,6 +9,7 @@ For Julien. **The orchestrator does not read this file.** Each build session rea
 | 3 | `S3-v5.16-second-half.md` | v5.16 waves 6 to 8, verify, reviews, fix rounds, close | `version: 5.16`, `next:` names the file |
 | 4 | `S4-v5.17.md` | v5.17 with the new card U4 | `version: 5.17` |
 | 5 | `S5-v5.18.md` | v5.18 with the scrolling shop | `version: 5.18` |
+| 6 | `S6-v5.19-test.md` | v5.19-test: the test build with cheats (cards X1 to X4), then STATE back to v5.20 | `version: 5.19-test` |
 
 ## How to run one
 1. Merge the last session's pull request.
