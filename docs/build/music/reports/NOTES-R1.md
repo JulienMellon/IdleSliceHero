@@ -89,3 +89,47 @@ Crest: peak over RMS in dB. 3-9 kHz: share of spectral power. Valley depth: medi
 | megaslice_hq | 53.68 | -19.0 | -6.0 | 0.00099 / 0.02804 | 981.2 (651.9) | -3.9 (-3.2) |
 
 Peaks now sit on the -6 dBFS ceiling (were -7.1 to -7.9): the 9 kHz roll-off and the gentler saturation let more of the attack through, so the limiter touches the loudest hits. Seconds, tiers, barRoots and manifest unchanged (`src/audio/manifest.ts` not modified). I did not render a stem alone to measure the Rhodes tail inside the mix. Checks: `py_compile` pass; `npx jest src/audio` 61 passed; `npx tsc --noEmit` clean; sfx byte-identical (`git status assets/audio/sfx` empty); `du -sb assets/audio` 18,586,494.
+
+# Notes round 3 (2026-11-19)
+
+Note: "Reimagine the melodic phrasing, themes, and arrangements. The Lofi jazz vibe with the brushed snares and bass is good and  but the main melody has a lot of room for change"
+Extra instruction from the orchestrator: keep the bed (kit, bass, grooves, tempos, keys, metres, bar counts, round-2 articulation and smear settings); new theme per neighbourhood; new phrasing (call and response, breaths, varied phrase lengths, displacement, development rather than repetition); new arrangement around it. Keep the chord-tone clash check, lead minus bed -2 to -4 LU (D5), the 20 MB cap, seams and tiers. Rhodes instrument unchanged.
+
+## Table (step 1, written before the build)
+
+| # | His words | Cues | What I change | How it will show in a measurement | Measured |
+|---|---|---|---|---|---|
+| 10 | "Reimagine the melodic phrasing, themes, and arrangements." / "the main melody has a lot of room for change" | the eight loops | One new module `tools/audio/tunes.py`: every loop's lines are text (pitch:beats), placed by `compose.play_tune`. Each loop gets its own theme (Downtown a lilt on an eighth rest, Suburbs a dotted G5 and falling G6 arpeggio, Waterfront a long A4 then a fall to the 13th, University a repeated-note hook, Industrial a blues riff C#-E-G, Uptown a broken Eb6 landing on the 6th, HQ a staccato chromatic tiptoe). The city motif (`material.MOTIF` and friends) is no longer in the eight loops (still in stingers and triumphs). | Build check `tune_check`: chord-tone clash check over every added note, no lead note in a lead-free bed bar, a theme text is stated at most twice per loop (counted as same pitches and same lengths). Lines per loop and phrase lengths in the table below. | all eight build; `tune_check` passes in every loop (clash check, lead-free beds, theme at most twice: counted 2, 2, 2, 1, 1, 2, 2 for Downtown, Suburbs, Waterfront, University, Industrial, Uptown, HQ). Table C |
+| 11 | same note: "phrasing" | the eight loops | Phrase shapes: A is call (2 bars) and response (2 bars, other instrument); B is one long arch (4 + 4 bars), the response augmented; a 4-bar run of one-bar trades (Suburbs march); rests in every phrase (an eighth to a beat); rhythmic displacement (Suburbs pick-ups on the 'and' of 4, Uptown B's first note late, Industrial call displaced by a half beat, HQ second tiptoe a beat late); development rather than repetition (inversion of rhythm in B, augmentation, sequence, quarter notes across the dotted pulse in Downtown). | Number of lead notes per loop, longest rest between phrases, lines per voice (table below). | Table C: lead notes 30-116 per loop; the longest lead-free stretch between lead notes is 4.5-5.5 bars (1.5 in Industrial, whose lead-free bed is chorus 1) |
+| 12 | same note: "arrangements" | the eight loops | Who plays when: two or three voices trade the tune (vibraphone/guitar, harp/marimba, kalimba/vibraphone/Rhodes, vibraphone/flute with the guitar answering, nylon/harp, Rhodes/pizzicato echo; Downtown full chart adds a celesta in the rests and a halo, the sparse chart keeps the nylon guitar and Rhodes only). Comping density per section: thin in beds (antic 0.1, answer 0.25-0.4), fuller in the B (up to 0.4 / 0.85), thin under Downtown's quarter-note development. Drop-outs: the bass rests for one bar at the end of an A or a bed (Downtown bars 7, 23, 39; Suburbs 7, 11, 27; Waterfront 7, 23; University 7, 11, 23; Industrial 11, 23; Uptown 7, 19; HQ two beats before bar 9); Waterfront's marimba arpeggio rests in the coda; University's Rhodes comp is one soft chord a bar under its hook. Kit, bass lines, grooves, tempo, keys, bar counts, articulation and smear settings are untouched. | Audit: lead minus bed per loop; bass notes removed (bars listed); comp hits per bar by section. | Table B (lead minus bed -2.5 to -3.3 LU on all eight); kit pattern identical to the committed build in all seven kit loops (same notes on the same 1/3-beat grid; only the humanise jitter is re-rolled, because the loops' random stream now runs over different lead notes); bass notes removed 2-8 per loop |
+
+## Table B: loops rebuilt (full build, then `git checkout -- assets/audio/sfx`)
+
+Lead minus bed from `python3 audit.py` (leads= tuples: downtown nylon melody; suburbs vibraphone and clean guitar; waterfront harp and marimba; university kalimba, vibraphone and rhodes melody; industrial vibraphone and flute; uptown nylon melody and harp; HQ rhodes villain and pizzicato echo). To land in -2 to -4 LU I first measured -7.3 to -0.9 with the new sparser lines, then set the lead levels: Downtown lead track volume 109 -> 112 (sparse 87 -> 84), lead velocity 44 -> 58, cap 56 -> 72; Suburbs velocity 54 / 52, cap 68; Waterfront 52 / 50, cap 64; University kalimba and vibraphone volume 127 -> 110; Industrial velocity 40; Uptown volume 100 -> 112, velocity 60 / 50, cap 72; HQ velocity 52 / 46, cap 64. The raw (before mastering) lead minus bed is -1.5 to -2.8 LU.
+
+| Cue | Seconds | LUFS (tier) | Peak dBFS | Seam step / 99th pct | KB (before) | GM programs in front | Lead minus bed (LU) |
+|---|---|---|---|---|---|---|---|
+| downtown | 94.55 | -20.0 | -6.0 | 0.0008 / 0.03337 | 1745.8 (1742.8) | nylon 25 (lead), celesta 9, Rhodes 5, warm pad 90, upright 33, brush kit | -2.8 |
+| downtown_sparse | 94.55 | -22.0 | -9.5 | 0.00175 / 0.0201 | 1716.0 (1714.8) | nylon 25, Rhodes 5 | -2.8 |
+| suburbs | 89.30 | -20.0 | -6.0 | 0.00019 / 0.03112 | 1641.0 (1642.2) | vibraphone 12, jazz guitar 27, glockenspiel 10, Rhodes 5, upright 33, brush kit | -2.9 |
+| waterfront | 96.00 | -20.0 | -6.0 | 0.00023 / 0.03383 | 1785.9 (1784.9) | harp 47, marimba 13, Rhodes 5, upright 33, brush kit | -2.6 |
+| university | 101.05 | -20.0 | -6.5 | 0.00035 / 0.02596 | 1861.8 (1864.3) | kalimba 109, vibraphone 12, Rhodes 5 (comp and melody), finger bass 34, brush kit | -3.3 |
+| industrial | 113.68 | -20.0 | -6.1 | 0.00172 / 0.03545 | 2096.0 (2090.2) | vibraphone 12, flute 74, clean guitar 28, Rhodes 5, warm pad 90, upright 33, brush kit | -2.9 |
+| uptown | 91.43 | -20.0 | -6.0 | 0.00033 / 0.03627 | 1683.0 (1680.7) | nylon 25, harp 47, piano 1, jazz guitar 27, upright 33, brush kit | -2.9 |
+| megaslice_hq | 53.68 | -19.0 | -6.0 | 0.00262 / 0.02811 | 981.0 (981.2) | Rhodes 5, pizzicato 46, upright 33, brush kit | -2.5 |
+
+Audio total: 18,595,860 B = 17.73 MB of 20 (cap 20,971,520 B; was 18,586,494 B). Seconds, `barRoots`, tiers and `src/audio/manifest.ts` unchanged (no diff in `src/`). Stingers, story cues and sfx: `git status assets/audio` lists only the eight loops.
+
+## Table C: the lines (from the MIDI, lead tracks only)
+
+| Loop | Lead notes | Bars with a lead | Lead range (MIDI) | Theme stated literally | Voices | Phrase plan |
+|---|---|---|---|---|---|---|
+| downtown (and sparse) | 116 | 37 of 52 | 67-81 | 2 | nylon guitar; celesta (full only) | A: lilt 4 bars, answer 4, development in quarter notes 4, close 4; B 8 + 8 (second half a step higher); lilt 4, coda 4 |
+| suburbs | 79 | 22 of 32 | 67-81 | 2 | vibraphone, clean guitar | call 2 + response 2 (other voice); B 4 (guitar) + 4 (vibraphone, augmented); march 4 one-bar trades; A' 4 with the guitar a third under |
+| waterfront | 72 | 22 of 32 | 66-78 | 2 | harp, marimba | harp call 2 + marimba response 2; B marimba 4 + harp 4; A' call 2 + response 2 that resolves; coda 4 |
+| university | 55 | 14 of 32 | 70-82 | 1 (the half-speed Rhodes is a development) | kalimba, vibraphone, Rhodes | hook 4 bars; B vibraphone 4 + 2, kalimba 2; Rhodes at half speed 4; tail 3 |
+| industrial | 76 | 23 of 36 | 69-81 | 1 | vibraphone, flute, guitar (answers) | chorus 1 none; chorus 2 call 2, answer 1, IV call 2, displaced call 2, turnaround 4; chorus 3 flute and vibraphone trade one bar each for 8 bars, flute 4 |
+| uptown | 80 | 22 of 32 | 65-79 | 2 | nylon guitar, harp | A 4; B 4 guitar + 2 harp + 2 guitar; A' 4; tag 8 harp |
+| megaslice_hq | 30 | 9 of 17 | 48-67 | 2 | Rhodes villain, pizzicato echo | tiptoe 2 bars + echo 2; bed 4; tiptoe a beat late 2 + echo 2; bed 3 |
+
+Checks: `python3 -m py_compile tools/audio/*.py` pass; `python3 build.py` (full) pass, seam checks pass; `npx jest src/audio` 61 passed; `npx tsc --noEmit` clean; sfx byte-identical. Not measured: how any of it sounds (nobody has listened). Counter-line levels were not audited on their own: Industrial's guitar answer and Downtown's celesta count in the bed (not in `leads=`).
