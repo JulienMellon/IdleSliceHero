@@ -115,6 +115,6 @@ describe('the app', () => {
   });
   it('still reaches the panel from game-ui.tsx (the guard is not vacuous)', () => {
     const src = fs.readFileSync(path.join(SRC, 'components', 'game-ui.tsx'), 'utf8');
-    expect(src).toMatch(/process\.env\.EXPO_PUBLIC_TEST_MODE === '1'\) \{\s*TestPill = require\('\.\.\/dev\/panel'\)/);
+    expect(src).toMatch(/process\.env\.EXPO_PUBLIC_TEST_MODE === '1'\) \{[^}]*TestPill = require\('\.\.\/dev\/panel'\)/);
   });
 });

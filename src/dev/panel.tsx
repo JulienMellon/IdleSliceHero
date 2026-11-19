@@ -38,7 +38,7 @@ function TestSheet({ onClose }: { onClose: () => void }) {
   return (
     <Modal transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <Pressable style={styles.dismiss} onPress={onClose} accessibilityLabel="Close the test panel" />
+        <Pressable style={styles.dismiss} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close the test panel" />
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 12 }]} testID="test-panel">
           <View style={styles.header}>
             <Text style={styles.title} accessibilityRole="header">

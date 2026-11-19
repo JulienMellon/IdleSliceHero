@@ -26,6 +26,7 @@ import { BUTTON_H, COMPACT_FONT_MAX_SCALE, GOAL_BAR_H, GOAL_TAP_H, GOAL_TAP_ROOM
 // never collects src/dev/panel (src/dev/README.md; `npm run check:no-test-mode` proves it).
 let TestPill: (() => React.JSX.Element) | null = null;
 if (process.env.EXPO_PUBLIC_TEST_MODE === '1') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   TestPill = require('../dev/panel').TestPill;
 }
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports, expo/no-dynamic-env-var */
 /// <reference types="jest" />
 // Card X1: the switch, the test save keys and the TEST pill's tap area.
 import { controlPasses, hitSize, MIN_DRAWN, MIN_HIT } from '../../components/tap-targets';
