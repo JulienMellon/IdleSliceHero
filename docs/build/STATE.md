@@ -40,3 +40,4 @@ next: run docs/build/sessions/S6-v5.19-test.md (VERSION docs/build/v5.19-test/VE
 - 2026-11-19 S6 wave 2: X3 done (14 snapshots, jumps + undo + build next; fixture x3_jumps unrun). Waiting on X2.
 - 2026-11-19 S6 wave 2 done: X2 done (free buys, diamonds, clock offset/speed; cheats key slice-empire/store/test-cheats-v1; repairByAd nets +20 diamonds with free buys, offers.ts unowned; fixture unrun). tsc pass, 2603/2603. Wave 3: X4.
 - 2026-11-19 S6 wave 3: X4 partial (story & save tools built, 138 tests); needs clock reset, sent to X2 (owner of clock.ts), then X4 wires it.
+- 2026-11-19 S6 wave 3: X2 added resetGameClockOffset (1406 tests pass); X4 resumed to wire it and drop the reload.
