@@ -171,28 +171,19 @@ export interface ResetHost {
   flush(): Promise<void>;
   /** The cheats back to what a test build starts with: free buys ON, speed 1x, no store answer, clock offset 0. */
   defaults(): void;
-  /** The clock offset now: the setter only moves forward, so it can still be above 0 after `defaults`. */
-  clockOffset(): number;
-  /** Reload the page: the cleared cheats key then puts the offset at 0. */
-  reload(): void;
   /** Start a new game in the store (it saves under the test key). */
   newGame(): Promise<void>;
 }
 
 /**
  * Clear the test save, the backup slot, the test cheats and the store's test prefs, put the cheats back to their defaults and start a new game.
- * Never touches the real save. When the clock offset cannot be put back from here (it only moves forward), the page reloads on the cleared keys
- * instead of starting a game stamped with a clock the next launch will not have.
+ * Never touches the real save. `defaults` puts the clock offset back to 0 before the new game, so its save is stamped with the wall clock; the cheats key
+ * is cleared (not rewritten), so the next launch starts from the same defaults.
  */
-export async function resetTestSave(host: ResetHost): Promise<{ reloaded: boolean }> {
+export async function resetTestSave(host: ResetHost): Promise<void> {
   assertTestKey(host.saveKey);
   await host.flush();
   for (const key of RESET_KEYS) await host.storage.removeItem(key);
   host.defaults();
-  if (host.clockOffset() > 0) {
-    host.reload();
-    return { reloaded: true };
-  }
   await host.newGame();
-  return { reloaded: false };
 }

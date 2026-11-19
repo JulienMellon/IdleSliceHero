@@ -24,7 +24,8 @@ jest.mock('../../services', () => ({
 import { CITIES, cityOf } from '../../content/cities';
 import { STORY_PACING } from '../../content/tuning';
 import { TEST_PREFS_KEY } from '../../components/store/store-model';
-import { challengeOffered, firstHood, migrate, newGame, pendingScenes, sceneId, TUTORIAL_DONE, type GameState } from '../../engine/game';
+import { gameClockOffset, gameSpeed, resetGameClockOffset, setGameClockOffset, setGameSpeed } from '../../engine/clock';
+import { challengeOffered, firstHood, freeBuysOn, migrate, newGame, pendingScenes, setFreeBuys, sceneId, TUTORIAL_DONE, type GameState } from '../../engine/game';
 import { coachStep, tutorialAdvance } from '../../engine/tutorial';
 import { CHEATS_KEY } from '../cheat-prefs';
 import { BACKUP_KEY, REAL_SAVE_KEY, TEST_SAVE_KEY, type JumpHost, type KeyValue } from '../jumps';
@@ -275,8 +276,8 @@ describe('Export and import (steps 3 and 4)', () => {
 
 describe('Reset test save (step 5)', () => {
   const REAL = '{"real":"player save"}';
-  /** A reset host over a fake storage that holds every test key and the real save, with a clock offset the defaults can (or cannot) clear. */
-  function resetFixture(canClearClock: boolean) {
+  /** A reset host over a fake storage that holds every test key and the real save; its defaults are the real clock and cheat setters. */
+  function resetFixture() {
     const fake = fakeStorage({
       [TEST_SAVE_KEY]: '{"a":1}',
       [BACKUP_KEY]: '{"b":2}',
@@ -284,49 +285,48 @@ describe('Reset test save (step 5)', () => {
       [TEST_PREFS_KEY]: '{"starterOffered":true}',
       [REAL_SAVE_KEY]: REAL,
     });
-    const cheats = { freeBuys: false, speed: 16, offset: 86_400_000 };
     const calls: string[] = [];
+    let offsetAtNewGame = -1;
     const h: ResetHost = {
       storage: fake.storage,
       saveKey: TEST_SAVE_KEY,
       flush: async () => void calls.push('flush'),
       defaults: () => {
-        cheats.freeBuys = true;
-        cheats.speed = 1;
-        if (canClearClock) cheats.offset = 0;
+        setFreeBuys(true);
+        setGameSpeed(1);
+        resetGameClockOffset();
         calls.push('defaults');
       },
-      clockOffset: () => cheats.offset,
-      reload: () => void calls.push('reload'),
-      newGame: async () => void calls.push('newGame'),
+      newGame: async () => {
+        offsetAtNewGame = gameClockOffset();
+        calls.push('newGame');
+      },
     };
-    return { h, fake, cheats, calls };
+    return { h, fake, calls, offsetAtNewGame: () => offsetAtNewGame };
   }
 
-  it('clears the three test keys and the store prefs, puts the cheats back, leaves the v1 save and starts a new game', async () => {
-    const f = resetFixture(true);
-    const r = await resetTestSave(f.h);
-    expect(r).toEqual({ reloaded: false });
+  it('clears the test keys and the store prefs, puts the cheats and the clock offset back, leaves the v1 save and starts a new game', async () => {
+    setGameClockOffset(86_400_000);
+    setGameSpeed(16);
+    setFreeBuys(false);
+    expect(gameClockOffset()).toBe(86_400_000);
+    const f = resetFixture();
+    await resetTestSave(f.h);
     for (const k of [TEST_SAVE_KEY, BACKUP_KEY, CHEATS_KEY, TEST_PREFS_KEY]) expect(f.fake.data.has(k)).toBe(false);
     expect(RESET_KEYS).toEqual([TEST_SAVE_KEY, BACKUP_KEY, CHEATS_KEY, TEST_PREFS_KEY]);
     expect(f.fake.data.get(REAL_SAVE_KEY)).toBe(REAL);
     expect(f.fake.writes).not.toContain(REAL_SAVE_KEY);
     expect(f.fake.writes).not.toContain(`remove ${REAL_SAVE_KEY}`);
-    expect(f.cheats).toEqual({ freeBuys: true, speed: 1, offset: 0 });
+    expect(gameClockOffset()).toBe(0);
+    expect(gameSpeed()).toBe(1);
+    expect(freeBuysOn()).toBe(true);
+    // the new game is made on the wall clock, after the offset is gone
+    expect(f.offsetAtNewGame()).toBe(0);
     expect(f.calls).toEqual(['flush', 'defaults', 'newGame']);
   });
 
-  it('reloads on the cleared keys when the clock offset cannot be lowered from here, and starts no game stamped with it', async () => {
-    const f = resetFixture(false);
-    const r = await resetTestSave(f.h);
-    expect(r).toEqual({ reloaded: true });
-    expect(f.calls).toEqual(['flush', 'defaults', 'reload']);
-    expect(f.fake.data.has(CHEATS_KEY)).toBe(false);
-    expect(f.fake.data.get(REAL_SAVE_KEY)).toBe(REAL);
-  });
-
   it('refuses a host that names the real save, clearing nothing', async () => {
-    const f = resetFixture(true);
+    const f = resetFixture();
     await expect(resetTestSave({ ...f.h, saveKey: REAL_SAVE_KEY })).rejects.toThrow(/test saves/);
     expect(f.fake.writes).toEqual([]);
   });

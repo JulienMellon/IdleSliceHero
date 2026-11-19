@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { NO_PREFS } from '../components/store/store-model';
-import { gameClockOffset, gameNow, setGameClockOffset, setGameSpeed } from '../engine/clock';
+import { gameNow, resetGameClockOffset, setGameSpeed } from '../engine/clock';
 import { setFreeBuys } from '../engine/game';
 import { setTestBuyAnswer } from '../services/purchases.web';
 import { useGame } from '../store/game-store';
@@ -43,11 +43,9 @@ const resetHost: ResetHost = {
   defaults: () => {
     setFreeBuys(true);
     setGameSpeed(1);
-    setGameClockOffset(0);
+    resetGameClockOffset();
     setTestBuyAnswer(null);
   },
-  clockOffset: gameClockOffset,
-  reload: () => globalThis.location?.reload(),
   newGame: async () => {
     useGame.setState({ prefs: NO_PREFS });
     await useGame.getState().resetGame();
@@ -128,9 +126,9 @@ export function StorySaveBody() {
   const doReset = async () => {
     setBusy(true);
     try {
-      const r = await resetTestSave(resetHost);
+      await resetTestSave(resetHost);
       setConfirmReset(false);
-      setMessage(r.reloaded ? 'Reset. Reloading to put the test clock at 0…' : 'Reset: a new game, free buys ON, 1×, clock offset 0');
+      setMessage('Reset: a new game, free buys ON, 1×, clock offset 0');
     } catch (e) {
       setMessage(`Failed: ${(e as Error).message}`);
     } finally {
