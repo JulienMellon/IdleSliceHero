@@ -61,7 +61,11 @@ export const rackCapacity = (tier: number): number => (tier > 0 ? BOATS.rack.cap
 export function rackPrice(g: GameState): number | null {
   const tier = read(g).tier;
   if (tier >= MAX_TIER) return null;
-  return Math.max(1, Math.ceil(BOATS.rack.minutes[tier] * 60 * shopRevenue(hoodOf(g), g.shops[hoodOf(g)], g.vehicle, undefined, cityOf(g))));
+  // a pack with no boats hood (C154) has no shop to price from: no price, never a throw
+  const id = hoodOf(g);
+  const shop = g.shops[id];
+  if (!shop) return null;
+  return Math.max(1, Math.ceil(BOATS.rack.minutes[tier] * 60 * shopRevenue(id, shop, g.vehicle, undefined, cityOf(g))));
 }
 
 /** Why the next tier can't be bought yet (other than cash), or null. */

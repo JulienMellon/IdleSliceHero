@@ -75,8 +75,8 @@ describe('a pack with no layers plays (T111)', () => {
     });
   });
 
-  // C154 (features/layers/boats.ts, card R1L's file): `hoodOf` is '' with no boats shop, and `rackPrice` reads shopRevenue('') and throws. Flip to `it` when it is fixed.
-  it.failing('the rack price is null, not a throw (C154)', () => {
+  // C154: `hoodOf` is '' with no boats shop; `rackPrice` returns null instead of reading shopRevenue('')
+  it('the rack price is null, not a throw (C154)', () => {
     withFeatures(layers, () => expect(rackPrice(g)).toBeNull());
   });
 });
