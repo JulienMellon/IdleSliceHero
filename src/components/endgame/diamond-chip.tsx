@@ -16,7 +16,17 @@ export const DiamondChip = memo(function DiamondChip() {
   const text = useGame((s) => (rewardsUnlocked(s.game) ? count(Math.floor(s.game.rewards.diamonds)) : ''));
   if (!text) return null;
   return (
-    <Pressable testID="shop-chip" hitSlop={HUD_BUTTON_SLOP.shop} accessibilityRole="button" accessibilityLabel={`Shop: ${text} diamonds`} onPress={() => { haptic(); router.push('/shop'); }} style={styles.chip}>
+    <Pressable
+      testID="shop-chip"
+      hitSlop={HUD_BUTTON_SLOP.shop}
+      accessibilityRole="button"
+      accessibilityLabel={`Shop: ${text} diamonds`}
+      onPress={() => {
+        haptic();
+        router.push('/shop');
+      }}
+      style={styles.chip}
+    >
       <DiamondIcon size={16} />
       <Text style={styles.text} numberOfLines={1} maxFontSizeMultiplier={1.1}>
         {text}
@@ -26,6 +36,13 @@ export const DiamondChip = memo(function DiamondChip() {
 });
 
 const styles = StyleSheet.create({
-  chip: { width: HUD_ICON, height: HUD_ICON, borderRadius: HUD_ICON / 2, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
+  chip: {
+    width: HUD_ICON,
+    height: HUD_ICON,
+    borderRadius: HUD_ICON / 2,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   text: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: '#fff' },
 });

@@ -1,17 +1,29 @@
 /// <reference types="jest" />
-import { ORDER, ORDER_CAST, ORDER_FAIL_LINE } from '../../content/hooks';
-import { NEIGHBORHOODS } from '../../content/tuning';
+import { ORDER, ORDER_FAIL_LINE } from '../../content/hooks';
 import type { NeighborhoodId } from '../../content/types';
 import * as G from '../game';
 import * as O from '../orders';
 import * as R from '../rewards';
 
+import { HOME_FIT } from '../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
+import { HOME_ORDER_CAST as ORDER_CAST } from '../../content/cities/home/voice';
 const T0 = 1_700_000_000_000;
 
 /** The Suburbs shop built and run by its heads, Nonna in charge Downtown, both characters met. */
 const ready = (): G.GameState => {
   const s = G.newGame(T0);
-  const run = (id: NeighborhoodId, lv: number) => ({ ...s.shops[id], built: true, managed: true, heads: G.allHeads(), prep: lv, ovens: lv, counter: lv, drivers: lv + 2, tables: lv });
+  const run = (id: NeighborhoodId, lv: number) => ({
+    ...s.shops[id],
+    built: true,
+    managed: true,
+    heads: G.allHeads(),
+    prep: lv,
+    ovens: lv,
+    counter: lv,
+    drivers: lv + 2,
+    tables: lv,
+  });
   return {
     ...s,
     tutorial: G.TUTORIAL_DONE,
@@ -36,7 +48,10 @@ const untilOffer = (s: G.GameState, limit = 900): G.GameState => {
   return s;
 };
 /** The same shop having sold `n` more pies. */
-const sold = (s: G.GameState, id: NeighborhoodId, n: number): G.GameState => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], sold: s.shops[id].sold + n } } });
+const sold = (s: G.GameState, id: NeighborhoodId, n: number): G.GameState => ({
+  ...s,
+  shops: { ...s.shops, [id]: { ...s.shops[id], sold: s.shops[id].sold + n } },
+});
 
 describe('when an offer comes', () => {
   test('never before the Suburbs shop is built, and never during the tutorial', () => {
@@ -44,7 +59,12 @@ describe('when an offer comes', () => {
     expect(O.ordersUnlocked(noShop)).toBe(false);
     expect(run(noShop, 900).order.offer).toBeNull();
     // Suburbs built by a hand-edited save, but Nonna has not taken over: still the tutorial
-    const tutorial = { ...ready(), seenScenes: ['downtown-1'], tutorial: 4, shops: { ...ready().shops, downtown: { ...ready().shops.downtown, managed: false, heads: G.noHeads() } } };
+    const tutorial = {
+      ...ready(),
+      seenScenes: ['downtown-1'],
+      tutorial: 4,
+      shops: { ...ready().shops, downtown: { ...ready().shops.downtown, managed: false, heads: G.noHeads() } },
+    };
     expect(O.ordersUnlocked(tutorial)).toBe(false);
     expect(run(tutorial, 900).order.offer).toBeNull();
     expect(run(tutorial, 900).order.made).toBe(0);
@@ -140,9 +160,13 @@ describe('when an offer comes', () => {
         }
       } else if (cur.order.offer && cur.order.offer.left > ORDER.offerWaitSeconds - 0.3) {
         const k = cur.order.made % 3;
-        if (k === 0) { cur = O.acceptOrder(cur); accepted++; }
-        else if (k === 1) { cur = O.declineOrder(cur); declined++; }
-        else ignored++;
+        if (k === 0) {
+          cur = O.acceptOrder(cur);
+          accepted++;
+        } else if (k === 1) {
+          cur = O.declineOrder(cur);
+          declined++;
+        } else ignored++;
       }
       expect(cur.order.offer !== null && cur.order.active !== null).toBe(false);
     }
@@ -169,7 +193,12 @@ describe('how big an order is', () => {
     const s = ready();
     const at = (lv: number) => {
       const t = { ...s, shops: { ...s.shops, suburbs: { ...s.shops.suburbs, prep: lv, ovens: lv, counter: lv, drivers: lv + 2, tables: lv } } };
-      return { t, target: O.orderTarget(t, 'suburbs'), pps: G.shopRate(t.shops.suburbs, t.vehicle), rushed: O.rushedRate(t.shops.suburbs, t.vehicle) };
+      return {
+        t,
+        target: O.orderTarget(t, 'suburbs'),
+        pps: G.shopRate(t.shops.suburbs, t.vehicle, HOME_FIT),
+        rushed: O.rushedRate(t.shops.suburbs, t.vehicle, HOME_FIT),
+      };
     };
     const lo = at(5);
     const mid = at(12);
@@ -188,8 +217,8 @@ describe('how big an order is', () => {
   test('a shop with three heads and no GM has no rush: its target is the plain rate’s', () => {
     const s = ready();
     const heads = { ...s, shops: { ...s.shops, suburbs: { ...s.shops.suburbs, managed: false } } };
-    const rate = G.shopRate(heads.shops.suburbs, heads.vehicle);
-    expect(O.rushedRate(heads.shops.suburbs, heads.vehicle)).toBe(rate);
+    const rate = G.shopRate(heads.shops.suburbs, heads.vehicle, HOME_FIT);
+    expect(O.rushedRate(heads.shops.suburbs, heads.vehicle, HOME_FIT)).toBe(rate);
     expect(O.orderTarget(heads, 'suburbs')).toBe(O.friendlyTarget(rate * ORDER.windowSeconds * ORDER.targetMargin));
   });
 
@@ -239,8 +268,8 @@ describe('an order can be won by playing (v5.16)', () => {
   test('the demand-limited shops are limited by demand, the kitchen-limited ones by the kitchen', () => {
     for (const [name, lv, drivers, tables] of SHOPS) {
       const sh = { ...ready().shops.suburbs, prep: lv, ovens: lv, counter: lv, drivers, tables, footprint: 3 };
-      const kitchen = Math.min(G.prepRate(sh), G.ovenRate(sh), G.counterRate(sh));
-      expect([name, G.demandRate(sh, 0) < kitchen]).toEqual([name, name.startsWith('demand')]);
+      const kitchen = Math.min(G.prepRate(sh), G.ovenRate(sh, HOME_FIT), G.counterRate(sh));
+      expect([name, G.demandRate(sh, 0, HOME_FIT) < kitchen]).toEqual([name, name.startsWith('demand')]);
     }
   });
 });
@@ -278,7 +307,10 @@ describe('an order from accept to the end', () => {
     expect(done.order.result!.reward).toBeCloseTo(reward, 6);
     expect(done.order.nextAt).toBeCloseTo(done.playSeconds + ORDER.gapSeconds, 6);
     // paid on the income of the day (a better shop pays more), not the one at accept time
-    const richer = { ...partway, shops: { ...partway.shops, downtown: { ...partway.shops.downtown, prep: 60, ovens: 60, counter: 60, drivers: 60, tables: 60 } } };
+    const richer = {
+      ...partway,
+      shops: { ...partway.shops, downtown: { ...partway.shops.downtown, prep: 60, ovens: 60, counter: 60, drivers: 60, tables: 60 } },
+    };
     expect(step(sold(richer, a.hood, 1)).cash - richer.cash).toBeGreaterThan(reward);
     // the flash lasts 2.5 s
     expect(run(done, 2.3).order.result).not.toBeNull();

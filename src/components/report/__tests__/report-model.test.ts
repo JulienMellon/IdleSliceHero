@@ -1,15 +1,38 @@
 // The shop report as data (card P1): which line the strip shows, whose voice, that it fits an iPhone SE beside the manager's face, the
 // sheet, and the cards' effect lines.
 import { COPY, MANAGER_COPY_KEY, type CopyKey } from '../../../content/service';
-import { MANAGERS, NONNA_TAKEOVER } from '../../../content/tuning';
 import type { NeighborhoodId } from '../../../content/types';
 import { withFeatures } from '../../../engine/features';
 import { reportView, service } from '../../../engine/features/service';
 import * as G from '../../../engine/game';
-import { lampInitial, stripLineHeight, compactEffect, copy, drawerLine, effectLine, fill, HIDDEN_STRIP, lampWord, noGainLine, sheetModel, STRIP, stripFont, stripKind, stripLine, stripModel, stripTextWidth, wrapLines } from '../report-model';
+import {
+  lampInitial,
+  stripLineHeight,
+  compactEffect,
+  copy,
+  drawerLine,
+  effectLine,
+  fill,
+  HIDDEN_STRIP,
+  lampWord,
+  noGainLine,
+  sheetModel,
+  STRIP,
+  stripFont,
+  stripKind,
+  stripLine,
+  stripModel,
+  stripTextWidth,
+  wrapLines,
+} from '../report-model';
 
+import { NONNA_TAKEOVER } from '../../../content/cities/home/fit';
+import { MANAGERS } from '../../../content/cities/home/data';
 const T0 = 1_800_000_000_000;
-const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
+const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } },
+});
 function shop(lv: number, d: number, t: number, patch: Partial<G.Shop> = {}): G.GameState {
   let g = G.newGame(T0);
   g = { ...g, seenScenes: [...g.seenScenes, NONNA_TAKEOVER.sceneId] };
@@ -211,7 +234,13 @@ describe('the strip in Boston', () => {
     const g = { ...g0, shops: { ...g0.shops, 'north-end': { ...g0.shops['north-end'], managed: true } } };
     const v = reportView(g, 'north-end', 0);
     for (const kind of ['kitchen', 'quiet', 'tipping', 'cold'] as const) {
-      expect(stripLine({ ...v, state: kind === 'cold' ? 'cold' : 'tipping', kitchenLimits: kind === 'kitchen', floorRatio: kind === 'quiet' ? 0.1 : v.floorRatio }, 'north-end', true)?.text ?? '').not.toMatch(/undefined/);
+      expect(
+        stripLine(
+          { ...v, state: kind === 'cold' ? 'cold' : 'tipping', kitchenLimits: kind === 'kitchen', floorRatio: kind === 'quiet' ? 0.1 : v.floorRatio },
+          'north-end',
+          true,
+        )?.text ?? '',
+      ).not.toMatch(/undefined/);
     }
     expect(stripModel(g, 'north-end', 0).manager === '' || stripModel(g, 'north-end', 0).manager === 'father-dom').toBe(true);
   });

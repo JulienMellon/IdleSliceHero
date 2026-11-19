@@ -45,8 +45,22 @@ export const RecipeReveal = memo(function RecipeReveal() {
   if (!head) return null;
   return (
     <View pointerEvents="box-none" style={styles.layer}>
-      <Animated.View ref={root} testID="recipe-reveal" style={{ transform: [{ scaleX: flip.interpolate({ inputRange: [0, 1], outputRange: [0.04, 1] }) }, { scale: flip.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.8, 1.06, 1] }) }] }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={`${RECIPE_HEADER}: ${head.text}. ${head.sub}. Dismiss`} onPress={() => setQueue((q) => q.slice(1))} style={[styles.card, { width: Math.max(revealWidth(width), Math.min(width - 24, 340)) }]}>
+      <Animated.View
+        ref={root}
+        testID="recipe-reveal"
+        style={{
+          transform: [
+            { scaleX: flip.interpolate({ inputRange: [0, 1], outputRange: [0.04, 1] }) },
+            { scale: flip.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.8, 1.06, 1] }) },
+          ],
+        }}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${RECIPE_HEADER}: ${head.text}. ${head.sub}. Dismiss`}
+          onPress={() => setQueue((q) => q.slice(1))}
+          style={[styles.card, { width: Math.max(revealWidth(width), Math.min(width - 24, 340)) }]}
+        >
           {/* D478: picture left, words right: the card is about 90 pt tall, wide so the words take few lines, so it stays in the sky band and the kitchen shows */}
           <RecipeArt hood={head.hood} n={head.n} owned size={52} />
           <View style={styles.words}>
@@ -66,7 +80,18 @@ export const RecipeReveal = memo(function RecipeReveal() {
 
 const styles = StyleSheet.create({
   layer: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'flex-start', paddingTop: 8 },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 18, borderWidth: 3, borderColor: C.cheeseDark, backgroundColor: '#FFF9EC', boxShadow: '0 6px 0 rgba(59,31,20,0.3)' } as object,
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    borderWidth: 3,
+    borderColor: C.cheeseDark,
+    backgroundColor: '#FFF9EC',
+    boxShadow: '0 6px 0 rgba(59,31,20,0.3)',
+  } as object,
   words: { flex: 1, gap: 2 },
   header: { fontFamily: F.bold, fontSize: 12, letterSpacing: 1.5, color: C.tomato },
   name: { fontFamily: F.bold, fontSize: 16, lineHeight: 19, color: C.ink, textAlign: 'left' },

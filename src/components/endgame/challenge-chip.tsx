@@ -7,6 +7,7 @@
 import { memo, useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { cityOf } from '../../content/cities';
 import { ORDER_VIEW } from '../../content/hooks';
 import { money } from '../../engine/format';
 import { attackView } from '../../engine/features/counterattack';
@@ -14,7 +15,7 @@ import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { haptic } from '../game-ui';
 import { RUSH_HINT } from '../order-model';
-import { Portrait } from '../portrait';
+import { Portrait } from '../portrait/index';
 import { emitCheer, emitCoin, emitPayout } from '../pulse-bus';
 import { TAP } from '../tap-targets';
 import { attackLite, barPct, challengeView, RESULT_MS, resultView, winDiamondsText } from './attack-model';
@@ -69,12 +70,21 @@ export const ChallengeChip = memo(function ChallengeChip({ shown = true }: { sho
   const g = useGame.getState().game;
   const view = attackView(g, gameNow());
   const run = challengeView(view);
-  const result = resultView(view);
+  const result = resultView(view, cityOf(g));
   if (face === 'running' && run) {
     const { setActive } = useGame.getState();
     return (
       <View testID="challenge-chip" style={styles.chip}>
-        <Pressable testID="challenge-active" accessibilityRole="button" accessibilityLabel={`${run.title}: ${run.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); setActive(run.shopId); }}>
+        <Pressable
+          testID="challenge-active"
+          accessibilityRole="button"
+          accessibilityLabel={`${run.title}: ${run.progress}. Show the shop`}
+          style={styles.row}
+          onPress={() => {
+            haptic();
+            setActive(run.shopId);
+          }}
+        >
           <Portrait id="victor-crust" mood="angry" size={40} />
           <View style={styles.mid}>
             <Text style={styles.name} numberOfLines={1}>{`${run.title} · ${run.name}`}</Text>
@@ -105,9 +115,18 @@ export const ChallengeChip = memo(function ChallengeChip({ shown = true }: { sho
   if (!result) return null;
   const won = result.kind === 'won';
   return (
-    <Animated.View ref={root} testID={`challenge-${result.kind}`} style={[styles.chip, won ? styles.chipWon : styles.chipLost, won && { transform: [{ scaleX: flip }] }]}>
+    <Animated.View
+      ref={root}
+      testID={`challenge-${result.kind}`}
+      style={[styles.chip, won ? styles.chipWon : styles.chipLost, won && { transform: [{ scaleX: flip }] }]}
+    >
       {won && <Animated.View pointerEvents="none" style={[styles.glow, { opacity: flash }]} />}
-      <Pressable accessibilityRole="button" accessibilityLabel={`${result.speaker}: ${result.line}. Dismiss`} style={styles.row} onPress={() => useGame.getState().ackEndgame('attack')}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${result.speaker}: ${result.line}. Dismiss`}
+        style={styles.row}
+        onPress={() => useGame.getState().ackEndgame('attack')}
+      >
         <Animated.View style={{ transform: [{ scale: bounce }] }}>
           <Portrait id={result.who} mood={won ? 'happy' : 'sad'} size={40} />
         </Animated.View>
@@ -131,7 +150,19 @@ export const ChallengeChip = memo(function ChallengeChip({ shown = true }: { sho
 });
 
 const styles = StyleSheet.create({
-  chip: { height: STACK.chip, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF4DC', borderWidth: 2, borderColor: '#5A2E1A', borderRadius: 16, paddingLeft: 8, paddingRight: 4, overflow: 'hidden', boxShadow: '0 3px 0 rgba(59,31,20,0.25)' } as object,
+  chip: {
+    height: STACK.chip,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF4DC',
+    borderWidth: 2,
+    borderColor: '#5A2E1A',
+    borderRadius: 16,
+    paddingLeft: 8,
+    paddingRight: 4,
+    overflow: 'hidden',
+    boxShadow: '0 3px 0 rgba(59,31,20,0.25)',
+  } as object,
   chipWon: { backgroundColor: '#FFD04A', borderColor: C.cheeseDark },
   chipLost: { backgroundColor: '#EFE6D8', borderColor: C.inkSoft },
   row: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: TAP.min },

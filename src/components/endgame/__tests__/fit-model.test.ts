@@ -1,11 +1,12 @@
 /// <reference types="jest" />
-import { FOOTPRINTS, NEIGHBORHOODS } from '../../../content/tuning';
 import * as G from '../../../engine/game';
 import { money } from '../../../engine/format';
 import { goalLine, goalLabelFit, masteryGoal } from '../../goal-model';
 import { SIDEWALK_ROW, TAP } from '../../tap-targets';
 import { cardFonts, cardTextWidths, cashFont, cashWidth, fits, fitFont, HUD_ICON, iconWidth, MIN_FONT, rateLine, SCRAPBOOK_HEAD } from '../fit-model';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../../content/cities/home/data';
 // iPhone SE (320 pt) and a 393 pt phone. Plain arithmetic: nothing here can be seen in a screenshot, so it is proved here.
 const SE = 320;
 const BIG = 393;
@@ -45,7 +46,10 @@ describe('G102: sidewalk cards at iPhone SE width', () => {
   });
 
   test('every price up to six characters fits its card at 393 pt, and up to five at 320 pt (a six-character one gets 33 of the 36 pt it wants: it ellipsizes before it shrinks under 10)', () => {
-    for (const [screen, longest] of [[BIG, 6], [SE, 5]] as const) {
+    for (const [screen, longest] of [
+      [BIG, 6],
+      [SE, 5],
+    ] as const) {
       for (const chip of [true, false]) {
         const w = cardTextWidths(screen, [1, 1, 1, 1], { chip, framed: true })[0];
         for (const price of PRICES.filter((p) => p.length <= longest)) {
@@ -75,7 +79,12 @@ describe('G102: sidewalk cards at iPhone SE width', () => {
   test('a merged card of two slots: the bundle title, the Expand title and the buy label fit (at 320 pt: up to 14 characters; "Buy both $83.2T" ellipsizes rather than go under 10 pt)', () => {
     for (const screen of [SE, BIG]) {
       const w = cardTextWidths(screen, [2, 1, 1], { chip: true, framed: true });
-      for (const [label, sub] of [['Buy both $83.2K', 'PREP + OVENS'], ['$83.2T', 'EXPAND \u00B7 Double'], ['Buy both $35', 'PREP + OVENS'], ['Buy both $83.2T', 'PREP + OVENS']] as const) {
+      for (const [label, sub] of [
+        ['Buy both $83.2K', 'PREP + OVENS'],
+        ['$83.2T', 'EXPAND \u00B7 Double'],
+        ['Buy both $35', 'PREP + OVENS'],
+        ['Buy both $83.2T', 'PREP + OVENS'],
+      ] as const) {
         const f = cardFonts(w[0], { label, sub });
         expect(f.label).toBeGreaterThanOrEqual(10);
         expect(f.sub).toBe(10);
@@ -88,7 +97,11 @@ describe('G102: sidewalk cards at iPhone SE width', () => {
   test('the Expand title is one word of the tier name', () => {
     const s = (() => {
       const g = G.newGame(0);
-      return { ...g, cash: 1e9, shops: { ...g.shops, downtown: { ...g.shops.downtown, managed: true, prep: 25, ovens: 25, counter: 25, drivers: 25, footprint: 0 } } };
+      return {
+        ...g,
+        cash: 1e9,
+        shops: { ...g.shops, downtown: { ...g.shops.downtown, managed: true, prep: 25, ovens: 25, counter: 25, drivers: 25, footprint: 0 } },
+      };
     })();
     // every tier's first word is short enough for a three-card span at 320 pt
     for (const t of FOOTPRINTS.slice(1)) {
@@ -147,7 +160,8 @@ describe('G98: the mastery goal line beside the oven chip and the event chip', (
   const IDS = NEIGHBORHOODS.map((n) => n.id);
   const city = (): G.GameState => {
     let g = G.newGame(1_700_000_000_000);
-    for (const id of IDS) g = { ...g, shops: { ...g.shops, [id]: { ...g.shops[id], built: true, managed: true, heads: G.allHeads(), footprint: id === 'waterfront' ? 3 : 0 } } };
+    for (const id of IDS)
+      g = { ...g, shops: { ...g.shops, [id]: { ...g.shops[id], built: true, managed: true, heads: G.allHeads(), footprint: id === 'waterfront' ? 3 : 0 } } };
     return { ...g, seenScenes: ['uptown-4'] };
   };
   // the goal bar's width: 296 inside the HUD at 320 pt, less the 44 pt oven chip, the 60 pt event chip and their 8 pt gaps

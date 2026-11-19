@@ -4,7 +4,38 @@
 import { buildCast, sidewalkOf, type CastMember } from '../cast';
 import { alongDist, emptyCrew, routesFor, stepCrew, type CrewState } from '../crew';
 import { advanceLine, AUTOMATIC, emptyLine, type Line, type LineRates } from '../../../engine/pipeline';
-import { BACK_ROW_Y, DRIVER_QUEUE_PITCH, MORE_TAG_DRIVER_AIR, MORE_TAG_GAP, MORE_TAG_Z, MORE_TAG_Z_ALONE, PATIO_Y, PILL_LAYER_Y, SIGN_Y, DRIVER_SPOTS, FEET_IN, NEAR_ROW_Y, PATIO_HALF_W, PATIO_SEAT, PROP_Y, QUEUE_PITCH, QUEUE_Y, SEAT, TABLE_SET_HALF, TAG_MARGIN, TREE_Y, VEHICLE_HALF_W, WAIT_TAG_Z, canopyBox, layout, moreTagAt, moreTagRect, waitTagAt, waitTagRect, waitTagWidth } from './draw-layout';
+import {
+  BACK_ROW_Y,
+  DRIVER_QUEUE_PITCH,
+  MORE_TAG_DRIVER_AIR,
+  MORE_TAG_GAP,
+  MORE_TAG_Z,
+  MORE_TAG_Z_ALONE,
+  PATIO_Y,
+  PILL_LAYER_Y,
+  SIGN_Y,
+  DRIVER_SPOTS,
+  FEET_IN,
+  NEAR_ROW_Y,
+  PATIO_HALF_W,
+  PATIO_SEAT,
+  PROP_Y,
+  QUEUE_PITCH,
+  QUEUE_Y,
+  SEAT,
+  TABLE_SET_HALF,
+  TAG_MARGIN,
+  TREE_Y,
+  VEHICLE_HALF_W,
+  WAIT_TAG_Z,
+  canopyBox,
+  layout,
+  moreTagAt,
+  moreTagRect,
+  waitTagAt,
+  waitTagRect,
+  waitTagWidth,
+} from './draw-layout';
 import { driverCast, hash32, lookFor } from '../looks';
 import { driverFigures, queueLabel, queueOverflow, waitingText } from '../waiting';
 import { seatPalette } from '../palette';
@@ -72,7 +103,17 @@ function frames(shop: Shop, pace: number, burst = false) {
       const clock = f / FPS;
       line = advanceLine(line, 1 / FPS, r, AUTOMATIC).line;
       crew = stepCrew(crew, { lay: shop.lay, walkins: true, departures: line.departures }, clock, SCENE_W);
-      const { cast } = buildCast({ lay: shop.lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace, clock, shopSeed: shop.shopSeed, nIdx: 1, pal: shop.pal, crew });
+      const { cast } = buildCast({
+        lay: shop.lay,
+        shop: { drivers: 12, tables: 40, prep: 120 },
+        running: true,
+        pace,
+        clock,
+        shopSeed: shop.shopSeed,
+        nIdx: 1,
+        pal: shop.pal,
+        crew,
+      });
       out.push(cast);
     }
     frameCache.set(key, out);
@@ -151,13 +192,25 @@ describe('the counter (D336)', () => {
   test('no walk-in and driver overlap by more than 15% near the counter, in any frame (steady, sparse and burst)', () => {
     const bad: string[] = [];
     for (const shop of busyShops())
-      for (const [pace, burst] of [[1, false], [2.6, false], [0.3, false], [1, true]] as const)
+      for (const [pace, burst] of [
+        [1, false],
+        [2.6, false],
+        [0.3, false],
+        [1, true],
+      ] as const)
         frames(shop, pace, burst).forEach((cast, f) => {
           const near = (c: CastMember) => c.props.y > 30 && c.props.y < 70;
           const drivers = cast.filter((c) => c.role === 'driver' && near(c));
           const walkins = cast.filter((c) => c.role === 'walkin' && c.props.kind !== 'sit' && near(c));
-          for (const d of drivers) for (const w of walkins) if (overlap(box(d), box(w)) > 0.15) bad.push(`${shop.name} pace${pace}${burst ? " burst" : ""} f${f} ${w.key}${w.props.step ? "w" : "s"}@${w.props.x.toFixed(0)},${w.props.y.toFixed(0)}/${d.key}${d.props.step ? "w" : "s"}@${d.props.x.toFixed(0)},${d.props.y.toFixed(0)}`);
-          for (const a of drivers) for (const b of drivers) if (a !== b && !a.props.step && !b.props.step && overlap(box(a), box(b)) > 0.15) bad.push(`${shop.name} f${f} ${a.key}/${b.key} stacked`);
+          for (const d of drivers)
+            for (const w of walkins)
+              if (overlap(box(d), box(w)) > 0.15)
+                bad.push(
+                  `${shop.name} pace${pace}${burst ? ' burst' : ''} f${f} ${w.key}${w.props.step ? 'w' : 's'}@${w.props.x.toFixed(0)},${w.props.y.toFixed(0)}/${d.key}${d.props.step ? 'w' : 's'}@${d.props.x.toFixed(0)},${d.props.y.toFixed(0)}`,
+                );
+          for (const a of drivers)
+            for (const b of drivers)
+              if (a !== b && !a.props.step && !b.props.step && overlap(box(a), box(b)) > 0.15) bad.push(`${shop.name} f${f} ${a.key}/${b.key} stacked`);
         });
     expect(bad.slice(0, 5)).toEqual([]);
   });
@@ -165,7 +218,7 @@ describe('the counter (D336)', () => {
   // The old chair test only checked a seat existed at ±SEAT; the lone rug-table diner still sat on air because the
   // old backrest (x −7.5…−1.1) hid entirely behind their torso. Now the chair must be at the diner's own side, with its
   // back rail showing beside the torso and 6 above the shoulders (the old rail failed both: 0 visible, 5 above).
-  test('each seated figure\'s own chair has its back on the diner\'s back side, showing beside the torso, 6 above the shoulders', () => {
+  test("each seated figure's own chair has its back on the diner's back side, showing beside the torso, 6 above the shoulders", () => {
     const bad: string[] = [];
     for (const shop of busyShops())
       for (const pace of [1, 2.6])
@@ -178,7 +231,8 @@ describe('the counter (D336)', () => {
             const cb = chairBack(out);
             const visible = out < 0 ? -SEATED_TORSO_HALF - cb.x0 : cb.x1 - SEATED_TORSO_HALF; // rail width beyond the torso edge
             const aboveShoulders = bodyBy('sit', 0) - cb.rail.y0;
-            if (Boolean(c.props.flip) !== out > 0 || visible < 3 || aboveShoulders < 5.5) bad.push(`${shop.name} pace${pace} f${f} ${c.key} flip${c.props.flip} visible${visible} above${aboveShoulders}`);
+            if (Boolean(c.props.flip) !== out > 0 || visible < 3 || aboveShoulders < 5.5)
+              bad.push(`${shop.name} pace${pace} f${f} ${c.key} flip${c.props.flip} visible${visible} above${aboveShoulders}`);
           }
         });
     expect(bad.slice(0, 5)).toEqual([]);
@@ -195,7 +249,8 @@ describe('the tutorial hand (D384)', () => {
     for (const shop of busyShops()) {
       if (shop.lay.fp !== 0) continue;
       for (const pace of [1, 2.6])
-        for (const scale of [0.95, 1.25, 1.6]) // fit.s on a 375 pt wide phone … a tablet
+        for (const scale of [0.95, 1.25, 1.6])
+          // fit.s on a 375 pt wide phone … a tablet
           for (const st of ['prep', 'oven', 'counter'] as const) {
             const cut = spotlightCutout(stationRects(shop.lay, 44 / scale)[st]);
             for (const bounce of [0, 4]) {
@@ -206,7 +261,8 @@ describe('the tutorial hand (D384)', () => {
                 for (const c of cast) {
                   if (c.role === 'walkin' && c.props.kind !== 'sit') continue; // a guest in transit may cross any spot for a moment
                   const h = headOf(c);
-                  if (hand.rect.x0 < h.x1 && hand.rect.x1 > h.x0 && hand.rect.y0 < h.y1 && hand.rect.y1 > h.y0) bad.push(`${shop.name} ${st} s${scale} pace${pace} f${f} ${c.key}`);
+                  if (hand.rect.x0 < h.x1 && hand.rect.x1 > h.x0 && hand.rect.y0 < h.y1 && hand.rect.y1 > h.y0)
+                    bad.push(`${shop.name} ${st} s${scale} pace${pace} f${f} ${c.key}`);
                 }
               });
             }
@@ -225,7 +281,17 @@ describe('the sidewalk row (D352)', () => {
       for (let f = 0; f < SECONDS * FPS; f++) {
         line = advanceLine(line, 1 / FPS, r, AUTOMATIC).line;
         crew = stepCrew(crew, { lay: shop.lay, walkins: true, idle: true, departures: line.departures }, f / FPS, SCENE_W);
-        const { cast } = buildCast({ lay: shop.lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace: 1, clock: f / FPS, shopSeed: shop.shopSeed, nIdx: 1, pal: shop.pal, crew });
+        const { cast } = buildCast({
+          lay: shop.lay,
+          shop: { drivers: 12, tables: 40, prep: 120 },
+          running: true,
+          pace: 1,
+          clock: f / FPS,
+          shopSeed: shop.shopSeed,
+          nIdx: 1,
+          pal: shop.pal,
+          crew,
+        });
         // the row's top edge is at room depth ≈ −27.6; keep feet 4 pt clear of it
         for (const c of cast) if (c.role === 'walkin' || c.role === 'driver') expect([shop.name, c.key, c.props.y >= -22]).toEqual([shop.name, c.key, true]);
       }
@@ -269,7 +335,12 @@ describe('drivers and diners (D353)', () => {
         frames(shop, pace).forEach((cast, f) => {
           const drivers = cast.filter((c) => c.role === 'driver');
           const sitters = cast.filter((c) => c.props.kind === 'sit');
-          for (const d of drivers) for (const s of sitters) if (s.props.y < d.props.y && overlap(box(d), box(s)) > (d.props.step ? 0.3 : 0.15)) bad.push(`${shop.name} pace${pace} f${f} ${s.key}@${s.props.x.toFixed(0)},${s.props.y.toFixed(0)} over ${d.key}@${d.props.x.toFixed(0)},${d.props.y.toFixed(0)}${d.props.step ? "w" : "s"} ${overlap(box(d), box(s)).toFixed(2)}`);
+          for (const d of drivers)
+            for (const s of sitters)
+              if (s.props.y < d.props.y && overlap(box(d), box(s)) > (d.props.step ? 0.3 : 0.15))
+                bad.push(
+                  `${shop.name} pace${pace} f${f} ${s.key}@${s.props.x.toFixed(0)},${s.props.y.toFixed(0)} over ${d.key}@${d.props.x.toFixed(0)},${d.props.y.toFixed(0)}${d.props.step ? 'w' : 's'} ${overlap(box(d), box(s)).toFixed(2)}`,
+                );
         });
     expect(bad.slice(0, 5)).toEqual([]);
   });
@@ -345,7 +416,8 @@ describe('the doorway sign (D377)', () => {
       for (const pace of [1, 2.6])
         frames(shop, pace).forEach((cast, f) => {
           for (const c of cast)
-            if ((c.role === 'walkin' && c.props.kind !== 'sit') || c.role === 'driver') if (hits(headOf(c), sign)) bad.push(`${shop.name} pace${pace} f${f} ${c.key}@${c.props.x.toFixed(0)},${c.props.y.toFixed(0)}`);
+            if ((c.role === 'walkin' && c.props.kind !== 'sit') || c.role === 'driver')
+              if (hits(headOf(c), sign)) bad.push(`${shop.name} pace${pace} f${f} ${c.key}@${c.props.x.toFixed(0)},${c.props.y.toFixed(0)}`);
         });
     }
     expect(bad.slice(0, 5)).toEqual([]);
@@ -353,8 +425,14 @@ describe('the doorway sign (D377)', () => {
   test('the order spot and the pickup spots keep their heads clear of the plank (and a figure by the door would not)', () => {
     for (const shop of busyShops()) {
       const sign = doorwaySignRect(shop.lay);
-      const at = (x: number, y: number, role: 'walkin' | 'driver'): CastMember => ({ key: 'p', sortY: y, role, props: { x, y, kind: role === 'driver' ? 'driver' : 'guest', step: 0 } });
-      for (const [x, y] of shop.lay.orderSpots.slice(0, 1)) expect([shop.name, 'order', hits(headOf(at(x, y, 'walkin')), sign)]).toEqual([shop.name, 'order', false]);
+      const at = (x: number, y: number, role: 'walkin' | 'driver'): CastMember => ({
+        key: 'p',
+        sortY: y,
+        role,
+        props: { x, y, kind: role === 'driver' ? 'driver' : 'guest', step: 0 },
+      });
+      for (const [x, y] of shop.lay.orderSpots.slice(0, 1))
+        expect([shop.name, 'order', hits(headOf(at(x, y, 'walkin')), sign)]).toEqual([shop.name, 'order', false]);
       for (const sp of shop.lay.spots) expect([shop.name, 'pickup', hits(headOf(at(sp.x, sp.y, 'driver')), sign)]).toEqual([shop.name, 'pickup', false]);
       expect(hits(headOf(at(unprojectX((sign.x0 + sign.x1) / 2, 60), 60, 'walkin')), sign)).toBe(true); // the control: a figure standing at the door (the v5.2 spot, the counter's right end, was one until the wide tiers moved the counter away from it)
     }
@@ -368,7 +446,11 @@ describe('seated diners have chairs (D354)', () => {
       for (const pace of [1, 2.6])
         frames(shop, pace).forEach((cast, f) => {
           for (const c of cast)
-            if (c.props.kind === 'sit' && !shop.lay.tables.some((tb) => Math.abs(tb.y - c.props.y) < 0.01 && Math.abs(Math.abs(c.props.x - tb.x) - SEAT) < 0.01)) bad.push(`${shop.name} pace${pace} f${f} ${c.key}@${c.props.x.toFixed(1)},${c.props.y}`);
+            if (
+              c.props.kind === 'sit' &&
+              !shop.lay.tables.some((tb) => Math.abs(tb.y - c.props.y) < 0.01 && Math.abs(Math.abs(c.props.x - tb.x) - SEAT) < 0.01)
+            )
+              bad.push(`${shop.name} pace${pace} f${f} ${c.key}@${c.props.x.toFixed(1)},${c.props.y}`);
         });
     expect(bad.slice(0, 5)).toEqual([]);
   });
@@ -383,7 +465,8 @@ const NARROW_S = 375 / 393;
 
 /** The top edge (scene units) of the sidewalk row on a phone where the scene is scaled by `s`. `stacked`: the no-GM hire stack. */
 const rowTop = (s: number, stacked: boolean) =>
-  SCENE_H - ((SCENE_H - CURB_Y) * s + (stacked ? SIDEWALK_ROW.raiseIdle + SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.raiseManaged + SIDEWALK_ROW.cardHeight)) / s;
+  SCENE_H -
+  ((SCENE_H - CURB_Y) * s + (stacked ? SIDEWALK_ROW.raiseIdle + SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.raiseManaged + SIDEWALK_ROW.cardHeight)) / s;
 
 interface SideShop {
   name: string;
@@ -398,7 +481,11 @@ interface SideShop {
 /** Every footprint with a full sidewalk (4 hungry diners, 37 idle drivers = 4 figures, every patio table the layout has room for), a lone starter table, and an idle shop. */
 function* sideShops(): Generator<SideShop> {
   for (let fp = 0; fp < 5; fp++)
-    for (const [tag, tables, patio, idle] of [['full', 6, 2, false], ['solo', 1, 0, false], ['idle', 6, 2, true]] as const) {
+    for (const [tag, tables, patio, idle] of [
+      ['full', 6, 2, false],
+      ['solo', 1, 0, false],
+      ['idle', 6, 2, true],
+    ] as const) {
       const lay = layout(fp, Math.min(fp + 1, 6), 3, 2, tables, DRIVER_SLOTS[fp], 1);
       const shopSeed = 97 * (fp + 3);
       const pal = seatPalette(hash32(shopSeed) % 8, hash32(shopSeed + 9) % 6, 8, 6, lay.tables.length + patio);
@@ -417,7 +504,20 @@ function sideFrames(sh: SideShop) {
       const clock = f / SIDE_FPS;
       line = advanceLine(line, 1 / SIDE_FPS, r, AUTOMATIC).line;
       crew = stepCrew(crew, { lay: sh.lay, walkins: true, idle: sh.idle, patio: sh.patio, departures: line.departures }, clock, SCENE_W);
-      out.push(buildCast({ lay: sh.lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace: 1.5, clock, shopSeed: sh.shopSeed, nIdx: 1, pal: sh.pal, crew, queue: sh.queue }).cast);
+      out.push(
+        buildCast({
+          lay: sh.lay,
+          shop: { drivers: 12, tables: 40, prep: 120 },
+          running: true,
+          pace: 1.5,
+          clock,
+          shopSeed: sh.shopSeed,
+          nIdx: 1,
+          pal: sh.pal,
+          crew,
+          queue: sh.queue,
+        }).cast,
+      );
     }
     sideCache.set(sh.name, out);
   }
@@ -433,7 +533,9 @@ describe('the sidewalk row never cuts a figure off (D408)', () => {
         // the hire stack when the shop has no GM, else the station cards
         for (const s of [NARROW_S, 1, 1.3]) {
           const top = rowTop(s, sh.idle) - 4;
-          for (const c of cast) if (c.props.y < 0 && P(c.props.x, c.props.y)[1] > top) bad.push(`${sh.name} s${s.toFixed(2)} ${c.key} feet ${P(c.props.x, c.props.y)[1].toFixed(1)} > ${top.toFixed(1)}`);
+          for (const c of cast)
+            if (c.props.y < 0 && P(c.props.x, c.props.y)[1] > top)
+              bad.push(`${sh.name} s${s.toFixed(2)} ${c.key} feet ${P(c.props.x, c.props.y)[1].toFixed(1)} > ${top.toFixed(1)}`);
         }
       }
     expect([...new Set(bad)].slice(0, 5)).toEqual([]);
@@ -441,7 +543,8 @@ describe('the sidewalk row never cuts a figure off (D408)', () => {
   test('the queue and patio spots clear even the tallest (stacked hire) row, so they could stand beside either', () => {
     for (const sh of sideShops()) {
       const top = rowTop(NARROW_S, true) - 4;
-      for (const [x, y] of [...sh.lay.queue, ...sh.lay.driverQueue, ...sh.lay.patio.map((p) => [p.x, p.y] as [number, number])]) expect([sh.name, P(x, y)[1] <= top]).toEqual([sh.name, true]);
+      for (const [x, y] of [...sh.lay.queue, ...sh.lay.driverQueue, ...sh.lay.patio.map((p) => [p.x, p.y] as [number, number])])
+        expect([sh.name, P(x, y)[1] <= top]).toEqual([sh.name, true]);
     }
   });
   test('an idle shop keeps the sidewalk clear: no queue, no patio, no walk-in on the patio', () => {
@@ -454,7 +557,12 @@ describe('the sidewalk row never cuts a figure off (D408)', () => {
 });
 
 describe('the sidewalk queues', () => {
-  const standing = (x: number, y: number, kind: 'guest' | 'driver' = 'guest'): CastMember => ({ key: 'p', sortY: y, role: 'walkin', props: { x, y, kind, step: 0 } });
+  const standing = (x: number, y: number, kind: 'guest' | 'driver' = 'guest'): CastMember => ({
+    key: 'p',
+    sortY: y,
+    role: 'walkin',
+    props: { x, y, kind, step: 0 },
+  });
 
   test('a full lane is 3 drivers nearest the door and the diners the shop front leaves room for left of them, all facing the door; the pills count the rest', () => {
     for (const sh of sideShops()) {
@@ -486,8 +594,22 @@ describe('the sidewalk queues', () => {
         const crew: CrewState = emptyCrew();
         let keys = '';
         for (let f = 0; f < 30; f++) {
-          const { cast } = buildCast({ lay, shop: { drivers: 12, tables: 40, prep: 120 }, running: true, pace: 1, clock: f / 15, shopSeed: 1234, nIdx: 1, pal, crew, queue: { diners: 0, drivers: n } });
-          const k = queuers(cast).filter((c) => c.props.kind === 'driver').map((c) => `${c.key}:${c.props.seed}`).join(',');
+          const { cast } = buildCast({
+            lay,
+            shop: { drivers: 12, tables: 40, prep: 120 },
+            running: true,
+            pace: 1,
+            clock: f / 15,
+            shopSeed: 1234,
+            nIdx: 1,
+            pal,
+            crew,
+            queue: { diners: 0, drivers: n },
+          });
+          const k = queuers(cast)
+            .filter((c) => c.props.kind === 'driver')
+            .map((c) => `${c.key}:${c.props.seed}`)
+            .join(',');
           if (f === 0) keys = k;
           expect([fp, n, f, k]).toEqual([fp, n, f, keys]); // no flicker: the same figures with the same faces every frame
         }
@@ -557,7 +679,8 @@ describe('the sidewalk queues', () => {
       for (const h of heads) expect([sh.name, h, heads.filter((o) => o >= h && o < h + 60).length <= 3]).toEqual([sh.name, h, true]);
       for (const cast of sideFrames(sh).filter((_, f) => f % 5 === 0)) {
         const q = queuers(cast).map((c) => box(c));
-        for (const c of cast) if (c.props.kind === 'sit' && c.props.y < 0) for (const b of q) expect([sh.name, c.key, overlap(box(c), b) <= 0.05]).toEqual([sh.name, c.key, true]);
+        for (const c of cast)
+          if (c.props.kind === 'sit' && c.props.y < 0) for (const b of q) expect([sh.name, c.key, overlap(box(c), b) <= 0.05]).toEqual([sh.name, c.key, true]);
       }
     }
   });
@@ -578,9 +701,12 @@ describe('the sidewalk queues', () => {
     for (const sh of sideShops()) {
       const ln = sh.lay.door.lanes;
       for (const c of queuers(sideFrames(sh)[100]))
-        for (const lx of [ln.guestPauseX, ln.driverPauseX, ln.guestX, ln.driverX]) expect([sh.name, c.key, lx, Math.abs(c.props.x - lx) >= 12]).toEqual([sh.name, c.key, lx, true]);
+        for (const lx of [ln.guestPauseX, ln.driverPauseX, ln.guestX, ln.driverX])
+          expect([sh.name, c.key, lx, Math.abs(c.props.x - lx) >= 12]).toEqual([sh.name, c.key, lx, true]);
       // …and no lane's standing figure covers a queue figure (> 20%) once it is in the doorway
-      for (const c of queuers(sideFrames(sh)[100])) for (const l of [standing(ln.guestX, 8), standing(ln.driverX, 8, 'driver')]) expect([sh.name, c.key, overlap(box(c), box(l)) <= 0.2]).toEqual([sh.name, c.key, true]);
+      for (const c of queuers(sideFrames(sh)[100]))
+        for (const l of [standing(ln.guestX, 8), standing(ln.driverX, 8, 'driver')])
+          expect([sh.name, c.key, overlap(box(c), box(l)) <= 0.2]).toEqual([sh.name, c.key, true]);
     }
   });
   test('a walker passing in front covers a queue figure (> 50%) in under 15% of frames', () => {
@@ -601,7 +727,13 @@ describe('the sidewalk queues', () => {
     for (const sh of sideShops())
       for (const text of texts) {
         const t = waitTagAt(sh.lay, text);
-        expect([sh.name, text, t.x - t.w / 2 >= sh.lay.frame.x0 + TAG_MARGIN - 1e-6, t.x + t.w / 2 <= sh.lay.frame.x0 + sh.lay.frame.width - TAG_MARGIN + 1e-6, t.w === waitTagWidth(text)]).toEqual([sh.name, text, true, true, true]);
+        expect([
+          sh.name,
+          text,
+          t.x - t.w / 2 >= sh.lay.frame.x0 + TAG_MARGIN - 1e-6,
+          t.x + t.w / 2 <= sh.lay.frame.x0 + sh.lay.frame.width - TAG_MARGIN + 1e-6,
+          t.w === waitTagWidth(text),
+        ]).toEqual([sh.name, text, true, true, true]);
         expect(Math.abs(t.x + t.tail - P(sh.lay.waitTag[0], sh.lay.waitTag[1])[0])).toBeLessThan(0.01);
       }
     for (const sh of sideShops()) {
@@ -648,7 +780,14 @@ const treeBox = (lay: Lay): Box => {
   return { x0: sx - 14, x1: sx + 14, y0: sy - 55, y1: sy };
 };
 /** x extents of each neighbourhood's signature prop around its anchor, and its height. */
-const PROP_EXTENT = { newsbox: [-9, 9, 29], picket: [-30, 30, 22], bollard: [-20, 9, 20], bikerack: [-33, 33, 22], barrel: [-13, 15, 22], topiary: [-14, 28.6, 25] } as const;
+const PROP_EXTENT = {
+  newsbox: [-9, 9, 29],
+  picket: [-30, 30, 22],
+  bollard: [-20, 9, 20],
+  bikerack: [-33, 33, 22],
+  barrel: [-13, 15, 22],
+  topiary: [-14, 28.6, 25],
+} as const;
 const propBoxes = (lay: Lay): Box[] => {
   const [sx, sy] = P(lay.prop.x, PROP_Y);
   return Object.values(PROP_EXTENT).map(([a, b, h]) => ({ x0: sx + a, x1: sx + b, y0: sy - h, y1: sy }));
@@ -660,7 +799,12 @@ const vehicleBox = (lay: Lay): Box => {
   return { x0: vx - VEHICLE_HALF_W * k, x1: vx + VEHICLE_HALF_W * k, y0: vy - 22, y1: vy + 2 };
 };
 const touches = (a: Box, b: Box) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
-const figureAt = (x: number, y: number, kind: 'guest' | 'driver' = 'guest'): CastMember => ({ key: 'f', sortY: y, role: 'queue', props: { x, y, kind, step: 0 } });
+const figureAt = (x: number, y: number, kind: 'guest' | 'driver' = 'guest'): CastMember => ({
+  key: 'f',
+  sortY: y,
+  role: 'queue',
+  props: { x, y, kind, step: 0 },
+});
 /**
  * A standing figure's drawn silhouette as boxes (screen units): the torso with its arms (−10 … +10.5, 0 … 50 up) and, for a driver, the cap whose brim
  * reaches +15.5 at head height (40 … 52 up). The plain `box()` (±11) leaves the brim out, which is why drivers 26 apart still touched.
@@ -669,17 +813,23 @@ function silhouette(c: CastMember): Box[] {
   const [sx, sy] = P(c.props.x, c.props.y);
   const k = kAt(c.props.y) * 1.14;
   const body = { x0: sx - 10 * k, x1: sx + 10.5 * k, y0: sy - 50 * k, y1: sy };
-  return c.props.kind === 'driver' ? [{ x0: sx - 10 * k, x1: sx + 15.5 * k, y0: sy - 52 * k, y1: sy - 40 * k }, { ...body, y0: sy - 40 * k }] : [body];
+  return c.props.kind === 'driver'
+    ? [
+        { x0: sx - 10 * k, x1: sx + 15.5 * k, y0: sy - 52 * k, y1: sy - 40 * k },
+        { ...body, y0: sy - 40 * k },
+      ]
+    : [body];
 }
 /** Overlapping area of two figures' silhouettes over the smaller one's area. */
 function silhouetteOverlap(a: CastMember, b: CastMember): number {
   const area2 = (bs: Box[]) => bs.reduce((t, x) => t + area(x), 0);
   let shared = 0;
-  for (const p of silhouette(a)) for (const q of silhouette(b)) {
-    const w = Math.min(p.x1, q.x1) - Math.max(p.x0, q.x0);
-    const h = Math.min(p.y1, q.y1) - Math.max(p.y0, q.y0);
-    if (w > 0 && h > 0) shared += w * h;
-  }
+  for (const p of silhouette(a))
+    for (const q of silhouette(b)) {
+      const w = Math.min(p.x1, q.x1) - Math.max(p.x0, q.x0);
+      const h = Math.min(p.y1, q.y1) - Math.max(p.y0, q.y0);
+      if (w > 0 && h > 0) shared += w * h;
+    }
   return shared / Math.min(area2(silhouette(a)), area2(silhouette(b)));
 }
 
@@ -693,10 +843,7 @@ function oldSidewalk(lay: Lay) {
 }
 
 describe('the sidewalk budgets (D414)', () => {
-  const full = (lay: Lay) => [
-    ...lay.queue.map(([x, y]) => figureAt(x, y)),
-    ...lay.driverQueue.map(([x, y]) => figureAt(x, y, 'driver')),
-  ];
+  const full = (lay: Lay) => [...lay.queue.map(([x, y]) => figureAt(x, y)), ...lay.driverQueue.map(([x, y]) => figureAt(x, y, 'driver'))];
   const lays = (): [string, Lay][] => [0, 1, 2, 3, 4].map((fp) => [`fp${fp}`, layout(fp, Math.min(fp + 1, 6), 3, 2, 6, DRIVER_SLOTS[fp], 1)]);
 
   test('the checks can fail: the v5.11 sidewalk had a queue figure over the patio, one against the parked vehicle, and an umbrella across the pillar', () => {
@@ -718,7 +865,7 @@ describe('the sidewalk budgets (D414)', () => {
         expect([name, f.props.x, 'vehicle', touches(b, vehicleBox(lay))]).toEqual([name, f.props.x, 'vehicle', false]);
       }
   });
-  test('no queue or driver figure overlaps the potted tree or the neighbourhood\'s signature prop (whichever of the six it is)', () => {
+  test("no queue or driver figure overlaps the potted tree or the neighbourhood's signature prop (whichever of the six it is)", () => {
     for (const [name, lay] of lays())
       for (const f of full(lay)) {
         const b = box(f);
@@ -756,7 +903,7 @@ describe('the sidewalk budgets (D414)', () => {
 });
 
 describe('the patio and walk-ins at every table', () => {
-  test('patio chairs sit on no walker\'s or driver\'s route (a patio guest touches only their own chair)', () => {
+  test("patio chairs sit on no walker's or driver's route (a patio guest touches only their own chair)", () => {
     for (const sh of sideShops()) {
       if (sh.idle || !sh.patio) continue;
       const R = routesFor(sh.lay, SCENE_W, false, sh.patio);
@@ -768,7 +915,11 @@ describe('the patio and walk-ins at every table', () => {
       ];
       R.guests.forEach((g, n) => {
         legs.push({ name: `guest${n} arrive`, pts: g.arrive.pts, own: null }, { name: `guest${n} giveUp`, pts: g.giveUp.pts, own: null });
-        for (const [nm, route] of [['toSeat', g.toSeat], ['leave', g.leave]] as const) legs.push({ name: `guest${n} ${nm}`, pts: route.pts, own: g.patio ? g.seat[0] : null });
+        for (const [nm, route] of [
+          ['toSeat', g.toSeat],
+          ['leave', g.leave],
+        ] as const)
+          legs.push({ name: `guest${n} ${nm}`, pts: route.pts, own: g.patio ? g.seat[0] : null });
       });
       for (const L of legs)
         for (let d = 0; d <= 1500; d += 1) {
@@ -780,7 +931,7 @@ describe('the patio and walk-ins at every table', () => {
         }
     }
   });
-  test('walk-ins sit at every table, the patio\'s too, and no seated figure overlaps another (> 10%)', () => {
+  test("walk-ins sit at every table, the patio's too, and no seated figure overlaps another (> 10%)", () => {
     for (const sh of sideShops()) {
       if (sh.idle) continue;
       const cast = sideFrames(sh);
@@ -789,9 +940,15 @@ describe('the patio and walk-ins at every table', () => {
         const sitters = frame.filter((c) => c.props.kind === 'sit').map((c) => ({ c, b: box(c) }));
         for (const w of sitters) if (w.c.role === 'walkin') seats.add(`${w.c.props.x.toFixed(1)},${w.c.props.y}`);
         // indoors with indoors, patio with patio (the sidewalk stands in front of the room, so a patio diner always crosses the front row in perspective)
-        for (const a of sitters) for (const o of sitters) if (a !== o && a.c.props.y < 0 === o.c.props.y < 0) expect([sh.name, f, a.c.key, o.c.key, overlap(a.b, o.b) <= 0.1]).toEqual([sh.name, f, a.c.key, o.c.key, true]);
+        for (const a of sitters)
+          for (const o of sitters)
+            if (a !== o && a.c.props.y < 0 === o.c.props.y < 0)
+              expect([sh.name, f, a.c.key, o.c.key, overlap(a.b, o.b) <= 0.1]).toEqual([sh.name, f, a.c.key, o.c.key, true]);
       });
-      const want = [...sh.lay.tables.map((t) => `${(t.x + SEAT).toFixed(1)},${t.y}`), ...sh.lay.patio.slice(0, sh.patio).map((t) => `${(t.x + PATIO_SEAT).toFixed(1)},${t.y}`)];
+      const want = [
+        ...sh.lay.tables.map((t) => `${(t.x + SEAT).toFixed(1)},${t.y}`),
+        ...sh.lay.patio.slice(0, sh.patio).map((t) => `${(t.x + PATIO_SEAT).toFixed(1)},${t.y}`),
+      ];
       expect([sh.name, want.filter((w) => !seats.has(w))]).toEqual([sh.name, []]);
     }
   });
@@ -802,7 +959,9 @@ describe('the patio and walk-ins at every table', () => {
         for (const c of frame) {
           if (c.props.kind !== 'sit') continue;
           const room = sh.lay.tables.some((tb) => Math.abs(tb.y - c.props.y) < 0.01 && Math.abs(Math.abs(c.props.x - tb.x) - SEAT) < 0.01);
-          const out = sh.lay.patio.slice(0, sh.patio).some((tb) => Math.abs(tb.y - c.props.y) < 0.01 && Math.abs(Math.abs(c.props.x - tb.x) - PATIO_SEAT) < 0.01);
+          const out = sh.lay.patio
+            .slice(0, sh.patio)
+            .some((tb) => Math.abs(tb.y - c.props.y) < 0.01 && Math.abs(Math.abs(c.props.x - tb.x) - PATIO_SEAT) < 0.01);
           expect([sh.name, c.key, room || out]).toEqual([sh.name, c.key, true]);
         }
     }
@@ -826,7 +985,8 @@ describe('the patio and walk-ins at every table', () => {
 // ---------- G91: the "+$" pop never covers the waiting pill ----------
 describe('pops and the waiting pill (G91)', () => {
   const TEXTS = ['28 drivers idle · buy Prep + Ovens', '37 drivers idle · buy all three', '12 drivers idle · buy Counter', '11 drivers idle · buy Prep'];
-  const hit = (a: { x0: number; x1: number; y0: number; y1: number }, b: { x0: number; x1: number; y0: number; y1: number }) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+  const hit = (a: { x0: number; x1: number; y0: number; y1: number }, b: { x0: number; x1: number; y0: number; y1: number }) =>
+    a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
   /** Every pop on screen in a frame, as the scene draws it: riding a driver's head, or hanging over the register for a hand-over. */
   function pops(sh: SideShop, cast: CastMember[], keepOff: { x0: number; x1: number; y0: number; y1: number }[]) {
     const register = P(sh.lay.staff[0] + 12, 70, 78);
@@ -854,7 +1014,7 @@ describe('pops and the waiting pill (G91)', () => {
     }
     expect(bad.slice(0, 5)).toEqual([]);
   });
-  test('the check can fail: placed the old way (no keep-off) the pop of the driver leaving the pickup spot lands on the pill\'s right end', () => {
+  test("the check can fail: placed the old way (no keep-off) the pop of the driver leaving the pickup spot lands on the pill's right end", () => {
     let covered = 0;
     for (const sh of sideShops()) {
       if (sh.idle) continue;
@@ -895,7 +1055,7 @@ describe('the waiting pill and the pops never cover a face (D439)', () => {
     return { x0: x - w / 2, x1: x + w / 2, y0: sy - 9.7, y1: sy + 12.7 };
   };
 
-  test('the drivers\' pill covers no standing or seated face, in any frame, at any footprint and for every instruction text', () => {
+  test("the drivers' pill covers no standing or seated face, in any frame, at any footprint and for every instruction text", () => {
     const bad: string[] = [];
     for (const sh of sideShops()) {
       if (sh.idle) continue;
@@ -903,7 +1063,9 @@ describe('the waiting pill and the pops never cover a face (D439)', () => {
         const t = waitTagAt(sh.lay, text);
         const pill = { x0: t.x - t.w / 2, x1: t.x + t.w / 2, y0: t.y - 9.7, y1: t.y + 8.7 }; // the pill's body (its 8 wide tail points down at the drivers)
         sideFrames(sh).forEach((cast, f) => {
-          for (const c of cast) if (!c.props.step && hit(face(c), pill)) bad.push(`${sh.name} "${text}" f${f} ${c.key} ${JSON.stringify([c.props.x, c.props.y, c.props.kind, c.props.talk])} ${JSON.stringify(pill)}`); // (a walker crossing under it for a moment is not covered for long: the stills are the budget)
+          for (const c of cast)
+            if (!c.props.step && hit(face(c), pill))
+              bad.push(`${sh.name} "${text}" f${f} ${c.key} ${JSON.stringify([c.props.x, c.props.y, c.props.kind, c.props.talk])} ${JSON.stringify(pill)}`); // (a walker crossing under it for a moment is not covered for long: the stills are the budget)
         });
       }
     }
@@ -936,12 +1098,23 @@ describe('the waiting pill and the pops never cover a face (D439)', () => {
             carriers.set(id, P(c.props.x, c.props.y, 52));
             deps.push({ id, kind: c.role === 'walkin' ? 'walkin' : 'driver', n: 1, cash: 12, left: 1.6 });
           }
-        const placed = placePops(deps, (d) => d.left, (d) => carriers.get(d.id) ?? null, register, SCENE_W);
+        const placed = placePops(
+          deps,
+          (d) => d.left,
+          (d) => carriers.get(d.id) ?? null,
+          register,
+          SCENE_W,
+        );
         const rects = placed.map((q) => q.rect);
         frames++;
         for (const q of placed) {
-          const at = q.dep.kind === 'walkin' ? register : carriers.get(q.dep.id) ?? register;
-          const plain = popPlace(at, q.w, { walkin: q.dep.kind === 'walkin', rideAlong: q.dep.kind !== 'walkin' && carriers.has(q.dep.id), k: Math.min(1, Math.max(0, 1 - (q.rest) / 1)), sceneW: SCENE_W }).rect;
+          const at = q.dep.kind === 'walkin' ? register : (carriers.get(q.dep.id) ?? register);
+          const plain = popPlace(at, q.w, {
+            walkin: q.dep.kind === 'walkin',
+            rideAlong: q.dep.kind !== 'walkin' && carriers.has(q.dep.id),
+            k: Math.min(1, Math.max(0, 1 - q.rest / 1)),
+            sceneW: SCENE_W,
+          }).rect;
           expect(Math.abs(plain.y1 - q.rect.y1)).toBeLessThan(7); // within its own 6 pt drift of the unlifted spot, never jumped above a pill
         }
         for (const pill of pills) {
@@ -961,7 +1134,7 @@ describe('the waiting pill and the pops never cover a face (D439)', () => {
     expect(popsCover([{ x0: 200, x1: 230, y0: 310, y1: 328 }], pill)).toBe(false);
     expect(popsCover([], pill)).toBe(false);
   });
-  test('the pops placed for the scene sit beside their carrier\'s head and cover no seated or queued diner\'s face other than their carrier\'s own row, at any footprint', () => {
+  test("the pops placed for the scene sit beside their carrier's head and cover no seated or queued diner's face other than their carrier's own row, at any footprint", () => {
     const bad: string[] = [];
     for (const sh of sideShops()) {
       if (sh.idle) continue;
@@ -982,11 +1155,14 @@ describe('the waiting pill and the pops never cover a face (D439)', () => {
 describe('queued diners never stand in front of a table or a seated diner (D430)', () => {
   const dinerBoxes = (lay: ReturnType<typeof layout>) => lay.queue.map(([x, y]) => box(figureAt(x, y)));
   /** The table sets the glass front shows nearest the sill, as screen x intervals (table top, both chairs and the diners in them). */
-  const sets = (lay: ReturnType<typeof layout>) => lay.tables.filter((t) => t.y <= NEAR_ROW_Y).map((t) => {
-    const c = P(t.x, t.y)[0];
-    const h = TABLE_SET_HALF * kAt(t.y) * 1.1;
-    return [c - h, c + h] as const;
-  });
+  const sets = (lay: ReturnType<typeof layout>) =>
+    lay.tables
+      .filter((t) => t.y <= NEAR_ROW_Y)
+      .map((t) => {
+        const c = P(t.x, t.y)[0];
+        const h = TABLE_SET_HALF * kAt(t.y) * 1.1;
+        return [c - h, c + h] as const;
+      });
   test('no queued diner overlaps a table set or a seated diner indoors, at any footprint and any table count; the rest are in the "+N" pill', () => {
     for (let fp = 0; fp < 5; fp++)
       for (const tables of [1, 2, 3, 4, 6, 8]) {
@@ -1001,8 +1177,12 @@ describe('queued diners never stand in front of a table or a seated diner (D430)
     for (const sh of sideShops()) {
       if (sh.idle) continue;
       for (const cast of sideFrames(sh).filter((_, f) => f % 5 === 0)) {
-        const diners = queuers(cast).filter((c) => c.props.kind === 'guest').map((c) => box(c));
-        for (const c of cast) if (c.props.kind === 'sit' && c.props.y >= 0 && c.props.y <= NEAR_ROW_Y) for (const b of diners) expect([sh.name, c.key, overlap(box(c), b) < 0.05]).toEqual([sh.name, c.key, true]);
+        const diners = queuers(cast)
+          .filter((c) => c.props.kind === 'guest')
+          .map((c) => box(c));
+        for (const c of cast)
+          if (c.props.kind === 'sit' && c.props.y >= 0 && c.props.y <= NEAR_ROW_Y)
+            for (const b of diners) expect([sh.name, c.key, overlap(box(c), b) < 0.05]).toEqual([sh.name, c.key, true]);
       }
     }
   });
@@ -1034,7 +1214,7 @@ describe('queued diners never stand in front of a table or a seated diner (D430)
 
 // ---------- D450: the waiting pill clears the umbrellas; fewer patio diners ----------
 describe('the waiting pill over the patio (D450)', () => {
-  test('the pill\'s body stays PILL_UMBRELLA_AIR (6 pt) above every umbrella tip, at every footprint with a patio, for every text; the old tip (75 up) was within 2 pt', () => {
+  test("the pill's body stays PILL_UMBRELLA_AIR (6 pt) above every umbrella tip, at every footprint with a patio, for every text; the old tip (75 up) was within 2 pt", () => {
     let sets = 0;
     for (const sh of sideShops()) {
       if (sh.idle) continue;
@@ -1115,7 +1295,7 @@ describe('the waiting pill over the patio (D450)', () => {
     expect(near).toBeGreaterThan(5);
     expect(bad).toEqual([]);
   });
-  test('the check can fail: at the old height (MORE_TAG_Z) the pill overlapped the drivers\' pill by about 4 pt', () => {
+  test("the check can fail: at the old height (MORE_TAG_Z) the pill overlapped the drivers' pill by about 4 pt", () => {
     expect(MORE_TAG_Z_ALONE).toBeLessThan(MORE_TAG_Z);
     for (const sh of ALONE()) {
       const w = waitTagRect(sh.lay, WAIT_TEXTS[1]);

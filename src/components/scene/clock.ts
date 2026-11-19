@@ -50,7 +50,9 @@ const reduceMotion = sharedFlag(
   () => reducedNow,
   (set) => {
     let alive = true;
-    void AccessibilityInfo.isReduceMotionEnabled().then((v) => alive && ((reducedNow = v), set(v))).catch(() => {});
+    void AccessibilityInfo.isReduceMotionEnabled()
+      .then((v) => alive && ((reducedNow = v), set(v)))
+      .catch(() => {});
     const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (v) => ((reducedNow = v), set(v)));
     return () => {
       alive = false;

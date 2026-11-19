@@ -8,6 +8,13 @@ import { def, offlineCapOf, pay, type BuyResult, type GameState } from './game';
 import { money } from './format';
 import { minutesToCash } from './rewards';
 import { cityOf, hoodIds } from '../content/cities';
+import type { NightOvenLines } from '../content/cities/types';
+
+/** What a city's night oven is called and says when its pack has no `nightOvenLines`. */
+const GENERIC_LINES: NightOvenLines = {
+  name: 'The night oven',
+  body: "While you're away, the night oven keeps baking for up to {hours}. Come back before it's full!",
+};
 
 /** The highest tier index. */
 export const MAX_TIER = NIGHT_OVEN.capSeconds.length - 1;
@@ -26,7 +33,8 @@ export const nightOvenChip = (s: Pick<GameState, 'nightOven'>): string => `🌙 
 export const nextTier = (s: Pick<GameState, 'nightOven'>): number | null => (s.nightOven < MAX_TIER ? s.nightOven + 1 : null);
 
 /** What a tier costs now: its minutes of citywide income, never less than NIGHT_OVEN.minPrice. */
-export const nightOvenPrice = (s: GameState, tier: number): number => Math.max(NIGHT_OVEN.minPrice, Math.ceil(minutesToCash(s, NIGHT_OVEN.priceMinutes[tier] ?? 0)));
+export const nightOvenPrice = (s: GameState, tier: number): number =>
+  Math.max(NIGHT_OVEN.minPrice, Math.ceil(minutesToCash(s, NIGHT_OVEN.priceMinutes[tier] ?? 0)));
 
 /** Why a tier can't be bought yet (other than cash), or null. */
 export function nightOvenLock(s: GameState, tier: number): string | null {
@@ -51,6 +59,8 @@ export interface NightOvenView {
   chip: string;
   /** The oven's size now: "4 h". */
   hours: string;
+  /** The oven's name in this city (`CityDef.nightOvenLines`). */
+  name: string;
   /** The info sheet's text. */
   body: string;
   /** "Leave now and it's full in 4 h." */
@@ -62,11 +72,12 @@ export interface NightOvenView {
 
 export function nightOvenView(s: GameState): NightOvenView {
   const hours = hoursText(offlineCapOf(s));
+  const lines = cityOf(s).nightOvenLines ?? GENERIC_LINES;
   const nt = nextTier(s);
   const tiers: NightOvenTier[] = NIGHT_OVEN.capSeconds.map((cap, tier) => {
     const lock = tier > s.nightOven ? nightOvenLock(s, tier) : null;
     const state = tier <= s.nightOven ? 'owned' : tier === nt ? 'next' : 'later';
-    const note = state === 'owned' ? 'Owned' : lock ?? money(nightOvenPrice(s, tier));
+    const note = state === 'owned' ? 'Owned' : (lock ?? money(nightOvenPrice(s, tier)));
     return { tier, hours: hoursText(cap), state, note };
   });
   const next =
@@ -75,12 +86,20 @@ export function nightOvenView(s: GameState): NightOvenView {
       : (() => {
           const price = nightOvenPrice(s, nt);
           const lock = nightOvenLock(s, nt);
-          return { tier: nt, title: `Night oven: holds ${hoursText(NIGHT_OVEN.capSeconds[nt])}`, hours: hoursText(NIGHT_OVEN.capSeconds[nt]), price, lock, canBuy: !lock && s.cash >= price };
+          return {
+            tier: nt,
+            title: `Night oven: holds ${hoursText(NIGHT_OVEN.capSeconds[nt])}`,
+            hours: hoursText(NIGHT_OVEN.capSeconds[nt]),
+            price,
+            lock,
+            canBuy: !lock && s.cash >= price,
+          };
         })();
   return {
     chip: nightOvenChip(s),
     hours,
-    body: `While you're away, Nonna's night oven keeps baking for up to ${hours}. Come back before it's full!`,
+    name: lines.name,
+    body: lines.body.replace('{hours}', hours),
     leaveLine: `Leave now and it's full in ${hours}.`,
     tiers,
     next,

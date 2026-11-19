@@ -7,11 +7,11 @@ import { CITIES, hoodIds, type CityDef } from '../../content/cities';
 import { HOME_CITY } from '../../content/cities/home';
 import { CITY_ORDER, cityNumbers } from '../../content/franchise';
 import { DECOR_KINDS, DECOR_TIER_COST, STATIONS, TUNING } from '../../content/tuning';
-import { NEIGHBORHOODS } from '../../content/tuning';
 import { starsFor, multiplierOf } from '../features/franchise';
 import { count, money, shownValue } from '../format';
 import * as G from '../game';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const CEILING = 1e300;
 const SPARE = 1e20;
 const LIMIT = CEILING / SPARE;
@@ -29,7 +29,11 @@ function planned(index: number): CityDef {
     ...HOME_CITY,
     id: CITY_ORDER[index],
     neighbourhoods: HOME_CITY.neighbourhoods.map((h, i) => ({ ...h, ...n.hoods[i] })),
-    fit: { ...HOME_CITY.fit, vehicles: HOME_CITY.fit.vehicles.map((v, i) => (i === 0 ? v : { ...v, cost: n.vehicleCosts[i - 1] })), headCostFirst: n.headCostFirst },
+    fit: {
+      ...HOME_CITY.fit,
+      vehicles: HOME_CITY.fit.vehicles.map((v, i) => (i === 0 ? v : { ...v, cost: n.vehicleCosts[i - 1] })),
+      headCostFirst: n.headCostFirst,
+    },
     bid: HOME_CITY.bid ? { ...HOME_CITY.bid, cost: n.bid.cost } : undefined,
   };
 }
@@ -46,7 +50,20 @@ function reach(city: CityDef, mult: number): Reach {
     for (const g of city.fit.ovenGrades) prices.push(g.cost * h.costMult);
     for (const f of city.fit.footprints) prices.push(f.cost * h.costMult);
     for (const c of DECOR_TIER_COST) prices.push(c * h.costMult * DECOR_KINDS.length);
-    const shop: G.Shop = { ...G.newShop(true), managed: true, heads: G.allHeads(), prep: cap, ovens: cap, counter: cap, tables: cap, drivers: cap, grade: city.fit.ovenGrades.length - 1, footprint: top, perk: true, decor: Object.fromEntries(DECOR_KINDS.map((k) => [k, 3])) as G.Shop['decor'] };
+    const shop: G.Shop = {
+      ...G.newShop(true),
+      managed: true,
+      heads: G.allHeads(),
+      prep: cap,
+      ovens: cap,
+      counter: cap,
+      tables: cap,
+      drivers: cap,
+      grade: city.fit.ovenGrades.length - 1,
+      footprint: top,
+      perk: true,
+      decor: Object.fromEntries(DECOR_KINDS.map((k) => [k, 3])) as G.Shop['decor'],
+    };
     income += G.shopRevenue(h.id, shop, city.fit.vehicles.length - 1, { value: FEATURE_HEADROOM * mult, demand: 1 }, city);
   }
   for (const v of city.fit.vehicles) prices.push(v.cost);

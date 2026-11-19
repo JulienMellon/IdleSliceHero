@@ -28,7 +28,11 @@ describe('T77 cast size', () => {
   });
 
   test('staging gives one placement per figure for 0, 1 and 2, and never more than two', () => {
-    for (const [w, h] of [[290, 349], [363, 497], [514, 718]]) {
+    for (const [w, h] of [
+      [290, 349],
+      [363, 497],
+      [514, 718],
+    ]) {
       expect(stageLayout(0, w, h, -1)).toEqual([]);
       expect(stageLayout(1, w, h, 0)).toHaveLength(1);
       expect(stageLayout(2, w, h, 1)).toHaveLength(2);

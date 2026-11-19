@@ -23,7 +23,10 @@ export interface ChallengeState {
 }
 
 /** How the last attack ended, for the UI to show once (`ackAttack`). */
-export type AttackNews = { kind: 'won'; shopId: NeighborhoodId; cash: number; diamonds: number } | { kind: 'lost'; shopId: NeighborhoodId } | { kind: 'expired'; shopId: NeighborhoodId };
+export type AttackNews =
+  | { kind: 'won'; shopId: NeighborhoodId; cash: number; diamonds: number }
+  | { kind: 'lost'; shopId: NeighborhoodId }
+  | { kind: 'expired'; shopId: NeighborhoodId };
 
 export interface AttackState {
   /** The first week number an attack may roll in; 0 = the finale hasn't been seen yet. */
@@ -72,12 +75,13 @@ export function pickTarget(g: GameState, week: number, previous: NeighborhoodId 
 
 /** Pies the challenge asks for in `id` right now: ceil(5 min x the shop's current pizza rate x 1.25), at least 1. */
 export function challengeTarget(g: GameState, id: NeighborhoodId, now: number): number {
-  const rate = shopRate(g.shops[id], g.vehicle, featureMults(g, id, now));
+  const rate = shopRate(g.shops[id], g.vehicle, cityOf(g).fit, featureMults(g, id, now));
   return Math.max(1, Math.ceil(COUNTERATTACK.challengeSeconds * rate * COUNTERATTACK.targetMargin));
 }
 
 /** Pies sold toward the running challenge, 0..target. */
-export const challengeProgress = (g: GameState, id: NeighborhoodId, c: ChallengeState): number => Math.max(0, Math.min(c.target, Math.floor(g.shops[id].sold - c.startSold)));
+export const challengeProgress = (g: GameState, id: NeighborhoodId, c: ChallengeState): number =>
+  Math.max(0, Math.min(c.target, Math.floor(g.shops[id].sold - c.startSold)));
 
 /**
  * What a win pays right now: 30 minutes of citywide income with no boost and no event, and without the attack's own x0.8
@@ -120,7 +124,15 @@ export function attackView(g: GameState, now: number): AttackView {
   const base = { weekEndsIn: resetCountdown(now, 'week'), rewardDiamonds: COUNTERATTACK.rewardDiamonds, valueMult: COUNTERATTACK.valueMult, news: st.news };
   if (!id) return { ...base, phase: 'none', shopId: null, name: '', target: 0, progress: 0, secondsLeft: 0, retryIn: 0, rewardCash: 0 };
   const common = { ...base, shopId: id, name: def(id, cityOf(g)).name, rewardCash: winCash(g) };
-  if (st.challenge) return { ...common, phase: 'running', target: st.challenge.target, progress: challengeProgress(g, id, st.challenge), secondsLeft: Math.max(0, Math.ceil(st.challenge.left)), retryIn: 0 };
+  if (st.challenge)
+    return {
+      ...common,
+      phase: 'running',
+      target: st.challenge.target,
+      progress: challengeProgress(g, id, st.challenge),
+      secondsLeft: Math.max(0, Math.ceil(st.challenge.left)),
+      retryIn: 0,
+    };
   const wait = Math.max(0, Math.ceil((st.retryAt - now) / 1000));
   return { ...common, phase: wait > 0 ? 'retry' : 'open', target: challengeTarget(g, id, now), progress: 0, secondsLeft: 0, retryIn: wait };
 }
@@ -146,7 +158,14 @@ export function ackAttack(g: GameState): GameState {
 function win(g: GameState, st: AttackState, id: NeighborhoodId): GameState {
   const cash = winCash(g);
   const r = g.rewards;
-  const next: AttackState = { ...st, open: false, challenge: null, retryAt: 0, defended: st.defended.includes(id) ? st.defended : [...st.defended, id], news: { kind: 'won', shopId: id, cash, diamonds: COUNTERATTACK.rewardDiamonds } };
+  const next: AttackState = {
+    ...st,
+    open: false,
+    challenge: null,
+    retryAt: 0,
+    defended: st.defended.includes(id) ? st.defended : [...st.defended, id],
+    news: { kind: 'won', shopId: id, cash, diamonds: COUNTERATTACK.rewardDiamonds },
+  };
   return write({ ...g, cash: g.cash + cash, totalEarned: g.totalEarned + cash, rewards: { ...r, diamonds: r.diamonds + COUNTERATTACK.rewardDiamonds } }, next);
 }
 
@@ -197,7 +216,10 @@ export const counterattack: Feature<AttackState> = {
       target,
       open,
       defended,
-      challenge: open && challengeOk && c ? { target: nat(c.target), startSold: nat(c.startSold), left: Math.min(COUNTERATTACK.challengeSeconds, c.left as number) } : null,
+      challenge:
+        open && challengeOk && c
+          ? { target: nat(c.target), startSold: nat(c.startSold), left: Math.min(COUNTERATTACK.challengeSeconds, c.left as number) }
+          : null,
       retryAt: nat(r.retryAt),
       news: null,
     };

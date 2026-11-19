@@ -60,7 +60,8 @@ const OTHER_CARDS: Record<string, string> = {};
 const every = files(SRC).flatMap((f) => pressables(fs.readFileSync(f, 'utf8'), path.relative(SRC, f)));
 const all = every.filter((f) => !(f.file in OTHER_CARDS));
 const where = (f: Found) => `${f.file}:${f.line}`;
-const lacks = (f: Found) => (!/accessibilityRole\s*=/.test(f.tag) || (!/accessibilityLabel\s*=/.test(f.tag) && !/<Text[\s>]/.test(f.body))) && !/\{\.\.\./.test(f.tag);
+const lacks = (f: Found) =>
+  (!/accessibilityRole\s*=/.test(f.tag) || (!/accessibilityLabel\s*=/.test(f.tag) && !/<Text[\s>]/.test(f.body))) && !/\{\.\.\./.test(f.tag);
 
 describe('pressables', () => {
   it('finds them (the walker itself works)', () => {
@@ -82,9 +83,7 @@ describe('pressables', () => {
   });
 
   it('a toggle or a disabled control says its state', () => {
-    const bad = all
-      .filter((f) => /accessibilityRole\s*=\s*"(switch|checkbox|radio|tab)"/.test(f.tag) && !/accessibilityState\s*=/.test(f.tag))
-      .map(where);
+    const bad = all.filter((f) => /accessibilityRole\s*=\s*"(switch|checkbox|radio|tab)"/.test(f.tag) && !/accessibilityState\s*=/.test(f.tag)).map(where);
     expect(bad).toEqual([]);
   });
 });
@@ -100,7 +99,8 @@ describe('motion', () => {
   });
 
   it('the coin layer, the buy button and the cut-scene player honour Reduce Motion', () => {
-    for (const rel of ['components/coin-layer.tsx', 'components/game-ui.tsx', 'components/cutscene-player.tsx']) expect(read(rel)).toMatch(/useMotion\(\)|useReducedMotion\(\)/);
+    for (const rel of ['components/coin-layer.tsx', 'components/game-ui.tsx', 'components/cutscene-player.tsx'])
+      expect(read(rel)).toMatch(/useMotion\(\)|useReducedMotion\(\)/);
   });
 
   it('the scene clock and the game tick stop in the background', () => {
@@ -112,10 +112,11 @@ describe('motion', () => {
 });
 
 describe('exemptions', () => {
-  if (Object.keys(OTHER_CARDS).length > 0) it.each(Object.entries(OTHER_CARDS))('%s (card %s) is still not done: remove it from OTHER_CARDS when it is', (file) => {
-    const mine = every.filter((f) => f.file === file);
-    expect(mine.some(lacks)).toBe(true);
-  });
+  if (Object.keys(OTHER_CARDS).length > 0)
+    it.each(Object.entries(OTHER_CARDS))('%s (card %s) is still not done: remove it from OTHER_CARDS when it is', (file) => {
+      const mine = every.filter((f) => f.file === file);
+      expect(mine.some(lacks)).toBe(true);
+    });
 });
 
 describe('the scene drawing', () => {

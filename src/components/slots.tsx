@@ -19,9 +19,9 @@ import { useGame } from '../store/game-store';
 import { C, F } from '../theme';
 import { hintFit, hintForHood } from './cutscene/story-hint-model';
 import { BannerStack } from './endgame/banner-stack';
-import { BostonSheet } from './endgame/boston-sheet';
 import { DiamondChip } from './endgame/diamond-chip';
 import { EventChip } from './endgame/event-chip';
+import { NextCitySheet } from './endgame/next-city-sheet';
 import { RecipeReveal } from './endgame/recipe-reveal';
 import { MoonIcon } from './game-ui';
 import { AuctionCardSlot, RackCardSlot } from './layers/drawer-cards';
@@ -29,23 +29,23 @@ import { GameDayChip, HarbourChip, RivalTag } from './layers/layer-hud';
 import { LayerSheet } from './layers/layer-sheet';
 import { LayerStack } from './layers/layer-stack';
 import { RivalScene } from './layers/rival/rival-scene';
-import { GameDayScene } from './layers/suburbs/gameday-scene';
-import { HarbourScene } from './layers/waterfront/harbour-scene';
-import { CriticBanner } from './layers/uptown/critic-banner';
-import { CriticScene } from './layers/uptown/critic-scene';
-import { IndustrialSheet } from './layers/industrial/industrial-sheet';
-import { IngredientsCard } from './layers/uptown/ingredients-card';
-import { JamOverlay } from './layers/industrial/jam-overlay';
-import { JamPulses } from './layers/industrial/jam-pulses';
-import { NightTint } from './layers/industrial/night-tint';
-import { ShiftBanner } from './layers/industrial/shift-banner';
-import { ShiftChip } from './layers/industrial/shift-chip';
-import { SignPlaque } from './layers/uptown/sign-plaque';
-import { StarsChip } from './layers/uptown/stars-chip';
-import { StarsSheet } from './layers/uptown/stars-sheet';
-import { DroneFlight } from './layers/university/drone-flight';
-import { UniversityChip } from './layers/university/university-chip';
-import { UniversitySheet } from './layers/university/university-sheet';
+import { GameDayScene } from './layers/game-day/gameday-scene';
+import { HarbourScene } from './layers/boats/harbour-scene';
+import { CriticBanner } from './layers/stars/critic-banner';
+import { CriticScene } from './layers/stars/critic-scene';
+import { ShiftsSheet } from './layers/shifts/shifts-sheet';
+import { IngredientsCard } from './layers/stars/ingredients-card';
+import { JamOverlay } from './layers/shifts/jam-overlay';
+import { JamPulses } from './layers/shifts/jam-pulses';
+import { NightTint } from './layers/shifts/night-tint';
+import { ShiftBanner } from './layers/shifts/shift-banner';
+import { ShiftChip } from './layers/shifts/shift-chip';
+import { SignPlaque } from './layers/stars/sign-plaque';
+import { StarsChip } from './layers/stars/stars-chip';
+import { StarsSheet } from './layers/stars/stars-sheet';
+import { DroneFlight } from './layers/menu/drone-flight';
+import { MenuChip } from './layers/menu/menu-chip';
+import { MenuSheet } from './layers/menu/menu-sheet';
 import { ReportSheet } from './report/report-sheet';
 import { ReportStrip } from './report/report-strip';
 import { ClaimSheet } from './store/claim-sheet';
@@ -138,7 +138,13 @@ const NightOvenChip = memo(function NightOvenChip() {
   const hours = useGame((s) => (rewardsUnlocked(s.game) ? hoursText(offlineCapOf(s.game)) : ''));
   if (!hours) return null;
   return (
-    <Pressable testID="night-oven-chip" onPress={askOven} style={styles.ovenChip} accessibilityRole="button" accessibilityLabel={`Nonna's night oven: full in ${hours}`}>
+    <Pressable
+      testID="night-oven-chip"
+      onPress={askOven}
+      style={styles.ovenChip}
+      accessibilityRole="button"
+      accessibilityLabel={`Nonna's night oven: full in ${hours}`}
+    >
       <MoonIcon size={16} />
       <Text style={styles.ovenPillText} numberOfLines={1} maxFontSizeMultiplier={1.1}>
         {hours}
@@ -187,7 +193,7 @@ export const HUD_CHIPS: SlotEntry[] = [
   { id: 'harbour-chip', order: 25, Component: HarbourChip },
   { id: 'rival-tag', order: 30, Component: RivalTag },
   // v5.16 (S2b): University's campus count, Industrial's shift clock and Uptown's rating (a tap opens the layer's sheet)
-  { id: 'university-chip', order: 40, Component: UniversityChip },
+  { id: 'university-chip', order: 40, Component: MenuChip },
   { id: 'shift-chip', order: 45, Component: ShiftChip },
   { id: 'stars-chip', order: 50, Component: StarsChip },
 ];
@@ -205,16 +211,16 @@ export const BANNERS: SlotEntry[] = [
   { id: 'jam-pulses', order: 41, Component: JamPulses },
   { id: 'critic-banner', order: 42, Component: CriticBanner },
 ];
-// v5.15 (U1): "Coming soon: Boston", once, after the last finale
+// v5.15 (U1): "Coming soon" with the next city's teaser, once, after the last finale
 export const SHEETS: SlotEntry[] = [
-  { id: 'boston-card', order: 10, Component: BostonSheet },
+  { id: 'next-city-card', order: 10, Component: NextCitySheet },
   // v5.16 (P1): the shop report's sheet, opened by a tap on its strip
   { id: 'shop-report', order: 20, Component: ReportSheet },
   // v5.16 (S2a): the layers' info sheets, opened from their HUD chips
   { id: 'layer-sheet', order: 30, Component: LayerSheet },
   // v5.16 (S2b): University's menu and zones, Industrial's shifts and jams, Uptown's stars and critic
-  { id: 'university-sheet', order: 40, Component: UniversitySheet },
-  { id: 'industrial-sheet', order: 50, Component: IndustrialSheet },
+  { id: 'university-sheet', order: 40, Component: MenuSheet },
+  { id: 'industrial-sheet', order: 50, Component: ShiftsSheet },
   { id: 'stars-sheet', order: 60, Component: StarsSheet },
   // v5.17 (U3): what a claim paid with its "double it" ad button, and the Starter Pack offered once after the tutorial
   { id: 'claim-sheet', order: 70, Component: ClaimSheet },
@@ -246,6 +252,14 @@ export const SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] = [
 const styles = StyleSheet.create({
   ovenChip: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
   ovenPillText: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: '#fff' },
-  waitHint: { width: '100%', backgroundColor: '#FFE7C2', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10, borderWidth: 1.5, borderColor: C.cheeseDark },
+  waitHint: {
+    width: '100%',
+    backgroundColor: '#FFE7C2',
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1.5,
+    borderColor: C.cheeseDark,
+  },
   waitHintText: { fontFamily: F.semi, color: C.ink, textAlign: 'center' },
 });

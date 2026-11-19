@@ -2,7 +2,6 @@
 // Cosmetics (v5.15, S1): every cosmetic the game gives out dresses something, a skin per cycle (repeating), the furniture memo sees what
 // is worn, and the two things that are drawn on the wall (the neon sign, the plaque) clear everything the ladder budget guards.
 import { cosmeticPart } from '../../../content/endgame';
-import { FOOTPRINTS, NEIGHBORHOODS } from '../../../content/tuning';
 import { WEEKLY_COSMETICS } from '../../../content/rewards';
 import { AWNING_GOLD, MINT, NO_DRESS, SKINS, dressOf, dressedLook, isDressed, neonSpot, ovenPaint, ovenTrim, plaqueRect, skinNumber } from '../cosmetics';
 import { furnitureDeps, furnitureInputs, type FurnitureSource } from '../furniture-inputs';
@@ -12,6 +11,8 @@ import { layout, secondVehicleShift } from './draw-layout';
 import { SCENE_W, P } from '../projection';
 import { doorwaySignRect, staffFaces } from '../stations';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../../content/cities/home/data';
 const DS = [2, 2, 3, 3, 4];
 const shopAt = (fp: number, staff = 2) => layout(fp, FOOTPRINTS[fp].ovenSlots, fp === 0 ? 2 : 3, staff, 8, DS[fp], 1);
 
@@ -88,7 +89,8 @@ describe('the furniture memo sees what is worn', () => {
   const deps = (worn: string[]) => JSON.stringify(furnitureDeps(furnitureInputs(base(worn))));
   test('each cosmetic changes the deps; wearing nothing is the plain deps', () => {
     const d0 = deps([]);
-    for (const id of ['oven-gold', 'oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold', 'plaque-master', 'storefront-skin-1', 'storefront-skin-2']) expect(deps([id])).not.toBe(d0);
+    for (const id of ['oven-gold', 'oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold', 'plaque-master', 'storefront-skin-1', 'storefront-skin-2'])
+      expect(deps([id])).not.toBe(d0);
     expect(deps(['oven-gold'])).not.toBe(deps(['oven-woodfired']));
   });
   test('a skin of the next cycle that looks the same does not rebuild (skin 4 is skin 1)', () => {

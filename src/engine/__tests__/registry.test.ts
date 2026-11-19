@@ -1,16 +1,19 @@
 // T87 (C112): the "+$X/s" caches refresh when an event, an attack or a recipe card moves a shop's value.
 // T88 (A31): a feature can be imported before the game, and only importing the features registers them.
-import { NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { getFeature } from '../features';
 import { counterattack } from '../features/counterattack';
 import { recipes } from '../features/recipes';
 import * as G from '../game';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const at = (y: number, m: number, d: number, h = 0) => new Date(y, m - 1, d, h).getTime();
 const FRI = at(2026, 11, 13, 18);
-const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
+const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } },
+});
 /** A running Downtown whose stations are tied, so the bundle hint exists. */
 const city = (now: number): G.GameState => {
   let g = G.newGame(now);
@@ -52,7 +55,20 @@ describe('T87 shopLevelKey follows the features', () => {
 });
 
 describe('T88 module order', () => {
-  const features = ['recipes', 'mastery', 'counterattack', 'events', 'heads', 'service', 'layers/suburbs-gameday', 'layers/waterfront-boats', 'layers/rival', 'layers/university-menu', 'layers/industrial-shifts', 'layers/uptown-stars'];
+  const features = [
+    'recipes',
+    'mastery',
+    'counterattack',
+    'events',
+    'heads',
+    'service',
+    'layers/game-day',
+    'layers/boats',
+    'layers/rival',
+    'layers/menu',
+    'layers/shifts',
+    'layers/stars',
+  ];
   for (const f of features) {
     it(`importing features/${f} before the game does not throw`, () => {
       jest.isolateModules(() => {
@@ -66,7 +82,21 @@ describe('T88 module order', () => {
       const game = require('../game');
       expect(game.newGame(0).x).toEqual({});
       require('../features');
-      expect(Object.keys(game.newGame(0).x)).toEqual(['mastery', 'counterattack', 'events', 'recipes', 'heads', 'service', 'suburbsGameDay', 'waterfrontBoats', 'rival', 'universityMenu', 'industrialShifts', 'uptownStars', 'franchise']);
+      expect(Object.keys(game.newGame(0).x)).toEqual([
+        'mastery',
+        'counterattack',
+        'events',
+        'recipes',
+        'heads',
+        'service',
+        'suburbsGameDay',
+        'waterfrontBoats',
+        'rival',
+        'universityMenu',
+        'industrialShifts',
+        'uptownStars',
+        'franchise',
+      ]);
       require('../features');
       expect(Object.keys(game.newGame(0).x)).toHaveLength(13);
     });

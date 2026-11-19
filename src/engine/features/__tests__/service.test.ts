@@ -1,14 +1,20 @@
 // Service (v5.16, card P1): the report's numbers, tips, the cold line, away time, and the heads' slammed asks. Only a shop that runs itself,
 // after the tutorial, takes part. One second of play per tick, with the wall clock moving the same second.
 import { COPY, MANAGER_COPY_KEY, SERVICE } from '../../../content/service';
-import { MANAGERS, NONNA_TAKEOVER } from '../../../content/tuning';
 import type { NeighborhoodId } from '../../../content/types';
 import * as G from '../../game';
 import { getFeature, withFeatures } from '..';
 import { onServicePulse, quantise, reportView, service, slammedAsks, type ServicePulse } from '../service';
 
+import { HOME_CITY } from '../../../content/cities/home';
+import { HOME_BARKS } from '../../../content/cities/home/voice';
+import { NONNA_TAKEOVER } from '../../../content/cities/home/fit';
+import { MANAGERS } from '../../../content/cities/home/data';
 const T0 = 1_800_000_000_000;
-const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
+const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } },
+});
 
 /** Downtown after the tutorial, run by Nonna, with a kitchen of one level `lv`, `d` drivers and `t` seating. */
 function shop(lv: number, d: number, t: number, patch: Partial<G.Shop> = {}): G.GameState {
@@ -90,7 +96,7 @@ describe('what is measured', () => {
     });
   });
 
-  test('wanted keeps the other features demand multipliers, before this feature\'s own effect', () => {
+  test("wanted keeps the other features demand multipliers, before this feature's own effect", () => {
     const doubling = { key: 'dbl', init: () => 0, migrate: () => 0, shopDemandMult: () => 2 };
     withFeatures([doubling, service], () => {
       const v = view(SLOW());
@@ -257,11 +263,11 @@ describe('away time', () => {
   });
 
   test('old saves migrate to zero, and a saved cold flag does not come back', () => {
-    const s = service.migrate({ at: 5, shops: { downtown: { below: 40, cold: true, tip: true, slam: { prep: 9, oven: 9, counter: 9 } } } }, T0);
+    const s = service.migrate({ at: 5, shops: { downtown: { below: 40, cold: true, tip: true, slam: { prep: 9, oven: 9, counter: 9 } } } }, T0, HOME_CITY);
     expect(s.at).toBe(0);
     expect(s.shops.downtown.cold).toBe(false);
     expect(s.shops.downtown.below).toBe(0);
-    expect(service.migrate(undefined, T0).shops.uptown.below).toBe(0);
+    expect(service.migrate(undefined, T0, HOME_CITY).shops.uptown.below).toBe(0);
   });
 });
 
@@ -308,16 +314,37 @@ describe('the copy', () => {
 
 describe('the slammed bark (step 6)', () => {
   test('18 lines, one per shop and station, after `attack` in the priority and ahead of the rest', () => {
-    const { BARKS, HEAD_BARKS } = jest.requireActual('../../../content/heads');
+    const { HEAD_BARKS } = jest.requireActual('../../../content/heads');
+    const { HOME_BARKS: BARKS } = jest.requireActual('../../../content/cities/home/voice');
     for (const id of Object.keys(BARKS)) for (const st of ['prep', 'oven', 'counter']) expect(BARKS[id][st].slammed.length).toBeGreaterThan(5);
     expect(HEAD_BARKS.priority.slice(0, 2)).toEqual(['attack', 'slammed']);
   });
   test('a slammed ask speaks through the ordinary ask rules and loses to an attack', () => {
     const { nextBark, newBarkMem } = jest.requireActual('../heads');
-    const { BARKS } = jest.requireActual('../../../content/heads');
-    const r = nextBark(newBarkMem(), 'downtown', [{ trigger: 'milestone', station: 'prep' }, { trigger: 'slammed', station: 'oven' }], 100, false);
+    const { HOME_BARKS: BARKS } = jest.requireActual('../../../content/cities/home/voice');
+    const r = nextBark(
+      newBarkMem(),
+      'downtown',
+      [
+        { trigger: 'milestone', station: 'prep' },
+        { trigger: 'slammed', station: 'oven' },
+      ],
+      100,
+      false,
+      HOME_BARKS,
+    );
     expect(r.bark.text).toBe(BARKS.downtown.oven.slammed);
-    const a = nextBark(newBarkMem(), 'downtown', [{ trigger: 'slammed', station: 'oven' }, { trigger: 'attack', station: 'prep', key: 'x' }], 100, false);
+    const a = nextBark(
+      newBarkMem(),
+      'downtown',
+      [
+        { trigger: 'slammed', station: 'oven' },
+        { trigger: 'attack', station: 'prep', key: 'x' },
+      ],
+      100,
+      false,
+      HOME_BARKS,
+    );
     expect(a.bark.trigger).toBe('attack');
   });
 });

@@ -4,24 +4,28 @@
 // Friday Night Rush and Big Game Day (v5.15): on and off at the boundaries, who they apply to, never offline, and how they
 // combine with boosts (docs/REWARDS.md: boosts add).
 import { EVENTS } from '../../content/endgame';
-import { NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { getFeature } from '../features';
 import { activeEvent, events, eventView, withoutEvent } from '../features/events';
 import * as G from '../game';
 import * as R from '../rewards';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const at = (y: number, m: number, d: number, h = 0, mi = 0, s = 0) => new Date(y, m - 1, d, h, mi, s).getTime();
 // 2026-11-13 is a Friday, 11-14 a Saturday, 11-15 a Sunday
 const FRI = (h: number, mi = 0, s = 0) => at(2026, 11, 13, h, mi, s);
 const SUN = (h: number, mi = 0, s = 0) => at(2026, 11, 15, h, mi, s);
-const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
+const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } },
+});
 
 /** Every shop built, kitchens far ahead of demand so the demand side decides, and a full set of heads. */
 function city(now: number): G.GameState {
   let g = G.newGame(now);
-  for (const id of IDS) g = withShop(g, id, { built: true, managed: true, heads: G.allHeads(), prep: 40, ovens: 40, counter: 40, footprint: 3, tables: 5, drivers: 2 });
+  for (const id of IDS)
+    g = withShop(g, id, { built: true, managed: true, heads: G.allHeads(), prep: 40, ovens: 40, counter: 40, footprint: 3, tables: 5, drivers: 2 });
   return { ...g, lastSavedAt: now };
 }
 // the same city at the same moment with no event: every other layer (the service tip, Industrial's shift, Uptown's stars) reads the same in both
@@ -127,7 +131,10 @@ describe('while the app is open', () => {
 
   it('adds with boosts instead of multiplying: 2x boost + 1.5x event = 2.5x', () => {
     const now = FRI(18);
-    const boosted = (g: G.GameState): G.GameState => ({ ...g, rewards: { ...g.rewards, boosts: [{ mult: 2, until: now + 3_600_000, source: 't' }], lastSeen: now } });
+    const boosted = (g: G.GameState): G.GameState => ({
+      ...g,
+      rewards: { ...g.rewards, boosts: [{ mult: 2, until: now + 3_600_000, source: 't' }], lastSeen: now },
+    });
     const withEvent = boosted(running(now));
     const plain = boosted(base(now));
     const perSecond = (g: G.GameState) => G.shopEarnings(g, 'uptown', now) * G.boostMult(g, now);
@@ -152,7 +159,10 @@ describe('while the app is open', () => {
 describe('T86 cash rewards are not inflated by an event (C111)', () => {
   const now = FRI(18);
   it('rewardIncome during an event equals the off-event value, with and without a 2x boost', () => {
-    const boosted = (g: G.GameState): G.GameState => ({ ...g, rewards: { ...g.rewards, boosts: [{ mult: 2, until: now + 3_600_000, source: 't' }], lastSeen: now } });
+    const boosted = (g: G.GameState): G.GameState => ({
+      ...g,
+      rewards: { ...g.rewards, boosts: [{ mult: 2, until: now + 3_600_000, source: 't' }], lastSeen: now },
+    });
     const on = running(now);
     expect(G.earningsPerSecond(on)).toBeCloseTo(G.earningsPerSecond(base(now)) * 1.5, 6); // the readout at the stamp does show the event
     expect(R.rewardIncome(on)).toBeCloseTo(R.rewardIncome(base(now)), 6);
@@ -162,7 +172,12 @@ describe('T86 cash rewards are not inflated by an event (C111)', () => {
 
   it('a daily-task claim pays the same in and out of an event', () => {
     const claim = (g: G.GameState) => {
-      const s = { ...g, seenScenes: ['downtown-4'], rewards: { ...g.rewards, lastSeen: 0, daily: [{ kind: 'upgrades' as const, target: 1, base: 0, claimed: false }], day: R.dayKey(now) }, stats: { ...g.stats, upgrades: 5 } };
+      const s = {
+        ...g,
+        seenScenes: ['downtown-4'],
+        rewards: { ...g.rewards, lastSeen: 0, daily: [{ kind: 'upgrades' as const, target: 1, base: 0, claimed: false }], day: R.dayKey(now) },
+        stats: { ...g.stats, upgrades: 5 },
+      };
       const r = R.claimDaily(s, 0, now);
       if (!r.ok) throw new Error(r.reason);
       return r.state.cash - s.cash;

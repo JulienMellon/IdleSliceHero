@@ -1,18 +1,34 @@
 /// <reference types="jest" />
 import { COUNTERATTACK } from '../../../content/endgame';
-import { NEIGHBORHOODS } from '../../../content/tuning';
 import type { NeighborhoodId } from '../../../content/types';
 import '../../../engine/features'; // registers the features (A31)
 import * as G from '../../../engine/game';
 import { attackView, startChallenge } from '../../../engine/features/counterattack';
 import { behindPace } from '../../order-model';
-import { attackFace, attackLite, bannerView, barPct, barStep, behindChallenge, challengeView, resultView, retryText, weekLeftText, winDiamondsText } from '../attack-model';
+import {
+  attackFace,
+  attackLite,
+  bannerView,
+  barPct,
+  barStep,
+  behindChallenge,
+  challengeView,
+  resultView,
+  retryText,
+  weekLeftText,
+  winDiamondsText,
+} from '../attack-model';
 
+import { HOME_CITY } from '../../../content/cities/home';
+import { NEIGHBORHOODS } from '../../../content/cities/home/data';
 const IDS = NEIGHBORHOODS.map((n) => n.id);
 const at = (y: number, m: number, d: number, h = 0, mi = 0, s = 0) => new Date(y, m - 1, d, h, mi, s).getTime();
 const WED = at(2026, 11, 11, 12);
 const MON = at(2026, 11, 16);
-const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
+const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } },
+});
 function city(): G.GameState {
   let g = G.newGame(WED);
   for (const id of IDS) g = withShop(g, id, { built: true, managed: true, heads: G.allHeads(), prep: 10, ovens: 10, counter: 10, tables: 10, drivers: 5 });
@@ -61,7 +77,7 @@ describe('which face the attack shows', () => {
     g = tick(g, MON + 1000, COUNTERATTACK.challengeSeconds + 1);
     const v = attackView(g, MON + 1000);
     expect(attackFace(v)).toBe('lost');
-    expect(resultView(v)).toMatchObject({ kind: 'lost' });
+    expect(resultView(v, HOME_CITY)).toMatchObject({ kind: 'lost' });
     expect(attackLite(g).face).toBe('lost');
   });
 });
@@ -70,7 +86,14 @@ describe('the challenge chip', () => {
   test('pie count, bars in 5% steps, clock, reward', () => {
     let g = defending();
     const v0 = challengeView(attackView(g, MON))!;
-    expect(v0).toMatchObject({ progress: expect.stringMatching(/^0 \/ [\d.]+K? pies$/), fillStep: 0, drainStep: 20, clock: '5:00', urgent: false, behind: false });
+    expect(v0).toMatchObject({
+      progress: expect.stringMatching(/^0 \/ [\d.]+K? pies$/),
+      fillStep: 0,
+      drainStep: 20,
+      clock: '5:00',
+      urgent: false,
+      behind: false,
+    });
     const id = attackView(g, MON).shopId!;
     const target = attackView(g, MON).target;
     g = withShop(g, id, { sold: g.shops[id].sold + Math.ceil(target / 2) });
@@ -94,7 +117,13 @@ describe('the challenge chip', () => {
     // behind at half the time used with a fifth sold, ahead with four fifths sold, the same as the order rule at the same share of time
     expect(behindChallenge(20, 100, T / 2)).toBe(true);
     expect(behindChallenge(80, 100, T / 2)).toBe(false);
-    for (const [done, used] of [[0, 0.5], [30, 0.5], [60, 0.5], [95, 0.9], [10, 0.1]] as const) {
+    for (const [done, used] of [
+      [0, 0.5],
+      [30, 0.5],
+      [60, 0.5],
+      [95, 0.9],
+      [10, 0.1],
+    ] as const) {
       const orderLeft = 120 * (1 - used);
       expect(behindChallenge(done, 100, T * (1 - used))).toBe(behindPace(done, 100, orderLeft));
     }
@@ -120,7 +149,7 @@ describe('how it ends', () => {
     g = tick(g, MON + 1000, 0.2);
     const end = attackView(g, MON + 1000);
     expect(attackFace(end)).toBe('won');
-    const r = resultView(end)!;
+    const r = resultView(end, HOME_CITY)!;
     expect(r.kind).toBe('won');
     expect(r.diamonds).toBe(COUNTERATTACK.rewardDiamonds);
     expect(r.cash).toBeGreaterThan(0);
@@ -132,17 +161,23 @@ describe('how it ends', () => {
     const lines = new Set<string>();
     for (const id of IDS) {
       for (const kind of ['won', 'lost'] as const) {
-        const r = resultView({ ...attackView(attacked(), MON), news: kind === 'won' ? { kind, shopId: id, cash: 5, diamonds: 15 } : { kind, shopId: id } })!;
+        const r = resultView(
+          { ...attackView(attacked(), MON), news: kind === 'won' ? { kind, shopId: id, cash: 5, diamonds: 15 } : { kind, shopId: id } },
+          HOME_CITY,
+        )!;
         expect(r.line).toMatch(/\S/);
         lines.add(r.line);
       }
     }
     expect(lines.size).toBe(12);
-    expect(resultView({ ...attackView(attacked(), MON), news: { kind: 'won', shopId: 'suburbs', cash: 1, diamonds: 15 } })).toMatchObject({ speaker: 'Dale', who: 'dale' });
+    expect(resultView({ ...attackView(attacked(), MON), news: { kind: 'won', shopId: 'suburbs', cash: 1, diamonds: 15 } }, HOME_CITY)).toMatchObject({
+      speaker: 'Dale',
+      who: 'dale',
+    });
   });
 
   test('an attack that expired unpaid has no line to show', () => {
-    expect(resultView({ ...attackView(attacked(), MON), news: { kind: 'expired', shopId: 'suburbs' } })).toBeNull();
+    expect(resultView({ ...attackView(attacked(), MON), news: { kind: 'expired', shopId: 'suburbs' } }, HOME_CITY)).toBeNull();
   });
 });
 

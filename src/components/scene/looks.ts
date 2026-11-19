@@ -11,7 +11,17 @@ export const HAIR_COLORS = ['#2B1A12', '#4A2C1D', '#8E5A3C', '#E3C16F', '#B5462E
 export const PANTS = ['#3B4A6B', '#5C4033', '#2F3140', '#6B7A8F', '#7A5C8E'];
 export const GUEST_SHIRTS = ['#F2994A', '#56CCF2', '#BB6BD9', '#6FCF97', '#F2C94C', '#EB6F92', '#3D9970', '#5C6BC0'];
 
-export interface Look { skin: string; hair: string; style: number; trait: number; wide: number; pants: string; shirt: string; tall: number; outfit: number }
+export interface Look {
+  skin: string;
+  hair: string;
+  style: number;
+  trait: number;
+  wide: number;
+  pants: string;
+  shirt: string;
+  tall: number;
+  outfit: number;
+}
 /** Integer hash (mulberry32 step) so every look field is independent of the others. */
 export function hash32(n: number) {
   let t = (n + 0x6d2b79f5) | 0;
@@ -37,7 +47,11 @@ export function lookFor(seed: number, worker = false): Look {
 }
 
 /** One idle driver of the sidewalk lane: the seed that draws their face, and whether they are checking a phone. */
-export interface DriverCast { seed: number; phone: boolean; cap: string }
+export interface DriverCast {
+  seed: number;
+  phone: boolean;
+  cap: string;
+}
 /** The brand's cap, one colour per slot (D513: four drivers in one red cap read as clones): red, mustard, teal, plum; the jacket stays the brand's blue. */
 export const DRIVER_CAPS = ['#D9443A', '#E9A23B', '#2F9E8F', '#8B5FBF'] as const;
 const driverCastCache = new Map<number, DriverCast[]>();

@@ -118,7 +118,15 @@ export default function Settings() {
         <View style={styles.card} testID="settings-purchases">
           <Text style={styles.cardTitle}>Purchases</Text>
           <Text style={styles.stat}>Bought something on another device? Get it back here.</Text>
-          <Pressable testID="restore-purchases" accessibilityRole="button" accessibilityLabel="Restore Purchases" accessibilityState={{ busy: restoring, disabled: restoring }} disabled={restoring} onPress={restore} style={[styles.action, restoring && { opacity: 0.6 }]}>
+          <Pressable
+            testID="restore-purchases"
+            accessibilityRole="button"
+            accessibilityLabel="Restore Purchases"
+            accessibilityState={{ busy: restoring, disabled: restoring }}
+            disabled={restoring}
+            onPress={restore}
+            style={[styles.action, restoring && { opacity: 0.6 }]}
+          >
             <Text style={styles.actionText}>Restore Purchases</Text>
           </Pressable>
           {restored !== '' && (
@@ -144,12 +152,20 @@ export default function Settings() {
                   onPress={async () => {
                     await resetGame();
                     router.back();
-                  }}>
+                  }}
+                >
                   <Text style={styles.dangerText}>Yes, erase</Text>
                 </Pressable>
               </View>
             ) : (
-              <Pressable style={styles.danger} onPress={() => setConfirm(true)} testID="reset" accessibilityRole="button" accessibilityLabel="Reset game" accessibilityHint="Asks you to confirm before anything is erased">
+              <Pressable
+                style={styles.danger}
+                onPress={() => setConfirm(true)}
+                testID="reset"
+                accessibilityRole="button"
+                accessibilityLabel="Reset game"
+                accessibilityHint="Asks you to confirm before anything is erased"
+              >
                 <Text style={styles.dangerText}>Reset game</Text>
               </Pressable>
             )}
@@ -161,9 +177,28 @@ export default function Settings() {
   );
 }
 
-function Toggle({ label, on, onPress, testID, whole = false }: { label: string; on: boolean; onPress: () => void; testID: string; /** `label` already says On or Off. */ whole?: boolean }) {
+function Toggle({
+  label,
+  on,
+  onPress,
+  testID,
+  whole = false,
+}: {
+  label: string;
+  on: boolean;
+  onPress: () => void;
+  testID: string;
+  /** `label` already says On or Off. */ whole?: boolean;
+}) {
   return (
-    <Pressable testID={testID} accessibilityRole="switch" accessibilityLabel={whole ? label : undefined} accessibilityState={{ checked: on }} onPress={onPress} style={[styles.toggle, on ? styles.toggleOn : styles.toggleOff]}>
+    <Pressable
+      testID={testID}
+      accessibilityRole="switch"
+      accessibilityLabel={whole ? label : undefined}
+      accessibilityState={{ checked: on }}
+      onPress={onPress}
+      style={[styles.toggle, on ? styles.toggleOn : styles.toggleOff]}
+    >
       <Text style={[styles.toggleText, { color: on ? '#fff' : C.inkSoft }]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.15}>
         {whole ? label : `${label}: ${on ? 'On' : 'Off'}`}
       </Text>
@@ -174,7 +209,13 @@ function Toggle({ label, on, onPress, testID, whole = false }: { label: string; 
 /** Opens a page of the site in the in-app browser. */
 function LinkButton({ label, url, testID }: { label: string; url: string; testID: string }) {
   return (
-    <Pressable testID={testID} accessibilityRole="link" accessibilityLabel={label} onPress={() => void WebBrowser.openBrowserAsync(url).catch(() => {})} style={[styles.action, { flex: 1 }]}>
+    <Pressable
+      testID={testID}
+      accessibilityRole="link"
+      accessibilityLabel={label}
+      onPress={() => void WebBrowser.openBrowserAsync(url).catch(() => {})}
+      style={[styles.action, { flex: 1 }]}
+    >
       <Text style={styles.actionText} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.15}>
         {label}
       </Text>
@@ -188,7 +229,16 @@ const styles = StyleSheet.create({
   toggleOff: { backgroundColor: '#E2D9CE', borderColor: '#C9BCAD' },
   toggleText: { fontFamily: F.bold, fontSize: 17 },
   root: { flex: 1, backgroundColor: C.bg },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 4, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    backgroundColor: C.tomato,
+    borderBottomWidth: 4,
+    borderColor: C.tomatoDark,
+  },
   back: { width: 70, minHeight: TAP.min, justifyContent: 'center' },
   backText: { fontFamily: F.bold, color: '#fff', fontSize: 18 },
   title: { fontFamily: F.bold, color: '#fff', fontSize: 24 },
@@ -198,7 +248,18 @@ const styles = StyleSheet.create({
   danger: { flex: 1, backgroundColor: C.tomato, borderRadius: 14, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 4, borderColor: C.tomatoDark },
   dangerText: { fontFamily: F.bold, color: '#fff', fontSize: 17 },
   version: { textAlign: 'center', fontFamily: F.regular, color: C.inkSoft },
-  action: { minHeight: BUTTON_H, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, marginTop: 10, backgroundColor: '#fff', borderWidth: 2.5, borderColor: C.ink, borderBottomWidth: 4 },
+  action: {
+    minHeight: BUTTON_H,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    marginTop: 10,
+    backgroundColor: '#fff',
+    borderWidth: 2.5,
+    borderColor: C.ink,
+    borderBottomWidth: 4,
+  },
   actionText: { fontFamily: F.bold, fontSize: 16, color: C.ink },
   idText: { fontFamily: F.semi, fontSize: 13, color: C.ink, marginTop: 8 },
 });

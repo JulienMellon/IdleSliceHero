@@ -14,7 +14,15 @@ export const VIEW_MARGIN = 12;
  * The draw-space span on screen: the view `viewW` pt wide scrolled `scrollX`, `margin` pt in from each edge, inside `bounds` (the drawing's own edges). `shift` is the
  * draw space's distance to the frame's space (`drawShift`). With no scrolling (`scrolls` false) it is `bounds`.
  */
-export function visibleSpan(scrolls: boolean, scrollX: number, viewW: number, fit: Pick<SceneFit, 's' | 'ox'>, shift: number, bounds: Span, margin = VIEW_MARGIN): Span {
+export function visibleSpan(
+  scrolls: boolean,
+  scrollX: number,
+  viewW: number,
+  fit: Pick<SceneFit, 's' | 'ox'>,
+  shift: number,
+  bounds: Span,
+  margin = VIEW_MARGIN,
+): Span {
   if (!scrolls) return bounds;
   const x0 = screenToScene(margin, scrollX, fit) - shift;
   const x1 = screenToScene(viewW - margin, scrollX, fit) - shift;
@@ -45,7 +53,10 @@ export function slideInto(centre: number, width: number, span: Span, limit: Span
 }
 
 /** The sign's own measure: the fascia beam's span, the sign's width (it follows the name) and the beam's top and bottom (plain plan, draw space). */
-export function fasciaSignBox(lay: Pick<Layout, 'L' | 'R'>, name: string): { fx0: number; fx1: number; fTop: number; fBot: number; fcx: number; signW: number } {
+export function fasciaSignBox(
+  lay: Pick<Layout, 'L' | 'R'>,
+  name: string,
+): { fx0: number; fx1: number; fTop: number; fBot: number; fcx: number; signW: number } {
   const [fx0, fTop] = P(lay.L - 6, 0, FRONT_TOP);
   const [fx1, fBot] = P(lay.R + 6, 0, FRONT_TOP - 20);
   return { fx0, fx1, fTop, fBot, fcx: (fx0 + fx1) / 2, signW: Math.min(fx1 - fx0 - 40, 34 + name.length * 9.6 + 54) };

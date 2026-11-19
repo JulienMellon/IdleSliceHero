@@ -3,37 +3,13 @@
 // A ring on the HUD's scrapbook button shows the progress toward it, in RING_STEP steps so it never repaints on a tick.
 import { RING_STEP } from '../content/hooks';
 import { cityOf } from '../content/cities';
+import { HOME_NAMES } from '../content/cities/home/cast';
 import type { CharacterId, Scene } from '../content/types';
 import { count } from './format';
-import { buildLock, def, pier9Available, pier9Price, sceneTriggered, type GameState } from './game';
+import { buildLock, def, bidAvailable, bidPrice, sceneTriggered, type GameState } from './game';
 
-/** The name the story line uses for each character (the character only, no scene content). */
-const WHO: Record<CharacterId, string> = {
-  'nonna-rosa': 'Nonna Rosa',
-  dale: 'Dale',
-  marisol: 'Marisol',
-  priya: 'Priya',
-  'big-sal': 'Big Sal',
-  genevieve: 'Genevieve',
-  'victor-crust': 'Victor Crust',
-  'megaslice-rep': 'the MegaSlice rep',
-  // a scene's `character` is the neighbourhood's lead; these only appear on stage, but the table covers every id
-  'mr-smith': 'Mr. Smith',
-  'todd-coat': 'Todd',
-  slicey: 'Slicey',
-  deb: 'Deb',
-  skip: 'Skip',
-  noor: 'Noor',
-  dee: 'Dee',
-  anton: 'Anton',
-  'father-dom': 'Father Dom',
-  'kayla-dunn': 'Kayla Dunn',
-  preston: 'Preston',
-  manny: 'Manny',
-  'lena-ko': 'Dr. Ko',
-  'grandma-bea': 'Grandma Bea',
-  'trish-vance': 'Trish Vance',
-};
+/** The name the story line uses for a character (the character only, no scene content): the city's own names, then the home cast's (the returning characters). */
+const whoName = (s: GameState, id: CharacterId): string => cityOf(s).names?.[id] ?? HOME_NAMES[id as keyof typeof HOME_NAMES] ?? id;
 
 export type TeaserKind = 'deliveries' | 'unlock' | 'bid' | 'soon' | 'complete';
 
@@ -71,14 +47,19 @@ type Make = (kind: TeaserKind, text: (() => string) | string, progress: number) 
 function teaserWith(s: GameState, scenes: readonly Scene[], make: Make): Teaser {
   const sc = nextScene(s, scenes);
   if (!sc) return make('complete', TEASER_COMPLETE, 1);
-  const who = () => `Next: ${WHO[sc.character]}'s story continues`;
+  const who = () => `Next: ${whoName(s, sc.character)}'s story continues`;
   const hood = def(sc.neighborhood, cityOf(s));
   const shop = s.shops[sc.neighborhood];
   if (sceneTriggered(s, sc)) return make('soon', () => `${who()} in a moment`, 1);
   // the shop isn't there yet: whatever the scene waits for, the player's next move is to build it
   if (!shop.built) return make('unlock', () => `${who()} when you build ${hood.name}`, buildLock(s, sc.neighborhood) ? 0 : ratio(s.cash, hood.buildCost));
   const tr = sc.trigger;
-  if (tr.kind === 'bid') return make('bid', () => `${who()} when you bid on Pier 9`, pier9Available(s) ? ratio(s.cash, pier9Price(s)) : ratio(shop.sold, cityOf(s).bid?.unlockPizzas ?? 0));
+  if (tr.kind === 'bid')
+    return make(
+      'bid',
+      () => `${who()} when you bid on Pier 9`,
+      bidAvailable(s) ? ratio(s.cash, bidPrice(s)) : ratio(shop.sold, cityOf(s).bid?.unlockPizzas ?? 0),
+    );
   if (tr.kind === 'after') return make('soon', () => `${who()} soon`, 0);
   if (tr.kind === 'challenge') return make('soon', () => `${who()} when you outsell MegaSlice`, 0);
   if (tr.kind === 'deliveries') {
@@ -92,7 +73,12 @@ function teaserWith(s: GameState, scenes: readonly Scene[], make: Make): Teaser 
 }
 
 export function nextSceneTeaser(s: GameState, scenes: readonly Scene[] = cityOf(s).scenes): Teaser {
-  return teaserWith(s, scenes, (kind, text, progress) => ({ kind, text: typeof text === 'string' ? text : text(), progress, step: kind === 'complete' ? 0 : ringStep(progress) }));
+  return teaserWith(s, scenes, (kind, text, progress) => ({
+    kind,
+    text: typeof text === 'string' ? text : text(),
+    progress,
+    step: kind === 'complete' ? 0 : ringStep(progress),
+  }));
 }
 
 /** U13: only the ring's step of `nextSceneTeaser` (the HUD asks five times a second): no text is built, the same answer. */

@@ -2,9 +2,9 @@
 // v5.16 (T1b): the Scrapbook lists every neighbourhood's scenes in story order, labels the interludes "Interlude", titles the five hire scenes
 // from the copy (docs/story/COPY-v5.16.md section 6) and counts against all 40 scenes.
 import { HOME_SCENES } from '../../content/scenes/home';
-import { NEIGHBORHOODS } from '../../content/tuning';
 import { INTERLUDE_LABEL, chapterScenes, storiesCount, tileLabel } from '../cutscene/scrapbook-model';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const HIRE_TITLES: Record<string, string> = {
   'suburbs-hire': 'Deb Takes the Counter',
   'waterfront-hire': 'Counted Twice',

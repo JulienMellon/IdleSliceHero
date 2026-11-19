@@ -1,15 +1,31 @@
 /// <reference types="jest" />
-import { ORDER, ORDER_CAST, ORDER_FAIL_LINE, ORDER_VIEW } from '../../content/hooks';
+import { ORDER, ORDER_FAIL_LINE, ORDER_VIEW } from '../../content/hooks';
 import { money } from '../../engine/format';
 import * as G from '../../engine/game';
 import * as O from '../../engine/orders';
 import { behindPace, chipPhase, chipView, clockText, offerExpiry, progressText } from '../order-model';
 
+import { HOME_ORDER_CAST as ORDER_CAST } from '../../content/cities/home/voice';
 const T0 = 1_700_000_000_000;
 const ready = (): G.GameState => {
   const s = G.newGame(T0);
-  const run = (lv: number) => ({ ...s.shops.suburbs, built: true, managed: true, heads: G.allHeads(), prep: lv, ovens: lv, counter: lv, drivers: lv + 2, tables: lv });
-  return { ...s, tutorial: G.TUTORIAL_DONE, seenScenes: ['downtown-1', 'downtown-4', 'suburbs-1'], shops: { ...s.shops, downtown: { ...s.shops.downtown, managed: true, heads: G.allHeads() }, suburbs: run(10) } };
+  const run = (lv: number) => ({
+    ...s.shops.suburbs,
+    built: true,
+    managed: true,
+    heads: G.allHeads(),
+    prep: lv,
+    ovens: lv,
+    counter: lv,
+    drivers: lv + 2,
+    tables: lv,
+  });
+  return {
+    ...s,
+    tutorial: G.TUTORIAL_DONE,
+    seenScenes: ['downtown-1', 'downtown-4', 'suburbs-1'],
+    shops: { ...s.shops, downtown: { ...s.shops.downtown, managed: true, heads: G.allHeads() }, suburbs: run(10) },
+  };
 };
 const withOffer = (): G.GameState => ({ ...ready(), order: { ...ready().order, offer: { hood: 'suburbs', target: 40, left: 45, variant: 0 } } });
 
@@ -64,7 +80,10 @@ describe('v5.14 fix round (D441, D442, D443)', () => {
     const v = chipView(withOffer())!;
     expect(v.reward).toMatch(/^\+\$/);
     expect(v.expiry).toBe(1);
-    const half = chipView({ ...withOffer(), order: { ...withOffer().order, offer: { hood: 'suburbs', target: 40, left: ORDER.offerWaitSeconds / 2, variant: 0 } } })!;
+    const half = chipView({
+      ...withOffer(),
+      order: { ...withOffer().order, offer: { hood: 'suburbs', target: 40, left: ORDER.offerWaitSeconds / 2, variant: 0 } },
+    })!;
     expect(half.expiry).toBeCloseTo(0.5, 6);
     expect([45, 22.5, 0, -1, 90].map(offerExpiry)).toEqual([1, 0.5, 0, 0, 1]);
   });

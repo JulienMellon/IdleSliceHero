@@ -2,14 +2,14 @@
 // most), never on a game tick. A tap opens the layer's info sheet.
 import { memo } from 'react';
 
-import { gameDayView } from '../../engine/features/layers/suburbs-gameday';
-import { boatsView } from '../../engine/features/layers/waterfront-boats';
+import { gameDayView } from '../../engine/features/layers/game-day';
+import { boatsView } from '../../engine/features/layers/boats';
 import { rivalOpen } from '../../engine/features/layers/rival';
 import { useGame } from '../../store/game-store';
 import { hoodOf } from './city-layers';
 import { LayerChip } from './layer-chip';
-import { gameDayChipShown, gameDayChipText } from './suburbs/gameday-model';
-import { auctionStatus, harbourChip } from './waterfront/boats-model';
+import { gameDayChipShown, gameDayChipText } from './game-day/gameday-model';
+import { auctionStatus, harbourChip } from './boats/boats-model';
 import { rivalTagText } from './rival/rival-model';
 import { gameNow } from '../../engine/clock';
 

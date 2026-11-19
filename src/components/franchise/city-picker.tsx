@@ -25,7 +25,13 @@ export function CityPicker({ game }: { game: GameState }) {
             <Text style={styles.sub}>{r.current ? 'You are here' : 'Franchised'}</Text>
           </View>
           {r.past && (
-            <Pressable testID={`city-scrapbook-${r.id}`} accessibilityRole="button" accessibilityLabel={`${r.name} Scrapbook`} onPress={() => setOpen(r.id)} style={styles.read}>
+            <Pressable
+              testID={`city-scrapbook-${r.id}`}
+              accessibilityRole="button"
+              accessibilityLabel={`${r.name} Scrapbook`}
+              onPress={() => setOpen(r.id)}
+              style={styles.read}
+            >
               <Text style={styles.readText}>Scrapbook ›</Text>
             </Pressable>
           )}
@@ -40,10 +46,30 @@ const styles = StyleSheet.create({
   wrap: { marginTop: 10, gap: 6 },
   head: { fontFamily: F.bold, fontSize: 18, color: C.ink },
   stars: { fontFamily: F.semi, fontSize: 14, color: C.inkSoft },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 14, borderWidth: 2.5, borderColor: C.locked, padding: 10, minHeight: TAP.min },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 2.5,
+    borderColor: C.locked,
+    padding: 10,
+    minHeight: TAP.min,
+  },
   rowHere: { borderColor: C.cheeseDark },
   name: { fontFamily: F.bold, fontSize: 16, color: C.ink },
   sub: { fontFamily: F.regular, fontSize: 12, color: C.inkSoft },
-  read: { minHeight: TAP.min, minWidth: 96, borderRadius: 12, borderWidth: 2.5, borderColor: C.ink, backgroundColor: '#FFF4E0', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
+  read: {
+    minHeight: TAP.min,
+    minWidth: 96,
+    borderRadius: 12,
+    borderWidth: 2.5,
+    borderColor: C.ink,
+    backgroundColor: '#FFF4E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
   readText: { fontFamily: F.bold, fontSize: 14, color: C.ink },
 });

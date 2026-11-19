@@ -5,5 +5,8 @@ import type { ProductId } from '../services/types';
 
 /** One grant per owned one-time product, holding only its entitlements. */
 export function standingGrants(owned: readonly ProductId[]): Grant[] {
-  return owned.filter((id) => GRANTS[id]).map((id) => restoredPart(GRANTS[id])).filter((g) => g.cosmetic || g.plus);
+  return owned
+    .filter((id) => GRANTS[id])
+    .map((id) => restoredPart(GRANTS[id]))
+    .filter((g) => g.cosmetic || g.plus);
 }

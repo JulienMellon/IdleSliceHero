@@ -23,8 +23,12 @@ function Sheet({ kind }: { kind: SheetKind }) {
           <View style={styles.rows}>
             {m.rows.map((r) => (
               <View key={r.key} style={styles.row} testID={`layer-row-${r.key}`}>
-                <Text style={styles.label} numberOfLines={1}>{r.label}</Text>
-                <Text style={styles.value} numberOfLines={1}>{r.value}</Text>
+                <Text style={styles.label} numberOfLines={1}>
+                  {r.label}
+                </Text>
+                <Text style={styles.value} numberOfLines={1}>
+                  {r.value}
+                </Text>
               </View>
             ))}
           </View>
@@ -64,7 +68,17 @@ export const LayerSheet = memo(function LayerSheet() {
 });
 
 const styles = StyleSheet.create({
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.6)', alignItems: 'center', justifyContent: 'center', padding: 16 },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(30,14,8,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
   card: { backgroundColor: C.bg, borderRadius: 20, borderWidth: 4, borderColor: C.ink, padding: 14, width: '100%', maxWidth: 360, maxHeight: '88%', gap: 8 },
   title: { fontFamily: F.bold, fontSize: 20, lineHeight: 24, color: C.ink, textAlign: 'center' },
   scroll: { flexGrow: 0 },

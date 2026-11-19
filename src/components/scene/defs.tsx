@@ -1,10 +1,10 @@
 import { memo } from 'react';
 import { Defs, LinearGradient, Stop } from 'react-native-svg';
-import { OVEN_GRADES } from '../../content/tuning';
+import type { OvenGrade } from '../../content/tuning';
 import { shade } from './projection';
 
 /** Gradients shared by the scene; static, so mounted once rather than rebuilt every frame. */
-export const SceneDefs = memo(function SceneDefs() {
+export const SceneDefs = memo(function SceneDefs({ grades }: { grades: readonly OvenGrade[] }) {
   return (
     <Defs>
       <LinearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
@@ -27,7 +27,7 @@ export const SceneDefs = memo(function SceneDefs() {
         <Stop offset="0.5" stopColor="#B83A1C" />
         <Stop offset="1" stopColor="#F08A2E" />
       </LinearGradient>
-      {OVEN_GRADES.map((g, i) => (
+      {grades.map((g, i) => (
         <LinearGradient key={i} id={`oven${i}`} x1="0" y1="0" x2="1" y2="0">
           <Stop offset="0" stopColor={shade(g.color, 0.3)} />
           <Stop offset="0.5" stopColor={g.color} />

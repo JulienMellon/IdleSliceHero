@@ -4,12 +4,12 @@ import { BOSTON_LAYER_COPY } from '../../../content/cities/boston/copy';
 import { BOSTON_CITY } from '../../../content/cities/boston';
 import { builtHood, hoodOf } from '../city-layers';
 import { dressed, isDressed } from '../city-dress';
-import { gameDayBanner, gameDayChipShown, gameDayChipText } from '../suburbs/gameday-model';
-import { harbourChip, rackCard, tierName } from '../waterfront/boats-model';
-import { chipText } from '../uptown/stars-model';
-import { shiftRows, whistle } from '../industrial/shift-model';
-import { jamLabel } from '../industrial/jam-model';
-import { zoneCells } from '../university/zones-model';
+import { gameDayBanner, gameDayChipShown, gameDayChipText } from '../game-day/gameday-model';
+import { harbourChip, rackCard, tierName } from '../boats/boats-model';
+import { chipText } from '../stars/stars-model';
+import { shiftRows, whistle } from '../shifts/shift-model';
+import { jamLabel } from '../shifts/jam-model';
+import { zoneCells } from '../menu/zones-model';
 import { rivalCard } from '../rival/rival-model';
 import { rivalLine } from '../layer-text';
 import { gameDaySheet, boatSheet } from '../sheet-model';
@@ -43,7 +43,6 @@ describe('the layers read the current city', () => {
     const v = { active: true, rush: false } as Parameters<typeof gameDayChipShown>[0];
     expect(gameDayChipShown(v, 'fenway', 'fenway')).toBe(true);
     expect(gameDayChipShown(v, 'suburbs', 'fenway')).toBe(false);
-    expect(gameDayChipShown(v, 'suburbs')).toBe(true);
   });
 });
 
@@ -77,14 +76,27 @@ describe('Boston’s layers speak the script’s words', () => {
   });
 
   test('Cambridge: lab hours and the exploding oven', () => {
-    expect(shiftRows('day', [{ id: 'day', demand: 1, value: 1 }, { id: 'swing', demand: 1, value: 1 }, { id: 'night', demand: 1, value: 2 }], 'boston').map((r) => r.name)).toEqual(['Morning Lab', 'Afternoon Lab', 'Night Lab']);
+    expect(
+      shiftRows(
+        'day',
+        [
+          { id: 'day', demand: 1, value: 1 },
+          { id: 'swing', demand: 1, value: 1 },
+          { id: 'night', demand: 1, value: 2 },
+        ],
+        'boston',
+      ).map((r) => r.name),
+    ).toEqual(['Morning Lab', 'Afternoon Lab', 'Night Lab']);
     expect(whistle('night', 'boston')?.text).toBe('Whistle! Night Lab is on');
     expect(jamLabel({ jammed: true, autoFixIn: null }, 'boston')).toBe(BOSTON_LAYER_COPY['layer.cambridge.breakdown.banner']);
     expect(jamLabel({ jammed: true, autoFixIn: null })).toBe('Oven jammed! Tap the wrench.');
   });
 
   test('Back Bay: the zones are its own streets', () => {
-    const cells = zoneCells({ drones: false, zones: [{ id: 'dorms', open: true, share: 50, tripSeconds: 6, distance: 1 }] } as unknown as Parameters<typeof zoneCells>[0], 'boston');
+    const cells = zoneCells(
+      { drones: false, zones: [{ id: 'dorms', open: true, share: 50, tripSeconds: 6, distance: 1 }] } as unknown as Parameters<typeof zoneCells>[0],
+      'boston',
+    );
     expect(cells[0].name).toBe('Brownstone Row');
   });
 

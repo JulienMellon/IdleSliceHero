@@ -58,9 +58,7 @@ export const INDUSTRIAL_SCENES: Scene[] = [
         backdrop: 'industrial',
         cast: [{ id: 'big-sal', mood: 'neutral' }],
         caption: 'Midnight. A hundred thousand pies in. Not one cold.',
-        lines: [
-          { speaker: 'Big Sal', text: "Pizza's... fine. Crust's fine. Sauce is..." },
-        ],
+        lines: [{ speaker: 'Big Sal', text: "Pizza's... fine. Crust's fine. Sauce is..." }],
       },
       {
         backdrop: 'industrial',
@@ -169,9 +167,7 @@ export const INDUSTRIAL_SCENES: Scene[] = [
         prop: 'vending-machine',
         cast: [{ id: 'megaslice-rep', mood: 'happy' }],
         caption: 'Overnight, MegaSlice vending machines appear in every break room.',
-        lines: [
-          { speaker: 'Todd', text: "Pizza from a machine! 90 seconds! It's hot on the outside! Mostly!" },
-        ],
+        lines: [{ speaker: 'Todd', text: "Pizza from a machine! 90 seconds! It's hot on the outside! Mostly!" }],
       },
       {
         backdrop: 'industrial',
@@ -189,9 +185,7 @@ export const INDUSTRIAL_SCENES: Scene[] = [
       {
         backdrop: 'megaslice-hq',
         cast: [{ id: 'victor-crust', mood: 'angry' }],
-        lines: [
-          { speaker: 'Victor Crust', text: 'Why are factory workers still ordering from that little shop? FIX IT, Ted.' },
-        ],
+        lines: [{ speaker: 'Victor Crust', text: 'Why are factory workers still ordering from that little shop? FIX IT, Ted.' }],
       },
       {
         backdrop: 'industrial',
@@ -217,9 +211,7 @@ export const INDUSTRIAL_SCENES: Scene[] = [
         prop: 'vending-machine',
         cast: [{ id: 'megaslice-rep', mood: 'sad' }],
         caption: 'Midnight. Todd stands in front of his own vending machine.',
-        lines: [
-          { speaker: 'Todd', text: "I restock these. I've never once eaten from one." },
-        ],
+        lines: [{ speaker: 'Todd', text: "I restock these. I've never once eaten from one." }],
       },
       {
         backdrop: 'industrial',
@@ -268,9 +260,7 @@ export const INDUSTRIAL_SCENES: Scene[] = [
         backdrop: 'industrial',
         cast: [{ id: 'big-sal', mood: 'happy' }],
         caption: 'The MegaSlice machines are gone. Mysteriously. Nobody saw anything.',
-        lines: [
-          { speaker: 'Big Sal', text: 'My crew voted. Your pizza only. Unanimous. Even Gary, and Gary hates voting.' },
-        ],
+        lines: [{ speaker: 'Big Sal', text: 'My crew voted. Your pizza only. Unanimous. Even Gary, and Gary hates voting.' }],
       },
       {
         backdrop: 'shop',

@@ -19,7 +19,27 @@ import { Upright } from './primitives';
  * The street face of the shop: brick pilasters at both corners, a fascia beam across the top
  * carrying the sign, a full-width scalloped awning, the brick sill and the entrance on the right.
  */
-export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, id, facadeSkin = 0, awningGold = false, awningFounder = false, plaque = false }: { lay: Layout; name: string; signage: number; plants: number; id: NeighborhoodId; /** Worn cosmetics (cosmetics.ts): the storefront skin's 1-based number (0: none), the gold awning, the master's plaque. */ facadeSkin?: number; awningGold?: boolean; /** The Starter Pack's red and white awning. */ awningFounder?: boolean; plaque?: boolean }) {
+export const FrontWall = memo(function FrontWall({
+  lay,
+  name,
+  signage,
+  plants,
+  id,
+  facadeSkin = 0,
+  awningGold = false,
+  awningFounder = false,
+  plaque = false,
+}: {
+  lay: Layout;
+  name: string;
+  signage: number;
+  plants: number;
+  id: NeighborhoodId;
+  /** Worn cosmetics (cosmetics.ts): the storefront skin's 1-based number (0: none), the gold awning, the master's plaque. */ facadeSkin?: number;
+  awningGold?: boolean;
+  /** The Starter Pack's red and white awning. */ awningFounder?: boolean;
+  plaque?: boolean;
+}) {
   const { L, R, door } = lay;
   const look = dressedLook(LOOKS[id], { facadeSkin, awningGold, awningFounder });
   const sill = (x0: number, x1: number) => {
@@ -57,14 +77,26 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
         {/* limestone quoins: pale blocks alternating on the outer corner */}
         {f === 'collegiate' &&
           Array.from({ length: Math.floor(rows / 2) }).map((_, i) => (
-            <Rect key={`q${i}`} x={inner === 'l' ? ax : bx - w * (i % 2 ? 0.45 : 0.7)} y={ty + 18 * i + 1} width={w * (i % 2 ? 0.45 : 0.7)} height={8} fill="#E8E0CC" stroke={look.seam} strokeWidth={0.6} />
+            <Rect
+              key={`q${i}`}
+              x={inner === 'l' ? ax : bx - w * (i % 2 ? 0.45 : 0.7)}
+              y={ty + 18 * i + 1}
+              width={w * (i % 2 ? 0.45 : 0.7)}
+              height={8}
+              fill="#E8E0CC"
+              stroke={look.seam}
+              strokeWidth={0.6}
+            />
           ))}
         {/* clapboard: overlapping horizontal boards */}
-        {f === 'clapboard' && Array.from({ length: Math.floor(h / 6) }).map((_, i) => <Path key={i} d={`M${ax} ${ty + 6 * (i + 1)} H${bx}`} stroke={look.seam} strokeWidth={1} />)}
+        {f === 'clapboard' &&
+          Array.from({ length: Math.floor(h / 6) }).map((_, i) => <Path key={i} d={`M${ax} ${ty + 6 * (i + 1)} H${bx}`} stroke={look.seam} strokeWidth={1} />)}
         {/* weathered planks, vertical seams, and a rope trim up each edge */}
         {f === 'planks' && (
           <G>
-            {[0.33, 0.66].map((t) => <Path key={t} d={`M${ax + w * t} ${ty} V${ay + 6}`} stroke={look.seam} strokeWidth={1} />)}
+            {[0.33, 0.66].map((t) => (
+              <Path key={t} d={`M${ax + w * t} ${ty} V${ay + 6}`} stroke={look.seam} strokeWidth={1} />
+            ))}
             {[ax + 1.5, bx - 1.5].map((rx) => (
               <Path key={rx} d={`M${rx} ${ty} V${ay + 4}`} stroke="#C99A6B" strokeWidth={2.4} strokeDasharray="3 2" />
             ))}
@@ -81,7 +113,9 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
         {/* green tile: a fine grid */}
         {f === 'tile' && (
           <G>
-            {Array.from({ length: Math.floor(h / 7) }).map((_, i) => <Path key={`h${i}`} d={`M${ax} ${ty + 7 * (i + 1)} H${bx}`} stroke={look.seam} strokeWidth={0.7} />)}
+            {Array.from({ length: Math.floor(h / 7) }).map((_, i) => (
+              <Path key={`h${i}`} d={`M${ax} ${ty + 7 * (i + 1)} H${bx}`} stroke={look.seam} strokeWidth={0.7} />
+            ))}
             <Path d={`M${ax + w / 2} ${ty} V${ay + 6}`} stroke={look.seam} strokeWidth={0.7} />
             <Rect x={ax - 2} y={ty} width={w + 4} height={5} rx={1} fill="#D4A84A" stroke={INK} strokeWidth={0.9} />
           </G>
@@ -129,27 +163,34 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
             {/* shop window above the entrance */}
             <Rect x={jax} y={gTop} width={kbx - jax} height={lTop - gTop} fill="url(#glass)" />
             <G opacity={0.85}>
-            {/* two-tier pizza stand on display in the window */}
-            {(() => {
-              const cx = (jax + kbx) / 2;
-              const by = lTop - 13;
-              const tier = (y: number, rx: number) => (
-                <G>
-                  <Ellipse cx={cx} cy={y} rx={rx} ry={rx * 0.24} fill="#E9E4DC" stroke={INK} strokeWidth={0.8} />
-                  <Ellipse cx={cx} cy={y - 1.6} rx={rx * 0.86} ry={rx * 0.21} fill="#E9A64B" stroke={INK} strokeWidth={0.7} />
-                  <Ellipse cx={cx} cy={y - 2} rx={rx * 0.7} ry={rx * 0.16} fill="#FFC531" />
-                  {[-0.45, 0, 0.45].map((d) => <Circle key={d} cx={cx + d * rx} cy={y - 2 + (d === 0 ? 0.6 : -0.3)} r={1.1} fill="#E8432E" />)}
-                </G>
-              );
-              return (
-                <G>
-                  <Path d={`M${cx - 3} ${by} L${cx + 3} ${by} L${cx + 1.2} ${by - 22} L${cx - 1.2} ${by - 22} Z`} fill="#C9A04A" stroke={INK} strokeWidth={0.7} />
-                  <Ellipse cx={cx} cy={by} rx={7} ry={1.8} fill="#C9A04A" stroke={INK} strokeWidth={0.7} />
-                  {tier(by - 8, 17)}
-                  {tier(by - 22, 11)}
-                </G>
-              );
-            })()}
+              {/* two-tier pizza stand on display in the window */}
+              {(() => {
+                const cx = (jax + kbx) / 2;
+                const by = lTop - 13;
+                const tier = (y: number, rx: number) => (
+                  <G>
+                    <Ellipse cx={cx} cy={y} rx={rx} ry={rx * 0.24} fill="#E9E4DC" stroke={INK} strokeWidth={0.8} />
+                    <Ellipse cx={cx} cy={y - 1.6} rx={rx * 0.86} ry={rx * 0.21} fill="#E9A64B" stroke={INK} strokeWidth={0.7} />
+                    <Ellipse cx={cx} cy={y - 2} rx={rx * 0.7} ry={rx * 0.16} fill="#FFC531" />
+                    {[-0.45, 0, 0.45].map((d) => (
+                      <Circle key={d} cx={cx + d * rx} cy={y - 2 + (d === 0 ? 0.6 : -0.3)} r={1.1} fill="#E8432E" />
+                    ))}
+                  </G>
+                );
+                return (
+                  <G>
+                    <Path
+                      d={`M${cx - 3} ${by} L${cx + 3} ${by} L${cx + 1.2} ${by - 22} L${cx - 1.2} ${by - 22} Z`}
+                      fill="#C9A04A"
+                      stroke={INK}
+                      strokeWidth={0.7}
+                    />
+                    <Ellipse cx={cx} cy={by} rx={7} ry={1.8} fill="#C9A04A" stroke={INK} strokeWidth={0.7} />
+                    {tier(by - 8, 17)}
+                    {tier(by - 22, 11)}
+                  </G>
+                );
+              })()}
             </G>
             <Path d={`M${jax + 7} ${gTop + 30} L${jax + 20} ${gTop + 8}`} stroke="#fff" strokeWidth={2.6} opacity={0.6} strokeLinecap="round" />
             {/* gold arched decal on the glass */}
@@ -165,7 +206,19 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
                     const x = cx + Math.sin(ang) * r;
                     const y = cy - Math.cos(ang) * r * 0.5;
                     return (
-                      <SvgText key={i} x={x} y={y} fontFamily={F.bold} fontSize={8} fill="#E0B000" stroke="#7A5A00" strokeWidth={0.3} textAnchor="middle" rotation={(ang * 180) / Math.PI} origin={`${x}, ${y}`}>
+                      <SvgText
+                        key={i}
+                        x={x}
+                        y={y}
+                        fontFamily={F.bold}
+                        fontSize={8}
+                        fill="#E0B000"
+                        stroke="#7A5A00"
+                        strokeWidth={0.3}
+                        textAnchor="middle"
+                        rotation={(ang * 180) / Math.PI}
+                        origin={`${x}, ${y}`}
+                      >
                         {ch}
                       </SvgText>
                     );
@@ -179,7 +232,11 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
             {brick(jax, kbx, bTop, gTop + 2)}
             <Rect x={jax - 1} y={gTop - 1} width={kbx - jax + 2} height={4} rx={1} fill={look.plinth} stroke={INK} strokeWidth={0.9} />
             <Circle cx={(jax + kbx) / 2 + 4} cy={(bTop + gTop) / 2 - 6} r={8} fill="#FFE7A0" stroke="#6B4330" strokeWidth={2.6} />
-            <Path d={`M${(jax + kbx) / 2 + 4} ${(bTop + gTop) / 2 - 14} V${(bTop + gTop) / 2 + 2} M${(jax + kbx) / 2 - 4} ${(bTop + gTop) / 2 - 6} H${(jax + kbx) / 2 + 12}`} stroke="#6B4330" strokeWidth={1.4} />
+            <Path
+              d={`M${(jax + kbx) / 2 + 4} ${(bTop + gTop) / 2 - 14} V${(bTop + gTop) / 2 + 2} M${(jax + kbx) / 2 - 4} ${(bTop + gTop) / 2 - 6} H${(jax + kbx) / 2 + 12}`}
+              stroke="#6B4330"
+              strokeWidth={1.4}
+            />
             {(() => {
               // hangs over the sidewalk off the right pilaster; on the widest shop (no room) it sits on the brick header
               const edgeX = P(R + 6, 0, 0, lay.frame)[0] + 26;
@@ -202,7 +259,14 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
                       PIZZA
                     </SvgText>
                   </Upright>
-                  <Path d={`M${sx - 21} ${sy - 4} A8 8 0 0 1 ${sx - 10} ${sy - 7.5}`} stroke="#fff" strokeWidth={1.2} opacity={0.5} fill="none" strokeLinecap="round" />
+                  <Path
+                    d={`M${sx - 21} ${sy - 4} A8 8 0 0 1 ${sx - 10} ${sy - 7.5}`}
+                    stroke="#fff"
+                    strokeWidth={1.2}
+                    opacity={0.5}
+                    fill="none"
+                    strokeLinecap="round"
+                  />
                 </G>
               );
             })()}
@@ -242,16 +306,17 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
       {pilaster(L - 6, L + 8, 'l')}
       {pilaster(R - 8, R + 6, 'r')}
       {/* the master's plaque: brass on the brick header over the door (cosmetics.ts `plaqueRect`, 34 x 22) */}
-      {plaque && (() => {
-        const r = plaqueRect(lay);
-        return (
-          <Upright cx={(r.x0 + r.x1) / 2}>
-            <G transform={`translate(${(r.x0 + r.x1) / 2} ${(r.y0 + r.y1) / 2})`}>
-              <GoldPlaque />
-            </G>
-          </Upright>
-        );
-      })()}
+      {plaque &&
+        (() => {
+          const r = plaqueRect(lay);
+          return (
+            <Upright cx={(r.x0 + r.x1) / 2}>
+              <G transform={`translate(${(r.x0 + r.x1) / 2} ${(r.y0 + r.y1) / 2})`}>
+                <GoldPlaque />
+              </G>
+            </Upright>
+          );
+        })()}
       {/* awning under the fascia: each neighbourhood's colours and shape; red stays as the first stripe or the piping */}
       {(() => {
         const [c0, c1] = look.awning;
@@ -299,7 +364,15 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
               {[-1, -0.5, 0, 0.5, 1].map((d) => {
                 const tx = hx + d * 12;
                 const ty = hy + 22 - Math.abs(d) * 5;
-                return <Path key={d} d={`M${hx + d * 3} ${hy - 1} Q${tx + d * 4 - 4} ${(hy + ty) / 2} ${tx} ${ty} Q${tx + d * 4 + 4} ${(hy + ty) / 2} ${hx + d * 3 + 1.5} ${hy - 1} Z`} fill={Math.abs(d) === 0.5 ? '#3F8A3E' : '#4FA048'} stroke={INK} strokeWidth={0.7} />;
+                return (
+                  <Path
+                    key={d}
+                    d={`M${hx + d * 3} ${hy - 1} Q${tx + d * 4 - 4} ${(hy + ty) / 2} ${tx} ${ty} Q${tx + d * 4 + 4} ${(hy + ty) / 2} ${hx + d * 3 + 1.5} ${hy - 1} Z`}
+                    fill={Math.abs(d) === 0.5 ? '#3F8A3E' : '#4FA048'}
+                    stroke={INK}
+                    strokeWidth={0.7}
+                  />
+                );
               })}
             </G>
           );
@@ -312,12 +385,31 @@ export const FrontWall = memo(function FrontWall({ lay, name, signage, plants, i
           <Circle cx={fcx} cy={fTop - 56} r={32} fill="#E9A64B" stroke={INK} strokeWidth={1.6} />
           <Circle cx={fcx} cy={fTop - 56} r={26} fill="#FFC531" />
           {[0, 60, 120].map((a) => (
-            <Path key={a} d={`M${fcx - 26 * Math.cos((a * Math.PI) / 180)} ${fTop - 56 - 26 * Math.sin((a * Math.PI) / 180)} L${fcx + 26 * Math.cos((a * Math.PI) / 180)} ${fTop - 56 + 26 * Math.sin((a * Math.PI) / 180)}`} stroke="#E9A64B" strokeWidth={1.4} />
+            <Path
+              key={a}
+              d={`M${fcx - 26 * Math.cos((a * Math.PI) / 180)} ${fTop - 56 - 26 * Math.sin((a * Math.PI) / 180)} L${fcx + 26 * Math.cos((a * Math.PI) / 180)} ${fTop - 56 + 26 * Math.sin((a * Math.PI) / 180)}`}
+              stroke="#E9A64B"
+              strokeWidth={1.4}
+            />
           ))}
-          {[[-12, -8], [10, -14], [2, 6], [-8, 12], [14, 8], [-14, -20]].map(([dx, dy], i) => (
+          {[
+            [-12, -8],
+            [10, -14],
+            [2, 6],
+            [-8, 12],
+            [14, 8],
+            [-14, -20],
+          ].map(([dx, dy], i) => (
             <Circle key={i} cx={fcx + dx} cy={fTop - 56 + dy} r={4} fill="#E8432E" stroke={INK} strokeWidth={0.6} />
           ))}
-          <Path d={`M${fcx - 20} ${fTop - 74} A26 26 0 0 1 ${fcx + 4} ${fTop - 82}`} stroke="#fff" strokeWidth={2.4} opacity={0.5} fill="none" strokeLinecap="round" />
+          <Path
+            d={`M${fcx - 20} ${fTop - 74} A26 26 0 0 1 ${fcx + 4} ${fTop - 82}`}
+            stroke="#fff"
+            strokeWidth={2.4}
+            opacity={0.5}
+            fill="none"
+            strokeLinecap="round"
+          />
         </G>
       )}
     </G>
@@ -337,7 +429,16 @@ export const FasciaSign = memo(function FasciaSign({ lay, name, signage, dx = 0 
     <G>
       {/* sign plate: painted board → neon → marquee bulbs */}
       {signage === 1 && <Rect x={fcx - signW / 2 - 6} y={fTop - 8} width={signW + 12} height={fBot - fTop + 16} rx={12} fill="#FF5E9A" opacity={0.28} />}
-      <Rect x={fcx - signW / 2} y={fTop - 5} width={signW} height={fBot - fTop + 10} rx={6} fill={board} stroke={signage === 1 ? '#FF5E9A' : INK} strokeWidth={signage === 1 ? 2 : 1.4} />
+      <Rect
+        x={fcx - signW / 2}
+        y={fTop - 5}
+        width={signW}
+        height={fBot - fTop + 10}
+        rx={6}
+        fill={board}
+        stroke={signage === 1 ? '#FF5E9A' : INK}
+        strokeWidth={signage === 1 ? 2 : 1.4}
+      />
       {signage !== 1 && <Rect x={fcx - signW / 2 + 3} y={fTop - 3} width={signW - 6} height={6} rx={3} fill="#fff" opacity={0.2} />}
       {signage >= 2 &&
         Array.from({ length: 18 }).map((_, i) => {
@@ -346,7 +447,16 @@ export const FasciaSign = memo(function FasciaSign({ lay, name, signage, dx = 0 
           return <Circle key={i} cx={x} cy={top ? fTop - 5 : fBot + 5} r={2.2} fill="#FFF3B0" stroke="#E0B000" strokeWidth={0.6} />;
         })}
       <Upright cx={fcx}>
-        <SvgText x={fcx} y={(fTop + fBot) / 2 + 5.5} fontFamily={F.bold} fontSize={16} fill={text} stroke={signage === 0 ? '#3B1F14' : undefined} strokeWidth={signage === 0 ? 0.4 : 0} textAnchor="middle">
+        <SvgText
+          x={fcx}
+          y={(fTop + fBot) / 2 + 5.5}
+          fontFamily={F.bold}
+          fontSize={16}
+          fill={text}
+          stroke={signage === 0 ? '#3B1F14' : undefined}
+          strokeWidth={signage === 0 ? 0.4 : 0}
+          textAnchor="middle"
+        >
           {`Rosa’s · ${name}`}
         </SvgText>
       </Upright>
@@ -403,9 +513,28 @@ export const Doormat = memo(function Doormat({ lay }: { lay: Layout }) {
   return (
     <G>
       <Polygon points={pts([a0, a1, b1, b0])} fill="#7A3520" stroke={INK} strokeWidth={0.9} />
-      <Polygon points={pts([P(lay.door.x0 + 4, -10), P(lay.door.x1 - 4, -10), P(lay.door.x1 - 1, -20), P(lay.door.x0 + 1, -20)])} fill="none" stroke="#C8643E" strokeWidth={0.8} />
-      {[a0, a1].map((pt, i) => <Path key={`f${i}`} d={`M${pt[0] + (i ? 1 : -1)} ${pt[1]} L${pt[0] + (i ? 2.2 : -2.2)} ${pt[1] + 1} M${pt[0] + (i ? 1.4 : -1.4)} ${pt[1] + 3} L${pt[0] + (i ? 2.8 : -2.8)} ${pt[1] + 4}`} stroke="#C8643E" strokeWidth={0.8} />)}
-      {[b0, b1].map((pt, i) => <Path key={`g${i}`} d={`M${pt[0] + (i ? 1 : -1)} ${pt[1] - 2} L${pt[0] + (i ? 2.6 : -2.6)} ${pt[1] - 1} M${pt[0] + (i ? 1 : -1)} ${pt[1] - 5} L${pt[0] + (i ? 2.6 : -2.6)} ${pt[1] - 4}`} stroke="#C8643E" strokeWidth={0.8} />)}
+      <Polygon
+        points={pts([P(lay.door.x0 + 4, -10), P(lay.door.x1 - 4, -10), P(lay.door.x1 - 1, -20), P(lay.door.x0 + 1, -20)])}
+        fill="none"
+        stroke="#C8643E"
+        strokeWidth={0.8}
+      />
+      {[a0, a1].map((pt, i) => (
+        <Path
+          key={`f${i}`}
+          d={`M${pt[0] + (i ? 1 : -1)} ${pt[1]} L${pt[0] + (i ? 2.2 : -2.2)} ${pt[1] + 1} M${pt[0] + (i ? 1.4 : -1.4)} ${pt[1] + 3} L${pt[0] + (i ? 2.8 : -2.8)} ${pt[1] + 4}`}
+          stroke="#C8643E"
+          strokeWidth={0.8}
+        />
+      ))}
+      {[b0, b1].map((pt, i) => (
+        <Path
+          key={`g${i}`}
+          d={`M${pt[0] + (i ? 1 : -1)} ${pt[1] - 2} L${pt[0] + (i ? 2.6 : -2.6)} ${pt[1] - 1} M${pt[0] + (i ? 1 : -1)} ${pt[1] - 5} L${pt[0] + (i ? 2.6 : -2.6)} ${pt[1] - 4}`}
+          stroke="#C8643E"
+          strokeWidth={0.8}
+        />
+      ))}
       <G transform={`translate(${cx} ${cy + 1.6}) skewX(-18) scale(1 0.62)`}>
         <SvgText x={0} y={2.4} fontFamily={F.bold} fontSize={8} fill="#FFC531" textAnchor="middle">
           WELCOME
@@ -450,7 +579,16 @@ export const StreetProp = memo(function StreetProp({ id, x, y }: { id: Neighborh
       {kind === 'picket' && (
         // a fenced front yard (D432): a lawn strip wider than the fence, the shrubs planted in it behind the pickets, a capped post at each end
         <G>
-          <Rect x={PICKET.bed.x0} y={PICKET.bed.y0} width={PICKET.bed.x1 - PICKET.bed.x0} height={PICKET.bed.y1 - PICKET.bed.y0} rx={3} fill="#6FA85A" stroke={INK} strokeWidth={0.9} />
+          <Rect
+            x={PICKET.bed.x0}
+            y={PICKET.bed.y0}
+            width={PICKET.bed.x1 - PICKET.bed.x0}
+            height={PICKET.bed.y1 - PICKET.bed.y0}
+            rx={3}
+            fill="#6FA85A"
+            stroke={INK}
+            strokeWidth={0.9}
+          />
           <Rect x={PICKET.bed.x0 + 3} y={PICKET.bed.y0 + 1.2} width={PICKET.bed.x1 - PICKET.bed.x0 - 6} height={1.6} rx={0.8} fill="#8CC36F" opacity={0.8} />
           <Rect x={PICKET.bed.x0 + 3} y={PICKET.bed.y1 - 3} width={PICKET.bed.x1 - PICKET.bed.x0 - 6} height={1.4} rx={0.7} fill="#4F7F3F" opacity={0.7} />
           {PICKET.shrubs.map((b) => (
@@ -485,7 +623,10 @@ export const StreetProp = memo(function StreetProp({ id, x, y }: { id: Neighborh
       {kind === 'bikerack' && (
         // two bikes in profile, 44 apart (a bike is ~24 long, so they no longer overlap), each leaning on its own #5A5A5A hoop with its own contact shadow (D363)
         <G>
-          {[[-22, '#6A2C9A'], [22, '#E0A800']].map(([bx, col]) => (
+          {[
+            [-22, '#6A2C9A'],
+            [22, '#E0A800'],
+          ].map(([bx, col]) => (
             <G key={bx as number} transform={`translate(${bx} 0)`}>
               <Ellipse cx={0} cy={0.5} rx={10} ry={2} fill="#000" opacity={0.2} />
               <Path d="M-5 0 V-12 Q-5 -17 0 -17 Q5 -17 5 -12 V0" stroke="#5A5A5A" strokeWidth={2} fill="none" />

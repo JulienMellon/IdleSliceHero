@@ -1,14 +1,17 @@
 /// <reference types="jest" />
 // v5.16 (T1b): the story wait hint is a one-line banner in the waiting neighbourhood's drawer, and only there.
-import { NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import * as G from '../../engine/game';
 import { HINT_FONT, hintFit, hintForHood } from '../cutscene/story-hint-model';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const HOODS = NEIGHBORHOODS.map((n) => n.id) as NeighborhoodId[];
 const name = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 /** Every sentence the engine can say: a finale to win over, or the Pier 9 dock, for each neighbourhood waiting. */
-const SENTENCES = HOODS.flatMap((waiting) => [...HOODS.filter((h) => h !== waiting).map((f) => `Win over ${name(f)} to continue ${name(waiting)}’s story`), `Save Marisol’s dock to continue ${name(waiting)}’s story`]);
+const SENTENCES = HOODS.flatMap((waiting) => [
+  ...HOODS.filter((h) => h !== waiting).map((f) => `Win over ${name(f)} to continue ${name(waiting)}’s story`),
+  `Save Marisol’s dock to continue ${name(waiting)}’s story`,
+]);
 
 describe('story wait hint banner', () => {
   test("it shows in the waiting neighbourhood's drawer and in no other", () => {
@@ -23,7 +26,11 @@ describe('story wait hint banner', () => {
     expect(hintForHood('Win over University to continue Uptown’s story', 'university')).toBeNull();
     expect(hintForHood('Save Marisol’s dock to continue University’s story', 'university')).toBe('Save Marisol’s dock to continue University’s story');
     // and it works on a real game state
-    const g: G.GameState = { ...G.newGame(0), seenScenes: ['uptown-1', 'uptown-2'], shops: { ...G.newGame(0).shops, uptown: { ...G.newGame(0).shops.uptown, built: true, sold: 700000 } } };
+    const g: G.GameState = {
+      ...G.newGame(0),
+      seenScenes: ['uptown-1', 'uptown-2'],
+      shops: { ...G.newGame(0).shops, uptown: { ...G.newGame(0).shops.uptown, built: true, sold: 700000 } },
+    };
     const hint = G.storyWaitHint(g);
     expect(hint).toBe('Win over Industrial to continue Uptown’s story');
     expect(hintForHood(hint, 'uptown')).toBe(hint);

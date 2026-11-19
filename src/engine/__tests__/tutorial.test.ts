@@ -1,8 +1,10 @@
 /// <reference types="jest" />
 // Nonna's guided tutorial (P2).
 import * as G from '../game';
-import { coachStep, HINTS, hintsAllowed, showLockedTabs, STEPS, TUTORIAL_DONE, tutorialAdvance, tutorialHoldsStory } from '../tutorial';
+import { HOME_CITY } from '../../content/cities/home';
+import { coachStep, HINTS, hintsAllowed, showLockedTabs, stepsFor, TUTORIAL_DONE, tutorialAdvance, tutorialHoldsStory } from '../tutorial';
 
+const STEPS = stepsFor(HOME_CITY);
 const opened = () => tutorialAdvance({ ...G.newGame(0), seenScenes: ['downtown-1'] });
 const tap = (s: G.GameState, st: 'prep' | 'oven' | 'counter') => {
   const r = G.tapStation(s, 'downtown', st);
@@ -95,7 +97,10 @@ describe('tutorial', () => {
   });
   // G83: the two wait steps point at the station being waited on, flagged so the scene keeps a ring and hand on it
   test('the wait steps (2 and 4) are flagged and target a scene station; tap steps are not', () => {
-    expect(STEPS.filter((st) => st.wait).map((st) => [st.id, st.target])).toEqual([[2, 'prep'], [4, 'oven']]);
+    expect(STEPS.filter((st) => st.wait).map((st) => [st.id, st.target])).toEqual([
+      [2, 'prep'],
+      [4, 'oven'],
+    ]);
   });
   // U4: one instruction at a time
   test('at every tutorial step at most one hint is allowed (none: Nonna is the one voice); all of them once it is over', () => {

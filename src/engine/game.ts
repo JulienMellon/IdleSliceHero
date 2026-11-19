@@ -3,10 +3,32 @@
 // Every neighborhood has its own pizzeria. Each pizzeria is a pipeline:
 //   Prep → Ovens → Counter → customers (delivery drivers + walk-ins at the tables)
 // and sells pizzas at the rate of its slowest stage. City income is the sum of all pizzerias.
-import { BATCH_GROWTH, DECOR_BOOST, DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, GM_BOOST, HEADS_OFFLINE_SHARE, HEAD_KINDS, HEAD_SHARE, OVEN_GRADES, STATIONS, TUNING, VEHICLES, type DecorKind, type HeadKind, type NeighborhoodDef } from '../content/tuning';
-import { CITIES, cityHolding, cityOf, findHood, hoodIds, HOME_ID, type CityDef } from '../content/cities';
-import { HOME_CITY } from '../content/cities/home';
-import { BOOST_MAX_AHEAD_MS, DAILY_CHESTS, DAILY_TASK_COUNT, MAX_BOOSTERS, MAX_CONCURRENT_BOOSTS, TASK_KINDS, WEEKLY_TASK_COUNT, type TaskKind } from '../content/rewards';
+import {
+  BATCH_GROWTH,
+  DECOR_BOOST,
+  DECOR_KINDS,
+  DECOR_TIER_COST,
+  GM_BOOST,
+  HEADS_OFFLINE_SHARE,
+  HEAD_KINDS,
+  HEAD_SHARE,
+  STATIONS,
+  TUNING,
+  type DecorKind,
+  type HeadKind,
+  type NeighborhoodDef,
+} from '../content/tuning';
+import { CITIES, cityHolding, cityOf, findHood, hoodIds, HOME_ID, type CityDef, type CityFit } from '../content/cities';
+import {
+  BOOST_MAX_AHEAD_MS,
+  DAILY_CHESTS,
+  DAILY_TASK_COUNT,
+  MAX_BOOSTERS,
+  MAX_CONCURRENT_BOOSTS,
+  TASK_KINDS,
+  WEEKLY_TASK_COUNT,
+  type TaskKind,
+} from '../content/rewards';
 import { BONUS, NIGHT_OVEN, ORDER } from '../content/hooks';
 import { auctionMult, LAYER_KEYS } from '../content/layers';
 import { cosmeticPart } from '../content/endgame';
@@ -14,12 +36,23 @@ import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
 import { migrateStory } from './story';
 import { FEATURES } from './features/registry';
-import { advanceLine, clampWalkInDebt, emptyLine, LINE, nextTap, piesInFlight, rushLine, tapStation as lineTap, type Automation, type Line, type LineRates, type Station } from './pipeline';
+import {
+  advanceLine,
+  clampWalkInDebt,
+  emptyLine,
+  LINE,
+  nextTap,
+  piesInFlight,
+  rushLine,
+  tapStation as lineTap,
+  type Automation,
+  type Line,
+  type LineRates,
+  type Station,
+} from './pipeline';
 
 /** v6 (Todd's story): 40 scenes, interludes that hold main beats back, manager hire scenes; the migration marks skipped scenes seen. v5 was rewards: daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. */
 export const SAVE_VERSION = 6;
-/** The HOME city's neighbourhood ids (card K1). For feature `init`/`migrate` hooks that have no game yet (A35); with a game in hand read `hoodIds(cityOf(g))`. */
-export const HOME_HOOD_IDS: NeighborhoodId[] = [...hoodIds(HOME_CITY)];
 /**
  * C106: the economy marker. 2 = the v5.13 retune (costMult = orderValue, 4 h offline cap, Pier 9 $120M); 3 = the v5.16 rules
  * (managers and heads priced apart, three heads sell half speed while you are away, station prices grow at their own rates,
@@ -40,12 +73,12 @@ export interface Shop {
   heads: Record<HeadKind, boolean>;
   prep: number;
   ovens: number;
-  /** Index into OVEN_GRADES. */
+  /** Index into the city's `fit.ovenGrades`. */
   grade: number;
   counter: number;
   drivers: number;
   tables: number;
-  /** Index into FOOTPRINTS. */
+  /** Index into the city's `fit.footprints`. */
   footprint: number;
   /** The kitchen line: jobs at each station, pies between them and carriers walking out (pipeline.ts). */
   line: Line;
@@ -65,7 +98,7 @@ export interface GameState {
   economy: number;
   cash: number;
   totalEarned: number;
-  /** City-wide fleet tier: index into VEHICLES. */
+  /** City-wide fleet tier: index into the city's `fit.vehicles`. */
   vehicle: number;
   shops: Record<NeighborhoodId, Shop>;
   /** Pizzeria shown on the main screen. */
@@ -217,14 +250,53 @@ export interface Stats {
   /** Special orders finished in time. */
   ordersDone: number;
 }
-export const STAT_KEYS: readonly (keyof Stats)[] = ['upgrades', 'ovens', 'hires', 'builds', 'fleet', 'decor', 'walkins', 'deliveries', 'baked', 'offline', 'boosters', 'dailyDone', 'days', 'bonusTaps', 'ordersDone'];
+export const STAT_KEYS: readonly (keyof Stats)[] = [
+  'upgrades',
+  'ovens',
+  'hires',
+  'builds',
+  'fleet',
+  'decor',
+  'walkins',
+  'deliveries',
+  'baked',
+  'offline',
+  'boosters',
+  'dailyDone',
+  'days',
+  'bonusTaps',
+  'ordersDone',
+];
 
-export const newStats = (): Stats => ({ upgrades: 0, ovens: 0, hires: 0, builds: 0, fleet: 0, decor: 0, walkins: 0, deliveries: 0, baked: 0, offline: 0, boosters: 0, dailyDone: 0, days: 0, bonusTaps: 0, ordersDone: 0 });
+export const newStats = (): Stats => ({
+  upgrades: 0,
+  ovens: 0,
+  hires: 0,
+  builds: 0,
+  fleet: 0,
+  decor: 0,
+  walkins: 0,
+  deliveries: 0,
+  baked: 0,
+  offline: 0,
+  boosters: 0,
+  dailyDone: 0,
+  days: 0,
+  bonusTaps: 0,
+  ordersDone: 0,
+});
 
 /** A starting seed from the clock (a save keeps its own). */
 const seedOf = (now: number) => Math.abs(Math.floor(now)) % 2147483647;
 export const newBonus = (now: number): BonusState => ({ seed: seedOf(now), spawned: 0, next: BONUS.firstAtPlay, until: 0 });
-export const newOrders = (now: number): OrderState => ({ seed: seedOf(now + 7919), made: 0, nextAt: ORDER.firstOfferAtPlay, offer: null, active: null, result: null });
+export const newOrders = (now: number): OrderState => ({
+  seed: seedOf(now + 7919),
+  made: 0,
+  nextAt: ORDER.firstOfferAtPlay,
+  offer: null,
+  active: null,
+  result: null,
+});
 export const newRewards = (): Rewards => ({
   day: '',
   daily: [],
@@ -263,11 +335,29 @@ export const noHeads = (): Record<HeadKind, boolean> => ({ prep: false, oven: fa
 export const allHeads = (): Record<HeadKind, boolean> => ({ prep: true, oven: true, counter: true });
 
 export function newShop(built = false): Shop {
-  return { built, managed: false, heads: noHeads(), prep: 1, ovens: 1, grade: 0, counter: 1, drivers: 1, tables: 1, footprint: 0, line: emptyLine(), sold: 0, decor: newDecor(), perk: false };
+  return {
+    built,
+    managed: false,
+    heads: noHeads(),
+    prep: 1,
+    ovens: 1,
+    grade: 0,
+    counter: 1,
+    drivers: 1,
+    tables: 1,
+    footprint: 0,
+    line: emptyLine(),
+    sold: 0,
+    decor: newDecor(),
+    perk: false,
+  };
 }
 
 /** The first neighbourhood of a city: built from the start, its founder takes over in the tutorial. */
 export const firstHood = (city: CityDef): NeighborhoodId => city.neighbourhoods[0].id;
+
+/** The neighbourhood whose shop shows its stations on the sidewalk rather than a hire stack, and whose moments speak as the founder's: the first, unless the pack says otherwise (`CityDef.founderHood`). Null for none. */
+export const founderHood = (city: CityDef): NeighborhoodId | null => (city.founderHood === undefined ? firstHood(city) : city.founderHood);
 
 export function newGame(now: number, cityId: string = HOME_ID): GameState {
   const city = cityOf({ city: cityId });
@@ -295,7 +385,7 @@ export function newGame(now: number, cityId: string = HOME_ID): GameState {
     bonus: newBonus(now),
     order: newOrders(now),
     nightOven: 0,
-    x: Object.fromEntries(FEATURES.map((f) => [f.key, f.init(now)])),
+    x: Object.fromEntries(FEATURES.map((f) => [f.key, f.init(now, city)])),
   };
 }
 
@@ -378,9 +468,19 @@ function migrateRewards(raw: unknown, now: number): Rewards {
   const boosts = (Array.isArray(r.boosts) ? (r.boosts as unknown[]) : []).slice(0, MAX_CONCURRENT_BOOSTS).flatMap((x) => {
     const b = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
     const until = num(b.until, 0);
-    return until > 0 ? [{ mult: Math.min(MAX_MULT, Math.max(1, num(b.mult, 1))), until: Math.min(until, now + BOOST_MAX_AHEAD_MS), source: typeof b.source === 'string' ? b.source.slice(0, 40) : 'boost' }] : [];
+    return until > 0
+      ? [
+          {
+            mult: Math.min(MAX_MULT, Math.max(1, num(b.mult, 1))),
+            until: Math.min(until, now + BOOST_MAX_AHEAD_MS),
+            source: typeof b.source === 'string' ? b.source.slice(0, 40) : 'boost',
+          },
+        ]
+      : [];
   });
-  const cosmetics = Array.isArray(r.cosmetics) ? [...new Set((r.cosmetics as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= 40))].slice(0, 200) : [];
+  const cosmetics = Array.isArray(r.cosmetics)
+    ? [...new Set((r.cosmetics as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= 40))].slice(0, 200)
+    : [];
   // worn: a save from before worn cosmetics wore everything it owned, so it keeps doing so (the latest of each part)
   const savedWorn = Array.isArray(r.worn) ? (r.worn as unknown[]).filter((x): x is string => typeof x === 'string' && cosmetics.includes(x)) : cosmetics;
   const worn: string[] = [];
@@ -444,7 +544,12 @@ function migrateOrders(raw: unknown, play: number, now: number, shops: Record<Ne
   const activeHood = activeRaw ? hoodOf(activeRaw.hood) : null;
   const offer: OrderOffer | null =
     offerRaw && offerHood && shops[offerHood].built && num(offerRaw.left, 0) > 0 && int(offerRaw.target, 0, 0) >= 1
-      ? { hood: offerHood, target: int(offerRaw.target, 0, 0, 1e15), left: Math.min(ORDER.offerWaitSeconds, num(offerRaw.left, 0)), variant: variantOf(offerRaw.variant) }
+      ? {
+          hood: offerHood,
+          target: int(offerRaw.target, 0, 0, 1e15),
+          left: Math.min(ORDER.offerWaitSeconds, num(offerRaw.left, 0)),
+          variant: variantOf(offerRaw.variant),
+        }
       : null;
   const active: ActiveOrder | null =
     activeRaw && activeHood && shops[activeHood].built && num(activeRaw.left, 0) > 0 && int(activeRaw.target, 0, 0) >= 1
@@ -495,7 +600,9 @@ export function migrate(raw: unknown, now: number): GameState {
     playSeconds: Math.max(0, num(r.playSeconds, 0)),
     sceneAt:
       r.sceneAt && typeof r.sceneAt === 'object'
-        ? Object.fromEntries(Object.entries(r.sceneAt as Record<string, unknown>).filter((e): e is [string, number] => typeof e[1] === 'number' && Number.isFinite(e[1])))
+        ? Object.fromEntries(
+            Object.entries(r.sceneAt as Record<string, unknown>).filter((e): e is [string, number] => typeof e[1] === 'number' && Number.isFinite(e[1])),
+          )
         : {},
     rewards: migrateRewards(r.rewards, now),
     stats: migrateStats(r.stats),
@@ -519,7 +626,10 @@ export function migrate(raw: unknown, now: number): GameState {
         tables: int(s.tables, 1, 1),
         footprint: int(s.footprint, 0, 0, city.fit.footprints.length - 1),
         line: migrateLine(s.line, Math.max(0, num(s.queued, 0))),
-        decor: Object.fromEntries(DECOR_KINDS.map((k) => [k, int((s.decor as Record<string, unknown> | undefined)?.[k], 0, 0, 3)])) as Record<DecorKind, number>,
+        decor: Object.fromEntries(DECOR_KINDS.map((k) => [k, int((s.decor as Record<string, unknown> | undefined)?.[k], 0, 0, 3)])) as Record<
+          DecorKind,
+          number
+        >,
         sold: Math.floor(Math.max(0, num(s.sold, 0))),
         // v2 saves: a finale already seen earns its perk (v3.7)
         perk: !!s.perk || (!!city.perks[id] && seen.includes(finaleId(id))),
@@ -552,7 +662,8 @@ export function migrate(raw: unknown, now: number): GameState {
   // was (C117): a registry that is empty or short (a module loaded in the wrong order, a feature behind a flag) must not delete a
   // player's saved layer state at the next save.
   const savedX = (r.x && typeof r.x === 'object' && !Array.isArray(r.x) ? r.x : {}) as Record<string, unknown>;
-  if (!FEATURES.length && typeof __DEV__ !== 'undefined' && __DEV__) console.warn('migrate: no features are registered (import engine/features before loading a game)');
+  if (!FEATURES.length && typeof __DEV__ !== 'undefined' && __DEV__)
+    console.warn('migrate: no features are registered (import engine/features before loading a game)');
   game.x = { ...savedX, ...Object.fromEntries(FEATURES.map((f) => [f.key, f.migrate(savedX[f.key], now, city)])) };
   return migrateStory(game, num(r.saveVersion, 0));
 }
@@ -580,11 +691,19 @@ export function nextMilestone(level: number): number | null {
   return TUNING.milestones.find((at) => at > level) ?? null;
 }
 
-/** The city whose neighbourhood `id` is (A35): a Boston id never reads the home city's tables. The home city for an id no pack has. */
-const cityOfHood = (id: NeighborhoodId): CityDef => cityHolding(id) ?? HOME_CITY;
+/** The city whose neighbourhood `id` is (A35): a Boston id never reads the home city's tables. Throws for an id no pack has (`findHood` is the lookup that returns undefined). */
+export const cityOfHood = (id: NeighborhoodId): CityDef => {
+  const city = cityHolding(id);
+  if (!city) throw new Error(`Unknown neighbourhood "${id}": no city has it`);
+  return city;
+};
 
-/** A neighbourhood's tables: in `city` when one is passed (`def(id, cityOf(g))`), else in the city that has the id (never a throw for another city's id). */
-export const def = (id: NeighborhoodId, city: CityDef = cityOfHood(id)): NeighborhoodDef => findHood(id, city)!;
+/** A neighbourhood's tables: in `city` when one is passed (`def(id, cityOf(g))`), else in the city that has the id. Total over the ids a city has; throws for one it has not. */
+export const def = (id: NeighborhoodId, city: CityDef = cityOfHood(id)): NeighborhoodDef => {
+  const found = findHood(id, city);
+  if (!found) throw new Error(`Unknown neighbourhood "${id}" in ${city.id}`);
+  return found;
+};
 
 /** Prep, ovens and counter can't level past this until the footprint grows. */
 export const levelCap = (shop: Shop) => TUNING.levelsPerFootprint * (shop.footprint + 1);
@@ -641,27 +760,31 @@ const levelSpeed = (base: number, level: number) => base * (1 + TUNING.speedPerL
 /** Room to work: each expansion speeds up prep and the counter. */
 export const footprintMult = (shop: Shop) => Math.pow(TUNING.footprintBoost, shop.footprint);
 export const prepRate = (shop: Shop, fx: FeatureMults = NO_FX) => levelSpeed(STATIONS.prep.speed, shop.prep) * footprintMult(shop) * (fx.stations?.prep ?? 1);
-export const ovenRate = (shop: Shop, fx: FeatureMults = NO_FX) => levelSpeed(STATIONS.ovens.speed, shop.ovens) * OVEN_GRADES[shop.grade].mult * (fx.stations?.oven ?? 1);
-export const counterRate = (shop: Shop, fx: FeatureMults = NO_FX) => levelSpeed(STATIONS.counter.speed, shop.counter) * footprintMult(shop) * (fx.stations?.counter ?? 1);
-export const tripSeconds = (vehicle: number) => TUNING.deliveryRoundTrip / VEHICLES[vehicle].speed;
-export const tripCapacity = (shop: Shop, vehicle: number) => VEHICLES[vehicle].capacity * milestoneMultiplier(shop.drivers);
-export const deliveryRate = (shop: Shop, vehicle: number) => (shop.drivers * tripCapacity(shop, vehicle)) / tripSeconds(vehicle);
+export const ovenRate = (shop: Shop, fit: CityFit, fx: FeatureMults = NO_FX) =>
+  levelSpeed(STATIONS.ovens.speed, shop.ovens) * fit.ovenGrades[shop.grade].mult * (fx.stations?.oven ?? 1);
+export const counterRate = (shop: Shop, fx: FeatureMults = NO_FX) =>
+  levelSpeed(STATIONS.counter.speed, shop.counter) * footprintMult(shop) * (fx.stations?.counter ?? 1);
+// R1: the rates that read a city's tables take its `CityFit` (`cityOf(s).fit`), right after the shop and the fleet tier and before the optional `fx`.
+export const tripSeconds = (vehicle: number, fit: CityFit) => TUNING.deliveryRoundTrip / fit.vehicles[vehicle].speed;
+export const tripCapacity = (shop: Shop, vehicle: number, fit: CityFit) => fit.vehicles[vehicle].capacity * milestoneMultiplier(shop.drivers);
+export const deliveryRate = (shop: Shop, vehicle: number, fit: CityFit) => (shop.drivers * tripCapacity(shop, vehicle, fit)) / tripSeconds(vehicle, fit);
 export const walkInRate = (shop: Shop) => levelSpeed(STATIONS.tables.speed, shop.tables);
 /** Tables drawn in the cutaway: grows with seating level, limited by the footprint. */
-export const tablesShown = (shop: Shop) => Math.min(FOOTPRINTS[shop.footprint].maxTables, 1 + Math.floor((shop.tables - 1) / 6));
-export const demandRate = (shop: Shop, vehicle: number, fx: FeatureMults = NO_FX) => (deliveryRate(shop, vehicle) + walkInRate(shop)) * fx.demand;
+export const tablesShown = (shop: Shop, fit: CityFit) => Math.min(fit.footprints[shop.footprint].maxTables, 1 + Math.floor((shop.tables - 1) / 6));
+export const demandRate = (shop: Shop, vehicle: number, fit: CityFit, fx: FeatureMults = NO_FX) =>
+  (deliveryRate(shop, vehicle, fit) + walkInRate(shop)) * fx.demand;
 
 /** Pizzas per second this pizzeria sells when running. */
-export function shopRate(shop: Shop, vehicle: number, fx: FeatureMults = NO_FX): number {
-  return Math.min(prepRate(shop, fx), ovenRate(shop, fx), counterRate(shop, fx), demandRate(shop, vehicle, fx));
+export function shopRate(shop: Shop, vehicle: number, fit: CityFit, fx: FeatureMults = NO_FX): number {
+  return Math.min(prepRate(shop, fx), ovenRate(shop, fit, fx), counterRate(shop, fx), demandRate(shop, vehicle, fit, fx));
 }
 
 /**
  * How the kitchen's pies split at the steady state: walk-ins are seated first, up to the seating rate
  * (walkInRate); the drivers deliver the rest. One rule for revenue, value per pizza and the walk-in fraction.
  */
-function pieSplit(shop: Shop, vehicle: number, fx: FeatureMults = NO_FX): { sold: number; walkIns: number; delivered: number } {
-  const sold = shopRate(shop, vehicle, fx);
+function pieSplit(shop: Shop, vehicle: number, fit: CityFit, fx: FeatureMults = NO_FX): { sold: number; walkIns: number; delivered: number } {
+  const sold = shopRate(shop, vehicle, fit, fx);
   const walkIns = Math.min(sold, walkInRate(shop) * fx.demand);
   return { sold, walkIns, delivered: sold - walkIns };
 }
@@ -673,10 +796,10 @@ function pieSplit(shop: Shop, vehicle: number, fx: FeatureMults = NO_FX): { sold
  *   - drivers: drivers with nothing to carry (the delivered share of the fleet's capacity left over). Not capped: the
  *     scene draws up to 3 and a "×N waiting" tag for the rest.
  */
-export function queueSizes(shop: Shop, vehicle: number): { diners: number; drivers: number } {
-  const { walkIns, delivered } = pieSplit(shop, vehicle);
+export function queueSizes(shop: Shop, vehicle: number, fit: CityFit): { diners: number; drivers: number } {
+  const { walkIns, delivered } = pieSplit(shop, vehicle, fit);
   const seats = walkInRate(shop);
-  const fleet = deliveryRate(shop, vehicle);
+  const fleet = deliveryRate(shop, vehicle, fit);
   const unmet = seats > 0 ? (seats - walkIns) / seats : 0;
   const idle = fleet > 0 ? shop.drivers * (1 - delivered / fleet) : 0;
   return { diners: Math.max(0, Math.min(4, Math.ceil(4 * unmet))), drivers: Math.max(0, Math.round(idle)) };
@@ -686,16 +809,24 @@ export function queueSizes(shop: Shop, vehicle: number): { diners: number; drive
  * Seating levels past the footprint's indoor cap put tables out on the sidewalk, up to two (v5.11). Purely visual:
  * it never changes `walkInRate`.
  */
-export const patioTables = (shop: Shop) => Math.max(0, Math.min(2, 1 + Math.floor((shop.tables - 1) / 6) - FOOTPRINTS[shop.footprint].maxTables));
+export const patioTables = (shop: Shop, fit: CityFit) =>
+  Math.max(0, Math.min(2, 1 + Math.floor((shop.tables - 1) / 6) - fit.footprints[shop.footprint].maxTables));
 
 /**
  * Cash per second a running pizzeria makes. Walk-ins get the kitchen's pies first, up to the seating rate
  * (they pay walkInShare of the price, 1.0 by default); drivers deliver the rest at full price.
  */
 export function shopRevenue(id: NeighborhoodId, shop: Shop, vehicle: number, fx: FeatureMults = NO_FX, city: CityDef = cityOfHood(id)): number {
-  const { walkIns, delivered } = pieSplit(shop, vehicle, fx);
+  const { walkIns, delivered } = pieSplit(shop, vehicle, city.fit, fx);
   const perk = perkOf(id, shop, city);
-  return def(id, city).orderValue * (perk?.priceMult ?? 1) * decorMult(shop, id, city) * gmMult(shop) * fx.value * (delivered + walkIns * (perk?.walkInShare ?? TUNING.walkInShare));
+  return (
+    def(id, city).orderValue *
+    (perk?.priceMult ?? 1) *
+    decorMult(shop, id, city) *
+    gmMult(shop) *
+    fx.value *
+    (delivered + walkIns * (perk?.walkInShare ?? TUNING.walkInShare))
+  );
 }
 
 /** The General Manager's neighbourhood boost. */
@@ -710,8 +841,10 @@ export const decorMult = (shop: Shop, id: NeighborhoodId, city: CityDef = cityOf
 
 /** Average cash per pizza sold right now. */
 export function valuePerPizza(id: NeighborhoodId, shop: Shop, vehicle: number, fx: FeatureMults = NO_FX, city: CityDef = cityOfHood(id)): number {
-  const sold = shopRate(shop, vehicle, fx);
-  return sold > 0 ? shopRevenue(id, shop, vehicle, fx, city) / sold : def(id, city).orderValue * (perkOf(id, shop, city)?.priceMult ?? 1) * decorMult(shop, id, city) * gmMult(shop) * fx.value;
+  const sold = shopRate(shop, vehicle, city.fit, fx);
+  return sold > 0
+    ? shopRevenue(id, shop, vehicle, fx, city) / sold
+    : def(id, city).orderValue * (perkOf(id, shop, city)?.priceMult ?? 1) * decorMult(shop, id, city) * gmMult(shop) * fx.value;
 }
 
 /**
@@ -745,25 +878,25 @@ export function earningsPerSecond(s: GameState): number {
 export type Stage = 'prep' | 'ovens' | 'counter' | 'customers';
 
 /** Each stage's rate (one table for `bottleneck` and `tiedStages`, A21). */
-export function stageRates(shop: Shop, vehicle: number): [Stage, number][] {
+export function stageRates(shop: Shop, vehicle: number, fit: CityFit): [Stage, number][] {
   return [
     ['prep', prepRate(shop)],
-    ['ovens', ovenRate(shop)],
+    ['ovens', ovenRate(shop, fit)],
     ['counter', counterRate(shop)],
-    ['customers', demandRate(shop, vehicle)],
+    ['customers', demandRate(shop, vehicle, fit)],
   ];
 }
 
 /** Every stage tied for the slowest (an upgrade to one of them alone adds nothing). */
-export function tiedStages(shop: Shop, vehicle: number): Stage[] {
-  const rates = stageRates(shop, vehicle);
+export function tiedStages(shop: Shop, vehicle: number, fit: CityFit): Stage[] {
+  const rates = stageRates(shop, vehicle, fit);
   const min = Math.min(...rates.map((r) => r[1]));
   return rates.filter((r) => r[1] <= min * (1 + 1e-9)).map((r) => r[0]);
 }
 
 /** The slowest stage of a pizzeria's pipeline. */
-export function bottleneck(shop: Shop, vehicle: number): Stage {
-  return stageRates(shop, vehicle).reduce((a, b) => (b[1] < a[1] ? b : a))[0];
+export function bottleneck(shop: Shop, vehicle: number, fit: CityFit): Stage {
+  return stageRates(shop, vehicle, fit).reduce((a, b) => (b[1] < a[1] ? b : a))[0];
 }
 
 // ---------- Purchases ----------
@@ -776,7 +909,8 @@ export const isHeadUpgrade = (u: Upgrade): u is HeadUpgrade => u in HEAD_OF;
 export const headOf = (u: HeadUpgrade): HeadKind => HEAD_OF[u];
 
 /** What hiring a station head costs in this pizzeria. */
-export const headCost = (id: NeighborhoodId, k: HeadKind, city: CityDef = cityOfHood(id)) => (id === firstHood(city) ? city.fit.headCostFirst[k] : Math.ceil(def(id, city).headsCost * HEAD_SHARE[k]));
+export const headCost = (id: NeighborhoodId, k: HeadKind, city: CityDef = cityOfHood(id)) =>
+  id === firstHood(city) ? city.fit.headCostFirst[k] : Math.ceil(def(id, city).headsCost * HEAD_SHARE[k]);
 export const allHeadsHired = (shop: Shop) => HEAD_KINDS.every((k) => shop.heads[k]);
 export type BuyResult = { ok: true; state: GameState } | { ok: false; reason: string };
 
@@ -902,22 +1036,21 @@ export function buildLock(s: GameState, id: NeighborhoodId): string | null {
 }
 
 /** Pizzas the first shop still has to deliver before Nonna takes over the kitchen (0 once it's due or seen). */
-export function nonnaPizzasLeft(s: GameState): number {
+export function founderPizzasLeft(s: GameState): number {
   const city = cityOf(s);
   const { sceneId: scene, pizzas } = city.fit.takeover;
   if (s.seenScenes.includes(scene)) return 0;
   return Math.max(0, pizzas - s.shops[firstHood(city)].sold);
 }
 
-/** The first shop's founder by the name the countdown uses: the city's own manager ("Father Dom" in Boston), Nonna at home (C141). */
+/** The first shop's founder by the name the countdown uses: the city's `founder` (Nonna at home), else its first manager ("Father Dom" in Boston) (C141). */
 export function founderName(s: GameState): string {
   const city = cityOf(s);
-  const name = city.managers[firstHood(city)]?.name ?? 'The founder';
-  return name.startsWith('Nonna ') ? 'Nonna' : name;
+  return city.founder?.name ?? city.managers[firstHood(city)]?.name ?? 'The founder';
 }
 
 export function founderCountdownText(s: GameState): string {
-  const n = nonnaPizzasLeft(s);
+  const n = founderPizzasLeft(s);
   const who = founderName(s);
   // the scene can wait out the story gap after the count is reached, so the copy doesn't promise "now" (C43)
   return n > 0 ? `${who} takes over in ${pizzasLeft(n)} more pizza${n === 1 ? '' : 's'}` : `${who} takes over soon — keep baking`;
@@ -931,26 +1064,27 @@ export function buildShop(s: GameState, id: NeighborhoodId): BuyResult {
   return { ok: true, state: bump({ ...withShop(r.state, id, { built: true }), active: id }, { builds: 1 }) };
 }
 
-// ---------- Pier 9 bid (Waterfront's finale) ----------
+// ---------- The bid (the city's finale that is a purchase: Pier 9 at home, `CityDef.bid`) ----------
 
-/** The Pier 9 bid is on offer once "Man Overboard" (waterfront-3b, which plays at the same pizza count) has played and Waterfront has sold enough pizzas. */
-export function pier9Available(s: GameState): boolean {
+/** The bid is on offer once "Man Overboard" (waterfront-3b, which plays at the same pizza count) has played and Waterfront has sold enough pizzas. */
+export function bidAvailable(s: GameState): boolean {
   const bid = cityOf(s).bid;
   if (!bid) return false;
   const w = s.shops[bid.hood];
   return w.built && !w.perk && s.seenScenes.includes(bid.afterScene) && w.sold >= bid.unlockPizzas;
 }
 
-/** What the Pier 9 bid costs now: the base bid times the live auction's multiplier (features/layers/waterfront-boats.ts `pier9AuctionMult`, the same number from the saved state: content/layers.ts). */
-export const pier9Price = (s: GameState): number => Math.ceil((cityOf(s).bid?.cost ?? 0) * auctionMult((s.x?.[LAYER_KEYS.boats] as { openedAt?: number } | undefined)?.openedAt ?? -1, s.playSeconds));
+/** What the bid costs now: the base bid times the live auction's multiplier (features/layers/waterfront-boats.ts `pier9AuctionMult`, the same number from the saved state: content/layers.ts). */
+export const bidPrice = (s: GameState): number =>
+  Math.ceil((cityOf(s).bid?.cost ?? 0) * auctionMult((s.x?.[LAYER_KEYS.boats] as { openedAt?: number } | undefined)?.openedAt ?? -1, s.playSeconds));
 
-/** Win the dock for Marisol: spends the bid and earns Waterfront's perk, which plays the finale. */
-export function bidPier9(s: GameState): BuyResult {
+/** Place the bid (Pier 9: win the dock for Marisol): spends it and earns the bid shop's perk, which plays the finale. */
+export function placeBid(s: GameState): BuyResult {
   const bid = cityOf(s).bid;
   if (!bid) return { ok: false, reason: 'There is no auction in this city' };
   if (s.shops[bid.hood].perk) return { ok: false, reason: 'Pier 9 is already saved' };
-  if (!pier9Available(s)) return { ok: false, reason: 'The Pier 9 auction hasn’t opened yet' };
-  const r = pay(s, pier9Price(s));
+  if (!bidAvailable(s)) return { ok: false, reason: 'The Pier 9 auction hasn’t opened yet' };
+  const r = pay(s, bidPrice(s));
   return r.ok ? { ok: true, state: withShop(r.state, bid.hood, { perk: true }) } : r;
 }
 
@@ -1000,8 +1134,8 @@ const ALL_AUTOMATIC: Automation = Object.freeze({ prep: true, oven: true, counte
 export const automationOf = (shop: Shop): Automation => (shop.managed ? ALL_AUTOMATIC : shop.heads);
 
 /** Share of pies that go to walk-ins at the steady state (walk-ins are seated first, up to walkInRate). */
-export function walkInFraction(shop: Shop, vehicle: number, fx: FeatureMults = NO_FX): number {
-  const { sold, walkIns } = pieSplit(shop, vehicle, fx);
+export function walkInFraction(shop: Shop, vehicle: number, fit: CityFit, fx: FeatureMults = NO_FX): number {
+  const { sold, walkIns } = pieSplit(shop, vehicle, fit, fx);
   return sold > 0 ? walkIns / sold : 0;
 }
 
@@ -1018,12 +1152,12 @@ export function lineRates(id: NeighborhoodId, shop: Shop, vehicle: number, mult 
   const first = id === firstHood(city) && shop.sold === 0 && !shop.managed ? FIRST_BATCH_SPEED : 1;
   return {
     prep: prepRate(shop, fx) * first,
-    oven: ovenRate(shop, fx) * first,
-    serve: (automationOf(shop).counter ? Math.min(counterRate(shop, fx), demandRate(shop, vehicle, fx)) : counterRate(shop, fx)) * first,
-    shop: shopRate(shop, vehicle, fx),
+    oven: ovenRate(shop, city.fit, fx) * first,
+    serve: (automationOf(shop).counter ? Math.min(counterRate(shop, fx), demandRate(shop, vehicle, city.fit, fx)) : counterRate(shop, fx)) * first,
+    shop: shopRate(shop, vehicle, city.fit, fx),
     // a running boost raises what every pie pays, so departures, pops and revenue agree
     price: valuePerPizza(id, shop, vehicle, fx, city) * mult,
-    walkInFraction: walkInFraction(shop, vehicle, fx),
+    walkInFraction: walkInFraction(shop, vehicle, city.fit, fx),
     tapBatch: tapBatch(shop),
   };
 }
@@ -1085,7 +1219,19 @@ export function lineTick(s: GameState, dt: number, now?: number): GameState {
     const l = shop.line;
     // an idle manual line with nobody walking can't change: skip the allocation
     // (carrier laps keep counting down while pies wait or a carrier is still out)
-    if (!auto.prep && !auto.oven && !auto.counter && !l.prep && !l.oven && !l.counter && l.departures.length === 0 && l.boxed === 0 && l.driverBusy <= 0 && l.walkinBusy <= 0) continue;
+    if (
+      !auto.prep &&
+      !auto.oven &&
+      !auto.counter &&
+      !l.prep &&
+      !l.oven &&
+      !l.counter &&
+      l.departures.length === 0 &&
+      l.boxed === 0 &&
+      l.driverBusy <= 0 &&
+      l.walkinBusy <= 0
+    )
+      continue;
     const a = advanceLine(l, dt, lineRates(id, shop, s.vehicle, mult, featureMults(s, id, now ?? s.lastSavedAt), city), auto);
     shops ??= { ...s.shops };
     shops[id] = { ...shop, line: a.line, sold: shop.sold + a.sold };
@@ -1099,7 +1245,8 @@ export function lineTick(s: GameState, dt: number, now?: number): GameState {
 }
 
 /** How many seconds away the player is paid for: the night oven's owned cap. */
-export const offlineCapOf = (s: Pick<GameState, 'nightOven'>): number => NIGHT_OVEN.capSeconds[Math.min(NIGHT_OVEN.capSeconds.length - 1, Math.max(0, s.nightOven | 0))];
+export const offlineCapOf = (s: Pick<GameState, 'nightOven'>): number =>
+  NIGHT_OVEN.capSeconds[Math.min(NIGHT_OVEN.capSeconds.length - 1, Math.max(0, s.nightOven | 0))];
 
 export interface OfflineResult {
   state: GameState;
@@ -1123,7 +1270,12 @@ export interface OfflineResult {
  * at half speed). One missing a head only finishes the jobs already running and pays the carriers already walking out.
  * Each line is settled, so nothing is paid twice.
  */
-export function offlineTick(s: GameState, seconds: number, boost = 1, now?: number): { state: GameState; byShop: { id: NeighborhoodId; pies: number; base: number; extra: number }[] } {
+export function offlineTick(
+  s: GameState,
+  seconds: number,
+  boost = 1,
+  now?: number,
+): { state: GameState; byShop: { id: NeighborhoodId; pies: number; base: number; extra: number }[] } {
   const shops = { ...s.shops };
   const add = { walkins: 0, deliveries: 0, baked: 0 };
   const rows: { id: NeighborhoodId; pies: number; base: number; extra: number }[] = [];
@@ -1143,12 +1295,12 @@ export function offlineTick(s: GameState, seconds: number, boost = 1, now?: numb
       const inFlight = piesInFlight(shop.line);
       const carried = shop.line.departures.reduce((t, d) => t + d.cash, 0);
       const carriedPies = shop.line.departures.reduce((t, d) => t + d.n, 0);
-      const rest = Math.floor(shopRate(shop, s.vehicle, fx) * share * seconds) + inFlight - carriedPies;
+      const rest = Math.floor(shopRate(shop, s.vehicle, city.fit, fx) * share * seconds) + inFlight - carriedPies;
       pies = carriedPies + rest;
       // `carried` was already boosted when it left the shop: only the rest takes the boost
       paid = carried + rest * valuePerPizza(id, shop, s.vehicle, fx, city) * boost;
       // closed form: the walk-in share of the steady state decides the split
-      const walk = Math.round(pies * walkInFraction(shop, s.vehicle, fx));
+      const walk = Math.round(pies * walkInFraction(shop, s.vehicle, city.fit, fx));
       add.walkins += walk;
       add.deliveries += pies - walk;
       add.baked += pies;
@@ -1182,15 +1334,35 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
   const seconds = Math.min(elapsed, cap);
   // each running boost adds (mult − 1) over the part of the offline window it covers
   const from = s.lastSavedAt;
-  const boost = seconds > 0 ? s.rewards.boosts.reduce((m, b) => m + (b.mult - 1) * Math.max(0, Math.min(b.until, from + seconds * 1000) - from) / (seconds * 1000), 1) : 1;
+  const boost =
+    seconds > 0
+      ? s.rewards.boosts.reduce((m, b) => m + ((b.mult - 1) * Math.max(0, Math.min(b.until, from + seconds * 1000) - from)) / (seconds * 1000), 1)
+      : 1;
   const { state: ticked, byShop } = offlineTick(s, seconds, boost, now);
   let state = ticked;
   // feature slices settle after the ordinary catch-up, in registry order
   for (const f of FEATURES) if (f.onOffline) state = f.onOffline(state, seconds, now, s);
-  const rows = byShop.map((r) => ({ id: r.id, managed: s.shops[r.id].managed, headsOnly: !s.shops[r.id].managed && runsItself(s.shops[r.id]), earned: r.base + r.extra, pies: r.pies })).filter((x) => x.earned > 0);
+  const rows = byShop
+    .map((r) => ({
+      id: r.id,
+      managed: s.shops[r.id].managed,
+      headsOnly: !s.shops[r.id].managed && runsItself(s.shops[r.id]),
+      earned: r.base + r.extra,
+      pies: r.pies,
+    }))
+    .filter((x) => x.earned > 0);
   // Downtown's manager is Nonna's story beat, not a hire the player can make, so it is never named as idle
   const idle = hoodIds(cityOf(s)).filter((id) => id !== firstHood(cityOf(s)) && s.shops[id].built && !runsItself(s.shops[id]));
-  return { state: { ...state, lastSavedAt: now }, seconds, cap, capped: elapsed - cap >= CAPPED_SLACK_SECONDS, awaySeconds: elapsed, earned: state.cash - s.cash, byShop: rows, idle };
+  return {
+    state: { ...state, lastSavedAt: now },
+    seconds,
+    cap,
+    capped: elapsed - cap >= CAPPED_SLACK_SECONDS,
+    awaySeconds: elapsed,
+    earned: state.cash - s.cash,
+    byShop: rows,
+    idle,
+  };
 }
 
 // ---------- Story ----------
@@ -1261,6 +1433,7 @@ export interface Bundle {
 export function bottleneckBundle(s: GameState, id: NeighborhoodId, maxSteps = 8): Bundle | null {
   if (!s.shops[id].built) return null;
   let st: GameState = { ...s, cash: WHAT_IF_CASH };
+  const fit = cityOf(s).fit;
   const start = shopEarnings(s, id);
   const steps: Upgrade[] = [];
   let cost = 0;
@@ -1268,9 +1441,9 @@ export function bottleneckBundle(s: GameState, id: NeighborhoodId, maxSteps = 8)
     const shop = st.shops[id];
     const rates: [Upgrade, number][] = [
       ['prep', prepRate(shop)],
-      ['ovens', ovenRate(shop)],
+      ['ovens', ovenRate(shop, fit)],
       ['counter', counterRate(shop)],
-      ['drivers', demandRate(shop, st.vehicle)],
+      ['drivers', demandRate(shop, st.vehicle, fit)],
     ];
     const min = Math.min(...rates.map((r) => r[1]));
     const tied = rates.filter((r) => r[1] <= min * (1 + 1e-9)).map((r) => r[0]);

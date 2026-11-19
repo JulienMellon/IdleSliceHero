@@ -1,7 +1,6 @@
 /// <reference types="jest" />
 // v5.16 (T1b): the five General Managers. The shop's badge, the drawer's hire card and the cut-scene portrait all name a manager by the id in
 // MANAGERS (not a generated `<shop>-gm` face), and the five fixed looks tell the managers apart.
-import { MANAGERS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import * as G from '../../engine/game';
 import { drawerCards } from '../drawer-model';
@@ -11,6 +10,7 @@ import type { Pose } from '../cutscene/staging';
 import { MANAGER_LOOKS, isManagerId } from '../scene/looks';
 import { pathPoints } from './path-bounds';
 
+import { MANAGERS } from '../../content/cities/home/data';
 const OTHERS = (Object.keys(MANAGERS) as NeighborhoodId[]).filter((id) => id !== 'downtown');
 
 describe('manager looks', () => {
@@ -68,7 +68,11 @@ describe('what a manager wears on an arm follows the arm', () => {
     expect(Object.keys(ARM_UPPER).sort()).toEqual([...poses].sort());
     expect(Object.keys(ARM_FORE).sort()).toEqual([...poses].sort());
     for (const pose of poses) {
-      for (const [name, spot] of [['upper', ARM_UPPER[pose]], ['fore', ARM_FORE[pose]]] as const) expect([pose, name, dist(pose, spot.x, spot.y) <= 1.5]).toEqual([pose, name, true]);
+      for (const [name, spot] of [
+        ['upper', ARM_UPPER[pose]],
+        ['fore', ARM_FORE[pose]],
+      ] as const)
+        expect([pose, name, dist(pose, spot.x, spot.y) <= 1.5]).toEqual([pose, name, true]);
     }
   });
 

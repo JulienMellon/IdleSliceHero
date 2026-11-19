@@ -14,7 +14,7 @@
 // (OG, FP, DC, VC, PB, PP, CAP, EFF as in scripts/review/sim2.ts) are chosen by hand; the fitter bisects each later pizzeria's
 // buildCost so its first scene lands on the target day, one stage at a time (a stage only depends on earlier ones), then
 // bisects Uptown's cost multiplier so the finale lands on its target. Round the printed numbers by hand and run `check`.
-import { FOOTPRINTS, HEAD_COST_DOWNTOWN, HEAD_KINDS, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES } from '../src/content/tuning';
+import { HEAD_KINDS } from '../src/content/tuning';
 import { FRANCHISE, cityNumbers, type CityNumbers } from '../src/content/franchise';
 import { canFranchise, franchise, franchiseGain } from '../src/engine/features/franchise';
 import { COUNTERATTACK } from '../src/content/endgame';
@@ -25,7 +25,8 @@ import { masteryStars, masteryTotal } from '../src/engine/features/mastery';
 import { cityOf } from '../src/content/cities';
 import { applyCfg, decisionMetric, endSummary, INSTALL, options, reportLines, rewardRules, run, sessionStats, type Cfg } from './review/sim2';
 
-
+import { FOOTPRINTS, HEAD_COST_DOWNTOWN, OVEN_GRADES, VEHICLES } from '../src/content/cities/home/fit';
+import { NEIGHBORHOODS, PIER9_BID } from '../src/content/cities/home/data';
 // ---- v5.16 (card E0): the economy rules after playtest 3. Every target the tests pin is a named constant here, so the version's final
 // refit (card E2b) changes numbers and not tests. ----
 
@@ -151,7 +152,11 @@ export function session1(c: Cfg = {}): Session1Result {
     medianGap: [...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)],
     maxGap: Math.max(...gaps),
     sceneGap: Math.max(...sceneWalls.map((w, i) => w - (i ? sceneWalls[i - 1] : 0))) / 60,
-    bought: { expand: between.some((l) => l.includes('expand')), stone: between.some((l) => l.endsWith(':grade')), decor: between.some((l) => l.includes(':decor-')) },
+    bought: {
+      expand: between.some((l) => l.includes('expand')),
+      stone: between.some((l) => l.endsWith(':grade')),
+      decor: between.some((l) => l.includes(':decor-')),
+    },
     suburbsLocked: takeover === undefined || opens === undefined || opens >= takeover,
     scenes: r.scenes.map((x) => ({ id: x.id, minutes: x.wall / 60 })),
     rewards: rewardRules(r),
@@ -215,20 +220,29 @@ function session1Check() {
   console.log(`Suburbs opens   ${SESSION1.suburbsOpens} min              -> ${f(m.opens)}`);
   console.log(`Suburbs manager ${SESSION1.suburbsManager} min              -> ${f(m.manager)}`);
   console.log(`Suburbs finale  ${SESSION1.suburbsFinale} min              -> ${f(m.finale)}`);
-  console.log(`purchase gaps: median ${m.medianGap} s (max ${SESSION1.medianBuyGapSeconds}), longest ${m.maxGap} s (max ${SESSION1.maxBuyGapSeconds}); longest scene gap ${m.sceneGap.toFixed(1)} min (max ${SESSION1.maxSceneGapMinutes})`);
+  console.log(
+    `purchase gaps: median ${m.medianGap} s (max ${SESSION1.medianBuyGapSeconds}), longest ${m.maxGap} s (max ${SESSION1.maxBuyGapSeconds}); longest scene gap ${m.sceneGap.toFixed(1)} min (max ${SESSION1.maxSceneGapMinutes})`,
+  );
   console.log(`bought between takeover and the build: ${JSON.stringify(m.bought)}; Suburbs locked until Nonna: ${m.suburbsLocked}`);
   console.log(`scenes ${m.scenes.map((x) => `${x.id}@${f(x.minutes)}`).join(' ')}`);
-  console.log(`rewards ${(m.rewards.share * 100).toFixed(1)}% of cash; decisions ${(m.decisions.cheapestShare * 100).toFixed(0)}% cheapest, third/best ${m.decisions.medianRatio3.toFixed(1)}`);
+  console.log(
+    `rewards ${(m.rewards.share * 100).toFixed(1)}% of cash; decisions ${(m.decisions.cheapestShare * 100).toFixed(0)}% cheapest, third/best ${m.decisions.medianRatio3.toFixed(1)}`,
+  );
 }
 
 /** Print manager timing and the reward rules of the check-in run. */
 function managersCheck() {
   applyCfg({ ...base, rewards: true });
   const r = managerRun();
-  for (const m of managerRows(r)) console.log(`${m.id.padEnd(10)} build d${m.build.toFixed(2)}  head1 d${m.head1.toFixed(2)} (+${m.head1Checkins} check-ins)  heads3 d${m.heads3.toFixed(2)} (+${m.heads3Checkins})  manager d${m.manager.toFixed(2)} (${m.share === null ? `${m.daysAfter.toFixed(2)} days after its build` : `${(m.share * 100).toFixed(0)}% of the way to the next build`}; ${m.hours.toFixed(1)} h of income)`);
+  for (const m of managerRows(r))
+    console.log(
+      `${m.id.padEnd(10)} build d${m.build.toFixed(2)}  head1 d${m.head1.toFixed(2)} (+${m.head1Checkins} check-ins)  heads3 d${m.heads3.toFixed(2)} (+${m.heads3Checkins})  manager d${m.manager.toFixed(2)} (${m.share === null ? `${m.daysAfter.toFixed(2)} days after its build` : `${(m.share * 100).toFixed(0)}% of the way to the next build`}; ${m.hours.toFixed(1)} h of income)`,
+    );
   console.log(reportLines(r).slice(0, 2).join('\n'));
   const q = storyRules(r);
-  console.log(`story: longest gap between scenes ${q.longestGap.minutes.toFixed(1)} min of play (${q.longestGap.id}; max ${STORY_RULES.maxSceneGapPlayMinutes}); days without a scene before the finale: ${q.scenelessDays.join(',') || 'none'}; drones bought day ${q.droneDay.toFixed(2)}, finale day ${q.finaleDay.toFixed(3)}`);
+  console.log(
+    `story: longest gap between scenes ${q.longestGap.minutes.toFixed(1)} min of play (${q.longestGap.id}; max ${STORY_RULES.maxSceneGapPlayMinutes}); days without a scene before the finale: ${q.scenelessDays.join(',') || 'none'}; drones bought day ${q.droneDay.toFixed(2)}, finale day ${q.finaleDay.toFixed(3)}`,
+  );
 }
 
 const SESSION = 300;
@@ -258,9 +272,19 @@ const list = (name: string) => process.env[name]?.split(',').map(Number);
 const num = (name: string) => (process.env[name] ? Number(process.env[name]) : undefined);
 
 const base: Cfg = {
-  ov: list('OV'), cm: list('CM'), mc: list('MC'), bc: list('BC'),
-  og: list('OG'), fp: list('FP'), dc: list('DC'), vc: list('VC'),
-  pier9: num('PB'), pier9Pizzas: num('PP'), cap: num("CAP"), eff: num('EFF'), eager: process.env.EAGER ? true : undefined,
+  ov: list('OV'),
+  cm: list('CM'),
+  mc: list('MC'),
+  bc: list('BC'),
+  og: list('OG'),
+  fp: list('FP'),
+  dc: list('DC'),
+  vc: list('VC'),
+  pier9: num('PB'),
+  pier9Pizzas: num('PP'),
+  cap: num('CAP'),
+  eff: num('EFF'),
+  eager: process.env.EAGER ? true : undefined,
 };
 const mcRatio = num('MCR');
 
@@ -269,7 +293,10 @@ function days(c: Cfg, until?: string, maxDays = 12) {
   applyCfg(c);
   const r = run('checkin', SESSION, AWAY, undefined, { atScene: until, maxWall: maxDays * 86400 });
   const out: Partial<Record<Key, number>> = {};
-  for (const k of KEYS) { const sc = r.scenes.find((x) => x.id === SCENE[k]); if (sc) out[k] = sc.wall / 86400; }
+  for (const k of KEYS) {
+    const sc = r.scenes.find((x) => x.id === SCENE[k]);
+    if (sc) out[k] = sc.wall / 86400;
+  }
   return { out, r };
 }
 
@@ -291,35 +318,77 @@ function scan(f: (x: number) => number, target: number, lo: number, hi: number) 
 }
 
 function fit() {
-  const cur: Cfg = { ...base, bc: base.bc ? [...base.bc] : NEIGHBORHOODS.map((n) => n.buildCost), cm: base.cm ? [...base.cm] : NEIGHBORHOODS.map((n) => n.costMult), mc: NEIGHBORHOODS.map((n) => n.managerCost) };
+  const cur: Cfg = {
+    ...base,
+    bc: base.bc ? [...base.bc] : NEIGHBORHOODS.map((n) => n.buildCost),
+    cm: base.cm ? [...base.cm] : NEIGHBORHOODS.map((n) => n.costMult),
+    mc: NEIGHBORHOODS.map((n) => n.managerCost),
+  };
   const mk = num('MK'); // manager price in units of the shop's cost multiplier (v5.13); beats MCR when set
-  const setBC = (i: number, v: number) => { cur.bc![i] = v; if (mk !== undefined) cur.mc![i] = mk * cur.cm![i]; else if (mcRatio !== undefined) cur.mc![i] = v * mcRatio; };
+  const setBC = (i: number, v: number) => {
+    cur.bc![i] = v;
+    if (mk !== undefined) cur.mc![i] = mk * cur.cm![i];
+    else if (mcRatio !== undefined) cur.mc![i] = v * mcRatio;
+  };
   // stages: waterfront (2), university (3), industrial (4), uptown (5)
   for (let i = 2; i <= 5; i++) {
     const key = KEYS[i - 2];
     const lo = num('LO') ?? 1e4;
-    const best = scan((v) => { setBC(i, v); return days(cur, SCENE[key], TARGETS[key] * 2.5).out[key] ?? TARGETS[key] * 3; }, TARGETS[key], i > 2 ? cur.bc![i - 1] / 8 : lo, num("HI") ?? 8.5e15);
+    const best = scan(
+      (v) => {
+        setBC(i, v);
+        return days(cur, SCENE[key], TARGETS[key] * 2.5).out[key] ?? TARGETS[key] * 3;
+      },
+      TARGETS[key],
+      i > 2 ? cur.bc![i - 1] / 8 : lo,
+      num('HI') ?? 8.5e15,
+    );
     setBC(i, best.x);
-    console.log(`${NEIGHBORHOODS[i].id.padEnd(10)} buildCost ${best.x.toPrecision(3)} managerCost ${cur.mc![i].toPrecision(3)} -> day ${best.d.toFixed(2)} (target ${TARGETS[key]})`);
+    console.log(
+      `${NEIGHBORHOODS[i].id.padEnd(10)} buildCost ${best.x.toPrecision(3)} managerCost ${cur.mc![i].toPrecision(3)} -> day ${best.d.toFixed(2)} (target ${TARGETS[key]})`,
+    );
   }
   // finale: Uptown's cost multiplier (cheaper upgrades -> more pizzas sooner)
   // finale: Uptown's cost multiplier within 0.3x-1.0x of its order value (v5.13: no outlier), the rest of the table fixed
   const ov5 = cur.ov?.[5] ?? NEIGHBORHOODS[5].orderValue;
-  const best = scan((v) => { cur.cm![5] = v; if (mk !== undefined) cur.mc![5] = mk * v; return days(cur, 'uptown-4', 9).out.finale ?? 20; }, TARGETS.finale, 0.3 * ov5, 1.0 * ov5);
+  const best = scan(
+    (v) => {
+      cur.cm![5] = v;
+      if (mk !== undefined) cur.mc![5] = mk * v;
+      return days(cur, 'uptown-4', 9).out.finale ?? 20;
+    },
+    TARGETS.finale,
+    0.3 * ov5,
+    1.0 * ov5,
+  );
   cur.cm![5] = Math.min(ov5, Math.max(0.3 * ov5, best.x));
   if (mk !== undefined) cur.mc![5] = mk * cur.cm![5];
   console.log(`uptown costMult ${best.x.toPrecision(3)} -> finale day ${best.d.toFixed(2)} (target ${TARGETS.finale})`);
-  console.log(JSON.stringify({ ov: cur.ov ?? NEIGHBORHOODS.map((n) => n.orderValue), bc: cur.bc!.map((v) => +v.toPrecision(3)), cm: cur.cm!.map((v) => +v.toPrecision(3)), mc: cur.mc!.map((v) => +v.toPrecision(3)) }));
+  console.log(
+    JSON.stringify({
+      ov: cur.ov ?? NEIGHBORHOODS.map((n) => n.orderValue),
+      bc: cur.bc!.map((v) => +v.toPrecision(3)),
+      cm: cur.cm!.map((v) => +v.toPrecision(3)),
+      mc: cur.mc!.map((v) => +v.toPrecision(3)),
+    }),
+  );
 }
 
 function check() {
   const c = { ...base };
-  for (const [sess, away] of [[300, 4 * 3600], [300, 8 * 3600], [600, 3 * 3600], [120, 2 * 3600]] as const) {
+  for (const [sess, away] of [
+    [300, 4 * 3600],
+    [300, 8 * 3600],
+    [600, 3 * 3600],
+    [120, 2 * 3600],
+  ] as const) {
     applyCfg(c);
     const r = run('checkin', sess, away);
     const m: Record<string, number> = {};
     for (const x of r.scenes) if (x.id.endsWith('-1') || x.id === 'uptown-4') m[x.id] = +(x.wall / 86400).toFixed(2);
-    console.log(`${sess / 60} min every ${(sess + away) / 3600} h: ${(r.wall / 86400).toFixed(1)} days, done=${r.s.cityComplete}, ${JSON.stringify(m)}; ${endSummary(r, sess, away)}`);
+    console.log(
+      `${sess / 60} min every ${(sess + away) / 3600} h: ${(r.wall / 86400).toFixed(1)} days, done=${r.s.cityComplete}, ${JSON.stringify(m)}; ${endSummary(r, sess, away)}`,
+    );
   }
   endgameCheck();
 }
@@ -387,7 +456,10 @@ export function endgame(s0: G.GameState, wall0: number, maxDays = 30, minAttacks
       if (a.challenge && a.target) for (let t = 0; t < DEFEND_TAPS_PER_SECOND; t++) s = G.tapShop(s, a.target);
       s = G.playTick(s, 1, now);
       const st = getFeature(s, counterattack);
-      if (st.open && st.seenWeek !== lastWeek) { res.attacks++; lastWeek = st.seenWeek; }
+      if (st.open && st.seenWeek !== lastWeek) {
+        res.attacks++;
+        lastWeek = st.seenWeek;
+      }
       if (st.news) {
         if (st.news.kind === 'won') res.won++;
         else if (st.news.kind === 'lost') res.lost++;
@@ -404,7 +476,10 @@ export function endgame(s0: G.GameState, wall0: number, maxDays = 30, minAttacks
       const total = masteryTotal(s);
       for (const m of [6, 12, 18] as const) if (total >= m && res.starDay[m] === null) res.starDay[m] = +((wall + k) / 86400).toFixed(2);
       res.stars = total;
-      if (total >= 18 && res.attacks >= minAttacks) { res.days = (wall + k) / 86400; return res; }
+      if (total >= 18 && res.attacks >= minAttacks) {
+        res.days = (wall + k) / 86400;
+        return res;
+      }
     }
     wall += SESSION;
     s = { ...s, lastSavedAt: INSTALL + wall * 1000 };
@@ -431,8 +506,19 @@ function fitStars() {
     const r = run('checkin', SESSION, AWAY);
     return endgame(r.s, r.wall, 40).starDay[18] ?? 60;
   };
-  const best = scan((k) => { const d = dayOf(k); console.log(`   k ${k.toPrecision(3)} -> all 18 stars on day ${d.toFixed(2)}`); return d; }, target, 1, 4096);
-  console.log(`k ${best.x.toPrecision(3)}: golden oven ${(og[4] * best.x).toPrecision(3)}, flagship ${(fp[4] * best.x).toPrecision(3)} (x costMult) -> day ${best.d.toFixed(2)} (target ${target})`);
+  const best = scan(
+    (k) => {
+      const d = dayOf(k);
+      console.log(`   k ${k.toPrecision(3)} -> all 18 stars on day ${d.toFixed(2)}`);
+      return d;
+    },
+    target,
+    1,
+    4096,
+  );
+  console.log(
+    `k ${best.x.toPrecision(3)}: golden oven ${(og[4] * best.x).toPrecision(3)}, flagship ${(fp[4] * best.x).toPrecision(3)} (x costMult) -> day ${best.d.toFixed(2)} (target ${target})`,
+  );
   applyCfg(cfgOf(best.x));
   endgameCheck();
 }
@@ -444,15 +530,32 @@ function endgameCheck() {
   const story = KEYS.map((k) => `${k} ${((r.scenes.find((x) => x.id === SCENE[k])?.wall ?? NaN) / 86400).toFixed(2)}`).join(' / ');
   const e = endgame(r.s, r.wall);
   const ok = (v: number | null, lo: number, hi: number) => (v !== null && v >= lo && v <= hi ? 'ok' : 'OUT');
-  console.log(`day table: story ${story} (targets ${KEYS.map((k) => TARGETS[k]).join(' / ')}) | stars 6 d${e.starDay[6]} 12 d${e.starDay[12]} 18 d${e.starDay[18]} (target ${STAR_DAYS.min}-${STAR_DAYS.max}: ${ok(e.starDay[18], STAR_DAYS.min, STAR_DAYS.max)}) | attacks ${e.attacks}: won ${e.won}, lost ${e.lost}, expired ${e.expired} (${COUNTERATTACK.challengeSeconds / 60} min, x${COUNTERATTACK.targetMargin})`);
+  console.log(
+    `day table: story ${story} (targets ${KEYS.map((k) => TARGETS[k]).join(' / ')}) | stars 6 d${e.starDay[6]} 12 d${e.starDay[12]} 18 d${e.starDay[18]} (target ${STAR_DAYS.min}-${STAR_DAYS.max}: ${ok(e.starDay[18], STAR_DAYS.min, STAR_DAYS.max)}) | attacks ${e.attacks}: won ${e.won}, lost ${e.lost}, expired ${e.expired} (${COUNTERATTACK.challengeSeconds / 60} min, x${COUNTERATTACK.targetMargin})`,
+  );
 }
 
 // ---- random local search over the whole table (loss on the 5-min-every-4-h run) ----
-interface Vec { bc: number[]; cm: number[]; mcr: number; ovg: number; og: number; fp: number }
+interface Vec {
+  bc: number[];
+  cm: number[];
+  mcr: number;
+  ovg: number;
+  og: number;
+  fp: number;
+}
 const toCfg = (v: Vec): Cfg => {
   const ov = [3, 10, ...[2, 3, 4, 5].map((i) => 10 * Math.pow(v.ovg, i - 1))];
   const mc = v.bc.map((b, i) => (i < 2 ? NEIGHBORHOODS[i].managerCost : b * v.mcr));
-  return { ...base, ov: base.ov ?? ov, bc: [0, 450, ...v.bc.slice(2)], cm: [1, 4.5, ...v.cm.slice(2)], mc, og: [400 * v.og, 12_000 * v.og, 400_000 * v.og, 12_000_000 * v.og], fp: [500 * v.fp, 15_000 * v.fp, 500_000 * v.fp, 15_000_000 * v.fp] };
+  return {
+    ...base,
+    ov: base.ov ?? ov,
+    bc: [0, 450, ...v.bc.slice(2)],
+    cm: [1, 4.5, ...v.cm.slice(2)],
+    mc,
+    og: [400 * v.og, 12_000 * v.og, 400_000 * v.og, 12_000_000 * v.og],
+    fp: [500 * v.fp, 15_000 * v.fp, 500_000 * v.fp, 15_000_000 * v.fp],
+  };
 };
 function loss(v: Vec) {
   const c = toCfg(v);
@@ -473,7 +576,10 @@ function loss(v: Vec) {
 }
 function search(seed: number, iters: number, start: Vec) {
   let rnd = seed;
-  const rand = () => { rnd = (rnd * 1664525 + 1013904223) % 4294967296; return rnd / 4294967296; };
+  const rand = () => {
+    rnd = (rnd * 1664525 + 1013904223) % 4294967296;
+    return rnd / 4294967296;
+  };
   const gauss = () => Math.sqrt(-2 * Math.log(rand() + 1e-9)) * Math.cos(2 * Math.PI * rand());
   let cur = start;
   let best = loss(cur);
@@ -485,11 +591,14 @@ function search(seed: number, iters: number, start: Vec) {
     for (let j = 0; j < n; j++) {
       const f = fields[Math.floor(rand() * fields.length)];
       const m = Math.exp(gauss() * 0.22);
-      if (f.startsWith('bc')) nxt.bc[+f[2]] *= m; else if (f.startsWith('cm')) nxt.cm[+f[2]] *= m; else (nxt as any)[f] *= m;
+      if (f.startsWith('bc')) nxt.bc[+f[2]] *= m;
+      else if (f.startsWith('cm')) nxt.cm[+f[2]] *= m;
+      else (nxt as any)[f] *= m;
     }
     const r = loss(nxt);
     if (r.L <= best.L) {
-      cur = nxt; best = r;
+      cur = nxt;
+      best = r;
       console.log(`it ${it} loss ${r.L.toFixed(2)} days ${r.got.map((x) => x.toFixed(2)).join(' ')} min ${r.min}`);
       console.log(JSON.stringify(cur));
     }
@@ -510,35 +619,50 @@ function fit2() {
   const mk = num('MK'); // manager price in units of the shop's cost multiplier (v5.13); beats MCR when set
   const bcMax = num('BCMAX') ?? Infinity; // the engine's what-if gains stop at 2^53 (about 9.0e15): keep builds below it
   const cur = { ov: [3, 10, 0, 0, 0, 0], bc: [0, 450, 0, 0, 0, 0], cm: [1, 4.5, 0, 0, 0, 0], mc: [0, 600, 0, 0, 0, 0] };
-  const fixed = (process.env.FIX ?? '').split(';').filter(Boolean).map((s) => s.split(',').map(Number)); // optional [ov,bc] for finished stages
+  const fixed = (process.env.FIX ?? '')
+    .split(';')
+    .filter(Boolean)
+    .map((s) => s.split(',').map(Number)); // optional [ov,bc] for finished stages
   for (let i = 2; i <= 5; i++) {
     const key = KEYS[i - 2];
     const T = TARGETS[key];
     const prevOv = cur.ov[i - 1];
     let best = { score: Infinity, ov: 0, bc: 0, g: 0, e: 0 };
     const tryIt = (ov: number, bc: number) => {
-      const c: Cfg = { ...base, ov: [...cur.ov.slice(0, i), ov, ...cur.ov.slice(i + 1)], bc: [...cur.bc.slice(0, i), bc, ...cur.bc.slice(i + 1)], cm: [...cur.cm.slice(0, i), ov * rho, ...cur.cm.slice(i + 1)], mc: [...cur.mc.slice(0, i), mk !== undefined ? ov * rho * mk : bc * mcr2, ...cur.mc.slice(i + 1)] };
+      const c: Cfg = {
+        ...base,
+        ov: [...cur.ov.slice(0, i), ov, ...cur.ov.slice(i + 1)],
+        bc: [...cur.bc.slice(0, i), bc, ...cur.bc.slice(i + 1)],
+        cm: [...cur.cm.slice(0, i), ov * rho, ...cur.cm.slice(i + 1)],
+        mc: [...cur.mc.slice(0, i), mk !== undefined ? ov * rho * mk : bc * mcr2, ...cur.mc.slice(i + 1)],
+      };
       if (bc > bcMax) return;
       const g = dayOfScene(c, false, SCENE[key], T * 2.2);
       const e = dayOfScene(c, true, SCENE[key], T * 2.2);
       const score = Math.log(g / T) ** 2 + 0.5 * Math.log(e / T) ** 2;
-      if (score < 0.01 && process.env.VERBOSE) console.log(`   ${NEIGHBORHOODS[i].id} ov ${ov.toPrecision(3)} bc ${bc.toPrecision(3)} greedy ${g.toFixed(2)} eager ${e.toFixed(2)}`);
-      if (score < best.score - 1e-4 || (Math.abs(score - best.score) <= 1e-4 && (process.env.TIE === 'big' ? ov > best.ov : ov < best.ov))) best = { score, ov, bc, g, e };
+      if (score < 0.01 && process.env.VERBOSE)
+        console.log(`   ${NEIGHBORHOODS[i].id} ov ${ov.toPrecision(3)} bc ${bc.toPrecision(3)} greedy ${g.toFixed(2)} eager ${e.toFixed(2)}`);
+      if (score < best.score - 1e-4 || (Math.abs(score - best.score) <= 1e-4 && (process.env.TIE === 'big' ? ov > best.ov : ov < best.ov)))
+        best = { score, ov, bc, g, e };
     };
     const fx = fixed[i - 2];
     if (fx) tryIt(fx[0], fx[1]);
     else {
       const bcLo = i === 2 ? 1e6 : cur.bc[i - 1] / 4;
-      for (const f of (process.env.FS ?? "2.5,4,6,10,16").split(",").map(Number)) for (let bc = bcLo; bc <= bcLo * 4096; bc *= 2.5) tryIt(prevOv * f, bc);
+      for (const f of (process.env.FS ?? '2.5,4,6,10,16').split(',').map(Number)) for (let bc = bcLo; bc <= bcLo * 4096; bc *= 2.5) tryIt(prevOv * f, bc);
       const { ov: o0, bc: b0 } = best;
-      for (const fo of (process.env.FO ?? "0.8,0.9,1,1.12,1.25").split(",").map(Number)) for (const fb of [0.7, 0.85, 1, 1.2, 1.4]) tryIt(o0 * fo, b0 * fb);
+      for (const fo of (process.env.FO ?? '0.8,0.9,1,1.12,1.25').split(',').map(Number)) for (const fb of [0.7, 0.85, 1, 1.2, 1.4]) tryIt(o0 * fo, b0 * fb);
     }
-    cur.ov[i] = best.ov; cur.bc[i] = best.bc; cur.cm[i] = best.ov * rho; cur.mc[i] = mk !== undefined ? best.ov * rho * mk : best.bc * mcr2;
-    console.log(`${NEIGHBORHOODS[i].id.padEnd(10)} ov ${best.ov.toPrecision(3)} buildCost ${best.bc.toPrecision(3)} -> greedy day ${best.g.toFixed(2)}, eager day ${best.e.toFixed(2)} (target ${T})`);
+    cur.ov[i] = best.ov;
+    cur.bc[i] = best.bc;
+    cur.cm[i] = best.ov * rho;
+    cur.mc[i] = mk !== undefined ? best.ov * rho * mk : best.bc * mcr2;
+    console.log(
+      `${NEIGHBORHOODS[i].id.padEnd(10)} ov ${best.ov.toPrecision(3)} buildCost ${best.bc.toPrecision(3)} -> greedy day ${best.g.toFixed(2)}, eager day ${best.e.toFixed(2)} (target ${T})`,
+    );
   }
   console.log(JSON.stringify(cur));
 }
-
 
 // ---- v5.13: proportional fit. costMult = RHO x orderValue, buildCost = K x costMult, managerCost = MCR x buildCost (D434, D435) ----
 function fit3() {
@@ -546,14 +670,36 @@ function fit3() {
   const K = num('K') ?? 300;
   const mcr = mcRatio ?? 0.5;
   const cur = { ov: [3, 10, 0, 0, 0, 0], bc: [0, 450, 0, 0, 0, 0], cm: [1, 4.5, 0, 0, 0, 0], mc: [0, 600, 0, 0, 0, 0] };
-  const set = (i: number, ov: number) => { cur.ov[i] = ov; cur.cm[i] = ov * rho; cur.bc[i] = ov * rho * K; cur.mc[i] = ov * rho * K * mcr; };
+  const set = (i: number, ov: number) => {
+    cur.ov[i] = ov;
+    cur.cm[i] = ov * rho;
+    cur.bc[i] = ov * rho * K;
+    cur.mc[i] = ov * rho * K * mcr;
+  };
   for (let i = 2; i <= 5; i++) {
     const key = KEYS[i - 2];
-    const best = scan((ov) => { set(i, ov); return dayOfScene({ ...base, ...cur }, false, SCENE[key], TARGETS[key] * 2.5); }, TARGETS[key], cur.ov[i - 1] * 1.5, cur.ov[i - 1] * 1e9);
+    const best = scan(
+      (ov) => {
+        set(i, ov);
+        return dayOfScene({ ...base, ...cur }, false, SCENE[key], TARGETS[key] * 2.5);
+      },
+      TARGETS[key],
+      cur.ov[i - 1] * 1.5,
+      cur.ov[i - 1] * 1e9,
+    );
     set(i, best.x);
-    console.log(`${NEIGHBORHOODS[i].id.padEnd(10)} ov ${best.x.toPrecision(3)} (x${(best.x / cur.ov[i - 1]).toExponential(1)} the last) buildCost ${cur.bc[i].toPrecision(3)} -> day ${best.d.toFixed(2)} (target ${TARGETS[key]})`);
+    console.log(
+      `${NEIGHBORHOODS[i].id.padEnd(10)} ov ${best.x.toPrecision(3)} (x${(best.x / cur.ov[i - 1]).toExponential(1)} the last) buildCost ${cur.bc[i].toPrecision(3)} -> day ${best.d.toFixed(2)} (target ${TARGETS[key]})`,
+    );
   }
-  console.log(JSON.stringify({ ov: cur.ov.map((v) => +v.toPrecision(3)), bc: cur.bc.map((v) => +v.toPrecision(3)), cm: cur.cm.map((v) => +v.toPrecision(3)), mc: cur.mc.map((v) => +v.toPrecision(3)) }));
+  console.log(
+    JSON.stringify({
+      ov: cur.ov.map((v) => +v.toPrecision(3)),
+      bc: cur.bc.map((v) => +v.toPrecision(3)),
+      cm: cur.cm.map((v) => +v.toPrecision(3)),
+      mc: cur.mc.map((v) => +v.toPrecision(3)),
+    }),
+  );
 }
 
 // ---- v5.13: proportional fit over the (orderValue step, K) plane. costMult = RHO x ov, buildCost = K x costMult, managerCost = MK x costMult.
@@ -566,8 +712,16 @@ function fit4() {
   const bcMax = num('BCMAX') ?? 8.5e15;
   const cmMax = num('CMMAX') ?? 4.5e7;
   const cur = { ov: [3, 10, 0, 0, 0, 0], bc: [0, 450, 0, 0, 0, 0], cm: [1, 4.5, 0, 0, 0, 0], mc: [0, 600, 0, 0, 0, 0] };
-  const fixed = (process.env.FIX ?? '').split(';').filter(Boolean).map((s) => s.split(',').map(Number)); // [ov,K] per finished stage
-  const set = (i: number, ov: number, K: number) => { cur.ov[i] = ov; cur.cm[i] = ov * rho; cur.bc[i] = ov * rho * K; cur.mc[i] = ov * rho * mk; };
+  const fixed = (process.env.FIX ?? '')
+    .split(';')
+    .filter(Boolean)
+    .map((s) => s.split(',').map(Number)); // [ov,K] per finished stage
+  const set = (i: number, ov: number, K: number) => {
+    cur.ov[i] = ov;
+    cur.cm[i] = ov * rho;
+    cur.bc[i] = ov * rho * K;
+    cur.mc[i] = ov * rho * mk;
+  };
   for (let i = 2; i <= 5; i++) {
     const key = KEYS[i - 2];
     const T = TARGETS[key];
@@ -587,12 +741,27 @@ function fit4() {
     else for (const f of fovs) for (const K of ks) tryIt(cur.ov[i - 1] * f, K);
     hits.sort((a, b) => a.score - b.score || a.K - b.K);
     const good = hits.filter((h) => h.score < 0.01);
-    console.log(`${NEIGHBORHOODS[i].id}: ${good.length} of ${hits.length} pairs within ~10% of day ${T}; best 6: ${hits.slice(0, 6).map((h) => `ov ${h.ov.toPrecision(3)} K ${h.K} -> ${h.g.toFixed(2)}/${h.e.toFixed(2)}`).join(' | ')}`);
-    if (!hits.length) { console.log('no pair fits the limits'); return; }
+    console.log(
+      `${NEIGHBORHOODS[i].id}: ${good.length} of ${hits.length} pairs within ~10% of day ${T}; best 6: ${hits
+        .slice(0, 6)
+        .map((h) => `ov ${h.ov.toPrecision(3)} K ${h.K} -> ${h.g.toFixed(2)}/${h.e.toFixed(2)}`)
+        .join(' | ')}`,
+    );
+    if (!hits.length) {
+      console.log('no pair fits the limits');
+      return;
+    }
     const pick = (process.env.PICK ?? 'smallK') === 'smallK' ? [...(good.length ? good : hits)].sort((a, b) => a.K - b.K || a.score - b.score)[0] : hits[0];
     set(i, pick.ov, pick.K);
   }
-  console.log(JSON.stringify({ ov: cur.ov.map((v) => +v.toPrecision(3)), bc: cur.bc.map((v) => +v.toPrecision(3)), cm: cur.cm.map((v) => +v.toPrecision(3)), mc: cur.mc.map((v) => +v.toPrecision(3)) }));
+  console.log(
+    JSON.stringify({
+      ov: cur.ov.map((v) => +v.toPrecision(3)),
+      bc: cur.bc.map((v) => +v.toPrecision(3)),
+      cm: cur.cm.map((v) => +v.toPrecision(3)),
+      mc: cur.mc.map((v) => +v.toPrecision(3)),
+    }),
+  );
 }
 
 // ---- polish: random local search on the last three stages, scoring the greedy and the eager player together ----
@@ -604,13 +773,25 @@ const snap = (x: number) => {
   return steps.reduce((b, s) => (Math.abs(Math.log(s / m)) < Math.abs(Math.log(b / m)) ? s : b)) * 10 ** e;
 };
 function polish(seed: number, iters: number) {
-  const ov = list('OV')!, bc = list('BC')!, cm = list('CM')!;
+  const ov = list('OV')!,
+    bc = list('BC')!,
+    cm = list('CM')!;
   const names = ['bc3', 'ov4', 'bc4', 'ov5', 'bc5', 'cm5', 'mcr5'];
   let p: Record<string, number> = { bc3: bc[3], ov4: ov[4], bc4: bc[4], ov5: ov[5], bc5: bc[5], cm5: cm[5], mcr5: num('MCR5') ?? 0.5 };
   const cfgOf = (q: Record<string, number>): Cfg => {
-    const o = [...ov], b = [...bc], c = [...cm], m = list('MC')!;
-    b[3] = q.bc3; o[4] = q.ov4; b[4] = q.bc4; o[5] = q.ov5; b[5] = q.bc5; c[5] = q.cm5;
-    m[3] = snap(b[3] * 0.5); m[4] = snap(b[4] * 0.5); m[5] = snap(b[5] * q.mcr5);
+    const o = [...ov],
+      b = [...bc],
+      c = [...cm],
+      m = list('MC')!;
+    b[3] = q.bc3;
+    o[4] = q.ov4;
+    b[4] = q.bc4;
+    o[5] = q.ov5;
+    b[5] = q.bc5;
+    c[5] = q.cm5;
+    m[3] = snap(b[3] * 0.5);
+    m[4] = snap(b[4] * 0.5);
+    m[5] = snap(b[5] * q.mcr5);
     return { ...base, ov: o, bc: b, cm: c, mc: m };
   };
   const score = (q: Record<string, number>) => {
@@ -634,7 +815,10 @@ function polish(seed: number, iters: number) {
     return { L, out: out.join(' | ') };
   };
   let rnd = seed;
-  const rand = () => { rnd = (rnd * 1664525 + 1013904223) % 4294967296; return rnd / 4294967296; };
+  const rand = () => {
+    rnd = (rnd * 1664525 + 1013904223) % 4294967296;
+    return rnd / 4294967296;
+  };
   const gauss = () => Math.sqrt(-2 * Math.log(rand() + 1e-9)) * Math.cos(2 * Math.PI * rand());
   let best = score(p);
   console.log('start', best.L.toFixed(2), best.out);
@@ -645,7 +829,12 @@ function polish(seed: number, iters: number) {
     for (const k of names) if (k !== 'mcr5') q[k] = snap(q[k]);
     if (names.every((k) => q[k] === p[k])) continue;
     const s = score(q);
-    if (s.L <= best.L) { p = q; best = s; console.log(`it ${it} loss ${s.L.toFixed(2)} ${s.out}`); console.log(JSON.stringify(Object.fromEntries(Object.entries(p).map(([k, v]) => [k, +v.toPrecision(3)])))); }
+    if (s.L <= best.L) {
+      p = q;
+      best = s;
+      console.log(`it ${it} loss ${s.L.toFixed(2)} ${s.out}`);
+      console.log(JSON.stringify(Object.fromEntries(Object.entries(p).map(([k, v]) => [k, +v.toPrecision(3)]))));
+    }
   }
 }
 
@@ -668,14 +857,18 @@ export function withBostonTables<T>(mult: number, fn: () => T, nums: CityNumbers
   };
   NEIGHBORHOODS.forEach((n, i) => Object.assign(n, { ...nums.hoods[i], orderValue: nums.hoods[i].orderValue * mult }));
   Object.assign(HEAD_COST_DOWNTOWN, nums.headCostFirst);
-  VEHICLES.forEach((v, i) => { if (i > 0) v.cost = nums.vehicleCosts[i - 1]; });
+  VEHICLES.forEach((v, i) => {
+    if (i > 0) v.cost = nums.vehicleCosts[i - 1];
+  });
   (PIER9_BID as { cost: number }).cost = nums.bid.cost;
   try {
     return fn();
   } finally {
     saved.hoods.forEach((n, i) => Object.assign(NEIGHBORHOODS[i], n));
     Object.assign(HEAD_COST_DOWNTOWN, saved.heads);
-    VEHICLES.forEach((v, i) => { v.cost = saved.vehicles[i]; });
+    VEHICLES.forEach((v, i) => {
+      v.cost = saved.vehicles[i];
+    });
     (PIER9_BID as { cost: number }).cost = saved.bid;
   }
 }
@@ -687,7 +880,8 @@ export interface FranchiseDays {
   boston: { days: Record<Key, number>; done: boolean; startedWith: { city: string; cash: number } };
 }
 
-const daysOf = (r: ReturnType<typeof run>): Record<Key, number> => Object.fromEntries(KEYS.map((k) => [k, (r.scenes.find((x) => x.id === SCENE[k])?.wall ?? NaN) / 86400])) as Record<Key, number>;
+const daysOf = (r: ReturnType<typeof run>): Record<Key, number> =>
+  Object.fromEntries(KEYS.map((k) => [k, (r.scenes.find((x) => x.id === SCENE[k])?.wall ?? NaN) / 86400])) as Record<Key, number>;
 
 /** The check-in player: finish the home city, franchise when it can, play Boston. */
 export function franchiseRun(): FranchiseDays {
@@ -709,7 +903,9 @@ export function franchiseRun(): FranchiseDays {
 function franchiseCheck() {
   const f = franchiseRun();
   const d = (x: number) => (Number.isFinite(x) ? x.toFixed(2) : 'n/a').padStart(6);
-  console.log(`home clear: ${f.home.earned.toExponential(3)} earned -> ${f.home.stars} Stars (target ${FRANCHISE.starsPerClear}), x${f.home.multiplier}; franchise on offer: ${f.home.offered}; Boston starts as ${f.boston.startedWith.city} with $${f.boston.startedWith.cash}`);
+  console.log(
+    `home clear: ${f.home.earned.toExponential(3)} earned -> ${f.home.stars} Stars (target ${FRANCHISE.starsPerClear}), x${f.home.multiplier}; franchise on offer: ${f.home.offered}; Boston starts as ${f.boston.startedWith.city} with $${f.boston.startedWith.cash}`,
+  );
   console.log('day table (check-in player, 5 min every 4 h)');
   console.log('            target   home  boston');
   for (const k of KEYS) console.log(`${k.padEnd(10)} ${d(TARGETS[k])} ${d(f.home.days[k])} ${d(f.boston.days[k])}`);
@@ -760,7 +956,9 @@ if (require.main === module) {
   else if (process.argv[2] === 'fitboston') fitBoston();
   else if (process.argv[2] === 'check') check();
   else if (process.argv[2] === 'search') {
-    const start: Vec = process.env.START ? JSON.parse(process.env.START) : { bc: [0, 450, 5e7, 1.75e8, 5.5e8, 5.4e9], cm: [1, 4.5, 12, 34, 90, 250], mcr: 0.5, ovg: 2.7, og: 1, fp: 1 };
+    const start: Vec = process.env.START
+      ? JSON.parse(process.env.START)
+      : { bc: [0, 450, 5e7, 1.75e8, 5.5e8, 5.4e9], cm: [1, 4.5, 12, 34, 90, 250], mcr: 0.5, ovg: 2.7, og: 1, fp: 1 };
     search(Number(process.env.SEED ?? 1), Number(process.env.ITERS ?? 200), start);
   } else fit();
 }

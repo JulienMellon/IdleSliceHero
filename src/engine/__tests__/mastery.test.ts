@@ -1,21 +1,26 @@
 // Shop mastery (v5.15): star rules, one-time pay, the milestone cosmetics and the catch-up on a v5.14 save.
 import { MASTERY } from '../../content/endgame';
 import { WEEKLY_COSMETICS } from '../../content/rewards';
-import { FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { HOME_CITY } from '../../content/cities/home';
 import { getFeature } from '../features';
 import { ackMastery, mastery, masteryStars, masteryTotal, nextStar, shopStars } from '../features/mastery';
 import * as G from '../game';
 
+import { FOOTPRINTS, OVEN_GRADES } from '../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const T0 = 1_700_000_000_000;
 const IDS = NEIGHBORHOODS.map((n) => n.id);
-const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
+const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } },
+});
 const allBuilt = (): G.GameState => IDS.reduce((g, id) => withShop(g, id, { built: true }), G.newGame(T0));
 const topFootprint = FOOTPRINTS.length - 1;
 const topGrade = OVEN_GRADES.length - 1;
 /** Give `n` shops (city order) all three stars. */
-const mastered = (g: G.GameState, n: number): G.GameState => IDS.slice(0, n).reduce((s, id) => withShop(s, id, { heads: G.allHeads(), footprint: topFootprint, grade: topGrade }), g);
+const mastered = (g: G.GameState, n: number): G.GameState =>
+  IDS.slice(0, n).reduce((s, id) => withShop(s, id, { heads: G.allHeads(), footprint: topFootprint, grade: topGrade }), g);
 const tick = (g: G.GameState) => G.playTick(g, 1, T0);
 const state = (g: G.GameState) => getFeature(g, mastery);
 
@@ -139,6 +144,10 @@ describe('a v5.14 save', () => {
 
   it('migrate tolerates junk', () => {
     expect(mastery.migrate('junk', T0).announced).toEqual([]);
-    expect(mastery.migrate({ announced: [1, 'a:heads'], granted: [6, 7], synced: 'yes' }, T0)).toMatchObject({ announced: ['a:heads'], granted: [6], synced: false });
+    expect(mastery.migrate({ announced: [1, 'a:heads'], granted: [6, 7], synced: 'yes' }, T0)).toMatchObject({
+      announced: ['a:heads'],
+      granted: [6],
+      synced: false,
+    });
   });
 });

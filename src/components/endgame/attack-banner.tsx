@@ -8,7 +8,7 @@ import { attackView, KEY as ATTACK_KEY, type AttackState } from '../../engine/fe
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { haptic } from '../game-ui';
-import { Portrait } from '../portrait';
+import { Portrait } from '../portrait/index';
 import { TAP } from '../tap-targets';
 import { attackLite, bannerView } from './attack-model';
 import { BANNER_OPEN_MS, setBannerOpen } from './banner-state';
@@ -57,14 +57,29 @@ export const AttackBanner = memo(function AttackBanner({ shown = true }: { shown
   };
   if (!open) {
     return (
-      <Pressable testID="attack-badge" accessibilityRole="button" accessibilityLabel={`MegaSlice is attacking ${b.name}. Open`} onPress={() => { haptic(); setSt((o) => ({ announced: shop, open: true, n: o.n + 1 })); }} style={styles.badge}>
+      <Pressable
+        testID="attack-badge"
+        accessibilityRole="button"
+        accessibilityLabel={`MegaSlice is attacking ${b.name}. Open`}
+        onPress={() => {
+          haptic();
+          setSt((o) => ({ announced: shop, open: true, n: o.n + 1 }));
+        }}
+        style={styles.badge}
+      >
         <Text style={styles.badgeText}>!</Text>
       </Pressable>
     );
   }
   return (
     <View testID="attack-banner" style={styles.banner}>
-      <Pressable testID="attack-words" accessibilityRole="button" accessibilityLabel={`${b.name}: ${b.title}`} style={styles.words} onPress={() => setVictor((v) => !v)}>
+      <Pressable
+        testID="attack-words"
+        accessibilityRole="button"
+        accessibilityLabel={`${b.name}: ${b.title}`}
+        style={styles.words}
+        onPress={() => setVictor((v) => !v)}
+      >
         <Portrait id="victor-crust" mood="angry" size={36} />
         <View style={styles.text}>
           {victor ? (
@@ -84,8 +99,21 @@ export const AttackBanner = memo(function AttackBanner({ shown = true }: { shown
           )}
         </View>
       </Pressable>
-      <Pressable testID="attack-defend" accessibilityRole="button" accessibilityLabel={b.canDefend ? `Defend ${b.name}` : b.button} disabled={!b.canDefend} onPress={defend} style={({ pressed }) => [styles.defend, !b.canDefend && styles.defendWait, pressed && styles.pressed]}>
-        <Text style={[styles.defendText, !b.canDefend && styles.defendTextWait]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8} maxFontSizeMultiplier={1.1}>
+      <Pressable
+        testID="attack-defend"
+        accessibilityRole="button"
+        accessibilityLabel={b.canDefend ? `Defend ${b.name}` : b.button}
+        disabled={!b.canDefend}
+        onPress={defend}
+        style={({ pressed }) => [styles.defend, !b.canDefend && styles.defendWait, pressed && styles.pressed]}
+      >
+        <Text
+          style={[styles.defendText, !b.canDefend && styles.defendTextWait]}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+          maxFontSizeMultiplier={1.1}
+        >
           {b.button}
         </Text>
       </Pressable>
@@ -94,8 +122,31 @@ export const AttackBanner = memo(function AttackBanner({ shown = true }: { shown
 });
 
 const styles = StyleSheet.create({
-  banner: { height: STACK.banner, flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 8, paddingRight: 6, borderRadius: 16, backgroundColor: '#FDE3DC', borderWidth: 2, borderColor: C.tomatoDark, boxShadow: '0 3px 0 rgba(59,31,20,0.25)' } as object,
-  badge: { alignSelf: 'flex-end', width: STACK.badge, height: STACK.badge, borderRadius: STACK.badge / 2, backgroundColor: C.tomato, borderWidth: 3, borderColor: '#fff', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 0 rgba(59,31,20,0.25)' } as object,
+  banner: {
+    height: STACK.banner,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingLeft: 8,
+    paddingRight: 6,
+    borderRadius: 16,
+    backgroundColor: '#FDE3DC',
+    borderWidth: 2,
+    borderColor: C.tomatoDark,
+    boxShadow: '0 3px 0 rgba(59,31,20,0.25)',
+  } as object,
+  badge: {
+    alignSelf: 'flex-end',
+    width: STACK.badge,
+    height: STACK.badge,
+    borderRadius: STACK.badge / 2,
+    backgroundColor: C.tomato,
+    borderWidth: 3,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 3px 0 rgba(59,31,20,0.25)',
+  } as object,
   badgeText: { fontFamily: F.bold, fontSize: 24, lineHeight: 28, color: '#fff' },
   words: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: TAP.min },
   text: { flex: 1, justifyContent: 'center' },
@@ -103,7 +154,17 @@ const styles = StyleSheet.create({
   title: { fontFamily: F.semi, fontSize: 12, lineHeight: 14, color: C.ink },
   ends: { fontFamily: F.semi, fontSize: 11, lineHeight: 13, color: C.inkSoft },
   victor: { fontFamily: F.semi, fontSize: 11, lineHeight: 13, color: C.ink },
-  defend: { width: 76, height: TAP.min, borderRadius: 12, backgroundColor: C.tomato, borderBottomWidth: 4, borderBottomColor: C.tomatoDark, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  defend: {
+    width: 76,
+    height: TAP.min,
+    borderRadius: 12,
+    backgroundColor: C.tomato,
+    borderBottomWidth: 4,
+    borderBottomColor: C.tomatoDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
   defendWait: { backgroundColor: '#E2D9CE', borderBottomColor: '#C9BCAD' },
   defendText: { fontFamily: F.bold, fontSize: 14, lineHeight: 16, color: '#fff', textAlign: 'center' },
   defendTextWait: { fontSize: 11, lineHeight: 12, color: '#665A4F' },

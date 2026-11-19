@@ -19,7 +19,9 @@ const BOSTON = hoodIds(cityOf({ city: 'boston' }));
 function boston(built: number): G.GameState {
   const g = G.newGame(NOW, 'boston');
   const shops = { ...g.shops };
-  BOSTON.slice(0, built).forEach((id) => (shops[id] = { ...shops[id], built: true, managed: true, heads: G.allHeads(), prep: 5, ovens: 5, counter: 5, drivers: 4, tables: 4 }));
+  BOSTON.slice(0, built).forEach(
+    (id) => (shops[id] = { ...shops[id], built: true, managed: true, heads: G.allHeads(), prep: 5, ovens: 5, counter: 5, drivers: 4, tables: 4 }),
+  );
   return { ...g, shops, cash: 1e12, active: BOSTON[0], tutorial: G.TUTORIAL_DONE, seenScenes: [...g.seenScenes, cityOf(g).fit.takeover.sceneId] };
 }
 
@@ -29,7 +31,7 @@ describe('a Boston game never reads a home id', () => {
     test(`${n} shops: night oven, teaser, mastery and ticks`, () => {
       expect(() => nightOvenView(g)).not.toThrow();
       expect(nightOvenLock(g, 1)).toBe(n >= 3 ? null : `Unlocks when you build ${G.def(BOSTON[2]).name}`);
-      expect(nightOvenLock(g, 2)).toBe(n >= 5 ? "Needs the 8 h oven first" : `Unlocks when you build ${G.def(BOSTON[4]).name}`);
+      expect(nightOvenLock(g, 2)).toBe(n >= 5 ? 'Needs the 8 h oven first' : `Unlocks when you build ${G.def(BOSTON[4]).name}`);
       expect(() => nextSceneTeaser(g)).not.toThrow();
       expect(masteryTotal(g)).toBeGreaterThanOrEqual(0);
       const ns = nextStar(g);
@@ -55,7 +57,10 @@ describe('a Boston game never reads a home id', () => {
   }
 
   test('the first shop is the founder’s: Father Dom, not Nonna', () => {
-    const v = drawerCards({ game: { ...boston(1), shops: { ...boston(1).shops, [BOSTON[0]]: { ...boston(1).shops[BOSTON[0]], managed: false } } }, id: BOSTON[0] });
+    const v = drawerCards({
+      game: { ...boston(1), shops: { ...boston(1).shops, [BOSTON[0]]: { ...boston(1).shops[BOSTON[0]], managed: false } } },
+      id: BOSTON[0],
+    });
     const m = v.cards.find((c) => c.key === 'manager')!;
     expect(m.title).toBe('Manager: Father Dom');
     expect(m.title).not.toMatch(/Nonna/);

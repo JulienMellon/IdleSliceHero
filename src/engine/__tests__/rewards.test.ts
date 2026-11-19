@@ -29,8 +29,10 @@ import {
   WEEKLY_TASK_COUNT,
   WEEKLY_TASK_REWARD,
 } from '../../content/rewards';
-import { NEIGHBORHOODS, TUNING, VEHICLES } from '../../content/tuning';
+import { TUNING } from '../../content/tuning';
 
+import { VEHICLES } from '../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 // Local times, so the tests hold in any time zone.
 const at = (y: number, m: number, d: number, h = 12, min = 0, sec = 0) => new Date(y, m - 1, d, h, min, sec).getTime();
 const T = at(2026, 10, 30); // a Friday
@@ -54,7 +56,12 @@ const finishDaily = (s: G.GameState, i: number): G.GameState => ({
 const everythingBuilt = (s: G.GameState): G.GameState => ({
   ...s,
   vehicle: VEHICLES.length - 1,
-  shops: Object.fromEntries(NEIGHBORHOODS.map((n) => [n.id, { ...s.shops[n.id], built: true, managed: true, heads: G.allHeads(), decor: { plants: 3, flooring: 3, tables: 3, walls: 3, signage: 3 } }])) as G.GameState['shops'],
+  shops: Object.fromEntries(
+    NEIGHBORHOODS.map((n) => [
+      n.id,
+      { ...s.shops[n.id], built: true, managed: true, heads: G.allHeads(), decor: { plants: 3, flooring: 3, tables: 3, walls: 3, signage: 3 } },
+    ]),
+  ) as G.GameState['shops'],
 });
 
 describe('dates', () => {
@@ -107,7 +114,11 @@ describe('unlock and refresh', () => {
   });
   test('generation is deterministic per day and differs between days', () => {
     expect(ready().rewards.daily).toEqual(ready().rewards.daily);
-    const days = Array.from({ length: 6 }, (_, i) => ready(at(2026, 11, 2 + i)).rewards.daily.map((t) => t.kind).join());
+    const days = Array.from({ length: 6 }, (_, i) =>
+      ready(at(2026, 11, 2 + i))
+        .rewards.daily.map((t) => t.kind)
+        .join(),
+    );
     expect(new Set(days).size).toBeGreaterThan(1);
   });
   test('sets hold distinct kinds when enough qualify', () => {
@@ -218,7 +229,11 @@ describe('progress counters', () => {
     expect(s.stats.upgrades).toBe(0);
   });
   test('the line reports walk-ins, deliveries and pies out of the oven', () => {
-    const rates = G.lineRates('downtown', { ...G.newShop(true), managed: true, prep: 60, ovens: 60, counter: 60, footprint: 4, grade: 4, tables: 5, drivers: 3 }, 0); // kitchen faster than the seats: drivers get the rest
+    const rates = G.lineRates(
+      'downtown',
+      { ...G.newShop(true), managed: true, prep: 60, ovens: 60, counter: 60, footprint: 4, grade: 4, tables: 5, drivers: 3 },
+      0,
+    ); // kitchen faster than the seats: drivers get the rest
     let line = emptyLine();
     let w = 0;
     let d = 0;
@@ -352,7 +367,27 @@ describe('claims', () => {
   });
   test('weekly tasks pay income and diamonds; the final chest needs all of them and gives this week’s cosmetic', () => {
     let s = ready();
-    s = { ...s, rewards: { ...s.rewards, weekly: s.rewards.weekly.map((t) => ({ ...t, target: 1, base: 0 })) }, stats: { ...s.stats, upgrades: 1, hires: 1, builds: 1, boosters: 1, ovens: 1, fleet: 1, deliveries: 1, baked: 1, walkins: 1, decor: 1, offline: 1, dailyDone: 1, days: 1 }, totalEarned: 1 };
+    s = {
+      ...s,
+      rewards: { ...s.rewards, weekly: s.rewards.weekly.map((t) => ({ ...t, target: 1, base: 0 })) },
+      stats: {
+        ...s.stats,
+        upgrades: 1,
+        hires: 1,
+        builds: 1,
+        boosters: 1,
+        ovens: 1,
+        fleet: 1,
+        deliveries: 1,
+        baked: 1,
+        walkins: 1,
+        decor: 1,
+        offline: 1,
+        dailyDone: 1,
+        days: 1,
+      },
+      totalEarned: 1,
+    };
     s = { ...s, rewards: { ...s.rewards, weekly: s.rewards.weekly.map((t) => ({ ...t, target: 1, base: 0 })) } };
     expect(R.claimWeeklyChest(s, T).ok).toBe(false);
     const cash = s.cash;
@@ -373,7 +408,16 @@ describe('claims', () => {
   });
   test('boosters start from the inventory, run for their time and stack', () => {
     let s = ready();
-    s = { ...s, rewards: { ...s.rewards, boosters: [{ mult: 2, seconds: 900 }, { mult: 2, seconds: 600 }] } };
+    s = {
+      ...s,
+      rewards: {
+        ...s.rewards,
+        boosters: [
+          { mult: 2, seconds: 900 },
+          { mult: 2, seconds: 600 },
+        ],
+      },
+    };
     expect(R.startBooster(s, 5, T).ok).toBe(false);
     s = ok(R.startBooster(s, 0, T));
     expect(s.rewards.boosters).toEqual([{ mult: 2, seconds: 600 }]);
@@ -394,21 +438,25 @@ describe('boosts in the economy', () => {
     expect(G.lineRates('downtown', shop, 0, 3).price).toBeCloseTo(3 * G.lineRates('downtown', shop, 0).price);
   });
   // no features (C117): the service tip moves with the clock, and this test is about the boost alone
-  test('playTick pays boosted cash only while the boost runs, and old call signatures still work', () => withFeatures([], () => {
-    let s = ready();
-    s = { ...s, rewards: { ...s.rewards, boosts: [{ mult: 2, until: T + 600_000, source: 'x' }] } };
-    const plain = G.playTick(G.playTick(s, 60), 60);
-    const boosted = G.playTick(G.playTick(s, 60, T + 1000), 60, T + 61_000);
-    const after = G.playTick(G.playTick(s, 60, T + 700_000), 60, T + 760_000);
-    expect(boosted.cash).toBeCloseTo(2 * plain.cash);
-    expect(after.cash).toBeCloseTo(plain.cash);
-  }));
+  test('playTick pays boosted cash only while the boost runs, and old call signatures still work', () =>
+    withFeatures([], () => {
+      let s = ready();
+      s = { ...s, rewards: { ...s.rewards, boosts: [{ mult: 2, until: T + 600_000, source: 'x' }] } };
+      const plain = G.playTick(G.playTick(s, 60), 60);
+      const boosted = G.playTick(G.playTick(s, 60, T + 1000), 60, T + 61_000);
+      const after = G.playTick(G.playTick(s, 60, T + 700_000), 60, T + 760_000);
+      expect(boosted.cash).toBeCloseTo(2 * plain.cash);
+      expect(after.cash).toBeCloseTo(plain.cash);
+    }));
   test('offline: each boost pays (mult − 1) over the share of the window it covers', () => {
     const base = { ...unlocked(), lastSavedAt: T };
     const away = (s: G.GameState, hours = 1) => G.applyOffline(s, T + hours * HOUR);
     const plain = away(base).earned;
     expect(plain).toBeGreaterThan(0);
-    const boostOf = (...b: [number, number][]) => ({ ...base, rewards: { ...base.rewards, boosts: b.map(([mult, secs]) => ({ mult, until: T + secs * 1000, source: 'x' })) } });
+    const boostOf = (...b: [number, number][]) => ({
+      ...base,
+      rewards: { ...base.rewards, boosts: b.map(([mult, secs]) => ({ mult, until: T + secs * 1000, source: 'x' })) },
+    });
     expect(away(boostOf([2, 7200])).earned / plain).toBeCloseTo(2); // covers the whole hour
     expect(away(boostOf([2, 1800])).earned / plain).toBeCloseTo(1.5); // half of it
     expect(away(boostOf([2, 7200], [2, 7200])).earned / plain).toBeCloseTo(3); // stacking adds
@@ -428,7 +476,14 @@ describe('clock rollback', () => {
     s = { ...s, rewards: { ...s.rewards, boosts: [{ mult: 2, until: T + HOUR, source: 'x' }], boosters: [{ mult: 2, seconds: 60 }], lastSeen: T + 5 * HOUR } };
     const back = T + HOUR;
     expect(R.clockBehind(s, back)).toBe(true);
-    for (const r of [R.claimDaily(s, 0, back), R.claimChest(s, 0, back), R.claimWeekly(s, 0, back), R.claimWeeklyChest(s, back), R.startBooster(s, 0, back), R.claimGift(s, back)]) {
+    for (const r of [
+      R.claimDaily(s, 0, back),
+      R.claimChest(s, 0, back),
+      R.claimWeekly(s, 0, back),
+      R.claimWeeklyChest(s, back),
+      R.startBooster(s, 0, back),
+      R.claimGift(s, back),
+    ]) {
       expect(r).toEqual({ ok: false, reason: R.CLOCK_REASON });
     }
     expect(R.refreshRewards(s, back)).toBe(s);
@@ -447,7 +502,8 @@ describe('clock rollback', () => {
 describe('daily gift', () => {
   const day = (d: number, h = 12, m = 0) => at(2026, 11, d, h, m);
   /** Claim on each listed November day; returns the state after the last. */
-  const claimOn = (s: G.GameState, days: number[], repairOn: number[] = []) => days.reduce((st, d) => ok(R.claimGift(R.refreshRewards(st, day(d)), day(d), { repair: repairOn.includes(d) })), s);
+  const claimOn = (s: G.GameState, days: number[], repairOn: number[] = []) =>
+    days.reduce((st, d) => ok(R.claimGift(R.refreshRewards(st, day(d)), day(d), { repair: repairOn.includes(d) })), s);
 
   test('has 30 days with the milestones in place', () => {
     expect(GIFT_DAYS).toHaveLength(30);
@@ -605,7 +661,10 @@ describe('save v5', () => {
     expect(m.rewards.gift).toEqual({ streak: 30, last: '', saveUsed: true, cycle: 0 });
     expect(m.rewards.giftShownDay).toBe('');
     expect(m.rewards.diamonds).toBe(0);
-    expect(m.rewards.boosters).toEqual([{ mult: 1, seconds: 5 }, { mult: 1, seconds: 30 * 86400 }]);
+    expect(m.rewards.boosters).toEqual([
+      { mult: 1, seconds: 5 },
+      { mult: 1, seconds: 30 * 86400 },
+    ]);
     expect(m.rewards.boosts).toEqual([{ mult: 100, until: 1000 + BOOST_MAX_AHEAD_MS, source: 'boost' }]);
     expect(m.rewards.cosmetics).toEqual(['a']);
     expect(m.rewards.lastSeen).toBe(1000 + 400 * 86400_000);
@@ -792,7 +851,7 @@ describe('G85 weekly chest prize', () => {
   };
   const start = WEEKLY_COSMETICS[R.isoWeek('2026-10-26') % WEEKLY_COSMETICS.length];
   const order = (i: number) => WEEKLY_COSMETICS[(R.isoWeek('2026-10-26') + i) % WEEKLY_COSMETICS.length];
-  test('unowned: this week\'s', () => {
+  test("unowned: this week's", () => {
     expect(R.weeklyChestPrize(chestReady([]))).toEqual({ kind: 'cosmetic', id: start, diamonds: WEEKLY_CHEST_DIAMONDS });
   });
   test('owned: the next unowned in rotation order', () => {
@@ -846,7 +905,8 @@ describe('upgrade tasks only where a level is a quick buy (C107)', () => {
     }
     const quick = at_(1);
     let seen = false;
-    for (let d = 0; d < 60 && !seen; d++) seen = R.refreshRewards({ ...quick, rewards: { ...quick.rewards, day: '' } }, at(2026, 11, 1 + d)).rewards.daily.some((t) => t.kind === 'upgrades');
+    for (let d = 0; d < 60 && !seen; d++)
+      seen = R.refreshRewards({ ...quick, rewards: { ...quick.rewards, day: '' } }, at(2026, 11, 1 + d)).rewards.daily.some((t) => t.kind === 'upgrades');
     expect(seen).toBe(true);
   });
 });

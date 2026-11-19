@@ -15,7 +15,9 @@ const WINDOWS: [number, number, number][] = [
   [900, 600, 0],
 ];
 
-const tagTexts = HOME_SCENES.flatMap((s) => s.panels).filter((p) => p.prop === 'name-tag').map((p) => p.propText);
+const tagTexts = HOME_SCENES.flatMap((s) => s.panels)
+  .filter((p) => p.prop === 'name-tag')
+  .map((p) => p.propText);
 
 describe('propText fit', () => {
   test('the scenes have name tags, each with text, and no other prop carries text', () => {

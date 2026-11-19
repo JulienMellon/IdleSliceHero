@@ -1,10 +1,39 @@
-import { NEIGHBORHOODS } from '../../content/tuning';
 /// <reference types="jest" />
 import { money } from '../../engine/format';
 import * as G from '../../engine/game';
-import { amountCard, amountLabel, effectFoot, nextAmount, BUY_AMOUNTS, buyMany, buyPlan, AFFORDABLE_OUTLINE, buildChipHint, buttonOutline, cardLook, buildChipSub, bundleButton, buttonTone, buyBundle, capExpandCost, goalHidesOwnHire, hireOnSidewalk, type MergedSlot, mergeGroups, needLine, needText, showBundlePill, sidewalkSlots, stationModels, stationTitle, stationViews } from '../sidewalk-model';
+import {
+  amountCard,
+  amountLabel,
+  effectFoot,
+  nextAmount,
+  BUY_AMOUNTS,
+  buyMany,
+  buyPlan,
+  AFFORDABLE_OUTLINE,
+  buildChipHint,
+  buttonOutline,
+  cardLook,
+  buildChipSub,
+  bundleButton,
+  buttonTone,
+  buyBundle,
+  capExpandCost,
+  goalHidesOwnHire,
+  hireOnSidewalk,
+  type MergedSlot,
+  mergeGroups,
+  needLine,
+  needText,
+  showBundlePill,
+  sidewalkSlots,
+  stationModels,
+  stationTitle,
+  stationViews,
+} from '../sidewalk-model';
 import { BUTTON_H, SIDEWALK_ROW, TAP } from '../tap-targets';
 
+import { HOME_CITY } from '../../content/cities/home';
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const shopState = (patch: Partial<G.Shop>, cash = 0): G.GameState => {
   const s = G.newGame(0);
   return { ...s, cash, shops: { ...s.shops, downtown: { ...s.shops.downtown, managed: true, ...patch } } };
@@ -36,7 +65,7 @@ describe('sidewalk station model (T39)', () => {
 describe('EXPAND at the level cap (B4)', () => {
   const capped = (cash: number) => shopState({ prep: 25, ovens: 25, counter: 25, drivers: 1, footprint: 0 }, cash);
   const expandCost = (s: G.GameState) => G.upgradeCostOf(s, 'downtown', 'expand')!;
-  test('a station stuck at the cap, with a next footprint, says EXPAND with Expand\'s price and buys expand', () => {
+  test("a station stuck at the cap, with a next footprint, says EXPAND with Expand's price and buys expand", () => {
     const s = capped(1e9);
     for (const k of ['prep', 'ovens', 'counter']) {
       const v = view(s, k);
@@ -187,7 +216,7 @@ describe('the tied-station bundle as a button (D304)', () => {
     expect(seen).toEqual(['prep']);
     expect(buyBundle([], () => true)).toBe(false);
   });
-  test('buying the hint\'s steps one by one costs exactly the hint\'s price and lifts income', () => {
+  test("buying the hint's steps one by one costs exactly the hint's price and lifts income", () => {
     const { s, hint } = tied(1e9);
     let g = s;
     for (const what of hint!.steps) {
@@ -202,10 +231,14 @@ describe('the tied-station bundle as a button (D304)', () => {
 
 describe('Pier 9 warning on the build chip', () => {
   const base = G.newGame(0);
-  const open = (patch: Partial<G.Shop> = {}): G.GameState => ({ ...base, seenScenes: [...base.seenScenes, 'waterfront-3', 'waterfront-3b'], shops: { ...base.shops, waterfront: { ...base.shops.waterfront, built: true, sold: 1e9, ...patch } } });
+  const open = (patch: Partial<G.Shop> = {}): G.GameState => ({
+    ...base,
+    seenScenes: [...base.seenScenes, 'waterfront-3', 'waterfront-3b'],
+    shops: { ...base.shops, waterfront: { ...base.shops.waterfront, built: true, sold: 1e9, ...patch } },
+  });
   test('shown only while the bid is on offer and not yet won', () => {
     expect(buildChipHint(base)).toBeNull();
-    expect(G.pier9Available(open())).toBe(true);
+    expect(G.bidAvailable(open())).toBe(true);
     expect(buildChipHint(open())).toBe('uses bid cash'); // a cost, not a reward; never claims to reset progress
     expect(buildChipHint(open({ perk: true }))).toBeNull(); // won
   });
@@ -222,25 +255,25 @@ describe('who is offered the next hire (B1)', () => {
   const sh = (patch: Partial<G.Shop>): G.Shop => ({ ...G.newGame(0).shops.suburbs, built: true, managed: false, ...patch });
   const heads = { prep: true, oven: true, counter: true };
   test('the sidewalk offers hires on every shop without a GM except Downtown, whose GM is Nonna', () => {
-    expect(hireOnSidewalk(sh({}), 'suburbs')).toBe(true);
-    expect(hireOnSidewalk(sh({ heads }), 'suburbs')).toBe(true); // all three heads: the GM is still on offer
-    expect(hireOnSidewalk(sh({ managed: true, heads }), 'suburbs')).toBe(false);
-    expect(hireOnSidewalk(sh({}), 'downtown')).toBe(false);
+    expect(hireOnSidewalk(sh({}), 'suburbs', HOME_CITY)).toBe(true);
+    expect(hireOnSidewalk(sh({ heads }), 'suburbs', HOME_CITY)).toBe(true); // all three heads: the GM is still on offer
+    expect(hireOnSidewalk(sh({ managed: true, heads }), 'suburbs', HOME_CITY)).toBe(false);
+    expect(hireOnSidewalk(sh({}), 'downtown', HOME_CITY)).toBe(false);
   });
   test('the goal bar steps aside for a head, but keeps the GM hire until it is bought', () => {
-    expect(goalHidesOwnHire(sh({}), 'suburbs')).toBe(true);
-    expect(goalHidesOwnHire(sh({ heads: { prep: true, oven: true, counter: false } }), 'suburbs')).toBe(true);
-    expect(goalHidesOwnHire(sh({ heads }), 'suburbs')).toBe(false);
-    expect(goalHidesOwnHire(sh({ managed: true, heads }), 'suburbs')).toBe(false);
+    expect(goalHidesOwnHire(sh({}), 'suburbs', HOME_CITY)).toBe(true);
+    expect(goalHidesOwnHire(sh({ heads: { prep: true, oven: true, counter: false } }), 'suburbs', HOME_CITY)).toBe(true);
+    expect(goalHidesOwnHire(sh({ heads }), 'suburbs', HOME_CITY)).toBe(false);
+    expect(goalHidesOwnHire(sh({ managed: true, heads }), 'suburbs', HOME_CITY)).toBe(false);
   });
-  test('Downtown\'s goal bar keeps its heads', () => {
-    expect(goalHidesOwnHire(sh({}), 'downtown')).toBe(false);
+  test("Downtown's goal bar keeps its heads", () => {
+    expect(goalHidesOwnHire(sh({}), 'downtown', HOME_CITY)).toBe(false);
   });
 });
 
 describe('capExpandCost: the one rule for "locked by the level cap alone" (D413)', () => {
   const capped = shopState({ prep: 25, ovens: 10, counter: 10, drivers: 25, footprint: 0 }, 0);
-  test('a station at the cap with a next footprint offers Expand\'s price; below the cap or on a maxed shop it does not', () => {
+  test("a station at the cap with a next footprint offers Expand's price; below the cap or on a maxed shop it does not", () => {
     const cost = G.upgradeCostOf(capped, 'downtown', 'expand');
     expect(capExpandCost(capped, 'downtown', 'prep')).toBe(cost);
     expect(capExpandCost(capped, 'downtown', 'drivers')).toBe(cost);
@@ -272,7 +305,11 @@ const merged = (slots: ReturnType<typeof sidewalkSlots>) => slots.filter((x): x 
 describe('tied stations merge into one card in their slots (D405)', () => {
   test('adjacent tied stations: one wider card, the others unchanged, the floating pill is gone', () => {
     const { s, slots } = slotsOf(TIES.prepOvens, 0);
-    expect(stationViews(s, 'downtown').filter((v) => v.tied).map((v) => v.key)).toEqual(['prep', 'ovens']);
+    expect(
+      stationViews(s, 'downtown')
+        .filter((v) => v.tied)
+        .map((v) => v.key),
+    ).toEqual(['prep', 'ovens']);
     const m = merged(slots);
     expect(m).toHaveLength(1);
     expect(m[0].kind).toBe('bundle');
@@ -289,7 +326,11 @@ describe('tied stations merge into one card in their slots (D405)', () => {
   });
   test('non-adjacent tied stations: the card sits in the first tied slot, the other slot collapses into it', () => {
     const { s, slots } = slotsOf(TIES.prepCounter, 0);
-    expect(stationViews(s, 'downtown').filter((v) => v.tied).map((v) => v.key)).toEqual(['prep', 'counter']);
+    expect(
+      stationViews(s, 'downtown')
+        .filter((v) => v.tied)
+        .map((v) => v.key),
+    ).toEqual(['prep', 'counter']);
     expect(slots.map((x) => (x.kind === 'station' ? x.key : x.keys.join('+')))).toEqual(['prep+counter', 'ovens', 'drivers']);
     expect(slots.reduce((t, x) => t + x.span, 0)).toBe(4);
   });
@@ -318,7 +359,7 @@ describe('tied stations merge into one card in their slots (D405)', () => {
     expect(stationViews(s, 'downtown').filter((v) => v.tied)).toHaveLength(1);
     expect(sidewalkSlots(s, 'downtown', G.bundleHint(s, 'downtown')).every((x) => x.kind === 'station')).toBe(true);
   });
-  test('the merged card keeps the row\'s sizes: a 44 pt button in the same card height', () => {
+  test("the merged card keeps the row's sizes: a 44 pt button in the same card height", () => {
     expect(BUTTON_H).toBeGreaterThanOrEqual(TAP.min);
     expect(SIDEWALK_ROW.cardHeight).toBeGreaterThanOrEqual(TAP.min);
   });
@@ -355,7 +396,10 @@ describe('EXPAND merges into one shop-wide card (D407)', () => {
   test('both merges can stand in one row: the bundle in the first slots, the capped stations in theirs', () => {
     const { slots } = slotsOf(TIES.twoCapped, 1e9);
     expect(slots.map((x) => x.kind)).toEqual(['bundle', 'expand']);
-    expect(merged(slots).map((m) => m.keys)).toEqual([['prep', 'ovens'], ['counter', 'drivers']]);
+    expect(merged(slots).map((m) => m.keys)).toEqual([
+      ['prep', 'ovens'],
+      ['counter', 'drivers'],
+    ]);
   });
 });
 
@@ -370,7 +414,7 @@ describe('merge priority: Expand first (D405 meets D407)', () => {
     expect(one.expand).toBeNull(); // a single capped station keeps its own amber card
     expect(one.bundle).toBeNull();
   });
-  test('tied stations that are not capped bundle as usual, beside a capped station\'s Expand', () => {
+  test("tied stations that are not capped bundle as usual, beside a capped station's Expand", () => {
     const g = mergeGroups([v('prep', false, true), v('ovens', false, true), v('counter', true, false), v('drivers', true, false)], true);
     expect(g.bundle).toEqual(['prep', 'ovens']);
     expect(g.expand).toEqual(['counter', 'drivers']);
@@ -396,7 +440,12 @@ describe('affordable cards are never washed out (D419, round 60)', () => {
         expect([n.id, frame, look.borderColor, look.borderWidth, look.borderStyle, look.labelOpacity]).toEqual([n.id, frame, '#3B1F14', 2, 'solid', 1]);
         expect([n.id, frame, look.backgroundColor.startsWith('#')]).toEqual([n.id, frame, true]); // solid, not rgba
         // the outline reads against the face and against the neighbourhood's own colour (the Waterfront blue, the Uptown violet…)
-        expect([n.id, frame, contrast(look.borderColor, look.backgroundColor) >= 7, contrast(look.borderColor, n.color) >= 2]).toEqual([n.id, frame, true, true]);
+        expect([n.id, frame, contrast(look.borderColor, look.backgroundColor) >= 7, contrast(look.borderColor, n.color) >= 2]).toEqual([
+          n.id,
+          frame,
+          true,
+          true,
+        ]);
       }
   });
   test('the check can fail: the old affordable bottleneck card had a tomato outline on a pale pink face (under 3:1 against its face)', () => {
@@ -442,9 +491,10 @@ describe('×1 / ×10 / MAX: one rule for how many levels a station tap buys (v5.
     expect(nextAmount('max')).toBe(1);
   });
 
-  test('×1 is the station\'s own price', () => {
+  test("×1 is the station's own price", () => {
     const s = at(1e12);
-    for (const what of ['prep', 'ovens', 'counter', 'drivers'] as const) expect(buyPlan(s, 'downtown', what, 1)).toEqual({ count: 1, total: G.upgradeCostOf(s, 'downtown', what), affordable: true });
+    for (const what of ['prep', 'ovens', 'counter', 'drivers'] as const)
+      expect(buyPlan(s, 'downtown', what, 1)).toEqual({ count: 1, total: G.upgradeCostOf(s, 'downtown', what), affordable: true });
   });
 
   test('×10 costs what ten single buys cost, for ten levels', () => {

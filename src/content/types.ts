@@ -1,4 +1,9 @@
 // Shared content types. Content (tuning + scenes) lives in data files, separate from logic.
+import type { CharacterId } from './cast';
+
+/** Every character a scene can put on stage: each city pack's `cast.ts`, concatenated in ./cast.ts (card R7a). A new city's characters are added there. */
+export { CHARACTER_IDS } from './cast';
+export type { CharacterId };
 
 /** A neighbourhood's id. v5.18 (card K1): a plain string, checked against the current city (`cityOf(g).neighbourhoods`; src/content/__tests__/city-schema.test.ts), not a closed union: a second city is a second folder. */
 export type NeighborhoodId = string;
@@ -8,29 +13,6 @@ export type HomeNeighborhoodId = 'downtown' | 'suburbs' | 'waterfront' | 'univer
 
 export type VehicleId = 'bike' | 'scooter' | 'car' | 'van' | 'drone';
 
-/** Every character a scene can put on stage, as data (the schema test checks a city's scenes against it) and as a type. A new city's characters are added here. */
-export const CHARACTER_IDS = [
-  'nonna-rosa',
-  'dale',
-  'marisol',
-  'priya',
-  'big-sal',
-  'genevieve',
-  'victor-crust',
-  'megaslice-rep',
-  // Todd, three ways (all variants of the megaslice-rep bust; card T1b draws them)
-  'mr-smith', // the trench coat with the mustache drawn on in marker
-  'todd-coat', // the same coat, no mustache
-  'slicey', // the foam pizza-slice mascot costume
-  // the five General Managers (MANAGERS in tuning.ts); each appears in their shop's hire scene
-  'deb',
-  'skip',
-  'noor',
-  'dee',
-  'anton',
-  'father-dom','kayla-dunn','preston','manny','lena-ko','grandma-bea','trish-vance',
-] as const;
-export type CharacterId = (typeof CHARACTER_IDS)[number];
 
 /** Speaker names that are not a character, a head, a manager or a lieutenant of the city: the player, and Todd's unnamed disguise. */
 export const NARRATOR_SPEAKERS: readonly string[] = ['You', 'Trench Coat', 'Todd'];
@@ -56,7 +38,27 @@ export interface CastMember {
 /** 0–2 characters, left to right: the stage has two slots, so a third figure is a type error rather than a crash (C100). */
 export type Cast = readonly [] | readonly [CastMember] | readonly [CastMember, CastMember];
 
-export const PROP_IDS = ['vending-machine', 'sold-sign', 'recipe-card', 'order-slip', 'name-tag', 'phone-footage', 'coupon','envelope','apron','contract','clipboard','phone','photo','thermometer','pantry-shelf','half-ladle','scorecard','golden-ladle','pretzel'] as const;
+export const PROP_IDS = [
+  'vending-machine',
+  'sold-sign',
+  'recipe-card',
+  'order-slip',
+  'name-tag',
+  'phone-footage',
+  'coupon',
+  'envelope',
+  'apron',
+  'contract',
+  'clipboard',
+  'phone',
+  'photo',
+  'thermometer',
+  'pantry-shelf',
+  'half-ladle',
+  'scorecard',
+  'golden-ladle',
+  'pretzel',
+] as const;
 export type PropId = (typeof PROP_IDS)[number];
 
 /** The backdrops that belong to no neighbourhood. */

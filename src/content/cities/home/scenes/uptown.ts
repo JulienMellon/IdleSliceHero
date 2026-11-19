@@ -57,9 +57,7 @@ export const UPTOWN_SCENES: Scene[] = [
         backdrop: 'uptown',
         cast: [{ id: 'genevieve', mood: 'neutral' }],
         caption: 'Genevieve orders again. Purely for research, she insists.',
-        lines: [
-          { speaker: 'Genevieve', text: 'I am only here to confirm my one star. Professionally.' },
-        ],
+        lines: [{ speaker: 'Genevieve', text: 'I am only here to confirm my one star. Professionally.' }],
       },
       {
         backdrop: 'uptown',
@@ -95,9 +93,7 @@ export const UPTOWN_SCENES: Scene[] = [
         backdrop: 'uptown',
         cast: [{ id: 'slicey', mood: 'happy' }],
         caption: 'Todd, demoted to mascot. He is now a giant foam slice.',
-        lines: [
-          { speaker: 'Todd', text: "Free MegaSlice! Try it! It's... free!" },
-        ],
+        lines: [{ speaker: 'Todd', text: "Free MegaSlice! Try it! It's... free!" }],
       },
       {
         backdrop: 'uptown',
@@ -114,9 +110,7 @@ export const UPTOWN_SCENES: Scene[] = [
       {
         backdrop: 'megaslice-hq',
         cast: [{ id: 'victor-crust', mood: 'happy' }],
-        lines: [
-          { speaker: 'Victor Crust', text: 'The critic is the key to this city. And I have a key. To a yacht.' },
-        ],
+        lines: [{ speaker: 'Victor Crust', text: 'The critic is the key to this city. And I have a key. To a yacht.' }],
       },
     ],
   },
@@ -219,9 +213,7 @@ export const UPTOWN_SCENES: Scene[] = [
           { id: 'slicey', mood: 'sad' },
         ],
         caption: "The night before the review. Slicey knocks on Genevieve's door.",
-        lines: [
-          { speaker: 'Todd', text: "Ms. Laurent. I have to tell you something. I physically can't not." },
-        ],
+        lines: [{ speaker: 'Todd', text: "Ms. Laurent. I have to tell you something. I physically can't not." }],
       },
       {
         backdrop: 'uptown',

@@ -1,7 +1,7 @@
 import { memo, type ReactElement } from 'react';
 import type { NeighborhoodId } from '../../content/types';
 import { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
-import { BOSTON_LOOKS } from '../cutscene/backdrop-art';
+import { CITIES, CITY_DATA } from '../cities';
 import { INK, ONE_SCREEN, shade } from './projection';
 
 // ---------- background: sky, skyline, trees ----------
@@ -11,7 +11,14 @@ export function Tree({ x, y, k, c = '#4FA048', palm = false }: { x: number; y: n
       <G transform={`translate(${x} ${y}) scale(${k})`}>
         <Path d="M-2 40 Q-6 10 2 -26 L6 -26 Q2 10 4 40 Z" fill="#9C6B3F" stroke={INK} strokeWidth={1} />
         {[-60, -25, 15, 50, 85].map((a) => (
-          <Path key={a} d={`M4 -28 q${Math.cos((a * Math.PI) / 180) * 18} ${-10 + Math.sin((a * Math.PI) / 180) * 6} ${Math.cos((a * Math.PI) / 180) * 30} ${Math.sin((a * Math.PI) / 180) * 14}`} stroke={c} strokeWidth={7} fill="none" strokeLinecap="round" />
+          <Path
+            key={a}
+            d={`M4 -28 q${Math.cos((a * Math.PI) / 180) * 18} ${-10 + Math.sin((a * Math.PI) / 180) * 6} ${Math.cos((a * Math.PI) / 180) * 30} ${Math.sin((a * Math.PI) / 180) * 14}`}
+            stroke={c}
+            strokeWidth={7}
+            fill="none"
+            strokeLinecap="round"
+          />
         ))}
       </G>
     );
@@ -37,8 +44,8 @@ export const LOOK: Record<NeighborhoodId, { sky: [string, string, string]; groun
   // D364: a warm hazy sky and lighter hills so the steel shop stands out (was grey on grey)
   industrial: { sky: ['#C9D3DC', '#E4D6C4', '#F2C99B'], ground: '#B7B0A0', ground2: '#A59E8E' },
   uptown: { sky: ['#3E4A8C', '#C98BA8', '#FBD3AE'], ground: '#8FBF7E', ground2: '#78AA6B' },
-  // Boston's own sky and ground (D508): the cut-scenes' palettes (cutscene/backdrop-art.ts BOSTON_LOOKS), so the shop and its story share a sky
-  ...Object.fromEntries(Object.entries(BOSTON_LOOKS).map(([id, l]) => [id, { sky: [l.sky[0], shade(l.sky[0], 0.5), l.sky[1]] as [string, string, string], ground: '#9CC48A', ground2: '#86B374' }])),
+  // each registered city's own sky and ground (cities/<id>/shop.ts), so the shop and its story share a sky
+  ...Object.assign({}, ...Object.values(CITY_DATA).map((c) => c.shop.street)),
 };
 
 export function Windows({ x, y, w, h, c }: { x: number; y: number; w: number; h: number; c: string }) {
@@ -56,7 +63,14 @@ export function Windows({ x, y, w, h, c }: { x: number; y: number; w: number; h:
 export const SKYLINE: Record<NeighborhoodId, () => ReactElement> = {
   downtown: () => (
     <G>
-      {[[-6, 150, 40], [36, 186, 34], [72, 120, 30], [292, 170, 36], [330, 130, 30], [362, 196, 40]].map(([x, h, w], i) => (
+      {[
+        [-6, 150, 40],
+        [36, 186, 34],
+        [72, 120, 30],
+        [292, 170, 36],
+        [330, 130, 30],
+        [362, 196, 40],
+      ].map(([x, h, w], i) => (
         <G key={i}>
           <Rect x={x} y={200 - h} width={w} height={h} fill={i % 2 ? '#93A6C4' : '#A9B8D0'} stroke="#7F92B0" strokeWidth={0.8} />
           <Windows x={x} y={200 - h} w={w} h={h} c="#D8E3F2" />
@@ -66,7 +80,11 @@ export const SKYLINE: Record<NeighborhoodId, () => ReactElement> = {
   ),
   suburbs: () => (
     <G>
-      {[[-4, '#F6E7C1', 118], [306, '#FADADD', 104], [352, '#D6EAF8', 128]].map(([x, c, top], i) => {
+      {[
+        [-4, '#F6E7C1', 118],
+        [306, '#FADADD', 104],
+        [352, '#D6EAF8', 128],
+      ].map(([x, c, top], i) => {
         const X = x as number;
         const T = top as number;
         return (
@@ -74,12 +92,19 @@ export const SKYLINE: Record<NeighborhoodId, () => ReactElement> = {
             <Rect x={X} y={T} width={46} height={214 - T} fill={c as string} stroke="#B9A78E" strokeWidth={0.8} />
             <Path d={`M${X - 6} ${T + 2} L${X + 23} ${T - 26} L${X + 52} ${T + 2} Z`} fill="#C9775F" stroke="#A85E49" strokeWidth={0.8} />
             <Rect x={X + 30} y={T - 22} width={7} height={12} fill="#A85E49" />
-            {[0, 1].map((r) => [0, 1].map((cc) => <Rect key={`${r}${cc}`} x={X + 7 + cc * 20} y={T + 12 + r * 30} width={11} height={12} fill="#BFE3F5" stroke="#8E7A62" strokeWidth={0.6} />))}
+            {[0, 1].map((r) =>
+              [0, 1].map((cc) => (
+                <Rect key={`${r}${cc}`} x={X + 7 + cc * 20} y={T + 12 + r * 30} width={11} height={12} fill="#BFE3F5" stroke="#8E7A62" strokeWidth={0.6} />
+              )),
+            )}
           </G>
         );
       })}
       {/* picket fences and a mailbox in the yards */}
-      {[[-10, 64], [326, 404]].map(([x0, x1]) => (
+      {[
+        [-10, 64],
+        [326, 404],
+      ].map(([x0, x1]) => (
         <G key={x0}>
           <Path d={`M${x0} 300 H${x1} M${x0} 310 H${x1}`} stroke="#E9E4DC" strokeWidth={2.2} />
           {Array.from({ length: Math.ceil((x1 - x0) / 9) }).map((_, i) => (
@@ -97,7 +122,16 @@ export const SKYLINE: Record<NeighborhoodId, () => ReactElement> = {
       <Rect x={-20} y={176} width={440} height={60} fill="#5BB8E8" />
       <Rect x={-20} y={176} width={440} height={8} fill="#8FD3F4" />
       {[192, 210, 226].map((yy, j) => (
-        <Path key={yy} d={`M${-10 + j * 14} ${yy} ${Array.from({ length: 12 }).map((_, i) => `q10 -4 20 0 t20 0`).join(' ')}`} stroke="#D6F0FB" strokeWidth={1.6} fill="none" opacity={0.8} />
+        <Path
+          key={yy}
+          d={`M${-10 + j * 14} ${yy} ${Array.from({ length: 12 })
+            .map((_, i) => `q10 -4 20 0 t20 0`)
+            .join(' ')}`}
+          stroke="#D6F0FB"
+          strokeWidth={1.6}
+          fill="none"
+          opacity={0.8}
+        />
       ))}
       {/* a far headland with a lighthouse fills the sky band (D302) */}
       <Path d="M250 176 Q290 140 330 150 Q370 138 420 160 L420 176 Z" fill="#9FB4CC" />
@@ -111,9 +145,13 @@ export const SKYLINE: Record<NeighborhoodId, () => ReactElement> = {
       {/* sailboat and pier at the sides */}
       <Path d="M8 176 L48 176 L42 186 L14 186 Z M28 174 L28 136 L50 172 Z" fill="#fff" stroke="#7FA6C0" strokeWidth={1} />
       <Rect x={330} y={226} width={80} height={6} fill="#A8714B" stroke={INK} strokeWidth={0.8} />
-      {[336, 356, 376, 396].map((px) => <Rect key={px} x={px} y={230} width={4} height={18} fill="#7A4A26" />)}
+      {[336, 356, 376, 396].map((px) => (
+        <Rect key={px} x={px} y={230} width={4} height={18} fill="#7A4A26" />
+      ))}
       <Rect x={-20} y={226} width={70} height={6} fill="#A8714B" stroke={INK} strokeWidth={0.8} />
-      {[-4, 16, 36].map((px) => <Rect key={px} x={px} y={230} width={4} height={18} fill="#7A4A26" />)}
+      {[-4, 16, 36].map((px) => (
+        <Rect key={px} x={px} y={230} width={4} height={18} fill="#7A4A26" />
+      ))}
     </G>
   ),
   university: () => (
@@ -131,7 +169,11 @@ export const SKYLINE: Record<NeighborhoodId, () => ReactElement> = {
   industrial: () => (
     <G>
       <Path d="M-10 204 L-10 150 L26 166 L26 150 L62 166 L62 150 L98 166 L98 204 Z" fill="#9A968E" stroke="#827E76" strokeWidth={0.8} />
-      {[[300, 40], [330, 70], [362, 30]].map(([x, top], i) => (
+      {[
+        [300, 40],
+        [330, 70],
+        [362, 30],
+      ].map(([x, top], i) => (
         <G key={i}>
           <Rect x={x} y={top} width={16} height={204 - top} fill="#8E8A83" stroke="#76726B" strokeWidth={0.8} />
           <Rect x={x} y={top + 10} width={16} height={6} fill="#C8463A" />
@@ -145,7 +187,14 @@ export const SKYLINE: Record<NeighborhoodId, () => ReactElement> = {
   ),
   uptown: () => (
     <G>
-      {[[-6, 190, 36], [30, 230, 34], [64, 160, 30], [288, 210, 34], [322, 250, 36], [358, 180, 40]].map(([x, h, w], i) => (
+      {[
+        [-6, 190, 36],
+        [30, 230, 34],
+        [64, 160, 30],
+        [288, 210, 34],
+        [322, 250, 36],
+        [358, 180, 40],
+      ].map(([x, h, w], i) => (
         <G key={i}>
           <Rect x={x} y={204 - h} width={w} height={h} fill={i % 2 ? '#6E6FA0' : '#8487B5'} stroke="#5B5C8C" strokeWidth={0.8} />
           <Windows x={x} y={204 - h} w={w} h={h} c="#FFE7A0" />
@@ -155,28 +204,8 @@ export const SKYLINE: Record<NeighborhoodId, () => ReactElement> = {
   ),
 };
 
-/** A Boston neighbourhood's skyline: its building colours and heights (BOSTON_LOOKS), three beside the shop on each side, and its signature piece (the church steeple, the ballpark's light towers). */
-const BOSTON_SKYLINE = (id: string): (() => ReactElement) => () => {
-  const L = BOSTON_LOOKS[id];
-  const slots: [number, number][] = [[-6, 36], [30, 34], [64, 30], [288, 34], [322, 36], [358, 40]];
-  return (
-    <G>
-      {slots.map(([x, w], i) => {
-        const [, , top, c] = L.buildings[i % L.buildings.length];
-        const h = 140 - top - (i % 3) * 10;
-        return (
-          <G key={i}>
-            <Rect x={x} y={200 - h} width={w} height={h} fill={c} stroke={L.trim} strokeWidth={0.8} />
-            <Windows x={x} y={200 - h} w={w} h={h} c={L.glass} />
-            {L.sig === 'steeple' && i === 1 && <Path d={`M${x + 4} ${200 - h} L${x + w / 2} ${200 - h - 34} L${x + w - 4} ${200 - h} Z`} fill={L.trim} stroke={INK} strokeWidth={0.8} strokeLinejoin="round" />}
-            {L.sig === 'towers' && (i === 2 || i === 3) && <Path d={`M${x + w / 2} ${200 - h} V${200 - h - 28} M${x + w / 2 - 8} ${200 - h - 28} H${x + w / 2 + 8}`} stroke={L.glass} strokeWidth={2.4} strokeLinecap="round" />}
-          </G>
-        );
-      })}
-    </G>
-  );
-};
-for (const id of Object.keys(BOSTON_LOOKS)) SKYLINE[id] = BOSTON_SKYLINE(id);
+// each registered city draws the skyline behind its own shops
+for (const c of Object.values(CITIES)) Object.assign(SKYLINE, c.skylines({ Windows }));
 
 /** Chain-link fence segment (Industrial). */
 export function Fence({ x0, x1, y }: { x0: number; x1: number; y: number }) {
@@ -195,7 +224,17 @@ export function Fence({ x0, x1, y }: { x0: number; x1: number; y: number }) {
 }
 
 /** `L`/`R`: the room's side walls; edge props only appear where they show whole beside the shop. */
-export const Backdrop = memo(function Backdrop({ id, L = 0, R = ONE_SCREEN.width, w = ONE_SCREEN.width }: { id: NeighborhoodId; L?: number; R?: number; /** The drawing's width (its frame's): the sky's. */ w?: number }) {
+export const Backdrop = memo(function Backdrop({
+  id,
+  L = 0,
+  R = ONE_SCREEN.width,
+  w = ONE_SCREEN.width,
+}: {
+  id: NeighborhoodId;
+  L?: number;
+  R?: number;
+  /** The drawing's width (its frame's): the sky's. */ w?: number;
+}) {
   const look = LOOK[id];
   const palm = id === 'waterfront';
   const treeC = id === 'uptown' ? '#3F8F4A' : '#4FA048';
@@ -226,12 +265,19 @@ export const Backdrop = memo(function Backdrop({ id, L = 0, R = ONE_SCREEN.width
         <G>
           <Fence x0={-10} x1={70} y={330} />
           <Fence x0={326} x1={404} y={330} />
-          {[[30, 380], [352, 370]].filter(([x]) => (x < 196 ? x + 14 < L - 6 : x - 14 > R + 6)).map(([x, y]) => (
-            <G key={x}>
-              <Rect x={x - 12} y={y - 22} width={24} height={22} rx={2} fill="#3F7FB0" stroke={INK} strokeWidth={1} />
-              {[0, 7, 14].map((d) => <Path key={d} d={`M${x - 12} ${y - 18 + d} H${x + 12}`} stroke="#2E6690" strokeWidth={1.4} />)}
-            </G>
-          ))}
+          {[
+            [30, 380],
+            [352, 370],
+          ]
+            .filter(([x]) => (x < 196 ? x + 14 < L - 6 : x - 14 > R + 6))
+            .map(([x, y]) => (
+              <G key={x}>
+                <Rect x={x - 12} y={y - 22} width={24} height={22} rx={2} fill="#3F7FB0" stroke={INK} strokeWidth={1} />
+                {[0, 7, 14].map((d) => (
+                  <Path key={d} d={`M${x - 12} ${y - 18 + d} H${x + 12}`} stroke="#2E6690" strokeWidth={1.4} />
+                ))}
+              </G>
+            ))}
         </G>
       )}
     </G>

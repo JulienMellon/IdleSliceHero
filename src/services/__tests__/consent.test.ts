@@ -2,7 +2,15 @@ import { createAdFlow, type AdPorts } from '../ad-flow';
 import { consentReduce, initialConsent, mayOfferAd, nextStep } from '../consent';
 import type { AdResult } from '../types';
 
-function ports(o: { loadedFn?: () => boolean; ump?: () => Promise<{ canRequestAds: boolean }>; tracking?: () => Promise<'granted' | 'denied' | 'unsupported'>; ad?: AdResult | (() => Promise<AdResult>); loaded?: boolean } = {}) {
+function ports(
+  o: {
+    loadedFn?: () => boolean;
+    ump?: () => Promise<{ canRequestAds: boolean }>;
+    tracking?: () => Promise<'granted' | 'denied' | 'unsupported'>;
+    ad?: AdResult | (() => Promise<AdResult>);
+    loaded?: boolean;
+  } = {},
+) {
   const calls: string[] = [];
   const preloads = { n: 0 };
   const p: AdPorts = {
@@ -80,7 +88,11 @@ describe('ad flow', () => {
   });
 
   it('tracking prompt that throws counts as refused, ad still shows', async () => {
-    const { p } = ports({ tracking: async () => { throw new Error('x'); } });
+    const { p } = ports({
+      tracking: async () => {
+        throw new Error('x');
+      },
+    });
     const f = createAdFlow(p);
     f.setTutorialDone();
     expect(await f.show('boost_2x')).toBe('rewarded');
@@ -99,7 +111,12 @@ describe('ad flow', () => {
 
   it('UMP that cannot be reached (offline) is unavailable now and asked again next time', async () => {
     let n = 0;
-    const { p, calls } = ports({ ump: async () => { if (n++ === 0) throw new Error('offline'); return { canRequestAds: true }; } });
+    const { p, calls } = ports({
+      ump: async () => {
+        if (n++ === 0) throw new Error('offline');
+        return { canRequestAds: true };
+      },
+    });
     const f = createAdFlow(p);
     f.setTutorialDone();
     expect(await f.show('streak_save')).toBe('unavailable');
@@ -112,7 +129,13 @@ describe('ad flow', () => {
     const a = createAdFlow(ports({ ad: 'unavailable' }).p);
     a.setTutorialDone();
     expect(await a.show('daily_booster')).toBe('unavailable');
-    const b = createAdFlow(ports({ ad: async () => { throw new Error('x'); } }).p);
+    const b = createAdFlow(
+      ports({
+        ad: async () => {
+          throw new Error('x');
+        },
+      }).p,
+    );
     b.setTutorialDone();
     expect(await b.show('daily_booster')).toBe('unavailable');
   });

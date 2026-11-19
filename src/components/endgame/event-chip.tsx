@@ -22,6 +22,17 @@ export const EventChip = memo(function EventChip() {
 
 // D465: "Rush in 42m" is one line; the longer "Playoffs in 42m" wraps to two in the same 44 pt pill
 const styles = StyleSheet.create({
-  chip: { minWidth: 44, maxWidth: 80, height: 44, borderRadius: 22, paddingHorizontal: 5, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.cheeseDark, alignItems: 'center', justifyContent: 'center' },
+  chip: {
+    minWidth: 44,
+    maxWidth: 80,
+    height: 44,
+    borderRadius: 22,
+    paddingHorizontal: 5,
+    backgroundColor: C.cheese,
+    borderWidth: 2,
+    borderColor: C.cheeseDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   text: { fontFamily: F.bold, fontSize: 10.5, lineHeight: 12, color: C.ink, textAlign: 'center' },
 });

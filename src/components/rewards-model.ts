@@ -2,9 +2,26 @@
 // Pure: everything the screen shows as text or state is decided here and unit-tested in node.
 import { collectionView } from '../engine/features/recipes';
 import { collectionLine } from './endgame/recipes-model';
-import { cosmeticName, DAILY_CHESTS, DAILY_TASK_REWARD, GIFT_DAYS, GIFT_LENGTH, GIFT_MILESTONES, STREAK_SAVE_DIAMONDS, TASK_TEXT, VISITOR_LINES, VISITOR_NAMES, WEEKLY_DIAMONDS, WEEKLY_TASK_REWARD, type BoosterDef, type Chest, type GiftDef } from '../content/rewards';
+import {
+  cosmeticName,
+  DAILY_CHESTS,
+  DAILY_TASK_REWARD,
+  GIFT_DAYS,
+  GIFT_LENGTH,
+  GIFT_MILESTONES,
+  STREAK_SAVE_DIAMONDS,
+  TASK_TEXT,
+  VISITOR_LINES,
+  VISITOR_NAMES,
+  WEEKLY_DIAMONDS,
+  WEEKLY_TASK_REWARD,
+  type BoosterDef,
+  type Chest,
+  type GiftDef,
+} from '../content/rewards';
 import { count, money, pizzas } from '../engine/format';
-import type { Booster, GameState, Task } from '../engine/game';
+import { founderName, type Booster, type GameState, type Task } from '../engine/game';
+import { t } from '../content/copy';
 import * as R from '../engine/rewards';
 import { isStarredTask } from '../engine/features/heads';
 
@@ -180,7 +197,12 @@ export function chestLabel(c: Chest): string {
 }
 
 export function chestRows(s: GameState): ChestRow[] {
-  return DAILY_CHESTS.map((c, index) => ({ index, points: c.points, state: s.rewards.chests[index] ? 'opened' : R.chestReady(s, index) ? 'ready' : 'locked', label: chestLabel(c) }));
+  return DAILY_CHESTS.map((c, index) => ({
+    index,
+    points: c.points,
+    state: s.rewards.chests[index] ? 'opened' : R.chestReady(s, index) ? 'ready' : 'locked',
+    label: chestLabel(c),
+  }));
 }
 
 /** The points bar: 0..1 of the last chest's threshold. */
@@ -199,7 +221,16 @@ export function weeklyChestView(s: GameState): WeeklyChestView {
   const left = s.rewards.weekly.filter((t) => !t.claimed).length;
   const state = s.rewards.weeklyChest ? 'opened' : R.weeklyChestReady(s) ? 'ready' : 'locked';
   // once opened the prize is already owned (the next one shows), so the opened line doesn't name it
-  return { state, prize, label: state === 'opened' ? 'Opened this week' : state === 'ready' ? `Open for ${p.kind === 'cosmetic' ? 'the ' : ''}${prize}` : `${prize} · ${left} ${left === 1 ? 'task' : 'tasks'} to go` };
+  return {
+    state,
+    prize,
+    label:
+      state === 'opened'
+        ? 'Opened this week'
+        : state === 'ready'
+          ? `Open for ${p.kind === 'cosmetic' ? 'the ' : ''}${prize}`
+          : `${prize} · ${left} ${left === 1 ? 'task' : 'tasks'} to go`,
+  };
 }
 
 /** v5.15: the tasks drawer's collection line, "Collection: 9/24 recipes" (the cards of engine/features/recipes.ts; cosmetics live in the Shop screen). */
@@ -210,7 +241,8 @@ export function collectionText(s: GameState): string {
 // ---------- Gift calendar ----------
 
 /** A duration in full words where there is room: "1 day", "7 days", "24 h" never (a whole day is a day), "90 min". */
-const daysText = (minutes: number): string => (minutes >= 1440 && minutes % 1440 === 0 ? `${minutes / 1440} ${minutes === 1440 ? 'day' : 'days'}` : minutesText(minutes));
+const daysText = (minutes: number): string =>
+  minutes >= 1440 && minutes % 1440 === 0 ? `${minutes / 1440} ${minutes === 1440 ? 'day' : 'days'}` : minutesText(minutes);
 
 /** What a gift gives, spelled out: "2× income for 7 days · 300 diamonds · Gold oven". */
 export function giftText(g: GiftDef, cycle = 0): string {
@@ -218,7 +250,8 @@ export function giftText(g: GiftDef, cycle = 0): string {
   if (g.minutes) parts.push(`${minutesText(g.minutes)} of income`);
   if (g.boostNow) parts.push(`${multText(g.boostNow.mult)} income for ${daysText(g.boostNow.minutes)}`);
   if (g.diamonds) parts.push(`${g.diamonds} diamonds`);
-  if (g.boosters?.length) parts.push(g.boosters.length === 1 ? `${boosterLabel(g.boosters[0])} booster` : `${g.boosters.length} boosters · ${boosterLabel(g.boosters[0])}`);
+  if (g.boosters?.length)
+    parts.push(g.boosters.length === 1 ? `${boosterLabel(g.boosters[0])} booster` : `${g.boosters.length} boosters · ${boosterLabel(g.boosters[0])}`);
   if (g.cosmetic) parts.push(cosmeticName(g.cosmetic.replace('{cycle}', String(cycle + 1))));
   return parts.join(' · ');
 }
@@ -268,7 +301,15 @@ export function giftTiles(s: GameState, now: number): GiftTile[] {
     else if (st.kind === 'save') state = day < st.day ? 'claimed' : day === st.day ? 'missed' : 'future';
     else state = day < st.day ? 'claimed' : day === st.day ? 'today' : 'future';
     const last = day === GIFT_LENGTH;
-    return { day, label: giftShort(g), icon: giftIcon(g), big: day in GIFT_MILESTONES, state, name: last ? g.name ?? 'Golden Oven' : '', what: last ? giftText(g, st.cycle) : '' };
+    return {
+      day,
+      label: giftShort(g),
+      icon: giftIcon(g),
+      big: day in GIFT_MILESTONES,
+      state,
+      name: last ? (g.name ?? 'Golden Oven') : '',
+      what: last ? giftText(g, st.cycle) : '',
+    };
   });
 }
 
@@ -288,12 +329,17 @@ export function giftHeader(s: GameState, now: number): GiftHeader {
   const prizeIcon = giftIcon(st.gift);
   const title = st.day === GIFT_LENGTH ? `Day ${GIFT_LENGTH} \u00B7 ${who} visits` : `Day ${st.day} of ${GIFT_LENGTH}`;
   if (st.kind === 'claimed') return { title, caption: `Claimed. Next gift in ${spanText(R.resetCountdown(now, 'day'))}`, prize: '', prizeIcon };
-  if (st.kind === 'locked') return { title, caption: 'Unlocks when Nonna takes over', prize: '', prizeIcon };
+  if (st.kind === 'locked') return { title, caption: t('rewards.gift.locked', { founder: founderName(s) }, s.city), prize: '', prizeIcon };
   if (st.kind === 'save') {
-    return { title, caption: `Missed a day! Keep your streak for ${STREAK_SAVE_DIAMONDS} \u{1F48E} (day ${st.day}: ${gift.replace(/(\d+) diamonds/, '$1 \u{1F48E}')}).`, prize: '', prizeIcon };
+    return {
+      title,
+      caption: `Missed a day! Keep your streak for ${STREAK_SAVE_DIAMONDS} \u{1F48E} (day ${st.day}: ${gift.replace(/(\d+) diamonds/, '$1 \u{1F48E}')}).`,
+      prize: '',
+      prizeIcon,
+    };
   }
   if (st.day === GIFT_LENGTH) return { title, caption: visitCaption(st.visitor), prize: gift, prizeIcon };
-  return { title, caption: "Today\u2019s gift", prize: gift, prizeIcon };
+  return { title, caption: 'Today\u2019s gift', prize: gift, prizeIcon };
 }
 
 /** Day 30: "Nonna Rosa drops by. “Thirty days…”" (also the claim confirmation). */
@@ -307,4 +353,5 @@ export function visitCaption(visitor: string): string {
 export const BOOST_STRIP = { rightInset: 16, fade: 24 } as const;
 
 /** Show the strip's right-edge fade: the chips overflow the strip and it isn't scrolled to the end yet. */
-export const boostFadeShown = (contentW: number, viewW: number, scrollX: number): boolean => viewW > 0 && contentW - viewW > 2 && scrollX < contentW - viewW - 2;
+export const boostFadeShown = (contentW: number, viewW: number, scrollX: number): boolean =>
+  viewW > 0 && contentW - viewW > 2 && scrollX < contentW - viewW - 2;

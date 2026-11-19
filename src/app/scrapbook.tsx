@@ -8,7 +8,7 @@ import { seenCount } from '@/components/franchise/scrapbook-view';
 import { fitFont, MIN_FONT, SCRAPBOOK_HEAD } from '@/components/endgame/fit-model';
 import { recipeGroups } from '@/components/endgame/recipes-model';
 import { RecipesSection } from '@/components/endgame/recipes-section';
-import { DISPLAY_NAMES, Portrait } from '@/components/portrait';
+import { DISPLAY_NAMES, Portrait } from '@/components/portrait/index';
 import { cityOf } from '@/content/cities';
 import { collectionView } from '@/engine/features/recipes';
 import { nextSceneTeaser } from '@/engine/teaser';
@@ -35,7 +35,11 @@ export default function Scrapbook() {
   }, [section]);
   // the owned cards are primitives (a count and a key), so the Recipes tab repaints when a card drops, not on every tick
   // M64: one primitive selector (the key), the count is read off it
-  const ownedKey = useGame((s) => collectionView(s.game).shops.map((x) => x.cards.map((c) => (c.owned ? 1 : 0)).join('')).join('|'));
+  const ownedKey = useGame((s) =>
+    collectionView(s.game)
+      .shops.map((x) => x.cards.map((c) => (c.owned ? 1 : 0)).join(''))
+      .join('|'),
+  );
   const owned = ownedKey.split('1').length - 1;
   const groups = useMemo(() => (tab === 'recipes' ? recipeGroups(useGame.getState().game) : []), [ownedKey, tab]); // eslint-disable-line react-hooks/exhaustive-deps -- `ownedKey` is what the groups depend on
   useEffect(() => {
@@ -59,7 +63,14 @@ export default function Scrapbook() {
       </View>
       <View style={styles.tabs} accessibilityRole="tablist">
         {(['story', 'recipes'] as const).map((t) => (
-          <Pressable key={t} testID={`scrapbook-tab-${t}`} accessibilityRole="tab" accessibilityState={{ selected: tab === t }} onPress={() => setTab(t)} style={[styles.tab, tab === t && styles.tabOn]}>
+          <Pressable
+            key={t}
+            testID={`scrapbook-tab-${t}`}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === t }}
+            onPress={() => setTab(t)}
+            style={[styles.tab, tab === t && styles.tabOn]}
+          >
             <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>{t === 'story' ? 'Story' : `Recipes ${owned}/24`}</Text>
           </Pressable>
         ))}
@@ -69,38 +80,47 @@ export default function Scrapbook() {
           <RecipesSection groups={groups} bottom={insets.bottom + 24} />
         </ScrollView>
       ) : (
-      <ScrollView contentContainerStyle={{ padding: 14, gap: 16, paddingBottom: insets.bottom + 24 }}>
-        {city.neighbourhoods.map((n) => {
-          const scenes = chapterScenes(n.id, city.scenes);
-          const character = scenes[0].character;
-          const met = scenes.some((s) => seen.includes(s.id));
-          return (
-            <View key={n.id} style={styles.chapter}>
-              <View style={[styles.chapterHead, { backgroundColor: met ? n.color : C.locked }]}>
-                <View style={styles.avatar}>{met ? <Portrait id={character} mood="happy" size={56} /> : <Text style={styles.q}>?</Text>}</View>
-                <View>
-                  <Text style={styles.chapterTitle}>{n.name}</Text>
-                  <Text style={styles.chapterSub}>{met ? DISPLAY_NAMES[character] : 'Not met yet'}</Text>
+        <ScrollView contentContainerStyle={{ padding: 14, gap: 16, paddingBottom: insets.bottom + 24 }}>
+          {city.neighbourhoods.map((n) => {
+            const scenes = chapterScenes(n.id, city.scenes);
+            const character = scenes[0].character;
+            const met = scenes.some((s) => seen.includes(s.id));
+            return (
+              <View key={n.id} style={styles.chapter}>
+                <View style={[styles.chapterHead, { backgroundColor: met ? n.color : C.locked }]}>
+                  <View style={styles.avatar}>{met ? <Portrait id={character} mood="happy" size={56} /> : <Text style={styles.q}>?</Text>}</View>
+                  <View>
+                    <Text style={styles.chapterTitle}>{n.name}</Text>
+                    <Text style={styles.chapterSub}>{met ? DISPLAY_NAMES[character] : 'Not met yet'}</Text>
+                  </View>
+                </View>
+                <View style={styles.grid}>
+                  {scenes.map((s) => {
+                    const open = seen.includes(s.id);
+                    return (
+                      <Pressable
+                        key={s.id}
+                        accessibilityRole="button"
+                        accessibilityLabel={open ? `${tileLabel(s)}: ${s.title}. Replay` : `${tileLabel(s)}: locked, not seen yet`}
+                        accessibilityState={{ disabled: !open }}
+                        disabled={!open}
+                        onPress={() => replay(s)}
+                        style={[styles.tile, !open && styles.tileLocked]}
+                        testID={`scene-${s.id}`}
+                      >
+                        <Text style={[styles.tileNum, s.beat === 'interlude' && styles.tileInterlude]}>{tileLabel(s)}</Text>
+                        <Text style={[styles.tileTitle, !open && { color: C.inkSoft }]} numberOfLines={2}>
+                          {open ? s.title : '???'}
+                        </Text>
+                        {open && <Text style={styles.play}>▶ Replay</Text>}
+                      </Pressable>
+                    );
+                  })}
                 </View>
               </View>
-              <View style={styles.grid}>
-                {scenes.map((s) => {
-                  const open = seen.includes(s.id);
-                  return (
-                    <Pressable key={s.id} accessibilityRole="button" accessibilityLabel={open ? `${tileLabel(s)}: ${s.title}. Replay` : `${tileLabel(s)}: locked, not seen yet`} accessibilityState={{ disabled: !open }} disabled={!open} onPress={() => replay(s)} style={[styles.tile, !open && styles.tileLocked]} testID={`scene-${s.id}`}>
-                      <Text style={[styles.tileNum, s.beat === 'interlude' && styles.tileInterlude]}>{tileLabel(s)}</Text>
-                      <Text style={[styles.tileTitle, !open && { color: C.inkSoft }]} numberOfLines={2}>
-                        {open ? s.title : '???'}
-                      </Text>
-                      {open && <Text style={styles.play}>▶ Replay</Text>}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          );
-        })}
-      </ScrollView>
+            );
+          })}
+        </ScrollView>
       )}
     </View>
   );
@@ -112,7 +132,16 @@ const styles = StyleSheet.create({
   headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   teaser: { fontFamily: F.semi, fontSize: 14, color: '#FFE7C2', textAlign: 'center' },
   tabs: { flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingTop: 10 },
-  tab: { flex: 1, minHeight: 44, borderRadius: 14, borderWidth: 2.5, borderColor: C.ink, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  tab: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 14,
+    borderWidth: 2.5,
+    borderColor: C.ink,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tabOn: { backgroundColor: C.tomato, borderColor: C.tomatoDark },
   tabText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   tabTextOn: { color: '#fff' },
@@ -122,7 +151,17 @@ const styles = StyleSheet.create({
   count: { minWidth: 70, textAlign: 'right', fontFamily: F.semi, color: '#FFE7C2', fontSize: SCRAPBOOK_HEAD.count },
   chapter: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 3, borderColor: C.ink, overflow: 'hidden' },
   chapterHead: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderBottomWidth: 3, borderColor: C.ink },
-  avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#fff', borderWidth: 2.5, borderColor: C.ink, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#fff',
+    borderWidth: 2.5,
+    borderColor: C.ink,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   q: { fontFamily: F.bold, fontSize: 28, color: C.inkSoft },
   chapterTitle: { fontFamily: F.bold, fontSize: 20, color: C.ink },
   chapterSub: { fontFamily: F.semi, fontSize: 14, color: C.ink },

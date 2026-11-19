@@ -3,6 +3,7 @@
 // src/content/cities/. The engine reads the current city with `cityOf(game)` (./index.ts), so a second city is a second folder.
 import type { CharacterId, NeighborhoodId, Scene, VehicleId } from '../types';
 import type { HeadKind } from '../tuning';
+import type { BarkStation, BarkTrigger } from '../heads';
 
 export interface NeighborhoodDef {
   id: NeighborhoodId;
@@ -23,6 +24,8 @@ export interface NeighborhoodDef {
   color: string;
   /** Cutaway wall color. */
   wall: string;
+  /** The shop's floor plan (content/shop-layout.ts): 'standard' (kitchen left, door right; the default) or 'mirrored' (kitchen right, door left). Home Waterfront and Industrial are mirrored. */
+  plan?: 'standard' | 'mirrored';
 }
 
 /** A small permanent perk from each neighbourhood's finale. It only applies to that neighbourhood's pizzeria. */
@@ -102,9 +105,41 @@ export interface Lieutenant {
   name: string;
 }
 
+/** What each neighbourhood's three heads say, by station and trigger (content/heads.ts `BarkTrigger`): the lines a head's bubble shows. */
+export type BarkTable = Record<NeighborhoodId, Record<BarkStation, Record<BarkTrigger, string>>>;
+
+/** A character who asks for special orders in a neighbourhood's shop (v5.13). */
+export interface OrderCast {
+  who: CharacterId;
+  /** As the HUD and the Scrapbook name them. */
+  name: string;
+  /** Two offers; `{n}` is the number of pies. At most 60 characters once `{n}` is filled in. */
+  offers: readonly [string, string];
+  /** Two thank-yous for a finished order. */
+  thanks: readonly [string, string];
+}
+
+/** The night oven's words: its name and the info sheet's line, in which `{hours}` is how long the away meter holds. */
+export interface NightOvenLines {
+  name: string;
+  body: string;
+}
+
+/** What the city before this one says about it (the "Coming soon" card of the city ahead): a title, two lines, a sign-off and who signs it. Read by `teaserFor` (./index.ts). */
+export interface CityTeaser {
+  title: string;
+  lines: [string, string];
+  signoff: string;
+  from: string;
+}
+
 export interface CityDef {
   id: string;
   name: string;
+  /** The characters this city adds (its pack's cast.ts, one line in content/cast.ts). Its scenes may also use the home cast, the returning characters. */
+  cast: readonly CharacterId[];
+  /** What the next-scene teaser calls this city's own characters (cast.ts, `<ID>_NAMES`); the home cast's names are the home pack's. A character with no name is called by its id. */
+  names?: Readonly<Partial<Record<CharacterId, string>>>;
   /** In build order: the first is built from the start, each next one after the one before. */
   neighbourhoods: NeighborhoodDef[];
   /** The whole story in play order. */
@@ -119,6 +154,36 @@ export interface CityDef {
   /** The local MegaSlice lieutenant, defeated in the city's finale. */
   lieutenant: Lieutenant;
   bid?: CityBid;
+  /** What the city before this one says about it: the next city's card reads it (`teaserFor`). Absent for a city nobody announces. */
+  teaser?: CityTeaser;
+  /**
+   * The city's voice (card R1). Every field is optional: a city without one is silent or generic, never the home city's, and the readers
+   * take `cityOf(g).barks ?? {}`. A city pack fills them in (the home city's are in home/voice.ts).
+   */
+  /** What the heads say, per neighbourhood, station and trigger. A neighbourhood with no entry has silent heads. */
+  barks?: Partial<BarkTable>;
+  /** Heads' lines as a script gives them, numbered per station and not tied to a trigger (Boston's `bark.<hood>.<station>.<n>`); a writer maps them onto `barks`. The engine does not read them yet. */
+  headBarks?: Partial<Record<NeighborhoodId, Record<BarkStation, readonly string[]>>>;
+  /** Who asks for special orders, by neighbourhood. */
+  orderCast?: Partial<Record<NeighborhoodId, OrderCast>>;
+  /** The night oven's name and sheet line; a city without them gets the generic ones. */
+  nightOvenLines?: NightOvenLines;
+  /** The first neighbourhood's founder, by the name the takeover countdown uses; without it the first manager's name is used. */
+  founder?: { id: CharacterId; name: string };
+  /**
+   * v5.18 behaviour a pack can keep while the engine is generic (card R1 is behaviour-preserving). Each is absent for a new city, and each Boston value
+   * below is a known bug carried over on purpose (see the card report); a later version deletes the field and the Boston value.
+   */
+  /** The scene whose being seen unlocks the rewards (default: the takeover scene, `fit.takeover.sceneId`). */
+  rewardsScene?: string;
+  /** The neighbourhood whose shop shows its stations on the sidewalk instead of a hire stack, and whose moments speak as the founder's (default: the first; `null`: none). */
+  founderHood?: NeighborhoodId | null;
+  /** The prep head the tutorial's last step names (default: the first neighbourhood's prep head). */
+  tutorialHead?: string;
+  /** The shops the shop-service slice starts with a row for (default: this city's own). */
+  serviceRows?: readonly NeighborhoodId[];
+  /** The city's own lines, by the home copy keys (content/copy/home): `t(key, vars, city)` says this line when the city has one and the home line otherwise. Keep a city's words here, in its own folder. */
+  copy?: Readonly<Record<string, string>>;
   /** The story-music key of the city theme (src/audio/manifest.ts `story` table). */
   theme: string;
   fit: CityFit;

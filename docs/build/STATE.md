@@ -3,37 +3,23 @@
 Keep this file under 40 lines. It is the only file the orchestrator edits by hand.
 
 ```
-version: 5.19
-step: waves                     # setup | waves | verify | review | fix | close
+version: 5.19                   # scope: a city is only a content pack (Julien 2026-11-18); cities beyond Boston on hold
+step: verify                     # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
-last_shots: v5.18-r3           # label of the last screenshot set that passed verify
-codecritic_range_start: 21e4057
+last_shots: v5.19                # verify r1: 9 changed (seam 00 24 104 105; R1L 145 86 86b 76; 116 under check)
+codecritic_range_start: eafbb5a
 cards:                 # todo | running | done | partial | blocked
-  K1: done  W3: done  V1: partial  E3: carried  T2: done  A2: carried  V2: partial
+  R0: done  R0p: done  R1: done  R6: done  R1L: done  R5c: done  R7a: done  R7b: done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.18/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 6; E2 U1 S3; D512 D514 D481 D493 D495 D505 carry)
   code:   docs/build/v5.18/review-r3-code.md (r3 APPROVED; blocker/high 0 medium 2 low 26; E15 U4 S5 N3 A1)
   story:  docs/build/v5.18/review-r2-story.md (r2 SATISFIED; bug 0 major 0 minor 2; U1 T1; S67 S48 carried)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
-open: T2 Needs: engine heads.ts barkText/nextBark read home BARKS, Boston heads silent (E); Boston shop art reuses home via sceneHood (follow-up card). V2 Needs: layoutOfShop returns plain plan in mirrored shops (jam-overlay, harbour/critic/gameday scenes) -> owner decides, carried to r1. Julien 2026-11-18: verify shoots only fixtures touched this session. seam-noise shots 00/24/104/105 (install id + title rays unpinned) and 29-31b (played_page settle() real-time jitter, shots_lib.py ~514). K1 leftovers home-only (.hood fields in content/layers.ts + ~15 components, ORDER_CAST, endgame events, NIGHT_OVEN, tutorial, audio director, art ids). Script: next city unnamed; props pretzel, phone. v5.17 carried: critic minors D481 D493 (by choice) D495 D505 (docs/build/v5.17/review-r3-critic.md); code mediums M68 A32 + lows, C133 needs services isOptedOut export (docs/build/v5.17/review-r2-code.md); audio AU41 AU39 AU40 AU82 AU25 (docs/build/v5.17/review-r2-audio.md), SliceAudioSession native module not built. For Julien: T2 picks (placeholder Boston GMs; boston-0 p1 'shop' backdrop; takeover gate north-end-2 at 424 pies); S48 layer copy. D495 is a pacing decision (first hire under $50 vs the 2/5/8 min head targets, content/tuning.ts + pacing refit); day-30 name 'Nonna's Golden Oven' to check with the writer; App Store privacy label must say Tracking = Yes; native paths unverified until DEVICE-CHECKLIST. expo install is refused by the proxy: use npm install with the version from node_modules/expo/bundledNativeModules.json. loop_stats.py cannot read loop: commits. Programmer cards: --only takes the fixture name without .py.
-next: FIRST ask Julien how to merge his 2026-11-18 decisions (Log, last 4 lines: one pizza per tap +1/10 lv, home city tops out ~$10M with Suburbs ~$30K, first goal <$50, ECONOMY 4 with old saves reset, rival gated at Suburbs 2 stars, A2 + carried audio notes, one more city named by the writer) into the committed v5.19 plan (docs/build/v5.19/VERSION.md: Chicago/NY/LA + bible, showdown E4, refactor R0-R6s). Options: amend the plan with an economy card run before the fits / economy-only v5.19 and the plan moves to v5.20 / replace the plan. v5.18 r4 already fixed notes owned by R2 (A33 A36 A37 M62 U12), R5c (C146 C137), R6s (U21 A29), R3 (A34 C148 C134 T104): tick them off. Still carried: D495 (now part of the economy change), A2 (music round R1). Setup: npm ci; pip install playwright==1.63.0.
+open: ON HOLD (Julien 2026-11-18): every city beyond Boston; cards in docs/build/v5.19/later/ (W4b W4s E4 E4f CITY A3) and the deferred refactor (R2 R2b R3 R4 R5f R6s) are not launched. PARKED for Julien, not in v5.19: economy refit (one pizza per tap +1/10 prep lv, home tops out ~$10M with Suburbs ~$30K, first goal <$50, ECONOMY 3->4 with old saves reset, D493 rival gated at Suburbs 2 stars, D495); don't ask about it during v5.19. Carried: A2 + audio notes AU41 AU39 AU40 AU25 AU82 (music round waits on Julien's R1 listen), SliceAudioSession native module not built; Boston heads need a writer pass (5 barks per head, one per trigger; their script has 4 numbered); Boston GMs placeholder; v5.17/v5.18 critic minors D481 D493 D495 D505 D512 D514. Tools: expo install is refused by the proxy (use npm install with the version from node_modules/expo/bundledNativeModules.json); loop_stats.py cannot read loop: commits; programmer --only takes the fixture name without .py; seam-noise shots 00/24/104/105 and 29-31b. App Store privacy label must say Tracking = Yes; native paths unverified until DEVICE-CHECKLIST.
+next: v5.19 r1 verify, open item: 116-boston-shop-layer changed 5.1% vs v5.19-base (cash/clock/gift only; identical on a pre-R1 build at 979eb27). Bisect eafbb5a vs R0 76dabc5 vs R0p 0d84ea2 in worktrees (lane E, R0p programmer); baseline flake -> re-shoot base 116, else fix. Then commit, r1 reviews per VERSION.md (codecritic medium range eafbb5a..HEAD paths src scripts .github; critic medium on R1L shots 145 86 86b 76 only), fix rounds, close.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-18 Fix r1: V2 partial (G111 D511 D515 fixed; D508 D512 D514 partly; D513 A29 not). layoutOfShop mirror: no owner card (V2 lists it read-only) -> ask Julien. Round r2 verify.
-- 2026-11-18 Verify r2: tsc pass, 1830/1830, --only 106_t2,140_v2: 0 errors, 13 changed 7 same. r2 re-checks launched.
-- 2026-11-18 r2: code APPROVED, story/audio SATISFIED, critic 0/0/9 (minors over gate). Context summarised: session ended, fix round r2 next.
-- 2026-11-18 Fix r2 (new session): E3 (E rows) + T2 (T/U/S rows) launched; V2 + V1 next.
-- 2026-11-18 Fix r2: E3 blocked, nothing in its files; D493 D495 carried (v5.17 choice / Julien pacing decision). V2 launched.
-- 2026-11-18 Fix r2: T2 done (D506 D510; tsc pass, 935 component tests). V1 launched.
-- 2026-11-18 Fix r2: V2 partial (D513 fixed; viewX0/viewX1 plumbed). Needs: D512 clamp in layers/industrial/jam-overlay.tsx + jam-model.ts pillBox (no card in scope) -> carried; D514 report strip vs cold guest = decision for Julien, carried.
-- 2026-11-18 Fix r2: V1 partial (no new edits; D513 confirmed; D512 D514 as V2 said). Round r3 verify.
-- 2026-11-18 Verify r3: tsc pass, 1830/1830, --only 106_t2,140_v2: 0 errors, 7 changed 13 same (loaded/layout need a full run). r3 re-checks launched.
-- 2026-11-18 v5.18 closed at r3: critic 0/0/6 minors carried, codecritic APPROVED (medium 2). Next: v5.19 after Julien.
-- 2026-11-18 Julien: finish v5.18 open notes before v5.19 (fix round r4). E3 (E rows) + V2 (S rows, D512 jam scope, D514 lift+frost) running; U/N/A rows next.
-- 2026-11-18 Fix r4: E3 partial (all E rows fixed; tsc pass, 1853 tests). Left: C107 goal-bar half -> T2; A37 Date.now in storefront.tsx 138/346/411 -> V2. T2 launched on U/N rows + D505 + C107 bar.
-- 2026-11-18 Fix r4: T2 partial (C146/C137 city-model halves; 1855 tests). Leftovers (founderName export, index.tsx goal cap + C137, D505, C134 C136 C133 T103) -> widened-scope programmer. shop-ui.tsx:71 piesToGo + storefront A37 -> V2 after it reports.
-- 2026-11-18 Fix r4: leftover U/N done (C107 bar, C137, D505 endgame banners, C134 C136 C133 T103; 1919 tests). Left for V2: shop-ui.tsx:72 piesToGo, storefront A37, layer-stack wait-for-reveal (D505).
 - 2026-11-18 Fix r4: A2 U8 fixed (director trackNow memo; 1919 tests). A2 card itself still carried (music STATE round R1).
 - 2026-11-18 Fix r4: V2 done (D512 D514 lift+frost C149 U25 A29 U21 T110; D481 already in HEAD; 45 strip-clear tests). Leftovers sent to V2: shop-ui piesToGo, storefront A37, layer-stack D505.
 - 2026-11-18 Fix r4 closed: V2 leftovers done (C137 shop-ui, A37 storefront, D505 layer-stack; 146 shot frost ok). tsc pass, 1919/1919.
@@ -41,3 +27,7 @@ next: FIRST ask Julien how to merge his 2026-11-18 decisions (Log, last 4 lines:
 - 2026-11-18 Julien (E4 inputs): pacing minutes unchanged; compress nominal $ so home city tops out ~$10M (Suburbs open ~$30K); first goal <$50; tap batch 1 then +1 per 10 prep levels; ECONOMY 3->4, old saves reset. Next: write v5.19 VERSION.md + cards for approval.
 - 2026-11-18 Julien (v5.19 scope): E4 economy + D493 rival gate + A2 audio (after music round) + next city pack + carried audio notes (AU41 AU39 AU40 AU25 AU82, SliceAudioSession). Boston GMs stay placeholder; North End 2 takeover gate set by E4 refit; Boston shop art later; city/day-30 names not in v5.19. Device check not in v5.19.
 - 2026-11-18 Found the committed v5.19 plan (3 cities, showdown, refactor), which conflicts with today's scope answers. Julien: save the merge decision for the next orchestration session.
+- 2026-11-18 v5.19 plan check (new session): cards checked against R0-R6s; E4 split (E4f fits after the packs), A2 gated on music round, waves 7-12 reordered (3 same-file clashes). v5.18 already closed, STEP 2 has nothing left. Waiting for Julien.
+- 2026-11-18 Julien: hold every city beyond Boston; v5.19 = city is only a content pack. VERSION.md rewritten (R0 R0p R1 R6 R1L R5c + new R7a R7b); held and deferred cards moved to v5.19/later/. Next: wave 0.
+
+- 2026-11-19 v5.19 waves 0-7 done (R0 R0p R1 R6 R1L R5c R7a R7b; dev deps eslint/prettier approved by Julien). Verify: True 0 [], layout 0, 9 changed = seam 00 24 104 105 + R1L 145 86 86b 76 + 116 (open). Pack guard ALLOW 0. Session ended by Julien before reviews.

@@ -6,6 +6,9 @@ import { getFeature, withFeatures } from '../../index';
 import * as G from '../../../game';
 import { challengeWon, rival, rivalOpen, rivalTarget, rivalView, startRivalChallenge } from '../rival';
 
+import { HOME_FIT } from '../../../../content/cities/home/fit';
+import { hoodIds } from '../../../../content/cities';
+import { HOME_CITY } from '../../../../content/cities/home';
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 const ID: NeighborhoodId = 'university';
 const run = <T>(fn: () => T): T => withFeatures([rival], fn);
@@ -16,7 +19,10 @@ const ok = (r: G.BuyResult): G.GameState => {
   return r.state;
 };
 /** University built and running, beat 3 seen: the rival is open. */
-const open = (seen: string[] = ['university-3']): G.GameState => ({ ...shopOf(G.newGame(NOW), ID, { built: true, managed: true, heads: G.allHeads(), prep: 10, ovens: 10, counter: 10, tables: 10, drivers: 5 }), seenScenes: seen });
+const open = (seen: string[] = ['university-3']): G.GameState => ({
+  ...shopOf(G.newGame(NOW), ID, { built: true, managed: true, heads: G.allHeads(), prep: 10, ovens: 10, counter: 10, tables: 10, drivers: 5 }),
+  seenScenes: seen,
+});
 /** Sell `n` pies in the shop at once (what the line would have done). */
 const sell = (g: G.GameState, n: number): G.GameState => shopOf(g, ID, { sold: g.shops[ID].sold + n });
 function play(g: G.GameState, seconds: number): G.GameState {
@@ -51,8 +57,8 @@ describe('opening and the x0.8', () => {
   it('opens in every neighbourhood once its own beat 3 is seen', () => {
     run(() => {
       let g = G.newGame(NOW);
-      for (const id of G.HOME_HOOD_IDS) g = shopOf(g, id, { built: true });
-      for (const id of G.HOME_HOOD_IDS) {
+      for (const id of hoodIds(HOME_CITY)) g = shopOf(g, id, { built: true });
+      for (const id of hoodIds(HOME_CITY)) {
         expect(rivalOpen(g, id)).toBe(false);
         g = { ...g, seenScenes: [...g.seenScenes, `${id}-3`] };
         expect(rivalOpen(g, id)).toBe(true);
@@ -65,13 +71,15 @@ describe('the challenge', () => {
   it('asks ceil(5 min x the shop’s current pizza rate x 1.2)', () => {
     run(() => {
       const g = open();
-      const rate = G.shopRate(g.shops[ID], g.vehicle);
+      const rate = G.shopRate(g.shops[ID], g.vehicle, HOME_FIT);
       expect(rivalTarget(g, ID, NOW)).toBe(Math.ceil(300 * rate * 1.2));
       expect(rivalView(g, ID, NOW)).toMatchObject({ phase: 'available', target: Math.ceil(300 * rate * 1.2) });
       // a faster shop asks for more
       expect(rivalTarget(shopOf(g, ID, { prep: 30, ovens: 30, counter: 30, tables: 30, drivers: 30 }), ID, NOW)).toBeGreaterThan(rivalTarget(g, ID, NOW));
       // at least one pie, even for a shop that sells nothing
-      expect(rivalTarget(shopOf(g, ID, { built: true, prep: 1, ovens: 1, counter: 1, tables: 1, drivers: 1, managed: false }), ID, NOW)).toBeGreaterThanOrEqual(1);
+      expect(rivalTarget(shopOf(g, ID, { built: true, prep: 1, ovens: 1, counter: 1, tables: 1, drivers: 1, managed: false }), ID, NOW)).toBeGreaterThanOrEqual(
+        1,
+      );
     });
   });
 
@@ -139,7 +147,11 @@ describe('the challenge', () => {
       expect(rivalView(at(100 + gap), ID, NOW).phase).toBe('available');
       expect(startRivalChallenge(at(100 + gap), ID, NOW).ok).toBe(true);
       // Downtown's wait is shorter
-      const dt: G.GameState = { ...shopOf(open(['downtown-3']), 'downtown', { built: true }), sceneAt: { 'downtown-3': 100 }, playSeconds: 100 + STORY_PACING.downtownBeat4GapSeconds - 1 };
+      const dt: G.GameState = {
+        ...shopOf(open(['downtown-3']), 'downtown', { built: true }),
+        sceneAt: { 'downtown-3': 100 },
+        playSeconds: 100 + STORY_PACING.firstHoodBeat4GapSeconds - 1,
+      };
       expect(rivalView(dt, 'downtown', NOW).phase).toBe('waiting');
       expect(rivalView({ ...dt, playSeconds: dt.playSeconds + 1 }, 'downtown', NOW).phase).toBe('available');
     });
@@ -196,7 +208,10 @@ describe('old saves', () => {
   });
 
   it('keeps what a save holds and drops garbage', () => {
-    const m = rival.migrate({ won: ['uptown', 'nowhere', 'uptown'], challenge: { hood: ID, target: 40, startSold: 7, left: 9999 }, retryAt: { [ID]: 800, downtown: 'x' } }, NOW);
+    const m = rival.migrate(
+      { won: ['uptown', 'nowhere', 'uptown'], challenge: { hood: ID, target: 40, startSold: 7, left: 9999 }, retryAt: { [ID]: 800, downtown: 'x' } },
+      NOW,
+    );
     expect(m).toEqual({ won: ['uptown'], challenge: { hood: ID, target: 40, startSold: 7, left: RIVAL.challengeSeconds }, retryAt: { [ID]: 800 } });
     expect(rival.migrate({ challenge: { hood: 'x', target: 5, left: 3 } }, NOW).challenge).toBeNull();
     expect(rival.migrate(undefined, NOW)).toEqual({ won: [], challenge: null, retryAt: {} });

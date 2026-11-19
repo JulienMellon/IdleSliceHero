@@ -5,13 +5,13 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { canAfford } from '../../engine/game';
 import { money } from '../../engine/format';
-import { boatsView } from '../../engine/features/layers/waterfront-boats';
+import { boatsView } from '../../engine/features/layers/boats';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { BuyButton } from '../game-ui';
 import { StationCard } from '../shop-ui';
 import { buttonTone } from '../sidewalk-model';
-import { auctionCard, auctionStatus, rackCard } from './waterfront/boats-model';
+import { auctionCard, auctionStatus, rackCard } from './boats/boats-model';
 import { LABELS } from './layer-text';
 import { gameNow } from '../../engine/clock';
 
@@ -56,18 +56,42 @@ export const AuctionCardSlot = memo(function AuctionCardSlot() {
     <View testID="auction-card" style={styles.card}>
       <View style={styles.head}>
         <Text style={styles.title}>{c.title}</Text>
-        {c.raised ? <Text testID="auction-raised" style={styles.raised} numberOfLines={2}>{c.raised}</Text> : null}
-        <Text testID="auction-meta" style={styles.meta} numberOfLines={1}>{[c.next, c.cap].filter(Boolean).join(' · ')}</Text>
+        {c.raised ? (
+          <Text testID="auction-raised" style={styles.raised} numberOfLines={2}>
+            {c.raised}
+          </Text>
+        ) : null}
+        <Text testID="auction-meta" style={styles.meta} numberOfLines={1}>
+          {[c.next, c.cap].filter(Boolean).join(' · ')}
+        </Text>
       </View>
       <View style={styles.buy}>
-        <BuyButton compact testID="bid-pier9" tone={buttonTone({ lock: false, gain: 1 })} label={money(c.price)} sub={LABELS.bid} enabled={c.canBuy} onPress={() => useGame.getState().bidPier9()} />
+        <BuyButton
+          compact
+          testID="bid-pier9"
+          tone={buttonTone({ lock: false, gain: 1 })}
+          label={money(c.price)}
+          sub={LABELS.bid}
+          enabled={c.canBuy}
+          onPress={() => useGame.getState().placeBid()}
+        />
       </View>
     </View>
   );
 });
 
 const styles = StyleSheet.create({
-  card: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FFF4F0', borderRadius: 16, borderWidth: 2.5, borderColor: C.tomato, padding: 6 },
+  card: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FFF4F0',
+    borderRadius: 16,
+    borderWidth: 2.5,
+    borderColor: C.tomato,
+    padding: 6,
+  },
   head: { flex: 1, gap: 1 },
   title: { fontFamily: F.bold, fontSize: 14, color: C.ink },
   raised: { fontFamily: F.semi, fontSize: 12, lineHeight: 14, color: C.tomatoDark },

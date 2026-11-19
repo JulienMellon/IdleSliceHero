@@ -1,14 +1,17 @@
 // Recipe cards (v5.15): each drop, the 1.01 multiplier, play-only sources and the catch-up on a v5.14 save.
 import { RECIPE, recipeId } from '../../content/endgame';
-import { NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { getFeature } from '../features';
 import { ackRecipes, cardEarned, collectionView, ownedIn, recipes } from '../features/recipes';
 import * as G from '../game';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const T0 = 1_700_000_000_000;
 const IDS = NEIGHBORHOODS.map((n) => n.id);
-const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
+const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } },
+});
 const built = (): G.GameState => IDS.reduce((g, id) => withShop(g, id, { built: true }), G.newGame(T0));
 const tick = (g: G.GameState) => G.playTick(g, 1, T0);
 const state = (g: G.GameState) => getFeature(g, recipes);
@@ -119,7 +122,9 @@ describe('a v5.14 save', () => {
     const a = tick(g);
     // downtown 1, 2; uptown 2, 3 (downtown's finale is not a card-3 flood: downtown-4 is seen, so downtown 3 too); the others have a GM only if set.
     // v5.16: a seen finale means the finales before it were seen (migrateStory), so Industrial's card 3 comes with Uptown's
-    expect(owned(a).sort()).toEqual(['recipe.downtown.1', 'recipe.downtown.2', 'recipe.downtown.3', 'recipe.industrial.3', 'recipe.uptown.2', 'recipe.uptown.3'].sort());
+    expect(owned(a).sort()).toEqual(
+      ['recipe.downtown.1', 'recipe.downtown.2', 'recipe.downtown.3', 'recipe.industrial.3', 'recipe.uptown.2', 'recipe.uptown.3'].sort(),
+    );
     expect(state(a).summary).toEqual({ cards: 6 });
     expect(state(a).fresh).toEqual([]);
     expect(collectionView(a).owned).toBe(6);

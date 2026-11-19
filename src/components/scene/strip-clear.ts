@@ -35,11 +35,20 @@ export function liftLayout(lay: Layout, floorY: number): Layout {
   const dDrivers = Math.max(0, floorY - lowest([...lay.driverQueue, lay.waitTag]));
   if (dDiners === 0 && dDrivers === 0 && lay.floorY === floorY) return lay;
   const { vanishX } = lay.frame;
-  const lift = (d: number) => ([x, y]: Pt): Pt => {
-    if (d === 0) return [x, y];
-    const sx = vanishX * (1 - SC) + (vanishX + (x - vanishX) * (1 - y / 520)) * SC; // the screen x at the old depth, kept at the new one
-    return [unprojectX(sx, y + d, lay.frame), y + d];
-  };
+  const lift =
+    (d: number) =>
+    ([x, y]: Pt): Pt => {
+      if (d === 0) return [x, y];
+      const sx = vanishX * (1 - SC) + (vanishX + (x - vanishX) * (1 - y / 520)) * SC; // the screen x at the old depth, kept at the new one
+      return [unprojectX(sx, y + d, lay.frame), y + d];
+    };
   const all = (pts: Pt[], d: number) => (d === 0 ? pts : pts.map(lift(d)));
-  return { ...lay, floorY, queue: all(lay.queue, dDiners), queueTag: lift(dDiners)(lay.queueTag), driverQueue: all(lay.driverQueue, dDrivers), waitTag: lift(dDrivers)(lay.waitTag) };
+  return {
+    ...lay,
+    floorY,
+    queue: all(lay.queue, dDiners),
+    queueTag: lift(dDiners)(lay.queueTag),
+    driverQueue: all(lay.driverQueue, dDrivers),
+    waitTag: lift(dDrivers)(lay.waitTag),
+  };
 }

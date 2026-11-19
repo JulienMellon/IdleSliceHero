@@ -2,18 +2,42 @@
 // The visual ladder's budgets (v5.11, D2): at every footprint no ladder prop covers a badge, a head, the doorway, the
 // mat, the doorway plank, the menu, the window, the oven bank or a pickup spot, and none sits in another station's tap area.
 // Checked here from the pure modules (layout, stations, projection) only, independently of ladder.ts's own placement test.
-import { FOOTPRINTS, HEADS, NEIGHBORHOODS, TUNING } from '../../../content/tuning';
+import { TUNING } from '../../../content/tuning';
 import { levelCap } from '../../../engine/game';
 import {
-  BOUNCE_SECONDS, BOUNCE_STEPS, CONFETTI, CONFETTI_FRAMES, CONFETTI_N, CONFETTI_OPACITY, CONFETTI_SECONDS, LADDER_LEVELS, MILESTONE_LINES, STEPS,
-  bounceStep, bounceTransforms, candidates, clearPillX, confettiStep, crossedMilestone, ladderProps, ladderStep, milestoneSpeaker, propRect, signRect, wallRects,
-  type LadderInput, type Placed, type PropId,
+  BOUNCE_SECONDS,
+  BOUNCE_STEPS,
+  CONFETTI,
+  CONFETTI_FRAMES,
+  CONFETTI_N,
+  CONFETTI_OPACITY,
+  CONFETTI_SECONDS,
+  LADDER_LEVELS,
+  MILESTONE_LINES,
+  STEPS,
+  bounceStep,
+  bounceTransforms,
+  candidates,
+  clearPillX,
+  confettiStep,
+  crossedMilestone,
+  ladderProps,
+  ladderStep,
+  milestoneSpeaker,
+  propRect,
+  signRect,
+  wallRects,
+  type LadderInput,
+  type Placed,
+  type PropId,
 } from '../ladder';
 import { ladderInput, furnitureInputs, furnitureDeps, type FurnitureSource } from '../furniture-inputs';
 import { SEAT, layout, type Layout } from './draw-layout';
 import { D, P, kAt } from '../projection';
 import { BADGE_R, badgeRowY, badgeXs, doorwaySignRect, stationRects, type Rect } from '../stations';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
+import { HEADS, NEIGHBORHOODS } from '../../../content/cities/home/data';
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 type Box = Rect;
 const hit = (a: Box, b: Box) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
@@ -25,7 +49,16 @@ function shop(fp: number) {
 /** What each footprint can reach: levels up to the cap (25 per tier). */
 const capStep = (fp: number) => ladderStep(levelCap({ footprint: fp } as never));
 const IDS = ['downtown', 'waterfront', 'uptown'] as const;
-const input = (fp: number, over: Partial<LadderInput> = {}): LadderInput => ({ id: 'downtown', prepStep: capStep(fp), counterStep: capStep(fp), driverStep: capStep(fp), pins: 12, vehicle: 2, outside: true, ...over });
+const input = (fp: number, over: Partial<LadderInput> = {}): LadderInput => ({
+  id: 'downtown',
+  prepStep: capStep(fp),
+  counterStep: capStep(fp),
+  driverStep: capStep(fp),
+  pins: 12,
+  vehicle: 2,
+  outside: true,
+  ...over,
+});
 /** Every step on (also levels no footprint reaches, to check the budget holds even for a save that is past its cap). */
 const FULL: Partial<LadderInput> = { prepStep: 8, counterStep: 8, driverStep: 8 };
 
@@ -51,7 +84,15 @@ function violations(p: Placed, lay: Layout, id: string = 'downtown'): string[] {
   // the entrance on the front plane: jambs to the right pilaster, shop window (z 196) to the floor
   if (hit(r, { x0: P(lay.door.x0 - 8, 0)[0], x1: P(lay.R - 8, 0)[0], y0: P(0, 0, 196)[1], y1: P(0, 0)[1] })) out.push('door');
   const mat = [P(lay.door.x0 + 2, -8), P(lay.door.x1 - 2, -8), P(lay.door.x1 + 1, -22), P(lay.door.x0 - 1, -22)];
-  if (hit(r, { x0: Math.min(...mat.map((m) => m[0])), x1: Math.max(...mat.map((m) => m[0])), y0: Math.min(...mat.map((m) => m[1])), y1: Math.max(...mat.map((m) => m[1])) })) out.push('mat');
+  if (
+    hit(r, {
+      x0: Math.min(...mat.map((m) => m[0])),
+      x1: Math.max(...mat.map((m) => m[0])),
+      y0: Math.min(...mat.map((m) => m[1])),
+      y1: Math.max(...mat.map((m) => m[1])),
+    })
+  )
+    out.push('mat');
   lay.spots.forEach((s, i) => {
     if (hit(r, fullBox(s.x, s.y))) out.push(`pickup spot ${i}`);
   });
@@ -108,7 +149,11 @@ describe('ladder budget', () => {
   test('also with one cook and one cashier, and the reachable steps only', () => {
     const bad: string[] = [];
     for (let fp = 0; fp < 5; fp++) {
-      for (const [cooks, staff] of [[1, 1], [2, 2], [3, 2]]) {
+      for (const [cooks, staff] of [
+        [1, 1],
+        [2, 2],
+        [3, 2],
+      ]) {
         const lay = layout(fp, 1, cooks, staff, 1, DRIVER_SLOTS[fp], 0);
         for (const id of IDS)
           for (const p of ladderProps(lay, input(fp, { id }))) {
@@ -125,7 +170,9 @@ describe('ladder budget', () => {
     const [spot] = lay.spots;
     const [sx, sy] = P(spot.x, spot.y);
     const base: Placed = { id: 'board', station: 'drivers', mount: 'wall', ax: 0, ay: 0, k: 1, sortY: D + 1, n: 0, rect: { x0: 0, y0: 0, x1: 10, y1: 10 } };
-    expect(violations({ ...base, rect: { x0: badgeXs(lay).oven - 5, y0: badgeRowY() - 5, x1: badgeXs(lay).oven + 5, y1: badgeRowY() + 5 } }, lay)).toContain('badge band');
+    expect(violations({ ...base, rect: { x0: badgeXs(lay).oven - 5, y0: badgeRowY() - 5, x1: badgeXs(lay).oven + 5, y1: badgeRowY() + 5 } }, lay)).toContain(
+      'badge band',
+    );
     expect(violations({ ...base, rect: { x0: P(lay.door.cx, 0)[0] - 5, y0: 400, x1: P(lay.door.cx, 0)[0] + 5, y1: 420 } }, lay)).toContain('door');
     expect(violations({ ...base, rect: { x0: sx - 5, y0: sy - 20, x1: sx + 5, y1: sy - 10 } }, lay)).toContain('pickup spot 0');
   });
@@ -174,7 +221,8 @@ describe('ladder budget', () => {
           expect([fp, id, p.id, 'prop', hit(p.rect, prop)]).toEqual([fp, id, p.id, 'prop', false]);
         }
       // the check can fail: where the second vehicle is dropped, its spot really does land on the board (the old layout drew it there)
-      for (const c of candidates(lay, { id: 'downtown', pins: 12, outside: true })) if (c.mount === 'street' && !c.ok && (hit(c.rect, board) || hit(c.rect, prop))) rawClips++;
+      for (const c of candidates(lay, { id: 'downtown', pins: 12, outside: true }))
+        if (c.mount === 'street' && !c.ok && (hit(c.rect, board) || hit(c.rect, prop))) rawClips++;
     }
     expect(rawClips).toBeGreaterThan(0);
   });
@@ -189,7 +237,8 @@ describe('ladder budget', () => {
 
   test('a step shows from its level and not before; idle shops keep the street clear', () => {
     const lay = shop(4);
-    const ids = (prepStep: number, over: Partial<LadderInput> = {}) => ladderProps(lay, { ...input(4), prepStep, counterStep: 0, driverStep: 0, ...over }).map((p) => p.id);
+    const ids = (prepStep: number, over: Partial<LadderInput> = {}) =>
+      ladderProps(lay, { ...input(4), prepStep, counterStep: 0, driverStep: 0, ...over }).map((p) => p.id);
     expect(ids(0)).toEqual([]);
     expect(ids(ladderStep(9))).toEqual([]);
     expect(ids(ladderStep(10))).toEqual(['pin2']);
@@ -293,7 +342,13 @@ describe('milestone moments', () => {
 
 describe('ladder inputs on the furniture memo', () => {
   const src = (over: Partial<FurnitureSource['shop']> = {}): FurnitureSource => ({
-    id: 'suburbs', name: 'Suburbs', running: true, rate: 4, vehicle: 1, worn: [], first: false,
+    id: 'suburbs',
+    name: 'Suburbs',
+    running: true,
+    rate: 4,
+    vehicle: 1,
+    worn: [],
+    first: false,
     shop: { footprint: 2, prep: 1, counter: 1, drivers: 1, managed: true, line: { prepped: 0 }, decor: { plants: 0, tables: 0, signage: 0 }, ...over },
   });
   const deps = (o: Partial<FurnitureSource['shop']>) => JSON.stringify(furnitureDeps(furnitureInputs(src(o))));

@@ -74,7 +74,14 @@ export function productRows(prices: Prices, owned: readonly ProductId[]): Produc
     if (has && id === 'starter_pack') continue;
     const price = prices?.[id] ?? null;
     const state: RowState = has ? 'owned' : price ? 'buy' : prices === null ? 'loading' : 'unpriced';
-    rows.push({ id, ...PRODUCTS[id], price, state, label: state === 'owned' ? 'Owned' : state === 'buy' ? (price as string) : state === 'loading' ? 'Loading…' : 'Price unavailable', enabled: state === 'buy' });
+    rows.push({
+      id,
+      ...PRODUCTS[id],
+      price,
+      state,
+      label: state === 'owned' ? 'Owned' : state === 'buy' ? (price as string) : state === 'loading' ? 'Loading…' : 'Price unavailable',
+      enabled: state === 'buy',
+    });
   }
   return rows;
 }

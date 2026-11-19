@@ -1,8 +1,9 @@
 import { HOME_SCENES } from '../../content/scenes/home';
-import { NONNA_TAKEOVER, TUNING } from '../../content/tuning';
+import { TUNING } from '../../content/tuning';
 import { goalAmount, money, pizzasLeft, rate } from '../format';
 import * as G from '../game';
 
+import { NONNA_TAKEOVER } from '../../content/cities/home/fit';
 const rich = (s: G.GameState): G.GameState => ({ ...s, cash: 1e15 });
 
 describe('formatting (playtest bug 6)', () => {
@@ -74,17 +75,21 @@ describe('frugal path (playtest UX)', () => {
     expect(G.buildShop(s, 'suburbs').ok).toBe(false);
     const seen = { ...s, seenScenes: ['downtown-4'] };
     expect(G.buildLock(seen, 'suburbs')).toBeNull();
-    expect(G.nonnaPizzasLeft({ ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, sold: NONNA_TAKEOVER.pizzas - 30 } } })).toBe(30);
+    expect(G.founderPizzasLeft({ ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, sold: NONNA_TAKEOVER.pizzas - 30 } } })).toBe(30);
   });
   it("the tuning constant matches downtown-4's trigger", () => {
-    expect(HOME_SCENES.find((x) => x.id === NONNA_TAKEOVER.sceneId)?.trigger).toMatchObject({ kind: 'deliveries', neighborhood: 'downtown', count: NONNA_TAKEOVER.pizzas });
+    expect(HOME_SCENES.find((x) => x.id === NONNA_TAKEOVER.sceneId)?.trigger).toMatchObject({
+      kind: 'deliveries',
+      neighborhood: 'downtown',
+      count: NONNA_TAKEOVER.pizzas,
+    });
   });
   it('a save already past the trigger counts as done (no soft-lock)', () => {
     const s = rich(G.newGame(0));
     const past = { ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, sold: NONNA_TAKEOVER.pizzas + 3000 } } };
-    expect(G.nonnaPizzasLeft(past)).toBe(0);
+    expect(G.founderPizzasLeft(past)).toBe(0);
     expect(G.pendingScenes(past, HOME_SCENES).map((x) => x.id)).toContain('downtown-4');
-    expect(G.nonnaPizzasLeft({ ...past, seenScenes: ['downtown-4'] })).toBe(0);
+    expect(G.founderPizzasLeft({ ...past, seenScenes: ['downtown-4'] })).toBe(0);
   });
 });
 

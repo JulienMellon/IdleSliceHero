@@ -19,4 +19,9 @@ const subscribe = (fn: () => void) => {
 export const openReport = () => set(true);
 export const closeReport = () => set(false);
 export const reportIsOpen = () => open;
-export const useReportOpen = (): boolean => useSyncExternalStore(subscribe, () => open, () => false);
+export const useReportOpen = (): boolean =>
+  useSyncExternalStore(
+    subscribe,
+    () => open,
+    () => false,
+  );

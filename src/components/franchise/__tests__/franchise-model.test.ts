@@ -62,7 +62,7 @@ describe('in Boston', () => {
     expect(cityRows(newGame(NOW)).length).toBe(1);
     expect(starsSummary(newGame(NOW))).toBeNull();
   });
-  it('counts a city\'s own seen scenes in its Scrapbook header', () => {
+  it("counts a city's own seen scenes in its Scrapbook header", () => {
     expect(seenCount(['downtown-1', 'north-end-1'], HOME_CITY.scenes)).toBe(`Stories 1/${HOME_CITY.scenes.length}`);
   });
 });

@@ -4,7 +4,7 @@
 // gives the master plaque. Pure rules: the state is only what has been paid, the stars themselves are read off the shops.
 import { MASTERY, MASTERY_STARS, type MasteryStar } from '../../content/endgame';
 import { WEEKLY_COSMETICS } from '../../content/rewards';
-import { HEAD_KINDS, NEIGHBORHOODS } from '../../content/tuning';
+import { HEAD_KINDS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { allHeadsHired, type GameState, type Shop } from '../game';
 import { grantCosmetic } from '../rewards';
@@ -37,7 +37,7 @@ export interface MasteryState {
 export const KEY = 'mastery';
 
 const MILESTONES: readonly number[] = [...MASTERY.cosmeticTotals, MASTERY.masterTotal];
-/** The top footprint and oven grade of a city (C143: its own fit; the home city's when a caller has no game to name one). */
+/** The top footprint and oven grade of a city (C143: its own fit). */
 const topFootprint = (city: CityDef): number => city.fit.footprints.length - 1;
 const topGrade = (city: CityDef): number => city.fit.ovenGrades.length - 1;
 
@@ -56,8 +56,8 @@ export function masteryTotal(g: GameState): number {
   return hoodIds(cityOf(g)).reduce((t, id) => t + shopStars(g.shops[id], cityOf(g)), 0);
 }
 
-// from the tuning list, not HOME_HOOD_IDS: game.ts loads this file while it is still being evaluated
-export const MASTERY_MAX = NEIGHBORHOODS.length * MASTERY_STARS.length;
+/** The most stars the city holds: three a shop. */
+export const masteryMax = (g: Pick<GameState, 'city'>): number => hoodIds(cityOf(g)).length * MASTERY_STARS.length;
 
 /** How far a star is: `have` of `need` steps (heads hired, footprint tier, oven grade), for "2 of 3 heads". */
 function starProgress(shop: Shop, star: MasteryStar, city: CityDef): { have: number; need: number } {
@@ -100,7 +100,8 @@ export function nextStar(g: GameState): NextStar | null {
 
 const empty = (): MasteryState => ({ announced: [], granted: [], fresh: [], synced: false, summary: null });
 
-const strings = (v: unknown, max: number): string[] => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= 60))].slice(0, max) : []);
+const strings = (v: unknown, max: number): string[] =>
+  Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= 60))].slice(0, max) : [];
 
 const read = (g: GameState): MasteryState => (g.x?.[KEY] as MasteryState | undefined) ?? empty();
 const write = (g: GameState, s: MasteryState): GameState => ({ ...g, x: { ...g.x, [KEY]: s } });
@@ -196,7 +197,10 @@ export const mastery: Feature<MasteryState> = {
       // news is a moment, not a record: it isn't kept across a reload
       fresh: [],
       synced: r.synced === true,
-      summary: sum && typeof sum.stars === 'number' && typeof sum.diamonds === 'number' ? { stars: Math.max(0, sum.stars), diamonds: Math.max(0, sum.diamonds), cosmetics: strings(sum.cosmetics, 8) } : null,
+      summary:
+        sum && typeof sum.stars === 'number' && typeof sum.diamonds === 'number'
+          ? { stars: Math.max(0, sum.stars), diamonds: Math.max(0, sum.diamonds), cosmetics: strings(sum.cosmetics, 8) }
+          : null,
     };
   },
   tick: (g) => settle(g),

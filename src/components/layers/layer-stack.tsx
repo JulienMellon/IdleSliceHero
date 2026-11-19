@@ -9,8 +9,8 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ORDER_VIEW } from '../../content/hooks';
 import { cityOf } from '../../content/cities';
 import { valuePerPizza, featureMults } from '../../engine/game';
-import { gameDayView } from '../../engine/features/layers/suburbs-gameday';
-import { boatsView } from '../../engine/features/layers/waterfront-boats';
+import { gameDayView } from '../../engine/features/layers/game-day';
+import { boatsView } from '../../engine/features/layers/boats';
 import { challengeWon, rivalView } from '../../engine/features/layers/rival';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
@@ -21,12 +21,12 @@ import { eventBannerView, eventViewNow } from '../endgame/event-model';
 import { STACK } from '../endgame/stack-model';
 import { haptic } from '../game-ui';
 import { chipPhase } from '../order-model';
-import { Portrait } from '../portrait';
+import { Portrait } from '../portrait/index';
 import { emitCheer, emitCoin, emitGameDay, emitPayout } from '../pulse-bus';
 import { TAP } from '../tap-targets';
 import { layerTop, pct5, ROWS } from './layer-model';
-import { gameDayBanner, gameDayPopText } from './suburbs/gameday-model';
-import { auctionStatus, boatBanner, raiseNotice } from './waterfront/boats-model';
+import { gameDayBanner, gameDayPopText } from './game-day/gameday-model';
+import { auctionStatus, boatBanner, raiseNotice } from './boats/boats-model';
 import { RESULT_MS, rivalCard, rivalLite, type RivalCardModel } from './rival/rival-model';
 import { hoodOf } from './city-layers';
 import { lc } from './layer-text';
@@ -92,9 +92,12 @@ function useTransientNotice(): Notice | null {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `show` only sets state
   }, [price, live]);
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
   return notice;
 }
 
@@ -176,19 +179,34 @@ const RivalCard = memo(function RivalCard() {
   if (m.face === 'running') {
     return (
       <View testID="rival-chip" style={styles.card}>
-        <Pressable testID="rival-active" accessibilityRole="button" accessibilityLabel={`${m.title}: ${m.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); useGame.getState().setActive(hood); }}>
+        <Pressable
+          testID="rival-active"
+          accessibilityRole="button"
+          accessibilityLabel={`${m.title}: ${m.progress}. Show the shop`}
+          style={styles.row}
+          onPress={() => {
+            haptic();
+            useGame.getState().setActive(hood);
+          }}
+        >
           <Portrait id={m.who} mood="angry" size={34} />
           <View style={styles.mid}>
             <Text testID="rival-progress" style={styles.progress} numberOfLines={1}>
               {m.progress}
-              {m.behind ? <Text testID="rival-rush" style={styles.rush}>{'  tap to rush!'}</Text> : null}
+              {m.behind ? (
+                <Text testID="rival-rush" style={styles.rush}>
+                  {'  tap to rush!'}
+                </Text>
+              ) : null}
             </Text>
             <View style={styles.track}>
               <View style={[styles.fill, { width: `${pct5(m.fillStep)}%` }]} />
             </View>
           </View>
           <View style={styles.right}>
-            <Text testID="rival-clock" style={[styles.clock, m.urgent && styles.clockUrgent]}>{m.clock}</Text>
+            <Text testID="rival-clock" style={[styles.clock, m.urgent && styles.clockUrgent]}>
+              {m.clock}
+            </Text>
           </View>
         </Pressable>
         <View testID="rival-drain" pointerEvents="none" style={[styles.drain, { width: `${pct5(m.drainStep)}%` }]} />
@@ -213,19 +231,21 @@ const RivalCard = memo(function RivalCard() {
 
 export const LayerStack = memo(function LayerStack() {
   const bannerOpen = useBannerOpen();
-  const top = useGame((s) => layerTop({
-    orderUp: chipPhase(s.game) !== 'none',
-    eventUp: !!eventBannerView(eventViewNow(gameNow(), s.game)),
-    attack: attackLite(s.game).face,
-    collapsed: !bannerOpen,
-  }));
+  const top = useGame((s) =>
+    layerTop({
+      orderUp: chipPhase(s.game) !== 'none',
+      eventUp: !!eventBannerView(eventViewNow(gameNow(), s.game)),
+      attack: attackLite(s.game).face,
+      collapsed: !bannerOpen,
+    }),
+  );
   const base = useGame((s) => {
     const g = s.game;
     return gameDayBanner(gameDayView(g, gameNow()), g.city) || boatBanner(boatsView(g, gameNow()), g.city);
   });
   const transient = useTransientNotice();
   // D505: the notice waits while a recipe card is up (its title would be covered)
-  const text = useRevealUp() ? '' : transient?.text ?? base;
+  const text = useRevealUp() ? '' : (transient?.text ?? base);
   useHold('notice', !!text);
   return (
     <View testID="layer-stack" pointerEvents="box-none" style={[styles.stack, { top }]}>
@@ -237,10 +257,33 @@ export const LayerStack = memo(function LayerStack() {
 
 const styles = StyleSheet.create({
   stack: { position: 'absolute', left: ORDER_VIEW.side, right: ORDER_VIEW.side, gap: STACK.gap },
-  notice: { height: ROWS.notice, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderRadius: 15, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.cheeseDark, boxShadow: '0 2px 0 rgba(59,31,20,0.25)' } as object,
+  notice: {
+    height: ROWS.notice,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    borderRadius: 15,
+    backgroundColor: C.cheese,
+    borderWidth: 2,
+    borderColor: C.cheeseDark,
+    boxShadow: '0 2px 0 rgba(59,31,20,0.25)',
+  } as object,
   noticeGood: { backgroundColor: '#CDEFC9', borderColor: C.basilDark },
   noticeText: { fontFamily: F.bold, fontSize: 13, color: C.ink },
-  card: { minHeight: ROWS.rival, maxHeight: 64, backgroundColor: '#FFF4DC', borderWidth: 2, borderColor: '#5A2E1A', borderRadius: 16, paddingLeft: 8, paddingRight: 4, justifyContent: 'center', overflow: 'hidden', boxShadow: '0 3px 0 rgba(59,31,20,0.25)' } as object,
+  card: {
+    minHeight: ROWS.rival,
+    maxHeight: 64,
+    backgroundColor: '#FFF4DC',
+    borderWidth: 2,
+    borderColor: '#5A2E1A',
+    borderRadius: 16,
+    paddingLeft: 8,
+    paddingRight: 4,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    boxShadow: '0 3px 0 rgba(59,31,20,0.25)',
+  } as object,
   cardWon: { backgroundColor: '#FFD04A', borderColor: C.cheeseDark },
   cardLost: { backgroundColor: '#EFE6D8', borderColor: C.inkSoft },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: TAP.min },

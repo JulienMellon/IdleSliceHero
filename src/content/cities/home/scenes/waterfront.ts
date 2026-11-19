@@ -38,9 +38,7 @@ export const WATERFRONT_SCENES: Scene[] = [
       {
         backdrop: 'waterfront',
         cast: [{ id: 'marisol', mood: 'neutral' }],
-        lines: [
-          { speaker: 'Captain Marisol', text: "Just keep the anchovies off mine. I've met enough fish for one lifetime." },
-        ],
+        lines: [{ speaker: 'Captain Marisol', text: "Just keep the anchovies off mine. I've met enough fish for one lifetime." }],
       },
     ],
   },
@@ -57,9 +55,7 @@ export const WATERFRONT_SCENES: Scene[] = [
         backdrop: 'waterfront',
         cast: [{ id: 'marisol', mood: 'happy' }],
         caption: 'Friday nights, the whole dock eats together now.',
-        lines: [
-          { speaker: 'Captain Marisol', text: "Haven't seen this many folks on Pier 9 since the Great Lobster Escape of '88." },
-        ],
+        lines: [{ speaker: 'Captain Marisol', text: "Haven't seen this many folks on Pier 9 since the Great Lobster Escape of '88." }],
       },
       {
         backdrop: 'waterfront',
@@ -172,9 +168,7 @@ export const WATERFRONT_SCENES: Scene[] = [
         backdrop: 'waterfront',
         cast: [{ id: 'megaslice-rep', mood: 'neutral' }],
         caption: 'Pier 9. Todd measures it for the megastore. Name tag: ASSOCIATE.',
-        lines: [
-          { speaker: 'Todd', text: 'Forty stories... the pier is... eleven feet wide. That seems bad.' },
-        ],
+        lines: [{ speaker: 'Todd', text: 'Forty stories... the pier is... eleven feet wide. That seems bad.' }],
       },
       {
         backdrop: 'waterfront',
@@ -220,9 +214,7 @@ export const WATERFRONT_SCENES: Scene[] = [
         cue: 'rep',
         cast: [{ id: 'megaslice-rep', mood: 'surprised' }],
         caption: 'Auction day. The final bid comes in... from a pizza shop.',
-        lines: [
-          { speaker: 'Todd', text: "You outbid us? With PIZZA money? That's not in my slideshow!" },
-        ],
+        lines: [{ speaker: 'Todd', text: "You outbid us? With PIZZA money? That's not in my slideshow!" }],
       },
       {
         backdrop: 'waterfront',
@@ -237,16 +229,12 @@ export const WATERFRONT_SCENES: Scene[] = [
         backdrop: 'waterfront',
         cast: [{ id: 'marisol', mood: 'happy' }],
         caption: 'The new sign on Pier 9 has a slice of pizza painted on it.',
-        lines: [
-          { speaker: 'Captain Marisol', text: "Waterfront's yours, Captain. Even the anchovies are on your side now." },
-        ],
+        lines: [{ speaker: 'Captain Marisol', text: "Waterfront's yours, Captain. Even the anchovies are on your side now." }],
       },
       {
         backdrop: 'megaslice-hq',
         cast: [{ id: 'victor-crust', mood: 'angry' }],
-        lines: [
-          { speaker: 'Victor Crust', text: "Fine. Keep the dock. I'll buy their brains instead." },
-        ],
+        lines: [{ speaker: 'Victor Crust', text: "Fine. Keep the dock. I'll buy their brains instead." }],
       },
     ],
   },

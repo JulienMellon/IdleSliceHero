@@ -13,11 +13,11 @@ import { SERVICE } from '../../content/service';
 import type { NeighborhoodId } from '../../content/types';
 import { bonusUnlocked } from '../bonus';
 import type { Seen } from './types';
-import { counterRate, featureMults, ovenRate, prepRate, runsItself, stationMults, HOME_HOOD_IDS, demandRate, valuePerPizza, type GameState } from '../game';
+import { counterRate, featureMults, ovenRate, prepRate, runsItself, stationMults, demandRate, valuePerPizza, type GameState } from '../game';
 import type { BarkAsk } from './heads';
 import { FEATURES } from './registry';
 import type { Feature } from './types';
-import { cityOf, hoodIds } from '../../content/cities';
+import { cityOf, hoodIds, type CityDef } from '../../content/cities';
 
 export const KEY = 'service';
 
@@ -41,8 +41,12 @@ export interface ServiceStateSlice {
 }
 
 const zeroShop = (): ShopService => ({ below: 0, cold: false, tip: false, slam: { prep: 0, oven: 0, counter: 0 } });
-const fresh = (): ServiceStateSlice => ({ at: 0, shops: Object.fromEntries(HOME_HOOD_IDS.map((id) => [id, zeroShop()])) as Record<NeighborhoodId, ShopService> });
-const read = (g: GameState): ServiceStateSlice => (g.x?.[KEY] as ServiceStateSlice | undefined) ?? fresh();
+/** A zeroed slice with a row for each of `city`'s shops (none without a city: every reader takes a missing row as zero, and `tick` adds it). */
+const fresh = (city?: CityDef): ServiceStateSlice => ({
+  at: 0,
+  shops: Object.fromEntries((city ? (city.serviceRows ?? hoodIds(city)) : []).map((id) => [id, zeroShop()])) as Record<NeighborhoodId, ShopService>,
+});
+const read = (g: GameState): ServiceStateSlice => (g.x?.[KEY] as ServiceStateSlice | undefined) ?? fresh(cityOf(g));
 
 // ---------- the numbers ----------
 
@@ -64,10 +68,11 @@ function flowFrom(g: GameState, id: NeighborhoodId, seen: Seen): Flow {
   const shop = g.shops[id];
   const fx = { value: 1, demand: seen.demand, stations: seen.stations };
   const prep = prepRate(shop, fx);
-  const ovens = ovenRate(shop, fx);
+  const fit = cityOf(g).fit;
+  const ovens = ovenRate(shop, fit, fx);
   const counter = counterRate(shop, fx);
   const kitchen = Math.min(prep, ovens, counter);
-  const wanted = demandRate(shop, g.vehicle, fx);
+  const wanted = demandRate(shop, g.vehicle, fit, fx);
   return { prep, ovens, counter, kitchen, wanted, sold: Math.min(wanted, kitchen) };
 }
 
@@ -188,7 +193,14 @@ export function reportView(g: GameState, id: NeighborhoodId, now: number): Repor
   const counting = service < SERVICE.coldBelow - 1e-9 && !st.cold && stampFresh(read(g), now);
   return {
     state,
-    perMin: { prep: flow.prep * 60, ovens: flow.ovens * 60, counter: flow.counter * 60, kitchen: flow.kitchen * 60, wanted: flow.wanted * 60, sold: flow.sold * 60 },
+    perMin: {
+      prep: flow.prep * 60,
+      ovens: flow.ovens * 60,
+      counter: flow.counter * 60,
+      kitchen: flow.kitchen * 60,
+      wanted: flow.wanted * 60,
+      sold: flow.sold * 60,
+    },
     loads,
     lamps,
     floorRatio,
@@ -226,18 +238,26 @@ export function slammedAsks(g: GameState, id: NeighborhoodId): BarkAsk[] {
   if (shop.managed || !reportActive(g, id)) return [];
   const slam = read(g).shops[id]?.slam;
   if (!slam) return [];
-  return (['prep', 'oven', 'counter'] as const).filter((st) => shop.heads[st] && slam[st] >= SERVICE.slammedBarkSeconds).map((station) => ({ trigger: 'slammed' as const, station }));
+  return (['prep', 'oven', 'counter'] as const)
+    .filter((st) => shop.heads[st] && slam[st] >= SERVICE.slammedBarkSeconds)
+    .map((station) => ({ trigger: 'slammed' as const, station }));
 }
 
 // ---------- the feature ----------
 
-const sameShop = (a: ShopService, b: ShopService) => a.below === b.below && a.cold === b.cold && a.tip === b.tip && a.slam.prep === b.slam.prep && a.slam.oven === b.slam.oven && a.slam.counter === b.slam.counter;
+const sameShop = (a: ShopService, b: ShopService) =>
+  a.below === b.below &&
+  a.cold === b.cold &&
+  a.tip === b.tip &&
+  a.slam.prep === b.slam.prep &&
+  a.slam.oven === b.slam.oven &&
+  a.slam.counter === b.slam.counter;
 
 export const service: Feature<ServiceStateSlice> = {
   key: KEY,
-  init: () => fresh(),
+  init: (_now, city) => fresh(city),
   // never carried over: a saved timer or cold flag is stale by the time it loads (away time: no penalty, and the timers start again)
-  migrate: () => fresh(),
+  migrate: (_raw, _now, city) => fresh(city),
   tick(g, dt, now) {
     const st = read(g);
     const stale = !stampFresh(st, now);
@@ -256,7 +276,12 @@ export const service: Feature<ServiceStateSlice> = {
           const below = under ? Math.min(SERVICE.coldSeconds, cur.below + dt) : 0;
           const cold = cur.cold ? under : below >= SERVICE.coldSeconds;
           const slam = (v: number, rate: number) => (loadOf(f, rate) >= SERVICE.slammedAt - 1e-9 ? Math.min(SERVICE.slammedBarkSeconds, v + dt) : 0);
-          next = { below, cold, tip, slam: { prep: slam(cur.slam.prep, f.prep), oven: slam(cur.slam.oven, f.ovens), counter: slam(cur.slam.counter, f.counter) } };
+          next = {
+            below,
+            cold,
+            tip,
+            slam: { prep: slam(cur.slam.prep, f.prep), oven: slam(cur.slam.oven, f.ovens), counter: slam(cur.slam.counter, f.counter) },
+          };
           if (next.tip && !cur.tip) emitPulse({ type: 'service-up', shopId: id });
           if (next.cold && !cur.cold) emitPulse({ type: 'service-down', shopId: id });
         }
@@ -272,7 +297,7 @@ export const service: Feature<ServiceStateSlice> = {
   },
   // coming back: no tip, no penalty, and the timers start again (the stamp is old, so the hooks already give nothing)
   onOffline(g) {
-    return { ...g, x: { ...g.x, [KEY]: fresh() } };
+    return { ...g, x: { ...g.x, [KEY]: fresh(cityOf(g)) } };
   },
   // the caches of "+$X/s" readouts refresh when the app first ticks (the tip needs a fresh stamp) and when the cold flag moves (the tip follows the levels, which are in the key already)
   shopKey: (g, id) => `${read(g).at > 0 ? 'f' : ''}${read(g).shops[id]?.cold ? 'c' : ''}`,

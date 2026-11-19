@@ -2,7 +2,14 @@
 import { skyBehindReveal } from '../stack-model';
 import { emitReveal, getRevealUp, onReveal, revealWidth, setRevealUp, type RecipeNews } from '../reveal-bus';
 
-const item: RecipeNews = { key: 'recipe:recipe.suburbs.4', kind: 'recipe', text: 'Home Field Deep Dish', sub: 'Nobody beats the Mudhens at home. Not anymore.', hood: 'suburbs', n: 4 };
+const item: RecipeNews = {
+  key: 'recipe:recipe.suburbs.4',
+  kind: 'recipe',
+  text: 'Home Field Deep Dish',
+  sub: 'Nobody beats the Mudhens at home. Not anymore.',
+  hood: 'suburbs',
+  n: 4,
+};
 
 describe('D469: the recipe reveal', () => {
   test('nothing listening: the toast column shows the card instead', () => {

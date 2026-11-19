@@ -10,7 +10,8 @@ import type { GameState, StationMults } from '../game';
 export interface Feature<S> {
   /** State lives at GameState.x[key]. */
   key: string;
-  init(now: number): S;
+  /** The state of a new game in `city` (the one `newGame` makes); `city` is absent only for a caller with no game to name one. */
+  init(now: number, city?: CityDef): S;
   /** Load a saved value; must accept undefined (saves from before the feature). */
   migrate(raw: unknown, now: number, city?: CityDef): S;
   /** Runs after the ordinary one-second tick body, in registry order. `dtPlay` is foreground seconds. */
@@ -37,4 +38,5 @@ export interface Seen {
 }
 
 /** The neighbourhood ids a saved slice may name: the save's own city's (`migrate`'s third argument), or, called without one, every city's (ids are unique across cities). */
-export const savedHoods = (city?: CityDef): readonly NeighborhoodId[] => (city ? hoodIds(city) : [...new Set(Object.values(CITIES).flatMap((c) => hoodIds(c)))]);
+export const savedHoods = (city?: CityDef): readonly NeighborhoodId[] =>
+  city ? hoodIds(city) : [...new Set(Object.values(CITIES).flatMap((c) => hoodIds(c)))];

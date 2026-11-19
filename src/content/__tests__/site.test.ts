@@ -10,7 +10,11 @@ const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 const privacy = read('site/privacy/index.html');
 const support = read('site/support/index.html');
 const index = read('site/index.html');
-const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/g, ' ').replace(/\s+/g, ' ');
+const text = (html: string) =>
+  html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&[a-z]+;/g, ' ')
+    .replace(/\s+/g, ' ');
 
 describe('links', () => {
   it('are the pages site/ publishes', () => {

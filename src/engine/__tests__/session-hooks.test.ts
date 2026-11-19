@@ -54,7 +54,13 @@ describe('saves from before v5.13', () => {
   test('garbage in the new fields is dropped', () => {
     const s = JSON.parse(JSON.stringify(G.newGame(T0)));
     s.bonus = { seed: 'x', spawned: -3, next: 'soon', until: 1e12 };
-    s.order = { seed: null, made: 'many', nextAt: -5, offer: { hood: 'atlantis', target: 10, left: 30 }, active: { hood: 'suburbs', target: 40, startSold: 9e9, left: 90 } };
+    s.order = {
+      seed: null,
+      made: 'many',
+      nextAt: -5,
+      offer: { hood: 'atlantis', target: 10, left: 30 },
+      active: { hood: 'suburbs', target: 40, startSold: 9e9, left: 90 },
+    };
     const m = G.migrate(s, T0);
     expect(m.bonus.seed).toBeGreaterThanOrEqual(0);
     expect(m.bonus.spawned).toBe(0);
@@ -95,7 +101,11 @@ describe('the daily task "Tap 3 golden pizzas"', () => {
 
   test('progress follows stats.bonusTaps, and it pays like every other daily task', () => {
     let s = G.newGame(T0);
-    s = { ...s, seenScenes: ['downtown-4'], shops: { ...s.shops, downtown: { ...s.shops.downtown, managed: true, heads: G.allHeads(), prep: 10, ovens: 10, counter: 10, drivers: 8, tables: 6 } } };
+    s = {
+      ...s,
+      seenScenes: ['downtown-4'],
+      shops: { ...s.shops, downtown: { ...s.shops.downtown, managed: true, heads: G.allHeads(), prep: 10, ovens: 10, counter: 10, drivers: 8, tables: 6 } },
+    };
     s = R.refreshRewards(s, T0);
     const task = { kind: 'bonusTaps' as const, target: 3, base: s.stats.bonusTaps, claimed: false };
     s = { ...s, rewards: { ...s.rewards, daily: [task, ...s.rewards.daily.slice(1)] } };

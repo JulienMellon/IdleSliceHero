@@ -2,11 +2,23 @@
 // v5.16 (T1b): each neighbourhood's shop interior. The five other shops have a palette, a window and one signature object of their own;
 // none hangs in the caption zone, runs off the panel edge or comes within 8 pt of a figure's head.
 import { HOME_SCENES } from '../../content/scenes/home';
-import { NEIGHBORHOODS } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
-import { BULB_INSET_PT, CAPTION_GAP_PT, CAPTION_ZONE_PT, SHOP_LOOKS, SHOP_OBJECT, SHOP_WINDOW, SIGN_INSET_PT, UNI_LIGHTS, backdropView, boxOf, shopLookFor } from '../cutscene/backdrop-art';
+import {
+  BULB_INSET_PT,
+  CAPTION_GAP_PT,
+  CAPTION_ZONE_PT,
+  SHOP_LOOKS,
+  SHOP_OBJECT,
+  SHOP_WINDOW,
+  SIGN_INSET_PT,
+  UNI_LIGHTS,
+  backdropView,
+  boxOf,
+  shopLookFor,
+} from '../cutscene/backdrop-art';
 import { FACE_BOX, LIMB_CLEARANCE, boxInPanel, panelSize, stageLayout } from '../cutscene/staging';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const WINDOWS: [number, number, number][] = [
   [320, 568, 20],
   [375, 812, 47],
@@ -33,7 +45,7 @@ describe('shop interiors per neighbourhood', () => {
     expect(new Set(OTHERS.map((h) => SHOP_LOOKS[h].floor)).size).toBe(OTHERS.length);
   });
 
-  test('a panel with no neighbourhood draws Downtown\'s room, as before', () => {
+  test("a panel with no neighbourhood draws Downtown's room, as before", () => {
     expect(shopLookFor(undefined)).toBe(SHOP_LOOKS.downtown);
   });
 
@@ -41,7 +53,10 @@ describe('shop interiors per neighbourhood', () => {
     for (const [w, h, top] of WINDOWS) {
       const { innerW, innerH } = panelSize(w, h, top);
       const v = backdropView(innerW, innerH);
-      for (const [name, b] of [['object', SHOP_OBJECT], ['window', boxOf(SHOP_WINDOW)]] as const) {
+      for (const [name, b] of [
+        ['object', SHOP_OBJECT],
+        ['window', boxOf(SHOP_WINDOW)],
+      ] as const) {
         expect([w, name, b.y0 >= v.y0 + CAPTION_ZONE_PT / v.scale]).toEqual([w, name, true]);
         expect([w, name, b.x0 >= v.x0 + SIGN_INSET_PT / v.scale, b.x1 <= v.x1 - SIGN_INSET_PT / v.scale]).toEqual([w, name, true, true]);
       }
@@ -55,7 +70,10 @@ describe('shop interiors per neighbourhood', () => {
       for (const count of [1, 2] as const) {
         for (const p of stageLayout(count, innerW, innerH, 0)) {
           const face = boxInPanel(p, FACE_BOX, innerH);
-          for (const [name, b] of [['object', SHOP_OBJECT], ['window', boxOf(SHOP_WINDOW)]] as const) {
+          for (const [name, b] of [
+            ['object', SHOP_OBJECT],
+            ['window', boxOf(SHOP_WINDOW)],
+          ] as const) {
             expect([w, count, name, (b.y1 - v.y0) * v.scale + LIMB_CLEARANCE <= face.y0]).toEqual([w, count, name, true]);
           }
         }

@@ -17,7 +17,7 @@ import { skyOf } from './endgame/stack-model';
 import { haptic } from './game-ui';
 import { emitCheer, emitCoin, emitPayout } from './pulse-bus';
 import { chipPhase, chipView, RUSH_HINT } from './order-model';
-import { Portrait } from './portrait';
+import { Portrait } from './portrait/index';
 import { TAP } from './tap-targets';
 import { gameNow } from '../engine/clock';
 
@@ -88,7 +88,11 @@ export const OrderChip = memo(function OrderChip({ top, onShop }: { top: number;
       ) : (
         <View style={styles.mid}>
           <Text style={styles.name} numberOfLines={1}>
-            {view.phase === 'done' && <Text testID="order-reward-done" style={styles.doneReward}>{view.reward}</Text>}
+            {view.phase === 'done' && (
+              <Text testID="order-reward-done" style={styles.doneReward}>
+                {view.reward}
+              </Text>
+            )}
             {view.phase === 'done' ? ` · ${view.name}` : view.name}
           </Text>
           <Text testID={view.phase === 'offer' ? 'order-line' : `order-${view.phase}`} style={styles.line} numberOfLines={2} maxFontSizeMultiplier={1.2}>
@@ -103,7 +107,16 @@ export const OrderChip = memo(function OrderChip({ top, onShop }: { top: number;
       {/* D436: the flash sits behind the content (first child), so the portrait and the reward are never washed out */}
       {view.phase === 'done' && <Animated.View pointerEvents="none" style={[styles.glow, { opacity: flash }]} />}
       {view.phase === 'active' ? (
-        <Pressable testID="order-active" accessibilityRole="button" accessibilityLabel={`${view.name}’s order: ${view.progress}. Show the shop`} style={styles.row} onPress={() => { haptic(); onShop(view.hood); }}>
+        <Pressable
+          testID="order-active"
+          accessibilityRole="button"
+          accessibilityLabel={`${view.name}’s order: ${view.progress}. Show the shop`}
+          style={styles.row}
+          onPress={() => {
+            haptic();
+            onShop(view.hood);
+          }}
+        >
           {face}
         </Pressable>
       ) : (
@@ -112,14 +125,32 @@ export const OrderChip = memo(function OrderChip({ top, onShop }: { top: number;
       {view.phase === 'offer' && (
         <>
           <View style={styles.acceptCol}>
-            <Pressable testID="order-accept" accessibilityRole="button" accessibilityLabel={`Accept ${view.name}’s order`} style={({ pressed }) => [styles.accept, pressed && styles.pressed]} onPress={() => { haptic('success'); acceptOrder(); }}>
+            <Pressable
+              testID="order-accept"
+              accessibilityRole="button"
+              accessibilityLabel={`Accept ${view.name}’s order`}
+              style={({ pressed }) => [styles.accept, pressed && styles.pressed]}
+              onPress={() => {
+                haptic('success');
+                acceptOrder();
+              }}
+            >
               <Text style={styles.acceptText}>Accept</Text>
             </Pressable>
             <Text testID="order-offer-reward" style={styles.offerReward}>
               {view.reward}
             </Text>
           </View>
-          <Pressable testID="order-decline" accessibilityRole="button" accessibilityLabel="Decline" style={styles.decline} onPress={() => { haptic(); declineOrder(); }}>
+          <Pressable
+            testID="order-decline"
+            accessibilityRole="button"
+            accessibilityLabel="Decline"
+            style={styles.decline}
+            onPress={() => {
+              haptic();
+              declineOrder();
+            }}
+          >
             <Text style={styles.declineText}>✕</Text>
           </Pressable>
         </>
@@ -160,7 +191,17 @@ const styles = StyleSheet.create({
   clock: { fontFamily: F.bold, fontSize: 17, color: C.ink },
   clockUrgent: { color: C.tomato },
   reward: { fontFamily: F.bold, fontSize: 12, color: C.basilDark },
-  accept: { height: TAP.min, minWidth: 72, paddingHorizontal: 10, borderRadius: 12, backgroundColor: C.basil, borderBottomWidth: 4, borderBottomColor: C.basilDark, alignItems: 'center', justifyContent: 'center' },
+  accept: {
+    height: TAP.min,
+    minWidth: 72,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: C.basil,
+    borderBottomWidth: 4,
+    borderBottomColor: C.basilDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   acceptText: { fontFamily: F.bold, fontSize: 14, color: '#fff' },
   pressed: { transform: [{ translateY: 2 }] },
   // a small ✕ drawn inside a 44 pt target

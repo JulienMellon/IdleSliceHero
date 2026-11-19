@@ -1,22 +1,20 @@
 // Reads the layer copy table (layer-copy.ts, generated from docs/story/COPY-v5.16.md): a line by its key, with {placeholders} filled.
 // No string of the layer screens is written in a component: it is a key here, or one of the few labels in `LABELS` below (numbers' captions
 // the copy file has no row for: listed in the card report as a copy ask). Pure: unit-tested in node.
+import { dressed, fill, t, type CopyVars } from '../../content/copy';
 import type { NeighborhoodId } from '../../content/types';
-import { dressed } from './city-dress';
 import { LAYER_COPY, LAYER_SPEAKERS, type LayerCopyKey } from './layer-copy';
 
-export type CopyVars = Readonly<Record<string, string | number>>;
+export type { CopyVars };
 
-/** The line for `key`, each `{name}` replaced by `vars.name` (a placeholder with no value is left as written). */
-export function lc(key: LayerCopyKey, vars: CopyVars = {}): string {
-  return fillText(LAYER_COPY[key], vars);
-}
+/** The line for `key`, each `{name}` replaced by `vars.name` (a placeholder with no value is left as written). A thin wrapper over `t` (home). */
+export const lc = (key: LayerCopyKey, vars: CopyVars = {}): string => t(key, vars);
 
-/** A template with each `{name}` replaced by `vars.name` (a placeholder with no value is left as written). */
-export const fillText = (text: string, vars: CopyVars = {}): string => text.replace(/\{(\w+)\}/g, (whole, name: string) => (name in vars ? String(vars[name]) : whole));
+/** A template with each `{name}` replaced by `vars.name` (the one `fill`). */
+export const fillText = fill;
 
-/** `lc` in a city: the city's own line for the key when it dresses it (city-dress.ts), else the home line. */
-export const lcc = (city: string | undefined, key: LayerCopyKey, vars: CopyVars = {}): string => fillText(dressed(city, key, LAYER_COPY[key]), vars);
+/** `lc` in a city: the city's own line for the key when it dresses it (its pack's `copy`), else the home line. A thin wrapper over `t`. */
+export const lcc = (city: string | undefined, key: LayerCopyKey, vars: CopyVars = {}): string => t(key, vars, city);
 
 /** Who says the line, or null for a line with no speaker. */
 export const speakerOf = (key: string): string | null => LAYER_SPEAKERS[key] ?? null;
@@ -27,7 +25,7 @@ export const rivalKey = (hood: NeighborhoodId, kind: RivalLine): LayerCopyKey =>
 export const rivalLine = (hood: NeighborhoodId, kind: RivalLine, vars: CopyVars = {}, city?: string): string => {
   const key = rivalKey(hood, kind);
   // a neighbourhood the home table has no row for (another city's) says the city's own rival line
-  return key in LAYER_COPY ? lc(key, vars) : fillText(dressed(city, `rival.${kind}`, ''), vars);
+  return key in LAYER_COPY ? lc(key, vars) : fill(dressed(city, `rival.${kind}`, ''), vars);
 };
 /** Who speaks a rival line: Todd, Victor, or the shop's character. */
 export const rivalSpeaker = (hood: NeighborhoodId, kind: RivalLine): string | null => speakerOf(rivalKey(hood, kind));

@@ -1,15 +1,45 @@
 // Node built-ins without @types/node in the app's tsconfig (tests run under ts-jest's node types)
 declare const __dirname: string;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const fs: { readFileSync(p: string, e: string): string; existsSync(p: string): boolean; readdirSync(p: string): string[]; statSync(p: string): { size: number } } = require('fs');
+const fs: {
+  readFileSync(p: string, e: string): string;
+  existsSync(p: string): boolean;
+  readdirSync(p: string): string[];
+  statSync(p: string): { size: number };
+} = require('fs');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const path: { join(...p: string[]): string } = require('path');
 
 import { HOME_SCENES } from '../../content/scenes/home';
 import { CITIES, hoodIds } from '../../content/cities';
-import { NEIGHBORHOODS } from '../../content/tuning';
-import { SCENE_INDEX, audioHood, stingTiming, MAX_TONIC_WAIT_SECONDS, perkDuckSeconds, RarePlays, shouldReleaseWarmCollect, DUCK, stingDuck, beatUnit, collectSize, EXCLUSIVE_CUES, milestoneCrossed, musicFor, nextVariant, panelCue, PurchaseChain, purchaseSting, quantizeDelay, sharedTimeline, StingGate, stingUnit, VoiceLimiter, type StingKind } from '../logic';
+import {
+  SCENE_INDEX,
+  audioHood,
+  stingTiming,
+  MAX_TONIC_WAIT_SECONDS,
+  perkDuckSeconds,
+  RarePlays,
+  shouldReleaseWarmCollect,
+  DUCK,
+  stingDuck,
+  beatUnit,
+  collectSize,
+  EXCLUSIVE_CUES,
+  milestoneCrossed,
+  musicFor,
+  nextVariant,
+  panelCue,
+  PurchaseChain,
+  purchaseSting,
+  quantizeDelay,
+  sharedTimeline,
+  StingGate,
+  stingUnit,
+  VoiceLimiter,
+  type StingKind,
+} from '../logic';
 
+import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const ROOT = path.join(__dirname, '..', '..', '..');
 const MANIFEST = fs.readFileSync(path.join(__dirname, '..', 'manifest.ts'), 'utf8');
 
@@ -89,7 +119,7 @@ describe('stingers (AU14)', () => {
 });
 
 describe('rare one-shots and perks (AU76, AU77)', () => {
-  it('a claim\'s Collect survives the store update that follows it', () => {
+  it("a claim's Collect survives the store update that follows it", () => {
     // the claim played its own player (not warmed by the sweep) and it is still loading: playing is false
     expect(shouldReleaseWarmCollect({ warmed: false, firing: true, playing: false, offlineOpen: false })).toBe(false);
     // the popup's warmed player was fired by Collect: it is firing, so the sweep leaves it alone until it ends
@@ -132,7 +162,8 @@ describe('stinger ducking (AU73)', () => {
     const db = (g: number) => 20 * Math.log10(g);
     for (const k of ['milestone_big', 'manager', 'build'] as StingKind[]) expect(db(stingDuck(k))).toBeCloseTo(-9, 6);
     expect(db(stingDuck('bottleneck'))).toBeCloseTo(-3, 6);
-    for (const k of ['milestone', 'upgrade', 'fleet', 'drone', 'perk', 'offline', 'welcome', 'warmth'] as StingKind[]) expect(db(stingDuck(k))).toBeCloseTo(-6, 6);
+    for (const k of ['milestone', 'upgrade', 'fleet', 'drone', 'perk', 'offline', 'welcome', 'warmth'] as StingKind[])
+      expect(db(stingDuck(k))).toBeCloseTo(-6, 6);
     expect(DUCK.big).toBeLessThan(DUCK.stinger);
   });
 });
@@ -188,7 +219,13 @@ describe('music and story cues (AU12, AU13, AU20)', () => {
       if (s.beat === 3) expect(cues).toContain('megaslice');
       if (s.beat === 4) expect(cues.some((c) => EXCLUSIVE_CUES.has(c))).toBe(true);
     }
-    const reveal = (id: string) => HOME_SCENES.find((s) => s.id === id)!.panels.map((_, i, a) => panelCue(HOME_SCENES.find((s) => s.id === id)!, i));
+    const reveal = (id: string) =>
+      HOME_SCENES.find((s) => s.id === id)!.panels.map((_, i, a) =>
+        panelCue(
+          HOME_SCENES.find((s) => s.id === id)!,
+          i,
+        ),
+      );
     expect(reveal('downtown-4')).toContain('recipe');
     // downtown-1 saves its welcome for Nonna's smile on the last panel (AU30)
     expect(reveal('downtown-1')).toEqual(['none', 'none', 'none', 'none', 'welcome']);
@@ -303,13 +340,36 @@ describe('generated manifest', () => {
     for (const f of files) expect(fs.existsSync(path.join(__dirname, '..', f))).toBe(true);
   });
   it('has every loop, every stinger in every key, and every story cue the director uses', () => {
-    const kinds: StingKind[] = ['bottleneck', 'milestone', 'milestone_big', 'manager', 'upgrade', 'fleet', 'drone', 'welcome', 'warmth', 'build', 'perk', 'offline'];
+    const kinds: StingKind[] = [
+      'bottleneck',
+      'milestone',
+      'milestone_big',
+      'manager',
+      'upgrade',
+      'fleet',
+      'drone',
+      'welcome',
+      'warmth',
+      'build',
+      'perk',
+      'offline',
+    ];
     for (const n of NEIGHBORHOODS) {
       expect(MANIFEST).toMatch(new RegExp(`\\n  ${n.id}: \\{ src: require\\('../../assets/audio/music/`));
       expect(MANIFEST).toContain(`triumph_${n.id}:`);
       for (const k of kinds) expect(MANIFEST).toContain(`${n.id}_${k}: { src:`);
     }
-    for (const id of ['downtown_sparse', 'megaslice_hq', 'megaslice_rep', 'megaslice_rep_dock', 'victor_exit', 'recipe', 'reunion', 'city_theme', 'waterfront_bid']) {
+    for (const id of [
+      'downtown_sparse',
+      'megaslice_hq',
+      'megaslice_rep',
+      'megaslice_rep_dock',
+      'victor_exit',
+      'recipe',
+      'reunion',
+      'city_theme',
+      'waterfront_bid',
+    ]) {
       expect(MANIFEST).toContain(`${id}: { src:`);
     }
   });
@@ -320,7 +380,8 @@ describe('generated manifest', () => {
     }
   });
   it('keeps the audio inside its memory budget (AU23)', () => {
-    const size = (dir: string) => fs.readdirSync(path.join(ROOT, 'assets', 'audio', dir)).reduce((a, f) => a + fs.statSync(path.join(ROOT, 'assets', 'audio', dir, f)).size, 0);
+    const size = (dir: string) =>
+      fs.readdirSync(path.join(ROOT, 'assets', 'audio', dir)).reduce((a, f) => a + fs.statSync(path.join(ROOT, 'assets', 'audio', dir, f)).size, 0);
     expect(size('sfx')).toBeLessThan(1.5 * 1024 * 1024);
     expect(size('music') + size('sting') + size('story') + size('sfx')).toBeLessThan(14 * 1024 * 1024);
   });

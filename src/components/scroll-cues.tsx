@@ -32,9 +32,17 @@ const Cue = memo(function Cue({ side, kind, word, label, scrollTo, top, onGo }: 
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={() => onGo(scrollTo)}
-      style={[styles.cue, side === 'left' ? styles.left : styles.right, { top, backgroundColor: tone.bg }]}>
+      style={[styles.cue, side === 'left' ? styles.left : styles.right, { top, backgroundColor: tone.bg }]}
+    >
       <Svg width={14} height={16} viewBox="0 0 14 16">
-        <Path d={side === 'left' ? 'M10 2 L4 8 L10 14' : 'M4 2 L10 8 L4 14'} stroke={tone.ink} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <Path
+          d={side === 'left' ? 'M10 2 L4 8 L10 14' : 'M4 2 L10 8 L4 14'}
+          stroke={tone.ink}
+          strokeWidth={3}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+        />
       </Svg>
       <Text style={[styles.word, { color: tone.ink }]} numberOfLines={1} maxFontSizeMultiplier={1.1}>
         {word}
@@ -64,13 +72,24 @@ export const ScrollCues = memo(function ScrollCues(p: ScrollCuesProps) {
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       {p.leftKind ? <Cue side="left" kind={p.leftKind} word={p.leftWord} label={p.leftLabel} scrollTo={p.leftScroll} top={p.leftTop} onGo={p.onGo} /> : null}
-      {p.rightKind ? <Cue side="right" kind={p.rightKind} word={p.rightWord} label={p.rightLabel} scrollTo={p.rightScroll} top={p.rightTop} onGo={p.onGo} /> : null}
+      {p.rightKind ? (
+        <Cue side="right" kind={p.rightKind} word={p.rightWord} label={p.rightLabel} scrollTo={p.rightScroll} top={p.rightTop} onGo={p.onGo} />
+      ) : null}
     </View>
   );
 });
 
 const styles = StyleSheet.create({
-  cue: { position: 'absolute', width: CUE_W, height: CUE_H, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#3B1F14', opacity: 0.94 },
+  cue: {
+    position: 'absolute',
+    width: CUE_W,
+    height: CUE_H,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#3B1F14',
+    opacity: 0.94,
+  },
   left: { left: 0, borderLeftWidth: 0, borderTopRightRadius: 22, borderBottomRightRadius: 22 },
   right: { right: 0, borderRightWidth: 0, borderTopLeftRadius: 22, borderBottomLeftRadius: 22 },
   word: { fontFamily: F.bold, fontSize: 10, lineHeight: 12 },

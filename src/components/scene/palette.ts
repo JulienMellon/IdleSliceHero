@@ -35,8 +35,18 @@ export function seatPalette(shirtBase: number, hairBase: number, nShirts: number
     hair,
     companionShirt,
     companionHair,
-    walkShirt: (i, lap) => pickAvoid(shirtBase + i * 3 + lap * 5, nShirts, near(i).flatMap((j) => [shirt(j), companionShirt(j)])),
-    walkHair: (i, lap) => pickAvoid(hairBase + i * 2 + lap * 5, nHair, near(i).flatMap((j) => [hair(j), companionHair(j)])),
+    walkShirt: (i, lap) =>
+      pickAvoid(
+        shirtBase + i * 3 + lap * 5,
+        nShirts,
+        near(i).flatMap((j) => [shirt(j), companionShirt(j)]),
+      ),
+    walkHair: (i, lap) =>
+      pickAvoid(
+        hairBase + i * 2 + lap * 5,
+        nHair,
+        near(i).flatMap((j) => [hair(j), companionHair(j)]),
+      ),
   };
 }
 

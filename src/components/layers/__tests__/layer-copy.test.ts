@@ -15,7 +15,11 @@ function rows(): string[][] {
     if (n !== '1' && n !== '2') continue;
     for (const line of body) {
       if (!line.startsWith('| `')) continue;
-      const cells = line.trim().replace(/^\||\|$/g, '').split(' | ').map((c) => c.trim());
+      const cells = line
+        .trim()
+        .replace(/^\||\|$/g, '')
+        .split(' | ')
+        .map((c) => c.trim());
       const key = cells[0].replace(/`/g, '');
       if (n === '1' && !/^(layer\.(suburbs|waterfront)|upgrade\.waterfront)/.test(key)) continue;
       if (cells.length === 3) out.push([key, cells[1], cells[2]]);

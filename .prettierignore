@@ -1,0 +1,12 @@
+node_modules
+dist
+.expo
+screenshots
+assets
+marketing
+site
+tools/audio/BANK
+package-lock.json
+docs/**
+*.md
+src/audio/manifest.ts

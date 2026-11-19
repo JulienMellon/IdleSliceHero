@@ -88,7 +88,14 @@ export const AdButton = memo(function AdButton({ placement, label, plusLabel, te
         accessibilityState={{ disabled: busy, busy }}
         disabled={busy}
         onPress={press}
-        style={({ pressed }) => [styles.btn, compact && styles.btnCompact, plus ? styles.btnPlus : styles.btnAd, busy && styles.busy, pressed && { transform: [{ translateY: 2 }] }]}>
+        style={({ pressed }) => [
+          styles.btn,
+          compact && styles.btnCompact,
+          plus ? styles.btnPlus : styles.btnAd,
+          busy && styles.busy,
+          pressed && { transform: [{ translateY: 2 }] },
+        ]}
+      >
         {plus ? <StarIcon size={20} /> : <FilmIcon size={20} />}
         <Text style={[styles.text, compact && styles.textCompact, plus && styles.textPlus]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.15}>
           {busy ? (compact ? '…' : 'One moment…') : text}
@@ -105,7 +112,16 @@ export const AdButton = memo(function AdButton({ placement, label, plusLabel, te
 
 const styles = StyleSheet.create({
   wrap: { alignSelf: 'stretch', gap: 4 },
-  btn: { minHeight: 44, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 14, borderBottomWidth: 4 },
+  btn: {
+    minHeight: 44,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    borderBottomWidth: 4,
+  },
   btnAd: { backgroundColor: C.cheese, borderBottomColor: C.cheeseDark },
   btnPlus: { backgroundColor: C.basil, borderBottomColor: C.basilDark },
   btnCompact: { gap: 4, paddingHorizontal: 6 },

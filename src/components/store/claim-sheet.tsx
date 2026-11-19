@@ -44,7 +44,16 @@ export const ClaimSheet = memo(function ClaimSheet() {
           <Text style={styles.paid} testID="claim-paid" accessibilityLiveRegion="polite">
             {paid}
           </Text>
-          {!doubled && <AdButton placement="double_claim" label={doubleLabel({ cash, diamonds }, money)} plusLabel="Double it · Nonna’s Plus" testID="claim-double" onBenefit={double} onSkip={dismiss} />}
+          {!doubled && (
+            <AdButton
+              placement="double_claim"
+              label={doubleLabel({ cash, diamonds }, money)}
+              plusLabel="Double it · Nonna’s Plus"
+              testID="claim-double"
+              onBenefit={double}
+              onSkip={dismiss}
+            />
+          )}
           <Pressable testID="claim-done" accessibilityRole="button" accessibilityLabel={doubled ? 'Done' : 'No thanks'} onPress={dismiss} style={styles.done}>
             <Text style={styles.doneText}>{doubled ? 'Done' : 'No thanks'}</Text>
           </Pressable>
@@ -57,7 +66,17 @@ export const ClaimSheet = memo(function ClaimSheet() {
 const styles = StyleSheet.create({
   scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.45)' },
   wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingHorizontal: 12 },
-  card: { alignSelf: 'stretch', maxWidth: 420, backgroundColor: C.bg, borderRadius: 20, borderWidth: 3, borderColor: C.ink, padding: 14, gap: 8, alignItems: 'stretch' },
+  card: {
+    alignSelf: 'stretch',
+    maxWidth: 420,
+    backgroundColor: C.bg,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: C.ink,
+    padding: 14,
+    gap: 8,
+    alignItems: 'stretch',
+  },
   title: { fontFamily: F.bold, fontSize: 17, color: C.ink, textAlign: 'center' },
   paid: { fontFamily: F.bold, fontSize: 22, color: C.basilDark, textAlign: 'center' },
   done: { minHeight: 44, borderRadius: 14, borderWidth: 2, borderColor: C.ink, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },

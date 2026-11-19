@@ -13,7 +13,7 @@ import { GOAL_BAR, GOAL_FONT_MAX_SCALE, GOAL_GAP, GOAL_LAYOUT, GOAL_PAD, goalBar
 import { buyLabelText } from './a11y-labels';
 import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, SliceIcon, StarIcon } from './icons';
 import { countUpValue, offlineGiftView, type GiftSummary } from './offline-model';
-import { Portrait } from './portrait';
+import { Portrait } from './portrait/index';
 import { emitCoin, emitPayout, onPayout, setCoinTarget } from './pulse-bus';
 import { AdButton } from './store/ad-button';
 import { offlineOffer } from './store/ad-model';
@@ -72,7 +72,43 @@ const BURST = ['star', 'coin', 'slice', 'star', 'coin', 'slice'] as const;
  * the player is saving for (D326). `expand` is the amber Expand buy (D407). `compact` is the 44 pt sidewalk button: `icon` + `sub`
  * above the price, and `foot` (or the "need" line) under it.
  */
-export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon, tone = 'normal', saving = false, progress = 0, need = null, foot = null, noBurst = false, labelSize, subSize, footSize, name }: { /** What it buys, for a screen reader ("Prep"): the label alone is a price. */ name?: string; /** G102: font sizes from the fit arithmetic (endgame/fit-model.ts): the web build can't shrink text to fit, so a long price would clip. */ labelSize?: number; subSize?: number; footSize?: number; /** D454: no confetti over the label (the offline popup's Collect: a star cut its "C"). */ noBurst?: boolean; label: string; sub?: string; enabled: boolean; onPress: () => boolean | void; testID?: string; compact?: boolean; icon?: React.ReactNode; tone?: ButtonTone; saving?: boolean; progress?: number; need?: string | null; /** A line under the price that shows whether or not the button is affordable (compact only). */ foot?: string | null }) {
+export function BuyButton({
+  label,
+  sub,
+  enabled,
+  onPress,
+  testID,
+  compact,
+  icon,
+  tone = 'normal',
+  saving = false,
+  progress = 0,
+  need = null,
+  foot = null,
+  noBurst = false,
+  labelSize,
+  subSize,
+  footSize,
+  name,
+}: {
+  /** What it buys, for a screen reader ("Prep"): the label alone is a price. */ name?: string;
+  /** G102: font sizes from the fit arithmetic (endgame/fit-model.ts): the web build can't shrink text to fit, so a long price would clip. */ labelSize?: number;
+  subSize?: number;
+  footSize?: number;
+  /** D454: no confetti over the label (the offline popup's Collect: a star cut its "C"). */ noBurst?: boolean;
+  label: string;
+  sub?: string;
+  enabled: boolean;
+  onPress: () => boolean | void;
+  testID?: string;
+  compact?: boolean;
+  icon?: React.ReactNode;
+  tone?: ButtonTone;
+  saving?: boolean;
+  progress?: number;
+  need?: string | null;
+  /** A line under the price that shows whether or not the button is affordable (compact only). */ foot?: string | null;
+}) {
   const nogain = tone === 'nogain';
   const amber = tone === 'expand' && enabled;
   const footText = foot ?? (!enabled ? need : null);
@@ -109,13 +145,29 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
   };
   return (
     <Animated.View style={{ transform: [{ translateX: shake }] }}>
-      <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={buyLabelText(name, label, sub, footText)} accessibilityState={{ disabled: !enabled }} onPress={press} style={({ pressed }) => [styles.buyOuter, compact && styles.buyOuterCompact, { backgroundColor: outerBg }, pressed && { transform: [{ translateY: 3 }] }]}>
+      <Pressable
+        testID={testID}
+        accessibilityRole="button"
+        accessibilityLabel={buyLabelText(name, label, sub, footText)}
+        accessibilityState={{ disabled: !enabled }}
+        onPress={press}
+        style={({ pressed }) => [
+          styles.buyOuter,
+          compact && styles.buyOuterCompact,
+          { backgroundColor: outerBg },
+          pressed && { transform: [{ translateY: 3 }] },
+        ]}
+      >
         <View style={[styles.buyInner, compact && styles.buyInnerCompact, { backgroundColor: innerBg }, innerBorder]}>
           {sub && (compact || !nogain) ? (
             compact ? (
               <View style={styles.buySubRow}>
                 {icon}
-                <Text style={[styles.buySubCompact, needLine && styles.buySubTight, subSize ? { fontSize: subSize } : null, { color: labelColor }]} numberOfLines={1} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+                <Text
+                  style={[styles.buySubCompact, needLine && styles.buySubTight, subSize ? { fontSize: subSize } : null, { color: labelColor }]}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}
+                >
                   {sub}
                 </Text>
               </View>
@@ -123,12 +175,28 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
               <Text style={styles.buySub}>{sub}</Text>
             )
           ) : null}
-          <Text style={[styles.buyLabel, compact && styles.buyLabelCompact, compact && needLine && styles.buyLabelTight, labelSize ? { fontSize: labelSize } : null, { color: labelColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={compact ? Math.min(1, MIN_FONT / (labelSize ?? 15)) : undefined} maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}>
+          <Text
+            style={[
+              styles.buyLabel,
+              compact && styles.buyLabelCompact,
+              compact && needLine && styles.buyLabelTight,
+              labelSize ? { fontSize: labelSize } : null,
+              { color: labelColor },
+            ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={compact ? Math.min(1, MIN_FONT / (labelSize ?? 15)) : undefined}
+            maxFontSizeMultiplier={compact ? COMPACT_FONT_MAX_SCALE : undefined}
+          >
             {label}
           </Text>
           {/* D402: what is still missing, under the muted price (compact only; the line heights tighten to keep the 44 pt button) */}
           {compact && needLine ? (
-            <Text style={[styles.buyNeed, footSize ? { fontSize: footSize } : null, { color: labelColor }]} numberOfLines={1} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
+            <Text
+              style={[styles.buyNeed, footSize ? { fontSize: footSize } : null, { color: labelColor }]}
+              numberOfLines={1}
+              maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}
+            >
               {footText}
             </Text>
           ) : null}
@@ -160,7 +228,8 @@ export function BuyButton({ label, sub, enabled, onPress, testID, compact, icon,
                     { scale: burst.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0.4, 1.2, 0.9] }) },
                   ],
                 },
-              ]}>
+              ]}
+            >
               {e === 'star' ? <StarIcon size={18} /> : e === 'coin' ? <CoinIcon size={18} /> : <SliceIcon size={18} />}
             </Animated.View>
           );
@@ -184,7 +253,39 @@ export interface Goal {
   onPress?: () => boolean;
 }
 
-export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, onCity, newScenes, halo = null, onTasks, tasksBadge = 0, onGift, giftDot = false, chips, scrapRing }: { /** G98: small round chips in the top row, after the gift (the HUD_TOP_CHIPS slot); the goal bar keeps its width. */ topChips?: React.ReactNode; /** The chips at the end of the goal row (the HUD_CHIPS slot); the screen passes `<Slots items={HUD_CHIPS} />`. */ chips?: React.ReactNode; /** The next story scene's progress ring around the scrapbook button, in whole 5% steps (0..20); none when undefined. */ scrapRing?: number; cash: number; subtitle: string; /** The running boost, "2× 10m": drawn in basil after the subtitle. */ boostText?: string; goal: Goal | null; onScrapbook: () => void; onCity: () => void; newScenes: number; halo?: 'cash' | 'goal' | null; onTasks?: () => void; tasksBadge?: number; onGift?: () => void; giftDot?: boolean }) {
+export function Hud({
+  topChips,
+  cash,
+  subtitle,
+  boostText,
+  goal,
+  onScrapbook,
+  onCity,
+  newScenes,
+  halo = null,
+  onTasks,
+  tasksBadge = 0,
+  onGift,
+  giftDot = false,
+  chips,
+  scrapRing,
+}: {
+  /** G98: small round chips in the top row, after the gift (the HUD_TOP_CHIPS slot); the goal bar keeps its width. */ topChips?: React.ReactNode;
+  /** The chips at the end of the goal row (the HUD_CHIPS slot); the screen passes `<Slots items={HUD_CHIPS} />`. */ chips?: React.ReactNode;
+  /** The next story scene's progress ring around the scrapbook button, in whole 5% steps (0..20); none when undefined. */ scrapRing?: number;
+  cash: number;
+  subtitle: string;
+  /** The running boost, "2× 10m": drawn in basil after the subtitle. */ boostText?: string;
+  goal: Goal | null;
+  onScrapbook: () => void;
+  onCity: () => void;
+  newScenes: number;
+  halo?: 'cash' | 'goal' | null;
+  onTasks?: () => void;
+  tasksBadge?: number;
+  onGift?: () => void;
+  giftDot?: boolean;
+}) {
   const shown = useCountUp(cash);
   const [flash] = useState(() => new Animated.Value(1));
   // the cash text's window position: payout coins land on it (C81)
@@ -220,7 +321,14 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
   return (
     <View style={styles.hud}>
       <View style={styles.hudTop}>
-        <Pressable onPress={onScrapbook} style={styles.hudIcon} testID="open-scrapbook" accessibilityRole="button" accessibilityLabel={newScenes > 0 ? `Scrapbook, ${newScenes} new` : 'Scrapbook'} hitSlop={HUD_BUTTON_SLOP.scrapbook}>
+        <Pressable
+          onPress={onScrapbook}
+          style={styles.hudIcon}
+          testID="open-scrapbook"
+          accessibilityRole="button"
+          accessibilityLabel={newScenes > 0 ? `Scrapbook, ${newScenes} new` : 'Scrapbook'}
+          hitSlop={HUD_BUTTON_SLOP.scrapbook}
+        >
           {scrapRing !== undefined && <ProgressRing step={scrapRing} />}
           <BookIcon size={32} />
           {newScenes > 0 && (
@@ -231,7 +339,14 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
         </Pressable>
         {/* v5.4: the clipboard and the gift show once rewards unlock (their handlers are passed) */}
         {onTasks && (
-          <Pressable onPress={onTasks} style={styles.hudIcon} testID="open-tasks" accessibilityRole="button" accessibilityLabel={tasksBadge > 0 ? `Daily and weekly tasks, ${tasksBadge} ready` : 'Daily and weekly tasks'} hitSlop={HUD_BUTTON_SLOP.tasks}>
+          <Pressable
+            onPress={onTasks}
+            style={styles.hudIcon}
+            testID="open-tasks"
+            accessibilityRole="button"
+            accessibilityLabel={tasksBadge > 0 ? `Daily and weekly tasks, ${tasksBadge} ready` : 'Daily and weekly tasks'}
+            hitSlop={HUD_BUTTON_SLOP.tasks}
+          >
             <ClipboardIcon size={30} />
             {tasksBadge > 0 && (
               <View style={styles.badge}>
@@ -247,7 +362,8 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
             style={[styles.cash, cashW > 0 && { fontSize: cashFont(cashText(Math.max(shown, cash)), cashW) }, { transform: [{ scale: flash }] }]}
             numberOfLines={1}
             adjustsFontSizeToFit
-            testID="cash">
+            testID="cash"
+          >
             {cashText(shown)}
           </Animated.Text>
           <Text style={[styles.perSec, rate && { fontSize: rate.size }]} numberOfLines={1}>
@@ -261,45 +377,67 @@ export function Hud({ topChips, cash, subtitle, boostText, goal, onScrapbook, on
           </Text>
         </View>
         {onGift && (
-          <Pressable onPress={onGift} style={styles.hudIcon} testID="open-gift" accessibilityRole="button" accessibilityLabel={giftDot ? 'Daily gift, ready to claim' : 'Daily gift'} hitSlop={HUD_BUTTON_SLOP.gift}>
+          <Pressable
+            onPress={onGift}
+            style={styles.hudIcon}
+            testID="open-gift"
+            accessibilityRole="button"
+            accessibilityLabel={giftDot ? 'Daily gift, ready to claim' : 'Daily gift'}
+            hitSlop={HUD_BUTTON_SLOP.gift}
+          >
             <GiftIcon size={30} />
             {giftDot && <View style={styles.giftDot} />}
           </Pressable>
         )}
         {topChips}
-        <Pressable onPress={onCity} style={styles.hudIcon} testID="open-city" accessibilityRole="button" accessibilityLabel="City map" hitSlop={HUD_BUTTON_SLOP.city}>
+        <Pressable
+          onPress={onCity}
+          style={styles.hudIcon}
+          testID="open-city"
+          accessibilityRole="button"
+          accessibilityLabel="City map"
+          hitSlop={HUD_BUTTON_SLOP.city}
+        >
           <MapIcon size={32} />
         </Pressable>
-
       </View>
       {goal && (
         <View style={styles.goalRow}>
-        <Pressable
-          testID="goal"
-          accessibilityRole="button"
-          accessibilityLabel={`${ready ? 'Ready: ' : 'Goal: '}${goal.label}, ${goalAmount(goal.current, goal.target)}${ready ? '. Tap to buy' : ''}`}
-          accessibilityState={{ disabled: !goal.onPress }}
-          disabled={!goal.onPress}
-          onPress={() => {
-            const ok = goal.onPress?.();
-            haptic(ok ? 'success' : ok === false ? 'error' : 'light');
-          }}
-          onLayout={(e) => setGoalW(e.nativeEvent.layout.width)}
-          style={styles.goalTap}>
-        <View style={[styles.goal, ready && styles.goalReady, halo === 'goal' && styles.haloGoal]}>
-          <View style={[styles.goalFill, goalW > 0 ? { width: bar.fillW } : { width: `${pct * 100}%` }, ready && { backgroundColor: C.basil }]} />
-          <GoalLine key={ready ? 'ready' : shownLabel} label={ready ? `▶ ${shownLabel}` : shownLabel} amount={ready ? 'tap!' : shownText ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone={ready ? 'ready' : 'track'} onSpans={ready ? undefined : onWords} onAmount={ready ? undefined : onAmount} />
-          {/* D297: the same line again in cream, clipped to the fill, so the part over the fill is light and the rest stays dark */}
-          {bar.split ? (
-            <View pointerEvents="none" style={[styles.goalClip, { width: bar.fillW }]}>
-              <View style={[styles.goalClipLine, { width: bar.innerW }]}>
-                <GoalLine label={shownLabel} amount={shownText ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone="fill" />
-              </View>
+          <Pressable
+            testID="goal"
+            accessibilityRole="button"
+            accessibilityLabel={`${ready ? 'Ready: ' : 'Goal: '}${goal.label}, ${goalAmount(goal.current, goal.target)}${ready ? '. Tap to buy' : ''}`}
+            accessibilityState={{ disabled: !goal.onPress }}
+            disabled={!goal.onPress}
+            onPress={() => {
+              const ok = goal.onPress?.();
+              haptic(ok ? 'success' : ok === false ? 'error' : 'light');
+            }}
+            onLayout={(e) => setGoalW(e.nativeEvent.layout.width)}
+            style={styles.goalTap}
+          >
+            <View style={[styles.goal, ready && styles.goalReady, halo === 'goal' && styles.haloGoal]}>
+              <View style={[styles.goalFill, goalW > 0 ? { width: bar.fillW } : { width: `${pct * 100}%` }, ready && { backgroundColor: C.basil }]} />
+              <GoalLine
+                key={ready ? 'ready' : shownLabel}
+                label={ready ? `▶ ${shownLabel}` : shownLabel}
+                amount={ready ? 'tap!' : (shownText ?? goalAmount(goal.current, goal.target))}
+                icon={goal.icon}
+                tone={ready ? 'ready' : 'track'}
+                onSpans={ready ? undefined : onWords}
+                onAmount={ready ? undefined : onAmount}
+              />
+              {/* D297: the same line again in cream, clipped to the fill, so the part over the fill is light and the rest stays dark */}
+              {bar.split ? (
+                <View pointerEvents="none" style={[styles.goalClip, { width: bar.fillW }]}>
+                  <View style={[styles.goalClipLine, { width: bar.innerW }]}>
+                    <GoalLine label={shownLabel} amount={shownText ?? goalAmount(goal.current, goal.target)} icon={goal.icon} tone="fill" />
+                  </View>
+                </View>
+              ) : null}
             </View>
-          ) : null}
-        </View>
-        </Pressable>
-        {chips}
+          </Pressable>
+          {chips}
         </View>
       )}
     </View>
@@ -333,7 +471,19 @@ const ProgressRing = memo(function ProgressRing({ step }: { step: number }) {
     <Animated.View pointerEvents="none" style={[styles.ring, { opacity: pulse }]}>
       <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={HUD_ICON} height={HUD_ICON} viewBox="0 0 44 44">
         <Circle cx={22} cy={22} r={RING_R} stroke="rgba(255,255,255,0.28)" strokeWidth={3} fill="none" />
-        {k > 0 && <Circle cx={22} cy={22} r={RING_R} stroke={C.cheese} strokeWidth={3} fill="none" strokeLinecap="round" strokeDasharray={`${RING_LEN * k} ${RING_LEN}`} transform="rotate(-90 22 22)" />}
+        {k > 0 && (
+          <Circle
+            cx={22}
+            cy={22}
+            r={RING_R}
+            stroke={C.cheese}
+            strokeWidth={3}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={`${RING_LEN * k} ${RING_LEN}`}
+            transform="rotate(-90 22 22)"
+          />
+        )}
       </Svg>
     </Animated.View>
   );
@@ -345,7 +495,21 @@ const ProgressRing = memo(function ProgressRing({ step }: { step: number }) {
  * that shrinks and clips (the last word ellipsizes first); the amount sits outside it and never shrinks, so on a 320 pt
  * phone the payoff word is what gives way, never the amount (C105).
  */
-function GoalLine({ label, amount, icon, tone, onSpans, onAmount }: { label: string; amount: string; icon?: React.ReactNode; tone: 'track' | 'fill' | 'ready'; onSpans?: (label: string, spans: GoalSpan[]) => void; onAmount?: (span: GoalSpan) => void }) {
+function GoalLine({
+  label,
+  amount,
+  icon,
+  tone,
+  onSpans,
+  onAmount,
+}: {
+  label: string;
+  amount: string;
+  icon?: React.ReactNode;
+  tone: 'track' | 'fill' | 'ready';
+  onSpans?: (label: string, spans: GoalSpan[]) => void;
+  onAmount?: (span: GoalSpan) => void;
+}) {
   const color = tone === 'track' ? GOAL_BAR.onTrack : tone === 'fill' ? GOAL_BAR.onFill : '#fff';
   const report = (e: { nativeEvent: { layout: { x: number; width: number } } }) => onAmount?.({ x: e.nativeEvent.layout.x, w: e.nativeEvent.layout.width });
   return (
@@ -369,7 +533,15 @@ function GoalLine({ label, amount, icon, tone, onSpans, onAmount }: { label: str
  * The goal line's words: memoised on primitives (label, tone and a stable `onSpans`), so the cash ticks that rewrite the
  * amount never reconcile them (C104). Spans are reported in the line's coordinates (the row starts GOAL_PAD in).
  */
-const GoalWords = memo(function GoalWords({ label, tone, onSpans }: { label: string; tone: 'track' | 'fill' | 'ready'; onSpans?: (label: string, spans: GoalSpan[]) => void }) {
+const GoalWords = memo(function GoalWords({
+  label,
+  tone,
+  onSpans,
+}: {
+  label: string;
+  tone: 'track' | 'fill' | 'ready';
+  onSpans?: (label: string, spans: GoalSpan[]) => void;
+}) {
   const color = tone === 'track' ? GOAL_BAR.onTrack : tone === 'fill' ? GOAL_BAR.onFill : '#fff';
   const words = goalWords(label);
   const seen = useRef<(GoalSpan | undefined)[]>([]);
@@ -388,7 +560,8 @@ const GoalWords = memo(function GoalWords({ label, tone, onSpans }: { label: str
           onLayout={onSpans ? (e) => report(i, GOAL_PAD + e.nativeEvent.layout.x, e.nativeEvent.layout.width) : undefined}
           style={[styles.goalLabel, i === words.length - 1 && styles.goalLabelLast, { color }]}
           numberOfLines={1}
-          maxFontSizeMultiplier={GOAL_FONT_MAX_SCALE}>
+          maxFontSizeMultiplier={GOAL_FONT_MAX_SCALE}
+        >
           {w}
         </Text>
       ))}
@@ -412,9 +585,7 @@ export function UpgradeRow(props: {
   const m = props.milestone;
   return (
     <View style={[styles.row, props.highlight && styles.rowHighlight]}>
-      <View style={styles.iconTile}>
-        {typeof props.icon === 'string' ? <Text style={styles.iconText}>{props.icon}</Text> : props.icon}
-      </View>
+      <View style={styles.iconTile}>{typeof props.icon === 'string' ? <Text style={styles.iconText}>{props.icon}</Text> : props.icon}</View>
       <View style={styles.rowMid}>
         <Text style={styles.cardTitle} numberOfLines={1}>
           {props.title} <Text style={styles.level}>{props.level}</Text>
@@ -430,7 +601,13 @@ export function UpgradeRow(props: {
         ) : null}
       </View>
       <View style={styles.rowBtn}>
-        <BuyButton testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : money(props.cost)} sub={props.cost === null ? undefined : 'BUY'} enabled={props.canBuy} onPress={props.onBuy} />
+        <BuyButton
+          testID={props.testID}
+          label={props.cost === null ? (props.costLabel ?? 'MAX') : money(props.cost)}
+          sub={props.cost === null ? undefined : 'BUY'}
+          enabled={props.canBuy}
+          onPress={props.onBuy}
+        />
       </View>
     </View>
   );
@@ -464,7 +641,14 @@ const OvenArt = memo(function OvenArt({ glow, open }: { glow: number; open: bool
   const k = open ? 1 : glow / 20;
   const puffs = open ? 3 : Math.round(k * 3);
   return (
-    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={OVEN_VB.w} height={OVEN_VB.h} viewBox={`0 ${OVEN_VB.top} ${OVEN_VB.w} ${OVEN_VB.h}`} style={styles.ovenArt}>
+    <Svg
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      width={OVEN_VB.w}
+      height={OVEN_VB.h}
+      viewBox={`0 ${OVEN_VB.top} ${OVEN_VB.w} ${OVEN_VB.h}`}
+      style={styles.ovenArt}
+    >
       <Defs>
         <RadialGradient id="ovenHeat" cx="50%" cy="50%" r="50%">
           <Stop offset="0" stopColor="#FFB23E" stopOpacity="0.95" />
@@ -474,7 +658,15 @@ const OvenArt = memo(function OvenArt({ glow, open }: { glow: number; open: bool
       {/* heat halo, behind everything: bigger and brighter as the oven fills */}
       <Circle cx={MOUTH_C.x} cy={MOUTH_C.y} r={46 + 34 * k} fill="url(#ovenHeat)" opacity={0.3 + 0.7 * k} />
       {open
-        ? RAYS.map((a, i) => <Path key={i} d={`M${MOUTH_C.x + Math.cos(a) * 52} ${MOUTH_C.y + Math.sin(a) * 52} L${MOUTH_C.x + Math.cos(a) * 78} ${MOUTH_C.y + Math.sin(a) * 78}`} stroke="#F6C343" strokeWidth={4} strokeLinecap="round" />)
+        ? RAYS.map((a, i) => (
+            <Path
+              key={i}
+              d={`M${MOUTH_C.x + Math.cos(a) * 52} ${MOUTH_C.y + Math.sin(a) * 52} L${MOUTH_C.x + Math.cos(a) * 78} ${MOUTH_C.y + Math.sin(a) * 78}`}
+              stroke="#F6C343"
+              strokeWidth={4}
+              strokeLinecap="round"
+            />
+          ))
         : null}
       {/* smoke from the chimney: more puffs as it fills */}
       {puffs >= 1 ? <Circle cx={106} cy={-5} r={5} fill="#E9E1D8" opacity={0.85} /> : null}
@@ -482,7 +674,13 @@ const OvenArt = memo(function OvenArt({ glow, open }: { glow: number; open: bool
       {puffs >= 3 ? <Circle cx={105} cy={-21} r={7.5} fill="#E9E1D8" opacity={0.55} /> : null}
       <Rect x={96} y={2} width={20} height={28} rx={3} fill="#9C4A33" stroke={OVEN_INK} strokeWidth={3} />
       <Path d="M14 122 V76 Q14 20 80 20 Q146 20 146 76 V122 Z" fill="#C8553D" stroke={OVEN_INK} strokeWidth={4} strokeLinejoin="round" />
-      <Path d="M30 50 Q40 40 52 36 M64 28 H96 M24 70 H38 M118 56 H134 M128 82 H140 M22 100 H34 M122 104 H138 M58 48 H72 M100 44 H112" stroke="#A8412C" strokeWidth={3} strokeLinecap="round" fill="none" />
+      <Path
+        d="M30 50 Q40 40 52 36 M64 28 H96 M24 70 H38 M118 56 H134 M128 82 H140 M22 100 H34 M122 104 H138 M58 48 H72 M100 44 H112"
+        stroke="#A8412C"
+        strokeWidth={3}
+        strokeLinecap="round"
+        fill="none"
+      />
       <Rect x={6} y={114} width={148} height={14} rx={5} fill="#8F5B3E" stroke={OVEN_INK} strokeWidth={3} />
       <G transform={`translate(${DOOR.x} ${DOOR.y})`}>
         {/* D454: the heat in front of the dome, as a ring round the door's arch: the half outside the arch shows over the bricks */}
@@ -529,7 +727,20 @@ const doubleOffline = (): void => void useGame.getState().doubleOffline();
  * button keeps testID `collect-offline` in both states. A full oven offers the bigger one (`onUpgrade` opens the night-oven sheet).
  * The maths lives in offline-model.ts.
  */
-export function OfflinePopup({ summary, nightOven, onCollect, onUpgrade }: { /** `boost`: what a timed boost multiplied the window by; `doubled`: the 2× ad (or Nonna's Plus) has been taken (v5.17, store/ad-model.ts). */ summary: GiftSummary & { boost?: number; doubled?: boolean }; nightOven: number; onCollect: () => void; onUpgrade?: () => void }) {
+export function OfflinePopup({
+  summary,
+  nightOven,
+  onCollect,
+  onUpgrade,
+}: {
+  /** `boost`: what a timed boost multiplied the window by; `doubled`: the 2× ad (or Nonna's Plus) has been taken (v5.17, store/ad-model.ts). */ summary: GiftSummary & {
+    boost?: number;
+    doubled?: boolean;
+  };
+  nightOven: number;
+  onCollect: () => void;
+  onUpgrade?: () => void;
+}) {
   const view = useMemo(() => offlineGiftView(summary, nightOven), [summary, nightOven]);
   const [pop] = useState(() => new Animated.Value(0.7));
   const [door] = useState(() => new Animated.Value(0));
@@ -538,7 +749,11 @@ export function OfflinePopup({ summary, nightOven, onCollect, onUpgrade }: { /**
   const [opened, setOpened] = useState(false);
   const [shown, setShown] = useState(0);
   const ovenRef = useRef<ComponentRef<typeof View>>(null);
-  const timers = useRef<{ tick: ReturnType<typeof setInterval> | null; close: ReturnType<typeof setTimeout> | null; closed: boolean }>({ tick: null, close: null, closed: false });
+  const timers = useRef<{ tick: ReturnType<typeof setInterval> | null; close: ReturnType<typeof setTimeout> | null; closed: boolean }>({
+    tick: null,
+    close: null,
+    closed: false,
+  });
   const { loops, slide } = useMotion();
   // read once, when the popup opens: a setting that changes while it is up must not restart its count-up
   const [springs] = useState(() => slide);
@@ -659,7 +874,9 @@ export function OfflinePopup({ summary, nightOven, onCollect, onUpgrade }: { /**
           </Animated.View>
         ) : null}
         {/* v5.17 (U3): 2× the whole total, before the door opens so the count-up lands on it; it replaces a timed boost, never stacks */}
-        {!opened && offlineOffer(summary.boost, summary.doubled) && <AdButton placement="offline_2x" label="2× earnings" plusLabel="2× earnings · Nonna’s Plus" testID="offline-double" onBenefit={doubleOffline} />}
+        {!opened && offlineOffer(summary.boost, summary.doubled) && (
+          <AdButton placement="offline_2x" label="2× earnings" plusLabel="2× earnings · Nonna’s Plus" testID="offline-double" onBenefit={doubleOffline} />
+        )}
         {summary.doubled ? (
           <Text style={[styles.giftLine, { fontFamily: F.bold, color: C.basilDark }]} testID="offline-doubled">
             Doubled! 2× earnings
@@ -711,13 +928,27 @@ export function NightOvenSheet({ view, onBuy, onClose }: { view: NightOvenView; 
                 <Text style={styles.tierHours}>{t.hours}</Text>
               </View>
               {/* the price is basil only when you can buy it; otherwise ink, like any price you can't pay yet */}
-              <Text style={[styles.small, { flexShrink: 1, textAlign: 'right', color: C.ink }, t.state === 'next' && !!next?.canBuy && { color: C.basilDark, fontFamily: F.semi }]}>{t.note}</Text>
+              <Text
+                style={[
+                  styles.small,
+                  { flexShrink: 1, textAlign: 'right', color: C.ink },
+                  t.state === 'next' && !!next?.canBuy && { color: C.basilDark, fontFamily: F.semi },
+                ]}
+              >
+                {t.note}
+              </Text>
             </View>
           ))}
         </View>
         {next ? (
           <View style={{ alignSelf: 'stretch' }}>
-            <BuyButton testID="buy-night-oven-sheet" label={`${next.title} · ${money(next.price)}`} enabled={next.canBuy} tone={next.lock ? 'nogain' : 'normal'} onPress={onBuy} />
+            <BuyButton
+              testID="buy-night-oven-sheet"
+              label={`${next.title} · ${money(next.price)}`}
+              enabled={next.canBuy}
+              tone={next.lock ? 'nogain' : 'normal'}
+              onPress={onBuy}
+            />
           </View>
         ) : null}
         <Pressable testID="close-night-oven" accessibilityRole="button" accessibilityLabel="Close the night oven" onPress={onClose} style={styles.sheetClose}>
@@ -744,7 +975,16 @@ const shadow = Platform.select({
 const styles = StyleSheet.create({
   // U5: a button is never shorter than 44 pt (the full-size ones were 39); the face grows to fill it
   buyOuter: { borderRadius: 14, paddingBottom: 4, minWidth: 88, minHeight: BUTTON_H },
-  buyInner: { flexGrow: 1, justifyContent: 'center', borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10, alignItems: 'center', borderWidth: 2, borderColor: 'rgba(0,0,0,0.12)' },
+  buyInner: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    borderRadius: 14,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(0,0,0,0.12)',
+  },
   buyLabel: { fontFamily: F.bold, color: '#fff', fontSize: 17 },
   // compact: a fixed 44 pt (outer, including its 4 pt lip), so nothing depends on flex-grow against a min height (C46)
   buyOuterCompact: { minWidth: 0, alignSelf: 'stretch', height: BUTTON_H },
@@ -766,15 +1006,55 @@ const styles = StyleSheet.create({
   hud: { backgroundColor: C.tomato, paddingHorizontal: 12, paddingBottom: HUD_STACK.padBottom, paddingTop: 6, gap: HUD_STACK.gap },
   // the row is at least HUD_ROW_H tall: 4 pt of room above and below a 40 pt button for its hitSlop (tap-targets.ts)
   hudTop: { flexDirection: 'row', alignItems: 'center', gap: HUD_GAP, minHeight: HUD_ROW_H },
-  hudIcon: { width: HUD_ICON, height: HUD_ICON, borderRadius: HUD_ICON / 2, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
+  hudIcon: {
+    width: HUD_ICON,
+    height: HUD_ICON,
+    borderRadius: HUD_ICON / 2,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   hudEmoji: { fontSize: 22 },
   ring: { position: 'absolute', left: 0, top: 0 },
   // U5: the goal button is 44 pt tall round its 30 pt bar; the row's negative margin takes the 7 pt either side back, so the HUD is no taller
   goalRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: -GOAL_TAP_ROOM },
   goalTap: { flex: 1, height: GOAL_TAP_H, justifyContent: 'center' },
-  hudIconSmall: { position: 'absolute', right: -4, top: -4, width: 26, height: 26, borderRadius: 13, backgroundColor: C.tomatoDark, alignItems: 'center', justifyContent: 'center' },
-  badge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
-  giftDot: { position: 'absolute', top: -1, right: -1, width: 16, height: 16, borderRadius: 8, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato },
+  hudIconSmall: {
+    position: 'absolute',
+    right: -4,
+    top: -4,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: C.tomatoDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: C.cheese,
+    borderWidth: 2,
+    borderColor: C.tomato,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  giftDot: {
+    position: 'absolute',
+    top: -1,
+    right: -1,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: C.cheese,
+    borderWidth: 2,
+    borderColor: C.tomato,
+  },
   badgeText: { fontFamily: F.bold, fontSize: 10, color: C.ink },
   cashPill: { flex: 1, alignItems: 'center' },
   cash: { fontFamily: F.bold, fontSize: 34, color: '#fff', textShadowColor: C.tomatoDark, textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 },
@@ -783,7 +1063,18 @@ const styles = StyleSheet.create({
   // Nonna's tutorial points at the cash or the goal bar with a gold halo
   halo: { borderRadius: 18, borderWidth: 3, borderColor: '#FFC531', backgroundColor: 'rgba(255,197,49,0.18)' },
   haloGoal: { borderColor: '#FFC531', borderWidth: 3 },
-  goal: { height: GOAL_BAR_H, alignSelf: 'stretch', borderRadius: 15, backgroundColor: GOAL_BAR.track, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, borderWidth: GOAL_BAR.border, borderColor: 'rgba(0,0,0,0.15)' },
+  goal: {
+    height: GOAL_BAR_H,
+    alignSelf: 'stretch',
+    borderRadius: 15,
+    backgroundColor: GOAL_BAR.track,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    borderWidth: GOAL_BAR.border,
+    borderColor: 'rgba(0,0,0,0.15)',
+  },
   goalReady: { borderColor: '#fff', backgroundColor: C.basil },
   goalFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: GOAL_BAR.fill },
   // two-tone label (D297): dark ink over the track, a cream copy clipped to the fill's width
@@ -798,7 +1089,17 @@ const styles = StyleSheet.create({
   goalAmt: { fontFamily: F.bold, fontSize: 13, ...GOAL_LAYOUT.amount },
   goalAmtBox: { ...GOAL_LAYOUT.amount },
 
-  ovenCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.panel, borderRadius: 20, padding: 10, gap: 12, borderWidth: 3, borderColor: C.ink, ...shadow },
+  ovenCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.panel,
+    borderRadius: 20,
+    padding: 10,
+    gap: 12,
+    borderWidth: 3,
+    borderColor: C.ink,
+    ...shadow,
+  },
   ovenIdle: { borderColor: C.tomato, backgroundColor: '#FFF7F2' },
   ovenEmoji: { position: 'absolute', alignSelf: 'center', top: 20, fontSize: 30 },
   ovenInfo: { flex: 1 },
@@ -808,9 +1109,28 @@ const styles = StyleSheet.create({
   slot: { width: 13, height: 13, borderRadius: 6.5, backgroundColor: '#F1E4D3', borderWidth: 1.5, borderColor: '#D9C4AB' },
   slotFull: { backgroundColor: C.cheese, borderColor: C.cheeseDark },
 
-  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.panel, borderRadius: 18, padding: 9, gap: 10, borderWidth: 3, borderColor: C.ink, ...shadow },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.panel,
+    borderRadius: 18,
+    padding: 9,
+    gap: 10,
+    borderWidth: 3,
+    borderColor: C.ink,
+    ...shadow,
+  },
   rowHighlight: { borderColor: C.basilDark, backgroundColor: '#F1FFF0' },
-  iconTile: { width: 48, height: 48, borderRadius: 14, backgroundColor: '#FFE9C7', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.cheeseDark },
+  iconTile: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#FFE9C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: C.cheeseDark,
+  },
   iconText: { fontSize: 26 },
   rowMid: { flex: 1 },
   rowBtn: { width: 96 },
@@ -821,8 +1141,28 @@ const styles = StyleSheet.create({
   msFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: C.cheese },
   msText: { fontFamily: F.semi, fontSize: 10, color: C.ink, textAlign: 'center' },
 
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  modal: { backgroundColor: C.bg, borderRadius: 24, borderWidth: 4, borderColor: C.ink, padding: 22, alignItems: 'center', width: '100%', maxWidth: 360, gap: 8 },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(30,14,8,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modal: {
+    backgroundColor: C.bg,
+    borderRadius: 24,
+    borderWidth: 4,
+    borderColor: C.ink,
+    padding: 22,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 360,
+    gap: 8,
+  },
   modalHead: { fontFamily: F.bold, fontSize: 24, color: C.ink },
   modalEmoji: { fontSize: 44 },
   ovenBox: { width: OVEN_VB.w, height: OVEN_VB.h },
@@ -832,20 +1172,61 @@ const styles = StyleSheet.create({
   meterFill: { height: '100%', backgroundColor: '#FF9A2E' },
   meterText: { fontFamily: F.bold, fontSize: 16, color: C.ink },
   giftLine: { fontFamily: F.semi, fontSize: 14, color: C.ink, textAlign: 'center' },
-  tierRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, backgroundColor: '#fff', borderWidth: 2, borderColor: C.cheeseDark },
+  tierRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: C.cheeseDark,
+  },
   tierOwned: { backgroundColor: '#FFF4E0' },
   tierHours: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   giftOverlay: { justifyContent: 'flex-start', paddingTop: 64 },
-  upgradeBtn: { alignSelf: 'stretch', minHeight: 44, borderRadius: 14, borderWidth: 2, borderColor: C.ink, backgroundColor: C.cheese, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 12 },
+  upgradeBtn: {
+    alignSelf: 'stretch',
+    minHeight: 44,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: C.ink,
+    backgroundColor: C.cheese,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+  },
   upgradeText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   sheetHead: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'stretch' },
   sheetTitle: { fontFamily: F.bold, fontSize: 22, color: C.ink },
   sheetSub: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  sheetClose: { alignSelf: 'stretch', height: 44, borderRadius: 12, borderWidth: 2, borderColor: C.ink, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  sheetClose: {
+    alignSelf: 'stretch',
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: C.ink,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   closeText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   modalCash: { fontFamily: F.bold, fontSize: 40, color: C.basilDark, marginBottom: 6 },
 
-  toast: { position: 'absolute', alignSelf: 'center', backgroundColor: C.ink, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, borderWidth: 2, borderColor: '#fff' },
+  toast: {
+    position: 'absolute',
+    alignSelf: 'center',
+    backgroundColor: C.ink,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
   toastCompact: { paddingVertical: 4, paddingHorizontal: 14, borderRadius: 14 },
   toastText: { fontFamily: F.semi, color: '#fff', fontSize: 15 },
 });

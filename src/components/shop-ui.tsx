@@ -10,7 +10,7 @@ import { money } from '../engine/format';
 import * as Game from '../engine/game';
 import { C, F } from '../theme';
 import { LockIcon } from './icons';
-import { lotView } from './city-model';
+import { lotView, piesToGo } from './city-model';
 import { buildChipHint, buildChipSub, cardLook, type ButtonTone } from './sidewalk-model';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BuyButton, haptic } from './game-ui';
@@ -19,7 +19,17 @@ import { shopStars } from '../engine/features/mastery';
 import { pipBits, showPips, starPips } from './endgame/mastery-model';
 import { StarPips } from './endgame/star-pips';
 
-export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Game.GameState; /** The running income boost: the chips show what the shop earns now. */ boostMult?: number; onSelect: (id: NeighborhoodId) => void; onBuild: (id: NeighborhoodId) => boolean }) {
+export function ShopTabs({
+  game,
+  boostMult = 1,
+  onSelect,
+  onBuild,
+}: {
+  game: Game.GameState;
+  /** The running income boost: the chips show what the shop earns now. */ boostMult?: number;
+  onSelect: (id: NeighborhoodId) => void;
+  onBuild: (id: NeighborhoodId) => boolean;
+}) {
   // v5.18: the tabs are the current city's neighbourhoods
   const NEIGHBORHOODS = cityOf(game).neighbourhoods;
   const next = Game.nextToBuild(game);
@@ -48,7 +58,18 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
   }, [activeIdx, offsets, maxScroll]);
   return (
     <View style={styles.tabsWrap}>
-      <ScrollView ref={scroller as never} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} snapToOffsets={reachable.length ? reachable : undefined} decelerationRate="fast" scrollEventThrottle={32} onScroll={(e) => setSx(e.nativeEvent.contentOffset.x)} onLayout={(e) => setDims((d) => ({ ...d, view: e.nativeEvent.layout.width }))} onContentSizeChange={(w) => setDims((d) => ({ ...d, content: w }))}>
+      <ScrollView
+        ref={scroller as never}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tabs}
+        snapToOffsets={reachable.length ? reachable : undefined}
+        decelerationRate="fast"
+        scrollEventThrottle={32}
+        onScroll={(e) => setSx(e.nativeEvent.contentOffset.x)}
+        onLayout={(e) => setDims((d) => ({ ...d, view: e.nativeEvent.layout.width }))}
+        onContentSizeChange={(w) => setDims((d) => ({ ...d, content: w }))}
+      >
         {NEIGHBORHOODS.map((n, i) => {
           const shop = game.shops[n.id];
           const active = game.active === n.id;
@@ -65,11 +86,17 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
             const lot = lotView(game, n);
             if (lot.locked) {
               return (
-                <View key={n.id} onLayout={onTab(i)} testID={`build-${n.id}`} accessibilityState={{ disabled: true }} style={[styles.tab, styles.tabBuild, styles.tabHeld]}>
+                <View
+                  key={n.id}
+                  onLayout={onTab(i)}
+                  testID={`build-${n.id}`}
+                  accessibilityState={{ disabled: true }}
+                  style={[styles.tab, styles.tabBuild, styles.tabHeld]}
+                >
                   <Text style={[styles.tabName, { color: C.inkSoft }]}>+ {n.name}</Text>
                   <Text style={[styles.tabSub, { color: C.inkSoft }]} numberOfLines={1}>
-                    {/* D503: the lot's own "N pies to go" (city-model lotView), not a slice of the pin */}
-                    {lot.piesToGo ?? lot.pin}
+                    {/* D503: "N pies to go" formatted from the lot's own count (city-model lotView.pinsLeft), not a slice of the pin */}
+                    {lot.pinsLeft !== null ? piesToGo(lot.pinsLeft, game.city) : lot.pin}
                   </Text>
                 </View>
               );
@@ -89,7 +116,8 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
                   const ok = onBuild(n.id);
                   haptic(ok ? 'success' : 'error');
                 }}
-                style={[styles.tab, styles.tabBuild, can && styles.tabBuildReady]}>
+                style={[styles.tab, styles.tabBuild, can && styles.tabBuildReady]}
+              >
                 <Text style={[styles.tabName, { color: can ? '#fff' : C.ink }]}>+ {n.name}</Text>
                 {/* D404: with the Pier 9 warning the price and the warning share the second line, so the chip stays two lines tall */}
                 <Text style={[styles.tabSub, { color: can ? '#fff' : C.tomato }]} numberOfLines={1}>
@@ -100,12 +128,23 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
           }
           const eps = Game.shopEarnings(game, n.id) * boostMult;
           return (
-            <Pressable key={n.id} onLayout={onTab(i)} testID={`tab-${n.id}`} accessibilityRole="tab" accessibilityLabel={`${n.name}, ${Game.runsItself(shop) ? `${money(eps)} a second` : 'you run it'}${showPips(shop) ? `, ${shopStars(shop, cityOf(game))} of 3 stars` : ''}`} accessibilityState={{ selected: active }} onPress={() => {
+            <Pressable
+              key={n.id}
+              onLayout={onTab(i)}
+              testID={`tab-${n.id}`}
+              accessibilityRole="tab"
+              accessibilityLabel={`${n.name}, ${Game.runsItself(shop) ? `${money(eps)} a second` : 'you run it'}${showPips(shop) ? `, ${shopStars(shop, cityOf(game))} of 3 stars` : ''}`}
+              accessibilityState={{ selected: active }}
+              onPress={() => {
                 if (!active) emitAudio({ type: 'click' });
                 onSelect(n.id);
-              }} style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}>
+              }}
+              style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}
+            >
               <Text style={styles.tabName}>{n.name}</Text>
-              <Text style={[styles.tabSub, active && { color: C.ink }, !Game.runsItself(shop) && !active && { color: C.tomato }]}>{Game.runsItself(shop) ? `${money(eps)}/s` : 'you run it'}</Text>
+              <Text style={[styles.tabSub, active && { color: C.ink }, !Game.runsItself(shop) && !active && { color: C.tomato }]}>
+                {Game.runsItself(shop) ? `${money(eps)}/s` : 'you run it'}
+              </Text>
               {/* v5.15: the shop's three mastery stars (heads, Flagship, golden ovens) */}
               {showPips(shop) && <StarPips testID={`stars-${n.id}`} bits={pipBits(starPips(shop, cityOf(game)))} size={10} />}
             </Pressable>
@@ -114,18 +153,30 @@ export function ShopTabs({ game, boostMult = 1, onSelect, onBuild }: { game: Gam
       </ScrollView>
       {/* edge fades so a clipped tab reads as "scroll for more" */}
       {/* hide each fade when the strip is already at that end */}
-      {(['l', 'r'] as const).filter((side) => (side === 'l' ? sx > 2 : sx < maxScroll - 2)).map((side) => (
-        <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" key={side} width={30} height="100%" style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]} viewBox="0 0 30 10" preserveAspectRatio="none" pointerEvents="none">
-          <Defs>
-            <LinearGradient id={`tf-${side}`} x1={side === 'l' ? '0' : '1'} y1="0" x2={side === 'l' ? '1' : '0'} y2="0">
-              <Stop offset="0" stopColor="#B52C1C" stopOpacity={1} />
-              <Stop offset="0.3" stopColor="#B52C1C" stopOpacity={0.95} />
-              <Stop offset="1" stopColor="#B52C1C" stopOpacity={0} />
-            </LinearGradient>
-          </Defs>
-          <Rect x={0} y={0} width={30} height={10} fill={`url(#tf-${side})`} />
-        </Svg>
-      ))}
+      {(['l', 'r'] as const)
+        .filter((side) => (side === 'l' ? sx > 2 : sx < maxScroll - 2))
+        .map((side) => (
+          <Svg
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            key={side}
+            width={30}
+            height="100%"
+            style={[styles.tabFade, side === 'l' ? { left: 0 } : { right: 0 }]}
+            viewBox="0 0 30 10"
+            preserveAspectRatio="none"
+            pointerEvents="none"
+          >
+            <Defs>
+              <LinearGradient id={`tf-${side}`} x1={side === 'l' ? '0' : '1'} y1="0" x2={side === 'l' ? '1' : '0'} y2="0">
+                <Stop offset="0" stopColor="#B52C1C" stopOpacity={1} />
+                <Stop offset="0.3" stopColor="#B52C1C" stopOpacity={0.95} />
+                <Stop offset="1" stopColor="#B52C1C" stopOpacity={0} />
+              </LinearGradient>
+            </Defs>
+            <Rect x={0} y={0} width={30} height={10} fill={`url(#tf-${side})`} />
+          </Svg>
+        ))}
     </View>
   );
 }
@@ -160,7 +211,16 @@ function StationCardView(props: {
   const { onBuy, onBuyKey, buyKey } = props;
   const press = useCallback(() => (onBuyKey && buyKey !== undefined ? onBuyKey(buyKey) : onBuy?.()), [onBuy, onBuyKey, buyKey]);
   return (
-    <View style={[styles.card, props.wide && styles.cardWide, props.canBuy ? { borderColor: look.borderColor, borderWidth: look.borderWidth, backgroundColor: look.backgroundColor, padding: 5 + (2.5 - look.borderWidth) } : props.hot && styles.cardHot, props.muted && !props.canBuy && styles.cardMuted]}>
+    <View
+      style={[
+        styles.card,
+        props.wide && styles.cardWide,
+        props.canBuy
+          ? { borderColor: look.borderColor, borderWidth: look.borderWidth, backgroundColor: look.backgroundColor, padding: 5 + (2.5 - look.borderWidth) }
+          : props.hot && styles.cardHot,
+        props.muted && !props.canBuy && styles.cardMuted,
+      ]}
+    >
       <View style={styles.cardHead}>
         <View style={styles.icon}>{typeof props.icon === 'string' ? <Text style={styles.iconText}>{props.icon}</Text> : props.icon}</View>
         <View style={{ flex: 1 }}>
@@ -180,7 +240,16 @@ function StationCardView(props: {
         </View>
       </View>
       <View style={props.wide ? { width: 96 } : undefined}>
-        <BuyButton compact name={props.title} tone={props.tone} testID={props.testID} label={props.cost === null ? props.costLabel ?? 'MAX' : props.buyLabel ?? money(props.cost)} sub={props.tone === 'nogain' ? 'no gain now' : undefined} enabled={props.canBuy} onPress={press} />
+        <BuyButton
+          compact
+          name={props.title}
+          tone={props.tone}
+          testID={props.testID}
+          label={props.cost === null ? (props.costLabel ?? 'MAX') : (props.buyLabel ?? money(props.cost))}
+          sub={props.tone === 'nogain' ? 'no gain now' : undefined}
+          enabled={props.canBuy}
+          onPress={press}
+        />
       </View>
     </View>
   );
@@ -205,7 +274,17 @@ const styles = StyleSheet.create({
   tabHeld: { backgroundColor: 'rgba(255,255,255,0.55)', borderColor: C.cheeseDark },
   tabBuildReady: { backgroundColor: C.basil, borderColor: '#fff', borderStyle: 'solid' },
 
-  card: { justifyContent: 'space-between', width: '48.5%', backgroundColor: C.panel, borderRadius: 16, padding: 5, gap: 5, borderWidth: 2.5, borderColor: C.ink, ...shadow },
+  card: {
+    justifyContent: 'space-between',
+    width: '48.5%',
+    backgroundColor: C.panel,
+    borderRadius: 16,
+    padding: 5,
+    gap: 5,
+    borderWidth: 2.5,
+    borderColor: C.ink,
+    ...shadow,
+  },
   cardWide: { width: '100%', flexDirection: 'row', alignItems: 'flex-start' },
   // D419: only a card that cannot be bought fades; a buyable one (Ovens on a shop with no manager) stays at full strength
   cardMuted: { opacity: 0.6 },
@@ -213,7 +292,16 @@ const styles = StyleSheet.create({
   neckChip: { alignSelf: 'flex-start', backgroundColor: C.tomato, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1, marginVertical: 1 },
   neckText: { fontFamily: F.bold, fontSize: 10, letterSpacing: 0.4, color: '#fff' },
   cardHead: { flexDirection: 'row', gap: 6, alignItems: 'flex-start', flex: 1 },
-  icon: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FFE9C7', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: C.cheeseDark },
+  icon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#FFE9C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: C.cheeseDark,
+  },
   iconText: { fontSize: 19 },
   title: { fontFamily: F.bold, color: C.ink, fontSize: 14 },
   level: { fontFamily: F.semi, color: C.inkSoft, fontSize: 12 },

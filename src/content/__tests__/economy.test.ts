@@ -3,7 +3,9 @@ import * as G from '../../engine/game';
 import { costLadder } from '../../engine/buy-many';
 import { stationCost } from '../../engine/game';
 import { money } from '../../engine/format';
-import { FOOTPRINTS, NEIGHBORHOODS, STATIONS, TUNING } from '../tuning';
+import { STATIONS, TUNING } from '../tuning';
+import { FOOTPRINTS } from '../cities/home/fit';
+import { NEIGHBORHOODS } from '../cities/home/data';
 
 const READABLE = /^\$\d+(\.\d+)?[A-Za-z]*$/;
 const STATION_KEYS = ['prep', 'ovens', 'counter', 'drivers', 'tables'] as const;
@@ -81,7 +83,10 @@ describe('T83 economy tables', () => {
     for (const k of ['prep', 'ovens', 'counter', 'drivers'] as const) {
       const ladder = costLadder(t, 'suburbs', k);
       let sum = 0;
-      for (let i = 0; i < 12; i++) { sum += stationCost('suburbs', k, shop[k] - 1 + i); expect(ladder[i]).toBe(sum); }
+      for (let i = 0; i < 12; i++) {
+        sum += stationCost('suburbs', k, shop[k] - 1 + i);
+        expect(ladder[i]).toBe(sum);
+      }
     }
   });
 

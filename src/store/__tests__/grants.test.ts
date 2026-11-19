@@ -60,7 +60,10 @@ describe('a grant during a load (C127)', () => {
 
 describe('Start over keeps what was paid for (C129)', () => {
   it('standing grants hold only the awning and Plus, never diamonds or the boost', () => {
-    expect(standingGrants(['starter_pack', 'nonnas_plus'])).toEqual([{ diamonds: 0, cosmetic: 'awning-founder' }, { diamonds: 0, plus: true }]);
+    expect(standingGrants(['starter_pack', 'nonnas_plus'])).toEqual([
+      { diamonds: 0, cosmetic: 'awning-founder' },
+      { diamonds: 0, plus: true },
+    ]);
     expect(standingGrants([])).toEqual([]);
   });
 

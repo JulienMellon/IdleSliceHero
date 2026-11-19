@@ -16,7 +16,12 @@ describe('cloud', () => {
     const m = /^(-?[\d.]+) (-?[\d.]+)v(-?[\d.]+)h(-?[\d.]+)v(-?[\d.]+)Z$/.exec(subpaths[4]);
     expect(m).not.toBeNull();
     const [x, y, v, h] = [1, 2, 3, 4].map((i) => Number(m![i]));
-    const pts = [[x, y], [x, y + v], [x + h, y + v], [x + h, y]];
+    const pts = [
+      [x, y],
+      [x, y + v],
+      [x + h, y + v],
+      [x + h, y],
+    ];
     let a = 0;
     for (let i = 0; i < 4; i++) {
       const [x0, y0] = pts[i];

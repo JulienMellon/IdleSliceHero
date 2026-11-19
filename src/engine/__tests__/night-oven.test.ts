@@ -12,7 +12,8 @@ const H = 3600;
 function city(built: G.GameState['active'][] = ['downtown'], patch: Partial<G.GameState> = {}): G.GameState {
   const base = G.newGame(T0);
   const shops = { ...base.shops };
-  for (const id of built) shops[id] = { ...shops[id], built: true, managed: true, heads: G.allHeads(), prep: 12, ovens: 12, counter: 12, drivers: 8, tables: 6 };
+  for (const id of built)
+    shops[id] = { ...shops[id], built: true, managed: true, heads: G.allHeads(), prep: 12, ovens: 12, counter: 12, drivers: 8, tables: 6 };
   return { ...base, shops, lastSavedAt: T0, ...patch };
 }
 
@@ -92,7 +93,11 @@ describe('buying', () => {
     expect(v.chip).toBe('🌙 4 h');
     expect(v.body).toBe("While you're away, Nonna's night oven keeps baking for up to 4 h. Come back before it's full!");
     expect(v.leaveLine).toBe("Leave now and it's full in 4 h.");
-    expect(v.tiers.map((t) => [t.hours, t.state])).toEqual([['4 h', 'owned'], ['8 h', 'next'], ['12 h', 'later']]);
+    expect(v.tiers.map((t) => [t.hours, t.state])).toEqual([
+      ['4 h', 'owned'],
+      ['8 h', 'next'],
+      ['12 h', 'later'],
+    ]);
     expect(v.next).toMatchObject({ tier: 1, title: 'Night oven: holds 8 h', lock: null, canBuy: true });
     const locked = nightOvenView(city(['downtown']));
     expect(locked.tiers[1].note).toBe('Unlocks when you build Waterfront');

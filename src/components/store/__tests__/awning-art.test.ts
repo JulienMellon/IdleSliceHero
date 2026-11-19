@@ -23,7 +23,11 @@ describe('one purchase at a time (C130)', () => {
     const guard = createBuyGuard();
     let calls = 0;
     let finish: (r: 'purchased') => void = () => {};
-    const buy = () => new Promise<'purchased'>((res) => { calls++; finish = res; });
+    const buy = () =>
+      new Promise<'purchased'>((res) => {
+        calls++;
+        finish = res;
+      });
     const first = guardedBuy(guard, buy, 'diamonds_80');
     expect(guard.busy()).toBe(true);
     expect(await guardedBuy(guard, buy, 'diamonds_80')).toBeNull();

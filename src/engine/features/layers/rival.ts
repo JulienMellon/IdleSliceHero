@@ -5,6 +5,7 @@
 // challenge won (read from the seen scenes, so no migration has to guess). Inactive until the shop is built.
 import { LAYER_KEYS, RIVAL } from '../../../content/layers';
 import type { NeighborhoodId } from '../../../content/types';
+import { cityOf } from '../../../content/cities';
 import { challengeOffered, featureMults, finaleId, sceneId, shopRate, type BuyResult, type GameState } from '../../game';
 import { savedHoods, type Feature } from '../types';
 
@@ -40,7 +41,7 @@ export const rivalOpen = (g: GameState, id: NeighborhoodId): boolean => !!g.shop
 
 /** Pies the challenge asks for in `id` right now: ceil(5 min x the shop's current pizza rate x 1.2), at least 1. */
 export function rivalTarget(g: GameState, id: NeighborhoodId, now: number): number {
-  const rate = shopRate(g.shops[id], g.vehicle, featureMults(g, id, now));
+  const rate = shopRate(g.shops[id], g.vehicle, cityOf(g).fit, featureMults(g, id, now));
   return Math.max(1, Math.ceil(RIVAL.challengeSeconds * rate * RIVAL.targetMargin));
 }
 
@@ -73,7 +74,8 @@ export function rivalView(g: GameState, id: NeighborhoodId, now: number): RivalV
   if (!open) return { ...base, phase: 'none', target: 0, progress: 0, secondsLeft: 0, retryIn: 0 };
   const st = read(g);
   const c = st.challenge;
-  if (c && c.hood === id) return { ...base, phase: 'running', target: c.target, progress: progressOf(g, c), secondsLeft: Math.max(0, Math.ceil(c.left)), retryIn: 0 };
+  if (c && c.hood === id)
+    return { ...base, phase: 'running', target: c.target, progress: progressOf(g, c), secondsLeft: Math.max(0, Math.ceil(c.left)), retryIn: 0 };
   // C125: the real target while it waits, so a sheet never recomputes it
   if (!challengeOffered(g, id)) return { ...base, phase: 'waiting', target: rivalTarget(g, id, now), progress: 0, secondsLeft: 0, retryIn: 0 };
   const wait = Math.max(0, Math.ceil((st.retryAt[id] ?? 0) - g.playSeconds));
@@ -113,9 +115,14 @@ export const rival: Feature<RivalState> = {
     const nat = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0);
     const won = Array.isArray(r.won) ? [...new Set((r.won as unknown[]).map(hood).filter((x): x is NeighborhoodId => x !== null))] : [];
     const c = r.challenge && typeof r.challenge === 'object' ? (r.challenge as Record<string, unknown>) : null;
-    const ch = c && hood(c.hood) && nat(c.target) >= 1 && typeof c.left === 'number' && c.left > 0 ? { hood: hood(c.hood) as NeighborhoodId, target: nat(c.target), startSold: nat(c.startSold), left: Math.min(RIVAL.challengeSeconds, c.left) } : null;
+    const ch =
+      c && hood(c.hood) && nat(c.target) >= 1 && typeof c.left === 'number' && c.left > 0
+        ? { hood: hood(c.hood) as NeighborhoodId, target: nat(c.target), startSold: nat(c.startSold), left: Math.min(RIVAL.challengeSeconds, c.left) }
+        : null;
     const retryAt: Partial<Record<NeighborhoodId, number>> = {};
-    if (r.retryAt && typeof r.retryAt === 'object') for (const id of savedHoods(city)) if (typeof (r.retryAt as Record<string, unknown>)[id] === 'number') retryAt[id] = nat((r.retryAt as Record<string, unknown>)[id]);
+    if (r.retryAt && typeof r.retryAt === 'object')
+      for (const id of savedHoods(city))
+        if (typeof (r.retryAt as Record<string, unknown>)[id] === 'number') retryAt[id] = nat((r.retryAt as Record<string, unknown>)[id]);
     return { won, challenge: ch, retryAt };
   },
   tick(g, dt) {

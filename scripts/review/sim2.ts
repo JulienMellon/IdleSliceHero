@@ -6,17 +6,17 @@
 // Env: REWARDS=0 · POLICY=top|smart|casual · NOTAP=1 · NOCACHE=1 (the 'top' player re-decides every second instead of only when something but cash changed).
 import { writeFileSync, mkdirSync } from 'fs';
 import { HOME_SCENES } from '../../src/content/scenes/home';
-import { DECOR_KINDS, DECOR_TIER_COST, FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES, PIER9_BID, VEHICLES, TUNING } from '../../src/content/tuning';
+import { DECOR_KINDS, DECOR_TIER_COST, TUNING } from '../../src/content/tuning';
 import { DAILY_CHESTS } from '../../src/content/rewards';
 import { ORDER } from '../../src/content/hooks';
 import type { NeighborhoodId } from '../../src/content/types';
 import { pickScene, scenePacesGap } from '../../src/engine/cutscene-input';
 import * as G from '../../src/engine/game';
-import { buyRack, rackLock, rackPrice } from '../../src/engine/features/layers/waterfront-boats';
+import { buyRack, rackLock, rackPrice } from '../../src/engine/features/layers/boats';
 import { rivalView, startRivalChallenge } from '../../src/engine/features/layers/rival';
-import { bestMix, mixOf, setMenu } from '../../src/engine/features/layers/university-menu';
-import { fixJam, jamView } from '../../src/engine/features/layers/industrial-shifts';
-import { buyIngredients, ingredientsLock, ingredientsPrice, type StarsState } from '../../src/engine/features/layers/uptown-stars';
+import { bestMix, mixOf, setMenu } from '../../src/engine/features/layers/menu';
+import { fixJam, jamView } from '../../src/engine/features/layers/shifts';
+import { buyIngredients, ingredientsLock, ingredientsPrice, type StarsState } from '../../src/engine/features/layers/stars';
 import { LAYER_KEYS } from '../../src/content/layers';
 import '../../src/engine/features'; // the registry must be live (mastery, heads, recipes, ...): without this import no feature hook runs
 import * as B from '../../src/engine/bonus';
@@ -25,6 +25,9 @@ import * as N from '../../src/engine/night-oven';
 import * as R from '../../src/engine/rewards';
 import { money } from '../../src/engine/format';
 
+import { HOME_FIT } from '../../src/content/cities/home/fit';
+import { FOOTPRINTS, OVEN_GRADES, VEHICLES } from '../../src/content/cities/home/fit';
+import { NEIGHBORHOODS, PIER9_BID } from '../../src/content/cities/home/data';
 // Every run is played in one time zone, so day and week keys (and so the daily sets) come out the same wherever it runs.
 if (!process.env.TZ) process.env.TZ = 'America/New_York';
 /** The install moment of every simulated player: a Monday morning, local time. The wall clock of a run is this plus the seconds since install. */
@@ -51,13 +54,33 @@ export function options(s: G.GameState): Option[] {
       if (gain !== null && cost !== null && shop.managed) out.push({ label: `${n.id}:decor-${kind}`, cost, gain, buy: (st) => G.buyDecor(st, n.id, kind) });
     }
     const b = G.bottleneckBundle(s, n.id);
-    if (b) out.push({ label: `${n.id}:bundle(${b.steps.join('+')})`, cost: b.cost, gain: G.runsItself(shop) ? b.gain : b.gain / 3, buy: (st) => { let cur = st; for (const w of b.steps) { const r = G.buyUpgrade(cur, n.id, w); if (!r.ok) return r; cur = r.state; } return { ok: true, state: cur }; } });
+    if (b)
+      out.push({
+        label: `${n.id}:bundle(${b.steps.join('+')})`,
+        cost: b.cost,
+        gain: G.runsItself(shop) ? b.gain : b.gain / 3,
+        buy: (st) => {
+          let cur = st;
+          for (const w of b.steps) {
+            const r = G.buyUpgrade(cur, n.id, w);
+            if (!r.ok) return r;
+            cur = r.state;
+          }
+          return { ok: true, state: cur };
+        },
+      });
     if (!G.upgradeLock(s, n.id, 'expand')) {
-      const stage = G.bottleneck(shop, s.vehicle);
+      const stage = G.bottleneck(shop, s.vehicle, HOME_FIT);
       const what: G.Upgrade = stage === 'customers' ? 'tables' : stage;
       if (G.upgradeLock(s, n.id, what)) {
         const after = G.buyUpgrade({ ...s, cash: 1e300 }, n.id, 'expand');
-        if (after.ok) out.push({ label: `${n.id}:expand`, cost: G.upgradeCostOf(s, n.id, 'expand')!, gain: G.upgradeGain(after.state, n.id, what) ?? 0, buy: (st) => G.buyUpgrade(st, n.id, 'expand') });
+        if (after.ok)
+          out.push({
+            label: `${n.id}:expand`,
+            cost: G.upgradeCostOf(s, n.id, 'expand')!,
+            gain: G.upgradeGain(after.state, n.id, what) ?? 0,
+            buy: (st) => G.buyUpgrade(st, n.id, 'expand'),
+          });
       }
     }
   }
@@ -79,7 +102,8 @@ export function options(s: G.GameState): Option[] {
   }
   const next = G.nextToBuild(s);
   // a build that is locked (Nonna has not taken over, the last finale has not played) cannot be bought: a player does not save for it, they buy something else
-  if (next && !G.buildLock(s, next.id)) out.push({ label: `build:${next.id}`, cost: next.buildCost, gain: G.buildGain(s, next.id) / 2, buy: (st) => G.buildShop(st, next.id) });
+  if (next && !G.buildLock(s, next.id))
+    out.push({ label: `build:${next.id}`, cost: next.buildCost, gain: G.buildGain(s, next.id) / 2, buy: (st) => G.buildShop(st, next.id) });
   const vg = G.vehicleGain(s);
   if (vg !== null) out.push({ label: 'fleet', cost: VEHICLES[s.vehicle + 1].cost, gain: vg, buy: G.buyVehicle });
   return out.filter((o) => o.gain > 1e-9);
@@ -104,15 +128,33 @@ export function levelsAffordable(s: G.GameState, id: NeighborhoodId, cash: numbe
   return n;
 }
 
-const median = (xs: number[]) => { const a = [...xs].sort((x, y) => x - y); return a.length ? a[Math.floor(a.length / 2)] : 0; };
+const median = (xs: number[]) => {
+  const a = [...xs].sort((x, y) => x - y);
+  return a.length ? a[Math.floor(a.length / 2)] : 0;
+};
 
 export type RewardKind = 'golden' | 'order' | 'daily' | 'chest' | 'weekly' | 'weeklyChest' | 'gift' | 'critic';
 /** One reward paid: when (wall seconds since install), what and how much cash (0 for a diamond or booster only). */
-export interface Claim { wall: number; kind: RewardKind; cash: number }
+export interface Claim {
+  wall: number;
+  kind: RewardKind;
+  cash: number;
+}
 /** One purchase decision after Nonna's takeover: whether the best-payback item was also the cheapest on offer, and the third-best payback over the best. */
-export interface Decision { wall: number; session: number; cheapest: boolean; ratio3: number | null }
+export interface Decision {
+  wall: number;
+  session: number;
+  cheapest: boolean;
+  ratio3: number | null;
+}
 /** When a pizzeria was built, got its first head, all three heads and its manager (wall seconds since install). */
-export interface Timeline { build?: number; head1?: number; heads3?: number; manager?: number; /** The manager's price in hours of the city's income just before it was hired. */ managerHours?: number }
+export interface Timeline {
+  build?: number;
+  head1?: number;
+  heads3?: number;
+  manager?: number;
+  /** The manager's price in hours of the city's income just before it was hired. */ managerHours?: number;
+}
 
 /**
  * mode 'continuous': plays without stopping. mode 'checkin': plays `session` s, then away `away` s (offline catch-up).
@@ -120,7 +162,21 @@ export interface Timeline { build?: number; head1?: number; heads3?: number; man
  * pizzas, accepts every special order (and rushes it), claims every finished task and chest, the weekly ones and the daily gift,
  * and buys the night oven when it can. Every one is the engine's own function on the run's wall clock (INSTALL + seconds).
  */
-export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 3600, dumpDir?: string, stop: { atScene?: string; maxWall?: number; /** Called after every simulated second of play with the state and the wall clock (the fitters sample curves with it). */ onSecond?: (s: G.GameState, wall: number) => void; /** Keep playing after the city is complete (to see what is bought after the story, up to `maxWall`). */ keepGoing?: boolean } = {}) {
+export function run(
+  mode: 'continuous' | 'checkin',
+  session = 300,
+  away = 4 * 3600,
+  dumpDir?: string,
+  stop: {
+    atScene?: string;
+    maxWall?: number;
+    /** Called after every simulated second of play with the state and the wall clock (the fitters sample curves with it). */ onSecond?: (
+      s: G.GameState,
+      wall: number,
+    ) => void;
+    /** Keep playing after the city is complete (to see what is bought after the story, up to `maxWall`). */ keepGoing?: boolean;
+  } = {},
+) {
   let s = G.newGame(INSTALL);
   let lastSceneEnd: number | null = null;
   let wall = 0; // real seconds since install
@@ -147,10 +203,20 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
   /** The cash the unaffordable pick of the last decision needs, and the scenes seen then (see the buy loop). */
   let waitCash = 0;
   let waitScenes = -1;
-  const dump = (name: string) => { if (!dumpDir || dumped.has(name)) return; dumped.add(name); writeFileSync(`${dumpDir}/${name}.json`, JSON.stringify({ ...s, lastSavedAt: 0 })); };
-  const mark = (id: NeighborhoodId, patch: Timeline) => { timeline[id] = { ...timeline[id], ...patch }; };
+  const dump = (name: string) => {
+    if (!dumpDir || dumped.has(name)) return;
+    dumped.add(name);
+    writeFileSync(`${dumpDir}/${name}.json`, JSON.stringify({ ...s, lastSavedAt: 0 }));
+  };
+  const mark = (id: NeighborhoodId, patch: Timeline) => {
+    timeline[id] = { ...timeline[id], ...patch };
+  };
   /** Take a claim's result: the cash it paid is what the state gained. */
-  const take = (kind: RewardKind, r: G.BuyResult) => { if (!r.ok) return; claims.push({ wall, kind, cash: r.state.cash - s.cash }); s = r.state; };
+  const take = (kind: RewardKind, r: G.BuyResult) => {
+    if (!r.ok) return;
+    claims.push({ wall, kind, cash: r.state.cash - s.cash });
+    s = r.state;
+  };
   /** What the player does with the rewards in one second of play. */
   const rewardSecond = () => {
     if (!R.rewardsUnlocked(s)) return;
@@ -160,22 +226,34 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
     s = B.bonusTick(s, 1, false);
     if (B.bonusVisible(s) && s.bonus.spawned % 5 !== 0) {
       const c = B.collectBonus(s);
-      if (c) { claims.push({ wall, kind: 'golden', cash: c.paid }); s = c.state; }
+      if (c) {
+        claims.push({ wall, kind: 'golden', cash: c.paid });
+        s = c.state;
+      }
     }
     // special order: accept every offer and rush it (only a managed shop has a rush); the engine decides the win
     const done = s.stats.ordersDone;
     const made = s.order.made;
     s = O.orderTick(s, 1, false);
     if (s.order.made > made) orders.offered++;
-    if (s.stats.ordersDone > done) { orders.done++; claims.push({ wall, kind: 'order', cash: s.order.result?.reward ?? 0 }); }
+    if (s.stats.ordersDone > done) {
+      orders.done++;
+      claims.push({ wall, kind: 'order', cash: s.order.result?.reward ?? 0 });
+    }
     if (s.order.offer) s = O.acceptOrder(s);
     const a = s.order.active;
     if (a && s.shops[a.hood].managed) for (let i = 0; i < ORDER.rushTapsPerSecond; i++) s = G.tapShop(s, a.hood);
     // tasks and chests, when something is ready
     if (R.claimableCount(s, at) > 0) {
-      s.rewards.daily.forEach((tk, i) => { if (!tk.claimed && R.taskDone(s, tk)) take('daily', R.claimDaily(s, i, at)); });
-      DAILY_CHESTS.forEach((_, i) => { if (R.chestReady(s, i)) take('chest', R.claimChest(s, i, at)); });
-      s.rewards.weekly.forEach((tk, i) => { if (!tk.claimed && R.taskDone(s, tk)) take('weekly', R.claimWeekly(s, i, at)); });
+      s.rewards.daily.forEach((tk, i) => {
+        if (!tk.claimed && R.taskDone(s, tk)) take('daily', R.claimDaily(s, i, at));
+      });
+      DAILY_CHESTS.forEach((_, i) => {
+        if (R.chestReady(s, i)) take('chest', R.claimChest(s, i, at));
+      });
+      s.rewards.weekly.forEach((tk, i) => {
+        if (!tk.claimed && R.taskDone(s, tk)) take('weekly', R.claimWeekly(s, i, at));
+      });
       if (R.weeklyChestReady(s)) take('weeklyChest', R.claimWeeklyChest(s, at));
     }
     // the daily gift, once a day (a missed day starts over: the sim never pays diamonds to repair it)
@@ -186,7 +264,11 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
     if (nt !== null && !N.nightOvenLock(s, nt) && s.cash >= N.nightOvenPrice(s, nt)) {
       const before = s.cash;
       const r = N.buyNightOven(s);
-      if (r.ok) { s = r.state; waitCash = 0; buys.push({ t: s.playSeconds, wall, label: 'night-oven', cost: before - s.cash, session: sessions, cashBefore: before }); }
+      if (r.ok) {
+        s = r.state;
+        waitCash = 0;
+        buys.push({ t: s.playSeconds, wall, label: 'night-oven', cost: before - s.cash, session: sessions, cashBefore: before });
+      }
     }
   };
   /**
@@ -202,14 +284,21 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
     if (price === null || rackLock(s) || !G.runsItself(s.shops.waterfront) || price > s.cash / 4) return;
     const before = s.cash;
     const r = buyRack(s);
-    if (r.ok) { s = r.state; waitCash = 0; buys.push({ t: s.playSeconds, wall, label: 'waterfront:rack', cost: before - s.cash, session: sessions, cashBefore: before }); }
+    if (r.ok) {
+      s = r.state;
+      waitCash = 0;
+      buys.push({ t: s.playSeconds, wall, label: 'waterfront:rack', cost: before - s.cash, session: sessions, cashBefore: before });
+    }
   };
   const rivalSecond = () => {
     const at = INSTALL + wall * 1000;
     if (rival.running) {
       const v = rivalView(s, rival.running, at);
       // the player rushes the shop all through the challenge, as for an order (a managed shop's tap is a rush)
-      if (v.phase === 'running') { if (s.shops[rival.running].managed) for (let i = 0; i < ORDER.rushTapsPerSecond; i++) s = G.tapShop(s, rival.running); return; }
+      if (v.phase === 'running') {
+        if (s.shops[rival.running].managed) for (let i = 0; i < ORDER.rushTapsPerSecond; i++) s = G.tapShop(s, rival.running);
+        return;
+      }
       if (v.won) rival.won++;
       rival.running = null;
     }
@@ -217,7 +306,11 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
       const sh = s.shops[n.id];
       if (!sh.built || !G.runsItself(sh) || !G.challengeOffered(s, n.id) || rivalView(s, n.id, at).phase !== 'available') continue; // v5.16 (card T1a): the finale wait gates the offer
       const r = startRivalChallenge(s, n.id, at);
-      if (r.ok) { s = r.state; rival.started++; rival.running = n.id; }
+      if (r.ok) {
+        s = r.state;
+        rival.started++;
+        rival.running = n.id;
+      }
       break;
     }
   };
@@ -231,14 +324,29 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
     if (s.shops.university.built && wall % 30 === 0) {
       const best = bestMix(s);
       const now = mixOf(s);
-      if (best.pepperoni !== now.pepperoni || best.knots !== now.knots) { const r = setMenu(s, best.pepperoni, best.knots); if (r.ok) s = r.state; }
+      if (best.pepperoni !== now.pepperoni || best.knots !== now.knots) {
+        const r = setMenu(s, best.pepperoni, best.knots);
+        if (r.ok) s = r.state;
+      }
     }
     if (s.shops.industrial.built && jamView(s).jammed) {
-      if (++jammedFor >= 5) { const r = fixJam(s); if (r.ok) s = r.state; jammedFor = 0; }
+      if (++jammedFor >= 5) {
+        const r = fixJam(s);
+        if (r.ok) s = r.state;
+        jammedFor = 0;
+      }
     } else jammedFor = 0;
     // Uptown's Ingredients are a luxury too (a rating is a goal, not a rate): bought once Uptown runs itself and the tier costs under a quarter of the cash in hand
     const ing = ingredientsPrice(s);
-    if (ing !== null && !ingredientsLock(s) && G.runsItself(s.shops.uptown) && ing <= s.cash / 4) { const before = s.cash; const r = buyIngredients(s); if (r.ok) { s = r.state; waitCash = 0; buys.push({ t: s.playSeconds, wall, label: 'uptown:ingredients', cost: before - s.cash, session: sessions, cashBefore: before }); } }
+    if (ing !== null && !ingredientsLock(s) && G.runsItself(s.shops.uptown) && ing <= s.cash / 4) {
+      const before = s.cash;
+      const r = buyIngredients(s);
+      if (r.ok) {
+        s = r.state;
+        waitCash = 0;
+        buys.push({ t: s.playSeconds, wall, label: 'uptown:ingredients', cost: before - s.cash, session: sessions, cashBefore: before });
+      }
+    }
     const stars = s.x[LAYER_KEYS.stars] as StarsState | undefined;
     if (stars?.result) {
       if (stars.result.hit) claims.push({ wall, kind: 'critic', cash: stars.result.cash });
@@ -250,25 +358,61 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
     lastSceneEnd = null;
     for (let k = 0; k < (mode === 'continuous' ? 1e9 : session); k++) {
       const newest = [...NEIGHBORHOODS].reverse().find((n) => s.shops[n.id].built)!.id as NeighborhoodId;
-      for (const id of (cfg.notap ? ['downtown'] : [newest, 'downtown']) as NeighborhoodId[]) for (let j = 0; j < 3 && !s.shops[id].managed; j++) { const st = G.nextStation(s.shops[id]); if (!st) break; const r = G.tapStation(s, id, st); if (!r.ok) break; s = r.state; }
-      s = G.playTick(s, 1); wall += 1;
+      for (const id of (cfg.notap ? ['downtown'] : [newest, 'downtown']) as NeighborhoodId[])
+        for (let j = 0; j < 3 && !s.shops[id].managed; j++) {
+          const st = G.nextStation(s.shops[id]);
+          if (!st) break;
+          const r = G.tapStation(s, id, st);
+          if (!r.ok) break;
+          s = r.state;
+        }
+      s = G.playTick(s, 1);
+      wall += 1;
       for (let sc = pickScene(s, HOME_SCENES, 1e15, 0, false, lastSceneEnd); sc; sc = pickScene(s, HOME_SCENES, 1e15, 0, false, lastSceneEnd)) {
-        s = G.markSceneSeen(s, sc); if (scenePacesGap(sc)) lastSceneEnd = s.playSeconds; scenes.push({ t: s.playSeconds, wall, id: sc.id });
+        s = G.markSceneSeen(s, sc);
+        if (scenePacesGap(sc)) lastSceneEnd = s.playSeconds;
+        scenes.push({ t: s.playSeconds, wall, id: sc.id });
         dump(`at-${sc.id}`);
         if (stop.atScene === sc.id) break outer;
       }
       if (cfg.rewards) rewardSecond();
       stop.onSecond?.(s, wall);
-      if (!pier9Open && G.pier9Available(s)) { const eps = G.earningsPerSecond(s); pier9Open = { wall, eps, minutes: PIER9_BID.cost / eps / 60 }; }
+      if (!pier9Open && G.bidAvailable(s)) {
+        const eps = G.earningsPerSecond(s);
+        pier9Open = { wall, eps, minutes: PIER9_BID.cost / eps / 60 };
+      }
       // the bid is a live auction (card E2a): the price is the base times the auction's multiplier
-      if (G.pier9Available(s) && s.cash >= G.pier9Price(s)) { const before = s.cash; const r = G.bidPier9(s); if (r.ok) { s = r.state; buys.push({ t: s.playSeconds, wall, label: 'pier9', cost: before - s.cash, session: sessions, cashBefore: before }); } }
+      if (G.bidAvailable(s) && s.cash >= G.bidPrice(s)) {
+        const before = s.cash;
+        const r = G.placeBid(s);
+        if (r.ok) {
+          s = r.state;
+          buys.push({ t: s.playSeconds, wall, label: 'pier9', cost: before - s.cash, session: sessions, cashBefore: before });
+        }
+      }
       rackSecond();
       rivalSecond();
       layerSecond();
-      if (s.cityComplete) { storyEnd ??= { wall, earned: s.totalEarned }; if (!stop.keepGoing) break outer; }
+      if (s.cityComplete) {
+        storyEnd ??= { wall, earned: s.totalEarned };
+        if (!stop.keepGoing) break outer;
+      }
       // EAGER=1: a human who builds the next neighbourhood the moment they can afford it (the default greedy waits until the build also beats every upgrade per dollar)
-      if (cfg.eager && !G.pier9Available(s)) { const nb = G.nextToBuild(s); if (nb && !G.buildLock(s, nb.id) && s.cash >= nb.buildCost) { const r = G.buildShop(s, nb.id); if (r.ok) { const before = s.cash; s = r.state; waitCash = 0; mark(nb.id, { build: wall }); buys.push({ t: s.playSeconds, wall, label: `build:${nb.id}`, cost: nb.buildCost, session: sessions, cashBefore: before }); builds.push({ id: nb.id, wall, left: s.cash, levels: levelsAffordable(s, nb.id, s.cash) }); } } }
-      for (let q = 0; q < 30 && !G.pier9Available(s); q++) {
+      if (cfg.eager && !G.bidAvailable(s)) {
+        const nb = G.nextToBuild(s);
+        if (nb && !G.buildLock(s, nb.id) && s.cash >= nb.buildCost) {
+          const r = G.buildShop(s, nb.id);
+          if (r.ok) {
+            const before = s.cash;
+            s = r.state;
+            waitCash = 0;
+            mark(nb.id, { build: wall });
+            buys.push({ t: s.playSeconds, wall, label: `build:${nb.id}`, cost: nb.buildCost, session: sessions, cashBefore: before });
+            builds.push({ id: nb.id, wall, left: s.cash, levels: levelsAffordable(s, nb.id, s.cash) });
+          }
+        }
+      }
+      for (let q = 0; q < 30 && !G.bidAvailable(s); q++) {
         // POLICY=top picks the same item until something other than cash changes (a purchase, a scene): while the cash is short of it, skip the work
         if (cfg.policy === 'top' && !process.env.NOCACHE && s.cash < waitCash && scenes.length === waitScenes) break;
         const opts = options(s).sort((a, b) => b.gain / b.cost - a.gain / a.cost);
@@ -290,18 +434,34 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
           if (x && x.cost / x.gain < Math.min(wait, cfg.payback)) pick = x;
         }
         const r = pick.buy(s);
-        if (!r.ok) { if (pick.cost > s.cash) { waitCash = pick.cost; waitScenes = scenes.length; } break; }
+        if (!r.ok) {
+          if (pick.cost > s.cash) {
+            waitCash = pick.cost;
+            waitScenes = scenes.length;
+          }
+          break;
+        }
         waitCash = 0;
         const epsPre = G.earningsPerSecond(s);
         if (s.seenScenes.includes('downtown-4')) {
           // the decision metric (card E0 step 5): was the best item also the cheapest on offer, and how far behind is the third best
           const best = opts[0];
-          decisions.push({ wall, session: sessions, cheapest: best.cost <= Math.min(...opts.map((o) => o.cost)), ratio3: opts.length >= 3 ? opts[2].cost / opts[2].gain / (best.cost / best.gain) : null });
+          decisions.push({
+            wall,
+            session: sessions,
+            cheapest: best.cost <= Math.min(...opts.map((o) => o.cost)),
+            ratio3: opts.length >= 3 ? opts[2].cost / opts[2].gain / (best.cost / best.gain) : null,
+          });
         }
-        const before = s.cash; s = r.state; buys.push({ t: s.playSeconds, wall, label: pick.label, cost: pick.cost, session: sessions, cashBefore: before });
+        const before = s.cash;
+        s = r.state;
+        buys.push({ t: s.playSeconds, wall, label: pick.label, cost: pick.cost, session: sessions, cashBefore: before });
         const [lbShop, lbWhat = ''] = pick.label.split(':') as [NeighborhoodId, string | undefined];
-        if (lbShop === ('build' as string)) { const id = lbWhat as NeighborhoodId; mark(id, { build: wall }); builds.push({ id, wall, left: s.cash, levels: levelsAffordable(s, id, s.cash) }); }
-        else if (lbWhat.startsWith('head')) {
+        if (lbShop === ('build' as string)) {
+          const id = lbWhat as NeighborhoodId;
+          mark(id, { build: wall });
+          builds.push({ id, wall, left: s.cash, levels: levelsAffordable(s, id, s.cash) });
+        } else if (lbWhat.startsWith('head')) {
           headBuys.push({ id: lbShop, kind: lbWhat, wall });
           if (!timeline[lbShop]?.head1) mark(lbShop, { head1: wall });
           if (G.allHeadsHired(s.shops[lbShop])) mark(lbShop, { heads3: wall });
@@ -330,7 +490,26 @@ export function run(mode: 'continuous' | 'checkin', session = 300, away = 4 * 36
     if (sessions > 400 || wall > (stop.maxWall ?? Infinity)) break;
   }
   const rewardCash = claims.filter((c) => !storyEnd || c.wall <= storyEnd.wall).reduce((t, c) => t + c.cash, 0);
-  return { storyEnd, s, buys, scenes, sessions, wall, builds, hires, rounds, pier9Open, claims, rewardCash, earnedCash: storyEnd?.earned ?? s.totalEarned, decisions, timeline, headBuys, orders, rival: { started: rival.started, won: rival.won } };
+  return {
+    storyEnd,
+    s,
+    buys,
+    scenes,
+    sessions,
+    wall,
+    builds,
+    hires,
+    rounds,
+    pier9Open,
+    claims,
+    rewardCash,
+    earnedCash: storyEnd?.earned ?? s.totalEarned,
+    decisions,
+    timeline,
+    headBuys,
+    orders,
+    rival: { started: rival.started, won: rival.won },
+  };
 }
 
 const median2 = (xs: number[]) => (xs.length ? median(xs) : NaN);
@@ -349,7 +528,10 @@ export function decisionMetric(r: ReturnType<typeof run>, from = 0, to = Infinit
 export function rewardRules(r: ReturnType<typeof run>, from: NeighborhoodId = 'waterfront') {
   const newestAt = (wall: number): NeighborhoodId => {
     let id: NeighborhoodId = 'downtown';
-    for (const n of NEIGHBORHOODS) { const b = r.timeline[n.id]?.build; if (n.id !== 'downtown' && b !== undefined && b <= wall) id = n.id; }
+    for (const n of NEIGHBORHOODS) {
+      const b = r.timeline[n.id]?.build;
+      if (n.id !== 'downtown' && b !== undefined && b <= wall) id = n.id;
+    }
     return id;
   };
   const unmanaged = (id: NeighborhoodId, wall: number) => id !== 'downtown' && (r.timeline[id]?.manager === undefined || r.timeline[id]!.manager! > wall);
@@ -372,20 +554,35 @@ export function reportLines(r: ReturnType<typeof run>) {
   const f = (x: number, d = 2) => (Number.isFinite(x) ? x.toFixed(d) : 'n/a');
   const takeover = r.scenes.find((x) => x.id === 'downtown-4')?.wall ?? 0;
   const sub = r.scenes.find((x) => x.id === 'suburbs-4')?.wall ?? Infinity;
-  const m1 = decisionMetric(r, takeover, sub), m2 = decisionMetric(r, takeover);
+  const m1 = decisionMetric(r, takeover, sub),
+    m2 = decisionMetric(r, takeover);
   const rr = rewardRules(r);
   const lines = [
     `decisions (cheapest = best): session 1 ${m1.n} buys, ${f(m1.cheapestShare * 100, 0)}% cheapest, third/best ${f(m1.medianRatio3, 1)} | whole run ${m2.n} buys, ${f(m2.cheapestShare * 100, 0)}% cheapest, third/best ${f(m2.medianRatio3, 1)}`,
-    `rewards ${cfg.rewards ? 'on' : 'off'}: ${f(rr.share * 100, 1)}% of cash earned; largest claim ${f(rr.maxClaimOfManager * 100, 1)}% and largest day ${f(rr.maxDayOfManager * 100, 1)}% of the newest unmanaged shop's manager; orders ${r.orders.done}/${r.orders.offered}; ${Object.entries(claimTable(r)).map(([k, v]) => `${k} ${v.n} (${money(v.cash)})`).join(', ')}`,
+    `rewards ${cfg.rewards ? 'on' : 'off'}: ${f(rr.share * 100, 1)}% of cash earned; largest claim ${f(rr.maxClaimOfManager * 100, 1)}% and largest day ${f(rr.maxDayOfManager * 100, 1)}% of the newest unmanaged shop's manager; orders ${r.orders.done}/${r.orders.offered}; ${Object.entries(
+      claimTable(r),
+    )
+      .map(([k, v]) => `${k} ${v.n} (${money(v.cash)})`)
+      .join(', ')}`,
   ];
-  for (const n of NEIGHBORHOODS) { const t = r.timeline[n.id]; if (t) lines.push(`${n.id.padEnd(10)} build d${f((t.build ?? 0) / 86400)} head1 d${f((t.head1 ?? NaN) / 86400)} heads3 d${f((t.heads3 ?? NaN) / 86400)} manager d${f((t.manager ?? NaN) / 86400)}${t.managerHours !== undefined ? ` (price ${f(t.managerHours, 1)} h of income)` : ''}`); }
+  for (const n of NEIGHBORHOODS) {
+    const t = r.timeline[n.id];
+    if (t)
+      lines.push(
+        `${n.id.padEnd(10)} build d${f((t.build ?? 0) / 86400)} head1 d${f((t.head1 ?? NaN) / 86400)} heads3 d${f((t.heads3 ?? NaN) / 86400)} manager d${f((t.manager ?? NaN) / 86400)}${t.managerHours !== undefined ? ` (price ${f(t.managerHours, 1)} h of income)` : ''}`,
+      );
+  }
   return lines;
 }
 
 /** Rewards by kind: count and cash. */
 export function claimTable(r: ReturnType<typeof run>) {
   const out: Record<string, { n: number; cash: number }> = {};
-  for (const c of r.claims) { const o = (out[c.kind] ??= { n: 0, cash: 0 }); o.n++; o.cash += c.cash; }
+  for (const c of r.claims) {
+    const o = (out[c.kind] ??= { n: 0, cash: 0 });
+    o.n++;
+    o.cash += c.cash;
+  }
   return out;
 }
 
@@ -397,7 +594,12 @@ export function sessionStats(r: ReturnType<typeof run>, sessionSeconds: number, 
     counts.push(r.buys.filter((b) => b.session === i).length);
   }
   const sorted = [...counts].sort((a, b) => a - b);
-  return { min: sorted.length ? sorted[0] : 0, median: sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0, max: sorted.length ? sorted[sorted.length - 1] : 0, counts };
+  return {
+    min: sorted.length ? sorted[0] : 0,
+    median: sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0,
+    max: sorted.length ? sorted[sorted.length - 1] : 0,
+    counts,
+  };
 }
 
 /** Purchases per session after day 0 and what the late-game items ended as. */
@@ -411,35 +613,77 @@ export function endSummary(r: ReturnType<typeof run>, sessionSeconds: number, aw
 /** Per-shop economy rows of a run: costMult/orderValue, build and manager price against the Lv 1 prep price, levels the cash left after the build buys, manager vs station price when the heads were hired, minutes of income one Lv 25 round costs. */
 export function economyReport(r: ReturnType<typeof run>) {
   const f = (x: number | undefined, d = 1) => (x === undefined ? 'n/a' : x >= 100 ? x.toFixed(0) : x.toFixed(d));
-  return NEIGHBORHOODS.map((n) => {
-    const b = r.builds.find((x) => x.id === n.id), h = r.hires.find((x) => x.id === n.id), c = r.rounds.find((x) => x.id === n.id);
-    const prep1 = G.stationCost(n.id, 'prep', 0);
-    return `${n.id.padEnd(10)} cm/ov ${f(n.costMult / n.orderValue, 2)}  build/prep1 ${f(n.buildCost / prep1)}  mgr/prep1 ${f(n.managerCost / prep1)}  after-build levels ${b ? b.levels : 'n/a'}  mgr/station@heads ${f(h?.ratio)}  Lv25 round ${c ? f(c.minutes) + ' min' : 'n/a'}`;
-  }).join('\n') + `\npier9 bid ${money(PIER9_BID.cost)} = ${r.pier9Open ? f(r.pier9Open.minutes) + ' min of income when it opens (day ' + (r.pier9Open.wall / 86400).toFixed(2) + ')' : 'never opened'}`;
+  return (
+    NEIGHBORHOODS.map((n) => {
+      const b = r.builds.find((x) => x.id === n.id),
+        h = r.hires.find((x) => x.id === n.id),
+        c = r.rounds.find((x) => x.id === n.id);
+      const prep1 = G.stationCost(n.id, 'prep', 0);
+      return `${n.id.padEnd(10)} cm/ov ${f(n.costMult / n.orderValue, 2)}  build/prep1 ${f(n.buildCost / prep1)}  mgr/prep1 ${f(n.managerCost / prep1)}  after-build levels ${b ? b.levels : 'n/a'}  mgr/station@heads ${f(h?.ratio)}  Lv25 round ${c ? f(c.minutes) + ' min' : 'n/a'}`;
+    }).join('\n') +
+    `\npier9 bid ${money(PIER9_BID.cost)} = ${r.pier9Open ? f(r.pier9Open.minutes) + ' min of income when it opens (day ' + (r.pier9Open.wall / 86400).toFixed(2) + ')' : 'never opened'}`
+  );
 }
 
 /** Everything the fitter can vary. Lists are per neighbourhood (6) unless noted. Unset fields keep src/content/tuning.ts. */
 export interface Cfg {
-  ov?: number[]; bc?: number[]; cm?: number[]; mc?: number[];
+  ov?: number[];
+  bc?: number[];
+  cm?: number[];
+  mc?: number[];
   /** Pier 9 bid cost and the Waterfront pizzas that unlock it. */
-  pier9?: number; pier9Pizzas?: number;
+  pier9?: number;
+  pier9Pizzas?: number;
   /** Oven grade costs for grades 1–4, footprint costs for tiers 1–4, decor tier costs 1–3, vehicle costs for 1–4 (scooter…drone). */
-  og?: number[]; fp?: number[]; dc?: number[]; vc?: number[];
-  cap?: number; eff?: number; eager?: boolean;
+  og?: number[];
+  fp?: number[];
+  dc?: number[];
+  vc?: number[];
+  cap?: number;
+  eff?: number;
+  eager?: boolean;
   /** Play with the rewards (the default) or without (REWARDS=0). */
   rewards?: boolean;
 }
-export const cfg = { cap: TUNING.offlineCapSeconds, eff: 1, eager: false, rewards: process.env.REWARDS !== '0', notap: !!process.env.NOTAP, policy: (process.env.POLICY === 'smart' || process.env.POLICY === 'casual' ? process.env.POLICY : 'top') as 'top' | 'smart' | 'casual', saveFor: Number(process.env.SAVEFOR ?? 4 * 3600), payback: Number(process.env.PAYBACK ?? Infinity) };
+export const cfg = {
+  cap: TUNING.offlineCapSeconds,
+  eff: 1,
+  eager: false,
+  rewards: process.env.REWARDS !== '0',
+  notap: !!process.env.NOTAP,
+  policy: (process.env.POLICY === 'smart' || process.env.POLICY === 'casual' ? process.env.POLICY : 'top') as 'top' | 'smart' | 'casual',
+  saveFor: Number(process.env.SAVEFOR ?? 4 * 3600),
+  payback: Number(process.env.PAYBACK ?? Infinity),
+};
 export function applyCfg(c: Cfg) {
-  const each = (xs: number[] | undefined, set: (i: number, v: number) => void) => xs?.forEach((v, i) => { if (Number.isFinite(v)) set(i, v); });
-  each(c.ov, (i, v) => { (NEIGHBORHOODS[i] as any).orderValue = v; });
-  each(c.bc, (i, v) => { (NEIGHBORHOODS[i] as any).buildCost = v; });
-  each(c.cm, (i, v) => { (NEIGHBORHOODS[i] as any).costMult = v; });
-  each(c.mc, (i, v) => { (NEIGHBORHOODS[i] as any).managerCost = v; });
-  each(c.og, (i, v) => { OVEN_GRADES[i + 1].cost = v; });
-  each(c.fp, (i, v) => { FOOTPRINTS[i + 1].cost = v; });
-  each(c.dc, (i, v) => { DECOR_TIER_COST[i] = v; });
-  each(c.vc, (i, v) => { VEHICLES[i + 1].cost = v; });
+  const each = (xs: number[] | undefined, set: (i: number, v: number) => void) =>
+    xs?.forEach((v, i) => {
+      if (Number.isFinite(v)) set(i, v);
+    });
+  each(c.ov, (i, v) => {
+    (NEIGHBORHOODS[i] as any).orderValue = v;
+  });
+  each(c.bc, (i, v) => {
+    (NEIGHBORHOODS[i] as any).buildCost = v;
+  });
+  each(c.cm, (i, v) => {
+    (NEIGHBORHOODS[i] as any).costMult = v;
+  });
+  each(c.mc, (i, v) => {
+    (NEIGHBORHOODS[i] as any).managerCost = v;
+  });
+  each(c.og, (i, v) => {
+    OVEN_GRADES[i + 1].cost = v;
+  });
+  each(c.fp, (i, v) => {
+    FOOTPRINTS[i + 1].cost = v;
+  });
+  each(c.dc, (i, v) => {
+    DECOR_TIER_COST[i] = v;
+  });
+  each(c.vc, (i, v) => {
+    VEHICLES[i + 1].cost = v;
+  });
   if (c.pier9 !== undefined) (PIER9_BID as any).cost = c.pier9;
   if (c.pier9Pizzas !== undefined) (PIER9_BID as any).unlockPizzas = c.pier9Pizzas;
   if (c.cap !== undefined) cfg.cap = c.cap;
@@ -451,42 +695,67 @@ const list = (name: string) => process.env[name]?.split(',').map(Number);
 
 // Env overrides (all optional): OV BC CM MC = six values; OG FP VC = four; DC = three; PB = Pier 9 bid; PP = Pier 9 unlock pizzas; CAP, EFF = offline cap (s) and rate; EAGER=1 builds the next pizzeria as soon as it is affordable.
 const main = () => {
-applyCfg({ ov: list('OV'), bc: list('BC'), cm: list('CM'), mc: list('MC'), og: list('OG'), fp: list('FP'), dc: list('DC'), vc: list('VC'),
-  pier9: process.env.PB ? Number(process.env.PB) : undefined, pier9Pizzas: process.env.PP ? Number(process.env.PP) : undefined,
-  cap: process.env.CAP ? Number(process.env.CAP) : undefined, eff: process.env.EFF ? Number(process.env.EFF) : undefined, eager: process.env.EAGER ? true : undefined });
-const mode = process.argv[2] ?? 'continuous';
-if (mode === 'continuous') {
-  mkdirSync('saves', { recursive: true });
-  const r = run('continuous', 0, 0, 'saves');
-  // purchase cadence per neighbourhood phase
-  const phases = r.scenes.filter((x) => x.id.endsWith('-1')).map((x) => ({ id: x.id.replace('-1', ''), t: x.t }));
-  phases.push({ id: 'end', t: r.s.playSeconds });
-  for (let i = 0; i < phases.length - 1; i++) {
-    const a = phases[i].t, b = phases[i + 1].t;
-    const bs = r.buys.filter((x) => x.t >= a && x.t < b);
-    const gaps = bs.map((x, j) => (j ? x.t - bs[j - 1].t : x.t - a));
-    gaps.push(b - (bs.length ? bs[bs.length - 1].t : a));
-    const sorted = [...gaps].sort((x, y) => x - y);
-    const long = gaps.filter((g) => g >= 60);
-    console.log(`${phases[i].id.padEnd(11)} ${((b - a) / 60).toFixed(1).padStart(6)} min · ${String(bs.length).padStart(4)} buys · median gap ${sorted[Math.floor(sorted.length / 2)].toFixed(0)} s · max gap ${(Math.max(...gaps)).toFixed(0)} s · ${long.length} waits ≥ 60 s totalling ${(long.reduce((t, g) => t + g, 0) / 60).toFixed(1)} min`);
+  applyCfg({
+    ov: list('OV'),
+    bc: list('BC'),
+    cm: list('CM'),
+    mc: list('MC'),
+    og: list('OG'),
+    fp: list('FP'),
+    dc: list('DC'),
+    vc: list('VC'),
+    pier9: process.env.PB ? Number(process.env.PB) : undefined,
+    pier9Pizzas: process.env.PP ? Number(process.env.PP) : undefined,
+    cap: process.env.CAP ? Number(process.env.CAP) : undefined,
+    eff: process.env.EFF ? Number(process.env.EFF) : undefined,
+    eager: process.env.EAGER ? true : undefined,
+  });
+  const mode = process.argv[2] ?? 'continuous';
+  if (mode === 'continuous') {
+    mkdirSync('saves', { recursive: true });
+    const r = run('continuous', 0, 0, 'saves');
+    // purchase cadence per neighbourhood phase
+    const phases = r.scenes.filter((x) => x.id.endsWith('-1')).map((x) => ({ id: x.id.replace('-1', ''), t: x.t }));
+    phases.push({ id: 'end', t: r.s.playSeconds });
+    for (let i = 0; i < phases.length - 1; i++) {
+      const a = phases[i].t,
+        b = phases[i + 1].t;
+      const bs = r.buys.filter((x) => x.t >= a && x.t < b);
+      const gaps = bs.map((x, j) => (j ? x.t - bs[j - 1].t : x.t - a));
+      gaps.push(b - (bs.length ? bs[bs.length - 1].t : a));
+      const sorted = [...gaps].sort((x, y) => x - y);
+      const long = gaps.filter((g) => g >= 60);
+      console.log(
+        `${phases[i].id.padEnd(11)} ${((b - a) / 60).toFixed(1).padStart(6)} min · ${String(bs.length).padStart(4)} buys · median gap ${sorted[Math.floor(sorted.length / 2)].toFixed(0)} s · max gap ${Math.max(...gaps).toFixed(0)} s · ${long.length} waits ≥ 60 s totalling ${(long.reduce((t, g) => t + g, 0) / 60).toFixed(1)} min`,
+      );
+    }
+    // what kinds were bought
+    const kinds: Record<string, number> = {};
+    for (const b of r.buys) {
+      const k = b.label.split(':')[1]?.replace(/\(.*/, '') ?? b.label;
+      kinds[k] = (kinds[k] ?? 0) + 1;
+    }
+    console.log(kinds);
+    console.log('total play', (r.s.playSeconds / 60).toFixed(0), 'min');
+    console.log(reportLines(r).join('\n'));
+    // dump mid-shops
+    writeFileSync('saves/end.json', JSON.stringify({ ...r.s, lastSavedAt: 0 }));
+  } else {
+    for (const [sess, away] of [
+      [300, 4 * 3600],
+      [300, 8 * 3600],
+      [600, 3 * 3600],
+      [120, 2 * 3600],
+    ] as const) {
+      const r = run('checkin', sess, away);
+      const days = r.wall / 86400;
+      const m: Record<string, number> = {};
+      for (const x of r.scenes) if (x.id.endsWith('-1') || x.id === 'uptown-4') m[x.id] = +(x.wall / 86400).toFixed(2);
+      console.log(
+        `sessions of ${sess / 60} min every ${(sess + away) / 3600} h: done=${r.s.cityComplete} after ${r.sessions} sessions, ${days.toFixed(1)} days; scenes ${r.s.seenScenes.length}/24; unlock days ${JSON.stringify(m)}; ${endSummary(r, sess, away)}`,
+      );
+      if (sess === 300 && away === 4 * 3600) console.log(economyReport(r));
+    }
   }
-  // what kinds were bought
-  const kinds: Record<string, number> = {};
-  for (const b of r.buys) { const k = b.label.split(':')[1]?.replace(/\(.*/, '') ?? b.label; kinds[k] = (kinds[k] ?? 0) + 1; }
-  console.log(kinds);
-  console.log('total play', (r.s.playSeconds / 60).toFixed(0), 'min');
-  console.log(reportLines(r).join('\n'));
-  // dump mid-shops
-  writeFileSync('saves/end.json', JSON.stringify({ ...r.s, lastSavedAt: 0 }));
-} else {
-  for (const [sess, away] of [[300, 4 * 3600], [300, 8 * 3600], [600, 3 * 3600], [120, 2 * 3600]] as const) {
-    const r = run('checkin', sess, away);
-    const days = r.wall / 86400;
-    const m: Record<string, number> = {};
-    for (const x of r.scenes) if (x.id.endsWith('-1') || x.id === 'uptown-4') m[x.id] = +(x.wall / 86400).toFixed(2);
-    console.log(`sessions of ${sess / 60} min every ${(sess + away) / 3600} h: done=${r.s.cityComplete} after ${r.sessions} sessions, ${days.toFixed(1)} days; scenes ${r.s.seenScenes.length}/24; unlock days ${JSON.stringify(m)}; ${endSummary(r, sess, away)}`);
-    if (sess === 300 && away === 4 * 3600) console.log(economyReport(r));
-  }
-}
 };
 if (require.main === module) main();

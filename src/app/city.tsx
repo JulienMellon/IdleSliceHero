@@ -40,7 +40,13 @@ export default function City() {
           <Text style={styles.backText}>‹ Back</Text>
         </Pressable>
         <Text style={styles.title}>{city.name}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Settings" onPress={() => router.push('/settings')} style={styles.settings} testID="open-settings">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Settings"
+          onPress={() => router.push('/settings')}
+          style={styles.settings}
+          testID="open-settings"
+        >
           <Text style={{ fontSize: 24, color: '#FFF4E0', fontFamily: F.bold }}>⚙︎</Text>
         </Pressable>
       </View>
@@ -62,7 +68,9 @@ export default function City() {
       <View style={styles.listWrap}>
         <ScrollView contentContainerStyle={styles.summary}>
           <Text style={styles.big}>{money(G.earningsPerSecond(game))}/sec</Text>
-          <Text style={styles.small}>{built}/{NEIGHBORHOODS.length} pizzerias built · {managersText(NEIGHBORHOODS.filter((n) => game.shops[n.id].managed).length)} · tap one to visit</Text>
+          <Text style={styles.small}>
+            {built}/{NEIGHBORHOODS.length} pizzerias built · {managersText(NEIGHBORHOODS.filter((n) => game.shops[n.id].managed).length)} · tap one to visit
+          </Text>
           {NEIGHBORHOODS.map((n) => {
             const sh = game.shops[n.id];
             const lot = lotView(game, n);
@@ -78,7 +86,8 @@ export default function City() {
                   onPress={() => {
                     if (build(n.id)) router.back();
                   }}
-                  style={[styles.row, styles.rowLocked, lot.kind === 'buildable' && { borderColor: C.cheeseDark, borderStyle: 'dashed', opacity: 1 }]}>
+                  style={[styles.row, styles.rowLocked, lot.kind === 'buildable' && { borderColor: C.cheeseDark, borderStyle: 'dashed', opacity: 1 }]}
+                >
                   <View style={[styles.dot, { backgroundColor: lot.kind === 'buildable' ? n.color : C.locked }]} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.rowName}>{n.name}</Text>
@@ -98,7 +107,8 @@ export default function City() {
                   setActive(n.id);
                   router.back();
                 }}
-                style={[styles.row, { borderColor: n.color }]}>
+                style={[styles.row, { borderColor: n.color }]}
+              >
                 <View style={[styles.dot, { backgroundColor: n.color }]} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rowName}>{n.name}</Text>
@@ -121,7 +131,16 @@ export default function City() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   listWrap: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 4, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    backgroundColor: C.tomato,
+    borderBottomWidth: 4,
+    borderColor: C.tomatoDark,
+  },
   // U5: Back and Settings are drawn 44 pt tall, the label in the middle of it
   back: { width: 70, minHeight: TAP.min, justifyContent: 'center' },
   settings: { width: 70, minHeight: TAP.min, alignItems: 'flex-end', justifyContent: 'center' },

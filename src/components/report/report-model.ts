@@ -9,7 +9,8 @@ import { reportView, type FloorLamp, type KitchenStation, type Lamp, type Report
 import { FIT_EM, fits } from '../endgame/fit-model';
 
 /** Fill `{name}` slots of a copy line. An unknown slot stays as written (a test catches it). */
-export const fill = (template: string, vars: Readonly<Record<string, string | number>>): string => template.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
+export const fill = (template: string, vars: Readonly<Record<string, string | number>>): string =>
+  template.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
 export const copy = (key: CopyKey, vars: Readonly<Record<string, string | number>> = {}): string => fill(COPY[key], vars);
 
 // ---------- the lamps ----------
@@ -26,7 +27,8 @@ export const LAMP_COLOR: Record<LampTone, string> = {
 };
 /** The initial's colour on its chip: white on red (contrast), ink elsewhere. */
 export const LAMP_INK: Record<LampTone, 'light' | 'dark'> = { slammed: 'light', full: 'light', busy: 'dark', steady: 'dark', idle: 'dark', quiet: 'dark' };
-export const lampWord = (kind: KitchenStation | 'floor', lamp: Lamp | FloorLamp): string => copy(`lamp.${kind === 'floor' ? 'floor' : 'station'}.${lamp}` as CopyKey);
+export const lampWord = (kind: KitchenStation | 'floor', lamp: Lamp | FloorLamp): string =>
+  copy(`lamp.${kind === 'floor' ? 'floor' : 'station'}.${lamp}` as CopyKey);
 
 // ---------- the strip ----------
 
@@ -73,7 +75,18 @@ export interface StripModel {
   word: string;
 }
 
-export const HIDDEN_STRIP: StripModel = Object.freeze({ show: false, kind: '', text: '', manager: '', prep: 'idle', ovens: 'idle', counter: 'idle', floor: 'steady', worstDot: '', word: '' }) as StripModel;
+export const HIDDEN_STRIP: StripModel = Object.freeze({
+  show: false,
+  kind: '',
+  text: '',
+  manager: '',
+  prep: 'idle',
+  ovens: 'idle',
+  counter: 'idle',
+  floor: 'steady',
+  worstDot: '',
+  word: '',
+}) as StripModel;
 
 export function stripModel(g: GameState, id: NeighborhoodId, now: number): StripModel {
   const v = reportView(g, id, now);
@@ -84,7 +97,7 @@ export function stripModel(g: GameState, id: NeighborhoodId, now: number): Strip
     show: true,
     kind: line.kind,
     text: line.text,
-    manager: managed ? cityOf(g).managers[id]?.id ?? '' : '',
+    manager: managed ? (cityOf(g).managers[id]?.id ?? '') : '',
     prep: v.lamps.prep,
     ovens: v.lamps.ovens,
     counter: v.lamps.counter,
@@ -198,9 +211,28 @@ const STATION_NAME: Record<KitchenStation | 'floor', string> = { prep: 'Prep', o
 
 export function sheetModel(g: GameState, id: NeighborhoodId, now: number): SheetModel {
   const v = reportView(g, id, now);
-  const rows: SheetRow[] = (['prep', 'ovens', 'counter'] as const).map((k) => ({ key: k, name: STATION_NAME[k], rate: perMin(v.perMin[k]), load: pct(v.loads[k]), tone: v.lamps[k], word: lampWord(k, v.lamps[k]) }));
-  rows.push({ key: 'floor', name: STATION_NAME.floor, rate: perMin(v.perMin.wanted), load: pct(v.floorRatio), tone: v.lamps.floor, word: lampWord('floor', v.lamps.floor) });
-  const timer = v.state === 'cold' ? `The line is cold. Get service back to ${pct(SERVICE.coldBelow)}.` : v.coldIn !== null ? `Cold in ${duration(Math.ceil(v.coldIn))} if it stays under ${pct(SERVICE.coldBelow)}.` : null;
+  const rows: SheetRow[] = (['prep', 'ovens', 'counter'] as const).map((k) => ({
+    key: k,
+    name: STATION_NAME[k],
+    rate: perMin(v.perMin[k]),
+    load: pct(v.loads[k]),
+    tone: v.lamps[k],
+    word: lampWord(k, v.lamps[k]),
+  }));
+  rows.push({
+    key: 'floor',
+    name: STATION_NAME.floor,
+    rate: perMin(v.perMin.wanted),
+    load: pct(v.floorRatio),
+    tone: v.lamps.floor,
+    word: lampWord('floor', v.lamps.floor),
+  });
+  const timer =
+    v.state === 'cold'
+      ? `The line is cold. Get service back to ${pct(SERVICE.coldBelow)}.`
+      : v.coldIn !== null
+        ? `Cold in ${duration(Math.ceil(v.coldIn))} if it stays under ${pct(SERVICE.coldBelow)}.`
+        : null;
   return {
     title: copy('report.sheet.title'),
     rows,
@@ -209,7 +241,12 @@ export function sheetModel(g: GameState, id: NeighborhoodId, now: number): Sheet
     cold: copy('report.sheet.cold'),
     timer,
     state: v.state,
-    fixes: FIX_ROWS.map((f) => ({ key: f.key, title: copy(`report.sheet.fix.${f.key}.title` as CopyKey), line: copy(`report.sheet.fix.${f.key}.line` as CopyKey), buys: f.buys })),
+    fixes: FIX_ROWS.map((f) => ({
+      key: f.key,
+      title: copy(`report.sheet.fix.${f.key}.title` as CopyKey),
+      line: copy(`report.sheet.fix.${f.key}.line` as CopyKey),
+      buys: f.buys,
+    })),
   };
 }
 
@@ -229,6 +266,7 @@ export const managerEffect = (): string => copy('effect.manager');
 export function compactEffect(gain: number | null, cost: number | null, width: number): string | null {
   if (gain === null || !(gain > 1e-9)) return null;
   const g = `+${money(gain * 60)}/min`;
-  const candidates = cost !== null && cost > 0 ? [`${g} · ${duration(Math.max(1, Math.ceil(cost / gain)))}`, g, `+${money(gain * 60)}/m`] : [g, `+${money(gain * 60)}/m`];
+  const candidates =
+    cost !== null && cost > 0 ? [`${g} · ${duration(Math.max(1, Math.ceil(cost / gain)))}`, g, `+${money(gain * 60)}/m`] : [g, `+${money(gain * 60)}/m`];
   return candidates.find((c) => fits(c, width, 10)) ?? candidates[candidates.length - 1];
 }

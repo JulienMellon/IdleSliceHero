@@ -38,7 +38,13 @@ export interface Cue {
   word: string;
 }
 
-const PLACE: Readonly<Record<ScrollTarget, string>> = { prep: 'the prep bench', ovens: 'the ovens', counter: 'the counter', floor: 'the dining room', door: 'the door' };
+const PLACE: Readonly<Record<ScrollTarget, string>> = {
+  prep: 'the prep bench',
+  ovens: 'the ovens',
+  counter: 'the counter',
+  floor: 'the dining room',
+  door: 'the door',
+};
 /** The word under the chevron names the place (D515), 7 letters at most; the kind is the colour and the screen reader's label. A jam keeps its own word: it is at the ovens. */
 const NAME: Readonly<Record<ScrollTarget, string>> = { prep: 'Prep', ovens: 'Ovens', counter: 'Counter', floor: 'Dining', door: 'Door' };
 export const cueWord = (kind: CueKind, at: ScrollTarget): string => (kind === 'jam' ? 'Jam!' : NAME[at]);
@@ -62,7 +68,13 @@ export const offScreen = (sx: number, viewW: number): 'left' | 'right' | null =>
  * The cues for the wants that are off screen: one per side, the most urgent (a tie goes to the nearer one). Nothing when the shop does not scroll
  * (`maxScroll` 0: all of it is on screen).
  */
-export function cuesFor(wants: readonly Want[], scrollX: number, viewW: number, fit: Pick<SceneFit, 's' | 'ox'>, maxScroll: number): { left: Cue | null; right: Cue | null } {
+export function cuesFor(
+  wants: readonly Want[],
+  scrollX: number,
+  viewW: number,
+  fit: Pick<SceneFit, 's' | 'ox'>,
+  maxScroll: number,
+): { left: Cue | null; right: Cue | null } {
   const out: { left: Cue | null; right: Cue | null } = { left: null, right: null };
   if (maxScroll <= 0) return out;
   const best: { left: { w: Want; d: number } | null; right: { w: Want; d: number } | null } = { left: null, right: null };
@@ -76,7 +88,15 @@ export function cuesFor(wants: readonly Want[], scrollX: number, viewW: number, 
   }
   for (const side of ['left', 'right'] as const) {
     const b = best[side];
-    if (b) out[side] = { side, kind: b.w.kind, at: b.w.at, scrollTo: openScroll(b.w.x, fit.s, viewW, maxScroll), label: cueLabel(b.w.kind, b.w.at, side), word: cueWord(b.w.kind, b.w.at) };
+    if (b)
+      out[side] = {
+        side,
+        kind: b.w.kind,
+        at: b.w.at,
+        scrollTo: openScroll(b.w.x, fit.s, viewW, maxScroll),
+        label: cueLabel(b.w.kind, b.w.at, side),
+        word: cueWord(b.w.kind, b.w.at),
+      };
   }
   return out;
 }
@@ -92,7 +112,12 @@ export interface PtRect {
 export const CUE_GAP = 8;
 
 /** Where the jam's wrench stands on the view (pt): a `size` square centred on the oven's scene place (`cx`, `cy` in content px), the view scrolled by `scrollX`. */
-export const wrenchRect = (cx: number, cy: number, size: number, scrollX: number): PtRect => ({ x0: cx - scrollX - size / 2, y0: cy - size / 2, x1: cx - scrollX + size / 2, y1: cy + size / 2 });
+export const wrenchRect = (cx: number, cy: number, size: number, scrollX: number): PtRect => ({
+  x0: cx - scrollX - size / 2,
+  y0: cy - size / 2,
+  x1: cx - scrollX + size / 2,
+  y1: cy + size / 2,
+});
 
 /**
  * Where a cue's top goes so that it is `gap` pt clear of every tappable on screen (G111: the right cue sat over the jam's wrench). The cue keeps its side

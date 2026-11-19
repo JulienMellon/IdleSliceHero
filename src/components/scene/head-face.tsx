@@ -90,11 +90,21 @@ export const HeadFace = memo(function HeadFace({ kind, name, size }: { kind: Hea
   return (
     <G transform={`scale(${k})`}>
       {/* shoulders in the role's colour */}
-      <Path d="M-15 20 Q-15 9 0 9 Q15 9 15 20 Z" fill={fixed ? fixed.shirt : kind === 'oven' ? '#B23A48' : kind === 'counter' ? '#2E8B3E' : kind === 'gm' ? '#3B4A6B' : '#FFFFFF'} stroke={INK} strokeWidth={1.4} />
+      <Path
+        d="M-15 20 Q-15 9 0 9 Q15 9 15 20 Z"
+        fill={fixed ? fixed.shirt : kind === 'oven' ? '#B23A48' : kind === 'counter' ? '#2E8B3E' : kind === 'gm' ? '#3B4A6B' : '#FFFFFF'}
+        stroke={INK}
+        strokeWidth={1.4}
+      />
       {fixed && <ManagerBody look={fixed} />}
       <Circle cx={0} cy={-1} r={11} fill={skin} stroke={INK} strokeWidth={1.4} />
       {/* hair under the hat */}
-      <Path d={fixed ? HAIR_TOP[fixed.hairStyle] : 'M-11 -2 Q-12 -12 0 -12 Q12 -12 11 -2 Q8 -7 0 -7 Q-8 -7 -11 -2 Z'} fill={hair} stroke={fixed ? INK : undefined} strokeWidth={fixed ? 0.8 : undefined} />
+      <Path
+        d={fixed ? HAIR_TOP[fixed.hairStyle] : 'M-11 -2 Q-12 -12 0 -12 Q12 -12 11 -2 Q8 -7 0 -7 Q-8 -7 -11 -2 Z'}
+        fill={hair}
+        stroke={fixed ? INK : undefined}
+        strokeWidth={fixed ? 0.8 : undefined}
+      />
       {fixed && <ManagerTop look={fixed} />}
       <Circle cx={-4} cy={0} r={1.4} fill={INK} />
       <Circle cx={4} cy={0} r={1.4} fill={INK} />

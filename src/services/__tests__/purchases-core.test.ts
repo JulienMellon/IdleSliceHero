@@ -44,7 +44,11 @@ describe('purchases core', () => {
   });
 
   it('a backend that throws is a failed buy', async () => {
-    const { p } = setup({ outcome: () => { throw new Error('boom'); } });
+    const { p } = setup({
+      outcome: () => {
+        throw new Error('boom');
+      },
+    });
     expect(await p.buy('diamonds_80')).toBe('failed');
   });
 
@@ -57,7 +61,16 @@ describe('purchases core', () => {
       kv: a.kv,
       bus,
       ids: PRODUCT_IDS,
-      backend: { products: async () => [], purchase: async () => ({ status: 'failed' }), restore: async () => { throw new Error('offline'); }, entitled: async () => { throw new Error('offline'); } },
+      backend: {
+        products: async () => [],
+        purchase: async () => ({ status: 'failed' }),
+        restore: async () => {
+          throw new Error('offline');
+        },
+        entitled: async () => {
+          throw new Error('offline');
+        },
+      },
     });
     await again.start();
     expect(again.owned()).toEqual(['nonnas_plus']);
@@ -68,7 +81,10 @@ describe('purchases core', () => {
     const { p, got } = setup({ entitled: ['starter_pack', 'nonnas_plus'] });
     expect(await p.restore()).toEqual(['starter_pack', 'nonnas_plus']);
     await p.restore();
-    expect(got).toEqual([{ diamonds: 0, cosmetic: 'awning-founder' }, { diamonds: 0, plus: true }]);
+    expect(got).toEqual([
+      { diamonds: 0, cosmetic: 'awning-founder' },
+      { diamonds: 0, plus: true },
+    ]);
   });
 
   it('a restore that fails offline keeps what is cached', async () => {
@@ -89,7 +105,17 @@ describe('purchases core', () => {
     const { p, kv } = setup();
     let seen = '';
     const bus = createGrantBus();
-    const q = createPurchases({ kv, bus, ids: PRODUCT_IDS, backend: { products: async () => [], purchase: async () => ({ status: 'purchased', transactionId: 'z' }), restore: async () => [], entitled: async () => [] } });
+    const q = createPurchases({
+      kv,
+      bus,
+      ids: PRODUCT_IDS,
+      backend: {
+        products: async () => [],
+        purchase: async () => ({ status: 'purchased', transactionId: 'z' }),
+        restore: async () => [],
+        entitled: async () => [],
+      },
+    });
     bus.subscribe(() => void kv.get(LEDGER_KEY).then((v) => (seen = v ?? '')));
     await q.buy('diamonds_80');
     await Promise.resolve();

@@ -1,7 +1,6 @@
 /// <reference types="jest" />
 // v5.18 card V2: the Restaurant and the Flagship are wider than the screen, two neighbourhoods use the mirrored floor plan, and the first three tiers do not change.
 import { createHash } from 'crypto';
-import { FOOTPRINTS } from '../../../content/tuning';
 import { FIRST_WIDE_FOOTPRINT, ROOM_WIDTH, SCENE_WIDTH, WIDE_PLAN, isMirrored } from '../../../content/shop-layout';
 import { buildCast, type CastMember } from '../cast';
 import { emptyCrew, routesFor, stepCrew, type CrewState } from '../crew';
@@ -15,6 +14,7 @@ import { P, drawFrame, drawShift, frameRight, kAt, makeFrame, sceneFrame } from 
 import { doorwaySignRect, badgeXs, stationRects } from '../stations';
 import { ladderInput, furnitureInputs } from '../furniture-inputs';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 
 describe('the widths (content/shop-layout.ts)', () => {
@@ -47,7 +47,9 @@ describe('the first three tiers do not change by a pixel', () => {
                 const lay = layout(fp, o, c, s, t, DRIVER_SLOTS[fp], p);
                 const old = Object.fromEntries(Object.entries(lay).filter(([k]) => !added.includes(k)));
                 h.update(JSON.stringify(old));
-                h.update(JSON.stringify([waitTagAt(lay, 'x'), waitTagAt(lay, '11 drivers idle · buy Ovens'), moreTagAt(lay, '+3'), moreTagAt(lay, '9 waiting')]));
+                h.update(
+                  JSON.stringify([waitTagAt(lay, 'x'), waitTagAt(lay, '11 drivers idle · buy Ovens'), moreTagAt(lay, '+3'), moreTagAt(lay, '9 waiting')]),
+                );
               }
     expect(h.digest('hex')).toBe('65e8b42473e7e5226c04c834ab74b1e7bb24a44f');
   });
@@ -56,7 +58,7 @@ describe('the first three tiers do not change by a pixel', () => {
 describe('the wide tiers use their room (card V2 step 2)', () => {
   const at = (fp: number, o = FOOTPRINTS[fp].ovenSlots, c = 3, s = 2, t = FOOTPRINTS[fp].maxTables, p = 1) => layout(fp, o, c, s, t, DRIVER_SLOTS[fp], p);
   const bank = (lay: Layout) => lay.ovenCols[lay.ovenCols.length - 1].x1 - lay.ovenCols[0].x0;
-  test('a longer oven bank: the bay is 140 / 190 against the narrow tiers\' 52 / 60 / 60, and the full bank is longer than the old 110 / 118 bay', () => {
+  test("a longer oven bank: the bay is 140 / 190 against the narrow tiers' 52 / 60 / 60, and the full bank is longer than the old 110 / 118 bay", () => {
     expect([OVEN_BAY[3].w, OVEN_BAY[4].w]).toEqual([WIDE_PLAN[3].bayW, WIDE_PLAN[4].bayW]);
     expect(bank(at(3))).toBeGreaterThan(120);
     expect(bank(at(4))).toBeGreaterThan(180);
@@ -70,7 +72,7 @@ describe('the wide tiers use their room (card V2 step 2)', () => {
       }
     }
   });
-  test('a second prep table beside the first, clear of it, of the oven bay and of the room\'s walls', () => {
+  test("a second prep table beside the first, clear of it, of the oven bay and of the room's walls", () => {
     for (const fp of [3, 4])
       for (const cooks of [1, 2, 3]) {
         const lay = at(fp, 3, cooks);
@@ -85,7 +87,7 @@ describe('the wide tiers use their room (card V2 step 2)', () => {
       }
     for (const fp of [0, 1, 2]) expect(at(fp).prep2).toBeNull();
   });
-  test('the dining room is deep enough for all of the footprint\'s tables in two rows, none on the bench\'s side of the back wall', () => {
+  test("the dining room is deep enough for all of the footprint's tables in two rows, none on the bench's side of the back wall", () => {
     for (const fp of [3, 4]) {
       const lay = at(fp);
       expect(lay.tables).toHaveLength(FOOTPRINTS[fp].maxTables);
@@ -109,7 +111,7 @@ describe('the wide tiers use their room (card V2 step 2)', () => {
     }
     expect(at(4).R - at(4).counter.x1).toBeGreaterThan(at(2).R - at(2).counter.x1);
   });
-  test('the room is centred in its drawing, the kitchen\'s pieces all stand inside it and in order along the back wall', () => {
+  test("the room is centred in its drawing, the kitchen's pieces all stand inside it and in order along the back wall", () => {
     for (const fp of [3, 4]) {
       const lay = at(fp);
       const f = sceneFrame(fp);
@@ -132,7 +134,7 @@ describe('the draw space', () => {
     expect(frameRight(d)).toBe(f.width - drawShift(f));
     expect(drawFrame(f)).toBe(d);
   });
-  test('every x of a layout lands drawShift to the left, and the default P of the drawing code plus the shift is the frame\'s own P', () => {
+  test("every x of a layout lands drawShift to the left, and the default P of the drawing code plus the shift is the frame's own P", () => {
     for (const fp of [3, 4])
       for (const mirrored of [false, true]) {
         const lay = layout(fp, 3, 2, 2, 4, DRIVER_SLOTS[fp], 1, undefined, mirrored);
@@ -141,25 +143,56 @@ describe('the draw space', () => {
         expect(d.L).toBeCloseTo(lay.L - dx, 9);
         expect(d.door.cx).toBeCloseTo(lay.door.cx - dx, 9);
         expect(d.tables.map((t) => t.x)).toEqual(lay.tables.map((t) => expect.closeTo(t.x - dx, 9)));
-        for (const [x, y] of [[lay.counter.x0, 70], [lay.door.cx, 0], [lay.patio[0]?.x ?? lay.L, -12]]) expect(P(x - dx, y)[0] + dx).toBeCloseTo(P(x, y, 0, lay.frame)[0], 9);
+        for (const [x, y] of [
+          [lay.counter.x0, 70],
+          [lay.door.cx, 0],
+          [lay.patio[0]?.x ?? lay.L, -12],
+        ])
+          expect(P(x - dx, y)[0] + dx).toBeCloseTo(P(x, y, 0, lay.frame)[0], 9);
         expect(toDrawSpace(lay)).toBe(d);
       }
   });
 });
 
 describe('the mirrored floor plan (card V2 step 3)', () => {
-  const build = (fp: number, mirrored: boolean, t = FOOTPRINTS[fp].maxTables) => layout(fp, Math.min(fp + 1, 6), 3, 2, t, DRIVER_SLOTS[fp], 1, undefined, mirrored);
+  const build = (fp: number, mirrored: boolean, t = FOOTPRINTS[fp].maxTables) =>
+    layout(fp, Math.min(fp + 1, 6), 3, 2, t, DRIVER_SLOTS[fp], 1, undefined, mirrored);
   // every x of a layout; the two ends of a span swap places when the plan is mirrored (the left end of a bench is the right end of its reflection)
   const xsOf = (lay: Layout): number[] => {
     const sp = (s: { x0: number; x1: number }) => (lay.mirrored ? [s.x1, s.x0] : [s.x0, s.x1]);
     return [
-    ...sp({ x0: lay.L, x1: lay.R }), ...sp(lay.prep), ...(lay.prep2 ? sp(lay.prep2) : []), ...lay.cooks, ...sp(lay.bay), ...sp(lay.counter), ...lay.staff,
-    ...sp(lay.door), lay.door.cx, lay.door.lanes.guestX, lay.door.lanes.driverX, lay.door.lanes.guestPauseX, lay.door.lanes.driverPauseX, ...sp(lay.jamb),
-    ...lay.spots.map((s) => s.x), ...lay.orderSpots.map((s) => s[0]), ...lay.tables.map((t) => t.x), ...lay.bakers.map((b) => b.x), lay.scooter.x, lay.tree.x, lay.sign.x, lay.prop.x,
-    ...lay.patio.map((p) => p.x), ...lay.queue.map((q) => q[0]), ...lay.driverQueue.map((q) => q[0]), lay.queueTag[0], lay.waitTag[0], lay.walk.from, lay.walk.away,
+      ...sp({ x0: lay.L, x1: lay.R }),
+      ...sp(lay.prep),
+      ...(lay.prep2 ? sp(lay.prep2) : []),
+      ...lay.cooks,
+      ...sp(lay.bay),
+      ...sp(lay.counter),
+      ...lay.staff,
+      ...sp(lay.door),
+      lay.door.cx,
+      lay.door.lanes.guestX,
+      lay.door.lanes.driverX,
+      lay.door.lanes.guestPauseX,
+      lay.door.lanes.driverPauseX,
+      ...sp(lay.jamb),
+      ...lay.spots.map((s) => s.x),
+      ...lay.orderSpots.map((s) => s[0]),
+      ...lay.tables.map((t) => t.x),
+      ...lay.bakers.map((b) => b.x),
+      lay.scooter.x,
+      lay.tree.x,
+      lay.sign.x,
+      lay.prop.x,
+      ...lay.patio.map((p) => p.x),
+      ...lay.queue.map((q) => q[0]),
+      ...lay.driverQueue.map((q) => q[0]),
+      lay.queueTag[0],
+      lay.waitTag[0],
+      lay.walk.from,
+      lay.walk.away,
     ];
   };
-  test('every x is reflected about the room\'s centre, every y is the same, and reflecting twice gives the plain plan back', () => {
+  test("every x is reflected about the room's centre, every y is the same, and reflecting twice gives the plain plan back", () => {
     for (let fp = 0; fp < 5; fp++) {
       const plain = build(fp, false);
       const m = build(fp, true);
@@ -207,7 +240,7 @@ describe('the mirrored floor plan (card V2 step 3)', () => {
       expect(m.jamb.x0).toBeCloseTo(m.L + 8, 6);
     }
   });
-  test('the crew\'s routes mirror with the layout: walkers come in from the right edge and go off the left, the chairs and the register are where the layout says', () => {
+  test("the crew's routes mirror with the layout: walkers come in from the right edge and go off the left, the chairs and the register are where the layout says", () => {
     for (let fp = 0; fp < 5; fp++) {
       const plain = build(fp, false);
       const m = build(fp, true);
@@ -226,7 +259,7 @@ describe('the mirrored floor plan (card V2 step 3)', () => {
       expect(m.walk.away).toBeLessThan(0);
     }
   });
-  test('the pills run the plain plan\'s rules on the reflection: the same pill, mirrored, with its tail turned round', () => {
+  test("the pills run the plain plan's rules on the reflection: the same pill, mirrored, with its tail turned round", () => {
     for (let fp = 0; fp < 5; fp++) {
       const plain = build(fp, false);
       const m = build(fp, true);
@@ -241,17 +274,32 @@ describe('the mirrored floor plan (card V2 step 3)', () => {
         expect([fp, mq.x]).toEqual([fp, expect.closeTo(a - mp.x, 6)]);
         expect(mq.y).toBeCloseTo(mp.y, 6);
         // and stays inside the drawing
-        for (const [x, w] of [[q.x, q.w], [mq.x, mq.w]]) expect([fp, x - w / 2 >= 0, x + w / 2 <= plain.frame.width]).toEqual([fp, true, true]);
+        for (const [x, w] of [
+          [q.x, q.w],
+          [mq.x, mq.w],
+        ])
+          expect([fp, x - w / 2 >= 0, x + w / 2 <= plain.frame.width]).toEqual([fp, true, true]);
       }
     }
   });
-  test('the ladder\'s props and the menu board are placed by the plain plan and flipped, so they never stand on the wrong wall', () => {
+  test("the ladder's props and the menu board are placed by the plain plan and flipped, so they never stand on the wrong wall", () => {
     for (let fp = 1; fp < 5; fp++) {
       // (the drawing code's space: its default `P`)
       const plain = toDrawSpace(build(fp, false));
       const m = toDrawSpace(build(fp, true));
       const a = 2 * plain.frame.vanishX;
-      const inp = ladderInput(furnitureInputs({ id: 'waterfront', name: 'Waterfront', shop: { footprint: fp, prep: 120, counter: 120, drivers: 40, managed: true, line: { prepped: 3 }, decor: { tables: 2, plants: 1, signage: 0 } }, running: true, rate: 3, vehicle: 2, worn: [], first: false }));
+      const inp = ladderInput(
+        furnitureInputs({
+          id: 'waterfront',
+          name: 'Waterfront',
+          shop: { footprint: fp, prep: 120, counter: 120, drivers: 40, managed: true, line: { prepped: 3 }, decor: { tables: 2, plants: 1, signage: 0 } },
+          running: true,
+          rate: 3,
+          vehicle: 2,
+          worn: [],
+          first: false,
+        }),
+      );
       const pp = ladderProps(plain, inp);
       const mm = ladderProps(m, inp);
       expect(mm.map((p) => p.id)).toEqual(pp.map((p) => p.id));
@@ -303,7 +351,13 @@ function simulate(fp: number, tables: number, mirrored: boolean, pace: number) {
 }
 
 describe('the crowd in the mirrored plan (the budgets of the plain plan, mirrored)', () => {
-  const cases = [[0, 1], [1, 3], [2, 6], [3, 5], [4, 6]] as const;
+  const cases = [
+    [0, 1],
+    [1, 3],
+    [2, 6],
+    [3, 5],
+    [4, 6],
+  ] as const;
   test('nobody walks in front of a baker or cook covering more than 35% of their torso', () => {
     const bad: string[] = [];
     for (const [fp, tables] of cases) {
@@ -326,7 +380,12 @@ describe('the crowd in the mirrored plan (the budgets of the plain plan, mirrore
     for (const [fp, tables] of cases) {
       const { lay, frames } = simulate(fp, tables, true, 1.5);
       const c4 = [P(lay.door.x0 + 2, -8), P(lay.door.x1 - 2, -8), P(lay.door.x1 + 1, -22), P(lay.door.x0 - 1, -22)];
-      const mat = { x0: Math.min(...c4.map((p) => p[0])), x1: Math.max(...c4.map((p) => p[0])), y0: Math.min(...c4.map((p) => p[1])), y1: Math.max(...c4.map((p) => p[1])) };
+      const mat = {
+        x0: Math.min(...c4.map((p) => p[0])),
+        x1: Math.max(...c4.map((p) => p[0])),
+        y0: Math.min(...c4.map((p) => p[1])),
+        y1: Math.max(...c4.map((p) => p[1])),
+      };
       for (const cast of frames) {
         for (const c of cast) {
           const still = !c.props.step && c.props.kind !== 'sit';

@@ -1,9 +1,23 @@
 /// <reference types="jest" />
-import { CITY_NAME, DECOR, DECOR_KINDS, FOOTPRINTS, HEAD_ROLE, HEADS, NEIGHBORHOODS, OVEN_GRADES, VEHICLES } from '../../content/tuning';
+import { DECOR, DECOR_KINDS, HEAD_ROLE } from '../../content/tuning';
 import { UPGRADE_TASK_MAX_SECONDS } from '../../content/rewards';
 import { goalAmount, money } from '../../engine/format';
-import { aOrAn, GOAL_BAR, GOAL_LAYOUT, goalBarLayout, goalLabelFit, goalLabelFits, goalTextW, goalWords, pickGoal, GOAL_FAR_SECONDS, snapSeam } from '../goal-model';
+import {
+  aOrAn,
+  GOAL_BAR,
+  GOAL_LAYOUT,
+  goalBarLayout,
+  goalLabelFit,
+  goalLabelFits,
+  goalTextW,
+  goalWords,
+  pickGoal,
+  GOAL_FAR_SECONDS,
+  snapSeam,
+} from '../goal-model';
 
+import { FOOTPRINTS, OVEN_GRADES, VEHICLES } from '../../content/cities/home/fit';
+import { CITY_NAME, HEADS, NEIGHBORHOODS } from '../../content/cities/home/data';
 const lum = (hex: string) => {
   const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
   return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
@@ -37,7 +51,12 @@ describe('goal bar two-tone label (D297)', () => {
     expect(b.split).toBe(true);
   });
   test('a zero or broken target never gives NaN', () => {
-    for (const [c, t] of [[0, 0], [5, 0], [Number.NaN, 10], [10, Number.NaN]]) {
+    for (const [c, t] of [
+      [0, 0],
+      [5, 0],
+      [Number.NaN, 10],
+      [10, Number.NaN],
+    ]) {
       const b = goalBarLayout(c, t, true, 354);
       expect(Number.isNaN(b.pct)).toBe(false);
       expect(Number.isNaN(b.fillW)).toBe(false);
@@ -46,7 +65,7 @@ describe('goal bar two-tone label (D297)', () => {
 });
 
 describe('a / an (B5)', () => {
-  test('picked from the name\'s first letter', () => {
+  test("picked from the name's first letter", () => {
     expect(aOrAn('Uptown')).toBe('an');
     expect(aOrAn('Industrial')).toBe('an');
     expect(aOrAn('Suburbs')).toBe('a');
@@ -115,10 +134,16 @@ describe('the goal line fits (C105, T81)', () => {
     return out;
   };
   // the widest amounts: the two-sided money text at every magnitude, and the story count
-  const amounts = (): string[] => [...Array.from({ length: 36 }, (_, i) => goalAmount(Math.pow(10, i) * 9.99, Math.pow(10, i) * 9.99)), goalAmount(0, 999_999_999_999_999), '24/24', money(1e33)];
+  const amounts = (): string[] => [
+    ...Array.from({ length: 36 }, (_, i) => goalAmount(Math.pow(10, i) * 9.99, Math.pow(10, i) * 9.99)),
+    goalAmount(0, 999_999_999_999_999),
+    '24/24',
+    money(1e33),
+  ];
   test('the amount is never clipped and the words keep a readable share, for every label generator, at 320, 375 and 393 pt', () => {
     const bad: string[] = [];
-    for (const barW of bars) for (const label of labels()) for (const amount of amounts()) if (!goalLabelFits(label, amount, barW)) bad.push(`${barW} "${label}" ${amount}`);
+    for (const barW of bars)
+      for (const label of labels()) for (const amount of amounts()) if (!goalLabelFits(label, amount, barW)) bad.push(`${barW} "${label}" ${amount}`);
     expect(bad.slice(0, 5)).toEqual([]);
   });
   test('the check can fail: an amount wider than the bar, or one that leaves the words nothing, does not fit', () => {
@@ -143,15 +168,30 @@ describe('C107: the goal never targets a multi-day buy', () => {
     expect(pickGoal(eps, () => [at(UPGRADE_TASK_MAX_SECONDS * 24), hour])).toBe(hour);
   });
   test('only multi-day buys on offer: no goal (the old fallback returned the far one)', () => {
-    expect(pickGoal(eps, () => [at(86400 * 3)], () => [at(86400 * 5)])).toBeNull();
+    expect(
+      pickGoal(
+        eps,
+        () => [at(86400 * 3)],
+        () => [at(86400 * 5)],
+      ),
+    ).toBeNull();
   });
   test('a later list is built only when the earlier ones have nothing near', () => {
     let built = 0;
     const near = at(5);
-    const later = () => { built++; return []; };
+    const later = () => {
+      built++;
+      return [];
+    };
     expect(pickGoal(eps, () => [near], later)).toBe(near);
     expect(built).toBe(0);
-    expect(pickGoal(eps, () => [], () => [near])).toBe(near);
+    expect(
+      pickGoal(
+        eps,
+        () => [],
+        () => [near],
+      ),
+    ).toBe(near);
   });
   test('a goal already paid for is always reachable', () => {
     const paid = { current: 500, target: 400 };

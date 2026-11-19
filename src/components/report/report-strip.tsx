@@ -11,7 +11,7 @@ import { cityOf } from '../../content/cities';
 import type { NeighborhoodId } from '../../content/types';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
-import { Portrait } from '../portrait';
+import { Portrait } from '../portrait/index';
 import { HeadFace } from '../scene/head-face';
 import { LAMP_COLOR, LAMP_INK, lampInitial, STRIP, stripFont, stripLineHeight, stripModel, stripTextWidth, type LampTone } from './report-model';
 import { openReport } from './sheet-state';
@@ -39,7 +39,13 @@ export const ReportStrip = memo(function ReportStrip({ bottom }: { bottom: numbe
   const tones: Record<(typeof CHIPS)[number], LampTone> = { prep: m.prep, ovens: m.ovens, counter: m.counter, floor: m.floor };
   return (
     // the touch box is 44 pt; only its bottom 28 pt are drawn, so the shop front and the mat show above the pill (D479)
-    <Pressable testID="shop-report-strip" accessibilityRole="button" accessibilityLabel={`Shop report. ${m.word}. ${m.text}`} onPress={openReport} style={[styles.box, { bottom }]}>
+    <Pressable
+      testID="shop-report-strip"
+      accessibilityRole="button"
+      accessibilityLabel={`Shop report. ${m.word}. ${m.text}`}
+      onPress={openReport}
+      style={[styles.box, { bottom }]}
+    >
       <View style={styles.pill}>
         <View style={styles.lamps}>
           <View style={styles.chips}>
@@ -56,7 +62,12 @@ export const ReportStrip = memo(function ReportStrip({ bottom }: { bottom: numbe
           </Text>
         </View>
         {withBadge ? <ManagerBadge hood={hood} /> : null}
-        <Text testID="shop-report-line" style={[styles.line, { fontSize: size, lineHeight: stripLineHeight(size) }]} numberOfLines={STRIP.maxLines} maxFontSizeMultiplier={1.1}>
+        <Text
+          testID="shop-report-line"
+          style={[styles.line, { fontSize: size, lineHeight: stripLineHeight(size) }]}
+          numberOfLines={STRIP.maxLines}
+          maxFontSizeMultiplier={1.1}
+        >
           {m.text}
         </Text>
       </View>
@@ -66,7 +77,17 @@ export const ReportStrip = memo(function ReportStrip({ bottom }: { bottom: numbe
 
 const styles = StyleSheet.create({
   box: { position: 'absolute', left: STRIP.margin, right: STRIP.margin, height: STRIP.height, justifyContent: 'flex-end' },
-  pill: { height: STRIP.pill, flexDirection: 'row', alignItems: 'center', gap: STRIP.gap, paddingHorizontal: STRIP.padX, borderRadius: 12, borderWidth: STRIP.border, borderColor: C.ink, backgroundColor: 'rgba(255,255,255,0.96)' },
+  pill: {
+    height: STRIP.pill,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: STRIP.gap,
+    paddingHorizontal: STRIP.padX,
+    borderRadius: 12,
+    borderWidth: STRIP.border,
+    borderColor: C.ink,
+    backgroundColor: 'rgba(255,255,255,0.96)',
+  },
   lamps: { width: STRIP.lampsWidth, alignItems: 'center', justifyContent: 'center' },
   chips: { flexDirection: 'row', gap: STRIP.chipGap },
   chip: { width: STRIP.chipW, height: STRIP.chipH, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },

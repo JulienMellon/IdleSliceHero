@@ -50,9 +50,7 @@ export const DOWNTOWN_SCENES: Scene[] = [
         backdrop: 'downtown',
         cue: 'welcome',
         cast: [{ id: 'nonna-rosa', mood: 'happy' }],
-        lines: [
-          { speaker: 'Nonna Rosa', text: "Make Downtown smell like Rosa's again. I'll be watching. Always watching." },
-        ],
+        lines: [{ speaker: 'Nonna Rosa', text: "Make Downtown smell like Rosa's again. I'll be watching. Always watching." }],
       },
     ],
   },
@@ -69,9 +67,7 @@ export const DOWNTOWN_SCENES: Scene[] = [
         backdrop: 'shop',
         cast: [{ id: 'nonna-rosa', mood: 'surprised' }],
         caption: 'Four hundred deliveries. The phone is actually ringing.',
-        lines: [
-          { speaker: 'Nonna Rosa', text: 'The phone! It rings! I thought it was broken since 1997.' },
-        ],
+        lines: [{ speaker: 'Nonna Rosa', text: 'The phone! It rings! I thought it was broken since 1997.' }],
       },
       {
         backdrop: 'downtown',
@@ -201,9 +197,7 @@ export const DOWNTOWN_SCENES: Scene[] = [
         prop: 'order-slip',
         cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
         caption: 'Downtown. Nonna is reading the order slips. All of them.',
-        lines: [
-          { speaker: 'Nonna Rosa', text: 'This Mr. Smith. Every day, one large pepperoni. Every shop we open.' },
-        ],
+        lines: [{ speaker: 'Nonna Rosa', text: 'This Mr. Smith. Every day, one large pepperoni. Every shop we open.' }],
       },
       {
         backdrop: 'shop',
@@ -227,9 +221,7 @@ export const DOWNTOWN_SCENES: Scene[] = [
         prop: 'order-slip',
         cast: [{ id: 'nonna-rosa', mood: 'surprised' }],
         caption: 'On the back of the slip: "Sorry in advance about the university. — S."',
-        lines: [
-          { speaker: 'Nonna Rosa', text: "Sorry? Spies don't say sorry. Who IS this man?" },
-        ],
+        lines: [{ speaker: 'Nonna Rosa', text: "Sorry? Spies don't say sorry. Who IS this man?" }],
       },
     ],
   },

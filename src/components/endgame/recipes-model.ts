@@ -1,9 +1,9 @@
 // The recipe collection as plain data (v5.15): 24 cards, four per shop. The rules are engine/features/recipes.ts
 // (`collectionView`); the names and lines are the copy table, the drop conditions are content/endgame.ts. Pure: unit-tested in node.
 import { RECIPE_DROPS } from '../../content/endgame';
-import { NEIGHBORHOODS } from '../../content/tuning';
+import { cityOf } from '../../content/cities';
 import type { NeighborhoodId } from '../../content/types';
-import type { GameState } from '../../engine/game';
+import { def, type GameState } from '../../engine/game';
 import { collectionView, type Collection } from '../../engine/features/recipes';
 import { recipeLine, recipeName } from './copy-text';
 
@@ -35,14 +35,21 @@ export const collectionLine = (c: Pick<Collection, 'owned' | 'total'>): string =
 export function recipeGroups(g: GameState): RecipeGroup[] {
   const view = collectionView(g);
   return view.shops.map((s) => {
-    const n = NEIGHBORHOODS.find((x) => x.id === s.id)!;
+    const n = def(s.id, cityOf(g));
     return {
       id: s.id,
       shop: n.name,
       color: n.color,
       owned: s.owned,
       total: s.total,
-      tiles: s.cards.map((c) => ({ id: c.id, n: c.n, owned: c.owned, name: c.owned ? recipeName(c.id) : '???', line: c.owned ? recipeLine(c.id) : '', drop: RECIPE_DROPS[c.n - 1] })),
+      tiles: s.cards.map((c) => ({
+        id: c.id,
+        n: c.n,
+        owned: c.owned,
+        name: c.owned ? recipeName(c.id) : '???',
+        line: c.owned ? recipeLine(c.id) : '',
+        drop: RECIPE_DROPS[c.n - 1],
+      })),
     };
   });
 }

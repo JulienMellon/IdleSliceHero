@@ -29,7 +29,15 @@ const awayAnHour = (): string => {
   const now = Date.now();
   const g = G.newGame(now - 3_600_000);
   const downtown = { ...g.shops.downtown, built: true, managed: true, heads: G.allHeads(), prep: 5, ovens: 5, counter: 5, drivers: 3, tables: 5, sold: 50 };
-  const saved = { ...g, cash: 1000, totalEarned: 1000, tutorial: G.TUTORIAL_DONE, seenScenes: ['downtown-1', 'downtown-4'], shops: { ...g.shops, downtown }, lastSavedAt: now - 3_600_000 };
+  const saved = {
+    ...g,
+    cash: 1000,
+    totalEarned: 1000,
+    tutorial: G.TUTORIAL_DONE,
+    seenScenes: ['downtown-1', 'downtown-4'],
+    shops: { ...g.shops, downtown },
+    lastSavedAt: now - 3_600_000,
+  };
   return JSON.stringify(saved);
 };
 

@@ -32,7 +32,6 @@ import {
   UPGRADE_TASK_MAX_SECONDS,
 } from '../content/rewards';
 import { cosmeticPart } from '../content/endgame';
-import { NONNA_TAKEOVER } from '../content/tuning';
 import { withoutEvent } from './features/events';
 import { withoutService } from './features/service';
 import { count, money } from './format';
@@ -100,8 +99,11 @@ export function resetCountdown(now: number, kind: 'day' | 'week'): number {
 
 // ---------- Gates ----------
 
-/** Rewards unlock once Nonna's takeover scene has been seen (the tutorial is done). */
-export const rewardsUnlocked = (s: GameState): boolean => s.seenScenes.includes(NONNA_TAKEOVER.sceneId);
+/** Rewards unlock once the founder's takeover scene has been seen (the tutorial is done): the city's `fit.takeover` (or its `rewardsScene`). */
+export const rewardsUnlocked = (s: GameState): boolean => {
+  const city = cityOf(s);
+  return s.seenScenes.includes(city.rewardsScene ?? city.fit.takeover.sceneId);
+};
 
 /** The device clock is behind the highest time seen: claims and resets wait. */
 export const clockBehind = (s: GameState, now: number): boolean => now < s.rewards.lastSeen;
@@ -121,7 +123,10 @@ function gate(s: GameState, now: number): string | null {
   return clockBehind(s, now) ? CLOCK_REASON : null;
 }
 
-const withRewards = (s: GameState, patch: Partial<Rewards>, now: number): GameState => ({ ...s, rewards: { ...s.rewards, ...patch, lastSeen: Math.max(s.rewards.lastSeen, now) } });
+const withRewards = (s: GameState, patch: Partial<Rewards>, now: number): GameState => ({
+  ...s,
+  rewards: { ...s.rewards, ...patch, lastSeen: Math.max(s.rewards.lastSeen, now) },
+});
 
 // ---------- Seeded generation ----------
 
@@ -142,12 +147,13 @@ function seeded(key: string): () => number {
 export function cityRates(s: GameState): { city: number; walkin: number; driver: number } {
   let city = 0;
   let walkin = 0;
+  const fit = cityOf(s).fit;
   for (const id of hoodIds(cityOf(s))) {
     const shop = s.shops[id];
     if (!shop.built || !runsItself(shop)) continue;
-    const rate = shopRate(shop, s.vehicle);
+    const rate = shopRate(shop, s.vehicle, fit);
     city += rate;
-    walkin += rate * walkInFraction(shop, s.vehicle);
+    walkin += rate * walkInFraction(shop, s.vehicle, fit);
   }
   return { city, walkin, driver: city - walkin };
 }
@@ -337,7 +343,15 @@ export function claimChest(s: GameState, i: number, now: number): BuyResult {
   const paid = pay(s, c.minutes ? minutesToCash(s, c.minutes) : 0);
   return {
     ok: true,
-    state: withRewards(paid, { chests, diamonds: s.rewards.diamonds + (c.diamonds ?? 0), boosters: c.booster ? addBoosters(s.rewards.boosters, [boosterOf(c.booster)]) : s.rewards.boosters }, now),
+    state: withRewards(
+      paid,
+      {
+        chests,
+        diamonds: s.rewards.diamonds + (c.diamonds ?? 0),
+        boosters: c.booster ? addBoosters(s.rewards.boosters, [boosterOf(c.booster)]) : s.rewards.boosters,
+      },
+      now,
+    ),
   };
 }
 
@@ -349,7 +363,10 @@ export function claimWeekly(s: GameState, i: number, now: number): BuyResult {
   if (task.claimed) return { ok: false, reason: 'Already claimed' };
   if (!taskDone(s, task)) return { ok: false, reason: 'Not done yet' };
   const weekly = s.rewards.weekly.map((t, k) => (k === i ? { ...t, claimed: true } : t));
-  return { ok: true, state: withRewards(pay(s, minutesToCash(s, WEEKLY_TASK_REWARD.minutes)), { weekly, diamonds: s.rewards.diamonds + (WEEKLY_DIAMONDS[i] ?? 0) }, now) };
+  return {
+    ok: true,
+    state: withRewards(pay(s, minutesToCash(s, WEEKLY_TASK_REWARD.minutes)), { weekly, diamonds: s.rewards.diamonds + (WEEKLY_DIAMONDS[i] ?? 0) }, now),
+  };
 }
 
 // ---------- Worn cosmetics ----------
@@ -411,7 +428,11 @@ export function claimWeeklyChest(s: GameState, now: number): BuyResult {
   if (s.rewards.weeklyChest) return { ok: false, reason: 'Already opened' };
   if (!weeklyChestReady(s)) return { ok: false, reason: 'Claim every weekly task first' };
   const prize = weeklyChestPrize(s);
-  if (prize.kind === 'cosmetic') return { ok: true, state: withRewards(s, { weeklyChest: true, ...grantCosmetic(s.rewards, prize.id), diamonds: s.rewards.diamonds + prize.diamonds }, now) };
+  if (prize.kind === 'cosmetic')
+    return {
+      ok: true,
+      state: withRewards(s, { weeklyChest: true, ...grantCosmetic(s.rewards, prize.id), diamonds: s.rewards.diamonds + prize.diamonds }, now),
+    };
   return { ok: true, state: withRewards(pay(s, minutesToCash(s, prize.minutes)), { weeklyChest: true, diamonds: s.rewards.diamonds + prize.diamonds }, now) };
 }
 
@@ -426,7 +447,14 @@ export function startBooster(s: GameState, i: number, now: number): BuyResult {
   if (bad) return { ok: false, reason: bad };
   const b = s.rewards.boosters[i];
   if (!b) return { ok: false, reason: 'No such booster' };
-  const next = withRewards(s, { boosters: s.rewards.boosters.filter((_, k) => k !== i), boosts: addBoost(s.rewards.boosts, { mult: b.mult, until: now + b.seconds * 1000, source: 'booster' }) }, now);
+  const next = withRewards(
+    s,
+    {
+      boosters: s.rewards.boosters.filter((_, k) => k !== i),
+      boosts: addBoost(s.rewards.boosts, { mult: b.mult, until: now + b.seconds * 1000, source: 'booster' }),
+    },
+    now,
+  );
   return { ok: true, state: { ...next, stats: { ...next.stats, boosters: next.stats.boosters + 1 } } };
 }
 
@@ -446,7 +474,13 @@ export interface GiftStatus {
 
 export function giftStatus(s: GameState, now: number): GiftStatus {
   const g = s.rewards.gift;
-  const out = (kind: GiftStatus['kind'], day: number, cycle = g.cycle): GiftStatus => ({ kind, day, gift: GIFT_DAYS[day - 1], cycle, visitor: VISITORS[cycle % VISITORS.length] });
+  const out = (kind: GiftStatus['kind'], day: number, cycle = g.cycle): GiftStatus => ({
+    kind,
+    day,
+    gift: GIFT_DAYS[day - 1],
+    cycle,
+    visitor: VISITORS[cycle % VISITORS.length],
+  });
   if (!rewardsUnlocked(s)) return out('locked', Math.min(GIFT_LENGTH, g.streak + 1));
   const today = dayKey(now);
   const gap = g.last ? dayNumber(today) - dayNumber(g.last) : Infinity;
@@ -472,14 +506,22 @@ export function claimGift(s: GameState, now: number, opts: { repair?: boolean } 
   const diamonds = Math.max(0, r.diamonds - (repairing ? STREAK_SAVE_DIAMONDS : 0) + (gift.diamonds ?? 0));
   const boosters = addBoosters(r.boosters, (gift.boosters ?? []).map(boosterOf));
   let boosts = r.boosts;
-  if (gift.boostNow) boosts = addBoost(boosts, { mult: gift.boostNow.mult, until: now + gift.boostNow.minutes * 60_000, source: gift.visit ? `visit-${VISITORS[cycle % VISITORS.length]}` : `gift-day-${day}` });
+  if (gift.boostNow)
+    boosts = addBoost(boosts, {
+      mult: gift.boostNow.mult,
+      until: now + gift.boostNow.minutes * 60_000,
+      source: gift.visit ? `visit-${VISITORS[cycle % VISITORS.length]}` : `gift-day-${day}`,
+    });
   const dressed = gift.cosmetic ? grantCosmetic(r, gift.cosmetic.replace('{cycle}', String(cycle + 1))) : { cosmetics: r.cosmetics, worn: r.worn };
   // the day-30 claim closes the cycle: the next claim is day 1 of the next one, with a fresh streak save
   // (starting over at day 1 is a fresh run too, with its own save)
   const done = day >= GIFT_LENGTH;
   const saveUsed = done ? false : repairing ? true : day === 1 ? false : r.gift.saveUsed;
   const streakGift = { streak: day, last: dayKey(now), saveUsed, cycle: done ? cycle + 1 : cycle };
-  return { ok: true, state: withRewards(pay(s, gift.minutes ? minutesToCash(s, gift.minutes) : 0), { gift: streakGift, diamonds, boosters, boosts, ...dressed }, now) };
+  return {
+    ok: true,
+    state: withRewards(pay(s, gift.minutes ? minutesToCash(s, gift.minutes) : 0), { gift: streakGift, diamonds, boosters, boosts, ...dressed }, now),
+  };
 }
 
 /** The gift calendar should pop open by itself: unlocked, something to claim, and not shown yet today. */

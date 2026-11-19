@@ -1,9 +1,9 @@
 /// <reference types="jest" />
 import { HOME_SCENES } from '../../content/scenes/home';
-import { PIER9_BID } from '../../content/tuning';
 import * as G from '../game';
 import { commas, nextSceneTeaser, ringStep, TEASER_COMPLETE, teaserStep } from '../teaser';
 
+import { PIER9_BID } from '../../content/cities/home/data';
 const T0 = new Date(2026, 10, 11, 12, 0, 0).getTime();
 /** The pizzas a count-triggered scene waits for (fitted in v5.16, so read from the scene). */
 const countOf = (id: string): number => (HOME_SCENES.find((s) => s.id === id)!.trigger as { count: number }).count;
@@ -13,7 +13,10 @@ function before(id: string, patch: Partial<G.GameState> = {}): G.GameState {
   const idx = HOME_SCENES.findIndex((s) => s.id === id);
   return { ...G.newGame(T0), seenScenes: HOME_SCENES.slice(0, idx).map((s) => s.id), ...patch };
 }
-const withShop = (s: G.GameState, id: G.GameState['active'], patch: Partial<G.Shop>): G.GameState => ({ ...s, shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } } });
+const withShop = (s: G.GameState, id: G.GameState['active'], patch: Partial<G.Shop>): G.GameState => ({
+  ...s,
+  shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } },
+});
 
 describe('nextSceneTeaser: one test per trigger kind', () => {
   test('deliveries: the character and the pies to go, never the scene', () => {
@@ -63,9 +66,14 @@ describe('nextSceneTeaser: one test per trigger kind', () => {
 
   test('bid (C122, T95): once on offer, the ring is cash over the price the bid costs now, the auction included', () => {
     const base = withShop(before('waterfront-4', { cash: PIER9_BID.cost / 2 }), 'waterfront', { built: true, sold: PIER9_BID.unlockPizzas, perk: false });
-    const s = { ...base, seenScenes: [...base.seenScenes, 'waterfront-3b'], playSeconds: 10_000, x: { ...base.x, waterfrontBoats: { ...(base.x.waterfrontBoats as object), openedAt: 0 } } };
-    expect(G.pier9Available(s)).toBe(true);
-    const price = G.pier9Price(s);
+    const s = {
+      ...base,
+      seenScenes: [...base.seenScenes, 'waterfront-3b'],
+      playSeconds: 10_000,
+      x: { ...base.x, waterfrontBoats: { ...(base.x.waterfrontBoats as object), openedAt: 0 } },
+    };
+    expect(G.bidAvailable(s)).toBe(true);
+    const price = G.bidPrice(s);
     expect(price).toBeGreaterThan(PIER9_BID.cost);
     expect(nextSceneTeaser(s).progress).toBeCloseTo(Math.min(1, s.cash / price));
   });

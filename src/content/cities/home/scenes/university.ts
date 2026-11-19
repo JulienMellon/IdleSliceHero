@@ -57,9 +57,7 @@ export const UNIVERSITY_SCENES: Scene[] = [
         backdrop: 'university',
         cast: [{ id: 'priya', mood: 'surprised' }],
         caption: "Night 63 of Priya's plain cheese slice.",
-        lines: [
-          { speaker: 'Priya', text: "Your driver took a weird route. I mapped it. You're losing four minutes a trip." },
-        ],
+        lines: [{ speaker: 'Priya', text: "Your driver took a weird route. I mapped it. You're losing four minutes a trip." }],
       },
       {
         backdrop: 'university',
@@ -95,9 +93,7 @@ export const UNIVERSITY_SCENES: Scene[] = [
         backdrop: 'university',
         cast: [{ id: 'megaslice-rep', mood: 'happy' }],
         caption: 'Career fair. MegaSlice has a booth. It has a smoke machine.',
-        lines: [
-          { speaker: 'Todd', text: 'Priya! Come code for MegaSlice! Free kombucha! Beanbags! A LADDER!' },
-        ],
+        lines: [{ speaker: 'Todd', text: 'Priya! Come code for MegaSlice! Free kombucha! Beanbags! A LADDER!' }],
       },
       {
         backdrop: 'university',
@@ -124,9 +120,7 @@ export const UNIVERSITY_SCENES: Scene[] = [
       {
         backdrop: 'shop',
         cast: [{ id: 'priya', mood: 'sad' }],
-        lines: [
-          { speaker: 'Priya', text: 'They offered me a lot. Like, "pay off my loans" a lot. I need to think.' },
-        ],
+        lines: [{ speaker: 'Priya', text: 'They offered me a lot. Like, "pay off my loans" a lot. I need to think.' }],
       },
     ],
   },
@@ -143,9 +137,7 @@ export const UNIVERSITY_SCENES: Scene[] = [
         backdrop: 'university',
         cast: [{ id: 'priya', mood: 'neutral' }],
         caption: "Priya still hasn't answered MegaSlice. She has been busy.",
-        lines: [
-          { speaker: 'Priya', text: 'If I might work there, I want to know who works there.' },
-        ],
+        lines: [{ speaker: 'Priya', text: 'If I might work there, I want to know who works there.' }],
       },
       {
         backdrop: 'university',
@@ -191,9 +183,7 @@ export const UNIVERSITY_SCENES: Scene[] = [
         prop: 'phone-footage',
         cast: [{ id: 'priya', mood: 'surprised' }],
         caption: 'A MegaSlice stairwell. A man wipes off his mustache. With a napkin.',
-        lines: [
-          { speaker: 'Priya', text: "That's the career-fair guy. The ladder guy. Todd." },
-        ],
+        lines: [{ speaker: 'Priya', text: "That's the career-fair guy. The ladder guy. Todd." }],
       },
       {
         backdrop: 'university',

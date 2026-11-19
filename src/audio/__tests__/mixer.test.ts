@@ -2,15 +2,48 @@
 // the lazy-load order and the launch budget, and the other-audio rule. Pure Node: no expo-audio, no native module.
 import { dbToGain, quantizeDelay, stingTiming, stingUnit } from '../logic';
 import {
-  COMMON_SFX, DOWNTOWN_SET, LAUNCH_PLAYER_BUDGET, OtherAudioRule, RARE, STING_PRELOAD, TITLE_SET, createMixer, launchPlan, type Catalog,
+  COMMON_SFX,
+  DOWNTOWN_SET,
+  LAUNCH_PLAYER_BUDGET,
+  OtherAudioRule,
+  RARE,
+  STING_PRELOAD,
+  TITLE_SET,
+  createMixer,
+  launchPlan,
+  type Catalog,
 } from '../mixer';
 import {
-  DECODED_BYTES_BUDGET, Epochs, LIMITER_RANGE, busOf, decodedBytes, limiterCurve, voiceToSteal, type AudioOutput, type Bus, type LoopOpts, type PlayOpts,
+  DECODED_BYTES_BUDGET,
+  Epochs,
+  LIMITER_RANGE,
+  busOf,
+  decodedBytes,
+  limiterCurve,
+  voiceToSteal,
+  type AudioOutput,
+  type Bus,
+  type LoopOpts,
+  type PlayOpts,
 } from '../output-core';
 
 const SFX_COUNT: Record<string, number> = {
-  tap: 4, cash: 5, buy: 8, rush: 4, bubble: 3, full: 2, refused: 2, click: 1, sparkle: 1, milestone: 1, fleet: 5,
-  collect: 3, build: 1, gavel: 1, grade: 1, expand: 1,
+  tap: 4,
+  cash: 5,
+  buy: 8,
+  rush: 4,
+  bubble: 3,
+  full: 2,
+  refused: 2,
+  click: 1,
+  sparkle: 1,
+  milestone: 1,
+  fleet: 5,
+  collect: 3,
+  build: 1,
+  gavel: 1,
+  grade: 1,
+  expand: 1,
 };
 const ROOTS = [1, 5, 1, 1, 1, 5, 1, 1, 4, 5, 1, 5];
 const CATALOG: Catalog = {
@@ -20,7 +53,11 @@ const CATALOG: Catalog = {
   story: (id) => (id.startsWith('triumph') ? { seconds: 6.474, bpm: 126, payoffSeconds: 3.81 } : { seconds: 4.7 }),
 };
 
-interface Play { id: string; o: PlayOpts; ended: boolean }
+interface Play {
+  id: string;
+  o: PlayOpts;
+  ended: boolean;
+}
 
 /** Records every call; a play stays "sounding" until `end` is called. Loaded counts follow the real outputs: loops and cues share two slots each. */
 class FakeOut implements AudioOutput {
@@ -31,9 +68,17 @@ class FakeOut implements AudioOutput {
   bus: Partial<Record<Bus, number>> = {};
   pos = new Map<string, number>();
   other: boolean | null = null;
-  load(id: string) { this.calls.push(`load ${id}`); this.loaded.add(id); }
-  unload(id: string) { this.calls.push(`unload ${id}`); this.loaded.delete(id); }
-  isLoaded(id: string) { return this.loaded.has(id); }
+  load(id: string) {
+    this.calls.push(`load ${id}`);
+    this.loaded.add(id);
+  }
+  unload(id: string) {
+    this.calls.push(`unload ${id}`);
+    this.loaded.delete(id);
+  }
+  isLoaded(id: string) {
+    return this.loaded.has(id);
+  }
   loadedCount() {
     let n = 0;
     const slots = { music: new Set<string>(), story: new Set<string>() };
@@ -44,27 +89,52 @@ class FakeOut implements AudioOutput {
     }
     return n + Math.min(2, slots.music.size) + Math.min(2, slots.story.size);
   }
-  play(id: string, o: PlayOpts) { this.calls.push(`play ${id}`); this.loaded.add(id); this.plays.push({ id, o, ended: false }); }
-  loop(id: string, o?: LoopOpts) { this.calls.push(`loop ${id}${o?.from !== undefined ? ` from ${o.from}` : ''}`); this.loaded.add(id); this.looping.add(id); }
+  play(id: string, o: PlayOpts) {
+    this.calls.push(`play ${id}`);
+    this.loaded.add(id);
+    this.plays.push({ id, o, ended: false });
+  }
+  loop(id: string, o?: LoopOpts) {
+    this.calls.push(`loop ${id}${o?.from !== undefined ? ` from ${o.from}` : ''}`);
+    this.loaded.add(id);
+    this.looping.add(id);
+  }
   stop(id: string, ms = 0) {
     this.calls.push(`stop ${id} ${ms}`);
     this.looping.delete(id);
     for (const p of this.plays) if (p.id === id) p.ended = true;
   }
-  resume(id: string) { this.calls.push(`resume ${id}`); }
-  fade(id: string, gain: number, ms: number) { this.calls.push(`fade ${id} ${gain.toFixed(3)} ${ms}`); }
-  playing(id: string) { return this.looping.has(id) || this.plays.some((p) => p.id === id && !p.ended); }
-  position(id: string) { return this.pos.get(id) ?? NaN; }
-  setBus(bus: Bus, gain: number) { this.calls.push(`bus ${bus} ${gain}`); this.bus[bus] = gain; }
-  otherAudio() { return this.other; }
-  setActive(active: boolean) { this.calls.push(`active ${active}`); }
+  resume(id: string) {
+    this.calls.push(`resume ${id}`);
+  }
+  fade(id: string, gain: number, ms: number) {
+    this.calls.push(`fade ${id} ${gain.toFixed(3)} ${ms}`);
+  }
+  playing(id: string) {
+    return this.looping.has(id) || this.plays.some((p) => p.id === id && !p.ended);
+  }
+  position(id: string) {
+    return this.pos.get(id) ?? NaN;
+  }
+  setBus(bus: Bus, gain: number) {
+    this.calls.push(`bus ${bus} ${gain}`);
+    this.bus[bus] = gain;
+  }
+  otherAudio() {
+    return this.other;
+  }
+  setActive(active: boolean) {
+    this.calls.push(`active ${active}`);
+  }
   /** The nth play of `id` finishes. */
   end(id: string, nth = 0) {
     const p = this.plays.filter((x) => x.id === id)[nth];
     p.ended = true;
     p.o.onEnd?.();
   }
-  count(prefix: string) { return this.calls.filter((c) => c.startsWith(prefix)).length; }
+  count(prefix: string) {
+    return this.calls.filter((c) => c.startsWith(prefix)).length;
+  }
 }
 
 function setup(prefs = { music: true, sound: true }, other: boolean | null = null) {

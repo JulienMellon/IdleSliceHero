@@ -89,7 +89,13 @@ describe('the golden pizza schedule', () => {
     const times = (seed: number) => {
       const out: number[] = [];
       let was = false;
-      run(unlocked(seed), 900, { onStep: (st) => { const v = B.bonusVisible(st); if (v && !was) out.push(st.playSeconds); was = v; } });
+      run(unlocked(seed), 900, {
+        onStep: (st) => {
+          const v = B.bonusVisible(st);
+          if (v && !was) out.push(st.playSeconds);
+          was = v;
+        },
+      });
       return out;
     };
     expect(times(7)).toEqual(times(7));
@@ -278,7 +284,11 @@ describe('v5.14 fix round (G93, D437, D438, D445, D446)', () => {
 
   test('D446: the pop says what the payout is worth in time', () => {
     expect(B.salesLine(false)).toBe(`+${BONUS.incomeSeconds} s of sales`);
-    expect(B.salesLine(true)).toBe(BONUS.luckyIncomeSeconds >= 120 && BONUS.luckyIncomeSeconds % 60 === 0 ? `+${BONUS.luckyIncomeSeconds / 60} min of sales` : `+${BONUS.luckyIncomeSeconds} s of sales`);
+    expect(B.salesLine(true)).toBe(
+      BONUS.luckyIncomeSeconds >= 120 && BONUS.luckyIncomeSeconds % 60 === 0
+        ? `+${BONUS.luckyIncomeSeconds / 60} min of sales`
+        : `+${BONUS.luckyIncomeSeconds} s of sales`,
+    );
   });
 
   test('D445: only the very first pizza, with no tap yet, is the gift', () => {
@@ -303,7 +313,10 @@ describe('v5.14 fix round (G93, D437, D438, D445, D446)', () => {
 
   test('G95: the gift label and the LUCKY tag stay on screen while the box slides in and out, and fade with it', () => {
     const W = 393;
-    for (const [boxW, itemW] of [[78, BONUS_VIEW.giftWidth], [96, BONUS_VIEW.tagWidth]] as const) {
+    for (const [boxW, itemW] of [
+      [78, BONUS_VIEW.giftWidth],
+      [96, BONUS_VIEW.tagWidth],
+    ] as const) {
       const r = B.edgeRider(W, boxW, itemW);
       expect(r.input[0]).toBe(0);
       expect(r.input[r.input.length - 1]).toBe(1);

@@ -1,9 +1,9 @@
 /// <reference types="jest" />
 // The oven ladder (D417): at every step the bank is wider in total, every oven keeps a fire window, Lv 25 / 50 add trim and a taller hood.
-import { FOOTPRINTS } from '../../../content/tuning';
 import { HOOD_EXTRA, isBoxOven, ovenFrame, ovenOpening, ovenTier } from '../geometry';
 import { BAY_COL_MIN, COUNTER_STAFF_STEP, MIN_OVEN_W, OVEN_BAY, ROOM_W, layout, ovenPlan } from './draw-layout';
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 
 function* banks() {
@@ -109,12 +109,16 @@ describe('the oven bay (D417, round 60)', () => {
             prev = totalW(lay);
             // …the same bank at the lowest prep and counter level: more crew never takes width from it
             const base = rig(fp, ovenLv, 1, 1);
-            if (totalW(lay) < totalW(base) - 1e-6 || lay.ovens.some((o, i) => Math.abs(o.x0 - base.ovens[i].x0) > 1e-6 || Math.abs(o.x1 - base.ovens[i].x1) > 1e-6)) bad.push(`${tag}: crew moved the ovens`);
+            if (
+              totalW(lay) < totalW(base) - 1e-6 ||
+              lay.ovens.some((o, i) => Math.abs(o.x0 - base.ovens[i].x0) > 1e-6 || Math.abs(o.x1 - base.ovens[i].x1) > 1e-6)
+            )
+              bad.push(`${tag}: crew moved the ovens`);
           }
         }
     expect(bad.slice(0, 6)).toEqual([]);
   });
-  test('the check can fail: the v5.12 zone (the bench and the counter set the ovens\' room) shrank with the crew and fell below the bay\'s 52 at every footprint', () => {
+  test("the check can fail: the v5.12 zone (the bench and the counter set the ovens' room) shrank with the crew and fell below the bay's 52 at every footprint", () => {
     const OLD_ROOM_W = [270, 295, 320, 340, 358]; // (the room widths of the v5.12 geometry: the Restaurant and the Flagship have been widened since, v5.18)
     // the old geometry, from layout.ts before the bay: bench ends at min(counter.x0 − 16 − 36, …), the ovens fill bench + 8 … counter.x0 − 8
     const oldZone = (fp: number, cooks: number, staff: number) => {
@@ -159,7 +163,9 @@ describe('the oven bay (D417, round 60)', () => {
         const tops = lay.ovens.filter((o) => !isBoxOven(o, grade));
         expect([fp, grade, tops.length >= lay.ovenCols.length]).toEqual([fp, grade, true]);
         // a column's topmost oven (nothing above it) is never a box
-        for (const o of lay.ovens) if (!lay.ovens.some((p) => p !== o && p.x0 < o.x1 - 1 && p.x1 > o.x0 + 1 && p.z > o.z)) expect([fp, grade, isBoxOven(o, grade)]).toEqual([fp, grade, false]);
+        for (const o of lay.ovens)
+          if (!lay.ovens.some((p) => p !== o && p.x0 < o.x1 - 1 && p.x1 > o.x0 + 1 && p.z > o.z))
+            expect([fp, grade, isBoxOven(o, grade)]).toEqual([fp, grade, false]);
         for (const o of tops) {
           const f = ovenFrame(o);
           expect(f.w).toBeGreaterThan(30); // an arch you can see

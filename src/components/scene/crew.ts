@@ -137,7 +137,10 @@ function buildRoutes(lay: Layout, sceneW: number, idle: boolean, patio: number):
   const gIn: Pt = [guestX, DOOR_IN_Y];
   const gOut: Pt = [guestPauseX, outY];
   const start: Pt = [lay.walk.from, walkY];
-  const seats = [...lay.tables.map((t) => ({ x: t.x, y: t.y, seat: SEAT, out: false })), ...lay.patio.slice(0, idle ? 0 : patio).map((t) => ({ x: t.x, y: t.y, seat: PATIO_SEAT, out: true }))];
+  const seats = [
+    ...lay.tables.map((t) => ({ x: t.x, y: t.y, seat: SEAT, out: false })),
+    ...lay.patio.slice(0, idle ? 0 : patio).map((t) => ({ x: t.x, y: t.y, seat: PATIO_SEAT, out: true })),
+  ];
   const eat = seats.length >= 2 ? EAT_S : EAT_S_SOLO;
   const guests = seats.map((table, n) => {
     const seat: Pt = [table.x + table.seat, table.y];
@@ -289,7 +292,9 @@ export function stepCrew(prev: CrewState, input: CrewInput, now: number, sceneW:
   if (!newDeps && !driverBack && !guestGone && !needGuest && !prev.guests.some(patience) && idle === prev.idle && patio === prev.patio) return prev;
 
   let driver: DriverSlot = driverBack ? { leftAt: null, deps: [] } : prev.driver;
-  let guests = prev.guests.filter(live).map((g) => (patience(g) ? { ...g, quitAt: input.walkins ? null : Math.max(now, g.start + g.arriveT) + MAX_WAIT_S } : g));
+  let guests = prev.guests
+    .filter(live)
+    .map((g) => (patience(g) ? { ...g, quitAt: input.walkins ? null : Math.max(now, g.start + g.arriveT) + MAX_WAIT_S } : g));
   const since = input.since ?? 0;
   let nextVisit = prev.nextVisit;
   let seenId = prev.seenId;
@@ -353,7 +358,8 @@ export function driverPoseAt(lay: Layout, d: DriverSlot, now: number, sceneW: nu
   if (d.leftAt === null) return { pos: [spot.x, spot.y], walking: false, face: false, carry: false, leaving: false, deps: NONE };
   const L = routesFor(lay, sceneW, idle).driver;
   let t = now - d.leftAt;
-  if (t < LINE.departSeconds) return { pos: alongDist(L.toDoor.pts, (t / LINE.departSeconds) * L.toDoor.len), walking: true, face: false, carry: true, leaving: true, deps: d.deps };
+  if (t < LINE.departSeconds)
+    return { pos: alongDist(L.toDoor.pts, (t / LINE.departSeconds) * L.toDoor.len), walking: true, face: false, carry: true, leaving: true, deps: d.deps };
   t -= LINE.departSeconds;
   const tAway = L.away.len / L.speed;
   if (t < tAway) return { pos: alongDist(L.away.pts, t * L.speed), walking: true, face: false, carry: true, leaving: true, deps: d.deps };
@@ -374,14 +380,25 @@ export function guestPoseAt(lay: Layout, g: GuestSlot, now: number, sceneW: numb
   const S = guestSchedule(g, L);
   if (now < g.start) return null;
   const base = { carry: false, deps: NONE };
-  if (now < S.arrived) return { ...base, pos: alongDist(L.arrive.pts, (now - g.start) * (L.arrive.len / g.arriveT)), walking: true, face: false, leaving: false, stage: 'arrive' };
+  if (now < S.arrived)
+    return { ...base, pos: alongDist(L.arrive.pts, (now - g.start) * (L.arrive.len / g.arriveT)), walking: true, face: false, leaving: false, stage: 'arrive' };
   if (g.servedAt === null) {
     if (now < S.waitEnd) return { ...base, pos: L.orderAt, walking: false, face: true, leaving: false, stage: 'order' };
     return now < S.done ? { ...base, pos: alongTimed(L.giveUp.pts, now - S.waitEnd), walking: true, face: false, leaving: true, stage: 'leave' } : null;
   }
   if (now >= S.done) return null;
-  if (now < g.servedAt + LINE.handoffSeconds) return { ...base, pos: L.orderAt, walking: false, face: true, leaving: false, stage: 'order', carry: true, deps: [g.dep] };
-  if (now < S.seated) return { ...base, pos: alongTimed(L.toSeat.pts, now - g.servedAt - LINE.handoffSeconds), walking: true, face: true, leaving: false, stage: 'toSeat', carry: true };
+  if (now < g.servedAt + LINE.handoffSeconds)
+    return { ...base, pos: L.orderAt, walking: false, face: true, leaving: false, stage: 'order', carry: true, deps: [g.dep] };
+  if (now < S.seated)
+    return {
+      ...base,
+      pos: alongTimed(L.toSeat.pts, now - g.servedAt - LINE.handoffSeconds),
+      walking: true,
+      face: true,
+      leaving: false,
+      stage: 'toSeat',
+      carry: true,
+    };
   if (now < S.eaten) return { ...base, pos: L.seat, walking: false, face: true, leaving: false, stage: 'seated' };
   return { ...base, pos: alongTimed(L.leave.pts, now - S.eaten), walking: true, face: false, leaving: true, stage: 'leave' };
 }

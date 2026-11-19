@@ -1,6 +1,5 @@
 /// <reference types="jest" />
 import { MASTERY_STARS } from '../../../content/endgame';
-import { FOOTPRINTS, NEIGHBORHOODS, OVEN_GRADES } from '../../../content/tuning';
 import type { NeighborhoodId } from '../../../content/types';
 import { HOME_CITY } from '../../../content/cities/home';
 import * as G from '../../../engine/game';
@@ -8,8 +7,13 @@ import { masteryTotal, nextStar } from '../../../engine/features/mastery';
 import { masteryGoal, goalLabelFit, STAR_UNIT } from '../../goal-model';
 import { masteryNewsText, nextStarLine, pipBits, starName, starPath, starPips, starToast } from '../mastery-model';
 
+import { FOOTPRINTS, OVEN_GRADES } from '../../../content/cities/home/fit';
+import { NEIGHBORHOODS } from '../../../content/cities/home/data';
 const IDS = NEIGHBORHOODS.map((n) => n.id);
-const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } } });
+const withShop = (g: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id], ...patch } },
+});
 const city = (finale: boolean): G.GameState => {
   let g = G.newGame(1_700_000_000_000);
   for (const id of IDS) g = withShop(g, id, { built: true, managed: true, heads: G.noHeads(), prep: 10, ovens: 10, counter: 10 });

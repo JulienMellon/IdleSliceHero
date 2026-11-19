@@ -1,4 +1,5 @@
 // What the order chip shows, as plain data (the chip is components/order-chip.tsx). Kept in .ts so it is tested in node.
+import { cityOf } from '../content/cities';
 import { ORDER, ORDER_FAIL_LINE, ORDER_VIEW } from '../content/hooks';
 import type { CharacterId, NeighborhoodId } from '../content/types';
 import { money, pizzas } from '../engine/format';
@@ -70,17 +71,52 @@ export function chipView(s: GameState): ChipView | null {
   const base = { done: 0, target: 0, fill: 0, progress: '', clock: '', urgent: false, behind: false, expiry: 0, reward: '', line: '' };
   if (phase === 'active' && o.active) {
     const a = o.active;
-    const cast = castOf(a.hood);
+    const cast = castOf(cityOf(s), a.hood);
+    if (!cast) return null;
     const done = orderProgress(s, a);
-    return { ...base, phase, hood: a.hood, who: cast.who, name: cast.name, done, target: a.target, fill: a.target > 0 ? done / a.target : 0, progress: progressText(done, a.target), clock: clockText(a.left), urgent: a.left <= URGENT_SECONDS, behind: behindPace(done, a.target, a.left), reward: `+${money(orderReward(s))}` };
+    return {
+      ...base,
+      phase,
+      hood: a.hood,
+      who: cast.who,
+      name: cast.name,
+      done,
+      target: a.target,
+      fill: a.target > 0 ? done / a.target : 0,
+      progress: progressText(done, a.target),
+      clock: clockText(a.left),
+      urgent: a.left <= URGENT_SECONDS,
+      behind: behindPace(done, a.target, a.left),
+      reward: `+${money(orderReward(s))}`,
+    };
   }
   if (phase === 'offer' && o.offer) {
     const f = o.offer;
-    const cast = castOf(f.hood);
-    return { ...base, phase, hood: f.hood, who: cast.who, name: cast.name, line: offerLine(cast, f.variant, f.target), target: f.target, expiry: offerExpiry(f.left), reward: `+${money(orderReward(s))}` };
+    const cast = castOf(cityOf(s), f.hood);
+    if (!cast) return null;
+    return {
+      ...base,
+      phase,
+      hood: f.hood,
+      who: cast.who,
+      name: cast.name,
+      line: offerLine(cast, f.variant, f.target),
+      target: f.target,
+      expiry: offerExpiry(f.left),
+      reward: `+${money(orderReward(s))}`,
+    };
   }
   const r = o.result;
   if (!r) return null;
-  const cast = castOf(r.hood);
-  return { ...base, phase: r.kind, hood: r.hood, who: cast.who, name: cast.name, line: r.kind === 'done' ? cast.thanks[r.variant] : ORDER_FAIL_LINE, reward: r.kind === 'done' ? `+${money(r.reward)}` : '' };
+  const cast = castOf(cityOf(s), r.hood);
+  if (!cast) return null;
+  return {
+    ...base,
+    phase: r.kind,
+    hood: r.hood,
+    who: cast.who,
+    name: cast.name,
+    line: r.kind === 'done' ? cast.thanks[r.variant] : ORDER_FAIL_LINE,
+    reward: r.kind === 'done' ? `+${money(r.reward)}` : '',
+  };
 }

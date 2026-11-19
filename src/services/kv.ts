@@ -15,10 +15,18 @@ export function webKV(): KV {
   if (!ls) return memoryKV();
   return {
     get: async (k) => {
-      try { return ls.getItem(k); } catch { return null; }
+      try {
+        return ls.getItem(k);
+      } catch {
+        return null;
+      }
     },
     set: async (k, v) => {
-      try { ls.setItem(k, v); } catch { /* private mode: keep going */ }
+      try {
+        ls.setItem(k, v);
+      } catch {
+        /* private mode: keep going */
+      }
     },
   };
 }

@@ -4,9 +4,10 @@
 //
 // The cache key covers everything the drawer reads from the game except cash. A new feature that moves a gain with some other state
 // must add that state to `drawerKey` (the same rule as `stationModels`).
-import { DECOR, DECOR_BOOST, DECOR_KINDS, FOOTPRINTS, HEAD_KINDS, HEAD_TITLE, OVEN_GRADES, VEHICLES, type DecorKind, type HeadKind } from '../content/tuning';
+import { DECOR, DECOR_BOOST, DECOR_KINDS, HEAD_KINDS, HEAD_TITLE, type DecorKind, type HeadKind } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
-import { cityOf, hoodIds } from '../content/cities';
+import { cityOf, hoodIds, type CityFit } from '../content/cities';
+import { HOME_FIT } from '../content/cities/home/fit';
 import { bonusUnlocked } from '../engine/bonus';
 import { money, rate } from '../engine/format';
 import * as G from '../engine/game';
@@ -88,18 +89,29 @@ export const STAGE_NAME: Record<G.Stage, string> = { prep: 'prep', ovens: 'ovens
 /** The tied-stations bundle for the sidewalk row and the drawer: only when two or more stations share the bottleneck. */
 export function tiedBundle(game: G.GameState, id: NeighborhoodId): G.BundleHint | null {
   const shop = game.shops[id];
-  const rates = stageRateMap(shop, game.vehicle);
+  const rates = stageRateMap(shop, game.vehicle, cityOf(game).fit);
   const min = Math.min(...Object.values(rates));
   const tiedCount = (Object.keys(rates) as G.Stage[]).filter((st) => rates[st] <= min * (1 + 1e-9)).length;
   return tiedCount >= 2 ? G.bundleHint(game, id) : null;
 }
 
-const stageRateMap = (shop: G.Shop, v: number): Record<G.Stage, number> => ({ prep: G.prepRate(shop), ovens: G.ovenRate(shop), counter: G.counterRate(shop), customers: G.demandRate(shop, v) });
+const stageRateMap = (shop: G.Shop, v: number, fit: CityFit): Record<G.Stage, number> => ({
+  prep: G.prepRate(shop),
+  ovens: G.ovenRate(shop, fit),
+  counter: G.counterRate(shop),
+  customers: G.demandRate(shop, v, fit),
+});
 
 /** Everything the drawer reads from the game except cash: the cache's key, derived from the one input object. */
 export function drawerKey({ game, id }: DrawerInput): string {
   // `bonusUnlocked`: the tutorial's end turns the frames off and the effect lines on (v5.16)
-  return [id, bonusUnlocked(game) ? 'a' : '-', ...hoodIds(cityOf(game)).map((i) => G.shopLevelKey(game, i)), game.dronesUnlocked ? 'd' : '-', id === G.firstHood(cityOf(game)) && !game.shops[id].managed ? G.nonnaPizzasLeft(game) : ''].join('#');
+  return [
+    id,
+    bonusUnlocked(game) ? 'a' : '-',
+    ...hoodIds(cityOf(game)).map((i) => G.shopLevelKey(game, i)),
+    game.dronesUnlocked ? 'd' : '-',
+    id === G.firstHood(cityOf(game)) && !game.shops[id].managed ? G.founderPizzasLeft(game) : '',
+  ].join('#');
 }
 
 interface LevelPart extends Omit<DrawerView, 'bundle' | 'cards' | 'decor'> {
@@ -125,7 +137,8 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
   const city = cityOf(game);
   const nd = G.def(id, city);
   const v = game.vehicle;
-  const rates = stageRateMap(shop, v);
+  const { fit } = city;
+  const rates = stageRateMap(shop, v, fit);
   const minRate = Math.min(...Object.values(rates));
   const tied = (st: G.Stage) => rates[st] <= minRate * (1 + 1e-9);
   const perk = G.perkOf(id, shop, city);
@@ -140,9 +153,12 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
   const after = bonusUnlocked(game);
   const says = after && !idleShop;
   const costOf = (what: G.Upgrade) => G.upgradeCostOf(game, id, what);
-  const gainLine = (g: number, what: G.Upgrade) => (says ? effectLine(g, costOf(what)) ?? plus(g) : plus(g));
+  const gainLine = (g: number, what: G.Upgrade) => (says ? (effectLine(g, costOf(what)) ?? plus(g)) : plus(g));
 
-  const card = (what: G.Upgrade, props: { icon: DrawerIcon; title: string; level?: string; detail: string; hot?: boolean; wide?: boolean; costLabel?: string }): DrawerCard => {
+  const card = (
+    what: G.Upgrade,
+    props: { icon: DrawerIcon; title: string; level?: string; detail: string; hot?: boolean; wide?: boolean; costLabel?: string },
+  ): DrawerCard => {
     const cost = G.upgradeCostOf(game, id, what);
     const lock = G.upgradeLock(game, id, what);
     const muted = idleShop && what !== 'manager' && !G.isHeadUpgrade(what);
@@ -154,7 +170,12 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
       key: what,
       testID: `buy-${what}`,
       ...props,
-      detail: lock && what !== 'manager' ? lock : lock && what === 'manager' && !first ? `${lock} · then ×2 income here, and it earns while you're away` : props.detail,
+      detail:
+        lock && what !== 'manager'
+          ? lock
+          : lock && what === 'manager' && !first
+            ? `${lock} · then ×2 income here, and it earns while you're away`
+            : props.detail,
       hot: muted ? false : props.hot,
       muted,
       tone: expandCost !== null ? 'expand' : buttonTone({ lock, gain, muted }),
@@ -166,9 +187,9 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
   };
   // Seating card: when the next visible table arrives
   const nextTableHint = (() => {
-    const shown = G.tablesShown(shop);
+    const shown = G.tablesShown(shop, fit);
     for (let l = shop.tables + 1; l <= shop.tables + 400; l++) {
-      if (G.tablesShown({ ...shop, tables: l }) > shown) return l === shop.tables + 1 ? 'next level: +1 table' : `+1 table at Lv ${l}`;
+      if (G.tablesShown({ ...shop, tables: l }, fit) > shown) return l === shop.tables + 1 ? 'next level: +1 table' : `+1 table at Lv ${l}`;
     }
     return 'dining room full';
   })();
@@ -182,13 +203,13 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
     // the shared reason ("waiting on …") is shown once in the drawer header; the button already says "no gain now" (D324). After the tutorial the card says it itself.
     return says ? `${rateText} · ${noGainLine(name)}` : rateText;
   };
-  const gradeNext = OVEN_GRADES[shop.grade + 1];
-  const fpNext = FOOTPRINTS[shop.footprint + 1];
+  const gradeNext = fit.ovenGrades[shop.grade + 1];
+  const fpNext = fit.footprints[shop.footprint + 1];
   const gradeGain = G.upgradeGain(game, id, 'grade') ?? 0;
   const expandGain = G.upgradeGain(game, id, 'expand') ?? 0;
   const fleetLockRaw = G.nextVehicleLock(game);
   const fleetLock = fleetLockRaw ? G.vehicleLockLabel(fleetLockRaw) : null;
-  const nextVeh = VEHICLES[v + 1];
+  const nextVeh = fit.vehicles[v + 1];
   const vg = G.vehicleGain(game);
 
   const cards: DrawerCard[] = [];
@@ -209,27 +230,85 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
       card('manager', {
         icon: first && city.managers[id].id === 'nonna-rosa' ? { t: 'nonna' } : { t: 'gm', name: city.managers[id].id },
         title: first ? `Manager: ${city.managers[id].name}` : `Hire ${aOrAn(nd.name)} ${nd.name} manager`,
-        detail: first ? `Keep baking — ${G.founderCountdownText(game)}` : after ? managerEffect() : `General Manager: ×2 income here, and it earns while you're away (${plus(G.shopEarnings(game, id))})`,
+        detail: first
+          ? `Keep baking — ${G.founderCountdownText(game)}`
+          : after
+            ? managerEffect()
+            : `General Manager: ×2 income here, and it earns while you're away (${plus(G.shopEarnings(game, id))})`,
         wide: true,
         costLabel: first ? 'Soon' : undefined,
       }),
     );
   }
   cards.push(
-    card('prep', { icon: { t: 'station', what: 'prep' }, title: 'Prep Cooks', level: `Lv ${shop.prep}`, detail: `${stationDetail('prep', 'prep', `${rate(rates.prep)}/s`, 'Prep')} · batch ${G.tapBatch(shop)} (bigger at Lv ${G.nextBatchLevel(shop)})`, hot: !after && tied('prep') }),
-    card('ovens', { icon: { t: 'station', what: 'ovens' }, title: 'Ovens', level: `Lv ${shop.ovens}`, detail: stationDetail('ovens', 'ovens', `${rate(rates.ovens)}/s`, 'Ovens'), hot: !after && tied('ovens') }),
-    card('counter', { icon: { t: 'station', what: 'counter' }, title: 'Counter', level: `Lv ${shop.counter}`, detail: stationDetail('counter', 'counter', `${rate(rates.counter)}/s`, 'Counter'), hot: !after && tied('counter') }),
-    card('drivers', { icon: { t: 'station', what: 'drivers' }, title: 'Drivers', level: `× ${shop.drivers}`, detail: stationDetail('customers', 'drivers', `${rate(G.deliveryRate(shop, v))}/s`, 'Drivers'), hot: !after && tied('customers') }),
-    card('tables', { icon: { t: 'station', what: 'tables' }, title: 'Seating', level: `Lv ${shop.tables}`, detail: nextTableHint === 'dining room full' ? `Dining room full · ${rate(G.walkInRate(shop))} walk‑ins/s` : `${stationDetail('customers', 'tables', `${rate(G.walkInRate(shop))} walk‑ins/s`, 'Seating')} · ${nextTableHint}`, hot: !after && tied('customers') }),
-    card('grade', { icon: { t: 'station', what: 'grade' }, title: 'Grade', level: OVEN_GRADES[shop.grade].name, detail: gradeNext ? (gradeGain > 1e-9 ? `→ ${gradeNext.name} ×2 · ${gainLine(gradeGain, 'grade')}` : `→ ${gradeNext.name} ×2${says ? ` · ${noGainLine('Oven grade')}` : ''}`) : 'Finest ovens in town' }),
-    card('expand', { icon: { t: 'station', what: 'expand' }, title: 'Expand', level: `${shop.footprint + 1}/5`, detail: fpNext ? `×1.5 prep & counter${expandGain > 1e-9 ? ` · ${gainLine(expandGain, 'expand')}` : atCap ? ` · Lv cap → ${G.levelCap(shop) + 25}` : ''}` : `${FOOTPRINTS[shop.footprint].name} — biggest it gets` }),
+    card('prep', {
+      icon: { t: 'station', what: 'prep' },
+      title: 'Prep Cooks',
+      level: `Lv ${shop.prep}`,
+      detail: `${stationDetail('prep', 'prep', `${rate(rates.prep)}/s`, 'Prep')} · batch ${G.tapBatch(shop)} (bigger at Lv ${G.nextBatchLevel(shop)})`,
+      hot: !after && tied('prep'),
+    }),
+    card('ovens', {
+      icon: { t: 'station', what: 'ovens' },
+      title: 'Ovens',
+      level: `Lv ${shop.ovens}`,
+      detail: stationDetail('ovens', 'ovens', `${rate(rates.ovens)}/s`, 'Ovens'),
+      hot: !after && tied('ovens'),
+    }),
+    card('counter', {
+      icon: { t: 'station', what: 'counter' },
+      title: 'Counter',
+      level: `Lv ${shop.counter}`,
+      detail: stationDetail('counter', 'counter', `${rate(rates.counter)}/s`, 'Counter'),
+      hot: !after && tied('counter'),
+    }),
+    card('drivers', {
+      icon: { t: 'station', what: 'drivers' },
+      title: 'Drivers',
+      level: `× ${shop.drivers}`,
+      detail: stationDetail('customers', 'drivers', `${rate(G.deliveryRate(shop, v, fit))}/s`, 'Drivers'),
+      hot: !after && tied('customers'),
+    }),
+    card('tables', {
+      icon: { t: 'station', what: 'tables' },
+      title: 'Seating',
+      level: `Lv ${shop.tables}`,
+      detail:
+        nextTableHint === 'dining room full'
+          ? `Dining room full · ${rate(G.walkInRate(shop))} walk‑ins/s`
+          : `${stationDetail('customers', 'tables', `${rate(G.walkInRate(shop))} walk‑ins/s`, 'Seating')} · ${nextTableHint}`,
+      hot: !after && tied('customers'),
+    }),
+    card('grade', {
+      icon: { t: 'station', what: 'grade' },
+      title: 'Grade',
+      level: fit.ovenGrades[shop.grade].name,
+      detail: gradeNext
+        ? gradeGain > 1e-9
+          ? `→ ${gradeNext.name} ×2 · ${gainLine(gradeGain, 'grade')}`
+          : `→ ${gradeNext.name} ×2${says ? ` · ${noGainLine('Oven grade')}` : ''}`
+        : 'Finest ovens in town',
+    }),
+    card('expand', {
+      icon: { t: 'station', what: 'expand' },
+      title: 'Expand',
+      level: `${shop.footprint + 1}/5`,
+      detail: fpNext
+        ? `×1.5 prep & counter${expandGain > 1e-9 ? ` · ${gainLine(expandGain, 'expand')}` : atCap ? ` · Lv cap → ${G.levelCap(shop) + 25}` : ''}`
+        : `${fit.footprints[shop.footprint].name} — biggest it gets`,
+    }),
     {
       key: 'fleet',
       testID: 'buy-fleet',
       icon: { t: 'station', what: 'fleet' },
       title: 'Fleet',
-      detail: nextVeh ? (fleetLock ? `→ ${nextVeh.name}s · ${fleetLock.charAt(0).toLowerCase()}${fleetLock.slice(1)}` : `→ ${nextVeh.name}s, all shops${vg && vg > 0 ? ` · ${plus(vg)}` : ''}`) : `${VEHICLES[v].name}s — top tier`,
-      cost: nextVeh && !fleetLock ? nextVeh.cost : null,
+      detail: nextVeh
+        ? fleetLock
+          ? `→ ${nextVeh.name}s · ${fleetLock.charAt(0).toLowerCase()}${fleetLock.slice(1)}`
+          : `→ ${nextVeh.name}s, all shops${vg && vg > 0 ? ` · ${plus(vg)}` : ''}`
+        : `${fit.vehicles[v].name}s — top tier`,
+      // v5.18 prices the fleet card from the home fleet in every city (BUG, reported with R1: fix is `nextVeh.cost`, the city's own)
+      cost: nextVeh && !fleetLock ? HOME_FIT.vehicles[v + 1].cost : null,
       costLabel: nextVeh ? 'Locked' : 'MAX',
       tone: buttonTone({ lock: !nextVeh || !!fleetLock, gain: vg }),
       buy: { t: 'fleet' },
@@ -259,7 +338,11 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
   return {
     title: `Rosa’s · ${nd.name}`,
     // v5.16: the report's line (the manager's voice when one is hired) once the shop runs itself; the tied stages before that
-    bottleneck: drawerLine(game, id) ?? `Bottleneck: ${G.tiedStages(shop, v).map((st) => STAGE_NAME[st]).join(' + ')}`,
+    bottleneck:
+      drawerLine(game, id) ??
+      `Bottleneck: ${G.tiedStages(shop, v, fit)
+        .map((st) => STAGE_NAME[st])
+        .join(' + ')}`,
     idleBanner: idleShop,
     perkBanner: perk ? `★ ${perk.who}’s perk: ${perk.text}` : null,
     bundleHint: tiedBundle(game, id),
@@ -277,5 +360,10 @@ export function drawerCards(input: DrawerInput): DrawerView {
   const { game, id } = input;
   const p = levelPart(input);
   const { bundleHint, cards, decor, ...rest } = p;
-  return { ...rest, bundle: bundleHint ? bundleButton(bundleHint, game.cash) : null, cards: cards.map((c) => withCash(c, game.cash)), decor: decor.map((c) => withCash(c, game.cash)) };
+  return {
+    ...rest,
+    bundle: bundleHint ? bundleButton(bundleHint, game.cash) : null,
+    cards: cards.map((c) => withCash(c, game.cash)),
+    decor: decor.map((c) => withCash(c, game.cash)),
+  };
 }

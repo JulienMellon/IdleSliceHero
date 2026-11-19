@@ -39,7 +39,12 @@ export const GoldPlaque = memo(function GoldPlaque() {
       <Rect x={-w / 2 + 1.5} y={-h / 2 + 2} width={w} height={h} rx={3} fill="rgba(59,31,20,0.3)" />
       <Rect x={-w / 2} y={-h / 2} width={w} height={h} rx={3} fill={GOLD_PLAQUE.rim} stroke={INK} strokeWidth={1.3} />
       <Rect x={-w / 2 + 2} y={-h / 2 + 2} width={w - 4} height={h - 4} rx={2} fill={GOLD_PLAQUE.face} stroke="#FFE9A0" strokeWidth={0.8} />
-      {[[-w / 2 + 4.5, -h / 2 + 4.5], [w / 2 - 4.5, -h / 2 + 4.5], [-w / 2 + 4.5, h / 2 - 4.5], [w / 2 - 4.5, h / 2 - 4.5]].map(([x, y], i) => (
+      {[
+        [-w / 2 + 4.5, -h / 2 + 4.5],
+        [w / 2 - 4.5, -h / 2 + 4.5],
+        [-w / 2 + 4.5, h / 2 - 4.5],
+        [w / 2 - 4.5, h / 2 - 4.5],
+      ].map(([x, y], i) => (
         <Circle key={i} cx={x} cy={y} r={1.1} fill={GOLD_PLAQUE.rim} />
       ))}
       <SvgText x={0} y={-1.2} fontFamily={F.bold} fontSize={6.6} fill={GOLD_PLAQUE.text} textAnchor="middle" letterSpacing={0.2}>

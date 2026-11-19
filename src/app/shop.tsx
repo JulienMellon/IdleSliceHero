@@ -49,11 +49,32 @@ function VanityCard({ v, onWear, onBuy }: { v: VanityView; onWear: (id: string, 
         testID={`vanity-${v.id}-button`}
         disabled={v.state === 'earn'}
         accessibilityRole="button"
-        accessibilityLabel={v.state === 'worn' ? `${v.name}: worn. Take off` : v.state === 'owned' ? `Wear ${v.name}` : v.state === 'earn' ? `${v.name}: ${v.label}` : `${v.name}: ${v.label}`}
+        accessibilityLabel={
+          v.state === 'worn'
+            ? `${v.name}: worn. Take off`
+            : v.state === 'owned'
+              ? `Wear ${v.name}`
+              : v.state === 'earn'
+                ? `${v.name}: ${v.label}`
+                : `${v.name}: ${v.label}`
+        }
         onPress={press}
-        style={({ pressed }) => [styles.btn, v.state === 'worn' && styles.btnWorn, v.state === 'owned' && styles.btnWear, v.state === 'buy' && styles.btnBuy, (v.state === 'poor' || v.state === 'earn') && styles.btnOff, pressed && can && styles.pressed]}>
+        style={({ pressed }) => [
+          styles.btn,
+          v.state === 'worn' && styles.btnWorn,
+          v.state === 'owned' && styles.btnWear,
+          v.state === 'buy' && styles.btnBuy,
+          (v.state === 'poor' || v.state === 'earn') && styles.btnOff,
+          pressed && can && styles.pressed,
+        ]}
+      >
         {(v.state === 'buy' || v.state === 'poor') && <DiamondIcon size={18} />}
-        <Text style={[styles.btnText, v.state === 'worn' && styles.btnTextWorn, (v.state === 'poor' || v.state === 'earn') && styles.btnTextOff]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.15}>
+        <Text
+          style={[styles.btnText, v.state === 'worn' && styles.btnTextWorn, (v.state === 'poor' || v.state === 'earn') && styles.btnTextOff]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          maxFontSizeMultiplier={1.15}
+        >
           {v.state === 'worn' ? 'Worn ✓' : v.label}
         </Text>
       </Pressable>
@@ -89,7 +110,14 @@ export default function Shop() {
       </View>
       <View style={styles.tabs} accessibilityRole="tablist">
         {tabs.map((label, i) => (
-          <Pressable key={label} testID={`shop-tab-${i}`} accessibilityRole="tab" accessibilityState={{ selected: tab === i }} onPress={() => setTab(i as Tab)} style={[styles.tab, tab === i && styles.tabOn]}>
+          <Pressable
+            key={label}
+            testID={`shop-tab-${i}`}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === i }}
+            onPress={() => setTab(i as Tab)}
+            style={[styles.tab, tab === i && styles.tabOn]}
+          >
             <Text style={[styles.tabText, tab === i && styles.tabTextOn]} numberOfLines={1} adjustsFontSizeToFit>
               {label}
             </Text>
@@ -97,7 +125,15 @@ export default function Shop() {
         ))}
       </View>
       <ScrollView contentContainerStyle={{ padding: 14, gap: 10, paddingBottom: insets.bottom + 24 }}>
-        {tab === 1 && boosterAd && <AdButton placement="daily_booster" label="Free booster: 2× for 15 min" plusLabel="Free booster · Nonna’s Plus" testID="booster-ad" onBenefit={takeBooster} />}
+        {tab === 1 && boosterAd && (
+          <AdButton
+            placement="daily_booster"
+            label="Free booster: 2× for 15 min"
+            plusLabel="Free booster · Nonna’s Plus"
+            testID="booster-ad"
+            onBenefit={takeBooster}
+          />
+        )}
         {tab === 0 ? (
           vanity.map((v) => <VanityCard key={v.id} v={v} onWear={(id, on) => equip(id, on)} onBuy={(id) => haptic(buyCosmetic(id) ? 'success' : 'error')} />)
         ) : tab === 2 ? (
@@ -122,7 +158,13 @@ export default function Shop() {
               <Text style={styles.shelfLabel} numberOfLines={1}>
                 {row.label}
               </Text>
-              <Pressable testID={`shelf-activate-${row.index}`} accessibilityRole="button" accessibilityLabel={`Activate ${row.label} booster`} onPress={() => haptic(startBooster(row.index) ? 'success' : 'error')} style={({ pressed }) => [styles.btn, styles.btnWear, styles.activate, pressed && styles.pressed]}>
+              <Pressable
+                testID={`shelf-activate-${row.index}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Activate ${row.label} booster`}
+                onPress={() => haptic(startBooster(row.index) ? 'success' : 'error')}
+                style={({ pressed }) => [styles.btn, styles.btnWear, styles.activate, pressed && styles.pressed]}
+              >
                 <Text style={styles.btnText}>Activate</Text>
               </Pressable>
             </View>
@@ -136,13 +178,40 @@ export default function Shop() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 8, backgroundColor: C.tomato, borderBottomWidth: 4, borderColor: C.tomatoDark },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: C.tomato,
+    borderBottomWidth: 4,
+    borderColor: C.tomatoDark,
+  },
   back: { minWidth: 70, minHeight: TAP.min, justifyContent: 'center' },
   backText: { fontFamily: F.bold, color: '#fff', fontSize: 18 },
-  gems: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: TAP.min, paddingHorizontal: 12, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.22)' },
+  gems: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: TAP.min,
+    paddingHorizontal: 12,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+  },
   gemsText: { fontFamily: F.bold, fontSize: 18, color: '#fff' },
   tabs: { flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingTop: 10 },
-  tab: { flex: 1, minHeight: TAP.min, borderRadius: 14, borderWidth: 2.5, borderColor: C.ink, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  tab: {
+    flex: 1,
+    minHeight: TAP.min,
+    borderRadius: 14,
+    borderWidth: 2.5,
+    borderColor: C.ink,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
   tabOn: { backgroundColor: C.tomato, borderColor: C.tomatoDark },
   tabText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   tabTextOn: { color: '#fff' },
@@ -151,7 +220,16 @@ const styles = StyleSheet.create({
   cardText: { flex: 1 },
   name: { fontFamily: F.bold, fontSize: 16, color: C.ink },
   desc: { fontFamily: F.regular, fontSize: 13, lineHeight: 16, color: C.inkSoft },
-  btn: { minHeight: TAP.min, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 12, borderBottomWidth: 4 },
+  btn: {
+    minHeight: TAP.min,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    borderBottomWidth: 4,
+  },
   btnWear: { backgroundColor: C.basil, borderBottomColor: C.basilDark },
   btnWorn: { backgroundColor: '#fff', borderBottomColor: C.basil, borderWidth: 2, borderColor: C.basil },
   // D461: buying is blue (the diamond's colour), wearing green, worn an outlined chip: three looks, never two identical greens
@@ -163,7 +241,16 @@ const styles = StyleSheet.create({
   pressed: { transform: [{ translateY: 2 }] },
   emptyBox: { alignItems: 'center', gap: 8, paddingVertical: 24 },
   empty: { fontFamily: F.semi, fontSize: 15, color: C.inkSoft, textAlign: 'center' },
-  shelfRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 16, borderWidth: 2.5, borderColor: C.ink, padding: 10 },
+  shelfRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    borderWidth: 2.5,
+    borderColor: C.ink,
+    padding: 10,
+  },
   shelfLabel: { flex: 1, fontFamily: F.bold, fontSize: 16, color: C.ink },
   activate: { minWidth: 96 },
 });

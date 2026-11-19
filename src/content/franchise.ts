@@ -68,16 +68,22 @@ export const PRICE_FIT: Partial<Record<number, number>> = { 1: 1.09 };
 
 /** City `index`'s numbers: the home city's, scaled, then moved by the fit (`adjust` false: the plain scaling, what the fit starts from). */
 export function cityNumbers(index: number, adjust = true): CityNumbers {
-  const p = priceScale(index) * (adjust ? PRICE_FIT[index] ?? 1 : 1);
+  const p = priceScale(index) * (adjust ? (PRICE_FIT[index] ?? 1) : 1);
   const v = valueScale(index);
-  const heads = Object.fromEntries((Object.keys(HEAD_COST_DOWNTOWN) as HeadKind[]).map((k) => [k, round3(HEAD_COST_DOWNTOWN[k] * p)])) as Record<HeadKind, number>;
+  const heads = Object.fromEntries((Object.keys(HEAD_COST_DOWNTOWN) as HeadKind[]).map((k) => [k, round3(HEAD_COST_DOWNTOWN[k] * p)])) as Record<
+    HeadKind,
+    number
+  >;
   return {
-    hoods: NEIGHBORHOODS.map((n) => ({ orderValue: round3(n.orderValue * v), buildCost: round3(n.buildCost * p), costMult: round3(n.costMult * p), managerCost: round3(n.managerCost * p), headsCost: round3(n.headsCost * p) })),
+    hoods: NEIGHBORHOODS.map((n) => ({
+      orderValue: round3(n.orderValue * v),
+      buildCost: round3(n.buildCost * p),
+      costMult: round3(n.costMult * p),
+      managerCost: round3(n.managerCost * p),
+      headsCost: round3(n.headsCost * p),
+    })),
     vehicleCosts: VEHICLES.slice(1).map((vh) => round3(vh.cost * p)),
     headCostFirst: heads,
     bid: { cost: round3(PIER9_BID.cost * p), unlockPizzas: PIER9_BID.unlockPizzas },
   };
 }
-
-/** Boston, the card T2 pack's numbers (src/content/cities/boston/ reads these: it owns the names, the scenes and the layout, this owns the prices). */
-export const BOSTON_NUMBERS: CityNumbers = cityNumbers(1);

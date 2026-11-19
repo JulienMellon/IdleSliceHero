@@ -13,7 +13,16 @@ function rows(): { section: string; cells: string[] }[] {
     const [head, ...body] = sec.split('\n');
     const n = head.split('.')[0];
     if (!['1', '3', '4', '5', '6', '7'].includes(n)) continue;
-    for (const line of body) if (line.startsWith('| `')) out.push({ section: n, cells: line.trim().replace(/^\||\|$/g, '').split(' | ').map((c) => c.trim()) });
+    for (const line of body)
+      if (line.startsWith('| `'))
+        out.push({
+          section: n,
+          cells: line
+            .trim()
+            .replace(/^\||\|$/g, '')
+            .split(' | ')
+            .map((c) => c.trim()),
+        });
   }
   return out;
 }

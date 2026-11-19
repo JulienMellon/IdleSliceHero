@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import type { CoachStep } from '../engine/tutorial';
 import { F } from '../theme';
-import { Portrait } from './portrait';
+import { Portrait } from './portrait/index';
 
 export const CoachCard = memo(function CoachCard({ step, low, high }: { step: CoachStep; low: number; high: number }) {
   return (

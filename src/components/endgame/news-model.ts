@@ -43,7 +43,15 @@ export function newsItems(g: GameState): NewsItem[] {
   }
   for (const id of r?.fresh ?? []) {
     const m = /^recipe\.(\w+)\.([1-4])$/.exec(id);
-    if (m) out.push({ key: `recipe:${id}`, kind: 'recipe', text: recipeName(id), sub: recipeLine(id), hood: m[1] as NeighborhoodId, n: Number(m[2]) as 1 | 2 | 3 | 4 });
+    if (m)
+      out.push({
+        key: `recipe:${id}`,
+        kind: 'recipe',
+        text: recipeName(id),
+        sub: recipeLine(id),
+        hood: m[1] as NeighborhoodId,
+        n: Number(m[2]) as 1 | 2 | 3 | 4,
+      });
   }
   return out;
 }
@@ -58,4 +66,9 @@ export function newsKey(g: GameState): string {
 }
 
 /** An event's start line as a toast: the character's name, then what they say. */
-export const eventNews = (b: Pick<EventBannerView, 'id' | 'start' | 'speaker'>): NewsItem => ({ key: `event:${b.id}`, kind: 'event', text: b.start, sub: b.speaker });
+export const eventNews = (b: Pick<EventBannerView, 'id' | 'start' | 'speaker'>): NewsItem => ({
+  key: `event:${b.id}`,
+  kind: 'event',
+  text: b.start,
+  sub: b.speaker,
+});

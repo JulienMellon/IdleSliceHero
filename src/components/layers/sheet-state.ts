@@ -21,4 +21,9 @@ const subscribe = (fn: () => void) => {
 export const openLayerSheet = (kind: SheetKind) => set(kind);
 export const closeLayerSheet = () => set(null);
 export const openLayerSheetKind = (): SheetKind | null => open;
-export const useLayerSheet = (): SheetKind | null => useSyncExternalStore(subscribe, () => open, () => null);
+export const useLayerSheet = (): SheetKind | null =>
+  useSyncExternalStore(
+    subscribe,
+    () => open,
+    () => null,
+  );
