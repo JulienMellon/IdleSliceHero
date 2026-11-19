@@ -99,16 +99,48 @@ def to_mono(a: np.ndarray) -> np.ndarray:
     return a.mean(axis=1, keepdims=True) if a.ndim == 2 and a.shape[1] == 2 else a.reshape(-1, 1)
 
 
-def encode(a: np.ndarray, out_path: str, kbps: int, mono: bool, sr_out: int = 44100) -> dict:
+def momentary_max(a: np.ndarray) -> float:
+    """Loudest momentary loudness (BS.1770, 400 ms window, 100 ms hop, K-weighted, no gate) in LUFS. A file shorter than the
+    window is measured over its own length."""
+    x = a.reshape(-1, 1) if a.ndim == 1 else a
+    x = x.copy()
+    for _name, stage in pyln.Meter(SR)._filters.items():
+        for ch in range(x.shape[1]):
+            x[:, ch] = stage.apply_filter(x[:, ch])
+    n = len(x)
+    win = min(int(0.4 * SR), n)
+    c = np.concatenate([np.zeros((1, x.shape[1])), np.cumsum(x ** 2, axis=0)])
+    starts = np.arange(0, n - win + 1, int(0.1 * SR))
+    ms = ((c[starts + win] - c[starts]) / win).sum(axis=1)  # L and R both carry gain 1
+    return float(-0.691 + 10 * np.log10(max(1e-12, ms.max())))
+
+
+def save_master(a: np.ndarray, path: str) -> str:
+    """The uncompressed master as it went into the encoder: 32-bit float WAV, 44.1 kHz, every channel kept."""
+    from scipy.io import wavfile
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    wavfile.write(path, SR, np.clip(a, -1, 1).astype(np.float32))
+    return path
+
+
+def encode(a: np.ndarray, out_path: str, kbps: int, mono: bool, sr_out: int = 44100, master: str | None = None,
+           float_in: bool = True) -> dict:
+    """AAC through ffmpeg. The audio goes in as 32-bit float (`float_in`; the sound effects keep 16-bit so their bytes don't
+    move), so the encoder sees the master without a 16-bit rounding step. `master` writes the uncompressed master as a WAV."""
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     x = to_mono(a) if mono else a
     ch = x.shape[1]
-    pcm = (np.clip(x, -1, 1) * 32767).astype('<i2').tobytes()
-    cmd = ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-f', 's16le', '-ar', str(SR), '-ac', str(ch), '-i', '-',
+    if master:
+        save_master(x, master)
+    if float_in:
+        pcm, fmt = np.clip(x, -1, 1).astype('<f4').tobytes(), 'f32le'
+    else:
+        pcm, fmt = (np.clip(x, -1, 1) * 32767).astype('<i2').tobytes(), 's16le'
+    cmd = ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-f', fmt, '-ar', str(SR), '-ac', str(ch), '-i', '-',
            '-ar', str(sr_out), '-c:a', 'aac', '-b:a', f'{kbps}k', '-movflags', '+faststart', out_path]
     subprocess.run(cmd, input=pcm, check=True)
     return {'file': os.path.relpath(out_path, os.path.join(HERE, '..', '..')), 'bytes': os.path.getsize(out_path),
-            'seconds': round(len(x) / SR, 3), 'lufs': round(lufs(x), 1),
+            'seconds': round(len(x) / SR, 3), 'lufs': round(lufs(x), 1), 'momentary_max': round(momentary_max(x), 1),
             'peak_dbfs': round(peak_db(x), 1), 'channels': ch, 'kbps': kbps, 'sample_rate': sr_out}
 
 

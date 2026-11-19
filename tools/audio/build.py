@@ -4,10 +4,11 @@
     python3 build.py
 
 Outputs:
-  assets/audio/music/*.m4a   stereo AAC 128 kbps (96 before 2026-11-19: crisper attacks), loops cut to exact bar length with the tail folded onto the start
-  assets/audio/sting/*.m4a   mono AAC 64 kbps, beat 1 at `downbeatSeconds`
-  assets/audio/story/*.m4a   stereo AAC 96 kbps
-  assets/audio/sfx/*.m4a     mono AAC 64 kbps, peaks at -9 dBFS
+  assets/audio/music/*.m4a   stereo AAC 256 kbps (96 before 2026-11-19, 128 in round R1), loops cut to exact bar length with the tail folded onto the start
+  assets/audio/sting/*.m4a   mono AAC 256 kbps (64 before 2026-11-19), beat 1 at `downbeatSeconds`
+  assets/audio/story/*.m4a   stereo AAC 256 kbps (96 before 2026-11-19)
+  assets/audio/sfx/*.m4a     mono AAC 64 kbps, peaks at -9 dBFS (unchanged, 16-bit in)
+  tools/audio/build/master/{music,sting,story}/*.wav   the 32-bit float masters that went into the encoder (not in git; reel.py cuts from them)
   src/audio/manifest.ts      generated: every cue's file, length, tempo and loudness
   tools/audio/build/report.json
 """
@@ -29,13 +30,14 @@ MIDI = os.path.join(HERE, 'build', 'midi')
 ASSETS = os.path.join(ROOT, 'assets', 'audio')
 
 LOUD = dict(music=-20.0, story=-16.0, sting=-18.0)  # AU22; the lofi loops sit 2 LU lower (2026-10-31)
-LOOP_KBPS = 128  # the lofi loops: more bits for the attacks (notes round R1, 2026-11-19; was 96)
+KBPS = 256  # music, stingers and story cues (Julien, 2026-11-19: 256 kbps; was 128 for loops, 64 for stingers, 96 for story)
+MASTER = os.path.join(HERE, 'build', 'master')
 LOOP_CEILING = -6.0
 # AU67: Nonna's takeover (sparse -> full) lifts by 2 LU. AU70, card M1c: the MegaSlice HQ loop keeps its own tier, 1 LU above the
 # other loops, and now goes through the same lofi chain.
 LOOP_LUFS = {'downtown_sparse': -22.0, 'megaslice_hq': -19.0}
 # AU64: the cues that sit over a lofi loop come down from -16 to -18 and get the story master (tape_sat, 10 kHz)
-STORY_MASTER = {'megaslice_rep': -18.0, 'megaslice_rep_dock': -18.0, 'city_theme': -18.0,
+STORY_MASTER = {'megaslice_rep': -18.0, 'megaslice_rep_dock': -18.0, 'city_theme': -18.0, 'victor_exit': -16.0,
                 **{f'triumph_{h}': -18.0 for h in ('downtown', 'suburbs', 'waterfront', 'university', 'industrial', 'uptown')}}
 # AU36: loudness by tier, so rare big moments are louder than frequent small ones; every file's peak ≤ −6 dBFS (AU38)
 CEILING = -6.0
@@ -78,6 +80,30 @@ def tier_ok(info: dict, target: float) -> bool:
     return abs(info['lufs'] - target) <= 0.5 or (info['lufs'] < target and info['peak_dbfs'] >= CEILING - 0.6)
 
 
+HOODS = ('downtown', 'suburbs', 'waterfront', 'university', 'industrial', 'uptown')
+# Card M2c: in every neighbourhood the stingers rank milestone_big > manager >= build > milestone > upgrade > bottleneck, on
+# integrated loudness and on momentary-max loudness (400 ms window), so a rare big moment is never quieter than a frequent small one.
+HIERARCHY = [('milestone_big', 'manager', True), ('manager', 'build', False), ('build', 'milestone', True),
+             ('milestone', 'upgrade', True), ('upgrade', 'bottleneck', True)]  # (louder, softer, strictly louder?)
+
+
+def hierarchy_errors(report: dict) -> list[str]:
+    """One line per inversion, naming both cues and their numbers. A neighbourhood with a missing stinger is skipped (partial build)."""
+    out = []
+    for h in HOODS:
+        row = {k: report.get(f'sting_{h}_{k}') for k in ('milestone_big', 'manager', 'build', 'milestone', 'upgrade', 'bottleneck')}
+        if any(v is None for v in row.values()):
+            continue
+        for hi, lo, strict in HIERARCHY:
+            for key, label in (('lufs', 'integrated'), ('momentary_max', 'momentary max')):
+                if key not in row[hi] or key not in row[lo]:  # a report from before the check (partial build)
+                    continue
+                a, b = row[hi][key], row[lo][key]
+                if (a <= b) if strict else (a < b):
+                    out.append(f'{h}: {hi} {a:.1f} LUFS {"is not above" if strict else "is below"} {lo} {b:.1f} LUFS ({label})')
+    return out
+
+
 def main(only: set[str] | None = None):
     if not only:  # a full build starts clean, so renamed or retired cues don't linger in the bundle
         import shutil
@@ -99,8 +125,12 @@ def main(only: set[str] | None = None):
             join, p99 = post.seam_step(a)
             if join > p99:  # the loop seam must be no bigger than an ordinary sample step
                 raise SystemExit(f'{name}: loop seam step {join:.5f} > 99th-percentile step {p99:.5f}')
-            info = post.encode(a, os.path.join(ASSETS, 'music', name + '.m4a'), LOOP_KBPS, mono=False)
+            info = post.encode(a, os.path.join(ASSETS, 'music', name + '.m4a'), KBPS, mono=False,
+                               master=os.path.join(MASTER, 'music', name + '.wav'))
             info['seam'] = [round(join, 5), round(p99, 5)]
+            info['target_lufs'] = LOOP_LUFS.get(name, LOUD['music'])
+            if not tier_ok(info, info['target_lufs']):
+                raise SystemExit(f'loop {name}: {info["lufs"]} LUFS, tier {info["target_lufs"]} (peak {info["peak_dbfs"]})')
         elif cue['kind'] == 'stinger':
             if cue.get('lofi'):  # shorter tails: trim at -46 dBFS and fade the last 0.3 s
                 bell = post.render_midi(os.path.join(MIDI, cue['bellStem'] + '.mid'), tail=2.5) if cue.get('bellStem') else None
@@ -109,7 +139,8 @@ def main(only: set[str] | None = None):
                 a = post.fade(post.trim_silence(a, -50), 0, 0.15)
             # AU59/AU62: normalise after the mono fold, because mono is what ships (stereo-then-fold read ~3 LU low)
             a = post.normalize(post.to_mono(a), STING_LUFS.get(cue['cue'], LOUD['sting']), ceiling_db=CEILING)
-            info = post.encode(a, os.path.join(ASSETS, 'sting', name.removeprefix('sting_') + '.m4a'), 64, mono=True)
+            info = post.encode(a, os.path.join(ASSETS, 'sting', name.removeprefix('sting_') + '.m4a'), KBPS, mono=True,
+                               master=os.path.join(MASTER, 'sting', name + '.wav'))
             target = STING_LUFS.get(cue['cue'], LOUD['sting'])
             info['target_lufs'] = target
             if not tier_ok(info, target):
@@ -119,7 +150,11 @@ def main(only: set[str] | None = None):
                 a = post.story_master(a)
             a = post.fade(post.trim_silence(a, -50), 0, 0.3)
             a = post.normalize(a, STORY_MASTER.get(name, LUFS_OVERRIDE.get(name, LOUD['story'])), ceiling_db=CEILING)
-            info = post.encode(a, os.path.join(ASSETS, 'story', name + '.m4a'), 96, mono=False)
+            info = post.encode(a, os.path.join(ASSETS, 'story', name + '.m4a'), KBPS, mono=False,
+                               master=os.path.join(MASTER, 'story', name + '.wav'))
+            info['target_lufs'] = STORY_MASTER.get(name, LUFS_OVERRIDE.get(name, LOUD['story']))
+            if not tier_ok(info, info['target_lufs']):
+                raise SystemExit(f'story {name}: {info["lufs"]} LUFS, tier {info["target_lufs"]} (peak {info["peak_dbfs"]})')
         report[name] = {**cue, **info}
         print(f"{name:34s} {info['seconds']:7.2f}s {info['lufs']:6.1f} LUFS {info['peak_dbfs']:6.1f} dBFS {info['bytes'] / 1024:7.1f} KB")
     for name, variants in SFX.ALL.items():
@@ -129,13 +164,16 @@ def main(only: set[str] | None = None):
             tier = SFX_LUFS[name]
             target = tier[i] if isinstance(tier, tuple) else tier
             a = post.normalize(x.reshape(-1, 1), target, None, ceiling_db=CEILING)
-            info = post.encode(a, os.path.join(ASSETS, 'sfx', f'{name}_{i}.m4a'), 64, mono=True)
+            info = post.encode(a, os.path.join(ASSETS, 'sfx', f'{name}_{i}.m4a'), 64, mono=True, float_in=False)
             report[f'sfx_{name}_{i}'] = {'kind': 'sfx', 'target_lufs': target, **info}
             # AU51: every effect lands on its tier, unless the −6 dBFS ceiling stopped it (then it's quieter, never louder)
             if not tier_ok(info, target):
                 raise SystemExit(f'sfx {name}_{i}: {info["lufs"]} LUFS, tier {target} (peak {info["peak_dbfs"]})')
     os.makedirs(os.path.join(HERE, 'build'), exist_ok=True)
     post.write_report(os.path.join(HERE, 'build', 'report.json'), report)
+    bad = hierarchy_errors(report)
+    if bad:
+        raise SystemExit('loudness hierarchy broken:\n  ' + '\n  '.join(bad))
     write_bank_json()
     write_manifest(report)
     tot = {}

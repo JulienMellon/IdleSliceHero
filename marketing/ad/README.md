@@ -28,3 +28,4 @@ cd marketing/ad && mkdir -p audio && cp ../../assets/audio/music/downtown.m4a ..
 - Swap "Coming soon on iPhone" for the store CTA and Apple's official badge once the app is live.
 - Platform specs differ (TikTok/Meta safe zones keep the bottom ~20% and right edge clear of UI). Captions currently sit at y ≈ 1745, inside TikTok's bottom UI zone: move them to y ≈ 1350 for TikTok cuts.
 - Re-record with the lofi score once it's final, if you want the ad to match the game.
+- The draft ad (`slice-empire-ad-15s-draft1.mp4`) uses the score from before 2026-11-15 (the accordion-and-brass sound); the game now plays the lofi jazz score.

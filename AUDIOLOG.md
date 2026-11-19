@@ -28,14 +28,14 @@ Fixed (in code; not auditioned): AU73, AU74, AU75, AU60, AU61. The lofi loop is 
 | ID | Sev | Note | Fix |
 | --- | --- | --- | --- |
 | AU76 | major — fixed after the loop (unreviewed) | Collect (claims, chests, weekly, gift, offline popup) can be silenced as it starts: `emitAudio` runs before `set()`, so `warmRare`'s sweep removes the still-loading `collect/*` player (`playing` false) | A `firing` set of keys started by `fire()`, cleared on that play's `onEnd`; `warmRare` removes only the collect player it created and only if not firing; test "claim → store update → player still alive" |
-| AU77 | minor — fixed after the loop (unreviewed) | Perk over a triumph: if the payoff is 3–5 s away, the payoff crash lands inside the perk's −6 dB story duck | Cap the duck at `min(perkLen, payoffAt − now − DUCK_UP_MS)`, or if the payoff is ≤ 1 s past the cap, wait for payoff + one beat |
+| AU77 | minor — fixed after the loop (unreviewed) | Perk over a triumph: if the payoff is 3–5 s away, the payoff (the triumph's arrival chord; a crash before the 2026-11-19 rewrite) lands inside the perk's −6 dB story duck | Cap the duck at `min(perkLen, payoffAt − now − DUCK_UP_MS)`, or if the payoff is ≤ 1 s past the cap, wait for payoff + one beat |
 | AU39 / AU40 / AU41 | — | Device checks (+ crackle under a podcast); `react-native-audio-api`; other-audio hint | Open (Julien) |
 | AU25 | — | v2 arrangements, rush layer, Boston theme | Deferred |
 
 **Audition checks for Julien (ring switch on; AirPods and speaker):**
 1. `downtown_milestone_big` and `industrial_manager` over their loops: bell clear, not brittle; no pump/crunch on the arrival; clearly bigger than a plain milestone.
 2. 10 min idle in Suburbs or Uptown: crackle a texture, not a tic; wow warm, not seasick; no audible seam; then a podcast underneath.
-3. A MegaSlice scheme into its win: HQ still villainous against the lofi bed; the triumph crash lands with full energy.
+3. A MegaSlice scheme into its win: HQ's villain motif sits in the lofi bed without brass; the triumph's arrival chord (no crash, no timpani) is still clearly the payoff.
 4. Pier 9 bid → Dock Saved → bell triumph: the held A7 hands over cleanly; it feels like Waterfront's peak.
 5. Fast buying + rush + a milestone: nothing clips or blurs; then a daily claim and the offline Collect: you hear Collect every time (AU76).
 
@@ -48,3 +48,6 @@ Fixed (in code; not auditioned): AU73, AU74, AU75, AU60, AU61. The lofi loop is 
 - R1 (the loops): all eight loops are lofi jazz now: Downtown and its sparse chart (M1a), Suburbs, Waterfront, University (M1b), Industrial (a 12-bar jazz blues, vibraphone and flute), Uptown (nylon guitar, piano, quiet pompe, harp tag) and MegaSlice HQ (a walking bass, a dark Rhodes villain motif; now on the lofi chain at its own -19 LUFS tier). The rep stings, Victor's exit, triumphs, stingers and story cues are R2 and still the old sound.
 - Bank: C, `MuseScore_General_Full.sf3` (Julien, 2026-11-16: "C"). Full build passes every seam, ceiling and tier check; total 13,867,227 bytes of 14,680,064; stem audit lead minus bed -3.0 to -3.6 LU on all eight.
 - Not auditioned yet: `build/reel/R1.mp3` (244.9 s) is waiting for Julien's listen; the audiocritic review of R1 is still to come.
+- R2 (stingers and story, card M2c closes it): every cue is lofi jazz now. Stingers (M2a), the six triumphs and the city theme (M2b) and, in M2c, the two rep stings (the HQ motif over a stalking upright bass, ending on an unresolved diminished chord; the dock variant over the held A), Victor's exit (a vibraphone run and a bass glide), recipe (solo nylon guitar) and reunion (nylon guitar answered by a vibraphone at velocity 50 or under). No accordion, brass, reed, fiddle, square lead, crash or tambourine remains anywhere: `palette.check` runs on all 153 cues, and the entries are gone from `compose.GM`.
+- The build now checks the hierarchy per neighbourhood (`milestone_big` > `manager` ≥ `build` > `milestone` > `upgrade` > `bottleneck` on integrated and on momentary-max loudness) and loops and story cues against their tiers. The M2a stingers failed it in several neighbourhoods; the three full-band kinds got a louder pad and per-neighbourhood bass velocities, and now pass with gaps as small as 0.1 LU (`docs/build/music/reports/M2c.md`).
+- Julien's notes (2026-11-19): music, stingers and story cues are encoded at 256 kbps from 32-bit float, the cap is 32 MB (total 33,240,658 bytes, 313,774 under), and `python3 tools/audio/reel.py FULL` (1302 s, 93 tracks, 320 kbps MP3) and `reel.py R2` are waiting for his listen; nobody has listened to R2's cues, and the audiocritic review of R2 is still to come.
