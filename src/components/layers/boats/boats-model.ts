@@ -2,7 +2,7 @@
 // engine/features/layers/boats.ts (`boatsView`, `rackPrice`) and content/layers.ts (`auctionMult`); the words are the copy table.
 // Pure: unit-tested in node.
 import { AUCTION, BOATS, LAYER_KEYS, auctionMult } from '../../../content/layers';
-import { HOME_BID } from '../../../content/cities/home/data';
+import { cityOf } from '../../../content/cities';
 import { money } from '../../../engine/format';
 import { canAfford, bidAvailable, bidPrice, type GameState } from '../../../engine/game';
 import type { BoatsView } from '../../../engine/features/layers/boats';
@@ -190,8 +190,7 @@ const openedAtOf = (g: GameState): number => (g.x?.[LAYER_KEYS.boats] as { opene
 export function auctionStatus(g: GameState): AuctionStatus {
   const openedAt = openedAtOf(g);
   const live = bidAvailable(g) && openedAt >= 0;
-  // v5.18 shows the home bid's cost as the base in every city (BUG, reported with R1: fix is the city's own, `cityOf(g).bid?.cost ?? 0`)
-  const base = HOME_BID.cost;
+  const base = cityOf(g).bid?.cost ?? 0;
   const cap = Math.ceil(base * (1 + AUCTION.maxShare));
   if (!live) return { live: false, price: bidPrice(g), base, cap, raises: 0, maxed: false, nextIn: 0 };
   const since = Math.max(0, g.playSeconds - openedAt);

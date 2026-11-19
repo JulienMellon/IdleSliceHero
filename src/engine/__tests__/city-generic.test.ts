@@ -37,7 +37,7 @@ describe('a save from v5.18 migrates to the state it always did', () => {
       const g = G.newGame(NOW, city.id);
       expect(Object.keys(g.shops)).toEqual([...hoodIds(city)]);
       expect(g.active).toBe(G.firstHood(city));
-      expect(Object.keys((g.x.service as { shops: object }).shops)).toEqual([...hoodIds(city.serviceRows ? HOME_CITY : city)]);
+      expect(Object.keys((g.x.service as { shops: object }).shops)).toEqual([...hoodIds(city)]);
     }
   });
 });

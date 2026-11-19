@@ -2,14 +2,13 @@
 // "Next: Dale's story continues after 1,200 more Suburbs pies", "…when you build Waterfront", "…when you bid on Pier 9".
 // A ring on the HUD's scrapbook button shows the progress toward it, in RING_STEP steps so it never repaints on a tick.
 import { RING_STEP } from '../content/hooks';
-import { cityOf } from '../content/cities';
-import { HOME_NAMES } from '../content/cities/home/cast';
+import { CITIES, cityOf, HOME_ID } from '../content/cities';
 import type { CharacterId, Scene } from '../content/types';
 import { count } from './format';
 import { buildLock, def, bidAvailable, bidPrice, sceneTriggered, type GameState } from './game';
 
 /** The name the story line uses for a character (the character only, no scene content): the city's own names, then the home cast's (the returning characters). */
-const whoName = (s: GameState, id: CharacterId): string => cityOf(s).names?.[id] ?? HOME_NAMES[id as keyof typeof HOME_NAMES] ?? id;
+const whoName = (s: GameState, id: CharacterId): string => cityOf(s).names?.[id] ?? CITIES[HOME_ID].names?.[id] ?? id;
 
 export type TeaserKind = 'deliveries' | 'unlock' | 'bid' | 'soon' | 'complete';
 

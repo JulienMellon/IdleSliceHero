@@ -361,7 +361,7 @@ export function sidewalkSlots(s: G.GameState, id: NeighborhoodId, bundle: G.Bund
  * The sidewalk offers the next hire (each head in turn, then the General Manager) on every pizzeria without a GM,
  * except the city's first, whose GM is its founder via the story. It stays until the GM is hired: three heads do not end the offer (B1).
  */
-export const hireOnSidewalk = (shop: Pick<G.Shop, 'managed'>, id: NeighborhoodId, city: CityDef) => !shop.managed && id !== G.founderHood(city);
+export const hireOnSidewalk = (shop: Pick<G.Shop, 'managed'>, id: NeighborhoodId, city: CityDef) => !shop.managed && id !== G.firstHood(city);
 
 /**
  * The goal bar skips this shop's own hire only while the sidewalk already offers a head (D341). The GM hire is offered in both

@@ -18,6 +18,7 @@ import {
   type HeadKind,
   type NeighborhoodDef,
 } from '../content/tuning';
+import { t } from '../content/copy';
 import { CITIES, cityHolding, cityOf, findHood, hoodIds, HOME_ID, type CityDef, type CityFit } from '../content/cities';
 import {
   BOOST_MAX_AHEAD_MS,
@@ -355,9 +356,6 @@ export function newShop(built = false): Shop {
 
 /** The first neighbourhood of a city: built from the start, its founder takes over in the tutorial. */
 export const firstHood = (city: CityDef): NeighborhoodId => city.neighbourhoods[0].id;
-
-/** The neighbourhood whose shop shows its stations on the sidewalk rather than a hire stack, and whose moments speak as the founder's: the first, unless the pack says otherwise (`CityDef.founderHood`). Null for none. */
-export const founderHood = (city: CityDef): NeighborhoodId | null => (city.founderHood === undefined ? firstHood(city) : city.founderHood);
 
 export function newGame(now: number, cityId: string = HOME_ID): GameState {
   const city = cityOf({ city: cityId });
@@ -1081,9 +1079,10 @@ export const bidPrice = (s: GameState): number =>
 /** Place the bid (Pier 9: win the dock for Marisol): spends it and earns the bid shop's perk, which plays the finale. */
 export function placeBid(s: GameState): BuyResult {
   const bid = cityOf(s).bid;
-  if (!bid) return { ok: false, reason: 'There is no auction in this city' };
-  if (s.shops[bid.hood].perk) return { ok: false, reason: 'Pier 9 is already saved' };
-  if (!bidAvailable(s)) return { ok: false, reason: 'The Pier 9 auction hasn’t opened yet' };
+  if (!bid) return { ok: false, reason: t('bid.refused.none', {}, cityOf(s).id) };
+  const vars = { bid: bid.name };
+  if (s.shops[bid.hood].perk) return { ok: false, reason: t('bid.refused.saved', vars, cityOf(s).id) };
+  if (!bidAvailable(s)) return { ok: false, reason: t('bid.refused.closed', vars, cityOf(s).id) };
   const r = pay(s, bidPrice(s));
   return r.ok ? { ok: true, state: withShop(r.state, bid.hood, { perk: true }) } : r;
 }

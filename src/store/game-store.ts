@@ -21,6 +21,7 @@ import { NO_PREFS, parsePrefs, PREFS_KEY, type StorePrefs } from '../components/
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
 import { cityOf } from '../content/cities';
+import { t } from '../content/copy';
 import { TUNING, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
@@ -611,7 +612,10 @@ export const useGame = create<Store>((set, get) => {
       return commit(N.buyNightOven(g), { name: 'Night oven', cost: nt === null ? null : N.nightOvenPrice(g, nt) }, plain('grade'));
     },
 
-    placeBid: () => commit(G.placeBid(get().game), { name: 'Bid on Pier 9', cost: G.bidPrice(get().game) }, plain('bid')),
+    placeBid: () => {
+      const g = get().game;
+      return commit(G.placeBid(g), { name: t('bid.toast', { bid: cityOf(g).bid?.name ?? '' }, cityOf(g).id), cost: G.bidPrice(g) }, plain('bid'));
+    },
 
     franchise: () => {
       const run = (): boolean => {

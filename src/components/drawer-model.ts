@@ -7,7 +7,6 @@
 import { DECOR, DECOR_BOOST, DECOR_KINDS, HEAD_KINDS, HEAD_TITLE, type DecorKind, type HeadKind } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { cityOf, hoodIds, type CityFit } from '../content/cities';
-import { HOME_FIT } from '../content/cities/home/fit';
 import { bonusUnlocked } from '../engine/bonus';
 import { money, rate } from '../engine/format';
 import * as G from '../engine/game';
@@ -307,8 +306,7 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
           ? `→ ${nextVeh.name}s · ${fleetLock.charAt(0).toLowerCase()}${fleetLock.slice(1)}`
           : `→ ${nextVeh.name}s, all shops${vg && vg > 0 ? ` · ${plus(vg)}` : ''}`
         : `${fit.vehicles[v].name}s — top tier`,
-      // v5.18 prices the fleet card from the home fleet in every city (BUG, reported with R1: fix is `nextVeh.cost`, the city's own)
-      cost: nextVeh && !fleetLock ? HOME_FIT.vehicles[v + 1].cost : null,
+      cost: nextVeh && !fleetLock ? nextVeh.cost : null,
       costLabel: nextVeh ? 'Locked' : 'MAX',
       tone: buttonTone({ lock: !nextVeh || !!fleetLock, gain: vg }),
       buy: { t: 'fleet' },

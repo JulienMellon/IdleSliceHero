@@ -228,12 +228,15 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const eventAt = useRef({ sec: -1, ev: null as ReturnType<typeof activeEvent> });
   const repAt = useRef({ sec: -1, view: null as ReturnType<typeof reportView> | null });
   // wall ms when this shop's scene was opened (the scene remounts per shop): the rush hint shows for the start of a visit
-  const [visitAt] = useState(() => Date.now());
+  const [visitAt] = useState(() => gameNow());
 
   // one room for the storefront and every overlay (scene/shop-layout.ts): geometry only changes with upgrades, so `roomLay` stays identical across frames and the
   // memoised layers that take `lay` (room shell, front wall, door, mat, hood) skip re-rendering. A shop on the second floor plan (`NeighborhoodDef.plan`: kitchen on
   // the right, door on the left) is mirrored inside the layout itself (scene/layout-space.ts)
-  const { room: roomLay, draw: drawLay } = shopLayout(id, shop, city);
+  // (memoised on the scene key, which holds every level the room is planned from, so a 15 fps frame does not even build the layout's cache key, U26)
+  const key = sceneKey(game, id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers every level the room depends on
+  const { room: roomLay, draw: drawLay } = useMemo(() => shopLayout(id, shop, city), [id, key, city]);
   // …and in the draw space the drawing code's default `P` expects (`drawFrame`): everything below the sky and the street is drawn in a group moved right by `shift`
   // …and lifted clear of the shop report's strip, which hides what stands lower on the sidewalk (strip-clear.ts, D514): the same fit the strip's `bottom` is computed from (app/index.tsx)
   const stripFloor = floorYFor(stripTop(sceneView(width, height, roomLay.frame).fit.s, hireOnSidewalk(shop, id, city)));
@@ -303,7 +306,6 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       );
   m0.crew = crew;
   // the stations tied for the bottleneck only change with upgrades: memo on the scene key (G80, M44); the idle drivers' pill names them (D421)
-  const key = sceneKey(game, id);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers every level the tie depends on
   const slowest = useMemo(() => Game.tiedStages(shop, game.vehicle, city.fit), [key]);
   // who waits outside: hungry diners and idle drivers (steady state, so only while the shop runs); the patio's tables
@@ -483,7 +485,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           levels: { prep: shop.prep, oven: shop.ovens, counter: shop.counter, drivers: shop.drivers },
           hired: shop.heads,
           headNames: city.heads[id],
-          downtown: id === Game.founderHood(city),
+          downtown: id === Game.firstHood(city),
         },
         clock,
       );
@@ -798,7 +800,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 x0={lay.mirrored ? bxs.counter - BADGE_R - 40 : bxs.prep - BADGE_R - 8}
                 x1={lay.mirrored ? bxs.prep + BADGE_R + 8 : bxs.counter + BADGE_R + 40}
                 y={by}
-                gm={shop.managed && id !== 'downtown' ? city.managers[id].id : shop.managed ? 'nonna' : null}
+                gm={shop.managed ? (id === Game.firstHood(city) && city.founder ? 'nonna' : city.managers[id].id) : null}
               />
               {badges.map((b) => (
                 <StationBadge
