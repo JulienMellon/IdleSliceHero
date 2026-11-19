@@ -4,19 +4,19 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.19                   # scope: a city is only a content pack (Julien 2026-11-18); cities beyond Boston on hold
-step: review                     # setup | waves | verify | review | fix | close
-round: r1              # r1 | r2 | r3
+step: fix                        # setup | waves | verify | review | fix | close
+round: r2              # r1 | r2 | r3
 last_shots: v5.19                # verify r1: 8 changed (seam 00 24 104 105; R1L 145 86 86b 76) gate met
 codecritic_range_start: eafbb5a
 cards:                 # todo | running | done | partial | blocked
-  R0: done  R0p: done  R1: done  R6: done  R1L: done  R5c: done  R7a: done  R7b: done
+  R0: done  R0p: done  R1: done  R6: done  R1L: done  R5c: done  R7a: done  R7b: done   # r2 fix: R1 R6 R1L R0 R7a R7b R5c
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.19/review-r1-critic.md (r1 NOT SATISFIED; bug 0 major 0 minor 6; E2 U2 S2)
-  code:   docs/build/v5.18/review-r3-code.md (r3 APPROVED; blocker/high 0 medium 2 low 26; E15 U4 S5 N3 A1)
+  code:   docs/build/v5.19/review-r1-code.md (r1 APPROVED; blocker/high 0 medium 3 low 11; E8 U1 S4 T1)
   story:  docs/build/v5.18/review-r2-story.md (r2 SATISFIED; bug 0 major 0 minor 2; U1 T1; S67 S48 carried)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
 open: ON HOLD (Julien 2026-11-18): every city beyond Boston; cards in docs/build/v5.19/later/ (W4b W4s E4 E4f CITY A3) and the deferred refactor (R2 R2b R3 R4 R5f R6s) are not launched. PARKED for Julien, not in v5.19: economy refit (one pizza per tap +1/10 prep lv, home tops out ~$10M with Suburbs ~$30K, first goal <$50, ECONOMY 3->4 with old saves reset, D493 rival gated at Suburbs 2 stars, D495); don't ask about it during v5.19. Carried: A2 + audio notes AU41 AU39 AU40 AU25 AU82 (music round waits on Julien's R1 listen), SliceAudioSession native module not built; Boston heads need a writer pass (5 barks per head, one per trigger; their script has 4 numbered); Boston GMs placeholder; v5.17/v5.18 critic minors D481 D493 D495 D505 D512 D514. Tools: expo install is refused by the proxy (use npm install with the version from node_modules/expo/bundledNativeModules.json); loop_stats.py cannot read loop: commits; programmer --only takes the fixture name without .py; seam-noise shots 00/24/104/105 and 29-31b. App Store privacy label must say Tracking = Yes; native paths unverified until DEVICE-CHECKLIST.
-next: v5.19 r1 reviews running (codecritic medium eafbb5a..HEAD paths src scripts .github, session model; critic medium on R1L shots 145 86 86b 76 as a bug fix). Then gate, fix rounds, close.
+next: v5.19 fix r2 (notes in review-r1-critic.md + review-r1-code.md). Pairs: R1||R6, then R1L||R0, then R7a||R7b, then R5c (T row). Then verify L=v5.19-r2 P=v5.19, critic+codecritic r2 re-checks (sonnet; codecritic keeps session model if src/store touched).
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
