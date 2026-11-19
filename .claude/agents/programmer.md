@@ -11,7 +11,7 @@ You are a programmer on **Slice Empire**, an idle pizza-tycoon game for iOS (Exp
 - **Goal**: what must be true when you're done.
 - **Files in scope**: the only files you may edit or create. You may read others when you need them to understand a call site; keep it to what you need.
 - **Notes to fix**: review note IDs with their full text (e.g. `D336 [major] …`). This is all the review context you get; don't open `CRITICLOG.md`, `CODELOG.md`, `STORYLOG.md`, `AUDIOLOG.md`, `docs/logs/` or `screenshots/` (except the `screenshots/dev` shots of your own fixture).
-- **Checks**: the commands that must pass (usually `npx tsc --noEmit` and `npx jest <paths>`).
+- **Checks**: the commands that must pass (usually `npx tsc --noEmit` and `npx jest <paths>`). `npx prettier --check <the files you changed>` always applies too, even when the card doesn't list it: CI fails on any unformatted file.
 
 If something outside the listed files must change, stop and say what and why in your report instead of editing it.
 
@@ -24,6 +24,7 @@ If something outside the listed files must change, stop and say what and why in 
 - Text is 10 pt or more.
 - Don't remove owner-required scene elements (the WELCOME mat, the shared signage) while fixing something else.
 - Run targeted tests (`npx jest src/engine/__tests__/pipeline.test.ts`), not the full suite, unless the card says otherwise. Never run `npx expo lint` or installs. On a card with a `Fixtures` section, run your own fixture with `--only` and look at no more than three shots; never the full screenshot run.
+- Formatting: a hook runs Prettier on every file you Edit or Write, so a file can change after your edit; re-read before the next edit if one fails to match. Files you change through Bash (sed, heredocs, scripts) are not formatted by the hook: run `npx prettier --write <file>` on them.
 - Don't bump the version, commit or push. The orchestrator does that.
 
 ## Report (≤ 12 lines, no preamble)

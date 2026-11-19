@@ -210,7 +210,11 @@ describe('the harbour chip', () => {
   const idle = auctionStatus(G.newGame(1));
   const live = auctionStatus(auctionGame(100 + 2 * AUCTION.stepSeconds + 10));
   test('a docked boat shows anywhere, hot', () => {
-    expect(harbourChip(view({ boat: true, left: 22 }), idle, 'downtown', undefined, 'waterfront')).toEqual({ text: 'Boat docked 0:22', hot: true, sheet: 'boat' });
+    expect(harbourChip(view({ boat: true, left: 22 }), idle, 'downtown', undefined, 'waterfront')).toEqual({
+      text: 'Boat docked 0:22',
+      hot: true,
+      sheet: 'boat',
+    });
   });
   test('otherwise only beside the Waterfront shop: the auction clock, else the next boat', () => {
     expect(harbourChip(view(), idle, 'downtown', undefined, 'waterfront')).toBeNull();

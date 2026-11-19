@@ -17,11 +17,12 @@ npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — re
 npx expo start              # start the dev server
 npx expo lint               # lint
 npx tsc --noEmit            # typecheck
+npm run format:check        # Prettier, as CI runs it (npm run format fixes)
 npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
 ```
 
-Run typecheck before declaring any task done. (Lint is not configured yet; see docs/build/DECISIONS.md #32.)
+Run typecheck and `npm run format:check` before declaring any task done; CI fails on either. (Lint is not configured yet; see docs/build/DECISIONS.md #32.)
 
 ## Navigation & Routing
 
