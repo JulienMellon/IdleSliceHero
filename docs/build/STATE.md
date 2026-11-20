@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.19-test             # normal verify: 0 new, 30 changed (0.24-1.36%), True 0 [], layout 0; changed = baseline noise (X1 vs 20b3797)
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
-  W1 todo  C1 todo  C2 todo  U0 todo  C3 todo
+  W1 done  C1 todo  C2 todo  U0 todo  C3 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.19-test/review-r1-critic.md (r1 SATISFIED; bug 0 major 0 minor 4 = carried D481 D519 + parked D493 D495; E2 S2)
   code:   docs/build/v5.19-test/review-r1-code.md (r1 APPROVED; blocker/high 0 medium 2 low 14; E1 U5 S3 N7; C158 open: purchases-core.ts shared purchase ledger key leaks test-build purchases into normal web build)
@@ -20,6 +20,7 @@ next: start S7-v5.20.md. v5.20 scope set by Julien 2026-11-20 (docs/PLAN-v5.20-o
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
+- 2026-11-20 S7 W1 done (COPY-v5.20.md, 17 lines, max 66 chars). Needs: {marco} read as Marco's name; lines not checked vs current tutorial.ts (C3 to check).
 - 2026-11-19 S6 wave 3: X2 added resetGameClockOffset (1406 tests pass); X4 resumed to wire it and drop the reload.
 - 2026-11-19 S6 waves 1-3 done: X1 partial (fixture only) X2 X3 X4 done. tsc pass, 2639/2639, lint 0 errors, normal dist grep clean, dist-test has the panel. Stopped at verify: no Python playwright (install denied), so no shots, reviews or close.
 - 2026-11-19 S6 verify: playwright + npm ci ok. Normal checks: tsc 0, format ok, 2639/2639, dist guard clean; normal shots v5.19-test running. Test-mode fixtures x1-x4 all FAIL (TEST pill under HUD 'sales' row); sent to X1 programmer.
