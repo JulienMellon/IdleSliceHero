@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.20-base             # fresh baseline: True 0 [], layout 0 new 9 allowed, 166 shots
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
-  W1 done  C1 done  C2 done  U0 done  C3 partial
+  W1 done  C1 done  C2 done  U0 done  C3 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.19-test/review-r1-critic.md (r1 SATISFIED; bug 0 major 0 minor 4 = carried D481 D519 + parked D493 D495; E2 S2)
   code:   docs/build/v5.19-test/review-r1-code.md (r1 APPROVED; blocker/high 0 medium 2 low 14; E1 U5 S3 N7; C158 open: purchases-core.ts shared purchase ledger key leaks test-build purchases into normal web build)
@@ -37,3 +37,4 @@ next: start S7-v5.20.md. v5.20 scope set by Julien 2026-11-20 (docs/PLAN-v5.20-o
 - 2026-11-20 S7 C2 done (7 scene targets via registerTarget, in-SVG scrim gone). Follow-ups sent: C1 drops index.tsx spotlight props + tutorialHand/spotlightCutout; C2 renumbers fixture (156 clash). Open: wide shop doesn't auto-scroll to a dial; dial pill half dimmed.
 - 2026-11-20 S7 wave 2 done: C2 U0 done, spotlight props removed. tsc 0, 2710/2710. C3 launched.
 - 2026-11-20 S7 C3 partial (15 steps, SAVE_VERSION 7, 2724/2724; drawer:close missing from union). Sent: C1 add drawer:close + fix 153_c1; C2 ovens:all lights one oven (shot 166). Then C3 registers drawer:close.
+- 2026-11-20 S7 wave 3 done: C3 done (drawer:close registered, 2725/2725). Open design question: buying Ovens lv2 draws 1 oven (scene: 1+floor((lv-1)/8)) but tutorial.9/10/11 promise two ovens.
