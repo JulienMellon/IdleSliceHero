@@ -1,5 +1,5 @@
 // The Coach overlay's geometry (v5.20, card C1), pure: where the scrim's holes are, where Nonna's hand points and where her card docks.
-// Every rect is in screen points. The hand's rules are the old scene spotlight's (stations.ts `tutorialHand`, D384): inside the cut-out, over the
+// Every rect is in screen points. The hand follows the old scene spotlight's rules (D384): inside the cut-out, over the
 // work surface, 30 up from its bottom edge; on a narrow target beside it, so it never covers what it points at.
 import type { Rect } from './targets';
 

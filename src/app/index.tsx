@@ -461,8 +461,6 @@ export default function GameScreen() {
             paused={covered || drawerOpen || tasksOpen || giftOpen}
             onTap={onShopTap}
             onStation={onStationTap}
-            spotlight={coach && id === first && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') ? coach.target : null}
-            spotlightWait={!!coach?.wait}
           />
         )}
         {/* upgrade row standing on the sidewalk */}
