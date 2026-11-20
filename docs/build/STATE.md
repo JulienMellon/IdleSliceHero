@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.20-base             # fresh baseline: True 0 [], layout 0 new 9 allowed, 166 shots
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
-  W1 done  C1 running  C2 todo  U0 todo  C3 todo
+  W1 done  C1 done  C2 running  U0 running  C3 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.19-test/review-r1-critic.md (r1 SATISFIED; bug 0 major 0 minor 4 = carried D481 D519 + parked D493 D495; E2 S2)
   code:   docs/build/v5.19-test/review-r1-code.md (r1 APPROVED; blocker/high 0 medium 2 low 14; E1 U5 S3 N7; C158 open: purchases-core.ts shared purchase ledger key leaks test-build purchases into normal web build)
@@ -32,3 +32,4 @@ next: start S7-v5.20.md. v5.20 scope set by Julien 2026-11-20 (docs/PLAN-v5.20-o
 - 2026-11-19 S6 closed v5.19-test at r1: critic SATISFIED (minor 4 carried/parked), codecritic APPROVED (medium 2, C158). STATE -> 5.20.
 - 2026-11-20 planning session: v5.20-v5.24 VERSION files and cards written (onboarding, chapters, reading the shop, store, catalog); pricing in docs/PRICING-STRATEGY.md.
 - 2026-11-20 S7 wave 0 done: baseline v5.20-base True 0 [], layout 0 new; range start 461e0a4.
+- 2026-11-20 S7 wave 1 done: C1 done (partial only for station:*/dial:* which C2 registers; index.tsx spotlight props to drop after C2). tsc 0, 2697/2697.

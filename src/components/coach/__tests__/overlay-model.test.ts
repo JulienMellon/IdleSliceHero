@@ -1,0 +1,155 @@
+import { blockers, CARD, cardRect, CUT, HAND, handPose, mergeCuts, overlayLayout, padCut, type Rect, type Safe, type Screen } from '../overlay-model';
+
+const PHONE: Screen = { w: 393, h: 852 };
+const PHONE_SAFE: Safe = { top: 59, bottom: 34 };
+const SE: Screen = { w: 375, h: 667 };
+const SE_SAFE: Safe = { top: 20, bottom: 0 };
+
+const r = (x0: number, y0: number, x1: number, y1: number): Rect => ({ x0, y0, x1, y1 });
+const meets = (a: Rect, b: Rect) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+const inside = (a: Rect, s: Screen) => a.x0 >= 0 && a.y0 >= 0 && a.x1 <= s.w && a.y1 <= s.h;
+const handBox = (x: number, y: number): Rect => r(x - HAND.size / 2, y - HAND.size / 2, x + HAND.size / 2, y + HAND.size / 2);
+
+// the targets of today's nine steps, where the shop puts them on a 393 x 852 phone and a 375 x 667 SE (measured by hand from the fixtures' layout)
+const CASES: { name: string; screen: Screen; safe: Safe; targets: Rect[] }[] = [
+  { name: 'prep station', screen: PHONE, safe: PHONE_SAFE, targets: [r(24, 330, 128, 440)] },
+  { name: 'prep station + dial', screen: PHONE, safe: PHONE_SAFE, targets: [r(24, 330, 128, 440), r(40, 300, 76, 328)] },
+  { name: 'oven station + dial', screen: PHONE, safe: PHONE_SAFE, targets: [r(150, 320, 250, 440), r(176, 292, 212, 318)] },
+  { name: 'counter station', screen: PHONE, safe: PHONE_SAFE, targets: [r(270, 340, 370, 440)] },
+  { name: 'cash pill', screen: PHONE, safe: PHONE_SAFE, targets: [r(96, 62, 256, 106)] },
+  { name: 'goal bar', screen: PHONE, safe: PHONE_SAFE, targets: [r(12, 112, 300, 148)] },
+  { name: 'walk ovens', screen: PHONE, safe: PHONE_SAFE, targets: [r(108, 646, 196, 701)] },
+  { name: 'prep station', screen: SE, safe: SE_SAFE, targets: [r(20, 250, 120, 340)] },
+  { name: 'oven station + dial', screen: SE, safe: SE_SAFE, targets: [r(140, 240, 235, 340), r(165, 214, 200, 238)] },
+  { name: 'cash pill', screen: SE, safe: SE_SAFE, targets: [r(90, 24, 240, 66)] },
+  { name: 'goal bar', screen: SE, safe: SE_SAFE, targets: [r(10, 70, 280, 106)] },
+  { name: 'walk ovens', screen: SE, safe: SE_SAFE, targets: [r(100, 548, 185, 603)] },
+];
+
+describe('overlayLayout', () => {
+  test.each(CASES)('$name on $screen.w x $screen.h: the card never overlaps a cut-out, the hand stays on screen', ({ screen, safe, targets }) => {
+    const lay = overlayLayout(targets, screen, safe)!;
+    expect(lay.card.fits).toBe(true);
+    const card = cardRect(lay.card, screen);
+    for (const cut of lay.cuts) expect(meets(card, cut)).toBe(false);
+    expect(meets(card, lay.bounds)).toBe(false);
+    // the card stays inside the safe area
+    expect(card.y0).toBeGreaterThanOrEqual(safe.top);
+    expect(card.y1).toBeLessThanOrEqual(screen.h - safe.bottom);
+    const hand = handBox(lay.hand.x, lay.hand.y);
+    expect(inside(hand, screen)).toBe(true);
+    // and the hand never covers the card
+    expect(meets(hand, card)).toBe(false);
+  });
+
+  test('a cut-out is the target grown by 8 with 12 pt corners', () => {
+    const lay = overlayLayout([r(100, 300, 200, 400)], PHONE, PHONE_SAFE)!;
+    expect(lay.cuts).toEqual([r(100 - CUT.pad, 300 - CUT.pad, 200 + CUT.pad, 400 + CUT.pad)]);
+    expect(CUT).toEqual({ pad: 8, radius: 12 });
+  });
+
+  test('the card goes below when it and 12 pt fit, else above', () => {
+    const mid = overlayLayout([r(100, 300, 200, 400)], PHONE, PHONE_SAFE)!;
+    expect(mid.card.dock).toBe('below');
+    expect(mid.card.top).toBe(mid.bounds.y1 + CARD.gap);
+    const low = overlayLayout([r(100, 600, 200, 655)], SE, SE_SAFE)!;
+    expect(low.card.dock).toBe('above');
+    expect(cardRect(low.card, SE).y1).toBe(low.bounds.y0 - CARD.gap);
+  });
+
+  test('nothing to point at: no layout', () => {
+    expect(overlayLayout([], PHONE, PHONE_SAFE)).toBeNull();
+  });
+
+  test('a cut-out too tall for either side leaves the card overlapping, and says so', () => {
+    const lay = overlayLayout([r(0, 80, 393, 800)], PHONE, PHONE_SAFE)!;
+    expect(lay.card.fits).toBe(false);
+  });
+
+  test('a target at the screen edge keeps its cut-out inside the screen', () => {
+    const lay = overlayLayout([r(0, 0, 60, 44)], PHONE, PHONE_SAFE)!;
+    expect(inside(lay.cuts[0], PHONE)).toBe(true);
+  });
+});
+
+describe('the hand', () => {
+  test('on a wide target it is inside the cut-out, centred, 30 up from the bottom edge (the old spotlight rule)', () => {
+    const cut = padCut(r(24, 330, 128, 440));
+    const hand = handPose(cut, PHONE);
+    expect(hand.where).toBe('inside');
+    expect(hand.x).toBe((cut.x0 + cut.x1) / 2);
+    expect(hand.y).toBe(cut.y1 - HAND.rest);
+    expect(hand.rot).toBe(HAND.tilt);
+  });
+
+  test('on a narrow target (a dial) it stands beside it, pointing in', () => {
+    const cut = padCut(r(40, 300, 66, 328));
+    const hand = handPose(cut, PHONE);
+    expect(hand.where).toBe('right');
+    expect(hand.x - HAND.size / 2).toBeGreaterThanOrEqual(cut.x1);
+    expect(hand.rot).toBeLessThan(0);
+  });
+
+  test('on a narrow target at the right edge it goes to the left', () => {
+    const cut = padCut(r(350, 300, 376, 328));
+    const hand = handPose(cut, PHONE);
+    expect(hand.where).toBe('left');
+    expect(hand.x + HAND.size / 2).toBeLessThanOrEqual(cut.x0);
+    expect(hand.rot).toBeGreaterThan(0);
+  });
+
+  test('on a short bar it rests on the bottom edge, clear of the card 12 pt below', () => {
+    const cut = padCut(r(12, 112, 300, 148));
+    const hand = handPose(cut, PHONE);
+    expect(hand.y + HAND.size / 2).toBeLessThanOrEqual(cut.y1 + CARD.gap);
+    expect(hand.x).toBeCloseTo(cut.x0 + (cut.x1 - cut.x0) * HAND.along, 6);
+  });
+
+  test('a sidewalk card (55 pt + the pad) counts as short too: the hand leaves its price showing', () => {
+    const cut = padCut(r(108, 646, 196, 701));
+    expect(handPose(cut, PHONE).y).toBe(cut.y1 - 6);
+  });
+
+  test.each([r(0, 0, 20, 20), r(373, 0, 393, 20), r(0, 832, 20, 852), r(373, 832, 393, 852), r(0, 0, 393, 852)])(
+    'a target in the corner of the screen: the hand stays inside',
+    (t) => {
+      const lay = overlayLayout([t], PHONE, PHONE_SAFE)!;
+      expect(inside(handBox(lay.hand.x, lay.hand.y), PHONE)).toBe(true);
+    },
+  );
+});
+
+describe('mergeCuts', () => {
+  test('overlapping cut-outs become their bounding box; separate ones stay two holes', () => {
+    expect(mergeCuts([r(0, 0, 50, 50), r(40, 40, 100, 100)])).toEqual([r(0, 0, 100, 100)]);
+    expect(mergeCuts([r(0, 0, 50, 50), r(200, 200, 300, 300)])).toHaveLength(2);
+  });
+
+  test('a chain merges all the way', () => {
+    expect(mergeCuts([r(0, 0, 50, 50), r(100, 0, 150, 50), r(40, 0, 110, 50)])).toEqual([r(0, 0, 150, 50)]);
+  });
+});
+
+describe('blockers', () => {
+  const area = (rs: Rect[]) => rs.reduce((t, b) => t + (b.x1 - b.x0) * (b.y1 - b.y0), 0);
+
+  test.each([[[r(100, 300, 200, 400)]], [[r(24, 330, 128, 440), r(250, 60, 350, 110)]], [[r(0, 0, 393, 100)]], [[r(0, 0, 393, 852)]]])(
+    'with the holes they tile the screen exactly, and none overlaps a hole',
+    (cuts) => {
+      const pieces = blockers(cuts, PHONE);
+      expect(area(pieces) + area(cuts)).toBeCloseTo(PHONE.w * PHONE.h, 6);
+      for (const p of pieces) for (const c of cuts) expect(meets(p, c)).toBe(false);
+      for (let i = 0; i < pieces.length; i++) for (let j = i + 1; j < pieces.length; j++) expect(meets(pieces[i], pieces[j])).toBe(false);
+    },
+  );
+
+  test('a touch inside a hole is in no blocker; one outside is in exactly one', () => {
+    const cuts = [r(100, 300, 200, 400)];
+    const pieces = blockers(cuts, PHONE);
+    const hits = (x: number, y: number) => pieces.filter((p) => x >= p.x0 && x < p.x1 && y >= p.y0 && y < p.y1).length;
+    expect(hits(150, 350)).toBe(0);
+    expect(hits(50, 350)).toBe(1);
+    expect(hits(150, 100)).toBe(1);
+    expect(hits(150, 500)).toBe(1);
+  });
+});

@@ -8,6 +8,7 @@ import { GIFT } from '../content/hooks';
 import { cashText, goalAmount, money } from '../engine/format';
 import type { NightOvenView } from '../engine/night-oven';
 import { C, F } from '../theme';
+import { useCoachTarget } from './coach/targets';
 import { cashFont, HUD_GAP, HUD_ICON, MIN_FONT, rateLine } from './endgame/fit-model';
 import { GOAL_BAR, GOAL_FONT_MAX_SCALE, GOAL_GAP, GOAL_LAYOUT, GOAL_PAD, goalBarLayout, goalLine, goalWords, type GoalSpan } from './goal-model';
 import { buyLabelText } from './a11y-labels';
@@ -270,7 +271,6 @@ export function Hud({
   onScrapbook,
   onCity,
   newScenes,
-  halo = null,
   onTasks,
   tasksBadge = 0,
   onGift,
@@ -288,7 +288,6 @@ export function Hud({
   onScrapbook: () => void;
   onCity: () => void;
   newScenes: number;
-  halo?: 'cash' | 'goal' | null;
   onTasks?: () => void;
   tasksBadge?: number;
   onGift?: () => void;
@@ -308,6 +307,9 @@ export function Hud({
     // Every delivery that lands on the map gives the cash total a little kick.
     return onPayout(() => bump(1.08));
   }, [counting, flash]);
+  // v5.20: the Coach's overlay cuts its hole round the cash pill and the goal bar
+  const cashTarget = useCoachTarget('hud:cash');
+  const goalTarget = useCoachTarget('hud:goal');
   const [goalW, setGoalW] = useState(0);
   // G101: the cash pill's measured width: the cash and its rate line are sized to fit it (the web build can't shrink text to fit)
   const [cashW, setCashW] = useState(0);
@@ -363,7 +365,14 @@ export function Hud({
             )}
           </Pressable>
         )}
-        <View style={[styles.cashPill, halo === 'cash' && styles.halo]} onLayout={(e) => setCashW(e.nativeEvent.layout.width)}>
+        <View
+          ref={cashTarget}
+          style={styles.cashPill}
+          onLayout={(e) => {
+            setCashW(e.nativeEvent.layout.width);
+            cashTarget.onLayout();
+          }}
+        >
           <Animated.Text
             ref={cashRef}
             onLayout={() => cashRef.current?.measureInWindow?.((x: number, y: number, w: number, h: number) => setCoinTarget(x + w / 2, y + h / 2))}
@@ -424,7 +433,7 @@ export function Hud({
             onLayout={(e) => setGoalW(e.nativeEvent.layout.width)}
             style={styles.goalTap}
           >
-            <View style={[styles.goal, ready && styles.goalReady, halo === 'goal' && styles.haloGoal]}>
+            <View ref={goalTarget} onLayout={goalTarget.onLayout} style={[styles.goal, ready && styles.goalReady]}>
               <View style={[styles.goalFill, goalW > 0 ? { width: bar.fillW } : { width: `${pct * 100}%` }, ready && { backgroundColor: C.basil }]} />
               <GoalLine
                 key={ready ? 'ready' : shownLabel}
@@ -1070,9 +1079,6 @@ const styles = StyleSheet.create({
   cash: { fontFamily: F.bold, fontSize: 34, color: '#fff', textShadowColor: C.tomatoDark, textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 0 },
   boostTail: { color: '#2E7D3E', backgroundColor: '#FFF4E0', fontFamily: F.bold },
   perSec: { fontFamily: F.semi, fontSize: 13, color: '#FFE7C2' },
-  // Nonna's tutorial points at the cash or the goal bar with a gold halo
-  halo: { borderRadius: 18, borderWidth: 3, borderColor: '#FFC531', backgroundColor: 'rgba(255,197,49,0.18)' },
-  haloGoal: { borderColor: '#FFC531', borderWidth: 3 },
   goal: {
     height: GOAL_BAR_H,
     alignSelf: 'stretch',

@@ -4,7 +4,8 @@ import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
-import { CoachCard } from '@/components/coach-card';
+import { CoachOverlay } from '@/components/coach/overlay';
+import { coachProps } from '@/components/coach/steps';
 import { FloatingBonus } from '@/components/floating-bonus';
 import { OrderChip } from '@/components/order-chip';
 import { chipPhase } from '@/components/order-model';
@@ -247,6 +248,8 @@ export default function GameScreen() {
   const plus = (x: number) => `+${money(x)}/s`;
   const newScenes = Math.max(0, game.seenScenes.length - game.scrapbookViewed);
   const coach = coachStep(game);
+  // Nonna points only in the first shop and not while the drawer is up (it covers what she would point at)
+  const coachOn = id === first && !drawerOpen;
   const eps = G.earningsPerSecond(game);
   // Tied stations: one upgrade alone adds $0/s, so say what to buy together. Keyed on levels, not cash or sales.
   const bundle = tiedBundle(game, id);
@@ -445,7 +448,6 @@ export default function GameScreen() {
         chips={<Slots items={HUD_CHIPS} />}
         topChips={<Slots items={HUD_TOP_CHIPS} />}
         scrapRing={ring}
-        halo={coach?.target === 'cash' ? 'cash' : coach?.target === 'goal' ? 'goal' : null}
       />
       <ShopTabs game={game} boostMult={hud.mult} onSelect={setActive} onBuild={build} />
       <View style={styles.sceneArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
@@ -471,7 +473,6 @@ export default function GameScreen() {
           bottom={rowBottom}
           onBuy={buy}
           onOpen={openDrawer}
-          highlight={coach?.target === 'walk-ovens' ? 'ovens' : null}
           quiet={coach?.id === 1}
           // the tied stations merge into one "Buy both" card in the row; kept apart while Nonna's coach is up
           bundle={showBundlePill(bundle, !!coach) ? bundle : null}
@@ -479,17 +480,6 @@ export default function GameScreen() {
         />
         {/* v5.16 (P1): the shop report's strip, one 44 pt row directly above the sidewalk row */}
         <ReportSlots items={SHOP_REPORT} bottom={rowBottom + (idleShopHere ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + STRIP.above} />
-        {/* D378: the tutorial scrim carries on over the sidewalk row (same 60% tone as the scene's), touches pass through */}
-        {coach && id === first && !drawerOpen && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') && (
-          <View
-            pointerEvents="none"
-            testID="coach-row-scrim"
-            style={[styles.rowScrim, { bottom: rowBottom - 6, height: (idleShopHere ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + 12 }]}
-          />
-        )}
-        {/* Nonna's tutorial (P2) */}
-        {/* D366: docked over the street band (decoration only), clear of the seating area */}
-        {coach && id === first && !drawerOpen && <CoachCard step={coach} low={Math.max(8, insets.bottom)} high={12} />}
         {/* v5.13: the special-order chip under the goal bar, and the golden pizza in the sky (both sit under the drawers) */}
         <OrderChip top={ORDER_VIEW.top} onShop={setActive} />
         {/* the BANNERS slot: notices over the scene, under the drawers */}
@@ -599,6 +589,8 @@ export default function GameScreen() {
         {/* Toast floats in the open sky at the top of the scene, clear of the shop, the row and the cards. */}
         {toast && hintsAllowed(game).toast && <Toast compact text={toast.text} top={10} />}
       </View>
+      {/* v5.20 (C1): the one tutorial highlight: a scrim with a cut-out over the HUD, the shop, the row and the drawer; under the calendar, the sheets and the cut-scenes */}
+      {coachOn && coach && <CoachOverlay {...coachProps(coach)} text={coach.text} />}
       {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
       {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}
       {/* the SHEETS slot: modal sheets over the whole screen, under the offline popup */}
@@ -614,7 +606,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
   sceneArea: { flex: 1, overflow: 'hidden', backgroundColor: '#BFE0F7' },
   dim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.4)' },
-  rowScrim: { position: 'absolute', left: 0, right: 0, backgroundColor: 'rgba(42,20,8,0.6)' },
   drawer: {
     position: 'absolute',
     left: 0,
