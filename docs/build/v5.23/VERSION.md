@@ -3,7 +3,7 @@
 **Scope (Julien, 2026-11-20):** `docs/PLAN-v5.20-onboarding.md` version v5.23 and `docs/PRICING-STRATEGY.md` §3–§6; DECISIONS #42–#45. His words: "When [the starter pack] is offered is a good moment to introduce the game's store, show it to the player and offer the starter pack for purchase in the store." "When communicating the increase value of packs we should not be discussing this as 'worth $5.57+'." "I think we can have timed income boosts."
 
 What the player gets:
-- The Store chip from the end of Chapter 1. Nonna leads the player into the Shop's Store tab with the Starter Pack card lit; "Not now" closes the Shop and the pack stays at the top until bought. The pop-up sheet is gone.
+- The Store chip from the moment the Starter Pack is first offered (the end of Chapter 1), with every Shop tab open (DECISIONS #47). Nonna leads the player into the Shop's Store tab with the Starter Pack card lit; "Not now" closes the Shop and the pack stays at the top until bought. The pop-up sheet is gone.
 - Starter Pack: 400 💎, the Founder awning, 2× income 24 h, $2.99.
 - Diamond packs shown as "400 + 100 bonus" / "800 + 400 bonus"; "Best rate" on the $9.99; the first buy of each pays double.
 - Diamond boosters on the Boosters tab: Rush Hour 1 h 30 💎, Dinner Service 4 h 90 💎, Big Night 12 h 220 💎, all 2×, in one paid-boost slot that extends and never stacks.

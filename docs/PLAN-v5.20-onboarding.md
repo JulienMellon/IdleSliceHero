@@ -41,3 +41,4 @@
 8. Prices, contents, diamond boosters and wording as in `PRICING-STRATEGY.md`.
 9. Diamonds buy looks **and** timed boosters (was looks only).
 10. No time-limited paid offers; no "worth $X".
+11. The Store is available from the moment the Starter Pack is first offered, every tab open, for good (v5.20 card U0 for today's pop-up; v5.23 for the intro).

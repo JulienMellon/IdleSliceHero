@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.19-test             # normal verify: 0 new, 30 changed (0.24-1.36%), True 0 [], layout 0; changed = baseline noise (X1 vs 20b3797)
 codecritic_range_start: ee18641   # v5.19-test closing commit
 cards:                 # todo | running | done | partial | blocked
-  W1 todo  C1 todo  C2 todo  C3 todo
+  W1 todo  C1 todo  C2 todo  U0 todo  C3 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.19-test/review-r1-critic.md (r1 SATISFIED; bug 0 major 0 minor 4 = carried D481 D519 + parked D493 D495; E2 S2)
   code:   docs/build/v5.19-test/review-r1-code.md (r1 APPROVED; blocker/high 0 medium 2 low 14; E1 U5 S3 N7; C158 open: purchases-core.ts shared purchase ledger key leaks test-build purchases into normal web build)

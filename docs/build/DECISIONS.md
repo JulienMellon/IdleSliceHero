@@ -75,3 +75,4 @@ Source: `docs/PLAN-v5.20-onboarding.md` and `docs/PRICING-STRATEGY.md`. Supersed
 | 44 | Diamonds buy timed boosters | Yes (was looks only). Rush Hour 1 h 30 💎, Dinner Service 4 h 90 💎, Big Night 12 h 220 💎, 2×, one paid-boost slot that extends (cap 24 h left) and never adds a second multiplier | 5.23 |
 | 45 | Value wording | Game units only. Never "worth", "value", "save X%", struck-through prices, countdowns or "limited time" | 5.23 |
 | 46 | Looks catalog | About 30 items in three tiers (60 / 150 / 400 💎), a 4–5 piece set per home neighbourhood, a weekly Featured row (never limited) | 5.24 |
+| 47 | When the Store becomes available | The moment the Starter Pack is first offered, with every Shop tab open, for good. v5.20 card U0 does it for today's pop-up; v5.23's intro keeps it | 5.20 · U0; 5.23 · U5 |

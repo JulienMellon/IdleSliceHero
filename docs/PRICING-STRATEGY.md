@@ -65,7 +65,7 @@ Allowed: diamond counts, "+N bonus", "Enough for N looks" (live), "Only in this 
 
 ## 6. Where and when the Store appears
 
-- Store chip from the **end of Chapter 1**. Vanity tab opens at the takeover; Boosters tab and Store tab are live from the start.
+- The Store is available **from the moment the Starter Pack is first offered** (the end of Chapter 1), with every tab open: Vanity, Boosters, Store (Julien, 2026-11-20; DECISIONS #47). Until v5.23 replaces the pop-up, the chip appears as soon as the pop-up has been shown (v5.20 card U0).
 - Starter Pack: introduced by Nonna at the end of Chapter 1 inside the Store, no pop-up, no countdown, stays at the top until bought.
 - Two quiet reminders only: a dot on the Store chip at the takeover; one Nonna line the first time an unaffordable look is opened.
 - No store interruptions during cut-scenes, the tutorial, or within 60 s of a purchase.

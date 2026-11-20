@@ -4,6 +4,8 @@
 
 Steps 7 and 8 of the new script (the goal bar and the task list) need v5.21's task list. In this version their ids exist and are skipped (the tutorial goes 6 → 9).
 
+**Also in this version (Julien, 2026-11-20):** card U0 — the Store chip appears for good the moment the Starter Pack is first offered, with every Shop tab open, so "Not now" no longer loses the pack.
+
 **Out of scope:** the task list and chapters (v5.21), the report and every bottleneck pointer outside the tutorial (v5.22), the store (v5.23). The economy refit stays parked (STATE). Cities beyond Boston stay on hold. Audio: nothing.
 
 ## Cards
@@ -12,6 +14,7 @@ Steps 7 and 8 of the new script (the goal bar and the task list) need v5.21's ta
 | W1 | T | Nonna's Chapter 1 lines, 15 steps | `card-W1.md` |
 | C1 | U | `CoachOverlay` and the target registry; HUD and sidewalk targets; `halo` and `cardCoach` go | `card-C1.md` |
 | C2 | S | The scene registers its targets (stations, dials, the oven pair) with the registry; the in-SVG scrim goes | `card-C2.md` |
+| U0 | U | The Store stays reachable once the Starter Pack has been offered (Julien, 2026-11-20) | `card-U0.md` |
 | C3 | E+U | The 15-step script in `engine/tutorial.ts`, save migration, the drawer targets, story held through step 11 | `card-C3.md` |
 
 ## Waves
@@ -19,7 +22,7 @@ At most two programmers or writers at once (README section 3). `‖` means the t
 
 0. **Baseline.** Record the current commit as `codecritic_range_start` in STATE. The v5.19-r2 baseline is stale (STATE `next:`), so take a fresh one: `npx expo export --platform web > /tmp/export.log 2>&1 && nohup python3 -u scripts/screenshots.py v5.20-base > /tmp/shots.log 2>&1 &`. Check `report.json` has `"errors": []`; commit the label.
 1. **W1 ‖ C1.** Disjoint: W1 writes one markdown file.
-2. **C2** alone. It needs C1's registry API.
+2. **C2 ‖ U0.** Disjoint (`scene/**` + `storefront.tsx` vs `endgame/diamond-chip.tsx`). C2 needs C1's registry API.
 3. **C3** alone. It needs W1's lines, C1's overlay and C2's scene targets.
 4. **Verify** (README section 5, `L=v5.20`, `P=v5.20-base`). Expected changed shots: every tutorial shot and shots that showed the old halo or yellow card. Then commit and review.
 
@@ -33,7 +36,7 @@ At most two programmers or writers at once (README section 3). `‖` means the t
 ## Fix routing
 | Owner | Cards |
 | --- | --- |
-| U | C1 (overlay, registry, HUD/sidewalk targets), C3 (drawer targets) |
+| U | C1 (overlay, registry, HUD/sidewalk targets), C3 (drawer targets), U0 (the Store chip) |
 | S | C2 (scene targets) |
 | E | C3 (steps, migration, story hold) |
 | T | W1 (lines); the line change is copied in by C3's programmer |
