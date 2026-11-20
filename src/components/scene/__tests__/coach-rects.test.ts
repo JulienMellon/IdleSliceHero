@@ -4,7 +4,7 @@ import { HOME_CITY } from '../../../content/cities/home';
 import { newShop } from '../../../engine/game';
 import type { Rect } from '../../coach/targets';
 import { coachRects, DIAL_R, SCENE_TARGETS } from '../coach-rects';
-import { openScroll, sceneToScreen, sceneView } from '../projection';
+import { D, P, openScroll, sceneToScreen, sceneView } from '../projection';
 import { shopLayout } from '../shop-layout';
 import { BADGE_R, badgeXs } from '../stations';
 
@@ -102,6 +102,28 @@ describe('coachRects (v5.20 C2)', () => {
         expect(holds(b['station:oven'], b['ovens:all'])).toBe(true);
         // a second oven is stacked (taller) or stands beside the first (wider): the bank only grows
         expect(area(b['ovens:all'])).toBeGreaterThan(area(a['ovens:all']));
+      }
+  });
+
+  test('ovens:all holds the face of every oven drawn: two ovens (level 9, the second slot) are both inside it, level 2 draws one', () => {
+    expect(shopAt(0, 1).ovens).toHaveLength(1);
+    for (const { w, h } of SCREENS)
+      for (const fp of [0, 1, 2, 3, 4]) {
+        const lay = shopAt(fp, 2);
+        expect(lay.ovens).toHaveLength(2);
+        const fit = sceneView(w, h, lay.frame).fit;
+        const all = coachRects(lay, fit, 0, origin)['ovens:all'];
+        for (const o of lay.ovens) {
+          const a = P(o.x0, D, o.z);
+          const b = P(o.x1, D, o.z + o.h);
+          const face: Rect = {
+            x0: origin.x + sceneToScreen(Math.min(a[0], b[0]) - lay.frame.x0, 0, fit),
+            x1: origin.x + sceneToScreen(Math.max(a[0], b[0]) - lay.frame.x0, 0, fit),
+            y0: origin.y + fit.oy + Math.min(a[1], b[1]) * fit.s,
+            y1: origin.y + fit.oy + Math.max(a[1], b[1]) * fit.s,
+          };
+          expect(holds(all, face)).toBe(true);
+        }
       }
   });
 

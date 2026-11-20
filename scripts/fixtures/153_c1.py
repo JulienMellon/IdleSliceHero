@@ -56,15 +56,15 @@ def run(ctx):
         page = seeded_page(browser, tutorial_save(10, 600)); settle(page, 1.0)
         expect(page, "coach", 3000)
         expect(page, "coach-cut-0", 3000)
-        cut_holds(page, "coach-cut-0", "walk-ovens", "155-coach-step8")
+        cut_holds(page, "coach-cut-0", "walk-ovens", "155-coach-step10")
         # a tap outside the hole is swallowed (the scrapbook stays shut); one inside reaches the card (the ovens are bought, the step is over)
         before = page.url
         tid(page, "open-scrapbook").click(force=True); advance(page, 400)
         if page.url != before or not is_up(page, "coach"):
-            report["errors"].append("fixture 153_c1: a tap outside the cut-out got through the scrim in shot 155-coach-step8")
-        shot(page, "155-coach-step8", 0.5)
+            report["errors"].append("fixture 153_c1: a tap outside the cut-out got through the scrim in shot 155-coach-step10")
+        shot(page, "155-coach-step10", 0.5)
         tid(page, "walk-ovens").click(); advance(page, 600)
-        if is_up(page, "coach-cut-0") and tid(page, "coach").inner_text().startswith("Tap Ovens"):
+        if is_up(page, "coach") and "Tap Ovens" in tid(page, "coach").inner_text():
             report["errors"].append("fixture 153_c1: a tap inside the cut-out did not reach the Ovens card")
     except Exception as e:
         report["errors"].append(f"C1 155 failed: {e}")

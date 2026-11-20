@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
 import { CoachOverlay } from '@/components/coach/overlay';
+import { useCoachTarget } from '@/components/coach/targets';
 import { FloatingBonus } from '@/components/floating-bonus';
 import { OrderChip } from '@/components/order-chip';
 import { chipPhase } from '@/components/order-model';
@@ -255,6 +256,7 @@ export default function GameScreen() {
     const next = tutorialNote(g, note);
     if (next !== g) useGame.setState({ game: next });
   }, []);
+  const closeTarget = useCoachTarget('drawer:close');
   const drawerWas = useRef(false);
   useEffect(() => {
     if (drawerOpen) noteCoach('drawer-open');
@@ -530,6 +532,8 @@ export default function GameScreen() {
                 </View>
                 <Pressable
                   testID="close-upgrades"
+                  ref={closeTarget}
+                  onLayout={closeTarget.onLayout}
                   accessibilityRole="button"
                   accessibilityLabel="Close the upgrades"
                   onPress={() => setDrawerOpen(false)}
