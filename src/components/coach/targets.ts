@@ -19,7 +19,8 @@ export type CoachTargetId =
   | 'walk:counter'
   | 'walk:drivers'
   | 'walk:all'
-  | 'drawer:hire:prep';
+  | 'drawer:hire:prep'
+  | 'drawer:close';
 
 /** A screen rect in points: x0,y0 the top-left corner, x1,y1 the bottom-right. */
 export interface Rect {

@@ -2,7 +2,7 @@
 
 153 a fresh save at step 1: the scrim, the prep station's cut-out, the hand, Nonna's card below it
 154 step 6: the cash pill is the cut-out (a wait step, the ring breathes), her card below it
-155 step 8: the Ovens card on the sidewalk is the cut-out, her card above it (no room below)
+155 step 10 (was 8 before the 15-step script): the Ovens card on the sidewalk is the cut-out, her card above it (no room below)
 Every state is asserted with expect() before its shot; game time moves only through advance().
 """
 from shots_lib import *  # noqa: F401,F403  (seeded_page, settle, shot, expect, tid, saves, report, ...)
@@ -11,7 +11,7 @@ from shots_lib import *  # noqa: F401,F403  (seeded_page, settle, shot, expect, 
 def tutorial_save(step, cash):
     """A fresh Downtown at tutorial step `step`: nothing sold, nothing managed, the opening scene seen."""
     unbuilt = {h: shop(built=False, managed=False) for h in IDS[1:]}
-    return dict(MID_SAVE, saveVersion=5, cash=cash, totalEarned=cash, vehicle=0, active="downtown", tutorial=step,
+    return dict(MID_SAVE, saveVersion=7, cash=cash, totalEarned=cash, vehicle=0, active="downtown", tutorial=step,
                 shops=dict(unbuilt, downtown=shop(managed=False, sold=0)),
                 seenScenes=["downtown-1"], scrapbookViewed=1, lastSavedAt=T0_MS)
 
@@ -51,9 +51,9 @@ def run(ctx):
     except Exception as e:
         report["errors"].append(f"C1 154 failed: {e}")
 
-    # 155: step 8, "Tap Ovens": the sidewalk card (the cash for it is in the save, or the coach falls back to step 7)
+    # 155: step 10, "Tap Ovens": the sidewalk card (the cash for it is in the save, or the coach falls back to step 7)
     try:
-        page = seeded_page(browser, tutorial_save(8, 600)); settle(page, 1.0)
+        page = seeded_page(browser, tutorial_save(10, 600)); settle(page, 1.0)
         expect(page, "coach", 3000)
         expect(page, "coach-cut-0", 3000)
         cut_holds(page, "coach-cut-0", "walk-ovens", "155-coach-step8")
