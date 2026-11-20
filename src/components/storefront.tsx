@@ -113,10 +113,6 @@ interface Props {
   onTap: () => void;
   /** A tap on one station of a shop without a GM; returns why it was refused, or null when it started. */
   onStation: (st: Station) => string | null;
-  /** @deprecated The coach overlay draws the spotlight now (card C2); ignored here until the call site stops passing it. */
-  spotlight?: Station | null;
-  /** @deprecated See `spotlight`. */
-  spotlightWait?: boolean;
 }
 
 /** Everything the still picture depends on: when this changes, the scene re-renders even while paused. */
