@@ -11,10 +11,10 @@
 - Do not touch: `src/components/store/**`, `src/engine/**`.
 
 ## Steps
-- [ ] **1.** The chip shows when `rewardsUnlocked(game)` **or** `prefs.starterOffered` is true. It reads the store prefs as a primitive selector (no re-render per tick).
-- [ ] **2.** No Shop tab is locked by rewards: check that Vanity, Boosters and Store all open and work before the takeover (a player may hold 0 diamonds; that's fine).
-- [ ] **3. Tests:** chip hidden on a fresh save, shown once the sheet has been offered (bought or "Not now"), shown after the takeover on an old save that never saw the sheet.
-- [ ] **4. Fixture:** a save just past the tutorial with `starterOffered: true`: the chip on the HUD, then the Shop's Store tab with the Starter Pack.
+- [x] **1.** The chip shows when `rewardsUnlocked(game)` **or** `prefs.starterOffered` is true. It reads the store prefs as a primitive selector (no re-render per tick).
+- [x] **2.** No Shop tab is locked by rewards: check that Vanity, Boosters and Store all open and work before the takeover (a player may hold 0 diamonds; that's fine).
+- [x] **3. Tests:** chip hidden on a fresh save, shown once the sheet has been offered (bought or "Not now"), shown after the takeover on an old save that never saw the sheet.
+- [x] **4. Fixture:** a save just past the tutorial with `starterOffered: true`: the chip on the HUD, then the Shop's Store tab with the Starter Pack.
 
 ## Checks
 `npx tsc --noEmit`; `npx jest src/components`; `npm run format:check`.
