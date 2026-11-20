@@ -7,7 +7,7 @@ version: 5.20                   # v5.19-test closed 2026-11-19 (r1: critic SATIS
 step: waves                       # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.19-test             # normal verify: 0 new, 30 changed (0.24-1.36%), True 0 [], layout 0; changed = baseline noise (X1 vs 20b3797)
-codecritic_range_start: ee18641   # v5.19-test closing commit
+codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
   W1 todo  C1 todo  C2 todo  U0 todo  C3 todo
 reviews:               # latest review file per critic, with verdict and counts
