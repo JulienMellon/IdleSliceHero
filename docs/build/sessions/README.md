@@ -10,6 +10,11 @@ For Julien. **The orchestrator does not read this file.** Each build session rea
 | 4 | `S4-v5.17.md` | v5.17 with the new card U4 | `version: 5.17` |
 | 5 | `S5-v5.18.md` | v5.18 with the scrolling shop | `version: 5.18` |
 | 6 | `S6-v5.19-test.md` | v5.19-test: the test build with cheats (cards X1 to X4), then STATE back to v5.20 | `version: 5.19-test` |
+| 7 | `S7-v5.20.md` | v5.20: one spotlight, Chapter 1 (W1, C1, C2, C3) | `version: 5.20` |
+| 8 | `S8-v5.21.md` | v5.21: chapters and the task list (E1, W2, U1, U2, E2) | `version: 5.21` |
+| 9 | `S9-v5.22.md` | v5.22: read the shop yourself (E3, W3, U3, S3, U4, E4, A3) | `version: 5.22` |
+| 10 | `S10-v5.23.md` | v5.23: the Store, packs, diamond boosters (W4, E5, N1, U5, E6) | `version: 5.23` |
+| 11 | `S11-v5.24.md` | v5.24: the looks catalog and the $19.99 pack (E7, W5, S4, N2, S5, U6) | `version: 5.24` |
 
 ## How to run one
 1. Merge the last session's pull request.
