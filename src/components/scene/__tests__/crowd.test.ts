@@ -42,7 +42,7 @@ import { seatPalette } from '../palette';
 import { CURB_Y, FRONT_TOP, P, SCENE_H, SCENE_W, kAt, unprojectX } from '../projection';
 import { SIDEWALK_ROW } from '../../tap-targets';
 import { PILL_UMBRELLA_AIR, UMBRELLA_TOP, patioSortYs } from '../patio-deck';
-import { doorwaySignRect, placePops, popPlace, popRect, popsCover, popWidth, spotlightCutout, staffFaces, stationRects, tutorialHand } from '../stations';
+import { doorwaySignRect, placePops, popPlace, popRect, popsCover, popWidth, staffFaces, stationRects } from '../stations';
 import { bodyBy, chairBack, SEATED_TORSO_HALF } from '../geometry';
 import { quantArm, quantStep } from '../quantise';
 
@@ -235,39 +235,6 @@ describe('the counter (D336)', () => {
               bad.push(`${shop.name} pace${pace} f${f} ${c.key} flip${c.props.flip} visible${visible} above${aboveShoulders}`);
           }
         });
-    expect(bad.slice(0, 5)).toEqual([]);
-  });
-});
-
-describe('the tutorial hand (D384)', () => {
-  const headOf = (c: CastMember) => {
-    const b = box(c);
-    return { x0: b.x0, x1: b.x1, y0: b.y0, y1: b.y0 + (b.y1 - b.y0) * 0.3 };
-  };
-  test('the hand never meets any character head, for every spotlighted station, at any bounce, in any frame (Downtown, footprint 0)', () => {
-    const bad: string[] = [];
-    for (const shop of busyShops()) {
-      if (shop.lay.fp !== 0) continue;
-      for (const pace of [1, 2.6])
-        for (const scale of [0.95, 1.25, 1.6])
-          // fit.s on a 375 pt wide phone … a tablet
-          for (const st of ['prep', 'oven', 'counter'] as const) {
-            const cut = spotlightCutout(stationRects(shop.lay, 44 / scale)[st]);
-            for (const bounce of [0, 4]) {
-              const hand = tutorialHand(cut, bounce);
-              expect(hand.hx).toBeCloseTo((cut.x0 + cut.x1) / 2);
-              expect(hand.hy).toBeCloseTo(cut.y1 - 30 + bounce);
-              frames(shop, pace).forEach((cast, f) => {
-                for (const c of cast) {
-                  if (c.role === 'walkin' && c.props.kind !== 'sit') continue; // a guest in transit may cross any spot for a moment
-                  const h = headOf(c);
-                  if (hand.rect.x0 < h.x1 && hand.rect.x1 > h.x0 && hand.rect.y0 < h.y1 && hand.rect.y1 > h.y0)
-                    bad.push(`${shop.name} ${st} s${scale} pace${pace} f${f} ${c.key}`);
-                }
-              });
-            }
-          }
-    }
     expect(bad.slice(0, 5)).toEqual([]);
   });
 });

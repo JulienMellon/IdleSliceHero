@@ -11,11 +11,11 @@
 - Do not touch: `src/components/coach/**` (C1; ask its owner through `Needs:`), `src/engine/**`.
 
 ## Steps
-- [ ] **1. Rects in screen points.** One pure helper `coachRects(lay, fit, scrollX, origin)` → `{ 'station:prep'|'station:oven'|'station:counter': Rect, 'dial:prep'|'dial:oven'|'dial:counter': Rect, 'ovens:all': Rect }`. Dials are the badge circles (`BADGE_R` + 4 pt). `ovens:all` is the union of every oven slot drawn. Use the same scene-to-screen mapping as the other overlays, so the scrolling shop (v5.18) is right.
-- [ ] **2. Register them** for the shop on screen only, after layout and whenever the footprint, oven count, scroll position or screen size changes (not per frame).
-- [ ] **3. Delete the in-SVG scrim**, its glow, the breathing ring and the hand (the overlay draws them now), and the `spotlight` / `spotlightWait` props and their `index.tsx` call site's arguments. Keep `tutorialHand` and `spotlightCutout` if card C1's model imports them; otherwise move them to C1 through `Needs:`.
-- [ ] **4. Test.** For a 1-oven and a 2-oven Downtown at 393 wide and at the widest footprint with scroll: each dial's rect lies inside the screen, and the union of `station:oven` and `dial:oven` contains both.
-- [ ] **5. Fixture.** `<n>_c2.py`: today's steps 2 and 4 (wait steps): the dial must be inside the lit area. `expect()` reads the overlay's cut-out from the DOM.
+- [x] **1. Rects in screen points.** One pure helper `coachRects(lay, fit, scrollX, origin)` → `{ 'station:prep'|'station:oven'|'station:counter': Rect, 'dial:prep'|'dial:oven'|'dial:counter': Rect, 'ovens:all': Rect }`. Dials are the badge circles (`BADGE_R` + 4 pt). `ovens:all` is the union of every oven slot drawn. Use the same scene-to-screen mapping as the other overlays, so the scrolling shop (v5.18) is right.
+- [x] **2. Register them** for the shop on screen only, after layout and whenever the footprint, oven count, scroll position or screen size changes (not per frame).
+- [x] **3. Delete the in-SVG scrim**, its glow, the breathing ring and the hand (the overlay draws them now), and the `spotlight` / `spotlightWait` props and their `index.tsx` call site's arguments. Keep `tutorialHand` and `spotlightCutout` if card C1's model imports them; otherwise move them to C1 through `Needs:`.
+- [x] **4. Test.** For a 1-oven and a 2-oven Downtown at 393 wide and at the widest footprint with scroll: each dial's rect lies inside the screen, and the union of `station:oven` and `dial:oven` contains both.
+- [x] **5. Fixture.** `<n>_c2.py`: today's steps 2 and 4 (wait steps): the dial must be inside the lit area. `expect()` reads the overlay's cut-out from the DOM.
 
 ## Rules
 Overlap fixes in the pure modules with a budget test; run the crowd suite. Don't remove the WELCOME mat.

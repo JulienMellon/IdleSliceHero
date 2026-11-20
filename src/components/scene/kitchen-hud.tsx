@@ -3,7 +3,7 @@
 import { memo } from 'react';
 import { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
-import type { Departure } from '../../engine/pipeline';
+import type { Departure, Station } from '../../engine/pipeline';
 import { F } from '../../theme';
 import { BADGE_R, placePops, POP_H, type BadgeTone, type Rect as ScreenRect } from './stations';
 import { HeadFace } from './head-face';
@@ -58,6 +58,7 @@ export const BadgeRail = memo(function BadgeRail({ x0, x1, y, gm }: { x0: number
 export const StationBadge = memo(function StationBadge({
   x,
   y,
+  st,
   step,
   count,
   tone,
@@ -72,6 +73,8 @@ export const StationBadge = memo(function StationBadge({
 }: {
   x: number;
   y: number;
+  /** Which station's dial this is: its test ID (`dial-prep`), so a fixture can find the ring the Coach lights. */
+  st: Station;
   step: number;
   count: string;
   tone: BadgeTone;
@@ -89,7 +92,7 @@ export const StationBadge = memo(function StationBadge({
   const pillW = Math.max(18, count.length * 6.2 + 10);
   return (
     <G transform={`translate(${x} ${y})`}>
-      <G transform={`scale(${s})`}>
+      <G testID={`dial-${st}`} transform={`scale(${s})`}>
         <Circle cx={0} cy={0} r={r + 1.5} fill={DISC} stroke={OUTLINE} strokeWidth={1.5} />
         <Circle cx={0} cy={0} r={r - 2.5} fill="none" stroke={TRACK} strokeWidth={3} />
         {step > 0 && <Path d={arc(0, 0, r - 2.5, step)} fill="none" stroke={tone === 'tomato' ? TOMATO : BASIL} strokeWidth={3} strokeLinecap="round" />}
