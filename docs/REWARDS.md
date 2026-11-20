@@ -18,7 +18,7 @@ Three retention features that give the player a reason to open the game every da
 
 - **Cash is expressed as minutes of income,** not fixed amounts: "15 min of income" = current earnings per second × 900, computed when claimed. This keeps rewards meaningful from the first shop to the last, and across franchise resets.
 - Income for reward purposes ignores active boosts, so a boost can't be used to inflate a cash reward.
-- **Diamonds** buy vanity items only, so diamond rewards never affect balance.
+- **Diamonds** buy looks and timed boosters (changed 2026-11-20, DECISIONS #44). Bought boosters share one paid-boost slot, so they add at most 2× at a time; cash rewards ignore every boost.
 - **Boosters** are timed income multipliers (see Boost stacking).
 
 ## Daily tasks
