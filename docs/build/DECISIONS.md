@@ -57,3 +57,22 @@ One default from the same plan is still unconfirmed and follows the rule at the 
 | --- | --- | --- | --- |
 | 33 | The seven ideas in `docs/REVIEW-v5.15-pacing.md` | Only idea 5 (special orders that can be won by playing) is built. Ideas 1 (spread the beats over check-ins), 2 (a ladder of sub-goals, or a nearer goal on the bar) and 7 (the 8-hour oven on day 0) are not planned. Ideas 3 and 6 are met by card E0's manager timing. Idea 4 (a meter paying 30 minutes of income) contradicts the reward cuts and is dropped | 5.16 · E0 step 3b |
 | 34 | How a cloud session's work reaches `main` | Each session pushes its own `claude/` branch and opens one pull request when it ends; Julien merges | README section 6 |
+
+## Decided by Julien, 2026-11-20 (onboarding, reading the shop, store pricing)
+Source: `docs/PLAN-v5.20-onboarding.md` and `docs/PRICING-STRATEGY.md`. Supersedes #2, #9 and the "Buy both" part of the 2026-11-13 playtest decisions, and idea 2 of #33 (a nearer goal on the bar).
+
+| # | Decision | Answer | Bites in |
+| --- | --- | --- | --- |
+| 35 | One highlight method | A full-screen gray scrim with one cut-out (union allowed) over any element; taps outside the cut-out are swallowed during tap steps | 5.20 |
+| 36 | The goal bar | Shows the current chapter's next task; a tap always opens the task list (no buying from the bar) | 5.21 |
+| 37 | Story gating | Main beats unlock when their chapter's 2–4 visible tasks are done; interludes stay timed. Chapter tasks are outcomes, never "buy X" | 5.21 |
+| 38 | Bottleneck pointers | All removed after Chapter 1: "Buy both", tomato tied badges (G80), station names on the drivers pill, red/amber/green lamps, the drawer's "Bottleneck" header. Reverses 2026-11-13's "keep Buy both" | 5.22 |
+| 39 | Upgrade card numbers | Capacity in pizzas a minute ("18/min → 22"), not "+$/min" | 5.22 |
+| 40 | The shop's state | Shown six ways: piles, workers, customers, sound, symptom lines (never "buy X"), the report's same-coloured capacity bars against a demand line | 5.22 |
+| 41 | When the report goes live | From a shop's first head hire; a 3-step tutorial explains how to read it and stops there | 5.22 |
+| 42 | Starter Pack | $2.99: 400 diamonds, the Founder awning, 2× income for 24 h; introduced in the Store at the end of Chapter 1; no pop-up, no countdown | 5.23 |
+| 43 | Diamond packs | 80 / 400+100 / 800+400 for $0.99 / $4.99 / $9.99; 1,600+1,000 for $19.99 in v5.24; the first buy of each pays double | 5.23, 5.24 |
+| 44 | Diamonds buy timed boosters | Yes (was looks only). Rush Hour 1 h 30 💎, Dinner Service 4 h 90 💎, Big Night 12 h 220 💎, 2×, one paid-boost slot that extends (cap 24 h left) and never adds a second multiplier | 5.23 |
+| 45 | Value wording | Game units only. Never "worth", "value", "save X%", struck-through prices, countdowns or "limited time" | 5.23 |
+| 46 | Looks catalog | About 30 items in three tiers (60 / 150 / 400 💎), a 4–5 piece set per home neighbourhood, a weekly Featured row (never limited) | 5.24 |
+| 47 | When the Store becomes available | The moment the Starter Pack is first offered, with every Shop tab open, for good. v5.20 card U0 does it for today's pop-up; v5.23's intro keeps it | 5.20 · U0; 5.23 · U5 |
