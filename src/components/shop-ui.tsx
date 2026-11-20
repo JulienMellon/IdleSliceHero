@@ -14,6 +14,7 @@ import { lotView, piesToGo } from './city-model';
 import { buildChipHint, buildChipSub, cardLook, type ButtonTone } from './sidewalk-model';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BuyButton, haptic } from './game-ui';
+import { useCoachTarget, type CoachTargetId } from './coach/targets';
 import { showLockedTabs } from '../engine/tutorial';
 import { shopStars } from '../engine/features/mastery';
 import { pipBits, showPips, starPips } from './endgame/mastery-model';
@@ -205,13 +206,18 @@ function StationCardView(props: {
   tone: ButtonTone;
   /** Replaces the price on the button (the drawer's "Expand · $500" on a station that only the level cap locks, D413). */
   buyLabel?: string;
+  /** The Coach can point at this card (v5.20): it reports where it is under this id. */
+  coachId?: CoachTargetId;
 }) {
+  const coachRef = useCoachTarget(props.coachId ?? 'drawer:hire:prep');
   // D419: a card you can afford has the 2 pt crust-brown outline on a solid face (the bottleneck's signal is its tint and chip, not a pale outline)
   const look = cardLook(props.hot && !props.muted ? 'hot' : null, props.canBuy);
   const { onBuy, onBuyKey, buyKey } = props;
   const press = useCallback(() => (onBuyKey && buyKey !== undefined ? onBuyKey(buyKey) : onBuy?.()), [onBuy, onBuyKey, buyKey]);
   return (
     <View
+      ref={props.coachId ? coachRef : undefined}
+      onLayout={props.coachId ? coachRef.onLayout : undefined}
       style={[
         styles.card,
         props.wide && styles.cardWide,

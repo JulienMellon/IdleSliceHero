@@ -123,8 +123,8 @@ describe("Boston's own first shop, tutorial and rewards (C152: the v5.18 bugs ar
     }
   });
 
-  test("the tutorial's last step names the city's own prep head", () => {
-    const text = (c: CityDef) => stepsFor(c)[8].text;
+  test("the tutorial's hire step names the city's own prep head", () => {
+    const text = (c: CityDef) => stepsFor(c)[12].text; // step 13: the prep head's hire card
     expect(text(BOSTON_CITY)).toContain(BOSTON_CITY.heads[G.firstHood(BOSTON_CITY)].prep);
     expect(text(BOSTON_CITY)).not.toContain(HOME_CITY.heads[G.firstHood(HOME_CITY)].prep);
   });
