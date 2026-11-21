@@ -7,7 +7,7 @@ version: 5.21                   # v5.20 closed 2026-11-21 (r3: critic SATISFIED,
 step: review                        # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.21                   # r1 verify: True 0 [], layout 0 new; 10 new 126 changed vs v5.20-r3
-codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
+codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
   E1 done  W2 done  U1 done  U2 done  E2 done
 reviews:               # latest review file per critic, with verdict and counts
