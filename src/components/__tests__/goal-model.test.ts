@@ -159,16 +159,15 @@ const withShop = (g: G.GameState, id: string, patch: Partial<G.Shop>): G.GameSta
   ...g,
   shops: { ...g.shops, [id]: { ...g.shops[id as G.GameState['active']], ...patch } },
 });
+/** The free chapter 1's tasks: past the tutorial they are done, or chapter 1 stays current. */
+const OPENING = HOME_CHAPTERS[0].tasks.map((t) => t.key);
 const doneKeys = (g: G.GameState, done: string[]): G.GameState => ({ ...g, x: { ...g.x, [CHAPTERS_KEY]: { ...newChapterSave(), done } } });
 /** Chapter `n` (1-based) is on, with its first `k` tasks done and the next one `sold` pies in. */
 const stateAt = (n: number, k: number, sold = 0): G.GameState => {
   const c = HOME_CHAPTERS[n - 1];
   const g = { ...G.newGame(0), seenScenes: HOME_CHAPTERS.slice(0, n - 1).map((x) => x.sceneId) };
   const next = c.tasks[k];
-  return doneKeys(
-    next?.kind === 'serve' ? withShop(g, next.shop, { sold }) : g,
-    c.tasks.slice(0, k).map((x) => x.key),
-  );
+  return doneKeys(next?.kind === 'serve' ? withShop(g, next.shop, { sold }) : g, [...(n > 1 ? OPENING : []), ...c.tasks.slice(0, k).map((x) => x.key)]);
 };
 const everyTaskGoal = () => HOME_CHAPTERS.flatMap((c, i) => c.tasks.map((_, k) => chapterGoal(stateAt(i + 1, k))!));
 
@@ -231,14 +230,24 @@ describe('the goal bar is the next chapter task (U1)', () => {
   });
 });
 
+describe('the tutorial is chapter 1 (U1)', () => {
+  test("after its beat has played the bar still shows chapter 1's next task, until its three tasks are done", () => {
+    const g = { ...G.newGame(0), seenScenes: ['downtown-1'] };
+    const a = chapterGoal(g)!;
+    expect([a.key, a.ready]).toEqual(['task.downtown-1.1', false]);
+    expect(a.label.startsWith('Ch 1 \u00B7 ')).toBe(true);
+    const b = chapterGoal(doneKeys(withShop(g, 'downtown', { sold: 1 }), [OPENING[0]]))!;
+    expect(b.key).toBe('task.downtown-1.2');
+    expect(chapterGoal(doneKeys(withShop(g, 'downtown', { sold: 5 }), OPENING.slice(0, 2)))!.key).toBe('task.downtown-1.3');
+    expect(chapterGoal(doneKeys(g, OPENING))!.label.startsWith('Ch 2 \u00B7 ')).toBe(true);
+  });
+});
+
 describe('a done chapter waiting on the story (U1)', () => {
   const waiting = (playSeconds: number) => {
     const c = HOME_CHAPTERS[1];
     const g = { ...G.newGame(0), seenScenes: ['downtown-1'], playSeconds, sceneAt: { 'downtown-1': 0 } };
-    return doneKeys(
-      withShop(g, 'downtown', { sold: 424 }),
-      c.tasks.map((t) => t.key),
-    );
+    return doneKeys(withShop(g, 'downtown', { sold: 424 }), [...OPENING, ...c.tasks.map((t) => t.key)]);
   };
   test('a full basil bar that says Ready, with the countdown in its words', () => {
     const g = chapterGoal(waiting(500), 450)!;
@@ -256,7 +265,7 @@ describe('a done chapter waiting on the story (U1)', () => {
 
 describe('after the last chapter, and in a city without chapters (U1)', () => {
   test('no chapter goal: the caller shows the mastery goal, then the story count', () => {
-    expect(chapterGoal({ ...G.newGame(0), seenScenes: HOME_CHAPTERS.map((c) => c.sceneId) })).toBeNull();
+    expect(chapterGoal(doneKeys({ ...G.newGame(0), seenScenes: HOME_CHAPTERS.map((c) => c.sceneId) }, OPENING))).toBeNull();
     expect(chapterGoal(G.newGame(0, 'boston'))).toBeNull();
   });
   test('the progress is the same one the Story tab prints', () => {

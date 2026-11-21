@@ -40,3 +40,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 U2 shots ok (177 padlock fix). Wave 2 committed. Wave 3: E2 launched (extra: tasks:story/close targets, Story tab follows currentChapter).
 - 2026-11-21 S8 E2 partial (steps 7/8 on, 179_e2 ok; step 2 blocked: ch1 is free+already done so bar shows ch2). Routed to E1: currentChapter keeps a free chapter until its tasks are done (no beat gated); no second-oven task (Defaults: bar never shows a purchase). Then E2 finishes step 2.
 - 2026-11-21 S8 E1 done (free ch1 stays current until its tasks are done; pacing moved: downtown-2 4.5->4.9 unchanged). 13 test fails in goal-model/rewards-story fixtures, sent to U1/U2. Then E2 step 2.
+- 2026-11-21 S8 U2 rewards-story fixtures fixed (25 pass). U1 goal-model fix running.

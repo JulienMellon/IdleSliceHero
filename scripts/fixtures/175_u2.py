@@ -8,6 +8,7 @@ Every state is asserted with expect() before its shot; game time moves only thro
 from shots_lib import *  # noqa: F401,F403  (seeded_page, settle, shot, expect, expect_text, tid, advance, report, ...)
 
 TUTORIAL_DONE = 16
+CH1 = [f"task.downtown-1.{n}" for n in (1, 2, 3)]  # chapter 1 (the tutorial's) is done, so chapter 2 is the one on
 
 
 def story_save(sold=212, **kw):
@@ -15,7 +16,8 @@ def story_save(sold=212, **kw):
     unbuilt = {h: shop(built=False, managed=False) for h in IDS[1:]}
     return dict(MID_SAVE, saveVersion=8, cash=500, totalEarned=500, vehicle=0, active="downtown", tutorial=TUTORIAL_DONE,
                 shops=dict(unbuilt, downtown=shop(managed=False, prep=3, ovens=2, counter=2, sold=sold, **kw)),
-                seenScenes=["downtown-1"], scrapbookViewed=1, lastSavedAt=T0_MS, playSeconds=200)
+                seenScenes=["downtown-1"], scrapbookViewed=1, lastSavedAt=T0_MS, playSeconds=200,
+                x={"chapters": {"done": CH1, "best": {}, "run": {}, "calm": {}, "report": False}})
 
 
 def open_drawer(page):

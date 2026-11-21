@@ -31,6 +31,8 @@ const withShop = (s: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G
   shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } },
 });
 const doneKeys = (s: G.GameState, done: string[]): G.GameState => ({ ...s, x: { ...s.x, [CHAPTERS_KEY]: { ...newChapterSave(), done } } });
+/** Chapter 1's three tasks (the tutorial's): a save past the tutorial has them done, and chapter 1 stays current until they are. */
+const CH1 = HOME_CHAPTERS[0].tasks.map((t) => t.key);
 
 /** Downtown's tutorial: the opening scene has not played, so chapter 1 is on and its three tasks are all done. */
 const tutorial = (): G.GameState =>
@@ -39,13 +41,13 @@ const tutorial = (): G.GameState =>
     HOME_CHAPTERS[0].tasks.map((t) => t.key),
   );
 /** Chapter 2 on, 212 of its 424 pies served, nothing else done. */
-const midway = (): G.GameState => withShop({ ...G.newGame(0), seenScenes: ['downtown-1'], playSeconds: 400 }, 'downtown', { sold: 212 });
+const midway = (): G.GameState => doneKeys(withShop({ ...G.newGame(0), seenScenes: ['downtown-1'], playSeconds: 400 }, 'downtown', { sold: 212 }), CH1);
 /** Chapter 2 with every task done and the last scene ended 50 play seconds ago. */
 const waiting = (): G.GameState =>
-  doneKeys(
-    withShop({ ...G.newGame(0), seenScenes: ['downtown-1'], playSeconds: 500 }, 'downtown', { sold: 424, heads: { ...G.noHeads(), oven: true } }),
-    HOME_CHAPTERS[1].tasks.map((t) => t.key),
-  );
+  doneKeys(withShop({ ...G.newGame(0), seenScenes: ['downtown-1'], playSeconds: 500 }, 'downtown', { sold: 424, heads: { ...G.noHeads(), oven: true } }), [
+    ...CH1,
+    ...HOME_CHAPTERS[1].tasks.map((t) => t.key),
+  ]);
 
 describe('chapter 1 during the tutorial', () => {
   const v = storyView(tutorial(), null);
@@ -63,6 +65,19 @@ describe('chapter 1 during the tutorial', () => {
   it('shows the reward as the scene and the diamonds', () => {
     expect(v.reward).toBe(`\u{1F3AC} New scene · \u{1F48E} ${CHAPTER_DIAMONDS}`);
     expect(storyRewardText()).toBe(v.reward);
+  });
+});
+
+describe('the tutorial after the opening scene', () => {
+  it('still shows chapter 1 (its beat has played, its tasks are not all done), with the ticks that are', () => {
+    const g = withShop({ ...G.newGame(0), seenScenes: ['downtown-1'] }, 'downtown', { sold: 4 });
+    const v = storyView(g, null);
+    expect(v.number).toBe(1);
+    expect(v.title).toBe('The Keys');
+    expect(v.tasks.map((t) => t.done)).toEqual([true, true, false]);
+  });
+  it('moves to chapter 2 once the three are done', () => {
+    expect(storyView(midway(), null).number).toBe(2);
   });
 });
 
@@ -117,7 +132,7 @@ describe('a done chapter waiting on the next scene', () => {
 
 describe('after the last chapter', () => {
   it('says every chapter is done and has no tasks', () => {
-    const all = { ...G.newGame(0), seenScenes: HOME_CHAPTERS.map((c) => c.sceneId) };
+    const all = doneKeys({ ...G.newGame(0), seenScenes: HOME_CHAPTERS.map((c) => c.sceneId) }, CH1);
     const v = storyView(all, null);
     expect(v.kind).toBe('finished');
     expect(v.finished).toBe('Every chapter done. The city is yours.');
@@ -171,7 +186,7 @@ describe('the copy table', () => {
   it('fills every chapter’s task labels (no placeholder is left on screen)', () => {
     let g = G.newGame(0);
     for (const c of HOME_CHAPTERS) {
-      g = { ...g, seenScenes: HOME_CHAPTERS.slice(0, HOME_CHAPTERS.indexOf(c)).map((x) => x.sceneId) };
+      g = doneKeys({ ...g, seenScenes: HOME_CHAPTERS.slice(0, HOME_CHAPTERS.indexOf(c)).map((x) => x.sceneId) }, CH1);
       const v = storyView(g, null);
       expect(v.title).not.toMatch(/^chapter\./);
       for (const t of v.tasks) expect(t.label).not.toMatch(/[{}]|^task\./);
