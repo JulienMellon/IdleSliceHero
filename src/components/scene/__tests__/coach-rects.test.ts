@@ -3,7 +3,7 @@
 import { HOME_CITY } from '../../../content/cities/home';
 import { newShop } from '../../../engine/game';
 import type { Rect } from '../../coach/targets';
-import { coachReporter, coachRects, DIAL_PILL, DIAL_R, SCENE_TARGETS } from '../coach-rects';
+import { coachReporter, coachRects, DIAL_PILL, OVEN_HEAD_PT, DIAL_R, SCENE_TARGETS } from '../coach-rects';
 import { D, P, openScroll, sceneToScreen, sceneView } from '../projection';
 import { shopLayout } from '../shop-layout';
 import { BADGE_R, badgeXs } from '../stations';
@@ -23,6 +23,9 @@ function shopAt(fp: number, ovens: number) {
 const inside = (r: Rect, w: number, h: number) => r.x0 >= 0 && r.y0 >= 0 && r.x1 <= w && r.y1 <= h;
 const holds = (a: Rect, b: Rect) => a.x0 <= b.x0 + 1e-6 && a.y0 <= b.y0 + 1e-6 && a.x1 >= b.x1 - 1e-6 && a.y1 >= b.y1 - 1e-6;
 const union = (a: Rect, b: Rect): Rect => ({ x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1) });
+/** The lowest edge of the oven faces drawn, in screen points (origin as the tests use it). */
+const bottomOf = (lay: ReturnType<typeof shopAt>, fit: ReturnType<typeof sceneView>['fit']) =>
+  origin.y + fit.oy + Math.max(...lay.ovens.map((o) => P(o.x0, D, o.z)[1])) * fit.s;
 const area = (r: Rect) => (r.x1 - r.x0) * (r.y1 - r.y0);
 const mid = (r: Rect) => (r.x0 + r.x1) / 2;
 
@@ -107,6 +110,8 @@ describe('coachRects (v5.20 C2)', () => {
         const a = coachRects(one, fit, 0, origin);
         const b = coachRects(two, fit, 0, origin);
         expect(holds(a['station:oven'], a['ovens:all'])).toBe(true);
+        // D531: it reaches OVEN_HEAD_PT below the oven faces, to take in the baker's head and hat
+        expect(a['ovens:all'].y1 - bottomOf(one, fit)).toBeCloseTo(OVEN_HEAD_PT, 6);
         expect(holds(b['station:oven'], b['ovens:all'])).toBe(true);
         // a second oven is stacked (taller) or stands beside the first (wider): the bank only grows
         expect(area(b['ovens:all'])).toBeGreaterThan(area(a['ovens:all']));

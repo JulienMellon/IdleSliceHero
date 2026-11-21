@@ -11,6 +11,9 @@ export const DIAL_R = BADGE_R + 4;
 /** …and the count pill beside the ring (kitchen-hud.tsx: it starts BADGE_R + 3 right of the centre and is 6.2 per character + 10 wide): room for two characters ("×4", "12"), so the number Nonna names is lit with the ring (G112). */
 export const DIAL_PILL = 24;
 
+/** The baker stands in front of the ovens with a head and hat just below the oven bank's face: `ovens:all` reaches this far (points) lower, so the cut-out holds them (D531). */
+export const OVEN_HEAD_PT = 10;
+
 /** The ids this module reports, in a fixed order. */
 export const SCENE_TARGETS = [
   'station:prep',
@@ -48,6 +51,7 @@ export function coachRects(lay: Layout, fit: SceneFit, scrollX: number, origin: 
     ov = { x0: Math.min(ov.x0, a[0], b[0]), y0: Math.min(ov.y0, a[1], b[1]), x1: Math.max(ov.x1, a[0], b[0]), y1: Math.max(ov.y1, a[1], b[1]) };
   }
 
+  const bank = toScreen(ov);
   return {
     'station:prep': toScreen(stations.prep),
     'station:oven': toScreen(stations.oven),
@@ -55,7 +59,7 @@ export function coachRects(lay: Layout, fit: SceneFit, scrollX: number, origin: 
     'dial:prep': dial('prep'),
     'dial:oven': dial('oven'),
     'dial:counter': dial('counter'),
-    'ovens:all': toScreen(ov),
+    'ovens:all': { ...bank, y1: bank.y1 + OVEN_HEAD_PT },
   };
 }
 

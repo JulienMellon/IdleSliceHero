@@ -360,9 +360,11 @@ export default function GameScreen() {
     return big.sort((a, b) => b.ratio - a.ratio);
   };
   // D494 + C107: the nearest goal within about half an hour of income, else one within the hour the upgrade tasks use, else none (never a multi-day buy)
-  let goal: Goal | null = pickGoal<Goal>(eps, () => shown, bigGoals);
+  // D528: while Nonna teaches the first shop (steps 1-11) the bar names no purchase ("hire Marco") that competes with her line: it shows the story, as before any goal is on offer
+  const teaching = !!coach && coach.id <= 11;
+  let goal: Goal | null = teaching ? null : pickGoal<Goal>(eps, () => shown, bigGoals);
   // v5.15 (D427): once the story is told and nothing else is worth saving for, the bar shows the city's mastery stars
-  const mg = goal ? null : masteryGoal(game);
+  const mg = goal || teaching ? null : masteryGoal(game);
   if (mg) goal = { label: mg.label, short: mg.short, tiny: mg.tiny, text: mg.text, current: mg.current, target: mg.target };
   if (!goal) {
     const story = storyGoal(game.seenScenes.length);
