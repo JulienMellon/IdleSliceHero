@@ -1,6 +1,7 @@
 // The Test panel's neighbourhood jumps (card X3): the snapshot loader, the backup / undo slot and "build the next shop now". Pure TypeScript with the
 // store and the storage passed in (`JumpHost`), so jest runs it in node; jumps-section.tsx wires the real ones. Nothing here may write the real save.
 import { CITIES, cityOf } from '../content/cities';
+import { chaptersOf } from '../engine/chapters';
 import { buildShop, migrate, nextToBuild, type BuyResult, type GameState } from '../engine/game';
 import { dayKey, weekKey } from '../engine/rewards';
 
@@ -145,14 +146,15 @@ export async function undoJump(host: JumpHost): Promise<{ ok: true; state: GameS
 
 /**
  * Build the next neighbourhood in `cityOf(g).neighbourhoods` order through the engine's own `buildShop` (so it costs what a build costs, and a free-buys
- * test build builds it free), with the story lock skipped: the lock is the founder's takeover scene, so the state `buildShop` sees has it as seen, and the
- * state that comes back has the real list again (the scene still plays when it is due). It may break the story order.
+ * test build builds it free), with the story locks skipped: the founder's takeover scene and the chapters (the next shop waits for the one before it, v5.21
+ * E1b), so the state `buildShop` sees has them as seen, and the state that comes back has the real list again (the scenes still play when they are due).
+ * It may break the story order.
  */
 export function buildNextNow(g: GameState): BuyResult {
   const next = nextToBuild(g);
   if (!next) return { ok: false, reason: 'Every shop is built' };
   const takeover = cityOf(g).fit.takeover.sceneId;
-  const open = g.seenScenes.includes(takeover) ? g : { ...g, seenScenes: [...g.seenScenes, takeover] };
+  const open = { ...g, seenScenes: [...new Set([...g.seenScenes, takeover, ...chaptersOf(g).map((c) => c.sceneId)])] };
   const r = buildShop(open, next.id);
   return r.ok ? { ok: true, state: { ...r.state, seenScenes: g.seenScenes } } : r;
 }

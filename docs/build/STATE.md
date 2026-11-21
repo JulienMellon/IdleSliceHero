@@ -9,7 +9,7 @@ round: r3              # r1 | r2 | r3
 last_shots: v5.21-r2                # r2 verify: True 0 [], layout 0 new; 1 new 141 changed vs v5.21
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
-  E1 done  W2 done  U1 done  U2 done  E2 done  E1b running
+  E1 done  W2 done  U1 done  U2 done  E2 done  E1b partial
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.21/review-r2-critic.md (r2 NOT SATISFIED; bug 0 major 3 minor 11; E3 U9 S2; D532 D536 D541 majors, D542 new)
   code:   docs/build/v5.21/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 3 low 18; E1 U12 S1 N7)
@@ -30,3 +30,4 @@ next: resume S8-v5.21.md: FIRST launch programmer on docs/build/v5.21/card-E1b.m
 - 2026-11-21 S8 r3 U1 done (D532 cash vs price, D541 tick pop + chapter ribbon + toast shot, D536 Go proved 178h2/i/j, S87 Pier 9 short). E2 r3 launched (D530).
 - 2026-11-21 S8 r3 fixes done (E2 D530 ribbon via goalCheer, shot 179e; gift needs Julien). 2902/2902, tsc clean, pacing same (downtown-2 +8.9%). Two fix rounds run: session ends before r3 verify.
 - 2026-11-21 S8 resumed: deps installed (npm ci, playwright 1.63.0); E1b launched before r3 verify.
+- 2026-11-21 S8 E1b partial (gate on beat 3 of prior shop; 2917 tests; EAGER max wait 1940.8 vs tuned 1919.8 at uptown-4, so beat 3 kept per acceptance; beat 4 broke 3 pacing tests). Needs index.tsx tasks param -> U1.

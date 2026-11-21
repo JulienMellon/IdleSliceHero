@@ -138,9 +138,21 @@ if (timers.some((g) => g.min > MAX_GAP_MIN)) {
   process.exitCode = 1;
 }
 
-// The player who builds University before the bid. EAGER builds every pizzeria the moment it is affordable, and University's build price is cut to twice
-// Waterfront's so that moment comes before the bid opens (at the real price it never does: the bid opens first). Scenes must still all play, and the
-// chapter task ("Win the auction in Waterfront") covers the wait for the bid.
+// The player who builds University as early as the game lets him. EAGER builds every pizzeria the moment it is affordable, and University's build price is
+// cut to twice Waterfront's so that moment comes early (at the real price it never does: the bid opens first). Since v5.21 (card E1b) the build waits for
+// Waterfront's chapter 3 (`buildLock`), so a chapter that needs Waterfront is never left behind a shop built too early. Scenes must still all play.
+/** The longest wait between two main beats of a run, in minutes, and the beat that ends it (the card E1b check: EAGER must not wait much longer than the tuned run). */
+const MAIN_IDS = new Set(HOME_CHAPTERS.map((c) => c.sceneId));
+const longestBeatWait = (walls: { id: string; wall: number }[]): { min: number; id: string } => {
+  let prevWall = 0;
+  let best = { min: 0, id: '' };
+  for (const x of walls.filter((w) => MAIN_IDS.has(w.id)).sort((a, b) => a.wall - b.wall)) {
+    if ((x.wall - prevWall) / 60 > best.min) best = { min: (x.wall - prevWall) / 60, id: x.id };
+    prevWall = x.wall;
+  }
+  return best;
+};
+const tunedWait = longestBeatWait(r.scenes);
 applyCfg({ eager: true, bc: NEIGHBORHOODS.map((n) => (n.id === 'university' ? NEIGHBORHOODS.find((w) => w.id === 'waterfront')!.buildCost * 2 : NaN)) });
 const e = run('continuous', 0, 0, undefined, {});
 const ePlayed = new Set(e.scenes.map((x) => x.id));
@@ -148,12 +160,16 @@ const eWall = (id: string) => e.scenes.find((x) => x.id === id)?.wall;
 const uniBuilt = e.timeline.university?.build;
 const bidOpen = e.pier9Open?.wall;
 console.log(
-  `\nUniversity built before the bid (EAGER): University built ${uniBuilt === undefined ? 'never' : (uniBuilt / 60).toFixed(1) + ' min'}, bid open ${bidOpen === undefined ? 'never' : (bidOpen / 60).toFixed(1) + ' min'}, waterfront-4 ${eWall('waterfront-4') === undefined ? 'never' : ((eWall('waterfront-4') ?? 0) / 60).toFixed(1) + ' min'}, university-3 ${eWall('university-3') === undefined ? 'never' : ((eWall('university-3') ?? 0) / 60).toFixed(1) + ' min'}`,
+  `\nEAGER player, University built as early as the gate lets him: University built ${uniBuilt === undefined ? 'never' : (uniBuilt / 60).toFixed(1) + ' min'}, bid open ${bidOpen === undefined ? 'never' : (bidOpen / 60).toFixed(1) + ' min'}, waterfront-4 ${eWall('waterfront-4') === undefined ? 'never' : ((eWall('waterfront-4') ?? 0) / 60).toFixed(1) + ' min'}, university-3 ${eWall('university-3') === undefined ? 'never' : ((eWall('university-3') ?? 0) / 60).toFixed(1) + ' min'}`,
 );
 console.log(`  scenes ${ePlayed.size}/${HOME_SCENES.length} · city complete ${e.s.cityComplete}`);
+const eagerWait = longestBeatWait(e.scenes);
+console.log(
+  `longest wait between main beats: tuned ${tunedWait.min.toFixed(1)} min (${tunedWait.id}) · EAGER ${eagerWait.min.toFixed(1)} min (${eagerWait.id})`,
+);
 const eMissing = HOME_SCENES.filter((x) => !ePlayed.has(x.id)).map((x) => x.id);
 if (eMissing.length) {
-  console.error(`NOT ALL SCENES PLAY (University first): missing ${eMissing.join(', ')}`);
+  console.error(`NOT ALL SCENES PLAY (EAGER): missing ${eMissing.join(', ')}`);
   process.exitCode = 1;
 }
 if (process.env.DEBUG) {

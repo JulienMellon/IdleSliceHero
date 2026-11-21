@@ -144,6 +144,7 @@ Placeholders: `{target}` is the task's number from `docs/build/v5.21/chapters.md
 | --- | --- |
 | `chapter.ready` | Next scene in {time} |
 | `chapter.done` | Every chapter done. Victor is waiting in Boston. |
+| `chapter.buildLocked` | Finish Chapter {n} first |
 
 ## 5. Scene fixes
 

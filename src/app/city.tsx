@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityMap } from '@/components/city-map';
 import { Toast } from '@/components/game-ui';
-import { lotView } from '@/components/city-model';
+import { LOCKED_LOT_TAP, lotView } from '@/components/city-model';
 import { LockIcon } from '@/components/icons';
 import { cityOf } from '@/content/cities';
 import { CityPicker } from '@/components/franchise/city-picker';
@@ -60,6 +60,14 @@ export default function City() {
             if (game.shops[id].built) {
               setActive(id);
               router.back();
+            } else if (
+              lotView(
+                game,
+                NEIGHBORHOODS.find((n) => n.id === id)!,
+              ).kind === 'chapter'
+            ) {
+              // E1b: a lot held by a chapter opens the task list on its Story tab, where the chapter's tasks are
+              router.dismissTo(LOCKED_LOT_TAP);
             } else if (build(id)) router.back();
           }}
         />
@@ -79,12 +87,13 @@ export default function City() {
                 <Pressable
                   key={n.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`${n.name}: ${lot.rowSub}${lot.rowRight ? `. ${lot.rowRight}` : ''}`}
+                  accessibilityLabel={`${n.name}: ${lot.rowSub}${lot.rowRight ? `. ${lot.rowRight}` : ''}${lot.kind === 'chapter' ? '. Opens the Story tab' : ''}`}
                   accessibilityState={{ disabled: !lot.tappable }}
                   testID={`city-row-${n.id}`}
                   disabled={!lot.tappable}
                   onPress={() => {
-                    if (build(n.id)) router.back();
+                    if (lot.kind === 'chapter') router.dismissTo(LOCKED_LOT_TAP);
+                    else if (build(n.id)) router.back();
                   }}
                   style={[styles.row, styles.rowLocked, lot.kind === 'buildable' && { borderColor: C.cheeseDark, borderStyle: 'dashed', opacity: 1 }]}
                 >

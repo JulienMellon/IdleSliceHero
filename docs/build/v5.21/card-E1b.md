@@ -20,11 +20,11 @@ Scenes marked as path-independent, interludes and manager-hire scenes keep their
 - `docs/story/COPY-v5.21.md` and `src/content/copy/home/chapters.ts`, for the lock line only: one key, `chapter.buildLocked`, ≤ 32 chars, with `{n}` for the chapter number
 
 ## Steps
-- [ ] 1. Name the build-gate function and the UI file here. List every shop build and the chapter that must be done before it.
-- [ ] 2. Engine gate plus tests: the build is refused while the chapter is open and allowed once its beat has played. An old save that already owns the shop keeps it. Boston is untouched.
-- [ ] 3. UI lock line and tap-to-Story-tab, with a test.
-- [ ] 4. `npx tsx scripts/pacing-sim.ts 2>&1 | tail -12`: the tuned run's beats must not move more than they do now (only downtown-2 +8.9%). The EAGER run must not wait at any beat much longer than the tuned run does. Report the EAGER run's longest wait and the beat where it happens.
-- [ ] 5. Fixture: one shot of a locked build with its line, under `scripts/fixtures/` (follow `scripts/fixtures/README.md`).
+- [x] 1. Name the build-gate function and the UI file here. GATE: `buildLock` (src/engine/game.ts), asking `buildChapter` (src/engine/chapters.ts); `buildShop` calls it. UI: `lotView` in src/components/city-model.ts (model) + src/app/city.tsx (row and map tap). Each shop waits for the beat 3 of the shop before it: suburbs <- downtown-3 (the founder's takeover, downtown-4, already holds it), waterfront <- suburbs-3, university <- waterfront-3, industrial <- university-3, uptown <- industrial-3. List every shop build and the chapter that must be done before it.
+- [x] 2. Engine gate plus tests: the build is refused while the chapter is open and allowed once its beat has played. An old save that already owns the shop keeps it. Boston is untouched.
+- [x] 3. UI lock line and tap-to-Story-tab, with a test. (The lot sends `router.dismissTo(LOCKED_LOT_TAP)`; src/app/index.tsx must read the `tasks` param to open the list: out of scope, see report.)
+- [x] 4. `npx tsx scripts/pacing-sim.ts 2>&1 | tail -12`: the tuned run's beats must not move more than they do now (only downtown-2 +8.9%). The EAGER run must not wait at any beat much longer than the tuned run does. Report the EAGER run's longest wait and the beat where it happens.
+- [x] 5. Fixture: one shot of a locked build with its line, under `scripts/fixtures/` (follow `scripts/fixtures/README.md`).
 
 ## Checks
 `npx tsc --noEmit`, `npm test`, `npm run format:check`, the pacing line from step 4, and `--only <your fixture>`.

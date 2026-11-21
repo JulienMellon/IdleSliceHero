@@ -5,11 +5,13 @@
 import { t } from '../content/copy';
 import type { NeighborhoodDef } from '../content/tuning';
 import { money, pizzasLeft } from '../engine/format';
+import { cityOf } from '../content/cities';
+import { buildChapter, chapterNumber } from '../engine/chapters';
 import * as G from '../engine/game';
 
 export interface LotView {
-  /** built: a pizzeria; buildable: next in line and free to build; founder: next in line, held until the city's founder takes over; queued: waiting for the lot before it. */
-  kind: 'built' | 'buildable' | 'founder' | 'queued';
+  /** built: a pizzeria; buildable: next in line and free to build; founder: next in line, held until the city's founder takes over; chapter: next in line, held until the chapter of the shop before it has played (E1b); queued: waiting for the lot before it. */
+  kind: 'built' | 'buildable' | 'founder' | 'chapter' | 'queued';
   /** The caption on the map pin ("" for a built lot, which shows its income instead). */
   pin: string;
   /** C146: pies the first shop still has to deliver before the founder takes over, as a number (`piesToGo` formats it); null unless the lot is held by the takeover or it is due ("soon"). */
@@ -24,7 +26,7 @@ export interface LotView {
   locked: boolean;
   /** Dim the pin and the row: the lot is held back, not just waiting. */
   dim: boolean;
-  /** The row is tappable (build, or visit when built). */
+  /** The row is tappable (build, or visit when built; a lot held by a chapter opens the Story tab: `LOCKED_LOT_TAP`). */
   tappable: boolean;
 }
 
@@ -44,8 +46,25 @@ export function lotView(s: G.GameState, n: NeighborhoodDef): LotView {
       dim: false,
       tappable: false,
     };
-  // the only lock the next lot can have is Nonna's takeover (the previous lot is built by definition)
-  if (G.buildLock(s, n.id) !== null) {
+  // the next lot's locks are Nonna's takeover (the second lot) and then the story of the shop before it (E1b); the previous lot is built by definition
+  const lock = G.buildLock(s, n.id);
+  const city = cityOf(s);
+  const takeoverHeld = city.neighbourhoods[1]?.id === n.id && !s.seenScenes.includes(city.fit.takeover.sceneId);
+  const held = lock !== null && !takeoverHeld ? buildChapter(s, n.id) : null;
+  if (held) {
+    return {
+      kind: 'chapter',
+      pin: `Chapter ${chapterNumber(s, held)}`,
+      pinsLeft: null,
+      founder: null,
+      rowSub: lock!,
+      rowRight: null,
+      locked: true,
+      dim: true,
+      tappable: true,
+    };
+  }
+  if (lock !== null) {
     const left = G.founderPizzasLeft(s);
     const founder = G.founderName(s);
     return {
@@ -75,3 +94,6 @@ export function lotView(s: G.GameState, n: NeighborhoodDef): LotView {
 
 /** The countdown under a held lot's tab ("2.21K pies to go", "1 pie to go"), formatted from `LotView.pinsLeft` (C146); the city's own words when it has them. */
 export const piesToGo = (left: number, city?: string): string => t(left <= 1 ? 'lot.piesToGo.one' : 'lot.piesToGo', { n: pizzasLeft(left) }, city);
+
+/** Where a tap on a lot held by a chapter goes (`LotView.kind` 'chapter'): the shop, with the task list open on its Story tab (the shop screen reads `tasks`). */
+export const LOCKED_LOT_TAP = { pathname: '/', params: { tasks: 'story' } } as const;
