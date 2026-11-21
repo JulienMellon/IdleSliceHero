@@ -263,6 +263,13 @@ export default function GameScreen() {
     else if (drawerWas.current) noteCoach('drawer-closed');
     drawerWas.current = drawerOpen;
   }, [drawerOpen, noteCoach]);
+  // a look step ends by itself even when its overlay cannot be drawn (the target is not mounted, another shop is on screen): the overlay's own 2.5 s comes first
+  const lookId = coach && coach.mode === 'look' && coach.id !== 13 ? coach.id : 0;
+  useEffect(() => {
+    if (!lookId) return;
+    const timer = setTimeout(() => noteCoach('look'), 6000);
+    return () => clearTimeout(timer);
+  }, [lookId, noteCoach]);
   // step 13's look lasts 2.5 s (or a tap); then the scrim goes and only her card stays, so the hire card and Close can be tapped
   const [lookedAt, setLookedAt] = useState(0);
   const onLook = useCallback(() => {

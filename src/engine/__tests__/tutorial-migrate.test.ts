@@ -62,3 +62,18 @@ describe('the tutorial in a v6 save', () => {
     expect(G.migrate(raw, 0).tutorial).toBe(10);
   });
 });
+
+describe('a first shop that runs itself ends the tutorial (no overlay is drawn on it, so a look step could never end)', () => {
+  test.each([1, 5, 6, 7, 8, 9, 10])('a managed v6 save at old step %i loads as done', (before) => {
+    const raw = old(before);
+    raw.shops.downtown.managed = true;
+    expect(G.migrate(raw, 0).tutorial).toBe(16);
+  });
+  test('a managed v7 save at any step loads as done', () => {
+    for (const t of [6, 11, 12, 13, 15]) {
+      const raw = { ...old(t), saveVersion: 7 };
+      raw.shops.downtown.managed = true;
+      expect(G.migrate(raw, 0).tutorial).toBe(16);
+    }
+  });
+});

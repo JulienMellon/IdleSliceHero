@@ -128,6 +128,27 @@ describe('tutorial', () => {
     expect(coachStep(s)).toBeNull();
     expect(seen).toEqual([1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15, TUTORIAL_DONE]);
   });
+  // the screen-ended steps (6, 11, 12, 13, 15) in every state they can be in: managed or not, a note or not
+  describe.each([6, 11, 12, 13, 15])('step %i', (n) => {
+    const at = (managed: boolean) => {
+      const g = { ...opened(), tutorial: n };
+      return { ...g, shops: { ...g.shops, downtown: { ...g.shops.downtown, managed, sold: 5 } } };
+    };
+    test('a shop that runs itself: the tutorial is over at the next advance, the coach gone, and no note is needed', () => {
+      const g = at(true);
+      expect(coachStep(g)).toBeNull();
+      const next = tutorialAdvance(g);
+      expect(next.tutorial).toBe(TUTORIAL_DONE);
+      expect(tutorialHoldsStory(next)).toBe(false);
+    });
+    test('a shop tapped by hand: the step waits for the screen, which ends it', () => {
+      const g = at(false);
+      expect(coachStep(g)?.id).toBe(n);
+      expect(tutorialAdvance(g).tutorial).toBe(n);
+      const note = { 6: 'look', 11: 'look', 12: 'drawer-open', 13: 'drawer-closed', 15: 'look' }[n] as 'look' | 'drawer-open' | 'drawer-closed';
+      expect(tutorialNote(g, note).tutorial).toBeGreaterThan(n);
+    });
+  });
   test('step 6 waits for the first sale: no look note before it', () => {
     const g = opened();
     const six = { ...g, tutorial: 6 };

@@ -124,6 +124,8 @@ function done(s: G.GameState, id: number): boolean {
 /** Move past every finished step (several can finish at once). Starts once the opening scene has played. */
 export function tutorialAdvance(s: G.GameState): G.GameState {
   let t = s.tutorial;
+  // a first shop that runs itself has no coach (no overlay is drawn there), so a step only the overlay can end must not hold the tutorial open: it is over
+  if (t >= 1 && t < TUTORIAL_DONE && s.shops[first(s)].managed) return { ...s, tutorial: TUTORIAL_DONE };
   if (t === 0 && s.seenScenes.includes(G.sceneId(first(s), 1))) t = 1;
   while (t >= 1 && t < TUTORIAL_DONE && done(s, t)) t++;
   return t === s.tutorial ? s : { ...s, tutorial: t };
