@@ -5,7 +5,7 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 ```
 version: 5.20                   # v5.19-test closed 2026-11-19 (r1: critic SATISFIED, codecritic APPROVED)
 step: fix                          # setup | waves | verify | review | fix | close
-round: r1              # r1 | r2 | r3
+round: r2              # r1 | r2 | r3
 last_shots: v5.20                  # r1 verify: True 0 [], layout 0 new; 17 new 12 changed vs v5.20-base
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
@@ -45,3 +45,4 @@ next: start S7-v5.20.md. v5.20 scope set by Julien 2026-11-20 (docs/PLAN-v5.20-o
 - 2026-11-21 S7 C3 fixed stuck tutorial (managed first shop ends it; look steps self-end after 6 s; migration), 2743/2743. Verify rerun.
 - 2026-11-21 S7 verify v5.20 pass: True 0 [], layout 0, 17 new 12 changed. r1 reviews launched (critic, codecritic, storycritic).
 - 2026-11-21 S7 r1 gate not met (critic NOT SATISFIED bug 1 major 3; story major S68; code APPROVED). Fix round r2 next; D521 asked of Julien.
+- 2026-11-21 S7 Julien on D521/D522: drop the 'no gain now' label, keep the Ovens step, step 11 shows the oven's gain. r2 fixes: C1 (U) + C2 (S) running; then W1 (T) + U0 (U); then C3 (E/U + label drop).
