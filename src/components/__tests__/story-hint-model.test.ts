@@ -1,7 +1,6 @@
 /// <reference types="jest" />
-// v5.16 (T1b): the story wait hint is a one-line banner in the waiting neighbourhood's drawer, and only there.
+// v5.16 (T1b): the story wait hint's text rules (the engine no longer says it, v5.21: the chapter task does).
 import type { NeighborhoodId } from '../../content/types';
-import * as G from '../../engine/game';
 import { HINT_FONT, hintFit, hintForHood } from '../cutscene/story-hint-model';
 
 import { NEIGHBORHOODS } from '../../content/cities/home/data';
@@ -25,16 +24,6 @@ describe('story wait hint banner', () => {
     // an Uptown hint ("...continue Uptown's story") is not University's even though University is named as the finale to win
     expect(hintForHood('Win over University to continue Uptown’s story', 'university')).toBeNull();
     expect(hintForHood('Save Marisol’s dock to continue University’s story', 'university')).toBe('Save Marisol’s dock to continue University’s story');
-    // and it works on a real game state
-    const g: G.GameState = {
-      ...G.newGame(0),
-      seenScenes: ['uptown-1', 'uptown-2'],
-      shops: { ...G.newGame(0).shops, uptown: { ...G.newGame(0).shops.uptown, built: true, sold: 700000 } },
-    };
-    const hint = G.storyWaitHint(g);
-    expect(hint).toBe('Win over Industrial to continue Uptown’s story');
-    expect(hintForHood(hint, 'uptown')).toBe(hint);
-    expect(hintForHood(hint, 'industrial')).toBeNull();
   });
 
   test('every sentence the engine can say fits one line at 10 pt or more on every phone width', () => {

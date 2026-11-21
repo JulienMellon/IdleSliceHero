@@ -6,6 +6,7 @@ import { HOME_CITY } from '../../content/cities/home';
 import { getFeature } from '../features';
 import { ackMastery, mastery, masteryStars, masteryTotal, nextStar, shopStars } from '../features/mastery';
 import * as G from '../game';
+import { sameSlices } from './chapter-helpers';
 
 import { FOOTPRINTS, OVEN_GRADES } from '../../content/cities/home/fit';
 import { NEIGHBORHOODS } from '../../content/cities/home/data';
@@ -61,7 +62,7 @@ describe('one-time pay', () => {
     expect(state(a).fresh).toEqual([{ kind: 'star', shopId: 'suburbs', star: 'heads' }]);
     expect(state(a).announced).toEqual(['suburbs:heads']);
     // nothing owed: the same object comes back, and the diamonds stay
-    expect(tick(a).x).toBe(a.x);
+    expect(sameSlices(tick(a).x, a.x)).toBe(true);
     const b = tick(withShop(a, 'downtown', { footprint: topFootprint }));
     expect(b.rewards.diamonds).toBe(2 * MASTERY.starDiamonds);
     // a star lost and earned again does not pay twice
@@ -98,7 +99,7 @@ describe('milestone cosmetics', () => {
     g = tick(mastered(g, 6));
     expect(g.rewards.cosmetics).toEqual([WEEKLY_COSMETICS[0], WEEKLY_COSMETICS[1], MASTERY.masterCosmetic]);
     expect(g.rewards.diamonds).toBe(18 * MASTERY.starDiamonds);
-    expect(tick(g).x).toBe(g.x);
+    expect(sameSlices(tick(g).x, g.x)).toBe(true);
   });
 
   it('skips a weekly cosmetic the player already owns', () => {
@@ -125,7 +126,7 @@ describe('a v5.14 save', () => {
     expect(state(a).summary).toEqual({ stars: 6, diamonds: 60, cosmetics: [WEEKLY_COSMETICS[0]] });
     expect(state(a).fresh).toEqual([]); // no toast flood
     expect(a.rewards.worn).toEqual([WEEKLY_COSMETICS[0]]);
-    expect(tick(a).x).toBe(a.x);
+    expect(sameSlices(tick(a).x, a.x)).toBe(true);
     expect(state(ackMastery(a)).summary).toBeNull();
   });
 

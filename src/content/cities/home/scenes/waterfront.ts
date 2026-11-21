@@ -193,7 +193,7 @@ export const WATERFRONT_SCENES: Scene[] = [
         cast: [{ id: 'marisol', mood: 'happy' }],
         lines: [
           { speaker: 'Captain Marisol', text: "Auction's open, kid. They raise every two minutes. Beat 'em to it." },
-          { speaker: 'Captain Marisol', text: 'Tap the bid on your goal bar when the cash is in. All hands!' },
+          { speaker: 'Captain Marisol', text: 'Bid from your Waterfront shop when the cash is in. All hands!' },
         ],
       },
     ],

@@ -4,6 +4,7 @@ import type { NeighborhoodId } from '../../content/types';
 import { getFeature } from '../features';
 import { ackRecipes, cardEarned, collectionView, ownedIn, recipes } from '../features/recipes';
 import * as G from '../game';
+import { sameSlices } from './chapter-helpers';
 
 import { NEIGHBORHOODS } from '../../content/cities/home/data';
 const T0 = 1_700_000_000_000;
@@ -62,7 +63,7 @@ describe('the cards', () => {
   it('a card drops once, and keeps its place if the condition lapses', () => {
     let g = tick(withShop(synced(), 'suburbs', { prep: 50 }));
     const x = g.x;
-    expect(tick(g).x).toBe(x);
+    expect(sameSlices(tick(g).x, x)).toBe(true);
     g = tick(withShop(g, 'suburbs', { prep: 10 }));
     expect(owned(g)).toEqual(['recipe.suburbs.1']);
   });
@@ -71,7 +72,7 @@ describe('the cards', () => {
     const g0 = synced();
     const g = tick({ ...g0, rewards: { ...g0.rewards, diamonds: 1e6, boosters: [{ mult: 2, seconds: 60 }], cosmetics: ['oven-gold'], worn: ['oven-gold'] } });
     expect(owned(g)).toEqual([]);
-    expect(g.x).toBe(g0.x);
+    expect(sameSlices(g.x, g0.x)).toBe(true);
   });
 });
 

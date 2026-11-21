@@ -1,8 +1,9 @@
 // Pure helpers for the cut-scene player and the store's scene gate (kept in .ts so they are unit-testable in node).
 import type { Scene, SceneLine } from '../content/types';
 import { STORY_PACING } from '../content/tuning';
-import { cityOf, findHood } from '../content/cities';
-import { pendingScenes, sceneId, type GameState } from './game';
+import { findHood } from '../content/cities';
+import { pendingScenes, type GameState } from './game';
+import { sceneWaitSeconds } from './story';
 
 /** Taps are ignored for this long after a line appears, so a tapping player can't blow past it. */
 export const LINE_LOCKOUT_MS = 450;
@@ -48,16 +49,8 @@ export const scenePacesGap = (scene: Pick<Scene, 'trigger'>): boolean => scene.t
  * this session, or null right after a launch or return, when one waiting beat may play straight away.
  */
 export function sceneReady(game: GameState, scene: Scene, lastSceneEndPlay: number | null): boolean {
-  const kind = scene.trigger.kind;
-  // the player caused it: a new pizzeria, the Pier 9 bid, a won challenge, a hired manager. (The finale wait for a challenge gates when it is offered: `challengeOffered`.)
-  if (kind === 'unlock' || kind === 'bid' || kind === 'challenge' || kind === 'manager') return true;
-  if (lastSceneEndPlay !== null && game.playSeconds - lastSceneEndPlay < STORY_PACING.gapSeconds) return false;
-  if (scene.beat === 4) {
-    const beat3 = game.sceneAt[sceneId(scene.neighborhood, 3)];
-    const gap = scene.neighborhood === cityOf(game).neighbourhoods[0].id ? STORY_PACING.firstHoodBeat4GapSeconds : STORY_PACING.beat4GapSeconds;
-    if (beat3 !== undefined && game.playSeconds - beat3 < gap) return false;
-  }
-  return true;
+  // the one rule is story.ts's `sceneWaitSeconds` (the goal bar's countdown reads it too)
+  return sceneWaitSeconds(game, scene, lastSceneEndPlay) === 0;
 }
 
 /** The scene to open now, or null while one is playing, the player is still tapping the kitchen, or pacing holds it back. */

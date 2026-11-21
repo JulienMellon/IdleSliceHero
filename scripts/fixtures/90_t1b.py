@@ -82,15 +82,6 @@ def run(ctx):
         tid(page, "scene-suburbs-hire").scroll_into_view_if_needed()
     shot(page, "95-scrapbook-interludes", 0.6)
 
-    # 96: Uptown's act 3 is held behind Industrial's finale: the drawer says so on one line
-    held = [i for i in SEEN if i not in ("uptown-2b", "uptown-3", "uptown-3b", "uptown-4", "industrial-4")]
-    page = seeded_page(b, story_save("uptown", seen=held, sold=700000, managed=False))
-    settle(page, 2.0)
-    tid(page, "open-upgrades").click()
-    if expect(page, "story-wait-hint"):
-        tid(page, "story-wait-hint").scroll_into_view_if_needed()
-    shot(page, "96-uptown-wait-hint", 0.6)
-
     # 139: Waterfront's manager runs the shop: Skip's badge at the end of the station rail and on every station he runs
     page = seeded_page(b, story_save("waterfront", managed=True))
     settle(page, 2.0)

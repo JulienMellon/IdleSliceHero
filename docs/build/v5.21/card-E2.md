@@ -8,10 +8,10 @@
 - Own: `src/engine/tutorial.ts`, its tests, the coach block of `src/app/index.tsx` (the drawer-open signal only), one fixture `scripts/fixtures/<next free number>_e2.py`.
 
 ## Steps
-- [ ] **1.** `CHAPTERS_ON = true` (or remove the constant). Step 7: `hud:goal`, tap, ends when the task list is open. Step 8: `tasks:story`, look, ends when the list is closed (`tasks:close`).
-- [ ] **2.** Chapter 1's tasks are the tutorial's (bake, serve, earn $10, second oven, hire Marco); at step 8 the first three are done. The bar during step 9 shows "Second oven" with `$12/$25`-style progress, so step 9's line can point at it.
-- [ ] **3.** Saves are unaffected: v5.20 never stored 7 or 8, and a save at 9 or later keeps its step (it doesn't go back to 7).
-- [ ] **4. Tests and fixture:** steps 7 and 8 with shots.
+- [x] **1.** `CHAPTERS_ON = true` (or remove the constant). Step 7: `hud:goal`, tap, ends when the task list is open. Step 8: `tasks:story`, look, ends when the list is closed (`tasks:close`).
+- [x] **2.** Chapter 1 (serve 1, serve 4, hire the prep head; no purchase task, per VERSION Defaults) stays current through the tutorial: the bar and Story tab show it at steps 7 and 8; step 9 has no "Second oven" bar.
+- [x] **3.** Saves are unaffected: v5.20 never stored 7 or 8, and a save at 9 or later keeps its step (it doesn't go back to 7).
+- [x] **4. Tests and fixture:** steps 7 and 8 with shots.
 
 ## Checks
 `npx tsc --noEmit`; `npx jest src/engine`; `npm run format:check`.

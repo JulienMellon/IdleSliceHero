@@ -1,8 +1,9 @@
 // Nonna's Chapter 1 script (v5.20, card C3): 15 steps, each with her line (a copy key, content/copy/home/tutorial.ts), the spots of the screen it
 // lights (coach targets, components/coach/targets.ts), a mode (what the player can do meanwhile) and a condition that ends it.
 // Pure: the step number is saved (GameState.tutorial); an existing player who has already sold pizza starts at "done".
-// Most steps end on the game's own state. Three kinds end on something only the screen knows, which it tells us through `tutorialNote`:
-// a `look` step (6, 11, 15) once it has been seen (a tap, or the overlay's `LOOK_MS`; `LOOK_FALLBACK_MS` when it cannot be drawn), the drawer opening (12) and the drawer closing (13).
+// Most steps end on the game's own state. Some end on something only the screen knows, which it tells us through `tutorialNote`:
+// a `look` step (6, 11, 15) once it has been seen (a tap, or the overlay's `LOOK_MS`; `LOOK_FALLBACK_MS` when it cannot be drawn), the task list opening (7) and closing (8),
+// the upgrades drawer opening (12) and closing (13).
 import { cityOf, type CityDef } from '../content/cities';
 import { t } from '../content/copy';
 import type { CoachMode, CoachTargetId } from './coach-types';
@@ -23,9 +24,6 @@ export interface CoachStep {
 
 export const TUTORIAL_DONE = G.TUTORIAL_DONE;
 
-/** The task-list steps (7 and 8) wait for the chapters (v5.21): until then they are skipped. */
-export const CHAPTERS_ON = false;
-
 /** The neighbourhood the tutorial is played in: the city's first (card K1). */
 const first = (s: G.GameState) => G.firstHood(cityOf(s));
 
@@ -38,8 +36,8 @@ const DEFS: readonly Def[] = [
   { targets: ['station:oven', 'dial:oven'], mode: 'wait' }, // 4
   { targets: ['station:counter'], mode: 'tap' }, // 5
   { targets: ['hud:cash'], mode: 'look' }, // 6
-  { targets: ['hud:goal'], mode: 'tap' }, // 7 (v5.21)
-  { targets: [], mode: 'look' }, // 8: the task list (v5.21)
+  { targets: ['hud:goal'], mode: 'tap' }, // 7: Nonna keeps a list; the goal bar opens it (v5.21)
+  { targets: ['tasks:story'], mode: 'look' }, // 8: the list's Story tab; ends when the list is closed
   { targets: [], mode: 'free' }, // 9: save up for the oven upgrade
   { targets: ['walk:ovens'], mode: 'tap' }, // 10
   { targets: ['ovens:all', 'dial:oven'], mode: 'look' }, // 11: the oven bakes faster (its gain tag) and the dial shows it
@@ -61,15 +59,12 @@ export function stepsFor(city: CityDef): readonly CoachStep[] {
   return steps;
 }
 
-/** The step the saved number stands for: 7 and 8 are skipped while the chapters are off. */
-const effective = (n: number) => (!CHAPTERS_ON && (n === 7 || n === 8) ? 9 : n);
-
 /** The step as it stands, without its line: which step, its copy key and mode. Cheap (no copy lookup, no money text): the per-frame questions ask this. */
 function current(s: G.GameState): { step: CoachStep; key: string; mode: CoachMode; ovens: number | null } | null {
   if (s.tutorial < 1 || s.tutorial >= TUTORIAL_DONE || s.shops[first(s)].managed) return null;
   const city = cityOf(s);
   const steps = stepsFor(city);
-  let step = steps[effective(s.tutorial) - 1];
+  let step = steps[s.tutorial - 1];
   let key = step.key;
   const ovens = G.upgradeCostOf(s, first(s), 'ovens');
   // D374: the Ovens cash went elsewhere (drivers, say): back to "save up" until it's there again
@@ -111,9 +106,6 @@ function done(s: G.GameState, id: number): boolean {
       return !l.oven && (l.baked > 0 || !!l.counter);
     case 5:
       return !!l.counter || l.boxed > 0 || l.departures.length > 0 || d.sold > 0;
-    case 7:
-    case 8:
-      return !CHAPTERS_ON;
     case 9:
       return d.ovens > 1 || G.canAfford(s, G.upgradeCostOf(s, first(s), 'ovens'));
     case 10:
@@ -124,7 +116,7 @@ function done(s: G.GameState, id: number): boolean {
     case 14:
       return d.heads.prep;
     default:
-      // 6, 11, 15: the screen says
+      // 6, 7, 8, 11, 15: the screen says
       return false;
   }
 }
@@ -139,9 +131,17 @@ export function tutorialAdvance(s: G.GameState): G.GameState {
   return t === s.tutorial ? s : { ...s, tutorial: t };
 }
 
-/** What the screen can tell the tutorial: a `look` step was seen (a tap, or the overlay's `LOOK_MS`; `LOOK_FALLBACK_MS` when it cannot be drawn), the upgrades drawer opened, the drawer closed. */
-export type TutorialNote = 'look' | 'drawer-open' | 'drawer-closed';
-const ENDED_BY: Readonly<Record<number, TutorialNote>> = { 6: 'look', 11: 'look', 12: 'drawer-open', 13: 'drawer-closed', 15: 'look' };
+/** What the screen can tell the tutorial: a `look` step was seen (a tap, or the overlay's `LOOK_MS`; `LOOK_FALLBACK_MS` when it cannot be drawn), the task list opened or closed, the upgrades drawer opened or closed. */
+export type TutorialNote = 'look' | 'tasks-open' | 'tasks-closed' | 'drawer-open' | 'drawer-closed';
+const ENDED_BY: Readonly<Record<number, TutorialNote>> = {
+  6: 'look',
+  7: 'tasks-open',
+  8: 'tasks-closed',
+  11: 'look',
+  12: 'drawer-open',
+  13: 'drawer-closed',
+  15: 'look',
+};
 
 /** The screen's say-so: ends the current step when it is the one waiting for this note, and moves on over any step that is already finished. Anything else changes nothing. */
 export function tutorialNote(s: G.GameState, note: TutorialNote): G.GameState {

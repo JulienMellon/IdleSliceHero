@@ -10,14 +10,13 @@
 // A component reads what it needs from the store with PRIMITIVE selectors and returns null when it has nothing to show.
 // An empty array renders nothing and adds no wrapper view. `order` sorts ascending; ties keep insertion order.
 import { memo, type ComponentType } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { offlineCapOf, storyWaitHint, type GameState } from '../engine/game';
+import { offlineCapOf } from '../engine/game';
 import { hoursText } from '../engine/night-oven';
 import { rewardsUnlocked } from '../engine/rewards';
 import { useGame } from '../store/game-store';
-import { C, F } from '../theme';
-import { hintFit, hintForHood } from './cutscene/story-hint-model';
+import { F } from '../theme';
 import { BannerStack } from './endgame/banner-stack';
 import { DiamondChip } from './endgame/diamond-chip';
 import { EventChip } from './endgame/event-chip';
@@ -153,37 +152,6 @@ const NightOvenChip = memo(function NightOvenChip() {
   );
 });
 
-// U18: storyWaitHint walks every scene; the store sets at 5 Hz, so it runs once a play second (and when a scene is seen), not per set
-let waitSeen: GameState['seenScenes'] | null = null;
-let waitSecond = -1;
-let waitText: string | null = null;
-function waitHintOnce(g: GameState): string | null {
-  const sec = Math.floor(g.playSeconds);
-  if (g.seenScenes !== waitSeen || sec !== waitSecond) {
-    waitSeen = g.seenScenes;
-    waitSecond = sec;
-    waitText = storyWaitHint(g);
-  }
-  return waitText;
-}
-
-/**
- * v5.16 (T1b): "Win over Industrial to continue Uptown’s story" (storyWaitHint), one line at the top of the waiting neighbourhood's drawer, in the
- * drawer banner's style (the Nonna countdown's: cream, ink text). It selects a string, so it repaints only when the words change.
- */
-export const StoryWaitBanner = memo(function StoryWaitBanner() {
-  const text = useGame((s) => hintForHood(waitHintOnce(s.game), s.game.active));
-  const { width } = useWindowDimensions();
-  if (!text) return null;
-  return (
-    <View testID="story-wait-hint" style={styles.waitHint} accessibilityRole="text">
-      <Text style={[styles.waitHintText, { fontSize: hintFit(text, width).fontSize }]} numberOfLines={1} maxFontSizeMultiplier={1.1}>
-        {text}
-      </Text>
-    </View>
-  );
-});
-
 export const HUD_CHIPS: SlotEntry[] = [
   { id: 'night-oven', order: 10, Component: NightOvenChip },
   // v5.15 (U1): the event countdown in the hour before an event
@@ -252,14 +220,4 @@ export const SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] = [
 const styles = StyleSheet.create({
   ovenChip: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
   ovenPillText: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: '#fff' },
-  waitHint: {
-    width: '100%',
-    backgroundColor: '#FFE7C2',
-    borderRadius: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderWidth: 1.5,
-    borderColor: C.cheeseDark,
-  },
-  waitHintText: { fontFamily: F.semi, color: C.ink, textAlign: 'center' },
 });

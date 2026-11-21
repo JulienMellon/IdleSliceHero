@@ -2,6 +2,7 @@ import { HOME_SCENES } from '../../content/scenes/home';
 import { TUNING } from '../../content/tuning';
 import { goalAmount, money, pizzasLeft, rate } from '../format';
 import * as G from '../game';
+import { withTasksDone } from './chapter-helpers';
 
 import { NONNA_TAKEOVER } from '../../content/cities/home/fit';
 const rich = (s: G.GameState): G.GameState => ({ ...s, cash: 1e15 });
@@ -86,7 +87,7 @@ describe('frugal path (playtest UX)', () => {
   });
   it('a save already past the trigger counts as done (no soft-lock)', () => {
     const s = rich(G.newGame(0));
-    const past = { ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, sold: NONNA_TAKEOVER.pizzas + 3000 } } };
+    const past = withTasksDone({ ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, sold: NONNA_TAKEOVER.pizzas + 3000 } } });
     expect(G.founderPizzasLeft(past)).toBe(0);
     expect(G.pendingScenes(past, HOME_SCENES).map((x) => x.id)).toContain('downtown-4');
     expect(G.founderPizzasLeft({ ...past, seenScenes: ['downtown-4'] })).toBe(0);

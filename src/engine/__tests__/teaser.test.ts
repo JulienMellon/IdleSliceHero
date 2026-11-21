@@ -1,6 +1,7 @@
 /// <reference types="jest" />
 import { HOME_SCENES } from '../../content/scenes/home';
 import * as G from '../game';
+import { withTasksDone } from './chapter-helpers';
 import { commas, nextSceneTeaser, ringStep, TEASER_COMPLETE, teaserStep } from '../teaser';
 
 import { PIER9_BID } from '../../content/cities/home/data';
@@ -79,7 +80,7 @@ describe('nextSceneTeaser: one test per trigger kind', () => {
   });
 
   test('a scene already due is "in a moment" at a full ring', () => {
-    const s = withShop(before('suburbs-2'), 'suburbs', { built: true, sold: countOf('suburbs-2') + 5000 });
+    const s = withTasksDone(withShop(before('suburbs-2'), 'suburbs', { built: true, sold: countOf('suburbs-2') + 5000 }));
     const t = nextSceneTeaser(s);
     expect(t.kind).toBe('soon');
     expect(t.text).toBe("Next: Dale's story continues in a moment");

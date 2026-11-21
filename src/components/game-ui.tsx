@@ -10,7 +10,21 @@ import type { NightOvenView } from '../engine/night-oven';
 import { C, F } from '../theme';
 import { useCoachTarget } from './coach/targets';
 import { cashFont, HUD_GAP, HUD_ICON, MIN_FONT, rateLine } from './endgame/fit-model';
-import { GOAL_BAR, GOAL_FONT_MAX_SCALE, GOAL_GAP, GOAL_LAYOUT, GOAL_PAD, goalBarLayout, goalLine, goalWords, type GoalSpan } from './goal-model';
+import {
+  GOAL_BAR,
+  GOAL_CHEVRON,
+  GOAL_FLASH_MS,
+  GOAL_FONT_MAX_SCALE,
+  GOAL_GAP,
+  CHEER_RIBBON_MS,
+  GOAL_LAYOUT,
+  GOAL_PAD,
+  goalBarLayout,
+  goalLine,
+  goalWords,
+  type GoalCheer,
+  type GoalSpan,
+} from './goal-model';
 import { buyLabelText } from './a11y-labels';
 import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, SliceIcon, StarIcon } from './icons';
 import { countUpValue, offlineGiftView, type GiftSummary } from './offline-model';
@@ -259,7 +273,12 @@ export interface Goal {
   text?: string;
   /** Shown instead of the amount, e.g. a trophy. */
   icon?: React.ReactNode;
-  onPress?: () => boolean;
+  /** What a tap does (the chapter goal opens the task list). */
+  onPress?: () => boolean | void;
+  /** What the goal is: when it changes the bar flashes once (the chapter goal's task key). */
+  key?: string;
+  /** A full bar that says so: basil, its words white (a done chapter waiting on the story's pacing). */
+  ready?: boolean;
 }
 
 export function Hud({
@@ -278,6 +297,7 @@ export function Hud({
   chips,
   scrapRing,
   coachLit = false,
+  cheer = null,
 }: {
   /** G98: small round chips in the top row, after the gift (the HUD_TOP_CHIPS slot); the goal bar keeps its width. */ topChips?: React.ReactNode;
   /** The chips at the end of the goal row (the HUD_CHIPS slot); the screen passes `<Slots items={HUD_CHIPS} />`. */ chips?: React.ReactNode;
@@ -295,6 +315,8 @@ export function Hud({
   giftDot?: boolean;
   /** A coach step is lit on something else: the goal's green "tap!" pill stays quiet, so the screen has one call to action (S69). */
   coachLit?: boolean;
+  /** D541: the goal's task was just done: a tick pops on the bar, and a done chapter gets a ribbon. `id` is new for each one. */
+  cheer?: (GoalCheer & { id: number }) | null;
 }) {
   const shown = useCountUp(cash);
   const [flash] = useState(() => new Animated.Value(1));
@@ -329,8 +351,41 @@ export function Hud({
   const onAmount = useCallback((span: GoalSpan) => setAmountSpan((p) => (p && p.x === span.x && p.w === span.w ? p : span)), []);
   // spans measured for another label (the goal just changed) are not used: until the new line reports, the seam is exact
   const measuredSpans = words.label === shownLabel && amountSpan ? [...words.spans, amountSpan] : [];
-  const bar = goalBarLayout(goal?.current ?? 0, goal?.target ?? 0, !!goal?.onPress && !coachLit, goalW, measuredSpans);
+  const bar = goalBarLayout(goal?.current ?? 0, goal?.target ?? 0, !!goal?.ready && !coachLit, goalW, measuredSpans);
   const { pct, ready } = bar;
+  // a task completing: the bar flashes once (opacity only, so Reduce Motion needs no other form) and moves on to the next task
+  const goalKey = goal?.key;
+  const [goalFlash] = useState(() => new Animated.Value(0));
+  const lastKey = useRef(goalKey);
+  useEffect(() => {
+    if (lastKey.current === goalKey) return;
+    const had = lastKey.current !== undefined;
+    lastKey.current = goalKey;
+    if (!had || goalKey === undefined) return;
+    goalFlash.setValue(1);
+    Animated.timing(goalFlash, { toValue: 0, duration: GOAL_FLASH_MS, useNativeDriver: native }).start();
+  }, [goalKey, goalFlash]);
+  // D541: the tick pops on the bar (spring in, hold, fade) and a finished chapter's ribbon rides under it for a moment
+  const [tickPop] = useState(() => new Animated.Value(0));
+  const [ribbonShow] = useState(() => new Animated.Value(0));
+  const [ribbonOn, setRibbonOn] = useState(false);
+  useEffect(() => {
+    if (!cheer) return;
+    tickPop.setValue(0);
+    Animated.sequence([
+      Animated.spring(tickPop, { toValue: 1, friction: 4, tension: 160, useNativeDriver: native }),
+      Animated.delay(450),
+      Animated.timing(tickPop, { toValue: 0, duration: 200, useNativeDriver: native }),
+    ]).start();
+    if (!cheer.chapter) return;
+    setRibbonOn(true);
+    ribbonShow.setValue(0);
+    Animated.sequence([
+      Animated.timing(ribbonShow, { toValue: 1, duration: 220, useNativeDriver: native }),
+      Animated.delay(CHEER_RIBBON_MS),
+      Animated.timing(ribbonShow, { toValue: 0, duration: 300, useNativeDriver: native }),
+    ]).start(() => setRibbonOn(false));
+  }, [cheer, tickPop, ribbonShow]);
   return (
     <View style={styles.hud}>
       <View style={styles.hudTop}>
@@ -350,14 +405,14 @@ export function Hud({
             </View>
           )}
         </Pressable>
-        {/* v5.4: the clipboard and the gift show once rewards unlock (their handlers are passed) */}
+        {/* v5.21: the clipboard shows from the start of the game (the task list); the gift once rewards unlock (its handler is passed) */}
         {onTasks && (
           <Pressable
             onPress={onTasks}
             style={styles.hudIcon}
             testID="open-tasks"
             accessibilityRole="button"
-            accessibilityLabel={tasksBadge > 0 ? `Daily and weekly tasks, ${tasksBadge} ready` : 'Daily and weekly tasks'}
+            accessibilityLabel={tasksBadge > 0 ? `Task list, ${tasksBadge} ready` : 'Task list'}
             hitSlop={HUD_BUTTON_SLOP.tasks}
           >
             <ClipboardIcon size={30} />
@@ -426,7 +481,7 @@ export function Hud({
           <Pressable
             testID="goal"
             accessibilityRole="button"
-            accessibilityLabel={`${ready ? 'Ready: ' : 'Goal: '}${goal.label}, ${goalAmount(goal.current, goal.target)}${ready ? '. Tap to buy' : ''}`}
+            accessibilityLabel={`${ready ? 'Ready: ' : 'Goal: '}${goal.label}, ${shownText ?? goalAmount(goal.current, goal.target)}. Opens the task list`}
             accessibilityState={{ disabled: !goal.onPress }}
             disabled={!goal.onPress}
             onPress={() => {
@@ -440,13 +495,14 @@ export function Hud({
               <View style={[styles.goalFill, goalW > 0 ? { width: bar.fillW } : { width: `${pct * 100}%` }, ready && { backgroundColor: C.basil }]} />
               <GoalLine
                 key={ready ? 'ready' : shownLabel}
-                label={ready ? `▶ ${shownLabel}` : shownLabel}
-                amount={ready ? 'tap!' : (shownText ?? goalAmount(goal.current, goal.target))}
+                label={shownLabel}
+                amount={shownText ?? goalAmount(goal.current, goal.target)}
                 icon={goal.icon}
                 tone={ready ? 'ready' : 'track'}
                 onSpans={ready ? undefined : onWords}
                 onAmount={ready ? undefined : onAmount}
               />
+              <Animated.View pointerEvents="none" testID="goal-flash" style={[styles.goalFlash, { opacity: goalFlash }]} />
               {/* D297: the same line again in cream, clipped to the fill, so the part over the fill is light and the rest stays dark */}
               {bar.split ? (
                 <View pointerEvents="none" style={[styles.goalClip, { width: bar.fillW }]}>
@@ -456,10 +512,23 @@ export function Hud({
                 </View>
               ) : null}
             </View>
+            <Animated.View pointerEvents="none" testID="goal-tick" style={[styles.goalTick, { opacity: tickPop, transform: [{ scale: tickPop }] }]}>
+              <Text style={styles.goalTickMark}>{'\u2713'}</Text>
+            </Animated.View>
           </Pressable>
           {chips}
         </View>
       )}
+      {ribbonOn && cheer?.chapter ? (
+        <Animated.View
+          pointerEvents="none"
+          testID="goal-ribbon"
+          accessibilityRole="alert"
+          style={[styles.ribbon, { opacity: ribbonShow, transform: [{ translateY: ribbonShow.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) }] }]}
+        >
+          <Text style={styles.ribbonText}>{`\u2713 ${cheer.text}`}</Text>
+        </Animated.View>
+      ) : null}
       {/* X1: overlaid on the HUD's lower right, so the row keeps its height; last in the HUD so it paints over the goal row's chips ("sales" tag) and takes the tap */}
       {TestPill && <TestPill />}
     </View>
@@ -547,6 +616,10 @@ function GoalLine({
           {amount}
         </Text>
       )}
+      {/* D532: every bar state opens the task list: a chevron in the right padding says so (the padding is GOAL_PAD wide, so the amount keeps its room) */}
+      <Text style={[styles.goalChevron, { color }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        {GOAL_CHEVRON}
+      </Text>
     </View>
   );
 }
@@ -983,7 +1056,7 @@ export function NightOvenSheet({ view, onBuy, onClose }: { view: NightOvenView; 
 
 export function Toast({ text, top, compact }: { text: string; top: number; compact?: boolean }) {
   return (
-    <View style={[styles.toast, compact && styles.toastCompact, { top }]} pointerEvents="none">
+    <View testID="toast" style={[styles.toast, compact && styles.toastCompact, { top }]} pointerEvents="none">
       <Text style={[styles.toastText, compact && { fontSize: 13 }]}>{text}</Text>
     </View>
   );
@@ -1025,7 +1098,15 @@ const styles = StyleSheet.create({
   burst: { position: 'absolute', alignSelf: 'center', top: 8 },
   modalIcons: { flexDirection: 'row', alignItems: 'center', gap: 2, marginVertical: 4 },
 
-  hud: { backgroundColor: C.tomato, paddingHorizontal: 12, paddingBottom: HUD_STACK.padBottom, paddingTop: 6, gap: HUD_STACK.gap },
+  hud: {
+    position: 'relative',
+    zIndex: 2,
+    backgroundColor: C.tomato,
+    paddingHorizontal: 12,
+    paddingBottom: HUD_STACK.padBottom,
+    paddingTop: 6,
+    gap: HUD_STACK.gap,
+  },
   // the row is at least HUD_ROW_H tall: 4 pt of room above and below a 40 pt button for its hitSlop (tap-targets.ts)
   hudTop: { flexDirection: 'row', alignItems: 'center', gap: HUD_GAP, minHeight: HUD_ROW_H },
   hudIcon: {
@@ -1095,6 +1176,38 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.15)',
   },
   goalReady: { borderColor: '#fff', backgroundColor: C.basil },
+  goalTick: {
+    position: 'absolute',
+    right: 6,
+    top: -3,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: C.basil,
+    borderWidth: 2,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  goalTickMark: { fontFamily: F.bold, fontSize: 14, lineHeight: 16, color: '#fff' },
+  // D541: the chapter's ribbon hangs under the bar, over the shop tabs, for a moment: it takes no room and no taps
+  ribbon: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    top: '100%',
+    marginTop: -4,
+    zIndex: 5,
+    alignItems: 'center',
+    backgroundColor: C.basil,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#fff',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  ribbonText: { fontFamily: F.bold, fontSize: 15, color: '#fff' },
+  goalFlash: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.7)' },
   goalFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: GOAL_BAR.fill },
   // two-tone label (D297): dark ink over the track, a cream copy clipped to the fill's width
   goalClip: { position: 'absolute', left: 0, top: 0, bottom: 0, overflow: 'hidden' },
@@ -1106,6 +1219,7 @@ const styles = StyleSheet.create({
   goalLabel: { fontFamily: F.bold, fontSize: 14, marginRight: 4, flexShrink: 0 },
   goalLabelLast: { flexShrink: 1 },
   goalAmt: { fontFamily: F.bold, fontSize: 13, ...GOAL_LAYOUT.amount },
+  goalChevron: { position: 'absolute', right: 6, top: 0, bottom: 0, fontFamily: F.bold, fontSize: 18, lineHeight: 26, textAlignVertical: 'center' },
   goalAmtBox: { ...GOAL_LAYOUT.amount },
 
   ovenCard: {

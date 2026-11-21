@@ -19,9 +19,25 @@ import {
   type Chest,
   type GiftDef,
 } from '../content/rewards';
+import { cityOf } from '../content/cities';
 import { count, money, pizzas } from '../engine/format';
-import { founderName, type Booster, type GameState, type Task } from '../engine/game';
+import {
+  CHAPTER_DIAMONDS,
+  chapterDiamonds,
+  chapterReady,
+  chaptersOf,
+  currentChapter,
+  RATE_HOLD_SECONDS,
+  saveOf,
+  taskProgress,
+  visibleTasks,
+} from '../engine/chapters';
+import { def, founderName, type Booster, type GameState, type Task } from '../engine/game';
+import { scenesById } from '../engine/story';
 import { t } from '../content/copy';
+import type { Chapter, ChapterTask } from '../content/cities/types';
+import type { CharacterId, NeighborhoodId } from '../content/types';
+import type { CoachTargetId } from '../engine/coach-types';
 import * as R from '../engine/rewards';
 import { isStarredTask } from '../engine/features/heads';
 
@@ -355,3 +371,176 @@ export const BOOST_STRIP = { rightInset: 16, fade: 24 } as const;
 /** Show the strip's right-edge fade: the chips overflow the strip and it isn't scrolled to the end yet. */
 export const boostFadeShown = (contentW: number, viewW: number, scrollX: number): boolean =>
   viewW > 0 && contentW - viewW > 2 && scrollX < contentW - viewW - 2;
+
+// ---------- Story tab (v5.21, card U2) ----------
+
+/** The tasks drawer's tabs: the chapter first, then the daily and weekly lists. */
+export type TasksTab = 'story' | 'daily' | 'weekly';
+export const TASKS_TABS: readonly TasksTab[] = ['story', 'daily', 'weekly'];
+
+export { CHAPTER_DIAMONDS };
+
+/** The tutorial's two spots in the drawer (card E2). */
+export const TASKS_STORY_TARGET: CoachTargetId = 'tasks:story';
+export const TASKS_CLOSE_TARGET: CoachTargetId = 'tasks:close';
+
+/** Daily and weekly are the rewards': they stay behind a padlock until the takeover. */
+export const rewardsTabLocked = (s: GameState): boolean => !R.rewardsUnlocked(s);
+
+/** The padlocked tab's line: "Opens when Nonna takes over". */
+export const tabLockedText = (s: GameState): string => `Opens when ${founderName(s)} takes over`;
+
+/** The Story tab exists in a city that has chapters; one without any (Boston) opens on Daily. */
+export const hasStory = (s: GameState): boolean => chaptersOf(s).length > 0;
+
+/** "0:42", "12:05". */
+export function clockText(seconds: number): string {
+  const n = Math.max(0, Math.ceil(Number.isFinite(seconds) ? seconds : 0));
+  return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
+}
+
+export interface StoryTask {
+  key: string;
+  /** "Serve 424 pies in Downtown" */
+  label: string;
+  done: boolean;
+  /** A count (more than one to reach) draws a bar with "212/424"; a yes/no task is only a tick. */
+  bar: boolean;
+  /** 0..1 */
+  pct: number;
+  /** "212/424" ('' with no bar) */
+  progress: string;
+  /** The row as it is read aloud. */
+  spoken: string;
+  /** D536: a task that is done by going somewhere (hire, build, win, bid) gets a "Go" button while it is open; '' for the rest. */
+  go: StoryGo | '';
+  shop: NeighborhoodId;
+}
+
+export type StoryGo = 'hire' | 'build' | 'win' | 'bid';
+const GO_KINDS: readonly string[] = ['hire', 'build', 'win', 'bid'];
+
+/** The reward row: the scene (or, for chapter 1 whose scene has played, a pointer to the next chapter) and the diamonds. */
+export interface StoryReward {
+  /** "New scene", "New scene · Daily tasks open" or "Next: Chapter 2". */
+  label: string;
+  /** The row has the clapper board (a scene is coming), not a pointer. */
+  scene: boolean;
+  /** What the chapter pays besides its scene; 0 (no gem on the row) for the free chapter. */
+  diamonds: number;
+}
+
+export interface StoryView {
+  /** 'chapter': one is on; 'finished': every chapter has played (or the city has none). */
+  kind: 'chapter' | 'finished';
+  /** The chapter's place in the story, from 1. */
+  number: number;
+  title: string;
+  teaser: string;
+  /** Who is in the next scene: the portrait by the teaser (null when the scene is not found). */
+  who: CharacterId | null;
+  tasks: StoryTask[];
+  reward: StoryReward | null;
+  /** D535: "Coming up · Chapter 3 · Corporate Crust" under the reward ('' on the last chapter and on chapter 1, whose reward row already points on). */
+  coming: string;
+  /** "Next scene in 0:42" once every task is done and the beat waits on the pacing; null otherwise. */
+  wait: string | null;
+  /** The line of the finished state. */
+  finished: string;
+}
+
+/** The reward row as one line of text (what it is read as): "🎬 New scene · 💎 5". */
+export const storyRewardText = (r: StoryReward): string => `${r.scene ? '\u{1F3AC} ' : ''}${r.label}${r.diamonds > 0 ? ` \u00B7 \u{1F48E} ${r.diamonds}` : ''}`;
+
+/** One task as the Story tab and the goal bar read it (the bar formats only the next one). */
+export function storyTask(g: GameState, task: ChapterTask): StoryTask {
+  const p = taskProgress(g, task);
+  const shop = def(task.shop, cityOf(g)).name;
+  // `noMissed`'s {target} is a bare number of seconds; every other count reads as a short number ("12.4K")
+  const target = task.kind === 'noMissed' ? String(task.target) : count(task.target);
+  const label = t(task.key, { target, shop }, g.city);
+  const bar = p.target > 1;
+  let progress = bar ? `${pizzas(p.current)}/${count(p.target)}` : '';
+  let pct = p.target > 0 ? Math.min(1, p.current / p.target) : 1;
+  let spoken = p.done ? `${label}, done` : bar ? `${label}, ${pizzas(p.current)} of ${count(p.target)}` : `${label}, not yet`;
+  // D537: a rate being held shows the rate now and how long it has held ("34/min · holding 12 s"); the bar is the hold
+  const w = !p.done && task.kind === 'rate' ? saveOf(g).run[task.key] : undefined;
+  if (w && w.lo > 0) {
+    const secs = Math.min(RATE_HOLD_SECONDS, Math.floor(w.secs));
+    if (w.lo >= task.target) {
+      progress = `${pizzas(w.lo)}/min \u00B7 holding ${secs} s`;
+      pct = Math.min(1, w.secs / RATE_HOLD_SECONDS);
+      spoken = `${label}, holding ${pizzas(w.lo)} a minute for ${secs} of ${RATE_HOLD_SECONDS} seconds`;
+    } else if (w.lo > p.current) {
+      progress = `${pizzas(w.lo)}/${count(p.target)}`;
+      pct = Math.min(1, w.lo / p.target);
+      spoken = `${label}, ${pizzas(w.lo)} of ${count(p.target)}`;
+    }
+  }
+  return {
+    key: task.key,
+    label,
+    done: p.done,
+    bar,
+    pct,
+    progress,
+    spoken,
+    go: !p.done && GO_KINDS.includes(task.kind) ? (task.kind as StoryGo) : '',
+    shop: task.shop,
+  };
+}
+
+/** The reward row of a chapter: the scene, plus what the scene opens (the takeover opens Daily and Weekly) and the diamonds. A free chapter (the tutorial's) has no scene to come: its beat has played. */
+function storyReward(g: GameState, c: Chapter, number: number): StoryReward {
+  // a free chapter pays nothing (`chapterDiamonds`, which `payChapter` pays by): its row only points on, with no diamonds
+  if (c.free) return { label: `Next: Chapter ${number + 1}`, scene: false, diamonds: 0 };
+  const city = cityOf(g);
+  const opens = c.sceneId === (city.rewardsScene ?? city.fit.takeover.sceneId) ? ' \u00B7 Daily tasks open' : '';
+  return { label: `New scene${opens}`, scene: true, diamonds: chapterDiamonds(c) };
+}
+
+/** Everything the Story tab shows, from the chapter selectors alone. `lastSceneEnd` is the store's `lastSceneEndPlay` (the pacing's clock). */
+export function storyView(g: GameState, lastSceneEnd: number | null): StoryView {
+  const c = currentChapter(g);
+  const finished = t('chapter.done', {}, g.city);
+  if (!c)
+    return { kind: 'finished', number: chaptersOf(g).length, title: '', teaser: '', who: null, tasks: [], reward: null, coming: '', wait: null, finished };
+  const ready = chapterReady(g, lastSceneEnd);
+  const list = chaptersOf(g);
+  const number = list.indexOf(c) + 1;
+  const after = list[number];
+  return {
+    kind: 'chapter',
+    number,
+    title: t(`${c.key}.title`, {}, g.city),
+    // the tutorial's chapter has no scene to tease (its beat opened the game): no teaser, no portrait
+    teaser: c.free ? '' : t(`${c.key}.teaser`, {}, g.city),
+    who: c.free ? null : (scenesById(cityOf(g).scenes).get(c.sceneId)?.character ?? null),
+    tasks: visibleTasks(c).map((task) => storyTask(g, task)),
+    reward: storyReward(g, c, number),
+    coming: after && !c.free ? `Coming up \u00B7 Chapter ${number + 1} \u00B7 ${t(`${after.key}.title`, {}, g.city)}` : '',
+    wait: ready ? t('chapter.ready', { time: clockText(ready.secondsLeft) }, g.city) : null,
+    finished,
+  };
+}
+
+/** The teaser's room (pt) in the card at a screen width: the list's padding, the card's border and padding, the 36 pt portrait and its gap. */
+export const TEASER = { font: 13, portrait: 36, gap: 10, lines: 2, charW: 0.56 } as const;
+export const teaserWidth = (screenW: number): number => screenW - 2 * 10 - 2 * (3 + 10) - TEASER.portrait - TEASER.gap;
+
+/** How many lines a line of text takes at a width, by a greedy wrap on an average character width (italic 13 pt: about 0.56 em). A budget, not a layout. */
+export function wrapLines(text: string, width: number, font: number = TEASER.font): number {
+  const perLine = Math.max(1, Math.floor(width / (font * TEASER.charW)));
+  let lines = 1;
+  let used = 0;
+  for (const word of text.split(' ')) {
+    const w = word.length;
+    if (used === 0) used = w;
+    else if (used + 1 + w <= perLine) used += 1 + w;
+    else {
+      lines += 1;
+      used = w;
+    }
+  }
+  return lines;
+}

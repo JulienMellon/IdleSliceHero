@@ -44,6 +44,7 @@ def tasks_page(browser, query):
     settle(page)
     tid(page, "open-tasks").click()
     expect(page, "tasks-drawer")
+    tid(page, "tab-daily").click()  # v5.21: the drawer opens on Story
     return page
 
 

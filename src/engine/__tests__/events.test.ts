@@ -8,6 +8,7 @@ import type { NeighborhoodId } from '../../content/types';
 import { getFeature } from '../features';
 import { activeEvent, events, eventView, withoutEvent } from '../features/events';
 import * as G from '../game';
+import { sameSlices } from './chapter-helpers';
 import * as R from '../rewards';
 
 import { NEIGHBORHOODS } from '../../content/cities/home/data';
@@ -252,7 +253,7 @@ describe('a readout with no clock (C116, T90)', () => {
 describe('the state', () => {
   it('stays still between stamps and while no event runs', () => {
     const a = running(FRI(18));
-    expect(G.playTick(a, 1, FRI(18) + 500).x).toBe(a.x);
+    expect(sameSlices(G.playTick(a, 1, FRI(18) + 500).x, a.x)).toBe(true);
     expect(G.playTick(a, 1, FRI(18) + 2500).x).not.toBe(a.x);
     const calm = G.playTick(city(at(2026, 11, 12, 18)), 1, at(2026, 11, 12, 18));
     // (the other layers keep their own foreground stamps: it is the events' slice that stays put while none runs)

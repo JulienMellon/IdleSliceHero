@@ -4,6 +4,7 @@ import { STORY_PACING } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { pickScene, resolveScene, resumeSceneEnd, sceneHeading, sceneReady, scenePacesGap } from '../cutscene-input';
 import * as G from '../game';
+import { withTasksDone } from './chapter-helpers';
 
 import { HOME_FIT } from '../../content/cities/home/fit';
 import { PERKS, PIER9_BID } from '../../content/cities/home/data';
@@ -14,12 +15,14 @@ const withShop = (s: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G
   ...s,
   shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } },
 });
-const seenUpTo = (ids: string[], playSeconds = 0, sceneAt: Record<string, number> = {}): G.GameState => ({
-  ...G.newGame(0),
-  seenScenes: ids,
-  playSeconds,
-  sceneAt,
-});
+// v5.21: these tests are about the trigger and the pacing; the chapters' teaching tasks are done (chapters.test.ts is about those)
+const seenUpTo = (ids: string[], playSeconds = 0, sceneAt: Record<string, number> = {}): G.GameState =>
+  withTasksDone({
+    ...G.newGame(0),
+    seenScenes: ids,
+    playSeconds,
+    sceneAt,
+  });
 const LATE = 1e9; // ms: long after any kitchen tap
 /** `id`'s rival challenge has been won (the rival feature's own state: features/layers/rival.ts). */
 const won = (s: G.GameState, id: NeighborhoodId): G.GameState => ({ ...s, x: { ...s.x, [LAYER_KEYS.rival]: { won: [id], challenge: null, retryAt: {} } } });
@@ -74,7 +77,7 @@ describe('save migration v2 → v3', () => {
       seenScenes: ['suburbs-4', 'waterfront-4'],
     };
     const m = G.migrate(old, 0);
-    expect(G.SAVE_VERSION).toBe(7);
+    expect(G.SAVE_VERSION).toBe(8);
     expect(m.playSeconds).toBe(0);
     expect(m.sceneAt).toEqual({});
     expect(m.shops.suburbs.perk).toBe(true);
@@ -411,46 +414,5 @@ describe('save migration v5 → v6 (v5.16)', () => {
   });
   it('a new game and a save with nothing seen are left alone', () => {
     expect(G.migrate(JSON.parse(JSON.stringify(G.newGame(0))), 0).seenScenes).toEqual([]);
-  });
-});
-
-describe('what a held-back scene tells the player (v5.16)', () => {
-  const uptownReady = (seen: string[]) =>
-    withShop(seenUpTo(['uptown-1', 'uptown-2', ...seen], 1e6, { 'uptown-2': 0 }), 'uptown', { built: true, sold: countOf('uptown-3') });
-  it('Uptown’s act 3 waits for Industrial’s finale: "Win over Industrial to continue Uptown’s story"', () => {
-    expect(G.storyWaitHint(uptownReady([]))).toBe('Win over Industrial to continue Uptown’s story');
-  });
-  it('University waits for the Pier 9 bid when it was built before it: "Save Marisol’s dock to continue University’s story"', () => {
-    const s = withShop(seenUpTo(['waterfront-1', 'waterfront-2', 'waterfront-3', 'university-1', 'university-2'], 1e6), 'university', {
-      built: true,
-      sold: countOf('university-3'),
-    });
-    expect(G.storyWaitHint(withShop(s, 'waterfront', { built: true }))).toBe('Save Marisol’s dock to continue University’s story');
-  });
-  it('is silent once the finale is earned (the scene only waits its turn), when the hold is time, and at the start', () => {
-    const industrialDone = uptownReady(['industrial-4']);
-    expect(G.storyWaitHint(industrialDone)).toBeNull(); // uptown-2b is only waiting for its timer
-    const bidWon = withShop(
-      seenUpTo(['waterfront-1', 'waterfront-2', 'waterfront-3', 'waterfront-3b', 'waterfront-4', 'university-1', 'university-2'], 1e6, { 'waterfront-4': 1e6 }),
-      'university',
-      { built: true, sold: countOf('university-3') },
-    );
-    expect(G.storyWaitHint(bidWon)).toBeNull(); // downtown-5, suburbs-5 and waterfront-5 are on their timers
-    expect(G.storyWaitHint(G.newGame(0))).toBeNull();
-  });
-  it('a finale that is won but waiting its turn is not "still to earn"', () => {
-    const s = won(
-      withShop(
-        withShop(
-          seenUpTo(['industrial-1', 'industrial-2', 'industrial-2b', 'industrial-3', 'industrial-3b', 'uptown-1', 'uptown-2'], 1e6, { 'uptown-2': 0 }),
-          'industrial',
-          { built: true },
-        ),
-        'uptown',
-        { built: true, sold: countOf('uptown-3') },
-      ),
-      'industrial',
-    );
-    expect(G.storyWaitHint(s)).toBeNull();
   });
 });

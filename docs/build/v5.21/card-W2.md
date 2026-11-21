@@ -11,9 +11,9 @@
 3. `task.<sceneId>.<n>` — each task's label, ≤ 32 characters, with the card's numbers as `{target}` and `{shop}` placeholders (the UI adds "212/424"). Also `task.kind.<kind>` generic labels for each kind as fallbacks.
 
 ## Steps
-- [ ] **1.** 24 titles, 24 teasers, every task label in the table.
-- [ ] **2.** The bar's waiting line `chapter.ready` ("Next scene in {time}") and the all-done line `chapter.done`.
-- [ ] **3.** Rules: no label says "buy", "upgrade" or names a level; a head is named by name ("Hire Marco"); outcomes read as goals ("Serve 30 a minute in Downtown").
+- [x] **1.** 24 titles, 24 teasers, every task label in the table.
+- [x] **2.** The bar's waiting line `chapter.ready` ("Next scene in {time}") and the all-done line `chapter.done`.
+- [x] **3.** Rules: no label says "buy", "upgrade" or names a level; a head is named by name ("Hire Marco"); outcomes read as goals ("Serve 30 a minute in Downtown").
 
 ## Report
 Standard format with counts and the longest of each kind.

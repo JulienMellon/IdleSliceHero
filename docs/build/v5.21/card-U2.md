@@ -9,10 +9,10 @@
 - Do not touch: the goal block and `game-ui.tsx` (U1: it makes the `open-tasks` button show from the start), `src/engine/**`.
 
 ## Steps
-- [ ] **1. Tabs** `story | daily | weekly`; Story first and the default. Before rewards unlock, Daily and Weekly show a padlock and "Opens when Nonna takes over". Accept an initial-tab prop so U1's bar and button open Story.
-- [ ] **2. Story tab layout:** chapter number and title; the teaser in italics with the next scene's character portrait (36 pt); task rows (tick, label, progress bar with "212/424", no Claim button: tasks complete themselves); a reward row ("🎬 New scene · 💎 5"). When the chapter is done and waiting: "Next scene in 0:42".
-- [ ] **3. Register coach targets** `tasks:story` (the tab's body) and `tasks:close` with `useCoachTarget` for the tutorial (card E2).
-- [ ] **4. Tests and fixture:** chapter 1 during the tutorial (three ticks), chapter 2 mid-way, a done chapter waiting; Daily locked before the takeover.
+- [x] **1. Tabs** `story | daily | weekly`; Story first and the default. Before rewards unlock, Daily and Weekly show a padlock and "Opens when Nonna takes over". Accept an initial-tab prop so U1's bar and button open Story.
+- [x] **2. Story tab layout:** chapter number and title; the teaser in italics with the next scene's character portrait (36 pt); task rows (tick, label, progress bar with "212/424", no Claim button: tasks complete themselves); a reward row ("🎬 New scene · 💎 5"). When the chapter is done and waiting: "Next scene in 0:42".
+- [x] **3. Register coach targets** `tasks:story` (the tab's body) and `tasks:close` with `useCoachTarget` for the tutorial (card E2).
+- [x] **4. Tests and fixture:** chapter 1 during the tutorial (three ticks), chapter 2 mid-way, a done chapter waiting; Daily locked before the takeover.
 
 ## Rules
 44 pt targets, 10 pt text, a teaser that fits two lines at 375 wide.

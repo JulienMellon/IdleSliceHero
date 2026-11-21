@@ -4,11 +4,15 @@ import { HOME_SCENES } from '../content/scenes/home';
 import { finaleSeen } from '../engine/features/counterattack';
 import { masteryMax, masteryTotal, nextStar } from '../engine/features/mastery';
 import { cityOf } from '../content/cities';
-import { def, type GameState } from '../engine/game';
-import { UPGRADE_TASK_MAX_SECONDS } from '../content/rewards';
+import type { ChapterTask } from '../content/cities/types';
+import { lineOf, t } from '../content/copy';
+import { chapterReady, chaptersOf, currentChapter, nextTask } from '../engine/chapters';
+import { def, headCost, upgradeCostOf, type GameState } from '../engine/game';
+import { goalAmount } from '../engine/format';
 import { C } from '../theme';
 import { copy } from './endgame/copy-text';
 import { nextStarLine, starName } from './endgame/mastery-model';
+import { clockText, storyTask, type TasksTab } from './rewards-model';
 
 export const GOAL_BAR = {
   /** The bar's own border (pt); the fill and the clipped copy live inside it. */
@@ -23,7 +27,7 @@ export const GOAL_BAR = {
 export interface GoalBarLayout {
   /** Fill fraction, 0–1 (0 when the target is 0 or not a number). */
   pct: number;
-  /** Full and tappable: the bar turns basil and its label white, so there is nothing to split. */
+  /** Full and marked ready (a done chapter waiting on the story's pacing): the bar turns basil and its label white, so there is nothing to split. */
   ready: boolean;
   /** Width inside the border (0 until measured). */
   innerW: number;
@@ -70,7 +74,9 @@ export const aOrAn = (word: string): 'a' | 'an' => (/^[aeiou]/i.test(word.trim()
 
 // ---------- the line's fit (C105, T81) ----------
 /** Horizontal padding inside the bar (pt) and the gap kept between the words and the amount. */
-export const GOAL_PAD = 12;
+export const GOAL_PAD = 18;
+/** The chevron that says the bar opens something: drawn in the right padding, so it takes nothing from the amount. */
+export const GOAL_CHEVRON = '›';
 export const GOAL_GAP = 6;
 /** Largest Dynamic Type scale the goal line follows: the bar is 30 pt tall, so past this the words would not fit it. */
 export const GOAL_FONT_MAX_SCALE = 1.2;
@@ -110,9 +116,20 @@ export const goalLabelFits = (label: string, amount: string, barW: number): bool
 /** Every scene of the home city: the bar's total (40 with Todd's interludes and the hire scenes), never a number typed in a screen. */
 export const STORY_TOTAL = HOME_SCENES.length;
 /** The completed-city fallback goal: "Story 12/40", the bar filling as scenes are seen. */
-export function storyGoal(seen: number): { label: string; current: number; target: number } {
-  return { label: `Story ${seen}/${STORY_TOTAL}`, current: seen, target: STORY_TOTAL };
+export function storyGoal(seen: number, total: number = STORY_TOTAL): { label: string; current: number; target: number } {
+  return { label: `Story ${seen}/${total}`, current: seen, target: total };
 }
+
+/** G116: the story count of the city being played: its own scenes seen of its own scenes (a franchise keeps the old city's ids in `seenScenes`). */
+export function cityStory(g: GameState): { label: string; current: number; target: number } {
+  const scenes = cityOf(g).scenes;
+  let ids = SCENE_IDS.get(scenes);
+  if (!ids) SCENE_IDS.set(scenes, (ids = new Set(scenes.map((sc) => sc.id))));
+  const own = ids;
+  return storyGoal(g.seenScenes.filter((id) => own.has(id)).length, scenes.length);
+}
+/** U32: a city's scene ids, built once per scenes array (the bar asks every render). */
+const SCENE_IDS = new WeakMap<readonly unknown[], ReadonlySet<string>>();
 
 // ---------- the post-story goal (v5.15, D427) ----------
 
@@ -173,20 +190,138 @@ export function goalLine(goal: { label: string; short?: string; tiny?: string; t
   return { label: goal.short, text: '' };
 }
 
-/** D494: a goal further than this many seconds of the city's income is skipped for a nearer one. */
-export const GOAL_FAR_SECONDS = 1800;
+// ---------- the chapter goal (v5.21, U1) ----------
+
+/** The tasks drawer's tab a tap on the goal bar (or the clipboard) opens. */
+export const GOAL_TAB: TasksTab = 'story';
+/** How long the bar flashes when a task completes (ms): once, and short. */
+export const GOAL_FLASH_MS = 500;
+
+/** The goal the bar draws: its words in three lengths, the amount beside them, and the fill. */
+export interface ChapterGoal {
+  /** "Ch 2 · Serve 424 pies in Downtown". */
+  label: string;
+  /** G98: the same without the shop and what follows a comma ("Ch 2 · Serve 424 pies", "Ch 2 · Hire Lucia"), for a narrow bar. */
+  short: string;
+  /** The narrowest bar: the chapter and the count, or the task's first word ("Ch 2 · 212/424", "Ch 2 · Hire"): whole words only. */
+  tiny: string;
+  /** The amount beside the words: "212/424", the countdown "1:29", "Ready" ('' for a yes/no task). */
+  text: string;
+  current: number;
+  target: number;
+  /** What the goal is: the task's key (the chapter's while it waits), so the bar flashes once when it changes. */
+  key: string;
+  /** The chapter's wait is over and its scene plays now: a full basil bar that says "Ready". */
+  ready: boolean;
+}
+
+/** The label without its shop ("Serve 424 pies in Downtown" → "Serve 424 pies"), for a narrow bar; a label that does not end with the shop is as it was. */
+export function withoutShop(label: string, shopName: string): string {
+  const tail = ` in ${shopName}`;
+  return label.endsWith(tail) ? label.slice(0, -tail.length) : label;
+}
 
 /**
- * C107: the goal the bar shows. The first candidate within `GOAL_FAR_SECONDS` of income (lists in order, each a thunk so a late list is built only if needed);
- * failing that, the first within `UPGRADE_TASK_MAX_SECONDS` (the same ceiling the "upgrades x N" tasks use); failing that none, so the bar never
- * targets a multi-day buy and the caller falls through to the mastery or story goal.
+ * G117: a task's label made short for a narrow bar, never cutting inside a word: the shop goes ("Serve 424 pies in Downtown" \u2192 "Serve 424 pies",
+ * "Build your Suburbs shop" \u2192 "Build Suburbs", "Read the Downtown shop report" \u2192 "Read the shop report"), and so does what follows a comma
+ * ("Hire Lucia, head baker" \u2192 "Hire Lucia").
  */
-export function pickGoal<T extends { current: number; target: number }>(eps: number, ...lists: (() => readonly T[])[]): T | null {
-  const rate = Math.max(1, eps);
-  const within = (c: T, secs: number) => c.target - c.current <= secs * rate;
-  const built: (readonly T[])[] = [];
-  const at = (i: number) => (built[i] ??= lists[i]());
-  for (let i = 0; i < lists.length; i++) for (const c of at(i)) if (within(c, GOAL_FAR_SECONDS)) return c;
-  for (let i = 0; i < lists.length; i++) for (const c of at(i)) if (within(c, UPGRADE_TASK_MAX_SECONDS)) return c;
-  return null;
+export function shortTask(label: string, shopName: string): string {
+  const short = withoutShop(label, shopName).replace(`your ${shopName} shop`, shopName).replace(`the ${shopName} shop`, 'the shop').replace(/,.*$/, '');
+  return short.trim() || label;
+}
+
+/** The narrowest bar's name for a yes/no task: as many whole words of the short label as fit in 10 characters, at least one ("Hire Lucia", "Build", "Beat", "Pier 9"). */
+export function firstWord(label: string): string {
+  const words = goalWords(label);
+  let out = words[0] ?? label;
+  for (const w of words.slice(1)) {
+    if (out.length + 1 + w.length > 10) break;
+    out += ` ${w}`;
+  }
+  return out;
+}
+
+/** D532: what a hire or a build task costs, or null for any other task (and for a hire that is not on offer): the bar shows the cash against it. */
+export function taskPrice(g: GameState, task: ChapterTask): number | null {
+  if (task.kind === 'build') return def(task.shop, cityOf(g)).buildCost;
+  if (task.kind !== 'hire' || !task.head) return null;
+  const price = task.head === 'manager' ? upgradeCostOf(g, task.shop, 'manager') : headCost(task.shop, task.head, cityOf(g));
+  return price !== null && price > 0 ? price : null;
+}
+
+/**
+ * The goal bar's chapter goal: the engine's next task (`nextTask`) of the chapter the player is on, with its progress; or, once every task is done,
+ * "Next scene" with the countdown in the amount's place and a basil "Ready" only when the wait is over. Null after the last chapter (the caller shows
+ * the mastery goal, then the story count). The words and the progress are the Story tab's own (`storyTask`, rewards-model), so the bar and the list
+ * never disagree; only the next task is formatted (U31). `lastSceneEndPlay` is the store's (the pacing's clock).
+ */
+export function chapterGoal(g: GameState, lastSceneEndPlay: number | null = null): ChapterGoal | null {
+  const chapter = currentChapter(g);
+  if (!chapter) return null;
+  const ch = `Ch ${chaptersOf(g).indexOf(chapter) + 1}`;
+  const row = nextTask(g);
+  if (row) {
+    const shown = storyTask(g, row.task);
+    const shop = def(row.task.shop, cityOf(g)).name;
+    // a kind with its own short line in the copy ("Beat MegaSlice"), else the label made short
+    const own = lineOf(`task.kind.${row.task.kind}.short`, g.city);
+    const short = own !== undefined ? t(`task.kind.${row.task.kind}.short`, { target: row.task.target, shop }, g.city) : shortTask(shown.label, shop);
+    // a hire or a build is paid for in cash: the bar shows the cash against that task's own price ("$12 / $400"); it still never offers the purchase
+    const price = taskPrice(g, row.task);
+    return {
+      label: `${ch} \u00B7 ${shown.label}`,
+      short: `${ch} \u00B7 ${short}`,
+      tiny: `${ch} \u00B7 ${shown.progress || firstWord(short)}`,
+      text: price !== null ? goalAmount(g.cash, price) : shown.progress,
+      current: price !== null ? g.cash : shown.pct * row.target,
+      target: price !== null ? price : row.target,
+      key: row.task.key,
+      ready: false,
+    };
+  }
+  // every task is done: the countdown to the beat (the pacing's gap), "Ready" at 0:00; held by something else, the chapter's title stands in
+  const key = `${chapter.key}.ready`;
+  const wait = chapterReady(g, lastSceneEndPlay);
+  if (!wait) {
+    const title = `${ch} \u00B7 ${t(`${chapter.key}.title`, {}, g.city)}`;
+    return { label: title, short: title, tiny: `${ch} \u00B7 Done`, text: '', current: 1, target: 1, key, ready: false };
+  }
+  const next = t('chapter.ready', { time: '' }, g.city).trim();
+  const text = wait.secondsLeft > 0 ? clockText(wait.secondsLeft) : 'Ready';
+  return {
+    label: `${ch} \u00B7 ${next}`,
+    short: `${ch} \u00B7 ${next}`,
+    tiny: `${ch} \u00B7 ${text}`,
+    text,
+    current: 1,
+    target: 1,
+    key,
+    ready: wait.secondsLeft === 0,
+  };
+}
+
+// ---------- the cheer (D541) ----------
+
+/** How long the chapter ribbon stays up (ms), after it has faded in. */
+export const CHEER_RIBBON_MS = 1800;
+
+/** What the bar celebrates when its task changes: a task done (a toast), or the chapter's last (a ribbon). */
+export interface GoalCheer {
+  chapter: boolean;
+  /** "Serve 424 pies in Downtown" for a task; "Chapter 2 complete" for a chapter. */
+  text: string;
+}
+
+/**
+ * D541: the goal moved from `prev` to `next` (the chapter goal's key and label). A task done: its words; the last task of a chapter, or the move to the
+ * next chapter: "Chapter N complete". Null when nothing was done: no goal before, the same one, or the wait for a scene ending (the beat played).
+ */
+export function goalCheer(prev: { key: string; label: string } | null, next: { key: string; label: string } | null): GoalCheer | null {
+  if (!prev || !next || prev.key === next.key || prev.key.endsWith('.ready')) return null;
+  const [ch, ...words] = prev.label.split(' \u00B7 ');
+  const nextCh = next.label.split(' \u00B7 ')[0];
+  const n = /^Ch (\d+)$/.exec(ch)?.[1];
+  if (next.key.endsWith('.ready') || nextCh !== ch) return { chapter: true, text: n ? `Chapter ${n} complete` : 'Chapter complete' };
+  return { chapter: false, text: words.join(' \u00B7 ') };
 }

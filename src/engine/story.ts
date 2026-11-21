@@ -1,10 +1,11 @@
 // The story's rules, as pure functions of a game (A33): when a scene's trigger has passed, which scenes are pending, the goal bar's wait hint,
 // when a rival challenge is offered and the load-time story migration. They were in game.ts, which then had to import the rival layer and the
 // scene lists; game.ts re-exports the readers for the callers that still say `G.pendingScenes`.
-import { cityOf, findHood } from '../content/cities';
+import { cityOf } from '../content/cities';
 import { STORY_PACING } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { challengeWon, rivalOpen } from './features/layers/rival';
+import { chapterDone, chapterOf } from './chapters';
 import { firstHood, sceneId, type GameState } from './game';
 
 /** Every scene a scene waits for: its `requires`, and the scene an `after` trigger counts from. */
@@ -37,10 +38,34 @@ export function triggerPasses(s: GameState, scene: Scene): boolean {
   }
 }
 
-/** The scene's trigger has passed and every scene it requires has been seen. */
+/**
+ * The scene may play: every scene it requires has been seen and its trigger has passed (the day's pacing is `sceneReady`'s). A main beat with a
+ * chapter (v5.21) also waits for every task of the chapter, whose first task is the trigger made visible, so the chapter only ever adds to the
+ * wait. A scene with no chapter (an interlude, a hire scene, Boston's story) and a chapter marked `free` (the opening) keep the trigger alone.
+ */
 export function sceneTriggered(s: GameState, scene: Scene): boolean {
   if (scene.requires?.some((id) => !s.seenScenes.includes(id))) return false;
-  return triggerPasses(s, scene);
+  if (!triggerPasses(s, scene)) return false;
+  const chapter = chapterOf(s, scene.id);
+  return !chapter || !!chapter.free || chapterDone(s, chapter);
+}
+
+/**
+ * Play seconds a scene whose trigger has passed still waits on the story's pacing: 0 when it may play now. The one rule behind `sceneReady`
+ * (cutscene-input.ts) and the goal bar's countdown (`chapterReady`): a scene the player caused (a new pizzeria, the bid, a won challenge, a hired
+ * manager) never waits; the others wait for the 90 s after the last scene (`lastSceneEndPlay`, null right after a launch: none), and a beat 4 for
+ * the gap after beat 3. Whole seconds, rounded up, so 0 is exactly "ready".
+ */
+export function sceneWaitSeconds(s: GameState, scene: Scene, lastSceneEndPlay: number | null): number {
+  const kind = scene.trigger.kind;
+  if (kind === 'unlock' || kind === 'bid' || kind === 'challenge' || kind === 'manager') return 0;
+  let left = lastSceneEndPlay === null ? 0 : STORY_PACING.gapSeconds - (s.playSeconds - lastSceneEndPlay);
+  if (scene.beat === 4) {
+    const beat3 = s.sceneAt[sceneId(scene.neighborhood, 3)];
+    const gap = scene.neighborhood === firstHood(cityOf(s)) ? STORY_PACING.firstHoodBeat4GapSeconds : STORY_PACING.beat4GapSeconds;
+    if (beat3 !== undefined) left = Math.max(left, gap - (s.playSeconds - beat3));
+  }
+  return Math.max(0, Math.ceil(left));
 }
 
 /** Unseen scenes whose triggers pass, in story order (earliest first); main beats come before interludes when both are ready. */
@@ -52,45 +77,13 @@ export function pendingScenes(s: GameState, scenes: Scene[]): Scene[] {
   return interludes.length ? main.concat(interludes) : main;
 }
 
-/** A story's scenes by id, built once per list (M66): the goal bar asks `storyWaitHint` often. */
+/** A story's scenes by id, built once per list (M66): the chapter code asks it often. */
 const BY_ID = new WeakMap<readonly Scene[], ReadonlyMap<string, Scene>>();
 export const scenesById = (scenes: readonly Scene[]): ReadonlyMap<string, Scene> => {
   let m = BY_ID.get(scenes);
   if (!m) BY_ID.set(scenes, (m = new Map(scenes.map((sc) => [sc.id, sc]))));
   return m;
 };
-
-const capital = (id: string) => findHood(id)?.name ?? id.charAt(0).toUpperCase() + id.slice(1);
-
-/**
- * A line for the goal bar when a main beat has triggered but is held behind a finale the player still has to earn (Uptown behind
- * Industrial's, University behind the Pier 9 bid). Holds that clear with play time return null: they clear on their own.
- */
-export function storyWaitHint(s: GameState, scenes: readonly Scene[] = cityOf(s).scenes): string | null {
-  const seen = new Set(s.seenScenes);
-  const byId = scenesById(scenes);
-  const unseenBehind = (sc: Scene, out: Set<string> = new Set()): Set<string> => {
-    for (const id of prerequisites(sc)) {
-      const p = byId.get(id);
-      if (seen.has(id) || out.has(id) || !p) continue;
-      out.add(id);
-      unseenBehind(p, out);
-    }
-    return out;
-  };
-  for (const sc of scenes) {
-    if (seen.has(sc.id) || sc.beat === 'interlude' || !triggerPasses(s, sc) || sceneTriggered(s, sc)) continue;
-    for (const id of unseenBehind(sc)) {
-      const f = byId.get(id)!;
-      // a finale of its own that nobody has earned yet (a finale that has been earned is only waiting its turn)
-      if (f.beat !== 4 || triggerPasses(s, f)) continue;
-      return f.trigger.kind === 'bid'
-        ? `Save Marisol’s dock to continue ${capital(sc.neighborhood)}’s story`
-        : `Win over ${capital(f.neighborhood)} to continue ${capital(sc.neighborhood)}’s story`;
-    }
-  }
-  return null;
-}
 
 /**
  * The rival challenge in `id` may be taken now: the MegaSlice shop is open there and the finale wait is over (300 s of play after beat 3,

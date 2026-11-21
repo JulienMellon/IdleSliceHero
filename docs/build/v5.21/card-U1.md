@@ -11,12 +11,12 @@
 - Do not touch: `src/components/rewards-ui.tsx` (U2), `src/engine/**`.
 
 ## Steps
-- [ ] **1. The bar's goal** = `nextTask(g)` with its label and progress; `chapterReady` shows `chapter.ready` with the countdown; after the last chapter, today's mastery goal, then the story count. Keep the short and tiny forms (G98) for narrow bars.
-- [ ] **2. Remove the purchase candidates** (`candidates`, `bigGoals`, `pickGoal`'s use here, the Pier 9 bid candidate, `goalHidesOwnHire`'s use for the bar). Keep `pickGoal` only if another caller uses it.
-- [ ] **3. Tap opens the list.** `onPress` opens the tasks drawer on the Story tab (U2 adds the tab; until it lands, open the drawer). A full bar is basil with "Ready" for a done chapter waiting on pacing; no buy path remains.
-- [ ] **3b. The `open-tasks` button** shows from the start of the game (today it waits for rewards to unlock); it opens the list on the Story tab.
-- [ ] **4. A task completing** flashes the bar once (≤ 600 ms) and moves to the next task.
-- [ ] **5. Tests** for the label, progress and fallbacks; **fixture** with shots of chapter 2 at 0, half, done-waiting.
+- [x] **1. The bar's goal** = `nextTask(g)` with its label and progress; `chapterReady` shows `chapter.ready` with the countdown; after the last chapter, today's mastery goal, then the story count. Keep the short and tiny forms (G98) for narrow bars.
+- [x] **2. Remove the purchase candidates** (`candidates`, `bigGoals`, `pickGoal`'s use here, the Pier 9 bid candidate, `goalHidesOwnHire`'s use for the bar). Keep `pickGoal` only if another caller uses it.
+- [x] **3. Tap opens the list.** `onPress` opens the tasks drawer on the Story tab (U2 adds the tab; until it lands, open the drawer). A full bar is basil with "Ready" for a done chapter waiting on pacing; no buy path remains.
+- [x] **3b. The `open-tasks` button** shows from the start of the game (today it waits for rewards to unlock); it opens the list on the Story tab.
+- [x] **4. A task completing** flashes the bar once (≤ 600 ms) and moves to the next task.
+- [x] **5. Tests** for the label, progress and fallbacks; **fixture** with shots of chapter 2 at 0, half, done-waiting.
 
 ## Checks
 `npx tsc --noEmit`; `npx jest src/components`; `npm run format:check`.

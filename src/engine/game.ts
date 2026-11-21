@@ -36,6 +36,7 @@ import { cosmeticPart } from '../content/endgame';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
 import { migrateStory } from './story';
+import { CHAPTERS_KEY, chaptersTick, migrateChapters, migrateChapterSave, payChapter } from './chapters';
 import { FEATURES } from './features/registry';
 import {
   advanceLine,
@@ -52,8 +53,8 @@ import {
   type Station,
 } from './pipeline';
 
-/** v7 (v5.20): the Chapter 1 tutorial has 15 steps (`tutorial` 1..15, done = 16), so a v6 save's step is renumbered on load (`legacyTutorial`). v6 (Todd's story): 40 scenes, interludes that hold main beats back, manager hire scenes; the migration marks skipped scenes seen. v5 was rewards: daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. */
-export const SAVE_VERSION = 7;
+/** v8 (v5.21): the chapters' progress is saved (`x.chapters`, engine/chapters.ts); a v7 save's open chapters are read from its counters on load. v7 (v5.20): the Chapter 1 tutorial has 15 steps (`tutorial` 1..15, done = 16), so a v6 save's step is renumbered on load (`legacyTutorial`). v6 (Todd's story): 40 scenes, interludes that hold main beats back, manager hire scenes; the migration marks skipped scenes seen. v5 was rewards: daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. */
+export const SAVE_VERSION = 8;
 /**
  * C106: the economy marker. 2 = the v5.13 retune (costMult = orderValue, 4 h offline cap, Pier 9 $120M); 3 = the v5.16 rules
  * (managers and heads priced apart, three heads sell half speed while you are away, station prices grow at their own rates,
@@ -670,7 +671,12 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!FEATURES.length && typeof __DEV__ !== 'undefined' && __DEV__)
     console.warn('migrate: no features are registered (import engine/features before loading a game)');
   game.x = { ...savedX, ...Object.fromEntries(FEATURES.map((f) => [f.key, f.migrate(savedX[f.key], now, city)])) };
-  return migrateStory(game, num(r.saveVersion, 0));
+  // the chapters' progress (v5.21) is no feature's slice: it is there once there is something to keep, checked field by field
+  const chapters = migrateChapterSave(savedX[CHAPTERS_KEY]);
+  if (chapters) game.x[CHAPTERS_KEY] = chapters;
+  else delete game.x[CHAPTERS_KEY];
+  const fromVersion = num(r.saveVersion, 0);
+  return migrateChapters(migrateStory(game, fromVersion), fromVersion);
 }
 
 /** Scene ids are `<neighbourhood>-<beat>` (pinned by a test); a neighbourhood's finale is beat 4. */
@@ -1225,7 +1231,8 @@ export function playTick(s: GameState, dt: number, now?: number): GameState {
   let next: GameState = { ...lineTick(s, dt, now), playSeconds: s.playSeconds + dt };
   // feature slices tick after the ordinary body, in registry order
   for (const f of FEATURES) if (f.tick) next = f.tick(next, dt, now ?? s.lastSavedAt);
-  return next;
+  // the chapters' held tasks (rate, no missed orders) count while the app is open
+  return chaptersTick(next, dt, now ?? s.lastSavedAt);
 }
 
 /**
@@ -1395,7 +1402,7 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
 
 // ---------- Story ----------
 // The story's rules (triggers, the finale waits, the load-time migration) are engine/story.ts (A33); re-exported here for the callers that read them from the game.
-export { challengeOffered, pendingScenes, prerequisites, sceneTriggered, storyWaitHint } from './story';
+export { challengeOffered, pendingScenes, prerequisites, sceneTriggered } from './story';
 
 export function applyReward(s: GameState, reward: SceneReward | undefined): GameState {
   switch (reward) {
@@ -1415,7 +1422,8 @@ export function markSceneSeen(s: GameState, scene: Scene): GameState {
   if (s.seenScenes.includes(scene.id)) return s;
   let next: GameState = { ...s, seenScenes: [...s.seenScenes, scene.id], sceneAt: { ...s.sceneAt, [scene.id]: s.playSeconds } };
   if (scene.perk) next = withShop(next, scene.neighborhood, { perk: true });
-  return applyReward(next, scene.reward);
+  // the chapter's diamonds (banked until the rewards unlock)
+  return payChapter(applyReward(next, scene.reward), scene);
 }
 
 // ---------- Advice ----------
