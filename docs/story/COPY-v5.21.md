@@ -93,8 +93,9 @@ Placeholders: `{target}` is the task's number from `docs/build/v5.21/chapters.md
 | `task.waterfront-2.2` | Hold {target}/min in {shop} |
 | `task.waterfront-3.1` | Serve {target} pies in {shop} |
 | `task.waterfront-3.2` | Hold {target}/min in {shop} |
-| `task.waterfront-4.1` | Win the Pier 9 auction |
-| `task.waterfront-4.2` | Hire Finn, head prep cook |
+| `task.waterfront-4.1` | Serve {target} pies in {shop} |
+| `task.waterfront-4.2` | Win the Pier 9 auction |
+| `task.waterfront-4.3` | Hire Finn, head prep cook |
 | `task.university-1.1` | Build your {shop} shop |
 | `task.university-1.2` | Hold {target}/min in {shop} |
 | `task.university-2.1` | Serve {target} pies in {shop} |

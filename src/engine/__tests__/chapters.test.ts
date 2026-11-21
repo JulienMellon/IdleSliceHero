@@ -3,6 +3,7 @@
 import '../features';
 import { HOME_CHAPTERS } from '../../content/cities/home/chapters';
 import { HOME_SCENES } from '../../content/scenes/home';
+import { PIER9_BID } from '../../content/cities/home/data';
 import { LAYER_KEYS } from '../../content/layers';
 import { STORY_PACING } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
@@ -85,13 +86,17 @@ describe('the data', () => {
       if (tr.kind === 'deliveries') expect([t.kind, t.target]).toEqual(['serve', tr.count]);
       else if (tr.kind === 'unlock') expect(t.kind).toBe(c.sceneId === 'downtown-1' ? 'serve' : 'build');
       else if (tr.kind === 'challenge') expect(t.kind).toBe('win');
-      else if (tr.kind === 'bid') expect(t.kind).toBe('bid');
-      else throw new Error(`a main beat with a ${tr.kind} trigger`);
+      else if (tr.kind === 'bid') {
+        // the bid opens at a pizza count (the interlude waterfront-3b's trigger): the count is task 1, the bid itself task 2 (S78)
+        expect([t.kind, t.target]).toEqual(['serve', PIER9_BID.unlockPizzas]);
+        expect(c.tasks[1].kind).toBe('bid');
+        expect(scene('waterfront-3b').trigger).toMatchObject({ kind: 'deliveries', count: PIER9_BID.unlockPizzas });
+      } else throw new Error(`a main beat with a ${tr.kind} trigger`);
     }
   });
 
   it('only teaches with hire, rate, noMissed and report after task 1, and never asks for a purchase', () => {
-    for (const c of HOME_CHAPTERS) for (const t of c.tasks.slice(1)) expect(['hire', 'rate', 'noMissed', 'report', 'serve']).toContain(t.kind);
+    for (const c of HOME_CHAPTERS) for (const t of c.tasks.slice(1)) expect(['hire', 'rate', 'noMissed', 'report', 'serve', 'bid']).toContain(t.kind);
     for (const c of HOME_CHAPTERS)
       for (const t of c.tasks) expect(['serve', 'rate', 'hire', 'build', 'win', 'bid', 'noMissed', 'playtime', 'report']).toContain(t.kind);
   });
@@ -122,8 +127,8 @@ describe('task progress', () => {
     expect(taskProgress(base, task('suburbs-4', 1)).done).toBe(false);
     const won = { ...base, x: { ...base.x, [LAYER_KEYS.rival]: { won: ['suburbs'], challenge: null, retryAt: {} } } };
     expect(taskProgress(won, task('suburbs-4', 1)).done).toBe(true);
-    expect(taskProgress(base, task('waterfront-4', 1)).done).toBe(false);
-    expect(taskProgress(withShop(base, 'waterfront', { perk: true }), task('waterfront-4', 1)).done).toBe(true);
+    expect(taskProgress(base, task('waterfront-4', 2)).done).toBe(false);
+    expect(taskProgress(withShop(base, 'waterfront', { perk: true }), task('waterfront-4', 2)).done).toBe(true);
   });
   it('playtest counts play seconds from the scene it names', () => {
     const t = { kind: 'playtime' as const, shop: 'downtown' as NeighborhoodId, target: 180, key: 'task.x.1', scene: 'downtown-2' };

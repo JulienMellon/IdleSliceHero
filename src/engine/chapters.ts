@@ -220,6 +220,9 @@ export function chaptersTick(g: GameState, dt: number, now: number): GameState {
 /** The diamonds a finished chapter pays besides its scene, once the rewards are unlocked (before that they are banked and paid at unlock). */
 export const CHAPTER_DIAMONDS = 5;
 
+/** The diamonds a chapter pays when its beat plays: a `free` chapter (the opening's) pays none. */
+export const chapterDiamonds = (c: Chapter): number => (c.free ? 0 : CHAPTER_DIAMONDS);
+
 /**
  * `next` is the state just after `scene` was seen: pay its chapter's diamonds (a `free` chapter has none, and a scene with no chapter none). Until
  * the rewards unlock they are banked in the chapters' slice, and everything banked is paid on the scene that unlocks them (`downtown-4` at home).
@@ -228,7 +231,7 @@ export const CHAPTER_DIAMONDS = 5;
 export function payChapter(next: GameState, scene: Scene): GameState {
   const chapter = chapterOf(next, scene.id);
   const c = saveOf(next);
-  const owed = c.banked + (chapter && !chapter.free ? CHAPTER_DIAMONDS : 0);
+  const owed = c.banked + (chapter ? chapterDiamonds(chapter) : 0);
   if (owed <= 0) return next;
   if (!rewardsUnlocked(next)) return owed === c.banked ? next : withSave(next, { ...c, banked: owed });
   const paid = c.banked > 0 ? withSave(next, { ...c, banked: 0 }) : next;

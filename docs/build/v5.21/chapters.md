@@ -32,7 +32,7 @@ Task kinds used: `serve` (the shop's `sold`), `build`, `win` (rival challenge), 
 | waterfront-1 | unlock | 174.9 | 1. build waterfront; 2. rate 2,000/min, suburbs (sim 38.5 min) |
 | waterfront-2 | deliveries 3,000 | 183.6 | 1. serve 3,000, waterfront; 2. rate 500/min, waterfront (sim 176.3 min) |
 | waterfront-3 | deliveries 15,000 | 217.0 | 1. serve 15,000, waterfront; 2. rate 1,000/min, waterfront (sim 184.1 min) |
-| waterfront-4 | bid | 239.6 | 1. bid, waterfront; 2. hire prep head, waterfront (sim 223.9 min) |
+| waterfront-4 | bid (opens at 50,000 served: waterfront-3b) | 239.6 | 1. serve 50,000, waterfront; 2. bid, waterfront; 3. hire prep head, waterfront (sim 223.9 min) |
 | university-1 | unlock | 800.0 | 1. build university; 2. rate 2,000/min, waterfront (sim 240.1 min) |
 | university-2 | deliveries 30,000 | 884.3 | 1. serve 30,000, university; 2. rate 500/min, university (sim 804.5 min) |
 | university-3 | deliveries 135,000 + requires waterfront-5 | 939.4 | 1. serve 135,000, university; 2. hire prep head, university (sim 892.1 min); 3. rate 1,000/min, university (sim 884.8 min) |

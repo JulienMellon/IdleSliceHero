@@ -21,7 +21,17 @@ import {
 } from '../content/rewards';
 import { cityOf } from '../content/cities';
 import { count, money, pizzas } from '../engine/format';
-import { CHAPTER_DIAMONDS, chapterReady, chaptersOf, currentChapter, RATE_HOLD_SECONDS, saveOf, taskProgress, visibleTasks } from '../engine/chapters';
+import {
+  CHAPTER_DIAMONDS,
+  chapterDiamonds,
+  chapterReady,
+  chaptersOf,
+  currentChapter,
+  RATE_HOLD_SECONDS,
+  saveOf,
+  taskProgress,
+  visibleTasks,
+} from '../engine/chapters';
 import { def, founderName, type Booster, type GameState, type Task } from '../engine/game';
 import { scenesById } from '../engine/story';
 import { t } from '../content/copy';
@@ -482,11 +492,11 @@ export function storyTask(g: GameState, task: ChapterTask): StoryTask {
 
 /** The reward row of a chapter: the scene, plus what the scene opens (the takeover opens Daily and Weekly) and the diamonds. A free chapter (the tutorial's) has no scene to come: its beat has played. */
 function storyReward(g: GameState, c: Chapter, number: number): StoryReward {
-  // a free chapter pays nothing (engine/chapters.ts `payChapter`): its row only points on, with no diamonds
+  // a free chapter pays nothing (`chapterDiamonds`, which `payChapter` pays by): its row only points on, with no diamonds
   if (c.free) return { label: `Next: Chapter ${number + 1}`, scene: false, diamonds: 0 };
   const city = cityOf(g);
   const opens = c.sceneId === (city.rewardsScene ?? city.fit.takeover.sceneId) ? ' \u00B7 Daily tasks open' : '';
-  return { label: `New scene${opens}`, scene: true, diamonds: CHAPTER_DIAMONDS };
+  return { label: `New scene${opens}`, scene: true, diamonds: chapterDiamonds(c) };
 }
 
 /** Everything the Story tab shows, from the chapter selectors alone. `lastSceneEnd` is the store's `lastSceneEndPlay` (the pacing's clock). */

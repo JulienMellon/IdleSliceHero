@@ -4,6 +4,7 @@
 import type { HeadKind } from '../../tuning';
 import type { NeighborhoodId } from '../../types';
 import type { Chapter, ChapterTask } from '../types';
+import { PIER9_BID } from './data';
 
 type Draft = Omit<ChapterTask, 'key'>;
 const serve = (shop: NeighborhoodId, target: number): Draft => ({ kind: 'serve', shop, target });
@@ -37,7 +38,7 @@ export const HOME_CHAPTERS: Chapter[] = [
   chapter('waterfront-1', [build('waterfront'), rate('suburbs', 2000)]),
   chapter('waterfront-2', [serve('waterfront', 3000), rate('waterfront', 500)]),
   chapter('waterfront-3', [serve('waterfront', 15000), rate('waterfront', 1000)]),
-  chapter('waterfront-4', [bid('waterfront'), hire('waterfront', 'prep')]),
+  chapter('waterfront-4', [serve('waterfront', PIER9_BID.unlockPizzas), bid('waterfront'), hire('waterfront', 'prep')]),
   // University
   chapter('university-1', [build('university'), rate('waterfront', 2000)]),
   chapter('university-2', [serve('university', 30000), rate('university', 500)]),
