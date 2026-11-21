@@ -1098,7 +1098,15 @@ const styles = StyleSheet.create({
   burst: { position: 'absolute', alignSelf: 'center', top: 8 },
   modalIcons: { flexDirection: 'row', alignItems: 'center', gap: 2, marginVertical: 4 },
 
-  hud: { backgroundColor: C.tomato, paddingHorizontal: 12, paddingBottom: HUD_STACK.padBottom, paddingTop: 6, gap: HUD_STACK.gap },
+  hud: {
+    position: 'relative',
+    zIndex: 2,
+    backgroundColor: C.tomato,
+    paddingHorizontal: 12,
+    paddingBottom: HUD_STACK.padBottom,
+    paddingTop: 6,
+    gap: HUD_STACK.gap,
+  },
   // the row is at least HUD_ROW_H tall: 4 pt of room above and below a 40 pt button for its hitSlop (tap-targets.ts)
   hudTop: { flexDirection: 'row', alignItems: 'center', gap: HUD_GAP, minHeight: HUD_ROW_H },
   hudIcon: {
@@ -1170,8 +1178,8 @@ const styles = StyleSheet.create({
   goalReady: { borderColor: '#fff', backgroundColor: C.basil },
   goalTick: {
     position: 'absolute',
-    left: 3,
-    top: 2,
+    right: 6,
+    top: -3,
     width: 24,
     height: 24,
     borderRadius: 12,

@@ -59,3 +59,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 r2 gate not met (critic major 3: D532 D536 D541; code APPROVED; story minors carry). Fix round r3: U1 + U2, then E1 + E2. D532 call: a hire/build chapter task may show cash vs its own price; the bar never offers a non-task purchase.
 - 2026-11-21 S8 r3 U2 done (D536 shots 175b-d, C173 free row 0 gems, T126). E1 r3 launched (+chapterDiamonds); U1 r3 running.
 - 2026-11-21 S8 r3 E1 done (C173 chapterDiamonds, S78 waterfront-4 serve 50,000 first; 2902 tests; pacing same). E2 r3 (D530) waits for U1's D541 ribbon.
+- 2026-11-21 S8 r3 U1 done (D532 cash vs price, D541 tick pop + chapter ribbon + toast shot, D536 Go proved 178h2/i/j, S87 Pier 9 short). E2 r3 launched (D530).

@@ -64,6 +64,7 @@ def run(ctx):
                 tid(page, t).click(); advance(page, 800)
         expect_text(page, "goal", r"940/941")
         if until(page, lambda: is_up(page, "goal-ribbon"), 60000, 250):
+            advance(page, 400)  # the ribbon has faded in
             expect_text(page, "goal-ribbon", r"Chapter\s+3\s+complete")
             shot(page, "178f-chapter-ribbon", 0.5)
         else:
