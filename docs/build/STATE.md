@@ -4,8 +4,8 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.21                   # v5.20 closed 2026-11-21 (r3: critic SATISFIED, codecritic APPROVED, story advisory minors)
-step: fix                        # setup | waves | verify | review | fix | close
-round: r2              # r1 | r2 | r3
+step: verify                        # setup | waves | verify | review | fix | close
+round: r3              # r1 | r2 | r3
 last_shots: v5.21-r2                # r2 verify: True 0 [], layout 0 new; 1 new 141 changed vs v5.21
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
@@ -16,41 +16,10 @@ reviews:               # latest review file per critic, with verdict and counts
   story:  docs/build/v5.21/review-r2-story.md (r2 NOT SATISFIED on minors only; bug 0 major 0 minor 7; E1 U3 T3; S48 S67 S70 S71 S78 S87 S88 advisory)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
 open: ON HOLD (Julien 2026-11-18): every city beyond Boston; cards in docs/build/v5.19/later/ (W4b W4s E4 E4f CITY A3) and the deferred refactor (R2 R2b R3 R4 R5f R6s) are not launched. PARKED for Julien, not in v5.19: economy refit (one pizza per tap +1/10 prep lv, home tops out ~$10M with Suburbs ~$30K, first goal <$50, ECONOMY 3->4 with old saves reset, D493 rival gated at Suburbs 2 stars, D495); don't ask about it during v5.19. Carried: A2 + audio notes AU41 AU39 AU40 AU25 AU82 (music round waits on Julien's R1 listen), SliceAudioSession native module not built; Boston heads need a writer pass (5 barks per head, one per trigger; their script has 4 numbered); Boston GMs placeholder; v5.17/v5.18 critic minors D481 D493 D495 D505 D512 D514. Tools: expo install is refused by the proxy (use npm install with the version from node_modules/expo/bundledNativeModules.json); loop_stats.py cannot read loop: commits; programmer --only takes the fixture name without .py; seam-noise shots 00/24/104/105 and 29-31b. App Store privacy label must say Tracking = Yes; native paths unverified until DEVICE-CHECKLIST.
-next: start S8-v5.21.md
+next: resume S8-v5.21.md at Do step 3: verify r3 (V=5.21, L=v5.21-r3, P=v5.21-r2; first: npm ci and pip install playwright==1.63.0, the container lacks both), then r3 re-checks (PREV = review-r2-*), gate, close per README 8; at close add "S4 todo" to the v5.22 cards line. Ask Julien: D530 Nonna graduation gift (what, how much), not built.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-21 S7 r2 U0 nothing to fix. C2 done: G112 D522 (Lv/+% oven tag) D523 D527 C156 C162 T120 U28 M69 T114; D481 D519 carried. C3 r2 running (+ dial:oven step 11, 160_c3 step-13 scrim + close-upgrades block).
-- 2026-11-21 S7 r2 C3 done (A42 noteCoach, U29, C164, D521 label gone, D522 dial:oven, S72, copy, 160_c3 clean). Verify v5.20-r2.
-- 2026-11-21 S7 verify v5.20-r2 pass: True 0 [], layout 0, 30 changed. r2 re-checks launched.
-- 2026-11-21 S7 r2 gate not met (critic minor 8 > 3; code APPROVED; story minors carry). Fix round r3: C1 + C2, then C3, then U0.
-- 2026-11-21 S7 r3 C1 done (D525 D526 D531 hand; 2775 tests). D531 oven rect sent to C2; C3 r3 launched (+D528).
-- 2026-11-21 S7 r3 C3 done (D528 goal bar shows story goal steps 1-11, C166; 2775 tests). U0 r3 check sent; C2 still running.
-- 2026-11-21 S7 r3 fixes done (C2: T120 U30 C165 T121 D531 oven head; D481 D519 not fixed). Two fix rounds run: session ends before r3 verify.
-- 2026-11-21 S7 CI failed on expo lint (not in README 5): engine/tutorial.ts imported components/coach types (A43). C3 moved them to engine/coach-types.ts; lint 0 errors, 2777/2777, CI steps pass locally.
-- 2026-11-21 S7 verify v5.20-r3 pass: True 0 [], layout 0, 23 changed. r3 re-checks launched.
-- 2026-11-21 S7 v5.20 closed at r3: critic SATISFIED (minor 5: D530 D481 D519 D493 D495), codecritic APPROVED (medium 1), storycritic minors carried (S48 S67 S70 S71 S73).
-- 2026-11-21 S8 v5.21 wave 1: E1 running (W2 waits for chapters.md).
-- 2026-11-21 S8 E1 partial (chapters.md written; pacing moved: downtown-2 4.5->4.9). W2 launched. Needs: boston fixture saveVersion 8, snapshots regen, storyWaitHint callers (U1); open Q: rate/noMissed tasks hold the EAGER sim at waterfront-2.
-- 2026-11-21 S8 E1 done (snapshots regen; 2838/2838, tsc clean). U1 extra: remove storyWaitHint callers. W2 running.
-- 2026-11-21 S8 W2 done (COPY-v5.21.md). Wave 1 committed. Wave 2: U1 + U2 launched (U2 extra: W2 notes on spoiler titles, noMissed {target} in s).
-- 2026-11-21 S8 U2 done (Story tab done, no shots: python playwright missing). Sent: U1 initialTab+open-tasks pre-takeover; U2 copy-system CHAPTERS. For E2: tasks:story/tasks:close coach targets, Story tab follows currentChapter.
-- 2026-11-21 S8 U2 done (copy-system CHAPTERS). Installed python playwright 1.63.0 (pip) for shots; U2 fixture 175_u2 to run once U1 lands. U1 done.
-- 2026-11-21 S8 U1 done (chapterGoal bar, pickGoal gone, storyWaitHint deleted). U2 sent to run 175_u2 shots.
-- 2026-11-21 S8 U2 shots ok (177 padlock fix). Wave 2 committed. Wave 3: E2 launched (extra: tasks:story/close targets, Story tab follows currentChapter).
-- 2026-11-21 S8 E2 partial (steps 7/8 on, 179_e2 ok; step 2 blocked: ch1 is free+already done so bar shows ch2). Routed to E1: currentChapter keeps a free chapter until its tasks are done (no beat gated); no second-oven task (Defaults: bar never shows a purchase). Then E2 finishes step 2.
-- 2026-11-21 S8 E1 done (free ch1 stays current until its tasks are done; pacing moved: downtown-2 4.5->4.9 unchanged). 13 test fails in goal-model/rewards-story fixtures, sent to U1/U2. Then E2 step 2.
-- 2026-11-21 S8 U2 rewards-story fixtures fixed (25 pass). U1 goal-model fix running.
-- 2026-11-21 S8 U1 goal-model fixtures fixed (26 pass). E2 resumed for step 2.
-- 2026-11-21 S8 E2 done (step 2 fits real ch1; 2876 tests). U2 casts dropped. pacing moved: downtown-2 4.5->4.9 (+8.9%). Verify v5.21.
-- 2026-11-21 S8 verify v5.21 FAIL: True 8 errors (148_u4, 98_u3, tasks/claim-sheet shots expect Daily; drawer opens on Story), layout 0, 10 new 121 changed. Sent to U2.
-- 2026-11-21 S8 verify v5.21 pass: True 0 [], layout 0, 10 new 126 changed. r1 reviews launched (critic, codecritic, storycritic).
-- 2026-11-21 S8 r1 gate not met (critic bug 5 major 4; code CHANGES REQUESTED high 1; story major 2). Fix round r2: E1 + U2, then U1 + E2, then W2. S and N owners have no fix route.
-- 2026-11-21 S8 r2 U2 done (G114 S75 C171 C172 D535-D538; Go prop for U1). U1 r2 launched; E1 r2 running.
-- 2026-11-21 S8 r2 E1 done (C169/G113 chapter gems paid+banked, G115, D533, D539, C170, M73; S78 needs T key shift; pacing same as r1: downtown-2 +8.9%). U2 sent E1 follow-ups; U1 told D533 test change. Next: E2 r2, then W2 r2.
-- 2026-11-21 S8 r2 U2 follow-ups done (CHAPTER_DIAMONDS re-export, visibleTasks). E2 r2 launched; U1 r2 running.
-- 2026-11-21 S8 r2 E2 done (S86 shot 179d; D530 not done, needs U D541 ribbon). W2 r2 launched. Pending: E1 sceneReady->sceneWaitSeconds after U1.
-- 2026-11-21 S8 r2 U1 done (G116 G117 D532 D534 D536 Go, D541 toast, U31). E1 sent sceneReady follow-up; W2 r2 running.
 - 2026-11-21 S8 r2 E1 sceneReady unified (2895/2895). W2 r2 running.
 - 2026-11-21 S8 r2 W2 done (S76 S77 S79-S85; 34 keys changed, 1 added). W2 writing S74 line; U2 syncing copy table.
 - 2026-11-21 S8 r2 fixes done (U1 win.short; E1 S74 scene line, golden re-recorded; 2896 tests). Verify v5.21-r2.
@@ -60,3 +29,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 r3 U2 done (D536 shots 175b-d, C173 free row 0 gems, T126). E1 r3 launched (+chapterDiamonds); U1 r3 running.
 - 2026-11-21 S8 r3 E1 done (C173 chapterDiamonds, S78 waterfront-4 serve 50,000 first; 2902 tests; pacing same). E2 r3 (D530) waits for U1's D541 ribbon.
 - 2026-11-21 S8 r3 U1 done (D532 cash vs price, D541 tick pop + chapter ribbon + toast shot, D536 Go proved 178h2/i/j, S87 Pier 9 short). E2 r3 launched (D530).
+- 2026-11-21 S8 r3 fixes done (E2 D530 ribbon via goalCheer, shot 179e; gift needs Julien). 2902/2902, tsc clean, pacing same (downtown-2 +8.9%). Two fix rounds run: session ends before r3 verify.
