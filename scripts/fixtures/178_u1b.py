@@ -2,7 +2,7 @@
 
 178  chapter 2 at 0 pies: "Ch 2 · Serve 424 pies in Downtown", 0/424, the bar empty
 178b chapter 2 half way: 212/424, the bar half full
-178c a chapter done and waiting on the story's pacing: a full basil bar that says "Ready" with the countdown
+178c a chapter done and waiting on the story's pacing: a full bar with the countdown in the amount slot ("Ready" on basil only at 0:00)
 178d a tap on the bar opens the task list on its Story tab (it buys nothing)
 Every state is asserted with expect() before its shot; game time moves only through advance().
 """
@@ -15,6 +15,9 @@ def story_save(sold=0, **kw):
     """Downtown after its tutorial, before Nonna takes over: chapter 2 of the story is on."""
     unbuilt = {h: shop(built=False, managed=False) for h in IDS[1:]}
     opening = ["task.downtown-1.1", "task.downtown-1.2", "task.downtown-1.3"]  # the free chapter 1 stays current until its tasks are done
+    # D533: the bar shows the hire and the rate before the long serve count, so they are done here and the bar is on the serve
+    opening += ["task.downtown-2.2", "task.downtown-2.3"]
+    kw.setdefault("heads", {"prep": True, "oven": True, "counter": False})
     return dict(MID_SAVE, x={"chapters": {"done": opening, "best": {}, "run": {}, "calm": {}, "report": False}}, saveVersion=8, cash=500, totalEarned=500, vehicle=0, active="downtown", tutorial=TUTORIAL_DONE,
                 shops=dict(unbuilt, downtown=shop(managed=False, prep=3, ovens=2, counter=2, sold=sold, **kw)),
                 seenScenes=["downtown-1"], scrapbookViewed=1, lastSavedAt=T0_MS, playSeconds=200)
@@ -42,7 +45,7 @@ def run(ctx):
         report["errors"].append(f"U1b 178b failed: {e}")
 
     # 178c: every task of chapters 2 and 3 done: chapter 2's beat plays (and is skipped), and chapter 3's waits on the 90 s the story keeps between
-    # beats: a full basil bar that says Ready, with the countdown in its words
+    # beats: a full bar with the countdown in the amount slot
     try:
         sv = story_save(sold=941, heads={"prep": True, "oven": True, "counter": True})
         sv["x"] = {"chapters": {"done": ["task.downtown-1.1", "task.downtown-1.2", "task.downtown-1.3", "task.downtown-2.1", "task.downtown-2.2", "task.downtown-2.3", "task.downtown-3.1", "task.downtown-3.2", "task.downtown-3.3"],
