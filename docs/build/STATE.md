@@ -41,3 +41,4 @@ next: start S7-v5.20.md. v5.20 scope set by Julien 2026-11-20 (docs/PLAN-v5.20-o
 - 2026-11-21 S7 Julien: reword the second-oven lines (no ladder change). Sent to W1 writer; C3 copies them into src/content/copy/home/tutorial.ts.
 - 2026-11-21 S7 C3 copied reworded lines (2725/2725). Waves done; verify v5.20 started.
 - 2026-11-21 S7 verify v5.20 FAIL: loaded True, 4 errors (coach-block intercepts walk-drivers in core loop + U4 148; 98_u3 starter-sheet missing), layout 0; 17 new 9 changed 2 removed. Sent to C1 (U).
+- 2026-11-21 S7 C1: verify errors were fixtures (force clicks in 00_boot/148_u4; 98_u3 reseeded). Found stuck-tutorial risk (migrated step 14->15 look on managed shop never ends); sent to C3.

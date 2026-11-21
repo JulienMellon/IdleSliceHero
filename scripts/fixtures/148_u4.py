@@ -42,7 +42,7 @@ def run(ctx):
             if i % 4 == 3:
                 for b in ["walk-drivers", "walk-ovens"]:
                     if page.locator(f'[data-testid="{b}"]').count():
-                        tid(page, b).click()
+                        tid(page, b).click(force=True)  # v5.20: the scrim may eat it (a tap outside Nonna's cut-out), like a finger's
             if page.locator('[data-testid="skip-scene"]').count():
                 tid(page, "skip-scene").click()
         expect(page, "coach", 3000)
