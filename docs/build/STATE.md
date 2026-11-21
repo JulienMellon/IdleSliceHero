@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.21                   # v5.20 closed 2026-11-21 (r3: critic SATISFIED, codecritic APPROVED, story advisory minors)
-step: verify                        # setup | waves | verify | review | fix | close
+step: review                        # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
-last_shots: v5.20-r3               # r3 verify: True 0 [], layout 0 new; 0 new 23 changed vs v5.20-r2
+last_shots: v5.21                   # r1 verify: True 0 [], layout 0 new; 10 new 126 changed vs v5.20-r3
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
   E1 done  W2 done  U1 done  U2 done  E2 done
@@ -44,3 +44,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 U1 goal-model fixtures fixed (26 pass). E2 resumed for step 2.
 - 2026-11-21 S8 E2 done (step 2 fits real ch1; 2876 tests). U2 casts dropped. pacing moved: downtown-2 4.5->4.9 (+8.9%). Verify v5.21.
 - 2026-11-21 S8 verify v5.21 FAIL: True 8 errors (148_u4, 98_u3, tasks/claim-sheet shots expect Daily; drawer opens on Story), layout 0, 10 new 121 changed. Sent to U2.
+- 2026-11-21 S8 verify v5.21 pass: True 0 [], layout 0, 10 new 126 changed. r1 reviews launched (critic, codecritic, storycritic).
