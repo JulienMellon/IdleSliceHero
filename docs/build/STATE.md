@@ -52,3 +52,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 r2 E2 done (S86 shot 179d; D530 not done, needs U D541 ribbon). W2 r2 launched. Pending: E1 sceneReady->sceneWaitSeconds after U1.
 - 2026-11-21 S8 r2 U1 done (G116 G117 D532 D534 D536 Go, D541 toast, U31). E1 sent sceneReady follow-up; W2 r2 running.
 - 2026-11-21 S8 r2 E1 sceneReady unified (2895/2895). W2 r2 running.
+- 2026-11-21 S8 r2 W2 done (S76 S77 S79-S85; 34 keys changed, 1 added). W2 writing S74 line; U2 syncing copy table.
