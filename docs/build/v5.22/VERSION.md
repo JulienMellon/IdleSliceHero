@@ -63,3 +63,10 @@ Upgrade cards show capacity ("Ovens · 18/min → 22"), not "+$/min" (U4). The r
 
 ## Close
 README section 8. Report: verdicts, whether A3 ran, and what is open. Set STATE to v5.23 and stop.
+
+## Added 2026-11-21 (S8, Julien): card S4
+| ID | Lane | What | Card |
+| --- | --- | --- | --- |
+| S4 | S | Sharded screenshot run (`--shard K/N`, `--jobs N`, merged report and layout) | `card-S4.md` |
+
+**Wave:** run S4 first, alone, before wave 1. It edits `scripts/screenshots.py`, which other cards' fixture checks run, and it changes README section 5's verify line. **Fix routing:** owner S → S4.
