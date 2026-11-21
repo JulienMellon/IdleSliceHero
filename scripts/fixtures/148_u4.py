@@ -99,6 +99,7 @@ def run(ctx):
         page = seeded_page(browser, rewarded(day_str(), 3, daily)); settle(page, 2.0)
         tid(page, "open-tasks").click()
         expect(page, "tasks-drawer", 3000)
+        tid(page, "tab-daily").click()                    # v5.21: the drawer opens on Story
         expect(page, "claim-daily-2", 3000)               # the finished one keeps its Claim button
         expect(page, "progress-claim-daily-0", 3000)      # the unfinished ones say how far they are
         expect_text(page, "progress-claim-daily-0", r"3 ?/ ?5")

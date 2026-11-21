@@ -22,7 +22,7 @@ def run(ctx):
     try:
         page = played_page(browser, rewarded(day_str(), 3, generate=True))
         shot(page, "29-hud-rewards", 0.8)
-        tid(page, "open-tasks").click(); shot(page, "30-tasks-daily", 0.8)
+        tid(page, "open-tasks").click(); tid(page, "tab-daily").click(); shot(page, "30-tasks-daily", 0.8)  # v5.21: the drawer opens on Story
         page.locator('[data-testid="chest-0"]').first.scroll_into_view_if_needed(); shot(page, "30b-tasks-daily-chests", 0.5)
         tid(page, "tab-weekly").click(); page.locator('[data-testid$="claim-weekly-0"]').first.scroll_into_view_if_needed(); shot(page, "31-tasks-weekly", 0.6)
         page.locator('[data-testid="weekly-chest"]').first.scroll_into_view_if_needed(); shot(page, "31b-tasks-weekly-chest", 0.5)
