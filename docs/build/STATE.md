@@ -48,3 +48,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 r1 gate not met (critic bug 5 major 4; code CHANGES REQUESTED high 1; story major 2). Fix round r2: E1 + U2, then U1 + E2, then W2. S and N owners have no fix route.
 - 2026-11-21 S8 r2 U2 done (G114 S75 C171 C172 D535-D538; Go prop for U1). U1 r2 launched; E1 r2 running.
 - 2026-11-21 S8 r2 E1 done (C169/G113 chapter gems paid+banked, G115, D533, D539, C170, M73; S78 needs T key shift; pacing same as r1: downtown-2 +8.9%). U2 sent E1 follow-ups; U1 told D533 test change. Next: E2 r2, then W2 r2.
+- 2026-11-21 S8 r2 U2 follow-ups done (CHAPTER_DIAMONDS re-export, visibleTasks). E2 r2 launched; U1 r2 running.

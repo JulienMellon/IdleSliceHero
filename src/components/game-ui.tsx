@@ -10,7 +10,19 @@ import type { NightOvenView } from '../engine/night-oven';
 import { C, F } from '../theme';
 import { useCoachTarget } from './coach/targets';
 import { cashFont, HUD_GAP, HUD_ICON, MIN_FONT, rateLine } from './endgame/fit-model';
-import { GOAL_BAR, GOAL_FLASH_MS, GOAL_FONT_MAX_SCALE, GOAL_GAP, GOAL_LAYOUT, GOAL_PAD, goalBarLayout, goalLine, goalWords, type GoalSpan } from './goal-model';
+import {
+  GOAL_BAR,
+  GOAL_CHEVRON,
+  GOAL_FLASH_MS,
+  GOAL_FONT_MAX_SCALE,
+  GOAL_GAP,
+  GOAL_LAYOUT,
+  GOAL_PAD,
+  goalBarLayout,
+  goalLine,
+  goalWords,
+  type GoalSpan,
+} from './goal-model';
 import { buyLabelText } from './a11y-labels';
 import { BookIcon, ClipboardIcon, CoinIcon, GiftIcon, MapIcon, SliceIcon, StarIcon } from './icons';
 import { countUpValue, offlineGiftView, type GiftSummary } from './offline-model';
@@ -565,6 +577,10 @@ function GoalLine({
           {amount}
         </Text>
       )}
+      {/* D532: every bar state opens the task list: a chevron in the right padding says so (the padding is GOAL_PAD wide, so the amount keeps its room) */}
+      <Text style={[styles.goalChevron, { color }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        {GOAL_CHEVRON}
+      </Text>
     </View>
   );
 }
@@ -1125,6 +1141,7 @@ const styles = StyleSheet.create({
   goalLabel: { fontFamily: F.bold, fontSize: 14, marginRight: 4, flexShrink: 0 },
   goalLabelLast: { flexShrink: 1 },
   goalAmt: { fontFamily: F.bold, fontSize: 13, ...GOAL_LAYOUT.amount },
+  goalChevron: { position: 'absolute', right: 6, top: 0, bottom: 0, fontFamily: F.bold, fontSize: 18, lineHeight: 26, textAlignVertical: 'center' },
   goalAmtBox: { ...GOAL_LAYOUT.amount },
 
   ovenCard: {

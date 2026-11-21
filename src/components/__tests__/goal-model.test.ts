@@ -1,7 +1,9 @@
 /// <reference types="jest" />
 import '../../engine/features';
 import { HOME_CHAPTERS } from '../../content/cities/home/chapters';
+import { cityOf } from '../../content/cities';
 import { CITY_NAME } from '../../content/cities/home/data';
+import { HOME_SCENES } from '../../content/scenes/home';
 import { CHAPTERS_KEY, newChapterSave } from '../../engine/chapters';
 import { count, goalAmount, money, pizzas } from '../../engine/format';
 import * as G from '../../engine/game';
@@ -13,9 +15,15 @@ import {
   GOAL_LAYOUT,
   GOAL_TAB,
   goalBarLayout,
+  cityStory,
+  GOAL_CHEVRON,
+  GOAL_PAD,
+  goalFitsWhole,
   goalLabelFit,
   goalLabelFits,
   goalLine,
+  shortTask,
+  STORY_TOTAL,
   goalTextW,
   goalWords,
   snapSeam,
@@ -169,64 +177,78 @@ const stateAt = (n: number, k: number, sold = 0): G.GameState => {
   const next = c.tasks[k];
   return doneKeys(next?.kind === 'serve' ? withShop(g, next.shop, { sold }) : g, [...(n > 1 ? OPENING : []), ...c.tasks.slice(0, k).map((x) => x.key)]);
 };
+/** Chapter `n` with every task but its serve done (D533: the bar shows the hire before the serve), `sold` pies in. */
+const serving = (n: number, sold: number): G.GameState => {
+  const c = HOME_CHAPTERS[n - 1];
+  const serve = c.tasks.find((t) => t.kind === 'serve')!;
+  const g = { ...G.newGame(0), seenScenes: HOME_CHAPTERS.slice(0, n - 1).map((x) => x.sceneId) };
+  return doneKeys(withShop(g, serve.shop, { sold }), [...(n > 1 ? OPENING : []), ...c.tasks.filter((t) => t !== serve).map((t) => t.key)]);
+};
 const everyTaskGoal = () => HOME_CHAPTERS.flatMap((c, i) => c.tasks.map((_, k) => chapterGoal(stateAt(i + 1, k))!));
 
 describe('the goal bar is the next chapter task (U1)', () => {
   test('chapter 2, 212 of 424 pies: "Ch 2 · Serve 424 pies in Downtown", 212/424, the fill at half', () => {
-    const g = chapterGoal(stateAt(2, 0, 212))!;
+    const g = chapterGoal(serving(2, 212))!;
     expect(g.label).toBe('Ch 2 \u00B7 Serve 424 pies in Downtown');
     expect(g.text).toBe('212/424');
     expect([g.current, g.target, g.ready]).toEqual([212, 424, false]);
     expect(goalBarLayout(g.current, g.target, g.ready, 351).pct).toBe(0.5);
   });
+  test('the hire comes before the long serve count (D533), and the serve follows once it is hired', () => {
+    const open = stateAt(2, 0, 212);
+    expect(chapterGoal(open)!.label).toBe('Ch 2 \u00B7 Hire Lucia, head baker');
+    expect(chapterGoal(serving(2, 212))!.key).toBe('task.downtown-2.1');
+  });
   test("it is the Story tab's own line for the same task, so the bar and the list never disagree", () => {
-    for (const [n, k] of [
-      [2, 0],
-      [2, 1],
-      [3, 1],
-      [9, 0],
-      [20, 1],
-    ]) {
-      const g = stateAt(n, k, 50);
-      const row = storyView(g, null).tasks.find((x) => !x.done)!;
-      expect(chapterGoal(g)!.label).toBe(`Ch ${n} \u00B7 ${row.label}`);
-      expect(chapterGoal(g)!.text).toBe(row.progress);
+    for (const g of [stateAt(2, 0, 50), serving(2, 50), stateAt(3, 1, 50), serving(10, 50), stateAt(20, 1, 50)]) {
+      const goal = chapterGoal(g)!;
+      const row = storyView(g, null).tasks.find((x) => x.key === goal.key)!;
+      expect(goal.label.endsWith(row.label)).toBe(true);
+      expect(goal.text).toBe(row.progress);
     }
   });
   test('it changes only when a task completes: the next task, its key and a fresh count', () => {
-    const a = chapterGoal(stateAt(2, 0, 100))!;
-    const b = chapterGoal(stateAt(2, 0, 300))!;
+    const a = chapterGoal(serving(2, 100))!;
+    const b = chapterGoal(serving(2, 300))!;
     expect(b.key).toBe(a.key);
     expect(b.label).toBe(a.label);
-    const c = chapterGoal(stateAt(2, 1))!;
+    const c = chapterGoal(stateAt(2, 0, 300))!;
     expect(c.key).not.toBe(a.key);
-    expect(c.label).toBe('Ch 2 \u00B7 Hire Lucia, head baker');
     expect(c.label).not.toBe(a.label);
   });
   test('a yes/no task has no count and an empty bar', () => {
     const g = chapterGoal(stateAt(2, 1))!;
     expect([g.text, g.current, g.target]).toEqual(['', 0, 1]);
   });
-  test('the short form drops the shop, the tiny one keeps the chapter and the count', () => {
-    const g = chapterGoal(stateAt(2, 0, 212))!;
+  test('the short form drops the shop and what follows a comma; the tiny one is the count or the first word', () => {
+    const g = chapterGoal(serving(2, 212))!;
     expect(g.short).toBe('Ch 2 \u00B7 Serve 424 pies');
     expect(g.tiny).toBe('Ch 2 \u00B7 212/424');
-    expect(withoutShop('Serve 424 pies in Downtown', 'Downtown')).toBe('Serve 424 pies');
+    const h = chapterGoal(stateAt(2, 0, 212))!;
+    expect(h.short).toBe('Ch 2 \u00B7 Hire Lucia');
+    expect(h.tiny).toBe('Ch 2 \u00B7 Hire');
+    expect(shortTask('Serve 424 pies in Downtown', 'Downtown')).toBe('Serve 424 pies');
+    expect(shortTask('Hire Lucia, head baker', 'Downtown')).toBe('Hire Lucia');
+    expect(shortTask('Build your Suburbs shop', 'Suburbs')).toBe('Build Suburbs');
+    expect(shortTask('Read the Downtown shop report', 'Downtown')).toBe('Read the shop report');
     expect(withoutShop('Hire Lucia, head baker', 'Downtown')).toBe('Hire Lucia, head baker');
-    expect(withoutShop('Build your Suburbs shop', 'Suburbs')).toBe('Build your Suburbs shop');
   });
-  test('every task of every chapter fits a bar of 296, 351 and 369 pt in one of its three forms, with its amount or without', () => {
+  test('G117: every task of every chapter shows whole words, never a cut letter, on a bar of 296, 351 and 369 pt (the line goalLine picks)', () => {
     const bad: string[] = [];
     for (const g of everyTaskGoal())
       for (const barW of [296, 351, 369]) {
         const line = goalLine(g, barW);
-        if (!goalLabelFits(line.label, line.text ?? '', barW)) bad.push(`${barW} ${line.label} ${line.text}`);
+        if (!goalFitsWhole(line.label, line.text ?? '', barW)) bad.push(`${barW} "${line.label}" ${line.text}`);
       }
     expect(bad.slice(0, 5)).toEqual([]);
   });
   test('the tap opens the list on the Story tab, and a completing task flashes for 600 ms at most', () => {
     expect(GOAL_TAB).toBe('story');
     expect(GOAL_FLASH_MS).toBeLessThanOrEqual(600);
+  });
+  test('D532: the chevron fits the right padding', () => {
+    expect(GOAL_CHEVRON).toBe('\u203A');
+    expect(GOAL_PAD).toBeGreaterThanOrEqual(18);
   });
 });
 
@@ -243,20 +265,26 @@ describe('the tutorial is chapter 1 (U1)', () => {
   });
 });
 
-describe('a done chapter waiting on the story (U1)', () => {
+describe('a done chapter waiting on the story (U1, D534)', () => {
   const waiting = (playSeconds: number) => {
     const c = HOME_CHAPTERS[1];
     const g = { ...G.newGame(0), seenScenes: ['downtown-1'], playSeconds, sceneAt: { 'downtown-1': 0 } };
     return doneKeys(withShop(g, 'downtown', { sold: 424 }), [...OPENING, ...c.tasks.map((t) => t.key)]);
   };
-  test('a full basil bar that says Ready, with the countdown in its words', () => {
+  test('the countdown is in the amount slot, the bar is full and not yet "Ready"', () => {
     const g = chapterGoal(waiting(500), 450)!;
-    expect(g.ready).toBe(true);
-    expect(g.label).toBe('Ch 2 \u00B7 Next scene in 0:40');
-    expect(g.text).toBe('Ready');
-    expect(goalBarLayout(g.current, g.target, g.ready, 351).ready).toBe(true);
+    expect(g.label).toBe('Ch 2 \u00B7 Next scene in');
+    expect(g.text).toBe('0:40');
+    expect([g.ready, g.current, g.target]).toEqual([false, 1, 1]);
+    expect(goalBarLayout(g.current, g.target, g.ready, 351).pct).toBe(1);
   });
-  test('its key is not a task key, so the bar flashes once when the last task completes', () => {
+  test('"Ready" and the basil bar only at 0:00, when the scene plays now', () => {
+    const g = chapterGoal(waiting(500), 100)!;
+    expect([g.text, g.ready]).toEqual(['Ready', true]);
+    expect(goalBarLayout(g.current, g.target, g.ready, 351).ready).toBe(true);
+    expect(chapterGoal(waiting(500), null)!.text).toBe('Ready');
+  });
+  test('its key is not a task key, so the bar flashes once when the last task completes, and not again as the seconds count down', () => {
     const k = chapterGoal(waiting(500), 450)!.key;
     expect(k).not.toBe(chapterGoal(stateAt(2, 2))!.key);
     expect(chapterGoal(waiting(520), 450)!.key).toBe(k);
@@ -267,6 +295,17 @@ describe('after the last chapter, and in a city without chapters (U1)', () => {
   test('no chapter goal: the caller shows the mastery goal, then the story count', () => {
     expect(chapterGoal(doneKeys({ ...G.newGame(0), seenScenes: HOME_CHAPTERS.map((c) => c.sceneId) }, OPENING))).toBeNull();
     expect(chapterGoal(G.newGame(0, 'boston'))).toBeNull();
+  });
+  test('G116: the story count is the active city\'s own: Boston never shows "Story 42/40"', () => {
+    const home = cityStory({ ...G.newGame(0), seenScenes: HOME_SCENES.map((x) => x.id) });
+    expect(home.label).toBe(`Story ${HOME_SCENES.length}/${STORY_TOTAL}`);
+    const boston = G.newGame(0, 'boston');
+    const total = cityOf(boston).scenes.length;
+    expect(cityStory(boston).label).toBe(`Story 0/${total}`);
+    // a franchise keeps the home scenes in seenScenes: only Boston's own count
+    const after = cityStory({ ...boston, seenScenes: [...HOME_SCENES.map((x) => x.id), cityOf(boston).scenes[0].id] });
+    expect(after.current).toBe(1);
+    expect(after.target).toBe(total);
   });
   test('the progress is the same one the Story tab prints', () => {
     expect(`${pizzas(212)}/${count(424)}`).toBe('212/424');

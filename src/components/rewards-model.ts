@@ -441,7 +441,8 @@ export interface StoryView {
 /** The reward row as one line of text (what it is read as): "🎬 New scene · 💎 5". */
 export const storyRewardText = (r: StoryReward): string => `${r.scene ? '\u{1F3AC} ' : ''}${r.label} \u00B7 \u{1F48E} ${r.diamonds}`;
 
-function storyTask(g: GameState, task: ChapterTask): StoryTask {
+/** One task as the Story tab and the goal bar read it (the bar formats only the next one). */
+export function storyTask(g: GameState, task: ChapterTask): StoryTask {
   const p = taskProgress(g, task);
   const shop = def(task.shop, cityOf(g)).name;
   // `noMissed`'s {target} is a bare number of seconds; every other count reads as a short number ("12.4K")

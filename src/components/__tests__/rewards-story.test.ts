@@ -119,6 +119,15 @@ describe('chapter 2 half way', () => {
   });
 });
 
+describe('the report task (D539)', () => {
+  it('is not listed while the report reader does not exist: chapter 3 shows its two other tasks', () => {
+    const g = doneKeys({ ...G.newGame(0), seenScenes: ['downtown-1', 'downtown-2'] }, CH1);
+    const v = storyView(g, null);
+    expect(v.number).toBe(3);
+    expect(v.tasks.map((t) => t.label)).toEqual(['Serve 941 pies in Downtown', 'Hire Benny, head cashier']);
+  });
+});
+
 describe('the chapter whose scene is the takeover', () => {
   const g = doneKeys({ ...G.newGame(0), seenScenes: ['downtown-1', 'downtown-2', 'downtown-3'] }, CH1);
   it('says it opens Daily and Weekly (D538)', () => {

@@ -12,13 +12,13 @@ import { OrderChip } from '@/components/order-chip';
 import { chipPhase } from '@/components/order-model';
 import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
-import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT, type TasksTab } from '@/components/rewards-model';
+import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT, type StoryGo, type TasksTab } from '@/components/rewards-model';
 import { coachMode, coachStep, hintsAllowed } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
 import { fitFont, MIN_FONT } from '@/components/endgame/fit-model';
-import { chapterGoal, GOAL_TAB, masteryGoal, STORY_TOTAL, storyGoal } from '@/components/goal-model';
+import { chapterGoal, cityStory, GOAL_TAB, masteryGoal } from '@/components/goal-model';
 import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots } from '@/components/slots';
 import { buyKeyOf, type DrawerIcon, type DrawerView, drawerCards, parseBuyKey, tiedBundle } from '@/components/drawer-model';
 import { buttonTone, buyBundle, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
@@ -35,7 +35,9 @@ import { usePerfMarks } from '@/components/scene/clock';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
 import { cityOf } from '@/content/cities';
 import type { HeadKind } from '@/content/tuning';
+import type { NeighborhoodId } from '@/content/types';
 import { APP_VERSION } from '@/content/version';
+import { gameNow } from '@/engine/clock';
 import { pizzas } from '@/engine/format';
 import * as G from '@/engine/game';
 import { nightOvenView } from '@/engine/night-oven';
@@ -217,6 +219,17 @@ export default function GameScreen() {
     setTasksTab(GOAL_TAB);
     setTasksOpen(true);
   }, []);
+  // D536: the Story tab's "Go" on a hire, build, win or bid row takes the player there: the list closes and the shop the task names opens
+  // (a hire or a bid: its upgrade drawer; a build: the shop tabs, where the unbuilt shop waits; a win: the shop, where the challenge card is)
+  const onGo = useCallback(
+    (kind: StoryGo, shop: NeighborhoodId) => {
+      haptic();
+      setTasksOpen(false);
+      setActive(shop);
+      if (kind === 'hire' || kind === 'bid') setDrawerOpen(true);
+    },
+    [setActive],
+  );
   const onGift = useCallback(() => {
     haptic();
     setTasksOpen(false);
@@ -288,15 +301,32 @@ export default function GameScreen() {
   if (cg) goal = { ...cg, onPress: onGoal };
   else if (mg) goal = { label: mg.label, short: mg.short, tiny: mg.tiny, text: mg.text, current: mg.current, target: mg.target, onPress: onGoal };
   else {
-    const story = storyGoal(game.seenScenes.length);
+    // G116: the active city's own count ("Story 0/36" in Boston), never the home city's total
+    const story = cityStory(game);
     goal = {
       label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : story.label,
       current: story.current,
-      target: STORY_TOTAL,
+      target: story.target,
       icon: <TrophyIcon size={22} />,
       onPress: onGoal,
     };
   }
+  // D541: a task completing says so: "✓ Ch 2 · Serve 424 pies in Downtown", or "✓ Ch 2 complete" when it was the last (the bar itself flashes once)
+  const goalKey = cg?.key;
+  const goalLabel = cg?.label ?? '';
+  const prevGoal = useRef<{ key: string; label: string } | null>(null);
+  useEffect(() => {
+    const prev = prevGoal.current;
+    prevGoal.current = goalKey === undefined ? null : { key: goalKey, label: goalLabel };
+    if (!prev || goalKey === undefined || prev.key === goalKey || prev.key.endsWith('.ready')) return;
+    const at = gameNow();
+    const text = goalKey.endsWith('.ready') ? `✓ ${prev.label.split(' · ')[0]} complete` : `✓ ${prev.label}`;
+    useGame.setState({ toast: { text, at } });
+    const timer = setTimeout(() => {
+      if (useGame.getState().toast?.at === at) useGame.setState({ toast: null });
+    }, 2200);
+    return () => clearTimeout(timer);
+  }, [goalKey, goalLabel]);
 
   // the HUD names the next station to tap (prep → oven → counter) until a GM runs the shop
   // G106: a shop whose three heads are hired runs itself too: it shows its rate, not "Baking…"
@@ -510,6 +540,7 @@ export default function GameScreen() {
             tab={tasksTab}
             onTab={setTasksTab}
             onClose={closeTasks}
+            onGo={onGo}
             actions={taskActions}
           />
         )}

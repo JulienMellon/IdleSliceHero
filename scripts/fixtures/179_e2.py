@@ -1,8 +1,9 @@
-"""Card E2 (v5.21): tutorial steps 7 and 8, Nonna's list. Shots 179-179c. Chapter 1 (serve 1, serve 4, hire the prep head) is what the bar and the list show.
+"""Card E2 (v5.21): tutorial steps 7 and 8, Nonna's list. Shots 179-179d. Chapter 1 (serve 1, serve 4, hire the prep head) is what the bar and the list show.
 
 179  step 7: "I keep a list, like my mother did. Tap it, cara." with the goal bar lit
 179b step 8: the task list is open on its Story tab; the tab is lit (a look)
 179c step 8 after the look: the scrim is gone and only Nonna's card stays, so the list can be read and closed
+179d step 9: the bar still reads chapter 1 and its open hire (S86)
 Closing the list ends step 8: step 9's "save up" line follows. Every state is asserted with expect() before its shot; game time moves only through advance().
 """
 from shots_lib import *  # noqa: F401,F403  (seeded_page, settle, shot, expect, expect_text, tid, advance, report, ...)
@@ -45,5 +46,9 @@ def run(ctx):
         # closing the list ends step 8
         tid(page, "close-tasks").click(); advance(page, 700)
         expect_text(page, "coach", r"Save \$[\d.,]+\w* for a faster oven", 3000)
+        # S86: through steps 9-14 the bar stays on chapter 1 and shows its open hire (Marco), not chapter 2's serve
+        expect_text(page, "goal", r"Ch\s*1", 3000)
+        expect_text(page, "goal", r"Hire", 3000)
+        shot(page, "179d-step9-bar", 0.4)
     except Exception as e:
         report["errors"].append(f"E2 179 failed: {e}")

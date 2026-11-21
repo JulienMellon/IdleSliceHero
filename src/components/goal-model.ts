@@ -4,12 +4,13 @@ import { HOME_SCENES } from '../content/scenes/home';
 import { finaleSeen } from '../engine/features/counterattack';
 import { masteryMax, masteryTotal, nextStar } from '../engine/features/mastery';
 import { cityOf } from '../content/cities';
-import { nextTask } from '../engine/chapters';
+import { t } from '../content/copy';
+import { chapterReady, chaptersOf, currentChapter, nextTask } from '../engine/chapters';
 import { def, type GameState } from '../engine/game';
 import { C } from '../theme';
 import { copy } from './endgame/copy-text';
 import { nextStarLine, starName } from './endgame/mastery-model';
-import { storyView, type TasksTab } from './rewards-model';
+import { clockText, storyTask, type TasksTab } from './rewards-model';
 
 export const GOAL_BAR = {
   /** The bar's own border (pt); the fill and the clipped copy live inside it. */
@@ -71,7 +72,9 @@ export const aOrAn = (word: string): 'a' | 'an' => (/^[aeiou]/i.test(word.trim()
 
 // ---------- the line's fit (C105, T81) ----------
 /** Horizontal padding inside the bar (pt) and the gap kept between the words and the amount. */
-export const GOAL_PAD = 12;
+export const GOAL_PAD = 18;
+/** The chevron that says the bar opens something: drawn in the right padding, so it takes nothing from the amount. */
+export const GOAL_CHEVRON = '›';
 export const GOAL_GAP = 6;
 /** Largest Dynamic Type scale the goal line follows: the bar is 30 pt tall, so past this the words would not fit it. */
 export const GOAL_FONT_MAX_SCALE = 1.2;
@@ -111,8 +114,15 @@ export const goalLabelFits = (label: string, amount: string, barW: number): bool
 /** Every scene of the home city: the bar's total (40 with Todd's interludes and the hire scenes), never a number typed in a screen. */
 export const STORY_TOTAL = HOME_SCENES.length;
 /** The completed-city fallback goal: "Story 12/40", the bar filling as scenes are seen. */
-export function storyGoal(seen: number): { label: string; current: number; target: number } {
-  return { label: `Story ${seen}/${STORY_TOTAL}`, current: seen, target: STORY_TOTAL };
+export function storyGoal(seen: number, total: number = STORY_TOTAL): { label: string; current: number; target: number } {
+  return { label: `Story ${seen}/${total}`, current: seen, target: total };
+}
+
+/** G116: the story count of the city being played: its own scenes seen of its own scenes (a franchise keeps the old city's ids in `seenScenes`). */
+export function cityStory(g: GameState): { label: string; current: number; target: number } {
+  const scenes = cityOf(g).scenes;
+  const ids = new Set(scenes.map((sc) => sc.id));
+  return storyGoal(g.seenScenes.filter((id) => ids.has(id)).length, scenes.length);
 }
 
 // ---------- the post-story goal (v5.15, D427) ----------
@@ -185,17 +195,17 @@ export const GOAL_FLASH_MS = 500;
 export interface ChapterGoal {
   /** "Ch 2 · Serve 424 pies in Downtown". */
   label: string;
-  /** G98: the same without the shop ("Ch 2 · Serve 424 pies"), for a narrow bar. */
+  /** G98: the same without the shop and what follows a comma ("Ch 2 · Serve 424 pies", "Ch 2 · Hire Lucia"), for a narrow bar. */
   short: string;
-  /** The narrowest bar: the chapter and the count only ("Ch 2 · 212/424"). */
+  /** The narrowest bar: the chapter and the count, or the task's first word ("Ch 2 · 212/424", "Ch 2 · Hire"): whole words only. */
   tiny: string;
-  /** The progress beside the words: "212/424" ('' for a yes/no task). */
+  /** The amount beside the words: "212/424", the countdown "1:29", "Ready" ('' for a yes/no task). */
   text: string;
   current: number;
   target: number;
   /** What the goal is: the task's key (the chapter's while it waits), so the bar flashes once when it changes. */
   key: string;
-  /** A done chapter waiting on the story's pacing: a full basil bar that says "Ready". */
+  /** The chapter's wait is over and its scene plays now: a full basil bar that says "Ready". */
   ready: boolean;
 }
 
@@ -206,40 +216,60 @@ export function withoutShop(label: string, shopName: string): string {
 }
 
 /**
- * The goal bar's chapter goal: the next task of the chapter the player is on, with its progress; or, once every task is done and the beat waits on
- * the story's pacing, the full "Ready" bar with the countdown. Null after the last chapter (the caller shows the mastery goal, then the story count).
- * The words and the progress are the Story tab's own (`storyView`, rewards-model), so the bar and the list never disagree.
- * `lastSceneEndPlay` is the store's (the pacing's clock).
+ * G117: a task's label made short for a narrow bar, never cutting inside a word: the shop goes ("Serve 424 pies in Downtown" \u2192 "Serve 424 pies",
+ * "Build your Suburbs shop" \u2192 "Build Suburbs", "Read the Downtown shop report" \u2192 "Read the shop report"), and so does what follows a comma
+ * ("Hire Lucia, head baker" \u2192 "Hire Lucia").
+ */
+export function shortTask(label: string, shopName: string): string {
+  const short = withoutShop(label, shopName).replace(`your ${shopName} shop`, shopName).replace(`the ${shopName} shop`, 'the shop').replace(/,.*$/, '');
+  return short.trim() || label;
+}
+
+/** The first word of a label: the narrowest bar's name for a yes/no task ("Hire", "Build", "Beat"). */
+export const firstWord = (label: string): string => goalWords(label)[0] ?? label;
+
+/**
+ * The goal bar's chapter goal: the engine's next task (`nextTask`) of the chapter the player is on, with its progress; or, once every task is done,
+ * "Next scene" with the countdown in the amount's place and a basil "Ready" only when the wait is over. Null after the last chapter (the caller shows
+ * the mastery goal, then the story count). The words and the progress are the Story tab's own (`storyTask`, rewards-model), so the bar and the list
+ * never disagree; only the next task is formatted (U31). `lastSceneEndPlay` is the store's (the pacing's clock).
  */
 export function chapterGoal(g: GameState, lastSceneEndPlay: number | null = null): ChapterGoal | null {
-  const view = storyView(g, lastSceneEndPlay);
-  if (view.kind !== 'chapter') return null;
-  const ch = `Ch ${view.number}`;
+  const chapter = currentChapter(g);
+  if (!chapter) return null;
+  const ch = `Ch ${chaptersOf(g).indexOf(chapter) + 1}`;
   const row = nextTask(g);
-  const shown = view.tasks.find((x) => !x.done);
-  if (row && shown) {
-    const shop = def(row.task.shop, cityOf(g)).name;
+  if (row) {
+    const shown = storyTask(g, row.task);
+    const short = shortTask(shown.label, def(row.task.shop, cityOf(g)).name);
     return {
       label: `${ch} \u00B7 ${shown.label}`,
-      short: `${ch} \u00B7 ${withoutShop(shown.label, shop)}`,
-      tiny: `${ch} \u00B7 ${shown.progress || shown.label}`,
+      short: `${ch} \u00B7 ${short}`,
+      tiny: `${ch} \u00B7 ${shown.progress || firstWord(short)}`,
       text: shown.progress,
-      current: row.current,
+      current: shown.pct * row.target,
       target: row.target,
       key: row.task.key,
       ready: false,
     };
   }
-  // every task is done: the beat plays at once or after the story's gap (the countdown); held by something else, the chapter's title stands in
-  const words = view.wait ?? view.title;
+  // every task is done: the countdown to the beat (the pacing's gap), "Ready" at 0:00; held by something else, the chapter's title stands in
+  const key = `${chapter.key}.ready`;
+  const wait = chapterReady(g, lastSceneEndPlay);
+  if (!wait) {
+    const title = `${ch} \u00B7 ${t(`${chapter.key}.title`, {}, g.city)}`;
+    return { label: title, short: title, tiny: `${ch} \u00B7 Done`, text: '', current: 1, target: 1, key, ready: false };
+  }
+  const next = t('chapter.ready', { time: '' }, g.city).trim();
+  const text = wait.secondsLeft > 0 ? clockText(wait.secondsLeft) : 'Ready';
   return {
-    label: `${ch} \u00B7 ${words}`,
-    short: `${ch} \u00B7 ${words}`,
-    tiny: `${ch} \u00B7 Ready`,
-    text: 'Ready',
+    label: `${ch} \u00B7 ${next}`,
+    short: `${ch} \u00B7 ${next}`,
+    tiny: `${ch} \u00B7 ${text}`,
+    text,
     current: 1,
     target: 1,
-    key: `${view.number}.ready`,
-    ready: true,
+    key,
+    ready: wait.secondsLeft === 0,
   };
 }
