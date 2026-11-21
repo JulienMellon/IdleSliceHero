@@ -482,9 +482,9 @@ export const MILESTONE_LINES: Record<Station, Record<number, string>> = {
   counter: { 25: 'Two lines, no waiting!', 50: 'Orders to the ceiling!', 100: 'Everyone gets served!' },
 };
 
-/** Who speaks: the station's head if hired; in Downtown, Nonna when not; otherwise nobody. */
-export function milestoneSpeaker(hired: boolean, headName: string, downtown: boolean): string | null {
-  return hired ? headName : downtown ? 'Nonna' : null;
+/** Who speaks: the station's head if hired; in the city's first shop, its founder (`CityDef.founder`: Nonna at home) when not; otherwise nobody (a city without a founder has silent shops). */
+export function milestoneSpeaker(hired: boolean, headName: string, founder: string | null): string | null {
+  return hired ? headName : founder;
 }
 
 export const CONFETTI_N = 14;

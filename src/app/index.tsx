@@ -1,17 +1,19 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
-import { CoachCard } from '@/components/coach-card';
+import { CoachOverlay } from '@/components/coach/overlay';
+import { useCoachTarget } from '@/components/coach/targets';
+import { useCoachFlow } from '@/components/coach/use-coach-flow';
 import { FloatingBonus } from '@/components/floating-bonus';
 import { OrderChip } from '@/components/order-chip';
 import { chipPhase } from '@/components/order-model';
 import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
-import { coachStep, hintsAllowed } from '@/engine/tutorial';
+import { coachMode, coachStep, hintsAllowed } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
@@ -192,7 +194,7 @@ export default function GameScreen() {
   const clockOff = game.rewards.lastSeen - tickAt > 2000;
   const rewardsOn = R.rewardsUnlocked(game);
   const hud = rewardsHud(game, now);
-  const tutorialOn = !!coachStep(game);
+  const tutorialOn = coachMode(game) !== null;
   // the calendar opens by itself on the first open of a day: after the title card, the offline popup, any story scene and the tutorial
   const autoGift = titleDone && !covered && !tutorialOn && hud.autoGift;
   // U1: the tasks drawer and the calendar see a snapshot that moves once a second, or at once when rewards change
@@ -247,6 +249,10 @@ export default function GameScreen() {
   const plus = (x: number) => `+${money(x)}/s`;
   const newScenes = Math.max(0, game.seenScenes.length - game.scrapbookViewed);
   const coach = coachStep(game);
+  // v5.20: Nonna's flow (what ends each step, where she points) is components/coach/use-coach-flow.ts
+  const coachFlow = useCoachFlow(coach, id === first, drawerOpen);
+  // the prep head's hire card in the drawer is where step 13 points: one ref, given to that one card (S72: while Nonna teaches, the drawer does not point at anything else)
+  const hireRef = useCoachTarget('drawer:hire:prep');
   const eps = G.earningsPerSecond(game);
   // Tied stations: one upgrade alone adds $0/s, so say what to buy together. Keyed on levels, not cash or sales.
   const bundle = tiedBundle(game, id);
@@ -354,9 +360,11 @@ export default function GameScreen() {
     return big.sort((a, b) => b.ratio - a.ratio);
   };
   // D494 + C107: the nearest goal within about half an hour of income, else one within the hour the upgrade tasks use, else none (never a multi-day buy)
-  let goal: Goal | null = pickGoal<Goal>(eps, () => shown, bigGoals);
+  // D528: while Nonna teaches the first shop (steps 1-11) the bar names no purchase ("hire Marco") that competes with her line: it shows the story, as before any goal is on offer
+  const teaching = !!coach && coach.id <= 11;
+  let goal: Goal | null = teaching ? null : pickGoal<Goal>(eps, () => shown, bigGoals);
   // v5.15 (D427): once the story is told and nothing else is worth saving for, the bar shows the city's mastery stars
-  const mg = goal ? null : masteryGoal(game);
+  const mg = goal || teaching ? null : masteryGoal(game);
   if (mg) goal = { label: mg.label, short: mg.short, tiny: mg.tiny, text: mg.text, current: mg.current, target: mg.target };
   if (!goal) {
     const story = storyGoal(game.seenScenes.length);
@@ -405,7 +413,7 @@ export default function GameScreen() {
       title={c.title}
       level={c.level}
       detail={c.detail}
-      hot={c.hot}
+      hot={c.hot && !coach}
       wide={c.wide}
       muted={c.muted}
       tone={c.tone}
@@ -415,6 +423,7 @@ export default function GameScreen() {
       canBuy={c.canBuy}
       buyKey={buyKeyOf(c.buy)}
       onBuyKey={onDrawerBuy}
+      rootRef={c.testID === 'buy-headPrep' ? hireRef : undefined}
     />
   );
 
@@ -445,7 +454,7 @@ export default function GameScreen() {
         chips={<Slots items={HUD_CHIPS} />}
         topChips={<Slots items={HUD_TOP_CHIPS} />}
         scrapRing={ring}
-        halo={coach?.target === 'cash' ? 'cash' : coach?.target === 'goal' ? 'goal' : null}
+        coachLit={!!coachFlow.view && coachFlow.view.mode !== 'free' && !coachFlow.view.targets.includes('hud:goal')}
       />
       <ShopTabs game={game} boostMult={hud.mult} onSelect={setActive} onBuild={build} />
       <View style={styles.sceneArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
@@ -459,8 +468,6 @@ export default function GameScreen() {
             paused={covered || drawerOpen || tasksOpen || giftOpen}
             onTap={onShopTap}
             onStation={onStationTap}
-            spotlight={coach && id === first && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') ? coach.target : null}
-            spotlightWait={!!coach?.wait}
           />
         )}
         {/* upgrade row standing on the sidewalk */}
@@ -471,7 +478,6 @@ export default function GameScreen() {
           bottom={rowBottom}
           onBuy={buy}
           onOpen={openDrawer}
-          highlight={coach?.target === 'walk-ovens' ? 'ovens' : null}
           quiet={coach?.id === 1}
           // the tied stations merge into one "Buy both" card in the row; kept apart while Nonna's coach is up
           bundle={showBundlePill(bundle, !!coach) ? bundle : null}
@@ -479,17 +485,6 @@ export default function GameScreen() {
         />
         {/* v5.16 (P1): the shop report's strip, one 44 pt row directly above the sidewalk row */}
         <ReportSlots items={SHOP_REPORT} bottom={rowBottom + (idleShopHere ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + STRIP.above} />
-        {/* D378: the tutorial scrim carries on over the sidewalk row (same 60% tone as the scene's), touches pass through */}
-        {coach && id === first && !drawerOpen && (coach.target === 'prep' || coach.target === 'oven' || coach.target === 'counter') && (
-          <View
-            pointerEvents="none"
-            testID="coach-row-scrim"
-            style={[styles.rowScrim, { bottom: rowBottom - 6, height: (idleShopHere ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + 12 }]}
-          />
-        )}
-        {/* Nonna's tutorial (P2) */}
-        {/* D366: docked over the street band (decoration only), clear of the seating area */}
-        {coach && id === first && !drawerOpen && <CoachCard step={coach} low={Math.max(8, insets.bottom)} high={12} />}
         {/* v5.13: the special-order chip under the goal bar, and the golden pizza in the sky (both sit under the drawers) */}
         <OrderChip top={ORDER_VIEW.top} onShop={setActive} />
         {/* the BANNERS slot: notices over the scene, under the drawers */}
@@ -510,16 +505,18 @@ export default function GameScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.drawerTitle}>{drawer.title}</Text>
                   {/* the manager's line is long: it shrinks (never under 10 pt) to the room beside Close, then wraps rather than clip */}
-                  <Text
-                    style={[
-                      styles.drawerSub,
-                      drawerGood && styles.drawerSubGood,
-                      { fontSize: fitFont(drawer.bottleneck, screenW - 2 * DRAWER_HEAD.padX - DRAWER_CLOSE_W, 12, MIN_FONT) },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {drawer.bottleneck}
-                  </Text>
+                  {!coach && (
+                    <Text
+                      style={[
+                        styles.drawerSub,
+                        drawerGood && styles.drawerSubGood,
+                        { fontSize: fitFont(drawer.bottleneck, screenW - 2 * DRAWER_HEAD.padX - DRAWER_CLOSE_W, 12, MIN_FONT) },
+                      ]}
+                      numberOfLines={2}
+                    >
+                      {drawer.bottleneck}
+                    </Text>
+                  )}
                 </View>
                 <Pressable
                   testID="close-upgrades"
@@ -599,6 +596,8 @@ export default function GameScreen() {
         {/* Toast floats in the open sky at the top of the scene, clear of the shop, the row and the cards. */}
         {toast && hintsAllowed(game).toast && <Toast compact text={toast.text} top={10} />}
       </View>
+      {/* v5.20 (C1): the one tutorial highlight: a scrim with a cut-out over the HUD, the shop, the row and the drawer; under the calendar, the sheets and the cut-scenes */}
+      {coachFlow.view && <CoachOverlay {...coachFlow.view} onDone={coachFlow.onDone} />}
       {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
       {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}
       {/* the SHEETS slot: modal sheets over the whole screen, under the offline popup */}
@@ -614,7 +613,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
   sceneArea: { flex: 1, overflow: 'hidden', backgroundColor: '#BFE0F7' },
   dim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.4)' },
-  rowScrim: { position: 'absolute', left: 0, right: 0, backgroundColor: 'rgba(42,20,8,0.6)' },
   drawer: {
     position: 'absolute',
     left: 0,

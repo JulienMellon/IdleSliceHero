@@ -28,7 +28,7 @@ describe('the main screen models, walked', () => {
       const label = buyLabelText(
         c.title,
         c.cost === null ? c.costLabel : (c.buyLabel ?? String(c.cost)),
-        c.tone === 'nogain' ? 'no gain now' : undefined,
+        undefined, // the drawer no longer says "no gain now" (D521)
         null,
       );
       expect(c.title.trim()).not.toBe('');

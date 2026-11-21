@@ -8,7 +8,7 @@
 One file: `docs/story/COPY-v5.20.md`. A table with columns `key | step | lit target | line`. Keys `tutorial.<n>` for n = 1..15. Add a second table `tutorial.alt.<n>` for the two lines that change with state (see step 2 below).
 
 ## Steps
-- [ ] **1. Write the 15 lines.** Each ≤ 70 characters, one instruction or one observation, in Nonna's voice (warm, bossy, a little Italian, never a pun on every line). The step, what is lit and when it ends:
+- [x] **1. Write the 15 lines.** Each ≤ 70 characters, one instruction or one observation, in Nonna's voice (warm, bossy, a little Italian, never a pun on every line). The step, what is lit and when it ends:
 
 | n | Lit | Ends when | Must say |
 |---|---|---|---|
@@ -28,8 +28,8 @@ One file: `docs/story/COPY-v5.20.md`. A table with columns `key | step | lit tar
 | 14 | nothing (free play) | Marco hired | none needed; may be empty (`—`) or one short nudge |
 | 15 | the prep dial running on its own | 2.5 s or a tap | Marco rolls on his own now; you bake and serve |
 
-- [ ] **2. Two state variants.** `tutorial.alt.9`: shown when the player had the oven money and spent it elsewhere ("save up again"). `tutorial.alt.13`: shown when Marco is already affordable when step 13 starts.
-- [ ] **3. Protected words.** "prep table", "oven", "counter", "Ovens", "All" are the on-screen labels; keep them exactly. Never say "bottleneck".
+- [x] **2. Two state variants.** `tutorial.alt.9`: shown when the player had the oven money and spent it elsewhere ("save up again"). `tutorial.alt.13`: shown when Marco is already affordable when step 13 starts.
+- [x] **3. Protected words.** "prep table", "oven", "counter", "Ovens", "All" are the on-screen labels; keep them exactly. Never say "bottleneck".
 
 ## Report
 Standard format, with the count of lines and the longest line's length.

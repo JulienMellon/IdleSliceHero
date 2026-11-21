@@ -1,7 +1,8 @@
 // The upgrade row standing on the sidewalk: four station buttons (or, on a shop with no manager, a chip row and the
 // manager button) plus "All". Every control is drawn at 44 pt (see tap-targets.ts). Moved out of app/index.tsx (A15).
 // Tied stations and capped stations merge into one wider card in their slots (sidewalk-model.ts `sidewalkSlots`).
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { Pressable, type StyleProp, StyleSheet, Text, useWindowDimensions, View, type ViewStyle } from 'react-native';
 
 import { cityOf } from '../content/cities';
 import { HEAD_ROLE } from '../content/tuning';
@@ -11,6 +12,7 @@ import * as G from '../engine/game';
 import { rewardsUnlocked } from '../engine/rewards';
 import { useGame } from '../store/game-store';
 import { C, F } from '../theme';
+import { useCoachTarget, type CoachTargetId } from './coach/targets';
 import { BuyButton, haptic } from './game-ui';
 import { cardFonts, cardTextWidths, fitFont, iconWidth, MIN_FONT } from './endgame/fit-model';
 import { DriverIcon, FlameIcon, PrepIcon, RegisterIcon } from './icons';
@@ -59,6 +61,16 @@ function AmountChip({ amount, onPick }: { amount: BuyAmount; onPick: (a: BuyAmou
   );
 }
 
+/** A card that names itself to the Coach (`walk:<station>`): a view that measures itself, so the slot loop above needs no hook of its own. */
+function Registered({ id, style, children }: { id: CoachTargetId; style: StyleProp<ViewStyle>; children: ReactNode }) {
+  const t = useCoachTarget(id);
+  return (
+    <View ref={t} onLayout={t.onLayout} style={style}>
+      {children}
+    </View>
+  );
+}
+
 export function SidewalkRow({
   game,
   id,
@@ -66,7 +78,6 @@ export function SidewalkRow({
   bottom,
   onBuy,
   onOpen,
-  highlight = null,
   bundle = null,
   onBundle,
   quiet = false,
@@ -77,13 +88,13 @@ export function SidewalkRow({
   bottom: number;
   onBuy: (what: G.Upgrade) => boolean;
   onOpen: () => void;
-  highlight?: StationKey | null;
   /** The tied stations' bundle: their cards merge into one "Buy both" card; null keeps them apart. */ bundle?: G.BundleHint | null;
   onBundle?: () => boolean;
   /** D500: before the first roll the row steps back (faded, still tappable) so the hand on the prep table is the one cue. */ quiet?: boolean;
 }) {
   // v5.15: the amount the player chose (not saved); a primitive, so the row repaints only when it changes
   const amount = useGame((s) => s.buyAmount);
+  const allTarget = useCoachTarget('walk:all');
   const toggleOn = rewardsUnlocked(game);
   const picked: BuyAmount = toggleOn ? amount : 1;
   // the name always stays on top; a player who has some cash but not enough sees "need $X" under the muted price (D359, D402)
@@ -123,16 +134,16 @@ export function SidewalkRow({
       </View>
     );
     return framed ? (
-      <View key={v.key} style={[styles.card, look(v.frame, many?.enabled ?? v.affordable), highlight === v.key && styles.cardCoach]}>
+      <Registered key={v.key} id={`walk:${v.key}`} style={[styles.card, look(v.frame, many?.enabled ?? v.affordable)]}>
         {button}
         {badge}
-      </View>
+      </Registered>
     ) : (
       // an unmanaged shop has no room for frames: the same button and badge, unframed (D315)
-      <View key={v.key} style={styles.chip}>
+      <Registered key={v.key} id={`walk:${v.key}`} style={styles.chip}>
         {button}
         {badge}
-      </View>
+      </Registered>
     );
   };
   // one card for several slots (D405, D407): the same frame as a bottleneck card, no level badge (it stands for several stations)
@@ -212,6 +223,8 @@ export function SidewalkRow({
           cards(true)
         )}
         <Pressable
+          ref={allTarget}
+          onLayout={allTarget.onLayout}
           testID="open-upgrades"
           accessibilityRole="button"
           accessibilityLabel="All upgrades"
@@ -257,8 +270,6 @@ const styles = StyleSheet.create({
     padding: STATION_CARD.padding,
     ...shadow,
   },
-  // Nonna's tutorial points here: a gold frame
-  cardCoach: { borderColor: '#FFC531', borderWidth: 4, borderStyle: 'solid' },
   idleStack: { flex: 4, gap: IDLE_STACK_GAP },
   chipRow: { flexDirection: 'row', gap: SIDEWALK_ROW.chipGap },
   chip: { flex: 1 },

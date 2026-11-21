@@ -3,10 +3,11 @@
 import { memo } from 'react';
 import { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
-import type { Departure } from '../../engine/pipeline';
+import type { Departure, Station } from '../../engine/pipeline';
 import { F } from '../../theme';
 import { BADGE_R, placePops, POP_H, type BadgeTone, type Rect as ScreenRect } from './stations';
 import { HeadFace } from './head-face';
+import { GAIN_BAND_H, GAIN_PILL_H, GAIN_W } from './oven-gain';
 import { HEAD_BARKS } from '../../content/heads';
 import type { HeadKind } from '../../content/tuning';
 import { INK, ONE_SCREEN } from './projection';
@@ -58,6 +59,7 @@ export const BadgeRail = memo(function BadgeRail({ x0, x1, y, gm }: { x0: number
 export const StationBadge = memo(function StationBadge({
   x,
   y,
+  st,
   step,
   count,
   tone,
@@ -72,6 +74,8 @@ export const StationBadge = memo(function StationBadge({
 }: {
   x: number;
   y: number;
+  /** Which station's dial this is: its test ID (`dial-prep`), so a fixture can find the ring the Coach lights. */
+  st: Station;
   step: number;
   count: string;
   tone: BadgeTone;
@@ -89,7 +93,7 @@ export const StationBadge = memo(function StationBadge({
   const pillW = Math.max(18, count.length * 6.2 + 10);
   return (
     <G transform={`translate(${x} ${y})`}>
-      <G transform={`scale(${s})`}>
+      <G testID={`dial-${st}`} transform={`scale(${s})`}>
         <Circle cx={0} cy={0} r={r + 1.5} fill={DISC} stroke={OUTLINE} strokeWidth={1.5} />
         <Circle cx={0} cy={0} r={r - 2.5} fill="none" stroke={TRACK} strokeWidth={3} />
         {step > 0 && <Path d={arc(0, 0, r - 2.5, step)} fill="none" stroke={tone === 'tomato' ? TOMATO : BASIL} strokeWidth={3} strokeLinecap="round" />}
@@ -99,7 +103,7 @@ export const StationBadge = memo(function StationBadge({
         <Circle cx={1.4} cy={2} r={1} fill="#E8432E" />
       </G>
       {/* the count pill sits to the right of the ring (late-game batches are 4+ digits) */}
-      <Rect x={r + 3} y={-7.5} width={pillW} height={15} rx={7.5} fill={INK} stroke="#fff" strokeWidth={1.2} />
+      <Rect testID={`dial-count-${st}`} x={r + 3} y={-7.5} width={pillW} height={15} rx={7.5} fill={INK} stroke="#fff" strokeWidth={1.2} />
       <SvgText x={r + 3 + pillW / 2} y={4} fontFamily={F.bold} fontSize={11} fill="#fff" textAnchor="middle">
         {count}
       </SvgText>
@@ -400,6 +404,22 @@ export const MilestoneBadge = memo(function MilestoneBadge({
           </G>
         ) : null}
       </G>
+    </G>
+  );
+});
+
+/** D522: the oven's plaque while the tutorial looks at the ovens: a brass band with its level over a green "+N%" pill (oven-gain.ts). Centred on (x, y). */
+export const OvenGainTag = memo(function OvenGainTag({ x, y, level, pct }: { x: number; y: number; level: number; pct: number }) {
+  return (
+    <G transform={`translate(${x} ${y})`}>
+      <Rect x={-GAIN_W / 2} y={-GAIN_BAND_H} width={GAIN_W} height={GAIN_BAND_H} rx={4} fill="#D9A441" stroke={INK} strokeWidth={1.2} />
+      <SvgText x={0} y={-GAIN_BAND_H / 2 + 4} fontFamily={F.bold} fontSize={11} fill={INK} textAnchor="middle">
+        {`Lv ${level}`}
+      </SvgText>
+      <Rect x={-GAIN_W / 2} y={1} width={GAIN_W} height={GAIN_PILL_H} rx={GAIN_PILL_H / 2} fill="#2E8B3E" stroke="#fff" strokeWidth={1.4} />
+      <SvgText x={0} y={GAIN_PILL_H / 2 + 5} fontFamily={F.bold} fontSize={11} fill="#fff" textAnchor="middle">
+        {`+${pct}%`}
+      </SvgText>
     </G>
   );
 });

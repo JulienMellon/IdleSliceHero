@@ -85,8 +85,9 @@ describe('golden run', () => {
     void _t;
     // v5.18 (card K1): `city` ('home') is new on GameState and, like `x`, not part of the recorded hash; the constant below is unchanged.
     const json = JSON.stringify(rest, (k, v) => (k === 'x' || k === 'city' ? undefined : v));
+    // v5.20 re-record (card C3): SAVE_VERSION 6 → 7 (the 15-step tutorial); nothing else moved (the same run hashes to the old constant with `saveVersion` set back to 6).
     // v5.16 re-record 2 (card E2b's refit): Downtown's head prices, Suburbs' build and manager, Waterfront's manager, University's build, Uptown's build and manager, and the Golden oven and Flagship prices changed. v5.16 re-record: ECONOMY 3, the heads/manager/station prices and the offline share changed the run. (v5.15 re-record: the save gained `economy` (C106) and `rewards.worn` (worn cosmetics). The golden run itself earns the same cash and buys the same things.)
-    expect(sha1(json)).toBe('031a4fadab26d2b4ae9363582d52d877ecf680b3');
+    expect(sha1(json)).toBe('393832c3713aac13cf30bf45deb198d131a39925');
   });
 
   it('golden: the run really earned something (guards against an empty script)', () => {
