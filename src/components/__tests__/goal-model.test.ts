@@ -1,23 +1,27 @@
 /// <reference types="jest" />
-import { DECOR, DECOR_KINDS, HEAD_ROLE } from '../../content/tuning';
-import { UPGRADE_TASK_MAX_SECONDS } from '../../content/rewards';
-import { goalAmount, money } from '../../engine/format';
+import '../../engine/features';
+import { HOME_CHAPTERS } from '../../content/cities/home/chapters';
+import { CITY_NAME } from '../../content/cities/home/data';
+import { CHAPTERS_KEY, newChapterSave } from '../../engine/chapters';
+import { count, goalAmount, money, pizzas } from '../../engine/format';
+import * as G from '../../engine/game';
 import {
   aOrAn,
+  chapterGoal,
   GOAL_BAR,
+  GOAL_FLASH_MS,
   GOAL_LAYOUT,
+  GOAL_TAB,
   goalBarLayout,
   goalLabelFit,
   goalLabelFits,
+  goalLine,
   goalTextW,
   goalWords,
-  pickGoal,
-  GOAL_FAR_SECONDS,
   snapSeam,
+  withoutShop,
 } from '../goal-model';
-
-import { FOOTPRINTS, OVEN_GRADES, VEHICLES } from '../../content/cities/home/fit';
-import { CITY_NAME, HEADS, NEIGHBORHOODS } from '../../content/cities/home/data';
+import { storyView } from '../rewards-model';
 const lum = (hex: string) => {
   const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
   return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
@@ -117,20 +121,11 @@ describe('goal bar seam snaps to a word edge (G88)', () => {
 // T81 (C105): the goal line must never clip its amount, on a 320, 375 or 393 pt phone. The bar is the screen less the HUD's 12 pt margins.
 describe('the goal line fits (C105, T81)', () => {
   const bars = [320, 375, 393].map((w) => w - 24);
-  // every label app/index.tsx builds, from the content tables the same way it does
+  // every line app/index.tsx can show: the chapter goals' three forms (a state on each task of each chapter), the mastery and the story fallbacks
   const labels = (): string[] => {
     const out: string[] = [];
-    for (const n of NEIGHBORHOODS) {
-      out.push(`${n.name}: hire a manager`);
-      for (const st of ['prep', 'oven', 'counter'] as const) out.push(`${n.name}: hire ${HEADS[n.id][st]} (${HEAD_ROLE[st]})`);
-      out.push(`Build a pizzeria in ${n.name}`);
-      out.push(`▶ Build a pizzeria in ${n.name} — tap!`);
-      for (const f of FOOTPRINTS.slice(1)) out.push(`Expand ${n.name} · ${f.name}`);
-      for (const g of OVEN_GRADES.slice(1)) out.push(`${g.name} ovens in ${n.name}`);
-      for (const k of DECOR_KINDS) for (const t of DECOR[k].tiers.slice(1)) out.push(`${t} in ${n.name}`);
-    }
-    for (const v of VEHICLES.slice(1)) out.push(`Upgrade fleet to ${v.name}s · +$1.23K/s`, `Upgrade fleet to ${v.name}s · +$999K/s`);
-    out.push('Bid on Pier 9 to save Marisol’s dock', `${CITY_NAME} is yours! Franchising soon`, 'Story 12/24');
+    for (const g of everyTaskGoal()) out.push(g.label, g.short, g.tiny);
+    out.push(`${CITY_NAME} is yours! Franchising soon`, 'Story 12/24');
     return out;
   };
   // the widest amounts: the two-sided money text at every magnitude, and the story count
@@ -158,43 +153,113 @@ describe('the goal line fits (C105, T81)', () => {
   });
 });
 
-describe('C107: the goal never targets a multi-day buy', () => {
-  const at = (secs: number) => ({ current: 0, target: secs * 10 });
-  const eps = 10;
-  test('the first near goal wins, else the first within the upgrade-task hour', () => {
-    const near = at(GOAL_FAR_SECONDS - 1);
-    const hour = at(UPGRADE_TASK_MAX_SECONDS - 1);
-    expect(pickGoal(eps, () => [at(GOAL_FAR_SECONDS + 5), near])).toBe(near);
-    expect(pickGoal(eps, () => [at(UPGRADE_TASK_MAX_SECONDS * 24), hour])).toBe(hour);
+// ---------- the chapter goal (v5.21, U1) ----------
+
+const withShop = (g: G.GameState, id: string, patch: Partial<G.Shop>): G.GameState => ({
+  ...g,
+  shops: { ...g.shops, [id]: { ...g.shops[id as G.GameState['active']], ...patch } },
+});
+const doneKeys = (g: G.GameState, done: string[]): G.GameState => ({ ...g, x: { ...g.x, [CHAPTERS_KEY]: { ...newChapterSave(), done } } });
+/** Chapter `n` (1-based) is on, with its first `k` tasks done and the next one `sold` pies in. */
+const stateAt = (n: number, k: number, sold = 0): G.GameState => {
+  const c = HOME_CHAPTERS[n - 1];
+  const g = { ...G.newGame(0), seenScenes: HOME_CHAPTERS.slice(0, n - 1).map((x) => x.sceneId) };
+  const next = c.tasks[k];
+  return doneKeys(
+    next?.kind === 'serve' ? withShop(g, next.shop, { sold }) : g,
+    c.tasks.slice(0, k).map((x) => x.key),
+  );
+};
+const everyTaskGoal = () => HOME_CHAPTERS.flatMap((c, i) => c.tasks.map((_, k) => chapterGoal(stateAt(i + 1, k))!));
+
+describe('the goal bar is the next chapter task (U1)', () => {
+  test('chapter 2, 212 of 424 pies: "Ch 2 · Serve 424 pies in Downtown", 212/424, the fill at half', () => {
+    const g = chapterGoal(stateAt(2, 0, 212))!;
+    expect(g.label).toBe('Ch 2 \u00B7 Serve 424 pies in Downtown');
+    expect(g.text).toBe('212/424');
+    expect([g.current, g.target, g.ready]).toEqual([212, 424, false]);
+    expect(goalBarLayout(g.current, g.target, g.ready, 351).pct).toBe(0.5);
   });
-  test('only multi-day buys on offer: no goal (the old fallback returned the far one)', () => {
-    expect(
-      pickGoal(
-        eps,
-        () => [at(86400 * 3)],
-        () => [at(86400 * 5)],
-      ),
-    ).toBeNull();
+  test("it is the Story tab's own line for the same task, so the bar and the list never disagree", () => {
+    for (const [n, k] of [
+      [2, 0],
+      [2, 1],
+      [3, 1],
+      [9, 0],
+      [20, 1],
+    ]) {
+      const g = stateAt(n, k, 50);
+      const row = storyView(g, null).tasks.find((x) => !x.done)!;
+      expect(chapterGoal(g)!.label).toBe(`Ch ${n} \u00B7 ${row.label}`);
+      expect(chapterGoal(g)!.text).toBe(row.progress);
+    }
   });
-  test('a later list is built only when the earlier ones have nothing near', () => {
-    let built = 0;
-    const near = at(5);
-    const later = () => {
-      built++;
-      return [];
-    };
-    expect(pickGoal(eps, () => [near], later)).toBe(near);
-    expect(built).toBe(0);
-    expect(
-      pickGoal(
-        eps,
-        () => [],
-        () => [near],
-      ),
-    ).toBe(near);
+  test('it changes only when a task completes: the next task, its key and a fresh count', () => {
+    const a = chapterGoal(stateAt(2, 0, 100))!;
+    const b = chapterGoal(stateAt(2, 0, 300))!;
+    expect(b.key).toBe(a.key);
+    expect(b.label).toBe(a.label);
+    const c = chapterGoal(stateAt(2, 1))!;
+    expect(c.key).not.toBe(a.key);
+    expect(c.label).toBe('Ch 2 \u00B7 Hire Lucia, head baker');
+    expect(c.label).not.toBe(a.label);
   });
-  test('a goal already paid for is always reachable', () => {
-    const paid = { current: 500, target: 400 };
-    expect(pickGoal(1, () => [paid])).toBe(paid);
+  test('a yes/no task has no count and an empty bar', () => {
+    const g = chapterGoal(stateAt(2, 1))!;
+    expect([g.text, g.current, g.target]).toEqual(['', 0, 1]);
+  });
+  test('the short form drops the shop, the tiny one keeps the chapter and the count', () => {
+    const g = chapterGoal(stateAt(2, 0, 212))!;
+    expect(g.short).toBe('Ch 2 \u00B7 Serve 424 pies');
+    expect(g.tiny).toBe('Ch 2 \u00B7 212/424');
+    expect(withoutShop('Serve 424 pies in Downtown', 'Downtown')).toBe('Serve 424 pies');
+    expect(withoutShop('Hire Lucia, head baker', 'Downtown')).toBe('Hire Lucia, head baker');
+    expect(withoutShop('Build your Suburbs shop', 'Suburbs')).toBe('Build your Suburbs shop');
+  });
+  test('every task of every chapter fits a bar of 296, 351 and 369 pt in one of its three forms, with its amount or without', () => {
+    const bad: string[] = [];
+    for (const g of everyTaskGoal())
+      for (const barW of [296, 351, 369]) {
+        const line = goalLine(g, barW);
+        if (!goalLabelFits(line.label, line.text ?? '', barW)) bad.push(`${barW} ${line.label} ${line.text}`);
+      }
+    expect(bad.slice(0, 5)).toEqual([]);
+  });
+  test('the tap opens the list on the Story tab, and a completing task flashes for 600 ms at most', () => {
+    expect(GOAL_TAB).toBe('story');
+    expect(GOAL_FLASH_MS).toBeLessThanOrEqual(600);
+  });
+});
+
+describe('a done chapter waiting on the story (U1)', () => {
+  const waiting = (playSeconds: number) => {
+    const c = HOME_CHAPTERS[1];
+    const g = { ...G.newGame(0), seenScenes: ['downtown-1'], playSeconds, sceneAt: { 'downtown-1': 0 } };
+    return doneKeys(
+      withShop(g, 'downtown', { sold: 424 }),
+      c.tasks.map((t) => t.key),
+    );
+  };
+  test('a full basil bar that says Ready, with the countdown in its words', () => {
+    const g = chapterGoal(waiting(500), 450)!;
+    expect(g.ready).toBe(true);
+    expect(g.label).toBe('Ch 2 \u00B7 Next scene in 0:40');
+    expect(g.text).toBe('Ready');
+    expect(goalBarLayout(g.current, g.target, g.ready, 351).ready).toBe(true);
+  });
+  test('its key is not a task key, so the bar flashes once when the last task completes', () => {
+    const k = chapterGoal(waiting(500), 450)!.key;
+    expect(k).not.toBe(chapterGoal(stateAt(2, 2))!.key);
+    expect(chapterGoal(waiting(520), 450)!.key).toBe(k);
+  });
+});
+
+describe('after the last chapter, and in a city without chapters (U1)', () => {
+  test('no chapter goal: the caller shows the mastery goal, then the story count', () => {
+    expect(chapterGoal({ ...G.newGame(0), seenScenes: HOME_CHAPTERS.map((c) => c.sceneId) })).toBeNull();
+    expect(chapterGoal(G.newGame(0, 'boston'))).toBeNull();
+  });
+  test('the progress is the same one the Story tab prints', () => {
+    expect(`${pizzas(212)}/${count(424)}`).toBe('212/424');
   });
 });

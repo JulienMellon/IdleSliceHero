@@ -1402,7 +1402,7 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
 
 // ---------- Story ----------
 // The story's rules (triggers, the finale waits, the load-time migration) are engine/story.ts (A33); re-exported here for the callers that read them from the game.
-export { challengeOffered, pendingScenes, prerequisites, sceneTriggered, storyWaitHint } from './story';
+export { challengeOffered, pendingScenes, prerequisites, sceneTriggered } from './story';
 
 export function applyReward(s: GameState, reward: SceneReward | undefined): GameState {
   switch (reward) {

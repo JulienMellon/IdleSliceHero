@@ -140,23 +140,9 @@ if (timers.some((g) => g.min > MAX_GAP_MIN)) {
 
 // The player who builds University before the bid. EAGER builds every pizzeria the moment it is affordable, and University's build price is cut to twice
 // Waterfront's so that moment comes before the bid opens (at the real price it never does: the bid opens first). Scenes must still all play, and the
-// goal bar's hint ("Save Marisol's dock to continue University's story") must be on screen while University's act 3 waits for the bid.
+// chapter task ("Win the auction in Waterfront") covers the wait for the bid.
 applyCfg({ eager: true, bc: NEIGHBORHOODS.map((n) => (n.id === 'university' ? NEIGHBORHOODS.find((w) => w.id === 'waterfront')!.buildCost * 2 : NaN)) });
-let hintFrom = -1;
-let hintTo = -1;
-let hintText = '';
-const e = run('continuous', 0, 0, undefined, {
-  onSecond: (st, wall) => {
-    const h = G.storyWaitHint(st);
-    if (h) {
-      if (hintFrom < 0) {
-        hintFrom = wall;
-        hintText = h;
-      }
-      hintTo = wall;
-    }
-  },
-});
+const e = run('continuous', 0, 0, undefined, {});
 const ePlayed = new Set(e.scenes.map((x) => x.id));
 const eWall = (id: string) => e.scenes.find((x) => x.id === id)?.wall;
 const uniBuilt = e.timeline.university?.build;
@@ -164,9 +150,7 @@ const bidOpen = e.pier9Open?.wall;
 console.log(
   `\nUniversity built before the bid (EAGER): University built ${uniBuilt === undefined ? 'never' : (uniBuilt / 60).toFixed(1) + ' min'}, bid open ${bidOpen === undefined ? 'never' : (bidOpen / 60).toFixed(1) + ' min'}, waterfront-4 ${eWall('waterfront-4') === undefined ? 'never' : ((eWall('waterfront-4') ?? 0) / 60).toFixed(1) + ' min'}, university-3 ${eWall('university-3') === undefined ? 'never' : ((eWall('university-3') ?? 0) / 60).toFixed(1) + ' min'}`,
 );
-console.log(
-  `  hint on screen ${hintFrom < 0 ? 'never' : `${(hintFrom / 60).toFixed(1)} to ${(hintTo / 60).toFixed(1)} min: "${hintText}"`} · scenes ${ePlayed.size}/${HOME_SCENES.length} · city complete ${e.s.cityComplete}`,
-);
+console.log(`  scenes ${ePlayed.size}/${HOME_SCENES.length} · city complete ${e.s.cityComplete}`);
 const eMissing = HOME_SCENES.filter((x) => !ePlayed.has(x.id)).map((x) => x.id);
 if (eMissing.length) {
   console.error(`NOT ALL SCENES PLAY (University first): missing ${eMissing.join(', ')}`);

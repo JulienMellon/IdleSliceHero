@@ -12,16 +12,16 @@ import { OrderChip } from '@/components/order-chip';
 import { chipPhase } from '@/components/order-model';
 import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
-import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
+import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT, type TasksTab } from '@/components/rewards-model';
 import { coachMode, coachStep, hintsAllowed } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
 import { fitFont, MIN_FONT } from '@/components/endgame/fit-model';
-import { masteryGoal, pickGoal, STORY_TOTAL, storyGoal } from '@/components/goal-model';
-import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots, StoryWaitBanner } from '@/components/slots';
+import { chapterGoal, GOAL_TAB, masteryGoal, STORY_TOTAL, storyGoal } from '@/components/goal-model';
+import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots } from '@/components/slots';
 import { buyKeyOf, type DrawerIcon, type DrawerView, drawerCards, parseBuyKey, tiedBundle } from '@/components/drawer-model';
-import { buttonTone, buyBundle, goalHidesOwnHire, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
+import { buttonTone, buyBundle, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
 import { STRIP, stripKind } from '@/components/report/report-model';
 import { reportView } from '@/engine/features/service';
@@ -34,9 +34,9 @@ import { CURB_Y, SCENE_H, sceneFrame, sceneView, Storefront } from '@/components
 import { usePerfMarks } from '@/components/scene/clock';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
 import { cityOf } from '@/content/cities';
-import { DECOR, DECOR_KINDS, HEAD_ROLE, type HeadKind } from '@/content/tuning';
+import type { HeadKind } from '@/content/tuning';
 import { APP_VERSION } from '@/content/version';
-import { money, pizzas } from '@/engine/format';
+import { pizzas } from '@/engine/format';
 import * as G from '@/engine/game';
 import { nightOvenView } from '@/engine/night-oven';
 import * as R from '@/engine/rewards';
@@ -122,7 +122,6 @@ export default function GameScreen() {
     build,
     setActive,
     dismissOffline,
-    placeBid,
     claimDaily,
     claimWeekly,
     claimChest,
@@ -147,6 +146,7 @@ export default function GameScreen() {
   );
   const onClaimGift = useCallback((repair: boolean) => claimGift(repair), [claimGift]);
   const titleDone = useGame((s) => s.titleDone);
+  const lastSceneEndPlay = useGame((s) => s.lastSceneEndPlay);
   // stable, so the memoised scene isn't re-rendered by every 200 ms game tick
   // a rush on a GM shop: jobs finish sooner; the cash still arrives with the pies (no payout here)
   const onShopTap = useCallback(() => tapShop(), [tapShop]);
@@ -160,7 +160,7 @@ export default function GameScreen() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   // v5.4: the tasks sheet and the gift calendar (the icons appear once Nonna has taken over)
   const [tasksOpen, setTasksOpen] = useState(false);
-  const [tasksTab, setTasksTab] = useState<'daily' | 'weekly'>('daily');
+  const [tasksTab, setTasksTab] = useState<TasksTab>(GOAL_TAB);
   const [giftOpen, setGiftOpen] = useState(false);
   // v5.14: Nonna's night oven info sheet (opened from the HUD chip)
   const [ovenOpen, setOvenOpen] = useState(false);
@@ -203,9 +203,18 @@ export default function GameScreen() {
   const slow = useSlowSnapshot(game, sec, tasksOpen || giftOpen);
   const onScrapbook = useCallback(() => router.push('/scrapbook'), []);
   const onCity = useCallback(() => router.push('/city'), []);
+  // the clipboard and the goal bar open the task list on its Story tab (the drawer shows Daily where the city has no chapters)
   const onTasks = useCallback(() => {
     haptic();
     setDrawerOpen(false);
+    setTasksTab(GOAL_TAB);
+    setTasksOpen(true);
+  }, []);
+  // the goal bar: a tap opens the task list on its Story tab (never a buy)
+  const onGoal = useCallback(() => {
+    setDrawerOpen(false);
+    setGiftOpen(false);
+    setTasksTab(GOAL_TAB);
     setTasksOpen(true);
   }, []);
   const onGift = useCallback(() => {
@@ -241,12 +250,8 @@ export default function GameScreen() {
   const shop = game.shops[id];
   // v5.18: every table below is the CURRENT city's (Boston after the franchise), never the home constants
   const city = cityOf(game);
-  const { neighbourhoods: NEIGHBORHOODS, heads: HEADS, name: CITY_NAME } = city;
-  const { footprints: FOOTPRINTS, ovenGrades: OVEN_GRADES, vehicles: VEHICLES } = city.fit;
+  const { neighbourhoods: NEIGHBORHOODS, name: CITY_NAME } = city;
   const first = G.firstHood(city);
-  const nd = G.def(id, city);
-  const v = game.vehicle;
-  const plus = (x: number) => `+${money(x)}/s`;
   const newScenes = Math.max(0, game.seenScenes.length - game.scrapbookViewed);
   const coach = coachStep(game);
   // v5.20: Nonna's flow (what ends each step, where she points) is components/coach/use-coach-flow.ts
@@ -259,120 +264,21 @@ export default function GameScreen() {
 
   // the sidewalk offers the next hire (each head, then the GM) here; see hireOnSidewalk (B1)
   const idleShopHere = hireOnSidewalk(shop, id, city);
-  // Goal bar: the big purchase worth saving for, by cash/sec per dollar.
-  const candidates: (Goal & { ratio: number })[] = [];
-  for (const n of NEIGHBORHOODS) {
-    const sh = game.shops[n.id];
-    // the next hire in a shop without a GM: each head, then the GM (Downtown's GM is Nonna, via the story)
-    const hire = sh.built ? G.nextHire(sh) : null;
-    if (hire && !(hire === 'manager' && n.id === first)) {
-      const cost = G.upgradeCostOf(game, n.id, hire) ?? 0;
-      // short enough to fit beside the amount (D338): "Waterfront: hire Finn (prep)"
-      const label = G.isHeadUpgrade(hire) ? `${n.name}: hire ${HEADS[n.id][G.headOf(hire)]} (${HEAD_ROLE[G.headOf(hire)]})` : `${n.name}: hire a manager`;
-      // D477: the bar beside the HUD's chips is narrow: the same goal without the shop's name
-      const short = G.isHeadUpgrade(hire) ? `Hire ${HEADS[n.id][G.headOf(hire)]} (${HEAD_ROLE[G.headOf(hire)]})` : 'Hire a manager';
-      candidates.push({
-        label,
-        short,
-        current: game.cash,
-        target: cost,
-        ratio: (G.shopEarnings(game, n.id) / Math.max(1, cost)) * 3,
-        onPress: () => {
-          if (game.active !== n.id) setActive(n.id);
-          return useGame.getState().buy(hire);
-        },
-      });
-    }
-  }
-  const next = G.nextToBuild(game);
-  // a locked build (Nonna's takeover, an unbuilt neighbour) is not a goal: its tap would do nothing (B2)
-  if (next && !G.buildLock(game, next.id))
-    candidates.push({
-      label: `Build a pizzeria in ${next.name}`,
-      short: `Build in ${next.name}`,
-      current: game.cash,
-      target: next.buildCost,
-      ratio: G.buildGain(game, next.id) / G.buildAllIn(next.id, city),
-      onPress: () => build(next.id),
-    });
-  const vg = G.vehicleGain(game);
-  if (vg && vg > 0)
-    candidates.push({
-      label: `Upgrade fleet to ${VEHICLES[v + 1].name}s · ${plus(vg)}`,
-      short: `${VEHICLES[v + 1].name}s ${plus(vg)}`,
-      current: game.cash,
-      target: VEHICLES[v + 1].cost,
-      ratio: vg / VEHICLES[v + 1].cost,
-      onPress: buyFleet,
-    });
-  candidates.sort((a, b) => b.ratio - a.ratio);
-  // Waterfront's finale is a purchase, so it leads the goal bar while it's on offer
-  if (G.bidAvailable(game))
-    candidates.unshift({
-      label: 'Bid on Pier 9 to save Marisol’s dock',
-      short: 'Bid on Pier 9',
-      current: game.cash,
-      target: G.bidPrice(game),
-      ratio: Number.MAX_VALUE,
-      onPress: placeBid,
-    });
-  // viewing an unmanaged shop: its next hire is the goal
-  // while the sidewalk offers a head, the goal bar moves on to the next goal (D341); the GM hire is offered in both places until it is hired (B1).
-  // Downtown's sidewalk shows its stations instead, so there the hire leads the goal bar
-  const mine = (c: Goal) => c.label.startsWith(`${nd.name}: hire`);
-  const shown = goalHidesOwnHire(shop, id, city)
-    ? candidates.filter((c) => !mine(c))
-    : !shop.managed
-      ? [...candidates.filter(mine), ...candidates.filter((c) => !mine(c))]
-      : candidates;
-  // the best big buy in this shop (Expand, Grade or a Decor tier), best gain per dollar first
-  const bigGoals = () => {
-    const big: (Goal & { ratio: number })[] = [];
-    for (const what of ['expand', 'grade'] as const) {
-      const cost = G.upgradeCostOf(game, id, what);
-      if (cost !== null && !G.upgradeLock(game, id, what)) {
-        const gain = G.upgradeGain(game, id, what) ?? 0;
-        big.push({
-          label:
-            what === 'expand'
-              ? `Expand ${nd.name} · ${FOOTPRINTS[shop.footprint + 1]?.name ?? ''}`
-              : `${OVEN_GRADES[shop.grade + 1]?.name ?? ''} ovens in ${nd.name}`,
-          short: what === 'expand' ? `Expand · ${FOOTPRINTS[shop.footprint + 1]?.name ?? ''}` : `${OVEN_GRADES[shop.grade + 1]?.name ?? ''} ovens`,
-          current: game.cash,
-          target: cost,
-          ratio: (gain + 1e-6) / cost,
-          onPress: () => buy(what),
-        });
-      }
-    }
-    for (const kind of DECOR_KINDS) {
-      const cost = G.decorCost(game, id, kind);
-      if (cost !== null)
-        big.push({
-          label: `${DECOR[kind].tiers[shop.decor[kind] + 1]} in ${nd.name}`,
-          short: `${DECOR[kind].tiers[shop.decor[kind] + 1]}`,
-          current: game.cash,
-          target: cost,
-          ratio: ((G.decorGain(game, id, kind) ?? 0) + 1e-6) / cost,
-          onPress: () => buyDecor(kind),
-        });
-    }
-    return big.sort((a, b) => b.ratio - a.ratio);
-  };
-  // D494 + C107: the nearest goal within about half an hour of income, else one within the hour the upgrade tasks use, else none (never a multi-day buy)
-  // D528: while Nonna teaches the first shop (steps 1-11) the bar names no purchase ("hire Marco") that competes with her line: it shows the story, as before any goal is on offer
-  const teaching = !!coach && coach.id <= 11;
-  let goal: Goal | null = teaching ? null : pickGoal<Goal>(eps, () => shown, bigGoals);
-  // v5.15 (D427): once the story is told and nothing else is worth saving for, the bar shows the city's mastery stars
-  const mg = goal || teaching ? null : masteryGoal(game);
-  if (mg) goal = { label: mg.label, short: mg.short, tiny: mg.tiny, text: mg.text, current: mg.current, target: mg.target };
-  if (!goal) {
+  // Goal bar (v5.21): the next task of the chapter the player is on, "Ch 2 · Serve 424 pies in Downtown 212/424"; a done chapter waiting on the story's
+  // pacing shows "Ready" with the countdown. It buys nothing: a tap opens the task list. Once every chapter is done the city's mastery stars show, then the story count.
+  let goal: Goal | null = null;
+  const cg = chapterGoal(game, lastSceneEndPlay);
+  const mg = cg ? null : masteryGoal(game);
+  if (cg) goal = { ...cg, onPress: onGoal };
+  else if (mg) goal = { label: mg.label, short: mg.short, tiny: mg.tiny, text: mg.text, current: mg.current, target: mg.target, onPress: onGoal };
+  else {
     const story = storyGoal(game.seenScenes.length);
     goal = {
       label: game.cityComplete ? `${CITY_NAME} is yours! Franchising soon` : story.label,
       current: story.current,
       target: STORY_TOTAL,
       icon: <TrophyIcon size={22} />,
+      onPress: onGoal,
     };
   }
 
@@ -447,7 +353,7 @@ export default function GameScreen() {
         newScenes={newScenes}
         onScrapbook={onScrapbook}
         onCity={onCity}
-        onTasks={rewardsOn ? onTasks : undefined}
+        onTasks={onTasks}
         tasksBadge={hud.badge}
         onGift={rewardsOn ? onGift : undefined}
         giftDot={hud.giftDot}
@@ -540,8 +446,6 @@ export default function GameScreen() {
                     <Text style={styles.bannerText}>{drawer.perkBanner}</Text>
                   </View>
                 )}
-                {/* v5.16 (T1b): why this neighbourhood's next story is held, with the other notices at the top */}
-                <StoryWaitBanner />
                 {drawer.bundle && (
                   // D304: the tied stations' bundle is a button, not a label: it buys every step through the ordinary buy path
                   <View style={styles.bundleRow}>

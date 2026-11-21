@@ -22,8 +22,10 @@ import { canAffordDiamonds, type GameState } from '../engine/game';
 import * as R from '../engine/rewards';
 import { useGame } from '../store/game-store';
 import { C, F } from '../theme';
+import { useCoachTarget } from './coach/targets';
 import { BuyButton } from './game-ui';
-import { BoostIcon, CoinIcon, DiamondIcon, GiftIcon, StarIcon } from './icons';
+import { BoostIcon, CoinIcon, DiamondIcon, GiftIcon, LockIcon, StarIcon } from './icons';
+import { Portrait } from './portrait/index';
 import { useMotion } from './scene/clock';
 import { AdButton } from './store/ad-button';
 import { canReroll } from './store/ad-model';
@@ -38,13 +40,24 @@ import {
   collectionText,
   countdownText,
   dailyRows,
+  defaultTasksTab,
   giftHeader,
   giftTiles,
+  hasStory,
   pointsPct,
+  rewardsTabLocked,
+  storyView,
+  tabLockedText,
+  TASKS_CLOSE_TARGET,
+  TASKS_STORY_TARGET,
+  TASKS_TABS,
+  TEASER,
   weeklyChestView,
   weeklyRows,
   type GiftIconKind,
+  type StoryTask,
   type TaskState,
+  type TasksTab,
 } from './rewards-model';
 import { CLOSE_SLOP, DRAWER_HEAD, TAP } from './tap-targets';
 
@@ -219,6 +232,28 @@ const TaskItem = memo(function TaskItem({
   );
 });
 
+const TAB_LABEL: Record<TasksTab, string> = { story: 'Story', daily: 'Daily', weekly: 'Weekly' };
+
+/** One task of the chapter: a tick (tasks complete themselves, there is no Claim) and, for a count, its bar with "212/424". Primitives only. */
+const StoryRow = memo(function StoryRow({ label, done, bar, pct, progress, spoken }: Omit<StoryTask, 'key'>) {
+  return (
+    <View style={styles.storyTask} testID={done ? 'story-task-done' : 'story-task'} accessible accessibilityLabel={spoken}>
+      <View style={[styles.tickBox, done && styles.tickBoxOn]}>{done && <Text style={styles.tickMark}>✓</Text>}</View>
+      <View style={styles.storyTaskBody}>
+        <Text style={[styles.storyTaskLabel, done && styles.storyTaskDone]} numberOfLines={2}>
+          {label}
+        </Text>
+        {bar && (
+          <View style={styles.barTrack}>
+            <View style={[styles.barFill, { width: `${Math.round(pct * 100)}%` }, done && { backgroundColor: C.basil }]} />
+            <Text style={styles.barText}>{progress}</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+});
+
 const ChestButton = memo(function ChestButton({
   index,
   points,
@@ -258,7 +293,8 @@ export const TasksDrawer = memo(function TasksDrawer({
   now,
   clockOff,
   bottomInset,
-  tab,
+  initialTab,
+  tab: tabProp,
   onTab,
   onClose,
   actions,
@@ -267,17 +303,37 @@ export const TasksDrawer = memo(function TasksDrawer({
   now: number;
   clockOff: boolean;
   bottomInset: number;
-  tab: 'daily' | 'weekly';
-  onTab: (t: 'daily' | 'weekly') => void;
+  /** The tab it opens on (Story where the city has chapters, else Daily); U2: the goal bar and the clipboard open Story. */
+  initialTab?: TasksTab;
+  /** Set to drive the tab from outside; left out, the drawer keeps its own. */
+  tab?: TasksTab;
+  onTab?: (t: TasksTab) => void;
   onClose: () => void;
   actions: TaskActions;
 }) {
   const r = game.rewards;
-  const rows = tab === 'daily' ? dailyRows(game) : weeklyRows(game);
+  const [ownTab, setOwnTab] = useState<TasksTab>(() => initialTab ?? defaultTasksTab(game));
+  const storyOn = hasStory(game);
+  const picked = tabProp ?? ownTab;
+  const tab = picked === 'story' && !storyOn ? 'daily' : picked;
+  const selectTab = useCallback(
+    (t: TasksTab) => {
+      setOwnTab(t);
+      onTab?.(t);
+    },
+    [onTab],
+  );
+  const locked = rewardsTabLocked(game);
+  const sceneEnd = useGame((s) => s.lastSceneEndPlay);
+  const story = tab === 'story' ? storyView(game, sceneEnd) : null;
+  const storyTarget = useCoachTarget(TASKS_STORY_TARGET);
+  const closeTarget = useCoachTarget(TASKS_CLOSE_TARGET);
+  const listTab = tab === 'story' || locked ? null : tab;
+  const rows = listTab === 'daily' ? dailyRows(game) : listTab === 'weekly' ? weeklyRows(game) : [];
   const chests = chestRows(game);
   const week = weeklyChestView(game);
   const running = R.runningBoosts(game, now);
-  const claimTask = useCallback((i: number) => (tab === 'daily' ? actions.claimDaily(i) : actions.claimWeekly(i)), [tab, actions]);
+  const claimTask = useCallback((i: number) => (tab === 'weekly' ? actions.claimWeekly(i) : actions.claimDaily(i)), [tab, actions]);
   const claimChest = actions.claimChest;
   // D390: the booster strip fades out on the right while it still scrolls. U7: the strip's sizes and scroll offset live in a ref (a
   // scroll event fires ~31×/s); only the fade boolean is state, and it is set only when it flips, so scrolling never re-renders the drawer.
@@ -327,90 +383,139 @@ export const TasksDrawer = memo(function TasksDrawer({
             onPress={onClose}
             style={styles.closeBtn}
             hitSlop={CLOSE_SLOP}
+            ref={closeTarget}
+            onLayout={closeTarget.onLayout}
           >
             <Text style={styles.closeText}>Close ▼</Text>
           </Pressable>
         </View>
-        <View style={styles.boosters}>
-          <Text style={styles.boostLabel}>Boosters</Text>
-          <View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.boostRow}
-              scrollEventThrottle={32}
-              onLayout={onStripLayout}
-              onContentSizeChange={onStripContent}
-              onScroll={onStripScroll}
-            >
-              {running.map((b, i) => (
-                <View key={`run-${i}`} style={[styles.chip, styles.chipRunning]} testID={`boost-running-${i}`}>
-                  <BoostRing seconds={Math.max(0, Math.ceil((b.until - now) / 1000))} />
-                  <Text style={[styles.chipText, styles.chipTextRunning]}>{`${boostOnText(Math.max(0, Math.ceil((b.until - now) / 1000)))}`}</Text>
-                </View>
-              ))}
-              {r.boosters.map((b, i) => (
-                <Pressable
-                  key={`inv-${i}`}
-                  testID={`booster-${i}`}
-                  accessibilityRole="button"
-                  onPress={() => actions.startBooster(i)}
-                  style={styles.chip}
-                  accessibilityLabel={`${boosterStartLabel(b)} booster`}
-                >
-                  <BoostIcon size={18} />
-                  <Text style={styles.chipText}>{boosterStartLabel(b)}</Text>
-                </Pressable>
-              ))}
-              {!running.length && !r.boosters.length && <Text style={styles.empty}>None yet. Chests and gifts drop them.</Text>}
-            </ScrollView>
-            {fade && (
-              <Svg
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-                testID="boost-fade"
-                width={BOOST_STRIP.fade}
-                height="100%"
-                style={styles.boostFade}
-                viewBox="0 0 24 10"
-                preserveAspectRatio="none"
-                pointerEvents="none"
+        {!locked && (
+          <View style={styles.boosters}>
+            <Text style={styles.boostLabel}>Boosters</Text>
+            <View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.boostRow}
+                scrollEventThrottle={32}
+                onLayout={onStripLayout}
+                onContentSizeChange={onStripContent}
+                onScroll={onStripScroll}
               >
-                <Defs>
-                  <LinearGradient id="boost-fade-grad" x1="0" y1="0" x2="1" y2="0">
-                    <Stop offset="0" stopColor={C.bg} stopOpacity={0} />
-                    <Stop offset="1" stopColor={C.bg} stopOpacity={1} />
-                  </LinearGradient>
-                </Defs>
-                <Rect x={0} y={0} width={24} height={10} fill="url(#boost-fade-grad)" />
-              </Svg>
-            )}
+                {running.map((b, i) => (
+                  <View key={`run-${i}`} style={[styles.chip, styles.chipRunning]} testID={`boost-running-${i}`}>
+                    <BoostRing seconds={Math.max(0, Math.ceil((b.until - now) / 1000))} />
+                    <Text style={[styles.chipText, styles.chipTextRunning]}>{`${boostOnText(Math.max(0, Math.ceil((b.until - now) / 1000)))}`}</Text>
+                  </View>
+                ))}
+                {r.boosters.map((b, i) => (
+                  <Pressable
+                    key={`inv-${i}`}
+                    testID={`booster-${i}`}
+                    accessibilityRole="button"
+                    onPress={() => actions.startBooster(i)}
+                    style={styles.chip}
+                    accessibilityLabel={`${boosterStartLabel(b)} booster`}
+                  >
+                    <BoostIcon size={18} />
+                    <Text style={styles.chipText}>{boosterStartLabel(b)}</Text>
+                  </Pressable>
+                ))}
+                {!running.length && !r.boosters.length && <Text style={styles.empty}>None yet. Chests and gifts drop them.</Text>}
+              </ScrollView>
+              {fade && (
+                <Svg
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                  testID="boost-fade"
+                  width={BOOST_STRIP.fade}
+                  height="100%"
+                  style={styles.boostFade}
+                  viewBox="0 0 24 10"
+                  preserveAspectRatio="none"
+                  pointerEvents="none"
+                >
+                  <Defs>
+                    <LinearGradient id="boost-fade-grad" x1="0" y1="0" x2="1" y2="0">
+                      <Stop offset="0" stopColor={C.bg} stopOpacity={0} />
+                      <Stop offset="1" stopColor={C.bg} stopOpacity={1} />
+                    </LinearGradient>
+                  </Defs>
+                  <Rect x={0} y={0} width={24} height={10} fill="url(#boost-fade-grad)" />
+                </Svg>
+              )}
+            </View>
           </View>
-        </View>
-        {clockOff && (
+        )}
+        {clockOff && !locked && (
           <View style={styles.banner} testID="clock-banner">
             <Text style={styles.bannerText}>{R.CLOCK_REASON}</Text>
           </View>
         )}
         <View style={styles.tabs}>
-          {(['daily', 'weekly'] as const).map((t) => (
+          {TASKS_TABS.filter((t) => t !== 'story' || storyOn).map((t) => (
             <Pressable
               key={t}
               testID={`tab-${t}`}
               accessibilityRole="tab"
+              accessibilityLabel={t !== 'story' && locked ? `${TAB_LABEL[t]}, locked` : TAB_LABEL[t]}
               accessibilityState={{ selected: tab === t }}
-              onPress={() => onTab(t)}
+              onPress={() => selectTab(t)}
               style={[styles.tab, tab === t && styles.tabOn]}
             >
-              <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>{t === 'daily' ? 'Daily' : 'Weekly'}</Text>
+              {t !== 'story' && locked && <LockIcon size={14} color={tab === t ? '#fff' : C.inkSoft} />}
+              <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>{TAB_LABEL[t]}</Text>
             </Pressable>
           ))}
-          <Text style={styles.reset} numberOfLines={1}>
-            {countdownText(R.resetCountdown(now, tab === 'daily' ? 'day' : 'week'))}
-          </Text>
+          {listTab && (
+            <Text style={styles.reset} numberOfLines={1}>
+              {countdownText(R.resetCountdown(now, listTab === 'daily' ? 'day' : 'week'))}
+            </Text>
+          )}
         </View>
         <ScrollView contentContainerStyle={[styles.list, { paddingBottom: bottomInset + 20 }]}>
-          {rows.length === 0 && <Text style={styles.empty}>New tasks arrive in a moment.</Text>}
+          {story && (
+            <View ref={storyTarget} onLayout={storyTarget.onLayout} collapsable={false} style={styles.story} testID="story-tab">
+              {story.kind === 'finished' ? (
+                <Text style={styles.empty} testID="story-finished">
+                  {story.finished}
+                </Text>
+              ) : (
+                <>
+                  <View style={styles.chapter}>
+                    <Text style={styles.chapterNo} testID="story-number">{`Chapter ${story.number}`}</Text>
+                    <Text style={styles.chapterTitle} testID="story-title">
+                      {story.title}
+                    </Text>
+                    <View style={styles.teaserRow}>
+                      {story.who && <Portrait id={story.who} size={TEASER.portrait} city={game.city} />}
+                      <Text style={styles.teaser} numberOfLines={TEASER.lines} testID="story-teaser">
+                        {story.teaser}
+                      </Text>
+                    </View>
+                  </View>
+                  {story.tasks.map((task) => (
+                    <StoryRow key={task.key} label={task.label} done={task.done} bar={task.bar} pct={task.pct} progress={task.progress} spoken={task.spoken} />
+                  ))}
+                  <View style={styles.rewardRow} testID="story-reward">
+                    <Text style={styles.rewardText}>{story.reward}</Text>
+                  </View>
+                  {story.wait !== null && (
+                    <View style={styles.waitRow} testID="story-wait">
+                      <Text style={styles.waitText}>{story.wait}</Text>
+                    </View>
+                  )}
+                </>
+              )}
+            </View>
+          )}
+          {!story && locked && (
+            <View style={styles.lockedTab} testID="tab-locked">
+              <LockIcon size={30} color={C.inkSoft} />
+              <Text style={styles.lockedText}>{tabLockedText(game)}</Text>
+            </View>
+          )}
+          {listTab && rows.length === 0 && <Text style={styles.empty}>New tasks arrive in a moment.</Text>}
           {rows.map((row) => (
             <TaskItem
               key={`${tab}-${row.index}`}
@@ -429,7 +534,7 @@ export const TasksDrawer = memo(function TasksDrawer({
               onSwap={swapDaily}
             />
           ))}
-          {tab === 'daily' ? (
+          {listTab === null ? null : listTab === 'daily' ? (
             <View style={styles.points} testID="points-track">
               <View style={styles.pointsHead}>
                 <Text style={styles.pointsTitle}>Slice Points</Text>
@@ -473,19 +578,21 @@ export const TasksDrawer = memo(function TasksDrawer({
             </Pressable>
           )}
           {/* v5.15: the recipe count; a tap opens the Scrapbook on its Recipes tab */}
-          <Pressable
-            testID="collection"
-            accessibilityRole="link"
-            accessibilityLabel={`${collectionText(game)}. Open the Scrapbook`}
-            style={styles.collectionRow}
-            onPress={() => {
-              onClose();
-              router.push({ pathname: '/scrapbook', params: { section: 'recipes' } });
-            }}
-          >
-            <Text style={styles.collection}>{collectionText(game)}</Text>
-            <Text style={styles.collectionGo}>{'\u203A'}</Text>
-          </Pressable>
+          {listTab && (
+            <Pressable
+              testID="collection"
+              accessibilityRole="link"
+              accessibilityLabel={`${collectionText(game)}. Open the Scrapbook`}
+              style={styles.collectionRow}
+              onPress={() => {
+                onClose();
+                router.push({ pathname: '/scrapbook', params: { section: 'recipes' } });
+              }}
+            >
+              <Text style={styles.collection}>{collectionText(game)}</Text>
+              <Text style={styles.collectionGo}>{'\u203A'}</Text>
+            </Pressable>
+          )}
         </ScrollView>
       </View>
     </View>
@@ -774,8 +881,10 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10, paddingBottom: 8 },
   tab: {
     height: 44,
-    minWidth: 88,
-    paddingHorizontal: 16,
+    minWidth: 72,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    gap: 4,
     borderRadius: 14,
     backgroundColor: '#fff',
     borderWidth: 2,
@@ -786,7 +895,65 @@ const styles = StyleSheet.create({
   tabOn: { backgroundColor: C.ink },
   tabText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   tabTextOn: { color: '#fff' },
-  reset: { flex: 1, textAlign: 'right', fontFamily: F.semi, fontSize: 12.5, color: C.tomatoDark },
+  reset: { flex: 1, textAlign: 'right', fontFamily: F.semi, fontSize: 12, color: C.tomatoDark },
+  story: { gap: 8 },
+  chapter: { backgroundColor: C.panel, borderRadius: 16, padding: 10, borderWidth: 3, borderColor: C.ink, gap: 4, ...shadow },
+  chapterNo: { fontFamily: F.semi, fontSize: 12, color: C.tomatoDark },
+  chapterTitle: { fontFamily: F.bold, fontSize: 19, color: C.ink },
+  teaserRow: { flexDirection: 'row', alignItems: 'center', gap: TEASER.gap, paddingTop: 2 },
+  teaser: { flex: 1, fontFamily: F.regular, fontStyle: 'italic', fontSize: TEASER.font, lineHeight: 17, color: C.inkSoft },
+  storyTask: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 48,
+    backgroundColor: C.panel,
+    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderWidth: 3,
+    borderColor: C.ink,
+    ...shadow,
+  },
+  storyTaskBody: { flex: 1, gap: 4 },
+  storyTaskLabel: { fontFamily: F.bold, fontSize: 15, color: C.ink },
+  storyTaskDone: { color: C.inkSoft },
+  tickBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2.5,
+    borderColor: C.lockedDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  tickBoxOn: { borderColor: C.basilDark, backgroundColor: '#F1FFF0' },
+  tickMark: { fontFamily: F.bold, fontSize: 16, lineHeight: 20, color: C.basilDark },
+  rewardRow: {
+    minHeight: 44,
+    borderRadius: 14,
+    backgroundColor: '#FFE7C2',
+    borderWidth: 2,
+    borderColor: C.cheeseDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  rewardText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
+  waitRow: {
+    minHeight: 44,
+    borderRadius: 14,
+    backgroundColor: '#F1FFF0',
+    borderWidth: 2,
+    borderColor: C.basilDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  waitText: { fontFamily: F.bold, fontSize: 15, color: C.basilDark },
+  lockedTab: { alignItems: 'center', gap: 10, paddingVertical: 28, paddingHorizontal: 20 },
+  lockedText: { fontFamily: F.bold, fontSize: 15, color: C.inkSoft, textAlign: 'center' },
   list: { padding: 10, gap: 8 },
   task: {
     flexDirection: 'row',
