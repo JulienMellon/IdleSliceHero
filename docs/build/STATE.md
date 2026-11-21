@@ -48,3 +48,4 @@ next: start S7-v5.20.md. v5.20 scope set by Julien 2026-11-20 (docs/PLAN-v5.20-o
 - 2026-11-21 S7 Julien on D521/D522: drop the 'no gain now' label, keep the Ovens step, step 11 shows the oven's gain. r2 fixes: C1 (U) + C2 (S) running; then W1 (T) + U0 (U); then C3 (E/U + label drop).
 - 2026-11-21 S7 r2 C1 done (D520 D524-6 D529 S69 A42-part C161 C163 C164 M72 T118 T119; 2771 tests). For C3: noteCoach into game-store.ts, D528 goal-model, S72 drawer header, shop-ui hire ref. W1 r2 launched.
 - 2026-11-21 S7 r2 W1 done: S68 fixed (tutorial.8 names no task), lines 9-11 now 'faster oven'. Other T rows are storycritic minors: carried.
+- 2026-11-21 S7 r2 U0 nothing to fix. C2 done: G112 D522 (Lv/+% oven tag) D523 D527 C156 C162 T120 U28 M69 T114; D481 D519 carried. C3 r2 running (+ dial:oven step 11, 160_c3 step-13 scrim + close-upgrades block).
