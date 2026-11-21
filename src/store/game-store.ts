@@ -41,7 +41,7 @@ import { fixJam as fixOvenJam } from '../engine/features/layers/shifts';
 import { setMenu as setUniversityMenu } from '../engine/features/layers/menu';
 import { ackCritic as ackUptownCritic, buyIngredients as buyUptownIngredients, ingredientsPrice } from '../engine/features/layers/stars';
 import * as R from '../engine/rewards';
-import { tutorialAdvance, tutorialHoldsStory } from '../engine/tutorial';
+import { tutorialAdvance, tutorialHoldsStory, tutorialNote, type TutorialNote } from '../engine/tutorial';
 import { buyCosmetic as buyVanity } from '../engine/vanity';
 import { analytics, EVENTS, onGrant, purchases, startServices, type Grant } from '../services';
 import { standingGrants } from './standing';
@@ -143,6 +143,8 @@ interface Store {
   buyIngredients: () => boolean;
   /** v5.16 (S2b): the UI has shown how the critic's visit went. Clears it; saved with the game. */
   ackCritic: () => void;
+  /** v5.20 (C3): what only the screen knows ends some tutorial steps (a look seen, the drawer opened or closed): tell the tutorial. */
+  noteCoach: (note: TutorialNote) => void;
   /** Short-lived message, e.g. "Not enough cash". */
   /** `need`: a need-cash toast clears itself once the player can afford it. */
   toast: { text: string; at: number; need?: number } | null;
@@ -626,6 +628,15 @@ export const useGame = create<Store>((set, get) => {
         { name: kind[0].toUpperCase() + kind.slice(1), cost: G.decorCost(get().game, get().game.active, kind) },
         plain('decor'),
       ),
+
+    noteCoach: (note) => {
+      const g = get().game;
+      const next = tutorialNote(g, note);
+      if (next !== g) {
+        set({ game: next });
+        void get().save();
+      }
+    },
 
     buyNightOven: () => {
       const g = get().game;

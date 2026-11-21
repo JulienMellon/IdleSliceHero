@@ -48,7 +48,7 @@ describe('tutorial', () => {
       [8, 'tutorial.8', [], 'look'],
       [9, 'tutorial.9', [], 'free'],
       [10, 'tutorial.10', ['walk:ovens'], 'tap'],
-      [11, 'tutorial.11', ['ovens:all'], 'look'],
+      [11, 'tutorial.11', ['ovens:all', 'dial:oven'], 'look'],
       [12, 'tutorial.12', ['walk:all'], 'tap'],
       [13, 'tutorial.13', ['drawer:hire:prep'], 'look'],
       [14, 'tutorial.14', [], 'free'],
@@ -97,7 +97,7 @@ describe('tutorial', () => {
     expect(b.ok).toBe(true);
     if (b.ok) s = tutorialAdvance(b.state);
     note();
-    expect(coachStep(s)?.targets).toEqual(['ovens:all']);
+    expect(coachStep(s)?.targets).toEqual(['ovens:all', 'dial:oven']);
     s = tutorialNote(s, 'look');
     note();
     expect(coachStep(s)?.targets).toEqual(['walk:all']);

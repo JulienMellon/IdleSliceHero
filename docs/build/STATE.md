@@ -4,7 +4,7 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.20                   # v5.19-test closed 2026-11-19 (r1: critic SATISFIED, codecritic APPROVED)
-step: fix                          # setup | waves | verify | review | fix | close
+step: verify                       # setup | waves | verify | review | fix | close
 round: r2              # r1 | r2 | r3
 last_shots: v5.20                  # r1 verify: True 0 [], layout 0 new; 17 new 12 changed vs v5.20-base
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
@@ -49,3 +49,4 @@ next: start S7-v5.20.md. v5.20 scope set by Julien 2026-11-20 (docs/PLAN-v5.20-o
 - 2026-11-21 S7 r2 C1 done (D520 D524-6 D529 S69 A42-part C161 C163 C164 M72 T118 T119; 2771 tests). For C3: noteCoach into game-store.ts, D528 goal-model, S72 drawer header, shop-ui hire ref. W1 r2 launched.
 - 2026-11-21 S7 r2 W1 done: S68 fixed (tutorial.8 names no task), lines 9-11 now 'faster oven'. Other T rows are storycritic minors: carried.
 - 2026-11-21 S7 r2 U0 nothing to fix. C2 done: G112 D522 (Lv/+% oven tag) D523 D527 C156 C162 T120 U28 M69 T114; D481 D519 carried. C3 r2 running (+ dial:oven step 11, 160_c3 step-13 scrim + close-upgrades block).
+- 2026-11-21 S7 r2 C3 done (A42 noteCoach, U29, C164, D521 label gone, D522 dial:oven, S72, copy, 160_c3 clean). Verify v5.20-r2.

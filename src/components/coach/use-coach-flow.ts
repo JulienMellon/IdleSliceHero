@@ -2,16 +2,12 @@
 // a look step ends by itself when its overlay cannot be drawn, and the drawer step's look turns `free` once seen. The rules are `coach-view.ts`; this carries the state.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { tutorialNote, type CoachStep, type TutorialNote } from '../../engine/tutorial';
+import type { CoachStep, TutorialNote } from '../../engine/tutorial';
 import { useGame } from '../../store/game-store';
 import { coachView, fallbackStep, LOOK_FALLBACK_MS, type CoachView } from './coach-view';
 
-/** Tell the tutorial what the screen saw. */
-function note(n: TutorialNote) {
-  const g = useGame.getState().game;
-  const next = tutorialNote(g, n);
-  if (next !== g) useGame.setState({ game: next });
-}
+/** Tell the tutorial what the screen saw (the store's action does the rest). */
+const note = (n: TutorialNote) => useGame.getState().noteCoach(n);
 
 /** The overlay's props for the current step, and the callback that ends a `look`. */
 export function useCoachFlow(step: CoachStep | null, isFirst: boolean, drawerOpen: boolean): { view: CoachView | null; onDone: () => void } {

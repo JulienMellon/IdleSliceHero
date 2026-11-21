@@ -1,6 +1,6 @@
 """Card C3 (v5.20): the Chapter 1 script. Shots 160-169, one for each of steps 1, 2, 4, 6, 9, 10, 11, 12, 13, 15.
 
-160 step 1  tap the prep table          165 step 10 tap Ovens (the oven upgrade is affordable)
+160 step 1  tap the prep table          165 step 10 tap Ovens (the oven money is there)
 161 step 2  the prep dial fills         166 step 11 the oven lit (a look)
 162 step 4  the oven dial is the timer  167 step 12 tap All
 163 step 6  the cash (a look)           168 step 13 the drawer's prep-head hire card (a look, then Nonna's card alone)
@@ -69,7 +69,7 @@ def run(ctx):
 
     # 164: step 9, free play: only Nonna's card, no scrim
     try:
-        page = step_page(browser, 9, r"Save \$[\d.,]+\w* to upgrade the oven", 4, sold=3)
+        page = step_page(browser, 9, r"Save \$[\d.,]+\w* for a faster oven", 4, sold=3)
         if is_up(page, "coach-cut-0"):
             report["errors"].append("fixture 160_c3: step 9 draws a cut-out (it is free play)")
         shot(page, "164-step9-free", 0.4)
@@ -85,9 +85,9 @@ def run(ctx):
     except Exception as e:
         report["errors"].append(f"C3 165 failed: {e}")
 
-    # 166: step 11, two ovens
+    # 166: step 11, the oven bakes faster (its gain tag and dial are lit)
     try:
-        page = step_page(browser, 11, r"A better oven bakes more", 0, sold=30, ovens=2)
+        page = step_page(browser, 11, r"The oven bakes faster now", 0, sold=30, ovens=2)
         expect(page, "coach-cut-0", 3000)
         shot(page, "166-step11-two-ovens", 0.4)
     except Exception as e:
@@ -106,8 +106,8 @@ def run(ctx):
         expect(page, "coach-cut-0", 3000)
         lit(page, "coach-cut-0", "buy-headPrep", "168-step13-hire")
         shot(page, "168-step13-hire", 0.4)
-        # after the look (2.5 s) the scrim goes and only her card stays: Close and the hire card can be tapped
-        advance(page, 3000)
+        # after the look (4 s) the scrim goes and only her card stays: Close and the hire card can be tapped
+        advance(page, 4500)
         if is_up(page, "coach-block"):
             report["errors"].append("fixture 160_c3: step 13 keeps its scrim after the look")
         tid(page, "close-upgrades").click(); advance(page, 600)

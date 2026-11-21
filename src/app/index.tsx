@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
 import { CoachOverlay } from '@/components/coach/overlay';
+import { useCoachTarget } from '@/components/coach/targets';
 import { useCoachFlow } from '@/components/coach/use-coach-flow';
 import { FloatingBonus } from '@/components/floating-bonus';
 import { OrderChip } from '@/components/order-chip';
@@ -12,7 +13,7 @@ import { chipPhase } from '@/components/order-model';
 import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
-import { coachStep, hintsAllowed } from '@/engine/tutorial';
+import { coachMode, coachStep, hintsAllowed } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
@@ -193,7 +194,7 @@ export default function GameScreen() {
   const clockOff = game.rewards.lastSeen - tickAt > 2000;
   const rewardsOn = R.rewardsUnlocked(game);
   const hud = rewardsHud(game, now);
-  const tutorialOn = !!coachStep(game);
+  const tutorialOn = coachMode(game) !== null;
   // the calendar opens by itself on the first open of a day: after the title card, the offline popup, any story scene and the tutorial
   const autoGift = titleDone && !covered && !tutorialOn && hud.autoGift;
   // U1: the tasks drawer and the calendar see a snapshot that moves once a second, or at once when rewards change
@@ -250,6 +251,8 @@ export default function GameScreen() {
   const coach = coachStep(game);
   // v5.20: Nonna's flow (what ends each step, where she points) is components/coach/use-coach-flow.ts
   const coachFlow = useCoachFlow(coach, id === first, drawerOpen);
+  // the prep head's hire card in the drawer is where step 13 points: one ref, given to that one card (S72: while Nonna teaches, the drawer does not point at anything else)
+  const hireRef = useCoachTarget('drawer:hire:prep');
   const eps = G.earningsPerSecond(game);
   // Tied stations: one upgrade alone adds $0/s, so say what to buy together. Keyed on levels, not cash or sales.
   const bundle = tiedBundle(game, id);
@@ -408,7 +411,7 @@ export default function GameScreen() {
       title={c.title}
       level={c.level}
       detail={c.detail}
-      hot={c.hot}
+      hot={c.hot && !coach}
       wide={c.wide}
       muted={c.muted}
       tone={c.tone}
@@ -418,7 +421,7 @@ export default function GameScreen() {
       canBuy={c.canBuy}
       buyKey={buyKeyOf(c.buy)}
       onBuyKey={onDrawerBuy}
-      coachId={c.testID === 'buy-headPrep' ? 'drawer:hire:prep' : undefined}
+      rootRef={c.testID === 'buy-headPrep' ? hireRef : undefined}
     />
   );
 
@@ -500,16 +503,18 @@ export default function GameScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.drawerTitle}>{drawer.title}</Text>
                   {/* the manager's line is long: it shrinks (never under 10 pt) to the room beside Close, then wraps rather than clip */}
-                  <Text
-                    style={[
-                      styles.drawerSub,
-                      drawerGood && styles.drawerSubGood,
-                      { fontSize: fitFont(drawer.bottleneck, screenW - 2 * DRAWER_HEAD.padX - DRAWER_CLOSE_W, 12, MIN_FONT) },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {drawer.bottleneck}
-                  </Text>
+                  {!coach && (
+                    <Text
+                      style={[
+                        styles.drawerSub,
+                        drawerGood && styles.drawerSubGood,
+                        { fontSize: fitFont(drawer.bottleneck, screenW - 2 * DRAWER_HEAD.padX - DRAWER_CLOSE_W, 12, MIN_FONT) },
+                      ]}
+                      numberOfLines={2}
+                    >
+                      {drawer.bottleneck}
+                    </Text>
+                  )}
                 </View>
                 <Pressable
                   testID="close-upgrades"

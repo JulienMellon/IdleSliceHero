@@ -43,7 +43,7 @@ const DEFS: readonly Def[] = [
   { targets: [], mode: 'look' }, // 8: the task list (v5.21)
   { targets: [], mode: 'free' }, // 9: save up for the oven upgrade
   { targets: ['walk:ovens'], mode: 'tap' }, // 10
-  { targets: ['ovens:all'], mode: 'look' }, // 11
+  { targets: ['ovens:all', 'dial:oven'], mode: 'look' }, // 11: the oven bakes faster (its gain tag) and the dial shows it
   { targets: ['walk:all'], mode: 'tap' }, // 12
   { targets: ['drawer:hire:prep'], mode: 'look' }, // 13
   { targets: [], mode: 'free' }, // 14: Marco won't hire himself
@@ -65,13 +65,11 @@ export function stepsFor(city: CityDef): readonly CoachStep[] {
 /** The step the saved number stands for: 7 and 8 are skipped while the chapters are off. */
 const effective = (n: number) => (!CHAPTERS_ON && (n === 7 || n === 8) ? 9 : n);
 
-/** The current step, or null when the tutorial isn't running (not started, done, or a GM already runs Downtown). */
-export function coachStep(s: G.GameState): CoachStep | null {
+/** The step as it stands, without its line: which step, its copy key and mode. Cheap (no copy lookup, no money text): the per-frame questions ask this. */
+function current(s: G.GameState): { step: CoachStep; key: string; mode: CoachMode; ovens: number | null } | null {
   if (s.tutorial < 1 || s.tutorial >= TUTORIAL_DONE || s.shops[first(s)].managed) return null;
   const city = cityOf(s);
   const steps = stepsFor(city);
-  const d = s.shops[first(s)];
-  const marco = city.heads[first(s)].prep;
   let step = steps[effective(s.tutorial) - 1];
   let key = step.key;
   const ovens = G.upgradeCostOf(s, first(s), 'ovens');
@@ -82,10 +80,21 @@ export function coachStep(s: G.GameState): CoachStep | null {
   }
   // Marco is already affordable: Nonna says so
   if (step.id === 13 && G.canAfford(s, G.headCost(first(s), 'prep', city))) key = 'tutorial.alt.13';
-  const text = t(key, { marco, cost: money(ovens ?? 0) }, city.id);
   // the first pizza is still on its way out: nothing to look at yet, so the cash waits with the ring breathing
-  const mode = step.id === 6 && d.sold === 0 ? 'wait' : step.mode;
-  return { ...step, key, text, mode };
+  const mode = step.id === 6 && s.shops[first(s)].sold === 0 ? 'wait' : step.mode;
+  return { step, key, mode, ovens };
+}
+
+/** The mode of the current step, or null when the tutorial isn't running (for the hints and the screen's "tutorial on": no line is built). */
+export const coachMode = (s: G.GameState): CoachMode | null => current(s)?.mode ?? null;
+
+/** The current step, or null when the tutorial isn't running (not started, done, or a GM already runs Downtown). */
+export function coachStep(s: G.GameState): CoachStep | null {
+  const c = current(s);
+  if (!c) return null;
+  const city = cityOf(s);
+  const text = t(c.key, { marco: city.heads[first(s)].prep, cost: money(c.ovens ?? 0) }, city.id);
+  return { ...c.step, key: c.key, text, mode: c.mode };
 }
 
 /** Whether step `id` is finished in this state (the steps that end on the screen's say-so are never finished here: see `tutorialNote`). */
@@ -158,8 +167,8 @@ export const HINTS: readonly Hint[] = ['refusal', 'waiting', 'more', 'toast'];
  */
 export function hintsAllowed(s: G.GameState): Record<Hint, boolean> {
   // the free steps (9 and 14: play on) are the one place the hints show, so the player sees what is holding the shop back
-  const step = coachStep(s);
-  const on = step !== null && step.mode !== 'free';
+  const mode = coachMode(s);
+  const on = mode !== null && mode !== 'free';
   return { refusal: !on, waiting: !on, more: !on, toast: !on };
 }
 
