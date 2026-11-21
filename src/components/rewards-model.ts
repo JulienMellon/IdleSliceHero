@@ -21,7 +21,7 @@ import {
 } from '../content/rewards';
 import { cityOf } from '../content/cities';
 import { count, money, pizzas } from '../engine/format';
-import { chapterReady, chaptersOf, currentChapter, RATE_HOLD_SECONDS, saveOf, taskProgress } from '../engine/chapters';
+import { CHAPTER_DIAMONDS, chapterReady, chaptersOf, currentChapter, RATE_HOLD_SECONDS, saveOf, taskProgress, visibleTasks } from '../engine/chapters';
 import { def, founderName, type Booster, type GameState, type Task } from '../engine/game';
 import { scenesById } from '../engine/story';
 import { t } from '../content/copy';
@@ -368,8 +368,7 @@ export const boostFadeShown = (contentW: number, viewW: number, scrollX: number)
 export type TasksTab = 'story' | 'daily' | 'weekly';
 export const TASKS_TABS: readonly TasksTab[] = ['story', 'daily', 'weekly'];
 
-/** The diamonds a finished chapter pays besides its scene (banked until the rewards unlock; VERSION.md "Defaults"). */
-export const CHAPTER_DIAMONDS = 5;
+export { CHAPTER_DIAMONDS };
 
 /** The tutorial's two spots in the drawer (card E2). */
 export const TASKS_STORY_TARGET: CoachTargetId = 'tasks:story';
@@ -504,7 +503,7 @@ export function storyView(g: GameState, lastSceneEnd: number | null): StoryView 
     // the tutorial's chapter has no scene to tease (its beat opened the game): no teaser, no portrait
     teaser: c.free ? '' : t(`${c.key}.teaser`, {}, g.city),
     who: c.free ? null : (scenesById(cityOf(g).scenes).get(c.sceneId)?.character ?? null),
-    tasks: c.tasks.map((task) => storyTask(g, task)),
+    tasks: visibleTasks(c).map((task) => storyTask(g, task)),
     reward: storyReward(g, c, number),
     coming: after && !c.free ? `Coming up \u00B7 Chapter ${number + 1} \u00B7 ${t(`${after.key}.title`, {}, g.city)}` : '',
     wait: ready ? t('chapter.ready', { time: clockText(ready.secondsLeft) }, g.city) : null,
