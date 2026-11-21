@@ -48,3 +48,10 @@ Julien's words: "I think the core story should have clear goals to reach the nex
 
 ## Close
 README section 8. Report: verdicts, the pacing table against v5.20's, and what is open. Set STATE to v5.22 and stop.
+
+## Added 2026-11-21 (S8, Julien): card E1b
+| ID | Lane | What | Card |
+| --- | --- | --- | --- |
+| E1b | E | The next shop's build waits for the current chapter (the story advances in order) | `card-E1b.md` |
+
+Run E1b alone, before the r3 verify. Fix routing: owner E → E1, E1b, E2.
