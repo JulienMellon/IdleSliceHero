@@ -46,3 +46,4 @@ next: start S7-v5.20.md. v5.20 scope set by Julien 2026-11-20 (docs/PLAN-v5.20-o
 - 2026-11-21 S7 verify v5.20 pass: True 0 [], layout 0, 17 new 12 changed. r1 reviews launched (critic, codecritic, storycritic).
 - 2026-11-21 S7 r1 gate not met (critic NOT SATISFIED bug 1 major 3; story major S68; code APPROVED). Fix round r2 next; D521 asked of Julien.
 - 2026-11-21 S7 Julien on D521/D522: drop the 'no gain now' label, keep the Ovens step, step 11 shows the oven's gain. r2 fixes: C1 (U) + C2 (S) running; then W1 (T) + U0 (U); then C3 (E/U + label drop).
+- 2026-11-21 S7 r2 C1 done (D520 D524-6 D529 S69 A42-part C161 C163 C164 M72 T118 T119; 2771 tests). For C3: noteCoach into game-store.ts, D528 goal-model, S72 drawer header, shop-ui hire ref. W1 r2 launched.
