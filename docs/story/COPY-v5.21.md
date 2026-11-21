@@ -35,7 +35,7 @@ Placeholders: `{target}` is the task's number from `docs/build/v5.21/chapters.md
 
 | key | text |
 | --- | --- |
-| `chapter.downtown-1.teaser` | Rain, one oven, zero customers. Nonna Rosa has had enough. |
+| `chapter.downtown-1.teaser` | The keys are yours. Nonna Rosa wants to see what you do with them. |
 | `chapter.downtown-2.teaser` | Nonna Rosa hears a sound the shop has not made in years. |
 | `chapter.downtown-3.teaser` | A man in a shiny suit walks into Nonna Rosa's shop. Smiling. |
 | `chapter.downtown-4.teaser` | Nonna Rosa has been watching. Always watching. Now she wants a word. |
@@ -47,18 +47,18 @@ Placeholders: `{target}` is the task's number from `docs/build/v5.21/chapters.md
 | `chapter.waterfront-2.teaser` | Friday night on the dock. Captain Marisol has a story she won't tell. |
 | `chapter.waterfront-3.teaser` | A new sign goes up on Pier 9, and Captain Marisol hates it. |
 | `chapter.waterfront-4.teaser` | Auction day for Pier 9. Captain Marisol can't watch the bids. |
-| `chapter.university-1.teaser` | Finals week. A student named Priya is counting her change. |
+| `chapter.university-1.teaser` | Finals week. Victor wants brains. Priya just wants a cheap slice. |
 | `chapter.university-2.teaser` | Priya said she was writing it down. She meant it. |
 | `chapter.university-3.teaser` | Career fair on campus. MegaSlice has a booth, and Priya is walking by. |
 | `chapter.university-4.teaser` | Priya has made up her mind about MegaSlice. She's carrying something. |
 | `chapter.industrial-1.teaser` | Sparks, smoke and a foreman named Big Sal who hates everything. |
 | `chapter.industrial-2.teaser` | Midnight on the line. Big Sal is finally hungry enough to try one. |
-| `chapter.industrial-3.teaser` | Something new turned up in the break rooms. Big Sal is not happy. |
+| `chapter.industrial-3.teaser` | New in the break rooms. Big Sal hates it more than Thursdays. |
 | `chapter.industrial-4.teaser` | Big Sal has something to say. He hates saying things. |
 | `chapter.uptown-1.teaser` | Grand opening Uptown. Genevieve Laurent, food critic, takes a bite. |
-| `chapter.uptown-2.teaser` | Genevieve is back. Purely for research, she insists. |
+| `chapter.uptown-2.teaser` | Genevieve gave you one star. She just ordered again. |
 | `chapter.uptown-3.teaser` | Victor Crust invites Genevieve to the top floor of MegaSlice HQ. |
-| `chapter.uptown-4.teaser` | Genevieve's review is out, and all of Port Marinara is reading it. |
+| `chapter.uptown-4.teaser` | Genevieve's review drops tomorrow. Victor bet a yacht on it. |
 
 ## 3. Task labels
 
@@ -69,70 +69,71 @@ Placeholders: `{target}` is the task's number from `docs/build/v5.21/chapters.md
 | `task.downtown-1.3` | Hire Marco, head prep cook |
 | `task.downtown-2.1` | Serve {target} pies in {shop} |
 | `task.downtown-2.2` | Hire Lucia, head baker |
-| `task.downtown-2.3` | Serve {target}/min in {shop} |
+| `task.downtown-2.3` | Hold {target}/min in {shop} |
 | `task.downtown-3.1` | Serve {target} pies in {shop} |
 | `task.downtown-3.2` | Hire Benny, head cashier |
 | `task.downtown-3.3` | Read the {shop} shop report |
 | `task.downtown-4.1` | Serve {target} pies in {shop} |
-| `task.downtown-4.2` | Serve {target}/min in {shop} |
+| `task.downtown-4.2` | Hold {target}/min in {shop} |
 | `task.downtown-4.3` | No missed orders for {target} s |
 | `task.suburbs-1.1` | Build your {shop} shop |
-| `task.suburbs-1.2` | Serve {target}/min in {shop} |
+| `task.suburbs-1.2` | Hold {target}/min in {shop} |
 | `task.suburbs-2.1` | Serve {target} pies in {shop} |
 | `task.suburbs-2.2` | Hire Patty, head prep cook |
-| `task.suburbs-2.3` | Serve {target}/min in {shop} |
+| `task.suburbs-2.3` | Hold {target}/min in {shop} |
 | `task.suburbs-3.1` | Serve {target} pies in {shop} |
 | `task.suburbs-3.2` | Hire Hank, head baker |
-| `task.suburbs-3.3` | Serve {target}/min in {shop} |
-| `task.suburbs-4.1` | Beat the rival in {shop} |
+| `task.suburbs-3.3` | Hold {target}/min in {shop} |
+| `task.suburbs-4.1` | Beat MegaSlice in {shop} |
 | `task.suburbs-4.2` | Hire Kayla, head cashier |
-| `task.suburbs-4.3` | Serve {target}/min in {shop} |
+| `task.suburbs-4.3` | Hold {target}/min in {shop} |
 | `task.waterfront-1.1` | Build your {shop} shop |
-| `task.waterfront-1.2` | Serve {target}/min in {shop} |
+| `task.waterfront-1.2` | Hold {target}/min in {shop} |
 | `task.waterfront-2.1` | Serve {target} pies in {shop} |
-| `task.waterfront-2.2` | Serve {target}/min in {shop} |
+| `task.waterfront-2.2` | Hold {target}/min in {shop} |
 | `task.waterfront-3.1` | Serve {target} pies in {shop} |
-| `task.waterfront-3.2` | Serve {target}/min in {shop} |
-| `task.waterfront-4.1` | Win the auction for the dock |
+| `task.waterfront-3.2` | Hold {target}/min in {shop} |
+| `task.waterfront-4.1` | Win the Pier 9 auction |
 | `task.waterfront-4.2` | Hire Finn, head prep cook |
 | `task.university-1.1` | Build your {shop} shop |
-| `task.university-1.2` | Serve {target}/min in {shop} |
+| `task.university-1.2` | Hold {target}/min in {shop} |
 | `task.university-2.1` | Serve {target} pies in {shop} |
-| `task.university-2.2` | Serve {target}/min in {shop} |
+| `task.university-2.2` | Hold {target}/min in {shop} |
 | `task.university-3.1` | Serve {target} pies in {shop} |
 | `task.university-3.2` | Hire Raj, head prep cook |
-| `task.university-3.3` | Serve {target}/min in {shop} |
-| `task.university-4.1` | Beat the rival in {shop} |
+| `task.university-3.3` | Hold {target}/min in {shop} |
+| `task.university-4.1` | Beat MegaSlice in {shop} |
 | `task.university-4.2` | Hire Mei, head baker |
 | `task.university-4.3` | Hire Tyler, head cashier |
 | `task.industrial-1.1` | Build your {shop} shop |
-| `task.industrial-1.2` | Serve {target}/min in {shop} |
+| `task.industrial-1.2` | Hold {target}/min in {shop} |
 | `task.industrial-2.1` | Serve {target} pies in {shop} |
 | `task.industrial-2.2` | Hire Stan, head prep cook |
 | `task.industrial-2.3` | Hire Ox, head baker |
 | `task.industrial-3.1` | Serve {target} pies in {shop} |
 | `task.industrial-3.2` | Hire Rita, head cashier |
-| `task.industrial-3.3` | Serve {target}/min in {shop} |
-| `task.industrial-4.1` | Beat the rival in {shop} |
+| `task.industrial-3.3` | Hold {target}/min in {shop} |
+| `task.industrial-4.1` | Beat MegaSlice in {shop} |
 | `task.industrial-4.2` | No missed orders for {target} s |
-| `task.industrial-4.3` | Serve {target}/min in {shop} |
+| `task.industrial-4.3` | Hold {target}/min in {shop} |
 | `task.uptown-1.1` | Build your {shop} shop |
-| `task.uptown-1.2` | Serve {target}/min in {shop} |
+| `task.uptown-1.2` | Hold {target}/min in {shop} |
 | `task.uptown-2.1` | Serve {target} pies in {shop} |
 | `task.uptown-2.2` | Hire Pierre, head prep cook |
 | `task.uptown-2.3` | Hire Margot, head baker |
 | `task.uptown-3.1` | Serve {target} pies in {shop} |
 | `task.uptown-3.2` | Hire Sterling, head cashier |
-| `task.uptown-3.3` | Serve {target}/min in {shop} |
-| `task.uptown-4.1` | Beat the rival in {shop} |
+| `task.uptown-3.3` | Hold {target}/min in {shop} |
+| `task.uptown-4.1` | Beat MegaSlice in {shop} |
 | `task.uptown-4.2` | No missed orders for {target} s |
-| `task.uptown-4.3` | Serve {target}/min in {shop} |
+| `task.uptown-4.3` | Hold {target}/min in {shop} |
 | `task.kind.serve` | Serve {target} pies in {shop} |
 | `task.kind.build` | Build your {shop} shop |
-| `task.kind.win` | Beat the rival in {shop} |
+| `task.kind.win` | Beat MegaSlice in {shop} |
+| `task.kind.win.short` | Beat MegaSlice |
 | `task.kind.bid` | Win the auction in {shop} |
 | `task.kind.hire` | Hire a {shop} station head |
-| `task.kind.rate` | Serve {target}/min in {shop} |
+| `task.kind.rate` | Hold {target}/min in {shop} |
 | `task.kind.noMissed` | No missed orders for {target} s |
 | `task.kind.report` | Read the {shop} shop report |
 
@@ -141,4 +142,4 @@ Placeholders: `{target}` is the task's number from `docs/build/v5.21/chapters.md
 | key | text |
 | --- | --- |
 | `chapter.ready` | Next scene in {time} |
-| `chapter.done` | Every chapter done. The city is yours. |
+| `chapter.done` | Every chapter done. Victor is waiting in Boston. |
