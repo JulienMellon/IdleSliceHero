@@ -18,6 +18,7 @@ import {
 import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
 import { DAILY_CHESTS, STREAK_SAVE_DIAMONDS } from '../content/rewards';
+import type { NeighborhoodId } from '../content/types';
 import { canAffordDiamonds, type GameState } from '../engine/game';
 import * as R from '../engine/rewards';
 import { useGame } from '../store/game-store';
@@ -40,12 +41,12 @@ import {
   collectionText,
   countdownText,
   dailyRows,
-  defaultTasksTab,
   giftHeader,
   giftTiles,
   hasStory,
   pointsPct,
   rewardsTabLocked,
+  storyRewardText,
   storyView,
   tabLockedText,
   TASKS_CLOSE_TARGET,
@@ -55,6 +56,7 @@ import {
   weeklyChestView,
   weeklyRows,
   type GiftIconKind,
+  type StoryGo,
   type StoryTask,
   type TaskState,
   type TasksTab,
@@ -234,12 +236,45 @@ const TaskItem = memo(function TaskItem({
 
 const TAB_LABEL: Record<TasksTab, string> = { story: 'Story', daily: 'Daily', weekly: 'Weekly' };
 
-/** One task of the chapter: a tick (tasks complete themselves, there is no Claim) and, for a count, its bar with "212/424". Primitives only. */
-const StoryRow = memo(function StoryRow({ label, done, bar, pct, progress, spoken }: Omit<StoryTask, 'key'>) {
+/** A padlock on a cream chip: the one lock glyph of the tabs and of the locked body (its shackle is ink, so it needs the chip on an ink tab). */
+function PadlockChip({ size }: { size: number }) {
   return (
-    <View style={styles.storyTask} testID={done ? 'story-task-done' : 'story-task'} accessible accessibilityLabel={spoken}>
+    <View style={[styles.lockChip, { width: size + 8, height: size + 8, borderRadius: (size + 8) / 2 }]}>
+      <LockIcon size={size} />
+    </View>
+  );
+}
+
+/** The clapper board of the reward row: a scene is coming. */
+function ClapperIcon({ size }: { size: number }) {
+  return (
+    <Svg accessibilityElementsHidden importantForAccessibility="no-hide-descendants" width={size} height={size} viewBox="0 0 24 24">
+      <Rect x={3} y={10} width={18} height={11} rx={2} fill="#fff" stroke={C.ink} strokeWidth={2} />
+      <Path d="M3 10 L21 5.5 L21 9.5 L3 10 Z" fill={C.ink} stroke={C.ink} strokeWidth={1.5} strokeLinejoin="round" />
+      <Path d="M8 9.2 L10.5 6.6 M13 8 L15.5 5.4" stroke="#FFF4E0" strokeWidth={1.6} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+/** One task of the chapter: a tick (tasks complete themselves, there is no Claim), for a count its bar with "212/424", and a 44 pt Go for a task done somewhere else. Primitives and one stable handler. */
+const StoryRow = memo(function StoryRow({
+  label,
+  done,
+  bar,
+  pct,
+  progress,
+  spoken,
+  go,
+  shop,
+  onGo,
+}: Omit<StoryTask, 'key'> & { onGo?: (kind: StoryGo, shop: NeighborhoodId) => void }) {
+  const press = useCallback(() => {
+    if (go && onGo) onGo(go, shop);
+  }, [go, shop, onGo]);
+  return (
+    <View style={styles.storyTask} testID={done ? 'story-task-done' : 'story-task'}>
       <View style={[styles.tickBox, done && styles.tickBoxOn]}>{done && <Text style={styles.tickMark}>✓</Text>}</View>
-      <View style={styles.storyTaskBody}>
+      <View style={styles.storyTaskBody} accessible accessibilityLabel={spoken}>
         <Text style={[styles.storyTaskLabel, done && styles.storyTaskDone]} numberOfLines={2}>
           {label}
         </Text>
@@ -250,6 +285,11 @@ const StoryRow = memo(function StoryRow({ label, done, bar, pct, progress, spoke
           </View>
         )}
       </View>
+      {go !== '' && onGo && (
+        <Pressable testID="story-go" accessibilityRole="button" accessibilityLabel={`Go: ${label}`} onPress={press} style={styles.goBtn}>
+          <Text style={styles.goText}>Go</Text>
+        </Pressable>
+      )}
     </View>
   );
 });
@@ -293,36 +333,27 @@ export const TasksDrawer = memo(function TasksDrawer({
   now,
   clockOff,
   bottomInset,
-  initialTab,
   tab: tabProp,
   onTab,
   onClose,
+  onGo,
   actions,
 }: {
   game: GameState;
   now: number;
   clockOff: boolean;
   bottomInset: number;
-  /** The tab it opens on (Story where the city has chapters, else Daily); U2: the goal bar and the clipboard open Story. */
-  initialTab?: TasksTab;
-  /** Set to drive the tab from outside; left out, the drawer keeps its own. */
-  tab?: TasksTab;
-  onTab?: (t: TasksTab) => void;
+  /** The screen owns the tab: the goal bar and the clipboard open Story. */
+  tab: TasksTab;
+  onTab: (t: TasksTab) => void;
   onClose: () => void;
+  /** D536: a Story task done by going somewhere (hire, build, win, bid) shows Go; the screen closes the list and opens the card, the map or the challenge. Without it there is no Go. */
+  onGo?: (kind: StoryGo, shop: NeighborhoodId) => void;
   actions: TaskActions;
 }) {
   const r = game.rewards;
-  const [ownTab, setOwnTab] = useState<TasksTab>(() => initialTab ?? defaultTasksTab(game));
   const storyOn = hasStory(game);
-  const picked = tabProp ?? ownTab;
-  const tab = picked === 'story' && !storyOn ? 'daily' : picked;
-  const selectTab = useCallback(
-    (t: TasksTab) => {
-      setOwnTab(t);
-      onTab?.(t);
-    },
-    [onTab],
-  );
+  const tab: TasksTab = tabProp === 'story' && !storyOn ? 'daily' : tabProp;
   const locked = rewardsTabLocked(game);
   const sceneEnd = useGame((s) => s.lastSceneEndPlay);
   const story = tab === 'story' ? storyView(game, sceneEnd) : null;
@@ -460,15 +491,10 @@ export const TasksDrawer = memo(function TasksDrawer({
               accessibilityRole="tab"
               accessibilityLabel={t !== 'story' && locked ? `${TAB_LABEL[t]}, locked` : TAB_LABEL[t]}
               accessibilityState={{ selected: tab === t }}
-              onPress={() => selectTab(t)}
+              onPress={() => onTab(t)}
               style={[styles.tab, tab === t && styles.tabOn]}
             >
-              {t !== 'story' && locked && (
-                // the padlock's shackle is ink: on the selected (ink) tab it sits on a cream chip so it still reads
-                <View style={tab === t ? styles.lockChip : null}>
-                  <LockIcon size={14} color={tab === t ? '#FFF4E0' : C.inkSoft} />
-                </View>
-              )}
+              {t !== 'story' && locked && <PadlockChip size={14} />}
               <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>{TAB_LABEL[t]}</Text>
             </Pressable>
           ))}
@@ -492,19 +518,43 @@ export const TasksDrawer = memo(function TasksDrawer({
                     <Text style={styles.chapterTitle} testID="story-title">
                       {story.title}
                     </Text>
-                    <View style={styles.teaserRow}>
-                      {story.who && <Portrait id={story.who} size={TEASER.portrait} city={game.city} />}
-                      <Text style={styles.teaser} numberOfLines={TEASER.lines} testID="story-teaser">
-                        {story.teaser}
-                      </Text>
-                    </View>
+                    {story.teaser !== '' && (
+                      <View style={styles.teaserRow}>
+                        {story.who && <Portrait id={story.who} size={TEASER.portrait} city={game.city} />}
+                        <Text style={styles.teaser} numberOfLines={TEASER.lines} testID="story-teaser">
+                          {story.teaser}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                   {story.tasks.map((task) => (
-                    <StoryRow key={task.key} label={task.label} done={task.done} bar={task.bar} pct={task.pct} progress={task.progress} spoken={task.spoken} />
+                    <StoryRow
+                      key={task.key}
+                      label={task.label}
+                      done={task.done}
+                      bar={task.bar}
+                      pct={task.pct}
+                      progress={task.progress}
+                      spoken={task.spoken}
+                      go={task.go}
+                      shop={task.shop}
+                      onGo={onGo}
+                    />
                   ))}
-                  <View style={styles.rewardRow} testID="story-reward">
-                    <Text style={styles.rewardText}>{story.reward}</Text>
-                  </View>
+                  {story.reward && (
+                    <View style={styles.rewardRow} testID="story-reward" accessible accessibilityLabel={storyRewardText(story.reward)}>
+                      {story.reward.scene && <ClapperIcon size={22} />}
+                      <Text style={styles.rewardText}>{story.reward.label}</Text>
+                      <Text style={styles.rewardText}>{'\u00B7'}</Text>
+                      <DiamondIcon size={20} />
+                      <Text style={styles.rewardText}>{story.reward.diamonds}</Text>
+                    </View>
+                  )}
+                  {story.coming !== '' && (
+                    <Text style={styles.coming} testID="story-coming">
+                      {story.coming}
+                    </Text>
+                  )}
                   {story.wait !== null && (
                     <View style={styles.waitRow} testID="story-wait">
                       <Text style={styles.waitText}>{story.wait}</Text>
@@ -516,7 +566,7 @@ export const TasksDrawer = memo(function TasksDrawer({
           )}
           {!story && locked && (
             <View style={styles.lockedTab} testID="tab-locked">
-              <LockIcon size={30} color={C.inkSoft} />
+              <PadlockChip size={30} />
               <Text style={styles.lockedText}>{tabLockedText(game)}</Text>
             </View>
           )}
@@ -901,7 +951,7 @@ const styles = StyleSheet.create({
   tabText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   tabTextOn: { color: '#fff' },
   reset: { flex: 1, textAlign: 'right', fontFamily: F.semi, fontSize: 12, color: C.tomatoDark },
-  lockChip: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#FFF4E0', alignItems: 'center', justifyContent: 'center' },
+  lockChip: { backgroundColor: '#FFF4E0', borderWidth: 1.5, borderColor: C.ink, alignItems: 'center', justifyContent: 'center' },
   story: { gap: 8 },
   chapter: { backgroundColor: C.panel, borderRadius: 16, padding: 10, borderWidth: 3, borderColor: C.ink, gap: 4, ...shadow },
   chapterNo: { fontFamily: F.semi, fontSize: 12, color: C.tomatoDark },
@@ -942,10 +992,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFE7C2',
     borderWidth: 2,
     borderColor: C.cheeseDark,
+    flexDirection: 'row',
+    gap: 6,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 10,
   },
+  coming: { fontFamily: F.semi, fontSize: 12, color: C.inkSoft, textAlign: 'center', paddingVertical: 2 },
+  goBtn: {
+    minWidth: 52,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: C.basil,
+    borderWidth: 2,
+    borderColor: C.basilDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  goText: { fontFamily: F.bold, fontSize: 15, color: '#fff' },
   rewardText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   waitRow: {
     minHeight: 44,

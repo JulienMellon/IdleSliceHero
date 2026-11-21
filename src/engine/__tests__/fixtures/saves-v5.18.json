@@ -1025,7 +1025,8 @@
       "task.university-1.2"
      ],
      "report": false,
-     "run": {}
+     "run": {},
+     "banked": 0
     }
    }
   }

@@ -46,3 +46,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 verify v5.21 FAIL: True 8 errors (148_u4, 98_u3, tasks/claim-sheet shots expect Daily; drawer opens on Story), layout 0, 10 new 121 changed. Sent to U2.
 - 2026-11-21 S8 verify v5.21 pass: True 0 [], layout 0, 10 new 126 changed. r1 reviews launched (critic, codecritic, storycritic).
 - 2026-11-21 S8 r1 gate not met (critic bug 5 major 4; code CHANGES REQUESTED high 1; story major 2). Fix round r2: E1 + U2, then U1 + E2, then W2. S and N owners have no fix route.
+- 2026-11-21 S8 r2 U2 done (G114 S75 C171 C172 D535-D538; Go prop for U1). U1 r2 launched; E1 r2 running.

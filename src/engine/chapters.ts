@@ -7,14 +7,14 @@
 //   - A done task stays done: `done` in the save holds the keys.
 // The slice lives at `GameState.x.chapters` (no feature owns it: a franchise keeps what no feature owns, and the new city has no chapters to read it).
 // It is absent until something is counted (`saveOf` reads an absent slice as empty), so a new game's `x` is the features' alone.
-import { STORY_PACING } from '../content/tuning';
 import { cityOf } from '../content/cities';
 import type { Chapter, ChapterTask } from '../content/cities/types';
 import type { Scene } from '../content/types';
 import { challengeWon } from './features/layers/rival';
 import { flowOf } from './features/service';
-import { sceneId, type GameState } from './game';
-import { scenesById, triggerPasses } from './story';
+import { TUTORIAL_DONE, type GameState } from './game';
+import { rewardsUnlocked } from './rewards';
+import { sceneWaitSeconds, scenesById, triggerPasses } from './story';
 
 export const CHAPTERS_KEY = 'chapters';
 
@@ -39,9 +39,11 @@ export interface ChapterSave {
   calm: Record<string, number>;
   /** The shop report has been opened (set by v5.22). */
   report: boolean;
+  /** Diamonds earned by chapters whose beats played before the rewards unlocked: paid when they do (VERSION.md "Defaults"). */
+  banked: number;
 }
 
-export const newChapterSave = (): ChapterSave => ({ done: [], best: {}, run: {}, calm: {}, report: false });
+export const newChapterSave = (): ChapterSave => ({ done: [], best: {}, run: {}, calm: {}, report: false, banked: 0 });
 
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, v) : 0);
 const numMap = (v: unknown): Record<string, number> =>
@@ -69,6 +71,7 @@ export function migrateChapterSave(raw: unknown): ChapterSave | null {
     run,
     calm: numMap(r.calm),
     report: r.report === true,
+    banked: Math.floor(num(r.banked)),
   };
 }
 
@@ -104,8 +107,10 @@ const clamp = (x: number, target: number) => Math.min(target, Math.max(0, x));
 const yes = (on: boolean, target: number): TaskProgress => ({ current: on ? target : 0, target, done: on });
 
 /** How far a task is: read from the save, never from a screen. A done task stays done. */
-export function taskProgress(g: GameState, task: ChapterTask): TaskProgress {
-  const c = saveOf(g);
+export const taskProgress = (g: GameState, task: ChapterTask): TaskProgress => progressFrom(saveOf(g), g, task);
+
+/** `taskProgress` against a slice that is not (yet) in `g` (the tick's own working copy: no state is built per task). */
+function progressFrom(c: ChapterSave, g: GameState, task: ChapterTask): TaskProgress {
   const { target } = task;
   if (c.done.includes(task.key)) return { current: target, target, done: true };
   const shop = g.shops[task.shop];
@@ -177,40 +182,57 @@ export function chaptersTick(g: GameState, dt: number, now: number): GameState {
   const open = openChapters(g);
   if (!open.length) return g;
   const c = saveOf(g);
-  let best = c.best;
-  let run = c.run;
-  let calm = c.calm;
-  let done = c.done;
+  let cur = c;
   let changed = false;
   for (const ch of open) {
     for (const t of ch.tasks) {
-      if (done.includes(t.key)) continue;
+      if (cur.done.includes(t.key)) continue;
       if (t.kind === 'rate' || t.kind === 'noMissed') {
         if (!g.shops[t.shop]?.built) continue;
         const f = flowOf(g, t.shop, now);
         if (t.kind === 'rate') {
           const r = f.sold * 60;
-          const w = run[t.key];
+          const w = cur.run[t.key];
           const lo = w === undefined ? r : Math.min(w.lo, r);
           const secs = (w?.secs ?? 0) + dt;
           if (secs >= RATE_HOLD_SECONDS) {
-            if (lo > (best[t.key] ?? 0)) best = { ...best, [t.key]: lo };
-            run = { ...run, [t.key]: { lo: r, secs: 0 } };
-          } else run = { ...run, [t.key]: { lo, secs } };
+            if (lo > (cur.best[t.key] ?? 0)) cur = { ...cur, best: { ...cur.best, [t.key]: lo } };
+            cur = { ...cur, run: { ...cur.run, [t.key]: { lo: r, secs: 0 } } };
+          } else cur = { ...cur, run: { ...cur.run, [t.key]: { lo, secs } } };
         } else {
-          const n = f.wanted - f.sold <= MISSED_EPS ? (calm[t.key] ?? 0) + dt : 0;
-          calm = { ...calm, [t.key]: n };
-          if (n > (best[t.key] ?? 0)) best = { ...best, [t.key]: n };
+          const n = f.wanted - f.sold <= MISSED_EPS ? (cur.calm[t.key] ?? 0) + dt : 0;
+          cur = { ...cur, calm: { ...cur.calm, [t.key]: n } };
+          if (n > (cur.best[t.key] ?? 0)) cur = { ...cur, best: { ...cur.best, [t.key]: n } };
         }
         changed = true;
       }
-      if (taskProgress(withSave(g, { ...c, best, run, calm, done }), t).done) {
-        done = [...done, t.key];
+      if (progressFrom(cur, g, t).done) {
+        cur = { ...cur, done: [...cur.done, t.key] };
         changed = true;
       }
     }
   }
-  return changed ? withSave(g, { ...c, best, run, calm, done }) : g;
+  return changed ? withSave(g, cur) : g;
+}
+
+// ---------- the chapter's diamonds ----------
+
+/** The diamonds a finished chapter pays besides its scene, once the rewards are unlocked (before that they are banked and paid at unlock). */
+export const CHAPTER_DIAMONDS = 5;
+
+/**
+ * `next` is the state just after `scene` was seen: pay its chapter's diamonds (a `free` chapter has none, and a scene with no chapter none). Until
+ * the rewards unlock they are banked in the chapters' slice, and everything banked is paid on the scene that unlocks them (`downtown-4` at home).
+ * The scene is only ever seen once, so a chapter pays once.
+ */
+export function payChapter(next: GameState, scene: Scene): GameState {
+  const chapter = chapterOf(next, scene.id);
+  const c = saveOf(next);
+  const owed = c.banked + (chapter && !chapter.free ? CHAPTER_DIAMONDS : 0);
+  if (owed <= 0) return next;
+  if (!rewardsUnlocked(next)) return owed === c.banked ? next : withSave(next, { ...c, banked: owed });
+  const paid = c.banked > 0 ? withSave(next, { ...c, banked: 0 }) : next;
+  return { ...paid, rewards: { ...paid.rewards, diamonds: paid.rewards.diamonds + owed } };
 }
 
 // ---------- selectors ----------
@@ -231,15 +253,24 @@ export interface TaskRow {
   done: boolean;
 }
 
+/** The tasks of a chapter the player is shown: a `report` task is done by itself until the report has a reader, so it stays out of the list (D539). */
+export const visibleTasks = (c: Chapter): ChapterTask[] => (REPORT_READER ? c.tasks : c.tasks.filter((t) => t.kind !== 'report'));
+
 /** The current chapter's tasks with their progress, in order (empty after the last chapter). */
 export function chapterTasks(g: GameState): TaskRow[] {
   const c = currentChapter(g);
-  return c ? c.tasks.map((task) => ({ task, ...taskProgress(g, task) })) : [];
+  return c ? visibleTasks(c).map((task) => ({ task, ...taskProgress(g, task) })) : [];
 }
 
-/** The first task of the current chapter that is not done, or null (all done, or no chapter). */
+/**
+ * The task the bar shows: the first one not done that the player can act on (a hire, a build, a win, a bid, a held rate), before a long `serve`
+ * count that only time and the other tasks move (D533). The opening's chapter (`free`: the tutorial's order) and a chapter with only `serve` left
+ * go in order. Null when every task is done, or there is no chapter.
+ */
 export function nextTask(g: GameState): TaskRow | null {
-  return chapterTasks(g).find((r) => !r.done) ?? null;
+  const open = chapterTasks(g).filter((r) => !r.done);
+  if (currentChapter(g)?.free) return open[0] ?? null;
+  return open.find((r) => r.task.kind !== 'serve') ?? open[0] ?? null;
 }
 
 /**
@@ -252,16 +283,7 @@ export function chapterReady(g: GameState, lastSceneEndPlay: number | null = nul
   const scene: Scene | undefined = c ? scenesById(cityOf(g).scenes).get(c.sceneId) : undefined;
   if (!c || c.free || !scene || !chapterDone(g, c) || scene.requires?.some((id) => !g.seenScenes.includes(id))) return null;
   if (!triggerPasses(g, scene)) return null;
-  const kind = scene.trigger.kind;
-  // the player caused it: a new pizzeria, the bid, a won challenge (the same list as `sceneReady`)
-  if (kind === 'unlock' || kind === 'bid' || kind === 'challenge') return { secondsLeft: 0 };
-  let left = lastSceneEndPlay === null ? 0 : STORY_PACING.gapSeconds - (g.playSeconds - lastSceneEndPlay);
-  if (scene.beat === 4) {
-    const beat3 = g.sceneAt[sceneId(scene.neighborhood, 3)];
-    const gap = scene.neighborhood === cityOf(g).neighbourhoods[0].id ? STORY_PACING.firstHoodBeat4GapSeconds : STORY_PACING.beat4GapSeconds;
-    if (beat3 !== undefined) left = Math.max(left, gap - (g.playSeconds - beat3));
-  }
-  return { secondsLeft: Math.max(0, Math.ceil(left)) };
+  return { secondsLeft: sceneWaitSeconds(g, scene, lastSceneEndPlay) };
 }
 
 // ---------- migration ----------
@@ -276,9 +298,10 @@ export function migrateChapters(g: GameState, fromVersion: number): GameState {
   const scenes = scenesById(cityOf(g).scenes);
   const c = saveOf(g);
   let done = c.done;
-  // the opening's chapter (`free`): a save that is past it (its beat played) counts it done, whatever the tutorial left undone
+  // the opening's chapter (`free`): a save whose tutorial is over counts it done, whatever the tutorial left undone; one that is still in it keeps its tasks
   for (const ch of chaptersOf(g))
-    if (ch.free && g.seenScenes.includes(ch.sceneId)) for (const t of ch.tasks) if (!done.includes(t.key)) done = [...done, t.key];
+    if (ch.free && g.seenScenes.includes(ch.sceneId) && g.tutorial >= TUTORIAL_DONE)
+      for (const t of ch.tasks) if (!done.includes(t.key)) done = [...done, t.key];
   for (const ch of openChapters(g)) {
     const scene = scenes.get(ch.sceneId);
     const waiting = !!scene && triggerPasses(g, scene);

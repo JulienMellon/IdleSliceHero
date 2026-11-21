@@ -12,7 +12,6 @@ import * as G from '../../engine/game';
 import {
   CHAPTER_DIAMONDS,
   clockText,
-  defaultTasksTab,
   hasStory,
   rewardsTabLocked,
   storyRewardText,
@@ -58,13 +57,14 @@ describe('chapter 1 during the tutorial', () => {
     expect(v.tasks.map((t) => t.done)).toEqual([true, true, true]);
     expect(v.tasks.map((t) => t.label)).toEqual(['Serve 1 pie in Downtown', 'Serve 4 pies in Downtown', 'Hire Marco, head prep cook']);
   });
-  it('names the scene it unlocks: the teaser and who is in it', () => {
-    expect(v.teaser).toBe(HOME_COPY['chapter.downtown-1.teaser']);
-    expect(v.who).toBe('nonna-rosa');
+  it('has no teaser and no portrait: its scene opened the game and has played (G114)', () => {
+    expect(v.teaser).toBe('');
+    expect(v.who).toBeNull();
+    expect(v.coming).toBe('');
   });
-  it('shows the reward as the scene and the diamonds', () => {
-    expect(v.reward).toBe(`\u{1F3AC} New scene · \u{1F48E} ${CHAPTER_DIAMONDS}`);
-    expect(storyRewardText()).toBe(v.reward);
+  it('points on to chapter 2 in the reward row, not "New scene" (S75)', () => {
+    expect(v.reward).toEqual({ label: 'Next: Chapter 2', scene: false, diamonds: CHAPTER_DIAMONDS });
+    expect(storyRewardText(v.reward!)).toBe(`Next: Chapter 2 · \u{1F48E} ${CHAPTER_DIAMONDS}`);
   });
 });
 
@@ -83,6 +83,18 @@ describe('the tutorial after the opening scene', () => {
 
 describe('chapter 2 half way', () => {
   const v = storyView(midway(), null);
+  it('names the scene it unlocks: the teaser and who is in it', () => {
+    expect(v.teaser).toBe(HOME_COPY['chapter.downtown-2.teaser']);
+    expect(v.who).toBe('nonna-rosa');
+  });
+  it('shows the reward as the scene and the diamonds, and what is coming up', () => {
+    expect(v.reward).toEqual({ label: 'New scene', scene: true, diamonds: CHAPTER_DIAMONDS });
+    expect(storyRewardText(v.reward!)).toBe(`\u{1F3AC} New scene · \u{1F48E} ${CHAPTER_DIAMONDS}`);
+    expect(v.coming).toBe('Coming up · Chapter 3 · Corporate Crust');
+  });
+  it('gives a Go to the tasks done by going somewhere, and none to a count', () => {
+    expect(v.tasks.map((t) => t.go)).toEqual(['', 'hire', '']);
+  });
   it('reads the chapter number, title and its tasks from the save', () => {
     expect(v.number).toBe(2);
     expect(v.title).toBe('First Regulars');
@@ -104,6 +116,37 @@ describe('chapter 2 half way', () => {
     const [, hire] = storyView(s, null).tasks;
     expect(hire.done).toBe(true);
     expect(hire.spoken).toBe('Hire Lucia, head baker, done');
+  });
+});
+
+describe('the chapter whose scene is the takeover', () => {
+  const g = doneKeys({ ...G.newGame(0), seenScenes: ['downtown-1', 'downtown-2', 'downtown-3'] }, CH1);
+  it('says it opens Daily and Weekly (D538)', () => {
+    const v = storyView(g, null);
+    expect(v.number).toBe(4);
+    expect(v.reward?.label).toBe('New scene · Daily tasks open');
+  });
+});
+
+describe('a rate being held (D537)', () => {
+  const key = HOME_CHAPTERS[1].tasks[2].key; // downtown-2: serve 6/min
+  const held = (lo: number, secs: number): G.GameState => ({
+    ...midway(),
+    x: { ...midway().x, [CHAPTERS_KEY]: { ...newChapterSave(), done: CH1, run: { [key]: { lo, secs } } } },
+  });
+  it('shows the rate and how long it has held once it is at the target', () => {
+    const rate = storyView(held(8, 12.4), null).tasks[2];
+    expect(rate.progress).toBe('8/min · holding 12 s');
+    expect(rate.pct).toBeCloseTo(12.4 / 30);
+    expect(rate.spoken).toContain('holding 8 a minute for 12 of 30 seconds');
+  });
+  it('shows the lowest rate so far, short of the target, as a count', () => {
+    const rate = storyView(held(4, 5), null).tasks[2];
+    expect(rate.progress).toBe('4/6');
+    expect(rate.pct).toBeCloseTo(4 / 6);
+  });
+  it('is the plain count with nothing measured', () => {
+    expect(storyView(midway(), null).tasks[2].progress).toBe('0/6');
   });
 });
 
@@ -151,15 +194,12 @@ describe('Daily and Weekly before the takeover', () => {
   it('unlock with the takeover', () => {
     expect(rewardsTabLocked({ ...G.newGame(0), seenScenes: ['downtown-1', NONNA_TAKEOVER.sceneId] })).toBe(false);
   });
-  it('open on Story, which comes first', () => {
+  it('Story comes first', () => {
     expect(TASKS_TABS).toEqual(['story', 'daily', 'weekly']);
     expect(hasStory(G.newGame(0))).toBe(true);
-    expect(defaultTasksTab(G.newGame(0))).toBe('story');
   });
-  it('a city without chapters opens on Daily', () => {
-    const boston = { ...G.newGame(0), city: 'boston' };
-    expect(hasStory(boston)).toBe(false);
-    expect(defaultTasksTab(boston)).toBe('daily');
+  it('a city without chapters has no Story tab', () => {
+    expect(hasStory({ ...G.newGame(0), city: 'boston' })).toBe(false);
   });
 });
 

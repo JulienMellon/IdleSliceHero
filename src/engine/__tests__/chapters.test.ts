@@ -7,6 +7,7 @@ import { LAYER_KEYS } from '../../content/layers';
 import { STORY_PACING } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import {
+  CHAPTER_DIAMONDS,
   chapterDone,
   chapterOf,
   chapterReady,
@@ -18,11 +19,13 @@ import {
   openChapters,
   saveOf,
   taskProgress,
+  visibleTasks,
 } from '../chapters';
 import { pickScene } from '../cutscene-input';
 import { flowOf } from '../features/service';
 import * as G from '../game';
-import { sceneTriggered } from '../story';
+import { sceneTriggered, sceneWaitSeconds } from '../story';
+import { sceneReady } from '../cutscene-input';
 import { ALL_TASK_KEYS, withTasksDone } from './chapter-helpers';
 
 const scene = (id: string) => HOME_SCENES.find((s) => s.id === id)!;
@@ -315,9 +318,12 @@ describe('the selectors', () => {
     const rows = chapterTasks(s);
     expect(rows.map((r) => r.task.kind)).toEqual(['serve', 'hire', 'rate']);
     expect(rows[0]).toMatchObject({ current: 100, target: 424, done: false });
-    expect(nextTask(s)?.task.key).toBe('task.downtown-2.1');
-    const first = withShop(s, 'downtown', { sold: 424 });
-    expect(nextTask(first)?.task.key).toBe('task.downtown-2.2');
+    // the bar shows what the player can act on before the long serve count
+    expect(nextTask(s)?.task.key).toBe('task.downtown-2.2');
+    const hired = withShop(s, 'downtown', { heads: { prep: true, oven: true, counter: false } });
+    expect(nextTask(hired)?.task.key).toBe('task.downtown-2.3');
+    // with only the serve left it is the serve
+    expect(nextTask(saved(hired, { best: { [task('downtown-2', 3).key]: 6 } }))?.task.key).toBe('task.downtown-2.1');
     expect(nextTask(withTasksDone(s))).toBeNull();
   });
   it('is null after the last chapter', () => {
@@ -346,7 +352,7 @@ describe('the save', () => {
     expect(migrateChapterSave(undefined)).toBeNull();
     expect(migrateChapterSave('x')).toBeNull();
     const m = migrateChapterSave({ done: ['a', 3, null], best: { a: 5, b: 'x', c: -2 }, run: { a: { lo: 3, secs: 99 }, b: 7 }, calm: [], report: 'yes' });
-    expect(m).toEqual({ done: ['a'], best: { a: 5, c: 0 }, run: { a: { lo: 3, secs: 30 } }, calm: {}, report: false });
+    expect(m).toEqual({ done: ['a'], best: { a: 5, c: 0 }, run: { a: { lo: 3, secs: 30 } }, calm: {}, report: false, banked: 0 });
   });
   it('is absent from a new game and from a state nothing has counted in', () => {
     expect(G.newGame(0).x.chapters).toBeUndefined();
@@ -410,7 +416,7 @@ describe('a save from before chapters (v7)', () => {
     const built = Object.fromEntries(
       HOODS.map((h) => [h, { ...g.shops[h], built: g.shops[h].built || g.seenScenes.includes(`${h}-1`) }]),
     ) as G.GameState['shops'];
-    return JSON.parse(JSON.stringify({ ...g, shops: built, saveVersion: 7 }));
+    return JSON.parse(JSON.stringify({ ...g, shops: built, saveVersion: 7, tutorial: G.TUTORIAL_DONE }));
   };
 
   it.each(MAIN.map((s) => s.id))('a save at %s loads on that chapter', (id: string) => {
@@ -423,7 +429,7 @@ describe('a save from before chapters (v7)', () => {
 
   it('marks the chapters of seen beats done without a record, and ticks the open one from the save', () => {
     const m = G.migrate(v7('downtown-3', { shops: withShop(G.newGame(0), 'downtown', { heads: { prep: true, oven: true, counter: true } }).shops }), 0);
-    expect(chapterTasks(m).map((r) => r.done)).toEqual([false, true, true]);
+    expect(chapterTasks(m).map((r) => r.done)).toEqual([false, true]); // (the self-done report task is not listed)
     expect(chapterDone(m, chapter('downtown-2'))).toBe(true);
   });
 
@@ -438,5 +444,77 @@ describe('a save from before chapters (v7)', () => {
     const g = G.playTick(withShop(before('downtown-4', { playSeconds: 100 }), 'downtown', { heads: G.allHeads() }), 35, 0);
     const again = G.migrate(JSON.parse(JSON.stringify(g)), 0);
     expect(saveOf(again)).toEqual(saveOf(g));
+  });
+});
+
+describe('the chapter’s diamonds', () => {
+  const dia = (g: G.GameState) => g.rewards.diamonds;
+  it('pays nothing for the opening, banks each chapter before the rewards unlock, and pays the bank on the scene that unlocks them', () => {
+    let g = G.newGame(0);
+    g = G.markSceneSeen(g, scene('downtown-1'));
+    expect([dia(g), saveOf(g).banked]).toEqual([0, 0]);
+    g = G.markSceneSeen(g, scene('downtown-2'));
+    expect([dia(g), saveOf(g).banked]).toEqual([0, CHAPTER_DIAMONDS]);
+    g = G.markSceneSeen(g, scene('downtown-3'));
+    expect([dia(g), saveOf(g).banked]).toEqual([0, 2 * CHAPTER_DIAMONDS]);
+    g = G.markSceneSeen(g, scene('downtown-4')); // the takeover scene unlocks the rewards
+    expect([dia(g), saveOf(g).banked]).toEqual([3 * CHAPTER_DIAMONDS, 0]);
+    g = G.markSceneSeen(g, scene('suburbs-1'));
+    expect(dia(g)).toBe(4 * CHAPTER_DIAMONDS);
+  });
+  it('pays once: a scene seen again pays nothing', () => {
+    const g = G.markSceneSeen(seen(['downtown-1', 'downtown-2', 'downtown-3', 'downtown-4']), scene('suburbs-1'));
+    expect(dia(g)).toBe(CHAPTER_DIAMONDS);
+    expect(G.markSceneSeen(g, scene('suburbs-1'))).toBe(g);
+  });
+  it('pays nothing for an interlude or a hire scene', () => {
+    const g = seen(['downtown-1', 'downtown-2', 'downtown-3', 'downtown-4', 'suburbs-1', 'suburbs-2', 'suburbs-3']);
+    expect(dia(G.markSceneSeen(g, scene('suburbs-3b')))).toBe(0);
+    expect(dia(G.markSceneSeen(g, scene('suburbs-hire')))).toBe(0);
+  });
+  it('keeps the bank through a save', () => {
+    const g = G.markSceneSeen(G.markSceneSeen(G.newGame(0), scene('downtown-1')), scene('downtown-2'));
+    expect(saveOf(G.migrate(JSON.parse(JSON.stringify(g)), 0)).banked).toBe(CHAPTER_DIAMONDS);
+  });
+});
+
+describe('the wait on the pacing is one rule', () => {
+  /** A state in which `id`'s chapter is current, every task is done and its trigger has passed. */
+  const ready = (id: string, playSeconds: number): G.GameState => {
+    const tr = scene(id).trigger;
+    let g = withTasksDone({ ...before(id), playSeconds, sceneAt: { 'downtown-3': 1000 - 250, 'suburbs-3': 1000 - 250 } });
+    if (tr.kind === 'deliveries') g = withShop(g, tr.neighborhood, { built: true, sold: tr.count });
+    else if (tr.kind === 'unlock') g = withShop(g, tr.neighborhood, { built: true });
+    else if (tr.kind === 'bid') g = withShop(g, tr.neighborhood, { built: true, perk: true });
+    else g = withShop({ ...g, x: { ...g.x, [LAYER_KEYS.rival]: { won: [tr.neighborhood], challenge: null, retryAt: {} } } }, tr.neighborhood, { built: true });
+    return g;
+  };
+  it('says 0 s left exactly when sceneReady says the beat may play, over a run of play time', () => {
+    for (const id of MAIN.map((x) => x.id).filter((x) => x !== 'downtown-1')) {
+      for (let play = 900; play <= 1500; play += 7) {
+        for (const last of [null, 1000, 1000 - 60, play - 1, play - 89, play - 90, play - 91]) {
+          const g = ready(id, play);
+          const wait = chapterReady(g, last);
+          expect(wait).not.toBeNull();
+          expect(wait!.secondsLeft === 0).toBe(sceneReady(g, scene(id), last));
+          expect(wait!.secondsLeft).toBe(sceneWaitSeconds(g, scene(id), last));
+        }
+      }
+    }
+  });
+});
+
+describe('what the player is shown', () => {
+  it('leaves the self-done report task out of the list until the report has a reader', () => {
+    expect(chapter('downtown-3').tasks).toHaveLength(3);
+    expect(visibleTasks(chapter('downtown-3')).map((t) => t.kind)).toEqual(['serve', 'hire']);
+    const s = withShop(before('downtown-3', { x: seen([]).x }), 'downtown', { sold: 10 });
+    expect(chapterTasks(s).map((r) => r.task.kind)).toEqual(['serve', 'hire']);
+  });
+  it('a save still in the tutorial keeps the opening’s tasks (they count done only once the tutorial is over)', () => {
+    const raw = JSON.parse(JSON.stringify({ ...G.newGame(0), seenScenes: ['downtown-1'], tutorial: 9, saveVersion: 7 }));
+    const m = G.migrate(raw, 0);
+    expect(currentChapter(m)?.sceneId).toBe('downtown-1');
+    expect(saveOf(m).done.filter((k) => k.startsWith('task.downtown-1.'))).toEqual([]);
   });
 });

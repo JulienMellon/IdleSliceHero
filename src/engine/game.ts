@@ -36,7 +36,7 @@ import { cosmeticPart } from '../content/endgame';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
 import { migrateStory } from './story';
-import { CHAPTERS_KEY, chaptersTick, migrateChapters, migrateChapterSave } from './chapters';
+import { CHAPTERS_KEY, chaptersTick, migrateChapters, migrateChapterSave, payChapter } from './chapters';
 import { FEATURES } from './features/registry';
 import {
   advanceLine,
@@ -1422,7 +1422,8 @@ export function markSceneSeen(s: GameState, scene: Scene): GameState {
   if (s.seenScenes.includes(scene.id)) return s;
   let next: GameState = { ...s, seenScenes: [...s.seenScenes, scene.id], sceneAt: { ...s.sceneAt, [scene.id]: s.playSeconds } };
   if (scene.perk) next = withShop(next, scene.neighborhood, { perk: true });
-  return applyReward(next, scene.reward);
+  // the chapter's diamonds (banked until the rewards unlock)
+  return payChapter(applyReward(next, scene.reward), scene);
 }
 
 // ---------- Advice ----------

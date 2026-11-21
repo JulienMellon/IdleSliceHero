@@ -50,6 +50,24 @@ export function sceneTriggered(s: GameState, scene: Scene): boolean {
   return !chapter || !!chapter.free || chapterDone(s, chapter);
 }
 
+/**
+ * Play seconds a scene whose trigger has passed still waits on the story's pacing: 0 when it may play now. The one rule behind `sceneReady`
+ * (cutscene-input.ts) and the goal bar's countdown (`chapterReady`): a scene the player caused (a new pizzeria, the bid, a won challenge, a hired
+ * manager) never waits; the others wait for the 90 s after the last scene (`lastSceneEndPlay`, null right after a launch: none), and a beat 4 for
+ * the gap after beat 3. Whole seconds, rounded up, so 0 is exactly "ready".
+ */
+export function sceneWaitSeconds(s: GameState, scene: Scene, lastSceneEndPlay: number | null): number {
+  const kind = scene.trigger.kind;
+  if (kind === 'unlock' || kind === 'bid' || kind === 'challenge' || kind === 'manager') return 0;
+  let left = lastSceneEndPlay === null ? 0 : STORY_PACING.gapSeconds - (s.playSeconds - lastSceneEndPlay);
+  if (scene.beat === 4) {
+    const beat3 = s.sceneAt[sceneId(scene.neighborhood, 3)];
+    const gap = scene.neighborhood === firstHood(cityOf(s)) ? STORY_PACING.firstHoodBeat4GapSeconds : STORY_PACING.beat4GapSeconds;
+    if (beat3 !== undefined) left = Math.max(left, gap - (s.playSeconds - beat3));
+  }
+  return Math.max(0, Math.ceil(left));
+}
+
 /** Unseen scenes whose triggers pass, in story order (earliest first); main beats come before interludes when both are ready. */
 export function pendingScenes(s: GameState, scenes: Scene[]): Scene[] {
   const seen = new Set(s.seenScenes);
