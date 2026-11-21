@@ -66,3 +66,4 @@ Fixed: C102 (T78), C103 (T79), M59. v5.12 numbers are numerically safe (max cost
 - v5.18 closed 2026-11-18: codecritic APPROVED — notes: docs/build/v5.18/review-r3-code.md
 - v5.19 closed 2026-11-19: codecritic APPROVED — notes: docs/build/v5.19/review-r2-code.md
 - v5.19-test closed 2026-11-19: codecritic APPROVED — notes: docs/build/v5.19-test/review-r1-code.md
+- v5.20 closed 2026-11-21: codecritic APPROVED — notes: docs/build/v5.20/review-r3-code.md
