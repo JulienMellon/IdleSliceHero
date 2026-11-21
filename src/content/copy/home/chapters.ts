@@ -1,5 +1,5 @@
 // Copied from docs/story/COPY-v5.21.md sections 1-4 (card W2) by key, byte for byte: the chapters' titles, teasers, task labels and the goal bar's two lines.
-// Placeholders: {target} is the task's number, {shop} the shop's name, {time} the wait until the next scene. Change the copy file, then this table.
+// Placeholders: {target} is the task's number, {shop} the shop's name, {time} the wait until the next scene, {n} a chapter's number. Change the copy file, then this table.
 
 /** Every line, by its key in the copy file. */
 export const COPY = {
@@ -126,4 +126,5 @@ export const COPY = {
   'task.kind.report': 'Read the {shop} shop report',
   'chapter.ready': 'Next scene in {time}',
   'chapter.done': 'Every chapter done. Victor is waiting in Boston.',
+  'chapter.buildLocked': 'Finish Chapter {n} first',
 } as const;

@@ -9,7 +9,7 @@
 // It is absent until something is counted (`saveOf` reads an absent slice as empty), so a new game's `x` is the features' alone.
 import { cityOf } from '../content/cities';
 import type { Chapter, ChapterTask } from '../content/cities/types';
-import type { Scene } from '../content/types';
+import type { NeighborhoodId, Scene } from '../content/types';
 import { challengeWon } from './features/layers/rival';
 import { flowOf } from './features/service';
 import { TUTORIAL_DONE, type GameState } from './game';
@@ -288,6 +288,36 @@ export function chapterReady(g: GameState, lastSceneEndPlay: number | null = nul
   if (!triggerPasses(g, scene)) return null;
   return { secondsLeft: sceneWaitSeconds(g, scene, lastSceneEndPlay) };
 }
+
+// ---------- the build gate (v5.21, card E1b) ----------
+
+/** The beat of the shop before it that must have played before the next shop can be built (its finale, beat 4, is the one the story's own waits and a won challenge or the bid decide). */
+export const BUILD_GATE_BEAT = 3;
+
+/**
+ * The chapter that holds back the build of shop `id`: while the gate beat (`BUILD_GATE_BEAT`) of the shop before it in the city has not played, the
+ * first chapter of that shop whose beat has not (the one the Story tab shows). The next shop waits for the story of the one the player would leave
+ * behind, so a chapter whose tasks need that shop (a `rate`, a `serve`, a hire) is never left to stall behind a shop built too early. Null when
+ * nothing holds it: the first shop, a city without chapters (Boston), an id that is not in this city, or the shop before it has played that far.
+ * Interludes and hire scenes have no chapter and never hold a build. (A shop already built is the caller's: `buildLock` says "Built" before it asks,
+ * so a save that already owns a later shop is never locked out.)
+ */
+export function buildChapter(g: GameState, id: NeighborhoodId): Chapter | null {
+  const list = chaptersOf(g);
+  if (!list.length) return null;
+  const hoods = cityOf(g).neighbourhoods;
+  const idx = hoods.findIndex((n) => n.id === id);
+  if (idx < 1) return null;
+  const byId = scenesById(cityOf(g).scenes);
+  const theirs = list.filter((c) => byId.get(c.sceneId)?.neighborhood === hoods[idx - 1].id);
+  // the gate beat or any later one of the shop has played (a beat 4 seen without its beat 3 is a state the dev jumps and old saves can have)
+  const from = theirs.findIndex((c) => byId.get(c.sceneId)?.beat === BUILD_GATE_BEAT);
+  if (from < 0 || theirs.slice(from).some((c) => g.seenScenes.includes(c.sceneId))) return null;
+  return theirs.find((c) => !g.seenScenes.includes(c.sceneId)) ?? null;
+}
+
+/** The chapter's number in the story (1-based), as the Story tab and the build line print it. */
+export const chapterNumber = (g: Pick<GameState, 'city'>, c: Chapter): number => chaptersOf(g).indexOf(c) + 1;
 
 // ---------- migration ----------
 

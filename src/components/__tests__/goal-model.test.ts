@@ -32,6 +32,7 @@ import {
   goalWords,
   snapSeam,
   withoutShop,
+  tasksParamTab,
 } from '../goal-model';
 import { storyView } from '../rewards-model';
 const lum = (hex: string) => {
@@ -375,5 +376,15 @@ describe('after the last chapter, and in a city without chapters (U1)', () => {
   });
   test('the progress is the same one the Story tab prints', () => {
     expect(`${pizzas(212)}/${count(424)}`).toBe('212/424');
+  });
+});
+
+describe('the `tasks` route param opens the list (E1b)', () => {
+  test('story from a locked lot, and nothing for a stray value', () => {
+    expect(tasksParamTab('story')).toBe('story');
+    expect(tasksParamTab(['story'])).toBe('story');
+    expect(tasksParamTab(undefined)).toBeNull();
+    expect(tasksParamTab('')).toBeNull();
+    expect(tasksParamTab('nope')).toBeNull();
   });
 });

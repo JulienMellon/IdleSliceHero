@@ -2,7 +2,7 @@
 import * as G from '../../engine/game';
 import { money, pizzasLeft } from '../../engine/format';
 import { cityOf } from '../../content/cities';
-import { lotView, piesToGo } from '../city-model';
+import { LOCKED_LOT_TAP, lotView, piesToGo } from '../city-model';
 
 import { NONNA_TAKEOVER } from '../../content/cities/home/fit';
 import { NEIGHBORHOODS } from '../../content/cities/home/data';
@@ -73,5 +73,33 @@ describe('C146: the pin names the own-city founder, and the tab gets its words w
     expect(v.founder).toBe('Father Dom');
     expect(v.pinsLeft).toBeGreaterThan(0);
     expect(piesToGo(v.pinsLeft!, 'boston')).toMatch(/pies to go$/);
+  });
+});
+
+describe('a lot held by the story of the shop before it (E1b)', () => {
+  const upTo = (seen: string[]): G.GameState => {
+    const s = G.newGame(0);
+    const built = (id: string) => ({ ...s.shops[id as keyof typeof s.shops], built: true });
+    return { ...s, seenScenes: [NONNA_TAKEOVER.sceneId, ...seen], shops: { ...s.shops, suburbs: built('suburbs') } };
+  };
+  test('is a padlock with the one line, and a tap that opens the Story tab', () => {
+    const v = lotView(upTo(['suburbs-1']), n('waterfront'));
+    expect(v.kind).toBe('chapter');
+    expect(v.rowSub).toBe(G.buildLock(upTo(['suburbs-1']), 'waterfront'));
+    expect(v.rowSub).toMatch(/^Finish Chapter \d+ first$/);
+    expect(v.rowSub.length).toBeLessThanOrEqual(32);
+    expect(v.pin).toBe('Chapter 6');
+    expect(v.locked).toBe(true);
+    expect(v.rowRight).toBeNull(); // the padlock, not a price
+    expect(v.tappable).toBe(true); // the tap goes to the Story tab, not to a build
+    expect(LOCKED_LOT_TAP).toEqual({ pathname: '/', params: { tasks: 'story' } });
+  });
+  test('is a live Build once the beat has played', () => {
+    const v = lotView(upTo(['suburbs-1', 'suburbs-2', 'suburbs-3']), n('waterfront'));
+    expect(v.kind).toBe('buildable');
+    expect(v.tappable).toBe(true);
+  });
+  test("Nonna's countdown still comes first for the second lot", () => {
+    expect(lotView(withSold(40), n('suburbs')).kind).toBe('founder');
   });
 });

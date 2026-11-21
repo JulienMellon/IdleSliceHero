@@ -8,6 +8,8 @@ import { LAYER_KEYS } from '../../content/layers';
 import { STORY_PACING } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import {
+  BUILD_GATE_BEAT,
+  buildChapter,
   CHAPTER_DIAMONDS,
   chapterDone,
   chapterOf,
@@ -25,6 +27,8 @@ import {
 import { pickScene } from '../cutscene-input';
 import { flowOf } from '../features/service';
 import * as G from '../game';
+import { NONNA_TAKEOVER } from '../../content/cities/home/fit';
+import { cityOf, hoodIds } from '../../content/cities';
 import { sceneTriggered, sceneWaitSeconds } from '../story';
 import { sceneReady } from '../cutscene-input';
 import { ALL_TASK_KEYS, withTasksDone } from './chapter-helpers';
@@ -186,6 +190,88 @@ describe('the gate', () => {
     const done = saved(s, { best: { [task('suburbs-1', 2).key]: 300 } });
     expect(sceneTriggered(done, scene('suburbs-1'))).toBe(true);
     expect(chapterReady(done, 99)).toEqual({ secondsLeft: 0 });
+  });
+});
+
+describe('the next shop waits for the chapter (E1b)', () => {
+  const NEXT = HOODS.slice(1);
+  const rich = (g: G.GameState): G.GameState => ({ ...g, cash: 1e15 });
+  /** A player who has built every shop up to `id`, with every scene before `scene` seen. */
+  const upTo = (id: NeighborhoodId, scene: string): G.GameState => {
+    const g = before(scene);
+    const shops = { ...g.shops };
+    for (const h of HOODS.slice(0, HOODS.indexOf(id) + 1)) shops[h] = { ...shops[h], built: true };
+    return rich({ ...g, shops });
+  };
+  const gateOf = (id: NeighborhoodId) => sceneOfBeat(HOODS[HOODS.indexOf(id) - 1], BUILD_GATE_BEAT);
+  const sceneOfBeat = (hood: NeighborhoodId, beat: number) => HOME_SCENES.find((s) => s.neighborhood === hood && s.beat === beat)!.id;
+
+  it('has a gate chapter behind every shop but the first', () => {
+    for (const h of NEXT) expect(chapterOf(G.newGame(0), gateOf(h))).toBeDefined();
+  });
+  it('refuses the build while the shop before it is short of its beat 3, and says which chapter and why', () => {
+    // Waterfront while Suburbs is at its chapter 2 (the sixth chapter of the story)
+    const s = upTo('suburbs', 'suburbs-2');
+    expect(G.buildLock(s, 'waterfront')).toBe('Finish Chapter 6 first');
+    expect(buildChapter(s, 'waterfront')).toBe(chapter('suburbs-2'));
+    const r = G.buildShop(s, 'waterfront');
+    expect(r).toEqual({ ok: false, reason: 'Finish Chapter 6 first' });
+  });
+  it('names the first chapter of the shop whose beat has not played', () => {
+    const s = upTo('suburbs', 'suburbs-3');
+    expect(G.buildLock(s, 'waterfront')).toBe('Finish Chapter 7 first');
+  });
+  it('is the chapter the Story tab shows, so the line and the list agree', () => {
+    const s = upTo('suburbs', 'suburbs-2');
+    expect(currentChapter(s)).toBe(buildChapter(s, 'waterfront'));
+  });
+  it('allows the build once the beat has played, and the build is then made', () => {
+    const s = upTo('suburbs', 'suburbs-4');
+    expect(G.buildLock(s, 'waterfront')).toBeNull();
+    const r = G.buildShop(s, 'waterfront');
+    expect(r.ok && r.state.shops.waterfront.built).toBe(true);
+  });
+  it('holds every later shop the same way, one beat 3 at a time', () => {
+    for (const h of NEXT.slice(1)) {
+      const prev = HOODS[HOODS.indexOf(h) - 1];
+      expect(G.buildLock(upTo(prev, sceneOfBeat(prev, 3)), h)).toMatch(/^Finish Chapter \d+ first$/);
+      const open = upTo(prev, sceneOfBeat(prev, 4));
+      expect(buildChapter(open, h)).toBeNull();
+      expect(G.buildLock(open, h)).toBeNull();
+    }
+  });
+  it('lets a later beat stand for the gate (a save or a jump that has beat 4 without beat 3)', () => {
+    expect(G.buildLock({ ...upTo('suburbs', 'suburbs-3'), seenScenes: [...upTo('suburbs', 'suburbs-3').seenScenes, 'suburbs-4'] }, 'waterfront')).toBeNull();
+  });
+  it('keeps the founder’s countdown for the second shop, ahead of the chapter line', () => {
+    const s = rich(G.newGame(0));
+    expect(G.buildLock(s, 'suburbs')).toBe(G.founderCountdownText(s));
+  });
+  it('never locks out a shop the save already owns', () => {
+    const s = upTo('waterfront', 'suburbs-2'); // Waterfront built with Suburbs' story unplayed: an old save
+    expect(G.buildLock(s, 'waterfront')).toBe('Built');
+    expect(buildChapter(s, 'university')).not.toBeNull();
+    const g = { ...s, shops: { ...s.shops, university: { ...s.shops.university, built: true } } };
+    expect(G.buildLock(g, 'university')).toBe('Built');
+  });
+  it('does not touch Boston, which has no chapters', () => {
+    const boston = G.newGame(0, 'boston');
+    for (const id of hoodIds(cityOf(boston))) expect(buildChapter(boston, id)).toBeNull();
+    const next = G.nextToBuild(boston);
+    expect(next).not.toBeNull();
+    expect(
+      G.buildLock({ ...boston, seenScenes: [...boston.seenScenes, boston.city === 'boston' ? cityOf(boston).fit.takeover.sceneId : ''] }, next!.id),
+    ).toBeNull();
+  });
+  it('does not hold a hire scene or an interlude, which have no chapter', () => {
+    expect(chapterOf(G.newGame(0), 'suburbs-hire')).toBeUndefined();
+    expect(chapterOf(G.newGame(0), 'suburbs-3b')).toBeUndefined();
+  });
+  it('leaves the goal bar on the chapter’s next task while the build is locked', () => {
+    const s = upTo('suburbs', 'suburbs-2');
+    expect(G.buildLock(s, 'waterfront')).not.toBeNull();
+    expect(currentChapter(s)).toBe(chapter('suburbs-2'));
+    expect(nextTask(s)?.task.key).toBe(task('suburbs-2', 2).key);
   });
 });
 

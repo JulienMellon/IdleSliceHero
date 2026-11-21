@@ -21,9 +21,10 @@ export function goldenRun(): { state: G.GameState; offline: G.OfflineResult } {
   // Nonna's takeover is out of the way, so Suburbs can be built right away
   g = { ...g, cash: 1e12, seenScenes: [NONNA_TAKEOVER.sceneId] };
   for (const id of ['suburbs', 'waterfront'] as const) {
-    const b = G.buildShop({ ...g, cash: 1e12 }, id);
+    // the next shop waits for the story of the one before it (v5.21, E1b): its beat 3 is out of the way for the build only, so the recorded state is as it was
+    const b = G.buildShop({ ...g, cash: 1e12, seenScenes: [...g.seenScenes, 'suburbs-3'] }, id);
     if (!b.ok) throw new Error(`${id}: ${b.reason}`);
-    g = { ...b.state, cash: g.cash };
+    g = { ...b.state, cash: g.cash, seenScenes: g.seenScenes };
   }
   const script: [NeighborhoodId, G.Upgrade][] = [
     ['downtown', 'prep'],

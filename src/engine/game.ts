@@ -36,7 +36,7 @@ import { cosmeticPart } from '../content/endgame';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
 import { migrateStory } from './story';
-import { CHAPTERS_KEY, chaptersTick, migrateChapters, migrateChapterSave, payChapter } from './chapters';
+import { buildChapter, CHAPTERS_KEY, chapterNumber, chaptersTick, migrateChapters, migrateChapterSave, payChapter } from './chapters';
 import { FEATURES } from './features/registry';
 import {
   advanceLine,
@@ -1065,6 +1065,9 @@ export function buildLock(s: GameState, id: NeighborhoodId): string | null {
   if (idx > 0 && !s.shops[hoods[idx - 1].id].built) return `Build in ${hoods[idx - 1].name} first`;
   // The first shop stops earning once the founder's tutorial is skipped past; keep the player there until she takes over (the second shop is the one that waits).
   if (idx === 1 && !s.seenScenes.includes(cityOf(s).fit.takeover.sceneId)) return founderCountdownText(s);
+  // v5.21 (E1b): the next shop waits for the story of the one before it (the chapter whose tasks need that shop), so a chapter never stalls behind a shop built too early
+  const held = buildChapter(s, id);
+  if (held) return t('chapter.buildLocked', { n: chapterNumber(s, held) }, s.city);
   return null;
 }
 

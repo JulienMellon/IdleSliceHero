@@ -65,7 +65,10 @@
 - chapterTasks(g: GameState): TaskRow[] — src/engine/chapters.ts:263 — The current chapter's tasks with their progress, in order (empty after the last chapter).
 - nextTask(g: GameState): TaskRow | null — src/engine/chapters.ts:273 — The task the bar shows: the first one not done that the player can act on (a hire, a build, a win, …
 - chapterReady(g: GameState, lastSceneEndPlay: number | null = null): { secondsLeft: number } | null — src/engine/chapters.ts:284 — The current chapter is done and its beat is waiting on the story's pacing: `secondsLeft` is what is…
-- migrateChapters(g: GameState, fromVersion: number): GameState — src/engine/chapters.ts:299 — A save from before chapters (saveVersion < 8): the chapters whose beats have played need nothing (a…
+- BUILD_GATE_BEAT — src/engine/chapters.ts:295 — The beat of the shop before it that must have played before the next shop can be built (its finale,…
+- buildChapter(g: GameState, id: NeighborhoodId): Chapter | null — src/engine/chapters.ts:305 — The chapter that holds back the build of shop `id`: while the gate beat (`BUILD_GATE_BEAT`) of the …
+- chapterNumber(g: Pick<GameState, 'city'>, c: Chapter): number — src/engine/chapters.ts:320 — The chapter's number in the story (1-based), as the Story tab and the build line print it.
+- migrateChapters(g: GameState, fromVersion: number): GameState — src/engine/chapters.ts:329 — A save from before chapters (saveVersion < 8): the chapters whose beats have played need nothing (a…
 - types: ChapterSave, TaskProgress, TaskRow
 
 ## src/engine/clock.ts
@@ -365,50 +368,50 @@
 - buyUpgrade(s: GameState, id: NeighborhoodId, what: Upgrade): BuyResult — src/engine/game.ts:1033
 - nextToBuild(s: GameState): NeighborhoodDef | null — src/engine/game.ts:1055
 - buildLock(s: GameState, id: NeighborhoodId): string | null — src/engine/game.ts:1059
-- founderPizzasLeft(s: GameState): number — src/engine/game.ts:1072 — Pizzas the first shop still has to deliver before Nonna takes over the kitchen (0 once it's due or …
-- founderName(s: GameState): string — src/engine/game.ts:1080 — The first shop's founder by the name the countdown uses: the city's `founder` (Nonna at home), else…
-- founderCountdownText(s: GameState): string — src/engine/game.ts:1085
-- buildShop(s: GameState, id: NeighborhoodId): BuyResult — src/engine/game.ts:1092
-- bidAvailable(s: GameState): boolean — src/engine/game.ts:1103 — The bid is on offer once "Man Overboard" (waterfront-3b, which plays at the same pizza count) has p…
-- bidPrice(s: GameState): number — src/engine/game.ts:1111 — What the bid costs now: the base bid times the live auction's multiplier (features/layers/waterfron…
-- placeBid(s: GameState): BuyResult — src/engine/game.ts:1115 — Place the bid (Pier 9: win the dock for Marisol): spends it and earns the bid shop's perk, which pl…
-- nextVehicleLock(s: GameState): VehicleLock | null — src/engine/game.ts:1128
-- vehicleLockLabel(lock: VehicleLock) — src/engine/game.ts:1137 — Player-facing text for a vehicle lock.
-- buyVehicle(s: GameState): BuyResult — src/engine/game.ts:1141
-- tapBatch(shop: Shop) — src/engine/game.ts:1151 — Pies per tapped prep batch: +BATCH_GROWTH.step every BATCH_GROWTH.every prep levels (4 → 6 at Lv 20…
-- nextBatchLevel(shop: Shop) — src/engine/game.ts:1153 — Prep level at which the batch next grows.
-- nextHire(shop: Shop): Upgrade | null — src/engine/game.ts:1156 — The next hire for a pizzeria without a GM: the first head not hired, then the GM; null with a GM.
-- lineBusy(l: Line) — src/engine/game.ts:1163 — The line has something happening: a job running or a carrier walking out.
-- automationOf(shop: Shop): Automation — src/engine/game.ts:1168 — One frozen object for GM shops, so the scene doesn't allocate it every frame (M44).
-- walkInFraction(shop: Shop, vehicle: number, fit: CityFit, fx: FeatureMults = NO_FX): number — src/engine/game.ts:1171 — Share of pies that go to walk-ins at the steady state (walk-ins are seated first, up to walkInRate).
-- FIRST_BATCH_SPEED — src/engine/game.ts:1177 — The first Downtown batch runs this much faster (tutorial pacing).
-- lineRates(id: NeighborhoodId, shop: Shop, vehicle: number, mult = 1, fx: FeatureMults = NO_FX, city: CityDef … — src/engine/game.ts:1184 — Everything the kitchen line needs from one pizzeria.
-- tapStation(s: GameState, id: NeighborhoodId, st: Station): TapOutcome — src/engine/game.ts:1202 — Tap one station of a pizzeria (prep → oven → counter).
-- nextStation(shop: Shop): Station | null — src/engine/game.ts:1212 — The station a tap on the shop should run next (null when nothing can start).
-- tapShop(s: GameState, id: NeighborhoodId): GameState — src/engine/game.ts:1218 — A tap on the whole pizzeria.
-- playTick(s: GameState, dt: number, now?: number): GameState — src/engine/game.ts:1229 — Foreground play: run every kitchen line and count the seconds toward story pacing.
-- lineTick(s: GameState, dt: number, now?: number): GameState — src/engine/game.ts:1242 — Advance every pizzeria's kitchen line by dt seconds (foreground).
-- offlineCapOf(s: Pick<GameState, 'nightOven'>): number — src/engine/game.ts:1283 — How many seconds away the player is paid for: the night oven's owned cap.
-- offlineTick(s: GameState, seconds: number, boost = 1, now?: number): { state: GameState; byShop: { id: Neighb… — src/engine/game.ts:1308 — Closed-form catch-up for time away.
-- CAPPED_SLACK_SECONDS — src/engine/game.ts:1363 — Away longer than the offline cap by less than this is not "capped": the popup would say "Capped at …
-- applyOffline(s: GameState, now: number): OfflineResult — src/engine/game.ts:1366 — Catch up after the app was closed: GM shops run, three-head shops run at half speed, the others fin…
-- challengeOffered (re-export) — src/engine/game.ts:1405
-- pendingScenes (re-export) — src/engine/game.ts:1405
-- prerequisites (re-export) — src/engine/game.ts:1405
-- sceneTriggered (re-export) — src/engine/game.ts:1405
-- applyReward(s: GameState, reward: SceneReward | undefined): GameState — src/engine/game.ts:1407
-- markSceneSeen(s: GameState, scene: Scene): GameState — src/engine/game.ts:1421
-- upgradeGain(s: GameState, id: NeighborhoodId, what: Upgrade): number | null — src/engine/game.ts:1432 — Cash/sec this pizzeria gains from an upgrade (counting it as running), or null if unavailable.
-- vehicleGain(s: GameState): number | null — src/engine/game.ts:1442 — Cash/sec the whole city gains from the next fleet tier.
-- buildGain(s: GameState, id: NeighborhoodId): number — src/engine/game.ts:1449 — A starting pizzeria's earnings once it runs itself (heads + a GM, so with the GM boost).
-- buildAllIn(id: NeighborhoodId, city: CityDef = cityOfHood(id)) — src/engine/game.ts:1455 — Everything it takes to get a new pizzeria running itself: the build, three heads and a GM.
-- bottleneckBundle(s: GameState, id: NeighborhoodId, maxSteps = 8): Bundle | null — src/engine/game.ts:1469 — The cheapest set of upgrades that actually raises a pizzeria's output.
-- shopBuildKey(s: GameState, id: NeighborhoodId): string — src/engine/game.ts:1525 — One key for what a shop's levels, fleet and decor decide, and nothing a feature adds: a price ladde…
-- shopLevelKey(s: GameState, id: NeighborhoodId): string — src/engine/game.ts:1531 — One key for everything a shop's upgrade levels decide (not cash, sales or the line): shared caches …
-- bundleHint(s: GameState, id: NeighborhoodId): BundleHint | null — src/engine/game.ts:1541 — "Upgrade prep + ovens · $X": the tied-station bundle, ready to show in the UI.
-- decorCost(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null — src/engine/game.ts:1554
-- buyDecor(s: GameState, id: NeighborhoodId, kind: DecorKind): BuyResult — src/engine/game.ts:1559
-- decorGain(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null — src/engine/game.ts:1570 — Cash/sec this pizzeria gains from the next decor tier (counting it as running).
+- founderPizzasLeft(s: GameState): number — src/engine/game.ts:1075 — Pizzas the first shop still has to deliver before Nonna takes over the kitchen (0 once it's due or …
+- founderName(s: GameState): string — src/engine/game.ts:1083 — The first shop's founder by the name the countdown uses: the city's `founder` (Nonna at home), else…
+- founderCountdownText(s: GameState): string — src/engine/game.ts:1088
+- buildShop(s: GameState, id: NeighborhoodId): BuyResult — src/engine/game.ts:1095
+- bidAvailable(s: GameState): boolean — src/engine/game.ts:1106 — The bid is on offer once "Man Overboard" (waterfront-3b, which plays at the same pizza count) has p…
+- bidPrice(s: GameState): number — src/engine/game.ts:1114 — What the bid costs now: the base bid times the live auction's multiplier (features/layers/waterfron…
+- placeBid(s: GameState): BuyResult — src/engine/game.ts:1118 — Place the bid (Pier 9: win the dock for Marisol): spends it and earns the bid shop's perk, which pl…
+- nextVehicleLock(s: GameState): VehicleLock | null — src/engine/game.ts:1131
+- vehicleLockLabel(lock: VehicleLock) — src/engine/game.ts:1140 — Player-facing text for a vehicle lock.
+- buyVehicle(s: GameState): BuyResult — src/engine/game.ts:1144
+- tapBatch(shop: Shop) — src/engine/game.ts:1154 — Pies per tapped prep batch: +BATCH_GROWTH.step every BATCH_GROWTH.every prep levels (4 → 6 at Lv 20…
+- nextBatchLevel(shop: Shop) — src/engine/game.ts:1156 — Prep level at which the batch next grows.
+- nextHire(shop: Shop): Upgrade | null — src/engine/game.ts:1159 — The next hire for a pizzeria without a GM: the first head not hired, then the GM; null with a GM.
+- lineBusy(l: Line) — src/engine/game.ts:1166 — The line has something happening: a job running or a carrier walking out.
+- automationOf(shop: Shop): Automation — src/engine/game.ts:1171 — One frozen object for GM shops, so the scene doesn't allocate it every frame (M44).
+- walkInFraction(shop: Shop, vehicle: number, fit: CityFit, fx: FeatureMults = NO_FX): number — src/engine/game.ts:1174 — Share of pies that go to walk-ins at the steady state (walk-ins are seated first, up to walkInRate).
+- FIRST_BATCH_SPEED — src/engine/game.ts:1180 — The first Downtown batch runs this much faster (tutorial pacing).
+- lineRates(id: NeighborhoodId, shop: Shop, vehicle: number, mult = 1, fx: FeatureMults = NO_FX, city: CityDef … — src/engine/game.ts:1187 — Everything the kitchen line needs from one pizzeria.
+- tapStation(s: GameState, id: NeighborhoodId, st: Station): TapOutcome — src/engine/game.ts:1205 — Tap one station of a pizzeria (prep → oven → counter).
+- nextStation(shop: Shop): Station | null — src/engine/game.ts:1215 — The station a tap on the shop should run next (null when nothing can start).
+- tapShop(s: GameState, id: NeighborhoodId): GameState — src/engine/game.ts:1221 — A tap on the whole pizzeria.
+- playTick(s: GameState, dt: number, now?: number): GameState — src/engine/game.ts:1232 — Foreground play: run every kitchen line and count the seconds toward story pacing.
+- lineTick(s: GameState, dt: number, now?: number): GameState — src/engine/game.ts:1245 — Advance every pizzeria's kitchen line by dt seconds (foreground).
+- offlineCapOf(s: Pick<GameState, 'nightOven'>): number — src/engine/game.ts:1286 — How many seconds away the player is paid for: the night oven's owned cap.
+- offlineTick(s: GameState, seconds: number, boost = 1, now?: number): { state: GameState; byShop: { id: Neighb… — src/engine/game.ts:1311 — Closed-form catch-up for time away.
+- CAPPED_SLACK_SECONDS — src/engine/game.ts:1366 — Away longer than the offline cap by less than this is not "capped": the popup would say "Capped at …
+- applyOffline(s: GameState, now: number): OfflineResult — src/engine/game.ts:1369 — Catch up after the app was closed: GM shops run, three-head shops run at half speed, the others fin…
+- challengeOffered (re-export) — src/engine/game.ts:1408
+- pendingScenes (re-export) — src/engine/game.ts:1408
+- prerequisites (re-export) — src/engine/game.ts:1408
+- sceneTriggered (re-export) — src/engine/game.ts:1408
+- applyReward(s: GameState, reward: SceneReward | undefined): GameState — src/engine/game.ts:1410
+- markSceneSeen(s: GameState, scene: Scene): GameState — src/engine/game.ts:1424
+- upgradeGain(s: GameState, id: NeighborhoodId, what: Upgrade): number | null — src/engine/game.ts:1435 — Cash/sec this pizzeria gains from an upgrade (counting it as running), or null if unavailable.
+- vehicleGain(s: GameState): number | null — src/engine/game.ts:1445 — Cash/sec the whole city gains from the next fleet tier.
+- buildGain(s: GameState, id: NeighborhoodId): number — src/engine/game.ts:1452 — A starting pizzeria's earnings once it runs itself (heads + a GM, so with the GM boost).
+- buildAllIn(id: NeighborhoodId, city: CityDef = cityOfHood(id)) — src/engine/game.ts:1458 — Everything it takes to get a new pizzeria running itself: the build, three heads and a GM.
+- bottleneckBundle(s: GameState, id: NeighborhoodId, maxSteps = 8): Bundle | null — src/engine/game.ts:1472 — The cheapest set of upgrades that actually raises a pizzeria's output.
+- shopBuildKey(s: GameState, id: NeighborhoodId): string — src/engine/game.ts:1528 — One key for what a shop's levels, fleet and decor decide, and nothing a feature adds: a price ladde…
+- shopLevelKey(s: GameState, id: NeighborhoodId): string — src/engine/game.ts:1534 — One key for everything a shop's upgrade levels decide (not cash, sales or the line): shared caches …
+- bundleHint(s: GameState, id: NeighborhoodId): BundleHint | null — src/engine/game.ts:1544 — "Upgrade prep + ovens · $X": the tied-station bundle, ready to show in the UI.
+- decorCost(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null — src/engine/game.ts:1557
+- buyDecor(s: GameState, id: NeighborhoodId, kind: DecorKind): BuyResult — src/engine/game.ts:1562
+- decorGain(s: GameState, id: NeighborhoodId, kind: DecorKind): number | null — src/engine/game.ts:1573 — Cash/sec this pizzeria gains from the next decor tier (counting it as running).
 - types: Shop, GameState, BonusState, OrderOffer, ActiveOrder, OrderResult, OrderState, Task, Booster, Boost, Rewards, Stats, FeatureMults, StationMults, Stage, HeadUpgrade, Upgrade, BuyResult, VehicleLock, TapOutcome, OfflineResult, Bundle, BundleHint
 
 ## src/engine/night-oven.ts

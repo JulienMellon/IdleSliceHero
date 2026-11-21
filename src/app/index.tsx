@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,7 +18,7 @@ import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePop
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
 import { fitFont, MIN_FONT } from '@/components/endgame/fit-model';
-import { chapterGoal, cityStory, type GoalCheer, goalCheer, GOAL_TAB, masteryGoal } from '@/components/goal-model';
+import { chapterGoal, cityStory, type GoalCheer, goalCheer, GOAL_TAB, masteryGoal, tasksParamTab } from '@/components/goal-model';
 import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots } from '@/components/slots';
 import { buyKeyOf, type DrawerIcon, type DrawerView, drawerCards, parseBuyKey, tiedBundle } from '@/components/drawer-model';
 import { buttonTone, buyBundle, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
@@ -186,6 +186,19 @@ export default function GameScreen() {
         useGame.setState({ toast: null });
       };
     }, []),
+  );
+  // E1b: a tap on a chapter-locked lot in the City comes back here with `tasks=story`: open the list on that tab, then clear the param
+  const { tasks: tasksParam } = useLocalSearchParams<{ tasks?: string }>();
+  useFocusEffect(
+    useCallback(() => {
+      const tab = tasksParamTab(tasksParam);
+      if (!tab) return;
+      setDrawerOpen(false);
+      setGiftOpen(false);
+      setTasksTab(tab);
+      setTasksOpen(true);
+      router.setParams({ tasks: undefined });
+    }, [tasksParam]),
   );
   const setBonusHold = useGame((s) => s.setBonusHold);
   // G95: the golden pizza also waits while a card is up (an order, or Victor's challenge): the sky has no room beside it
@@ -562,7 +575,12 @@ export default function GameScreen() {
         {toast && hintsAllowed(game).toast && <Toast compact text={toast.text} top={10} />}
       </View>
       {/* v5.20 (C1): the one tutorial highlight: a scrim with a cut-out over the HUD, the shop, the row and the drawer; under the calendar, the sheets and the cut-scenes */}
-      {coachView && <CoachOverlay {...coachView} onDone={coachDone} />}
+      {/* r3: the HUD sits at zIndex 2 (the chapter ribbon hangs over the tabs), so the overlay's own layer rides above it or a tap on the HUD gets past the scrim */}
+      {coachView && (
+        <View pointerEvents="box-none" style={styles.coachLayer}>
+          <CoachOverlay {...coachView} onDone={coachDone} />
+        </View>
+      )}
       {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
       {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}
       {/* the SHEETS slot: modal sheets over the whole screen, under the offline popup */}
@@ -577,6 +595,7 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
   sceneArea: { flex: 1, overflow: 'hidden', backgroundColor: '#BFE0F7' },
+  coachLayer: { ...StyleSheet.absoluteFill, zIndex: 3 },
   dim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.4)' },
   drawer: {
     position: 'absolute',
