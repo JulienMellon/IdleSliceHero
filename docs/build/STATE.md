@@ -11,7 +11,7 @@ codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
   W1 done  C1 done  C2 done  U0 done  C3 done
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.20/review-r1-critic.md (r1 NOT SATISFIED; bug 1 major 3 minor 12; E4 U6 S6; G112 bug dial pill outside cut-out; D520 D522 D521(needs-owner) major)
+  critic: docs/build/v5.20/review-r2-critic.md (r2 NOT SATISFIED on minors; bug 0 major 0 minor 8; E3 U4 S2; open D525 D526 D531 D481 D519 D528 D530 +1)
   code:   docs/build/v5.20/review-r1-code.md (r1 APPROVED; blocker/high 0 medium 3 low 25; E3 U12 S6 N7; C158 C156 carried, A42 coach flow inline in index.tsx)
   story:  docs/build/v5.20/review-r2-story.md (r2 NOT SATISFIED on minors only; bug 0 major 0 minor 4; U1 T3; S48 S67 S70 S71 carried, advisory)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
