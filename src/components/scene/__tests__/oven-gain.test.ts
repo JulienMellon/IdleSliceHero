@@ -21,6 +21,13 @@ describe('ovenGain (D522)', () => {
   });
 });
 
+describe('the grade does not change the gain (T121)', () => {
+  test('the same ovens at another grade give the same percent: only the level counts', () => {
+    const base = ovenGain(shop(2), HOME_CITY.fit)!;
+    for (const grade of [0, 1, 2, 3]) expect(ovenGain({ ...shop(2), grade }, HOME_CITY.fit)).toEqual(base);
+  });
+});
+
 describe('the plaque sits on the oven (D522)', () => {
   test('it is no wider than the thinnest oven and lies inside the highest oven’s face, at every footprint with one oven or two', () => {
     expect(GAIN_W).toBeLessThanOrEqual(MIN_OVEN_W * kAt(D)); // the back wall is drawn smaller than the room

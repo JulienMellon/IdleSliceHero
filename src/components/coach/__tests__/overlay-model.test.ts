@@ -73,6 +73,9 @@ describe('overlayLayout', () => {
     // D526: the street band, y >= 734 on a 852 phone: clear of the shop and its diners
     expect(cardRect(shop.card, PHONE).y0).toBeGreaterThanOrEqual(PHONE.h - PHONE_SAFE.bottom - CARD.margin - CARD.height - 1);
     expect(cardRect(shop.card, PHONE).y0).toBeGreaterThan(700);
+    // D526: a sidewalk card on the 852 phone (row bottom 701 + pad) leaves the band below it for the card, so the dining room stays clear
+    const row = overlayLayout([r(108, 692, 196, 748)], PHONE, { top: 59, bottom: 0 })!;
+    expect(row.card.dock).toBe('bottom');
     const low = overlayLayout([r(100, 600, 200, 655)], SE, SE_SAFE)!;
     expect(low.card.dock).toBe('above');
     expect(cardRect(low.card, SE).y1).toBe(low.bounds.y0 - CARD.gap);
@@ -111,18 +114,34 @@ describe('the hand', () => {
     expect(hand.rot).toBe(HAND.down);
   });
 
-  test('on a narrow target with no room above, or the card above it, it stands beside it, on the side with room', () => {
+  test('on a narrow target with no room above the hand goes below it, pointing up; with the card above it goes below too (D525)', () => {
     const top = padCut(r(40, 10, 66, 38));
-    expect(handPose(top, PHONE).where).toBe('right');
+    expect(handPose(top, PHONE).where).toBe('below');
+    const cut = padCut(r(150, 600, 176, 628));
+    const card = { x0: 16, y0: cut.y0 - 12 - 72, x1: 377, y1: cut.y0 - 12 };
+    const hand = handPose(cut, PHONE, card);
+    expect(hand.where).toBe('below');
+    expect(hand.y - HAND.size / 2).toBeGreaterThanOrEqual(cut.y1);
+  });
+
+  test('with no room above and the card below, the hand stands beside the target, on the side with room', () => {
+    const top = padCut(r(40, 10, 66, 38));
+    const card = { x0: 16, y0: top.y1 + 12, x1: 377, y1: top.y1 + 12 + 72 };
+    const right = handPose(top, PHONE, card);
+    expect(right.where).toBe('right');
+    expect(right.x - HAND.size / 2).toBeGreaterThanOrEqual(top.x1);
     const edge = padCut(r(350, 10, 376, 38));
-    const hand = handPose(edge, PHONE);
+    const hand = handPose(edge, PHONE, { ...card, y0: edge.y1 + 12, y1: edge.y1 + 84 });
     expect(hand.where).toBe('left');
     expect(hand.x + HAND.size / 2).toBeLessThanOrEqual(edge.x0);
     expect(hand.rot).toBeGreaterThan(0);
-    // the card sits right above the target: the hand goes beside
-    const cut = padCut(r(150, 600, 176, 628));
-    const card = { x0: 16, y0: cut.y0 - 12 - 84, x1: 377, y1: cut.y0 - 12 };
-    expect(handPose(cut, PHONE, card).where).not.toBe('above');
+  });
+
+  test('a dial pill (70 pt wide with its pad) counts as narrow: the hand is above it, clear of the digit (D531)', () => {
+    const cut = padCut(r(86, 312, 140, 346));
+    const hand = handPose(cut, PHONE);
+    expect(hand.where).toBe('above');
+    expect(hand.y + HAND.size / 2).toBeLessThanOrEqual(cut.y0);
   });
 
   test('on the All button the hand is above it, clear of the Drivers card beside it (D525)', () => {
@@ -130,6 +149,10 @@ describe('the hand', () => {
     const lay = overlayLayout([all], PHONE, PHONE_SAFE)!;
     expect(lay.hand.where).toBe('above');
     expect(lay.hand.x).toBeGreaterThan(all.x0);
+    // on the short SE the card is above the row: the hand goes below All, still clear of Drivers
+    const se = overlayLayout([r(330, 548, 376, 603)], SE, SE_SAFE)!;
+    expect(se.card.dock).toBe('above');
+    expect(se.hand.where).toBe('below');
   });
 
   test('on a short bar it rests on the bottom edge, clear of the card 12 pt below', () => {

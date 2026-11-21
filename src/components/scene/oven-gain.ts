@@ -12,10 +12,10 @@ export interface OvenGain {
 }
 
 /** The plaque's content: null at level 1 (nothing was bought) or when the level made no difference. */
-export function ovenGain(shop: Pick<Shop, 'ovens' | 'grade'>, fit: CityFit): OvenGain | null {
+export function ovenGain(shop: Shop, fit: CityFit): OvenGain | null {
   if (shop.ovens < 2) return null;
-  const now = ovenRate(shop as Shop, fit);
-  const before = ovenRate({ ...shop, ovens: shop.ovens - 1 } as Shop, fit);
+  const now = ovenRate(shop, fit);
+  const before = ovenRate({ ...shop, ovens: shop.ovens - 1 }, fit);
   const pct = Math.round((now / before - 1) * 100);
   return pct >= 1 ? { level: shop.ovens, pct } : null;
 }

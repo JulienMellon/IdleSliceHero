@@ -19,9 +19,9 @@ export interface Safe {
 /** A cut-out is its target grown by `pad` with corners of `radius` (the old scene spotlight's 8 and 12). */
 export const CUT = { pad: 8, radius: 12 } as const;
 /** Nonna's card: the room it is planned with (two or three lines of text beside her portrait), the gap to the cut-out, the margin to the screen's edge. */
-export const CARD = { height: 84, gap: 12, margin: 8, side: 16 } as const;
+export const CARD = { height: 72, gap: 12, margin: 8, side: 16 } as const;
 /** The hand: its box (pt), the width under which a target is "narrow" and the height under which it is "short", how far up from the bottom edge it rests, its tilt (the glyph points up at 0). */
-export const HAND = { size: 34, narrow: 64, short: 90, rest: 30, along: 0.78, tilt: -20, beside: 70, down: 160 } as const;
+export const HAND = { size: 34, narrow: 80, short: 90, rest: 30, along: 0.78, tilt: -20, beside: 70, down: 160 } as const;
 /** A target whose bottom edge is in the top fifth of the screen (the HUD) gets its card right below it; any other gets it at the street band, clear of the shop. */
 export const HUD_ZONE = 0.22;
 
@@ -84,7 +84,7 @@ export interface HandPose {
   y: number;
   /** Rotation in degrees; the glyph points up at 0. */
   rot: number;
-  where: 'inside' | 'above' | 'left' | 'right';
+  where: 'inside' | 'above' | 'below' | 'left' | 'right';
 }
 
 export interface CardDock {
@@ -107,8 +107,10 @@ export interface OverlayLayout {
 }
 
 /**
- * The hand's pose for the cut-out `c` it points at. Wide target: inside it. Narrow target (a dial, the All button): above it, pointing down, so it never lands on the
- * control beside it (D525); beside it only when there is no room above or the card would be under it (`card`).
+ * The hand's pose for the cut-out `c` it points at. It never covers a number or another control (D525, D531).
+ * A big target (a station): inside it, over the work surface. A short wide one (the cash pill, a sidewalk card): on its bottom edge, three quarters along.
+ * A small one (a dial, the All button): outside it, above and pointing down, else below and pointing up, else beside it; `card` is where Nonna's card
+ * stands, which the hand keeps clear of.
  */
 export function handPose(c: Rect, screen: Screen, card?: Rect): HandPose {
   const half = HAND.size / 2;
@@ -117,16 +119,18 @@ export function handPose(c: Rect, screen: Screen, card?: Rect): HandPose {
   const h = c.y1 - c.y0;
   let pose: HandPose;
   if (w < HAND.narrow) {
-    const above: HandPose = { x: (c.x0 + c.x1) / 2, y: c.y0 - half - 2, rot: HAND.down, where: 'above' };
+    const cx = (c.x0 + c.x1) / 2;
+    const cy = (c.y0 + c.y1) / 2;
     const box = (p: HandPose): Rect => ({ x0: p.x - half, y0: p.y - half, x1: p.x + half, y1: p.y + half });
-    const covers = (p: HandPose) => !!card && box(p).x0 < card.x1 && box(p).x1 > card.x0 && box(p).y0 < card.y1 && box(p).y1 > card.y0;
-    if (above.y - half >= 0 && !covers(above)) pose = above;
-    else {
-      const right = screen.w - c.x1 >= HAND.beside || screen.w - c.x1 >= c.x0;
-      pose = right
-        ? { x: c.x1 + half + 2, y: (c.y0 + c.y1) / 2, rot: -75, where: 'right' }
-        : { x: c.x0 - half - 2, y: (c.y0 + c.y1) / 2, rot: 75, where: 'left' };
-    }
+    const clear = (p: HandPose) => {
+      const b = box(p);
+      return b.y0 >= 0 && b.y1 <= screen.h && !(card && b.x0 < card.x1 && b.x1 > card.x0 && b.y0 < card.y1 && b.y1 > card.y0);
+    };
+    const above: HandPose = { x: cx, y: c.y0 - half - 2, rot: HAND.down, where: 'above' };
+    const below: HandPose = { x: cx, y: c.y1 + half + 2, rot: 0, where: 'below' };
+    const right = screen.w - c.x1 >= HAND.beside || screen.w - c.x1 >= c.x0;
+    const beside: HandPose = right ? { x: c.x1 + half + 2, y: cy, rot: -75, where: 'right' } : { x: c.x0 - half - 2, y: cy, rot: 75, where: 'left' };
+    pose = [above, below].find(clear) ?? beside;
   } else {
     // inside, centred across and 30 up from the bottom edge (over the work surface); on a short bar or card (cash, goal, a sidewalk card) it would hide the
     // text, so it rests on the bottom edge, three quarters along (its card sits 12 below, so the hand must not reach it)

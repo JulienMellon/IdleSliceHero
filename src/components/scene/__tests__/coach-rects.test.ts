@@ -3,7 +3,7 @@
 import { HOME_CITY } from '../../../content/cities/home';
 import { newShop } from '../../../engine/game';
 import type { Rect } from '../../coach/targets';
-import { coachRects, DIAL_PILL, DIAL_R, SCENE_TARGETS } from '../coach-rects';
+import { coachReporter, coachRects, DIAL_PILL, DIAL_R, SCENE_TARGETS } from '../coach-rects';
 import { D, P, openScroll, sceneToScreen, sceneView } from '../projection';
 import { shopLayout } from '../shop-layout';
 import { BADGE_R, badgeXs } from '../stations';
@@ -149,5 +149,31 @@ describe('coachRects (v5.20 C2)', () => {
       expect(c[t].x0).toBeCloseTo(a[t].x0 + 7, 9);
       expect(c[t].y1).toBeCloseTo(a[t].y1 + 11, 9);
     }
+  });
+
+  test('the reporter registers nothing until the origin is known, and nothing after the scene is gone (T120: a late measureInWindow)', () => {
+    const lay = shopAt(0, 1);
+    const { fit } = sceneView(393, 852, lay.frame);
+    const calls: [string, Rect | null][] = [];
+    const rep = coachReporter(
+      () => ({ lay, fit, scrollX: 0 }),
+      (id, r) => calls.push([id, r]),
+    );
+    rep.report(); // no origin yet
+    expect(calls).toEqual([]);
+    rep.setOrigin(0, 59);
+    expect(calls.map(([id]) => id)).toEqual([...SCENE_TARGETS]);
+    expect(calls.every(([, r]) => r !== null)).toBe(true);
+    calls.length = 0;
+    rep.stop(); // the scene unmounts: every target is dropped…
+    expect(calls.map(([id]) => id)).toEqual([...SCENE_TARGETS]);
+    expect(calls.every(([, r]) => r === null)).toBe(true);
+    calls.length = 0;
+    rep.setOrigin(0, 60); // …and a measureInWindow answer that lands afterwards, or a scroll event, puts nothing back
+    rep.report();
+    expect(calls).toEqual([]);
+    rep.start(); // a remount that keeps the instance reports again
+    rep.report();
+    expect(calls).toHaveLength(SCENE_TARGETS.length);
   });
 });

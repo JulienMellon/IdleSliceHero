@@ -58,3 +58,41 @@ export function coachRects(lay: Layout, fit: SceneFit, scrollX: number, origin: 
     'ovens:all': toScreen(ov),
   };
 }
+
+/** What a report needs from the scene right now. */
+export interface CoachInput {
+  lay: Layout;
+  fit: SceneFit;
+  scrollX: number;
+}
+
+/**
+ * The scene's reporter to the registry (T120): `report` computes the rects and registers them once the screen origin is known; after `stop` (the scene is gone) a late
+ * origin answer or scroll event reports nothing and the targets stay unregistered. `start` undoes `stop` (a remount that keeps the instance). Pure: the registry is passed in.
+ */
+export function coachReporter(input: () => CoachInput, register: (id: SceneTargetId, rect: Rect | null) => void) {
+  let alive = true;
+  let origin: { x: number; y: number } | null = null;
+  const report = () => {
+    if (!alive || !origin) return;
+    const { lay, fit, scrollX } = input();
+    const r = coachRects(lay, fit, scrollX, origin);
+    for (const t of SCENE_TARGETS) register(t, r[t]);
+  };
+  return {
+    report,
+    /** `measureInWindow`'s answer: where the scene view's top-left corner is on the screen. */
+    setOrigin(x: number, y: number) {
+      if (!alive) return;
+      origin = { x, y };
+      report();
+    },
+    start() {
+      alive = true;
+    },
+    stop() {
+      alive = false;
+      for (const t of SCENE_TARGETS) register(t, null);
+    },
+  };
+}

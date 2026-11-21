@@ -59,7 +59,7 @@ import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEAD_BARKS } from '../content/heads';
 import { getFeature } from '../engine/features';
 import { counterattack } from '../engine/features/counterattack';
-import { coachStep, hintsAllowed } from '../engine/tutorial';
+import { hintsAllowed, stepsFor } from '../engine/tutorial';
 import { gainAnchor, ovenGain } from './scene/oven-gain';
 import type { BarkTable } from '../content/cities/types';
 import { reportView, slammedAsks } from '../engine/features/service';
@@ -110,7 +110,7 @@ import { rushCombo, rushPill } from './rush-model';
 import { emptyCrew, stepCrew, type CrewState } from './scene/crew';
 import { emitCoin } from './pulse-bus';
 import { BADGE_R, COIN_FLIGHT, badgeAt, badgeModels, badgeRowY, badgeXs, MIN_TAP_PT, placePops, popsCover, stationAt, stationRects } from './scene/stations';
-import { coachRects, SCENE_TARGETS } from './scene/coach-rects';
+import { coachReporter, type CoachInput } from './scene/coach-rects';
 import { registerTarget } from './coach/targets';
 
 export { CURB_Y, SCENE_H, sceneFit, sceneFrame, sceneView } from './scene/projection';
@@ -178,21 +178,20 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const fp = shop.footprint;
   // where this view sits on the page, for turning a tap's pageX/pageY into scene coordinates
   const viewRef = useRef<ComponentRef<typeof View>>(null);
-  const origin = useRef({ x: 0, y: 0, known: false });
-  // …and the same answer tells the Coach where the stations and their dials are on the screen (scene/coach-rects.ts), once the origin is known
-  const coachAt = useRef<() => void>(() => {});
-  // false once this scene is gone: a measureInWindow answer that arrives late must not put the scene's targets back in the registry (C162)
-  const alive = useRef(true);
+  const origin = useRef({ x: 0, y: 0 });
+  // a wide shop scrolls sideways (scene/scroll.ts): how far it has gone, where the finger went down (a drag past TAP_SLOP is a scroll, never a tap), and the view
+  const scrollX = useRef(0);
+  // …and the same answer tells the Coach where the stations and their dials are on the screen (scene/coach-rects.ts `coachReporter`), once the origin is known; after this scene is gone
+  // a late answer reports nothing (C162, T120). The layout and fit are the latest render's; the scroll is read when the report is made
+  const coachIn = useRef<Pick<CoachInput, 'lay' | 'fit'> | null>(null);
+  const [reporter] = useState(() => coachReporter(() => ({ ...coachIn.current!, scrollX: scrollX.current }), registerTarget));
   // the tutorial runs: only then does a scroll in motion re-report the targets (the rest of the time a settled scroll does)
   const coachRuns = useRef(false);
   const measureOrigin = () =>
     viewRef.current?.measureInWindow((x: number, y: number) => {
-      if (!alive.current) return;
-      origin.current = { x, y, known: true };
-      coachAt.current();
+      origin.current = { x, y };
+      reporter.setOrigin(x, y);
     });
-  // a wide shop scrolls sideways (scene/scroll.ts): how far it has gone, where the finger went down (a drag past TAP_SLOP is a scroll, never a tap), and the view
-  const scrollX = useRef(0);
   const touchAt = useRef({ x: 0, y: 0 });
   const scroller = useRef<ComponentRef<typeof ScrollView>>(null);
   const opened = useRef(false);
@@ -354,7 +353,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   ).map((q) => q.rect);
   // U4: while Nonna's coach is up the scene says nothing else (tutorial.ts `hintsAllowed`)
   const hints = hintsAllowed(game);
-  const ovenLook = !!coachStep(game)?.targets.includes('ovens:all');
+  // the step's targets, from the cached step table (no copy built per frame)
+  const ovenLook = game.tutorial >= 1 && game.tutorial < Game.TUTORIAL_DONE && !!stepsFor(city)[game.tutorial - 1]?.targets.includes('ovens:all');
   // the pills' words change with the counts and the bottleneck only (U10/U11), not with the clock
   const waitWords = useMemo(() => (side.waiting > 0 ? waitingText(side.waiting, slowest) : null), [side.waiting, slowest]);
   const moreWords = useMemo(() => (side.more > 0 ? queueLabel(side.more, side.diners) : null), [side.more, side.diners]);
@@ -633,22 +633,15 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   };
   // the Coach's targets (scene/coach-rects.ts): reported after layout and whenever the footprint, the oven count, the screen size or the scroll changes (an event, never a frame);
   // the registry ignores a rect that has not moved, so a settled scroll costs nothing
-  coachAt.current = () => {
-    if (!origin.current.known) return;
-    const r = coachRects(lay, fit, scrollX.current, origin.current);
-    for (const t of SCENE_TARGETS) registerTarget(t, r[t]);
-  };
+  coachIn.current = { lay, fit };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `lay` changes with the footprint and the oven count; the fit with the screen's size
   useEffect(() => {
     measureOrigin();
   }, [lay, fit.s, fit.ox, fit.oy, width, height]);
   useEffect(() => {
-    alive.current = true;
-    return () => {
-      alive.current = false;
-      for (const t of SCENE_TARGETS) registerTarget(t, null);
-    };
-  }, []);
+    reporter.start();
+    return () => reporter.stop();
+  }, [reporter]);
   coachRuns.current = game.tutorial >= 1 && game.tutorial < Game.TUTORIAL_DONE;
   const askRef = useRef<(t: ScrollTarget) => void>(() => {});
   askRef.current = (t) => {
@@ -1017,19 +1010,19 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             opened.current = true;
             scrollX.current = startX;
             scroller.current?.scrollTo({ x: startX, y: 0, animated: false });
-            coachAt.current();
+            reporter.report();
           }}
           onScroll={(e) => {
             scrollX.current = e.nativeEvent.contentOffset.x;
-            if (coachRuns.current) coachAt.current();
+            if (coachRuns.current) reporter.report();
           }}
           onScrollEndDrag={(e) => {
             useGame.getState().setSceneScroll(id, e.nativeEvent.contentOffset.x);
-            coachAt.current();
+            reporter.report();
           }}
           onMomentumScrollEnd={(e) => {
             useGame.getState().setSceneScroll(id, e.nativeEvent.contentOffset.x);
-            coachAt.current();
+            reporter.report();
           }}
           style={{ width, height }}
           contentContainerStyle={{ width: cw, height }}
