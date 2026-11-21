@@ -575,7 +575,12 @@ export default function GameScreen() {
         {toast && hintsAllowed(game).toast && <Toast compact text={toast.text} top={10} />}
       </View>
       {/* v5.20 (C1): the one tutorial highlight: a scrim with a cut-out over the HUD, the shop, the row and the drawer; under the calendar, the sheets and the cut-scenes */}
-      {coachView && <CoachOverlay {...coachView} onDone={coachDone} />}
+      {/* r3: the HUD sits at zIndex 2 (the chapter ribbon hangs over the tabs), so the overlay's own layer rides above it or a tap on the HUD gets past the scrim */}
+      {coachView && (
+        <View pointerEvents="box-none" style={styles.coachLayer}>
+          <CoachOverlay {...coachView} onDone={coachDone} />
+        </View>
+      )}
       {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
       {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}
       {/* the SHEETS slot: modal sheets over the whole screen, under the offline popup */}
@@ -590,6 +595,7 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
   sceneArea: { flex: 1, overflow: 'hidden', backgroundColor: '#BFE0F7' },
+  coachLayer: { ...StyleSheet.absoluteFill, zIndex: 3 },
   dim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.4)' },
   drawer: {
     position: 'absolute',

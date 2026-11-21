@@ -20,7 +20,6 @@ next: resume S8-v5.21.md: FIRST launch programmer on docs/build/v5.21/card-E1b.m
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-21 S8 r2 gate not met (critic major 3: D532 D536 D541; code APPROVED; story minors carry). Fix round r3: U1 + U2, then E1 + E2. D532 call: a hire/build chapter task may show cash vs its own price; the bar never offers a non-task purchase.
 - 2026-11-21 S8 r3 U2 done (D536 shots 175b-d, C173 free row 0 gems, T126). E1 r3 launched (+chapterDiamonds); U1 r3 running.
 - 2026-11-21 S8 r3 E1 done (C173 chapterDiamonds, S78 waterfront-4 serve 50,000 first; 2902 tests; pacing same). E2 r3 (D530) waits for U1's D541 ribbon.
 - 2026-11-21 S8 r3 U1 done (D532 cash vs price, D541 tick pop + chapter ribbon + toast shot, D536 Go proved 178h2/i/j, S87 Pier 9 short). E2 r3 launched (D530).
@@ -30,3 +29,4 @@ next: resume S8-v5.21.md: FIRST launch programmer on docs/build/v5.21/card-E1b.m
 - 2026-11-21 S8 r3 U1 done (locked-lot tap opens Story tab, shot 180b; 2918 tests). Verify v5.21-r3 next.
 - 2026-11-21 S8 r3 pre-verify: tsc clean, format ok, 2918/2918, pacing same (downtown-2 +8.9%; EAGER max 1940.8 vs tuned 1919.8). Shots v5.21-r3 running.
 - 2026-11-21 S8 verify v5.21-r3 FAIL: 2 errors in 153_c1 (scrim leak shot 155-coach-step10, walk-ovens not visible); layout 0. Sent to E2.
+- 2026-11-21 S8 r3 E2 done (153_c1: HUD zIndex 2 from U1 covered coach; coach layer raised). Re-verify v5.21-r3. Watch: HUD may cover GiftCalendar/NightOvenSheet/SHEETS.
