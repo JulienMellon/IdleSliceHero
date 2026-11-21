@@ -508,7 +508,7 @@
    }
   },
   "migrated": {
-   "saveVersion": 6,
+   "saveVersion": 7,
    "city": "home",
    "economy": 3,
    "cash": 4859291.338800002,
@@ -788,7 +788,7 @@
    "lastSavedAt": 1794416480000,
    "playSeconds": 4079.9999999999272,
    "sceneAt": {},
-   "tutorial": 10,
+   "tutorial": 16,
    "rewards": {
     "day": "",
     "daily": [],
@@ -1571,7 +1571,7 @@
    }
   },
   "migrated": {
-   "saveVersion": 6,
+   "saveVersion": 7,
    "city": "boston",
    "economy": 3,
    "cash": 2965155408,
@@ -1840,7 +1840,7 @@
    "lastSavedAt": 1794416480000,
    "playSeconds": 4079.9999999999272,
    "sceneAt": {},
-   "tutorial": 10,
+   "tutorial": 16,
    "rewards": {
     "day": "",
     "daily": [],

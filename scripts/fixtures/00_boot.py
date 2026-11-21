@@ -45,8 +45,9 @@ def run(ctx):
         for i in range(70):
             tap_station(page, ["counter", "oven", "prep"][i % 3]); advance(page, 300)
             if i % 4 == 3:
+                # v5.20: while Nonna's scrim is up a tap outside her cut-out is swallowed on purpose; a forced click goes to the screen point like a finger and may be eaten
                 for b in ["walk-drivers", "walk-ovens"]:
-                    tid(page, b).click()
+                    tid(page, b).click(force=True)
             if page.locator('[data-testid="skip-scene"]').count():
                 tid(page, "skip-scene").click()
         shot(page, "04-after-20s-play")

@@ -2,6 +2,7 @@
 // The visual ladder's budgets (v5.11, D2): at every footprint no ladder prop covers a badge, a head, the doorway, the
 // mat, the doorway plank, the menu, the window, the oven bank or a pickup spot, and none sits in another station's tap area.
 // Checked here from the pure modules (layout, stations, projection) only, independently of ladder.ts's own placement test.
+import { CITIES } from '../../../content/cities';
 import { TUNING } from '../../../content/tuning';
 import { levelCap } from '../../../engine/game';
 import {
@@ -317,10 +318,12 @@ describe('milestone moments', () => {
       for (const st of ['prep', 'oven', 'counter'] as const)
         for (const m of TUNING.milestones) expect(`${HEADS[id][st]}: ${MILESTONE_LINES[st][m]}`.length).toBeLessThanOrEqual(42);
   });
-  test('the speaker is the head if hired, Nonna in Downtown otherwise, nobody elsewhere', () => {
-    expect(milestoneSpeaker(true, 'Marco', true)).toBe('Marco');
-    expect(milestoneSpeaker(false, 'Finn', true)).toBe('Nonna');
-    expect(milestoneSpeaker(false, 'Finn', false)).toBeNull();
+  test('the speaker is the head if hired, the city founder in its first shop otherwise, nobody elsewhere (T114: Boston has no founder, so never Nonna)', () => {
+    expect(milestoneSpeaker(true, 'Marco', 'Nonna')).toBe('Marco');
+    expect(milestoneSpeaker(false, 'Finn', 'Nonna')).toBe('Nonna');
+    expect(milestoneSpeaker(false, 'Finn', null)).toBeNull();
+    expect(CITIES.boston.founder).toBeUndefined();
+    expect(CITIES.home.founder?.name).toBe('Nonna');
   });
   test('only a level that crosses 25 / 50 / 100 is a milestone; a jump reports the highest', () => {
     expect(crossedMilestone(24, 25)).toBe(25);

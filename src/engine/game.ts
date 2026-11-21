@@ -52,8 +52,8 @@ import {
   type Station,
 } from './pipeline';
 
-/** v6 (Todd's story): 40 scenes, interludes that hold main beats back, manager hire scenes; the migration marks skipped scenes seen. v5 was rewards: daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. */
-export const SAVE_VERSION = 6;
+/** v7 (v5.20): the Chapter 1 tutorial has 15 steps (`tutorial` 1..15, done = 16), so a v6 save's step is renumbered on load (`legacyTutorial`). v6 (Todd's story): 40 scenes, interludes that hold main beats back, manager hire scenes; the migration marks skipped scenes seen. v5 was rewards: daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. */
+export const SAVE_VERSION = 7;
 /**
  * C106: the economy marker. 2 = the v5.13 retune (costMult = orderValue, 4 h offline cap, Pier 9 $120M); 3 = the v5.16 rules
  * (managers and heads priced apart, three heads sell half speed while you are away, station prices grow at their own rates,
@@ -328,7 +328,10 @@ export function boostMult(s: GameState, now: number): number {
 }
 
 /** The tutorial's step after its last (tutorial.ts reads it from here to avoid an import cycle). */
-export const TUTORIAL_DONE = 10;
+export const TUTORIAL_DONE = 16;
+
+/** A tutorial step of a save from before v7 (nine steps, done = 10) as the step of the same moment in the 15-step script: 1..6 keep, 7 (again) → 9, 8 (buy the ovens) → 10, 9 (hire Marco) → 14, 10 (done) → 16. */
+export const legacyTutorial = (t: number): number => (t <= 6 ? t : ([9, 10, 14, 16] as const)[Math.min(t, 10) - 7]);
 
 export const newDecor = (): Record<DecorKind, number> => ({ plants: 0, flooring: 0, tables: 0, walls: 0, signage: 0 });
 
@@ -651,7 +654,11 @@ export function migrate(raw: unknown, now: number): GameState {
   if (!game.shops[game.active].built) game.active = first;
   // saves from before the tutorial: anyone who has sold pizza (or has Nonna running Downtown) skips it
   const veteran = game.shops[first].sold > 0 || game.shops[first].managed;
-  game.tutorial = int(r.tutorial, veteran ? TUTORIAL_DONE : 0, 0, TUTORIAL_DONE);
+  // a save from before v7 counts the old nine steps: renumber it; a v7 save keeps its own
+  const oldSteps = num(r.saveVersion, 0) < 7;
+  game.tutorial = oldSteps ? legacyTutorial(int(r.tutorial, veteran ? 10 : 0, 0, 10)) : int(r.tutorial, veteran ? TUTORIAL_DONE : 0, 0, TUTORIAL_DONE);
+  // a first shop that runs itself is past the tutorial, whatever step the save was at (no overlay is drawn on it, so a look step could never end)
+  if (game.tutorial >= 1 && game.shops[first].managed) game.tutorial = TUTORIAL_DONE;
   game.bonus = migrateBonus(r.bonus, game.playSeconds, now);
   game.order = migrateOrders(r.order, game.playSeconds, now, game.shops);
   // saves from before the night oven have none: the base cap

@@ -59,7 +59,9 @@ import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEAD_BARKS } from '../content/heads';
 import { getFeature } from '../engine/features';
 import { counterattack } from '../engine/features/counterattack';
-import { hintsAllowed } from '../engine/tutorial';
+import { hintsAllowed, stepsFor } from '../engine/tutorial';
+import { gainAnchor, ovenGain } from './scene/oven-gain';
+import type { BarkTable } from '../content/cities/types';
 import { reportView, slammedAsks } from '../engine/features/service';
 import { jamView } from '../engine/features/layers/shifts';
 import {
@@ -73,7 +75,18 @@ import {
   type BarkAsk,
   type BarkMem,
 } from '../engine/features/heads';
-import { BadgeRail, CameoBubble, CameoTag, DeparturePops, HireBubble, MilestoneBadge, RushPill, StationBadge, rushPillWidth } from './scene/kitchen-hud';
+import {
+  BadgeRail,
+  CameoBubble,
+  OvenGainTag,
+  CameoTag,
+  DeparturePops,
+  HireBubble,
+  MilestoneBadge,
+  RushPill,
+  StationBadge,
+  rushPillWidth,
+} from './scene/kitchen-hud';
 import {
   CHIP_ROW_HALF,
   MILE_SECONDS,
@@ -96,21 +109,9 @@ import {
 import { rushCombo, rushPill } from './rush-model';
 import { emptyCrew, stepCrew, type CrewState } from './scene/crew';
 import { emitCoin } from './pulse-bus';
-import {
-  BADGE_R,
-  COIN_FLIGHT,
-  badgeAt,
-  badgeModels,
-  badgeRowY,
-  badgeXs,
-  MIN_TAP_PT,
-  placePops,
-  popsCover,
-  spotlightCutout,
-  stationAt,
-  stationRects,
-  tutorialHand,
-} from './scene/stations';
+import { BADGE_R, COIN_FLIGHT, badgeAt, badgeModels, badgeRowY, badgeXs, MIN_TAP_PT, placePops, popsCover, stationAt, stationRects } from './scene/stations';
+import { coachReporter, type CoachInput } from './scene/coach-rects';
+import { registerTarget } from './coach/targets';
 
 export { CURB_Y, SCENE_H, sceneFit, sceneFrame, sceneView } from './scene/projection';
 
@@ -125,10 +126,6 @@ interface Props {
   onTap: () => void;
   /** A tap on one station of a shop without a GM; returns why it was refused, or null when it started. */
   onStation: (st: Station) => string | null;
-  /** Nonna's tutorial points at this station: dim the rest of the scene around it (D367). */
-  spotlight?: Station | null;
-  /** The spotlit step is a wait (G83): a breathing ring and a resting hand instead of the tap bounce. */
-  spotlightWait?: boolean;
 }
 
 /** Everything the still picture depends on: when this changes, the scene re-renders even while paused. */
@@ -145,6 +142,9 @@ const CLOUDS = [
   { x0: 360, y: 70, k: 0.6, v: 5 },
 ] as const;
 
+/** A city without lines for its heads: one frozen table, not a new `{}` every frame. */
+const NO_BARKS: Partial<BarkTable> = Object.freeze({});
+
 const STAGE_STATION: Record<Game.Stage, Station> = { prep: 'prep', ovens: 'oven', counter: 'counter', customers: 'counter' };
 const HIRE_LINE: Record<Station, string> = { prep: 'I got the dough, boss!', oven: 'Ovens are mine now.', counter: 'Next customer, please!' };
 
@@ -158,7 +158,7 @@ const seedFor = (id: string) => Array.from(id).reduce((h, ch) => (h * 31 + ch.ch
  * Re-renders on its own 15 fps clock (reading the latest game state each frame) and when the shop's
  * upgrades change. The parent's 200 ms game ticks don't re-render it, and a paused scene stays still.
  */
-export const Storefront = memo(function Storefront({ id, width, height, paused, onTap, onStation, spotlight = null, spotlightWait = false }: Props) {
+export const Storefront = memo(function Storefront({ id, width, height, paused, onTap, onStation }: Props) {
   // Opt out of React Compiler memoisation: this component deliberately reads the live store
   // (useGame.getState()) on every clock frame, which auto-memoisation could otherwise cache.
   'use no memo';
@@ -179,12 +179,19 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // where this view sits on the page, for turning a tap's pageX/pageY into scene coordinates
   const viewRef = useRef<ComponentRef<typeof View>>(null);
   const origin = useRef({ x: 0, y: 0 });
+  // a wide shop scrolls sideways (scene/scroll.ts): how far it has gone, where the finger went down (a drag past TAP_SLOP is a scroll, never a tap), and the view
+  const scrollX = useRef(0);
+  // …and the same answer tells the Coach where the stations and their dials are on the screen (scene/coach-rects.ts `coachReporter`), once the origin is known; after this scene is gone
+  // a late answer reports nothing (C162, T120). The layout and fit are the latest render's; the scroll is read when the report is made
+  const coachIn = useRef<Pick<CoachInput, 'lay' | 'fit'> | null>(null);
+  const [reporter] = useState(() => coachReporter(() => ({ ...coachIn.current!, scrollX: scrollX.current }), registerTarget));
+  // the tutorial runs: only then does a scroll in motion re-report the targets (the rest of the time a settled scroll does)
+  const coachRuns = useRef(false);
   const measureOrigin = () =>
     viewRef.current?.measureInWindow((x: number, y: number) => {
       origin.current = { x, y };
+      reporter.setOrigin(x, y);
     });
-  // a wide shop scrolls sideways (scene/scroll.ts): how far it has gone, where the finger went down (a drag past TAP_SLOP is a scroll, never a tap), and the view
-  const scrollX = useRef(0);
   const touchAt = useRef({ x: 0, y: 0 });
   const scroller = useRef<ComponentRef<typeof ScrollView>>(null);
   const opened = useRef(false);
@@ -346,6 +353,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   ).map((q) => q.rect);
   // U4: while Nonna's coach is up the scene says nothing else (tutorial.ts `hintsAllowed`)
   const hints = hintsAllowed(game);
+  // the step's targets, from the cached step table (no copy built per frame)
+  const ovenLook = game.tutorial >= 1 && game.tutorial < Game.TUTORIAL_DONE && !!stepsFor(city)[game.tutorial - 1]?.targets.includes('ovens:all');
   // the pills' words change with the counts and the bottleneck only (U10/U11), not with the clock
   const waitWords = useMemo(() => (side.waiting > 0 ? waitingText(side.waiting, slowest) : null), [side.waiting, slowest]);
   const moreWords = useMemo(() => (side.more > 0 ? queueLabel(side.more, side.diners) : null), [side.more, side.diners]);
@@ -485,7 +494,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           levels: { prep: shop.prep, oven: shop.ovens, counter: shop.counter, drivers: shop.drivers },
           hired: shop.heads,
           headNames: city.heads[id],
-          downtown: id === Game.firstHood(city),
+          founder: id === Game.firstHood(city) ? (city.founder?.name ?? null) : null,
         },
         clock,
       );
@@ -526,7 +535,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       m.hires.length > 0 ||
       !!(m.mile?.text && m.mile.at !== clock && clock - m.mile.at < 2.5);
     const before = barkMemory.get(id) ?? newBarkMem();
-    const { mem: after, bark } = nextBark(before, id, asks, wall, paused || !!g.playing || otherBubble, city.barks ?? {}); // a city without lines for the shop has silent heads (Boston's wait for the writer pass, copy.ts BOSTON_BARKS);
+    const { mem: after, bark } = nextBark(before, id, asks, wall, paused || !!g.playing || otherBubble || !hintsAllowed(g.game).toast, city.barks ?? NO_BARKS); // a city without lines for the shop has silent heads (Boston's wait for the writer pass, copy.ts BOSTON_BARKS);
     if (after !== before) barkMemory.set(id, after);
     if (bark) {
       if (bark.trigger === 'milestone' && m.mile && m.mile.at === clock) m.mile.text = bark.text;
@@ -622,6 +631,18 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     scroller.current?.scrollTo({ x: to, y: 0, animated: true });
     useGame.getState().setSceneScroll(id, to);
   };
+  // the Coach's targets (scene/coach-rects.ts): reported after layout and whenever the footprint, the oven count, the screen size or the scroll changes (an event, never a frame);
+  // the registry ignores a rect that has not moved, so a settled scroll costs nothing
+  coachIn.current = { lay, fit };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `lay` changes with the footprint and the oven count; the fit with the screen's size
+  useEffect(() => {
+    measureOrigin();
+  }, [lay, fit.s, fit.ox, fit.oy, width, height]);
+  useEffect(() => {
+    reporter.start();
+    return () => reporter.stop();
+  }, [reporter]);
+  coachRuns.current = game.tutorial >= 1 && game.tutorial < Game.TUTORIAL_DONE;
   const askRef = useRef<(t: ScrollTarget) => void>(() => {});
   askRef.current = (t) => {
     if (!view.scrolls) return;
@@ -739,6 +760,13 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
               );
             })()}
             {items.map((it) => it.el)}
+            {/* D522: the tutorial's look at the ovens (its target is `ovens:all`) shows what the upgrade bought, on the oven the coach lights */}
+            {ovenLook &&
+              (() => {
+                const gain = ovenGain(shop, city.fit);
+                const at = gain && gainAnchor(lay);
+                return gain && at ? <OvenGainTag x={at.x} y={at.y} level={gain.level} pct={gain.pct} /> : null;
+              })()}
             {rep.state === 'cold' && <ColdFrost x={frame.x0 - 20} w={frame.width + 40} frontY={frontY} />}
           </G>
           {trafficFor(CARS, rivalOpen(game, id)).map((c, i) => {
@@ -752,7 +780,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             );
           })}
           {evLook.lights && <StringLights x0={8} x1={sceneFrame.width - 8} y={104} />}
-          {/* the badges, bubbles, pops and the tutorial's spotlight sit over the room: the same moved group */}
+          {/* the badges, bubbles and pops sit over the room: the same moved group */}
           <G transform={worldT}>
             {/* the neon counter sign hangs over the register, in front of the wall (cosmetics.ts `neonSpot`; G99) */}
             {fin.neon &&
@@ -802,17 +830,19 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 y={by}
                 gm={shop.managed ? (id === Game.firstHood(city) && city.founder ? 'nonna' : city.managers[id].id) : null}
               />
+              {/* D523: while a coach step is lit its own hand points; the dial's "tap me" hand and pulse wait */}
               {badges.map((b) => (
                 <StationBadge
                   key={b.st}
                   x={bxs[b.st]}
                   y={by}
+                  st={b.st}
                   step={b.step}
                   count={b.count}
                   tone={b.tone}
-                  ready={b.ready}
-                  pulse={b.ready ? pulse : 0}
-                  nudge={b.ready ? nudge : 0}
+                  ready={b.ready && hints.refusal}
+                  pulse={b.ready && hints.refusal ? pulse : 0}
+                  nudge={b.ready && hints.refusal ? nudge : 0}
                   face={b.runner === 'head' ? b.st : null}
                   faceName={b.runner === 'gm' ? city.managers[id].id : city.heads[id][b.st]}
                   jump={line[b.st] ? rushJump : 0}
@@ -898,10 +928,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 const w = m.flash.text.length * 7 + 16;
                 const px = Math.min(frame.x0 + frame.width - 4 - w / 2, Math.max(frame.x0 + 4 + w / 2, fx));
                 return (
-                  <G
-                    transform={`translate(${px} ${fy - k * (m.flash.st === 'door' ? 24 : 14) - (spotlight ? 28 : 0)})`}
-                    opacity={k > 0.75 ? (1 - k) / 0.25 : 1}
-                  >
+                  <G transform={`translate(${px} ${fy - k * (m.flash.st === 'door' ? 24 : 14)})`} opacity={k > 0.75 ? (1 - k) / 0.25 : 1}>
                     <Rect x={-w / 2} y={-11} width={w} height={20} rx={10} fill="#2E8B3E" stroke="#fff" strokeWidth={1.4} />
                     <SvgText x={0} y={4} fontFamily={F.bold} fontSize={13} fill="#fff" textAnchor="middle">
                       {m.flash.text}
@@ -947,46 +974,6 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 color={city.neighbourhoods[nIdx].color}
               />
             )}
-            {/* D367: Nonna's tutorial spotlights its station: a dark scrim with a rounded cut-out, a pulsing gold outline
-              and a hand pointing at the station itself */}
-            {spotlight &&
-              (() => {
-                const r = rects[spotlight];
-                const { x0, y0, x1, y1 } = spotlightCutout(r);
-                const rr = 12;
-                const vb = { x: -fit.ox / fit.s - shift, y: -fit.oy / fit.s, w: cw / fit.s, h: height / fit.s };
-                const hole = `M${x0 + rr} ${y0} H${x1 - rr} Q${x1} ${y0} ${x1} ${y0 + rr} V${y1 - rr} Q${x1} ${y1} ${x1 - rr} ${y1} H${x0 + rr} Q${x0} ${y1} ${x0} ${y1 - rr} V${y0 + rr} Q${x0} ${y0} ${x0 + rr} ${y0} Z`;
-                const glow = 0.55 + 0.45 * pulse;
-                const { hx, hy, rot, scale: hs } = tutorialHand({ x0, y0, x1, y1 }, spotlightWait ? 0 : 4 * pulse);
-                return (
-                  <G>
-                    <Path d={`M${vb.x} ${vb.y} H${vb.x + vb.w} V${vb.y + vb.h} H${vb.x} Z ${hole}`} fill="#2A1408" opacity={0.6} fillRule="evenodd" />
-                    {/* D378: a 4 pt soft glow around the cut-out, then the gold outline */}
-                    <Path d={hole} fill="none" stroke="#FFD54A" strokeWidth={3 + 2 * 4} opacity={0.28 * glow} strokeLinejoin="round" />
-                    <Path d={hole} fill="none" stroke="#FFD54A" strokeWidth={3} opacity={glow} />
-                    {/* G83: on a wait step the ring breathes outward so the station being waited on still reads as the focus */}
-                    {spotlightWait && (
-                      <Path
-                        d={hole}
-                        fill="none"
-                        stroke="#fff"
-                        strokeWidth={2}
-                        opacity={0.75 * (1 - pulse)}
-                        transform={`translate(${(x0 + x1) / 2} ${(y0 + y1) / 2}) scale(${1 + 0.05 * pulse}) translate(${-(x0 + x1) / 2} ${-(y0 + y1) / 2})`}
-                      />
-                    )}
-                    <G transform={`translate(${hx} ${hy}) rotate(${rot}) scale(${hs})`}>
-                      <Path
-                        d="M0 -7 Q1.6 -7 1.6 -5 L1.6 -1 L5 -0.4 Q6.6 0 6.2 2 L5 6 Q4.4 7.4 3 7.4 L-2.4 7.4 Q-4 7.4 -4.4 6 L-5.6 1.6 Q-5.8 0 -4.2 0.2 L-1.6 1 L-1.6 -5 Q-1.6 -7 0 -7 Z"
-                        fill="#fff"
-                        stroke={INK}
-                        strokeWidth={1}
-                        strokeLinejoin="round"
-                      />
-                    </G>
-                  </G>
-                );
-              })()}
             <DeparturePops
               sceneW={frame.x0 + frame.width}
               x0={frame.x0}
@@ -1023,12 +1010,20 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             opened.current = true;
             scrollX.current = startX;
             scroller.current?.scrollTo({ x: startX, y: 0, animated: false });
+            reporter.report();
           }}
           onScroll={(e) => {
             scrollX.current = e.nativeEvent.contentOffset.x;
+            if (coachRuns.current) reporter.report();
           }}
-          onScrollEndDrag={(e) => useGame.getState().setSceneScroll(id, e.nativeEvent.contentOffset.x)}
-          onMomentumScrollEnd={(e) => useGame.getState().setSceneScroll(id, e.nativeEvent.contentOffset.x)}
+          onScrollEndDrag={(e) => {
+            useGame.getState().setSceneScroll(id, e.nativeEvent.contentOffset.x);
+            reporter.report();
+          }}
+          onMomentumScrollEnd={(e) => {
+            useGame.getState().setSceneScroll(id, e.nativeEvent.contentOffset.x);
+            reporter.report();
+          }}
           style={{ width, height }}
           contentContainerStyle={{ width: cw, height }}
         >

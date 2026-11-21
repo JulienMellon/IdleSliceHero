@@ -116,7 +116,8 @@ export interface MomentsInput {
   levels: PerStation;
   hired: Record<Station, boolean>;
   headNames: Record<Station, string>;
-  downtown: boolean;
+  /** The founder's name when this is the city's first shop and the city has one: she keeps the milestone line while no head is hired (ladder.ts `milestoneSpeaker`). */
+  founder: string | null;
 }
 
 /**
@@ -142,8 +143,8 @@ export function stepMoments(prev: Moments, now: MomentsInput, clock: number): { 
       if (st === 'drivers') continue;
       const hit = crossedMilestone(prev.levels[st], now.levels[st]);
       if (!hit) continue;
-      // a hired head speaks the copy's milestone bark (decided by the caller, if the shop's one bubble is free); Nonna, with no head hired Downtown, keeps her own line
-      const who = milestoneSpeaker(now.hired[st], now.headNames[st], now.downtown);
+      // a hired head speaks the copy's milestone bark (decided by the caller, if the shop's one bubble is free); the city's founder, with no head hired in its first shop, keeps her own line
+      const who = milestoneSpeaker(now.hired[st], now.headNames[st], now.founder);
       next.mile = { st, at: clock, text: who && !now.hired[st] ? `${who}: ${MILESTONE_LINES[st][hit]}` : null, level: now.levels[st] };
       if (now.hired[st]) asks.push(st);
     }

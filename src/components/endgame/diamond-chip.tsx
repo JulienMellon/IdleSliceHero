@@ -1,19 +1,18 @@
-// The HUD chip with the player's diamonds (HUD_CHIPS): a 40 pt round chip (a 44 pt touch area: HUD_BUTTON_SLOP) that opens the Shop screen. Shows once rewards unlock.
-// A string selector: it repaints when the diamond count changes, never per game tick.
+// The HUD chip with the player's diamonds (HUD_CHIPS): a 40 pt round chip (a 44 pt touch area: HUD_BUTTON_SLOP) that opens the Shop screen. Shows once rewards unlock or the Starter Pack has been offered (DECISIONS #47).
+// A string selector (the prefs flag is a boolean inside it): it repaints when the diamond count changes, never per game tick.
 import { router } from 'expo-router';
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { count } from '../../engine/format';
-import { rewardsUnlocked } from '../../engine/rewards';
 import { useGame } from '../../store/game-store';
 import { F } from '../../theme';
 import { haptic } from '../game-ui';
 import { DiamondIcon } from '../icons';
 import { HUD_BUTTON_SLOP, HUD_ICON } from '../tap-targets';
+import { diamondChipText } from './diamond-chip-model';
 
 export const DiamondChip = memo(function DiamondChip() {
-  const text = useGame((s) => (rewardsUnlocked(s.game) ? count(Math.floor(s.game.rewards.diamonds)) : ''));
+  const text = useGame((s) => diamondChipText(s.game, s.prefs.starterOffered));
   if (!text) return null;
   return (
     <Pressable

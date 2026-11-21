@@ -1,18 +1,17 @@
-// Nonna's tutorial card (P2): her portrait and one line, docked low (above the sidewalk row) when she points at
-// the kitchen, high (in the sky band) when she points at the sidewalk or the HUD, so it never covers its target.
+// Nonna's tutorial card (P2): her portrait and one line. The Coach overlay (coach/overlay.tsx) docks it: below the cut-out when there is room,
+// else above, so it never covers its target. Primitive props, so a frame with the same text and dock repaints nothing.
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { CoachStep } from '../engine/tutorial';
 import { F } from '../theme';
 import { Portrait } from './portrait/index';
 
-export const CoachCard = memo(function CoachCard({ step, low, high }: { step: CoachStep; low: number; high: number }) {
+export const CoachCard = memo(function CoachCard({ text, top, bottom }: { text: string; top?: number; bottom?: number }) {
   return (
-    <View testID="coach" pointerEvents="none" style={[styles.card, step.dock === 'low' ? { bottom: low } : { top: high }]}>
+    <View testID="coach" pointerEvents="none" style={[styles.card, top !== undefined ? { top } : { bottom: bottom ?? 8 }]}>
       <Portrait id="nonna-rosa" mood="happy" size={44} />
       <Text style={styles.text} maxFontSizeMultiplier={1.3}>
-        {step.text}
+        {text}
       </Text>
     </View>
   );

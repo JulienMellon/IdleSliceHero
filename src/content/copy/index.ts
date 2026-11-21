@@ -8,12 +8,13 @@ import { LINES } from './home/lines';
 import { COPY as MENU } from './home/menu';
 import { COPY as SHIFTS } from './home/shifts';
 import { COPY as STARS } from './home/stars';
+import { COPY as TUTORIAL } from './home/tutorial';
 import { fill, type CopyVars } from './fill';
 
 export { fill, type CopyVars } from './fill';
 
 /** Every home line, by key (the keys of the tables are disjoint: copy.test.ts checks it). */
-export const HOME_COPY: Readonly<Record<string, string>> = { ...ENDGAME, ...LAYER_COPY, ...MENU, ...SHIFTS, ...STARS, ...LINES };
+export const HOME_COPY: Readonly<Record<string, string>> = { ...ENDGAME, ...LAYER_COPY, ...MENU, ...SHIFTS, ...STARS, ...TUTORIAL, ...LINES };
 
 /** The line a city says in place of the home one for `key` (its pack's `copy`), or undefined when it has none. */
 export function cityLine(city: string | undefined, key: string): string | undefined {
