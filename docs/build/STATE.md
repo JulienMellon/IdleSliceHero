@@ -43,3 +43,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 U2 rewards-story fixtures fixed (25 pass). U1 goal-model fix running.
 - 2026-11-21 S8 U1 goal-model fixtures fixed (26 pass). E2 resumed for step 2.
 - 2026-11-21 S8 E2 done (step 2 fits real ch1; 2876 tests). U2 casts dropped. pacing moved: downtown-2 4.5->4.9 (+8.9%). Verify v5.21.
+- 2026-11-21 S8 verify v5.21 FAIL: True 8 errors (148_u4, 98_u3, tasks/claim-sheet shots expect Daily; drawer opens on Story), layout 0, 10 new 121 changed. Sent to U2.
