@@ -233,6 +233,21 @@ describe('the goal bar is the next chapter task (U1)', () => {
     expect(shortTask('Read the Downtown shop report', 'Downtown')).toBe('Read the shop report');
     expect(withoutShop('Hire Lucia, head baker', 'Downtown')).toBe('Hire Lucia, head baker');
   });
+  test("a win task uses the copy's own short line, and a bid task its label without the shop", () => {
+    const at = (n: number) => HOME_CHAPTERS[n - 1];
+    const win = at(HOME_CHAPTERS.findIndex((c) => c.sceneId === 'suburbs-4') + 1);
+    const g = chapterGoal(
+      doneKeys({ ...G.newGame(0), seenScenes: HOME_CHAPTERS.slice(0, 7).map((x) => x.sceneId) }, [
+        ...OPENING,
+        ...win.tasks.filter((t) => t.kind !== 'win').map((t) => t.key),
+      ]),
+    )!;
+    expect(g.key).toBe(win.tasks.find((t) => t.kind === 'win')!.key);
+    expect(g.label).toBe('Ch 8 \u00B7 Beat MegaSlice in Suburbs');
+    expect(g.short).toBe('Ch 8 \u00B7 Beat MegaSlice');
+    expect(g.tiny).toBe('Ch 8 \u00B7 Beat');
+    expect(shortTask('Win the auction in Waterfront', 'Waterfront')).toBe('Win the auction');
+  });
   test('G117: every task of every chapter shows whole words, never a cut letter, on a bar of 296, 351 and 369 pt (the line goalLine picks)', () => {
     const bad: string[] = [];
     for (const g of everyTaskGoal())

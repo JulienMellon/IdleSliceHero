@@ -4,7 +4,7 @@ import { HOME_SCENES } from '../content/scenes/home';
 import { finaleSeen } from '../engine/features/counterattack';
 import { masteryMax, masteryTotal, nextStar } from '../engine/features/mastery';
 import { cityOf } from '../content/cities';
-import { t } from '../content/copy';
+import { lineOf, t } from '../content/copy';
 import { chapterReady, chaptersOf, currentChapter, nextTask } from '../engine/chapters';
 import { def, type GameState } from '../engine/game';
 import { C } from '../theme';
@@ -241,7 +241,10 @@ export function chapterGoal(g: GameState, lastSceneEndPlay: number | null = null
   const row = nextTask(g);
   if (row) {
     const shown = storyTask(g, row.task);
-    const short = shortTask(shown.label, def(row.task.shop, cityOf(g)).name);
+    const shop = def(row.task.shop, cityOf(g)).name;
+    // a kind with its own short line in the copy ("Beat MegaSlice"), else the label made short
+    const own = lineOf(`task.kind.${row.task.kind}.short`, g.city);
+    const short = own !== undefined ? t(`task.kind.${row.task.kind}.short`, { target: row.task.target, shop }, g.city) : shortTask(shown.label, shop);
     return {
       label: `${ch} \u00B7 ${shown.label}`,
       short: `${ch} \u00B7 ${short}`,

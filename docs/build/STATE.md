@@ -4,8 +4,8 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.21                   # v5.20 closed 2026-11-21 (r3: critic SATISFIED, codecritic APPROVED, story advisory minors)
-step: fix                        # setup | waves | verify | review | fix | close
-round: r1              # r1 | r2 | r3
+step: verify                        # setup | waves | verify | review | fix | close
+round: r2              # r1 | r2 | r3
 last_shots: v5.21                   # r1 verify: True 0 [], layout 0 new; 10 new 126 changed vs v5.20-r3
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
@@ -53,3 +53,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 r2 U1 done (G116 G117 D532 D534 D536 Go, D541 toast, U31). E1 sent sceneReady follow-up; W2 r2 running.
 - 2026-11-21 S8 r2 E1 sceneReady unified (2895/2895). W2 r2 running.
 - 2026-11-21 S8 r2 W2 done (S76 S77 S79-S85; 34 keys changed, 1 added). W2 writing S74 line; U2 syncing copy table.
+- 2026-11-21 S8 r2 fixes done (U1 win.short; E1 S74 scene line, golden re-recorded; 2896 tests). Verify v5.21-r2.
