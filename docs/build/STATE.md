@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.20-r3               # r3 verify: True 0 [], layout 0 new; 0 new 23 changed vs v5.20-r2
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
-  E1 done  W2 running  U1 todo  U2 todo  E2 todo
+  E1 done  W2 done  U1 running  U2 running  E2 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.20/review-r3-critic.md (r3 SATISFIED; bug 0 major 0 minor 5; E3 S2; open D530 D481 D519 D493 D495)
   code:   docs/build/v5.20/review-r3-code.md (r3 APPROVED; blocker/high 0 medium 1 low 15; E1 U7 S1 N7)
@@ -33,3 +33,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 v5.21 wave 1: E1 running (W2 waits for chapters.md).
 - 2026-11-21 S8 E1 partial (chapters.md written; pacing moved: downtown-2 4.5->4.9). W2 launched. Needs: boston fixture saveVersion 8, snapshots regen, storyWaitHint callers (U1); open Q: rate/noMissed tasks hold the EAGER sim at waterfront-2.
 - 2026-11-21 S8 E1 done (snapshots regen; 2838/2838, tsc clean). U1 extra: remove storyWaitHint callers. W2 running.
+- 2026-11-21 S8 W2 done (COPY-v5.21.md). Wave 1 committed. Wave 2: U1 + U2 launched (U2 extra: W2 notes on spoiler titles, noMissed {target} in s).
