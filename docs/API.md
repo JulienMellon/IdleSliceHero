@@ -79,17 +79,17 @@
 - types: CoachMode, CoachTargetId
 
 ## src/engine/cutscene-input.ts
-- LINE_LOCKOUT_MS — src/engine/cutscene-input.ts:8 — Taps are ignored for this long after a line appears, so a tapping player can't blow past it.
-- SCENE_LOCKOUT_MS — src/engine/cutscene-input.ts:10 — …and for this long after a scene opens.
-- SCENE_GATE_AFTER_TAP_MS — src/engine/cutscene-input.ts:12 — A new scene waits until the player has stopped tapping the kitchen for this long.
-- canAdvance(msSinceLineShown: number, msSinceSceneOpen: number): boolean — src/engine/cutscene-input.ts:14
-- sceneMayOpen(nowMs: number, lastKitchenTapMs: number): boolean — src/engine/cutscene-input.ts:19 — True when a pending scene may open now (the last kitchen tap was long enough ago).
-- sceneHeading(scene: Pick<Scene, 'title' | 'neighborhood' | 'beat' | 'panels'>, panel: number, showReward: boo… — src/engine/cutscene-input.ts:31 — The heading shown while a scene plays.
-- resolveScene(scene: Scene, seenScenes: readonly string[]): Scene — src/engine/cutscene-input.ts:37 — The scene as it plays for this save: a line that waits on another scene (`ifSeen`: a manager speaki…
-- scenePacesGap(scene: Pick<Scene, 'trigger'>): boolean — src/engine/cutscene-input.ts:44 — Whether the scene's end restarts the 90 s story gap.
-- sceneReady(game: GameState, scene: Scene, lastSceneEndPlay: number | null): boolean — src/engine/cutscene-input.ts:50 — Whether a waiting scene may play now (v3.7 pacing).
-- pickScene(game: GameState, scenes: Scene[], nowMs: number, lastKitchenTapMs: number, playing: boolean, lastSc… — src/engine/cutscene-input.ts:64 — The scene to open now, or null while one is playing, the player is still tapping the kitchen, or pa…
-- resumeSceneEnd(prev: number | null, awaySeconds: number, playSeconds: number): number | null — src/engine/cutscene-input.ts:81 — The story gap to keep when the app comes back to the foreground.
+- LINE_LOCKOUT_MS — src/engine/cutscene-input.ts:9 — Taps are ignored for this long after a line appears, so a tapping player can't blow past it.
+- SCENE_LOCKOUT_MS — src/engine/cutscene-input.ts:11 — …and for this long after a scene opens.
+- SCENE_GATE_AFTER_TAP_MS — src/engine/cutscene-input.ts:13 — A new scene waits until the player has stopped tapping the kitchen for this long.
+- canAdvance(msSinceLineShown: number, msSinceSceneOpen: number): boolean — src/engine/cutscene-input.ts:15
+- sceneMayOpen(nowMs: number, lastKitchenTapMs: number): boolean — src/engine/cutscene-input.ts:20 — True when a pending scene may open now (the last kitchen tap was long enough ago).
+- sceneHeading(scene: Pick<Scene, 'title' | 'neighborhood' | 'beat' | 'panels'>, panel: number, showReward: boo… — src/engine/cutscene-input.ts:32 — The heading shown while a scene plays.
+- resolveScene(scene: Scene, seenScenes: readonly string[]): Scene — src/engine/cutscene-input.ts:38 — The scene as it plays for this save: a line that waits on another scene (`ifSeen`: a manager speaki…
+- scenePacesGap(scene: Pick<Scene, 'trigger'>): boolean — src/engine/cutscene-input.ts:45 — Whether the scene's end restarts the 90 s story gap.
+- sceneReady(game: GameState, scene: Scene, lastSceneEndPlay: number | null): boolean — src/engine/cutscene-input.ts:51 — Whether a waiting scene may play now (v3.7 pacing).
+- pickScene(game: GameState, scenes: Scene[], nowMs: number, lastKitchenTapMs: number, playing: boolean, lastSc… — src/engine/cutscene-input.ts:57 — The scene to open now, or null while one is playing, the player is still tapping the kitchen, or pa…
+- resumeSceneEnd(prev: number | null, awaySeconds: number, playSeconds: number): number | null — src/engine/cutscene-input.ts:74 — The story gap to keep when the app comes back to the foreground.
 
 ## src/engine/features/counterattack.ts
 - KEY — src/engine/features/counterattack.ts:48
