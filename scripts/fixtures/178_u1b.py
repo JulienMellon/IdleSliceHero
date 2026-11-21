@@ -55,7 +55,7 @@ def run(ctx):
             if page.locator(f'[data-testid="{t}"]').count():
                 tid(page, t).click(); advance(page, 800)
         expect_text(page, "goal", r"Next\s+scene\s+in")
-        expect_text(page, "goal", r"Ready")
+        expect_text(page, "goal", r"\d:\d\d")  # the countdown sits in the amount slot; "Ready" only at 0:00
         shot(page, "178c-goal-ready", 0.5)
     except Exception as e:
         report["errors"].append(f"U1b 178c failed: {e}")
