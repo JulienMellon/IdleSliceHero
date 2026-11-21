@@ -38,3 +38,4 @@ next: start S7-v5.20.md. v5.20 scope set by Julien 2026-11-20 (docs/PLAN-v5.20-o
 - 2026-11-20 S7 wave 2 done: C2 U0 done, spotlight props removed. tsc 0, 2710/2710. C3 launched.
 - 2026-11-20 S7 C3 partial (15 steps, SAVE_VERSION 7, 2724/2724; drawer:close missing from union). Sent: C1 add drawer:close + fix 153_c1; C2 ovens:all lights one oven (shot 166). Then C3 registers drawer:close.
 - 2026-11-20 S7 wave 3 done: C3 done (drawer:close registered, 2725/2725). Open design question: buying Ovens lv2 draws 1 oven (scene: 1+floor((lv-1)/8)) but tutorial.9/10/11 promise two ovens.
+- 2026-11-21 S7 Julien: reword the second-oven lines (no ladder change). Sent to W1 writer; C3 copies them into src/content/copy/home/tutorial.ts.
