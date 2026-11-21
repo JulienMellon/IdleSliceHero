@@ -4,14 +4,14 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.20                   # v5.19-test closed 2026-11-19 (r1: critic SATISFIED, codecritic APPROVED)
-step: review                       # setup | waves | verify | review | fix | close
+step: fix                          # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.20                  # r1 verify: True 0 [], layout 0 new; 17 new 12 changed vs v5.20-base
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
   W1 done  C1 done  C2 done  U0 done  C3 done
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.19-test/review-r1-critic.md (r1 SATISFIED; bug 0 major 0 minor 4 = carried D481 D519 + parked D493 D495; E2 S2)
+  critic: docs/build/v5.20/review-r1-critic.md (r1 NOT SATISFIED; bug 1 major 3 minor 12; E4 U6 S6; G112 bug dial pill outside cut-out; D520 D522 D521(needs-owner) major)
   code:   docs/build/v5.20/review-r1-code.md (r1 APPROVED; blocker/high 0 medium 3 low 25; E3 U12 S6 N7; C158 C156 carried, A42 coach flow inline in index.tsx)
   story:  docs/build/v5.20/review-r1-story.md (r1 NOT SATISFIED; bug 0 major 1 minor 6; U3 T4; S68 major: tutorial.8 says oven next, goal bar says hire Marco)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
@@ -44,3 +44,4 @@ next: start S7-v5.20.md. v5.20 scope set by Julien 2026-11-20 (docs/PLAN-v5.20-o
 - 2026-11-21 S7 C1: verify errors were fixtures (force clicks in 00_boot/148_u4; 98_u3 reseeded). Found stuck-tutorial risk (migrated step 14->15 look on managed shop never ends); sent to C3.
 - 2026-11-21 S7 C3 fixed stuck tutorial (managed first shop ends it; look steps self-end after 6 s; migration), 2743/2743. Verify rerun.
 - 2026-11-21 S7 verify v5.20 pass: True 0 [], layout 0, 17 new 12 changed. r1 reviews launched (critic, codecritic, storycritic).
+- 2026-11-21 S7 r1 gate not met (critic NOT SATISFIED bug 1 major 3; story major S68; code APPROVED). Fix round r2 next; D521 asked of Julien.
