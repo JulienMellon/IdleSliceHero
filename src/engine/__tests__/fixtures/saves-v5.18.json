@@ -508,7 +508,7 @@
    }
   },
   "migrated": {
-   "saveVersion": 7,
+   "saveVersion": 8,
    "city": "home",
    "economy": 3,
    "cash": 4859291.338800002,
@@ -1011,6 +1011,18 @@
      "stars": 0,
      "cityStart": 0,
      "masteryBanked": 0
+    },
+    "chapters": {
+     "best": {},
+     "calm": {},
+     "done": [
+      "task.suburbs-3.2",
+      "task.waterfront-2.2",
+      "task.university-1.1",
+      "task.university-1.2"
+     ],
+     "report": false,
+     "run": {}
     }
    }
   }
@@ -1571,7 +1583,7 @@
    }
   },
   "migrated": {
-   "saveVersion": 7,
+   "saveVersion": 8,
    "city": "boston",
    "economy": 3,
    "cash": 2965155408,

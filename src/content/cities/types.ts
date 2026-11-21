@@ -100,6 +100,39 @@ export interface CityBid {
   afterScene: string;
 }
 
+/**
+ * What a chapter task asks (v5.21): an outcome, never a purchase.
+ * serve = pizzas sold in a shop · rate = pizzas a minute in a shop, held 30 s · hire = a named station head (or the manager) · build = a shop is built ·
+ * win = the shop's rival challenge is won · bid = the city's bid is won · noMissed = no missed orders for `target` seconds · playtime = `target` play
+ * seconds after scene `scene` · report = the shop report has been opened (done by itself until the report tutorial reads it).
+ */
+export type ChapterTaskKind = 'serve' | 'rate' | 'hire' | 'build' | 'win' | 'bid' | 'noMissed' | 'playtime' | 'report';
+
+export interface ChapterTask {
+  kind: ChapterTaskKind;
+  /** The shop the task counts in. */
+  shop: NeighborhoodId;
+  /** The count, the pizzas a minute, or the seconds (1 for the kinds that are done or not). */
+  target: number;
+  /** The copy key of the task's label: `task.<sceneId>.<n>` (n from 1). Also the task's id in the save. */
+  key: string;
+  /** `hire`: which head, or the General Manager. */
+  head?: HeadKind | 'manager';
+  /** `playtime`: the scene the seconds count from. */
+  scene?: string;
+}
+
+/** A main beat's chapter: 2 to 4 tasks, the first being today's gate made visible. The beat plays when every task is done. */
+export interface Chapter {
+  /** The beat this chapter leads to. */
+  sceneId: string;
+  /** The copy key stem: `chapter.<sceneId>` (`.title` and `.teaser` are its lines). */
+  key: string;
+  tasks: ChapterTask[];
+  /** The beat plays by itself (the first, which opens the game): the tasks are shown but the beat does not wait for them. */
+  free?: true;
+}
+
 export interface Lieutenant {
   id: CharacterId;
   name: string;
@@ -144,6 +177,8 @@ export interface CityDef {
   neighbourhoods: NeighborhoodDef[];
   /** The whole story in play order. */
   scenes: Scene[];
+  /** The main beats' chapters in story order (v5.21). A scene with no chapter keeps its own trigger; a city without any (Boston) plays by triggers alone. */
+  chapters?: Chapter[];
   /** One perk per finale. */
   perks: Partial<Record<NeighborhoodId, PerkDef>>;
   /** The layer each neighbourhood plays (null: none). */

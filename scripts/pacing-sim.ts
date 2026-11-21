@@ -9,6 +9,7 @@ import { applyCfg, options, reportLines, run } from './review/sim2';
 import { BOSTON_TOLERANCE, franchiseRun } from './pacing-fit';
 
 import { HOME_FIT } from '../src/content/cities/home/fit';
+import { HOME_CHAPTERS } from '../src/content/cities/home/chapters';
 import { NEIGHBORHOODS } from '../src/content/cities/home/data';
 const r = run('continuous');
 const s = r.s;
@@ -17,7 +18,46 @@ const KIND = (id: string): string => {
   const t = HOME_SCENES.find((x) => x.id === id)!.trigger;
   return t.kind === 'after' ? `after ${t.scene} +${t.seconds}s` : t.kind;
 };
-const events: [number, string][] = r.scenes.map((x) => [x.wall, `${x.id} [${KIND(x.id)}]`]);
+/** v5.21 (card E1): the minutes each main beat played at in v5.20 (before the chapters), from this script's own table. */
+const V520_MIN: Record<string, number> = {
+  'downtown-1': 0.0,
+  'downtown-2': 4.5,
+  'downtown-3': 7.9,
+  'downtown-4': 11.4,
+  'suburbs-1': 17.8,
+  'suburbs-2': 23.7,
+  'suburbs-3': 30.8,
+  'suburbs-4': 38.0,
+  'waterfront-1': 174.9,
+  'waterfront-2': 183.6,
+  'waterfront-3': 217.0,
+  'waterfront-4': 239.6,
+  'university-1': 800.0,
+  'university-2': 884.3,
+  'university-3': 939.4,
+  'university-4': 1401.4,
+  'industrial-1': 1620.5,
+  'industrial-2': 1711.8,
+  'industrial-3': 1741.5,
+  'industrial-4': 2234.4,
+  'uptown-1': 2281.7,
+  'uptown-2': 2379.4,
+  'uptown-3': 2518.5,
+  'uptown-4': 4438.4,
+};
+const movedBeats: string[] = [];
+/** The chapter column: the chapter's task kinds, and where the beat plays now against v5.20 (a beat more than 5% off is flagged). */
+const CHAPTER = (id: string, wall: number): string => {
+  const c = HOME_CHAPTERS.find((x) => x.sceneId === id);
+  if (!c) return '';
+  const before = V520_MIN[id];
+  const now = wall / 60;
+  const pct = before >= 1 ? ((now - before) / before) * 100 : 0;
+  const moved = Math.abs(pct) > 5;
+  if (moved) movedBeats.push(`${id} ${before.toFixed(1)} -> ${now.toFixed(1)} min (${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%)`);
+  return ` · chapter ${c.tasks.map((t) => t.kind).join('+')} · v5.20 ${before.toFixed(1)} -> ${now.toFixed(1)} (${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%)${moved ? ' MOVED' : ''}`;
+};
+const events: [number, string][] = r.scenes.map((x) => [x.wall, `${x.id} [${KIND(x.id)}]${CHAPTER(x.id, x.wall)}`]);
 for (const b of r.buys) {
   const l = b.label;
   if (
@@ -41,6 +81,7 @@ for (const [t, e] of events) {
   console.log(`${(t / 60).toFixed(1).padStart(7)} min  ${scene ? `(+${((t - prev) / 60).toFixed(1)})` : '        '}  ${e}`);
   if (scene) prev = t;
 }
+console.log(`chapter beats more than 5% off v5.20: ${movedBeats.length ? movedBeats.join(', ') : 'none'}`);
 const played = new Set(r.scenes.map((x) => x.id));
 const missing = HOME_SCENES.filter((x) => !played.has(x.id)).map((x) => x.id);
 console.log(

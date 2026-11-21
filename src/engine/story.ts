@@ -5,6 +5,7 @@ import { cityOf, findHood } from '../content/cities';
 import { STORY_PACING } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { challengeWon, rivalOpen } from './features/layers/rival';
+import { chapterDone, chapterOf } from './chapters';
 import { firstHood, sceneId, type GameState } from './game';
 
 /** Every scene a scene waits for: its `requires`, and the scene an `after` trigger counts from. */
@@ -37,10 +38,16 @@ export function triggerPasses(s: GameState, scene: Scene): boolean {
   }
 }
 
-/** The scene's trigger has passed and every scene it requires has been seen. */
+/**
+ * The scene may play: every scene it requires has been seen and its trigger has passed (the day's pacing is `sceneReady`'s). A main beat with a
+ * chapter (v5.21) also waits for every task of the chapter, whose first task is the trigger made visible, so the chapter only ever adds to the
+ * wait. A scene with no chapter (an interlude, a hire scene, Boston's story) and a chapter marked `free` (the opening) keep the trigger alone.
+ */
 export function sceneTriggered(s: GameState, scene: Scene): boolean {
   if (scene.requires?.some((id) => !s.seenScenes.includes(id))) return false;
-  return triggerPasses(s, scene);
+  if (!triggerPasses(s, scene)) return false;
+  const chapter = chapterOf(s, scene.id);
+  return !chapter || !!chapter.free || chapterDone(s, chapter);
 }
 
 /** Unseen scenes whose triggers pass, in story order (earliest first); main beats come before interludes when both are ready. */
@@ -65,6 +72,8 @@ const capital = (id: string) => findHood(id)?.name ?? id.charAt(0).toUpperCase()
 /**
  * A line for the goal bar when a main beat has triggered but is held behind a finale the player still has to earn (Uptown behind
  * Industrial's, University behind the Pier 9 bid). Holds that clear with play time return null: they clear on their own.
+ * @deprecated v5.21: the chapter's `win` / `bid` task says it. Unused by the engine; its last callers (components/slots.tsx, cutscene/story-hint-model.ts)
+ * go with the goal bar (card U1), then this goes.
  */
 export function storyWaitHint(s: GameState, scenes: readonly Scene[] = cityOf(s).scenes): string | null {
   const seen = new Set(s.seenScenes);

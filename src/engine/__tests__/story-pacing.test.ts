@@ -4,6 +4,7 @@ import { STORY_PACING } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { pickScene, resolveScene, resumeSceneEnd, sceneHeading, sceneReady, scenePacesGap } from '../cutscene-input';
 import * as G from '../game';
+import { withTasksDone } from './chapter-helpers';
 
 import { HOME_FIT } from '../../content/cities/home/fit';
 import { PERKS, PIER9_BID } from '../../content/cities/home/data';
@@ -14,12 +15,14 @@ const withShop = (s: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G
   ...s,
   shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } },
 });
-const seenUpTo = (ids: string[], playSeconds = 0, sceneAt: Record<string, number> = {}): G.GameState => ({
-  ...G.newGame(0),
-  seenScenes: ids,
-  playSeconds,
-  sceneAt,
-});
+// v5.21: these tests are about the trigger and the pacing; the chapters' teaching tasks are done (chapters.test.ts is about those)
+const seenUpTo = (ids: string[], playSeconds = 0, sceneAt: Record<string, number> = {}): G.GameState =>
+  withTasksDone({
+    ...G.newGame(0),
+    seenScenes: ids,
+    playSeconds,
+    sceneAt,
+  });
 const LATE = 1e9; // ms: long after any kitchen tap
 /** `id`'s rival challenge has been won (the rival feature's own state: features/layers/rival.ts). */
 const won = (s: G.GameState, id: NeighborhoodId): G.GameState => ({ ...s, x: { ...s.x, [LAYER_KEYS.rival]: { won: [id], challenge: null, retryAt: {} } } });
@@ -74,7 +77,7 @@ describe('save migration v2 → v3', () => {
       seenScenes: ['suburbs-4', 'waterfront-4'],
     };
     const m = G.migrate(old, 0);
-    expect(G.SAVE_VERSION).toBe(7);
+    expect(G.SAVE_VERSION).toBe(8);
     expect(m.playSeconds).toBe(0);
     expect(m.sceneAt).toEqual({});
     expect(m.shops.suburbs.perk).toBe(true);
