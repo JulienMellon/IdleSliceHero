@@ -20,7 +20,6 @@ next: resume S8-v5.21.md: FIRST launch programmer on docs/build/v5.21/card-E1b.m
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-21 S8 Julien asked for card S4 (sharded screenshot run) in v5.22: docs/build/v5.22/card-S4.md, appended to v5.22 VERSION.md; add 'S4 todo' to the v5.22 cards line at close.
 - 2026-11-21 S8 verify v5.21-r2 pass: True 0 [], layout 0, 1 new 141 changed. r2 re-checks launched.
 - 2026-11-21 S8 r2 gate not met (critic major 3: D532 D536 D541; code APPROVED; story minors carry). Fix round r3: U1 + U2, then E1 + E2. D532 call: a hire/build chapter task may show cash vs its own price; the bar never offers a non-task purchase.
 - 2026-11-21 S8 r3 U2 done (D536 shots 175b-d, C173 free row 0 gems, T126). E1 r3 launched (+chapterDiamonds); U1 r3 running.
@@ -30,3 +29,4 @@ next: resume S8-v5.21.md: FIRST launch programmer on docs/build/v5.21/card-E1b.m
 - 2026-11-21 S8 resumed: deps installed (npm ci, playwright 1.63.0); E1b launched before r3 verify.
 - 2026-11-21 S8 E1b done (gate on beat 3 of prior shop; 2917 tests; EAGER max wait 1940.8 vs tuned 1919.8 at uptown-4, so beat 3 kept per acceptance; beat 4 broke 3 pacing tests). Needs index.tsx tasks param -> U1.
 - 2026-11-21 S8 r3 U1 done (locked-lot tap opens Story tab, shot 180b; 2918 tests). Verify v5.21-r3 next.
+- 2026-11-21 S8 r3 pre-verify: tsc clean, format ok, 2918/2918, pacing same (downtown-2 +8.9%; EAGER max 1940.8 vs tuned 1919.8). Shots v5.21-r3 running.
