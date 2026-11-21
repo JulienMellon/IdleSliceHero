@@ -76,7 +76,7 @@ describe('tutorial', () => {
     note();
     s = run(s, 5);
     note();
-    // step 6: the cash, until the screen has shown it (the sale is in, so it is a look; a tap or 2.5 s)
+    // step 6: the cash, until the screen has shown it (the sale is in, so it is a look; a tap or the look timer)
     expect(s.tutorial).toBe(6);
     expect(coachStep(s)?.mode).toBe('look');
     // (the cash goes elsewhere here, so the free "save up" step is shown: a first sale can already pay for the ovens)

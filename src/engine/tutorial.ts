@@ -2,7 +2,7 @@
 // lights (coach targets, components/coach/targets.ts), a mode (what the player can do meanwhile) and a condition that ends it.
 // Pure: the step number is saved (GameState.tutorial); an existing player who has already sold pizza starts at "done".
 // Most steps end on the game's own state. Three kinds end on something only the screen knows, which it tells us through `tutorialNote`:
-// a `look` step (6, 11, 15) once it has been seen (a tap or 2.5 s), the drawer opening (12) and the drawer closing (13).
+// a `look` step (6, 11, 15) once it has been seen (a tap, or the overlay's `LOOK_MS`; `LOOK_FALLBACK_MS` when it cannot be drawn), the drawer opening (12) and the drawer closing (13).
 import { cityOf, type CityDef } from '../content/cities';
 import { t } from '../content/copy';
 import type { CoachMode } from '../components/coach/steps';
@@ -18,7 +18,7 @@ export interface CoachStep {
   text: string;
   /** What the overlay cuts out: none for a free step (only Nonna's card shows). */
   targets: CoachTargetId[];
-  /** tap: the player taps the lit spot; wait: nothing to tap (the ring breathes); look: a moment to see it (a tap or 2.5 s ends it); free: play on. */
+  /** tap: the player taps the lit spot; wait: nothing to tap (the ring breathes); look: a moment to see it (a tap or the overlay's `LOOK_MS` ends it); free: play on. */
   mode: CoachMode;
 }
 
@@ -140,7 +140,7 @@ export function tutorialAdvance(s: G.GameState): G.GameState {
   return t === s.tutorial ? s : { ...s, tutorial: t };
 }
 
-/** What the screen can tell the tutorial: a `look` step was seen (a tap or 2.5 s), the upgrades drawer opened, the drawer closed. */
+/** What the screen can tell the tutorial: a `look` step was seen (a tap, or the overlay's `LOOK_MS`; `LOOK_FALLBACK_MS` when it cannot be drawn), the upgrades drawer opened, the drawer closed. */
 export type TutorialNote = 'look' | 'drawer-open' | 'drawer-closed';
 const ENDED_BY: Readonly<Record<number, TutorialNote>> = { 6: 'look', 11: 'look', 12: 'drawer-open', 13: 'drawer-closed', 15: 'look' };
 

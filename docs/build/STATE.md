@@ -53,3 +53,4 @@ next: start S7-v5.20.md. v5.20 scope set by Julien 2026-11-20 (docs/PLAN-v5.20-o
 - 2026-11-21 S7 verify v5.20-r2 pass: True 0 [], layout 0, 30 changed. r2 re-checks launched.
 - 2026-11-21 S7 r2 gate not met (critic minor 8 > 3; code APPROVED; story minors carry). Fix round r3: C1 + C2, then C3, then U0.
 - 2026-11-21 S7 r3 C1 done (D525 D526 D531 hand; 2775 tests). D531 oven rect sent to C2; C3 r3 launched (+D528).
+- 2026-11-21 S7 r3 C3 done (D528 goal bar shows story goal steps 1-11, C166; 2775 tests). U0 r3 check sent; C2 still running.
