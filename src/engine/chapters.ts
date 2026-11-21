@@ -215,10 +215,13 @@ export function chaptersTick(g: GameState, dt: number, now: number): GameState {
 
 // ---------- selectors ----------
 
-/** The chapter the player is on: the first in the story whose beat has not played, or null after the last. */
+/**
+ * The chapter the player is on: the first in the story whose beat has not played, or null after the last. A `free` chapter (the opening's: its beat
+ * plays at the start and waits for nothing) stays current after its beat until every task is done, so the tutorial's tasks show on the bar and the
+ * Story tab; it gates no beat and pays nothing, and the chapter after it counts in the background meanwhile (`openChapters`).
+ */
 export function currentChapter(g: GameState): Chapter | null {
-  const seen = new Set(g.seenScenes);
-  return chaptersOf(g).find((c) => !seen.has(c.sceneId)) ?? null;
+  return chaptersOf(g).find((c) => !(g.seenScenes.includes(c.sceneId) && (!c.free || c.tasks.every((t) => taskProgress(g, t).done)))) ?? null;
 }
 
 export interface TaskRow {
@@ -247,7 +250,7 @@ export function nextTask(g: GameState): TaskRow | null {
 export function chapterReady(g: GameState, lastSceneEndPlay: number | null = null): { secondsLeft: number } | null {
   const c = currentChapter(g);
   const scene: Scene | undefined = c ? scenesById(cityOf(g).scenes).get(c.sceneId) : undefined;
-  if (!c || !scene || !chapterDone(g, c) || scene.requires?.some((id) => !g.seenScenes.includes(id))) return null;
+  if (!c || c.free || !scene || !chapterDone(g, c) || scene.requires?.some((id) => !g.seenScenes.includes(id))) return null;
   if (!triggerPasses(g, scene)) return null;
   const kind = scene.trigger.kind;
   // the player caused it: a new pizzeria, the bid, a won challenge (the same list as `sceneReady`)
@@ -273,6 +276,9 @@ export function migrateChapters(g: GameState, fromVersion: number): GameState {
   const scenes = scenesById(cityOf(g).scenes);
   const c = saveOf(g);
   let done = c.done;
+  // the opening's chapter (`free`): a save that is past it (its beat played) counts it done, whatever the tutorial left undone
+  for (const ch of chaptersOf(g))
+    if (ch.free && g.seenScenes.includes(ch.sceneId)) for (const t of ch.tasks) if (!done.includes(t.key)) done = [...done, t.key];
   for (const ch of openChapters(g)) {
     const scene = scenes.get(ch.sceneId);
     const waiting = !!scene && triggerPasses(g, scene);

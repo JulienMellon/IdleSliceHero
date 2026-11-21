@@ -35,7 +35,12 @@ const withShop = (s: G.GameState, id: NeighborhoodId, patch: Partial<G.Shop>): G
   shops: { ...s.shops, [id]: { ...s.shops[id], ...patch } },
 });
 const saved = (s: G.GameState, patch: Partial<ReturnType<typeof saveOf>>): G.GameState => ({ ...s, x: { ...s.x, chapters: { ...saveOf(s), ...patch } } });
-const seen = (ids: string[], extra: Partial<G.GameState> = {}): G.GameState => ({ ...G.newGame(0), seenScenes: ids, ...extra });
+const OPENING = chapter('downtown-1').tasks.map((t) => t.key);
+/** A player past the tutorial: the opening's tasks are done (`free` chapter 1 stays current until they are), `ids` have been seen. */
+const seen = (ids: string[], extra: Partial<G.GameState> = {}): G.GameState => {
+  const g = G.newGame(0);
+  return { ...g, seenScenes: ids, x: { ...g.x, chapters: { ...saveOf(g), done: OPENING } }, ...extra };
+};
 /** Every scene before `id` in the story has been seen. */
 const before = (id: string, extra: Partial<G.GameState> = {}): G.GameState =>
   seen(
@@ -261,6 +266,45 @@ describe('the tick', () => {
   it('survives a long tick (a 40 s step is one window)', () => {
     const g = chaptersTick(live(), 40, 0);
     expect(saveOf(g).best[t4(2).key]).toBeGreaterThan(0);
+  });
+});
+
+describe('the opening chapter (free)', () => {
+  const opened = () => seen(['downtown-1'], { x: G.newGame(0).x });
+  it('stays current after its beat has played, until every task is done, then hands over to chapter 2', () => {
+    const s = opened();
+    expect(currentChapter(s)?.sceneId).toBe('downtown-1');
+    expect(chapterTasks(s).map((r) => r.task.kind)).toEqual(['serve', 'serve', 'hire']);
+    expect(nextTask(s)?.task.key).toBe('task.downtown-1.1');
+    const sold = withShop(s, 'downtown', { sold: 4 });
+    expect(nextTask(sold)?.task.key).toBe('task.downtown-1.3');
+    expect(currentChapter(sold)?.sceneId).toBe('downtown-1');
+    const hired = withShop(sold, 'downtown', { heads: { prep: true, oven: false, counter: false } });
+    expect(currentChapter(hired)?.sceneId).toBe('downtown-2');
+  });
+  it('is current from the start of the game too (before its beat has played)', () => {
+    expect(currentChapter(G.newGame(0))?.sceneId).toBe('downtown-1');
+  });
+  it('gates nothing, pays nothing, and says nothing is waiting', () => {
+    const s = opened();
+    expect(chapterReady(s)).toBeNull();
+    expect(saveOf(s).done).toEqual([]);
+    // chapter 2's beat still waits for chapter 2's tasks alone
+    const dt2 = withShop({ ...s, playSeconds: 1000 }, 'downtown', { sold: 424, heads: { prep: false, oven: true, counter: false } });
+    expect(sceneTriggered(saved(dt2, { best: { [task('downtown-2', 3).key]: 6 } }), scene('downtown-2'))).toBe(true);
+  });
+  it('keeps counting chapter 2 meanwhile', () => {
+    const s = withShop(opened(), 'downtown', { heads: G.allHeads() });
+    expect(openChapters(s).map((c) => c.sceneId)).toEqual(['downtown-2']);
+    const g = chaptersTick(s, 31, 0);
+    expect(saveOf(g).best[task('downtown-2', 3).key]).toBeGreaterThan(0);
+  });
+  it('counts as done in a save from before chapters that is past the opening, whatever the tutorial left', () => {
+    const g = G.newGame(0);
+    const raw = JSON.parse(JSON.stringify({ ...g, seenScenes: ['downtown-1'], tutorial: 16, saveVersion: 7 }));
+    const m = G.migrate(raw, 0);
+    expect(currentChapter(m)?.sceneId).toBe('downtown-2');
+    expect(saveOf(m).done).toEqual(expect.arrayContaining(OPENING));
   });
 });
 
