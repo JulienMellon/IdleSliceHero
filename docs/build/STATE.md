@@ -11,7 +11,7 @@ codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
   E1 done  W2 done  U1 done  U2 done  E2 done
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.21/review-r1-critic.md (r1 NOT SATISFIED; bug 5 major 4 minor 11; E7 U11 S2; G113-G117 bugs, D532 D533 D536 D541 majors)
+  critic: docs/build/v5.21/review-r2-critic.md (r2 NOT SATISFIED; bug 0 major 3 minor 11; E3 U9 S2; D532 D536 D541 majors, D542 new)
   code:   docs/build/v5.21/review-r1-code.md (r1 CHANGES REQUESTED; blocker/high 1 medium 3 low 20; E6 U10 S1 N7; C169 chapter 5 gems unpaid)
   story:  docs/build/v5.21/review-r2-story.md (r2 NOT SATISFIED on minors only; bug 0 major 0 minor 7; E1 U3 T3; S48 S67 S70 S71 S78 S87 S88 advisory)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
