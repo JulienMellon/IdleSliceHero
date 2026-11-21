@@ -256,6 +256,22 @@ export default function GameScreen() {
   const coach = coachStep(game);
   // v5.20: Nonna's flow (what ends each step, where she points) is components/coach/use-coach-flow.ts
   const coachFlow = useCoachFlow(coach, id === first, drawerOpen);
+  // v5.21 (E2): the task list opening ends step 7 and its closing ends step 8 (the flow above tells the upgrades drawer's the same way)
+  const coachId = coach?.id ?? 0;
+  const tasksWas = useRef(false);
+  useEffect(() => {
+    if (tasksOpen) useGame.getState().noteCoach('tasks-open');
+    else if (tasksWas.current) useGame.getState().noteCoach('tasks-closed');
+    tasksWas.current = tasksOpen;
+  }, [tasksOpen, coachId]);
+  // step 8's look blocks every touch until it has been seen (a tap, or 4 s); then the line stays as a card, so the player can read the list and close it
+  const [listSeen, setListSeen] = useState(false);
+  const onCoachDone = coachFlow.onDone;
+  const coachDone = useCallback(() => {
+    onCoachDone();
+    if (coachId === 8) setListSeen(true);
+  }, [onCoachDone, coachId]);
+  const coachView = coachFlow.view && coachId === 8 && listSeen ? { ...coachFlow.view, mode: 'free' as const } : coachFlow.view;
   // the prep head's hire card in the drawer is where step 13 points: one ref, given to that one card (S72: while Nonna teaches, the drawer does not point at anything else)
   const hireRef = useCoachTarget('drawer:hire:prep');
   const eps = G.earningsPerSecond(game);
@@ -501,7 +517,7 @@ export default function GameScreen() {
         {toast && hintsAllowed(game).toast && <Toast compact text={toast.text} top={10} />}
       </View>
       {/* v5.20 (C1): the one tutorial highlight: a scrim with a cut-out over the HUD, the shop, the row and the drawer; under the calendar, the sheets and the cut-scenes */}
-      {coachFlow.view && <CoachOverlay {...coachFlow.view} onDone={coachFlow.onDone} />}
+      {coachView && <CoachOverlay {...coachView} onDone={coachDone} />}
       {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
       {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}
       {/* the SHEETS slot: modal sheets over the whole screen, under the offline popup */}

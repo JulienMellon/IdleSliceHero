@@ -19,4 +19,6 @@ export type CoachTargetId =
   | 'walk:counter'
   | 'walk:drivers'
   | 'walk:all'
-  | 'drawer:hire:prep';
+  | 'drawer:hire:prep'
+  | 'tasks:story'
+  | 'tasks:close';

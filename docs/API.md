@@ -392,7 +392,6 @@
 - pendingScenes (re-export) — src/engine/game.ts:1405
 - prerequisites (re-export) — src/engine/game.ts:1405
 - sceneTriggered (re-export) — src/engine/game.ts:1405
-- storyWaitHint (re-export) — src/engine/game.ts:1405
 - applyReward(s: GameState, reward: SceneReward | undefined): GameState — src/engine/game.ts:1407
 - markSceneSeen(s: GameState, scene: Scene): GameState — src/engine/game.ts:1421
 - upgradeGain(s: GameState, id: NeighborhoodId, what: Upgrade): number | null — src/engine/game.ts:1431 — Cash/sec this pizzeria gains from an upgrade (counting it as running), or null if unavailable.
@@ -514,9 +513,8 @@
 - sceneTriggered(s: GameState, scene: Scene): boolean — src/engine/story.ts:46 — The scene may play: every scene it requires has been seen and its trigger has passed (the day's pac…
 - pendingScenes(s: GameState, scenes: Scene[]): Scene[] — src/engine/story.ts:54 — Unseen scenes whose triggers pass, in story order (earliest first); main beats come before interlud…
 - scenesById(scenes: readonly Scene[]): ReadonlyMap<string, Scene> — src/engine/story.ts:64
-- storyWaitHint(s: GameState, scenes: readonly Scene[] = cityOf(s).scenes): string | null — src/engine/story.ts:78 — A line for the goal bar when a main beat has triggered but is held behind a finale the player still…
-- challengeOffered(s: GameState, id: NeighborhoodId): boolean — src/engine/story.ts:108 — The rival challenge in `id` may be taken now: the MegaSlice shop is open there and the finale wait …
-- migrateStory(game: GameState, fromVersion: number): GameState — src/engine/story.ts:121 — The story part of `migrate` (idempotent, so it runs on every load).
+- challengeOffered(s: GameState, id: NeighborhoodId): boolean — src/engine/story.ts:74 — The rival challenge in `id` may be taken now: the MegaSlice shop is open there and the finale wait …
+- migrateStory(game: GameState, fromVersion: number): GameState — src/engine/story.ts:87 — The story part of `migrate` (idempotent, so it runs on every load).
 
 ## src/engine/teaser.ts
 - TEASER_COMPLETE — src/engine/teaser.ts:24
@@ -528,12 +526,11 @@
 - types: TeaserKind, Teaser
 
 ## src/engine/tutorial.ts
-- TUTORIAL_DONE — src/engine/tutorial.ts:24
-- CHAPTERS_ON — src/engine/tutorial.ts:27 — The task-list steps (7 and 8) wait for the chapters (v5.21): until then they are skipped.
-- stepsFor(city: CityDef): readonly CoachStep[] — src/engine/tutorial.ts:58
-- coachMode(s: G.GameState): CoachMode | null — src/engine/tutorial.ts:88 — The mode of the current step, or null when the tutorial isn't running (for the hints and the screen…
-- coachStep(s: G.GameState): CoachStep | null — src/engine/tutorial.ts:91 — The current step, or null when the tutorial isn't running (not started, done, or a GM already runs …
-- tutorialAdvance(s: G.GameState): G.GameState — src/engine/tutorial.ts:133 — Move past every finished step (several can finish at once).
+- TUTORIAL_DONE — src/engine/tutorial.ts:25
+- stepsFor(city: CityDef): readonly CoachStep[] — src/engine/tutorial.ts:56
+- coachMode(s: G.GameState): CoachMode | null — src/engine/tutorial.ts:83 — The mode of the current step, or null when the tutorial isn't running (for the hints and the screen…
+- coachStep(s: G.GameState): CoachStep | null — src/engine/tutorial.ts:86 — The current step, or null when the tutorial isn't running (not started, done, or a GM already runs …
+- tutorialAdvance(s: G.GameState): G.GameState — src/engine/tutorial.ts:125 — Move past every finished step (several can finish at once).
 - tutorialNote(s: G.GameState, note: TutorialNote): G.GameState — src/engine/tutorial.ts:147 — The screen's say-so: ends the current step when it is the one waiting for this note, and moves on o…
 - tutorialHoldsStory(s: G.GameState) — src/engine/tutorial.ts:156 — Story scenes wait while Nonna walks the player through the first shop (steps 1-11).
 - HINTS: readonly Hint[] — src/engine/tutorial.ts:160
@@ -605,20 +602,19 @@ FootprintTier, NeighborhoodDef, OvenGrade, PerkDef, VehicleDef, TUNING, STATIONS
 - types: CoinLaunch
 
 ## src/components/slots.tsx
-- onOvenAsk(fn: () => void) — src/components/slots.tsx:78 — The screen listens here; returns the unsubscribe.
-- askOven() — src/components/slots.tsx:85 — Ask the screen to open Nonna's night-oven sheet (it also closes the drawer, tasks and calendar).
-- askScroll (re-export) — src/components/slots.tsx:90
-- onScrollAsk (re-export) — src/components/slots.tsx:90
-- inOrder<P>(items: readonly SlotEntry<P>[]): readonly SlotEntry<P>[] — src/components/slots.tsx:93 — The entries in `order` (ascending, stable).
-- Slots({ items }: { items: readonly SlotEntry[] }) — src/components/slots.tsx:98 — Renders every entry of a prop-less slot.
-- SceneSlots({ items, shopId, width, height }: { items: readonly SlotEntry<SceneSlotProps>[]; shopId: string; w… — src/components/slots.tsx:110 — Renders every scene overlay with the shop and the scene size.
-- ReportSlots({ items, bottom }: { items: readonly SlotEntry<ShopReportSlotProps>[]; bottom: number }) — src/components/slots.tsx:122 — Renders every shop-report entry with the strip's `bottom`.
-- StoryWaitBanner — src/components/slots.tsx:174 — v5.16 (T1b): "Win over Industrial to continue Uptown’s story" (storyWaitHint), one line at the top …
-- HUD_CHIPS: SlotEntry[] — src/components/slots.tsx:187
-- HUD_TOP_CHIPS: SlotEntry[] — src/components/slots.tsx:201
-- BANNERS: SlotEntry[] — src/components/slots.tsx:203
-- SHEETS: SlotEntry[] — src/components/slots.tsx:215
-- SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] — src/components/slots.tsx:230
-- DRAWER_CARDS: SlotEntry[] — src/components/slots.tsx:232
-- SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] — src/components/slots.tsx:240
+- onOvenAsk(fn: () => void) — src/components/slots.tsx:77 — The screen listens here; returns the unsubscribe.
+- askOven() — src/components/slots.tsx:84 — Ask the screen to open Nonna's night-oven sheet (it also closes the drawer, tasks and calendar).
+- askScroll (re-export) — src/components/slots.tsx:89
+- onScrollAsk (re-export) — src/components/slots.tsx:89
+- inOrder<P>(items: readonly SlotEntry<P>[]): readonly SlotEntry<P>[] — src/components/slots.tsx:92 — The entries in `order` (ascending, stable).
+- Slots({ items }: { items: readonly SlotEntry[] }) — src/components/slots.tsx:97 — Renders every entry of a prop-less slot.
+- SceneSlots({ items, shopId, width, height }: { items: readonly SlotEntry<SceneSlotProps>[]; shopId: string; w… — src/components/slots.tsx:109 — Renders every scene overlay with the shop and the scene size.
+- ReportSlots({ items, bottom }: { items: readonly SlotEntry<ShopReportSlotProps>[]; bottom: number }) — src/components/slots.tsx:121 — Renders every shop-report entry with the strip's `bottom`.
+- HUD_CHIPS: SlotEntry[] — src/components/slots.tsx:155
+- HUD_TOP_CHIPS: SlotEntry[] — src/components/slots.tsx:169
+- BANNERS: SlotEntry[] — src/components/slots.tsx:171
+- SHEETS: SlotEntry[] — src/components/slots.tsx:183
+- SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] — src/components/slots.tsx:198
+- DRAWER_CARDS: SlotEntry[] — src/components/slots.tsx:200
+- SCENE_OVERLAYS: SlotEntry<SceneSlotProps>[] — src/components/slots.tsx:208
 - types: SlotProps, SceneSlotProps, ShopReportSlotProps, SlotEntry

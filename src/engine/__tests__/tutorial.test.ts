@@ -3,7 +3,6 @@
 import * as G from '../game';
 import { HOME_CITY } from '../../content/cities/home';
 import {
-  CHAPTERS_ON,
   coachStep,
   HINTS,
   hintsAllowed,
@@ -13,6 +12,7 @@ import {
   tutorialAdvance,
   tutorialHoldsStory,
   tutorialNote,
+  type TutorialNote,
 } from '../tutorial';
 
 const STEPS = stepsFor(HOME_CITY);
@@ -31,10 +31,9 @@ describe('tutorial', () => {
     expect(tutorialAdvance(G.newGame(0)).tutorial).toBe(0);
     expect(coachStep(opened())?.targets).toEqual(['station:prep']);
   });
-  test('the script is 15 steps and the tutorial ends at 16; chapters are off in this version', () => {
+  test('the script is 15 steps and the tutorial ends at 16', () => {
     expect(STEPS.map((st) => st.id)).toEqual(Array.from({ length: 15 }, (_, i) => i + 1));
     expect(TUTORIAL_DONE).toBe(16);
-    expect(CHAPTERS_ON).toBe(false);
   });
   test('each step names its targets and mode (card C3)', () => {
     expect(STEPS.map((st) => [st.id, st.key, st.targets, st.mode])).toEqual([
@@ -45,7 +44,7 @@ describe('tutorial', () => {
       [5, 'tutorial.5', ['station:counter'], 'tap'],
       [6, 'tutorial.6', ['hud:cash'], 'look'],
       [7, 'tutorial.7', ['hud:goal'], 'tap'],
-      [8, 'tutorial.8', [], 'look'],
+      [8, 'tutorial.8', ['tasks:story'], 'look'],
       [9, 'tutorial.9', [], 'free'],
       [10, 'tutorial.10', ['walk:ovens'], 'tap'],
       [11, 'tutorial.11', ['ovens:all', 'dial:oven'], 'look'],
@@ -55,7 +54,7 @@ describe('tutorial', () => {
       [15, 'tutorial.15', ['station:prep', 'dial:prep'], 'look'],
     ]);
   });
-  test('walks the 15 steps on a simulated run, skipping only 7 and 8, and ends at 16', () => {
+  test('walks the 15 steps on a simulated run and ends at 16', () => {
     let s = opened();
     const seen: number[] = [s.tutorial];
     const note = () => {
@@ -83,7 +82,19 @@ describe('tutorial', () => {
     s = { ...s, cash: 0 };
     s = tutorialNote(s, 'look');
     note();
-    // 7 and 8 are skipped: the free "save up" step is next
+    // 7: the goal bar, which only the task list opening ends; 8: the list's Story tab, which only the list closing ends (v5.21)
+    expect(s.tutorial).toBe(7);
+    expect(coachStep(s)?.targets).toEqual(['hud:goal']);
+    expect(tutorialNote(s, 'look')).toBe(s);
+    expect(tutorialNote(s, 'tasks-closed')).toBe(s);
+    s = tutorialNote(s, 'tasks-open');
+    note();
+    expect(coachStep(s)?.targets).toEqual(['tasks:story']);
+    expect(tutorialNote(s, 'look')).toBe(s);
+    expect(tutorialNote(s, 'tasks-open')).toBe(s);
+    s = tutorialNote(s, 'tasks-closed');
+    note();
+    // the free "save up" step is next
     expect(s.tutorial).toBe(9);
     expect(coachStep(s)?.mode).toBe('free');
     for (let k = 0; k < 400 && s.tutorial < 10; k++) {
@@ -126,10 +137,10 @@ describe('tutorial', () => {
     note();
     expect(s.tutorial).toBe(TUTORIAL_DONE);
     expect(coachStep(s)).toBeNull();
-    expect(seen).toEqual([1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15, TUTORIAL_DONE]);
+    expect(seen).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, TUTORIAL_DONE]);
   });
-  // the screen-ended steps (6, 11, 12, 13, 15) in every state they can be in: managed or not, a note or not
-  describe.each([6, 11, 12, 13, 15])('step %i', (n) => {
+  // the screen-ended steps (6, 7, 8, 11, 12, 13, 15) in every state they can be in: managed or not, a note or not
+  describe.each([6, 7, 8, 11, 12, 13, 15])('step %i', (n) => {
     const at = (managed: boolean) => {
       const g = { ...opened(), tutorial: n };
       return { ...g, shops: { ...g.shops, downtown: { ...g.shops.downtown, managed, sold: 5 } } };
@@ -145,7 +156,7 @@ describe('tutorial', () => {
       const g = at(false);
       expect(coachStep(g)?.id).toBe(n);
       expect(tutorialAdvance(g).tutorial).toBe(n);
-      const note = { 6: 'look', 11: 'look', 12: 'drawer-open', 13: 'drawer-closed', 15: 'look' }[n] as 'look' | 'drawer-open' | 'drawer-closed';
+      const note = { 6: 'look', 7: 'tasks-open', 8: 'tasks-closed', 11: 'look', 12: 'drawer-open', 13: 'drawer-closed', 15: 'look' }[n] as TutorialNote;
       expect(tutorialNote(g, note).tutorial).toBeGreaterThan(n);
     });
   });
@@ -157,10 +168,15 @@ describe('tutorial', () => {
     const sold = { ...six, shops: { ...six.shops, downtown: { ...six.shops.downtown, sold: 1 } } };
     expect(coachStep(sold)?.mode).toBe('look');
   });
-  test('saved steps 7 and 8 (chapters off) read as step 9, the free one', () => {
+  // saves: v5.20 never stored 7 or 8, and a save at 9 or later keeps its step
+  test('a saved step 9 or later stays where it is; 7 and 8 are real steps now', () => {
     const g = opened();
-    expect(coachStep({ ...g, tutorial: 7 })?.id).toBe(9);
-    expect(coachStep({ ...g, tutorial: 8 })?.id).toBe(9);
+    for (const n of [7, 8, 9, 15]) expect(coachStep({ ...g, tutorial: n })?.id).toBe(n);
+    for (const n of [9, 11, 12, 13, 14, 15]) {
+      const loaded = G.migrate(JSON.parse(JSON.stringify({ ...g, tutorial: n })), 0);
+      expect(loaded.tutorial).toBe(n);
+      expect(tutorialAdvance(loaded).tutorial).toBe(n);
+    }
   });
   test('step 9 names the price, and hires finish steps 12 to 14 whatever the drawer did', () => {
     const g = { ...opened(), tutorial: 9 };
@@ -233,7 +249,7 @@ describe('tutorial', () => {
       const g = { ...opened(), tutorial: st.id };
       expect(coachStep(g)).not.toBeNull();
       const allowed = HINTS.filter((h) => hintsAllowed(g)[h]);
-      // the step as shown: 7 and 8 read as step 9 while the chapters are off, and step 10 without the oven money falls back to "save up" (D374)
+      // the step as shown: step 10 without the oven money falls back to "save up" (D374)
       expect(allowed).toEqual(coachStep(g)?.mode === 'free' ? [...HINTS] : []);
     }
     const over = { ...opened(), tutorial: TUTORIAL_DONE };
