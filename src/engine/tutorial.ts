@@ -41,7 +41,7 @@ const DEFS: readonly Def[] = [
   { targets: ['hud:cash'], mode: 'look' }, // 6
   { targets: ['hud:goal'], mode: 'tap' }, // 7 (v5.21)
   { targets: [], mode: 'look' }, // 8: the task list (v5.21)
-  { targets: [], mode: 'free' }, // 9: save up for the second oven
+  { targets: [], mode: 'free' }, // 9: save up for the oven upgrade
   { targets: ['walk:ovens'], mode: 'tap' }, // 10
   { targets: ['ovens:all'], mode: 'look' }, // 11
   { targets: ['walk:all'], mode: 'tap' }, // 12

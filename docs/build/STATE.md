@@ -4,7 +4,7 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.20                   # v5.19-test closed 2026-11-19 (r1: critic SATISFIED, codecritic APPROVED)
-step: waves                       # setup | waves | verify | review | fix | close
+step: verify                       # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.20-base             # fresh baseline: True 0 [], layout 0 new 9 allowed, 166 shots
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
@@ -39,3 +39,4 @@ next: start S7-v5.20.md. v5.20 scope set by Julien 2026-11-20 (docs/PLAN-v5.20-o
 - 2026-11-20 S7 C3 partial (15 steps, SAVE_VERSION 7, 2724/2724; drawer:close missing from union). Sent: C1 add drawer:close + fix 153_c1; C2 ovens:all lights one oven (shot 166). Then C3 registers drawer:close.
 - 2026-11-20 S7 wave 3 done: C3 done (drawer:close registered, 2725/2725). Open design question: buying Ovens lv2 draws 1 oven (scene: 1+floor((lv-1)/8)) but tutorial.9/10/11 promise two ovens.
 - 2026-11-21 S7 Julien: reword the second-oven lines (no ladder change). Sent to W1 writer; C3 copies them into src/content/copy/home/tutorial.ts.
+- 2026-11-21 S7 C3 copied reworded lines (2725/2725). Waves done; verify v5.20 started.

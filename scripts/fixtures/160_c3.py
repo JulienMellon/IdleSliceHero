@@ -1,7 +1,7 @@
 """Card C3 (v5.20): the Chapter 1 script. Shots 160-169, one for each of steps 1, 2, 4, 6, 9, 10, 11, 12, 13, 15.
 
-160 step 1  tap the prep table          165 step 10 tap Ovens (the second oven is affordable)
-161 step 2  the prep dial fills         166 step 11 both ovens lit (a look)
+160 step 1  tap the prep table          165 step 10 tap Ovens (the oven upgrade is affordable)
+161 step 2  the prep dial fills         166 step 11 the oven lit (a look)
 162 step 4  the oven dial is the timer  167 step 12 tap All
 163 step 6  the cash (a look)           168 step 13 the drawer's prep-head hire card (a look, then Nonna's card alone)
 164 step 9  free play, save for ovens   169 step 15 the prep dial runs on its own (a look)
@@ -69,7 +69,7 @@ def run(ctx):
 
     # 164: step 9, free play: only Nonna's card, no scrim
     try:
-        page = step_page(browser, 9, r"Save \$[\d.,]+\w* for a second oven", 4, sold=3)
+        page = step_page(browser, 9, r"Save \$[\d.,]+\w* to upgrade the oven", 4, sold=3)
         if is_up(page, "coach-cut-0"):
             report["errors"].append("fixture 160_c3: step 9 draws a cut-out (it is free play)")
         shot(page, "164-step9-free", 0.4)
@@ -87,7 +87,7 @@ def run(ctx):
 
     # 166: step 11, two ovens
     try:
-        page = step_page(browser, 11, r"Two ovens bake two", 0, sold=30, ovens=2)
+        page = step_page(browser, 11, r"A better oven bakes more", 0, sold=30, ovens=2)
         expect(page, "coach-cut-0", 3000)
         shot(page, "166-step11-two-ovens", 0.4)
     except Exception as e:
