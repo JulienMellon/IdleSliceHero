@@ -143,3 +143,9 @@ Placeholders: `{target}` is the task's number from `docs/build/v5.21/chapters.md
 | --- | --- |
 | `chapter.ready` | Next scene in {time} |
 | `chapter.done` | Every chapter done. Victor is waiting in Boston. |
+
+## 5. Scene fixes
+
+| key | file:line | speaker | text |
+| --- | --- | --- | --- |
+| `scene.waterfront-3b.p4.2` | `src/content/cities/home/scenes/waterfront.ts:196` | Captain Marisol | Bid from your Waterfront shop when the cash is in. All hands! |

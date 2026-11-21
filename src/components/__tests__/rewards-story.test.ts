@@ -98,7 +98,7 @@ describe('chapter 2 half way', () => {
   it('reads the chapter number, title and its tasks from the save', () => {
     expect(v.number).toBe(2);
     expect(v.title).toBe('First Regulars');
-    expect(v.tasks.map((t) => t.label)).toEqual(['Serve 424 pies in Downtown', 'Hire Lucia, head baker', 'Serve 6/min in Downtown']);
+    expect(v.tasks.map((t) => t.label)).toEqual(['Serve 424 pies in Downtown', 'Hire Lucia, head baker', 'Hold 6/min in Downtown']);
   });
   it('gives a count its bar and "212/424", and a hire or a build only a tick', () => {
     const [serve, hire, rate] = v.tasks;
@@ -187,7 +187,7 @@ describe('after the last chapter', () => {
     const all = doneKeys({ ...G.newGame(0), seenScenes: HOME_CHAPTERS.map((c) => c.sceneId) }, CH1);
     const v = storyView(all, null);
     expect(v.kind).toBe('finished');
-    expect(v.finished).toBe('Every chapter done. The city is yours.');
+    expect(v.finished).toBe('Every chapter done. Victor is waiting in Boston.');
     expect(v.tasks).toEqual([]);
     expect(v.wait).toBeNull();
   });
@@ -227,7 +227,7 @@ describe('the copy table', () => {
       for (const t of c.tasks) expect(CHAPTER_COPY).toHaveProperty([t.key]);
     }
     expect(CHAPTER_COPY['chapter.ready']).toBe('Next scene in {time}');
-    expect(CHAPTER_COPY['chapter.done']).toBe('Every chapter done. The city is yours.');
+    expect(CHAPTER_COPY['chapter.done']).toBe('Every chapter done. Victor is waiting in Boston.');
   });
   it('is in the home copy', () => {
     for (const k of Object.keys(CHAPTER_COPY)) expect(HOME_COPY[k]).toBe((CHAPTER_COPY as Record<string, string>)[k]);
