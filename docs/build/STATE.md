@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.20-r3               # r3 verify: True 0 [], layout 0 new; 0 new 23 changed vs v5.20-r2
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
-  E1 todo  W2 todo  U1 todo  U2 todo  E2 todo
+  E1 running  W2 todo  U1 todo  U2 todo  E2 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.20/review-r3-critic.md (r3 SATISFIED; bug 0 major 0 minor 5; E3 S2; open D530 D481 D519 D493 D495)
   code:   docs/build/v5.20/review-r3-code.md (r3 APPROVED; blocker/high 0 medium 1 low 15; E1 U7 S1 N7)
@@ -30,3 +30,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S7 CI failed on expo lint (not in README 5): engine/tutorial.ts imported components/coach types (A43). C3 moved them to engine/coach-types.ts; lint 0 errors, 2777/2777, CI steps pass locally.
 - 2026-11-21 S7 verify v5.20-r3 pass: True 0 [], layout 0, 23 changed. r3 re-checks launched.
 - 2026-11-21 S7 v5.20 closed at r3: critic SATISFIED (minor 5: D530 D481 D519 D493 D495), codecritic APPROVED (medium 1), storycritic minors carried (S48 S67 S70 S71 S73).
+- 2026-11-21 S8 v5.21 wave 1: E1 running (W2 waits for chapters.md).
