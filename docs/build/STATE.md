@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.20                   # v5.19-test closed 2026-11-19 (r1: critic SATISFIED, codecritic APPROVED)
-step: verify                       # setup | waves | verify | review | fix | close
+step: review                       # setup | waves | verify | review | fix | close
 round: r3              # r1 | r2 | r3
-last_shots: v5.20-r2               # r2 verify: True 0 [], layout 0 new; 0 new 30 changed vs v5.20
+last_shots: v5.20-r3               # r3 verify: True 0 [], layout 0 new; 0 new 23 changed vs v5.20-r2
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
   W1 done  C1 done  C2 done  U0 done  C3 done
@@ -16,7 +16,7 @@ reviews:               # latest review file per critic, with verdict and counts
   story:  docs/build/v5.20/review-r2-story.md (r2 NOT SATISFIED on minors only; bug 0 major 0 minor 4; U1 T3; S48 S67 S70 S71 carried, advisory)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
 open: ON HOLD (Julien 2026-11-18): every city beyond Boston; cards in docs/build/v5.19/later/ (W4b W4s E4 E4f CITY A3) and the deferred refactor (R2 R2b R3 R4 R5f R6s) are not launched. PARKED for Julien, not in v5.19: economy refit (one pizza per tap +1/10 prep lv, home tops out ~$10M with Suburbs ~$30K, first goal <$50, ECONOMY 3->4 with old saves reset, D493 rival gated at Suburbs 2 stars, D495); don't ask about it during v5.19. Carried: A2 + audio notes AU41 AU39 AU40 AU25 AU82 (music round waits on Julien's R1 listen), SliceAudioSession native module not built; Boston heads need a writer pass (5 barks per head, one per trigger; their script has 4 numbered); Boston GMs placeholder; v5.17/v5.18 critic minors D481 D493 D495 D505 D512 D514. Tools: expo install is refused by the proxy (use npm install with the version from node_modules/expo/bundledNativeModules.json); loop_stats.py cannot read loop: commits; programmer --only takes the fixture name without .py; seam-noise shots 00/24/104/105 and 29-31b. App Store privacy label must say Tracking = Yes; native paths unverified until DEVICE-CHECKLIST.
-next: continue S7-v5.20.md at round r3 verify (r3 fixes done 2026-11-21: C1 C2 C3 fixed, U0 nothing; tsc 0, lint 0 errors, 2777/2777). README 5 omits lint: also run `npx expo lint 2>&1 | grep -c " error "` (must be 0) before every push; CI runs it. Run README section 5 with V=5.20 L=v5.20-r3 P=v5.20-r2, then r3 re-checks (critic+storycritic sonnet, codecritic session model; PREV = review-r2-*), gate, close per README 8, STATE -> 5.21. Carried: D481 D519 (wide-shop scale needs Julien), D530 (graduation ribbon), C158 C156 C151 C153, story S48 S67 S70 S71. Julien 2026-11-21: 'no gain now' label removed for good; v5.22 report says what to build.
+next: continue S7-v5.20.md at round r3 review: r3 re-checks (critic+storycritic sonnet, codecritic session model; PREV = review-r2-*), gate, close per README 8, STATE -> 5.21. Carried: D481 D519 (wide-shop scale needs Julien), D530, C158 C156 C151 C153, story S48 S67 S70 S71.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
@@ -30,3 +30,4 @@ next: continue S7-v5.20.md at round r3 verify (r3 fixes done 2026-11-21: C1 C2 C
 - 2026-11-21 S7 r3 C3 done (D528 goal bar shows story goal steps 1-11, C166; 2775 tests). U0 r3 check sent; C2 still running.
 - 2026-11-21 S7 r3 fixes done (C2: T120 U30 C165 T121 D531 oven head; D481 D519 not fixed). Two fix rounds run: session ends before r3 verify.
 - 2026-11-21 S7 CI failed on expo lint (not in README 5): engine/tutorial.ts imported components/coach types (A43). C3 moved them to engine/coach-types.ts; lint 0 errors, 2777/2777, CI steps pass locally.
+- 2026-11-21 S7 verify v5.20-r3 pass: True 0 [], layout 0, 23 changed. r3 re-checks launched.
