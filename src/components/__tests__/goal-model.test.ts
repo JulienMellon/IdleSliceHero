@@ -7,9 +7,13 @@ import { HOME_SCENES } from '../../content/scenes/home';
 import { CHAPTERS_KEY, newChapterSave } from '../../engine/chapters';
 import { count, goalAmount, money, pizzas } from '../../engine/format';
 import * as G from '../../engine/game';
+import { headCost } from '../../engine/game';
 import {
   aOrAn,
   chapterGoal,
+  CHEER_RIBBON_MS,
+  goalCheer,
+  taskPrice,
   GOAL_BAR,
   GOAL_FLASH_MS,
   GOAL_LAYOUT,
@@ -204,7 +208,13 @@ describe('the goal bar is the next chapter task (U1)', () => {
       const goal = chapterGoal(g)!;
       const row = storyView(g, null).tasks.find((x) => x.key === goal.key)!;
       expect(goal.label.endsWith(row.label)).toBe(true);
-      expect(goal.text).toBe(row.progress);
+      if (
+        !taskPrice(
+          g,
+          HOME_CHAPTERS.flatMap((c) => c.tasks).find((t) => t.key === goal.key)!,
+        )
+      )
+        expect(goal.text).toBe(row.progress);
     }
   });
   test('it changes only when a task completes: the next task, its key and a fresh count', () => {
@@ -216,9 +226,22 @@ describe('the goal bar is the next chapter task (U1)', () => {
     expect(c.key).not.toBe(a.key);
     expect(c.label).not.toBe(a.label);
   });
-  test('a yes/no task has no count and an empty bar', () => {
-    const g = chapterGoal(stateAt(2, 1))!;
-    expect([g.text, g.current, g.target]).toEqual(['', 0, 1]);
+  test('D532: a hire or a build shows the cash against its own price, and fills with the cash', () => {
+    const g = chapterGoal({ ...stateAt(2, 0), cash: 12 })!;
+    expect(g.label).toBe('Ch 2 \u00B7 Hire Lucia, head baker');
+    expect(g.text).toBe('$12 / $' + Math.floor(headCost('downtown', 'oven')));
+    expect([g.current, g.target]).toEqual([12, headCost('downtown', 'oven')]);
+    expect(g.ready).toBe(false);
+    const b = chapterGoal({ ...stateAt(5, 0), cash: 50 })!;
+    expect(b.key).toBe('task.suburbs-1.1');
+    expect([b.current, b.target]).toEqual([50, G.def('suburbs').buildCost]);
+    // cash past the price fills the bar and stops there ("$400 / $400"); the bar still only opens the list
+    expect(goalBarLayout(1e9, headCost('downtown', 'oven'), false, 351).pct).toBe(1);
+  });
+  test('a task that is not bought (a count, a rate) shows its own count; a hire has the price only while it is on offer', () => {
+    expect(chapterGoal(serving(2, 100))!.text).toBe('100/424');
+    expect(taskPrice(G.newGame(0), HOME_CHAPTERS[1].tasks[0])).toBeNull();
+    expect(taskPrice(G.newGame(0), HOME_CHAPTERS[1].tasks[1])).toBe(headCost('downtown', 'oven'));
   });
   test('the short form drops the shop and what follows a comma; the tiny one is the count or the first word', () => {
     const g = chapterGoal(serving(2, 212))!;
@@ -226,7 +249,7 @@ describe('the goal bar is the next chapter task (U1)', () => {
     expect(g.tiny).toBe('Ch 2 \u00B7 212/424');
     const h = chapterGoal(stateAt(2, 0, 212))!;
     expect(h.short).toBe('Ch 2 \u00B7 Hire Lucia');
-    expect(h.tiny).toBe('Ch 2 \u00B7 Hire');
+    expect(h.tiny).toBe('Ch 2 \u00B7 Hire Lucia');
     expect(shortTask('Serve 424 pies in Downtown', 'Downtown')).toBe('Serve 424 pies');
     expect(shortTask('Hire Lucia, head baker', 'Downtown')).toBe('Hire Lucia');
     expect(shortTask('Build your Suburbs shop', 'Suburbs')).toBe('Build Suburbs');
@@ -264,6 +287,34 @@ describe('the goal bar is the next chapter task (U1)', () => {
   test('D532: the chevron fits the right padding', () => {
     expect(GOAL_CHEVRON).toBe('\u203A');
     expect(GOAL_PAD).toBeGreaterThanOrEqual(18);
+  });
+});
+
+describe('the cheer when a task is done (D541)', () => {
+  const at = (key: string, label: string) => ({ key, label });
+  test('a task done: its words for the toast', () => {
+    expect(goalCheer(at('task.downtown-2.2', 'Ch 2 \u00B7 Hire Lucia, head baker'), at('task.downtown-2.3', 'Ch 2 \u00B7 Hold 6/min in Downtown'))).toEqual({
+      chapter: false,
+      text: 'Hire Lucia, head baker',
+    });
+  });
+  test('the last task of a chapter, or the move to the next chapter: "Chapter N complete"', () => {
+    expect(goalCheer(at('task.downtown-2.1', 'Ch 2 \u00B7 Serve 424 pies in Downtown'), at('chapter.downtown-2.ready', 'Ch 2 \u00B7 Next scene in'))).toEqual({
+      chapter: true,
+      text: 'Chapter 2 complete',
+    });
+    expect(goalCheer(at('task.downtown-1.3', 'Ch 1 \u00B7 Hire Marco, head prep cook'), at('task.downtown-2.2', 'Ch 2 \u00B7 Hire Lucia'))!.text).toBe(
+      'Chapter 1 complete',
+    );
+  });
+  test('nothing to cheer: the first goal, the same goal, or the beat that ends the wait', () => {
+    expect(goalCheer(null, at('a', 'Ch 2 \u00B7 x'))).toBeNull();
+    expect(goalCheer(at('a', 'Ch 2 \u00B7 x'), at('a', 'Ch 2 \u00B7 x'))).toBeNull();
+    expect(goalCheer(at('chapter.downtown-2.ready', 'Ch 2 \u00B7 Next scene in'), at('task.downtown-3.1', 'Ch 3 \u00B7 Hire Raj'))).toBeNull();
+    expect(goalCheer(at('a', 'Ch 2 \u00B7 x'), null)).toBeNull();
+  });
+  test('the ribbon and the tick are short', () => {
+    expect(CHEER_RIBBON_MS).toBeLessThanOrEqual(2500);
   });
 });
 

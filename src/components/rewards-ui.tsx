@@ -545,9 +545,13 @@ export const TasksDrawer = memo(function TasksDrawer({
                     <View style={styles.rewardRow} testID="story-reward" accessible accessibilityLabel={storyRewardText(story.reward)}>
                       {story.reward.scene && <ClapperIcon size={22} />}
                       <Text style={styles.rewardText}>{story.reward.label}</Text>
-                      <Text style={styles.rewardText}>{'\u00B7'}</Text>
-                      <DiamondIcon size={20} />
-                      <Text style={styles.rewardText}>{story.reward.diamonds}</Text>
+                      {story.reward.diamonds > 0 && (
+                        <>
+                          <Text style={styles.rewardText}>{'\u00B7'}</Text>
+                          <DiamondIcon size={20} />
+                          <Text style={styles.rewardText}>{story.reward.diamonds}</Text>
+                        </>
+                      )}
                     </View>
                   )}
                   {story.coming !== '' && (

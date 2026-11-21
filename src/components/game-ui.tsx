@@ -16,11 +16,13 @@ import {
   GOAL_FLASH_MS,
   GOAL_FONT_MAX_SCALE,
   GOAL_GAP,
+  CHEER_RIBBON_MS,
   GOAL_LAYOUT,
   GOAL_PAD,
   goalBarLayout,
   goalLine,
   goalWords,
+  type GoalCheer,
   type GoalSpan,
 } from './goal-model';
 import { buyLabelText } from './a11y-labels';
@@ -295,6 +297,7 @@ export function Hud({
   chips,
   scrapRing,
   coachLit = false,
+  cheer = null,
 }: {
   /** G98: small round chips in the top row, after the gift (the HUD_TOP_CHIPS slot); the goal bar keeps its width. */ topChips?: React.ReactNode;
   /** The chips at the end of the goal row (the HUD_CHIPS slot); the screen passes `<Slots items={HUD_CHIPS} />`. */ chips?: React.ReactNode;
@@ -312,6 +315,8 @@ export function Hud({
   giftDot?: boolean;
   /** A coach step is lit on something else: the goal's green "tap!" pill stays quiet, so the screen has one call to action (S69). */
   coachLit?: boolean;
+  /** D541: the goal's task was just done: a tick pops on the bar, and a done chapter gets a ribbon. `id` is new for each one. */
+  cheer?: (GoalCheer & { id: number }) | null;
 }) {
   const shown = useCountUp(cash);
   const [flash] = useState(() => new Animated.Value(1));
@@ -360,6 +365,27 @@ export function Hud({
     goalFlash.setValue(1);
     Animated.timing(goalFlash, { toValue: 0, duration: GOAL_FLASH_MS, useNativeDriver: native }).start();
   }, [goalKey, goalFlash]);
+  // D541: the tick pops on the bar (spring in, hold, fade) and a finished chapter's ribbon rides under it for a moment
+  const [tickPop] = useState(() => new Animated.Value(0));
+  const [ribbonShow] = useState(() => new Animated.Value(0));
+  const [ribbonOn, setRibbonOn] = useState(false);
+  useEffect(() => {
+    if (!cheer) return;
+    tickPop.setValue(0);
+    Animated.sequence([
+      Animated.spring(tickPop, { toValue: 1, friction: 4, tension: 160, useNativeDriver: native }),
+      Animated.delay(450),
+      Animated.timing(tickPop, { toValue: 0, duration: 200, useNativeDriver: native }),
+    ]).start();
+    if (!cheer.chapter) return;
+    setRibbonOn(true);
+    ribbonShow.setValue(0);
+    Animated.sequence([
+      Animated.timing(ribbonShow, { toValue: 1, duration: 220, useNativeDriver: native }),
+      Animated.delay(CHEER_RIBBON_MS),
+      Animated.timing(ribbonShow, { toValue: 0, duration: 300, useNativeDriver: native }),
+    ]).start(() => setRibbonOn(false));
+  }, [cheer, tickPop, ribbonShow]);
   return (
     <View style={styles.hud}>
       <View style={styles.hudTop}>
@@ -486,10 +512,23 @@ export function Hud({
                 </View>
               ) : null}
             </View>
+            <Animated.View pointerEvents="none" testID="goal-tick" style={[styles.goalTick, { opacity: tickPop, transform: [{ scale: tickPop }] }]}>
+              <Text style={styles.goalTickMark}>{'\u2713'}</Text>
+            </Animated.View>
           </Pressable>
           {chips}
         </View>
       )}
+      {ribbonOn && cheer?.chapter ? (
+        <Animated.View
+          pointerEvents="none"
+          testID="goal-ribbon"
+          accessibilityRole="alert"
+          style={[styles.ribbon, { opacity: ribbonShow, transform: [{ translateY: ribbonShow.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) }] }]}
+        >
+          <Text style={styles.ribbonText}>{`\u2713 ${cheer.text}`}</Text>
+        </Animated.View>
+      ) : null}
       {/* X1: overlaid on the HUD's lower right, so the row keeps its height; last in the HUD so it paints over the goal row's chips ("sales" tag) and takes the tap */}
       {TestPill && <TestPill />}
     </View>
@@ -1017,7 +1056,7 @@ export function NightOvenSheet({ view, onBuy, onClose }: { view: NightOvenView; 
 
 export function Toast({ text, top, compact }: { text: string; top: number; compact?: boolean }) {
   return (
-    <View style={[styles.toast, compact && styles.toastCompact, { top }]} pointerEvents="none">
+    <View testID="toast" style={[styles.toast, compact && styles.toastCompact, { top }]} pointerEvents="none">
       <Text style={[styles.toastText, compact && { fontSize: 13 }]}>{text}</Text>
     </View>
   );
@@ -1129,6 +1168,37 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.15)',
   },
   goalReady: { borderColor: '#fff', backgroundColor: C.basil },
+  goalTick: {
+    position: 'absolute',
+    left: 3,
+    top: 2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: C.basil,
+    borderWidth: 2,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  goalTickMark: { fontFamily: F.bold, fontSize: 14, lineHeight: 16, color: '#fff' },
+  // D541: the chapter's ribbon hangs under the bar, over the shop tabs, for a moment: it takes no room and no taps
+  ribbon: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    top: '100%',
+    marginTop: -4,
+    zIndex: 5,
+    alignItems: 'center',
+    backgroundColor: C.basil,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#fff',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  ribbonText: { fontFamily: F.bold, fontSize: 15, color: '#fff' },
   goalFlash: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.7)' },
   goalFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: GOAL_BAR.fill },
   // two-tone label (D297): dark ink over the track, a cream copy clipped to the fill's width

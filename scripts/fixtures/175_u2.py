@@ -20,6 +20,34 @@ def story_save(sold=212, **kw):
                 x={"chapters": {"done": CH1, "best": {}, "run": {}, "calm": {}, "report": False}})
 
 
+# D536: a chapter whose open task is done by going somewhere: its Go button (44 pt) takes the player there. Main beats, in story order, with the
+# interludes before them: everything before the chapter has played, the first chapter's tasks are done, Nonna has taken over (the list is open).
+BEATS = ["downtown-1", "downtown-2", "downtown-3", "downtown-4", "suburbs-1", "suburbs-2", "suburbs-3", "suburbs-3b", "suburbs-hire",
+         "suburbs-4", "waterfront-1", "waterfront-2", "waterfront-3", "waterfront-3b", "waterfront-4"]
+
+
+def go_save(chapter, built):
+    """The save on `chapter` (a scene id in BEATS): every beat before it seen, `built` the shops that exist, all of them run by their managers."""
+    seen = BEATS[:BEATS.index(chapter)]
+    shops = {h: shop(built=h in built, managed=h in built, prep=8, ovens=6, counter=6, sold=900 if h in built else 0) for h in IDS}
+    return dict(MID_SAVE, saveVersion=8, cash=200, totalEarned=20000, vehicle=1, active=built[-1], tutorial=TUTORIAL_DONE, shops=shops,
+                seenScenes=seen, scrapbookViewed=3, lastSavedAt=T0_MS, playSeconds=900,
+                rewards={"giftShownDay": day_str()},
+                x={"chapters": {"done": CH1, "best": {}, "run": {}, "calm": {}, "report": False}})
+
+
+def go_shot(browser, chapter, built, title, name):
+    """Open the Story tab of `chapter`: its title is the chapter's, and a Go button (44 pt) is on the row."""
+    page = seeded_page(browser, go_save(chapter, built)); settle(page, 1.0)
+    open_drawer(page)
+    expect_text(page, "story-title", title)
+    expect(page, "story-go", 3000)
+    box = tid(page, "story-go").first.bounding_box()
+    if box["height"] < 43.5 or box["width"] < 43.5:
+        report["errors"].append(f"fixture 175_u2: the Go button is {box['width']:.0f} x {box['height']:.0f} pt in shot {name} (44 pt needed)")
+    shot(page, name, 0.6)
+
+
 def open_drawer(page):
     tid(page, "open-tasks").click()
     expect(page, "tasks-drawer", 3000)
@@ -60,3 +88,14 @@ def run(ctx):
         shot(page, "177-daily-locked", 0.5)
     except Exception as e:
         report["errors"].append(f"U2 177 failed: {e}")
+
+    # 175b-d (D536): the Story tab on a build, a win and a bid chapter: each open task has its Go
+    for chapter, built, title, name in [
+        ("suburbs-1", ["downtown"], r"Meet the Mudhens", "175b-story-go-build"),
+        ("suburbs-4", ["downtown", "suburbs"], r"The Championship", "175c-story-go-win"),
+        ("waterfront-4", ["downtown", "suburbs", "waterfront"], r"Auction Day", "175d-story-go-bid"),
+    ]:
+        try:
+            go_shot(browser, chapter, built, title, name)
+        except Exception as e:
+            report["errors"].append(f"U2 {name} failed: {e}")

@@ -4,9 +4,11 @@ import { HOME_SCENES } from '../content/scenes/home';
 import { finaleSeen } from '../engine/features/counterattack';
 import { masteryMax, masteryTotal, nextStar } from '../engine/features/mastery';
 import { cityOf } from '../content/cities';
+import type { ChapterTask } from '../content/cities/types';
 import { lineOf, t } from '../content/copy';
 import { chapterReady, chaptersOf, currentChapter, nextTask } from '../engine/chapters';
-import { def, type GameState } from '../engine/game';
+import { def, headCost, upgradeCostOf, type GameState } from '../engine/game';
+import { goalAmount } from '../engine/format';
 import { C } from '../theme';
 import { copy } from './endgame/copy-text';
 import { nextStarLine, starName } from './endgame/mastery-model';
@@ -121,9 +123,13 @@ export function storyGoal(seen: number, total: number = STORY_TOTAL): { label: s
 /** G116: the story count of the city being played: its own scenes seen of its own scenes (a franchise keeps the old city's ids in `seenScenes`). */
 export function cityStory(g: GameState): { label: string; current: number; target: number } {
   const scenes = cityOf(g).scenes;
-  const ids = new Set(scenes.map((sc) => sc.id));
-  return storyGoal(g.seenScenes.filter((id) => ids.has(id)).length, scenes.length);
+  let ids = SCENE_IDS.get(scenes);
+  if (!ids) SCENE_IDS.set(scenes, (ids = new Set(scenes.map((sc) => sc.id))));
+  const own = ids;
+  return storyGoal(g.seenScenes.filter((id) => own.has(id)).length, scenes.length);
 }
+/** U32: a city's scene ids, built once per scenes array (the bar asks every render). */
+const SCENE_IDS = new WeakMap<readonly unknown[], ReadonlySet<string>>();
 
 // ---------- the post-story goal (v5.15, D427) ----------
 
@@ -225,8 +231,24 @@ export function shortTask(label: string, shopName: string): string {
   return short.trim() || label;
 }
 
-/** The first word of a label: the narrowest bar's name for a yes/no task ("Hire", "Build", "Beat"). */
-export const firstWord = (label: string): string => goalWords(label)[0] ?? label;
+/** The narrowest bar's name for a yes/no task: as many whole words of the short label as fit in 10 characters, at least one ("Hire Lucia", "Build", "Beat", "Pier 9"). */
+export function firstWord(label: string): string {
+  const words = goalWords(label);
+  let out = words[0] ?? label;
+  for (const w of words.slice(1)) {
+    if (out.length + 1 + w.length > 10) break;
+    out += ` ${w}`;
+  }
+  return out;
+}
+
+/** D532: what a hire or a build task costs, or null for any other task (and for a hire that is not on offer): the bar shows the cash against it. */
+export function taskPrice(g: GameState, task: ChapterTask): number | null {
+  if (task.kind === 'build') return def(task.shop, cityOf(g)).buildCost;
+  if (task.kind !== 'hire' || !task.head) return null;
+  const price = task.head === 'manager' ? upgradeCostOf(g, task.shop, 'manager') : headCost(task.shop, task.head, cityOf(g));
+  return price !== null && price > 0 ? price : null;
+}
 
 /**
  * The goal bar's chapter goal: the engine's next task (`nextTask`) of the chapter the player is on, with its progress; or, once every task is done,
@@ -245,13 +267,15 @@ export function chapterGoal(g: GameState, lastSceneEndPlay: number | null = null
     // a kind with its own short line in the copy ("Beat MegaSlice"), else the label made short
     const own = lineOf(`task.kind.${row.task.kind}.short`, g.city);
     const short = own !== undefined ? t(`task.kind.${row.task.kind}.short`, { target: row.task.target, shop }, g.city) : shortTask(shown.label, shop);
+    // a hire or a build is paid for in cash: the bar shows the cash against that task's own price ("$12 / $400"); it still never offers the purchase
+    const price = taskPrice(g, row.task);
     return {
       label: `${ch} \u00B7 ${shown.label}`,
       short: `${ch} \u00B7 ${short}`,
       tiny: `${ch} \u00B7 ${shown.progress || firstWord(short)}`,
-      text: shown.progress,
-      current: shown.pct * row.target,
-      target: row.target,
+      text: price !== null ? goalAmount(g.cash, price) : shown.progress,
+      current: price !== null ? g.cash : shown.pct * row.target,
+      target: price !== null ? price : row.target,
       key: row.task.key,
       ready: false,
     };
@@ -275,4 +299,29 @@ export function chapterGoal(g: GameState, lastSceneEndPlay: number | null = null
     key,
     ready: wait.secondsLeft === 0,
   };
+}
+
+// ---------- the cheer (D541) ----------
+
+/** How long the chapter ribbon stays up (ms), after it has faded in. */
+export const CHEER_RIBBON_MS = 1800;
+
+/** What the bar celebrates when its task changes: a task done (a toast), or the chapter's last (a ribbon). */
+export interface GoalCheer {
+  chapter: boolean;
+  /** "Serve 424 pies in Downtown" for a task; "Chapter 2 complete" for a chapter. */
+  text: string;
+}
+
+/**
+ * D541: the goal moved from `prev` to `next` (the chapter goal's key and label). A task done: its words; the last task of a chapter, or the move to the
+ * next chapter: "Chapter N complete". Null when nothing was done: no goal before, the same one, or the wait for a scene ending (the beat played).
+ */
+export function goalCheer(prev: { key: string; label: string } | null, next: { key: string; label: string } | null): GoalCheer | null {
+  if (!prev || !next || prev.key === next.key || prev.key.endsWith('.ready')) return null;
+  const [ch, ...words] = prev.label.split(' \u00B7 ');
+  const nextCh = next.label.split(' \u00B7 ')[0];
+  const n = /^Ch (\d+)$/.exec(ch)?.[1];
+  if (next.key.endsWith('.ready') || nextCh !== ch) return { chapter: true, text: n ? `Chapter ${n} complete` : 'Chapter complete' };
+  return { chapter: false, text: words.join(' \u00B7 ') };
 }

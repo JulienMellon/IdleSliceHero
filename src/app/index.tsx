@@ -18,7 +18,7 @@ import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePop
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
 import { fitFont, MIN_FONT } from '@/components/endgame/fit-model';
-import { chapterGoal, cityStory, GOAL_TAB, masteryGoal } from '@/components/goal-model';
+import { chapterGoal, cityStory, type GoalCheer, goalCheer, GOAL_TAB, masteryGoal } from '@/components/goal-model';
 import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots } from '@/components/slots';
 import { buyKeyOf, type DrawerIcon, type DrawerView, drawerCards, parseBuyKey, tiedBundle } from '@/components/drawer-model';
 import { buttonTone, buyBundle, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
@@ -104,6 +104,15 @@ function cachedIcon(icon: DrawerIcon): React.ReactNode {
   return el;
 }
 const MOON_ICON = <MoonIcon size={26} />;
+
+/** C175: a toast that owns its own timer (the effect that asks for it may re-run or unmount before it ends). */
+function flashToast(text: string, ms = 2200) {
+  const at = gameNow();
+  useGame.setState({ toast: { text, at } });
+  setTimeout(() => {
+    if (useGame.getState().toast?.at === at) useGame.setState({ toast: null });
+  }, ms);
+}
 
 type DrawerCardView = DrawerView['cards'][number];
 
@@ -219,12 +228,17 @@ export default function GameScreen() {
     setTasksTab(GOAL_TAB);
     setTasksOpen(true);
   }, []);
-  // D536: the Story tab's "Go" on a hire, build, win or bid row takes the player there: the list closes and the shop the task names opens
-  // (a hire or a bid: its upgrade drawer; a build: the shop tabs, where the unbuilt shop waits; a win: the shop, where the challenge card is)
+  // D536: the Story tab's "Go" on a hire, build, win or bid row takes the player where the task is done, and the list closes:
+  // hire: the shop's upgrade drawer (its hire card) · bid: the same drawer, where the Pier 9 auction card is · win: the shop, where the rival's
+  // challenge card is · build: the city map, where the lot to build waits (C174: setActive ignores a shop that is not built yet)
   const onGo = useCallback(
     (kind: StoryGo, shop: NeighborhoodId) => {
       haptic();
       setTasksOpen(false);
+      if (kind === 'build') {
+        router.push('/city');
+        return;
+      }
       setActive(shop);
       if (kind === 'hire' || kind === 'bid') setDrawerOpen(true);
     },
@@ -311,21 +325,20 @@ export default function GameScreen() {
       onPress: onGoal,
     };
   }
-  // D541: a task completing says so: "✓ Ch 2 · Serve 424 pies in Downtown", or "✓ Ch 2 complete" when it was the last (the bar itself flashes once)
+  // D541: a task completing says so: a tick pops on the bar, a toast names the task ("✓ Serve 424 pies in Downtown"), and the chapter's last gets a
+  // "Chapter 2 complete" ribbon (the bar itself flashes once)
   const goalKey = cg?.key;
   const goalLabel = cg?.label ?? '';
   const prevGoal = useRef<{ key: string; label: string } | null>(null);
+  const [cheer, setCheer] = useState<(GoalCheer & { id: number }) | null>(null);
   useEffect(() => {
     const prev = prevGoal.current;
-    prevGoal.current = goalKey === undefined ? null : { key: goalKey, label: goalLabel };
-    if (!prev || goalKey === undefined || prev.key === goalKey || prev.key.endsWith('.ready')) return;
-    const at = gameNow();
-    const text = goalKey.endsWith('.ready') ? `✓ ${prev.label.split(' · ')[0]} complete` : `✓ ${prev.label}`;
-    useGame.setState({ toast: { text, at } });
-    const timer = setTimeout(() => {
-      if (useGame.getState().toast?.at === at) useGame.setState({ toast: null });
-    }, 2200);
-    return () => clearTimeout(timer);
+    const next = goalKey === undefined ? null : { key: goalKey, label: goalLabel };
+    prevGoal.current = next;
+    const c = goalCheer(prev, next);
+    if (!c) return;
+    setCheer({ ...c, id: Date.now() });
+    if (!c.chapter) flashToast(`\u2713 ${c.text}`);
   }, [goalKey, goalLabel]);
 
   // the HUD names the next station to tap (prep → oven → counter) until a GM runs the shop
@@ -396,6 +409,7 @@ export default function GameScreen() {
         subtitle={coach && id === first ? '' : subtitle}
         boostText={boost?.text}
         goal={goal}
+        cheer={cheer}
         newScenes={newScenes}
         onScrapbook={onScrapbook}
         onCity={onCity}

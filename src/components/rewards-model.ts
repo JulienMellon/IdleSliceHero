@@ -416,6 +416,7 @@ export interface StoryReward {
   label: string;
   /** The row has the clapper board (a scene is coming), not a pointer. */
   scene: boolean;
+  /** What the chapter pays besides its scene; 0 (no gem on the row) for the free chapter. */
   diamonds: number;
 }
 
@@ -439,7 +440,7 @@ export interface StoryView {
 }
 
 /** The reward row as one line of text (what it is read as): "🎬 New scene · 💎 5". */
-export const storyRewardText = (r: StoryReward): string => `${r.scene ? '\u{1F3AC} ' : ''}${r.label} \u00B7 \u{1F48E} ${r.diamonds}`;
+export const storyRewardText = (r: StoryReward): string => `${r.scene ? '\u{1F3AC} ' : ''}${r.label}${r.diamonds > 0 ? ` \u00B7 \u{1F48E} ${r.diamonds}` : ''}`;
 
 /** One task as the Story tab and the goal bar read it (the bar formats only the next one). */
 export function storyTask(g: GameState, task: ChapterTask): StoryTask {
@@ -481,7 +482,8 @@ export function storyTask(g: GameState, task: ChapterTask): StoryTask {
 
 /** The reward row of a chapter: the scene, plus what the scene opens (the takeover opens Daily and Weekly) and the diamonds. A free chapter (the tutorial's) has no scene to come: its beat has played. */
 function storyReward(g: GameState, c: Chapter, number: number): StoryReward {
-  if (c.free) return { label: `Next: Chapter ${number + 1}`, scene: false, diamonds: CHAPTER_DIAMONDS };
+  // a free chapter pays nothing (engine/chapters.ts `payChapter`): its row only points on, with no diamonds
+  if (c.free) return { label: `Next: Chapter ${number + 1}`, scene: false, diamonds: 0 };
   const city = cityOf(g);
   const opens = c.sceneId === (city.rewardsScene ?? city.fit.takeover.sceneId) ? ' \u00B7 Daily tasks open' : '';
   return { label: `New scene${opens}`, scene: true, diamonds: CHAPTER_DIAMONDS };

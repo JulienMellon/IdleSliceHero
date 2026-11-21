@@ -6,8 +6,9 @@ import { HOME_CHAPTERS } from '../../content/cities/home/chapters';
 import { NONNA_TAKEOVER } from '../../content/cities/home/fit';
 import type { NeighborhoodId } from '../../content/types';
 import { HOME_COPY } from '../../content/copy';
+import { HOME_SCENES } from '../../content/scenes/home';
 import { COPY as CHAPTER_COPY } from '../../content/copy/home/chapters';
-import { CHAPTERS_KEY, newChapterSave } from '../../engine/chapters';
+import { CHAPTERS_KEY, newChapterSave, saveOf } from '../../engine/chapters';
 import * as G from '../../engine/game';
 import {
   CHAPTER_DIAMONDS,
@@ -63,8 +64,8 @@ describe('chapter 1 during the tutorial', () => {
     expect(v.coming).toBe('');
   });
   it('points on to chapter 2 in the reward row, not "New scene" (S75)', () => {
-    expect(v.reward).toEqual({ label: 'Next: Chapter 2', scene: false, diamonds: CHAPTER_DIAMONDS });
-    expect(storyRewardText(v.reward!)).toBe(`Next: Chapter 2 · \u{1F48E} ${CHAPTER_DIAMONDS}`);
+    expect(v.reward).toEqual({ label: 'Next: Chapter 2', scene: false, diamonds: 0 });
+    expect(storyRewardText(v.reward!)).toBe('Next: Chapter 2');
   });
 });
 
@@ -116,6 +117,22 @@ describe('chapter 2 half way', () => {
     const [, hire] = storyView(s, null).tasks;
     expect(hire.done).toBe(true);
     expect(hire.spoken).toBe('Hire Lucia, head baker, done');
+  });
+});
+
+describe('the row’s diamonds are what the chapter pays (T126)', () => {
+  const ALL_KEYS = HOME_CHAPTERS.flatMap((c) => c.tasks.map((t) => t.key));
+  const owed = (g: G.GameState): number => g.rewards.diamonds + saveOf(g).banked;
+  it('for every chapter, the row equals what its scene’s end adds to the diamonds paid and banked; 0 for the free one', () => {
+    for (const c of HOME_CHAPTERS) {
+      const at = HOME_SCENES.findIndex((sc) => sc.id === c.sceneId);
+      const g = doneKeys({ ...G.newGame(0), seenScenes: HOME_SCENES.slice(0, at).map((sc) => sc.id) }, ALL_KEYS);
+      const v = storyView(g, null);
+      expect(v.title).toBe(HOME_COPY[`${c.key}.title`]);
+      const paid = owed(G.markSceneSeen(g, HOME_SCENES[at])) - owed(g);
+      expect(v.reward?.diamonds).toBe(paid);
+      if (c.free) expect(paid).toBe(0);
+    }
   });
 });
 

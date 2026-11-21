@@ -57,3 +57,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 Julien asked for card S4 (sharded screenshot run) in v5.22: docs/build/v5.22/card-S4.md, appended to v5.22 VERSION.md; add 'S4 todo' to the v5.22 cards line at close.
 - 2026-11-21 S8 verify v5.21-r2 pass: True 0 [], layout 0, 1 new 141 changed. r2 re-checks launched.
 - 2026-11-21 S8 r2 gate not met (critic major 3: D532 D536 D541; code APPROVED; story minors carry). Fix round r3: U1 + U2, then E1 + E2. D532 call: a hire/build chapter task may show cash vs its own price; the bar never offers a non-task purchase.
+- 2026-11-21 S8 r3 U2 done (D536 shots 175b-d, C173 free row 0 gems, T126). E1 r3 launched (+chapterDiamonds); U1 r3 running.
