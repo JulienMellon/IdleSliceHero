@@ -4,14 +4,14 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.21                   # v5.20 closed 2026-11-21 (r3: critic SATISFIED, codecritic APPROVED, story advisory minors)
-step: review                        # setup | waves | verify | review | fix | close
+step: fix                        # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.21                   # r1 verify: True 0 [], layout 0 new; 10 new 126 changed vs v5.20-r3
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
   E1 done  W2 done  U1 done  U2 done  E2 done
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.20/review-r3-critic.md (r3 SATISFIED; bug 0 major 0 minor 5; E3 S2; open D530 D481 D519 D493 D495)
+  critic: docs/build/v5.21/review-r1-critic.md (r1 NOT SATISFIED; bug 5 major 4 minor 11; E7 U11 S2; G113-G117 bugs, D532 D533 D536 D541 majors)
   code:   docs/build/v5.21/review-r1-code.md (r1 CHANGES REQUESTED; blocker/high 1 medium 3 low 20; E6 U10 S1 N7; C169 chapter 5 gems unpaid)
   story:  docs/build/v5.21/review-r1-story.md (r1 NOT SATISFIED; bug 0 major 2 minor 15; E2 U2 T13; S74 bid line, S75 ch1 reward)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
@@ -45,3 +45,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 E2 done (step 2 fits real ch1; 2876 tests). U2 casts dropped. pacing moved: downtown-2 4.5->4.9 (+8.9%). Verify v5.21.
 - 2026-11-21 S8 verify v5.21 FAIL: True 8 errors (148_u4, 98_u3, tasks/claim-sheet shots expect Daily; drawer opens on Story), layout 0, 10 new 121 changed. Sent to U2.
 - 2026-11-21 S8 verify v5.21 pass: True 0 [], layout 0, 10 new 126 changed. r1 reviews launched (critic, codecritic, storycritic).
+- 2026-11-21 S8 r1 gate not met (critic bug 5 major 4; code CHANGES REQUESTED high 1; story major 2). Fix round r2: E1 + U2, then U1 + E2, then W2. S and N owners have no fix route.
