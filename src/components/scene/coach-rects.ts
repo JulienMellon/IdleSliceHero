@@ -12,7 +12,7 @@ export const DIAL_R = BADGE_R + 4;
 export const DIAL_PILL = 24;
 
 /** The baker stands in front of the ovens with a head and hat just below the oven bank's face: `ovens:all` reaches this far (points) lower, so the cut-out holds them (D531). */
-export const OVEN_HEAD_PT = 10;
+export const OVEN_HEAD_PT = 16;
 
 /** The ids this module reports, in a fixed order. */
 export const SCENE_TARGETS = [
