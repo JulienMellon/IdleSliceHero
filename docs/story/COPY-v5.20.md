@@ -11,7 +11,7 @@
 | `tutorial.5` | 5 | counter | Hot pizza waits for nobody. Tap the counter to serve! |
 | `tutorial.6` | 6 | cash in the HUD | Look! Every pizza you sell becomes money. Is how we eat. |
 | `tutorial.7` | 7 (from v5.21) | goal bar | I keep a list, like my mother did. Tap it, cara. |
-| `tutorial.8` | 8 (from v5.21) | task list | This list tells you what comes next. First on it: a second oven. |
+| `tutorial.8` | 8 (from v5.21) | task list | This list tells you what comes next. First on it: a better oven. |
 | `tutorial.9` | 9 | nothing (free play) | Keep baking, keep serving. Save {cost} to upgrade the oven. |
 | `tutorial.10` | 10 | sidewalk Ovens card | Ecco, you have enough. Tap Ovens to upgrade the oven. |
 | `tutorial.11` | 11 | both ovens | A better oven bakes more pizzas. Now this is a kitchen! |
