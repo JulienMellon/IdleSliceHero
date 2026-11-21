@@ -3,23 +3,9 @@
 // The store is plain module state: a subscriber is told only when ITS target's rect changes.
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
 
-/** Every spot the tutorial can point at. Scene ids are registered by the storefront (card C2), drawer ids by the drawer (card C3). */
-export type CoachTargetId =
-  | 'station:prep'
-  | 'station:oven'
-  | 'station:counter'
-  | 'dial:prep'
-  | 'dial:oven'
-  | 'dial:counter'
-  | 'ovens:all'
-  | 'hud:cash'
-  | 'hud:goal'
-  | 'walk:prep'
-  | 'walk:ovens'
-  | 'walk:counter'
-  | 'walk:drivers'
-  | 'walk:all'
-  | 'drawer:hire:prep';
+import type { CoachTargetId } from '../../engine/coach-types';
+
+export type { CoachTargetId };
 
 /** A screen rect in points: x0,y0 the top-left corner, x1,y1 the bottom-right. */
 export interface Rect {

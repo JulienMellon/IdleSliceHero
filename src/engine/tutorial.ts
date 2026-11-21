@@ -5,8 +5,7 @@
 // a `look` step (6, 11, 15) once it has been seen (a tap, or the overlay's `LOOK_MS`; `LOOK_FALLBACK_MS` when it cannot be drawn), the drawer opening (12) and the drawer closing (13).
 import { cityOf, type CityDef } from '../content/cities';
 import { t } from '../content/copy';
-import type { CoachMode } from '../components/coach/steps';
-import type { CoachTargetId } from '../components/coach/targets';
+import type { CoachMode, CoachTargetId } from './coach-types';
 import { money } from './format';
 import * as G from './game';
 
