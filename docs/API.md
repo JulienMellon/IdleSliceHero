@@ -52,6 +52,9 @@
 - gameSpeed(): number — src/engine/clock.ts:32 — The foreground tick's speed multiplier (1 in the normal build).
 - gameNow(): number — src/engine/clock.ts:35 — Wall-clock milliseconds, as the game counts them.
 
+## src/engine/coach-types.ts
+- types: CoachMode, CoachTargetId
+
 ## src/engine/cutscene-input.ts
 - LINE_LOCKOUT_MS — src/engine/cutscene-input.ts:8 — Taps are ignored for this long after a line appears, so a tapping player can't blow past it.
 - SCENE_LOCKOUT_MS — src/engine/cutscene-input.ts:10 — …and for this long after a scene opens.
@@ -505,17 +508,17 @@
 - types: TeaserKind, Teaser
 
 ## src/engine/tutorial.ts
-- TUTORIAL_DONE — src/engine/tutorial.ts:25
-- CHAPTERS_ON — src/engine/tutorial.ts:28 — The task-list steps (7 and 8) wait for the chapters (v5.21): until then they are skipped.
-- stepsFor(city: CityDef): readonly CoachStep[] — src/engine/tutorial.ts:59
-- coachMode(s: G.GameState): CoachMode | null — src/engine/tutorial.ts:89 — The mode of the current step, or null when the tutorial isn't running (for the hints and the screen…
-- coachStep(s: G.GameState): CoachStep | null — src/engine/tutorial.ts:92 — The current step, or null when the tutorial isn't running (not started, done, or a GM already runs …
-- tutorialAdvance(s: G.GameState): G.GameState — src/engine/tutorial.ts:134 — Move past every finished step (several can finish at once).
-- tutorialNote(s: G.GameState, note: TutorialNote): G.GameState — src/engine/tutorial.ts:148 — The screen's say-so: ends the current step when it is the one waiting for this note, and moves on o…
-- tutorialHoldsStory(s: G.GameState) — src/engine/tutorial.ts:157 — Story scenes wait while Nonna walks the player through the first shop (steps 1-11).
-- HINTS: readonly Hint[] — src/engine/tutorial.ts:161
-- hintsAllowed(s: G.GameState): Record<Hint, boolean> — src/engine/tutorial.ts:168 — v5.17 (U4): one instruction at a time.
-- showLockedTabs(s: G.GameState): boolean — src/engine/tutorial.ts:179 — v5.17 (U4): the padlocked tabs of neighbourhoods that cannot be built yet only mean something once …
+- TUTORIAL_DONE — src/engine/tutorial.ts:24
+- CHAPTERS_ON — src/engine/tutorial.ts:27 — The task-list steps (7 and 8) wait for the chapters (v5.21): until then they are skipped.
+- stepsFor(city: CityDef): readonly CoachStep[] — src/engine/tutorial.ts:58
+- coachMode(s: G.GameState): CoachMode | null — src/engine/tutorial.ts:88 — The mode of the current step, or null when the tutorial isn't running (for the hints and the screen…
+- coachStep(s: G.GameState): CoachStep | null — src/engine/tutorial.ts:91 — The current step, or null when the tutorial isn't running (not started, done, or a GM already runs …
+- tutorialAdvance(s: G.GameState): G.GameState — src/engine/tutorial.ts:133 — Move past every finished step (several can finish at once).
+- tutorialNote(s: G.GameState, note: TutorialNote): G.GameState — src/engine/tutorial.ts:147 — The screen's say-so: ends the current step when it is the one waiting for this note, and moves on o…
+- tutorialHoldsStory(s: G.GameState) — src/engine/tutorial.ts:156 — Story scenes wait while Nonna walks the player through the first shop (steps 1-11).
+- HINTS: readonly Hint[] — src/engine/tutorial.ts:160
+- hintsAllowed(s: G.GameState): Record<Hint, boolean> — src/engine/tutorial.ts:167 — v5.17 (U4): one instruction at a time.
+- showLockedTabs(s: G.GameState): boolean — src/engine/tutorial.ts:178 — v5.17 (U4): the padlocked tabs of neighbourhoods that cannot be built yet only mean something once …
 - types: CoachStep, TutorialNote, Hint
 
 ## src/engine/vanity.ts
