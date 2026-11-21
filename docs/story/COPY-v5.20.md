@@ -12,9 +12,9 @@
 | `tutorial.6` | 6 | cash in the HUD | Look! Every pizza you sell becomes money. Is how we eat. |
 | `tutorial.7` | 7 (from v5.21) | goal bar | I keep a list, like my mother did. Tap it, cara. |
 | `tutorial.8` | 8 (from v5.21) | task list | This list tells you what comes next. First on it: a second oven. |
-| `tutorial.9` | 9 | nothing (free play) | Keep baking, keep serving. Save {cost} for a second oven. |
-| `tutorial.10` | 10 | sidewalk Ovens card | Ecco, you have enough. Tap Ovens to buy a second oven. |
-| `tutorial.11` | 11 | both ovens | Two ovens bake two pizzas at once. Now this is a kitchen! |
+| `tutorial.9` | 9 | nothing (free play) | Keep baking, keep serving. Save {cost} to upgrade the oven. |
+| `tutorial.10` | 10 | sidewalk Ovens card | Ecco, you have enough. Tap Ovens to upgrade the oven. |
+| `tutorial.11` | 11 | both ovens | A better oven bakes more pizzas. Now this is a kitchen! |
 | `tutorial.12` | 12 | the All button | Tap All. Every upgrade in the shop lives in there. |
 | `tutorial.13` | 13 | the drawer's prep-head hire card | {marco} rolls dough for you, flour and all. Hire him when you can. |
 | `tutorial.14` | 14 | nothing (free play) | Keep baking. {marco} won't hire himself. |
@@ -24,5 +24,5 @@
 
 | key | step | lit target | line |
 |---|---|---|---|
-| `tutorial.alt.9` | 9 (oven money was spent elsewhere) | nothing (free play) | Ay! You spent the oven money. Fine. Save {cost} again, eh? |
+| `tutorial.alt.9` | 9 (oven money was spent elsewhere) | nothing (free play) | Ay! You spent the oven money. Save {cost} again for the upgrade. |
 | `tutorial.alt.13` | 13 (Marco already affordable) | the drawer's prep-head hire card | {marco} rolls dough for you, flour and all. You can hire him now. |
