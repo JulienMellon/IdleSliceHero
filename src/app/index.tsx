@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,7 +18,7 @@ import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePop
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
 import { fitFont, MIN_FONT } from '@/components/endgame/fit-model';
-import { chapterGoal, cityStory, type GoalCheer, goalCheer, GOAL_TAB, masteryGoal } from '@/components/goal-model';
+import { chapterGoal, cityStory, type GoalCheer, goalCheer, GOAL_TAB, masteryGoal, tasksParamTab } from '@/components/goal-model';
 import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots } from '@/components/slots';
 import { buyKeyOf, type DrawerIcon, type DrawerView, drawerCards, parseBuyKey, tiedBundle } from '@/components/drawer-model';
 import { buttonTone, buyBundle, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
@@ -186,6 +186,19 @@ export default function GameScreen() {
         useGame.setState({ toast: null });
       };
     }, []),
+  );
+  // E1b: a tap on a chapter-locked lot in the City comes back here with `tasks=story`: open the list on that tab, then clear the param
+  const { tasks: tasksParam } = useLocalSearchParams<{ tasks?: string }>();
+  useFocusEffect(
+    useCallback(() => {
+      const tab = tasksParamTab(tasksParam);
+      if (!tab) return;
+      setDrawerOpen(false);
+      setGiftOpen(false);
+      setTasksTab(tab);
+      setTasksOpen(true);
+      router.setParams({ tasks: undefined });
+    }, [tasksParam]),
   );
   const setBonusHold = useGame((s) => s.setBonusHold);
   // G95: the golden pizza also waits while a card is up (an order, or Victor's challenge): the sky has no room beside it

@@ -15,5 +15,8 @@ def run(ctx):
         expect(page, "city-row-university", 3000)
         expect_text(page, "city-row-university", r"Finish Chapter 10 first", 3000)
         shot(page, "180-build-locked", 0.6)
+        tid(page, "city-row-university").click(); advance(page, 800)
+        expect(page, "story-tab", 3000)
+        shot(page, "180b-locked-tap-story", 0.6)
     except Exception as e:
         report["errors"].append(f"E1b 180 failed: {e}")

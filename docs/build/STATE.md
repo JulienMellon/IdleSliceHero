@@ -9,7 +9,7 @@ round: r3              # r1 | r2 | r3
 last_shots: v5.21-r2                # r2 verify: True 0 [], layout 0 new; 1 new 141 changed vs v5.21
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
-  E1 done  W2 done  U1 done  U2 done  E2 done  E1b partial
+  E1 done  W2 done  U1 done  U2 done  E2 done  E1b done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.21/review-r2-critic.md (r2 NOT SATISFIED; bug 0 major 3 minor 11; E3 U9 S2; D532 D536 D541 majors, D542 new)
   code:   docs/build/v5.21/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 3 low 18; E1 U12 S1 N7)
@@ -20,8 +20,6 @@ next: resume S8-v5.21.md: FIRST launch programmer on docs/build/v5.21/card-E1b.m
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-21 S8 r2 W2 done (S76 S77 S79-S85; 34 keys changed, 1 added). W2 writing S74 line; U2 syncing copy table.
-- 2026-11-21 S8 r2 fixes done (U1 win.short; E1 S74 scene line, golden re-recorded; 2896 tests). Verify v5.21-r2.
 - 2026-11-21 S8 Julien asked for card S4 (sharded screenshot run) in v5.22: docs/build/v5.22/card-S4.md, appended to v5.22 VERSION.md; add 'S4 todo' to the v5.22 cards line at close.
 - 2026-11-21 S8 verify v5.21-r2 pass: True 0 [], layout 0, 1 new 141 changed. r2 re-checks launched.
 - 2026-11-21 S8 r2 gate not met (critic major 3: D532 D536 D541; code APPROVED; story minors carry). Fix round r3: U1 + U2, then E1 + E2. D532 call: a hire/build chapter task may show cash vs its own price; the bar never offers a non-task purchase.
@@ -30,4 +28,5 @@ next: resume S8-v5.21.md: FIRST launch programmer on docs/build/v5.21/card-E1b.m
 - 2026-11-21 S8 r3 U1 done (D532 cash vs price, D541 tick pop + chapter ribbon + toast shot, D536 Go proved 178h2/i/j, S87 Pier 9 short). E2 r3 launched (D530).
 - 2026-11-21 S8 r3 fixes done (E2 D530 ribbon via goalCheer, shot 179e; gift needs Julien). 2902/2902, tsc clean, pacing same (downtown-2 +8.9%). Two fix rounds run: session ends before r3 verify.
 - 2026-11-21 S8 resumed: deps installed (npm ci, playwright 1.63.0); E1b launched before r3 verify.
-- 2026-11-21 S8 E1b partial (gate on beat 3 of prior shop; 2917 tests; EAGER max wait 1940.8 vs tuned 1919.8 at uptown-4, so beat 3 kept per acceptance; beat 4 broke 3 pacing tests). Needs index.tsx tasks param -> U1.
+- 2026-11-21 S8 E1b done (gate on beat 3 of prior shop; 2917 tests; EAGER max wait 1940.8 vs tuned 1919.8 at uptown-4, so beat 3 kept per acceptance; beat 4 broke 3 pacing tests). Needs index.tsx tasks param -> U1.
+- 2026-11-21 S8 r3 U1 done (locked-lot tap opens Story tab, shot 180b; 2918 tests). Verify v5.21-r3 next.

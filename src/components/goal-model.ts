@@ -194,6 +194,11 @@ export function goalLine(goal: { label: string; short?: string; tiny?: string; t
 
 /** The tasks drawer's tab a tap on the goal bar (or the clipboard) opens. */
 export const GOAL_TAB: TasksTab = 'story';
+/** The tasks tab a `tasks` route param asks for ('story' from a tap on a chapter-locked lot in the City), or null for no (or a stray) value. */
+export function tasksParamTab(param: string | string[] | undefined): TasksTab | null {
+  const v = Array.isArray(param) ? param[0] : param;
+  return v === 'story' || v === 'daily' || v === 'weekly' ? v : null;
+}
 /** How long the bar flashes when a task completes (ms): once, and short. */
 export const GOAL_FLASH_MS = 500;
 
