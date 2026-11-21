@@ -21,7 +21,9 @@ export const CUT = { pad: 8, radius: 12 } as const;
 /** Nonna's card: the room it is planned with (two or three lines of text beside her portrait), the gap to the cut-out, the margin to the screen's edge. */
 export const CARD = { height: 84, gap: 12, margin: 8, side: 16 } as const;
 /** The hand: its box (pt), the width under which a target is "narrow" and the height under which it is "short", how far up from the bottom edge it rests, its tilt (the glyph points up at 0). */
-export const HAND = { size: 34, narrow: 64, short: 90, rest: 30, along: 0.78, tilt: -20, beside: 70 } as const;
+export const HAND = { size: 34, narrow: 64, short: 90, rest: 30, along: 0.78, tilt: -20, beside: 70, down: 160 } as const;
+/** A target whose bottom edge is in the top fifth of the screen (the HUD) gets its card right below it; any other gets it at the street band, clear of the shop. */
+export const HUD_ZONE = 0.22;
 
 export const padCut = (r: Rect, pad: number = CUT.pad): Rect => ({ x0: r.x0 - pad, y0: r.y0 - pad, x1: r.x1 + pad, y1: r.y1 + pad });
 
@@ -82,7 +84,7 @@ export interface HandPose {
   y: number;
   /** Rotation in degrees; the glyph points up at 0. */
   rot: number;
-  where: 'inside' | 'left' | 'right';
+  where: 'inside' | 'above' | 'left' | 'right';
 }
 
 export interface CardDock {
@@ -104,19 +106,27 @@ export interface OverlayLayout {
   card: CardDock;
 }
 
-/** The hand's pose for the first target's cut-out `c`. */
-export function handPose(c: Rect, screen: Screen): HandPose {
+/**
+ * The hand's pose for the cut-out `c` it points at. Wide target: inside it. Narrow target (a dial, the All button): above it, pointing down, so it never lands on the
+ * control beside it (D525); beside it only when there is no room above or the card would be under it (`card`).
+ */
+export function handPose(c: Rect, screen: Screen, card?: Rect): HandPose {
   const half = HAND.size / 2;
   const keep = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
   const w = c.x1 - c.x0;
   const h = c.y1 - c.y0;
   let pose: HandPose;
   if (w < HAND.narrow) {
-    // a narrow target (a dial, a badge): the hand stands beside it, on the side with room, pointing in
-    const right = screen.w - c.x1 >= HAND.beside || screen.w - c.x1 >= c.x0;
-    pose = right
-      ? { x: c.x1 + half + 2, y: (c.y0 + c.y1) / 2, rot: -75, where: 'right' }
-      : { x: c.x0 - half - 2, y: (c.y0 + c.y1) / 2, rot: 75, where: 'left' };
+    const above: HandPose = { x: (c.x0 + c.x1) / 2, y: c.y0 - half - 2, rot: HAND.down, where: 'above' };
+    const box = (p: HandPose): Rect => ({ x0: p.x - half, y0: p.y - half, x1: p.x + half, y1: p.y + half });
+    const covers = (p: HandPose) => !!card && box(p).x0 < card.x1 && box(p).x1 > card.x0 && box(p).y0 < card.y1 && box(p).y1 > card.y0;
+    if (above.y - half >= 0 && !covers(above)) pose = above;
+    else {
+      const right = screen.w - c.x1 >= HAND.beside || screen.w - c.x1 >= c.x0;
+      pose = right
+        ? { x: c.x1 + half + 2, y: (c.y0 + c.y1) / 2, rot: -75, where: 'right' }
+        : { x: c.x0 - half - 2, y: (c.y0 + c.y1) / 2, rot: 75, where: 'left' };
+    }
   } else {
     // inside, centred across and 30 up from the bottom edge (over the work surface); on a short bar or card (cash, goal, a sidewalk card) it would hide the
     // text, so it rests on the bottom edge, three quarters along (its card sits 12 below, so the hand must not reach it)
@@ -126,13 +136,19 @@ export function handPose(c: Rect, screen: Screen): HandPose {
   return { ...pose, x: keep(pose.x, half, screen.w - half), y: keep(pose.y, half, screen.h - half) };
 }
 
-/** The card's dock: below the cut-outs when the card plus 12 pt fits between them and the safe bottom, else above; never over a cut-out unless nothing fits. */
+/**
+ * The card's dock. A target in the HUD gets it right below (room permitting). Anything else gets it at the street band, the bottom of the screen, so it covers
+ * neither the shop nor its diners (D526); when the cut-out reaches too far down for that (a phone with a short screen), above the cut-out. Never over a cut-out unless nothing fits.
+ */
 export function cardDock(bounds: Rect, screen: Screen, safe: Safe, cardH: number = CARD.height): CardDock {
   const floor = screen.h - Math.max(safe.bottom, CARD.margin);
   const ceil = safe.top + CARD.margin;
   const roomBelow = floor - (bounds.y1 + CARD.gap);
   const roomAbove = bounds.y0 - CARD.gap - ceil;
-  if (roomBelow >= cardH) return { dock: 'below', top: bounds.y1 + CARD.gap, fits: true };
+  if (roomBelow >= cardH) {
+    if (bounds.y1 <= screen.h * HUD_ZONE) return { dock: 'below', top: bounds.y1 + CARD.gap, fits: true };
+    return { dock: 'bottom', bottom: Math.max(safe.bottom, CARD.margin), fits: true };
+  }
   if (roomAbove >= cardH) return { dock: 'above', bottom: screen.h - (bounds.y0 - CARD.gap), fits: true };
   // neither: the side with more room, as near the cut-out as the screen lets it be
   return roomBelow >= roomAbove
@@ -146,13 +162,40 @@ export function cardRect(card: CardDock, screen: Screen, cardH: number = CARD.he
   return { x0: CARD.side, y0, x1: screen.w - CARD.side, y1: y0 + cardH };
 }
 
-/** Everything the overlay draws, from the targets' rects (the first is the one the hand points at). Null when there are none. */
-export function overlayLayout(targets: readonly Rect[], screen: Screen, safe: Safe): OverlayLayout | null {
+/** A dotted leader between two holes (D524): from the point of each nearest the other's centre. */
+export interface Leader {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+export function leaders(cuts: readonly Rect[]): Leader[] {
+  const near = (r: Rect, to: Rect) => ({
+    x: Math.max(r.x0, Math.min(r.x1, (to.x0 + to.x1) / 2)),
+    y: Math.max(r.y0, Math.min(r.y1, (to.y0 + to.y1) / 2)),
+  });
+  return cuts.slice(1).map((c) => {
+    const a = near(cuts[0], c);
+    const b = near(c, cuts[0]);
+    return { x0: a.x, y0: a.y, x1: b.x, y1: b.y };
+  });
+}
+
+/**
+ * Everything the overlay draws, from the targets' rects. The hand points at the first target on a `tap` step (the thing to tap) and at the last on a `wait` or `look`
+ * step (the dial the line is about: D520). Null when there are none, or when the first one is off the screen (a zero-area hole would leave a scrim that swallows every touch).
+ */
+export function overlayLayout(targets: readonly Rect[], screen: Screen, safe: Safe, mode: 'tap' | 'wait' | 'look' = 'tap'): OverlayLayout | null {
   if (targets.length === 0) return null;
+  const area = (r: Rect) => (r.x1 - r.x0) * (r.y1 - r.y0);
   const padded = targets.map((t) => clampTo(padCut(t), screen));
-  const cuts = mergeCuts(padded);
+  if (area(padded[0]) <= 0) return null;
+  const shown = padded.filter((r) => area(r) > 0);
+  const cuts = mergeCuts(shown);
   const bounds = hull(cuts);
-  return { cuts, bounds, hand: handPose(padded[0], screen), card: cardDock(bounds, screen, safe) };
+  const card = cardDock(bounds, screen, safe);
+  const point = mode === 'tap' ? shown[0] : shown[shown.length - 1];
+  return { cuts, bounds, hand: handPose(point, screen, cardRect(card, screen)), card };
 }
 
 /** Where a card sits with no target (a `free` step): along the bottom, above the safe inset. */

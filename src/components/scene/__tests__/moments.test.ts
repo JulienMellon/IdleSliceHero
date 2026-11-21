@@ -238,7 +238,7 @@ describe('stepMoments (A28)', () => {
     levels: { prep: 10, oven: 10, counter: 10, drivers: 2 },
     hired: { prep: false, oven: false, counter: false },
     headNames: { prep: 'Marco', oven: 'Gina', counter: 'Lou' },
-    downtown: false,
+    founder: null,
     ...over,
   });
   const first = () => stepMoments(newMoments(), base(), 1).moments;
@@ -276,7 +276,9 @@ describe('stepMoments (A28)', () => {
     const empty = stepMoments(first(), base({ levels: lv }), 7);
     expect(empty.asks).toEqual([]);
     expect(empty.moments.mile?.text === null || typeof empty.moments.mile?.text === 'string').toBe(true);
-    const nonna = stepMoments(first(), base({ levels: lv, downtown: true }), 7);
-    expect(nonna.moments.mile?.text).toEqual(expect.stringContaining(': '));
+    const nonna = stepMoments(first(), base({ levels: lv, founder: 'Nonna' }), 7);
+    expect(nonna.moments.mile?.text).toBe('Nonna: Double batch, capo!');
+    // a city with no founder (Boston's North End): nobody speaks for an unhired station, never Nonna
+    expect(stepMoments(first(), base({ levels: lv, founder: null }), 7).moments.mile?.text).toBeNull();
   });
 });

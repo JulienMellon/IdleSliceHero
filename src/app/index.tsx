@@ -5,14 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoinLayer } from '@/components/coin-layer';
 import { CoachOverlay } from '@/components/coach/overlay';
-import { useCoachTarget } from '@/components/coach/targets';
+import { useCoachFlow } from '@/components/coach/use-coach-flow';
 import { FloatingBonus } from '@/components/floating-bonus';
 import { OrderChip } from '@/components/order-chip';
 import { chipPhase } from '@/components/order-model';
 import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT } from '@/components/rewards-model';
-import { coachStep, hintsAllowed, tutorialNote, type TutorialNote } from '@/engine/tutorial';
+import { coachStep, hintsAllowed } from '@/engine/tutorial';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
@@ -248,35 +248,8 @@ export default function GameScreen() {
   const plus = (x: number) => `+${money(x)}/s`;
   const newScenes = Math.max(0, game.seenScenes.length - game.scrapbookViewed);
   const coach = coachStep(game);
-  // Nonna points only in the first shop; the drawer covers the shop, so she waits it out, except on her step about the drawer's own hire card (13)
-  const coachOn = id === first && (!drawerOpen || coach?.id === 13);
-  // v5.20 (C3): what only the screen knows ends some steps: a `look` seen (6, 11, 15), the drawer opened (12), the drawer closed (13)
-  const noteCoach = useCallback((note: TutorialNote) => {
-    const g = useGame.getState().game;
-    const next = tutorialNote(g, note);
-    if (next !== g) useGame.setState({ game: next });
-  }, []);
-  const closeTarget = useCoachTarget('drawer:close');
-  const drawerWas = useRef(false);
-  useEffect(() => {
-    if (drawerOpen) noteCoach('drawer-open');
-    else if (drawerWas.current) noteCoach('drawer-closed');
-    drawerWas.current = drawerOpen;
-  }, [drawerOpen, noteCoach]);
-  // a look step ends by itself even when its overlay cannot be drawn (the target is not mounted, another shop is on screen): the overlay's own 2.5 s comes first
-  const lookId = coach && coach.mode === 'look' && coach.id !== 13 ? coach.id : 0;
-  useEffect(() => {
-    if (!lookId) return;
-    const timer = setTimeout(() => noteCoach('look'), 6000);
-    return () => clearTimeout(timer);
-  }, [lookId, noteCoach]);
-  // step 13's look lasts 2.5 s (or a tap); then the scrim goes and only her card stays, so the hire card and Close can be tapped
-  const [lookedAt, setLookedAt] = useState(0);
-  const onLook = useCallback(() => {
-    noteCoach('look');
-    setLookedAt(useGame.getState().game.tutorial);
-  }, [noteCoach]);
-  const coachMode = coach && coach.mode === 'look' && coach.id === 13 && lookedAt === 13 ? 'free' : coach?.mode;
+  // v5.20: Nonna's flow (what ends each step, where she points) is components/coach/use-coach-flow.ts
+  const coachFlow = useCoachFlow(coach, id === first, drawerOpen);
   const eps = G.earningsPerSecond(game);
   // Tied stations: one upgrade alone adds $0/s, so say what to buy together. Keyed on levels, not cash or sales.
   const bundle = tiedBundle(game, id);
@@ -476,6 +449,7 @@ export default function GameScreen() {
         chips={<Slots items={HUD_CHIPS} />}
         topChips={<Slots items={HUD_TOP_CHIPS} />}
         scrapRing={ring}
+        coachLit={!!coachFlow.view && coachFlow.view.mode !== 'free' && !coachFlow.view.targets.includes('hud:goal')}
       />
       <ShopTabs game={game} boostMult={hud.mult} onSelect={setActive} onBuild={build} />
       <View style={styles.sceneArea} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
@@ -539,8 +513,6 @@ export default function GameScreen() {
                 </View>
                 <Pressable
                   testID="close-upgrades"
-                  ref={closeTarget}
-                  onLayout={closeTarget.onLayout}
                   accessibilityRole="button"
                   accessibilityLabel="Close the upgrades"
                   onPress={() => setDrawerOpen(false)}
@@ -618,7 +590,7 @@ export default function GameScreen() {
         {toast && hintsAllowed(game).toast && <Toast compact text={toast.text} top={10} />}
       </View>
       {/* v5.20 (C1): the one tutorial highlight: a scrim with a cut-out over the HUD, the shop, the row and the drawer; under the calendar, the sheets and the cut-scenes */}
-      {coachOn && coach && coachMode && <CoachOverlay targets={coach.targets} mode={coachMode} text={coach.text} onDone={onLook} />}
+      {coachFlow.view && <CoachOverlay {...coachFlow.view} onDone={coachFlow.onDone} />}
       {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
       {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}
       {/* the SHEETS slot: modal sheets over the whole screen, under the offline popup */}

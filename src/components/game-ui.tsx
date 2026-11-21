@@ -277,6 +277,7 @@ export function Hud({
   giftDot = false,
   chips,
   scrapRing,
+  coachLit = false,
 }: {
   /** G98: small round chips in the top row, after the gift (the HUD_TOP_CHIPS slot); the goal bar keeps its width. */ topChips?: React.ReactNode;
   /** The chips at the end of the goal row (the HUD_CHIPS slot); the screen passes `<Slots items={HUD_CHIPS} />`. */ chips?: React.ReactNode;
@@ -292,6 +293,8 @@ export function Hud({
   tasksBadge?: number;
   onGift?: () => void;
   giftDot?: boolean;
+  /** A coach step is lit on something else: the goal's green "tap!" pill stays quiet, so the screen has one call to action (S69). */
+  coachLit?: boolean;
 }) {
   const shown = useCountUp(cash);
   const [flash] = useState(() => new Animated.Value(1));
@@ -326,7 +329,7 @@ export function Hud({
   const onAmount = useCallback((span: GoalSpan) => setAmountSpan((p) => (p && p.x === span.x && p.w === span.w ? p : span)), []);
   // spans measured for another label (the goal just changed) are not used: until the new line reports, the seam is exact
   const measuredSpans = words.label === shownLabel && amountSpan ? [...words.spans, amountSpan] : [];
-  const bar = goalBarLayout(goal?.current ?? 0, goal?.target ?? 0, !!goal?.onPress, goalW, measuredSpans);
+  const bar = goalBarLayout(goal?.current ?? 0, goal?.target ?? 0, !!goal?.onPress && !coachLit, goalW, measuredSpans);
   const { pct, ready } = bar;
   return (
     <View style={styles.hud}>

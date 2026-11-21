@@ -1,4 +1,19 @@
-import { blockers, CARD, cardRect, CUT, HAND, handPose, mergeCuts, overlayLayout, padCut, type Rect, type Safe, type Screen } from '../overlay-model';
+import {
+  blockers,
+  CARD,
+  cardRect,
+  CUT,
+  HAND,
+  handPose,
+  HUD_ZONE,
+  leaders,
+  mergeCuts,
+  overlayLayout,
+  padCut,
+  type Rect,
+  type Safe,
+  type Screen,
+} from '../overlay-model';
 
 const PHONE: Screen = { w: 393, h: 852 };
 const PHONE_SAFE: Safe = { top: 59, bottom: 34 };
@@ -48,10 +63,16 @@ describe('overlayLayout', () => {
     expect(CUT).toEqual({ pad: 8, radius: 12 });
   });
 
-  test('the card goes below when it and 12 pt fit, else above', () => {
-    const mid = overlayLayout([r(100, 300, 200, 400)], PHONE, PHONE_SAFE)!;
-    expect(mid.card.dock).toBe('below');
-    expect(mid.card.top).toBe(mid.bounds.y1 + CARD.gap);
+  test('a HUD target gets the card right below it; a shop target gets it at the street band; a target too low for that gets it above', () => {
+    const hud = overlayLayout([r(96, 62, 256, 106)], PHONE, PHONE_SAFE)!;
+    expect(hud.card.dock).toBe('below');
+    expect(hud.card.top).toBe(hud.bounds.y1 + CARD.gap);
+    expect(hud.bounds.y1).toBeLessThanOrEqual(PHONE.h * HUD_ZONE);
+    const shop = overlayLayout([r(100, 300, 200, 400)], PHONE, PHONE_SAFE)!;
+    expect(shop.card.dock).toBe('bottom');
+    // D526: the street band, y >= 734 on a 852 phone: clear of the shop and its diners
+    expect(cardRect(shop.card, PHONE).y0).toBeGreaterThanOrEqual(PHONE.h - PHONE_SAFE.bottom - CARD.margin - CARD.height - 1);
+    expect(cardRect(shop.card, PHONE).y0).toBeGreaterThan(700);
     const low = overlayLayout([r(100, 600, 200, 655)], SE, SE_SAFE)!;
     expect(low.card.dock).toBe('above');
     expect(cardRect(low.card, SE).y1).toBe(low.bounds.y0 - CARD.gap);
@@ -82,20 +103,33 @@ describe('the hand', () => {
     expect(hand.rot).toBe(HAND.tilt);
   });
 
-  test('on a narrow target (a dial) it stands beside it, pointing in', () => {
+  test('on a narrow target (a dial) it stands above it, pointing down (D525)', () => {
     const cut = padCut(r(40, 300, 66, 328));
     const hand = handPose(cut, PHONE);
-    expect(hand.where).toBe('right');
-    expect(hand.x - HAND.size / 2).toBeGreaterThanOrEqual(cut.x1);
-    expect(hand.rot).toBeLessThan(0);
+    expect(hand.where).toBe('above');
+    expect(hand.y + HAND.size / 2).toBeLessThanOrEqual(cut.y0);
+    expect(hand.rot).toBe(HAND.down);
   });
 
-  test('on a narrow target at the right edge it goes to the left', () => {
-    const cut = padCut(r(350, 300, 376, 328));
-    const hand = handPose(cut, PHONE);
+  test('on a narrow target with no room above, or the card above it, it stands beside it, on the side with room', () => {
+    const top = padCut(r(40, 10, 66, 38));
+    expect(handPose(top, PHONE).where).toBe('right');
+    const edge = padCut(r(350, 10, 376, 38));
+    const hand = handPose(edge, PHONE);
     expect(hand.where).toBe('left');
-    expect(hand.x + HAND.size / 2).toBeLessThanOrEqual(cut.x0);
+    expect(hand.x + HAND.size / 2).toBeLessThanOrEqual(edge.x0);
     expect(hand.rot).toBeGreaterThan(0);
+    // the card sits right above the target: the hand goes beside
+    const cut = padCut(r(150, 600, 176, 628));
+    const card = { x0: 16, y0: cut.y0 - 12 - 84, x1: 377, y1: cut.y0 - 12 };
+    expect(handPose(cut, PHONE, card).where).not.toBe('above');
+  });
+
+  test('on the All button the hand is above it, clear of the Drivers card beside it (D525)', () => {
+    const all = r(340, 646, 386, 701);
+    const lay = overlayLayout([all], PHONE, PHONE_SAFE)!;
+    expect(lay.hand.where).toBe('above');
+    expect(lay.hand.x).toBeGreaterThan(all.x0);
   });
 
   test('on a short bar it rests on the bottom edge, clear of the card 12 pt below', () => {
@@ -151,5 +185,63 @@ describe('blockers', () => {
     expect(hits(50, 350)).toBe(1);
     expect(hits(150, 100)).toBe(1);
     expect(hits(150, 500)).toBe(1);
+  });
+});
+
+describe('wait and look steps (D520)', () => {
+  const station = r(24, 330, 128, 440);
+  const dial = r(40, 300, 76, 328);
+
+  test('the hand points at the dial, the last target, not the station', () => {
+    const wait = overlayLayout([station, dial], PHONE, PHONE_SAFE, 'wait')!;
+    expect(wait.hand.where).not.toBe('inside');
+    expect(Math.abs(wait.hand.x - 58)).toBeLessThan(40);
+    const look = overlayLayout([station, dial], PHONE, PHONE_SAFE, 'look')!;
+    expect(look.hand).toEqual(wait.hand);
+    const tap = overlayLayout([station, dial], PHONE, PHONE_SAFE, 'tap')!;
+    expect(tap.hand.where).toBe('inside');
+  });
+
+  test('a single wait target keeps its own pose', () => {
+    const lay = overlayLayout([r(96, 62, 256, 106)], PHONE, PHONE_SAFE, 'wait')!;
+    expect(lay.hand.where).toBe('inside');
+  });
+});
+
+describe('the dotted leader (D524)', () => {
+  test('one line from the station hole to the dial hole, ending on their edges', () => {
+    const a = padCut(r(24, 330, 128, 440));
+    const b = padCut(r(40, 250, 76, 278));
+    const [l] = leaders([a, b]);
+    expect(leaders([a, b])).toHaveLength(1);
+    expect(l.y0).toBe(a.y0);
+    expect(l.y1).toBe(b.y1);
+    expect(l.x0).toBeGreaterThanOrEqual(a.x0);
+    expect(l.x1).toBeLessThanOrEqual(b.x1);
+  });
+
+  test('one hole has no leader', () => {
+    expect(leaders([r(0, 0, 10, 10)])).toEqual([]);
+  });
+});
+
+describe('a target off the screen (C163)', () => {
+  test('a first target fully off the screen gives no layout, so no scrim swallows every touch', () => {
+    expect(overlayLayout([r(500, 300, 600, 400)], PHONE, PHONE_SAFE)).toBeNull();
+    expect(overlayLayout([r(-200, 300, -100, 400)], PHONE, PHONE_SAFE)).toBeNull();
+    expect(overlayLayout([r(100, 900, 200, 1000)], PHONE, PHONE_SAFE)).toBeNull();
+  });
+
+  test('a first target that shows keeps its layout; an off-screen second one is dropped', () => {
+    const lay = overlayLayout([r(24, 330, 128, 440), r(500, 300, 520, 330)], PHONE, PHONE_SAFE, 'wait')!;
+    expect(lay.cuts).toHaveLength(1);
+  });
+
+  test('in a tap step the blockers never cover the whole screen', () => {
+    for (const t of [r(24, 330, 128, 440), r(0, 0, 20, 20), r(373, 832, 393, 852), r(-5, -5, 5, 5)]) {
+      const lay = overlayLayout([t], PHONE, PHONE_SAFE)!;
+      const covered = blockers(lay.cuts, PHONE).reduce((n, b) => n + (b.x1 - b.x0) * (b.y1 - b.y0), 0);
+      expect(covered).toBeLessThan(PHONE.w * PHONE.h);
+    }
   });
 });

@@ -1,6 +1,6 @@
 """Card C2 (v5.20): the scene reports its stations and their dials to the Coach. Shots 158-159.
 
-158 step 2 (prep is rolling, a wait step): the prep table's cut-out and the prep dial's cut-out are both lit; the dial is inside the lit area
+158 step 2 (prep is rolling, a wait step): the prep table's cut-out and the prep dial's cut-out are both lit; the dial and its count pill are inside the lit area
 159 step 4 (the oven is baking, a wait step): the same for the oven and its dial
 Every state is asserted with expect() before its shot; game time moves only through advance(). The dial is the badge in the SVG (test ID dial-<station>):
 its box must lie inside one of the overlay's cut-outs (coach-cut-0 / coach-cut-1), read from the DOM.
@@ -43,6 +43,7 @@ def run(ctx):
         expect(page, "coach-cut-1", 3000)     # a wait step cuts two holes: the station, then its dial
         expect(page, "dial-prep", 3000)
         inside_lit(page, "dial-prep", "158-coach-dial-prep")
+        inside_lit(page, "dial-count-prep", "158-coach-dial-prep")     # G112: the number Nonna names is lit with the ring
         shot(page, "158-coach-dial-prep", 0.5)
 
         # 159: the dough is rolled -> tap the oven -> step 4, "Watch the timer…": the oven and its dial
@@ -51,6 +52,7 @@ def run(ctx):
         expect(page, "coach-cut-1", 3000)
         expect(page, "dial-oven", 3000)
         inside_lit(page, "dial-oven", "159-coach-dial-oven")
+        inside_lit(page, "dial-count-oven", "159-coach-dial-oven")
         shot(page, "159-coach-dial-oven", 0.5)
     except Exception as e:
         report["errors"].append(f"C2 158/159 failed: {e}")

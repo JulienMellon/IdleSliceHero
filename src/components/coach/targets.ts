@@ -19,8 +19,7 @@ export type CoachTargetId =
   | 'walk:counter'
   | 'walk:drivers'
   | 'walk:all'
-  | 'drawer:hire:prep'
-  | 'drawer:close';
+  | 'drawer:hire:prep';
 
 /** A screen rect in points: x0,y0 the top-left corner, x1,y1 the bottom-right. */
 export interface Rect {
@@ -153,13 +152,6 @@ export function parseRectsKey(key: string): Rect[] | null {
     const [x0, y0, x1, y1] = p.split(',').map(Number);
     return { x0, y0, x1, y1 };
   });
-}
-
-/** One target's rect, as a hook: the component re-renders only when this rect changes. */
-export function useTargetRect(id: CoachTargetId): Rect | null {
-  const subscribe = useCallback((fn: () => void) => subscribeTargets([id], fn), [id]);
-  const get = useCallback(() => rects.get(id) ?? null, [id]);
-  return useSyncExternalStore(subscribe, get, get);
 }
 
 /** Several targets' rects, in the order asked; null while any is missing. */

@@ -59,7 +59,9 @@ import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEAD_BARKS } from '../content/heads';
 import { getFeature } from '../engine/features';
 import { counterattack } from '../engine/features/counterattack';
-import { hintsAllowed } from '../engine/tutorial';
+import { coachStep, hintsAllowed } from '../engine/tutorial';
+import { gainAnchor, ovenGain } from './scene/oven-gain';
+import type { BarkTable } from '../content/cities/types';
 import { reportView, slammedAsks } from '../engine/features/service';
 import { jamView } from '../engine/features/layers/shifts';
 import {
@@ -73,7 +75,18 @@ import {
   type BarkAsk,
   type BarkMem,
 } from '../engine/features/heads';
-import { BadgeRail, CameoBubble, CameoTag, DeparturePops, HireBubble, MilestoneBadge, RushPill, StationBadge, rushPillWidth } from './scene/kitchen-hud';
+import {
+  BadgeRail,
+  CameoBubble,
+  OvenGainTag,
+  CameoTag,
+  DeparturePops,
+  HireBubble,
+  MilestoneBadge,
+  RushPill,
+  StationBadge,
+  rushPillWidth,
+} from './scene/kitchen-hud';
 import {
   CHIP_ROW_HALF,
   MILE_SECONDS,
@@ -129,6 +142,9 @@ const CLOUDS = [
   { x0: 360, y: 70, k: 0.6, v: 5 },
 ] as const;
 
+/** A city without lines for its heads: one frozen table, not a new `{}` every frame. */
+const NO_BARKS: Partial<BarkTable> = Object.freeze({});
+
 const STAGE_STATION: Record<Game.Stage, Station> = { prep: 'prep', ovens: 'oven', counter: 'counter', customers: 'counter' };
 const HIRE_LINE: Record<Station, string> = { prep: 'I got the dough, boss!', oven: 'Ovens are mine now.', counter: 'Next customer, please!' };
 
@@ -165,8 +181,13 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const origin = useRef({ x: 0, y: 0, known: false });
   // …and the same answer tells the Coach where the stations and their dials are on the screen (scene/coach-rects.ts), once the origin is known
   const coachAt = useRef<() => void>(() => {});
+  // false once this scene is gone: a measureInWindow answer that arrives late must not put the scene's targets back in the registry (C162)
+  const alive = useRef(true);
+  // the tutorial runs: only then does a scroll in motion re-report the targets (the rest of the time a settled scroll does)
+  const coachRuns = useRef(false);
   const measureOrigin = () =>
     viewRef.current?.measureInWindow((x: number, y: number) => {
+      if (!alive.current) return;
       origin.current = { x, y, known: true };
       coachAt.current();
     });
@@ -333,6 +354,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   ).map((q) => q.rect);
   // U4: while Nonna's coach is up the scene says nothing else (tutorial.ts `hintsAllowed`)
   const hints = hintsAllowed(game);
+  const ovenLook = !!coachStep(game)?.targets.includes('ovens:all');
   // the pills' words change with the counts and the bottleneck only (U10/U11), not with the clock
   const waitWords = useMemo(() => (side.waiting > 0 ? waitingText(side.waiting, slowest) : null), [side.waiting, slowest]);
   const moreWords = useMemo(() => (side.more > 0 ? queueLabel(side.more, side.diners) : null), [side.more, side.diners]);
@@ -472,7 +494,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           levels: { prep: shop.prep, oven: shop.ovens, counter: shop.counter, drivers: shop.drivers },
           hired: shop.heads,
           headNames: city.heads[id],
-          downtown: id === Game.firstHood(city),
+          founder: id === Game.firstHood(city) ? (city.founder?.name ?? null) : null,
         },
         clock,
       );
@@ -513,7 +535,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       m.hires.length > 0 ||
       !!(m.mile?.text && m.mile.at !== clock && clock - m.mile.at < 2.5);
     const before = barkMemory.get(id) ?? newBarkMem();
-    const { mem: after, bark } = nextBark(before, id, asks, wall, paused || !!g.playing || otherBubble, city.barks ?? {}); // a city without lines for the shop has silent heads (Boston's wait for the writer pass, copy.ts BOSTON_BARKS);
+    const { mem: after, bark } = nextBark(before, id, asks, wall, paused || !!g.playing || otherBubble || !hintsAllowed(g.game).toast, city.barks ?? NO_BARKS); // a city without lines for the shop has silent heads (Boston's wait for the writer pass, copy.ts BOSTON_BARKS);
     if (after !== before) barkMemory.set(id, after);
     if (bark) {
       if (bark.trigger === 'milestone' && m.mile && m.mile.at === clock) m.mile.text = bark.text;
@@ -620,12 +642,14 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   useEffect(() => {
     measureOrigin();
   }, [lay, fit.s, fit.ox, fit.oy, width, height]);
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
       for (const t of SCENE_TARGETS) registerTarget(t, null);
-    },
-    [],
-  );
+    };
+  }, []);
+  coachRuns.current = game.tutorial >= 1 && game.tutorial < Game.TUTORIAL_DONE;
   const askRef = useRef<(t: ScrollTarget) => void>(() => {});
   askRef.current = (t) => {
     if (!view.scrolls) return;
@@ -743,6 +767,13 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
               );
             })()}
             {items.map((it) => it.el)}
+            {/* D522: the tutorial's look at the ovens (its target is `ovens:all`) shows what the upgrade bought, on the oven the coach lights */}
+            {ovenLook &&
+              (() => {
+                const gain = ovenGain(shop, city.fit);
+                const at = gain && gainAnchor(lay);
+                return gain && at ? <OvenGainTag x={at.x} y={at.y} level={gain.level} pct={gain.pct} /> : null;
+              })()}
             {rep.state === 'cold' && <ColdFrost x={frame.x0 - 20} w={frame.width + 40} frontY={frontY} />}
           </G>
           {trafficFor(CARS, rivalOpen(game, id)).map((c, i) => {
@@ -806,6 +837,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 y={by}
                 gm={shop.managed ? (id === Game.firstHood(city) && city.founder ? 'nonna' : city.managers[id].id) : null}
               />
+              {/* D523: while a coach step is lit its own hand points; the dial's "tap me" hand and pulse wait */}
               {badges.map((b) => (
                 <StationBadge
                   key={b.st}
@@ -815,9 +847,9 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                   step={b.step}
                   count={b.count}
                   tone={b.tone}
-                  ready={b.ready}
-                  pulse={b.ready ? pulse : 0}
-                  nudge={b.ready ? nudge : 0}
+                  ready={b.ready && hints.refusal}
+                  pulse={b.ready && hints.refusal ? pulse : 0}
+                  nudge={b.ready && hints.refusal ? nudge : 0}
                   face={b.runner === 'head' ? b.st : null}
                   faceName={b.runner === 'gm' ? city.managers[id].id : city.heads[id][b.st]}
                   jump={line[b.st] ? rushJump : 0}
@@ -989,10 +1021,16 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
           }}
           onScroll={(e) => {
             scrollX.current = e.nativeEvent.contentOffset.x;
+            if (coachRuns.current) coachAt.current();
+          }}
+          onScrollEndDrag={(e) => {
+            useGame.getState().setSceneScroll(id, e.nativeEvent.contentOffset.x);
             coachAt.current();
           }}
-          onScrollEndDrag={(e) => useGame.getState().setSceneScroll(id, e.nativeEvent.contentOffset.x)}
-          onMomentumScrollEnd={(e) => useGame.getState().setSceneScroll(id, e.nativeEvent.contentOffset.x)}
+          onMomentumScrollEnd={(e) => {
+            useGame.getState().setSceneScroll(id, e.nativeEvent.contentOffset.x);
+            coachAt.current();
+          }}
           style={{ width, height }}
           contentContainerStyle={{ width: cw, height }}
         >

@@ -1,8 +1,8 @@
 """Card C1 (v5.20): the Coach overlay, one highlight for every tutorial step. Shots 153-155.
 
-153 a fresh save at step 1: the scrim, the prep station's cut-out, the hand, Nonna's card below it
-154 step 6: the cash pill is the cut-out (a wait step, the ring breathes), her card below it
-155 step 10 (was 8 before the 15-step script): the Ovens card on the sidewalk is the cut-out, her card above it (no room below)
+153 a fresh save at step 1: the scrim, the prep station's cut-out, the hand, Nonna's card at the street band
+154 step 6: the cash pill is the cut-out (a wait step, the ring breathes), her card right below it (a HUD target)
+155 step 10 (was 8 before the 15-step script): the Ovens card on the sidewalk is the cut-out, her card at the street band, under the row
 Every state is asserted with expect() before its shot; game time moves only through advance().
 """
 from shots_lib import *  # noqa: F401,F403  (seeded_page, settle, shot, expect, tid, saves, report, ...)

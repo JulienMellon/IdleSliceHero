@@ -6,8 +6,10 @@ import type { Layout } from './layout';
 import { D, P, sceneToScreen, type SceneFit } from './projection';
 import { BADGE_R, MIN_TAP_PT, badgeRowY, badgeXs, stationRects, type Rect as SceneRect } from './stations';
 
-/** A dial is the badge's circle, a little proud of its ring (scene units: `badgeAt`'s own reach). */
+/** A dial is the badge's circle, a little proud of its ring (scene units: `badgeAt`'s own reach), plus its count pill on the right. */
 export const DIAL_R = BADGE_R + 4;
+/** …and the count pill beside the ring (kitchen-hud.tsx: it starts BADGE_R + 3 right of the centre and is 6.2 per character + 10 wide): room for two characters ("×4", "12"), so the number Nonna names is lit with the ring (G112). */
+export const DIAL_PILL = 24;
 
 /** The ids this module reports, in a fixed order. */
 export const SCENE_TARGETS = [
@@ -36,7 +38,7 @@ export function coachRects(lay: Layout, fit: SceneFit, scrollX: number, origin: 
   const stations = stationRects(lay, MIN_TAP_PT / fit.s);
   const xs = badgeXs(lay);
   const by = badgeRowY();
-  const dial = (st: Station): Rect => toScreen({ x0: xs[st] - DIAL_R, y0: by - DIAL_R, x1: xs[st] + DIAL_R, y1: by + DIAL_R });
+  const dial = (st: Station): Rect => toScreen({ x0: xs[st] - DIAL_R, y0: by - DIAL_R, x1: xs[st] + BADGE_R + 3 + DIAL_PILL, y1: by + DIAL_R });
 
   // every oven slot drawn: the face of each oven on the back wall (the same projection the drawing uses)
   let ov: SceneRect = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };

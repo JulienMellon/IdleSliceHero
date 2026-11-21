@@ -3,7 +3,7 @@
 import { HOME_CITY } from '../../../content/cities/home';
 import { newShop } from '../../../engine/game';
 import type { Rect } from '../../coach/targets';
-import { coachRects, DIAL_R, SCENE_TARGETS } from '../coach-rects';
+import { coachRects, DIAL_PILL, DIAL_R, SCENE_TARGETS } from '../coach-rects';
 import { D, P, openScroll, sceneToScreen, sceneView } from '../projection';
 import { shopLayout } from '../shop-layout';
 import { BADGE_R, badgeXs } from '../stations';
@@ -41,7 +41,7 @@ describe('coachRects (v5.20 C2)', () => {
     }
   });
 
-  test('a dial is the badge circle (BADGE_R + 4) in points, centred on the badge, whatever the screen', () => {
+  test('a dial is the badge circle (BADGE_R + 4) in points plus its count pill on the right, whatever the screen', () => {
     for (const { w, h } of SCREENS)
       for (const { fp, ovens } of CASES) {
         const lay = shopAt(fp, ovens);
@@ -51,9 +51,17 @@ describe('coachRects (v5.20 C2)', () => {
         for (const st of ['prep', 'oven', 'counter'] as const) {
           const d = r[`dial:${st}`];
           expect(DIAL_R).toBe(BADGE_R + 4);
-          expect(d.x1 - d.x0).toBeCloseTo(2 * DIAL_R * fit.s, 6);
+          const cx = origin.x + sceneToScreen(xs[st] - lay.frame.x0, 0, fit);
           expect(d.y1 - d.y0).toBeCloseTo(2 * DIAL_R * fit.s, 6);
-          expect(mid(d)).toBeCloseTo(origin.x + sceneToScreen(xs[st] - lay.frame.x0, 0, fit), 6);
+          expect(cx - d.x0).toBeCloseTo(DIAL_R * fit.s, 6);
+          // G112: the pill of a one- or two-character count ("0", "×4", "12": 6.2 a character + 10, at least 18) lies inside the dial
+          for (const chars of [1, 2]) expect(cx + (BADGE_R + 3 + Math.max(18, chars * 6.2 + 10)) * fit.s).toBeLessThanOrEqual(d.x1 + 1e-6);
+          // …and it stops short of the next dial's ring
+          const next = st === 'prep' ? 'oven' : st === 'oven' ? 'counter' : null;
+          if (next) {
+            const gap = Math.abs(xs[next] - xs[st]);
+            if (!lay.mirrored) expect(BADGE_R + 3 + DIAL_PILL).toBeLessThanOrEqual(gap - DIAL_R + 1e-6);
+          }
         }
       }
   });

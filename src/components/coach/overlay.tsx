@@ -3,23 +3,23 @@
 // sidewalk and the drawer, below cut-scenes and system sheets.
 //   tap   taps outside the cut-out are swallowed (and shake the hand once); taps inside fall through to the element below
 //   wait  no tap anywhere reaches the game; a breathing ring on the cut-out (G83)
-//   look  like wait, ended by a tap anywhere or after 2.5 s (`onDone`)
+//   look  like wait, ended by a tap anywhere or after 4 s (`onDone`)
 //   free  the card only, no scrim
 // A target whose rect is missing hides the overlay for that frame: never a scrim with no hole.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Line, Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoachCard } from '../coach-card';
 import { useMotion } from '../scene/clock';
-import { blockers, CUT, freeDock, HAND, overlayLayout, type Rect } from './overlay-model';
+import { blockers, CUT, freeDock, HAND, leaders, overlayLayout, type Rect } from './overlay-model';
 import type { CoachMode } from './steps';
 import { remeasureTargets, type CoachTargetId, useTargetRects } from './targets';
 
 const native = Platform.OS !== 'web';
-/** How long a `look` step stays up by itself. */
-export const LOOK_MS = 2500;
+/** How long a `look` step stays up by itself (D529: a slow reader still gets the closing line; a tap ends it sooner). */
+export const LOOK_MS = 4000;
 const SCRIM = '#2A1408';
 const GOLD = '#FFD54A';
 const INK = '#3B1F14';
@@ -36,11 +36,14 @@ export interface CoachOverlayProps {
   targets: readonly CoachTargetId[];
   mode: CoachMode;
   text: string;
-  /** `look` only: called when the step has been seen (a tap, or 2.5 s). */
+  /** `look` only: called when the step has been seen (a tap, or 4 s). */
   onDone?: () => void;
+  /** False for a step whose line is about nothing to tap (15): the breathing ring carries it, no hand. */
+  hand?: boolean;
 }
 
-export function CoachOverlay({ targets, mode, text, onDone }: CoachOverlayProps) {
+// primitive or stable props (the step's own target list, its text, a stable callback), so a screen tick that changes nothing repaints nothing (M72)
+export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, onDone, hand: showHand = true }: CoachOverlayProps) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const wantsTargets = mode !== 'free' || targets.length > 0;
@@ -84,11 +87,27 @@ export function CoachOverlay({ targets, mode, text, onDone }: CoachOverlayProps)
   }, [mode, idKey, text]);
 
   const layout = useMemo(
-    () => (rects && rects.length > 0 ? overlayLayout(rects, { w: width, h: height }, { top: insets.top, bottom: insets.bottom }) : null),
-    [rects, width, height, insets.top, insets.bottom],
+    () =>
+      rects && rects.length > 0
+        ? overlayLayout(rects, { w: width, h: height }, { top: insets.top, bottom: insets.bottom }, mode === 'wait' || mode === 'look' ? mode : 'tap')
+        : null,
+    [rects, width, height, insets.top, insets.bottom, mode],
   );
   const holes = useMemo(() => (layout ? layout.cuts.map((c) => hole(c, CUT.radius)).join(' ') : ''), [layout]);
   const pieces = useMemo(() => (layout && mode === 'tap' ? blockers(layout.cuts, { w: width, h: height }) : []), [layout, mode, width, height]);
+
+  const links = useMemo(() => (layout ? leaders(layout.cuts) : []), [layout]);
+  const anim = useMemo(
+    () => ({
+      glow: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }),
+      halo: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.154, 0.28] }),
+      breathe: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.75, 0] }),
+      grow: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }),
+      bounce: pulse.interpolate({ inputRange: [0, 1], outputRange: [0, 4] }),
+      swing: shake.interpolate({ inputRange: [-1, 1], outputRange: [-8, 8] }),
+    }),
+    [pulse, shake],
+  );
 
   const nudge = () => {
     shake.setValue(0);
@@ -107,11 +126,7 @@ export function CoachOverlay({ targets, mode, text, onDone }: CoachOverlayProps)
   }
   if (!layout) return null;
 
-  const glow = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] });
-  const breathe = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.75, 0] });
-  const grow = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] });
-  const bounce = pulse.interpolate({ inputRange: [0, 1], outputRange: [0, 4] });
-  const swing = shake.interpolate({ inputRange: [-1, 1], outputRange: [-8, 8] });
+  const { glow, halo, breathe, grow, bounce, swing } = anim;
   const waiting = mode !== 'tap';
   const { hand, card } = layout;
   const half = HAND.size / 2;
@@ -120,6 +135,10 @@ export function CoachOverlay({ targets, mode, text, onDone }: CoachOverlayProps)
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill} testID="coach-overlay">
       <Svg pointerEvents="none" width={width} height={height} style={StyleSheet.absoluteFill}>
         <Path d={`M0 0 H${width} V${height} H0 Z ${holes}`} fill={SCRIM} opacity={0.6} fillRule="evenodd" />
+        {/* D524: a dotted gold leader links the station's hole to its dial's, so the eye need not make the jump */}
+        {links.map((l, i) => (
+          <Line key={i} x1={l.x0} y1={l.y0} x2={l.x1} y2={l.y1} stroke={GOLD} strokeWidth={2} strokeDasharray="1 6" strokeLinecap="round" opacity={0.9} />
+        ))}
       </Svg>
       {/* the touches: one view that claims every touch, over everything (wait, look), or the pieces round the holes (tap), so a tap in a hole reaches the element below */}
       {waiting ? (
@@ -148,32 +167,34 @@ export function CoachOverlay({ targets, mode, text, onDone }: CoachOverlayProps)
           testID={`coach-cut-${i}`}
         >
           {/* a soft glow, then the gold outline */}
-          <Animated.View style={[styles.ring, styles.glow, { opacity: Animated.multiply(glow, 0.28) }]} />
+          <Animated.View style={[styles.ring, styles.glow, { opacity: halo }]} />
           <Animated.View style={[styles.ring, styles.outline, { opacity: glow }]} />
           {/* G83: on a wait step the ring breathes outward, so the thing being waited on still reads as the focus */}
           {waiting && <Animated.View style={[styles.ring, styles.breath, { opacity: breathe, transform: [{ scale: grow }] }]} />}
         </View>
       ))}
-      <Animated.View
-        pointerEvents="none"
-        testID="coach-hand"
-        style={{
-          position: 'absolute',
-          left: hand.x - half,
-          top: hand.y - half,
-          width: HAND.size,
-          height: HAND.size,
-          transform: [{ translateX: swing }, { translateY: waiting ? 0 : bounce }, { rotate: `${hand.rot}deg` }],
-        }}
-      >
-        <Svg width={HAND.size} height={HAND.size} viewBox="-8 -8 16 16">
-          <Path d={HAND_PATH} fill="#fff" stroke={INK} strokeWidth={0.8} strokeLinejoin="round" />
-        </Svg>
-      </Animated.View>
+      {showHand && (
+        <Animated.View
+          pointerEvents="none"
+          testID="coach-hand"
+          style={{
+            position: 'absolute',
+            left: hand.x - half,
+            top: hand.y - half,
+            width: HAND.size,
+            height: HAND.size,
+            transform: [{ translateX: swing }, { translateY: waiting ? 0 : bounce }, { rotate: `${hand.rot}deg` }],
+          }}
+        >
+          <Svg width={HAND.size} height={HAND.size} viewBox="-8 -8 16 16">
+            <Path d={HAND_PATH} fill="#fff" stroke={INK} strokeWidth={0.8} strokeLinejoin="round" />
+          </Svg>
+        </Animated.View>
+      )}
       <CoachCard text={text} top={card.top} bottom={card.bottom} />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   ring: { position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, borderRadius: CUT.radius },
