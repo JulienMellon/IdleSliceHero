@@ -4,12 +4,12 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.21                   # v5.20 closed 2026-11-21 (r3: critic SATISFIED, codecritic APPROVED, story advisory minors)
-step: waves                        # setup | waves | verify | review | fix | close
+step: verify                        # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.20-r3               # r3 verify: True 0 [], layout 0 new; 0 new 23 changed vs v5.20-r2
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
-  E1 done  W2 done  U1 done  U2 done  E2 partial
+  E1 done  W2 done  U1 done  U2 done  E2 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.20/review-r3-critic.md (r3 SATISFIED; bug 0 major 0 minor 5; E3 S2; open D530 D481 D519 D493 D495)
   code:   docs/build/v5.20/review-r3-code.md (r3 APPROVED; blocker/high 0 medium 1 low 15; E1 U7 S1 N7)
@@ -42,3 +42,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 E1 done (free ch1 stays current until its tasks are done; pacing moved: downtown-2 4.5->4.9 unchanged). 13 test fails in goal-model/rewards-story fixtures, sent to U1/U2. Then E2 step 2.
 - 2026-11-21 S8 U2 rewards-story fixtures fixed (25 pass). U1 goal-model fix running.
 - 2026-11-21 S8 U1 goal-model fixtures fixed (26 pass). E2 resumed for step 2.
+- 2026-11-21 S8 E2 done (step 2 fits real ch1; 2876 tests). U2 casts dropped. pacing moved: downtown-2 4.5->4.9 (+8.9%). Verify v5.21.

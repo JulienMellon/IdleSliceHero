@@ -1,4 +1,4 @@
-"""Card E2 (v5.21): tutorial steps 7 and 8, Nonna's list. Shots 179-179c.
+"""Card E2 (v5.21): tutorial steps 7 and 8, Nonna's list. Shots 179-179c. Chapter 1 (serve 1, serve 4, hire the prep head) is what the bar and the list show.
 
 179  step 7: "I keep a list, like my mother did. Tap it, cara." with the goal bar lit
 179b step 8: the task list is open on its Story tab; the tab is lit (a look)
@@ -23,6 +23,8 @@ def run(ctx):
         expect(page, "coach", 3000)
         expect_text(page, "coach", r"I keep a list", 3000)
         expect(page, "coach-cut-0", 3000)
+        expect_text(page, "goal", r"Ch\s*1", 3000)  # chapter 1 stays current through the tutorial: serve 1 is done, the bar shows serve 4
+        expect_text(page, "goal", r"1/4", 3000)
         shot(page, "179-step7-goal", 0.4)
 
         # the tap on the lit bar opens the list on its Story tab: step 8
@@ -30,6 +32,7 @@ def run(ctx):
         expect(page, "tasks-drawer", 3000)
         expect_text(page, "coach", r"This list tells you", 3000)
         expect(page, "coach-cut-0", 3000)
+        expect_text(page, "story-tab", r"Chapter\s*1", 3000)
         shot(page, "179b-step8-story-tab", 0.4)
 
         # the look seen (4 s): the scrim goes, the card stays, and Close can be tapped

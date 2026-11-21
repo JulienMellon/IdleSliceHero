@@ -371,9 +371,9 @@ export const TASKS_TABS: readonly TasksTab[] = ['story', 'daily', 'weekly'];
 /** The diamonds a finished chapter pays besides its scene (banked until the rewards unlock; VERSION.md "Defaults"). */
 export const CHAPTER_DIAMONDS = 5;
 
-/** The tutorial's two spots in the drawer (card E2 adds these ids to `CoachTargetId`; the cast keeps this file compiling until then). */
-export const TASKS_STORY_TARGET = 'tasks:story' as unknown as CoachTargetId;
-export const TASKS_CLOSE_TARGET = 'tasks:close' as unknown as CoachTargetId;
+/** The tutorial's two spots in the drawer (card E2). */
+export const TASKS_STORY_TARGET: CoachTargetId = 'tasks:story';
+export const TASKS_CLOSE_TARGET: CoachTargetId = 'tasks:close';
 
 /** Daily and weekly are the rewards': they stay behind a padlock until the takeover. */
 export const rewardsTabLocked = (s: GameState): boolean => !R.rewardsUnlocked(s);
