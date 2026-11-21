@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.20                   # v5.19-test closed 2026-11-19 (r1: critic SATISFIED, codecritic APPROVED)
-step: verify                       # setup | waves | verify | review | fix | close
+step: review                       # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
-last_shots: v5.20-base             # fresh baseline: True 0 [], layout 0 new 9 allowed, 166 shots
+last_shots: v5.20                  # r1 verify: True 0 [], layout 0 new; 17 new 12 changed vs v5.20-base
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
   W1 done  C1 done  C2 done  U0 done  C3 done
@@ -43,3 +43,4 @@ next: start S7-v5.20.md. v5.20 scope set by Julien 2026-11-20 (docs/PLAN-v5.20-o
 - 2026-11-21 S7 verify v5.20 FAIL: loaded True, 4 errors (coach-block intercepts walk-drivers in core loop + U4 148; 98_u3 starter-sheet missing), layout 0; 17 new 9 changed 2 removed. Sent to C1 (U).
 - 2026-11-21 S7 C1: verify errors were fixtures (force clicks in 00_boot/148_u4; 98_u3 reseeded). Found stuck-tutorial risk (migrated step 14->15 look on managed shop never ends); sent to C3.
 - 2026-11-21 S7 C3 fixed stuck tutorial (managed first shop ends it; look steps self-end after 6 s; migration), 2743/2743. Verify rerun.
+- 2026-11-21 S7 verify v5.20 pass: True 0 [], layout 0, 17 new 12 changed. r1 reviews launched (critic, codecritic, storycritic).

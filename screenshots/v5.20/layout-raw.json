@@ -4,6 +4,13 @@
  "02-cutscene-dialog": [],
  "03-new-game": [],
  "03b-full-queue-tap": [],
+ "04-after-20s-play": [
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
  "05-mid-game": [
   {
    "kind": "tap",
@@ -1355,6 +1362,13 @@
    "key": "buy-amount",
    "detail": "40x55"
   },
+  {
+   "kind": "tap",
+   "key": "open-upgrades",
+   "detail": "42x55"
+  }
+ ],
+ "148-first-20s": [
   {
    "kind": "tap",
    "key": "open-upgrades",
@@ -3804,43 +3818,7 @@
    "ellipsis": "Loading\u2026"
   }
  ],
- "103-starter-sheet": [
-  {
-   "kind": "tap",
-   "key": "open-scrapbook",
-   "detail": "40x40"
-  },
-  {
-   "kind": "tap",
-   "key": "open-tasks",
-   "detail": "40x40"
-  },
-  {
-   "kind": "tap",
-   "key": "open-gift",
-   "detail": "40x40"
-  },
-  {
-   "kind": "tap",
-   "key": "shop-chip",
-   "detail": "40x40"
-  },
-  {
-   "kind": "tap",
-   "key": "open-city",
-   "detail": "40x40"
-  },
-  {
-   "kind": "tap",
-   "key": "buy-amount",
-   "detail": "40x55"
-  },
-  {
-   "kind": "tap",
-   "key": "open-upgrades",
-   "detail": "42x55"
-  }
- ],
+ "103-starter-sheet": [],
  "104-settings-new-rows": [],
  "105-settings-restored": [],
  "106-task-swap": [

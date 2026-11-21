@@ -1,17 +1,13 @@
 {
   "version": "v5.20",
-  "errors": [
-    "core loop interaction failed: Locator.click: Timeout 20000ms exceeded.\nCall log:\n  - waiting for locator(\"[data-testid=\\\"walk-drivers\\\"]\").first\n    - locator resolved to <button tabindex=\"0\" role=\"button\" type=\"button\" aria-label=\"$7. DRIVERS\" data-testid=\"walk-drivers\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-t23y2h r-peo1c r-iphfwy r-1pz39u2 r-1ugchlj r-bcqeeo\">\u2026</button>\n  - attempting click action\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div data-testid=\"coach-block\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af\"></div> from <div data-testid=\"coach-overlay\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af r-12vffkv\">\u2026</div> subtree intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div data-testid=\"coach-block\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af\"></div> from <div data-testid=\"coach-overlay\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af r-12vffkv\">\u2026</div> subtree intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    39 \u00d7 waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div data-testid=\"coach-block\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af\"></div> from <div data-testid=\"coach-overlay\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af r-12vffkv\">\u2026</div> subtree intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n",
-    "U4 148 failed: Locator.click: Timeout 20000ms exceeded.\nCall log:\n  - waiting for locator(\"[data-testid=\\\"walk-drivers\\\"]\").first\n    - locator resolved to <button tabindex=\"0\" role=\"button\" type=\"button\" aria-label=\"$7. DRIVERS\" data-testid=\"walk-drivers\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-t23y2h r-peo1c r-iphfwy r-1pz39u2 r-1ugchlj r-bcqeeo\">\u2026</button>\n  - attempting click action\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div data-testid=\"coach-block\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af\"></div> from <div data-testid=\"coach-overlay\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af r-12vffkv\">\u2026</div> subtree intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div data-testid=\"coach-block\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af\"></div> from <div data-testid=\"coach-overlay\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af r-12vffkv\">\u2026</div> subtree intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    39 \u00d7 waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div data-testid=\"coach-block\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af\"></div> from <div data-testid=\"coach-overlay\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af r-12vffkv\">\u2026</div> subtree intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n",
-    "fixture 98_u3.py: expected testid \"starter-sheet\" before shot 103-starter-sheet",
-    "fixture 98_u3.py: expected text /\\$2\\.99/ in testid \"starter-buy\" before shot 103-starter-sheet"
-  ],
+  "errors": [],
   "shots": [
     "/home/user/IdleSliceHero/screenshots/v5.20/00-title-card.png",
     "/home/user/IdleSliceHero/screenshots/v5.20/01-opening-cutscene.png",
     "/home/user/IdleSliceHero/screenshots/v5.20/02-cutscene-dialog.png",
     "/home/user/IdleSliceHero/screenshots/v5.20/03-new-game.png",
     "/home/user/IdleSliceHero/screenshots/v5.20/03b-full-queue-tap.png",
+    "/home/user/IdleSliceHero/screenshots/v5.20/04-after-20s-play.png",
     "/home/user/IdleSliceHero/screenshots/v5.20/05-mid-game.png",
     "/home/user/IdleSliceHero/screenshots/v5.20/05a-upgrades-sheet.png",
     "/home/user/IdleSliceHero/screenshots/v5.20/05a2-decor-section.png",
@@ -67,6 +63,7 @@
     "/home/user/IdleSliceHero/screenshots/v5.20/145-industrial-jam-cue.png",
     "/home/user/IdleSliceHero/screenshots/v5.20/146-cold-short-queue.png",
     "/home/user/IdleSliceHero/screenshots/v5.20/147-corner-unchanged.png",
+    "/home/user/IdleSliceHero/screenshots/v5.20/148-first-20s.png",
     "/home/user/IdleSliceHero/screenshots/v5.20/149-offer-golden-waits.png",
     "/home/user/IdleSliceHero/screenshots/v5.20/150-attack-golden-waits.png",
     "/home/user/IdleSliceHero/screenshots/v5.20/151-tasks-progress.png",
@@ -193,7 +190,7 @@
   "audio": {
     "opening": [
       "downtown_sparse.m4a @3.1",
-      "bubble_0.m4a @3.3",
+      "bubble_1.m4a @3.3",
       "bubble_2.m4a @4.4"
     ],
     "offline": [
@@ -202,25 +199,27 @@
     "recipe": [
       "downtown_sparse.m4a @2.2",
       "downtown.m4a @2.5",
-      "bubble_0.m4a @2.5",
+      "bubble_1.m4a @2.5",
       "triumph_downtown.m4a @5.5",
-      "bubble_1.m4a @5.5",
-      "bubble_0.m4a @6.8",
-      "bubble_1.m4a @8.1",
-      "bubble_0.m4a @9.4",
+      "bubble_0.m4a @5.5",
+      "bubble_1.m4a @6.8",
+      "bubble_0.m4a @8.1",
+      "bubble_2.m4a @9.4",
       "recipe.m4a @10.1"
     ],
     "session": [
       "suburbs.m4a @2.2",
-      "rush_2.m4a @6.1",
-      "rush_0.m4a @6.4",
-      "rush_3.m4a @6.6",
+      "rush_0.m4a @6.1",
+      "rush_1.m4a @6.4",
+      "rush_0.m4a @6.6",
       "rush_1.m4a @6.9",
-      "rush_2.m4a @7.1",
-      "rush_0.m4a @7.4",
+      "rush_0.m4a @7.1",
+      "rush_2.m4a @7.4",
       "click_0.m4a @8.6",
       "downtown.m4a @8.6",
-      "cash_0.m4a @10.2"
+      "cash_1.m4a @10.2"
     ]
-  }
+  },
+  "cash_after_play": "$0",
+  "earned_after_play": 12
 }
