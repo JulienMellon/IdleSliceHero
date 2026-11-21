@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.20-r3               # r3 verify: True 0 [], layout 0 new; 0 new 23 changed vs v5.20-r2
 codecritic_range_start: 461e0a4   # v5.20 start (main after planning)
 cards:                 # todo | running | done | partial | blocked
-  E1 done  W2 done  U1 done  U2 done  E2 todo
+  E1 done  W2 done  U1 done  U2 done  E2 running
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.20/review-r3-critic.md (r3 SATISFIED; bug 0 major 0 minor 5; E3 S2; open D530 D481 D519 D493 D495)
   code:   docs/build/v5.20/review-r3-code.md (r3 APPROVED; blocker/high 0 medium 1 low 15; E1 U7 S1 N7)
@@ -37,3 +37,4 @@ next: start S8-v5.21.md
 - 2026-11-21 S8 U2 done (Story tab done, no shots: python playwright missing). Sent: U1 initialTab+open-tasks pre-takeover; U2 copy-system CHAPTERS. For E2: tasks:story/tasks:close coach targets, Story tab follows currentChapter.
 - 2026-11-21 S8 U2 done (copy-system CHAPTERS). Installed python playwright 1.63.0 (pip) for shots; U2 fixture 175_u2 to run once U1 lands. U1 done.
 - 2026-11-21 S8 U1 done (chapterGoal bar, pickGoal gone, storyWaitHint deleted). U2 sent to run 175_u2 shots.
+- 2026-11-21 S8 U2 shots ok (177 padlock fix). Wave 2 committed. Wave 3: E2 launched (extra: tasks:story/close targets, Story tab follows currentChapter).

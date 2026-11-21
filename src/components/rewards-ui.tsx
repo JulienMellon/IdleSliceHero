@@ -463,7 +463,12 @@ export const TasksDrawer = memo(function TasksDrawer({
               onPress={() => selectTab(t)}
               style={[styles.tab, tab === t && styles.tabOn]}
             >
-              {t !== 'story' && locked && <LockIcon size={14} color={tab === t ? '#fff' : C.inkSoft} />}
+              {t !== 'story' && locked && (
+                // the padlock's shackle is ink: on the selected (ink) tab it sits on a cream chip so it still reads
+                <View style={tab === t ? styles.lockChip : null}>
+                  <LockIcon size={14} color={tab === t ? '#FFF4E0' : C.inkSoft} />
+                </View>
+              )}
               <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>{TAB_LABEL[t]}</Text>
             </Pressable>
           ))}
@@ -896,6 +901,7 @@ const styles = StyleSheet.create({
   tabText: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   tabTextOn: { color: '#fff' },
   reset: { flex: 1, textAlign: 'right', fontFamily: F.semi, fontSize: 12, color: C.tomatoDark },
+  lockChip: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#FFF4E0', alignItems: 'center', justifyContent: 'center' },
   story: { gap: 8 },
   chapter: { backgroundColor: C.panel, borderRadius: 16, padding: 10, borderWidth: 3, borderColor: C.ink, gap: 4, ...shadow },
   chapterNo: { fontFamily: F.semi, fontSize: 12, color: C.tomatoDark },
