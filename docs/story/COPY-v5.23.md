@@ -31,7 +31,7 @@ Placeholders: `{n}` is a count (diamonds, looks or ads, as the key says); `{cash
 | `store.pack.diamonds_500.title` | Box of Diamonds |
 | `store.pack.diamonds_1200.title` | Crate of Diamonds |
 | `store.bonus` | +{n} bonus |
-| `store.best` | Best rate |
+| `store.best` | Best diamond-pack rate |
 | `store.firstbuy` | First buy: 2× |
 | `store.firstbuy.pays` | First buy pays double: {n} diamonds |
 | `store.looks` | Enough for {n} looks |
@@ -41,7 +41,7 @@ Placeholders: `{n}` is a count (diamonds, looks or ads, as the key says); `{cash
 | Key | Text |
 | --- | --- |
 | `store.plus.title` | Nonna's Plus |
-| `store.plus.ads` | You watched {n} ads this week. With Plus: same rewards, no ads. |
+| `store.plus.ads` | You watched {n} ads this week. Plus skips all {n}. |
 | `store.plus.once` | Pay once. Yours forever. |
 
 ## 5. Boosters

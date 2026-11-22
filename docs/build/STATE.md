@@ -9,7 +9,7 @@ round: r3              # r1 | r2 | r3
 last_shots: v5.23-r2                # v5.23 r2 verify: True 0 [], layout 0 new; 1 new 134 changed vs v5.23
 codecritic_range_start: fa8c5a5   # v5.23 start (main at S10 start)
 cards:                 # todo | running | done | partial | blocked
-  W4 running  E5 done  N1 done  U5 done  E6 running   # r3 fix round
+  W4 done  E5 done  N1 running  U5 done  E6 running   # r3 fix round
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.23/review-r2-critic.md (r2 NOT SATISFIED; bug 0 major 0 minor 22; E4 U13 S4 T1 N2; G120-G122 D558-D568 fixed; D569 D570 new)
   code:   docs/build/v5.23/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 2 low 32; E7 U15 S2 N9 A1)
@@ -54,3 +54,4 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 S10 r3 U5 done (C190). E5 launched.
 - 2026-11-22 S10 r3 E5 done (no rows in its files; C179 A45 need a card owning game.ts + content/service.ts / city-model.ts, carried). E6 launched.
 - 2026-11-22 S10 r3 N1 done (D569 C188 C189; 3093 tests). D570 decided per VERSION default: keep the pace chip. W4 launched.
+- 2026-11-22 S10 r3 W4 done (S103 S104) -> N1 puts them into store.ts.
