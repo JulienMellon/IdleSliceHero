@@ -1,7 +1,6 @@
 # Card A2 — Audio v2 and the Boston theme (v5.18, lane A)
 
-> **Prerequisite (2026-11-15): the music rewrite.** Julien asked for the whole score to be rewritten as relaxed lofi jazz (`docs/PLAN-music-rewrite.md`; the work runs from `docs/build/music/`). This card owns the same files, so it starts only when `grep -n '^round:' docs/build/music/STATE.md` prints `round: done`. Until then it is blocked: report `BLOCKED` with that line under `Needs:`.
-> Where the steps below say the lofi brief's palette, or that MegaSlice cues and win triumphs keep their energy, the rewrite's direction replaces them: sections 2 and 9 of that plan, the helpers in `tools/audio/jazz.py`, and the palette check in `tools/audio/palette.py`.
+> **Prerequisite met:** the music rewrite is on `main` as of 2026-11-22; Boston, the managed stems and the rush layer use `tools/audio/jazz.py`, `tools/audio/palette.py` and the bank in `tools/audio/BANK`.
 
 **Goal:** the three items `docs/AUDIO.md` lists as v2 work (AU25): arrangements that change once a shop has a manager, a rush rhythm layer kept in time with the loop, and a theme for Boston.
 
