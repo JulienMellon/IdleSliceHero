@@ -84,7 +84,7 @@ export function driverCast(shopSeed: number): DriverCast[] {
   return picked;
 }
 
-export type Mood = 'smile' | 'focus' | 'happy' | 'o' | 'chew';
+export type Mood = 'smile' | 'focus' | 'happy' | 'o' | 'chew' | 'frown';
 /** What a worker's hands are doing: cooks roll / toss / ladle; bakers hold an empty peel, a pizza, or slide one in. */
 export type Act = 'none' | 'phone' | 'pin' | 'toss' | 'ladle' | 'peel' | 'pizza' | 'slide' | 'slice' | 'cup' | 'lean' | 'cheer';
 
@@ -120,6 +120,14 @@ export interface PersonProps {
   carryWalk?: boolean;
   peelK?: number;
   o?: number;
+  /** v5.22 poses (poses.ts, walkout.ts), transforms on the same art: lifted this many scene units, tilted (1 = leaning on the counter), a sweat drop at step 1-3. */
+  bob?: number;
+  lean?: number;
+  sweat?: number;
+  /** The frown bubble over the head of a customer who is walking out. */
+  frown?: boolean;
+  /** Sits on a scooter (an idle driver): the figure is lifted onto its seat and a small scooter stands under it. */
+  ride?: boolean;
 }
 
 // ---------- the five General Managers (v5.16, card T1b) ----------

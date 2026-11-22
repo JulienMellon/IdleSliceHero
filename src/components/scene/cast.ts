@@ -8,6 +8,8 @@ import { frostTint, type SeatPalette } from './palette';
 import { ONE_SCREEN, P } from './projection';
 import { STEP_FRAMES } from './quantise';
 import { driverPoseAt, guestLeg, guestPoseAt, guestSchedule, type CrewState } from './crew';
+import { workerPose, type WorkerSymptom } from './poses';
+import { walkoutAt } from './walkout';
 
 const BAKER_SHIRTS = ['#B23A48', '#7E3A8E', '#2E6E8E'];
 const BAKER_DOTS = ['#D9443A', '#3FAE5A', '#2D9CDB'];
@@ -16,6 +18,8 @@ const SEATED_ACTS = ['none', 'slice', 'cup', 'lean'] as const;
 const COMPANION_ACTS = ['cup', 'none', 'slice', 'lean'] as const;
 const COOK_ACTS = ['pin', 'toss', 'ladle'] as const;
 const BAKER_ACTS = ['pizza', 'peel', 'slide'] as const;
+
+const NO_SYMPTOMS: NonNullable<CastInput['symptoms']> = Object.freeze({});
 
 /** One figure this frame: a React key, its depth for sorting, and its props. */
 export interface CastMember {
@@ -48,6 +52,8 @@ export interface CastInput {
   cold?: boolean;
   /** The `cheer` pulse is up (pulse-bus.ts, D444): the cooks raise both arms. */
   cheer?: boolean;
+  /** What the shop shows (the report's symptoms, v5.22): each kitchen station's worker piling or idle, and the floor's walk-out. Absent: nothing to show. */
+  symptoms?: { prep?: WorkerSymptom; ovens?: WorkerSymptom; counter?: WorkerSymptom; floor?: string | null };
 }
 
 /** What the sidewalk shows this frame. An idle shop (the hire stack stands on the sidewalk) keeps it clear. */
@@ -87,7 +93,21 @@ export const edgeFade = (sx: number, width: number = ONE_SCREEN.width) =>
  *   - a 7.5 Hz pose clock for arm work and eating, so a worker's limbs keep identical props for two
  *     frames and their memo holds.
  */
-export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cold = false, cheer = false }: CastInput): {
+export function buildCast({
+  lay,
+  shop,
+  running,
+  pace,
+  clock,
+  shopSeed,
+  nIdx,
+  pal,
+  crew,
+  queue,
+  cold = false,
+  cheer = false,
+  symptoms = NO_SYMPTOMS,
+}: CastInput): {
   cast: CastMember[];
 } {
   const t = clock * pace;
@@ -245,25 +265,33 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
   // the sidewalk lane: hungry diners nearest the door, then the idle drivers, all facing the door. They stand at their spots
   // with a one-pixel bob on the 7.5 Hz pose clock
   const bobAt = (n: number) => (Math.sin(poseClock * 2.4 + n * 1.7) > 0.35 ? 0.8 : 0);
+  // a customer who gives up on the line turns, frowns and walks off the curb, one at a time (walkout.ts); their spot in the line is empty while they go
+  const wo = symptoms.floor === 'walkout' ? walkoutAt(lay, clock, true, side.diners) : null;
   for (let q = 0; q < side.diners; q++) {
     const [x, y0] = lay.queue[q];
     const y = y0 + bobAt(q);
     const sd = shopSeed + 61 + q * 7;
+    const mine = wo && wo.q === q ? wo : null;
+    const w = mine?.walker ?? null;
+    const px = w ? w.x : x;
+    const py = w ? w.y : y;
     cast.push({
       key: `q${q}`,
-      sortY: y,
+      sortY: py,
       role: 'queue',
       props: {
-        x,
-        y,
+        x: px,
+        y: py,
         kind: 'guest',
         seed: sd,
-        shirt: ice(GUEST_SHIRTS[pal.walkShirt(q, 7)]),
-        hair: ice(HAIR_COLORS[pal.walkHair(q, 7)]),
-        flip: fl(false),
+        shirt: ice(GUEST_SHIRTS[pal.walkShirt(q, 7)], !w),
+        hair: ice(HAIR_COLORS[pal.walkHair(q, 7)], !w),
+        flip: fl(!!w),
+        step: w?.walking ? walkStep(q) : 0,
         blink: blinkAt(sd),
-        mood: 'smile',
-        o: fadeAt(x, y),
+        mood: w ? 'frown' : 'smile',
+        frown: !!w,
+        o: fadeAt(px, py) * (w ? w.o : mine ? mine.spotOpacity : 1),
       },
     });
   }
@@ -287,6 +315,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
         flip: fl(false),
         blink: blinkAt(d.seed),
         mood: d.phone ? 'focus' : 'smile',
+        ride: true,
         o: fadeAt(x, y),
       },
     });
@@ -297,6 +326,8 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
   lay.cooks.forEach((x, i) => {
     const sd = shopSeed + i * 4 + 20;
     const y = cookY + (i % 2) * 8;
+    // a swamped cook hurries and sweats; one with nothing to do leans on the bench, hands still (poses.ts)
+    const pose = cheer ? null : workerPose(symptoms.prep, poseClock, sd);
     cast.push({
       key: `c${i}`,
       sortY: y,
@@ -308,11 +339,14 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
         variant: i,
         gold: shop.prep >= 100,
         front: true,
-        act: cheer ? 'cheer' : COOK_ACTS[i % 3],
-        mood: cheer ? 'happy' : running && Math.floor(poseClock / 1.5 + i) % 2 === 0 ? 'focus' : 'smile',
+        act: cheer ? 'cheer' : (pose?.act ?? (pose?.still ? 'none' : COOK_ACTS[i % 3])),
+        mood: cheer ? 'happy' : (pose?.mood ?? (running && Math.floor(poseClock / 1.5 + i) % 2 === 0 ? 'focus' : 'smile')),
         seed: sd,
         blink: blinkAt(sd),
-        arm: running ? Math.abs(Math.sin(pt * 4 + i)) * 3 : 0,
+        arm: running && !pose?.still ? Math.abs(Math.sin(pt * 4 + i)) * 3 : 0,
+        bob: pose?.bob,
+        lean: pose?.lean,
+        sweat: pose?.sweat,
       },
     });
   });
@@ -321,6 +355,7 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
   lay.bakers.forEach((b, i) => {
     const sd = shopSeed + i * 3 + 31 + nIdx * 7;
     const ci = (bBase + i) % 3;
+    const pose = workerPose(symptoms.ovens, poseClock, sd);
     cast.push({
       key: `b${i}`,
       sortY: b.y,
@@ -331,16 +366,21 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
         shirt: BAKER_SHIRTS[ci],
         kind: 'baker',
         seed: sd,
+        mood: pose?.mood ?? undefined,
         blink: blinkAt(sd),
-        arm: running ? Math.abs(Math.sin(pt * 3 + i)) * 2.5 : 0,
+        arm: running && !pose?.still ? Math.abs(Math.sin(pt * 3 + i)) * 2.5 : 0,
         peelK: b.nearCounter ? 0.7 : 1,
         act: b.nearCounter ? 'peel' : BAKER_ACTS[(i + bBase) % 3],
         dot: BAKER_DOTS[(ci + 1) % 3],
+        bob: pose?.bob,
+        lean: pose?.lean,
+        sweat: pose?.sweat,
       },
     });
   });
   lay.staff.forEach((x, i) => {
     const sd = shopSeed + i * 5 + 41;
+    const pose = workerPose(symptoms.counter, poseClock, sd);
     cast.push({
       key: `st${i}`,
       sortY: 92,
@@ -353,8 +393,13 @@ export function buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal
         alt: i === 1,
         cap: STAFF_CAPS[nIdx],
         seed: sd,
+        act: pose?.act ?? undefined,
+        mood: pose?.mood ?? undefined,
         blink: blinkAt(sd),
-        arm: running ? Math.abs(Math.sin(pt * 5 + i * 2)) * 2 : 0,
+        arm: running && !pose?.still ? Math.abs(Math.sin(pt * 5 + i * 2)) * 2 : 0,
+        bob: pose?.bob,
+        lean: pose?.lean,
+        sweat: pose?.sweat,
       },
     });
   });

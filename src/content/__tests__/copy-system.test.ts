@@ -9,6 +9,7 @@ import { COPY as ENDGAME } from '../copy/home/endgame';
 import { LAYER_COPY } from '../copy/home/layers';
 import { LINES } from '../copy/home/lines';
 import { COPY as MENU } from '../copy/home/menu';
+import { COPY as REPORT } from '../copy/home/report';
 import { COPY as SHIFTS } from '../copy/home/shifts';
 import { COPY as STARS } from '../copy/home/stars';
 import { COPY as TUTORIAL } from '../copy/home/tutorial';
@@ -53,7 +54,7 @@ describe('t: the pack first, then home', () => {
 
 describe('the home tables', () => {
   test('no key is in two tables, so one merged lookup is the same words', () => {
-    const tables = [CHAPTERS, ENDGAME, LAYER_COPY, MENU, SHIFTS, STARS, TUTORIAL, LINES];
+    const tables = [CHAPTERS, ENDGAME, LAYER_COPY, MENU, REPORT, SHIFTS, STARS, TUTORIAL, LINES];
     const keys = tables.flatMap((tb) => Object.keys(tb));
     expect(new Set(keys).size).toBe(keys.length);
     expect(Object.keys(HOME_COPY)).toHaveLength(keys.length);

@@ -162,7 +162,7 @@ describe('the drawer after the tutorial (P1)', () => {
     const ticked = G.playTick(G.playTick(g, 1, g.lastSavedAt + 1000), 1, g.lastSavedAt + 2000);
     const line = drawerCards({ game: ticked, id: 'downtown' }).bottleneck;
     expect(line.startsWith('Bottleneck: ')).toBe(false);
-    expect(line).toMatch(/bake|minute|tip|cold/i);
+    expect(line).toMatch(/^Served \d+\/min · Missed \d+\/min$/);
   });
   test('the cache key knows the tutorial has ended', () => {
     const s = after();
