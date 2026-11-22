@@ -10,6 +10,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CoachOverlay } from '@/components/coach/overlay';
 import { BoosterBuy } from '@/components/endgame/booster-buy';
 import { storeFrom, STORE_OPENED_EVENT, tabFromParam } from '@/components/endgame/diamond-chip-model';
 import { NudgeCard } from '@/components/endgame/nudge-card';
@@ -23,16 +24,38 @@ import { boosterAdOffer } from '@/components/store/ad-model';
 import { StoreTab } from '@/components/store/store-tab';
 import { BoostIcon, DiamondIcon } from '@/components/icons';
 import { TAP } from '@/components/tap-targets';
+import { Z } from '@/components/z-order';
 import { analytics } from '@/services';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
 import { gameNow } from '../engine/clock';
+import type { CoachTargetId } from '../engine/coach-types';
+import { coachStep, STARTER_STEP } from '../engine/tutorial';
 import { rewardsUnlocked } from '../engine/rewards';
 
 type Tab = 0 | 1 | 2;
 
 /** The shelf's ad gives the booster; the store sets today as taken. Module-level, so the memoised button keeps one callback. */
 const takeBooster = () => void useGame.getState().freeBooster();
+
+const STARTER_TARGETS: readonly CoachTargetId[] = ['store:starter'];
+
+/** Nonna's Store intro on this screen (tutorial 16-17): the Store tab opening ends 16, the Starter card is lit while 17 runs, and leaving the Shop ends 17. */
+function StoreCoach({ tab }: { tab: Tab }) {
+  const text = useGame((s) => (s.game.tutorial === STARTER_STEP ? (coachStep(s.game)?.text ?? '') : ''));
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    if (tab === 2) useGame.getState().noteCoach('store-open');
+  }, [tab]);
+  useEffect(() => () => useGame.getState().noteCoach('store-left'), []);
+  const onDone = useCallback(() => setSeen(true), []);
+  if (!text || tab !== 2) return null;
+  return (
+    <View pointerEvents="box-none" style={styles.coachLayer}>
+      <CoachOverlay targets={STARTER_TARGETS} mode={seen ? 'free' : 'look'} text={text} hand={false} onDone={onDone} />
+    </View>
+  );
+}
 
 function VanityCard({ v, onWear, onBuy }: { v: VanityView; onWear: (id: string, on: boolean) => void; onBuy: (id: string, short: boolean) => void }) {
   const can = v.state === 'owned' || v.state === 'worn' || v.state === 'buy';
@@ -203,12 +226,14 @@ export default function Shop() {
         )}
       </ScrollView>
       {toast && <Toast compact text={toast.text} top={insets.top + 56} />}
+      <StoreCoach tab={tab} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
+  coachLayer: { ...StyleSheet.absoluteFillObject, zIndex: Z.coach },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

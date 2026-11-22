@@ -10,6 +10,7 @@ import { analytics, EVENTS, purchases, type ProductId } from '../../services';
 import { queryFlag } from '../../services/query';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
+import { useCoachTarget } from '../coach/targets';
 import { DiamondIcon } from '../icons';
 import { Portrait } from '../portrait/index';
 import { gameNow } from '../../engine/clock';
@@ -71,12 +72,14 @@ const ProductCard = memo(function ProductCard({
   const { id, title, blurb, label, state, enabled } = row;
   const press = useCallback(() => onBuy(id), [onBuy, id]);
   const starter = id === 'starter_pack';
+  // Nonna's Store intro (tutorial step 17) lights the Starter card; only that card is the target
+  const target = useCoachTarget('store:starter');
   const owned = state === 'owned';
   useEffect(() => {
     if (!owned) analytics.track(EVENTS.packCardSeen, { id });
   }, [id, owned]);
   return (
-    <View testID={`product-${id}`} style={styles.card}>
+    <View testID={`product-${id}`} style={styles.card} {...(starter ? { ref: target, onLayout: target.onLayout, collapsable: false } : null)}>
       {starter && <FounderAwning height={52} />}
       <View style={styles.top}>
         <ProductArt id={id} />

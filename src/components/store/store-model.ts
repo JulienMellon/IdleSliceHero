@@ -210,24 +210,6 @@ export function restoreLine(ids: readonly ProductId[]): string {
 // Moved to engine/offers.ts (A34); re-exported for the screens and tests.
 export { applyGrant } from '../../engine/offers';
 
-// ---------- the Starter Pack's offer ----------
-
-/** Play seconds after the tutorial ends before the sheet may show: the first story beat and the first look at the shop come first. */
-export const STARTER_DELAY = 30;
-
-export interface StarterInput {
-  /** Play seconds when the tutorial ended this session; null if it didn't. */
-  at: number | null;
-  playSeconds: number;
-  offered: boolean;
-  owned: boolean;
-  /** A scene, the offline popup, a drawer or another screen is up. */
-  covered: boolean;
-}
-
-/** The sheet shows once, after the tutorial, when nothing else is up and the pack isn't owned. */
-export const starterShows = (i: StarterInput): boolean => i.at !== null && !i.offered && !i.owned && !i.covered && i.playSeconds >= i.at + STARTER_DELAY;
-
 // ---------- prefs ----------
 
 /** Saved on their own (not in the game save), so Start over doesn't offer a bought pack again. */

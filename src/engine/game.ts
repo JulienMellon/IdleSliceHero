@@ -673,10 +673,11 @@ export function migrate(raw: unknown, now: number): GameState {
   // a save from before v7 counts the old nine steps: renumber it; a v7 save keeps its own
   const oldSteps = num(r.saveVersion, 0) < 7;
   game.tutorial = oldSteps ? legacyTutorial(int(r.tutorial, veteran ? 10 : 0, 0, 10)) : int(r.tutorial, veteran ? TUTORIAL_DONE : 0, 0, TUTORIAL_DONE);
-  // a first shop that runs itself is past the tutorial, whatever step the save was at (no overlay is drawn on it, so a look step could never end)
-  if (game.tutorial >= 1 && game.shops[first].managed) game.tutorial = TUTORIAL_DONE;
-  // v5.23 (E6): a save done before the Store intro existed (16 = done) sees the intro once, unless it already owns the Starter Pack
-  if (game.tutorial >= STORE_INTRO_START && game.tutorial < TUTORIAL_DONE && starterOwned(game)) game.tutorial = TUTORIAL_DONE;
+  // a first shop that runs itself is past the shop's steps, whatever step the save was at (no overlay is drawn on it, so a look step could never end): on to the Store intro
+  if (game.tutorial >= 1 && game.tutorial < STORE_INTRO_START && game.shops[first].managed) game.tutorial = STORE_INTRO_START;
+  // v5.23 (E6): a save done before the Store intro existed (16 = done) sees the intro once, unless it already owns the Starter Pack. The Shop is not open on a
+  // load, so a save closed in the middle of the Starter card (17) lights the Store chip again.
+  if (game.tutorial >= STORE_INTRO_START && game.tutorial < TUTORIAL_DONE) game.tutorial = starterOwned(game) ? TUTORIAL_DONE : STORE_INTRO_START;
   game.bonus = migrateBonus(r.bonus, game.playSeconds, now);
   game.order = migrateOrders(r.order, game.playSeconds, now, game.shops);
   // saves from before the night oven have none: the base cap
