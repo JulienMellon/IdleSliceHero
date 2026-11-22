@@ -22,7 +22,7 @@ def store_save():
          "week": day_str(), "weekly": [], "weeklyChest": False,
          "gift": {"streak": 3, "last": day_str(0), "saveUsed": False, "cycle": 0}, "giftShownDay": day_str(),
          "diamonds": 42, "boosters": [], "boosts": [], "cosmetics": [], "lastSeen": now_ms - 60000}
-    return dict(MID_SAVE, saveVersion=5, totalEarned=15000, lastSavedAt=T0_MS, rewards=r)
+    return dict(MID_SAVE, saveVersion=7, tutorial=18, totalEarned=15000, lastSavedAt=T0_MS, rewards=r)
 
 
 def prefs(ads=0):

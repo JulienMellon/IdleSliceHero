@@ -46,7 +46,7 @@ def boston_save(active="north-end", built=("north-end",), seen=None, **over):
     """A Boston game: the shops in `built` run themselves, `seen` scenes are told (the home story by default)."""
     shops = {h: shop(built=h in built, managed=h in built, prep=20, ovens=18, counter=18, drivers=10, tables=8, footprint=1, sold=60000 if h in built else 0, decor=DECOR3) for h in BOSTON_IDS}
     seen = list(HOME_SCENES) if seen is None else seen
-    sv = dict(saveVersion=6, economy=3, city="boston", cash=5e9, totalEarned=3e15, vehicle=2, active=active, shops=shops, dronesUnlocked=False,
+    sv = dict(saveVersion=7, tutorial=18, economy=3, city="boston", cash=5e9, totalEarned=3e15, vehicle=2, active=active, shops=shops, dronesUnlocked=False,
               cityComplete=False, seenScenes=seen, scrapbookViewed=len(seen), lastSavedAt=T0_MS, playSeconds=9000)
     sv["rewards"] = {"giftShownDay": day_str(), "diamonds": 340}
     sv["x"] = {"franchise": {"count": 1, "stars": 12, "cityStart": 2.79e15, "masteryBanked": 0}}

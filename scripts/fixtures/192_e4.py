@@ -6,7 +6,7 @@ Every state is asserted with expect() before its shot; game time moves only thro
 """
 from shots_lib import *  # noqa: F401,F403  (seeded_page, settle, shot, expect, expect_text, tid, advance, report, ...)
 
-TUTORIAL_DONE = 16
+TUTORIAL_DONE = 18
 
 
 def chapter3_save():

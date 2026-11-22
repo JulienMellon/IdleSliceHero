@@ -18,7 +18,7 @@ def run(ctx):
             "diamonds": diamonds, "boosters": [{"mult": 2, "seconds": 900}, {"mult": 2, "seconds": 1800}],
             "boosts": [{"mult": 2, "until": now_ms + 14 * 60 * 1000 + 5000, "source": "booster"}],
             "cosmetics": ["oven-woodfired"], "lastSeen": now_ms - 60000}
-        return dict(MID_SAVE, saveVersion=5, stats=stats, lastSavedAt=T0_MS, totalEarned=15000, rewards=r)
+        return dict(MID_SAVE, saveVersion=7, tutorial=18, stats=stats, lastSavedAt=T0_MS, totalEarned=15000, rewards=r)
     try:
         page = played_page(browser, rewarded(day_str(), 3, generate=True))
         shot(page, "29-hud-rewards", 0.8)
