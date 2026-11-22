@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.23-r3                # v5.23 r3 verify: True 0 [], layout 0 new; 16 changed vs v5.23-r2
 codecritic_range_start: 688f26f   # v5.23b start (v5.23 closed commit)
 cards:                 # todo | running | done | partial | blocked
-  Q7 todo  Q8 todo  S6 done  U7 todo  U8 running  W6 done
+  Q7 todo  Q8 todo  S6 done  U7 running  U8 running  W6 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.23/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 21; E3 U12 S4 T1 N1)
   code:   docs/build/v5.23/review-r3-code.md (r3 APPROVED; blocker/high 0 medium 3 low 29; E5 U16 S2 N8 A1; C192 A46 A44 medium)
