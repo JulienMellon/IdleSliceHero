@@ -23,7 +23,19 @@ If something outside the listed files must change, stop and say what and why in 
 - Tap targets: draw them at 44 pt, or at 40 pt or more with a `hitSlop` that a test in `src/components/__tests__/tap-targets.test.ts` proves reaches 44 pt inside space the parent owns. Never under 40 pt.
 - Text is 10 pt or more.
 - Don't remove owner-required scene elements (the WELCOME mat, the shared signage) while fixing something else.
-- Run targeted tests (`npx jest src/engine/__tests__/pipeline.test.ts`), not the full suite, unless the card says otherwise. Never run `npx expo lint` or installs. On a card with a `Fixtures` section, run your own fixture with `--only` and look at no more than three shots; never the full screenshot run.
+- While you work, run targeted tests (`npx jest src/engine/__tests__/pipeline.test.ts`). **Before you report, run the full suite once: `npm test 2>&1 | tail -6` (about a minute).** A failure in a file outside your scope goes on your `Needs:` line as `path:line — what to change`; don't report DONE on a red suite without naming every red file. (S9: three cards reported a green subset while the full suite was red.) Never run `npx expo lint` or installs. On a card with a `Fixtures` section, run your own fixture with `--only` and look at no more than three shots; never the full screenshot run.
+- **When you rename or remove a string, copy key, test id, type field or export**, grep for the old name before you report: `grep -rn "<old>" src scripts/fixtures | head`. Fix the hits in your scope; list the rest in `Needs:`. Fixture scripts in `scripts/fixtures/` assert on text and test ids and are not in the test suite, so only this grep finds them. (S9: all three verify errors were older fixtures expecting removed text.)
+
+## Reading (from S9: two agents read the whole 52K-character API.md)
+- `docs/API.md`: never read it whole. `grep -n "<symbol>" docs/API.md`, then read that section with `offset`/`limit`.
+- A file over 400 lines: `grep -n` first, then Read only the range you need. Don't re-read a range you already have unless an edit changed it.
+- If your prompt names a `WAVE-NOTES.md`, read it before the card's source files: it lists what earlier waves renamed, added and removed.
+
+## Editing and waiting (from S9: about 10 failed script edits, 36 sleep/poll loops)
+- Edit code with the Edit tool. Use a script (`python3 - <<'EOF'`, `sed -i`) only for more than five mechanical replacements, and make it check each match (`assert s.count(old) == 1`). Run `npx prettier --write` on files a script changed.
+- Tool names are case-sensitive: `Bash`, not `bash`. You have no `Monitor` tool.
+- Never start a command in the background and then poll it: `sleep` is blocked. Run long commands (your fixture, the pacing sim) in the foreground with a Bash `timeout` of up to 600000 ms.
+- Scratch screenshot runs use the label `dev` or `tmp-<name>` (both gitignored), never a new label.
 - Formatting: a hook runs Prettier on every file you Edit or Write, so a file can change after your edit; re-read before the next edit if one fails to match. Files you change through Bash (sed, heredocs, scripts) are not formatted by the hook: run `npx prettier --write <file>` on them.
 - Don't bump the version, commit or push. The orchestrator does that.
 

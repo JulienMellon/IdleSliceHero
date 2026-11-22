@@ -41,6 +41,8 @@ Report CPU findings as their own ranked list in a **CPU** section (IDs with pref
 
 Be pragmatic: this is a solo-developer game heading to the App Store, not a bank. Prefer a few high-leverage changes over a long list of nits. Every issue must say **where** (file:line or symbol), **why it matters**, and **the concrete change** (what to extract, rename, memoise, test).
 
+**The verdict follows the gate (README section 4.5):** APPROVED only with no blocker, no [high] in any list, and at most three [medium] across ISSUES, ARCHITECTURE, MEMORY and CPU. Four or more mediums is CHANGES REQUESTED, however mild they look. (S9: an APPROVED verdict with four mediums failed the gate.)
+
 ## Output (exactly this shape)
 ```
 VERDICT: APPROVED | CHANGES REQUESTED

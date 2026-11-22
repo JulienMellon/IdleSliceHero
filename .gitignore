@@ -58,6 +58,7 @@ __pycache__/
 screenshots/*/review/
 # scratch sets from one-fixture runs (scripts/screenshots.py dev --only ...) and side-by-side retakes
 screenshots/dev/
+screenshots/tmp-*/
 screenshots/*-b/
 saves/
 vis/

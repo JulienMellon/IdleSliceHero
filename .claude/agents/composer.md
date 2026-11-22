@@ -41,7 +41,8 @@ He listened to the old score and said the instruments at the front "sound like a
 - A lead plays at or below its bed: the stem audit must show lead minus bed at 0 LU or less (aim for −2 to −4).
 
 ## Working method
-- Set up once: `cd tools/audio && npm install --silent 2>&1 | tail -1 && pip install -q mido numpy scipy pyloudnorm 2>&1 | tail -1` (add `--break-system-packages` if pip asks). If `tools/audio/fetch_bank.sh` exists, run it: it fetches the chosen soundfont, which is not in git.
+- Set up once: `cd tools/audio && npm install --silent 2>&1 | tail -1 && pip install -q mido numpy scipy pyloudnorm 2>&1 | tail -1` (add `--break-system-packages` if pip asks). If `tools/audio/fetch_bank.sh` exists, run it: it fetches the chosen soundfont, which is not in git. In a fresh container run `apt-get update -qq` first, or the download fails (`scripts/session-setup.sh` does both).
+- Never start a build in the background and poll it: `sleep` is blocked and you have no `Monitor` tool. Run builds in the foreground with a Bash `timeout` of up to 600000 ms.
 - **Fresh checkout:** run one full `python3 build.py` before any partial build. A partial build (`python3 build.py <cue> <cue>`) needs the `build/report.json` that a full build writes.
 - Card commands that start `python3 build.py`, `python3 compose.py` or `python3 audit.py` run from `tools/audio/`. Every other command runs from the repo root.
 - Iterate with partial builds. Finish with one full build only if your card says so.

@@ -16,14 +16,14 @@ Never open: card files, review files, source files, `CRITICLOG.md`, `CODELOG.md`
 ## 3. Agents
 Use only these types: `programmer`, `writer`, `critic`, `codecritic`, `storycritic`, `audiocritic`, `tests`, `search`, `docs`. Never `general-purpose`, `Plan` or `Explore` (about 60K tokens each before any work, measured 2026-10-30).
 
-- **At most two programmers or writers run at once.** Three in parallel exhausted the 5-hour limit twice on 2026-11-11.
+- **At most two programmers or writers run at once.** Three in parallel exhausted the 5-hour limit twice on 2026-11-11. A SendMessage that resumes a finished agent starts it again and counts. Before every spawn or resume, count the agents that have not reported since their last message; at two, queue the work. (S9 ran three once, while routing a follow-up.)
 - Launch all agents in the background.
 - A card is passed **by path**, never pasted.
 
 Spawn prompt for a card (the file name is in the Card column of VERSION.md; add nothing else unless VERSION.md gives an `extra:` line for that card):
 ```
 Your task card is the file docs/build/<version>/<card file>. Read it first and follow it exactly.
-Read docs/API.md before opening any engine file (skip if it doesn't exist yet).
+Before opening an engine file, grep docs/API.md for the symbols you need (never read it whole; skip if it doesn't exist yet).
 As each step's check passes, tick its box in the card file, so the work can be resumed.
 If your card has a `Fixtures` section: when your checks pass, run: npx expo export --platform web > /tmp/export.log 2>&1 && python3 scripts/screenshots.py dev --only <your fixture file>. Open at most three shots from screenshots/dev at half size and fix what you see before you report.
 If your card writes a fixture: Fixtures follow scripts/fixtures/README.md: move time with advance(), never time.sleep, and call expect() before a shot that shows a state.
@@ -35,6 +35,8 @@ Writer cards use `subagent_type: writer` with the same prompt, minus the API lin
 1. **Waves.** Launch the waves in VERSION.md in order. A wave starts when the one before it has reported.
    - `DONE` → mark the card `done` in STATE.
    - `PARTIAL` / `BLOCKED` → read only the `Needs:` line. If it names a default in VERSION.md `Defaults`, send that default back to the same agent with SendMessage. If it needs a file outside the card's scope, send the request to the agent that owns the file (see `OWNERS.md`). Otherwise ask Julien one question.
+   - **Wave notes.** After each wave, append to `docs/build/<version>/WAVE-NOTES.md` one line per thing a later card must know: a renamed or removed field, key, test id or export; a new selector or copy key; a `Needs:` item routed to a later card. Add `Wave notes: docs/build/<version>/WAVE-NOTES.md` to every later spawn prompt of the version, instead of retyping the notes as `extra:` lines. (S9: 15 follow-up messages, most of them for things an earlier wave already knew.)
+   - **Copy lands in code.** When a writer card reports, the card that puts its strings into code must be named in VERSION.md, or in the writer card. If neither names one, add it to the next programmer's prompt in the same lane as the strings. (S9: W3's barks reached the game only in r2, so the r1 reviews judged a silent shop.)
 2. **Verify** (section 5). On a failure, send the failing lines (≤ 10) to the owning lane's programmer. Don't debug yourself.
 3. **Commit and push** (section 6).
 4. **Review.** Launch the critics VERSION.md lists for this round, in parallel, using the prompts in section 7. Don't change the working tree while the codecritic runs.
@@ -65,8 +67,9 @@ npm test 2>&1 | tail -6
 npx expo export --platform web > /tmp/export.log 2>&1; tail -2 /tmp/export.log
 nohup python3 -u scripts/screenshots.py $L --jobs 3 > /tmp/shots.log 2>&1 &
 ```
-Wait about 10 minutes (measured 569 s with `--jobs 3` for 207 shots; longer as fixtures are added; `--jobs 1` took 28 minutes), then:
+Wait about 10 minutes (measured 569 s with `--jobs 3` for 207 shots; longer as fixtures are added; `--jobs 1` took 28 minutes), then read the log first. A run that crashed at start leaves no `report.json`, and the log says why:
 ```
+tail -3 /tmp/shots.log | cut -c1-200
 python3 -c "import json;r=json.load(open('screenshots/$L/report.json'));print(r['loaded'],len(r['errors']),r['errors'][:3])"
 python3 -c "import json;print(json.load(open('screenshots/$L/layout.json'))['new'])"
 python3 scripts/review_shots.py $L $P 2>&1 | tail -3
@@ -79,7 +82,12 @@ At session start, set the git identity once without opening HANDOFF.md:
 ```
 git config user.name "Julien Mellon"
 git config user.email "$(grep -o 'user.email="[^"]*"' HANDOFF.md | head -1 | cut -d'"' -f2)"
+bash scripts/session-setup.sh 2>&1 | tail -4   # node_modules, Python Playwright, audio bank; each line must say ok, installed or fetched
 ```
+A fresh container has none of the three. In S9 the first verify crashed on a missing `playwright` module, and the composer had to find `apt-get update` by itself.
+
+**Checkpoints.** The session's stop hook asks for a commit whenever the tree is dirty, which it is while agents edit. Commit when an agent reports. If the hook fires while an agent is still working, commit what is on disk as `WIP checkpoint` without `screenshots/`. Leave out a screenshot folder that is still being written. Scratch runs use the `dev` or `tmp-*` labels, which are gitignored.
+
 Then per round:
 ```
 git add -A && git commit -q -m "v$V $ROUND: <one line>" -m "<this session's attribution lines>"
@@ -126,3 +134,9 @@ Relaunch the same card with one extra line: `Resume: some steps are already tick
 
 ## 10. Context budget
 If this session has run two fix rounds, or you notice replies slowing, finish the current step, update STATE (`next:` line says exactly what to do), commit, and end the session. Live programmers die with the session; the next session spawns fresh ones from the same cards.
+
+## 11. Writing cards and session files (for planning sessions)
+From the S9 transcript analysis (`docs/build/LESSONS-S9.md`):
+- A card's **Files** section lists the tests and `scripts/fixtures/*.py` that check what the card renames or removes. Find them with `grep -rln "<name>" src scripts/fixtures`. In S9, E3, U3 and U4 each needed a follow-up round for files their card did not list.
+- Every writer card names the card that puts its strings into code, and that card lists the content file (`src/content/cities/*/voice.ts`, `src/content/copy/**`).
+- A session file that runs a second track (music) names that track's README sections to read for each answer Julien can give, so the orchestrator does not grep for the procedure.
