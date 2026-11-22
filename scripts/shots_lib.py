@@ -69,6 +69,8 @@ MID_SAVE = {
     "seenScenes": ["downtown-1", "downtown-2", "downtown-3", "downtown-4", "suburbs-1", "suburbs-2", "suburbs-3", "suburbs-3b", "suburbs-hire", "waterfront-1"],  # suburbs-hire: a v7+ save keeps a managed shop's hire scene pending (it was marked seen below v6)
     "scrapbookViewed": 7, "lastSavedAt": now_ms,
 }
+# What a save from before v6 got on load: the hire scene of each manager already hired counts as seen. A v7+ fixture save lists them itself.
+HIRES = lambda hoods: [f"{h}-hire" for h in hoods if h != "downtown"]
 report = {"version": VERSION, "errors": [], "shots": [], "loaded": False}
 if VIEWPORT:
     report["viewport"] = f"{VIEWPORT[0]}x{VIEWPORT[1]}"

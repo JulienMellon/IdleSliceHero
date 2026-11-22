@@ -20,11 +20,6 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-22 S9 r2 E landed all COPY-v5.22 barks (36 head + 12 manager, HOME_MANAGER_BARKS wired); home pack had none before (wave-1 gap). Watch bark rate in r2 shots.
-- 2026-11-22 S9 r2 S done (D548 piles 1.3-1.6x + spill + rock, D549 Z\/phone bubbles + lean, M74, C167). Julien: skip verify\/reviews, PR now; next session resumes at r2 verify.
-- 2026-11-22 S9b Julien: skip verify/shots/critics until this session's fixes land. Shot run stopped. r2 E fix (drivers-short counter symptom, D556 once-flag) launched on E3.
-- 2026-11-22 S9b r2 E done (drivers-short counter piling when no idle driver; ChapterSave.missedZero + missedZeroShown). Open for Julien: flow-based drivers symptom (new Symptom value). U launched to wire D556.
-- 2026-11-22 S9b r2 U done (D556 payoff once, gated on missedZero; strip flash/coin burst not in U3). tsc ok, 2995 tests pass. Verify deferred to next session.
 - 2026-11-22 S9c verify v5.22-r2 FAIL: 3 errors (192_e4 coach 'the dashed line' + coach-block click -> E4; 66_s1 head-rush bark text -> E4), layout 4 new (walk-* capacity labels ellipsis -> U4); 0 new 122 changed vs v5.22. E4 || U4 launched. Music: Julien R2 notes, notes round 2 running.
 - 2026-11-22 S9c r2 verify fix U4 done (sidewalk capacityFit: unit-shared and now-only fallbacks; walk-* clips fixed in code, not yet re-shot).
 - 2026-11-22 S9c r2 verify fix E4 done (192_e4 expects 'Dashed line, cara' per COPY; 66_s1 waits 42 s, symptom bark outranks rush). WIP ea7437a caught composer mid-rebuild (assets deleted); composer told to rebuild clean before verify.
@@ -43,3 +38,4 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 S10 E6 done (3075 tests). U follow-ups (98_u3 shot 103, coach-view 16/17) sent to U5 before verify.
 - 2026-11-22 S10 U5 follow-ups done (3077 tests). MID_SAVE in shots_lib lands fixtures on step 16 -> sent to E6 before verify.
 - 2026-11-22 S10 E6 MID_SAVE fix done (saveVersion 7, tutorial 18; 4 fixtures + 3 TUTORIAL_DONE locals). Possible: fixtures 09/19/56 may need suburbs-hire seen. Verify v5.23 running (tsc, format, 3077 tests ok).
+- 2026-11-22 S10 verify v5.23 FAIL: 3 errors (56_u1 soon-card + gift-close click; 106_t2 open-city click), layout 0 new; 10 new 54 changed vs v5.22-r2. Sent to E6 (fixture saves).

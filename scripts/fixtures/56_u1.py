@@ -13,7 +13,7 @@ import datetime
 
 from shots_lib import *  # seeded_page, fresh_page, clock_page, settle, shot, tid, shop, hood_save, MID_SAVE, IDS, day_str, T0, T0_MS, report
 
-SCENES = lambda hoods: [f"{h}-{b}" for h in hoods for b in range(1, 5)]
+SCENES = lambda hoods: [f"{h}-{b}" for h in hoods for b in range(1, 5)] + HIRES(hoods)
 DECOR3 = {"plants": 3, "flooring": 3, "tables": 3, "walls": 3, "signage": 3}
 
 
