@@ -1,20 +1,22 @@
-// What each sidewalk station button shows, as plain data (A16). The level-dependent part (cost, lock, gain, which
-// stations are tied for the bottleneck) is cached on the shop's levels, so the 200 ms tick doesn't rerun four
-// upgrade simulations (M26); only `affordable` depends on cash. Pure: unit-tested in node.
+// What each sidewalk station button shows, as plain data (A16). The level-dependent part (cost, lock, and the station's capacity now and
+// after the buy) is cached on the shop's levels, so the 200 ms tick doesn't rerun the what-ifs (M26); only `affordable` depends on cash.
+// v5.22: a card says what its station can handle ("18/min → 22"); nothing here ranks, tints or bundles stations. Pure: unit-tested in node.
 import { cityOf, type CityDef } from '../content/cities';
+import type { HeadKind } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { BUY_AMOUNTS, buyPlan, isLevelUpgrade, type BuyAmount } from '../engine/buy-many';
-import { bonusUnlocked } from '../engine/bonus';
-import { money } from '../engine/format';
+import { count, money } from '../engine/format';
 import * as G from '../engine/game';
-import { compactEffect } from './report/report-model';
+import { fits } from './endgame/fit-model';
+import { capacityAfter, flowOf, reportActive, reportView, type K3 } from '../engine/features/service';
 
 /** The look of a purchase button: `expand` is the amber Expand buy, which never reads as a station buy (D407). */
 export type ButtonTone = 'normal' | 'neutral' | 'nogain' | 'expand';
 
 /**
- * The one rule for a purchase button's tone, shared by the sidewalk and the drawer (C60/G75): a locked or maxed
- * upgrade is never "no gain" (it shows its reason or MAX), and a muted (unmanaged) card stays neutral.
+ * The one rule for a purchase button's tone, shared by the sidewalk and the drawer (C60/G75): a locked or maxed upgrade is never "no gain"
+ * (it shows its reason or MAX), and a muted (unmanaged) card stays neutral. v5.22: the station cards and the drawer pass no `gain`, so a
+ * card never reads as worth less than its neighbours; a caller that does pass one (the layers' cards) still gets the flat `nogain` look for 0.
  */
 export function buttonTone({
   lock,
@@ -22,18 +24,18 @@ export function buttonTone({
   muted = false,
 }: {
   lock: string | null | boolean;
-  gain: number | null;
+  gain?: number | null;
   muted?: boolean;
 }): Exclude<ButtonTone, 'expand'> {
   if (muted) return 'neutral';
-  if (lock) return 'normal';
+  if (lock || gain === undefined) return 'normal';
   return (gain ?? 0) > 1e-9 ? 'normal' : 'nogain';
 }
 
 /**
  * The look of an affordable card and its button (D419): a 2 pt crust-brown outline and a solid face in every neighbourhood, so a buy
- * you can make never reads as washed out. The bottleneck keeps its signal in the card's tomato fill instead of the outline (the old
- * affordable bottleneck card had a tomato outline on a pale pink face, which read faded beside the dark-outlined cards).
+ * you can make never reads as washed out. v5.22: the sidewalk and the drawer pass no frame (null); `frame` stays only for shop-ui's StationCard
+ * until its `hot` prop goes (that file is not in this card).
  */
 export const AFFORDABLE_OUTLINE = { color: '#3B1F14', width: 2 } as const;
 export interface CardLook {
@@ -62,9 +64,6 @@ export function cardLook(frame: 'hot' | 'waiting' | null, affordable: boolean): 
 export const buttonOutline = (enabled: boolean, tone: ButtonTone): { borderColor: string; borderWidth: number } | null =>
   enabled && tone !== 'nogain' ? { borderColor: AFFORDABLE_OUTLINE.color, borderWidth: AFFORDABLE_OUTLINE.width } : null;
 
-/** The unmuted case of `buttonTone` (sidewalk stations are never muted). */
-export const stationTone = (lock: string | null, gain: number | null): 'normal' | 'nogain' => (lock || (gain ?? 0) > 1e-9 ? 'normal' : 'nogain');
-
 /**
  * "need $X": what is still missing for a purchase, rounded up so it never reads "need $0" (D359). Null when the
  * player has enough, or there is nothing to buy (a locked or maxed upgrade has no cost).
@@ -88,12 +87,61 @@ export function capExpandCost(s: G.GameState, id: NeighborhoodId, what: G.Upgrad
 
 export type StationKey = 'prep' | 'ovens' | 'counter' | 'drivers';
 export const STATION_KEYS: StationKey[] = ['prep', 'ovens', 'counter', 'drivers'];
-const STATION: Record<StationKey, { what: G.Upgrade; name: string; stage: G.Stage }> = {
-  prep: { what: 'prep', name: 'PREP', stage: 'prep' },
-  ovens: { what: 'ovens', name: 'OVENS', stage: 'ovens' },
-  counter: { what: 'counter', name: 'COUNTER', stage: 'counter' },
-  drivers: { what: 'drivers', name: 'DRIVERS', stage: 'customers' },
+const STATION: Record<StationKey, { what: G.Upgrade; name: string }> = {
+  prep: { what: 'prep', name: 'PREP' },
+  ovens: { what: 'ovens', name: 'OVENS' },
+  counter: { what: 'counter', name: 'COUNTER' },
+  drivers: { what: 'drivers', name: 'DRIVERS' },
 };
+
+// ---------- what a station can handle: "18/min → 22" ----------
+
+/** Pizzas (or deliveries) a minute as a card writes them: whole from 10 up, one decimal below (a counter at 4.5/min is not "5"). */
+export const perMinute = (n: number): string => {
+  const x = Math.max(0, n);
+  return x >= 10 ? count(Math.round(x)) : String(Math.round(x * 10) / 10);
+};
+
+/** "18/min → 22": what the station handles now, and after the buy. The spaces around the arrow do not break: a number never wraps alone. */
+export const capacityText = (now: number, after: number): string => `${perMinute(now)}/min\u00A0→\u00A0${perMinute(after)}`;
+
+/**
+ * The same for a narrow card (a station's text is about 46 pt wide on a 375 pt phone, 7 characters at 10 pt): the whole line if it fits `width`
+ * at 10 pt, else "/m", else without the unit, else packed ("446→486"), else only where it is going ("→486"). Never under 10 pt.
+ */
+export function capacityFit(c: { now: number; after: number }, width: number): string {
+  const a = perMinute(c.now);
+  const b = perMinute(c.after);
+  const candidates = [`${a}/min\u00A0→\u00A0${b}`, `${a}/m\u00A0→\u00A0${b}`, `${a}\u00A0→\u00A0${b}`, `${a}→${b}`, `→${b}`];
+  return candidates.find((t) => fits(t, width, 10)) ?? candidates[candidates.length - 1];
+}
+
+/** What a station can handle now, a minute (E3's `capacity` while the report is live, else the flow's own rate: a shop run by hand has no readout yet). */
+export function capacityNow(s: G.GameState, id: NeighborhoodId, k: K3 | 'drivers'): number {
+  const now = s.lastSavedAt;
+  return reportActive(s, id) ? reportView(s, id, now).capacity[k] : flowOf(s, id, now)[k] * 60;
+}
+
+/** The numbers a hand-tapped station's capacity moves with (what the player made lately); part of the caches' keys, '' with none. */
+export function capacityKey(s: G.GameState, id: NeighborhoodId): string {
+  if (!reportActive(s, id)) return '';
+  const v = reportView(s, id, s.lastSavedAt);
+  return (['prep', 'ovens', 'counter'] as const)
+    .filter((k) => v.you[k])
+    .map((k) => Math.round(v.capacity[k]))
+    .join(',');
+}
+
+/** A station's capacity now and after one more level (the same number twice for a station at its cap). */
+export function stationCap(s: G.GameState, id: NeighborhoodId, k: StationKey): { now: number; after: number } {
+  return { now: capacityNow(s, id, k), after: capacityAfter(s, id, k, s.lastSavedAt) };
+}
+
+/** A station card's capacity line: "18/min → 22". */
+export function stationCapacity(s: G.GameState, id: NeighborhoodId, k: StationKey): string {
+  const c = stationCap(s, id, k);
+  return capacityText(c.now, c.after);
+}
 
 export interface StationModel {
   key: StationKey;
@@ -108,24 +156,18 @@ export interface StationModel {
   badge: string;
   /** Stuck at the level cap while the next footprint exists: the button buys Expand instead (B4). */
   expand: boolean;
-  /** `nogain` when an unlocked upgrade adds nothing right now; `expand` is the amber Expand buy. */
-  tone: 'normal' | 'nogain' | 'expand';
-  /** Cash a second the buy adds (`upgradeGain`, counting the shop as running), or null when it is locked or maxed. */
-  gain: number | null;
-  /** Tied for the bottleneck and adds income: the station to buy. */
-  neck: boolean;
-  /** Among the slowest stages, whether or not one upgrade alone would add income (the bundle's stations). */
-  tied: boolean;
+  /** The same look on every station card; `expand` is the amber Expand buy. */
+  tone: 'normal' | 'expand';
+  /** What the station handles now and after the buy, pizzas (deliveries) a minute; null for the Expand buy and a locked or maxed station. */
+  cap: { now: number; after: number } | null;
+  /** The foot line in full: "18/min → 22" (null as `cap`). */
+  foot: string | null;
 }
 
 export interface StationView extends StationModel {
   affordable: boolean;
   /** "need $X" for the 9 pt line under the price: only while the player is short and has some cash (at $0 it would just repeat the price), else null. */
   need: string | null;
-  /** Card frame: solid red when the bottleneck is affordable, dashed while the player saves for it. Always null after the tutorial (v5.16: the player chooses what to upgrade, the game stops pointing). */
-  frame: 'hot' | 'waiting' | null;
-  /** How close the player is to the bottleneck they're saving for, 0–1 (0 unless `frame` is waiting). */
-  progress: number;
 }
 
 let cacheKey = '';
@@ -133,30 +175,22 @@ let cacheVal: StationModel[] = [];
 
 const levelKey = G.shopLevelKey;
 
-/** The level-dependent part of every station button, cached on the shop's levels. */
+/** The level-dependent part of every station button, cached on the shop's levels (and, for a hand-tapped station, what the player made lately). */
 export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[] {
-  const key = levelKey(s, id);
+  const key = `${levelKey(s, id)}|${capacityKey(s, id)}`;
   if (key === cacheKey) return cacheVal;
   const shop = s.shops[id];
-  const rates: Record<G.Stage, number> = {
-    prep: G.prepRate(shop),
-    ovens: G.ovenRate(shop, cityOf(s).fit),
-    counter: G.counterRate(shop),
-    customers: G.demandRate(shop, s.vehicle, cityOf(s).fit),
-  };
-  const min = Math.min(...Object.values(rates));
   cacheVal = STATION_KEYS.map((k) => {
-    const { what, name, stage } = STATION[k];
+    const { what, name } = STATION[k];
     const stationLock = G.upgradeLock(s, id, what);
-    const gain = G.upgradeGain(s, id, what);
-    const useful = (gain ?? 0) > 1e-9;
     // locked by the level cap alone, and Expand exists: the button buys Expand (amber, the station's name stays), through the ordinary buy path.
-    // MAX is left for when nothing can raise the cap. Expand is worth buying here even though it adds $0/s by itself (as in the drawer).
+    // MAX is left for when nothing can raise the cap.
     const level = k === 'drivers' ? `×${shop.drivers}` : `${shop[k]}`;
     const expandCost = capExpandCost(s, id, what);
     const expand = expandCost !== null;
     const cost = expand ? expandCost : G.upgradeCostOf(s, id, what);
     const lock = expand ? null : stationLock;
+    const cap = expand || lock ? null : stationCap(s, id, k);
     return {
       key: k,
       what: expand ? 'expand' : what,
@@ -169,10 +203,9 @@ export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[
       label: lock && !expand ? 'MAX' : money(cost ?? 0),
       badge: expand ? `MAX ${level}` : level,
       expand,
-      tone: expand ? 'expand' : stationTone(lock, gain),
-      gain,
-      neck: useful && rates[stage] <= min * (1 + 1e-9),
-      tied: rates[stage] <= min * (1 + 1e-9),
+      tone: expand ? 'expand' : 'normal',
+      cap,
+      foot: cap && capacityText(cap.now, cap.after),
     };
   });
   cacheKey = key;
@@ -187,69 +220,36 @@ export const stationTitle = (v: Pick<StationModel, 'name' | 'expand'>): string =
 
 /** Add the cash-dependent part. */
 export function stationViews(s: G.GameState, id: NeighborhoodId): StationView[] {
-  return stationModels(s, id).map((m) => {
-    const affordable = !m.lock && G.canAfford(s, m.cost);
-    const frame = !bonusUnlocked(s) && m.neck ? (affordable ? 'hot' : 'waiting') : null;
-    const progress = frame === 'waiting' && m.cost ? Math.min(1, Math.max(0, s.cash / m.cost)) : 0;
-    return { ...m, affordable, need: m.lock || s.cash <= 0 ? null : needText(m.cost, s.cash), frame, progress };
-  });
+  return stationModels(s, id).map((m) => ({
+    ...m,
+    affordable: !m.lock && G.canAfford(s, m.cost),
+    need: m.lock || s.cash <= 0 ? null : needText(m.cost, s.cash),
+  }));
 }
 
 /**
- * v5.16: what a station card says it does, after the tutorial: the gain a minute with its payback time (as much as `width` allows), or "No gain"
- * for a station that is not the limit. Null during the tutorial, for the Expand buy, a locked or maxed station and a shop still tapped by hand (its
- * cards only pay while you tap): those keep their own foot line.
+ * The line under a card's price: the ×10 / MAX plan's levels when one is chosen, else the station's capacity; the Expand buy and a locked card
+ * (no capacity to show) keep "need $X" while the player is short.
  */
-export function effectFoot(s: G.GameState, v: Pick<StationView, 'gain' | 'cost' | 'lock' | 'expand'>, width: number, running: boolean): string | null {
-  if (!running || !bonusUnlocked(s) || v.expand || v.lock || v.cost === null) return null;
-  return compactEffect(v.gain, v.cost, width) ?? 'No gain';
-}
+export const footLine = (v: Pick<StationView, 'cap' | 'need'>, many: { foot: string } | null, width: number): string | null =>
+  many?.foot ?? (v.cap ? capacityFit(v.cap, width) : v.need);
 
-/**
- * The need line a station button actually draws. A framed card that is saving for its bottleneck already shows a
- * progress bar in the same spot at the foot of the button, so it keeps the bar and skips the text (D402).
- */
-export function needLine(v: StationView, framed: boolean): string | null {
-  return framed && v.frame === 'waiting' ? null : v.need;
-}
-
-// ---------- the tied-stations bundle button (D304) ----------
+// ---------- the "Buy both" bundle button (D304), kept only until src/dev/__tests__/money.test.ts stops reading it ----------
 
 export interface BundleButton {
   label: string;
-  /** Small line above the label: that the stations are tied, what the bundle costs and what it earns (or what is missing). */
   sub: string;
   enabled: boolean;
   steps: G.Upgrade[];
 }
 
-/** "+$12/s": what the bundle (or any purchase) adds per second. */
-export const gainText = (gain: number): string => `+${money(gain)}/s`;
-
-/** "Buy both $35": the tied-station bundle as a button, in the drawer and merged into the sidewalk row. Disabled with the "need $X" style when short. */
+/** @deprecated v5.22: nothing in the sidewalk or the drawer bundles stations; goes with its last reader (dev/__tests__/money.test.ts). */
 export function bundleButton(hint: G.BundleHint, cash: number): BundleButton {
-  const kinds = new Set(hint.steps).size;
-  const word = kinds <= 2 ? 'both' : `all ${kinds}`;
   const need = needText(hint.cost, cash);
-  return {
-    label: `Buy ${word} ${money(hint.cost)}`,
-    // D412: the payoff, not "one alone adds $0/s"
-    sub: need ? `Tied · ${need} · ${gainText(hint.gain)}` : `Tied: buy ${word} · ${money(hint.cost)} · ${gainText(hint.gain)}`,
-    enabled: need === null,
-    steps: hint.steps,
-  };
+  return { label: `Buy ${money(hint.cost)}`, sub: need ?? '', enabled: need === null, steps: hint.steps };
 }
 
-/** Buy each step through the ordinary buy path; stops at the first refusal. True when every step went through. */
-export function buyBundle(steps: readonly G.Upgrade[], buy: (what: G.Upgrade) => boolean): boolean {
-  for (const what of steps) if (!buy(what)) return false;
-  return steps.length > 0;
-}
-
-/** The bundle merges into the row when a bundle exists and the tutorial coach isn't up. */
-export const showBundlePill = (hint: G.BundleHint | null, coachUp: boolean) => hint !== null && !coachUp;
-
-// ---------- the sidewalk row's slots: stations, and the cards that merge several of them (D405, D407) ----------
+// ---------- the sidewalk row's slots: stations, and the Expand card that merges the capped ones (D407) ----------
 
 /** A station button in its own slot. */
 export interface StationSlot {
@@ -260,12 +260,11 @@ export interface StationSlot {
 }
 
 /**
- * One wider card standing in for several stations' slots: the tied stations' "Buy both" (`bundle`), or the shop-wide
- * Expand when two or more stations are capped (`expand`). It takes the first member's place and the row's flex of all
- * of them; the other members' slots are gone, so the row keeps its width and the other cards keep their size.
+ * One wider card standing in for several stations' slots: the shop-wide Expand when two or more stations are capped. It takes the first
+ * member's place and the row's flex of all of them; the other members' slots are gone, so the row keeps its width and the other cards keep their size.
  */
 export interface MergedSlot {
-  kind: 'bundle' | 'expand';
+  kind: 'expand';
   keys: StationKey[];
   /** How many slots wide (flex weight). */
   span: number;
@@ -277,83 +276,61 @@ export interface MergedSlot {
   enabled: boolean;
   /** What a tap buys, in order, through the ordinary buy path. */
   steps: G.Upgrade[];
-  /** Card frame, as on the bottleneck card: solid red when affordable, dashed while the player saves for it. */
-  frame: 'hot' | 'waiting' | null;
 }
 
 export type SidewalkSlot = StationSlot | MergedSlot;
 
-/**
- * Which stations merge, as plain data (so the priority is testable): Expand first. Two or more capped stations make the
- * expand group; the tied stations make the bundle group only when a bundle exists, two or more are tied, and none of
- * them is capped (the bundle's steps would start with an expansion, which the Expand card already sells).
- */
-export function mergeGroups(
-  views: readonly Pick<StationView, 'key' | 'expand' | 'tied'>[],
-  hasBundle: boolean,
-): { expand: StationKey[] | null; bundle: StationKey[] | null } {
+/** The stations at the level cap, when two or more are: they make the one Expand card. */
+export function expandGroup(views: readonly Pick<StationView, 'key' | 'expand'>[]): StationKey[] | null {
   const capped = views.filter((v) => v.expand).map((v) => v.key);
-  const tied = views.filter((v) => v.tied);
-  return {
-    expand: capped.length >= 2 ? capped : null,
-    bundle: hasBundle && tied.length >= 2 && !tied.some((v) => v.expand) ? tied.map((v) => v.key) : null,
-  };
+  return capped.length >= 2 ? capped : null;
 }
 
 /**
- * The row's cards left to right. Priority is Expand first (`mergeGroups`): stations at the level cap show the Expand buy (a wide
- * card for two or more, the amber button on the station's own card for one), and the tied-stations bundle only merges when none of the tied
- * stations is capped (its steps would start with an expansion). Members need not be adjacent: the merged card sits in
- * the first member's slot and the others' slots collapse into it.
+ * The row's cards left to right: one card a station, with the stations at the level cap showing the Expand buy (a wide card for two or more,
+ * the amber button on the station's own card for one). Members need not be adjacent: the Expand card sits in the first member's slot and the
+ * others' slots collapse into it.
  */
-export function sidewalkSlots(s: G.GameState, id: NeighborhoodId, bundle: G.BundleHint | null): SidewalkSlot[] {
+export function sidewalkSlots(s: G.GameState, id: NeighborhoodId): SidewalkSlot[] {
   const views = stationViews(s, id);
   const shop = s.shops[id];
-  const merged = new Map<StationKey, MergedSlot | null>();
-  const place = (slot: MergedSlot) => slot.keys.forEach((k, i) => merged.set(k, i === 0 ? slot : null));
-  const groups = mergeGroups(views, bundle !== null);
-  const nameOf = (k: StationKey) => STATION[k].name;
   const next = cityOf(s).fit.footprints[shop.footprint + 1];
-  const expandKeys = groups.expand;
-  if (expandKeys && next) {
-    const cost = views.find((v) => v.key === expandKeys[0])?.cost ?? 0;
-    place({
+  const keys = expandGroup(views);
+  let wide: MergedSlot | null = null;
+  if (keys && next) {
+    const cost = views.find((v) => v.key === keys[0])?.cost ?? 0;
+    wide = {
       kind: 'expand',
-      keys: expandKeys,
-      span: expandKeys.length,
-      title: `EXPAND \u00B7 ${next.name.split(' ')[0]}`, // G102: "EXPAND · Double", one word of the tier's name
+      keys,
+      span: keys.length,
+      title: `EXPAND · ${next.name.split(' ')[0]}`, // G102: "EXPAND · Double", one word of the tier's name
       label: money(cost),
       foot: `Lv cap ${G.levelCap(shop)} → ${G.levelCap({ ...shop, footprint: shop.footprint + 1 })}`,
       enabled: G.canAfford(s, cost),
       steps: ['expand'],
-      frame: null,
-    });
-  }
-  if (groups.bundle && bundle) {
-    const button = bundleButton(bundle, s.cash);
-    const need = s.cash > 0 ? needText(bundle.cost, s.cash) : null;
-    place({
-      kind: 'bundle',
-      keys: groups.bundle,
-      span: groups.bundle.length,
-      title: groups.bundle.map(nameOf).join(' + '),
-      label: button.label,
-      foot: need ? `${gainText(bundle.gain)} · ${need}` : gainText(bundle.gain),
-      enabled: button.enabled,
-      steps: bundle.steps,
-      frame: bonusUnlocked(s) ? null : button.enabled ? 'hot' : 'waiting',
-    });
+    };
   }
   const slots: SidewalkSlot[] = [];
   for (const view of views) {
-    if (!merged.has(view.key)) slots.push({ kind: 'station', key: view.key, span: 1, view });
-    else {
-      const m = merged.get(view.key);
-      if (m) slots.push(m);
-    }
+    if (!wide || !wide.keys.includes(view.key)) slots.push({ kind: 'station', key: view.key, span: 1, view });
+    else if (wide.keys[0] === view.key) slots.push(wide);
   }
   return slots;
 }
+
+// ---------- what a hire does, in words (no number) ----------
+
+const TAKES: Record<HeadKind, string> = { prep: 'the prep table', oven: 'the ovens', counter: 'the counter' };
+
+/** "Marco takes the prep table": a head's effect in words (the drawer's card and the sidewalk's hire button share it). */
+export const headTakes = (name: string, kind: HeadKind): string => `${name} takes ${TAKES[kind]}`;
+
+/** The general manager's effect in words: the whole shop, even while the player is away. */
+export const managerTakes = (name: string): string => `${name} takes the whole shop, even while you're away`;
+
+/** The sidewalk's hire button, over its price: "HIRE MARCO · TAKES THE PREP TABLE", or the manager's. `name` is the head's (ignored for the manager). */
+export const hireSidewalkLabel = (hire: G.Upgrade, name: string): string =>
+  G.isHeadUpgrade(hire) ? `HIRE ${name.toUpperCase()} · TAKES ${TAKES[G.headOf(hire)].toUpperCase()}` : 'HIRE A MANAGER · TAKES THE WHOLE SHOP';
 
 // ---------- who is offered the next hire, and where ----------
 

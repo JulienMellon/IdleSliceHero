@@ -1,11 +1,11 @@
 // The upgrade row standing on the sidewalk: four station buttons (or, on a shop with no manager, a chip row and the
 // manager button) plus "All". Every control is drawn at 44 pt (see tap-targets.ts). Moved out of app/index.tsx (A15).
-// Tied stations and capped stations merge into one wider card in their slots (sidewalk-model.ts `sidewalkSlots`).
+// Capped stations merge into one wider Expand card in their slots (sidewalk-model.ts `sidewalkSlots`). v5.22: every station card has the same look
+// and says what the station handles, now and after the buy; no card is framed, tinted or bundled with another.
 import type { ReactNode } from 'react';
 import { Pressable, type StyleProp, StyleSheet, Text, useWindowDimensions, View, type ViewStyle } from 'react-native';
 
 import { cityOf } from '../content/cities';
-import { HEAD_ROLE } from '../content/tuning';
 import type { NeighborhoodId } from '../content/types';
 import { money } from '../engine/format';
 import * as G from '../engine/game';
@@ -21,10 +21,10 @@ import {
   amountLabel,
   type BuyAmount,
   cardLook,
-  effectFoot,
+  footLine,
   type MergedSlot,
-  needLine,
   nextAmount,
+  hireSidewalkLabel,
   sidewalkSlots,
   stationTitle,
   type StationKey,
@@ -78,8 +78,6 @@ export function SidewalkRow({
   bottom,
   onBuy,
   onOpen,
-  bundle = null,
-  onBundle,
   quiet = false,
 }: {
   game: G.GameState;
@@ -88,8 +86,6 @@ export function SidewalkRow({
   bottom: number;
   onBuy: (what: G.Upgrade) => boolean;
   onOpen: () => void;
-  /** The tied stations' bundle: their cards merge into one "Buy both" card; null keeps them apart. */ bundle?: G.BundleHint | null;
-  onBundle?: () => boolean;
   /** D500: before the first roll the row steps back (faded, still tappable) so the hand on the prep table is the one cue. */ quiet?: boolean;
 }) {
   // v5.15: the amount the player chose (not saved); a primitive, so the row repaints only when it changes
@@ -97,44 +93,39 @@ export function SidewalkRow({
   const allTarget = useCoachTarget('walk:all');
   const toggleOn = rewardsUnlocked(game);
   const picked: BuyAmount = toggleOn ? amount : 1;
-  // the name always stays on top; a player who has some cash but not enough sees "need $X" under the muted price (D359, D402)
+  // the name always stays on top; the foot says what the station handles now and after the buy (sidewalk-model `footLine`)
   const station = (v: StationView, framed: boolean, textW: number) => {
     // ×10 / MAX: the card shows the total price and the levels gained, and a tap buys them all at once (sidewalk-model `buyPlan`)
     const many = amountCard(game, id, v, picked);
     // G102: the price, the title and the foot line each get the size the card's width allows (the icon takes 14 pt of the title's line, and goes when the card is too narrow for both)
-    const need = many ? null : needLine(v, framed);
-    // v5.16: after the tutorial a card says what it does (the gain a minute and the payback), ahead of "need $X"
-    const effect = many ? null : effectFoot(game, v, textW, framed);
+    const foot = footLine(v, many, textW);
     const iconW = iconWidth(textW, stationTitle(v));
-    const fonts = cardFonts(textW, { label: many?.label ?? v.label, sub: stationTitle(v), foot: many?.foot ?? effect ?? need, iconW });
+    const fonts = cardFonts(textW, { label: many?.label ?? v.label, sub: stationTitle(v), foot, iconW });
     const button = (
       <BuyButton
         compact
         testID={framed ? `walk-${v.key}` : `mini-${v.key}`}
         icon={iconW ? ICON[v.key] : undefined}
         sub={stationTitle(v)}
-        need={need}
-        foot={many?.foot ?? effect}
+        foot={foot}
         labelSize={fonts.label}
         subSize={fonts.sub}
         footSize={fonts.foot}
         tone={v.tone}
         label={many?.label ?? v.label}
         enabled={many ? many.enabled : v.affordable}
-        saving={framed && v.frame === 'waiting'}
-        progress={v.progress}
         onPress={() => (many ? useGame.getState().buyStation(v.what) : onBuy(v.what))}
       />
     );
     const badge = (
-      <View style={[styles.level, v.frame === 'hot' && styles.levelHot]} pointerEvents="none">
+      <View style={styles.level} pointerEvents="none">
         <Text style={styles.levelText} numberOfLines={1} maxFontSizeMultiplier={COMPACT_FONT_MAX_SCALE}>
           {v.badge}
         </Text>
       </View>
     );
     return framed ? (
-      <Registered key={v.key} id={`walk:${v.key}`} style={[styles.card, look(v.frame, many?.enabled ?? v.affordable)]}>
+      <Registered key={v.key} id={`walk:${v.key}`} style={[styles.card, look(many?.enabled ?? v.affordable)]}>
         {button}
         {badge}
       </Registered>
@@ -146,26 +137,26 @@ export function SidewalkRow({
       </Registered>
     );
   };
-  // one card for several slots (D405, D407): the same frame as a bottleneck card, no level badge (it stands for several stations)
+  // one card for the capped stations' slots (D407): the same card as the others, no level badge (it stands for several stations)
   const merged = (m: MergedSlot, framed: boolean, textW: number) => {
     const fonts = cardFonts(textW, { label: m.label, sub: m.title, foot: m.foot });
     const button = (
       <BuyButton
         compact
-        testID={m.kind === 'bundle' ? 'walk-bundle' : 'walk-expand'}
+        testID="walk-expand"
         sub={m.title}
         label={m.label}
         foot={m.foot}
         labelSize={fonts.label}
         subSize={fonts.sub}
         footSize={fonts.foot}
-        tone={m.kind === 'expand' ? 'expand' : 'normal'}
+        tone="expand"
         enabled={m.enabled}
-        onPress={() => (m.kind === 'bundle' ? (onBundle?.() ?? false) : onBuy('expand'))}
+        onPress={() => onBuy('expand')}
       />
     );
     return framed ? (
-      <View key={m.kind} style={[styles.card, { flex: m.span }, look(m.frame, m.enabled)]}>
+      <View key={m.kind} style={[styles.card, { flex: m.span }, look(m.enabled)]}>
         {button}
       </View>
     ) : (
@@ -174,7 +165,7 @@ export function SidewalkRow({
       </View>
     );
   };
-  const slots = sidewalkSlots(game, id, bundle);
+  const slots = sidewalkSlots(game, id);
   const { width: screenW } = useWindowDimensions();
   const cards = (framed: boolean) => {
     const widths = cardTextWidths(
@@ -187,10 +178,8 @@ export function SidewalkRow({
   // the next hire: each head in turn, then the General Manager
   const hire = G.nextHire(game.shops[id]) ?? 'manager';
   const hireCost = G.upgradeCostOf(game, id, hire);
-  // say what the hire does, not just who (D341)
-  const hireLabel = G.isHeadUpgrade(hire)
-    ? `HIRE ${cityOf(game).heads[id][G.headOf(hire)].toUpperCase()} · RUNS ${HEAD_ROLE[G.headOf(hire)].toUpperCase()} FOR YOU`
-    : `HIRE A MANAGER · ×2 INCOME + EARNS AWAY`;
+  // say what the hire does, in words and with no number (D341): "HIRE MARCO · TAKES THE PREP TABLE"
+  const hireLabel = hireSidewalkLabel(hire, G.isHeadUpgrade(hire) ? cityOf(game).heads[id][G.headOf(hire)] : '');
   return (
     <>
       <View style={[styles.row, { bottom }, quiet && styles.quiet]} pointerEvents="box-none">
@@ -244,9 +233,9 @@ export function SidewalkRow({
   );
 }
 
-/** D419: an affordable card is a 2 pt #3B1F14 outline on a solid face; a quiet or saving card keeps its 2.5 pt frame. The content box stays the same size. */
-const look = (frame: 'hot' | 'waiting' | null, affordable: boolean) => {
-  const l = cardLook(frame, affordable);
+/** D419: an affordable card is a 2 pt #3B1F14 outline on a solid face; a card you cannot buy keeps its 2.5 pt frame. The content box stays the same size. */
+const look = (affordable: boolean) => {
+  const l = cardLook(null, affordable);
   return {
     borderColor: l.borderColor,
     borderWidth: l.borderWidth,
@@ -287,7 +276,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  levelHot: { backgroundColor: C.tomato },
   levelText: { fontFamily: F.bold, fontSize: 10, color: '#fff' },
   all: {
     width: SIDEWALK_ROW.allWidth,

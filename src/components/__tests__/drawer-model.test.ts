@@ -1,6 +1,7 @@
 /// <reference types="jest" />
 import { DECOR_KINDS } from '../../content/tuning';
 import * as G from '../../engine/game';
+import * as service from '../../engine/features/service';
 import { buyKeyOf, drawerCards, drawerKey, parseBuyKey, type DrawerBuy } from '../drawer-model';
 
 const base = (cash = 0): G.GameState => ({ ...G.newGame(0), cash });
@@ -28,7 +29,7 @@ describe('drawerCards', () => {
     ]);
     expect(v.decor.map((c) => c.testID)).toEqual(DECOR_KINDS.map((k) => `decor-${k}`));
     expect(v.title).toBe('Rosa’s · Downtown');
-    expect(v.bottleneck.startsWith('Bottleneck: ')).toBe(true);
+    expect(v.line).toBeNull(); // no head yet: the header is the shop's title alone
     expect(v.built).toBe(1);
   });
 
@@ -76,35 +77,35 @@ describe('drawerCards', () => {
     expect(prep.canBuy).toBe(true);
   });
 
-  it('only builds the bundle button when stations are tied, and prices it against cash', () => {
-    const s = withShop(base(), 'downtown', { managed: true });
-    const tied = drawerCards({ game: s, id: 'downtown' });
-    const rich = drawerCards({ game: { ...s, cash: 1e12 }, id: 'downtown' });
-    if (tied.bundle) {
-      expect(tied.bundle.enabled).toBe(false);
-      expect(rich.bundle!.enabled).toBe(true);
-    } else {
-      expect(rich.bundle).toBeNull();
-    }
+  it('has no bundle button and no hot card, tied stations or not', () => {
+    const tied = withShop(base(1e12), 'downtown', { managed: true, prep: 3, ovens: 3, counter: 3, drivers: 3 });
+    const v = drawerCards({ game: tied, id: 'downtown' });
+    expect(v).not.toHaveProperty('bundle');
+    expect(v).not.toHaveProperty('bottleneck');
+    for (const c of v.cards) expect(c).not.toHaveProperty('hot');
+    const tones = v.cards.filter((c) => ['prep', 'ovens', 'counter', 'drivers'].includes(c.key)).map((c) => c.tone);
+    expect(new Set(tones).size).toBe(1);
   });
 });
 
 describe('the drawer cache (M32)', () => {
-  it('reruns no what-if simulation when only cash or sales move', () => {
+  it('reruns no what-if when only cash or sales move, and never asks the gain simulations at all', () => {
     const s = withShop(base(), 'downtown', { managed: true });
     drawerCards({ game: s, id: 'downtown' });
+    const cap = jest.spyOn(service, 'capacityAfter');
     const gain = jest.spyOn(G, 'upgradeGain');
     const fleet = jest.spyOn(G, 'vehicleGain');
     const decor = jest.spyOn(G, 'decorGain');
     try {
       drawerCards({ game: { ...s, cash: 12345 }, id: 'downtown' });
       drawerCards({ game: { ...s, cash: 99999, shops: { ...s.shops, downtown: { ...s.shops.downtown, sold: 777 } } }, id: 'downtown' });
+      expect(cap).not.toHaveBeenCalled();
+      // a level moves: it recomputes
+      drawerCards({ game: withShop(s, 'downtown', { prep: 5 }), id: 'downtown' });
+      expect(cap).toHaveBeenCalled();
       expect(gain).not.toHaveBeenCalled();
       expect(fleet).not.toHaveBeenCalled();
       expect(decor).not.toHaveBeenCalled();
-      // a level moves: it recomputes
-      drawerCards({ game: withShop(s, 'downtown', { prep: 5 }), id: 'downtown' });
-      expect(gain).toHaveBeenCalled();
     } finally {
       jest.restoreAllMocks();
     }
@@ -122,51 +123,80 @@ describe('the drawer cache (M32)', () => {
   });
 });
 
-// ---------- v5.16 (card P1): cards say what they do; the game stops choosing; the header is the report ----------
+// ---------- v5.22 (card U4): cards say what the station can handle, now and after the buy; nothing ranks them ----------
 
-describe('the drawer after the tutorial (P1)', () => {
-  const after = (cash = 1e9): G.GameState => {
+describe('the drawer says capacity, never a gain or a pointer (U4)', () => {
+  /** A managed Downtown short on ovens: prep and counter far ahead, a few drivers. */
+  const shortOvens = (cash = 1e9): G.GameState => {
     const s = base(cash);
-    return withShop({ ...s, seenScenes: [...s.seenScenes, 'downtown-4'] }, 'downtown', { managed: true, prep: 20, ovens: 20, counter: 20, drivers: 1 });
+    return withShop({ ...s, seenScenes: [...s.seenScenes, 'downtown-4'] }, 'downtown', { managed: true, prep: 20, ovens: 4, counter: 20, drivers: 8 });
   };
   const card = (s: G.GameState, key: string) => drawerCards({ game: s, id: 'downtown' }).cards.find((c) => c.key === key)!;
+  /** The detail with its numbers taken out: what is left is the card's shape. */
+  const shape = (d: string) => d.replace(/\d[\d.,]*[KM]?/g, '#');
 
-  test('no card is hot after the tutorial; during it the tied stations still are', () => {
-    const during = { ...after(), seenScenes: [] };
-    expect(drawerCards({ game: during, id: 'downtown' }).cards.some((c) => c.hot)).toBe(true);
-    expect(drawerCards({ game: after(), id: 'downtown' }).cards.some((c) => c.hot)).toBe(false);
+  test('a station card ends in "<n>/min → <m>" and the ovens card differs from the others by its numbers alone', () => {
+    const s = shortOvens();
+    const ovens = card(s, 'ovens');
+    const counter = card(s, 'counter');
+    expect(ovens.detail).toMatch(/^\d[\d.,]*[KM]?\/min\s→\s\d[\d.,]*[KM]?$/);
+    expect(shape(ovens.detail)).toBe(shape(counter.detail));
+    expect(ovens.detail).not.toBe(counter.detail); // its numbers are its own
+    expect(Object.keys(ovens).sort()).toEqual(Object.keys(counter).sort());
+    for (const k of ['tone', 'muted', 'wide', 'buyLabel', 'costLabel'] as const) expect(ovens[k]).toEqual(counter[k]);
+    expect(ovens).not.toHaveProperty('hot');
+    expect(card(s, 'prep').detail).toMatch(/^\d[\d.,]*[KM]?\/min\s→\s\d[\d.,]*[KM]? · batch /);
   });
-  test('the bottleneck card gives its gain a minute and payback; a card that adds nothing names itself', () => {
-    const s = after();
-    expect(card(s, 'drivers').detail).toMatch(/\+\$[\d.]+[KMB]?\/min · pays back in \d+[smh]/);
-    expect(card(s, 'prep').detail).toContain('Prep isn’t holding you back');
-    expect(card(s, 'grade').detail).toMatch(/pays back in|Oven grade isn’t holding you back/);
-    expect(drawerCards({ game: s, id: 'downtown' }).decor[0].detail).toMatch(/\/min · pays back in/);
+  test("the numbers are the engine's: capacity now, and capacity after one more level", () => {
+    const s = shortOvens();
+    const now = service.reportView(s, 'downtown', s.lastSavedAt).capacity.ovens;
+    const after = service.capacityAfter(s, 'downtown', 'ovens', s.lastSavedAt);
+    expect(after).toBeGreaterThan(now);
+    const [a, b] = card(s, 'ovens')
+      .detail.split(/\s→\s/)
+      .map((x) => parseFloat(x));
+    expect(Math.round(now)).toBe(Math.round(a));
+    expect(Math.round(after)).toBe(Math.round(b));
   });
-  test('during the tutorial the old readouts stay', () => {
-    const during = { ...after(), seenScenes: [] };
-    expect(card(during, 'drivers').detail).toMatch(/\+\$[\d.]+[KMB]?\/s/);
-    expect(card(during, 'drivers').detail).not.toMatch(/\/min/);
+  test('drivers and the fleet speak in deliveries a minute; no card carries a "+$" gain, a payback or "holding you back"', () => {
+    const s = shortOvens();
+    const v = drawerCards({ game: s, id: 'downtown' });
+    expect(card(s, 'drivers').detail).toMatch(/^Deliveries \d[\d.,]*[KM]?\/min\s→\s\d/);
+    expect(card(s, 'fleet').detail).toMatch(/Deliveries \d[\d.,]*[KM]?\/min\s→\s\d/);
+    for (const c of [...v.cards, ...v.decor]) expect(c.detail).not.toMatch(/\+\$|\/s\b|pays back|holding you back|tied|Bottleneck/i);
   });
-  test('heads and the manager say what they do, not a number', () => {
-    const s = withShop({ ...after(), seenScenes: ['downtown-4'] }, 'suburbs', { built: true });
+  test('the same for an unmanaged shop that is not Downtown and for one that is tied', () => {
+    const s = withShop(base(), 'suburbs', { built: true });
+    const v = drawerCards({ game: s, id: 'suburbs' });
+    expect(v.cards.find((c) => c.key === 'ovens')!.detail).toMatch(/\/min\s→\s/);
+    const tied = withShop(shortOvens(), 'downtown', { prep: 3, ovens: 3, counter: 3, drivers: 3 });
+    const t = drawerCards({ game: tied, id: 'downtown' });
+    expect(t.cards.map((c) => c.key)).not.toContain('bundle');
+    expect(t.cards.find((c) => c.key === 'ovens')!.detail).toMatch(/\/min\s→\s/);
+  });
+  test('heads and the manager say what they do in words, no number', () => {
+    const s = withShop(shortOvens(), 'suburbs', { built: true });
     const v = drawerCards({ game: { ...s, active: 'suburbs' }, id: 'suburbs' });
-    expect(v.cards.find((c) => c.key === 'headPrep')!.detail).toBe('Runs this station for you, nonstop');
-    expect(v.cards.find((c) => c.key === 'manager')!.detail).not.toMatch(/\+\$/);
+    expect(v.cards.find((c) => c.key === 'headPrep')!.detail).toMatch(/^\S+ takes the prep table$/);
+    expect(v.cards.find((c) => c.key === 'headOven')!.detail).toMatch(/ takes the ovens$/);
+    expect(v.cards.find((c) => c.key === 'headCounter')!.detail).toMatch(/ takes the counter$/);
+    for (const k of ['headPrep', 'headOven', 'headCounter', 'manager']) expect(v.cards.find((c) => c.key === k)!.detail).not.toMatch(/\d|\+\$|×/);
   });
-  test('the header line is the report for a shop that runs itself, and the tied stages before that', () => {
-    const t = base();
-    expect(drawerCards({ game: t, id: 'downtown' }).bottleneck.startsWith('Bottleneck: ')).toBe(true);
-    // a fresh stamp from a ticked game gives the report line
-    const g = after(0);
+  test("grade, expand and decor keep their own effect lines, in the shop's words and never a +$/min", () => {
+    const v = drawerCards({ game: shortOvens(), id: 'downtown' });
+    expect(v.cards.find((c) => c.key === 'grade')!.detail).toMatch(/×2 · Ovens \d[\d.,]*[KM]?\/min\s→\s/);
+    expect(v.cards.find((c) => c.key === 'expand')!.detail).toMatch(/^×1\.5 prep & counter · Lv cap \d+ → \d+$/);
+    expect(v.decor[0].detail).toMatch(/^→ .+ · \+\d+% pizza price$/);
+  });
+  test('the header line is the report for a shop that runs itself, null before that', () => {
+    expect(drawerCards({ game: base(), id: 'downtown' }).line).toBeNull();
+    const g = shortOvens(0);
     const ticked = G.playTick(G.playTick(g, 1, g.lastSavedAt + 1000), 1, g.lastSavedAt + 2000);
-    const line = drawerCards({ game: ticked, id: 'downtown' }).bottleneck;
-    expect(line.startsWith('Bottleneck: ')).toBe(false);
-    expect(line).toMatch(/^Served \d+\/min · Missed \d+\/min$/);
+    expect(drawerCards({ game: ticked, id: 'downtown' }).line).toMatch(/^Served \d+\/min · Missed \d+\/min$/);
   });
-  test('the cache key knows the tutorial has ended', () => {
-    const s = after();
-    expect(drawerKey({ game: s, id: 'downtown' })).not.toBe(drawerKey({ game: { ...s, seenScenes: [] }, id: 'downtown' }));
+  test('the cache key follows what a hand-tapped station made, and no longer the tutorial', () => {
+    const s = shortOvens();
+    expect(drawerKey({ game: s, id: 'downtown' })).toBe(drawerKey({ game: { ...s, seenScenes: [] }, id: 'downtown' }));
   });
 });
 

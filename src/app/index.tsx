@@ -20,11 +20,10 @@ import { holdsBonus } from '@/components/endgame/stack-model';
 import { fitFont, MIN_FONT } from '@/components/endgame/fit-model';
 import { chapterGoal, cityStory, type GoalCheer, goalCheer, GOAL_TAB, masteryGoal, tasksParamTab } from '@/components/goal-model';
 import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots } from '@/components/slots';
-import { buyKeyOf, type DrawerIcon, type DrawerView, drawerCards, parseBuyKey, tiedBundle } from '@/components/drawer-model';
-import { buttonTone, buyBundle, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
+import { buyKeyOf, type DrawerIcon, type DrawerView, drawerCards, parseBuyKey } from '@/components/drawer-model';
+import { buttonTone, hireOnSidewalk } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
-import { STRIP, stripKind } from '@/components/report/report-model';
-import { reportView } from '@/engine/features/service';
+import { STRIP } from '@/components/report/report-model';
 import { CLOSE_SLOP, DRAWER_CLOSE_W, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait/index';
@@ -316,8 +315,6 @@ export default function GameScreen() {
   // the prep head's hire card in the drawer is where step 13 points: one ref, given to that one card (S72: while Nonna teaches, the drawer does not point at anything else)
   const hireRef = useCoachTarget('drawer:hire:prep');
   const eps = G.earningsPerSecond(game);
-  // Tied stations: one upgrade alone adds $0/s, so say what to buy together. Keyed on levels, not cash or sales.
-  const bundle = tiedBundle(game, id);
 
   // the sidewalk offers the next hire (each head, then the GM) here; see hireOnSidewalk (B1)
   const idleShopHere = hireOnSidewalk(shop, id, city);
@@ -381,8 +378,6 @@ export default function GameScreen() {
 
   // the drawer's cards are a pure model (drawer-model.ts): its level-dependent part is cached on the levels of every shop, so only cash is applied per tick; nothing while it is closed
   const drawer = drawerOpen ? drawerCards({ game, id }) : null;
-  // D488: the drawer's line is green when it is good news (tips), red only for what holds the shop back
-  const drawerGood = drawer ? stripKind(reportView(game, id, game.lastSavedAt)) === 'tipping' : false;
 
   const drawerCard = (c: DrawerCardView) => (
     <StationCard
@@ -392,7 +387,6 @@ export default function GameScreen() {
       title={c.title}
       level={c.level}
       detail={c.detail}
-      hot={c.hot && !coach}
       wide={c.wide}
       muted={c.muted}
       tone={c.tone}
@@ -451,18 +445,7 @@ export default function GameScreen() {
           />
         )}
         {/* upgrade row standing on the sidewalk */}
-        <SidewalkRow
-          game={game}
-          id={id}
-          idleShop={idleShopHere}
-          bottom={rowBottom}
-          onBuy={buy}
-          onOpen={openDrawer}
-          quiet={coach?.id === 1}
-          // the tied stations merge into one "Buy both" card in the row; kept apart while Nonna's coach is up
-          bundle={showBundlePill(bundle, !!coach) ? bundle : null}
-          onBundle={bundle ? () => buyBundle(bundle.steps, buy) : undefined}
-        />
+        <SidewalkRow game={game} id={id} idleShop={idleShopHere} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} quiet={coach?.id === 1} />
         {/* v5.16 (P1): the shop report's strip, one 44 pt row directly above the sidewalk row */}
         <ReportSlots items={SHOP_REPORT} bottom={rowBottom + (idleShopHere ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + STRIP.above} />
         {/* v5.13: the special-order chip under the goal bar, and the golden pizza in the sky (both sit under the drawers) */}
@@ -484,17 +467,13 @@ export default function GameScreen() {
               <View style={styles.drawerHead}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.drawerTitle}>{drawer.title}</Text>
-                  {/* the manager's line is long: it shrinks (never under 10 pt) to the room beside Close, then wraps rather than clip */}
-                  {!coach && (
+                  {/* the report's line ("Served 41/min · Missed 7/min") is long: it shrinks (never under 10 pt) to the room beside Close, then wraps rather than clip */}
+                  {!coach && drawer.line && (
                     <Text
-                      style={[
-                        styles.drawerSub,
-                        drawerGood && styles.drawerSubGood,
-                        { fontSize: fitFont(drawer.bottleneck, screenW - 2 * DRAWER_HEAD.padX - DRAWER_CLOSE_W, 12, MIN_FONT) },
-                      ]}
+                      style={[styles.drawerSub, { fontSize: fitFont(drawer.line, screenW - 2 * DRAWER_HEAD.padX - DRAWER_CLOSE_W, 12, MIN_FONT) }]}
                       numberOfLines={2}
                     >
-                      {drawer.bottleneck}
+                      {drawer.line}
                     </Text>
                   )}
                 </View>
@@ -518,19 +497,6 @@ export default function GameScreen() {
                 {drawer.perkBanner && (
                   <View style={styles.banner}>
                     <Text style={styles.bannerText}>{drawer.perkBanner}</Text>
-                  </View>
-                )}
-                {drawer.bundle && (
-                  // D304: the tied stations' bundle is a button, not a label: it buys every step through the ordinary buy path
-                  <View style={styles.bundleRow}>
-                    <BuyButton
-                      compact
-                      testID="buy-bundle"
-                      label={drawer.bundle.label}
-                      sub={drawer.bundle.sub}
-                      enabled={drawer.bundle.enabled}
-                      onPress={() => buyBundle(drawer.bundle!.steps, buy)}
-                    />
                   </View>
                 )}
                 {drawer.cards.map(drawerCard)}
@@ -640,8 +606,8 @@ const styles = StyleSheet.create({
     paddingBottom: DRAWER_HEAD.padBottom,
   },
   drawerTitle: { fontFamily: F.bold, fontSize: 17, color: C.ink },
-  drawerSub: { fontFamily: F.semi, fontSize: 12, color: C.tomatoDark },
-  drawerSubGood: { color: C.basilDark },
+  // the report's line is neutral: nothing in the drawer is colour coded (v5.22)
+  drawerSub: { fontFamily: F.semi, fontSize: 12, color: C.inkSoft },
   closeBtn: {
     backgroundColor: '#fff',
     borderWidth: 2,
@@ -663,7 +629,6 @@ const styles = StyleSheet.create({
     borderColor: C.cheeseDark,
   },
   bannerText: { fontFamily: F.semi, fontSize: 12.5, color: C.ink, textAlign: 'center' },
-  bundleRow: { width: '100%' },
   section: { width: '100%', fontFamily: F.bold, fontSize: 14, color: C.ink, marginTop: 6 },
   footer: { width: '100%', textAlign: 'center', fontFamily: F.regular, color: C.inkSoft, fontSize: 12, marginTop: 4 },
 });
