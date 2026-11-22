@@ -51,7 +51,7 @@ describe('the copy', () => {
     for (const id of IDS)
       for (const st of ['prep', 'oven', 'counter'] as const)
         for (const t of triggers) {
-          const text = BARKS[id][st][t];
+          const text = BARKS[id][st][t]!;
           expect(text.length).toBeGreaterThan(5);
           expect(barkText(HOME_BARKS, id, st, t)).toBe(text);
           expect(text.length * 5.6 + 16).toBeLessThanOrEqual(240);

@@ -6,7 +6,7 @@
 //     as counterattack.ts; lesson C94). It wears a gold star and its station's daily tasks are starred (`starredKinds`).
 //   No income effect: this feature has no value or demand hook.
 import type { BarkTable } from '../../content/cities/types';
-import { HEAD_BARKS, STATION_TASKS, type BarkStation, type BarkTrigger } from '../../content/heads';
+import { HEAD_BARKS, STATION_TASKS, SYMPTOM_TRIGGERS, type BarkStation, type BarkTrigger, type ManagerBarks, type ManagerTrigger } from '../../content/heads';
 import type { NeighborhoodId } from '../../content/types';
 import { seededUnit } from '../bonus';
 import { type GameState, type Shop } from '../game';
@@ -115,6 +115,10 @@ export interface BarkAsk {
   trigger: BarkTrigger;
   station: BarkStation;
   key?: string;
+  /** Seconds the state behind a symptom ask has held: past `HEAD_BARKS.symptomLongAfter` its repeats come sooner. */
+  held?: number;
+  /** The manager speaks (`station` is only where the bubble stands); the line comes from `ManagerBarks`. */
+  by?: 'manager';
 }
 
 export interface BarkMem {
@@ -122,9 +126,15 @@ export interface BarkMem {
   at: number;
   /** Once-only keys already spoken (the newest 16). */
   seen: readonly string[];
+  /** Wall seconds the last symptom bubble started (−Infinity: none yet): symptom lines have their own, longer gap. */
+  sym: number;
 }
 
-export const newBarkMem = (): BarkMem => ({ at: Number.NEGATIVE_INFINITY, seen: [] });
+export const newBarkMem = (): BarkMem => ({ at: Number.NEGATIVE_INFINITY, seen: [], sym: Number.NEGATIVE_INFINITY });
+
+const isSymptom = (t: BarkTrigger): boolean => (SYMPTOM_TRIGGERS as readonly string[]).includes(t);
+/** What a manager says: the city's line for the shop and trigger, or undefined (silent). */
+export const managerText = (managers: ManagerBarks, shopId: NeighborhoodId, trigger: ManagerTrigger): string | undefined => managers[shopId]?.[trigger];
 
 export interface Bark extends BarkAsk {
   text: string;
@@ -143,15 +153,26 @@ export function nextBark(
   now: number,
   blocked: boolean,
   barks: Partial<BarkTable>,
+  managers: ManagerBarks = {},
 ): { mem: BarkMem; bark: Bark | null } {
-  if (blocked || !barks[shopId] || now - mem.at < HEAD_BARKS.gap) return { mem, bark: null };
-  const open = asks.filter((a) => !a.key || !mem.seen.includes(a.key));
-  if (!open.length) return { mem, bark: null };
-  const best = open.reduce((b, a) => (HEAD_BARKS.priority.indexOf(a.trigger) < HEAD_BARKS.priority.indexOf(b.trigger) ? a : b));
+  if (blocked || now - mem.at < HEAD_BARKS.gap) return { mem, bark: null };
+  const sym = mem.sym ?? Number.NEGATIVE_INFINITY;
+  // a symptom line is spoken once the shop's own gap has passed (45 s; 30 s once the state has held two minutes), whoever speaks it
+  const open = asks.filter((a) => {
+    if (a.key && mem.seen.includes(a.key)) return false;
+    if (!isSymptom(a.trigger)) return true;
+    const gap = (a.held ?? 0) >= HEAD_BARKS.symptomLongAfter ? HEAD_BARKS.symptomGapLong : HEAD_BARKS.symptomGap;
+    return now - sym >= gap;
+  });
+  const text = (a: BarkAsk): string | undefined =>
+    a.by === 'manager' ? managerText(managers, shopId, a.trigger as ManagerTrigger) : barks[shopId] ? barkText(barks, shopId, a.station, a.trigger) : undefined;
+  // the best ask that has a line to say (a city or a shop without lines is silent)
+  const best = open
+    .filter((a) => text(a) !== undefined)
+    .reduce<BarkAsk | null>((b, a) => (!b || HEAD_BARKS.priority.indexOf(a.trigger) < HEAD_BARKS.priority.indexOf(b.trigger) ? a : b), null);
+  if (!best) return { mem, bark: null };
   const seen = best.key ? [...mem.seen, best.key].slice(-16) : mem.seen;
-  const text = barkText(barks, shopId, best.station, best.trigger);
-  if (text === undefined) return { mem, bark: null };
-  return { mem: { at: now, seen }, bark: { ...best, text } };
+  return { mem: { at: now, seen, sym: isSymptom(best.trigger) ? now : sym }, bark: { ...best, text: text(best)! } };
 }
 
 /** The bubble is up for HEAD_BARKS.seconds after it starts. */

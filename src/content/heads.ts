@@ -1,11 +1,23 @@
 // Station heads' bark rules, the Head of the Week and the day-30 visitors' cameo (v5.15). Every number is here (the lines are each city's `barks`,
 // the home city's in cities/home/voice.ts); the rules are in
 // src/engine/features/heads.ts (barks, the week's pick) and src/components/scene/cameo.ts (the visitor in the shop).
-// Strings come from docs/story/COPY-v5.15.md sections 2 and 8, by key: bark.<shop>.<station>.<trigger> and cameo.nonna.<n>.
+// Strings come from docs/story/COPY-v5.15.md sections 2 and 8, by key: bark.<shop>.<station>.<trigger> and cameo.nonna.<n>
+// (the symptom lines, v5.22: docs/story/COPY-v5.22.md, bark.<shop>.<station>.<trigger> and manager.<shop>.<trigger>).
+import type { NeighborhoodId } from './types';
 
 export type BarkStation = 'prep' | 'oven' | 'counter';
-/** What makes a head speak: its station's Lv 25/50/100, a rush combo, an attack on its shop, being Head of the Week, or its station being Slammed for 20 s in a shop with no manager (v5.16). */
-export type BarkTrigger = 'milestone' | 'rush' | 'attack' | 'week' | 'slammed';
+/**
+ * What makes a head (or a manager) speak: its station's Lv 25/50/100, a rush combo, an attack on its shop, being Head of the Week, or, since v5.22, a
+ * symptom of the shop that has held 10 s: a pile-up at the head's station (`pile`), idle hands at it (`idle`), a line at the door (`line`, the manager's)
+ * or idle drivers (`drivers-idle`, the manager's). A symptom line describes; it never says what to buy.
+ */
+export type BarkTrigger = 'milestone' | 'rush' | 'attack' | 'week' | 'pile' | 'idle' | 'line' | 'drivers-idle';
+/** The triggers that report the shop's state: spaced by `HEAD_BARKS.symptomGap`. */
+export type SymptomTrigger = 'pile' | 'idle' | 'line' | 'drivers-idle';
+export const SYMPTOM_TRIGGERS: readonly SymptomTrigger[] = ['pile', 'idle', 'line', 'drivers-idle'];
+/** What the manager says about the shop, by shop (copy keys `manager.<shop>.<trigger>`; a missing line is silent). */
+export type ManagerTrigger = 'line' | 'drivers-idle';
+export type ManagerBarks = Partial<Record<NeighborhoodId, Partial<Record<ManagerTrigger, string>>>>;
 
 export const HEAD_BARKS = {
   /** A bubble stays up this long (s). */
@@ -13,7 +25,11 @@ export const HEAD_BARKS = {
   /** Bubbles in one shop start at least this far apart (s). */
   gap: 20,
   /** When two things ask at once, the first in this list speaks. */
-  priority: ['attack', 'slammed', 'milestone', 'week', 'rush'] as readonly BarkTrigger[],
+  priority: ['attack', 'pile', 'line', 'drivers-idle', 'idle', 'milestone', 'week', 'rush'] as readonly BarkTrigger[],
+  /** A symptom line is spoken at most this often in one shop (s), and this often once its state has held `symptomLongAfter` s. */
+  symptomGap: 45,
+  symptomGapLong: 30,
+  symptomLongAfter: 120,
   /** Rank pins: a head wears one per station level reached (TUNING.milestones), bronze, silver, gold. */
   rankLevels: [25, 50, 100] as readonly number[],
   rankColors: ['#C98B3C', '#C9CED4', '#FFC531'] as readonly string[],

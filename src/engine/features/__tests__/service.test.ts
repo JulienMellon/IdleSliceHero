@@ -4,7 +4,11 @@ import { COPY, MANAGER_COPY_KEY, SERVICE } from '../../../content/service';
 import type { NeighborhoodId } from '../../../content/types';
 import * as G from '../../game';
 import { getFeature, withFeatures } from '..';
-import { onServicePulse, quantise, reportView, service, slammedAsks, type ServicePulse } from '../service';
+import { capacityAfter, missedOf, onServicePulse, quantise, reportActive, reportView, service, symptomAsks, type ServicePulse } from '../service';
+import { HEAD_BARKS } from '../../../content/heads';
+import { newBarkMem, nextBark } from '../heads';
+import type { BarkTable } from '../../../content/cities/types';
+const bt = (o: unknown) => o as Partial<BarkTable>;
 
 import { HOME_CITY } from '../../../content/cities/home';
 import { HOME_BARKS } from '../../../content/cities/home/voice';
@@ -114,7 +118,7 @@ describe('the cost of the hook (U17)', () => {
       const g = TIPPING();
       for (let i = 0; i < 5; i++) {
         view(g);
-        slammedAsks(g, 'downtown');
+        symptomAsks(g, 'downtown');
       }
       expect(calls).toBe(1);
       // a different state is a different flow
@@ -239,7 +243,7 @@ describe('away time', () => {
       let { g, now } = play(COLD(), 70);
       expect(view(g, now).state).toBe('cold');
       const back = G.applyOffline({ ...g, lastSavedAt: now }, now + 3_600_000).state;
-      expect(getFeature(back, service).shops.downtown).toEqual({ below: 0, cold: false, tip: false, slam: { prep: 0, oven: 0, counter: 0 } });
+      expect(getFeature(back, service).shops.downtown).toEqual(service.init(0, HOME_CITY).shops.downtown);
       // what the shop earns while away is plain: the same as with no feature at all
       const away = G.offlineTick({ ...g, lastSavedAt: now }, 600, 1, now + 3_600_000).state.cash - g.cash;
       const plain = withFeatures([], () => G.offlineTick({ ...g, lastSavedAt: now }, 600, 1, now + 3_600_000).state.cash - g.cash);
@@ -263,7 +267,7 @@ describe('away time', () => {
   });
 
   test('old saves migrate to zero, and a saved cold flag does not come back', () => {
-    const s = service.migrate({ at: 5, shops: { downtown: { below: 40, cold: true, tip: true, slam: { prep: 9, oven: 9, counter: 9 } } } }, T0, HOME_CITY);
+    const s = service.migrate({ at: 5, shops: { downtown: { below: 40, cold: true, tip: true, pile: { prep: 1 } } } }, T0, HOME_CITY);
     expect(s.at).toBe(0);
     expect(s.shops.downtown.cold).toBe(false);
     expect(s.shops.downtown.below).toBe(0);
@@ -289,20 +293,6 @@ describe('the pulse', () => {
   });
 });
 
-describe('heads that ask for help', () => {
-  const heads = () => shop(5, 10, 1, { managed: false, heads: G.allHeads() });
-  test('a Slammed station asks after 20 s, in a shop with no manager', () => {
-    only(() => {
-      const { g: early } = play(heads(), 19);
-      expect(slammedAsks(early, 'downtown')).toEqual([]);
-      const { g } = play(heads(), 21);
-      // the ovens are the slammed station at this level (load 100%)
-      expect(slammedAsks(g, 'downtown')).toEqual([{ trigger: 'slammed', station: 'oven' }]);
-      expect(slammedAsks({ ...g, shops: { ...g.shops, downtown: { ...g.shops.downtown, managed: true } } }, 'downtown')).toEqual([]);
-    });
-  });
-});
-
 describe('the copy', () => {
   test('every manager has the four strip lines, the shops name the managers the game has', () => {
     for (const id of Object.keys(MANAGERS) as NeighborhoodId[]) {
@@ -312,39 +302,237 @@ describe('the copy', () => {
   });
 });
 
-describe('the slammed bark (step 6)', () => {
-  test('18 lines, one per shop and station, after `attack` in the priority and ahead of the rest', () => {
-    const { HEAD_BARKS } = jest.requireActual('../../../content/heads');
-    const { HOME_BARKS: BARKS } = jest.requireActual('../../../content/cities/home/voice');
-    for (const id of Object.keys(BARKS)) for (const st of ['prep', 'oven', 'counter']) expect(BARKS[id][st].slammed.length).toBeGreaterThan(5);
-    expect(HEAD_BARKS.priority.slice(0, 2)).toEqual(['attack', 'slammed']);
+// ---------- v5.22 (card E3): the report from the first head, and the shop's symptoms ----------
+
+/** A downtown with the three stations at the given levels, run by `heads` (a head per station, or none), 10 drivers and 1 seating. */
+const kitchen = (
+  levels: { prep: number; ovens: number; counter: number },
+  heads: Partial<Record<'prep' | 'oven' | 'counter', boolean>> = G.allHeads(),
+  patch: Partial<G.Shop> = {},
+) => shop(5, 10, 1, { managed: false, heads: { ...G.noHeads(), ...heads }, ...levels, ...patch });
+/** Ovens far short of prep and counter: wants 2.8 a second, ovens make 0.7. */
+const OVENS_SHORT = () => kitchen({ prep: 20, ovens: 1, counter: 20 });
+
+describe('the report is live from the first head (v5.22)', () => {
+  test('a shop with no head and no manager is inactive; one head makes it live; a manager does', () => {
+    only(() => {
+      const none = kitchen({ prep: 5, ovens: 5, counter: 5 }, {});
+      expect(reportActive(none, 'downtown')).toBe(false);
+      expect(view(none)).toBe(view(none)); // the shared inactive view
+      expect(view(none).capacity).toEqual({ prep: 0, ovens: 0, counter: 0, drivers: 0 });
+      for (const h of ['prep', 'oven', 'counter'] as const)
+        expect(reportActive(kitchen({ prep: 5, ovens: 5, counter: 5 }, { [h]: true }), 'downtown')).toBe(true);
+      expect(reportActive(shop(5, 10, 1), 'downtown')).toBe(true);
+      expect(reportActive(withShop(none, 'downtown', { built: false, heads: G.allHeads() }), 'downtown')).toBe(false);
+    });
   });
-  test('a slammed ask speaks through the ordinary ask rules and loses to an attack', () => {
-    const { nextBark, newBarkMem } = jest.requireActual('../heads');
-    const { HOME_BARKS: BARKS } = jest.requireActual('../../../content/cities/home/voice');
-    const r = nextBark(
-      newBarkMem(),
-      'downtown',
-      [
-        { trigger: 'milestone', station: 'prep' },
-        { trigger: 'slammed', station: 'oven' },
-      ],
-      100,
-      false,
-      HOME_BARKS,
+
+  test('the tip and the cold line still wait for a shop that runs itself, after the takeover', () => {
+    only(() => {
+      const one = kitchen({ prep: 10, ovens: 10, counter: 10 }, { oven: true });
+      const v = view(one);
+      expect(v.state).toBe('inactive');
+      expect(v.capacity.ovens).toBeGreaterThan(0);
+      const { g, now } = play(one, 5);
+      expect(view(g, now).state).toBe('inactive');
+      expect(getFeature(g, service).shops.downtown.tip).toBe(false);
+      expect(G.shopEarnings(g, 'downtown', now)).toBeCloseTo(
+        withFeatures([], () => G.shopEarnings(g, 'downtown', now)),
+        9,
+      );
+    });
+  });
+
+  test('a station the player still taps is `you`, and its capacity is what the hands made', () => {
+    only(() => {
+      const g0 = kitchen({ prep: 10, ovens: 10, counter: 10 }, { oven: true, counter: true });
+      const v0 = view(g0);
+      expect(v0.you).toEqual({ prep: true, ovens: false, counter: false });
+      expect(v0.capacity.prep).toBe(0); // nothing made yet
+      expect(v0.capacity.ovens).toBeCloseTo(v0.perMin.ovens, 9);
+      // tap prep whenever the bench has room for a minute
+      let g = g0;
+      let now = T0;
+      for (let i = 0; i < 60; i++) {
+        const r = G.tapStation(g, 'downtown', 'prep');
+        if (r.ok) g = r.state;
+        now += 1000;
+        g = G.playTick(g, 1, now);
+      }
+      const v = view(g, now);
+      expect(v.capacity.prep).toBeGreaterThan(0);
+      expect(v.capacity.prep).toBeLessThan(v.perMin.prep); // what it managed is below what the bench could do
+    });
+  });
+});
+
+describe('capacity, wanted, served and missed (v5.22)', () => {
+  test('per minute, for every station and the drivers; served and missed add up to wanted', () => {
+    only(() => {
+      const v = view(OVENS_SHORT());
+      expect(v.capacity.ovens).toBeCloseTo(0.7 * 60, 6);
+      expect(v.capacity.drivers).toBeGreaterThan(0);
+      expect(v.wanted).toBeCloseTo(2.8 * 60, 6);
+      expect(v.served).toBeCloseTo(0.7 * 60, 6);
+      expect(v.missed).toBeCloseTo((2.8 - 0.7) * 60, 6);
+      expect(v.served + v.missed).toBeCloseTo(v.wanted, 9);
+      // the smallest kitchen entry is the ovens: the table is data, nobody names it
+      const { prep, ovens, counter } = v.capacity;
+      expect(Math.min(prep, ovens, counter)).toBe(ovens);
+      expect(Object.keys(v)).not.toContain('limit');
+    });
+  });
+
+  test('missed is zero when the kitchen keeps up, and the chapters read it (a hand shop: its machines)', () => {
+    only(() => {
+      expect(view(TIPPING()).missed).toBe(0);
+      expect(missedOf(TIPPING(), 'downtown', T0 + 1000)).toBe(0);
+      expect(missedOf(OVENS_SHORT(), 'downtown', T0 + 1000)).toBeCloseTo(2.1 * 60, 6);
+      const byHand = kitchen({ prep: 5, ovens: 5, counter: 5 }, {});
+      expect(missedOf(byHand, 'downtown', T0 + 1000)).toBeCloseTo((2.8 - 2.1) * 60, 6);
+    });
+  });
+
+  test('capacityAfter is the station after one more level, and unchanged at the cap', () => {
+    only(() => {
+      const g = kitchen({ prep: 5, ovens: 5, counter: 5 });
+      const now = T0 + 1000;
+      const before = view(g, now).capacity;
+      const more = (k: 'prep' | 'ovens' | 'counter') => G.buyUpgrade({ ...g, cash: 1e15 }, 'downtown', k);
+      for (const k of ['prep', 'ovens', 'counter'] as const) {
+        const r = more(k);
+        expect(r.ok).toBe(true);
+        if (r.ok) expect(capacityAfter(g, 'downtown', k, now)).toBeCloseTo(view(r.state, now).capacity[k], 9);
+        expect(capacityAfter(g, 'downtown', k, now)).toBeGreaterThan(before[k]);
+      }
+      const d = G.buyUpgrade({ ...g, cash: 1e15 }, 'downtown', 'drivers');
+      if (d.ok) expect(capacityAfter(g, 'downtown', 'drivers', now)).toBeCloseTo(view(d.state, now).capacity.drivers, 9);
+      const capped = withShop(g, 'downtown', { prep: G.levelCap(g.shops.downtown) });
+      expect(capacityAfter(capped, 'downtown', 'prep', now)).toBeCloseTo(view(capped, now).capacity.prep, 9);
+    });
+  });
+});
+
+describe('symptoms (v5.22)', () => {
+  test('ovens far short: dough piles at prep, the counter waits, the ovens neither', () => {
+    only(() => {
+      const { g, now } = play(OVENS_SHORT(), 60);
+      const v = view(g, now);
+      expect(v.symptoms.prep).toBe('piling');
+      expect(v.symptoms.counter).toBe('idle');
+      expect(v.symptoms.ovens).toBeNull();
+    });
+  });
+
+  test('before they have held a while nothing shows, and a kitchen that keeps up shows nothing at all', () => {
+    only(() => {
+      expect(view(play(OVENS_SHORT(), 2).g, T0 + 2000).symptoms).toEqual({ prep: null, ovens: null, counter: null, drivers: null, floor: null });
+      const { g, now } = play(kitchen({ prep: 10, ovens: 10, counter: 10 }, G.allHeads(), { drivers: 1 }), 60);
+      expect(view(g, now).symptoms).toEqual({ prep: null, ovens: null, counter: null, drivers: null, floor: null });
+    });
+  });
+
+  test('customers outnumbering the kitchen: a line at the door after 10 s, a walk-out after 20', () => {
+    only(() => {
+      let { g, now } = play(OVENS_SHORT(), 5);
+      expect(view(g, now).symptoms.floor).toBeNull();
+      ({ g, now } = play(g, 8, now));
+      expect(view(g, now).symptoms.floor).toBe('line');
+      ({ g, now } = play(g, 15, now));
+      expect(view(g, now).symptoms.floor).toBe('walkout');
+    });
+  });
+
+  test('idle drivers: more than half of them with nothing to carry, held 10 s', () => {
+    only(() => {
+      const idle = kitchen({ prep: 20, ovens: 20, counter: 20 }, G.allHeads(), { drivers: 30, tables: 1 }); // a fleet far bigger than the orders
+      let { g, now } = play(idle, 5);
+      expect(view(g, now).symptoms.drivers).toBeNull();
+      ({ g, now } = play(g, 8, now));
+      expect(view(g, now).symptoms.drivers).toBe('idle');
+      expect(view(OVENS_SHORT(), T0 + 1000).symptoms.drivers).toBeNull();
+    });
+  });
+
+  test('a station the player taps by hand is never idle (it is the player)', () => {
+    only(() => {
+      const { g, now } = play(kitchen({ prep: 10, ovens: 10, counter: 10 }, { counter: true }), 60);
+      expect(view(g, now).symptoms.prep).not.toBe('idle');
+      expect(view(g, now).symptoms.ovens).not.toBe('idle');
+    });
+  });
+
+  test('away time starts them over', () => {
+    only(() => {
+      const { g, now } = play(OVENS_SHORT(), 60);
+      expect(view(g, now).symptoms.prep).toBe('piling');
+      const back = G.applyOffline({ ...g, lastSavedAt: now }, now + 3_600_000).state;
+      expect(view(back, now + 3_600_000).symptoms).toEqual({ prep: null, ovens: null, counter: null, drivers: null, floor: null });
+    });
+  });
+});
+
+describe('symptom barks (v5.22)', () => {
+  const managed = () => withShop(OVENS_SHORT(), 'downtown', { managed: true });
+
+  test('a head speaks about their station, the manager about the door, each after the state has held 10 s', () => {
+    only(() => {
+      expect(symptomAsks(play(OVENS_SHORT(), 8).g, 'downtown')).toEqual([]);
+      const { g } = play(OVENS_SHORT(), 60);
+      const asks = symptomAsks(g, 'downtown');
+      expect(asks.map((a) => [a.trigger, a.station, a.by])).toEqual([
+        ['pile', 'prep', undefined],
+        ['idle', 'counter', undefined],
+      ]); // heads, no manager: nobody speaks for the door
+      expect(asks.every((a) => (a.held ?? 0) >= SERVICE.barkAfterSeconds)).toBe(true);
+      const m = symptomAsks(play(managed(), 40).g, 'downtown').filter((a) => a.by === 'manager');
+      expect(m.map((a) => a.trigger)).toEqual(['line', 'drivers-idle']); // the fleet has little to carry while the kitchen is short
+    });
+  });
+
+  test('nobody speaks before a hire', () => {
+    only(() => expect(symptomAsks(play(kitchen({ prep: 20, ovens: 1, counter: 20 }, {}), 40).g, 'downtown')).toEqual([]));
+  });
+
+  test('at most once per 45 s in a shop, and every 30 s once the state has held two minutes', () => {
+    const lines = bt({ downtown: { prep: { pile: 'Dough’s stacking up by the ovens, boss.' } } });
+    const manager = { downtown: { line: 'Line’s out the door.' } };
+    const pile = { trigger: 'pile' as const, station: 'prep' as const, held: 20 };
+    const first = nextBark(newBarkMem(), 'downtown', [pile], 100, false, lines, manager);
+    expect(first.bark?.text).toBe('Dough’s stacking up by the ovens, boss.');
+    // the bubble gap (20 s) has passed but the symptom gap has not
+    expect(nextBark(first.mem, 'downtown', [pile], 100 + HEAD_BARKS.gap + 1, false, lines, manager).bark).toBeNull();
+    expect(nextBark(first.mem, 'downtown', [pile], 100 + HEAD_BARKS.symptomGap - 1, false, lines, manager).bark).toBeNull();
+    expect(nextBark(first.mem, 'downtown', [pile], 100 + HEAD_BARKS.symptomGap, false, lines, manager).bark).not.toBeNull();
+    // a long-held state comes back sooner
+    const long = { ...pile, held: HEAD_BARKS.symptomLongAfter };
+    expect(nextBark(first.mem, 'downtown', [long], 100 + HEAD_BARKS.symptomGapLong, false, lines, manager).bark).not.toBeNull();
+    // another kind of bark is not held back by a symptom's gap
+    const milestone = { trigger: 'milestone' as const, station: 'prep' as const };
+    expect(nextBark(first.mem, 'downtown', [milestone], 100 + HEAD_BARKS.gap, false, bt({ downtown: { prep: { milestone: 'Flour!' } } })).bark?.text).toBe(
+      'Flour!',
     );
-    expect(r.bark.text).toBe(BARKS.downtown.oven.slammed);
-    const a = nextBark(
-      newBarkMem(),
-      'downtown',
-      [
-        { trigger: 'slammed', station: 'oven' },
-        { trigger: 'attack', station: 'prep', key: 'x' },
-      ],
-      100,
-      false,
-      HOME_BARKS,
-    );
-    expect(a.bark.trigger).toBe('attack');
+  });
+
+  test('the manager speaks the manager’s line; a missing line is silent', () => {
+    const line = { trigger: 'line' as const, station: 'counter' as const, by: 'manager' as const, held: 12 };
+    const r = nextBark(newBarkMem(), 'downtown', [line], 100, false, {}, { downtown: { line: 'Line’s out the door.' } });
+    expect(r.bark?.text).toBe('Line’s out the door.');
+    expect(nextBark(newBarkMem(), 'downtown', [line], 100, false, {}, {}).bark).toBeNull();
+  });
+
+  test('a symptom outranks a milestone, and an attack outranks both', () => {
+    const lines = bt({ downtown: { prep: { pile: 'p', milestone: 'm', attack: 'a' } } });
+    const at = (...t: ('pile' | 'milestone' | 'attack')[]) =>
+      nextBark(
+        newBarkMem(),
+        'downtown',
+        t.map((trigger) => ({ trigger, station: 'prep' as const, held: 20 })),
+        100,
+        false,
+        lines,
+      ).bark?.trigger;
+    expect(at('milestone', 'pile')).toBe('pile');
+    expect(at('milestone', 'pile', 'attack')).toBe('attack');
   });
 });
