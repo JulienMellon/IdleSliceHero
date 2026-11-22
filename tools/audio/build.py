@@ -4,9 +4,9 @@
     python3 build.py
 
 Outputs:
-  assets/audio/music/*.m4a   stereo AAC 256 kbps (96 before 2026-11-19, 128 in round R1), loops cut to exact bar length with the tail folded onto the start
-  assets/audio/sting/*.m4a   mono AAC 256 kbps (64 before 2026-11-19), beat 1 at `downbeatSeconds`
-  assets/audio/story/*.m4a   stereo AAC 256 kbps (96 before 2026-11-19)
+  assets/audio/music/*.m4a   stereo AAC 192 kbps (96 before 2026-11-19, 128 in round R1, 256 until 2026-11-22), loops cut to exact bar length with the tail folded onto the start
+  assets/audio/sting/*.m4a   mono AAC 192 kbps (64 before 2026-11-19, 256 until 2026-11-22), beat 1 at `downbeatSeconds`
+  assets/audio/story/*.m4a   stereo AAC 192 kbps (96 before 2026-11-19, 256 until 2026-11-22)
   assets/audio/sfx/*.m4a     mono AAC 64 kbps, peaks at -9 dBFS (unchanged, 16-bit in)
   tools/audio/build/master/{music,sting,story}/*.wav   the 32-bit float masters that went into the encoder (not in git; reel.py cuts from them)
   src/audio/manifest.ts      generated: every cue's file, length, tempo and loudness
@@ -30,14 +30,14 @@ MIDI = os.path.join(HERE, 'build', 'midi')
 ASSETS = os.path.join(ROOT, 'assets', 'audio')
 
 LOUD = dict(music=-20.0, story=-16.0, sting=-18.0)  # AU22; the lofi loops sit 2 LU lower (2026-10-31)
-KBPS = 256  # music, stingers and story cues (Julien, 2026-11-19: 256 kbps; was 128 for loops, 64 for stingers, 96 for story)
+KBPS = 192  # music, stingers and story cues (Julien, 2026-11-22: 192 kbps going forward, reel and game; 256 from 2026-11-19; 128 for loops, 64 for stingers, 96 for story before)
 MASTER = os.path.join(HERE, 'build', 'master')
 LOOP_CEILING = -6.0
 # AU67: Nonna's takeover (sparse -> full) lifts by 2 LU. AU70, card M1c: the MegaSlice HQ loop keeps its own tier, 1 LU above the
 # other loops, and now goes through the same lofi chain.
 LOOP_LUFS = {'downtown_sparse': -22.0, 'megaslice_hq': -19.0}
 # AU64: the cues that sit over a lofi loop come down from -16 to -18 and get the story master (tape_sat, 10 kHz)
-STORY_MASTER = {'megaslice_rep': -18.0, 'megaslice_rep_dock': -18.0, 'city_theme': -18.0, 'victor_exit': -19.0,  # notes R2: victor_exit -16 -> -19
+STORY_MASTER = {'megaslice_rep': -18.0, 'megaslice_rep_dock': -18.0, 'city_theme': -18.0, 'victor_exit': -16.0,
                 **{f'triumph_{h}': -18.0 for h in ('downtown', 'suburbs', 'waterfront', 'university', 'industrial', 'uptown')}}
 # AU36: loudness by tier, so rare big moments are louder than frequent small ones; every file's peak ≤ −6 dBFS (AU38)
 CEILING = -6.0
@@ -45,14 +45,25 @@ SFX_LUFS = {'click': -32, 'bubble': -32, 'tap': -28, 'full': -28, 'cash': -28, '
             'sparkle': -24, 'milestone': -19, 'expand': -19, 'grade': -19, 'fleet': -19, 'gavel': -18, 'build': -16,
             'collect': (-19, -17.5, -16)}
 # every tier moved down 2 LU with the loops (lofi round 1), so each stinger sits the same distance above the music.
-# Notes R2 (Julien 2026-11-22, "the stingers and story moments do not sit well over the music"): the cues that play over a ducked
-# loop come down so they sit 3 to 4 LU closer to it (over the ducked loop: milestone_big +13 -> +10.5 LU, manager +12 -> +9.5,
-# build +12 -> +8.5, milestone +7 -> +4, upgrade, fleet and drone +6 -> +3). The ladder keeps the order of D5 with 1 LU between
-# rungs, because two cues with the same integrated tier differ by up to 0.8 LU in momentary max (the first try, manager = build, failed
-# the hierarchy check). The bottleneck only drops 2 LU: its duck is -3 dB, so it was +1 LU over the loop and is now -1. The perk
-# stays at -20: it is layered over the exclusive triumphs and the city theme, where the loop is silent.
-STING_LUFS = {'bottleneck': -24, 'upgrade': -23, 'fleet': -23, 'drone': -23, 'milestone': -22, 'welcome': -22,
-              'warmth': -23, 'manager': -19.5, 'milestone_big': -18.5, 'build': -20.5, 'perk': -20, 'offline': -25, 'bid': -21}
+STING_LUFS = {'bottleneck': -22, 'upgrade': -20, 'fleet': -20, 'drone': -20, 'milestone': -19, 'welcome': -19,
+              'warmth': -20, 'manager': -17, 'milestone_big': -16, 'build': -17, 'perk': -20, 'offline': -22, 'bid': -18}
+# Notes R2 (Julien 2026-11-22): "the stingers and story moments do not sit well over the music", then, asked which ("a3"): "only the
+# downtown stinger lands wrong". Round 1 had lowered every neighbourhood's stingers and victor_exit on a guess; his answer clears the
+# other five neighbourhoods and the story cues, so they are back on the tiers above (what he heard on the R2 reel). Downtown's own
+# tiers: the round-1 ladder (3 to 4 LU closer to the ducked loop; the order of D5 with 1 LU between rungs, because two cues on the
+# same integrated tier differ by up to 0.8 LU in momentary max and the build's hierarchy check fails) and a further 2 LU, because
+# the Downtown stingers also play over `downtown_sparse` (-22 LUFS, until downtown-4), a bed 2 LU under every other loop, so on
+# the same tier they sat 2 LU higher over it than any other neighbourhood's stingers sit over theirs. The perk stays at -20: it is layered over
+# exclusive cues, where the loop is silent.
+STING_LUFS_HOOD = {'downtown': {'bottleneck': -26, 'upgrade': -25, 'fleet': -25, 'drone': -25, 'milestone': -24, 'welcome': -24,
+                                'warmth': -25, 'manager': -21.5, 'milestone_big': -20.5, 'build': -22.5, 'perk': -20, 'offline': -27}}
+
+
+def sting_tier(cue: dict) -> float:
+    """The loudness tier of a stinger: its neighbourhood's own ladder when it has one, else the shared one."""
+    return STING_LUFS_HOOD.get(cue.get('hood'), STING_LUFS).get(cue['cue'], STING_LUFS.get(cue['cue'], LOUD['sting']))
+
+
 # per-cue loudness overrides: the reveals are the game's quietest moments (AU13)
 LUFS_OVERRIDE = {'reunion': -23.0, 'recipe': -21.0, 'offline_open': -20.0}
 
@@ -144,10 +155,10 @@ def main(only: set[str] | None = None):
             else:
                 a = post.fade(post.trim_silence(a, -50), 0, 0.15)
             # AU59/AU62: normalise after the mono fold, because mono is what ships (stereo-then-fold read ~3 LU low)
-            a = post.normalize(post.to_mono(a), STING_LUFS.get(cue['cue'], LOUD['sting']), ceiling_db=CEILING)
+            a = post.normalize(post.to_mono(a), sting_tier(cue), ceiling_db=CEILING)
             info = post.encode(a, os.path.join(ASSETS, 'sting', name.removeprefix('sting_') + '.m4a'), KBPS, mono=True,
                                master=os.path.join(MASTER, 'sting', name + '.wav'))
-            target = STING_LUFS.get(cue['cue'], LOUD['sting'])
+            target = sting_tier(cue)
             info['target_lufs'] = target
             if not tier_ok(info, target):
                 raise SystemExit(f'stinger {name}: {info["lufs"]} LUFS, tier {target} (peak {info["peak_dbfs"]})')

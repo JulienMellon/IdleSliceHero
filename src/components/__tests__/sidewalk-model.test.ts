@@ -511,7 +511,10 @@ describe('capacity on the cards (U4)', () => {
     expect(capacityFit({ now: 5810, after: 6240 }, 200)).toBe('5.81K→6.24K');
     expect(capacityFit({ now: 5810, after: 6240 }, 54)).toBe('5.8K→6.2K');
     expect(capacityFit({ now: 5810, after: 6240 }, 40)).toBe('6K→6K');
-    expect(capacityFit({ now: 116000, after: 124000 }, 46)).toMatch(/^116K→124K$/);
+    // v5.22: "124K→129K" drew an ellipsis in a 51 pt card (layout check): the unit is said once, and a card too narrow for that keeps the current value
+    expect(capacityFit({ now: 124000, after: 129000 }, 60)).toBe('124K→129K');
+    expect(capacityFit({ now: 124000, after: 129000 }, 51)).toBe('124→129K');
+    expect(capacityFit({ now: 124000, after: 129000 }, 46)).toBe('124K');
     expect(capacityFit({ now: 1234, after: 1500 }, 10)).toMatch(/^\d.*→\d/); // never "→1.5K"
     expect(abbreviate(5810, 2)).toBe('5.8K');
     expect(abbreviate(18, 2)).toBe('18');
@@ -520,6 +523,9 @@ describe('capacity on the cards (U4)', () => {
     for (const w of [375, 390, 414, 430]) {
       const [textW] = cardTextWidths(w, [1, 1, 1, 1], { chip: true, framed: true });
       for (const big of [{ now: 18, after: 22 }, c]) expect(fits(capacityFit(big, textW), textW, 10)).toBe(true);
+      // v5.22: large numbers (the layout check's flagship and ladder shots) never draw a line wider than the card
+      for (const now of [1234, 5810, 12400, 58100, 124000, 293000, 1.2e6, 4.56e9])
+        expect(fits(capacityFit({ now, after: now * 1.04 }, textW), textW, 10)).toBe(true);
     }
   });
   test('the card is cached on the levels: cash moves nothing, a level does; what a hand-tapped station made also moves it', () => {

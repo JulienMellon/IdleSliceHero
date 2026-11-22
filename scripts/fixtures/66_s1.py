@@ -46,8 +46,9 @@ def run(ctx):
     page = seeded_page(b, sv)
     settle(page, 2.0)
     # the city's only hired heads are Downtown's, so one of them is Head of the Week and says so on load; bubbles are 20 s apart, so let that
-    # one pass (D459: the rush bark used to be held back by it and shot 70 showed none)
-    advance(page, 22000)
+    # one pass (D459: the rush bark used to be held back by it and shot 70 showed none). Since v5.22 a pile/idle line (10 s in, outranks a rush) takes the next slot
+    # too, so wait out both gaps (week at 0, symptom at 20, free from 40 s)
+    advance(page, 42000)
     for _ in range(10):
         tap_shop(page)
         advance(page, 120)

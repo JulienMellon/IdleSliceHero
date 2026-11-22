@@ -7,22 +7,15 @@ round: R2              # R0 | R1 | R2 | done
 step: listen           # cards | verify | review | fix | reel | listen
 bank: C MuseScore_General_Full.sf3      # letter and file name once Julien picks (R0)
 cards:                 # todo | running | done | partial | blocked
-  M0 M1a M1b M1c done; M2a done, M2b done, M2c done; NOTES(R2) done
+  M0 M1a M1b M1c done; M2a done, M2b done, M2c done; NOTES(R2) done; NOTES(R2#2) done
 review: docs/build/music/review-R2-audio.md NOT SATISFIED, bugs 0 major 1 (AU85 fixed) minor 10
-last_reel: tools/audio/build/reel/R2.mp3 (2026-11-22, notes round 1, sent)
+last_reel: tools/audio/build/reel/R2.mp3 (2026-11-22, notes round 2, 192 kbps, sent)
 heard: R0 → "C"; R1 → "Go"           # round → Julien's verdict in five words
 open: M2c extra: encode all music/sting/story at 256 kbps, 24-bit/float renders and source WAVs where the codec allows, under 32 MB; full-score reel for Julien at end of R2 (every cue, full length, 320 kbps, from uncompressed renders if present); growth eval docs/build/music/notes/R1-growth-eval.md awaits Julien (stems need +1.5 MB and src/audio director changes); lead minus bed -1.7 LU on one loop (D5 default is -2 to -4)
-next: await Julien on R2 after notes round 1 (stingers 2-3.5 LU quieter, victor_exit -3): do stingers and story moments sit well over the loops now? "go" runs card-CLOSE (section 13). If notes again: notes round 2, and ask whether the bank or instrument list should change. Open: bottleneck sits 1 LU under its ducked loop; a deeper duck is a src/audio change. NEXT COMPOSER CARD (CLOSE or NOTES) gets extra: Julien 2026-11-22: render at 192 kbps: build.py KBPS 256->192 (music, sting, story; sfx stays 64) and reel.py R2/FULL 320->192; full rebuild; update AUDIO.md, the size test and build.py header.
+next: await Julien on R2 after notes round 2 (Downtown stingers 2 LU quieter on their own ladder, others back to pre-round-1 tiers, stingers on the next tonic bar in the reel, 192 kbps): does the Downtown stinger land now? "go" runs card-CLOSE (section 13). Composer guessed loudness: if he means timing or pitch, ask which cue. Asked him whether bank or instrument list should change before a third notes round. Open: 28 MB size guard vs his 32 MB cap; card-NOTES 14,680,064 B check line stale; bottleneck 1 LU under its ducked loop.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-16 M0 DONE. Built: 0 cues shipped, audio 13.28 MB of 14 unchanged, reel R0.mp3 62.85 s. Needs: recommend D (2–5 kHz share 1.9%, sustain ratio 0.59); D licence notes uncertain sample origin.
-- 2026-11-16 R0 verified (jest src\/audio 53 pass, assets\/audio + src untouched); reel sent; step listen.
-- 2026-11-16 Julien heard R0: "C". Round R1 started; M1a launched.
-- 2026-11-16 M1a DONE. Built: 2 cues (downtown, downtown_sparse), audio 13.37 MB of 14, full build pass on bank C. Needs: fetch_bank.sh needs bash; all cues re-rendered through bank C (large diff, expected).
-- 2026-11-16 M1b DONE. Built: 3 loops plus 37 stingers, audio 13.87 MB of 14, full build pass. Needs: nothing (note: Suburbs walking bass also under the march; a stray full build wiped assets, restored, sfx checked out again).
-- 2026-11-16 M1c DONE. Built: 8 loops, audio 13.87 MB of 14 (13867227 B), full build pass, lead minus bed -3.0 to -3.6 LU. Needs: nothing (judgement calls: HQ motif twice per loop; Industrial lead vibes then flute).
-- 2026-11-16 R1 verified and committed e950b8f; review NOT SATISFIED (0/1/6), AU78 major: motif tonic held over I maj9; fix pass launched.
 - 2026-11-16 R1 fix pass DONE (AU78: 6/9 voicings, clash check in build). Built: 5 cues, audio 13.87 MB of 14 (13866695 B), lead minus bed -2.9 to -3.6 LU. Verified (1581 tests); reel R1 sent; step listen.
 - 2026-11-16 Julien heard R1: notes, no yes (droning sustained piano chords on tracks 2, 4, 5; track 3 comping too busy; asks to evaluate music that builds as the restaurant grows). Notes round 1 launched.
 - 2026-11-16 Notes round 1 DONE. Built: 8 loops, audio 13877074 B of 14680064, chord overlaps 0 on 6 loops (University 2, melody grace notes), lead minus bed -1.7 to -3.2 LU. Verified (1581 tests); reel R1 sent; step listen. Needs: growth eval choice (trim loops ~20 s or raise cap; director changes outside lane).
@@ -31,3 +24,5 @@ next: await Julien on R2 after notes round 1 (stingers 2-3.5 LU quieter, victor_
 - 2026-11-19 M2b DONE. Built: 6 triumphs + city theme, payoffs within 0.25 s, audio 17073549 B of 32 MB. Needs: city_theme one ii-V-I per bar (kept payoff); AUDIO.md/AUDIOLOG stale (M2c).
 - 2026-11-19 M2c DONE. Built: 153 cues, 256 kbps, float masters, FULL reel 1302 s; audio 33240658 B of 33554432 (0.3 MiB margin). Verified (2501 tests). Review next.
 - 2026-11-19 R2 fix pass DONE (AU85/86 6/9 arrivals, hierarchy gaps >=0.3 LU). Audio 33249842 B of 33554432. Verified (2501 tests). Reels FULL/R2/R1 sent; step listen.
+- 2026-11-22 Julien heard R2: notes, no yes ("only the downtown stinger lands wrong"). Notes round 2 on R2 launched with 192 kbps extra.
+- 2026-11-22 Notes round 2 on R2 DONE (Downtown sting ladder -2 LU, others reverted, victor_exit -16, 192 kbps). Built: 136 files, 27787604 B of 32 MiB. Verified (2995 tests). Reel R2 sent; step listen.
