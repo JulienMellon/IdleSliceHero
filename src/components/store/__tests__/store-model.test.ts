@@ -249,7 +249,7 @@ describe('the store cards (card N1)', () => {
   });
   test('Plus: the 7-day ad line when there is something to count, and "Pay once"', () => {
     expect(row('nonnas_plus').adLine).toBeNull();
-    expect(row('nonnas_plus', { ...ctx, adCount: 5 }).adLine).toBe("You took 5 ad rewards this week. With Plus, they're one tap.");
+    expect(row('nonnas_plus', { ...ctx, adCount: 5 }).adLine).toBe('You watched 5 ads this week. With Plus: same rewards, no ads.');
     expect(row('nonnas_plus').once).toBe('Pay once. Yours forever.');
   });
   test('looks are whole looks at the vanity price', () => {
