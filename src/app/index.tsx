@@ -12,6 +12,7 @@ import { OrderChip } from '@/components/order-chip';
 import { chipPhase } from '@/components/order-model';
 import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
+import { emitRivalGlow } from '@/components/layers/rival/rival-glow';
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT, type StoryGo, type TasksTab } from '@/components/rewards-model';
 import { coachMode, coachStep, hintsAllowed, reportCoachLive, reportCoachStep } from '@/engine/tutorial';
 import { useReportOpen } from '@/components/report/sheet-state';
@@ -255,6 +256,8 @@ export default function GameScreen() {
       }
       setActive(shop);
       if (kind === 'hire' || kind === 'bid') setDrawerOpen(true);
+      // D547: a "Beat MegaSlice" row lands on the shop with the rival's band glowing for 2 s
+      if (kind === 'win') emitRivalGlow(shop);
     },
     [setActive],
   );

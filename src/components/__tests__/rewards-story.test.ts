@@ -58,9 +58,10 @@ describe('chapter 1 during the tutorial', () => {
     expect(v.tasks.map((t) => t.done)).toEqual([true, true, true]);
     expect(v.tasks.map((t) => t.label)).toEqual(['Serve 1 pie in Downtown', 'Serve 4 pies in Downtown', 'Hire Marco, head prep cook']);
   });
-  it('has no teaser and no portrait: its scene opened the game and has played (G114)', () => {
-    expect(v.teaser).toBe('');
-    expect(v.who).toBeNull();
+  it("has Nonna's line and her portrait like chapters 2 to 4 (D545); no 'Coming up' line, its reward row points on", () => {
+    expect(v.teaser).toBe('Take my keys, cara. Make this place smell like home.');
+    expect(v.teaser).toBe(HOME_COPY['chapter.downtown-1.teaser']);
+    expect(v.who).toBe('nonna-rosa');
     expect(v.coming).toBe('');
   });
   it('points on to chapter 2 in the reward row, not "New scene" (S75)', () => {

@@ -1,7 +1,7 @@
 // The Coach overlay's geometry (v5.20, card C1), pure: where the scrim's holes are, where Nonna's hand points and where her card docks.
 // Every rect is in screen points. The hand follows the old scene spotlight's rules (D384): inside the cut-out, over the
 // work surface, 30 up from its bottom edge; on a narrow target beside it, so it never covers what it points at.
-import type { Rect } from './targets';
+import type { CoachTargetId, Rect } from './targets';
 
 export type { Rect };
 
@@ -22,6 +22,12 @@ export const CUT = { pad: 8, radius: 12 } as const;
 export const CARD = { height: 72, gap: 12, margin: 8, side: 16 } as const;
 /** The hand: its box (pt), the width under which a target is "narrow" and the height under which it is "short", how far up from the bottom edge it rests, its tilt (the glyph points up at 0). */
 export const HAND = { size: 34, narrow: 80, short: 90, rest: 30, along: 0.78, tilt: -20, beside: 70, down: 160 } as const;
+/**
+ * D542: a target that is a whole panel of text (the drawer's Story tab: "Chapter 2", the tasks, the reward row) has its hand moved right and down from the usual
+ * rest, to the panel's bottom corner, so it never covers a label. In points, applied to a hand drawn inside the cut-out.
+ */
+export const HAND_NUDGE: Partial<Record<CoachTargetId, { dx: number; dy: number }>> = { 'tasks:story': { dx: 24, dy: 24 } };
+
 /** A target whose bottom edge is in the top fifth of the screen (the HUD) gets its card right below it; any other gets it at the street band, clear of the shop. */
 export const HUD_ZONE = 0.22;
 
@@ -112,7 +118,7 @@ export interface OverlayLayout {
  * A small one (a dial, the All button): outside it, above and pointing down, else below and pointing up, else beside it; `card` is where Nonna's card
  * stands, which the hand keeps clear of.
  */
-export function handPose(c: Rect, screen: Screen, card?: Rect): HandPose {
+export function handPose(c: Rect, screen: Screen, card?: Rect, nudge?: { dx: number; dy: number }): HandPose {
   const half = HAND.size / 2;
   const keep = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
   const w = c.x1 - c.x0;
@@ -136,6 +142,7 @@ export function handPose(c: Rect, screen: Screen, card?: Rect): HandPose {
     // text, so it rests on the bottom edge, three quarters along (its card sits 12 below, so the hand must not reach it)
     const short = h < HAND.short;
     pose = { x: short ? c.x0 + w * HAND.along : (c.x0 + c.x1) / 2, y: short ? c.y1 - 6 : c.y1 - HAND.rest, rot: HAND.tilt, where: 'inside' };
+    if (nudge) pose = { ...pose, x: pose.x + nudge.dx, y: pose.y + nudge.dy };
   }
   return { ...pose, x: keep(pose.x, half, screen.w - half), y: keep(pose.y, half, screen.h - half) };
 }
@@ -189,17 +196,26 @@ export function leaders(cuts: readonly Rect[]): Leader[] {
  * Everything the overlay draws, from the targets' rects. The hand points at the first target on a `tap` step (the thing to tap) and at the last on a `wait` or `look`
  * step (the dial the line is about: D520). Null when there are none, or when the first one is off the screen (a zero-area hole would leave a scrim that swallows every touch).
  */
-export function overlayLayout(targets: readonly Rect[], screen: Screen, safe: Safe, mode: 'tap' | 'wait' | 'look' = 'tap'): OverlayLayout | null {
+export function overlayLayout(
+  targets: readonly Rect[],
+  screen: Screen,
+  safe: Safe,
+  mode: 'tap' | 'wait' | 'look' = 'tap',
+  /** The target ids, in the order of `targets`: a panel target (`HAND_NUDGE`) moves the hand off its text. */
+  ids: readonly CoachTargetId[] = [],
+): OverlayLayout | null {
   if (targets.length === 0) return null;
   const area = (r: Rect) => (r.x1 - r.x0) * (r.y1 - r.y0);
   const padded = targets.map((t) => clampTo(padCut(t), screen));
   if (area(padded[0]) <= 0) return null;
-  const shown = padded.filter((r) => area(r) > 0);
+  const at = padded.map((_, i) => i).filter((i) => area(padded[i]) > 0);
+  const shown = at.map((i) => padded[i]);
   const cuts = mergeCuts(shown);
   const bounds = hull(cuts);
   const card = cardDock(bounds, screen, safe);
-  const point = mode === 'tap' ? shown[0] : shown[shown.length - 1];
-  return { cuts, bounds, hand: handPose(point, screen, cardRect(card, screen)), card };
+  const pointed = mode === 'tap' ? 0 : shown.length - 1;
+  const id = ids[at[pointed]];
+  return { cuts, bounds, hand: handPose(shown[pointed], screen, cardRect(card, screen), id ? HAND_NUDGE[id] : undefined), card };
 }
 
 /** Where a card sits with no target (a `free` step): along the bottom, above the safe inset. */

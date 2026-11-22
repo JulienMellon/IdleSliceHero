@@ -16,6 +16,7 @@ import {
   GOAL_FLASH_MS,
   GOAL_FONT_MAX_SCALE,
   GOAL_GAP,
+  CHEER_RIBBON_FADE,
   CHEER_RIBBON_MS,
   GOAL_LAYOUT,
   GOAL_PAD,
@@ -370,9 +371,9 @@ export function Hud({
     setRibbonOn(true);
     ribbonShow.setValue(0);
     Animated.sequence([
-      Animated.timing(ribbonShow, { toValue: 1, duration: 220, useNativeDriver: native }),
+      Animated.timing(ribbonShow, { toValue: 1, duration: CHEER_RIBBON_FADE.in, useNativeDriver: native }),
       Animated.delay(CHEER_RIBBON_MS),
-      Animated.timing(ribbonShow, { toValue: 0, duration: 300, useNativeDriver: native }),
+      Animated.timing(ribbonShow, { toValue: 0, duration: CHEER_RIBBON_FADE.out, useNativeDriver: native }),
     ]).start(() => setRibbonOn(false));
   }, [cheer, tickPop, ribbonShow]);
   return (
@@ -1163,10 +1164,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.15)',
   },
   goalReady: { borderColor: '#fff', backgroundColor: C.basil },
+  // D544: the tick badge sits on the bar's top-right corner, mostly above it, so it never covers the amount ("$800 / $800") or the "Ch N" words
   goalTick: {
     position: 'absolute',
-    right: 6,
-    top: -3,
+    right: 2,
+    top: -10,
     width: 24,
     height: 24,
     borderRadius: 12,

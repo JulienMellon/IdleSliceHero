@@ -466,13 +466,13 @@ export function storyTask(g: GameState, task: ChapterTask): StoryTask {
   let progress = bar ? `${pizzas(p.current)}/${count(p.target)}` : '';
   let pct = p.target > 0 ? Math.min(1, p.current / p.target) : 1;
   let spoken = p.done ? `${label}, done` : bar ? `${label}, ${pizzas(p.current)} of ${count(p.target)}` : `${label}, not yet`;
-  // D537: a rate being held shows the rate now and how long it has held ("34/min · holding 12 s"); the bar is the hold
+  // D537: a rate at or over its target reads "6/6 · holding" with a full bar (never "8/6"); the seconds held are in the spoken row
   const w = !p.done && task.kind === 'rate' ? saveOf(g).run[task.key] : undefined;
   if (w && w.lo > 0) {
     const secs = Math.min(RATE_HOLD_SECONDS, Math.floor(w.secs));
     if (w.lo >= task.target) {
-      progress = `${pizzas(w.lo)}/min \u00B7 holding ${secs} s`;
-      pct = Math.min(1, w.secs / RATE_HOLD_SECONDS);
+      progress = `${count(p.target)}/${count(p.target)} \u00B7 holding`;
+      pct = 1;
       spoken = `${label}, holding ${pizzas(w.lo)} a minute for ${secs} of ${RATE_HOLD_SECONDS} seconds`;
     } else if (w.lo > p.current) {
       progress = `${pizzas(w.lo)}/${count(p.target)}`;
@@ -516,9 +516,9 @@ export function storyView(g: GameState, lastSceneEnd: number | null): StoryView 
     kind: 'chapter',
     number,
     title: t(`${c.key}.title`, {}, g.city),
-    // the tutorial's chapter has no scene to tease (its beat opened the game): no teaser, no portrait
-    teaser: c.free ? '' : t(`${c.key}.teaser`, {}, g.city),
-    who: c.free ? null : (scenesById(cityOf(g).scenes).get(c.sceneId)?.character ?? null),
+    // D545: the tutorial's chapter too has Nonna's line and her portrait (its scene opened the game, but the card reads like the other chapters')
+    teaser: t(`${c.key}.teaser`, {}, g.city),
+    who: scenesById(cityOf(g).scenes).get(c.sceneId)?.character ?? null,
     tasks: visibleTasks(c).map((task) => storyTask(g, task)),
     reward: storyReward(g, c, number),
     coming: after && !c.free ? `Coming up \u00B7 Chapter ${number + 1} \u00B7 ${t(`${after.key}.title`, {}, g.city)}` : '',

@@ -17,9 +17,11 @@ import { SceneViewContext } from '../../scene/view-context';
 import { rivalPlace } from '../../scene/viewport';
 import type { SceneSlotProps } from '../../slots';
 import { FAR_KERB, RIVAL_SHOP, SHUTTERS_TOTAL, shutterShare } from './rival-model';
+import { onRivalGlow, rivalGlowLeft, rivalGlowLevel } from './rival-glow';
 
 const PURPLE = '#7B2CBF';
 const YELLOW = '#FFC531';
+const GLOW = '#FFD54A';
 
 /**
  * The shop: sign band, striped awning, window with a shutter box above it, door, and the shutters that come down over both (`shut` 0..1).
@@ -86,6 +88,21 @@ export const RivalScene = memo(function RivalScene({ shopId, width, height }: Sc
   const wasOpen = useRef(open);
   const [closedAt, setClosedAt] = useState<number | null>(null);
   const root = useRef<ComponentRef<typeof View>>(null);
+  // D547: "Go" on a "Beat MegaSlice" row lights the rival's pavement band for 2 s: `glowEnd` is when it stops (a wall-clock ms), null when it is dark
+  const [glowEnd, setGlowEnd] = useState<number | null>(null);
+  useEffect(() => {
+    const sync = () => {
+      const left = rivalGlowLeft(shopId);
+      setGlowEnd(left > 0 ? Date.now() + left : null);
+    };
+    sync();
+    return onRivalGlow(sync);
+  }, [shopId]);
+  useEffect(() => {
+    if (glowEnd === null) return;
+    const t = setTimeout(() => setGlowEnd(null), Math.max(0, glowEnd - Date.now()));
+    return () => clearTimeout(t);
+  }, [glowEnd]);
   const clock = useClock(15, closedAt === null);
   void clock;
   const fit = sceneFit(width, height, frame);
@@ -117,6 +134,7 @@ export const RivalScene = memo(function RivalScene({ shopId, width, height }: Sc
   if (!shown) return <View ref={root} pointerEvents="none" style={StyleSheet.absoluteFill} />;
   const kerbTop = at.top + RIVAL_SHOP.h - FAR_KERB.rise;
   const shut = closedAt === null ? 0 : shutterShare((Date.now() - closedAt) / 1000);
+  const glow = glowEnd === null ? 0 : rivalGlowLevel(glowEnd - Date.now());
   return (
     <View ref={root} testID="rival-shop" pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Svg
@@ -129,7 +147,26 @@ export const RivalScene = memo(function RivalScene({ shopId, width, height }: Sc
         {/* the far pavement across the whole foot of the scene: the road ends at its kerb line, the shop stands on it (D481) */}
         <Rect x={-20} y={kerbTop} width={frame.width + 40} height={700 - kerbTop} fill="#D3CCC0" />
         <Rect x={-20} y={kerbTop} width={frame.width + 40} height={FAR_KERB.height} fill="#9B9386" stroke={INK} strokeWidth={0.8} />
+        {glow > 0 && (
+          <G>
+            <Rect x={-20} y={kerbTop} width={frame.width + 40} height={700 - kerbTop} fill={GLOW} opacity={0.4 * glow} />
+            <Rect x={-20} y={kerbTop} width={frame.width + 40} height={FAR_KERB.height} fill="none" stroke={GLOW} strokeWidth={3} opacity={glow} />
+          </G>
+        )}
         <G transform={`translate(${at.x} ${at.top})`}>
+          {glow > 0 && (
+            <Rect
+              x={-RIVAL_SHOP.slab - 4}
+              y={-4}
+              width={RIVAL_SHOP.w + 2 * RIVAL_SHOP.slab + 8}
+              height={RIVAL_SHOP.h + RIVAL_SHOP.kerb + 8}
+              rx={6}
+              fill="none"
+              stroke={GLOW}
+              strokeWidth={3}
+              opacity={glow}
+            />
+          )}
           <MegaShop shut={shut} />
         </G>
       </Svg>

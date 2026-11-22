@@ -8,3 +8,4 @@
 - S6: walkout `away` now means "turned against the line's way"; piles use `pileCount(backlog, batch, piling)` (non-piling station <= 2 items, piling >= 4).
 - S6: fixture scripts/fixtures/211_s6.py (shots 211-216). Rival pavement band now hides lane-1 traffic while the rival is open (Q8: rival shop is not a protected element).
 - D519 (Julien): wide shops scroll, no scale-down in projection.ts. U7 adds a scroll cue for a cut-off wide shop (scroll-cues-model.ts) if its scope allows; else Needs.
+- S6 done: shot 213-wide-industrial.png shows a wide shop cut off at the right edge with no persistent cue; the cue lives in scroll-cues-model.ts and the ScrollCues component (U7, if in scope).

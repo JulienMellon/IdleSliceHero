@@ -11,7 +11,9 @@ import { headCost } from '../../engine/game';
 import {
   aOrAn,
   chapterGoal,
+  CHEER_RIBBON_FADE,
   CHEER_RIBBON_MS,
+  CHEER_RIBBON_TOTAL_MAX,
   goalCheer,
   taskPrice,
   GOAL_BAR,
@@ -316,6 +318,10 @@ describe('the cheer when a task is done (D541)', () => {
   });
   test('the ribbon and the tick are short', () => {
     expect(CHEER_RIBBON_MS).toBeLessThanOrEqual(2500);
+  });
+  test('the chapter ribbon is gone by 1.5 s: fade in + stay + fade out (D544)', () => {
+    expect(CHEER_RIBBON_FADE.in + CHEER_RIBBON_MS + CHEER_RIBBON_FADE.out).toBeLessThanOrEqual(CHEER_RIBBON_TOTAL_MAX);
+    expect(CHEER_RIBBON_TOTAL_MAX).toBe(1500);
   });
 });
 

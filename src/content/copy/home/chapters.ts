@@ -27,7 +27,8 @@ export const COPY = {
   'chapter.uptown-2.title': 'Second Bite',
   'chapter.uptown-3.title': 'An Invitation',
   'chapter.uptown-4.title': 'The Review',
-  'chapter.downtown-1.teaser': 'The keys are yours. Nonna Rosa wants to see what you do with them.',
+  // D545 (docs/story/COPY-v5.23b.md, `story.ch1.line`): Nonna's own words, the one teaser that is a line she says; the key is the chapter's own, like the other three
+  'chapter.downtown-1.teaser': 'Take my keys, cara. Make this place smell like home.',
   'chapter.downtown-2.teaser': 'Nonna Rosa hears a sound the shop has not made in years.',
   'chapter.downtown-3.teaser': "A man in a shiny suit walks into Nonna Rosa's shop. Smiling.",
   'chapter.downtown-4.teaser': 'Nonna Rosa has been watching. Always watching. Now she wants a word.',
@@ -120,6 +121,7 @@ export const COPY = {
   'task.kind.win': 'Beat MegaSlice in {shop}',
   'task.kind.win.short': 'Beat MegaSlice',
   'task.kind.bid': 'Win the auction in {shop}',
+  'task.kind.bid.short': 'Win Pier 9',
   'task.kind.hire': 'Hire a {shop} station head',
   'task.kind.rate': 'Hold {target}/min in {shop}',
   'task.kind.noMissed': 'No missed orders for {target} s',
