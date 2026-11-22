@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.21-r3                # r3 verify: True 0 [], layout 0 new; 14 new 94 changed vs r2
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
-  S4 done  E3 done  W3 done  U3 done  S3 running  U4 todo  E4 todo  A3 todo
+  S4 done  E3 done  W3 done  U3 done  S3 done  U4 running  E4 todo  A3 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.21/review-r3-critic.md (r3 NOT SATISFIED; bug 1 major 1 minor 13; E4 U9 S2 T1; G118 bug HUD zIndex 2 over sheets/scrim, D543 major night-oven title under HUD; D546 minor lock says Ch 10, Story tab Ch 8)
   code:   docs/build/v5.21/review-r3-code.md (r3 CHANGES REQUESTED; blocker/high 1 medium 2 low 21; E5 U11 S1 N7; K5 high coachLayer zIndex 3 scrim covers OfflinePopup Collect)
@@ -42,3 +42,4 @@ next: S9-v5.22.md waves (Julien 2026-11-22: cards before verify): S4 alone, then
 - 2026-11-22 S9 E3 done (lane-E follow-ups). tsc clean, 2941/2942 (city-model 'Chapter 6' -> U3). Wave 2 U3||S3 launched.
 - 2026-11-22 S9 U3 partial (report bars+demand line, C157, fixture 181). Sent back: drawer-model.test regex, 130_p1.py retarget (U3); copy-system.test tables + home-ids-guard ALLOW (E3, tiny). For E4: CoachTargetId report:strip/demand/close/bar:* (drop asTarget cast); engine: hand-tapped ovens service 75% vs Missed 168 (shot 185).
 - 2026-11-22 S9 U3 done (follow-ups: drawer test, 130_p1 retargeted; shot names 130-133 still say tipping/slammed, rename later).
+- 2026-11-22 S9 S3 done (piles, poses, walkouts, scooters; G80 D421 fixed; fixture 186). Carry: C167 coachTargets export (E4), D481, D519. To U4: scroll-cues 'slammed' kind/label, add 186_s3 to fixtures README. Note: engine caps backlog ~2 batches (piles mostly 3). Wave 3 U4 launched.

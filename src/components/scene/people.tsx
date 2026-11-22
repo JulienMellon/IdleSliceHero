@@ -290,7 +290,7 @@ export function Person({ x, y, o = 1, ...p }: PersonProps) {
 }
 
 /** The lean's tilt (degrees) at strength 1. */
-const LEAN_DEG = 5;
+const LEAN_DEG = 9;
 
 /** A drop of sweat running down the temple: it falls through three steps (poses.ts `workerPose`). */
 const Sweat = memo(function Sweat({ hy, step }: { hy: number; step: number }) {

@@ -36,7 +36,9 @@ const fullLadder = (lay: Lay) =>
 describe('pile counts (step 1)', () => {
   test('0 to 5 items from the backlog against one batch; 5 means more than four batches', () => {
     const b = 8;
-    expect([0, 0.4, 0.5, 0.6, 1, 1.5, 1.6, 2.5, 2.6, 3.5, 3.6, 4, 4.01, 9].map((r) => pileCount(r * b, b))).toEqual([0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
+    expect([0, 0.4, 0.5, 0.6, 1, 1.5, 1.75, 1.8, 2.5, 2.6, 4, 4.01, 9].map((r) => pileCount(r * b, b))).toEqual([0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
+    // a station is `piling` from two batches (features/service.ts): that already shows three items
+    expect(pileCount(2 * b, b)).toBe(3);
     expect(pileCount(4 * b + 0.01, b)).toBe(PILE_MAX);
     expect(pileCount(4 * b, b)).toBeLessThan(PILE_MAX);
   });

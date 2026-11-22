@@ -13,13 +13,13 @@ const Dough = memo(function Dough({ n, stand }: { n: number; stand: boolean }) {
         <G>
           <Rect x={-6} y={-base} width={1.8} height={base} fill="#7C858E" stroke={INK} strokeWidth={0.7} />
           <Rect x={4.2} y={-base} width={1.8} height={base} fill="#7C858E" stroke={INK} strokeWidth={0.7} />
-          <Rect x={-7.5} y={-base - 1.6} width={15} height={2.6} rx={0.8} fill="#AEB4BB" stroke={INK} strokeWidth={0.8} />
+          <Rect x={-8.5} y={-base - 1.6} width={17} height={2.6} rx={0.8} fill="#AEB4BB" stroke={INK} strokeWidth={0.8} />
         </G>
       )}
       {Array.from({ length: n }).map((_, i) => (
         <G key={i}>
-          <Ellipse cx={(i % 2) * 0.8 - 0.4} cy={-base - 3 - i * 2.6} rx={7} ry={2.8} fill="#FBEFD6" stroke={INK} strokeWidth={0.8} />
-          <Ellipse cx={(i % 2) * 0.8 - 1.6} cy={-base - 3.6 - i * 2.6} rx={3.2} ry={0.8} fill="#fff" opacity={0.6} />
+          <Ellipse cx={(i % 2) * 0.8 - 0.4} cy={-base - 3.4 - i * 3.2} rx={8} ry={3.3} fill="#FBEFD6" stroke={INK} strokeWidth={0.8} />
+          <Ellipse cx={(i % 2) * 0.8 - 1.6} cy={-base - 4.2 - i * 3.2} rx={3.6} ry={0.9} fill="#fff" opacity={0.6} />
         </G>
       ))}
     </G>
@@ -81,7 +81,7 @@ const Bags = memo(function Bags({ n }: { n: number }) {
 export const Pile = memo(function Pile({ kind, n, ax, ay, k, stand }: { kind: PileKind; n: number; ax: number; ay: number; k: number; stand: boolean }) {
   if (n <= 0) return null;
   return (
-    <G transform={`translate(${ax.toFixed(1)} ${ay.toFixed(1)}) scale(${k.toFixed(3)})`}>
+    <G testID={`pile-${kind}`} transform={`translate(${ax.toFixed(1)} ${ay.toFixed(1)}) scale(${k.toFixed(3)})`}>
       {kind === 'dough' ? <Dough n={n} stand={stand} /> : kind === 'boxes' ? <Boxes n={n} /> : <Bags n={n} />}
     </G>
   );

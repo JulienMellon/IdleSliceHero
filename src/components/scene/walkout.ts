@@ -43,8 +43,15 @@ export interface WalkoutFrame {
 
 const paths = new WeakMap<Layout, [number, number][][]>();
 
-/** Where customer `q` stands before they go: their line spot, or (`-1`) the pause left of the door. */
-export const spotOf = (lay: Layout, q: number): [number, number] => (q >= 0 ? lay.queue[q] : [lay.door.lanes.guestPauseX, DOOR_OUT_Y]);
+/** The customer who comes from the door stands this far (room units) beyond where walk-ins pause, so they never stand on the mat (that pause is a waypoint, not a place to stand). */
+export const DOOR_SPOT_GAP = 16;
+
+/** Where customer `q` stands before they go: their line spot, or (`-1`) just past the pause by the door, away from it. */
+export const spotOf = (lay: Layout, q: number): [number, number] => {
+  if (q >= 0) return lay.queue[q];
+  const pause = lay.door.lanes.guestPauseX;
+  return [pause + (pause >= lay.door.cx ? 1 : -1) * DOOR_SPOT_GAP, DOOR_OUT_Y];
+};
 
 /** Where a customer at line spot `q` walks: down off the sidewalk to the walkers' lane, then away from the door along it. Far enough to be off screen. Cached per layout. */
 export function walkoutPath(lay: Layout, q: number): [number, number][] {

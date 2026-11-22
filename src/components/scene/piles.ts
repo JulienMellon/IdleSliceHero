@@ -12,8 +12,11 @@ import type { NeighborhoodId } from '../../content/types';
 
 /** The most items a pile shows. */
 export const PILE_MAX = 5;
-/** A pile shows another item for each of these many batches of backlog: half a batch is the first item, more than four batches is the full five. */
-export const PILE_STEPS: readonly number[] = [0.5, 1.5, 2.5, 3.5, 4];
+/**
+ * A pile shows another item at each of these many batches of backlog: over half a batch is the first, over four is the full five. The line's own buffers
+ * stop near two batches, which is where a station is `piling` (the engine's symptom), so that is already three items: a pile-up reads at a glance.
+ */
+export const PILE_STEPS: readonly number[] = [0.5, 1, 1.75, 2.5, 4];
 
 /** How many items a backlog of `backlog` pies shows when one batch is `batch` (0 to PILE_MAX). */
 export function pileCount(backlog: number, batch: number): number {
@@ -37,7 +40,7 @@ export const STAND_H = 22;
  */
 export function pileBox(kind: PileKind, n: number, stand = false): Rect {
   if (n <= 0) return { x0: 0, y0: 0, x1: 0, y1: 0 };
-  if (kind === 'dough') return { x0: -8, y0: -((stand ? STAND_H : 0) + 2.6 * n + 4), x1: 8, y1: 1 };
+  if (kind === 'dough') return { x0: -9, y0: -((stand ? STAND_H : 0) + 3.2 * n + 4), x1: 9, y1: 1 };
   if (kind === 'boxes') return { x0: -10.5, y0: -(5 * n + 1), x1: 10.5, y1: 1 };
   return { x0: -15, y0: n > 3 ? -25 : -15, x1: 15, y1: 6 };
 }
@@ -62,8 +65,14 @@ interface Candidate {
   x: number;
   y: number;
   z: number;
+  /** The painter's depth: just in front of the furniture the pile stands on (the bench at 66, the counter at 64), so it is drawn over it. */
+  sort: number;
   stand: boolean;
 }
+
+/** The depths the bench (props.tsx `PrepBench`, 66) and the counter (64) are sorted at: a pile standing on one is drawn just after it. */
+const BENCH_SORT = 65.5;
+const COUNTER_SORT = 63.5;
 
 /** Candidates for each kind, in the order they are tried, in the plain plan's room units. */
 function candidatesFor(lay: Layout): Record<PileKind, Candidate[]> {
@@ -74,21 +83,21 @@ function candidatesFor(lay: Layout): Record<PileKind, Candidate[]> {
   return {
     // the pass: the gap between the bench and the oven bay, on a steel stand; then the bench's two ends
     dough: [
-      { x: gap, y: 76, z: 0, stand: true },
-      { x: lastPrep.x1 - 6, y: 76, z: 28, stand: false },
-      { x: lay.prep.x0 + 8, y: 76, z: 28, stand: false },
+      { x: gap, y: 76, z: 0, sort: BENCH_SORT, stand: true },
+      { x: lastPrep.x1 - 6, y: 76, z: 28, sort: BENCH_SORT, stand: false },
+      { x: lay.prep.x0 + 8, y: 76, z: 28, sort: BENCH_SORT, stand: false },
     ],
     // the counter's door end, where the boxes always stood, then its other free places
     boxes: [
-      { x: counter.x1 - 15, y: 74, z: 38, stand: false },
-      { x: counter.x0 + 9, y: 74, z: 38, stand: false },
-      { x: mid, y: 76, z: 38, stand: false },
+      { x: counter.x1 - 15, y: 74, z: 38, sort: COUNTER_SORT, stand: false },
+      { x: counter.x0 + 9, y: 74, z: 38, sort: COUNTER_SORT, stand: false },
+      { x: mid, y: 76, z: 38, sort: COUNTER_SORT, stand: false },
     ],
     // the pickup shelf: bracketed to the counter's front panel by the pickup spots (the idle driver stands in front of it), then further along the panel
     bags: [
-      { x: counter.x1 - 15, y: 64.5, z: 12, stand: false },
-      { x: counter.x1 - 44, y: 64.5, z: 12, stand: false },
-      { x: counter.x0 + 15, y: 64.5, z: 12, stand: false },
+      { x: counter.x1 - 15, y: 64.5, z: 12, sort: COUNTER_SORT - 0.1, stand: false },
+      { x: counter.x1 - 44, y: 64.5, z: 12, sort: COUNTER_SORT - 0.1, stand: false },
+      { x: counter.x0 + 15, y: 64.5, z: 12, sort: COUNTER_SORT - 0.1, stand: false },
     ],
   };
 }
@@ -120,7 +129,7 @@ export function pileSpots(lay: Layout, id: NeighborhoodId, avoid: readonly Rect[
   for (const kind of PILE_KINDS) {
     for (const c of cands[kind]) {
       const [ax, ay] = P(c.x, c.y, c.z);
-      const spot: PileSpot = { kind, ax, ay, k: kAt(c.y), sortY: c.y + 0.2, stand: c.stand };
+      const spot: PileSpot = { kind, ax, ay, k: kAt(c.y), sortY: c.sort, stand: c.stand };
       const r = pileRect(spot, PILE_MAX);
       // the pickup shelf stands where the idle driver does: he covers it, it never covers him (he is drawn over the shelf)
       if (fixed.some((b) => hits(r, b)) || taken.some((b) => hits(r, b)) || (kind !== 'bags' && spots.some((b) => hits(r, b)))) continue;

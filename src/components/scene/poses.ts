@@ -62,6 +62,6 @@ export function workerPose(sym: WorkerSymptom, poseClock: number, seed: number):
 
 // ---------- the idle drivers' scooters ----------
 /** An idle driver sits on a small scooter: it is drawn at this scale, the driver is lifted this far (figure units) onto its seat, and its drawing spans this box (unscaled). */
-export const SCOOTER_K = 0.8;
-export const RIDE_LIFT = 9;
+export const SCOOTER_K = 0.75;
+export const RIDE_LIFT = 8;
 export const SCOOTER_BOX = { x0: -16.2, x1: 17.2, y0: -21.5, y1: 3.5 } as const;

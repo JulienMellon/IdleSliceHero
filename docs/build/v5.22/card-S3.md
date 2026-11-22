@@ -9,12 +9,12 @@
 - Do not touch: `src/engine/**`, `report/**`, sidewalk and drawer.
 
 ## Steps
-- [ ] **1. Piles.** On the pass between prep and ovens, rolled dough discs; on the counter, boxed pies; on the pickup shelf, bags. 0–5 drawn items scaled from the backlog (5 = more than 4× one batch). Pure placement helper with a budget test (no pile over a head, the WELCOME mat, or a badge).
-- [ ] **2. Worker poses.** For each station's worker: `piling` at their output → quick bob and a sweat drop every 3 s; `idle` → lean on the counter, a yawn every 6 s or a phone glance. Same art, new transforms; no new characters.
-- [ ] **3. Customers.** The door line already draws; a `walkout` customer turns, a frown bubble (12 pt), and walks off the curb. At most one walk-out animating at a time.
-- [ ] **4. Drivers.** Idle drivers sit on their scooters (one figure per up to ten, as D430). The pill says only "{n} drivers waiting" — no station names (remove `slowest` from `waiting.ts`'s pill).
-- [ ] **5. Remove the tomato tint** on tied station badges (G80: `tone`) — every badge uses the basil tone.
-- [ ] **6. Tests:** budgets for piles and poses; the badge tone is the same for every station. **Fixture:** a shop short on ovens (dough piles, counter worker idle), short on drivers (bags pile on the pickup shelf, the counter worker idles), short on counter (boxes pile).
+- [x] **1. Piles.** On the pass between prep and ovens, rolled dough discs; on the counter, boxed pies; on the pickup shelf, bags. 0–5 drawn items scaled from the backlog (5 = more than 4× one batch). Pure placement helper with a budget test (no pile over a head, the WELCOME mat, or a badge).
+- [x] **2. Worker poses.** For each station's worker: `piling` at their output → quick bob and a sweat drop every 3 s; `idle` → lean on the counter, a yawn every 6 s or a phone glance. Same art, new transforms; no new characters.
+- [x] **3. Customers.** The door line already draws; a `walkout` customer turns, a frown bubble (12 pt), and walks off the curb. At most one walk-out animating at a time.
+- [x] **4. Drivers.** Idle drivers sit on their scooters (one figure per up to ten, as D430). The pill says only "{n} drivers waiting" — no station names (remove `slowest` from `waiting.ts`'s pill).
+- [x] **5. Remove the tomato tint** on tied station badges (G80: `tone`) — every badge uses the basil tone.
+- [x] **6. Tests:** budgets for piles and poses; the badge tone is the same for every station. **Fixture:** a shop short on ovens (dough piles, counter worker idle), short on drivers (bags pile on the pickup shelf, the counter worker idles), short on counter (boxes pile).
 
 ## Rules
 Overlap fixes in pure modules with a budget test; run the whole crowd suite. Don't remove the WELCOME mat. No per-frame allocations in the render path (perf audit rules in v5.16's handoff).

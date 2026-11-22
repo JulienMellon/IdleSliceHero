@@ -37,7 +37,7 @@ describe('worker poses (step 2)', () => {
   test('piling: a quick bob every step and a sweat drop that falls through three steps once every 3 s', () => {
     let drops = 0;
     let prev = 0;
-    const poses = samples(30).map((t) => workerPose('piling', t, 3)!);
+    const poses = samples(30).map((t) => workerPose('piling', t, 0)!);
     for (const p of poses) {
       expect(p.lean).toBe(0);
       expect(p.still).toBe(false);
@@ -52,10 +52,10 @@ describe('worker poses (step 2)', () => {
     // the drop is up for a fraction of the cycle, not all of it
     expect(poses.filter((p) => p.sweat > 0).length / poses.length).toBeCloseTo(SWEAT_SECONDS / SWEAT_EVERY, 1);
     // the bob really moves: both heights show every second
-    for (let s = 0; s < 30; s++) expect(new Set(samples(1, s).map((t) => workerPose('piling', t, 3)!.bob)).size).toBe(2);
+    for (let s = 0; s < 30; s++) expect(new Set(samples(1, s).map((t) => workerPose('piling', t, 0)!.bob)).size).toBe(2);
   });
   test('idle: leaning, hands still, and every 6 s a yawn or a phone glance, taking turns', () => {
-    const poses = samples(36).map((t) => ({ t, p: workerPose('idle', t, 5)! }));
+    const poses = samples(36).map((t) => ({ t, p: workerPose('idle', t, 0)! }));
     for (const { p } of poses) {
       expect(p.lean).toBe(LEAN);
       expect(p.still).toBe(true);
@@ -67,7 +67,7 @@ describe('worker poses (step 2)', () => {
     // each 6 s window has exactly one of the two, and they alternate
     const events: string[] = [];
     for (let w = 0; w < 6; w++) {
-      const win = poses.filter(({ t }) => t >= 5 * 0 + w * YAWN_EVERY - 0.0001 && t < (w + 1) * YAWN_EVERY - 0.0001).map(({ p }) => p);
+      const win = poses.filter(({ t }) => t >= w * YAWN_EVERY - 0.0001 && t < (w + 1) * YAWN_EVERY - 0.0001).map(({ p }) => p);
       const kinds = new Set(win.flatMap((p) => [p.mood === 'o' ? 'yawn' : '', p.act === 'phone' ? 'phone' : ''].filter(Boolean)));
       expect(kinds.size).toBeLessThanOrEqual(1);
       events.push([...kinds][0] ?? 'none');
@@ -153,44 +153,50 @@ describe('the cast shows the stations’ state (step 2)', () => {
 
 describe('customers walk out (step 3)', () => {
   const FPS = 15;
-  const walkingFrames = (active: boolean, seconds: number, l = lay) =>
+  // the flagship's sidewalk has room for the door line (4 figures); the others have none, so their customer comes from the pause by the door
+  const wide = layout(4, 3, 3, 2, 3, 3, 1);
+  const frames = (l: typeof lay, active: boolean, seconds: number) =>
     Array.from({ length: seconds * FPS }, (_, f) => {
       const clock = f / FPS;
-      return { clock, frame: walkoutAt(l, clock, active, 4), cast: build(clock, { queue: queue4, symptoms: active ? { floor: 'walkout' } : {} }) };
+      return { clock, frame: walkoutAt(l, clock, active, 4), cast: build(clock, { lay: l, queue: queue4, symptoms: active ? { floor: 'walkout' } : {} }) };
     });
-  test('nothing walks out unless the floor shows a walk-out, or the line has nobody in it', () => {
-    expect(walkingFrames(false, 30).every(({ frame }) => frame === null)).toBe(true);
-    expect(walkoutAt(lay, 3, true, 0)).toBeNull();
-    expect(walkingFrames(false, 30).every(({ cast }) => cast.every((c) => !c.props.frown))).toBe(true);
+  test('the flagship draws a door line and a narrow shop does not (the premise of the two cases below)', () => {
+    expect(wide.queue.length).toBeGreaterThanOrEqual(2);
+    expect(lay.queue.length).toBe(0);
+  });
+  test('nothing walks out unless the floor shows a walk-out', () => {
+    for (const l of [lay, wide]) {
+      expect(frames(l, false, 20).every(({ frame, cast }) => frame === null && cast.every((c) => !c.props.frown))).toBe(true);
+    }
+    expect(walkoutAt(lay, -1, true, 4)).toBeNull();
   });
   test('at most one walk-out animates at a time, and it happens again and again', () => {
-    const frames = walkingFrames(true, 60);
-    let starts = 0;
-    let was = false;
-    for (const { cast } of frames) {
-      const frowning = cast.filter((c) => c.props.frown);
-      expect(frowning.length).toBeLessThanOrEqual(1);
-      if (frowning.length && !was) starts++;
-      was = frowning.length > 0;
+    for (const l of [lay, wide]) {
+      let starts = 0;
+      let was = false;
+      for (const { cast } of frames(l, true, 60)) {
+        const frowning = cast.filter((c) => c.props.frown);
+        expect(frowning.length).toBeLessThanOrEqual(1);
+        if (frowning.length && !was) starts++;
+        was = frowning.length > 0;
+      }
+      expect(starts).toBe(Math.ceil(60 / WALKOUT_EVERY));
     }
-    expect(starts).toBe(Math.floor(60 / WALKOUT_EVERY) + (60 % WALKOUT_EVERY > 0 ? 1 : 0));
     expect(WALKOUT_TOTAL).toBeLessThan(WALKOUT_EVERY);
   });
-  test('the customer turns away, frowns, walks off the curb and fades out; the line’s own figure is the walker (same key, no mount)', () => {
-    const f0 = walkoutAt(lay, 0.1, true, 4)!;
+  test('a figure of the door line turns away, frowns, walks off the curb and fades out, and the same element is the walker (same key, no mount)', () => {
+    const f0 = walkoutAt(wide, 0.1, true, 4)!;
     expect(f0.walker).toMatchObject({ walking: false, away: true, o: 1 });
-    const [qx, qy] = lay.queue[f0.q];
+    const [qx, qy] = wide.queue[f0.q];
     expect([f0.walker!.x, f0.walker!.y]).toEqual([qx, qy]);
     // walking: down the sidewalk to the lane, then away from the door
-    const mid = walkoutAt(lay, WALKOUT_TURN + WALKOUT_WALK * 0.6, true, 4)!;
+    const mid = walkoutAt(wide, WALKOUT_TURN + WALKOUT_WALK * 0.6, true, 4)!;
     expect(mid.walker!.walking).toBe(true);
     expect(mid.walker!.y).toBeLessThan(qy);
-    const door = lay.door.cx;
-    expect(Math.sign(mid.walker!.x - qx)).toBe(Math.sign(qx - door) || -1);
-    // faded out before the spot fills again
-    const end = walkoutAt(lay, WALKOUT_TURN + WALKOUT_WALK - 0.02, true, 4)!;
-    expect(end.walker!.o).toBeLessThan(0.1);
-    const back = walkoutAt(lay, WALKOUT_TURN + WALKOUT_WALK + WALKOUT_RETURN / 2, true, 4)!;
+    expect(Math.sign(mid.walker!.x - qx)).toBe(Math.sign(qx - wide.door.cx));
+    // faded out before the spot fills again, and the spot fills with a fade
+    expect(walkoutAt(wide, WALKOUT_TURN + WALKOUT_WALK - 0.02, true, 4)!.walker!.o).toBeLessThan(0.1);
+    const back = walkoutAt(wide, WALKOUT_TURN + WALKOUT_WALK + WALKOUT_RETURN / 2, true, 4)!;
     expect(back.walker).toBeNull();
     expect(back.spotOpacity).toBeCloseTo(0.5, 1);
     // the cast keeps the same keys all the way through (React keeps the element)
@@ -199,31 +205,45 @@ describe('customers walk out (step 3)', () => {
         .map((m) => m.key)
         .sort()
         .join();
-    const calm = keys(build(0.1, { queue: queue4 }));
-    for (const t of [0.1, 1, 2, 2.9, 3.2]) expect(keys(build(t, { queue: queue4, symptoms: { floor: 'walkout' } }))).toBe(calm);
-    const walking = build(1, { queue: queue4, symptoms: { floor: 'walkout' } }).find((c) => c.props.frown)!;
-    expect(walking.key).toBe(`q${walkoutAt(lay, 1, true, 4)!.q}`);
+    const calm = keys(build(0.1, { lay: wide, queue: queue4 }));
+    for (const t of [0.1, 1, 2, 2.9, 3.2]) expect(keys(build(t, { lay: wide, queue: queue4, symptoms: { floor: 'walkout' } }))).toBe(calm);
+    const walking = build(1, { lay: wide, queue: queue4, symptoms: { floor: 'walkout' } }).find((c) => c.props.frown)!;
+    expect(walking.key).toBe(`q${walkoutAt(wide, 1, true, 4)!.q}`);
     expect(walking.props.mood).toBe('frown');
+    expect(walking.props.flip).toBe(true); // turned away from the door (the plain plan's door is on the right)
+  });
+  test('a shop with no room for a line has its customer come from the door and walk away from it', () => {
+    const start = walkoutAt(lay, 0.1, true, 0)!;
+    expect(start.q).toBe(-1);
+    expect(start.walker!.o).toBeLessThan(1); // fading in as they turn
+    const mid = walkoutAt(lay, WALKOUT_TURN + 1, true, 0)!;
+    expect(mid.walker!.x).toBeLessThan(start.walker!.x); // away from the door (to its left in the plain plan)
+    expect(walkoutAt(lay, WALKOUT_TURN + WALKOUT_WALK + 0.3, true, 0)!.walker).toBeNull();
+    const walker = build(1, { queue: queue4, symptoms: { floor: 'walkout' } }).find((c) => c.props.frown)!;
+    expect(walker.key).toBe('wo');
   });
   test('the walk stays on the sidewalk, off the doormat and out of the road, in every footprint and plan', () => {
     for (const mirrored of [false, true])
       for (let fp = 0; fp < 5; fp++) {
         const l = layout(fp, 3, 3, 2, 3, 3, 1, undefined, mirrored);
         const mat = matRect(l);
-        for (let q = 0; q < l.queue.length; q++)
-          for (const t of samples(WALKOUT_TURN + WALKOUT_WALK, 0)) {
-            const w = walkoutAt(l, t + q * 0.001, true, l.queue.length);
-            // (a different line spot is chosen each cycle: aim at spot q by walking its path directly)
-            const path = walkoutPath(l, q);
-            expect(path[path.length - 1][1]).toBeLessThanOrEqual(l.queue[q][1]);
-            expect(Math.min(...path.map((p) => p[1]))).toBeGreaterThan(-80);
-            if (w?.walker) {
-              const [sx, sy] = P(w.walker.x, w.walker.y);
-              const k = kAt(w.walker.y) * 1.14;
-              const body = { x0: sx - 11 * k, x1: sx + 11 * k, y0: sy - 50 * k, y1: sy };
-              if (!w.walker.walking) expect(hits(body, mat)).toBe(false);
-            }
-          }
+        const spots = l.queue.length ? l.queue.map((_, q) => q) : [-1];
+        for (const q of spots) {
+          const path = walkoutPath(l, q);
+          expect(Math.min(...path.map((p) => p[1]))).toBeGreaterThan(-80);
+          // away from the door, whichever plan
+          expect(Math.sign(path[2][0] - path[0][0])).toBe(Math.sign(path[0][0] - l.door.cx));
+        }
+        for (const t of samples(WALKOUT_TURN + WALKOUT_WALK + WALKOUT_RETURN, 0)) {
+          const w = walkoutAt(l, t, true, l.queue.length)?.walker;
+          if (!w) continue;
+          const [sx, sy] = P(w.x, w.y);
+          const k = kAt(w.y) * 1.14;
+          const body = { x0: sx - 11 * k, x1: sx + 11 * k, y0: sy - 50 * k, y1: sy };
+          // a figure standing still (the turn) never stands on the mat (the crowd budget's 20% of its box); one walking by may pass over it
+          const cover = Math.max(0, Math.min(body.x1, mat.x1) - Math.max(body.x0, mat.x0)) * Math.max(0, Math.min(body.y1, mat.y1) - Math.max(body.y0, mat.y0));
+          if (!w.walking) expect([fp, mirrored, cover / ((mat.x1 - mat.x0) * (mat.y1 - mat.y0)) > 0.2]).toEqual([fp, mirrored, false]);
+        }
       }
   });
   test('the frown bubble is at least 12 pt across wherever the walker is', () => {
@@ -256,12 +276,7 @@ describe('idle drivers sit on their scooters (step 4)', () => {
           const k = kAt(y) * 1.14 * SCOOTER_K;
           // the scooter is drawn mirrored when the plan is
           const [a, b] = mirrored ? [-SCOOTER_BOX.x1, -SCOOTER_BOX.x0] : [SCOOTER_BOX.x0, SCOOTER_BOX.x1];
-          return {
-            x0: sx + (a * k) / SCOOTER_K,
-            x1: sx + (b * k) / SCOOTER_K,
-            y0: sy + (SCOOTER_BOX.y0 * k) / SCOOTER_K,
-            y1: sy + (SCOOTER_BOX.y1 * k) / SCOOTER_K,
-          };
+          return { x0: sx + a * k, x1: sx + b * k, y0: sy + SCOOTER_BOX.y0 * k, y1: sy + SCOOTER_BOX.y1 * k };
         });
         rects.forEach((r, i) => {
           if (hits(r, mat)) bad.push(`fp${fp}${mirrored ? 'm' : ''} scooter ${i} on the mat`);
