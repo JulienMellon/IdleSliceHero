@@ -8,7 +8,7 @@ import { BUY_AMOUNTS, buyPlan, isLevelUpgrade, type BuyAmount } from '../engine/
 import { count, money } from '../engine/format';
 import * as G from '../engine/game';
 import { fits } from './endgame/fit-model';
-import { capacityAfter, flowOf, reportActive, reportView, type K3 } from '../engine/features/service';
+import { capacityAfter, flowOf, KEY as SERVICE_KEY, reportActive, reportView, type ServiceStateSlice } from '../engine/features/service';
 
 /** The look of a purchase button: `expand` is the amber Expand buy, which never reads as a station buy (D407). */
 export type ButtonTone = 'normal' | 'neutral' | 'nogain' | 'expand';
@@ -101,42 +101,79 @@ export const perMinute = (n: number): string => {
 /** "18/min → 22": what the station handles now, and after the buy. The spaces around the arrow do not break: a number never wraps alone. */
 export const capacityText = (now: number, after: number): string => `${perMinute(now)}/min\u00A0→\u00A0${perMinute(after)}`;
 
+/** A number a minute to `digits` significant figures at most, thousands and millions as K and M ("5.8K"): both ends of a card's line shrink together, never one dropped. */
+export function abbreviate(n: number, digits: 1 | 2 | 3): string {
+  const x = Math.max(0, n);
+  const unit = x >= 1e6 ? 'M' : x >= 1e3 ? 'K' : '';
+  const v = unit === 'M' ? x / 1e6 : unit === 'K' ? x / 1e3 : x;
+  const places = v >= 100 || digits === 1 ? 0 : v >= 10 ? Math.min(1, digits - 2) : digits - 1;
+  return `${Number(v.toFixed(Math.max(0, places)))}${unit}`;
+}
+
 /**
- * The same for a narrow card (a station's text is about 46 pt wide on a 375 pt phone, 7 characters at 10 pt): the whole line if it fits `width`
- * at 10 pt, else "/m", else without the unit, else packed ("446→486"), else only where it is going ("→486"). Never under 10 pt.
+ * The line on a sidewalk card, one format: "446→486", no unit (a station's text is about 46 pt wide on a 375 pt phone, 7 characters at 10 pt).
+ * When the numbers are too long both are abbreviated together ("5.8K→6.2K", then "6K→6K"); the current value is never dropped. Never under 10 pt.
  */
 export function capacityFit(c: { now: number; after: number }, width: number): string {
-  const a = perMinute(c.now);
-  const b = perMinute(c.after);
-  const candidates = [`${a}/min\u00A0→\u00A0${b}`, `${a}/m\u00A0→\u00A0${b}`, `${a}\u00A0→\u00A0${b}`, `${a}→${b}`, `→${b}`];
+  const candidates = [`${perMinute(c.now)}→${perMinute(c.after)}`, ...([2, 1] as const).map((d) => `${abbreviate(c.now, d)}→${abbreviate(c.after, d)}`)];
   return candidates.find((t) => fits(t, width, 10)) ?? candidates[candidates.length - 1];
 }
 
-/** What a station can handle now, a minute (E3's `capacity` while the report is live, else the flow's own rate: a shop run by hand has no readout yet). */
-export function capacityNow(s: G.GameState, id: NeighborhoodId, k: K3 | 'drivers'): number {
-  const now = s.lastSavedAt;
-  return reportActive(s, id) ? reportView(s, id, now).capacity[k] : flowOf(s, id, now)[k] * 60;
+/** What a station can handle now with its machines, and after one more level, a minute: no hand-tapped scaling, so it depends on the shop's levels alone. */
+type MachineCaps = Record<StationKey, { now: number; after: number }>;
+
+/** `g` with what the player made by hand left out of the service slice, so `capacityAfter` answers with the machines' own rates. */
+function withoutMade(g: G.GameState, id: NeighborhoodId): G.GameState {
+  const sv = g.x?.[SERVICE_KEY] as ServiceStateSlice | undefined;
+  const row = sv?.shops[id];
+  if (!sv || !row) return g;
+  return { ...g, x: { ...g.x, [SERVICE_KEY]: { ...sv, shops: { ...sv.shops, [id]: { ...row, made: { prep: 0, ovens: 0, counter: 0 } } } } } };
 }
 
-/** The numbers a hand-tapped station's capacity moves with (what the player made lately); part of the caches' keys, '' with none. */
-export function capacityKey(s: G.GameState, id: NeighborhoodId): string {
-  if (!reportActive(s, id)) return '';
-  const v = reportView(s, id, s.lastSavedAt);
-  return (['prep', 'ovens', 'counter'] as const)
-    .filter((k) => v.you[k])
-    .map((k) => Math.round(v.capacity[k]))
-    .join(',');
+let machineKey = '';
+let machineVal: MachineCaps | null = null;
+
+/** The machines' capacity now and after, cached on the shop's levels (U34: what a hand-tapped station made is applied per render, in `stationCap`, not in a key). */
+function machineCaps(s: G.GameState, id: NeighborhoodId): MachineCaps {
+  const key = G.shopLevelKey(s, id);
+  if (machineVal && key === machineKey) return machineVal;
+  const flow = flowOf(s, id, s.lastSavedAt);
+  const bare = withoutMade(s, id);
+  const one = (k: StationKey) => ({ now: flow[k] * 60, after: capacityAfter(bare, id, k, s.lastSavedAt) });
+  machineVal = { prep: one('prep'), ovens: one('ovens'), counter: one('counter'), drivers: one('drivers') };
+  machineKey = key;
+  return machineVal;
 }
 
-/** A station's capacity now and after one more level (the same number twice for a station at its cap). */
+/**
+ * A station's capacity now and after one more level (the same number twice for a station at its cap). A station the player taps by hand shows what they
+ * made lately, and after the buy that scaled by what the level adds to its machine; the rest is the cached machine numbers.
+ */
 export function stationCap(s: G.GameState, id: NeighborhoodId, k: StationKey): { now: number; after: number } {
-  return { now: capacityNow(s, id, k), after: capacityAfter(s, id, k, s.lastSavedAt) };
+  const m = machineCaps(s, id)[k];
+  if (k === 'drivers' || !reportActive(s, id)) return m;
+  const v = reportView(s, id, s.lastSavedAt);
+  if (!v.you[k]) return m;
+  const now = v.capacity[k];
+  return { now, after: now > 0 && m.now > 0 ? (now * m.after) / m.now : m.after };
 }
 
-/** A station card's capacity line: "18/min → 22". */
+/** What a station can handle now, a minute (E3's `capacity` while the report is live, else the flow's own rate: a shop run by hand has no readout yet). */
+export function capacityNow(s: G.GameState, id: NeighborhoodId, k: StationKey): number {
+  return stationCap(s, id, k).now;
+}
+
+/** A station card's capacity line in the drawer: "18/min → 22". */
 export function stationCapacity(s: G.GameState, id: NeighborhoodId, k: StationKey): string {
   const c = stationCap(s, id, k);
   return capacityText(c.now, c.after);
+}
+
+/** Whether the player taps a kitchen station by hand (its numbers move every tick: the drawer redoes those cards' lines per render). */
+export function tapsByHand(s: G.GameState, id: NeighborhoodId): boolean {
+  if (!reportActive(s, id)) return false;
+  const you = reportView(s, id, s.lastSavedAt).you;
+  return you.prep || you.ovens || you.counter;
 }
 
 export interface StationModel {
@@ -154,13 +191,15 @@ export interface StationModel {
   expand: boolean;
   /** The same look on every station card; `expand` is the amber Expand buy. */
   tone: 'normal' | 'expand';
-  /** What the station handles now and after the buy, pizzas (deliveries) a minute; null for the Expand buy and a locked or maxed station. */
-  cap: { now: number; after: number } | null;
-  /** The foot line in full: "18/min → 22" (null as `cap`). */
-  foot: string | null;
+  /** The card shows its capacity: not for the Expand buy, nor a locked or maxed station. */
+  shows: boolean;
 }
 
 export interface StationView extends StationModel {
+  /** What the station handles now and after the buy, pizzas (deliveries) a minute; null where `shows` is false. */
+  cap: { now: number; after: number } | null;
+  /** The foot line in full: "18/min → 22" (null as `cap`). */
+  foot: string | null;
   affordable: boolean;
   /** "need $X" for the 9 pt line under the price: only while the player is short and has some cash (at $0 it would just repeat the price), else null. */
   need: string | null;
@@ -171,9 +210,9 @@ let cacheVal: StationModel[] = [];
 
 const levelKey = G.shopLevelKey;
 
-/** The level-dependent part of every station button, cached on the shop's levels (and, for a hand-tapped station, what the player made lately). */
+/** The level-dependent part of every station button, cached on the shop's levels. */
 export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[] {
-  const key = `${levelKey(s, id)}|${capacityKey(s, id)}`;
+  const key = levelKey(s, id);
   if (key === cacheKey) return cacheVal;
   const shop = s.shops[id];
   cacheVal = STATION_KEYS.map((k) => {
@@ -186,7 +225,6 @@ export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[
     const expand = expandCost !== null;
     const cost = expand ? expandCost : G.upgradeCostOf(s, id, what);
     const lock = expand ? null : stationLock;
-    const cap = expand || lock ? null : stationCap(s, id, k);
     return {
       key: k,
       what: expand ? 'expand' : what,
@@ -200,8 +238,7 @@ export function stationModels(s: G.GameState, id: NeighborhoodId): StationModel[
       badge: expand ? `MAX ${level}` : level,
       expand,
       tone: expand ? 'expand' : 'normal',
-      cap,
-      foot: cap && capacityText(cap.now, cap.after),
+      shows: !expand && !lock,
     };
   });
   cacheKey = key;
@@ -216,11 +253,16 @@ export const stationTitle = (v: Pick<StationModel, 'name' | 'expand'>): string =
 
 /** Add the cash-dependent part. */
 export function stationViews(s: G.GameState, id: NeighborhoodId): StationView[] {
-  return stationModels(s, id).map((m) => ({
-    ...m,
-    affordable: !m.lock && G.canAfford(s, m.cost),
-    need: m.lock || s.cash <= 0 ? null : needText(m.cost, s.cash),
-  }));
+  return stationModels(s, id).map((m) => {
+    const cap = m.shows ? stationCap(s, id, m.key) : null;
+    return {
+      ...m,
+      cap,
+      foot: cap && capacityText(cap.now, cap.after),
+      affordable: !m.lock && G.canAfford(s, m.cost),
+      need: m.lock || s.cash <= 0 ? null : needText(m.cost, s.cash),
+    };
+  });
 }
 
 /**

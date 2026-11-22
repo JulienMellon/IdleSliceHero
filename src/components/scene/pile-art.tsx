@@ -5,7 +5,7 @@
 import { memo } from 'react';
 import { Ellipse, G, Path, Rect } from 'react-native-svg';
 import { INK } from './projection';
-import { PILE_STACK, SPILL_STEP, SPILL_X, STAND_H, type PileKind } from './piles';
+import { PILE_STACK, STAND_H, spillX, type PileKind } from './piles';
 
 /** The top item's rock (degrees) at wobble step 1 and 2 (0: still). */
 const ROCK = [0, -5, 5] as const;
@@ -35,7 +35,7 @@ const Dough = memo(function Dough({ n, stand, drop, wob }: { n: number; stand: b
         <Disc key={i} cx={(i % 2) * 0.8 - 0.4} cy={-base - 3.4 - i * 3.2} wob={i === stacked - 1 ? wob : 0} />
       ))}
       {Array.from({ length: n - stacked }).map((_, i) => (
-        <Disc key={`s${i}`} cx={SPILL_X + i * SPILL_STEP} cy={drop - 3} />
+        <Disc key={`s${i}`} cx={spillX('dough', i)} cy={drop - 3} />
       ))}
     </G>
   );
@@ -58,7 +58,7 @@ const Boxes = memo(function Boxes({ n, drop, wob }: { n: number; drop: number; w
       ))}
       {/* the rest slid off the counter onto the floor in front of it */}
       {Array.from({ length: n - stacked }).map((_, i) => (
-        <Box key={`s${i}`} x={SPILL_X + i * SPILL_STEP - 9} y={drop - 5} />
+        <Box key={`s${i}`} x={spillX('boxes', i) - 9} y={drop - 5} />
       ))}
     </G>
   );
@@ -79,19 +79,20 @@ const Bag = ({ x, y, wob = 0 }: { x: number; y: number; wob?: number }) => (
   </G>
 );
 
-const Bags = memo(function Bags({ n, drop, wob }: { n: number; drop: number; wob: number }) {
-  const stacked = Math.min(n, PILE_STACK);
+const Bags = memo(function Bags({ n, wob }: { n: number; wob: number }) {
+  // three on the shelf and the rest in a second row on top of them
+  const low = Math.min(3, n);
+  const high = Math.max(0, n - 3);
   return (
     <G>
       {/* the shelf: a plank on two brackets */}
       <Rect x={-15} y={-2.4} width={30} height={3} rx={0.8} fill="#9A6A44" stroke={INK} strokeWidth={0.8} />
       <Path d="M-11 0.6 L-11 5 L-6 0.6 M11 0.6 L11 5 L6 0.6" fill="none" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
-      {Array.from({ length: stacked }).map((_, i) => (
-        <Bag key={i} x={(i - (stacked - 1) / 2) * 9.5} y={-2.4} wob={i === stacked - 1 ? wob : 0} />
+      {Array.from({ length: low }).map((_, i) => (
+        <Bag key={`l${i}`} x={(i - (low - 1) / 2) * 9.5} y={-2.4} wob={high === 0 && i === low - 1 ? wob : 0} />
       ))}
-      {/* bags past the shelf's three stand on the floor beside it */}
-      {Array.from({ length: n - stacked }).map((_, i) => (
-        <Bag key={`s${i}`} x={SPILL_X + i * SPILL_STEP} y={drop} />
+      {Array.from({ length: high }).map((_, i) => (
+        <Bag key={`h${i}`} x={(i - (high - 1) / 2) * 9.5 + 0.6} y={-12.4} wob={i === high - 1 ? wob : 0} />
       ))}
     </G>
   );
@@ -127,7 +128,7 @@ export const Pile = memo(function Pile({
       ) : kind === 'boxes' ? (
         <Boxes n={n} drop={drop} wob={wob} />
       ) : (
-        <Bags n={n} drop={drop} wob={wob} />
+        <Bags n={n} wob={wob} />
       )}
     </G>
   );

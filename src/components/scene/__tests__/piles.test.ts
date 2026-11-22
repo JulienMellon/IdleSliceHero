@@ -4,7 +4,7 @@
 import { layout } from './draw-layout';
 import { FIRST_WIDE_FOOTPRINT } from '../../../content/shop-layout';
 import { LINE } from '../../../engine/pipeline';
-import { PILE_KINDS, PILE_MAX, PILE_STEPS, batchOf, pileBox, pileCount, pileParts, pileRect, pileSpots, type PileKind } from '../piles';
+import { PILE_KINDS, PILE_MAX, PILE_SCALE, PILE_STACK, PILE_STEPS, batchOf, pileBox, pileCount, pileParts, pileRect, pileSpots, type PileKind } from '../piles';
 import { LADDER_LEVELS, ladderProps, badgeBand, doorRect, fixedPeople, hits, headBox, matRect } from '../ladder';
 import { doorwaySignRect } from '../stations';
 import { MAX_PINS } from '../ladder';
@@ -69,6 +69,38 @@ describe('pile counts (step 1)', () => {
   });
 });
 
+describe('piles read at phone size (D548)', () => {
+  test('a pile is drawn bigger than the furniture, so three items stand at least 18 pt tall (the dough on its stand 40) and 22 pt wide', () => {
+    const lay = layout(1, 3, 3, 2, 3, 3, 1);
+    for (const kind of PILE_KINDS) {
+      expect(PILE_SCALE[kind]).toBeGreaterThanOrEqual(1.3);
+      const s = pileSpots(lay, 'downtown')[kind]!;
+      const r = pileRect(s, PILE_STACK);
+      expect([kind, r.y1 - r.y0 >= (kind === 'dough' ? 40 : 18), r.x1 - r.x0 >= 22]).toEqual([kind, true, true]);
+    }
+  });
+  test('items past the third spill onto the floor beside the pile (the shelf takes a second row), and a bigger pile is a bigger drawing', () => {
+    const lay = layout(1, 3, 3, 2, 3, 3, 1);
+    for (const kind of ['dough', 'boxes'] as const) {
+      const s = pileSpots(lay, 'downtown')[kind]!;
+      expect(pileParts(s, PILE_STACK)).toHaveLength(1);
+      const spilled = pileParts(s, PILE_STACK + 2);
+      expect(spilled).toHaveLength(2);
+      // the spill lies on the floor, below the stack's foot
+      expect(spilled[1].y1).toBeGreaterThan(spilled[0].y1);
+    }
+    const s = pileSpots(lay, 'downtown').bags!;
+    expect(pileParts(s, 5)).toHaveLength(1);
+    expect(pileRect(s, 5).y1 - pileRect(s, 5).y0).toBeGreaterThan(pileRect(s, 3).y1 - pileRect(s, 3).y0);
+    for (const kind of PILE_KINDS) {
+      const sp = pileSpots(lay, 'downtown')[kind]!;
+      const area = (n: number) => pileParts(sp, n).reduce((t, r) => t + (r.x1 - r.x0) * (r.y1 - r.y0), 0);
+      for (let n = 2; n <= PILE_MAX; n++) expect(area(n)).toBeGreaterThanOrEqual(area(n - 1));
+      expect(area(PILE_MAX)).toBeGreaterThan(area(1));
+    }
+  });
+});
+
 describe('where the piles stand (step 1 budget)', () => {
   test('every pile finds a place in every footprint, crew and plan', () => {
     const missing: string[] = [];
@@ -113,7 +145,9 @@ describe('where the piles stand (step 1 budget)', () => {
       );
       const placed = PILE_KINDS.flatMap((k) => (spots[k] ? pileParts(spots[k]!, PILE_MAX).map((r) => ({ k, r })) : []));
       for (const { k, r } of placed) for (const p of props) if (hits(r, p.rect)) bad.push(`${name} ${k} over ${p.id}`);
-      placed.forEach((a, i) => placed.slice(i + 1).forEach((b) => a.k !== b.k && hits(a.r, b.r) && bad.push(`${name} ${a.k} over ${b.k}`)));
+      // the stacks stay clear of each other; a spill is items on the floor, which another pile may stand over
+      const stacks = PILE_KINDS.flatMap((k) => (spots[k] ? [{ k, r: pileParts(spots[k]!, PILE_MAX)[0] }] : []));
+      stacks.forEach((a, i) => stacks.slice(i + 1).forEach((b) => hits(a.r, b.r) && bad.push(`${name} ${a.k} over ${b.k}`)));
     }
     expect(bad.slice(0, 6)).toEqual([]);
   });

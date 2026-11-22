@@ -371,6 +371,7 @@ export function buildCast({
         bob: pose?.bob,
         lean: pose?.lean,
         sweat: pose?.sweat,
+        idle: pose?.bubble ?? undefined,
       },
     });
   });
@@ -399,6 +400,7 @@ export function buildCast({
         bob: pose?.bob,
         lean: pose?.lean,
         sweat: pose?.sweat,
+        idle: pose?.bubble ?? undefined,
       },
     });
   });
@@ -424,6 +426,7 @@ export function buildCast({
         bob: pose?.bob,
         lean: pose?.lean,
         sweat: pose?.sweat,
+        idle: pose?.bubble ?? undefined,
       },
     });
   });

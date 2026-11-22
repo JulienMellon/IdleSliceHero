@@ -6,6 +6,7 @@ import * as sidewalkApi from '../sidewalk-model';
 import {
   amountCard,
   amountLabel,
+  abbreviate,
   capacityFit,
   capacityText,
   expandGroup,
@@ -190,7 +191,7 @@ describe('"need $X" instead of a struck price (D359)', () => {
     const s = shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 1);
     const prep = view(s, 'prep');
     expect(prep.need).not.toBeNull();
-    expect(footLine(prep, null, 200)).toBe(prep.foot); // short of cash, a station card still shows its numbers
+    expect(footLine(prep, null, 200)).toBe(capacityFit(prep.cap!, 200)); // short of cash, a station card still shows its numbers
     expect(footLine(prep, { foot: '+10 lv' }, 200)).toBe('+10 lv'); // a ×10 / MAX plan comes first
     const capped = shopState({ prep: 25, ovens: 25, counter: 25, drivers: 1, footprint: 0 }, 5);
     expect(view(capped, 'prep').foot).toBeNull();
@@ -504,18 +505,21 @@ describe('capacity on the cards (U4)', () => {
     for (const s of [base, { ...base, seenScenes: [...base.seenScenes, 'downtown-4'] }, { ...base, cash: 0 }])
       for (const v of stationViews(s, 'downtown')) expect(v.foot).toMatch(/^\d[\d.,]*[KM]?\/min\s→\s\d[\d.,]*[KM]?$/);
   });
-  test('a narrow card drops "/min" to "/m", then the unit, then the space, rather than clip or go under 10 pt', () => {
+  test('D551: one format on the sidewalk, "446→486": no unit, both ends abbreviated together, the current value never dropped', () => {
     const c = { now: 446, after: 486 };
-    expect(capacityFit(c, 200)).toBe(capacityText(446, 486));
-    expect(capacityFit(c, 70)).toBe('446/m\u00A0→\u00A0486');
-    expect(capacityFit(c, 60)).toBe('446\u00A0→\u00A0486');
-    expect(capacityFit(c, 46)).toBe('446→486');
-    expect(capacityFit({ now: 1234, after: 1500 }, 46)).toBe('→1.5K');
-    // every phone from 375 pt wide up, with the amount chip: the line fits its card at 10 pt (the first build clipped "446/min →" there)
+    expect(capacityFit(c, 200)).toBe('446→486');
+    expect(capacityFit({ now: 5810, after: 6240 }, 200)).toBe('5.81K→6.24K');
+    expect(capacityFit({ now: 5810, after: 6240 }, 54)).toBe('5.8K→6.2K');
+    expect(capacityFit({ now: 5810, after: 6240 }, 40)).toBe('6K→6K');
+    expect(capacityFit({ now: 116000, after: 124000 }, 46)).toMatch(/^116K→124K$/);
+    expect(capacityFit({ now: 1234, after: 1500 }, 10)).toMatch(/^\d.*→\d/); // never "→1.5K"
+    expect(abbreviate(5810, 2)).toBe('5.8K');
+    expect(abbreviate(18, 2)).toBe('18');
+    expect(abbreviate(4.46, 2)).toBe('4.5');
+    // every phone from 375 pt wide up, with the amount chip: a three-digit pair fits its card at 10 pt (the first build clipped "446/min →" there)
     for (const w of [375, 390, 414, 430]) {
       const [textW] = cardTextWidths(w, [1, 1, 1, 1], { chip: true, framed: true });
-      for (const big of [{ now: 18, after: 22 }, c, { now: 1234, after: 1500 }]) expect(fits(capacityFit(big, textW), textW, 10)).toBe(true);
-      expect(fits(capacityText(446, 486), textW, 10)).toBe(false); // the full line would not have
+      for (const big of [{ now: 18, after: 22 }, c]) expect(fits(capacityFit(big, textW), textW, 10)).toBe(true);
     }
   });
   test('the card is cached on the levels: cash moves nothing, a level does; what a hand-tapped station made also moves it', () => {
@@ -531,6 +535,30 @@ describe('capacity on the cards (U4)', () => {
     } finally {
       spy.mockRestore();
     }
+  });
+  test('U34: a hand-tapped shop whose made-by-hand number decays every tick keeps the cached model and re-asks no what-if', () => {
+    const g0 = shopState({ prep: 10, ovens: 5, counter: 10, drivers: 10, managed: false, heads: { prep: true, oven: false, counter: true } }, 0);
+    let a = g0;
+    for (let i = 0; i < 4; i++) a = G.playTick(a, 1, g0.lastSavedAt + 1000 * (i + 1));
+    const b = G.playTick(a, 1, a.lastSavedAt + 1000);
+    expect(service.reportView(a, 'downtown', a.lastSavedAt).you.ovens).toBe(true);
+    const first = stationModels(a, 'downtown');
+    const viewA = stationViews(a, 'downtown');
+    const spy = jest.spyOn(service, 'capacityAfter');
+    try {
+      expect(stationModels(b, 'downtown')).toBe(first);
+      stationViews(b, 'downtown');
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
+    // the hand-tapped ovens number is still the player's, scaled by the cached ratio: now and after keep their proportion
+    const o = viewA.find((v) => v.key === 'ovens')!.cap!;
+    expect(o.after / Math.max(o.now, 1e-9)).toBeCloseTo(
+      stationViews(b, 'downtown').find((v) => v.key === 'ovens')!.cap!.after /
+        Math.max(stationViews(b, 'downtown').find((v) => v.key === 'ovens')!.cap!.now, 1e-9),
+      6,
+    );
   });
   test('the hire button says what the hire does in words, no number', () => {
     expect(headTakes('Marco', 'prep')).toBe('Marco takes the prep table');

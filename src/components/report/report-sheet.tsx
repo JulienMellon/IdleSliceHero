@@ -1,6 +1,6 @@
-// The shop report's sheet (SHEETS slot), opened by a tap on the strip (card U3, v5.22): one bar per station and one for the drivers, all basil,
-// each as long as the pizzas a minute it can handle, one dashed ink line across them at the customers a minute, then served and missed, and the
-// service score. No lamps, no red, no station named as the limit. Built only while it is open; opening it tells the store (`reportOpened`).
+// The shop report's sheet (SHEETS slot), opened by a tap on the strip (card U3, v5.22): one bar per kitchen station, all basil, each as long as the
+// pizzas a minute it can handle, then the customers as one stacked bar (deliveries, then seats) that ends at the one dashed ink line across all of
+// them (G119: the drivers alone could never reach a line that counts the walk-ins too), then served and missed, and the service score. No lamps, no red, no station named as the limit. Built only while it is open; opening it tells the store (`reportOpened`).
 import { memo, useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
@@ -9,7 +9,7 @@ import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import type { CoachTargetId } from '../../engine/coach-types';
 import { useCoachTarget } from '../coach/targets';
-import { REPORT_TARGET, sheetModel, type BarRow } from './report-model';
+import { REPORT_TARGET, sheetModel, type BarRow, type CustomersRow } from './report-model';
 import { closeReport, useReportOpen } from './sheet-state';
 
 const BAR_H = 14;
@@ -30,6 +30,24 @@ const Bar = memo(function Bar({ id, name, value, frac, you }: { id: CoachTargetI
             {you}
           </Text>
         ) : null}
+      </View>
+      <Text style={styles.value} numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
+  );
+});
+
+/** The customers' row: deliveries then seats in the same basil, a thin cream seam between them, ending at the dashed line. */
+const Customers = memo(function Customers({ name, value, deliveries, seats }: Pick<CustomersRow, 'name' | 'value' | 'deliveries' | 'seats'>) {
+  return (
+    <View style={styles.row} testID="report-customers">
+      <Text style={styles.name} numberOfLines={1}>
+        {name}
+      </Text>
+      <View style={[styles.track, styles.stack]}>
+        <View style={[styles.bar, styles.segFirst, { width: `${Math.round(deliveries * 100)}%` }]} />
+        <View style={[styles.bar, styles.segSecond, { width: `${Math.round(seats * 100)}%` }]} />
       </View>
       <Text style={styles.value} numberOfLines={1}>
         {value}
@@ -71,21 +89,28 @@ function Sheet() {
       <View style={styles.card}>
         <Text style={styles.title}>{m.title}</Text>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.body}>
-          <View ref={demandTarget} onLayout={demandTarget.onLayout} style={styles.legend} testID="report-demand">
-            <Svg width={6} height={16} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-              <Line x1="3" x2="3" y1="0" y2="16" stroke={C.ink} strokeWidth={2} strokeDasharray="4 3" />
-            </Svg>
-            <Text style={styles.legendText} numberOfLines={1}>
-              {m.demand.label}
-            </Text>
-          </View>
-          <View style={styles.bars}>
-            {m.bars.map((b: BarRow) => (
-              <Bar key={b.key} id={b.target} name={b.name} value={b.value} frac={b.frac} you={b.you} />
-            ))}
-            <View style={styles.lineBox} pointerEvents="none">
-              <DemandLine frac={m.demand.frac} />
+          {/* the coach's "customers" look covers the legend and the bars, so the dashed line itself is lit (S92) */}
+          <View ref={demandTarget} onLayout={demandTarget.onLayout} style={styles.body} testID="report-demand">
+            <View style={styles.legend}>
+              <Svg width={6} height={16} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                <Line x1="3" x2="3" y1="0" y2="16" stroke={C.ink} strokeWidth={2} strokeDasharray="4 3" />
+              </Svg>
+              <Text style={styles.legendText} numberOfLines={1}>
+                {m.demand.label}
+              </Text>
             </View>
+            <View style={styles.bars}>
+              {m.bars.map((b: BarRow) => (
+                <Bar key={b.key} id={b.target} name={b.name} value={b.value} frac={b.frac} you={b.you} />
+              ))}
+              <Customers name={m.customers.name} value={m.customers.value} deliveries={m.customers.deliveries} seats={m.customers.seats} />
+              <View style={styles.lineBox} pointerEvents="none">
+                <DemandLine frac={m.demand.frac} />
+              </View>
+            </View>
+            <Text style={styles.split} testID="report-split">
+              {m.customers.split}
+            </Text>
           </View>
           <View style={styles.flow} testID="report-flow">
             <Text style={styles.served}>{m.served}</Text>
@@ -149,6 +174,10 @@ const styles = StyleSheet.create({
   name: { width: NAME_W, fontFamily: F.semi, fontSize: 13, color: C.ink },
   track: { flex: 1, height: BAR_H, justifyContent: 'center' },
   bar: { height: BAR_H, borderRadius: 4, backgroundColor: C.basil },
+  stack: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' },
+  segFirst: { borderTopRightRadius: 0, borderBottomRightRadius: 0 },
+  segSecond: { borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeftWidth: 2, borderLeftColor: C.bg },
+  split: { fontFamily: F.regular, fontSize: 12, lineHeight: 15, color: C.inkSoft },
   you: {
     position: 'absolute',
     left: 3,

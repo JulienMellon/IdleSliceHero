@@ -78,6 +78,13 @@ describe('worker poses (step 2)', () => {
     expect(YAWN_SECONDS).toBeLessThan(YAWN_EVERY);
     expect(PHONE_SECONDS).toBeLessThan(YAWN_EVERY);
   });
+  test('D549: an idle worker has a bubble over their head the whole time (a Z, then the phone while they glance at it); a swamped one has none', () => {
+    const idle = samples(24).map((t) => workerPose('idle', t, 0)!);
+    expect(idle.every((p) => p.bubble === 'z' || p.bubble === 'phone')).toBe(true);
+    expect(idle.filter((p) => p.act === 'phone').every((p) => p.bubble === 'phone')).toBe(true);
+    expect(new Set(idle.map((p) => p.bubble))).toEqual(new Set(['z', 'phone']));
+    expect(samples(24).every((t) => workerPose('piling', t, 0)!.bubble === null)).toBe(true);
+  });
   test('three workers at a station are not in step', () => {
     const at = (seed: number) => samples(12).map((t) => workerPose('idle', t, seed)!.mood === 'o');
     expect(at(1)).not.toEqual(at(7));

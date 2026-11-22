@@ -24,9 +24,9 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
 
 // ---------- the coach's targets (card E4 points at these) ----------
 
-/** The bars, in order: the three kitchen stations and the drivers. */
-export type BarKey = K3 | 'drivers';
-export const BAR_KEYS: readonly BarKey[] = ['prep', 'ovens', 'counter', 'drivers'];
+/** The bars, in order: the three kitchen stations. (The customers' row is not a station: it is the stacked deliveries and seats, ending at the line.) */
+export type BarKey = K3;
+export const BAR_KEYS: readonly BarKey[] = ['prep', 'ovens', 'counter'];
 
 /** The ids this card registers with the Coach: the strip, one per bar (`report:bar:ovens`), the dashed line's label and the sheet's Close. */
 export const REPORT_TARGET = {
@@ -50,7 +50,11 @@ export function stripKind(v: ReportView): StripKind | null {
 }
 
 /** The strip's one line, for a view: "Served 41/min · Missed 7/min". */
-export const reportLine = (v: Pick<ReportView, 'served' | 'missed'>): string => t('report.strip', { served: whole(v.served), missed: whole(v.missed) });
+export const reportLine = (v: Pick<ReportView, 'served' | 'missed'> & Partial<Pick<ReportView, 'state'>>): string => {
+  const line = t('report.strip', { served: whole(v.served), missed: whole(v.missed) });
+  // D554: the tip and the cold line change the shop's money, so the strip says so in a neutral word ("· Tips up", "· Word's spreading")
+  return v.state === 'tipping' ? `${line} · ${t('report.state.tipping')}` : v.state === 'cold' ? `${line} · ${t('report.strip.cold')}` : line;
+};
 
 /** What the strip draws, as primitives only (the component selects this with a shallow compare, so it repaints when a word changes, never on a tick). */
 export interface StripModel {
@@ -137,7 +141,6 @@ const BAR_NAME: Record<BarKey, string> = {
   prep: 'report.bar.prep',
   ovens: 'report.bar.oven',
   counter: 'report.bar.counter',
-  drivers: 'report.bar.drivers',
 };
 
 export interface BarRow {
@@ -153,9 +156,25 @@ export interface BarRow {
   target: CoachTargetId;
 }
 
+/**
+ * The customers' row (G119, S90): one stacked bar, the deliveries the drivers carry and then the walk-ins the seats take, ending exactly at the dashed
+ * line (the line IS their sum). The drivers have no bar of their own to hold against the line: they are only part of what the line asks for.
+ */
+export interface CustomersRow {
+  name: string;
+  /** "168/min": every customer a minute. */
+  value: string;
+  /** The deliveries' and the seats' lengths, 0..1 of the track; together they end at the line. */
+  deliveries: number;
+  seats: number;
+  /** "Drivers 90/min · Seats 78/min". */
+  split: string;
+}
+
 export interface SheetModel {
   title: string;
   bars: BarRow[];
+  customers: CustomersRow;
   /** The dashed line: "Customers 24/min", and where it crosses the bars (0..1 of the track). */
   demand: { label: string; frac: number };
   served: string;
@@ -171,8 +190,8 @@ export interface SheetModel {
   state: ReportView['state'];
 }
 
-/** The bars and the line from one view: every length is a share of the longest of the bars and the line, so the longest one fills the track. */
-export function barRows(v: Pick<ReportView, 'capacity' | 'wanted' | 'you'>): { bars: BarRow[]; demandFrac: number } {
+/** The bars, the customers' stacked row and the line from one view: every length is a share of the longest of the bars and the line, so the longest one fills the track. */
+export function barRows(v: Pick<ReportView, 'capacity' | 'wanted' | 'walkIns' | 'you'>): { bars: BarRow[]; customers: CustomersRow; demandFrac: number } {
   const top = Math.max(v.wanted, ...BAR_KEYS.map((k) => v.capacity[k]));
   const share = (x: number) => (top > 1e-9 ? Math.min(1, Math.max(0, x / top)) : 0);
   const bars = BAR_KEYS.map((k): BarRow => ({
@@ -180,15 +199,24 @@ export function barRows(v: Pick<ReportView, 'capacity' | 'wanted' | 'you'>): { b
     name: t(BAR_NAME[k]),
     value: perMin(v.capacity[k]),
     frac: share(v.capacity[k]),
-    you: k !== 'drivers' && v.you[k] ? t('report.you') : '',
+    you: v.you[k] ? t('report.you') : '',
     target: REPORT_TARGET.bar(k),
   }));
-  return { bars, demandFrac: share(v.wanted) };
+  const deliveries = share(v.capacity.drivers);
+  const customers: CustomersRow = {
+    name: t('report.demand'),
+    value: perMin(v.wanted),
+    deliveries,
+    // the seats take the rest of the way to the line, so the stack always ends at it
+    seats: Math.max(0, share(v.wanted) - deliveries),
+    split: t('report.customers.split', { drivers: whole(v.capacity.drivers), seats: whole(v.walkIns) }),
+  };
+  return { bars, customers, demandFrac: share(v.wanted) };
 }
 
 export function sheetModel(g: GameState, id: NeighborhoodId, now: number): SheetModel {
   const v = reportView(g, id, now);
-  const { bars, demandFrac } = barRows(v);
+  const { bars, customers, demandFrac } = barRows(v);
   const timer =
     v.state === 'cold'
       ? `The line is cold. Get service back to ${pct(SERVICE.coldBelow)}.`
@@ -198,6 +226,7 @@ export function sheetModel(g: GameState, id: NeighborhoodId, now: number): Sheet
   return {
     title: t('report.sheet.title'),
     bars,
+    customers,
     demand: { label: `${t('report.demand')} ${perMin(v.wanted)}`, frac: demandFrac },
     served: t('report.served', { n: whole(v.served) }),
     missed: t('report.missed', { n: whole(v.missed) }),

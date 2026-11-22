@@ -20,18 +20,20 @@ export interface WorkerPose {
   act: Act | null;
   /** A yawn, or none. */
   mood: Mood | null;
+  /** The bubble over an idle worker's head, there the whole time (D549): a Z, or the phone while they glance at it. */
+  bubble: 'z' | 'phone' | null;
 }
 
 /** A drop of sweat shows this often, this long, and falls through three steps. */
 export const SWEAT_EVERY = 3;
-export const SWEAT_SECONDS = 0.9;
+export const SWEAT_SECONDS = 1.5;
 export const SWEAT_STEPS = 3;
 /** A yawn or a phone glance comes this often (they alternate), and lasts this long. */
 export const YAWN_EVERY = 6;
 export const YAWN_SECONDS = 1.2;
 export const PHONE_SECONDS = 2;
 /** The hurried bob: this high (scene units), flipping every pose step (7.5 Hz: about four bobs a second). */
-export const HURRY_BOB = 1.4;
+export const HURRY_BOB = 2.4;
 /** The lean's strength (1 = leaning). */
 export const LEAN = 1;
 
@@ -51,13 +53,14 @@ export function workerPose(sym: WorkerSymptom, poseClock: number, seed: number):
       still: false,
       act: null,
       mood: null,
+      bubble: null,
     };
   }
   const cycle = Math.floor(t / YAWN_EVERY);
   const phase = t - cycle * YAWN_EVERY;
   const yawn = cycle % 2 === 0 && phase < YAWN_SECONDS;
   const phone = cycle % 2 === 1 && phase < PHONE_SECONDS;
-  return { bob: 0, lean: LEAN, sweat: 0, still: true, act: phone ? 'phone' : null, mood: yawn ? 'o' : null };
+  return { bob: 0, lean: LEAN, sweat: 0, still: true, act: phone ? 'phone' : null, mood: yawn ? 'o' : null, bubble: phone ? 'phone' : 'z' };
 }
 
 // ---------- the idle drivers' scooters ----------

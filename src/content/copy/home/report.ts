@@ -8,8 +8,8 @@ export const COPY = {
   'report.bar.prep': 'Prep',
   'report.bar.oven': 'Ovens',
   'report.bar.counter': 'Counter',
-  'report.bar.drivers': 'Drivers',
   'report.demand': 'Customers',
+  'report.customers.split': 'Drivers {drivers}/min · Seats {seats}/min',
   'report.served': 'Served {n}/min',
   'report.missed': 'Missed {n}/min',
   'report.you': 'You',
@@ -17,6 +17,7 @@ export const COPY = {
   'report.service': 'Service {n}%',
   'report.state.tipping': 'Tips up',
   'report.state.cold': 'Line’s gone cold',
+  'report.strip.cold': 'Word’s spreading',
 } as const;
 
 export type CopyKey = keyof typeof COPY;

@@ -1,6 +1,7 @@
 // What the upgrade drawer shows, as plain data (A17, M32). The level-dependent part (every card's title, detail, cost, lock, tone and the
 // capacity numbers behind them) is cached on the levels of every shop, the fleet and Nonna's countdown, so the 200 ms tick doesn't rerun the
-// what-ifs; only `canBuy` and the header's line depend on cash and time. Pure: unit-tested in node.
+// what-ifs; only `canBuy` and the header's line depend on cash and time (and the lines of a station the player taps by hand, which move with what
+// they made: `drawerCards` redoes those per render from the cached machine numbers, U34). Pure: unit-tested in node.
 // v5.22: a station's card says what it handles now and after the buy ("18/min → 22"); nothing here ranks, tints or bundles stations.
 //
 // The cache key covers everything the drawer reads from the game except cash. A new feature that moves a capacity with some other state
@@ -15,14 +16,14 @@ import { aOrAn } from './goal-model';
 import { drawerLine } from './report/report-model';
 import {
   buttonTone,
-  capacityKey,
-  capacityNow,
+  stationCap,
   capacityText,
   capExpandCost,
   headTakes,
   managerTakes,
   perMinute,
   stationCapacity,
+  tapsByHand,
   type ButtonTone,
 } from './sidewalk-model';
 
@@ -94,10 +95,8 @@ export interface DrawerView {
 
 /** Everything the drawer reads from the game except cash: the cache's key, derived from the one input object. */
 export function drawerKey({ game, id }: DrawerInput): string {
-  // `capacityKey`: what the player made by hand moves a hand-tapped station's numbers
   return [
     id,
-    capacityKey(game, id),
     ...hoodIds(cityOf(game)).map((i) => G.shopLevelKey(game, i)),
     game.dronesUnlocked ? 'd' : '-',
     id === G.firstHood(cityOf(game)) && !game.shops[id].managed ? G.founderPizzasLeft(game) : '',
@@ -119,6 +118,18 @@ function levelPart(input: DrawerInput): LevelPart {
   cacheVal = buildLevelPart(input);
   cacheKey = key;
   return cacheVal;
+}
+
+/** The lines of the three kitchen cards and the grade card, from the capacity numbers (the ones a hand-tapped station moves). */
+function handLine(game: G.GameState, id: NeighborhoodId, k: 'prep' | 'ovens' | 'counter'): string {
+  const cap = stationCapacity(game, id, k);
+  const shop = game.shops[id];
+  return k === 'prep' ? `${cap} · batch ${G.tapBatch(shop)} (bigger at Lv ${G.nextBatchLevel(shop)})` : cap;
+}
+function gradeLine(game: G.GameState, id: NeighborhoodId, next: string): string {
+  const m = stationCap(game, id, 'ovens');
+  const after = capacityAfter(game, id, 'grade', game.lastSavedAt);
+  return `→ ${next} ×2 · Ovens ${capacityText(m.now, after)}`;
 }
 
 function buildLevelPart({ game, id }: DrawerInput): LevelPart {
@@ -148,7 +159,8 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
       detail:
         lock && what !== 'manager' ? lock : lock && what === 'manager' && !first ? `${lock} · then ${managerTakes(city.managers[id].name)}` : props.detail,
       muted,
-      tone: expandCost !== null ? 'expand' : buttonTone({ lock, muted }),
+      // D550: the Expand buy is basil like every other buy (the word "Expand" is on its label); amber is the sidewalk's
+      tone: buttonTone({ lock: expandCost !== null ? null : lock, muted }),
       cost: expandCost ?? (lock ? null : cost),
       buyLabel: expandCost !== null ? `Expand · ${money(expandCost)}` : undefined,
       costLabel: props.costLabel ?? (lock && !/Finest|Biggest|Max/.test(lock) ? 'Locked' : 'MAX'),
@@ -172,7 +184,7 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
   // the fleet's deliveries a minute now and with the next vehicle: the drivers' capacity scaled by what the vehicle changes
   const deliveries = (() => {
     if (!nextVeh) return null;
-    const now = capacityNow(game, id, 'drivers');
+    const now = stationCap(game, id, 'drivers').now;
     const cur = G.deliveryRate(shop, v, fit);
     const next = G.deliveryRate(shop, v + 1, fit);
     return capacityText(now, cur > 0 ? (now * next) / cur : next * 60);
@@ -207,19 +219,19 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
       icon: { t: 'station', what: 'prep' },
       title: 'Prep Cooks',
       level: `Lv ${shop.prep}`,
-      detail: `${stationCapacity(game, id, 'prep')} · batch ${G.tapBatch(shop)} (bigger at Lv ${G.nextBatchLevel(shop)})`,
+      detail: handLine(game, id, 'prep'),
     }),
     card('ovens', {
       icon: { t: 'station', what: 'ovens' },
       title: 'Ovens',
       level: `Lv ${shop.ovens}`,
-      detail: stationCapacity(game, id, 'ovens'),
+      detail: handLine(game, id, 'ovens'),
     }),
     card('counter', {
       icon: { t: 'station', what: 'counter' },
       title: 'Counter',
       level: `Lv ${shop.counter}`,
-      detail: stationCapacity(game, id, 'counter'),
+      detail: handLine(game, id, 'counter'),
     }),
     card('drivers', {
       icon: { t: 'station', what: 'drivers' },
@@ -240,9 +252,7 @@ function buildLevelPart({ game, id }: DrawerInput): LevelPart {
       icon: { t: 'station', what: 'grade' },
       title: 'Grade',
       level: fit.ovenGrades[shop.grade].name,
-      detail: gradeNext
-        ? `→ ${gradeNext.name} ×2 · Ovens ${capacityText(capacityNow(game, id, 'ovens'), capacityAfter(game, id, 'grade', game.lastSavedAt))}`
-        : 'Finest ovens in town',
+      detail: gradeNext ? gradeLine(game, id, gradeNext.name) : 'Finest ovens in town',
     }),
     card('expand', {
       icon: { t: 'station', what: 'expand' },
@@ -306,10 +316,18 @@ const withCash = (c: DrawerCard, cash: number) => ({ ...c, canBuy: G.canAfford({
 export function drawerCards(input: DrawerInput): DrawerView {
   const { game, id } = input;
   const { cards, decor, ...rest } = levelPart(input);
+  // a hand-tapped station's numbers move every tick: those cards' lines are made again from the cached machine numbers (U34)
+  const byHand = tapsByHand(game, id);
+  const fresh = (c: DrawerCard): DrawerCard => {
+    const k = c.key;
+    if (!byHand || (k !== 'prep' && k !== 'ovens' && k !== 'counter' && k !== 'grade') || G.upgradeLock(game, id, k)) return c;
+    const next = game.shops[id] && cityOf(game).fit.ovenGrades[game.shops[id].grade + 1];
+    return { ...c, detail: k === 'grade' ? (next ? gradeLine(game, id, next.name) : c.detail) : handLine(game, id, k) };
+  };
   return {
     ...rest,
     line: drawerLine(game, id),
-    cards: cards.map((c) => withCash(c, game.cash)),
+    cards: cards.map((c) => withCash(fresh(c), game.cash)),
     decor: decor.map((c) => withCash(c, game.cash)),
   };
 }

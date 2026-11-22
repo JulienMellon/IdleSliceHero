@@ -59,7 +59,7 @@ describe('the copy', () => {
   test('every report word is in the home copy, and every slot a line uses is one the report fills', () => {
     for (const [key, text] of Object.entries(REPORT_COPY)) {
       expect(t(key)).toBe(text);
-      expect(fill(text, { n: 1, served: 1, missed: 1 })).not.toMatch(/\{/);
+      expect(fill(text, { n: 1, served: 1, missed: 1, drivers: 1, seats: 1 })).not.toMatch(/\{/);
     }
     expect(t('report.strip', { served: 41, missed: 7 })).toBe('Served 41/min · Missed 7/min');
     expect(fill('{a} of {b}', { a: 1 })).toBe('1 of {b}');
@@ -74,12 +74,13 @@ describe('the copy', () => {
 });
 
 describe('the bars', () => {
-  test('short on ovens: the ovens bar is shorter than the line, the others are longer; one bar per station and one for drivers', () => {
+  test('short on ovens: the ovens bar is shorter than the line, the others are longer; one bar per kitchen station, then the customers row', () => {
     only(() => {
       const { g, now } = shortOvens();
       const s = sheetModel(g, 'downtown', now);
-      expect(s.bars.map((b) => b.key)).toEqual(['prep', 'ovens', 'counter', 'drivers']);
-      expect(s.bars.map((b) => b.name)).toEqual(['Prep', 'Ovens', 'Counter', 'Drivers']);
+      expect(s.bars.map((b) => b.key)).toEqual(['prep', 'ovens', 'counter']);
+      expect(s.bars.map((b) => b.name)).toEqual(['Prep', 'Ovens', 'Counter']);
+      expect(s.customers.name).toBe('Customers');
       const by = Object.fromEntries(s.bars.map((b) => [b.key, b]));
       expect(by.ovens.value).toBe('126/min');
       expect(by.ovens.frac).toBeLessThan(s.demand.frac);
@@ -89,14 +90,23 @@ describe('the bars', () => {
       expect(s.missed).toBe('Missed 42/min');
     });
   });
-  test('short on drivers: the drivers bar is the short one', () => {
+  test('G119 / S90: the customers are one stacked bar, deliveries then seats, that ends exactly at the dashed line; no lone Drivers bar to fall short of it', () => {
     only(() => {
+      for (const play of [shortOvens, shortDrivers, balanced]) {
+        const { g, now } = play();
+        const s = sheetModel(g, 'downtown', now);
+        expect(s.bars.map((b) => b.name)).not.toContain('Drivers');
+        expect(s.customers.deliveries + s.customers.seats).toBeCloseTo(s.demand.frac, 9);
+        const v = reportView(g, 'downtown', now);
+        expect(v.capacity.drivers + v.walkIns).toBeCloseTo(v.wanted, 6);
+      }
+      // short on drivers (one driver): the numbers of shot 183, 15 a minute by driver and 18 by seat make the 33 the line asks for, and nothing is missed
       const { g, now } = shortDrivers();
       const s = sheetModel(g, 'downtown', now);
-      const by = Object.fromEntries(s.bars.map((b) => [b.key, b]));
-      expect(by.drivers.value).toBe('15/min');
-      expect(by.drivers.frac).toBeLessThan(s.demand.frac);
-      for (const k of ['prep', 'ovens', 'counter']) expect(by[k].frac).toBeGreaterThan(s.demand.frac);
+      expect(s.customers.value).toBe('33/min');
+      expect(s.customers.split).toBe('Drivers 15/min · Seats 18/min');
+      expect(s.missed).toBe('Missed 0/min');
+      for (const b of s.bars) expect(b.frac).toBeGreaterThan(s.demand.frac); // every bar that stops short of the line would mean missed customers
     });
   });
   test('balanced: every bar reaches the line, nothing is missed', () => {
@@ -104,7 +114,8 @@ describe('the bars', () => {
       const { g, now } = balanced();
       const s = sheetModel(g, 'downtown', now);
       expect(s.missed).toBe('Missed 0/min');
-      for (const b of s.bars) if (b.key !== 'drivers') expect(b.frac).toBeGreaterThanOrEqual(s.demand.frac);
+      for (const b of s.bars) expect(b.frac).toBeGreaterThanOrEqual(s.demand.frac);
+      expect(s.customers.deliveries + s.customers.seats).toBeCloseTo(s.demand.frac, 9);
     });
   });
   test('a hand-tapped station says "You" on its bar, and no other bar does', () => {
@@ -118,14 +129,18 @@ describe('the bars', () => {
   });
   test('the longest of the bars and the line fills the track; a longer line shortens every bar', () => {
     const you = { prep: false, ovens: false, counter: false };
-    const bars = barRows({ capacity: { prep: 10, ovens: 20, counter: 5, drivers: 8 }, wanted: 12, you });
-    expect(bars.bars.map((b) => b.frac)).toEqual([0.5, 1, 0.25, 0.4]);
+    const bars = barRows({ capacity: { prep: 10, ovens: 20, counter: 5, drivers: 8 }, walkIns: 4, wanted: 12, you });
+    expect(bars.bars.map((b) => b.frac)).toEqual([0.5, 1, 0.25]);
     expect(bars.demandFrac).toBe(0.6);
-    const wide = barRows({ capacity: { prep: 10, ovens: 20, counter: 5, drivers: 8 }, wanted: 40, you });
+    expect(bars.customers.deliveries).toBe(0.4);
+    expect(bars.customers.seats).toBeCloseTo(0.2, 9); // 8 + 4 = 12, the line
+    const wide = barRows({ capacity: { prep: 10, ovens: 20, counter: 5, drivers: 8 }, walkIns: 32, wanted: 40, you });
     expect(wide.demandFrac).toBe(1);
-    expect(wide.bars.map((b) => b.frac)).toEqual([0.25, 0.5, 0.125, 0.2]);
-    const none = barRows({ capacity: { prep: 0, ovens: 0, counter: 0, drivers: 0 }, wanted: 0, you });
-    expect([none.demandFrac, ...none.bars.map((b) => b.frac)]).toEqual([0, 0, 0, 0, 0]);
+    expect(wide.bars.map((b) => b.frac)).toEqual([0.25, 0.5, 0.125]);
+    expect(wide.customers.deliveries).toBe(0.2);
+    expect(wide.customers.seats).toBeCloseTo(0.8, 9);
+    const none = barRows({ capacity: { prep: 0, ovens: 0, counter: 0, drivers: 0 }, walkIns: 0, wanted: 0, you });
+    expect([none.demandFrac, ...none.bars.map((b) => b.frac), none.customers.deliveries, none.customers.seats]).toEqual([0, 0, 0, 0, 0, 0]);
   });
   test('no bar carries a colour or a lamp: a bar is its name, value, length and "You"', () => {
     only(() => {
@@ -134,15 +149,7 @@ describe('the bars', () => {
     });
   });
   test('the coach finds the strip, every bar, the dashed line and Close', () => {
-    expect(REPORT_TARGETS).toEqual([
-      'report:strip',
-      'report:demand',
-      'report:close',
-      'report:bar:prep',
-      'report:bar:ovens',
-      'report:bar:counter',
-      'report:bar:drivers',
-    ]);
+    expect(REPORT_TARGETS).toEqual(['report:strip', 'report:demand', 'report:close', 'report:bar:prep', 'report:bar:ovens', 'report:bar:counter']);
     expect(BAR_KEYS.map(REPORT_TARGET.bar)).toContain('report:bar:ovens');
     only(() => {
       const { g, now } = shortOvens();
@@ -153,6 +160,8 @@ describe('the bars', () => {
     const sheet = fs.readFileSync(path.join(dir, 'report-sheet.tsx'), 'utf8');
     const strip = fs.readFileSync(path.join(dir, 'report-strip.tsx'), 'utf8');
     for (const id of ['demand', 'close']) expect(sheet).toContain(`REPORT_TARGET.${id}`);
+    // S92: the "customers" look covers the dashed line, not just its label: the target wraps the legend and the bars box
+    expect(sheet).toMatch(/ref=\{demandTarget\}[^>]*testID="report-demand">\s*<View style=\{styles\.legend\}>[\s\S]*<DemandLine/);
     expect(sheet).toContain('useCoachTarget(id)');
     expect(strip).toContain('REPORT_TARGET.strip');
   });
@@ -203,12 +212,12 @@ describe('the strip', () => {
       expect(reportLine(reportView(g, 'downtown', now))).toBe(m.text);
     });
   });
-  test('the same line in every state: tipping and cold do not change it', () => {
+  test('the same numbers in every state: tipping and cold only add a neutral word after them', () => {
     only(() => {
       const a = balanced();
-      expect(stripModel(a.g, 'downtown', a.now).text).toMatch(/^Served \d+\/min · Missed 0\/min$/);
+      expect(stripModel(a.g, 'downtown', a.now).text).toMatch(/^Served \d+\/min · Missed 0\/min · Tips up$/);
       const c = play(shop(5, 5, 5, 10, 10), 70);
-      expect(stripModel(c.g, 'downtown', c.now).text).toMatch(/^Served \d+\/min · Missed \d+\/min$/);
+      expect(stripModel(c.g, 'downtown', c.now).text).toMatch(/^Served \d+\/min · Missed \d+\/min( · Word’s spreading)?$/);
     });
   });
   test('shown from the first head: with no manager there is no face; with no head and no manager it is hidden', () => {
@@ -229,6 +238,17 @@ describe('the strip', () => {
       expect(b).toEqual(a);
     });
   });
+  test('D554: a tipping shop says "Tips up" on the strip and a cold one "Word’s spreading", neutral words; nothing else adds a suffix', () => {
+    expect(reportLine({ served: 41, missed: 7, state: 'tipping' })).toBe('Served 41/min · Missed 7/min · Tips up');
+    expect(reportLine({ served: 41, missed: 7, state: 'cold' })).toBe('Served 41/min · Missed 7/min · Word’s spreading');
+    expect(reportLine({ served: 41, missed: 7, state: 'normal' })).toBe('Served 41/min · Missed 7/min');
+    expect(reportLine({ served: 41, missed: 7, state: 'inactive' })).toBe('Served 41/min · Missed 7/min');
+    only(() => {
+      const { g, now } = balanced();
+      expect(reportView(g, 'downtown', now).state).toBe('tipping');
+      expect(stripModel(g, 'downtown', now).text).toMatch(/ · Tips up$/);
+    });
+  });
   test('the drawer header is the report line', () => {
     only(() => {
       const { g, now } = shortOvens();
@@ -239,7 +259,7 @@ describe('the strip', () => {
 
 describe('the strip fits an iPhone SE', () => {
   const SE = 375; // an iPhone SE (375 pt): the narrowest phone the app runs on
-  const worst = t('report.strip', { served: '99.9K', missed: '99.9K' });
+  const worst = `${t('report.strip', { served: '99.9K', missed: '99.9K' })} · ${t('report.strip.cold')}`; // the longest: a cold line adds a word (D554)
   test('the strip is a 44 pt touch box with a 28 pt pill (D479): the front wall and the mat show above it', () => {
     expect(STRIP.height).toBe(44);
     expect(STRIP.pill).toBeLessThanOrEqual(28);

@@ -71,7 +71,7 @@ describe('drawerCards', () => {
   it('offers the Expand buy on a station the level cap alone locks (D413)', () => {
     const s = withShop(base(1e12), 'downtown', { managed: true, prep: G.levelCap(base().shops.downtown) });
     const prep = drawerCards({ game: s, id: 'downtown' }).cards.find((c) => c.key === 'prep')!;
-    expect(prep.tone).toBe('expand');
+    expect(prep.tone).toBe('normal'); // D550: basil like the other buys, the word is on its label
     expect(prep.buy).toEqual({ t: 'upgrade', what: 'expand' });
     expect(prep.buyLabel).toMatch(/^Expand · /);
     expect(prep.canBuy).toBe(true);

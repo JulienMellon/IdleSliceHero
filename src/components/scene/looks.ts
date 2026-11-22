@@ -124,6 +124,8 @@ export interface PersonProps {
   bob?: number;
   lean?: number;
   sweat?: number;
+  /** An idle worker's bubble over the head, there all the time they are idle: a sleepy Z, or the phone they glance at (poses.ts). */
+  idle?: 'z' | 'phone';
   /** The frown bubble over the head of a customer who is walking out. */
   frown?: boolean;
   /** Sits on a scooter (an idle driver): the figure is lifted onto its seat and a small scooter stands under it. */

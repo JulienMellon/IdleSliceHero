@@ -299,13 +299,30 @@ export function Person({ x, y, o = 1, ...p }: PersonProps) {
 }
 
 /** The lean's tilt (degrees) at strength 1. */
-const LEAN_DEG = 9;
+const LEAN_DEG = 13;
 
 /** A drop of sweat running down the temple: it falls through three steps (poses.ts `workerPose`). */
 const Sweat = memo(function Sweat({ hy, step }: { hy: number; step: number }) {
-  const y = hy - 6 + (step - 1) * 4.5;
+  const y = hy - 6 + (step - 1) * 5;
+  return <Path d={`M13 ${y - 5.4} Q17.6 ${y} 13 ${y + 3.2} Q8.4 ${y} 13 ${y - 5.4} Z`} fill="#8AD6FF" stroke={INK} strokeWidth={0.7} strokeLinejoin="round" />;
+});
+
+/** The bubble over an idle worker's head (D549): round and white like the frown's, with a Z, or the phone they are looking at. It stays for as long as they are idle. */
+const IdleBubble = memo(function IdleBubble({ hy, what }: { hy: number; what: 'z' | 'phone' }) {
+  const y = hy - 27;
   return (
-    <Path d={`M12.5 ${y - 3.2} Q15.2 ${y} 12.5 ${y + 1.8} Q9.8 ${y} 12.5 ${y - 3.2} Z`} fill="#8AD6FF" stroke={INK} strokeWidth={0.7} strokeLinejoin="round" />
+    <G>
+      <Path d={`M-1.6 ${y + 6.6} L1.4 ${y + 11.4} L3.6 ${y + 6.6} Z`} fill="#fff" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+      <Circle cx={0.5} cy={y} r={FROWN_R} fill="#fff" stroke={INK} strokeWidth={1} />
+      {what === 'z' ? (
+        <Path d={`M-2.6 ${y - 3.2} h6.2 l-6.2 6.4 h6.2`} stroke="#2F80ED" strokeWidth={1.7} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      ) : (
+        <G>
+          <Rect x={-2.4} y={y - 4.6} width={5.8} height={9.2} rx={1.2} fill="#2A2F3A" stroke={INK} strokeWidth={0.8} />
+          <Rect x={-1.5} y={y - 3.4} width={4} height={6} rx={0.6} fill="#9AD8FF" />
+        </G>
+      )}
+    </G>
   );
 });
 
