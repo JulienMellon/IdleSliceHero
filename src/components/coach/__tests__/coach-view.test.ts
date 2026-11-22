@@ -1,6 +1,6 @@
 import { newGame } from '../../../engine/game';
 import { type CoachStep, tutorialNote } from '../../../engine/tutorial';
-import { coachView, DRAWER_STEP, fallbackStep, LAST_STEP } from '../coach-view';
+import { coachView, DRAWER_STEP, fallbackStep, LAST_STEP, STARTER_STEP, STORE_STEP } from '../coach-view';
 
 const step = (id: number, mode: CoachStep['mode'], targets: CoachStep['targets'] = ['station:prep']): CoachStep => ({
   id,
@@ -15,6 +15,19 @@ describe('coachView', () => {
   test('no step, or another shop on screen: nothing', () => {
     expect(coachView(null, screen)).toBeNull();
     expect(coachView(step(1, 'tap'), { ...screen, isFirst: false })).toBeNull();
+  });
+
+  test('the Store step (16) lights the chip on any shop, not only the first', () => {
+    const store = step(STORE_STEP, 'tap', ['hud:store']);
+    expect(coachView(store, { ...screen, isFirst: false })).toEqual({ targets: ['hud:store'], mode: 'tap', text: 'line 16', hand: true });
+    expect(coachView(store, screen)?.targets).toEqual(['hud:store']);
+    // every other step still waits for the first shop
+    expect(coachView(step(10, 'tap'), { ...screen, isFirst: false })).toBeNull();
+  });
+
+  test('the Starter card step (17) is drawn by the Shop: the game screen shows nothing for it', () => {
+    expect(coachView(step(STARTER_STEP, 'look', ['store:starter']), screen)).toBeNull();
+    expect(coachView(step(STARTER_STEP, 'look', ['store:starter']), { ...screen, isFirst: false })).toBeNull();
   });
 
   test('a step shows its own targets, mode and line, with a hand', () => {

@@ -8,6 +8,10 @@ import type { CoachTargetId } from './targets';
 export const DRAWER_STEP = 13;
 /** The last step: her closing line, with no hand (the ring carries it). */
 export const LAST_STEP = 15;
+/** The Store intro (card E6): Nonna lights the Store chip, which is on every shop's HUD, so she points at it wherever the player is. */
+export const STORE_STEP = 16;
+/** The Starter card inside the Shop: the Shop screen draws this step, the game screen shows nothing for it. */
+export const STARTER_STEP = 17;
 /** A look step ends by itself after this long even when its overlay cannot be drawn: later than the overlay's own `LOOK_MS`, so that one comes first. */
 export const LOOK_FALLBACK_MS = 8000;
 
@@ -26,9 +30,10 @@ export interface CoachView {
   hand: boolean;
 }
 
-/** What the overlay draws: null when it shows nothing (no step, another shop on screen, or the drawer covering the shop except at its own step). */
+/** What the overlay draws: null when it shows nothing (no step, the Starter card's step, another shop on screen except at the Store step, or the drawer covering the shop except at its own step). */
 export function coachView(step: CoachStep | null, screen: CoachScreen): CoachView | null {
-  if (!step || !screen.isFirst) return null;
+  if (!step || step.id === STARTER_STEP) return null;
+  if (!screen.isFirst && step.id !== STORE_STEP) return null;
   if (screen.drawerOpen && step.id !== DRAWER_STEP) return null;
   const seen = step.mode === 'look' && step.id === DRAWER_STEP && screen.lookedAt === DRAWER_STEP;
   return { targets: step.targets, mode: seen ? 'free' : step.mode, text: step.text, hand: step.id !== LAST_STEP };

@@ -97,24 +97,6 @@ def run(ctx):
         shot(page, "102-store-loading", 0.4)
     except Exception as e:
         report["errors"].append(f"store tab shots failed: {e}")
-    # 103: the tutorial ends in play (v5.20: step 15, Nonna's last look at the prep table, ends after 2.5 s; Marco is already hired); 30 s later the pack is offered once
-    try:
-        shops = dict(MID_SAVE["shops"], downtown=shop(managed=False, prep=22, ovens=20, grade=1, counter=18, drivers=14, tables=8, footprint=1, sold=4000,
-                                                      heads={"prep": True, "oven": False, "counter": False}))
-        sv = dict(MID_SAVE, saveVersion=7, tutorial=15, active="downtown", shops=shops, lastSavedAt=T0_MS, rewards={"giftShownDay": day_str()})
-        page = seeded_page(browser, sv)
-        advance(page, 1000)
-        for _ in range(12):  # a due scene or popup first, as settle() does
-            if not any(is_up(page, t) for t in DISMISS):
-                break
-            settle(page, 0.5)
-        advance(page, 32000)
-        settle(page, 0.2)
-        expect(page, "starter-sheet", 8000)
-        expect_text(page, "starter-buy", r"\$2\.99")
-        shot(page, "103-starter-sheet", 0.4)
-    except Exception as e:
-        report["errors"].append(f"starter sheet shot failed: {e}")
     # 104 / 105: Settings, the new rows, then after Restore Purchases (the account owns Plus)
     try:
         page = seeded_page(browser, rewarded_save())
