@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.23                   # v5.22 closed 2026-11-22 at r2 (critic SATISFIED, code APPROVED 3 medium, story advisory 10 minor)
-step: verify                         # setup | waves | verify | review | fix | close
+step: review                         # setup | waves | verify | review | fix | close
 round: r2              # r1 | r2 | r3
-last_shots: v5.23                   # v5.23 r1 verify: True 0 [], layout 0 new; 10 new 39 changed vs v5.22-r2
+last_shots: v5.23-r2                # v5.23 r2 verify: True 0 [], layout 0 new; 1 new 134 changed vs v5.23
 codecritic_range_start: fa8c5a5   # v5.23 start (main at S10 start)
 cards:                 # todo | running | done | partial | blocked
   W4 done  E5 done  N1 done  U5 done  E6 done
@@ -49,3 +49,4 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 S10 r2 U5 done (S101 S102 C183; skippable flag). C182 skip wiring (tutorial.ts, overlay.tsx, use-coach-flow.ts) -> E6.
 - 2026-11-22 S10 r2 N1 S103 landed (3090 tests). Waiting on E6 (C182 skip) before the r2 verify.
 - 2026-11-22 S10 r2 E6 done (C182 store-skip; 3092 tests). r2 verify v5.23-r2 running.
+- 2026-11-22 S10 r2 verify v5.23-r2 PASS (True 0 [], layout 0). r2 re-checks launched.
