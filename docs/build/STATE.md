@@ -37,3 +37,4 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 Julien: "There should be a starter pack that costs money and periodic gifts from time to time, one of which should be early in the game" -> tutorial.16 'starter pack' wording stands; periodic free gifts (one early) are a new feature for a planning session, not v5.23.
 - 2026-11-22 S10 U5 done (chip/tabs/boosters/nudge done; StoreTab onClose waits on N1; hud:store CoachTargetId -> E6). U5 needs sent to N1.
 - 2026-11-22 S10 N1 done (3059 tests green); U5 done (StoreTab defaults onClose to router.back). Wave 3 E6 launched.
+- 2026-11-22 S10 E6 died on the 5-hour limit before editing anything; resumed after the reset (Julien: Go).
