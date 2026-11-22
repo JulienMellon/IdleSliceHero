@@ -26,6 +26,7 @@ The wishlist's launch items that no agent can do, with the version each one bloc
 | Screenshots | submission | Card L1 generates the 6.9-inch iPhone set. Re-check Apple's screenshot specifications page on the day you upload |
 | App Privacy label and age rating (13+) | submission | Card L1 reconciles the answers with what the code collects |
 | Support and privacy pages live | submission | Card L1 builds the site; turn on GitHub Pages for the repo |
+| Starter Pack description in App Store Connect says 400 diamonds | v5.23 submission | Added 2026-11-22 (v5.23 changed the pack from 150 to 400 diamonds; VERSION v5.23). Product id is on card N1 |
 
 ## Testing and release
 | Item | When | Note |
