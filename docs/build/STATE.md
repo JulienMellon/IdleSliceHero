@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.23                   # v5.22 closed 2026-11-22 at r2 (critic SATISFIED, code APPROVED 3 medium, story advisory 10 minor)
-step: verify                         # setup | waves | verify | review | fix | close
+step: review                         # setup | waves | verify | review | fix | close
 round: r3              # r1 | r2 | r3
-last_shots: v5.23-r2                # v5.23 r2 verify: True 0 [], layout 0 new; 1 new 134 changed vs v5.23
+last_shots: v5.23-r3                # v5.23 r3 verify: True 0 [], layout 0 new; 16 changed vs v5.23-r2
 codecritic_range_start: fa8c5a5   # v5.23 start (main at S10 start)
 cards:                 # todo | running | done | partial | blocked
   W4 done  E5 done  N1 done  U5 done  E6 done
@@ -57,3 +57,4 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 S10 r3 W4 done (S103 S104) -> N1 puts them into store.ts.
 - 2026-11-22 S10 r3 N1 copy landed (S103 S104; 3093 tests). Waiting on E6.
 - 2026-11-22 S10 r3 E6 done (C191 T133 D567; 3096 tests). r3 verify v5.23-r3 running.
+- 2026-11-22 S10 r3 verify v5.23-r3 PASS (True 0 [], layout 0, 16 changed). r3 re-checks launched.
