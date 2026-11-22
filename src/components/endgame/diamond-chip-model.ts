@@ -8,8 +8,8 @@ import { EVENTS } from '../../services/events';
 
 /** The analytics event the Shop sends when it opens (props: `{ from }`). */
 export const STORE_OPENED_EVENT = EVENTS.storeOpened;
-/** How the Shop was reached: the HUD chip, Nonna's Store intro (the chip while step 16 is up), or the "Store" nudge on the Style tab. */
-export type StoreFrom = 'chip' | 'intro' | 'nudge';
+/** How the Shop was reached: the HUD chip, Nonna's Store intro (the chip while step 16 is up), or the "Store" nudge on the Style tab, or a booster the player can't afford. */
+export type StoreFrom = 'chip' | 'intro' | 'nudge' | 'booster';
 
 export const chipShows = (game: GameState, starterOffered: boolean): boolean => game.tutorial >= STORE_INTRO_START || starterOffered || rewardsUnlocked(game);
 
@@ -25,7 +25,7 @@ export const shopHref = (game: GameState): string =>
   game.tutorial === STORE_INTRO_START ? '/shop?tab=store&from=intro' : starterOwned(game) ? '/shop?from=chip' : '/shop?tab=store&from=chip';
 
 /** The `from` route param as a `StoreFrom` (anything else is the chip). */
-export const storeFrom = (param: string | string[] | undefined): StoreFrom => (param === 'intro' || param === 'nudge' ? param : 'chip');
+export const storeFrom = (param: string | string[] | undefined): StoreFrom => (param === 'intro' || param === 'nudge' || param === 'booster' ? param : 'chip');
 
 /** The Shop's tab for a route param: `store` is the Store tab (2), anything else the first (0). */
 export const tabFromParam = (param: string | string[] | undefined): 0 | 1 | 2 => (param === 'store' ? 2 : param === 'boosters' ? 1 : 0);

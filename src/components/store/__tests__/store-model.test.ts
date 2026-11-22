@@ -199,6 +199,10 @@ describe('the store cards (card N1)', () => {
     expect(starterBestRate(amounts, ['diamonds_80', 'diamonds_500'])).toBe(false); // the 1,200 pack's first buy is 240 a dollar
     expect(starterBestRate(amounts, ALL)).toBe(true);
     expect(row('starter_pack', { ...ctx, firstUsed: ALL }).rate).toBe('Most diamonds per dollar in the store');
+    // D569: and then no pack says "Best rate" beside it; with the Starter bought, the card is gone and the pack may
+    const used = { ...ctx, firstUsed: ALL };
+    expect(productRows(prices, [], used).flatMap((r) => r.tags)).not.toContain('Best rate');
+    expect(productRows(prices, ['starter_pack'], used).find((r) => r.id === 'diamonds_1200')!.tags).toContain('Best rate');
     // at $4.99 it is 80 per dollar: no longer the most
     const dear = { ...amounts, starter_pack: 4.99 };
     expect(starterBestRate(dear, ALL)).toBe(false);

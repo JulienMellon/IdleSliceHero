@@ -33,7 +33,12 @@ export function createPurchases(deps: { kv: KV; backend: PurchaseBackend; bus: G
     return run;
   };
 
-  const load = () => (loaded ??= kv.get(LEDGER_KEY).then((raw) => void (ledger = parseLedger(raw))));
+  // C189: an unreadable store is an empty ledger, so `loaded` always resolves (a card waiting on it never hangs on a rejection)
+  const load = () =>
+    (loaded ??= kv.get(LEDGER_KEY).then(
+      (raw) => void (ledger = parseLedger(raw)),
+      () => void (ledger = emptyLedger()),
+    ));
 
   /** Ledger first, grant second: a crash between them loses a grant, never doubles one. */
   const pay = async (id: ProductId, tx: string, via: 'buy' | 'restore') => {

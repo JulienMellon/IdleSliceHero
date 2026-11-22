@@ -70,6 +70,19 @@ describe('purchases core', () => {
     }
   });
 
+  it('an unreadable store is an empty ledger: loaded() still resolves (C189)', async () => {
+    const kv = { get: async () => Promise.reject(new Error('disk')), set: async () => {} };
+    const backend: PurchaseBackend = {
+      products: async () => [],
+      purchase: async () => ({ status: 'failed' }),
+      restore: async () => [],
+      entitled: async () => [],
+    };
+    const p = createPurchases({ kv, bus: createGrantBus(), ids: PRODUCT_IDS, backend });
+    await expect(p.loaded()).resolves.toBeUndefined();
+    expect(p.firstBuysUsed()).toEqual([]);
+  });
+
   it('until the saved ledger is read nothing looks bought; loaded() says when it is (T135)', async () => {
     const kv = memoryKV({ [LEDGER_KEY]: JSON.stringify({ keys: ['first:diamonds_500', 'tx:a', 'product:nonnas_plus'] }) });
     const backend: PurchaseBackend = {

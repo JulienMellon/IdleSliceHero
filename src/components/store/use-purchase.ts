@@ -26,11 +26,14 @@ export function usePurchase(): PurchaseState {
   // the saved ledger is read a moment after start-up: until then nothing looks bought, so ask again when it is in (T135)
   useEffect(() => {
     let live = true;
-    void purchases.loaded().then(() => {
-      if (!live) return;
-      setOwned(purchases.owned());
-      setFirstUsed(purchases.firstBuysUsed());
-    });
+    void purchases
+      .loaded()
+      .then(() => {
+        if (!live) return;
+        setOwned(purchases.owned());
+        setFirstUsed(purchases.firstBuysUsed());
+      })
+      .catch(() => {});
     return () => {
       live = false;
     };

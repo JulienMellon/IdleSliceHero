@@ -188,7 +188,9 @@ const ONCE: ReadonlySet<ProductId> = new Set<ProductId>(['starter_pack', 'nonnas
  */
 export function productRows(prices: Prices, owned: readonly ProductId[], ctx: RowContext = NO_CONTEXT): ProductRow[] {
   const rows: ProductRow[] = [];
-  const best = bestRate(ctx.amounts, ctx.firstUsed);
+  // D569: while the Starter card says "Most diamonds per dollar in the store", no pack also says "Best rate"
+  const starterClaims = !owned.includes('starter_pack') && starterBestRate(ctx.amounts, ctx.firstUsed);
+  const best = starterClaims ? null : bestRate(ctx.amounts, ctx.firstUsed);
   for (const id of PRODUCT_ORDER) {
     const has = ONCE.has(id) && owned.includes(id);
     if (has && id === 'starter_pack') continue;
@@ -214,7 +216,7 @@ export function productRows(prices: Prices, owned: readonly ProductId[], ctx: Ro
       base: split ? split.base : null,
       bonus: split && split.bonus > 0 ? t('store.bonus', { n: split.bonus }) : null,
       chips: productChips(id, ctx.income, ctx.looksLeft),
-      rate: id === 'starter_pack' && starterBestRate(ctx.amounts, ctx.firstUsed) ? t('store.starter.rate') : null,
+      rate: id === 'starter_pack' && starterClaims ? t('store.starter.rate') : null,
       adLine: id === 'nonnas_plus' && ctx.adCount >= 2 ? t('store.plus.ads', { n: ctx.adCount }) : null,
       once: id === 'nonnas_plus' ? t('store.plus.once') : null,
     });

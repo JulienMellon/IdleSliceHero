@@ -139,7 +139,11 @@ export default function Shop() {
     setNudge(false);
     setTab(2);
   }, []);
-  const shortToStore = nudgeToStore;
+  // a booster the player can't afford: its own source, and Nonna's nudge card (not on this tab) is untouched
+  const shortToStore = useCallback(() => {
+    analytics.track(STORE_OPENED_EVENT, { from: 'booster' });
+    setTab(2);
+  }, []);
   // G94: leaving the screen takes its toast with it
   useFocusEffect(useCallback(() => () => useGame.setState({ toast: null }), []));
   const { equip, buyCosmetic, startBooster } = useGame.getState();

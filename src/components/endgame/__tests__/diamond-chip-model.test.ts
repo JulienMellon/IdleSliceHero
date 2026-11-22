@@ -76,6 +76,7 @@ describe('the chip from the Store intro (v5.23, card U5)', () => {
     expect(tabFromParam('nonsense')).toBe(0);
     expect(storeFrom('intro')).toBe('intro');
     expect(storeFrom('nudge')).toBe('nudge');
+    expect(storeFrom('booster')).toBe('booster');
     expect(storeFrom('?')).toBe('chip');
     expect(storeFrom(undefined)).toBe('chip');
   });
