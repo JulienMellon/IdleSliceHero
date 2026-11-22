@@ -35,3 +35,4 @@ next: S9-v5.22.md waves (Julien 2026-11-22: cards before verify): S4 alone, then
 - 2026-11-22 S8 r4 pre-verify: tsc clean, format ok, 2924/2924, pacing same. Shots v5.21-r4 running.
 - 2026-11-22 S8->S9 Julien: go to v5.22 cards before verify/shots. S4 launched alone.
 - 2026-11-22 S9 music interleaved (Julien): R2 not a go -> notes round on card-NOTES (composer running beside S4). A3 stays blocked until music round done.
+- 2026-11-22 S9 music R2 notes round 1 done (stingers -2..-3.5 LU, AU83 agreed); verify pass; reel sent; music back at listen.
