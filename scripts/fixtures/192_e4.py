@@ -36,7 +36,7 @@ def run(ctx):
         shot(page, "193-report-coach-bar", 0.5)
 
         tid(page, "coach-block").first.click()  # a tap anywhere ends a look
-        expect_text(page, "coach", r"the dashed line")
+        expect_text(page, "coach", r"Dashed line, cara")
         shot(page, "194-report-coach-demand", 0.5)
 
         tid(page, "coach-block").first.click()
