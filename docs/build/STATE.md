@@ -34,3 +34,4 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 S10 W4 done (COPY-v5.23.md; §7 carried copy fixes need code cards). Ask Julien: tutorial.16 says 'starter pack' not 'gift' (paid).
 - 2026-11-22 S10 E5 done (paid-boost slot, SAVE_VERSION 9, 3012 tests). Ask Julien: offline earnings ignore paid boosts (12 h bought then away = nothing). Wave 2 N1 || U5 launched.
 - 2026-11-22 S10 music notes round 3 done, reel sent, music back at listen; A3 stays blocked. splash_theme cue exists but src does not play it yet (needs a U-lane card).
+- 2026-11-22 Julien: "There should be a starter pack that costs money and periodic gifts from time to time, one of which should be early in the game" -> tutorial.16 'starter pack' wording stands; periodic free gifts (one early) are a new feature for a planning session, not v5.23.

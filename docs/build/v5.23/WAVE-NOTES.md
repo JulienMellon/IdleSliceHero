@@ -5,3 +5,4 @@
 - E5 Needs -> N1 (owns src/services/**): add `boosterBought: 'booster_bought'` to EVENTS in src/services/events.ts and switch game-store's tracking to it.
 - E5 Needs -> E6 (E lane): in src/engine/rewards.ts refreshRewards, set paidUntil=0 in the clock-recovery branch where boosts are cleared; optionally drop an expired slot.
 - Offline earnings ignore paidUntil (card E5 default); open for Julien.
+- Julien 2026-11-22: the Starter Pack is paid, so call it "starter pack", never "gift". Free gifts are a separate feature planned for later; no v5.23 card builds them.
