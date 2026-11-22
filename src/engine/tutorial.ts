@@ -56,6 +56,9 @@ const DEFS: readonly Def[] = [
 export const STORE_STEP = G.STORE_INTRO_START;
 export const STARTER_STEP = STORE_STEP + 1;
 
+/** Chapter 1's shop steps are over (the Store intro, 16-17, is a polite offer): what the ad consent and the scroll reporter gate on, not `TUTORIAL_DONE` (C182, C183). */
+export const shopTutorialDone = (s: Pick<G.GameState, 'tutorial'>): boolean => s.tutorial >= STORE_STEP;
+
 /** Every step of a city's tutorial, in order (1-based ids; 0 = not started, before the opening scene ends). The hire steps name the first shop's prep head. */
 const buildSteps = (city: CityDef): readonly CoachStep[] => {
   const marco = city.heads[G.firstHood(city)].prep;
@@ -173,9 +176,8 @@ export function tutorialNote(s: G.GameState, note: TutorialNote): G.GameState {
   return tutorialAdvance({ ...s, tutorial: step.id + 1 });
 }
 
-/** Story scenes wait while Nonna walks the player through the first shop (steps 1-11) and through the Store intro (16-17: nothing else may cover the Shop or the chip). */
-export const tutorialHoldsStory = (s: G.GameState) =>
-  (s.tutorial >= 1 && s.tutorial <= 11 && !s.shops[first(s)].managed) || (s.tutorial >= STORE_STEP && s.tutorial < TUTORIAL_DONE);
+/** Story scenes wait while Nonna walks the player through the first shop (steps 1-11) and while the Starter card is lit (17: nothing may cover the Shop). Not at 16: a player who never taps the lit chip must not wait for the story (C182). */
+export const tutorialHoldsStory = (s: G.GameState) => (s.tutorial >= 1 && s.tutorial <= 11 && !s.shops[first(s)].managed) || s.tutorial === STARTER_STEP;
 
 /** The small notes the screen can show besides Nonna's card: a refused tap's reason, the idle-drivers pill, the queue count, a refused buy's toast. */
 export type Hint = 'refusal' | 'waiting' | 'more' | 'toast';

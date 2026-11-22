@@ -6,6 +6,7 @@ import {
   coachStep,
   HINTS,
   hintsAllowed,
+  shopTutorialDone,
   showLockedTabs,
   stepsFor,
   TUTORIAL_DONE,
@@ -142,7 +143,8 @@ describe('tutorial', () => {
     expect(coachStep(s)?.targets).toEqual(['hud:store']);
     expect(tutorialNote(s, 'look')).toBe(s);
     expect(tutorialNote(s, 'store-left')).toBe(s);
-    expect(tutorialHoldsStory(s)).toBe(true);
+    expect(tutorialHoldsStory(s)).toBe(false); // a player who never taps the chip is not kept from the story
+    expect(shopTutorialDone(s)).toBe(true);
     s = tutorialNote(s, 'store-open');
     note();
     expect(s.tutorial).toBe(17);
@@ -313,10 +315,12 @@ describe('the Store intro', () => {
     expect(tutorialAdvance(owner(at(17))).tutorial).toBe(TUTORIAL_DONE);
     expect(tutorialAdvance(at(17)).tutorial).toBe(17);
   });
-  test('story, gifts and offers wait through both steps and not after', () => {
-    expect(tutorialHoldsStory(at(16))).toBe(true);
+  test('story waits while the Starter card is lit (17), not at 16 or after; gifts wait through both', () => {
+    expect(tutorialHoldsStory(at(16))).toBe(false);
     expect(tutorialHoldsStory(at(17))).toBe(true);
     expect(tutorialHoldsStory(at(TUTORIAL_DONE))).toBe(false);
+    expect(shopTutorialDone(at(15))).toBe(false);
+    expect(shopTutorialDone(at(16))).toBe(true);
     // the calendar and the hints gate on the coach mode (index.tsx `tutorialOn`): it is on for both steps
     expect(hintsAllowed(at(16)).toast).toBe(false);
     expect(hintsAllowed(at(17)).toast).toBe(false);

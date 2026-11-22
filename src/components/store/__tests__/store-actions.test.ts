@@ -179,6 +179,20 @@ describe("the Starter Pack's intro (card E6)", () => {
   });
 });
 
+describe('the rolling ad count (A48)', () => {
+  test('recordAdGrant adds one stamp to the prefs, keeping the rest of them', () => {
+    useGame.setState({ prefs: { starterOffered: true, boosterAdDay: '2026-11-11', adGrants: [] } });
+    st().recordAdGrant();
+    st().recordAdGrant();
+    expect(st().prefs.adGrants).toHaveLength(2);
+    expect(st().prefs.starterOffered).toBe(true);
+    expect(st().prefs.boosterAdDay).toBe('2026-11-11');
+  });
+  test('the old module is gone', () => {
+    expect(fs.existsSync(path.join(__dirname, '..', 'ad-count.ts'))).toBe(false);
+  });
+});
+
 describe('analytics events (card N1)', () => {
   let track: jest.SpyInstance;
   beforeEach(() => {

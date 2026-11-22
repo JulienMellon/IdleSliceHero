@@ -9,7 +9,6 @@ import { ads, analytics, EVENTS, type AdPlacement } from '../../services';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { StarIcon } from '../icons';
-import { recordAdGrant } from './ad-count';
 import { adLabel, adOffering, buttonShown, gives, READY_CHECK_MS, runAd } from './ad-model';
 
 /** The film-strip icon of every ad button. */
@@ -70,7 +69,7 @@ export const AdButton = memo(function AdButton({ placement, label, plusLabel, te
       // the ad is spent: ask again, so a failed show hides the button until the next one has loaded and a good one brings it back
       setReady(ads.ready(placement));
       if (gives(outcome)) {
-        if (outcome === 'rewarded') recordAdGrant();
+        if (outcome === 'rewarded') useGame.getState().recordAdGrant();
         if (Platform.OS !== 'web') void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         onBenefit();
       } else {

@@ -1,6 +1,6 @@
 # v5.23 copy: the Store, its cards, diamond boosters (card W4)
 
-Placeholders: `{n}` is a count (diamonds, looks or ad rewards, as the key says); `{cash}` is in-game cash from `money()`, already prefixed "≈" by the line; `{name}` is a booster's name; `{time}` is the time left in the paid-boost slot; `{mult}` and `{hours}` come from the pack's grant. Prices are never typed in: the store supplies them.
+Placeholders: `{n}` is a count (diamonds, looks or ads, as the key says); `{cash}` is in-game cash from `money()`, already prefixed "≈" by the line; `{span}` is a boost's length in words ("a full day", "1 hour"); `{name}` is the name of the booster last bought into the paid-boost slot (Rush Hour, Dinner Service, Big Night), never a multiplier; `{time}` is the time left in that slot; `{mult}` and `{hours}` come from the pack's grant. Prices are never typed in: the store supplies them.
 
 ## 1. Store intro
 
@@ -20,6 +20,7 @@ Placeholders: `{n}` is a count (diamonds, looks or ad rewards, as the key says);
 | `store.chip.diamonds` | — | Enough for {n} shop looks |
 | `store.chip.awning` | — | Only in this pack |
 | `store.chip.boost` | — | ≈ {cash} at your shop's pace |
+| `store.chip.boost.plain` | — | Double income for {span} |
 | `store.starter.rate` | — | Most diamonds per dollar in the store |
 
 ## 3. Diamond packs
@@ -32,6 +33,7 @@ Placeholders: `{n}` is a count (diamonds, looks or ad rewards, as the key says);
 | `store.bonus` | +{n} bonus |
 | `store.best` | Best rate |
 | `store.firstbuy` | First buy: 2× |
+| `store.firstbuy.pays` | First buy pays double: {n} diamonds |
 | `store.looks` | Enough for {n} looks |
 
 ## 4. Plus
@@ -39,7 +41,7 @@ Placeholders: `{n}` is a count (diamonds, looks or ad rewards, as the key says);
 | Key | Text |
 | --- | --- |
 | `store.plus.title` | Nonna's Plus |
-| `store.plus.ads` | You took {n} ad rewards this week. With Plus, they're one tap. |
+| `store.plus.ads` | You watched {n} ads this week. With Plus: same rewards, no ads. |
 | `store.plus.once` | Pay once. Yours forever. |
 
 ## 5. Boosters
@@ -47,11 +49,11 @@ Placeholders: `{n}` is a count (diamonds, looks or ad rewards, as the key says);
 | Key | Text |
 | --- | --- |
 | `booster.rush.name` | Rush Hour |
-| `booster.rush.desc` | Double income, 1 hour. The lunch crowd. |
+| `booster.rush.desc` | The whole lunch crowd, all at once. |
 | `booster.dinner.name` | Dinner Service |
-| `booster.dinner.desc` | Double income, 4 hours. All tables full. |
+| `booster.dinner.desc` | Every table full, every candle lit. |
 | `booster.bignight.name` | Big Night |
-| `booster.bignight.desc` | Double income, 12 hours. The ovens sing. |
+| `booster.bignight.desc` | The ovens sing till morning. |
 | `booster.pace` | ≈ {cash} at your shop's pace |
 | `booster.running` | {name} running · {time} left |
 | `booster.full` | Ay, the slot holds 24 h. Nothing spent. |

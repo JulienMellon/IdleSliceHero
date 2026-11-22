@@ -17,7 +17,7 @@ import {
   repairByAd,
   rerollDaily as rerollDailyTask,
 } from '../engine/offers';
-import { activePrefsKey, NO_PREFS, parsePrefs, type StorePrefs } from '../components/store/store-model';
+import { activePrefsKey, NO_PREFS, parsePrefs, withAdGrant, type StorePrefs } from '../components/store/store-model';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
 import { cityOf } from '../content/cities';
@@ -210,6 +210,8 @@ interface Store {
   prefs: StorePrefs;
   /** Records that Nonna's Store intro has run (`prefs.starterOffered`). */
   markStarterOffered: () => void;
+  /** One more rewarded ad paid (the ad button calls it; a Nonna's Plus owner takes no ad, so none is counted): the rolling 7-day count in the saved prefs. */
+  recordAdGrant: () => void;
   resetGame: () => Promise<void>;
   // X4 (v5.19-test): the Test panel's story and save tools. Does nothing in a normal build.
   /** Put `game` in place as if it had just been loaded: the popups and the scene of the old one are gone, the story gap and the kitchen-tap gate are open (a waiting beat plays at once), and it is saved. */
@@ -835,6 +837,8 @@ export const useGame = create<Store>((set, get) => {
     markStarterOffered: () => {
       if (!get().prefs.starterOffered) setPrefs({ starterOffered: true });
     },
+
+    recordAdGrant: () => setPrefs(withAdGrant(get().prefs, gameNow())),
 
     resetGame: async () => {
       await AsyncStorage.removeItem(SAVE_KEY).catch(() => {});
