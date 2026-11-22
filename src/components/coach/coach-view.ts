@@ -27,6 +27,8 @@ export interface CoachView {
   mode: CoachMode;
   text: string;
   hand: boolean;
+  /** The step may be left by tapping outside its lit spot (the Store chip, step 16): a player who doesn't want the Store must not be held by the scrim. The overlay and the tutorial's `store-skip` note are what act on it. */
+  skippable: boolean;
 }
 
 /** What the overlay draws: null when it shows nothing (no step, the Starter card's step, another shop on screen except at the Store step, or the drawer covering the shop except at its own step). */
@@ -35,7 +37,7 @@ export function coachView(step: CoachStep | null, screen: CoachScreen): CoachVie
   if (!screen.isFirst && step.id !== STORE_STEP) return null;
   if (screen.drawerOpen && step.id !== DRAWER_STEP) return null;
   const seen = step.mode === 'look' && step.id === DRAWER_STEP && screen.lookedAt === DRAWER_STEP;
-  return { targets: step.targets, mode: seen ? 'free' : step.mode, text: step.text, hand: step.id !== LAST_STEP };
+  return { targets: step.targets, mode: seen ? 'free' : step.mode, text: step.text, hand: step.id !== LAST_STEP, skippable: step.id === STORE_STEP };
 }
 
 /**

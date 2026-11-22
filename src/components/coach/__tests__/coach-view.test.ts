@@ -19,10 +19,15 @@ describe('coachView', () => {
 
   test('the Store step (16) lights the chip on any shop, not only the first', () => {
     const store = step(STORE_STEP, 'tap', ['hud:store']);
-    expect(coachView(store, { ...screen, isFirst: false })).toEqual({ targets: ['hud:store'], mode: 'tap', text: 'line 16', hand: true });
+    expect(coachView(store, { ...screen, isFirst: false })).toEqual({ targets: ['hud:store'], mode: 'tap', text: 'line 16', hand: true, skippable: true });
     expect(coachView(store, screen)?.targets).toEqual(['hud:store']);
     // every other step still waits for the first shop
     expect(coachView(step(10, 'tap'), { ...screen, isFirst: false })).toBeNull();
+  });
+
+  test('only the Store step (16) can be left by tapping outside the chip', () => {
+    expect(coachView(step(STORE_STEP, 'tap', ['hud:store']), screen)?.skippable).toBe(true);
+    for (const id of [1, 7, 10, 12, 15]) expect(coachView(step(id, 'tap'), screen)?.skippable).toBe(false);
   });
 
   test('the Starter card step (17) is drawn by the Shop: the game screen shows nothing for it', () => {
@@ -31,7 +36,13 @@ describe('coachView', () => {
   });
 
   test('a step shows its own targets, mode and line, with a hand', () => {
-    expect(coachView(step(3, 'tap', ['station:oven']), screen)).toEqual({ targets: ['station:oven'], mode: 'tap', text: 'line 3', hand: true });
+    expect(coachView(step(3, 'tap', ['station:oven']), screen)).toEqual({
+      targets: ['station:oven'],
+      mode: 'tap',
+      text: 'line 3',
+      hand: true,
+      skippable: false,
+    });
   });
 
   test('the last step has no hand: the ring carries it', () => {

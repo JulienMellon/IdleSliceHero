@@ -11,7 +11,7 @@ import { isForeground } from '@/components/app-state-model';
 import { CutscenePlayer } from '@/components/cutscene-player';
 import { TitleCard } from '@/components/title-card';
 import { TUNING } from '@/content/tuning';
-import { TUTORIAL_DONE } from '@/engine/game';
+import { shopTutorialDone } from '@/engine/tutorial';
 import { gameNow } from '@/engine/clock';
 import { adsTutorialDone, analytics, EVENTS, startServices } from '@/services';
 import { createLifecycle } from '@/services/lifecycle';
@@ -70,7 +70,7 @@ function GameRunner() {
 
 /** Starts the four services (opt-out first, no prompts), counts the first session, and tells the ads when the tutorial is over. */
 function ServicesRunner() {
-  const tutorialDone = useGame((s) => s.game.tutorial >= TUTORIAL_DONE);
+  const tutorialDone = useGame((s) => shopTutorialDone(s.game));
   useEffect(() => {
     // later sessions (after a real background) are counted by GameRunner's one AppState listener
     void startServices().then(() => analytics.track(EVENTS.sessionStart));
