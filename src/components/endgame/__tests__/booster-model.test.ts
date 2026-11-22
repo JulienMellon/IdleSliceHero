@@ -5,7 +5,7 @@ import * as path from 'path';
 import { PAID_BOOSTERS, PAID_SLOT_CAP } from '../../../content/rewards';
 import * as G from '../../../engine/game';
 import { buyBooster } from '../../../engine/paid-boost';
-import { BOOSTER_LINES, BOOSTER_WORDS, boosterSection } from '../booster-model';
+import { BOOSTER_LINES, BOOSTER_WORDS, boosterKey, boosterSection } from '../booster-model';
 import { vanityViews } from '../shop-model';
 
 const NOW = 1_700_000_000_000;
@@ -48,6 +48,22 @@ describe('the Boosters tab, Buy section (card U5)', () => {
   test('short of diamonds: only the dearer cards are off', () => {
     const states = boosterSection(takenOver(50), NOW).cards.map((c) => c.state);
     expect(states).toEqual(['buy', 'poor', 'poor']);
+  });
+
+  test('a card short of diamonds says by how many (D565); one the player can pay says 0', () => {
+    expect(boosterSection(takenOver(50), NOW).cards.map((c) => c.short)).toEqual([0, 40, 170]);
+  });
+
+  test('the key moves with the diamonds, the slot, the shown minute and the pace bucket, not with every tick (U39)', () => {
+    const g = takenOver(100);
+    const k = boosterKey(g, NOW);
+    expect(boosterKey({ ...g, playSeconds: g.playSeconds + 1 }, NOW)).toBe(k);
+    expect(boosterKey({ ...g, rewards: { ...g.rewards, diamonds: 101 } }, NOW)).not.toBe(k);
+    expect(boosterKey({ ...g, playSeconds: g.playSeconds + 5 }, NOW)).not.toBe(k);
+    const r = buyBooster(g, 'rush-hour', NOW);
+    if (!r.ok) throw new Error('buy');
+    expect(boosterKey(r.state, NOW + 1000)).toBe(boosterKey(r.state, NOW + 2000));
+    expect(boosterKey(r.state, NOW + 61_000)).not.toBe(boosterKey(r.state, NOW + 1000));
   });
 
   test("before Nonna's takeover the cards are shown and the engine refuses (no tab or card is hidden)", () => {

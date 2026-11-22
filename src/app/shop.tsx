@@ -1,13 +1,12 @@
 // The Shop screen (v5.15), opened from the diamond chip. Tab 1, Shop Style: the seven cosmetics, each owned (wear / take off), for
 // 150 diamonds, or earned (the master's plaque: "earn 18 stars", never sold). Tab 2, Booster Shelf: a "Buy" section of three diamond boosters
-// (v5.23, endgame/booster-buy.tsx), then one free booster a day for an ad, then the inventory with an Activate button each, or the empty-shelf line.
+// (v5.23, endgame/booster-buy.tsx), then one free booster a day for an ad. Boosters the player owns come first under "Yours" with an Activate button each; an empty shelf shows nothing.
 // Tab 3, Store (v5.17, components/store): the Starter Pack, Nonna's Plus and the diamond packs, for money. Data: endgame/shop-model.ts.
 // No tab is locked (DECISIONS #47). `?tab=store` opens the Store tab; `?from=` says how the Shop was reached (store_opened). The first refused
 // buy of a look shows Nonna's nudge to the Store (once per save).
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path, Rect } from 'react-native-svg';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoachOverlay } from '@/components/coach/overlay';
@@ -16,7 +15,7 @@ import { storeFrom, STORE_OPENED_EVENT, tabFromParam } from '@/components/endgam
 import { NudgeCard } from '@/components/endgame/nudge-card';
 import { useShopFlags } from '@/components/endgame/shop-flags';
 import { nudgeShows } from '@/components/endgame/shop-flags-model';
-import { boosterShelf, SHELF_EMPTY, SHOP_TABS, vanityViews, type VanityView } from '@/components/endgame/shop-model';
+import { boosterShelf, SHOP_TABS, vanityViews, type VanityView } from '@/components/endgame/shop-model';
 import { VanityArt } from '@/components/endgame/vanity-art';
 import { haptic, Toast } from '@/components/game-ui';
 import { AdButton } from '@/components/store/ad-button';
@@ -34,6 +33,9 @@ import { coachStep, STARTER_STEP } from '../engine/tutorial';
 import { rewardsUnlocked } from '../engine/rewards';
 
 type Tab = 0 | 1 | 2;
+
+/** The toast sits near the bottom edge (this far above it), never over the tab row or Nonna's nudge card at the top (D562). */
+const TOAST_FROM_BOTTOM = 96;
 
 /** The shelf's ad gives the booster; the store sets today as taken. Module-level, so the memoised button keeps one callback. */
 const takeBooster = () => void useGame.getState().freeBooster();
@@ -116,6 +118,7 @@ function VanityCard({ v, onWear, onBuy }: { v: VanityView; onWear: (id: string, 
 
 export default function Shop() {
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   const toast = useGame((s) => s.toast);
   const diamonds = useGame((s) => Math.floor(s.game.rewards.diamonds));
   // primitives: the screen repaints when a diamond, a cosmetic or a booster changes, not on every game tick
@@ -130,11 +133,13 @@ export default function Shop() {
     analytics.track(STORE_OPENED_EVENT, { from: storeFrom(params.from) });
     useShopFlags.getState().opened(rewardsUnlocked(useGame.getState().game));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- once per opening: the route's params are what it was opened with
+  // Nonna's nudge and a booster the player can't afford both lead to the Store tab
   const nudgeToStore = useCallback(() => {
     analytics.track(STORE_OPENED_EVENT, { from: 'nudge' });
     setNudge(false);
     setTab(2);
   }, []);
+  const shortToStore = nudgeToStore;
   // G94: leaving the screen takes its toast with it
   useFocusEffect(useCallback(() => () => useGame.setState({ toast: null }), []));
   const { equip, buyCosmetic, startBooster } = useGame.getState();
@@ -177,35 +182,12 @@ export default function Shop() {
         ))}
       </View>
       <ScrollView contentContainerStyle={{ padding: 14, gap: 10, paddingBottom: insets.bottom + 24 }}>
-        {tab === 1 && <BoosterBuy />}
-        {tab === 1 && boosterAd && (
-          <AdButton
-            placement="daily_booster"
-            label="Free booster: 2× for 15 min"
-            plusLabel="Free booster · Nonna’s Plus"
-            testID="booster-ad"
-            onBenefit={takeBooster}
-          />
+        {tab === 1 && shelf.length > 0 && (
+          <Text style={styles.head} accessibilityRole="header">
+            Yours
+          </Text>
         )}
-        {tab === 0 && nudge && <NudgeCard onStore={nudgeToStore} />}
-        {tab === 0 ? (
-          vanity.map((v) => <VanityCard key={v.id} v={v} onWear={(id, on) => equip(id, on)} onBuy={buyLook} />)
-        ) : tab === 2 ? (
-          <StoreTab />
-        ) : shelf.length === 0 ? (
-          <View style={styles.emptyBox}>
-            <Text testID="shelf-empty" style={styles.empty}>
-              {SHELF_EMPTY()}
-            </Text>
-            {/* D462: an empty shelf, drawn below the line */}
-            <Svg width={220} height={90} viewBox="0 0 220 90" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-              <Rect x={10} y={46} width={200} height={12} rx={3} fill="#A8714B" stroke={C.ink} strokeWidth={2} />
-              <Path d="M30 58 V78 M190 58 V78 M30 58 L50 58 M190 58 L170 58" stroke={C.ink} strokeWidth={3} strokeLinecap="round" />
-              <Path d="M70 46 q4 -22 14 -22 q10 0 14 22 Z" fill="none" stroke={C.locked} strokeWidth={2} strokeDasharray="4 4" />
-              <Rect x={130} y={26} width={26} height={20} rx={3} fill="none" stroke={C.locked} strokeWidth={2} strokeDasharray="4 4" />
-            </Svg>
-          </View>
-        ) : (
+        {tab === 1 &&
           shelf.map((row) => (
             <View key={row.index} testID={`shelf-${row.index}`} style={styles.shelfRow}>
               <BoostIcon size={26} />
@@ -222,10 +204,21 @@ export default function Shop() {
                 <Text style={styles.btnText}>Activate</Text>
               </Pressable>
             </View>
-          ))
+          ))}
+        {tab === 1 && <BoosterBuy onStore={shortToStore} />}
+        {tab === 1 && boosterAd && (
+          <AdButton
+            placement="daily_booster"
+            label="Free booster: 2× for 15 min"
+            plusLabel="Free booster · Nonna’s Plus"
+            testID="booster-ad"
+            onBenefit={takeBooster}
+          />
         )}
+        {tab === 0 && nudge && <NudgeCard onStore={nudgeToStore} />}
+        {tab === 0 ? vanity.map((v) => <VanityCard key={v.id} v={v} onWear={(id, on) => equip(id, on)} onBuy={buyLook} />) : tab === 2 ? <StoreTab /> : null}
       </ScrollView>
-      {toast && <Toast compact text={toast.text} top={insets.top + 56} />}
+      {toast && <Toast compact text={toast.text} top={height - insets.bottom - TOAST_FROM_BOTTOM} />}
       <StoreCoach tab={tab} />
     </View>
   );
@@ -295,8 +288,7 @@ const styles = StyleSheet.create({
   btnTextWorn: { color: C.basilDark },
   btnTextOff: { color: '#665A4F' },
   pressed: { transform: [{ translateY: 2 }] },
-  emptyBox: { alignItems: 'center', gap: 8, paddingVertical: 24 },
-  empty: { fontFamily: F.semi, fontSize: 15, color: C.inkSoft, textAlign: 'center' },
+  head: { fontFamily: F.bold, fontSize: 18, color: C.ink },
   shelfRow: {
     flexDirection: 'row',
     alignItems: 'center',

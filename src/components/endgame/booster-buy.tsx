@@ -8,7 +8,7 @@ import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { haptic } from '../game-ui';
 import { BoostIcon, DiamondIcon } from '../icons';
-import { BOOSTER_LINES, boosterSection, type BoosterSection, type BoosterView } from './booster-model';
+import { BOOSTER_LINES, boosterKey, boosterSection, type BoosterView } from './booster-model';
 
 const BoosterCard = memo(function BoosterCard({
   id,
@@ -18,6 +18,7 @@ const BoosterCard = memo(function BoosterCard({
   desc,
   pace,
   price,
+  short,
   state,
   onBuy,
 }: BoosterView & { onBuy: (id: string, state: BoosterView['state']) => void }) {
@@ -42,35 +43,45 @@ const BoosterCard = memo(function BoosterCard({
       <Pressable
         testID={`booster-${id}-buy`}
         accessibilityRole="button"
-        accessibilityLabel={`Buy ${name} for ${price} diamonds`}
+        accessibilityLabel={state === 'poor' ? `${name}: ${short} more diamonds needed. Opens the Store` : `Buy ${name} for ${price} diamonds`}
         accessibilityState={{ disabled: off }}
         onPress={() => onBuy(id, state)}
         style={({ pressed }) => [styles.btn, off ? styles.btnOff : styles.btnBuy, pressed && styles.pressed]}
       >
         <DiamondIcon size={18} />
         <Text style={[styles.btnText, off && styles.btnTextOff]} numberOfLines={1} maxFontSizeMultiplier={1.15}>
-          {price}
+          {state === 'poor' ? `${short} more` : price}
         </Text>
       </Pressable>
     </View>
   );
 });
 
-export const BoosterBuy = memo(function BoosterBuy() {
-  // one string: the section repaints when a price state, a pace or the running minute changes, never per game tick
-  const key = useGame((s) => JSON.stringify(boosterSection(s.game, gameNow())));
-  const section = useMemo(() => JSON.parse(key) as BoosterSection, [key]);
+/** `onStore`: a tap on a button the player can't afford takes them to the Store tab (D565). */
+export const BoosterBuy = memo(function BoosterBuy({ onStore }: { onStore: () => void }) {
+  // a cheap key (U39): the section is built when the diamonds, the slot or the pace's five-second bucket change, never per game tick
+  const key = useGame((s) => boosterKey(s.game, gameNow()));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` is what the section depends on
+  const section = useMemo(() => boosterSection(useGame.getState().game, gameNow()), [key]);
   const [refused, setRefused] = useState(false);
-  const buy = useCallback((id: string, state: BoosterView['state']) => {
-    if (state === 'full') {
-      haptic('error');
-      setRefused(true);
-      return;
-    }
-    const ok = useGame.getState().buyBooster(id);
-    haptic(ok ? 'success' : 'error');
-    setRefused(false);
-  }, []);
+  const buy = useCallback(
+    (id: string, state: BoosterView['state']) => {
+      if (state === 'poor') {
+        haptic('error');
+        onStore();
+        return;
+      }
+      if (state === 'full') {
+        haptic('error');
+        setRefused(true);
+        return;
+      }
+      const ok = useGame.getState().buyBooster(id);
+      haptic(ok ? 'success' : 'error');
+      setRefused(false);
+    },
+    [onStore],
+  );
   return (
     <View style={styles.section} testID="booster-buy">
       <Text style={styles.head} accessibilityRole="header">

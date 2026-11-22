@@ -5,6 +5,7 @@
 import { router } from 'expo-router';
 import { memo, useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
@@ -13,12 +14,13 @@ import { haptic } from '../game-ui';
 import { DiamondIcon } from '../icons';
 import { HUD_BUTTON_SLOP, HUD_ICON } from '../tap-targets';
 import { BOOSTER_LINES } from './booster-model';
-import { chipDot, diamondChipText, shopHref, STORE_INTRO_STEP } from './diamond-chip-model';
+import { STORE_INTRO_START } from '../../engine/game';
+import { chipDot, diamondChipText, shopHref } from './diamond-chip-model';
 import { useShopFlags } from './shop-flags';
 
 export const DiamondChip = memo(function DiamondChip() {
   const text = useGame((s) => diamondChipText(s.game, s.prefs.starterOffered));
-  const newGame = useGame((s) => s.game.tutorial < STORE_INTRO_STEP);
+  const newGame = useGame((s) => s.game.tutorial < STORE_INTRO_START);
   const dotCleared = useShopFlags((f) => f.dotCleared);
   const loaded = useShopFlags((f) => f.loaded);
   const dot = useGame((s) => chipDot(s.game, dotCleared)) && loaded;
@@ -47,6 +49,13 @@ export const DiamondChip = memo(function DiamondChip() {
       <Text style={styles.text} numberOfLines={1} maxFontSizeMultiplier={1.1}>
         {text}
       </Text>
+      {/* D568: a "0" next to a diamond reads as an empty wallet; the bag says this is the Store */}
+      <View style={styles.bag} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Svg width={14} height={14} viewBox="0 0 16 16">
+          <Path d="M3.5 6.5 H12.5 L13.5 14 H2.5 Z" fill={C.basil} stroke={C.ink} strokeWidth={1.4} strokeLinejoin="round" />
+          <Path d="M5.8 6.5 V5.2 a2.2 2.2 0 0 1 4.4 0 V6.5" fill="none" stroke={C.ink} strokeWidth={1.4} strokeLinecap="round" />
+        </Svg>
+      </View>
       {dot && <View testID="shop-chip-dot" style={styles.dot} />}
     </Pressable>
   );
@@ -62,5 +71,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: '#fff' },
-  dot: { position: 'absolute', top: -1, right: -1, width: 11, height: 11, borderRadius: 6, backgroundColor: C.tomato, borderWidth: 2, borderColor: '#fff' },
+  bag: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 17,
+    height: 17,
+    borderRadius: 9,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // D561: filled like the gift dot (cheese with a tomato rim), never tomato on the tomato HUD
+  dot: { position: 'absolute', top: -2, right: -2, width: 14, height: 14, borderRadius: 7, backgroundColor: C.cheese, borderWidth: 2, borderColor: C.tomato },
 });

@@ -22,4 +22,7 @@ export const COPY = {
   'store.plus.title': "Nonna's Plus",
   'store.plus.ads': "You took {n} ad rewards this week. With Plus, they're one tap.",
   'store.plus.once': 'Pay once. Yours forever.',
+  // Added by card N1 (v5.23 r2, G120, S99, D566); not yet rows of COPY-v5.23.md, so W4 should land them there.
+  'store.firstbuy.pays': 'First buy pays double: {n} diamonds',
+  'store.chip.boost.plain': 'Double income for {span}',
 } as const;

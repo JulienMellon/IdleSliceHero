@@ -1,5 +1,5 @@
 // One purchase at a time, shared by the store tab and the Starter Pack sheet: buy, say how it went. The services index counts iap_purchased.
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { purchases, type ProductId } from '../../services';
 import { createBuyGuard, guardedBuy } from './buy-guard';
@@ -23,6 +23,18 @@ export function usePurchase(): PurchaseState {
   const [owned, setOwned] = useState<ProductId[]>(() => purchases.owned());
   const [firstUsed, setFirstUsed] = useState<ProductId[]>(() => purchases.firstBuysUsed());
   const [guard] = useState(createBuyGuard);
+  // the saved ledger is read a moment after start-up: until then nothing looks bought, so ask again when it is in (T135)
+  useEffect(() => {
+    let live = true;
+    void purchases.loaded().then(() => {
+      if (!live) return;
+      setOwned(purchases.owned());
+      setFirstUsed(purchases.firstBuysUsed());
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
   const buy = useCallback(
     (id: ProductId) => {
       // purchases.buy is called here, outside any state updater (an updater may run twice), and only when the guard lets it

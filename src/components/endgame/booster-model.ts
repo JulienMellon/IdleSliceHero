@@ -41,6 +41,8 @@ export interface BoosterView {
   /** "≈ $1.2K at your shop's pace". */
   pace: string;
   price: number;
+  /** Diamonds still missing (0 when the player has the price): the greyed button says it (D565). */
+  short: number;
   state: BoosterState;
 }
 
@@ -52,6 +54,13 @@ export interface BoosterSection {
 
 /** The slot holds one running stretch, bought one or more times, so the line names the boost by what it does, not by a booster it may no longer be. */
 const SLOT_NAME = `${PAID_BOOST_MULT}× income`;
+
+/**
+ * What the section depends on, as one cheap string (U39): the diamonds, the slot (its end and the minute that is shown), whether rewards are open, and a
+ * five-second bucket of play time for the pace lines (income moves slowly; the pace says "about"). The section is built only when this changes.
+ */
+export const boosterKey = (g: GameState, now: number): string =>
+  `${Math.floor(g.rewards.diamonds)}|${g.rewards.paidUntil}|${Math.floor(paidBoostLeft(g, now) / 60)}|${rewardsUnlocked(g) ? 1 : 0}|${Math.floor(g.playSeconds / 5)}`;
 
 export function boosterSection(g: GameState, now: number = gameNow()): BoosterSection {
   const open = rewardsUnlocked(g);
@@ -65,6 +74,7 @@ export function boosterSection(g: GameState, now: number = gameNow()): BoosterSe
       desc: words?.desc ?? '',
       pace: fill(BOOSTER_LINES.pace, { cash: money(boosterPace(g, b.id)) }),
       price: b.diamonds,
+      short: Math.max(0, Math.ceil(b.diamonds - g.rewards.diamonds)),
       state: !open ? 'locked' : !boosterFits(g, b.id, now) ? 'full' : canAffordDiamonds(g, b.diamonds) ? 'buy' : 'poor',
     };
   });

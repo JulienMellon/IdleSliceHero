@@ -1,6 +1,6 @@
 // What the screen shows of Nonna's tutorial step (card C1, review A42): a pure function of the step and three facts about the screen, so the rules that were
 // spread over the game screen live in one place and are tested. The hook that feeds it (use-coach-flow.ts) only carries state and timers.
-import type { CoachStep } from '../../engine/tutorial';
+import { STARTER_STEP, STORE_STEP, type CoachStep } from '../../engine/tutorial';
 import type { CoachMode } from './steps';
 import type { CoachTargetId } from './targets';
 
@@ -8,10 +8,9 @@ import type { CoachTargetId } from './targets';
 export const DRAWER_STEP = 13;
 /** The last step: her closing line, with no hand (the ring carries it). */
 export const LAST_STEP = 15;
-/** The Store intro (card E6): Nonna lights the Store chip, which is on every shop's HUD, so she points at it wherever the player is. */
-export const STORE_STEP = 16;
-/** The Starter card inside the Shop: the Shop screen draws this step, the game screen shows nothing for it. */
-export const STARTER_STEP = 17;
+// STORE_STEP (16): Nonna lights the Store chip, which is on every shop's HUD, so she points at it wherever the player is. STARTER_STEP (17): the
+// Starter card inside the Shop; the Shop screen draws it, the game screen shows nothing for it. Both are the engine's (tutorial.ts).
+export { STARTER_STEP, STORE_STEP };
 /** A look step ends by itself after this long even when its overlay cannot be drawn: later than the overlay's own `LOOK_MS`, so that one comes first. */
 export const LOOK_FALLBACK_MS = 8000;
 

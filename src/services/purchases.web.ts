@@ -42,5 +42,6 @@ export const purchases: Purchases = {
   restore: core.restore,
   owned: () => [...new Set([...flagOwned(), ...core.owned()])],
   firstBuysUsed: core.firstBuysUsed,
+  loaded: core.loaded,
 };
 export const startPurchases = core.start;

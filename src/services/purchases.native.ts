@@ -56,5 +56,12 @@ const backend: PurchaseBackend = {
 
 const core = createPurchases({ kv: store, backend, bus: grantBus, ids: PRODUCT_IDS });
 
-export const purchases: PurchasesApi = { products: core.products, buy: core.buy, restore: core.restore, owned: core.owned, firstBuysUsed: core.firstBuysUsed };
+export const purchases: PurchasesApi = {
+  products: core.products,
+  buy: core.buy,
+  restore: core.restore,
+  owned: core.owned,
+  firstBuysUsed: core.firstBuysUsed,
+  loaded: core.loaded,
+};
 export const startPurchases = core.start;

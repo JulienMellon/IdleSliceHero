@@ -25,6 +25,12 @@ export const NudgeCard = memo(function NudgeCard({ onStore }: { onStore: () => v
           {BOOSTER_LINES.nudge}
         </Text>
       </View>
+      {/* D562: the card is a button: the pill says where it goes */}
+      <View style={styles.pill}>
+        <Text style={styles.pillText} maxFontSizeMultiplier={1.15}>
+          {'Store \u203A'}
+        </Text>
+      </View>
     </Pressable>
   );
 });
@@ -42,6 +48,8 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   text: { flex: 1 },
+  pill: { minHeight: 32, paddingHorizontal: 12, borderRadius: 16, backgroundColor: C.basil, alignItems: 'center', justifyContent: 'center' },
+  pillText: { fontFamily: F.bold, fontSize: 14, color: '#fff' },
   who: { fontFamily: F.bold, fontSize: 12, color: C.tomatoDark },
   line: { fontFamily: F.semi, fontSize: 14, lineHeight: 18, color: C.ink },
 });

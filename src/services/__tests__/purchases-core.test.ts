@@ -1,6 +1,6 @@
 import { createGrantBus } from '../grant-bus';
 import { memoryKV } from '../kv';
-import { LEDGER_KEY, TEST_LEDGER_KEY, ledgerKey, createPurchases, type PurchaseBackend, type PurchaseOutcome } from '../purchases-core';
+import { LEDGER_KEY, TEST_LEDGER_KEY, createPurchases, type PurchaseBackend, type PurchaseOutcome } from '../purchases-core';
 import { PRODUCT_IDS, type ProductId } from '../types';
 
 function setup(opts: { outcome?: () => PurchaseOutcome; entitled?: ProductId[]; throwOnRestore?: boolean } = {}) {
@@ -54,11 +54,36 @@ describe('purchases core', () => {
     expect(again.firstBuysUsed()).toEqual(['diamonds_80']);
   });
 
-  it('the test build keeps its own ledger key (C158, T116)', () => {
+  it('the test build keeps its own ledger key, and a normal build its own (C158, T116, C184)', () => {
     expect(LEDGER_KEY).toBe('se.purchases.ledger');
     expect(TEST_LEDGER_KEY).toBe('se.purchases.ledger.test');
-    expect(ledgerKey(true)).toBe(TEST_LEDGER_KEY);
-    expect(ledgerKey(false)).toBe(LEDGER_KEY);
+    const before = process.env.EXPO_PUBLIC_TEST_MODE;
+    process.env.EXPO_PUBLIC_TEST_MODE = '1';
+    try {
+      jest.isolateModules(() => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        expect((require('../purchases-core') as { LEDGER_KEY: string }).LEDGER_KEY).toBe(TEST_LEDGER_KEY);
+      });
+    } finally {
+      if (before === undefined) delete process.env.EXPO_PUBLIC_TEST_MODE;
+      else process.env.EXPO_PUBLIC_TEST_MODE = before;
+    }
+  });
+
+  it('until the saved ledger is read nothing looks bought; loaded() says when it is (T135)', async () => {
+    const kv = memoryKV({ [LEDGER_KEY]: JSON.stringify({ keys: ['first:diamonds_500', 'tx:a', 'product:nonnas_plus'] }) });
+    const backend: PurchaseBackend = {
+      products: async () => [],
+      purchase: async () => ({ status: 'failed' }),
+      restore: async () => [],
+      entitled: async () => [],
+    };
+    const p = createPurchases({ kv, bus: createGrantBus(), ids: PRODUCT_IDS, backend });
+    expect(p.firstBuysUsed()).toEqual([]);
+    expect(p.owned()).toEqual([]);
+    await p.loaded();
+    expect(p.firstBuysUsed()).toEqual(['diamonds_500']);
+    expect(p.owned()).toEqual(['nonnas_plus']);
   });
 
   it('two buys at the same moment still pay once', async () => {

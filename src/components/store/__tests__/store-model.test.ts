@@ -2,7 +2,7 @@
 import { MAX_CONCURRENT_BOOSTS } from '../../../content/rewards';
 import * as G from '../../../engine/game';
 import { GRANTS } from '../../../services/grants';
-import { PRODUCT_IDS } from '../../../services/types';
+import { PRODUCT_IDS, type ProductId } from '../../../services/types';
 import { ANALYTICS_LABEL, analyticsNote, analyticsSwitchText, copyLine, installIdText, restoreResult } from '../settings-model';
 import {
   applyGrant,
@@ -14,6 +14,8 @@ import {
   amountsFrom,
   bestRate,
   looksFor,
+  looksUnowned,
+  createSeenOnce,
   type RowContext,
   type StorePrefs,
   starterBestRate,
@@ -167,13 +169,20 @@ describe('the store cards (card N1)', () => {
     { id: 'diamonds_500', amount: 4.99 },
     { id: 'diamonds_1200', amount: 9.99 },
   ]);
-  const ctx: RowContext = { amounts, firstUsed: [], adCount: 0, income: 1000 };
+  const ctx: RowContext = { amounts, firstUsed: [], adCount: 0, income: 1000, looksLeft: Infinity };
+  const ALL: ProductId[] = ['diamonds_80', 'diamonds_500', 'diamonds_1200'];
   const row = (id: string, c = ctx) => productRows(prices, [], c).find((r) => r.id === id)!;
 
   test('the best rate is computed from the store numbers: today the 1,200 pack', () => {
     expect(bestRate(amounts)).toBe('diamonds_1200');
+    expect(bestRate(amounts, ALL)).toBe('diamonds_1200');
     // a different set of prices moves it
     expect(bestRate({ ...amounts, diamonds_500: 3 })).toBe('diamonds_500');
+  });
+  test('the best rate counts what the player gets today: a pack whose first buy is unused pays double (G120)', () => {
+    // the 1,200 pack's first buy used: 1,200 per $9.99 = 120, but the 500 pack still pays 1,000 per $4.99 = 200
+    expect(bestRate(amounts, ['diamonds_1200'])).toBe('diamonds_500');
+    expect(productRows(prices, [], { ...ctx, firstUsed: ['diamonds_1200'] }).find((r) => r.id === 'diamonds_500')!.tags).toContain('Best rate');
   });
   test('the best rate is hidden while prices load, or when a pack has no price', () => {
     expect(bestRate(null)).toBeNull();
@@ -183,14 +192,42 @@ describe('the store cards (card N1)', () => {
     expect(row('diamonds_1200').tags).toContain('Best rate');
     expect(row('diamonds_500').tags).not.toContain('Best rate');
   });
-  test('the Starter says "Most diamonds per dollar" only when the same computation puts it first', () => {
-    expect(starterBestRate(amounts)).toBe(true);
-    expect(row('starter_pack').rate).toBe('Most diamonds per dollar in the store');
+  test('"Most diamonds per dollar" shows only when it is true at the till: not while a first buy 2× is live (G120, S99)', () => {
+    // 400 for $2.99 is 134 a dollar; a first buy of the 80 pack is 160 for $0.99
+    expect(starterBestRate(amounts)).toBe(false);
+    expect(row('starter_pack').rate).toBeNull();
+    expect(starterBestRate(amounts, ['diamonds_80', 'diamonds_500'])).toBe(false); // the 1,200 pack's first buy is 240 a dollar
+    expect(starterBestRate(amounts, ALL)).toBe(true);
+    expect(row('starter_pack', { ...ctx, firstUsed: ALL }).rate).toBe('Most diamonds per dollar in the store');
     // at $4.99 it is 80 per dollar: no longer the most
     const dear = { ...amounts, starter_pack: 4.99 };
-    expect(starterBestRate(dear)).toBe(false);
-    expect(row('starter_pack', { ...ctx, amounts: dear }).rate).toBeNull();
-    expect(starterBestRate(null)).toBe(false);
+    expect(starterBestRate(dear, ALL)).toBe(false);
+    expect(starterBestRate(null, ALL)).toBe(false);
+  });
+  test('"First buy: 2×" says what doubles, in diamonds, until it is used', () => {
+    expect(row('diamonds_80').firstLine).toBe('First buy pays double: 160 diamonds');
+    expect(row('diamonds_1200').firstLine).toBe('First buy pays double: 2,400 diamonds');
+    expect(row('diamonds_500', { ...ctx, firstUsed: ['diamonds_500'] }).firstLine).toBeNull();
+    expect(row('starter_pack').firstLine).toBeNull();
+    expect(row('nonnas_plus').firstLine).toBeNull();
+  });
+  test('"Enough for N looks" never promises more than the looks still for sale (G121)', () => {
+    expect(row('diamonds_1200').blurb).toBe('Enough for 8 looks');
+    expect(row('diamonds_1200', { ...ctx, looksLeft: 3 }).blurb).toBe('Enough for 3 looks');
+    expect(row('diamonds_1200', { ...ctx, looksLeft: 0 }).blurb).toBe('');
+    expect(row('starter_pack', { ...ctx, looksLeft: 0 }).chips[0].sub).toBe('diamonds');
+    expect(looksUnowned([])).toBe(6);
+    expect(looksUnowned(['oven-gold', 'storefront-skin-3', 'awning-founder'])).toBe(4);
+    expect(looksUnowned(['oven-gold', 'storefront-skin-101', 'oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold'])).toBe(0);
+  });
+  test('the boost chip with no pace still says what it is', () => {
+    expect(productChips('starter_pack', 0)[1].sub).toBe('Double income for a full day');
+  });
+  test('pack_card_seen is counted once until the count is reset', () => {
+    const seen = createSeenOnce();
+    expect([seen.first('diamonds_80'), seen.first('diamonds_80'), seen.first('diamonds_500')]).toEqual([true, false, true]);
+    seen.reset();
+    expect(seen.first('diamonds_80')).toBe(true);
   });
   test('the Starter card: Nonna, the ribbon, three chips with game units and no struck-through price', () => {
     const r = row('starter_pack');
@@ -230,5 +267,17 @@ describe('the store cards (card N1)', () => {
     expect(adCount7([now - AD_WINDOW_MS], now)).toBe(0);
     expect(adCount7([now - AD_WINDOW_MS + 1], now)).toBe(1);
     expect(withAdGrant(NO_PREFS, now).adGrants).toEqual([now]);
+  });
+  test('the ad stamps are a window and a cap, and a stamp from the future counts (T134)', () => {
+    const now = 10 * AD_WINDOW_MS;
+    // the window is dropped on write: only stamps inside it survive, the new one last
+    expect(withAdGrant({ ...NO_PREFS, adGrants: [now - AD_WINDOW_MS - 1, now - AD_WINDOW_MS + 5] }, now).adGrants).toEqual([now - AD_WINDOW_MS + 5, now]);
+    // the cap: 200 kept, the newest
+    const many = Array.from({ length: 250 }, (_, i) => now - 1000 + i);
+    const capped = withAdGrant({ ...NO_PREFS, adGrants: many }, now).adGrants;
+    expect(capped).toHaveLength(200);
+    expect(capped[capped.length - 1]).toBe(now);
+    // a clock set back leaves stamps ahead of now: they still count
+    expect(adCount7([now + 3 * 86_400_000], now)).toBe(1);
   });
 });

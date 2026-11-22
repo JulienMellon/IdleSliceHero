@@ -1,8 +1,9 @@
 // The store's pure parts (card U3): the five products as rows with their price state, what a paid-out grant does to the game, the
 // Starter Pack's one-time offer and the small saved prefs. The tab (store-tab.tsx), and Settings only draw this.
 import { t } from '../../content/copy';
-import { VANITY_PRICE } from '../../content/endgame';
+import { VANITY_IDS, VANITY_PRICE } from '../../content/endgame';
 import { money } from '../../engine/format';
+import { isSkin } from '../../engine/vanity';
 import { GRANTS, isConsumable, PACK_SPLIT } from '../../services/grants';
 import { PRODUCT_IDS, type BuyResult, type ProductId } from '../../services/types';
 
@@ -14,7 +15,11 @@ export type Prices = Readonly<Partial<Record<ProductId, string>>> | null;
 export type Amounts = Readonly<Partial<Record<ProductId, number>>> | null;
 
 /** What a diamond pack's diamonds buy: whole looks at the vanity shop's price. */
-export const looksFor = (diamonds: number): number => Math.floor(diamonds / VANITY_PRICE);
+export const looksFor = (diamonds: number, left: number = Infinity): number => Math.min(Math.floor(diamonds / VANITY_PRICE), left);
+
+/** G121: the looks for sale the player does not own yet (the plaque is earned, not sold; any storefront skin owns the skin item, as the Style tab counts it). */
+export const looksUnowned = (cosmetics: readonly string[]): number =>
+  VANITY_IDS.filter((id) => id !== 'plaque-master' && !(id === 'storefront-skin' ? cosmetics.some(isSkin) : cosmetics.includes(id))).length;
 
 export interface ProductInfo {
   title: string;
@@ -22,7 +27,8 @@ export interface ProductInfo {
   blurb: string;
 }
 
-const looksLine = (diamonds: number): string => (looksFor(diamonds) >= 1 ? t('store.looks', { n: looksFor(diamonds) }) : '');
+/** "Enough for 3 looks", or '' when the diamonds buy none (or none are left to buy). */
+const looksLine = (diamonds: number, left?: number): string => (looksFor(diamonds, left) >= 1 ? t('store.looks', { n: looksFor(diamonds, left) }) : '');
 const starterGrant = GRANTS.starter_pack;
 
 export const PRODUCTS: Readonly<Record<ProductId, ProductInfo>> = {
@@ -31,9 +37,9 @@ export const PRODUCTS: Readonly<Record<ProductId, ProductInfo>> = {
     blurb: t('store.starter.blurb', { n: starterGrant.diamonds, mult: starterGrant.boost?.mult ?? 1, hours: starterGrant.boost?.hours ?? 0 }),
   },
   nonnas_plus: { title: t('store.plus.title'), blurb: 'Every ad reward at one tap, no ad. Offline earnings 2×, built in.' },
-  diamonds_80: { title: t('store.pack.diamonds_80.title'), blurb: looksLine(GRANTS.diamonds_80.diamonds) },
-  diamonds_500: { title: t('store.pack.diamonds_500.title'), blurb: looksLine(GRANTS.diamonds_500.diamonds) },
-  diamonds_1200: { title: t('store.pack.diamonds_1200.title'), blurb: looksLine(GRANTS.diamonds_1200.diamonds) },
+  diamonds_80: { title: t('store.pack.diamonds_80.title'), blurb: '' },
+  diamonds_500: { title: t('store.pack.diamonds_500.title'), blurb: '' },
+  diamonds_1200: { title: t('store.pack.diamonds_1200.title'), blurb: '' },
 };
 
 /** The order the tab lists them in. */
@@ -50,14 +56,26 @@ export interface Chip {
  * The content chips of a bundle: one per thing it gives. A plain diamond pack or Plus has none (its card says it).
  * `income` is the player's cash per second (the rewards' income): the boost chip says what the boost earns at that pace, "about".
  */
-export function productChips(id: ProductId, income = 0): Chip[] {
+export function productChips(id: ProductId, income = 0, looksLeft: number = Infinity): Chip[] {
   const g = GRANTS[id];
   if (!g.boost && !g.cosmetic) return [];
   const out: Chip[] = [];
-  if (g.diamonds > 0) out.push({ kind: 'diamonds', title: String(g.diamonds), sub: t('store.chip.diamonds', { n: looksFor(g.diamonds) }) });
+  if (g.diamonds > 0)
+    out.push({
+      kind: 'diamonds',
+      title: String(g.diamonds),
+      sub: looksFor(g.diamonds, looksLeft) >= 1 ? t('store.chip.diamonds', { n: looksFor(g.diamonds, looksLeft) }) : 'diamonds',
+    });
   if (g.boost) {
     const cash = income * g.boost.hours * 3600;
-    out.push({ kind: 'boost', title: `${g.boost.mult}× · ${g.boost.hours} h`, sub: cash > 0 ? t('store.chip.boost', { cash: money(cash) }) : 'income' });
+    out.push({
+      kind: 'boost',
+      title: `${g.boost.mult}× · ${g.boost.hours} h`,
+      sub:
+        cash > 0
+          ? t('store.chip.boost', { cash: money(cash) })
+          : t('store.chip.boost.plain', { span: g.boost.hours === 24 ? 'a full day' : `${g.boost.hours} hours` }),
+    });
   }
   if (g.cosmetic) out.push({ kind: 'awning', title: 'Founder awning', sub: t('store.chip.awning') });
   return out;
@@ -66,25 +84,42 @@ export function productChips(id: ProductId, income = 0): Chip[] {
 /** The ribbon on the Starter card: one per owner (it leaves the tab once bought). */
 export const PRODUCT_RIBBON: Readonly<Partial<Record<ProductId, string>>> = { starter_pack: t('store.starter.ribbon') };
 
+/** C186: remembers which cards were counted as seen, so `pack_card_seen` is sent once per Shop opening, not each time the Store tab is switched to. */
+export function createSeenOnce() {
+  const seen = new Set<string>();
+  return {
+    /** True the first time `id` is asked since the last reset. */
+    first(id: string): boolean {
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    },
+    reset: (): void => seen.clear(),
+  };
+}
+
 // ---------- the best rate ----------
 
 const CONSUMABLES = PRODUCT_ORDER.filter(isConsumable);
-/** Diamonds per unit of the store's price, or null when this product has no usable price. */
-const rateOf = (id: ProductId, amounts: NonNullable<Amounts>): number | null => {
+/** What the player gets today for a product: a pack's first buy pays double (until it is used), so the claim is about that amount, not the list one. */
+const diamondsToday = (id: ProductId, firstUsed: readonly ProductId[]): number => GRANTS[id].diamonds * (isConsumable(id) && !firstUsed.includes(id) ? 2 : 1);
+/** Diamonds per unit of the store's price for what the player gets today, or null when this product has no usable price. */
+const rateOf = (id: ProductId, amounts: NonNullable<Amounts>, firstUsed: readonly ProductId[]): number | null => {
   const a = amounts[id];
-  return typeof a === 'number' && a > 0 ? GRANTS[id].diamonds / a : null;
+  return typeof a === 'number' && a > 0 ? diamondsToday(id, firstUsed) / a : null;
 };
 
 /**
- * "Best rate" (PRICING §3): the diamond pack with the most diamonds per unit price, from the store's numbers. Null while they load, or when any
- * pack has no price (a rate over part of the list could name the wrong one). The diamonds are the pack's total, base plus bonus, not the first-buy 2×.
+ * "Best rate" (PRICING §3): the diamond pack with the most diamonds per unit price, from the store's numbers, for what the player would get today:
+ * a pack whose first buy is unused counts its doubled diamonds (G120, S99), so the claim is never false at the till. Null while the prices load, or
+ * when any pack has no price (a rate over part of the list could name the wrong one). `firstUsed` is the packs whose first buy is used.
  */
-export function bestRate(amounts: Amounts): ProductId | null {
+export function bestRate(amounts: Amounts, firstUsed: readonly ProductId[] = []): ProductId | null {
   if (!amounts) return null;
   let best: ProductId | null = null;
   let top = 0;
   for (const id of CONSUMABLES) {
-    const r = rateOf(id, amounts);
+    const r = rateOf(id, amounts, firstUsed);
     if (r === null) return null;
     if (r > top) {
       top = r;
@@ -94,11 +129,11 @@ export function bestRate(amounts: Amounts): ProductId | null {
   return best;
 }
 
-/** The Starter card's "Most diamonds per dollar in the store": true only when the same computation puts it above every pack. */
-export function starterBestRate(amounts: Amounts): boolean {
-  if (!amounts || bestRate(amounts) === null) return false;
-  const own = rateOf('starter_pack', amounts);
-  return own !== null && CONSUMABLES.every((id) => own > (rateOf(id, amounts) as number));
+/** The Starter card's "Most diamonds per dollar in the store": shown only when it is true today, the packs' first-buy 2× included (so only once those are used). */
+export function starterBestRate(amounts: Amounts, firstUsed: readonly ProductId[] = []): boolean {
+  if (!amounts || bestRate(amounts, firstUsed) === null) return false;
+  const own = rateOf('starter_pack', amounts, firstUsed);
+  return own !== null && CONSUMABLES.every((id) => own > (rateOf(id, amounts, firstUsed) as number));
 }
 
 export type RowState = 'owned' | 'buy' | 'loading' | 'unpriced';
@@ -112,8 +147,10 @@ export interface RowContext {
   adCount: number;
   /** Cash per second at the player's pace (the rewards' income). */
   income: number;
+  /** Looks for sale the player does not own (G121): the most "Enough for N looks" may say. Infinity when unknown. */
+  looksLeft: number;
 }
-export const NO_CONTEXT: RowContext = { amounts: null, firstUsed: [], adCount: 0, income: 0 };
+export const NO_CONTEXT: RowContext = { amounts: null, firstUsed: [], adCount: 0, income: 0, looksLeft: Infinity };
 
 export interface ProductRow {
   id: ProductId;
@@ -125,8 +162,10 @@ export interface ProductRow {
   /** The button's words: the price, "Owned", or why there is no price. */
   label: string;
   enabled: boolean;
-  /** Small tags beside the title: the Starter's ribbon, "Best rate", "First buy: 2×". */
+  /** Small tags in one row under the title: the Starter's ribbon, "Best rate", "First buy: 2×". */
   tags: string[];
+  /** What the first buy doubles, in diamonds: "First buy pays double: 160 diamonds" (null once used, and for the rest). */
+  firstLine: string | null;
   /** Nonna's line on the Starter card. */
   nonna: string | null;
   /** A diamond pack's base diamonds and its "+N bonus" line. */
@@ -149,7 +188,7 @@ const ONCE: ReadonlySet<ProductId> = new Set<ProductId>(['starter_pack', 'nonnas
  */
 export function productRows(prices: Prices, owned: readonly ProductId[], ctx: RowContext = NO_CONTEXT): ProductRow[] {
   const rows: ProductRow[] = [];
-  const best = bestRate(ctx.amounts);
+  const best = bestRate(ctx.amounts, ctx.firstUsed);
   for (const id of PRODUCT_ORDER) {
     const has = ONCE.has(id) && owned.includes(id);
     if (has && id === 'starter_pack') continue;
@@ -159,20 +198,23 @@ export function productRows(prices: Prices, owned: readonly ProductId[], ctx: Ro
     const tags: string[] = [];
     if (id === 'starter_pack') tags.push(PRODUCT_RIBBON.starter_pack as string);
     if (isConsumable(id) && best === id) tags.push(t('store.best'));
-    if (isConsumable(id) && !ctx.firstUsed.includes(id)) tags.push(t('store.firstbuy'));
+    const firstLive = isConsumable(id) && !ctx.firstUsed.includes(id);
+    if (firstLive) tags.push(t('store.firstbuy'));
     rows.push({
       id,
       ...PRODUCTS[id],
+      blurb: isConsumable(id) ? looksLine(GRANTS[id].diamonds, ctx.looksLeft) : PRODUCTS[id].blurb,
       price,
       state,
       label: state === 'owned' ? 'Owned' : state === 'buy' ? (price as string) : state === 'loading' ? 'Loading…' : 'Price unavailable',
       enabled: state === 'buy',
       tags: state === 'owned' ? [] : tags,
+      firstLine: firstLive ? t('store.firstbuy.pays', { n: (GRANTS[id].diamonds * 2).toLocaleString('en-US') }) : null,
       nonna: id === 'starter_pack' ? t('store.starter.nonna') : null,
       base: split ? split.base : null,
       bonus: split && split.bonus > 0 ? t('store.bonus', { n: split.bonus }) : null,
-      chips: productChips(id, ctx.income),
-      rate: id === 'starter_pack' && starterBestRate(ctx.amounts) ? t('store.starter.rate') : null,
+      chips: productChips(id, ctx.income, ctx.looksLeft),
+      rate: id === 'starter_pack' && starterBestRate(ctx.amounts, ctx.firstUsed) ? t('store.starter.rate') : null,
       adLine: id === 'nonnas_plus' && ctx.adCount >= 2 ? t('store.plus.ads', { n: ctx.adCount }) : null,
       once: id === 'nonnas_plus' ? t('store.plus.once') : null,
     });

@@ -1,7 +1,8 @@
 """Shots 205-208 (card N1): the Store tab's cards, in game units, with the store's own price strings.
-205 prices still loading (no price, a disabled button, no "Best rate") · 206 prices in: the Starter card at the top with Nonna's line, three chips and
-"Most diamonds per dollar in the store" · 206b the diamond packs below it: base, "+N bonus", "Enough for N looks", "Best rate" on the 1,200 pack, "First buy: 2×" ·
-207 the Starter owned (its card gone, Plus with the 7-day ad line) · 208 every first buy used (no "First buy: 2×", "Best rate" stays).
+205 prices still loading (no price, a disabled button, no "Best rate") · 206 prices in: the Starter card at the top with Nonna's line and three chips (no
+per-dollar claim while the packs' first buys are live) · 206b the diamond packs below it: base, "+N bonus", "Enough for N looks", "First buy pays double",
+"Best rate" on the 1,200 pack · 207 the Starter owned (its card gone, Plus with the 7-day ad line) · 208 every first buy used: the Starter says "Most diamonds
+per dollar in the store" · 208b the packs then: no "First buy: 2×" tags, "Best rate" on the 1,200 pack.
 Flags (services/purchases.web.ts, store-tab.tsx): `?prices=loading`, `?owned=starter_pack`. A flag lives in the page's URL and the router drops it when
 the app opens another screen, so `flags()` puts it back before the Store tab opens. The first buys come from the ledger (`first:<id>` keys, seeded under both
 ledger keys: the dev export may or may not be the test build); the ad count from the store prefs' `adGrants`.
@@ -72,7 +73,7 @@ def run(ctx):
         page = store_page(browser, "")
         expect_text(page, "buy-starter_pack", r"\$2\.99")
         expect_text(page, "starter-nonna", r"Like a lunch")
-        expect(page, "starter-rate")
+        expect_text(page, "first-diamonds_80", r"First buy pays double: 160 diamonds")
         expect(page, "starter-not-now")
         shot(page, "206-n1-starter", 0.4)
         scroll_to(page, "product-diamonds_1200")
@@ -88,11 +89,13 @@ def run(ctx):
         shot(page, "207-n1-starter-owned", 0.4)
     except Exception as e:
         report["errors"].append(f"N1 owned shot failed: {e}")
-    # 208: every first buy used
+    # 208 / 208b: every first buy used, the Starter not bought
     try:
-        page = store_page(browser, "?owned=starter_pack", first=("diamonds_80", "diamonds_500", "diamonds_1200"))
+        page = store_page(browser, "", first=("diamonds_80", "diamonds_500", "diamonds_1200"))
         expect(page, "product-diamonds_500")
-        scroll_to(page, "product-diamonds_1200")
+        expect(page, "starter-rate")
         shot(page, "208-n1-first-used", 0.4)
+        scroll_to(page, "product-diamonds_1200")
+        shot(page, "208b-n1-packs-used", 0.4)
     except Exception as e:
         report["errors"].append(f"N1 first buys shot failed: {e}")

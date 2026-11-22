@@ -15,8 +15,11 @@ describe('the Shop screen and its chip, as wired (card U5)', () => {
   });
 
   test('the Boosters tab sells above the free shelf', () => {
-    expect(shop.indexOf('<BoosterBuy />')).toBeGreaterThan(0);
-    expect(shop.indexOf('<BoosterBuy />')).toBeLessThan(shop.indexOf('testID="booster-ad"'));
+    expect(shop.indexOf('<BoosterBuy onStore')).toBeGreaterThan(0);
+    // D563: owned boosters come first and an empty shelf draws nothing
+    expect(shop.indexOf('testID={`shelf-${row.index}`}')).toBeLessThan(shop.indexOf('<BoosterBuy onStore'));
+    expect(shop).not.toContain('shelf-empty');
+    expect(shop.indexOf('<BoosterBuy onStore')).toBeLessThan(shop.indexOf('testID="booster-ad"'));
   });
 
   test('the route param opens the Store tab, the Shop says how it was opened, and no tab is locked', () => {

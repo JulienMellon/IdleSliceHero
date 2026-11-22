@@ -22,6 +22,8 @@ export interface Purchases {
   owned(): ProductId[];
   /** The diamond packs whose first buy (paid double) has been used. */
   firstBuysUsed(): ProductId[];
+  /** Resolves once the saved ledger is read: until then `owned` and `firstBuysUsed` answer as if nothing was bought. */
+  loaded(): Promise<void>;
 }
 
 export type Props = Record<string, string | number | boolean>;

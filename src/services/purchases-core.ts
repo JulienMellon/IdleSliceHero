@@ -3,10 +3,12 @@ import type { GrantBus } from './grant-bus';
 import { emptyLedger, firstBuysUsed, ownedFrom, parseLedger, redeem, type Ledger } from './grants';
 import type { BuyResult, KV, ProductId, Purchases } from './types';
 
-/** C158: the test build keeps its own ledger, so a test reset never touches a real one (the literal env check lets a normal bundle fold the test key away). */
+/**
+ * C158: the test build keeps its own ledger, so a test reset never touches a real one. The test key is only a string: it is in every bundle (the dev reset
+ * imports it, src/dev/story-save.ts), and only the literal env check decides which key a build reads and writes (C184).
+ */
 export const TEST_LEDGER_KEY = 'se.purchases.ledger.test';
-export const ledgerKey = (testMode: boolean): string => (testMode ? TEST_LEDGER_KEY : 'se.purchases.ledger');
-export const LEDGER_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? TEST_LEDGER_KEY : ledgerKey(false);
+export const LEDGER_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? TEST_LEDGER_KEY : 'se.purchases.ledger';
 
 export type PurchaseOutcome = { status: 'purchased'; transactionId: string } | { status: 'cancelled' | 'failed' };
 
@@ -60,6 +62,7 @@ export function createPurchases(deps: { kv: KV; backend: PurchaseBackend; bus: G
     products: () => backend.products(ids).catch(() => []),
     owned: () => ownedFrom(ledger),
     firstBuysUsed: () => firstBuysUsed(ledger),
+    loaded: load,
     buy(id): Promise<BuyResult> {
       return serial(async () => {
         await load();

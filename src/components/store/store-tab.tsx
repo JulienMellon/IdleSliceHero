@@ -1,7 +1,7 @@
 // The Shop screen's Store tab (card U3): the Starter Pack until it is bought, Nonna's Plus and the three diamond packs. Prices are the store's own
 // (`purchases.products()`); while they load, or when they don't come, a pack shows no price and a disabled button, never a placeholder.
 // Debug on the web build only: `?prices=loading` never answers, `?prices=failed` answers with none.
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -11,11 +11,10 @@ import { queryFlag } from '../../services/query';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { useCoachTarget } from '../coach/targets';
-import { DiamondIcon } from '../icons';
 import { Portrait } from '../portrait/index';
 import { gameNow } from '../../engine/clock';
-import { adCount7, amountsFrom, pricesFrom, productRows, type Amounts, type Prices, type ProductRow } from './store-model';
-import { ChipRow, FounderAwning, Ribbon } from './store-art';
+import { adCount7, amountsFrom, createSeenOnce, looksUnowned, pricesFrom, productRows, type Amounts, type Prices, type ProductRow } from './store-model';
+import { ChipRow, FounderStorefront, PackArt, Ribbon } from './store-art';
 import { usePurchase } from './use-purchase';
 
 /** The store's answer: its price texts and its numbers (for "Best rate"), both `null` while it is asked. */
@@ -48,15 +47,15 @@ export function useCatalog(): Catalog {
   return catalog;
 }
 
-/** The prices from the store, `null` while it is asked. */
-export const usePrices = (): Prices => useCatalog().prices;
-
-/** The card's picture: the Founder awning over the Starter Pack, Nonna on her Plus, a diamond on a pack of them. */
+/** The card's picture: a storefront under the Founder awning for the Starter Pack, Nonna on her Plus, a gem, a pouch or a crate of them on the packs. */
 function ProductArt({ id }: { id: ProductId }) {
   if (id === 'nonnas_plus') return <Portrait id="nonna-rosa" size={56} />;
   if (id === 'starter_pack') return null;
-  return <DiamondIcon size={40} />;
+  return <PackArt id={id} size={56} />;
 }
+
+/** One `pack_card_seen` per card per Shop opening (the Store tab is left and returned to inside one). */
+const packsSeen = createSeenOnce();
 
 const ProductCard = memo(function ProductCard({
   row,
@@ -76,11 +75,11 @@ const ProductCard = memo(function ProductCard({
   const target = useCoachTarget('store:starter');
   const owned = state === 'owned';
   useEffect(() => {
-    if (!owned) analytics.track(EVENTS.packCardSeen, { id });
+    if (!owned && packsSeen.first(id)) analytics.track(EVENTS.packCardSeen, { id });
   }, [id, owned]);
   return (
     <View testID={`product-${id}`} style={styles.card} {...(starter ? { ref: target, onLayout: target.onLayout, collapsable: false } : null)}>
-      {starter && <FounderAwning height={52} />}
+      {starter && <FounderStorefront height={44} />}
       <View style={styles.top}>
         <ProductArt id={id} />
         <View style={styles.text}>
@@ -88,10 +87,14 @@ const ProductCard = memo(function ProductCard({
             <Text style={styles.name} numberOfLines={2} maxFontSizeMultiplier={1.15}>
               {title}
             </Text>
-            {row.tags.map((tag) => (
-              <Ribbon key={tag} inline text={tag} />
-            ))}
           </View>
+          {row.tags.length > 0 && (
+            <View style={styles.tags}>
+              {row.tags.map((tag) => (
+                <Ribbon key={tag} inline text={tag} />
+              ))}
+            </View>
+          )}
           {row.nonna !== null && (
             <Text style={styles.nonna} testID="starter-nonna" maxFontSizeMultiplier={1.15}>
               “{row.nonna}”
@@ -108,6 +111,11 @@ const ProductCard = memo(function ProductCard({
                 </Text>
               )}
             </View>
+          )}
+          {row.firstLine !== null && (
+            <Text style={styles.first} testID={`first-${id}`} maxFontSizeMultiplier={1.15}>
+              {row.firstLine}
+            </Text>
           )}
           {blurb !== '' && (
             <Text style={styles.desc} numberOfLines={3} maxFontSizeMultiplier={1.15}>
@@ -172,12 +180,19 @@ export function StoreTab({ onClose = router.back }: { onClose?: () => void }) {
   const { busy, line, owned, firstUsed, buy } = usePurchase();
   // the pace is read once as the tab opens: "about" what the Starter's boost earns, not a live counter
   const [income] = useState(() => rewardIncome(useGame.getState().game));
+  // looks for sale the player does not own, read once too (G121: "Enough for N looks" never promises more than the Style tab sells)
+  const [looksLeft] = useState(() => looksUnowned(useGame.getState().game.rewards.cosmetics));
   const adGrants = useGame((s) => s.prefs.adGrants);
   const adCount = adCount7(adGrants, gameNow());
   useEffect(() => {
     analytics.track(EVENTS.iapViewed, { surface: 'store_tab' });
   }, []);
-  const rows = useMemo(() => productRows(prices, owned, { amounts, firstUsed, adCount, income }), [prices, owned, amounts, firstUsed, adCount, income]);
+  // the Shop closing (or another screen over it) starts a new count of cards seen (C186)
+  useFocusEffect(useCallback(() => () => packsSeen.reset(), []));
+  const rows = useMemo(
+    () => productRows(prices, owned, { amounts, firstUsed, adCount, income, looksLeft }),
+    [prices, owned, amounts, firstUsed, adCount, income, looksLeft],
+  );
   return (
     <View style={styles.list} testID="store-tab">
       <Text style={styles.note} testID="store-note">
@@ -201,7 +216,9 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 2.5, borderColor: C.ink, padding: 10, paddingTop: 12, gap: 8, overflow: 'hidden' },
   top: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   text: { flex: 1 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  nameRow: { flexDirection: 'row', alignItems: 'center' },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
+  first: { fontFamily: F.semi, fontSize: 13, color: C.ink },
   name: { fontFamily: F.bold, fontSize: 16, color: C.ink },
   nonna: { fontFamily: F.semi, fontSize: 13, lineHeight: 17, fontStyle: 'italic', color: C.ink },
   baseRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
