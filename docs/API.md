@@ -578,7 +578,7 @@
 
 ## src/content/cities/types.ts
 - LAYER_KINDS — src/content/cities/types.ts:78 — The layers a neighbourhood can play (card K1: the layer modules key off this, not a neighbourhood i…
-- FIT_KEYS: readonly (keyof CityFit)[] — src/content/cities/types.ts:218 — Every key a `CityFit` must have (the schema test checks a pack against this).
+- FIT_KEYS: readonly (keyof CityFit)[] — src/content/cities/types.ts:220 — Every key a `CityFit` must have (the schema test checks a pack against this).
 - types: NeighborhoodDef, PerkDef, OvenGrade, FootprintTier, VehicleDef, LayerKind, CityFit, CityBid, ChapterTaskKind, ChapterTask, Chapter, Lieutenant, BarkTable, OrderCast, NightOvenLines, CityTeaser, CityDef
 
 ## src/content/types.ts
