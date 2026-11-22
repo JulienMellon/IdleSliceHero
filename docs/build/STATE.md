@@ -9,7 +9,7 @@ round: r4              # r1 | r2 | r3 | r4 (extra, Julien 2026-11-22)
 last_shots: v5.21-r3                # r3 verify: True 0 [], layout 0 new; 14 new 94 changed vs r2
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
-  E1 done  W2 done  U1 running  U2 done  E2 running  E1b done
+  E1 done  W2 done  U1 done  U2 done  E2 done  E1b done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.21/review-r3-critic.md (r3 NOT SATISFIED; bug 1 major 1 minor 13; E4 U9 S2 T1; G118 bug HUD zIndex 2 over sheets/scrim, D543 major night-oven title under HUD; D546 minor lock says Ch 10, Story tab Ch 8)
   code:   docs/build/v5.21/review-r3-code.md (r3 CHANGES REQUESTED; blocker/high 1 medium 2 low 21; E5 U11 S1 N7; K5 high coachLayer zIndex 3 scrim covers OfflinePopup Collect)
@@ -31,3 +31,5 @@ next: r4 (Julien yes 2026-11-22): programmer on card-U1.md + card-E2.md notes G1
 - 2026-11-21 S8 verify v5.21-r3 pass: True 0 [], layout 0, 14 new 94 changed. r3 re-checks launched.
 - 2026-11-21 S8 r3 gate NOT met: critic bug 1 major 1 (G118 D543), code CHANGES REQUESTED (K5 high), story minors carry. Stopped for Julien; PR opened.
 - 2026-11-22 S8 r4 (Julien yes): programmer launched on U1+E2 (G118 D543 K5 stacking order); npm ci running.
+- 2026-11-22 S8 r4 U1+E2 done (G118 D543 K5: one Z set in z-order.ts, test pins order). Verify v5.21-r4 next.
+- 2026-11-22 S8 r4 pre-verify: tsc clean, format ok, 2924/2924, pacing same. Shots v5.21-r4 running.
