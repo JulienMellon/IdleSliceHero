@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.21-r3                # r3 verify: True 0 [], layout 0 new; 14 new 94 changed vs r2
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
-  S4 done  E3 done  W3 done  U3 done  S3 done  U4 running  E4 todo  A3 todo
+  S4 done  E3 done  W3 done  U3 done  S3 done  U4 done  E4 running  A3 blocked
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.21/review-r3-critic.md (r3 NOT SATISFIED; bug 1 major 1 minor 13; E4 U9 S2 T1; G118 bug HUD zIndex 2 over sheets/scrim, D543 major night-oven title under HUD; D546 minor lock says Ch 10, Story tab Ch 8)
   code:   docs/build/v5.21/review-r3-code.md (r3 CHANGES REQUESTED; blocker/high 1 medium 2 low 21; E5 U11 S1 N7; K5 high coachLayer zIndex 3 scrim covers OfflinePopup Collect)
@@ -44,3 +44,4 @@ next: S9-v5.22.md waves (Julien 2026-11-22: cards before verify): S4 alone, then
 - 2026-11-22 S9 U3 done (follow-ups: drawer test, 130_p1 retargeted; shot names 130-133 still say tipping/slammed, rename later).
 - 2026-11-22 S9 S3 done (piles, poses, walkouts, scooters; G80 D421 fixed; fixture 186). Carry: C167 coachTargets export (E4), D481, D519. To U4: scroll-cues 'slammed' kind/label, add 186_s3 to fixtures README. Note: engine caps backlog ~2 batches (piles mostly 3). Wave 3 U4 launched.
 - 2026-11-22 S9 U4 done (capacity feet, bundle/Buy both/tones gone, scroll cue 'piling'; fixture 189). Follow-ups: U4 drops shop-ui BOTTLENECK chip + bundleButton/cardLook frame + dead report-model helpers; S3 renames storefront slammed->piling. For E4: drop deprecated kitchenLimits/lamps/worst/slammedAsks (only service.test reads them), C167 coachTargets, CoachTargetId report:*.
+- 2026-11-22 S9 U4 follow-ups done (BOTTLENECK chip, bundleButton, cardLook frame, dead report helpers gone). A3 blocked: waits for the music track (R2 at listen). Wave 4 E4 launched alone.
