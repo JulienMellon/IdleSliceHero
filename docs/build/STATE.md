@@ -4,14 +4,14 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.22                   # v5.21 r4 fix done 2026-11-22; r4 verify+reviews+close DEFERRED (Julien: cards first)
-step: review                        # setup | waves | verify | review | fix | close
-round: r1              # r1 | r2 | r3
+step: fix                           # setup | waves | verify | review | fix | close
+round: r2              # r1 | r2 | r3
 last_shots: v5.22                   # v5.22 r1 verify: True 0 [], layout 0 new; 14 new 150 changed vs v5.21-r3
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
   S4 done  E3 done  W3 done  U3 done  S3 done  U4 done  E4 done  A3 blocked
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.21/review-r3-critic.md (r3 NOT SATISFIED; bug 1 major 1 minor 13; E4 U9 S2 T1; G118 bug HUD zIndex 2 over sheets/scrim, D543 major night-oven title under HUD; D546 minor lock says Ch 10, Story tab Ch 8)
+  critic: docs/build/v5.22/review-r1-critic.md (r1 NOT SATISFIED; bug 1 major 2 minor 19; E2 U13 S5 T2; G119 bug drivers bar never reaches Customers line, D548 major piles same short vs balanced, D549 major poses/idle drivers unreadable at phone size)
   code:   docs/build/v5.22/review-r1-code.md (r1 APPROVED but medium 4 > gate 3; blocker/high 0 medium 4 low 27; E8 U14 S2 N7; K5 fixed)
   story:  docs/build/v5.22/review-r1-story.md (r1 NOT SATISFIED; bug 0 major 1 minor 14; E3 U3 T9; S90 major drivers bar under customers line yet Missed 0, shots 182/183)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
@@ -48,3 +48,4 @@ next: S9 verify v5.22 (L=v5.22 P=v5.21-r3; covers v5.21 r4 stacking fix too, Jul
 - 2026-11-22 S9 E4 done (report coach 3 steps, REPORT_READER on, coachTargets export; D539 T127 C167 fixed; sheet service = served/wanted; sim2 opens report). Pacing same (EAGER 1940.8 / tuned 1919.8). Open: S89 vs D533 nextTask rule (owner decision); storefront.tsx:357 can use coachTargets (S); A45 C154 U33; D493 D495 parked.
 - 2026-11-22 S9 verify v5.22 FAIL: 3 errors (140_v2 scroll-cue-left 143, 140_v2 cold strip 146 -> U4; 180_e1b 'Finish Chapter 10 first' -> E4); layout 0 new; 14 new 154 changed vs v5.21-r3. Re-verify after fixes.
 - 2026-11-22 S9 verify v5.22 PASS (re-run after 3 fixture fixes): True 0 [], layout 0; 14 new 150 changed. r1 reviews launched (critic full, codecritic medium src scripts 12c99bd..HEAD, storycritic medium COPY-v5.22); audiocritic skipped (A3 blocked).
+- 2026-11-22 S9 r1 gate NOT met (critic bug1 major2; code medium 4>3; story S90 major). Fix r2: batch 1 E (E3+E4 via E4 programmer) || S (S3); batch 2 U (U3+U4); batch 3 T (W3). N rows (code, 7) have no v5.22 card: carry.
