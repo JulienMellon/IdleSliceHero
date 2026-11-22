@@ -9,7 +9,7 @@ round: r2              # r1 | r2 | r3
 last_shots: v5.22                   # v5.22 r1 verify: True 0 [], layout 0 new; 14 new 150 changed vs v5.21-r3
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
-  S4 done  E3 done  W3 done  U3 done  S3 done  U4 done  E4 done  A3 blocked  (r2 verify fix: E4 running, U4 running)
+  S4 done  E3 done  W3 done  U3 done  S3 done  U4 done  E4 done  A3 blocked  (r2 verify fix: E4 running, U4 done)
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.22/review-r1-critic.md (r1 NOT SATISFIED; bug 1 major 2 minor 19; E2 U13 S5 T2; G119 bug drivers bar never reaches Customers line, D548 major piles same short vs balanced, D549 major poses/idle drivers unreadable at phone size)
   code:   docs/build/v5.22/review-r1-code.md (r1 APPROVED but medium 4 > gate 3; blocker/high 0 medium 4 low 27; E8 U14 S2 N7; K5 fixed)
@@ -30,3 +30,4 @@ next: S9 resume at r2 verify (Julien 2026-11-22: skip verify+shots+critics until
 - 2026-11-22 S9b r2 E done (drivers-short counter piling when no idle driver; ChapterSave.missedZero + missedZeroShown). Open for Julien: flow-based drivers symptom (new Symptom value). U launched to wire D556.
 - 2026-11-22 S9b r2 U done (D556 payoff once, gated on missedZero; strip flash/coin burst not in U3). tsc ok, 2995 tests pass. Verify deferred to next session.
 - 2026-11-22 S9c verify v5.22-r2 FAIL: 3 errors (192_e4 coach 'the dashed line' + coach-block click -> E4; 66_s1 head-rush bark text -> E4), layout 4 new (walk-* capacity labels ellipsis -> U4); 0 new 122 changed vs v5.22. E4 || U4 launched. Music: Julien R2 notes, notes round 2 running.
+- 2026-11-22 S9c r2 verify fix U4 done (sidewalk capacityFit: unit-shared and now-only fallbacks; walk-* clips fixed in code, not yet re-shot).

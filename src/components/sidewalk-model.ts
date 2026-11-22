@@ -112,11 +112,20 @@ export function abbreviate(n: number, digits: 1 | 2 | 3): string {
 
 /**
  * The line on a sidewalk card, one format: "446→486", no unit (a station's text is about 46 pt wide on a 375 pt phone, 7 characters at 10 pt).
- * When the numbers are too long both are abbreviated together ("5.8K→6.2K", then "6K→6K"); the current value is never dropped. Never under 10 pt.
+ * When the numbers are too long both are abbreviated together ("5.8K→6.2K", then "6K→6K"); the current value is never dropped, and no line is wider than the card. Never under 10 pt.
+ * A pair that still does not fit shares one unit ("124→129K"); a card too narrow even for that shows the current value alone ("124K").
  */
 export function capacityFit(c: { now: number; after: number }, width: number): string {
-  const candidates = [`${perMinute(c.now)}→${perMinute(c.after)}`, ...([2, 1] as const).map((d) => `${abbreviate(c.now, d)}→${abbreviate(c.after, d)}`)];
-  return candidates.find((t) => fits(t, width, 10)) ?? candidates[candidates.length - 1];
+  const lines: string[] = [`${perMinute(c.now)}→${perMinute(c.after)}`];
+  for (const d of [2, 1] as const) {
+    const a = abbreviate(c.now, d);
+    const b = abbreviate(c.after, d);
+    lines.push(`${a}→${b}`);
+    // same unit on both ends: say it once, after the second number (a six-digit "124K→129K" is 9 characters, wider than a card)
+    if (/[KM]$/.test(a) && a.slice(-1) === b.slice(-1)) lines.push(`${a.slice(0, -1)}→${b}`);
+  }
+  const now = abbreviate(c.now, 1);
+  return lines.find((t) => fits(t, width, 10)) ?? (fits(now, width, 10) ? now : lines[lines.length - 1]);
 }
 
 /** What a station can handle now with its machines, and after one more level, a minute: no hand-tapped scaling, so it depends on the shop's levels alone. */
