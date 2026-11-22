@@ -272,20 +272,19 @@
 - FEATURES: Feature<any>[] — src/engine/features/registry.ts:8 — Every feature, in the order their hooks run.
 
 ## src/engine/features/service.ts
-- KEY — src/engine/features/service.ts:38
-- quantise(x: number): number — src/engine/features/service.ts:95 — Round down to a 5% step (an epsilon so 0.9 stays 0.9), as a plain two-decimal number.
-- flowOf(g: GameState, id: NeighborhoodId, now: number): Flow — src/engine/features/service.ts:128 — The shop's flow right now.
-- serviceOf(f: Flow): number — src/engine/features/service.ts:147 — Service, 0..1, in 5% steps (rounded down).
-- loadOf(f: Flow, rate: number): number — src/engine/features/service.ts:149 — A station's load, 0..1, in 5% steps.
-- reportActive(g: GameState, id: NeighborhoodId): boolean — src/engine/features/service.ts:152 — The report is live from a shop's first head (a manager brings all three): the capacity bars, the se…
-- reportView(g: GameState, id: NeighborhoodId, now: number): ReportView — src/engine/features/service.ts:296 — Everything the strip and the sheet show for one shop.
-- missedOf(g: GameState, id: NeighborhoodId, now: number): number — src/engine/features/service.ts:347 — Missed orders a minute (the chapters' `noMissed` reads this).
-- capacityAfter(g: GameState, id: NeighborhoodId, what: K3 | 'drivers' | 'grade', now: number = g.lastSavedAt):… — src/engine/features/service.ts:354 — The station's capacity (pizzas a minute) after one more level of `what`, for the upgrade cards.
-- onServicePulse(fn: (p: ServicePulse) => void) — src/engine/features/service.ts:377
-- symptomAsks(g: GameState, id: NeighborhoodId): BarkAsk[] — src/engine/features/service.ts:392 — The asks of a shop's heads and manager: a station's head about a pile-up or idle hands at their sta…
-- service: Feature<ServiceStateSlice> — src/engine/features/service.ts:460
-- withoutService(g: GameState): GameState — src/engine/features/service.ts:511 — `g` with no tip and no penalty (for a reward that must not move with how well the shop is served, a…
-- types: ServiceState, KitchenStation, K3, Spot, Symptom, ShopService, ServiceStateSlice, Flow, ReportView, ServicePulse
+- KEY — src/engine/features/service.ts:36
+- quantise(x: number): number — src/engine/features/service.ts:92 — Round down to a 5% step (an epsilon so 0.9 stays 0.9), as a plain two-decimal number.
+- flowOf(g: GameState, id: NeighborhoodId, now: number): Flow — src/engine/features/service.ts:137 — The shop's flow right now.
+- serviceOf(f: Flow): number — src/engine/features/service.ts:156 — Service, 0..1, in 5% steps (rounded down).
+- reportActive(g: GameState, id: NeighborhoodId): boolean — src/engine/features/service.ts:159 — The report is live from a shop's first head (a manager brings all three): the capacity bars, the se…
+- reportView(g: GameState, id: NeighborhoodId, now: number): ReportView — src/engine/features/service.ts:297 — Everything the strip and the sheet show for one shop.
+- missedOf(g: GameState, id: NeighborhoodId, now: number): number — src/engine/features/service.ts:342 — Missed orders a minute (the chapters' `noMissed` reads this).
+- capacityAfter(g: GameState, id: NeighborhoodId, what: K3 | 'drivers' | 'grade', now: number = g.lastSavedAt):… — src/engine/features/service.ts:349 — The station's capacity (pizzas a minute) after one more level of `what`, for the upgrade cards.
+- onServicePulse(fn: (p: ServicePulse) => void) — src/engine/features/service.ts:372
+- symptomAsks(g: GameState, id: NeighborhoodId): BarkAsk[] — src/engine/features/service.ts:387 — The asks of a shop's heads and manager: a station's head about a pile-up or idle hands at their sta…
+- service: Feature<ServiceStateSlice> — src/engine/features/service.ts:455
+- withoutService(g: GameState): GameState — src/engine/features/service.ts:506 — `g` with no tip and no penalty (for a reward that must not move with how well the shop is served, a…
+- types: ServiceState, K3, Spot, Symptom, ShopService, ServiceStateSlice, Flow, ReportView, ServicePulse
 
 ## src/engine/features/types.ts
 - savedHoods(city?: CityDef): readonly NeighborhoodId[] — src/engine/features/types.ts:41 — The neighbourhood ids a saved slice may name: the save's own city's (`migrate`'s third argument), o…
@@ -550,7 +549,7 @@
 - showLockedTabs(s: G.GameState): boolean — src/engine/tutorial.ts:185 — v5.17 (U4): the padlocked tabs of neighbourhoods that cannot be built yet only mean something once …
 - REPORT_COACH — src/engine/tutorial.ts:193 — The id the finished sequence is saved under in `coachDone`; each step saves its own mark (`ReportCo…
 - reportCoachLive(s: G.GameState): boolean — src/engine/tutorial.ts:223 — The sequence has begun (the player tapped the lit strip) and has not ended: it ends when the sheet …
-- reportCoachStep(s: G.GameState, ui: ReportCoachScreen): ReportCoachStep | null — src/engine/tutorial.ts:233 — The step to show now, or null (nothing to say).
+- reportCoachStep(s: G.GameState, ui: ReportCoachScreen): ReportCoachStep | null — src/engine/tutorial.ts:235 — The step to show now, or null (nothing to say).
 - types: CoachStep, TutorialNote, Hint, ReportStepId, ReportCoachStep, ReportCoachScreen
 
 ## src/engine/vanity.ts

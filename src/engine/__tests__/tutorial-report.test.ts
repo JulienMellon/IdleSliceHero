@@ -106,6 +106,8 @@ describe('the report coach', () => {
     expect(
       reportCoachStep({ ...s, shops: { ...s.shops, downtown: { ...s.shops.downtown, heads: { prep: false, oven: false, counter: false } } } }, SHUT),
     ).toBeNull();
+    // the strip belongs to the shop on screen (C180)
+    expect(reportCoachStep({ ...s, active: 'suburbs' }, SHUT)).toBeNull();
     // stray notes from the sheet with no coach up change nothing
     expect(saveOf(note(G.newGame(0), 'report-open')).coachDone).toEqual([]);
     expect(note(s, 'report-look')).toBe(s);

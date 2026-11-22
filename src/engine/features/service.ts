@@ -17,14 +17,12 @@ import {
   counterRate,
   deliveryRate,
   demandRate,
-  featureMults,
   levelCap,
   ovenRate,
   prepRate,
   runsItself,
   stationMults,
   tapBatch,
-  valuePerPizza,
   walkInRate,
   type GameState,
   type Shop,
@@ -38,7 +36,6 @@ import { cityOf, hoodIds, type CityDef } from '../../content/cities';
 export const KEY = 'service';
 
 export type ServiceState = 'inactive' | 'tipping' | 'normal' | 'cold';
-export type KitchenStation = 'prep' | 'ovens' | 'counter';
 
 /** The three kitchen stations the line runs, by the names the report uses (the ovens' head is `oven`). */
 export type K3 = 'prep' | 'ovens' | 'counter';
@@ -104,6 +101,8 @@ export interface Flow {
   sold: number;
   /** What the drivers can carry (with the demand multipliers, as `wanted` has them). */
   drivers: number;
+  /** The walk-in customers (seats), with the demand multipliers, as `wanted` has them: `drivers + walkIns` is `wanted`. */
+  walkIns: number;
   /** The share of the fleet with nothing to carry, 0..1. */
   driversIdle: number;
 }
@@ -121,7 +120,17 @@ function flowFrom(g: GameState, id: NeighborhoodId, seen: Seen): Flow {
   const sold = Math.min(wanted, kitchen);
   const drivers = deliveryRate(shop, g.vehicle, fit) * fx.demand;
   const delivered = Math.max(0, sold - Math.min(sold, walkInRate(shop) * fx.demand));
-  return { prep, ovens, counter, kitchen, wanted, sold, drivers, driversIdle: drivers > 0 ? Math.max(0, Math.min(1, 1 - delivered / drivers)) : 0 };
+  return {
+    prep,
+    ovens,
+    counter,
+    kitchen,
+    wanted,
+    sold,
+    drivers,
+    walkIns: walkInRate(shop) * fx.demand,
+    driversIdle: drivers > 0 ? Math.max(0, Math.min(1, 1 - delivered / drivers)) : 0,
+  };
 }
 
 /** The shop's flow right now. `now` only reaches the other features' demand hooks. */
@@ -145,8 +154,6 @@ const sameRegistry = (list: readonly unknown[]): boolean => list.length === FEAT
 
 /** Service, 0..1, in 5% steps (rounded down). */
 export const serviceOf = (f: Flow): number => (f.wanted > 0 ? quantise(f.sold / f.wanted) : 1);
-/** A station's load, 0..1, in 5% steps. */
-export const loadOf = (f: Flow, rate: number): number => (rate > 0 ? quantise(f.sold / rate) : 1);
 
 /** The report is live from a shop's first head (a manager brings all three): the capacity bars, the served and missed numbers and the symptoms. */
 export const reportActive = (g: GameState, id: NeighborhoodId): boolean => {
@@ -242,6 +249,8 @@ export interface ReportView {
   perMin: { prep: number; ovens: number; counter: number; kitchen: number; wanted: number; sold: number };
   /** Pizzas a minute each station and the drivers can handle now (a hand-tapped station: what the player made over the last minute). */
   capacity: { prep: number; ovens: number; counter: number; drivers: number };
+  /** Customers a minute who walk in and sit (seats): the drivers' deliveries plus these are `wanted`, so the Drivers bar reaches the Customers line only with these stacked on it (G119). */
+  walkIns: number;
   /** The stations the player still taps by hand. */
   you: Record<K3, boolean>;
   /** Customers a minute who want a pizza, how many are served and how many are missed (rolling about 60 s). */
@@ -252,14 +261,8 @@ export interface ReportView {
   symptoms: Record<Spot, Symptom | null>;
   /** Seconds each spot's symptom has held (0 with none): the barks wait for 10 s. */
   held: Record<Spot, number>;
-  /** Station loads, 0..1 in 5% steps. */
-  loads: Record<KitchenStation, number>;
-  /** wanted ÷ kitchen. */
-  floorRatio: number;
   /** Service, 0..1 in 5% steps. */
   service: number;
-  /** Cash walking out the door each minute: (wanted − sold) × the shop's value per pizza × 60. */
-  lostPerMinute: number;
   /** The share of its line the street draws: 1, or `coldQueueShare` while the line is cold. */
   queueShare: number;
   /** Seconds of play under 60% so far (0..coldSeconds), and how many are left before the line goes cold (null when not counting). */
@@ -277,16 +280,14 @@ const INACTIVE_VIEW: ReportView = Object.freeze({
   state: 'inactive',
   perMin: { prep: 0, ovens: 0, counter: 0, kitchen: 0, wanted: 0, sold: 0 },
   capacity: { prep: 0, ovens: 0, counter: 0, drivers: 0 },
+  walkIns: 0,
   you: { prep: false, ovens: false, counter: false },
   wanted: 0,
   served: 0,
   missed: 0,
   symptoms: NO_SYMPTOMS,
   held: NO_HELD,
-  loads: { prep: 0, ovens: 0, counter: 0 },
-  floorRatio: 1,
   service: 1,
-  lostPerMinute: 0,
   queueShare: 1,
   below: 0,
   coldIn: null,
@@ -307,10 +308,6 @@ export function reportView(g: GameState, id: NeighborhoodId, now: number): Repor
   // (shot 185 read "Served 0, Missed 168" next to 75%). With every station on its own the two are the same number; the tip and the cold line keep `flowService`.
   const service = flow.wanted > 0 ? quantise(served / flow.wanted) : 1;
   const missedPs = Math.max(0, flow.wanted - served);
-  const loads = { prep: loadOf(flow, flow.prep), ovens: loadOf(flow, flow.ovens), counter: loadOf(flow, flow.counter) };
-  const floorRatio = flow.kitchen > 0 ? flow.wanted / flow.kitchen : 1;
-  const lost = flow.wanted - flow.sold;
-  const lostPerMinute = lost > 1e-12 ? lost * valuePerPizza(id, shop, g.vehicle, featureMults(g, id, now), cityOf(g)) * 60 : 0;
   const counting = flowService < SERVICE.coldBelow - 1e-9 && !st.cold && stampFresh(read(g), now);
   const symptoms = symptomsOf(st, shop, missedPs);
   return {
@@ -324,16 +321,14 @@ export function reportView(g: GameState, id: NeighborhoodId, now: number): Repor
       sold: flow.sold * 60,
     },
     capacity: { prep: cap.prep * 60, ovens: cap.ovens * 60, counter: cap.counter * 60, drivers: flow.drivers * 60 },
+    walkIns: flow.walkIns * 60,
     you: { prep: byHand(shop, 'prep'), ovens: byHand(shop, 'ovens'), counter: byHand(shop, 'counter') },
     wanted: flow.wanted * 60,
     served: served * 60,
     missed: missedPs * 60,
     symptoms,
     held: st.hold,
-    loads,
-    floorRatio,
     service,
-    lostPerMinute,
     queueShare: state === 'cold' ? SERVICE.coldQueueShare : 1,
     below: st.below,
     coldIn: counting ? Math.max(0, SERVICE.coldSeconds - st.below) : null,

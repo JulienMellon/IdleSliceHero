@@ -4,7 +4,7 @@
 import { layout } from './draw-layout';
 import { FIRST_WIDE_FOOTPRINT } from '../../../content/shop-layout';
 import { LINE } from '../../../engine/pipeline';
-import { PILE_KINDS, PILE_MAX, PILE_STEPS, batchOf, pileBox, pileCount, pileRect, pileSpots, type PileKind } from '../piles';
+import { PILE_KINDS, PILE_MAX, PILE_STEPS, batchOf, pileBox, pileCount, pileParts, pileRect, pileSpots, type PileKind } from '../piles';
 import { LADDER_LEVELS, ladderProps, badgeBand, doorRect, fixedPeople, hits, headBox, matRect } from '../ladder';
 import { doorwaySignRect } from '../stations';
 import { MAX_PINS } from '../ladder';
@@ -92,10 +92,11 @@ describe('where the piles stand (step 1 budget)', () => {
         const s = spots[kind];
         if (!s) continue;
         for (let n = 1; n <= PILE_MAX; n++) {
-          const r = pileRect(s, n);
-          for (const [what, f] of fixed) if (hits(r, f)) bad.push(`${name} ${kind}×${n} over ${what}`);
-          // drawn after everyone standing deeper than it: their heads must show
-          for (const p of fixedPeople(lay)) if (p.y > s.sortY && hits(r, headBox(p.box))) bad.push(`${name} ${kind}×${n} over a head`);
+          for (const r of pileParts(s, n)) {
+            for (const [what, f] of fixed) if (hits(r, f)) bad.push(`${name} ${kind}×${n} over ${what}`);
+            // drawn after everyone standing deeper than it: their heads must show
+            for (const p of fixedPeople(lay)) if (p.y > s.sortY && hits(r, headBox(p.box))) bad.push(`${name} ${kind}×${n} over a head`);
+          }
         }
       }
     }
@@ -110,16 +111,16 @@ describe('where the piles stand (step 1 budget)', () => {
         'downtown',
         props.map((p) => p.rect),
       );
-      const placed = PILE_KINDS.flatMap((k) => (spots[k] ? [{ k, r: pileRect(spots[k]!, PILE_MAX) }] : []));
+      const placed = PILE_KINDS.flatMap((k) => (spots[k] ? pileParts(spots[k]!, PILE_MAX).map((r) => ({ k, r })) : []));
       for (const { k, r } of placed) for (const p of props) if (hits(r, p.rect)) bad.push(`${name} ${k} over ${p.id}`);
-      placed.forEach((a, i) => placed.slice(i + 1).forEach((b) => hits(a.r, b.r) && bad.push(`${name} ${a.k} over ${b.k}`)));
+      placed.forEach((a, i) => placed.slice(i + 1).forEach((b) => a.k !== b.k && hits(a.r, b.r) && bad.push(`${name} ${a.k} over ${b.k}`)));
     }
     expect(bad.slice(0, 6)).toEqual([]);
   });
   test('the budget can fail: a pile on the doormat is caught', () => {
     const lay = layout(2, 3, 3, 2, 3, 3, 1);
     const mat = matRect(lay);
-    const on: PileKindSpot = { kind: 'boxes', ax: (mat.x0 + mat.x1) / 2, ay: mat.y1, k: 1, sortY: -15, stand: false };
+    const on: PileKindSpot = { kind: 'boxes', ax: (mat.x0 + mat.x1) / 2, ay: mat.y1, k: 1, sortY: -15, stand: false, drop: 0, dir: 1 };
     expect(hits(pileRect(on, 3), mat)).toBe(true);
   });
   test('the mirrored plan is the plain plan’s places reflected', () => {

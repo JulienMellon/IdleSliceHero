@@ -56,26 +56,15 @@ describe('what is measured', () => {
     });
   });
 
-  test('wanted, kitchen and sold per minute; the loads', () => {
+  test('wanted, kitchen and sold per minute; the seats', () => {
     only(() => {
       const v = view(SLOW());
       expect(v.perMin.wanted).toBeCloseTo(2.8 * 60, 6);
       expect(v.perMin.kitchen).toBeCloseTo(2.1 * 60, 6);
       expect(v.perMin.sold).toBeCloseTo(2.1 * 60, 6);
-      // loads are sold ÷ the station's rate
-      expect(v.loads.ovens).toBe(1);
-      expect(v.loads.prep).toBe(0.75); // 2.1 / 2.7 = 0.777, down to 5%
-      expect(v.loads.counter).toBe(0.6); // 2.1 / 3.3 = 0.636
-    });
-  });
-
-  test('money walking out a minute = (wanted − sold) × the value per pizza × 60', () => {
-    only(() => {
-      const g = SLOW();
-      const v = view(g);
-      const perPie = G.valuePerPizza('downtown', g.shops.downtown, g.vehicle, G.featureMults(g, 'downtown', T0 + 1000));
-      expect(v.lostPerMinute).toBeCloseTo((2.8 - 2.1) * perPie * 60, 6);
-      expect(view(QUIET()).lostPerMinute).toBe(0);
+      // the Customers line is the drivers' deliveries plus the seats (G119, S90): the Drivers bar alone can never reach it
+      expect(v.capacity.drivers + v.walkIns).toBeCloseTo(v.wanted, 6);
+      expect(v.walkIns).toBeGreaterThan(0);
     });
   });
 

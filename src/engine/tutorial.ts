@@ -224,9 +224,11 @@ export const reportCoachLive = (s: G.GameState): boolean => marks(s).includes(RE
 
 /** The sequence may begin: the chapter task `report` is the next task and open, Chapter 1's coach is over, the sequence never ran and the strip is there to light. */
 function reportCoachStarts(s: G.GameState): boolean {
-  if (marks(s).includes(REPORT_COACH) || coachMode(s) !== null) return false;
+  // the cheap answers first: this runs on every render of the game screen, and a save that has opened the report (nearly all of them, for good) stops here (U36, C180)
+  if (saveOf(s).report || marks(s).includes(REPORT_COACH) || coachMode(s) !== null) return false;
   const row = nextTask(s);
-  return !!row && row.task.kind === 'report' && !row.done && !saveOf(s).report && reportActive(s, row.task.shop);
+  // the strip is the active shop's: the coach points at it only while the task's shop is the one on screen
+  return !!row && row.task.kind === 'report' && !row.done && s.active === row.task.shop && reportActive(s, row.task.shop);
 }
 
 /** The step to show now, or null (nothing to say). Cheap: no copy is built unless a step shows. */

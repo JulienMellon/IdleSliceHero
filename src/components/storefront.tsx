@@ -397,15 +397,39 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const nDough = live ? pileCount(line.prepped, batch) : 0;
   const nBoxes = live ? pileCount(line.baked, batch) : 0;
   const nBags = live ? pileCount(line.boxed, batch) : 0;
+  // while a station is piling its top item rocks (two steps, about 3 times a second): the pile's own state, readable at a glance (D548)
+  const rockStep = Math.floor(clock * 6) % 2 === 0 ? 1 : 2;
+  const wobD = rep.symptoms.prep === 'piling' ? rockStep : 0;
+  const wobB = rep.symptoms.ovens === 'piling' ? rockStep : 0;
+  const wobG = rep.symptoms.counter === 'piling' ? rockStep : 0;
   const piles = useMemo(() => {
     const n: Record<PileKind, number> = { dough: nDough, boxes: nBoxes, bags: nBags };
+    const wob: Record<PileKind, number> = { dough: wobD, boxes: wobB, bags: wobG };
     return PILE_KINDS.flatMap((kind) => {
       const sp = spots[kind];
       return sp && n[kind] > 0
-        ? [{ y: sp.sortY, el: <Pile key={`pile-${kind}`} kind={kind} n={n[kind]} ax={sp.ax} ay={sp.ay} k={sp.k} stand={sp.stand} /> }]
+        ? [
+            {
+              y: sp.sortY,
+              el: (
+                <Pile
+                  key={`pile-${kind}`}
+                  kind={kind}
+                  n={n[kind]}
+                  ax={sp.ax}
+                  ay={sp.ay}
+                  k={sp.k}
+                  stand={sp.stand}
+                  drop={sp.drop}
+                  wob={wob[kind]}
+                  dir={sp.dir}
+                />
+              ),
+            },
+          ]
         : [];
     });
-  }, [spots, nDough, nBoxes, nBags]);
+  }, [spots, nDough, nBoxes, nBags, wobD, wobB, wobG]);
   // per-buy bounce: each station's transform strings (one per step, about its base) are built when the layout changes, never per frame
   const bounceT = useMemo(() => {
     const [ox0, ox1] = [lay.ovenCols[0].x0, lay.ovenCols[lay.ovenCols.length - 1].x1];
