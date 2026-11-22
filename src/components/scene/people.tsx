@@ -254,37 +254,46 @@ export function Person({ x, y, o = 1, ...p }: PersonProps) {
   const bob = bobFor(p.kind, step);
   // the v5.22 poses are transforms of the whole figure: a hurried bob and a lean about the feet (poses.ts)
   const posed = p.bob || p.lean ? ` translate(0 ${(-(p.bob ?? 0)).toFixed(2)}) rotate(${((p.lean ?? 0) * LEAN_DEG).toFixed(1)})` : '';
+  const figure = (
+    <>
+      {/* the back limbs only use the arm swing when rolling dough with both hands */}
+      <Limbs {...limbs} arm={act === 'pin' ? limbs.arm : 0} part="back" />
+      <G transform={bob ? `translate(0 ${(-bob).toFixed(2)})` : undefined}>
+        <FigureBody
+          kind={p.kind}
+          seed={seed}
+          shirt={p.shirt}
+          hair={p.hair}
+          cap={p.cap}
+          dot={p.dot}
+          gold={p.gold}
+          alt={p.alt}
+          variant={p.variant}
+          front={p.front}
+          flip={p.flip}
+          blink={p.blink}
+          talk={p.talk}
+          mood={p.mood}
+        />
+      </G>
+      {p.shawl && <Shawl color={p.shawl} by={bodyBy(p.kind, look.tall)} />}
+      <Limbs {...limbs} part="front" />
+      {p.sweat ? <Sweat hy={bodyBy(p.kind, look.tall) - 9} step={p.sweat} /> : null}
+      {p.frown ? <Frown hy={bodyBy(p.kind, look.tall) - 9} /> : null}
+    </>
+  );
   return (
     <G opacity={o} transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${(p.flip ? -k : k).toFixed(3)} ${k.toFixed(3)})${posed}`}>
-      {p.ride && <Scooter />}
-      {/* an idle driver sits on the scooter's seat: the figure is lifted onto it, the scooter stays on the ground and is drawn over the legs */}
-      <G transform={p.ride ? `translate(0 ${-RIDE_LIFT})` : undefined}>
-        {/* the back limbs only use the arm swing when rolling dough with both hands */}
-        <Limbs {...limbs} arm={act === 'pin' ? limbs.arm : 0} part="back" />
-        <G transform={bob ? `translate(0 ${(-bob).toFixed(2)})` : undefined}>
-          <FigureBody
-            kind={p.kind}
-            seed={seed}
-            shirt={p.shirt}
-            hair={p.hair}
-            cap={p.cap}
-            dot={p.dot}
-            gold={p.gold}
-            alt={p.alt}
-            variant={p.variant}
-            front={p.front}
-            flip={p.flip}
-            blink={p.blink}
-            talk={p.talk}
-            mood={p.mood}
-          />
-        </G>
-        {p.shawl && <Shawl color={p.shawl} by={bodyBy(p.kind, look.tall)} />}
-        <Limbs {...limbs} part="front" />
-        {p.sweat ? <Sweat hy={bodyBy(p.kind, look.tall) - 9} step={p.sweat} /> : null}
-        {p.frown ? <Frown hy={bodyBy(p.kind, look.tall) - 9} /> : null}
-      </G>
-      {p.ride && <ScooterFront />}
+      {p.ride ? (
+        <>
+          <Scooter />
+          {/* an idle driver sits on the scooter's seat: the figure is lifted onto it, the scooter stays on the ground and is drawn over the legs */}
+          <G transform={`translate(0 ${-RIDE_LIFT})`}>{figure}</G>
+          <ScooterFront />
+        </>
+      ) : (
+        figure
+      )}
     </G>
   );
 }

@@ -61,7 +61,7 @@ import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEAD_BARKS } from '../content/heads';
 import { getFeature } from '../engine/features';
 import { counterattack } from '../engine/features/counterattack';
-import { hintsAllowed, stepsFor } from '../engine/tutorial';
+import { coachTargets, hintsAllowed } from '../engine/tutorial';
 import { gainAnchor, ovenGain } from './scene/oven-gain';
 import type { BarkTable } from '../content/cities/types';
 import { reportActive, reportView, symptomAsks } from '../engine/features/service';
@@ -353,8 +353,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   ).map((q) => q.rect);
   // U4: while Nonna's coach is up the scene says nothing else (tutorial.ts `hintsAllowed`)
   const hints = hintsAllowed(game);
-  // the step's targets, from the cached step table (no copy built per frame)
-  const ovenLook = game.tutorial >= 1 && game.tutorial < Game.TUTORIAL_DONE && !!stepsFor(city)[game.tutorial - 1]?.targets.includes('ovens:all');
+  // the step's targets (engine/tutorial.ts `coachTargets`: none while the tutorial is not running)
+  const ovenLook = coachTargets(game).includes('ovens:all');
   // the pills' words change with the counts only (U10/U11), not with the clock
   const waitWords = useMemo(() => (side.waiting > 0 ? waitingText(side.waiting) : null), [side.waiting]);
   const moreWords = useMemo(() => (side.more > 0 ? queueLabel(side.more, side.diners) : null), [side.more, side.diners]);
