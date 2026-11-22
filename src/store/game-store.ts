@@ -42,6 +42,7 @@ import { fixJam as fixOvenJam } from '../engine/features/layers/shifts';
 import { setMenu as setUniversityMenu } from '../engine/features/layers/menu';
 import { ackCritic as ackUptownCritic, buyIngredients as buyUptownIngredients, ingredientsPrice } from '../engine/features/layers/stars';
 import * as R from '../engine/rewards';
+import { buyBooster as buyPaidBooster, BOOSTER_BOUGHT_EVENT } from '../engine/paid-boost';
 import { tutorialAdvance, tutorialHoldsStory, tutorialNote, type TutorialNote } from '../engine/tutorial';
 import { buyCosmetic as buyVanity } from '../engine/vanity';
 import { analytics, EVENTS, onGrant, purchases, startServices, type Grant } from '../services';
@@ -177,6 +178,8 @@ interface Store {
   claimWeekly: (i: number) => boolean;
   claimWeeklyChest: () => boolean;
   startBooster: (i: number) => boolean;
+  /** v5.23: buy a diamond booster (PAID_BOOSTERS id) into the paid-boost slot; false (nothing taken) when refused. */
+  buyBooster: (id: string) => boolean;
   claimGift: (repair?: boolean) => boolean;
   /** The gift calendar opened by itself today: don't open it again until tomorrow. */
   markGiftShown: () => void;
@@ -722,6 +725,11 @@ export const useGame = create<Store>((set, get) => {
     claimWeekly: (i) => claimTracked('weekly', (g, now) => R.claimWeekly(g, i, now)),
     claimWeeklyChest: () => claim((g, now) => R.claimWeeklyChest(g, now)),
     startBooster: (i) => claim((g, now) => R.startBooster(g, i, now)),
+    buyBooster: (id) => {
+      const ok = claim((g, now) => buyPaidBooster(g, id, now));
+      if (ok) analytics.track(BOOSTER_BOUGHT_EVENT, { booster: id });
+      return ok;
+    },
     claimGift: (repair = false) => claimTracked('gift', (g, now) => R.claimGift(g, now, { repair })),
     markGiftShown: () => {
       const g = get().game;

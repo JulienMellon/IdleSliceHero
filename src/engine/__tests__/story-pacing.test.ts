@@ -77,7 +77,7 @@ describe('save migration v2 → v3', () => {
       seenScenes: ['suburbs-4', 'waterfront-4'],
     };
     const m = G.migrate(old, 0);
-    expect(G.SAVE_VERSION).toBe(8);
+    expect(G.SAVE_VERSION).toBe(9);
     expect(m.playSeconds).toBe(0);
     expect(m.sceneAt).toEqual({});
     expect(m.shops.suburbs.perk).toBe(true);

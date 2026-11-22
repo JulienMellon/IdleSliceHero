@@ -508,7 +508,7 @@
    }
   },
   "migrated": {
-   "saveVersion": 8,
+   "saveVersion": 9,
    "city": "home",
    "economy": 3,
    "cash": 4859291.338800002,
@@ -814,7 +814,8 @@
     "boosts": [],
     "cosmetics": [],
     "worn": [],
-    "lastSeen": 0
+    "lastSeen": 0,
+    "paidUntil": 0
    },
    "stats": {
     "upgrades": 0,
@@ -1697,7 +1698,7 @@
    }
   },
   "migrated": {
-   "saveVersion": 8,
+   "saveVersion": 9,
    "city": "boston",
    "economy": 3,
    "cash": 2965155408,
@@ -1992,7 +1993,8 @@
     "boosts": [],
     "cosmetics": [],
     "worn": [],
-    "lastSeen": 0
+    "lastSeen": 0,
+    "paidUntil": 0
    },
    "stats": {
     "upgrades": 0,

@@ -26,6 +26,8 @@ import {
   DAILY_TASK_COUNT,
   MAX_BOOSTERS,
   MAX_CONCURRENT_BOOSTS,
+  PAID_BOOST_MULT,
+  PAID_SLOT_CAP,
   TASK_KINDS,
   WEEKLY_TASK_COUNT,
   type TaskKind,
@@ -53,8 +55,8 @@ import {
   type Station,
 } from './pipeline';
 
-/** v8 (v5.21): the chapters' progress is saved (`x.chapters`, engine/chapters.ts); a v7 save's open chapters are read from its counters on load. v7 (v5.20): the Chapter 1 tutorial has 15 steps (`tutorial` 1..15, done = 16), so a v6 save's step is renumbered on load (`legacyTutorial`). v6 (Todd's story): 40 scenes, interludes that hold main beats back, manager hire scenes; the migration marks skipped scenes seen. v5 was rewards: daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. */
-export const SAVE_VERSION = 8;
+/** v9 (v5.23): `rewards.paidUntil`, the diamond boosters' slot; an older save gets 0 (none). v8 (v5.21): the chapters' progress is saved (`x.chapters`, engine/chapters.ts); a v7 save's open chapters are read from its counters on load. v7 (v5.20): the Chapter 1 tutorial has 15 steps (`tutorial` 1..15, done = 16), so a v6 save's step is renumbered on load (`legacyTutorial`). v6 (Todd's story): 40 scenes, interludes that hold main beats back, manager hire scenes; the migration marks skipped scenes seen. v5 was rewards: daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. */
+export const SAVE_VERSION = 9;
 /**
  * C106: the economy marker. 2 = the v5.13 retune (costMult = orderValue, 4 h offline cap, Pier 9 $120M); 3 = the v5.16 rules
  * (managers and heads priced apart, three heads sell half speed while you are away, station prices grow at their own rates,
@@ -226,6 +228,8 @@ export interface Rewards {
   boosters: Booster[];
   /** Boosts running now. */
   boosts: Boost[];
+  /** v5.23: the paid-boost slot (diamond boosters, engine/paid-boost.ts) runs until this wall time (ms); 0 = none. It adds one 2× on top of `boosts`, never a second. */
+  paidUntil: number;
   cosmetics: string[];
   /** The owned cosmetics currently worn (rewards.ts `wear`); at most one per part (`cosmeticPart`). */
   worn: string[];
@@ -313,19 +317,22 @@ export const newRewards = (): Rewards => ({
   diamonds: 0,
   boosters: [],
   boosts: [],
+  paidUntil: 0,
   cosmetics: [],
   worn: [],
   lastSeen: 0,
 });
 
 /**
- * 1 + Σ(mult − 1) over the boosts running at `now` (boosts add, they don't multiply).
+ * 1 + Σ(mult − 1) over the boosts running at `now` (boosts add, they don't multiply), plus the paid slot's one
+ * (PAID_BOOST_MULT − 1) while `paidUntil` is ahead of `now`.
  * A clock behind `lastSeen` gets no boost, so winding it back can't stretch one.
  */
 export function boostMult(s: GameState, now: number): number {
   const r = s.rewards;
-  if (!r.boosts.length || now < r.lastSeen) return 1;
-  return r.boosts.reduce((m, b) => (b.until > now ? m + (b.mult - 1) : m), 1);
+  if (now < r.lastSeen) return 1;
+  const paid = r.paidUntil > now ? PAID_BOOST_MULT - 1 : 0;
+  return r.boosts.reduce((m, b) => (b.until > now ? m + (b.mult - 1) : m), 1 + paid);
 }
 
 /** The tutorial's step after its last (tutorial.ts reads it from here to avoid an import cycle). */
@@ -502,6 +509,8 @@ function migrateRewards(raw: unknown, now: number): Rewards {
     diamonds: int(r.diamonds, 0, 0, 1e9),
     boosters,
     boosts,
+    // a corrupt far-future value would be a free boost for good: the slot holds at most PAID_SLOT_CAP
+    paidUntil: Math.min(now + PAID_SLOT_CAP * 1000, Math.max(0, num(r.paidUntil, 0))),
     cosmetics,
     worn,
     // a corrupt far-future value would lock rewards for good; a year of rollback headroom is plenty

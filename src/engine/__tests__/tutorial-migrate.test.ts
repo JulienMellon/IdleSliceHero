@@ -13,9 +13,9 @@ const old = (tutorial: number | undefined, patch: Record<string, unknown> = {}) 
 
 describe('the tutorial in a v6 save', () => {
   test('the save version is 8 and the tutorial ends at 16', () => {
-    expect(G.SAVE_VERSION).toBe(8);
+    expect(G.SAVE_VERSION).toBe(9);
     expect(G.TUTORIAL_DONE).toBe(16);
-    expect(G.migrate(old(3), 0).saveVersion).toBe(8);
+    expect(G.migrate(old(3), 0).saveVersion).toBe(9);
   });
   // the table: old step → new step
   test.each([
