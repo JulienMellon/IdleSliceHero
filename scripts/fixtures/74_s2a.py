@@ -101,7 +101,10 @@ def run(ctx):
     expect(page, "rival-won", 12000)
     advance(page, 600)
     # the win plays the suburbs finale (beat 4): skip it to see the street (the win line stays on its card for 6 s)
-    if page.locator('[data-testid="skip-scene"]').count():
+    # (the scene starts a moment after the win: wait for its skip button in game time, then for the scene to go)
+    if until(page, lambda: is_up(page, "skip-scene"), 6000):
         tid(page, "skip-scene").click()
         advance(page, 800)
+    if is_up(page, "skip-scene"):
+        report["errors"].append("D567: the Act 4 cut-scene is still up over shot 81")
     shot(page, "81-rival-closed", 0.3)

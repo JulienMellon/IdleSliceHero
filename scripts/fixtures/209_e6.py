@@ -49,15 +49,19 @@ def run(ctx):
     except Exception as e:
         report["errors"].append(f"E6 intro failed: {e}")
 
-    # a tap outside the lit chip skips the intro: the coach is gone, the chip is still there and opens the Shop
+    # two taps outside the lit chip skip the intro: the coach is gone, the chip is still there and opens the Shop
     try:
         page = seeded_page(b, chapter1_end())
         settle(page, 1.5)
         expect(page, "coach-overlay", 6000)
-        tid(page, "coach-block").first.click()
+        tid(page, "coach-block").first.click()  # the first tap outside only nudges
+        advance(page, 600)
+        if not is_up(page, "coach-overlay"):
+            report["errors"].append("E6: one stray tap ended the intro")
+        tid(page, "coach-block").first.click()  # the second skips
         advance(page, 800)
         if is_up(page, "coach-overlay"):
-            report["errors"].append("E6: the coach is still up after a tap outside the chip")
+            report["errors"].append("E6: the coach is still up after two taps outside the chip")
         expect(page, "shop-chip")
         tid(page, "shop-chip").click()
         expect(page, "shop-tab-0")

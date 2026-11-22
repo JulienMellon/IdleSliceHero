@@ -324,6 +324,8 @@ describe('the Store intro', () => {
     expect(tutorialHoldsStory(at(TUTORIAL_DONE))).toBe(false);
     expect(shopTutorialDone(at(15))).toBe(false);
     expect(shopTutorialDone(at(16))).toBe(true);
+    expect(shopTutorialDone(at(17))).toBe(true);
+    expect(shopTutorialDone(at(TUTORIAL_DONE))).toBe(true);
     // the calendar and the hints gate on the coach mode (index.tsx `tutorialOn`): it is on for both steps
     expect(hintsAllowed(at(16)).toast).toBe(false);
     expect(hintsAllowed(at(17)).toast).toBe(false);
@@ -341,7 +343,7 @@ describe('the Store intro', () => {
   });
   test('only the lit chip step is skippable, and the overlay and the flow hook carry it', () => {
     const src = (f: string) => fs.readFileSync(path.join(__dirname, '..', '..', 'components', 'coach', f), 'utf8');
-    expect(src('overlay.tsx')).toMatch(/skippable \? \(\) => skipRef\.current\?\.\(\) : nudge/);
+    expect(src('overlay.tsx')).toMatch(/skippable && outsideTaps\.current\+\+ >= 1 \? skipRef\.current\?\.\(\) : nudge\(\)/);
     expect(src('use-coach-flow.ts')).toContain("note('store-skip')");
   });
 });

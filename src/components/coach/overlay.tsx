@@ -40,7 +40,7 @@ export interface CoachOverlayProps {
   onDone?: () => void;
   /** False for a step whose line is about nothing to tap (15): the breathing ring carries it, no hand. */
   hand?: boolean;
-  /** `tap` only: a tap outside the lit spot calls `onSkip` (the Store chip, step 16) instead of the nudge. */
+  /** `tap` only: a first tap outside the lit spot nudges as usual; a second one calls `onSkip` (the Store chip, step 16), so one stray tap does not end the intro (C191). */
   skippable?: boolean;
   onSkip?: () => void;
 }
@@ -80,6 +80,7 @@ export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, on
   }, [loops, pulse]);
 
   const skipRef = useRef(onSkip);
+  const outsideTaps = useRef(0);
   const doneRef = useRef(onDone);
   useEffect(() => {
     doneRef.current = onDone;
@@ -159,7 +160,7 @@ export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, on
             key={i}
             testID="coach-block"
             onStartShouldSetResponder={() => true}
-            onResponderRelease={skippable ? () => skipRef.current?.() : nudge}
+            onResponderRelease={() => (skippable && outsideTaps.current++ >= 1 ? skipRef.current?.() : nudge())}
             style={{ position: 'absolute', left: p.x0, top: p.y0, width: p.x1 - p.x0, height: p.y1 - p.y0 }}
           />
         ))
