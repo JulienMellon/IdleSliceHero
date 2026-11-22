@@ -5,7 +5,7 @@ import { HOME_CHAPTERS } from './chapters';
 import { CITY_NAME, HEADS, HOME_BID, HOME_LAYERS, MANAGERS, NEIGHBORHOODS, PERKS } from './data';
 import { HOME_FIT } from './fit';
 import { HOME_SCENES } from './scenes';
-import { HOME_BARKS, HOME_FOUNDER, HOME_NIGHT_OVEN_LINES, HOME_ORDER_CAST } from './voice';
+import { HOME_BARKS, HOME_FOUNDER, HOME_MANAGER_BARKS, HOME_NIGHT_OVEN_LINES, HOME_ORDER_CAST } from './voice';
 
 export const HOME_CITY: CityDef = {
   id: 'home',
@@ -23,6 +23,7 @@ export const HOME_CITY: CityDef = {
   lieutenant: { id: 'megaslice-rep', name: 'Todd' },
   bid: HOME_BID,
   barks: HOME_BARKS,
+  managerBarks: HOME_MANAGER_BARKS,
   orderCast: HOME_ORDER_CAST,
   nightOvenLines: HOME_NIGHT_OVEN_LINES,
   founder: HOME_FOUNDER,
