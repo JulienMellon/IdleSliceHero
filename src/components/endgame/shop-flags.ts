@@ -12,14 +12,16 @@ interface ShopFlagsStore extends ShopFlags {
   /** The Shop opened (`takenOver`: rewards are unlocked). */
   opened: (takenOver: boolean) => void;
   markNudged: () => void;
+  /** A booster was bought: `until` is the paid slot's end after it. */
+  boosterBought: (id: string, until: number) => void;
   reset: () => void;
 }
 
 export const useShopFlags = create<ShopFlagsStore>()((set, get) => {
   const put = (patch: Partial<ShopFlags>) => {
-    const { dotCleared, nudged } = { ...get(), ...patch };
-    set({ dotCleared, nudged });
-    void AsyncStorage.setItem(KEY, JSON.stringify({ dotCleared, nudged })).catch(() => {});
+    const { dotCleared, nudged, lastBooster } = { ...get(), ...patch };
+    set({ dotCleared, nudged, lastBooster });
+    void AsyncStorage.setItem(KEY, JSON.stringify({ dotCleared, nudged, lastBooster })).catch(() => {});
   };
   void AsyncStorage.getItem(KEY)
     .then((raw) => set({ ...parseFlags(raw), loaded: true }))
@@ -34,8 +36,9 @@ export const useShopFlags = create<ShopFlagsStore>()((set, get) => {
     markNudged: () => {
       if (!get().nudged) put({ nudged: true });
     },
+    boosterBought: (id, until) => put({ lastBooster: { id, until } }),
     reset: () => {
-      if (get().dotCleared || get().nudged) put(NO_FLAGS);
+      if (get().dotCleared || get().nudged || get().lastBooster) put(NO_FLAGS);
     },
   };
 });

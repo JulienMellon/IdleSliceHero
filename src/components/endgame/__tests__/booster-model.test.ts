@@ -73,13 +73,30 @@ describe('the Boosters tab, Buy section (card U5)', () => {
     expect(cards.every((c) => c.state === 'locked')).toBe(true);
   });
 
-  test('a running slot shows booster.running with the time left; buying more adds to it', () => {
+  test('a running slot names the booster last bought into it (S101), with the time left; never "2× income"', () => {
     const r = buyBooster(takenOver(500), 'rush-hour', NOW);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    const s = boosterSection(r.state, NOW + 60_000);
-    expect(s.running).toBe('2× income running · 59 m left');
-    expect(boosterSection(r.state, NOW + 3_600_000 + 1000).running).toBeNull();
+    const last = { id: 'rush-hour', until: r.state.rewards.paidUntil };
+    expect(boosterSection(r.state, NOW + 60_000, last).running).toBe('Rush Hour running \u00B7 59 m left');
+    expect(boosterSection(r.state, NOW + 3_600_000 + 1000, last).running).toBeNull();
+    // a second, bigger buy: the line follows the last one
+    const r2 = buyBooster(r.state, 'big-night', NOW);
+    if (!r2.ok) throw new Error('buy');
+    const last2 = { id: 'big-night', until: r2.state.rewards.paidUntil };
+    expect(boosterSection(r2.state, NOW, last2).running).toBe('Big Night running \u00B7 13 h left');
+  });
+
+  test('a slot that something else filled or moved is named by the booster that covers its time, never by "2× income"', () => {
+    const r = buyBooster(takenOver(500), 'dinner-service', NOW);
+    if (!r.ok) throw new Error('buy');
+    // no record, or a record from an earlier slot end
+    expect(boosterSection(r.state, NOW).running).toBe('Dinner Service running \u00B7 4 h left');
+    expect(boosterSection(r.state, NOW, { id: 'rush-hour', until: 1 }).running).toBe('Dinner Service running \u00B7 4 h left');
+    // a 24 h slot (the Starter Pack's) is the biggest booster's name
+    const day = { ...r.state, rewards: { ...r.state.rewards, paidUntil: NOW + 86_400_000 } };
+    expect(boosterSection(day, NOW).running).toBe('Big Night running \u00B7 1 d left');
+    expect(boosterSection(day, NOW).running).not.toMatch(/income/);
   });
 
   test('a booster that would pass 24 h is full, and the refusal costs nothing', () => {

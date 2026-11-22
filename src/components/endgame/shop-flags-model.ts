@@ -6,16 +6,20 @@ export interface ShopFlags {
   dotCleared: boolean;
   /** The nudge has been shown. */
   nudged: boolean;
+  /** The booster last bought into the paid slot and the slot's end after that buy: the running line names it while the slot still ends there (S101). */
+  lastBooster: { id: string; until: number } | null;
 }
 
-export const NO_FLAGS: ShopFlags = { dotCleared: false, nudged: false };
+export const NO_FLAGS: ShopFlags = { dotCleared: false, nudged: false, lastBooster: null };
 export const FLAGS_KEY = 'slice-empire/shop/v1';
 export const TEST_FLAGS_KEY = 'slice-empire/shop/test-v1';
 
 export function parseFlags(raw: string | null): ShopFlags {
   try {
     const v = JSON.parse(raw ?? '') as Partial<ShopFlags>;
-    return { dotCleared: v.dotCleared === true, nudged: v.nudged === true };
+    const b = v.lastBooster;
+    const lastBooster = b && typeof b.id === 'string' && typeof b.until === 'number' && Number.isFinite(b.until) ? { id: b.id, until: b.until } : null;
+    return { dotCleared: v.dotCleared === true, nudged: v.nudged === true, lastBooster };
   } catch {
     return NO_FLAGS;
   }

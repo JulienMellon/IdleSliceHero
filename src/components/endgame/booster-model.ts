@@ -11,9 +11,9 @@ import { tidySpan } from './shop-model';
 
 /** COPY-v5.23 §5: each booster's name and line, by the id the engine sells it under. */
 export const BOOSTER_WORDS: Readonly<Record<string, { key: string; name: string; desc: string }>> = {
-  'rush-hour': { key: 'rush', name: 'Rush Hour', desc: 'Double income, 1 hour. The lunch crowd.' },
-  'dinner-service': { key: 'dinner', name: 'Dinner Service', desc: 'Double income, 4 hours. All tables full.' },
-  'big-night': { key: 'bignight', name: 'Big Night', desc: 'Double income, 12 hours. The ovens sing.' },
+  'rush-hour': { key: 'rush', name: 'Rush Hour', desc: 'The whole lunch crowd, all at once.' },
+  'dinner-service': { key: 'dinner', name: 'Dinner Service', desc: 'Every table full, every candle lit.' },
+  'big-night': { key: 'bignight', name: 'Big Night', desc: 'The ovens sing till morning.' },
 };
 
 /** The lines with a placeholder or a speaker (COPY-v5.23 §5 and §6). */
@@ -52,8 +52,22 @@ export interface BoosterSection {
   running: string | null;
 }
 
-/** The slot holds one running stretch, bought one or more times, so the line names the boost by what it does, not by a booster it may no longer be. */
-const SLOT_NAME = `${PAID_BOOST_MULT}× income`;
+/** The booster last bought into the slot (S101), remembered with the slot's end after that buy. */
+export interface LastBooster {
+  id: string;
+  until: number;
+}
+
+/**
+ * The name the running line prints: the booster last bought into the slot, while the slot still ends where that buy left it. When something else
+ * filled or moved the slot (the Starter Pack's boost, an older save), the smallest booster that covers the time left (the biggest when none does).
+ */
+export function slotName(g: GameState, left: number, last: LastBooster | null): string {
+  const known = last && last.until === g.rewards.paidUntil ? BOOSTER_WORDS[last.id] : undefined;
+  if (known) return known.name;
+  const cover = PAID_BOOSTERS.find((b) => b.seconds >= left) ?? PAID_BOOSTERS[PAID_BOOSTERS.length - 1];
+  return BOOSTER_WORDS[cover.id]?.name ?? cover.id;
+}
 
 /**
  * What the section depends on, as one cheap string (U39): the diamonds, the slot (its end and the minute that is shown), whether rewards are open, and a
@@ -62,7 +76,7 @@ const SLOT_NAME = `${PAID_BOOST_MULT}× income`;
 export const boosterKey = (g: GameState, now: number): string =>
   `${Math.floor(g.rewards.diamonds)}|${g.rewards.paidUntil}|${Math.floor(paidBoostLeft(g, now) / 60)}|${rewardsUnlocked(g) ? 1 : 0}|${Math.floor(g.playSeconds / 5)}`;
 
-export function boosterSection(g: GameState, now: number = gameNow()): BoosterSection {
+export function boosterSection(g: GameState, now: number = gameNow(), last: LastBooster | null = null): BoosterSection {
   const open = rewardsUnlocked(g);
   const cards = PAID_BOOSTERS.map((b): BoosterView => {
     const words = BOOSTER_WORDS[b.id];
@@ -79,5 +93,5 @@ export function boosterSection(g: GameState, now: number = gameNow()): BoosterSe
     };
   });
   const left = paidBoostLeft(g, now);
-  return { cards, running: left > 0 ? fill(BOOSTER_LINES.running, { name: SLOT_NAME, time: tidySpan(left) }) : null };
+  return { cards, running: left > 0 ? fill(BOOSTER_LINES.running, { name: slotName(g, left, last), time: tidySpan(left) }) : null };
 }

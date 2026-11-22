@@ -8,6 +8,7 @@ import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { haptic } from '../game-ui';
 import { BoostIcon, DiamondIcon } from '../icons';
+import { useShopFlags } from './shop-flags';
 import { BOOSTER_LINES, boosterKey, boosterSection, type BoosterView } from './booster-model';
 
 const BoosterCard = memo(function BoosterCard({
@@ -62,7 +63,8 @@ export const BoosterBuy = memo(function BoosterBuy({ onStore }: { onStore: () =>
   // a cheap key (U39): the section is built when the diamonds, the slot or the pace's five-second bucket change, never per game tick
   const key = useGame((s) => boosterKey(s.game, gameNow()));
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` is what the section depends on
-  const section = useMemo(() => boosterSection(useGame.getState().game, gameNow()), [key]);
+  const last = useShopFlags((f) => f.lastBooster);
+  const section = useMemo(() => boosterSection(useGame.getState().game, gameNow(), last), [key, last]);
   const [refused, setRefused] = useState(false);
   const buy = useCallback(
     (id: string, state: BoosterView['state']) => {
@@ -78,6 +80,7 @@ export const BoosterBuy = memo(function BoosterBuy({ onStore }: { onStore: () =>
       }
       const ok = useGame.getState().buyBooster(id);
       haptic(ok ? 'success' : 'error');
+      if (ok) useShopFlags.getState().boosterBought(id, useGame.getState().game.rewards.paidUntil);
       setRefused(false);
     },
     [onStore],
