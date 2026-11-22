@@ -1,3 +1,7 @@
 - W4 (wave 1): all v5.23 copy is in docs/story/COPY-v5.23.md. New keys: store.starter.ribbon ("ONE PER OWNER", replaces "ONE-TIME DEAL") and store.starter.blurb (placeholders; the old blurb says 150 diamonds). Each card lands the rows for its own files: N1 store cards/packs/Plus; U5 Store chip, Boosters tab, reminder dot/line; E5/E6 booster lines and tutorial.16 intro.
 - W4 §7 "Carried fixes" (D555+S91, S98, S95 x2, D545, S70, S71, S87, S67) are text only; they are not in code yet. The card that owns the file each row names puts it in. Any row in a file no v5.23 card owns stays in COPY §7 for the fix round.
 - W4 kept booster.running as the card wrote it ("X left" style); PRICING §5 bans that only for offers.
+- E5 (wave 1): src/engine/paid-boost.ts exports buyBooster, paidBoostLeft, boosterPace, boosterFits, BOOSTER_BOUGHT_EVENT='booster_bought'; store action useGameStore buyBooster(id). Content: PAID_BOOSTERS, PAID_BOOST_MULT=2, PAID_SLOT_CAP=86400 in src/content/rewards.ts. Save field rewards.paidUntil (0 = none); SAVE_VERSION is now 9 (tests and fixtures saves bumped).
+- E5 Needs -> N1 (owns src/services/**): add `boosterBought: 'booster_bought'` to EVENTS in src/services/events.ts and switch game-store's tracking to it.
+- E5 Needs -> E6 (E lane): in src/engine/rewards.ts refreshRewards, set paidUntil=0 in the clock-recovery branch where boosts are cleared; optionally drop an expired slot.
+- Offline earnings ignore paidUntil (card E5 default); open for Julien.

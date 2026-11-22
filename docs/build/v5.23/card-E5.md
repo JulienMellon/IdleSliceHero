@@ -11,12 +11,12 @@
 - Do not touch: `src/components/**`, `src/app/**`.
 
 ## Steps
-- [ ] **1. Data:** `PAID_BOOSTERS = [{ id: 'rush-hour', seconds: 3600, diamonds: 30 }, { id: 'dinner-service', seconds: 14400, diamonds: 90 }, { id: 'big-night', seconds: 43200, diamonds: 220 }]`, mult 2, `PAID_SLOT_CAP = 86400`.
-- [ ] **2. The slot:** `rewards.paidUntil: number` (0 = none). `buyBooster(g, id, now)`: refuse when diamonds are short or `max(paidUntil, now) + seconds − now > PAID_SLOT_CAP` (no diamonds taken); else pay and set `paidUntil = max(paidUntil, now) + seconds`.
-- [ ] **3. `boostMult`** adds `+1` while `paidUntil > now` (and the clock-behind rule holds), on top of today's sum. Cash rewards still use the rewards' income (no boost). The 2× offline ad and Plus keep their non-stacking rule: offline earnings ignore the paid slot exactly as they ignore other timed boosts.
-- [ ] **4. Save:** bump the version; old saves get `paidUntil: 0`.
-- [ ] **5. Selectors** for U5: `paidBoostLeft(g, now)`, `boosterPace(g, id)` (rewards' income × seconds).
-- [ ] **6. Tests:** buying, extending, the cap refusal with no charge, `boostMult` with a free 2× running (3×), the clock-behind rule, offline unaffected, `analytics` event name `booster_bought` exported for U5.
+- [x] **1. Data:** `PAID_BOOSTERS = [{ id: 'rush-hour', seconds: 3600, diamonds: 30 }, { id: 'dinner-service', seconds: 14400, diamonds: 90 }, { id: 'big-night', seconds: 43200, diamonds: 220 }]`, mult 2, `PAID_SLOT_CAP = 86400`.
+- [x] **2. The slot:** `rewards.paidUntil: number` (0 = none). `buyBooster(g, id, now)`: refuse when diamonds are short or `max(paidUntil, now) + seconds − now > PAID_SLOT_CAP` (no diamonds taken); else pay and set `paidUntil = max(paidUntil, now) + seconds`.
+- [x] **3. `boostMult`** adds `+1` while `paidUntil > now` (and the clock-behind rule holds), on top of today's sum. Cash rewards still use the rewards' income (no boost). The 2× offline ad and Plus keep their non-stacking rule: offline earnings ignore the paid slot exactly as they ignore other timed boosts.
+- [x] **4. Save:** bump the version; old saves get `paidUntil: 0`.
+- [x] **5. Selectors** for U5: `paidBoostLeft(g, now)`, `boosterPace(g, id)` (rewards' income × seconds).
+- [x] **6. Tests:** buying, extending, the cap refusal with no charge, `boostMult` with a free 2× running (3×), the clock-behind rule, offline unaffected, `analytics` event name `booster_bought` exported for U5.
 
 ## Checks
 `npx tsc --noEmit`; `npx jest`; `npm run format:check`; `npx tsx scripts/pacing-sim.ts | tail -12` (unchanged: the sim buys nothing).

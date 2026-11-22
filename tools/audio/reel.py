@@ -125,6 +125,7 @@ def preset_r2() -> list[tuple[str, np.ndarray]]:
         clips.append((f'{HOOD_NAMES[h]} loop, last 8 s (the loop at its own level); triumph_{h} starts at 0:08',
                       np.concatenate([tail, master('story', f'triumph_{h}')])))
     clips.append(('city_theme, whole', master('story', 'city_theme')))
+    clips.append(('splash_theme (the splash screen), whole', master('story', 'splash_theme')))
     hq = master('music', 'megaslice_hq')[:int(15 * SR)].copy()
     hq[-int(0.08 * SR):] *= np.linspace(1, 0, int(0.08 * SR))[:, None]
     clips.append(('megaslice_hq, first 15 s; megaslice_rep starts at 0:15', np.concatenate([hq, master('story', 'megaslice_rep')])))
@@ -216,7 +217,7 @@ def full_order(rep: dict) -> list[tuple[str, str, str]]:
     for n in ('megaslice_rep', 'megaslice_rep_dock'):
         out.append(('story', n, n))
     out += [('story', f'triumph_{h}', f'triumph_{h}') for h in HOODS if h != 'waterfront'] + [('story', 'triumph_waterfront', 'triumph_waterfront (Dock Saved bell)')]
-    for n in ('recipe', 'reunion', 'victor_exit', 'city_theme'):
+    for n in ('recipe', 'reunion', 'victor_exit', 'city_theme', 'splash_theme'):
         out.append(('story', n, n))
     for k in ('perk', 'offline'):
         out += [('sting', f'sting_{h}_{k}', f'{h} {k}') for h in HOODS]

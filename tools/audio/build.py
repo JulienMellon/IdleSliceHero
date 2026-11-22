@@ -37,7 +37,7 @@ LOOP_CEILING = -6.0
 # other loops, and now goes through the same lofi chain.
 LOOP_LUFS = {'downtown_sparse': -22.0, 'megaslice_hq': -19.0}
 # AU64: the cues that sit over a lofi loop come down from -16 to -18 and get the story master (tape_sat, 10 kHz)
-STORY_MASTER = {'megaslice_rep': -18.0, 'megaslice_rep_dock': -18.0, 'city_theme': -18.0, 'victor_exit': -16.0,
+STORY_MASTER = {'megaslice_rep': -18.0, 'megaslice_rep_dock': -18.0, 'city_theme': -18.0, 'splash_theme': -18.0, 'victor_exit': -16.0,
                 **{f'triumph_{h}': -18.0 for h in ('downtown', 'suburbs', 'waterfront', 'university', 'industrial', 'uptown')}}
 # AU36: loudness by tier, so rare big moments are louder than frequent small ones; every file's peak ≤ −6 dBFS (AU38)
 CEILING = -6.0
