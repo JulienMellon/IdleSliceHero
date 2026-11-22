@@ -116,20 +116,19 @@ describe('the rival shop stays on screen (D481)', () => {
 
 describe('wide shops fit the screen or scroll (D519)', () => {
   const hoods = NEIGHBORHOODS.map((n) => n.id);
-  test('every neighbourhood and footprint: the room is inside [12, 381] at scroll 0 at the scale it is drawn at, or it is a wide shop and scrolls', () => {
+  test('every neighbourhood and footprint: the room is inside [12, 381] at scroll 0 at the scale it is drawn at, or it is a wide shop, which scrolls', () => {
     const bad: string[] = [];
     for (const hood of hoods)
       for (let fp = 0; fp < 5; fp++) {
         const lay = layout(fp, Math.min(fp + 1, 6), 3, 2, FOOTPRINTS[fp].maxTables, 3, 1, undefined, isMirrored(hood));
         const v = sceneView(W, 650, lay.frame);
         const room = roomSpan(lay);
-        const fit = wideFit({ x0: room.x0 * v.fit.s, x1: room.x1 * v.fit.s }, W);
-        const x0 = v.fit.ox + room.x0 * v.fit.s * fit.scale;
-        const x1 = v.fit.ox + room.x1 * v.fit.s * fit.scale;
+        const x0 = v.fit.ox + room.x0 * v.fit.s;
+        const x1 = v.fit.ox + room.x1 * v.fit.s;
         const inside = x0 >= VIEW_MARGIN - 1e-6 && x1 <= W - VIEW_MARGIN + 1e-6;
+        // a shop that fits does not scroll; one that does not fit is a wide shop with a scroll view (owner: wide shops scroll, they are not scaled)
         if (!inside && !v.scrolls) bad.push(`${hood} fp${fp}: room ${x0.toFixed(0)}..${x1.toFixed(0)} on a shop that does not scroll`);
-        // a shop that does not scroll fits at its own scale; one that scrolls is wider than the screen even at the smallest scale
-        expect([hood, fp, fit.scrolls, v.scrolls]).toEqual([hood, fp, !inside, v.scrolls && !inside]);
+        expect([hood, fp, wideFit({ x0: x0, x1: x1 }, W).scrolls]).toEqual([hood, fp, !inside]);
       }
     expect(bad).toEqual([]);
   });

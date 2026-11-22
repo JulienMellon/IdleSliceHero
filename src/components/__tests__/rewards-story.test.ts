@@ -160,11 +160,13 @@ describe('a rate being held (D537)', () => {
     ...midway(),
     x: { ...midway().x, [CHAPTERS_KEY]: { ...newChapterSave(), done: CH1, run: { [key]: { lo, secs } } } },
   });
-  it('shows the rate and how long it has held once it is at the target', () => {
-    const rate = storyView(held(8, 12.4), null).tasks[2];
-    expect(rate.progress).toBe('8/min · holding 12 s');
-    expect(rate.pct).toBeCloseTo(12.4 / 30);
-    expect(rate.spoken).toContain('holding 8 a minute for 12 of 30 seconds');
+  it('reads "6/6 · holding" with a full bar once it is at or over the target, and says the seconds aloud', () => {
+    for (const lo of [6, 8]) {
+      const rate = storyView(held(lo, 12.4), null).tasks[2];
+      expect(rate.progress).toBe('6/6 · holding');
+      expect(rate.pct).toBe(1);
+      expect(rate.spoken).toContain(`holding ${lo} a minute for 12 of 30 seconds`);
+    }
   });
   it('shows the lowest rate so far, short of the target, as a count', () => {
     const rate = storyView(held(4, 5), null).tasks[2];

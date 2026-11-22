@@ -33,3 +33,4 @@ next: start S10b-v5.23b.md (cleanup step), then S11-v5.24.md. Carried notes: doc
 - 2026-11-22 S10b r1 wave 1 launched (W6 || S6).
 - 2026-11-22 S10b r1 W6 done (COPY-v5.23b.md, 9 rows). Waiting on S6.
 - 2026-11-22 S10b r1 S6 partial (D481 D552 D557; D519 needs projection.ts) -> VERSION default sent back. U8 launched.
+- 2026-11-22 Julien: D519 allow scrolling (no scale-down). Scroll cue for cut-off wide shops -> U7.

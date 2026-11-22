@@ -96,17 +96,17 @@ export function rivalPlace(
 
 // ---------- how much of a wide shop fits the screen (D519) ----------
 
-/** A wide cutaway is drawn no smaller than this before the shop scrolls: smaller and the people are too small to read. */
-export const WIDE_MIN_SCALE = 0.88;
-
 /** The room's drawn extent across, in the frame's space: the front fascia's edges (the widest part of the cutaway), from the layout's walls. */
 export function roomSpan(lay: Pick<Layout, 'L' | 'R' | 'frame'>): Span {
   return { x0: P(lay.L - 6, 0, FRONT_TOP, lay.frame)[0], x1: P(lay.R + 6, 0, FRONT_TOP, lay.frame)[0] };
 }
 
+/** A wide cutaway is drawn no smaller than this before the shop scrolls: smaller and the people are too small to read. */
+export const WIDE_MIN_SCALE = 0.88;
+
 /**
  * How a cutaway whose room spans `room` (pt at scale 1, at scroll 0) sits on a screen `viewW` wide with `margin` pt clear at each edge (D519): the scale that makes it fit, never under
- * `minScale` (a room that would need less is drawn at `minScale` and scrolls), and whether it still scrolls at that scale. Never above 1: a room that fits is not enlarged.
+ * `minScale`, and whether it still scrolls at that scale. Never above 1. Owner decision (D519): the game does not scale wide shops, they scroll; this is the measure the budget uses.
  */
 export function wideFit(room: Span, viewW: number, margin = VIEW_MARGIN, minScale = WIDE_MIN_SCALE): { scale: number; scrolls: boolean } {
   const avail = viewW - 2 * margin;
