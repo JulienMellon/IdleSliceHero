@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.22                   # v5.21 r4 fix done 2026-11-22; r4 verify+reviews+close DEFERRED (Julien: cards first)
-step: verify                        # setup | waves | verify | review | fix | close  (r2 fixes landed)
+step: review                        # setup | waves | verify | review | fix | close  (r2 fixes landed)
 round: r2              # r1 | r2 | r3
-last_shots: v5.22                   # v5.22 r1 verify: True 0 [], layout 0 new; 14 new 150 changed vs v5.21-r3
+last_shots: v5.22-r2                # v5.22 r2 verify: True 0 [], layout 0 new; 0 new 122 changed vs v5.22
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
   S4 done  E3 done  W3 done  U3 done  S3 done  U4 done  E4 done  A3 blocked  (r2 verify fix: E4 done, U4 done)
@@ -32,3 +32,4 @@ next: S9 resume at r2 verify (Julien 2026-11-22: skip verify+shots+critics until
 - 2026-11-22 S9c verify v5.22-r2 FAIL: 3 errors (192_e4 coach 'the dashed line' + coach-block click -> E4; 66_s1 head-rush bark text -> E4), layout 4 new (walk-* capacity labels ellipsis -> U4); 0 new 122 changed vs v5.22. E4 || U4 launched. Music: Julien R2 notes, notes round 2 running.
 - 2026-11-22 S9c r2 verify fix U4 done (sidewalk capacityFit: unit-shared and now-only fallbacks; walk-* clips fixed in code, not yet re-shot).
 - 2026-11-22 S9c r2 verify fix E4 done (192_e4 expects 'Dashed line, cara' per COPY; 66_s1 waits 42 s, symptom bark outranks rush). WIP ea7437a caught composer mid-rebuild (assets deleted); composer told to rebuild clean before verify.
+- 2026-11-22 S9c verify v5.22-r2 PASS (re-run after E4/U4 fixes + music rebuild): True 0 [], layout 0; 0 new 122 changed. r2 re-checks launched (critic, code, story; sonnet).
