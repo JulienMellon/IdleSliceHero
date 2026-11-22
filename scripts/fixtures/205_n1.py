@@ -2,7 +2,7 @@
 205 prices still loading (no price, a disabled button, no "Best rate") · 206 prices in: the Starter card at the top with Nonna's line and three chips (no
 per-dollar claim while the packs' first buys are live) · 206b the diamond packs below it: base, "+N bonus", "Enough for N looks", "First buy pays double",
 "Best rate" on the 1,200 pack · 207 the Starter owned (its card gone, Plus with the 7-day ad line) · 208 every first buy used: the Starter says "Most diamonds
-per dollar in the store" · 208b the packs then: no "First buy: 2×" tags, "Best rate" on the 1,200 pack.
+per dollar in the store" · 208b the packs then: no "First buy: 2×" tags and no "Best rate" (the Starter claims the rate, D569).
 Flags (services/purchases.web.ts, store-tab.tsx): `?prices=loading`, `?owned=starter_pack`. A flag lives in the page's URL and the router drops it when
 the app opens another screen, so `flags()` puts it back before the Store tab opens. The first buys come from the ledger (`first:<id>` keys, seeded under both
 ledger keys: the dev export may or may not be the test build); the ad count from the store prefs' `adGrants`.
