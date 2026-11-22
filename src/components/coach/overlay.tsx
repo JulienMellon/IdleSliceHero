@@ -40,10 +40,13 @@ export interface CoachOverlayProps {
   onDone?: () => void;
   /** False for a step whose line is about nothing to tap (15): the breathing ring carries it, no hand. */
   hand?: boolean;
+  /** `tap` only: a tap outside the lit spot calls `onSkip` (the Store chip, step 16) instead of the nudge. */
+  skippable?: boolean;
+  onSkip?: () => void;
 }
 
 // primitive or stable props (the step's own target list, its text, a stable callback), so a screen tick that changes nothing repaints nothing (M72)
-export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, onDone, hand: showHand = true }: CoachOverlayProps) {
+export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, onDone, hand: showHand = true, skippable = false, onSkip }: CoachOverlayProps) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const wantsTargets = mode !== 'free' || targets.length > 0;
@@ -76,9 +79,11 @@ export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, on
     return () => loop.stop();
   }, [loops, pulse]);
 
+  const skipRef = useRef(onSkip);
   const doneRef = useRef(onDone);
   useEffect(() => {
     doneRef.current = onDone;
+    skipRef.current = onSkip;
   });
   useEffect(() => {
     if (mode !== 'look') return;
@@ -154,7 +159,7 @@ export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, on
             key={i}
             testID="coach-block"
             onStartShouldSetResponder={() => true}
-            onResponderRelease={nudge}
+            onResponderRelease={skippable ? () => skipRef.current?.() : nudge}
             style={{ position: 'absolute', left: p.x0, top: p.y0, width: p.x1 - p.x0, height: p.y1 - p.y0 }}
           />
         ))

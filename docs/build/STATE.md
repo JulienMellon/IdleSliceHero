@@ -9,7 +9,7 @@ round: r2              # r1 | r2 | r3
 last_shots: v5.23                   # v5.23 r1 verify: True 0 [], layout 0 new; 10 new 39 changed vs v5.22-r2
 codecritic_range_start: fa8c5a5   # v5.23 start (main at S10 start)
 cards:                 # todo | running | done | partial | blocked
-  W4 done  E5 done  N1 running  U5 done  E6 running   # r2 fix round
+  W4 done  E5 done  N1 done  U5 done  E6 running   # r2 fix round
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.23/review-r1-critic.md (r1 NOT SATISFIED; bug 3 major 2 minor 27; E4 U19 S4 T1 N5; G120 G121 G122 bugs, D558 D559 major)
   code:   docs/build/v5.23/review-r1-code.md (r1 APPROVED; blocker/high 0 medium 3 low 36; E8 U18 S1 N11 A1)
@@ -31,7 +31,7 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 S10 music notes round 3 done, reel sent, music back at listen; A3 stays blocked. splash_theme cue exists but src does not play it yet (needs a U-lane card).
 - 2026-11-22 Julien: "There should be a starter pack that costs money and periodic gifts from time to time, one of which should be early in the game" -> tutorial.16 'starter pack' wording stands; periodic free gifts (one early) are a new feature for a planning session, not v5.23.
 - 2026-11-22 S10 U5 done (chip/tabs/boosters/nudge done; StoreTab onClose waits on N1; hud:store CoachTargetId -> E6). U5 needs sent to N1.
-- 2026-11-22 S10 N1 running (3059 tests green); U5 done (StoreTab defaults onClose to router.back). Wave 3 E6 launched.
+- 2026-11-22 S10 N1 done (3059 tests green); U5 done (StoreTab defaults onClose to router.back). Wave 3 E6 launched.
 - 2026-11-22 S10 E6 died on the 5-hour limit before editing anything; resumed after the reset (Julien: Go).
 - 2026-11-22 S10 music closed (Julien yes on R2). A3 (docs/build/v5.22/card-A3.md) launched beside E6.
 - 2026-11-22 S10 A3 done (3 shop SFX + shop-ears rules, 3075 tests). Julien has not heard the three sounds.
@@ -42,8 +42,9 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 S10 verify v5.23 PASS (True 0 [], layout 0). r1 reviews launched: critic full, codecritic high, storycritic low.
 - 2026-11-22 S10 gate r1 not met (critic 3 bugs 2 majors; code APPROVED 3 medium; story major S99). Fix round r2: N1 || U5 first, then E5 || E6, then W4. S and A rows have no v5.23 card and carry.
 - 2026-11-22 S10 r2 U5 done (D558 D561 D562 D563 D565 D568 U39 M76 A47; toast still covers a card button briefly). G122 sent to E5 (rewards-model.ts).
-- 2026-11-22 S10 r2 N1 running (G120 G121 S99 D559 D560 D566 C184 C186 T134 T135; C187 VERSION-level, carried). E6 launched with A48.
+- 2026-11-22 S10 r2 N1 done (G120 G121 S99 D559 D560 D566 C184 C186 T134 T135; C187 VERSION-level, carried). E6 launched with A48.
 - 2026-11-22 S10 r2 E5 done (G122, C185; 3088 tests, tsc ok). W4 launched.
 - 2026-11-22 S10 r2 W4 done (S101 S102 S103 + N1 keys). S101/S102 -> U5 (booster-model.ts) now; S103 -> N1 (store.ts) queued after E6.
 - 2026-11-22 S10 r2 E6 running (A48 T133 fixed, C182 partly: step 16 dismiss needs coach-view). C183 + step-16 dismiss -> U5; S103 -> N1.
 - 2026-11-22 S10 r2 U5 done (S101 S102 C183; skippable flag). C182 skip wiring (tutorial.ts, overlay.tsx, use-coach-flow.ts) -> E6.
+- 2026-11-22 S10 r2 N1 S103 landed (3090 tests). Waiting on E6 (C182 skip) before the r2 verify.

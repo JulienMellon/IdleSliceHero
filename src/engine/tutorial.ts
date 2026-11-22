@@ -153,7 +153,17 @@ export function tutorialAdvance(s: G.GameState): G.GameState {
 
 /** What the screen can tell the tutorial: a `look` step was seen (a tap, or the overlay's `LOOK_MS`; `LOOK_FALLBACK_MS` when it cannot be drawn), the task list opened or closed, the upgrades drawer opened or closed. */
 export type TutorialNote =
-  'look' | 'store-open' | 'store-left' | 'tasks-open' | 'tasks-closed' | 'drawer-open' | 'drawer-closed' | 'report-open' | 'report-look' | 'report-closed';
+  | 'look'
+  | 'store-open'
+  | 'store-left'
+  | 'store-skip'
+  | 'tasks-open'
+  | 'tasks-closed'
+  | 'drawer-open'
+  | 'drawer-closed'
+  | 'report-open'
+  | 'report-look'
+  | 'report-closed';
 const ENDED_BY: Readonly<Record<number, TutorialNote>> = {
   6: 'look',
   7: 'tasks-open',
@@ -169,6 +179,8 @@ const ENDED_BY: Readonly<Record<number, TutorialNote>> = {
 /** The screen's say-so: ends the current step when it is the one waiting for this note, and moves on over any step that is already finished. Anything else changes nothing. */
 export function tutorialNote(s: G.GameState, note: TutorialNote): G.GameState {
   if (note === 'report-open' || note === 'report-look' || note === 'report-closed') return reportNote(s, note);
+  // a tap outside the lit Store chip: the player does not want the Store now. The intro is over (the pack stays in the Store tab, and the chip stays on the HUD)
+  if (note === 'store-skip') return s.tutorial === STORE_STEP ? { ...s, tutorial: TUTORIAL_DONE } : s;
   const step = coachStep(s);
   if (!step || ENDED_BY[step.id] !== note) return s;
   // step 6 waits for the first sale: the cash has nothing to show before it

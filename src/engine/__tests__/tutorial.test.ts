@@ -1,5 +1,8 @@
 /// <reference types="jest" />
 // Nonna's guided tutorial (P2).
+import * as fs from 'fs';
+import * as path from 'path';
+import { chipShows } from '../../components/endgame/diamond-chip-model';
 import * as G from '../game';
 import { HOME_CITY } from '../../content/cities/home';
 import {
@@ -324,5 +327,21 @@ describe('the Store intro', () => {
     // the calendar and the hints gate on the coach mode (index.tsx `tutorialOn`): it is on for both steps
     expect(hintsAllowed(at(16)).toast).toBe(false);
     expect(hintsAllowed(at(17)).toast).toBe(false);
+  });
+  test('a tap outside the lit chip (store-skip) ends the intro at 16 and nowhere else; the chip stays', () => {
+    const g = at(16);
+    const out = tutorialNote(g, 'store-skip');
+    expect(out.tutorial).toBe(TUTORIAL_DONE);
+    expect(coachStep(out)).toBeNull();
+    expect(tutorialHoldsStory(out)).toBe(false);
+    expect(shopTutorialDone(out)).toBe(true);
+    // the chip is shown from step 16 on, so it is still there to open the Shop
+    expect(chipShows(out, false)).toBe(true);
+    for (const n of [15, 17, TUTORIAL_DONE]) expect(tutorialNote(at(n), 'store-skip')).toEqual(at(n));
+  });
+  test('only the lit chip step is skippable, and the overlay and the flow hook carry it', () => {
+    const src = (f: string) => fs.readFileSync(path.join(__dirname, '..', '..', 'components', 'coach', f), 'utf8');
+    expect(src('overlay.tsx')).toMatch(/skippable \? \(\) => skipRef\.current\?\.\(\) : nudge/);
+    expect(src('use-coach-flow.ts')).toContain("note('store-skip')");
   });
 });

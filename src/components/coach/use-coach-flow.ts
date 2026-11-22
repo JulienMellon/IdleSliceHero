@@ -10,7 +10,11 @@ import { coachView, fallbackStep, LOOK_FALLBACK_MS, type CoachView } from './coa
 const note = (n: TutorialNote) => useGame.getState().noteCoach(n);
 
 /** The overlay's props for the current step, and the callback that ends a `look`. */
-export function useCoachFlow(step: CoachStep | null, isFirst: boolean, drawerOpen: boolean): { view: CoachView | null; onDone: () => void } {
+export function useCoachFlow(
+  step: CoachStep | null,
+  isFirst: boolean,
+  drawerOpen: boolean,
+): { view: (CoachView & { onSkip: () => void }) | null; onDone: () => void } {
   const drawerWas = useRef(false);
   useEffect(() => {
     if (drawerOpen) note('drawer-open');
@@ -24,9 +28,12 @@ export function useCoachFlow(step: CoachStep | null, isFirst: boolean, drawerOpe
     return () => clearTimeout(timer);
   }, [lookId]);
   const [lookedAt, setLookedAt] = useState(0);
+  /** A tap outside the lit Store chip (step 16) ends the intro. */
+  const onSkip = useCallback(() => note('store-skip'), []);
   const onDone = useCallback(() => {
     note('look');
     setLookedAt(useGame.getState().game.tutorial);
   }, []);
-  return { view: coachView(step, { isFirst, drawerOpen, lookedAt }), onDone };
+  const view = coachView(step, { isFirst, drawerOpen, lookedAt });
+  return { view: view && { ...view, onSkip }, onDone };
 }
