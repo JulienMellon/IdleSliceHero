@@ -1079,7 +1079,8 @@ const styles = StyleSheet.create({
   // with a need line the three lines share the 36 pt inside the button: 10 + 15 + 10 (U5: no text under 10 pt)
   buySubTight: { lineHeight: 10 },
   buyLabelTight: { lineHeight: 15 },
-  buyNeed: { fontFamily: F.semi, fontSize: MIN_FONT, lineHeight: 10, opacity: 0.85 },
+  // D551: the capacity line sits 2 pt higher, clear of the button lip
+  buyNeed: { fontFamily: F.semi, fontSize: MIN_FONT, lineHeight: 10, opacity: 0.85, marginTop: -2 },
   noGainInner: { backgroundColor: '#EFE6D8', borderColor: '#CFC3B2' },
   buyInnerCompact: { flex: 1, justifyContent: 'center', paddingVertical: 0, paddingHorizontal: 1 },
   buySub: { fontFamily: F.semi, color: 'rgba(255,255,255,0.85)', fontSize: 10, letterSpacing: 1 },

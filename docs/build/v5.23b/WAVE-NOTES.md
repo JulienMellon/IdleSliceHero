@@ -12,3 +12,7 @@
 - U8: Ch 1 line lives under the existing key `chapter.downtown-1.teaser` (text now W6's line); `story.ch1.line` is not used. `storyView` gives every chapter, free or not, its teaser and portrait.
 - U8: new `layers/rival/rival-glow.ts` (emitRivalGlow / rivalGlowLeft); rival-scene.tsx only gained the glow overlay. `overlayLayout` takes the target ids as a 5th argument (HAND_NUDGE). Fixture scripts/fixtures/220_u8.py (shots 220-220e).
 - U8: S95 x2 and S71 landed (hooks.ts, voice.ts, downtown.ts). S67 NOT landed: Boston has no "downtown" neighbourhood, so panel backdrop "downtown" fails city-schema.test.ts (needs a schema/backdrop decision). D540 goes to U7 (city-model.ts lotView).
+- U7: `report.missed.zero` replaced by `report.missedZero`; added `report.customers.row` ("Hungry crowd"). D556 payoff is once per shop per session (module Set); the save flag is written but no longer gates.
+- U7: new src/components/__tests__/button-tone-source.test.ts scans src/components/** and src/app/** for buy colours outside buttonTone (allowlist: game-ui EXPAND_AMBER, #B9780B lip, store-tab btnBuy, stars-sheet buy).
+- U7: fixture scripts/fixtures/221_u7.py. City map pins over 14 chars set at 2.6.
+- D519 scroll cue for cut-off wide shops: no card owns scroll-cues-model.ts in v5.23b; carried.
