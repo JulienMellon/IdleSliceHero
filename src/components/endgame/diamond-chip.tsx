@@ -6,7 +6,6 @@ import { router } from 'expo-router';
 import { memo, useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { CoachTargetId } from '../../engine/coach-types';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { useCoachTarget } from '../coach/targets';
@@ -17,16 +16,13 @@ import { BOOSTER_LINES } from './booster-model';
 import { chipDot, diamondChipText, shopHref, STORE_INTRO_STEP } from './diamond-chip-model';
 import { useShopFlags } from './shop-flags';
 
-// 'hud:store' joins CoachTargetId with card E6 (src/engine/coach-types.ts); the cast goes with it.
-const STORE_TARGET = 'hud:store' as CoachTargetId;
-
 export const DiamondChip = memo(function DiamondChip() {
   const text = useGame((s) => diamondChipText(s.game, s.prefs.starterOffered));
   const newGame = useGame((s) => s.game.tutorial < STORE_INTRO_STEP);
   const dotCleared = useShopFlags((f) => f.dotCleared);
   const loaded = useShopFlags((f) => f.loaded);
   const dot = useGame((s) => chipDot(s.game, dotCleared)) && loaded;
-  const target = useCoachTarget(STORE_TARGET);
+  const target = useCoachTarget('hud:store');
   // a new game (the tutorial is back before the Store intro) starts the reminders over
   useEffect(() => {
     if (newGame && loaded) useShopFlags.getState().reset();

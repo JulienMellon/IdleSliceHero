@@ -24,6 +24,7 @@ jest.mock('../../services', () => ({
 import { CITIES, cityOf } from '../../content/cities';
 import { STORY_PACING } from '../../content/tuning';
 import { TEST_PREFS_KEY } from '../../components/store/store-model';
+import { TEST_LEDGER_KEY } from '../../services/purchases-core';
 import { gameClockOffset, gameSpeed, resetGameClockOffset, setGameClockOffset, setGameSpeed } from '../../engine/clock';
 import {
   challengeOffered,
@@ -328,8 +329,8 @@ describe('Reset test save (step 5)', () => {
     expect(gameClockOffset()).toBe(86_400_000);
     const f = resetFixture();
     await resetTestSave(f.h);
-    for (const k of [TEST_SAVE_KEY, BACKUP_KEY, CHEATS_KEY, TEST_PREFS_KEY]) expect(f.fake.data.has(k)).toBe(false);
-    expect(RESET_KEYS).toEqual([TEST_SAVE_KEY, BACKUP_KEY, CHEATS_KEY, TEST_PREFS_KEY]);
+    for (const k of [TEST_SAVE_KEY, BACKUP_KEY, CHEATS_KEY, TEST_PREFS_KEY, TEST_LEDGER_KEY]) expect(f.fake.data.has(k)).toBe(false);
+    expect(RESET_KEYS).toEqual([TEST_SAVE_KEY, BACKUP_KEY, CHEATS_KEY, TEST_PREFS_KEY, TEST_LEDGER_KEY]);
     expect(f.fake.data.get(REAL_SAVE_KEY)).toBe(REAL);
     expect(f.fake.writes).not.toContain(REAL_SAVE_KEY);
     expect(f.fake.writes).not.toContain(`remove ${REAL_SAVE_KEY}`);

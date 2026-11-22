@@ -4,12 +4,13 @@
 import { count } from '../../engine/format';
 import type { GameState } from '../../engine/game';
 import { rewardsUnlocked } from '../../engine/rewards';
+import { EVENTS } from '../../services/events';
 
 /** The tutorial step that is the Store intro (card E6). The chip shows from here on; not `TUTORIAL_DONE`, which E6 moves past it. */
 export const STORE_INTRO_STEP = 16;
 
 /** The analytics event the Shop sends when it opens (props: `{ from }`). */
-export const STORE_OPENED_EVENT = 'store_opened';
+export const STORE_OPENED_EVENT = EVENTS.storeOpened;
 /** How the Shop was reached: the HUD chip, Nonna's Store intro (the chip while step 16 is up), or the "Store" nudge on the Style tab. */
 export type StoreFrom = 'chip' | 'intro' | 'nudge';
 

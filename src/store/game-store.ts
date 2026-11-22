@@ -17,7 +17,7 @@ import {
   repairByAd,
   rerollDaily as rerollDailyTask,
 } from '../engine/offers';
-import { NO_PREFS, parsePrefs, PREFS_KEY as NORMAL_PREFS_KEY, TEST_PREFS_KEY, type StorePrefs } from '../components/store/store-model';
+import { activePrefsKey, NO_PREFS, parsePrefs, type StorePrefs } from '../components/store/store-model';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
 import { cityOf } from '../content/cities';
@@ -42,7 +42,7 @@ import { fixJam as fixOvenJam } from '../engine/features/layers/shifts';
 import { setMenu as setUniversityMenu } from '../engine/features/layers/menu';
 import { ackCritic as ackUptownCritic, buyIngredients as buyUptownIngredients, ingredientsPrice } from '../engine/features/layers/stars';
 import * as R from '../engine/rewards';
-import { buyBooster as buyPaidBooster, BOOSTER_BOUGHT_EVENT } from '../engine/paid-boost';
+import { buyBooster as buyPaidBooster } from '../engine/paid-boost';
 import { STARTER_STEP, tutorialAdvance, tutorialHoldsStory, tutorialNote, type TutorialNote } from '../engine/tutorial';
 import { buyCosmetic as buyVanity } from '../engine/vanity';
 import { analytics, EVENTS, onGrant, purchases, startServices, type Grant } from '../services';
@@ -53,7 +53,7 @@ import { gameNow, gameSpeed } from '../engine/clock';
 // X1 (v5.19-test): the test build saves under its own keys, so a cheated save can never become a real one. The comparison is written out
 // in full on purpose (src/dev/README.md): the normal build folds it to the v1 keys.
 const SAVE_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? 'slice-empire/save/test-v1' : 'slice-empire/save/v1';
-const PREFS_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? TEST_PREFS_KEY : NORMAL_PREFS_KEY;
+const PREFS_KEY = activePrefsKey();
 // end X1
 
 // X2 (v5.19-test): the test cheats (free buys, clock offset, speed, store answer) saved on the last visit are put back before the first save loads.
@@ -725,7 +725,7 @@ export const useGame = create<Store>((set, get) => {
     startBooster: (i) => claim((g, now) => R.startBooster(g, i, now)),
     buyBooster: (id) => {
       const ok = claim((g, now) => buyPaidBooster(g, id, now));
-      if (ok) analytics.track(BOOSTER_BOUGHT_EVENT, { booster: id });
+      if (ok) analytics.track(EVENTS.boosterBought, { booster: id });
       return ok;
     },
     claimGift: (repair = false) => claimTracked('gift', (g, now) => R.claimGift(g, now, { repair })),
