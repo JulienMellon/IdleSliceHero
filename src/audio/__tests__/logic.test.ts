@@ -383,6 +383,7 @@ describe('generated manifest', () => {
     const size = (dir: string) =>
       fs.readdirSync(path.join(ROOT, 'assets', 'audio', dir)).reduce((a, f) => a + fs.statSync(path.join(ROOT, 'assets', 'audio', dir, f)).size, 0);
     expect(size('sfx')).toBeLessThan(1.5 * 1024 * 1024);
-    expect(size('music') + size('sting') + size('story') + size('sfx')).toBeLessThan(32 * 1024 * 1024);
+    // Julien, 2026-11-22: 192 kbps going forward (26.5 MiB built); his 32 MB ceiling of 2026-11-19 still stands, this guard sits 1.5 MiB over the build
+    expect(size('music') + size('sting') + size('story') + size('sfx')).toBeLessThan(28 * 1024 * 1024);
   });
 });

@@ -140,29 +140,54 @@ def preset_r2() -> list[tuple[str, np.ndarray]]:
     return clips
 
 
+def info_down(hood: str, kind: str) -> float:
+    return report()[f'sting_{hood}_{kind}'].get('downbeatSeconds', 0.0)
+
+
 def stinger_run(hood: str, kinds=('bottleneck', 'upgrade', 'milestone', 'manager', 'milestone_big'), lead_in: float = 6.0,
                 gap: float = 1.5) -> tuple[str, np.ndarray]:
-    """`lead_in` seconds of the loop, then each stinger over the running loop, its beat 1 on a bar line of the loop, the loop
+    """`lead_in` seconds of the loop, then each stinger over the running loop, its beat 1 on a bar line of the loop that the director would pick (the next tonic bar, notes R2), the loop
     ducked by the cue sheet's amount for the stinger's `musicSeconds` (80 ms down, 400 ms up). Every cue at its own level."""
     rep = report()
     loop = master('music', hood)
     lm = rep[hood]
     bar = lm['beatsPerBar'] * 60.0 / lm['bpm']
+    roots = lm['barRoots']
     t, plan = lead_in, []
     for k in kinds:
         info = rep[f'sting_{hood}_{k}']
         x = master('sting', f'sting_{hood}_{k}')
         down = info.get('downbeatSeconds', 0.0)
-        bar_t = np.ceil((t + down) / bar - 1e-9) * bar          # the first bar line that puts the file's start at or after t
+        extra_duck = 0.0
+        if k == 'bottleneck':  # the director plays it on the next beat (a dotted quarter in 6/8), whatever the chord
+            beat = bar / 2 if lm['beatsPerBar'] == 3 else 60.0 / lm['bpm']
+            bar_t = np.ceil((t + down) / beat - 1e-9) * beat
+        else:
+            # notes R2 (a3: "only the downtown stinger lands wrong"): the director waits for the next bar whose chord is I, up to
+            # 2 bars ahead and only while the wait is 2.5 s or less (AU47, AU63, AU74); failing that it takes the next bar and
+            # ducks the loop a further 6 dB. The reel used to take the first bar line whatever its chord.
+            first = np.ceil((t + down) / bar - 1e-9) * bar
+            bar_t = first
+            for j in range(3):
+                cand = first + j * bar
+                if j > 0 and cand - t > 2.5:
+                    break
+                if roots[int(round(cand / bar)) % len(roots)] == 1:
+                    bar_t = cand
+                    break
+            else:
+                extra_duck = -6.0
+            if roots[int(round(bar_t / bar)) % len(roots)] != 1:
+                extra_duck = -6.0
         start = bar_t - down
-        plan.append((k, start, x, info.get('musicSeconds', info['seconds'])))
+        plan.append((k, start, x, info.get('musicSeconds', info['seconds']), extra_duck))
         t = start + len(x) / SR + gap
     total = int(round((t + 1.0) * SR))
     base = np.tile(loop, (total // len(loop) + 1, 1))[:total]
     gain = np.ones(total)
-    for k, start, x, music in plan:
+    for k, start, x, music, xd in plan:
         a0, a1 = int(start * SR), int((start + music) * SR)
-        g = 10 ** (DUCK_DB[k] / 20)
+        g = 10 ** ((DUCK_DB[k] + xd) / 20)
         env = np.ones(total)
         env[a0:a1] = g
         nd, nu = int(DUCK_DOWN * SR), int(DUCK_UP * SR)
@@ -170,11 +195,11 @@ def stinger_run(hood: str, kinds=('bottleneck', 'upgrade', 'milestone', 'manager
         env[a1:a1 + nu] = np.linspace(g, 1, len(env[a1:a1 + nu]))
         gain = np.minimum(gain, env)
     mix = base * gain[:, None]
-    for k, start, x, music in plan:
+    for k, start, x, music, xd in plan:
         a0 = int(start * SR)
         seg = mix[a0:a0 + len(x)]
         seg += x[:len(seg)]
-    when = ', '.join(f'{k} {clock(s)} (loop {DUCK_DB[k]:+.0f} dB)' for k, s, _x, _m in plan)
+    when = ', '.join(f'{k} {clock(s)} (loop {DUCK_DB[k] + xd:+.0f} dB, bar {int(round((s + info_down(hood, k)) / bar)) % len(roots)})' for k, s, _x, _m, xd in plan)
     return f'{HOOD_NAMES[hood]}: loop from 0:00, then {when}', mix
 
 
