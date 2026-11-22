@@ -11,7 +11,7 @@ codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
   S4 done  E3 done  W3 done  U3 done  S3 done  U4 done  E4 done  A3 blocked  (r2 verify fix: E4 done, U4 done)
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.22/review-r1-critic.md (r1 NOT SATISFIED; bug 1 major 2 minor 19; E2 U13 S5 T2; G119 bug drivers bar never reaches Customers line, D548 major piles same short vs balanced, D549 major poses/idle drivers unreadable at phone size)
+  critic: docs/build/v5.22/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 19; E2 U12 S4 T2; G119 D548 D549 G118 D543 fixed, D556 open minor, D557 carried)
   code:   docs/build/v5.22/review-r1-code.md (r1 APPROVED but medium 4 > gate 3; blocker/high 0 medium 4 low 27; E8 U14 S2 N7; K5 fixed)
   story:  docs/build/v5.22/review-r1-story.md (r1 NOT SATISFIED; bug 0 major 1 minor 14; E3 U3 T9; S90 major drivers bar under customers line yet Missed 0, shots 182/183)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
