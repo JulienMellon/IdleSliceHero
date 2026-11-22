@@ -5,18 +5,18 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 ```
 version: 5.21                   # v5.20 closed 2026-11-21 (r3: critic SATISFIED, codecritic APPROVED, story advisory minors)
 step: fix                           # setup | waves | verify | review | fix | close
-round: r3              # r1 | r2 | r3
+round: r4              # r1 | r2 | r3 | r4 (extra, Julien 2026-11-22)
 last_shots: v5.21-r3                # r3 verify: True 0 [], layout 0 new; 14 new 94 changed vs r2
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
-  E1 done  W2 done  U1 done  U2 done  E2 done  E1b done
+  E1 done  W2 done  U1 running  U2 done  E2 running  E1b done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.21/review-r3-critic.md (r3 NOT SATISFIED; bug 1 major 1 minor 13; E4 U9 S2 T1; G118 bug HUD zIndex 2 over sheets/scrim, D543 major night-oven title under HUD; D546 minor lock says Ch 10, Story tab Ch 8)
   code:   docs/build/v5.21/review-r3-code.md (r3 CHANGES REQUESTED; blocker/high 1 medium 2 low 21; E5 U11 S1 N7; K5 high coachLayer zIndex 3 scrim covers OfflinePopup Collect)
   story:  docs/build/v5.21/review-r3-story.md (r3 NOT SATISFIED on minors only; bug 0 major 0 minor 7; E1 U2 T4; advisory, carry)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
 open: ON HOLD (Julien 2026-11-18): every city beyond Boston; cards in docs/build/v5.19/later/ (W4b W4s E4 E4f CITY A3) and the deferred refactor (R2 R2b R3 R4 R5f R6s) are not launched. PARKED for Julien, not in v5.19: economy refit (one pizza per tap +1/10 prep lv, home tops out ~$10M with Suburbs ~$30K, first goal <$50, ECONOMY 3->4 with old saves reset, D493 rival gated at Suburbs 2 stars, D495); don't ask about it during v5.19. Carried: A2 + audio notes AU41 AU39 AU40 AU25 AU82 (music round waits on Julien's R1 listen), SliceAudioSession native module not built; Boston heads need a writer pass (5 barks per head, one per trigger; their script has 4 numbered); Boston GMs placeholder; v5.17/v5.18 critic minors D481 D493 D495 D505 D512 D514. Tools: expo install is refused by the proxy (use npm install with the version from node_modules/expo/bundledNativeModules.json); loop_stats.py cannot read loop: commits; programmer --only takes the fixture name without .py; seam-noise shots 00/24/104/105 and 29-31b. App Store privacy label must say Tracking = Yes; native paths unverified until DEVICE-CHECKLIST.
-next: STOPPED at r3 gate (README 4.5): bug/major still open, all one layering cause: U1's HUD zIndex 2 (G118 bug, D543 major) and E2's coachLayer zIndex 3 (K5 high). Ask Julien whether to run an extra fix round r4. If yes: one programmer on card-U1.md + card-E2.md notes G118 D543 K5 (rows in review-r3-critic.md and review-r3-code.md; fix the stacking order of HUD, coach, OfflinePopup, GiftCalendar, NightOvenSheet, SHEETS as one decision), then verify L=v5.21-r4 P=v5.21-r3, re-checks (PREV = review-r3-*), gate, close per README 8; at close add "S4 todo" to the v5.22 cards line. Carry: D546 (lock says Chapter 10, Story tab Ch 8), S87 (bar 'Ch 12 · Win the', add task.kind.bid.short), S89. D530 gift and PACING RULE notes as before; E1b gate = beat 3 (beat 4 broke 3 pacing tests).
+next: r4 (Julien yes 2026-11-22): programmer on card-U1.md + card-E2.md notes G118 D543 K5 (fix stacking order HUD, coach, OfflinePopup, GiftCalendar, NightOvenSheet, SHEETS as one decision); then verify L=v5.21-r4 P=v5.21-r3, re-checks (PREV = review-r3-*), gate, close per README 8; at close add "S4 todo" to the v5.22 cards line. Carry: D546, S87, S89, D530 gift, PACING RULE; E1b gate = beat 3.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
@@ -30,3 +30,4 @@ next: STOPPED at r3 gate (README 4.5): bug/major still open, all one layering ca
 - 2026-11-21 S8 r3 E2 done (153_c1: HUD zIndex 2 from U1 covered coach; coach layer raised). Re-verify v5.21-r3. Watch: HUD may cover GiftCalendar/NightOvenSheet/SHEETS.
 - 2026-11-21 S8 verify v5.21-r3 pass: True 0 [], layout 0, 14 new 94 changed. r3 re-checks launched.
 - 2026-11-21 S8 r3 gate NOT met: critic bug 1 major 1 (G118 D543), code CHANGES REQUESTED (K5 high), story minors carry. Stopped for Julien; PR opened.
+- 2026-11-22 S8 r4 (Julien yes): programmer launched on U1+E2 (G118 D543 K5 stacking order); npm ci running.
