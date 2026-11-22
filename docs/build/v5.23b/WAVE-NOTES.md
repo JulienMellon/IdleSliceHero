@@ -9,3 +9,6 @@
 - S6: fixture scripts/fixtures/211_s6.py (shots 211-216). Rival pavement band now hides lane-1 traffic while the rival is open (Q8: rival shop is not a protected element).
 - D519 (Julien): wide shops scroll, no scale-down in projection.ts. U7 adds a scroll cue for a cut-off wide shop (scroll-cues-model.ts) if its scope allows; else Needs.
 - S6 done: shot 213-wide-industrial.png shows a wide shop cut off at the right edge with no persistent cue; the cue lives in scroll-cues-model.ts and the ScrollCues component (U7, if in scope).
+- U8: Ch 1 line lives under the existing key `chapter.downtown-1.teaser` (text now W6's line); `story.ch1.line` is not used. `storyView` gives every chapter, free or not, its teaser and portrait.
+- U8: new `layers/rival/rival-glow.ts` (emitRivalGlow / rivalGlowLeft); rival-scene.tsx only gained the glow overlay. `overlayLayout` takes the target ids as a 5th argument (HAND_NUDGE). Fixture scripts/fixtures/220_u8.py (shots 220-220e).
+- U8 Needs (not my files): D540 is `lotView` in city-model.ts (`pin: Chapter N` -> "Opens after Ch N"; shop-ui.tsx draws it, city-map.tsx too). S95 x2, S71, S67 copy sits in hooks.ts, cities/home/voice.ts, scenes/downtown.ts, boston scenes/north-end.ts.

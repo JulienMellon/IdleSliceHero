@@ -143,7 +143,7 @@ export function ShopTabs({
               style={[styles.tab, { borderColor: n.color }, active && styles.tabActive]}
             >
               <Text style={styles.tabName}>{n.name}</Text>
-              <Text style={[styles.tabSub, active && { color: C.ink }, !Game.runsItself(shop) && !active && { color: C.tomato }]}>
+              <Text style={[styles.tabSub, (active || !Game.runsItself(shop)) && { color: C.ink }]}>
                 {Game.runsItself(shop) ? `${money(eps)}/s` : 'you run it'}
               </Text>
               {/* v5.15: the shop's three mastery stars (heads, Flagship, golden ovens) */}

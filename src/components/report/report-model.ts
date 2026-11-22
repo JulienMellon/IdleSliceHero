@@ -44,16 +44,23 @@ export const REPORT_TARGETS: readonly CoachTargetId[] = [REPORT_TARGET.strip, RE
 export type StripKind = 'tipping' | 'cold';
 
 /** The state worth a word, or null (also null while the service score's money does not run yet). */
-export function stripKind(v: ReportView): StripKind | null {
+export function stripKind(v: Pick<ReportView, 'state'>): StripKind | null {
   if (v.state === 'tipping' || v.state === 'cold') return v.state;
   return null;
 }
+
+/** The neutral words each state adds: the strip's suffix (D554) and the sheet's state word. One table, so a state never has a word in one place and none in the other. */
+const STRIP_WORDS: Record<StripKind, { suffix: string; word: string }> = {
+  tipping: { suffix: 'report.strip.cold.tips', word: 'report.state.tipping' },
+  cold: { suffix: 'report.strip.cold.word', word: 'report.state.cold' },
+};
 
 /** The strip's one line, for a view: "Served 41/min · Missed 7/min". */
 export const reportLine = (v: Pick<ReportView, 'served' | 'missed'> & Partial<Pick<ReportView, 'state'>>): string => {
   const line = t('report.strip', { served: whole(v.served), missed: whole(v.missed) });
   // D554: the tip and the cold line change the shop's money, so the strip says so in a neutral word ("· Tips up", "· Word's spreading")
-  return v.state === 'tipping' ? `${line} ${t('report.strip.cold.tips')}` : v.state === 'cold' ? `${line} ${t('report.strip.cold.word')}` : line;
+  const kind = v.state === undefined ? null : stripKind({ state: v.state });
+  return kind ? `${line} ${t(STRIP_WORDS[kind].suffix)}` : line;
 };
 
 /** What the strip draws, as primitives only (the component selects this with a shallow compare, so it repaints when a word changes, never on a tick). */
@@ -62,15 +69,21 @@ export interface StripModel {
   text: string;
   /** The manager's id (their face badge), or '' without one. */
   manager: string;
+  /** Missed rounds to 0 while customers want pizzas (D556): the payoff's condition, before its 10 s hold and its once-a-session gate. */
+  zero: boolean;
 }
 
-export const HIDDEN_STRIP: StripModel = Object.freeze({ show: false, text: '', manager: '' }) as StripModel;
+export const HIDDEN_STRIP: StripModel = Object.freeze({ show: false, text: '', manager: '', zero: false }) as StripModel;
+
+/** Missed rounds to 0 while customers want pizzas (D556). */
+export const isMissedZero = (v: Pick<ReportView, 'wanted' | 'missed'>): boolean => v.wanted >= 0.5 && Math.round(v.missed) === 0;
 
 /** The strip: shown from the first head or manager (the report is live), with the served/missed line and, when a manager runs the shop, their face. */
 export function stripModel(g: GameState, id: NeighborhoodId, now: number): StripModel {
   if (!reportActive(g, id)) return HIDDEN_STRIP;
   const managed = g.shops[id].managed;
-  return { show: true, text: reportLine(reportView(g, id, now)), manager: managed ? (cityOf(g).managers[id]?.id ?? '') : '' };
+  const v = reportView(g, id, now);
+  return { show: true, text: reportLine(v), manager: managed ? (cityOf(g).managers[id]?.id ?? '') : '', zero: isMissedZero(v) };
 }
 
 /** The drawer's header: the report's line when the shop takes part in it, else null (the drawer keeps its own). */
@@ -206,7 +219,7 @@ export function barRows(v: Pick<ReportView, 'capacity' | 'wanted' | 'walkIns' | 
   }));
   const deliveries = share(v.capacity.drivers);
   const customers: CustomersRow = {
-    name: t('report.demand'),
+    name: t('report.customers.row'),
     value: perMin(v.wanted),
     deliveries,
     // the seats take the rest of the way to the line, so the stack always ends at it
@@ -219,12 +232,23 @@ export function barRows(v: Pick<ReportView, 'capacity' | 'wanted' | 'walkIns' | 
 /** Seconds Missed must stay at 0, with the sheet open, before the payoff plays. */
 export const MISSED_ZERO_HOLD_S = 10;
 
-/** D556: the "Missed reached 0" payoff plays only while Missed is 0 and the save has not recorded it (`saveOf(game).missedZero`); the sheet then calls the store's `missedZeroShown`. */
-export const missedZeroPlays = (zero: boolean, alreadyShown: boolean): boolean => zero && !alreadyShown;
+/** The shops whose payoff has played in this session (D556: once per shop per session). */
+const payoffShown = new Set<string>();
+export const missedZeroSeen = (id: NeighborhoodId): boolean => payoffShown.has(id);
+export const markMissedZeroSeen = (id: NeighborhoodId): void => void payoffShown.add(id);
+/** Forget the session (tests, a new save). */
+export const resetMissedZeroSeen = (): void => payoffShown.clear();
+
+/** D556: the strip's "Missed reached 0" payoff plays while Missed is 0 and this shop has not had it this session; the strip then also calls the store's `missedZeroShown`, which records it in the save (`saveOf(game).missedZero`). */
+export const missedZeroPlays = (zero: boolean, seenThisSession: boolean): boolean => zero && !seenThisSession;
+
+/** How long the payoff's line replaces the strip's numbers, and how long the basil flash lasts, in ms; and how many coins fly from the strip to the cash. */
+export const PAYOFF = { lineMs: 3500, flashMs: 600, coins: 6 } as const;
 
 export function sheetModel(g: GameState, id: NeighborhoodId, now: number): SheetModel {
   const v = reportView(g, id, now);
   const { bars, customers, demandFrac } = barRows(v);
+  const kind = stripKind(v);
   const timer =
     v.state === 'cold'
       ? `The line is cold. Get service back to ${pct(SERVICE.coldBelow)}.`
@@ -233,14 +257,14 @@ export function sheetModel(g: GameState, id: NeighborhoodId, now: number): Sheet
         : null;
   return {
     title: t('report.sheet.title'),
-    zero: v.wanted >= 0.5 && Math.round(v.missed) === 0,
+    zero: isMissedZero(v),
     bars,
     customers,
     demand: { label: `${t('report.demand')} ${perMin(v.wanted)}`, frac: demandFrac },
     served: t('report.served', { n: whole(v.served) }),
     missed: t('report.missed', { n: whole(v.missed) }),
     service: t('report.service', { n: Math.round(v.service * 100) }),
-    stateWord: v.state === 'tipping' ? t('report.state.tipping') : v.state === 'cold' ? t('report.state.cold') : '',
+    stateWord: kind ? t(STRIP_WORDS[kind].word) : '',
     tip: copy('report.sheet.tip'),
     cold: copy('report.sheet.cold'),
     timer,

@@ -249,7 +249,7 @@ export function CityMap({
                 y={n.y + 14.6}
                 fontSize={2.8}
                 fontFamily={F.bold}
-                fill={shop.built ? (shop.managed ? C.basilDark : C.tomato) : isNext ? C.tomato : C.inkSoft}
+                fill={shop.built ? (shop.managed ? C.basilDark : INK) : isNext ? INK : C.inkSoft}
                 textAnchor="middle"
               >
                 {shop.built ? (shop.managed ? `${money(eps)}/s` : 'needs manager') : lot.pin}

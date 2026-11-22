@@ -10,16 +10,16 @@
 - Do not touch: the sidewalk, drawer, tabs, City or `report/**` (U7); `scene/**` (S6, Q8); `src/engine/**`.
 
 ## Steps
-- [ ] **1. Story tab.**
+- [x] **1. Story tab.**
   - D535: the clapper and gem on the reward row are SVG, and the tabs and locked chips use one lock glyph.
   - D537: a rate row over its target reads "6/6 · holding" with a full ring.
   - D538: the reward row names the gameplay unlock ("Daily tasks open" on Chapter 4), read from `chapters.ts`.
   - D545: the Chapter 1 card gets W6's `story.ch1.line` and Nonna's portrait, like Chapters 2 to 4.
-- [ ] **2. Coach.** D542: the tutorial hand is offset 24 pt right and below, so it never covers the "Chapter 2" label. Use the same rule as D525/D531: the hand never covers a number, a label or another control. Add a test over every coach step's target.
-- [ ] **3. Goal bar.** D544: the "Chapter N complete" ribbon is gone by 1.5 s, and the tick badge doesn't crowd "Ch N". Check this against the freeze-clock fixture.
+- [x] **2. Coach.** D542: the tutorial hand is offset 24 pt right and below, so it never covers the "Chapter 2" label. Use the same rule as D525/D531: the hand never covers a number, a label or another control. Add a test over every coach step's target.
+- [x] **3. Goal bar.** D544: the "Chapter N complete" ribbon is gone by 1.5 s, and the tick badge doesn't crowd "Ch N". Check this against the freeze-clock fixture.
 - [ ] **4. Chips.** D540: the Suburbs chip reads "Opens after Ch 4" while a chapter gates it.
-- [ ] **5. D547.** Tapping Go on a "Beat …" row lands on the shop with the rival challenge band glowing for 2 s.
-- [ ] **6. D555.** Land W6's `tutorial.report.3`. If its opening changed, update `192_e4.py`'s expected text.
+- [x] **5. D547.** Tapping Go on a "Beat …" row lands on the shop with the rival challenge band glowing for 2 s.
+- [x] **6. D555.** Land W6's `tutorial.report.3`. If its opening changed, update `192_e4.py`'s expected text.
 - [ ] **7. Any other U or E row in `CARRY` in these files.** Fix it, or say why not.
 
 ## Checks
