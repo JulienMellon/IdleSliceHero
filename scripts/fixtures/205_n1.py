@@ -85,7 +85,7 @@ def run(ctx):
     try:
         page = store_page(browser, "?owned=starter_pack", ads=5)
         expect(page, "product-nonnas_plus")
-        expect_text(page, "plus-ads", r"You watched 5 ads")
+        expect_text(page, "plus-ads", r"You watched 5 ads this week\. Plus skips all 5\.")
         shot(page, "207-n1-starter-owned", 0.4)
     except Exception as e:
         report["errors"].append(f"N1 owned shot failed: {e}")

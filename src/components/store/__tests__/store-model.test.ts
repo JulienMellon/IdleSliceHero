@@ -182,15 +182,15 @@ describe('the store cards (card N1)', () => {
   test('the best rate counts what the player gets today: a pack whose first buy is unused pays double (G120)', () => {
     // the 1,200 pack's first buy used: 1,200 per $9.99 = 120, but the 500 pack still pays 1,000 per $4.99 = 200
     expect(bestRate(amounts, ['diamonds_1200'])).toBe('diamonds_500');
-    expect(productRows(prices, [], { ...ctx, firstUsed: ['diamonds_1200'] }).find((r) => r.id === 'diamonds_500')!.tags).toContain('Best rate');
+    expect(productRows(prices, [], { ...ctx, firstUsed: ['diamonds_1200'] }).find((r) => r.id === 'diamonds_500')!.tags).toContain('Best diamond-pack rate');
   });
   test('the best rate is hidden while prices load, or when a pack has no price', () => {
     expect(bestRate(null)).toBeNull();
     expect(bestRate({})).toBeNull();
     expect(bestRate({ diamonds_80: 0.99, diamonds_500: 4.99 })).toBeNull();
-    expect(productRows(prices, [], { ...ctx, amounts: null }).flatMap((r) => r.tags)).not.toContain('Best rate');
-    expect(row('diamonds_1200').tags).toContain('Best rate');
-    expect(row('diamonds_500').tags).not.toContain('Best rate');
+    expect(productRows(prices, [], { ...ctx, amounts: null }).flatMap((r) => r.tags)).not.toContain('Best diamond-pack rate');
+    expect(row('diamonds_1200').tags).toContain('Best diamond-pack rate');
+    expect(row('diamonds_500').tags).not.toContain('Best diamond-pack rate');
   });
   test('"Most diamonds per dollar" shows only when it is true at the till: not while a first buy 2× is live (G120, S99)', () => {
     // 400 for $2.99 is 134 a dollar; a first buy of the 80 pack is 160 for $0.99
@@ -201,8 +201,8 @@ describe('the store cards (card N1)', () => {
     expect(row('starter_pack', { ...ctx, firstUsed: ALL }).rate).toBe('Most diamonds per dollar in the store');
     // D569: and then no pack says "Best rate" beside it; with the Starter bought, the card is gone and the pack may
     const used = { ...ctx, firstUsed: ALL };
-    expect(productRows(prices, [], used).flatMap((r) => r.tags)).not.toContain('Best rate');
-    expect(productRows(prices, ['starter_pack'], used).find((r) => r.id === 'diamonds_1200')!.tags).toContain('Best rate');
+    expect(productRows(prices, [], used).flatMap((r) => r.tags)).not.toContain('Best diamond-pack rate');
+    expect(productRows(prices, ['starter_pack'], used).find((r) => r.id === 'diamonds_1200')!.tags).toContain('Best diamond-pack rate');
     // at $4.99 it is 80 per dollar: no longer the most
     const dear = { ...amounts, starter_pack: 4.99 };
     expect(starterBestRate(dear, ALL)).toBe(false);
@@ -246,14 +246,14 @@ describe('the store cards (card N1)', () => {
     expect([r.base, r.bonus, r.blurb]).toEqual([400, '+100 bonus', 'Enough for 3 looks']);
     expect(r.tags).toEqual(['First buy: 2×']);
     expect(row('diamonds_500', { ...ctx, firstUsed: ['diamonds_500'] }).tags).toEqual([]);
-    expect(row('diamonds_1200').tags).toEqual(['Best rate', 'First buy: 2×']);
+    expect(row('diamonds_1200').tags).toEqual(['Best diamond-pack rate', 'First buy: 2×']);
     expect([row('diamonds_80').bonus, row('diamonds_80').blurb]).toEqual([null, '']); // 80 diamonds is under one look
     expect(row('starter_pack').tags).not.toContain('First buy: 2×');
     expect(row('nonnas_plus').tags).toEqual([]);
   });
   test('Plus: the 7-day ad line when there is something to count, and "Pay once"', () => {
     expect(row('nonnas_plus').adLine).toBeNull();
-    expect(row('nonnas_plus', { ...ctx, adCount: 5 }).adLine).toBe('You watched 5 ads this week. With Plus: same rewards, no ads.');
+    expect(row('nonnas_plus', { ...ctx, adCount: 5 }).adLine).toBe('You watched 5 ads this week. Plus skips all 5.');
     expect(row('nonnas_plus').once).toBe('Pay once. Yours forever.');
   });
   test('looks are whole looks at the vanity price', () => {
