@@ -1,6 +1,6 @@
 // The shop report (v5.16, card P1): every number and every line of the service feature, the strip and the sheet.
 // The rules are in src/engine/features/service.ts (what is measured, tips, the cold line) and src/components/report/ (what is drawn).
-// Strings come from docs/story/COPY-v5.16.md section 7, by key. The heads' slammed barks live with the other barks (content/heads.ts).
+// Strings come from docs/story/COPY-v5.16.md section 7, by key. The heads' symptom barks live with the other barks (content/heads.ts).
 import type { NeighborhoodId } from './types';
 
 export const SERVICE = {
@@ -23,8 +23,28 @@ export const SERVICE = {
   /** The floor's lamp, from wanted ÷ kitchen: a line out the door from `packedAt`, Steady from `steadyAt`, Quiet below. */
   packedAt: 1.05,
   steadyAt: 0.6,
-  /** A head asks for help when their station's lamp has been Slammed this long (s) and the shop has no manager. */
-  slammedBarkSeconds: 20,
+  /**
+   * Symptoms (v5.22, card E3), read off the kitchen line the shop is running, never off the rates. A station is `piling` when its output backlog
+   * (dough on the bench, pies on the pass) is over `pileBatches` of one batch while customers outnumber the kitchen; the state is a running
+   * average over about `pileSeconds` that must reach `pileOn`. It is `idle` when it waited for input (no job running, output not backed up)
+   * for `idleOn` of about the last `idleSeconds`. The drivers are `idle` when more than `driversIdleShare` of them wait, and the floor shows
+   * a `line` when customers outnumber the kitchen; each has to hold `holdSeconds` first, and the line is a `walkout` once it has held
+   * `walkoutSeconds` (customers are leaving).
+   */
+  pileBatches: 2,
+  pileSeconds: 5,
+  pileOn: 0.7,
+  idleSeconds: 20,
+  idleOn: 0.6,
+  driversIdleShare: 0.5,
+  holdSeconds: 10,
+  walkoutSeconds: 20,
+  /** A symptom bark waits until the state has held this long (s); the gaps between barks are in content/heads.ts. */
+  barkAfterSeconds: 10,
+  /** The pizzas a minute a hand-tapped station "can handle" is what the player made over about this window (s). */
+  madeSeconds: 60,
+  /** A state's hold timer stops counting here (s): past the long bark gap's threshold there is nothing more to learn. */
+  holdCap: 180,
   /** A foreground stamp older than this (ms) means the app was away: no tip, no penalty, and the timers start again. */
   freshMs: 5_000,
   /** The stamp is renewed this often (ms). */
