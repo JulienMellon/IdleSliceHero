@@ -335,8 +335,14 @@ export function boostMult(s: GameState, now: number): number {
   return r.boosts.reduce((m, b) => (b.until > now ? m + (b.mult - 1) : m), 1 + paid);
 }
 
-/** The tutorial's step after its last (tutorial.ts reads it from here to avoid an import cycle). */
-export const TUTORIAL_DONE = 16;
+/** The tutorial's step after its last (tutorial.ts reads it from here to avoid an import cycle). 16 and 17 are the Store intro (v5.23, card E6). */
+export const TUTORIAL_DONE = 18;
+
+/** The Store intro's first step (Nonna lights the Store chip). A save that finished the 15 steps before v5.23 sits here until it has seen the intro. */
+export const STORE_INTRO_START = 16;
+
+/** The Founder awning is what the Starter Pack gives; owning it is how the game knows the pack is owned. */
+export const starterOwned = (s: Pick<GameState, 'rewards'>): boolean => s.rewards.cosmetics.includes('awning-founder');
 
 /** A tutorial step of a save from before v7 (nine steps, done = 10) as the step of the same moment in the 15-step script: 1..6 keep, 7 (again) → 9, 8 (buy the ovens) → 10, 9 (hire Marco) → 14, 10 (done) → 16. */
 export const legacyTutorial = (t: number): number => (t <= 6 ? t : ([9, 10, 14, 16] as const)[Math.min(t, 10) - 7]);
@@ -669,6 +675,8 @@ export function migrate(raw: unknown, now: number): GameState {
   game.tutorial = oldSteps ? legacyTutorial(int(r.tutorial, veteran ? 10 : 0, 0, 10)) : int(r.tutorial, veteran ? TUTORIAL_DONE : 0, 0, TUTORIAL_DONE);
   // a first shop that runs itself is past the tutorial, whatever step the save was at (no overlay is drawn on it, so a look step could never end)
   if (game.tutorial >= 1 && game.shops[first].managed) game.tutorial = TUTORIAL_DONE;
+  // v5.23 (E6): a save done before the Store intro existed (16 = done) sees the intro once, unless it already owns the Starter Pack
+  if (game.tutorial >= STORE_INTRO_START && game.tutorial < TUTORIAL_DONE && starterOwned(game)) game.tutorial = TUTORIAL_DONE;
   game.bonus = migrateBonus(r.bonus, game.playSeconds, now);
   game.order = migrateOrders(r.order, game.playSeconds, now, game.shops);
   // saves from before the night oven have none: the base cap
