@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.21-r3                # r3 verify: True 0 [], layout 0 new; 14 new 94 changed vs r2
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
-  S4 running  E3 todo  W3 todo  U3 todo  S3 todo  U4 todo  E4 todo  A3 todo
+  S4 done  E3 running  W3 running  U3 todo  S3 todo  U4 todo  E4 todo  A3 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.21/review-r3-critic.md (r3 NOT SATISFIED; bug 1 major 1 minor 13; E4 U9 S2 T1; G118 bug HUD zIndex 2 over sheets/scrim, D543 major night-oven title under HUD; D546 minor lock says Ch 10, Story tab Ch 8)
   code:   docs/build/v5.21/review-r3-code.md (r3 CHANGES REQUESTED; blocker/high 1 medium 2 low 21; E5 U11 S1 N7; K5 high coachLayer zIndex 3 scrim covers OfflinePopup Collect)
@@ -36,3 +36,4 @@ next: S9-v5.22.md waves (Julien 2026-11-22: cards before verify): S4 alone, then
 - 2026-11-22 S8->S9 Julien: go to v5.22 cards before verify/shots. S4 launched alone.
 - 2026-11-22 S9 music interleaved (Julien): R2 not a go -> notes round on card-NOTES (composer running beside S4). A3 stays blocked until music round done.
 - 2026-11-22 S9 music R2 notes round 1 done (stingers -2..-3.5 LU, AU83 agreed); verify pass; reel sent; music back at listen.
+- 2026-11-22 S9 S4 done (--jobs 3: 569 s vs 1677 s, same report/layout). Watch: shots 04, 156 differ 0.12-0.18% in one parallel run; if it recurs add to seam-noise list or use --jobs 2. Wave 1 E3||W3 launched.

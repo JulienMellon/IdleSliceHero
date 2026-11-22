@@ -63,9 +63,9 @@ npm run format:check 2>&1 | tail -3   # CI fails on any unformatted file; npm ru
 npm test 2>&1 | tail -6
 [ -f scripts/api-digest.ts ] && npx tsx scripts/api-digest.ts 2>&1 | tail -1
 npx expo export --platform web > /tmp/export.log 2>&1; tail -2 /tmp/export.log
-nohup python3 -u scripts/screenshots.py $L > /tmp/shots.log 2>&1 &
+nohup python3 -u scripts/screenshots.py $L --jobs 3 > /tmp/shots.log 2>&1 &
 ```
-Wait about 9 minutes (longer once fixtures pass 100), then:
+Wait about 10 minutes (measured 569 s with `--jobs 3` for 207 shots; longer as fixtures are added; `--jobs 1` took 28 minutes), then:
 ```
 python3 -c "import json;r=json.load(open('screenshots/$L/report.json'));print(r['loaded'],len(r['errors']),r['errors'][:3])"
 python3 -c "import json;print(json.load(open('screenshots/$L/layout.json'))['new'])"
