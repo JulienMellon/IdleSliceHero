@@ -10,7 +10,7 @@ describe('the Shop screen and its chip, as wired (card U5)', () => {
 
   test("the chip is the coach's hud:store and carries the dot", () => {
     expect(chip).toContain("'hud:store'");
-    expect(chip).toContain('useCoachTarget(STORE_TARGET)');
+    expect(chip).toContain("useCoachTarget('hud:store')");
     expect(chip).toContain('shop-chip-dot');
   });
 

@@ -35,6 +35,9 @@ def run(ctx):
         expect_text(page, "coach", r"My pack waits here")
         shot(page, "210-store-intro-starter", 0.5)
 
+        advance(page, 4500)  # the look ends by itself (a tap would end it sooner); the card stays, and the pack can be tapped
+        if is_up(page, "coach-block"):
+            report["errors"].append("E6: the look still blocks the Shop after 4.5 s")
         tid(page, "starter-not-now").click()  # "Not now" leaves the Shop: the intro is over
         advance(page, 1200)
         if is_up(page, "coach-overlay"):

@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.22-r2                # v5.22 r2 verify: True 0 [], layout 0 new; 122 changed vs v5.22
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
-  W4 done  E5 done  N1 done  U5 done  E6 running
+  W4 done  E5 done  N1 done  U5 done  E6 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.22/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 19; E2 U12 S4 T2; G119 D548 D549 G118 D543 fixed, D556 open minor, D557 carried)
   code:   docs/build/v5.22/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 3 low 24; E5 U14 S1 N7; K5 fixed; A46 A44 C158 medium open)
@@ -40,3 +40,4 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 S10 E6 died on the 5-hour limit before editing anything; resumed after the reset (Julien: Go).
 - 2026-11-22 S10 music closed (Julien yes on R2). A3 (docs/build/v5.22/card-A3.md) launched beside E6.
 - 2026-11-22 S10 A3 done (3 shop SFX + shop-ears rules, 3075 tests). Julien has not heard the three sounds.
+- 2026-11-22 S10 E6 done (3075 tests). U follow-ups (98_u3 shot 103, coach-view 16/17) sent to U5 before verify.
