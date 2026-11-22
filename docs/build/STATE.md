@@ -41,3 +41,4 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 S10 music closed (Julien yes on R2). A3 (docs/build/v5.22/card-A3.md) launched beside E6.
 - 2026-11-22 S10 A3 done (3 shop SFX + shop-ears rules, 3075 tests). Julien has not heard the three sounds.
 - 2026-11-22 S10 E6 done (3075 tests). U follow-ups (98_u3 shot 103, coach-view 16/17) sent to U5 before verify.
+- 2026-11-22 S10 U5 follow-ups done (3077 tests). MID_SAVE in shots_lib lands fixtures on step 16 -> sent to E6 before verify.

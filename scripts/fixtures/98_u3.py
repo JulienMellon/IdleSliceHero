@@ -36,7 +36,7 @@ def rewarded_save(missed=False):
         "week": monday, "weekly": [], "weeklyChest": False,
         "gift": {"streak": 3, "last": day_str(-2 if missed else 0), "saveUsed": False, "cycle": 0}, "giftShownDay": day_str(),
         "diamonds": 42, "boosters": [], "boosts": [], "cosmetics": [], "lastSeen": now_ms - 60000}
-    return dict(MID_SAVE, saveVersion=5, stats=stats, lastSavedAt=T0_MS, totalEarned=15000, rewards=r)
+    return dict(MID_SAVE, saveVersion=9, tutorial=18, stats=stats, lastSavedAt=T0_MS, totalEarned=15000, rewards=r)
 
 
 def tasks_page(browser, query):
