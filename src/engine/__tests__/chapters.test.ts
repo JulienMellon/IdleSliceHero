@@ -17,6 +17,7 @@ import {
   chaptersTick,
   chapterTasks,
   currentChapter,
+  markMissedZeroShown,
   markReportOpened,
   migrateChapterSave,
   nextTask,
@@ -299,6 +300,20 @@ describe('the shop report is opened (v5.22)', () => {
   });
 });
 
+describe('the "Missed reached 0" payoff plays once (D556)', () => {
+  it('is saved, so it is the same state after the first time and survives a reload', () => {
+    const g = G.newGame(0);
+    expect(saveOf(g).missedZero).toBe(false);
+    const a = markMissedZeroShown(g);
+    expect(saveOf(a).missedZero).toBe(true);
+    expect(saveOf(a).report).toBe(false); // its own flag, not the sheet's
+    expect(markMissedZeroShown(a)).toBe(a);
+    expect(migrateChapterSave(JSON.parse(JSON.stringify(saveOf(a))))?.missedZero).toBe(true);
+    expect(migrateChapterSave({ missedZero: 'yes' })?.missedZero).toBe(false);
+    expect(saveOf(markReportOpened(a)).missedZero).toBe(true);
+  });
+});
+
 describe('no missed orders reads the report (v5.22)', () => {
   const t4 = (n: number) => task('downtown-4', n);
   const start = () => withShop(before('downtown-4', { playSeconds: 100 }), 'downtown', { heads: G.allHeads(), managed: true });
@@ -490,7 +505,16 @@ describe('the save', () => {
       report: 'yes',
       coachDone: ['report', 7, 'report', 'x'],
     });
-    expect(m).toEqual({ done: ['a'], best: { a: 5, c: 0 }, run: { a: { lo: 3, secs: 30 } }, calm: {}, report: false, coachDone: ['report', 'x'], banked: 0 });
+    expect(m).toEqual({
+      done: ['a'],
+      best: { a: 5, c: 0 },
+      run: { a: { lo: 3, secs: 30 } },
+      calm: {},
+      report: false,
+      missedZero: false,
+      coachDone: ['report', 'x'],
+      banked: 0,
+    });
   });
   it('is absent from a new game and from a state nothing has counted in', () => {
     expect(G.newGame(0).x.chapters).toBeUndefined();

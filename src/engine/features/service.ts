@@ -422,13 +422,16 @@ function senseShop(g: GameState, id: NeighborhoodId, f: Flow, cur: ShopService, 
   const b = batchOf(shop, f);
   const out: Record<K3, number> = { prep: l.prepped, ovens: l.baked, counter: l.boxed };
   const job: Record<K3, boolean> = { prep: !!l.prep, ovens: !!l.oven, counter: !!l.counter };
-  // piles only mean something while customers outnumber the kitchen: otherwise the line backs up because it is paced by the door
+  // piles only mean something while customers outnumber the kitchen: otherwise the line backs up because it is paced by the door.
+  // The bags at the counter are the exception: they only stack while every carrier is out (the counter's own job is paced by the door), so a fleet with
+  // no idle driver and boxes backing up is a drivers-short shop, and it shows as the counter's pile-up even with a kitchen that could make more.
   const full = f.wanted > f.kitchen + 1e-9;
+  const driversShort = f.drivers > 0 && f.driversIdle < 1e-9;
   const pile = k3();
   const wait = k3();
   for (const k of K3S) {
     const backed = out[k] > SERVICE.pileBatches * b - 1e-9;
-    pile[k] = ease(cur.pile[k], full && backed ? 1 : 0, dt, SERVICE.pileSeconds);
+    pile[k] = ease(cur.pile[k], (full || (k === 'counter' && driversShort)) && backed ? 1 : 0, dt, SERVICE.pileSeconds);
     wait[k] = ease(cur.wait[k], !job[k] && !backed ? 1 : 0, dt, SERVICE.idleSeconds);
   }
   // what the hands made: the pies out of each station since the last tick, averaged over about a minute

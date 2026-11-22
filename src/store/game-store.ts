@@ -27,7 +27,7 @@ import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
 import * as B from '../engine/bonus';
 import { buyMany, buyPlan, type BuyAmount } from '../engine/buy-many';
-import { markReportOpened } from '../engine/chapters';
+import { markMissedZeroShown, markReportOpened } from '../engine/chapters';
 import * as G from '../engine/game';
 import * as N from '../engine/night-oven';
 import * as O from '../engine/orders';
@@ -183,6 +183,8 @@ interface Store {
   markScrapbookViewed: () => void;
   /** v5.22: the shop report sheet opened (the chapter task `report` reads it). */
   reportOpened: () => void;
+  /** v5.22 (D556): the sheet played the "Missed reached 0" payoff; saved so it plays once, ever. Read `saveOf(game).missedZero`. */
+  missedZeroShown: () => void;
   /** v5.17 (U3): the player owns Nonna's Plus (every ad benefit without the ad). Not saved: `purchases.owned()` is the truth, read again after the services start. */
   plus: boolean;
   syncPlus: () => void;
@@ -733,6 +735,15 @@ export const useGame = create<Store>((set, get) => {
     reportOpened: () => {
       const g = get().game;
       const next = markReportOpened(g);
+      if (next !== g) {
+        set({ game: next });
+        void get().save();
+      }
+    },
+
+    missedZeroShown: () => {
+      const g = get().game;
+      const next = markMissedZeroShown(g);
       if (next !== g) {
         set({ game: next });
         void get().save();
