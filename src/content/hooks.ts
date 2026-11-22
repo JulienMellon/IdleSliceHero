@@ -69,7 +69,7 @@ export const BONUS_VIEW = {
   /** D451: the lucky banner sits in the sky band (the lane's top) so the cooks' cheer below it stays in view. */
   bannerHeight: 48,
   /** D445: the label by the very first golden pizza. */
-  giftLine: 'A gift, caro. Tap it!',
+  giftLine: 'A gift, cara. Tap it!',
 } as const;
 
 // ---------- Special orders from the cast ----------

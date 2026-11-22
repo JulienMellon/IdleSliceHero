@@ -54,7 +54,7 @@ export function lotView(s: G.GameState, n: NeighborhoodDef): LotView {
   if (held) {
     return {
       kind: 'chapter',
-      pin: `Chapter ${chapterNumber(s, held)}`,
+      pin: `Opens after Ch ${chapterNumber(s, held)}`, // D540: the lot says what opens it (the row's line keeps "Finish Chapter N first")
       pinsLeft: null,
       founder: null,
       rowSub: lock!,

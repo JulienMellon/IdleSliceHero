@@ -88,8 +88,9 @@ describe('a lot held by the story of the shop before it (E1b)', () => {
     expect(v.rowSub).toBe(G.buildLock(upTo(['suburbs-1']), 'waterfront'));
     expect(v.rowSub).toMatch(/^Finish Chapter \d+ first$/);
     expect(v.rowSub.length).toBeLessThanOrEqual(32);
-    expect(v.pin).toBe('Chapter 1'); // D546: the current chapter, the one the Story tab shows
-    expect(v.rowSub).toBe(`Finish ${v.pin} first`);
+    expect(v.pin).toBe('Opens after Ch 1'); // D540/D546: the current chapter, the one the Story tab shows
+    expect(v.rowSub).toBe('Finish Chapter 1 first');
+    expect(v.pin.length).toBeLessThanOrEqual(16); // as wide as "Rosa in 120 pies", the map card's longest pin
     expect(v.locked).toBe(true);
     expect(v.rowRight).toBeNull(); // the padlock, not a price
     expect(v.tappable).toBe(true); // the tap goes to the Story tab, not to a build

@@ -42,7 +42,7 @@ export const DOWNTOWN_SCENES: Scene[] = [
         backdrop: 'shop',
         cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
         lines: [
-          { speaker: 'Nonna Rosa', text: 'Fine. First you bake. Tap the kitchen, one batch each tap. Tap, tap, tap!' },
+          { speaker: 'Nonna Rosa', text: 'Fine. First you bake. I show you how. Watch, then tap!' },
           { speaker: 'Nonna Rosa', text: 'Then hire workers. Drivers to deliver, more cooks for the kitchen. Capisce?' },
         ],
       },

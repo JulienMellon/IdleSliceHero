@@ -11,4 +11,4 @@
 - S6 done: shot 213-wide-industrial.png shows a wide shop cut off at the right edge with no persistent cue; the cue lives in scroll-cues-model.ts and the ScrollCues component (U7, if in scope).
 - U8: Ch 1 line lives under the existing key `chapter.downtown-1.teaser` (text now W6's line); `story.ch1.line` is not used. `storyView` gives every chapter, free or not, its teaser and portrait.
 - U8: new `layers/rival/rival-glow.ts` (emitRivalGlow / rivalGlowLeft); rival-scene.tsx only gained the glow overlay. `overlayLayout` takes the target ids as a 5th argument (HAND_NUDGE). Fixture scripts/fixtures/220_u8.py (shots 220-220e).
-- U8 Needs (not my files): D540 is `lotView` in city-model.ts (`pin: Chapter N` -> "Opens after Ch N"; shop-ui.tsx draws it, city-map.tsx too). S95 x2, S71, S67 copy sits in hooks.ts, cities/home/voice.ts, scenes/downtown.ts, boston scenes/north-end.ts.
+- U8: S95 x2 and S71 landed (hooks.ts, voice.ts, downtown.ts). S67 NOT landed: Boston has no "downtown" neighbourhood, so panel backdrop "downtown" fails city-schema.test.ts (needs a schema/backdrop decision). D540 goes to U7 (city-model.ts lotView).

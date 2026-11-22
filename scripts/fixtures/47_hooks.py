@@ -17,7 +17,7 @@ def run(ctx):
     except Exception as e:
         report["errors"].append(f"golden pizza shot failed: {e}")
     try:
-        # D445: the very first golden pizza (number 1, no tap yet) carries Nonna's "A gift, caro. Tap it!"
+        # D445: the very first golden pizza (number 1, no tap yet) carries Nonna's "A gift, cara. Tap it!"
         page = seeded_page(browser, hooks_save(bonus={"spawned": 1, "until": HOOK_PLAY + 12}, stats={"bonusTaps": 0}))
         quiet_start(page)
         expect(page, "golden-gift", 8000)

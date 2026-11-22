@@ -28,6 +28,8 @@ One file per group of shots, `NN_name.py`, NN = the first shot number the file o
 | `195_u5.py` | 195-197 the Store chip from the Store intro, the Style tab's nudge, the Boosters tab with a running slot and a refused buy (card U5) |
 | `205_n1.py` | 205-208 the Store tab's cards: loading, Starter with Nonna's line, diamond packs, Starter owned, first buys used (card N1) |
 | `209_e6.py` | 209-210 Nonna's Store intro: the Store chip lit, the Starter card lit in the Store tab; "Not now" ends it, no pop-up sheet (card E6) |
+| `220_u8.py` | 220-220e Story tab and coach minors: Chapter 1 with Nonna's line and the hand off its text, a rate "6/6 · holding", the reward row's "Daily tasks open", Go on a "Beat" row lights the rival band, the tick badge and the 1.5 s ribbon (card U8) |
+| `221_u7.py` | 221-221b City screen: "no manager" in ink, the halo on the visited shop, "Opens after Ch N" on a held lot; the strip's Missed-zero payoff (card U7) |
 
 ## One fixture at a time
 ```

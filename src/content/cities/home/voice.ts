@@ -198,7 +198,7 @@ export const HOME_ORDER_CAST: Record<NeighborhoodId, OrderCast> = {
   downtown: {
     who: 'nonna-rosa',
     name: 'Nonna Rosa',
-    offers: ['“{n} pies, caro. Two minutes. Fast hands!”', '“Soup’s cooling… {n} pies before the clock, eh?”'],
+    offers: ['“{n} pies, cara. Two minutes. Fast hands!”', '“Soup’s cooling… {n} pies before the clock, eh?”'],
     thanks: ['“Bravo! Now eat something, you’re too thin.”', '“That’s my pizza! Rosa’s proud of you.”'],
   },
   suburbs: {
