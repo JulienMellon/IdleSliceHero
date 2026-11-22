@@ -118,11 +118,11 @@ describe('the bars', () => {
       expect(s.customers.deliveries + s.customers.seats).toBeCloseTo(s.demand.frac, 9);
     });
   });
-  test('a hand-tapped station says "You" on its bar, and no other bar does', () => {
+  test('a hand-tapped station says "You tap" on its bar, and no other bar does', () => {
     only(() => {
       const { g, now } = byHand();
       const s = sheetModel(g, 'downtown', now);
-      expect(s.bars.filter((b) => b.you).map((b) => [b.key, b.you])).toEqual([['ovens', 'You']]);
+      expect(s.bars.filter((b) => b.you).map((b) => [b.key, b.you])).toEqual([['ovens', 'You tap']]);
       const c = shortOvens();
       expect(sheetModel(c.g, 'downtown', c.now).bars.every((b) => b.you === '')).toBe(true);
     });
@@ -142,7 +142,7 @@ describe('the bars', () => {
     const none = barRows({ capacity: { prep: 0, ovens: 0, counter: 0, drivers: 0 }, walkIns: 0, wanted: 0, you });
     expect([none.demandFrac, ...none.bars.map((b) => b.frac), none.customers.deliveries, none.customers.seats]).toEqual([0, 0, 0, 0, 0, 0]);
   });
-  test('no bar carries a colour or a lamp: a bar is its name, value, length and "You"', () => {
+  test('no bar carries a colour or a lamp: a bar is its name, value, length and "You tap"', () => {
     only(() => {
       const { g, now } = shortOvens();
       for (const b of sheetModel(g, 'downtown', now).bars) expect(Object.keys(b).sort()).toEqual(['frac', 'key', 'name', 'target', 'value', 'you']);
@@ -259,7 +259,7 @@ describe('the strip', () => {
 
 describe('the strip fits an iPhone SE', () => {
   const SE = 375; // an iPhone SE (375 pt): the narrowest phone the app runs on
-  const worst = `${t('report.strip', { served: '99.9K', missed: '99.9K' })} · ${t('report.strip.cold')}`; // the longest: a cold line adds a word (D554)
+  const worst = `${t('report.strip', { served: '99.9K', missed: '99.9K' })} ${t('report.strip.cold.word')}`; // the longest: a cold line adds a word (D554)
   test('the strip is a 44 pt touch box with a 28 pt pill (D479): the front wall and the mat show above it', () => {
     expect(STRIP.height).toBe(44);
     expect(STRIP.pill).toBeLessThanOrEqual(28);

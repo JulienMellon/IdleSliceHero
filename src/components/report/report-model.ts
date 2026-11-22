@@ -53,7 +53,7 @@ export function stripKind(v: ReportView): StripKind | null {
 export const reportLine = (v: Pick<ReportView, 'served' | 'missed'> & Partial<Pick<ReportView, 'state'>>): string => {
   const line = t('report.strip', { served: whole(v.served), missed: whole(v.missed) });
   // D554: the tip and the cold line change the shop's money, so the strip says so in a neutral word ("· Tips up", "· Word's spreading")
-  return v.state === 'tipping' ? `${line} · ${t('report.state.tipping')}` : v.state === 'cold' ? `${line} · ${t('report.strip.cold')}` : line;
+  return v.state === 'tipping' ? `${line} ${t('report.strip.cold.tips')}` : v.state === 'cold' ? `${line} ${t('report.strip.cold.word')}` : line;
 };
 
 /** What the strip draws, as primitives only (the component selects this with a shallow compare, so it repaints when a word changes, never on a tick). */
@@ -150,7 +150,7 @@ export interface BarRow {
   value: string;
   /** The bar's length, 0..1 of the track. */
   frac: number;
-  /** "You" on a bar the player makes by hand, else ''. */
+  /** "You tap" on a bar the player makes by hand, else ''. */
   you: string;
   /** The coach's id for the bar (`report:bar:ovens`). */
   target: CoachTargetId;

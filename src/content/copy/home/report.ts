@@ -12,12 +12,14 @@ export const COPY = {
   'report.customers.split': 'Drivers {drivers}/min · Seats {seats}/min',
   'report.served': 'Served {n}/min',
   'report.missed': 'Missed {n}/min',
-  'report.you': 'You',
+  'report.you': 'You tap',
   'report.strip': 'Served {served}/min · Missed {missed}/min',
   'report.service': 'Service {n}%',
   'report.state.tipping': 'Tips up',
   'report.state.cold': 'Line’s gone cold',
-  'report.strip.cold': 'Word’s spreading',
+  'report.strip.cold.tips': '· Tips up',
+  'report.strip.cold.word': '· Word’s spreading',
+  'report.missed.zero': 'Nobody walks out hungry. Bellissimo!',
 } as const;
 
 export type CopyKey = keyof typeof COPY;

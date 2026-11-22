@@ -15,7 +15,7 @@ import { closeReport, useReportOpen } from './sheet-state';
 const BAR_H = 14;
 const ROW_H = 22;
 
-/** One bar: its name, the track with the basil bar (and "You" when the player's hands make it) and its value at the end. Primitive props, so a tick that changes nothing repaints nothing. */
+/** One bar: its name, the track with the basil bar (and "You tap" when the player's hands make it) and its value at the end. Primitive props, so a tick that changes nothing repaints nothing. */
 const Bar = memo(function Bar({ id, name, value, frac, you }: { id: CoachTargetId; name: string; value: string; frac: number; you: string }) {
   const t = useCoachTarget(id);
   return (
