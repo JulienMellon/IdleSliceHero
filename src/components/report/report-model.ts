@@ -173,6 +173,8 @@ export interface CustomersRow {
 
 export interface SheetModel {
   title: string;
+  /** Missed rounds to 0 while customers want pizzas (D556): the payoff's condition, before the "plays once, ever" gate. */
+  zero: boolean;
   bars: BarRow[];
   customers: CustomersRow;
   /** The dashed line: "Customers 24/min", and where it crosses the bars (0..1 of the track). */
@@ -214,6 +216,12 @@ export function barRows(v: Pick<ReportView, 'capacity' | 'wanted' | 'walkIns' | 
   return { bars, customers, demandFrac: share(v.wanted) };
 }
 
+/** Seconds Missed must stay at 0, with the sheet open, before the payoff plays. */
+export const MISSED_ZERO_HOLD_S = 10;
+
+/** D556: the "Missed reached 0" payoff plays only while Missed is 0 and the save has not recorded it (`saveOf(game).missedZero`); the sheet then calls the store's `missedZeroShown`. */
+export const missedZeroPlays = (zero: boolean, alreadyShown: boolean): boolean => zero && !alreadyShown;
+
 export function sheetModel(g: GameState, id: NeighborhoodId, now: number): SheetModel {
   const v = reportView(g, id, now);
   const { bars, customers, demandFrac } = barRows(v);
@@ -225,6 +233,7 @@ export function sheetModel(g: GameState, id: NeighborhoodId, now: number): Sheet
         : null;
   return {
     title: t('report.sheet.title'),
+    zero: v.wanted >= 0.5 && Math.round(v.missed) === 0,
     bars,
     customers,
     demand: { label: `${t('report.demand')} ${perMin(v.wanted)}`, frac: demandFrac },
