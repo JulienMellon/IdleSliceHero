@@ -39,13 +39,15 @@ export interface ChapterSave {
   calm: Record<string, number>;
   /** The shop report has been opened (set by v5.22). */
   report: boolean;
+  /** The "nobody walks out hungry" payoff (Missed reaching 0 on the sheet: the flash, the coins and Nonna's line) has played once (D556). */
+  missedZero: boolean;
   /** Coach sequences played or under way (card E4): `report:strip`, `report:bar:ovens`, `report:demand` as each step is seen, then `report` once it has ended. Never shown again. */
   coachDone: string[];
   /** Diamonds earned by chapters whose beats played before the rewards unlocked: paid when they do (VERSION.md "Defaults"). */
   banked: number;
 }
 
-export const newChapterSave = (): ChapterSave => ({ done: [], best: {}, run: {}, calm: {}, report: false, coachDone: [], banked: 0 });
+export const newChapterSave = (): ChapterSave => ({ done: [], best: {}, run: {}, calm: {}, report: false, missedZero: false, coachDone: [], banked: 0 });
 
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, v) : 0);
 const numMap = (v: unknown): Record<string, number> =>
@@ -73,6 +75,7 @@ export function migrateChapterSave(raw: unknown): ChapterSave | null {
     run,
     calm: numMap(r.calm),
     report: r.report === true,
+    missedZero: r.missedZero === true,
     coachDone: Array.isArray(r.coachDone) ? [...new Set((r.coachDone as unknown[]).filter((x): x is string => typeof x === 'string'))] : [],
     banked: Math.floor(num(r.banked)),
   };
@@ -82,6 +85,12 @@ export function migrateChapterSave(raw: unknown): ChapterSave | null {
 export function markReportOpened(g: GameState): GameState {
   const c = saveOf(g);
   return c.report ? g : withSave(g, { ...c, report: true });
+}
+
+/** The payoff for Missed reaching 0 has played (D556): it never plays again. `g` itself when it already had. */
+export function markMissedZeroShown(g: GameState): GameState {
+  const c = saveOf(g);
+  return c.missedZero ? g : withSave(g, { ...c, missedZero: true });
 }
 
 /** Record a coach step or sequence as seen (see `ChapterSave.coachDone`). `g` itself when it already was. */

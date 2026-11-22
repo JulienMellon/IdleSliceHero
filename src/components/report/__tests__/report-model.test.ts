@@ -10,12 +10,15 @@ import { COPY as REPORT_COPY } from '../../../content/copy/home/report';
 import type { NeighborhoodId } from '../../../content/types';
 import { withFeatures } from '../../../engine/features';
 import { reportView, service } from '../../../engine/features/service';
+import { markMissedZeroShown, saveOf } from '../../../engine/chapters';
 import * as G from '../../../engine/game';
 import {
   BAR_KEYS,
   barRows,
   drawerLine,
   fill,
+  MISSED_ZERO_HOLD_S,
+  missedZeroPlays,
   HIDDEN_STRIP,
   REPORT_TARGET,
   REPORT_TARGETS,
@@ -116,6 +119,22 @@ describe('the bars', () => {
       expect(s.missed).toBe('Missed 0/min');
       for (const b of s.bars) expect(b.frac).toBeGreaterThanOrEqual(s.demand.frac);
       expect(s.customers.deliveries + s.customers.seats).toBeCloseTo(s.demand.frac, 9);
+    });
+  });
+  test('D556: the "Missed reached 0" payoff plays only while Missed is 0 and the save has not recorded it, and once recorded never again', () => {
+    only(() => {
+      const bal = balanced();
+      const zero = sheetModel(bal.g, 'downtown', bal.now).zero;
+      expect(zero).toBe(true);
+      expect(sheetModel(shortOvens().g, 'downtown', shortOvens().now).zero).toBe(false);
+      expect(saveOf(bal.g).missedZero).toBe(false);
+      expect(missedZeroPlays(zero, saveOf(bal.g).missedZero)).toBe(true);
+      const after = markMissedZeroShown(bal.g); // what the store's `missedZeroShown` does once the line has played
+      expect(saveOf(after).missedZero).toBe(true);
+      expect(missedZeroPlays(sheetModel(after, 'downtown', bal.now).zero, saveOf(after).missedZero)).toBe(false);
+      expect(markMissedZeroShown(after)).toBe(after);
+      expect(missedZeroPlays(false, false)).toBe(false);
+      expect(MISSED_ZERO_HOLD_S).toBe(10);
     });
   });
   test('a hand-tapped station says "You tap" on its bar, and no other bar does', () => {

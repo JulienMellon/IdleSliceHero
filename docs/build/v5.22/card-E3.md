@@ -20,3 +20,7 @@
 
 ## Report
 Standard format, plus the readers outside the engine that used `worst`, `lamps` or `kitchenLimits` (for U3, U4, S3).
+
+## Round r2 (E)
+- [x] **6. Drivers short shows a symptom.** Bags backing up at the counter with no idle driver count as the counter's `piling` even when the kitchen could make more (service.ts `senseShop`); test in service.test.ts.
+- [x] **7. D556 once-flag.** `ChapterSave.missedZero`, `markMissedZeroShown`, store action `missedZeroShown`; tests in chapters.test.ts.

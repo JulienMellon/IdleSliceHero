@@ -1134,6 +1134,7 @@
      ],
      "coachDone": [],
      "report": false,
+     "missedZero": false,
      "run": {},
      "banked": 0
     }

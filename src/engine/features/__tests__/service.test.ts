@@ -425,6 +425,26 @@ describe('symptoms (v5.22)', () => {
     });
   });
 
+  test('drivers short: bags stacking up with no idle driver show at the counter even when the kitchen could make more', () => {
+    only(() => {
+      const short = () => kitchen({ prep: 20, ovens: 20, counter: 20 }, G.allHeads(), { drivers: 1, tables: 6 });
+      expect(view(short()).wanted).toBeLessThan(view(short()).perMin.kitchen); // the kitchen has room: nothing here is a customers-outnumber-the-kitchen pile-up
+      // every carrier out and a stack of boxes waiting for one, for as long as the symptom takes to show
+      const stuck = (g: G.GameState): G.GameState => withShop(g, 'downtown', { line: { ...g.shops.downtown.line, boxed: 60, driverBusy: 5, walkinBusy: 5 } });
+      let g = short();
+      let now = T0;
+      for (let i = 0; i < 20; i++) {
+        now += 1000;
+        g = G.playTick(stuck(g), 1, now);
+      }
+      const v = view(g, now);
+      expect(v.symptoms.counter).toBe('piling');
+      expect(v.symptoms.prep).toBeNull();
+      expect(v.symptoms.ovens).toBeNull();
+      expect(symptomAsks(g, 'downtown').map((a) => [a.trigger, a.station])).toContainEqual(['pile', 'counter']);
+    });
+  });
+
   test('a station the player taps by hand is never idle (it is the player)', () => {
     only(() => {
       const { g, now } = play(kitchen({ prep: 10, ovens: 10, counter: 10 }, { counter: true }), 60);
