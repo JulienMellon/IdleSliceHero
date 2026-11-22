@@ -119,10 +119,13 @@ export const SFX = {
   gavel: [require("../../assets/audio/sfx/gavel_0.m4a")],
   grade: [require("../../assets/audio/sfx/grade_0.m4a")],
   milestone: [require("../../assets/audio/sfx/milestone_0.m4a")],
+  oven_ding: [require("../../assets/audio/sfx/oven_ding_0.m4a")],
+  phone_ring: [require("../../assets/audio/sfx/phone_ring_0.m4a")],
   refused: [require("../../assets/audio/sfx/refused_0.m4a"), require("../../assets/audio/sfx/refused_1.m4a")],
   rush: [require("../../assets/audio/sfx/rush_0.m4a"), require("../../assets/audio/sfx/rush_1.m4a"), require("../../assets/audio/sfx/rush_2.m4a"), require("../../assets/audio/sfx/rush_3.m4a")],
   sparkle: [require("../../assets/audio/sfx/sparkle_0.m4a")],
   tap: [require("../../assets/audio/sfx/tap_0.m4a"), require("../../assets/audio/sfx/tap_1.m4a"), require("../../assets/audio/sfx/tap_2.m4a"), require("../../assets/audio/sfx/tap_3.m4a")],
+  tip_bell: [require("../../assets/audio/sfx/tip_bell_0.m4a")],
 } as const;
 
 export type MusicId = keyof typeof MUSIC;

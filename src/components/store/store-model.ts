@@ -1,5 +1,5 @@
 // The store's pure parts (card U3): the five products as rows with their price state, what a paid-out grant does to the game, the
-// Starter Pack's one-time offer and the small saved prefs. The tab (store-tab.tsx), the sheet (starter-sheet.tsx) and Settings only draw this.
+// Starter Pack's one-time offer and the small saved prefs. The tab (store-tab.tsx), and Settings only draw this.
 import { t } from '../../content/copy';
 import { VANITY_PRICE } from '../../content/endgame';
 import { money } from '../../engine/format';

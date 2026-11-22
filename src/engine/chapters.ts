@@ -12,7 +12,7 @@ import type { Chapter, ChapterTask } from '../content/cities/types';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { challengeWon } from './features/layers/rival';
 import { flowOf, missedOf } from './features/service';
-import { TUTORIAL_DONE, type GameState } from './game';
+import { STORE_INTRO_START, type GameState } from './game';
 import { rewardsUnlocked } from './rewards';
 import { sceneWaitSeconds, scenesById, triggerPasses } from './story';
 
@@ -357,7 +357,7 @@ export function migrateChapters(g: GameState, fromVersion: number): GameState {
   let done = c.done;
   // the opening's chapter (`free`): a save whose tutorial is over counts it done, whatever the tutorial left undone; one that is still in it keeps its tasks
   for (const ch of chaptersOf(g))
-    if (ch.free && g.seenScenes.includes(ch.sceneId) && g.tutorial >= TUTORIAL_DONE)
+    if (ch.free && g.seenScenes.includes(ch.sceneId) && g.tutorial >= STORE_INTRO_START)
       for (const t of ch.tasks) if (!done.includes(t.key)) done = [...done, t.key];
   for (const ch of openChapters(g)) {
     const scene = scenes.get(ch.sceneId);

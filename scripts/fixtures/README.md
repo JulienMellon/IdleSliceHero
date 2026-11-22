@@ -25,6 +25,9 @@ One file per group of shots, `NN_name.py`, NN = the first shot number the file o
 | `186_s3.py` | 186-188 the shop shows its state: dough, bags and boxes pile up where it is short (card S3) |
 | `189_u4.py` | 189-191 upgrade cards say "<n>/min → <m>": sidewalk and drawer of a shop short on ovens, a balanced shop (card U4) |
 | `192_e4.py` | 192-194 Nonna's report tutorial: the strip lit, the Ovens bar lit over the sheet, the dashed line lit; gone on the second opening (card E4) |
+| `195_u5.py` | 195-197 the Store chip from the Store intro, the Style tab's nudge, the Boosters tab with a running slot and a refused buy (card U5) |
+| `205_n1.py` | 205-208 the Store tab's cards: loading, Starter with Nonna's line, diamond packs, Starter owned, first buys used (card N1) |
+| `209_e6.py` | 209-210 Nonna's Store intro: the Store chip lit, the Starter card lit in the Store tab; "Not now" ends it, no pop-up sheet (card E6) |
 
 ## One fixture at a time
 ```

@@ -25,8 +25,6 @@ import {
   pricesFrom,
   productRows,
   restoreLine,
-  STARTER_DELAY,
-  starterShows,
 } from '../store-model';
 
 const NOW = 1_800_000_000_000;
@@ -114,20 +112,6 @@ describe('a paid-out grant', () => {
     for (let i = 0; i < MAX_CONCURRENT_BOOSTS + 3; i++) g = applyGrant(g, GRANTS.starter_pack, NOW + i);
     expect(g.rewards.boosts).toHaveLength(MAX_CONCURRENT_BOOSTS);
   });
-});
-
-describe('the Starter Pack offer', () => {
-  const ok = { at: 100, playSeconds: 100 + STARTER_DELAY, offered: false, owned: false, covered: false };
-  test('shows once, after the tutorial and a short wait, when nothing else is up', () => {
-    expect(starterShows(ok)).toBe(true);
-    expect(starterShows({ ...ok, playSeconds: 100 + STARTER_DELAY - 1 })).toBe(false);
-  });
-  test.each([
-    ['the tutorial did not end in this session', { at: null }],
-    ['it was offered already', { offered: true }],
-    ['it is owned', { owned: true }],
-    ['a scene or popup is up', { covered: true }],
-  ])('not when %s', (_, patch) => expect(starterShows({ ...ok, ...patch })).toBe(false));
 });
 
 describe('saved prefs', () => {

@@ -8,9 +8,9 @@
 - Own: `src/engine/tutorial.ts`, `src/engine/game.ts` (`TUTORIAL_DONE` and migration only), `src/store/game-store.ts` (`starterAt` and `prefs.starterOffered` only), `src/components/store/starter-sheet.tsx` (delete), its line in `src/components/slots.tsx`, the Starter card's `useCoachTarget('store:starter')` call in `src/components/store/` (one line), the coach overlay's mount in `src/app/shop.tsx` (one line, so the overlay draws on the Shop screen), tests, one fixture `scripts/fixtures/<next free number>_e6.py`.
 
 ## Steps
-- [ ] **1. Steps 16 and 17.** 16: `hud:store` tap → opens `/shop?tab=store` (`store_opened{from:'intro'}`). 17: `store:starter` look, ends on "Not now", Buy, or leaving the Shop. `TUTORIAL_DONE` = 18. A save at 16 (done in v5.20–v5.22) is mapped to 18 only if the Starter Pack is owned; otherwise to 16, so existing players see the intro once.
-- [ ] **2. Hold** everything else that can cover the screen (story, gifts, offers) during 16–17.
-- [ ] **3. Remove the pop-up:** delete `starter-sheet.tsx`, its slot entry, `starterAt`, `starterShows` and `STARTER_DELAY`; keep `prefs.starterOffered` as "the intro has run".
+- [x] **1. Steps 16 and 17.** 16: `hud:store` tap → opens `/shop?tab=store` (`store_opened{from:'intro'}`). 17: `store:starter` look, ends on "Not now", Buy, or leaving the Shop. `TUTORIAL_DONE` = 18. A save at 16 (done in v5.20–v5.22) is mapped to 18 only if the Starter Pack is owned; otherwise to 16, so existing players see the intro once.
+- [x] **2. Hold** everything else that can cover the screen (story, gifts, offers) during 16–17.
+- [x] **3. Remove the pop-up:** delete `starter-sheet.tsx`, its slot entry, `starterAt`, `starterShows` and `STARTER_DELAY`; keep `prefs.starterOffered` as "the intro has run".
 - [ ] **4. Tests and fixture:** both steps on a fresh save; an owner of the pack skips them; no sheet anywhere.
 
 ## Checks

@@ -149,7 +149,8 @@ export function tutorialAdvance(s: G.GameState): G.GameState {
 }
 
 /** What the screen can tell the tutorial: a `look` step was seen (a tap, or the overlay's `LOOK_MS`; `LOOK_FALLBACK_MS` when it cannot be drawn), the task list opened or closed, the upgrades drawer opened or closed. */
-export type TutorialNote = 'look' | 'store-open' | 'store-left' | 'tasks-open' | 'tasks-closed' | 'drawer-open' | 'drawer-closed' | 'report-open' | 'report-look' | 'report-closed';
+export type TutorialNote =
+  'look' | 'store-open' | 'store-left' | 'tasks-open' | 'tasks-closed' | 'drawer-open' | 'drawer-closed' | 'report-open' | 'report-look' | 'report-closed';
 const ENDED_BY: Readonly<Record<number, TutorialNote>> = {
   6: 'look',
   7: 'tasks-open',
@@ -173,7 +174,8 @@ export function tutorialNote(s: G.GameState, note: TutorialNote): G.GameState {
 }
 
 /** Story scenes wait while Nonna walks the player through the first shop (steps 1-11) and through the Store intro (16-17: nothing else may cover the Shop or the chip). */
-export const tutorialHoldsStory = (s: G.GameState) => (s.tutorial >= 1 && s.tutorial <= 11 && !s.shops[first(s)].managed) || (s.tutorial >= STORE_STEP && s.tutorial < TUTORIAL_DONE);
+export const tutorialHoldsStory = (s: G.GameState) =>
+  (s.tutorial >= 1 && s.tutorial <= 11 && !s.shops[first(s)].managed) || (s.tutorial >= STORE_STEP && s.tutorial < TUTORIAL_DONE);
 
 /** The small notes the screen can show besides Nonna's card: a refused tap's reason, the idle-drivers pill, the queue count, a refused buy's toast. */
 export type Hint = 'refusal' | 'waiting' | 'more' | 'toast';

@@ -43,7 +43,9 @@ STORY_MASTER = {'megaslice_rep': -18.0, 'megaslice_rep_dock': -18.0, 'city_theme
 CEILING = -6.0
 SFX_LUFS = {'click': -32, 'bubble': -32, 'tap': -28, 'full': -28, 'cash': -28, 'buy': -22, 'refused': -22, 'rush': -22,
             'sparkle': -24, 'milestone': -19, 'expand': -19, 'grade': -19, 'fleet': -19, 'gavel': -18, 'build': -16,
-            'collect': (-19, -17.5, -16)}
+            'collect': (-19, -17.5, -16),
+            # card A3: the shop's state by ear, under the quietest stinger tier (bottleneck -22) and level with the constant tier
+            'oven_ding': -28, 'phone_ring': -28, 'tip_bell': -28}
 # every tier moved down 2 LU with the loops (lofi round 1), so each stinger sits the same distance above the music.
 STING_LUFS = {'bottleneck': -22, 'upgrade': -20, 'fleet': -20, 'drone': -20, 'milestone': -19, 'welcome': -19,
               'warmth': -20, 'manager': -17, 'milestone_big': -16, 'build': -17, 'perk': -20, 'offline': -22, 'bid': -18}

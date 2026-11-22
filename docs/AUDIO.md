@@ -78,7 +78,7 @@ Every stinger is rendered in all six keys (`sting/<hood>_<kind>`), as mono AAC (
 | Pier 9 bid (`bidPier9`) | `waterfront_bid`: held A9 on Rhodes and upright bass under a soft vibraphone swell, unresolved (waterfront-4 resolves it), with the gavel SFX "knock, knock, SOLD" | 2.6 s | −18 | −10 dB |
 
 ## Sound effects (AU21)
-All effects are mono AAC at 64 kbps: 0.17 MB in total, 42 files. Loudness is set by tier (AU36), so rare big moments are louder than frequent small ones, and every peak is limited to −6 dBFS or below:
+All effects are mono AAC at 64 kbps: 0.19 MB in total, 45 files. Loudness is set by tier (AU36), so rare big moments are louder than frequent small ones, and every peak is limited to −6 dBFS or below:
 
 | Tier | Effects | Loudness |
 |---|---|---|
@@ -89,6 +89,7 @@ All effects are mono AAC at 64 kbps: 0.17 MB in total, 42 files. Loudness is set
 | Gavel | gavel | ≈ −22 (transient-limited) |
 | Building | build | ≈ −18 |
 | Collect, by size | collect | −19, −17.5, −16 |
+| The shop by ear (card A3) | oven_ding, phone_ring, tip_bell | −28 (peaks −16 to −19 dBFS), under every stinger tier (the quietest is bottleneck at −22, Downtown's offline −27) |
 
 `build.py` fails if any effect misses its tier by more than 0.5 LU, unless the ceiling stopped it.
 
@@ -112,6 +113,11 @@ The rest of this section: They are synthesised in `sfx.py` from one palette of w
 | 13 | Tab switch | `click_0` | 0.05 s | Soft click |
 | 14 | Speech bubble (each line) | `bubble_0..2` | 0.08 s | 3 variants |
 | 15 | Pier 9 bid | `gavel_0` | 0.6 s | Hardwood "knock, knock, SOLD" |
+| 16 | A baked batch lands on the pass while the ovens' output is piling (A3) | `oven_ding_0` | 0.5 s | A soft kitchen-timer ding (small bell, 1760 Hz, quick decay); at most one per 4 s |
+| 17 | The floor has a line (A3) | `phone_ring_0` | 2.0 s | An old telephone: two rings (two bells struck in turn at about 20 Hz) and then silence; at most one per 30 s |
+| 18 | Tipping (A3) | `tip_bell_0` | 0.45 s | A small counter bell, one ting; at most one per 20 sales while the service state is `tipping` |
+
+**The shop by ear (card A3, v5.22).** `src/audio/shop-ears.ts` (pure, tested in `__tests__/shop-ears.test.ts`) holds the rules and the director's `listenToShop` feeds it the active shop's report once a second (`EARS.pollMs`): the ovens' and the floor's symptoms and the `tipping` state from `reportView`, `line.baked` and `sold` from the shop. The ding fires when the ovens' symptom is `piling` and the pass holds more baked pies than a second ago (a new batch landed), at most once per 4 s. The phone rings when the floor's symptom is `line` (or `walkout`, which is a line that is losing customers), at most once per 30 s; the ring is the whole 2 s file, so it stops by itself. The bell rings once the shop has made 20 sales while tipping (the count restarts when the tip ends), so a long streak chimes every 20 sales. A reset (another shop, a scene, the offline popup, Sound off, the app in the background, a shop with no head) only drops the last counts, so a jump never reads as a batch or a sale; it never clears the rate limits. All three go through `mixer.sfx`, so they are on the SFX bus, obey the Sound switch (there is no new setting), play at 0.7 gain under a stinger like every effect, and the director says nothing at all while a scene or the offline popup is open. They are not in `COMMON_SFX`: each is decoded on its first play. The level is −28 LUFS, level with the constant tier and under the quietest stinger (the build checks each file within 0.5 LU of it). Nobody has listened to these three yet.
 
 ## Mix rules (AU22)
 - **No master bus.** `expo-audio` has no master bus, so clipping is prevented in the files. Lofi loops sit at −20 LUFS, peaking at −7 to −8 dBFS (the ceiling is −6; the tape saturation keeps the limiter idle), Downtown's sparse chart at −22; the MegaSlice HQ loop at −19.0 (peak −7.0); triumphs, the city theme and the rep stings at −18 (peaks −6.0 to −8.3); Victor's exit at −19 (peak −6.5, through the story master; −16 before the R2 notes); the reveals at −21 (recipe) and −23 (reunion); stingers (−18.5 to −25 by tier since the R2 notes: Julien said the stingers and story moments did not sit well over the music, so every cue that plays over a ducked loop came down 2 to 3.5 LU; −16 to −22 before) and SFX by tier. A look-ahead limiter keeps every stinger, story cue and SFX at or below −6 dBFS.
@@ -145,8 +151,8 @@ The rest of this section: They are synthesised in `sfx.py` from one palette of w
 | Music | 17.66 MB (8 lofi jazz loops, AAC at the 192 kbps setting, measured 196–204 kbps stereo) |
 | Stingers | 5.87 MB (73, mono, measured 90–165 kbps) |
 | Story | 2.80 MB (12 cues, stereo, measured 188–199 kbps) |
-| SFX | 0.17 MB |
-| **Total** | **26.50 MB** (27,787,604 bytes in `assets/audio`; the test caps it at 28 MB, 29,360,128 bytes, so 1,572,524 bytes are left; Julien's own ceiling is 32 MB) |
+| SFX | 0.19 MB |
+| **Total** | **26.75 MB** (28,054,303 bytes in `assets/audio`, with the splash theme and the A3 effects; the test caps it at 28 MB, 29,360,128 bytes, so 1,305,825 bytes are left; Julien's own ceiling is 32 MB) |
 
 - **Web.** Nothing plays until the first pointer press, because browsers block autoplay. `scripts/screenshots.py` logs every `play()` into `report.json` under `audio`.
 

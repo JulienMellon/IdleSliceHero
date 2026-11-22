@@ -8,6 +8,7 @@ import { AppState, Platform } from 'react-native';
 import { CITIES, HOME_ID, cityOf, hoodIds } from '../content/cities';
 import type { NeighborhoodId, PanelCue } from '../content/types';
 import * as G from '../engine/game';
+import { reportActive, reportView } from '../engine/features/service';
 import { useGame } from '../store/game-store';
 import { onAudio, type AudioEvent } from './bus';
 import { DUCK, EXCLUSIVE_CUES, PurchaseChain, VoiceLimiter, audioHood, collectSize, musicFor, panelCue, SCENE_INDEX } from './logic';
@@ -15,6 +16,7 @@ import { MUSIC, SFX, STINGS, STORY, type SfxId, type StoryCueId } from './manife
 import { createMixer, type Catalog, type Mixer } from './mixer';
 import { createOutput } from './output';
 import { useAudioPrefs } from './prefs';
+import { EARS, ShopEars } from './shop-ears';
 
 const SKIP_FADE_MS = 400;
 const STING_OUT_MS = 150; // a scene's first panel clears gameplay stingers (AU27)
@@ -237,6 +239,41 @@ function handle(e: AudioEvent) {
   }
 }
 
+// ------------------------------------------------------------------------------------------------ the shop by ear (card A3)
+const ears = new ShopEars();
+let earsAt = 0;
+let earsHood = '';
+
+/**
+ * About once a second: read the active shop's report and play what `ShopEars` says (oven ding, phone ring, tip bell). Silent, and forgetting
+ * what it saw, while a scene or the offline popup is open, with Sound off, or before the save is in: those sounds are the shop's, not the story's.
+ */
+function listenToShop(s: ReturnType<typeof useGame.getState>) {
+  const now = Date.now();
+  if (now - earsAt < EARS.pollMs) return;
+  earsAt = now;
+  const id = s.game.active;
+  if (!s.loaded || s.playing || s.offline || !useAudioPrefs.getState().sound || !mixer.appActive || !reportActive(s.game, id)) {
+    ears.reset();
+    return;
+  }
+  if (earsHood !== id) {
+    earsHood = id;
+    ears.reset();
+  }
+  const view = reportView(s.game, id, s.game.lastSavedAt);
+  const shop = s.game.shops[id];
+  const heard = ears.step(now, {
+    live: true,
+    ovens: view.symptoms.ovens,
+    floor: view.symptoms.floor,
+    tipping: view.state === 'tipping',
+    baked: shop.line.baked,
+    sold: shop.sold,
+  });
+  for (const sound of heard) mixer.sfx(sound, { jitter: 0 });
+}
+
 const popLimiter = new VoiceLimiter();
 const rushLimiter = new VoiceLimiter();
 
@@ -282,6 +319,7 @@ export function startAudio() {
   let lastLoaded = useGame.getState().loaded;
   useGame.subscribe((s) => {
     warmRare(s);
+    listenToShop(s);
     if (s.playing !== lastPlaying) {
       if (!s.playing) {
         scenePanelCue = 'none';

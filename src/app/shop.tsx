@@ -233,7 +233,7 @@ export default function Shop() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  coachLayer: { ...StyleSheet.absoluteFillObject, zIndex: Z.coach },
+  coachLayer: { ...StyleSheet.absoluteFill, zIndex: Z.coach },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

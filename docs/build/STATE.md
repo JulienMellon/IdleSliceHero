@@ -16,7 +16,7 @@ reviews:               # latest review file per critic, with verdict and counts
   story:  docs/build/v5.22/review-r2-story.md (r2 NOT SATISFIED advisory; bug 0 major 0 minor 10; E2 U1 T7; S90 resolved; S67 S70 S71 S87 copy not in code, S98 new)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
 open: ON HOLD (Julien 2026-11-18): every city beyond Boston; cards in docs/build/v5.19/later/ (W4b W4s E4 E4f CITY A3) and the deferred refactor (R2 R2b R3 R4 R5f R6s) are not launched. PARKED for Julien, not in v5.19: economy refit (one pizza per tap +1/10 prep lv, home tops out ~$10M with Suburbs ~$30K, first goal <$50, ECONOMY 3->4 with old saves reset, D493 rival gated at Suburbs 2 stars, D495); don't ask about it during v5.19. Carried: A2 + audio notes AU41 AU39 AU40 AU25 AU82 (music round waits on Julien's R1 listen), SliceAudioSession native module not built; Boston heads need a writer pass (5 barks per head, one per trigger; their script has 4 numbered); Boston GMs placeholder; v5.17/v5.18 critic minors D481 D493 D495 D505 D512 D514. Tools: expo install is refused by the proxy (use npm install with the version from node_modules/expo/bundledNativeModules.json); loop_stats.py cannot read loop: commits; programmer --only takes the fixture name without .py; seam-noise shots 00/24/104/105 and 29-31b. App Store privacy label must say Tracking = Yes; native paths unverified until DEVICE-CHECKLIST.
-next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code,story}.md open-notes tables (D556 minor; A46 A44 C158 medium; S67 S70 S71 S87 S91 S95 S97 S98; N rows 7). A3 running (music closed 2026-11-22, R2 approved). Ask Julien still open: flow-based drivers symptom (new Symptom value + bark)?
+next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code,story}.md open-notes tables (D556 minor; A46 A44 C158 medium; S67 S70 S71 S87 S91 S95 S97 S98; N rows 7). A3 done (oven ding, phone ring, tip bell; unheard by Julien). Ask Julien still open: flow-based drivers symptom (new Symptom value + bark)?
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
@@ -39,3 +39,4 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 S10 N1 done (3059 tests green); U5 done (StoreTab defaults onClose to router.back). Wave 3 E6 launched.
 - 2026-11-22 S10 E6 died on the 5-hour limit before editing anything; resumed after the reset (Julien: Go).
 - 2026-11-22 S10 music closed (Julien yes on R2). A3 (docs/build/v5.22/card-A3.md) launched beside E6.
+- 2026-11-22 S10 A3 done (3 shop SFX + shop-ears rules, 3075 tests). Julien has not heard the three sounds.
