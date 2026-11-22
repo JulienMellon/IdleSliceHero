@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.22-r2                # v5.22 r2 verify: True 0 [], layout 0 new; 122 changed vs v5.22
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
-  W4 todo  E5 todo  N1 todo  U5 todo  E6 todo
+  W4 running  E5 running  N1 todo  U5 todo  E6 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.22/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 19; E2 U12 S4 T2; G119 D548 D549 G118 D543 fixed, D556 open minor, D557 carried)
   code:   docs/build/v5.22/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 3 low 24; E5 U14 S1 N7; K5 fixed; A46 A44 C158 medium open)
@@ -30,3 +30,4 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 S9c r2 verify fix E4 done (192_e4 expects 'Dashed line, cara' per COPY; 66_s1 waits 42 s, symptom bark outranks rush). WIP ea7437a caught composer mid-rebuild (assets deleted); composer told to rebuild clean before verify.
 - 2026-11-22 S9c verify v5.22-r2 PASS (re-run after E4/U4 fixes + music rebuild): True 0 [], layout 0; 0 new 122 changed. r2 re-checks launched (critic, code, story; sonnet).
 - 2026-11-22 S9c r2 gate MET: critic SATISFIED (0/0/19, carried minors), code APPROVED (medium 3), story NOT SATISFIED advisory (0/0/10). v5.22 closed; v5.21 logged closed as superseded. STATE -> v5.23.
+- 2026-11-22 S10 start: wave 1 W4 || E5 launched. Music: Julien R2 answer (Downtown triumph gap ~0:07, bank ok, wants splash theme) -> notes round 3 launched.

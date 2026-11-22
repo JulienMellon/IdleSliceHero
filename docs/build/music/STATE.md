@@ -4,10 +4,10 @@ Keep this file under 30 lines. It is the only file the music orchestrator edits 
 
 ```
 round: R2              # R0 | R1 | R2 | done
-step: listen           # cards | verify | review | fix | reel | listen
+step: cards            # cards | verify | review | fix | reel | listen
 bank: C MuseScore_General_Full.sf3      # letter and file name once Julien picks (R0)
 cards:                 # todo | running | done | partial | blocked
-  M0 M1a M1b M1c done; M2a done, M2b done, M2c done; NOTES(R2) done; NOTES(R2#2) done
+  M0 M1a M1b M1c done; M2a done, M2b done, M2c done; NOTES(R2) done; NOTES(R2#2) done; NOTES(R2#3) running
 review: docs/build/music/review-R2-audio.md NOT SATISFIED, bugs 0 major 1 (AU85 fixed) minor 10
 last_reel: tools/audio/build/reel/R2.mp3 (2026-11-22, notes round 2, 192 kbps, sent)
 heard: R0 → "C"; R1 → "Go"           # round → Julien's verdict in five words
@@ -26,3 +26,4 @@ next: await Julien on R2 after notes round 2 (Downtown stingers 2 LU quieter on 
 - 2026-11-19 R2 fix pass DONE (AU85/86 6/9 arrivals, hierarchy gaps >=0.3 LU). Audio 33249842 B of 33554432. Verified (2501 tests). Reels FULL/R2/R1 sent; step listen.
 - 2026-11-22 Julien heard R2: notes, no yes ("only the downtown stinger lands wrong"). Notes round 2 on R2 launched with 192 kbps extra.
 - 2026-11-22 Notes round 2 on R2 DONE (Downtown sting ladder -2 LU, others reverted, victor_exit -16, 192 kbps). Built: 136 files, 27787604 B of 32 MiB. Verified (2995 tests). Reel R2 sent; step listen.
+- 2026-11-22 Julien heard R2 after notes round 2: notes, no yes (Downtown triumph gap ~0:07 in reel; bank ok; game needs a splash screen theme). Notes round 3 on R2 launched with 192 kbps extra.
