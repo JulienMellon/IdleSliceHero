@@ -4,12 +4,12 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.23                   # v5.22 closed 2026-11-22 at r2 (critic SATISFIED, code APPROVED 3 medium, story advisory 10 minor)
-step: fix                            # setup | waves | verify | review | fix | close
+step: verify                         # setup | waves | verify | review | fix | close
 round: r2              # r1 | r2 | r3
 last_shots: v5.23                   # v5.23 r1 verify: True 0 [], layout 0 new; 10 new 39 changed vs v5.22-r2
 codecritic_range_start: fa8c5a5   # v5.23 start (main at S10 start)
 cards:                 # todo | running | done | partial | blocked
-  W4 done  E5 done  N1 done  U5 done  E6 running   # r2 fix round
+  W4 done  E5 done  N1 done  U5 done  E6 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.23/review-r1-critic.md (r1 NOT SATISFIED; bug 3 major 2 minor 27; E4 U19 S4 T1 N5; G120 G121 G122 bugs, D558 D559 major)
   code:   docs/build/v5.23/review-r1-code.md (r1 APPROVED; blocker/high 0 medium 3 low 36; E8 U18 S1 N11 A1)
@@ -45,6 +45,7 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 S10 r2 N1 done (G120 G121 S99 D559 D560 D566 C184 C186 T134 T135; C187 VERSION-level, carried). E6 launched with A48.
 - 2026-11-22 S10 r2 E5 done (G122, C185; 3088 tests, tsc ok). W4 launched.
 - 2026-11-22 S10 r2 W4 done (S101 S102 S103 + N1 keys). S101/S102 -> U5 (booster-model.ts) now; S103 -> N1 (store.ts) queued after E6.
-- 2026-11-22 S10 r2 E6 running (A48 T133 fixed, C182 partly: step 16 dismiss needs coach-view). C183 + step-16 dismiss -> U5; S103 -> N1.
+- 2026-11-22 S10 r2 E6 done (A48 T133 fixed, C182 partly: step 16 dismiss needs coach-view). C183 + step-16 dismiss -> U5; S103 -> N1.
 - 2026-11-22 S10 r2 U5 done (S101 S102 C183; skippable flag). C182 skip wiring (tutorial.ts, overlay.tsx, use-coach-flow.ts) -> E6.
 - 2026-11-22 S10 r2 N1 S103 landed (3090 tests). Waiting on E6 (C182 skip) before the r2 verify.
+- 2026-11-22 S10 r2 E6 done (C182 store-skip; 3092 tests). r2 verify v5.23-r2 running.
