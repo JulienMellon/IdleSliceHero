@@ -7,10 +7,10 @@ import { cityOf } from '../../content/cities';
 import { t } from '../../content/copy';
 import type { NeighborhoodId } from '../../content/types';
 import type { CoachTargetId } from '../../engine/coach-types';
-import { count, duration, money } from '../../engine/format';
+import { count, duration } from '../../engine/format';
 import type { GameState } from '../../engine/game';
 import { reportActive, reportView, type K3, type ReportView } from '../../engine/features/service';
-import { FIT_EM, fits } from '../endgame/fit-model';
+import { FIT_EM } from '../endgame/fit-model';
 
 /** Fill `{name}` slots of a copy line. An unknown slot stays as written (a test catches it). */
 export const fill = (template: string, vars: Readonly<Record<string, string | number>>): string =>
