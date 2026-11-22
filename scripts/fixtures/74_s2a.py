@@ -102,7 +102,9 @@ def run(ctx):
     advance(page, 600)
     # the win plays the suburbs finale (beat 4): skip it to see the street (the win line stays on its card for 6 s)
     # (the scene starts a moment after the win: wait for its skip button in game time, then for the scene to go)
-    if until(page, lambda: is_up(page, "skip-scene"), 6000):
+    for _ in range(4):  # a beat or two can follow the finale: skip each until the street is clear
+        if not until(page, lambda: is_up(page, "skip-scene"), 6000 if _ == 0 else 1500):
+            break
         tid(page, "skip-scene").click()
         advance(page, 800)
     if is_up(page, "skip-scene"):

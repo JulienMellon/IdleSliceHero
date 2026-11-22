@@ -343,7 +343,7 @@ describe('the Store intro', () => {
   });
   test('only the lit chip step is skippable, and the overlay and the flow hook carry it', () => {
     const src = (f: string) => fs.readFileSync(path.join(__dirname, '..', '..', 'components', 'coach', f), 'utf8');
-    expect(src('overlay.tsx')).toMatch(/skippable && outsideTaps\.current\+\+ >= 1 \? skipRef\.current\?\.\(\) : nudge\(\)/);
+    expect(src('overlay.tsx')).toMatch(/skippable && tap\.skip/);
     expect(src('use-coach-flow.ts')).toContain("note('store-skip')");
   });
 });

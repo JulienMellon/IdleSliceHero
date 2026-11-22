@@ -8,8 +8,10 @@ import {
   HUD_ZONE,
   leaders,
   mergeCuts,
+  outsideTap,
   overlayLayout,
   padCut,
+  SKIP_TAP,
   type Rect,
   type Safe,
   type Screen,
@@ -266,5 +268,19 @@ describe('a target off the screen (C163)', () => {
       const covered = blockers(lay.cuts, PHONE).reduce((n, b) => n + (b.x1 - b.x0) * (b.y1 - b.y0), 0);
       expect(covered).toBeLessThan(PHONE.w * PHONE.h);
     }
+  });
+});
+
+describe('the skippable step: a second tap outside the lit spot skips (C191)', () => {
+  test('the first tap only nudges and is remembered', () => {
+    expect(outsideTap(null, 1000)).toEqual({ skip: false, last: 1000 });
+  });
+  test('a second tap a moment later skips', () => {
+    expect(outsideTap(1000, 1000 + SKIP_TAP.minMs).skip).toBe(true);
+    expect(outsideTap(1000, 1000 + SKIP_TAP.maxMs).skip).toBe(true);
+  });
+  test('two events of one touch count once, and a tap long after the first starts over', () => {
+    expect(outsideTap(1000, 1010)).toEqual({ skip: false, last: 1000 });
+    expect(outsideTap(1000, 1000 + SKIP_TAP.maxMs + 1)).toEqual({ skip: false, last: 1000 + SKIP_TAP.maxMs + 1 });
   });
 });

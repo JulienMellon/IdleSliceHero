@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoachCard } from '../coach-card';
 import { useMotion } from '../scene/clock';
-import { blockers, CUT, freeDock, HAND, leaders, overlayLayout, type Rect } from './overlay-model';
+import { blockers, CUT, freeDock, HAND, leaders, outsideTap, overlayLayout, type Rect } from './overlay-model';
 import type { CoachMode } from './steps';
 import { remeasureTargets, type CoachTargetId, useTargetRects } from './targets';
 
@@ -80,7 +80,7 @@ export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, on
   }, [loops, pulse]);
 
   const skipRef = useRef(onSkip);
-  const outsideTaps = useRef(0);
+  const lastOutside = useRef<number | null>(null);
   const doneRef = useRef(onDone);
   useEffect(() => {
     doneRef.current = onDone;
@@ -160,7 +160,12 @@ export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, on
             key={i}
             testID="coach-block"
             onStartShouldSetResponder={() => true}
-            onResponderRelease={() => (skippable && outsideTaps.current++ >= 1 ? skipRef.current?.() : nudge())}
+            onResponderRelease={() => {
+              const tap = outsideTap(lastOutside.current, Date.now());
+              lastOutside.current = tap.last;
+              if (skippable && tap.skip) skipRef.current?.();
+              else nudge();
+            }}
             style={{ position: 'absolute', left: p.x0, top: p.y0, width: p.x1 - p.x0, height: p.y1 - p.y0 }}
           />
         ))
