@@ -49,3 +49,4 @@ next: S9 verify v5.22 (L=v5.22 P=v5.21-r3; covers v5.21 r4 stacking fix too, Jul
 - 2026-11-22 S9 verify v5.22 FAIL: 3 errors (140_v2 scroll-cue-left 143, 140_v2 cold strip 146 -> U4; 180_e1b 'Finish Chapter 10 first' -> E4); layout 0 new; 14 new 154 changed vs v5.21-r3. Re-verify after fixes.
 - 2026-11-22 S9 verify v5.22 PASS (re-run after 3 fixture fixes): True 0 [], layout 0; 14 new 150 changed. r1 reviews launched (critic full, codecritic medium src scripts 12c99bd..HEAD, storycritic medium COPY-v5.22); audiocritic skipped (A3 blocked).
 - 2026-11-22 S9 r1 gate NOT met (critic bug1 major2; code medium 4>3; story S90 major). Fix r2: batch 1 E (E3+E4 via E4 programmer) || S (S3); batch 2 U (U3+U4); batch 3 T (W3). N rows (code, 7) have no v5.22 card: carry.
+- 2026-11-22 S9 r2 batch 1 (E, S) hit the 5-hour limit before any edit; resumed 11:31 UTC after reset.
