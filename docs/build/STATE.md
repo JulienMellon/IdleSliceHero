@@ -38,3 +38,4 @@ next: start S10b-v5.23b.md (cleanup step), then S11-v5.24.md. Carried notes: doc
 - 2026-11-22 S10b r1 U8 done (D537 D542 D544 D545 D547 D555; D535 D538 already in) -> 4 T copy files granted; D540 -> U7.
 - 2026-11-22 S10b r1 U8 done (S95 x2 S71 landed; S67 carried: downtown backdrop not allowed in Boston pack, needs backdrop decision). Waiting on U7.
 - 2026-11-22 S10b r1 U7 done (D540 D553 D554 D556 S98; D550 already in; D551 2pt raise -> U8). Scroll cue (D519) unowned: carried. Q8 launched.
+- 2026-11-22 S10b r1 U8 D551 2pt raise done (3146 tests). Waiting on Q8.
