@@ -1,9 +1,10 @@
-// Nonna's Chapter 1 script (v5.20, card C3): 15 steps, each with her line (a copy key, content/copy/home/tutorial.ts), the spots of the screen it
+// Nonna's Chapter 1 script (v5.20, card C3): 15 steps (then, v5.23 card E6, the two-step Store intro: 16 and 17), each with her line (a copy key, content/copy/home/tutorial.ts), the spots of the screen it
 // lights (coach targets, components/coach/targets.ts), a mode (what the player can do meanwhile) and a condition that ends it.
 // Pure: the step number is saved (GameState.tutorial); an existing player who has already sold pizza starts at "done".
 // Most steps end on the game's own state. Some end on something only the screen knows, which it tells us through `tutorialNote`:
 // a `look` step (6, 11, 15) once it has been seen (a tap, or the overlay's `LOOK_MS`; `LOOK_FALLBACK_MS` when it cannot be drawn), the task list opening (7) and closing (8),
-// the upgrades drawer opening (12) and closing (13).
+// the upgrades drawer opening (12) and closing (13). The Store intro: the Shop opening (16, the Store chip is lit) and the Shop closing (17, the Starter card is lit);
+// owning the Starter Pack ends either.
 import { cityOf, type CityDef } from '../content/cities';
 import { t } from '../content/copy';
 import { currentChapter, markCoachDone, nextTask, saveOf } from './chapters';
@@ -47,7 +48,16 @@ const DEFS: readonly Def[] = [
   { targets: ['drawer:hire:prep'], mode: 'look' }, // 13
   { targets: [], mode: 'free' }, // 14: Marco won't hire himself
   { targets: ['station:prep', 'dial:prep'], mode: 'look' }, // 15
+  { targets: ['hud:store'], mode: 'tap' }, // 16: the Store chip opens the Shop on its Store tab (v5.23)
+  { targets: ['store:starter'], mode: 'look' }, // 17: the Starter card; ends on "Not now", Buy or leaving the Shop
 ];
+
+/** The Store intro's two steps. A first shop that runs itself does not end them: their overlays are the HUD's and the Shop's, not the shop's. */
+export const STORE_STEP = G.STORE_INTRO_START;
+export const STARTER_STEP = STORE_STEP + 1;
+
+/** Chapter 1's shop steps are over (the Store intro, 16-17, is a polite offer): what the ad consent and the scroll reporter gate on, not `TUTORIAL_DONE` (C182, C183). */
+export const shopTutorialDone = (s: Pick<G.GameState, 'tutorial'>): boolean => s.tutorial >= STORE_STEP;
 
 /** Every step of a city's tutorial, in order (1-based ids; 0 = not started, before the opening scene ends). The hire steps name the first shop's prep head. */
 const buildSteps = (city: CityDef): readonly CoachStep[] => {
@@ -63,7 +73,7 @@ export function stepsFor(city: CityDef): readonly CoachStep[] {
 
 /** The step as it stands, without its line: which step, its copy key and mode. Cheap (no copy lookup, no money text): the per-frame questions ask this. */
 function current(s: G.GameState): { step: CoachStep; key: string; mode: CoachMode; ovens: number | null } | null {
-  if (s.tutorial < 1 || s.tutorial >= TUTORIAL_DONE || s.shops[first(s)].managed) return null;
+  if (s.tutorial < 1 || s.tutorial >= TUTORIAL_DONE || (s.tutorial < STORE_STEP && s.shops[first(s)].managed)) return null;
   const city = cityOf(s);
   const steps = stepsFor(city);
   let step = steps[s.tutorial - 1];
@@ -116,6 +126,10 @@ function done(s: G.GameState, id: number): boolean {
       return d.ovens > 1 || G.canAfford(s, G.upgradeCostOf(s, first(s), 'ovens'));
     case 10:
       return d.ovens > 1;
+    // the Store intro: whoever owns the Starter Pack has nothing to be shown
+    case 16:
+    case 17:
+      return G.starterOwned(s);
     // Marco hired ends 12 to 14 whatever the player did with the drawer
     case 12:
     case 13:
@@ -130,15 +144,26 @@ function done(s: G.GameState, id: number): boolean {
 /** Move past every finished step (several can finish at once). Starts once the opening scene has played. */
 export function tutorialAdvance(s: G.GameState): G.GameState {
   let t = s.tutorial;
-  // a first shop that runs itself has no coach (no overlay is drawn there), so a step only the overlay can end must not hold the tutorial open: it is over
-  if (t >= 1 && t < TUTORIAL_DONE && s.shops[first(s)].managed) return { ...s, tutorial: TUTORIAL_DONE };
+  // a first shop that runs itself has no coach (no overlay is drawn there), so a step only the overlay can end must not hold the tutorial open: it goes on to the Store intro
+  if (t >= 1 && t < STORE_STEP && s.shops[first(s)].managed) t = STORE_STEP;
   if (t === 0 && s.seenScenes.includes(G.sceneId(first(s), 1))) t = 1;
   while (t >= 1 && t < TUTORIAL_DONE && done(s, t)) t++;
   return t === s.tutorial ? s : { ...s, tutorial: t };
 }
 
 /** What the screen can tell the tutorial: a `look` step was seen (a tap, or the overlay's `LOOK_MS`; `LOOK_FALLBACK_MS` when it cannot be drawn), the task list opened or closed, the upgrades drawer opened or closed. */
-export type TutorialNote = 'look' | 'tasks-open' | 'tasks-closed' | 'drawer-open' | 'drawer-closed' | 'report-open' | 'report-look' | 'report-closed';
+export type TutorialNote =
+  | 'look'
+  | 'store-open'
+  | 'store-left'
+  | 'store-skip'
+  | 'tasks-open'
+  | 'tasks-closed'
+  | 'drawer-open'
+  | 'drawer-closed'
+  | 'report-open'
+  | 'report-look'
+  | 'report-closed';
 const ENDED_BY: Readonly<Record<number, TutorialNote>> = {
   6: 'look',
   7: 'tasks-open',
@@ -147,11 +172,15 @@ const ENDED_BY: Readonly<Record<number, TutorialNote>> = {
   12: 'drawer-open',
   13: 'drawer-closed',
   15: 'look',
+  16: 'store-open',
+  17: 'store-left',
 };
 
 /** The screen's say-so: ends the current step when it is the one waiting for this note, and moves on over any step that is already finished. Anything else changes nothing. */
 export function tutorialNote(s: G.GameState, note: TutorialNote): G.GameState {
   if (note === 'report-open' || note === 'report-look' || note === 'report-closed') return reportNote(s, note);
+  // a tap outside the lit Store chip: the player does not want the Store now. The intro is over (the pack stays in the Store tab, and the chip stays on the HUD)
+  if (note === 'store-skip') return s.tutorial === STORE_STEP ? { ...s, tutorial: TUTORIAL_DONE } : s;
   const step = coachStep(s);
   if (!step || ENDED_BY[step.id] !== note) return s;
   // step 6 waits for the first sale: the cash has nothing to show before it
@@ -159,8 +188,8 @@ export function tutorialNote(s: G.GameState, note: TutorialNote): G.GameState {
   return tutorialAdvance({ ...s, tutorial: step.id + 1 });
 }
 
-/** Story scenes wait while Nonna walks the player through the first shop (steps 1-11). */
-export const tutorialHoldsStory = (s: G.GameState) => s.tutorial >= 1 && s.tutorial <= 11 && !s.shops[first(s)].managed;
+/** Story scenes wait while Nonna walks the player through the first shop (steps 1-11) and while the Starter card is lit (17: nothing may cover the Shop). Not at 16: a player who never taps the lit chip must not wait for the story (C182). */
+export const tutorialHoldsStory = (s: G.GameState) => (s.tutorial >= 1 && s.tutorial <= 11 && !s.shops[first(s)].managed) || s.tutorial === STARTER_STEP;
 
 /** The small notes the screen can show besides Nonna's card: a refused tap's reason, the idle-drivers pill, the queue count, a refused buy's toast. */
 export type Hint = 'refusal' | 'waiting' | 'more' | 'toast';

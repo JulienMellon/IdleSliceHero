@@ -258,6 +258,8 @@ export function refreshRewards(s: GameState, now: number): GameState {
   if (recovering) {
     patch.lastSeen = now;
     if (r.boosts.length) patch.boosts = [];
+    // the diamond boosters' slot is a wall-clock stamp too: a clock that jumped cannot keep it running (v5.23, E5)
+    if (r.paidUntil) patch.paidUntil = 0;
     // a refresh under the wrong clock may have rolled day/week/gift into the future: pull them back to today, keeping the
     // current sets (nothing regenerates, so nothing is farmable) so the next real day rolls normally
     if (r.day !== '' && dayNumber(r.day) > dayNumber(dayKey(now))) patch.day = dayKey(now);

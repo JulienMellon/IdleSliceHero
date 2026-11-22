@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoachCard } from '../coach-card';
 import { useMotion } from '../scene/clock';
-import { blockers, CUT, freeDock, HAND, leaders, overlayLayout, type Rect } from './overlay-model';
+import { blockers, CUT, freeDock, HAND, leaders, outsideTap, overlayLayout, type Rect } from './overlay-model';
 import type { CoachMode } from './steps';
 import { remeasureTargets, type CoachTargetId, useTargetRects } from './targets';
 
@@ -40,10 +40,13 @@ export interface CoachOverlayProps {
   onDone?: () => void;
   /** False for a step whose line is about nothing to tap (15): the breathing ring carries it, no hand. */
   hand?: boolean;
+  /** `tap` only: a first tap outside the lit spot nudges as usual; a second one calls `onSkip` (the Store chip, step 16), so one stray tap does not end the intro (C191). */
+  skippable?: boolean;
+  onSkip?: () => void;
 }
 
 // primitive or stable props (the step's own target list, its text, a stable callback), so a screen tick that changes nothing repaints nothing (M72)
-export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, onDone, hand: showHand = true }: CoachOverlayProps) {
+export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, onDone, hand: showHand = true, skippable = false, onSkip }: CoachOverlayProps) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const wantsTargets = mode !== 'free' || targets.length > 0;
@@ -76,9 +79,12 @@ export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, on
     return () => loop.stop();
   }, [loops, pulse]);
 
+  const skipRef = useRef(onSkip);
+  const lastOutside = useRef<number | null>(null);
   const doneRef = useRef(onDone);
   useEffect(() => {
     doneRef.current = onDone;
+    skipRef.current = onSkip;
   });
   useEffect(() => {
     if (mode !== 'look') return;
@@ -154,7 +160,12 @@ export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, on
             key={i}
             testID="coach-block"
             onStartShouldSetResponder={() => true}
-            onResponderRelease={nudge}
+            onResponderRelease={() => {
+              const tap = outsideTap(lastOutside.current, Date.now());
+              lastOutside.current = tap.last;
+              if (skippable && tap.skip) skipRef.current?.();
+              else nudge();
+            }}
             style={{ position: 'absolute', left: p.x0, top: p.y0, width: p.x1 - p.x0, height: p.y1 - p.y0 }}
           />
         ))

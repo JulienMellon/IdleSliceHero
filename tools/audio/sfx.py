@@ -265,6 +265,33 @@ def gavel():
     return pad_to(mix(*hits, at=[0, 0.16, 0.36]), 0.6)
 
 
+def oven_ding():
+    """Card A3: the oven timer's ding. Soft and short: one small bell, a quick decay, no top end. Played when baked batches pile up."""
+    t = t_(0.5)
+    f = 1760.0
+    x = sum(a * np.sin(2 * np.pi * f * r * t) * np.exp(-t / d) for r, a, d in ((1, 1.0, 0.16), (2.41, 0.28, 0.06), (4.2, 0.1, 0.02)))
+    return lp(x * env(len(t), 0.001, 10), 6000) * 0.8
+
+
+def phone_ring():
+    """Card A3: an old telephone, two rings and then silence. Two bells struck in turn (about 20 Hz) for 0.7 s, a pause, 0.7 s again. Played
+    when a line forms at the door."""
+    t = t_(0.7)
+    bells = sum(a * np.sin(2 * np.pi * f * t) for f, a in ((1180, 1.0), (1590, 0.7), (2930, 0.15)))
+    clap = 0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 20 * t))  # the clapper swings between the two bells
+    clap = lp(clap, 60, 1) * 0.6 + 0.4
+    ring = lp(bells * clap, 4500) * np.minimum(1, t / 0.01) * np.minimum(1, (0.7 - t) / 0.03)
+    return pad_to(mix(ring, ring, at=[0, 1.0]), 2.0)
+
+
+def tip_bell():
+    """Card A3: a small counter bell, one ting, for a tip. Higher and shorter than the ding."""
+    t = t_(0.45)
+    f = 2794.0
+    x = sum(a * np.sin(2 * np.pi * f * r * t) * np.exp(-t / d) for r, a, d in ((1, 1.0, 0.12), (2.0, 0.22, 0.05), (3.1, 0.08, 0.02)))
+    return lp(x * env(len(t), 0.0008, 10), 7000) * 0.8
+
+
 ALL = {
     'tap': [kitchen_tap(v) for v in range(4)],
     'full': [queue_full(v) for v in range(2)],
@@ -282,4 +309,7 @@ ALL = {
     'click': [ui_click()],
     'bubble': [bubble_pop(v) for v in range(3)],
     'gavel': [gavel()],
+    'oven_ding': [oven_ding()],
+    'phone_ring': [phone_ring()],
+    'tip_bell': [tip_bell()],
 }

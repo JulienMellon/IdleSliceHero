@@ -31,7 +31,7 @@ const backend: PurchaseBackend = {
   async products(ids) {
     if (!configure()) return [];
     const list = await Purchases.getProducts([...ids], Purchases.PRODUCT_CATEGORY.NON_SUBSCRIPTION);
-    return list.filter((p) => isProduct(p.identifier)).map((p) => ({ id: p.identifier as ProductId, price: p.priceString }));
+    return list.filter((p) => isProduct(p.identifier)).map((p) => ({ id: p.identifier as ProductId, price: p.priceString, amount: p.price }));
   },
   async purchase(id) {
     if (!configure()) return { status: 'failed' };
@@ -56,5 +56,12 @@ const backend: PurchaseBackend = {
 
 const core = createPurchases({ kv: store, backend, bus: grantBus, ids: PRODUCT_IDS });
 
-export const purchases: PurchasesApi = { products: core.products, buy: core.buy, restore: core.restore, owned: core.owned };
+export const purchases: PurchasesApi = {
+  products: core.products,
+  buy: core.buy,
+  restore: core.restore,
+  owned: core.owned,
+  firstBuysUsed: core.firstBuysUsed,
+  loaded: core.loaded,
+};
 export const startPurchases = core.start;

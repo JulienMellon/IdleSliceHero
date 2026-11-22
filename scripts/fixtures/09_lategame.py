@@ -17,7 +17,7 @@ def run(ctx):
                     "industrial": shop(prep=52, ovens=48, grade=3, counter=50, drivers=22, tables=34, footprint=2, sold=360500),
                     "uptown": shop(managed=False, sold=0),
                 },
-                seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:18] + ["industrial-2b", "uptown-1"], scrapbookViewed=19)
+                seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:18] + ["industrial-2b", "uptown-1"] + HIRES(IDS), scrapbookViewed=19)
     page = seeded_page(browser, late); advance(page, 2500)
     if page.locator('[data-testid="collect-offline"]').count():
         tid(page, "collect-offline").click(); advance(page, 800)
@@ -46,7 +46,7 @@ def run(ctx):
     except Exception as e:
         report["errors"].append(f"neighbourhood look shots failed: {e}")
     # 7. Flagship pizzeria with maxed Expand and Oven Grade
-    flag = dict(late, active="industrial", cash=2.0e8, seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:19] + ["industrial-2b", "uptown-1"], scrapbookViewed=20,
+    flag = dict(late, active="industrial", cash=2.0e8, seenScenes=[f"{n}-{b}" for n in IDS for b in range(1, 5)][:19] + ["industrial-2b", "uptown-1"] + HIRES(IDS), scrapbookViewed=20,
                 shops=dict(late["shops"], industrial=shop(prep=104, ovens=100, grade=4, counter=104, drivers=44, tables=90, footprint=4, sold=450000,
                            decor={"plants": 3, "flooring": 3, "tables": 3, "walls": 3, "signage": 3})))
     page = seeded_page(browser, flag); settle(page)

@@ -204,3 +204,10 @@ export function overlayLayout(targets: readonly Rect[], screen: Screen, safe: Sa
 
 /** Where a card sits with no target (a `free` step): along the bottom, above the safe inset. */
 export const freeDock = (safe: Safe): CardDock => ({ dock: 'bottom', bottom: Math.max(safe.bottom, CARD.margin), fits: true });
+
+/** A skippable step (the Store chip, step 16): a tap outside the lit spot only nudges; a second one 0.25-6 s later skips (C191). Two events of one touch (under 0.25 s) count as one. */
+export const SKIP_TAP = { minMs: 250, maxMs: 6000 } as const;
+export function outsideTap(last: number | null, now: number): { skip: boolean; last: number } {
+  if (last !== null && now - last < SKIP_TAP.minMs) return { skip: false, last };
+  return { skip: last !== null && now - last <= SKIP_TAP.maxMs, last: now };
+}

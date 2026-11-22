@@ -96,7 +96,8 @@ export const STORY = {
   megaslice_rep_dock: { src: require('../../assets/audio/story/megaslice_rep_dock.m4a'), seconds: 5.236 },
   recipe: { src: require('../../assets/audio/story/recipe.m4a'), seconds: 9.824 },
   reunion: { src: require('../../assets/audio/story/reunion.m4a'), seconds: 16.815 },
-  triumph_downtown: { src: require('../../assets/audio/story/triumph_downtown.m4a'), seconds: 6.614, bpm: 99, beatsPerBar: 3, downbeatSeconds: 0.303, payoffSeconds: 3.939 },
+  splash_theme: { src: require('../../assets/audio/story/splash_theme.m4a'), seconds: 10.019, bpm: 99, beatsPerBar: 3, downbeatSeconds: 0.0, payoffSeconds: 7.273 },
+  triumph_downtown: { src: require('../../assets/audio/story/triumph_downtown.m4a'), seconds: 6.387, bpm: 99, beatsPerBar: 3, downbeatSeconds: 0.0, payoffSeconds: 3.636 },
   triumph_industrial: { src: require('../../assets/audio/story/triumph_industrial.m4a'), seconds: 9.562, bpm: 76, beatsPerBar: 4, downbeatSeconds: 0.0, payoffSeconds: 6.316 },
   triumph_suburbs: { src: require('../../assets/audio/story/triumph_suburbs.m4a'), seconds: 8.415, bpm: 86, beatsPerBar: 4, downbeatSeconds: 0.0, payoffSeconds: 5.581 },
   triumph_university: { src: require('../../assets/audio/story/triumph_university.m4a'), seconds: 10.415, bpm: 76, beatsPerBar: 4, downbeatSeconds: 0.7895, payoffSeconds: 7.105 },
@@ -118,10 +119,13 @@ export const SFX = {
   gavel: [require("../../assets/audio/sfx/gavel_0.m4a")],
   grade: [require("../../assets/audio/sfx/grade_0.m4a")],
   milestone: [require("../../assets/audio/sfx/milestone_0.m4a")],
+  oven_ding: [require("../../assets/audio/sfx/oven_ding_0.m4a")],
+  phone_ring: [require("../../assets/audio/sfx/phone_ring_0.m4a")],
   refused: [require("../../assets/audio/sfx/refused_0.m4a"), require("../../assets/audio/sfx/refused_1.m4a")],
   rush: [require("../../assets/audio/sfx/rush_0.m4a"), require("../../assets/audio/sfx/rush_1.m4a"), require("../../assets/audio/sfx/rush_2.m4a"), require("../../assets/audio/sfx/rush_3.m4a")],
   sparkle: [require("../../assets/audio/sfx/sparkle_0.m4a")],
   tap: [require("../../assets/audio/sfx/tap_0.m4a"), require("../../assets/audio/sfx/tap_1.m4a"), require("../../assets/audio/sfx/tap_2.m4a"), require("../../assets/audio/sfx/tap_3.m4a")],
+  tip_bell: [require("../../assets/audio/sfx/tip_bell_0.m4a")],
 } as const;
 
 export type MusicId = keyof typeof MUSIC;

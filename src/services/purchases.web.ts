@@ -6,7 +6,7 @@ import { queryFlag } from './query';
 import { store } from './store';
 import { PRODUCT_IDS, type ProductId, type Purchases } from './types';
 
-const PRICES: Record<ProductId, string> = { starter_pack: '$2.99', nonnas_plus: '$4.99', diamonds_80: '$0.99', diamonds_500: '$4.99', diamonds_1200: '$9.99' };
+const AMOUNTS: Record<ProductId, number> = { starter_pack: 2.99, nonnas_plus: 4.99, diamonds_80: 0.99, diamonds_500: 4.99, diamonds_1200: 9.99 };
 
 const flagOwned = (): ProductId[] =>
   queryFlag('owned')
@@ -25,7 +25,7 @@ export const testBuyAnswerOn = (): boolean => testBuyAnswer === 'purchased';
 
 let n = 0;
 const backend: PurchaseBackend = {
-  products: async (ids) => ids.map((id) => ({ id, price: PRICES[id] })),
+  products: async (ids) => ids.map((id) => ({ id, price: `$${AMOUNTS[id].toFixed(2)}`, amount: AMOUNTS[id] })),
   purchase: async () => {
     const v = testBuyAnswer ?? queryFlag('buy');
     return v === 'purchased' ? { status: 'purchased', transactionId: `web-${Date.now()}-${n++}` } : { status: v === 'failed' ? 'failed' : 'cancelled' };
@@ -41,5 +41,7 @@ export const purchases: Purchases = {
   buy: core.buy,
   restore: core.restore,
   owned: () => [...new Set([...flagOwned(), ...core.owned()])],
+  firstBuysUsed: core.firstBuysUsed,
+  loaded: core.loaded,
 };
 export const startPurchases = core.start;

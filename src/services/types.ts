@@ -15,10 +15,15 @@ export const PRODUCT_IDS: readonly ProductId[] = ['starter_pack', 'nonnas_plus',
 export type BuyResult = 'purchased' | 'cancelled' | 'failed';
 
 export interface Purchases {
-  products(): Promise<{ id: ProductId; price: string }[]>;
+  /** `price` is the store's own text; `amount` its number in the store's currency (only to compare packs, never shown). */
+  products(): Promise<{ id: ProductId; price: string; amount: number }[]>;
   buy(id: ProductId): Promise<BuyResult>;
   restore(): Promise<ProductId[]>;
   owned(): ProductId[];
+  /** The diamond packs whose first buy (paid double) has been used. */
+  firstBuysUsed(): ProductId[];
+  /** Resolves once the saved ledger is read: until then `owned` and `firstBuysUsed` answer as if nothing was bought. */
+  loaded(): Promise<void>;
 }
 
 export type Props = Record<string, string | number | boolean>;

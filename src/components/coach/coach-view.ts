@@ -1,6 +1,6 @@
 // What the screen shows of Nonna's tutorial step (card C1, review A42): a pure function of the step and three facts about the screen, so the rules that were
 // spread over the game screen live in one place and are tested. The hook that feeds it (use-coach-flow.ts) only carries state and timers.
-import type { CoachStep } from '../../engine/tutorial';
+import { STARTER_STEP, STORE_STEP, type CoachStep } from '../../engine/tutorial';
 import type { CoachMode } from './steps';
 import type { CoachTargetId } from './targets';
 
@@ -8,6 +8,9 @@ import type { CoachTargetId } from './targets';
 export const DRAWER_STEP = 13;
 /** The last step: her closing line, with no hand (the ring carries it). */
 export const LAST_STEP = 15;
+// STORE_STEP (16): Nonna lights the Store chip, which is on every shop's HUD, so she points at it wherever the player is. STARTER_STEP (17): the
+// Starter card inside the Shop; the Shop screen draws it, the game screen shows nothing for it. Both are the engine's (tutorial.ts).
+export { STARTER_STEP, STORE_STEP };
 /** A look step ends by itself after this long even when its overlay cannot be drawn: later than the overlay's own `LOOK_MS`, so that one comes first. */
 export const LOOK_FALLBACK_MS = 8000;
 
@@ -24,14 +27,17 @@ export interface CoachView {
   mode: CoachMode;
   text: string;
   hand: boolean;
+  /** The step may be left by tapping outside its lit spot (the Store chip, step 16): a player who doesn't want the Store must not be held by the scrim. The overlay and the tutorial's `store-skip` note are what act on it. */
+  skippable: boolean;
 }
 
-/** What the overlay draws: null when it shows nothing (no step, another shop on screen, or the drawer covering the shop except at its own step). */
+/** What the overlay draws: null when it shows nothing (no step, the Starter card's step, another shop on screen except at the Store step, or the drawer covering the shop except at its own step). */
 export function coachView(step: CoachStep | null, screen: CoachScreen): CoachView | null {
-  if (!step || !screen.isFirst) return null;
+  if (!step || step.id === STARTER_STEP) return null;
+  if (!screen.isFirst && step.id !== STORE_STEP) return null;
   if (screen.drawerOpen && step.id !== DRAWER_STEP) return null;
   const seen = step.mode === 'look' && step.id === DRAWER_STEP && screen.lookedAt === DRAWER_STEP;
-  return { targets: step.targets, mode: seen ? 'free' : step.mode, text: step.text, hand: step.id !== LAST_STEP };
+  return { targets: step.targets, mode: seen ? 'free' : step.mode, text: step.text, hand: step.id !== LAST_STEP, skippable: step.id === STORE_STEP };
 }
 
 /**

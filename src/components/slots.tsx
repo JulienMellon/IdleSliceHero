@@ -48,7 +48,6 @@ import { MenuSheet } from './layers/menu/menu-sheet';
 import { ReportSheet } from './report/report-sheet';
 import { ReportStrip } from './report/report-strip';
 import { ClaimSheet } from './store/claim-sheet';
-import { StarterSheet } from './store/starter-sheet';
 
 /** The slot kinds with no props: each component reads its own state. */
 export type SlotProps = Readonly<Record<never, never>>;
@@ -190,9 +189,8 @@ export const SHEETS: SlotEntry[] = [
   { id: 'university-sheet', order: 40, Component: MenuSheet },
   { id: 'industrial-sheet', order: 50, Component: ShiftsSheet },
   { id: 'stars-sheet', order: 60, Component: StarsSheet },
-  // v5.17 (U3): what a claim paid with its "double it" ad button, and the Starter Pack offered once after the tutorial
+  // v5.17 (U3): what a claim paid with its "double it" ad button. (The Starter Pack's pop-up is gone, v5.23: Nonna's Store intro shows it.)
   { id: 'claim-sheet', order: 70, Component: ClaimSheet },
-  { id: 'starter-sheet', order: 80, Component: StarterSheet },
 ];
 // v5.16 (P1): the shop report's strip, one 44 pt row above the sidewalk row
 export const SHOP_REPORT: SlotEntry<ShopReportSlotProps>[] = [{ id: 'shop-report-strip', order: 10, Component: ReportStrip }];

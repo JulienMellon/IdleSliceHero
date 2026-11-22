@@ -1,11 +1,15 @@
 /// <reference types="jest" />
 // Nonna's guided tutorial (P2).
+import * as fs from 'fs';
+import * as path from 'path';
+import { chipShows } from '../../components/endgame/diamond-chip-model';
 import * as G from '../game';
 import { HOME_CITY } from '../../content/cities/home';
 import {
   coachStep,
   HINTS,
   hintsAllowed,
+  shopTutorialDone,
   showLockedTabs,
   stepsFor,
   TUTORIAL_DONE,
@@ -31,9 +35,9 @@ describe('tutorial', () => {
     expect(tutorialAdvance(G.newGame(0)).tutorial).toBe(0);
     expect(coachStep(opened())?.targets).toEqual(['station:prep']);
   });
-  test('the script is 15 steps and the tutorial ends at 16', () => {
-    expect(STEPS.map((st) => st.id)).toEqual(Array.from({ length: 15 }, (_, i) => i + 1));
-    expect(TUTORIAL_DONE).toBe(16);
+  test('the script is 17 steps (15 of the shop, 2 of the Store intro) and the tutorial ends at 18', () => {
+    expect(STEPS.map((st) => st.id)).toEqual(Array.from({ length: 17 }, (_, i) => i + 1));
+    expect(TUTORIAL_DONE).toBe(18);
   });
   test('each step names its targets and mode (card C3)', () => {
     expect(STEPS.map((st) => [st.id, st.key, st.targets, st.mode])).toEqual([
@@ -52,9 +56,11 @@ describe('tutorial', () => {
       [13, 'tutorial.13', ['drawer:hire:prep'], 'look'],
       [14, 'tutorial.14', [], 'free'],
       [15, 'tutorial.15', ['station:prep', 'dial:prep'], 'look'],
+      [16, 'tutorial.16', ['hud:store'], 'tap'],
+      [17, 'tutorial.17', ['store:starter'], 'look'],
     ]);
   });
-  test('walks the 15 steps on a simulated run and ends at 16', () => {
+  test('walks the 17 steps on a simulated run and ends at 18', () => {
     let s = opened();
     const seen: number[] = [s.tutorial];
     const note = () => {
@@ -135,9 +141,26 @@ describe('tutorial', () => {
     expect(coachStep(s)?.targets).toEqual(['station:prep', 'dial:prep']);
     s = tutorialNote(s, 'look');
     note();
+    // the Store intro: the chip is lit until the Shop opens; the Starter card until the Shop is left
+    expect(s.tutorial).toBe(16);
+    expect(coachStep(s)?.targets).toEqual(['hud:store']);
+    expect(tutorialNote(s, 'look')).toBe(s);
+    expect(tutorialNote(s, 'store-left')).toBe(s);
+    expect(tutorialHoldsStory(s)).toBe(false); // a player who never taps the chip is not kept from the story
+    expect(shopTutorialDone(s)).toBe(true);
+    s = tutorialNote(s, 'store-open');
+    note();
+    expect(s.tutorial).toBe(17);
+    expect(coachStep(s)?.targets).toEqual(['store:starter']);
+    // a look that is seen does not end it: only the Shop closing (Not now, Back) or the buy does
+    expect(tutorialNote(s, 'look')).toBe(s);
+    expect(tutorialHoldsStory(s)).toBe(true);
+    s = tutorialNote(s, 'store-left');
+    note();
     expect(s.tutorial).toBe(TUTORIAL_DONE);
     expect(coachStep(s)).toBeNull();
-    expect(seen).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, TUTORIAL_DONE]);
+    expect(tutorialHoldsStory(s)).toBe(false);
+    expect(seen).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, TUTORIAL_DONE]);
   });
   // the screen-ended steps (6, 7, 8, 11, 12, 13, 15) in every state they can be in: managed or not, a note or not
   describe.each([6, 7, 8, 11, 12, 13, 15])('step %i', (n) => {
@@ -145,12 +168,12 @@ describe('tutorial', () => {
       const g = { ...opened(), tutorial: n };
       return { ...g, shops: { ...g.shops, downtown: { ...g.shops.downtown, managed, sold: 5 } } };
     };
-    test('a shop that runs itself: the tutorial is over at the next advance, the coach gone, and no note is needed', () => {
+    test('a shop that runs itself: the shop steps are over at the next advance, the coach gone, and no note is needed (the Store intro is next)', () => {
       const g = at(true);
       expect(coachStep(g)).toBeNull();
       const next = tutorialAdvance(g);
-      expect(next.tutorial).toBe(TUTORIAL_DONE);
-      expect(tutorialHoldsStory(next)).toBe(false);
+      expect(next.tutorial).toBe(16);
+      expect(coachStep(next)?.targets).toEqual(['hud:store']);
     });
     test('a shop tapped by hand: the step waits for the screen, which ends it', () => {
       const g = at(false);
@@ -271,5 +294,56 @@ describe('tutorial', () => {
     // the shop tabs ask it (a source check: the strip is a component)
     const src = require('fs').readFileSync(require('path').join(__dirname, '../../components/shop-ui.tsx'), 'utf8') as string;
     expect(src).toMatch(/showLockedTabs\(/);
+  });
+});
+
+// v5.23 (card E6): Nonna's Store intro, steps 16 and 17
+describe('the Store intro', () => {
+  const at = (tutorial: number, patch: Partial<G.GameState> = {}): G.GameState => ({ ...opened(), tutorial, ...patch });
+  const owner = (g: G.GameState): G.GameState => ({ ...g, rewards: { ...g.rewards, cosmetics: [...g.rewards.cosmetics, 'awning-founder'] } });
+  test('16 lights the chip and ends when the Store opens; 17 lights the Starter card and ends when the Shop closes', () => {
+    expect(coachStep(at(16))?.mode).toBe('tap');
+    expect(tutorialNote(at(16), 'store-open').tutorial).toBe(17);
+    expect(coachStep(at(17))?.mode).toBe('look');
+    expect(tutorialNote(at(17), 'store-left').tutorial).toBe(TUTORIAL_DONE);
+  });
+  test('the intro runs even when the first shop runs itself (an existing player sees it once)', () => {
+    const g = at(16);
+    const managed = { ...g, shops: { ...g.shops, downtown: { ...g.shops.downtown, managed: true } } };
+    expect(coachStep(managed)?.id).toBe(16);
+    expect(tutorialAdvance(managed).tutorial).toBe(16);
+  });
+  test('an owner of the Starter Pack skips both steps, and buying on step 17 ends it', () => {
+    expect(tutorialAdvance(owner(at(15, { tutorial: 16 }))).tutorial).toBe(TUTORIAL_DONE);
+    expect(tutorialAdvance(owner(at(17))).tutorial).toBe(TUTORIAL_DONE);
+    expect(tutorialAdvance(at(17)).tutorial).toBe(17);
+  });
+  test('story waits while the Starter card is lit (17), not at 16 or after; gifts wait through both', () => {
+    expect(tutorialHoldsStory(at(16))).toBe(false);
+    expect(tutorialHoldsStory(at(17))).toBe(true);
+    expect(tutorialHoldsStory(at(TUTORIAL_DONE))).toBe(false);
+    expect(shopTutorialDone(at(15))).toBe(false);
+    expect(shopTutorialDone(at(16))).toBe(true);
+    expect(shopTutorialDone(at(17))).toBe(true);
+    expect(shopTutorialDone(at(TUTORIAL_DONE))).toBe(true);
+    // the calendar and the hints gate on the coach mode (index.tsx `tutorialOn`): it is on for both steps
+    expect(hintsAllowed(at(16)).toast).toBe(false);
+    expect(hintsAllowed(at(17)).toast).toBe(false);
+  });
+  test('a tap outside the lit chip (store-skip) ends the intro at 16 and nowhere else; the chip stays', () => {
+    const g = at(16);
+    const out = tutorialNote(g, 'store-skip');
+    expect(out.tutorial).toBe(TUTORIAL_DONE);
+    expect(coachStep(out)).toBeNull();
+    expect(tutorialHoldsStory(out)).toBe(false);
+    expect(shopTutorialDone(out)).toBe(true);
+    // the chip is shown from step 16 on, so it is still there to open the Shop
+    expect(chipShows(out, false)).toBe(true);
+    for (const n of [15, 17, TUTORIAL_DONE]) expect(tutorialNote(at(n), 'store-skip')).toEqual(at(n));
+  });
+  test('only the lit chip step is skippable, and the overlay and the flow hook carry it', () => {
+    const src = (f: string) => fs.readFileSync(path.join(__dirname, '..', '..', 'components', 'coach', f), 'utf8');
+    expect(src('overlay.tsx')).toMatch(/skippable && tap\.skip/);
+    expect(src('use-coach-flow.ts')).toContain("note('store-skip')");
   });
 });

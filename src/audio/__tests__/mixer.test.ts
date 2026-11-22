@@ -7,6 +7,7 @@ import {
   LAUNCH_PLAYER_BUDGET,
   OtherAudioRule,
   RARE,
+  SFX_UNDER_STING,
   STING_PRELOAD,
   TITLE_SET,
   createMixer,
@@ -44,6 +45,9 @@ const SFX_COUNT: Record<string, number> = {
   gavel: 1,
   grade: 1,
   expand: 1,
+  oven_ding: 1,
+  phone_ring: 1,
+  tip_bell: 1,
 };
 const ROOTS = [1, 5, 1, 1, 1, 5, 1, 1, 4, 5, 1, 5];
 const CATALOG: Catalog = {
@@ -174,6 +178,20 @@ describe('bus gains', () => {
     const { out, mixer } = setup({ music: true, sound: false });
     mixer.sfx('tap');
     expect(out.plays).toHaveLength(0);
+  });
+
+  it('the shop sounds (A3) obey the Sound switch and sit under a stinger like any effect', () => {
+    for (const id of ['oven_ding', 'phone_ring', 'tip_bell']) {
+      const off = setup({ music: true, sound: false });
+      off.mixer.sfx(id, { jitter: 0 });
+      expect(off.out.plays).toHaveLength(0);
+      const { out, mixer } = setup();
+      mixer.sfx(id, { jitter: 0 });
+      expect(out.plays.at(-1)!.o.gain).toBe(1);
+      mixer.sting('downtown', 'milestone', { immediate: true });
+      mixer.sfx(id, { jitter: 0 });
+      expect(out.plays.at(-1)!.o.gain).toBe(SFX_UNDER_STING);
+    }
   });
 
   it('ducks reach the loop as a gain fade, the product of the active ducks', () => {

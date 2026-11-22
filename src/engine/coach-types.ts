@@ -14,6 +14,8 @@ export type CoachTargetId =
   | 'ovens:all'
   | 'hud:cash'
   | 'hud:goal'
+  | 'hud:store'
+  | 'store:starter'
   | 'walk:prep'
   | 'walk:ovens'
   | 'walk:counter'

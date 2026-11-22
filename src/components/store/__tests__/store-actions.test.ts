@@ -47,8 +47,7 @@ beforeEach(() => {
     offline: null,
     claimed: null,
     plus: false,
-    starterAt: null,
-    prefs: { starterOffered: false, boosterAdDay: '' },
+    prefs: { starterOffered: false, boosterAdDay: '', adGrants: [] },
     toast: null,
   });
 });
@@ -97,7 +96,7 @@ describe('a paid-out grant', () => {
   test('the Starter Pack lands in the game; Plus sets the flag', () => {
     const d0 = st().game.rewards.diamonds;
     st().receiveGrant(GRANTS.starter_pack);
-    expect(st().game.rewards.diamonds).toBe(d0 + 150);
+    expect(st().game.rewards.diamonds).toBe(d0 + 400);
     expect(st().game.rewards.cosmetics).toContain('awning-founder');
     expect(st().game.rewards.boosts.some((b) => b.mult === 2 && b.source === 'purchase')).toBe(true);
     expect(st().plus).toBe(false);
@@ -165,17 +164,32 @@ describe('2x offline earnings', () => {
   });
 });
 
-describe("the Starter Pack's cue", () => {
-  test('the tutorial ending in play sets it; a save that is already done does not', () => {
+describe("the Starter Pack's intro (card E6)", () => {
+  test('the Shop opening on the Starter step marks the intro as run; reaching step 16 does not', () => {
     const g = fresh();
-    useGame.setState({ game: { ...g, tutorial: 9, playSeconds: 77 } });
-    expect(st().starterAt).toBeNull();
-    useGame.setState({ game: { ...st().game, tutorial: G.TUTORIAL_DONE } });
-    expect(st().starterAt).toBe(77);
+    useGame.setState({ game: { ...g, tutorial: 15 } });
+    useGame.setState({ game: { ...st().game, tutorial: 16 } });
+    expect(st().prefs.starterOffered).toBe(false);
+    useGame.setState({ game: { ...st().game, tutorial: 17 } });
+    expect(st().prefs.starterOffered).toBe(true);
   });
   test('marking it offered is saved with the prefs', () => {
     st().markStarterOffered();
     expect(st().prefs.starterOffered).toBe(true);
+  });
+});
+
+describe('the rolling ad count (A48)', () => {
+  test('recordAdGrant adds one stamp to the prefs, keeping the rest of them', () => {
+    useGame.setState({ prefs: { starterOffered: true, boosterAdDay: '2026-11-11', adGrants: [] } });
+    st().recordAdGrant();
+    st().recordAdGrant();
+    expect(st().prefs.adGrants).toHaveLength(2);
+    expect(st().prefs.starterOffered).toBe(true);
+    expect(st().prefs.boosterAdDay).toBe('2026-11-11');
+  });
+  test('the old module is gone', () => {
+    expect(fs.existsSync(path.join(__dirname, '..', 'ad-count.ts'))).toBe(false);
   });
 });
 
@@ -231,11 +245,11 @@ describe('analytics events (card N1)', () => {
     }
   });
 
-  test('iap_viewed is sent by the Store tab and by the Starter Pack sheet', () => {
+  test('iap_viewed is sent by the Store tab; the Starter Pack pop-up is gone', () => {
     const tab = fs.readFileSync(path.join(__dirname, '..', 'store-tab.tsx'), 'utf8');
-    const sheet = fs.readFileSync(path.join(__dirname, '..', 'starter-sheet.tsx'), 'utf8');
     expect(tab).toMatch(/EVENTS\.iapViewed, \{ surface: 'store_tab' \}/);
-    expect(sheet).toMatch(/EVENTS\.iapViewed, \{ surface: 'starter_sheet' \}/);
+    expect(fs.existsSync(path.join(__dirname, '..', 'starter-sheet.tsx'))).toBe(false);
+    expect(fs.readFileSync(path.join(__dirname, '..', '..', 'slots.tsx'), 'utf8')).not.toMatch(/starter-sheet|StarterSheet/);
   });
 });
 

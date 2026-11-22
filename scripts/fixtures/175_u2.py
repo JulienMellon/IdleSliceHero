@@ -7,7 +7,7 @@ Every state is asserted with expect() before its shot; game time moves only thro
 """
 from shots_lib import *  # noqa: F401,F403  (seeded_page, settle, shot, expect, expect_text, tid, advance, report, ...)
 
-TUTORIAL_DONE = 16
+TUTORIAL_DONE = 18
 CH1 = [f"task.downtown-1.{n}" for n in (1, 2, 3)]  # chapter 1 (the tutorial's) is done, so chapter 2 is the one on
 
 

@@ -14,14 +14,17 @@ export const COPY = {
   'tutorial.9': 'Keep baking, keep serving. Save {cost} for a faster oven.',
   'tutorial.10': 'Ecco, you have enough. Tap Ovens to make the oven faster.',
   'tutorial.11': 'Feel that heat? The oven bakes faster now. Watch the dial.',
-  'tutorial.12': 'Tap All. Every upgrade in the shop lives in there.',
+  'tutorial.12': 'Tap All. Every upgrade and every hire lives in there.',
   'tutorial.13': '{marco} rolls dough for you, flour and all. Hire him when you can.',
   'tutorial.14': "Keep baking. {marco} won't hire himself.",
   'tutorial.15': 'See? {marco} rolls on his own now. You bake and serve. Bravo!',
+  // v5.23 (card E6): the Store intro, from docs/story/COPY-v5.23.md section 1
+  'tutorial.16': 'A new owner needs a starter pack. I made one. Tap the Store, cara.',
+  'tutorial.17': 'Store in the phone! Modern ideas. My pack waits here, cara. No rush.',
   // v5.22 (card E4): the shop report's three lines, from docs/story/COPY-v5.22.md section 4
   'tutorial.report.1': 'This strip, cara, is how my shop is doing. Served and missed.',
   'tutorial.report.2': 'This bar is my ovens. How many pizzas a minute they can bake, cara.',
-  'tutorial.report.3': 'Dashed line, cara: my customers. Past my shortest bar? Those, I miss.',
+  'tutorial.report.3': 'Dashed line, cara: my customers. Served stops at my shortest bar. The rest, I miss.',
   'tutorial.alt.9': 'Ay! You spent the oven money. Save {cost} again for the upgrade.',
   'tutorial.alt.13': '{marco} rolls dough for you, flour and all. You can hire him now.',
 } as const;

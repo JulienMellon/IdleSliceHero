@@ -59,8 +59,8 @@ describe('the privacy policy follows the code (card L1 step 2)', () => {
   });
 
   it('names every analytics event the code defines', () => {
-    // the policy describes them by meaning; this keeps the list from growing unnoticed: five groups, nine events
-    expect(Object.keys(EVENTS)).toHaveLength(9);
+    // the policy describes them by meaning; this keeps the list from growing unnoticed: five groups, twelve events
+    expect(Object.keys(EVENTS)).toHaveLength(12);
     for (const word of ['session', 'ad was offered', 'purchase', 'story scene', 'pizzeria was built']) expect(text(privacy)).toContain(word);
   });
 

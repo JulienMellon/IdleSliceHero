@@ -254,6 +254,22 @@ export const BOOST_MAX_AHEAD_MS = 30 * 86_400_000;
 export const MAX_BOOSTERS = 99;
 /** Boosts running at once; starting or gaining one past this drops the soonest-ending. */
 export const MAX_CONCURRENT_BOOSTS = 20;
+/** v5.23 (E5): a diamond booster. It runs in the one paid-boost slot (`rewards.paidUntil`) at `PAID_BOOST_MULT`. */
+export interface PaidBooster {
+  id: string;
+  seconds: number;
+  diamonds: number;
+}
+/** The three boosters Shop sells for diamonds (docs/PRICING-STRATEGY.md §4). */
+export const PAID_BOOSTERS: readonly PaidBooster[] = [
+  { id: 'rush-hour', seconds: 3600, diamonds: 30 },
+  { id: 'dinner-service', seconds: 14400, diamonds: 90 },
+  { id: 'big-night', seconds: 43200, diamonds: 220 },
+];
+/** The paid slot's multiplier: it adds `PAID_BOOST_MULT − 1` to `boostMult` while it runs, however many are bought. */
+export const PAID_BOOST_MULT = 2;
+/** Most seconds the paid slot may hold at once; a purchase that would pass it is refused. */
+export const PAID_SLOT_CAP = 86_400;
 /** A clock this far ahead of the real time is treated as a mistake and recovered from (lastSeen = now, boosts cleared). */
 export const CLOCK_RECOVER_MS = 36 * 3_600_000;
 /** `lastSeen` is raised only when this stale (and on claims): it keeps `game.rewards` stable between ticks. */

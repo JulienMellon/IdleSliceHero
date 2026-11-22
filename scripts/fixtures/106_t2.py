@@ -10,7 +10,7 @@ fixture taps on until the panel's own text is up.
 from shots_lib import *  # noqa: F401,F403  (seeded_page, settle, shot, tid, expect, advance, shop, MID_SAVE, IDS, day_str, T0_MS, report)
 
 BOSTON_IDS = ["north-end", "southie", "back-bay", "fenway", "cambridge", "dorchester"]
-HOME_SCENES = [f"{h}-{b}" for h in IDS for b in range(1, 5)]
+HOME_SCENES = [f"{h}-{b}" for h in IDS for b in range(1, 5)] + HIRES(IDS)
 DECOR3 = {"plants": 3, "flooring": 3, "tables": 3, "walls": 3, "signage": 3}
 # every Boston scene told before a neighbourhood's beat 1, in play order (the bridge, then each earlier neighbourhood's, interludes where the story tells them)
 ORDER = {h: [f"{h}-{n}" for n in (1, 2, 3, 5, 4)] for h in BOSTON_IDS}
@@ -46,7 +46,7 @@ def boston_save(active="north-end", built=("north-end",), seen=None, **over):
     """A Boston game: the shops in `built` run themselves, `seen` scenes are told (the home story by default)."""
     shops = {h: shop(built=h in built, managed=h in built, prep=20, ovens=18, counter=18, drivers=10, tables=8, footprint=1, sold=60000 if h in built else 0, decor=DECOR3) for h in BOSTON_IDS}
     seen = list(HOME_SCENES) if seen is None else seen
-    sv = dict(saveVersion=6, economy=3, city="boston", cash=5e9, totalEarned=3e15, vehicle=2, active=active, shops=shops, dronesUnlocked=False,
+    sv = dict(saveVersion=7, tutorial=18, economy=3, city="boston", cash=5e9, totalEarned=3e15, vehicle=2, active=active, shops=shops, dronesUnlocked=False,
               cityComplete=False, seenScenes=seen, scrapbookViewed=len(seen), lastSavedAt=T0_MS, playSeconds=9000)
     sv["rewards"] = {"giftShownDay": day_str(), "diamonds": 340}
     sv["x"] = {"franchise": {"count": 1, "stars": 12, "cityStart": 2.79e15, "masteryBanked": 0}}

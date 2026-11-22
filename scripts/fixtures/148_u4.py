@@ -87,7 +87,7 @@ def run(ctx):
             "week": monday, "weekly": [], "weeklyChest": False,
             "gift": {"streak": streak, "last": last, "saveUsed": False, "cycle": 0}, "giftShownDay": shown if shown is not None else day_str(),
             "diamonds": 42, "boosters": [], "boosts": [], "cosmetics": ["oven-woodfired"], "lastSeen": now_ms - 60000}
-        return dict(MID_SAVE, saveVersion=5, stats=stats, lastSavedAt=T0_MS, totalEarned=15000, rewards=r)
+        return dict(MID_SAVE, saveVersion=7, tutorial=18, stats=stats, lastSavedAt=T0_MS, totalEarned=15000, rewards=r)
 
     # 151: three daily tasks: upgrades 3 / 5 and hires 1 / 3 in progress, decor done (Claim)
     try:

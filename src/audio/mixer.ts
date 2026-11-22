@@ -33,7 +33,18 @@ const BUS_MUTE_AFTER_MS = 250;
 
 /** Rare one-shots: unloaded after each play instead of staying resident (AU55). */
 export const RARE: ReadonlySet<string> = new Set(['collect', 'build', 'gavel', 'grade', 'expand']);
-export const SFX_SECONDS: Readonly<Record<string, number>> = { collect: 1.5, build: 0.8, fleet: 0.6, grade: 0.6, gavel: 0.6, expand: 0.5, milestone: 0.4 };
+export const SFX_SECONDS: Readonly<Record<string, number>> = {
+  collect: 1.5,
+  build: 0.8,
+  fleet: 0.6,
+  grade: 0.6,
+  gavel: 0.6,
+  expand: 0.5,
+  milestone: 0.4,
+  oven_ding: 0.5,
+  phone_ring: 2,
+  tip_bell: 0.45,
+};
 /** Effects created in this order once the first frame is up; sparkle, milestone and fleet join them (they used to wait for first use). */
 export const COMMON_SFX: readonly string[] = ['tap', 'cash', 'buy', 'rush', 'bubble', 'full', 'refused', 'click', 'sparkle', 'milestone', 'fleet'];
 /** The title screen's sounds, then the Downtown set the first minutes of play use (AU39). */

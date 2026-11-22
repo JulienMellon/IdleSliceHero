@@ -1,14 +1,19 @@
 // Purchases over a backend port (RevenueCat on iOS, a flag-driven fake on the web): the ledger makes every grant pay once.
 import type { GrantBus } from './grant-bus';
-import { emptyLedger, ownedFrom, parseLedger, redeem, type Ledger } from './grants';
+import { emptyLedger, firstBuysUsed, ownedFrom, parseLedger, redeem, type Ledger } from './grants';
 import type { BuyResult, KV, ProductId, Purchases } from './types';
 
-export const LEDGER_KEY = 'se.purchases.ledger';
+/**
+ * C158: the test build keeps its own ledger, so a test reset never touches a real one. The test key is only a string: it is in every bundle (the dev reset
+ * imports it, src/dev/story-save.ts), and only the literal env check decides which key a build reads and writes (C184).
+ */
+export const TEST_LEDGER_KEY = 'se.purchases.ledger.test';
+export const LEDGER_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? TEST_LEDGER_KEY : 'se.purchases.ledger';
 
 export type PurchaseOutcome = { status: 'purchased'; transactionId: string } | { status: 'cancelled' | 'failed' };
 
 export interface PurchaseBackend {
-  products(ids: readonly ProductId[]): Promise<{ id: ProductId; price: string }[]>;
+  products(ids: readonly ProductId[]): Promise<{ id: ProductId; price: string; amount: number }[]>;
   purchase(id: ProductId): Promise<PurchaseOutcome>;
   /** Ask the store which non-consumables this account owns (a restore). */
   restore(): Promise<ProductId[]>;
@@ -28,7 +33,12 @@ export function createPurchases(deps: { kv: KV; backend: PurchaseBackend; bus: G
     return run;
   };
 
-  const load = () => (loaded ??= kv.get(LEDGER_KEY).then((raw) => void (ledger = parseLedger(raw))));
+  // C189: an unreadable store is an empty ledger, so `loaded` always resolves (a card waiting on it never hangs on a rejection)
+  const load = () =>
+    (loaded ??= kv.get(LEDGER_KEY).then(
+      (raw) => void (ledger = parseLedger(raw)),
+      () => void (ledger = emptyLedger()),
+    ));
 
   /** Ledger first, grant second: a crash between them loses a grant, never doubles one. */
   const pay = async (id: ProductId, tx: string, via: 'buy' | 'restore') => {
@@ -56,6 +66,8 @@ export function createPurchases(deps: { kv: KV; backend: PurchaseBackend; bus: G
       ),
     products: () => backend.products(ids).catch(() => []),
     owned: () => ownedFrom(ledger),
+    firstBuysUsed: () => firstBuysUsed(ledger),
+    loaded: load,
     buy(id): Promise<BuyResult> {
       return serial(async () => {
         await load();

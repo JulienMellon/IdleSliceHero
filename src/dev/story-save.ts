@@ -4,6 +4,7 @@
 import { cityOf } from '../content/cities';
 import { STORY_PACING } from '../content/tuning';
 import { TEST_PREFS_KEY } from '../components/store/store-model';
+import { TEST_LEDGER_KEY } from '../services/purchases-core';
 import { challengeOffered, firstHood, markSceneSeen, migrate, sceneId, TUTORIAL_DONE, type GameState } from '../engine/game';
 import { rivalOpen } from '../engine/features/layers/rival';
 import { sceneTriggered } from '../engine/story';
@@ -12,8 +13,8 @@ import { BACKUP_KEY, REAL_SAVE_KEY, TEST_SAVE_KEY, type JumpHost, type KeyValue 
 
 export { BACKUP_KEY, TEST_SAVE_KEY };
 
-/** Every key the reset clears: the test save, its backup slot, the test cheats (free buys, speed, clock offset) and the store's test prefs. */
-export const RESET_KEYS = [TEST_SAVE_KEY, BACKUP_KEY, CHEATS_KEY, TEST_PREFS_KEY] as const;
+/** Every key the reset clears: the test save, its backup slot, the test cheats (free buys, speed, clock offset) the store's test prefs and the purchase ledger's test key. */
+export const RESET_KEYS = [TEST_SAVE_KEY, BACKUP_KEY, CHEATS_KEY, TEST_PREFS_KEY, TEST_LEDGER_KEY] as const;
 
 function assertTestKey(saveKey: string): void {
   if (saveKey === REAL_SAVE_KEY || !saveKey.startsWith('slice-empire/save/test-')) throw new Error(`the test panel writes only test saves, not ${saveKey}`);

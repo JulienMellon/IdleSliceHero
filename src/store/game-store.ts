@@ -17,7 +17,7 @@ import {
   repairByAd,
   rerollDaily as rerollDailyTask,
 } from '../engine/offers';
-import { NO_PREFS, parsePrefs, PREFS_KEY as NORMAL_PREFS_KEY, TEST_PREFS_KEY, type StorePrefs } from '../components/store/store-model';
+import { activePrefsKey, NO_PREFS, parsePrefs, withAdGrant, type StorePrefs } from '../components/store/store-model';
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
 import { cityOf } from '../content/cities';
@@ -42,7 +42,8 @@ import { fixJam as fixOvenJam } from '../engine/features/layers/shifts';
 import { setMenu as setUniversityMenu } from '../engine/features/layers/menu';
 import { ackCritic as ackUptownCritic, buyIngredients as buyUptownIngredients, ingredientsPrice } from '../engine/features/layers/stars';
 import * as R from '../engine/rewards';
-import { tutorialAdvance, tutorialHoldsStory, tutorialNote, type TutorialNote } from '../engine/tutorial';
+import { buyBooster as buyPaidBooster } from '../engine/paid-boost';
+import { STARTER_STEP, tutorialAdvance, tutorialHoldsStory, tutorialNote, type TutorialNote } from '../engine/tutorial';
 import { buyCosmetic as buyVanity } from '../engine/vanity';
 import { analytics, EVENTS, onGrant, purchases, startServices, type Grant } from '../services';
 import { standingGrants } from './standing';
@@ -52,7 +53,7 @@ import { gameNow, gameSpeed } from '../engine/clock';
 // X1 (v5.19-test): the test build saves under its own keys, so a cheated save can never become a real one. The comparison is written out
 // in full on purpose (src/dev/README.md): the normal build folds it to the v1 keys.
 const SAVE_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? 'slice-empire/save/test-v1' : 'slice-empire/save/v1';
-const PREFS_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? TEST_PREFS_KEY : NORMAL_PREFS_KEY;
+const PREFS_KEY = activePrefsKey();
 // end X1
 
 // X2 (v5.19-test): the test cheats (free buys, clock offset, speed, store answer) saved on the last visit are put back before the first save loads.
@@ -177,6 +178,8 @@ interface Store {
   claimWeekly: (i: number) => boolean;
   claimWeeklyChest: () => boolean;
   startBooster: (i: number) => boolean;
+  /** v5.23: buy a diamond booster (PAID_BOOSTERS id) into the paid-boost slot; false (nothing taken) when refused. */
+  buyBooster: (id: string) => boolean;
   claimGift: (repair?: boolean) => boolean;
   /** The gift calendar opened by itself today: don't open it again until tomorrow. */
   markGiftShown: () => void;
@@ -205,9 +208,10 @@ interface Store {
   doubleOffline: () => boolean;
   /** Small saved prefs of the store (the Starter Pack was offered, the day the shelf's booster was taken). */
   prefs: StorePrefs;
-  /** Play seconds when the tutorial ended this session (the Starter Pack sheet's cue); null otherwise. Not saved. */
-  starterAt: number | null;
+  /** Records that Nonna's Store intro has run (`prefs.starterOffered`). */
   markStarterOffered: () => void;
+  /** One more rewarded ad paid (the ad button calls it; a Nonna's Plus owner takes no ad, so none is counted): the rolling 7-day count in the saved prefs. */
+  recordAdGrant: () => void;
   resetGame: () => Promise<void>;
   // X4 (v5.19-test): the Test panel's story and save tools. Does nothing in a normal build.
   /** Put `game` in place as if it had just been loaded: the popups and the scene of the old one are gone, the story gap and the kitchen-tap gate are open (a waiting beat plays at once), and it is saved. */
@@ -424,7 +428,6 @@ export const useGame = create<Store>((set, get) => {
     plus: false,
     claimed: null,
     prefs: NO_PREFS,
-    starterAt: null,
     finishTitle: () => {
       if (get().titleDone) return;
       set({ titleDone: true });
@@ -722,6 +725,11 @@ export const useGame = create<Store>((set, get) => {
     claimWeekly: (i) => claimTracked('weekly', (g, now) => R.claimWeekly(g, i, now)),
     claimWeeklyChest: () => claim((g, now) => R.claimWeeklyChest(g, now)),
     startBooster: (i) => claim((g, now) => R.startBooster(g, i, now)),
+    buyBooster: (id) => {
+      const ok = claim((g, now) => buyPaidBooster(g, id, now));
+      if (ok) analytics.track(EVENTS.boosterBought, { booster: id });
+      return ok;
+    },
     claimGift: (repair = false) => claimTracked('gift', (g, now) => R.claimGift(g, now, { repair })),
     markGiftShown: () => {
       const g = get().game;
@@ -830,12 +838,14 @@ export const useGame = create<Store>((set, get) => {
       if (!get().prefs.starterOffered) setPrefs({ starterOffered: true });
     },
 
+    recordAdGrant: () => setPrefs(withAdGrant(get().prefs, gameNow())),
+
     resetGame: async () => {
       await AsyncStorage.removeItem(SAVE_KEY).catch(() => {});
       const now = gameNow();
       // C129: what the player paid for is theirs after a reset (the Founder awning; Plus is the store's own flag): the standing part of each owned product
       const game = standingGrants(purchases.owned()).reduce((g, grant) => applyGrant(g, grant, now), G.newGame(now));
-      set({ game, offline: null, playing: null, lastSceneEndPlay: null, claimed: null, starterAt: null });
+      set({ game, offline: null, playing: null, lastSceneEndPlay: null, claimed: null });
       queueScene();
       void get().save();
     },
@@ -851,8 +861,8 @@ export const useGame = create<Store>((set, get) => {
   };
 });
 
-// v5.17 (U3): the tutorial ending in play (not a save that loads already done) is the Starter Pack sheet's cue.
+// v5.23 (E6): the Store intro running in play (the Shop opening on Nonna's cue: step 17) is `prefs.starterOffered`: "the intro has run". The 30-second pop-up is gone.
 useGame.subscribe((s, prev) => {
-  if (!prev.loaded || !s.loaded || s.starterAt !== null) return;
-  if (prev.game.tutorial < G.TUTORIAL_DONE && s.game.tutorial >= G.TUTORIAL_DONE) useGame.setState({ starterAt: s.game.playSeconds });
+  if (!prev.loaded || !s.loaded || s.prefs.starterOffered) return;
+  if (prev.game.tutorial < STARTER_STEP && s.game.tutorial >= STARTER_STEP) s.markStarterOffered();
 });

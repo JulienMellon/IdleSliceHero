@@ -1099,7 +1099,8 @@ def bid_sting():
 # 7-9-3-5, strings root-5th-9th, vibraphone, a celesta bell) under a brush swirl that ends on it. No cymbal, no timpani, no brass.
 # Each cue plays at its neighbourhood's loop tempo and swing (`HOODS`); the arrival lands where the old payoff crash did.
 # (t0, P): the beat the first bar starts and the beat of the arrival, picked so P in seconds is within 0.25 s of the old payoff.
-TRIUMPH_TIMING = {'downtown': (0.5, 6.5), 'suburbs': (0.0, 8.0), 'waterfront': (2.0, 10.0), 'university': (1.0, 9.0),
+# Downtown's t0 is 0 since notes R2 (2026-11-22): a 0.5-beat pickup left 0.3 s at -28 dB where the loop drops out.
+TRIUMPH_TIMING = {'downtown': (0.0, 6.0), 'suburbs': (0.0, 8.0), 'waterfront': (2.0, 10.0), 'university': (1.0, 9.0),
                   'industrial': (0.0, 8.0), 'uptown': (0.0, 8.0)}
 # Where the music ends, in beats from the arrival (tuned so the encoded file is within 1.0 s of the old file's length).
 TRIUMPH_TAIL = {'downtown': 4.4, 'suburbs': 4.0, 'waterfront': 4.0, 'university': 4.2, 'industrial': 4.0, 'uptown': 4.0}
@@ -1107,7 +1108,7 @@ TRIUMPH_TAIL = {'downtown': 4.4, 'suburbs': 4.0, 'waterfront': 4.0, 'university'
 # the kalimba and the marimba are the quietest voices at the same velocity). The lead's velocity cap is STORY_LEAD_CAP.
 STORY_LEAD = {'triumph_downtown': (116, 54), 'triumph_suburbs': (118, 54), 'triumph_waterfront': (127, 60),
               'triumph_university': (127, 70), 'triumph_industrial': (124, 56), 'triumph_uptown': (106, 54),
-              'city_theme': (112, 54)}
+              'city_theme': (112, 54), 'splash_theme': (116, 54)}
 STORY_LEAD_CAP = 72
 STORY_BELL_VEL = 56  # arrival bell
 
@@ -1476,6 +1477,23 @@ def city_theme():
     story_cue('city_theme', R, md, bpm, B, jazz.SWING44, h['swing'], h['ts'], P, n_pre, 4.0, leads, seed=95)
 
 
+def splash_theme():
+    """Notes R2 (Julien, 2026-11-22): "Game needs a splash screen theme song". A short non-looping story cue for the splash, in
+    Downtown's language (6/8, dotted quarter 66, nylon guitar 25, swung brushes, upright bass): the city motif once over a ii-V-I
+    vamp (two bars), then CLOSE68 over ii and V, into the same 6/9 arrival chord as the triumphs. Its first note is at 0 s."""
+    h = HOODS['downtown']
+    R, md, bpm, B = h['root'], h['mode'], h['bpm'], float(h['bar'])
+    fr = STING_FRONT['downtown']
+    n_pre = 2
+    P = (n_pre + 2) * B
+    lvol, lvel = STORY_LEAD['splash_theme']
+    tc = P - 2 * B
+    t_first = tc - n_pre * B
+    leads = [dict(name='lead', program=fr['lead'], shift=fr['shift'], pan=64, volume=lvol,
+                  phrases=[(M.M68[:2], t_first, lvel), (M.CLOSE68[:3], tc, lvel)], pickup=None)]
+    story_cue('splash_theme', R, md, bpm, B, fr['feel'], h['swing'], h['ts'], P, n_pre, 4.4, leads, seed=97)
+
+
 if __name__ == '__main__':
     downtown()
     downtown(sparse=True)
@@ -1492,6 +1510,7 @@ if __name__ == '__main__':
     reunion()
     recipe()
     city_theme()
+    splash_theme()
     with open(os.path.join(OUT, 'manifest.json'), 'w') as f:
         json.dump(MANIFEST, f, indent=1)
     for k, v in MANIFEST.items():

@@ -156,17 +156,20 @@ describe('props carry no personal data', () => {
     expect(cleanProps(undefined)).toBeUndefined();
   });
 
-  it('defines the nine events', () => {
+  it('defines the twelve events', () => {
     expect(Object.values(EVENTS).sort()).toEqual([
       'ad_completed',
       'ad_offered',
       'ad_started',
+      'booster_bought',
       'iap_purchased',
       'iap_viewed',
+      'pack_card_seen',
       'scene_seen',
       'session_end',
       'session_start',
       'shop_built',
+      'store_opened',
     ]);
   });
 });
