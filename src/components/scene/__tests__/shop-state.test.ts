@@ -126,6 +126,7 @@ describe('the cast shows the stations’ state (step 2)', () => {
       for (const c of roleOf(build(5, { symptoms: { [key]: 'idle' } }), role)) {
         expect([role, c.props.lean]).toEqual([role, LEAN]);
         expect([role, c.props.arm]).toEqual([role, 0]);
+        expect([role, ['z', 'phone'].includes(c.props.idle!)]).toEqual([role, true]);
       }
       const hurried = samples(6).flatMap((t) => roleOf(build(t, { symptoms: { [key]: 'piling' } }), role).map((c) => c.props));
       expect(hurried.some((p) => (p.sweat ?? 0) > 0)).toBe(true);

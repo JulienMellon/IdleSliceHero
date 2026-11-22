@@ -280,6 +280,7 @@ export function Person({ x, y, o = 1, ...p }: PersonProps) {
       <Limbs {...limbs} part="front" />
       {p.sweat ? <Sweat hy={bodyBy(p.kind, look.tall) - 9} step={p.sweat} /> : null}
       {p.frown ? <Frown hy={bodyBy(p.kind, look.tall) - 9} /> : null}
+      {p.idle ? <IdleBubble hy={bodyBy(p.kind, look.tall) - 9} what={p.idle} /> : null}
     </>
   );
   return (
