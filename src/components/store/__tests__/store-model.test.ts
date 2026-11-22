@@ -9,6 +9,15 @@ import {
   buyLine,
   productChips,
   PRODUCT_RIBBON,
+  AD_WINDOW_MS,
+  adCount7,
+  amountsFrom,
+  bestRate,
+  looksFor,
+  type RowContext,
+  type StorePrefs,
+  starterBestRate,
+  withAdGrant,
   NO_PREFS,
   parsePrefs,
   PRODUCT_ORDER,
@@ -78,17 +87,17 @@ describe('the products tab', () => {
     expect(buyLine('purchased')).toMatch(/Thank you/);
     expect(buyLine('failed')).toMatch(/didn’t go through/);
     expect(buyLine('cancelled')).toBe('');
-    expect(restoreLine(['nonnas_plus'])).toBe('Restored: Nonna’s Plus.');
+    expect(restoreLine(['nonnas_plus'])).toBe("Restored: Nonna's Plus.");
     expect(restoreLine([])).toMatch(/No earlier purchases/);
-    expect(restoreResult(['starter_pack', 'nonnas_plus'])).toBe('Restored: Starter Pack, Nonna’s Plus.');
+    expect(restoreResult(['starter_pack', 'nonnas_plus'])).toBe("Restored: Nonna's Starter Pack, Nonna's Plus.");
   });
 });
 
 describe('a paid-out grant', () => {
   const g0 = (): G.GameState => G.newGame(NOW);
-  test('the Starter Pack: 150 diamonds, a 24 h 2x boost and the founder awning, worn', () => {
+  test('the Starter Pack: 400 diamonds, a 24 h 2x boost and the founder awning, worn', () => {
     const g = applyGrant({ ...g0(), rewards: { ...g0().rewards, diamonds: 10, worn: ['awning-gold'] } }, GRANTS.starter_pack, NOW);
-    expect(g.rewards.diamonds).toBe(160);
+    expect(g.rewards.diamonds).toBe(410);
     expect(g.rewards.boosts).toEqual([{ mult: 2, until: NOW + 24 * 3_600_000, source: 'purchase' }]);
     expect(g.rewards.cosmetics).toContain('awning-founder');
     // it replaces the gold awning (same part)
@@ -123,7 +132,11 @@ describe('the Starter Pack offer', () => {
 
 describe('saved prefs', () => {
   test('read back, and a damaged value is the default', () => {
-    expect(parsePrefs(JSON.stringify({ starterOffered: true, boosterAdDay: '2026-11-11' }))).toEqual({ starterOffered: true, boosterAdDay: '2026-11-11' });
+    expect(parsePrefs(JSON.stringify({ starterOffered: true, boosterAdDay: '2026-11-11', adGrants: [5, 'x', 7] }))).toEqual({
+      starterOffered: true,
+      boosterAdDay: '2026-11-11',
+      adGrants: [5, 7],
+    });
     expect(parsePrefs(null)).toEqual(NO_PREFS);
     expect(parsePrefs('{"starterOffered":"yes","boosterAdDay":5}')).toEqual(NO_PREFS);
     expect(parsePrefs('nope')).toEqual(NO_PREFS);
@@ -152,11 +165,86 @@ describe('the pack art (D496)', () => {
     const chips = productChips('starter_pack');
     expect(chips.map((c) => c.kind)).toEqual(['diamonds', 'boost', 'awning']);
     expect(chips[0].title).toBe(String(GRANTS.starter_pack.diamonds));
-    expect(chips[1].title).toBe(`${GRANTS.starter_pack.boost!.mult}×`);
+    expect(chips[1].title).toBe(`${GRANTS.starter_pack.boost!.mult}× · ${GRANTS.starter_pack.boost!.hours} h`);
     expect(productChips('nonnas_plus')).toEqual([]);
     expect(productChips('diamonds_500')).toEqual([]);
   });
   test('the ribbon is on the Starter Pack only', () => {
     expect(Object.keys(PRODUCT_RIBBON)).toEqual(['starter_pack']);
+  });
+});
+
+describe('the store cards (card N1)', () => {
+  const prices = { starter_pack: '$2.99', nonnas_plus: '$4.99', diamonds_80: '$0.99', diamonds_500: '$4.99', diamonds_1200: '$9.99' } as const;
+  const amounts = amountsFrom([
+    { id: 'starter_pack', amount: 2.99 },
+    { id: 'nonnas_plus', amount: 4.99 },
+    { id: 'diamonds_80', amount: 0.99 },
+    { id: 'diamonds_500', amount: 4.99 },
+    { id: 'diamonds_1200', amount: 9.99 },
+  ]);
+  const ctx: RowContext = { amounts, firstUsed: [], adCount: 0, income: 1000 };
+  const row = (id: string, c = ctx) => productRows(prices, [], c).find((r) => r.id === id)!;
+
+  test('the best rate is computed from the store numbers: today the 1,200 pack', () => {
+    expect(bestRate(amounts)).toBe('diamonds_1200');
+    // a different set of prices moves it
+    expect(bestRate({ ...amounts, diamonds_500: 3 })).toBe('diamonds_500');
+  });
+  test('the best rate is hidden while prices load, or when a pack has no price', () => {
+    expect(bestRate(null)).toBeNull();
+    expect(bestRate({})).toBeNull();
+    expect(bestRate({ diamonds_80: 0.99, diamonds_500: 4.99 })).toBeNull();
+    expect(productRows(prices, [], { ...ctx, amounts: null }).flatMap((r) => r.tags)).not.toContain('Best rate');
+    expect(row('diamonds_1200').tags).toContain('Best rate');
+    expect(row('diamonds_500').tags).not.toContain('Best rate');
+  });
+  test('the Starter says "Most diamonds per dollar" only when the same computation puts it first', () => {
+    expect(starterBestRate(amounts)).toBe(true);
+    expect(row('starter_pack').rate).toBe('Most diamonds per dollar in the store');
+    // at $4.99 it is 80 per dollar: no longer the most
+    const dear = { ...amounts, starter_pack: 4.99 };
+    expect(starterBestRate(dear)).toBe(false);
+    expect(row('starter_pack', { ...ctx, amounts: dear }).rate).toBeNull();
+    expect(starterBestRate(null)).toBe(false);
+  });
+  test('the Starter card: Nonna, the ribbon, three chips with game units and no struck-through price', () => {
+    const r = row('starter_pack');
+    expect(r.nonna).toBe('I pack it myself. Like a lunch, cara.');
+    expect(r.tags).toEqual(['ONE PER OWNER']);
+    expect(r.blurb).toBe('400 diamonds, 2× income for 24 hours and the Founder awning');
+    expect(r.chips.map((c) => c.sub)).toEqual(['Enough for 2 shop looks', "≈ $86.4M at your shop's pace", 'Only in this pack']);
+    expect(JSON.stringify(r)).not.toMatch(/ONE-TIME|worth|value|save \d|limited|left/i);
+  });
+  test('diamond packs: base, "+N bonus", looks, and "First buy: 2×" until it is used', () => {
+    const r = row('diamonds_500');
+    expect([r.base, r.bonus, r.blurb]).toEqual([400, '+100 bonus', 'Enough for 3 looks']);
+    expect(r.tags).toEqual(['First buy: 2×']);
+    expect(row('diamonds_500', { ...ctx, firstUsed: ['diamonds_500'] }).tags).toEqual([]);
+    expect(row('diamonds_1200').tags).toEqual(['Best rate', 'First buy: 2×']);
+    expect([row('diamonds_80').bonus, row('diamonds_80').blurb]).toEqual([null, '']); // 80 diamonds is under one look
+    expect(row('starter_pack').tags).not.toContain('First buy: 2×');
+    expect(row('nonnas_plus').tags).toEqual([]);
+  });
+  test('Plus: the 7-day ad line when there is something to count, and "Pay once"', () => {
+    expect(row('nonnas_plus').adLine).toBeNull();
+    expect(row('nonnas_plus', { ...ctx, adCount: 5 }).adLine).toBe("You took 5 ad rewards this week. With Plus, they're one tap.");
+    expect(row('nonnas_plus').once).toBe('Pay once. Yours forever.');
+  });
+  test('looks are whole looks at the vanity price', () => {
+    expect([looksFor(149), looksFor(150), looksFor(400)]).toEqual([0, 1, 2]);
+  });
+  test('the rolling 7-day ad count', () => {
+    const now = 10 * AD_WINDOW_MS;
+    // the grants of 8, 6 and 3 days ago and now: the first is outside the window when the last comes in
+    const day = 86_400_000;
+    let p: StorePrefs = { ...NO_PREFS, adGrants: [now - 8 * day] };
+    for (const ago of [6, 3, 0]) p = withAdGrant(p, now - ago * day);
+    // the 8-day-old stamp was dropped when a later grant came in
+    expect(p.adGrants).toHaveLength(3);
+    expect(adCount7(p.adGrants, now)).toBe(3);
+    expect(adCount7([now - AD_WINDOW_MS], now)).toBe(0);
+    expect(adCount7([now - AD_WINDOW_MS + 1], now)).toBe(1);
+    expect(withAdGrant(NO_PREFS, now).adGrants).toEqual([now]);
   });
 });

@@ -88,7 +88,10 @@ export const boosterShelf = (g: GameState): ShelfRow[] => g.rewards.boosters.map
 
 /** "2× income · 1 h": the shelf's own wording; whole hours and days drop their zero minutes and hours. */
 export const shelfLabel = (mult: number, seconds: number): string =>
-  `${Number.isInteger(mult) ? mult : Math.round(mult * 10) / 10}\u00D7 income \u00B7 ${spanText(seconds).replace(/ 0 m$/, '').replace(/ 0 h$/, '')}`;
+  `${Number.isInteger(mult) ? mult : Math.round(mult * 10) / 10}\u00D7 income \u00B7 ${tidySpan(seconds)}`;
+
+/** A span as "1 h", "4 h", "15 m", "1 h 5 m": whole hours and days drop their zero minutes and hours. */
+export const tidySpan = (seconds: number): string => spanText(seconds).replace(/ 0 m$/, '').replace(/ 0 h$/, '');
 
 export const SHELF_EMPTY = (): string => copy('shop.boosters.empty');
 

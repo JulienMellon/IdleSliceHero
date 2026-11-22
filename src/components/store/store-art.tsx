@@ -55,20 +55,22 @@ function ChipIcon({ kind }: { kind: Chip['kind'] }) {
   return <AwningGlyph size={28} />;
 }
 
-/** What a pack holds, as small cards in a row. */
+/** What a pack holds, as small cards, one to a line (a line of words has to fit beside its icon). */
 export function ChipRow({ chips }: { chips: readonly Chip[] }) {
   if (!chips.length) return null;
   return (
     <View style={styles.row} testID="pack-chips">
       {chips.map((c) => (
-        <View key={c.kind} style={styles.chip} accessible accessibilityLabel={`${c.title} ${c.sub}`}>
+        <View key={c.kind} style={styles.chip} accessible accessibilityLabel={`${c.title}. ${c.sub}`}>
           <ChipIcon kind={c.kind} />
-          <Text style={styles.chipTitle} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.15}>
-            {c.title}
-          </Text>
-          <Text style={styles.chipSub} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.15}>
-            {c.sub}
-          </Text>
+          <View style={styles.chipText}>
+            <Text style={styles.chipTitle} numberOfLines={1} maxFontSizeMultiplier={1.15}>
+              {c.title}
+            </Text>
+            <Text style={styles.chipSub} numberOfLines={2} maxFontSizeMultiplier={1.15}>
+              {c.sub}
+            </Text>
+          </View>
         </View>
       ))}
     </View>
@@ -88,21 +90,21 @@ export function Ribbon({ text, inline = false }: { text: string; inline?: boolea
 
 const styles = StyleSheet.create({
   awning: { alignSelf: 'center' },
-  row: { flexDirection: 'row', gap: 6 },
+  row: { gap: 6 },
   chip: {
-    flex: 1,
-    minWidth: 0,
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 10,
     paddingVertical: 6,
-    paddingHorizontal: 4,
+    paddingHorizontal: 10,
     borderRadius: 12,
     backgroundColor: '#FFF4E0',
     borderWidth: 2,
     borderColor: C.cheeseDark,
   },
-  chipTitle: { fontFamily: F.bold, fontSize: 14, color: C.ink, alignSelf: 'stretch', textAlign: 'center' },
-  chipSub: { fontFamily: F.semi, fontSize: 11, color: C.inkSoft, alignSelf: 'stretch', textAlign: 'center' },
+  chipText: { flex: 1, minWidth: 0 },
+  chipTitle: { fontFamily: F.bold, fontSize: 14, color: C.ink },
+  chipSub: { fontFamily: F.semi, fontSize: 12, color: C.inkSoft },
   ribbon: {
     position: 'absolute',
     top: -2,

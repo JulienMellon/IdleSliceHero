@@ -12,6 +12,8 @@ export interface PurchaseState {
   line: string;
   /** What the account owns, read again after every purchase. */
   owned: ProductId[];
+  /** The diamond packs whose first buy (paid double) has been used, read again after every purchase. */
+  firstUsed: ProductId[];
   buy: (id: ProductId) => void;
 }
 
@@ -19,6 +21,7 @@ export function usePurchase(): PurchaseState {
   const [busy, setBusy] = useState<ProductId | null>(null);
   const [line, setLine] = useState('');
   const [owned, setOwned] = useState<ProductId[]>(() => purchases.owned());
+  const [firstUsed, setFirstUsed] = useState<ProductId[]>(() => purchases.firstBuysUsed());
   const [guard] = useState(createBuyGuard);
   const buy = useCallback(
     (id: ProductId) => {
@@ -29,11 +32,12 @@ export function usePurchase(): PurchaseState {
       void guardedBuy(guard, (p) => purchases.buy(p), id).then((r) => {
         if (r === null) return;
         setOwned(purchases.owned());
+        setFirstUsed(purchases.firstBuysUsed());
         setLine(buyLine(r));
         setBusy(null);
       });
     },
     [guard],
   );
-  return { busy, line, owned, buy };
+  return { busy, line, owned, firstUsed, buy };
 }

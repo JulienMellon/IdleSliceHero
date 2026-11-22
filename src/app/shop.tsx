@@ -1,13 +1,20 @@
 // The Shop screen (v5.15), opened from the diamond chip. Tab 1, Shop Style: the seven cosmetics, each owned (wear / take off), for
-// 150 diamonds, or earned (the master's plaque: "earn 18 stars", never sold). Tab 2, Booster Shelf: the inventory with an Activate
-// button each, or the empty-shelf line, and above it one free booster a day for an ad. Boosters have no diamond price: they are never sold for
-// diamonds. Tab 3, Store (v5.17, components/store): the Starter Pack, Nonna's Plus and the diamond packs, for money. Data: endgame/shop-model.ts.
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+// 150 diamonds, or earned (the master's plaque: "earn 18 stars", never sold). Tab 2, Booster Shelf: a "Buy" section of three diamond boosters
+// (v5.23, endgame/booster-buy.tsx), then one free booster a day for an ad, then the inventory with an Activate button each, or the empty-shelf line.
+// Tab 3, Store (v5.17, components/store): the Starter Pack, Nonna's Plus and the diamond packs, for money. Data: endgame/shop-model.ts.
+// No tab is locked (DECISIONS #47). `?tab=store` opens the Store tab; `?from=` says how the Shop was reached (store_opened). The first refused
+// buy of a look shows Nonna's nudge to the Store (once per save).
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BoosterBuy } from '@/components/endgame/booster-buy';
+import { storeFrom, STORE_OPENED_EVENT, tabFromParam } from '@/components/endgame/diamond-chip-model';
+import { NudgeCard } from '@/components/endgame/nudge-card';
+import { useShopFlags } from '@/components/endgame/shop-flags';
+import { nudgeShows } from '@/components/endgame/shop-flags-model';
 import { boosterShelf, SHELF_EMPTY, SHOP_TABS, vanityViews, type VanityView } from '@/components/endgame/shop-model';
 import { VanityArt } from '@/components/endgame/vanity-art';
 import { haptic, Toast } from '@/components/game-ui';
@@ -16,21 +23,23 @@ import { boosterAdOffer } from '@/components/store/ad-model';
 import { StoreTab } from '@/components/store/store-tab';
 import { BoostIcon, DiamondIcon } from '@/components/icons';
 import { TAP } from '@/components/tap-targets';
+import { analytics } from '@/services';
 import { useGame } from '@/store/game-store';
 import { C, F } from '@/theme';
 import { gameNow } from '../engine/clock';
+import { rewardsUnlocked } from '../engine/rewards';
 
 type Tab = 0 | 1 | 2;
 
 /** The shelf's ad gives the booster; the store sets today as taken. Module-level, so the memoised button keeps one callback. */
 const takeBooster = () => void useGame.getState().freeBooster();
 
-function VanityCard({ v, onWear, onBuy }: { v: VanityView; onWear: (id: string, on: boolean) => void; onBuy: (id: string) => void }) {
+function VanityCard({ v, onWear, onBuy }: { v: VanityView; onWear: (id: string, on: boolean) => void; onBuy: (id: string, short: boolean) => void }) {
   const can = v.state === 'owned' || v.state === 'worn' || v.state === 'buy';
   const press = () => {
-    if (v.state === 'buy' && v.buyId) onBuy(v.buyId);
+    if (v.state === 'buy' && v.buyId) onBuy(v.buyId, false);
     else if (v.wearId) onWear(v.wearId, v.state !== 'worn');
-    else if (v.state === 'poor' && v.buyId) onBuy(v.buyId);
+    else if (v.state === 'poor' && v.buyId) onBuy(v.buyId, true);
   };
   return (
     <View testID={`vanity-${v.id}`} style={styles.card}>
@@ -90,13 +99,33 @@ export default function Shop() {
   const wardrobe = useGame((s) => `${s.game.rewards.cosmetics.join(',')}|${s.game.rewards.worn.join(',')}|${Math.floor(s.game.rewards.diamonds)}`);
   const shelfKey = useGame((s) => s.game.rewards.boosters.map((b) => `${b.mult}:${b.seconds}`).join(','));
   const boosterAd = useGame((s) => boosterAdOffer(s.game, gameNow(), s.prefs.boosterAdDay));
-  const [tab, setTab] = useState<Tab>(0);
+  const params = useLocalSearchParams<{ tab?: string; from?: string }>();
+  const [tab, setTab] = useState<Tab>(() => tabFromParam(params.tab));
+  const [nudge, setNudge] = useState(false);
+  // the Shop opened: say how, and use up the chip's dot if the takeover has happened
+  useEffect(() => {
+    analytics.track(STORE_OPENED_EVENT, { from: storeFrom(params.from) });
+    useShopFlags.getState().opened(rewardsUnlocked(useGame.getState().game));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- once per opening: the route's params are what it was opened with
+  const nudgeToStore = useCallback(() => {
+    analytics.track(STORE_OPENED_EVENT, { from: 'nudge' });
+    setNudge(false);
+    setTab(2);
+  }, []);
   // G94: leaving the screen takes its toast with it
   useFocusEffect(useCallback(() => () => useGame.setState({ toast: null }), []));
   const { equip, buyCosmetic, startBooster } = useGame.getState();
   const vanity = useMemo(() => vanityViews(useGame.getState().game), [wardrobe]); // eslint-disable-line react-hooks/exhaustive-deps -- `wardrobe` is what the views depend on
   const shelf = useMemo(() => boosterShelf(useGame.getState().game), [shelfKey]); // eslint-disable-line react-hooks/exhaustive-deps -- `shelfKey` is what the shelf depends on
   const tabs = [...SHOP_TABS(), 'Store'];
+  const buyLook = (id: string, short: boolean) => {
+    const ok = buyCosmetic(id);
+    haptic(ok ? 'success' : 'error');
+    if (nudgeShows(useShopFlags.getState(), ok, short)) {
+      useShopFlags.getState().markNudged();
+      setNudge(true);
+    }
+  };
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -125,6 +154,7 @@ export default function Shop() {
         ))}
       </View>
       <ScrollView contentContainerStyle={{ padding: 14, gap: 10, paddingBottom: insets.bottom + 24 }}>
+        {tab === 1 && <BoosterBuy />}
         {tab === 1 && boosterAd && (
           <AdButton
             placement="daily_booster"
@@ -134,8 +164,9 @@ export default function Shop() {
             onBenefit={takeBooster}
           />
         )}
+        {tab === 0 && nudge && <NudgeCard onStore={nudgeToStore} />}
         {tab === 0 ? (
-          vanity.map((v) => <VanityCard key={v.id} v={v} onWear={(id, on) => equip(id, on)} onBuy={(id) => haptic(buyCosmetic(id) ? 'success' : 'error')} />)
+          vanity.map((v) => <VanityCard key={v.id} v={v} onWear={(id, on) => equip(id, on)} onBuy={buyLook} />)
         ) : tab === 2 ? (
           <StoreTab />
         ) : shelf.length === 0 ? (

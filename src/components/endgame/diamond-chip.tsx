@@ -1,28 +1,49 @@
-// The HUD chip with the player's diamonds (HUD_CHIPS): a 40 pt round chip (a 44 pt touch area: HUD_BUTTON_SLOP) that opens the Shop screen. Shows once rewards unlock or the Starter Pack has been offered (DECISIONS #47).
-// A string selector (the prefs flag is a boolean inside it): it repaints when the diamond count changes, never per game tick.
+// The HUD chip with the player's diamonds (HUD_CHIPS): a 40 pt round chip (a 44 pt touch area: HUD_BUTTON_SLOP) that opens the Shop screen. Shows from
+// the Store intro (tutorial step 16), once the Starter Pack has been offered, or once rewards unlock (DECISIONS #47), and is the coach's `hud:store`.
+// A small dot at the takeover while the Starter Pack isn't owned, until the Shop is opened.
+// Selectors return strings and booleans: it repaints when the diamond count or the dot changes, never per game tick.
 import { router } from 'expo-router';
-import { memo } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { memo, useEffect } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import type { CoachTargetId } from '../../engine/coach-types';
 import { useGame } from '../../store/game-store';
-import { F } from '../../theme';
+import { C, F } from '../../theme';
+import { useCoachTarget } from '../coach/targets';
 import { haptic } from '../game-ui';
 import { DiamondIcon } from '../icons';
 import { HUD_BUTTON_SLOP, HUD_ICON } from '../tap-targets';
-import { diamondChipText } from './diamond-chip-model';
+import { BOOSTER_LINES } from './booster-model';
+import { chipDot, diamondChipText, shopHref, STORE_INTRO_STEP } from './diamond-chip-model';
+import { useShopFlags } from './shop-flags';
+
+// 'hud:store' joins CoachTargetId with card E6 (src/engine/coach-types.ts); the cast goes with it.
+const STORE_TARGET = 'hud:store' as CoachTargetId;
 
 export const DiamondChip = memo(function DiamondChip() {
   const text = useGame((s) => diamondChipText(s.game, s.prefs.starterOffered));
+  const newGame = useGame((s) => s.game.tutorial < STORE_INTRO_STEP);
+  const dotCleared = useShopFlags((f) => f.dotCleared);
+  const loaded = useShopFlags((f) => f.loaded);
+  const dot = useGame((s) => chipDot(s.game, dotCleared)) && loaded;
+  const target = useCoachTarget(STORE_TARGET);
+  // a new game (the tutorial is back before the Store intro) starts the reminders over
+  useEffect(() => {
+    if (newGame && loaded) useShopFlags.getState().reset();
+  }, [newGame, loaded]);
   if (!text) return null;
   return (
     <Pressable
+      ref={target}
+      onLayout={target.onLayout}
+      collapsable={false}
       testID="shop-chip"
       hitSlop={HUD_BUTTON_SLOP.shop}
       accessibilityRole="button"
-      accessibilityLabel={`Shop: ${text} diamonds`}
+      accessibilityLabel={dot ? `Shop: ${text} diamonds. ${BOOSTER_LINES.dot}` : `Shop: ${text} diamonds`}
       onPress={() => {
         haptic();
-        router.push('/shop');
+        router.push(shopHref(useGame.getState().game));
       }}
       style={styles.chip}
     >
@@ -30,6 +51,7 @@ export const DiamondChip = memo(function DiamondChip() {
       <Text style={styles.text} numberOfLines={1} maxFontSizeMultiplier={1.1}>
         {text}
       </Text>
+      {dot && <View testID="shop-chip-dot" style={styles.dot} />}
     </Pressable>
   );
 });
@@ -44,4 +66,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: { fontFamily: F.bold, fontSize: 10, lineHeight: 12, color: '#fff' },
+  dot: { position: 'absolute', top: -1, right: -1, width: 11, height: 11, borderRadius: 6, backgroundColor: C.tomato, borderWidth: 2, borderColor: '#fff' },
 });

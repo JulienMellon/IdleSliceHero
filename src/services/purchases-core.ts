@@ -1,14 +1,17 @@
 // Purchases over a backend port (RevenueCat on iOS, a flag-driven fake on the web): the ledger makes every grant pay once.
 import type { GrantBus } from './grant-bus';
-import { emptyLedger, ownedFrom, parseLedger, redeem, type Ledger } from './grants';
+import { emptyLedger, firstBuysUsed, ownedFrom, parseLedger, redeem, type Ledger } from './grants';
 import type { BuyResult, KV, ProductId, Purchases } from './types';
 
-export const LEDGER_KEY = 'se.purchases.ledger';
+/** C158: the test build keeps its own ledger, so a test reset never touches a real one (the literal env check lets a normal bundle fold the test key away). */
+export const TEST_LEDGER_KEY = 'se.purchases.ledger.test';
+export const ledgerKey = (testMode: boolean): string => (testMode ? TEST_LEDGER_KEY : 'se.purchases.ledger');
+export const LEDGER_KEY = process.env.EXPO_PUBLIC_TEST_MODE === '1' ? TEST_LEDGER_KEY : ledgerKey(false);
 
 export type PurchaseOutcome = { status: 'purchased'; transactionId: string } | { status: 'cancelled' | 'failed' };
 
 export interface PurchaseBackend {
-  products(ids: readonly ProductId[]): Promise<{ id: ProductId; price: string }[]>;
+  products(ids: readonly ProductId[]): Promise<{ id: ProductId; price: string; amount: number }[]>;
   purchase(id: ProductId): Promise<PurchaseOutcome>;
   /** Ask the store which non-consumables this account owns (a restore). */
   restore(): Promise<ProductId[]>;
@@ -56,6 +59,7 @@ export function createPurchases(deps: { kv: KV; backend: PurchaseBackend; bus: G
       ),
     products: () => backend.products(ids).catch(() => []),
     owned: () => ownedFrom(ledger),
+    firstBuysUsed: () => firstBuysUsed(ledger),
     buy(id): Promise<BuyResult> {
       return serial(async () => {
         await load();

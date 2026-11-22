@@ -6,3 +6,7 @@
 - E5 Needs -> E6 (E lane): in src/engine/rewards.ts refreshRewards, set paidUntil=0 in the clock-recovery branch where boosts are cleared; optionally drop an expired slot.
 - Offline earnings ignore paidUntil (card E5 default); open for Julien.
 - Julien 2026-11-22: the Starter Pack is paid, so call it "starter pack", never "gift". Free gifts are a separate feature planned for later; no v5.23 card builds them.
+- U5 (wave 2): the Store chip is coach target `hud:store` (cast in diamond-chip.tsx). -> E6: add 'hud:store' to CoachTargetId in src/engine/coach-types.ts and drop the cast. The chip opens `/shop?tab=store&from=intro` while step 16 is up. Shop takes `?tab=store`. STORE_OPENED_EVENT is in diamond-chip-model.ts until N1 adds EVENTS.storeOpened.
+- U5: booster.*, store.nudge and store.dot.label copy lives in src/components/endgame/booster-model.ts (no copy table was in scope). Dot and nudge flags are per device (shop-flags.ts) and reset when the tutorial drops below 16.
+- U5 open: shop.tsx does not yet pass onClose to <StoreTab />. N1 adds the prop; U5 wires it (router.back) after N1 reports.
+- U5: the running line reads "2× income running · 59 m left" (one slot, not one named booster).

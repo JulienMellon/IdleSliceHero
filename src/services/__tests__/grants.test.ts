@@ -1,5 +1,5 @@
 import { createGrantBus } from '../grant-bus';
-import { GRANTS, emptyLedger, grantKey, isConsumable, ownedFrom, parseLedger, redeem } from '../grants';
+import { GRANTS, PACK_SPLIT, emptyLedger, firstBuysUsed, grantKey, isConsumable, ownedFrom, parseLedger, redeem } from '../grants';
 import { PRODUCT_IDS } from '../types';
 
 describe('grants', () => {
@@ -14,13 +14,55 @@ describe('grants', () => {
     expect([GRANTS.diamonds_80.diamonds, GRANTS.diamonds_500.diamonds, GRANTS.diamonds_1200.diamonds]).toEqual([80, 500, 1200]);
   });
 
+  it('the Starter Pack pays 400 diamonds (PRICING-STRATEGY §3)', () => {
+    expect(GRANTS.starter_pack.diamonds).toBe(400);
+  });
+
+  it('a pack is its base plus its bonus: 400 + 100 and 800 + 400', () => {
+    expect(PACK_SPLIT.diamonds_500).toEqual({ base: 400, bonus: 100 });
+    expect(PACK_SPLIT.diamonds_1200).toEqual({ base: 800, bonus: 400 });
+    for (const id of PRODUCT_IDS.filter(isConsumable)) expect(PACK_SPLIT[id]!.base + PACK_SPLIT[id]!.bonus).toBe(GRANTS[id].diamonds);
+  });
+
   it('a consumable pays once per transaction id, so a replay never pays diamonds twice', () => {
     const a = redeem(emptyLedger(), 'diamonds_80', 'tx1');
-    expect(a.grant?.diamonds).toBe(80);
+    expect(a.grant?.diamonds).toBe(160); // the first buy pays double
     const replay = redeem(a.ledger, 'diamonds_80', 'tx1');
     expect(replay.grant).toBeNull();
     const second = redeem(replay.ledger, 'diamonds_80', 'tx2');
     expect(second.grant?.diamonds).toBe(80);
+  });
+
+  it('the first paid-out buy of each pack pays its diamonds twice, once, and writes first:<id> to the ledger', () => {
+    const a = redeem(emptyLedger(), 'diamonds_500', 'a');
+    expect(a.grant).toMatchObject({ diamonds: 1000, firstBuy: true });
+    expect(a.ledger.keys).toEqual(['tx:a', 'first:diamonds_500']);
+    const b = redeem(a.ledger, 'diamonds_500', 'b');
+    expect(b.grant?.diamonds).toBe(500);
+    expect(b.grant?.firstBuy).toBeUndefined();
+    // each pack has its own first buy
+    expect(redeem(b.ledger, 'diamonds_1200', 'c').grant?.diamonds).toBe(2400);
+    expect(firstBuysUsed(b.ledger)).toEqual(['diamonds_500']);
+  });
+
+  it('the Starter Pack and Plus are not paid double', () => {
+    expect(redeem(emptyLedger(), 'starter_pack', 'x').grant?.diamonds).toBe(400);
+    expect(redeem(emptyLedger(), 'nonnas_plus', 'x').ledger.keys).toEqual(['product:nonnas_plus']);
+  });
+
+  it('a duplicate transaction pays nothing, not even a second first buy', () => {
+    const a = redeem(emptyLedger(), 'diamonds_80', 'tx1');
+    const dup = redeem(a.ledger, 'diamonds_80', 'tx1');
+    expect(dup.grant).toBeNull();
+    expect(dup.ledger).toBe(a.ledger);
+  });
+
+  it('a restore never pays the double, and a first buy after it is still the first paid-out one', () => {
+    const r = redeem(emptyLedger(), 'diamonds_1200', 'old', 'restore');
+    expect(r.grant?.diamonds).toBe(1200);
+    expect(r.grant?.firstBuy).toBeUndefined();
+    // the first buy is spent by any paid-out purchase, so nothing doubles later
+    expect(redeem(r.ledger, 'diamonds_1200', 'new').grant?.diamonds).toBe(1200);
   });
 
   it('a consumable with no transaction id pays nothing', () => {
@@ -30,7 +72,7 @@ describe('grants', () => {
 
   it('a non-consumable pays once whatever its transaction id', () => {
     const a = redeem(emptyLedger(), 'starter_pack', 'tx1');
-    expect(a.grant?.diamonds).toBe(150);
+    expect(a.grant?.diamonds).toBe(400);
     expect(redeem(a.ledger, 'starter_pack', 'tx-restored').grant).toBeNull();
     expect(ownedFrom(a.ledger)).toEqual(['starter_pack']);
   });

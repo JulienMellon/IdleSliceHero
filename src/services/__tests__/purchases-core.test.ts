@@ -1,6 +1,6 @@
 import { createGrantBus } from '../grant-bus';
 import { memoryKV } from '../kv';
-import { LEDGER_KEY, createPurchases, type PurchaseBackend, type PurchaseOutcome } from '../purchases-core';
+import { LEDGER_KEY, TEST_LEDGER_KEY, ledgerKey, createPurchases, type PurchaseBackend, type PurchaseOutcome } from '../purchases-core';
 import { PRODUCT_IDS, type ProductId } from '../types';
 
 function setup(opts: { outcome?: () => PurchaseOutcome; entitled?: ProductId[]; throwOnRestore?: boolean } = {}) {
@@ -9,7 +9,7 @@ function setup(opts: { outcome?: () => PurchaseOutcome; entitled?: ProductId[]; 
   const got: { diamonds: number; plus?: boolean; cosmetic?: string }[] = [];
   bus.subscribe((g) => got.push(g));
   const backend: PurchaseBackend = {
-    products: async (ids) => ids.map((id) => ({ id, price: '$1' })),
+    products: async (ids) => ids.map((id) => ({ id, price: '$1', amount: 1 })),
     purchase: async () => (opts.outcome ?? (() => ({ status: 'purchased', transactionId: 'tx1' }) as PurchaseOutcome))(),
     restore: async () => {
       if (opts.throwOnRestore) throw new Error('offline');
@@ -26,7 +26,39 @@ describe('purchases core', () => {
     const { p, got } = setup();
     expect(await p.buy('diamonds_80')).toBe('purchased');
     expect(await p.buy('diamonds_80')).toBe('purchased'); // the store hands back tx1 again
-    expect(got.map((g) => g.diamonds)).toEqual([80]);
+    expect(got.map((g) => g.diamonds)).toEqual([160]); // the first buy of a pack pays double
+  });
+
+  it('the first buy doubles, the second does not, and the card learns the first is used', async () => {
+    let n = 0;
+    const { p, got } = setup({ outcome: () => ({ status: 'purchased', transactionId: `t${n++}` }) });
+    expect(p.firstBuysUsed()).toEqual([]);
+    await p.buy('diamonds_500');
+    await p.buy('diamonds_500');
+    expect(got.map((g) => g.diamonds)).toEqual([1000, 500]);
+    expect(p.firstBuysUsed()).toEqual(['diamonds_500']);
+  });
+
+  it('a restore never pays a pack double, and the first buy survives a restart', async () => {
+    let n = 0;
+    const { p, kv } = setup({ entitled: ['nonnas_plus'], outcome: () => ({ status: 'purchased', transactionId: `t${n++}` }) });
+    await p.buy('diamonds_80');
+    await p.restore();
+    const again = createPurchases({
+      kv,
+      bus: createGrantBus(),
+      ids: PRODUCT_IDS,
+      backend: { products: async () => [], purchase: async () => ({ status: 'failed' }), restore: async () => [], entitled: async () => [] },
+    });
+    await again.start();
+    expect(again.firstBuysUsed()).toEqual(['diamonds_80']);
+  });
+
+  it('the test build keeps its own ledger key (C158, T116)', () => {
+    expect(LEDGER_KEY).toBe('se.purchases.ledger');
+    expect(TEST_LEDGER_KEY).toBe('se.purchases.ledger.test');
+    expect(ledgerKey(true)).toBe(TEST_LEDGER_KEY);
+    expect(ledgerKey(false)).toBe(LEDGER_KEY);
   });
 
   it('two buys at the same moment still pay once', async () => {
@@ -98,7 +130,7 @@ describe('purchases core', () => {
     await p.buy('starter_pack');
     await p.restore();
     expect(got).toHaveLength(1);
-    expect(got[0].diamonds).toBe(150);
+    expect(got[0].diamonds).toBe(400);
   });
 
   it('writes the ledger before it announces the grant', async () => {

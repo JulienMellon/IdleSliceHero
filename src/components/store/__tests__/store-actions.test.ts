@@ -48,7 +48,7 @@ beforeEach(() => {
     claimed: null,
     plus: false,
     starterAt: null,
-    prefs: { starterOffered: false, boosterAdDay: '' },
+    prefs: { starterOffered: false, boosterAdDay: '', adGrants: [] },
     toast: null,
   });
 });
@@ -97,7 +97,7 @@ describe('a paid-out grant', () => {
   test('the Starter Pack lands in the game; Plus sets the flag', () => {
     const d0 = st().game.rewards.diamonds;
     st().receiveGrant(GRANTS.starter_pack);
-    expect(st().game.rewards.diamonds).toBe(d0 + 150);
+    expect(st().game.rewards.diamonds).toBe(d0 + 400);
     expect(st().game.rewards.cosmetics).toContain('awning-founder');
     expect(st().game.rewards.boosts.some((b) => b.mult === 2 && b.source === 'purchase')).toBe(true);
     expect(st().plus).toBe(false);
