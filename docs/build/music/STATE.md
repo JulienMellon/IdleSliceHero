@@ -12,7 +12,7 @@ review: docs/build/music/review-R2-audio.md NOT SATISFIED, bugs 0 major 1 (AU85 
 last_reel: tools/audio/build/reel/R2.mp3 (2026-11-22, notes round 1, sent)
 heard: R0 → "C"; R1 → "Go"           # round → Julien's verdict in five words
 open: M2c extra: encode all music/sting/story at 256 kbps, 24-bit/float renders and source WAVs where the codec allows, under 32 MB; full-score reel for Julien at end of R2 (every cue, full length, 320 kbps, from uncompressed renders if present); growth eval docs/build/music/notes/R1-growth-eval.md awaits Julien (stems need +1.5 MB and src/audio director changes); lead minus bed -1.7 LU on one loop (D5 default is -2 to -4)
-next: await Julien on R2 after notes round 1 (stingers 2-3.5 LU quieter, victor_exit -3): do stingers and story moments sit well over the loops now? "go" runs card-CLOSE (section 13). If notes again: notes round 2, and ask whether the bank or instrument list should change. Open: bottleneck sits 1 LU under its ducked loop; a deeper duck is a src/audio change.
+next: await Julien on R2 after notes round 1 (stingers 2-3.5 LU quieter, victor_exit -3): do stingers and story moments sit well over the loops now? "go" runs card-CLOSE (section 13). If notes again: notes round 2, and ask whether the bank or instrument list should change. Open: bottleneck sits 1 LU under its ducked loop; a deeper duck is a src/audio change. NEXT COMPOSER CARD (CLOSE or NOTES) gets extra: Julien 2026-11-22: render at 192 kbps: build.py KBPS 256->192 (music, sting, story; sfx stays 64) and reel.py R2/FULL 320->192; full rebuild; update AUDIO.md, the size test and build.py header.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
