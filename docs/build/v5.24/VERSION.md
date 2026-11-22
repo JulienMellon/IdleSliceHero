@@ -56,4 +56,4 @@
 - **Featured:** 4 looks, chosen by `ISO week mod` over the catalog so every look is featured within ~8 weeks; owned looks are skipped.
 
 ## Close
-README section 8. Report: verdicts, the catalog's count and total diamond price, the App Store Connect item Julien must create, what is open. Then stop: the next scope is Julien's call.
+README section 8. Report: verdicts, the catalog's count and total diamond price, the App Store Connect item Julien must create, what is open. Set STATE to `version: 5.25` (economy refit and pacing, `docs/build/v5.25/VERSION.md`), `step: setup`, and stop: v5.25 needs its cards written with Julien first.

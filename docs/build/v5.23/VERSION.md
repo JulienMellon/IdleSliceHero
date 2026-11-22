@@ -54,4 +54,4 @@ What the player gets:
 - **Analytics:** `store_opened{from}`, `pack_card_seen{id}`, `booster_bought{id}`.
 
 ## Close
-README section 8. Report: verdicts, the App Store Connect change Julien must make, what is open. Set STATE to v5.24 and stop.
+README section 8. Report: verdicts, the App Store Connect change Julien must make, what is open. Set STATE to `version: 5.23b` (the cleanup step, `docs/build/v5.23b/VERSION.md`; Julien 2026-11-22), `step: waves`, `round: r1`, and stop. v5.24 starts after v5.23b closes.
