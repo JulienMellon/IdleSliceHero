@@ -1,9 +1,9 @@
 """Shots 140-147 (v5.18, card V2): wide shops, a second floor plan, off-screen cues.
 
 140 a Restaurant scrolled to the kitchen · 141 the same scrolled to the dining room · 142 a Flagship, centre ·
-143 a Flagship during a rush with a cue pointing at the Slammed prep bench · 144 Waterfront mirrored (kitchen on the right, door on the left) ·
+143 a Flagship during a rush with a cue pointing at the prep bench, where orders pile up · 144 Waterfront mirrored (kitchen on the right, door on the left) ·
 145 Industrial mirrored with a jam off screen and its cue · 146 a cold line with the short queue · 147 a Corner shop, unchanged, for comparison.
-Levels are chosen against vehicle 0 (see 130_p1.py): a prep of 1 against ovens and a counter of 60 is the Slammed station. Game time moves only through advance().
+Levels are chosen against vehicle 0 (see 130_p1.py): an oven level of 1 against a prep and a counter of 60 backs the prep bench up (the `piling` symptom, v5.22: a station is named by its pile, never as the limit). Game time moves only through advance().
 """
 from shots_lib import *  # seeded_page, settle, shot, tid, expect, expect_text, advance, scroll_shop, tap_shop, hood_save, ...
 
@@ -54,10 +54,11 @@ def run(ctx):
     scroll_shop(page, "middle")
     shot(page, "142-flagship-centre", 0.4)
 
-    # 143: the Flagship's prep is the limit (Slammed) and the player is rushing at the counter end: a chevron points back at the bench. (The oven bank's badge is
+    # 143: the Flagship's ovens are slow, so dough piles up at the prep bench (symptom `piling`) and the player is rushing at the counter end: a chevron points back at the bench. (The oven bank's badge is
     # always on screen in a 640 drawing: 190 units wide in the middle of it; the ovens' own cue is the jam at the bank's far end, shot 145.)
-    page = page_of(b, shop_save(footprint=4, prep=1, ovens=60, counter=60, drivers=50, tables=60, grade=3, sold=9e5))
+    page = page_of(b, shop_save(footprint=4, prep=60, ovens=1, counter=60, drivers=50, tables=60, grade=3, sold=9e5))
     settle(page, 2.0)
+    advance(page, 40000)  # the pile has to build up for the symptom to hold
     wide(page, "the rushed Flagship")
     scroll_shop(page, "end")
     for _ in range(4):
@@ -85,7 +86,11 @@ def run(ctx):
     page = page_of(b, shop_save(footprint=2, prep=5, ovens=5, counter=5, drivers=10, tables=10))
     settle(page, 2.0)
     advance(page, 66000)
-    expect_text(page, "shop-report-line", r"[Cc]old", 4000)
+    # the strip no longer says "cold" (v5.22: served/missed only); the sheet's service row does
+    tid(page, "shop-report-strip").click()
+    expect_text(page, "report-service", r"cold", 4000)
+    tid(page, "close-report").click()
+    advance(page, 500)
     shot(page, "146-cold-short-queue", 0.4)
 
     # 147: a Corner shop, the same screen as before this card (for comparison with the wide shops)
