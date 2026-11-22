@@ -209,6 +209,8 @@ export function CityMap({
           const eps = Game.shopEarnings(game, n.id);
           // D464: no stars until the first head is hired
           const pips = shop.built && showPips(shop);
+          // the card's second line; a long one ("needs manager", "Opens after Ch 8") is set a little smaller so it stays inside the 22-wide card (D540)
+          const pinText = shop.built ? (shop.managed ? `${money(eps)}/s` : 'needs manager') : lot.pin;
           return (
             <G key={n.id} onPress={() => onPress(n.id)} opacity={lot.dim ? 0.7 : 1}>
               {active && <Circle cx={n.x} cy={n.y} r={12} fill={C.cheese} opacity={0.55} />}
@@ -247,12 +249,12 @@ export function CityMap({
               <SvgText
                 x={n.x}
                 y={n.y + 14.6}
-                fontSize={2.8}
+                fontSize={pinText.length > 14 ? 2.6 : 2.8}
                 fontFamily={F.bold}
                 fill={shop.built ? (shop.managed ? C.basilDark : INK) : isNext ? INK : C.inkSoft}
                 textAnchor="middle"
               >
-                {shop.built ? (shop.managed ? `${money(eps)}/s` : 'needs manager') : lot.pin}
+                {pinText}
               </SvgText>
             </G>
           );
