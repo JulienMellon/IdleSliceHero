@@ -1,12 +1,12 @@
 // Off-screen cues for a wide shop (v5.18, card V2). The Restaurant and the Flagship are wider than the screen, so something that wants the player can be
-// out of sight: a Slammed station, a jammed oven, a head's bubble, a station to tap in a shop that is run by hand. A chevron at the screen's edge says
+// out of sight: a station with orders piling up, a jammed oven, a head's bubble, a station to tap in a shop that is run by hand. A chevron at the screen's edge says
 // which way, one per side, the most urgent; a tap on it scrolls there, and so does a tap on a lamp of the shop report (`askScroll`): every place in
 // the shop stays reachable by taps alone, the drag is an addition, never a requirement (Julien's October rule). Pure: tested in node.
 import { openScroll, sceneToScreen, type SceneFit } from './scene/projection';
 
-/** What wants attention, most urgent first: a jam stops the oven, a Slammed station is losing sales, a bubble is a head asking, a tap is a hand-run station. */
-export type CueKind = 'jam' | 'slammed' | 'bubble' | 'tap';
-export const CUE_URGENCY: Readonly<Record<CueKind, number>> = { jam: 4, slammed: 3, bubble: 2, tap: 1 };
+/** What wants attention, most urgent first: a jam stops the oven, a station with orders piling up is losing sales, a bubble is a head asking, a tap is a hand-run station. */
+export type CueKind = 'jam' | 'piling' | 'bubble' | 'tap';
+export const CUE_URGENCY: Readonly<Record<CueKind, number>> = { jam: 4, piling: 3, bubble: 2, tap: 1 };
 
 /** The report's three stations (the engine's names: `ovens`, not the line's `oven`). */
 export type KitchenSpot = 'prep' | 'ovens' | 'counter';
@@ -48,9 +48,14 @@ const PLACE: Readonly<Record<ScrollTarget, string>> = {
 /** The word under the chevron names the place (D515), 7 letters at most; the kind is the colour and the screen reader's label. A jam keeps its own word: it is at the ovens. */
 const NAME: Readonly<Record<ScrollTarget, string>> = { prep: 'Prep', ovens: 'Ovens', counter: 'Counter', floor: 'Dining', door: 'Door' };
 export const cueWord = (kind: CueKind, at: ScrollTarget): string => (kind === 'jam' ? 'Jam!' : NAME[at]);
-const PHRASE: Readonly<Record<CueKind, string>> = { jam: 'An oven is jammed', slammed: 'is slammed', bubble: 'has something to say', tap: 'is ready to tap' };
+const PHRASE: Readonly<Record<CueKind, string>> = {
+  jam: 'An oven is jammed',
+  piling: 'has orders piling up',
+  bubble: 'has something to say',
+  tap: 'is ready to tap',
+};
 
-/** What a screen reader says for a cue: "Scroll right: An oven is jammed at the ovens" / "Scroll left: the prep bench is slammed". */
+/** What a screen reader says for a cue: "Scroll right: An oven is jammed at the ovens" / "Scroll left: The prep bench has orders piling up". */
 export function cueLabel(kind: CueKind, at: ScrollTarget, side: 'left' | 'right'): string {
   const dir = `Scroll ${side}: `;
   if (kind === 'jam') return `${dir}${PHRASE.jam} at ${PLACE[at]}`;
@@ -143,10 +148,10 @@ export function clearCueTop(side: 'left' | 'right', top: number, viewW: number, 
   return best;
 }
 
-/** The stations the report's lamps call Slammed, as wants at the stations' places. */
+/** The stations the report shows a pile-up at (symptom `piling`), as wants at the stations' places. */
 export function wantsOf(input: {
-  /** Lamps of the three stations (the report's); empty for a shop with no report. */
-  slammed: readonly KitchenSpot[];
+  /** The stations with a pile-up (the report's symptoms); empty for a shop with no report. */
+  piling: readonly KitchenSpot[];
   /** An oven is jammed (Industrial). */
   jam: boolean;
   /** The station whose head's bubble is up. */
@@ -158,7 +163,7 @@ export function wantsOf(input: {
   jamX: number;
 }): Want[] {
   const w: Want[] = [];
-  for (const st of input.slammed) w.push({ kind: 'slammed', x: input.xs[st], at: st });
+  for (const st of input.piling) w.push({ kind: 'piling', x: input.xs[st], at: st });
   if (input.jam) w.push({ kind: 'jam', x: input.jamX, at: 'ovens' });
   if (input.bubble) w.push({ kind: 'bubble', x: input.xs[input.bubble], at: input.bubble });
   if (input.tap) w.push({ kind: 'tap', x: input.xs[input.tap], at: input.tap });

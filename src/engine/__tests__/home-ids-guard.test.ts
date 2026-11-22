@@ -21,8 +21,6 @@ const ALLOW: Record<string, string> = {
     "painter: the Uptown dusk sky is chosen by the look id `art === 'uptown'` (stays until the per-city look registry, plan P6; its other home ids are gone)",
   'components/city-map.tsx':
     "painter: a Boston lot's mini shop borrows the home look by index (`lookId`, stays until the per-city look registry, plan P6). NOT an art module: R1L/P6 moves it",
-  'components/report/report-strip.tsx':
-    "painter: Nonna's portrait on the Downtown report strip (outside card R1's files; fix is `firstHood(city)` and the city's founder portrait)",
   'components/scene/ladder.ts': "art module: the ladder's height for the Waterfront and Uptown fronts (stays until the shared shop layout, plan P1)",
 };
 const HOME_IDS = ['downtown', 'suburbs', 'waterfront', 'university', 'industrial', 'uptown'];

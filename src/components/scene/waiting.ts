@@ -1,5 +1,4 @@
 // What the sidewalk says about the people waiting outside (G90, D421). Pure, so the counts and the words are tested in node.
-import type { Stage } from '../../engine/game';
 
 /** Most idle drivers the scene draws (D430: four were a wall of caps); each figure stands for up to ten drivers, the pill counts them all. */
 export const MAX_DRIVER_FIGURES = 3;
@@ -13,18 +12,13 @@ export const DRIVERS_PER_FIGURE = 10;
  */
 export const driverFigures = (idle: number): number => (idle > 0 ? Math.min(MAX_DRIVER_FIGURES, Math.ceil(idle / DRIVERS_PER_FIGURE)) : 0);
 
-const KITCHEN_NAME: Partial<Record<Stage, string>> = { prep: 'Prep', ovens: 'Ovens', counter: 'Counter' };
-
 /**
- * The pill over the idle drivers (D421): how many wait, and which station to buy. `slowest` is the stages tied for the
- * bottleneck (`Game.tiedStages`); only the kitchen's stations can be bought to feed idle drivers. Two tied stations
- * read "Prep + Ovens" (one alone adds nothing), all three read "all three".
+ * The pill over the idle drivers (D421, v5.22): how many wait, and nothing else. It never says which station to buy: the player reads that from the
+ * scene (the piles, the workers' poses) and the report.
  */
-export function waitingText(idle: number, slowest: readonly Stage[]): string {
+export function waitingText(idle: number): string {
   const n = Math.max(0, Math.round(idle));
-  const names = (['prep', 'ovens', 'counter'] as const).filter((st) => slowest.includes(st)).map((st) => KITCHEN_NAME[st]!);
-  const what = names.length === 0 ? '' : names.length === 3 ? ' · buy all three' : ` · buy ${names.join(' + ')}`;
-  return `${n} driver${n === 1 ? '' : 's'} idle${what}`;
+  return `${n} driver${n === 1 ? '' : 's'} waiting`;
 }
 
 /** The "+N" pill at the end of the diner queue: how many hungry diners the spots cannot show (0: no pill). */

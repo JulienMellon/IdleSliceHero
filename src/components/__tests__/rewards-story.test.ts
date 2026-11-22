@@ -137,11 +137,11 @@ describe('the row’s diamonds are what the chapter pays (T126)', () => {
 });
 
 describe('the report task (D539)', () => {
-  it('is not listed while the report reader does not exist: chapter 3 shows its two other tasks', () => {
+  it('is listed now the report has a reader: chapter 3 shows its third task', () => {
     const g = doneKeys({ ...G.newGame(0), seenScenes: ['downtown-1', 'downtown-2'] }, CH1);
     const v = storyView(g, null);
     expect(v.number).toBe(3);
-    expect(v.tasks.map((t) => t.label)).toEqual(['Serve 941 pies in Downtown', 'Hire Benny, head cashier']);
+    expect(v.tasks.map((t) => t.label)).toEqual(['Serve 941 pies in Downtown', 'Hire Benny, head cashier', 'Read the Downtown shop report']);
   });
 });
 

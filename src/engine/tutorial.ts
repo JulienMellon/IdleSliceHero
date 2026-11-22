@@ -6,7 +6,9 @@
 // the upgrades drawer opening (12) and closing (13).
 import { cityOf, type CityDef } from '../content/cities';
 import { t } from '../content/copy';
+import { currentChapter, markCoachDone, nextTask, saveOf } from './chapters';
 import type { CoachMode, CoachTargetId } from './coach-types';
+import { reportActive } from './features/service';
 import { money } from './format';
 import * as G from './game';
 
@@ -82,6 +84,10 @@ function current(s: G.GameState): { step: CoachStep; key: string; mode: CoachMod
 /** The mode of the current step, or null when the tutorial isn't running (for the hints and the screen's "tutorial on": no line is built). */
 export const coachMode = (s: G.GameState): CoachMode | null => current(s)?.mode ?? null;
 
+/** The spots the current step lights (none when the tutorial isn't running): the one place that knows, so no screen keeps its own step-range check (C167). */
+export const coachTargets = (s: G.GameState): readonly CoachTargetId[] => current(s)?.step.targets ?? NO_TARGETS;
+const NO_TARGETS: readonly CoachTargetId[] = [];
+
 /** The current step, or null when the tutorial isn't running (not started, done, or a GM already runs Downtown). */
 export function coachStep(s: G.GameState): CoachStep | null {
   const c = current(s);
@@ -132,7 +138,7 @@ export function tutorialAdvance(s: G.GameState): G.GameState {
 }
 
 /** What the screen can tell the tutorial: a `look` step was seen (a tap, or the overlay's `LOOK_MS`; `LOOK_FALLBACK_MS` when it cannot be drawn), the task list opened or closed, the upgrades drawer opened or closed. */
-export type TutorialNote = 'look' | 'tasks-open' | 'tasks-closed' | 'drawer-open' | 'drawer-closed';
+export type TutorialNote = 'look' | 'tasks-open' | 'tasks-closed' | 'drawer-open' | 'drawer-closed' | 'report-open' | 'report-look' | 'report-closed';
 const ENDED_BY: Readonly<Record<number, TutorialNote>> = {
   6: 'look',
   7: 'tasks-open',
@@ -145,6 +151,7 @@ const ENDED_BY: Readonly<Record<number, TutorialNote>> = {
 
 /** The screen's say-so: ends the current step when it is the one waiting for this note, and moves on over any step that is already finished. Anything else changes nothing. */
 export function tutorialNote(s: G.GameState, note: TutorialNote): G.GameState {
+  if (note === 'report-open' || note === 'report-look' || note === 'report-closed') return reportNote(s, note);
   const step = coachStep(s);
   if (!step || ENDED_BY[step.id] !== note) return s;
   // step 6 waits for the first sale: the cash has nothing to show before it
@@ -176,3 +183,75 @@ export function hintsAllowed(s: G.GameState): Record<Hint, boolean> {
  * hire: until a head (or a manager) is hired anywhere, the tab strip shows the shops that are built plus the next one to build.
  */
 export const showLockedTabs = (s: G.GameState): boolean => Object.values(s.shops).some((sh) => sh.managed || Object.values(sh.heads).some(Boolean));
+
+// ---------- the shop report's coach (v5.22, card E4) ----------
+// A second, short sequence: the first time the chapter task "Open the shop report" is the next task, Nonna lights the strip (tap), then the Ovens bar
+// and the dashed line (look) once the sheet is open, and stops when the sheet closes. Its progress is saved in `coachDone` (chapters.ts), so a save that
+// has been through it, or that opened the report on its own, never sees it. The sheet itself is the screen's: it tells us (`report-open` / `-look` / `-closed`).
+
+/** The id the finished sequence is saved under in `coachDone`; each step saves its own mark (`ReportCoachStep.mark`) as it is seen. */
+export const REPORT_COACH = 'report';
+
+export type ReportStepId = 'strip' | 'bar' | 'demand';
+export interface ReportCoachStep {
+  id: ReportStepId;
+  /** The copy key of the line: `tutorial.report.<n>`. */
+  key: string;
+  text: string;
+  targets: CoachTargetId[];
+  mode: CoachMode;
+  /** What `coachDone` gets when the step has been seen. */
+  mark: string;
+}
+
+/** The steps in order. The bar is always the ovens', whatever the shop's state, so the tutorial never singles out the limit. */
+const REPORT_DEFS: readonly Omit<ReportCoachStep, 'text'>[] = [
+  { id: 'strip', key: 'tutorial.report.1', targets: ['report:strip'], mode: 'tap', mark: 'report:strip' },
+  { id: 'bar', key: 'tutorial.report.2', targets: ['report:bar:ovens'], mode: 'look', mark: 'report:bar:ovens' },
+  { id: 'demand', key: 'tutorial.report.3', targets: ['report:demand'], mode: 'look', mark: 'report:demand' },
+];
+
+/** What the screen knows: the sheet is open, and nothing else is up (no cut-scene, other sheet, drawer, task list or Chapter 1 step). */
+export interface ReportCoachScreen {
+  sheetOpen: boolean;
+  clear: boolean;
+}
+
+const marks = (s: G.GameState) => saveOf(s).coachDone;
+
+/** The sequence has begun (the player tapped the lit strip) and has not ended: it ends when the sheet closes. */
+export const reportCoachLive = (s: G.GameState): boolean => marks(s).includes(REPORT_DEFS[0].mark) && !marks(s).includes(REPORT_COACH);
+
+/** The sequence may begin: the chapter task `report` is the next task and open, Chapter 1's coach is over, the sequence never ran and the strip is there to light. */
+function reportCoachStarts(s: G.GameState): boolean {
+  // the cheap answers first: this runs on every render of the game screen, and a save that has opened the report (nearly all of them, for good) stops here (U36, C180)
+  if (saveOf(s).report || marks(s).includes(REPORT_COACH) || coachMode(s) !== null) return false;
+  const row = nextTask(s);
+  // the strip is the active shop's: the coach points at it only while the task's shop is the one on screen
+  return !!row && row.task.kind === 'report' && !row.done && s.active === row.task.shop && reportActive(s, row.task.shop);
+}
+
+/** The step to show now, or null (nothing to say). Cheap: no copy is built unless a step shows. */
+export function reportCoachStep(s: G.GameState, ui: ReportCoachScreen): ReportCoachStep | null {
+  const seen = marks(s);
+  let def: Omit<ReportCoachStep, 'text'> | undefined;
+  if (!ui.clear) return null;
+  if (reportCoachLive(s)) def = ui.sheetOpen ? REPORT_DEFS.slice(1).find((d) => !seen.includes(d.mark)) : undefined;
+  else if (!ui.sheetOpen && reportCoachStarts(s)) def = REPORT_DEFS[0];
+  return def ? { ...def, text: t(def.key, {}, cityOf(s).id) } : null;
+}
+
+/** The sheet's notes. `report-open` is the screen's, sent only when the strip step was up; the other two are checked here. */
+function reportNote(s: G.GameState, note: 'report-open' | 'report-look' | 'report-closed'): G.GameState {
+  const seen = marks(s);
+  if (seen.includes(REPORT_COACH)) return s;
+  if (note === 'report-open') {
+    // the task may already read done (the sheet's own `reportOpened` can land first), so only the chapter and Chapter 1's coach are asked
+    const has = currentChapter(s)?.tasks.some((t) => t.kind === 'report');
+    return has && coachMode(s) === null && !seen.includes(REPORT_DEFS[0].mark) ? markCoachDone(s, REPORT_DEFS[0].mark) : s;
+  }
+  if (!reportCoachLive(s)) return s;
+  if (note === 'report-closed') return markCoachDone(s, REPORT_COACH);
+  const next = REPORT_DEFS.slice(1).find((d) => !seen.includes(d.mark));
+  return next ? markCoachDone(s, next.mark) : s;
+}

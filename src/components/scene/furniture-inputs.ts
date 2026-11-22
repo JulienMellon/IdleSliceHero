@@ -45,9 +45,11 @@ export interface FurnitureSource {
   worn: readonly string[];
   /** The city's first shop: its sidewalk is never covered by the chip strip, managed or not (Downtown, North End). */
   first: boolean;
+  /** The shop's report is live (v5.22): the dough on the bench and the boxes on the counter are drawn as the piles of piles.ts, from the backlog, not as the fixed decoration. */
+  piles?: boolean;
 }
 
-export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn, first }: FurnitureSource): FurnitureInputs {
+export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn, first, piles = false }: FurnitureSource): FurnitureInputs {
   return {
     id,
     name,
@@ -61,8 +63,9 @@ export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn, 
     driverStep: ladderStep(shop.drivers),
     pins: Math.min(MAX_PINS, shop.drivers),
     // dough on the bench follows the pies prepped and waiting for the oven
-    dough: shop.managed ? 3 : Math.max(2, Math.min(8, Math.ceil(shop.line.prepped / 1.5))),
-    boxes: running ? Math.min(5, 1 + Math.round(Math.log2(1 + rate))) : 0,
+    // (a shop with a live report shows the backlog itself as piles instead: piles.ts)
+    dough: piles ? 0 : shop.managed ? 3 : Math.max(2, Math.min(8, Math.ceil(shop.line.prepped / 1.5))),
+    boxes: piles || !running ? 0 : Math.min(5, 1 + Math.round(Math.log2(1 + rate))),
     // an unmanaged shop's chip strip covers the kerb, so its sidewalk props move up and the vehicle stays home
     idleShop: !shop.managed && !first,
     vehicle,

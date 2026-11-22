@@ -1,8 +1,9 @@
 // The home city's voice (card R1, moved out of content/heads.ts and content/hooks.ts): what its heads say at a milestone, a rush, an attack, being
 // Head of the Week or being Slammed; who asks for special orders and in which words; its night oven's name and sheet line; and its founder.
 // A city pack that has no entry for one of these is silent or generic, never the home city's: the engine reads them with `cityOf(game)`.
-// Strings come from docs/story/COPY-v5.15.md section 2 (bark.<shop>.<station>.<trigger>) and the order cast of v5.13.
+// Strings come from docs/story/COPY-v5.15.md section 2 (bark.<shop>.<station>.<trigger>), docs/story/COPY-v5.22.md sections 1-2 (the symptom lines: `pile`, `idle`, and the managers') and the order cast of v5.13.
 import type { NeighborhoodId } from '../../types';
+import type { ManagerBarks } from '../../heads';
 import type { BarkTable, NightOvenLines, OrderCast } from '../types';
 
 export const HOME_BARKS: BarkTable = {
@@ -12,21 +13,24 @@ export const HOME_BARKS: BarkTable = {
       rush: 'Dough’s flying! Duck, everybody!',
       attack: 'MegaSlice? I’ll roll ’em out flat!',
       week: 'Me? Head of the Week? Nonna, look!',
-      slammed: 'Dough’s piling up! I need more arms!',
+      pile: 'Dough mountain by the oven! I made that!',
+      idle: 'Hands free! I floured myself. For fun.',
     },
     oven: {
       milestone: 'My oven. My fire. My record.',
       rush: 'Nobody touches the oven door but me!',
       attack: 'They want this oven? Over my ashes.',
       week: 'Zia Rosa will pretend not to be proud.',
-      slammed: 'Oven’s full! Upgrade. Hands off my dial.',
+      pile: 'My pies pile up on the counter, cooling.',
+      idle: 'My oven is hot and empty. It hates that.',
     },
     counter: {
       milestone: 'Every regular, by name. And by topping.',
       rush: 'Mrs. Russo, the usual? Already rung up!',
       attack: 'MegaSlice doesn’t know anyone’s usual.',
       week: 'Head of the Week! Put it on my tab.',
-      slammed: 'Even Mrs. Russo is waiting. Help!',
+      pile: 'Bags piling on the shelf. All regulars!',
+      idle: 'Nothing to ring up. Reciting usuals.',
     },
   },
   suburbs: {
@@ -35,21 +39,24 @@ export const HOME_BARKS: BarkTable = {
       rush: 'Sign-up sheet for toppings! Go, go!',
       attack: 'MegaSlice is not on the approved list.',
       week: 'I made myself a sticker. It’s laminated.',
-      slammed: 'Out of labels! OUT OF LABELS!',
+      pile: 'Dough’s piling by the oven! All labeled!',
+      idle: 'Idle hands! Labeling the labels.',
     },
     oven: {
       milestone: 'A good fire is a patient fire, sport.',
       rush: 'Crank it up. Dad’s got this.',
       attack: 'Nobody tells Hank how to run a fire.',
       week: 'Head of the Week. Gonna tell the kids.',
-      slammed: 'Even a patient fire has limits, sport.',
+      pile: 'Pies stack on the counter like patties.',
+      idle: 'Fire’s lit, nothing on it. Sad, sport.',
     },
     counter: {
       milestone: 'Cool. Huge. I’m screaming inside.',
       rush: 'Line’s out the door. I’m thriving.',
       attack: 'MegaSlice? Yeah, no.',
       week: 'Head of the Week. Résumé material.',
-      slammed: 'Line’s out the door. I’m not thriving.',
+      pile: 'Bags on the shelf. So many bags. Cool.',
+      idle: 'Counter’s dead. I’m on my phone.',
     },
   },
   waterfront: {
@@ -58,21 +65,24 @@ export const HOME_BARKS: BarkTable = {
       rush: 'All hands! Clove-hitch those orders!',
       attack: 'MegaSlice? Tie ’em up in a sheepshank!',
       week: 'Me? Knot bad. Knot bad at all.',
-      slammed: 'We’re in a tangle! Every order’s a knot!',
+      pile: 'Dough’s piled by the oven like wet rope!',
+      idle: 'Nothing to roll. Tying knots. Untying.',
     },
     oven: {
       milestone: 'Seen hotter ovens. In a storm. Barely.',
       rush: 'Rough seas tonight. Keep her burning.',
       attack: 'Weathered worse than a pizza chain.',
       week: 'Head of the Week. Tell the gulls.',
-      slammed: 'Seen worse storms. Not by much.',
+      pile: 'Pies on the counter, listing to port.',
+      idle: 'Oven’s hot, hold’s empty. Dead calm.',
     },
     counter: {
       milestone: 'Every order logged and docked.',
       rush: 'Hold your course! Single file!',
       attack: 'No MegaSlice vessel docks at my counter.',
       week: 'Harbor master of the week. Obviously.',
-      slammed: 'Harbor’s jammed! Hold your positions!',
+      pile: 'Pickup shelf’s full. No berths left.',
+      idle: 'Counter’s clear. Nothing in the harbor.',
     },
   },
   university: {
@@ -81,21 +91,24 @@ export const HOME_BARKS: BarkTable = {
       rush: 'Throughput maxed. Thesis: confirmed.',
       attack: 'MegaSlice dough fails peer review.',
       week: 'Adding this to my CV. Top of page.',
-      slammed: 'Bottleneck found. It’s me. Upgrade me.',
+      pile: 'Dough by the oven: piling. Graphing it.',
+      idle: 'Free cycles. Optimizing my nap.',
     },
     oven: {
       milestone: 'Right on temperature. As predicted.',
       rush: 'Heat’s up. Reaction’s accelerating!',
       attack: 'Ran tests on MegaSlice. Mostly glue.',
       week: 'Head of the Week. Reproducible results.',
-      slammed: 'Over capacity. I need a bigger beaker.',
+      pile: 'Pies pile on the counter. Temp falling.',
+      idle: 'Holding at temp. No samples. Tragic.',
     },
     counter: {
       milestone: 'Bro. BRO. We did that.',
       rush: 'Everybody gets a slice and a compliment!',
       attack: 'MegaSlice? Not at my counter, bro.',
       week: 'Head of the Week? Group hug. Everyone.',
-      slammed: 'Line’s huge, bro. Can’t hug ’em all.',
+      pile: 'So many bags on the shelf, bro. Wild.',
+      idle: 'No pies to hand out, bro. Just vibes.',
     },
   },
   industrial: {
@@ -104,21 +117,24 @@ export const HOME_BARKS: BarkTable = {
       rush: 'Rush or no rush, break’s on time.',
       attack: 'Filing a grievance against MegaSlice.',
       week: 'Head of the Week. Telling the union.',
-      slammed: 'Overtime? Not in my contract.',
+      pile: 'Dough piling by the oven. On the record.',
+      idle: 'Hands idle. Not break yet. Bell says so.',
     },
     oven: {
       milestone: '(Ox nods. The oven roars.)',
       rush: '(Ox lifts the whole crate. Gently.)',
       attack: '(Ox stands in the doorway. Arms folded.)',
       week: '(Ox blushes.) …Thanks.',
-      slammed: '(Ox sweats. The oven sweats too.)',
+      pile: '(Pies pile up on the counter. Ox frets.)',
+      idle: '(Ox stares into the empty oven. Sighs.)',
     },
     counter: {
       milestone: 'Look at you go, hon. Proud of ya.',
       rush: 'Line’s long, hon. Rita’s got it.',
       attack: 'MegaSlice, hon? Bless their hearts.',
       week: 'Head of the Week? Oh, stop it, hon.',
-      slammed: 'Line’s past the gate, hon. Hang tight.',
+      pile: 'Shelf’s full of bags, hon. Poor things.',
+      idle: 'Counter’s empty, hon. Crossword time.',
     },
   },
   uptown: {
@@ -127,22 +143,53 @@ export const HOME_BARKS: BarkTable = {
       rush: 'So many toppings. So little dignity.',
       attack: 'MegaSlice toppings should be illegal.',
       week: 'An honor. I will allow extra cheese.',
-      slammed: 'This is not a kitchen. It is a stampede.',
+      pile: 'Dough heaped by the oven. Like a buffet.',
+      idle: 'Nothing to roll. At last, time to sulk.',
     },
     oven: {
       milestone: 'Flakier than a croissant. I said it.',
       rush: 'Faster than any soufflé. Allez!',
       attack: 'MegaSlice bakes in a toaster. Probably.',
       week: 'Pastry never gave me this. Merci.',
-      slammed: 'Pastry was never this busy. Mon Dieu.',
+      pile: 'Pies stacked on the counter. Inelegant.',
+      idle: 'Empty oven. I almost miss croissants.',
     },
     counter: {
       milestone: 'Another table delighted. As expected.',
       rush: 'Right this way. Your slice awaits.',
       attack: 'I’m sorry, MegaSlice has no reservation.',
       week: 'Head of the Week. I’ll alert the press.',
-      slammed: 'There will be a wait. I’m mortified.',
+      pile: 'Bags on the shelf, unclaimed. Unseemly.',
+      idle: 'Empty counter. I’m polishing the bell.',
     },
+  },
+};
+
+/** What each shop's manager says when the line is at the door or the drivers sit idle (docs/story/COPY-v5.22.md section 2). */
+export const HOME_MANAGER_BARKS: ManagerBarks = {
+  downtown: {
+    line: 'Line at my door. They waited then, too.',
+    'drivers-idle': 'My drivers sit and eat my pizza. Ay, ay!',
+  },
+  suburbs: {
+    line: 'Line’s to the door. My snack bar? Never.',
+    'drivers-idle': 'Drivers just sitting. I’ll remember.',
+  },
+  waterfront: {
+    line: 'Line to the door. Counted it twice.',
+    'drivers-idle': 'Drivers moored on scooters. Logged.',
+  },
+  university: {
+    line: 'Queue’s long. First in, still waiting.',
+    'drivers-idle': 'Drivers idle on scooters. I timed it.',
+  },
+  industrial: {
+    line: 'Line at the door. Clock’s running, crew.',
+    'drivers-idle': 'Drivers on their scooters. Not a break.',
+  },
+  uptown: {
+    line: 'Guests at the door, unseated. A scandal.',
+    'drivers-idle': 'Drivers lounging on their scooters. Tsk.',
   },
 };
 

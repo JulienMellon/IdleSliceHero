@@ -21,6 +21,10 @@ One file per group of shots, `NN_name.py`, NN = the first shot number the file o
 | `98_u3.py` | 98-105 ad buttons, store, Starter Pack, Settings rows (card U3) |
 | `148_u4.py` | 148-152 first minute, one sky event at a time, task progress, day-30 prize (card U4) |
 | `180_e1b.py` | 180 a build locked behind the chapter, with its line (card E1b) |
+| `181_u3.py` | 181-185 the shop report redrawn: strip, sheet short on ovens / drivers, balanced, "You" (card U3) |
+| `186_s3.py` | 186-188 the shop shows its state: dough, bags and boxes pile up where it is short (card S3) |
+| `189_u4.py` | 189-191 upgrade cards say "<n>/min → <m>": sidewalk and drawer of a shop short on ovens, a balanced shop (card U4) |
+| `192_e4.py` | 192-194 Nonna's report tutorial: the strip lit, the Ovens bar lit over the sheet, the dashed line lit; gone on the second opening (card E4) |
 
 ## One fixture at a time
 ```

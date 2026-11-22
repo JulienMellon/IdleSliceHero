@@ -905,61 +905,169 @@
        "below": 0,
        "cold": false,
        "tip": false,
-       "slam": {
+       "pile": {
         "prep": 0,
-        "oven": 0,
+        "ovens": 0,
         "counter": 0
-       }
+       },
+       "wait": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "hold": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0,
+        "drivers": 0,
+        "floor": 0
+       },
+       "made": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "seen": null
       },
       "suburbs": {
        "below": 0,
        "cold": false,
        "tip": false,
-       "slam": {
+       "pile": {
         "prep": 0,
-        "oven": 0,
+        "ovens": 0,
         "counter": 0
-       }
+       },
+       "wait": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "hold": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0,
+        "drivers": 0,
+        "floor": 0
+       },
+       "made": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "seen": null
       },
       "waterfront": {
        "below": 0,
        "cold": false,
        "tip": false,
-       "slam": {
+       "pile": {
         "prep": 0,
-        "oven": 0,
+        "ovens": 0,
         "counter": 0
-       }
+       },
+       "wait": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "hold": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0,
+        "drivers": 0,
+        "floor": 0
+       },
+       "made": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "seen": null
       },
       "university": {
        "below": 0,
        "cold": false,
        "tip": false,
-       "slam": {
+       "pile": {
         "prep": 0,
-        "oven": 0,
+        "ovens": 0,
         "counter": 0
-       }
+       },
+       "wait": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "hold": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0,
+        "drivers": 0,
+        "floor": 0
+       },
+       "made": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "seen": null
       },
       "industrial": {
        "below": 0,
        "cold": false,
        "tip": false,
-       "slam": {
+       "pile": {
         "prep": 0,
-        "oven": 0,
+        "ovens": 0,
         "counter": 0
-       }
+       },
+       "wait": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "hold": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0,
+        "drivers": 0,
+        "floor": 0
+       },
+       "made": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "seen": null
       },
       "uptown": {
        "below": 0,
        "cold": false,
        "tip": false,
-       "slam": {
+       "pile": {
         "prep": 0,
-        "oven": 0,
+        "ovens": 0,
         "counter": 0
-       }
+       },
+       "wait": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "hold": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0,
+        "drivers": 0,
+        "floor": 0
+       },
+       "made": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "seen": null
       }
      }
     },
@@ -1024,6 +1132,7 @@
       "task.university-1.1",
       "task.university-1.2"
      ],
+     "coachDone": [],
      "report": false,
      "run": {},
      "banked": 0
@@ -1972,61 +2081,169 @@
        "below": 0,
        "cold": false,
        "tip": false,
-       "slam": {
+       "pile": {
         "prep": 0,
-        "oven": 0,
+        "ovens": 0,
         "counter": 0
-       }
+       },
+       "wait": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "hold": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0,
+        "drivers": 0,
+        "floor": 0
+       },
+       "made": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "seen": null
       },
       "southie": {
        "below": 0,
        "cold": false,
        "tip": false,
-       "slam": {
+       "pile": {
         "prep": 0,
-        "oven": 0,
+        "ovens": 0,
         "counter": 0
-       }
+       },
+       "wait": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "hold": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0,
+        "drivers": 0,
+        "floor": 0
+       },
+       "made": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "seen": null
       },
       "back-bay": {
        "below": 0,
        "cold": false,
        "tip": false,
-       "slam": {
+       "pile": {
         "prep": 0,
-        "oven": 0,
+        "ovens": 0,
         "counter": 0
-       }
+       },
+       "wait": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "hold": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0,
+        "drivers": 0,
+        "floor": 0
+       },
+       "made": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "seen": null
       },
       "fenway": {
        "below": 0,
        "cold": false,
        "tip": false,
-       "slam": {
+       "pile": {
         "prep": 0,
-        "oven": 0,
+        "ovens": 0,
         "counter": 0
-       }
+       },
+       "wait": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "hold": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0,
+        "drivers": 0,
+        "floor": 0
+       },
+       "made": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "seen": null
       },
       "cambridge": {
        "below": 0,
        "cold": false,
        "tip": false,
-       "slam": {
+       "pile": {
         "prep": 0,
-        "oven": 0,
+        "ovens": 0,
         "counter": 0
-       }
+       },
+       "wait": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "hold": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0,
+        "drivers": 0,
+        "floor": 0
+       },
+       "made": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "seen": null
       },
       "dorchester": {
        "below": 0,
        "cold": false,
        "tip": false,
-       "slam": {
+       "pile": {
         "prep": 0,
-        "oven": 0,
+        "ovens": 0,
         "counter": 0
-       }
+       },
+       "wait": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "hold": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0,
+        "drivers": 0,
+        "floor": 0
+       },
+       "made": {
+        "prep": 0,
+        "ovens": 0,
+        "counter": 0
+       },
+       "seen": null
       }
      }
     },

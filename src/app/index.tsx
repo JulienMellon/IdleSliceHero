@@ -13,18 +13,18 @@ import { chipPhase } from '@/components/order-model';
 import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT, type StoryGo, type TasksTab } from '@/components/rewards-model';
-import { coachMode, coachStep, hintsAllowed } from '@/engine/tutorial';
+import { coachMode, coachStep, hintsAllowed, reportCoachLive, reportCoachStep } from '@/engine/tutorial';
+import { useReportOpen } from '@/components/report/sheet-state';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
 import { fitFont, MIN_FONT } from '@/components/endgame/fit-model';
 import { chapterGoal, cityStory, type GoalCheer, goalCheer, GOAL_TAB, masteryGoal, tasksParamTab } from '@/components/goal-model';
 import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots, SHEETS, SHOP_REPORT, Slots } from '@/components/slots';
-import { buyKeyOf, type DrawerIcon, type DrawerView, drawerCards, parseBuyKey, tiedBundle } from '@/components/drawer-model';
-import { buttonTone, buyBundle, hireOnSidewalk, showBundlePill } from '@/components/sidewalk-model';
+import { buyKeyOf, type DrawerIcon, type DrawerView, drawerCards, parseBuyKey } from '@/components/drawer-model';
+import { buttonTone, hireOnSidewalk } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
-import { STRIP, stripKind } from '@/components/report/report-model';
-import { reportView } from '@/engine/features/service';
+import { STRIP } from '@/components/report/report-model';
 import { CLOSE_SLOP, DRAWER_CLOSE_W, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait/index';
@@ -33,6 +33,7 @@ import Svg from 'react-native-svg';
 import { CURB_Y, SCENE_H, sceneFrame, sceneView, Storefront } from '@/components/storefront';
 import { usePerfMarks } from '@/components/scene/clock';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
+import { Z } from '@/components/z-order';
 import { cityOf } from '@/content/cities';
 import type { HeadKind } from '@/content/tuning';
 import type { NeighborhoodId } from '@/content/types';
@@ -312,11 +313,22 @@ export default function GameScreen() {
     if (coachId === 8) setListSeen(true);
   }, [onCoachDone, coachId]);
   const coachView = coachFlow.view && coachId === 8 && listSeen ? { ...coachFlow.view, mode: 'free' as const } : coachFlow.view;
+  // v5.22 (E4): the shop report's coach. Strip lit while the sheet is shut, then (over the sheet) the Ovens bar and the dashed line; it ends when the sheet closes.
+  const sheetOpen = useReportOpen();
+  const reportStep = reportCoachStep(game, { sheetOpen, clear: !covered && focused && !drawerOpen && !tasksOpen && !giftOpen && !ovenOpen });
+  const reportStepId = reportStep?.id ?? '';
+  const reportLive = reportCoachLive(game);
+  const stripWas = useRef(false);
+  useEffect(() => {
+    // the sheet opening under the lit strip is the strip step seen; it closing ends the sequence (also after a restart in the middle of it)
+    if (sheetOpen && stripWas.current) useGame.getState().noteCoach('report-open');
+    else if (!sheetOpen && reportLive) useGame.getState().noteCoach('report-closed');
+    stripWas.current = reportStepId === 'strip';
+  }, [sheetOpen, reportStepId, reportLive]);
+  const onReportLook = useCallback(() => useGame.getState().noteCoach('report-look'), []);
   // the prep head's hire card in the drawer is where step 13 points: one ref, given to that one card (S72: while Nonna teaches, the drawer does not point at anything else)
   const hireRef = useCoachTarget('drawer:hire:prep');
   const eps = G.earningsPerSecond(game);
-  // Tied stations: one upgrade alone adds $0/s, so say what to buy together. Keyed on levels, not cash or sales.
-  const bundle = tiedBundle(game, id);
 
   // the sidewalk offers the next hire (each head, then the GM) here; see hireOnSidewalk (B1)
   const idleShopHere = hireOnSidewalk(shop, id, city);
@@ -380,8 +392,6 @@ export default function GameScreen() {
 
   // the drawer's cards are a pure model (drawer-model.ts): its level-dependent part is cached on the levels of every shop, so only cash is applied per tick; nothing while it is closed
   const drawer = drawerOpen ? drawerCards({ game, id }) : null;
-  // D488: the drawer's line is green when it is good news (tips), red only for what holds the shop back
-  const drawerGood = drawer ? stripKind(reportView(game, id, game.lastSavedAt)) === 'tipping' : false;
 
   const drawerCard = (c: DrawerCardView) => (
     <StationCard
@@ -391,7 +401,6 @@ export default function GameScreen() {
       title={c.title}
       level={c.level}
       detail={c.detail}
-      hot={c.hot && !coach}
       wide={c.wide}
       muted={c.muted}
       tone={c.tone}
@@ -450,18 +459,7 @@ export default function GameScreen() {
           />
         )}
         {/* upgrade row standing on the sidewalk */}
-        <SidewalkRow
-          game={game}
-          id={id}
-          idleShop={idleShopHere}
-          bottom={rowBottom}
-          onBuy={buy}
-          onOpen={openDrawer}
-          quiet={coach?.id === 1}
-          // the tied stations merge into one "Buy both" card in the row; kept apart while Nonna's coach is up
-          bundle={showBundlePill(bundle, !!coach) ? bundle : null}
-          onBundle={bundle ? () => buyBundle(bundle.steps, buy) : undefined}
-        />
+        <SidewalkRow game={game} id={id} idleShop={idleShopHere} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} quiet={coach?.id === 1} />
         {/* v5.16 (P1): the shop report's strip, one 44 pt row directly above the sidewalk row */}
         <ReportSlots items={SHOP_REPORT} bottom={rowBottom + (idleShopHere ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + STRIP.above} />
         {/* v5.13: the special-order chip under the goal bar, and the golden pizza in the sky (both sit under the drawers) */}
@@ -483,17 +481,13 @@ export default function GameScreen() {
               <View style={styles.drawerHead}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.drawerTitle}>{drawer.title}</Text>
-                  {/* the manager's line is long: it shrinks (never under 10 pt) to the room beside Close, then wraps rather than clip */}
-                  {!coach && (
+                  {/* the report's line ("Served 41/min · Missed 7/min") is long: it shrinks (never under 10 pt) to the room beside Close, then wraps rather than clip */}
+                  {!coach && drawer.line && (
                     <Text
-                      style={[
-                        styles.drawerSub,
-                        drawerGood && styles.drawerSubGood,
-                        { fontSize: fitFont(drawer.bottleneck, screenW - 2 * DRAWER_HEAD.padX - DRAWER_CLOSE_W, 12, MIN_FONT) },
-                      ]}
+                      style={[styles.drawerSub, { fontSize: fitFont(drawer.line, screenW - 2 * DRAWER_HEAD.padX - DRAWER_CLOSE_W, 12, MIN_FONT) }]}
                       numberOfLines={2}
                     >
-                      {drawer.bottleneck}
+                      {drawer.line}
                     </Text>
                   )}
                 </View>
@@ -517,19 +511,6 @@ export default function GameScreen() {
                 {drawer.perkBanner && (
                   <View style={styles.banner}>
                     <Text style={styles.bannerText}>{drawer.perkBanner}</Text>
-                  </View>
-                )}
-                {drawer.bundle && (
-                  // D304: the tied stations' bundle is a button, not a label: it buys every step through the ordinary buy path
-                  <View style={styles.bundleRow}>
-                    <BuyButton
-                      compact
-                      testID="buy-bundle"
-                      label={drawer.bundle.label}
-                      sub={drawer.bundle.sub}
-                      enabled={drawer.bundle.enabled}
-                      onPress={() => buyBundle(drawer.bundle!.steps, buy)}
-                    />
                   </View>
                 )}
                 {drawer.cards.map(drawerCard)}
@@ -575,19 +556,41 @@ export default function GameScreen() {
         {toast && hintsAllowed(game).toast && <Toast compact text={toast.text} top={10} />}
       </View>
       {/* v5.20 (C1): the one tutorial highlight: a scrim with a cut-out over the HUD, the shop, the row and the drawer; under the calendar, the sheets and the cut-scenes */}
-      {/* r3: the HUD sits at zIndex 2 (the chapter ribbon hangs over the tabs), so the overlay's own layer rides above it or a tap on the HUD gets past the scrim */}
+      {/* r4: the screen's layers take their zIndex from z-order.ts (HUD < coach < gift < night oven < SHEETS < offline popup < coins), so no overlay sits under the HUD or under the coach's scrim */}
       {coachView && (
         <View pointerEvents="box-none" style={styles.coachLayer}>
           <CoachOverlay {...coachView} onDone={coachDone} />
         </View>
       )}
-      {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
-      {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}
+      {/* v5.22 (E4): the report's coach (no hand on a look: it would cover the numbers it points at): over the strip (the coach's own layer), then over the sheet itself (above the SHEETS slot, under only the offline popup) */}
+      {reportStep && (
+        <View pointerEvents="box-none" style={reportStep.id === 'strip' ? styles.coachLayer : styles.reportCoachLayer}>
+          <CoachOverlay targets={reportStep.targets} mode={reportStep.mode} text={reportStep.text} hand={reportStep.mode === 'tap'} onDone={onReportLook} />
+        </View>
+      )}
+      {giftOpen && !covered && (
+        <View pointerEvents="box-none" style={styles.giftLayer}>
+          <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />
+        </View>
+      )}
+      {ovenOpen && !covered && ovenView && (
+        <View pointerEvents="box-none" style={styles.ovenLayer}>
+          <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />
+        </View>
+      )}
       {/* the SHEETS slot: modal sheets over the whole screen, under the offline popup */}
-      <Slots items={SHEETS} />
-      {offline && <OfflinePopup summary={offline} nightOven={game.nightOven} onCollect={dismissOffline} onUpgrade={onOven} />}
+      <View pointerEvents="box-none" style={styles.sheetsLayer}>
+        <Slots items={SHEETS} />
+      </View>
+      {offline && (
+        <View pointerEvents="box-none" style={styles.offlineLayer}>
+          <OfflinePopup summary={offline} nightOven={game.nightOven} onCollect={dismissOffline} onUpgrade={onOven} />
+        </View>
+      )}
       {/* payout coins fly from the carrier to the cash (D344); last, so the offline popup's burst from the oven's mouth shows over it (D454) */}
-      <CoinLayer />
+      <View pointerEvents="none" style={styles.coinsLayer}>
+        <CoinLayer />
+      </View>
     </View>
   );
 }
@@ -595,7 +598,13 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
   sceneArea: { flex: 1, overflow: 'hidden', backgroundColor: '#BFE0F7' },
-  coachLayer: { ...StyleSheet.absoluteFill, zIndex: 3 },
+  coachLayer: { ...StyleSheet.absoluteFill, zIndex: Z.coach },
+  reportCoachLayer: { ...StyleSheet.absoluteFill, zIndex: Z.offline },
+  giftLayer: { ...StyleSheet.absoluteFill, zIndex: Z.gift },
+  ovenLayer: { ...StyleSheet.absoluteFill, zIndex: Z.nightOven },
+  sheetsLayer: { ...StyleSheet.absoluteFill, zIndex: Z.sheets },
+  offlineLayer: { ...StyleSheet.absoluteFill, zIndex: Z.offline },
+  coinsLayer: { ...StyleSheet.absoluteFill, zIndex: Z.coins },
   dim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.4)' },
   drawer: {
     position: 'absolute',
@@ -618,8 +627,8 @@ const styles = StyleSheet.create({
     paddingBottom: DRAWER_HEAD.padBottom,
   },
   drawerTitle: { fontFamily: F.bold, fontSize: 17, color: C.ink },
-  drawerSub: { fontFamily: F.semi, fontSize: 12, color: C.tomatoDark },
-  drawerSubGood: { color: C.basilDark },
+  // the report's line is neutral: nothing in the drawer is colour coded (v5.22)
+  drawerSub: { fontFamily: F.semi, fontSize: 12, color: C.inkSoft },
   closeBtn: {
     backgroundColor: '#fff',
     borderWidth: 2,
@@ -641,7 +650,6 @@ const styles = StyleSheet.create({
     borderColor: C.cheeseDark,
   },
   bannerText: { fontFamily: F.semi, fontSize: 12.5, color: C.ink, textAlign: 'center' },
-  bundleRow: { width: '100%' },
   section: { width: '100%', fontFamily: F.bold, fontSize: 14, color: C.ink, marginTop: 6 },
   footer: { width: '100%', textAlign: 'center', fontFamily: F.regular, color: C.inkSoft, fontSize: 12, marginTop: 4 },
 });

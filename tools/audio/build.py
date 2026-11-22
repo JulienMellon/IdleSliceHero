@@ -37,16 +37,22 @@ LOOP_CEILING = -6.0
 # other loops, and now goes through the same lofi chain.
 LOOP_LUFS = {'downtown_sparse': -22.0, 'megaslice_hq': -19.0}
 # AU64: the cues that sit over a lofi loop come down from -16 to -18 and get the story master (tape_sat, 10 kHz)
-STORY_MASTER = {'megaslice_rep': -18.0, 'megaslice_rep_dock': -18.0, 'city_theme': -18.0, 'victor_exit': -16.0,
+STORY_MASTER = {'megaslice_rep': -18.0, 'megaslice_rep_dock': -18.0, 'city_theme': -18.0, 'victor_exit': -19.0,  # notes R2: victor_exit -16 -> -19
                 **{f'triumph_{h}': -18.0 for h in ('downtown', 'suburbs', 'waterfront', 'university', 'industrial', 'uptown')}}
 # AU36: loudness by tier, so rare big moments are louder than frequent small ones; every file's peak ≤ −6 dBFS (AU38)
 CEILING = -6.0
 SFX_LUFS = {'click': -32, 'bubble': -32, 'tap': -28, 'full': -28, 'cash': -28, 'buy': -22, 'refused': -22, 'rush': -22,
             'sparkle': -24, 'milestone': -19, 'expand': -19, 'grade': -19, 'fleet': -19, 'gavel': -18, 'build': -16,
             'collect': (-19, -17.5, -16)}
-# every tier moved down 2 LU with the loops (lofi round 1), so each stinger sits the same distance above the music
-STING_LUFS = {'bottleneck': -22, 'upgrade': -20, 'fleet': -20, 'drone': -20, 'milestone': -19, 'welcome': -19,
-              'warmth': -20, 'manager': -17, 'milestone_big': -16, 'build': -17, 'perk': -20, 'offline': -22, 'bid': -18}
+# every tier moved down 2 LU with the loops (lofi round 1), so each stinger sits the same distance above the music.
+# Notes R2 (Julien 2026-11-22, "the stingers and story moments do not sit well over the music"): the cues that play over a ducked
+# loop come down so they sit 3 to 4 LU closer to it (over the ducked loop: milestone_big +13 -> +10.5 LU, manager +12 -> +9.5,
+# build +12 -> +8.5, milestone +7 -> +4, upgrade, fleet and drone +6 -> +3). The ladder keeps the order of D5 with 1 LU between
+# rungs, because two cues with the same integrated tier differ by up to 0.8 LU in momentary max (the first try, manager = build, failed
+# the hierarchy check). The bottleneck only drops 2 LU: its duck is -3 dB, so it was +1 LU over the loop and is now -1. The perk
+# stays at -20: it is layered over the exclusive triumphs and the city theme, where the loop is silent.
+STING_LUFS = {'bottleneck': -24, 'upgrade': -23, 'fleet': -23, 'drone': -23, 'milestone': -22, 'welcome': -22,
+              'warmth': -23, 'manager': -19.5, 'milestone_big': -18.5, 'build': -20.5, 'perk': -20, 'offline': -25, 'bid': -21}
 # per-cue loudness overrides: the reveals are the game's quietest moments (AU13)
 LUFS_OVERRIDE = {'reunion': -23.0, 'recipe': -21.0, 'offline_open': -20.0}
 

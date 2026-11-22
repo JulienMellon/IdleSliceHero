@@ -9,10 +9,10 @@
 - Do not touch: `src/components/report/**` (U3), `scene/**` (S3).
 
 ## Steps
-- [ ] **1. Capacity line.** Each station card's foot: `<n>/min → <m>` (the station's capacity before and after, from E3's `capacityAfter(g, id, what)`). Drivers card: deliveries a minute. Hires: "Marco takes the prep table" (the hire's effect in words, no number). Fleet: deliveries a minute. Expand, grade, decor keep their own effect lines, but never a "+$/min".
-- [ ] **2. Remove:** `upgradeGain`'s use in card lines, `effectLine`/`noGainLine` for stations, `tiedBundle`, `buyBundle`, `showBundlePill`, the bundle card in `sidewalkSlots`, the drawer header's "Bottleneck: …" (the header is the shop's title alone, or U3's strip line), the `frame: 'hot' | 'waiting'` and `saving` looks if anything still sets them after the tutorial.
-- [ ] **3. Chapter 1 still works:** steps 9–10 light `walk:ovens`; the card needs no special look.
-- [ ] **4. Tests and fixture:** sidewalk and drawer for a shop short on ovens (nothing on the ovens card differs from the others but its numbers), and a tied shop (no bundle card).
+- [x] **1. Capacity line.** Each station card's foot: `<n>/min → <m>` (the station's capacity before and after, from E3's `capacityAfter(g, id, what)`). Drivers card: deliveries a minute. Hires: "Marco takes the prep table" (the hire's effect in words, no number). Fleet: deliveries a minute. Expand, grade, decor keep their own effect lines, but never a "+$/min".
+- [x] **2. Remove:** `upgradeGain`'s use in card lines, `effectLine`/`noGainLine` for stations, `tiedBundle`, `buyBundle`, `showBundlePill`, the bundle card in `sidewalkSlots`, the drawer header's "Bottleneck: …" (the header is the shop's title alone, or U3's strip line), the `frame: 'hot' | 'waiting'` and `saving` looks if anything still sets them after the tutorial.
+- [x] **3. Chapter 1 still works:** steps 9–10 light `walk:ovens`; the card needs no special look.
+- [x] **4. Tests and fixture:** sidewalk and drawer for a shop short on ovens (nothing on the ovens card differs from the others but its numbers), and a tied shop (no bundle card).
 
 ## Checks
 `npx tsc --noEmit`; `npx jest src/components`; `npm run format:check`.

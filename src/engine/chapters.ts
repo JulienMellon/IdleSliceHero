@@ -11,7 +11,7 @@ import { cityOf } from '../content/cities';
 import type { Chapter, ChapterTask } from '../content/cities/types';
 import type { NeighborhoodId, Scene } from '../content/types';
 import { challengeWon } from './features/layers/rival';
-import { flowOf } from './features/service';
+import { flowOf, missedOf } from './features/service';
 import { TUTORIAL_DONE, type GameState } from './game';
 import { rewardsUnlocked } from './rewards';
 import { sceneWaitSeconds, scenesById, triggerPasses } from './story';
@@ -20,13 +20,13 @@ export const CHAPTERS_KEY = 'chapters';
 
 /** How long a `rate` must hold, in play seconds. */
 export const RATE_HOLD_SECONDS = 30;
-/** Unmet demand under this many pizzas a second counts as none. */
-const MISSED_EPS = 1e-6;
+/** Missed orders under this many pizzas a minute count as none. */
+const MISSED_EPS = 1e-6 * 60;
 /**
- * The shop report's tutorial (v5.22) sets `report` in the save when the player opens it. Until a reader exists a `report` task is done by itself
- * (it would otherwise hold a beat back for something the player cannot do).
+ * The shop report has a reader (v5.22, card E3/E4): the store sets `report` in the save when the player opens the sheet, and the `report` task reads it.
+ * With no reader (false) the task would be done by itself and kept out of the list, so it could not hold a beat back for something the player cannot do.
  */
-export const REPORT_READER = false;
+export const REPORT_READER = true;
 
 export interface ChapterSave {
   /** Keys (`task.<scene>.<n>`) of the tasks that are done. */
@@ -39,11 +39,13 @@ export interface ChapterSave {
   calm: Record<string, number>;
   /** The shop report has been opened (set by v5.22). */
   report: boolean;
+  /** Coach sequences played or under way (card E4): `report:strip`, `report:bar:ovens`, `report:demand` as each step is seen, then `report` once it has ended. Never shown again. */
+  coachDone: string[];
   /** Diamonds earned by chapters whose beats played before the rewards unlocked: paid when they do (VERSION.md "Defaults"). */
   banked: number;
 }
 
-export const newChapterSave = (): ChapterSave => ({ done: [], best: {}, run: {}, calm: {}, report: false, banked: 0 });
+export const newChapterSave = (): ChapterSave => ({ done: [], best: {}, run: {}, calm: {}, report: false, coachDone: [], banked: 0 });
 
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, v) : 0);
 const numMap = (v: unknown): Record<string, number> =>
@@ -71,8 +73,21 @@ export function migrateChapterSave(raw: unknown): ChapterSave | null {
     run,
     calm: numMap(r.calm),
     report: r.report === true,
+    coachDone: Array.isArray(r.coachDone) ? [...new Set((r.coachDone as unknown[]).filter((x): x is string => typeof x === 'string'))] : [],
     banked: Math.floor(num(r.banked)),
   };
+}
+
+/** The shop report has been opened (the store's `reportOpened` action calls this when the sheet opens); the chapter task `report` reads it. `g` itself when it already was. */
+export function markReportOpened(g: GameState): GameState {
+  const c = saveOf(g);
+  return c.report ? g : withSave(g, { ...c, report: true });
+}
+
+/** Record a coach step or sequence as seen (see `ChapterSave.coachDone`). `g` itself when it already was. */
+export function markCoachDone(g: GameState, id: string): GameState {
+  const c = saveOf(g);
+  return c.coachDone.includes(id) ? g : withSave(g, { ...c, coachDone: [...c.coachDone, id] });
 }
 
 /** The saved slice (a state with none reads as empty). */
@@ -175,7 +190,7 @@ export function openChapters(g: GameState): Chapter[] {
 /**
  * Count the held tasks of the open chapters for `dt` seconds of play and record every task that is newly done. `g` itself when nothing changed.
  * `rate`: the lowest pizzas-a-minute (the shop's flow) in each 30 s window; a window's lowest value is banked in `best`. `noMissed`: the seconds in
- * a row the shop sold everything that was wanted. Both read the flow as it is now: a shop's rate changes when the player buys, not between ticks.
+ * a row the shop's report (`missedOf`) shows no missed orders. Both read the flow as it is now: a shop's rate changes when the player buys, not between ticks.
  */
 export function chaptersTick(g: GameState, dt: number, now: number): GameState {
   if (!(dt > 0)) return g;
@@ -189,9 +204,8 @@ export function chaptersTick(g: GameState, dt: number, now: number): GameState {
       if (cur.done.includes(t.key)) continue;
       if (t.kind === 'rate' || t.kind === 'noMissed') {
         if (!g.shops[t.shop]?.built) continue;
-        const f = flowOf(g, t.shop, now);
         if (t.kind === 'rate') {
-          const r = f.sold * 60;
+          const r = flowOf(g, t.shop, now).sold * 60;
           const w = cur.run[t.key];
           const lo = w === undefined ? r : Math.min(w.lo, r);
           const secs = (w?.secs ?? 0) + dt;
@@ -200,7 +214,7 @@ export function chaptersTick(g: GameState, dt: number, now: number): GameState {
             cur = { ...cur, run: { ...cur.run, [t.key]: { lo: r, secs: 0 } } };
           } else cur = { ...cur, run: { ...cur.run, [t.key]: { lo, secs } } };
         } else {
-          const n = f.wanted - f.sold <= MISSED_EPS ? (cur.calm[t.key] ?? 0) + dt : 0;
+          const n = missedOf(g, t.shop, now) <= MISSED_EPS ? (cur.calm[t.key] ?? 0) + dt : 0;
           cur = { ...cur, calm: { ...cur.calm, [t.key]: n } };
           if (n > (cur.best[t.key] ?? 0)) cur = { ...cur, best: { ...cur.best, [t.key]: n } };
         }
@@ -296,7 +310,7 @@ export const BUILD_GATE_BEAT = 3;
 
 /**
  * The chapter that holds back the build of shop `id`: while the gate beat (`BUILD_GATE_BEAT`) of the shop before it in the city has not played, the
- * first chapter of that shop whose beat has not (the one the Story tab shows). The next shop waits for the story of the one the player would leave
+ * chapter the player is on (the one the Story tab shows, so the lock line and the tab name the same number). The next shop waits for the story of the one the player would leave
  * behind, so a chapter whose tasks need that shop (a `rate`, a `serve`, a hire) is never left to stall behind a shop built too early. Null when
  * nothing holds it: the first shop, a city without chapters (Boston), an id that is not in this city, or the shop before it has played that far.
  * Interludes and hire scenes have no chapter and never hold a build. (A shop already built is the caller's: `buildLock` says "Built" before it asks,
@@ -313,7 +327,8 @@ export function buildChapter(g: GameState, id: NeighborhoodId): Chapter | null {
   // the gate beat or any later one of the shop has played (a beat 4 seen without its beat 3 is a state the dev jumps and old saves can have)
   const from = theirs.findIndex((c) => byId.get(c.sceneId)?.beat === BUILD_GATE_BEAT);
   if (from < 0 || theirs.slice(from).some((c) => g.seenScenes.includes(c.sceneId))) return null;
-  return theirs.find((c) => !g.seenScenes.includes(c.sceneId)) ?? null;
+  // the chapter the Story tab shows (D546): the player's next one, which is never later than the shop's own (the story is told in order)
+  return currentChapter(g) ?? theirs.find((c) => !g.seenScenes.includes(c.sceneId)) ?? null;
 }
 
 /** The chapter's number in the story (1-based), as the Story tab and the build line print it. */

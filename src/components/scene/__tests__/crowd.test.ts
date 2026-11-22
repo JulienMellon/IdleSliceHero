@@ -716,12 +716,12 @@ describe('the sidewalk queues', () => {
     }
     expect(TAG_MARGIN).toBe(12);
   });
-  test('D421: the pill names how many drivers wait and which station to buy', () => {
-    expect(waitingText(29, ['ovens'])).toBe('29 drivers idle · buy Ovens');
-    expect(waitingText(1, ['prep'])).toBe('1 driver idle · buy Prep');
-    expect(waitingText(12, ['counter', 'prep'])).toBe('12 drivers idle · buy Prep + Counter');
-    expect(waitingText(12, ['prep', 'ovens', 'counter'])).toBe('12 drivers idle · buy all three');
-    expect(waitingText(12, ['customers'])).toBe('12 drivers idle'); // nothing to buy in the kitchen
+  test('D421 (v5.22): the pill counts the drivers who wait and names no station', () => {
+    expect(waitingText(29)).toBe('29 drivers waiting');
+    expect(waitingText(1)).toBe('1 driver waiting');
+    expect(waitingText(12)).toBe('12 drivers waiting');
+    // nothing to buy is named, whatever the shop is short of
+    for (const n of [1, 2, 12, 29, 100]) expect(waitingText(n)).not.toMatch(/buy|prep|oven|counter|all three/i);
     expect(queueOverflow(4, 3)).toBe(1);
     expect(queueOverflow(2, 3)).toBe(0);
   });

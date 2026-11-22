@@ -18,6 +18,10 @@ export const COPY = {
   'tutorial.13': '{marco} rolls dough for you, flour and all. Hire him when you can.',
   'tutorial.14': "Keep baking. {marco} won't hire himself.",
   'tutorial.15': 'See? {marco} rolls on his own now. You bake and serve. Bravo!',
+  // v5.22 (card E4): the shop report's three lines, from docs/story/COPY-v5.22.md section 4
+  'tutorial.report.1': 'This strip, cara, is how my shop is doing. Served and missed.',
+  'tutorial.report.2': 'This bar is my ovens. How many pizzas a minute they can bake, cara.',
+  'tutorial.report.3': 'Dashed line, cara: my customers. Past my shortest bar? Those, I miss.',
   'tutorial.alt.9': 'Ay! You spent the oven money. Save {cost} again for the upgrade.',
   'tutorial.alt.13': '{marco} rolls dough for you, flour and all. You can hire him now.',
 } as const;

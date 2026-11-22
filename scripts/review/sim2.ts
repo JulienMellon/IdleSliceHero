@@ -10,6 +10,7 @@ import { DECOR_KINDS, DECOR_TIER_COST, TUNING } from '../../src/content/tuning';
 import { DAILY_CHESTS } from '../../src/content/rewards';
 import { ORDER } from '../../src/content/hooks';
 import type { NeighborhoodId } from '../../src/content/types';
+import { markReportOpened } from '../../src/engine/chapters';
 import { pickScene, scenePacesGap } from '../../src/engine/cutscene-input';
 import * as G from '../../src/engine/game';
 import { buyRack, rackLock, rackPrice } from '../../src/engine/features/layers/boats';
@@ -219,6 +220,8 @@ export function run(
   };
   /** What the player does with the rewards in one second of play. */
   const rewardSecond = () => {
+    // the shop report (v5.22): the player opens it the moment the strip shows (the first head); chapter 3's `report` task waits for it
+    if (s.shops.downtown?.heads.prep) s = markReportOpened(s);
     if (!R.rewardsUnlocked(s)) return;
     const at = INSTALL + wall * 1000;
     s = R.refreshRewards(s, at);

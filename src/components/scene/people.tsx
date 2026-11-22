@@ -3,6 +3,8 @@ import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { bodyBy, isWorker, limbGeom } from './geometry';
 import { bobFor, quantArm, quantStep } from './quantise';
 import { INK, P, kAt, shade } from './projection';
+import { RIDE_LIFT, SCOOTER_K } from './poses';
+import { FROWN_R } from './walkout';
 import { DRIVER_CAPS, HAIR_COLORS, type Act, type Kind, type Look, type Mood, type PersonProps, lookFor } from './looks';
 
 export { GUEST_SHIRTS, HAIR_COLORS, PANTS, SKINS, hash32, lookFor, type Act, type Kind, type Look, type Mood, type PersonProps } from './looks';
@@ -250,8 +252,10 @@ export function Person({ x, y, o = 1, ...p }: PersonProps) {
     tall: look.tall,
   };
   const bob = bobFor(p.kind, step);
-  return (
-    <G opacity={o} transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${(p.flip ? -k : k).toFixed(3)} ${k.toFixed(3)})`}>
+  // the v5.22 poses are transforms of the whole figure: a hurried bob and a lean about the feet (poses.ts)
+  const posed = p.bob || p.lean ? ` translate(0 ${(-(p.bob ?? 0)).toFixed(2)}) rotate(${((p.lean ?? 0) * LEAN_DEG).toFixed(1)})` : '';
+  const figure = (
+    <>
       {/* the back limbs only use the arm swing when rolling dough with both hands */}
       <Limbs {...limbs} arm={act === 'pin' ? limbs.arm : 0} part="back" />
       <G transform={bob ? `translate(0 ${(-bob).toFixed(2)})` : undefined}>
@@ -274,9 +278,93 @@ export function Person({ x, y, o = 1, ...p }: PersonProps) {
       </G>
       {p.shawl && <Shawl color={p.shawl} by={bodyBy(p.kind, look.tall)} />}
       <Limbs {...limbs} part="front" />
+      {p.sweat ? <Sweat hy={bodyBy(p.kind, look.tall) - 9} step={p.sweat} /> : null}
+      {p.frown ? <Frown hy={bodyBy(p.kind, look.tall) - 9} /> : null}
+      {p.idle ? <IdleBubble hy={bodyBy(p.kind, look.tall) - 9} what={p.idle} /> : null}
+    </>
+  );
+  return (
+    <G opacity={o} transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)}) scale(${(p.flip ? -k : k).toFixed(3)} ${k.toFixed(3)})${posed}`}>
+      {p.ride ? (
+        <>
+          <Scooter />
+          {/* an idle driver sits on the scooter's seat: the figure is lifted onto it, the scooter stays on the ground and is drawn over the legs */}
+          <G transform={`translate(0 ${-RIDE_LIFT})`}>{figure}</G>
+          <ScooterFront />
+        </>
+      ) : (
+        figure
+      )}
     </G>
   );
 }
+
+/** The lean's tilt (degrees) at strength 1. */
+const LEAN_DEG = 13;
+
+/** A drop of sweat running down the temple: it falls through three steps (poses.ts `workerPose`). */
+const Sweat = memo(function Sweat({ hy, step }: { hy: number; step: number }) {
+  const y = hy - 6 + (step - 1) * 5;
+  return <Path d={`M13 ${y - 5.4} Q17.6 ${y} 13 ${y + 3.2} Q8.4 ${y} 13 ${y - 5.4} Z`} fill="#8AD6FF" stroke={INK} strokeWidth={0.7} strokeLinejoin="round" />;
+});
+
+/** The bubble over an idle worker's head (D549): round and white like the frown's, with a Z, or the phone they are looking at. It stays for as long as they are idle. */
+const IdleBubble = memo(function IdleBubble({ hy, what }: { hy: number; what: 'z' | 'phone' }) {
+  const y = hy - 27;
+  return (
+    <G>
+      <Path d={`M-1.6 ${y + 6.6} L1.4 ${y + 11.4} L3.6 ${y + 6.6} Z`} fill="#fff" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+      <Circle cx={0.5} cy={y} r={FROWN_R} fill="#fff" stroke={INK} strokeWidth={1} />
+      {what === 'z' ? (
+        <Path d={`M-2.6 ${y - 3.2} h6.2 l-6.2 6.4 h6.2`} stroke="#2F80ED" strokeWidth={1.7} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      ) : (
+        <G>
+          <Rect x={-2.4} y={y - 4.6} width={5.8} height={9.2} rx={1.2} fill="#2A2F3A" stroke={INK} strokeWidth={0.8} />
+          <Rect x={-1.5} y={y - 3.4} width={4} height={6} rx={0.6} fill="#9AD8FF" />
+        </G>
+      )}
+    </G>
+  );
+});
+
+/** The frown bubble over a customer's head: a round white bubble (15 across) with a tail, two eyes and a downturned mouth. */
+const Frown = memo(function Frown({ hy }: { hy: number }) {
+  const y = hy - 26;
+  return (
+    <G>
+      <Path d={`M-1.6 ${y + 6.6} L1.4 ${y + 11.4} L3.6 ${y + 6.6} Z`} fill="#fff" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+      <Circle cx={0.5} cy={y} r={FROWN_R} fill="#fff" stroke={INK} strokeWidth={1} />
+      <Path d={`M-3.6 ${y - 3.4} l2.6 1.2 M4.6 ${y - 3.4} l-2.6 1.2`} stroke={INK} strokeWidth={0.9} strokeLinecap="round" />
+      <Circle cx={-2.2} cy={y - 0.8} r={0.9} fill={INK} />
+      <Circle cx={3.2} cy={y - 0.8} r={0.9} fill={INK} />
+      <Path d={`M-2.6 ${y + 3.8} q3.1 -3.2 6.2 0`} stroke="#C8463A" strokeWidth={1.2} fill="none" strokeLinecap="round" />
+    </G>
+  );
+});
+
+/** The scooter under an idle driver: the back half (wheels, floor and the seat the driver sits on), drawn behind them... */
+const Scooter = memo(function Scooter() {
+  return (
+    <G transform={`scale(${SCOOTER_K})`}>
+      <Ellipse cx={0} cy={0.5} rx={16} ry={3} fill="rgba(59,31,20,0.25)" />
+      <Circle cx={-11} cy={-5.5} r={5.2} fill="#222" stroke={INK} strokeWidth={0.9} />
+      <Circle cx={-11} cy={-5.5} r={1.7} fill="#bbb" />
+      <Path d="M-15 -9 Q-15 -13.5 -10 -13.5 L-1 -13.5 L-1 -9 Z" fill="#E8432E" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+    </G>
+  );
+});
+
+/** …and its front half, drawn over the driver's legs: the footboard, the steering column and the front wheel. */
+const ScooterFront = memo(function ScooterFront() {
+  return (
+    <G transform={`scale(${SCOOTER_K})`}>
+      <Rect x={-2} y={-9.6} width={13} height={3.4} rx={1.2} fill="#D9443A" stroke={INK} strokeWidth={0.9} />
+      <Path d="M9 -8 L11.4 -20.5 M8.4 -20.8 L14.4 -19.6" stroke={INK} strokeWidth={2} strokeLinecap="round" fill="none" />
+      <Circle cx={12} cy={-5.5} r={5.2} fill="#222" stroke={INK} strokeWidth={0.9} />
+      <Circle cx={12} cy={-5.5} r={1.7} fill="#bbb" />
+    </G>
+  );
+});
 
 /** A shawl over the shoulders (the day-30 visitor's): a rounded cape with a pointed front and a fringe, over the torso at `by`. */
 const Shawl = memo(function Shawl({ color, by }: { color: string; by: number }) {
@@ -470,6 +558,8 @@ const FigureBody = memo(function FigureBody(p: FigureProps) {
       <Ellipse cx={front ? 0.5 : 8.6} cy={hy + 1.6} rx={0.9} ry={0.75} fill={shade(skin, -0.2)} />
       {talk || mood === 'o' ? (
         <Ellipse cx={fx} cy={hy + 4.4} rx={1.3} ry={1.6} fill="#B5462E" stroke={INK} strokeWidth={0.8} />
+      ) : mood === 'frown' ? (
+        <Path d={`M${fx - 1.9} ${hy + 5.4} q1.9 -2.4 3.8 0`} stroke={INK} strokeWidth={0.95} fill="none" strokeLinecap="round" />
       ) : mood === 'focus' ? (
         <Path d={`M${fx - 1.5} ${hy + 4.2} h3`} stroke={INK} strokeWidth={0.95} strokeLinecap="round" />
       ) : mood === 'chew' ? (

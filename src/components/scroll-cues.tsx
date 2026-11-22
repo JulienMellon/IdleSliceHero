@@ -9,7 +9,7 @@ import { CUE_H, CUE_W, type CueKind } from './scroll-cues-model';
 
 const TONE: Record<CueKind, { bg: string; ink: string }> = {
   jam: { bg: '#D9443A', ink: '#fff' },
-  slammed: { bg: '#E8762E', ink: '#fff' },
+  piling: { bg: '#E8762E', ink: '#fff' },
   bubble: { bg: '#FFF8EA', ink: '#3B1F14' },
   tap: { bg: '#FFC531', ink: '#3B1F14' },
 };

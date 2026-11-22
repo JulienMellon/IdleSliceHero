@@ -55,3 +55,19 @@ describe('furniture memo inputs (T24)', () => {
     expect(furnitureInputs({ ...base({ managed: false }), id: 'downtown', first: true }).idleShop).toBe(false);
   });
 });
+
+describe('piles take the place of the fixed decoration (v5.22)', () => {
+  test('a shop with a live report has no fixed dough or boxes (the piles draw the backlog), one without keeps them', () => {
+    const live = furnitureInputs({ ...base({ managed: false, line: { prepped: 9 } }), piles: true });
+    expect([live.dough, live.boxes]).toEqual([0, 0]);
+    const old = furnitureInputs(base({ managed: false, line: { prepped: 9 } }));
+    expect(old.dough).toBe(6);
+    expect(old.boxes).toBeGreaterThan(0);
+  });
+  test('turning the report on changes the deps, and the live inputs no longer follow the tap queue', () => {
+    expect(deps({ ...base(), piles: true })).not.toBe(deps(base()));
+    expect(deps({ ...base({ managed: false, line: { prepped: 2 } }), piles: true })).toBe(
+      deps({ ...base({ managed: false, line: { prepped: 9 } }), piles: true }),
+    );
+  });
+});

@@ -13,7 +13,21 @@ import { SERVICE } from '../../content/service';
 import type { NeighborhoodId } from '../../content/types';
 import { bonusUnlocked } from '../bonus';
 import type { Seen } from './types';
-import { counterRate, featureMults, ovenRate, prepRate, runsItself, stationMults, demandRate, valuePerPizza, type GameState } from '../game';
+import {
+  counterRate,
+  deliveryRate,
+  demandRate,
+  levelCap,
+  ovenRate,
+  prepRate,
+  runsItself,
+  stationMults,
+  tapBatch,
+  walkInRate,
+  type GameState,
+  type Shop,
+} from '../game';
+import { LINE } from '../pipeline';
 import type { BarkAsk } from './heads';
 import { FEATURES } from './registry';
 import type { Feature } from './types';
@@ -21,17 +35,31 @@ import { cityOf, hoodIds, type CityDef } from '../../content/cities';
 
 export const KEY = 'service';
 
-export type Lamp = 'slammed' | 'busy' | 'idle';
-export type FloorLamp = 'full' | 'steady' | 'quiet';
 export type ServiceState = 'inactive' | 'tipping' | 'normal' | 'cold';
-export type KitchenStation = 'prep' | 'ovens' | 'counter';
 
-/** One shop's saved part: the seconds under 60% (capped at the cold line), the cold flag, whether it was tipping at the last tick and how long each station has been Slammed (capped). */
+/** The three kitchen stations the line runs, by the names the report uses (the ovens' head is `oven`). */
+export type K3 = 'prep' | 'ovens' | 'counter';
+const K3S: readonly K3[] = ['prep', 'ovens', 'counter'];
+const HEAD_OF_K3: Record<K3, 'prep' | 'oven' | 'counter'> = { prep: 'prep', ovens: 'oven', counter: 'counter' };
+/** Everything the report has a symptom for. */
+export type Spot = K3 | 'drivers' | 'floor';
+export type Symptom = 'piling' | 'idle' | 'line' | 'walkout';
+const SPOTS: readonly Spot[] = ['prep', 'ovens', 'counter', 'drivers', 'floor'];
+
+/**
+ * One shop's saved part (never carried over a load): the seconds under 60% (capped at the cold line), the cold flag, whether it was tipping at the
+ * last tick, and what the symptoms are made of: running averages of "backed up" and "waiting for input" per station, the seconds each spot's state
+ * has held, what the player's own hands made per second (a station nobody runs) and the cumulative pies last seen out of each station.
+ */
 export interface ShopService {
   below: number;
   cold: boolean;
   tip: boolean;
-  slam: { prep: number; oven: number; counter: number };
+  pile: Record<K3, number>;
+  wait: Record<K3, number>;
+  hold: Record<Spot, number>;
+  made: Record<K3, number>;
+  seen: Record<K3, number> | null;
 }
 
 export interface ServiceStateSlice {
@@ -40,7 +68,17 @@ export interface ServiceStateSlice {
   shops: Record<NeighborhoodId, ShopService>;
 }
 
-const zeroShop = (): ShopService => ({ below: 0, cold: false, tip: false, slam: { prep: 0, oven: 0, counter: 0 } });
+const k3 = (): Record<K3, number> => ({ prep: 0, ovens: 0, counter: 0 });
+const zeroShop = (): ShopService => ({
+  below: 0,
+  cold: false,
+  tip: false,
+  pile: k3(),
+  wait: k3(),
+  hold: { ...k3(), drivers: 0, floor: 0 },
+  made: k3(),
+  seen: null,
+});
 /** A zeroed slice with a row for each of `city`'s shops (none without a city: every reader takes a missing row as zero, and `tick` adds it). */
 const fresh = (city?: CityDef): ServiceStateSlice => ({
   at: 0,
@@ -61,6 +99,12 @@ export interface Flow {
   kitchen: number;
   wanted: number;
   sold: number;
+  /** What the drivers can carry (with the demand multipliers, as `wanted` has them). */
+  drivers: number;
+  /** The walk-in customers (seats), with the demand multipliers, as `wanted` has them: `drivers + walkIns` is `wanted`. */
+  walkIns: number;
+  /** The share of the fleet with nothing to carry, 0..1. */
+  driversIdle: number;
 }
 
 /** The flow from demand and station multipliers somebody has already worked out (no hook runs here). */
@@ -73,7 +117,20 @@ function flowFrom(g: GameState, id: NeighborhoodId, seen: Seen): Flow {
   const counter = counterRate(shop, fx);
   const kitchen = Math.min(prep, ovens, counter);
   const wanted = demandRate(shop, g.vehicle, fit, fx);
-  return { prep, ovens, counter, kitchen, wanted, sold: Math.min(wanted, kitchen) };
+  const sold = Math.min(wanted, kitchen);
+  const drivers = deliveryRate(shop, g.vehicle, fit) * fx.demand;
+  const delivered = Math.max(0, sold - Math.min(sold, walkInRate(shop) * fx.demand));
+  return {
+    prep,
+    ovens,
+    counter,
+    kitchen,
+    wanted,
+    sold,
+    drivers,
+    walkIns: walkInRate(shop) * fx.demand,
+    driversIdle: drivers > 0 ? Math.max(0, Math.min(1, 1 - delivered / drivers)) : 0,
+  };
 }
 
 /** The shop's flow right now. `now` only reaches the other features' demand hooks. */
@@ -97,28 +154,49 @@ const sameRegistry = (list: readonly unknown[]): boolean => list.length === FEAT
 
 /** Service, 0..1, in 5% steps (rounded down). */
 export const serviceOf = (f: Flow): number => (f.wanted > 0 ? quantise(f.sold / f.wanted) : 1);
-/** A station's load, 0..1, in 5% steps. */
-export const loadOf = (f: Flow, rate: number): number => (rate > 0 ? quantise(f.sold / rate) : 1);
 
-export const lampOf = (load: number): Lamp => (load >= SERVICE.slammedAt - 1e-9 ? 'slammed' : load >= SERVICE.busyAt - 1e-9 ? 'busy' : 'idle');
-/** The floor's lamp from wanted ÷ kitchen (the raw ratio: its thresholds are not 5% steps). */
-export const floorOf = (f: Flow): FloorLamp => {
-  const r = f.kitchen > 0 ? f.wanted / f.kitchen : 1;
-  return r >= SERVICE.packedAt - 1e-9 ? 'full' : r >= SERVICE.steadyAt - 1e-9 ? 'steady' : 'quiet';
-};
-
-/** A shop that runs itself, after the tutorial: the only kind the report covers. */
+/** The report is live from a shop's first head (a manager brings all three): the capacity bars, the served and missed numbers and the symptoms. */
 export const reportActive = (g: GameState, id: NeighborhoodId): boolean => {
   const shop = g.shops[id];
-  return shop.built && runsItself(shop) && bonusUnlocked(g);
+  return !!shop?.built && (shop.managed || shop.heads.prep || shop.heads.oven || shop.heads.counter);
 };
+
+/** The tip and the cold line (the service score's money) still start at the takeover: a shop that runs itself, after the tutorial. */
+const effectsActive = (g: GameState, id: NeighborhoodId): boolean => {
+  const shop = g.shops[id];
+  return !!shop?.built && runsItself(shop) && bonusUnlocked(g);
+};
+
+/** A station nobody runs: the player taps it by hand. */
+const byHand = (shop: Pick<Shop, 'managed' | 'heads'>, st: K3): boolean => !shop.managed && !shop.heads[HEAD_OF_K3[st]];
+
+/** The pies each station has put out since the game began, from what is on the line and what was sold (pies in flight downstream count as out). */
+function cumulative(shop: Shop): Record<K3, number> {
+  const l = shop.line;
+  const counter = shop.sold + l.boxed + l.departures.reduce((t, d) => t + d.n, 0);
+  const ovens = counter + l.baked + (l.counter?.n ?? 0);
+  return { counter, ovens, prep: ovens + l.prepped + (l.oven?.n ?? 0) };
+}
+
+/** One batch of the automated line (pipeline.ts `batchFor`, with the flow's own steady rate). */
+const batchOf = (shop: Shop, f: Flow): number => Math.max(tapBatch(shop), Math.ceil(f.sold * LINE.cycleSeconds));
+
+/** What each station can handle now, in pizzas a second: its machine's rate, or for a hand-tapped one what the player made lately. */
+function capacities(shop: Shop, f: Flow, made: Record<K3, number>): Record<K3, number> {
+  return {
+    prep: byHand(shop, 'prep') ? made.prep : f.prep,
+    ovens: byHand(shop, 'ovens') ? made.ovens : f.ovens,
+    counter: byHand(shop, 'counter') ? made.counter : f.counter,
+  };
+}
+const kitchenOf = (c: Record<K3, number>): number => Math.min(c.prep, c.ovens, c.counter);
 
 /** The app has been open lately: the stamp is not older than `freshMs` (a `now` before the stamp is a stale readout and counts as fresh). */
 const stampFresh = (st: ServiceStateSlice, now: number): boolean => st.at > 0 && now - st.at <= SERVICE.freshMs;
 
 /** The state and the multiplier on the shop's pizzas, from the rates alone (plus the cold flag). */
 function effectOf(g: GameState, id: NeighborhoodId, now: number, f?: Flow, seen?: Seen): { state: ServiceState; mult: number } {
-  if (!reportActive(g, id)) return { state: 'inactive', mult: 1 };
+  if (!effectsActive(g, id)) return { state: 'inactive', mult: 1 };
   const st = read(g);
   if (!stampFresh(st, now)) return { state: 'normal', mult: 1 };
   const service = serviceOf(f ?? (seen ? flowFrom(g, id, seen) : flowOf(g, id, now)));
@@ -127,26 +205,64 @@ function effectOf(g: GameState, id: NeighborhoodId, now: number, f?: Flow, seen?
   return { state: 'normal', mult: 1 };
 }
 
+// ---------- symptoms ----------
+
+/** Whether customers outnumber what the kitchen puts out (the floor's raw ratio, as `floorOf`'s Packed). */
+const crowded = (wanted: number, kitchen: number): boolean => (kitchen > 0 ? wanted / kitchen : 1) >= SERVICE.packedAt - 1e-9;
+
+/** A station's symptom from its running averages: piled up wins over idle; a hand-tapped station is the player's own, so it is never `idle`. */
+function stationSymptom(st: ShopService, shop: Shop, k: K3): Symptom | null {
+  if (st.pile[k] >= SERVICE.pileOn - 1e-9) return 'piling';
+  if (!byHand(shop, k) && st.wait[k] >= SERVICE.idleOn - 1e-9) return 'idle';
+  return null;
+}
+
+/** The symptom at every spot, from the saved state alone (the floor and the drivers from how long their raw state has held). */
+function symptomsOf(st: ShopService, shop: Shop, missed: number): Record<Spot, Symptom | null> {
+  const floor = st.hold.floor >= SERVICE.walkoutSeconds && missed > 0 ? 'walkout' : st.hold.floor >= SERVICE.holdSeconds ? 'line' : null;
+  return {
+    prep: stationSymptom(st, shop, 'prep'),
+    ovens: stationSymptom(st, shop, 'ovens'),
+    counter: stationSymptom(st, shop, 'counter'),
+    drivers: st.hold.drivers >= SERVICE.holdSeconds ? 'idle' : null,
+    floor,
+  };
+}
+
+/** The spots' state "on" right now, for the hold timers: the symptom's kind for a station, plain on/off for the drivers and the floor. */
+function rawOn(st: ShopService, shop: Shop, f: Flow, eff: number): Record<Spot, string | null> {
+  return {
+    prep: stationSymptom(st, shop, 'prep'),
+    ovens: stationSymptom(st, shop, 'ovens'),
+    counter: stationSymptom(st, shop, 'counter'),
+    drivers: f.driversIdle > SERVICE.driversIdleShare ? 'idle' : null,
+    floor: crowded(f.wanted, eff) ? 'line' : null,
+  };
+}
+
 // ---------- the report, for the strip and the sheet ----------
 
 export interface ReportView {
-  /** `inactive`: a shop still tapped by hand, or in the tutorial: nothing new to show. */
+  /** `inactive`: the service score's money does not run here yet (before the takeover, or while a head is still missing): no tip, no cold line. */
   state: ServiceState;
   /** Pizzas per minute. */
   perMin: { prep: number; ovens: number; counter: number; kitchen: number; wanted: number; sold: number };
-  /** Station loads, 0..1 in 5% steps. */
-  loads: Record<KitchenStation, number>;
-  lamps: Record<KitchenStation, Lamp> & { floor: FloorLamp };
-  /** wanted ÷ kitchen. */
-  floorRatio: number;
+  /** Pizzas a minute each station and the drivers can handle now (a hand-tapped station: what the player made over the last minute). */
+  capacity: { prep: number; ovens: number; counter: number; drivers: number };
+  /** Customers a minute who walk in and sit (seats): the drivers' deliveries plus these are `wanted`, so the Drivers bar reaches the Customers line only with these stacked on it (G119). */
+  walkIns: number;
+  /** The stations the player still taps by hand. */
+  you: Record<K3, boolean>;
+  /** Customers a minute who want a pizza, how many are served and how many are missed (rolling about 60 s). */
+  wanted: number;
+  served: number;
+  missed: number;
+  /** What each spot of the shop is showing: a pile-up, idle hands, a line at the door, a walk-out. Null: nothing to see. */
+  symptoms: Record<Spot, Symptom | null>;
+  /** Seconds each spot's symptom has held (0 with none): the barks wait for 10 s. */
+  held: Record<Spot, number>;
   /** Service, 0..1 in 5% steps. */
   service: number;
-  /** Cash walking out the door each minute: (wanted − sold) × the shop's value per pizza × 60. */
-  lostPerMinute: number;
-  /** The kitchen is the limit (it makes less than is wanted). */
-  kitchenLimits: boolean;
-  /** The lamp the strip names: the busiest station's when the kitchen is the limit, the floor's when it is Quiet, else null. */
-  worst: { kind: KitchenStation | 'floor'; lamp: Lamp | FloorLamp } | null;
   /** The share of its line the street draws: 1, or `coldQueueShare` while the line is cold. */
   queueShare: number;
   /** Seconds of play under 60% so far (0..coldSeconds), and how many are left before the line goes cold (null when not counting). */
@@ -154,16 +270,24 @@ export interface ReportView {
   coldIn: number | null;
 }
 
+const NO_SYMPTOMS: Record<Spot, Symptom | null> = Object.freeze({ prep: null, ovens: null, counter: null, drivers: null, floor: null }) as Record<
+  Spot,
+  Symptom | null
+>;
+const NO_HELD: Record<Spot, number> = Object.freeze({ prep: 0, ovens: 0, counter: 0, drivers: 0, floor: 0 }) as Record<Spot, number>;
+
 const INACTIVE_VIEW: ReportView = Object.freeze({
   state: 'inactive',
   perMin: { prep: 0, ovens: 0, counter: 0, kitchen: 0, wanted: 0, sold: 0 },
-  loads: { prep: 0, ovens: 0, counter: 0 },
-  lamps: { prep: 'idle', ovens: 'idle', counter: 'idle', floor: 'steady' },
-  floorRatio: 1,
+  capacity: { prep: 0, ovens: 0, counter: 0, drivers: 0 },
+  walkIns: 0,
+  you: { prep: false, ovens: false, counter: false },
+  wanted: 0,
+  served: 0,
+  missed: 0,
+  symptoms: NO_SYMPTOMS,
+  held: NO_HELD,
   service: 1,
-  lostPerMinute: 0,
-  kitchenLimits: false,
-  worst: null,
   queueShare: 1,
   below: 0,
   coldIn: null,
@@ -175,22 +299,17 @@ export function reportView(g: GameState, id: NeighborhoodId, now: number): Repor
   const flow = flowOf(g, id, now);
   const { state } = effectOf(g, id, now, flow);
   const shop = g.shops[id];
-  const service = serviceOf(flow);
-  const loads = { prep: loadOf(flow, flow.prep), ovens: loadOf(flow, flow.ovens), counter: loadOf(flow, flow.counter) };
-  const lamps = { prep: lampOf(loads.prep), ovens: lampOf(loads.ovens), counter: lampOf(loads.counter), floor: floorOf(flow) };
-  const floorRatio = flow.kitchen > 0 ? flow.wanted / flow.kitchen : 1;
-  const lost = flow.wanted - flow.sold;
-  const lostPerMinute = lost > 1e-12 ? lost * valuePerPizza(id, shop, g.vehicle, featureMults(g, id, now), cityOf(g)) * 60 : 0;
-  const kitchenLimits = lamps.floor === 'full';
-  // the worst lamp: the most loaded station (ties go to the pipeline's order) while the kitchen limits; the floor while it is Quiet
-  let worst: ReportView['worst'] = null;
-  if (kitchenLimits) {
-    const order: KitchenStation[] = ['prep', 'ovens', 'counter'];
-    const top = order.reduce((a, b) => (loads[b] > loads[a] ? b : a));
-    worst = { kind: top, lamp: lamps[top] };
-  } else if (lamps.floor === 'quiet') worst = { kind: 'floor', lamp: 'quiet' };
   const st = read(g).shops[id] ?? zeroShop();
-  const counting = service < SERVICE.coldBelow - 1e-9 && !st.cold && stampFresh(read(g), now);
+  const flowService = serviceOf(flow);
+  const cap = capacities(shop, flow, st.made);
+  const eff = kitchenOf(cap);
+  const served = Math.min(flow.wanted, eff);
+  // the score the sheet shows is served ÷ wanted, so it agrees with its own Served and Missed: a station the player taps by hand counts for what their hands made
+  // (shot 185 read "Served 0, Missed 168" next to 75%). With every station on its own the two are the same number; the tip and the cold line keep `flowService`.
+  const service = flow.wanted > 0 ? quantise(served / flow.wanted) : 1;
+  const missedPs = Math.max(0, flow.wanted - served);
+  const counting = flowService < SERVICE.coldBelow - 1e-9 && !st.cold && stampFresh(read(g), now);
+  const symptoms = symptomsOf(st, shop, missedPs);
   return {
     state,
     perMin: {
@@ -201,17 +320,45 @@ export function reportView(g: GameState, id: NeighborhoodId, now: number): Repor
       wanted: flow.wanted * 60,
       sold: flow.sold * 60,
     },
-    loads,
-    lamps,
-    floorRatio,
+    capacity: { prep: cap.prep * 60, ovens: cap.ovens * 60, counter: cap.counter * 60, drivers: flow.drivers * 60 },
+    walkIns: flow.walkIns * 60,
+    you: { prep: byHand(shop, 'prep'), ovens: byHand(shop, 'ovens'), counter: byHand(shop, 'counter') },
+    wanted: flow.wanted * 60,
+    served: served * 60,
+    missed: missedPs * 60,
+    symptoms,
+    held: st.hold,
     service,
-    lostPerMinute,
-    kitchenLimits,
-    worst,
     queueShare: state === 'cold' ? SERVICE.coldQueueShare : 1,
     below: st.below,
     coldIn: counting ? Math.max(0, SERVICE.coldSeconds - st.below) : null,
   };
+}
+
+/**
+ * Missed orders a minute (the chapters' `noMissed` reads this). A shop with a head or a manager: the report's own number; one still run by hand:
+ * what its machines would leave unserved, as before the report was live.
+ */
+export function missedOf(g: GameState, id: NeighborhoodId, now: number): number {
+  if (reportActive(g, id)) return reportView(g, id, now).missed;
+  const f = flowOf(g, id, now);
+  return Math.max(0, f.wanted - f.sold) * 60;
+}
+
+/** The station's capacity (pizzas a minute) after one more level of `what`, for the upgrade cards. A level past the cap, or a missing shop, changes nothing. A hand-tapped station keeps its own measure, scaled by what the level adds to its machine. */
+export function capacityAfter(g: GameState, id: NeighborhoodId, what: K3 | 'drivers' | 'grade', now: number = g.lastSavedAt): number {
+  const shop = g.shops[id];
+  if (!shop) return 0;
+  const f = flowOf(g, id, now);
+  const k: K3 | 'drivers' = what === 'grade' ? 'ovens' : what;
+  const nowRate = f[k];
+  const next: Partial<Shop> = what === 'grade' ? { grade: shop.grade + 1 } : what === 'drivers' ? { drivers: shop.drivers + 1 } : { [what]: shop[what] + 1 };
+  const capped = what === 'grade' ? shop.grade + 1 >= cityOf(g).fit.ovenGrades.length : shop[what === 'drivers' ? 'drivers' : what] >= levelCap(shop);
+  const after = capped ? f : flowOf({ ...g, shops: { ...g.shops, [id]: { ...shop, ...next } } }, id, now);
+  const rate = after[k];
+  if (k === 'drivers' || !byHand(shop, k)) return rate * 60;
+  const mine = read(g).shops[id]?.made[k] ?? 0;
+  return (nowRate > 0 && mine > 0 ? mine * (rate / nowRate) : rate) * 60;
 }
 
 // ---------- the pulse: tipping starts, the line goes cold ----------
@@ -230,28 +377,80 @@ export function onServicePulse(fn: (p: ServicePulse) => void) {
 }
 const emitPulse = (p: ServicePulse) => pulseListeners.forEach((fn) => fn(p));
 
-// ---------- heads that ask for help ----------
+// ---------- heads that speak up ----------
 
-/** The asks of a shop's heads: each hired head whose station has been Slammed for `slammedBarkSeconds`, while the shop has no manager. Unkeyed moments: `nextBark`'s own gap and memory decide when one speaks. */
-export function slammedAsks(g: GameState, id: NeighborhoodId): BarkAsk[] {
+/**
+ * The asks of a shop's heads and manager: a station's head about a pile-up or idle hands at their station, the manager about the line at the door
+ * and idle drivers (none without a manager). Each waits until its state has held `barkAfterSeconds`, and carries how long it has held so
+ * `nextBark` can space the repeats. A hired head says nothing for a station that is not theirs, and nobody speaks before a hire.
+ */
+export function symptomAsks(g: GameState, id: NeighborhoodId): BarkAsk[] {
+  if (!reportActive(g, id)) return [];
   const shop = g.shops[id];
-  if (shop.managed || !reportActive(g, id)) return [];
-  const slam = read(g).shops[id]?.slam;
-  if (!slam) return [];
-  return (['prep', 'oven', 'counter'] as const)
-    .filter((st) => shop.heads[st] && slam[st] >= SERVICE.slammedBarkSeconds)
-    .map((station) => ({ trigger: 'slammed' as const, station }));
+  const st = read(g).shops[id];
+  if (!st) return [];
+  const asks: BarkAsk[] = [];
+  for (const k of K3S) {
+    const head = HEAD_OF_K3[k];
+    const sym = stationSymptom(st, shop, k);
+    if (sym && shop.heads[head] && st.hold[k] >= SERVICE.barkAfterSeconds)
+      asks.push({ trigger: sym === 'piling' ? 'pile' : 'idle', station: head, held: st.hold[k] });
+  }
+  if (shop.managed) {
+    if (st.hold.floor >= SERVICE.barkAfterSeconds) asks.push({ trigger: 'line', station: 'counter', by: 'manager', held: st.hold.floor });
+    if (st.hold.drivers >= SERVICE.barkAfterSeconds) asks.push({ trigger: 'drivers-idle', station: 'counter', by: 'manager', held: st.hold.drivers });
+  }
+  return asks;
 }
 
 // ---------- the feature ----------
 
-const sameShop = (a: ShopService, b: ShopService) =>
-  a.below === b.below &&
-  a.cold === b.cold &&
-  a.tip === b.tip &&
-  a.slam.prep === b.slam.prep &&
-  a.slam.oven === b.slam.oven &&
-  a.slam.counter === b.slam.counter;
+/** A running average of a reading over about `tau` seconds: it moves toward `value` by `dt`. */
+const ease = (avg: number, value: number, dt: number, tau: number): number => avg + (1 - Math.exp(-dt / tau)) * (value - avg);
+const isZero = (c: ShopService): boolean =>
+  c.seen === null &&
+  c.below === 0 &&
+  !c.cold &&
+  !c.tip &&
+  K3S.every((k) => c.pile[k] === 0 && c.wait[k] === 0 && c.made[k] === 0) &&
+  SPOTS.every((sp) => c.hold[sp] === 0);
+
+/** The symptoms' part of one shop's tick: the running averages, what the player made by hand, and how long each spot's state has held. */
+function senseShop(g: GameState, id: NeighborhoodId, f: Flow, cur: ShopService, dt: number): Pick<ShopService, 'pile' | 'wait' | 'made' | 'seen' | 'hold'> {
+  const shop = g.shops[id];
+  const l = shop.line;
+  const b = batchOf(shop, f);
+  const out: Record<K3, number> = { prep: l.prepped, ovens: l.baked, counter: l.boxed };
+  const job: Record<K3, boolean> = { prep: !!l.prep, ovens: !!l.oven, counter: !!l.counter };
+  // piles only mean something while customers outnumber the kitchen: otherwise the line backs up because it is paced by the door
+  const full = f.wanted > f.kitchen + 1e-9;
+  const pile = k3();
+  const wait = k3();
+  for (const k of K3S) {
+    const backed = out[k] > SERVICE.pileBatches * b - 1e-9;
+    pile[k] = ease(cur.pile[k], full && backed ? 1 : 0, dt, SERVICE.pileSeconds);
+    wait[k] = ease(cur.wait[k], !job[k] && !backed ? 1 : 0, dt, SERVICE.idleSeconds);
+  }
+  // what the hands made: the pies out of each station since the last tick, averaged over about a minute
+  const now = cumulative(shop);
+  const made = { ...cur.made };
+  let seen: Record<K3, number> | null = now;
+  if (cur.seen) {
+    for (const k of K3S) {
+      const d = now[k] - cur.seen[k];
+      if (d < 0)
+        seen = null; // the line was replaced (a reset, a debug jump): start measuring again
+      else made[k] = ease(cur.made[k], d / dt, dt, SERVICE.madeSeconds / 2);
+    }
+  }
+  const mid: ShopService = { ...cur, pile, wait, made };
+  const eff = kitchenOf(capacities(shop, f, made));
+  const before = rawOn(cur, shop, f, eff);
+  const after = rawOn(mid, shop, f, eff);
+  const hold = {} as Record<Spot, number>;
+  for (const sp of SPOTS) hold[sp] = after[sp] && after[sp] === before[sp] ? Math.min(SERVICE.holdCap, cur.hold[sp] + dt) : 0;
+  return { pile, wait, made, seen, hold };
+}
 
 export const service: Feature<ServiceStateSlice> = {
   key: KEY,
@@ -265,31 +464,26 @@ export const service: Feature<ServiceStateSlice> = {
     for (const id of hoodIds(cityOf(g))) {
       const cur = st.shops[id] ?? zeroShop();
       let next: ShopService;
-      if (!reportActive(g, id)) next = zeroShop();
-      else {
+      if (!reportActive(g, id)) {
+        if (st.shops[id] && isZero(cur)) continue;
+        next = zeroShop();
+      } else {
         const f = flowOf(g, id, now);
         const service = serviceOf(f);
-        const tip = service >= SERVICE.tipAt - 1e-9;
+        const money = effectsActive(g, id);
+        const tip = money && service >= SERVICE.tipAt - 1e-9;
         if (stale) next = { ...zeroShop(), tip };
         else {
-          const under = service < SERVICE.coldBelow - 1e-9;
+          const under = money && service < SERVICE.coldBelow - 1e-9;
           const below = under ? Math.min(SERVICE.coldSeconds, cur.below + dt) : 0;
-          const cold = cur.cold ? under : below >= SERVICE.coldSeconds;
-          const slam = (v: number, rate: number) => (loadOf(f, rate) >= SERVICE.slammedAt - 1e-9 ? Math.min(SERVICE.slammedBarkSeconds, v + dt) : 0);
-          next = {
-            below,
-            cold,
-            tip,
-            slam: { prep: slam(cur.slam.prep, f.prep), oven: slam(cur.slam.oven, f.ovens), counter: slam(cur.slam.counter, f.counter) },
-          };
+          const cold = money && (cur.cold ? under : below >= SERVICE.coldSeconds);
+          next = { below, cold, tip, ...senseShop(g, id, f, cur, dt) };
           if (next.tip && !cur.tip) emitPulse({ type: 'service-up', shopId: id });
           if (next.cold && !cur.cold) emitPulse({ type: 'service-down', shopId: id });
         }
       }
-      if (!sameShop(cur, next) || !st.shops[id]) {
-        if (shops === st.shops) shops = { ...st.shops };
-        shops[id] = next;
-      }
+      if (shops === st.shops) shops = { ...st.shops };
+      shops[id] = next;
     }
     const restamp = stale || now - st.at >= SERVICE.stampMs || now < st.at;
     if (shops === st.shops && !restamp) return g;

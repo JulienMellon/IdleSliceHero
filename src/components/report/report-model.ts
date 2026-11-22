@@ -1,124 +1,89 @@
-// The shop report as plain data (card P1): the strip above the sidewalk, its sheet, the cards' effect lines. Pure: unit-tested in node.
-// All text is the copy's, by key (content/service.ts COPY); nothing here is drawn. The strip and the sheet pass the primitives they need.
-import { COPY, FIX_ROWS, LAMP_INITIAL, MANAGER_COPY_KEY, SERVICE, type CopyKey } from '../../content/service';
+// The shop report as plain data (card U3, v5.22): the strip above the sidewalk, its sheet, the cards' effect lines. Pure: unit-tested in node.
+// One bar per station and one for the drivers, all the same colour, each as long as the pizzas a minute it can handle, with one dashed line
+// across them at the customers a minute. Nothing here names a station as the limit and nothing is colour coded (the lamps are gone).
+// Report words come from content/copy/home/report.ts by `t()`; the effect lines still read content/service.ts COPY.
+import { COPY, SERVICE, type CopyKey } from '../../content/service';
 import { cityOf } from '../../content/cities';
+import { t } from '../../content/copy';
 import type { NeighborhoodId } from '../../content/types';
-import { count, duration, money } from '../../engine/format';
+import type { CoachTargetId } from '../../engine/coach-types';
+import { count, duration } from '../../engine/format';
 import type { GameState } from '../../engine/game';
-import { reportView, type FloorLamp, type KitchenStation, type Lamp, type ReportView } from '../../engine/features/service';
-import { FIT_EM, fits } from '../endgame/fit-model';
+import { reportActive, reportView, type K3, type ReportView } from '../../engine/features/service';
+import { FIT_EM } from '../endgame/fit-model';
 
 /** Fill `{name}` slots of a copy line. An unknown slot stays as written (a test catches it). */
 export const fill = (template: string, vars: Readonly<Record<string, string | number>>): string =>
   template.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
 export const copy = (key: CopyKey, vars: Readonly<Record<string, string | number>> = {}): string => fill(COPY[key], vars);
 
-// ---------- the lamps ----------
+/** Orders a minute as the report writes them: a whole number, K/M past a thousand. */
+const whole = (x: number): string => count(Math.max(0, Math.round(x)));
+const perMin = (x: number) => `${whole(x)}/min`;
+const pct = (x: number) => `${Math.round(x * 100)}%`;
 
-export type LampTone = 'slammed' | 'busy' | 'idle' | 'full' | 'steady' | 'quiet';
-/** The dots' colours: red where it is jammed, amber where it is busy, green where it has room, blue-grey where it is quiet. */
-export const LAMP_COLOR: Record<LampTone, string> = {
-  slammed: '#D9443A',
-  full: '#D9443A',
-  busy: '#E8A33D',
-  steady: '#4FA05B',
-  idle: '#4FA05B',
-  quiet: '#8AA4B8',
-};
-/** The initial's colour on its chip: white on red (contrast), ink elsewhere. */
-export const LAMP_INK: Record<LampTone, 'light' | 'dark'> = { slammed: 'light', full: 'light', busy: 'dark', steady: 'dark', idle: 'dark', quiet: 'dark' };
-export const lampWord = (kind: KitchenStation | 'floor', lamp: Lamp | FloorLamp): string =>
-  copy(`lamp.${kind === 'floor' ? 'floor' : 'station'}.${lamp}` as CopyKey);
+// ---------- the coach's targets (card E4 points at these) ----------
+
+/** The bars, in order: the three kitchen stations. (The customers' row is not a station: it is the stacked deliveries and seats, ending at the line.) */
+export type BarKey = K3;
+export const BAR_KEYS: readonly BarKey[] = ['prep', 'ovens', 'counter'];
+
+/** The ids this card registers with the Coach: the strip, one per bar (`report:bar:ovens`), the dashed line's label and the sheet's Close. */
+export const REPORT_TARGET = {
+  strip: 'report:strip',
+  demand: 'report:demand',
+  close: 'report:close',
+  bar: (k: BarKey): CoachTargetId => `report:bar:${k}`,
+} as const satisfies Record<string, CoachTargetId | ((k: BarKey) => CoachTargetId)>;
+/** Every id above, as a list (a test pins that each one is drawn). */
+export const REPORT_TARGETS: readonly CoachTargetId[] = [REPORT_TARGET.strip, REPORT_TARGET.demand, REPORT_TARGET.close, ...BAR_KEYS.map(REPORT_TARGET.bar)];
 
 // ---------- the strip ----------
 
-export type StripKind = 'kitchen' | 'quiet' | 'tipping' | 'cold';
+/** What a neutral state says: the pizzas tip, or the line has gone cold. Never a station. */
+export type StripKind = 'tipping' | 'cold';
 
-/** Which line the strip shows. Cold first (it says what ends it), then a Quiet floor (go find customers), then the kitchen as the limit, then the tip. Null: nothing to say. */
+/** The state worth a word, or null (also null while the service score's money does not run yet). */
 export function stripKind(v: ReportView): StripKind | null {
-  if (v.state === 'inactive') return null;
-  if (v.state === 'cold') return 'cold';
-  if (v.lamps.floor === 'quiet') return 'quiet';
-  if (v.kitchenLimits && v.state !== 'tipping') return 'kitchen';
-  return v.state === 'tipping' ? 'tipping' : null;
+  if (v.state === 'tipping' || v.state === 'cold') return v.state;
+  return null;
 }
 
-/** The strip's line for a shop: the manager's when one is hired (their `report.<id>.*` copy), else the neutral copy. */
-export function stripLine(v: ReportView, id: NeighborhoodId, managed: boolean): { kind: StripKind; text: string } | null {
-  // a manager with no `report.<id>.*` copy (another city's: the script writes none) says the neutral line
-  const kind = stripKind(v);
-  if (!kind) return null;
-  const key = (managed && MANAGER_COPY_KEY[id] ? `report.${MANAGER_COPY_KEY[id]}.${kind}` : `report.${kind}`) as CopyKey;
-  const vars = {
-    served: count(Math.max(0, Math.round(v.perMin.sold))),
-    wanted: count(Math.max(0, Math.round(v.perMin.wanted))),
-    could: count(Math.max(0, Math.round(v.perMin.kitchen))),
-    lost: `${money(v.lostPerMinute)}/min`,
-  };
-  return { kind, text: copy(key, vars) };
-}
+/** The strip's one line, for a view: "Served 41/min · Missed 7/min". */
+export const reportLine = (v: Pick<ReportView, 'served' | 'missed'> & Partial<Pick<ReportView, 'state'>>): string => {
+  const line = t('report.strip', { served: whole(v.served), missed: whole(v.missed) });
+  // D554: the tip and the cold line change the shop's money, so the strip says so in a neutral word ("· Tips up", "· Word's spreading")
+  return v.state === 'tipping' ? `${line} ${t('report.strip.cold.tips')}` : v.state === 'cold' ? `${line} ${t('report.strip.cold.word')}` : line;
+};
 
 /** What the strip draws, as primitives only (the component selects this with a shallow compare, so it repaints when a word changes, never on a tick). */
 export interface StripModel {
   show: boolean;
-  kind: StripKind | '';
   text: string;
   /** The manager's id (their face badge), or '' without one. */
   manager: string;
-  prep: LampTone;
-  ovens: LampTone;
-  counter: LampTone;
-  floor: LampTone;
-  /** The worst lamp's chip ('prep' ... 'floor'), or ''. */
-  worstDot: string;
-  /** One state word, always (D492): the worst lamp's ("Slammed", "Quiet"), else the state's ("Tipping", "Cold"). */
-  word: string;
 }
 
-export const HIDDEN_STRIP: StripModel = Object.freeze({
-  show: false,
-  kind: '',
-  text: '',
-  manager: '',
-  prep: 'idle',
-  ovens: 'idle',
-  counter: 'idle',
-  floor: 'steady',
-  worstDot: '',
-  word: '',
-}) as StripModel;
+export const HIDDEN_STRIP: StripModel = Object.freeze({ show: false, text: '', manager: '' }) as StripModel;
 
+/** The strip: shown from the first head or manager (the report is live), with the served/missed line and, when a manager runs the shop, their face. */
 export function stripModel(g: GameState, id: NeighborhoodId, now: number): StripModel {
-  const v = reportView(g, id, now);
+  if (!reportActive(g, id)) return HIDDEN_STRIP;
   const managed = g.shops[id].managed;
-  const line = stripLine(v, id, managed);
-  if (!line) return HIDDEN_STRIP;
-  return {
-    show: true,
-    kind: line.kind,
-    text: line.text,
-    manager: managed ? (cityOf(g).managers[id]?.id ?? '') : '',
-    prep: v.lamps.prep,
-    ovens: v.lamps.ovens,
-    counter: v.lamps.counter,
-    floor: v.lamps.floor,
-    worstDot: v.worst?.kind ?? '',
-    word: v.worst ? lampWord(v.worst.kind, v.worst.lamp) : copy(`lamp.state.${line.kind === 'cold' ? 'cold' : 'tipping'}` as CopyKey),
-  };
+  return { show: true, text: reportLine(reportView(g, id, now)), manager: managed ? (cityOf(g).managers[id]?.id ?? '') : '' };
 }
 
 /** The drawer's header: the report's line when the shop takes part in it, else null (the drawer keeps its own). */
 export function drawerLine(g: GameState, id: NeighborhoodId): string | null {
-  const line = stripLine(reportView(g, id, g.lastSavedAt), id, g.shops[id].managed);
-  return line ? line.text : null;
+  return reportActive(g, id) ? reportLine(reportView(g, id, g.lastSavedAt)) : null;
 }
 
 // ---------- fitting the strip's line ----------
 
 /**
- * The strip (D479, D485, D492). Its touch box is 44 pt, directly above the sidewalk row, but only the bottom `pill` pt are drawn: the rest is
- * clear, so the shop front and the WELCOME mat show above the pill. Inside the pill: four lamp chips with initials (P, O, C, In) over one
- * state word, then the manager's face, then the line (two lines at 10 pt or more). The widths live here so the fit arithmetic and the layout share them.
+ * The strip (D479, D485). Its touch box is 44 pt, directly above the sidewalk row, but only the bottom `pill` pt are drawn: the rest is
+ * clear, so the shop front and the WELCOME mat show above the pill. Inside the pill: the manager's face when one runs the shop, then the
+ * line (two lines at 10 pt or more). The widths live here so the fit arithmetic and the layout share them.
  */
 export const STRIP = {
   /** The touch box (the control's drawn size for the tap-target rule). */
@@ -128,30 +93,21 @@ export const STRIP = {
   border: 2,
   margin: 8,
   padX: 6,
-  /** A lamp chip: its colour with the initial in it. */
-  chipW: 14,
-  chipH: 12,
-  chipGap: 2,
-  /** Four chips with their gaps (the state word under them needs about as much). */
-  lampsWidth: 4 * 14 + 3 * 2,
   gap: 6,
   /** The manager's face badge. */
   badge: 22,
   /** Gap between the strip and the sidewalk row below it. */
   above: 4,
   maxLines: 2,
-  fonts: [11, 10] as readonly number[],
+  fonts: [12, 11, 10] as readonly number[],
 } as const;
 
 /** A line of the strip's text at `size` takes this much height. */
 export const stripLineHeight = (size: number): number => size + 1;
 
-/** The lamp chip's initial. */
-export const lampInitial = (d: KitchenStation | 'floor'): string => LAMP_INITIAL[d];
-
 /** The width of the strip's line on a screen `screenW` wide, with or without a manager's badge. */
 export const stripTextWidth = (screenW: number, withBadge: boolean): number =>
-  screenW - 2 * STRIP.margin - 2 * (STRIP.padX + STRIP.border) - STRIP.lampsWidth - STRIP.gap - (withBadge ? STRIP.badge + STRIP.gap : 0);
+  screenW - 2 * STRIP.margin - 2 * (STRIP.padX + STRIP.border) - (withBadge ? STRIP.badge + STRIP.gap : 0);
 
 /** How many lines `text` takes at `size` in `width` pt (greedy word wrap by the same per-character estimate as `fitFont`). */
 export function wrapLines(text: string, width: number, size: number): number {
@@ -181,52 +137,86 @@ export function stripFont(text: string, width: number): { size: number; lines: n
 
 // ---------- the sheet ----------
 
-const perMin = (x: number) => `${count(Math.max(0, Math.round(x)))}/min`;
-const pct = (x: number) => `${Math.round(x * 100)}%`;
+const BAR_NAME: Record<BarKey, string> = {
+  prep: 'report.bar.prep',
+  ovens: 'report.bar.oven',
+  counter: 'report.bar.counter',
+};
 
-export interface SheetRow {
-  key: KitchenStation | 'floor';
+export interface BarRow {
+  key: BarKey;
   name: string;
-  /** Pizzas a minute: what the station can make, or what is coming in. */
-  rate: string;
-  /** Load for a station, wanted ÷ kitchen for the floor. */
-  load: string;
-  tone: LampTone;
-  word: string;
+  /** "18/min": what the station can handle. */
+  value: string;
+  /** The bar's length, 0..1 of the track. */
+  frac: number;
+  /** "You tap" on a bar the player makes by hand, else ''. */
+  you: string;
+  /** The coach's id for the bar (`report:bar:ovens`). */
+  target: CoachTargetId;
+}
+
+/**
+ * The customers' row (G119, S90): one stacked bar, the deliveries the drivers carry and then the walk-ins the seats take, ending exactly at the dashed
+ * line (the line IS their sum). The drivers have no bar of their own to hold against the line: they are only part of what the line asks for.
+ */
+export interface CustomersRow {
+  name: string;
+  /** "168/min": every customer a minute. */
+  value: string;
+  /** The deliveries' and the seats' lengths, 0..1 of the track; together they end at the line. */
+  deliveries: number;
+  seats: number;
+  /** "Drivers 90/min · Seats 78/min". */
+  split: string;
 }
 
 export interface SheetModel {
   title: string;
-  rows: SheetRow[];
+  bars: BarRow[];
+  customers: CustomersRow;
+  /** The dashed line: "Customers 24/min", and where it crosses the bars (0..1 of the track). */
+  demand: { label: string; frac: number };
+  served: string;
+  missed: string;
+  /** "Service 85%". */
   service: string;
+  /** A neutral word for the two states worth one ("Tips up", "Line’s gone cold"), else ''. */
+  stateWord: string;
   tip: string;
   cold: string;
   /** "Cold in 40 s", "The line is cold: get service back to 60%", or null. */
   timer: string | null;
   state: ReportView['state'];
-  fixes: { key: string; title: string; line: string; buys: string }[];
 }
 
-const STATION_NAME: Record<KitchenStation | 'floor', string> = { prep: 'Prep', ovens: 'Ovens', counter: 'Counter', floor: 'Orders coming in' };
+/** The bars, the customers' stacked row and the line from one view: every length is a share of the longest of the bars and the line, so the longest one fills the track. */
+export function barRows(v: Pick<ReportView, 'capacity' | 'wanted' | 'walkIns' | 'you'>): { bars: BarRow[]; customers: CustomersRow; demandFrac: number } {
+  const top = Math.max(v.wanted, ...BAR_KEYS.map((k) => v.capacity[k]));
+  const share = (x: number) => (top > 1e-9 ? Math.min(1, Math.max(0, x / top)) : 0);
+  const bars = BAR_KEYS.map((k): BarRow => ({
+    key: k,
+    name: t(BAR_NAME[k]),
+    value: perMin(v.capacity[k]),
+    frac: share(v.capacity[k]),
+    you: v.you[k] ? t('report.you') : '',
+    target: REPORT_TARGET.bar(k),
+  }));
+  const deliveries = share(v.capacity.drivers);
+  const customers: CustomersRow = {
+    name: t('report.demand'),
+    value: perMin(v.wanted),
+    deliveries,
+    // the seats take the rest of the way to the line, so the stack always ends at it
+    seats: Math.max(0, share(v.wanted) - deliveries),
+    split: t('report.customers.split', { drivers: whole(v.capacity.drivers), seats: whole(v.walkIns) }),
+  };
+  return { bars, customers, demandFrac: share(v.wanted) };
+}
 
 export function sheetModel(g: GameState, id: NeighborhoodId, now: number): SheetModel {
   const v = reportView(g, id, now);
-  const rows: SheetRow[] = (['prep', 'ovens', 'counter'] as const).map((k) => ({
-    key: k,
-    name: STATION_NAME[k],
-    rate: perMin(v.perMin[k]),
-    load: pct(v.loads[k]),
-    tone: v.lamps[k],
-    word: lampWord(k, v.lamps[k]),
-  }));
-  rows.push({
-    key: 'floor',
-    name: STATION_NAME.floor,
-    rate: perMin(v.perMin.wanted),
-    load: pct(v.floorRatio),
-    tone: v.lamps.floor,
-    word: lampWord('floor', v.lamps.floor),
-  });
+  const { bars, customers, demandFrac } = barRows(v);
   const timer =
     v.state === 'cold'
       ? `The line is cold. Get service back to ${pct(SERVICE.coldBelow)}.`
@@ -234,39 +224,17 @@ export function sheetModel(g: GameState, id: NeighborhoodId, now: number): Sheet
         ? `Cold in ${duration(Math.ceil(v.coldIn))} if it stays under ${pct(SERVICE.coldBelow)}.`
         : null;
   return {
-    title: copy('report.sheet.title'),
-    rows,
-    service: pct(v.service),
+    title: t('report.sheet.title'),
+    bars,
+    customers,
+    demand: { label: `${t('report.demand')} ${perMin(v.wanted)}`, frac: demandFrac },
+    served: t('report.served', { n: whole(v.served) }),
+    missed: t('report.missed', { n: whole(v.missed) }),
+    service: t('report.service', { n: Math.round(v.service * 100) }),
+    stateWord: v.state === 'tipping' ? t('report.state.tipping') : v.state === 'cold' ? t('report.state.cold') : '',
     tip: copy('report.sheet.tip'),
     cold: copy('report.sheet.cold'),
     timer,
     state: v.state,
-    fixes: FIX_ROWS.map((f) => ({
-      key: f.key,
-      title: copy(`report.sheet.fix.${f.key}.title` as CopyKey),
-      line: copy(`report.sheet.fix.${f.key}.line` as CopyKey),
-      buys: f.buys,
-    })),
   };
-}
-
-// ---------- cards say what they do ----------
-
-/** "+$250/min · pays back in 12m": the gain a minute and the payback time (cost ÷ gain). `gain` is cash a second. Null when it adds nothing. */
-export function effectLine(gain: number | null, cost: number | null): string | null {
-  if (gain === null || !(gain > 1e-9)) return null;
-  return copy('effect.gain', { gain: money(gain * 60), time: cost !== null && cost > 0 ? duration(Math.max(1, Math.ceil(cost / gain))) : 'now' });
-}
-/** The no-gain line: "Prep isn't holding you back". */
-export const noGainLine = (station: string): string => copy('effect.nogain', { station });
-export const headEffect = (): string => copy('effect.head');
-export const managerEffect = (): string => copy('effect.manager');
-
-/** A sidewalk card's foot line: the longest of the gain with its payback, the gain alone, or a shorter gain that fits `width` (the card's text width). */
-export function compactEffect(gain: number | null, cost: number | null, width: number): string | null {
-  if (gain === null || !(gain > 1e-9)) return null;
-  const g = `+${money(gain * 60)}/min`;
-  const candidates =
-    cost !== null && cost > 0 ? [`${g} · ${duration(Math.max(1, Math.ceil(cost / gain)))}`, g, `+${money(gain * 60)}/m`] : [g, `+${money(gain * 60)}/m`];
-  return candidates.find((c) => fits(c, width, 10)) ?? candidates[candidates.length - 1];
 }

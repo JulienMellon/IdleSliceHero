@@ -29,7 +29,7 @@ const H = 852;
 const flagship = sceneView(W, H, sceneFrame(4));
 const fit = flagship.fit;
 const xs: Record<KitchenSpot, number> = { prep: 90, ovens: 330, counter: 560 };
-const mk = (over: Partial<Parameters<typeof wantsOf>[0]> = {}) => wantsOf({ slammed: [], jam: false, bubble: null, tap: null, xs, jamX: 380, ...over });
+const mk = (over: Partial<Parameters<typeof wantsOf>[0]> = {}) => wantsOf({ piling: [], jam: false, bubble: null, tap: null, xs, jamX: 380, ...over });
 
 describe('what is off screen', () => {
   test('a place is off the left under CUE_EDGE, off the right past the width less CUE_EDGE, and on screen between', () => {
@@ -47,35 +47,35 @@ describe('what is off screen', () => {
 
 describe('one cue per side, the most urgent', () => {
   const view = (scrollX: number, wants: Want[]) => cuesFor(wants, scrollX, W, fit, flagship.maxScroll);
-  test("scrolled to the kitchen's left end, the counter is off the right edge and a Slammed counter says so", () => {
-    const left = view(0, mk({ slammed: ['counter'] }));
+  test("scrolled to the kitchen's left end, the counter is off the right edge and a counter with orders piling up says so", () => {
+    const left = view(0, mk({ piling: ['counter'] }));
     expect(left.left).toBeNull();
-    expect(left.right).toMatchObject({ side: 'right', kind: 'slammed', at: 'counter' });
+    expect(left.right).toMatchObject({ side: 'right', kind: 'piling', at: 'counter' });
     expect(sceneToScreen(560, 0, fit)).toBeGreaterThan(W);
   });
-  test("the order is a jam, then a Slammed station, then a head's bubble, then a tap; the first off screen on a side wins", () => {
-    expect(CUE_URGENCY.jam).toBeGreaterThan(CUE_URGENCY.slammed);
-    expect(CUE_URGENCY.slammed).toBeGreaterThan(CUE_URGENCY.bubble);
+  test("the order is a jam, then a station with orders piling up, then a head's bubble, then a tap; the first off screen on a side wins", () => {
+    expect(CUE_URGENCY.jam).toBeGreaterThan(CUE_URGENCY.piling);
+    expect(CUE_URGENCY.piling).toBeGreaterThan(CUE_URGENCY.bubble);
     expect(CUE_URGENCY.bubble).toBeGreaterThan(CUE_URGENCY.tap);
-    const all = mk({ slammed: ['counter'], jam: true, bubble: 'counter', tap: 'counter' });
+    const all = mk({ piling: ['counter'], jam: true, bubble: 'counter', tap: 'counter' });
     // both the jammed oven (380) and the counter (560) are off the right edge at scroll 0 in a 393 screen? the oven is at 380 * s: still on or just off
     const r = view(0, all);
-    expect(r.right?.kind).toBe(sceneToScreen(380, 0, fit) > W - CUE_EDGE ? 'jam' : 'slammed');
+    expect(r.right?.kind).toBe(sceneToScreen(380, 0, fit) > W - CUE_EDGE ? 'jam' : 'piling');
     expect(view(0, mk({ bubble: 'counter', tap: 'counter' })).right?.kind).toBe('bubble');
     expect(view(0, mk({ tap: 'counter' })).right?.kind).toBe('tap');
   });
   test('a tie goes to the nearer place; each side has its own cue', () => {
     const far = Math.round(flagship.maxScroll);
-    const r = view(far, mk({ slammed: ['prep', 'ovens'], tap: 'prep' }));
+    const r = view(far, mk({ piling: ['prep', 'ovens'], tap: 'prep' }));
     expect(r.left?.at).toBe('ovens');
-    expect(r.left?.kind).toBe('slammed');
+    expect(r.left?.kind).toBe('piling');
     expect(r.right).toBeNull();
-    const both = view(Math.round(far / 2), mk({ slammed: ['prep', 'counter'] }));
+    const both = view(Math.round(far / 2), mk({ piling: ['prep', 'counter'] }));
     expect([both.left?.at, both.right?.at]).toEqual(['prep', 'counter']);
   });
   test('a tap scrolls there: the place lands in the middle of the screen, inside the content', () => {
     for (const st of ['prep', 'ovens', 'counter'] as const) {
-      const c = view(0, mk({ slammed: [st] })).right ?? view(flagship.maxScroll, mk({ slammed: [st] })).left;
+      const c = view(0, mk({ piling: [st] })).right ?? view(flagship.maxScroll, mk({ piling: [st] })).left;
       if (!c) continue;
       expect(c.scrollTo).toBeGreaterThanOrEqual(0);
       expect(c.scrollTo).toBeLessThanOrEqual(flagship.maxScroll);
@@ -83,12 +83,12 @@ describe('one cue per side, the most urgent', () => {
       expect(sx).toBeGreaterThanOrEqual(CUE_EDGE);
       expect(sx).toBeLessThanOrEqual(W - CUE_EDGE);
       // …and once there, no cue points at it any more
-      const after = cuesFor(mk({ slammed: [st] }), c.scrollTo, W, fit, flagship.maxScroll);
+      const after = cuesFor(mk({ piling: [st] }), c.scrollTo, W, fit, flagship.maxScroll);
       expect(after.left?.at === st || after.right?.at === st).toBe(false);
     }
   });
   test('every place in the shop can be brought on screen by taps alone: every want, from every scroll position, has a cue that reaches it', () => {
-    const wants = mk({ slammed: ['prep', 'ovens', 'counter'], jam: true, bubble: 'ovens', tap: 'prep' });
+    const wants = mk({ piling: ['prep', 'ovens', 'counter'], jam: true, bubble: 'ovens', tap: 'prep' });
     for (const start of [0, flagship.maxScroll / 4, flagship.maxScroll / 2, flagship.maxScroll]) {
       let at = start;
       for (let hops = 0; hops < 6; hops++) {
@@ -117,10 +117,10 @@ describe('the cue itself', () => {
   });
   test('a screen reader hears which way, what and where', () => {
     expect(cueLabel('jam', 'ovens', 'right')).toBe('Scroll right: An oven is jammed at the ovens');
-    expect(cueLabel('slammed', 'prep', 'left')).toBe('Scroll left: The prep bench is slammed');
+    expect(cueLabel('piling', 'prep', 'left')).toBe('Scroll left: The prep bench has orders piling up');
     expect(cueLabel('tap', 'counter', 'right')).toBe('Scroll right: The counter is ready to tap');
-    const c = cuesFor(mk({ slammed: ['counter'] }), 0, W, fit, flagship.maxScroll).right!;
-    expect(c.label).toBe(cueLabel('slammed', 'counter', 'right'));
+    const c = cuesFor(mk({ piling: ['counter'] }), 0, W, fit, flagship.maxScroll).right!;
+    expect(c.label).toBe(cueLabel('piling', 'counter', 'right'));
     expect(c.word.length).toBeLessThanOrEqual(7);
   });
 });
@@ -178,13 +178,13 @@ describe('G111: a cue keeps 8 pt clear of the tappables on screen', () => {
     expect(clearCueTop('right', 40, W, 60, [{ x0: W - 60, y0: 0, x1: W, y1: 60 }])).toBe(40);
   });
   test('the word names the station, 7 letters at most', () => {
-    expect([cueWord('slammed', 'ovens'), cueWord('tap', 'prep'), cueWord('bubble', 'counter'), cueWord('jam', 'ovens')]).toEqual([
+    expect([cueWord('piling', 'ovens'), cueWord('tap', 'prep'), cueWord('bubble', 'counter'), cueWord('jam', 'ovens')]).toEqual([
       'Ovens',
       'Prep',
       'Counter',
       'Jam!',
     ]);
-    for (const k of ['jam', 'slammed', 'bubble', 'tap'] as const)
+    for (const k of ['jam', 'piling', 'bubble', 'tap'] as const)
       for (const at of ['prep', 'ovens', 'counter', 'floor', 'door'] as const) expect(cueWord(k, at).length).toBeLessThanOrEqual(7);
   });
 });

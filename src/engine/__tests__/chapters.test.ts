@@ -17,6 +17,7 @@ import {
   chaptersTick,
   chapterTasks,
   currentChapter,
+  markReportOpened,
   migrateChapterSave,
   nextTask,
   openChapters,
@@ -25,7 +26,7 @@ import {
   visibleTasks,
 } from '../chapters';
 import { pickScene } from '../cutscene-input';
-import { flowOf } from '../features/service';
+import { flowOf, reportView } from '../features/service';
 import * as G from '../game';
 import { NONNA_TAKEOVER } from '../../content/cities/home/fit';
 import { cityOf, hoodIds } from '../../content/cities';
@@ -141,8 +142,10 @@ describe('task progress', () => {
     expect(taskProgress({ ...s, playSeconds: 160 }, t)).toEqual({ current: 60, target: 180, done: false });
     expect(taskProgress({ ...s, playSeconds: 400 }, t).done).toBe(true);
   });
-  it('report is done by itself until the report has a reader', () => {
-    expect(taskProgress(base, task('downtown-3', 3)).done).toBe(true);
+  it('report is done once the shop report has been opened, and not before', () => {
+    const t = task('downtown-3', 3);
+    expect(taskProgress(base, t)).toEqual({ current: 0, target: 1, done: false });
+    expect(taskProgress(saved(base, { report: true }), t).done).toBe(true);
   });
   it('a done task stays done', () => {
     const t = task('downtown-2', 2);
@@ -225,6 +228,16 @@ describe('the next shop waits for the chapter (E1b)', () => {
     const s = upTo('suburbs', 'suburbs-2');
     expect(currentChapter(s)).toBe(buildChapter(s, 'waterfront'));
   });
+  it('names the chapter the Story tab shows even when it is not the held shop’s own (D546)', () => {
+    // Suburbs is built early while the story is still in Downtown: the lock names the chapter the player is on, not a later one
+    const g = upTo('suburbs', 'downtown-3');
+    const held = buildChapter(g, 'waterfront');
+    expect(held).toBe(currentChapter(g));
+    expect(G.buildLock(g, 'waterfront')).toBe(`Finish Chapter ${HOME_CHAPTERS.indexOf(currentChapter(g)!) + 1} first`);
+  });
+  it('never holds the build a chapter asks for (every build task, once its chapter is current)', () => {
+    for (const c of HOME_CHAPTERS) for (const t of c.tasks) if (t.kind === 'build') expect(buildChapter(before(c.sceneId), t.shop)).toBeNull();
+  });
   it('allows the build once the beat has played, and the build is then made', () => {
     const s = upTo('suburbs', 'suburbs-4');
     expect(G.buildLock(s, 'waterfront')).toBeNull();
@@ -272,6 +285,33 @@ describe('the next shop waits for the chapter (E1b)', () => {
     expect(G.buildLock(s, 'waterfront')).not.toBeNull();
     expect(currentChapter(s)).toBe(chapter('suburbs-2'));
     expect(nextTask(s)?.task.key).toBe(task('suburbs-2', 2).key);
+  });
+});
+
+describe('the shop report is opened (v5.22)', () => {
+  it('marks the save once, and gives the same state back after', () => {
+    const g = G.newGame(0);
+    expect(saveOf(g).report).toBe(false);
+    const a = markReportOpened(g);
+    expect(saveOf(a).report).toBe(true);
+    expect(markReportOpened(a)).toBe(a);
+    expect(migrateChapterSave(JSON.parse(JSON.stringify(saveOf(a))))?.report).toBe(true);
+  });
+});
+
+describe('no missed orders reads the report (v5.22)', () => {
+  const t4 = (n: number) => task('downtown-4', n);
+  const start = () => withShop(before('downtown-4', { playSeconds: 100 }), 'downtown', { heads: G.allHeads(), managed: true });
+  it('counts a shop that keeps up and starts over for one that misses orders, as the report shows them', () => {
+    const calm = withShop(start(), 'downtown', { prep: 12, ovens: 12, counter: 12, drivers: 1, tables: 1 });
+    expect(reportView(calm, 'downtown', 0).missed).toBe(0);
+    let g = calm;
+    for (let i = 0; i < 10; i++) g = chaptersTick(g, 1, 0);
+    expect(saveOf(g).calm[t4(3).key]).toBe(10);
+    const short = withShop(g, 'downtown', { ovens: 1, drivers: 12, tables: 12 });
+    expect(reportView(short, 'downtown', 0).missed).toBeGreaterThan(0);
+    expect(saveOf(chaptersTick(short, 1, 0)).calm[t4(3).key]).toBe(0);
+    expect(saveOf(chaptersTick(short, 1, 0)).best[t4(3).key]).toBe(10); // the best run stays
   });
 });
 
@@ -442,8 +482,15 @@ describe('the save', () => {
   it('reads a broken slice as none, and a partly broken one field by field', () => {
     expect(migrateChapterSave(undefined)).toBeNull();
     expect(migrateChapterSave('x')).toBeNull();
-    const m = migrateChapterSave({ done: ['a', 3, null], best: { a: 5, b: 'x', c: -2 }, run: { a: { lo: 3, secs: 99 }, b: 7 }, calm: [], report: 'yes' });
-    expect(m).toEqual({ done: ['a'], best: { a: 5, c: 0 }, run: { a: { lo: 3, secs: 30 } }, calm: {}, report: false, banked: 0 });
+    const m = migrateChapterSave({
+      done: ['a', 3, null],
+      best: { a: 5, b: 'x', c: -2 },
+      run: { a: { lo: 3, secs: 99 }, b: 7 },
+      calm: [],
+      report: 'yes',
+      coachDone: ['report', 7, 'report', 'x'],
+    });
+    expect(m).toEqual({ done: ['a'], best: { a: 5, c: 0 }, run: { a: { lo: 3, secs: 30 } }, calm: {}, report: false, coachDone: ['report', 'x'], banked: 0 });
   });
   it('is absent from a new game and from a state nothing has counted in', () => {
     expect(G.newGame(0).x.chapters).toBeUndefined();
@@ -520,7 +567,7 @@ describe('a save from before chapters (v7)', () => {
 
   it('marks the chapters of seen beats done without a record, and ticks the open one from the save', () => {
     const m = G.migrate(v7('downtown-3', { shops: withShop(G.newGame(0), 'downtown', { heads: { prep: true, oven: true, counter: true } }).shops }), 0);
-    expect(chapterTasks(m).map((r) => r.done)).toEqual([false, true]); // (the self-done report task is not listed)
+    expect(chapterTasks(m).map((r) => r.done)).toEqual([false, true, false]); // (the report task waits for the sheet to be opened)
     expect(chapterDone(m, chapter('downtown-2'))).toBe(true);
   });
 
@@ -596,11 +643,11 @@ describe('the wait on the pacing is one rule', () => {
 });
 
 describe('what the player is shown', () => {
-  it('leaves the self-done report task out of the list until the report has a reader', () => {
+  it('lists the report task now the report has a reader (D539)', () => {
     expect(chapter('downtown-3').tasks).toHaveLength(3);
-    expect(visibleTasks(chapter('downtown-3')).map((t) => t.kind)).toEqual(['serve', 'hire']);
+    expect(visibleTasks(chapter('downtown-3')).map((t) => t.kind)).toEqual(['serve', 'hire', 'report']);
     const s = withShop(before('downtown-3', { x: seen([]).x }), 'downtown', { sold: 10 });
-    expect(chapterTasks(s).map((r) => r.task.kind)).toEqual(['serve', 'hire']);
+    expect(chapterTasks(s).map((r) => r.task.kind)).toEqual(['serve', 'hire', 'report']);
   });
   it('a save still in the tutorial keeps the opening’s tasks (they count done only once the tutorial is over)', () => {
     const raw = JSON.parse(JSON.stringify({ ...G.newGame(0), seenScenes: ['downtown-1'], tutorial: 9, saveVersion: 7 }));

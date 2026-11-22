@@ -36,6 +36,7 @@ import { useGame } from '../store/game-store';
 import { useMotion } from './scene/clock';
 import { buttonOutline, type ButtonTone } from './sidewalk-model';
 import { BUTTON_H, COMPACT_FONT_MAX_SCALE, GOAL_BAR_H, GOAL_TAP_H, GOAL_TAP_ROOM, HUD_BUTTON_SLOP, HUD_ROW_H, HUD_STACK } from './tap-targets';
+import { Z } from './z-order';
 
 // X1 (v5.19-test): the red TEST pill and its panel. The require sits inside the literal env check, so the normal export folds it away and
 // never collects src/dev/panel (src/dev/README.md; `npm run check:no-test-mode` proves it).
@@ -91,8 +92,7 @@ const BURST = ['star', 'coin', 'slice', 'star', 'coin', 'slice'] as const;
  * (shake). `tone`: `normal` is green when affordable and grey when not; `neutral` is white (de-emphasised, e.g. before
  * a shop has a manager); `nogain` is a buy that adds nothing right now, drawn flat and muted (no strike-through: a struck price read as
  * "unaffordable" or "discounted", D359), so green always means "this adds income" (D313). `nogain` is a style of the same element tree, so a station
- * flipping to it right after a purchase keeps its burst (C56). `saving` (with `progress` 0–1) marks the bottleneck
- * the player is saving for (D326). `expand` is the amber Expand buy (D407). `compact` is the 44 pt sidewalk button: `icon` + `sub`
+ * flipping to it right after a purchase keeps its burst (C56). `expand` is the amber Expand buy (D407). `compact` is the 44 pt sidewalk button: `icon` + `sub`
  * above the price, and `foot` (or the "need" line) under it.
  */
 export function BuyButton({
@@ -104,8 +104,6 @@ export function BuyButton({
   compact,
   icon,
   tone = 'normal',
-  saving = false,
-  progress = 0,
   need = null,
   foot = null,
   noBurst = false,
@@ -127,8 +125,6 @@ export function BuyButton({
   compact?: boolean;
   icon?: React.ReactNode;
   tone?: ButtonTone;
-  saving?: boolean;
-  progress?: number;
   need?: string | null;
   /** A line under the price that shows whether or not the button is affordable (compact only). */ foot?: string | null;
 }) {
@@ -136,12 +132,10 @@ export function BuyButton({
   const amber = tone === 'expand' && enabled;
   const footText = foot ?? (!enabled ? need : null);
   const needLine = !!footText;
-  // saving for the bottleneck: a pale basil face, so the one thing worth saving for stands out among the greys (D326)
-  const wait = saving && !enabled && !nogain;
-  const outerBg = nogain ? '#CFC3B2' : wait ? '#A9CFB1' : !enabled ? '#C9BCAD' : amber ? '#B9780B' : C.basilDark;
-  const innerBg = nogain ? '#EFE6D8' : wait ? '#DDEFD9' : !enabled ? '#E2D9CE' : amber ? EXPAND_AMBER : tone === 'neutral' ? '#FFFFFF' : C.basil;
+  const outerBg = nogain ? '#CFC3B2' : !enabled ? '#C9BCAD' : amber ? '#B9780B' : C.basilDark;
+  const innerBg = nogain ? '#EFE6D8' : !enabled ? '#E2D9CE' : amber ? EXPAND_AMBER : tone === 'neutral' ? '#FFFFFF' : C.basil;
   // a greyed-out button still reads at ~4:1 (was #8A7B6E, ~2:1: D310)
-  const labelColor = nogain ? '#8A7B6C' : wait ? '#2E7D3E' : !enabled ? '#665A4F' : amber || tone === 'neutral' ? C.ink : '#fff';
+  const labelColor = nogain ? '#8A7B6C' : !enabled ? '#665A4F' : amber || tone === 'neutral' ? C.ink : '#fff';
   // D419: a buy you can make has a 2 pt crust-brown outline in every neighbourhood
   const innerBorder = nogain ? styles.noGainInner : buttonOutline(enabled, tone);
   // lazily created once, not a throwaway Animated.Value on every render (M29)
@@ -222,11 +216,6 @@ export function BuyButton({
             >
               {footText}
             </Text>
-          ) : null}
-          {wait ? (
-            <View style={styles.saveTrack} pointerEvents="none">
-              <View style={[styles.saveFill, { width: `${Math.round(Math.min(1, Math.max(0, progress)) * 100)}%` }]} />
-            </View>
           ) : null}
           {/* a no-gain button explains itself under the price */}
           {sub && !compact && nogain ? <Text style={[styles.buySub, { color: '#8A7B6C', letterSpacing: 0.3 }]}>{sub}</Text> : null}
@@ -1091,8 +1080,6 @@ const styles = StyleSheet.create({
   buyLabelTight: { lineHeight: 15 },
   buyNeed: { fontFamily: F.semi, fontSize: MIN_FONT, lineHeight: 10, opacity: 0.85 },
   noGainInner: { backgroundColor: '#EFE6D8', borderColor: '#CFC3B2' },
-  saveTrack: { position: 'absolute', left: 6, right: 6, bottom: 2, height: 3, borderRadius: 2, backgroundColor: 'rgba(46,125,62,0.18)' },
-  saveFill: { height: 3, borderRadius: 2, backgroundColor: '#2E7D3E' },
   buyInnerCompact: { flex: 1, justifyContent: 'center', paddingVertical: 0, paddingHorizontal: 1 },
   buySub: { fontFamily: F.semi, color: 'rgba(255,255,255,0.85)', fontSize: 10, letterSpacing: 1 },
   burst: { position: 'absolute', alignSelf: 'center', top: 8 },
@@ -1100,7 +1087,7 @@ const styles = StyleSheet.create({
 
   hud: {
     position: 'relative',
-    zIndex: 2,
+    zIndex: Z.hud,
     backgroundColor: C.tomato,
     paddingHorizontal: 12,
     paddingBottom: HUD_STACK.padBottom,

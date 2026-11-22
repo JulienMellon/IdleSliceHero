@@ -27,6 +27,7 @@ import type { NeighborhoodId, Scene } from '../content/types';
 import { money } from '../engine/format';
 import * as B from '../engine/bonus';
 import { buyMany, buyPlan, type BuyAmount } from '../engine/buy-many';
+import { markReportOpened } from '../engine/chapters';
 import * as G from '../engine/game';
 import * as N from '../engine/night-oven';
 import * as O from '../engine/orders';
@@ -180,6 +181,8 @@ interface Store {
   /** The gift calendar opened by itself today: don't open it again until tomorrow. */
   markGiftShown: () => void;
   markScrapbookViewed: () => void;
+  /** v5.22: the shop report sheet opened (the chapter task `report` reads it). */
+  reportOpened: () => void;
   /** v5.17 (U3): the player owns Nonna's Plus (every ad benefit without the ad). Not saved: `purchases.owned()` is the truth, read again after the services start. */
   plus: boolean;
   syncPlus: () => void;
@@ -721,6 +724,15 @@ export const useGame = create<Store>((set, get) => {
     markGiftShown: () => {
       const g = get().game;
       const next = R.markGiftShown(g, gameNow());
+      if (next !== g) {
+        set({ game: next });
+        void get().save();
+      }
+    },
+
+    reportOpened: () => {
+      const g = get().game;
+      const next = markReportOpened(g);
       if (next !== g) {
         set({ game: next });
         void get().save();

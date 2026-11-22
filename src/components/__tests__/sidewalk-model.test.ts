@@ -1,11 +1,20 @@
 /// <reference types="jest" />
 import { money } from '../../engine/format';
 import * as G from '../../engine/game';
+import * as service from '../../engine/features/service';
+import * as sidewalkApi from '../sidewalk-model';
 import {
   amountCard,
   amountLabel,
-  effectFoot,
+  abbreviate,
+  capacityFit,
+  capacityText,
+  expandGroup,
+  footLine,
+  headTakes,
+  hireSidewalkLabel,
   nextAmount,
+  perMinute,
   BUY_AMOUNTS,
   buyMany,
   buyPlan,
@@ -14,22 +23,18 @@ import {
   buttonOutline,
   cardLook,
   buildChipSub,
-  bundleButton,
   buttonTone,
-  buyBundle,
   capExpandCost,
   goalHidesOwnHire,
   hireOnSidewalk,
   type MergedSlot,
-  mergeGroups,
-  needLine,
   needText,
-  showBundlePill,
   sidewalkSlots,
   stationModels,
   stationTitle,
   stationViews,
 } from '../sidewalk-model';
+import { cardTextWidths, fits } from '../endgame/fit-model';
 import { BUTTON_H, SIDEWALK_ROW, TAP } from '../tap-targets';
 
 import { HOME_CITY } from '../../content/cities/home';
@@ -40,16 +45,29 @@ const shopState = (patch: Partial<G.Shop>, cash = 0): G.GameState => {
 };
 const view = (s: G.GameState, key: string) => stationViews(s, 'downtown').find((v) => v.key === key)!;
 
-describe('sidewalk station model (T39)', () => {
-  test('a useful bottleneck you cannot afford yet is dashed; affordable, it is solid', () => {
-    const s = shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 0);
-    expect(view(s, 'drivers').neck).toBe(true);
-    expect(view(s, 'drivers').frame).toBe('waiting');
-    expect(view({ ...s, cash: 1e9 }, 'drivers').frame).toBe('hot');
+describe('sidewalk station model (T39, U4)', () => {
+  test('a shop short on ovens: the ovens card differs from the others by its numbers alone', () => {
+    const s = shopState({ prep: 20, ovens: 4, counter: 20, drivers: 8 }, 1e9);
+    const views = stationViews(s, 'downtown');
+    const [prep, ovens, counter] = views;
+    for (const v of views) {
+      expect(v).not.toHaveProperty('frame');
+      expect(v).not.toHaveProperty('neck');
+      expect(v).not.toHaveProperty('tied');
+      expect(v).not.toHaveProperty('gain');
+      expect(v).not.toHaveProperty('progress');
+      expect(v.tone).toBe('normal');
+      expect(v.affordable).toBe(true);
+    }
+    expect(Object.keys(ovens).sort()).toEqual(Object.keys(prep).sort());
+    const shape = (f: string | null) => f?.replace(/\d[\d.,]*[KM]?/g, '#');
+    expect(shape(ovens.foot)).toBe('#/min\u00A0→\u00A0#');
+    expect(shape(ovens.foot)).toBe(shape(counter.foot));
+    expect(ovens.foot).not.toBe(counter.foot);
   });
-  test('an unlocked station that adds nothing is "nogain"', () => {
+  test('a card that adds nothing is not flattened either: every unlocked station card has the same tone', () => {
     const s = shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 1e9);
-    expect(view(s, 'prep').tone).toBe('nogain');
+    expect(new Set(stationViews(s, 'downtown').map((v) => v.tone))).toEqual(new Set(['normal']));
   });
   test('MAX only when nothing can raise the cap: the last footprint, every level at its cap', () => {
     const top = shopState({ footprint: 4, prep: 125, ovens: 125, counter: 125, drivers: 125 }, 1e9);
@@ -58,6 +76,7 @@ describe('sidewalk station model (T39)', () => {
       expect(view(top, k).label).toBe('MAX');
       expect(view(top, k).tone).toBe('normal');
       expect(view(top, k).what).not.toBe('expand');
+      expect(view(top, k).foot).toBeNull(); // nothing to show the next level of
     }
   });
 });
@@ -123,17 +142,6 @@ describe('EXPAND at the level cap (B4)', () => {
   });
 });
 
-describe('saving progress (T46)', () => {
-  test('only the bottleneck being saved for has progress, between 0 and 1, never NaN', () => {
-    const s = shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 0);
-    const cost = view(s, 'drivers').cost!;
-    expect(view({ ...s, cash: cost / 2 }, 'drivers').progress).toBeCloseTo(0.5, 6);
-    expect(view({ ...s, cash: cost / 2 }, 'prep').progress).toBe(0);
-    expect(view({ ...s, cash: cost * 3 }, 'drivers').progress).toBe(0); // affordable: solid, not saving
-    for (const v of stationViews(s, 'downtown')) expect(Number.isNaN(v.progress)).toBe(false);
-  });
-});
-
 describe('one button-tone rule for the sidewalk and the drawer (T42)', () => {
   test('a locked or maxed upgrade is never "no gain"', () => {
     expect(buttonTone({ lock: 'Expand to go past Lv 25', gain: null })).toBe('normal');
@@ -143,6 +151,10 @@ describe('one button-tone rule for the sidewalk and the drawer (T42)', () => {
     expect(buttonTone({ lock: null, gain: 0 })).toBe('nogain');
     expect(buttonTone({ lock: null, gain: null })).toBe('nogain');
     expect(buttonTone({ lock: null, gain: 2 })).toBe('normal');
+  });
+  test('v5.22: a caller that passes no gain (the station cards, the drawer) never gets "no gain"', () => {
+    expect(buttonTone({ lock: null })).toBe('normal');
+    expect(buttonTone({ lock: 'Max' })).toBe('normal');
   });
   test('a muted card (no manager yet) stays neutral', () => {
     expect(buttonTone({ lock: null, gain: 0, muted: true })).toBe('neutral');
@@ -175,57 +187,15 @@ describe('"need $X" instead of a struck price (D359)', () => {
     const cost = view(s, 'prep').cost!;
     expect(view({ ...s, cash: cost - 3 }, 'prep').need).toBe('need $3');
   });
-  test('a framed card saving for its bottleneck keeps its progress bar instead of the text', () => {
+  test('the foot is the capacity, or "need $X" where there is none to show (the Expand buy)', () => {
     const s = shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 1);
-    const d = view(s, 'drivers');
-    expect(d.frame).toBe('waiting');
-    expect(d.need).not.toBeNull();
-    expect(needLine(d, true)).toBeNull();
-    expect(needLine(d, false)).toBe(d.need); // an unframed chip has no bar
-    expect(needLine(view(s, 'prep'), true)).toBe(view(s, 'prep').need);
-  });
-});
-
-describe('the tied-station bundle as a button (D304)', () => {
-  const tied = (cash: number) => {
-    const s = shopState({ prep: 3, ovens: 3, counter: 3, drivers: 3 }, cash);
-    const hint = G.bundleHint(s, 'downtown');
-    return { s, hint };
-  };
-  test('names its price and what it buys; enabled only when affordable', () => {
-    const { hint } = tied(0);
-    expect(hint).not.toBeNull();
-    const poor = bundleButton(hint!, 0);
-    expect(poor.label).toMatch(/^Buy (both|all \d) \$/);
-    expect(poor.label).toContain(money(hint!.cost));
-    expect(poor.enabled).toBe(false);
-    expect(poor.sub).toContain('need ');
-    const rich = bundleButton(hint!, hint!.cost);
-    expect(rich.enabled).toBe(true);
-    // D412: the payoff, never "one alone adds $0/s"
-    expect(rich.sub).toBe(`Tied: buy both · ${money(hint!.cost)} · +${money(hint!.gain)}/s`);
-    expect(poor.sub).toContain(`+${money(hint!.gain)}/s`);
-    expect(`${rich.sub} ${poor.sub}`).not.toContain('$0/s');
-  });
-  test('buyBundle runs every step through the buy path and stops at the first refusal', () => {
-    const bought: G.Upgrade[] = [];
-    expect(buyBundle(['prep', 'ovens'], (w) => (bought.push(w), true))).toBe(true);
-    expect(bought).toEqual(['prep', 'ovens']);
-    const seen: G.Upgrade[] = [];
-    expect(buyBundle(['prep', 'ovens'], (w) => (seen.push(w), false))).toBe(false);
-    expect(seen).toEqual(['prep']);
-    expect(buyBundle([], () => true)).toBe(false);
-  });
-  test("buying the hint's steps one by one costs exactly the hint's price and lifts income", () => {
-    const { s, hint } = tied(1e9);
-    let g = s;
-    for (const what of hint!.steps) {
-      const r = G.buyUpgrade(g, 'downtown', what);
-      expect(r.ok).toBe(true);
-      if (r.ok) g = r.state;
-    }
-    expect(s.cash - g.cash).toBe(hint!.cost);
-    expect(G.shopEarnings(g, 'downtown')).toBeGreaterThan(G.shopEarnings(s, 'downtown'));
+    const prep = view(s, 'prep');
+    expect(prep.need).not.toBeNull();
+    expect(footLine(prep, null, 200)).toBe(capacityFit(prep.cap!, 200)); // short of cash, a station card still shows its numbers
+    expect(footLine(prep, { foot: '+10 lv' }, 200)).toBe('+10 lv'); // a ×10 / MAX plan comes first
+    const capped = shopState({ prep: 25, ovens: 25, counter: 25, drivers: 1, footprint: 0 }, 5);
+    expect(view(capped, 'prep').foot).toBeNull();
+    expect(footLine(view(capped, 'prep'), null, 200)).toBe(view(capped, 'prep').need);
   });
 });
 
@@ -290,7 +260,7 @@ describe('capExpandCost: the one rule for "locked by the level cap alone" (D413)
   });
 });
 
-// Levels found by search: prep 6 / ovens 8 / counter 5 tie prep+ovens; 10 / 14 / 8 tie prep+counter (not adjacent); 6 / 10 / 8 tie ovens+counter
+// Levels that used to tie prep + ovens (6 / 8 / 5) and prep + counter (10 / 14 / 8): the row now shows one card a station, whatever the ties
 const TIES = {
   prepOvens: { prep: 6, ovens: 8, counter: 5, drivers: 25 },
   prepCounter: { prep: 10, ovens: 14, counter: 8, drivers: 25 },
@@ -298,68 +268,24 @@ const TIES = {
 };
 const slotsOf = (patch: Partial<G.Shop>, cash: number) => {
   const s = shopState(patch, cash);
-  return { s, slots: sidewalkSlots(s, 'downtown', G.bundleHint(s, 'downtown')) };
+  return { s, slots: sidewalkSlots(s, 'downtown') };
 };
 const merged = (slots: ReturnType<typeof sidewalkSlots>) => slots.filter((x): x is MergedSlot => x.kind !== 'station');
 
-describe('tied stations merge into one card in their slots (D405)', () => {
-  test('adjacent tied stations: one wider card, the others unchanged, the floating pill is gone', () => {
-    const { s, slots } = slotsOf(TIES.prepOvens, 0);
-    expect(
-      stationViews(s, 'downtown')
-        .filter((v) => v.tied)
-        .map((v) => v.key),
-    ).toEqual(['prep', 'ovens']);
-    const m = merged(slots);
-    expect(m).toHaveLength(1);
-    expect(m[0].kind).toBe('bundle');
-    expect(m[0].keys).toEqual(['prep', 'ovens']);
-    expect(m[0].span).toBe(2);
-    expect(m[0].title).toBe('PREP + OVENS');
-    const hint = G.bundleHint(s, 'downtown')!;
-    expect(m[0].label).toBe(`Buy both ${money(hint.cost)}`);
-    expect(m[0].foot).toContain(`+${money(hint.gain)}/s`);
-    expect(m[0].steps).toEqual(hint.steps);
-    // the row still has four slots' width: the merged card's 2 + counter + drivers
-    expect(slots.map((x) => x.kind)).toEqual(['bundle', 'station', 'station']); // counter, and drivers (capped: its own amber card)
-    expect(slots.reduce((t, x) => t + x.span, 0)).toBe(4);
+describe('tied stations stay apart: no bundle card (U4)', () => {
+  test('every station keeps its own slot, whatever is tied, and no slot is a bundle', () => {
+    for (const ties of [TIES.prepOvens, TIES.prepCounter, { prep: 3, ovens: 3, counter: 3, drivers: 3 }]) {
+      const { slots } = slotsOf({ ...ties, drivers: 3 }, 1e9);
+      expect(slots.map((x) => x.kind)).toEqual(['station', 'station', 'station', 'station']);
+      expect(slots.map((x) => (x.kind === 'station' ? x.key : ''))).toEqual(['prep', 'ovens', 'counter', 'drivers']);
+      expect(slots.reduce((t, x) => t + x.span, 0)).toBe(4);
+    }
   });
-  test('non-adjacent tied stations: the card sits in the first tied slot, the other slot collapses into it', () => {
-    const { s, slots } = slotsOf(TIES.prepCounter, 0);
-    expect(
-      stationViews(s, 'downtown')
-        .filter((v) => v.tied)
-        .map((v) => v.key),
-    ).toEqual(['prep', 'counter']);
-    expect(slots.map((x) => (x.kind === 'station' ? x.key : x.keys.join('+')))).toEqual(['prep+counter', 'ovens', 'drivers']);
-    expect(slots.reduce((t, x) => t + x.span, 0)).toBe(4);
+  test('the model exports nothing that bundles or ranks', () => {
+    const api = sidewalkApi as Record<string, unknown>;
+    for (const gone of ['buyBundle', 'showBundlePill', 'mergeGroups', 'effectFoot', 'needLine', 'stationTone', 'gainText']) expect(api[gone]).toBeUndefined();
   });
-  test('the card shows "need $X" while short (not at $0), is dashed while saving and solid when affordable', () => {
-    const poor = merged(slotsOf(TIES.prepOvens, 0).slots)[0];
-    expect(poor.enabled).toBe(false);
-    expect(poor.frame).toBe('waiting');
-    expect(poor.foot).not.toContain('need');
-    const some = slotsOf(TIES.prepOvens, 1);
-    const short = merged(some.slots)[0];
-    expect(short.foot).toContain('need ');
-    const rich = merged(slotsOf(TIES.prepOvens, 1e9).slots)[0];
-    expect(rich.enabled).toBe(true);
-    expect(rich.frame).toBe('hot');
-    expect(rich.foot).not.toContain('need');
-  });
-  test('without a bundle (coach up, or none) the stations stay apart', () => {
-    const s = shopState(TIES.prepOvens, 0);
-    expect(sidewalkSlots(s, 'downtown', null).every((x) => x.kind === 'station')).toBe(true);
-    expect(showBundlePill(G.bundleHint(s, 'downtown'), true)).toBe(false);
-    expect(showBundlePill(G.bundleHint(s, 'downtown'), false)).toBe(true);
-    expect(showBundlePill(null, false)).toBe(false);
-  });
-  test('one tied station is not a bundle', () => {
-    const s = shopState({ prep: 3, ovens: 3, counter: 3, drivers: 3 }, 0);
-    expect(stationViews(s, 'downtown').filter((v) => v.tied)).toHaveLength(1);
-    expect(sidewalkSlots(s, 'downtown', G.bundleHint(s, 'downtown')).every((x) => x.kind === 'station')).toBe(true);
-  });
-  test("the merged card keeps the row's sizes: a 44 pt button in the same card height", () => {
+  test("the card keeps the row's sizes: a 44 pt button in the same card height", () => {
     expect(BUTTON_H).toBeGreaterThanOrEqual(TAP.min);
     expect(SIDEWALK_ROW.cardHeight).toBeGreaterThanOrEqual(TAP.min);
   });
@@ -376,6 +302,7 @@ describe('EXPAND merges into one shop-wide card (D407)', () => {
     expect(m[0].title).toBe('EXPAND \u00B7 Corner');
     expect(m[0].label).toBe(money(G.upgradeCostOf(s, 'downtown', 'expand')!));
     expect(m[0].foot).toBe('Lv cap 25 → 50');
+    expect(m[0]).not.toHaveProperty('frame');
     expect(m[0].steps).toEqual(['expand']);
     expect(m[0].enabled).toBe(true);
     expect(slots.map((x) => x.kind)).toEqual(['expand', 'station']);
@@ -393,70 +320,46 @@ describe('EXPAND merges into one shop-wide card (D407)', () => {
     expect(prep?.kind === 'station' && prep.view.label).toMatch(/^\$/);
     expect(prep?.kind === 'station' && prep.view.what).toBe('expand');
   });
-  test('both merges can stand in one row: the bundle in the first slots, the capped stations in theirs', () => {
+  test('two Expand-capped pairs at once make one Expand card, and the row keeps its four slots of width', () => {
     const { slots } = slotsOf(TIES.twoCapped, 1e9);
-    expect(slots.map((x) => x.kind)).toEqual(['bundle', 'expand']);
-    expect(merged(slots).map((m) => m.keys)).toEqual([
-      ['prep', 'ovens'],
-      ['counter', 'drivers'],
-    ]);
+    expect(slots.map((x) => x.kind)).toEqual(['station', 'station', 'expand']);
+    expect(slots.reduce((t, x) => t + x.span, 0)).toBe(4);
   });
 });
 
-describe('merge priority: Expand first (D405 meets D407)', () => {
-  const v = (key: StationKeyT, expand: boolean, tied: boolean) => ({ key, expand, tied });
+describe('which stations make the Expand card (D407)', () => {
+  const v = (key: StationKeyT, expand: boolean) => ({ key, expand });
   type StationKeyT = 'prep' | 'ovens' | 'counter' | 'drivers';
-  test('a tied station that is capped holds the bundle back; the Expand card takes it first', () => {
-    const g = mergeGroups([v('prep', true, true), v('ovens', true, true), v('counter', false, false), v('drivers', false, false)], true);
-    expect(g.expand).toEqual(['prep', 'ovens']);
-    expect(g.bundle).toBeNull();
-    const one = mergeGroups([v('prep', true, true), v('ovens', false, true), v('counter', false, false), v('drivers', false, false)], true);
-    expect(one.expand).toBeNull(); // a single capped station keeps its own amber card
-    expect(one.bundle).toBeNull();
-  });
-  test("tied stations that are not capped bundle as usual, beside a capped station's Expand", () => {
-    const g = mergeGroups([v('prep', false, true), v('ovens', false, true), v('counter', true, false), v('drivers', true, false)], true);
-    expect(g.bundle).toEqual(['prep', 'ovens']);
-    expect(g.expand).toEqual(['counter', 'drivers']);
-    expect(g.expand!.some((k) => g.bundle!.includes(k))).toBe(false);
-  });
-  test('no bundle, no merge', () => {
-    expect(mergeGroups([v('prep', false, true), v('ovens', false, true), v('counter', false, false), v('drivers', false, false)], false).bundle).toBeNull();
+  test('two or more capped stations make the group, one keeps its own amber card, none make nothing', () => {
+    expect(expandGroup([v('prep', true), v('ovens', true), v('counter', false), v('drivers', false)])).toEqual(['prep', 'ovens']);
+    expect(expandGroup([v('prep', false), v('ovens', true), v('counter', false), v('drivers', true)])).toEqual(['ovens', 'drivers']);
+    expect(expandGroup([v('prep', true), v('ovens', false), v('counter', false), v('drivers', false)])).toBeNull();
+    expect(expandGroup([v('prep', false), v('ovens', false), v('counter', false), v('drivers', false)])).toBeNull();
   });
 });
 
 describe('affordable cards are never washed out (D419, round 60)', () => {
-  const frames = ['hot', 'waiting', null] as const;
   const lum = (hex: string) => {
     const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
   };
   const contrast = (a: string, b: string) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
-  test('an affordable card, in every neighbourhood and every frame, has a 2 pt #3B1F14 outline on a solid face and a full-opacity label', () => {
+  test('an affordable card, in every neighbourhood, has a 2 pt #3B1F14 outline on a solid face and a full-opacity label', () => {
     expect(AFFORDABLE_OUTLINE).toEqual({ color: '#3B1F14', width: 2 });
-    for (const n of NEIGHBORHOODS)
-      for (const frame of frames) {
-        const look = cardLook(frame, true);
-        expect([n.id, frame, look.borderColor, look.borderWidth, look.borderStyle, look.labelOpacity]).toEqual([n.id, frame, '#3B1F14', 2, 'solid', 1]);
-        expect([n.id, frame, look.backgroundColor.startsWith('#')]).toEqual([n.id, frame, true]); // solid, not rgba
-        // the outline reads against the face and against the neighbourhood's own colour (the Waterfront blue, the Uptown violet…)
-        expect([n.id, frame, contrast(look.borderColor, look.backgroundColor) >= 7, contrast(look.borderColor, n.color) >= 2]).toEqual([
-          n.id,
-          frame,
-          true,
-          true,
-        ]);
-      }
+    const look = cardLook(true);
+    expect([look.borderColor, look.borderWidth, look.borderStyle, look.labelOpacity]).toEqual(['#3B1F14', 2, 'solid', 1]);
+    expect(look.backgroundColor.startsWith('#')).toBe(true); // solid, not rgba
+    for (const n of NEIGHBORHOODS) {
+      // the outline reads against the face and against the neighbourhood's own colour (the Waterfront blue, the Uptown violet…)
+      expect([n.id, contrast(look.borderColor, look.backgroundColor) >= 7, contrast(look.borderColor, n.color) >= 2]).toEqual([n.id, true, true]);
+    }
   });
-  test('the check can fail: the old affordable bottleneck card had a tomato outline on a pale pink face (under 3:1 against its face)', () => {
-    expect(contrast('#E5483A', '#FFF4F0')).toBeLessThan(4);
-    expect(cardLook('hot', true).borderColor).not.toBe('#E5483A');
-    expect(contrast(cardLook('hot', true).borderColor, cardLook('hot', true).backgroundColor)).toBeGreaterThan(10);
+  test('no tint: an affordable card has one face, whatever the station', () => {
+    expect(cardLook(true).backgroundColor).toBe('#FFFFFF');
+    expect(cardLook.length).toBe(1); // the frame argument is gone
   });
-  test('the bottleneck keeps its signal: a tinted face, distinct from the plain affordable card; a card you cannot buy keeps its quiet frame', () => {
-    expect(cardLook('hot', true).backgroundColor).not.toBe(cardLook(null, true).backgroundColor);
-    expect(cardLook('waiting', false)).toMatchObject({ borderStyle: 'dashed' });
-    expect(cardLook(null, false).borderWidth).toBe(2.5);
+  test('a card you cannot buy keeps its quiet frame', () => {
+    expect(cardLook(false)).toMatchObject({ borderStyle: 'solid', borderWidth: 2.5 });
   });
   test('the button face is outlined the same way whenever the buy can be made, whatever its tone, and not when it is flat or unaffordable', () => {
     for (const tone of ['normal', 'neutral', 'expand'] as const) expect(buttonOutline(true, tone)).toEqual({ borderColor: '#3B1F14', borderWidth: 2 });
@@ -575,46 +478,102 @@ describe('×1 / ×10 / MAX: one rule for how many levels a station tap buys (v5.
   });
 });
 
-// ---------- v5.16 (card P1): after the tutorial the game stops choosing, and every card says what it does ----------
+// ---------- v5.22 (card U4): the card says what the station handles, now and after ----------
 
-describe('after the tutorial: no frame, no tomato fill, effect lines (P1)', () => {
-  const after = (s: G.GameState): G.GameState => ({ ...s, seenScenes: [...s.seenScenes, 'downtown-4'] });
-  const bottleneck = () => shopState({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 1e9);
+describe('capacity on the cards (U4)', () => {
+  const ready = (patch: Partial<G.Shop>, cash = 1e9) => shopState(patch, cash);
 
-  test('during the tutorial the bottleneck card is still framed (nothing changes)', () => {
-    expect(view(bottleneck(), 'drivers').frame).toBe('hot');
-    expect(view({ ...bottleneck(), cash: 0 }, 'drivers').frame).toBe('waiting');
+  test('the numbers: whole from 10 up, one decimal below, "18/min → 22"', () => {
+    expect(perMinute(18.4)).toBe('18');
+    expect(perMinute(4.46)).toBe('4.5');
+    expect(perMinute(4)).toBe('4');
+    expect(perMinute(0)).toBe('0');
+    expect(perMinute(1234)).toBe('1.23K');
+    expect(capacityText(18, 22)).toBe('18/min\u00A0→\u00A022');
   });
-  test('after it, frame is always null: affordable or saving, merged or not', () => {
-    const s = after(bottleneck());
-    for (const v of stationViews(s, 'downtown')) expect(v.frame).toBeNull();
-    for (const v of stationViews({ ...s, cash: 0 }, 'downtown')) expect(v.frame).toBeNull();
-    expect(view(s, 'drivers').neck).toBe(true); // it is still the limit; the card just does not shout it
-    // the "Buy both" card stays, without a frame
-    const tied = after(shopState(TIES.prepOvens, 1e9));
-    const bundle = sidewalkSlots(tied, 'downtown', G.bundleHint(tied, 'downtown')).find((x): x is MergedSlot => x.kind === 'bundle');
-    expect(bundle).toBeDefined();
-    expect(bundle!.label).toMatch(/^Buy both/);
-    expect(bundle!.frame).toBeNull();
-    expect(cardLook(bundle!.frame, bundle!.enabled).backgroundColor).not.toBe('#FFD9CF'); // no tomato fill
+  test("a station card's foot is the engine's capacity now and after one more level", () => {
+    const s = ready({ prep: 20, ovens: 4, counter: 20, drivers: 8 });
+    const now = service.reportView(s, 'downtown', s.lastSavedAt).capacity;
+    for (const k of ['prep', 'ovens', 'counter', 'drivers'] as const) {
+      const after = service.capacityAfter(s, 'downtown', k, s.lastSavedAt);
+      expect(after).toBeGreaterThan(now[k]);
+      expect(view(s, k).foot).toBe(capacityText(now[k], after));
+    }
   });
-  test('a card says the gain a minute and its payback; a station that is not the limit says so', () => {
-    const s = after(bottleneck());
-    const d = view(s, 'drivers');
-    expect(d.gain).toBeGreaterThan(0);
-    const line = effectFoot(s, d, 200, true)!;
-    expect(line).toContain(`+${money(d.gain! * 60)}/min`);
-    expect(line).toMatch(/· \d+[smh]/);
-    expect(effectFoot(s, view(s, 'prep'), 200, true)).toBe('No gain');
-    // narrower cards keep the gain and drop the payback
-    expect(effectFoot(s, d, 50, true)).toBe(`+${money(d.gain! * 60)}/min`);
+  test('the old readouts are gone: no gain, no payback, no "No gain", in the tutorial or after it', () => {
+    const base = ready({ prep: 20, ovens: 20, counter: 20, drivers: 1 });
+    for (const s of [base, { ...base, seenScenes: [...base.seenScenes, 'downtown-4'] }, { ...base, cash: 0 }])
+      for (const v of stationViews(s, 'downtown')) expect(v.foot).toMatch(/^\d[\d.,]*[KM]?\/min\s→\s\d[\d.,]*[KM]?$/);
   });
-  test('no effect line in the tutorial, on the Expand buy, on a locked card or in a shop still tapped by hand', () => {
-    const s = bottleneck();
-    expect(effectFoot(s, view(s, 'drivers'), 200, true)).toBeNull();
-    const a = after(s);
-    expect(effectFoot(a, view(a, 'drivers'), 200, false)).toBeNull();
-    expect(effectFoot(a, { ...view(a, 'drivers'), expand: true }, 200, true)).toBeNull();
-    expect(effectFoot(a, { ...view(a, 'drivers'), lock: 'Max' }, 200, true)).toBeNull();
+  test('D551: one format on the sidewalk, "446→486": no unit, both ends abbreviated together, the current value never dropped', () => {
+    const c = { now: 446, after: 486 };
+    expect(capacityFit(c, 200)).toBe('446→486');
+    expect(capacityFit({ now: 5810, after: 6240 }, 200)).toBe('5.81K→6.24K');
+    expect(capacityFit({ now: 5810, after: 6240 }, 54)).toBe('5.8K→6.2K');
+    expect(capacityFit({ now: 5810, after: 6240 }, 40)).toBe('6K→6K');
+    expect(capacityFit({ now: 116000, after: 124000 }, 46)).toMatch(/^116K→124K$/);
+    expect(capacityFit({ now: 1234, after: 1500 }, 10)).toMatch(/^\d.*→\d/); // never "→1.5K"
+    expect(abbreviate(5810, 2)).toBe('5.8K');
+    expect(abbreviate(18, 2)).toBe('18');
+    expect(abbreviate(4.46, 2)).toBe('4.5');
+    // every phone from 375 pt wide up, with the amount chip: a three-digit pair fits its card at 10 pt (the first build clipped "446/min →" there)
+    for (const w of [375, 390, 414, 430]) {
+      const [textW] = cardTextWidths(w, [1, 1, 1, 1], { chip: true, framed: true });
+      for (const big of [{ now: 18, after: 22 }, c]) expect(fits(capacityFit(big, textW), textW, 10)).toBe(true);
+    }
+  });
+  test('the card is cached on the levels: cash moves nothing, a level does; what a hand-tapped station made also moves it', () => {
+    const s = ready({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 0);
+    const spy = jest.spyOn(service, 'capacityAfter');
+    try {
+      stationViews(s, 'downtown');
+      spy.mockClear();
+      stationViews({ ...s, cash: 5e6 }, 'downtown');
+      expect(spy).not.toHaveBeenCalled();
+      stationViews(ready({ prep: 21, ovens: 20, counter: 20, drivers: 1 }), 'downtown');
+      expect(spy).toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+  test('U34: a hand-tapped shop whose made-by-hand number decays every tick keeps the cached model and re-asks no what-if', () => {
+    const g0 = shopState({ prep: 10, ovens: 5, counter: 10, drivers: 10, managed: false, heads: { prep: true, oven: false, counter: true } }, 0);
+    let a = g0;
+    for (let i = 0; i < 4; i++) a = G.playTick(a, 1, g0.lastSavedAt + 1000 * (i + 1));
+    const b = G.playTick(a, 1, a.lastSavedAt + 1000);
+    expect(service.reportView(a, 'downtown', a.lastSavedAt).you.ovens).toBe(true);
+    const first = stationModels(a, 'downtown');
+    const viewA = stationViews(a, 'downtown');
+    const spy = jest.spyOn(service, 'capacityAfter');
+    try {
+      expect(stationModels(b, 'downtown')).toBe(first);
+      stationViews(b, 'downtown');
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
+    // the hand-tapped ovens number is still the player's, scaled by the cached ratio: now and after keep their proportion
+    const o = viewA.find((v) => v.key === 'ovens')!.cap!;
+    expect(o.after / Math.max(o.now, 1e-9)).toBeCloseTo(
+      stationViews(b, 'downtown').find((v) => v.key === 'ovens')!.cap!.after /
+        Math.max(stationViews(b, 'downtown').find((v) => v.key === 'ovens')!.cap!.now, 1e-9),
+      6,
+    );
+  });
+  test('the hire button says what the hire does in words, no number', () => {
+    expect(headTakes('Marco', 'prep')).toBe('Marco takes the prep table');
+    expect(hireSidewalkLabel('headPrep', 'Marco')).toBe('HIRE MARCO · TAKES THE PREP TABLE');
+    expect(hireSidewalkLabel('headOven', 'Lucia')).toBe('HIRE LUCIA · TAKES THE OVENS');
+    expect(hireSidewalkLabel('headCounter', 'Benny')).toBe('HIRE BENNY · TAKES THE COUNTER');
+    expect(hireSidewalkLabel('manager', '')).toBe('HIRE A MANAGER · TAKES THE WHOLE SHOP');
+    for (const h of ['headPrep', 'headOven', 'headCounter', 'manager'] as const) expect(hireSidewalkLabel(h, 'Marco')).not.toMatch(/\d|×|\$/);
+  });
+  test('chapter 1: the ovens card lights for the coach with no look of its own (same tone, same keys as the prep card)', () => {
+    const s = G.newGame(0);
+    const prep = stationViews(s, 'downtown')[0];
+    const ovens = stationViews(s, 'downtown')[1];
+    expect(ovens.tone).toBe(prep.tone);
+    expect(Object.keys(ovens).sort()).toEqual(Object.keys(prep).sort());
+    expect(ovens.foot).toMatch(/\/min\s→\s/);
   });
 });

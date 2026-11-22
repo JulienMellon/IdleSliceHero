@@ -95,7 +95,8 @@ export const progressStep = (p: number) => Math.max(0, Math.min(24, Math.floor(p
 
 // ---------- badge view-model (A19): primitives per station, built from the line; tested in node ----------
 
-export type BadgeTone = 'basil' | 'tomato';
+/** Every badge wears the basil ring: no station is coloured for being the limit (v5.22; G80's tomato tint on the tied stations is gone). */
+export type BadgeTone = 'basil';
 
 export interface BadgeModel {
   st: Station;
@@ -103,7 +104,7 @@ export interface BadgeModel {
   step: number;
   /** Pies in the job, or waiting; an idle prep table shows the next batch as "×4" (D350). */
   count: string;
-  /** Tomato on every station tied for the bottleneck (G80), basil otherwise. */
+  /** Always basil, for every station. */
   tone: BadgeTone;
   /** The station to tap next (manual stations only). */
   ready: boolean;
@@ -115,8 +116,6 @@ export interface BadgeInput {
   line: Line;
   auto: Readonly<Record<Station, boolean>>;
   managed: boolean;
-  /** Stations tied for the bottleneck. */
-  neck: ReadonlySet<Station>;
   next: Station | null;
   tapBatch: number;
   /** Seconds since the engine's last tick (0 while paused). */
@@ -141,7 +140,7 @@ export function badgeModels(b: BadgeInput): BadgeModel[] {
       st,
       step,
       count,
-      tone: b.neck.has(st) ? 'tomato' : 'basil',
+      tone: 'basil',
       ready: !b.auto[st] && b.next === st,
       runner: b.auto[st] ? (b.managed ? 'gm' : 'head') : null,
     };

@@ -16,6 +16,8 @@ import { MILE_R, bubbleWidth, bubbleX, mileLevelSize } from './moments';
 
 const BASIL = '#4CAF50';
 const TOMATO = '#E5483A';
+/** The ring's colour per tone: one entry, since every station's badge is basil (stations.ts `BadgeTone`). */
+const RING: Record<BadgeTone, string> = { basil: BASIL };
 const TRACK = '#E9DCC3';
 const DISC = '#FFF8EA';
 const OUTLINE = '#4A2A1A';
@@ -96,7 +98,7 @@ export const StationBadge = memo(function StationBadge({
       <G testID={`dial-${st}`} transform={`scale(${s})`}>
         <Circle cx={0} cy={0} r={r + 1.5} fill={DISC} stroke={OUTLINE} strokeWidth={1.5} />
         <Circle cx={0} cy={0} r={r - 2.5} fill="none" stroke={TRACK} strokeWidth={3} />
-        {step > 0 && <Path d={arc(0, 0, r - 2.5, step)} fill="none" stroke={tone === 'tomato' ? TOMATO : BASIL} strokeWidth={3} strokeLinecap="round" />}
+        {step > 0 && <Path d={arc(0, 0, r - 2.5, step)} fill="none" stroke={RING[tone]} strokeWidth={3} strokeLinecap="round" />}
         <Path d={PIE_ICON} fill="#FFC531" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
         <Path d="M-6 -4.5 Q0 -7.5 6 -4.5 L5.2 -3 Q0 -5.6 -5.2 -3 Z" fill="#E9A64B" />
         <Circle cx={-1.2} cy={-1.4} r={1.2} fill="#E8432E" />

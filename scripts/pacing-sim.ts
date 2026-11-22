@@ -167,6 +167,14 @@ const eagerWait = longestBeatWait(e.scenes);
 console.log(
   `longest wait between main beats: tuned ${tunedWait.min.toFixed(1)} min (${tunedWait.id}) · EAGER ${eagerWait.min.toFixed(1)} min (${eagerWait.id})`,
 );
+// T127: a gate that holds the eager player back far longer than the tuned one is a stall the tuned run hides: fail the run
+const EAGER_WAIT_MULT = 1.25;
+if (eagerWait.min > tunedWait.min * EAGER_WAIT_MULT) {
+  console.error(
+    `EAGER STALLS: longest beat wait ${eagerWait.min.toFixed(1)} min is over ${EAGER_WAIT_MULT}x the tuned ${tunedWait.min.toFixed(1)} min (${eagerWait.id})`,
+  );
+  process.exitCode = 1;
+}
 const eMissing = HOME_SCENES.filter((x) => !ePlayed.has(x.id)).map((x) => x.id);
 if (eMissing.length) {
   console.error(`NOT ALL SCENES PLAY (EAGER): missing ${eMissing.join(', ')}`);

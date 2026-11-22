@@ -9,11 +9,11 @@
 - Do not touch: `src/engine/**`, the sidewalk and drawer (U4).
 
 ## Steps
-- [ ] **1. Model** (`report-model.ts`): bar rows from `capacity`, the line from `wanted`, scaled so the longest of bars and line fills the width; "You" on a hand-tapped station's bar; remove `LAMP_COLOR`, `LAMP_INK`, `lampWord`, `stripKind`'s kitchen/quiet cases and the manager-voiced strip lines that name a station. The tipping and cold states keep a neutral word ("Tips up" / "Line's gone cold") without colour coding stations.
-- [ ] **2. Sheet:** title, bars (basil, 14 pt tall, value at the end "18/min"), the dashed ink line labelled "Customers 24/min", the served/missed line, the service score. One extra row for walk-ins vs deliveries if it fits without scrolling at 375 × 667; otherwise drop it.
-- [ ] **3. Strip:** `report.strip`; tapping it opens the sheet (as today) and calls E3's `reportOpened` action.
-- [ ] **4. Coach targets** for card E4: `report:strip`, `report:bar:ovens` (register every bar as `report:bar:<station>`), `report:demand`, `report:close`.
-- [ ] **5. Tests and fixture:** a shop short on ovens, one short on drivers, one balanced, one hand-tapped station.
+- [x] **1. Model** (`report-model.ts`): bar rows from `capacity`, the line from `wanted`, scaled so the longest of bars and line fills the width; "You" on a hand-tapped station's bar; remove `LAMP_COLOR`, `LAMP_INK`, `lampWord`, `stripKind`'s kitchen/quiet cases and the manager-voiced strip lines that name a station. The tipping and cold states keep a neutral word ("Tips up" / "Line's gone cold") without colour coding stations.
+- [x] **2. Sheet:** title, bars (basil, 14 pt tall, value at the end "18/min"), the dashed ink line labelled "Customers 24/min", the served/missed line, the service score. One extra row for walk-ins vs deliveries if it fits without scrolling at 375 × 667; otherwise drop it.
+- [x] **3. Strip:** `report.strip`; tapping it opens the sheet (as today) and calls E3's `reportOpened` action.
+- [x] **4. Coach targets** for card E4: `report:strip`, `report:bar:ovens` (register every bar as `report:bar:<station>`), `report:demand`, `report:close`.
+- [x] **5. Tests and fixture:** a shop short on ovens, one short on drivers, one balanced, one hand-tapped station.
 
 ## Checks
 `npx tsc --noEmit`; `npx jest src/components`; `npm run format:check`.

@@ -3,7 +3,7 @@
 // src/content/cities/. The engine reads the current city with `cityOf(game)` (./index.ts), so a second city is a second folder.
 import type { CharacterId, NeighborhoodId, Scene, VehicleId } from '../types';
 import type { HeadKind } from '../tuning';
-import type { BarkStation, BarkTrigger } from '../heads';
+import type { BarkStation, BarkTrigger, ManagerBarks } from '../heads';
 
 export interface NeighborhoodDef {
   id: NeighborhoodId;
@@ -139,7 +139,7 @@ export interface Lieutenant {
 }
 
 /** What each neighbourhood's three heads say, by station and trigger (content/heads.ts `BarkTrigger`): the lines a head's bubble shows. */
-export type BarkTable = Record<NeighborhoodId, Record<BarkStation, Record<BarkTrigger, string>>>;
+export type BarkTable = Record<NeighborhoodId, Record<BarkStation, Partial<Record<BarkTrigger, string>>>>;
 
 /** A character who asks for special orders in a neighbourhood's shop (v5.13). */
 export interface OrderCast {
@@ -197,6 +197,8 @@ export interface CityDef {
    */
   /** What the heads say, per neighbourhood, station and trigger. A neighbourhood with no entry has silent heads. */
   barks?: Partial<BarkTable>;
+  /** What each shop's manager says about the shop (`manager.<shop>.<trigger>`, v5.22): `line` and `drivers-idle`. A shop with no entry has a silent manager. */
+  managerBarks?: ManagerBarks;
   /** Heads' lines as a script gives them, numbered per station and not tied to a trigger (Boston's `bark.<hood>.<station>.<n>`); a writer maps them onto `barks`. The engine does not read them yet. */
   headBarks?: Partial<Record<NeighborhoodId, Record<BarkStation, readonly string[]>>>;
   /** Who asks for special orders, by neighbourhood. */
