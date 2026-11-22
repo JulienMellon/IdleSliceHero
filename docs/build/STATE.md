@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.23-r3                # v5.23 r3 verify: True 0 [], layout 0 new; 16 changed vs v5.23-r2
 codecritic_range_start: 688f26f   # v5.23b start (v5.23 closed commit)
 cards:                 # todo | running | done | partial | blocked
-  Q7 todo  Q8 todo  S6 running  U7 todo  U8 todo  W6 done
+  Q7 todo  Q8 todo  S6 partial  U7 todo  U8 todo  W6 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.23/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 21; E3 U12 S4 T1 N1)
   code:   docs/build/v5.23/review-r3-code.md (r3 APPROVED; blocker/high 0 medium 3 low 29; E5 U16 S2 N8 A1; C192 A46 A44 medium)
@@ -32,3 +32,4 @@ next: start S10b-v5.23b.md (cleanup step), then S11-v5.24.md. Carried notes: doc
 - 2026-11-22 S10 v5.23 closed at r3 (critic minors only, code APPROVED). STATE -> v5.23b per VERSION.md close line (Julien 2026-11-22).
 - 2026-11-22 S10b r1 wave 1 launched (W6 || S6).
 - 2026-11-22 S10b r1 W6 done (COPY-v5.23b.md, 9 rows). Waiting on S6.
+- 2026-11-22 S10b r1 S6 partial (D481 D552 D557; D519 needs projection.ts) -> VERSION default sent back. U8 launched.

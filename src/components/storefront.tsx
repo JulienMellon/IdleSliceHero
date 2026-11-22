@@ -394,9 +394,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     [lay, art, placed],
   );
   const batch = batchOf(Game.tapBatch(shop), rate);
-  const nDough = live ? pileCount(line.prepped, batch) : 0;
-  const nBoxes = live ? pileCount(line.baked, batch) : 0;
-  const nBags = live ? pileCount(line.boxed, batch) : 0;
+  // a station that is not piling (the report's symptom) shows two items at most (D557: a balanced shop's dough stack read as a pile)
+  const nDough = live ? pileCount(line.prepped, batch, rep.symptoms.prep === 'piling') : 0;
+  const nBoxes = live ? pileCount(line.baked, batch, rep.symptoms.ovens === 'piling') : 0;
+  const nBags = live ? pileCount(line.boxed, batch, rep.symptoms.counter === 'piling') : 0;
   // while a station is piling its top item rocks (two steps, about 3 times a second): the pile's own state, readable at a glance (D548)
   const rockStep = Math.floor(clock * 6) % 2 === 0 ? 1 : 2;
   const wobD = rep.symptoms.prep === 'piling' ? rockStep : 0;

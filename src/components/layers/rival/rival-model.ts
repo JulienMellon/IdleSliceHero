@@ -24,11 +24,9 @@ export const rivalTagText = (v: Pick<RivalView, 'open'>): string => (v.open ? lc
 // ---------- the storefront across the street ----------
 
 /**
- * Where the MegaSlice shop stands (D481): across the road from the shop's door, on the far kerb at the screen's foot, drawn WHOLE (sign,
- * awning, window, door, shutter box, kerb) at 60% of its 108 x 52 art, so it is 65 x 31 on screen and its kerb ends 8 units above the
- * scene's last row (the old 96 x 44 shop sat flush on the bottom edge and read as cropped under the road). Small and at the left, away from
- * the door's walk-in lane. It sits below the curb and the sidewalk row (the row, the report strip and the doormat are all above the curb
- * line). Scene units.
+ * The MegaSlice shop across the street (D481), drawn WHOLE (sign, awning, window, door, shutter box, kerb) at 60% of its 108 x 52 art, so it is 65 x 31 on screen. Where it
+ * stands comes from `rivalPlace` (scene/viewport.ts): on the far kerb with the kerb's foot above the home indicator, and in from the screen's left edge whatever the scroll
+ * (the old shop sat at the drawing's left edge, 6 units above the scene's last row: cut by the screen's foot, and off screen in a scrolled wide shop). Scene units.
  */
 export const RIVAL_SHOP = {
   /** The drawing's own size, and how much of it shows. */
@@ -37,9 +35,6 @@ export const RIVAL_SHOP = {
   /** On screen: the whole shop, sign to foot. */
   w: 65,
   h: 31,
-  /** Left edge and top. */
-  x: 12,
-  top: 637,
   /** The far kerb it stands on, under its foot. */
   kerb: 6,
   /** The pavement slab under it: how far it reaches past the shop on each side, and how far up the shop's foot it rises. */
@@ -50,13 +45,18 @@ export const RIVAL_SHOP = {
 } as const;
 
 /**
- * The far pavement the shop stands on (D481, "on the asphalt" in shot 76): a full-width band at the scene's foot, with its kerb line at `top`, so the road ends
- * above the shop and the shop's foot (RIVAL_SHOP.top + h = 668) is on pavement, not mid-lane. Scene units.
+ * The far pavement the shop stands on (D481, "on the asphalt" in shot 76): a full-width band whose kerb line is `rise` above the shop's foot, so the road ends above
+ * the shop and its foot is on pavement, not mid-lane. It runs to the scene's foot. Scene units.
  */
-export const FAR_KERB = { top: 652, height: 8 } as const;
+export const FAR_KERB = { rise: 16, height: 8 } as const;
 
-/** The rect the rival occupies (scene units): the tests keep it clear of the mat, the strip and the sidewalk row. */
-export const rivalRect = () => ({ x0: RIVAL_SHOP.x, x1: RIVAL_SHOP.x + RIVAL_SHOP.w, y0: RIVAL_SHOP.top, y1: RIVAL_SHOP.top + RIVAL_SHOP.h + RIVAL_SHOP.kerb });
+/** The rect the rival occupies (scene units) at a place from `rivalPlace`: the tests keep it on screen and clear of the mat, the strip and the sidewalk row. */
+export const rivalRect = (at: { x: number; top: number }) => ({
+  x0: at.x - RIVAL_SHOP.slab,
+  x1: at.x + RIVAL_SHOP.w + RIVAL_SHOP.slab,
+  y0: at.top,
+  y1: at.top + RIVAL_SHOP.h + RIVAL_SHOP.kerb,
+});
 
 /** The road's lower edge is the screen's foot; the rival must stay below the curb. */
 export const RIVAL_BELOW = CURB_Y;

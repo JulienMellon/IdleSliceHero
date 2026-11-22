@@ -13,16 +13,24 @@ import type { NeighborhoodId } from '../../content/types';
 /** The most items a pile shows. */
 export const PILE_MAX = 5;
 /**
- * A pile shows another item at each of these many batches of backlog: over half a batch is the first, over four is the full five. The line's own buffers
- * stop near two batches, which is where a station is `piling` (the engine's symptom), so that is already three items: a pile-up reads at a glance.
+ * A pile shows another item at each of these many batches of backlog: over one and a half is the first, over four is the full five (D557: a balanced shop's bench holds a batch
+ * or two as the line runs, which read as a pile at one half; D548 asked for the first item at 1.5).
  */
-export const PILE_STEPS: readonly number[] = [0.5, 1, 1.75, 2.5, 4];
+export const PILE_STEPS: readonly number[] = [1.5, 1.75, 2, 2.5, 4];
+/** A station that is not `piling` (the engine's symptom: customers outnumber the kitchen and the stock stays over two batches) never shows more than this many items (D557: two discs, no stack). */
+export const CALM_MAX = 2;
+/** A station that is `piling` shows at least this many items, so a short shop reads as one at a glance whatever instant the pile is drawn at (the oven takes a batch every few seconds). */
+export const PILING_MIN = 4;
 
-/** How many items a backlog of `backlog` pies shows when one batch is `batch` (0 to PILE_MAX). */
-export function pileCount(backlog: number, batch: number): number {
+/**
+ * How many items a backlog of `backlog` pies shows when one batch is `batch` (0 to PILE_MAX). `piling`: the station's symptom is `piling`. A balanced station (the default) shows 0 to
+ * CALM_MAX items; a piling one shows PILING_MIN or more while anything is waiting.
+ */
+export function pileCount(backlog: number, batch: number, piling = false): number {
   if (!(backlog > 0) || !(batch > 0)) return 0;
   const r = backlog / batch;
-  return PILE_STEPS.filter((t) => r > t).length;
+  const n = PILE_STEPS.filter((t) => r > t).length;
+  return piling ? Math.max(n, PILING_MIN) : Math.min(n, CALM_MAX);
 }
 
 export type PileKind = 'dough' | 'boxes' | 'bags';

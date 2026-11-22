@@ -11,11 +11,11 @@
 - Do not touch: `src/components/report/**`, `sidewalk-*`, `drawer-*` (U7), `coach/**` (U8), `src/content/tuning.ts`.
 
 ## Steps
-- [ ] **1. D481 rival store.** Draw it whole inside the safe area at about 60 pt wide on the far-kerb band, with the sign and shutters readable (shutters down while the rival is beaten). It must not be cut by the screen bottom or the home indicator in shots 13, 76 and 156, and not missing in 79 when the camera is panned. Add a test that the store's rect lies inside the viewport for every hood that has the rival band.
-- [ ] **2. D519 wide shops.** At the widest footprint, fit the cutaway to 393 pt with a 12 pt margin on each side. Scale down (not below 0.88×) before falling back to scroll. Test: for every hood × footprint, the room's x-extent lies inside [12, 381] pt at scroll 0, or the scroll cue shows.
-- [ ] **3. D552.** The walk-out walks the floor above the report strip's top edge (`floorYFor(stripTop(...))`), so his body shows. Idle drivers park by the door, apart from the walk-in order line. Add crowd budgets for both, and confirm they fail on today's code before you fix it.
-- [ ] **4. D557.** A balanced shop shows no dough stack, or 2 discs at most. Piles start at 1.5 batches, per the D548 note. Test: a balanced shop's pile count is 0 or 2 or fewer, and a short-ovens shop's is above 3.
-- [ ] **5. Any other S row in `CARRY`.** Fix it, or say why not.
+- [x] **1. D481 rival store.** Draw it whole inside the safe area at about 60 pt wide on the far-kerb band, with the sign and shutters readable (shutters down while the rival is beaten). It must not be cut by the screen bottom or the home indicator in shots 13, 76 and 156, and not missing in 79 when the camera is panned. Add a test that the store's rect lies inside the viewport for every hood that has the rival band.
+- [~] **2. D519 wide shops.** At the widest footprint, fit the cutaway to 393 pt with a 12 pt margin on each side. Scale down (not below 0.88×) before falling back to scroll. Test: for every hood × footprint, the room's x-extent lies inside [12, 381] pt at scroll 0, or the scroll cue shows.
+- [x] **3. D552.** The walk-out walks the floor above the report strip's top edge (`floorYFor(stripTop(...))`), so his body shows. Idle drivers park by the door, apart from the walk-in order line. Add crowd budgets for both, and confirm they fail on today's code before you fix it.
+- [x] **4. D557.** A balanced shop shows no dough stack, or 2 discs at most. Piles start at 1.5 batches, per the D548 note. Test: a balanced shop's pile count is 0 or 2 or fewer, and a short-ovens shop's is above 3.
+- [x] **5. Any other S row in `CARRY`.** Fix it, or say why not.
 - [ ] **6. Whole suites.** Run the full crowd suite after every route or spot change, not only the budget you are fixing (CRITICLOG lesson 4).
 
 ## Checks

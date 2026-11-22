@@ -1,7 +1,7 @@
 // The MegaSlice shop across the street (SCENE_OVERLAYS slot): small, in the bottom strip of the scene below the curb, so it never sits on
 // the WELCOME mat, the sidewalk row or the report strip. While the rival is open it stands there with its sign and awning; when the
 // challenge is won its shutters come down, a burst of coins flies to the cash, and the shop is taken away (the HUD tag goes with it).
-import { memo, useEffect, useRef, useState, type ComponentRef } from 'react';
+import { memo, useContext, useEffect, useRef, useState, type ComponentRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
@@ -11,8 +11,10 @@ import { useGame } from '../../../store/game-store';
 import { F } from '../../../theme';
 import { emitCheer, emitCoin, emitPayout } from '../../pulse-bus';
 import { useClock } from '../../scene/clock';
-import { INK, sceneFit } from '../../scene/projection';
+import { INK, SCENE_H, sceneFit } from '../../scene/projection';
 import { useShopFrame } from '../../scene/use-frame';
+import { SceneViewContext } from '../../scene/view-context';
+import { rivalPlace } from '../../scene/viewport';
 import type { SceneSlotProps } from '../../slots';
 import { FAR_KERB, RIVAL_SHOP, SHUTTERS_TOTAL, shutterShare } from './rival-model';
 
@@ -78,21 +80,26 @@ export const RivalScene = memo(function RivalScene({ shopId, width, height }: Sc
   // Reads the live store: React Compiler must not cache that.
   'use no memo';
   const frame = useShopFrame(shopId);
+  // a scrolled wide shop: the shop stands at the view's left edge, so it is on screen wherever the shop has been scrolled (D481)
+  const view = useContext(SceneViewContext);
   const open = useGame((s) => rivalOpen(s.game, shopId as never));
   const wasOpen = useRef(open);
   const [closedAt, setClosedAt] = useState<number | null>(null);
   const root = useRef<ComponentRef<typeof View>>(null);
   const clock = useClock(15, closedAt === null);
   void clock;
+  const fit = sceneFit(width, height, frame);
+  const at = rivalPlace(fit, SCENE_H, view, RIVAL_SHOP);
+  const placeRef = useRef(at);
+  placeRef.current = at;
 
   // the rival closes because the challenge was won: shutters, coins, then gone
   useEffect(() => {
     if (wasOpen.current && !open && challengeWon(useGame.getState().game, shopId as never)) {
       setClosedAt(Date.now());
-      const fit = sceneFit(width, height, frame);
       root.current?.measureInWindow((x: number, y: number) => {
-        const cx = x + (RIVAL_SHOP.x + RIVAL_SHOP.w / 2) * fit.s;
-        const cy = y + (RIVAL_SHOP.top + 10) * fit.s;
+        const cx = x + (placeRef.current.x + RIVAL_SHOP.w / 2) * fit.s;
+        const cy = y + (placeRef.current.top + 10) * fit.s;
         for (let i = 0; i < ORDER_VIEW.coins + 3; i++) emitCoin({ x: cx + (i - 4) * 6, y: cy, ms: 520 + i * 90 });
         emitPayout();
         emitCheer();
@@ -106,9 +113,9 @@ export const RivalScene = memo(function RivalScene({ shopId, width, height }: Sc
     return () => clearTimeout(t);
   }, [closedAt]);
 
-  const fit = sceneFit(width, height, frame);
   const shown = open || closedAt !== null;
   if (!shown) return <View ref={root} pointerEvents="none" style={StyleSheet.absoluteFill} />;
+  const kerbTop = at.top + RIVAL_SHOP.h - FAR_KERB.rise;
   const shut = closedAt === null ? 0 : shutterShare((Date.now() - closedAt) / 1000);
   return (
     <View ref={root} testID="rival-shop" pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -120,9 +127,9 @@ export const RivalScene = memo(function RivalScene({ shopId, width, height }: Sc
         viewBox={`${-fit.ox / fit.s} ${-fit.oy / fit.s} ${width / fit.s} ${height / fit.s}`}
       >
         {/* the far pavement across the whole foot of the scene: the road ends at its kerb line, the shop stands on it (D481) */}
-        <Rect x={-20} y={FAR_KERB.top} width={frame.width + 40} height={700 - FAR_KERB.top} fill="#D3CCC0" />
-        <Rect x={-20} y={FAR_KERB.top} width={frame.width + 40} height={FAR_KERB.height} fill="#9B9386" stroke={INK} strokeWidth={0.8} />
-        <G transform={`translate(${RIVAL_SHOP.x} ${RIVAL_SHOP.top})`}>
+        <Rect x={-20} y={kerbTop} width={frame.width + 40} height={700 - kerbTop} fill="#D3CCC0" />
+        <Rect x={-20} y={kerbTop} width={frame.width + 40} height={FAR_KERB.height} fill="#9B9386" stroke={INK} strokeWidth={0.8} />
+        <G transform={`translate(${at.x} ${at.top})`}>
           <MegaShop shut={shut} />
         </G>
       </Svg>
