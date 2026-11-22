@@ -4,9 +4,9 @@
     python3 build.py
 
 Outputs:
-  assets/audio/music/*.m4a   stereo AAC 256 kbps (96 before 2026-11-19, 128 in round R1), loops cut to exact bar length with the tail folded onto the start
-  assets/audio/sting/*.m4a   mono AAC 256 kbps (64 before 2026-11-19), beat 1 at `downbeatSeconds`
-  assets/audio/story/*.m4a   stereo AAC 256 kbps (96 before 2026-11-19)
+  assets/audio/music/*.m4a   stereo AAC 192 kbps (96 before 2026-11-19, 128 in round R1, 256 until 2026-11-22), loops cut to exact bar length with the tail folded onto the start
+  assets/audio/sting/*.m4a   mono AAC 192 kbps (64 before 2026-11-19, 256 until 2026-11-22), beat 1 at `downbeatSeconds`
+  assets/audio/story/*.m4a   stereo AAC 192 kbps (96 before 2026-11-19, 256 until 2026-11-22)
   assets/audio/sfx/*.m4a     mono AAC 64 kbps, peaks at -9 dBFS (unchanged, 16-bit in)
   tools/audio/build/master/{music,sting,story}/*.wav   the 32-bit float masters that went into the encoder (not in git; reel.py cuts from them)
   src/audio/manifest.ts      generated: every cue's file, length, tempo and loudness
@@ -30,7 +30,7 @@ MIDI = os.path.join(HERE, 'build', 'midi')
 ASSETS = os.path.join(ROOT, 'assets', 'audio')
 
 LOUD = dict(music=-20.0, story=-16.0, sting=-18.0)  # AU22; the lofi loops sit 2 LU lower (2026-10-31)
-KBPS = 256  # music, stingers and story cues (Julien, 2026-11-19: 256 kbps; was 128 for loops, 64 for stingers, 96 for story)
+KBPS = 192  # music, stingers and story cues (Julien, 2026-11-22: 192 kbps going forward, reel and game; 256 from 2026-11-19; 128 for loops, 64 for stingers, 96 for story before)
 MASTER = os.path.join(HERE, 'build', 'master')
 LOOP_CEILING = -6.0
 # AU67: Nonna's takeover (sparse -> full) lifts by 2 LU. AU70, card M1c: the MegaSlice HQ loop keeps its own tier, 1 LU above the

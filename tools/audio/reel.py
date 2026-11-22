@@ -5,7 +5,7 @@
 
 Every clip gets a 0.3 s fade in and out, with 0.7 s of silence between clips. One static gain is applied to the whole reel,
 set so the reel measures about -16 LUFS. There is no loudnorm and no per-clip matching, so level differences between
-clips survive. Stereo. `R0` and `R1` are 128 kbps. `R2` and `FULL` (card M2c, 2026-11-19) are 320 kbps MP3 cut from the 32-bit
+clips survive. Stereo. `R0` and `R1` are 128 kbps. `R2` and `FULL` (card M2c, 2026-11-19; 320 kbps until 2026-11-22, then 192 kbps by Julien's note) are 192 kbps MP3 cut from the 32-bit
 float masters that `build.py` keeps under build/master/ (the decoded .m4a when a master is missing), with the reel built in
 float and no 16-bit step. `R0`, `R1`, `R2` and `FULL` are entries of PRESETS; a later round adds a preset by adding a function
 that returns a list of (label, stereo float array at 44.1 kHz).
@@ -32,7 +32,7 @@ OUT = os.path.join(HERE, 'build', 'reel')
 SR = post.SR
 FADE, GAP, TARGET_LUFS = 0.3, 0.7, -16.0
 MASTER = os.path.join(HERE, 'build', 'master')
-KBPS = {'R0': 128, 'R1': 128, 'R2': 320, 'FULL': 320}  # MP3 bitrate per preset
+KBPS = {'R0': 128, 'R1': 128, 'R2': 192, 'FULL': 192}  # MP3 bitrate per preset
 CLIP_SECONDS = 12.0
 BANK_NAMES = {k: os.path.splitext(v)[0] for k, v in BANKS.items()}
 

@@ -9,7 +9,7 @@ round: r2              # r1 | r2 | r3
 last_shots: v5.22                   # v5.22 r1 verify: True 0 [], layout 0 new; 14 new 150 changed vs v5.21-r3
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
 cards:                 # todo | running | done | partial | blocked
-  S4 done  E3 done  W3 done  U3 done  S3 done  U4 done  E4 done  A3 blocked
+  S4 done  E3 done  W3 done  U3 done  S3 done  U4 done  E4 done  A3 blocked  (r2 verify fix: E4 running, U4 running)
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.22/review-r1-critic.md (r1 NOT SATISFIED; bug 1 major 2 minor 19; E2 U13 S5 T2; G119 bug drivers bar never reaches Customers line, D548 major piles same short vs balanced, D549 major poses/idle drivers unreadable at phone size)
   code:   docs/build/v5.22/review-r1-code.md (r1 APPROVED but medium 4 > gate 3; blocker/high 0 medium 4 low 27; E8 U14 S2 N7; K5 fixed)
@@ -20,10 +20,6 @@ next: S9 resume at r2 verify (Julien 2026-11-22: skip verify+shots+critics until
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-22 S9 verify v5.22 FAIL: 3 errors (140_v2 scroll-cue-left 143, 140_v2 cold strip 146 -> U4; 180_e1b 'Finish Chapter 10 first' -> E4); layout 0 new; 14 new 154 changed vs v5.21-r3. Re-verify after fixes.
-- 2026-11-22 S9 verify v5.22 PASS (re-run after 3 fixture fixes): True 0 [], layout 0; 14 new 150 changed. r1 reviews launched (critic full, codecritic medium src scripts 12c99bd..HEAD, storycritic medium COPY-v5.22); audiocritic skipped (A3 blocked).
-- 2026-11-22 S9 r1 gate NOT met (critic bug1 major2; code medium 4>3; story S90 major). Fix r2: batch 1 E (E3+E4 via E4 programmer) || S (S3); batch 2 U (U3+U4); batch 3 T (W3). N rows (code, 7) have no v5.22 card: carry.
-- 2026-11-22 S9 r2 batch 1 (E, S) hit the 5-hour limit before any edit; resumed 11:31 UTC after reset.
 - 2026-11-22 S9 r2 E done (G119/S90: engine right, added ReportView.walkIns -> U draws; C180 U36 fixed, C179 service part). Not done: C179 game.ts part, A45, C154, M75, S89 (vs D533), S97, D493 D495. r2 U (U3+U4) launched beside S.
 - 2026-11-22 S9 r2 U done (G119 S90: one Customers row deliveries+seats to the line; S92 D554 U34 T130 D551 D550). Carry: D556 needs W3 line + animation; index.tsx coach/dev rows (A46 A44 C178 T131 C176 C177 T125 T129 A41 U27 C151 M70) and D553 D547 D544 D542 D535 D537 D538 D540 S48 S88 outside U3/U4. r2 T (W3) launched beside S.
 - 2026-11-22 S9 r2 T done (D555 S91 S93 S94 S96; report.missed.zero for D556; ignored S67 S70 S71 S87 S95 D545 code-side). Landing: U lands report/tutorial strings + strip.cold split + D556; then E lands barks/manager lines (voice.ts, heads).
@@ -33,3 +29,4 @@ next: S9 resume at r2 verify (Julien 2026-11-22: skip verify+shots+critics until
 - 2026-11-22 S9b Julien: skip verify/shots/critics until this session's fixes land. Shot run stopped. r2 E fix (drivers-short counter symptom, D556 once-flag) launched on E3.
 - 2026-11-22 S9b r2 E done (drivers-short counter piling when no idle driver; ChapterSave.missedZero + missedZeroShown). Open for Julien: flow-based drivers symptom (new Symptom value). U launched to wire D556.
 - 2026-11-22 S9b r2 U done (D556 payoff once, gated on missedZero; strip flash/coin burst not in U3). tsc ok, 2995 tests pass. Verify deferred to next session.
+- 2026-11-22 S9c verify v5.22-r2 FAIL: 3 errors (192_e4 coach 'the dashed line' + coach-block click -> E4; 66_s1 head-rush bark text -> E4), layout 4 new (walk-* capacity labels ellipsis -> U4); 0 new 122 changed vs v5.22. E4 || U4 launched. Music: Julien R2 notes, notes round 2 running.
