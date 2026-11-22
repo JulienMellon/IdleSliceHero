@@ -14,6 +14,7 @@ For Julien. **The orchestrator does not read this file.** Each build session rea
 | 8 | `S8-v5.21.md` | v5.21: chapters and the task list (E1, W2, U1, U2, E2) | `version: 5.21` |
 | 9 | `S9-v5.22.md` | v5.22: read the shop yourself (E3, W3, U3, S3, U4, E4, A3) | `version: 5.22` |
 | 10 | `S10-v5.23.md` | v5.23: the Store, packs, diamond boosters (W4, E5, N1, U5, E6) | `version: 5.23` |
+| 10b | `S10b-v5.23b.md` | v5.23b: the cleanup step, carried critic notes and loop fixes (W6, S6, U7, U8, Q8, Q7) | `version: 5.23b` |
 | 11 | `S11-v5.24.md` | v5.24: the looks catalog and the $19.99 pack (E7, W5, S4, N2, S5, U6) | `version: 5.24` |
 
 ## How to run one
