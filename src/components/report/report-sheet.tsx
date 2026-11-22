@@ -7,16 +7,17 @@ import Svg, { Line } from 'react-native-svg';
 
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
+import type { CoachTargetId } from '../../engine/coach-types';
 import { useCoachTarget } from '../coach/targets';
-import { asTarget, REPORT_TARGET, sheetModel, type BarRow } from './report-model';
+import { REPORT_TARGET, sheetModel, type BarRow } from './report-model';
 import { closeReport, useReportOpen } from './sheet-state';
 
 const BAR_H = 14;
 const ROW_H = 22;
 
 /** One bar: its name, the track with the basil bar (and "You" when the player's hands make it) and its value at the end. Primitive props, so a tick that changes nothing repaints nothing. */
-const Bar = memo(function Bar({ id, name, value, frac, you }: { id: string; name: string; value: string; frac: number; you: string }) {
-  const t = useCoachTarget(asTarget(id));
+const Bar = memo(function Bar({ id, name, value, frac, you }: { id: CoachTargetId; name: string; value: string; frac: number; you: string }) {
+  const t = useCoachTarget(id);
   return (
     <View ref={t} onLayout={t.onLayout} style={styles.row} testID={`report-bar-${id.split(':').pop()}`}>
       <Text style={styles.name} numberOfLines={1}>
@@ -58,8 +59,8 @@ function Sheet() {
   const game = useGame((s) => s.game);
   const now = useGame((s) => s.tickAt);
   const reportOpened = useGame((s) => s.reportOpened);
-  const demandTarget = useCoachTarget(asTarget(REPORT_TARGET.demand));
-  const closeTarget = useCoachTarget(asTarget(REPORT_TARGET.close));
+  const demandTarget = useCoachTarget(REPORT_TARGET.demand);
+  const closeTarget = useCoachTarget(REPORT_TARGET.close);
   useEffect(() => {
     reportOpened();
   }, [reportOpened]);

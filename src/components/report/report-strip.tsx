@@ -15,7 +15,7 @@ import { C, F } from '../../theme';
 import { useCoachTarget } from '../coach/targets';
 import { Portrait } from '../portrait/index';
 import { HeadFace } from '../scene/head-face';
-import { asTarget, REPORT_TARGET, STRIP, stripFont, stripLineHeight, stripModel, stripTextWidth } from './report-model';
+import { REPORT_TARGET, STRIP, stripFont, stripLineHeight, stripModel, stripTextWidth } from './report-model';
 import { openReport } from './sheet-state';
 
 /** The manager's face: the city's founder in its first shop (their portrait), otherwise the head-face drawing the drawer uses (same name, same face). */
@@ -33,7 +33,7 @@ function ManagerBadge({ hood }: { hood: NeighborhoodId }) {
 export const ReportStrip = memo(function ReportStrip({ bottom }: { bottom: number }) {
   const m = useGame(useShallow((s) => stripModel(s.game, s.game.active, s.tickAt)));
   const hood = useGame((s) => s.game.active);
-  const target = useCoachTarget(asTarget(REPORT_TARGET.strip));
+  const target = useCoachTarget(REPORT_TARGET.strip);
   const { width: screenW } = useWindowDimensions();
   if (!m.show) return null;
   const withBadge = m.manager !== '';

@@ -21,4 +21,11 @@ export type CoachTargetId =
   | 'walk:all'
   | 'drawer:hire:prep'
   | 'tasks:story'
-  | 'tasks:close';
+  | 'tasks:close'
+  | 'report:strip'
+  | 'report:demand'
+  | 'report:close'
+  | 'report:bar:prep'
+  | 'report:bar:ovens'
+  | 'report:bar:counter'
+  | 'report:bar:drivers';

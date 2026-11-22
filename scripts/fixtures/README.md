@@ -24,6 +24,7 @@ One file per group of shots, `NN_name.py`, NN = the first shot number the file o
 | `181_u3.py` | 181-185 the shop report redrawn: strip, sheet short on ovens / drivers, balanced, "You" (card U3) |
 | `186_s3.py` | 186-188 the shop shows its state: dough, bags and boxes pile up where it is short (card S3) |
 | `189_u4.py` | 189-191 upgrade cards say "<n>/min → <m>": sidewalk and drawer of a shop short on ovens, a balanced shop (card U4) |
+| `192_e4.py` | 192-194 Nonna's report tutorial: the strip lit, the Ovens bar lit over the sheet, the dashed line lit; gone on the second opening (card E4) |
 
 ## One fixture at a time
 ```

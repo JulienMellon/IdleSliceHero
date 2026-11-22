@@ -33,12 +33,10 @@ export const REPORT_TARGET = {
   strip: 'report:strip',
   demand: 'report:demand',
   close: 'report:close',
-  bar: (k: BarKey) => `report:bar:${k}`,
-} as const;
-/** The registry's id type lists the ids the engine knows; these are ours until card E4 adds them there, so the one cast is here. */
-export const asTarget = (id: string): CoachTargetId => id as unknown as CoachTargetId;
+  bar: (k: BarKey): CoachTargetId => `report:bar:${k}`,
+} as const satisfies Record<string, CoachTargetId | ((k: BarKey) => CoachTargetId)>;
 /** Every id above, as a list (a test pins that each one is drawn). */
-export const REPORT_TARGETS: readonly string[] = [REPORT_TARGET.strip, REPORT_TARGET.demand, REPORT_TARGET.close, ...BAR_KEYS.map(REPORT_TARGET.bar)];
+export const REPORT_TARGETS: readonly CoachTargetId[] = [REPORT_TARGET.strip, REPORT_TARGET.demand, REPORT_TARGET.close, ...BAR_KEYS.map(REPORT_TARGET.bar)];
 
 // ---------- the strip ----------
 
@@ -152,7 +150,7 @@ export interface BarRow {
   /** "You" on a bar the player makes by hand, else ''. */
   you: string;
   /** The coach's id for the bar (`report:bar:ovens`). */
-  target: string;
+  target: CoachTargetId;
 }
 
 export interface SheetModel {

@@ -56,7 +56,7 @@ describe('what is measured', () => {
     });
   });
 
-  test('wanted, kitchen and sold per minute; the lamps and the floor', () => {
+  test('wanted, kitchen and sold per minute; the loads', () => {
     only(() => {
       const v = view(SLOW());
       expect(v.perMin.wanted).toBeCloseTo(2.8 * 60, 6);
@@ -66,27 +66,6 @@ describe('what is measured', () => {
       expect(v.loads.ovens).toBe(1);
       expect(v.loads.prep).toBe(0.75); // 2.1 / 2.7 = 0.777, down to 5%
       expect(v.loads.counter).toBe(0.6); // 2.1 / 3.3 = 0.636
-      expect(v.lamps).toEqual({ prep: 'busy', ovens: 'slammed', counter: 'busy', floor: 'full' });
-      expect(v.worst).toEqual({ kind: 'ovens', lamp: 'slammed' });
-      expect(v.kitchenLimits).toBe(true);
-    });
-  });
-
-  test('the floor is Quiet below 0.6 of the kitchen, Steady from there, Packed from 1.05', () => {
-    only(() => {
-      expect(view(QUIET()).lamps.floor).toBe('quiet');
-      expect(view(QUIET()).worst).toEqual({ kind: 'floor', lamp: 'quiet' });
-      expect(view(TIPPING()).lamps.floor).toBe('steady');
-      expect(view(TIPPING()).worst).toBeNull();
-      expect(view(SLOW()).lamps.floor).toBe('full');
-    });
-  });
-
-  test('a station is Idle under 60% load, Busy from 60%, Slammed from 95%', () => {
-    only(() => {
-      const v = view(QUIET()); // sold 0.55 against 3.85 / 4.95 / 6.05
-      expect(v.lamps.ovens).toBe('idle');
-      expect(view(TIPPING()).lamps.ovens).toBe('busy'); // 2.8 / 3.85 = 0.727
     });
   });
 
@@ -297,7 +276,7 @@ describe('the copy', () => {
   test('every manager has the four strip lines, the shops name the managers the game has', () => {
     for (const id of Object.keys(MANAGERS) as NeighborhoodId[]) {
       const k = MANAGER_COPY_KEY[id];
-      for (const s of ['kitchen', 'quiet', 'tipping', 'cold']) expect(COPY[`report.${k}.${s}` as keyof typeof COPY]).toBeTruthy();
+      for (const s of ['tipping', 'cold']) expect(COPY[`report.${k}.${s}` as keyof typeof COPY]).toBeTruthy();
     }
   });
 });
@@ -349,6 +328,9 @@ describe('the report is live from the first head (v5.22)', () => {
       const v0 = view(g0);
       expect(v0.you).toEqual({ prep: true, ovens: false, counter: false });
       expect(v0.capacity.prep).toBe(0); // nothing made yet
+      // the score the sheet shows agrees with its Served and Missed: nothing made by hand serves nobody, however fast the machine would be
+      expect(v0.served).toBe(0);
+      expect(v0.service).toBe(0);
       expect(v0.capacity.ovens).toBeCloseTo(v0.perMin.ovens, 9);
       // tap prep whenever the bench has room for a minute
       let g = g0;

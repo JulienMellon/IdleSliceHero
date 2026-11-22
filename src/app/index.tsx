@@ -13,7 +13,8 @@ import { chipPhase } from '@/components/order-model';
 import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT, type StoryGo, type TasksTab } from '@/components/rewards-model';
-import { coachMode, coachStep, hintsAllowed } from '@/engine/tutorial';
+import { coachMode, coachStep, hintsAllowed, reportCoachLive, reportCoachStep } from '@/engine/tutorial';
+import { useReportOpen } from '@/components/report/sheet-state';
 import { BuyButton, type Goal, haptic, Hud, MoonIcon, NightOvenSheet, OfflinePopup, Toast } from '@/components/game-ui';
 import { useBannerOpen } from '@/components/endgame/banner-state';
 import { holdsBonus } from '@/components/endgame/stack-model';
@@ -312,6 +313,19 @@ export default function GameScreen() {
     if (coachId === 8) setListSeen(true);
   }, [onCoachDone, coachId]);
   const coachView = coachFlow.view && coachId === 8 && listSeen ? { ...coachFlow.view, mode: 'free' as const } : coachFlow.view;
+  // v5.22 (E4): the shop report's coach. Strip lit while the sheet is shut, then (over the sheet) the Ovens bar and the dashed line; it ends when the sheet closes.
+  const sheetOpen = useReportOpen();
+  const reportStep = reportCoachStep(game, { sheetOpen, clear: !covered && focused && !drawerOpen && !tasksOpen && !giftOpen && !ovenOpen });
+  const reportStepId = reportStep?.id ?? '';
+  const reportLive = reportCoachLive(game);
+  const stripWas = useRef(false);
+  useEffect(() => {
+    // the sheet opening under the lit strip is the strip step seen; it closing ends the sequence (also after a restart in the middle of it)
+    if (sheetOpen && stripWas.current) useGame.getState().noteCoach('report-open');
+    else if (!sheetOpen && reportLive) useGame.getState().noteCoach('report-closed');
+    stripWas.current = reportStepId === 'strip';
+  }, [sheetOpen, reportStepId, reportLive]);
+  const onReportLook = useCallback(() => useGame.getState().noteCoach('report-look'), []);
   // the prep head's hire card in the drawer is where step 13 points: one ref, given to that one card (S72: while Nonna teaches, the drawer does not point at anything else)
   const hireRef = useCoachTarget('drawer:hire:prep');
   const eps = G.earningsPerSecond(game);
@@ -548,6 +562,12 @@ export default function GameScreen() {
           <CoachOverlay {...coachView} onDone={coachDone} />
         </View>
       )}
+      {/* v5.22 (E4): the report's coach (no hand on a look: it would cover the numbers it points at): over the strip (the coach's own layer), then over the sheet itself (above the SHEETS slot, under only the offline popup) */}
+      {reportStep && (
+        <View pointerEvents="box-none" style={reportStep.id === 'strip' ? styles.coachLayer : styles.reportCoachLayer}>
+          <CoachOverlay targets={reportStep.targets} mode={reportStep.mode} text={reportStep.text} hand={reportStep.mode === 'tap'} onDone={onReportLook} />
+        </View>
+      )}
       {giftOpen && !covered && (
         <View pointerEvents="box-none" style={styles.giftLayer}>
           <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />
@@ -579,6 +599,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
   sceneArea: { flex: 1, overflow: 'hidden', backgroundColor: '#BFE0F7' },
   coachLayer: { ...StyleSheet.absoluteFill, zIndex: Z.coach },
+  reportCoachLayer: { ...StyleSheet.absoluteFill, zIndex: Z.offline },
   giftLayer: { ...StyleSheet.absoluteFill, zIndex: Z.gift },
   ovenLayer: { ...StyleSheet.absoluteFill, zIndex: Z.nightOven },
   sheetsLayer: { ...StyleSheet.absoluteFill, zIndex: Z.sheets },

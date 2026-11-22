@@ -37,8 +37,6 @@ import { cityOf, hoodIds, type CityDef } from '../../content/cities';
 
 export const KEY = 'service';
 
-export type Lamp = 'slammed' | 'busy' | 'idle';
-export type FloorLamp = 'full' | 'steady' | 'quiet';
 export type ServiceState = 'inactive' | 'tipping' | 'normal' | 'cold';
 export type KitchenStation = 'prep' | 'ovens' | 'counter';
 
@@ -150,13 +148,6 @@ export const serviceOf = (f: Flow): number => (f.wanted > 0 ? quantise(f.sold / 
 /** A station's load, 0..1, in 5% steps. */
 export const loadOf = (f: Flow, rate: number): number => (rate > 0 ? quantise(f.sold / rate) : 1);
 
-export const lampOf = (load: number): Lamp => (load >= SERVICE.slammedAt - 1e-9 ? 'slammed' : load >= SERVICE.busyAt - 1e-9 ? 'busy' : 'idle');
-/** The floor's lamp from wanted ÷ kitchen (the raw ratio: its thresholds are not 5% steps). */
-export const floorOf = (f: Flow): FloorLamp => {
-  const r = f.kitchen > 0 ? f.wanted / f.kitchen : 1;
-  return r >= SERVICE.packedAt - 1e-9 ? 'full' : r >= SERVICE.steadyAt - 1e-9 ? 'steady' : 'quiet';
-};
-
 /** The report is live from a shop's first head (a manager brings all three): the capacity bars, the served and missed numbers and the symptoms. */
 export const reportActive = (g: GameState, id: NeighborhoodId): boolean => {
   const shop = g.shops[id];
@@ -263,18 +254,12 @@ export interface ReportView {
   held: Record<Spot, number>;
   /** Station loads, 0..1 in 5% steps. */
   loads: Record<KitchenStation, number>;
-  /** @deprecated v5.22: the lamps are gone from the design; U3 and S3 stop reading this, then it goes. */
-  lamps: Record<KitchenStation, Lamp> & { floor: FloorLamp };
   /** wanted ÷ kitchen. */
   floorRatio: number;
   /** Service, 0..1 in 5% steps. */
   service: number;
   /** Cash walking out the door each minute: (wanted − sold) × the shop's value per pizza × 60. */
   lostPerMinute: number;
-  /** @deprecated v5.22: nothing may name a limit; U3 and S3 stop reading this, then it goes. */
-  kitchenLimits: boolean;
-  /** @deprecated v5.22: nothing may name a limit; U3 and S3 stop reading this, then it goes. */
-  worst: { kind: KitchenStation | 'floor'; lamp: Lamp | FloorLamp } | null;
   /** The share of its line the street draws: 1, or `coldQueueShare` while the line is cold. */
   queueShare: number;
   /** Seconds of play under 60% so far (0..coldSeconds), and how many are left before the line goes cold (null when not counting). */
@@ -299,12 +284,9 @@ const INACTIVE_VIEW: ReportView = Object.freeze({
   symptoms: NO_SYMPTOMS,
   held: NO_HELD,
   loads: { prep: 0, ovens: 0, counter: 0 },
-  lamps: { prep: 'idle', ovens: 'idle', counter: 'idle', floor: 'steady' },
   floorRatio: 1,
   service: 1,
   lostPerMinute: 0,
-  kitchenLimits: false,
-  worst: null,
   queueShare: 1,
   below: 0,
   coldIn: null,
@@ -317,25 +299,19 @@ export function reportView(g: GameState, id: NeighborhoodId, now: number): Repor
   const { state } = effectOf(g, id, now, flow);
   const shop = g.shops[id];
   const st = read(g).shops[id] ?? zeroShop();
-  const service = serviceOf(flow);
+  const flowService = serviceOf(flow);
   const cap = capacities(shop, flow, st.made);
   const eff = kitchenOf(cap);
   const served = Math.min(flow.wanted, eff);
+  // the score the sheet shows is served ÷ wanted, so it agrees with its own Served and Missed: a station the player taps by hand counts for what their hands made
+  // (shot 185 read "Served 0, Missed 168" next to 75%). With every station on its own the two are the same number; the tip and the cold line keep `flowService`.
+  const service = flow.wanted > 0 ? quantise(served / flow.wanted) : 1;
   const missedPs = Math.max(0, flow.wanted - served);
   const loads = { prep: loadOf(flow, flow.prep), ovens: loadOf(flow, flow.ovens), counter: loadOf(flow, flow.counter) };
-  const lamps = { prep: lampOf(loads.prep), ovens: lampOf(loads.ovens), counter: lampOf(loads.counter), floor: floorOf(flow) };
   const floorRatio = flow.kitchen > 0 ? flow.wanted / flow.kitchen : 1;
   const lost = flow.wanted - flow.sold;
   const lostPerMinute = lost > 1e-12 ? lost * valuePerPizza(id, shop, g.vehicle, featureMults(g, id, now), cityOf(g)) * 60 : 0;
-  const kitchenLimits = lamps.floor === 'full';
-  // the deprecated worst lamp, until the last reader is gone
-  let worst: ReportView['worst'] = null;
-  if (kitchenLimits) {
-    const order: KitchenStation[] = ['prep', 'ovens', 'counter'];
-    const top = order.reduce((a, b) => (loads[b] > loads[a] ? b : a));
-    worst = { kind: top, lamp: lamps[top] };
-  } else if (lamps.floor === 'quiet') worst = { kind: 'floor', lamp: 'quiet' };
-  const counting = service < SERVICE.coldBelow - 1e-9 && !st.cold && stampFresh(read(g), now);
+  const counting = flowService < SERVICE.coldBelow - 1e-9 && !st.cold && stampFresh(read(g), now);
   const symptoms = symptomsOf(st, shop, missedPs);
   return {
     state,
@@ -355,12 +331,9 @@ export function reportView(g: GameState, id: NeighborhoodId, now: number): Repor
     symptoms,
     held: st.hold,
     loads,
-    lamps,
     floorRatio,
     service,
     lostPerMinute,
-    kitchenLimits,
-    worst,
     queueShare: state === 'cold' ? SERVICE.coldQueueShare : 1,
     below: st.below,
     coldIn: counting ? Math.max(0, SERVICE.coldSeconds - st.below) : null,
@@ -434,8 +407,6 @@ export function symptomAsks(g: GameState, id: NeighborhoodId): BarkAsk[] {
   }
   return asks;
 }
-/** @deprecated v5.22: the old name; storefront.tsx moves to `symptomAsks`. */
-export const slammedAsks = symptomAsks;
 
 // ---------- the feature ----------
 

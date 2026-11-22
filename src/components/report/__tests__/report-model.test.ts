@@ -12,7 +12,6 @@ import { withFeatures } from '../../../engine/features';
 import { reportView, service } from '../../../engine/features/service';
 import * as G from '../../../engine/game';
 import {
-  asTarget,
   BAR_KEYS,
   barRows,
   drawerLine,
@@ -145,7 +144,6 @@ describe('the bars', () => {
       'report:bar:drivers',
     ]);
     expect(BAR_KEYS.map(REPORT_TARGET.bar)).toContain('report:bar:ovens');
-    expect(asTarget('report:strip')).toBe('report:strip');
     only(() => {
       const { g, now } = shortOvens();
       expect(sheetModel(g, 'downtown', now).bars.map((b) => b.target)).toEqual(REPORT_TARGETS.slice(3));
@@ -155,7 +153,7 @@ describe('the bars', () => {
     const sheet = fs.readFileSync(path.join(dir, 'report-sheet.tsx'), 'utf8');
     const strip = fs.readFileSync(path.join(dir, 'report-strip.tsx'), 'utf8');
     for (const id of ['demand', 'close']) expect(sheet).toContain(`REPORT_TARGET.${id}`);
-    expect(sheet).toContain('useCoachTarget(asTarget(id))');
+    expect(sheet).toContain('useCoachTarget(id)');
     expect(strip).toContain('REPORT_TARGET.strip');
   });
 });

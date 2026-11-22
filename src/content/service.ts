@@ -61,71 +61,26 @@ export const MANAGER_COPY_KEY: Record<NeighborhoodId, string> = {
   uptown: 'anton',
 };
 
-/** The initial in each lamp chip on the strip (D492): Prep, Ovens, Counter, and the floor's customers coming In. */
-export const LAMP_INITIAL = { prep: 'P', ovens: 'O', counter: 'C', floor: 'In' } as const;
-
 /** Every line, by the copy's key. `{name}` is filled by `fill` in components/report/report-model.ts. */
 export const COPY = {
-  'report.kitchen': 'Serving {served} of {wanted} orders a minute. {lost} walking out.',
-  'report.quiet': 'Kitchen could do {could} a minute. Only {wanted} come in.',
   'report.tipping': 'Fast service. Customers are tipping 10% extra.',
   'report.cold': 'Service went cold. Income −10% until it recovers.',
-  'report.nonna.kitchen': '{served} of {wanted} a minute, cara. {lost} walks out the door!',
-  'report.nonna.quiet': 'We bake {could}, they want {wanted}. Go find me hungry people!',
   'report.nonna.tipping': 'Fast and hot! They tip 10% more. Of course they do.',
   'report.nonna.cold': 'Cold service, cold pizza! −10% until we fix it. Bake!',
-  'report.deb.kitchen': '{served} of {wanted} a minute. {lost} walked off. Unacceptable.',
-  'report.deb.quiet': 'Kitchen can do {could}. Only {wanted} show up. Get me a crowd.',
   'report.deb.tipping': 'Line’s moving, tips up 10%. That’s how it’s done.',
   'report.deb.cold': 'We’re slow and folks noticed. −10% till we fix it.',
-  'report.skip.kitchen': '{served} of {wanted} a minute. Counted twice. {lost} walking off.',
-  'report.skip.quiet': 'We can do {could}. Only {wanted} came aboard. I checked twice.',
   'report.skip.tipping': 'Tips up 10%. Counted twice. Then once more, for joy.',
   'report.skip.cold': 'Service is slipping. −10% till we mend it. Recounting.',
-  'report.noor.kitchen': 'Queue: {served} of {wanted} a minute. {lost} gave up and left.',
-  'report.noor.quiet': 'Capacity {could}, arrivals {wanted}. Idle servers. Fascinating.',
   'report.noor.tipping': 'Barely any wait. Tips up 10%. This is publishable.',
   'report.noor.cold': 'Queue’s unstable. Word spread. −10% until it settles.',
-  'report.dee.kitchen': '{served} of {wanted} a minute. {lost} clocking out early.',
-  'report.dee.quiet': 'Ovens can do {could}. Only {wanted} in line. Slow shift.',
   'report.dee.tipping': 'Crew’s on rhythm. Tips up 10%. Sal might hum.',
   'report.dee.cold': 'Line’s backed up. −10% till it clears. Pick it up.',
-  'report.anton.kitchen': '{served} of {wanted} seated a minute. {lost} left without dining.',
-  'report.anton.quiet': 'We could seat {could}. Only {wanted} arrive. The room echoes.',
   'report.anton.tipping': 'Impeccable service. Tips up 10%. As it should be.',
   'report.anton.cold': 'Guests waiting. Unforgivable. −10% until we recover.',
 
-  'lamp.station.slammed': 'Slammed',
-  'lamp.station.busy': 'Busy',
-  'lamp.station.idle': 'Idle',
-  'lamp.floor.full': 'Packed',
-  'lamp.floor.steady': 'Steady',
-  'lamp.floor.quiet': 'Quiet',
-  // the strip's one state word when no lamp is the worst (D492)
-  'lamp.state.tipping': 'Tipping',
-  'lamp.state.cold': 'Cold',
-
-  'effect.gain': '+{gain}/min · pays back in {time}',
-  'effect.nogain': '{station} isn’t holding you back',
-  'effect.head': 'Runs this station for you, nonstop',
-  'effect.manager': 'Full speed while away · income ×2',
-
   'report.sheet.title': 'Shop Report',
-  'report.sheet.fix.faster.title': 'Faster stations',
-  'report.sheet.fix.faster.line': 'Upgrade the slowest station first. That’s where orders pile up.',
-  'report.sheet.fix.customers.title': 'More customers',
-  'report.sheet.fix.customers.line': 'When the kitchen has room to spare, bring in more people.',
-  'report.sheet.fix.prices.title': 'Pricier pizzas',
-  'report.sheet.fix.prices.line': 'Better recipes earn more per pie, without a single extra order.',
   'report.sheet.tip': 'Serve 90% or more of your orders and customers tip 10% extra.',
   'report.sheet.cold': 'Under 60% served for a minute? Word spreads: −10% until it recovers.',
 } as const;
 
 export type CopyKey = keyof typeof COPY;
-
-/** The purchases each "way to fix it" row names (real cards in the drawer). */
-export const FIX_ROWS = [
-  { key: 'faster', buys: 'Prep, Ovens, Counter' },
-  { key: 'customers', buys: 'Seating, Drivers, Fleet' },
-  { key: 'prices', buys: 'Oven grade, Decor' },
-] as const;
