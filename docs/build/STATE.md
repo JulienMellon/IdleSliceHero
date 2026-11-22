@@ -4,7 +4,7 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.22                   # v5.21 r4 fix done 2026-11-22; r4 verify+reviews+close DEFERRED (Julien: cards first)
-step: fix                           # setup | waves | verify | review | fix | close
+step: verify                        # setup | waves | verify | review | fix | close  (r2 fixes landed)
 round: r2              # r1 | r2 | r3
 last_shots: v5.22                   # v5.22 r1 verify: True 0 [], layout 0 new; 14 new 150 changed vs v5.21-r3
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
@@ -16,36 +16,10 @@ reviews:               # latest review file per critic, with verdict and counts
   story:  docs/build/v5.22/review-r1-story.md (r1 NOT SATISFIED; bug 0 major 1 minor 14; E3 U3 T9; S90 major drivers bar under customers line yet Missed 0, shots 182/183)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
 open: ON HOLD (Julien 2026-11-18): every city beyond Boston; cards in docs/build/v5.19/later/ (W4b W4s E4 E4f CITY A3) and the deferred refactor (R2 R2b R3 R4 R5f R6s) are not launched. PARKED for Julien, not in v5.19: economy refit (one pizza per tap +1/10 prep lv, home tops out ~$10M with Suburbs ~$30K, first goal <$50, ECONOMY 3->4 with old saves reset, D493 rival gated at Suburbs 2 stars, D495); don't ask about it during v5.19. Carried: A2 + audio notes AU41 AU39 AU40 AU25 AU82 (music round waits on Julien's R1 listen), SliceAudioSession native module not built; Boston heads need a writer pass (5 barks per head, one per trigger; their script has 4 numbered); Boston GMs placeholder; v5.17/v5.18 critic minors D481 D493 D495 D505 D512 D514. Tools: expo install is refused by the proxy (use npm install with the version from node_modules/expo/bundledNativeModules.json); loop_stats.py cannot read loop: commits; programmer --only takes the fixture name without .py; seam-noise shots 00/24/104/105 and 29-31b. App Store privacy label must say Tracking = Yes; native paths unverified until DEVICE-CHECKLIST.
-next: S9 verify v5.22 (L=v5.22 P=v5.21-r3; covers v5.21 r4 stacking fix too, Julien 2026-11-22: v5.21 closes as superseded by v5.22 review), then r1 reviews per VERSION, gate, fix rounds, close. A3 blocked on music R2 listen. Carry: D546 fixed, S87, S89 (vs D533), D530 gift, PACING RULE.
+next: S9 resume at r2 verify (Julien 2026-11-22: skip r2 verify+reviews this session; r2 fixes all landed, tsc clean 2992/2992). Do: verify L=v5.22-r2 P=v5.22 (--jobs 3), re-checks model sonnet with PREV=review-r1-* (critic, code, story; G119 D548 D549 S90 K5 G118 D543 verdicts), gate, r3 if needed, close v5.22 per README 8 (also log v5.21 closed as superseded by v5.22 review). For E: drivers-short shop shows no counter symptom (piling needs wanted>kitchen; bags pile but no pose); D556 needs a once-flag. Carry: D552 D481 D519 S89(vs D533) S97 A45 C154 M75 D493 D495, N rows (7). A3 blocked: music R2 at listen (notes round 1 reel sent 2026-11-22; next composer card renders 192 kbps). Then STATE to v5.23 per S9 step 5.
 ```
 
 ## Log (one line per event, newest last; trim to the last 10)
-- 2026-11-21 S8 r3 U1 done (D532 cash vs price, D541 tick pop + chapter ribbon + toast shot, D536 Go proved 178h2/i/j, S87 Pier 9 short). E2 r3 launched (D530).
-- 2026-11-21 S8 r3 fixes done (E2 D530 ribbon via goalCheer, shot 179e; gift needs Julien). 2902/2902, tsc clean, pacing same (downtown-2 +8.9%). Two fix rounds run: session ends before r3 verify.
-- 2026-11-21 S8 resumed: deps installed (npm ci, playwright 1.63.0); E1b launched before r3 verify.
-- 2026-11-21 S8 E1b done (gate on beat 3 of prior shop; 2917 tests; EAGER max wait 1940.8 vs tuned 1919.8 at uptown-4, so beat 3 kept per acceptance; beat 4 broke 3 pacing tests). Needs index.tsx tasks param -> U1.
-- 2026-11-21 S8 r3 U1 done (locked-lot tap opens Story tab, shot 180b; 2918 tests). Verify v5.21-r3 next.
-- 2026-11-21 S8 r3 pre-verify: tsc clean, format ok, 2918/2918, pacing same (downtown-2 +8.9%; EAGER max 1940.8 vs tuned 1919.8). Shots v5.21-r3 running.
-- 2026-11-21 S8 verify v5.21-r3 FAIL: 2 errors in 153_c1 (scrim leak shot 155-coach-step10, walk-ovens not visible); layout 0. Sent to E2.
-- 2026-11-21 S8 r3 E2 done (153_c1: HUD zIndex 2 from U1 covered coach; coach layer raised). Re-verify v5.21-r3. Watch: HUD may cover GiftCalendar/NightOvenSheet/SHEETS.
-- 2026-11-21 S8 verify v5.21-r3 pass: True 0 [], layout 0, 14 new 94 changed. r3 re-checks launched.
-- 2026-11-21 S8 r3 gate NOT met: critic bug 1 major 1 (G118 D543), code CHANGES REQUESTED (K5 high), story minors carry. Stopped for Julien; PR opened.
-- 2026-11-22 S8 r4 (Julien yes): programmer launched on U1+E2 (G118 D543 K5 stacking order); npm ci running.
-- 2026-11-22 S8 r4 U1+E2 done (G118 D543 K5: one Z set in z-order.ts, test pins order). Verify v5.21-r4 next.
-- 2026-11-22 S8 r4 pre-verify: tsc clean, format ok, 2924/2924, pacing same. Shots v5.21-r4 running.
-- 2026-11-22 S8->S9 Julien: go to v5.22 cards before verify/shots. S4 launched alone.
-- 2026-11-22 S9 music interleaved (Julien): R2 not a go -> notes round on card-NOTES (composer running beside S4). A3 stays blocked until music round done.
-- 2026-11-22 S9 music R2 notes round 1 done (stingers -2..-3.5 LU, AU83 agreed); verify pass; reel sent; music back at listen.
-- 2026-11-22 S9 S4 done (--jobs 3: 569 s vs 1677 s, same report/layout). Watch: shots 04, 156 differ 0.12-0.18% in one parallel run; if it recurs add to seam-noise list or use --jobs 2. Wave 1 E3||W3 launched.
-- 2026-11-22 S9 W3 done (COPY-v5.22.md). Needs routed: report keys report.bar.*/demand/served/missed/you -> E3 (sent) + U3; retire report.sheet.fix.*, bark.*.slammed, report.*.quiet/kitchen -> E3/U3/U4; D545 Nonna line under The Keys -> U; S87 label 'Win Pier 9'.
-- 2026-11-22 S9 E3 partial (report data, symptoms, barks; D546 T128 fixed). Lane-E needs (voice.ts slammed keys, BarkTable type, CityDef.managerBarks, boston fixture) sent back to E3. Wave 2 extras: S3 passes managerBarks as nextBark 7th arg in storefront.tsx and moves storefront rep.lamps/slammedAsks + scroll-cues slammed kind; U3 updates city-model.test 'Chapter 6' -> current chapter and moves report-model lamps/worst/kitchenLimits readers + retires report.sheet.fix.*/quiet/kitchen/lamp.* keys.
-- 2026-11-22 S9 E3 done (lane-E follow-ups). tsc clean, 2941/2942 (city-model 'Chapter 6' -> U3). Wave 2 U3||S3 launched.
-- 2026-11-22 S9 U3 partial (report bars+demand line, C157, fixture 181). Sent back: drawer-model.test regex, 130_p1.py retarget (U3); copy-system.test tables + home-ids-guard ALLOW (E3, tiny). For E4: CoachTargetId report:strip/demand/close/bar:* (drop asTarget cast); engine: hand-tapped ovens service 75% vs Missed 168 (shot 185).
-- 2026-11-22 S9 U3 done (follow-ups: drawer test, 130_p1 retargeted; shot names 130-133 still say tipping/slammed, rename later).
-- 2026-11-22 S9 S3 done (piles, poses, walkouts, scooters; G80 D421 fixed; fixture 186). Carry: C167 coachTargets export (E4), D481, D519. To U4: scroll-cues 'slammed' kind/label, add 186_s3 to fixtures README. Note: engine caps backlog ~2 batches (piles mostly 3). Wave 3 U4 launched.
-- 2026-11-22 S9 U4 done (capacity feet, bundle/Buy both/tones gone, scroll cue 'piling'; fixture 189). Follow-ups: U4 drops shop-ui BOTTLENECK chip + bundleButton/cardLook frame + dead report-model helpers; S3 renames storefront slammed->piling. For E4: drop deprecated kitchenLimits/lamps/worst/slammedAsks (only service.test reads them), C167 coachTargets, CoachTargetId report:*.
-- 2026-11-22 S9 U4 follow-ups done (BOTTLENECK chip, bundleButton, cardLook frame, dead report helpers gone). A3 blocked: waits for the music track (R2 at listen). Wave 4 E4 launched alone.
-- 2026-11-22 S9 E4 done (report coach 3 steps, REPORT_READER on, coachTargets export; D539 T127 C167 fixed; sheet service = served/wanted; sim2 opens report). Pacing same (EAGER 1940.8 / tuned 1919.8). Open: S89 vs D533 nextTask rule (owner decision); storefront.tsx:357 can use coachTargets (S); A45 C154 U33; D493 D495 parked.
 - 2026-11-22 S9 verify v5.22 FAIL: 3 errors (140_v2 scroll-cue-left 143, 140_v2 cold strip 146 -> U4; 180_e1b 'Finish Chapter 10 first' -> E4); layout 0 new; 14 new 154 changed vs v5.21-r3. Re-verify after fixes.
 - 2026-11-22 S9 verify v5.22 PASS (re-run after 3 fixture fixes): True 0 [], layout 0; 14 new 150 changed. r1 reviews launched (critic full, codecritic medium src scripts 12c99bd..HEAD, storycritic medium COPY-v5.22); audiocritic skipped (A3 blocked).
 - 2026-11-22 S9 r1 gate NOT met (critic bug1 major2; code medium 4>3; story S90 major). Fix r2: batch 1 E (E3+E4 via E4 programmer) || S (S3); batch 2 U (U3+U4); batch 3 T (W3). N rows (code, 7) have no v5.22 card: carry.
@@ -55,3 +29,4 @@ next: S9 verify v5.22 (L=v5.22 P=v5.21-r3; covers v5.21 r4 stacking fix too, Jul
 - 2026-11-22 S9 r2 T done (D555 S91 S93 S94 S96; report.missed.zero for D556; ignored S67 S70 S71 S87 S95 D545 code-side). Landing: U lands report/tutorial strings + strip.cold split + D556; then E lands barks/manager lines (voice.ts, heads).
 - 2026-11-22 S9 r2 U landed report/tutorial copy (strip.cold.tips/.word, You tap, tutorial.report.3). D556 carries (needs a saved once-flag, lane E). E landing barks/manager lines.
 - 2026-11-22 S9 r2 E landed all COPY-v5.22 barks (36 head + 12 manager, HOME_MANAGER_BARKS wired); home pack had none before (wave-1 gap). Watch bark rate in r2 shots.
+- 2026-11-22 S9 r2 S done (D548 piles 1.3-1.6x + spill + rock, D549 Z\/phone bubbles + lean, M74, C167). Julien: skip verify\/reviews, PR now; next session resumes at r2 verify.
