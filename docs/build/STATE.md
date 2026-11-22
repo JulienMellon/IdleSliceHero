@@ -4,7 +4,7 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.23                   # v5.22 closed 2026-11-22 at r2 (critic SATISFIED, code APPROVED 3 medium, story advisory 10 minor)
-step: waves                         # setup | waves | verify | review | fix | close
+step: verify                         # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.22-r2                # v5.22 r2 verify: True 0 [], layout 0 new; 122 changed vs v5.22
 codecritic_range_start: 12c99bd   # v5.21 start (main at S8 start)
@@ -42,3 +42,4 @@ next: start S10-v5.23.md. Carried notes: docs/build/v5.22/review-r2-{critic,code
 - 2026-11-22 S10 A3 done (3 shop SFX + shop-ears rules, 3075 tests). Julien has not heard the three sounds.
 - 2026-11-22 S10 E6 done (3075 tests). U follow-ups (98_u3 shot 103, coach-view 16/17) sent to U5 before verify.
 - 2026-11-22 S10 U5 follow-ups done (3077 tests). MID_SAVE in shots_lib lands fixtures on step 16 -> sent to E6 before verify.
+- 2026-11-22 S10 E6 MID_SAVE fix done (saveVersion 7, tutorial 18; 4 fixtures + 3 TUTORIAL_DONE locals). Possible: fixtures 09/19/56 may need suburbs-hire seen. Verify v5.23 running (tsc, format, 3077 tests ok).
