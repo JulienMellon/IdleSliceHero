@@ -34,8 +34,7 @@ export function buttonTone({
 
 /**
  * The look of an affordable card and its button (D419): a 2 pt crust-brown outline and a solid face in every neighbourhood, so a buy
- * you can make never reads as washed out. v5.22: the sidewalk and the drawer pass no frame (null); `frame` stays only for shop-ui's StationCard
- * until its `hot` prop goes (that file is not in this card).
+ * you can make never reads as washed out. v5.22: every card has this one look; nothing frames, tints or saves-for a card.
  */
 export const AFFORDABLE_OUTLINE = { color: '#3B1F14', width: 2 } as const;
 export interface CardLook {
@@ -46,18 +45,15 @@ export interface CardLook {
   /** Opacity of the card's label and price (1 whenever the buy can be made). */
   labelOpacity: number;
 }
-export function cardLook(frame: 'hot' | 'waiting' | null, affordable: boolean): CardLook {
+export function cardLook(affordable: boolean): CardLook {
   if (affordable)
     return {
       borderColor: AFFORDABLE_OUTLINE.color,
       borderWidth: AFFORDABLE_OUTLINE.width,
       borderStyle: 'solid',
-      backgroundColor: frame === 'hot' ? '#FFD9CF' : '#FFFFFF',
+      backgroundColor: '#FFFFFF',
       labelOpacity: 1,
     };
-  // not affordable: saving for it is a dashed basil outline, anything else the quiet card
-  if (frame === 'waiting')
-    return { borderColor: 'rgba(46,125,62,0.6)', borderWidth: 2.5, borderStyle: 'dashed', backgroundColor: 'rgba(255,255,255,0.95)', labelOpacity: 1 };
   return { borderColor: '#3B1F14', borderWidth: 2.5, borderStyle: 'solid', backgroundColor: 'rgba(255,255,255,0.95)', labelOpacity: 1 };
 }
 /** The border of a button's face: dark and 2 pt whenever the buy can be made (any tone but the flat "no gain"), else none. */
@@ -233,21 +229,6 @@ export function stationViews(s: G.GameState, id: NeighborhoodId): StationView[] 
  */
 export const footLine = (v: Pick<StationView, 'cap' | 'need'>, many: { foot: string } | null, width: number): string | null =>
   many?.foot ?? (v.cap ? capacityFit(v.cap, width) : v.need);
-
-// ---------- the "Buy both" bundle button (D304), kept only until src/dev/__tests__/money.test.ts stops reading it ----------
-
-export interface BundleButton {
-  label: string;
-  sub: string;
-  enabled: boolean;
-  steps: G.Upgrade[];
-}
-
-/** @deprecated v5.22: nothing in the sidewalk or the drawer bundles stations; goes with its last reader (dev/__tests__/money.test.ts). */
-export function bundleButton(hint: G.BundleHint, cash: number): BundleButton {
-  const need = needText(hint.cost, cash);
-  return { label: `Buy ${money(hint.cost)}`, sub: need ?? '', enabled: need === null, steps: hint.steps };
-}
 
 // ---------- the sidewalk row's slots: stations, and the Expand card that merges the capped ones (D407) ----------
 

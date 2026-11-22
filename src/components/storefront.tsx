@@ -649,8 +649,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const jamOn = layerOf(city, id) === 'shifts' && jamView(game).jammed;
   const wants = view.scrolls
     ? wantsOf({
-        // the stations with a pile-up (the cue kind keeps its old name: scroll-cues-model.ts is not this card's)
-        slammed: (['prep', 'ovens', 'counter'] as const).filter((k) => rep.symptoms[k] === 'piling'),
+        // the stations with a pile-up
+        piling: (['prep', 'ovens', 'counter'] as const).filter((k) => rep.symptoms[k] === 'piling'),
         jam: jamOn,
         bubble: bubbleSt ? spotOf(bubbleSt) : null,
         tap: next ? spotOf(next) : null,

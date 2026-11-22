@@ -150,8 +150,8 @@ export function clearCueTop(side: 'left' | 'right', top: number, viewW: number, 
 
 /** The stations the report shows a pile-up at (symptom `piling`), as wants at the stations' places. */
 export function wantsOf(input: {
-  /** The stations with a pile-up (the report's symptoms); empty for a shop with no report. Still named `slammed` until storefront.tsx, which feeds it, is renamed with it. */
-  slammed: readonly KitchenSpot[];
+  /** The stations with a pile-up (the report's symptoms); empty for a shop with no report. */
+  piling: readonly KitchenSpot[];
   /** An oven is jammed (Industrial). */
   jam: boolean;
   /** The station whose head's bubble is up. */
@@ -163,7 +163,7 @@ export function wantsOf(input: {
   jamX: number;
 }): Want[] {
   const w: Want[] = [];
-  for (const st of input.slammed) w.push({ kind: 'piling', x: input.xs[st], at: st });
+  for (const st of input.piling) w.push({ kind: 'piling', x: input.xs[st], at: st });
   if (input.jam) w.push({ kind: 'jam', x: input.jamX, at: 'ovens' });
   if (input.bubble) w.push({ kind: 'bubble', x: input.xs[input.bubble], at: input.bubble });
   if (input.tap) w.push({ kind: 'tap', x: input.xs[input.tap], at: input.tap });

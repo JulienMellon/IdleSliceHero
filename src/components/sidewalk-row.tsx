@@ -235,7 +235,7 @@ export function SidewalkRow({
 
 /** D419: an affordable card is a 2 pt #3B1F14 outline on a solid face; a card you cannot buy keeps its 2.5 pt frame. The content box stays the same size. */
 const look = (affordable: boolean) => {
-  const l = cardLook(null, affordable);
+  const l = cardLook(affordable);
   return {
     borderColor: l.borderColor,
     borderWidth: l.borderWidth,

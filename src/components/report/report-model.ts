@@ -211,24 +211,3 @@ export function sheetModel(g: GameState, id: NeighborhoodId, now: number): Sheet
     state: v.state,
   };
 }
-
-// ---------- cards say what they do ----------
-
-/** "+$250/min · pays back in 12m": the gain a minute and the payback time (cost ÷ gain). `gain` is cash a second. Null when it adds nothing. */
-export function effectLine(gain: number | null, cost: number | null): string | null {
-  if (gain === null || !(gain > 1e-9)) return null;
-  return copy('effect.gain', { gain: money(gain * 60), time: cost !== null && cost > 0 ? duration(Math.max(1, Math.ceil(cost / gain))) : 'now' });
-}
-/** The no-gain line: "Prep isn't holding you back". */
-export const noGainLine = (station: string): string => copy('effect.nogain', { station });
-export const headEffect = (): string => copy('effect.head');
-export const managerEffect = (): string => copy('effect.manager');
-
-/** A sidewalk card's foot line: the longest of the gain with its payback, the gain alone, or a shorter gain that fits `width` (the card's text width). */
-export function compactEffect(gain: number | null, cost: number | null, width: number): string | null {
-  if (gain === null || !(gain > 1e-9)) return null;
-  const g = `+${money(gain * 60)}/min`;
-  const candidates =
-    cost !== null && cost > 0 ? [`${g} · ${duration(Math.max(1, Math.ceil(cost / gain)))}`, g, `+${money(gain * 60)}/m`] : [g, `+${money(gain * 60)}/m`];
-  return candidates.find((c) => fits(c, width, 10)) ?? candidates[candidates.length - 1];
-}

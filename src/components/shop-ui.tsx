@@ -193,8 +193,6 @@ function StationCardView(props: {
   cost: number | null;
   costLabel?: string;
   canBuy: boolean;
-  hot?: boolean;
-  /** Opened from its sidewalk card: highlight in cheese yellow (distinct from the red bottleneck). */
   onBuy?: () => boolean | void;
   /** A list passes one stable handler and each card's key, instead of a new closure per card per render. */
   buyKey?: string;
@@ -209,8 +207,8 @@ function StationCardView(props: {
   /** The Coach can point at this card (v5.20): the screen gives it the ref of the target (one card has one; the others cost nothing). */
   rootRef?: CoachTargetRef;
 }) {
-  // D419: a card you can afford has the 2 pt crust-brown outline on a solid face (the bottleneck's signal is its tint and chip, not a pale outline)
-  const look = cardLook(props.hot && !props.muted ? 'hot' : null, props.canBuy);
+  // D419: a card you can afford has the 2 pt crust-brown outline on a solid face; no card is tinted or named as the limit (v5.22)
+  const look = cardLook(props.canBuy);
   const { onBuy, onBuyKey, buyKey } = props;
   const press = useCallback(() => (onBuyKey && buyKey !== undefined ? onBuyKey(buyKey) : onBuy?.()), [onBuy, onBuyKey, buyKey]);
   return (
@@ -222,7 +220,7 @@ function StationCardView(props: {
         props.wide && styles.cardWide,
         props.canBuy
           ? { borderColor: look.borderColor, borderWidth: look.borderWidth, backgroundColor: look.backgroundColor, padding: 5 + (2.5 - look.borderWidth) }
-          : props.hot && styles.cardHot,
+          : null,
         props.muted && !props.canBuy && styles.cardMuted,
       ]}
     >
@@ -233,11 +231,6 @@ function StationCardView(props: {
             {props.title}
             {props.level ? <Text style={styles.level}> {props.level}</Text> : null}
           </Text>
-          {props.hot && !props.muted ? (
-            <View style={styles.neckChip}>
-              <Text style={styles.neckText}>BOTTLENECK</Text>
-            </View>
-          ) : null}
           <Text style={styles.detail} numberOfLines={4}>
             {/* a line may break before a "·", never after it */}
             {props.detail.replace(/ · /g, ' ·\u00A0')}
@@ -292,9 +285,6 @@ const styles = StyleSheet.create({
   cardWide: { width: '100%', flexDirection: 'row', alignItems: 'flex-start' },
   // D419: only a card that cannot be bought fades; a buyable one (Ovens on a shop with no manager) stays at full strength
   cardMuted: { opacity: 0.6 },
-  cardHot: { borderColor: C.tomato, backgroundColor: '#FFF4F0' },
-  neckChip: { alignSelf: 'flex-start', backgroundColor: C.tomato, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1, marginVertical: 1 },
-  neckText: { fontFamily: F.bold, fontSize: 10, letterSpacing: 0.4, color: '#fff' },
   cardHead: { flexDirection: 'row', gap: 6, alignItems: 'flex-start', flex: 1 },
   icon: {
     width: 34,

@@ -24,7 +24,7 @@ jest.mock('../../services', () => ({
 import { VANITY_PRICE } from '../../content/endgame';
 import { STREAK_SAVE_DIAMONDS } from '../../content/rewards';
 import { vanityViews } from '../../components/endgame/shop-model';
-import { bundleButton, stationViews } from '../../components/sidewalk-model';
+import { stationViews } from '../../components/sidewalk-model';
 import * as G from '../../engine/game';
 import { nightOvenView } from '../../engine/night-oven';
 import * as R from '../../engine/rewards';
@@ -190,9 +190,9 @@ describe('need-text (step 4)', () => {
     expect(short.every((v) => v.need !== null)).toBe(true);
     G.setFreeBuys(true);
     for (const v of stationViews(s, 'downtown')) expect(v.need).toBeNull();
-    expect(bundleButton({ steps: ['prep', 'ovens'], cost: 1e6, gain: 1 } as G.BundleHint, 5)).toMatchObject({ enabled: true });
+    expect(stationViews(s, 'downtown').every((v) => v.affordable || v.lock !== null)).toBe(true);
     G.setFreeBuys(false);
-    expect(bundleButton({ steps: ['prep', 'ovens'], cost: 1e6, gain: 1 } as G.BundleHint, 5)).toMatchObject({ enabled: false });
+    expect(stationViews(s, 'downtown').some((v) => !v.affordable && v.lock === null)).toBe(true);
   });
 });
 

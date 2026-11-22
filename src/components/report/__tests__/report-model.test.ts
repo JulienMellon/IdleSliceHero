@@ -15,12 +15,9 @@ import {
   asTarget,
   BAR_KEYS,
   barRows,
-  compactEffect,
   drawerLine,
-  effectLine,
   fill,
   HIDDEN_STRIP,
-  noGainLine,
   REPORT_TARGET,
   REPORT_TARGETS,
   reportLine,
@@ -264,22 +261,6 @@ describe('the strip fits an iPhone SE', () => {
   });
   test('the fit really can fail: one very long line takes more than 2 lines (the test is not vacuous)', () => {
     expect(wrapLines('word '.repeat(40), stripTextWidth(SE, true), 10)).toBeGreaterThan(STRIP.maxLines);
-  });
-});
-
-describe('effect lines', () => {
-  test('the gain a minute and the payback time, cost ÷ gain', () => {
-    expect(effectLine(5, 3000)).toBe('+$300/min · pays back in 10m');
-    expect(effectLine(0.5, 90)).toBe('+$30/min · pays back in 3m');
-    expect(effectLine(0, 100)).toBeNull();
-    expect(effectLine(null, 100)).toBeNull();
-    expect(noGainLine('Prep')).toBe('Prep isn’t holding you back');
-  });
-  test('a sidewalk card takes the longest form that fits its width', () => {
-    expect(compactEffect(5, 3000, 200)).toBe('+$300/min · 10m');
-    expect(compactEffect(5, 3000, 60)).toBe('+$300/min');
-    expect(compactEffect(5, 3000, 30)).toBe('+$300/m');
-    expect(compactEffect(0, 3000, 100)).toBeNull();
   });
 });
 
