@@ -36,6 +36,7 @@ import { useGame } from '../store/game-store';
 import { useMotion } from './scene/clock';
 import { buttonOutline, type ButtonTone } from './sidewalk-model';
 import { BUTTON_H, COMPACT_FONT_MAX_SCALE, GOAL_BAR_H, GOAL_TAP_H, GOAL_TAP_ROOM, HUD_BUTTON_SLOP, HUD_ROW_H, HUD_STACK } from './tap-targets';
+import { Z } from './z-order';
 
 // X1 (v5.19-test): the red TEST pill and its panel. The require sits inside the literal env check, so the normal export folds it away and
 // never collects src/dev/panel (src/dev/README.md; `npm run check:no-test-mode` proves it).
@@ -1100,7 +1101,7 @@ const styles = StyleSheet.create({
 
   hud: {
     position: 'relative',
-    zIndex: 2,
+    zIndex: Z.hud,
     backgroundColor: C.tomato,
     paddingHorizontal: 12,
     paddingBottom: HUD_STACK.padBottom,

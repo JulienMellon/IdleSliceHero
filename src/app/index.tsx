@@ -33,6 +33,7 @@ import Svg from 'react-native-svg';
 import { CURB_Y, SCENE_H, sceneFrame, sceneView, Storefront } from '@/components/storefront';
 import { usePerfMarks } from '@/components/scene/clock';
 import { ShopTabs, StationCard } from '@/components/shop-ui';
+import { Z } from '@/components/z-order';
 import { cityOf } from '@/content/cities';
 import type { HeadKind } from '@/content/tuning';
 import type { NeighborhoodId } from '@/content/types';
@@ -575,19 +576,35 @@ export default function GameScreen() {
         {toast && hintsAllowed(game).toast && <Toast compact text={toast.text} top={10} />}
       </View>
       {/* v5.20 (C1): the one tutorial highlight: a scrim with a cut-out over the HUD, the shop, the row and the drawer; under the calendar, the sheets and the cut-scenes */}
-      {/* r3: the HUD sits at zIndex 2 (the chapter ribbon hangs over the tabs), so the overlay's own layer rides above it or a tap on the HUD gets past the scrim */}
+      {/* r4: the screen's layers take their zIndex from z-order.ts (HUD < coach < gift < night oven < SHEETS < offline popup < coins), so no overlay sits under the HUD or under the coach's scrim */}
       {coachView && (
         <View pointerEvents="box-none" style={styles.coachLayer}>
           <CoachOverlay {...coachView} onDone={coachDone} />
         </View>
       )}
-      {giftOpen && !covered && <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />}
-      {ovenOpen && !covered && ovenView && <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />}
+      {giftOpen && !covered && (
+        <View pointerEvents="box-none" style={styles.giftLayer}>
+          <GiftCalendar game={slow.game} now={slow.sec} onClaim={onClaimGift} onClose={closeGift} />
+        </View>
+      )}
+      {ovenOpen && !covered && ovenView && (
+        <View pointerEvents="box-none" style={styles.ovenLayer}>
+          <NightOvenSheet view={ovenView} onBuy={buyNightOven} onClose={closeOven} />
+        </View>
+      )}
       {/* the SHEETS slot: modal sheets over the whole screen, under the offline popup */}
-      <Slots items={SHEETS} />
-      {offline && <OfflinePopup summary={offline} nightOven={game.nightOven} onCollect={dismissOffline} onUpgrade={onOven} />}
+      <View pointerEvents="box-none" style={styles.sheetsLayer}>
+        <Slots items={SHEETS} />
+      </View>
+      {offline && (
+        <View pointerEvents="box-none" style={styles.offlineLayer}>
+          <OfflinePopup summary={offline} nightOven={game.nightOven} onCollect={dismissOffline} onUpgrade={onOven} />
+        </View>
+      )}
       {/* payout coins fly from the carrier to the cash (D344); last, so the offline popup's burst from the oven's mouth shows over it (D454) */}
-      <CoinLayer />
+      <View pointerEvents="none" style={styles.coinsLayer}>
+        <CoinLayer />
+      </View>
     </View>
   );
 }
@@ -595,7 +612,12 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.tomato },
   sceneArea: { flex: 1, overflow: 'hidden', backgroundColor: '#BFE0F7' },
-  coachLayer: { ...StyleSheet.absoluteFill, zIndex: 3 },
+  coachLayer: { ...StyleSheet.absoluteFill, zIndex: Z.coach },
+  giftLayer: { ...StyleSheet.absoluteFill, zIndex: Z.gift },
+  ovenLayer: { ...StyleSheet.absoluteFill, zIndex: Z.nightOven },
+  sheetsLayer: { ...StyleSheet.absoluteFill, zIndex: Z.sheets },
+  offlineLayer: { ...StyleSheet.absoluteFill, zIndex: Z.offline },
+  coinsLayer: { ...StyleSheet.absoluteFill, zIndex: Z.coins },
   dim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(30,14,8,0.4)' },
   drawer: {
     position: 'absolute',
