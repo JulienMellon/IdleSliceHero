@@ -6,9 +6,6 @@ import { PAID_BOOSTERS, PAID_SLOT_CAP, type PaidBooster } from '../content/rewar
 import { payDiamonds, type BuyResult, type GameState } from './game';
 import { CLOCK_REASON, clockBehind, rewardIncome, rewardsUnlocked } from './rewards';
 
-/** The analytics event a diamond-booster purchase sends (props: `{ booster: id }`); U5 wires it to `analytics.track`. */
-export const BOOSTER_BOUGHT_EVENT = 'booster_bought';
-
 export const paidBooster = (id: string): PaidBooster | undefined => PAID_BOOSTERS.find((b) => b.id === id);
 
 /** Seconds the paid slot has left at `now` (0 when it is empty or ended). */

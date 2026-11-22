@@ -15,3 +15,5 @@
 - N1: the Plus ad line shows only when n >= 2 (the copy has no singular). Players with older consumable purchases get one doubled pack buy (accepted).
 - E6 (wave 3): tutorial step 16 = hud:store tap, step 17 = store:starter look, TUTORIAL_DONE=18; starter-sheet.tsx is deleted, along with starterAt, STARTER_DELAY and starterShows. src/engine/chapters.ts now uses `>= STORE_INTRO_START` (an out-of-scope one-line edit). Fixture 209_e6.py makes shots 209-210. The unused BOOSTER_BOUGHT_EVENT in paid-boost.ts can be removed.
 - E6 -> U5 (sent): drop the 98_u3.py shot-103 block (starter-sheet); coach-view step 17 null on index; step 16 on any shop.
+- r2 N1: new copy keys store.firstbuy.pays ("First buy pays double: {n} diamonds") and store.chip.boost.plain ("Double income for {span}") -> W4 adds them to COPY-v5.23.md. The Starter's per-dollar line shows only once every first buy is used. purchases.loaded() is new.
+- r2 N1 leaves A48 (src/store/game-store.ts) -> E6, and S101 (booster.running) -> E5/W4.

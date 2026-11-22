@@ -2,7 +2,7 @@
 import * as G from '../game';
 import * as R from '../rewards';
 import { withFeatures } from '../features';
-import { boosterFits, boosterPace, BOOSTER_BOUGHT_EVENT, buyBooster, paidBoostLeft } from '../paid-boost';
+import { boosterFits, boosterPace, buyBooster, paidBoostLeft } from '../paid-boost';
 import { PAID_BOOSTERS, PAID_BOOST_MULT, PAID_SLOT_CAP } from '../../content/rewards';
 
 const T = new Date(2026, 10, 30, 12).getTime();
@@ -27,7 +27,6 @@ describe('paid boosters: the table', () => {
     ]);
     expect(PAID_BOOST_MULT).toBe(2);
     expect(PAID_SLOT_CAP).toBe(86400);
-    expect(BOOSTER_BOUGHT_EVENT).toBe('booster_bought');
   });
 });
 

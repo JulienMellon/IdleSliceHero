@@ -20,6 +20,7 @@ import {
   type GiftDef,
 } from '../content/rewards';
 import { cityOf } from '../content/cities';
+import { paidBoostLeft } from '../engine/paid-boost';
 import { count, money, pizzas } from '../engine/format';
 import {
   CHAPTER_DIAMONDS,
@@ -97,11 +98,13 @@ export const TAP_PREP_TEXT = 'Tap the prep table';
 /** Inventory booster button: "2× 15m". */
 export const boosterLabel = (b: Booster | BoosterDef): string => `${multText(b.mult)} ${compactSpan('seconds' in b ? b.seconds : b.minutes * 60)}`;
 
-/** The total multiplier now and the seconds until the first running boost ends, or null with none running. */
+/** The total multiplier now and the seconds until the first running boost (the paid slot included, G122) ends, or null with none running. */
 export function boostSummary(s: GameState, now: number): { mult: number; seconds: number } | null {
   const running = R.runningBoosts(s, now);
-  if (!running.length) return null;
-  return { mult: R.boostMult(s, now), seconds: Math.max(0, Math.ceil((running[0].until - now) / 1000)) };
+  const paid = paidBoostLeft(s, now);
+  if (!running.length && !paid) return null;
+  const ends = [...(running.length ? [Math.max(0, Math.ceil((running[0].until - now) / 1000))] : []), ...(paid ? [paid] : [])];
+  return { mult: R.boostMult(s, now), seconds: Math.min(...ends) };
 }
 
 export interface RewardsHud {

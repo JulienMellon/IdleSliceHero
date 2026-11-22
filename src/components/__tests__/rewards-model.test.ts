@@ -100,6 +100,13 @@ describe('time text', () => {
     expect(boostSummary(s, NOW)).toEqual({ mult: 3, seconds: 841 });
     expect(boostSummary(base(), NOW)).toBeNull();
   });
+  test('boost summary counts the paid slot (G122): a free 2× and the slot read 3×, the slot alone 2×', () => {
+    const free = withR(base(), { boosts: [{ mult: 2, until: NOW + 840_500, source: 'a' }], paidUntil: NOW + 3_600_000 });
+    expect(boostSummary(free, NOW)).toEqual({ mult: 3, seconds: 841 });
+    const alone = withR(base(), { paidUntil: NOW + 3_600_000 });
+    expect(boostSummary(alone, NOW)).toEqual({ mult: 2, seconds: 3600 });
+    expect(boostSummary(withR(base(), { paidUntil: NOW }), NOW)).toBeNull();
+  });
 });
 
 describe('rewardsHud (one gift status call)', () => {
