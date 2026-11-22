@@ -295,6 +295,30 @@ export function buildCast({
       },
     });
   }
+  // a shop whose sidewalk has no room for a line figure: the customer who gives up comes from where walk-ins pause by the door
+  if (wo && wo.q < 0 && wo.walker) {
+    const w = wo.walker;
+    const sd = shopSeed + 89;
+    cast.push({
+      key: 'wo',
+      sortY: w.y,
+      role: 'queue',
+      props: {
+        x: w.x,
+        y: w.y,
+        kind: 'guest',
+        seed: sd,
+        shirt: GUEST_SHIRTS[pal.walkShirt(2, 5)],
+        hair: HAIR_COLORS[pal.walkHair(2, 5)],
+        flip: fl(true),
+        step: w.walking ? walkStep(2) : 0,
+        blink: blinkAt(sd),
+        mood: 'frown',
+        frown: true,
+        o: fadeAt(w.x, w.y) * w.o,
+      },
+    });
+  }
   // D416: a varied cast of drivers (skin, hair, build; one moustache at most), one of them checking a phone
   const drivers = driverCast(shopSeed);
   for (let q = 0; q < side.drivers; q++) {

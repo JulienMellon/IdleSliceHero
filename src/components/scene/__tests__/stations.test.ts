@@ -68,7 +68,7 @@ import { emptyLine } from '../../../engine/pipeline';
 import { SCENE_W } from '../projection';
 
 describe('codecritic round 16', () => {
-  const base = { auto: { prep: false, oven: false, counter: false }, managed: false, neck: new Set<'prep' | 'oven' | 'counter'>(), tapBatch: 4, since: 0 };
+  const base = { auto: { prep: false, oven: false, counter: false }, managed: false, tapBatch: 4, since: 0 };
   test('T53: a GM shop shows its runner on every station; a tapped shop has exactly one ready station', () => {
     const gm = badgeModels({ ...base, line: emptyLine(), auto: { prep: true, oven: true, counter: true }, managed: true, next: null });
     expect(gm.map((b) => b.runner)).toEqual(['gm', 'gm', 'gm']);
@@ -83,9 +83,19 @@ describe('codecritic round 16', () => {
     expect(ringSteps(1.6)).toBe(13);
     expect(ringSteps(30)).toBe(24);
   });
-  test('G80: every tied station is tomato', () => {
-    const t = badgeModels({ ...base, line: emptyLine(), neck: new Set(['prep', 'oven'] as const), next: 'prep' });
-    expect(t.map((b) => b.tone)).toEqual(['tomato', 'tomato', 'basil']);
+  test('G80 (v5.22): no station is tinted for being the limit: every badge is basil, whatever the line holds', () => {
+    const lines = [
+      emptyLine(),
+      { ...emptyLine(), prepped: 40 },
+      { ...emptyLine(), baked: 40 },
+      { ...emptyLine(), boxed: 40 },
+      { ...emptyLine(), oven: { n: 4, left: 1, total: 2 } },
+    ];
+    for (const line of lines)
+      for (const next of ['prep', 'oven', 'counter', null] as const) {
+        const t = badgeModels({ ...base, line, next });
+        expect(t.map((b) => b.tone)).toEqual(['basil', 'basil', 'basil']);
+      }
   });
   test('T52: a fresh walk-in and a fresh driver both pop; at most 2 pops; merged cash adds up', () => {
     const deps = [

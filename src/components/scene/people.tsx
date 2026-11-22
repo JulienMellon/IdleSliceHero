@@ -3,6 +3,8 @@ import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { bodyBy, isWorker, limbGeom } from './geometry';
 import { bobFor, quantArm, quantStep } from './quantise';
 import { INK, P, kAt, shade } from './projection';
+import { RIDE_LIFT, SCOOTER_K } from './poses';
+import { FROWN_R } from './walkout';
 import { DRIVER_CAPS, HAIR_COLORS, type Act, type Kind, type Look, type Mood, type PersonProps, lookFor } from './looks';
 
 export { GUEST_SHIRTS, HAIR_COLORS, PANTS, SKINS, hash32, lookFor, type Act, type Kind, type Look, type Mood, type PersonProps } from './looks';
@@ -287,9 +289,8 @@ export function Person({ x, y, o = 1, ...p }: PersonProps) {
   );
 }
 
-/** The lean's tilt (degrees) at strength 1, and how far a rider is lifted onto the seat (figure units). */
+/** The lean's tilt (degrees) at strength 1. */
 const LEAN_DEG = 5;
-const RIDE_LIFT = 9;
 
 /** A drop of sweat running down the temple: it falls through three steps (poses.ts `workerPose`). */
 const Sweat = memo(function Sweat({ hy, step }: { hy: number; step: number }) {
@@ -305,7 +306,7 @@ const Frown = memo(function Frown({ hy }: { hy: number }) {
   return (
     <G>
       <Path d={`M-1.6 ${y + 6.6} L1.4 ${y + 11.4} L3.6 ${y + 6.6} Z`} fill="#fff" stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
-      <Circle cx={0.5} cy={y} r={7.6} fill="#fff" stroke={INK} strokeWidth={1} />
+      <Circle cx={0.5} cy={y} r={FROWN_R} fill="#fff" stroke={INK} strokeWidth={1} />
       <Path d={`M-3.6 ${y - 3.4} l2.6 1.2 M4.6 ${y - 3.4} l-2.6 1.2`} stroke={INK} strokeWidth={0.9} strokeLinecap="round" />
       <Circle cx={-2.2} cy={y - 0.8} r={0.9} fill={INK} />
       <Circle cx={3.2} cy={y - 0.8} r={0.9} fill={INK} />
@@ -317,7 +318,7 @@ const Frown = memo(function Frown({ hy }: { hy: number }) {
 /** The scooter under an idle driver: the back half (wheels, floor and the seat the driver sits on), drawn behind them... */
 const Scooter = memo(function Scooter() {
   return (
-    <G>
+    <G transform={`scale(${SCOOTER_K})`}>
       <Ellipse cx={0} cy={0.5} rx={16} ry={3} fill="rgba(59,31,20,0.25)" />
       <Circle cx={-11} cy={-5.5} r={5.2} fill="#222" stroke={INK} strokeWidth={0.9} />
       <Circle cx={-11} cy={-5.5} r={1.7} fill="#bbb" />
@@ -329,7 +330,7 @@ const Scooter = memo(function Scooter() {
 /** …and its front half, drawn over the driver's legs: the footboard, the steering column and the front wheel. */
 const ScooterFront = memo(function ScooterFront() {
   return (
-    <G>
+    <G transform={`scale(${SCOOTER_K})`}>
       <Rect x={-2} y={-9.6} width={13} height={3.4} rx={1.2} fill="#D9443A" stroke={INK} strokeWidth={0.9} />
       <Path d="M9 -8 L11.4 -20.5 M8.4 -20.8 L14.4 -19.6" stroke={INK} strokeWidth={2} strokeLinecap="round" fill="none" />
       <Circle cx={12} cy={-5.5} r={5.2} fill="#222" stroke={INK} strokeWidth={0.9} />

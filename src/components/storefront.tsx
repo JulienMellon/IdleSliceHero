@@ -54,6 +54,8 @@ import { rivalOpen } from '../engine/features/layers/rival';
 import { Car, CARS, Cloud, ParkedVehicle, Sidewalk, sidewalkItems, Street } from './scene/street';
 import { buildCast, sidewalkOf } from './scene/cast';
 import { queueLabel, waitingText } from './scene/waiting';
+import { PILE_KINDS, batchOf, pileCount, pileSpots, type PileKind } from './scene/piles';
+import { Pile } from './scene/pile-art';
 import { hireOnSidewalk } from './sidewalk-model';
 import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEAD_BARKS } from '../content/heads';
@@ -62,7 +64,7 @@ import { counterattack } from '../engine/features/counterattack';
 import { hintsAllowed, stepsFor } from '../engine/tutorial';
 import { gainAnchor, ovenGain } from './scene/oven-gain';
 import type { BarkTable } from '../content/cities/types';
-import { reportView, slammedAsks } from '../engine/features/service';
+import { reportActive, reportView, symptomAsks } from '../engine/features/service';
 import { jamView } from '../engine/features/layers/shifts';
 import {
   heads as headsFeature,
@@ -145,7 +147,6 @@ const CLOUDS = [
 /** A city without lines for its heads: one frozen table, not a new `{}` every frame. */
 const NO_BARKS: Partial<BarkTable> = Object.freeze({});
 
-const STAGE_STATION: Record<Game.Stage, Station> = { prep: 'prep', ovens: 'oven', counter: 'counter', customers: 'counter' };
 const HIRE_LINE: Record<Station, string> = { prep: 'I got the dough, boss!', oven: 'Ovens are mine now.', counter: 'Next customer, please!' };
 
 /** Each shop's last head bubble and the once-only ones already spoken, kept across visits so the 20 s gap and "one star per week" hold when the scene remounts (features/heads.ts `nextBark`). */
@@ -233,7 +234,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     momentsKey: '',
   });
   const eventAt = useRef({ sec: -1, ev: null as ReturnType<typeof activeEvent> });
-  const repAt = useRef({ sec: -1, view: null as ReturnType<typeof reportView> | null });
+  const repAt = useRef({ sec: -1, view: null as ReturnType<typeof reportView> | null, live: false });
   // wall ms when this shop's scene was opened (the scene remounts per shop): the rush hint shows for the start of a visit
   const [visitAt] = useState(() => gameNow());
 
@@ -312,18 +313,17 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         frame.width,
       );
   m0.crew = crew;
-  // the stations tied for the bottleneck only change with upgrades: memo on the scene key (G80, M44); the idle drivers' pill names them (D421)
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers every level the tie depends on
-  const slowest = useMemo(() => Game.tiedStages(shop, game.vehicle, city.fit), [key]);
   // who waits outside: hungry diners and idle drivers (steady state, so only while the shop runs); the patio's tables
   // a running weekly event (D470): the sky goes to dusk, string lights come on, and two more hungry diners stand in the lane while the shop sells
   // (activeEvent is looked up once a second, not on every 15 fps frame: U15)
   const nowSec = Math.floor(nowMs / 1000);
   if (eventAt.current.sec !== nowSec) eventAt.current = { sec: nowSec, ev: activeEvent(nowSec * 1000, game) };
   const evLook = eventLook(eventAt.current.ev, id, running);
-  // the shop report once a second too: the cold line's share (step 4) and the Slammed lamps (the off-screen cues)
-  if (repAt.current.sec !== nowSec) repAt.current = { sec: nowSec, view: reportView(game, id, game.lastSavedAt) };
+  // the shop report once a second too: the cold line's share (step 4) and the symptoms (the workers' poses, the piles, the off-screen cues)
+  if (repAt.current.sec !== nowSec) repAt.current = { sec: nowSec, view: reportView(game, id, game.lastSavedAt), live: reportActive(game, id) };
   const rep = repAt.current.view!;
+  // from a shop's first head the scene shows its state: the backlog as piles, the workers' poses, the line and its walk-outs (v5.22)
+  const live = repAt.current.live;
   // M60/U10/U11: the queue sizes are a function of the levels, grade, seating and vehicle, all in `key`: computed per upgrade, not 15 times a second
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers every input of queueSizes
   const q0 = useMemo(() => (running ? Game.queueSizes(shop, game.vehicle, city.fit) : undefined), [key, running]);
@@ -335,7 +335,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     [q0, extraDiners, queueShare],
   );
   const cheer = nowMs / 1000 - m0.cheerAt < CHEER_SECONDS;
-  const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cold: rep.state === 'cold', cheer });
+  const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cold: rep.state === 'cold', cheer, symptoms: rep.symptoms });
   const side = sidewalkOf(lay, crew, queue);
   // each pop rides over the figure carrying its departure (one Map reused per mount, M48)
   const carriers = m0.carriers;
@@ -355,8 +355,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const hints = hintsAllowed(game);
   // the step's targets, from the cached step table (no copy built per frame)
   const ovenLook = game.tutorial >= 1 && game.tutorial < Game.TUTORIAL_DONE && !!stepsFor(city)[game.tutorial - 1]?.targets.includes('ovens:all');
-  // the pills' words change with the counts and the bottleneck only (U10/U11), not with the clock
-  const waitWords = useMemo(() => (side.waiting > 0 ? waitingText(side.waiting, slowest) : null), [side.waiting, slowest]);
+  // the pills' words change with the counts only (U10/U11), not with the clock
+  const waitWords = useMemo(() => (side.waiting > 0 ? waitingText(side.waiting) : null), [side.waiting]);
   const moreWords = useMemo(() => (side.more > 0 ? queueLabel(side.more, side.diners) : null), [side.more, side.diners]);
   const waitRaw = hints.waiting && waitWords && !(m0.mile && hidesWaitingPill(clock - m0.mile.at)) ? waitWords : null;
   // U21: the pills' rects depend on the layout and the words only (moreTagAt searches the seats and umbrellas), so they are memoised, not rebuilt each frame
@@ -365,13 +365,47 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const moreRaw = hints.more ? moreWords : null;
   const moreRect = useMemo(() => (moreRaw ? moreTagRect(lay, moreRaw) : null), [lay, moreRaw]);
   const moreText = moreRaw && moreRect && !popsCover(popRects, moreRect) ? moreRaw : null;
-  const fin = furnitureInputs({ id: art, name: nd.name, shop, running, rate, vehicle: game.vehicle, worn: game.rewards.worn, first: id === hoodIds(city)[0] });
+  const fin = furnitureInputs({
+    id: art,
+    name: nd.name,
+    shop,
+    running,
+    rate,
+    vehicle: game.vehicle,
+    worn: game.rewards.worn,
+    first: id === hoodIds(city)[0],
+    piles: live,
+  });
   // Furniture only changes with upgrades and the dough/box counts, so it is built once per change (M12), not 15 times a second.
   // The visual ladder (v5.11): the props this shop's levels have earned, placed from the layout; built once per upgrade like the furniture
   // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are lay + every value of `fin`, the builder's only inputs
   const placed = useMemo(() => ladderProps(lay, ladderInput(fin)), [lay, ...furnitureDeps(fin)]);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are lay + every value of `fin`, the builder's only inputs
   const furniture = useMemo(() => buildFurniture(lay, fin, placed), [lay, placed, ...furnitureDeps(fin)]);
+  // the backlog as piles (piles.ts): rolled dough on the pass, boxed pies on the counter, bags on the pickup shelf, 0-5 of each from the pies waiting against one batch.
+  // The places are found once per layout and ladder (clear of heads, badges, the mat and the ladder's props); the drawing is rebuilt only when a count moves
+  const spots = useMemo(
+    () =>
+      pileSpots(
+        lay,
+        art,
+        placed.map((p) => p.rect),
+      ),
+    [lay, art, placed],
+  );
+  const batch = batchOf(Game.tapBatch(shop), rate);
+  const nDough = live ? pileCount(line.prepped, batch) : 0;
+  const nBoxes = live ? pileCount(line.baked, batch) : 0;
+  const nBags = live ? pileCount(line.boxed, batch) : 0;
+  const piles = useMemo(() => {
+    const n: Record<PileKind, number> = { dough: nDough, boxes: nBoxes, bags: nBags };
+    return PILE_KINDS.flatMap((kind) => {
+      const sp = spots[kind];
+      return sp && n[kind] > 0
+        ? [{ y: sp.sortY, el: <Pile key={`pile-${kind}`} kind={kind} n={n[kind]} ax={sp.ax} ay={sp.ay} k={sp.k} stand={sp.stand} /> }]
+        : [];
+    });
+  }, [spots, nDough, nBoxes, nBags]);
   // per-buy bounce: each station's transform strings (one per step, about its base) are built when the layout changes, never per frame
   const bounceT = useMemo(() => {
     const [ox0, ox1] = [lay.ovenCols[0].x0, lay.ovenCols[lay.ovenCols.length - 1].x1];
@@ -422,6 +456,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
         </Flip>
       ),
     },
+    ...piles,
     ...sidewalkItems(lay, side.patio, waitText, moreText),
     ...cast.map((c) => ({ y: c.sortY, el: <Person key={c.key} {...c.props} /> })),
     ...(visit && cameo
@@ -517,8 +552,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       const sp = speakerFor(shop, atk.seenWeek);
       if (sp) asks.push({ trigger: 'attack', station: sp, key: `attack-${atk.seenWeek}` });
     }
-    // a station Slammed for 20 s in a shop with no manager: its head asks for help (features/service.ts; P1 step 6)
-    asks.push(...slammedAsks(g.game, id));
+    // what the shop shows has held 10 s: a head speaks about a pile-up or idle hands at their station, the manager about the line and the idle drivers (features/service.ts `symptomAsks`)
+    asks.push(...symptomAsks(g.game, id));
     // a rush combo: three quick taps inside the window (rush-model.ts), whether or not the kitchen could still go faster (so the pill may be a hint)
     const combo = rushCombo(rushTaps, gameNow()).n >= 3;
     if (combo && !m.combo) {
@@ -535,7 +570,15 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       m.hires.length > 0 ||
       !!(m.mile?.text && m.mile.at !== clock && clock - m.mile.at < 2.5);
     const before = barkMemory.get(id) ?? newBarkMem();
-    const { mem: after, bark } = nextBark(before, id, asks, wall, paused || !!g.playing || otherBubble || !hintsAllowed(g.game).toast, city.barks ?? NO_BARKS); // a city without lines for the shop has silent heads (Boston's wait for the writer pass, copy.ts BOSTON_BARKS);
+    const { mem: after, bark } = nextBark(
+      before,
+      id,
+      asks,
+      wall,
+      paused || !!g.playing || otherBubble || !hintsAllowed(g.game).toast,
+      city.barks ?? NO_BARKS,
+      city.managerBarks,
+    ); // a city without lines for the shop has silent heads (Boston's wait for the writer pass, copy.ts BOSTON_BARKS);
     if (after !== before) barkMemory.set(id, after);
     if (bark) {
       if (bark.trigger === 'milestone' && m.mile && m.mile.at === clock) m.mile.text = bark.text;
@@ -550,7 +593,6 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const leftNow = (left: number) => Math.max(0, left - since);
   const auto = Game.automationOf(shop);
   const next = shop.managed ? null : Game.nextStation(shop);
-  const neck = useMemo(() => new Set(slowest.map((st) => STAGE_STATION[st])), [slowest]);
   // the rush pill (GM shops): decided on a 200 ms bucket of the wall clock and the shop's levels, not rebuilt on every 15 fps frame
   const rushBucket = Math.floor(nowMs / 200);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` covers the levels the rates depend on; `rushBucket` is the time
@@ -568,7 +610,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   );
   // back-wall rects the rush pill keeps clear of: the menu board and the ladder's wall props (D406)
   const pillAvoid = useMemo(() => [...(menuRect(lay) ? [menuRect(lay)!] : []), ...wallRects(placed)], [lay, placed]);
-  const badges = badgeModels({ line, auto, managed: shop.managed, neck, next, tapBatch: Game.tapBatch(shop), since });
+  const badges = badgeModels({ line, auto, managed: shop.managed, next, tapBatch: Game.tapBatch(shop), since });
   // the "tap me" pulse and the miss nudge step on the 7.5 Hz pose clock, 6 levels, so the badge memo holds (M43)
   const poseT = Math.floor(clock * 7.5) / 7.5;
   const pulse = Math.round(((Math.sin(poseT * Math.PI * 2 * 1.2) + 1) / 2) * 5) / 5;
@@ -607,7 +649,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const jamOn = layerOf(city, id) === 'shifts' && jamView(game).jammed;
   const wants = view.scrolls
     ? wantsOf({
-        slammed: (['prep', 'ovens', 'counter'] as const).filter((k) => rep.lamps[k] === 'slammed'),
+        // the stations with a pile-up (the cue kind keeps its old name: scroll-cues-model.ts is not this card's)
+        slammed: (['prep', 'ovens', 'counter'] as const).filter((k) => rep.symptoms[k] === 'piling'),
         jam: jamOn,
         bubble: bubbleSt ? spotOf(bubbleSt) : null,
         tap: next ? spotOf(next) : null,

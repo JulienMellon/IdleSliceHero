@@ -1,7 +1,7 @@
 """Shots 130-137 (v5.16, card P1): the shop report, and upgrades the player chooses.
 
-130 a manager's shop humming: tip on, the manager's line · 131 ovens Slammed, money walking out · 132 floor Quiet ·
-133 the cold line after a minute under 60% · 134 the sheet open · 135 sidewalk cards after the tutorial: effect lines, no frame, "Buy both" ·
+130 a manager's shop humming: nothing missed · 131 ovens short, orders missed · 132 few customers, nothing missed ·
+133 a minute under 60% served: the strip still reads served/missed (v5.22: the lamps, the manager's voice and the limit's name are gone) · 134 the sheet open · 135 sidewalk cards after the tutorial: effect lines, no frame, "Buy both" ·
 136 a tutorial shop that still shows the frame · 137 a heads-only shop whose Slammed head asks for help.
 Levels are chosen against vehicle 0 (a Downtown shop wants 0.25 pies/s per driver and 0.3 per seating level 1).
 """
@@ -24,36 +24,37 @@ def shop_save(hood="downtown", cash=2000, **kw):
 def run(ctx):
     b = ctx.browser
 
-    # 130: a kitchen with room to spare and a manager: service 100%, customers tip, Nonna says so
+    # 130: a kitchen with room to spare and a manager: nothing missed
     page = seeded_page(b, shop_save(prep=10, ovens=10, counter=10, drivers=10, tables=1))
     settle(page, 2.0)
-    expect_text(page, "shop-report-line", r"tip", 4000)
+    expect_text(page, "shop-report-line", r"Served \d+/min . Missed 0/min", 4000)
     shot(page, "130-report-tipping", 0.4)
 
-    # 131: the ovens are the limit: 75% served, the Slammed lamp, and the money walking out
+    # 131: the ovens are short: 75% served, orders missed
     page = seeded_page(b, shop_save(prep=10, ovens=5, counter=10, drivers=10, tables=1))
     settle(page, 2.0)
-    expect_text(page, "shop-report-line", r"of \d+", 4000)
+    expect_text(page, "shop-report-line", r"Missed [1-9]\d*/min", 4000)
     shot(page, "131-report-slammed", 0.4)
 
-    # 132: the floor is Quiet: the kitchen could make far more than comes in
+    # 132: few customers: the kitchen could make far more than comes in
     page = seeded_page(b, shop_save(prep=10, ovens=10, counter=10, drivers=1, tables=1))
     settle(page, 2.0)
-    expect_text(page, "shop-report-line", r"hungry|could|bake", 4000)
+    expect_text(page, "shop-report-line", r"Missed 0/min", 4000)
     shot(page, "132-report-quiet", 0.4)
 
     # 133: under 60% served for a minute of play: the line goes cold (-10%)
     page = seeded_page(b, shop_save(prep=5, ovens=5, counter=5, drivers=10, tables=10))
     settle(page, 2.0)
     advance(page, 66000)
-    expect_text(page, "shop-report-line", r"[Cc]old", 4000)
+    expect_text(page, "shop-report-line", r"Served \d+/min . Missed [1-9]\d*/min", 4000)
     shot(page, "133-report-cold", 0.4)
 
-    # 134: the sheet: each station's rate and load, the floor, service, three ways to fix it
+    # 134: the sheet: a bar per station and the drivers, the dashed customers line, service
     page = seeded_page(b, shop_save(prep=10, ovens=5, counter=10, drivers=10, tables=1))
     settle(page, 2.0)
     tid(page, "shop-report-strip").click()
     expect(page, "report-sheet")
+    expect(page, "report-bar-ovens")
     shot(page, "134-report-sheet", 0.4)
 
     # 135: after the tutorial the cards say what they do: no red frame, effect lines, and "Buy both" stays (prep and ovens tied)

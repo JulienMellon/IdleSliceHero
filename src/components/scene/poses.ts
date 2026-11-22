@@ -3,10 +3,11 @@
 //   - `idle` (they wait for input): they lean on the counter, hands still, and every YAWN_EVERY seconds yawn or glance at a phone (the two take turns).
 // Pure and a function of the pose clock alone (the 7.5 Hz clock in cast.ts), so the memoised figures keep identical props between steps and a budget
 // test can check the timing without a renderer.
+import type { Symptom } from '../../engine/features/service';
 import type { Act, Mood } from './looks';
 
 /** What a worker's station says about them: the engine's `piling` or `idle`, or nothing. */
-export type WorkerSymptom = 'piling' | 'idle' | null | undefined;
+export type WorkerSymptom = Symptom | null | undefined;
 
 /** The whole pose: transforms (`bob` lifts the figure, `lean` tilts it, `sweat` is the drop's step 1-3 or 0), and what replaces the work they were doing. */
 export interface WorkerPose {
@@ -58,3 +59,9 @@ export function workerPose(sym: WorkerSymptom, poseClock: number, seed: number):
   const phone = cycle % 2 === 1 && phase < PHONE_SECONDS;
   return { bob: 0, lean: LEAN, sweat: 0, still: true, act: phone ? 'phone' : null, mood: yawn ? 'o' : null };
 }
+
+// ---------- the idle drivers' scooters ----------
+/** An idle driver sits on a small scooter: it is drawn at this scale, the driver is lifted this far (figure units) onto its seat, and its drawing spans this box (unscaled). */
+export const SCOOTER_K = 0.8;
+export const RIDE_LIFT = 9;
+export const SCOOTER_BOX = { x0: -16.2, x1: 17.2, y0: -21.5, y1: 3.5 } as const;
