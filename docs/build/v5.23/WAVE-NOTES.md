@@ -1,0 +1,3 @@
+- W4 (wave 1): all v5.23 copy is in docs/story/COPY-v5.23.md. New keys: store.starter.ribbon ("ONE PER OWNER", replaces "ONE-TIME DEAL") and store.starter.blurb (placeholders; the old blurb says 150 diamonds). Each card lands the rows for its own files: N1 store cards/packs/Plus; U5 Store chip, Boosters tab, reminder dot/line; E5/E6 booster lines and tutorial.16 intro.
+- W4 §7 "Carried fixes" (D555+S91, S98, S95 x2, D545, S70, S71, S87, S67) are text only; they are not in code yet. The card that owns the file each row names puts it in. Any row in a file no v5.23 card owns stays in COPY §7 for the fix round.
+- W4 kept booster.running as the card wrote it ("X left" style); PRICING §5 bans that only for offers.
