@@ -4,10 +4,10 @@ Keep this file under 30 lines. It is the only file the music orchestrator edits 
 
 ```
 round: R2              # R0 | R1 | R2 | done
-step: listen           # cards | verify | review | fix | reel | listen
+step: cards            # cards | verify | review | fix | reel | listen
 bank: C MuseScore_General_Full.sf3      # letter and file name once Julien picks (R0)
 cards:                 # todo | running | done | partial | blocked
-  M0 M1a M1b M1c done; M2a done, M2b done, M2c done; NOTES(R2) done
+  M0 M1a M1b M1c done; M2a done, M2b done, M2c done; NOTES(R2) done; NOTES(R2#2) running
 review: docs/build/music/review-R2-audio.md NOT SATISFIED, bugs 0 major 1 (AU85 fixed) minor 10
 last_reel: tools/audio/build/reel/R2.mp3 (2026-11-22, notes round 1, sent)
 heard: R0 → "C"; R1 → "Go"           # round → Julien's verdict in five words
@@ -31,3 +31,4 @@ next: await Julien on R2 after notes round 1 (stingers 2-3.5 LU quieter, victor_
 - 2026-11-19 M2b DONE. Built: 6 triumphs + city theme, payoffs within 0.25 s, audio 17073549 B of 32 MB. Needs: city_theme one ii-V-I per bar (kept payoff); AUDIO.md/AUDIOLOG stale (M2c).
 - 2026-11-19 M2c DONE. Built: 153 cues, 256 kbps, float masters, FULL reel 1302 s; audio 33240658 B of 33554432 (0.3 MiB margin). Verified (2501 tests). Review next.
 - 2026-11-19 R2 fix pass DONE (AU85/86 6/9 arrivals, hierarchy gaps >=0.3 LU). Audio 33249842 B of 33554432. Verified (2501 tests). Reels FULL/R2/R1 sent; step listen.
+- 2026-11-22 Julien heard R2: notes, no yes ("only the downtown stinger lands wrong"). Notes round 2 on R2 launched with 192 kbps extra.
