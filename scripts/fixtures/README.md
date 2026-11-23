@@ -86,6 +86,7 @@ After a `--only` run call it by hand: `python3 scripts/layout_check.py dev`; the
 | `text` | visible text with a computed font size under 10 px | nearest ancestor's `data-testid` + the text, a number (with K/M/B/T) as `#` |
 | `clip` | text that is cut off: a box that hides its overflow and whose text (measured with a Range) is wider or taller than it, or text that itself ends in "…" and its source does not | same |
 | `edge` | text starting left of 0 or ending right of the viewport (not inside a horizontal scroller: the shop tabs scroll) | same |
+| `cover` | something opaque on top of a protected element: the WELCOME mat, the entrance, a cook / baker / counter worker's face (the storefront publishes `window.__protected`, `scene/protected.ts`). A 5x3 grid of `elementFromPoint` samples per rect; a point counts when the top element is outside the scene, paints something and is not in a modal root (`aria-modal`, `role=dialog`, a `data-testid` ending in `-sheet` / `-scrim` / `-popup` / `-modal`, or a touchable ancestor 90% of the app wide and half as tall that does not hold the scene: drawers, sheets and scrims are expected). Over 10% of the points is a finding | `<protected id> \| <testid of the top element>`; `detail` is `n/m points` |
 
 How a cut-off shows in this build: react-native-web draws `numberOfLines={1}` as `overflow:hidden; white-space:nowrap; text-overflow:ellipsis` and
 `numberOfLines={n}` as `-webkit-line-clamp:n`; `adjustsFontSizeToFit` does nothing. `scrollWidth` vs `clientWidth` rounds both sides to whole pixels and

@@ -8,7 +8,7 @@
 // Everything is drawn in a 393×680 "scene" box that is scaled to cover the available area,
 // anchored to the bottom so the sidewalk and street are always visible (taller screens show more sky).
 import { memo, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactElement } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Platform, Pressable, ScrollView, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { F } from '../theme';
 import { cityOf, hoodIds, layerOf, sceneHood } from '../content/cities';
@@ -48,6 +48,7 @@ import { FasciaSign } from './scene/facade';
 import { fasciaSignBox, overlaySpan, slideInto, visibleSpan } from './scene/viewport';
 import { SceneViewContext } from './scene/view-context';
 import { gameNow } from '../engine/clock';
+import { publishProtected } from './scene/protected';
 import { floorYFor, liftLayout, stripTop } from './scene/strip-clear';
 import { trafficFor } from './scene/street-props';
 import { rivalOpen } from '../engine/features/layers/rival';
@@ -706,6 +707,11 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   useEffect(() => {
     measureOrigin();
   }, [lay, fit.s, fit.ox, fit.oy, width, height]);
+  // the layout probe's protected rects (scene/protected.ts): web only (the screenshot build), a getter so a scroll needs no refresh
+  useEffect(
+    () => (Platform.OS === 'web' ? publishProtected(() => ({ ...coachIn.current!, scrollX: scrollX.current, origin: origin.current })) : undefined),
+    [],
+  );
   useEffect(() => {
     reporter.start();
     return () => reporter.stop();

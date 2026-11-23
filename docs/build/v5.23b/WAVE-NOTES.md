@@ -16,3 +16,4 @@
 - U7: new src/components/__tests__/button-tone-source.test.ts scans src/components/** and src/app/** for buy colours outside buttonTone (allowlist: game-ui EXPAND_AMBER, #B9780B lip, store-tab btnBuy, stars-sheet buy).
 - U7: fixture scripts/fixtures/221_u7.py. City map pins over 14 chars set at 2.6.
 - D519 scroll cue for cut-off wide shops: no card owns scroll-cues-model.ts in v5.23b; carried.
+- Q8: protected elements live in src/components/scene/protected.ts (window.__protected on web); layout probe kind `cover` in scripts/shots_lib.py; drawers/sheets/title cards (modal roots) are skipped. scripts/layout_allow.json has 1 temporary entry (report strip over mat) that U7 removes with its fix.

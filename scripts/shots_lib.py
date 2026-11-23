@@ -267,6 +267,12 @@ def expect_text(page, testid, pattern, timeout=5000):
 #         wrapping box, taller than the box. A scrollWidth/clientWidth comparison alone rounds both to whole pixels and misses a 1 px cut
 #         (D477: "+$83/s" is 41.8 wide in a 40.5 box). Also: text that itself ends in "…" (layout_check.py drops those whose source does).
 #   edge  text that starts left of 0 or ends right of the viewport (text inside a horizontal scroller is skipped: the shop tabs scroll)
+#   cover something opaque over a protected element (Q8): the storefront publishes window.__protected, the WELCOME mat, the entrance and the faces of the cooks, bakers and
+#         counter staff, as page-pixel rects (scene/protected.ts). Each gets a 5x3 grid of points; at each, document.elementFromPoint says what is on top. A point is covered when
+#         that element is not inside the scene ([data-testid="shop"], which draws its own people and props, and the crowd budget guards those), paints something (a background,
+#         an image, a border, an own text, an svg shape: a transparent touch box does not count) and does not belong to a modal root (a sheet or a scrim over the whole
+#         scene is expected; see modalRoot below). More than 10% of the points covered gives a finding. key: <protected id> | <testid of the top element>; detail: n/m points.
+#         elementFromPoint skips pointer-events: none, so a purely decorative overlay is not seen here.
 # The page is only read: no waiting, no clock step.
 LAYOUT_PROBE = """() => {
   const out = []; const vw = document.documentElement.clientWidth, vh = innerHeight;
@@ -305,6 +311,42 @@ LAYOUT_PROBE = """() => {
   for (const el of document.querySelectorAll('[role="button"], [tabindex="0"]')) {
     const r = el.getBoundingClientRect(); if (!seen(el, r)) continue;
     if (r.width < 43.5 || r.height < 43.5) out.push({kind: 'tap', key: el.getAttribute('data-testid') || norm(el.textContent) || '(none)', detail: Math.round(r.width) + 'x' + Math.round(r.height)});
+  }
+  // cover (Q8). A modal root is an ancestor of the top element that (a) says so (aria-modal="true" / role="dialog"), (b) is named like one (data-testid ending in -sheet, -scrim,
+  // -popup or -modal), or (c) is 90% of the app's (#root) width and half its height, takes touches itself (pointer-events is not none: the HUD's box-none wrapper is not a sheet)
+  // and does not hold the scene: a drawer or a full-screen sheet or scrim, whatever its testid. The tasks drawer's overlay is 676 of 852 tall; the strip is 44, the hire stack 100.
+  const shopEl = document.querySelector('[data-testid="shop"]');
+  const app = (document.getElementById('root') || document.body).getBoundingClientRect();   // the app's own size: innerHeight is the browser window's (1121 here, the app is 852)
+  const modalRoot = (el) => {
+    for (let a = el; a && a !== document.body && a !== document.documentElement; a = a.parentElement) {
+      if (a.getAttribute('aria-modal') === 'true' || a.getAttribute('role') === 'dialog') return true;
+      if (/(-sheet|-scrim|-popup|-modal)$/.test(a.getAttribute('data-testid') || '')) return true;
+      if (shopEl && a.contains(shopEl)) continue;
+      const r = a.getBoundingClientRect();
+      if (r.width >= app.width * 0.9 && r.height >= app.height * 0.5 && getComputedStyle(a).pointerEvents !== 'none') return true;
+    }
+    return false; };
+  const alpha = (c) => { const m = /^rgba?\\(([^)]*)\\)/.exec(c); if (!m) return 0; const p = m[1].split(/[ ,\\/]+/).filter(Boolean); return p.length > 3 ? parseFloat(p[3]) : 1; };
+  const painted = (el) => {
+    if (el instanceof SVGElement) return !/^(svg|g|defs)$/i.test(el.tagName);
+    if (/^(IMG|CANVAS|VIDEO)$/.test(el.tagName)) return true;
+    const cs = getComputedStyle(el);
+    if (alpha(cs.backgroundColor) >= 0.1 || cs.backgroundImage !== 'none') return true;
+    if (px(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none' && alpha(cs.borderTopColor) >= 0.1) return true;
+    for (const n of el.childNodes) if (n.nodeType === 3 && n.data.trim()) return true;
+    return false; };
+  const prot = Array.isArray(window.__protected) ? window.__protected : [];
+  for (const p of prot) {
+    let n = 0, hit = 0; const tops = {};
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 3; j++) {
+      const x = p.x0 + (i + 0.5) / 5 * (p.x1 - p.x0), y = p.y0 + (j + 0.5) / 3 * (p.y1 - p.y0);
+      if (x < 0 || y < 0 || x >= app.width || y >= app.height) continue;
+      const top = document.elementFromPoint(x, y);
+      if (!top || (shopEl && shopEl.contains(top)) || modalRoot(top)) continue;
+      n++;
+      if (painted(top)) { hit++; const k = p.id + ' | ' + tidOf(top); tops[k] = (tops[k] || 0) + 1; }
+    }
+    if (n && hit / n > 0.1) { const k = Object.keys(tops).sort((a, b) => tops[b] - tops[a])[0]; out.push({kind: 'cover', key: k, detail: hit + '/' + n + ' points'}); }
   }
   return out; }"""
 LAYOUT = {}   # shot name -> findings; screenshots.py writes it to layout-raw.json
