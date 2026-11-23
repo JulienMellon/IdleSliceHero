@@ -11,7 +11,7 @@ codecritic_range_start: 85202bd   # v5.23b start (688f26f not in repo)
 cards:                 # todo | running | done | partial | blocked
   Q7 done  Q8 done  S6 done  U7 done  U8 done  W6 done
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.23b/review-r1-critic.md (r1 NOT SATISFIED; bug 0 major 0 minor 7; E1 U3 S2 N1; 16 carried rows fixed; D571 mat in 214)
+  critic: docs/build/v5.23b/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 6, 3 counted; E1 U2 S2 N1; D556 fixed)
   code:   docs/build/v5.23b/review-r1-code.md (r1 CHANGES REQUESTED; blocker/high 0 medium 5 low 36; E5 U23 S4 N8 A1; C194 C195 new, C192 A46 A44 carried)
   story:  docs/build/v5.23b/review-r1-story.md (r1 NOT SATISFIED advisory; bug 0 major 0 minor 5; E1 U2 T2)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
