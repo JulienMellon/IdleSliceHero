@@ -1,0 +1,445 @@
+{
+ "full": true,
+ "fixtures": {
+  "09_lategame.py": {
+   "s": 79.3,
+   "shots": [
+    "08-late-cutscene.png",
+    "09-late-game.png",
+    "10-late-game-pops-a.png",
+    "11-late-game-pops-b.png",
+    "12-late-rush-tap.png",
+    "25-look-suburbs.png",
+    "25-look-university.png",
+    "25-look-downtown.png",
+    "13-flagship-max.png",
+    "14-uptown-decorated.png",
+    "15-uptown-drawer.png",
+    "15a-uptown-decor-section.png",
+    "16-tied-bundle-drawer.png",
+    "17-suburbs-locked.png",
+    "18-sold-sign-scene.png"
+   ]
+  },
+  "158_c2.py": {
+   "s": 30.5,
+   "shots": [
+    "158-coach-dial-prep.png",
+    "159-coach-dial-oven.png"
+   ]
+  },
+  "180_e1b.py": {
+   "s": 5.5,
+   "shots": [
+    "180-build-locked.png",
+    "180b-locked-tap-story.png"
+   ]
+  },
+  "192_e4.py": {
+   "s": 13.7,
+   "shots": [
+    "192-report-coach-strip.png",
+    "193-report-coach-bar.png",
+    "194-report-coach-demand.png"
+   ]
+  },
+  "19_story_props.py": {
+   "s": 60.4,
+   "shots": [
+    "19-recipe-card-scene.png",
+    "20-offline-capped.png",
+    "21-pier9-bid-goal.png",
+    "22-dale-perk-card.png",
+    "23-perk-banner-drawer.png"
+   ]
+  },
+  "205_n1.py": {
+   "s": 27.8,
+   "shots": [
+    "205-n1-loading.png",
+    "206-n1-starter.png",
+    "206b-n1-packs.png",
+    "207-n1-starter-owned.png",
+    "208-n1-first-used.png",
+    "208b-n1-packs-used.png"
+   ]
+  },
+  "211_s6.py": {
+   "s": 215.4,
+   "shots": [
+    "211-wide-suburbs-rival.png",
+    "212-rival-waterfront.png",
+    "213-wide-industrial.png",
+    "214-short-drivers-walkout.png",
+    "215-balanced-no-stack.png",
+    "216-short-ovens-pile.png"
+   ]
+  },
+  "221_u7.py": {
+   "s": 36.0,
+   "shots": [
+    "221-city-no-manager.png",
+    "221b-missed-zero.png"
+   ]
+  },
+  "34_sidewalk.py": {
+   "s": 43.3,
+   "shots": [
+    "34-sidewalk-expand.png",
+    "35-sidewalk-bundle.png",
+    "36-rush-combo.png",
+    "37-gm-hire-sidewalk.png",
+    "38-suburbs-locked-goal.png"
+   ]
+  },
+  "39_ladder.py": {
+   "s": 73.3,
+   "shots": [
+    "39-ladder-lv10.png",
+    "40-ladder-lv40.png",
+    "41-ladder-lv120.png",
+    "42-milestone-moment.png",
+    "43-diner-queue.png",
+    "44-driver-queue.png",
+    "45-patio-one.png",
+    "46-patio-two-busy.png"
+   ]
+  },
+  "51_return.py": {
+   "s": 20.6,
+   "shots": [
+    "51-night-oven-sheet.png",
+    "52-gift-closed.png",
+    "53-gift-counting.png",
+    "54-gift-full-upgrade.png",
+    "55b-hud-teaser-ring.png",
+    "55-scrapbook-teaser.png"
+   ]
+  },
+  "66_s1.py": {
+   "s": 120.7,
+   "shots": [
+    "66-gold-oven-awning.png",
+    "67-woodfired-neon.png",
+    "68-skin-mint-scooter.png",
+    "69-master-plaque.png",
+    "70-head-rush-bark.png",
+    "71-head-of-the-week.png",
+    "72-nonna-cameo.png",
+    "73-nothing-worn.png"
+   ]
+  },
+  "98_u3.py": {
+   "s": 48.9,
+   "shots": [
+    "98-claim-double.png",
+    "99-claim-double-plus.png",
+    "100-offline-double.png",
+    "101-store-prices.png",
+    "102-store-loading.png",
+    "104-settings-new-rows.png",
+    "105-settings-restored.png",
+    "106-task-swap.png",
+    "107-streak-save-ad.png",
+    "108-booster-ad.png"
+   ]
+  },
+  "05_midgame.py": {
+   "s": 25.7,
+   "shots": [
+    "05-mid-game.png",
+    "05a-upgrades-sheet.png",
+    "05a2-decor-section.png",
+    "05b-unmanaged-shop.png",
+    "05b2-heads-drawer.png",
+    "05b3-prep-ring.png",
+    "05b4-refused-tap.png",
+    "05b5-hire-bubble.png",
+    "05b6-upgrade-flash.png",
+    "05c-city.png"
+   ]
+  },
+  "106_t2.py": {
+   "s": 119.0,
+   "shots": [
+    "106-franchise-confirm.png",
+    "107-franchise-moment.png",
+    "108-boston-city.png",
+    "109-north-end.png",
+    "110-southie.png",
+    "111-back-bay.png",
+    "112-fenway.png",
+    "113-cambridge.png",
+    "114-dorchester.png",
+    "115-trish-hq.png",
+    "116-boston-shop-layer.png",
+    "117-home-scrapbook-from-boston.png"
+   ]
+  },
+  "140_v2.py": {
+   "s": 193.2,
+   "shots": [
+    "140-restaurant-kitchen.png",
+    "141-restaurant-dining.png",
+    "142-flagship-centre.png",
+    "143-flagship-rush-cue.png",
+    "144-waterfront-mirrored.png",
+    "145-industrial-jam-cue.png",
+    "146-cold-short-queue.png",
+    "147-corner-unchanged.png"
+   ]
+  },
+  "153_c1.py": {
+   "s": 20.4,
+   "shots": [
+    "153-coach-step1.png",
+    "154-coach-step6.png",
+    "155-coach-step10.png"
+   ]
+  },
+  "156_u0.py": {
+   "s": 6.1,
+   "shots": [
+    "156-chip-before-takeover.png",
+    "157-store-before-takeover.png"
+   ]
+  },
+  "160_c3.py": {
+   "s": 46.1,
+   "shots": [
+    "160-step1-prep.png",
+    "161-step2-prep-dial.png",
+    "162-step4-oven-dial.png",
+    "163-step6-cash.png",
+    "164-step9-free.png",
+    "165-step10-ovens.png",
+    "166-step11-two-ovens.png",
+    "167-step12-all.png",
+    "168-step13-hire.png",
+    "169-step15-marco.png"
+   ]
+  },
+  "178_u1b.py": {
+   "s": 75.5,
+   "shots": [
+    "178-goal-start.png",
+    "178b-goal-half.png",
+    "178f-chapter-ribbon.png",
+    "178c-goal-ready.png",
+    "178d-goal-opens-list.png",
+    "178g-goal-hire-price.png",
+    "178e-task-done-toast.png",
+    "178h-go-build-row.png",
+    "178h2-go-build-city.png",
+    "178i-go-win-shop.png",
+    "178j-go-bid-drawer.png",
+    "178k-goal-ch1.png"
+   ]
+  },
+  "179_e2.py": {
+   "s": 13.8,
+   "shots": [
+    "179-step7-goal.png",
+    "179b-step8-story-tab.png",
+    "179c-step8-seen.png",
+    "179d-step9-bar.png",
+    "179e-graduation-ribbon.png"
+   ]
+  },
+  "220_u8.py": {
+   "s": 41.0,
+   "shots": [
+    "220-step8-chapter1-line.png",
+    "220b-rate-holding.png",
+    "220c-reward-daily.png",
+    "220d-go-win-glow.png",
+    "220d2-glow-over.png",
+    "220e-tick-ribbon.png"
+   ]
+  },
+  "29_rewards.py": {
+   "s": 31.0,
+   "shots": [
+    "29-hud-rewards.png",
+    "30-tasks-daily.png",
+    "30b-tasks-daily-chests.png",
+    "31-tasks-weekly.png",
+    "31b-tasks-weekly-chest.png",
+    "32-gift-calendar.png",
+    "33-gift-streak-save.png"
+   ]
+  },
+  "47_hooks.py": {
+   "s": 37.2,
+   "shots": [
+    "47-golden-pizza.png",
+    "47a-golden-gift.png",
+    "47b-golden-lucky.png",
+    "47c-golden-lucky-tap.png",
+    "48-order-offer.png",
+    "49-order-active.png",
+    "50-order-success.png"
+   ]
+  },
+  "56_u1.py": {
+   "s": 94.2,
+   "shots": [
+    "58-boston-card.png",
+    "56-post-story-goal.png",
+    "57-city-stars-boston.png",
+    "59b-attack-marked-tile.png",
+    "59-attack-banner.png",
+    "60-challenge-behind.png",
+    "61-challenge-won.png",
+    "62-event-countdown-chip.png",
+    "62b-event-banner.png",
+    "63-scrapbook-recipes.png",
+    "64-vanity-tab.png",
+    "64b-booster-shelf.png",
+    "65-sidewalk-max.png"
+   ]
+  },
+  "82_s2b.py": {
+   "s": 69.4,
+   "shots": [
+    "82-menu-sheet.png",
+    "83-zones-locked.png",
+    "84-drones.png",
+    "84b-zones-drones.png",
+    "85-night-shift.png",
+    "86-jam-wrench.png",
+    "86b-jam-head-baker.png",
+    "87-uptown-2-stars.png",
+    "88-stars-sheet.png",
+    "89-critic-pass.png"
+   ]
+  },
+  "00_boot.py": {
+   "s": 44.0,
+   "shots": [
+    "00-title-card.png",
+    "01-opening-cutscene.png",
+    "02-cutscene-dialog.png",
+    "03-new-game.png",
+    "03b-full-queue-tap.png",
+    "04-after-20s-play.png"
+   ]
+  },
+  "06_scrapbook_offline.py": {
+   "s": 12.5,
+   "shots": [
+    "06-scrapbook.png",
+    "07-offline-popup.png"
+   ]
+  },
+  "130_p1.py": {
+   "s": 178.8,
+   "shots": [
+    "130-report-tipping.png",
+    "131-report-slammed.png",
+    "132-report-quiet.png",
+    "133-report-cold.png",
+    "134-report-sheet.png",
+    "135-cards-effect-lines.png",
+    "136-tutorial-frame.png",
+    "137-heads-slammed.png"
+   ]
+  },
+  "148_u4.py": {
+   "s": 58.0,
+   "shots": [
+    "148-first-20s.png",
+    "149-offer-golden-waits.png",
+    "150-attack-golden-waits.png",
+    "151-tasks-progress.png",
+    "152-gift-day-30.png"
+   ]
+  },
+  "175_u2.py": {
+   "s": 31.1,
+   "shots": [
+    "175-story-half.png",
+    "176-story-done.png",
+    "177-daily-locked.png",
+    "175b-story-go-build.png",
+    "175c-story-go-win.png",
+    "175d-story-go-bid.png"
+   ]
+  },
+  "181_u3.py": {
+   "s": 27.5,
+   "shots": [
+    "181-report-strip.png",
+    "182-report-short-ovens.png",
+    "183-report-short-drivers.png",
+    "184-report-balanced.png",
+    "185-report-you.png"
+   ]
+  },
+  "186_s3.py": {
+   "s": 181.7,
+   "shots": [
+    "186-state-short-ovens.png",
+    "187-state-short-drivers.png",
+    "188-state-short-counter.png"
+   ]
+  },
+  "189_u4.py": {
+   "s": 14.8,
+   "shots": [
+    "189-sidewalk-short-ovens.png",
+    "190-drawer-short-ovens.png",
+    "191-sidewalk-balanced.png"
+   ]
+  },
+  "195_u5.py": {
+   "s": 24.8,
+   "shots": [
+    "195-style-tab-nudge.png",
+    "196-boosters-buy.png",
+    "197-boosters-full.png"
+   ]
+  },
+  "209_e6.py": {
+   "s": 39.4,
+   "shots": [
+    "209-store-intro-chip.png",
+    "210-store-intro-starter.png"
+   ]
+  },
+  "24_settings.py": {
+   "s": 17.1,
+   "shots": [
+    "24-settings-audio.png"
+   ]
+  },
+  "74_s2a.py": {
+   "s": 80.9,
+   "shots": [
+    "74-gameday-chip.png",
+    "75-gameday-rush.png",
+    "76-boat-and-rack.png",
+    "77-rack-card.png",
+    "78-auction-bid-card.png",
+    "79-rival-open.png",
+    "80-rival-challenge-behind.png",
+    "81-rival-closed.png"
+   ]
+  },
+  "90_t1b.py": {
+   "s": 67.9,
+   "shots": [
+    "90-mr-smith.png",
+    "91-name-tag.png",
+    "92-order-slip.png",
+    "93-phone-footage.png",
+    "94-slicey.png",
+    "97-waterfront-shop-interior.png",
+    "138-hire-scene-noor.png",
+    "95-scrapbook-interludes.png",
+    "139-skip-badge.png",
+    "139b-skip-drawer-row.png"
+   ]
+  }
+ }
+}

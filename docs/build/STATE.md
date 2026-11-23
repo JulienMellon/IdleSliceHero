@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.23b                  # v5.23 closed 2026-11-22 at r3 (critic 0 bug 0 major 21 minor carried; code APPROVED 3 medium; story advisory 9 minor)
-step: verify                        # setup | waves | verify | review | fix | close
+step: review                        # setup | waves | verify | review | fix | close
 round: r2              # r1 | r2 | r3
-last_shots: v5.23b                  # v5.23b r1 verify: True 0 [], layout 0 new (cover 0); 169 changed vs v5.23-r3
+last_shots: v5.23b-r2               # r2 verify: True 0 [], layout 0 new (cover 0); 64 changed vs v5.23b
 codecritic_range_start: 85202bd   # v5.23b start (688f26f not in repo)
 cards:                 # todo | running | done | partial | blocked
   Q7 done  Q8 done  S6 done  U7 done  U8 done  W6 done
@@ -48,3 +48,4 @@ next: start S10b-v5.23b.md (cleanup step), then S11-v5.24.md. Carried notes: doc
 - 2026-11-23 S10b r2 U8 done (C195 A44 A46 C193 S89 +tests; 3228 tests). D564 (goal bar word suffix overflow) and S97 (3 fixtures) carried. S6 launched.
 - 2026-11-23 S10b r2 U7 done (C194 T139 D556 C196 comment; 3229 tests). Carried: C196 game-store resetMissedZeroSeen, D573, D519 cue, C176. Waiting on S6.
 - 2026-11-23 S10b r2 S6 done (D571 D572 C197 C198 C183; 3229 tests). Verify v5.23b-r2 running.
+- 2026-11-23 S10b r2 verify v5.23b-r2 PASS (True 0 [], layout 0, cover 0, 64 changed). r2 re-checks launched.
