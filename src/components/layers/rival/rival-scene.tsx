@@ -3,7 +3,7 @@
 // challenge is won its shutters come down, a burst of coins flies to the cash, and the shop is taken away (the HUD tag goes with it).
 import { memo, useContext, useEffect, useRef, useState, type ComponentRef } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Ellipse, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { ORDER_VIEW } from '../../../content/hooks';
 import { challengeWon, rivalOpen } from '../../../engine/features/layers/rival';
@@ -48,6 +48,15 @@ const MegaShop = memo(function MegaShop({ shut }: { shut: number }) {
         strokeWidth={0.8}
       />
       <Rect x={-RIVAL_SHOP.slab} y={h * scale + kerb - 2} width={w + 2 * RIVAL_SHOP.slab} height={2} fill="#9B9386" />
+      {/* D572: the shop stands on the kerb: a shadow on the pavement at its foot, and its right-hand wall in the darker purple (the side face that gives it depth) */}
+      <Ellipse cx={w / 2 + 3} cy={h * scale + 1.5} rx={w / 2 + RIVAL_SHOP.slab - 2} ry={2.6} fill="rgba(59,31,20,0.2)" />
+      <Path
+        d={`M${w} ${6 * scale} L${w + 6} ${3 * scale} L${w + 6} ${h * scale - 3} L${w} ${h * scale} Z`}
+        fill="#4B1A78"
+        stroke={INK}
+        strokeWidth={1}
+        strokeLinejoin="round"
+      />
       <G transform={`scale(${scale})`}>
         <Rect x={0} y={6} width={aw} height={h - 6} rx={4} fill={PURPLE} stroke={INK} strokeWidth={1.8} />
         <Rect x={0} y={0} width={aw} height={19} rx={4} fill={YELLOW} stroke={INK} strokeWidth={1.8} />

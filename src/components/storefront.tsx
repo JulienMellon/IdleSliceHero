@@ -62,7 +62,7 @@ import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEAD_BARKS } from '../content/heads';
 import { getFeature } from '../engine/features';
 import { counterattack } from '../engine/features/counterattack';
-import { coachTargets, hintsAllowed } from '../engine/tutorial';
+import { coachTargets, hintsAllowed, shopTutorialDone } from '../engine/tutorial';
 import { gainAnchor, ovenGain } from './scene/oven-gain';
 import type { BarkTable } from '../content/cities/types';
 import { reportActive, reportView, symptomAsks } from '../engine/features/service';
@@ -709,14 +709,17 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   }, [lay, fit.s, fit.ox, fit.oy, width, height]);
   // the layout probe's protected rects (scene/protected.ts): web only (the screenshot build), a getter so a scroll needs no refresh
   useEffect(
-    () => (Platform.OS === 'web' ? publishProtected(() => ({ ...coachIn.current!, scrollX: scrollX.current, origin: origin.current })) : undefined),
+    () =>
+      Platform.OS === 'web'
+        ? publishProtected(() => (coachIn.current ? { ...coachIn.current, scrollX: scrollX.current, origin: origin.current } : null))
+        : undefined,
     [],
   );
   useEffect(() => {
     reporter.start();
     return () => reporter.stop();
   }, [reporter]);
-  coachRuns.current = game.tutorial >= 1 && game.tutorial < Game.TUTORIAL_DONE;
+  coachRuns.current = game.tutorial >= 1 && !shopTutorialDone(game);
   const askRef = useRef<(t: ScrollTarget) => void>(() => {});
   askRef.current = (t) => {
     if (!view.scrolls) return;

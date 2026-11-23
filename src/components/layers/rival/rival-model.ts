@@ -45,10 +45,10 @@ export const RIVAL_SHOP = {
 } as const;
 
 /**
- * The far pavement the shop stands on (D481, "on the asphalt" in shot 76): a full-width band whose kerb line is `rise` above the shop's foot, so the road ends above
- * the shop and its foot is on pavement, not mid-lane. It runs to the scene's foot. Scene units.
+ * The far pavement the shop stands on (D481, "on the asphalt" in shot 76): a full-width band whose kerb line is `rise` above the shop's foot, so the road ends at the
+ * shop's awning and the whole shop stands on pavement, not astride the road (D572). It runs to the scene's foot. Scene units.
  */
-export const FAR_KERB = { rise: 16, height: 8 } as const;
+export const FAR_KERB = { rise: 28, height: 8 } as const;
 
 /** The rect the rival occupies (scene units) at a place from `rivalPlace`: the tests keep it on screen and clear of the mat, the strip and the sidewalk row. */
 export const rivalRect = (at: { x: number; top: number }) => ({

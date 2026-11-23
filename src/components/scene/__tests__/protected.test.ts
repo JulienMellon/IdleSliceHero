@@ -5,7 +5,11 @@
 import { CITIES, hoodIds } from '../../../content/cities';
 import * as G from '../../../engine/game';
 import { COVER_MAX, coverFindings, coveredShare, protectedRects, protectedScene, sceneCovers, type CoverInputs } from '../protected';
-import { P, sceneView } from '../projection';
+import { P, kAt, sceneView } from '../projection';
+import { floorYFor, liftLayout } from '../strip-clear';
+import { matRect } from '../ladder';
+import { spotOf } from '../walkout';
+import { layout as drawLayout } from './draw-layout';
 import { shopLayout } from '../shop-layout';
 import { stripTop } from '../strip-clear';
 
@@ -103,5 +107,25 @@ describe('the rule itself', () => {
     expect(pm.id).toBe('mat');
     expect(pm.x0).toBeCloseTo(100 + 5 + (mat.x0 - draw.frame.x0) * 2 - 10);
     expect(pm.y0).toBeCloseTo(200 + 7 + mat.y0 * 2);
+  });
+});
+
+describe('the customer who walks out from the door never stands on the mat (D571)', () => {
+  // he stands still for the turn (WALKOUT_TURN) at `spotOf(lay, -1)`: his body must be clear of the mat's rect by 6 pt or more at every screen fit, in both plans and every footprint
+  test('his body stands 6 pt or more past the mat and covers none of it, lifted clear of the strip at every fit', () => {
+    const bad: string[] = [];
+    for (const mirrored of [false, true])
+      for (let fp = 0; fp < 5; fp++)
+        for (const s of [0.9, 0.95, 1, 1.1, 1.25]) {
+          const lay = liftLayout(drawLayout(fp, Math.min(fp + 1, 6), 3, 2, 6, 3, 1, undefined, mirrored), floorYFor(stripTop(s, false)));
+          const mat = matRect(lay);
+          const [x, y] = spotOf(lay, -1);
+          const [sx, sy] = P(x, y);
+          const k = kAt(y) * 1.14;
+          const body = { x0: sx - 11 * k, x1: sx + 11 * k, y0: sy - 50 * k, y1: sy };
+          const gap = mirrored ? mat.x0 - body.x1 : body.x0 - mat.x1;
+          if (coveredShare(mat, body) > 0 || gap < 6) bad.push(`fp${fp}${mirrored ? 'm' : ''} s${s}: gap ${gap.toFixed(1)}`);
+        }
+    expect(bad).toEqual([]);
   });
 });

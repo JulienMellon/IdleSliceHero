@@ -22,7 +22,6 @@ import type { Rect } from './stations';
 /** The most of a protected rect that may lie under a cover (a share of its area). */
 export const COVER_MAX = 0.1;
 
-export type ProtectedId = 'mat' | 'door' | 'face-cook' | 'face-baker' | 'face-counter';
 export interface Named extends Rect {
   id: string;
 }

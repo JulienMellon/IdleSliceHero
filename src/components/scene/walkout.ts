@@ -47,7 +47,7 @@ export interface WalkoutFrame {
 const paths = new WeakMap<Layout, [number, number][][]>();
 
 /** The customer who comes from the door stands this far (room units) beyond where delivery drivers pause, so they never stand on the mat (that pause is a waypoint, not a place to stand). */
-export const DOOR_SPOT_GAP = 16;
+export const DOOR_SPOT_GAP = 24;
 
 /**
  * Where customer `q` stands before they go: their line spot, or (`-1`) just past the drivers' pause by the door, on the far side of it from the idle drivers' lane (D552: the idle

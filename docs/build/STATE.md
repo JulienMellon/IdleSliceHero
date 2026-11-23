@@ -9,7 +9,7 @@ round: r2              # r1 | r2 | r3
 last_shots: v5.23b                  # v5.23b r1 verify: True 0 [], layout 0 new (cover 0); 169 changed vs v5.23-r3
 codecritic_range_start: 85202bd   # v5.23b start (688f26f not in repo)
 cards:                 # todo | running | done | partial | blocked
-  Q7 done  Q8 done  S6 running  U7 running  U8 done  W6 done
+  Q7 done  Q8 done  S6 running  U7 done  U8 done  W6 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.23b/review-r1-critic.md (r1 NOT SATISFIED; bug 0 major 0 minor 7; E1 U3 S2 N1; 16 carried rows fixed; D571 mat in 214)
   code:   docs/build/v5.23b/review-r1-code.md (r1 CHANGES REQUESTED; blocker/high 0 medium 5 low 36; E5 U23 S4 N8 A1; C194 C195 new, C192 A46 A44 carried)
@@ -37,7 +37,7 @@ next: start S10b-v5.23b.md (cleanup step), then S11-v5.24.md. Carried notes: doc
 - 2026-11-22 S10b r1 S6 running (D481 D552 D557; D519 scrolls per Julien). U7 launched with the scroll-cue need.
 - 2026-11-22 S10b r1 U8 done (D537 D542 D544 D545 D547 D555; D535 D538 already in) -> 4 T copy files granted; D540 -> U7.
 - 2026-11-22 S10b r1 U8 done (S95 x2 S71 landed; S67 carried: downtown backdrop not allowed in Boston pack, needs backdrop decision). Waiting on U7.
-- 2026-11-22 S10b r1 U7 running (D540 D553 D554 D556 S98; D550 already in; D551 2pt raise -> U8). Scroll cue (D519) unowned: carried. Q8 launched.
+- 2026-11-22 S10b r1 U7 done (D540 D553 D554 D556 S98; D550 already in; D551 2pt raise -> U8). Scroll cue (D519) unowned: carried. Q8 launched.
 - 2026-11-22 S10b r1 U8 D551 2pt raise done (3146 tests). Waiting on Q8.
 - 2026-11-22 S10b r1 Q8 done (protected.ts, cover probe; cover 1 real: report strip over mat, allowlisted) -> U7 moves strip + fixes 134 clip. Q7 launched.
 - 2026-11-22 S10b r1 Q7 done (README/critic/programmer rules; apply from v5.24). Waiting on U7 strip fix.
@@ -46,3 +46,4 @@ next: start S10b-v5.23b.md (cleanup step), then S11-v5.24.md. Carried notes: doc
 - 2026-11-23 S10b r1 verify v5.23b PASS (True 0 [], layout 0 new, cover 0, 169 changed). r1 reviews launched.
 - 2026-11-23 S10b gate r1 not met (critic 7 minor; code CHANGES REQUESTED 5 medium). Fix round r2: U7 || U8 (+E rows), then S6.
 - 2026-11-23 S10b r2 U8 done (C195 A44 A46 C193 S89 +tests; 3228 tests). D564 (goal bar word suffix overflow) and S97 (3 fixtures) carried. S6 launched.
+- 2026-11-23 S10b r2 U7 done (C194 T139 D556 C196 comment; 3229 tests). Carried: C196 game-store resetMissedZeroSeen, D573, D519 cue, C176. Waiting on S6.

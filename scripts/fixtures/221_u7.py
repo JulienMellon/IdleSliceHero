@@ -34,7 +34,7 @@ def run(ctx):
         until(page, lambda: "Not one missed" in tid(page, "shop-report-line").inner_text(), timeout=4000, step=100)
         advance(page, 200)
         expect_text(page, "shop-report-line", r"Not one missed", 1000)
-        shot(page, "221b-missed-zero", 0.5)
+        shot(page, "221b-missed-zero", 0.0)
         advance(page, 1000)
         advance(page, 4000)
         expect_text(page, "shop-report-line", r"Missed 0/min", 3000)
