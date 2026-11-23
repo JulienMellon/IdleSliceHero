@@ -7,12 +7,12 @@ version: 5.23b                  # v5.23 closed 2026-11-22 at r3 (critic 0 bug 0 
 step: review                        # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.23b                  # v5.23b r1 verify: True 0 [], layout 0 new (cover 0); 169 changed vs v5.23-r3
-codecritic_range_start: 688f26f   # v5.23b start (v5.23 closed commit)
+codecritic_range_start: 85202bd   # v5.23b start (688f26f not in repo)
 cards:                 # todo | running | done | partial | blocked
   Q7 done  Q8 done  S6 done  U7 done  U8 done  W6 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.23/review-r3-critic.md (r3 NOT SATISFIED; bug 0 major 0 minor 21; E3 U12 S4 T1 N1)
-  code:   docs/build/v5.23/review-r3-code.md (r3 APPROVED; blocker/high 0 medium 3 low 29; E5 U16 S2 N8 A1; C192 A46 A44 medium)
+  code:   docs/build/v5.23b/review-r1-code.md (r1 CHANGES REQUESTED; blocker/high 0 medium 5 low 36; E5 U23 S4 N8 A1; C194 C195 new, C192 A46 A44 carried)
   story:  docs/build/v5.23b/review-r1-story.md (r1 NOT SATISFIED advisory; bug 0 major 0 minor 5; E1 U2 T2)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
 open: ON HOLD (Julien 2026-11-18): every city beyond Boston; cards in docs/build/v5.19/later/ (W4b W4s E4 E4f CITY A3) and the deferred refactor (R2 R2b R3 R4 R5f R6s) are not launched. PARKED for Julien, not in v5.19: economy refit (one pizza per tap +1/10 prep lv, home tops out ~$10M with Suburbs ~$30K, first goal <$50, ECONOMY 3->4 with old saves reset, D493 rival gated at Suburbs 2 stars, D495); don't ask about it during v5.19. Carried: A2 + audio notes AU41 AU39 AU40 AU25 AU82 (music round waits on Julien's R1 listen), SliceAudioSession native module not built; Boston heads need a writer pass (5 barks per head, one per trigger; their script has 4 numbered); Boston GMs placeholder; v5.17/v5.18 critic minors D481 D493 D495 D505 D512 D514. Tools: expo install is refused by the proxy (use npm install with the version from node_modules/expo/bundledNativeModules.json); loop_stats.py cannot read loop: commits; programmer --only takes the fixture name without .py; seam-noise shots 00/24/104/105 and 29-31b. App Store privacy label must say Tracking = Yes; native paths unverified until DEVICE-CHECKLIST.
