@@ -58,9 +58,10 @@ describe('chapter 1 during the tutorial', () => {
     expect(v.tasks.map((t) => t.done)).toEqual([true, true, true]);
     expect(v.tasks.map((t) => t.label)).toEqual(['Serve 1 pie in Downtown', 'Serve 4 pies in Downtown', 'Hire Marco, head prep cook']);
   });
-  it('has no teaser and no portrait: its scene opened the game and has played (G114)', () => {
-    expect(v.teaser).toBe('');
-    expect(v.who).toBeNull();
+  it("has Nonna's line and her portrait like chapters 2 to 4 (D545); no 'Coming up' line, its reward row points on", () => {
+    expect(v.teaser).toBe('Take my keys, cara. Make this place smell like home.');
+    expect(v.teaser).toBe(HOME_COPY['chapter.downtown-1.teaser']);
+    expect(v.who).toBe('nonna-rosa');
     expect(v.coming).toBe('');
   });
   it('points on to chapter 2 in the reward row, not "New scene" (S75)', () => {
@@ -154,17 +155,30 @@ describe('the chapter whose scene is the takeover', () => {
   });
 });
 
+describe('the row the goal bar picks (S89)', () => {
+  it('is marked when the bar skips ahead of the first open task: chapter 2 leads with the serve count, the bar with the hire', () => {
+    const v = storyView(midway(), null);
+    expect(v.tasks.map((t) => t.next)).toEqual([false, true, false]);
+  });
+  it('is not marked in the tutorial chapter, where the list order is the bar order', () => {
+    const g = withShop({ ...G.newGame(0), seenScenes: ['downtown-1'] }, 'downtown', { sold: 4 });
+    expect(storyView(g, null).tasks.some((t) => t.next)).toBe(false);
+  });
+});
+
 describe('a rate being held (D537)', () => {
   const key = HOME_CHAPTERS[1].tasks[2].key; // downtown-2: serve 6/min
   const held = (lo: number, secs: number): G.GameState => ({
     ...midway(),
     x: { ...midway().x, [CHAPTERS_KEY]: { ...newChapterSave(), done: CH1, run: { [key]: { lo, secs } } } },
   });
-  it('shows the rate and how long it has held once it is at the target', () => {
-    const rate = storyView(held(8, 12.4), null).tasks[2];
-    expect(rate.progress).toBe('8/min · holding 12 s');
-    expect(rate.pct).toBeCloseTo(12.4 / 30);
-    expect(rate.spoken).toContain('holding 8 a minute for 12 of 30 seconds');
+  it('reads "6/6 · holding" with a full bar once it is at or over the target, and says the seconds aloud', () => {
+    for (const lo of [6, 8]) {
+      const rate = storyView(held(lo, 12.4), null).tasks[2];
+      expect(rate.progress).toBe('6/6 · holding');
+      expect(rate.pct).toBe(1);
+      expect(rate.spoken).toContain(`holding ${lo} a minute for 12 of 30 seconds`);
+    }
   });
   it('shows the lowest rate so far, short of the target, as a count', () => {
     const rate = storyView(held(4, 5), null).tasks[2];

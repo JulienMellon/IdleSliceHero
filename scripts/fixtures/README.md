@@ -28,6 +28,8 @@ One file per group of shots, `NN_name.py`, NN = the first shot number the file o
 | `195_u5.py` | 195-197 the Store chip from the Store intro, the Style tab's nudge, the Boosters tab with a running slot and a refused buy (card U5) |
 | `205_n1.py` | 205-208 the Store tab's cards: loading, Starter with Nonna's line, diamond packs, Starter owned, first buys used (card N1) |
 | `209_e6.py` | 209-210 Nonna's Store intro: the Store chip lit, the Starter card lit in the Store tab; "Not now" ends it, no pop-up sheet (card E6) |
+| `220_u8.py` | 220-220e Story tab and coach minors: Chapter 1 with Nonna's line and the hand off its text, a rate "6/6 · holding", the reward row's "Daily tasks open", Go on a "Beat" row lights the rival band, the tick badge and the 1.5 s ribbon (card U8) |
+| `221_u7.py` | 221-221b City screen: "no manager" in ink, the halo on the visited shop, "Opens after Ch N" on a held lot; the strip's Missed-zero payoff (card U7) |
 
 ## One fixture at a time
 ```
@@ -84,6 +86,7 @@ After a `--only` run call it by hand: `python3 scripts/layout_check.py dev`; the
 | `text` | visible text with a computed font size under 10 px | nearest ancestor's `data-testid` + the text, a number (with K/M/B/T) as `#` |
 | `clip` | text that is cut off: a box that hides its overflow and whose text (measured with a Range) is wider or taller than it, or text that itself ends in "…" and its source does not | same |
 | `edge` | text starting left of 0 or ending right of the viewport (not inside a horizontal scroller: the shop tabs scroll) | same |
+| `cover` | something opaque on top of a protected element: the WELCOME mat, the entrance, a cook / baker / counter worker's face (the storefront publishes `window.__protected`, `scene/protected.ts`). A 5x3 grid of `elementFromPoint` samples per rect; a point counts when the top element is outside the scene, paints something and is not in a modal root (`aria-modal`, `role=dialog`, a `data-testid` ending in `-sheet` / `-scrim` / `-popup` / `-modal`, or a touchable ancestor 90% of the app wide and half as tall that does not hold the scene: drawers, sheets and scrims are expected). Over 10% of the points is a finding | `<protected id> \| <testid of the top element>`; `detail` is `n/m points` |
 
 How a cut-off shows in this build: react-native-web draws `numberOfLines={1}` as `overflow:hidden; white-space:nowrap; text-overflow:ellipsis` and
 `numberOfLines={n}` as `-webkit-line-clamp:n`; `adjustsFontSizeToFit` does nothing. `scrollWidth` vs `clientWidth` rounds both sides to whole pixels and

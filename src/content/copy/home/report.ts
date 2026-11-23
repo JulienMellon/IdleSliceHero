@@ -9,6 +9,7 @@ export const COPY = {
   'report.bar.oven': 'Ovens',
   'report.bar.counter': 'Counter',
   'report.demand': 'Customers',
+  'report.customers.row': 'Hungry crowd',
   'report.customers.split': 'Drivers {drivers}/min · Seats {seats}/min',
   'report.served': 'Served {n}/min',
   'report.missed': 'Missed {n}/min',
@@ -19,7 +20,7 @@ export const COPY = {
   'report.state.cold': 'Line’s gone cold',
   'report.strip.cold.tips': '· Tips up',
   'report.strip.cold.word': '· Word’s spreading',
-  'report.missed.zero': 'Nobody walks out hungry. Bellissimo!',
+  'report.missedZero': 'Not one missed, cara. Like the old days.',
 } as const;
 
 export type CopyKey = keyof typeof COPY;

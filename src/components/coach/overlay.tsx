@@ -86,6 +86,10 @@ export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, on
     doneRef.current = onDone;
     skipRef.current = onSkip;
   });
+  // C193: a stray tap on one step must not count towards the next step's skip: the first outside tap of a new step only nudges
+  useEffect(() => {
+    lastOutside.current = null;
+  }, [idKey, text, skippable]);
   useEffect(() => {
     if (mode !== 'look') return;
     const t = setTimeout(() => doneRef.current?.(), LOOK_MS);
@@ -95,9 +99,9 @@ export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, on
   const layout = useMemo(
     () =>
       rects && rects.length > 0
-        ? overlayLayout(rects, { w: width, h: height }, { top: insets.top, bottom: insets.bottom }, mode === 'wait' || mode === 'look' ? mode : 'tap')
+        ? overlayLayout(rects, { w: width, h: height }, { top: insets.top, bottom: insets.bottom }, mode === 'wait' || mode === 'look' ? mode : 'tap', targets)
         : null,
-    [rects, width, height, insets.top, insets.bottom, mode],
+    [rects, width, height, insets.top, insets.bottom, mode, targets],
   );
   const holes = useMemo(() => (layout ? layout.cuts.map((c) => hole(c, CUT.radius)).join(' ') : ''), [layout]);
   const pieces = useMemo(() => (layout && mode === 'tap' ? blockers(layout.cuts, { w: width, h: height }) : []), [layout, mode, width, height]);

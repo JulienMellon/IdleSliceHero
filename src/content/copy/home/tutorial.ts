@@ -24,7 +24,7 @@ export const COPY = {
   // v5.22 (card E4): the shop report's three lines, from docs/story/COPY-v5.22.md section 4
   'tutorial.report.1': 'This strip, cara, is how my shop is doing. Served and missed.',
   'tutorial.report.2': 'This bar is my ovens. How many pizzas a minute they can bake, cara.',
-  'tutorial.report.3': 'Dashed line, cara: my customers. Served stops at my shortest bar. The rest, I miss.',
+  'tutorial.report.3': 'Dashed line, cara: my customers. Served never goes past my shortest bar. The rest, I miss.',
   'tutorial.alt.9': 'Ay! You spent the oven money. Save {cost} again for the upgrade.',
   'tutorial.alt.13': '{marco} rolls dough for you, flour and all. You can hire him now.',
 } as const;

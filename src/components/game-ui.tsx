@@ -16,6 +16,7 @@ import {
   GOAL_FLASH_MS,
   GOAL_FONT_MAX_SCALE,
   GOAL_GAP,
+  CHEER_RIBBON_FADE,
   CHEER_RIBBON_MS,
   GOAL_LAYOUT,
   GOAL_PAD,
@@ -370,9 +371,9 @@ export function Hud({
     setRibbonOn(true);
     ribbonShow.setValue(0);
     Animated.sequence([
-      Animated.timing(ribbonShow, { toValue: 1, duration: 220, useNativeDriver: native }),
+      Animated.timing(ribbonShow, { toValue: 1, duration: CHEER_RIBBON_FADE.in, useNativeDriver: native }),
       Animated.delay(CHEER_RIBBON_MS),
-      Animated.timing(ribbonShow, { toValue: 0, duration: 300, useNativeDriver: native }),
+      Animated.timing(ribbonShow, { toValue: 0, duration: CHEER_RIBBON_FADE.out, useNativeDriver: native }),
     ]).start(() => setRibbonOn(false));
   }, [cheer, tickPop, ribbonShow]);
   return (
@@ -1078,7 +1079,8 @@ const styles = StyleSheet.create({
   // with a need line the three lines share the 36 pt inside the button: 10 + 15 + 10 (U5: no text under 10 pt)
   buySubTight: { lineHeight: 10 },
   buyLabelTight: { lineHeight: 15 },
-  buyNeed: { fontFamily: F.semi, fontSize: MIN_FONT, lineHeight: 10, opacity: 0.85 },
+  // D551: the capacity line sits 2 pt higher, clear of the button lip
+  buyNeed: { fontFamily: F.semi, fontSize: MIN_FONT, lineHeight: 10, opacity: 0.85, marginTop: -2 },
   noGainInner: { backgroundColor: '#EFE6D8', borderColor: '#CFC3B2' },
   buyInnerCompact: { flex: 1, justifyContent: 'center', paddingVertical: 0, paddingHorizontal: 1 },
   buySub: { fontFamily: F.semi, color: 'rgba(255,255,255,0.85)', fontSize: 10, letterSpacing: 1 },
@@ -1163,10 +1165,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.15)',
   },
   goalReady: { borderColor: '#fff', backgroundColor: C.basil },
+  // D544: the tick badge sits on the bar's top-right corner, mostly above it, so it never covers the amount ("$800 / $800") or the "Ch N" words
   goalTick: {
     position: 'absolute',
-    right: 6,
-    top: -3,
+    right: 2,
+    top: -10,
     width: 24,
     height: 24,
     borderRadius: 12,

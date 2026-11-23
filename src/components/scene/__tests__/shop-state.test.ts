@@ -225,7 +225,9 @@ describe('customers walk out (step 3)', () => {
     expect(start.q).toBe(-1);
     expect(start.walker!.o).toBeLessThan(1); // fading in as they turn
     const mid = walkoutAt(lay, WALKOUT_TURN + 1, true, 0)!;
-    expect(mid.walker!.x).toBeLessThan(start.walker!.x); // away from the door (to its left in the plain plan)
+    // away from the door, and on the side the idle drivers do not park on (D552: the first of them stood where the customer did)
+    expect(Math.sign(mid.walker!.x - start.walker!.x)).toBe(Math.sign(start.walker!.x - lay.door.cx));
+    for (const [dx] of lay.driverQueue) expect(Math.sign(dx - lay.door.cx)).toBe(-Math.sign(start.walker!.x - lay.door.cx));
     expect(walkoutAt(lay, WALKOUT_TURN + WALKOUT_WALK + 0.3, true, 0)!.walker).toBeNull();
     const walker = build(1, { queue: queue4, symptoms: { floor: 'walkout' } }).find((c) => c.props.frown)!;
     expect(walker.key).toBe('wo');

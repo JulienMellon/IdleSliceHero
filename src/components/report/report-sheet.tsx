@@ -1,17 +1,16 @@
 // The shop report's sheet (SHEETS slot), opened by a tap on the strip (card U3, v5.22): one bar per kitchen station, all basil, each as long as the
 // pizzas a minute it can handle, then the customers as one stacked bar (deliveries, then seats) that ends at the one dashed ink line across all of
 // them (G119: the drivers alone could never reach a line that counts the walk-ins too), then served and missed, and the service score. No lamps, no red, no station named as the limit. Built only while it is open; opening it tells the store (`reportOpened`).
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 
 import { t } from '../../content/copy';
-import { saveOf } from '../../engine/chapters';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import type { CoachTargetId } from '../../engine/coach-types';
 import { useCoachTarget } from '../coach/targets';
-import { MISSED_ZERO_HOLD_S, missedZeroPlays, REPORT_TARGET, sheetModel, type BarRow, type CustomersRow } from './report-model';
+import { missedZeroSeen, REPORT_TARGET, sheetModel, type BarRow, type CustomersRow } from './report-model';
 import { closeReport, useReportOpen } from './sheet-state';
 
 const BAR_H = 14;
@@ -85,18 +84,8 @@ function Sheet() {
     reportOpened();
   }, [reportOpened]);
   const m = sheetModel(game, game.active, now);
-  // D556: Missed held at 0 for 10 s with the sheet open plays the payoff once, ever; the save remembers it (`missedZeroShown`). The line stays up while the sheet is open.
-  const missedZeroShown = useGame((s) => s.missedZeroShown);
-  const plays = missedZeroPlays(m.zero, saveOf(game).missedZero);
-  const [played, setPlayed] = useState(false);
-  useEffect(() => {
-    if (!plays) return;
-    const id = setTimeout(() => {
-      setPlayed(true);
-      missedZeroShown();
-    }, MISSED_ZERO_HOLD_S * 1000);
-    return () => clearTimeout(id);
-  }, [plays, missedZeroShown]);
+  // D556: the strip plays the payoff (flash, coins, Nonna's line) once per shop per session; while Missed stays at 0 the sheet keeps her line up
+  const played = m.zero && missedZeroSeen(game.active);
   return (
     <View style={styles.overlay} testID="report-sheet">
       <Pressable style={StyleSheet.absoluteFill} onPress={closeReport} accessibilityRole="button" accessibilityLabel="Close the shop report" />
@@ -132,7 +121,7 @@ function Sheet() {
           </View>
           {played ? (
             <View style={styles.payoff} testID="report-missed-zero">
-              <Text style={styles.payoffText}>{t('report.missed.zero')}</Text>
+              <Text style={styles.payoffText}>{t('report.missedZero')}</Text>
             </View>
           ) : null}
           <View style={styles.service} testID="report-service">
@@ -166,7 +155,7 @@ export const ReportSheet = memo(function ReportSheet() {
 });
 
 // the name and value columns' widths; the tracks column takes the rest, and the dashed line is laid over it alone
-const NAME_W = 64;
+const NAME_W = 88; // "Hungry crowd" at 13 pt is about 80 pt wide (it was clipped at 64)
 const VALUE_W = 58;
 const GAP = 6;
 

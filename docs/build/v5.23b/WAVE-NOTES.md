@@ -1,0 +1,20 @@
+# v5.23b wave notes
+- W6: copy is docs/story/COPY-v5.23b.md (9 rows: D545, D555, D556 + carried T rows S98, S95 x2, S71, S87, S67).
+- W6 key clash: card names `story.ch1.line`, but chapters.ts uses `chapter.<id>.teaser` and COPY-v5.22/v5.23 used `chapter.downtown-1.line`. U8 picks one key for the Ch 1 line and drops the old one.
+- W6 key clash: `report.missedZero` replaces `report.missed.zero` (v5.22 §7). U7 picks one key and drops the old one.
+- U8: rewards-story.test.ts:61 expects the Ch 1 teaser empty with no portrait (G114); change that test when landing D545.
+- W6: tutorial.report.3 still opens "Dashed line, cara", so fixture 192_e4 is unchanged.
+- S6: removed RIVAL_SHOP.x / .top; FAR_KERB.top is now FAR_KERB.rise; rival placement comes from `rivalPlace` in scene/viewport.ts (also FOOT_SAFE, wideFit, roomSpan, WIDE_MIN_SCALE).
+- S6: walkout `away` now means "turned against the line's way"; piles use `pileCount(backlog, batch, piling)` (non-piling station <= 2 items, piling >= 4).
+- S6: fixture scripts/fixtures/211_s6.py (shots 211-216). Rival pavement band now hides lane-1 traffic while the rival is open (Q8: rival shop is not a protected element).
+- D519 (Julien): wide shops scroll, no scale-down in projection.ts. U7 adds a scroll cue for a cut-off wide shop (scroll-cues-model.ts) if its scope allows; else Needs.
+- S6 done: shot 213-wide-industrial.png shows a wide shop cut off at the right edge with no persistent cue; the cue lives in scroll-cues-model.ts and the ScrollCues component (U7, if in scope).
+- U8: Ch 1 line lives under the existing key `chapter.downtown-1.teaser` (text now W6's line); `story.ch1.line` is not used. `storyView` gives every chapter, free or not, its teaser and portrait.
+- U8: new `layers/rival/rival-glow.ts` (emitRivalGlow / rivalGlowLeft); rival-scene.tsx only gained the glow overlay. `overlayLayout` takes the target ids as a 5th argument (HAND_NUDGE). Fixture scripts/fixtures/220_u8.py (shots 220-220e).
+- U8: S95 x2 and S71 landed (hooks.ts, voice.ts, downtown.ts). S67 NOT landed: Boston has no "downtown" neighbourhood, so panel backdrop "downtown" fails city-schema.test.ts (needs a schema/backdrop decision). D540 goes to U7 (city-model.ts lotView).
+- U7: `report.missed.zero` replaced by `report.missedZero`; added `report.customers.row` ("Hungry crowd"). D556 payoff is once per shop per session (module Set); the save flag is written but no longer gates.
+- U7: new src/components/__tests__/button-tone-source.test.ts scans src/components/** and src/app/** for buy colours outside buttonTone (allowlist: game-ui EXPAND_AMBER, #B9780B lip, store-tab btnBuy, stars-sheet buy).
+- U7: fixture scripts/fixtures/221_u7.py. City map pins over 14 chars set at 2.6.
+- D519 scroll cue for cut-off wide shops: no card owns scroll-cues-model.ts in v5.23b; carried.
+- Q8: protected elements live in src/components/scene/protected.ts (window.__protected on web); layout probe kind `cover` in scripts/shots_lib.py; drawers/sheets/title cards (modal roots) are skipped. scripts/layout_allow.json has 1 temporary entry (report strip over mat) that U7 removes with its fix.
+- U8 r2: C195 fixed (rival clock runs while glowing); A44/A46 step-8 seen rule, tasks notes and report coach notes moved into coach/use-coach-flow.ts (`useCoachFlow(..., tasksOpen)`, `useReportCoachNotes`); S89 marks the goal bar's pick on the Story tab (`StoryTask.next`). D564 tried and reverted: word suffixes ("$99.9 quint / $99.9 quint") overflow the 296 pt goal line budget.

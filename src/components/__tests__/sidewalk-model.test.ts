@@ -528,6 +528,26 @@ describe('capacity on the cards (U4)', () => {
         expect(fits(capacityFit({ now, after: now * 1.04 }, textW), textW, 10)).toBe(true);
     }
   });
+  test('D551: every format the line can take reads as one of four shapes, and the current value is never dropped', () => {
+    const num = '\\d+(?:\\.\\d+)?';
+    const shapes = [new RegExp(`^${num}[KM]?→${num}[KM]?$`), new RegExp(`^${num}→${num}[KM]$`), new RegExp(`^${num}[KM]?$`)];
+    const nows = [0, 0.4, 4.5, 18, 99, 446, 999, 1234, 5810, 12400, 58100, 124000, 293000, 999000, 1.2e6, 4.56e7];
+    for (const w of [30, 40, 46, 51, 54, 60, 80, 200])
+      for (const now of nows)
+        for (const grow of [1, 1.04, 1.5]) {
+          const after = now * grow;
+          const line = capacityFit({ now, after }, w);
+          expect(shapes.some((re) => re.test(line))).toBe(true);
+          // the left side is the current value at some precision, or the whole line is it: never the "after" alone
+          const left = line.split('→')[0];
+          const times = (u: string) => (u === 'K' ? 1e3 : u === 'M' ? 1e6 : 1);
+          // "124→129K" says its unit once, for both; any other reading of a bare left number is its own
+          const shared = line.match(/[KM]$/)?.[0] ?? '';
+          const reads = [parseFloat(left) * times(left.match(/[KM]$/)?.[0] ?? ''), parseFloat(left) * times(shared)];
+          const value = reads.reduce((best, r) => (Math.abs(r - now) < Math.abs(best - now) ? r : best));
+          if (now >= 10) expect(Math.abs(value - now)).toBeLessThanOrEqual(now * 0.5);
+        }
+  });
   test('the card is cached on the levels: cash moves nothing, a level does; what a hand-tapped station made also moves it', () => {
     const s = ready({ prep: 20, ovens: 20, counter: 20, drivers: 1 }, 0);
     const spy = jest.spyOn(service, 'capacityAfter');

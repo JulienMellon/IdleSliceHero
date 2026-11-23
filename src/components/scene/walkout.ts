@@ -24,7 +24,10 @@ export const WALKOUT_TOTAL = WALKOUT_TURN + WALKOUT_WALK + WALKOUT_RETURN;
 export interface Walker {
   x: number;
   y: number;
-  /** Turned toward where they walk (`true`: away from the door). */
+  /**
+   * Turned round against the way the line's figures face (they face the door): a customer of the line walks off with their back to it. The customer from the door (`q` -1) stands on the far side of the
+   * door from the line (D552) and walks off the way the line faces, so they are not turned round.
+   */
   away: boolean;
   /** Walking (false while still turning round). */
   walking: boolean;
@@ -43,23 +46,30 @@ export interface WalkoutFrame {
 
 const paths = new WeakMap<Layout, [number, number][][]>();
 
-/** The customer who comes from the door stands this far (room units) beyond where walk-ins pause, so they never stand on the mat (that pause is a waypoint, not a place to stand). */
-export const DOOR_SPOT_GAP = 16;
+/** The customer who comes from the door stands this far (room units) beyond where delivery drivers pause, so they never stand on the mat (that pause is a waypoint, not a place to stand). */
+export const DOOR_SPOT_GAP = 24;
 
-/** Where customer `q` stands before they go: their line spot, or (`-1`) just past the pause by the door, away from it. */
+/**
+ * Where customer `q` stands before they go: their line spot, or (`-1`) just past the drivers' pause by the door, on the far side of it from the idle drivers' lane (D552: the idle
+ * drivers park on the guests' side of the door, the customer used to stand on the first of them). Never lower than `lay.floorY`, the lowest depth that is clear of the report
+ * strip, so the whole body shows (the plain pause line, y -30, is behind the strip on a phone).
+ */
 export const spotOf = (lay: Layout, q: number): [number, number] => {
   if (q >= 0) return lay.queue[q];
-  const pause = lay.door.lanes.guestPauseX;
-  return [pause + (pause >= lay.door.cx ? 1 : -1) * DOOR_SPOT_GAP, DOOR_OUT_Y];
+  const pause = lay.door.lanes.driverPauseX;
+  return [pause + (pause >= lay.door.cx ? 1 : -1) * DOOR_SPOT_GAP, Math.max(DOOR_OUT_Y, lay.floorY)];
 };
 
-/** Where a customer at line spot `q` walks: down off the sidewalk to the walkers' lane, then away from the door along it. Far enough to be off screen. Cached per layout. */
+/**
+ * Where a customer at line spot `q` walks: down off the sidewalk to the walkers' lane, then away from the door along it. Far enough to be off screen. Cached per layout.
+ * The lane is above the report strip (`lay.floorY`), like every walker's.
+ */
 export function walkoutPath(lay: Layout, q: number): [number, number][] {
   let all = paths.get(lay);
   if (!all) paths.set(lay, (all = []));
   if (!all[q + 1]) {
     const [x, y] = spotOf(lay, q);
-    const lane = Math.min(y, Math.max(GUEST_WALK_Y, lay.floorY, DOOR_OUT_Y - 40));
+    const lane = Math.max(lay.floorY, Math.min(y, Math.max(GUEST_WALK_Y, DOOR_OUT_Y - 40)));
     const dir = x >= lay.door.cx ? 1 : -1;
     all[q + 1] = [
       [x, y],
@@ -80,13 +90,13 @@ export function walkoutAt(lay: Layout, clock: number, active: boolean, figures: 
   const q = n > 0 ? hash32(cycle * 7919 + 3) % n : -1;
   const [sx, sy] = spotOf(lay, q);
   // a customer from the door fades in as they turn (nobody was drawn there before); a line figure is already there
-  if (age < WALKOUT_TURN) return { q, walker: { x: sx, y: sy, away: true, walking: false, o: q < 0 ? age / WALKOUT_TURN : 1 }, spotOpacity: 0 };
+  if (age < WALKOUT_TURN) return { q, walker: { x: sx, y: sy, away: q >= 0, walking: false, o: q < 0 ? age / WALKOUT_TURN : 1 }, spotOpacity: 0 };
   const t = age - WALKOUT_TURN;
   if (t < WALKOUT_WALK) {
     const path = walkoutPath(lay, q);
     const [x, y] = alongDist(path, Math.min(t * WALK, pathLength(path)));
     const left = WALKOUT_WALK - t;
-    return { q, walker: { x, y, away: true, walking: true, o: left < WALKOUT_FADE ? left / WALKOUT_FADE : 1 }, spotOpacity: 0 };
+    return { q, walker: { x, y, away: q >= 0, walking: true, o: left < WALKOUT_FADE ? left / WALKOUT_FADE : 1 }, spotOpacity: 0 };
   }
   return { q, walker: null, spotOpacity: q < 0 ? 1 : Math.min(1, (t - WALKOUT_WALK) / WALKOUT_RETURN) };
 }

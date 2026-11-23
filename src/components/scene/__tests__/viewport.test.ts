@@ -1,10 +1,14 @@
 /// <reference types="jest" />
 // D511 / D512: on a wide shop the name plate and the bubbles stay inside the screen (12 pt in) while the shop scrolls.
 
+import { FOOTPRINTS } from '../../../content/cities/home/fit';
+import { isMirrored } from '../../../content/shop-layout';
+import { NEIGHBORHOODS } from '../../../content/cities/home/data';
+import { RIVAL_SHOP, rivalRect } from '../../layers/rival/rival-model';
 import { layout } from '../layout';
 import { toDrawSpace } from '../layout-space';
-import { drawFrame, drawShift, sceneFrame, sceneToScreen, sceneView } from '../projection';
-import { fasciaSignBox, overlaySpan, slideInto, visibleSpan, VIEW_MARGIN } from '../viewport';
+import { SCENE_H, drawFrame, drawShift, sceneFrame, sceneToScreen, sceneView } from '../projection';
+import { FOOT_SAFE, WIDE_MIN_SCALE, fasciaSignBox, overlaySpan, rivalPlace, roomSpan, slideInto, visibleSpan, wideFit, VIEW_MARGIN } from '../viewport';
 
 const W = 393;
 const frame = sceneFrame(4);
@@ -70,5 +74,70 @@ describe('overlaySpan: what the scene overlays may use of a scrolled shop (T110,
     expect(overlaySpan(true, -40, W, cw)!.x0).toBeGreaterThanOrEqual(0);
     expect(overlaySpan(true, view.maxScroll + 40, W, cw)!.x1).toBe(cw);
     expect(overlaySpan(true, 10.4, W, cw)).toEqual(overlaySpan(true, 10.2, W, cw));
+  });
+});
+
+describe('the rival shop stays on screen (D481)', () => {
+  const hoods = NEIGHBORHOODS.map((n) => n.id);
+  const phones = [
+    { w: 393, h: 650 },
+    { w: 375, h: 470 },
+    { w: 430, h: 760 },
+  ];
+  test('every neighbourhood, footprint and phone: the shop, its kerb and its slab are inside the view and 34 pt above its foot, at every scroll position', () => {
+    const bad: string[] = [];
+    let checked = 0;
+    for (const hood of hoods)
+      for (let fp = 0; fp < 5; fp++)
+        for (const ph of phones) {
+          const v = sceneView(ph.w, ph.h, sceneFrame(fp));
+          for (let x = 0; x <= v.maxScroll; x += 25) {
+            const span = overlaySpan(v.scrolls, x, ph.w, v.contentW);
+            const r = rivalRect(rivalPlace(v.fit, SCENE_H, span, RIVAL_SHOP));
+            // in the pt of the overlay (the content's), less how far the view has scrolled
+            const left = v.fit.ox + r.x0 * v.fit.s - (span ? Math.round(x) : 0);
+            const right = v.fit.ox + r.x1 * v.fit.s - (span ? Math.round(x) : 0);
+            const foot = ph.h - (v.fit.oy + r.y1 * v.fit.s);
+            checked++;
+            if (left < 0 || right > ph.w || foot < FOOT_SAFE - 1e-6 - 2)
+              bad.push(`${hood} fp${fp} ${ph.w}x${ph.h} scroll ${x}: ${left.toFixed(1)}..${right.toFixed(1)}, ${foot.toFixed(1)} above the foot`);
+          }
+        }
+    expect(checked).toBeGreaterThan(300);
+    expect(bad.slice(0, 5)).toEqual([]);
+  });
+  test('the old place (the drawing’s left edge, 6 units above its foot) was off screen once a wide shop was scrolled, and under the home indicator', () => {
+    const v = sceneView(393, 650, sceneFrame(3));
+    const oldRight = v.fit.ox + (12 + RIVAL_SHOP.w) * v.fit.s - 120;
+    expect(oldRight).toBeLessThan(0);
+    expect((SCENE_H - (668 + RIVAL_SHOP.kerb)) * v.fit.s).toBeLessThan(34);
+  });
+});
+
+describe('wide shops fit the screen or scroll (D519)', () => {
+  const hoods = NEIGHBORHOODS.map((n) => n.id);
+  test('every neighbourhood and footprint: the room is inside [12, 381] at scroll 0 at the scale it is drawn at, or it is a wide shop, which scrolls', () => {
+    const bad: string[] = [];
+    for (const hood of hoods)
+      for (let fp = 0; fp < 5; fp++) {
+        const lay = layout(fp, Math.min(fp + 1, 6), 3, 2, FOOTPRINTS[fp].maxTables, 3, 1, undefined, isMirrored(hood));
+        const v = sceneView(W, 650, lay.frame);
+        const room = roomSpan(lay);
+        const x0 = v.fit.ox + room.x0 * v.fit.s;
+        const x1 = v.fit.ox + room.x1 * v.fit.s;
+        const inside = x0 >= VIEW_MARGIN - 1e-6 && x1 <= W - VIEW_MARGIN + 1e-6;
+        // a shop that fits does not scroll; one that does not fit is a wide shop with a scroll view (owner: wide shops scroll, they are not scaled)
+        if (!inside && !v.scrolls) bad.push(`${hood} fp${fp}: room ${x0.toFixed(0)}..${x1.toFixed(0)} on a shop that does not scroll`);
+        expect([hood, fp, wideFit({ x0: x0, x1: x1 }, W).scrolls]).toEqual([hood, fp, !inside]);
+      }
+    expect(bad).toEqual([]);
+  });
+  test('wideFit: a room that fits keeps its scale, a slightly wide one is scaled down to fit, a wide one stops at 0.88 and scrolls', () => {
+    expect(wideFit({ x0: 30, x1: 360 }, 393)).toEqual({ scale: 1, scrolls: false });
+    const slight = wideFit({ x0: 0, x1: 400 }, 393);
+    expect(slight.scale).toBeCloseTo(369 / 400, 9);
+    expect(slight.scrolls).toBe(false);
+    expect(wideFit({ x0: 0, x1: 453 }, 393)).toEqual({ scale: WIDE_MIN_SCALE, scrolls: true });
+    expect(wideFit({ x0: 0, x1: 570 }, 393).scale).toBe(WIDE_MIN_SCALE);
   });
 });

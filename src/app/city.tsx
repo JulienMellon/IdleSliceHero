@@ -125,7 +125,7 @@ export default function City() {
                     {fit.footprints[sh.footprint].name} · {fit.ovenGrades[sh.grade].name} ovens · {sh.drivers} driver{sh.drivers === 1 ? '' : 's'}
                   </Text>
                 </View>
-                <Text style={[styles.rowEps, !sh.managed && { color: C.tomato }]}>{sh.managed ? `${money(G.shopEarnings(game, n.id))}/s` : 'no manager'}</Text>
+                <Text style={[styles.rowEps, !sh.managed && { color: C.ink }]}>{sh.managed ? `${money(G.shopEarnings(game, n.id))}/s` : 'no manager'}</Text>
               </Pressable>
             );
           })}

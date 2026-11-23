@@ -27,6 +27,10 @@ import {
   STRIP,
   stripFont,
   stripKind,
+  markMissedZeroSeen,
+  missedZeroSeen,
+  PAYOFF,
+  resetMissedZeroSeen,
   stripLineHeight,
   stripModel,
   stripTextWidth,
@@ -83,7 +87,8 @@ describe('the bars', () => {
       const s = sheetModel(g, 'downtown', now);
       expect(s.bars.map((b) => b.key)).toEqual(['prep', 'ovens', 'counter']);
       expect(s.bars.map((b) => b.name)).toEqual(['Prep', 'Ovens', 'Counter']);
-      expect(s.customers.name).toBe('Customers');
+      expect(s.customers.name).toBe('Hungry crowd'); // S98: the row's name; the dashed line keeps "Customers"
+      expect(s.demand.label).toMatch(/^Customers /);
       const by = Object.fromEntries(s.bars.map((b) => [b.key, b]));
       expect(by.ovens.value).toBe('126/min');
       expect(by.ovens.frac).toBeLessThan(s.demand.frac);
@@ -121,20 +126,27 @@ describe('the bars', () => {
       expect(s.customers.deliveries + s.customers.seats).toBeCloseTo(s.demand.frac, 9);
     });
   });
-  test('D556: the "Missed reached 0" payoff plays only while Missed is 0 and the save has not recorded it, and once recorded never again', () => {
+  test('D556: the strip plays the "Missed reached 0" payoff once per shop per session, only while Missed is 0; the save records it too', () => {
     only(() => {
+      resetMissedZeroSeen();
       const bal = balanced();
-      const zero = sheetModel(bal.g, 'downtown', bal.now).zero;
-      expect(zero).toBe(true);
-      expect(sheetModel(shortOvens().g, 'downtown', shortOvens().now).zero).toBe(false);
+      expect(stripModel(bal.g, 'downtown', bal.now).zero).toBe(true);
+      expect(sheetModel(bal.g, 'downtown', bal.now).zero).toBe(true);
+      expect(stripModel(shortOvens().g, 'downtown', shortOvens().now).zero).toBe(false);
       expect(saveOf(bal.g).missedZero).toBe(false);
-      expect(missedZeroPlays(zero, saveOf(bal.g).missedZero)).toBe(true);
-      const after = markMissedZeroShown(bal.g); // what the store's `missedZeroShown` does once the line has played
+      expect(missedZeroPlays(true, missedZeroSeen('downtown'))).toBe(true);
+      markMissedZeroSeen('downtown');
+      expect(missedZeroPlays(true, missedZeroSeen('downtown'))).toBe(false);
+      expect(missedZeroPlays(true, missedZeroSeen('suburbs' as NeighborhoodId))).toBe(true); // another shop has its own
+      resetMissedZeroSeen();
+      expect(missedZeroSeen('downtown')).toBe(false);
+      const after = markMissedZeroShown(bal.g); // what the store's `missedZeroShown` does once the payoff has played
       expect(saveOf(after).missedZero).toBe(true);
-      expect(missedZeroPlays(sheetModel(after, 'downtown', bal.now).zero, saveOf(after).missedZero)).toBe(false);
       expect(markMissedZeroShown(after)).toBe(after);
       expect(missedZeroPlays(false, false)).toBe(false);
       expect(MISSED_ZERO_HOLD_S).toBe(10);
+      expect(PAYOFF.coins).toBe(6);
+      expect(t('report.missedZero')).toBe('Not one missed, cara. Like the old days.');
     });
   });
   test('a hand-tapped station says "You tap" on its bar, and no other bar does', () => {
@@ -209,6 +221,8 @@ describe('the sheet', () => {
       expect(s.timer).toMatch(/back to 60%/);
       expect(s.stateWord).toBe('Line’s gone cold');
       expect(stripKind(reportView(b.g, 'downtown', b.now))).toBe('cold');
+      // D554: the strip carries the neutral suffix for the cold line, as for the tip, from the same stripKind
+      expect(stripModel(b.g, 'downtown', b.now).text).toMatch(/ · Word’s spreading$/);
     });
   });
   test('nothing in the sheet names a station as the limit', () => {
@@ -226,7 +240,7 @@ describe('the strip', () => {
     only(() => {
       const { g, now } = shortOvens();
       const m = stripModel(g, 'downtown', now);
-      expect(m).toEqual({ show: true, text: 'Served 126/min · Missed 42/min', manager: MANAGERS.downtown.id });
+      expect(m).toEqual({ show: true, text: 'Served 126/min · Missed 42/min', manager: MANAGERS.downtown.id, zero: false, idle: false });
       expect(m.text).not.toMatch(/prep|oven|counter|driver|slammed|quiet|tip|cold/i);
       expect(reportLine(reportView(g, 'downtown', now))).toBe(m.text);
     });

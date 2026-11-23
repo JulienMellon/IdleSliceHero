@@ -37,9 +37,9 @@ Writer cards use `subagent_type: writer` with the same prompt, minus the API lin
    - `PARTIAL` / `BLOCKED` → read only the `Needs:` line. If it names a default in VERSION.md `Defaults`, send that default back to the same agent with SendMessage. If it needs a file outside the card's scope, send the request to the agent that owns the file (see `OWNERS.md`). Otherwise ask Julien one question.
    - **Wave notes.** After each wave, append to `docs/build/<version>/WAVE-NOTES.md` one line per thing a later card must know: a renamed or removed field, key, test id or export; a new selector or copy key; a `Needs:` item routed to a later card. Add `Wave notes: docs/build/<version>/WAVE-NOTES.md` to every later spawn prompt of the version, instead of retyping the notes as `extra:` lines. (S9: 15 follow-up messages, most of them for things an earlier wave already knew.)
    - **Copy lands in code.** When a writer card reports, the card that puts its strings into code must be named in VERSION.md, or in the writer card. If neither names one, add it to the next programmer's prompt in the same lane as the strings. (S9: W3's barks reached the game only in r2, so the r1 reviews judged a silent shop.)
-2. **Verify** (section 5). On a failure, send the failing lines (≤ 10) to the owning lane's programmer. Don't debug yourself.
+2. **Verify** (section 5). On a failure, send the failing lines (≤ 10) to the owning lane's programmer. Don't debug yourself. Keep the `Unverified:` IDs from each programmer report (a row with no shot that shows it); step 4 passes them to the critic as `Check first: <IDs>`.
 3. **Commit and push** (section 6).
-4. **Review.** Launch the critics VERSION.md lists for this round, in parallel, using the prompts in section 7. Don't change the working tree while the codecritic runs.
+4. **Review.** Launch the critics VERSION.md lists for this round, in parallel, using the prompts in section 7. Add `Check first: <the Unverified IDs from step 2>` to the critic's prompt when there are any. Don't change the working tree while the codecritic runs.
 5. **Gate.** Critic SATISFIED = 0 bugs, 0 major, ≤ 3 minor. Codecritic APPROVED = no blocker or high, ≤ 3 medium. Storycritic and audiocritic are advisory: their majors go into the fix round, their minors carry.
    - Gate met → step 7.
    - Not met and round < r3 → step 6.
@@ -50,7 +50,7 @@ Writer cards use `subagent_type: writer` with the same prompt, minus the API lin
    Fix round <rN>. Your notes are the rows with owner=<X> in the "## Open notes" table at the end of each of:
    docs/build/<version>/review-<rPrev>-*.md   (read only that table: sed -n '/^## Open notes/,$p' <file>)
    Fix the rows that concern the files of docs/build/<version>/<card file> and ignore the rest; say which you ignored.
-   Scope, rules and checks are that card's. Fix bugs and majors first. Report as usual.
+   Scope, rules and checks are that card's. Fix bugs and majors first. Then fix every row whose fix is one string, one format or one clamp, before any other minor. Report as usual. List each row you fixed with the shot that shows it; a row you could not see in a shot is `Unverified`, not fixed.
    ```
    **Two rounds per bug.** A row with `sev` = `bug` whose ID was in the one-line-per-bug returns of the two previous reviews of this version is not sent again as a note. Send this instead: `<ID> has survived two fixes. Before changing the code, write a test that fails for every state this element can be in (list the states in the test's name), then fix until it passes.`
    Then set `round` to the next value and go to step 2. **Fix rounds do not bump the version number.**
@@ -104,6 +104,7 @@ Critic:
 ```
 Review build <L>. Review set: screenshots/<L>/review/ (index.json marks each shot new, changed or noted). Report: screenshots/<L>/report.json.
 Open notes and next IDs: the "## Open notes" table at the end of <PREV>.
+Check first: <the `Unverified:` IDs from the programmers' reports; omit the line if none>.
 Effort: <full for r1 | medium re-check for r2 and r3: verdict on the open IDs plus anything new. A new minor on a shot marked neither changed nor noted is recorded as carried and does not count against the gate>.
 Write your critique to docs/build/<version>/review-<round>-critic.md and return only the summary your brief's "Review file" section defines.
 ```
@@ -140,3 +141,7 @@ From the S9 transcript analysis (`docs/build/LESSONS-S9.md`):
 - A card's **Files** section lists the tests and `scripts/fixtures/*.py` that check what the card renames or removes. Find them with `grep -rln "<name>" src scripts/fixtures`. In S9, E3, U3 and U4 each needed a follow-up round for files their card did not list.
 - Every writer card names the card that puts its strings into code, and that card lists the content file (`src/content/cities/*/voice.ts`, `src/content/copy/**`).
 - A session file that runs a second track (music) names that track's README sections to read for each answer Julien can give, so the orchestrator does not grep for the procedure.
+- **Reward moment.** Any card that ships a payoff (a win, a completion, a gift, an upgrade, a milestone) specifies the moment: centre stage, a count-up, coins flying to the cash, the cast reacting, nothing stacked on the moment's subject, and a fixture shot taken mid-moment. (Critic rounds 59 to 87: every payoff feature drew a [major] in its first round for shipping flat.)
+- **Size floor.** A scene detail that is meant to be read or told apart is at least 6 pt at 1x (393 pt wide). A state cue (a pile, a pose, a timer) is at least 10 pt. (D139, D169, D185, D193, D337, D458, D459, D548.)
+- **Variety check.** A card that multiplies content (a city, a collection, a cast, a set of looks) lists how each item differs by silhouette or prop, not only by colour, before any art is drawn. (D457, D490, D507, D508, D509.)
+- **Protected elements.** A card that adds anything drawn over the shop names the `cover` check (Q8, `src/components/scene/protected.ts`) in its Checks.

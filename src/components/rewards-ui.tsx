@@ -266,6 +266,7 @@ const StoryRow = memo(function StoryRow({
   spoken,
   go,
   shop,
+  next,
   onGo,
 }: Omit<StoryTask, 'key'> & { onGo?: (kind: StoryGo, shop: NeighborhoodId) => void }) {
   const press = useCallback(() => {
@@ -274,7 +275,12 @@ const StoryRow = memo(function StoryRow({
   return (
     <View style={styles.storyTask} testID={done ? 'story-task-done' : 'story-task'}>
       <View style={[styles.tickBox, done && styles.tickBoxOn]}>{done && <Text style={styles.tickMark}>✓</Text>}</View>
-      <View style={styles.storyTaskBody} accessible accessibilityLabel={spoken}>
+      <View style={styles.storyTaskBody} accessible accessibilityLabel={next ? `${spoken}, next on the goal bar` : spoken}>
+        {next && (
+          <Text style={styles.nextTag} testID="story-next">
+            On the goal bar
+          </Text>
+        )}
         <Text style={[styles.storyTaskLabel, done && styles.storyTaskDone]} numberOfLines={2}>
           {label}
         </Text>
@@ -538,6 +544,7 @@ export const TasksDrawer = memo(function TasksDrawer({
                       spoken={task.spoken}
                       go={task.go}
                       shop={task.shop}
+                      next={task.next}
                       onGo={onGo}
                     />
                   ))}
@@ -976,6 +983,7 @@ const styles = StyleSheet.create({
     ...shadow,
   },
   storyTaskBody: { flex: 1, gap: 4 },
+  nextTag: { fontFamily: F.bold, fontSize: 10, letterSpacing: 0.4, color: C.basil, textTransform: 'uppercase' },
   storyTaskLabel: { fontFamily: F.bold, fontSize: 15, color: C.ink },
   storyTaskDone: { color: C.inkSoft },
   tickBox: {

@@ -39,11 +39,13 @@ If something outside the listed files must change, stop and say what and why in 
 - Formatting: a hook runs Prettier on every file you Edit or Write, so a file can change after your edit; re-read before the next edit if one fails to match. Files you change through Bash (sed, heredocs, scripts) are not formatted by the hook: run `npx prettier --write <file>` on them.
 - Don't bump the version, commit or push. The orchestrator does that.
 
-## Report (≤ 12 lines, no preamble)
+## Report (≤ 12 lines, no preamble; the `Fixed:` and `Unverified:` blocks may run over)
 ```
 DONE | PARTIAL | BLOCKED
 Changed: path — one line on what changed (one line per file)
 Notes: ID → fixed / not fixed (why)
+Fixed: <ID> → <shot path> · <what changed in its pixels>   (one line per row; skip if the card has no notes)
+Unverified: <ID> → <reason>   (code-only, or not in any fixture; the orchestrator passes these to the critic as `Check first:`)
 Checks: command → pass/fail (key error line if failed)
 Needs: anything outside scope, or a decision for the owner
 ```

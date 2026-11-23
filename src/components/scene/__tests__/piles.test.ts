@@ -2,9 +2,29 @@
 // Card S3, step 1: the piles. How many items a backlog draws, and the budget on where they stand: no pile over a head, a badge, the WELCOME mat, the doorway,
 // the ladder's props or another pile, in any footprint, any crew and either floor plan.
 import { layout } from './draw-layout';
+import { cityOf } from '../../../content/cities';
+import { NONNA_TAKEOVER } from '../../../content/cities/home/fit';
+import { withFeatures } from '../../../engine/features';
+import { reportView, service } from '../../../engine/features/service';
+import * as G from '../../../engine/game';
 import { FIRST_WIDE_FOOTPRINT } from '../../../content/shop-layout';
 import { LINE } from '../../../engine/pipeline';
-import { PILE_KINDS, PILE_MAX, PILE_SCALE, PILE_STACK, PILE_STEPS, batchOf, pileBox, pileCount, pileParts, pileRect, pileSpots, type PileKind } from '../piles';
+import {
+  CALM_MAX,
+  PILE_KINDS,
+  PILE_MAX,
+  PILING_MIN,
+  PILE_SCALE,
+  PILE_STACK,
+  PILE_STEPS,
+  batchOf,
+  pileBox,
+  pileCount,
+  pileParts,
+  pileRect,
+  pileSpots,
+  type PileKind,
+} from '../piles';
 import { LADDER_LEVELS, ladderProps, badgeBand, doorRect, fixedPeople, hits, headBox, matRect } from '../ladder';
 import { doorwaySignRect } from '../stations';
 import { MAX_PINS } from '../ladder';
@@ -34,13 +54,17 @@ const fullLadder = (lay: Lay) =>
   });
 
 describe('pile counts (step 1)', () => {
-  test('0 to 5 items from the backlog against one batch; 5 means more than four batches', () => {
+  test('a balanced station shows 0 to 2 items from the backlog against one batch (D557: the first at 1.5 batches, never more than two)', () => {
     const b = 8;
-    expect([0, 0.4, 0.5, 0.6, 1, 1.5, 1.75, 1.8, 2.5, 2.6, 4, 4.01, 9].map((r) => pileCount(r * b, b))).toEqual([0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
-    // a station is `piling` from two batches (features/service.ts): that already shows three items
-    expect(pileCount(2 * b, b)).toBe(3);
-    expect(pileCount(4 * b + 0.01, b)).toBe(PILE_MAX);
-    expect(pileCount(4 * b, b)).toBeLessThan(PILE_MAX);
+    expect([0, 0.4, 1, 1.5, 1.6, 1.75, 1.8, 2, 2.6, 4.01, 9].map((r) => pileCount(r * b, b))).toEqual([0, 0, 0, 0, 1, 1, 2, 2, 2, 2, 2]);
+    expect(PILE_STEPS[0]).toBe(1.5);
+    expect(CALM_MAX).toBe(2);
+  });
+  test('a piling station shows 4 items or more, 5 past four batches', () => {
+    const b = 8;
+    expect([0, 0.4, 1, 1.6, 2, 2.6, 4, 4.01, 9].map((r) => pileCount(r * b, b, true))).toEqual([0, 4, 4, 4, 4, 4, 4, 5, 5]);
+    expect(PILING_MIN).toBeGreaterThan(PILE_STACK);
+    expect(pileCount(4 * b + 0.01, b, true)).toBe(PILE_MAX);
   });
   test('never negative, never over five, never NaN: an empty or odd input draws nothing', () => {
     for (const [backlog, batch] of [
@@ -50,22 +74,71 @@ describe('pile counts (step 1)', () => {
       [10, NaN],
       [Infinity, 4],
     ] as const) {
-      const n = pileCount(backlog, batch);
-      expect([backlog, batch, Number.isInteger(n) && n >= 0 && n <= PILE_MAX]).toEqual([backlog, batch, true]);
+      for (const piling of [false, true]) {
+        const n = pileCount(backlog, batch, piling);
+        expect([backlog, batch, Number.isInteger(n) && n >= 0 && n <= PILE_MAX]).toEqual([backlog, batch, true]);
+      }
     }
     expect(PILE_STEPS).toHaveLength(PILE_MAX);
   });
   test('a pile only grows as the backlog does', () => {
     let last = 0;
-    for (let q = 0; q <= 400; q++) {
-      const n = pileCount(q / 10, 5);
-      expect(n).toBeGreaterThanOrEqual(last);
-      last = n;
+    for (const piling of [false, true]) {
+      last = 0;
+      for (let q = 0; q <= 400; q++) {
+        const n = pileCount(q / 10, 5, piling);
+        expect(n).toBeGreaterThanOrEqual(last);
+        last = n;
+      }
     }
   });
   test('the batch is a tapped batch or what the shop moves in one cycle, as the line sizes it', () => {
     expect(batchOf(4, 1)).toBe(4);
     expect(batchOf(4, 10)).toBe(Math.ceil(10 * LINE.cycleSeconds));
+  });
+});
+
+describe('a balanced shop shows no dough stack (D557)', () => {
+  const T0 = 1_800_000_000_000;
+  /** Downtown after the tutorial, a head at every station, 10 drivers and 1 seating; the kitchen at the given levels. Played `seconds` seconds, then the piles it would draw. */
+  function piles(
+    levels: { prep: number; ovens: number; counter: number },
+    seconds: number,
+  ): (Record<'dough' | 'boxes' | 'bags', number> & { oldDough: number })[] {
+    let g = G.newGame(T0);
+    g = { ...g, seenScenes: [...g.seenScenes, NONNA_TAKEOVER.sceneId] };
+    g = { ...g, shops: { ...g.shops, downtown: { ...g.shops.downtown, built: true, managed: false, heads: G.allHeads(), drivers: 10, tables: 1, ...levels } } };
+    const city = cityOf(g);
+    const out: (Record<'dough' | 'boxes' | 'bags', number> & { oldDough: number })[] = [];
+    let now = T0;
+    for (let i = 0; i < seconds; i++) {
+      now += 1000;
+      g = G.playTick(g, 1, now);
+      if (i < 40) continue;
+      const shop = g.shops.downtown;
+      const batch = batchOf(G.tapBatch(shop), G.shopRate(shop, g.vehicle, city.fit));
+      const sym = reportView(g, 'downtown', now).symptoms;
+      out.push({
+        dough: pileCount(shop.line.prepped, batch, sym.prep === 'piling'),
+        oldDough: [0.5, 1, 1.75, 2.5, 4].filter((t) => shop.line.prepped / batch > t).length,
+        boxes: pileCount(shop.line.baked, batch, sym.ovens === 'piling'),
+        bags: pileCount(shop.line.boxed, batch, sym.counter === 'piling'),
+      });
+    }
+    return out;
+  }
+  test('with every station at one level the dough pile is 0 or 2 discs at most in every second, and the other piles too', () => {
+    const seen = withFeatures([service], () => piles({ prep: 10, ovens: 10, counter: 10 }, 120));
+    expect(seen.length).toBeGreaterThan(60);
+    expect(Math.max(...seen.map((p) => p.dough))).toBeLessThanOrEqual(CALM_MAX);
+    expect(Math.max(...seen.map((p) => p.boxes))).toBeLessThanOrEqual(CALM_MAX);
+    expect(Math.max(...seen.map((p) => p.bags))).toBeLessThanOrEqual(CALM_MAX);
+    // the check can fail: the old steps (the first at half a batch, a third item at two) drew a stack of 3 for this balanced shop
+    expect(Math.max(...seen.map((p) => p.oldDough))).toBeGreaterThan(CALM_MAX);
+  });
+  test('a shop short on ovens piles the dough above 3 discs in every second', () => {
+    const seen = withFeatures([service], () => piles({ prep: 20, ovens: 1, counter: 20 }, 120));
+    expect(Math.min(...seen.map((p) => p.dough))).toBeGreaterThan(3);
   });
 });
 

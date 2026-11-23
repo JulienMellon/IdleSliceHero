@@ -4,17 +4,29 @@
 // depth a managed shop's walkers may use (crew.ts). One rule, here; the rest of the scene reads the lifted layout.
 import { STRIP } from '../report/report-model';
 import { SIDEWALK_ROW } from '../tap-targets';
-import { CURB_Y, SC, TY, unprojectX } from './projection';
+import { CURB_Y, SC, SCENE_H, TY, unprojectX } from './projection';
 import type { Layout } from './layout';
 
 /** Clear air (scene units) kept between a figure's feet (and their one-pixel bob) and the strip. */
 export const STRIP_AIR = 2;
 
-/** Scene y of the top of the strip's drawn pill, for a scene drawn at scale `s` (the area's bottom is the scene's bottom; the touch box above the pill is transparent). */
+/**
+ * Scene y of the top of the strip's drawn pill when it stands over the sidewalk row (a shop with a manager), for a scene drawn at scale `s` (the area's bottom is the scene's bottom; the
+ * touch box above the pill is transparent). An unmanaged shop's strip stands at the top of the area (`stripRect`), nowhere near a guest's feet, so there is no top to keep clear of: the
+ * kerb line, below everything a guest can stand on.
+ */
 export function stripTop(s: number, idle: boolean): number {
-  const row = idle ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight;
-  const raise = idle ? SIDEWALK_ROW.raiseIdle : SIDEWALK_ROW.raiseManaged;
-  return CURB_Y - (raise + row + STRIP.above + STRIP.pill) / s;
+  if (idle) return CURB_Y;
+  return CURB_Y - (SIDEWALK_ROW.raiseManaged + SIDEWALK_ROW.cardHeight + STRIP.above + STRIP.pill) / s;
+}
+
+/**
+ * The strip's drawn pill in scene units, for a scene drawn at scale `s` in an area `h` pt tall: over the sidewalk row with a manager, at the top of the area without one
+ * (`top` pt below the area's top: `STRIP.top`, or `idleStripTop(true)` while the special-order chip is up).
+ */
+export function stripRect(s: number, idle: boolean, h: number, top: number = STRIP.top): { y0: number; y1: number } {
+  const y0 = idle ? SCENE_H - (h - top) / s : stripTop(s, false);
+  return { y0, y1: y0 + STRIP.pill / s };
 }
 
 /** The lowest room depth y (smaller = nearer the viewer) whose feet land at scene y `top - STRIP_AIR` or higher: P's y at z = 0 is TY + (492 - 1.25 y) SC. */

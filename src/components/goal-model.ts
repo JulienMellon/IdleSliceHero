@@ -309,7 +309,10 @@ export function chapterGoal(g: GameState, lastSceneEndPlay: number | null = null
 // ---------- the cheer (D541) ----------
 
 /** How long the chapter ribbon stays up (ms), after it has faded in. */
-export const CHEER_RIBBON_MS = 1800;
+export const CHEER_RIBBON_MS = 900;
+/** The ribbon's fade in and fade out (ms). D544: in + stay + out is under `CHEER_RIBBON_TOTAL_MAX`, so it is gone before it hides the shop chips for long. */
+export const CHEER_RIBBON_FADE = { in: 220, out: 300 } as const;
+export const CHEER_RIBBON_TOTAL_MAX = 1500;
 
 /** What the bar celebrates when its task changes: a task done (a toast), or the chapter's last (a ribbon). */
 export interface GoalCheer {

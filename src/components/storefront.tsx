@@ -8,7 +8,7 @@
 // Everything is drawn in a 393×680 "scene" box that is scaled to cover the available area,
 // anchored to the bottom so the sidewalk and street are always visible (taller screens show more sky).
 import { memo, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactElement } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Platform, Pressable, ScrollView, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { F } from '../theme';
 import { cityOf, hoodIds, layerOf, sceneHood } from '../content/cities';
@@ -48,6 +48,7 @@ import { FasciaSign } from './scene/facade';
 import { fasciaSignBox, overlaySpan, slideInto, visibleSpan } from './scene/viewport';
 import { SceneViewContext } from './scene/view-context';
 import { gameNow } from '../engine/clock';
+import { publishProtected } from './scene/protected';
 import { floorYFor, liftLayout, stripTop } from './scene/strip-clear';
 import { trafficFor } from './scene/street-props';
 import { rivalOpen } from '../engine/features/layers/rival';
@@ -61,7 +62,7 @@ import { LINE, STATIONS_IN_ORDER, type Station } from '../engine/pipeline';
 import { HEAD_BARKS } from '../content/heads';
 import { getFeature } from '../engine/features';
 import { counterattack } from '../engine/features/counterattack';
-import { coachTargets, hintsAllowed } from '../engine/tutorial';
+import { coachTargets, hintsAllowed, shopTutorialDone } from '../engine/tutorial';
 import { gainAnchor, ovenGain } from './scene/oven-gain';
 import type { BarkTable } from '../content/cities/types';
 import { reportActive, reportView, symptomAsks } from '../engine/features/service';
@@ -394,9 +395,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     [lay, art, placed],
   );
   const batch = batchOf(Game.tapBatch(shop), rate);
-  const nDough = live ? pileCount(line.prepped, batch) : 0;
-  const nBoxes = live ? pileCount(line.baked, batch) : 0;
-  const nBags = live ? pileCount(line.boxed, batch) : 0;
+  // a station that is not piling (the report's symptom) shows two items at most (D557: a balanced shop's dough stack read as a pile)
+  const nDough = live ? pileCount(line.prepped, batch, rep.symptoms.prep === 'piling') : 0;
+  const nBoxes = live ? pileCount(line.baked, batch, rep.symptoms.ovens === 'piling') : 0;
+  const nBags = live ? pileCount(line.boxed, batch, rep.symptoms.counter === 'piling') : 0;
   // while a station is piling its top item rocks (two steps, about 3 times a second): the pile's own state, readable at a glance (D548)
   const rockStep = Math.floor(clock * 6) % 2 === 0 ? 1 : 2;
   const wobD = rep.symptoms.prep === 'piling' ? rockStep : 0;
@@ -705,11 +707,19 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   useEffect(() => {
     measureOrigin();
   }, [lay, fit.s, fit.ox, fit.oy, width, height]);
+  // the layout probe's protected rects (scene/protected.ts): web only (the screenshot build), a getter so a scroll needs no refresh
+  useEffect(
+    () =>
+      Platform.OS === 'web'
+        ? publishProtected(() => (coachIn.current ? { ...coachIn.current, scrollX: scrollX.current, origin: origin.current } : null))
+        : undefined,
+    [],
+  );
   useEffect(() => {
     reporter.start();
     return () => reporter.stop();
   }, [reporter]);
-  coachRuns.current = game.tutorial >= 1 && game.tutorial < Game.TUTORIAL_DONE;
+  coachRuns.current = game.tutorial >= 1 && !shopTutorialDone(game);
   const askRef = useRef<(t: ScrollTarget) => void>(() => {});
   askRef.current = (t) => {
     if (!view.scrolls) return;

@@ -1,9 +1,13 @@
+import { cityOf } from '../../../content/cities';
+import { stepsFor } from '../../../engine/tutorial';
+import type { CoachTargetId } from '../targets';
 import {
   blockers,
   CARD,
   cardRect,
   CUT,
   HAND,
+  HAND_NUDGE,
   handPose,
   HUD_ZONE,
   leaders,
@@ -282,5 +286,83 @@ describe('the skippable step: a second tap outside the lit spot skips (C191)', (
   test('two events of one touch count once, and a tap long after the first starts over', () => {
     expect(outsideTap(1000, 1010)).toEqual({ skip: false, last: 1000 });
     expect(outsideTap(1000, 1000 + SKIP_TAP.maxMs + 1)).toEqual({ skip: false, last: 1000 + SKIP_TAP.maxMs + 1 });
+  });
+});
+
+// D542 (with D525, D531): the hand never covers a number, a label or another control. Every target a coach step names has a row here: where it is on the phone,
+// and the things the hand must keep off (a dial's digit, the Drivers card beside All, the Story tab's reward row). A `Record` over the ids, so a new target fails tsc until it has a row.
+type Keep = { name: string; screen: Screen; safe: Safe; target: Rect; clear: Rect[] };
+const KEEP: Record<CoachTargetId, Keep[]> = {
+  'station:prep': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(24, 330, 128, 440), clear: [r(40, 300, 76, 328)] }],
+  'station:oven': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(150, 320, 250, 440), clear: [r(176, 292, 212, 318)] }],
+  'station:counter': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(270, 340, 370, 440), clear: [] }],
+  'dial:prep': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(40, 300, 76, 328), clear: [r(40, 300, 76, 328)] }],
+  'dial:oven': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(176, 292, 212, 318), clear: [r(176, 292, 212, 318)] }],
+  'dial:counter': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(300, 312, 336, 338), clear: [r(300, 312, 336, 338)] }],
+  'ovens:all': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(340, 646, 386, 701), clear: [r(250, 646, 336, 701)] }],
+  'hud:cash': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(96, 62, 256, 106), clear: [] }],
+  'hud:goal': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(12, 112, 300, 148), clear: [] }],
+  'hud:store': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(300, 62, 380, 100), clear: [] }],
+  'store:starter': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(16, 220, 377, 520), clear: [] }],
+  'walk:prep': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(20, 646, 108, 701), clear: [] }],
+  'walk:ovens': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(108, 646, 196, 701), clear: [] }],
+  'walk:counter': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(196, 646, 284, 701), clear: [] }],
+  'walk:drivers': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(250, 646, 336, 701), clear: [] }],
+  'walk:all': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(340, 646, 386, 701), clear: [r(250, 646, 336, 701)] }],
+  'drawer:hire:prep': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(10, 420, 383, 500), clear: [] }],
+  // the Story tab: "Chapter N" and the title on top, the tasks, the reward row ("Next: Chapter 2", 160 pt of text) at the foot
+  'tasks:story': [
+    { name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(10, 330, 383, 560), clear: [r(24, 520, 184, 548), r(24, 336, 140, 380)] },
+    { name: 'SE', screen: SE, safe: SE_SAFE, target: r(10, 250, 365, 420), clear: [r(24, 385, 184, 412), r(24, 256, 140, 300)] },
+  ],
+  'tasks:close': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(330, 270, 376, 314), clear: [] }],
+  'report:strip': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(12, 700, 381, 740), clear: [] }],
+  'report:demand': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(20, 400, 373, 430), clear: [] }],
+  'report:close': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(330, 120, 376, 164), clear: [] }],
+  'report:bar:prep': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(20, 300, 373, 340), clear: [] }],
+  'report:bar:ovens': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(20, 346, 373, 386), clear: [] }],
+  'report:bar:counter': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(20, 392, 373, 432), clear: [] }],
+  'report:bar:drivers': [{ name: 'phone', screen: PHONE, safe: PHONE_SAFE, target: r(20, 438, 373, 478), clear: [] }],
+};
+
+describe('the hand keeps off numbers, labels and other controls, for every coach step (D542)', () => {
+  const rows = (Object.entries(KEEP) as [CoachTargetId, Keep[]][]).flatMap(([id, list]) => list.map((k) => ({ id, ...k })));
+
+  test('every target a tutorial step names has a row', () => {
+    const named = new Set(stepsFor(cityOf({})).flatMap((st) => st.targets));
+    expect(named.size).toBeGreaterThan(10);
+    for (const id of named) expect(KEEP[id]?.length).toBeGreaterThan(0);
+  });
+
+  test.each(rows)('$id on the $name: in tap, wait and look the hand covers none of what must stay readable', ({ id, screen, safe, target, clear }) => {
+    for (const mode of ['tap', 'wait', 'look'] as const) {
+      const lay = overlayLayout([target], screen, safe, mode, [id])!;
+      const hand = handBox(lay.hand.x, lay.hand.y);
+      for (const c of clear) expect(meets(hand, c)).toBe(false);
+      expect(inside(hand, screen)).toBe(true);
+      expect(meets(hand, cardRect(lay.card, screen))).toBe(false);
+    }
+  });
+
+  test('the Story tab hand sits 24 pt right and below the usual rest, which covered the reward row', () => {
+    const tab = r(10, 330, 383, 560);
+    const plain = handPose(padCut(tab), PHONE);
+    const nudged = overlayLayout([tab], PHONE, PHONE_SAFE, 'look', ['tasks:story'])!.hand;
+    expect(HAND_NUDGE['tasks:story']).toEqual({ dx: 24, dy: 24 });
+    expect(nudged.x).toBe(plain.x + 24);
+    expect(nudged.y).toBe(plain.y + 24);
+    expect(meets(handBox(plain.x, plain.y), r(24, 520, 184, 548))).toBe(true);
+  });
+});
+
+describe('a skip needs two taps on the same step (C193, T137)', () => {
+  test('a tap outside the lit spot on step 15 does not pair with the first tap of step 16: the overlay forgets the last tap when the step changes, so that one only nudges', () => {
+    const onStep15 = outsideTap(null, 1000);
+    expect(onStep15.skip).toBe(false);
+    // step 16 begins 2 s later; without the reset the first tap there would skip the Store intro
+    expect(outsideTap(onStep15.last, 3000).skip).toBe(true);
+    const afterReset = outsideTap(null, 3000);
+    expect(afterReset.skip).toBe(false);
+    expect(outsideTap(afterReset.last, 3600).skip).toBe(true);
   });
 });

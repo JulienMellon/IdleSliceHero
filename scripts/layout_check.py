@@ -6,7 +6,15 @@ scripts/layout_allow.json accepts, and writes screenshots/<label>/layout.json:
   {"new": n, "findings": [{kind, key, shots, detail}], "allowed": m, "stale": [allowlist entries that matched nothing]}
 `findings` lists the new ones only. It prints one line: `layout: <n> new, <m> allowed, <k> stale`. Exit code 0 either way (the reader decides).
 
-The probe's four kinds (see LAYOUT_PROBE in shots_lib.py): tap (drawn under 44 px), text (under 10 px), clip (cut off), edge (off the screen).
+The probe's five kinds (see LAYOUT_PROBE in shots_lib.py): tap (drawn under 44 px), text (under 10 px), clip (cut off), edge (off the screen), cover (Q8: something
+opaque lies over the WELCOME mat, the entrance or a station worker's face).
+A cover finding's key is `<protected id> | <testid of the top element>` (ids: mat, door, face-cook, face-baker, face-counter). The probe reads window.__protected, the rects the
+storefront publishes (src/components/scene/protected.ts), samples a 5x3 grid in each with elementFromPoint, and counts a point as covered when the element on top is outside the
+scene ([data-testid="shop"]), paints something (a background, border, image, own text or an svg shape; a transparent touch box does not) and is not in a modal root. More than 10% of the
+points covered is a finding. A modal root is an ancestor of the top element that has aria-modal="true" or role="dialog", or a data-testid ending in -sheet, -scrim, -popup or -modal, or that is 90% of the
+app's (#root) width and half its height, takes touches (pointer-events is not none) and does not contain the scene: a drawer, or a full-screen sheet or scrim (the tasks drawer, the gift
+calendar, the night oven, the offline popup, the coach scrim) is expected to cover it.
+A cover entry in the allowlist needs a reason. A real overlap is written up as a critic row and listed with "REAL overlap" at the start of its reason until it is fixed; delete the entry then.
 A finding is one (kind, key) over all the shots; `shots` says where it was seen and `detail` what was measured.
 
 The allowlist is a list of {kind, key, reason, card} (and for a tap: optionally `drawn` and `proof`):

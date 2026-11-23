@@ -2,7 +2,8 @@
 import { RIVAL } from '../../../../content/layers';
 import type { NeighborhoodId } from '../../../../content/types';
 import type { RivalView } from '../../../../engine/features/layers/rival';
-import { CURB_Y, SCENE_H, SCENE_W, P } from '../../../scene/projection';
+import { CURB_Y, SCENE_H, SCENE_W, P, sceneFrame, sceneView } from '../../../scene/projection';
+import { rivalPlace } from '../../../scene/viewport';
 import { layout } from '../../../scene/layout';
 import { SIDEWALK_ROW, TAP } from '../../../tap-targets';
 import { STRIP } from '../../../report/report-model';
@@ -41,35 +42,38 @@ describe('the tag', () => {
 });
 
 describe('the shop across the street', () => {
-  test('it sits below the curb, inside the scene, away from the mat, the sidewalk row and the report strip', () => {
-    const r = rivalRect();
-    expect(r.y0).toBeGreaterThan(CURB_Y + 8);
-    expect(r.y1).toBeLessThanOrEqual(SCENE_H);
-    // drawn whole: its foot and kerb are on screen (D481)
-    expect(RIVAL_SHOP.top + RIVAL_SHOP.h + RIVAL_SHOP.kerb).toBeLessThanOrEqual(SCENE_H);
-    expect(r.x0).toBeGreaterThanOrEqual(0);
-    expect(r.x1).toBeLessThanOrEqual(SCENE_W);
-    // D481: at 60% of its art, the kerb ends clear of the scene's last row (the old shop sat flush on it), sign text still 10 pt or more
+  // the places a phone gives the scene: the usual one, a short narrow one and a tall wide one (the fit is the larger of width / 393 and height / 680)
+  const fits = [
+    { w: 393, h: 650 },
+    { w: 375, h: 470 },
+    { w: 430, h: 760 },
+  ].map(({ w, h }) => sceneView(w, h, sceneFrame(1)).fit);
+  test('it sits below the curb, inside the scene and above the home indicator, away from the mat, the sidewalk row and the report strip', () => {
+    for (const fit of fits) {
+      const r = rivalRect(rivalPlace(fit, SCENE_H, null, RIVAL_SHOP));
+      expect(r.y0).toBeGreaterThan(CURB_Y + 8);
+      // drawn whole: its foot and kerb are on screen and 34 pt or more above the screen's last row (D481)
+      expect((SCENE_H - r.y1) * fit.s).toBeGreaterThanOrEqual(34);
+      expect(fit.ox + r.x0 * fit.s).toBeGreaterThanOrEqual(0);
+      expect(fit.ox + r.x1 * fit.s).toBeLessThanOrEqual(fit.ox * 2 + SCENE_W * fit.s);
+    }
+    // D481: at 60% of its art, sign text still 10 pt or more
     expect(RIVAL_SHOP.scale).toBe(0.6);
     expect(RIVAL_SHOP.w).toBeCloseTo(RIVAL_SHOP.art.w * RIVAL_SHOP.scale, 0);
     expect(RIVAL_SHOP.h).toBeCloseTo(RIVAL_SHOP.art.h * RIVAL_SHOP.scale, 0);
-    expect(r.y1).toBeLessThanOrEqual(SCENE_H - 6);
     expect(RIVAL_SHOP.signFont).toBeGreaterThanOrEqual(10);
-    // D481: it stands on a pavement slab (the far kerb) wider than the shop that rises behind its foot, whole inside the scene
+    // D481: it stands on a pavement slab (the far kerb) wider than the shop that rises behind its foot
     expect(RIVAL_SHOP.slab).toBeGreaterThanOrEqual(6);
     expect(RIVAL_SHOP.slabRise).toBeGreaterThan(0);
-    expect(RIVAL_SHOP.x - RIVAL_SHOP.slab).toBeGreaterThanOrEqual(0);
-    expect(RIVAL_SHOP.x + RIVAL_SHOP.w + RIVAL_SHOP.slab).toBeLessThanOrEqual(SCENE_W);
     expect(RIVAL_SHOP.kerb).toBeGreaterThanOrEqual(5);
-    // D481: the shop's foot is on the far pavement band, which starts below the near road's lane line and above the shop's top
-    expect(FAR_KERB.top).toBeGreaterThan(CURB_Y + 40);
-    expect(FAR_KERB.top).toBeLessThan(RIVAL_SHOP.top + RIVAL_SHOP.h);
-    expect(FAR_KERB.top + FAR_KERB.height).toBeLessThanOrEqual(RIVAL_SHOP.top + RIVAL_SHOP.h);
+    // D481: the shop's foot is on the far pavement band, whose kerb line is above the foot and clear of the shop's roof
+    expect(FAR_KERB.rise).toBeGreaterThan(RIVAL_SHOP.slabRise);
+    expect(FAR_KERB.rise + FAR_KERB.height).toBeLessThanOrEqual(RIVAL_SHOP.h + RIVAL_SHOP.kerb);
     for (let fp = 0; fp < 5; fp++) {
       const lay = layout(fp, 2, 2, 2, 4, 3, 1);
-      // the doormat is on the sidewalk, over 100 scene units above the road
+      // the doormat is on the sidewalk, well above the road
       const matLow = Math.max(P(lay.door.x0, -22)[1], P(lay.door.x1, -22)[1]);
-      expect(matLow).toBeLessThan(r.y0 - 60);
+      expect(matLow).toBeLessThan(rivalRect(rivalPlace(fits[0], SCENE_H, null, RIVAL_SHOP)).y0 - 60);
     }
     // the sidewalk row and the strip stand above the curb line (tap-targets.ts: the row's foot is raised off it)
     expect(SIDEWALK_ROW.raiseManaged).toBeGreaterThanOrEqual(0);

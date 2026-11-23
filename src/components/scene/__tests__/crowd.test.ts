@@ -45,6 +45,8 @@ import { PILL_UMBRELLA_AIR, UMBRELLA_TOP, patioSortYs } from '../patio-deck';
 import { doorwaySignRect, placePops, popPlace, popRect, popsCover, popWidth, staffFaces, stationRects } from '../stations';
 import { bodyBy, chairBack, SEATED_TORSO_HALF } from '../geometry';
 import { quantArm, quantStep } from '../quantise';
+import { floorYFor, liftLayout, stripTop } from '../strip-clear';
+import { WALKOUT_EVERY } from '../walkout';
 
 const DRIVER_SLOTS = [2, 2, 3, 3, 4];
 const FPS = 15;
@@ -1322,5 +1324,75 @@ describe('the waiting pill over the patio (D450)', () => {
         }
     }
     expect(seen).toBeGreaterThan(50);
+  });
+});
+
+// ---------- v5.23b (S6, D552): the walk-out and the idle drivers on a screen where the report strip is up ----------
+// The budgets above run on the plain layout. The game lifts it clear of the strip (strip-clear.ts `liftLayout`), and the walk-out and the idle drivers were never
+// measured there: the customer from the door stood and walked on the plain DOOR_OUT_Y, behind the strip, and the lift moved the idle drivers off the door line the
+// diners keep.
+describe('the walk-out and the idle drivers above the report strip (D552)', () => {
+  const FITS = [0.9, 1, 1.1, 1.25];
+  const WO_FPS = 15;
+  const lifted = (fp: number, mirrored: boolean, s: number) =>
+    liftLayout(layout(fp, Math.min(fp + 1, 6), 3, 2, 6, DRIVER_SLOTS[fp], 1, undefined, mirrored), floorYFor(stripTop(s, false)));
+  /** The frames of two walk-out cycles on a lifted layout, the line full (4 hungry diners, 37 idle drivers). */
+  function* walkFrames() {
+    for (const mirrored of [false, true])
+      for (let fp = 0; fp < 5; fp++)
+        for (const s of FITS) {
+          const lay = lifted(fp, mirrored, s);
+          const pal = seatPalette(1, 2, 8, 6, lay.tables.length);
+          for (let f = 0; f < 2 * WALKOUT_EVERY * WO_FPS; f++) {
+            const { cast } = buildCast({
+              lay,
+              shop: { drivers: 12, tables: 40, prep: 120 },
+              running: true,
+              pace: 1.5,
+              clock: f / WO_FPS,
+              shopSeed: 97 * (fp + 3),
+              nIdx: 1,
+              pal,
+              crew: emptyCrew(),
+              queue: { diners: 4, drivers: 37 },
+              symptoms: { floor: 'walkout' },
+            });
+            yield { name: `fp${fp}${mirrored ? 'm' : ''} s${s} f${f}`, lay, s, cast };
+          }
+        }
+  }
+  test('the customer who walks out keeps his feet above the strip in every frame (his body shows, not just his head)', () => {
+    const bad: string[] = [];
+    let walkers = 0;
+    for (const { name, s, cast } of walkFrames()) {
+      const top = stripTop(s, false);
+      for (const c of cast)
+        if (c.props.frown && (c.props.o ?? 1) > 0.05) {
+          walkers++;
+          const feet = P(c.props.x, c.props.y)[1];
+          if (feet > top) bad.push(`${name} ${c.key} feet ${feet.toFixed(1)} > strip ${top.toFixed(1)}`);
+        }
+    }
+    expect(walkers).toBeGreaterThan(500);
+    expect([...new Set(bad)].slice(0, 5)).toEqual([]);
+  });
+  test('the idle drivers, the diners in the line and the customer at the door never overlap by more than 15% of the smaller box in any frame; the one walking covers another (> 50%) in under 15% of frames', () => {
+    const bad: string[] = [];
+    const covered = new Map<string, { frames: number; hit: number }>();
+    for (const { name, cast } of walkFrames()) {
+      const [config] = name.split(' f');
+      const q = cast.filter((c) => c.role === 'queue' && (c.props.o ?? 1) > 0.05).map((c) => ({ c, b: box(c), moving: !!c.props.step }));
+      const n = covered.get(config) ?? { frames: 0, hit: 0 };
+      n.frames++;
+      if (q.some((a) => a.moving && q.some((o) => o !== a && overlap(a.b, o.b) > 0.5))) n.hit++;
+      covered.set(config, n);
+      q.forEach((a, i) =>
+        q.slice(i + 1).forEach((o) => {
+          if (!a.moving && !o.moving && overlap(a.b, o.b) > 0.15) bad.push(`${name} ${a.c.key} x ${o.c.key} ${(overlap(a.b, o.b) * 100).toFixed(0)}%`);
+        }),
+      );
+    }
+    for (const [config, n] of covered) if (n.hit / n.frames >= 0.15) bad.push(`${config} walker covers another in ${n.hit}/${n.frames} frames`);
+    expect([...new Set(bad)].slice(0, 5)).toEqual([]);
   });
 });

@@ -310,7 +310,7 @@ export function buildCast({
         seed: sd,
         shirt: GUEST_SHIRTS[pal.walkShirt(2, 5)],
         hair: HAIR_COLORS[pal.walkHair(2, 5)],
-        flip: fl(true),
+        flip: fl(w.away),
         step: w.walking ? walkStep(2) : 0,
         blink: blinkAt(sd),
         mood: 'frown',

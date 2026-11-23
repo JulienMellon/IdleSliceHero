@@ -1,6 +1,7 @@
 import { newGame } from '../../../engine/game';
 import { type CoachStep, tutorialNote } from '../../../engine/tutorial';
-import { coachView, DRAWER_STEP, fallbackStep, LAST_STEP, STARTER_STEP, STORE_STEP } from '../coach-view';
+import { Z } from '../../z-order';
+import { coachView, DRAWER_STEP, fallbackStep, LAST_STEP, STARTER_STEP, STORE_STEP, TASKS_STEP } from '../coach-view';
 
 const step = (id: number, mode: CoachStep['mode'], targets: CoachStep['targets'] = ['station:prep']): CoachStep => ({
   id,
@@ -103,5 +104,35 @@ describe('the notes the screen sends', () => {
   test('a look note does not end the drawer step', () => {
     const g = at(DRAWER_STEP);
     expect(tutorialNote(g, 'look')).toBe(g);
+  });
+});
+
+describe('step 8, the task list (A44, T125)', () => {
+  const at = (tutorial: number) => ({ ...newGame(0), tutorial });
+  const list = step(TASKS_STEP, 'look', ['tasks:story']);
+
+  test('its look turns free once seen, so the list can be read and closed; a look seen on another step does not carry over', () => {
+    expect(coachView(list, { ...screen, lookedAt: TASKS_STEP })?.mode).toBe('free');
+    expect(coachView(list, { ...screen, lookedAt: 0 })?.mode).toBe('look');
+    expect(coachView(list, { ...screen, lookedAt: 7 })?.mode).toBe('look');
+  });
+
+  test('after a relaunch with the list closed the step blocks nothing: it is a look (the overlay draws nothing without its target) and opening then closing the list ends it', () => {
+    expect(coachView(list, screen)?.mode).toBe('look');
+    const g = at(TASKS_STEP);
+    expect(tutorialNote(g, 'look')).toBe(g);
+    expect(tutorialNote(g, 'tasks-open')).toBe(g);
+    expect(tutorialNote(g, 'tasks-closed').tutorial).toBeGreaterThan(TASKS_STEP);
+  });
+
+  test('the list opening ends step 7', () => {
+    expect(tutorialNote(at(7), 'tasks-open').tutorial).toBeGreaterThan(7);
+  });
+});
+
+describe('the coach sits under every sheet and the offline popup (T129)', () => {
+  test('the coach layer is over the HUD and under the gift, the night oven, the sheets and the offline popup, so none of them is ever behind its scrim', () => {
+    expect(Z.coach).toBeGreaterThan(Z.hud);
+    for (const above of [Z.gift, Z.nightOven, Z.sheets, Z.offline, Z.coins]) expect(Z.coach).toBeLessThan(above);
   });
 });
