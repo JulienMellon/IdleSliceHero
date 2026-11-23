@@ -10,13 +10,12 @@
 // Pure (no react-native), so jest can test it. Everything in draw space (the `lay` the drawing code uses) unless a function says it is in page pixels.
 import type { NeighborhoodId } from '../../content/types';
 import { SIDEWALK_ROW } from '../tap-targets';
-import { STRIP } from '../report/report-model';
 import { bboxOf, doorRect, fixedPeople, ladderProps, matRect, propRect, signRect, type LadderInput } from './ladder';
 import type { Layout } from './layout';
 import { neonSpot, plaqueRect } from './cosmetics';
 import { UMBRELLA_TOP, deckBox, patioDeck } from './patio-deck';
 import { CURB_Y, P, sceneToScreen, type SceneFit } from './projection';
-import { stripTop } from './strip-clear';
+import { stripRect } from './strip-clear';
 import type { Rect } from './stations';
 
 /** The most of a protected rect that may lie under a cover (a share of its area). */
@@ -57,6 +56,8 @@ export interface CoverInputs {
   idleShop: boolean;
   /** The scene's scale on this screen (`sceneView(...).fit.s`): where the strip and the sidewalk row stand in scene units. */
   s: number;
+  /** The scene area's height (pt): an unmanaged shop's strip stands at its top, so where that lies in scene units depends on it. */
+  h: number;
 }
 
 /**
@@ -79,11 +80,12 @@ export function sceneCovers(lay: Layout, inp: CoverInputs): Named[] {
     out.push(named('patio', { x0: d.x0, x1: d.x1, y0: P(t.x, t.y, UMBRELLA_TOP)[1], y1: d.y1 }));
   }
   out.push(named('neon', neonSpot(lay).rect), named('plaque', plaqueRect(lay)));
-  const top = stripTop(inp.s, inp.idleShop);
+  const strip = stripRect(inp.s, inp.idleShop, inp.h);
   const raise = inp.idleShop ? SIDEWALK_ROW.raiseIdle : SIDEWALK_ROW.raiseManaged;
+  const rowH = inp.idleShop ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight;
   const wide = { x0: -1e6, x1: 1e6 };
-  out.push(named('strip', { ...wide, y0: top, y1: top + STRIP.pill / inp.s }));
-  out.push(named('row', { ...wide, y0: top + (STRIP.pill + STRIP.above) / inp.s, y1: CURB_Y - raise / inp.s }));
+  out.push(named('strip', { ...wide, ...strip }));
+  out.push(named('row', { ...wide, y0: CURB_Y - (raise + rowH) / inp.s, y1: CURB_Y - raise / inp.s }));
   return out;
 }
 

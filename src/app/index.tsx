@@ -464,7 +464,10 @@ export default function GameScreen() {
         {/* upgrade row standing on the sidewalk */}
         <SidewalkRow game={game} id={id} idleShop={idleShopHere} bottom={rowBottom} onBuy={buy} onOpen={openDrawer} quiet={coach?.id === 1} />
         {/* v5.16 (P1): the shop report's strip, one 44 pt row directly above the sidewalk row */}
-        <ReportSlots items={SHOP_REPORT} bottom={rowBottom + (idleShopHere ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight) + STRIP.above} />
+        <ReportSlots
+          items={SHOP_REPORT}
+          bottom={idleShopHere ? Math.max(0, area.h - STRIP.top - STRIP.pill) : rowBottom + SIDEWALK_ROW.cardHeight + STRIP.above}
+        />
         {/* v5.13: the special-order chip under the goal bar, and the golden pizza in the sky (both sit under the drawers) */}
         <OrderChip top={ORDER_VIEW.top} onShop={setActive} />
         {/* the BANNERS slot: notices over the scene, under the drawers */}

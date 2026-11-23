@@ -109,8 +109,16 @@ export const STRIP = {
   gap: 6,
   /** The manager's face badge. */
   badge: 22,
-  /** Gap between the strip and the sidewalk row below it. */
-  above: 4,
+  /**
+   * Gap between the strip and the sidewalk row below it, in a shop with a manager. D479/Q8: 1 pt, so the pill's top clears the WELCOME mat on the narrowest phone (fit 0.95: with 4 it
+   * covered 23% of the mat); the cards' own 2 pt outline is the visible gap.
+   */
+  above: 1,
+  /**
+   * An unmanaged shop's strip stands at the top of the scene area instead (Q8): its hire stack is two buttons tall, so no strip fits between the mat and the stack, and the mat and the door
+   * are never covered. The distance (pt) from the area's top to the pill's top: the 44 pt touch box (pill at its foot) then lies wholly inside the area.
+   */
+  top: 16,
   maxLines: 2,
   fonts: [12, 11, 10] as readonly number[],
 } as const;

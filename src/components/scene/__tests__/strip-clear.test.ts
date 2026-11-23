@@ -5,7 +5,7 @@ import { emptyCrew, routesFor } from '../crew';
 import { frostTint, FROST, seatPalette } from '../palette';
 import { layout } from './draw-layout';
 import { P, sceneFrame } from '../projection';
-import { floorYFor, liftLayout, STRIP_AIR, stripTop } from '../strip-clear';
+import { floorYFor, liftLayout, STRIP_AIR, stripRect, stripTop } from '../strip-clear';
 import { STRIP } from '../../report/report-model';
 import { SIDEWALK_ROW } from '../../tap-targets';
 
@@ -22,7 +22,14 @@ describe('the strip box (scene units)', () => {
   test('the pill is 28 pt tall over the sidewalk row, and sits lower on a bigger fit', () => {
     expect(stripTop(1, false)).toBe(590 - (SIDEWALK_ROW.raiseManaged + SIDEWALK_ROW.cardHeight + STRIP.above + STRIP.pill));
     expect(stripTop(1.1, false)).toBeGreaterThan(stripTop(0.9, false));
-    expect(stripTop(1, true)).toBeLessThan(stripTop(1, false)); // the hire stack is taller
+    // an unmanaged shop's strip stands at the top of the area (Q8), so nothing on the sidewalk needs to keep clear of it: its top is the kerb line
+    expect(stripTop(1, true)).toBe(590);
+    for (const [s, h] of [
+      [0.95, 489],
+      [1, 676],
+      [1.11, 754],
+    ])
+      expect(stripRect(s, true, h).y1 - stripRect(s, true, h).y0).toBeCloseTo(STRIP.pill / s, 9);
   });
   test('floorYFor inverts the projection', () => {
     for (const top of [430, 460, 490]) expect(feetY(floorYFor(top))).toBeCloseTo(top - STRIP_AIR, 6);
@@ -44,7 +51,7 @@ describe('no queued guest overlaps the strip (D514)', () => {
     }
     test(`footprint ${fp}${mirrored ? ' mirrored' : ''}: lifting keeps each figure's screen x and the drivers' own heights`, () => {
       const plain = build(fp, mirrored);
-      const lay = liftLayout(plain, floorYFor(stripTop(1, true)));
+      const lay = liftLayout(plain, floorYFor(stripTop(1, false)));
       const sx = (l: typeof plain) => (p: [number, number]) => P(p[0], p[1], 0, l.frame)[0];
       lay.queue.forEach((p, i) => expect(sx(lay)(p)).toBeCloseTo(sx(plain)(plain.queue[i]), 6));
       expect(lay.queue.length).toBe(plain.queue.length);
@@ -55,10 +62,11 @@ describe('no queued guest overlaps the strip (D514)', () => {
       gaps(lay).forEach((g, i) => expect(g).toBeCloseTo(gaps(plain)[i], 6));
     });
   }
-  test('the old layout failed: with the hire stack the standing queue was drawn behind the strip', () => {
+  test('an unmanaged shop needs no lift: its strip is at the top of the area, so the queue stays where the layout put it', () => {
     const plain = build(1, false);
-    expect(feetY(plain.driverQueue[0][1])).toBeGreaterThan(stripTop(1, true));
-    expect(feetY(plain.queue.length ? plain.queue[0][1] : plain.queueTag[1])).toBeGreaterThan(stripTop(1, true));
+    const lay = liftLayout(plain, floorYFor(stripTop(1, true)));
+    expect(lay.queue).toBe(plain.queue);
+    expect(lay.driverQueue).toBe(plain.driverQueue);
   });
   test('a layout that needs no lift comes back as it is (the memos on it stay warm)', () => {
     const plain = build(1, false);
