@@ -14,7 +14,7 @@ End the file with exactly this block, listing every note that is still open, inc
 
 Next IDs: <your next free IDs>
 ```
-- `sev` is `bug`, `blocker`, `high`, `major`, `medium`, `minor` or `low`, as your brief defines them.
+- `sev` is `bug`, `blocker`, `high`, `major`, `medium`, `minor`, `low` or `parked`, as your brief defines them. `parked` is only for the rows under "Parked by Julien" in the critic brief: it doesn't count toward the gate and is not raised again.
 - `owner` is one letter from `docs/build/OWNERS.md`. Read that file; it is 15 lines.
 
 Then return **only** this, and nothing else:

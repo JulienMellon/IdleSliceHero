@@ -14,6 +14,8 @@ The visual **critic** (`.claude/agents/critic.md`) reviews each build's iPhone-s
 ## Lessons from rounds 15–50 (read before fixing crowd/geometry notes)
 - **Overlap fixes kept moving the overlap instead of removing it** (rounds 30–34: the counter lane moved onto the bakers, the outside pause moved onto the mat, the back row moved onto the bakers' feet). Fix crowd notes in `scene/cast.ts`, `scene/timelines.ts` or `scene/layout.ts`. Then prove the fix with a budget in `scene/__tests__/crowd.test.ts` before taking screenshots, and make sure the test could actually fail on the old code.
 - **Verify in pixels.** The critic marks a fix open if the screenshot doesn't show it, whatever this log says.
+- **Space squeeze: a new chip clips its neighbour's text** (every new chip, rounds 59–87). Give every label a short form and fit to width (`fit-model.ts`); see the size floor in `docs/build/README.md` § 11 and the layout check.
+- **Fixed in the log but not in the pixels** (D67, G70, D450, D454). A fix claim names its shot: the programmer's `Fixed:` block lists `<ID> → <shot> · <what changed>`, and a row with no shot is `Unverified:` and goes to the critic as `Check first:` (`docs/build/README.md` § 4, `.claude/agents/programmer.md`).
 - **Don't remove owner-required elements** while fixing something else. The WELCOME mat was removed once by mistake (G54).
 - **Moving one figure moves the overlap onto another** (rounds 47–50, the walk-in vs. driver at the counter): run the whole crowd suite after every route/spot change, not only the budget you are fixing.
 

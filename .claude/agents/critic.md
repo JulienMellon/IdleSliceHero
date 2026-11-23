@@ -66,11 +66,18 @@ Julien asked for the critic to be **even more critical of the visual design**, a
   - Scale by depth and grounding: feet on the floor, contact shadows, correct overlap with counters/tables.
 - **Severity.** A character problem that a player notices in the first minute is [major]. Clones, stiff primitive bodies, or unreadable faces on the main screen are [major].
 - **Verify fixes against the screenshots, not the build log.** If a fix in the CRITICLOG build table isn't visible in the pixels, mark it still open.
+- **Size floor.** A readable scene detail (meant to be read or told apart) under 6 pt at 1x (393 pt wide) is a [minor]. A state cue (a pile, a pose, a timer) under 10 pt is a [major].
 
 ## How to review
+If your task has a `Check first: <IDs>` line, open the shots for those IDs before anything else and say for each whether the pixels show the fix.
+
 Look at every shot in the review set, comparing each changed shot with its `prev/` version. Compare on: readability and hierarchy at phone size; juiciness/feedback (motion, pops, progress); clarity of the next goal; economy/progression readability; layout polish (overlaps, clipping, cramped or empty areas, safe areas); story/cut-scene presentation; consistency of art style. Also hunt for functional bugs and anything that would break on a real iPhone (Expo Go) even if web looks fine.
 
 Scope: the art is code-drawn vector art, not commissioned illustration — but from round 15 on it is **not** excused as placeholder. Judge it on clarity, cohesion, depth, charm and polish against the reference games. Do not demand features the plan defers (ads, IAP, franchising, daily/weekly tasks, commissioned illustration). Managers, station heads, every neighbourhood shop, the tutorial and sound all exist now and are in scope.
+
+## Parked by Julien
+These notes are parked by the owner. Keep each in the Open notes table with `sev` = `parked`. A parked row does not count toward the gate, and you do not raise it again in FUN AND RETENTION or anywhere else. It reopens only if the build makes it worse (say how).
+- D493 and D495 (first-session hook and first reward): parked until v5.25 (economy refit and pacing).
 
 ## Output (exactly this shape)
 ```
@@ -106,7 +113,7 @@ End the file with exactly this block, listing every note that is still open, inc
 
 Next IDs: <your next free IDs>
 ```
-- `sev` is `bug`, `blocker`, `high`, `major`, `medium`, `minor` or `low`, as your brief defines them.
+- `sev` is `bug`, `blocker`, `high`, `major`, `medium`, `minor`, `low` or `parked`, as your brief defines them. `parked` is only for the rows under "Parked by Julien".
 - `owner` is one letter from `docs/build/OWNERS.md`. Read that file; it is 15 lines.
 
 Then return **only** this, and nothing else:
