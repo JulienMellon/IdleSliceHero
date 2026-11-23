@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.23b                  # v5.23 closed 2026-11-22 at r3 (critic 0 bug 0 major 21 minor carried; code APPROVED 3 medium; story advisory 9 minor)
-step: verify                        # setup | waves | verify | review | fix | close
+step: review                        # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
-last_shots: v5.23-r3                # v5.23 r3 verify: True 0 [], layout 0 new; 16 changed vs v5.23-r2
+last_shots: v5.23b                  # v5.23b r1 verify: True 0 [], layout 0 new (cover 0); 169 changed vs v5.23-r3
 codecritic_range_start: 688f26f   # v5.23b start (v5.23 closed commit)
 cards:                 # todo | running | done | partial | blocked
   Q7 done  Q8 done  S6 done  U7 done  U8 done  W6 done
@@ -43,3 +43,4 @@ next: start S10b-v5.23b.md (cleanup step), then S11-v5.24.md. Carried notes: doc
 - 2026-11-22 S10b r1 Q7 done (README/critic/programmer rules; apply from v5.24). Waiting on U7 strip fix.
 - 2026-11-23 S10b r1 U7 134 clip fixed; strip-over-mat: decided strip at scene top for unmanaged shops (default: mat never covered), U7 scope widened to index.tsx strip line, strip-clear.ts, protected.ts.
 - 2026-11-23 S10b r1 U7 strip fix done (cover allowlist entry removed; 3215 tests). Heads-up: order chip may overlap unmanaged strip top band. Verify v5.23b running.
+- 2026-11-23 S10b r1 verify v5.23b PASS (True 0 [], layout 0 new, cover 0, 169 changed). r1 reviews launched.
