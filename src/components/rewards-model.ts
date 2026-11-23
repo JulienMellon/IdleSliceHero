@@ -28,6 +28,7 @@ import {
   chapterReady,
   chaptersOf,
   currentChapter,
+  nextTask,
   RATE_HOLD_SECONDS,
   saveOf,
   taskProgress,
@@ -418,6 +419,8 @@ export interface StoryTask {
   /** D536: a task that is done by going somewhere (hire, build, win, bid) gets a "Go" button while it is open; '' for the rest. */
   go: StoryGo | '';
   shop: NeighborhoodId;
+  /** S89: the goal bar's pick when it is not the first open task of the list (the bar leads with a hire or a rate before a long serve count): the row says so. */
+  next: boolean;
 }
 
 export type StoryGo = 'hire' | 'build' | 'win' | 'bid';
@@ -490,7 +493,16 @@ export function storyTask(g: GameState, task: ChapterTask): StoryTask {
     spoken,
     go: !p.done && GO_KINDS.includes(task.kind) ? (task.kind as StoryGo) : '',
     shop: task.shop,
+    next: false,
   };
+}
+
+/** S89: flag the row the goal bar shows when the bar skips ahead of the list's first open task, so the two never look like they disagree. */
+export function markNext(g: GameState, tasks: StoryTask[]): StoryTask[] {
+  const pick = nextTask(g)?.task.key;
+  const firstOpen = tasks.find((t) => !t.done)?.key;
+  if (!pick || pick === firstOpen) return tasks;
+  return tasks.map((t) => (t.key === pick && !t.done ? { ...t, next: true } : t));
 }
 
 /** The reward row of a chapter: the scene, plus what the scene opens (the takeover opens Daily and Weekly) and the diamonds. A free chapter (the tutorial's) has no scene to come: its beat has played. */
@@ -519,7 +531,10 @@ export function storyView(g: GameState, lastSceneEnd: number | null): StoryView 
     // D545: the tutorial's chapter too has Nonna's line and her portrait (its scene opened the game, but the card reads like the other chapters')
     teaser: t(`${c.key}.teaser`, {}, g.city),
     who: scenesById(cityOf(g).scenes).get(c.sceneId)?.character ?? null,
-    tasks: visibleTasks(c).map((task) => storyTask(g, task)),
+    tasks: markNext(
+      g,
+      visibleTasks(c).map((task) => storyTask(g, task)),
+    ),
     reward: storyReward(g, c, number),
     coming: after && !c.free ? `Coming up \u00B7 Chapter ${number + 1} \u00B7 ${t(`${after.key}.title`, {}, g.city)}` : '',
     wait: ready ? t('chapter.ready', { time: clockText(ready.secondsLeft) }, g.city) : null,

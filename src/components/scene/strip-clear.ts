@@ -20,9 +20,12 @@ export function stripTop(s: number, idle: boolean): number {
   return CURB_Y - (SIDEWALK_ROW.raiseManaged + SIDEWALK_ROW.cardHeight + STRIP.above + STRIP.pill) / s;
 }
 
-/** The strip's drawn pill in scene units, for a scene drawn at scale `s` in an area `h` pt tall: over the sidewalk row with a manager, at the top of the area without one (STRIP.top). */
-export function stripRect(s: number, idle: boolean, h: number): { y0: number; y1: number } {
-  const y0 = idle ? SCENE_H - (h - STRIP.top) / s : stripTop(s, false);
+/**
+ * The strip's drawn pill in scene units, for a scene drawn at scale `s` in an area `h` pt tall: over the sidewalk row with a manager, at the top of the area without one
+ * (`top` pt below the area's top: `STRIP.top`, or `idleStripTop(true)` while the special-order chip is up).
+ */
+export function stripRect(s: number, idle: boolean, h: number, top: number = STRIP.top): { y0: number; y1: number } {
+  const y0 = idle ? SCENE_H - (h - top) / s : stripTop(s, false);
   return { y0, y1: y0 + STRIP.pill / s };
 }
 

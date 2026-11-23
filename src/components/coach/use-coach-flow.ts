@@ -9,12 +9,20 @@ import { coachView, fallbackStep, LOOK_FALLBACK_MS, type CoachView } from './coa
 /** Tell the tutorial what the screen saw (the store's action does the rest). */
 const note = (n: TutorialNote) => useGame.getState().noteCoach(n);
 
-/** The overlay's props for the current step, and the callback that ends a `look`. */
+/** The overlay's props for the current step, and the callback that ends a `look`. `tasksOpen`: the task list is open (it ends steps 7 and 8, A44). */
 export function useCoachFlow(
   step: CoachStep | null,
   isFirst: boolean,
   drawerOpen: boolean,
+  tasksOpen = false,
 ): { view: (CoachView & { onSkip: () => void }) | null; onDone: () => void } {
+  const tasksWas = useRef(false);
+  const stepId = step?.id ?? 0;
+  useEffect(() => {
+    if (tasksOpen) note('tasks-open');
+    else if (tasksWas.current) note('tasks-closed');
+    tasksWas.current = tasksOpen;
+  }, [tasksOpen, stepId]);
   const drawerWas = useRef(false);
   useEffect(() => {
     if (drawerOpen) note('drawer-open');
@@ -36,4 +44,14 @@ export function useCoachFlow(
   }, []);
   const view = coachView(step, { isFirst, drawerOpen, lookedAt });
   return { view: view && { ...view, onSkip }, onDone };
+}
+
+/** The shop report's coach notes (v5.22, E4): the sheet opening under the lit strip is the strip step seen; its closing ends the sequence (also after a restart in the middle of it). */
+export function useReportCoachNotes(sheetOpen: boolean, stripLit: boolean, live: boolean): void {
+  const stripWas = useRef(false);
+  useEffect(() => {
+    if (sheetOpen && stripWas.current) note('report-open');
+    else if (!sheetOpen && live) note('report-closed');
+    stripWas.current = stripLit;
+  }, [sheetOpen, stripLit, live]);
 }

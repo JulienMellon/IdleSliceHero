@@ -155,6 +155,17 @@ describe('the chapter whose scene is the takeover', () => {
   });
 });
 
+describe('the row the goal bar picks (S89)', () => {
+  it('is marked when the bar skips ahead of the first open task: chapter 2 leads with the serve count, the bar with the hire', () => {
+    const v = storyView(midway(), null);
+    expect(v.tasks.map((t) => t.next)).toEqual([false, true, false]);
+  });
+  it('is not marked in the tutorial chapter, where the list order is the bar order', () => {
+    const g = withShop({ ...G.newGame(0), seenScenes: ['downtown-1'] }, 'downtown', { sold: 4 });
+    expect(storyView(g, null).tasks.some((t) => t.next)).toBe(false);
+  });
+});
+
 describe('a rate being held (D537)', () => {
   const key = HOME_CHAPTERS[1].tasks[2].key; // downtown-2: serve 6/min
   const held = (lo: number, secs: number): G.GameState => ({

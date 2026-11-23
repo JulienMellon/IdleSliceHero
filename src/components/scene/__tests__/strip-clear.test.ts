@@ -4,9 +4,10 @@ import { buildCast } from '../cast';
 import { emptyCrew, routesFor } from '../crew';
 import { frostTint, FROST, seatPalette } from '../palette';
 import { layout } from './draw-layout';
-import { P, sceneFrame } from '../projection';
+import { P, SCENE_H, sceneFrame } from '../projection';
 import { floorYFor, liftLayout, STRIP_AIR, stripRect, stripTop } from '../strip-clear';
-import { STRIP } from '../../report/report-model';
+import { BONUS_VIEW, ORDER_VIEW } from '../../../content/hooks';
+import { bonusLaneTop, idleStripTop, STRIP } from '../../report/report-model';
 import { SIDEWALK_ROW } from '../../tap-targets';
 
 import { FOOTPRINTS } from '../../../content/cities/home/fit';
@@ -33,6 +34,34 @@ describe('the strip box (scene units)', () => {
   });
   test('floorYFor inverts the projection', () => {
     for (const top of [430, 460, 490]) expect(feetY(floorYFor(top))).toBeCloseTo(top - STRIP_AIR, 6);
+  });
+});
+
+describe("an unmanaged shop's strip at the top of the area keeps clear of the order chip and the golden pizza's lane (C194)", () => {
+  const chipBottom = ORDER_VIEW.top + ORDER_VIEW.height;
+  test('with an order chip up the pill starts under it; without one it starts at STRIP.top', () => {
+    expect(idleStripTop(true)).toBeGreaterThanOrEqual(chipBottom);
+    expect(idleStripTop(false)).toBe(STRIP.top);
+    expect(idleStripTop(false)).toBeGreaterThanOrEqual(0);
+  });
+  test('the lane starts under the pill in every state, and keeps its old place in a managed shop', () => {
+    for (const chip of [false, true]) {
+      expect(bonusLaneTop(chip, true)).toBeGreaterThanOrEqual(idleStripTop(chip) + STRIP.pill);
+      expect(bonusLaneTop(chip, false)).toBe(chip ? chipBottom + 6 : BONUS_VIEW.laneTop);
+    }
+  });
+  test('the touch box lies wholly inside the area on every screen the game runs on', () => {
+    for (const h of [489, 676, 754]) for (const chip of [false, true]) expect(idleStripTop(chip) + STRIP.height).toBeLessThanOrEqual(h);
+  });
+  test('in scene units the pill is under the chip band on every fit', () => {
+    for (const [s, h] of [
+      [0.95, 489],
+      [1, 676],
+      [1.11, 754],
+    ]) {
+      const chipBandBottom = SCENE_H - (h - chipBottom) / s;
+      expect(stripRect(s, true, h, idleStripTop(true)).y0).toBeGreaterThanOrEqual(chipBandBottom);
+    }
   });
 });
 

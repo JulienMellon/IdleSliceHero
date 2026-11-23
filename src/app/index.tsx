@@ -6,11 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CoinLayer } from '@/components/coin-layer';
 import { CoachOverlay } from '@/components/coach/overlay';
 import { useCoachTarget } from '@/components/coach/targets';
-import { useCoachFlow } from '@/components/coach/use-coach-flow';
+import { useCoachFlow, useReportCoachNotes } from '@/components/coach/use-coach-flow';
 import { FloatingBonus } from '@/components/floating-bonus';
 import { OrderChip } from '@/components/order-chip';
 import { chipPhase } from '@/components/order-model';
-import { BONUS_VIEW, ORDER_VIEW } from '@/content/hooks';
+import { ORDER_VIEW } from '@/content/hooks';
 import { GiftCalendar, TasksDrawer, useSlowSnapshot } from '@/components/rewards-ui';
 import { emitRivalGlow } from '@/components/layers/rival/rival-glow';
 import { citywideText, hudRateText, rewardsHud, TAP_PREP_TEXT, type StoryGo, type TasksTab } from '@/components/rewards-model';
@@ -25,7 +25,7 @@ import { BANNERS, DRAWER_CARDS, HUD_CHIPS, HUD_TOP_CHIPS, onOvenAsk, ReportSlots
 import { buyKeyOf, type DrawerIcon, type DrawerView, drawerCards, parseBuyKey } from '@/components/drawer-model';
 import { buttonTone, hireOnSidewalk } from '@/components/sidewalk-model';
 import { SidewalkRow } from '@/components/sidewalk-row';
-import { STRIP } from '@/components/report/report-model';
+import { bonusLaneTop, idleStripTop, STRIP } from '@/components/report/report-model';
 import { CLOSE_SLOP, DRAWER_CLOSE_W, DRAWER_HEAD, SIDEWALK_ROW, TAP } from '@/components/tap-targets';
 import { TrophyIcon, DecorIcon, DriverIcon, ExpandIcon, FlameIcon, PrepIcon, RegisterIcon, ScooterIcon, SeatIcon, SparkleIcon } from '@/components/icons';
 import { Portrait } from '@/components/portrait/index';
@@ -212,7 +212,6 @@ export default function GameScreen() {
   }, [hold, setBonusHold]);
   // an order chip is up: the golden pizza flies just below it, not behind it
   const chipUp = chipPhase(game) !== 'none';
-  const bonusTop = chipUp ? ORDER_VIEW.top + ORDER_VIEW.height + 6 : BONUS_VIEW.laneTop;
   // the game tick's clock, never behind rewards.lastSeen (a claim moves lastSeen up to 200 ms ahead of the next tick);
   // a real rollback (lastSeen well ahead of the tick) is `clockOff`
   const tickAt = useGame((s) => s.tickAt);
@@ -299,35 +298,16 @@ export default function GameScreen() {
   const newScenes = Math.max(0, game.seenScenes.length - game.scrapbookViewed);
   const coach = coachStep(game);
   // v5.20: Nonna's flow (what ends each step, where she points) is components/coach/use-coach-flow.ts
-  const coachFlow = useCoachFlow(coach, id === first, drawerOpen);
-  // v5.21 (E2): the task list opening ends step 7 and its closing ends step 8 (the flow above tells the upgrades drawer's the same way)
-  const coachId = coach?.id ?? 0;
-  const tasksWas = useRef(false);
-  useEffect(() => {
-    if (tasksOpen) useGame.getState().noteCoach('tasks-open');
-    else if (tasksWas.current) useGame.getState().noteCoach('tasks-closed');
-    tasksWas.current = tasksOpen;
-  }, [tasksOpen, coachId]);
-  // step 8's look blocks every touch until it has been seen (a tap, or 4 s); then the line stays as a card, so the player can read the list and close it
-  const [listSeen, setListSeen] = useState(false);
-  const onCoachDone = coachFlow.onDone;
-  const coachDone = useCallback(() => {
-    onCoachDone();
-    if (coachId === 8) setListSeen(true);
-  }, [onCoachDone, coachId]);
-  const coachView = coachFlow.view && coachId === 8 && listSeen ? { ...coachFlow.view, mode: 'free' as const } : coachFlow.view;
+  const coachFlow = useCoachFlow(coach, id === first, drawerOpen, tasksOpen);
+  // v5.21 (E2): the task list opening ends step 7 and its closing ends step 8; step 8's look turns free once seen (both in the flow, A44)
+  const coachView = coachFlow.view;
+  const coachDone = coachFlow.onDone;
   // v5.22 (E4): the shop report's coach. Strip lit while the sheet is shut, then (over the sheet) the Ovens bar and the dashed line; it ends when the sheet closes.
   const sheetOpen = useReportOpen();
   const reportStep = reportCoachStep(game, { sheetOpen, clear: !covered && focused && !drawerOpen && !tasksOpen && !giftOpen && !ovenOpen });
   const reportStepId = reportStep?.id ?? '';
   const reportLive = reportCoachLive(game);
-  const stripWas = useRef(false);
-  useEffect(() => {
-    // the sheet opening under the lit strip is the strip step seen; it closing ends the sequence (also after a restart in the middle of it)
-    if (sheetOpen && stripWas.current) useGame.getState().noteCoach('report-open');
-    else if (!sheetOpen && reportLive) useGame.getState().noteCoach('report-closed');
-    stripWas.current = reportStepId === 'strip';
-  }, [sheetOpen, reportStepId, reportLive]);
+  useReportCoachNotes(sheetOpen, reportStepId === 'strip', reportLive);
   const onReportLook = useCallback(() => useGame.getState().noteCoach('report-look'), []);
   // the prep head's hire card in the drawer is where step 13 points: one ref, given to that one card (S72: while Nonna teaches, the drawer does not point at anything else)
   const hireRef = useCoachTarget('drawer:hire:prep');
@@ -335,6 +315,8 @@ export default function GameScreen() {
 
   // the sidewalk offers the next hire (each head, then the GM) here; see hireOnSidewalk (B1)
   const idleShopHere = hireOnSidewalk(shop, id, city);
+  // the golden pizza's lane: under the order chip, and under an unmanaged shop's report strip (which stands at the top of the area, under the chip when one is up)
+  const bonusTop = bonusLaneTop(chipUp, idleShopHere);
   // Goal bar (v5.21): the next task of the chapter the player is on, "Ch 2 · Serve 424 pies in Downtown 212/424"; a done chapter waiting on the story's
   // pacing shows "Ready" with the countdown. It buys nothing: a tap opens the task list. Once every chapter is done the city's mastery stars show, then the story count.
   let goal: Goal | null = null;
@@ -466,7 +448,7 @@ export default function GameScreen() {
         {/* v5.16 (P1): the shop report's strip, one 44 pt row directly above the sidewalk row */}
         <ReportSlots
           items={SHOP_REPORT}
-          bottom={idleShopHere ? Math.max(0, area.h - STRIP.top - STRIP.pill) : rowBottom + SIDEWALK_ROW.cardHeight + STRIP.above}
+          bottom={idleShopHere ? Math.max(0, area.h - idleStripTop(chipUp) - STRIP.height) : rowBottom + SIDEWALK_ROW.cardHeight + STRIP.above}
         />
         {/* v5.13: the special-order chip under the goal bar, and the golden pizza in the sky (both sit under the drawers) */}
         <OrderChip top={ORDER_VIEW.top} onShop={setActive} />

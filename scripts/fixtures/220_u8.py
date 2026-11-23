@@ -1,7 +1,7 @@
 """Card U8 (v5.23b): Story tab, coach and goal-bar minors. Shots 220-220e.
 
 220  step 8 of the tutorial: the Story tab is lit, Chapter 1 has Nonna's line and portrait (D545), the hand rests 24 pt right and below, off the "Next: Chapter 2" row (D542)
-220b chapter 2, a rate held over its target: "6/6 · holding" with a full bar (D537)
+220b chapter 2, a rate held over its target: "6/6 · holding" with a full bar (D537); the row the goal bar picks says so (S89)
 220c chapter 4: the reward row names what it opens, "Daily tasks open" (D538), with the SVG clapper and gem (D535)
 220d "Go" on a "Beat MegaSlice" row: the shop, with the rival's pavement band glowing (D547); two seconds later it is dark again
 220e a hire done: the tick badge and the chapter ribbon (D544); the ribbon is gone 1.5 s after it began
@@ -57,6 +57,7 @@ def run(ctx):
         tid(page, "goal").click(); advance(page, 700)
         expect(page, "story-tab", 3000)
         expect_text(page, "story-tab", r"6/6\s*·\s*holding", 3000)
+        expect(page, "story-next", 3000)  # S89: the bar leads with the hire, so the list marks it
         shot(page, "220b-rate-holding", 0.4)
     except Exception as e:
         report["errors"].append(f"U8 220b failed: {e}")

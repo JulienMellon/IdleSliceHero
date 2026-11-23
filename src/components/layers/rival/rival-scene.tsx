@@ -103,7 +103,7 @@ export const RivalScene = memo(function RivalScene({ shopId, width, height }: Sc
     const t = setTimeout(() => setGlowEnd(null), Math.max(0, glowEnd - Date.now()));
     return () => clearTimeout(t);
   }, [glowEnd]);
-  const clock = useClock(15, closedAt === null);
+  const clock = useClock(15, closedAt === null && glowEnd === null);
   void clock;
   const fit = sceneFit(width, height, frame);
   const at = rivalPlace(fit, SCENE_H, view, RIVAL_SHOP);

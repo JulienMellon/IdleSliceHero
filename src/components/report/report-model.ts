@@ -11,6 +11,8 @@ import { count, duration } from '../../engine/format';
 import type { GameState } from '../../engine/game';
 import { reportActive, reportView, type K3, type ReportView } from '../../engine/features/service';
 import { FIT_EM } from '../endgame/fit-model';
+import { hireOnSidewalk } from '../sidewalk-model';
+import { BONUS_VIEW, ORDER_VIEW } from '../../content/hooks';
 
 /** Fill `{name}` slots of a copy line. An unknown slot stays as written (a test catches it). */
 export const fill = (template: string, vars: Readonly<Record<string, string | number>>): string =>
@@ -71,9 +73,11 @@ export interface StripModel {
   manager: string;
   /** Missed rounds to 0 while customers want pizzas (D556): the payoff's condition, before its 10 s hold and its once-a-session gate. */
   zero: boolean;
+  /** An unmanaged shop (the sidewalk's hire stack): the strip stands at the top of the area, its pill at the top of its touch box (C194). */
+  idle: boolean;
 }
 
-export const HIDDEN_STRIP: StripModel = Object.freeze({ show: false, text: '', manager: '', zero: false }) as StripModel;
+export const HIDDEN_STRIP: StripModel = Object.freeze({ show: false, text: '', manager: '', zero: false, idle: false }) as StripModel;
 
 /** Missed rounds to 0 while customers want pizzas (D556). */
 export const isMissedZero = (v: Pick<ReportView, 'wanted' | 'missed'>): boolean => v.wanted >= 0.5 && Math.round(v.missed) === 0;
@@ -83,7 +87,13 @@ export function stripModel(g: GameState, id: NeighborhoodId, now: number): Strip
   if (!reportActive(g, id)) return HIDDEN_STRIP;
   const managed = g.shops[id].managed;
   const v = reportView(g, id, now);
-  return { show: true, text: reportLine(v), manager: managed ? (cityOf(g).managers[id]?.id ?? '') : '', zero: isMissedZero(v) };
+  return {
+    show: true,
+    text: reportLine(v),
+    manager: managed ? (cityOf(g).managers[id]?.id ?? '') : '',
+    zero: isMissedZero(v),
+    idle: hireOnSidewalk(g.shops[id], id, cityOf(g)),
+  };
 }
 
 /** The drawer's header: the report's line when the shop takes part in it, else null (the drawer keeps its own). */
@@ -116,12 +126,22 @@ export const STRIP = {
   above: 1,
   /**
    * An unmanaged shop's strip stands at the top of the scene area instead (Q8): its hire stack is two buttons tall, so no strip fits between the mat and the stack, and the mat and the door
-   * are never covered. The distance (pt) from the area's top to the pill's top: the 44 pt touch box (pill at its foot) then lies wholly inside the area.
+   * are never covered. The distance (pt) from the area's top to the pill's top: there the pill is drawn at the top of its 44 pt touch box (the box reaches 16 pt below it), so the box lies wholly inside the area.
    */
-  top: 16,
+  top: 8,
   maxLines: 2,
   fonts: [12, 11, 10] as readonly number[],
 } as const;
+
+/**
+ * Where an unmanaged shop's pill starts, pt from the scene area's top (C194): at `STRIP.top`, or, while the special-order chip is up (it stands from `ORDER_VIEW.top`, `ORDER_VIEW.height` tall, over the
+ * top of the area), under it (the pill is at the top of its box, so the box starts clear of the chip). The golden pizza's lane then starts under the pill (`bonusLaneTop`).
+ */
+export const idleStripTop = (chipUp: boolean): number => (chipUp ? ORDER_VIEW.top + ORDER_VIEW.height + 6 : STRIP.top);
+
+/** The golden pizza's lane top (pt from the area's top): the sky's lane, under the order chip, or under an unmanaged shop's pill (and the chip above it). */
+export const bonusLaneTop = (chipUp: boolean, idleShop: boolean): number =>
+  idleShop ? idleStripTop(chipUp) + STRIP.pill + 6 : chipUp ? ORDER_VIEW.top + ORDER_VIEW.height + 6 : BONUS_VIEW.laneTop;
 
 /** A line of the strip's text at `size` takes this much height. */
 export const stripLineHeight = (size: number): number => size + 1;
@@ -244,10 +264,10 @@ export const MISSED_ZERO_HOLD_S = 10;
 const payoffShown = new Set<string>();
 export const missedZeroSeen = (id: NeighborhoodId): boolean => payoffShown.has(id);
 export const markMissedZeroSeen = (id: NeighborhoodId): void => void payoffShown.add(id);
-/** Forget the session (tests, a new save). */
+/** Forget the session (tests; a new save should call it too: game-store's `newGame`/load, not wired here). */
 export const resetMissedZeroSeen = (): void => payoffShown.clear();
 
-/** D556: the strip's "Missed reached 0" payoff plays while Missed is 0 and this shop has not had it this session; the strip then also calls the store's `missedZeroShown`, which records it in the save (`saveOf(game).missedZero`). */
+/** D556: the strip's "Missed reached 0" payoff plays while Missed is 0 and this shop has not had it this session; the strip then also calls the store's `missedZeroShown`, which records it in the save (`saveOf(game).missedZero`). The save flag is write-only: nothing reads it, the session set above decides (once per shop per session, VERSION.md). */
 export const missedZeroPlays = (zero: boolean, seenThisSession: boolean): boolean => zero && !seenThisSession;
 
 /** How long the payoff's line replaces the strip's numbers, and how long the basil flash lasts, in ms; and how many coins fly from the strip to the cash. */

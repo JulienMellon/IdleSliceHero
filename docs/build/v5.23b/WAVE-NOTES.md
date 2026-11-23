@@ -17,3 +17,4 @@
 - U7: fixture scripts/fixtures/221_u7.py. City map pins over 14 chars set at 2.6.
 - D519 scroll cue for cut-off wide shops: no card owns scroll-cues-model.ts in v5.23b; carried.
 - Q8: protected elements live in src/components/scene/protected.ts (window.__protected on web); layout probe kind `cover` in scripts/shots_lib.py; drawers/sheets/title cards (modal roots) are skipped. scripts/layout_allow.json has 1 temporary entry (report strip over mat) that U7 removes with its fix.
+- U8 r2: C195 fixed (rival clock runs while glowing); A44/A46 step-8 seen rule, tasks notes and report coach notes moved into coach/use-coach-flow.ts (`useCoachFlow(..., tasksOpen)`, `useReportCoachNotes`); S89 marks the goal bar's pick on the Story tab (`StoryTask.next`). D564 tried and reverted: word suffixes ("$99.9 quint / $99.9 quint") overflow the 296 pt goal line budget.

@@ -14,7 +14,7 @@ import { firstHood } from '../../engine/game';
 import { useGame } from '../../store/game-store';
 import { C, F } from '../../theme';
 import { useCoachTarget } from '../coach/targets';
-import { emitCoin } from '../pulse-bus';
+import { emitCheer, emitCoin } from '../pulse-bus';
 import { Portrait } from '../portrait/index';
 import { useMotion } from '../scene/clock';
 import { HeadFace } from '../scene/head-face';
@@ -64,6 +64,7 @@ export const ReportStrip = memo(function ReportStrip({ bottom }: { bottom: numbe
       markMissedZeroSeen(hood);
       missedZeroShown();
       setLine(true);
+      emitCheer(); // the crew cheers with Nonna (the scene's cooks raise both arms)
       if (motion.fly)
         pill.current?.measureInWindow((x: number, y: number, w: number, h: number) => {
           for (let i = 0; i < PAYOFF.coins; i++) emitCoin({ x: x + w / 2 + (i - (PAYOFF.coins - 1) / 2) * 6, y: y + h / 2, ms: 420 + i * 70 });
@@ -94,7 +95,7 @@ export const ReportStrip = memo(function ReportStrip({ bottom }: { bottom: numbe
       accessibilityRole="button"
       accessibilityLabel={`Shop report. ${text}`}
       onPress={openReport}
-      style={[styles.box, { bottom }]}
+      style={[styles.box, { bottom }, m.idle && styles.boxTop]}
     >
       <View ref={pill} style={styles.pill}>
         <Animated.View pointerEvents="none" style={[styles.flash, { opacity: flash }]} />
@@ -114,6 +115,7 @@ export const ReportStrip = memo(function ReportStrip({ bottom }: { bottom: numbe
 
 const styles = StyleSheet.create({
   box: { position: 'absolute', left: STRIP.margin, right: STRIP.margin, height: STRIP.height, justifyContent: 'flex-end' },
+  boxTop: { justifyContent: 'flex-start' },
   pill: {
     height: STRIP.pill,
     flexDirection: 'row',

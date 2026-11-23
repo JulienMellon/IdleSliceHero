@@ -15,6 +15,7 @@ import type { Layout } from './layout';
 import { neonSpot, plaqueRect } from './cosmetics';
 import { UMBRELLA_TOP, deckBox, patioDeck } from './patio-deck';
 import { CURB_Y, P, sceneToScreen, type SceneFit } from './projection';
+import { idleStripTop } from '../report/report-model';
 import { stripRect } from './strip-clear';
 import type { Rect } from './stations';
 
@@ -85,6 +86,8 @@ export function sceneCovers(lay: Layout, inp: CoverInputs): Named[] {
   const rowH = inp.idleShop ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight;
   const wide = { x0: -1e6, x1: 1e6 };
   out.push(named('strip', { ...wide, ...strip }));
+  // an unmanaged shop's strip stands under the order chip while one is up (C194): the lower place is a cover too
+  if (inp.idleShop) out.push(named('strip-chip', { ...wide, ...stripRect(inp.s, true, inp.h, idleStripTop(true)) }));
   out.push(named('row', { ...wide, y0: CURB_Y - (raise + rowH) / inp.s, y1: CURB_Y - raise / inp.s }));
   return out;
 }

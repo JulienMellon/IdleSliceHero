@@ -354,3 +354,15 @@ describe('the hand keeps off numbers, labels and other controls, for every coach
     expect(meets(handBox(plain.x, plain.y), r(24, 520, 184, 548))).toBe(true);
   });
 });
+
+describe('a skip needs two taps on the same step (C193, T137)', () => {
+  test('a tap outside the lit spot on step 15 does not pair with the first tap of step 16: the overlay forgets the last tap when the step changes, so that one only nudges', () => {
+    const onStep15 = outsideTap(null, 1000);
+    expect(onStep15.skip).toBe(false);
+    // step 16 begins 2 s later; without the reset the first tap there would skip the Store intro
+    expect(outsideTap(onStep15.last, 3000).skip).toBe(true);
+    const afterReset = outsideTap(null, 3000);
+    expect(afterReset.skip).toBe(false);
+    expect(outsideTap(afterReset.last, 3600).skip).toBe(true);
+  });
+});

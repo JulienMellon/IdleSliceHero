@@ -26,7 +26,7 @@ export function onRivalGlow(fn: Listener): () => void {
   };
 }
 
-/** Forget any glow (tests, a franchise's fresh screen). */
+/** Forget any glow (tests only: a glow lasts 2 s, so a new save never meets one). */
 export function resetRivalGlow(): void {
   glow = null;
   listeners.clear();

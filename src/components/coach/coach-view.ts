@@ -6,6 +6,10 @@ import type { CoachTargetId } from './targets';
 
 /** The step that is about the drawer's own hire card: it is the one step shown while the drawer is open. */
 export const DRAWER_STEP = 13;
+/** The step that lights the task list's Story tab: it ends when the list is closed, and its look turns `free` once seen, so the list can be read and closed (A44). */
+export const TASKS_STEP = 8;
+/** The steps whose look, once seen, turns `free`: the hire card and Close (13), the list and Close (8). */
+const SEEN_FREE: readonly number[] = [DRAWER_STEP, TASKS_STEP];
 /** The last step: her closing line, with no hand (the ring carries it). */
 export const LAST_STEP = 15;
 // STORE_STEP (16): Nonna lights the Store chip, which is on every shop's HUD, so she points at it wherever the player is. STARTER_STEP (17): the
@@ -18,7 +22,7 @@ export interface CoachScreen {
   /** The first shop is the one on screen (Nonna points only there). */
   isFirst: boolean;
   drawerOpen: boolean;
-  /** The step whose `look` was seen while it was the current one (0 = none): the drawer step turns `free` then, so its hire card and Close can be tapped. */
+  /** The step whose `look` was seen while it was the current one (0 = none): the drawer step and the list step turn `free` then, so their cards and Close can be tapped. */
   lookedAt: number;
 }
 
@@ -36,7 +40,7 @@ export function coachView(step: CoachStep | null, screen: CoachScreen): CoachVie
   if (!step || step.id === STARTER_STEP) return null;
   if (!screen.isFirst && step.id !== STORE_STEP) return null;
   if (screen.drawerOpen && step.id !== DRAWER_STEP) return null;
-  const seen = step.mode === 'look' && step.id === DRAWER_STEP && screen.lookedAt === DRAWER_STEP;
+  const seen = step.mode === 'look' && SEEN_FREE.includes(step.id) && screen.lookedAt === step.id;
   return { targets: step.targets, mode: seen ? 'free' : step.mode, text: step.text, hand: step.id !== LAST_STEP, skippable: step.id === STORE_STEP };
 }
 

@@ -240,7 +240,7 @@ describe('the strip', () => {
     only(() => {
       const { g, now } = shortOvens();
       const m = stripModel(g, 'downtown', now);
-      expect(m).toEqual({ show: true, text: 'Served 126/min · Missed 42/min', manager: MANAGERS.downtown.id, zero: false });
+      expect(m).toEqual({ show: true, text: 'Served 126/min · Missed 42/min', manager: MANAGERS.downtown.id, zero: false, idle: false });
       expect(m.text).not.toMatch(/prep|oven|counter|driver|slammed|quiet|tip|cold/i);
       expect(reportLine(reportView(g, 'downtown', now))).toBe(m.text);
     });

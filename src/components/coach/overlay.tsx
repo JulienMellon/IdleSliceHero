@@ -86,6 +86,10 @@ export const CoachOverlay = memo(function CoachOverlay({ targets, mode, text, on
     doneRef.current = onDone;
     skipRef.current = onSkip;
   });
+  // C193: a stray tap on one step must not count towards the next step's skip: the first outside tap of a new step only nudges
+  useEffect(() => {
+    lastOutside.current = null;
+  }, [idKey, text, skippable]);
   useEffect(() => {
     if (mode !== 'look') return;
     const t = setTimeout(() => doneRef.current?.(), LOOK_MS);
