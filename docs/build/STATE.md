@@ -41,3 +41,4 @@ next: start S10b-v5.23b.md (cleanup step), then S11-v5.24.md. Carried notes: doc
 - 2026-11-22 S10b r1 U8 D551 2pt raise done (3146 tests). Waiting on Q8.
 - 2026-11-22 S10b r1 Q8 done (protected.ts, cover probe; cover 1 real: report strip over mat, allowlisted) -> U7 moves strip + fixes 134 clip. Q7 launched.
 - 2026-11-22 S10b r1 Q7 done (README/critic/programmer rules; apply from v5.24). Waiting on U7 strip fix.
+- 2026-11-23 S10b r1 U7 134 clip fixed; strip-over-mat: decided strip at scene top for unmanaged shops (default: mat never covered), U7 scope widened to index.tsx strip line, strip-clear.ts, protected.ts.

@@ -155,7 +155,7 @@ export const ReportSheet = memo(function ReportSheet() {
 });
 
 // the name and value columns' widths; the tracks column takes the rest, and the dashed line is laid over it alone
-const NAME_W = 64;
+const NAME_W = 88; // "Hungry crowd" at 13 pt is about 80 pt wide (it was clipped at 64)
 const VALUE_W = 58;
 const GAP = 6;
 
