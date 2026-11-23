@@ -7,7 +7,7 @@ version: 5.24                   # v5.23b closed 2026-11-23 at r2 (critic SATISFI
 step: waves                         # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
 last_shots: v5.23b-r2               # r2 verify: True 0 [], layout 0 new (cover 0); 64 changed vs v5.23b
-codecritic_range_start: CLOSED   # v5.24 start = the "v5.23b closed" commit (git log --grep "v5.23b closed" -1 --format=%h)
+codecritic_range_start: 04b0abf   # v5.24 start (v5.23b closed commit)
 cards:                 # todo | running | done | partial | blocked
   E7 todo  W5 todo  S4 todo  N2 todo  S5 todo  U6 todo
 reviews:               # latest review file per critic, with verdict and counts
