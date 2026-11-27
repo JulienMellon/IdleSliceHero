@@ -104,16 +104,19 @@ export function PackArt({ id, size = 56 }: { id: ProductId; size?: number }) {
       )}
       {id === 'diamonds_2600' && (
         <>
-          <Gem x={8} y={8} s={1.1} />
-          <Gem x={22} y={0} s={1.3} />
-          <Gem x={40} y={6} s={1.2} />
-          <Rect x={6} y={24} width={44} height={22} rx={3} fill={WOOD} stroke={INK} strokeWidth={2.2} />
-          <Path d="M6 35 H50 M18 24 V46 M38 24 V46" stroke={INK} strokeWidth={1.6} />
-          <Path d="M50 30 H58" stroke={INK} strokeWidth={2.2} strokeLinecap="round" />
-          <Circle cx={18} cy={50} r={6} fill={SACK} stroke={INK} strokeWidth={2.2} />
-          <Circle cx={40} cy={50} r={6} fill={SACK} stroke={INK} strokeWidth={2.2} />
-          <Circle cx={18} cy={50} r={1.6} fill={INK} />
-          <Circle cx={40} cy={50} r={1.6} fill={INK} />
+          <Gem x={1} y={12} s={1.1} />
+          <Gem x={38} y={10} s={1.2} />
+          <Gem x={13} y={3} s={1.4} />
+          <Gem x={27} y={0} s={1.5} />
+          <Gem x={22} y={13} s={1.1} />
+          <Path d="M4 27 H52 L48 46 H8 Z" fill={WOOD} stroke={INK} strokeWidth={2.2} strokeLinejoin="round" />
+          <Path d="M6 37 H50" stroke={INK} strokeWidth={1.6} />
+          <Rect x={2} y={23} width={52} height={7} rx={3.5} fill="#FFC531" stroke={INK} strokeWidth={2} />
+          <Path d="M52 30 L58 19" stroke={INK} strokeWidth={2.4} strokeLinecap="round" />
+          <Circle cx={17} cy={51} r={7} fill={SACK} stroke={INK} strokeWidth={2.2} />
+          <Circle cx={41} cy={51} r={7} fill={SACK} stroke={INK} strokeWidth={2.2} />
+          <Circle cx={17} cy={51} r={2.2} fill="#FFC531" stroke={INK} strokeWidth={1.2} />
+          <Circle cx={41} cy={51} r={2.2} fill="#FFC531" stroke={INK} strokeWidth={1.2} />
         </>
       )}
     </Svg>

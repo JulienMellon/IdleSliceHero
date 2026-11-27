@@ -13,6 +13,7 @@ import {
   adCount7,
   amountsFrom,
   bestRate,
+  ALL_LOOK_PRICES,
   looksFor,
   looksUnowned,
   createSeenOnce,
@@ -184,7 +185,7 @@ describe('the store cards (card N1)', () => {
     { id: 'diamonds_1200', amount: 9.99 },
     { id: 'diamonds_2600', amount: 19.99 },
   ]);
-  const ctx: RowContext = { amounts, firstUsed: [], adCount: 0, income: 1000, looksLeft: Infinity };
+  const ctx: RowContext = { amounts, firstUsed: [], adCount: 0, income: 1000, lookPrices: ALL_LOOK_PRICES };
   const ALL: ProductId[] = ['diamonds_80', 'diamonds_500', 'diamonds_1200', 'diamonds_2600'];
   const row = (id: string, c = ctx) => productRows(prices, [], c).find((r) => r.id === id)!;
 
@@ -248,14 +249,21 @@ describe('the store cards (card N1)', () => {
     expect(row('starter_pack').firstLine).toBeNull();
     expect(row('nonnas_plus').firstLine).toBeNull();
   });
-  test('"Enough for N looks" never promises more than the looks still for sale (G121)', () => {
-    expect(row('diamonds_1200').blurb).toBe('Enough for 8 looks');
-    expect(row('diamonds_1200', { ...ctx, looksLeft: 3 }).blurb).toBe('Enough for 3 looks');
-    expect(row('diamonds_1200', { ...ctx, looksLeft: 0 }).blurb).toBe('');
-    expect(row('starter_pack', { ...ctx, looksLeft: 0 }).chips[0].sub).toBe('diamonds');
-    expect(looksUnowned([])).toBe(6);
-    expect(looksUnowned(['oven-gold', 'storefront-skin-3', 'awning-founder'])).toBe(4);
-    expect(looksUnowned(['oven-gold', 'storefront-skin-101', 'oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold'])).toBe(0);
+  test('"Enough for N looks" counts the cheapest looks the diamonds pay for, and never more than are still for sale (G121, G123)', () => {
+    // each pack says its own number: the Crate and the Cart never read the same
+    expect(['diamonds_80', 'diamonds_500', 'diamonds_1200', 'diamonds_2600'].map((id) => row(id).blurb)).toEqual([
+      'Enough for 1 look',
+      'Enough for 8 looks',
+      'Enough for 20 looks',
+      'Enough for 29 looks',
+    ]);
+    expect(row('diamonds_1200', { ...ctx, lookPrices: [150, 150, 150] }).blurb).toBe('Enough for 3 looks');
+    expect(row('diamonds_1200', { ...ctx, lookPrices: [] }).blurb).toBe('');
+    expect(row('starter_pack', { ...ctx, lookPrices: [] }).chips[0].sub).toBe('diamonds');
+    expect(looksUnowned([])).toHaveLength(41);
+    expect(looksUnowned([])).toEqual([...looksUnowned([])].sort((x, y) => x - y));
+    expect(looksUnowned(['oven-gold', 'storefront-skin-3', 'awning-founder'])).toHaveLength(39);
+    expect(looksUnowned(['oven-gold', 'storefront-skin-101', 'oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold'])).toHaveLength(35);
   });
   test('the boost chip with no pace still says what it is', () => {
     expect(productChips('starter_pack', 0)[1].sub).toBe('Double income for a full day');
@@ -271,18 +279,18 @@ describe('the store cards (card N1)', () => {
     expect(r.nonna).toBe('I pack it myself. Like a lunch, cara.');
     expect(r.tags).toEqual(['ONE PER OWNER']);
     expect(r.blurb).toBe('400 diamonds, 2× income for 24 hours and the Founder awning');
-    expect(r.chips.map((c) => c.sub)).toEqual(['Enough for 2 shop looks', "≈ $86.4M at your shop's pace", 'Only in this pack']);
+    expect(r.chips.map((c) => c.sub)).toEqual(['Enough for 6 shop looks', "≈ $86.4M at your shop's pace", 'Only in this pack']);
     expect(JSON.stringify(r)).not.toMatch(/ONE-TIME|worth|value|save \d|limited|left/i);
   });
   test('diamond packs: base, "+N bonus", looks, and "First buy: 2×" until it is used', () => {
     const r = row('diamonds_500');
-    expect([r.base, r.bonus, r.blurb]).toEqual([400, '+100 bonus', 'Enough for 3 looks']);
+    expect([r.base, r.bonus, r.blurb]).toEqual([400, '+100 bonus', 'Enough for 8 looks']);
     expect(r.tags).toEqual(['First buy: 2×']);
     expect(row('diamonds_500', { ...ctx, firstUsed: ['diamonds_500'] }).tags).toEqual([]);
     expect(row('diamonds_1200').tags).toEqual(['First buy: 2×']);
     expect(row('diamonds_2600').tags).toEqual(['Best diamond-pack rate', 'First buy: 2×']);
     expect([row('diamonds_2600').base, row('diamonds_2600').bonus]).toEqual([1600, '+1,000 bonus']);
-    expect([row('diamonds_80').bonus, row('diamonds_80').blurb]).toEqual([null, '']); // 80 diamonds is under one look
+    expect([row('diamonds_80').bonus, row('diamonds_80').blurb]).toEqual([null, 'Enough for 1 look']); // 80 diamonds buy one small look
     expect(row('starter_pack').tags).not.toContain('First buy: 2×');
     expect(row('nonnas_plus').tags).toEqual([]);
   });
@@ -291,8 +299,9 @@ describe('the store cards (card N1)', () => {
     expect(row('nonnas_plus', { ...ctx, adCount: 5 }).adLine).toBe('You watched 5 ads this week. Plus skips all 5.');
     expect(row('nonnas_plus').once).toBe('Pay once. Yours forever.');
   });
-  test('looks are whole looks at the vanity price', () => {
-    expect([looksFor(149), looksFor(150), looksFor(400)]).toEqual([0, 1, 2]);
+  test('looks are whole looks at the catalog prices, cheapest first', () => {
+    expect([looksFor(59), looksFor(60), looksFor(120), looksFor(400)]).toEqual([0, 1, 2, 6]);
+    expect(looksFor(1000, [400, 400, 400])).toBe(2);
   });
   test('the rolling 7-day ad count', () => {
     const now = 10 * AD_WINDOW_MS;

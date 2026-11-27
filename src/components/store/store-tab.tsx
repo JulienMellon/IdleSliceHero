@@ -56,6 +56,8 @@ function ProductArt({ id }: { id: ProductId }) {
 
 /** One `pack_card_seen` per card per Shop opening (the Store tab is left and returned to inside one). */
 const packsSeen = createSeenOnce();
+/** Starts a new count of cards seen (C192): the Shop calls it once per opening, whichever tab is showing. */
+export const resetPacksSeen = (): void => packsSeen.reset();
 
 const ProductCard = memo(function ProductCard({
   row,
@@ -181,7 +183,7 @@ export function StoreTab({ onClose = router.back }: { onClose?: () => void }) {
   // the pace is read once as the tab opens: "about" what the Starter's boost earns, not a live counter
   const [income] = useState(() => rewardIncome(useGame.getState().game));
   // looks for sale the player does not own, read once too (G121: "Enough for N looks" never promises more than the Style tab sells)
-  const [looksLeft] = useState(() => looksUnowned(useGame.getState().game.rewards.cosmetics));
+  const [lookPrices] = useState(() => looksUnowned(useGame.getState().game.rewards.cosmetics));
   const adGrants = useGame((s) => s.prefs.adGrants);
   const adCount = adCount7(adGrants, gameNow());
   useEffect(() => {
@@ -192,8 +194,8 @@ export function StoreTab({ onClose = router.back }: { onClose?: () => void }) {
   const navigation = useNavigation();
   useEffect(() => navigation.addListener('blur', () => packsSeen.reset()), [navigation]);
   const rows = useMemo(
-    () => productRows(prices, owned, { amounts, firstUsed, adCount, income, looksLeft }),
-    [prices, owned, amounts, firstUsed, adCount, income, looksLeft],
+    () => productRows(prices, owned, { amounts, firstUsed, adCount, income, lookPrices }),
+    [prices, owned, amounts, firstUsed, adCount, income, lookPrices],
   );
   return (
     <View style={styles.list} testID="store-tab">
