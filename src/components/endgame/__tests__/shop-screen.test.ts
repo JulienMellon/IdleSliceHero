@@ -22,6 +22,13 @@ describe('the Shop screen and its chip, as wired (card U5)', () => {
     expect(shop.indexOf('<BoosterBuy onStore')).toBeLessThan(shop.indexOf('testID="booster-ad"'));
   });
 
+  test('the Shop opening resets the pack cards seen once, in its once-per-opening effect (C192)', () => {
+    expect(shop).toContain('resetPacksSeen');
+    const effect = shop.slice(shop.indexOf('resetPacksSeen();'), shop.indexOf('[]); // eslint-disable-line react-hooks/exhaustive-deps'));
+    expect(effect).toContain('STORE_OPENED_EVENT');
+    expect(shop.match(/resetPacksSeen\(\)/g)).toHaveLength(1);
+  });
+
   test('the route param opens the Store tab, the Shop says how it was opened, and no tab is locked', () => {
     expect(shop).toContain('tabFromParam(params.tab)');
     expect(shop).toContain('STORE_OPENED_EVENT');

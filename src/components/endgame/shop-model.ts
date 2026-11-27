@@ -214,8 +214,8 @@ export const SHELF_EMPTY = (): string => copy('shop.boosters.empty');
 /** Both tabs' titles. */
 export const SHOP_TABS = () => [copy('shop.vanity.title'), copy('shop.boosters.title')] as const;
 
-/** The tag on a look the player owns. */
 /** The worn button's text, with its tick. */
 export const WORN_CHIP = (): string => t('shop.look.worn.chip');
 
+/** The tag on a look the player owns. */
 export const OWNED_TAG = (): string => t('shop.look.owned');

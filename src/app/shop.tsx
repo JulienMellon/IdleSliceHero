@@ -20,7 +20,7 @@ import { SectionHead, VanityCard } from '@/components/endgame/vanity-card';
 import { haptic, Toast } from '@/components/game-ui';
 import { AdButton } from '@/components/store/ad-button';
 import { boosterAdOffer } from '@/components/store/ad-model';
-import { StoreTab } from '@/components/store/store-tab';
+import { resetPacksSeen, StoreTab } from '@/components/store/store-tab';
 import { BoostIcon, DiamondIcon } from '@/components/icons';
 import { TAP } from '@/components/tap-targets';
 import { Z } from '@/components/z-order';
@@ -80,6 +80,7 @@ export default function Shop() {
   const [nudge, setNudge] = useState(false);
   // the Shop opened: say how, and use up the chip's dot if the takeover has happened
   useEffect(() => {
+    resetPacksSeen(); // a new Shop opening counts its pack cards afresh, whichever tab it opens on (C192)
     analytics.track(STORE_OPENED_EVENT, { from: storeFrom(params.from) });
     useShopFlags.getState().opened(rewardsUnlocked(useGame.getState().game));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- once per opening: the route's params are what it was opened with
