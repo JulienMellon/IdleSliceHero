@@ -12,6 +12,7 @@ from shots_lib import *  # noqa: F401,F403  (seeded_page, settle, shot, expect, 
 
 # every look for sale, read from the catalog (the plaque is earned; the storefront skin is owned as a numbered, bought one)
 _CAT = open(os.path.join(os.path.dirname(__file__), "..", "..", "src", "content", "catalog.ts"), encoding="utf8").read()
+GENERIC = ["storefront-skin-101" if i == "storefront-skin" else i for i in re.findall(r"look\('([\w-]+)', '\w+', '\w+'\)", _CAT) if i != "plaque-master"]
 ALL = ["storefront-skin-101" if i == "storefront-skin" else i for i in re.findall(r"look\('([\w-]+)'", _CAT) if i != "plaque-master"]
 
 CLASSIC = ["facade-classic", "awning-classic", "menu-classic", "apron-classic"]
@@ -43,18 +44,20 @@ def run(ctx):
     b = ctx.browser
 
     try:
-        page = seeded_page(b, shop_save())
+        # the picks at T0 are generic looks: owning every generic look moves Featured on to the first set's pieces, so the tiles show their "set · shows in hood" line
+        page = seeded_page(b, shop_save(GENERIC))
         open_vanity(page)
         expect(page, "vanity-featured")
         n = page.locator('[data-testid^="vanity-featured-"][data-testid$="-button"]').count()
         assert n == 4, f"Featured shows {n} looks, not 4"
         assert not is_up(page, "vanity-done-set:classic"), "a set with nothing owned shows no done line"
         expect_text(page, "vanity-progress-set:classic", r"0/4 pieces", 3000)
-        expect_text(page, "vanity-featured", r"shows in", 3000) if page.locator('[data-testid$="-where"]').count() else None
+        assert page.locator('[data-testid^="vanity-featured-"][data-testid$="-where"]').count() >= 1, "a Featured set piece has no 'shows in' line"
         shot(page, "227-vanity-fresh", 0.5)
-        # the tab scrolls to the generic looks, and a price is on a button
+        # the tab scrolls to the generic looks (owned here), and a set piece's button reads its tier price
         scroll_to(page, "vanity-section-tier:small")
-        expect_text(page, "vanity-menu-chalkboard-button", r"60", 3000)
+        expect_text(page, "vanity-menu-chalkboard-button", r"Wear|Worn", 3000)
+        expect_text(page, "vanity-facade-marble-button", r"400", 3000)
     except Exception as e:
         report["errors"].append(f"U6 227 failed: {e}")
 

@@ -17,6 +17,7 @@ import {
   AWNING_LOOKS,
   CHIMES,
   CHIME_H,
+  CHIME_Z,
   CHIME_W,
   CLOTHS,
   COUNTERS,
@@ -215,7 +216,8 @@ function clearOf(lay: Case['lay'], id: string, r: Rect, own: 'counter' | 'door',
   const check = (name: string, o: Rect) => hits(r, o) && bad.push(name);
   check('badges', badgeBand(lay));
   check('mat', matRect(lay));
-  check('doorway plank', doorwaySignRect(lay));
+  // (the chime's hook is behind the plank and the lintel: they are drawn over it)
+  if (own !== 'door') check('doorway plank', doorwaySignRect(lay));
   // a prop is drawn at depth `depth`: the people standing nearer than that are drawn over it (an order spot in front of the counter), the ones deeper are what it must not cover
   fixedPeople(lay).forEach((p, i) => p.y > depth && check(`head ${i}`, p.head));
   spotBoxes(lay).forEach((b, i) => check(`pickup spot ${i}`, b));
@@ -279,7 +281,9 @@ describe('the door chime stands clear (budget)', () => {
     expect(coveredShare(doorRect(c.lay), r)).toBeLessThan(COVER_MAX);
     expect(hits(r, plaqueRect(c.lay))).toBe(false);
     // above head height: under the lintel (108 up), over the people who walk in (heads 60 up at most)
-    expect(r.y0).toBeCloseTo(P(0, 0, 108)[1], 0);
+    expect(r.y0).toBeCloseTo(P(0, 0, CHIME_Z)[1], 0);
+    // and its foot is 8 pt or more above where it hung before (D579: it sat on the cap of the driver at the door)
+    expect(r.y1).toBeLessThanOrEqual(P(0, 0, 108)[1] + 14);
   });
 });
 

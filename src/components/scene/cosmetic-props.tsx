@@ -278,7 +278,7 @@ export const TableCloth = memo(function TableCloth({ look }: { look: string }) {
 export const ApronOverlay = memo(function ApronOverlay({ look, by, kind }: { look: string; by: number; kind: string }) {
   const a = APRONS[look];
   if (!a) return null;
-  const top = by + (kind === 'cook' ? 8.5 : kind === 'baker' ? 4 : 6);
+  const top = by + (kind === 'cook' ? 6.5 : kind === 'baker' ? 4 : 6);
   const foot = by + 19;
   const rows = 3;
   const rh = (foot - top) / rows;
@@ -296,7 +296,7 @@ export const ApronOverlay = memo(function ApronOverlay({ look, by, kind }: { loo
         Array.from({ length: rows * 3 }).map((_, i) => {
           const r = Math.floor(i / 3);
           const c = i % 3;
-          return (r + c) % 2 === 0 ? <Rect key={i} x={-5.6 + c * 3.9} y={top + r * rh} width={3.9} height={rh} fill={a.alt} opacity={0.85} /> : null;
+          return (r + c) % 2 === 0 ? <Rect key={i} x={-5.6 + c * 3.9} y={top + r * rh} width={3.9} height={rh} fill={a.alt} /> : null;
         })}
       {a.pattern === 'hazard' && (
         <G>

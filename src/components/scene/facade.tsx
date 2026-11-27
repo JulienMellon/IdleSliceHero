@@ -448,8 +448,11 @@ export const FasciaSign = memo(function FasciaSign({
   const { fTop, fBot, fcx: cx0, signW } = fasciaSignBox(lay, name);
   const fcx = cx0 + dx;
   const set = shape === 'board' ? null : SIGN_BOARDS[shape];
-  const board = signage === 0 ? (set?.board ?? '#8E5A3C') : signage === 1 ? '#1E1630' : '#D9443A';
-  const text = signage === 0 ? (set?.text ?? '#FFF4E0') : signage === 1 ? '#FF8FB8' : '#fff';
+  // the Dockside plank is its own sign at every signage tier (D576: it stayed pink neon): weathered planks, cream stencil lettering, no halo and no bulbs
+  const plank = shape === 'plank';
+  const tier = plank ? 0 : signage;
+  const board = tier === 0 ? (set?.board ?? '#8E5A3C') : tier === 1 ? '#1E1630' : '#D9443A';
+  const text = tier === 0 ? (set?.text ?? '#FFF4E0') : tier === 1 ? '#FF8FB8' : '#fff';
   const plateH = fBot - fTop + 10;
   const plateX = fcx - signW / 2;
   const rx =
@@ -465,7 +468,7 @@ export const FasciaSign = memo(function FasciaSign({
   return (
     <G>
       {/* sign plate: painted board → neon → marquee bulbs */}
-      {signage === 1 && <Rect x={fcx - signW / 2 - 6} y={fTop - 8} width={signW + 12} height={fBot - fTop + 16} rx={12} fill="#FF5E9A" opacity={0.28} />}
+      {tier === 1 && <Rect x={fcx - signW / 2 - 6} y={fTop - 8} width={signW + 12} height={fBot - fTop + 16} rx={12} fill="#FF5E9A" opacity={0.28} />}
       <Rect
         x={fcx - signW / 2}
         y={fTop - 5}
@@ -473,8 +476,8 @@ export const FasciaSign = memo(function FasciaSign({
         height={fBot - fTop + 10}
         rx={rx}
         fill={board}
-        stroke={signage === 1 ? '#FF5E9A' : INK}
-        strokeWidth={signage === 1 ? 2 : 1.4}
+        stroke={tier === 1 ? '#FF5E9A' : INK}
+        strokeWidth={tier === 1 ? 2 : 1.4}
       />
       {set && (
         <G>
@@ -535,15 +538,23 @@ export const FasciaSign = memo(function FasciaSign({
                 strokeWidth={0.7}
                 opacity={0.35}
               />
-              {[plateX + 5, plateX + signW - 5].map((cx) => (
-                <Circle key={cx} cx={cx} cy={(fTop + fBot) / 2} r={2} fill={set.edge} stroke={INK} strokeWidth={0.8} />
+              {/* a 14 pt anchor at the left end, and a rope's end hanging from each corner */}
+              <G transform={`translate(${plateX + 11} ${(fTop + fBot) / 2}) scale(0.62)`} stroke={set.text} strokeWidth={2.4} strokeLinecap="round" fill="none">
+                <Circle cx={0} cy={-9.4} r={2.4} />
+                <Path d="M0 -7 V9 M-6 -3.4 H6 M-8.6 3 Q-7.6 10 0 10 Q7.6 10 8.6 3" />
+              </G>
+              {[plateX + 4, plateX + signW - 4].map((cx) => (
+                <G key={cx}>
+                  <Path d={`M${cx} ${fBot + 4} q-1.6 4 0.4 8`} stroke={INK} strokeWidth={3.2} fill="none" strokeLinecap="round" />
+                  <Path d={`M${cx} ${fBot + 4} q-1.6 4 0.4 8`} stroke={set.edge} strokeWidth={1.8} fill="none" strokeLinecap="round" strokeDasharray="2 1.2" />
+                </G>
               ))}
             </G>
           )}
         </G>
       )}
-      {signage !== 1 && <Rect x={fcx - signW / 2 + 3} y={fTop - 3} width={signW - 6} height={6} rx={3} fill="#fff" opacity={0.2} />}
-      {signage >= 2 &&
+      {tier !== 1 && <Rect x={fcx - signW / 2 + 3} y={fTop - 3} width={signW - 6} height={6} rx={3} fill="#fff" opacity={0.2} />}
+      {tier >= 2 &&
         Array.from({ length: 18 }).map((_, i) => {
           const top = i < 9;
           const x = fcx - signW / 2 + 8 + (i % 9) * ((signW - 16) / 8);
@@ -556,8 +567,8 @@ export const FasciaSign = memo(function FasciaSign({
           fontFamily={F.bold}
           fontSize={16}
           fill={text}
-          stroke={signage === 0 ? '#3B1F14' : undefined}
-          strokeWidth={signage === 0 ? 0.4 : 0}
+          stroke={tier === 0 ? '#3B1F14' : undefined}
+          strokeWidth={tier === 0 ? 0.4 : 0}
           textAnchor="middle"
         >
           {`Rosa’s · ${name}`}

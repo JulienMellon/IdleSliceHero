@@ -106,6 +106,22 @@ describe('no queued guest overlaps the strip (D514)', () => {
   });
 });
 
+describe('the parked vehicle stands above the strip (D575)', () => {
+  test('its feet are above the strip at every fit, in every plan; the unlifted layout had them under it', () => {
+    let wasUnder = 0;
+    for (const { fp, mirrored } of plans)
+      for (const s of fits) {
+        const raw = build(fp, mirrored);
+        const lay = liftLayout(raw, floorYFor(stripTop(s, false)));
+        expect(feetY(lay.scooter.y)).toBeLessThanOrEqual(stripTop(s, false) - STRIP_AIR + 1e-6);
+        if (feetY(raw.scooter.y) > stripTop(s, false)) wasUnder++;
+        // it moves up the screen only: its screen x is kept
+        expect(P(lay.scooter.x, lay.scooter.y, 0, lay.frame)[0]).toBeCloseTo(P(raw.scooter.x, raw.scooter.y, 0, raw.frame)[0], 6);
+      }
+    expect(wasUnder).toBeGreaterThan(0);
+  });
+});
+
 describe("a managed shop's walkers keep above the strip too", () => {
   for (const { fp, mirrored } of plans) {
     test(`footprint ${fp}${mirrored ? ' mirrored' : ''}: every point of every route`, () => {

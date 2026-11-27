@@ -144,9 +144,9 @@ export interface ApronLook {
   strap: string;
 }
 export const APRONS: Readonly<Record<string, ApronLook>> = {
-  classic: { bib: SET_CLASSIC.cream, alt: SET_CLASSIC.green, pattern: 'plain', strap: SET_CLASSIC.gold },
-  checkered: { bib: '#FFFFFF', alt: GENERIC.gingham, pattern: 'check', strap: GENERIC.gingham },
-  striped: { bib: '#FFFFFF', alt: GENERIC.denim, pattern: 'stripe', strap: GENERIC.denim },
+  classic: { bib: SET_CLASSIC.green, alt: SET_CLASSIC.cream, pattern: 'plain', strap: SET_CLASSIC.gold },
+  checkered: { bib: '#FFE3DA', alt: GENERIC.gingham, pattern: 'check', strap: GENERIC.gingham },
+  striped: { bib: '#DCE8F7', alt: GENERIC.denim, pattern: 'stripe', strap: GENERIC.denim },
   brick: { bib: SET_BRICK.leather, alt: SET_BRICK.steelDark, pattern: 'hazard', strap: SET_BRICK.steelDark },
 };
 
@@ -262,7 +262,7 @@ export interface CounterLook {
 }
 export const PLAIN_COUNTER: CounterLook = { front: '#B0653A', top: '#E9DCC8', trim: '#8C4A26', checker: false };
 export const COUNTERS: Readonly<Record<string, CounterLook>> = {
-  diner: { front: SET_DINER.red, top: SET_DINER.chrome, trim: SET_DINER.chromeDark, checker: true },
+  diner: { front: '#D12F2F', top: '#EEF3F6', trim: SET_DINER.chrome, checker: true },
 };
 
 // ---------- the scooter's paint (scooter-red; the mint one is cosmetics.ts `MINT`) ----------
@@ -290,14 +290,15 @@ export const OVEN_LOOKS: Readonly<Record<string, OvenLook>> = {
 
 // ---------- the boxes the new props stand in ----------
 
-/** The tip jar's shelf and jar: 16 wide, 17 tall (screen units). */
-export const JAR_W = 16;
-export const JAR_H = 17;
-/** The jar's shelf stands on the counter's front panel, at the counter's far end from the door, 26 up (below the counter top, above most of the pickup bags' shelf). */
-export const JAR_SHELF_Z = 26;
+/** The tip jar's shelf and jar: 21 wide, 22 tall (screen units): the 16 x 17 art drawn at JAR_SCALE (D581: the jars were indistinguishable at 1x). */
+export const JAR_SCALE = 1.3;
+export const JAR_W = 16 * JAR_SCALE;
+export const JAR_H = 17 * JAR_SCALE;
+/** The jar's shelf stands on the counter's front panel, at the counter's far end from the door, 19 up (below the counter top and the registers). */
+export const JAR_SHELF_Z = 19;
 const JAR_DEPTH = 64;
 /** How far along the panel from its far end the jar stands (room units): between the order spot at that end and the pickup bags' places, where nobody stands. */
-const JAR_AT = 27;
+const JAR_AT = 31;
 
 /**
  * Where the tip jar stands: on a small bracket shelf on the counter's front panel, at the end of the counter away from the door (the plain plan's left end, the mirrored
@@ -307,17 +308,21 @@ const JAR_AT = 27;
 export function tipJarSpot(lay: Pick<Layout, 'counter' | 'mirrored' | 'frame'>): { x: number; y: number; rect: Rect } {
   const rx = lay.mirrored ? lay.counter.x1 - JAR_AT : lay.counter.x0 + JAR_AT;
   const [x, y] = P(rx, JAR_DEPTH, JAR_SHELF_Z, lay.frame);
-  return { x, y, rect: { x0: x - JAR_W / 2, x1: x + JAR_W / 2, y0: y - JAR_H, y1: y + 2 } };
+  return { x, y, rect: { x0: x - JAR_W / 2, x1: x + JAR_W / 2, y0: y - JAR_H, y1: y + 2 * JAR_SCALE } };
 }
 export const tipJarRect = (lay: Pick<Layout, 'counter' | 'mirrored' | 'frame'>): Rect => tipJarSpot(lay).rect;
 
-/** The door chime's box: 14 wide, 22 hung under the lintel (header drawn 108 up), left of the doorway's middle. The art is drawn 24 tall and is shown at CHIME_SCALE. */
-export const CHIME_W = 14;
-export const CHIME_H = 22;
-export const CHIME_SCALE = 0.9;
+/**
+ * The door chime's box: 17 wide, 29 tall, hung from the lintel's face (the header is drawn 108 to 122 up; the hook is 124 up, behind the PIZZERIA plank and the brick, so the
+ * cord disappears behind the lintel and the chime shows from the lintel's foot down), left of the doorway's middle. The art is drawn 24 tall and is shown at CHIME_SCALE (D579: it
+ * hung low enough to sit on the cap of the driver at the door; D581: it read as a speck at 1x).
+ */
+export const CHIME_W = 17;
+export const CHIME_H = 29;
+export const CHIME_SCALE = 1.2;
 /** The depth it is drawn at: behind everyone in the room (the cast and the furniture are sorted by depth, deepest first), over the room's walls. */
 export const CHIME_SORT = 100;
-export const CHIME_Z = 108;
+export const CHIME_Z = 124;
 
 /**
  * Where the door chime hangs: from the lintel at the left end of the doorway, above head height (the glazed door leaf folds against the right wall and the OPEN plate is

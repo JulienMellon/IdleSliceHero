@@ -45,3 +45,4 @@ next: start S11-v5.24.md. Carried notes: docs/build/v5.23b/review-r2-{critic,cod
 - 2026-11-27 S11 r1 verify v5.24 PASS (True 0 [], layout 0, 11 new 10 changed). r1 reviews launched.
 - 2026-11-27 S11 gate r1 not met (critic bug 1 major 2 minor 17; code 1 high 2 medium). Fix round r2: E7 || U6, then S4 || N2, then S5. A row (code, 1 low) has no fix lane: carried.
 - 2026-11-27 S11 r2 E7 done (D574 T143; 3515 tests; D574 Unverified; S106 oven names need T). S4 launched (U6 still running).
+- 2026-11-27 S11 r2 U6 done (C204 D582 D583 S107 S108; ignored U40 index.tsx outside card). N2 launched (S4 running).

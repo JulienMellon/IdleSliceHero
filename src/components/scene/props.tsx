@@ -8,7 +8,7 @@ import { HOOD_EXTRA, boxOvenGeom, chairBack, domeGeom, flameBox, isBoxOven, oven
 import { Box, FloorShadow } from './primitives';
 import { ovenPaint, ovenTrim, type OvenSkin } from './cosmetics';
 import { TableCloth, TipJar } from './cosmetic-props';
-import { COUNTERS, OVEN_LOOKS, PLAIN_COUNTER, tipJarSpot } from './look-art';
+import { COUNTERS, OVEN_LOOKS, JAR_SCALE, PLAIN_COUNTER, tipJarSpot } from './look-art';
 
 /**
  * An oven against the back wall. Single-deck ovens are domed pizza ovens on a brick plinth
@@ -700,7 +700,9 @@ export const Counter = memo(function Counter({ lay, boxes, counter = '', jar = '
           const [, ly] = P(lay.counter.x0, 64, 38);
           return (
             <G>
-              <Path d={`M${ax} ${ly + 0.8} H${bx}`} stroke={look.trim} strokeWidth={2} />
+              <Path d={`M${ax} ${ly + 1.4} H${bx}`} stroke={INK} strokeWidth={4.2} />
+              <Path d={`M${ax} ${ly + 1.4} H${bx}`} stroke={look.trim} strokeWidth={3} />
+              <Path d={`M${ax + 2} ${ly + 0.6} H${bx - 2}`} stroke="#fff" strokeWidth={0.9} opacity={0.8} />
               <Rect x={ax} y={ay - 5} width={bx - ax} height={5} fill="#FFFFFF" />
               <Path d={`M${ax} ${ay - 3.75} H${bx}`} stroke="#2A2A33" strokeWidth={2.5} strokeDasharray="2.5 2.5" />
               <Path d={`M${ax} ${ay - 1.25} H${bx}`} stroke="#2A2A33" strokeWidth={2.5} strokeDasharray="2.5 2.5" strokeDashoffset={2.5} />
@@ -709,7 +711,7 @@ export const Counter = memo(function Counter({ lay, boxes, counter = '', jar = '
         })()}
       {/* the tip jar on its bracket shelf, at the end of the front panel away from the door (look-art.ts `tipJarSpot`) */}
       {!!jar && (
-        <G transform={`translate(${tipJarSpot(lay).x} ${tipJarSpot(lay).y})`}>
+        <G transform={`translate(${tipJarSpot(lay).x} ${tipJarSpot(lay).y}) scale(${JAR_SCALE})`}>
           <TipJar look={jar} />
         </G>
       )}
