@@ -44,7 +44,7 @@ import { ackCritic as ackUptownCritic, buyIngredients as buyUptownIngredients, i
 import * as R from '../engine/rewards';
 import { buyBooster as buyPaidBooster } from '../engine/paid-boost';
 import { STARTER_STEP, tutorialAdvance, tutorialHoldsStory, tutorialNote, type TutorialNote } from '../engine/tutorial';
-import { buyCosmetic as buyVanity } from '../engine/vanity';
+import { buyCosmetic as buyVanity, setCompleteEvent, type SetCompleteEvent } from '../engine/vanity';
 import { analytics, EVENTS, onGrant, purchases, startServices, type Grant } from '../services';
 import { standingGrants } from './standing';
 import type { Station } from '../engine/pipeline';
@@ -135,6 +135,9 @@ interface Store {
   equip: (id: string, on: boolean) => void;
   /** The vanity shop: buy a cosmetic with diamonds (it is worn at once). */
   buyCosmetic: (id: string) => boolean;
+  /** v5.24: set when a purchase completes a looks set (`{ type: 'set_complete', set, at }`): the scene's flourish and the Vanity tab read it, then call `ackSetComplete`. Not saved (the saved record is `game.rewards.setsDone`). */
+  setComplete: SetCompleteEvent | null;
+  ackSetComplete: () => void;
   /** The UI has shown the endgame news: `news` = stars and recipe cards, `attack` = how the last attack ended. Clears it; not saved. */
   ackEndgame: (part: 'news' | 'attack') => void;
   /** v5.16 (S2b): University's menu mix, in whole percents of Pepperoni and Garlic Knots (Cheese is the rest). One save per change. */
@@ -427,6 +430,7 @@ export const useGame = create<Store>((set, get) => {
     buyAmount: 1,
     plus: false,
     claimed: null,
+    setComplete: null,
     prefs: NO_PREFS,
     finishTitle: () => {
       if (get().titleDone) return;
@@ -600,7 +604,16 @@ export const useGame = create<Store>((set, get) => {
       void get().save();
     },
 
-    buyCosmetic: (id) => commit(buyVanity(get().game, id), undefined, plain('decor')),
+    buyCosmetic: (id) => {
+      const before = get().game;
+      if (!commit(buyVanity(before, id, gameNow()), undefined, plain('decor'))) return false;
+      const done = setCompleteEvent(before, get().game);
+      if (done) set({ setComplete: done });
+      return true;
+    },
+    ackSetComplete: () => {
+      if (get().setComplete) set({ setComplete: null });
+    },
 
     ackEndgame: (part) => {
       const g = get().game;

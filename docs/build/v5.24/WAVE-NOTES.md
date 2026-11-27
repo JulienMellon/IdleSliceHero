@@ -11,3 +11,4 @@
 - S4 pre-existing: storefront furnitureDeps changes length when awningFounder is worn (React deps-size warning) -> S5 (owns storefront scene files this wave).
 - U6: tab built from vanitySections(g, now) in endgame/shop-model.ts (lookView, lookName, setSpeaker, vanityViews); new endgame/vanity-card.tsx; copy keys in src/content/copy/home/looks.ts. Set lines nameless until hire scene (Nonna always named; Boston hoods nameless). Fixture 227_u6.py. New tier titles / "Shows in {hood}" / "Owned" / "Complete" are not in COPY-v5.24 (storycritic to check).
 - U6 Needs routed to E7 (resumed): copy-system test LOOKS table, game-store buyCosmetic -> gameNow + setCompleteEvent, COSMETIC_NAMES for 35 new looks.
+- S5: Dorm/Brick/Marble sets, Dress.ovenSet, scene/set-flourish.ts; flourish triggers from rewards.setsDone < 3 s old by gameNow() (needs buyCosmetic to pass gameNow, sent to E7). furnitureDeps warning fixed. Fixture 228_s5.py (228-231).

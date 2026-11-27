@@ -191,3 +191,12 @@ describe('sets', () => {
     expect(G.migrate(raw, T0).rewards.setsDone).toEqual([]);
   });
 });
+
+describe('names', () => {
+  it('cosmeticName never shows a raw id for a catalog look', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { cosmeticName } = require('../../content/rewards');
+    for (const l of LOOKS) expect(cosmeticName(l.id)).not.toBe(l.id);
+    expect(cosmeticName('storefront-skin-3')).toBe('Storefront skin 3');
+  });
+});
