@@ -281,7 +281,7 @@ describe('the store cards (card N1)', () => {
     expect(row('diamonds_500', { ...ctx, firstUsed: ['diamonds_500'] }).tags).toEqual([]);
     expect(row('diamonds_1200').tags).toEqual(['First buy: 2×']);
     expect(row('diamonds_2600').tags).toEqual(['Best diamond-pack rate', 'First buy: 2×']);
-    expect([row('diamonds_2600').base, row('diamonds_2600').bonus]).toEqual([1600, '+1000 bonus']);
+    expect([row('diamonds_2600').base, row('diamonds_2600').bonus]).toEqual([1600, '+1,000 bonus']);
     expect([row('diamonds_80').bonus, row('diamonds_80').blurb]).toEqual([null, '']); // 80 diamonds is under one look
     expect(row('starter_pack').tags).not.toContain('First buy: 2×');
     expect(row('nonnas_plus').tags).toEqual([]);

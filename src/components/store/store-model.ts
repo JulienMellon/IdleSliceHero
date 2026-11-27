@@ -214,7 +214,7 @@ export function productRows(prices: Prices, owned: readonly ProductId[], ctx: Ro
       firstLine: firstLive ? t('store.firstbuy.pays', { n: (GRANTS[id].diamonds * 2).toLocaleString('en-US') }) : null,
       nonna: id === 'starter_pack' ? t('store.starter.nonna') : null,
       base: split ? split.base : null,
-      bonus: split && split.bonus > 0 ? t('store.bonus', { n: split.bonus }) : null,
+      bonus: split && split.bonus > 0 ? t('store.bonus', { n: split.bonus.toLocaleString('en-US') }) : null,
       chips: productChips(id, ctx.income, ctx.looksLeft),
       rate: id === 'starter_pack' && starterClaims ? t('store.starter.rate') : null,
       adLine: id === 'nonnas_plus' && ctx.adCount >= 2 ? t('store.plus.ads', { n: ctx.adCount }) : null,
