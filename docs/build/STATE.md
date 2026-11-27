@@ -49,3 +49,4 @@ next: start S11-v5.24.md. Carried notes: docs/build/v5.23b/review-r2-{critic,cod
 - 2026-11-27 S11 r2 S4 done (D575 D576 D578 D579 D581; 3516 tests; D580 to S5). S5 launched (C202 first); N2 running.
 - 2026-11-27 S11 r2 N2 done (G123 D584; 3516 tests; C192 half, route in WAVE-NOTES, carried). Waiting on S5.
 - 2026-11-27 S11 r2 S5 done (C202 M77 M78 U41 D585 D580 D577 T142 T144; C203 half; C202 Unverified in shot). founder-awning test fix sent to N2.
+- 2026-11-27 S11 r2 fixes done (3520 tests). Verify v5.24-r2 running.
