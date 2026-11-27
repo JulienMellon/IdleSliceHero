@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { C, F } from '../../theme';
 import { LookThumb } from '../scene/look-thumb';
 import { TAP } from '../tap-targets';
-import { OWN_ART, type VanitySection, type VanityState } from './shop-model';
+import { buttonA11y, OWN_ART, OWNED_TAG, WORN_CHIP, type VanitySection, type VanityState } from './shop-model';
 import { VanityArt } from './vanity-art';
 
 export interface VanityCardProps {
@@ -16,6 +16,8 @@ export interface VanityCardProps {
   prefix: string;
   name: string;
   desc: string;
+  /** A set piece's "set · shows in hood" line (the Featured tile has no room for `desc`, but still says where the look shows). */
+  where: string;
   state: VanityState;
   owned: boolean;
   label: string;
@@ -33,6 +35,7 @@ export const VanityCard = memo(function VanityCard({
   prefix,
   name,
   desc,
+  where,
   state,
   owned,
   label,
@@ -55,15 +58,7 @@ export const VanityCard = memo(function VanityCard({
       disabled={state === 'earn'}
       accessibilityRole="button"
       accessibilityState={{ disabled: state === 'earn' || state === 'poor' }}
-      accessibilityLabel={
-        state === 'worn'
-          ? `${name}: worn. Take off`
-          : state === 'owned'
-            ? `Wear ${name}`
-            : state === 'earn'
-              ? `${name}: ${label}`
-              : `${name}: ${price} diamonds`
-      }
+      accessibilityLabel={buttonA11y(state, name, price, label)}
       onPress={press}
       style={({ pressed }) => [
         styles.btn,
@@ -82,7 +77,7 @@ export const VanityCard = memo(function VanityCard({
         minimumFontScale={0.8}
         maxFontSizeMultiplier={1.15}
       >
-        {state === 'worn' ? 'Worn ✓' : label}
+        {state === 'worn' ? WORN_CHIP() : label}
       </Text>
     </Pressable>
   );
@@ -98,7 +93,7 @@ export const VanityCard = memo(function VanityCard({
       )}
       {owned && !compact && (
         <Text style={styles.ownedTag} maxFontSizeMultiplier={1.15}>
-          Owned
+          {OWNED_TAG()}
         </Text>
       )}
     </View>
@@ -110,6 +105,11 @@ export const VanityCard = memo(function VanityCard({
           {art}
           {text}
         </View>
+        {!!where && (
+          <Text testID={`${prefix}-${id}-where`} style={styles.whereCompact} numberOfLines={2} maxFontSizeMultiplier={1.15}>
+            {where}
+          </Text>
+        )}
         {button}
       </View>
     );
@@ -154,7 +154,8 @@ export const SectionHead = memo(function SectionHead({
 const styles = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 2.5, borderColor: C.ink, padding: 10 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  tile: { flexBasis: '47%', flexGrow: 1, gap: 8 },
+  tile: { flexBasis: '47%', flexGrow: 1, gap: 8, justifyContent: 'space-between' },
+  whereCompact: { fontFamily: F.regular, fontSize: 11, lineHeight: 14, color: C.inkSoft },
   tileTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   text: { flex: 1 },
   name: { fontFamily: F.bold, fontSize: 16, lineHeight: 19, color: C.ink },

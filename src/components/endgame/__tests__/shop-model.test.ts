@@ -39,7 +39,7 @@ describe('tab 1: Shop Style, the seven cosmetics', () => {
 
   test('the master plaque says "earn 18 stars" and is never sold, however many diamonds', () => {
     const v = vanityViews(rich(100_000)).find((x) => x.id === 'plaque-master')!;
-    expect(v).toMatchObject({ state: 'earn', label: 'earn 18 stars', buyId: null, wearId: null });
+    expect(v).toMatchObject({ state: 'earn', label: 'Earn 18 stars', buyId: null, wearId: null });
     expect(MASTERY.masterTotal).toBe(18);
     expect(buyCosmetic(rich(100_000), 'plaque-master')).toEqual({ ok: false, reason: 'Not for sale' });
     expect(buyCosmetic(rich(), 'hamster-wheel')).toEqual({ ok: false, reason: 'Not for sale' });
@@ -191,9 +191,16 @@ describe('the Vanity tab (v5.24, card U6)', () => {
 
   test('a set piece says which shop it shows in; a generic look does not', () => {
     const v = vanityViews(base());
-    expect(v.find((x) => x.id === 'facade-dockside')?.desc).toBe('Shows in Waterfront');
-    expect(v.find((x) => x.id === 'oven-brick')?.desc).toBe('Shows in Industrial');
+    expect(v.find((x) => x.id === 'facade-dockside')?.desc).toBe('Dockside shack · shows in Waterfront');
+    expect(v.find((x) => x.id === 'oven-brick')?.desc).toBe('Union brick · shows in Industrial');
     expect(v.find((x) => x.id === 'chime-bell')?.desc).toBe('');
+  });
+
+  test('a Featured tile of a set piece carries the same where line (D582)', () => {
+    const pieces = section(base(), 'featured').cards.filter((c) => c.desc.includes('shows in'));
+    for (const c of pieces) expect(c.where).toBe(c.desc);
+    expect(vanityViews(base()).find((x) => x.id === 'facade-classic')?.where).toBe('Rosa’s classic · shows in Downtown');
+    expect(vanityViews(base()).find((x) => x.id === 'chime-bell')?.where).toBe('');
   });
 
   test('a half set: its progress reads "2/4 pieces", no check, no done line', () => {

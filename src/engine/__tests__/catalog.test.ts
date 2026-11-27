@@ -91,6 +91,14 @@ describe('wearing', () => {
     expect(dressFor(g, 'suburbs')).toEqual(['awning-gold', 'apron-checkered']); // other shops never wear it
   });
 
+  it('a set piece beats the founder awning in its shop; the founder awning shows elsewhere', () => {
+    const base = buyAll(rich(), ['awning-classic']);
+    const g = R.wear({ ...base, rewards: { ...base.rewards, cosmetics: [...base.rewards.cosmetics, 'awning-founder'] } }, 'awning-founder');
+    expect(g.rewards.worn).toEqual(['awning-classic', 'awning-founder']);
+    expect(dressFor(g, 'downtown')).toEqual(['awning-classic']);
+    expect(dressFor(g, 'suburbs')).toEqual(['awning-founder']);
+  });
+
   it('a set facade beats a bought skin in its own shop; the skin shows elsewhere', () => {
     const g = buyAll(rich(), ['storefront-skin-101', 'facade-dockside']);
     expect(dressFor(g, 'waterfront')).toEqual(['facade-dockside']);
@@ -123,8 +131,16 @@ describe('wearing', () => {
   });
 });
 
+const withShops = (g: G.GameState, built: readonly string[]): G.GameState => ({
+  ...g,
+  shops: Object.fromEntries(Object.entries(g.shops).map(([id, sh]) => [id, { ...sh, built: built.includes(id) }])) as G.GameState['shops'],
+});
+
 describe('Featured', () => {
-  const g = rich();
+  const g = withShops(
+    rich(),
+    SETS.map((s) => s.hood),
+  );
 
   it('four unowned looks, the same all week, and the next set the week after', () => {
     const mon = featured(g, T0);
@@ -140,6 +156,17 @@ describe('Featured', () => {
     for (let w = 0; w < 11; w++) for (const l of featured(g, T0 + w * 7 * DAY)) seen.add(l.id);
     expect(seen.size).toBe(SOLD_LOOKS.length);
     expect(seen.has('plaque-master')).toBe(false);
+  });
+
+  it('set pieces of a shop that is not built are never featured; the row stays four', () => {
+    const early = withShops(rich(), ['downtown']);
+    for (let w = 0; w < 14; w++) {
+      const row = featured(early, T0 + w * 7 * DAY);
+      expect(row).toHaveLength(4);
+      for (const l of row) expect(l.shows === 'all' || l.shows === 'downtown').toBe(true);
+    }
+    const none = withShops(rich(), []);
+    for (const l of featured(none, T0)) expect(l.set).toBeNull();
   });
 
   it('owned looks are skipped and the row stays four; a skin of any kind owns the skin row', () => {

@@ -71,7 +71,7 @@ export default function Shop() {
   // primitives: the screen repaints when a diamond, a cosmetic or a booster changes, not on every game tick
   const wardrobe = useGame(
     (s) =>
-      `${s.game.rewards.cosmetics.join(',')}|${s.game.rewards.worn.join(',')}|${Math.floor(s.game.rewards.diamonds)}|${s.game.seenScenes.filter((x) => x.endsWith('-hire')).join(',')}`,
+      `${s.game.rewards.cosmetics.join(',')}|${s.game.rewards.worn.join(',')}|${Math.floor(s.game.rewards.diamonds)}|${s.game.seenScenes.reduce((n, x) => n + (x.endsWith('-hire') ? 1 : 0), 0)}`,
   );
   const shelfKey = useGame((s) => s.game.rewards.boosters.map((b) => `${b.mult}:${b.seconds}`).join(','));
   const boosterAd = useGame((s) => boosterAdOffer(s.game, gameNow(), s.prefs.boosterAdDay));

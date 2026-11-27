@@ -98,18 +98,22 @@ export function weekIndex(now: number): number {
   return Math.floor((Math.round(Date.UTC(y, m - 1, d) / 86_400_000) + 3) / 7);
 }
 
+/** Is this look one the player can see yet? A generic look always; a set piece once its neighbourhood's shop is built (D574: no looks for a shop that is not open). */
+const opened = (g: Pick<GameState, 'shops'>, l: LookDef): boolean => l.shows === 'all' || !!g.shops[l.shows]?.built;
+
 /**
  * Featured this week: four looks the player does not own, taken from the looks for sale in catalog order starting at this week's
- * place (four further on each week), skipping owned ones. Stable all week for the same wardrobe; with 41 looks each comes up
- * within 11 weeks, sooner for a player who already owns some. Never limited: every look stays buyable.
+ * place (four further on each week), skipping owned ones and the set pieces of shops that are not built yet. Stable all week for the
+ * same wardrobe and shops; with every shop built and 41 looks each comes up within 11 weeks, sooner for a player who already owns
+ * some. Never limited: every look stays buyable.
  */
-export function featured(g: Pick<GameState, 'rewards'>, now: number): LookDef[] {
+export function featured(g: Pick<GameState, 'rewards' | 'shops'>, now: number): LookDef[] {
   const n = SOLD_LOOKS.length;
   const start = (weekIndex(now) * FEATURED_COUNT) % n;
   const out: LookDef[] = [];
   for (let k = 0; k < n && out.length < FEATURED_COUNT; k++) {
     const l = SOLD_LOOKS[(start + k) % n];
-    if (!owns(g.rewards.cosmetics, l)) out.push(l);
+    if (!owns(g.rewards.cosmetics, l) && opened(g, l)) out.push(l);
   }
   return out;
 }
