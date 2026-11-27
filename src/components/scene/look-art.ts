@@ -326,12 +326,13 @@ export const CHIME_SORT = -0.5;
 export const CHIME_Z = 106;
 
 /**
- * Where the door chime hangs: on the wall right of the doorway, centred between the door's far jamb and the pilaster's far edge. `x` is the screen x of its centre in the plan the
+ * Where the door chime hangs: on the wall right of the doorway, its left edge 2 right of the doorway's (what a head in the doorway shows never meets it). `x` is the screen x of its centre in the plan the
  * shop shows (mirrored included: the front wall is drawn plain and flipped), `y` the screen y of its hook.
  */
 export function chimeSpot(lay: Layout): { x: number; y: number; rect: Rect } {
   const p = plainOf(lay);
-  const [x, y] = P((p.door.x1 + p.R + 6) / 2, 0, CHIME_Z, p.frame);
+  const [edge, y] = P(p.door.x1, 0, CHIME_Z, p.frame);
+  const x = edge + 2 + CHIME_W / 2;
   const plain = { x0: x - CHIME_W / 2, x1: x + CHIME_W / 2, y0: y, y1: y + CHIME_H };
   const a = 2 * lay.frame.vanishX;
   return { x: lay.mirrored ? a - x : x, y, rect: lay.mirrored ? flipRect(plain, a) : plain };
