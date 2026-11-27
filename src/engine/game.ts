@@ -482,7 +482,8 @@ function migrateSetsDone(raw: unknown, now: number): SetDone[] {
   const out: SetDone[] = [];
   for (const x of raw as unknown[]) {
     const e = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
-    if (typeof e.set === 'string' && SETS.some((s) => s.id === e.set) && !out.some((o) => o.set === e.set)) out.push({ set: e.set, at: Math.min(now + 400 * 86400_000, Math.max(0, num(e.at, 0))) });
+    if (typeof e.set === 'string' && SETS.some((s) => s.id === e.set) && !out.some((o) => o.set === e.set))
+      out.push({ set: e.set, at: Math.min(now + 400 * 86400_000, Math.max(0, num(e.at, 0))) });
   }
   return out;
 }

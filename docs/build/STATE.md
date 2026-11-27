@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.23b-r2               # r2 verify: True 0 [], layout 0 new (cover 0); 64 changed vs v5.23b
 codecritic_range_start: 04b0abf   # v5.24 start (v5.23b closed commit)
 cards:                 # todo | running | done | partial | blocked
-  E7 running  W5 running  S4 todo  N2 todo  S5 todo  U6 todo
+  E7 running  W5 done  S4 todo  N2 todo  S5 todo  U6 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.23b/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 6, 3 counted; E1 U2 S2 N1; D556 fixed)
   code:   docs/build/v5.23b/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 1 low 29; E5 U16 S1 N7 A1)
@@ -32,3 +32,4 @@ next: start S11-v5.24.md. Carried notes: docs/build/v5.23b/review-r2-{critic,cod
 - 2026-11-23 Julien: mat may be covered transiently (D571 closed); wide shops scroll, no cue (D519 closed); create a Boston backdrop for S67.
 - 2026-11-27 S11 r1 wave 1: E7 launched (W5 waits for catalog.md). P=v5.23b-r2 (STATE last_shots, per S11).
 - 2026-11-27 S11 r1 catalog.md written; W5 launched alongside E7.
+- 2026-11-27 S11 r1 W5 done (COPY-v5.24.md). Speaker-before-hire routed to U6 in WAVE-NOTES. Waiting on E7.

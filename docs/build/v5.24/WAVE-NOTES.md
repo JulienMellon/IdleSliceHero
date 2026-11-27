@@ -1,0 +1,2 @@
+- W5: copy in docs/story/COPY-v5.24.md (35 look names, 6 set names, 6 set-complete lines, shop.featured + 1 tab key). U6 puts the names and keys into code.
+- W5 Needs -> U6 (with E7's data): set-complete lines are spoken by the shop's manager; if the manager's hire scene has not played, show the line with no speaker name (don't spoil the hire).
