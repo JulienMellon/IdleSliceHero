@@ -4,14 +4,14 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.24                   # v5.23b closed 2026-11-23 at r2 (critic SATISFIED 0 bug 0 major 6 minor carried; code APPROVED 1 medium; story advisory 5 minor)
-step: review                        # setup | waves | verify | review | fix | close
-round: r1              # r1 | r2 | r3
+step: fix                           # setup | waves | verify | review | fix | close
+round: r2              # r1 | r2 | r3
 last_shots: v5.24                   # r1 verify: True 0 [], layout 0 new; 11 new 10 changed vs v5.23b-r2
 codecritic_range_start: 04b0abf   # v5.24 start (v5.23b closed commit)
 cards:                 # todo | running | done | partial | blocked
   E7 done  W5 done  S4 done  N2 done  S5 done  U6 done
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.23b/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 6, 3 counted; E1 U2 S2 N1; D556 fixed)
+  critic: docs/build/v5.24/review-r1-critic.md (r1 NOT SATISFIED; bug 1 major 2 minor 17; E4 U5 S10 N3; G123 D574 D575)
   code:   docs/build/v5.24/review-r1-code.md (r1 CHANGES REQUESTED; blocker/high 1 medium 2 low 38; E7 U17 S10 N8 A1; C202 high flourish unseen under Shop)
   story:  docs/build/v5.24/review-r1-story.md (r1 NOT SATISFIED advisory; bug 0 major 0 minor 9; E1 U4 T4)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
@@ -43,3 +43,4 @@ next: start S11-v5.24.md. Carried notes: docs/build/v5.23b/review-r2-{critic,cod
 - 2026-11-27 S11 r1 E7 follow-up done (3512 tests). All cards done. Verify v5.24 running.
 - 2026-11-27 S11 r1 verify v5.24 FAIL: 1 error 205_n1 starter-rate (sent to N2); layout 0 new.
 - 2026-11-27 S11 r1 verify v5.24 PASS (True 0 [], layout 0, 11 new 10 changed). r1 reviews launched.
+- 2026-11-27 S11 gate r1 not met (critic bug 1 major 2 minor 17; code 1 high 2 medium). Fix round r2: E7 || U6, then S4 || N2, then S5. A row (code, 1 low) has no fix lane: carried.
