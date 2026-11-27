@@ -9,6 +9,8 @@ import { fasciaSignBox } from './viewport';
 import type { Layout } from './layout';
 import { GoldPlaque } from './cosmetic-props';
 import { dressedLook, plaqueRect } from './cosmetics';
+import { FasciaTrim } from './cosmetic-props';
+import { SIGN_BOARDS, type SignShape } from './look-art';
 import { LOOKS } from './identity';
 import { doorwaySignRect } from './stations';
 import { Sidewalk } from './street';
@@ -29,6 +31,8 @@ export const FrontWall = memo(function FrontWall({
   awningGold = false,
   awningFounder = false,
   plaque = false,
+  facadeSet = '',
+  awningSet = '',
 }: {
   lay: Layout;
   name: string;
@@ -39,9 +43,12 @@ export const FrontWall = memo(function FrontWall({
   awningGold?: boolean;
   /** The Starter Pack's red and white awning. */ awningFounder?: boolean;
   plaque?: boolean;
+  /** The v5.24 looks (cosmetics.ts `Dress`): the storefront theme and the catalog's awning, each the look's variant or ''. */
+  facadeSet?: string;
+  awningSet?: string;
 }) {
   const { L, R, door } = lay;
-  const look = dressedLook(LOOKS[id], { facadeSkin, awningGold, awningFounder });
+  const look = dressedLook(LOOKS[id], { facadeSkin, awningGold, awningFounder, facadeSet, awningSet });
   const sill = (x0: number, x1: number) => {
     const [ax, ay] = P(x0, 0);
     const [bx] = P(x1, 0);
@@ -117,7 +124,7 @@ export const FrontWall = memo(function FrontWall({
               <Path key={`h${i}`} d={`M${ax} ${ty + 7 * (i + 1)} H${bx}`} stroke={look.seam} strokeWidth={0.7} />
             ))}
             <Path d={`M${ax + w / 2} ${ty} V${ay + 6}`} stroke={look.seam} strokeWidth={0.7} />
-            <Rect x={ax - 2} y={ty} width={w + 4} height={5} rx={1} fill="#D4A84A" stroke={INK} strokeWidth={0.9} />
+            <Rect x={ax - 2} y={ty} width={w + 4} height={5} rx={1} fill={look.cap ?? '#D4A84A'} stroke={INK} strokeWidth={0.9} />
           </G>
         )}
         <Rect x={inner === 'l' ? bx - 3.5 : ax} y={ty} width={3.5} height={h + 6} fill="#000" opacity={0.18} />
@@ -352,6 +359,10 @@ export const FrontWall = memo(function FrontWall({
       {/* fascia beam */}
       <Rect x={fx0} y={fTop} width={fx1 - fx0} height={fBot - fTop} fill={look.fascia} stroke={INK} strokeWidth={1.4} />
       <Rect x={fx0 + 1} y={fTop + 1} width={fx1 - fx0 - 2} height={4} fill="#fff" opacity={0.14} />
+      {/* a storefront theme's line along the beam (look-art.ts `FACADE_THEMES`); the name plate hangs over it */}
+      {look.theme && (
+        <FasciaTrim kind={look.theme.trim} color={look.theme.trimColor} alt={look.theme.trimAlt} x0={fx0 + 1} x1={fx1 - 1} top={fTop} bottom={fBot} />
+      )}
       {/* hanging ferns from the fascia (plants decor) */}
       {plants >= 2 &&
         [0.04, 0.96].map((f) => {
@@ -420,11 +431,28 @@ export const FrontWall = memo(function FrontWall({
  * The shop's name plate on the fascia: painted board, neon or marquee bulbs. It is its own part so a wide shop can slide it along the beam by `dx` (draw units)
  * to stay inside the screen while the shop scrolls (D511); the rest of the front wall is static and does not redraw for it.
  */
-export const FasciaSign = memo(function FasciaSign({ lay, name, signage, dx = 0 }: { lay: Layout; name: string; signage: number; dx?: number }) {
+export const FasciaSign = memo(function FasciaSign({
+  lay,
+  name,
+  signage,
+  dx = 0,
+  shape = 'board',
+}: {
+  lay: Layout;
+  name: string;
+  signage: number;
+  dx?: number;
+  /** The plate's shape (look-art.ts `signShapeOf`): the plain board, or a set's cartouche, pill, roped board or plank. */
+  shape?: SignShape;
+}) {
   const { fTop, fBot, fcx: cx0, signW } = fasciaSignBox(lay, name);
   const fcx = cx0 + dx;
-  const board = signage === 0 ? '#8E5A3C' : signage === 1 ? '#1E1630' : '#D9443A';
-  const text = signage === 0 ? '#FFF4E0' : signage === 1 ? '#FF8FB8' : '#fff';
+  const set = shape === 'board' ? null : SIGN_BOARDS[shape];
+  const board = signage === 0 ? (set?.board ?? '#8E5A3C') : signage === 1 ? '#1E1630' : '#D9443A';
+  const text = signage === 0 ? (set?.text ?? '#FFF4E0') : signage === 1 ? '#FF8FB8' : '#fff';
+  const plateH = fBot - fTop + 10;
+  const plateX = fcx - signW / 2;
+  const rx = shape === 'pill' ? plateH / 2 : shape === 'cartouche' ? 10 : shape === 'plank' ? 2 : 6;
   return (
     <G>
       {/* sign plate: painted board → neon → marquee bulbs */}
@@ -434,11 +462,40 @@ export const FasciaSign = memo(function FasciaSign({ lay, name, signage, dx = 0 
         y={fTop - 5}
         width={signW}
         height={fBot - fTop + 10}
-        rx={6}
+        rx={rx}
         fill={board}
         stroke={signage === 1 ? '#FF5E9A' : INK}
         strokeWidth={signage === 1 ? 2 : 1.4}
       />
+      {set && (
+        <G>
+          {/* the set's plate: an inner border (gold, chrome or rope), a plank's seams and cleats */}
+          <Rect
+            x={plateX + 3}
+            y={fTop - 2}
+            width={signW - 6}
+            height={plateH - 6}
+            rx={Math.max(1, rx - 3)}
+            fill="none"
+            stroke={set.edge}
+            strokeWidth={shape === 'rope' ? 1.6 : 1}
+            strokeDasharray={shape === 'rope' ? '3 1.6' : undefined}
+          />
+          {shape === 'plank' && (
+            <G>
+              <Path
+                d={`M${plateX + signW / 3} ${fTop - 5} V${fBot + 5} M${plateX + (2 * signW) / 3} ${fTop - 5} V${fBot + 5}`}
+                stroke={INK}
+                strokeWidth={0.7}
+                opacity={0.35}
+              />
+              {[plateX + 5, plateX + signW - 5].map((cx) => (
+                <Circle key={cx} cx={cx} cy={(fTop + fBot) / 2} r={2} fill={set.edge} stroke={INK} strokeWidth={0.8} />
+              ))}
+            </G>
+          )}
+        </G>
+      )}
       {signage !== 1 && <Rect x={fcx - signW / 2 + 3} y={fTop - 3} width={signW - 6} height={6} rx={3} fill="#fff" opacity={0.2} />}
       {signage >= 2 &&
         Array.from({ length: 18 }).map((_, i) => {

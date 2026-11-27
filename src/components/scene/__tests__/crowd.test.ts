@@ -42,6 +42,7 @@ import { seatPalette } from '../palette';
 import { CURB_Y, FRONT_TOP, P, SCENE_H, SCENE_W, kAt, unprojectX } from '../projection';
 import { SIDEWALK_ROW } from '../../tap-targets';
 import { PILL_UMBRELLA_AIR, UMBRELLA_TOP, patioSortYs } from '../patio-deck';
+import { CHIME_SORT, chimeRect } from '../look-art';
 import { doorwaySignRect, placePops, popPlace, popRect, popsCover, popWidth, staffFaces, stationRects } from '../stations';
 import { bodyBy, chairBack, SEATED_TORSO_HALF } from '../geometry';
 import { quantArm, quantStep } from '../quantise';
@@ -405,6 +406,33 @@ describe('the doorway sign (D377)', () => {
       for (const sp of shop.lay.spots) expect([shop.name, 'pickup', hits(headOf(at(sp.x, sp.y, 'driver')), sign)]).toEqual([shop.name, 'pickup', false]);
       expect(hits(headOf(at(unprojectX((sign.x0 + sign.x1) / 2, 60), 60, 'walkin')), sign)).toBe(true); // the control: a figure standing at the door (the v5.2 spot, the counter's right end, was one until the wide tiers moved the counter away from it)
     }
+  });
+});
+
+describe('the door chime (v5.24, S4)', () => {
+  // the chime is furniture sorted behind the cast (CHIME_SORT, deepest first), so any head that meets its box is drawn over it: the front wall it replaces would have covered the
+  // drivers who walk through the doorway's height (on the wall it met their heads at (278..291, 32) in the first build)
+  const headOf = (c: CastMember) => {
+    const b = box(c);
+    return { x0: b.x0, x1: b.x1, y0: b.y0, y1: b.y0 + (b.y1 - b.y0) * 0.3 };
+  };
+  const hits = (a: Box, r: { x0: number; x1: number; y0: number; y1: number }) => a.x0 < r.x1 && a.x1 > r.x0 && a.y0 < r.y1 && a.y1 > r.y0;
+  test('every head that meets the chime in any frame is drawn over it, and some do (the control: the doorway is walked through)', () => {
+    const under: string[] = [];
+    let met = 0;
+    for (const shop of busyShops()) {
+      const chime = chimeRect(shop.lay);
+      for (const pace of [1, 2.6])
+        frames(shop, pace).forEach((cast, f) => {
+          for (const c of cast)
+            if (hits(headOf(c), chime)) {
+              met++;
+              if (c.sortY >= CHIME_SORT) under.push(`${shop.name} pace${pace} f${f} ${c.key}@${c.props.x.toFixed(0)},${c.props.y.toFixed(0)}`);
+            }
+        });
+    }
+    expect(met).toBeGreaterThan(0);
+    expect(under.slice(0, 5)).toEqual([]);
   });
 });
 

@@ -15,6 +15,7 @@ import { cityOf, hoodIds, layerOf, sceneHood } from '../content/cities';
 import { LOOKS } from './scene/identity';
 import type { NeighborhoodId } from '../content/types';
 import * as Game from '../engine/game';
+import { dressFor } from '../engine/vanity';
 import { useGame } from '../store/game-store';
 import { emitAudio } from '../audio/bus';
 import { CHEER_SECONDS, emitPayout, onCheer } from './pulse-bus';
@@ -36,11 +37,12 @@ import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Ru
 import { ovenTier } from './scene/geometry';
 import { furnitureDeps, furnitureInputs, ladderInput, type FurnitureInputs } from './scene/furniture-inputs';
 import { LadderPiece } from './scene/ladder-props';
-import { NEON_W, neonSpot } from './scene/cosmetics';
+import { NEON_W, dressOf, neonSpot, scooterKey } from './scene/cosmetics';
+import { CHIME_SCALE, CHIME_SORT, chimeSpot, signShapeOf } from './scene/look-art';
 import { ColdFrost, DuskTint, StringLights } from './scene/event-props';
 import { eventLook } from './scene/event-look';
 import { activeEvent } from '../engine/features/events';
-import { NeonCounterSign } from './scene/cosmetic-props';
+import { DoorChime, NeonCounterSign } from './scene/cosmetic-props';
 import { VISITOR_LOOK, cameoGeom, sayLines, visitLine, visitOf, visitTagLabel } from './scene/cameo';
 import { CHIP_RISE, CHIP_SECONDS, bounceStep, bounceTransforms, clearPillX, confettiStep, ladderProps, menuRect, wallRects, type Placed } from './scene/ladder';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverlays, StreetProp } from './scene/room';
@@ -336,7 +338,25 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     [q0, extraDiners, queueShare],
   );
   const cheer = nowMs / 1000 - m0.cheerAt < CHEER_SECONDS;
-  const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cold: rep.state === 'cold', cheer, symptoms: rep.symptoms });
+  // what this shop wears (engine/vanity.ts `dressFor`: the worn looks less other shops' set pieces, a set piece beating the generic look of its part): recomputed when the wardrobe changes, not per frame
+  const worn = useMemo(() => dressFor(game, id), [game.rewards.worn, id]); // eslint-disable-line react-hooks/exhaustive-deps -- `dressFor` reads only `rewards.worn`
+  const apron = useMemo(() => dressOf(worn).apron, [worn]);
+  const { cast } = buildCast({
+    lay,
+    shop,
+    running,
+    pace,
+    clock,
+    shopSeed,
+    nIdx,
+    pal,
+    crew,
+    queue,
+    cold: rep.state === 'cold',
+    cheer,
+    apron,
+    symptoms: rep.symptoms,
+  });
   const side = sidewalkOf(lay, crew, queue);
   // each pop rides over the figure carrying its departure (one Map reused per mount, M48)
   const carriers = m0.carriers;
@@ -373,7 +393,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     running,
     rate,
     vehicle: game.vehicle,
-    worn: game.rewards.worn,
+    worn,
     first: id === hoodIds(city)[0],
     piles: live,
   });
@@ -478,7 +498,13 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       y: 0,
       el: (
         <Flip key="fascia" on={lay.mirrored} axis={frame.vanishX}>
-          <FasciaSign lay={plainOf(lay)} name={nd.name} signage={fin.signageTier} dx={lay.mirrored ? -signDraw : signDraw} />
+          <FasciaSign
+            lay={plainOf(lay)}
+            name={nd.name}
+            signage={fin.signageTier}
+            dx={lay.mirrored ? -signDraw : signDraw}
+            shape={signShapeOf(fin.facadeSet, fin.signSet)}
+          />
         </Flip>
       ),
     },
@@ -797,6 +823,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             <Flip on={lay.mirrored} axis={frame.vanishX}>
               <RoomShell
                 id={art}
+                menu={fin.menu}
                 lay={plainOf(lay)}
                 wall={nd.wall}
                 fp={fp}
@@ -1138,8 +1165,8 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
   // tables + seated diners: chairs, then the diner, then the table over their lap
   lay.tables.forEach((tb, i) => {
     if (lay.tables.length === 1) f.push({ y: tb.y + 12, el: <Rug key="rug" x={tb.x} y={tb.y} /> });
-    f.push({ y: tb.y + 0.6, el: <Table key={`tb${i}`} x={tb.x} y={tb.y} tier={fin.tableTier} part="back" /> });
-    f.push({ y: tb.y - 0.6, el: <Table key={`tf${i}`} x={tb.x} y={tb.y} tier={fin.tableTier} part="front" /> });
+    f.push({ y: tb.y + 0.6, el: <Table key={`tb${i}`} x={tb.x} y={tb.y} tier={fin.tableTier} part="back" cloth={fin.tablecloth} /> });
+    f.push({ y: tb.y - 0.6, el: <Table key={`tf${i}`} x={tb.x} y={tb.y} tier={fin.tableTier} part="front" cloth={fin.tablecloth} /> });
   });
   // potted plants (plants decor); the corner fern only stands in a starter room, before a front row of tables
   // (the mirrored plan stands its corner props at the wall far from the door too: that is the right wall there)
@@ -1149,13 +1176,13 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
   f.push({ y: 66, st: 'prep', el: <PrepBench key="prep" lay={lay} prep={fin.prep} dough={fin.dough} /> });
   // the wide tiers' second prep table, beside the first: the same bench with no dough and nobody at it (the layout's `prep2` stands where the first one would)
   if (lay.prep2) f.push({ y: 66, st: 'prep', el: <PrepBench key="prep2" lay={{ ...lay, prep: lay.prep2, cooks: [] }} prep={fin.prep} dough={0} /> });
-  f.push({ y: 64, st: 'counter', el: <Counter key="counter" lay={lay} boxes={fin.boxes} /> });
+  f.push({ y: 64, st: 'counter', el: <Counter key="counter" lay={lay} boxes={fin.boxes} counter={fin.counterSet} jar={fin.tipjar} /> });
   // the visual ladder: bench, counter and street props bounce with their station; the wall ones stay put
   for (const p of ladder)
     f.push({
       y: p.sortY,
       st: p.mount === 'wall' ? undefined : p.station === 'drivers' ? 'drivers' : p.station === 'prep' ? 'prep' : 'counter',
-      el: <LadderPiece key={`lp-${p.id}`} id={p.id} ax={p.ax} ay={p.ay} k={p.k} n={p.n} v={fin.vehicle} mint={fin.scooterMint} />,
+      el: <LadderPiece key={`lp-${p.id}`} id={p.id} ax={p.ax} ay={p.ay} k={p.k} n={p.n} v={fin.vehicle} paint={scooterKey(fin)} />,
     });
   // front of the shop + sidewalk props
   // the facade is handed (the doorway's post and brick, the hanging sign): the mirrored plan draws the plain plan's and flips it, its lettering kept upright
@@ -1174,11 +1201,25 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
           awningGold={fin.awningGold}
           awningFounder={!!fin.awningFounder}
           plaque={fin.plaque}
+          facadeSet={fin.facadeSet}
+          awningSet={fin.awningSet}
         />
       </Flip>
     ),
   });
   f.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
+  // the door chime hangs in the doorway, behind everyone (look-art.ts `chimeSpot`: a head must never be under it)
+  if (fin.chime) {
+    const ch = chimeSpot(lay);
+    f.push({
+      y: CHIME_SORT,
+      el: (
+        <G key="chime" transform={`translate(${ch.x} ${ch.y}) scale(${CHIME_SCALE})`}>
+          <DoorChime look={fin.chime} />
+        </G>
+      ),
+    });
+  }
   if (lay.ledge) {
     f.push({ y: STOOL_Y, el: <Stools key="stools" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
     f.push({ y: LEDGE_Y, el: <LedgeBar key="ledge" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
@@ -1204,7 +1245,7 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
   }
   if (!fin.idleShop) {
     const [scx, scy] = P(lay.scooter.x, lay.scooter.y, 0, lay.frame);
-    f.push({ y: lay.scooter.y, st: 'drivers', el: <ParkedVehicle key="scooter" x={scx} y={scy} v={fin.vehicle} mint={fin.scooterMint} /> });
+    f.push({ y: lay.scooter.y, st: 'drivers', el: <ParkedVehicle key="scooter" x={scx} y={scy} v={fin.vehicle} paint={scooterKey(fin)} /> });
   }
   return f;
 }

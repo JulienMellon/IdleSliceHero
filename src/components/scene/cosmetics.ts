@@ -11,8 +11,10 @@
 //   awning-gold             awning     the awning                               gold and cream stripes; the brand's red stays as the piping
 //   awning-founder          awning     the awning                               red and white stripes with a dark-red piping (the Starter Pack's; never sold on its own)
 //   plaque-master           plaque     a gold plaque by the door                on the brick header over the door
+import { lookOf, type Part } from '../../content/catalog';
 import type { ShopLook } from './identity';
 import type { Layout } from './layout';
+import { AWNING_LOOKS, FACADE_THEMES, RED_SCOOTER, type FacadeTheme, type ScooterPaint } from './look-art';
 import { P } from './projection';
 import type { Rect } from './stations';
 
@@ -30,9 +32,59 @@ export interface Dress {
   scooterMint: boolean;
   neon: boolean;
   plaque: boolean;
+  // The v5.24 catalog (card S4): the looks of the sets and the generic small looks. Each is the worn look's variant, its id without the part (`awning-classic` -> 'classic'),
+  // or '' when none is worn. They are strings (primitives) so the furniture memo keys on them like on the rest.
+  /** facade-<set>: a storefront theme (look-art.ts `FACADE_THEMES`). */
+  facadeSet: string;
+  /** awning-<variant> of the catalog (not the gold and founder ones above). */
+  awningSet: string;
+  /** counter-<set>: a repainted service counter (not the neon sign above). */
+  counterSet: string;
+  /** sign-<set>: the name plate's shape. */
+  signSet: string;
+  /** scooter-<variant> of the catalog (not the mint one above). */
+  scooterSet: string;
+  menu: string;
+  apron: string;
+  tablecloth: string;
+  tipjar: string;
+  chime: string;
 }
 
-export const NO_DRESS: Dress = { ovenSkin: 0, awningGold: false, facadeSkin: 0, scooterMint: false, neon: false, plaque: false };
+export const NO_DRESS: Dress = {
+  ovenSkin: 0,
+  awningGold: false,
+  facadeSkin: 0,
+  scooterMint: false,
+  neon: false,
+  plaque: false,
+  facadeSet: '',
+  awningSet: '',
+  counterSet: '',
+  signSet: '',
+  scooterSet: '',
+  menu: '',
+  apron: '',
+  tablecloth: '',
+  tipjar: '',
+  chime: '',
+};
+
+/** The `Dress` field each catalog part's variant is worn in (the parts S4 draws; S5 adds the oven's). */
+const VARIANT_FIELD: Partial<
+  Record<Part, 'facadeSet' | 'awningSet' | 'counterSet' | 'signSet' | 'scooterSet' | 'menu' | 'apron' | 'tablecloth' | 'tipjar' | 'chime'>
+> = {
+  facade: 'facadeSet',
+  awning: 'awningSet',
+  counter: 'counterSet',
+  sign: 'signSet',
+  scooter: 'scooterSet',
+  menu: 'menu',
+  apron: 'apron',
+  tablecloth: 'tablecloth',
+  tipjar: 'tipjar',
+  chime: 'chime',
+};
 
 export interface FacadeSkin {
   name: string;
@@ -75,30 +127,57 @@ export function dressOf(worn: readonly string[]): Dress {
     else if (id === 'neon-counter') d.neon = true;
     else if (id === 'plaque-master') d.plaque = true;
     else if (skinNumber(id)) d.facadeSkin = skinNumber(id);
+    else {
+      const l = lookOf(id);
+      const field = l && VARIANT_FIELD[l.part];
+      if (l && field && id.startsWith(`${l.part}-`)) d[field] = id.slice(l.part.length + 1);
+    }
   }
   return d;
 }
 
 /** Whether anything at all is worn (the "nothing worn" shop is the plain one). */
 export const isDressed = (d: Dress): boolean =>
-  d.ovenSkin !== 0 || d.awningGold || !!d.awningFounder || d.facadeSkin !== 0 || d.scooterMint || d.neon || d.plaque;
+  d.ovenSkin !== 0 ||
+  d.awningGold ||
+  !!d.awningFounder ||
+  d.facadeSkin !== 0 ||
+  d.scooterMint ||
+  d.neon ||
+  d.plaque ||
+  Object.values(VARIANT_FIELD).some((f) => d[f] !== '');
 
 /** OVEN_GRADES index an oven is painted with: a skin overrides the grade bought (gold = Golden, 4; wood-fired = 2). */
 export const ovenPaint = (grade: number, skin: OvenSkin): number => (skin === 1 ? 4 : skin === 2 ? 2 : grade);
 /** The gold skin always carries D417's brass trim. */
 export const ovenTrim = (tier: 0 | 1 | 2, skin: OvenSkin): 0 | 1 | 2 => (skin === 1 && tier < 1 ? 1 : tier);
 
-/** A neighbourhood's look with the worn skin and awning painted over it (the brand's OPEN sign, WELCOME mat and plank are not in `ShopLook`). */
-export function dressedLook(look: ShopLook, d: Pick<Dress, 'facadeSkin' | 'awningGold' | 'awningFounder'>): ShopLook & { fascia: string } {
+/** What `dressedLook` reads of the worn looks: the first two as before, the rest only when the shop wears a v5.24 set facade or awning. */
+export type LookDress = Pick<Dress, 'facadeSkin' | 'awningGold'> & Partial<Pick<Dress, 'awningFounder' | 'facadeSet' | 'awningSet'>>;
+
+/** A neighbourhood's look with the worn skin, theme and awning painted over it (the brand's OPEN sign, WELCOME mat and plank are not in `ShopLook`). `theme` is the set's storefront, for its trim and its sign. */
+export function dressedLook(look: ShopLook, d: LookDress): ShopLook & { fascia: string; cap?: string; theme: FacadeTheme | null } {
   const skin = d.facadeSkin ? SKINS[d.facadeSkin - 1] : null;
+  const theme = (!skin && d.facadeSet && FACADE_THEMES[d.facadeSet]) || null;
+  const set = d.awningSet ? AWNING_LOOKS[d.awningSet] : undefined;
   return {
     ...look,
     ...(skin ? { pilaster: skin.pilaster, seam: skin.seam, plinth: skin.plinth } : {}),
+    ...(theme ? { pilaster: theme.pilaster, seam: theme.seam, plinth: theme.plinth, ...(theme.facade ? { facade: theme.facade } : {}) } : {}),
     ...(d.awningGold ? { awning: [AWNING_GOLD.main, AWNING_GOLD.alt] as [string, string], piping: AWNING_GOLD.piping } : {}),
     ...(d.awningFounder ? { awning: [AWNING_FOUNDER.main, AWNING_FOUNDER.alt] as [string, string], piping: AWNING_FOUNDER.piping } : {}),
-    fascia: skin ? skin.fascia : '#5E3A26',
+    ...(set ? { awning: [set.main, set.alt] as [string, string], piping: set.piping } : {}),
+    fascia: skin ? skin.fascia : theme ? theme.fascia : '#5E3A26',
+    ...(theme?.cap ? { cap: theme.cap } : {}),
+    theme,
   };
 }
+
+/** The parked vehicle's repaints by key (`scooterKey`): the mint scooter and the catalog's red one. */
+export const SCOOTER_PAINTS: Readonly<Record<string, ScooterPaint>> = { mint: { body: MINT.body, dark: MINT.dark }, red: RED_SCOOTER };
+
+/** Which repaint the parked vehicle wears ('' for the fleet's own colours): the mint scooter wins when both are on. A primitive, so the memoised vehicle keys on it. */
+export const scooterKey = (d: Pick<Dress, 'scooterMint' | 'scooterSet'>): string => (d.scooterMint ? 'mint' : d.scooterSet === 'red' ? 'red' : '');
 
 // ---------- the neon sign ----------
 

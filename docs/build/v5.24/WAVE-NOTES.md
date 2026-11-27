@@ -5,3 +5,7 @@
 - E7 Needs -> U6: store-model.ts:22 and shop-model.ts list only VANITY_IDS; switch to LOOKS/featured. COSMETIC_NAMES and shop.item.<id> keys exist only for the seven: add W5's names. game-store.ts ~603: pass gameNow() to buyVanity and raise setCompleteEvent(before, after) for the tab and for S5's flourish.
 - E7 Needs -> S5: consume the set-complete event U6 raises from game-store for the flourish.
 - N2: diamonds_2600 'Cart of Diamonds' added (store.pack.diamonds_2600.title in copy/home/store.ts). bestRate now skips unpriced packs (orchestrator accepted). 205_n1 fixture may want 2600 added; COPY record of the pack line not written (carried).
+- S4: scene dresses from dressFor(game,id) (storefront.tsx). New scene/look-art.ts (pure style tables DRAWN, FACADE_THEMES..., hasArt, S4_LOOKS) and scene/look-thumb.tsx `LookThumb({id,size=48})`. `mint` scene key renamed `paint` (street.tsx, ladder-props.tsx). protected.ts: tip jar and door chime are fixed covers. Fixture 222_s4.py (shots 222-226).
+- S4 Needs -> S5: add University/Industrial/Uptown rows to look-art.ts tables, an `ovenSet` field on Dress with a VARIANT_FIELD entry.
+- S4 Needs -> U6: import LookThumb from src/components/scene/look-thumb.tsx for tab tiles; looks without art (other 3 sets until S5, oven skins, neon sign) get a plain glyph tile.
+- S4 pre-existing: storefront furnitureDeps changes length when awningFounder is worn (React deps-size warning) -> S5 (owns storefront scene files this wave).

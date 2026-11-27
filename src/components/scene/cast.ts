@@ -52,6 +52,8 @@ export interface CastInput {
   cold?: boolean;
   /** The `cheer` pulse is up (pulse-bus.ts, D444): the cooks raise both arms. */
   cheer?: boolean;
+  /** The worn apron's variant (look-art.ts `APRONS`), or '' for the uniforms' own: the cooks, the bakers and the counter staff wear it. */
+  apron?: string;
   /** What the shop shows (the report's symptoms, v5.22): each kitchen station's worker piling or idle, and the floor's walk-out. Absent: nothing to show. */
   symptoms?: { prep?: WorkerSymptom; ovens?: WorkerSymptom; counter?: WorkerSymptom; floor?: string | null };
 }
@@ -106,6 +108,7 @@ export function buildCast({
   queue,
   cold = false,
   cheer = false,
+  apron = '',
   symptoms = NO_SYMPTOMS,
 }: CastInput): {
   cast: CastMember[];
@@ -361,6 +364,7 @@ export function buildCast({
         y,
         kind: 'cook',
         variant: i,
+        apron,
         gold: shop.prep >= 100,
         front: true,
         act: cheer ? 'cheer' : (pose?.act ?? (pose?.still ? 'none' : COOK_ACTS[i % 3])),
@@ -390,6 +394,7 @@ export function buildCast({
         y: b.y,
         shirt: BAKER_SHIRTS[ci],
         kind: 'baker',
+        apron,
         seed: sd,
         mood: pose?.mood ?? undefined,
         blink: blinkAt(sd),
@@ -415,6 +420,7 @@ export function buildCast({
         x,
         y: 92,
         kind: 'staff',
+        apron,
         front: true,
         alt: i === 1,
         cap: STAFF_CAPS[nIdx],

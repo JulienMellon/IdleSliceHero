@@ -7,6 +7,8 @@ import { type Layout, SEAT } from './layout';
 import { HOOD_EXTRA, boxOvenGeom, chairBack, domeGeom, flameBox, isBoxOven, ovenFrame, type OvenSpec } from './geometry';
 import { Box, FloorShadow } from './primitives';
 import { ovenPaint, ovenTrim, type OvenSkin } from './cosmetics';
+import { TableCloth, TipJar } from './cosmetic-props';
+import { COUNTERS, PLAIN_COUNTER, tipJarSpot } from './look-art';
 
 /**
  * An oven against the back wall. Single-deck ovens are domed pizza ovens on a brick plinth
@@ -295,7 +297,7 @@ export const TABLE_STYLE = [
  * A dining table in two layers so diners really sit: `back` is the floor shadow and both
  * chairs (back rest on the outer side + seat); `front` is the table itself, drawn over the diners' laps.
  */
-export const Table = memo(function Table({ x, y, tier, part }: { x: number; y: number; tier: number; part: 'back' | 'front' }) {
+export const Table = memo(function Table({ x, y, tier, part, cloth = '' }: { x: number; y: number; tier: number; part: 'back' | 'front'; cloth?: string }) {
   const st = TABLE_STYLE[tier];
   const [cx, cy] = P(x, y);
   const k = kAt(y) * 1.1;
@@ -355,8 +357,12 @@ export const Table = memo(function Table({ x, y, tier, part }: { x: number; y: n
         <Ellipse cx={0} cy={-1} rx={6} ry={2} fill={st.leg} />
         <Ellipse cx={0} cy={-15} rx={14} ry={5} fill={st.rim} stroke={INK} strokeWidth={1.1} />
         <Ellipse cx={0} cy={-16} rx={14} ry={5} fill={st.top} stroke={INK} strokeWidth={1.1} />
-        {tier === 1 && [-8, -3, 2, 7].map((dx, i) => <Rect key={dx} x={dx} y={-19 + (i % 2) * 2} width={3} height={2} fill="#D9443A" opacity={0.85} />)}
-        {tier === 3 && <Path d="M-10 -17 Q0 -19 10 -15" stroke="#C9C3BA" strokeWidth={0.8} fill="none" />}
+        {/* a worn table cloth (look-art.ts `CLOTHS`) covers the top and the tier's own pattern */}
+        {!!cloth && <TableCloth look={cloth} />}
+        {!cloth &&
+          tier === 1 &&
+          [-8, -3, 2, 7].map((dx, i) => <Rect key={dx} x={dx} y={-19 + (i % 2) * 2} width={3} height={2} fill="#D9443A" opacity={0.85} />)}
+        {!cloth && tier === 3 && <Path d="M-10 -17 Q0 -19 10 -15" stroke="#C9C3BA" strokeWidth={0.8} fill="none" />}
         <Ellipse cx={-3} cy={-16.5} rx={5} ry={1.8} fill="#FFC531" stroke={INK} strokeWidth={0.6} />
         <Circle cx={-4} cy={-16.8} r={0.8} fill="#E8432E" />
         <Circle cx={-1.5} cy={-16} r={0.8} fill="#E8432E" />
@@ -638,17 +644,39 @@ export const PrepBench = memo(function PrepBench({ lay, prep, dough }: { lay: La
 });
 
 /** Service counter with its register and a stack of boxes that grows with throughput. */
-export const Counter = memo(function Counter({ lay, boxes }: { lay: Layout; boxes: number }) {
+export const Counter = memo(function Counter({ lay, boxes, counter = '', jar = '' }: { lay: Layout; boxes: number; counter?: string; jar?: string }) {
+  const look = COUNTERS[counter] ?? PLAIN_COUNTER;
   return (
     <G>
       <FloorShadow x={(lay.counter.x0 + lay.counter.x1) / 2} y={62} r={(lay.counter.x1 - lay.counter.x0) * 0.6} />
-      <Box x0={lay.counter.x0} x1={lay.counter.x1} y0={64} y1={84} h={38} color="#B0653A" top="#E9DCC8" />
+      <Box x0={lay.counter.x0} x1={lay.counter.x1} y0={64} y1={84} h={38} color={look.front} top={look.top} />
       {/* front panel trim */}
       {(() => {
         const [ax, ay] = P(lay.counter.x0 + 3, 64, 6);
         const [bx, by] = P(lay.counter.x1 - 3, 64, 32);
-        return <Rect x={ax} y={by} width={bx - ax} height={ay - by} rx={3} fill="none" stroke="#8C4A26" strokeWidth={1.2} />;
+        return <Rect x={ax} y={by} width={bx - ax} height={ay - by} rx={3} fill="none" stroke={look.trim} strokeWidth={1.2} />;
       })()}
+      {/* the diner counter's chrome lip and the checker band along its foot (look-art.ts `COUNTERS`) */}
+      {look.checker &&
+        (() => {
+          const [ax, ay] = P(lay.counter.x0, 64, 0);
+          const [bx] = P(lay.counter.x1, 64, 0);
+          const [, ly] = P(lay.counter.x0, 64, 38);
+          return (
+            <G>
+              <Path d={`M${ax} ${ly + 0.8} H${bx}`} stroke={look.trim} strokeWidth={2} />
+              <Rect x={ax} y={ay - 5} width={bx - ax} height={5} fill="#FFFFFF" />
+              <Path d={`M${ax} ${ay - 3.75} H${bx}`} stroke="#2A2A33" strokeWidth={2.5} strokeDasharray="2.5 2.5" />
+              <Path d={`M${ax} ${ay - 1.25} H${bx}`} stroke="#2A2A33" strokeWidth={2.5} strokeDasharray="2.5 2.5" strokeDashoffset={2.5} />
+            </G>
+          );
+        })()}
+      {/* the tip jar on its bracket shelf, at the end of the front panel away from the door (look-art.ts `tipJarSpot`) */}
+      {!!jar && (
+        <G transform={`translate(${tipJarSpot(lay).x} ${tipJarSpot(lay).y})`}>
+          <TipJar look={jar} />
+        </G>
+      )}
       {lay.staff.slice(0, 1).map((x, i) => (
         <Register key={i} x={x + 12} y={70} z={38} />
       ))}

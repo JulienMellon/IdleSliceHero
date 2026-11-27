@@ -106,6 +106,8 @@ export interface PersonProps {
   shawl?: string;
   /** Which cook in the kitchen (0–2): neckerchief colour, and the second wears a skull cap (D306). */
   variant?: number;
+  /** The worn apron (look-art.ts `APRONS`: classic, checkered, striped), on the kitchen crew and the counter staff. Absent: the uniform's own. */
+  apron?: string;
   // pose
   act?: Act;
   mood?: Mood;
