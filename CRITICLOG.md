@@ -57,3 +57,4 @@ v5.13 = golden pizza + special orders, economy refit (4 h cap, costMult = order 
 - v5.22 closed 2026-11-22: critic SATISFIED r2 — notes: docs/build/v5.22/review-r2-critic.md
 - v5.23 closed 2026-11-22: critic NOT SATISFIED r3 (0 bugs, 0 majors, 21 minors carried) — notes: docs/build/v5.23/review-r3-critic.md
 - v5.23b closed 2026-11-23: critic SATISFIED r2 — notes: docs/build/v5.23b/review-r2-critic.md
+- v5.24 closed 2026-11-27: critic NOT SATISFIED (minors only, carried) r3 — notes: docs/build/v5.24/review-r3-critic.md
