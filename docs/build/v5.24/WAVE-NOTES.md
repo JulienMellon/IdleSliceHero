@@ -1,2 +1,6 @@
 - W5: copy in docs/story/COPY-v5.24.md (35 look names, 6 set names, 6 set-complete lines, shop.featured + 1 tab key). U6 puts the names and keys into code.
 - W5 Needs -> U6 (with E7's data): set-complete lines are spoken by the shop's manager; if the manager's hire scene has not played, show the line with no speaker name (don't spoil the hire).
+- E7: catalog in src/content/catalog.ts (LOOKS, TIER_PRICE, SETS, lookOf, setLooks, showsIn, CATALOG_TOTAL); engine/vanity.ts adds dressFor, featured, weekIndex, setProgress, setCompleteEvent, SET_COMPLETE; buyCosmetic(g, id, now?) charges tier price. cosmeticPart now returns a slot (`awning@classic`; storefront skins -> facade). SAVE_VERSION 10, rewards.setsDone. 41 looks for sale, 5,760 diamonds; Featured covers all in ~11 weeks.
+- E7 Needs -> S4: the scene must dress from dressFor(g, hood), not rewards.worn (src/components/storefront.tsx ~376).
+- E7 Needs -> U6: store-model.ts:22 and shop-model.ts list only VANITY_IDS; switch to LOOKS/featured. COSMETIC_NAMES and shop.item.<id> keys exist only for the seven: add W5's names. game-store.ts ~603: pass gameNow() to buyVanity and raise setCompleteEvent(before, after) for the tab and for S5's flourish.
+- E7 Needs -> S5: consume the set-complete event U6 raises from game-store for the flourish.

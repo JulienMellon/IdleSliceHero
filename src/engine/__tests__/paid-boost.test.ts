@@ -130,7 +130,7 @@ describe('selectors and save', () => {
     old.saveVersion = 8;
     delete old.rewards.paidUntil;
     expect(G.migrate(old, T).rewards.paidUntil).toBe(0);
-    expect(G.SAVE_VERSION).toBe(9);
+    expect(G.SAVE_VERSION).toBe(10);
     const s = ok(buyBooster(unlocked(), 'rush-hour', T));
     const back = G.migrate(JSON.parse(JSON.stringify(s)), T);
     expect(back.rewards.paidUntil).toBe(T + HOUR);

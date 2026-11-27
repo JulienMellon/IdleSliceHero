@@ -1,2305 +1,2232 @@
 {
- "home": {
-  "save": {
-   "saveVersion": 6,
-   "city": "home",
-   "economy": 3,
-   "cash": 4859291.338800002,
-   "totalEarned": 5723489.338800003,
-   "vehicle": 2,
-   "shops": {
-    "downtown": {
-     "built": true,
-     "managed": true,
-     "heads": {
-      "prep": true,
-      "oven": true,
-      "counter": true
-     },
-     "prep": 3,
-     "ovens": 2,
-     "grade": 0,
-     "counter": 4,
-     "drivers": 2,
-     "tables": 5,
-     "footprint": 0,
-     "line": {
-      "prep": {
-       "n": 4,
-       "left": 0.6349206349206271,
-       "total": 2.2222222222222223
+  "home": {
+    "save": {
+      "saveVersion": 6,
+      "city": "home",
+      "economy": 3,
+      "cash": 4859291.338800002,
+      "totalEarned": 5723489.338800003,
+      "vehicle": 2,
+      "shops": {
+        "downtown": {
+          "built": true,
+          "managed": true,
+          "heads": {
+            "prep": true,
+            "oven": true,
+            "counter": true
+          },
+          "prep": 3,
+          "ovens": 2,
+          "grade": 0,
+          "counter": 4,
+          "drivers": 2,
+          "tables": 5,
+          "footprint": 0,
+          "line": {
+            "prep": {
+              "n": 4,
+              "left": 0.6349206349206271,
+              "total": 2.2222222222222223
+            },
+            "oven": {
+              "n": 4,
+              "left": 2.2222222222222134,
+              "total": 3.80952380952381
+            },
+            "counter": null,
+            "prepped": 4,
+            "baked": 0,
+            "boxed": 4,
+            "driverBusy": 0,
+            "walkinBusy": 0.8005772005771852,
+            "departures": [],
+            "walkInDebt": 1.1428571428571477,
+            "nextId": 19
+          },
+          "sold": 476,
+          "decor": {
+            "plants": 0,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "perk": false
+        },
+        "suburbs": {
+          "built": true,
+          "managed": true,
+          "heads": {
+            "prep": true,
+            "oven": true,
+            "counter": true
+          },
+          "prep": 7,
+          "ovens": 5,
+          "grade": 1,
+          "counter": 6,
+          "drivers": 3,
+          "tables": 8,
+          "footprint": 1,
+          "line": {
+            "prep": {
+              "n": 11,
+              "left": 0.026455026455019237,
+              "total": 2.0370370370370368
+            },
+            "oven": {
+              "n": 11,
+              "left": 0.6084656084656015,
+              "total": 2.6190476190476195
+            },
+            "counter": null,
+            "prepped": 11,
+            "baked": 0,
+            "boxed": 11,
+            "driverBusy": 2.275132275132267,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 1.1102230246251565e-14,
+            "nextId": 25
+          },
+          "sold": 1108,
+          "decor": {
+            "plants": 1,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "perk": false
+        },
+        "waterfront": {
+          "built": true,
+          "managed": true,
+          "heads": {
+            "prep": true,
+            "oven": true,
+            "counter": true
+          },
+          "prep": 11,
+          "ovens": 8,
+          "grade": 2,
+          "counter": 8,
+          "drivers": 4,
+          "tables": 11,
+          "footprint": 2,
+          "line": {
+            "prep": {
+              "n": 27,
+              "left": 1.73881673881673,
+              "total": 2.2222222222222223
+            },
+            "oven": {
+              "n": 27,
+              "left": 1.6594516594516504,
+              "total": 2.142857142857143
+            },
+            "counter": {
+              "n": 27,
+              "left": 1.9408369408369313,
+              "total": 2.424242424242424
+            },
+            "prepped": 27,
+            "baked": 27,
+            "boxed": 54,
+            "driverBusy": 1.7893217893217637,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": -8.454545454545482,
+            "nextId": 21
+          },
+          "sold": 1983,
+          "decor": {
+            "plants": 2,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "perk": false
+        },
+        "university": {
+          "built": true,
+          "managed": false,
+          "heads": {
+            "prep": true,
+            "oven": false,
+            "counter": false
+          },
+          "prep": 15,
+          "ovens": 11,
+          "grade": 3,
+          "counter": 10,
+          "drivers": 5,
+          "tables": 14,
+          "footprint": 2,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": null,
+            "prepped": 46,
+            "baked": 0,
+            "boxed": 0,
+            "driverBusy": 0,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 0,
+            "nextId": 1
+          },
+          "sold": 1600,
+          "decor": {
+            "plants": 3,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "perk": false
+        },
+        "industrial": {
+          "built": false,
+          "managed": false,
+          "heads": {
+            "prep": false,
+            "oven": false,
+            "counter": false
+          },
+          "prep": 1,
+          "ovens": 1,
+          "grade": 0,
+          "counter": 1,
+          "drivers": 1,
+          "tables": 1,
+          "footprint": 0,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": null,
+            "prepped": 0,
+            "baked": 0,
+            "boxed": 0,
+            "driverBusy": 0,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 0,
+            "nextId": 1
+          },
+          "sold": 0,
+          "decor": {
+            "plants": 0,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "perk": false
+        },
+        "uptown": {
+          "built": false,
+          "managed": false,
+          "heads": {
+            "prep": false,
+            "oven": false,
+            "counter": false
+          },
+          "prep": 1,
+          "ovens": 1,
+          "grade": 0,
+          "counter": 1,
+          "drivers": 1,
+          "tables": 1,
+          "footprint": 0,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": null,
+            "prepped": 0,
+            "baked": 0,
+            "boxed": 0,
+            "driverBusy": 0,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 0,
+            "nextId": 1
+          },
+          "sold": 0,
+          "decor": {
+            "plants": 0,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "perk": false
+        }
       },
-      "oven": {
-       "n": 4,
-       "left": 2.2222222222222134,
-       "total": 3.80952380952381
+      "active": "downtown",
+      "dronesUnlocked": false,
+      "cityComplete": false,
+      "seenScenes": ["downtown-1", "downtown-2", "downtown-3", "downtown-4", "suburbs-1", "suburbs-2", "waterfront-1"],
+      "scrapbookViewed": 0,
+      "lastSavedAt": 1794416480000,
+      "playSeconds": 4079.9999999999272,
+      "sceneAt": {},
+      "tutorial": 10,
+      "rewards": {
+        "day": "",
+        "daily": [],
+        "points": 0,
+        "chests": [false, false, false],
+        "rerollUsed": false,
+        "week": "",
+        "weekly": [],
+        "weeklyChest": false,
+        "gift": {
+          "streak": 0,
+          "last": "",
+          "saveUsed": false,
+          "cycle": 0
+        },
+        "giftShownDay": "",
+        "diamonds": 30,
+        "boosters": [],
+        "boosts": [],
+        "cosmetics": [],
+        "worn": [],
+        "lastSeen": 0
       },
-      "counter": null,
-      "prepped": 4,
-      "baked": 0,
-      "boxed": 4,
-      "driverBusy": 0,
-      "walkinBusy": 0.8005772005771852,
-      "departures": [],
-      "walkInDebt": 1.1428571428571477,
-      "nextId": 19
-     },
-     "sold": 476,
-     "decor": {
-      "plants": 0,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "perk": false
-    },
-    "suburbs": {
-     "built": true,
-     "managed": true,
-     "heads": {
-      "prep": true,
-      "oven": true,
-      "counter": true
-     },
-     "prep": 7,
-     "ovens": 5,
-     "grade": 1,
-     "counter": 6,
-     "drivers": 3,
-     "tables": 8,
-     "footprint": 1,
-     "line": {
-      "prep": {
-       "n": 11,
-       "left": 0.026455026455019237,
-       "total": 2.0370370370370368
+      "stats": {
+        "upgrades": 0,
+        "ovens": 0,
+        "hires": 0,
+        "builds": 0,
+        "fleet": 0,
+        "decor": 0,
+        "walkins": 298,
+        "deliveries": 869,
+        "baked": 1290,
+        "offline": 0,
+        "boosters": 0,
+        "dailyDone": 0,
+        "days": 0,
+        "bonusTaps": 0,
+        "ordersDone": 0
       },
-      "oven": {
-       "n": 11,
-       "left": 0.6084656084656015,
-       "total": 2.6190476190476195
+      "bonus": {
+        "seed": 1267554755,
+        "spawned": 0,
+        "next": 20,
+        "until": 0
       },
-      "counter": null,
-      "prepped": 11,
-      "baked": 0,
-      "boxed": 11,
-      "driverBusy": 2.275132275132267,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 1.1102230246251565e-14,
-      "nextId": 25
-     },
-     "sold": 1108,
-     "decor": {
-      "plants": 1,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "perk": false
-    },
-    "waterfront": {
-     "built": true,
-     "managed": true,
-     "heads": {
-      "prep": true,
-      "oven": true,
-      "counter": true
-     },
-     "prep": 11,
-     "ovens": 8,
-     "grade": 2,
-     "counter": 8,
-     "drivers": 4,
-     "tables": 11,
-     "footprint": 2,
-     "line": {
-      "prep": {
-       "n": 27,
-       "left": 1.73881673881673,
-       "total": 2.2222222222222223
+      "order": {
+        "seed": 1267562674,
+        "made": 0,
+        "nextAt": 60,
+        "offer": null,
+        "active": null,
+        "result": null
       },
-      "oven": {
-       "n": 27,
-       "left": 1.6594516594516504,
-       "total": 2.142857142857143
-      },
-      "counter": {
-       "n": 27,
-       "left": 1.9408369408369313,
-       "total": 2.424242424242424
-      },
-      "prepped": 27,
-      "baked": 27,
-      "boxed": 54,
-      "driverBusy": 1.7893217893217637,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": -8.454545454545482,
-      "nextId": 21
-     },
-     "sold": 1983,
-     "decor": {
-      "plants": 2,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "perk": false
-    },
-    "university": {
-     "built": true,
-     "managed": false,
-     "heads": {
-      "prep": true,
-      "oven": false,
-      "counter": false
-     },
-     "prep": 15,
-     "ovens": 11,
-     "grade": 3,
-     "counter": 10,
-     "drivers": 5,
-     "tables": 14,
-     "footprint": 2,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": null,
-      "prepped": 46,
-      "baked": 0,
-      "boxed": 0,
-      "driverBusy": 0,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 0,
-      "nextId": 1
-     },
-     "sold": 1600,
-     "decor": {
-      "plants": 3,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "perk": false
-    },
-    "industrial": {
-     "built": false,
-     "managed": false,
-     "heads": {
-      "prep": false,
-      "oven": false,
-      "counter": false
-     },
-     "prep": 1,
-     "ovens": 1,
-     "grade": 0,
-     "counter": 1,
-     "drivers": 1,
-     "tables": 1,
-     "footprint": 0,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": null,
-      "prepped": 0,
-      "baked": 0,
-      "boxed": 0,
-      "driverBusy": 0,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 0,
-      "nextId": 1
-     },
-     "sold": 0,
-     "decor": {
-      "plants": 0,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "perk": false
-    },
-    "uptown": {
-     "built": false,
-     "managed": false,
-     "heads": {
-      "prep": false,
-      "oven": false,
-      "counter": false
-     },
-     "prep": 1,
-     "ovens": 1,
-     "grade": 0,
-     "counter": 1,
-     "drivers": 1,
-     "tables": 1,
-     "footprint": 0,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": null,
-      "prepped": 0,
-      "baked": 0,
-      "boxed": 0,
-      "driverBusy": 0,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 0,
-      "nextId": 1
-     },
-     "sold": 0,
-     "decor": {
-      "plants": 0,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "perk": false
-    }
-   },
-   "active": "downtown",
-   "dronesUnlocked": false,
-   "cityComplete": false,
-   "seenScenes": [
-    "downtown-1",
-    "downtown-2",
-    "downtown-3",
-    "downtown-4",
-    "suburbs-1",
-    "suburbs-2",
-    "waterfront-1"
-   ],
-   "scrapbookViewed": 0,
-   "lastSavedAt": 1794416480000,
-   "playSeconds": 4079.9999999999272,
-   "sceneAt": {},
-   "tutorial": 10,
-   "rewards": {
-    "day": "",
-    "daily": [],
-    "points": 0,
-    "chests": [
-     false,
-     false,
-     false
-    ],
-    "rerollUsed": false,
-    "week": "",
-    "weekly": [],
-    "weeklyChest": false,
-    "gift": {
-     "streak": 0,
-     "last": "",
-     "saveUsed": false,
-     "cycle": 0
-    },
-    "giftShownDay": "",
-    "diamonds": 30,
-    "boosters": [],
-    "boosts": [],
-    "cosmetics": [],
-    "worn": [],
-    "lastSeen": 0
-   },
-   "stats": {
-    "upgrades": 0,
-    "ovens": 0,
-    "hires": 0,
-    "builds": 0,
-    "fleet": 0,
-    "decor": 0,
-    "walkins": 298,
-    "deliveries": 869,
-    "baked": 1290,
-    "offline": 0,
-    "boosters": 0,
-    "dailyDone": 0,
-    "days": 0,
-    "bonusTaps": 0,
-    "ordersDone": 0
-   },
-   "bonus": {
-    "seed": 1267554755,
-    "spawned": 0,
-    "next": 20,
-    "until": 0
-   },
-   "order": {
-    "seed": 1267562674,
-    "made": 0,
-    "nextAt": 60,
-    "offer": null,
-    "active": null,
-    "result": null
-   },
-   "nightOven": 1,
-   "x": {
-    "mastery": {
-     "announced": [
-      "downtown:heads",
-      "suburbs:heads",
-      "waterfront:heads"
-     ],
-     "granted": [],
-     "fresh": [],
-     "synced": true,
-     "summary": {
-      "stars": 3,
-      "diamonds": 30,
-      "cosmetics": []
-     }
-    },
-    "counterattack": {
-     "armedWeek": 0,
-     "seenWeek": 0,
-     "target": null,
-     "open": false,
-     "defended": [],
-     "challenge": null,
-     "retryAt": 0,
-     "news": null
-    },
-    "events": {
-     "id": null,
-     "at": 0
-    },
-    "recipes": {
-     "owned": [
-      "recipe.downtown.2",
-      "recipe.downtown.3",
-      "recipe.suburbs.2",
-      "recipe.waterfront.2"
-     ],
-     "fresh": [],
-     "synced": true,
-     "summary": {
-      "cards": 4
-     }
-    },
-    "heads": {
-     "week": 2966,
-     "pick": {
-      "shopId": "waterfront",
-      "station": "oven"
-     }
-    },
-    "service": {
-     "at": 1794416478000,
-     "shops": {
-      "downtown": {
-       "below": 60,
-       "cold": true,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 20,
-        "counter": 0
-       }
-      },
-      "suburbs": {
-       "below": 60,
-       "cold": true,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 20,
-        "counter": 0
-       }
-      },
-      "waterfront": {
-       "below": 0,
-       "cold": false,
-       "tip": true,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 20
-       }
-      },
-      "university": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      },
-      "industrial": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      },
-      "uptown": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
+      "nightOven": 1,
+      "x": {
+        "mastery": {
+          "announced": ["downtown:heads", "suburbs:heads", "waterfront:heads"],
+          "granted": [],
+          "fresh": [],
+          "synced": true,
+          "summary": {
+            "stars": 3,
+            "diamonds": 30,
+            "cosmetics": []
+          }
+        },
+        "counterattack": {
+          "armedWeek": 0,
+          "seenWeek": 0,
+          "target": null,
+          "open": false,
+          "defended": [],
+          "challenge": null,
+          "retryAt": 0,
+          "news": null
+        },
+        "events": {
+          "id": null,
+          "at": 0
+        },
+        "recipes": {
+          "owned": ["recipe.downtown.2", "recipe.downtown.3", "recipe.suburbs.2", "recipe.waterfront.2"],
+          "fresh": [],
+          "synced": true,
+          "summary": {
+            "cards": 4
+          }
+        },
+        "heads": {
+          "week": 2966,
+          "pick": {
+            "shopId": "waterfront",
+            "station": "oven"
+          }
+        },
+        "service": {
+          "at": 1794416478000,
+          "shops": {
+            "downtown": {
+              "below": 60,
+              "cold": true,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 20,
+                "counter": 0
+              }
+            },
+            "suburbs": {
+              "below": 60,
+              "cold": true,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 20,
+                "counter": 0
+              }
+            },
+            "waterfront": {
+              "below": 0,
+              "cold": false,
+              "tip": true,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 20
+              }
+            },
+            "university": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            },
+            "industrial": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            },
+            "uptown": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            }
+          }
+        },
+        "suburbsGameDay": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": 4451.5,
+          "until": 0,
+          "at": 0
+        },
+        "waterfrontBoats": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": 4181.9,
+          "until": 0,
+          "at": 0,
+          "tier": 0,
+          "rack": 0,
+          "carry": 0,
+          "openedAt": -1
+        },
+        "rival": {
+          "won": [],
+          "challenge": null,
+          "retryAt": {}
+        },
+        "universityMenu": {
+          "pepperoni": 0,
+          "knots": 0
+        },
+        "industrialShifts": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": -1,
+          "jam": -1,
+          "startAt": -1,
+          "at": 0
+        },
+        "uptownStars": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": -1,
+          "tier": 0,
+          "sign": 0,
+          "result": null
+        },
+        "franchise": {
+          "count": 0,
+          "stars": 0,
+          "cityStart": 0,
+          "masteryBanked": 0
+        }
       }
-     }
     },
-    "suburbsGameDay": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": 4451.5,
-     "until": 0,
-     "at": 0
-    },
-    "waterfrontBoats": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": 4181.9,
-     "until": 0,
-     "at": 0,
-     "tier": 0,
-     "rack": 0,
-     "carry": 0,
-     "openedAt": -1
-    },
-    "rival": {
-     "won": [],
-     "challenge": null,
-     "retryAt": {}
-    },
-    "universityMenu": {
-     "pepperoni": 0,
-     "knots": 0
-    },
-    "industrialShifts": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": -1,
-     "jam": -1,
-     "startAt": -1,
-     "at": 0
-    },
-    "uptownStars": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": -1,
-     "tier": 0,
-     "sign": 0,
-     "result": null
-    },
-    "franchise": {
-     "count": 0,
-     "stars": 0,
-     "cityStart": 0,
-     "masteryBanked": 0
+    "migrated": {
+      "saveVersion": 10,
+      "city": "home",
+      "economy": 3,
+      "cash": 4859291.338800002,
+      "totalEarned": 5723489.338800003,
+      "vehicle": 2,
+      "shops": {
+        "downtown": {
+          "built": true,
+          "managed": true,
+          "heads": {
+            "prep": true,
+            "oven": true,
+            "counter": true
+          },
+          "prep": 3,
+          "ovens": 2,
+          "grade": 0,
+          "counter": 4,
+          "drivers": 2,
+          "tables": 5,
+          "footprint": 0,
+          "line": {
+            "prep": {
+              "n": 4,
+              "total": 2.2222222222222223,
+              "left": 0.6349206349206271
+            },
+            "oven": {
+              "n": 4,
+              "total": 3.80952380952381,
+              "left": 2.2222222222222134
+            },
+            "counter": null,
+            "prepped": 4,
+            "baked": 0,
+            "boxed": 4,
+            "driverBusy": 0,
+            "walkinBusy": 0.8005772005771852,
+            "departures": [],
+            "walkInDebt": 1.1428571428571477,
+            "nextId": 19
+          },
+          "decor": {
+            "plants": 0,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "sold": 476,
+          "perk": false
+        },
+        "suburbs": {
+          "built": true,
+          "managed": true,
+          "heads": {
+            "prep": true,
+            "oven": true,
+            "counter": true
+          },
+          "prep": 7,
+          "ovens": 5,
+          "grade": 1,
+          "counter": 6,
+          "drivers": 3,
+          "tables": 8,
+          "footprint": 1,
+          "line": {
+            "prep": {
+              "n": 11,
+              "total": 2.0370370370370368,
+              "left": 0.026455026455019237
+            },
+            "oven": {
+              "n": 11,
+              "total": 2.6190476190476195,
+              "left": 0.6084656084656015
+            },
+            "counter": null,
+            "prepped": 11,
+            "baked": 0,
+            "boxed": 11,
+            "driverBusy": 2.275132275132267,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 1.1102230246251565e-14,
+            "nextId": 25
+          },
+          "decor": {
+            "plants": 1,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "sold": 1108,
+          "perk": false
+        },
+        "waterfront": {
+          "built": true,
+          "managed": true,
+          "heads": {
+            "prep": true,
+            "oven": true,
+            "counter": true
+          },
+          "prep": 11,
+          "ovens": 8,
+          "grade": 2,
+          "counter": 8,
+          "drivers": 4,
+          "tables": 11,
+          "footprint": 2,
+          "line": {
+            "prep": {
+              "n": 27,
+              "total": 2.2222222222222223,
+              "left": 1.73881673881673
+            },
+            "oven": {
+              "n": 27,
+              "total": 2.142857142857143,
+              "left": 1.6594516594516504
+            },
+            "counter": {
+              "n": 27,
+              "total": 2.424242424242424,
+              "left": 1.9408369408369313
+            },
+            "prepped": 27,
+            "baked": 27,
+            "boxed": 54,
+            "driverBusy": 1.7893217893217637,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": -8.454545454545482,
+            "nextId": 21
+          },
+          "decor": {
+            "plants": 2,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "sold": 1983,
+          "perk": false
+        },
+        "university": {
+          "built": true,
+          "managed": false,
+          "heads": {
+            "prep": true,
+            "oven": false,
+            "counter": false
+          },
+          "prep": 15,
+          "ovens": 11,
+          "grade": 3,
+          "counter": 10,
+          "drivers": 5,
+          "tables": 14,
+          "footprint": 2,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": null,
+            "prepped": 46,
+            "baked": 0,
+            "boxed": 0,
+            "driverBusy": 0,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 0,
+            "nextId": 1
+          },
+          "decor": {
+            "plants": 3,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "sold": 1600,
+          "perk": false
+        },
+        "industrial": {
+          "built": false,
+          "managed": false,
+          "heads": {
+            "prep": false,
+            "oven": false,
+            "counter": false
+          },
+          "prep": 1,
+          "ovens": 1,
+          "grade": 0,
+          "counter": 1,
+          "drivers": 1,
+          "tables": 1,
+          "footprint": 0,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": null,
+            "prepped": 0,
+            "baked": 0,
+            "boxed": 0,
+            "driverBusy": 0,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 0,
+            "nextId": 1
+          },
+          "decor": {
+            "plants": 0,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "sold": 0,
+          "perk": false
+        },
+        "uptown": {
+          "built": false,
+          "managed": false,
+          "heads": {
+            "prep": false,
+            "oven": false,
+            "counter": false
+          },
+          "prep": 1,
+          "ovens": 1,
+          "grade": 0,
+          "counter": 1,
+          "drivers": 1,
+          "tables": 1,
+          "footprint": 0,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": null,
+            "prepped": 0,
+            "baked": 0,
+            "boxed": 0,
+            "driverBusy": 0,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 0,
+            "nextId": 1
+          },
+          "decor": {
+            "plants": 0,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "sold": 0,
+          "perk": false
+        }
+      },
+      "active": "downtown",
+      "dronesUnlocked": false,
+      "cityComplete": false,
+      "seenScenes": ["downtown-1", "downtown-2", "downtown-3", "downtown-4", "suburbs-1", "suburbs-2", "waterfront-1"],
+      "scrapbookViewed": 0,
+      "lastSavedAt": 1794416480000,
+      "playSeconds": 4079.9999999999272,
+      "sceneAt": {},
+      "tutorial": 16,
+      "rewards": {
+        "day": "",
+        "daily": [],
+        "points": 0,
+        "chests": [false, false, false],
+        "rerollUsed": false,
+        "week": "",
+        "weekly": [],
+        "weeklyChest": false,
+        "gift": {
+          "streak": 0,
+          "last": "",
+          "saveUsed": false,
+          "cycle": 0
+        },
+        "giftShownDay": "",
+        "diamonds": 30,
+        "boosters": [],
+        "boosts": [],
+        "cosmetics": [],
+        "worn": [],
+        "lastSeen": 0,
+        "paidUntil": 0,
+        "setsDone": []
+      },
+      "stats": {
+        "upgrades": 0,
+        "ovens": 0,
+        "hires": 0,
+        "builds": 0,
+        "fleet": 0,
+        "decor": 0,
+        "walkins": 298,
+        "deliveries": 869,
+        "baked": 1290,
+        "offline": 0,
+        "boosters": 0,
+        "dailyDone": 0,
+        "days": 0,
+        "bonusTaps": 0,
+        "ordersDone": 0
+      },
+      "bonus": {
+        "seed": 1267554755,
+        "spawned": 0,
+        "next": 4099.999999999927,
+        "until": 0
+      },
+      "order": {
+        "seed": 1267562674,
+        "made": 0,
+        "nextAt": 4139.999999999927,
+        "offer": null,
+        "active": null,
+        "result": null
+      },
+      "nightOven": 1,
+      "x": {
+        "mastery": {
+          "announced": ["downtown:heads", "suburbs:heads", "waterfront:heads"],
+          "granted": [],
+          "fresh": [],
+          "synced": true,
+          "summary": {
+            "stars": 3,
+            "diamonds": 30,
+            "cosmetics": []
+          }
+        },
+        "counterattack": {
+          "armedWeek": 0,
+          "seenWeek": 0,
+          "target": null,
+          "open": false,
+          "defended": [],
+          "challenge": null,
+          "retryAt": 0,
+          "news": null
+        },
+        "events": {
+          "id": null,
+          "at": 0
+        },
+        "recipes": {
+          "owned": ["recipe.downtown.2", "recipe.downtown.3", "recipe.suburbs.2", "recipe.waterfront.2"],
+          "fresh": [],
+          "synced": true,
+          "summary": {
+            "cards": 4
+          }
+        },
+        "heads": {
+          "week": 2966,
+          "pick": {
+            "shopId": "waterfront",
+            "station": "oven"
+          }
+        },
+        "service": {
+          "at": 0,
+          "shops": {
+            "downtown": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "pile": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "wait": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "hold": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0,
+                "drivers": 0,
+                "floor": 0
+              },
+              "made": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "seen": null
+            },
+            "suburbs": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "pile": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "wait": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "hold": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0,
+                "drivers": 0,
+                "floor": 0
+              },
+              "made": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "seen": null
+            },
+            "waterfront": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "pile": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "wait": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "hold": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0,
+                "drivers": 0,
+                "floor": 0
+              },
+              "made": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "seen": null
+            },
+            "university": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "pile": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "wait": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "hold": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0,
+                "drivers": 0,
+                "floor": 0
+              },
+              "made": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "seen": null
+            },
+            "industrial": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "pile": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "wait": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "hold": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0,
+                "drivers": 0,
+                "floor": 0
+              },
+              "made": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "seen": null
+            },
+            "uptown": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "pile": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "wait": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "hold": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0,
+                "drivers": 0,
+                "floor": 0
+              },
+              "made": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "seen": null
+            }
+          }
+        },
+        "suburbsGameDay": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": 4451.5,
+          "until": 0,
+          "at": 0
+        },
+        "waterfrontBoats": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": 4181.9,
+          "until": 0,
+          "at": 0,
+          "tier": 0,
+          "rack": 0,
+          "carry": 0,
+          "openedAt": -1
+        },
+        "rival": {
+          "won": [],
+          "challenge": null,
+          "retryAt": {}
+        },
+        "universityMenu": {
+          "pepperoni": 0,
+          "knots": 0
+        },
+        "industrialShifts": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": -1,
+          "jam": -1,
+          "startAt": -1,
+          "at": 0
+        },
+        "uptownStars": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": -1,
+          "tier": 0,
+          "sign": 0,
+          "result": null
+        },
+        "franchise": {
+          "count": 0,
+          "stars": 0,
+          "cityStart": 0,
+          "masteryBanked": 0
+        },
+        "chapters": {
+          "best": {},
+          "calm": {},
+          "done": [
+            "task.downtown-1.1",
+            "task.downtown-1.2",
+            "task.downtown-1.3",
+            "task.suburbs-3.2",
+            "task.waterfront-2.2",
+            "task.university-1.1",
+            "task.university-1.2"
+          ],
+          "coachDone": [],
+          "report": false,
+          "missedZero": false,
+          "run": {},
+          "banked": 0
+        }
+      }
     }
-   }
   },
-  "migrated": {
-   "saveVersion": 9,
-   "city": "home",
-   "economy": 3,
-   "cash": 4859291.338800002,
-   "totalEarned": 5723489.338800003,
-   "vehicle": 2,
-   "shops": {
-    "downtown": {
-     "built": true,
-     "managed": true,
-     "heads": {
-      "prep": true,
-      "oven": true,
-      "counter": true
-     },
-     "prep": 3,
-     "ovens": 2,
-     "grade": 0,
-     "counter": 4,
-     "drivers": 2,
-     "tables": 5,
-     "footprint": 0,
-     "line": {
-      "prep": {
-       "n": 4,
-       "total": 2.2222222222222223,
-       "left": 0.6349206349206271
+  "boston": {
+    "save": {
+      "saveVersion": 6,
+      "city": "boston",
+      "economy": 3,
+      "cash": 2965155408,
+      "totalEarned": 2966019606,
+      "vehicle": 2,
+      "shops": {
+        "north-end": {
+          "built": true,
+          "managed": true,
+          "heads": {
+            "prep": true,
+            "oven": true,
+            "counter": true
+          },
+          "prep": 3,
+          "ovens": 2,
+          "grade": 0,
+          "counter": 4,
+          "drivers": 2,
+          "tables": 5,
+          "footprint": 0,
+          "line": {
+            "prep": {
+              "n": 4,
+              "left": 0.6349206349206271,
+              "total": 2.2222222222222223
+            },
+            "oven": {
+              "n": 4,
+              "left": 2.2222222222222134,
+              "total": 3.80952380952381
+            },
+            "counter": null,
+            "prepped": 4,
+            "baked": 0,
+            "boxed": 4,
+            "driverBusy": 0,
+            "walkinBusy": 0.8005772005771852,
+            "departures": [],
+            "walkInDebt": 1.1428571428571477,
+            "nextId": 19
+          },
+          "sold": 476,
+          "decor": {
+            "plants": 0,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "perk": false
+        },
+        "southie": {
+          "built": true,
+          "managed": true,
+          "heads": {
+            "prep": true,
+            "oven": true,
+            "counter": true
+          },
+          "prep": 7,
+          "ovens": 5,
+          "grade": 1,
+          "counter": 6,
+          "drivers": 3,
+          "tables": 8,
+          "footprint": 1,
+          "line": {
+            "prep": {
+              "n": 11,
+              "left": 0.026455026455019237,
+              "total": 2.0370370370370368
+            },
+            "oven": {
+              "n": 11,
+              "left": 0.6084656084656015,
+              "total": 2.6190476190476195
+            },
+            "counter": null,
+            "prepped": 11,
+            "baked": 0,
+            "boxed": 11,
+            "driverBusy": 2.275132275132267,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 1.1102230246251565e-14,
+            "nextId": 25
+          },
+          "sold": 1108,
+          "decor": {
+            "plants": 1,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "perk": false
+        },
+        "back-bay": {
+          "built": true,
+          "managed": true,
+          "heads": {
+            "prep": true,
+            "oven": true,
+            "counter": true
+          },
+          "prep": 11,
+          "ovens": 8,
+          "grade": 2,
+          "counter": 8,
+          "drivers": 4,
+          "tables": 11,
+          "footprint": 2,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": {
+              "n": 18,
+              "left": 0.25602447403395,
+              "total": 2.4170616113744074
+            },
+            "prepped": 36,
+            "baked": 36,
+            "boxed": 18,
+            "driverBusy": 0.3271145214272965,
+            "walkinBusy": 0.021901251285133594,
+            "departures": [],
+            "walkInDebt": -4.736842105263145,
+            "nextId": 21
+          },
+          "sold": 1740,
+          "decor": {
+            "plants": 2,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "perk": false
+        },
+        "fenway": {
+          "built": true,
+          "managed": false,
+          "heads": {
+            "prep": true,
+            "oven": false,
+            "counter": false
+          },
+          "prep": 15,
+          "ovens": 11,
+          "grade": 3,
+          "counter": 10,
+          "drivers": 5,
+          "tables": 14,
+          "footprint": 2,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": null,
+            "prepped": 66,
+            "baked": 0,
+            "boxed": 0,
+            "driverBusy": 0,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 0,
+            "nextId": 1
+          },
+          "sold": 1600,
+          "decor": {
+            "plants": 3,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "perk": false
+        },
+        "cambridge": {
+          "built": false,
+          "managed": false,
+          "heads": {
+            "prep": false,
+            "oven": false,
+            "counter": false
+          },
+          "prep": 1,
+          "ovens": 1,
+          "grade": 0,
+          "counter": 1,
+          "drivers": 1,
+          "tables": 1,
+          "footprint": 0,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": null,
+            "prepped": 0,
+            "baked": 0,
+            "boxed": 0,
+            "driverBusy": 0,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 0,
+            "nextId": 1
+          },
+          "sold": 0,
+          "decor": {
+            "plants": 0,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "perk": false
+        },
+        "dorchester": {
+          "built": false,
+          "managed": false,
+          "heads": {
+            "prep": false,
+            "oven": false,
+            "counter": false
+          },
+          "prep": 1,
+          "ovens": 1,
+          "grade": 0,
+          "counter": 1,
+          "drivers": 1,
+          "tables": 1,
+          "footprint": 0,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": null,
+            "prepped": 0,
+            "baked": 0,
+            "boxed": 0,
+            "driverBusy": 0,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 0,
+            "nextId": 1
+          },
+          "sold": 0,
+          "decor": {
+            "plants": 0,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "perk": false
+        }
       },
-      "oven": {
-       "n": 4,
-       "total": 3.80952380952381,
-       "left": 2.2222222222222134
+      "active": "north-end",
+      "dronesUnlocked": false,
+      "cityComplete": false,
+      "seenScenes": ["north-end-1", "north-end-2", "southie-1"],
+      "scrapbookViewed": 0,
+      "lastSavedAt": 1794416480000,
+      "playSeconds": 4079.9999999999272,
+      "sceneAt": {},
+      "tutorial": 10,
+      "rewards": {
+        "day": "",
+        "daily": [],
+        "points": 0,
+        "chests": [false, false, false],
+        "rerollUsed": false,
+        "week": "",
+        "weekly": [],
+        "weeklyChest": false,
+        "gift": {
+          "streak": 0,
+          "last": "",
+          "saveUsed": false,
+          "cycle": 0
+        },
+        "giftShownDay": "",
+        "diamonds": 30,
+        "boosters": [],
+        "boosts": [],
+        "cosmetics": [],
+        "worn": [],
+        "lastSeen": 0
       },
-      "counter": null,
-      "prepped": 4,
-      "baked": 0,
-      "boxed": 4,
-      "driverBusy": 0,
-      "walkinBusy": 0.8005772005771852,
-      "departures": [],
-      "walkInDebt": 1.1428571428571477,
-      "nextId": 19
-     },
-     "decor": {
-      "plants": 0,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "sold": 476,
-     "perk": false
-    },
-    "suburbs": {
-     "built": true,
-     "managed": true,
-     "heads": {
-      "prep": true,
-      "oven": true,
-      "counter": true
-     },
-     "prep": 7,
-     "ovens": 5,
-     "grade": 1,
-     "counter": 6,
-     "drivers": 3,
-     "tables": 8,
-     "footprint": 1,
-     "line": {
-      "prep": {
-       "n": 11,
-       "total": 2.0370370370370368,
-       "left": 0.026455026455019237
+      "stats": {
+        "upgrades": 0,
+        "ovens": 0,
+        "hires": 0,
+        "builds": 0,
+        "fleet": 0,
+        "decor": 0,
+        "walkins": 253,
+        "deliveries": 671,
+        "baked": 1011,
+        "offline": 0,
+        "boosters": 0,
+        "dailyDone": 0,
+        "days": 0,
+        "bonusTaps": 0,
+        "ordersDone": 0
       },
-      "oven": {
-       "n": 11,
-       "total": 2.6190476190476195,
-       "left": 0.6084656084656015
+      "bonus": {
+        "seed": 1267554755,
+        "spawned": 0,
+        "next": 20,
+        "until": 0
       },
-      "counter": null,
-      "prepped": 11,
-      "baked": 0,
-      "boxed": 11,
-      "driverBusy": 2.275132275132267,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 1.1102230246251565e-14,
-      "nextId": 25
-     },
-     "decor": {
-      "plants": 1,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "sold": 1108,
-     "perk": false
-    },
-    "waterfront": {
-     "built": true,
-     "managed": true,
-     "heads": {
-      "prep": true,
-      "oven": true,
-      "counter": true
-     },
-     "prep": 11,
-     "ovens": 8,
-     "grade": 2,
-     "counter": 8,
-     "drivers": 4,
-     "tables": 11,
-     "footprint": 2,
-     "line": {
-      "prep": {
-       "n": 27,
-       "total": 2.2222222222222223,
-       "left": 1.73881673881673
+      "order": {
+        "seed": 1267562674,
+        "made": 0,
+        "nextAt": 60,
+        "offer": null,
+        "active": null,
+        "result": null
       },
-      "oven": {
-       "n": 27,
-       "total": 2.142857142857143,
-       "left": 1.6594516594516504
-      },
-      "counter": {
-       "n": 27,
-       "total": 2.424242424242424,
-       "left": 1.9408369408369313
-      },
-      "prepped": 27,
-      "baked": 27,
-      "boxed": 54,
-      "driverBusy": 1.7893217893217637,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": -8.454545454545482,
-      "nextId": 21
-     },
-     "decor": {
-      "plants": 2,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "sold": 1983,
-     "perk": false
-    },
-    "university": {
-     "built": true,
-     "managed": false,
-     "heads": {
-      "prep": true,
-      "oven": false,
-      "counter": false
-     },
-     "prep": 15,
-     "ovens": 11,
-     "grade": 3,
-     "counter": 10,
-     "drivers": 5,
-     "tables": 14,
-     "footprint": 2,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": null,
-      "prepped": 46,
-      "baked": 0,
-      "boxed": 0,
-      "driverBusy": 0,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 0,
-      "nextId": 1
-     },
-     "decor": {
-      "plants": 3,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "sold": 1600,
-     "perk": false
-    },
-    "industrial": {
-     "built": false,
-     "managed": false,
-     "heads": {
-      "prep": false,
-      "oven": false,
-      "counter": false
-     },
-     "prep": 1,
-     "ovens": 1,
-     "grade": 0,
-     "counter": 1,
-     "drivers": 1,
-     "tables": 1,
-     "footprint": 0,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": null,
-      "prepped": 0,
-      "baked": 0,
-      "boxed": 0,
-      "driverBusy": 0,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 0,
-      "nextId": 1
-     },
-     "decor": {
-      "plants": 0,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "sold": 0,
-     "perk": false
-    },
-    "uptown": {
-     "built": false,
-     "managed": false,
-     "heads": {
-      "prep": false,
-      "oven": false,
-      "counter": false
-     },
-     "prep": 1,
-     "ovens": 1,
-     "grade": 0,
-     "counter": 1,
-     "drivers": 1,
-     "tables": 1,
-     "footprint": 0,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": null,
-      "prepped": 0,
-      "baked": 0,
-      "boxed": 0,
-      "driverBusy": 0,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 0,
-      "nextId": 1
-     },
-     "decor": {
-      "plants": 0,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "sold": 0,
-     "perk": false
-    }
-   },
-   "active": "downtown",
-   "dronesUnlocked": false,
-   "cityComplete": false,
-   "seenScenes": [
-    "downtown-1",
-    "downtown-2",
-    "downtown-3",
-    "downtown-4",
-    "suburbs-1",
-    "suburbs-2",
-    "waterfront-1"
-   ],
-   "scrapbookViewed": 0,
-   "lastSavedAt": 1794416480000,
-   "playSeconds": 4079.9999999999272,
-   "sceneAt": {},
-   "tutorial": 16,
-   "rewards": {
-    "day": "",
-    "daily": [],
-    "points": 0,
-    "chests": [
-     false,
-     false,
-     false
-    ],
-    "rerollUsed": false,
-    "week": "",
-    "weekly": [],
-    "weeklyChest": false,
-    "gift": {
-     "streak": 0,
-     "last": "",
-     "saveUsed": false,
-     "cycle": 0
-    },
-    "giftShownDay": "",
-    "diamonds": 30,
-    "boosters": [],
-    "boosts": [],
-    "cosmetics": [],
-    "worn": [],
-    "lastSeen": 0,
-    "paidUntil": 0
-   },
-   "stats": {
-    "upgrades": 0,
-    "ovens": 0,
-    "hires": 0,
-    "builds": 0,
-    "fleet": 0,
-    "decor": 0,
-    "walkins": 298,
-    "deliveries": 869,
-    "baked": 1290,
-    "offline": 0,
-    "boosters": 0,
-    "dailyDone": 0,
-    "days": 0,
-    "bonusTaps": 0,
-    "ordersDone": 0
-   },
-   "bonus": {
-    "seed": 1267554755,
-    "spawned": 0,
-    "next": 4099.999999999927,
-    "until": 0
-   },
-   "order": {
-    "seed": 1267562674,
-    "made": 0,
-    "nextAt": 4139.999999999927,
-    "offer": null,
-    "active": null,
-    "result": null
-   },
-   "nightOven": 1,
-   "x": {
-    "mastery": {
-     "announced": [
-      "downtown:heads",
-      "suburbs:heads",
-      "waterfront:heads"
-     ],
-     "granted": [],
-     "fresh": [],
-     "synced": true,
-     "summary": {
-      "stars": 3,
-      "diamonds": 30,
-      "cosmetics": []
-     }
-    },
-    "counterattack": {
-     "armedWeek": 0,
-     "seenWeek": 0,
-     "target": null,
-     "open": false,
-     "defended": [],
-     "challenge": null,
-     "retryAt": 0,
-     "news": null
-    },
-    "events": {
-     "id": null,
-     "at": 0
-    },
-    "recipes": {
-     "owned": [
-      "recipe.downtown.2",
-      "recipe.downtown.3",
-      "recipe.suburbs.2",
-      "recipe.waterfront.2"
-     ],
-     "fresh": [],
-     "synced": true,
-     "summary": {
-      "cards": 4
-     }
-    },
-    "heads": {
-     "week": 2966,
-     "pick": {
-      "shopId": "waterfront",
-      "station": "oven"
-     }
-    },
-    "service": {
-     "at": 0,
-     "shops": {
-      "downtown": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "pile": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "wait": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "hold": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0,
-        "drivers": 0,
-        "floor": 0
-       },
-       "made": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "seen": null
-      },
-      "suburbs": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "pile": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "wait": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "hold": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0,
-        "drivers": 0,
-        "floor": 0
-       },
-       "made": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "seen": null
-      },
-      "waterfront": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "pile": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "wait": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "hold": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0,
-        "drivers": 0,
-        "floor": 0
-       },
-       "made": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "seen": null
-      },
-      "university": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "pile": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "wait": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "hold": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0,
-        "drivers": 0,
-        "floor": 0
-       },
-       "made": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "seen": null
-      },
-      "industrial": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "pile": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "wait": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "hold": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0,
-        "drivers": 0,
-        "floor": 0
-       },
-       "made": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "seen": null
-      },
-      "uptown": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "pile": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "wait": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "hold": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0,
-        "drivers": 0,
-        "floor": 0
-       },
-       "made": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "seen": null
+      "nightOven": 1,
+      "x": {
+        "mastery": {
+          "announced": ["north-end:heads", "southie:heads", "back-bay:heads"],
+          "granted": [],
+          "fresh": [],
+          "synced": true,
+          "summary": {
+            "stars": 3,
+            "diamonds": 30,
+            "cosmetics": []
+          }
+        },
+        "counterattack": {
+          "armedWeek": 0,
+          "seenWeek": 0,
+          "target": null,
+          "open": false,
+          "defended": [],
+          "challenge": null,
+          "retryAt": 0,
+          "news": null
+        },
+        "events": {
+          "id": null,
+          "at": 0
+        },
+        "recipes": {
+          "owned": ["recipe.north-end.2", "recipe.southie.2", "recipe.back-bay.2"],
+          "fresh": [],
+          "synced": true,
+          "summary": {
+            "cards": 3
+          }
+        },
+        "heads": {
+          "week": 2966,
+          "pick": {
+            "shopId": "back-bay",
+            "station": "oven"
+          }
+        },
+        "service": {
+          "at": 1794416478000,
+          "shops": {
+            "downtown": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            },
+            "suburbs": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            },
+            "waterfront": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            },
+            "university": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            },
+            "industrial": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            },
+            "uptown": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            },
+            "north-end": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            },
+            "southie": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            },
+            "back-bay": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            },
+            "fenway": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            },
+            "cambridge": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            },
+            "dorchester": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "slam": {
+                "prep": 0,
+                "oven": 0,
+                "counter": 0
+              }
+            }
+          }
+        },
+        "suburbsGameDay": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": 4451.5,
+          "until": 0,
+          "at": 0
+        },
+        "waterfrontBoats": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": -1,
+          "until": 0,
+          "at": 0,
+          "tier": 0,
+          "rack": 0,
+          "carry": 0,
+          "openedAt": -1
+        },
+        "rival": {
+          "won": [],
+          "challenge": null,
+          "retryAt": {}
+        },
+        "universityMenu": {
+          "pepperoni": 0,
+          "knots": 0
+        },
+        "industrialShifts": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": -1,
+          "jam": -1,
+          "startAt": -1,
+          "at": 0
+        },
+        "uptownStars": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": 4818.099999999999,
+          "tier": 0,
+          "sign": 0,
+          "result": null
+        },
+        "franchise": {
+          "count": 0,
+          "stars": 0,
+          "cityStart": 0,
+          "masteryBanked": 0
+        }
       }
-     }
     },
-    "suburbsGameDay": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": 4451.5,
-     "until": 0,
-     "at": 0
-    },
-    "waterfrontBoats": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": 4181.9,
-     "until": 0,
-     "at": 0,
-     "tier": 0,
-     "rack": 0,
-     "carry": 0,
-     "openedAt": -1
-    },
-    "rival": {
-     "won": [],
-     "challenge": null,
-     "retryAt": {}
-    },
-    "universityMenu": {
-     "pepperoni": 0,
-     "knots": 0
-    },
-    "industrialShifts": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": -1,
-     "jam": -1,
-     "startAt": -1,
-     "at": 0
-    },
-    "uptownStars": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": -1,
-     "tier": 0,
-     "sign": 0,
-     "result": null
-    },
-    "franchise": {
-     "count": 0,
-     "stars": 0,
-     "cityStart": 0,
-     "masteryBanked": 0
-    },
-    "chapters": {
-     "best": {},
-     "calm": {},
-     "done": [
-      "task.downtown-1.1",
-      "task.downtown-1.2",
-      "task.downtown-1.3",
-      "task.suburbs-3.2",
-      "task.waterfront-2.2",
-      "task.university-1.1",
-      "task.university-1.2"
-     ],
-     "coachDone": [],
-     "report": false,
-     "missedZero": false,
-     "run": {},
-     "banked": 0
+    "migrated": {
+      "saveVersion": 10,
+      "city": "boston",
+      "economy": 3,
+      "cash": 2965155408,
+      "totalEarned": 2966019606,
+      "vehicle": 2,
+      "shops": {
+        "north-end": {
+          "built": true,
+          "managed": true,
+          "heads": {
+            "prep": true,
+            "oven": true,
+            "counter": true
+          },
+          "prep": 3,
+          "ovens": 2,
+          "grade": 0,
+          "counter": 4,
+          "drivers": 2,
+          "tables": 5,
+          "footprint": 0,
+          "line": {
+            "prep": {
+              "n": 4,
+              "total": 2.2222222222222223,
+              "left": 0.6349206349206271
+            },
+            "oven": {
+              "n": 4,
+              "total": 3.80952380952381,
+              "left": 2.2222222222222134
+            },
+            "counter": null,
+            "prepped": 4,
+            "baked": 0,
+            "boxed": 4,
+            "driverBusy": 0,
+            "walkinBusy": 0.8005772005771852,
+            "departures": [],
+            "walkInDebt": 1.1428571428571477,
+            "nextId": 19
+          },
+          "decor": {
+            "plants": 0,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "sold": 476,
+          "perk": false
+        },
+        "southie": {
+          "built": true,
+          "managed": true,
+          "heads": {
+            "prep": true,
+            "oven": true,
+            "counter": true
+          },
+          "prep": 7,
+          "ovens": 5,
+          "grade": 1,
+          "counter": 6,
+          "drivers": 3,
+          "tables": 8,
+          "footprint": 1,
+          "line": {
+            "prep": {
+              "n": 11,
+              "total": 2.0370370370370368,
+              "left": 0.026455026455019237
+            },
+            "oven": {
+              "n": 11,
+              "total": 2.6190476190476195,
+              "left": 0.6084656084656015
+            },
+            "counter": null,
+            "prepped": 11,
+            "baked": 0,
+            "boxed": 11,
+            "driverBusy": 2.275132275132267,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 1.1102230246251565e-14,
+            "nextId": 25
+          },
+          "decor": {
+            "plants": 1,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "sold": 1108,
+          "perk": false
+        },
+        "back-bay": {
+          "built": true,
+          "managed": true,
+          "heads": {
+            "prep": true,
+            "oven": true,
+            "counter": true
+          },
+          "prep": 11,
+          "ovens": 8,
+          "grade": 2,
+          "counter": 8,
+          "drivers": 4,
+          "tables": 11,
+          "footprint": 2,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": {
+              "n": 18,
+              "total": 2.4170616113744074,
+              "left": 0.25602447403395
+            },
+            "prepped": 36,
+            "baked": 36,
+            "boxed": 18,
+            "driverBusy": 0.3271145214272965,
+            "walkinBusy": 0.021901251285133594,
+            "departures": [],
+            "walkInDebt": -4.736842105263145,
+            "nextId": 21
+          },
+          "decor": {
+            "plants": 2,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "sold": 1740,
+          "perk": false
+        },
+        "fenway": {
+          "built": true,
+          "managed": false,
+          "heads": {
+            "prep": true,
+            "oven": false,
+            "counter": false
+          },
+          "prep": 15,
+          "ovens": 11,
+          "grade": 3,
+          "counter": 10,
+          "drivers": 5,
+          "tables": 14,
+          "footprint": 2,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": null,
+            "prepped": 66,
+            "baked": 0,
+            "boxed": 0,
+            "driverBusy": 0,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 0,
+            "nextId": 1
+          },
+          "decor": {
+            "plants": 3,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "sold": 1600,
+          "perk": false
+        },
+        "cambridge": {
+          "built": false,
+          "managed": false,
+          "heads": {
+            "prep": false,
+            "oven": false,
+            "counter": false
+          },
+          "prep": 1,
+          "ovens": 1,
+          "grade": 0,
+          "counter": 1,
+          "drivers": 1,
+          "tables": 1,
+          "footprint": 0,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": null,
+            "prepped": 0,
+            "baked": 0,
+            "boxed": 0,
+            "driverBusy": 0,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 0,
+            "nextId": 1
+          },
+          "decor": {
+            "plants": 0,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "sold": 0,
+          "perk": false
+        },
+        "dorchester": {
+          "built": false,
+          "managed": false,
+          "heads": {
+            "prep": false,
+            "oven": false,
+            "counter": false
+          },
+          "prep": 1,
+          "ovens": 1,
+          "grade": 0,
+          "counter": 1,
+          "drivers": 1,
+          "tables": 1,
+          "footprint": 0,
+          "line": {
+            "prep": null,
+            "oven": null,
+            "counter": null,
+            "prepped": 0,
+            "baked": 0,
+            "boxed": 0,
+            "driverBusy": 0,
+            "walkinBusy": 0,
+            "departures": [],
+            "walkInDebt": 0,
+            "nextId": 1
+          },
+          "decor": {
+            "plants": 0,
+            "flooring": 0,
+            "tables": 0,
+            "walls": 0,
+            "signage": 0
+          },
+          "sold": 0,
+          "perk": false
+        }
+      },
+      "active": "north-end",
+      "dronesUnlocked": false,
+      "cityComplete": false,
+      "seenScenes": ["north-end-1", "north-end-2", "southie-1", "boston-0"],
+      "scrapbookViewed": 0,
+      "lastSavedAt": 1794416480000,
+      "playSeconds": 4079.9999999999272,
+      "sceneAt": {},
+      "tutorial": 16,
+      "rewards": {
+        "day": "",
+        "daily": [],
+        "points": 0,
+        "chests": [false, false, false],
+        "rerollUsed": false,
+        "week": "",
+        "weekly": [],
+        "weeklyChest": false,
+        "gift": {
+          "streak": 0,
+          "last": "",
+          "saveUsed": false,
+          "cycle": 0
+        },
+        "giftShownDay": "",
+        "diamonds": 30,
+        "boosters": [],
+        "boosts": [],
+        "cosmetics": [],
+        "worn": [],
+        "lastSeen": 0,
+        "paidUntil": 0,
+        "setsDone": []
+      },
+      "stats": {
+        "upgrades": 0,
+        "ovens": 0,
+        "hires": 0,
+        "builds": 0,
+        "fleet": 0,
+        "decor": 0,
+        "walkins": 253,
+        "deliveries": 671,
+        "baked": 1011,
+        "offline": 0,
+        "boosters": 0,
+        "dailyDone": 0,
+        "days": 0,
+        "bonusTaps": 0,
+        "ordersDone": 0
+      },
+      "bonus": {
+        "seed": 1267554755,
+        "spawned": 0,
+        "next": 4099.999999999927,
+        "until": 0
+      },
+      "order": {
+        "seed": 1267562674,
+        "made": 0,
+        "nextAt": 4139.999999999927,
+        "offer": null,
+        "active": null,
+        "result": null
+      },
+      "nightOven": 1,
+      "x": {
+        "mastery": {
+          "announced": ["north-end:heads", "southie:heads", "back-bay:heads"],
+          "granted": [],
+          "fresh": [],
+          "synced": true,
+          "summary": {
+            "stars": 3,
+            "diamonds": 30,
+            "cosmetics": []
+          }
+        },
+        "counterattack": {
+          "armedWeek": 0,
+          "seenWeek": 0,
+          "target": null,
+          "open": false,
+          "defended": [],
+          "challenge": null,
+          "retryAt": 0,
+          "news": null
+        },
+        "events": {
+          "id": null,
+          "at": 0
+        },
+        "recipes": {
+          "owned": ["recipe.north-end.2", "recipe.southie.2", "recipe.back-bay.2"],
+          "fresh": [],
+          "synced": true,
+          "summary": {
+            "cards": 3
+          }
+        },
+        "heads": {
+          "week": 2966,
+          "pick": {
+            "shopId": "back-bay",
+            "station": "oven"
+          }
+        },
+        "service": {
+          "at": 0,
+          "shops": {
+            "north-end": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "pile": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "wait": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "hold": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0,
+                "drivers": 0,
+                "floor": 0
+              },
+              "made": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "seen": null
+            },
+            "southie": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "pile": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "wait": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "hold": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0,
+                "drivers": 0,
+                "floor": 0
+              },
+              "made": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "seen": null
+            },
+            "back-bay": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "pile": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "wait": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "hold": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0,
+                "drivers": 0,
+                "floor": 0
+              },
+              "made": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "seen": null
+            },
+            "fenway": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "pile": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "wait": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "hold": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0,
+                "drivers": 0,
+                "floor": 0
+              },
+              "made": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "seen": null
+            },
+            "cambridge": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "pile": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "wait": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "hold": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0,
+                "drivers": 0,
+                "floor": 0
+              },
+              "made": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "seen": null
+            },
+            "dorchester": {
+              "below": 0,
+              "cold": false,
+              "tip": false,
+              "pile": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "wait": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "hold": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0,
+                "drivers": 0,
+                "floor": 0
+              },
+              "made": {
+                "prep": 0,
+                "ovens": 0,
+                "counter": 0
+              },
+              "seen": null
+            }
+          }
+        },
+        "suburbsGameDay": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": 4451.5,
+          "until": 0,
+          "at": 0
+        },
+        "waterfrontBoats": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": -1,
+          "until": 0,
+          "at": 0,
+          "tier": 0,
+          "rack": 0,
+          "carry": 0,
+          "openedAt": -1
+        },
+        "rival": {
+          "won": [],
+          "challenge": null,
+          "retryAt": {}
+        },
+        "universityMenu": {
+          "pepperoni": 0,
+          "knots": 0
+        },
+        "industrialShifts": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": -1,
+          "jam": -1,
+          "startAt": -1,
+          "at": 0
+        },
+        "uptownStars": {
+          "seed": 1267554755,
+          "n": 0,
+          "nextAt": 4818.099999999999,
+          "tier": 0,
+          "sign": 0,
+          "result": null
+        },
+        "franchise": {
+          "count": 0,
+          "stars": 0,
+          "cityStart": 0,
+          "masteryBanked": 0
+        }
+      }
     }
-   }
   }
- },
- "boston": {
-  "save": {
-   "saveVersion": 6,
-   "city": "boston",
-   "economy": 3,
-   "cash": 2965155408,
-   "totalEarned": 2966019606,
-   "vehicle": 2,
-   "shops": {
-    "north-end": {
-     "built": true,
-     "managed": true,
-     "heads": {
-      "prep": true,
-      "oven": true,
-      "counter": true
-     },
-     "prep": 3,
-     "ovens": 2,
-     "grade": 0,
-     "counter": 4,
-     "drivers": 2,
-     "tables": 5,
-     "footprint": 0,
-     "line": {
-      "prep": {
-       "n": 4,
-       "left": 0.6349206349206271,
-       "total": 2.2222222222222223
-      },
-      "oven": {
-       "n": 4,
-       "left": 2.2222222222222134,
-       "total": 3.80952380952381
-      },
-      "counter": null,
-      "prepped": 4,
-      "baked": 0,
-      "boxed": 4,
-      "driverBusy": 0,
-      "walkinBusy": 0.8005772005771852,
-      "departures": [],
-      "walkInDebt": 1.1428571428571477,
-      "nextId": 19
-     },
-     "sold": 476,
-     "decor": {
-      "plants": 0,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "perk": false
-    },
-    "southie": {
-     "built": true,
-     "managed": true,
-     "heads": {
-      "prep": true,
-      "oven": true,
-      "counter": true
-     },
-     "prep": 7,
-     "ovens": 5,
-     "grade": 1,
-     "counter": 6,
-     "drivers": 3,
-     "tables": 8,
-     "footprint": 1,
-     "line": {
-      "prep": {
-       "n": 11,
-       "left": 0.026455026455019237,
-       "total": 2.0370370370370368
-      },
-      "oven": {
-       "n": 11,
-       "left": 0.6084656084656015,
-       "total": 2.6190476190476195
-      },
-      "counter": null,
-      "prepped": 11,
-      "baked": 0,
-      "boxed": 11,
-      "driverBusy": 2.275132275132267,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 1.1102230246251565e-14,
-      "nextId": 25
-     },
-     "sold": 1108,
-     "decor": {
-      "plants": 1,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "perk": false
-    },
-    "back-bay": {
-     "built": true,
-     "managed": true,
-     "heads": {
-      "prep": true,
-      "oven": true,
-      "counter": true
-     },
-     "prep": 11,
-     "ovens": 8,
-     "grade": 2,
-     "counter": 8,
-     "drivers": 4,
-     "tables": 11,
-     "footprint": 2,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": {
-       "n": 18,
-       "left": 0.25602447403395,
-       "total": 2.4170616113744074
-      },
-      "prepped": 36,
-      "baked": 36,
-      "boxed": 18,
-      "driverBusy": 0.3271145214272965,
-      "walkinBusy": 0.021901251285133594,
-      "departures": [],
-      "walkInDebt": -4.736842105263145,
-      "nextId": 21
-     },
-     "sold": 1740,
-     "decor": {
-      "plants": 2,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "perk": false
-    },
-    "fenway": {
-     "built": true,
-     "managed": false,
-     "heads": {
-      "prep": true,
-      "oven": false,
-      "counter": false
-     },
-     "prep": 15,
-     "ovens": 11,
-     "grade": 3,
-     "counter": 10,
-     "drivers": 5,
-     "tables": 14,
-     "footprint": 2,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": null,
-      "prepped": 66,
-      "baked": 0,
-      "boxed": 0,
-      "driverBusy": 0,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 0,
-      "nextId": 1
-     },
-     "sold": 1600,
-     "decor": {
-      "plants": 3,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "perk": false
-    },
-    "cambridge": {
-     "built": false,
-     "managed": false,
-     "heads": {
-      "prep": false,
-      "oven": false,
-      "counter": false
-     },
-     "prep": 1,
-     "ovens": 1,
-     "grade": 0,
-     "counter": 1,
-     "drivers": 1,
-     "tables": 1,
-     "footprint": 0,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": null,
-      "prepped": 0,
-      "baked": 0,
-      "boxed": 0,
-      "driverBusy": 0,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 0,
-      "nextId": 1
-     },
-     "sold": 0,
-     "decor": {
-      "plants": 0,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "perk": false
-    },
-    "dorchester": {
-     "built": false,
-     "managed": false,
-     "heads": {
-      "prep": false,
-      "oven": false,
-      "counter": false
-     },
-     "prep": 1,
-     "ovens": 1,
-     "grade": 0,
-     "counter": 1,
-     "drivers": 1,
-     "tables": 1,
-     "footprint": 0,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": null,
-      "prepped": 0,
-      "baked": 0,
-      "boxed": 0,
-      "driverBusy": 0,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 0,
-      "nextId": 1
-     },
-     "sold": 0,
-     "decor": {
-      "plants": 0,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "perk": false
-    }
-   },
-   "active": "north-end",
-   "dronesUnlocked": false,
-   "cityComplete": false,
-   "seenScenes": [
-    "north-end-1",
-    "north-end-2",
-    "southie-1"
-   ],
-   "scrapbookViewed": 0,
-   "lastSavedAt": 1794416480000,
-   "playSeconds": 4079.9999999999272,
-   "sceneAt": {},
-   "tutorial": 10,
-   "rewards": {
-    "day": "",
-    "daily": [],
-    "points": 0,
-    "chests": [
-     false,
-     false,
-     false
-    ],
-    "rerollUsed": false,
-    "week": "",
-    "weekly": [],
-    "weeklyChest": false,
-    "gift": {
-     "streak": 0,
-     "last": "",
-     "saveUsed": false,
-     "cycle": 0
-    },
-    "giftShownDay": "",
-    "diamonds": 30,
-    "boosters": [],
-    "boosts": [],
-    "cosmetics": [],
-    "worn": [],
-    "lastSeen": 0
-   },
-   "stats": {
-    "upgrades": 0,
-    "ovens": 0,
-    "hires": 0,
-    "builds": 0,
-    "fleet": 0,
-    "decor": 0,
-    "walkins": 253,
-    "deliveries": 671,
-    "baked": 1011,
-    "offline": 0,
-    "boosters": 0,
-    "dailyDone": 0,
-    "days": 0,
-    "bonusTaps": 0,
-    "ordersDone": 0
-   },
-   "bonus": {
-    "seed": 1267554755,
-    "spawned": 0,
-    "next": 20,
-    "until": 0
-   },
-   "order": {
-    "seed": 1267562674,
-    "made": 0,
-    "nextAt": 60,
-    "offer": null,
-    "active": null,
-    "result": null
-   },
-   "nightOven": 1,
-   "x": {
-    "mastery": {
-     "announced": [
-      "north-end:heads",
-      "southie:heads",
-      "back-bay:heads"
-     ],
-     "granted": [],
-     "fresh": [],
-     "synced": true,
-     "summary": {
-      "stars": 3,
-      "diamonds": 30,
-      "cosmetics": []
-     }
-    },
-    "counterattack": {
-     "armedWeek": 0,
-     "seenWeek": 0,
-     "target": null,
-     "open": false,
-     "defended": [],
-     "challenge": null,
-     "retryAt": 0,
-     "news": null
-    },
-    "events": {
-     "id": null,
-     "at": 0
-    },
-    "recipes": {
-     "owned": [
-      "recipe.north-end.2",
-      "recipe.southie.2",
-      "recipe.back-bay.2"
-     ],
-     "fresh": [],
-     "synced": true,
-     "summary": {
-      "cards": 3
-     }
-    },
-    "heads": {
-     "week": 2966,
-     "pick": {
-      "shopId": "back-bay",
-      "station": "oven"
-     }
-    },
-    "service": {
-     "at": 1794416478000,
-     "shops": {
-      "downtown": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      },
-      "suburbs": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      },
-      "waterfront": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      },
-      "university": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      },
-      "industrial": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      },
-      "uptown": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      },
-      "north-end": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      },
-      "southie": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      },
-      "back-bay": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      },
-      "fenway": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      },
-      "cambridge": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      },
-      "dorchester": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "slam": {
-        "prep": 0,
-        "oven": 0,
-        "counter": 0
-       }
-      }
-     }
-    },
-    "suburbsGameDay": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": 4451.5,
-     "until": 0,
-     "at": 0
-    },
-    "waterfrontBoats": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": -1,
-     "until": 0,
-     "at": 0,
-     "tier": 0,
-     "rack": 0,
-     "carry": 0,
-     "openedAt": -1
-    },
-    "rival": {
-     "won": [],
-     "challenge": null,
-     "retryAt": {}
-    },
-    "universityMenu": {
-     "pepperoni": 0,
-     "knots": 0
-    },
-    "industrialShifts": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": -1,
-     "jam": -1,
-     "startAt": -1,
-     "at": 0
-    },
-    "uptownStars": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": 4818.099999999999,
-     "tier": 0,
-     "sign": 0,
-     "result": null
-    },
-    "franchise": {
-     "count": 0,
-     "stars": 0,
-     "cityStart": 0,
-     "masteryBanked": 0
-    }
-   }
-  },
-  "migrated": {
-   "saveVersion": 9,
-   "city": "boston",
-   "economy": 3,
-   "cash": 2965155408,
-   "totalEarned": 2966019606,
-   "vehicle": 2,
-   "shops": {
-    "north-end": {
-     "built": true,
-     "managed": true,
-     "heads": {
-      "prep": true,
-      "oven": true,
-      "counter": true
-     },
-     "prep": 3,
-     "ovens": 2,
-     "grade": 0,
-     "counter": 4,
-     "drivers": 2,
-     "tables": 5,
-     "footprint": 0,
-     "line": {
-      "prep": {
-       "n": 4,
-       "total": 2.2222222222222223,
-       "left": 0.6349206349206271
-      },
-      "oven": {
-       "n": 4,
-       "total": 3.80952380952381,
-       "left": 2.2222222222222134
-      },
-      "counter": null,
-      "prepped": 4,
-      "baked": 0,
-      "boxed": 4,
-      "driverBusy": 0,
-      "walkinBusy": 0.8005772005771852,
-      "departures": [],
-      "walkInDebt": 1.1428571428571477,
-      "nextId": 19
-     },
-     "decor": {
-      "plants": 0,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "sold": 476,
-     "perk": false
-    },
-    "southie": {
-     "built": true,
-     "managed": true,
-     "heads": {
-      "prep": true,
-      "oven": true,
-      "counter": true
-     },
-     "prep": 7,
-     "ovens": 5,
-     "grade": 1,
-     "counter": 6,
-     "drivers": 3,
-     "tables": 8,
-     "footprint": 1,
-     "line": {
-      "prep": {
-       "n": 11,
-       "total": 2.0370370370370368,
-       "left": 0.026455026455019237
-      },
-      "oven": {
-       "n": 11,
-       "total": 2.6190476190476195,
-       "left": 0.6084656084656015
-      },
-      "counter": null,
-      "prepped": 11,
-      "baked": 0,
-      "boxed": 11,
-      "driverBusy": 2.275132275132267,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 1.1102230246251565e-14,
-      "nextId": 25
-     },
-     "decor": {
-      "plants": 1,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "sold": 1108,
-     "perk": false
-    },
-    "back-bay": {
-     "built": true,
-     "managed": true,
-     "heads": {
-      "prep": true,
-      "oven": true,
-      "counter": true
-     },
-     "prep": 11,
-     "ovens": 8,
-     "grade": 2,
-     "counter": 8,
-     "drivers": 4,
-     "tables": 11,
-     "footprint": 2,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": {
-       "n": 18,
-       "total": 2.4170616113744074,
-       "left": 0.25602447403395
-      },
-      "prepped": 36,
-      "baked": 36,
-      "boxed": 18,
-      "driverBusy": 0.3271145214272965,
-      "walkinBusy": 0.021901251285133594,
-      "departures": [],
-      "walkInDebt": -4.736842105263145,
-      "nextId": 21
-     },
-     "decor": {
-      "plants": 2,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "sold": 1740,
-     "perk": false
-    },
-    "fenway": {
-     "built": true,
-     "managed": false,
-     "heads": {
-      "prep": true,
-      "oven": false,
-      "counter": false
-     },
-     "prep": 15,
-     "ovens": 11,
-     "grade": 3,
-     "counter": 10,
-     "drivers": 5,
-     "tables": 14,
-     "footprint": 2,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": null,
-      "prepped": 66,
-      "baked": 0,
-      "boxed": 0,
-      "driverBusy": 0,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 0,
-      "nextId": 1
-     },
-     "decor": {
-      "plants": 3,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "sold": 1600,
-     "perk": false
-    },
-    "cambridge": {
-     "built": false,
-     "managed": false,
-     "heads": {
-      "prep": false,
-      "oven": false,
-      "counter": false
-     },
-     "prep": 1,
-     "ovens": 1,
-     "grade": 0,
-     "counter": 1,
-     "drivers": 1,
-     "tables": 1,
-     "footprint": 0,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": null,
-      "prepped": 0,
-      "baked": 0,
-      "boxed": 0,
-      "driverBusy": 0,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 0,
-      "nextId": 1
-     },
-     "decor": {
-      "plants": 0,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "sold": 0,
-     "perk": false
-    },
-    "dorchester": {
-     "built": false,
-     "managed": false,
-     "heads": {
-      "prep": false,
-      "oven": false,
-      "counter": false
-     },
-     "prep": 1,
-     "ovens": 1,
-     "grade": 0,
-     "counter": 1,
-     "drivers": 1,
-     "tables": 1,
-     "footprint": 0,
-     "line": {
-      "prep": null,
-      "oven": null,
-      "counter": null,
-      "prepped": 0,
-      "baked": 0,
-      "boxed": 0,
-      "driverBusy": 0,
-      "walkinBusy": 0,
-      "departures": [],
-      "walkInDebt": 0,
-      "nextId": 1
-     },
-     "decor": {
-      "plants": 0,
-      "flooring": 0,
-      "tables": 0,
-      "walls": 0,
-      "signage": 0
-     },
-     "sold": 0,
-     "perk": false
-    }
-   },
-   "active": "north-end",
-   "dronesUnlocked": false,
-   "cityComplete": false,
-   "seenScenes": [
-    "north-end-1",
-    "north-end-2",
-    "southie-1",
-    "boston-0"
-   ],
-   "scrapbookViewed": 0,
-   "lastSavedAt": 1794416480000,
-   "playSeconds": 4079.9999999999272,
-   "sceneAt": {},
-   "tutorial": 16,
-   "rewards": {
-    "day": "",
-    "daily": [],
-    "points": 0,
-    "chests": [
-     false,
-     false,
-     false
-    ],
-    "rerollUsed": false,
-    "week": "",
-    "weekly": [],
-    "weeklyChest": false,
-    "gift": {
-     "streak": 0,
-     "last": "",
-     "saveUsed": false,
-     "cycle": 0
-    },
-    "giftShownDay": "",
-    "diamonds": 30,
-    "boosters": [],
-    "boosts": [],
-    "cosmetics": [],
-    "worn": [],
-    "lastSeen": 0,
-    "paidUntil": 0
-   },
-   "stats": {
-    "upgrades": 0,
-    "ovens": 0,
-    "hires": 0,
-    "builds": 0,
-    "fleet": 0,
-    "decor": 0,
-    "walkins": 253,
-    "deliveries": 671,
-    "baked": 1011,
-    "offline": 0,
-    "boosters": 0,
-    "dailyDone": 0,
-    "days": 0,
-    "bonusTaps": 0,
-    "ordersDone": 0
-   },
-   "bonus": {
-    "seed": 1267554755,
-    "spawned": 0,
-    "next": 4099.999999999927,
-    "until": 0
-   },
-   "order": {
-    "seed": 1267562674,
-    "made": 0,
-    "nextAt": 4139.999999999927,
-    "offer": null,
-    "active": null,
-    "result": null
-   },
-   "nightOven": 1,
-   "x": {
-    "mastery": {
-     "announced": [
-      "north-end:heads",
-      "southie:heads",
-      "back-bay:heads"
-     ],
-     "granted": [],
-     "fresh": [],
-     "synced": true,
-     "summary": {
-      "stars": 3,
-      "diamonds": 30,
-      "cosmetics": []
-     }
-    },
-    "counterattack": {
-     "armedWeek": 0,
-     "seenWeek": 0,
-     "target": null,
-     "open": false,
-     "defended": [],
-     "challenge": null,
-     "retryAt": 0,
-     "news": null
-    },
-    "events": {
-     "id": null,
-     "at": 0
-    },
-    "recipes": {
-     "owned": [
-      "recipe.north-end.2",
-      "recipe.southie.2",
-      "recipe.back-bay.2"
-     ],
-     "fresh": [],
-     "synced": true,
-     "summary": {
-      "cards": 3
-     }
-    },
-    "heads": {
-     "week": 2966,
-     "pick": {
-      "shopId": "back-bay",
-      "station": "oven"
-     }
-    },
-    "service": {
-     "at": 0,
-     "shops": {
-      "north-end": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "pile": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "wait": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "hold": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0,
-        "drivers": 0,
-        "floor": 0
-       },
-       "made": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "seen": null
-      },
-      "southie": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "pile": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "wait": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "hold": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0,
-        "drivers": 0,
-        "floor": 0
-       },
-       "made": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "seen": null
-      },
-      "back-bay": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "pile": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "wait": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "hold": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0,
-        "drivers": 0,
-        "floor": 0
-       },
-       "made": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "seen": null
-      },
-      "fenway": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "pile": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "wait": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "hold": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0,
-        "drivers": 0,
-        "floor": 0
-       },
-       "made": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "seen": null
-      },
-      "cambridge": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "pile": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "wait": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "hold": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0,
-        "drivers": 0,
-        "floor": 0
-       },
-       "made": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "seen": null
-      },
-      "dorchester": {
-       "below": 0,
-       "cold": false,
-       "tip": false,
-       "pile": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "wait": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "hold": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0,
-        "drivers": 0,
-        "floor": 0
-       },
-       "made": {
-        "prep": 0,
-        "ovens": 0,
-        "counter": 0
-       },
-       "seen": null
-      }
-     }
-    },
-    "suburbsGameDay": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": 4451.5,
-     "until": 0,
-     "at": 0
-    },
-    "waterfrontBoats": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": -1,
-     "until": 0,
-     "at": 0,
-     "tier": 0,
-     "rack": 0,
-     "carry": 0,
-     "openedAt": -1
-    },
-    "rival": {
-     "won": [],
-     "challenge": null,
-     "retryAt": {}
-    },
-    "universityMenu": {
-     "pepperoni": 0,
-     "knots": 0
-    },
-    "industrialShifts": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": -1,
-     "jam": -1,
-     "startAt": -1,
-     "at": 0
-    },
-    "uptownStars": {
-     "seed": 1267554755,
-     "n": 0,
-     "nextAt": 4818.099999999999,
-     "tier": 0,
-     "sign": 0,
-     "result": null
-    },
-    "franchise": {
-     "count": 0,
-     "stars": 0,
-     "cityStart": 0,
-     "masteryBanked": 0
-    }
-   }
-  }
- }
 }
