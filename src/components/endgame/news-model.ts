@@ -2,7 +2,6 @@
 // the master plaque (Nonna's line), and an event's start line. The engine keeps this news until the UI acknowledges it
 // (`ackMastery`, `ackRecipes`); the toast takes the whole batch at once and shows it one by one. Pure: unit-tested in node.
 import { MASTERY } from '../../content/endgame';
-import { cosmeticName } from '../../content/rewards';
 import type { NeighborhoodId } from '../../content/types';
 import type { EventBannerView } from './event-model';
 import type { GameState } from '../../engine/game';
@@ -10,7 +9,7 @@ import { KEY as MASTERY_KEY, type MasteryState } from '../../engine/features/mas
 import { KEY as RECIPES_KEY, type RecipesState } from '../../engine/features/recipes';
 import { copy, recipeLine, recipeName, speakerOf } from './copy-text';
 import { masteryNewsText } from './mastery-model';
-import { VANITY_IDS } from './shop-model';
+import { lookName } from './shop-model';
 
 export type NewsItem =
   | { key: string; kind: 'star'; text: string; sub: string; shopId: NeighborhoodId }
@@ -25,11 +24,8 @@ export const RECIPE_HEADER = 'NEW RECIPE';
 /** How long one toast stays up (ms). */
 export const NEWS_MS = 3200;
 
-/** A cosmetic's name: the shop's copy for the seven it sells, the rewards name for the rest. */
-export function cosmeticTitle(id: string): string {
-  if (id.startsWith('storefront-skin')) return copy('shop.item.storefront-skin.name');
-  return (VANITY_IDS as readonly string[]).includes(id) ? copy(`shop.item.${id as (typeof VANITY_IDS)[number]}.name`) : cosmeticName(id);
-}
+/** A cosmetic's name: the shop's copy for the looks it sells (shop-model `lookName`), the rewards name for the rest (the founder awning). */
+export const cosmeticTitle = (id: string): string => lookName(id);
 
 /** Everything the engine is waiting for the UI to show, in the order it happened (stars and cosmetics, then recipe cards). */
 export function newsItems(g: GameState): NewsItem[] {

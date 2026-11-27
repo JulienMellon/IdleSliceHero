@@ -338,6 +338,33 @@ export const RushPill = memo(function RushPill({
 export const rushPillWidth = (text: string) => Math.min(120, Math.max(70, text.length * 6.2 + 18));
 
 /**
+ * The milestone's confetti burst (D415), centred on its own origin: fourteen pieces tossed up and out in the neighbourhood's colour, `step` the confetti step (ladder.ts `confettiStep`,
+ * -1: none). The set flourish (set-flourish.ts) bursts the same pieces from the shop's sign.
+ */
+export const Confetti = memo(function Confetti({ step, color }: { step: number; color: string }) {
+  if (step < 0) return null;
+  const fills = confettiFills(color);
+  return (
+    <G opacity={CONFETTI_OPACITY[step]}>
+      {CONFETTI.map((c, i) => (
+        <Rect
+          key={i}
+          x={-c.w / 2}
+          y={-c.h / 2}
+          width={c.w}
+          height={c.h}
+          rx={0.8}
+          fill={fills[c.tone]}
+          stroke={INK}
+          strokeWidth={0.5}
+          transform={CONFETTI_FRAMES[step][i]}
+        />
+      ))}
+    </G>
+  );
+});
+
+/**
  * The milestone moment (D415): a gold badge 72 pt across, centred over the station that reached Lv 25 / 50 / 100, with
  * its level in big type and the speed-up it bought underneath. The confetti is drawn FIRST, so it bursts out from behind
  * the disc and never covers the text (it used to land on its own "Lv 25"). `step` is the confetti step (−1: none),
@@ -364,28 +391,10 @@ export const MilestoneBadge = memo(function MilestoneBadge({
   step: number;
   color: string;
 }) {
-  const fills = confettiFills(color);
   const subW = Math.min(48, Math.max(34, (sub?.length ?? 0) * 6.4 + 8));
   return (
     <G transform={`translate(${x.toFixed(1)} ${y.toFixed(1)})`}>
-      {step >= 0 && (
-        <G opacity={CONFETTI_OPACITY[step]}>
-          {CONFETTI.map((c, i) => (
-            <Rect
-              key={i}
-              x={-c.w / 2}
-              y={-c.h / 2}
-              width={c.w}
-              height={c.h}
-              rx={0.8}
-              fill={fills[c.tone]}
-              stroke={INK}
-              strokeWidth={0.5}
-              transform={CONFETTI_FRAMES[step][i]}
-            />
-          ))}
-        </G>
-      )}
+      <Confetti step={step} color={color} />
       <G transform={`scale(${scale})`} opacity={opacity}>
         <Circle cx={0} cy={2} r={MILE_R} fill="rgba(59,31,20,0.28)" />
         <Circle cx={0} cy={0} r={MILE_R} fill="#FFC531" stroke={INK} strokeWidth={2.2} />

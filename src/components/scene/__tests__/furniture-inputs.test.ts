@@ -16,8 +16,11 @@ const deps = (s: FurnitureSource) => JSON.stringify(furnitureDeps(furnitureInput
 describe('furniture memo deps (T27)', () => {
   test('every input field is a dependency, in a constant-length list', () => {
     const f = furnitureInputs(base());
-    expect(furnitureDeps(f)).toHaveLength(Object.keys(f).length);
-    expect(furnitureDeps(furnitureInputs(base({ line: { prepped: 8 }, managed: false })))).toHaveLength(Object.keys(f).length);
+    // `awningFounder` is absent until worn, but its slot is always in the deps
+    const n = Object.keys({ ...f, awningFounder: false }).length;
+    expect(furnitureDeps(f)).toHaveLength(n);
+    expect(furnitureDeps(furnitureInputs(base({ line: { prepped: 8 }, managed: false })))).toHaveLength(n);
+    expect(furnitureDeps(furnitureInputs({ ...base(), worn: ['awning-founder'] }))).toHaveLength(n);
   });
   test('name, id and idleShop each change the deps', () => {
     const d0 = deps(base());

@@ -1,0 +1,67 @@
+// The Vanity tab's lines (v5.24, card U6), copied byte for byte from docs/story/COPY-v5.24.md sections 1 to 3 (written by card W5): the 35 look names the
+// seven older looks do not already have (those are `shop.item.<id>.name` in endgame.ts), the six sets' names and set-complete lines, and the Featured row.
+// Hand-kept like store.ts, not generated: change the copy file and this table together. The last block is U6's own (not in the copy file): the tab's
+// small section titles and the "Shows in" line, for the owner or the writer to review.
+
+/** Every line, by its key in the copy file. */
+export const COPY = {
+  // section 1. Looks
+  'look.facade-classic': 'Nonna-approved front',
+  'look.awning-classic': 'Sunday-best awning',
+  'look.menu-classic': 'Nonna’s scrawled menu',
+  'look.apron-classic': 'Flour-proof apron',
+  'look.facade-diner': 'Mudhens diner front',
+  'look.counter-diner': 'No-cutting counter',
+  'look.tablecloth-diner': 'Labeled tablecloths',
+  'look.tipjar-diner': 'Team-fund tip jar',
+  'look.facade-dockside': 'Seen-worse boathouse',
+  'look.sign-dockside': 'Knotted rope sign',
+  'look.tipjar-dockside': 'Counted-twice tip jar',
+  'look.chime-dockside': 'Foghorn door chime',
+  'look.facade-dorm': 'All-nighter front',
+  'look.scooter-dorm': 'Finals-week scooter',
+  'look.menu-dorm': 'Peer-reviewed menu',
+  'look.tablecloth-dorm': 'Notebook-paper cloths',
+  'look.facade-brick': 'Union-built front',
+  'look.oven-brick': 'No-sick-days oven',
+  'look.apron-brick': 'Night-shift apron',
+  'look.chime-brick': 'Shift-whistle chime',
+  'look.facade-marble': 'Far too much marble',
+  'look.awning-marble': 'Velvet-rope awning',
+  'look.tablecloth-marble': 'Folded-napkin linens',
+  'look.tipjar-marble': 'Crystal gratuity bowl',
+  'look.menu-chalkboard': 'Chalkboard menu',
+  'look.apron-checkered': 'Checkered apron',
+  'look.apron-striped': 'Striped apron',
+  'look.tablecloth-gingham': 'Gingham tablecloths',
+  'look.tablecloth-linen': 'Linen tablecloths',
+  'look.tipjar-glass': 'Glass tip jar',
+  'look.tipjar-brass': 'Brass tip jar',
+  'look.chime-bell': 'Front-door bell',
+  'look.chime-wind': 'Wind chimes',
+  'look.awning-candy': 'Candy-stripe awning',
+  'look.scooter-red': 'Red scooter',
+  // section 2. Sets
+  'set.classic': 'Rosa’s classic',
+  'set.classic.done': 'Now it looks like Rosa’s. Good, eh?',
+  'set.diner': 'Mudhens diner',
+  'set.diner.done': 'Matching set. Coach cried. I didn’t.',
+  'set.dockside': 'Dockside shack',
+  'set.dockside.done': 'Full set. Counted it twice. Still full.',
+  'set.dorm': 'Dorm deluxe',
+  'set.dorm.done': 'Set complete. The queue approves. Noted.',
+  'set.brick': 'Union brick',
+  'set.brick.done': 'Whole set. Ox nodded. That’s a speech.',
+  'set.marble': 'Uptown marble',
+  'set.marble.done': 'The set is complete. Madame may sit.',
+  // section 3. Vanity tab
+  'shop.featured': 'This week’s picks',
+  'shop.set.progress': '{have}/{need} pieces',
+  // U6's own, to review
+  'shop.tier.small': 'Small looks',
+  'shop.tier.medium': 'Medium looks',
+  'shop.tier.large': 'Large looks',
+  'shop.look.shows': 'Shows in {hood}',
+  'shop.look.owned': 'Owned',
+  'shop.set.done': 'Complete',
+} as const;

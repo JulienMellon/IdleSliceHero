@@ -1,21 +1,22 @@
 // What the v5.24 looks (card S4: the Downtown, Suburbs and Waterfront sets and the generic small looks) change in the shop, as pure data: colours per look, which shape a sign
 // takes, and the two small boxes the new props stand in (the tip jar, the door chime). Pure (no React), so the budget test can put every box against the stations, the heads,
 // the badges, the mat and the coach targets, and the thumbnails (look-thumb.tsx) read the same tables as the scene. The colours of a set are one entry in palette.ts.
-// The worn ids reach this module through `Dress` (cosmetics.ts: a look's variant is its id without its part, `awning-classic` -> `classic`); S5 adds the other three sets here.
+// The worn ids reach this module through `Dress` (cosmetics.ts: a look's variant is its id without its part, `awning-classic` -> `classic`). Card S5 added the University (`dorm`),
+// Industrial (`brick`) and Uptown (`marble`) rows to every table.
 import { LOOKS, lookOf, type Part } from '../../content/catalog';
 import type { FacadeKind } from './identity';
 import type { Layout } from './layout';
 import { flipRect, plainOf } from './layout-space';
-import { GENERIC, SET_CLASSIC, SET_DINER, SET_DOCKSIDE } from './palette';
+import { GENERIC, SET_BRICK, SET_CLASSIC, SET_DINER, SET_DOCKSIDE, SET_DORM, SET_MARBLE } from './palette';
 import { P } from './projection';
 import type { Rect } from './stations';
 
 // ---------- the storefront themes (facade-*) ----------
 
-/** The line drawn under the fascia beam: a gold pinstripe, the diner's checker band, or a rope. */
-export type TrimKind = 'pinstripe' | 'checker' | 'rope';
+/** The line drawn under the fascia beam: a gold pinstripe, the diner's checker band, a rope, the dorm's bunting, the factory's rivet strip or Uptown's gilt key. */
+export type TrimKind = 'pinstripe' | 'checker' | 'rope' | 'bunting' | 'rivets' | 'gilt';
 /** The shape of the shop's name plate. `board` is the plain one every shop starts with. */
-export type SignShape = 'board' | 'cartouche' | 'pill' | 'rope' | 'plank';
+export type SignShape = 'board' | 'cartouche' | 'pill' | 'rope' | 'plank' | 'pennant' | 'plate' | 'engraved';
 
 export interface FacadeTheme {
   /** The pilaster pattern the theme paints (absent: the neighbourhood's own). */
@@ -66,6 +67,40 @@ export const FACADE_THEMES: Readonly<Record<string, FacadeTheme>> = {
     trimAlt: SET_DOCKSIDE.ropeDark,
     sign: 'rope',
   },
+  dorm: {
+    facade: 'collegiate',
+    pilaster: SET_DORM.brick,
+    seam: SET_DORM.brickSeam,
+    plinth: SET_DORM.ivy,
+    fascia: SET_DORM.navy,
+    trim: 'bunting',
+    trimColor: SET_DORM.gold,
+    trimAlt: SET_DORM.cream,
+    sign: 'pennant',
+  },
+  brick: {
+    facade: 'brick',
+    pilaster: SET_BRICK.brick,
+    seam: SET_BRICK.brickSeam,
+    plinth: SET_BRICK.steel,
+    fascia: SET_BRICK.steelDark,
+    trim: 'rivets',
+    trimColor: SET_BRICK.rivet,
+    trimAlt: SET_BRICK.hazard,
+    sign: 'plate',
+  },
+  marble: {
+    facade: 'tile',
+    pilaster: SET_MARBLE.stone,
+    seam: SET_MARBLE.stoneSeam,
+    plinth: SET_MARBLE.black,
+    fascia: SET_MARBLE.black,
+    cap: SET_MARBLE.gilt,
+    trim: 'gilt',
+    trimColor: SET_MARBLE.gilt,
+    trimAlt: SET_MARBLE.ivory,
+    sign: 'engraved',
+  },
 };
 
 /** The plate's colours by shape, for a shop whose sign is the plain painted board (signage tier 0); the neon and marquee tiers keep their own. */
@@ -74,6 +109,9 @@ export const SIGN_BOARDS: Readonly<Record<Exclude<SignShape, 'board'>, { board: 
   pill: { board: SET_DINER.red, text: SET_DINER.cream, edge: SET_DINER.chrome },
   rope: { board: SET_DOCKSIDE.deep, text: SET_DOCKSIDE.white, edge: SET_DOCKSIDE.rope },
   plank: { board: '#6E5236', text: '#FFF4E0', edge: SET_DOCKSIDE.rope },
+  pennant: { board: SET_DORM.navy, text: SET_DORM.cream, edge: SET_DORM.gold },
+  plate: { board: SET_BRICK.steelDark, text: '#FFE7B0', edge: SET_BRICK.hazard },
+  engraved: { board: SET_MARBLE.black, text: SET_MARBLE.ivory, edge: SET_MARBLE.gilt },
 };
 
 /** The plate a shop wears: the Dockside sign look is a plank whatever the storefront; else the storefront theme's shape; else the plain board. */
@@ -92,14 +130,15 @@ export interface AwningLook {
 export const AWNING_LOOKS: Readonly<Record<string, AwningLook>> = {
   classic: { main: SET_CLASSIC.green, alt: SET_CLASSIC.cream, piping: SET_CLASSIC.gold },
   candy: { main: GENERIC.candy, alt: GENERIC.candyAlt, piping: '#E8432E' },
+  marble: { main: SET_MARBLE.black, alt: SET_MARBLE.ivory, piping: SET_MARBLE.gilt },
 };
 
 // ---------- the crew's aprons (apron-*) ----------
 
-export type ApronPattern = 'plain' | 'check' | 'stripe';
+export type ApronPattern = 'plain' | 'check' | 'stripe' | 'hazard';
 export interface ApronLook {
   bib: string;
-  /** The hem band of a plain apron, the squares of a check, the stripes of a stripe. */
+  /** The hem band of a plain apron, the squares of a check, the stripes of a stripe, the dark bars of a hazard hem. */
   alt: string;
   pattern: ApronPattern;
   strap: string;
@@ -108,6 +147,7 @@ export const APRONS: Readonly<Record<string, ApronLook>> = {
   classic: { bib: SET_CLASSIC.cream, alt: SET_CLASSIC.green, pattern: 'plain', strap: SET_CLASSIC.gold },
   checkered: { bib: '#FFFFFF', alt: GENERIC.gingham, pattern: 'check', strap: GENERIC.gingham },
   striped: { bib: '#FFFFFF', alt: GENERIC.denim, pattern: 'stripe', strap: GENERIC.denim },
+  brick: { bib: SET_BRICK.leather, alt: SET_BRICK.steelDark, pattern: 'hazard', strap: SET_BRICK.steelDark },
 };
 
 // ---------- table cloths (tablecloth-*) ----------
@@ -122,11 +162,13 @@ export const CLOTHS: Readonly<Record<string, ClothLook>> = {
   diner: { cloth: '#FFFFFF', alt: SET_DINER.tile, pattern: 'check' },
   gingham: { cloth: '#FFFFFF', alt: GENERIC.gingham, pattern: 'check' },
   linen: { cloth: GENERIC.linen, alt: GENERIC.linenEdge, pattern: 'plain' },
+  dorm: { cloth: SET_DORM.cream, alt: SET_DORM.navy, pattern: 'check' },
+  marble: { cloth: SET_MARBLE.ivory, alt: SET_MARBLE.gilt, pattern: 'plain' },
 };
 
 // ---------- tip jars (tipjar-*) ----------
 
-export type JarShape = 'jar' | 'pot' | 'shake' | 'bottle';
+export type JarShape = 'jar' | 'pot' | 'shake' | 'bottle' | 'urn';
 export interface JarLook {
   shape: JarShape;
   body: string;
@@ -138,11 +180,12 @@ export const JARS: Readonly<Record<string, JarLook>> = {
   brass: { shape: 'pot', body: GENERIC.brass, lid: '#8A6A1F', accent: '#F6D47A' },
   diner: { shape: 'shake', body: '#FFFFFF', lid: SET_DINER.chrome, accent: SET_DINER.red },
   dockside: { shape: 'bottle', body: '#9ED3C1', lid: SET_DOCKSIDE.ropeDark, accent: SET_DOCKSIDE.rope },
+  marble: { shape: 'urn', body: SET_MARBLE.urn, lid: SET_MARBLE.gilt, accent: SET_MARBLE.giltDark },
 };
 
 // ---------- door chimes (chime-*) ----------
 
-export type ChimeShape = 'bell' | 'tubes' | 'ship';
+export type ChimeShape = 'bell' | 'tubes' | 'ship' | 'gear';
 export interface ChimeLook {
   shape: ChimeShape;
   metal: string;
@@ -152,6 +195,7 @@ export const CHIMES: Readonly<Record<string, ChimeLook>> = {
   bell: { shape: 'bell', metal: GENERIC.brass, cord: GENERIC.wood },
   wind: { shape: 'tubes', metal: '#B9C4CC', cord: GENERIC.wood },
   dockside: { shape: 'ship', metal: SET_DOCKSIDE.brass, cord: SET_DOCKSIDE.rope },
+  brick: { shape: 'gear', metal: SET_BRICK.steelLight, cord: SET_BRICK.steelDark },
 };
 
 // ---------- the menu board (menu-*) ----------
@@ -196,6 +240,15 @@ export const MENUS: Readonly<Record<string, MenuLook>> = {
     price: '#FFE08A',
     slice: '#FFE08A',
   },
+  dorm: {
+    board: SET_DORM.cork,
+    frame: SET_DORM.navy,
+    head: SET_DORM.gold,
+    headText: 'MENU',
+    text: '#3B1F14',
+    price: SET_DORM.navyDark,
+    slice: SET_DORM.brick,
+  },
 };
 
 // ---------- the counter (counter-diner) and the sign (sign-dockside) ----------
@@ -219,6 +272,21 @@ export interface ScooterPaint {
   dark: string;
 }
 export const RED_SCOOTER: ScooterPaint = { body: GENERIC.scooterRed, dark: GENERIC.scooterRedDark };
+/** The Dorm's school-purple scooter (scooter-dorm). */
+export const DORM_SCOOTER: ScooterPaint = { body: SET_DORM.scooter, dark: SET_DORM.scooterDark };
+
+// ---------- the oven's paint (oven-brick) ----------
+
+export interface OvenLook {
+  /** The body's colour (the gradient's middle), the steel band and the rivets on it. */
+  base: string;
+  band: string;
+  rivet: string;
+}
+/** The Industrial oven: a soot-red body with a riveted steel band, drawn over the grade bought (the gold and wood-fired skins win when worn too). */
+export const OVEN_LOOKS: Readonly<Record<string, OvenLook>> = {
+  brick: { base: SET_BRICK.oven, band: SET_BRICK.steelDark, rivet: SET_BRICK.rivet },
+};
 
 // ---------- the boxes the new props stand in ----------
 
@@ -267,7 +335,7 @@ export const chimeRect = (lay: Layout): Rect => chimeSpot(lay).rect;
 
 // ---------- which looks have art ----------
 
-/** The variants each part draws, by key (a look's variant is its id without the part). The sign and the scooter have one each. S5 adds its sets' rows to these tables. */
+/** The variants each part draws, by key (a look's variant is its id without the part). The sign, the scooter and the oven are listed by hand. */
 const DRAWN: Partial<Record<Part, readonly string[]>> = {
   facade: Object.keys(FACADE_THEMES),
   awning: Object.keys(AWNING_LOOKS),
@@ -278,7 +346,8 @@ const DRAWN: Partial<Record<Part, readonly string[]>> = {
   menu: Object.keys(MENUS),
   counter: Object.keys(COUNTERS),
   sign: ['dockside'],
-  scooter: ['red'],
+  scooter: ['red', 'dorm'],
+  oven: Object.keys(OVEN_LOOKS),
 };
 
 /** The variant a catalog look is worn as (`awning-classic` -> 'classic'), or '' for an id that is not a row. */
@@ -293,7 +362,10 @@ export function hasArt(id: string): boolean {
   return !!l && (DRAWN[l.part] ?? []).includes(variantOfLook(id));
 }
 
-/** The catalog rows this module draws: the Downtown, Suburbs and Waterfront sets and every generic look the tables above cover. */
+/** The catalog rows card S5 draws: the University, Industrial and Uptown sets. */
+export const S5_LOOKS: readonly string[] = LOOKS.filter((l) => hasArt(l.id) && l.set !== null && ['dorm', 'brick', 'marble'].includes(l.set)).map((l) => l.id);
+
+/** The catalog rows card S4 draws: the Downtown, Suburbs and Waterfront sets and every generic look the tables above cover. */
 export const S4_LOOKS: readonly string[] = LOOKS.filter((l) => hasArt(l.id) && (l.set === null || ['classic', 'diner', 'dockside'].includes(l.set))).map(
   (l) => l.id,
 );

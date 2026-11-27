@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-// The v5.24 looks (card S4): the Downtown, Suburbs and Waterfront sets and the generic small looks. Every look has art, every worn look reaches the furniture memo, and the new props
+// The v5.24 looks (cards S4 and S5): all six sets and the generic small looks. Every look has art, every worn look reaches the furniture memo, and the new props
 // (the tip jar, the door chime, the table cloths) stand clear of the stations, the heads, the badges, the WELCOME mat and the coach targets in every city, neighbourhood,
 // footprint and plan. The jar and the chime are also fixed covers in protected.ts, so the protected-element test guards them against the mat, the door and the faces too.
 import { CITIES, hoodIds } from '../../../content/cities';
@@ -25,7 +25,9 @@ import {
   JAR_H,
   JAR_W,
   MENUS,
+  OVEN_LOOKS,
   S4_LOOKS,
+  S5_LOOKS,
   SIGN_BOARDS,
   chimeSpot,
   hasArt,
@@ -33,7 +35,7 @@ import {
   tipJarSpot,
   variantOfLook,
 } from '../look-art';
-import { GENERIC, SET_CLASSIC, SET_DINER, SET_DOCKSIDE } from '../palette';
+import { GENERIC, SET_BRICK, SET_CLASSIC, SET_DINER, SET_DOCKSIDE, SET_DORM, SET_MARBLE } from '../palette';
 import { COVER_MAX, coveredShare } from '../protected';
 import { P, kAt } from '../projection';
 import { shopLayout } from '../shop-layout';
@@ -58,11 +60,20 @@ describe('every look of the card has art', () => {
     for (const l of generic) expect(hasArt(l.id)).toBe(true);
     expect(S4_LOOKS).toHaveLength(23);
   });
-  test('the other three sets are not claimed (S5 draws them)', () => {
-    for (const l of CATALOG.filter((x) => x.set && !MINE.includes(x.set))) expect(hasArt(l.id)).toBe(false);
+  test('the University, Industrial and Uptown sets are drawn too (card S5): 12 pieces, none claimed twice', () => {
+    const theirs = CATALOG.filter((x) => x.set && !MINE.includes(x.set));
+    expect(theirs).toHaveLength(12);
+    for (const l of theirs) expect(hasArt(l.id)).toBe(true);
+    expect([...S5_LOOKS].sort()).toEqual(theirs.map((l) => l.id).sort());
+    expect(S4_LOOKS.some((id) => S5_LOOKS.includes(id))).toBe(false);
+  });
+  test('the oven set piece is its own dress field and wins nothing over a skin', () => {
+    expect(dressOf(['oven-brick']).ovenSet).toBe('brick');
+    expect(dressOf(['oven-brick']).ovenSkin).toBe(0);
+    expect(Object.keys(OVEN_LOOKS)).toEqual(['brick']);
   });
   test('worn, each look dresses exactly one thing, and unknown variants dress nothing', () => {
-    for (const id of S4_LOOKS) {
+    for (const id of [...S4_LOOKS, ...S5_LOOKS]) {
       const d = dressOf([id]);
       expect(isDressed(d)).toBe(true);
       const part = CATALOG.find((l) => l.id === id)!.part;
@@ -74,9 +85,10 @@ describe('every look of the card has art', () => {
   });
   test('a theme paints the facade, the fascia and the sign; the three themes differ from each other and from the neighbourhoods', () => {
     const themes = Object.values(FACADE_THEMES);
-    expect(themes).toHaveLength(3);
-    expect(new Set(themes.map((t) => t.fascia)).size).toBe(3);
-    expect(new Set(themes.map((t) => t.pilaster)).size).toBe(3);
+    expect(themes).toHaveLength(6);
+    expect(new Set(themes.map((t) => t.fascia)).size).toBe(6);
+    expect(new Set(themes.map((t) => t.pilaster)).size).toBe(6);
+    expect(new Set(themes.map((t) => t.sign)).size).toBe(6);
     for (const t of themes) {
       expect(Object.values(LOOKS).some((l) => l.pilaster === t.pilaster)).toBe(false);
       expect(SKINS.some((s) => s.pilaster === t.pilaster)).toBe(false);
@@ -85,6 +97,9 @@ describe('every look of the card has art', () => {
       ['facade-classic', 'classic'],
       ['facade-diner', 'diner'],
       ['facade-dockside', 'dockside'],
+      ['facade-dorm', 'dorm'],
+      ['facade-brick', 'brick'],
+      ['facade-marble', 'marble'],
     ] as const) {
       const look = dressedLook(LOOKS.downtown, dressOf([id]));
       expect(look.pilaster).toBe(FACADE_THEMES[k].pilaster);
@@ -109,24 +124,35 @@ describe('every look of the card has art', () => {
     expect(signShapeOf('dockside', '')).toBe('rope');
     expect(signShapeOf('dockside', 'dockside')).toBe('plank');
     expect(signShapeOf('', 'dockside')).toBe('plank');
-    expect(Object.keys(SIGN_BOARDS).sort()).toEqual(['cartouche', 'pill', 'plank', 'rope']);
+    expect(signShapeOf('dorm', '')).toBe('pennant');
+    expect(signShapeOf('brick', '')).toBe('plate');
+    expect(signShapeOf('marble', '')).toBe('engraved');
+    expect(Object.keys(SIGN_BOARDS).sort()).toEqual(['cartouche', 'engraved', 'pennant', 'pill', 'plank', 'plate', 'rope']);
   });
   test('the red scooter and the mint one are different paints; mint wins when both are on', () => {
     expect(scooterKey(dressOf([]))).toBe('');
     expect(scooterKey(dressOf(['scooter-red']))).toBe('red');
     expect(scooterKey(dressOf(['scooter-mint']))).toBe('mint');
+    expect(scooterKey(dressOf(['scooter-dorm']))).toBe('dorm');
+    expect(scooterKey({ scooterMint: true, scooterSet: 'dorm' })).toBe('mint');
+    expect(scooterKey({ scooterMint: false, scooterSet: 'nonesuch' })).toBe('');
     expect(scooterKey({ scooterMint: true, scooterSet: 'red' })).toBe('mint');
   });
   test('the tables hold every variant the catalog names, and each set reads as one family of colours', () => {
-    expect(Object.keys(APRONS)).toEqual(expect.arrayContaining(['classic', 'checkered', 'striped']));
-    expect(Object.keys(CLOTHS).sort()).toEqual(['diner', 'gingham', 'linen']);
-    expect(Object.keys(JARS).sort()).toEqual(['brass', 'diner', 'dockside', 'glass']);
-    expect(Object.keys(CHIMES).sort()).toEqual(['bell', 'dockside', 'wind']);
-    expect(Object.keys(MENUS).sort()).toEqual(['chalkboard', 'classic']);
+    expect(Object.keys(APRONS)).toEqual(expect.arrayContaining(['classic', 'checkered', 'striped', 'brick']));
+    expect(Object.keys(CLOTHS).sort()).toEqual(['diner', 'dorm', 'gingham', 'linen', 'marble']);
+    expect(Object.keys(JARS).sort()).toEqual(['brass', 'diner', 'dockside', 'glass', 'marble']);
+    expect(Object.keys(CHIMES).sort()).toEqual(['bell', 'brick', 'dockside', 'wind']);
+    expect(Object.keys(MENUS).sort()).toEqual(['chalkboard', 'classic', 'dorm']);
     expect(Object.keys(COUNTERS)).toEqual(['diner']);
     expect(FACADE_THEMES.classic.plinth).toBe(SET_CLASSIC.green);
     expect(FACADE_THEMES.diner.fascia).toBe(SET_DINER.redDark);
     expect(FACADE_THEMES.dockside.fascia).toBe(SET_DOCKSIDE.deep);
+    expect(FACADE_THEMES.dorm.plinth).toBe(SET_DORM.ivy);
+    expect(FACADE_THEMES.brick.fascia).toBe(SET_BRICK.steelDark);
+    expect(FACADE_THEMES.marble.fascia).toBe(SET_MARBLE.black);
+    expect(AWNING_LOOKS.marble.piping).toBe(SET_MARBLE.gilt);
+    expect(OVEN_LOOKS.brick.base).toBe(SET_BRICK.oven);
     expect(GENERIC.scooterRed).not.toBe('#FFC531');
   });
 });
@@ -160,8 +186,10 @@ describe('the furniture memo sees every look', () => {
   const deps = (worn: string[]) => JSON.stringify(furnitureDeps(furnitureInputs(src(worn))));
   test('each look changes the deps; the deps keep their length', () => {
     const d0 = deps([]);
-    for (const id of S4_LOOKS) expect(deps([id])).not.toBe(d0);
-    expect(furnitureDeps(furnitureInputs(src([])))).toHaveLength(furnitureDeps(furnitureInputs(src([...S4_LOOKS]))).length);
+    for (const id of [...S4_LOOKS, ...S5_LOOKS]) expect(deps([id])).not.toBe(d0);
+    expect(furnitureDeps(furnitureInputs(src([])))).toHaveLength(furnitureDeps(furnitureInputs(src([...S4_LOOKS, ...S5_LOOKS]))).length);
+    // the Starter Pack's awning is absent from the dress until worn, yet the deps keep their length (React warns when a memo's deps change size)
+    expect(furnitureDeps(furnitureInputs(src([])))).toHaveLength(furnitureDeps(furnitureInputs(src(['awning-founder']))).length);
   });
 });
 

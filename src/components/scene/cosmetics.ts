@@ -14,7 +14,7 @@
 import { lookOf, type Part } from '../../content/catalog';
 import type { ShopLook } from './identity';
 import type { Layout } from './layout';
-import { AWNING_LOOKS, FACADE_THEMES, RED_SCOOTER, type FacadeTheme, type ScooterPaint } from './look-art';
+import { AWNING_LOOKS, DORM_SCOOTER, FACADE_THEMES, RED_SCOOTER, type FacadeTheme, type ScooterPaint } from './look-art';
 import { P } from './projection';
 import type { Rect } from './stations';
 
@@ -44,6 +44,8 @@ export interface Dress {
   signSet: string;
   /** scooter-<variant> of the catalog (not the mint one above). */
   scooterSet: string;
+  /** oven-<set>: a repainted oven (look-art.ts `OVEN_LOOKS`; the gold and wood-fired skins above win). */
+  ovenSet: string;
   menu: string;
   apron: string;
   tablecloth: string;
@@ -63,6 +65,7 @@ export const NO_DRESS: Dress = {
   counterSet: '',
   signSet: '',
   scooterSet: '',
+  ovenSet: '',
   menu: '',
   apron: '',
   tablecloth: '',
@@ -70,15 +73,16 @@ export const NO_DRESS: Dress = {
   chime: '',
 };
 
-/** The `Dress` field each catalog part's variant is worn in (the parts S4 draws; S5 adds the oven's). */
+/** The `Dress` field each catalog part's variant is worn in. */
 const VARIANT_FIELD: Partial<
-  Record<Part, 'facadeSet' | 'awningSet' | 'counterSet' | 'signSet' | 'scooterSet' | 'menu' | 'apron' | 'tablecloth' | 'tipjar' | 'chime'>
+  Record<Part, 'facadeSet' | 'awningSet' | 'counterSet' | 'signSet' | 'scooterSet' | 'ovenSet' | 'menu' | 'apron' | 'tablecloth' | 'tipjar' | 'chime'>
 > = {
   facade: 'facadeSet',
   awning: 'awningSet',
   counter: 'counterSet',
   sign: 'signSet',
   scooter: 'scooterSet',
+  oven: 'ovenSet',
   menu: 'menu',
   apron: 'apron',
   tablecloth: 'tablecloth',
@@ -173,11 +177,12 @@ export function dressedLook(look: ShopLook, d: LookDress): ShopLook & { fascia: 
   };
 }
 
-/** The parked vehicle's repaints by key (`scooterKey`): the mint scooter and the catalog's red one. */
-export const SCOOTER_PAINTS: Readonly<Record<string, ScooterPaint>> = { mint: { body: MINT.body, dark: MINT.dark }, red: RED_SCOOTER };
+/** The parked vehicle's repaints by key (`scooterKey`): the mint scooter and the catalog's red and dorm ones. */
+export const SCOOTER_PAINTS: Readonly<Record<string, ScooterPaint>> = { mint: { body: MINT.body, dark: MINT.dark }, red: RED_SCOOTER, dorm: DORM_SCOOTER };
 
 /** Which repaint the parked vehicle wears ('' for the fleet's own colours): the mint scooter wins when both are on. A primitive, so the memoised vehicle keys on it. */
-export const scooterKey = (d: Pick<Dress, 'scooterMint' | 'scooterSet'>): string => (d.scooterMint ? 'mint' : d.scooterSet === 'red' ? 'red' : '');
+export const scooterKey = (d: Pick<Dress, 'scooterMint' | 'scooterSet'>): string =>
+  d.scooterMint ? 'mint' : d.scooterSet === 'red' || d.scooterSet === 'dorm' ? d.scooterSet : '';
 
 // ---------- the neon sign ----------
 

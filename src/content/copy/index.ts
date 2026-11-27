@@ -6,6 +6,7 @@ import { COPY as CHAPTERS } from './home/chapters';
 import { COPY as ENDGAME } from './home/endgame';
 import { LAYER_COPY } from './home/layers';
 import { LINES } from './home/lines';
+import { COPY as LOOKS } from './home/looks';
 import { COPY as MENU } from './home/menu';
 import { COPY as REPORT } from './home/report';
 import { COPY as SHIFTS } from './home/shifts';
@@ -21,6 +22,7 @@ export const HOME_COPY: Readonly<Record<string, string>> = {
   ...CHAPTERS,
   ...ENDGAME,
   ...LAYER_COPY,
+  ...LOOKS,
   ...MENU,
   ...REPORT,
   ...SHIFTS,

@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Defs, LinearGradient, Stop } from 'react-native-svg';
 import type { OvenGrade } from '../../content/tuning';
+import { OVEN_LOOKS } from './look-art';
 import { shade } from './projection';
 
 /** Gradients shared by the scene; static, so mounted once rather than rebuilt every frame. */
@@ -32,6 +33,14 @@ export const SceneDefs = memo(function SceneDefs({ grades }: { grades: readonly 
           <Stop offset="0" stopColor={shade(g.color, 0.3)} />
           <Stop offset="0.5" stopColor={g.color} />
           <Stop offset="1" stopColor={shade(g.color, -0.35)} />
+        </LinearGradient>
+      ))}
+      {/* the set ovens' paint (look-art.ts `OVEN_LOOKS`) */}
+      {Object.entries(OVEN_LOOKS).map(([k, l]) => (
+        <LinearGradient key={k} id={`ovenLook-${k}`} x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor={shade(l.base, 0.3)} />
+          <Stop offset="0.5" stopColor={l.base} />
+          <Stop offset="1" stopColor={shade(l.base, -0.35)} />
         </LinearGradient>
       ))}
     </Defs>

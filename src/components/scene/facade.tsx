@@ -452,7 +452,16 @@ export const FasciaSign = memo(function FasciaSign({
   const text = signage === 0 ? (set?.text ?? '#FFF4E0') : signage === 1 ? '#FF8FB8' : '#fff';
   const plateH = fBot - fTop + 10;
   const plateX = fcx - signW / 2;
-  const rx = shape === 'pill' ? plateH / 2 : shape === 'cartouche' ? 10 : shape === 'plank' ? 2 : 6;
+  const rx =
+    shape === 'pill'
+      ? plateH / 2
+      : shape === 'cartouche'
+        ? 10
+        : shape === 'plank' || shape === 'plate'
+          ? 2
+          : shape === 'pennant' || shape === 'engraved'
+            ? 4
+            : 6;
   return (
     <G>
       {/* sign plate: painted board → neon → marquee bulbs */}
@@ -481,6 +490,43 @@ export const FasciaSign = memo(function FasciaSign({
             strokeWidth={shape === 'rope' ? 1.6 : 1}
             strokeDasharray={shape === 'rope' ? '3 1.6' : undefined}
           />
+          {shape === 'plate' && (
+            <G>
+              {[
+                [plateX + 5, fTop],
+                [plateX + signW - 5, fTop],
+                [plateX + 5, fBot + 1],
+                [plateX + signW - 5, fBot + 1],
+              ].map(([cx, cy]) => (
+                <Circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={1.6} fill="#D2D8DC" stroke={INK} strokeWidth={0.7} />
+              ))}
+            </G>
+          )}
+          {shape === 'pennant' && (
+            <G>
+              {[plateX + 7, plateX + signW - 7].map((cx) => (
+                <Path
+                  key={cx}
+                  d={`M${cx - 3.4} ${fBot + 5} L${cx} ${fBot - 1} L${cx + 3.4} ${fBot + 5} Z`}
+                  fill={set.edge}
+                  stroke={INK}
+                  strokeWidth={0.6}
+                  strokeLinejoin="round"
+                />
+              ))}
+            </G>
+          )}
+          {shape === 'engraved' && (
+            <G>
+              {[plateX + 7, plateX + signW - 7].map((cx) => (
+                <Path
+                  key={cx}
+                  d={`M${cx} ${(fTop + fBot) / 2 - 3} L${cx + 2.6} ${(fTop + fBot) / 2} L${cx} ${(fTop + fBot) / 2 + 3} L${cx - 2.6} ${(fTop + fBot) / 2} Z`}
+                  fill={set.edge}
+                />
+              ))}
+            </G>
+          )}
           {shape === 'plank' && (
             <G>
               <Path

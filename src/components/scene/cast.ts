@@ -52,6 +52,8 @@ export interface CastInput {
   cold?: boolean;
   /** The `cheer` pulse is up (pulse-bus.ts, D444): the cooks raise both arms. */
   cheer?: boolean;
+  /** A set was just completed (set-flourish.ts): the seated diners cheer too, and the cooks (the caller also sets `cheer`). */
+  celebrate?: boolean;
   /** The worn apron's variant (look-art.ts `APRONS`), or '' for the uniforms' own: the cooks, the bakers and the counter staff wear it. */
   apron?: string;
   /** What the shop shows (the report's symptoms, v5.22): each kitchen station's worker piling or idle, and the floor's walk-out. Absent: nothing to show. */
@@ -108,6 +110,7 @@ export function buildCast({
   queue,
   cold = false,
   cheer = false,
+  celebrate = false,
   apron = '',
   symptoms = NO_SYMPTOMS,
 }: CastInput): {
@@ -230,12 +233,12 @@ export function buildCast({
         kind: 'sit',
         flip: false,
         seed: dSeed,
-        act,
+        act: celebrate ? 'cheer' : act,
         shirt: GUEST_SHIRTS[pal.shirt(i)],
         hair: HAIR_COLORS[pal.hair(i)],
         blink: blinkAt(dSeed),
         arm: bite * 2,
-        mood: act === 'slice' || bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile',
+        mood: celebrate ? 'happy' : act === 'slice' || bite > 0.7 ? 'chew' : bite < 0.3 ? 'happy' : 'smile',
       },
     });
     const cx = tb.x - sx;
@@ -254,12 +257,12 @@ export function buildCast({
           kind: 'sit',
           flip: true,
           seed: cSeed,
-          act: COMPANION_ACTS[(hash32(cSeed) >>> 3) % 4],
+          act: celebrate ? 'cheer' : COMPANION_ACTS[(hash32(cSeed) >>> 3) % 4],
           shirt: GUEST_SHIRTS[pal.companionShirt(i)],
           hair: HAIR_COLORS[pal.companionHair(i)],
           blink: blinkAt(cSeed),
           arm: cb * 2,
-          mood: cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile',
+          mood: celebrate ? 'happy' : cb > 0.7 ? 'chew' : cb < 0.3 ? 'happy' : 'smile',
         },
       });
     }

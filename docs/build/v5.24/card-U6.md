@@ -9,10 +9,10 @@
 - Do not touch: `src/components/scene/**`, `src/engine/**`.
 
 ## Steps
-- [ ] **1. Model:** sections `featured` (header `shop.featured`, no timer), one per set (title, `shop.set.progress`, its pieces), `small` / `medium` / `large` for generic looks. Wearing a set piece says which shop it shows in.
-- [ ] **2. Cards:** thumbnail, name (W5), the price as "{n} 💎" on the button, or "Owned" / "Wear" / "Worn". Unaffordable: the button reads the price, disabled, and the first tap shows v5.23's nudge.
-- [ ] **3. Set complete:** the set's section shows a ✓ and its `set.<set>.done` line.
-- [ ] **4. Tests and fixture:** a fresh tab, a half set, a complete set, all owned.
+- [x] **1. Model:** sections `featured` (header `shop.featured`, no timer), one per set (title, `shop.set.progress`, its pieces), `small` / `medium` / `large` for generic looks. Wearing a set piece says which shop it shows in.
+- [x] **2. Cards:** thumbnail, name (W5), the price as "{n} 💎" on the button, or "Owned" / "Wear" / "Worn". Unaffordable: the button reads the price, disabled, and the first tap shows v5.23's nudge.
+- [x] **3. Set complete:** the set's section shows a ✓ and its `set.<set>.done` line.
+- [x] **4. Tests and fixture:** a fresh tab, a half set, a complete set, all owned.
 
 ## Rules
 44 pt targets, 10 pt text; the tab scrolls; the Featured row fits at 375 wide.

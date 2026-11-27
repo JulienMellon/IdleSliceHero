@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.23b-r2               # r2 verify: True 0 [], layout 0 new (cover 0); 64 changed vs v5.23b
 codecritic_range_start: 04b0abf   # v5.24 start (v5.23b closed commit)
 cards:                 # todo | running | done | partial | blocked
-  E7 done  W5 done  S4 done  N2 done  S5 running  U6 running
+  E7 done  W5 done  S4 done  N2 done  S5 running  U6 done
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.23b/review-r2-critic.md (r2 SATISFIED; bug 0 major 0 minor 6, 3 counted; E1 U2 S2 N1; D556 fixed)
   code:   docs/build/v5.23b/review-r2-code.md (r2 APPROVED; blocker/high 0 medium 1 low 29; E5 U16 S1 N7 A1)
@@ -38,3 +38,4 @@ next: start S11-v5.24.md. Carried notes: docs/build/v5.23b/review-r2-{critic,cod
 - 2026-11-27 S11 r1 N2 done (3290 tests; bestRate skips unpriced packs, accepted; cart art Unverified). Waiting on S4.
 - 2026-11-27 S11 r1 S4 done (3486 tests). Unverified: tip jar hidden by bag pile/spill, Downtown aprons, Waterfront plank anchor, sign-dockside reads neon; N2 cart art. Wave 2 check running.
 - 2026-11-27 S11 r1 wave 2 committed e3162cb (3486 tests). Wave 3 S5 || U6 launched.
+- 2026-11-27 S11 r1 U6 done (in scope; 3 E-lane needs sent to E7 resumed). Unverified: all-owned and half-set tab states. Waiting on S5, E7.

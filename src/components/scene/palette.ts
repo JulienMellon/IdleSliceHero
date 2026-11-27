@@ -61,7 +61,7 @@ export function frostTint(hex: string, k = 0.6): string {
 }
 
 // ---------- the looks' colours (v5.24, card S4) ----------
-// One entry per set, so a set reads as one family in the shop and on its thumbnails (look-art.ts takes every look's colours from here). S5 adds University, Industrial and Uptown.
+// One entry per set, so a set reads as one family in the shop and on its thumbnails (look-art.ts takes every look's colours from here). The University, Industrial and Uptown sets are the last three (card S5).
 
 /** Downtown's "Classic": cream plaster, deep green and gold, like an old trattoria. */
 export const SET_CLASSIC = {
@@ -96,6 +96,47 @@ export const SET_DOCKSIDE = {
   white: '#F4F7F8',
   brass: '#D6A93C',
   buoy: '#E8432E',
+} as const;
+
+/** The University's "Dorm": ivy-green brick, navy and a pennant gold, like a college hall. */
+export const SET_DORM = {
+  brick: '#9A4A38',
+  brickSeam: '#6E2F26',
+  ivy: '#3F7A4E',
+  navy: '#26365E',
+  navyDark: '#1A2542',
+  gold: '#F2C94C',
+  cream: '#FFF1D2',
+  cork: '#C9975B',
+  corkDark: '#8F6A38',
+  scooter: '#5B4BA8',
+  scooterDark: '#3C2F78',
+} as const;
+
+/** The Industrial district's "Brick": soot brick, riveted steel and hazard orange. */
+export const SET_BRICK = {
+  brick: '#7C3F30',
+  brickSeam: '#4F2418',
+  steel: '#59626B',
+  steelDark: '#343A41',
+  steelLight: '#A9B3BB',
+  rivet: '#D2D8DC',
+  hazard: '#F2A91E',
+  leather: '#A9733F',
+  leatherDark: '#5E3A1E',
+  oven: '#8A3E2C',
+} as const;
+
+/** Uptown's "Marble": white stone, black lacquer and gilt. */
+export const SET_MARBLE = {
+  stone: '#EFEBE3',
+  stoneSeam: '#B7B1A6',
+  black: '#26262E',
+  gilt: '#D9B24C',
+  giltDark: '#8F6F1E',
+  ivory: '#F7F2E6',
+  wine: '#6E1F3A',
+  urn: '#E9E2D3',
 } as const;
 
 /** The generic looks: the aprons, cloths and jars every shop can wear. */

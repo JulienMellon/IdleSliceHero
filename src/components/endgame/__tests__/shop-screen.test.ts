@@ -28,4 +28,12 @@ describe('the Shop screen and its chip, as wired (card U5)', () => {
     expect(shop).not.toContain('disabled={tab');
     expect(shop).not.toMatch(/tab-locked|tabLocked|tabsLocked/);
   });
+
+  test('the Vanity tab renders the sections in order and each card is at least 44 pt tall (card U6)', () => {
+    expect(shop).toContain('vanitySections(');
+    expect(shop.indexOf("sec.kind === 'featured'")).toBeGreaterThan(0);
+    const card = read('components/endgame/vanity-card.tsx');
+    expect(card).toContain('minHeight: TAP.min');
+    for (const m of card.matchAll(/fontSize: (\d+)/g)) expect(Number(m[1])).toBeGreaterThanOrEqual(10);
+  });
 });

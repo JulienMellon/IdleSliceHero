@@ -9,3 +9,5 @@
 - S4 Needs -> S5: add University/Industrial/Uptown rows to look-art.ts tables, an `ovenSet` field on Dress with a VARIANT_FIELD entry.
 - S4 Needs -> U6: import LookThumb from src/components/scene/look-thumb.tsx for tab tiles; looks without art (other 3 sets until S5, oven skins, neon sign) get a plain glyph tile.
 - S4 pre-existing: storefront furnitureDeps changes length when awningFounder is worn (React deps-size warning) -> S5 (owns storefront scene files this wave).
+- U6: tab built from vanitySections(g, now) in endgame/shop-model.ts (lookView, lookName, setSpeaker, vanityViews); new endgame/vanity-card.tsx; copy keys in src/content/copy/home/looks.ts. Set lines nameless until hire scene (Nonna always named; Boston hoods nameless). Fixture 227_u6.py. New tier titles / "Shows in {hood}" / "Owned" / "Complete" are not in COPY-v5.24 (storycritic to check).
+- U6 Needs routed to E7 (resumed): copy-system test LOOKS table, game-store buyCosmetic -> gameNow + setCompleteEvent, COSMETIC_NAMES for 35 new looks.

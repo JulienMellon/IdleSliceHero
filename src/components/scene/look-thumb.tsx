@@ -1,13 +1,13 @@
 // The look thumbnails (v5.24, card S4): one 48 pt picture of each look the shop draws, for the Shop's Style tab (card U6 imports `LookThumb`). Each is the look's own art at a
 // small scale, read from the same tables as the scene (look-art.ts), so the picture on the card is the thing the shop wears. No text: a thumbnail's words are the card's.
-// Looks S4 does not draw (the other three sets, the oven skins, the neon sign) get the plain tile, which names the part by its glyph.
+// Looks nobody draws (the oven skins, the neon sign) get the plain tile, which names the part by its glyph. Card S5 added the University, Industrial and Uptown sets.
 import { memo, type ReactElement } from 'react';
 import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 
 import { lookOf, type Part } from '../../content/catalog';
 import { AWNING_GOLD } from './cosmetics';
 import { ApronOverlay, DoorChime, TableCloth, TipJar } from './cosmetic-props';
-import { AWNING_LOOKS, COUNTERS, FACADE_THEMES, MENUS, SIGN_BOARDS, variantOfLook, hasArt } from './look-art';
+import { AWNING_LOOKS, COUNTERS, FACADE_THEMES, MENUS, OVEN_LOOKS, SIGN_BOARDS, variantOfLook, hasArt } from './look-art';
 import { GENERIC } from './palette';
 import { INK } from './projection';
 import { ParkedVehicle } from './street';
@@ -47,8 +47,27 @@ function Facade({ variant }: { variant: string }) {
           <Path d="M5 15 H43" stroke={t.trimColor} strokeWidth={2} strokeDasharray="2 2" />
           <Path d="M5 17 H43" stroke={t.trimColor} strokeWidth={2} strokeDasharray="2 2" strokeDashoffset={2} />
         </G>
+      ) : t.trim === 'bunting' ? (
+        <G>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Path key={i} d={`M${5 + i * 4.75} 13 h4.75 l-2.4 4.6 Z`} fill={i % 2 === 0 ? t.trimColor : t.trimAlt} stroke={INK} strokeWidth={0.4} />
+          ))}
+        </G>
+      ) : t.trim === 'rivets' ? (
+        <G>
+          <Rect x={5} y={14} width={38} height={3.6} fill={t.trimAlt} />
+          <Path d="M5 15.8 H43" stroke="#2A2A33" strokeWidth={3.2} strokeDasharray="2.6 2.6" />
+          {[8, 16, 24, 32, 40].map((x) => (
+            <Circle key={x} cx={x} cy={9.2} r={0.8} fill={t.trimColor} />
+          ))}
+        </G>
       ) : (
-        <Path d="M5 16 H43" stroke={t.trimColor} strokeWidth={t.trim === 'rope' ? 2 : 1.2} strokeDasharray={t.trim === 'rope' ? '2.4 1.4' : undefined} />
+        <Path
+          d="M5 16 H43"
+          stroke={t.trimColor}
+          strokeWidth={t.trim === 'rope' ? 2 : t.trim === 'gilt' ? 1.6 : 1.2}
+          strokeDasharray={t.trim === 'rope' ? '2.4 1.4' : undefined}
+        />
       )}
       <Rect
         x={14}
@@ -64,6 +83,7 @@ function Facade({ variant }: { variant: string }) {
         <G key={x}>
           <Rect x={x} y={18} width={6} height={24} fill={t.pilaster} stroke={INK} strokeWidth={1} />
           <Path d={`M${x} 26 H${x + 6} M${x} 34 H${x + 6}`} stroke={t.seam} strokeWidth={0.8} />
+          {t.cap && <Rect x={x - 1} y={18} width={8} height={2.6} fill={t.cap} stroke={INK} strokeWidth={0.6} />}
         </G>
       ))}
       <Rect x={10} y={22} width={28} height={20} fill="#BFE3F5" stroke={INK} strokeWidth={1} />
@@ -110,6 +130,25 @@ function Counter({ variant }: { variant: string }) {
           <Path d="M5 38.3 H43" stroke="#2A2A33" strokeWidth={2.2} strokeDasharray="2.2 2.2" strokeDashoffset={2.2} />
         </G>
       )}
+    </G>
+  );
+}
+
+/** The Industrial oven: a soot-red dome on a steel plinth with a riveted band and a glowing mouth. */
+function BrickOven() {
+  const o = OVEN_LOOKS.brick;
+  return (
+    <G>
+      <Ellipse cx={24} cy={41} rx={18} ry={2.6} fill="rgba(59,31,20,0.2)" />
+      <Path d="M8 36 V28 A16 17 0 0 1 40 28 V36 Z" fill={o.base} stroke={INK} strokeWidth={1.2} />
+      <Path d="M10 22 Q24 16 38 22 M9 29 Q24 23 39 29" stroke="#000" strokeWidth={0.8} opacity={0.3} fill="none" />
+      <Rect x={8} y={28} width={32} height={4.8} fill={o.band} stroke={INK} strokeWidth={0.8} />
+      {[12, 18, 24, 30, 36].map((x) => (
+        <Circle key={x} cx={x} cy={30.4} r={1} fill={o.rivet} />
+      ))}
+      <Path d="M18 36 V24 A6 6 0 0 1 30 24 V36 Z" fill="#FFB347" stroke={INK} strokeWidth={1} />
+      <Path d="M21 36 V28 L23 25 L24.5 28 L26 24 L27 36 Z" fill="#FFE08A" />
+      <Rect x={6} y={36} width={36} height={5} rx={1} fill="#59626B" stroke={INK} strokeWidth={1} />
     </G>
   );
 }
@@ -165,7 +204,7 @@ const TONES: Partial<Record<Part, string>> = {
 };
 
 /**
- * The 48 pt thumbnail of a look (a catalog id such as `awning-classic`). The looks of the Downtown, Suburbs and Waterfront sets and the generic small looks are drawn; any other id gets
+ * The 48 pt thumbnail of a look (a catalog id such as `awning-classic`). The looks of the six sets and the generic small looks are drawn; any other id gets
  * the plain tile of its part. Memoised on the id and the size.
  */
 export const LookThumb = memo(function LookThumb({ id, size = LOOK_THUMB }: { id: string; size?: number }) {
@@ -207,10 +246,11 @@ export const LookThumb = memo(function LookThumb({ id, size = LOOK_THUMB }: { id
           <DoorChime look={v} />
         </G>
       );
+    else if (part === 'oven') art = <BrickOven />;
     else if (part === 'scooter')
       art = (
         <G transform="translate(24 40) scale(0.95)">
-          <ParkedVehicle x={0} y={0} v={1} paint="red" />
+          <ParkedVehicle x={0} y={0} v={1} paint={v} />
         </G>
       );
   } else if (id === 'awning-gold') art = <Awning main={AWNING_GOLD.main} alt={AWNING_GOLD.alt} piping={AWNING_GOLD.piping} />;

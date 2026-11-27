@@ -2,11 +2,9 @@
 import { memo } from 'react';
 import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
-import type { VanityId } from './shop-model';
-
 const INK = '#3B1F14';
 
-export const VanityArt = memo(function VanityArt({ id, size = 44 }: { id: VanityId; size?: number }) {
+export const VanityArt = memo(function VanityArt({ id, size = 44 }: { id: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 44 44" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <Rect x={1} y={1} width={42} height={42} rx={10} fill="#FFF4E0" stroke="#E6D3B0" strokeWidth={1.5} />

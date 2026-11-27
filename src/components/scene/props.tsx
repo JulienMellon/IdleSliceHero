@@ -8,7 +8,7 @@ import { HOOD_EXTRA, boxOvenGeom, chairBack, domeGeom, flameBox, isBoxOven, oven
 import { Box, FloorShadow } from './primitives';
 import { ovenPaint, ovenTrim, type OvenSkin } from './cosmetics';
 import { TableCloth, TipJar } from './cosmetic-props';
-import { COUNTERS, PLAIN_COUNTER, tipJarSpot } from './look-art';
+import { COUNTERS, OVEN_LOOKS, PLAIN_COUNTER, tipJarSpot } from './look-art';
 
 /**
  * An oven against the back wall. Single-deck ovens are domed pizza ovens on a brick plinth
@@ -33,7 +33,8 @@ function Flame({ mx, my, mw, mh, flicker, hot }: { mx: number; my: number; mw: n
 
 /**
  * One oven: a memoised body (re-rendered only on upgrades) plus a per-frame flame. `skin` is the worn oven cosmetic (cosmetics.ts):
- * 1 paints it as the Golden grade with brass trim, 2 as the wood-fired grade with its log pile and a wisp of smoke; 0 is the grade bought.
+ * 1 paints it as the Golden grade with brass trim, 2 as the wood-fired grade with its log pile and a wisp of smoke; 0 is the grade bought. `look` is the worn set oven
+ * (look-art.ts `OVEN_LOOKS`, the Industrial brick oven): its own paint and a riveted steel band, over the grade bought; a skin wins over it.
  */
 export function Oven({
   o,
@@ -43,6 +44,7 @@ export function Oven({
   hot = false,
   tier = 0,
   skin = 0,
+  look = '',
   grades,
 }: {
   o: OvenSpec;
@@ -54,13 +56,16 @@ export function Oven({
   hot?: boolean;
   tier?: 0 | 1 | 2;
   skin?: OvenSkin;
+  /** The worn set oven's variant (`Dress.ovenSet`), or ''. */
+  look?: string;
 }) {
   const paint = ovenPaint(grade, skin);
+  const set = skin === 0 && OVEN_LOOKS[look] ? look : '';
   const trim = ovenTrim(tier, skin);
   const fb = useMemo(() => flameBox(o, paint), [o, paint]);
   return (
     <G>
-      <OvenBody o={o} grade={paint} base={grades[paint].color} lit={lit} tier={trim} />
+      <OvenBody o={o} grade={paint} base={set ? OVEN_LOOKS[set].base : grades[paint].color} look={set} lit={lit} tier={trim} />
       {lit && <Flame {...fb} flicker={flicker} hot={hot} />}
       {!isBoxOven(o, paint) && <DomeFront o={o} gold={paint >= 3} wood={paint === 2} tier={trim} />}
       {skin === 2 && <WoodExtras o={o} lit={lit} tier={trim} />}
@@ -92,11 +97,40 @@ const WoodExtras = memo(function WoodExtras({ o, lit, tier }: { o: OvenSpec; lit
   );
 });
 
+/** The Industrial oven's steel strap across the body: a dark band with a row of rivets. */
+function SteelBand({ x0, x1, y, band, rivet }: { x0: number; x1: number; y: number; band: string; rivet: string }) {
+  const n = Math.max(3, Math.floor((x1 - x0) / 9));
+  return (
+    <G>
+      <Rect x={x0} y={y - 2.4} width={x1 - x0} height={4.8} fill={band} stroke={INK} strokeWidth={0.7} />
+      {Array.from({ length: n }).map((_, i) => (
+        <Circle key={i} cx={x0 + ((i + 0.5) * (x1 - x0)) / n} cy={y} r={1} fill={rivet} />
+      ))}
+    </G>
+  );
+}
+
 /** Brass trim for the oven ladder's Lv 25 / 50 tiers (D417). */
 const BRASS = '#D4A84A';
 const BRASS_DARK = '#8A6A1E';
 
-const OvenBody = memo(function OvenBody({ o, grade, base, lit, tier }: { o: OvenSpec; grade: number; base: string; lit: boolean; tier: 0 | 1 | 2 }) {
+const OvenBody = memo(function OvenBody({
+  o,
+  grade,
+  base,
+  look,
+  lit,
+  tier,
+}: {
+  o: OvenSpec;
+  grade: number;
+  base: string;
+  look: string;
+  lit: boolean;
+  tier: 0 | 1 | 2;
+}) {
+  const fill = look ? `url(#ovenLook-${look})` : `url(#oven${grade})`;
+  const set = OVEN_LOOKS[look];
   const { ax, ay, bx, w, cx, k, top } = ovenFrame(o);
   const dark = shade(base, -0.4);
   // never a black window: an oven with no pie in it still glows with banked coals (D417)
@@ -109,7 +143,7 @@ const OvenBody = memo(function OvenBody({ o, grade, base, lit, tier }: { o: Oven
         {legs > 0 &&
           [0.12, 0.88].map((f) => <Rect key={f} x={ax + w * f - 2} y={bBot - 1} width={4} height={legs + 1} fill="#4A4F57" stroke={INK} strokeWidth={0.8} />)}
         <Rect x={ax + 3} y={bTop + 3} width={w} height={bh} rx={5} fill={dark} />
-        <Rect x={ax} y={bTop} width={w} height={bh} rx={5} fill={`url(#oven${grade})`} stroke={INK} strokeWidth={1.3} />
+        <Rect x={ax} y={bTop} width={w} height={bh} rx={5} fill={fill} stroke={INK} strokeWidth={1.3} />
         <Rect x={ax + 3} y={bTop + 3} width={w - 6} height={bh * 0.18} rx={3} fill="#fff" opacity={0.22} />
         {/* door with a glowing window and a handle bar */}
         <Rect x={cx - dw / 2} y={dy} width={dw} height={dh} rx={3} fill={shade(base, -0.25)} stroke={INK} strokeWidth={1} />
@@ -131,6 +165,7 @@ const OvenBody = memo(function OvenBody({ o, grade, base, lit, tier }: { o: Oven
             ))}
           </G>
         )}
+        {set && <SteelBand x0={ax + 1} x1={bx - 1} y={bBot - 6} band={set.band} rivet={set.rivet} />}
         <Circle cx={ax + w - 6} cy={bTop + bh * 0.22} r={2.2} fill={lit ? '#7FE0A0' : '#9A958E'} stroke={INK} strokeWidth={0.6} />
         {grade >= 4 && <Path d={`M${ax + 4} ${bTop + 2} H${bx - 4}`} stroke="#FFF3B0" strokeWidth={1.6} />}
       </G>
@@ -165,7 +200,8 @@ const OvenBody = memo(function OvenBody({ o, grade, base, lit, tier }: { o: Oven
         </G>
       )}
       <Path d={dome(3)} fill={dark} />
-      <Path d={dome(0)} fill={`url(#oven${grade})`} stroke={INK} strokeWidth={1.3} />
+      <Path d={dome(0)} fill={fill} stroke={INK} strokeWidth={1.3} />
+      {set && <SteelBand x0={ax + 1} x1={bx - 1} y={shoulder + 5} band={set.band} rivet={set.rivet} />}
       {/* brick courses on brick/wood-fired domes, rivet band on copper/gold */}
       {grade <= 2 ? (
         [0.3, 0.55].map((f) => (

@@ -7,6 +7,7 @@ import { Circle, Ellipse, G, Path, Rect, Text as SvgText } from 'react-native-sv
 import { F } from '../../theme';
 import { GOLD_PLAQUE, PLAQUE_H, PLAQUE_W } from './cosmetics';
 import { APRONS, CHIMES, CLOTHS, JARS, JAR_H, JAR_W, type TrimKind } from './look-art';
+import { SET_BRICK } from './palette';
 import { INK } from './projection';
 
 const PINK = '#FF5E9A';
@@ -123,6 +124,28 @@ export const TipJar = memo(function TipJar({ look }: { look: string }) {
           <Path d="M-3.4 -8 L-3.4 -2.5" stroke="#fff" strokeWidth={1} opacity={0.55} strokeLinecap="round" />
         </G>
       )}
+      {j.shape === 'urn' && (
+        <G>
+          <Path d="M-3 -0.6 L-3.6 -2.6 H3.6 L3 -0.6 Z" fill={j.lid} stroke={INK} strokeWidth={0.9} strokeLinejoin="round" />
+          <Path
+            d="M-4.6 -9.6 Q-7.6 -9.4 -6.6 -6.4 Q-6 -5.4 -4.8 -5.6 M4.6 -9.6 Q7.6 -9.4 6.6 -6.4 Q6 -5.4 4.8 -5.6"
+            stroke={j.lid}
+            strokeWidth={1.2}
+            fill="none"
+          />
+          <Path
+            d="M-3.6 -2.6 Q-6.2 -6 -4.6 -9.6 Q-3.2 -11.4 -2.4 -12.4 H2.4 Q3.2 -11.4 4.6 -9.6 Q6.2 -6 3.6 -2.6 Z"
+            fill={j.body}
+            stroke={INK}
+            strokeWidth={1}
+            strokeLinejoin="round"
+          />
+          <Path d="M-5.2 -7 Q0 -5 5.2 -7" stroke={j.accent} strokeWidth={1} fill="none" />
+          <Rect x={-3.6} y={-14.4} width={7.2} height={2.2} rx={1} fill={j.lid} stroke={INK} strokeWidth={0.9} />
+          <Path d="M-2.8 -10.4 L-3.4 -5.2" stroke="#fff" strokeWidth={1} opacity={0.7} strokeLinecap="round" />
+          {coins(-14.6)}
+        </G>
+      )}
     </G>
   );
 });
@@ -181,6 +204,33 @@ export const DoorChime = memo(function DoorChime({ look }: { look: string }) {
           <Circle cx={0} cy={16.8} r={1.6} fill="#8A6A1F" stroke={INK} strokeWidth={0.7} />
           <Path d="M0 16.8 V20.6" stroke={c.cord} strokeWidth={1.4} />
           <Circle cx={0} cy={22} r={1.8} fill={c.cord} stroke={INK} strokeWidth={0.7} />
+        </G>
+      )}
+      {c.shape === 'gear' && (
+        <G>
+          <Path d="M0 1 V4.6" stroke={INK} strokeWidth={1} />
+          <G transform="translate(0 10.2)">
+            {[0, 45, 90, 135].map((a) => (
+              <Rect key={a} x={-1.3} y={-6.8} width={2.6} height={13.6} rx={0.6} fill={c.metal} stroke={INK} strokeWidth={0.7} transform={`rotate(${a})`} />
+            ))}
+            <Circle cx={0} cy={0} r={5} fill={c.metal} stroke={INK} strokeWidth={0.9} />
+            <Circle cx={0} cy={0} r={1.9} fill={c.cord} stroke={INK} strokeWidth={0.7} />
+            <Path d="M-3 -2.4 Q-2.4 -3.6 -1 -3.8" stroke="#fff" strokeWidth={0.8} opacity={0.7} strokeLinecap="round" fill="none" />
+          </G>
+          {[
+            [-3.2, 20.6],
+            [3.2, 21.6],
+          ].map(([dx, dy]) => (
+            <G key={dx}>
+              <Path d={`M${dx} 15.6 V${dy - 1.6}`} stroke={INK} strokeWidth={0.8} />
+              <Path
+                d={`M${dx - 1.8} ${dy} L${dx - 0.9} ${dy - 1.6} H${dx + 0.9} L${dx + 1.8} ${dy} L${dx + 0.9} ${dy + 1.6} H${dx - 0.9} Z`}
+                fill={c.cord}
+                stroke={INK}
+                strokeWidth={0.6}
+              />
+            </G>
+          ))}
         </G>
       )}
     </G>
@@ -248,6 +298,13 @@ export const ApronOverlay = memo(function ApronOverlay({ look, by, kind }: { loo
           const c = i % 3;
           return (r + c) % 2 === 0 ? <Rect key={i} x={-5.6 + c * 3.9} y={top + r * rh} width={3.9} height={rh} fill={a.alt} opacity={0.85} /> : null;
         })}
+      {a.pattern === 'hazard' && (
+        <G>
+          <Path d={`M-6.2 ${foot - 3.6} L6.8 ${foot - 3.6} L7 ${foot} L-6.4 ${foot} Z`} fill={SET_BRICK.hazard} />
+          <Path d={`M-6.3 ${foot - 1.8} H6.9`} stroke={a.alt} strokeWidth={3.4} strokeDasharray="2.2 2.2" />
+          <Rect x={-3.6} y={top + 2.6} width={5.4} height={3.8} rx={0.6} fill={SET_BRICK.leatherDark} opacity={0.55} stroke={INK} strokeWidth={0.4} />
+        </G>
+      )}
       {a.pattern === 'stripe' && (
         <Path d={`M-3.6 ${top + 0.6} V${foot - 0.4} M0.3 ${top + 0.6} V${foot - 0.4} M4.2 ${top + 0.6} V${foot - 0.4}`} stroke={a.alt} strokeWidth={1.7} />
       )}
@@ -292,6 +349,45 @@ export const FasciaTrim = memo(function FasciaTrim({
         <Path d={`M${x0} ${bottom - 5.2} H${x1}`} stroke={color} strokeWidth={3.5} strokeDasharray="3.5 3.5" />
         <Path d={`M${x0} ${bottom - 1.7} H${x1}`} stroke={color} strokeWidth={3.5} strokeDasharray="3.5 3.5" strokeDashoffset={3.5} />
         <Path d={`M${x0} ${bottom - 7} H${x1}`} stroke={INK} strokeWidth={0.6} />
+      </G>
+    );
+  if (kind === 'bunting') {
+    const n = Math.max(2, Math.floor((x1 - x0) / 9));
+    const w = (x1 - x0) / n;
+    return (
+      <G>
+        <Path d={`M${x0} ${bottom - 8} H${x1}`} stroke={INK} strokeWidth={0.8} />
+        {Array.from({ length: n }).map((_, i) => (
+          <Path
+            key={i}
+            d={`M${x0 + i * w + 0.6} ${bottom - 8} H${x0 + (i + 1) * w - 0.6} L${x0 + (i + 0.5) * w} ${bottom - 1.2} Z`}
+            fill={i % 2 === 0 ? color : alt}
+            stroke={INK}
+            strokeWidth={0.6}
+            strokeLinejoin="round"
+          />
+        ))}
+      </G>
+    );
+  }
+  if (kind === 'rivets') {
+    const n = Math.max(3, Math.floor((x1 - x0) / 8));
+    return (
+      <G>
+        <Rect x={x0} y={bottom - 6} width={x1 - x0} height={5} fill={alt} stroke={INK} strokeWidth={0.6} />
+        <Path d={`M${x0} ${bottom - 3.5} H${x1}`} stroke="#2A2A33" strokeWidth={4.4} strokeDasharray="3.4 3.4" />
+        {Array.from({ length: n }).map((_, i) => (
+          <Circle key={i} cx={x0 + ((i + 0.5) * (x1 - x0)) / n} cy={top + 3.4} r={1.1} fill={color} stroke={INK} strokeWidth={0.4} />
+        ))}
+      </G>
+    );
+  }
+  if (kind === 'gilt')
+    return (
+      <G>
+        <Path d={`M${x0} ${bottom - 3.6} H${x1}`} stroke={color} strokeWidth={1.8} />
+        <Path d={`M${x0} ${bottom - 6.4} H${x1}`} stroke={alt} strokeWidth={0.6} opacity={0.8} />
+        <Path d={`M${x0} ${top + 4.4} H${x1}`} stroke={color} strokeWidth={2.4} strokeDasharray="2.4 2.4" />
       </G>
     );
   return (

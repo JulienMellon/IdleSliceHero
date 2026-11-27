@@ -74,7 +74,11 @@ export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn, 
 }
 
 /** The memo dependencies: every input's value. Derived from the object (key order is fixed by `furnitureInputs`), so a new field can't be left out. */
-export const furnitureDeps = (f: FurnitureInputs): (string | number | boolean)[] => Object.values(f);
+export const furnitureDeps = (f: FurnitureInputs): (string | number | boolean)[] => {
+  // `awningFounder` is absent (not false) until worn, so the object's size changes with it; its value goes last, always present, so the memo's deps keep one length (React warns when they don't)
+  const { awningFounder, ...rest } = f;
+  return [...Object.values(rest), !!awningFounder];
+};
 
 /** What the visual ladder reads (ladder.ts), taken from the furniture inputs so it memoises on the same values. */
 export const ladderInput = (f: FurnitureInputs): LadderInput => ({
