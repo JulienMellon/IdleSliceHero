@@ -207,6 +207,7 @@ export const COSMETIC_NAMES: Readonly<Record<string, string>> = {
   'awning-founder': 'Founder awning',
   'oven-gold': 'Gold oven',
   'plaque-master': 'Master’s Plaque',
+  'storefront-skin': 'Fresh Storefront',
 };
 
 /** Display name of a cosmetic id (storefront skins are numbered by cycle; the 35 v5.24 looks are named in copy/home/looks.ts, W5's copy). */

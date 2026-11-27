@@ -40,3 +40,4 @@ next: start S11-v5.24.md. Carried notes: docs/build/v5.23b/review-r2-{critic,cod
 - 2026-11-27 S11 r1 wave 2 committed e3162cb (3486 tests). Wave 3 S5 || U6 launched.
 - 2026-11-27 S11 r1 U6 done (in scope; 3 E-lane needs sent to E7 resumed). Unverified: all-owned and half-set tab states. Waiting on S5, E7.
 - 2026-11-27 S11 r1 S5 done. Unverified: Dorm set (228), jar urn, gear chime, hazard apron, cork menu, plaid cloths, purple scooter, S5 thumbnails, flourish bubble width at 40+ chars. Waiting on E7 follow-up.
+- 2026-11-27 S11 r1 E7 follow-up done (3512 tests). All cards done. Verify v5.24 running.
