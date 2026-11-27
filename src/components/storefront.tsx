@@ -7,6 +7,7 @@
 //
 // Everything is drawn in a 393×680 "scene" box that is scaled to cover the available area,
 // anchored to the bottom so the sidewalk and street are always visible (taller screens show more sky).
+import { useNavigation } from 'expo-router';
 import { memo, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactElement } from 'react';
 import { Platform, Pressable, ScrollView, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
@@ -48,7 +49,20 @@ import { CHIP_RISE, CHIP_SECONDS, bounceStep, bounceTransforms, clearPillX, conf
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverlays, StreetProp } from './scene/room';
 import { FasciaSign } from './scene/facade';
 import { fasciaSignBox, overlaySpan, slideInto, visibleSpan } from './scene/viewport';
-import { FLOURISH_SECONDS, flourishAge, flourishConfetti, flourishDue, flourishKey, flourishLine, flourishOn, type Flourish } from './scene/set-flourish';
+import {
+  CREST_R,
+  FLOURISH_BUBBLE_DROP,
+  FLOURISH_SECONDS,
+  crestOpacity,
+  crestScale,
+  flourishAge,
+  flourishConfetti,
+  flourishDue,
+  flourishKey,
+  flourishLine,
+  flourishOn,
+  type Flourish,
+} from './scene/set-flourish';
 import { setSpeaker } from './endgame/shop-model';
 import { t } from '../content/copy';
 import { SceneViewContext } from './scene/view-context';
@@ -90,6 +104,7 @@ import {
   CameoTag,
   Confetti,
   DeparturePops,
+  SetCrest,
   HireBubble,
   MilestoneBadge,
   RushPill,
@@ -161,6 +176,8 @@ const barkMemory = new Map<NeighborhoodId, BarkMem>();
 
 /** The set completions whose flourish has started (`flourishKey`), kept across visits so one purchase celebrates once however often the scene remounts (set-flourish.ts). */
 const flourished = new Set<string>();
+/** When this session began (game ms): a set completed before it (a save's `setsDone`) never celebrates; one completed since does, the first time its shop is seen. */
+const SESSION_START = gameNow();
 
 /** Per-shop character seed (stable crowd per neighbourhood). */
 const seedFor = (id: string) => Array.from(id).reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 997, 7) * 97;
@@ -397,6 +414,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const moreRaw = hints.more ? moreWords : null;
   const moreRect = useMemo(() => (moreRaw ? moreTagRect(lay, moreRaw) : null), [lay, moreRaw]);
   const moreText = moreRaw && moreRect && !popsCover(popRects, moreRect) ? moreRaw : null;
+  const navigation = useNavigation();
   const fin = furnitureInputs({
     id: art,
     name: nd.name,
@@ -411,9 +429,10 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // Furniture only changes with upgrades and the dough/box counts, so it is built once per change (M12), not 15 times a second.
   // The visual ladder (v5.11): the props this shop's levels have earned, placed from the layout; built once per upgrade like the furniture
   // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are lay + every value of `fin`, the builder's only inputs
-  const placed = useMemo(() => ladderProps(lay, ladderInput(fin)), [lay, ...furnitureDeps(fin)]);
+  const finDeps = furnitureDeps(fin);
+  const placed = useMemo(() => ladderProps(lay, ladderInput(fin)), [lay, ...finDeps]);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are lay + every value of `fin`, the builder's only inputs
-  const furniture = useMemo(() => buildFurniture(lay, fin, placed), [lay, placed, ...furnitureDeps(fin)]);
+  const furniture = useMemo(() => buildFurniture(lay, fin, placed), [lay, placed, ...finDeps]);
   // the backlog as piles (piles.ts): rolled dough on the pass, boxed pies on the counter, bags on the pickup shelf, 0-5 of each from the pies waiting against one batch.
   // The places are found once per layout and ladder (clear of heads, badges, the mat and the ladder's props); the drawing is rebuilt only when a count moves
   const spots = useMemo(
@@ -609,10 +628,13 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     const g = useGame.getState();
     const wall = gameNow() / 1000;
     // a set this shop dresses was just completed (engine/vanity.ts `setsDone`): the flourish starts, once per completion
-    const done = flourishDue(g.game.rewards.setsDone, id, gameNow(), flourished);
+    // (only on a frame where the shop is seen: not paused, and this route on top, so a purchase made on the Shop route waits for the player's return)
+    const done = !paused && navigation.isFocused() ? flourishDue(g.game.rewards.setsDone, id, SESSION_START, flourished) : null;
     if (done) {
       flourished.add(flourishKey(done));
-      m.flourish = { set: done.set, key: flourishKey(done), at: clock };
+      // the words are settled once, here: the manager's name only once their hire scene has played
+      const text = flourishLine(setSpeaker(g.game, id), t(`set.${done.set}.done`));
+      m.flourish = { set: done.set, key: flourishKey(done), at: clock, text };
     }
     const week = weekStation(g.game, id);
     if (week) asks.push({ trigger: 'week', station: week, key: `week-${getFeature(g.game, headsFeature)?.week ?? 0}` });
@@ -706,7 +728,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const visitSays = visitLineNow && !barkOn && !refusal && !(m.hire && clock - m.hire.at < 2.5) ? visitLineNow : null;
   // the set flourish (set-flourish.ts): the manager's line under the counter's badge for its 3 s; it beats a hello, a bark and the rush pill (one bubble per shop)
   const fAge = flourishAge(m.flourish, clock);
-  const fText = m.flourish && flourishOn(fAge) ? flourishLine(setSpeaker(game, id), t(`set.${m.flourish.set}.done`)) : null;
+  const fText = m.flourish && flourishOn(fAge) ? m.flourish.text : null;
   const mileAge = m.mile ? clock - m.mile.at : -1;
   const mileLine = m.mile?.text && mileAge < 2.5 ? m.mile.text : null;
   // D415: the badge's centre (over the station's furniture, below the chip row), and the speed-up pill that rides in it instead of rising over the chips
@@ -1001,7 +1023,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 return <HireBubble sceneW={span.x1} x0={span.x0} x={a.cx} y={mileSpeechY(a.cy)} text={mileLine} wall0={walls.x0} wall1={walls.x1} />;
               })()}
             {!refusal && !mileLine && fText && (
-              <HireBubble sceneW={span.x1} x0={span.x0} x={bxs.counter} y={by + 44} text={fText} wall0={walls.x0} wall1={walls.x1} />
+              <HireBubble sceneW={span.x1} x0={span.x0} x={bxs.counter} y={by + 44 + FLOURISH_BUBBLE_DROP} text={fText} wall0={walls.x0} wall1={walls.x1} />
             )}
             {!refusal && !mileLine && !fText && m.hire && clock - m.hire.at < 2.5 && (
               <HireBubble sceneW={span.x1} x0={span.x0} x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} wall0={walls.x0} wall1={walls.x1} />
@@ -1117,6 +1139,12 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             {fText !== null && (
               <G transform={`translate(${signC + signDraw} ${(signBox.fTop + signBox.fBot) / 2})`}>
                 <Confetti step={flourishConfetti(fAge)} color={city.neighbourhoods[nIdx].color} />
+                <G transform="scale(1.3)">
+                  <Confetti step={flourishConfetti(fAge + FLOURISH_SECONDS / 4)} color="#FFC531" />
+                </G>
+                <G transform={`translate(${signBox.signW / 2 - 2} ${-(signBox.fBot - signBox.fTop) / 2 - 2})`}>
+                  <SetCrest scale={crestScale(fAge)} opacity={crestOpacity(fAge)} />
+                </G>
               </G>
             )}
             <DeparturePops

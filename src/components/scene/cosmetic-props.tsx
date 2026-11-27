@@ -385,6 +385,7 @@ export const FasciaTrim = memo(function FasciaTrim({
   if (kind === 'gilt')
     return (
       <G>
+        <Path d={`M${x0} ${top + 1.4} H${x1}`} stroke={color} strokeWidth={1.6} />
         <Path d={`M${x0} ${bottom - 3.6} H${x1}`} stroke={color} strokeWidth={1.8} />
         <Path d={`M${x0} ${bottom - 6.4} H${x1}`} stroke={alt} strokeWidth={0.6} opacity={0.8} />
         <Path d={`M${x0} ${top + 4.4} H${x1}`} stroke={color} strokeWidth={2.4} strokeDasharray="2.4 2.4" />

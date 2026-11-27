@@ -47,8 +47,8 @@ def run(ctx):
     page = look(b, dressed("uptown", MARBLE))
     shot(page, "230-uptown-marble", 1.0)
 
-    # 231: Downtown completes its Classic set: the flourish starts when the scene opens and is mid-play 1.2 s later (3 s in all)
-    page = seeded_page(b, dressed("downtown", CLASSIC, sets_done=[{"set": "classic", "at": T0_MS + 500}]))
+    # 231: Downtown completes its Classic set: the set is stamped a little after the session began, so the flourish starts on the scene's first visible frame and is mid-play 1.2 s later (3 s in all)
+    page = seeded_page(b, dressed("downtown", CLASSIC, sets_done=[{"set": "classic", "at": T0_MS + 60_000}]))
     advance(page, 1200)
     expect_text(page, None, r"Good, eh")
     shot(page, "231-downtown-set-flourish", 1.0)

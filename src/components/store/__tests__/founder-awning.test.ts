@@ -20,7 +20,7 @@ describe("the founder awning (the Starter Pack's cosmetic)", () => {
     expect(d.awningFounder).toBe(true);
     expect(isDressed(d)).toBe(true);
     expect(dressOf([])).toEqual(NO_DRESS);
-    expect(dressOf(['awning-gold']).awningFounder).toBeUndefined();
+    expect(dressOf(['awning-gold']).awningFounder).toBe(false);
   });
   test('the look is red and white stripes with a dark-red piping; the gold awning is unchanged', () => {
     const look = LOOKS.downtown;

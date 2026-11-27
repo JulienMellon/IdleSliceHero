@@ -90,7 +90,7 @@ export const FACADE_THEMES: Readonly<Record<string, FacadeTheme>> = {
     sign: 'plate',
   },
   marble: {
-    facade: 'tile',
+    facade: 'marble',
     pilaster: SET_MARBLE.stone,
     seam: SET_MARBLE.stoneSeam,
     plinth: SET_MARBLE.black,

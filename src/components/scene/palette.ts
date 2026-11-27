@@ -131,6 +131,7 @@ export const SET_BRICK = {
 export const SET_MARBLE = {
   stone: '#EFEBE3',
   stoneSeam: '#B7B1A6',
+  vein: '#6F6B78',
   black: '#26262E',
   gilt: '#D9B24C',
   giltDark: '#8F6F1E',

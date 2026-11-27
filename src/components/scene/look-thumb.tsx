@@ -83,6 +83,9 @@ function Facade({ variant }: { variant: string }) {
         <G key={x}>
           <Rect x={x} y={18} width={6} height={24} fill={t.pilaster} stroke={INK} strokeWidth={1} />
           <Path d={`M${x} 26 H${x + 6} M${x} 34 H${x + 6}`} stroke={t.seam} strokeWidth={0.8} />
+          {t.facade === 'marble' && (
+            <Path d={`M${x + 1.4} 22 Q${x + 4} 28 ${x + 2} 33 M${x + 4.6} 30 Q${x + 3} 36 ${x + 5} 40`} stroke="#6F6B78" strokeWidth={0.7} fill="none" />
+          )}
           {t.cap && <Rect x={x - 1} y={18} width={8} height={2.6} fill={t.cap} stroke={INK} strokeWidth={0.6} />}
         </G>
       ))}

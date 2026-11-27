@@ -11,6 +11,7 @@ import { GoldPlaque } from './cosmetic-props';
 import { dressedLook, plaqueRect } from './cosmetics';
 import { FasciaTrim } from './cosmetic-props';
 import { SIGN_BOARDS, type SignShape } from './look-art';
+import { SET_MARBLE } from './palette';
 import { LOOKS } from './identity';
 import { doorwaySignRect } from './stations';
 import { Sidewalk } from './street';
@@ -117,6 +118,31 @@ export const FrontWall = memo(function FrontWall({
               <Path d={`M${ax + 3.4 + i * 4} ${ty} V${ay + 6}`} stroke={look.seam} strokeWidth={0.8} />
             </G>
           ))}
+        {/* marble: two big panels (one joint), grey veins running through each, and a gilt cap (the Uptown set) */}
+        {f === 'marble' && (
+          <G>
+            <Path d={`M${ax} ${ty + h * 0.5} H${bx}`} stroke={look.seam} strokeWidth={1.2} />
+            {[0, 0.5].map((o) => (
+              <G key={o}>
+                <Path
+                  d={`M${ax + w * 0.18} ${ty + h * (o + 0.04)} Q${ax + w * 0.7} ${ty + h * (o + 0.14)} ${ax + w * 0.4} ${ty + h * (o + 0.28)} T${ax + w * 0.72} ${ty + h * (o + 0.47)}`}
+                  stroke={SET_MARBLE.vein}
+                  strokeWidth={1.5}
+                  fill="none"
+                  opacity={0.9}
+                />
+                <Path
+                  d={`M${ax + w * 0.86} ${ty + h * (o + 0.1)} Q${ax + w * 0.5} ${ty + h * (o + 0.22)} ${ax + w * 0.62} ${ty + h * (o + 0.34)}`}
+                  stroke={SET_MARBLE.vein}
+                  strokeWidth={0.9}
+                  fill="none"
+                  opacity={0.8}
+                />
+              </G>
+            ))}
+            <Rect x={ax - 2} y={ty} width={w + 4} height={5} rx={1} fill={look.cap ?? '#D4A84A'} stroke={INK} strokeWidth={0.9} />
+          </G>
+        )}
         {/* green tile: a fine grid */}
         {f === 'tile' && (
           <G>

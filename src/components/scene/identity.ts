@@ -5,7 +5,7 @@
 import type { NeighborhoodId } from '../../content/types';
 import { CITY_DATA } from '../cities/data';
 
-export type FacadeKind = 'brick' | 'clapboard' | 'planks' | 'collegiate' | 'steel' | 'tile';
+export type FacadeKind = 'brick' | 'clapboard' | 'planks' | 'collegiate' | 'steel' | 'tile' | 'marble';
 export type AwningShape = 'scallop' | 'straight' | 'box' | 'dome';
 export type WallBand = 'subway' | 'beadboard' | 'shiplap' | 'panelling' | 'ducts' | 'none';
 

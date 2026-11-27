@@ -9,7 +9,19 @@ import { emptyCrew } from '../crew';
 import { limbGeom } from '../geometry';
 import { seatPalette } from '../palette';
 import { layout } from './draw-layout';
-import { FLOURISH_SECONDS, flourishAge, flourishConfetti, flourishDue, flourishKey, flourishLine, flourishOn, hoodOfSet } from '../set-flourish';
+import {
+  FLOURISH_BUBBLE_DROP,
+  FLOURISH_SECONDS,
+  crestOpacity,
+  crestScale,
+  flourishAge,
+  flourishConfetti,
+  flourishDue,
+  flourishKey,
+  flourishLine,
+  flourishOn,
+  hoodOfSet,
+} from '../set-flourish';
 
 const NOW = 1_700_000_000_000;
 
@@ -18,35 +30,44 @@ describe('which shop celebrates', () => {
     for (const s of SETS) {
       expect(hoodOfSet(s.id)).toBe(s.hood);
       const done = [{ set: s.id, at: NOW }];
-      expect(flourishDue(done, s.hood, NOW + 100, new Set())).toEqual(done[0]);
-      for (const other of SETS.filter((o) => o.hood !== s.hood)) expect(flourishDue(done, other.hood, NOW + 100, new Set())).toBeNull();
+      expect(flourishDue(done, s.hood, NOW - 10, new Set())).toEqual(done[0]);
+      for (const other of SETS.filter((o) => o.hood !== s.hood)) expect(flourishDue(done, other.hood, NOW - 10, new Set())).toBeNull();
     }
     expect(hoodOfSet('nonesuch')).toBeUndefined();
   });
   test('once per completion: a played entry starts nothing, and a distinct entry of the same shop does', () => {
     const a = { set: 'classic', at: NOW };
     const played = new Set([flourishKey(a)]);
-    expect(flourishDue([a], 'downtown', NOW + 50, played)).toBeNull();
-    expect(flourishDue([a, { set: 'classic', at: NOW + 1 }], 'downtown', NOW + 50, played)).toEqual({ set: 'classic', at: NOW + 1 });
+    expect(flourishDue([a], 'downtown', NOW - 10, played)).toBeNull();
+    expect(flourishDue([a, { set: 'classic', at: NOW + 1 }], 'downtown', NOW - 10, played)).toEqual({ set: 'classic', at: NOW + 1 });
   });
-  test('only a fresh completion: a set the save loaded with (older than 3 s) never plays', () => {
+  test("only this session's completions: a set the save loaded with (stamped before the session began) never plays", () => {
     const d = [{ set: 'dorm', at: NOW }];
-    expect(flourishDue(d, 'university', NOW + 2_900, new Set())).not.toBeNull();
-    expect(flourishDue(d, 'university', NOW + 3_000, new Set())).toBeNull();
-    expect(flourishDue(d, 'university', NOW + 60_000, new Set())).toBeNull();
-    expect(flourishDue(d, 'university', NOW - 10_000, new Set())).toBeNull();
+    expect(flourishDue(d, 'university', NOW, new Set())).not.toBeNull();
+    expect(flourishDue(d, 'university', NOW + 1, new Set())).toBeNull();
+    expect(flourishDue([{ set: 'dorm', at: NOW - 7 * 86_400_000 }], 'university', NOW, new Set())).toBeNull();
   });
-  test('it reads the same entry the engine raises its set_complete event from', () => {
+  test('a completion stamped while the scene was covered (the Shop route open, the app in the background) plays once, on the first visible frame, in its own shop only', () => {
+    // the scene asks only on frames where it is visible, so what "plays on the first visible frame" means is: no age limit, and the key is spent when it plays
+    const done = [{ set: 'brick', at: NOW + 5_000 }];
+    const played = new Set<string>();
+    expect(flourishDue(done, 'suburbs', NOW, played)).toBeNull();
+    const first = flourishDue(done, 'industrial', NOW, played);
+    expect(first).toEqual(done[0]);
+    played.add(flourishKey(first!));
+    expect(flourishDue(done, 'industrial', NOW, played)).toBeNull();
+  });
+  test('it reads the entry a purchase pushes, the one the engine raises its set_complete event from', () => {
     const before = newGame(0);
     const after = { rewards: { ...before.rewards, setsDone: [{ set: 'marble', at: NOW }] } };
     const ev = setCompleteEvent(before, after);
     expect(ev?.type).toBe(SET_COMPLETE);
-    expect(flourishDue(after.rewards.setsDone, 'uptown', ev!.at + 10, new Set())).toEqual({ set: ev!.set, at: ev!.at });
+    expect(flourishDue(after.rewards.setsDone, 'uptown', ev!.at - 1, new Set())).toEqual({ set: ev!.set, at: ev!.at });
   });
 });
 
 describe('the 3 seconds', () => {
-  const f = { set: 'diner', key: 'diner@1', at: 10 };
+  const f = { set: 'diner', key: 'diner@1', at: 10, text: 'Deb: Matching set.' };
   test('on from its start for exactly 3 s', () => {
     expect(FLOURISH_SECONDS).toBe(3);
     expect(flourishOn(flourishAge(null, 10))).toBe(false);
@@ -65,6 +86,22 @@ describe('the 3 seconds', () => {
   test("the line carries the manager's name only once they have been met", () => {
     expect(flourishLine('Deb', 'Matching set.')).toBe('Deb: Matching set.');
     expect(flourishLine(null, 'Matching set.')).toBe('Matching set.');
+  });
+});
+
+describe('the payoff', () => {
+  test('the crest pops in, holds, then fades out inside the 3 s', () => {
+    expect(crestScale(-0.1)).toBe(0);
+    expect(crestScale(0)).toBeLessThan(1);
+    expect(Math.max(...Array.from({ length: 40 }, (_, i) => crestScale(i * 0.01)))).toBeGreaterThan(1);
+    expect(crestScale(1.5)).toBe(1);
+    expect(crestOpacity(1.5)).toBe(1);
+    expect(crestOpacity(2.9)).toBeLessThan(1);
+    expect(crestOpacity(3)).toBe(0);
+    expect(crestScale(3)).toBe(0);
+  });
+  test('the bubble hangs 30 pt lower than the barks do, clear of the menu board', () => {
+    expect(FLOURISH_BUBBLE_DROP).toBe(30);
   });
 });
 

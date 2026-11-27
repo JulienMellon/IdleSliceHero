@@ -13,6 +13,7 @@ import type { HeadKind } from '../../content/tuning';
 import { INK, ONE_SCREEN } from './projection';
 import { CONFETTI, CONFETTI_FRAMES, CONFETTI_OPACITY, confettiFills } from './ladder';
 import { MILE_R, bubbleWidth, bubbleX, mileLevelSize } from './moments';
+import { CREST_R } from './set-flourish';
 
 const BASIL = '#4CAF50';
 const TOMATO = '#E5483A';
@@ -360,6 +361,28 @@ export const Confetti = memo(function Confetti({ step, color }: { step: number; 
           transform={CONFETTI_FRAMES[step][i]}
         />
       ))}
+    </G>
+  );
+});
+
+/** The set crest (set flourish, D585): a gold rosette with a star and two ribbon tails, centred on its own origin, CREST_R across; it pops over the sign's corner while the confetti flies. */
+export const SetCrest = memo(function SetCrest({ scale, opacity }: { scale: number; opacity: number }) {
+  const r = CREST_R;
+  return (
+    <G transform={`scale(${scale})`} opacity={opacity}>
+      <Path d={`M-8 ${r - 4} L-11 ${r + 10} L-5 ${r + 6} L-2 ${r + 11} L0 ${r - 2} Z`} fill="#D9443A" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+      <Path d={`M8 ${r - 4} L11 ${r + 10} L5 ${r + 6} L2 ${r + 11} L0 ${r - 2} Z`} fill="#B23A30" stroke={INK} strokeWidth={1} strokeLinejoin="round" />
+      <Circle cx={0} cy={1.2} r={r} fill="rgba(59,31,20,0.28)" />
+      <Circle cx={0} cy={0} r={r} fill="#FFC531" stroke={INK} strokeWidth={1.6} />
+      <Circle cx={0} cy={0} r={r - 3.4} fill="#FFD866" stroke="#E09B00" strokeWidth={1.1} />
+      <Path
+        d="M0 -7.2 L2.1 -2.3 L7.4 -2 L3.3 1.4 L4.6 6.6 L0 3.8 L-4.6 6.6 L-3.3 1.4 L-7.4 -2 L-2.1 -2.3 Z"
+        fill="#fff"
+        stroke={INK}
+        strokeWidth={0.9}
+        strokeLinejoin="round"
+      />
+      <Path d="M-8 -7 A11 11 0 0 1 -2 -10.5" stroke="#fff" strokeWidth={1.6} opacity={0.7} fill="none" strokeLinecap="round" />
     </G>
   );
 });
