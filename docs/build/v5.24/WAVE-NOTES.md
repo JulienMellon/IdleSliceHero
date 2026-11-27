@@ -4,3 +4,4 @@
 - E7 Needs -> S4: the scene must dress from dressFor(g, hood), not rewards.worn (src/components/storefront.tsx ~376).
 - E7 Needs -> U6: store-model.ts:22 and shop-model.ts list only VANITY_IDS; switch to LOOKS/featured. COSMETIC_NAMES and shop.item.<id> keys exist only for the seven: add W5's names. game-store.ts ~603: pass gameNow() to buyVanity and raise setCompleteEvent(before, after) for the tab and for S5's flourish.
 - E7 Needs -> S5: consume the set-complete event U6 raises from game-store for the flourish.
+- N2: diamonds_2600 'Cart of Diamonds' added (store.pack.diamonds_2600.title in copy/home/store.ts). bestRate now skips unpriced packs (orchestrator accepted). 205_n1 fixture may want 2600 added; COPY record of the pack line not written (carried).

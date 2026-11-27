@@ -40,10 +40,11 @@ export const PRODUCTS: Readonly<Record<ProductId, ProductInfo>> = {
   diamonds_80: { title: t('store.pack.diamonds_80.title'), blurb: '' },
   diamonds_500: { title: t('store.pack.diamonds_500.title'), blurb: '' },
   diamonds_1200: { title: t('store.pack.diamonds_1200.title'), blurb: '' },
+  diamonds_2600: { title: t('store.pack.diamonds_2600.title'), blurb: '' },
 };
 
 /** The order the tab lists them in. */
-export const PRODUCT_ORDER: readonly ProductId[] = ['starter_pack', 'nonnas_plus', 'diamonds_80', 'diamonds_500', 'diamonds_1200'];
+export const PRODUCT_ORDER: readonly ProductId[] = ['starter_pack', 'nonnas_plus', 'diamonds_80', 'diamonds_500', 'diamonds_1200', 'diamonds_2600'];
 
 /** What a pack holds, shown as a small card (D496): the numbers come from the grant itself, so the art can't drift from what is paid. */
 export interface Chip {
@@ -112,7 +113,7 @@ const rateOf = (id: ProductId, amounts: NonNullable<Amounts>, firstUsed: readonl
 /**
  * "Best rate" (PRICING §3): the diamond pack with the most diamonds per unit price, from the store's numbers, for what the player would get today:
  * a pack whose first buy is unused counts its doubled diamonds (G120, S99), so the claim is never false at the till. Null while the prices load, or
- * when any pack has no price (a rate over part of the list could name the wrong one). `firstUsed` is the packs whose first buy is used.
+ * when no pack has a price. A pack with no price can't be bought, so it is left out and the best of the priced ones wins. `firstUsed` is the packs whose first buy is used.
  */
 export function bestRate(amounts: Amounts, firstUsed: readonly ProductId[] = []): ProductId | null {
   if (!amounts) return null;
@@ -120,8 +121,7 @@ export function bestRate(amounts: Amounts, firstUsed: readonly ProductId[] = [])
   let top = 0;
   for (const id of CONSUMABLES) {
     const r = rateOf(id, amounts, firstUsed);
-    if (r === null) return null;
-    if (r > top) {
+    if (r !== null && r > top) {
       top = r;
       best = id;
     }
@@ -133,7 +133,7 @@ export function bestRate(amounts: Amounts, firstUsed: readonly ProductId[] = [])
 export function starterBestRate(amounts: Amounts, firstUsed: readonly ProductId[] = []): boolean {
   if (!amounts || bestRate(amounts, firstUsed) === null) return false;
   const own = rateOf('starter_pack', amounts, firstUsed);
-  return own !== null && CONSUMABLES.every((id) => own > (rateOf(id, amounts, firstUsed) as number));
+  return own !== null && CONSUMABLES.every((id) => own > (rateOf(id, amounts, firstUsed) ?? 0));
 }
 
 export type RowState = 'owned' | 'buy' | 'loading' | 'unpriced';

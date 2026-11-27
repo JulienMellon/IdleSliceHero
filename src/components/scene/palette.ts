@@ -59,3 +59,58 @@ export function frostTint(hex: string, k = 0.6): string {
   const mix = (sh: number) => Math.round(((a >> sh) & 255) * (1 - k) + ((b >> sh) & 255) * k);
   return '#' + [16, 8, 0].map((sh) => mix(sh).toString(16).padStart(2, '0')).join('');
 }
+
+// ---------- the looks' colours (v5.24, card S4) ----------
+// One entry per set, so a set reads as one family in the shop and on its thumbnails (look-art.ts takes every look's colours from here). S5 adds University, Industrial and Uptown.
+
+/** Downtown's "Classic": cream plaster, deep green and gold, like an old trattoria. */
+export const SET_CLASSIC = {
+  plaster: '#F1E6CF',
+  plasterSeam: '#D2C4A3',
+  green: '#2E6B4A',
+  greenDark: '#1F4D36',
+  cream: '#FFF4E0',
+  gold: '#D4A84A',
+  wine: '#8E2F3B',
+} as const;
+
+/** The Suburbs' "Diner": mint tile, chrome, cherry red and a checker band. */
+export const SET_DINER = {
+  tile: '#8EE0D3',
+  tileSeam: '#5DB9AB',
+  chrome: '#C9D1D6',
+  chromeDark: '#8F9AA2',
+  red: '#D63C3C',
+  redDark: '#A82828',
+  cream: '#FFF8EC',
+  black: '#2A2A33',
+} as const;
+
+/** The Waterfront's "Dockside": navy planks, rope, brass and a buoy red. */
+export const SET_DOCKSIDE = {
+  plank: '#2F5D7C',
+  plankSeam: '#1E3F57',
+  deep: '#1B3A52',
+  rope: '#C9A66B',
+  ropeDark: '#8A6A4A',
+  white: '#F4F7F8',
+  brass: '#D6A93C',
+  buoy: '#E8432E',
+} as const;
+
+/** The generic looks: the aprons, cloths and jars every shop can wear. */
+export const GENERIC = {
+  gingham: '#D9443A',
+  denim: '#3F6FB5',
+  linen: '#EFE6D2',
+  linenEdge: '#C9B993',
+  chalk: '#F4F1E6',
+  chalkBoard: '#26302B',
+  candy: '#F78FB3',
+  candyAlt: '#FFFFFF',
+  scooterRed: '#E02F2F',
+  scooterRedDark: '#8E1B1B',
+  glass: '#CFEFF7',
+  brass: '#C9962E',
+  wood: '#8E5A3C',
+} as const;

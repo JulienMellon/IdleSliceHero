@@ -10,8 +10,8 @@ export interface Ads {
   show(p: AdPlacement): Promise<AdResult>;
 }
 
-export type ProductId = 'starter_pack' | 'nonnas_plus' | 'diamonds_80' | 'diamonds_500' | 'diamonds_1200';
-export const PRODUCT_IDS: readonly ProductId[] = ['starter_pack', 'nonnas_plus', 'diamonds_80', 'diamonds_500', 'diamonds_1200'];
+export type ProductId = 'starter_pack' | 'nonnas_plus' | 'diamonds_80' | 'diamonds_500' | 'diamonds_1200' | 'diamonds_2600';
+export const PRODUCT_IDS: readonly ProductId[] = ['starter_pack', 'nonnas_plus', 'diamonds_80', 'diamonds_500', 'diamonds_1200', 'diamonds_2600'];
 export type BuyResult = 'purchased' | 'cancelled' | 'failed';
 
 export interface Purchases {

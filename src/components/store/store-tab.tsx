@@ -1,4 +1,4 @@
-// The Shop screen's Store tab (card U3): the Starter Pack until it is bought, Nonna's Plus and the three diamond packs. Prices are the store's own
+// The Shop screen's Store tab (card U3): the Starter Pack until it is bought, Nonna's Plus and the four diamond packs. Prices are the store's own
 // (`purchases.products()`); while they load, or when they don't come, a pack shows no price and a disabled button, never a placeholder.
 // Debug on the web build only: `?prices=loading` never answers, `?prices=failed` answers with none.
 import { router, useNavigation } from 'expo-router';

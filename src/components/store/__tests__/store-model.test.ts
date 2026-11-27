@@ -32,15 +32,22 @@ import {
 const NOW = 1_800_000_000_000;
 
 describe('the products tab', () => {
-  const prices = { starter_pack: '$2.99', nonnas_plus: '$4.99', diamonds_80: '$0.99', diamonds_500: '$4.99', diamonds_1200: '$9.99' } as const;
-  test('sells the five products, and the order and the copy cover every id', () => {
+  const prices = {
+    starter_pack: '$2.99',
+    nonnas_plus: '$4.99',
+    diamonds_80: '$0.99',
+    diamonds_500: '$4.99',
+    diamonds_1200: '$9.99',
+    diamonds_2600: '$19.99',
+  } as const;
+  test('sells the six products, and the order and the copy cover every id', () => {
     expect([...PRODUCT_ORDER].sort()).toEqual([...PRODUCT_IDS].sort());
     expect(Object.keys(PRODUCTS).sort()).toEqual([...PRODUCT_IDS].sort());
-    expect(productRows(prices, []).map((r) => r.id)).toEqual(['starter_pack', 'nonnas_plus', 'diamonds_80', 'diamonds_500', 'diamonds_1200']);
+    expect(productRows(prices, []).map((r) => r.id)).toEqual(['starter_pack', 'nonnas_plus', 'diamonds_80', 'diamonds_500', 'diamonds_1200', 'diamonds_2600']);
   });
   test("prices are the store's own text, and a buyable button needs one", () => {
     const rows = productRows(prices, []);
-    expect(rows.map((r) => r.price)).toEqual(['$2.99', '$4.99', '$0.99', '$4.99', '$9.99']);
+    expect(rows.map((r) => r.price)).toEqual(['$2.99', '$4.99', '$0.99', '$4.99', '$9.99', '$19.99']);
     expect(rows.every((r) => r.enabled && r.state === 'buy' && r.label === r.price)).toBe(true);
   });
   test('while the prices load: no price, a disabled button, never a placeholder price', () => {
@@ -50,7 +57,7 @@ describe('the products tab', () => {
   });
   test('when the prices fail: the pack stays, unpriced and disabled', () => {
     const rows = productRows({}, []);
-    expect(rows).toHaveLength(5);
+    expect(rows).toHaveLength(6);
     expect(rows.every((r) => r.price === null && !r.enabled && r.state === 'unpriced' && r.label === 'Price unavailable')).toBe(true);
     // one pack missing from the answer is unpriced alone
     const part = productRows({ diamonds_80: '$0.99' }, []);
@@ -59,7 +66,7 @@ describe('the products tab', () => {
   });
   test('the Starter Pack leaves once bought; Plus stays as Owned; packs can be bought again', () => {
     const rows = productRows(prices, ['starter_pack', 'nonnas_plus']);
-    expect(rows.map((r) => r.id)).toEqual(['nonnas_plus', 'diamonds_80', 'diamonds_500', 'diamonds_1200']);
+    expect(rows.map((r) => r.id)).toEqual(['nonnas_plus', 'diamonds_80', 'diamonds_500', 'diamonds_1200', 'diamonds_2600']);
     const plus = rows[0];
     expect(plus.state).toBe('owned');
     expect(plus.label).toBe('Owned');
@@ -161,48 +168,73 @@ describe('the pack art (D496)', () => {
 });
 
 describe('the store cards (card N1)', () => {
-  const prices = { starter_pack: '$2.99', nonnas_plus: '$4.99', diamonds_80: '$0.99', diamonds_500: '$4.99', diamonds_1200: '$9.99' } as const;
+  const prices = {
+    starter_pack: '$2.99',
+    nonnas_plus: '$4.99',
+    diamonds_80: '$0.99',
+    diamonds_500: '$4.99',
+    diamonds_1200: '$9.99',
+    diamonds_2600: '$19.99',
+  } as const;
   const amounts = amountsFrom([
     { id: 'starter_pack', amount: 2.99 },
     { id: 'nonnas_plus', amount: 4.99 },
     { id: 'diamonds_80', amount: 0.99 },
     { id: 'diamonds_500', amount: 4.99 },
     { id: 'diamonds_1200', amount: 9.99 },
+    { id: 'diamonds_2600', amount: 19.99 },
   ]);
   const ctx: RowContext = { amounts, firstUsed: [], adCount: 0, income: 1000, looksLeft: Infinity };
-  const ALL: ProductId[] = ['diamonds_80', 'diamonds_500', 'diamonds_1200'];
+  const ALL: ProductId[] = ['diamonds_80', 'diamonds_500', 'diamonds_1200', 'diamonds_2600'];
   const row = (id: string, c = ctx) => productRows(prices, [], c).find((r) => r.id === id)!;
 
-  test('the best rate is computed from the store numbers: today the 1,200 pack', () => {
-    expect(bestRate(amounts)).toBe('diamonds_1200');
-    expect(bestRate(amounts, ALL)).toBe('diamonds_1200');
+  test('the best rate is computed from the store numbers: today the 2,600 pack', () => {
+    expect(bestRate(amounts)).toBe('diamonds_2600');
+    expect(bestRate(amounts, ALL)).toBe('diamonds_2600');
     // a different set of prices moves it
     expect(bestRate({ ...amounts, diamonds_500: 3 })).toBe('diamonds_500');
   });
   test('the best rate counts what the player gets today: a pack whose first buy is unused pays double (G120)', () => {
-    // the 1,200 pack's first buy used: 1,200 per $9.99 = 120, but the 500 pack still pays 1,000 per $4.99 = 200
-    expect(bestRate(amounts, ['diamonds_1200'])).toBe('diamonds_500');
-    expect(productRows(prices, [], { ...ctx, firstUsed: ['diamonds_1200'] }).find((r) => r.id === 'diamonds_500')!.tags).toContain('Best diamond-pack rate');
+    // the 2,600 pack's first buy used: 130 a dollar, but the 1,200 pack still pays 2,400 per $9.99 = 240
+    expect(bestRate(amounts, ['diamonds_2600'])).toBe('diamonds_1200');
+    // both used: the 500 pack's first buy, 1,000 per $4.99 = 200, is the best left
+    expect(bestRate(amounts, ['diamonds_1200', 'diamonds_2600'])).toBe('diamonds_500');
+    expect(productRows(prices, [], { ...ctx, firstUsed: ['diamonds_1200', 'diamonds_2600'] }).find((r) => r.id === 'diamonds_500')!.tags).toContain(
+      'Best diamond-pack rate',
+    );
   });
-  test('the best rate is hidden while prices load, or when a pack has no price', () => {
+  test('the best rate is hidden while prices load, or when no pack has a price; a pack with no price is left out', () => {
     expect(bestRate(null)).toBeNull();
     expect(bestRate({})).toBeNull();
-    expect(bestRate({ diamonds_80: 0.99, diamonds_500: 4.99 })).toBeNull();
+    // the 2,600 pack missing on the device: the claim moves to the 1,200 pack, and its card has no price and no tag
+    const { diamonds_2600: _gone, ...without } = amounts!;
+    expect(bestRate(without)).toBe('diamonds_1200');
+    const rows = productRows(
+      pricesFrom([
+        { id: 'diamonds_2600', price: '' },
+        { id: 'diamonds_1200', price: '$9.99' },
+      ]),
+      [],
+      { ...ctx, amounts: without },
+    );
+    expect(rows.find((r) => r.id === 'diamonds_1200')!.tags).toContain('Best diamond-pack rate');
+    expect(rows.find((r) => r.id === 'diamonds_2600')).toMatchObject({ price: null, enabled: false, state: 'unpriced', tags: ['First buy: 2×'] });
     expect(productRows(prices, [], { ...ctx, amounts: null }).flatMap((r) => r.tags)).not.toContain('Best diamond-pack rate');
-    expect(row('diamonds_1200').tags).toContain('Best diamond-pack rate');
+    expect(row('diamonds_2600').tags).toContain('Best diamond-pack rate');
+    expect(row('diamonds_1200').tags).not.toContain('Best diamond-pack rate');
     expect(row('diamonds_500').tags).not.toContain('Best diamond-pack rate');
   });
   test('"Most diamonds per dollar" shows only when it is true at the till: not while a first buy 2× is live (G120, S99)', () => {
     // 400 for $2.99 is 134 a dollar; a first buy of the 80 pack is 160 for $0.99
     expect(starterBestRate(amounts)).toBe(false);
     expect(row('starter_pack').rate).toBeNull();
-    expect(starterBestRate(amounts, ['diamonds_80', 'diamonds_500'])).toBe(false); // the 1,200 pack's first buy is 240 a dollar
+    expect(starterBestRate(amounts, ['diamonds_80', 'diamonds_500'])).toBe(false); // the 2,600 pack's first buy is 260 a dollar
     expect(starterBestRate(amounts, ALL)).toBe(true);
     expect(row('starter_pack', { ...ctx, firstUsed: ALL }).rate).toBe('Most diamonds per dollar in the store');
     // D569: and then no pack says "Best rate" beside it; with the Starter bought, the card is gone and the pack may
     const used = { ...ctx, firstUsed: ALL };
     expect(productRows(prices, [], used).flatMap((r) => r.tags)).not.toContain('Best diamond-pack rate');
-    expect(productRows(prices, ['starter_pack'], used).find((r) => r.id === 'diamonds_1200')!.tags).toContain('Best diamond-pack rate');
+    expect(productRows(prices, ['starter_pack'], used).find((r) => r.id === 'diamonds_2600')!.tags).toContain('Best diamond-pack rate');
     // at $4.99 it is 80 per dollar: no longer the most
     const dear = { ...amounts, starter_pack: 4.99 };
     expect(starterBestRate(dear, ALL)).toBe(false);
@@ -211,6 +243,7 @@ describe('the store cards (card N1)', () => {
   test('"First buy: 2×" says what doubles, in diamonds, until it is used', () => {
     expect(row('diamonds_80').firstLine).toBe('First buy pays double: 160 diamonds');
     expect(row('diamonds_1200').firstLine).toBe('First buy pays double: 2,400 diamonds');
+    expect(row('diamonds_2600').firstLine).toBe('First buy pays double: 5,200 diamonds');
     expect(row('diamonds_500', { ...ctx, firstUsed: ['diamonds_500'] }).firstLine).toBeNull();
     expect(row('starter_pack').firstLine).toBeNull();
     expect(row('nonnas_plus').firstLine).toBeNull();
@@ -246,7 +279,9 @@ describe('the store cards (card N1)', () => {
     expect([r.base, r.bonus, r.blurb]).toEqual([400, '+100 bonus', 'Enough for 3 looks']);
     expect(r.tags).toEqual(['First buy: 2×']);
     expect(row('diamonds_500', { ...ctx, firstUsed: ['diamonds_500'] }).tags).toEqual([]);
-    expect(row('diamonds_1200').tags).toEqual(['Best diamond-pack rate', 'First buy: 2×']);
+    expect(row('diamonds_1200').tags).toEqual(['First buy: 2×']);
+    expect(row('diamonds_2600').tags).toEqual(['Best diamond-pack rate', 'First buy: 2×']);
+    expect([row('diamonds_2600').base, row('diamonds_2600').bonus]).toEqual([1600, '+1000 bonus']);
     expect([row('diamonds_80').bonus, row('diamonds_80').blurb]).toEqual([null, '']); // 80 diamonds is under one look
     expect(row('starter_pack').tags).not.toContain('First buy: 2×');
     expect(row('nonnas_plus').tags).toEqual([]);
