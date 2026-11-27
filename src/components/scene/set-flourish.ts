@@ -2,10 +2,12 @@
 // already have), confetti bursts from the shop's sign (the milestone confetti, twice over the 3 s) and the shop's manager says the set's `set.<set>.done` line as a bubble. Pure, so
 // the timing, the "which shop" rule and the once-only rule are tested in node. The scene starts it from `rewards.setsDone` (engine/vanity.ts: the entry a purchase pushes), on the
 // first frame its shop is VISIBLE after the purchase (a purchase made on the Shop route, or with the app in the background, plays when the shop is next seen, not unseen), and
-// never twice for one entry; the entries a save loaded with (older than the session) never play.
+// never twice for one entry; the entries a save loaded with are marked played on load (`seedPlayed`) and never play.
 import { SETS } from '../../content/catalog';
 import type { SetDone } from '../../engine/game';
 import { CONFETTI_SECONDS, confettiStep } from './ladder';
+import { bubbleWidth, bubbleX } from './moments';
+import type { Rect } from './stations';
 
 /** How long the flourish lasts: the cheer, the confetti and the line. */
 export const FLOURISH_SECONDS = 3;
@@ -25,13 +27,18 @@ export const flourishKey = (d: SetDone): string => `${d.set}@${d.at}`;
 export const hoodOfSet = (set: string): string | undefined => SETS.find((s) => s.id === set)?.hood;
 
 /**
- * The completion that should start a flourish in shop `hood`: the first entry of that shop's set that was stamped at or after `since` (game ms: when this session began, so the
- * sets a save loaded with never play) and is not in `played`. It has no age limit: the caller asks only on frames where the shop is visible, so a purchase made while the scene was
- * covered plays on the first frame it is seen. A set of another shop never starts one here.
+ * The completion that should start a flourish in shop `hood`: the first entry of that shop's set that is not in `played`. It has no age limit: the caller asks only on frames where
+ * the shop is visible, so a purchase made while the scene was covered plays on the first frame it is seen. A set of another shop never starts one here. The sets a save loads with
+ * must be in `played` first (`seedPlayed`), or they would celebrate again on every launch.
  */
-export function flourishDue(setsDone: readonly SetDone[], hood: string, since: number, played: ReadonlySet<string>): SetDone | null {
-  for (const d of setsDone) if (hoodOfSet(d.set) === hood && d.at >= since && !played.has(flourishKey(d))) return d;
+export function flourishDue(setsDone: readonly SetDone[], hood: string, played: ReadonlySet<string>): SetDone | null {
+  for (const d of setsDone) if (hoodOfSet(d.set) === hood && !played.has(flourishKey(d))) return d;
   return null;
+}
+
+/** Mark every completion a loaded save already holds as played: only what is completed after the load celebrates. */
+export function seedPlayed(played: Set<string>, setsDone: readonly SetDone[]): void {
+  for (const d of setsDone) played.add(flourishKey(d));
 }
 
 /** Seconds into the flourish at scene clock `clock` (negative before it, no flourish: -1). */
@@ -59,4 +66,18 @@ export function crestScale(age: number): number {
 export const crestOpacity = (age: number): number =>
   !flourishOn(age) ? 0 : age > FLOURISH_SECONDS - 0.5 ? Math.round(((FLOURISH_SECONDS - age) / 0.5) * 5) / 5 : 1;
 /** The crest's radius (pt, before its pop). */
-export const CREST_R = 14;
+export const CREST_R = 20;
+
+/**
+ * The flourish bubble's box (pill and tail) for `text`, hung under the counter badge at `x` and the badge row `by`, kept inside `walls` like every bubble. It starts FLOURISH_BUBBLE_DROP
+ * below a bark's spot; where that still lands on the menu board (`menu`, ladder.ts `menuRect`) it goes below the board, so the wall's menu is never covered by the line.
+ */
+export function flourishBubbleRect(text: string, x: number, by: number, walls: { x0: number; x1: number }, menu: Rect | null = null): Rect & { y: number } {
+  const w = bubbleWidth(text);
+  const px = bubbleX(x, w, walls);
+  let y = by + 44 + FLOURISH_BUBBLE_DROP;
+  const box = (yy: number): Rect => ({ x0: px - w / 2, x1: px + w / 2, y0: yy - 20, y1: yy + 4 });
+  const b = box(y);
+  if (menu && b.x0 < menu.x1 && b.x1 > menu.x0 && b.y0 < menu.y1 && b.y1 > menu.y0) y = menu.y1 + 21;
+  return { ...box(y), y };
+}

@@ -51,7 +51,7 @@ import { FasciaSign } from './scene/facade';
 import { fasciaSignBox, overlaySpan, slideInto, visibleSpan } from './scene/viewport';
 import {
   CREST_R,
-  FLOURISH_BUBBLE_DROP,
+  flourishBubbleRect,
   FLOURISH_SECONDS,
   crestOpacity,
   crestScale,
@@ -61,6 +61,7 @@ import {
   flourishKey,
   flourishLine,
   flourishOn,
+  seedPlayed,
   type Flourish,
 } from './scene/set-flourish';
 import { setSpeaker } from './endgame/shop-model';
@@ -176,8 +177,8 @@ const barkMemory = new Map<NeighborhoodId, BarkMem>();
 
 /** The set completions whose flourish has started (`flourishKey`), kept across visits so one purchase celebrates once however often the scene remounts (set-flourish.ts). */
 const flourished = new Set<string>();
-/** When this session began (game ms): a set completed before it (a save's `setsDone`) never celebrates; one completed since does, the first time its shop is seen. */
-const SESSION_START = gameNow();
+/** Set once the loaded save's `setsDone` is in `flourished`: a set completed before the load never celebrates; one completed since does, the first time its shop is seen. */
+let flourishSeeded = false;
 
 /** Per-shop character seed (stable crowd per neighbourhood). */
 const seedFor = (id: string) => Array.from(id).reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 997, 7) * 97;
@@ -627,9 +628,13 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     // nothing starts while a refusal, a hello or a milestone line is up (or a cut-scene plays); the rest of the rules are `nextBark`'s
     const g = useGame.getState();
     const wall = gameNow() / 1000;
+    if (!flourishSeeded && g.loaded) {
+      seedPlayed(flourished, g.game.rewards.setsDone);
+      flourishSeeded = true;
+    }
     // a set this shop dresses was just completed (engine/vanity.ts `setsDone`): the flourish starts, once per completion
     // (only on a frame where the shop is seen: not paused, and this route on top, so a purchase made on the Shop route waits for the player's return)
-    const done = !paused && navigation.isFocused() ? flourishDue(g.game.rewards.setsDone, id, SESSION_START, flourished) : null;
+    const done = flourishSeeded && !paused && navigation.isFocused() ? flourishDue(g.game.rewards.setsDone, id, flourished) : null;
     if (done) {
       flourished.add(flourishKey(done));
       // the words are settled once, here: the manager's name only once their hire scene has played
@@ -1023,7 +1028,15 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 return <HireBubble sceneW={span.x1} x0={span.x0} x={a.cx} y={mileSpeechY(a.cy)} text={mileLine} wall0={walls.x0} wall1={walls.x1} />;
               })()}
             {!refusal && !mileLine && fText && (
-              <HireBubble sceneW={span.x1} x0={span.x0} x={bxs.counter} y={by + 44 + FLOURISH_BUBBLE_DROP} text={fText} wall0={walls.x0} wall1={walls.x1} />
+              <HireBubble
+                sceneW={span.x1}
+                x0={span.x0}
+                x={bxs.counter}
+                y={flourishBubbleRect(fText, bxs.counter, by, walls, menuRect(lay)).y}
+                text={fText}
+                wall0={walls.x0}
+                wall1={walls.x1}
+              />
             )}
             {!refusal && !mileLine && !fText && m.hire && clock - m.hire.at < 2.5 && (
               <HireBubble sceneW={span.x1} x0={span.x0} x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} wall0={walls.x0} wall1={walls.x1} />
@@ -1138,11 +1151,13 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             {/* the set flourish's confetti: the milestone's burst, twice over 3 s, from the name plate */}
             {fText !== null && (
               <G transform={`translate(${signC + signDraw} ${(signBox.fTop + signBox.fBot) / 2})`}>
-                <Confetti step={flourishConfetti(fAge)} color={city.neighbourhoods[nIdx].color} />
-                <G transform="scale(1.3)">
+                <G transform="scale(1.5)">
+                  <Confetti step={flourishConfetti(fAge)} color={city.neighbourhoods[nIdx].color} />
+                </G>
+                <G transform="scale(1.9)">
                   <Confetti step={flourishConfetti(fAge + FLOURISH_SECONDS / 4)} color="#FFC531" />
                 </G>
-                <G transform={`translate(${signBox.signW / 2 - 2} ${-(signBox.fBot - signBox.fTop) / 2 - 2})`}>
+                <G transform={`translate(${signBox.signW / 2 + 9} ${-(signBox.fBot - signBox.fTop) / 2 - 8})`}>
                   <SetCrest scale={crestScale(fAge)} opacity={crestOpacity(fAge)} />
                 </G>
               </G>

@@ -1,8 +1,6 @@
 /// <reference types="jest" />
 // The once-per-set flourish (card S5): which shop it plays in, that it plays once per completion, its 3 s, and the words of the bubble.
 import { SETS } from '../../../content/catalog';
-import { newGame } from '../../../engine/game';
-import { SET_COMPLETE, setCompleteEvent } from '../../../engine/vanity';
 import { CONFETTI_STEPS } from '../ladder';
 import { buildCast, type CastMember } from '../cast';
 import { emptyCrew } from '../crew';
@@ -21,6 +19,7 @@ import {
   flourishLine,
   flourishOn,
   hoodOfSet,
+  seedPlayed,
 } from '../set-flourish';
 
 const NOW = 1_700_000_000_000;
@@ -30,39 +29,35 @@ describe('which shop celebrates', () => {
     for (const s of SETS) {
       expect(hoodOfSet(s.id)).toBe(s.hood);
       const done = [{ set: s.id, at: NOW }];
-      expect(flourishDue(done, s.hood, NOW - 10, new Set())).toEqual(done[0]);
-      for (const other of SETS.filter((o) => o.hood !== s.hood)) expect(flourishDue(done, other.hood, NOW - 10, new Set())).toBeNull();
+      expect(flourishDue(done, s.hood, new Set())).toEqual(done[0]);
+      for (const other of SETS.filter((o) => o.hood !== s.hood)) expect(flourishDue(done, other.hood, new Set())).toBeNull();
     }
     expect(hoodOfSet('nonesuch')).toBeUndefined();
   });
   test('once per completion: a played entry starts nothing, and a distinct entry of the same shop does', () => {
     const a = { set: 'classic', at: NOW };
     const played = new Set([flourishKey(a)]);
-    expect(flourishDue([a], 'downtown', NOW - 10, played)).toBeNull();
-    expect(flourishDue([a, { set: 'classic', at: NOW + 1 }], 'downtown', NOW - 10, played)).toEqual({ set: 'classic', at: NOW + 1 });
+    expect(flourishDue([a], 'downtown', played)).toBeNull();
+    expect(flourishDue([a, { set: 'classic', at: NOW + 1 }], 'downtown', played)).toEqual({ set: 'classic', at: NOW + 1 });
   });
-  test("only this session's completions: a set the save loaded with (stamped before the session began) never plays", () => {
-    const d = [{ set: 'dorm', at: NOW }];
-    expect(flourishDue(d, 'university', NOW, new Set())).not.toBeNull();
-    expect(flourishDue(d, 'university', NOW + 1, new Set())).toBeNull();
-    expect(flourishDue([{ set: 'dorm', at: NOW - 7 * 86_400_000 }], 'university', NOW, new Set())).toBeNull();
+  test('a loaded save never replays: its sets are seeded as played, even when stamped after the process started, and only a later completion plays', () => {
+    const loaded = SETS.map((s, i) => ({ set: s.id, at: NOW + 1000 * i }));
+    const played = new Set<string>();
+    seedPlayed(played, loaded);
+    for (const s of SETS) expect(flourishDue(loaded, s.hood, played)).toBeNull();
+    const bought = [...loaded, { set: 'classic', at: NOW + 90_000 }];
+    expect(flourishDue(bought, 'downtown', played)).toEqual({ set: 'classic', at: NOW + 90_000 });
+    expect(flourishDue(bought, 'suburbs', played)).toBeNull();
   });
   test('a completion stamped while the scene was covered (the Shop route open, the app in the background) plays once, on the first visible frame, in its own shop only', () => {
     // the scene asks only on frames where it is visible, so what "plays on the first visible frame" means is: no age limit, and the key is spent when it plays
     const done = [{ set: 'brick', at: NOW + 5_000 }];
     const played = new Set<string>();
-    expect(flourishDue(done, 'suburbs', NOW, played)).toBeNull();
-    const first = flourishDue(done, 'industrial', NOW, played);
+    expect(flourishDue(done, 'suburbs', played)).toBeNull();
+    const first = flourishDue(done, 'industrial', played);
     expect(first).toEqual(done[0]);
     played.add(flourishKey(first!));
-    expect(flourishDue(done, 'industrial', NOW, played)).toBeNull();
-  });
-  test('it reads the entry a purchase pushes, the one the engine raises its set_complete event from', () => {
-    const before = newGame(0);
-    const after = { rewards: { ...before.rewards, setsDone: [{ set: 'marble', at: NOW }] } };
-    const ev = setCompleteEvent(before, after);
-    expect(ev?.type).toBe(SET_COMPLETE);
-    expect(flourishDue(after.rewards.setsDone, 'uptown', ev!.at - 1, new Set())).toEqual({ set: ev!.set, at: ev!.at });
+    expect(flourishDue(done, 'industrial', played)).toBeNull();
   });
 });
 

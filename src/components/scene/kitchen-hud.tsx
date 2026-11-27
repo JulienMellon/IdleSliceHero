@@ -375,14 +375,16 @@ export const SetCrest = memo(function SetCrest({ scale, opacity }: { scale: numb
       <Circle cx={0} cy={1.2} r={r} fill="rgba(59,31,20,0.28)" />
       <Circle cx={0} cy={0} r={r} fill="#FFC531" stroke={INK} strokeWidth={1.6} />
       <Circle cx={0} cy={0} r={r - 3.4} fill="#FFD866" stroke="#E09B00" strokeWidth={1.1} />
-      <Path
-        d="M0 -7.2 L2.1 -2.3 L7.4 -2 L3.3 1.4 L4.6 6.6 L0 3.8 L-4.6 6.6 L-3.3 1.4 L-7.4 -2 L-2.1 -2.3 Z"
-        fill="#fff"
-        stroke={INK}
-        strokeWidth={0.9}
-        strokeLinejoin="round"
-      />
-      <Path d="M-8 -7 A11 11 0 0 1 -2 -10.5" stroke="#fff" strokeWidth={1.6} opacity={0.7} fill="none" strokeLinecap="round" />
+      <G transform={`scale(${r / 14})`}>
+        <Path
+          d="M0 -7.2 L2.1 -2.3 L7.4 -2 L3.3 1.4 L4.6 6.6 L0 3.8 L-4.6 6.6 L-3.3 1.4 L-7.4 -2 L-2.1 -2.3 Z"
+          fill="#fff"
+          stroke={INK}
+          strokeWidth={0.9}
+          strokeLinejoin="round"
+        />
+        <Path d="M-8 -7 A11 11 0 0 1 -2 -10.5" stroke="#fff" strokeWidth={1.6} opacity={0.7} fill="none" strokeLinecap="round" />
+      </G>
     </G>
   );
 });
