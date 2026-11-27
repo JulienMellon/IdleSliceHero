@@ -11,7 +11,7 @@ codecritic_range_start: 04b0abf   # v5.24 start (v5.23b closed commit)
 cards:                 # todo | running | done | partial | blocked
   E7 done  W5 done  S4 done  N2 done  S5 done  U6 done
 reviews:               # latest review file per critic, with verdict and counts
-  critic: docs/build/v5.24/review-r1-critic.md (r1 NOT SATISFIED; bug 1 major 2 minor 17; E4 U5 S10 N3; G123 D574 D575)
+  critic: docs/build/v5.24/review-r2-critic.md (r2 NOT SATISFIED; bug 0 major 0 minor 11; E3 U3 S6 N1; minors only)
   code:   docs/build/v5.24/review-r1-code.md (r1 CHANGES REQUESTED; blocker/high 1 medium 2 low 38; E7 U17 S10 N8 A1; C202 high flourish unseen under Shop)
   story:  docs/build/v5.24/review-r1-story.md (r1 NOT SATISFIED advisory; bug 0 major 0 minor 9; E1 U4 T4)
   audio:  docs/build/v5.18/review-r2-audio.md (r2 SATISFIED; bug 0 major 0 minor 3 low 1; A4; AU41 AU39 AU40 AU25 carried)
@@ -51,3 +51,4 @@ next: start S11-v5.24.md. Carried notes: docs/build/v5.23b/review-r2-{critic,cod
 - 2026-11-27 S11 r2 S5 done (C202 M77 M78 U41 D585 D580 D577 T142 T144; C203 half; C202 Unverified in shot). founder-awning test fix sent to N2.
 - 2026-11-27 S11 r2 fixes done (3520 tests). Verify v5.24-r2 running.
 - 2026-11-27 S11 r2 verify v5.24-r2 PASS (True 0 [], layout 0, 160 changed). r2 re-checks launched (critic, code; story advisory had no majors, carried).
+- 2026-11-27 S11 r2 critic: 0 bug 0 major 11 minor (lists D571 D519 open though Julien closed them 2026-11-23). Waiting on codecritic.
