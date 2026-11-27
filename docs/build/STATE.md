@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.24                   # v5.23b closed 2026-11-23 at r2 (critic SATISFIED 0 bug 0 major 6 minor carried; code APPROVED 1 medium; story advisory 5 minor)
-step: fix                           # setup | waves | verify | review | fix | close
+step: review                        # setup | waves | verify | review | fix | close
 round: r3              # r1 | r2 | r3
-last_shots: v5.24-r2                # r2 verify: True 0 [], layout 0 new; 2 new 160 changed 1 noted vs v5.24
+last_shots: v5.24-r3                # r3 verify: True 0 [], layout 0 new; 1 new 7 changed 15 noted vs v5.24-r2
 codecritic_range_start: 04b0abf   # v5.24 start (v5.23b closed commit)
 cards:                 # todo | running | done | partial | blocked
   E7 done  W5 done  S4 done  N2 done  S5 done  U6 done
@@ -58,3 +58,4 @@ next: start S11-v5.24.md. Carried notes: docs/build/v5.23b/review-r2-{critic,cod
 - 2026-11-27 S11 r3 N2 done (C192 fixed in code). crowd chime test red mid-S4 edit; waiting on S4.
 - 2026-11-27 S11 r3 S4 done (D579; 3521 tests green). S5 launched.
 - 2026-11-27 S11 r3 S5 done (D577 D580 D585 C206 T145 C203). Verify v5.24-r3 running.
+- 2026-11-27 S11 r3 verify v5.24-r3 PASS (True 0 [], layout 0, 7 changed). r3 re-checks launched.
