@@ -46,6 +46,7 @@ import { CHIME_SORT, chimeRect } from '../look-art';
 import { doorwaySignRect, placePops, popPlace, popRect, popsCover, popWidth, staffFaces, stationRects } from '../stations';
 import { bodyBy, chairBack, SEATED_TORSO_HALF } from '../geometry';
 import { quantArm, quantStep } from '../quantise';
+import type { Layout } from '../layout';
 import { floorYFor, liftLayout, stripTop } from '../strip-clear';
 import { WALKOUT_EVERY } from '../walkout';
 
@@ -410,23 +411,24 @@ describe('the doorway sign (D377)', () => {
 });
 
 describe('the door chime (v5.24, S4)', () => {
-  // the chime is furniture sorted behind the cast (CHIME_SORT, deepest first), so any head that meets its box is drawn over it: the front wall it replaces would have covered the
-  // drivers who walk through the doorway's height (on the wall it met their heads at (278..291, 32) in the first build)
-  const headOf = (c: CastMember) => {
+  // the chime hangs on the wall right of the doorway, over the wall (CHIME_SORT, just in front of the front wall) and under the people on the sidewalk, who are nearer. Someone inside the
+  // room is behind the wall: what shows of them is what the doorway lets through, so no part of a head seen in the doorway may meet the chime, and anyone on the sidewalk is drawn over it
+  const headOf = (c: CastMember, lay: Layout) => {
     const b = box(c);
-    return { x0: b.x0, x1: b.x1, y0: b.y0, y1: b.y0 + (b.y1 - b.y0) * 0.3 };
+    const h = { x0: b.x0, x1: b.x1, y0: b.y0, y1: b.y0 + (b.y1 - b.y0) * 0.3 };
+    if (c.props.y <= 0) return h;
+    return { ...h, x0: Math.max(h.x0, P(lay.door.x0, 0, 0, lay.frame)[0]), x1: Math.min(h.x1, P(lay.door.x1, 0, 0, lay.frame)[0]) };
   };
   const hits = (a: Box, r: { x0: number; x1: number; y0: number; y1: number }) => a.x0 < r.x1 && a.x1 > r.x0 && a.y0 < r.y1 && a.y1 > r.y0;
-  test('every head that meets the chime in any frame is drawn over it (hung from the lintel, none does now)', () => {
+  test('every head that meets the chime in any frame is drawn over it, and none seen through the doorway does', () => {
     const under: string[] = [];
     for (const shop of busyShops()) {
       const chime = chimeRect(shop.lay);
       for (const pace of [1, 2.6])
         frames(shop, pace).forEach((cast, f) => {
           for (const c of cast)
-            if (hits(headOf(c), chime)) {
-              if (c.sortY >= CHIME_SORT) under.push(`${shop.name} pace${pace} f${f} ${c.key}@${c.props.x.toFixed(0)},${c.props.y.toFixed(0)}`);
-            }
+            if (hits(headOf(c, shop.lay), chime) && c.sortY >= CHIME_SORT)
+              under.push(`${shop.name} pace${pace} f${f} ${c.key}@${c.props.x.toFixed(0)},${c.props.y.toFixed(0)}`);
         });
     }
     expect(under.slice(0, 5)).toEqual([]);

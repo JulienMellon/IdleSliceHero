@@ -55,3 +55,4 @@ next: start S11-v5.24.md. Carried notes: docs/build/v5.23b/review-r2-{critic,cod
 - 2026-11-27 S11 gate r2 not met (critic 11 minor; code APPROVED). Fix round r3: E7 || U6, then S4 || N2, then S5. After r3: close (minors carry) unless a bug/major appears.
 - 2026-11-27 S11 r3 E7 done (no change; C203 low carried, needs S5 test edit). S4 launched; U6 running.
 - 2026-11-27 S11 r3 U6 done (C205, C192 half 1; 3521 tests). N2 launched (C192 half 2); S4 running.
+- 2026-11-27 S11 r3 N2 done (C192 fixed in code). crowd chime test red mid-S4 edit; waiting on S4.
