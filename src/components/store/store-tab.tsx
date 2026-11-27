@@ -1,7 +1,7 @@
 // The Shop screen's Store tab (card U3): the Starter Pack until it is bought, Nonna's Plus and the four diamond packs. Prices are the store's own
 // (`purchases.products()`); while they load, or when they don't come, a pack shows no price and a disabled button, never a placeholder.
 // Debug on the web build only: `?prices=loading` never answers, `?prices=failed` answers with none.
-import { router, useNavigation } from 'expo-router';
+import { router } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -189,10 +189,7 @@ export function StoreTab({ onClose = router.back }: { onClose?: () => void }) {
   useEffect(() => {
     analytics.track(EVENTS.iapViewed, { surface: 'store_tab' });
   }, []);
-  // the Shop closing (or another screen over it) starts a new count of cards seen (C186)
-  // the screen's own blur (a tab switch unmounts this tab without one, C188), so a tab switch does not count as a new opening
-  const navigation = useNavigation();
-  useEffect(() => navigation.addListener('blur', () => packsSeen.reset()), [navigation]);
+  // the count of cards seen restarts once per Shop opening, from shop.tsx (resetPacksSeen, C192); a tab switch is not an opening
   const rows = useMemo(
     () => productRows(prices, owned, { amounts, firstUsed, adCount, income, lookPrices }),
     [prices, owned, amounts, firstUsed, adCount, income, lookPrices],

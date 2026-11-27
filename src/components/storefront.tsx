@@ -1277,7 +1277,7 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
     ),
   });
   f.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
-  // the door chime hangs in the doorway, behind everyone (look-art.ts `chimeSpot`: a head must never be under it)
+  // the door chime hangs on the wall right of the doorway, over the wall and under the sidewalk's people (look-art.ts `chimeSpot`)
   if (fin.chime) {
     const ch = chimeSpot(lay);
     f.push({

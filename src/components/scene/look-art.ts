@@ -313,25 +313,25 @@ export function tipJarSpot(lay: Pick<Layout, 'counter' | 'mirrored' | 'frame'>):
 export const tipJarRect = (lay: Pick<Layout, 'counter' | 'mirrored' | 'frame'>): Rect => tipJarSpot(lay).rect;
 
 /**
- * The door chime's box: 17 wide, 29 tall, hung from the lintel's face (the header is drawn 108 to 122 up; the hook is 124 up, behind the PIZZERIA plank and the brick, so the
- * cord disappears behind the lintel and the chime shows from the lintel's foot down), left of the doorway's middle. The art is drawn 24 tall and is shown at CHIME_SCALE (D579: it
- * hung low enough to sit on the cap of the driver at the door; D581: it read as a speck at 1x).
+ * The door chime's box: 18 wide, 31 tall (the art is 24 tall, shown at CHIME_SCALE 1.3), hung from the lintel's foot on the brick beside the doorway: the wall between the glazed
+ * door and the right pilaster (D579: left of the doorway's middle it hung behind the OPEN plate and the lintel, or on the cap of the driver at the door). The wall is opaque, so
+ * nobody behind it shows, and the chime is drawn over it and under the people on the sidewalk, who are nearer.
  */
-export const CHIME_W = 17;
-export const CHIME_H = 29;
-export const CHIME_SCALE = 1.2;
-/** The depth it is drawn at: behind everyone in the room (the cast and the furniture are sorted by depth, deepest first), over the room's walls. */
-export const CHIME_SORT = 100;
-export const CHIME_Z = 124;
+export const CHIME_W = 18;
+export const CHIME_H = 31;
+export const CHIME_SCALE = 1.3;
+/** The depth it is drawn at: just in front of the front wall (sort 0), behind the sidewalk's people (deeper-first order: the nearer the later). */
+export const CHIME_SORT = -0.5;
+/** Its hook, 106 up: the lintel's foot (the header is drawn 108 to 122 up). */
+export const CHIME_Z = 106;
 
 /**
- * Where the door chime hangs: from the lintel at the left end of the doorway, above head height (the glazed door leaf folds against the right wall and the OPEN plate is
- * centred). The chime is its own piece of the furniture, sorted behind the cast (the front wall is drawn over the people behind it, and a driver walks through the doorway's
- * height: a chime on the wall would cover heads). `x` is the screen x of its centre in the plan the shop shows (mirrored included), `y` the screen y of its hook.
+ * Where the door chime hangs: on the wall right of the doorway, centred between the door's far jamb and the pilaster's far edge. `x` is the screen x of its centre in the plan the
+ * shop shows (mirrored included: the front wall is drawn plain and flipped), `y` the screen y of its hook.
  */
 export function chimeSpot(lay: Layout): { x: number; y: number; rect: Rect } {
   const p = plainOf(lay);
-  const [x, y] = P(p.door.x0 + 17, 0, CHIME_Z, p.frame);
+  const [x, y] = P((p.door.x1 + p.R + 6) / 2, 0, CHIME_Z, p.frame);
   const plain = { x0: x - CHIME_W / 2, x1: x + CHIME_W / 2, y0: y, y1: y + CHIME_H };
   const a = 2 * lay.frame.vanishX;
   return { x: lay.mirrored ? a - x : x, y, rect: lay.mirrored ? flipRect(plain, a) : plain };

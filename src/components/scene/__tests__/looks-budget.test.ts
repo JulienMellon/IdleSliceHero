@@ -17,6 +17,7 @@ import {
   AWNING_LOOKS,
   CHIMES,
   CHIME_H,
+  CHIME_SORT,
   CHIME_Z,
   CHIME_W,
   CLOTHS,
@@ -282,8 +283,12 @@ describe('the door chime stands clear (budget)', () => {
     expect(hits(r, plaqueRect(c.lay))).toBe(false);
     // above head height: under the lintel (108 up), over the people who walk in (heads 60 up at most)
     expect(r.y0).toBeCloseTo(P(0, 0, CHIME_Z)[1], 0);
-    // and its foot is 8 pt or more above where it hung before (D579: it sat on the cap of the driver at the door)
-    expect(r.y1).toBeLessThanOrEqual(P(0, 0, 108)[1] + 14);
+    // on the wall right of the doorway (D579): clear of the OPEN plate (centred, 22 wide), inside the pilaster's far edge, and nearer than the wall's opaque brick (it is drawn over it)
+    const pl = chimeSpot(plainOf(c.lay)).rect;
+    const p = plainOf(c.lay);
+    expect(pl.x0).toBeGreaterThanOrEqual(P(p.door.cx, 0, 0, p.frame)[0] + 11 + 2);
+    expect(pl.x1).toBeLessThanOrEqual(P(p.R + 6, 0, 0, p.frame)[0] + 4);
+    expect(CHIME_SORT).toBeLessThan(0);
   });
 });
 
