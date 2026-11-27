@@ -25,7 +25,7 @@ export interface Dress {
   /** 0 none, 1 oven-gold, 2 oven-woodfired. */
   ovenSkin: OvenSkin;
   awningGold: boolean;
-  /** The Starter Pack's red-and-white awning. Absent (not false) when not worn, so a save of the old shape compares equal. */
+  /** The Starter Pack's red-and-white awning. */
   awningFounder?: boolean;
   /** 0 none, else the 1-based index into SKINS. */
   facadeSkin: number;
@@ -56,6 +56,7 @@ export interface Dress {
 export const NO_DRESS: Dress = {
   ovenSkin: 0,
   awningGold: false,
+  awningFounder: false,
   facadeSkin: 0,
   scooterMint: false,
   neon: false,
