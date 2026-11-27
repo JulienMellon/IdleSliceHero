@@ -4,9 +4,9 @@ Keep this file under 40 lines. It is the only file the orchestrator edits by han
 
 ```
 version: 5.24                   # v5.23b closed 2026-11-23 at r2 (critic SATISFIED 0 bug 0 major 6 minor carried; code APPROVED 1 medium; story advisory 5 minor)
-step: waves                         # setup | waves | verify | review | fix | close
+step: review                        # setup | waves | verify | review | fix | close
 round: r1              # r1 | r2 | r3
-last_shots: v5.24                   # r1 verify: True 1 (205_n1 starter-rate -> N2), layout 0 new; 11 new 10 changed vs v5.23b-r2
+last_shots: v5.24                   # r1 verify: True 0 [], layout 0 new; 11 new 10 changed vs v5.23b-r2
 codecritic_range_start: 04b0abf   # v5.24 start (v5.23b closed commit)
 cards:                 # todo | running | done | partial | blocked
   E7 done  W5 done  S4 done  N2 done  S5 done  U6 done
@@ -42,3 +42,4 @@ next: start S11-v5.24.md. Carried notes: docs/build/v5.23b/review-r2-{critic,cod
 - 2026-11-27 S11 r1 S5 done. Unverified: Dorm set (228), jar urn, gear chime, hazard apron, cork menu, plaid cloths, purple scooter, S5 thumbnails, flourish bubble width at 40+ chars. Waiting on E7 follow-up.
 - 2026-11-27 S11 r1 E7 follow-up done (3512 tests). All cards done. Verify v5.24 running.
 - 2026-11-27 S11 r1 verify v5.24 FAIL: 1 error 205_n1 starter-rate (sent to N2); layout 0 new.
+- 2026-11-27 S11 r1 verify v5.24 PASS (True 0 [], layout 0, 11 new 10 changed). r1 reviews launched.
