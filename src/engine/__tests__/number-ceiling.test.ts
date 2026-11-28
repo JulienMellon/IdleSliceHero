@@ -155,6 +155,7 @@ describe('format at the top of its range', () => {
   });
   it('the home city’s own largest price still fits the names', () => {
     const top = Math.max(...NEIGHBORHOODS.map((n) => n.managerCost));
-    expect(money(top)).toMatch(/Q/i);
+    // v5.25: the home ladder is flat (builds $20K to $1.5M) and the later prices follow the fit: a name from the table, never scientific form
+    expect(money(top)).toMatch(/^\$\d+(\.\d+)?(K|M|B|T|Qa|Qi)$/);
   });
 });

@@ -28,7 +28,7 @@ export const HOME_CHAPTERS: Chapter[] = [
   chapter('downtown-1', [serve('downtown', 1), serve('downtown', 4), hire('downtown', 'prep')], true),
   chapter('downtown-2', [serve('downtown', 424), hire('downtown', 'oven'), rate('downtown', 6)]),
   chapter('downtown-3', [serve('downtown', 941), hire('downtown', 'counter'), report('downtown')]),
-  chapter('downtown-4', [serve('downtown', 2217), rate('downtown', 30), noMissed('downtown', 30)]),
+  chapter('downtown-4', [serve('downtown', 2217), rate('downtown', 2500), noMissed('downtown', 30)]),
   // Suburbs
   chapter('suburbs-1', [build('suburbs'), rate('downtown', 300)]),
   chapter('suburbs-2', [serve('suburbs', 12430), hire('suburbs', 'prep'), rate('suburbs', 500)]),

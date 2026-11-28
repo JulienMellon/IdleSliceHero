@@ -24,6 +24,17 @@ export const CITY_NAME = 'Port Marinara';
  * v5.16 final refit (card E2b), with the six layers, the service tip, the rival (x0.8) and the interludes in: Downtown's heads 400 / 800 / 950,
  * Suburbs' build 270K and manager 4.6M, Waterfront's manager 8B, University's build 8B, Uptown's build 10T and manager 2.6Q, the Golden oven 2B
  * and the Flagship 2.5B (all 18 stars on day 11.7). The finale comes 0.006 days past its band: see STORY_TOLERANCES in scripts/pacing-fit.ts.
+ *
+ * v5.25 (card E8, ECONOMY 4): the flat ladder. Build prices are Julien's: Suburbs 20K, Waterfront 80K, University 200K, Industrial 500K, Uptown
+ * 1.5M. Suburbs opens at about 20 minutes of play (Nonna's takeover, which the pizza count, Downtown's rate task and the heads' prices hold to
+ * 19.5 min, builds it at once: the cash that her takeover releases is 30 times its price), session 1 is in SESSION1 (scripts/pacing-fit.ts).
+ * Downtown's own prices (tuning.ts STATIONS, fit.ts) top out near 10M (about 24M with every decor tier and the fleet), and the story days
+ * stay where TARGETS has them. The hood tables below are from `npx tsx scripts/pacing-fit.ts ladder`: Suburbs by the session-1 fit, Waterfront
+ * by the scale that puts University on day 2, University on the old chain of ratios to Waterfront, Industrial and Uptown by the factor that lets
+ * the check-in player finish Industrial's chapter 4 (the kitchen must not be at its level cap while "no missed orders" is a task). A flat ladder
+ * does not make a flat economy: the engine's income potential per pizza (prep 0.9 pies/s x up to 125 levels x 8 milestones) is the old one, so
+ * managers, heads, cost multipliers and order values from Waterfront on are far above the build prices. They are what the check-in sim needs,
+ * not 10x and 2x of the build; the owner decision is in the E8 report.
  */
 export const NEIGHBORHOODS: NeighborhoodDef[] = [
   {
@@ -43,10 +54,10 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
     id: 'suburbs',
     name: 'Suburbs',
     orderValue: 60,
-    buildCost: 270_000,
-    costMult: 18,
-    managerCost: 4_600_000,
-    headsCost: 400_000,
+    buildCost: 20_000,
+    costMult: 20,
+    managerCost: 4_200_000,
+    headsCost: 40_000,
     x: 30,
     y: 67,
     color: '#6FCF97',
@@ -55,11 +66,11 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
   {
     id: 'waterfront',
     name: 'Waterfront',
-    orderValue: 2_500,
-    buildCost: 600_000_000,
-    costMult: 2_500,
-    managerCost: 8_000_000_000,
-    headsCost: 2_000_000_000,
+    orderValue: 3_900_000,
+    buildCost: 80_000,
+    costMult: 3_500_000,
+    managerCost: 310_000_000_000,
+    headsCost: 62_000_000_000,
     x: 76,
     y: 67,
     color: '#56CCF2',
@@ -69,11 +80,11 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
   {
     id: 'university',
     name: 'University',
-    orderValue: 200_000,
-    buildCost: 8_000_000_000,
-    costMult: 200_000,
-    managerCost: 350_000_000_000,
-    headsCost: 80_000_000_000,
+    orderValue: 310_000_000,
+    buildCost: 200_000,
+    costMult: 280_000_000,
+    managerCost: 13_600_000_000_000,
+    headsCost: 2_500_000_000_000,
     x: 18,
     y: 9,
     color: '#BB6BD9',
@@ -82,11 +93,11 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
   {
     id: 'industrial',
     name: 'Industrial',
-    orderValue: 6_000_000,
-    buildCost: 1_200_000_000_000,
-    costMult: 6_000_000,
-    managerCost: 60_000_000_000_000,
-    headsCost: 1_200_000_000_000,
+    orderValue: 14_100_000_000_000,
+    buildCost: 500_000,
+    costMult: 12_600_000_000_000,
+    managerCost: 3_450_000_000_000_000_000,
+    headsCost: 57_000_000_000_000_000,
     x: 50,
     y: 9,
     color: '#A0826D',
@@ -96,11 +107,11 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
   {
     id: 'uptown',
     name: 'Uptown',
-    orderValue: 60_000_000,
-    buildCost: 10_000_000_000_000,
-    costMult: 60_000_000,
-    managerCost: 2_600_000_000_000_000,
-    headsCost: 80_000_000_000_000,
+    orderValue: 94_000_000_000_000,
+    buildCost: 1_500_000,
+    costMult: 84_000_000_000_000,
+    managerCost: 100_000_000_000_000_000_000,
+    headsCost: 2_500_000_000_000_000_000,
     x: 82,
     y: 9,
     color: '#EB5757',
@@ -109,7 +120,7 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
 ];
 
 /** Waterfront's finale is a purchase: bid on Pier 9 once "For Sale" has played and Waterfront has sold this many pizzas. ~4.4 min of income at that moment in the pacing sim (v5.13 retune). */
-export const PIER9_BID = { cost: 120_000_000, unlockPizzas: 50_000 } as const;
+export const PIER9_BID = { cost: 4_700_000_000, unlockPizzas: 50_000 } as const;
 
 /** The bid as the city schema has it: Waterfront's finale is the Pier 9 purchase, open once "Man Overboard" (waterfront-3b) has played. */
 export const HOME_BID: CityBid = {

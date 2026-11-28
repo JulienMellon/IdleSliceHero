@@ -130,7 +130,7 @@ describe('Pier 9 bid (v3.7)', () => {
       managed: true,
       sold: PIER9_BID.unlockPizzas,
     });
-  it('costs $120M (about 4–5 minutes of income when it opens, v5.13)', () => expect(PIER9_BID.cost).toBe(120_000_000));
+  it('costs $4.7B (v5.25: scaled with Waterfront, about 4-5 minutes of its income when it opens)', () => expect(PIER9_BID.cost).toBe(4_700_000_000));
   it('opens after "Man Overboard" and 50,000 Waterfront pizzas', () => {
     expect(G.bidAvailable(ready())).toBe(true);
     expect(G.bidAvailable(withShop(ready(), 'waterfront', { sold: PIER9_BID.unlockPizzas - 1 }))).toBe(false);
@@ -311,7 +311,7 @@ describe('beat 4 is won (v5.16)', () => {
     expect(pickScene(s, HOME_SCENES, LATE, 0, false, 1995)?.id).toBe('suburbs-4');
     expect(sceneReady(s, scene('suburbs-4'), 1999)).toBe(true);
   });
-  it('the challenge is offered 300 s of play after beat 3 (Downtown: 60 s), not before', () => {
+  it('the challenge is offered 180 s of play (v5.25; it was 300) after beat 3 (Downtown: 60 s), not before', () => {
     expect(G.challengeOffered(beat3(800 + STORY_PACING.beat4GapSeconds - 1), 'suburbs')).toBe(false);
     expect(G.challengeOffered(beat3(800 + STORY_PACING.beat4GapSeconds), 'suburbs')).toBe(true);
     const dt = withShop(seenUpTo(['downtown-1', 'downtown-2', 'downtown-3'], 0, { 'downtown-3': 400 }), 'downtown', {});

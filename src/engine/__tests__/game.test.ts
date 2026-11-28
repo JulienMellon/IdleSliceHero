@@ -198,7 +198,7 @@ describe('managers, heads and tapping', () => {
     expect(s.cash).toBe(0);
     s = G.tapShop(s, 'downtown'); // counter
     s = G.lineTick(s, 60);
-    expect(s.shops.downtown.sold).toBe(4);
+    expect(s.shops.downtown.sold).toBe(1); // v5.25: one pizza per tap
     expect(s.cash).toBeGreaterThan(0);
   });
   test('a station refuses a tap it cannot start, with a reason', () => {
@@ -270,10 +270,10 @@ describe('managers, heads and tapping', () => {
     expect(s.shops.downtown.managed).toBe(true);
     expect(s.shops.downtown.heads).toEqual({ prep: true, oven: true, counter: true });
   });
-  test('the batch grows by 2 pies every 20 prep levels', () => {
+  test('one pizza per tap, and the batch grows by 1 pie every 10 prep levels (v5.25)', () => {
     const at = (prep: number) => G.tapBatch({ ...G.newShop(true), prep });
-    expect([1, 19, 20, 39, 40, 100].map(at)).toEqual([4, 4, 6, 6, 8, 14]);
-    expect(G.nextBatchLevel({ ...G.newShop(true), prep: 7 })).toBe(20);
+    expect([1, 9, 10, 19, 20, 100].map(at)).toEqual([1, 1, 2, 2, 3, 11]);
+    expect(G.nextBatchLevel({ ...G.newShop(true), prep: 7 })).toBe(10);
   });
   test('the first head is affordable within about 4 minutes of tapping alone (v5.16: the heads come at about 3, 5 and 7 minutes)', () => {
     let s = fresh();
@@ -411,7 +411,7 @@ describe('offline and saves', () => {
     const s = managed(fresh());
     expect(G.applyOffline(s, s.lastSavedAt - 5000).earned).toBe(0);
   });
-  test('v1 saves migrate into Downtown plus starter pizzerias', () => {
+  test('v1 saves (no economy marker) are replaced by a new game (v5.25: ECONOMY 4 is a full reset)', () => {
     const v1 = {
       cash: 500,
       ovenLevel: 18,
@@ -423,14 +423,21 @@ describe('offline and saves', () => {
       seenScenes: ['a', 'b'],
     };
     const m = G.migrate(v1, 5);
-    expect(m.cash).toBe(500);
-    expect(m.shops.downtown.ovens).toBe(18);
-    expect(m.shops.downtown.drivers).toBe(9);
-    expect(m.shops.downtown.managed).toBe(true);
-    expect(m.shops.suburbs.built).toBe(true);
-    expect(m.shops.suburbs.sold).toBe(620);
-    expect(m.shops.waterfront.built).toBe(false);
-    expect(m.scrapbookViewed).toBe(2);
+    expect(m).toEqual(G.newGame(5));
+    expect(m.cash).toBe(0);
+    expect(m.shops.downtown.ovens).toBe(1);
+    expect(m.shops.downtown.managed).toBe(false);
+    expect(m.shops.suburbs.built).toBe(false);
+    // the same save stamped with the current economy still migrates the old way, so the v1 → v2 steps stay covered
+    const kept = G.migrate({ ...v1, economy: G.ECONOMY }, 5);
+    expect(kept.cash).toBe(500);
+    expect(kept.shops.downtown.ovens).toBe(18);
+    expect(kept.shops.downtown.drivers).toBe(9);
+    expect(kept.shops.downtown.managed).toBe(true);
+    expect(kept.shops.suburbs.built).toBe(true);
+    expect(kept.shops.suburbs.sold).toBe(620);
+    expect(kept.shops.waterfront.built).toBe(false);
+    expect(kept.scrapbookViewed).toBe(2);
   });
   test('v2 saves round-trip and reject junk', () => {
     const s = managed({ ...fresh(), cash: 42 });
@@ -443,7 +450,7 @@ describe('offline and saves', () => {
 describe('format', () => {
   test('money', () => {
     expect(money(0)).toBe('$0');
-    expect(money(7.5)).toBe('$7.5');
+    expect(money(7.5)).toBe('$7'); // v5.25: whole numbers, rounded down
     expect(money(1234)).toBe('$1.23K');
     expect(money(60_000)).toBe('$60K');
     expect(money(3_900, true)).toBe('$3.90K');

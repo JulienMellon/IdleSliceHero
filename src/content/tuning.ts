@@ -35,11 +35,11 @@ export const TUNING = {
  * is no longer always the best buy (the price of level n is cost × costMult × growth^(n-1)).
  */
 export const STATIONS = {
-  prep: { name: 'Prep Cooks', speed: 0.9, cost: 5.76, growth: 1.125 },
-  ovens: { name: 'Ovens', speed: 0.7, cost: 11.7, growth: 1.171 },
-  counter: { name: 'Counter', speed: 1.1, cost: 12.4, growth: 1.152 },
-  drivers: { name: 'Drivers', cost: 6.27, growth: 1.168 },
-  tables: { name: 'Seating', speed: 0.3, cost: 6.79, growth: 1.155 },
+  prep: { name: 'Prep Cooks', speed: 0.9, cost: 12, growth: 1.084 },
+  ovens: { name: 'Ovens', speed: 0.7, cost: 22, growth: 1.08 },
+  counter: { name: 'Counter', speed: 1.1, cost: 26, growth: 1.08 },
+  drivers: { name: 'Drivers', cost: 13, growth: 1.083 },
+  tables: { name: 'Seating', speed: 0.3, cost: 14, growth: 1.082 },
 } as const;
 
 export const SHOP_POS = { x: 50, y: 36 };
@@ -51,7 +51,7 @@ export type DecorKind = 'plants' | 'flooring' | 'tables' | 'walls' | 'signage';
 export const DECOR_KINDS: DecorKind[] = ['plants', 'flooring', 'tables', 'walls', 'signage'];
 export const DECOR_BOOST = 0.04;
 /** Base cost of tiers 1–3, × the pizzeria's cost multiplier. */
-export const DECOR_TIER_COST = [150, 8_000, 400_000];
+export const DECOR_TIER_COST = [150, 3_000, 60_000];
 
 export interface DecorDef {
   name: string;
@@ -72,10 +72,11 @@ export const DECOR: Record<DecorKind, DecorDef> = {
  * Story pacing (v3.7). A launch or return plays at most one waiting story beat straight away; after that a beat
  * waits for `gapSeconds` of play since the last one ended. A finale (beat 4) also waits this long after its beat 3.
  * Scenes the player causes (a new pizzeria, the Pier 9 bid) are never held back.
+ * v5.25 (card E8): the finale wait after beat 3 is 180 s (it was 300), so the Suburbs finale follows its interlude within three minutes.
  */
 export const STORY_PACING = {
   gapSeconds: 90,
-  beat4GapSeconds: 300,
+  beat4GapSeconds: 180,
   firstHoodBeat4GapSeconds: 120,
   /** Away at least this long counts as a return. iOS also fires "active" after Control Center, a banner or the app switcher. */
   returnSeconds: 60,

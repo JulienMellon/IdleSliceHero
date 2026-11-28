@@ -1,5 +1,5 @@
-// Pacing pins for v5.16 (card E0 step 6): session 1, the continuous player with the rewards on, from the first launch to the Suburbs
-// finale. Heads at 2 / 5 / 8 min, Nonna at 10, Suburbs at 16, its manager at 28, its finale at 40 (each within its tolerance), the
+// Pacing pins for v5.16 (card E0 step 6), refit in v5.25 (card E8): session 1, the continuous player with the rewards on, from the first launch to the Suburbs
+// finale. Heads at 2 / 6.5 / 13 min, Nonna at 19.5, Suburbs at 20, its manager at 26, its finale at 33 (each within its tolerance), the
 // purchases that must be possible before Suburbs opens, and Suburbs locked until Nonna. Every target is a constant in
 // scripts/pacing-fit.ts (SESSION1): card E2b's refit changes numbers there, not here. Check it with `npx tsx scripts/pacing-fit.ts session1`.
 import { HOME_SCENES } from '../../content/scenes/home';
@@ -10,7 +10,7 @@ import { HEAD_COST_DOWNTOWN, NONNA_TAKEOVER } from '../../content/cities/home/fi
 import { NEIGHBORHOODS } from '../../content/cities/home/data';
 jest.setTimeout(120_000);
 
-describe('session 1: the first 40 minutes (rewards on)', () => {
+describe('session 1: the first 33 minutes (rewards on)', () => {
   const m = session1();
   const within = (x: number, target: number, tolerance: number) => Math.abs(x - target) <= tolerance + 1e-9;
 
@@ -30,17 +30,17 @@ describe('session 1: the first 40 minutes (rewards on)', () => {
     expect(within(m.finale, SESSION1.suburbsFinale, SESSION1.finaleTolerance)).toBe(true));
 
   it('a purchase at least every minute at the median', () => expect(m.medianGap).toBeLessThanOrEqual(SESSION1.medianBuyGapSeconds));
-  it('the longest wait for a purchase and the longest gap between scenes stay at the fitted values (targets 120 s and 6 min: see SESSION1_MISSES)', () => {
+  it('the longest wait for a purchase and the longest gap between scenes stay at the fitted values (targets 120 s and 3 min: see SESSION1_MISSES)', () => {
     expect(m.maxGap).toBeLessThanOrEqual(SESSION1_MISSES.maxBuyGapSeconds);
     expect(m.sceneGap).toBeLessThanOrEqual(SESSION1_MISSES.maxSceneGapMinutes + 1e-9);
   });
-  it('between Nonna and the Suburbs build the player buys the first Expand, the Stone oven and a decor tier', () =>
+  it('before the Suburbs build the player buys the first Expand, the Stone oven and a decor tier', () =>
     expect(m.bought).toEqual({ expand: true, stone: true, decor: true }));
 
   it('Suburbs stays locked until Nonna takes over, and is built only after', () => {
     expect(G.buildLock(G.newGame(0), 'suburbs')).not.toBeNull();
     expect(m.suburbsLocked).toBe(true);
-    expect(m.opens).toBeGreaterThan(m.takeover);
+    expect(m.opens).toBeGreaterThanOrEqual(m.takeover);
   });
 
   it('Nonna’s takeover count is downtown-4’s trigger count', () => {
@@ -56,6 +56,11 @@ describe('session 1: the first 40 minutes (rewards on)', () => {
   it('the scenes come in story order', () => {
     // v5.16 (card T1a): Deb's hire scene comes with the manager, and Dale's "3b" interlude after beat 3
     const order = ['downtown-1', 'downtown-2', 'downtown-3', 'downtown-4', 'suburbs-1', 'suburbs-2', 'suburbs-hire', 'suburbs-3', 'suburbs-3b', 'suburbs-4'];
-    expect(m.scenes.map((x) => x.id)).toEqual(order);
+    // v5.25: Waterfront (80K) may be built once Suburbs' third beat has played, so its scenes can come in before the Suburbs finale; they are not part of this order
+    const own = m.scenes.map((x) => x.id).filter((id) => /^(downtown|suburbs)-/.test(id));
+    expect(own).toEqual(order);
+    const ids = m.scenes.map((x) => x.id);
+    const wf = ids.indexOf('waterfront-1');
+    if (wf >= 0) expect(wf).toBeGreaterThan(ids.indexOf('suburbs-3'));
   });
 });
