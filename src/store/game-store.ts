@@ -11,7 +11,6 @@ import {
   claimDelta,
   claimOffer,
   grantDailyBooster,
-  offlineBoost,
   offlineExtra,
   offlineFactor,
   repairByAd,
@@ -379,7 +378,7 @@ export const useGame = create<Store>((set, get) => {
               pies: b.pies,
             })),
             idle: r.idle.map((id) => G.def(id, cityOf(saved)).name),
-            boost: offlineBoost(saved.rewards.boosts, saved.lastSavedAt, r.seconds),
+            boost: r.boost,
           };
           game = { ...game, cash: game.cash - r.earned, totalEarned: game.totalEarned - r.earned };
         }

@@ -23,7 +23,11 @@ import * as G from '../src/engine/game';
 import { getFeature } from '../src/engine/features';
 import { ackAttack, counterattack, attackView, startChallenge } from '../src/engine/features/counterattack';
 import { masteryStars, masteryTotal } from '../src/engine/features/mastery';
-import { cityOf } from '../src/content/cities';
+import { cityOf, hoodIds } from '../src/content/cities';
+import { LAYER_GATES, LAYER_KEYS } from '../src/content/layers';
+import { GIFT_LENGTH } from '../src/content/rewards';
+import { cameoOpen } from '../src/engine/features/layers/gates';
+import { rivalOpen } from '../src/engine/features/layers/rival';
 import { applyCfg, decisionMetric, endSummary, INSTALL, options, reportLines, rewardRules, run, sessionStats, type Cfg } from './review/sim2';
 
 import { FOOTPRINTS, HEAD_COST_DOWNTOWN, OVEN_GRADES, VEHICLES } from '../src/content/cities/home/fit';
@@ -44,14 +48,45 @@ export const SESSION1 = {
   opensTolerance: 2,
   suburbsManager: 26,
   managerTolerance: 3,
-  suburbsFinale: 33,
-  finaleTolerance: 5,
+  /** v5.25 (card E9, D493): the Suburbs finale is the rival's challenge, and the rival opens at Suburbs two stars, so the finale is that wait (measured 172 min: the Flagship). */
+  suburbsFinale: 172,
+  finaleTolerance: 15,
   /** A purchase at least this often at the median, and never a wait over this (seconds). */
   medianBuyGapSeconds: 60,
   maxBuyGapSeconds: 120,
-  /** A scene at least this often (minutes), from the first scene to the finale. */
+  /** A scene at least this often (minutes), from the first scene to the end of the window below. */
   maxSceneGapMinutes: 3,
+  /** The purchase and scene gaps are read over the first this many minutes (the rest of the way to the finale is the star wait of D493). */
+  windowMinutes: 40,
 } as const;
+
+/**
+ * v5.25 (card E9, closes D493): the layers come one to a session. A session is this many minutes of the continuous player's play, counted from
+ * the first launch, and the first session of all is the shop on its own (before Suburbs opens): no layer appears in it. A layer "appears" when
+ * the player can first meet it: Game Day's first game (one gap after Suburbs opens), the first boat (Downtown at two stars and Waterfront
+ * built, then one gap), the rival (Suburbs at two stars, its beat 3 seen) and the cameo (the day-30 visitor, no sooner than day 30 and Suburbs at one star).
+ */
+export const LAYER_SESSIONS = { minutes: 40 } as const;
+
+/** Minutes of play at which each layer first appears (NaN: not within the run). */
+export interface LayerFirsts {
+  gameDay: number;
+  boats: number;
+  rival: number;
+  cameo: number;
+}
+
+/** The 40-minute session (from 1) each layer first appears in, whether none is in the shop-only first session, and whether no two share a session. Pure. */
+export function layerSessions(f: LayerFirsts, opens: number) {
+  const sessions = Object.fromEntries((Object.keys(f) as (keyof LayerFirsts)[]).map((k) => [k, Math.floor(f[k] / LAYER_SESSIONS.minutes) + 1])) as Record<
+    keyof LayerFirsts,
+    number
+  >;
+  const mins = Object.values(f);
+  const afterShop = mins.every((m) => Number.isFinite(m) && m >= opens);
+  const distinct = new Set(Object.values(sessions)).size === mins.length && mins.every(Number.isFinite);
+  return { sessions, afterShop, distinct };
+}
 
 /**
  * What the fit could not reach in session 1, measured (v5.25, card E8). The scene gap: Downtown has four beats and Suburbs opens at about
@@ -61,7 +96,10 @@ export const SESSION1 = {
  * v5.25 (card E10): Downtown has a slot for one more scene (`downtown-3b`, an interlude 200 s after beat 3: it splits the 7-minute wait before Nonna) and the gap falls to
  * 6.3 min, the wait between Downtown's first two beats; a 3-minute gap needs an interlude in each of the three Downtown gaps and in Suburbs' (a story decision, W6).
  */
-export const SESSION1_MISSES = { maxBuyGapSeconds: 300, maxSceneGapMinutes: 6.4 } as const;
+export const SESSION1_MISSES = { maxBuyGapSeconds: 300, maxSceneGapMinutes: 58.1 } as const;
+// v5.25 (card E9, D493): the rival opens at Suburbs two stars, so Suburbs' finale (the challenge) and the Waterfront scenes that follow it wait for the
+// Flagship (the finale at 172 min). The gap that starts in the first 40 minutes is now Waterfront's first scene (32.5) to its manager's (90.5): 58 min.
+// Story beats for that wait (interludes in Suburbs and Waterfront) are W6's and T3's; the longest gap of the first session proper is still the 6.3 min above.
 
 /**
  * Waterfront to Uptown (card E0 step 7): where the manager and the heads fall for the check-in player (5 min every 4 h).
@@ -138,6 +176,8 @@ export interface Session1Result {
   /** Suburbs was not built before Nonna took over. */
   suburbsLocked: boolean;
   scenes: { id: string; minutes: number }[];
+  /** v5.25: when each layer first appears (see LAYER_SESSIONS). */
+  layers: LayerFirsts;
   rewards: ReturnType<typeof rewardRules>;
   decisions: ReturnType<typeof decisionMetric>;
 }
@@ -145,17 +185,31 @@ export interface Session1Result {
 /** Play session 1 and measure it against SESSION1. */
 export function session1(c: Cfg = {}): Session1Result {
   applyCfg({ ...c, rewards: c.rewards ?? true });
-  const r = run('continuous', 0, 0, undefined, { atScene: 'suburbs-4', maxWall: 90 * 60 });
+  const sec: Record<keyof LayerFirsts, number | undefined> = { gameDay: undefined, boats: undefined, rival: undefined, cameo: undefined };
+  const city = hoodIds(cityOf(G.newGame(0)));
+  const r = run('continuous', 0, 0, undefined, {
+    atScene: 'suburbs-4',
+    maxWall: 4 * 3600,
+    onSecond: (s, wall) => {
+      const ran = (key: string) => ((s.x?.[key] as { n?: number } | undefined)?.n ?? 0) >= 1;
+      if (sec.gameDay === undefined && ran(LAYER_KEYS.gameDay)) sec.gameDay = wall;
+      if (sec.boats === undefined && ran(LAYER_KEYS.boats)) sec.boats = wall;
+      if (sec.rival === undefined && city.some((id) => rivalOpen(s, id))) sec.rival = wall;
+      if (sec.cameo === undefined && cameoOpen(s)) sec.cameo = wall;
+    },
+  });
   const min = (x: number | undefined) => (x === undefined ? NaN : x / 60);
   const at = (id: string) => r.scenes.find((x) => x.id === id)?.wall;
   const takeover = at('downtown-4');
   const opens = r.timeline.suburbs?.build;
   const finale = at('suburbs-4');
-  const end = finale ?? r.wall;
+  // the gaps are read over the first SESSION1.windowMinutes (what follows is the wait for the rival's two stars)
+  const end = Math.min(finale ?? r.wall, SESSION1.windowMinutes * 60);
   const walls = r.buys.filter((b) => b.wall <= end).map((b) => b.wall);
   const gaps = walls.map((w, i) => w - (i ? walls[i - 1] : 0));
   gaps.push(end - (walls.length ? walls[walls.length - 1] : 0));
-  const sceneWalls = [...r.scenes.map((x) => x.wall), end];
+  // a gap counts when it starts in the window, however far past it the next scene is
+  const sceneWalls = [...r.scenes.map((x) => x.wall), end].filter((w, i, all) => w <= end || (i > 0 && all[i - 1] <= end));
   // v5.25: Suburbs is built the moment Nonna takes over (the reward cash at her takeover pays for it at once), so the window is the whole of session 1 up to the build
   const between = r.buys.filter((b) => opens !== undefined && b.wall <= opens).map((b) => b.label);
   return {
@@ -174,6 +228,13 @@ export function session1(c: Cfg = {}): Session1Result {
     },
     suburbsLocked: takeover === undefined || opens === undefined || opens >= takeover,
     scenes: r.scenes.map((x) => ({ id: x.id, minutes: x.wall / 60 })),
+    // the visitor is the day-30 gift's: it cannot come before day 30 of the calendar, whatever the gate says
+    layers: {
+      gameDay: min(sec.gameDay),
+      boats: min(sec.boats),
+      rival: min(sec.rival),
+      cameo: Math.max(min(sec.cameo), (GIFT_LENGTH - 1) * 24 * 60),
+    },
     rewards: rewardRules(r),
     decisions: decisionMetric(r, takeover ?? 0, finale ?? Infinity),
   };
@@ -240,6 +301,10 @@ function session1Check() {
   );
   console.log(`bought before the build: ${JSON.stringify(m.bought)}; Suburbs locked until Nonna: ${m.suburbsLocked}`);
   console.log(`scenes ${m.scenes.map((x) => `${x.id}@${f(x.minutes)}`).join(' ')}`);
+  const ls = layerSessions(m.layers, m.opens);
+  console.log(
+    `layers first appear (min / ${LAYER_SESSIONS.minutes}-min session): ${(Object.keys(m.layers) as (keyof LayerFirsts)[]).map((k) => `${k} ${f(m.layers[k])} / ${ls.sessions[k]}`).join(', ')}; none before Suburbs opens: ${ls.afterShop}; one to a session: ${ls.distinct}`,
+  );
   console.log(
     `rewards ${(m.rewards.share * 100).toFixed(1)}% of cash; decisions ${(m.decisions.cheapestShare * 100).toFixed(0)}% cheapest, third/best ${m.decisions.medianRatio3.toFixed(1)}`,
   );
@@ -911,6 +976,7 @@ export function withBostonTables<T>(mult: number, fn: () => T, nums: CityNumbers
     vehicles: VEHICLES.map((v) => v.cost),
     bid: PIER9_BID.cost,
     homeBid: HOME_BID.cost,
+    gates: [{ ...LAYER_GATES.rival }, { ...LAYER_GATES.boats }] as { hood: number; stars: number }[],
   };
   NEIGHBORHOODS.forEach((n, i) => Object.assign(n, { ...nums.hoods[i], orderValue: nums.hoods[i].orderValue * mult }));
   Object.assign(HEAD_COST_DOWNTOWN, nums.headCostFirst);
@@ -920,6 +986,9 @@ export function withBostonTables<T>(mult: number, fn: () => T, nums: CityNumbers
   (PIER9_BID as { cost: number }).cost = nums.bid.cost;
   // the city's own bid (what the engine reads) is a copy of PIER9_BID made when the module loaded: it moves too (v5.25, card E10)
   (HOME_BID as { cost: number }).cost = nums.bid.cost;
+  // v5.25 (card E9): the layers' gates are the first city's (the engine does not apply them to Boston); this stand-in is the home city's engine, so they are off
+  Object.assign(LAYER_GATES.rival, { hood: 0, stars: 0 });
+  Object.assign(LAYER_GATES.boats, { hood: 0, stars: 0 });
   try {
     return fn();
   } finally {
@@ -930,6 +999,8 @@ export function withBostonTables<T>(mult: number, fn: () => T, nums: CityNumbers
     });
     (PIER9_BID as { cost: number }).cost = saved.bid;
     (HOME_BID as { cost: number }).cost = saved.homeBid;
+    Object.assign(LAYER_GATES.rival, saved.gates[0]);
+    Object.assign(LAYER_GATES.boats, saved.gates[1]);
   }
 }
 

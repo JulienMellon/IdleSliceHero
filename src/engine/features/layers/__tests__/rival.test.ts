@@ -9,6 +9,7 @@ import { challengeWon, rival, rivalOpen, rivalTarget, rivalView, startRivalChall
 import { HOME_FIT } from '../../../../content/cities/home/fit';
 import { hoodIds } from '../../../../content/cities';
 import { HOME_CITY } from '../../../../content/cities/home';
+import { withRivalGate, withStars } from './gate-helpers';
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 const ID: NeighborhoodId = 'university';
 const run = <T>(fn: () => T): T => withFeatures([rival], fn);
@@ -20,7 +21,7 @@ const ok = (r: G.BuyResult): G.GameState => {
 };
 /** University built and running, beat 3 seen: the rival is open. */
 const open = (seen: string[] = ['university-3']): G.GameState => ({
-  ...shopOf(G.newGame(NOW), ID, { built: true, managed: true, heads: G.allHeads(), prep: 10, ovens: 10, counter: 10, tables: 10, drivers: 5 }),
+  ...shopOf(withRivalGate(G.newGame(NOW)), ID, { built: true, managed: true, heads: G.allHeads(), prep: 10, ovens: 10, counter: 10, tables: 10, drivers: 5 }),
   seenScenes: seen,
 });
 /** Sell `n` pies in the shop at once (what the line would have done). */
@@ -41,6 +42,28 @@ describe('opening and the x0.8', () => {
     });
   });
 
+  it('waits for Suburbs at two stars (D493): nowhere before it, not even at Downtown’s beat 3', () => {
+    run(() => {
+      const base = shopOf(G.newGame(NOW), 'downtown', { built: true });
+      const seen = { ...base, seenScenes: ['downtown-3', 'suburbs-3', 'university-3'] };
+      for (const stars of [0, 1]) {
+        const g = withStars(shopOf(seen, ID, { built: true }), 1, stars);
+        expect(rivalOpen(g, 'downtown')).toBe(false);
+        expect(rivalOpen(g, 'suburbs')).toBe(false);
+        expect(rivalOpen(g, ID)).toBe(false);
+        expect(rivalView(g, ID, NOW).phase).toBe('none');
+        expect(G.featureMults(g, 'suburbs', NOW).value).toBe(1);
+        expect(startRivalChallenge(g, 'suburbs', NOW).ok).toBe(false);
+      }
+      const two = withStars(shopOf(seen, ID, { built: true }), 1, 2);
+      expect(rivalOpen(two, 'suburbs')).toBe(true);
+      expect(rivalOpen(two, ID)).toBe(true);
+      expect(G.featureMults(two, 'suburbs', NOW).value).toBeCloseTo(0.8, 9);
+      // Downtown’s story ends by its delivery count, which closes its rival for good
+      expect(rivalOpen({ ...two, seenScenes: [...two.seenScenes, 'downtown-4'] }, 'downtown')).toBe(false);
+    });
+  });
+
   it('takes 20% off that shop’s value while open, and nothing from the others', () => {
     run(() => {
       const on = open();
@@ -56,7 +79,7 @@ describe('opening and the x0.8', () => {
 
   it('opens in every neighbourhood once its own beat 3 is seen', () => {
     run(() => {
-      let g = G.newGame(NOW);
+      let g = withRivalGate(G.newGame(NOW));
       for (const id of hoodIds(HOME_CITY)) g = shopOf(g, id, { built: true });
       for (const id of hoodIds(HOME_CITY)) {
         expect(rivalOpen(g, id)).toBe(false);
@@ -180,7 +203,7 @@ describe('the challenge', () => {
 
 describe('old saves', () => {
   const saved = (seen: string[]) => {
-    const g = JSON.parse(JSON.stringify(shopOf(G.newGame(NOW), ID, { built: true })));
+    const g = JSON.parse(JSON.stringify(shopOf(withRivalGate(G.newGame(NOW)), ID, { built: true })));
     delete g.x;
     g.seenScenes = seen;
     return g;

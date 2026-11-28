@@ -8,6 +8,8 @@ import { INK, FRONT_TOP, P, pts } from './projection';
 import { fasciaSignBox } from './viewport';
 import type { Layout } from './layout';
 import { GoldPlaque } from './cosmetic-props';
+import { hasFixture, renoPlaqueRect, type RenoDress } from './renovation-art';
+import { Beacon, NeonOpen, RenoPlaque, RoofPylon } from './renovation-props';
 import { dressedLook, plaqueRect } from './cosmetics';
 import { FasciaTrim } from './cosmetic-props';
 import { SIGN_BOARDS, type SignShape } from './look-art';
@@ -34,6 +36,8 @@ export const FrontWall = memo(function FrontWall({
   plaque = false,
   facadeSet = '',
   awningSet = '',
+  renoSet = '',
+  renoLevel = 0,
 }: {
   lay: Layout;
   name: string;
@@ -47,8 +51,12 @@ export const FrontWall = memo(function FrontWall({
   /** The v5.24 looks (cosmetics.ts `Dress`): the storefront theme and the catalog's awning, each the look's variant or ''. */
   facadeSet?: string;
   awningSet?: string;
+  /** The shop's renovation (v5.25, renovation-art.ts `RenoDress`): the set of looks and the level: the plaque by the door and the fixtures of the levels reached. */
+  renoSet?: RenoDress['renoSet'];
+  renoLevel?: number;
 }) {
   const { L, R, door } = lay;
+  const reno = { renoSet, renoLevel };
   const look = dressedLook(LOOKS[id], { facadeSkin, awningGold, awningFounder, facadeSet, awningSet });
   const sill = (x0: number, x1: number) => {
     const [ax, ay] = P(x0, 0);
@@ -163,11 +171,19 @@ export const FrontWall = memo(function FrontWall({
   const [fx0, fTop] = P(L - 6, 0, FRONT_TOP);
   const [fx1, fBot] = P(R + 6, 0, FRONT_TOP - 20);
   const fcx = (fx0 + fx1) / 2;
-  // awning valance under the fascia
-  const n = 12;
-  const aw = (fx1 - fx0 + 12) / n;
   return (
     <G>
+      {/* the rooftop things of the renovation (v5.25): the Suburbs' arrow pylon (III) and the Waterfront's lighthouse turret (III), behind the fascia that carries them */}
+      {hasFixture(reno, 'roof-sign') && (
+        <G transform={`translate(${fx1 - 22} ${fTop + 3})`}>
+          <RoofPylon />
+        </G>
+      )}
+      {hasFixture(reno, 'beacon') && (
+        <G transform={`translate(${fx1 - 26} ${fTop + 3})`}>
+          <Beacon dir={-1} />
+        </G>
+      )}
       {sill(L - 4, door.x0)}
       {sill(door.x1, R + 4)}
       {/* entrance set in the front plane: brick jambs + lintel, glazed leaf swung inward,
@@ -263,6 +279,14 @@ export const FrontWall = memo(function FrontWall({
             <Rect x={jax + 2} y={gTop + 2} width={kbx - jax - 4} height={lTop - gTop - 2} fill="none" stroke={INK} strokeWidth={0.8} />
             <Path d={`M${(jax + kbx) / 2} ${gTop} V${(gTop + lTop) / 2 - 14}`} stroke="#6B4330" strokeWidth={3} />
             {brick(jax, kbx, bTop, gTop + 2)}
+            {/* the Suburbs' pink neon OPEN in the shop window (renovation I) */}
+            {hasFixture(reno, 'neon-open') && (
+              <Upright cx={(jax + kbx) / 2}>
+                <G transform={`translate(${(jax + kbx) / 2} ${gTop + 17})`}>
+                  <NeonOpen />
+                </G>
+              </Upright>
+            )}
             <Rect x={jax - 1} y={gTop - 1} width={kbx - jax + 2} height={4} rx={1} fill={look.plinth} stroke={INK} strokeWidth={0.9} />
             <Circle cx={(jax + kbx) / 2 + 4} cy={(bTop + gTop) / 2 - 6} r={8} fill="#FFE7A0" stroke="#6B4330" strokeWidth={2.6} />
             <Path
@@ -350,11 +374,29 @@ export const FrontWall = memo(function FrontWall({
             </Upright>
           );
         })()}
+      {/* the renovation plaque by the door (I, II, III): on the brick header, above the master's plaque (renovation-art.ts `renoPlaqueRect`) */}
+      {renoLevel > 0 &&
+        renoSet !== '' &&
+        (() => {
+          const r = renoPlaqueRect(lay);
+          return (
+            <Upright cx={(r.x0 + r.x1) / 2}>
+              <G transform={`translate(${(r.x0 + r.x1) / 2} ${(r.y0 + r.y1) / 2})`}>
+                <RenoPlaque shop={renoSet} level={renoLevel} />
+              </G>
+            </Upright>
+          );
+        })()}
       {/* awning under the fascia: each neighbourhood's colours and shape; red stays as the first stripe or the piping */}
       {(() => {
         const [c0, c1] = look.awning;
-        const drop = look.shape === 'box' ? 16 : look.shape === 'dome' ? 15 : 13;
+        // Downtown's renovation I: a deeper awning of narrower stripes with big scallops and a gold fringe; a worn awning look keeps its own colours over the new shape
+        const deep = hasFixture(reno, 'awning');
+        const drop = deep ? 20 : look.shape === 'box' ? 16 : look.shape === 'dome' ? 15 : 13;
         const bulge = look.shape === 'dome' ? 5 : 0;
+        const n = deep ? 16 : 12;
+        const aw = (fx1 - fx0 + 12) / n;
+        const scallop = deep || look.shape === 'scallop' || look.shape === 'dome';
         return (
           <G>
             <Path d={`M${fx0} ${fBot} L${fx1} ${fBot} L${fx1 + 6} ${fBot + drop} L${fx0 - 6} ${fBot + drop} Z`} fill={c1} stroke={INK} strokeWidth={1.1} />
@@ -367,8 +409,13 @@ export const FrontWall = memo(function FrontWall({
               return (
                 <G key={i}>
                   {i % 2 === 0 && <Path d={`M${ta} ${fBot} L${tb} ${fBot} L${xa + aw} ${fBot + drop + mid} L${xa} ${fBot + drop + mid} Z`} fill={c0} />}
-                  {look.shape === 'scallop' || look.shape === 'dome' ? (
-                    <Path d={`M${xa} ${fBot + drop + mid} q${aw / 2} ${aw * 0.5} ${aw} 0`} fill={i % 2 === 0 ? c0 : c1} stroke={INK} strokeWidth={1} />
+                  {scallop ? (
+                    <Path
+                      d={`M${xa} ${fBot + drop + mid} q${aw / 2} ${aw * (deep ? 0.95 : 0.5)} ${aw} 0`}
+                      fill={i % 2 === 0 ? c0 : c1}
+                      stroke={INK}
+                      strokeWidth={1}
+                    />
                   ) : (
                     // straight and box awnings end in a flat valance
                     <Rect x={xa} y={fBot + drop} width={aw} height={look.shape === 'box' ? 6 : 4} fill={i % 2 === 0 ? c0 : c1} stroke={INK} strokeWidth={0.8} />
@@ -376,7 +423,11 @@ export const FrontWall = memo(function FrontWall({
                 </G>
               );
             })}
-            <Path d={`M${fx0 - 6} ${fBot + drop} H${fx1 + 6}`} stroke={look.piping ?? INK} strokeWidth={look.piping ? 2.4 : 1.1} />
+            <Path d={`M${fx0 - 6} ${fBot + drop} H${fx1 + 6}`} stroke={deep ? '#E3B52E' : (look.piping ?? INK)} strokeWidth={deep || look.piping ? 2.4 : 1.1} />
+            {deep &&
+              Array.from({ length: n + 1 }).map((_, i) => (
+                <Circle key={`f${i}`} cx={fx0 - 6 + i * aw} cy={fBot + drop + 1.4} r={1.5} fill="#E3B52E" stroke={INK} strokeWidth={0.5} />
+              ))}
             {look.piping && <Path d={`M${fx0 - 6} ${fBot + drop - 1.4} H${fx1 + 6}`} stroke={INK} strokeWidth={0.6} opacity={0.6} />}
           </G>
         );
@@ -463,11 +514,14 @@ export const FasciaSign = memo(function FasciaSign({
   signage,
   dx = 0,
   shape = 'board',
+  gold = false,
 }: {
   lay: Layout;
   name: string;
   signage: number;
   dx?: number;
+  /** Downtown's renovation III (renovation-art.ts): gold-leaf lettering on a dark plate and a ring of rim bulbs all the way round. A worn sign look keeps its own plate and lettering under the bulbs. */
+  gold?: boolean;
   /** The plate's shape (look-art.ts `signShapeOf`): the plain board, or a set's cartouche, pill, roped board or plank. */
   shape?: SignShape;
 }) {
@@ -477,8 +531,9 @@ export const FasciaSign = memo(function FasciaSign({
   // the Dockside plank is its own sign at every signage tier (D576: it stayed pink neon): weathered planks, cream stencil lettering, no halo and no bulbs
   const plank = shape === 'plank';
   const tier = plank ? 0 : signage;
-  const board = tier === 0 ? (set?.board ?? '#8E5A3C') : tier === 1 ? '#1E1630' : '#D9443A';
-  const text = tier === 0 ? (set?.text ?? '#FFF4E0') : tier === 1 ? '#FF8FB8' : '#fff';
+  const leaf = gold && !set;
+  const board = leaf ? '#2A1A10' : tier === 0 ? (set?.board ?? '#8E5A3C') : tier === 1 ? '#1E1630' : '#D9443A';
+  const text = leaf ? '#F2C94C' : tier === 0 ? (set?.text ?? '#FFF4E0') : tier === 1 ? '#FF8FB8' : '#fff';
   const plateH = fBot - fTop + 10;
   const plateX = fcx - signW / 2;
   const rx =
@@ -579,8 +634,31 @@ export const FasciaSign = memo(function FasciaSign({
           )}
         </G>
       )}
+      {leaf && (
+        <Rect x={plateX + 3} y={fTop - 2} width={signW - 6} height={plateH - 6} rx={Math.max(1, rx - 3)} fill="none" stroke="#F2C94C" strokeWidth={1.2} />
+      )}
       {tier !== 1 && <Rect x={fcx - signW / 2 + 3} y={fTop - 3} width={signW - 6} height={6} rx={3} fill="#fff" opacity={0.2} />}
+      {/* the gold sign's rim: a bulb every 11 pt round the whole plate, lit, with a glint */}
+      {gold &&
+        (() => {
+          const w = signW - 6;
+          const h = fBot - fTop + 4;
+          const nx = Math.max(4, Math.round(w / 11));
+          const ny = 2;
+          const x0 = plateX + 3;
+          const y0 = fTop - 5;
+          const dots: [number, number][] = [];
+          for (let i = 0; i <= nx; i++) dots.push([x0 + (w * i) / nx, y0], [x0 + (w * i) / nx, y0 + h + 6]);
+          for (let j = 1; j < ny + 1; j++) dots.push([x0, y0 + ((h + 6) * j) / (ny + 1)], [x0 + w, y0 + ((h + 6) * j) / (ny + 1)]);
+          return dots.map(([x, y], i) => (
+            <G key={`rb${i}`}>
+              <Circle cx={x} cy={y} r={3.4} fill="#FFE9A0" opacity={0.35} />
+              <Circle cx={x} cy={y} r={2.1} fill="#FFF3B0" stroke="#C99A00" strokeWidth={0.7} />
+            </G>
+          ));
+        })()}
       {tier >= 2 &&
+        !gold &&
         Array.from({ length: 18 }).map((_, i) => {
           const top = i < 9;
           const x = fcx - signW / 2 + 8 + (i % 9) * ((signW - 16) / 8);

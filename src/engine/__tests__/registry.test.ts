@@ -97,9 +97,10 @@ describe('T88 module order', () => {
         'uptownStars',
         'franchise',
         'renovationFx',
+        'freeGift',
       ]);
       require('../features');
-      expect(Object.keys(game.newGame(0).x)).toHaveLength(14);
+      expect(Object.keys(game.newGame(0).x)).toHaveLength(15);
     });
   });
 
@@ -107,8 +108,8 @@ describe('T88 module order', () => {
     jest.isolateModules(() => {
       const f = require('../features');
       const game = require('../game');
-      expect(f.FEATURES).toHaveLength(14);
-      expect(Object.keys(game.newGame(0).x)).toHaveLength(14);
+      expect(f.FEATURES).toHaveLength(15);
+      expect(Object.keys(game.newGame(0).x)).toHaveLength(15);
     });
   });
 });

@@ -121,7 +121,7 @@ export const RESET_FIELDS = [
 export const SET_FIELDS = ['saveVersion', 'city', 'lastSavedAt', 'x'] as const;
 
 /** Feature slices (GameState.x keys) a franchise keeps: mastery stars already paid, recipe cards owned, and the franchise's own. */
-export const KEPT_FEATURES = ['mastery', 'recipes', KEY] as const;
+export const KEPT_FEATURES = ['mastery', 'recipes', 'freeGift', KEY] as const;
 
 /** Feature slices a franchise starts over: the weekly counter-attack, the shops' service, the heads' pick, a running event, every layer. */
 export const RESET_FEATURES = [

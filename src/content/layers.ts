@@ -48,8 +48,21 @@ export function auctionMult(openedAt: number, playSeconds: number): number {
   return 1 + Math.min(AUCTION.maxShare, AUCTION.stepShare * Math.floor((playSeconds - openedAt) / AUCTION.stepSeconds));
 }
 
+/**
+ * v5.25 (card E9, D493): what opens each layer, so that no two of them first appear together and none in the first session (the shop and its first
+ * goals). A `hood` is a position in the city's build order (0 = the first shop, Downtown; 1 = Suburbs); `stars` is the mastery stars (heads,
+ * Flagship, Golden oven) that shop must have. Game Day opens with its own shop and has no star gate, but its first game waits a full gap.
+ * The cameo's gate is `CAMEO_GATE` (content/rewards.ts).
+ */
+export const LAYER_GATES = {
+  /** The rival: Suburbs at two stars (every neighbourhood's rival waits for it; Downtown's story needs none: its beat 4 is a delivery count). */
+  rival: { hood: 1, stars: 2 },
+  /** Boats: Downtown at two stars, and the boats' own shop (Waterfront) built. */
+  boats: { hood: 0, stars: 2 },
+} as const;
+
 export const RIVAL = {
-  /** The rival opens when this beat has been seen. */
+  /** The rival opens when this beat has been seen (and `LAYER_GATES.rival` is met). */
   beat: 3,
   /** While the rival is open, that shop's value per pizza is multiplied by this. */
   valueMult: 0.8,

@@ -3,10 +3,11 @@
 // from the memo's dependencies (the v3.5 `prep` bug: a managed shop's prep bench never updated).
 import type { NeighborhoodId } from '../../content/types';
 import { dressOf, type Dress } from './cosmetics';
+import { NO_RENO, type RenoDress } from './renovation-art';
 import { MAX_PINS, ladderStep, type LadderInput } from './ladder';
 
 /** What the furniture is built from. The worn cosmetics (`Dress`, cosmetics.ts) are part of it: a skin change rebuilds the furniture. */
-export interface FurnitureInputs extends Dress {
+export interface FurnitureInputs extends Dress, RenoDress {
   id: NeighborhoodId;
   name: string;
   fp: number;
@@ -43,13 +44,15 @@ export interface FurnitureSource {
   vehicle: number;
   /** `rewards.worn`: the cosmetics on (city-wide). */
   worn: readonly string[];
+  /** The shop's renovation (v5.25: renovation-art.ts `renoDressOf`): its set of looks, level and the decor bought. None when it has had none. */
+  reno?: RenoDress;
   /** The city's first shop: its sidewalk is never covered by the chip strip, managed or not (Downtown, North End). */
   first: boolean;
   /** The shop's report is live (v5.22): the dough on the bench and the boxes on the counter are drawn as the piles of piles.ts, from the backlog, not as the fixed decoration. */
   piles?: boolean;
 }
 
-export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn, first, piles = false }: FurnitureSource): FurnitureInputs {
+export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn, first, piles = false, reno = NO_RENO }: FurnitureSource): FurnitureInputs {
   return {
     id,
     name,
@@ -70,6 +73,7 @@ export function furnitureInputs({ id, name, shop, running, rate, vehicle, worn, 
     idleShop: !shop.managed && !first,
     vehicle,
     ...dressOf(worn),
+    ...reno,
   };
 }
 

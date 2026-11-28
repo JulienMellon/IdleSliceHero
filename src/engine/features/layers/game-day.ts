@@ -2,7 +2,8 @@
 // only into the seats that are free, so seating (more tables, the sidewalk patio, a higher seating level) and Dale's perk (walk-ins
 // pay 15% more) matter. Play time only: the schedule is a hash of the saved seed and a counter, so a save replays the same games,
 // and it never re-rolls when the clock or the time zone changes. Inactive until the Suburbs shop is built. Old saves load as
-// "inactive": the first game is one gap after the shop is first seen built.
+// "inactive": the first game is one gap after the shop is first seen built. (v5.25, D493: that is the gate: Game Day opens with the Suburbs shop, and its
+// first game waits a full gap after the unlock, however late in the play that is.)
 //
 // The rush multiplies through `shopDemandMult` (the one demand number the engine has), as a ratio that adds the extra walk-ins to
 // the whole demand, so the drivers' share is not multiplied. It applies only while the app is open (a wall-clock stamp of the last

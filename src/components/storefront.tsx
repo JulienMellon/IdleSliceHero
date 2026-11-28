@@ -48,6 +48,8 @@ import { VISITOR_LOOK, cameoGeom, sayLines, visitLine, visitOf, visitTagLabel } 
 import { CHIP_RISE, CHIP_SECONDS, bounceStep, bounceTransforms, clearPillX, confettiStep, ladderProps, menuRect, wallRects, type Placed } from './scene/ladder';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverlays, StreetProp } from './scene/room';
 import { FasciaSign } from './scene/facade';
+import { SILL_SORT, fixtureSpots, hasFixture, renoDressOf, renoSpots } from './scene/renovation-art';
+import { ChromeCounter, OvenArch, PlankDeck, RopeRail, RenoDecor } from './scene/renovation-props';
 import { fasciaSignBox, overlaySpan, slideInto, visibleSpan } from './scene/viewport';
 import {
   CREST_R,
@@ -369,6 +371,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // what this shop wears (engine/vanity.ts `dressFor`: the worn looks less other shops' set pieces, a set piece beating the generic look of its part): recomputed when the wardrobe changes, not per frame
   const worn = useMemo(() => dressFor(game, id), [game.rewards.worn, id]); // eslint-disable-line react-hooks/exhaustive-deps -- `dressFor` reads only `rewards.worn`
   const apron = useMemo(() => dressOf(worn).apron, [worn]);
+  // the shop's renovation (v5.25: its plaque, fixtures and bought decor), by E10's selectors: recomputed when the renovation record changes, not per frame
+  const reno = useMemo(() => renoDressOf(game, id, city), [game.renovation, id, city]); // eslint-disable-line react-hooks/exhaustive-deps -- `renoDressOf` reads only `renovation`
   const { cast } = buildCast({
     lay,
     shop,
@@ -426,6 +430,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     worn,
     first: id === hoodIds(city)[0],
     piles: live,
+    reno,
   });
   // Furniture only changes with upgrades and the dough/box counts, so it is built once per change (M12), not 15 times a second.
   // The visual ladder (v5.11): the props this shop's levels have earned, placed from the layout; built once per upgrade like the furniture
@@ -535,6 +540,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             signage={fin.signageTier}
             dx={lay.mirrored ? -signDraw : signDraw}
             shape={signShapeOf(fin.facadeSet, fin.signSet)}
+            gold={hasFixture(fin, 'gold-sign')}
           />
         </Flip>
       ),
@@ -1240,6 +1246,33 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
 });
 
 /**
+ * A renovated shop's pieces of its own (v5.25, card S6; renovation-art.ts has the places, renovation-props.tsx the drawings): the fixtures that are not part of the front wall (the oven arch,
+ * the counter's apron, the plank deck, the rope rail) and the bought decor, each at its own depth. The plaque, the awning, the name sign, the neon, the pylon and the beacon are the front wall's.
+ */
+function renovationPieces(lay: Layout, fin: FurnitureInputs): { y: number; el: ReactElement }[] {
+  const out: { y: number; el: ReactElement }[] = [];
+  if (fin.renoSet === '' || fin.renoLevel === 0) return out;
+  const fx = fixtureSpots(lay);
+  if (hasFixture(fin, 'oven-arch'))
+    fx.arches.forEach((a, i) => out.push({ y: D - 5, el: <OvenArch key={`arch${i}`} cx={a.cx} top={a.top} bottom={a.bottom} w={a.w} /> }));
+  if (hasFixture(fin, 'chrome-counter')) out.push({ y: 63.8, el: <ChromeCounter key="apron" {...fx.counter} /> });
+  if (hasFixture(fin, 'plank-deck')) out.push({ y: 500, el: <PlankDeck key="deck" {...fx.deck} /> });
+  if (hasFixture(fin, 'rope-rail') && !fin.idleShop) out.push({ y: SILL_SORT, el: <RopeRail key="rail" {...fx.rail} /> });
+  const bought = new Set(fin.renoDecor.split(',').filter(Boolean));
+  for (const p of renoSpots(lay, fin.renoSet, fin.id, fin.vehicle, fin.idleShop))
+    if (bought.has(p.thing))
+      out.push({
+        y: p.sortY,
+        el: (
+          <G key={`reno-${p.thing}`} transform={`translate(${p.ax} ${p.ay}) scale(${p.k})`}>
+            <RenoDecor thing={p.thing} w={p.thing === 'pennants' ? p.rect.x1 - p.rect.x0 : 0} />
+          </G>
+        ),
+      });
+  return out;
+}
+
+/**
  * The static furniture layer, painter-sorted later with the cast. Reads only `lay`, `fin` and the ladder props placed from
  * them, so memoising on those is complete. `st` tags the pieces that bounce when their station is bought.
  */
@@ -1287,10 +1320,13 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
           plaque={fin.plaque}
           facadeSet={fin.facadeSet}
           awningSet={fin.awningSet}
+          renoSet={fin.renoSet}
+          renoLevel={fin.renoLevel}
         />
       </Flip>
     ),
   });
+  f.push(...renovationPieces(lay, fin));
   f.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
   // the door chime hangs on the wall right of the doorway, over the wall and under the sidewalk's people (look-art.ts `chimeSpot`)
   if (fin.chime) {

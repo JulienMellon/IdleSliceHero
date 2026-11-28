@@ -1343,6 +1343,8 @@ export interface OfflineResult {
   capped: boolean;
   /** Real time away, before the cap. */
   awaySeconds: number;
+  /** v5.25 (card E9): the multiplier the paid boosts gave the paid time (1 with none): the number the offline ad's factor starts from. */
+  boost: number;
   earned: number;
   /** Cash each pizzeria made while away (only those that made any), and the pies it sold. `headsOnly`: no GM, all three heads: it sold at HEADS_OFFLINE_SHARE of its rate (S33). */
   byShop: { id: NeighborhoodId; earned: number; managed: boolean; headsOnly: boolean; pies: number }[];
@@ -1410,6 +1412,19 @@ export function offlineTick(
   return { state: bump({ ...s, cash, totalEarned: s.totalEarned + earned, shops }, add), byShop: rows };
 }
 
+/**
+ * v5.25 (card E9): the multiplier every paid boost gave a window of `seconds` that began at wall ms `from`: each timed boost (`rewards.boosts`: a
+ * booster, a gift, the Starter Pack's, a visit) and the diamond boosters' slot (`rewards.paidUntil`) adds (mult - 1) over the part of the window it
+ * still covered, and the sum starts at 1. (The General Manager's boost is not timed: it is in every managed pizza's value.) 1 with no window.
+ */
+export function offlineBoostOf(r: Pick<Rewards, 'boosts' | 'paidUntil'>, from: number, seconds: number): number {
+  if (!(seconds > 0)) return 1;
+  const span = seconds * 1000;
+  const covered = (until: number) => Math.max(0, Math.min(until, from + span) - from) / span;
+  const paid = (PAID_BOOST_MULT - 1) * covered(r.paidUntil);
+  return r.boosts.reduce((m, b) => m + (b.mult - 1) * covered(b.until), 1 + paid);
+}
+
 /** Away longer than the offline cap by less than this is not "capped": the popup would say "Capped at 4h (away 4h)" (G92). */
 export const CAPPED_SLACK_SECONDS = 60;
 
@@ -1418,12 +1433,8 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
   const elapsed = Math.max(0, (now - s.lastSavedAt) / 1000);
   const cap = offlineCapOf(s);
   const seconds = Math.min(elapsed, cap);
-  // each running boost adds (mult − 1) over the part of the offline window it covers
-  const from = s.lastSavedAt;
-  const boost =
-    seconds > 0
-      ? s.rewards.boosts.reduce((m, b) => m + ((b.mult - 1) * Math.max(0, Math.min(b.until, from + seconds * 1000) - from)) / (seconds * 1000), 1)
-      : 1;
+  // each running boost adds (mult − 1) over the part of the offline window it covers (the paid slot's too, v5.25)
+  const boost = offlineBoostOf(s.rewards, s.lastSavedAt, seconds);
   const { state: ticked, byShop } = offlineTick(s, seconds, boost, now);
   let state = ticked;
   // feature slices settle after the ordinary catch-up, in registry order
@@ -1445,6 +1456,7 @@ export function applyOffline(s: GameState, now: number): OfflineResult {
     cap,
     capped: elapsed - cap >= CAPPED_SLACK_SECONDS,
     awaySeconds: elapsed,
+    boost,
     earned: state.cash - s.cash,
     byShop: rows,
     idle,

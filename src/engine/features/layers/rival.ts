@@ -1,4 +1,4 @@
-// The rival (v5.16): once a neighbourhood's beat 3 has been seen, a MegaSlice shop is open across the street there and that shop's
+// The rival (v5.16; v5.25, D493: nowhere before Suburbs has two mastery stars, `rivalGateMet`): once a neighbourhood's beat 3 has been seen, a MegaSlice shop is open across the street there and that shop's
 // value per pizza is x0.8. A challenge becomes available: sell ceil(5 min x the shop's current pizza rate x 1.2) pies in 5 minutes
 // (play time). Winning closes the rival for good and sets `challengeWon(g, id)` (the story's beat 4 reads it). Losing costs
 // nothing; retry after 2 minutes of play. Existing saves: a neighbourhood whose beat 4 is already seen has the rival closed and the
@@ -8,6 +8,7 @@ import type { NeighborhoodId } from '../../../content/types';
 import { cityOf } from '../../../content/cities';
 import { challengeOffered, featureMults, finaleId, sceneId, shopRate, type BuyResult, type GameState } from '../../game';
 import { savedHoods, type Feature } from '../types';
+import { rivalGateMet } from './gates';
 
 export interface RivalChallenge {
   hood: NeighborhoodId;
@@ -36,8 +37,9 @@ const beat = (id: NeighborhoodId) => sceneId(id, RIVAL.beat as 3);
 /** The neighbourhood's challenge is won (or its finale was already seen, in a save from before the rival). */
 export const challengeWon = (g: GameState, id: NeighborhoodId): boolean => read(g).won.includes(id) || g.seenScenes.includes(finaleId(id));
 
-/** The MegaSlice shop across the street is open: beat 3 seen, the shop built and the challenge not yet won. */
-export const rivalOpen = (g: GameState, id: NeighborhoodId): boolean => !!g.shops[id]?.built && g.seenScenes.includes(beat(id)) && !challengeWon(g, id);
+/** The MegaSlice shop across the street is open: beat 3 seen, the shop built, the challenge not yet won and (v5.25, D493) Suburbs at two stars. */
+export const rivalOpen = (g: GameState, id: NeighborhoodId): boolean =>
+  !!g.shops[id]?.built && g.seenScenes.includes(beat(id)) && !challengeWon(g, id) && rivalGateMet(g);
 
 /** Pies the challenge asks for in `id` right now: ceil(5 min x the shop's current pizza rate x 1.2), at least 1. */
 export function rivalTarget(g: GameState, id: NeighborhoodId, now: number): number {

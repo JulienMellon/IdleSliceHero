@@ -4,6 +4,7 @@ import { STORY_PACING } from '../../content/tuning';
 import type { NeighborhoodId } from '../../content/types';
 import { pickScene, resolveScene, resumeSceneEnd, sceneHeading, sceneReady, scenePacesGap } from '../cutscene-input';
 import * as G from '../game';
+import { withRivalGate } from '../features/layers/__tests__/gate-helpers';
 import { withTasksDone } from './chapter-helpers';
 
 import { HOME_FIT } from '../../content/cities/home/fit';
@@ -296,11 +297,14 @@ describe('interludes (v5.16)', () => {
 });
 
 describe('beat 4 is won (v5.16)', () => {
+  // the rival waits for Suburbs at two stars (D493): the helper gives it
   const beat3 = (playSeconds: number, hood: NeighborhoodId = 'suburbs') =>
-    withShop(
-      seenUpTo([...DT, `${hood}-1`, `${hood}-2`, `${hood}-3`, ...(hood === 'suburbs' ? ['suburbs-3b'] : [])], playSeconds, { [`${hood}-3`]: 800 }),
-      hood,
-      { built: true },
+    withRivalGate(
+      withShop(
+        seenUpTo([...DT, `${hood}-1`, `${hood}-2`, `${hood}-3`, ...(hood === 'suburbs' ? ['suburbs-3b'] : [])], playSeconds, { [`${hood}-3`]: 800 }),
+        hood,
+        { built: true },
+      ),
     );
   it('beat 4 waits for the challenge: sold pizzas alone never play it', () => {
     const s = withShop(beat3(5000), 'suburbs', { sold: 1e9 });
@@ -315,9 +319,15 @@ describe('beat 4 is won (v5.16)', () => {
   it('the challenge is offered 180 s of play (v5.25; it was 300) after beat 3 (Downtown: 60 s), not before', () => {
     expect(G.challengeOffered(beat3(800 + STORY_PACING.beat4GapSeconds - 1), 'suburbs')).toBe(false);
     expect(G.challengeOffered(beat3(800 + STORY_PACING.beat4GapSeconds), 'suburbs')).toBe(true);
-    const dt = withShop(seenUpTo(['downtown-1', 'downtown-2', 'downtown-3'], 0, { 'downtown-3': 400 }), 'downtown', {});
+    const dt = withRivalGate(withShop(seenUpTo(['downtown-1', 'downtown-2', 'downtown-3'], 0, { 'downtown-3': 400 }), 'downtown', {}));
     expect(G.challengeOffered({ ...dt, playSeconds: 400 + STORY_PACING.firstHoodBeat4GapSeconds - 1 }, 'downtown')).toBe(false);
     expect(G.challengeOffered({ ...dt, playSeconds: 400 + STORY_PACING.firstHoodBeat4GapSeconds }, 'downtown')).toBe(true);
+  });
+  it('the challenge is not offered before Suburbs has two stars (D493), whatever beat 3 and the wait say', () => {
+    const open = beat3(1e6);
+    expect(G.challengeOffered(open, 'suburbs')).toBe(true);
+    const one = { ...open, shops: { ...open.shops, suburbs: { ...open.shops.suburbs, footprint: 0 } } };
+    expect(G.challengeOffered(one, 'suburbs')).toBe(false);
   });
   it('the challenge is not offered with no rival: beat 3 unseen, the shop unbuilt, or the challenge already won', () => {
     expect(G.challengeOffered(withShop(seenUpTo(['suburbs-1', 'suburbs-2'], 1e6), 'suburbs', { built: true }), 'suburbs')).toBe(false);

@@ -9,6 +9,7 @@ import { boatsView, buyRack, pier9AuctionMult, rackCapacity, rackLock, rackPrice
 
 import { HOME_FIT } from '../../../../content/cities/home/fit';
 import { PIER9_BID } from '../../../../content/cities/home/data';
+import { withStars } from './gate-helpers';
 const NOW = new Date(2026, 10, 9, 9, 0, 0).getTime();
 const HOOD = layerHood(HOME_CITY, 'boats')!;
 const patch = (g: G.GameState, p: Partial<G.Shop>): G.GameState => ({ ...g, shops: { ...g.shops, [HOOD]: { ...g.shops[HOOD], ...p } } });
@@ -22,7 +23,7 @@ function play(g: G.GameState, seconds: number, now = NOW): G.GameState {
 
 /** Waterfront built and running, with demand the slow stage between boats and the oven the slow stage in a boat's rush (so the rack has spare to store and a gap to fill). */
 function dock(tier = 0): G.GameState {
-  let g = G.newGame(NOW);
+  let g = withStars(G.newGame(NOW), 0, 2);
   const base = { built: true, managed: true, heads: G.allHeads(), tables: 3, drivers: 2, counter: 200, ovens: 200, footprint: 4 };
   g = patch(g, base);
   // search the prep and seating levels for a kitchen 1.5 to 2.5 times the demand (the milestones' jumps make a single level too coarse)
@@ -70,6 +71,45 @@ describe('the schedule', () => {
       expect(boatsView(after, NOW).active).toBe(false);
       expect(boatsLayer.shopDemandMult!(after, HOOD, NOW)).toBe(1);
       expect(buyRack(after)).toEqual({ ok: false, reason: 'Build this pizzeria first' });
+    });
+  });
+
+  it('waits for Downtown at two stars as well as the built Waterfront shop (D493), then the first boat is one gap away', () => {
+    run(() => {
+      const built = patch(G.newGame(NOW), { built: true });
+      for (const stars of [0, 1]) {
+        const g = play(withStars(built, 0, stars), 600);
+        expect(state(g)).toMatchObject({ nextAt: -1, until: 0, n: 0, rack: 0 });
+        expect(boatsView(g, NOW).active).toBe(false);
+        expect(boatsLayer.shopDemandMult!(g, HOOD, NOW)).toBe(1);
+        expect(boatsLayer.shopKey!(g, HOOD)).toBe('');
+        expect(rackLock(g)).toBe('Earn 2 stars in Downtown first');
+        expect(buyRack({ ...g, cash: 1e12 }).ok).toBe(false);
+      }
+      // two stars alone (Waterfront not built) is not enough either
+      expect(boatsView(play(withStars(G.newGame(NOW), 0, 2), 600), NOW).active).toBe(false);
+      // both: the schedule starts then, and the first boat comes a full gap (7.2 s short of 3 min at the least) after
+      let g = withStars(built, 0, 1);
+      g = play(g, 600);
+      g = withStars(g, 0, 2);
+      const at = g.playSeconds;
+      g = play(g, 1);
+      expect(boatsView(g, NOW).active).toBe(true);
+      expect(state(g).n).toBe(0);
+      expect(state(g).nextAt - at).toBeGreaterThanOrEqual(BOATS.everySeconds * (1 - BOATS.jitter));
+      expect(rackLock(g)).toBeNull();
+    });
+  });
+
+  it('the Pier 9 auction does not wait for the gate: it opens with the bid', () => {
+    run(() => {
+      const g = play(
+        { ...patch(G.newGame(NOW), { built: true, sold: PIER9_BID.unlockPizzas }), seenScenes: ['waterfront-3', 'waterfront-3b'], cash: PIER9_BID.cost * 2 },
+        1,
+      );
+      expect(state(g).openedAt).toBe(g.playSeconds);
+      expect(boatsView(g, NOW)).toMatchObject({ active: false, auctionMult: 1 });
+      expect(boatsView({ ...g, playSeconds: g.playSeconds + 300 }, NOW).auctionMult).toBeCloseTo(1.1, 10);
     });
   });
 
@@ -237,7 +277,7 @@ describe('the Pier 9 live auction', () => {
 
 describe('old saves', () => {
   it('a v5.15 save loads with no rack, an unopened auction and a schedule that starts now', () => {
-    const saved = JSON.parse(JSON.stringify(patch(G.newGame(NOW), { built: true, sold: PIER9_BID.unlockPizzas })));
+    const saved = JSON.parse(JSON.stringify(patch(withStars(G.newGame(NOW), 0, 2), { built: true, sold: PIER9_BID.unlockPizzas })));
     delete saved.x;
     saved.seenScenes = ['waterfront-3', 'waterfront-3b'];
     saved.playSeconds = 7000;

@@ -197,6 +197,12 @@ export const GIFT_DAYS: readonly GiftDef[] = (() => {
   return Array.from({ length: GIFT_LENGTH }, (_, i) => GIFT_MILESTONES[i + 1] ?? GIFT_SMALL[small++ % GIFT_SMALL.length]);
 })();
 
+/**
+ * v5.25 (card E9, D493): the cameo, the day-30 visitor standing in the shop while the visit's boost runs, shows only once this hood (a position in
+ * the city's build order: 1 = Suburbs) has this many mastery stars. The calendar and the visit's boost are as they were; engine `cameoOpen` reads this.
+ */
+export const CAMEO_GATE = { hood: 1, stars: 1 } as const;
+
 /** Who visits on day 30, by cycle (then repeats). */
 export const VISITORS: readonly string[] = ['nonna', 'big-sal', 'genevieve'];
 

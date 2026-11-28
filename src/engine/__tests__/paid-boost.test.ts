@@ -102,11 +102,12 @@ describe('boostMult with the paid slot', () => {
       expect(G.playTick(paid, 60, T + 1000).cash).toBeCloseTo(2 * plain.cash);
       expect(G.playTick(paid, 60, T + 700_000).cash).toBeCloseTo(plain.cash);
     }));
-  test('offline earnings ignore the paid slot, as they ignore the 2× ad and Plus stacking', () => {
+  test('offline earnings pay the slot for the time it still covers (v5.25, card E9; the kinds are in offline-boosts.test.ts)', () => {
     const base = { ...unlocked(), lastSavedAt: T };
     const paid = withSlot(base, T + 10 * HOUR);
     expect(G.applyOffline(paid, T + HOUR).earned).toBeGreaterThan(0);
-    expect(G.applyOffline(paid, T + HOUR).earned).toBe(G.applyOffline(base, T + HOUR).earned);
+    // the slot covers the whole hour away: 2x
+    expect(G.applyOffline(paid, T + HOUR).earned).toBeCloseTo(2 * G.applyOffline(base, T + HOUR).earned, 6);
   });
   test('cash rewards ignore the slot', () => {
     const s = unlocked();

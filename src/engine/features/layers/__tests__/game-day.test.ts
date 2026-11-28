@@ -45,6 +45,25 @@ describe('the schedule', () => {
     expect(a[0]).toBeGreaterThanOrEqual(GAME_DAY.everySeconds * (1 - GAME_DAY.jitter) - 1);
   });
 
+  it('D493: the first game waits a full gap after the Suburbs unlock, however late in the play it is built', () => {
+    run(() => {
+      const built = patch(G.newGame(NOW), { built: false });
+      // 20 minutes of play with Suburbs locked: nothing is scheduled
+      let g = play({ ...built, playSeconds: 1200 }, 60);
+      expect(state(g)).toMatchObject({ nextAt: -1, n: 0, until: 0 });
+      g = patch(g, { built: true });
+      const unlock = g.playSeconds;
+      let first = -1;
+      for (let i = 0; i < 700 && first < 0; i++) {
+        g = G.playTick(g, 1, NOW);
+        if (state(g).n >= 1) first = g.playSeconds - unlock;
+      }
+      expect(first).toBeGreaterThanOrEqual(GAME_DAY.everySeconds * (1 - GAME_DAY.jitter) - 1);
+      expect(first).toBeLessThanOrEqual(GAME_DAY.everySeconds * (1 + GAME_DAY.jitter) + 2);
+      expect(gameDayView(patch(play({ ...built, playSeconds: 1200 }, 60), { built: true }), NOW).nextIn).toBe(GAME_DAY.everySeconds);
+    });
+  });
+
   it('is the same however big the ticks are', () => {
     run(() => {
       const fine = play(game(), 1501);

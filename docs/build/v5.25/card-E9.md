@@ -26,15 +26,15 @@
   - **Cameo:** at Suburbs ★ (keep the day-30 visit too if it is a separate thing; say which in the report).
 
   New `pacing-fit session1` assertion: no two of {rival, Game Day, boats, cameo} first appear within the same 40-minute session of the sim player, and none appears in the first session.
-- [ ] **2. Free gift engine.**
+- [x] **2. Free gift engine.**
   - **Save:** `freeGift: { nextAt: number; count: number; ready: boolean }`.
   - **Timing:** the first gift is ready at 120 s of active play, then every 4 h of real (wall) time. It counts while offline, but never more than 1 waits.
   - **Contents:** `claimFreeGift(g, now)` gives cash worth 5 min of the shop's income at claim time (whole dollars), and every 3rd claim also gives 10 💎.
   - **Event:** emits `free_gift_claimed { cash, diamonds }` for the scene, the UI and the audio.
   - **Selector:** `freeGiftReady(g, now)`.
   - Defaults go in `src/content/free-gift.ts`.
-- [ ] **3. Offline with paid boosts.** List every kind of paid boost: timed boosts in `rewards.boosts`, diamond boosters (`paid-boost.ts`), the GM boost, the Starter Pack boost (N3 grants it as a timed boost) and any other. Then write a test per kind: active for 10 min of a 60-min absence, offline pays boosted for 10 min, then base for 50. Fix the kinds that fail. Timed boosts already pass (game.ts ~1416).
-- [ ] **4. Tests.** Gates, gift timing (first at 120 s, then 4 h, never stacking), gift contents, offline per boost kind, the save round trip.
+- [x] **3. Offline with paid boosts.** List every kind of paid boost: timed boosts in `rewards.boosts`, diamond boosters (`paid-boost.ts`), the GM boost, the Starter Pack boost (N3 grants it as a timed boost) and any other. Then write a test per kind: active for 10 min of a 60-min absence, offline pays boosted for 10 min, then base for 50. Fix the kinds that fail. Timed boosts already pass (game.ts ~1416).
+- [x] **4. Tests.** Gates, gift timing (first at 120 s, then 4 h, never stacking), gift contents, offline per boost kind, the save round trip.
 
 ## Checks
 - `npx tsc --noEmit`

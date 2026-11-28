@@ -7,6 +7,8 @@
 // +50% (`pier9AuctionMult`; game.ts's `bidPrice` reads the same number from the saved `openedAt`, content/layers.ts).
 // Play time only; the schedule replays from the saved seed; inactive until the Waterfront shop is built; old saves load as
 // "inactive, the schedule starts now". The rack and the rush earn only while the app is open.
+// v5.25 (card E9, D493): the boats, the rack and the harbour readout wait for Downtown at two stars as well as the built Waterfront shop
+// (`boatsOpen`, gates.ts); the first boat comes one gap after both are true. The auction below is the Pier 9 bid's and runs from the build.
 import { BOATS, LAYER_KEYS, auctionMult } from '../../../content/layers';
 import {
   boostMult,
@@ -28,6 +30,7 @@ import type { Feature } from '../types';
 import { cityOf, layerHood } from '../../../content/cities';
 import type { NeighborhoodId } from '../../../content/types';
 import { freshTimed, migrateTimed, stepTimed, timedOn, type Timed, type TimedSpec } from './game-day';
+import { boatsLock, boatsOpen } from './gates';
 
 export interface BoatsState extends Timed {
   /** Warming rack tier owned, 0 (none) to 4. */
@@ -70,7 +73,8 @@ export function rackPrice(g: GameState): number | null {
 
 /** Why the next tier can't be bought yet (other than cash), or null. */
 export function rackLock(g: GameState): string | null {
-  if (!built(g)) return 'Build this pizzeria first';
+  const gate = boatsLock(g);
+  if (gate) return gate;
   return read(g).tier >= MAX_TIER ? 'Biggest rack there is' : null;
 }
 
@@ -87,7 +91,7 @@ export function buyRack(g: GameState): BuyResult {
 }
 
 export interface BoatsView {
-  /** The Waterfront shop is built (the layer is live). */
+  /** The layer is live: the Waterfront shop is built and Downtown has two stars (v5.25). */
   active: boolean;
   /** A boat is docked now. */
   boat: boolean;
@@ -108,7 +112,7 @@ export interface BoatsView {
 /** Everything the harbour readout and the rack's card need, pure. */
 export function boatsView(g: GameState, now: number): BoatsView {
   const st = read(g);
-  if (!built(g))
+  if (!boatsOpen(g))
     return {
       active: false,
       boat: false,
@@ -118,7 +122,7 @@ export function boatsView(g: GameState, now: number): BoatsView {
       rackPies: 0,
       rackCapacity: rackCapacity(st.tier),
       rackPrice: null,
-      auctionMult: 1,
+      auctionMult: built(g) ? pier9AuctionMult(g) : 1,
     };
   const boat = timedOn(st, g.playSeconds, now);
   return {
@@ -174,10 +178,11 @@ export const boatsLayer: Feature<BoatsState> = {
   tick(g, dt, now) {
     if (!built(g)) return g;
     const st = read(g);
-    let next = stepTimed(st, g.playSeconds, now, spec);
+    const open = boatsOpen(g);
+    let next = open ? stepTimed(st, g.playSeconds, now, spec) : st;
     // the auction opens the first time a tick sees the bid on offer; the clock runs in play seconds from then
     if (next.openedAt < 0 && bidAvailable(g)) next = { ...next, openedAt: g.playSeconds };
-    next = rackStep(g, next, dt, now);
+    if (open) next = rackStep(g, next, dt, now);
     let out = g;
     const whole = Math.floor(next.carry);
     if (whole > 0) {
@@ -191,9 +196,9 @@ export const boatsLayer: Feature<BoatsState> = {
     return same ? out : write(out, next);
   },
   shopDemandMult(g, id, now) {
-    return id === hoodOf(g) && built(g) && timedOn(read(g), g.playSeconds, now) ? BOATS.demandMult : 1;
+    return id === hoodOf(g) && boatsOpen(g) && timedOn(read(g), g.playSeconds, now) ? BOATS.demandMult : 1;
   },
   shopKey(g, id) {
-    return id === hoodOf(g) && built(g) && read(g).until > g.playSeconds ? 'boat' : '';
+    return id === hoodOf(g) && boatsOpen(g) && read(g).until > g.playSeconds ? 'boat' : '';
   },
 };

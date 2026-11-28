@@ -3,6 +3,7 @@ import type { GameState } from '../game';
 import { counterattack } from './counterattack';
 import { events } from './events';
 import { franchiseFeature } from './franchise';
+import { freeGiftFeature } from './free-gift';
 import { heads } from './heads';
 import { mastery } from './mastery';
 import { shiftsLayer } from './layers/shifts';
@@ -37,6 +38,7 @@ FEATURES.push(
   starsLayer,
   franchiseFeature,
   renovationFeature,
+  freeGiftFeature,
 );
 
 /** A feature's state. Before the feature has ever saved, this is whatever `init`/`migrate` gave it. */

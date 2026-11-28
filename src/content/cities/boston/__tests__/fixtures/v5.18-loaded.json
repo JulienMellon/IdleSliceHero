@@ -632,7 +632,8 @@
       "cityStart": 0,
       "masteryBanked": 0
     },
-    "renovationFx": {}
+    "renovationFx": {},
+    "freeGift": { "nextAt": 0, "count": 0, "ready": false }
   },
   "renovation": {
     "north-end": {

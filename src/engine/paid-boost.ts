@@ -1,6 +1,7 @@
 // The paid-boost slot (v5.23, card E5): three boosters sold for diamonds. They share one slot that runs at PAID_BOOST_MULT;
 // buying another while it runs adds its time (up to PAID_SLOT_CAP seconds left) and never a second multiplier.
-// `boostMult` (game.ts) reads the slot; offline earnings (`applyOffline`) don't, exactly as the 2× offline ad and Plus don't stack with it.
+// `boostMult` (game.ts) reads the slot, and so does `applyOffline` (v5.25, card E9: `offlineBoostOf`): the slot pays boosted for the part of the time away
+// it still covers, then base. The 2× offline ad replaces a boost already in the total, it never stacks with it (offers.ts `offlineFactor`).
 
 import { PAID_BOOSTERS, PAID_SLOT_CAP, type PaidBooster } from '../content/rewards';
 import { payDiamonds, type BuyResult, type GameState } from './game';

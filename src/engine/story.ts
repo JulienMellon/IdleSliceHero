@@ -86,7 +86,7 @@ export const scenesById = (scenes: readonly Scene[]): ReadonlyMap<string, Scene>
 };
 
 /**
- * The rival challenge in `id` may be taken now: the MegaSlice shop is open there and the finale wait is over (300 s of play after beat 3,
+ * The rival challenge in `id` may be taken now: the MegaSlice shop is open there (beat 3 seen, and from v5.25 Suburbs at two stars: `rivalOpen`) and the finale wait is over (180 s of play after beat 3,
  * Downtown's shorter). This wait gates when the challenge is offered, not when beat 4 plays: beat 4 plays the moment it is won.
  */
 export function challengeOffered(s: GameState, id: NeighborhoodId): boolean {

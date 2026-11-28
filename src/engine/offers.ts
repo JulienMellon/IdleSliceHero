@@ -6,7 +6,7 @@ import { MAX_BOOSTERS, MAX_CONCURRENT_BOOSTS, STREAK_SAVE_DIAMONDS } from '../co
 import { DECOR_KINDS } from '../content/tuning';
 import { cityOf, hoodIds } from '../content/cities';
 import type { Grant } from '../services/grants';
-import { nextHire, type Boost, type BuyResult, type GameState, type Task } from './game';
+import { nextHire, offlineBoostOf, type Boost, type BuyResult, type GameState, type Task } from './game';
 import * as R from './rewards';
 
 // ---------- limits ----------
@@ -116,13 +116,11 @@ export function grantDailyBooster(g: GameState, now: number): BuyResult {
 // -- 2x offline earnings --
 
 /**
- * The multiplier a timed boost gave an away window: each running boost adds (mult - 1) over the part of the window it covered
- * (the engine's own rule in `applyOffline`). 1 with none.
+ * The multiplier the paid boosts gave an away window: each running boost adds (mult - 1) over the part of the window it covered (the engine's own
+ * rule, `offlineBoostOf`), and so does the diamond boosters' slot (`paidUntil`, v5.25: it used to be left out). 1 with none.
  */
-export function offlineBoost(boosts: readonly { mult: number; until: number }[], lastSavedAt: number, seconds: number): number {
-  if (!(seconds > 0)) return 1;
-  const span = seconds * 1000;
-  return boosts.reduce((m, b) => m + ((b.mult - 1) * Math.max(0, Math.min(b.until, lastSavedAt + span) - lastSavedAt)) / span, 1);
+export function offlineBoost(boosts: readonly { mult: number; until: number }[], lastSavedAt: number, seconds: number, paidUntil = 0): number {
+  return offlineBoostOf({ boosts: boosts as Boost[], paidUntil }, lastSavedAt, seconds);
 }
 
 /**

@@ -2,9 +2,10 @@
 // finale. Heads at 2 / 6.5 / 13 min, Nonna at 19.5, Suburbs at 20, its manager at 26, its finale at 33 (each within its tolerance), the
 // purchases that must be possible before Suburbs opens, and Suburbs locked until Nonna. Every target is a constant in
 // scripts/pacing-fit.ts (SESSION1): card E2b's refit changes numbers there, not here. Check it with `npx tsx scripts/pacing-fit.ts session1`.
+import { GAME_DAY } from '../../content/layers';
 import { HOME_SCENES } from '../../content/scenes/home';
 import * as G from '../game';
-import { SESSION1, SESSION1_MISSES, session1 } from '../../../scripts/pacing-fit';
+import { LAYER_SESSIONS, SESSION1, SESSION1_MISSES, layerSessions, session1 } from '../../../scripts/pacing-fit';
 
 import { HEAD_COST_DOWNTOWN, NONNA_TAKEOVER } from '../../content/cities/home/fit';
 import { NEIGHBORHOODS } from '../../content/cities/home/data';
@@ -52,6 +53,24 @@ describe('session 1: the first 33 minutes (rewards on)', () => {
   });
   it('Downtown’s headsCost is the sum of its three fixed head prices', () => {
     expect(NEIGHBORHOODS[0].headsCost).toBe(HEAD_COST_DOWNTOWN.prep + HEAD_COST_DOWNTOWN.oven + HEAD_COST_DOWNTOWN.counter);
+  });
+  it('D493: no layer appears in the shop-only first session, and no two appear in the same 40-minute session', () => {
+    const ls = layerSessions(m.layers, m.opens);
+    expect(LAYER_SESSIONS.minutes).toBe(40);
+    for (const k of ['gameDay', 'boats', 'rival', 'cameo'] as const) expect(m.layers[k]).toBeGreaterThanOrEqual(m.opens);
+    expect(ls.afterShop).toBe(true);
+    expect(ls.distinct).toBe(true);
+    // each layer's own gate: Game Day a full gap after the Suburbs unlock, the boats with Downtown's second star, the rival with Suburbs'
+    expect(m.layers.gameDay - m.opens).toBeGreaterThanOrEqual((GAME_DAY.everySeconds * (1 - GAME_DAY.jitter)) / 60 - 0.1);
+    expect(m.layers.boats).toBeGreaterThan(m.layers.gameDay);
+    expect(m.layers.rival).toBeGreaterThan(m.layers.boats);
+    expect(m.layers.cameo).toBeGreaterThan(m.layers.rival);
+  });
+  it('the rule that checks it fails the old layout: the rival at Downtown’s beat 3 (before Suburbs), or two layers in one session', () => {
+    expect(layerSessions({ gameDay: 27, boats: 56, rival: 12.5, cameo: 50000 }, 19.6).afterShop).toBe(false);
+    expect(layerSessions({ gameDay: 27, boats: 56, rival: 169, cameo: 50000 }, 19.6)).toMatchObject({ afterShop: true, distinct: true });
+    expect(layerSessions({ gameDay: 27, boats: 30, rival: 169, cameo: 50000 }, 19.6).distinct).toBe(false);
+    expect(layerSessions({ gameDay: 27, boats: NaN, rival: 169, cameo: 50000 }, 19.6)).toMatchObject({ afterShop: false, distinct: false });
   });
   it('the scenes come in story order', () => {
     // v5.16 (card T1a): Deb's hire scene comes with the manager, and Dale's "3b" interlude after beat 3
