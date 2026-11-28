@@ -5,7 +5,7 @@ import type { CityDef, CityTeaser, LayerKind, NeighborhoodDef } from './types';
 import { HOME_CITY } from './home';
 import { BOSTON_CITY } from './boston';
 
-export type { CityDef, CityFit, CityTeaser, LayerKind } from './types';
+export type { AmbientBeat, CityAmbient, CityDef, CityFit, CityTeaser, GateFacts, LayerKind } from './types';
 
 /** The id of the city a new game starts in, and the one an old save (from before cities) belongs to. */
 export const HOME_ID = 'home';

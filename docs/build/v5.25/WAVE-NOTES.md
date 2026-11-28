@@ -34,3 +34,4 @@
 - W4 T3 -> E: src/engine/story.ts pendingScenes must call sceneGateMet (facts from boatsOpen, shop.managed and the heads hired). The store must play each due HOME_AMBIENT beat once (bark over the head, banner as a toast).
 - W4 T3 -> U7: src/components/rewards-model.ts:330 falls back to 'Golden Oven' (S106 wants 'Golden oven').
 - W4 T3 -> W6/T3: one more Suburbs interlude after suburbs-1 (+~115 s) would bring the gap to ≤ 3. S67 (boston-0 backdrop) is still open: city-schema.test.ts:48 and cutscene-boston.test.ts:29 reject home backdrops in Boston.
+- W4 E9: story.ts now has `gateFacts`, `dueAmbient`, `markAmbientPlayed` and `ambientPlayed`, and `CityDef.ambient` holds {beats, gateMet, due}. game-store's `playAmbient` plays one beat every 20 s or more. Its state is `ambientBark {key, text, speaker, shop, at}` (2.5 s); banners go to `toast`. Each beat is stamped in `sceneAt[key]`. S7 draws the bubble.

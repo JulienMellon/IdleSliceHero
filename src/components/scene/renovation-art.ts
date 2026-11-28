@@ -308,6 +308,8 @@ function spotsOf(lay: Layout, set: RenoShop | null, id: NeighborhoodId, vehicle:
     if (shareOf(door, r) > STATION_MAX || shareOf(mat, r) > STATION_MAX || hits(r, dsign)) return false;
     if (hits(r, door)) return false;
     if (r.x0 < frameL || r.x1 > frameR) return false;
+    // the gift box is never hidden by a person standing before it, nor does it hide one: it keeps off every figure's box (the staff, the order spots and the diners)
+    if (thing === GIFT && peopleBoxes.some((b) => hits(r, b))) return false;
     // the stations' rects: only the counter's own things stand on the counter's; nothing else may lie over more than a tenth of one
     for (const st of ['prep', 'oven', 'counter'] as const) {
       if (st === 'counter' && mount === 'counter') continue;

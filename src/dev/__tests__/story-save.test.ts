@@ -95,9 +95,16 @@ function waitingOn(cityId: string, sceneIdWaiting: string): GameState {
   const target = city.scenes.find((s) => s.id === sceneIdWaiting)!;
   if (target.trigger.kind !== 'after') throw new Error('not an after scene');
   const shops = Object.fromEntries(Object.entries(base.shops).map(([id, s]) => [id, { ...s, built: true }])) as GameState['shops'];
+  // v5.25: the gated interludes need their gate met to be pending (Waterfront's heads hired, Downtown at two stars: the boats open), so the save has them
+  const gated = {
+    ...shops,
+    ...Object.fromEntries(Object.entries(shops).map(([id, sh]) => [id, { ...sh, heads: { prep: true, oven: true, counter: true } }])),
+  } as GameState['shops'];
+  const top = base.city === 'home' ? { footprint: cityOf(base).fit.footprints.length - 1 } : {};
+  const first = Object.keys(gated)[0] as keyof GameState['shops'];
   return {
     ...base,
-    shops,
+    shops: { ...gated, [first]: { ...gated[first], ...top } },
     tutorial: TUTORIAL_DONE,
     playSeconds: 5000,
     seenScenes: city.scenes.filter((s) => s.id !== target.id).map((s) => s.id),

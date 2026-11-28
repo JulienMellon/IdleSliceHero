@@ -9,7 +9,7 @@ import { RENO_SHOPS } from '../../../content/renovation';
 import * as G from '../../../engine/game';
 import { badgeBand, doorRect, fixedPeople, hits, matRect } from '../ladder';
 import { COVER_MAX, coveredShare } from '../protected';
-import { GIFT_BOB_AMP, GIFT_GLINT_EVERY, GIFT_GLINT_LEN, giftHit, giftPose } from '../gift';
+import { GIFT_BOB_AMP, GIFT_GLINT_EVERY, GIFT_GLINT_LEN, giftHit, giftPose, giftTapRect } from '../gift';
 import { giftSpot, renoSpots } from '../renovation-art';
 import { shopLayout } from '../shop-layout';
 import { stationRects } from '../stations';
@@ -66,14 +66,23 @@ describe('the gift box has one clear place in every shop', () => {
 
 describe('the tap', () => {
   const rect = { x0: 100, y0: 300, x1: 118, y1: 317 };
+  test('the target is 44 pt each way at every scene scale, round the box', () => {
+    for (const s of [0.95, 1, 1.11]) {
+      const t = giftTapRect(rect, s);
+      expect((t.x1 - t.x0) * s).toBeGreaterThanOrEqual(44 - 1e-9);
+      expect((t.y1 - t.y0) * s).toBeGreaterThanOrEqual(44 - 1e-9);
+      expect((t.x0 + t.x1) / 2).toBeCloseTo(109);
+      expect(t.x0).toBeLessThanOrEqual(rect.x0);
+    }
+  });
   test('lands on the box and on the 44 pt around its middle, not beyond', () => {
     for (const s of [0.95, 1, 1.11]) {
       const reach = 22 / s;
-      expect(giftHit(rect, 109, 308, s)).toBe(true);
-      expect(giftHit(rect, 109 + reach - 0.5, 308, s)).toBe(true);
-      expect(giftHit(rect, 109, 308 - reach + 0.5, s)).toBe(true);
-      expect(giftHit(rect, 109 + reach + 1, 308, s)).toBe(false);
-      expect(giftHit(rect, 109, 308 + reach + 1, s)).toBe(false);
+      expect(giftHit(rect, 109, 308.5, s)).toBe(true);
+      expect(giftHit(rect, 109 + reach - 0.5, 308.5, s)).toBe(true);
+      expect(giftHit(rect, 109, 308.5 - reach + 0.5, s)).toBe(true);
+      expect(giftHit(rect, 109 + reach + 1, 308.5, s)).toBe(false);
+      expect(giftHit(rect, 109, 308.5 + reach + 1, s)).toBe(false);
     }
   });
 });

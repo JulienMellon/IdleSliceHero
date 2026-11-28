@@ -1,9 +1,10 @@
 // The story's rules, as pure functions of a game (A33): when a scene's trigger has passed, which scenes are pending, the goal bar's wait hint,
 // when a rival challenge is offered and the load-time story migration. They were in game.ts, which then had to import the rival layer and the
 // scene lists; game.ts re-exports the readers for the callers that still say `G.pendingScenes`.
-import { cityOf } from '../content/cities';
+import { cityOf, type AmbientBeat, type GateFacts } from '../content/cities';
 import { STORY_PACING } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
+import { boatsOpen } from './features/layers/gates';
 import { challengeWon, rivalOpen } from './features/layers/rival';
 import { chapterDone, chapterOf } from './chapters';
 import { firstHood, sceneId, type GameState } from './game';
@@ -68,12 +69,25 @@ export function sceneWaitSeconds(s: GameState, scene: Scene, lastSceneEndPlay: n
   return Math.max(0, Math.ceil(left));
 }
 
-/** Unseen scenes whose triggers pass, in story order (earliest first); main beats come before interludes when both are ready. */
+/** What a scene's extra gate (content `SCENE_GATES`) asks of this game: the boats open, a shop's manager, a head hired (v5.25, card T3). */
+export const gateFacts = (s: GameState): GateFacts => ({
+  boatsOpen: boatsOpen(s),
+  managed: (id) => !!s.shops[id]?.managed,
+  headHired: (id, kind) => !!s.shops[id]?.heads[kind],
+});
+
+/**
+ * Unseen scenes whose triggers pass, in story order (earliest first); main beats come before interludes when both are ready. An interlude with a gate
+ * (waterfront-1c waits for the boats, waterfront-1d only while Waterfront has no manager, the head interludes for their head) also waits for it.
+ */
 export function pendingScenes(s: GameState, scenes: Scene[]): Scene[] {
   const seen = new Set(s.seenScenes);
   const main: Scene[] = [];
   const interludes: Scene[] = [];
-  for (const sc of scenes) if (!seen.has(sc.id) && sceneTriggered(s, sc)) (sc.beat === 'interlude' ? interludes : main).push(sc);
+  const facts = gateFacts(s);
+  const gates = cityOf(s).ambient;
+  for (const sc of scenes)
+    if (!seen.has(sc.id) && sceneTriggered(s, sc) && (gates?.gateMet(sc.id, facts) ?? true)) (sc.beat === 'interlude' ? interludes : main).push(sc);
   return interludes.length ? main.concat(interludes) : main;
 }
 
@@ -124,3 +138,21 @@ export function migrateStory(game: GameState, fromVersion: number): GameState {
   const seenScenes = [...game.seenScenes, ...[...seen].filter((id) => !game.seenScenes.includes(id))];
   return { ...game, seenScenes, sceneAt };
 }
+
+// ---------- Ambient beats (v5.25, card T3) ----------
+
+/** The city's ambient barks and banners (the home city has them; a city without a table has none). */
+const ambientBeats = (s: GameState): readonly AmbientBeat[] => cityOf(s).ambient?.beats ?? [];
+
+/** The beat has played: its key is stamped in `sceneAt` (saved, and kept by a franchise, with the play second it played at). */
+export const ambientPlayed = (s: Pick<GameState, 'sceneAt'>, beat: AmbientBeat): boolean => s.sceneAt[beat.key] !== undefined;
+
+/** The ambient beats due now and not played yet, in table order: the scene they follow was seen long enough ago and their own gate holds (`ambientDue`). */
+export function dueAmbient(s: GameState): AmbientBeat[] {
+  const facts = gateFacts(s);
+  return ambientBeats(s).filter((b) => !ambientPlayed(s, b) && s.seenScenes.includes(b.after) && cityOf(s).ambient!.due(b, s.sceneAt, s.playSeconds, facts));
+}
+
+/** Record a beat as played (once, ever), stamped with the play second. */
+export const markAmbientPlayed = (s: GameState, beat: AmbientBeat): GameState =>
+  ambientPlayed(s, beat) ? s : { ...s, sceneAt: { ...s.sceneAt, [beat.key]: s.playSeconds } };

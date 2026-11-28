@@ -34,12 +34,20 @@ export function giftPose(t: number, still = false): GiftPose {
 }
 
 /**
- * Whether a tap at scene point (`x`, `y`) lands on the box: its own rect, grown to `MIN_TAP_PT` points on each axis where the rect is smaller (`s` is the scene's scale, points
- * per scene unit), around its middle.
+ * The box's tap target in scene units: its own rect, grown to `MIN_TAP_PT` points on each axis where the rect is smaller, around its middle (`s` is the scene's scale, points per
+ * scene unit). The storefront lays an invisible button over it.
  */
-export function giftHit(rect: Rect, x: number, y: number, s: number): boolean {
+export function giftTapRect(rect: Rect, s: number): Rect {
   const reach = MIN_TAP_PT / s / 2;
   const cx = (rect.x0 + rect.x1) / 2;
   const cy = (rect.y0 + rect.y1) / 2;
-  return Math.abs(x - cx) <= Math.max(reach, (rect.x1 - rect.x0) / 2) && Math.abs(y - cy) <= Math.max(reach, (rect.y1 - rect.y0) / 2);
+  const hw = Math.max(reach, (rect.x1 - rect.x0) / 2);
+  const hh = Math.max(reach, (rect.y1 - rect.y0) / 2);
+  return { x0: cx - hw, x1: cx + hw, y0: cy - hh, y1: cy + hh };
+}
+
+/** Whether a tap at scene point (`x`, `y`) lands on the box's tap target. */
+export function giftHit(rect: Rect, x: number, y: number, s: number): boolean {
+  const t = giftTapRect(rect, s);
+  return x >= t.x0 && x <= t.x1 && y >= t.y0 && y <= t.y1;
 }

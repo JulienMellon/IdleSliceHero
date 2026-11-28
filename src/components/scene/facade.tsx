@@ -202,7 +202,7 @@ export const FrontWall = memo(function FrontWall({
         </G>
       )}
       {hasFixture(reno, 'crown-sign') && (
-        <G transform={`translate(${fcx} ${fTop - 3})`}>
+        <G transform={`translate(${fcx} ${fTop - 34})`}>
           <CrownSign />
         </G>
       )}

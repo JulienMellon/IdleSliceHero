@@ -871,11 +871,14 @@ export const BrassPost = memo(function BrassPost({ h }: { h: number }) {
   );
 });
 
-/** Uptown's gold crown over the sign, with a twinkle: 30 wide, 24 tall, the origin its foot's middle. */
+/** Uptown's gold crown over the sign, with a twinkle: 32 wide, 24 tall, the origin its foot's middle, on a stem 32 long that reaches down to the sign. */
 export const CrownSign = memo(function CrownSign() {
   return (
     <G>
       <Circle cx={0} cy={-14} r={16} fill="#FFE08A" opacity={0.25} />
+      {/* the stem that holds it up over the sign, so it stands clear of the sign's own chips */}
+      <Rect x={-2.2} y={0} width={4.4} height={32} fill={GOLD} {...L} />
+      <Path d="M-0.8 2 V30" stroke="#fff" strokeWidth={0.8} opacity={0.6} />
       <Path d="M-14 0 L-16 -16 L-8 -9 L0 -20 L8 -9 L16 -16 L14 0 Z" fill={GOLD} {...L} />
       <Rect x={-14.6} y={-4} width={29.2} height={4.4} rx={1} fill={GOLD_LIGHT} {...L} />
       {[

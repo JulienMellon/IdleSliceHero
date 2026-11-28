@@ -20,6 +20,7 @@ import { activePrefsKey, NO_PREFS, parsePrefs, withAdGrant, type StorePrefs } fr
 import { collectSize, purchaseSting, type Purchase } from '../audio/logic';
 import { pickScene, resolveScene, resumeSceneEnd, scenePacesGap } from '../engine/cutscene-input';
 import { cityOf } from '../content/cities';
+import { HEAD_BARKS } from '../content/heads';
 import { t } from '../content/copy';
 import { TUNING, type DecorKind } from '../content/tuning';
 import type { NeighborhoodId, Scene } from '../content/types';
@@ -27,6 +28,7 @@ import { money } from '../engine/format';
 import * as B from '../engine/bonus';
 import { buyMany, buyPlan, type BuyAmount } from '../engine/buy-many';
 import { markMissedZeroShown, markReportOpened } from '../engine/chapters';
+import { dueAmbient, markAmbientPlayed } from '../engine/story';
 import * as G from '../engine/game';
 import * as N from '../engine/night-oven';
 import * as O from '../engine/orders';
@@ -149,6 +151,8 @@ interface Store {
   /** Short-lived message, e.g. "Not enough cash". */
   /** `need`: a need-cash toast clears itself once the player can afford it. */
   toast: { text: string; at: number; need?: number } | null;
+  /** v5.25 (card T3): an ambient bark: `speaker` says `text` over `shop`'s kitchen for HEAD_BARKS.seconds (the scene draws it; not saved). Its banner twin uses `toast`. */
+  ambientBark: { key: string; text: string; speaker: string; shop: NeighborhoodId; at: number } | null;
 
   load: () => Promise<void>;
   save: () => Promise<void>;
@@ -259,6 +263,9 @@ const benefit = (fn: () => boolean): boolean => {
   return true;
 };
 
+/** Wall ms the last ambient beat played (not saved): the next waits a head's bubble gap. */
+let lastAmbientAt = Number.NEGATIVE_INFINITY;
+
 export const useGame = create<Store>((set, get) => {
   /** After any state change, queue the next story scene if one has triggered. */
   const queueScene = () => {
@@ -267,6 +274,36 @@ export const useGame = create<Store>((set, get) => {
     if (!get().titleDone || tutorialHoldsStory(game)) return;
     const next = pickScene(game, cityOf(game).scenes, gameNow(), lastKitchenTap, !!playing, lastSceneEndPlay);
     if (next) set({ playing: { scene: next, replay: false } });
+    else if (!playing) playAmbient();
+  };
+
+  /**
+   * v5.25 (card T3): the Waterfront stretch's ambient beats (content HOME_AMBIENT, engine `dueAmbient`). One due beat plays at a time, no sooner than a
+   * head's bubble gap after the last, while no scene plays: a bark is set for the scene to draw over its head, a banner is a toast. Each is stamped in
+   * the save (`sceneAt[key]`) as it plays, so it is never played twice.
+   */
+  const playAmbient = () => {
+    const { game, ambientBark, toast } = get();
+    const at = gameNow();
+    if (!get().titleDone || tutorialHoldsStory(game) || get().offline) return;
+    if (ambientBark || (toast && at - toast.at < 3000) || at - lastAmbientAt < HEAD_BARKS.gap * 1000) return;
+    const beat = dueAmbient(game)[0];
+    if (!beat) return;
+    lastAmbientAt = at;
+    const text = t(beat.key, {}, cityOf(game).id);
+    const next = markAmbientPlayed(game, beat);
+    if (beat.kind === 'bark') {
+      set({ game: next, ambientBark: { key: beat.key, text, speaker: beat.speaker ?? '', shop: beat.shop, at } });
+      setTimeout(() => {
+        if (get().ambientBark?.at === at) set({ ambientBark: null });
+      }, HEAD_BARKS.seconds * 1000);
+    } else {
+      set({ game: next, toast: { text, at } });
+      setTimeout(() => {
+        if (get().toast?.at === at) set({ toast: null });
+      }, 3000);
+    }
+    void get().save();
   };
 
   /** `sound` describes a successful purchase for the audio director (docs/AUDIO.md); a refusal always bonks. */
@@ -418,6 +455,7 @@ export const useGame = create<Store>((set, get) => {
     lastSceneEndPlay: null,
     playing: null,
     toast: null,
+    ambientBark: null,
     bonusHold: false,
     layerHold: false,
     background: false,
@@ -663,7 +701,7 @@ export const useGame = create<Store>((set, get) => {
         if (!canFranchise(g)) return false;
         emitAudio({ type: 'click' });
         // the new city's story starts at once (no wait left over from the last scene, no old city's taps or toast), and the offline summary of the old one is moot
-        set({ game: franchiseCity(g, gameNow()), lastSceneEndPlay: null, offline: null, rushTaps: [], lastKitchenTap: 0, toast: null });
+        set({ game: franchiseCity(g, gameNow()), lastSceneEndPlay: null, offline: null, rushTaps: [], lastKitchenTap: 0, toast: null, ambientBark: null });
         queueScene();
         void get().save();
         return true;

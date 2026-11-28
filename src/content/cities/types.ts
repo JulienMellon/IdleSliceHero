@@ -4,6 +4,18 @@
 import type { CharacterId, NeighborhoodId, Scene, VehicleId } from '../types';
 import type { HeadKind } from '../tuning';
 import type { BarkStation, BarkTrigger, ManagerBarks } from '../heads';
+import type { AmbientBeat, GateFacts } from './home/scenes/ambient';
+
+export type { AmbientBeat, GateFacts };
+
+/** v5.25 (card T3): a city's ambient barks and banners, and the extra gate of its interludes (the engine's `pendingScenes` and the store read them; a city without it has neither). */
+export interface CityAmbient {
+  beats: readonly AmbientBeat[];
+  /** Whether the scene's extra gate holds (true for a scene with none). */
+  gateMet: (sceneId: string, facts: GateFacts) => boolean;
+  /** Whether a beat is due (the scene it follows was seen long enough ago, its own gate holds). */
+  due: (beat: AmbientBeat, sceneAt: Readonly<Record<string, number | undefined>>, playSeconds: number, facts: Pick<GateFacts, 'managed'>) => boolean;
+}
 
 export interface NeighborhoodDef {
   id: NeighborhoodId;
@@ -179,6 +191,8 @@ export interface CityDef {
   scenes: Scene[];
   /** The main beats' chapters in story order (v5.21). A scene with no chapter keeps its own trigger; a city without any (Boston) plays by triggers alone. */
   chapters?: Chapter[];
+  /** v5.25 (card T3): ambient beats and interlude gates (the home city has them). */
+  ambient?: CityAmbient;
   /** One perk per finale. */
   perks: Partial<Record<NeighborhoodId, PerkDef>>;
   /** The layer each neighbourhood plays (null: none). */

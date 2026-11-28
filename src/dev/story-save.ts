@@ -7,7 +7,7 @@ import { TEST_PREFS_KEY } from '../components/store/store-model';
 import { TEST_LEDGER_KEY } from '../services/purchases-core';
 import { challengeOffered, firstHood, markSceneSeen, migrate, sceneId, TUTORIAL_DONE, type GameState } from '../engine/game';
 import { rivalOpen } from '../engine/features/layers/rival';
-import { sceneTriggered } from '../engine/story';
+import { gateFacts, sceneTriggered } from '../engine/story';
 import { CHEATS_KEY } from './cheat-prefs';
 import { BACKUP_KEY, REAL_SAVE_KEY, TEST_SAVE_KEY, type JumpHost, type KeyValue } from './jumps';
 
@@ -47,6 +47,7 @@ export function nextBeatNow(g: GameState): NextBeat {
     if (tr.kind !== 'after' || seen.has(sc.id)) continue;
     if (sc.requires?.some((id) => !seen.has(id)) || !seen.has(tr.scene) || !g.shops[tr.neighborhood]?.built) continue;
     if (sceneTriggered(g, sc)) continue; // already due: nothing waits
+    if (!(city.ambient?.gateMet(sc.id, gateFacts(g)) ?? true)) continue; // v5.25: waits on a gate (boats, a head, a manager), not on a gap: the row cannot move that
     const due = (g.sceneAt[tr.scene] ?? 0) + tr.seconds;
     // one second past the line, so a float sum can never land a hair short of it
     if (!best || due < best.due) best = { due, sceneId: sc.id, label: sc.title, stamp: tr.scene, at: g.playSeconds - tr.seconds - 1 };

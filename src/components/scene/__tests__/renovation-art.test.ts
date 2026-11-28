@@ -47,6 +47,27 @@ describe('the table of things', () => {
     }
     expect(Object.keys(DEFS)).toHaveLength(54);
   });
+  test('the University, Industrial and Uptown fixtures are each drawn: on the front wall (facade.tsx) or as a piece of their own (renovation-props-b.tsx)', () => {
+    const facade = fs.readFileSync(path.resolve(__dirname, '../facade.tsx'), 'utf8');
+    const pieces = fs.readFileSync(path.resolve(__dirname, '../renovation-props-b.tsx'), 'utf8');
+    for (const f of ['banner', 'clock-tower', 'steel-shutter', 'chimney', 'gantry', 'brass-door', 'crown-sign'])
+      expect(facade).toContain(`hasFixture(reno, '${f}')`);
+    for (const piece of ['LoungeCounter', 'MarbleCounter']) expect(pieces).toContain(`export const ${piece}`);
+    expect(['university', 'industrial', 'uptown'].flatMap((set) => fixturesOf(set as RenoShop))).toEqual([
+      'banner',
+      'lounge-counter',
+      'clock-tower',
+      'steel-shutter',
+      'chimney',
+      'gantry',
+      'brass-door',
+      'marble-counter',
+      'crown-sign',
+    ]);
+  });
+  test('each shop of the six has one plaque frame of its own', () => {
+    expect(new Set(RENO_SHOPS.map(plaqueFrame)).size).toBe(6);
+  });
   test('a thing is named by its id without the level and the shop', () => {
     expect(thingOf('reno2-downtown-pendant-lamps')).toBe('pendant-lamps');
     expect(RENO_ITEMS.suburbs[2].decor.map(thingOf)).toEqual(['cadillac', 'trophy-case', 'popcorn-cart']);

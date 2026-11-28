@@ -5,6 +5,7 @@ import { HOME_CHAPTERS } from './chapters';
 import { CITY_NAME, HEADS, HOME_BID, HOME_LAYERS, MANAGERS, NEIGHBORHOODS, PERKS } from './data';
 import { HOME_FIT } from './fit';
 import { HOME_SCENES } from './scenes';
+import { HOME_AMBIENT, ambientDue, sceneGateMet } from './scenes/ambient';
 import { HOME_BARKS, HOME_FOUNDER, HOME_MANAGER_BARKS, HOME_NIGHT_OVEN_LINES, HOME_ORDER_CAST } from './voice';
 
 export const HOME_CITY: CityDef = {
@@ -15,6 +16,7 @@ export const HOME_CITY: CityDef = {
   neighbourhoods: NEIGHBORHOODS,
   scenes: HOME_SCENES,
   chapters: HOME_CHAPTERS,
+  ambient: { beats: HOME_AMBIENT, gateMet: sceneGateMet, due: ambientDue },
   perks: PERKS,
   layers: HOME_LAYERS,
   heads: HEADS,
