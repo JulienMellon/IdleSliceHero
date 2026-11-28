@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.24-r3                # r3 verify: True 0 [], layout 0 new; 7 changed vs v5.24-r2
 codecritic_range_start: afa3189   # v5.25 start (v5.24 closed commit)
 cards:                 # todo | running | done | partial | blocked
-  E8 partial | N3 done | E10 done | W6 done | E9 done | S6 running | S7 todo | T3 todo | U7 todo | A6 todo
+  E8 partial | N3 done | E10 done | W6 done | E9 done | S6 done | S7 running | T3 todo | U7 todo | A6 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.24/review-r3-critic.md (r3 NOT SATISFIED, minors only -> close; bug 0 major 0 minor 6; E1 U2 S2 N1; D577 D586 D572 D573 D564 D570 carried)
   code:   docs/build/v5.24/review-r3-code.md (r3 APPROVED; blocker/high 0 medium 1 low 33; E6 U16 S4 N7 A1; U40 carried)
@@ -40,3 +40,4 @@ next: start docs/build/sessions/S13-v5.25.md (wave 1: E8 || N3). Julien: create 
 - 2026-11-28 S13 W6 done (COPY-v5.25.md; 4 interludes). Wave 2 end. Wave 3 E9 || S6 launched.
 - 2026-11-28 S13 E9 partial (gates, gift, offline done; sim/tests red) -> resumed with Needs 1,2,3,5. S6 sent cameo gate + home-ids-guard. 58-min Waterfront gap -> W6 resume after wave 3.
 - 2026-11-28 S13 E9 done (3727 tests; Suburbs 19.6, Game Day 26.8, boats 56.2, rival 169; Boston = Home). W6 resumed for Waterfront-gap interludes. scripts/layout_allow.json fails prettier (owner: verify).
+- 2026-11-28 S13 S6 done (3839 tests). Wave 3 end. S7 launched; T3 waits for W6's gap interludes.

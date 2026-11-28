@@ -20,3 +20,6 @@
 - W3 E9: offline is `offlineBoostOf` and `OfflineResult.boost` in game.ts. game-store must use `r.boost`.
 - W3 E9 -> S6: Storefront/cameo.ts must check `cameoOpen(g)`.
 - W3 E9 -> writer/T3: the session-1 scene gap is now 58 min (Waterfront's first scene at 32.5 min to its manager at 90.5 min). It needs interludes there, written by W6 (resume) and landed by T3. SESSION1.suburbsFinale is 172 ±15.
+- W3 S6: src/components/scene/renovation-art.ts provides RenoDress, `renoSpots`, `fixtureSpots` and `renoCovers`. src/components/scene/renovation-props.tsx has RenoPlaque and the decor drawings. FurnitureInputs gains `reno`, protected.ts gains `reno` covers. cameo.ts `visitShown` (gated by `cameoOpen`). Fixture 233_reno_a.py; shots 235-238.
+- W3 S6 -> S7: add `DEFS` and DRAW entries for University, Industrial and Uptown in renovation-art.ts and renovation-props.tsx. Until then `renoSpots` skips them and the plaque falls back to the oval frame. Check that street items (rowboat, anchor, crates, Vespa, Cadillac) are not hidden under the report strip, the tree or the scooter.
+- W3 S6: first-serve cash pop already exists ("×2 · +$6", shot 238); D495 pop holds.

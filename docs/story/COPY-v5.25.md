@@ -273,3 +273,128 @@ Lands in: T3. Placeholders, filled by code: `{shop}` neighbourhood name, `{mult}
 | `scene.suburbs-2b.p3.caption` | suburbs | dale (happy) | — | Saturday. The Mudhens score. Then nobody else does. |
 | `scene.suburbs-2b.p3.line1` | | | Dale | We WON? We WON! Somebody hold my clipboard. I need to lie on the grass. |
 | `scene.suburbs-2b.p3.line2` | | | Dale | First W in Mudhens history, pal. Word’s gonna get around. |
+
+## 6. The Waterfront stretch (waterfront-1 at 32.5 min to the Waterfront manager at 90.5 min)
+
+### 6.1 waterfront-1b
+| key | value |
+| --- | --- |
+| `scene.waterfront-1b.title` | The Lookout |
+| `scene.waterfront-1b.trigger` | after waterfront-1 +540 s |
+| `scene.waterfront-1b.meta` | city home · character marisol · neighborhood waterfront · beat interlude |
+
+| key | backdrop | cast | speaker | text |
+| --- | --- | --- | --- | --- |
+| `scene.waterfront-1b.p1.caption` | shop | marisol (neutral) | — | Captain Marisol has claimed the stool by the window. It faces the sea. |
+| `scene.waterfront-1b.p1.line1` | | | Captain Marisol | Every shop needs a lookout. I’m the lookout. Also the customer. |
+| `scene.waterfront-1b.p1.line2` | | | You | Want a menu? |
+| `scene.waterfront-1b.p1.line3` | | | Captain Marisol | I want what I had yesterday. Hold the fish. |
+| `scene.waterfront-1b.p2.line1` | waterfront | marisol (happy) | Captain Marisol | Fog rolls in at noon and out by supper. Like a regular. |
+| `scene.waterfront-1b.p2.line2` | | | Captain Marisol | Dock crews can’t see a thing in it. They follow your oven by the smell. |
+| `scene.waterfront-1b.p3.line1` | shop | marisol (neutral) | Gus | Captain. Oven’s running hot. Seen hotter. In a storm. |
+| `scene.waterfront-1b.p3.line2` | | | Captain Marisol | Then feed it, Gus. And kid, ask me about this dock sometime. Not today. |
+
+### 6.2 downtown-4b
+| key | value |
+| --- | --- |
+| `scene.downtown-4b.title` | Where Spoons Live |
+| `scene.downtown-4b.trigger` | after waterfront-1b +540 s |
+| `scene.downtown-4b.meta` | city home · character nonna-rosa · neighborhood downtown · beat interlude |
+
+| key | backdrop | cast | speaker | text |
+| --- | --- | --- | --- | --- |
+| `scene.downtown-4b.p1.caption` | shop | nonna-rosa (happy) | — | Downtown. Nonna runs the kitchen now. The kitchen has noticed. |
+| `scene.downtown-4b.p1.line1` | | | Marco | Nonna moved every spoon. I can’t find anything. I love it. |
+| `scene.downtown-4b.p1.line2` | | | Nonna Rosa | A spoon lives where Nonna puts it. Like a grandchild. |
+| `scene.downtown-4b.p2.line1` | shop | nonna-rosa (neutral) | Nonna Rosa | So. You go to the Waterfront every day now. With the fishermen. |
+| `scene.downtown-4b.p2.line2` | | | You | It’s a good shop, Nonna. |
+| `scene.downtown-4b.p2.line3` | | | Nonna Rosa | Good, you say. Eat something there. The sea makes people thin. |
+| `scene.downtown-4b.p3.caption` | shop | nonna-rosa (surprised) | — | Nonna squints at the address on a Waterfront order. |
+| `scene.downtown-4b.p3.line1` | | | Nonna Rosa | The Waterfront? Is there still a woman who shouts at gulls? Tall? Bossy? |
+| `scene.downtown-4b.p3.line2` | | | Nonna Rosa | Never mind. Tell nobody I asked. |
+
+### 6.3 waterfront-1c
+| key | value |
+| --- | --- |
+| `scene.waterfront-1c.title` | Gulls and Crews |
+| `scene.waterfront-1c.trigger` | after downtown-4b +540 s, and not before boats are open |
+| `scene.waterfront-1c.meta` | city home · character marisol · neighborhood waterfront · beat interlude |
+
+| key | backdrop | cast | speaker | text |
+| --- | --- | --- | --- | --- |
+| `scene.waterfront-1c.p1.caption` | waterfront | marisol (happy) | — | A fishing boat ties up at the dock. Its crew follows the smell. |
+| `scene.waterfront-1c.p1.line1` | | | Captain Marisol | That’s the Gray Gull. Her crew eats like gulls. Loud, and all at once. |
+| `scene.waterfront-1c.p2.line1` | waterfront | marisol (surprised) | You | Nonna Rosa asked if you still shout at gulls. |
+| `scene.waterfront-1c.p2.line2` | | | Captain Marisol | Rosa? Rosa from the bread stall? She’s still alive and still nosy? |
+| `scene.waterfront-1c.p2.line3` | | | Captain Marisol | Ha! Of course she is. Too stubborn for anything else. |
+| `scene.waterfront-1c.p3.line1` | waterfront | marisol (neutral) | Finn | Captain! The crew wants their pies tied up with string! |
+| `scene.waterfront-1c.p3.line2` | | | Captain Marisol | Then tie ’em, Finn. A bowline. And kid: tell Rosa I haven’t forgotten the sardine. |
+
+### 6.4 suburbs-1b
+| key | value |
+| --- | --- |
+| `scene.suburbs-1b.title` | Car Wash |
+| `scene.suburbs-1b.trigger` | after waterfront-1c +540 s |
+| `scene.suburbs-1b.meta` | city home · character dale · neighborhood suburbs · beat interlude |
+
+| key | backdrop | cast | speaker | text |
+| --- | --- | --- | --- | --- |
+| `scene.suburbs-1b.p1.caption` | suburbs | dale (happy) | — | Mudhens car wash. Nobody’s car is getting any cleaner. |
+| `scene.suburbs-1b.p1.line1` | | | Dale | Fundraiser, pal! Every dollar goes to new shin guards. And hoses. |
+| `scene.suburbs-1b.p2.line1` | suburbs | dale (surprised) | Hank | A good wash is a patient wash, sport. |
+| `scene.suburbs-1b.p2.line2` | | | Dale | Hank, you’ve been on the same minivan since breakfast. |
+| `scene.suburbs-1b.p2.line3` | | | Hank | And she’s never looked better. |
+| `scene.suburbs-1b.p3.line1` | suburbs | dale (happy) | Dale | Pizza for every washer! It’s in the budget. I am the budget. |
+| `scene.suburbs-1b.p3.line2` | | | Dale | And Saturday, pal, I’ve got a secret play. I drew it on a napkin. Then I ate off it. |
+
+### 6.5 downtown-4c
+| key | value |
+| --- | --- |
+| `scene.downtown-4c.title` | The Sardine |
+| `scene.downtown-4c.trigger` | after suburbs-1b +540 s |
+| `scene.downtown-4c.meta` | city home · character nonna-rosa · neighborhood downtown · beat interlude |
+
+| key | backdrop | cast | speaker | text |
+| --- | --- | --- | --- | --- |
+| `scene.downtown-4c.p1.line1` | shop | nonna-rosa (surprised) | You | Captain Marisol says she hasn’t forgotten the sardine. |
+| `scene.downtown-4c.p1.line2` | | | Nonna Rosa | MARISOL. Ay. The sardine was fine. A little old. Like her. |
+| `scene.downtown-4c.p2.caption` | shop | nonna-rosa (happy) | — | Long ago, two stalls at the old fish market. Bread on one side. Fish on the other. |
+| `scene.downtown-4c.p2.line1` | | | Nonna Rosa | Every morning we argued who had the best stall. Every morning I won. |
+| `scene.downtown-4c.p2.line2` | | | You | And what does she say? |
+| `scene.downtown-4c.p2.line3` | | | Nonna Rosa | She says the same. Is a long argument, cara. |
+| `scene.downtown-4c.p3.line1` | shop | nonna-rosa (neutral) | Nonna Rosa | Tell her: Rosa’s pizza feeds the whole Waterfront now. She will hate that. |
+| `scene.downtown-4c.p3.line2` | | | Marco | Can I take the message? I want to see her face! |
+
+### 6.6 waterfront-1d
+| key | value |
+| --- | --- |
+| `scene.waterfront-1d.title` | Don’t Tell Rosa |
+| `scene.waterfront-1d.trigger` | after downtown-4c +540 s, only while Waterfront has no manager |
+| `scene.waterfront-1d.meta` | city home · character marisol · neighborhood waterfront · beat interlude |
+
+| key | backdrop | cast | speaker | text |
+| --- | --- | --- | --- | --- |
+| `scene.waterfront-1d.p1.line1` | waterfront | marisol (angry) | You | Nonna says her pizza feeds the whole Waterfront now. |
+| `scene.waterfront-1d.p1.line2` | | | Captain Marisol | Her pizza. In MY harbor. In MY fog. |
+| `scene.waterfront-1d.p2.caption` | waterfront | marisol (happy) | — | Marisol takes a slice. Then another. Slowly. |
+| `scene.waterfront-1d.p2.line1` | | | Captain Marisol | Fine. It’s good. Don’t you dare tell her I said so. |
+| `scene.waterfront-1d.p2.line2` | | | You | My lips are sealed, Captain. |
+| `scene.waterfront-1d.p3.line1` | shop | marisol (neutral) | Captain Marisol | Look at this crowd, kid. A shop this busy needs a manager. |
+| `scene.waterfront-1d.p3.line2` | | | Captain Marisol | Hire one, and I’ll make an introduction. I know a fellow. |
+
+### 6.7 Ambient beats (one every 3 min between the interludes)
+| key | trigger | shop | kind | speaker | text |
+| --- | --- | --- | --- | --- | --- |
+| `ambient.wf.1` | after waterfront-1 +180 s | waterfront | bark | Captain Marisol | Fog’s in. Crews will follow the smell. Bake, kid! |
+| `ambient.wf.2` | after waterfront-1 +360 s | downtown | bark | Nonna Rosa | My kitchen, my rules. The main rule: eat something. |
+| `ambient.wf.3` | after waterfront-1b +180 s | suburbs | bark | Dale | Halftime tip, pal: hustle wins games. So does pizza. |
+| `ambient.wf.4` | after waterfront-1b +360 s | waterfront | banner | — | The fog smells like pizza now |
+| `ambient.wf.5` | after downtown-4b +180 s | waterfront | bark | Captain Marisol | Gulls circling your roof. Take it as a compliment. |
+| `ambient.wf.6` | after downtown-4b +360 s | downtown | bark | Marco | Nonna moved the flour. I found it. It was on me. |
+| `ambient.wf.7` | after waterfront-1c +180 s | waterfront | bark | Captain Marisol | More crews tie up every day. You did that, kid. |
+| `ambient.wf.8` | after waterfront-1c +360 s | suburbs | bark | Dale | Orange slices are retired, pal. Pizza made the team. |
+| `ambient.wf.9` | after suburbs-1b +180 s | suburbs | banner | — | Every minivan has a pizza box |
+| `ambient.wf.10` | after suburbs-1b +360 s | downtown | bark | Lucia | Zia hums at my oven now. I pretend not to hear. |
+| `ambient.wf.11` | after downtown-4c +180 s | waterfront | bark | Captain Marisol | Harbor’s as busy as I’ve ever seen it. Almost. |
+| `ambient.wf.12` | after downtown-4c +360 s | waterfront | banner | — | Dock crews line up at your door |
+| `ambient.wf.13` | after waterfront-1d +120 s, only while Waterfront has no manager | waterfront | bark | Captain Marisol | Still no manager, kid? I’m retired. Mostly. |

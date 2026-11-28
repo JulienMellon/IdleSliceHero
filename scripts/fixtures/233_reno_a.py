@@ -55,6 +55,10 @@ def run(ctx):
     expect_text(page, None, plaque(3))
     shot(page, "237-waterfront-reno-3", 1.0)
 
+    first_serve(b)
+
+
+def first_serve(b):
     # 238: a new game's first serves pop "+$N" over the counter, in whole dollars: an unmanaged first shop, tutorial done, tapped through prep, oven and counter
     sv = hood_save("downtown", cash=0, vehicle=0, managed=False, prep=1, ovens=1, counter=1, drivers=1, tables=1, footprint=0, sold=0)
     sv.update(lastSavedAt=T0_MS, rewards={"giftShownDay": day_str()})
@@ -65,4 +69,4 @@ def run(ctx):
             tap_station(page, st)
             advance(page, 400)
     expect_text(page, None, r"\+\$\d+(?![\d.])")
-    shot(page, "238-first-serve-pop", 1.0)
+    shot(page, "238-first-serve-pop", 0.05)   # right after the pop shows: a longer wait would let it fade
