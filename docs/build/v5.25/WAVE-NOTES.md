@@ -7,3 +7,4 @@
 - W1 E8: src/content/franchise.ts homeDivisor 9.1e19, PRICE_FIT {} (Boston matches Home).
 - W1 N3/E8: Grant has `cash?`; STARTER_CASH = 7000 in src/services/grants.ts (fitted 6,667; kept 7,000); applyGrant in src/engine/offers.ts pays grant.cash. Store blurb key `store.starter.blurb` = "{cash} + {n} 💎 + {mult}x for {span}" in src/content/copy/home/store-copy.ts; `boostSpan` helper in store-model.ts.
 - W1 E8: first-serve cash pop unverified; S6 checks whether src/app/index.tsx's existing pop covers D495.
+- W1 decision (Julien 2026-11-28): E8's retune folds into E10 (milestones [25], footprintBoost 1.1, takeover reward cap ~1/4 next hood, ladder/fitstars refit, Downtown scene slot). W6 writes the new Downtown scene; T3 lands it in src/content/cities/home/scenes/downtown.ts.
