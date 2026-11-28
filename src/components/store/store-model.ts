@@ -53,10 +53,18 @@ const looksLine = (diamonds: number, prices?: readonly number[]): string => {
 };
 const starterGrant = GRANTS.starter_pack;
 
+/** A boost's length in the card's words: "30 min" under an hour, "24 h" after ("2 h 30 min" is never needed). */
+const boostSpan = (hours: number): string => (hours < 1 ? `${Math.round(hours * 60)} min` : `${hours} h`);
+
 export const PRODUCTS: Readonly<Record<ProductId, ProductInfo>> = {
   starter_pack: {
     title: t('store.starter.title'),
-    blurb: t('store.starter.blurb', { n: starterGrant.diamonds, mult: starterGrant.boost?.mult ?? 1, hours: starterGrant.boost?.hours ?? 0 }),
+    blurb: t('store.starter.blurb', {
+      cash: money(starterGrant.cash ?? 0),
+      n: starterGrant.diamonds,
+      mult: starterGrant.boost?.mult ?? 1,
+      span: boostSpan(starterGrant.boost?.hours ?? 0),
+    }),
   },
   nonnas_plus: { title: t('store.plus.title'), blurb: 'Every ad reward at one tap, no ad. Offline earnings 2×, built in.' },
   diamonds_80: { title: t('store.pack.diamonds_80.title'), blurb: '' },
@@ -96,11 +104,13 @@ export function productChips(id: ProductId, income = 0, lookPrices: readonly num
     const cash = income * g.boost.hours * 3600;
     out.push({
       kind: 'boost',
-      title: `${g.boost.mult}× · ${g.boost.hours} h`,
+      title: `${g.boost.mult}× · ${boostSpan(g.boost.hours)}`,
       sub:
         cash > 0
           ? t('store.chip.boost', { cash: money(cash) })
-          : t('store.chip.boost.plain', { span: g.boost.hours === 24 ? 'a full day' : `${g.boost.hours} hours` }),
+          : t('store.chip.boost.plain', {
+              span: g.boost.hours === 24 ? 'a full day' : g.boost.hours < 1 ? `${Math.round(g.boost.hours * 60)} minutes` : `${g.boost.hours} hours`,
+            }),
     });
   }
   if (g.cosmetic) out.push({ kind: 'awning', title: 'Founder awning', sub: t('store.chip.awning') });

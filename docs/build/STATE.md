@@ -9,7 +9,7 @@ round: r1              # r1 | r2 | r3
 last_shots: v5.24-r3                # r3 verify: True 0 [], layout 0 new; 7 changed vs v5.24-r2
 codecritic_range_start: afa3189   # v5.25 start (v5.24 closed commit)
 cards:                 # todo | running | done | partial | blocked
-  E8 running | N3 running | E10 todo | W6 todo | E9 todo | S6 todo | S7 todo | T3 todo | U7 todo | A6 todo
+  E8 running | N3 partial | E10 todo | W6 todo | E9 todo | S6 todo | S7 todo | T3 todo | U7 todo | A6 todo
 reviews:               # latest review file per critic, with verdict and counts
   critic: docs/build/v5.24/review-r3-critic.md (r3 NOT SATISFIED, minors only -> close; bug 0 major 0 minor 6; E1 U2 S2 N1; D577 D586 D572 D573 D564 D570 carried)
   code:   docs/build/v5.24/review-r3-code.md (r3 APPROVED; blocker/high 0 medium 1 low 33; E6 U16 S4 N7 A1; U40 carried)
@@ -31,3 +31,4 @@ next: start docs/build/sessions/S13-v5.25.md (wave 1: E8 || N3). Julien: create 
 - 2026-11-28 S12 planning: STATE step waves -> setup (VERSION.md says setup; v5.25 cards written with Julien). PR #47 merged.
 - 2026-11-28 S12 planning: v5.25 scoped with Julien (full reset, ladder 20K/80K/200K/500K/1.5M, renovation x2-x4, 7-day city, gifts, offline boosts, splash_theme, ShopEars SFX, Starter Pack retune, whole numbers). 10 cards written; STATE -> waves r1.
 - 2026-11-28 S13 wave 1 launched: E8 || N3.
+- 2026-11-28 S13 N3 partial (Needs: offers.ts applyGrant cash -> routed to E8; STARTER_CASH 7000 placeholder). ASC description: "Nonna's Starter Pack: about $7K in cash, 400 diamonds and 2x income for 30 minutes, plus the Founder awning. One per player."

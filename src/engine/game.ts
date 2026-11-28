@@ -61,13 +61,14 @@ export const SAVE_VERSION = 10;
 /**
  * C106: the economy marker. 2 = the v5.13 retune (costMult = orderValue, 4 h offline cap, Pier 9 $120M); 3 = the v5.16 rules
  * (managers and heads priced apart, three heads sell half speed while you are away, station prices grow at their own rates,
- * cash rewards cut). A save without the marker is from before the marker existed and loads as 2; one that has it keeps its own.
- * Old saves keep their cash and hires untouched (nothing is refunded or repriced: they simply buy at the new prices from now on).
+ * cash rewards cut); 4 = the v5.25 curve (one pizza per tap, the Home ladder Suburbs $20K .. Uptown $1.5M, whole numbers on screen).
+ * v5.25 (Julien, 2026-11-28, pre-launch): a save whose marker is below 4, or that has none, is replaced by `newGame()` in `migrate`.
+ * It is a full reset: nothing carries over, standing IAP grants included.
  * Any later retune that changes prices or income must bump this number and decide in the same change what a save with the old
- * number gets (a refund, a bonus, nothing); it must never silently reprice a save.
+ * number gets (a refund, a bonus, a reset, nothing); it must never silently reprice a save.
  */
-export const ECONOMY = 3;
-/** The economy of a save that carries no marker. */
+export const ECONOMY = 4;
+/** The economy of a save that carries no marker (it is older than the marker, so it resets). */
 const ECONOMY_BEFORE_MARKER = 2;
 
 export interface Shop {
@@ -617,6 +618,8 @@ function migrateOrders(raw: unknown, play: number, now: number, shops: Record<Ne
 export function migrate(raw: unknown, now: number): GameState {
   if (!raw || typeof raw !== 'object') return newGame(now);
   const r = raw as Record<string, unknown>;
+  // v5.25: an older economy is a full reset (ECONOMY above)
+  if (int(r.economy, ECONOMY_BEFORE_MARKER, 0) < ECONOMY) return newGame(now);
   // a save from before cities has no `city`: it is the home city's. An id this build does not know loads as home too.
   const city = cityOf({ city: typeof r.city === 'string' && Object.prototype.hasOwnProperty.call(CITIES, r.city) ? r.city : HOME_ID });
   const base = newGame(now, city.id);
@@ -625,8 +628,7 @@ export function migrate(raw: unknown, now: number): GameState {
   const seen = Array.isArray(r.seenScenes) ? (r.seenScenes as unknown[]).filter((x): x is string => typeof x === 'string') : [];
   const game: GameState = {
     ...base,
-    // C106: a save without the marker is from before it existed (economy 2); one that has it keeps its own
-    economy: int(r.economy, ECONOMY_BEFORE_MARKER, 0),
+    economy: int(r.economy, ECONOMY, 0),
     cash: Math.max(0, num(r.cash, 0)),
     totalEarned: Math.max(0, num(r.totalEarned, 0)),
     vehicle: int(r.vehicle, 0, 0, city.fit.vehicles.length - 1),
@@ -1191,7 +1193,7 @@ export function buyVehicle(s: GameState): BuyResult {
 
 // ---------- Simulation ----------
 
-/** Pies per tapped prep batch: +BATCH_GROWTH.step every BATCH_GROWTH.every prep levels (4 → 6 at Lv 20 …). */
+/** Pies per tapped prep batch: one, +BATCH_GROWTH.step every BATCH_GROWTH.every prep levels (v5.25: 1 → 2 at Lv 10 …). */
 export const tapBatch = (shop: Shop) => BATCH_GROWTH.base + BATCH_GROWTH.step * Math.floor(shop.prep / BATCH_GROWTH.every);
 /** Prep level at which the batch next grows. */
 export const nextBatchLevel = (shop: Shop) => (Math.floor(shop.prep / BATCH_GROWTH.every) + 1) * BATCH_GROWTH.every;

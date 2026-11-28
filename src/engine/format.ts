@@ -9,14 +9,15 @@ function scientific(n: number, fixed: boolean): string {
 }
 
 /**
- * 1234 → "$1.23K", 9.5e6 → "$9.5M". Small values keep one decimal only when useful.
+ * v5.25: every amount is a whole number, rounded down: 0.6 → "$0", 12.5 → "$12", 999.9 → "$999". From 1000 up the K/M/B suffix forms keep their
+ * digits (1500 → "$1.5K", 1234 → "$1.23K", 9.5e6 → "$9.5M"): the only decimal point left is inside a suffix form.
  * `fixed` keeps 3 significant figures ("$3.90K") so a live counter doesn't change width.
  */
 export function money(n: number, fixed = false): string {
   if (!Number.isFinite(n)) return '$0';
-  const sign = n < 0 ? '-' : '';
+  const sign = n <= -1 ? '-' : '';
   n = Math.abs(n);
-  if (n < 1000) return `${sign}$${n < 10 && n % 1 !== 0 ? n.toFixed(1) : Math.floor(n)}`;
+  if (n < 1000) return `${sign}$${Math.floor(n)}`;
   if (n >= SCIENTIFIC_FROM) return `${sign}$${scientific(n, fixed)}`;
   const { tier, digits } = scaled(n);
   return `${sign}$${fixed ? digits : parseFloat(digits)}${SUFFIXES[tier]}`;
@@ -40,7 +41,7 @@ function scaled(n: number): { tier: number; digits: string } {
 export function shownValue(n: number): number {
   if (!Number.isFinite(n)) return 0;
   const a = Math.abs(n);
-  if (a < 1000) return Math.sign(n) * (a < 10 && a % 1 !== 0 ? Math.round(a * 10) / 10 : Math.floor(a));
+  if (a < 1000) return Math.sign(n) * Math.floor(a);
   if (a >= SCIENTIFIC_FROM) return Math.sign(n) * parseFloat(a.toExponential(2));
   const { tier, digits } = scaled(a);
   return Math.sign(n) * parseFloat(digits) * Math.pow(1000, tier);
@@ -50,10 +51,15 @@ export function count(n: number): string {
   return money(n).replace('$', '');
 }
 
-/** A per-second rate: one decimal under 10, then K/M suffixes (never "20000.0"). */
-export function rate(n: number): string {
-  if (!Number.isFinite(n)) return '0.0';
-  return Math.abs(n) < 10 ? n.toFixed(1) : count(n);
+/**
+ * A rate of money per second as the player reads it (v5.25): "$12/s" from $1/s up (suffix forms as in `money`: "$1.5K/s"), "$36/min" under $1/s,
+ * and "<$1/min" under $1/min (and for no income at all). Never a decimal point outside a suffix form.
+ */
+export function rate(perSecond: number): string {
+  if (!Number.isFinite(perSecond) || perSecond <= 0) return '<$1/min';
+  if (perSecond >= 1) return `${money(perSecond)}/s`;
+  const perMinute = Math.floor(perSecond * 60);
+  return perMinute >= 1 ? `$${perMinute}/min` : '<$1/min';
 }
 
 /** "$1.50K / $1.50K": both sides of the goal bar use the same precision so they never disagree. */

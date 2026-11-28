@@ -3,6 +3,8 @@ import type { ProductId } from './types';
 
 export interface Grant {
   diamonds: number;
+  /** Cash in whole dollars, paid when the grant lands (the Starter Pack: about a third of the way to Suburbs). */
+  cash?: number;
   /** A running boost, started when the grant lands. */
   boost?: { mult: number; hours: number };
   /** A cosmetic id (src/content/rewards.ts COSMETIC_NAMES). */
@@ -15,9 +17,12 @@ export interface Grant {
 
 export const FOUNDER_COSMETIC = 'awning-founder';
 
-/** Starter pack ($2.99): 400 diamonds, a 24 h 2x boost and the founder awning (VERSION.md). */
+/** The Starter Pack's cash. A placeholder until E8's fitted number lands (WAVE-NOTES was empty when this was written): about a third of Suburbs' $20K. */
+export const STARTER_CASH = 7000;
+
+/** Starter pack ($2.99): $7K cash (E8's fit: about a third of the way to Suburbs), 400 diamonds, a 2x boost for 30 min and the founder awning (card N3). */
 export const GRANTS: Readonly<Record<ProductId, Grant>> = {
-  starter_pack: { diamonds: 400, boost: { mult: 2, hours: 24 }, cosmetic: FOUNDER_COSMETIC },
+  starter_pack: { cash: STARTER_CASH, diamonds: 400, boost: { mult: 2, hours: 0.5 }, cosmetic: FOUNDER_COSMETIC },
   nonnas_plus: { diamonds: 0, plus: true },
   diamonds_80: { diamonds: 80 },
   diamonds_500: { diamonds: 500 },

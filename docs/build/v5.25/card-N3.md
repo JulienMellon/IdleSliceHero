@@ -9,10 +9,10 @@
 - Do not touch: `src/engine/**`. Grant the boost through the existing timed-boost API (grep `docs/API.md` for `addBoost` or `boosts`). If none fits, write `Needs: E9 timed-boost grant` and stop that step.
 
 ## Steps
-- [ ] **1. Grant:** the Starter Pack's grant gives cash (from WAVE-NOTES, whole dollars), 400 💎 and a 2x boost for 1,800 s. Its price and product id stay unchanged.
-- [ ] **2. Store text:** the pack card lists all three items. The visible copy is the short placeholder `$7K + 400 💎 + 2x for 30 min`, and W6/T3 may replace it.
-- [ ] **3. LAUNCH-TRACK:** rewrite the Starter Pack's App Store Connect description to list the three items. Keep its length under 170 characters.
-- [ ] **4. Tests:** the grant contents, a boost that is active right after the buy, the store-model row.
+- [x] **1. Grant:** the Starter Pack's grant gives cash (from WAVE-NOTES, whole dollars), 400 💎 and a 2x boost for 1,800 s. Its price and product id stay unchanged.
+- [x] **2. Store text:** the pack card lists all three items. The visible copy is the short placeholder `$7K + 400 💎 + 2x for 30 min`, and W6/T3 may replace it.
+- [x] **3. LAUNCH-TRACK:** rewrite the Starter Pack's App Store Connect description to list the three items. Keep its length under 170 characters.
+- [x] **4. Tests:** the grant contents, a boost that is active right after the buy, the store-model row.
 
 ## Checks
 - `npx tsc --noEmit`

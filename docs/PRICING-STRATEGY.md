@@ -32,7 +32,7 @@ An engaged free player earns about **900 💎 a month** (daily chest 10 × 30 = 
 
 | Product id | Price | Contents | 💎 per $ | Card shows |
 |---|---|---|---|---|
-| `starter_pack` (once) | $2.99 | **400 💎** · Founder awning (only here) · 2× income 24 h | 134 | "Most diamonds per dollar in the store" |
+| `starter_pack` (once) | $2.99 | **$7K cash** (a third of the way to Suburbs) · **400 💎** · Founder awning (only here) · 2× income 30 min | 134 | "Most diamonds per dollar in the store" |
 | `diamonds_80` | $0.99 | 80 💎 | 81 | — |
 | `diamonds_500` | $4.99 | 400 + **100 bonus** | 100 | "+100 bonus" |
 | `diamonds_1200` | $9.99 | 800 + **400 bonus** | 120 | "+400 bonus" · **Best rate** (v5.23) |
@@ -41,7 +41,7 @@ An engaged free player earns about **900 💎 a month** (daily chest 10 × 30 = 
 
 - **First buy of each diamond pack pays double** ("First buy: 2×" ribbon until used). Stated before purchase; no timer. The Starter Pack and Plus are excluded.
 - No $49.99 / $99.99 at launch.
-- App Store Connect: the Starter Pack's description must change to 400 diamonds before v5.23 ships; `diamonds_2600` must be created before v5.24 ships (Julien).
+- App Store Connect: the Starter Pack's description must list $7K, 400 diamonds and 2× for 30 minutes before v5.25 ships (card N3); `diamonds_2600` must be created before v5.24 ships (Julien).
 
 ## 4. Diamond boosters (approved 2026-11-20)
 

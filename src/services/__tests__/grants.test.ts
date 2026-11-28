@@ -1,5 +1,5 @@
 import { createGrantBus } from '../grant-bus';
-import { GRANTS, PACK_SPLIT, emptyLedger, firstBuysUsed, grantKey, isConsumable, ownedFrom, parseLedger, redeem } from '../grants';
+import { GRANTS, PACK_SPLIT, STARTER_CASH, emptyLedger, firstBuysUsed, grantKey, isConsumable, ownedFrom, parseLedger, redeem } from '../grants';
 import { PRODUCT_IDS } from '../types';
 
 describe('grants', () => {
@@ -7,8 +7,8 @@ describe('grants', () => {
     for (const id of PRODUCT_IDS) expect(GRANTS[id]).toBeDefined();
   });
 
-  it('starter pack gives the 24 h boost and the founder awning; Plus gives the entitlement; packs give diamonds', () => {
-    expect(GRANTS.starter_pack.boost).toEqual({ mult: 2, hours: 24 });
+  it('starter pack gives the 30 min boost and the founder awning; Plus gives the entitlement; packs give diamonds', () => {
+    expect(GRANTS.starter_pack.boost).toEqual({ mult: 2, hours: 0.5 });
     expect(GRANTS.starter_pack.cosmetic).toBe('awning-founder');
     expect(GRANTS.nonnas_plus.plus).toBe(true);
     expect([GRANTS.diamonds_80.diamonds, GRANTS.diamonds_500.diamonds, GRANTS.diamonds_1200.diamonds, GRANTS.diamonds_2600.diamonds]).toEqual([
@@ -16,8 +16,13 @@ describe('grants', () => {
     ]);
   });
 
-  it('the Starter Pack pays 400 diamonds (PRICING-STRATEGY §3)', () => {
+  it('the Starter Pack pays 400 diamonds (PRICING-STRATEGY §3), whole-dollar cash and a 2x boost for 1,800 s', () => {
     expect(GRANTS.starter_pack.diamonds).toBe(400);
+    expect(GRANTS.starter_pack.cash).toBe(STARTER_CASH);
+    expect(Number.isInteger(STARTER_CASH) && STARTER_CASH >= 5000 && STARTER_CASH <= 9000).toBe(true);
+    expect(GRANTS.starter_pack.boost!.hours * 3600).toBe(1800);
+    expect(redeem(emptyLedger(), 'starter_pack', 'x').grant).toMatchObject({ cash: STARTER_CASH, diamonds: 400, boost: { mult: 2, hours: 0.5 } });
+    expect(redeem(emptyLedger(), 'starter_pack', '', 'restore').grant?.cash).toBeUndefined();
   });
 
   it('a pack is its base plus its bonus: 400 + 100, 800 + 400 and 1,600 + 1,000', () => {

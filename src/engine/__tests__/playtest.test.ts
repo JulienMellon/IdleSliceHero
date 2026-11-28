@@ -9,13 +9,13 @@ const rich = (s: G.GameState): G.GameState => ({ ...s, cash: 1e15 });
 
 describe('formatting (playtest bug 6)', () => {
   it('rates never print "20000.0/s"', () => {
-    expect(rate(20000)).not.toMatch(/\.0$/);
-    expect(rate(20000)).toBe('20K');
-    expect(rate(3.14)).toBe('3.1');
-    expect(rate(9.94)).toBe('9.9');
-    expect(rate(10)).toBe('10');
-    expect(rate(1_500_000)).toBe('1.5M');
-    expect(rate(NaN)).toBe('0.0');
+    expect(rate(20000)).not.toMatch(/\.0\//);
+    expect(rate(20000)).toBe('$20K/s');
+    expect(rate(3.14)).toBe('$3/s');
+    expect(rate(9.94)).toBe('$9/s');
+    expect(rate(10)).toBe('$10/s');
+    expect(rate(1_500_000)).toBe('$1.5M/s');
+    expect(rate(NaN)).toBe('<$1/min');
   });
   it('goal bar prints both amounts the same way', () => {
     expect(goalAmount(1500, 1500)).toBe(`${money(1500, true)} / ${money(1500, true)}`);

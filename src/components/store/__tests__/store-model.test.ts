@@ -103,10 +103,12 @@ describe('the products tab', () => {
 
 describe('a paid-out grant', () => {
   const g0 = (): G.GameState => G.newGame(NOW);
-  test('the Starter Pack: 400 diamonds, a 24 h 2x boost and the founder awning, worn', () => {
+  test('the Starter Pack: 400 diamonds, a 2x boost for 30 min (running right after the buy) and the founder awning, worn', () => {
     const g = applyGrant({ ...g0(), rewards: { ...g0().rewards, diamonds: 10, worn: ['awning-gold'] } }, GRANTS.starter_pack, NOW);
     expect(g.rewards.diamonds).toBe(410);
-    expect(g.rewards.boosts).toEqual([{ mult: 2, until: NOW + 24 * 3_600_000, source: 'purchase' }]);
+    expect(g.rewards.boosts).toEqual([{ mult: 2, until: NOW + 1_800_000, source: 'purchase' }]);
+    expect(G.boostMult(g, NOW)).toBe(2);
+    expect(G.boostMult(g, NOW + 1_800_001)).toBe(1);
     expect(g.rewards.cosmetics).toContain('awning-founder');
     // it replaces the gold awning (same part)
     expect(g.rewards.worn).toEqual(['awning-founder']);
@@ -159,7 +161,7 @@ describe('the pack art (D496)', () => {
     const chips = productChips('starter_pack');
     expect(chips.map((c) => c.kind)).toEqual(['diamonds', 'boost', 'awning']);
     expect(chips[0].title).toBe(String(GRANTS.starter_pack.diamonds));
-    expect(chips[1].title).toBe(`${GRANTS.starter_pack.boost!.mult}× · ${GRANTS.starter_pack.boost!.hours} h`);
+    expect(chips[1].title).toBe('2× · 30 min');
     expect(productChips('nonnas_plus')).toEqual([]);
     expect(productChips('diamonds_500')).toEqual([]);
   });
@@ -266,7 +268,7 @@ describe('the store cards (card N1)', () => {
     expect(looksUnowned(['oven-gold', 'storefront-skin-101', 'oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold'])).toHaveLength(35);
   });
   test('the boost chip with no pace still says what it is', () => {
-    expect(productChips('starter_pack', 0)[1].sub).toBe('Double income for a full day');
+    expect(productChips('starter_pack', 0)[1].sub).toBe('Double income for 30 minutes');
   });
   test('pack_card_seen is counted once until the count is reset', () => {
     const seen = createSeenOnce();
@@ -278,8 +280,8 @@ describe('the store cards (card N1)', () => {
     const r = row('starter_pack');
     expect(r.nonna).toBe('I pack it myself. Like a lunch, cara.');
     expect(r.tags).toEqual(['ONE PER OWNER']);
-    expect(r.blurb).toBe('400 diamonds, 2× income for 24 hours and the Founder awning');
-    expect(r.chips.map((c) => c.sub)).toEqual(['Enough for 6 shop looks', "≈ $86.4M at your shop's pace", 'Only in this pack']);
+    expect(r.blurb).toBe('$7K + 400 💎 + 2x for 30 min');
+    expect(r.chips.map((c) => c.sub)).toEqual(['Enough for 6 shop looks', "≈ $1.8M at your shop's pace", 'Only in this pack']);
     expect(JSON.stringify(r)).not.toMatch(/ONE-TIME|worth|value|save \d|limited|left/i);
   });
   test('diamond packs: base, "+N bonus", looks, and "First buy: 2×" until it is used', () => {

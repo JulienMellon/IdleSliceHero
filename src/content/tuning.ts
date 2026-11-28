@@ -20,8 +20,8 @@ export const TUNING = {
   speedPerLevel: 0.5,
   /** Walk-ins pay this share of the order value (seated first, at full price). */
   walkInShare: 1.0,
-  /** Pizzas added per tap when a pizzeria has no manager, and how many can be queued. */
-  tapBatch: 4,
+  /** Pizzas added per tap when a pizzeria has no manager (v5.25: one; BATCH_GROWTH adds more with prep levels), and how many can be queued. */
+  tapBatch: 1,
   tapQueueMax: 12,
   /** Round-trip blocks for a local delivery. */
   deliveryRoundTrip: 4,
@@ -94,8 +94,8 @@ export const GM_BOOST = 2;
  * within 0.3 to 0.6.
  */
 export const HEADS_OFFLINE_SHARE = 0.5;
-/** The tap batch grows by `step` pies every `every` prep levels (4 → 6 at Lv 20 …). */
-export const BATCH_GROWTH = { base: 4, every: 20, step: 2 } as const;
+/** v5.25: one pizza per tap, +`step` pies every `every` prep levels (1 → 2 at Lv 10, 3 at Lv 20 …). */
+export const BATCH_GROWTH = { base: 1, every: 10, step: 1 } as const;
 
 export const HEAD_TITLE: Record<HeadKind, string> = { prep: 'Head Prep Cook', oven: 'Head Baker', counter: 'Head Cashier' };
 /** One word for what a head runs (goal bar, sidewalk). */

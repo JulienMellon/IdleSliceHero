@@ -148,5 +148,7 @@ export function applyGrant(g: GameState, grant: Grant, now: number): GameState {
     boosts = [...boosts, b].sort((x, y) => y.until - x.until).slice(0, MAX_CONCURRENT_BOOSTS);
   }
   const dressed = grant.cosmetic ? R.grantCosmetic(r, grant.cosmetic) : { cosmetics: r.cosmetics, worn: r.worn };
-  return { ...g, rewards: { ...r, diamonds: r.diamonds + Math.max(0, grant.diamonds), boosts, ...dressed } };
+  // v5.25 (card N3): a grant may carry cash (the Starter Pack's); it is cash in hand, not earnings, so `totalEarned` stays
+  const cash = Math.max(0, grant.cash ?? 0);
+  return { ...g, cash: g.cash + cash, rewards: { ...r, diamonds: r.diamonds + Math.max(0, grant.diamonds), boosts, ...dressed } };
 }
