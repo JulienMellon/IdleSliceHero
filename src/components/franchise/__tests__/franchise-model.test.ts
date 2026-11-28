@@ -13,7 +13,7 @@ const HOME = HOME_CITY.neighbourhoods.map((n) => n.id);
 function cleared(): GameState {
   let g = newGame(NOW);
   for (const id of HOME) g = { ...g, shops: { ...g.shops, [id]: { ...g.shops[id], built: true, managed: true } } };
-  return { ...g, cash: 5e9, totalEarned: 2.79e15, cityComplete: true, tutorial: TUTORIAL_DONE, seenScenes: ['downtown-1', finaleId(HOME[HOME.length - 1])] };
+  return { ...g, cash: 5e9, totalEarned: 9.17e21, cityComplete: true, tutorial: TUTORIAL_DONE, seenScenes: ['downtown-1', finaleId(HOME[HOME.length - 1])] };
 }
 
 describe('the confirm sheet', () => {

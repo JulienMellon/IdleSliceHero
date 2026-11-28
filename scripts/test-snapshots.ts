@@ -195,6 +195,8 @@ function playCity(start: G.GameState, wall0: number, onSecond: (s: G.GameState, 
       }
       waitCash = 0;
       s = r.state;
+      // one build a second: cash can be far past the price (v5.25), and a snapshot of "just built" must not have the next shop built too
+      if (pick.label.startsWith('build:')) break;
     }
   }
   return { s, wall };

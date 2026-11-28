@@ -3,7 +3,7 @@
     "save": {
       "saveVersion": 6,
       "city": "home",
-      "economy": 3,
+      "economy": 4,
       "cash": 4859291.338800002,
       "totalEarned": 5723489.338800003,
       "vehicle": 2,
@@ -489,7 +489,7 @@
     "migrated": {
       "saveVersion": 10,
       "city": "home",
-      "economy": 3,
+      "economy": 4,
       "cash": 4859291.338800002,
       "totalEarned": 5723489.338800003,
       "vehicle": 2,
@@ -1105,7 +1105,7 @@
     "save": {
       "saveVersion": 6,
       "city": "boston",
-      "economy": 3,
+      "economy": 4,
       "cash": 2965155408,
       "totalEarned": 2966019606,
       "vehicle": 2,
@@ -1643,7 +1643,7 @@
     "migrated": {
       "saveVersion": 10,
       "city": "boston",
-      "economy": 3,
+      "economy": 4,
       "cash": 2965155408,
       "totalEarned": 2966019606,
       "vehicle": 2,

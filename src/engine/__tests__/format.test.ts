@@ -4,7 +4,7 @@ import { count, money, rate, shownValue } from '../format';
 describe('money', () => {
   test('ordinary values', () => {
     expect([0, 5, 9.5, 999, 1000, 1234, 15_000, 9.5e6].map((n) => money(n))).toEqual(['$0', '$5', '$9', '$999', '$1K', '$1.23K', '$15K', '$9.5M']);
-    expect(money(3900, true)).toBe('$3.90K');
+    expect(money(3900, true)).toBe('$3.9K');
     expect(money(-1234)).toBe('-$1.23K');
   });
 
@@ -34,7 +34,7 @@ describe('money', () => {
     expect(money(999_499)).toBe('$999K');
     expect(money(999_500)).toBe('$1M');
     expect(money(999_999)).toBe('$1M');
-    expect(money(999_999, true)).toBe('$1.00M');
+    expect(money(999_999, true)).toBe('$1M');
     expect(money(999_999_999)).toBe('$1B');
     expect(money(999_500_000_000)).toBe('$1T');
     expect(money(-999_999)).toBe('-$1M');

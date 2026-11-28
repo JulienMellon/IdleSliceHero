@@ -2,25 +2,25 @@ const SUFFIXES = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'D
 /** From here the last suffix would print four digits ("1000Dc"): 999.5 Dc rounds to 1000, so a number this big is written in scientific form instead ("2.4e38"). */
 const SCIENTIFIC_FROM = 999.5 * Math.pow(1000, SUFFIXES.length - 1);
 
-/** n at or past SCIENTIFIC_FROM as "2.4e38" (three significant figures at most, trailing zeros dropped; `fixed` keeps all three). */
-function scientific(n: number, fixed: boolean): string {
+/** n at or past SCIENTIFIC_FROM as "2.4e38" (three significant figures at most, trailing zeros dropped). */
+function scientific(n: number): string {
   const [m, e] = n.toExponential(2).split('e');
-  return `${fixed ? m : parseFloat(m)}e${parseInt(e, 10)}`;
+  return `${parseFloat(m)}e${parseInt(e, 10)}`;
 }
 
 /**
  * v5.25: every amount is a whole number, rounded down: 0.6 → "$0", 12.5 → "$12", 999.9 → "$999". From 1000 up the K/M/B suffix forms keep their
  * digits (1500 → "$1.5K", 1234 → "$1.23K", 9.5e6 → "$9.5M"): the only decimal point left is inside a suffix form.
- * `fixed` keeps 3 significant figures ("$3.90K") so a live counter doesn't change width.
+ * v5.25: no trailing zeros anywhere ("$3.9K", never "$3.90K"); `fixed` is kept for the call sites that pass it and changes nothing.
  */
-export function money(n: number, fixed = false): string {
+export function money(n: number, _fixed = false): string {
   if (!Number.isFinite(n)) return '$0';
   const sign = n <= -1 ? '-' : '';
   n = Math.abs(n);
   if (n < 1000) return `${sign}$${Math.floor(n)}`;
-  if (n >= SCIENTIFIC_FROM) return `${sign}$${scientific(n, fixed)}`;
+  if (n >= SCIENTIFIC_FROM) return `${sign}$${scientific(n)}`;
   const { tier, digits } = scaled(n);
-  return `${sign}$${fixed ? digits : parseFloat(digits)}${SUFFIXES[tier]}`;
+  return `${sign}$${parseFloat(digits)}${SUFFIXES[tier]}`;
 }
 
 /**

@@ -137,7 +137,7 @@ describe('format at the top of its range', () => {
     expect(money(999.5e33)).toBe('$1e36');
     expect(money(1e36)).toBe('$1e36');
     expect(money(2.4036e38)).toBe('$2.4e38');
-    expect(money(2.4036e38, true)).toBe('$2.40e38');
+    expect(money(2.4036e38, true)).toBe('$2.4e38');
     expect(money(9.996e38)).toBe('$1e39');
     expect(money(-2.4e38)).toBe('-$2.4e38');
     expect(money(1.5e300)).toBe('$1.5e300');

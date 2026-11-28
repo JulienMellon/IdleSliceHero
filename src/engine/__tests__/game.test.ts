@@ -453,7 +453,7 @@ describe('format', () => {
     expect(money(7.5)).toBe('$7'); // v5.25: whole numbers, rounded down
     expect(money(1234)).toBe('$1.23K');
     expect(money(60_000)).toBe('$60K');
-    expect(money(3_900, true)).toBe('$3.90K');
+    expect(money(3_900, true)).toBe('$3.9K');
     expect(money(NaN)).toBe('$0');
   });
   test('duration', () => {

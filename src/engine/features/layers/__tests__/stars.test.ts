@@ -131,9 +131,9 @@ describe('the Ingredients track', () => {
     run(() => {
       const g = uptown();
       const price = ingredientsPrice(g)!;
-      expect(buyIngredients({ ...g, cash: price - 1 })).toEqual({ ok: false, reason: 'Not enough cash' });
-      const r = buyIngredients({ ...g, cash: price + 7 });
-      expect(r.ok && r.state.cash).toBe(7);
+      expect(buyIngredients({ ...g, cash: price * 0.5 })).toEqual({ ok: false, reason: 'Not enough cash' });
+      const r = buyIngredients({ ...g, cash: price * 3 });
+      expect(r.ok && r.state.cash).toBe(price * 3 - price);
       expect(ingredientsLock(G.newGame(NOW))).toBe('Build this pizzeria first');
       expect(buyIngredients(G.newGame(NOW))).toEqual({ ok: false, reason: 'Build this pizzeria first' });
     });

@@ -232,7 +232,7 @@ describe('the goal bar is the next chapter task (U1)', () => {
   test('D532: a hire or a build shows the cash against its own price, and fills with the cash', () => {
     const g = chapterGoal({ ...stateAt(2, 0), cash: 12 })!;
     expect(g.label).toBe('Ch 2 \u00B7 Hire Lucia, head baker');
-    expect(g.text).toBe('$12 / $' + Math.floor(headCost('downtown', 'oven')));
+    expect(g.text).toBe('$12 / ' + money(headCost('downtown', 'oven')));
     expect([g.current, g.target]).toEqual([12, headCost('downtown', 'oven')]);
     expect(g.ready).toBe(false);
     const b = chapterGoal({ ...stateAt(5, 0), cash: 50 })!;

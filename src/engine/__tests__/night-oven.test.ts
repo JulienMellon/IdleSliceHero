@@ -50,7 +50,7 @@ describe('the lock and the price', () => {
   test('the tiers come in order', () => {
     const s = city(['downtown', 'suburbs', 'waterfront', 'university', 'industrial']);
     expect(nightOvenLock(s, 2)).toBe('Needs the 8 h oven first');
-    expect(buyNightOven({ ...s, cash: 1e12 }).ok).toBe(true);
+    expect(buyNightOven({ ...s, cash: 1e40 }).ok).toBe(true);
   });
 
   test('the price is 20 / 60 minutes of the rewards’ boost-free income', () => {
@@ -72,11 +72,11 @@ describe('buying', () => {
 
   test('spends the price and raises the tier, once per tier', () => {
     const price = nightOvenPrice(s0, 1);
-    const r = buyNightOven({ ...s0, cash: price + 5 });
+    const r = buyNightOven({ ...s0, cash: price * 3 });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.state.nightOven).toBe(1);
-    expect(r.state.cash).toBe(5);
+    expect(r.state.cash).toBe(price * 3 - price);
     expect(nextTier(r.state)).toBe(2);
   });
 
@@ -89,7 +89,7 @@ describe('buying', () => {
   });
 
   test('the view: chip, info text, tiers and the next one', () => {
-    const v = nightOvenView({ ...s0, cash: 1e12 });
+    const v = nightOvenView({ ...s0, cash: 1e40 });
     expect(v.chip).toBe('🌙 4 h');
     expect(v.body).toBe("While you're away, Nonna's night oven keeps baking for up to 4 h. Come back before it's full!");
     expect(v.leaveLine).toBe("Leave now and it's full in 4 h.");
@@ -153,9 +153,9 @@ describe('old saves load', () => {
   test('a saved tier survives a round trip; junk is clamped', () => {
     const s = city(['downtown'], { nightOven: 2 });
     expect(G.migrate(JSON.parse(JSON.stringify(s)), T0).nightOven).toBe(2);
-    expect(G.migrate({ nightOven: 9 }, T0).nightOven).toBe(2);
-    expect(G.migrate({ nightOven: -3 }, T0).nightOven).toBe(0);
-    expect(G.migrate({ nightOven: 'big' }, T0).nightOven).toBe(0);
-    expect(G.migrate({ nightOven: 1.7 }, T0).nightOven).toBe(1);
+    expect(G.migrate({ economy: G.ECONOMY, nightOven: 9 }, T0).nightOven).toBe(2);
+    expect(G.migrate({ economy: G.ECONOMY, nightOven: -3 }, T0).nightOven).toBe(0);
+    expect(G.migrate({ economy: G.ECONOMY, nightOven: 'big' }, T0).nightOven).toBe(0);
+    expect(G.migrate({ economy: G.ECONOMY, nightOven: 1.7 }, T0).nightOven).toBe(1);
   });
 });

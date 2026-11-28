@@ -140,7 +140,8 @@ describe('while the app is open', () => {
     const plain = boosted(base(now));
     const perSecond = (g: G.GameState) => G.shopEarnings(g, 'uptown', now) * G.boostMult(g, now);
     expect(perSecond(withEvent) / perSecond(plain)).toBeCloseTo((1 + 1 + 0.5) / 2, 9); // (1 + (2-1) + (1.5-1)) / (1 + (2-1))
-    expect(perSecond(withEvent)).toBeCloseTo(G.shopEarnings(base(now), 'uptown', now) * 2.5, 6);
+    const want = G.shopEarnings(base(now), 'uptown', now) * 2.5;
+    expect(Math.abs(perSecond(withEvent) - want) / want).toBeLessThan(1e-12); // v5.25: the numbers are far past 2^53, so a relative bound
   });
 
   it('the line pays the added price too, through the pipeline', () => {

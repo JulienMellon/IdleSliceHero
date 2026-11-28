@@ -292,7 +292,7 @@
 - types: Feature, Seen
 
 ## src/engine/format.ts
-- money(n: number, fixed = false): string — src/engine/format.ts:16 — v5.25: every amount is a whole number, rounded down: 0.6 → "$0", 12.5 → "$12", 999.9 → "$999".
+- money(n: number, _fixed = false): string — src/engine/format.ts:16 — v5.25: every amount is a whole number, rounded down: 0.6 → "$0", 12.5 → "$12", 999.9 → "$999".
 - shownValue(n: number): number — src/engine/format.ts:41 — The value `money(n)` displays, so totals can be summed from the same rounded lines.
 - count(n: number): string — src/engine/format.ts:50
 - rate(perSecond: number): string — src/engine/format.ts:58 — A rate of money per second as the player reads it (v5.25): "$12/s" from $1/s up (suffix forms as in…

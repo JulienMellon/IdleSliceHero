@@ -19,7 +19,7 @@ describe('formatting (playtest bug 6)', () => {
   });
   it('goal bar prints both amounts the same way', () => {
     expect(goalAmount(1500, 1500)).toBe(`${money(1500, true)} / ${money(1500, true)}`);
-    expect(goalAmount(1500, 1500)).toBe('$1.50K / $1.50K');
+    expect(goalAmount(1500, 1500)).toBe('$1.5K / $1.5K');
   });
 });
 

@@ -57,7 +57,7 @@ def shop(built=True, managed=True, **kw):
 IDS = ["downtown", "suburbs", "waterfront", "university", "industrial", "uptown"]
 MID_SAVE = {
     # v7+ with the tutorial done (18): an older version would map to Nonna's Store intro (step 16) and put a coach block over every shot
-    "saveVersion": 7, "tutorial": 18, "cash": 3120, "totalEarned": 15000, "vehicle": 1, "active": "suburbs",
+    "saveVersion": 7, "economy": 4, "tutorial": 18, "cash": 3120, "totalEarned": 15000, "vehicle": 1, "active": "suburbs",
     "shops": {
         "downtown": shop(prep=22, ovens=20, grade=1, counter=18, drivers=14, tables=8, footprint=1, sold=4000),
         "suburbs": shop(prep=12, ovens=10, grade=1, counter=9, drivers=6, tables=7, footprint=1, sold=700,
