@@ -10,6 +10,7 @@ import type { Layout } from './layout';
 import { GoldPlaque } from './cosmetic-props';
 import { hasFixture, plaqueFrame, renoPlaqueRect, type RenoDress } from './renovation-art';
 import { Beacon, NeonOpen, RenoPlaque, RoofPylon } from './renovation-props';
+import { BrassDoor, BrassPost, BrickChimney, ClockTower, CrownSign, Gantry, SchoolBanner, SteelShutter } from './renovation-props-b';
 import { dressedLook, plaqueRect } from './cosmetics';
 import { FasciaTrim } from './cosmetic-props';
 import { SIGN_BOARDS, type SignShape } from './look-art';
@@ -184,6 +185,27 @@ export const FrontWall = memo(function FrontWall({
           <Beacon dir={-1} />
         </G>
       )}
+      {/* the other three shops' rooftop things (card S7): the University's clock tower, Industrial's brick stack and gantry crane, Uptown's gold crown over the sign */}
+      {hasFixture(reno, 'clock-tower') && (
+        <G transform={`translate(${fx1 - 30} ${fTop + 3})`}>
+          <ClockTower />
+        </G>
+      )}
+      {hasFixture(reno, 'chimney') && (
+        <G transform={`translate(${fx0 + 34} ${fTop + 3})`}>
+          <BrickChimney />
+        </G>
+      )}
+      {hasFixture(reno, 'gantry') && (
+        <G transform={`translate(${P(door.cx, 0)[0]} ${fTop + 3})`}>
+          <Gantry />
+        </G>
+      )}
+      {hasFixture(reno, 'crown-sign') && (
+        <G transform={`translate(${fcx} ${fTop - 3})`}>
+          <CrownSign />
+        </G>
+      )}
       {sill(L - 4, door.x0)}
       {sill(door.x1, R + 4)}
       {/* entrance set in the front plane: brick jambs + lintel, glazed leaf swung inward,
@@ -341,6 +363,24 @@ export const FrontWall = memo(function FrontWall({
             <Rect x={jax} y={jay - 2} width={jbx - 3.2 - jax} height={8} fill={look.pilaster} stroke={INK} strokeWidth={0.9} />
             {brick(P(door.x1, 0)[0], kbx, lTop, jay + 6)}
             {brick(jax, kbx, lTop, lBot)}
+            {/* the doors' fixtures (card S7): Industrial's roll-up shutter housing over the door and Uptown's brass revolving-door hood with its posts, under the OPEN plate */}
+            {hasFixture(reno, 'steel-shutter') && (
+              <G transform={`translate(${jbx} ${lTop + 1})`}>
+                <SteelShutter w={P(door.x1, 0)[0] - jbx} />
+              </G>
+            )}
+            {hasFixture(reno, 'brass-door') && (
+              <G>
+                <G transform={`translate(${(jbx + P(door.x1, 0)[0]) / 2} ${lBot})`}>
+                  <BrassDoor w={P(door.x1, 0)[0] - jbx} />
+                </G>
+                {[jbx + 2.4, P(door.x1, 0)[0] - 2.4].map((px) => (
+                  <G key={px} transform={`translate(${px} ${lBot + 1})`}>
+                    <BrassPost h={44} />
+                  </G>
+                ))}
+              </G>
+            )}
             <Rect x={jax - 1} y={lTop - 3} width={kbx - jax + 2} height={4} rx={1} fill={look.plinth} stroke={INK} strokeWidth={0.9} />
             <Path d={`M${jbx} ${lBot} V${jay + 4} M${P(door.x1, 0)[0]} ${lBot} V${jay + 4}`} stroke="#5E3A26" strokeWidth={2.4} />
             {/* OPEN plate hanging from the lintel, centred in the doorway, above head height */}
@@ -362,6 +402,12 @@ export const FrontWall = memo(function FrontWall({
       })()}
       {pilaster(L - 6, L + 8, 'l')}
       {pilaster(R - 8, R + 6, 'r')}
+      {/* the University's school banner (card S7): a tall pennant on the right pilaster, by the door, hung under the awning's edge */}
+      {hasFixture(reno, 'banner') && (
+        <G transform={`translate(${(P(R - 8, 0)[0] + P(R + 6, 0)[0]) / 2} ${fBot + 21})`}>
+          <SchoolBanner />
+        </G>
+      )}
       {/* the master's plaque: brass on the brick header over the door (cosmetics.ts `plaqueRect`, 34 x 22) */}
       {plaque &&
         (() => {

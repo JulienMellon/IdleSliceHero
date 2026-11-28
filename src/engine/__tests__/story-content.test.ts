@@ -10,24 +10,33 @@ const hire = (s: Scene) => s.trigger.kind === 'manager';
 const interludes = HOME_SCENES.filter((s) => s.beat === 'interlude' && !hire(s));
 const text = (s: Scene) => s.panels.flatMap((p) => [p.caption ?? '', p.propText ?? '', ...p.lines.map((l) => l.text)]).join(' | ');
 
-// v5.25 (card E10): 41 scenes: downtown-3b is the Downtown slot (a placeholder interlude W6 writes)
-describe('the 41 scenes', () => {
-  it('are 24 main beats, 12 interludes and 5 hire scenes, with unique ids', () => {
-    expect(HOME_SCENES).toHaveLength(41);
-    expect(new Set(HOME_SCENES.map((s) => s.id)).size).toBe(41);
+// v5.25 (cards E10, T3): 50 scenes: W6's ten interludes (downtown-1b, 2b, 3b, 4b, 4c, suburbs-2b, suburbs-1b, waterfront-1b, 1c, 1d)
+describe('the 50 scenes', () => {
+  it('are 24 main beats, 21 interludes and 5 hire scenes, with unique ids', () => {
+    expect(HOME_SCENES).toHaveLength(50);
+    expect(new Set(HOME_SCENES.map((s) => s.id)).size).toBe(50);
     expect(HOME_SCENES.filter((s) => s.beat !== 'interlude')).toHaveLength(24);
     expect(interludes.map((s) => s.id).sort()).toEqual(
       [
+        'downtown-1b',
+        'downtown-2b',
         'downtown-3b',
+        'downtown-4b',
+        'downtown-4c',
         'downtown-5',
         'industrial-2b',
         'industrial-3b',
+        'suburbs-1b',
+        'suburbs-2b',
         'suburbs-3b',
         'suburbs-5',
         'uptown-2b',
         'uptown-3b',
         'university-3b',
         'university-3c',
+        'waterfront-1b',
+        'waterfront-1c',
+        'waterfront-1d',
         'waterfront-3b',
         'waterfront-5',
       ].sort(),
@@ -93,16 +102,28 @@ describe('references between scenes', () => {
   it('a scene waits on another neighbourhood only where the story says so', () => {
     const cross: string[] = [];
     for (const s of HOME_SCENES) for (const id of prerequisites(s)) if (byId.get(id)!.neighborhood !== s.neighborhood) cross.push(`${s.id} ← ${id}`);
-    // downtown-5, suburbs-5 and waterfront-5 pass the Todd gag along; uptown-3's act waits for Industrial's finale; University's act 3 for waterfront-5
+    // downtown-5, suburbs-5 and waterfront-5 pass the Todd gag along; uptown-3's act waits for Industrial's finale; University's act 3 for waterfront-5;
+    // v5.25 (card T3): the Waterfront stretch's chain passes from shop to shop (waterfront-1b, downtown-4b, waterfront-1c, suburbs-1b, downtown-4c, waterfront-1d)
     expect(cross.sort()).toEqual(
-      ['downtown-5 ← waterfront-4', 'suburbs-5 ← downtown-5', 'uptown-2b ← industrial-4', 'university-3 ← waterfront-5', 'waterfront-5 ← suburbs-5'].sort(),
+      [
+        'downtown-4b ← waterfront-1b',
+        'downtown-4c ← suburbs-1b',
+        'downtown-5 ← waterfront-4',
+        'suburbs-1b ← waterfront-1c',
+        'suburbs-5 ← downtown-5',
+        'uptown-2b ← industrial-4',
+        'university-3 ← waterfront-5',
+        'waterfront-1c ← downtown-4b',
+        'waterfront-1d ← downtown-4c',
+        'waterfront-5 ← suburbs-5',
+      ].sort(),
     );
   });
-  it('an interlude that counts from a scene counts from one in its own neighbourhood unless it is one of the three that cross', () => {
+  it('an interlude that counts from a scene counts from one in its own neighbourhood unless it is one of the three that cross or one of the Waterfront stretch’s chain (v5.25)', () => {
     for (const s of interludes) {
       if (s.trigger.kind !== 'after') continue;
       const base = s.trigger.scene;
-      if (['downtown-5', 'suburbs-5', 'waterfront-5'].includes(s.id)) continue;
+      if (['downtown-5', 'suburbs-5', 'waterfront-5', 'downtown-4b', 'downtown-4c', 'suburbs-1b', 'waterfront-1c', 'waterfront-1d'].includes(s.id)) continue;
       expect(base.startsWith(`${s.neighborhood}-`)).toBe(true);
       expect(s.trigger.seconds).toBeGreaterThan(0);
     }

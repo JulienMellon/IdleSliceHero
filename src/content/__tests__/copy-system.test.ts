@@ -4,18 +4,24 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { COPY as AMBIENT } from '../copy/home/ambient';
 import { COPY as CHAPTERS } from '../copy/home/chapters';
 import { COPY as ENDGAME } from '../copy/home/endgame';
+import { COPY as FREE_GIFT } from '../copy/home/free-gift';
 import { LAYER_COPY } from '../copy/home/layers';
 import { LINES } from '../copy/home/lines';
 import { COPY as LOOKS } from '../copy/home/looks';
 import { COPY as MENU } from '../copy/home/menu';
+import { COPY as RENOVATION, RENO_NAME_MAX, renoNameKey } from '../copy/home/renovation';
 import { COPY as REPORT } from '../copy/home/report';
 import { COPY as SHIFTS } from '../copy/home/shifts';
 import { COPY as STARS } from '../copy/home/stars';
 import { COPY as STORE } from '../copy/home/store-copy';
 import { COPY as TUTORIAL } from '../copy/home/tutorial';
 import { CITIES } from '../cities';
+import { RENO_IDS } from '../renovation';
+import { HOME_AMBIENT } from '../cities/home/scenes/ambient';
+import { HOME_SCENES } from '../scenes/home';
 import { BOSTON_COPY } from '../cities/boston/copy';
 import { dressed, fill, HOME_COPY, isDressed, t } from '../copy';
 
@@ -56,7 +62,7 @@ describe('t: the pack first, then home', () => {
 
 describe('the home tables', () => {
   test('no key is in two tables, so one merged lookup is the same words', () => {
-    const tables = [CHAPTERS, ENDGAME, LAYER_COPY, MENU, REPORT, SHIFTS, STARS, STORE, TUTORIAL, LINES, LOOKS];
+    const tables = [AMBIENT, CHAPTERS, ENDGAME, FREE_GIFT, LAYER_COPY, MENU, RENOVATION, REPORT, SHIFTS, STARS, STORE, TUTORIAL, LINES, LOOKS];
     const keys = tables.flatMap((tb) => Object.keys(tb));
     expect(new Set(keys).size).toBe(keys.length);
     expect(Object.keys(HOME_COPY)).toHaveLength(keys.length);
@@ -85,6 +91,52 @@ describe('a pack never imports content/copy (no cycle)', () => {
     for (const f of walk(path.join(__dirname, '../cities'))) {
       if (f.includes('__tests__')) continue;
       expect(fs.readFileSync(f, 'utf8')).not.toMatch(/from '(\.\.\/)+copy(\/[^']*)?'/);
+    }
+  });
+});
+
+describe('v5.25 copy (card T3, docs/story/COPY-v5.25.md)', () => {
+  const isPlaque = (id: string) => id.endsWith('-plaque');
+  test('every renovation item (fixture or decor) has a name of at most 18 characters, and every plaque has its words', () => {
+    const items = RENO_IDS.filter((id) => !isPlaque(id));
+    expect(items).toHaveLength(72);
+    for (const id of items) {
+      const name = RENOVATION[renoNameKey(id) as keyof typeof RENOVATION];
+      expect([id, typeof name]).toEqual([id, 'string']);
+      expect([id, (name as string).length <= RENO_NAME_MAX]).toEqual([id, true]);
+    }
+    for (const level of [1, 2, 3]) expect(RENOVATION[`reno.plaque.${level}` as keyof typeof RENOVATION]).toContain('{shop}');
+    // no name for an id that does not exist
+    const names = Object.keys(RENOVATION).filter((k) => k.startsWith('reno.name.'));
+    expect(names.sort()).toEqual(
+      RENO_IDS.filter((id) => !isPlaque(id))
+        .map(renoNameKey)
+        .sort(),
+    );
+  });
+  test('the renovation section has its 103 strings, the gift 6 and the ambient beats 13', () => {
+    expect(Object.keys(RENOVATION)).toHaveLength(103);
+    expect(Object.keys(FREE_GIFT)).toHaveLength(6);
+    expect(Object.keys(AMBIENT)).toHaveLength(13);
+  });
+  test('the renovation lines fill: {shop}, {mult}, {numeral}, {fixture}, {cash} and {n}', () => {
+    expect(t('reno.offer', { shop: 'Downtown', mult: 2 })).toBe('Renovate Downtown for 2x income');
+    expect(t('reno.button.confirm', { cash: '$250K' })).toBe('Renovate for $250K');
+    expect(t('reno.confirm.gains.3', { fixture: t(renoNameKey('reno1-downtown-awning')) })).toBe('New fixture: Scalloped awning');
+    expect(t('reno.plaque.2', { shop: 'Suburbs' })).toBe('Suburbs · II · Built to last');
+    expect(t('gift.banner.both', { cash: '$3K', diamonds: 10 })).toBe('Free gift! +$3K and 10 💎');
+  });
+  test('the Starter Pack lines carry {cash}, {n}, {mult} and {span}', () => {
+    expect(t('store.starter.blurb', { cash: '$7K', n: 400, mult: 2, span: '30 min' })).toBe('$7K in cash + 400 💎 + 2x income for 30 min');
+    expect(t('store.starter.item.boost', { mult: 2, span: '30 min' })).toBe('2x income for 30 min');
+  });
+  test('every ambient beat names a copy key and a scene it follows, and a bark has a speaker', () => {
+    const ids = new Set(HOME_SCENES.map((s) => s.id));
+    expect(HOME_AMBIENT).toHaveLength(13);
+    for (const b of HOME_AMBIENT) {
+      expect([b.key, typeof AMBIENT[b.key as keyof typeof AMBIENT]]).toEqual([b.key, 'string']);
+      expect([b.key, ids.has(b.after)]).toEqual([b.key, true]);
+      expect([b.key, b.kind === 'bark' ? typeof b.speaker : b.speaker]).toEqual([b.key, b.kind === 'bark' ? 'string' : undefined]);
     }
   });
 });

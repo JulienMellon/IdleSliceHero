@@ -14,7 +14,7 @@ import { bboxOf, doorRect, fixedPeople, ladderProps, matRect, propRect, signRect
 import type { Layout } from './layout';
 import { neonSpot, plaqueRect } from './cosmetics';
 import { chimeRect, tipJarRect } from './look-art';
-import { renoCovers } from './renovation-art';
+import { giftSpot, renoCovers } from './renovation-art';
 import type { RenoShop } from '../../content/renovation';
 import { UMBRELLA_TOP, deckBox, patioDeck } from './patio-deck';
 import { CURB_Y, P, sceneToScreen, type SceneFit } from './projection';
@@ -85,6 +85,9 @@ export function sceneCovers(lay: Layout, inp: CoverInputs): Named[] {
     out.push(named('patio', { x0: d.x0, x1: d.x1, y0: P(t.x, t.y, UMBRELLA_TOP)[1], y1: d.y1 }));
   }
   out.push(named('neon', neonSpot(lay).rect), named('plaque', plaqueRect(lay)), named('jar', tipJarRect(lay)), named('chime', chimeRect(lay)));
+  // the free gift's box (v5.25): it stands in every shop, so it is a cover whether or not a gift is waiting
+  const gift = giftSpot(lay, inp.id, inp.vehicle, inp.idleShop);
+  if (gift) out.push(named('gift', gift.rect));
   if (inp.reno) for (const c of renoCovers(lay, inp.reno, inp.id, inp.vehicle, inp.idleShop)) out.push(named(c.id, c.rect));
   const strip = stripRect(inp.s, inp.idleShop, inp.h);
   const raise = inp.idleShop ? SIDEWALK_ROW.raiseIdle : SIDEWALK_ROW.raiseManaged;

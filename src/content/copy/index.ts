@@ -2,12 +2,15 @@
 // (`CityDef.copy`, in the city's folder) and then in the home tables below, and fills the `{placeholders}` (fill.ts). The components' old readers
 // (copy(), lc(), lcc(), dressed(), isDressed()) are thin wrappers over it. content/copy may import content/cities; a pack never imports this.
 import { CITIES } from '../cities';
+import { COPY as AMBIENT } from './home/ambient';
 import { COPY as CHAPTERS } from './home/chapters';
 import { COPY as ENDGAME } from './home/endgame';
+import { COPY as FREE_GIFT } from './home/free-gift';
 import { LAYER_COPY } from './home/layers';
 import { LINES } from './home/lines';
 import { COPY as LOOKS } from './home/looks';
 import { COPY as MENU } from './home/menu';
+import { COPY as RENOVATION } from './home/renovation';
 import { COPY as REPORT } from './home/report';
 import { COPY as SHIFTS } from './home/shifts';
 import { COPY as STARS } from './home/stars';
@@ -19,11 +22,14 @@ export { fill, type CopyVars } from './fill';
 
 /** Every home line, by key (the keys of the tables are disjoint: copy.test.ts checks it). */
 export const HOME_COPY: Readonly<Record<string, string>> = {
+  ...AMBIENT,
   ...CHAPTERS,
   ...ENDGAME,
+  ...FREE_GIFT,
   ...LAYER_COPY,
   ...LOOKS,
   ...MENU,
+  ...RENOVATION,
   ...REPORT,
   ...SHIFTS,
   ...STARS,

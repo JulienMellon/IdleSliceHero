@@ -32,6 +32,7 @@ import { applyCfg, decisionMetric, endSummary, INSTALL, options, reportLines, re
 
 import { FOOTPRINTS, HEAD_COST_DOWNTOWN, OVEN_GRADES, VEHICLES } from '../src/content/cities/home/fit';
 import { HOME_BID, NEIGHBORHOODS, PIER9_BID } from '../src/content/cities/home/data';
+import { HOME_AMBIENT } from '../src/content/cities/home/scenes/ambient';
 // ---- v5.16 (card E0): the economy rules after playtest 3. Every target the tests pin is a named constant here, so the version's final
 // refit (card E2b) changes numbers and not tests. ----
 
@@ -96,7 +97,10 @@ export function layerSessions(f: LayerFirsts, opens: number) {
  * v5.25 (card E10): Downtown has a slot for one more scene (`downtown-3b`, an interlude 200 s after beat 3: it splits the 7-minute wait before Nonna) and the gap falls to
  * 6.3 min, the wait between Downtown's first two beats; a 3-minute gap needs an interlude in each of the three Downtown gaps and in Suburbs' (a story decision, W6).
  */
-export const SESSION1_MISSES = { maxBuyGapSeconds: 300, maxSceneGapMinutes: 58.1 } as const;
+export const SESSION1_MISSES = { maxBuyGapSeconds: 300, maxSceneGapMinutes: 3.92 } as const;
+// v5.25 (card T3): W6's ten interludes and thirteen ambient beats (docs/story/COPY-v5.25.md sections 5 and 6) are landed and their triggers refitted: the longest gap is now
+// 3.92 min, Suburbs' first scene (19.6) to its manager's hire scene (23.5), which no interlude can split (the hire is the player's; a Suburbs interlude after suburbs-1 would
+// need one more scene from W6). Every other gap is 3.2 min or less, and the Waterfront stretch (32.5 to 90.5 min) is 3.0 min exactly: an interlude or an ambient beat every 3 min.
 // v5.25 (card E9, D493): the rival opens at Suburbs two stars, so Suburbs' finale (the challenge) and the Waterfront scenes that follow it wait for the
 // Flagship (the finale at 172 min). The gap that starts in the first 40 minutes is now Waterfront's first scene (32.5) to its manager's (90.5): 58 min.
 // Story beats for that wait (interludes in Suburbs and Waterfront) are W6's and T3's; the longest gap of the first session proper is still the 6.3 min above.
@@ -209,7 +213,16 @@ export function session1(c: Cfg = {}): Session1Result {
   const gaps = walls.map((w, i) => w - (i ? walls[i - 1] : 0));
   gaps.push(end - (walls.length ? walls[walls.length - 1] : 0));
   // a gap counts when it starts in the window, however far past it the next scene is
-  const sceneWalls = [...r.scenes.map((x) => x.wall), end].filter((w, i, all) => w <= end || (i > 0 && all[i - 1] <= end));
+  // v5.25 (card T3): the Waterfront stretch's ambient beats (content/cities/home/scenes/ambient.ts) are story beats too: each plays `seconds` after the scene it follows
+  const ambientWalls = HOME_AMBIENT.flatMap((b) => {
+    const from = at(b.after);
+    const w = from === undefined ? undefined : from + b.seconds;
+    const managed = b.noManager === undefined ? undefined : r.timeline[b.noManager]?.manager;
+    return w === undefined || (managed !== undefined && w >= managed) ? [] : [w];
+  });
+  const sceneWalls = [...r.scenes.map((x) => x.wall), ...ambientWalls, end]
+    .sort((a, b) => a - b)
+    .filter((w, i, all) => w <= end || (i > 0 && all[i - 1] <= end));
   // v5.25: Suburbs is built the moment Nonna takes over (the reward cash at her takeover pays for it at once), so the window is the whole of session 1 up to the build
   const between = r.buys.filter((b) => opens !== undefined && b.wall <= opens).map((b) => b.label);
   return {

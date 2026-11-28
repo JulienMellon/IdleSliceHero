@@ -149,7 +149,7 @@
 | `rush.friday.start` | Captain Marisol | Friday night, crew! The whole dock’s hungry. All hands to the ovens! |
 | `rush.gameday.banner` | — | Mudhens Playoff Rush! |
 | `rush.gameday.chip` | — | Playoffs in {time} |
-| `rush.gameday.start` | Dale | Big game today, pal! Every family wants pizza at halftime. Go, Mudhens! |
+| `rush.gameday.start` | Dale | Playoffs today, pal! Every family wants pizza at halftime. Go, Mudhens! |
 
 ## 5. Mastery
 
@@ -174,19 +174,19 @@
 
 | Key | Text |
 | --- | --- |
-| `shop.item.oven-gold.name` | Golden Oven |
+| `shop.item.oven-gold.name` | Golden oven |
 | `shop.item.oven-gold.desc` | Gold-trimmed bricks. The pizza notices. |
-| `shop.item.storefront-skin.name` | Fresh Storefront |
+| `shop.item.storefront-skin.name` | Fresh storefront |
 | `shop.item.storefront-skin.desc` | New paint, new sign, same old sauce. |
-| `shop.item.oven-woodfired.name` | Wood-Fired Oven |
+| `shop.item.oven-woodfired.name` | Wood-fired oven |
 | `shop.item.oven-woodfired.desc` | Real wood, real smoke, real crackle. |
-| `shop.item.scooter-mint.name` | Mint Scooter |
+| `shop.item.scooter-mint.name` | Mint scooter |
 | `shop.item.scooter-mint.desc` | A mint-green ride your drivers fight over. |
-| `shop.item.neon-counter.name` | Neon Counter |
+| `shop.item.neon-counter.name` | Neon counter |
 | `shop.item.neon-counter.desc` | Glows all night. Customers find you in the fog. |
-| `shop.item.awning-gold.name` | Golden Awning |
+| `shop.item.awning-gold.name` | Golden awning |
 | `shop.item.awning-gold.desc` | Gold stripes over the door. Very Uptown. |
-| `shop.item.plaque-master.name` | Master’s Plaque |
+| `shop.item.plaque-master.name` | Master’s plaque |
 | `shop.item.plaque-master.desc` | Polished brass by the door. Everyone reads it. |
 | `shop.vanity.title` | Shop Style |
 | `shop.boosters.title` | Booster Shelf |

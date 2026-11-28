@@ -13,11 +13,11 @@
 - Do not touch: `src/components/**`. U7 and N3 switch their placeholders to T3's keys; the keys go in WAVE-NOTES.
 
 ## Steps
-- [ ] **1. Modules:** one copy module per W6 section, keys as W6 wrote them, with placeholders typed (`{cash}`, `{diamonds}`, `{level}`).
-- [ ] **2. Names:** the 72 renovation item names attached to E10's ids. A test checks that every id has a name and that every name is ≤ 18 characters.
-- [ ] **3. Story fixes:** apply each W6 story correction (the 9 review-r1-story rows, S97, and S106 oven names). Name each row ID in the report as fixed or kept.
-- [ ] **4. Starter Pack:** export the three item lines for N3's card. The store component swap is U7's, or N3's if it is still alive.
-- [ ] **5. WAVE-NOTES lines:** the export names and keys, ready to paste.
+- [x] **1. Modules:** one copy module per W6 section, keys as W6 wrote them, with placeholders typed (`{cash}`, `{diamonds}`, `{level}`).
+- [x] **2. Names:** the 72 renovation item names attached to E10's ids. A test checks that every id has a name and that every name is ≤ 18 characters.
+- [x] **3. Story fixes:** apply each W6 story correction (the 9 review-r1-story rows, S97, and S106 oven names). Name each row ID in the report as fixed or kept.
+- [x] **4. Starter Pack:** export the three item lines for N3's card. The store component swap is U7's, or N3's if it is still alive.
+- [x] **5. WAVE-NOTES lines:** the export names and keys, ready to paste.
 
 ## Checks
 - `npx tsc --noEmit`

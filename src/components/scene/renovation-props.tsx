@@ -1,6 +1,6 @@
 // The drawings of a renovated shop (v5.25, card S6; where they stand is renovation-art.ts, the list of looks docs/build/v5.25/renovation.md): the plaque, the fixture upgrades
 // that are pieces of their own (the oven arch, the counter's apron, the plank deck, the rope rail, the lighthouse, the roof pylon, the neon OPEN) and the 27 decor props of
-// Downtown (classic trattoria), the Suburbs (1950s diner) and the Waterfront (dockside). Every drawing is memoised on primitives and stands at its own origin (the anchor is the
+// Downtown (classic trattoria), the Suburbs (1950s diner) and the Waterfront (dockside); the other three shops' are renovation-props-b.tsx. Every drawing is memoised on primitives and stands at its own origin (the anchor is the
 // bottom centre; a hung thing's is its top centre), drawn inside the box renovation-art.ts `DEFS` gives it. The awning, the gold name sign and the rest of the facade are in facade.tsx.
 import { memo, type ReactElement } from 'react';
 import { Circle, Ellipse, G, Path, Polygon, Rect, Text as SvgText } from 'react-native-svg';
@@ -8,6 +8,7 @@ import { Circle, Ellipse, G, Path, Polygon, Rect, Text as SvgText } from 'react-
 import { F } from '../../theme';
 import { INK, P, pts } from './projection';
 import { RENO_PLAQUE_H, RENO_PLAQUE_W, type PlaqueFrame } from './renovation-art';
+import { DRAW_B } from './renovation-props-b';
 
 const L = { stroke: INK, strokeWidth: 1, strokeLinejoin: 'round' as const };
 const CHROME = '#C9CED4';
@@ -37,8 +38,9 @@ const METALS = [
 export const NUMERALS = ['I', 'II', 'III'] as const;
 
 /**
- * The renovation plaque, centred on its origin in RENO_PLAQUE_W x RENO_PLAQUE_H: an oval with a rope edge (Downtown), a rounded plate with rivets (the Suburbs) or a porthole ring
- * with four bolts (the Waterfront), in bronze, silver or gold with its numeral in Roman at 12 pt.
+ * The renovation plaque, centred on its origin in RENO_PLAQUE_W x RENO_PLAQUE_H: an oval with a rope edge (Downtown), a rounded plate with rivets (the Suburbs), a porthole ring
+ * with four bolts (the Waterfront), a shield with a book (the University), a hex nut (Industrial) or a stepped art-deco fan (Uptown), in bronze, silver or gold with its numeral in
+ * Roman at 12 pt.
  */
 export const RenoPlaque = memo(function RenoPlaque({ frame, level }: { frame: PlaqueFrame; level: number }) {
   const m = METALS[Math.max(0, Math.min(2, level - 1))];
@@ -65,6 +67,65 @@ export const RenoPlaque = memo(function RenoPlaque({ frame, level }: { frame: Pl
         <Path d="M-6.4 -6 A9 9 0 0 1 0 -9" stroke="#fff" strokeWidth={1.2} opacity={0.5} fill="none" strokeLinecap="round" />
       </G>
     );
+  if (frame === 'shield')
+    return (
+      <G>
+        <Path d="M-11 -11.2 H13 V3 Q13 10 1 14 Q-11 10 -11 3 Z" fill="rgba(59,31,20,0.3)" />
+        <Path d="M-12 -12.6 H12 V2 Q12 9 0 13 Q-12 9 -12 2 Z" fill={m.rim} stroke={INK} strokeWidth={1.3} strokeLinejoin="round" />
+        <Path d="M-9.4 -10 H9.4 V1.8 Q9.4 7 0 10.4 Q-9.4 7 -9.4 1.8 Z" fill={m.face} stroke={m.hi} strokeWidth={0.8} strokeLinejoin="round" />
+        <SvgText x={0} y={0.6} fontFamily={F.bold} fontSize={12} fill={m.ink} textAnchor="middle" letterSpacing={0.4}>
+          {NUMERALS[Math.max(0, Math.min(2, level - 1))]}
+        </SvgText>
+        {/* the open book at the shield's point */}
+        <Path
+          d="M-5.4 3.4 Q-2.6 2 0 3.4 Q2.6 2 5.4 3.4 V8 Q2.6 6.8 0 8 Q-2.6 6.8 -5.4 8 Z"
+          fill="#FFF4E0"
+          stroke={m.ink}
+          strokeWidth={0.8}
+          strokeLinejoin="round"
+        />
+        <Path d="M0 3.4 V8" stroke={m.ink} strokeWidth={0.6} />
+        <Path d="M-8 -8 H-3" stroke="#fff" strokeWidth={1.2} opacity={0.6} strokeLinecap="round" />
+      </G>
+    );
+  if (frame === 'hex') {
+    const hex = (r: number, k: number) => `${-r},0 ${-r / 2},${-k} ${r / 2},${-k} ${r},0 ${r / 2},${k} ${-r / 2},${k}`;
+    return (
+      <G>
+        <Polygon points={hex(19, 12.6)} transform="translate(1 1.6)" fill="rgba(59,31,20,0.3)" />
+        <Polygon points={hex(19, 12.6)} fill={m.rim} stroke={INK} strokeWidth={1.3} strokeLinejoin="round" />
+        <Polygon points={hex(16, 10.4)} fill={m.face} stroke={m.hi} strokeWidth={0.8} strokeLinejoin="round" />
+        {/* the nut's bore: a dark ring the numeral sits in, and a bolt at each point */}
+        <Circle cx={0} cy={0} r={9.8} fill="#2A2F36" stroke={INK} strokeWidth={0.9} />
+        <Circle cx={0} cy={0} r={8.6} fill="none" stroke={m.hi} strokeWidth={0.7} />
+        {[-1, 1].map((d) => (
+          <Circle key={d} cx={d * 15} cy={0} r={1.5} fill={m.hi} stroke={INK} strokeWidth={0.6} />
+        ))}
+        <SvgText x={0} y={4.4} fontFamily={F.bold} fontSize={12} fill={m.face} textAnchor="middle" letterSpacing={0.4}>
+          {NUMERALS[Math.max(0, Math.min(2, level - 1))]}
+        </SvgText>
+        <Path d="M-12 -7.4 L-7.6 -9.6" stroke="#fff" strokeWidth={1.2} opacity={0.6} strokeLinecap="round" />
+      </G>
+    );
+  }
+  if (frame === 'fan') {
+    // the stepped edge of an art-deco fan: a ziggurat outline with a ray of lines fanning up from its foot
+    const zig = (i: number) =>
+      `M${-19 + i} ${13 - i} V${6 - i} H${-15 + i} V0 H${-10 + i} V${-6 + i} H${-6 + i} V${-13 + i} H${6 - i} V${-6 + i} H${10 - i} V0 H${15 - i} V${6 - i} H${19 - i} V${13 - i} Z`;
+    return (
+      <G>
+        <Path d={zig(0)} transform="translate(1 1.6)" fill="rgba(59,31,20,0.3)" />
+        <Path d={zig(0)} fill={m.rim} stroke={INK} strokeWidth={1.3} strokeLinejoin="round" />
+        <Path d={zig(3)} fill={m.face} stroke={m.hi} strokeWidth={0.8} strokeLinejoin="round" />
+        {[-50, -25, 0, 25, 50].map((a) => (
+          <Path key={a} d="M0 12 V-9" transform={`rotate(${a} 0 12)`} stroke={m.rim} strokeWidth={0.8} opacity={0.5} />
+        ))}
+        <Circle cx={0} cy={-9.4} r={1.4} fill={m.hi} stroke={INK} strokeWidth={0.5} />
+        {num}
+        <Path d="M-11 -4.6 V-9" stroke="#fff" strokeWidth={1.2} opacity={0.6} strokeLinecap="round" />
+      </G>
+    );
+  }
   if (frame === 'plate')
     return (
       <G>
@@ -756,12 +817,12 @@ const DRAW: Readonly<Record<string, () => ReactElement>> = {
 /** One decor prop at its own origin (renovation-art.ts `DEFS` has the box it stays inside). `w` is the pennants' span. */
 export const RenoDecor = memo(function RenoDecor({ thing, w = 0 }: { thing: string; w?: number }) {
   if (thing === 'pennants') return <Pennants w={w} />;
-  const Draw = DRAW[thing];
+  const Draw = DRAW[thing] ?? DRAW_B[thing];
   return Draw ? <Draw /> : null;
 });
 
 /** The things that have a drawing (the budget checks every `DEFS` entry has one). */
-export const DRAWN_THINGS: readonly string[] = [...Object.keys(DRAW), 'pennants'];
+export const DRAWN_THINGS: readonly string[] = [...Object.keys(DRAW), ...Object.keys(DRAW_B), 'pennants'];
 
 // ---------- the fixtures that are pieces of their own ----------
 

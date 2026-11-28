@@ -43,7 +43,7 @@ export const COPY = {
   'look.scooter-red': 'Red scooter',
   // section 2. Sets
   'set.classic': 'Rosa’s classic',
-  'set.classic.done': 'Now it looks like Rosa’s. Good, eh?',
+  'set.classic.done': 'Looks like Rosa’s now, cara. Good, eh?',
   'set.diner': 'Mudhens diner',
   'set.diner.done': 'Matching set. Coach cried. I didn’t.',
   'set.dockside': 'Dockside shack',

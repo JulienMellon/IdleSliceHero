@@ -239,7 +239,7 @@ describe('U4: the day-30 cell is named', () => {
     expect(named[0].name).not.toBe('Visit');
     expect(named[0].what).toMatch(/2× income for 7 days/);
     expect(named[0].what).toMatch(/300 diamonds/);
-    expect(named[0].what).toMatch(/Gold oven/);
+    expect(named[0].what).toMatch(/Golden oven/);
     expect(t.filter((x) => x.day !== 30).every((x) => x.what === '')).toBe(true);
   });
 });
@@ -326,7 +326,7 @@ describe('gift calendar', () => {
     const h = giftHeader(gift(29, 1), NOW);
     expect(h.caption).toBe(`Nonna Rosa drops by. \u201C${VISITOR_LINES.nonna}\u201D`);
     expect(h.caption).toBe(visitCaption('nonna'));
-    expect(h.prize).toBe('2× income for 7 days · 300 diamonds · Gold oven');
+    expect(h.prize).toBe('2× income for 7 days · 300 diamonds · Golden oven');
     expect(h.prizeIcon).toBe('oven');
   });
   test('gift text covers every kind', () => {

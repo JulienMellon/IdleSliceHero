@@ -43,6 +43,113 @@ export const WATERFRONT_SCENES: Scene[] = [
     ],
   },
   {
+    id: 'waterfront-1b',
+    city: 'home',
+    character: 'marisol',
+    neighborhood: 'waterfront',
+    beat: 'interlude',
+    title: 'The Lookout',
+    trigger: { kind: 'after', neighborhood: 'waterfront', scene: 'waterfront-1', seconds: 540 },
+    panels: [
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'marisol', mood: 'neutral' }],
+        caption: 'Captain Marisol has claimed the stool by the window. It faces the sea.',
+        lines: [
+          { speaker: 'Captain Marisol', text: 'Every shop needs a lookout. I’m the lookout. Also the customer.' },
+          { speaker: 'You', text: 'Want a menu?' },
+          { speaker: 'Captain Marisol', text: 'I want what I had yesterday. Hold the fish.' },
+        ],
+      },
+      {
+        backdrop: 'waterfront',
+        cast: [{ id: 'marisol', mood: 'happy' }],
+        lines: [
+          { speaker: 'Captain Marisol', text: 'Fog rolls in at noon and out by supper. Like a regular.' },
+          { speaker: 'Captain Marisol', text: 'Dock crews can’t see a thing in it. They follow your oven by the smell.' },
+        ],
+      },
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'marisol', mood: 'neutral' }],
+        lines: [
+          { speaker: 'Gus', text: 'Captain. Oven’s running hot. Seen hotter. In a storm.' },
+          { speaker: 'Captain Marisol', text: 'Then feed it, Gus. And kid, ask me about this dock sometime. Not today.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'waterfront-1c',
+    city: 'home',
+    character: 'marisol',
+    neighborhood: 'waterfront',
+    beat: 'interlude',
+    title: 'Gulls and Crews',
+    trigger: { kind: 'after', neighborhood: 'waterfront', scene: 'downtown-4b', seconds: 540 },
+    panels: [
+      {
+        backdrop: 'waterfront',
+        cast: [{ id: 'marisol', mood: 'happy' }],
+        caption: 'A fishing boat ties up at the dock. Its crew follows the smell.',
+        lines: [{ speaker: 'Captain Marisol', text: 'That’s the Gray Gull. Her crew eats like gulls. Loud, and all at once.' }],
+      },
+      {
+        backdrop: 'waterfront',
+        cast: [{ id: 'marisol', mood: 'surprised' }],
+        lines: [
+          { speaker: 'You', text: 'Nonna Rosa asked if you still shout at gulls.' },
+          { speaker: 'Captain Marisol', text: 'Rosa? Rosa from the bread stall? She’s still alive and still nosy?' },
+          { speaker: 'Captain Marisol', text: 'Ha! Of course she is. Too stubborn for anything else.' },
+        ],
+      },
+      {
+        backdrop: 'waterfront',
+        cast: [{ id: 'marisol', mood: 'neutral' }],
+        lines: [
+          { speaker: 'Finn', text: 'Captain! The crew wants their pies tied up with string!' },
+          { speaker: 'Captain Marisol', text: 'Then tie ’em, Finn. A bowline. And kid: tell Rosa I haven’t forgotten the sardine.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'waterfront-1d',
+    city: 'home',
+    character: 'marisol',
+    neighborhood: 'waterfront',
+    beat: 'interlude',
+    title: 'Don’t Tell Rosa',
+    trigger: { kind: 'after', neighborhood: 'waterfront', scene: 'downtown-4c', seconds: 540 },
+    panels: [
+      {
+        backdrop: 'waterfront',
+        cast: [{ id: 'marisol', mood: 'angry' }],
+        lines: [
+          { speaker: 'You', text: 'Nonna says her pizza feeds the whole Waterfront now.' },
+          { speaker: 'Captain Marisol', text: 'Her pizza. In MY harbor. In MY fog.' },
+        ],
+      },
+      {
+        backdrop: 'waterfront',
+        cast: [{ id: 'marisol', mood: 'happy' }],
+        caption: 'Marisol takes a slice. Then another. Slowly.',
+        lines: [
+          { speaker: 'Captain Marisol', text: 'Fine. It’s good. Don’t you dare tell her I said so.' },
+          { speaker: 'You', text: 'My lips are sealed, Captain.' },
+        ],
+      },
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'marisol', mood: 'neutral' }],
+        lines: [
+          { speaker: 'Captain Marisol', text: 'Look at this crowd, kid. A shop this busy needs a manager.' },
+          { speaker: 'Captain Marisol', text: 'Hire one, and I’ll make an introduction. I know a fellow.' },
+        ],
+      },
+    ],
+  },
+  {
     id: 'waterfront-2',
     city: 'home',
     character: 'marisol',

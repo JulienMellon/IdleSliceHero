@@ -214,12 +214,12 @@ export const STREAK_SAVE_DIAMONDS = 20;
 export const COSMETIC_NAMES: Readonly<Record<string, string>> = {
   'oven-woodfired': 'Wood-fired oven',
   'scooter-mint': 'Mint scooter',
-  'neon-counter': 'Neon counter sign',
-  'awning-gold': 'Gold awning',
+  'neon-counter': 'Neon counter',
+  'awning-gold': 'Golden awning',
   'awning-founder': 'Founder awning',
-  'oven-gold': 'Gold oven',
-  'plaque-master': 'Master’s Plaque',
-  'storefront-skin': 'Fresh Storefront',
+  'oven-gold': 'Golden oven',
+  'plaque-master': 'Master’s plaque',
+  'storefront-skin': 'Fresh storefront',
 };
 
 /** Display name of a cosmetic id (storefront skins are numbered by cycle; the 35 v5.24 looks are named in copy/home/looks.ts, W5's copy). */

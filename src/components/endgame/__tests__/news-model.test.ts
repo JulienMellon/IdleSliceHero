@@ -43,8 +43,8 @@ describe('the endgame toasts', () => {
     const all = newsItems(withNews([{ kind: 'cosmetic', id: 'plaque-master' }], []));
     expect(all[0]).toMatchObject({ kind: 'all', sub: 'Nonna Rosa' });
     expect(all[0].text).toMatch(/^Eighteen stars, cara mia/);
-    expect(newsItems(withNews([{ kind: 'cosmetic', id: 'neon-counter' }], []))[0]).toMatchObject({ kind: 'cosmetic', text: 'Neon Counter' });
-    expect(cosmeticTitle('storefront-skin-3')).toBe('Fresh Storefront');
+    expect(newsItems(withNews([{ kind: 'cosmetic', id: 'neon-counter' }], []))[0]).toMatchObject({ kind: 'cosmetic', text: 'Neon counter' });
+    expect(cosmeticTitle('storefront-skin-3')).toBe('Fresh storefront');
   });
 
   test('stars first, then recipe cards, in the order they came', () => {

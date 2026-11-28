@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-// Renovation art (v5.25, card S6): Downtown, the Suburbs and the Waterfront show their plaque, their fixtures and their nine decor things. The budget: for every city, shop,
+// Renovation art (v5.25, cards S6 and S7): all six shops (Downtown, the Suburbs, the Waterfront, the University, Industrial, Uptown) show their plaque, their fixtures and their nine decor things. The budget: for every city, shop,
 // footprint, station level (a renovated shop's stations are back at 1), parked vehicle and plan, all nine things find a place; none lies over a head, the badge rail, the doorway, the
 // WELCOME mat or another thing; each stays on screen; the plaque stands clear of the master's plaque, the door's glass and the badges. The art is in renovation-props.tsx, which a node
 // test cannot import: the test reads its source for the table of drawings.
@@ -31,12 +31,12 @@ import { shopLayout } from '../shop-layout';
 import { visitShown } from '../cameo';
 import { withStars } from '../../../engine/features/layers/__tests__/gate-helpers';
 
-const ART: RenoShop[] = ['downtown', 'suburbs', 'waterfront'];
+const ART: RenoShop[] = [...RENO_SHOPS];
 const lv = (fp: number, n: number): G.Shop => ({ ...G.newShop(true), footprint: fp, ovens: n, prep: n, counter: n, tables: n });
 
 describe('the table of things', () => {
   test('every decor thing of the three shops has a place rule and a drawing; the plaque and the fixtures are named', () => {
-    const src = fs.readFileSync(path.resolve(__dirname, '../renovation-props.tsx'), 'utf8');
+    const src = ['renovation-props.tsx', 'renovation-props-b.tsx'].map((f) => fs.readFileSync(path.resolve(__dirname, '..', f), 'utf8')).join('\n');
     for (const set of ART) {
       expect(decorOf(set)).toHaveLength(9);
       for (const t of decorOf(set)) {
@@ -45,17 +45,19 @@ describe('the table of things', () => {
       }
       expect(fixturesOf(set)).toHaveLength(3);
     }
-    expect(Object.keys(DEFS)).toHaveLength(27);
+    expect(Object.keys(DEFS)).toHaveLength(54);
   });
   test('a thing is named by its id without the level and the shop', () => {
     expect(thingOf('reno2-downtown-pendant-lamps')).toBe('pendant-lamps');
     expect(RENO_ITEMS.suburbs[2].decor.map(thingOf)).toEqual(['cadillac', 'trophy-case', 'popcorn-cart']);
   });
   test('the plaque has a frame by place and a numeral at 12 pt in a box that holds it', () => {
-    expect(RENO_SHOPS.slice(0, 3).map(plaqueFrame)).toEqual(['oval', 'plate', 'porthole']);
-    const src = fs.readFileSync(path.resolve(__dirname, '../renovation-props.tsx'), 'utf8');
-    const sizes = [...src.matchAll(/fontSize=\{(\d+(?:\.\d+)?)\}/g)].map((m) => Number(m[1]));
-    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(10);
+    expect(RENO_SHOPS.map(plaqueFrame)).toEqual(['oval', 'plate', 'porthole', 'shield', 'hex', 'fan']);
+    for (const f of ['renovation-props.tsx', 'renovation-props-b.tsx']) {
+      const src = fs.readFileSync(path.resolve(__dirname, '..', f), 'utf8');
+      const sizes = [...src.matchAll(/fontSize=\{(\d+(?:\.\d+)?)\}/g)].map((m) => Number(m[1]));
+      if (sizes.length) expect(Math.min(...sizes)).toBeGreaterThanOrEqual(10);
+    }
     expect(RENO_PLAQUE_W).toBeGreaterThanOrEqual(36);
     expect(RENO_PLAQUE_H).toBeGreaterThanOrEqual(24);
   });

@@ -18,13 +18,13 @@ describe('tab 1: Shop Style, the seven cosmetics', () => {
     const v = vanityViews(base());
     expect(v.slice(0, 7).map((x) => x.id)).toEqual([...VANITY_IDS]);
     expect(v.slice(0, 7).map((x) => x.name)).toEqual([
-      'Golden Oven',
-      'Fresh Storefront',
-      'Wood-Fired Oven',
-      'Mint Scooter',
-      'Neon Counter',
-      'Golden Awning',
-      'Master’s Plaque',
+      'Golden oven',
+      'Fresh storefront',
+      'Wood-fired oven',
+      'Mint scooter',
+      'Neon counter',
+      'Golden awning',
+      'Master’s plaque',
     ]);
     expect(v[0].desc).toBe('Gold-trimmed bricks. The pizza notices.');
   });
@@ -218,7 +218,7 @@ describe('the Vanity tab (v5.24, card U6)', () => {
     expect(section(classic, 'set:classic')).toMatchObject({
       progress: '4/4 pieces',
       done: true,
-      doneLine: 'Now it looks like Rosa’s. Good, eh?',
+      doneLine: 'Looks like Rosa’s now, cara. Good, eh?',
       speaker: 'Nonna Rosa',
     });
     const diner = own(

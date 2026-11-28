@@ -75,17 +75,24 @@ describe('session 1: the first 33 minutes (rewards on)', () => {
   it('the scenes come in story order', () => {
     // v5.16 (card T1a): Deb's hire scene comes with the manager, and Dale's "3b" interlude after beat 3
     // v5.25 (card E10): downtown-3b is the Downtown slot (an interlude 200 s after beat 3)
+    // v5.25 (card T3): W6's interludes (downtown-1b, 2b, suburbs-2b) and the Waterfront stretch's Downtown and Suburbs ones (downtown-4b, suburbs-1b, downtown-4c) come in
     const order = [
       'downtown-1',
+      'downtown-1b',
       'downtown-2',
+      'downtown-2b',
       'downtown-3',
       'downtown-3b',
       'downtown-4',
       'suburbs-1',
       'suburbs-2',
+      'suburbs-2b',
       'suburbs-hire',
       'suburbs-3',
       'suburbs-3b',
+      'downtown-4b',
+      'suburbs-1b',
+      'downtown-4c',
       'suburbs-4',
     ];
     // v5.25: Waterfront (80K) may be built once Suburbs' third beat has played, so its scenes can come in before the Suburbs finale; they are not part of this order

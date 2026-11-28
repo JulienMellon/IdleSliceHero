@@ -55,6 +55,47 @@ export const DOWNTOWN_SCENES: Scene[] = [
     ],
   },
   {
+    id: 'downtown-1b',
+    city: 'home',
+    character: 'nonna-rosa',
+    neighborhood: 'downtown',
+    beat: 'interlude',
+    title: 'The Chair',
+    trigger: { kind: 'after', neighborhood: 'downtown', scene: 'downtown-1', seconds: 190 },
+    panels: [
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
+        caption: 'Nonna has dragged her old chair to the door. It creaks. So does she.',
+        lines: [
+          { speaker: 'Nonna Rosa', text: 'My knees, they retire. My eyes? Never. From here, I supervise.' },
+          { speaker: 'You', text: 'Supervise what, exactly?' },
+        ],
+      },
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'nonna-rosa', mood: 'angry' }],
+        lines: [
+          { speaker: 'Nonna Rosa', text: 'You. You hold the dough like it owes you money.' },
+          { speaker: 'You', text: 'Is that bad?' },
+          { speaker: 'Nonna Rosa', text: 'Gentle, cara. Dough remembers. So do I.' },
+        ],
+      },
+      {
+        backdrop: 'downtown',
+        cast: [
+          { id: 'nonna-rosa', mood: 'surprised' },
+          { id: 'mr-smith', mood: 'neutral' },
+        ],
+        caption: 'Across the street, a trench coat walks past. Slowly. Again.',
+        lines: [
+          { speaker: 'Nonna Rosa', text: 'That man. He walks past my window again and again. He thinks I don’t see.' },
+          { speaker: 'Nonna Rosa', text: 'I never forget a face, cara. Even one hiding in a collar.' },
+        ],
+      },
+    ],
+  },
+  {
     id: 'downtown-2',
     city: 'home',
     character: 'nonna-rosa',
@@ -85,6 +126,45 @@ export const DOWNTOWN_SCENES: Scene[] = [
           { speaker: 'You', text: 'Our first regular is a "Mr. Smith." He tipped in MegaSlice coupons.' },
           { speaker: 'Nonna Rosa', text: 'Suspicious. But a tip is a tip.' },
           { speaker: 'Nonna Rosa', text: 'Four hundred pizzas. Is small. Is a start. Keep going, eh?' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'downtown-2b',
+    city: 'home',
+    character: 'nonna-rosa',
+    neighborhood: 'downtown',
+    beat: 'interlude',
+    title: 'The Fine Print',
+    trigger: { kind: 'after', neighborhood: 'downtown', scene: 'downtown-2', seconds: 186 },
+    panels: [
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'nonna-rosa', mood: 'happy' }],
+        caption: 'Nonna has found a use for Mr. Smith’s MegaSlice coupons.',
+        lines: [
+          { speaker: 'Nonna Rosa', text: 'Under the wobbly table. At last, MegaSlice holds something up.' },
+          { speaker: 'You', text: 'Nonna, that’s a good one.' },
+          { speaker: 'Nonna Rosa', text: 'I have many. I save them for special occasions.' },
+        ],
+      },
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'nonna-rosa', mood: 'surprised' }],
+        lines: [
+          { speaker: 'Nonna Rosa', text: 'Ay, the fine print. “Soon, every pizzeria will be a MegaSlice.”' },
+          { speaker: 'You', text: 'That’s not a coupon. That’s a threat.' },
+          { speaker: 'Nonna Rosa', text: 'A threat with a discount. Very modern.' },
+        ],
+      },
+      {
+        backdrop: 'downtown',
+        cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
+        caption: 'A long black car slows outside Rosa’s. Then it drives on.',
+        lines: [
+          { speaker: 'Nonna Rosa', text: 'Fancy car. Nobody fancy comes Downtown, cara. Unless they want something.' },
+          { speaker: 'Nonna Rosa', text: 'So we bake. If somebody comes, they find us busy.' },
         ],
       },
     ],
@@ -136,34 +216,42 @@ export const DOWNTOWN_SCENES: Scene[] = [
       },
     ],
   },
-  // v5.25 (card E10): the slot that splits the longest wait of session 1 (downtown-3 to downtown-4, 7 minutes) in two. PLACEHOLDER: W6 writes the scene, T3 lands it.
-  // It is an interlude (no chapter, no task): it plays 200 s of play after downtown-3 and does not hold downtown-4 back.
+  // v5.25 (card T3): the interludes between Downtown's beats; each plays after the scene it names (the gaps split the session-1 story waits, scripts/pacing-fit.ts session1).
   {
     id: 'downtown-3b',
     city: 'home',
     character: 'nonna-rosa',
     neighborhood: 'downtown',
     beat: 'interlude',
-    title: 'Downtown Interlude',
-    trigger: { kind: 'after', neighborhood: 'downtown', scene: 'downtown-3', seconds: 200 },
+    title: 'Real Bread',
+    trigger: { kind: 'after', neighborhood: 'downtown', scene: 'downtown-3', seconds: 165 },
     panels: [
       {
         backdrop: 'shop',
         cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
-        caption: 'PLACEHOLDER 1/3: a short Downtown moment.',
-        lines: [{ speaker: 'Nonna Rosa', text: 'PLACEHOLDER: keep baking, cara.' }],
+        caption: 'The day after the suit. Lucia has put a stool in front of the oven.',
+        lines: [
+          { speaker: 'Lucia', text: 'I sleep here now, Zia. Suits are like mice. They come back.' },
+          { speaker: 'Nonna Rosa', text: 'You sleep at home. The oven protects itself. It has fire.' },
+        ],
+      },
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'nonna-rosa', mood: 'angry' }],
+        lines: [
+          { speaker: 'Nonna Rosa', text: '“Real bread,” he says. As if there is another kind.' },
+          { speaker: 'You', text: 'You’re still thinking about his crust.' },
+          { speaker: 'Nonna Rosa', text: 'I am thinking about OUR crust. Ours is better. And it can be better still.' },
+        ],
       },
       {
         backdrop: 'downtown',
         cast: [{ id: 'nonna-rosa', mood: 'happy' }],
-        caption: 'PLACEHOLDER 2/3.',
-        lines: [{ speaker: 'Nonna Rosa', text: 'PLACEHOLDER: the line is longer today.' }],
-      },
-      {
-        backdrop: 'shop',
-        cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
-        caption: 'PLACEHOLDER 3/3.',
-        lines: [{ speaker: 'Nonna Rosa', text: 'PLACEHOLDER: back to the ovens.' }],
+        caption: 'Outside, the line reaches the corner.',
+        lines: [
+          { speaker: 'Nonna Rosa', text: 'Look at them, cara. Every one of them is a “no” to MegaSlice.' },
+          { speaker: 'Nonna Rosa', text: 'Keep baking. When Downtown smells like Rosa’s again, I show you something.' },
+        ],
       },
     ],
   },
@@ -210,6 +298,81 @@ export const DOWNTOWN_SCENES: Scene[] = [
         lines: [
           { speaker: 'Nonna Rosa', text: 'From now on, I run the Downtown kitchen myself. You rest your tapping finger.' },
           { speaker: 'Nonna Rosa', text: 'You go open shops in the other neighborhoods. Go! Before I get sentimental.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'downtown-4b',
+    city: 'home',
+    character: 'nonna-rosa',
+    neighborhood: 'downtown',
+    beat: 'interlude',
+    title: 'Where Spoons Live',
+    trigger: { kind: 'after', neighborhood: 'downtown', scene: 'waterfront-1b', seconds: 540 },
+    panels: [
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'nonna-rosa', mood: 'happy' }],
+        caption: 'Downtown. Nonna runs the kitchen now. The kitchen has noticed.',
+        lines: [
+          { speaker: 'Marco', text: 'Nonna moved every spoon. I can’t find anything. I love it.' },
+          { speaker: 'Nonna Rosa', text: 'A spoon lives where Nonna puts it. Like a grandchild.' },
+        ],
+      },
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
+        lines: [
+          { speaker: 'Nonna Rosa', text: 'So. You go to the Waterfront every day now. With the fishermen.' },
+          { speaker: 'You', text: 'It’s a good shop, Nonna.' },
+          { speaker: 'Nonna Rosa', text: 'Good, you say. Eat something there. The sea makes people thin.' },
+        ],
+      },
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'nonna-rosa', mood: 'surprised' }],
+        caption: 'Nonna squints at the address on a Waterfront order.',
+        lines: [
+          { speaker: 'Nonna Rosa', text: 'The Waterfront? Is there still a woman who shouts at gulls? Tall? Bossy?' },
+          { speaker: 'Nonna Rosa', text: 'Never mind. Tell nobody I asked.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'downtown-4c',
+    city: 'home',
+    character: 'nonna-rosa',
+    neighborhood: 'downtown',
+    beat: 'interlude',
+    title: 'The Sardine',
+    trigger: { kind: 'after', neighborhood: 'downtown', scene: 'suburbs-1b', seconds: 540 },
+    panels: [
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'nonna-rosa', mood: 'surprised' }],
+        lines: [
+          { speaker: 'You', text: 'Captain Marisol says she hasn’t forgotten the sardine.' },
+          { speaker: 'Nonna Rosa', text: 'MARISOL. Ay. The sardine was fine. A little old. Like her.' },
+        ],
+      },
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'nonna-rosa', mood: 'happy' }],
+        caption: 'Long ago, two stalls at the old fish market. Bread on one side. Fish on the other.',
+        lines: [
+          { speaker: 'Nonna Rosa', text: 'Every morning we argued who had the best stall. Every morning I won.' },
+          { speaker: 'You', text: 'And what does she say?' },
+          { speaker: 'Nonna Rosa', text: 'She says the same. Is a long argument, cara.' },
+        ],
+      },
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
+        lines: [
+          { speaker: 'Nonna Rosa', text: 'Tell her: Rosa’s pizza feeds the whole Waterfront now. She will hate that.' },
+          { speaker: 'Marco', text: 'Can I take the message? I want to see her face!' },
         ],
       },
     ],

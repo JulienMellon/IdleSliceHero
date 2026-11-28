@@ -26,9 +26,9 @@ describe('later-cycle visitors', () => {
 });
 
 describe('the story count', () => {
-  test('the completed-city goal counts against all 41 scenes', () => {
+  test('the completed-city goal counts against all 50 scenes', () => {
     expect(STORY_TOTAL).toBe(HOME_SCENES.length);
-    expect(STORY_TOTAL).toBe(41);
-    expect(storyGoal(12)).toEqual({ label: 'Story 12/41', current: 12, target: 41 });
+    expect(STORY_TOTAL).toBe(50);
+    expect(storyGoal(12)).toEqual({ label: 'Story 12/50', current: 12, target: 50 });
   });
 });

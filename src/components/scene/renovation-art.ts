@@ -73,9 +73,12 @@ export const hasFixture = (d: Pick<RenoDress, 'renoSet' | 'renoLevel'>, name: st
 
 /** The plaque's box (screen units): 38 x 26 whatever the frame (an oval, a rivetted plate or a porthole ring), numeral at 12 pt. */
 export const RENO_PLAQUE_W = 38;
-/** The plaque's frame by the shop's place in the city (docs/build/v5.25/renovation.md): an oval with a rope edge, a rivetted plate, a porthole ring. The other shops' (card S7) draw the oval until theirs land. */
-export type PlaqueFrame = 'oval' | 'plate' | 'porthole';
-const FRAMES: readonly PlaqueFrame[] = ['oval', 'plate', 'porthole'];
+/**
+ * The plaque's frame by the shop's place in the city (docs/build/v5.25/renovation.md): an oval with a rope edge (Downtown), a rivetted plate (the Suburbs), a porthole ring (the Waterfront),
+ * a shield with a book (the University), a hex nut (Industrial) and an art-deco fan (Uptown).
+ */
+export type PlaqueFrame = 'oval' | 'plate' | 'porthole' | 'shield' | 'hex' | 'fan';
+const FRAMES: readonly PlaqueFrame[] = ['oval', 'plate', 'porthole', 'shield', 'hex', 'fan'];
 export const plaqueFrame = (set: RenoShop | ''): PlaqueFrame => FRAMES[RENO_SHOPS.indexOf(set as RenoShop)] ?? 'oval';
 export const RENO_PLAQUE_H = 26;
 /**
@@ -101,7 +104,7 @@ interface Def {
 const box = (hw: number, up: number, down = 1): Rect => ({ x0: -hw, x1: hw, y0: -up, y1: down });
 const hung = (hw: number, h: number): Rect => ({ x0: -hw, x1: hw, y0: 0, y1: h });
 
-/** All 27 things, by `<set>/<thing>`. */
+/** All 54 things, by `<set>/<thing>`. */
 export const DEFS: Readonly<Record<string, Def>> = {
   'downtown/espresso': { mount: 'counter', box: box(8, 34) },
   'downtown/wine-rack': { mount: 'wall', box: box(13, 34, 0) },
@@ -130,6 +133,33 @@ export const DEFS: Readonly<Record<string, Def>> = {
   'waterfront/helm': { mount: 'wall', box: box(15, 31, 0) },
   'waterfront/mast': { mount: 'street', box: box(10, 50) },
   'waterfront/barrel-table': { mount: 'street', box: box(12, 26, 2) },
+  'university/bulletin-board': { mount: 'wall', box: box(12, 22, 0) },
+  'university/bean-bag': { mount: 'floor', box: box(11, 15, 2) },
+  'university/string-lights': { mount: 'hang', box: hung(28, 14) },
+  'university/couch': { mount: 'floor', box: box(21, 16, 2) },
+  'university/vending': { mount: 'floor', box: box(8, 40, 2) },
+  'university/bike-rack': { mount: 'street', box: box(16, 18, 2) },
+  'university/globe': { mount: 'counter', box: box(8, 22) },
+  'university/library-ladder': { mount: 'wall', box: box(14, 40, 0) },
+  'university/telescope': { mount: 'street', box: box(12, 34, 2) },
+  'industrial/pipe-run': { mount: 'hang', box: hung(30, 22) },
+  'industrial/drums': { mount: 'street', box: box(14, 20, 2) },
+  'industrial/pegboard': { mount: 'wall', box: box(13, 24, 0) },
+  'industrial/flour-pallet': { mount: 'street', box: box(15, 22, 2) },
+  'industrial/gear-clock': { mount: 'wall', box: box(14, 28, 0) },
+  'industrial/work-lamp': { mount: 'hang', box: hung(12, 27) },
+  'industrial/boiler': { mount: 'floor', box: box(13, 34, 2) },
+  'industrial/conveyor': { mount: 'floor', box: box(24, 14, 2) },
+  'industrial/anvil-table': { mount: 'floor', box: box(12, 20, 2) },
+  'uptown/velvet-rope': { mount: 'street', box: box(18, 20, 2) },
+  'uptown/orchid': { mount: 'counter', box: box(8, 34) },
+  'uptown/lectern': { mount: 'street', box: box(8, 28, 2) },
+  'uptown/columns': { mount: 'wall', box: box(13, 46, 0) },
+  'uptown/piano': { mount: 'floor', box: box(22, 28, 2) },
+  'uptown/portrait': { mount: 'wall', box: box(12, 28, 0) },
+  'uptown/ice-swan': { mount: 'counter', box: box(8, 22) },
+  'uptown/champagne-tower': { mount: 'floor', box: box(14, 34, 2) },
+  'uptown/deco-arch': { mount: 'wall', box: box(14, 36, 0) },
 };
 
 export interface RenoPlaced {
@@ -173,16 +203,46 @@ interface Cand {
   pref: [number, number];
 }
 
+/** Which side of the back wall a wall thing likes (the rest take the left). */
+const WALL_PREF: Readonly<Record<string, 'left' | 'mid' | 'right'>> = {
+  'wine-rack': 'right',
+  'trophy-case': 'mid',
+  'bulletin-board': 'right',
+  'gear-clock': 'mid',
+  portrait: 'left',
+  'deco-arch': 'mid',
+  columns: 'right',
+};
+
 /**
  * Where each of the shop's nine decor things stands in this layout (the plain plan's, flipped for the mirrored plan). An item with no clear spot is left out (the budget in
  * `__tests__/renovation-art.test.ts` asserts none is, for every footprint and every level of the shop).
  */
 export function renoSpots(lay: Layout, set: RenoShop, id: NeighborhoodId, vehicle = 1, idleShop = false): RenoPlaced[] {
+  return spotsOf(lay, set, id, vehicle, idleShop).filter((p) => p.thing !== GIFT);
+}
+
+/** The thing the free gift's box is placed as: first of all, so every shop (renovated or not) gives it the same place and the decor goes round it. */
+export const GIFT = 'gift';
+/** The gift box's drawing box: 18 wide, 17 tall, on the dining floor. */
+const GIFT_DEF: Def = { mount: 'floor', box: box(9, 16) };
+const defOf = (set: RenoShop | null, thing: string): Def => (thing === GIFT ? GIFT_DEF : DEFS[`${set}/${thing}`]);
+
+/**
+ * Where the free gift's box stands in this layout (the plain plan's, flipped for the mirrored plan): one fixed free place on the dining floor, found by the rule the decor things use
+ * (off a head, the badges, the doorway, the WELCOME mat, the stations and the ladder's props), in front of the window side. Null when the room has no clear place (the budget in
+ * `__tests__/gift-prop.test.ts` asserts it never happens). It does not depend on the renovation: the decor is placed around it.
+ */
+export function giftSpot(lay: Layout, id: NeighborhoodId, vehicle = 1, idleShop = false): RenoPlaced | null {
+  return spotsOf(lay, null, id, vehicle, idleShop).find((p) => p.thing === GIFT) ?? null;
+}
+
+function spotsOf(lay: Layout, set: RenoShop | null, id: NeighborhoodId, vehicle: number, idleShop: boolean): RenoPlaced[] {
   if (lay.mirrored) {
     const a = 2 * lay.frame.vanishX;
-    return renoSpots(plainOf(lay), set, id, vehicle, idleShop).map((p) => ({ ...p, ax: a - p.ax, rect: flipRect(p.rect, a) }));
+    return spotsOf(plainOf(lay), set, id, vehicle, idleShop).map((p) => ({ ...p, ax: a - p.ax, rect: flipRect(p.rect, a) }));
   }
-  const things = decorOf(set);
+  const things = set ? decorOf(set) : [];
   const blockers = obstacles(lay, id);
   const people = fixedPeople(lay);
   const heads = people.map((p) => ({ y: p.y, head: p.head }));
@@ -266,7 +326,7 @@ export function renoSpots(lay: Layout, set: RenoShop, id: NeighborhoodId, vehicl
     return s + 0.02 * (Math.abs(c.pref[0] - (r.x0 + r.x1) / 2) + Math.abs(c.pref[1] - (r.y0 + r.y1) / 2));
   };
   const put = (thing: string, cands: Cand[]) => {
-    const def = DEFS[`${set}/${thing}`];
+    const def = defOf(set, thing);
     const b = thing === 'pennants' ? pennantBox(lay) : def.box;
     let best: { c: Cand; r: Rect; s: number } | null = null;
     for (const c of cands) {
@@ -275,7 +335,7 @@ export function renoSpots(lay: Layout, set: RenoShop, id: NeighborhoodId, vehicl
       const s = score(r, c);
       if (!best || s < best.s - 1e-9) best = { c, r, s };
     }
-    if (best) placed.push({ key: `${set}/${thing}`, thing, ax: best.c.ax, ay: best.c.ay, k: best.c.k, sortY: best.c.sortY, rect: best.r });
+    if (best) placed.push({ key: `${set ?? GIFT}/${thing}`, thing, ax: best.c.ax, ay: best.c.ay, k: best.c.k, sortY: best.c.sortY, rect: best.r });
   };
 
   const range = (a: number, b: number, step: number): number[] => {
@@ -293,11 +353,9 @@ export function renoSpots(lay: Layout, set: RenoShop, id: NeighborhoodId, vehicl
 
   // the widest things first, so a narrow one takes what room is left (the order only decides who gets the open stretch of pavement; every place is found for all nine)
   const widthOf = (t: string) => (t === 'pennants' ? Infinity : DEFS[`${set}/${t}`] ? DEFS[`${set}/${t}`].box.x1 - DEFS[`${set}/${t}`].box.x0 : 0);
-  for (const thing of [...things].sort((a, b) => widthOf(b) - widthOf(a))) {
-    // the sets of the other three shops are card S7's: their things have no entry here yet
-    if (!DEFS[`${set}/${thing}`]) continue;
-    const { mount } = DEFS[`${set}/${thing}`];
-    const b = thing === 'pennants' ? pennantBox(lay) : DEFS[`${set}/${thing}`].box;
+  for (const thing of [GIFT, ...[...things].sort((a, b) => widthOf(b) - widthOf(a))]) {
+    const { mount } = defOf(set, thing);
+    const b = thing === 'pennants' ? pennantBox(lay) : defOf(set, thing).box;
     const cands: Cand[] = [];
     if (mount === 'counter') {
       // the counter's top: the far end from the door first (the left end of the plain plan)
@@ -308,12 +366,23 @@ export function renoSpots(lay: Layout, set: RenoShop, id: NeighborhoodId, vehicl
       }
     } else if (mount === 'wall') {
       // the back wall: a band of heights above the heads (which start at ~297) and off the oven bank; wine goes on the door's side, trophies mid-room, the helm beside the ovens
-      const prefX = thing === 'wine-rack' ? right : thing === 'trophy-case' ? (left + right) / 2 : left;
+      const prefX = WALL_PREF[thing] === 'right' ? right : WALL_PREF[thing] === 'mid' ? (left + right) / 2 : left;
       for (const ay of range(232, 296, 4)) for (const ax of range(left + 16, right - 16, 4)) cands.push({ ax, ay, k: 1, sortY: D + 1, pref: [prefX, 270] });
     } else if (mount === 'hang') {
       const ay = band.y1 + 1;
       const w = b.x1 - b.x0;
-      const prefX = thing === 'chandelier' ? P(mid, D)[0] : thing === 'pennants' ? (left + right) / 2 : thing === 'net-buoys' ? left + 40 : (left + right) / 2;
+      const prefX =
+        thing === 'chandelier'
+          ? P(mid, D)[0]
+          : thing === 'pennants'
+            ? (left + right) / 2
+            : thing === 'net-buoys'
+              ? left + 40
+              : thing === 'pipe-run'
+                ? left + 40
+                : thing === 'work-lamp'
+                  ? (cx0 + cx1) / 2
+                  : (left + right) / 2;
       if (thing === 'pennants') cands.push({ ax: (left + right) / 2, ay, k: 1, sortY: D - 2, pref: [prefX, ay + 10] });
       else {
         // the chandelier is drawn at 0.74 so that it ends over the oven bank's rect, not in it
@@ -323,14 +392,29 @@ export function renoSpots(lay: Layout, set: RenoShop, id: NeighborhoodId, vehicl
     } else if (mount === 'floor') {
       // the dining floor: the medallion mid-room, the stools in front of the counter, the booth on the window side, the jukebox and the gumball machine toward the door
       const prefX =
-        thing === 'medallion'
+        thing === 'medallion' || thing === 'champagne-tower' || thing === 'anvil-table'
           ? mid
-          : thing === 'stools'
-            ? (lay.counter.x0 + lay.counter.x1) / 2
-            : thing === 'booth'
-              ? lay.L + 30
-              : lay.door.x0 - (thing === 'gumball' ? 14 : 36);
-      const ys = thing === 'medallion' ? [24, 32, 40, 48] : thing === 'stools' ? [54, 50, 46] : [12, 18, 26, 34, 44, 54];
+          : thing === GIFT
+            ? lay.L + 22
+            : thing === 'stools' || thing === 'conveyor'
+              ? (lay.counter.x0 + lay.counter.x1) / 2
+              : thing === 'booth' || thing === 'couch'
+                ? lay.L + 30
+                : thing === 'bean-bag' || thing === 'vending'
+                  ? lay.L + 14
+                  : thing === 'boiler' || thing === 'piano'
+                    ? lay.R - 16
+                    : lay.door.x0 - (thing === 'gumball' ? 14 : 36);
+      const ys =
+        thing === GIFT
+          ? [10, 16, 24, 32]
+          : thing === 'medallion' || thing === 'champagne-tower' || thing === 'anvil-table'
+            ? [24, 32, 40, 48]
+            : thing === 'stools' || thing === 'conveyor'
+              ? [54, 50, 46]
+              : thing === 'couch' || thing === 'piano'
+                ? [54, 46, 38, 30]
+                : [12, 18, 26, 34, 44, 54];
       for (const y of ys)
         for (const x of range(lay.L + 14, lay.R - 14, 4)) {
           const [ax, ay] = P(x, y, 0);
@@ -358,7 +442,14 @@ export function renoSpots(lay: Layout, set: RenoShop, id: NeighborhoodId, vehicl
       // the pavement at the kerb: feet just above the report strip, anywhere along the front but over the mat; the pavement's open stretches win
       const [fx0] = P(lay.L, fy);
       const [fx1] = P(lay.R, fy);
-      const pref = thing === 'cadillac' || thing === 'vespa' ? fx0 + 20 : thing === 'chalkboard' || thing === 'mast' ? fx1 : (fx0 + fx1) / 2;
+      const pref =
+        thing === 'cadillac' || thing === 'vespa' || thing === 'drums' || thing === 'bike-rack'
+          ? fx0 + 20
+          : thing === 'chalkboard' || thing === 'mast' || thing === 'telescope'
+            ? fx1
+            : thing === 'velvet-rope' || thing === 'lectern'
+              ? P(lay.door.cx, fy)[0]
+              : (fx0 + fx1) / 2;
       const [, ay] = P(0, fy, 0);
       for (const ax of range(frameL + b.x1 + 2, frameR - b.x1 - 2, 3)) cands.push({ ax, ay, k: kAt(fy) * 1.04, sortY: fy, pref: [pref, ay - 12] });
     }
@@ -370,6 +461,7 @@ export function renoSpots(lay: Layout, set: RenoShop, id: NeighborhoodId, vehicl
 /** Every rect the renovation draws that nothing opaque may lie over a protected element with (the cover budget, protected.ts): the plaque and the decor things' places. */
 export function renoCovers(lay: Layout, set: RenoShop, id: NeighborhoodId, vehicle = 1, idleShop = false): { id: string; rect: Rect }[] {
   const out: { id: string; rect: Rect }[] = [{ id: 'reno-plaque', rect: renoPlaqueRect(lay) }];
+  // (the free gift's box is a cover of its own: `giftSpot`, protected.ts)
   for (const p of renoSpots(lay, set, id, vehicle, idleShop)) out.push({ id: `reno-${p.thing}`, rect: p.rect });
   return out;
 }

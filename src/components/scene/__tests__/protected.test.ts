@@ -15,8 +15,8 @@ import { shopLayout } from '../shop-layout';
 import { stripTop } from '../strip-clear';
 
 const shopAt = (footprint: number, lv = 100): G.Shop => ({ ...G.newShop(true), footprint, ovens: lv, prep: lv, counter: lv, tables: lv });
-// the sets of renovation looks that have art (v5.25, card S6: Downtown, the Suburbs, the Waterfront; the other three are card S7's)
-const RENO_ART = ['downtown', 'suburbs', 'waterfront'];
+// the sets of renovation looks that have art (v5.25, cards S6 and S7: all six)
+const RENO_ART: string[] = [...RENO_SHOPS];
 // the phones the game runs on, as the area the scene gets: the screen less the HUD and the shop tabs above it (178 pt in the screenshots; src/app/index.tsx sceneArea). The fit is
 // then set by the width (the SE 0.95, the standard 1.0) or, on the Max, by the height (1.11): the scene never fits larger than that, so the strip never sits higher than this.
 const CHROME = 178;

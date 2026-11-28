@@ -97,7 +97,7 @@ describe('the products tab', () => {
     expect(buyLine('cancelled')).toBe('');
     expect(restoreLine(['nonnas_plus'])).toBe("Restored: Nonna's Plus.");
     expect(restoreLine([])).toMatch(/No earlier purchases/);
-    expect(restoreResult(['starter_pack', 'nonnas_plus'])).toBe("Restored: Nonna's Starter Pack, Nonna's Plus.");
+    expect(restoreResult(['starter_pack', 'nonnas_plus'])).toBe("Restored: Nonna’s Starter Pack, Nonna's Plus.");
   });
 });
 
@@ -280,7 +280,7 @@ describe('the store cards (card N1)', () => {
     const r = row('starter_pack');
     expect(r.nonna).toBe('I pack it myself. Like a lunch, cara.');
     expect(r.tags).toEqual(['ONE PER OWNER']);
-    expect(r.blurb).toBe('$7K + 400 💎 + 2x for 30 min');
+    expect(r.blurb).toBe('$7K in cash + 400 💎 + 2x income for 30 min');
     expect(r.chips.map((c) => c.sub)).toEqual(['Enough for 6 shop looks', "≈ $1.8M at your shop's pace", 'Only in this pack']);
     expect(JSON.stringify(r)).not.toMatch(/ONE-TIME|worth|value|save \d|limited|left/i);
   });

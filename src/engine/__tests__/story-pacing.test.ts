@@ -30,7 +30,7 @@ const won = (s: G.GameState, id: NeighborhoodId): G.GameState => ({ ...s, x: { .
 const after = (id: string) => (scene(id).trigger as { seconds: number }).seconds;
 const ids = (list: { id: string }[]) => list.map((x) => x.id);
 /** Everything in Downtown played, so no Downtown scene is waiting in front of the scene a test is about. */
-const DT = ['downtown-1', 'downtown-2', 'downtown-3', 'downtown-3b', 'downtown-4'];
+const DT = ['downtown-1', 'downtown-1b', 'downtown-2', 'downtown-2b', 'downtown-3', 'downtown-3b', 'downtown-4'];
 
 describe('story pacing (v3.7)', () => {
   it('the first scene after a launch or return plays straight away', () => {
@@ -47,7 +47,9 @@ describe('story pacing (v3.7)', () => {
     expect(pickScene(s, HOME_SCENES, LATE, 0, false, 99)?.id).toBe('suburbs-1');
   });
   it('Downtown’s beat 4 (a pizza count) waits 120 s of play after beat 3 (S45)', () => {
-    const dt = withShop(seenUpTo(['downtown-1', 'downtown-2', 'downtown-3'], 500, { 'downtown-3': 400 }), 'downtown', { sold: countOf('downtown-4') });
+    const dt = withShop(seenUpTo(['downtown-1', 'downtown-1b', 'downtown-2', 'downtown-2b', 'downtown-3'], 500, { 'downtown-3': 400 }), 'downtown', {
+      sold: countOf('downtown-4'),
+    });
     expect(pickScene({ ...dt, playSeconds: 400 + STORY_PACING.firstHoodBeat4GapSeconds - 10 }, HOME_SCENES, LATE, 0, false, null)).toBeNull();
     expect(pickScene({ ...dt, playSeconds: 400 + STORY_PACING.firstHoodBeat4GapSeconds + 10 }, HOME_SCENES, LATE, 0, false, null)?.id).toBe('downtown-4');
   });
@@ -238,7 +240,7 @@ describe('perk scope (T31)', () => {
 
 describe('interludes (v5.16)', () => {
   const sub3 = (playSeconds: number) =>
-    withShop(seenUpTo([...DT, 'suburbs-1', 'suburbs-2', 'suburbs-3'], playSeconds, { 'suburbs-3': 800 }), 'suburbs', { built: true });
+    withShop(seenUpTo([...DT, 'suburbs-1', 'suburbs-2', 'suburbs-2b', 'suburbs-3'], playSeconds, { 'suburbs-3': 800 }), 'suburbs', { built: true });
   it('an `after` interlude plays at its delay and not before', () => {
     const delay = after('suburbs-3b');
     expect(delay).toBeGreaterThan(0);
@@ -248,7 +250,7 @@ describe('interludes (v5.16)', () => {
     expect(G.sceneTriggered(withShop(seenUpTo(['suburbs-3'], 1e6, { 'suburbs-3': 0 }), 'suburbs', { built: false }), scene('suburbs-3b'))).toBe(false);
   });
   it('a scene seen with no time on record (an old save, or one the migration marked) counts from the start of play', () => {
-    const s = withShop(seenUpTo([...DT, 'suburbs-1', 'suburbs-2', 'suburbs-3'], 0), 'suburbs', { built: true });
+    const s = withShop(seenUpTo([...DT, 'suburbs-1', 'suburbs-2', 'suburbs-2b', 'suburbs-3'], 0), 'suburbs', { built: true });
     expect(G.sceneTriggered({ ...s, playSeconds: after('suburbs-3b') - 1 }, scene('suburbs-3b'))).toBe(false);
     expect(G.sceneTriggered({ ...s, playSeconds: after('suburbs-3b') }, scene('suburbs-3b'))).toBe(true);
   });
@@ -267,13 +269,10 @@ describe('interludes (v5.16)', () => {
   });
   it('main beats win ties: a main beat and an interlude both ready, the main beat first, though the interlude comes first in the story', () => {
     const seen = [
-      'downtown-1',
-      'downtown-2',
-      'downtown-3',
-      'downtown-3b',
-      'downtown-4',
+      ...DT,
       'suburbs-1',
       'suburbs-2',
+      'suburbs-2b',
       'suburbs-3',
       'suburbs-3b',
       'waterfront-1',

@@ -188,7 +188,7 @@ describe('the checker itself', () => {
   it('catches a cycle, a layer kind that is not one, and a fit with a key missing', () => {
     const cyc = withScene((s) => ({ ...s, requires: ['waterfront-2'] }), 'waterfront-1');
     expect(problemsOf({ ...cyc, scenes: cyc.scenes.map((s) => (s.id === 'waterfront-2' ? { ...s, requires: ['waterfront-1'] } : s)) }).join('\n')).toMatch(
-      /a cycle: waterfront-1 → waterfront-2 → waterfront-1|a cycle: waterfront-2 → waterfront-1 → waterfront-2/,
+      /a cycle: .*waterfront-1 → waterfront-2 → waterfront-1|a cycle: .*waterfront-2 → waterfront-1 → waterfront-2/,
     );
     expect(problemsOf({ ...home, layers: { ...home.layers, uptown: 'tennis' as never } }).join('\n')).toMatch(
       /city "home" · layers\.uptown: "tennis" is not a layer kind/,

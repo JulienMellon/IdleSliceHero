@@ -4,10 +4,14 @@
 
 /** Every line, by its key in the copy file. */
 export const COPY = {
-  'store.starter.title': "Nonna's Starter Pack",
+  // v5.25 (card T3), COPY-v5.25.md section 3: {cash} is money(), {n} a whole count of diamonds, {mult} the boost's multiplier, {span} its length (boostSpan()).
+  'store.starter.title': 'Nonna’s Starter Pack',
+  'store.starter.subtitle': 'Everything a new owner needs, packed by Nonna',
+  'store.starter.item.cash': '{cash} in cash',
+  'store.starter.item.diamonds': '{n} diamonds',
+  'store.starter.item.boost': '{mult}x income for {span}',
+  'store.starter.blurb': '{cash} in cash + {n} 💎 + {mult}x income for {span}',
   'store.starter.nonna': 'I pack it myself. Like a lunch, cara.',
-  // A short placeholder: W6/T3 may replace it. {cash} is money(), {span} the boost's length.
-  'store.starter.blurb': '{cash} + {n} 💎 + {mult}x for {span}',
   'store.starter.ribbon': 'ONE PER OWNER',
   'store.chip.diamonds': 'Enough for {n} shop looks',
   'store.chip.awning': 'Only in this pack',

@@ -80,6 +80,44 @@ export const SUBURBS_SCENES: Scene[] = [
     ],
   },
   {
+    id: 'suburbs-2b',
+    city: 'home',
+    character: 'dale',
+    neighborhood: 'suburbs',
+    beat: 'interlude',
+    title: 'Pizza Practice',
+    trigger: { kind: 'after', neighborhood: 'suburbs', scene: 'suburbs-2', seconds: 135 },
+    panels: [
+      {
+        backdrop: 'suburbs',
+        cast: [{ id: 'dale', mood: 'happy' }],
+        caption: 'Mudhens practice. New drill: run a lap, earn a slice.',
+        lines: [
+          { speaker: 'Dale', text: 'Look at ’em hustle, pal! Orange slices never made a kid run like that.' },
+          { speaker: 'Dale', text: 'Tater ran toward the right net all practice. I’m keeping a chart.' },
+        ],
+      },
+      {
+        backdrop: 'suburbs',
+        cast: [{ id: 'dale', mood: 'surprised' }],
+        lines: [
+          { speaker: 'Kayla', text: 'Coach. A kid asked if pizza counts as a vegetable.' },
+          { speaker: 'Dale', text: 'Sauce is tomatoes, tomatoes grow in dirt, dirt is nature. Next question!' },
+          { speaker: 'Kayla', text: 'Cool. I’m telling his mom you said that.' },
+        ],
+      },
+      {
+        backdrop: 'suburbs',
+        cast: [{ id: 'dale', mood: 'happy' }],
+        caption: 'Saturday. The Mudhens score. Then nobody else does.',
+        lines: [
+          { speaker: 'Dale', text: 'We WON? We WON! Somebody hold my clipboard. I need to lie on the grass.' },
+          { speaker: 'Dale', text: 'First W in Mudhens history, pal. Word’s gonna get around.' },
+        ],
+      },
+    ],
+  },
+  {
     id: 'suburbs-3',
     city: 'home',
     character: 'dale',
@@ -188,6 +226,40 @@ export const SUBURBS_SCENES: Scene[] = [
           { speaker: 'Deb', text: 'Coach. Out of my kitchen.' },
           { speaker: 'Dale', text: 'Yes, ma’am.' },
           { speaker: 'Deb', text: 'Counter’s mine now. Ask me about the bake sale sometime. Dale knows which one.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'suburbs-1b',
+    city: 'home',
+    character: 'dale',
+    neighborhood: 'suburbs',
+    beat: 'interlude',
+    title: 'Car Wash',
+    trigger: { kind: 'after', neighborhood: 'suburbs', scene: 'waterfront-1c', seconds: 540 },
+    panels: [
+      {
+        backdrop: 'suburbs',
+        cast: [{ id: 'dale', mood: 'happy' }],
+        caption: 'Mudhens car wash. Nobody’s car is getting any cleaner.',
+        lines: [{ speaker: 'Dale', text: 'Fundraiser, pal! Every dollar goes to new shin guards. And hoses.' }],
+      },
+      {
+        backdrop: 'suburbs',
+        cast: [{ id: 'dale', mood: 'surprised' }],
+        lines: [
+          { speaker: 'Hank', text: 'A good wash is a patient wash, sport.' },
+          { speaker: 'Dale', text: 'Hank, you’ve been on the same minivan since breakfast.' },
+          { speaker: 'Hank', text: 'And she’s never looked better.' },
+        ],
+      },
+      {
+        backdrop: 'suburbs',
+        cast: [{ id: 'dale', mood: 'happy' }],
+        lines: [
+          { speaker: 'Dale', text: 'Pizza for every washer! It’s in the budget. I am the budget.' },
+          { speaker: 'Dale', text: 'And Saturday, pal, I’ve got a secret play. I drew it on a napkin. Then I ate off it.' },
         ],
       },
     ],
