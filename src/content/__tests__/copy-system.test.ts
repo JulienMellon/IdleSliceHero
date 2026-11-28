@@ -13,7 +13,7 @@ import { COPY as MENU } from '../copy/home/menu';
 import { COPY as REPORT } from '../copy/home/report';
 import { COPY as SHIFTS } from '../copy/home/shifts';
 import { COPY as STARS } from '../copy/home/stars';
-import { COPY as STORE } from '../copy/home/store';
+import { COPY as STORE } from '../copy/home/store-copy';
 import { COPY as TUTORIAL } from '../copy/home/tutorial';
 import { CITIES } from '../cities';
 import { BOSTON_COPY } from '../cities/boston/copy';
