@@ -192,7 +192,7 @@ describe('the Pier 9 auction', () => {
     const c = auctionCard(auctionStatus(g), g.cash);
     expect(c.raised).toBe('MegaSlice raised it. $1.65B wins Pier 9');
     expect(c.next).toBe('Next raise 1:50');
-    expect(c.cap).toBe('Bid cap $7.05B');
+    expect(c.cap).toBe('Bid cap $2.25B');
     expect(c.canBuy).toBe(true);
     expect(auctionCard(auctionStatus(g), 1e6).canBuy).toBe(false);
     expect(auctionCard(auctionStatus(auctionGame(120)), 0).raised).toBe('');

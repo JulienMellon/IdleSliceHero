@@ -58,7 +58,7 @@ describe('the info sheets say what it is, the numbers and what to buy', () => {
     expect(m.title).toBe('The Pier 9 Auction');
     expect(m.rows.map((r) => r.key)).toEqual(['now', 'base', 'cap', 'raises', 'next']);
     expect(m.rows[0].value).toBe('$1.65B');
-    expect(m.rows[2].value).toBe('$7.05B');
+    expect(m.rows[2].value).toBe('$2.25B');
     expect(m.rows[3].value).toBe('2');
     expect(m.buys[0].line).toBe('They topped us, kid. Sell faster. Pier 9 won’t save itself.');
   });

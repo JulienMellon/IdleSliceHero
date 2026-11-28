@@ -105,7 +105,7 @@ describe('variants and sizes', () => {
 
 describe('stingers (AU14)', () => {
   it('milestones beat bottlenecks; level 100 is the big one', () => {
-    expect(milestoneCrossed(24, 25)).toBe('milestone');
+    expect(milestoneCrossed(24, 25)).toBe('milestone_big'); // v5.25: 25 is the only milestone, so the last one
     expect(milestoneCrossed(99, 100)).toBeNull(); // v5.25: 25 is the only milestone
     expect(milestoneCrossed(25, 26)).toBeNull();
     expect(purchaseSting('ovens', { levelBefore: 49, levelAfter: 50, bottleneckBefore: 'ovens', bottleneckAfter: 'prep' })).toBe('bottleneck');
