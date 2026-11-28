@@ -7,7 +7,7 @@ import { Circle, Ellipse, G, Path, Polygon, Rect, Text as SvgText } from 'react-
 
 import { F } from '../../theme';
 import { INK, P, pts } from './projection';
-import { RENO_PLAQUE_H, RENO_PLAQUE_W } from './renovation-art';
+import { RENO_PLAQUE_H, RENO_PLAQUE_W, type PlaqueFrame } from './renovation-art';
 
 const L = { stroke: INK, strokeWidth: 1, strokeLinejoin: 'round' as const };
 const CHROME = '#C9CED4';
@@ -40,7 +40,7 @@ export const NUMERALS = ['I', 'II', 'III'] as const;
  * The renovation plaque, centred on its origin in RENO_PLAQUE_W x RENO_PLAQUE_H: an oval with a rope edge (Downtown), a rounded plate with rivets (the Suburbs) or a porthole ring
  * with four bolts (the Waterfront), in bronze, silver or gold with its numeral in Roman at 12 pt.
  */
-export const RenoPlaque = memo(function RenoPlaque({ shop, level }: { shop: string; level: number }) {
+export const RenoPlaque = memo(function RenoPlaque({ frame, level }: { frame: PlaqueFrame; level: number }) {
   const m = METALS[Math.max(0, Math.min(2, level - 1))];
   const w = RENO_PLAQUE_W;
   const h = RENO_PLAQUE_H;
@@ -49,7 +49,7 @@ export const RenoPlaque = memo(function RenoPlaque({ shop, level }: { shop: stri
       {NUMERALS[Math.max(0, Math.min(2, level - 1))]}
     </SvgText>
   );
-  if (shop === 'waterfront')
+  if (frame === 'porthole')
     return (
       <G>
         <Circle cx={1} cy={1.4} r={12.6} fill="rgba(59,31,20,0.3)" />
@@ -65,7 +65,7 @@ export const RenoPlaque = memo(function RenoPlaque({ shop, level }: { shop: stri
         <Path d="M-6.4 -6 A9 9 0 0 1 0 -9" stroke="#fff" strokeWidth={1.2} opacity={0.5} fill="none" strokeLinecap="round" />
       </G>
     );
-  if (shop === 'suburbs')
+  if (frame === 'plate')
     return (
       <G>
         <Rect x={-w / 2 + 1.2} y={-h / 2 + 1.8} width={w - 2} height={h - 2} rx={6} fill="rgba(59,31,20,0.3)" />

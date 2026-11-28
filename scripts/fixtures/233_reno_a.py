@@ -55,9 +55,14 @@ def run(ctx):
     expect_text(page, None, plaque(3))
     shot(page, "237-waterfront-reno-3", 1.0)
 
-    # 238: a new game's first serves pop "+$N" over the counter, in whole dollars
-    page = seeded_page(b, None)
+    # 238: a new game's first serves pop "+$N" over the counter, in whole dollars: an unmanaged first shop, tutorial done, tapped through prep, oven and counter
+    sv = hood_save("downtown", cash=0, vehicle=0, managed=False, prep=1, ovens=1, counter=1, drivers=1, tables=1, footprint=0, sold=0)
+    sv.update(lastSavedAt=T0_MS, rewards={"giftShownDay": day_str()})
+    page = seeded_page(b, sv)
     settle(page, 1.0)
-    advance(page, 4000)
+    for i in range(12):
+        for st in ("prep", "oven", "counter"):
+            tap_station(page, st)
+            advance(page, 400)
     expect_text(page, None, r"\+\$\d+(?![\d.])")
     shot(page, "238-first-serve-pop", 1.0)

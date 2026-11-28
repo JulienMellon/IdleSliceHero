@@ -44,7 +44,7 @@ type Option = { label: string; cost: number; gain: number; buy: (s: G.GameState)
  */
 function calmShops(s: G.GameState): Set<string> {
   const out = new Set<string>();
-  for (const ch of openChapters(s)) for (const t of ch.tasks) if (t.kind === 'noMissed' && t.target >= 60 && !taskProgress(s, t).done) out.add(t.shop);
+  for (const ch of openChapters(s)) for (const t of ch.tasks) if (t.kind === 'noMissed' && t.target >= 30 && !taskProgress(s, t).done) out.add(t.shop);
   return out;
 }
 

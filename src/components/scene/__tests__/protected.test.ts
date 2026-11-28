@@ -3,6 +3,7 @@
 // street props; an unmanaged one has the taller hire stack), plan (the mirrored shops are in the data) and phone size, no fixed scene cover (parked vehicles, the
 // A-frame, the neighbourhood prop, the patio, the cosmetics, the report strip and the sidewalk row) lies over more than 10% of a protected rect (protected.ts).
 import { CITIES, hoodIds } from '../../../content/cities';
+import { RENO_SHOPS } from '../../../content/renovation';
 import * as G from '../../../engine/game';
 import { COVER_MAX, coverFindings, coveredShare, protectedRects, protectedScene, sceneCovers, type CoverInputs } from '../protected';
 import { P, kAt, sceneView } from '../projection';
@@ -13,7 +14,9 @@ import { layout as drawLayout } from './draw-layout';
 import { shopLayout } from '../shop-layout';
 import { stripTop } from '../strip-clear';
 
-const shopAt = (footprint: number): G.Shop => ({ ...G.newShop(true), footprint, ovens: 100, prep: 100, counter: 100, tables: 100 });
+const shopAt = (footprint: number, lv = 100): G.Shop => ({ ...G.newShop(true), footprint, ovens: lv, prep: lv, counter: lv, tables: lv });
+// the sets of renovation looks that have art (v5.25, card S6: Downtown, the Suburbs, the Waterfront; the other three are card S7's)
+const RENO_ART = ['downtown', 'suburbs', 'waterfront'];
 // the phones the game runs on, as the area the scene gets: the screen less the HUD and the shop tabs above it (178 pt in the screenshots; src/app/index.tsx sceneArea). The fit is
 // then set by the width (the SE 0.95, the standard 1.0) or, on the Max, by the height (1.11): the scene never fits larger than that, so the strip never sits higher than this.
 const CHROME = 178;
@@ -22,6 +25,11 @@ const SCREENS: [number, number][] = [
   [393, 852 - CHROME],
   [430, 932 - CHROME],
 ];
+
+const renoOf = (city: (typeof CITIES)[string], id: string) => {
+  const set = RENO_SHOPS[hoodIds(city).indexOf(id)];
+  return RENO_ART.includes(set) ? set : undefined;
+};
 
 interface Case {
   name: string;
@@ -32,14 +40,16 @@ interface Case {
 const cases: Case[] = [];
 for (const city of Object.values(CITIES)) {
   for (const id of hoodIds(city)) {
-    for (let fp = 0; fp < city.fit.footprints.length; fp++) {
-      const { room, draw } = shopLayout(id, shopAt(fp), city);
-      const inputs: CoverInputs[] = [];
-      for (const idleShop of [false, true])
-        for (let vehicle = 0; vehicle < city.fit.vehicles.length; vehicle++)
-          for (const [w, h] of SCREENS) inputs.push({ id, vehicle, idleShop, s: sceneView(w, h, room.frame).fit.s, h });
-      cases.push({ name: `${city.id} ${id} footprint ${fp}${room.mirrored ? ' mirrored' : ''}`, lay: draw, frameOf: room.frame, inputs });
-    }
+    for (let fp = 0; fp < city.fit.footprints.length; fp++)
+      // a renovated shop's stations are back at level 1: its room is the small one
+      for (const lv of [1, 100]) {
+        const { room, draw } = shopLayout(id, shopAt(fp, lv), city);
+        const inputs: CoverInputs[] = [];
+        for (const idleShop of [false, true])
+          for (let vehicle = 0; vehicle < city.fit.vehicles.length; vehicle++)
+            for (const [w, h] of SCREENS) inputs.push({ id, vehicle, idleShop, s: sceneView(w, h, room.frame).fit.s, h, reno: renoOf(city, id) });
+        cases.push({ name: `${city.id} ${id} footprint ${fp} level ${lv}${room.mirrored ? ' mirrored' : ''}`, lay: draw, frameOf: room.frame, inputs });
+      }
   }
 }
 

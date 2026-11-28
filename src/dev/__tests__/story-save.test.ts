@@ -21,6 +21,7 @@ jest.mock('../../services', () => ({
   startServices: async () => {},
 }));
 
+import { withRivalGate } from '../../engine/features/layers/__tests__/gate-helpers';
 import { CITIES, cityOf } from '../../content/cities';
 import { STORY_PACING } from '../../content/tuning';
 import { TEST_PREFS_KEY } from '../../components/store/store-model';
@@ -149,12 +150,13 @@ describe('Play next story beat now (step 1)', () => {
     const hood = firstHood(city);
     const at = 1000;
     // beat 3 seen just now, the shop built: the rival is open and the 120 s gap is running
-    const g: GameState = {
+    // (v5.25, D493: the rival opens at Suburbs two stars, so the save has them)
+    const g: GameState = withRivalGate({
       ...base,
       playSeconds: at + 10,
       seenScenes: [sceneId(hood, 1), sceneId(hood, 2), sceneId(hood, 3), 'downtown-3b'],
       sceneAt: { [sceneId(hood, 3)]: at },
-    };
+    });
     expect(challengeOffered(g, hood)).toBe(false);
     const r = nextBeatNow(g);
     expect(r.ok && r.kind).toBe('challenge');

@@ -62,9 +62,9 @@ export interface CityNumbers {
  * What the pacing fit moved after the plain scaling (`npx tsx scripts/pacing-fit.ts fitboston`): one factor on every price of a city (builds,
  * managers, heads, cost multipliers, fleet, bid). The scaling keeps the home city's economy but not its rounding (a Lv 1 price of $5.76 is $6
  * at home) or the waits that no price moves (the story's interludes), so the check-in player's beats drift by a fraction of a day; this puts
- * them back. v5.25 (card E10): Boston 0.85, from `fitboston` with the renovating player: it lands within 0.35 days of the home city on every beat. Order values are not moved: they are the city's "bigger numbers", and the Stars carry the rest.
+ * them back. v5.25 (card E10): Boston 0.85, from `fitboston` with the renovating player: it landed within 0.35 days of the home city on every beat. v5.25 (card E9): none (the plain scaling): with the rival gated (D493) and the sim reading Downtown's 30 s calm task, `fitboston` gives 1.0 (and 1.025) an exact match of the home days, 0.68 / 0.85 / 4.25 / 4.77 / 6.98. Order values are not moved: they are the city's "bigger numbers", and the Stars carry the rest.
  */
-export const PRICE_FIT: Partial<Record<number, number>> = { 1: 0.85 };
+export const PRICE_FIT: Partial<Record<number, number>> = {};
 
 /** City `index`'s numbers: the home city's, scaled, then moved by the fit (`adjust` false: the plain scaling, what the fit starts from). */
 export function cityNumbers(index: number, adjust = true): CityNumbers {

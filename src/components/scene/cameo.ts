@@ -3,7 +3,8 @@
 // what they say and when, and where everything goes, so the budget is tested in node. storefront.tsx draws it.
 import { CAMEO, CAMEO_NONNA_LINES } from '../../content/heads';
 import { VISITOR_LINES, VISITOR_NAMES, VISITORS } from '../../content/rewards';
-import type { Boost } from '../../engine/game';
+import type { Boost, GameState } from '../../engine/game';
+import { cameoOpen } from '../../engine/features/layers/gates';
 import type { Layout } from './layout';
 import { flipRect, plainOf } from './layout-space';
 import type { PersonProps } from './looks';
@@ -28,6 +29,9 @@ export function visitOf(boosts: readonly Pick<Boost, 'source' | 'until'>[], now:
   if (!VISITORS.includes(visitor)) return null;
   return { visitor, name: VISITOR_NAMES[visitor] ?? visitor, left: (best.until - now) / 1000 };
 }
+
+/** The visit the shop draws: `visitOf`, but only once the cameo is open (E9's `cameoOpen`: Suburbs at one star). Before that the visit's boost still runs; nobody stands in the shop. */
+export const visitShown = (g: GameState, now: number): Visit | null => (cameoOpen(g) ? visitOf(g.rewards.boosts, now) : null);
 
 /** The tag's text: "6d 4h" while there are days, "5h 12m" under a day, "42m" under an hour. Rounded up to the minute, so it never reads 0m while the visit runs. */
 export function visitTag(left: number): string {

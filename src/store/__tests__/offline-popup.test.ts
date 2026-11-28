@@ -22,10 +22,11 @@ jest.mock('../../services', () => ({
 }));
 
 import * as G from '../../engine/game';
+import { offlineOffer } from '../../engine/offers';
 import { useGame } from '../game-store';
 
 /** A save written an hour ago with Downtown running itself. */
-const awayAnHour = (): string => {
+const awayAnHour = (paidUntilAhead = 0): string => {
   const now = Date.now();
   const g = G.newGame(now - 3_600_000);
   const downtown = { ...g.shops.downtown, built: true, managed: true, heads: G.allHeads(), prep: 5, ovens: 5, counter: 5, drivers: 3, tables: 5, sold: 50 };
@@ -37,6 +38,7 @@ const awayAnHour = (): string => {
     seenScenes: ['downtown-1', 'downtown-4'],
     shops: { ...g.shops, downtown },
     lastSavedAt: now - 3_600_000,
+    rewards: { ...g.rewards, paidUntil: paidUntilAhead > 0 ? now + paidUntilAhead : 0 },
   };
   return JSON.stringify(saved);
 };
@@ -66,5 +68,21 @@ describe('a short background with the welcome-back popup open (C135)', () => {
     after.dismissOffline();
     expect(useGame.getState().offline).toBeNull();
     expect(Math.abs(useGame.getState().game.cash - (held + popup!.earned))).toBeLessThan(popup!.earned / 100);
+  });
+});
+
+describe('the popup carries the engine’s boost (v5.25, card E9)', () => {
+  it('a diamond booster that covered the whole hour makes it 2x, so the 2x ad is not offered on top', async () => {
+    mem.save = awayAnHour();
+    await useGame.getState().load();
+    const plain = useGame.getState().offline!;
+    expect(plain.boost).toBe(1);
+    mem.save = awayAnHour(5 * 3_600_000);
+    await useGame.getState().load();
+    const paid = useGame.getState().offline!;
+    expect(paid.boost).toBeCloseTo(2, 9);
+    expect(paid.earned).toBeCloseTo(plain.earned * 2, 4);
+    expect(offlineOffer(paid.boost, paid.doubled)).toBe(false);
+    expect(offlineOffer(plain.boost, plain.doubled)).toBe(true);
   });
 });

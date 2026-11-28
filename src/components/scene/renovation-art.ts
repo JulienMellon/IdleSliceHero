@@ -9,7 +9,7 @@
 // The places are found for the shop's nine decor items together, whether or not they are bought, so buying one never moves another. The plain plan is placed and the mirrored
 // plan flips the places (the drawings are not turned round), as the ladder does.
 import type { NeighborhoodId } from '../../content/types';
-import { RENO_ITEMS, renoShopOf, type RenoShop } from '../../content/renovation';
+import { RENO_ITEMS, RENO_SHOPS, renoShopOf, type RenoShop } from '../../content/renovation';
 import { renoLevel, renoOf } from '../../engine/features/renovation';
 import type { CityDef } from '../../content/cities';
 import type { GameState } from '../../engine/game';
@@ -17,6 +17,7 @@ import {
   badgeBand,
   bboxOf,
   doorRect,
+  figureBox,
   fixedPeople,
   hits,
   ladderProps,
@@ -72,6 +73,10 @@ export const hasFixture = (d: Pick<RenoDress, 'renoSet' | 'renoLevel'>, name: st
 
 /** The plaque's box (screen units): 38 x 26 whatever the frame (an oval, a rivetted plate or a porthole ring), numeral at 12 pt. */
 export const RENO_PLAQUE_W = 38;
+/** The plaque's frame by the shop's place in the city (docs/build/v5.25/renovation.md): an oval with a rope edge, a rivetted plate, a porthole ring. The other shops' (card S7) draw the oval until theirs land. */
+export type PlaqueFrame = 'oval' | 'plate' | 'porthole';
+const FRAMES: readonly PlaqueFrame[] = ['oval', 'plate', 'porthole'];
+export const plaqueFrame = (set: RenoShop | ''): PlaqueFrame => FRAMES[RENO_SHOPS.indexOf(set as RenoShop)] ?? 'oval';
 export const RENO_PLAQUE_H = 26;
 /**
  * The renovation plaque by the door: on the brick header over the doorway, above the master's plaque (cosmetics.ts `plaqueRect`, 8 lower). Beside the round window of the header
@@ -227,6 +232,8 @@ export function renoSpots(lay: Layout, set: RenoShop, id: NeighborhoodId, vehicl
       ];
     })(),
     ...lay.patio.map((t) => ({ r: deckBox(patioDeck(t)), w: 0.6 })),
+    // the queue's standing places on the pavement: a street thing keeps off them while a free stretch is left
+    ...[...lay.queue, ...lay.driverQueue].map(([qx, qy]) => ({ r: figureBox(qx, qy), w: 0.5 })),
   ];
   const placed: RenoPlaced[] = [];
 
@@ -284,7 +291,9 @@ export function renoSpots(lay: Layout, set: RenoShop, id: NeighborhoodId, vehicl
   const ovX1 = lay.ovenCols[lay.ovenCols.length - 1].x1;
   const mid = (lay.L + lay.R) / 2;
 
-  for (const thing of things) {
+  // the widest things first, so a narrow one takes what room is left (the order only decides who gets the open stretch of pavement; every place is found for all nine)
+  const widthOf = (t: string) => (t === 'pennants' ? Infinity : DEFS[`${set}/${t}`] ? DEFS[`${set}/${t}`].box.x1 - DEFS[`${set}/${t}`].box.x0 : 0);
+  for (const thing of [...things].sort((a, b) => widthOf(b) - widthOf(a))) {
     // the sets of the other three shops are card S7's: their things have no entry here yet
     if (!DEFS[`${set}/${thing}`]) continue;
     const { mount } = DEFS[`${set}/${thing}`];

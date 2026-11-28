@@ -14,6 +14,8 @@ import { bboxOf, doorRect, fixedPeople, ladderProps, matRect, propRect, signRect
 import type { Layout } from './layout';
 import { neonSpot, plaqueRect } from './cosmetics';
 import { chimeRect, tipJarRect } from './look-art';
+import { renoCovers } from './renovation-art';
+import type { RenoShop } from '../../content/renovation';
 import { UMBRELLA_TOP, deckBox, patioDeck } from './patio-deck';
 import { CURB_Y, P, sceneToScreen, type SceneFit } from './projection';
 import { idleStripTop } from '../report/report-model';
@@ -59,6 +61,8 @@ export interface CoverInputs {
   s: number;
   /** The scene area's height (pt): an unmanaged shop's strip stands at its top, so where that lies in scene units depends on it. */
   h: number;
+  /** The set of renovation looks the shop wears (v5.25): its plaque and its nine decor things are covers too, at the places the scene puts them. */
+  reno?: RenoShop;
 }
 
 /**
@@ -81,6 +85,7 @@ export function sceneCovers(lay: Layout, inp: CoverInputs): Named[] {
     out.push(named('patio', { x0: d.x0, x1: d.x1, y0: P(t.x, t.y, UMBRELLA_TOP)[1], y1: d.y1 }));
   }
   out.push(named('neon', neonSpot(lay).rect), named('plaque', plaqueRect(lay)), named('jar', tipJarRect(lay)), named('chime', chimeRect(lay)));
+  if (inp.reno) for (const c of renoCovers(lay, inp.reno, inp.id, inp.vehicle, inp.idleShop)) out.push(named(c.id, c.rect));
   const strip = stripRect(inp.s, inp.idleShop, inp.h);
   const raise = inp.idleShop ? SIDEWALK_ROW.raiseIdle : SIDEWALK_ROW.raiseManaged;
   const rowH = inp.idleShop ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight;

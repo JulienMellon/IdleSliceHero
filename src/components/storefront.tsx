@@ -44,7 +44,7 @@ import { ColdFrost, DuskTint, StringLights } from './scene/event-props';
 import { eventLook } from './scene/event-look';
 import { activeEvent } from '../engine/features/events';
 import { DoorChime, NeonCounterSign } from './scene/cosmetic-props';
-import { VISITOR_LOOK, cameoGeom, sayLines, visitLine, visitOf, visitTagLabel } from './scene/cameo';
+import { VISITOR_LOOK, cameoGeom, sayLines, visitLine, visitShown, visitTagLabel } from './scene/cameo';
 import { CHIP_RISE, CHIP_SECONDS, bounceStep, bounceTransforms, clearPillX, confettiStep, ladderProps, menuRect, wallRects, type Placed } from './scene/ladder';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverlays, StreetProp } from './scene/room';
 import { FasciaSign } from './scene/facade';
@@ -315,7 +315,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   // ---- people (pure cast builder) + furniture, painter-sorted by depth
   type Item = { y: number; el: ReactElement };
   // the day-30 visitor (cameo.ts): in the shop on screen while the visit's boost runs, with a tag of the time left and a line every few minutes
-  const visit = visitOf(game.rewards.boosts, nowMs);
+  const visit = visitShown(game, nowMs);
   const visitTagText = visit ? visitTagLabel(visit) : '';
   const visitLineNow = visit ? visitLine(visit.visitor, nowMs / 1000) : null;
   // M68: the figure's spot searches the counter for the roomiest x, so it is found when the layout or the tag's text changes, not 15 times a second
@@ -663,7 +663,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       if (sp) asks.push({ trigger: 'rush', station: sp });
     }
     m.combo = combo;
-    const cv = visitOf(g.game.rewards.boosts, gameNow());
+    const cv = visitShown(g.game, gameNow());
     const cameoSpeaking = !!cv && visitLine(cv.visitor, wall) !== null;
     const otherBubble =
       cameoSpeaking ||

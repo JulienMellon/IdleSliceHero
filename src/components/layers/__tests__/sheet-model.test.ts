@@ -4,6 +4,7 @@ import '../../../engine/features';
 import * as G from '../../../engine/game';
 import { auctionSheet, boatSheet, gameDaySheet, rivalSheet, sheetModel } from '../sheet-model';
 
+import { withStars } from '../../../engine/features/layers/__tests__/gate-helpers';
 import { PIER9_BID } from '../../../content/cities/home/data';
 const NOW = new Date(2026, 10, 11, 12, 0, 0).getTime();
 const base = (): G.GameState => {
@@ -19,13 +20,22 @@ const base = (): G.GameState => {
     tables: 10,
     grade: 1,
   });
-  return {
-    ...g,
-    cash: 1e9,
-    playSeconds: 400,
-    seenScenes: [...g.seenScenes, 'suburbs-3', 'waterfront-3b'],
-    shops: { ...g.shops, suburbs: shop('suburbs'), waterfront: { ...shop('waterfront'), sold: PIER9_BID.unlockPizzas + 5 } },
-  };
+  // v5.25 (D493): the rival and the boats open with stars (Suburbs two, Downtown two), so the save has them
+  return withStars(
+    withStars(
+      {
+        ...g,
+        cash: 1e9,
+        playSeconds: 400,
+        seenScenes: [...g.seenScenes, 'suburbs-3', 'waterfront-3b'],
+        shops: { ...g.shops, suburbs: shop('suburbs'), waterfront: { ...shop('waterfront'), sold: PIER9_BID.unlockPizzas + 5 } },
+      },
+      1,
+      2,
+    ),
+    0,
+    2,
+  );
 };
 
 describe('the info sheets say what it is, the numbers and what to buy', () => {

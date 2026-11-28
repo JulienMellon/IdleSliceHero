@@ -8,7 +8,7 @@ import { INK, FRONT_TOP, P, pts } from './projection';
 import { fasciaSignBox } from './viewport';
 import type { Layout } from './layout';
 import { GoldPlaque } from './cosmetic-props';
-import { hasFixture, renoPlaqueRect, type RenoDress } from './renovation-art';
+import { hasFixture, plaqueFrame, renoPlaqueRect, type RenoDress } from './renovation-art';
 import { Beacon, NeonOpen, RenoPlaque, RoofPylon } from './renovation-props';
 import { dressedLook, plaqueRect } from './cosmetics';
 import { FasciaTrim } from './cosmetic-props';
@@ -382,7 +382,7 @@ export const FrontWall = memo(function FrontWall({
           return (
             <Upright cx={(r.x0 + r.x1) / 2}>
               <G transform={`translate(${(r.x0 + r.x1) / 2} ${(r.y0 + r.y1) / 2})`}>
-                <RenoPlaque shop={renoSet} level={renoLevel} />
+                <RenoPlaque frame={plaqueFrame(renoSet)} level={renoLevel} />
               </G>
             </Upright>
           );
