@@ -17,14 +17,13 @@
 - [ ] **2. Names:** the 72 renovation item names attached to E10's ids. A test checks that every id has a name and that every name is ≤ 18 characters.
 - [ ] **3. Story fixes:** apply each W6 story correction (the 9 review-r1-story rows, S97, and S106 oven names). Name each row ID in the report as fixed or kept.
 - [ ] **4. Starter Pack:** export the three item lines for N3's card. The store component swap is U7's, or N3's if it is still alive.
-- [ ] **5. Lint error (on main since v5.24):** `npm run lint` fails on `src/content/copy/index.ts:14`, because `./home/store` matches the rule that content may not import the store. Rename the copy module to `home/shop-store` or `home/store-copy`, and update its importers (`grep -rln "copy/home/store" src`). Do not loosen the rule. After this, `npm run lint` must exit 0.
-- [ ] **6. WAVE-NOTES lines:** the export names and keys, ready to paste.
+- [ ] **5. WAVE-NOTES lines:** the export names and keys, ready to paste.
 
 ## Checks
 - `npx tsc --noEmit`
 - `npx jest`
 - `npm run format:check`
-- `npm run lint` (exit 0)
+- `npm run lint` (exit 0; the copy module is `home/store-copy.ts`, renamed in S12 so content never matches the store-import rule)
 
 ## Report
 Standard format, plus the keys list (for WAVE-NOTES) and the row IDs fixed.

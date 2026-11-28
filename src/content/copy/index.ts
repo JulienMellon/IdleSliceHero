@@ -11,7 +11,7 @@ import { COPY as MENU } from './home/menu';
 import { COPY as REPORT } from './home/report';
 import { COPY as SHIFTS } from './home/shifts';
 import { COPY as STARS } from './home/stars';
-import { COPY as STORE } from './home/store';
+import { COPY as STORE } from './home/store-copy';
 import { COPY as TUTORIAL } from './home/tutorial';
 import { fill, type CopyVars } from './fill';
 
