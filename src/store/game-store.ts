@@ -600,7 +600,8 @@ export const useGame = create<Store>((set, get) => {
       void get().save();
     },
 
-    buyCosmetic: (id) => commit(buyVanity(get().game, id), undefined, plain('decor')),
+    // v5.24: `now` stamps `rewards.setsDone`, which the set-complete flourish reads (scene/**)
+    buyCosmetic: (id) => commit(buyVanity(get().game, id, gameNow()), undefined, plain('decor')),
 
     ackEndgame: (part) => {
       const g = get().game;

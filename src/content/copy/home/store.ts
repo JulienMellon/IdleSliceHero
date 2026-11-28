@@ -15,6 +15,7 @@ export const COPY = {
   'store.pack.diamonds_80.title': 'Pinch of Diamonds',
   'store.pack.diamonds_500.title': 'Box of Diamonds',
   'store.pack.diamonds_1200.title': 'Crate of Diamonds',
+  'store.pack.diamonds_2600.title': 'Cart of Diamonds',
   'store.bonus': '+{n} bonus',
   'store.best': 'Best diamond-pack rate',
   'store.firstbuy': 'First buy: 2×',

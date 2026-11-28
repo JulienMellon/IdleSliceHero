@@ -34,7 +34,7 @@ describe('what each cosmetic dresses', () => {
     const parts = new Set(ALL.map(cosmeticPart));
     expect(parts.size).toBe(6);
     const all = dressOf(ALL);
-    expect(all).toEqual({ ovenSkin: 2, awningGold: true, facadeSkin: 1, scooterMint: true, neon: true, plaque: true });
+    expect(all).toEqual({ ...NO_DRESS, ovenSkin: 2, awningGold: true, facadeSkin: 1, scooterMint: true, neon: true, plaque: true });
   });
   test('the two oven skins repaint with the Golden and the wood-fired grade, whatever grade was bought', () => {
     expect([0, 1, 2, 3, 4].map((g) => ovenPaint(g, 1))).toEqual([4, 4, 4, 4, 4]);
@@ -59,7 +59,7 @@ describe('storefront skins: one per cycle, repeating', () => {
   test('a skin repaints the facade and the fascia; the gold awning repaints the stripes and keeps the red piping', () => {
     const base = LOOKS.downtown;
     const plain = dressedLook(base, { facadeSkin: 0, awningGold: false });
-    expect(plain).toEqual({ ...base, fascia: '#5E3A26' });
+    expect(plain).toEqual({ ...base, fascia: '#5E3A26', theme: null });
     const skinned = dressedLook(base, { facadeSkin: 2, awningGold: false });
     expect(skinned.pilaster).toBe(SKINS[1].pilaster);
     expect(skinned.fascia).toBe(SKINS[1].fascia);

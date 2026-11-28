@@ -8,9 +8,9 @@
 - Own: `src/services/**`, `src/components/store/**`, their tests.
 
 ## Steps
-- [ ] **1.** Add `diamonds_2600` to `ProductId`, `GRANTS` (2,600), `CONSUMABLE`, `PRODUCTS` (base 1,600, bonus 1,000, name from W4's pattern or "Cart"), `PRODUCT_ORDER` (last), and the web stub's price list ($19.99).
-- [ ] **2.** RevenueCat / StoreKit product lists include it; a missing product on the device shows the card without a price and a disabled button (the existing rule).
-- [ ] **3. Tests:** grant, first-buy 2×, "Best rate" on 2600 when prices are in, on 1200 when 2600 has no price.
+- [x] **1.** Add `diamonds_2600` to `ProductId`, `GRANTS` (2,600), `CONSUMABLE`, `PRODUCTS` (base 1,600, bonus 1,000, name from W4's pattern or "Cart"), `PRODUCT_ORDER` (last), and the web stub's price list ($19.99).
+- [x] **2.** RevenueCat / StoreKit product lists include it; a missing product on the device shows the card without a price and a disabled button (the existing rule).
+- [x] **3. Tests:** grant, first-buy 2×, "Best rate" on 2600 when prices are in, on 1200 when 2600 has no price.
 
 ## Checks
 `npx tsc --noEmit`; `npx jest src/services src/components/store`; `npm run format:check`; `scripts/check-no-test-mode.sh`.

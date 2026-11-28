@@ -56,11 +56,13 @@ export function limbGeom({ kind, act, carry, carryWalk, step, arm, tall }: LimbG
       ? [5, by + 10]
       : [12, by + 8]
     : sitting
-      ? act === 'slice'
-        ? [7.5, hy + 5.5]
-        : act === 'cup'
-          ? [10.5, by + 6.5]
-          : [12 + arm, by + 9 - arm]
+      ? act === 'cheer'
+        ? CHEER_HAND(hy)
+        : act === 'slice'
+          ? [7.5, hy + 5.5]
+          : act === 'cup'
+            ? [10.5, by + 6.5]
+            : [12 + arm, by + 9 - arm]
       : act === 'cheer'
         ? CHEER_HAND(hy)
         : act === 'toss'
@@ -77,7 +79,7 @@ export function limbGeom({ kind, act, carry, carryWalk, step, arm, tall }: LimbG
   // a walking carrier holds the box centred in front, both hands on it
   const bx = carryWalk ? 10 : 3;
   const backHand: [number, number] =
-    act === 'cheer' && !sitting
+    act === 'cheer'
       ? [-CHEER_HAND(hy)[0], CHEER_HAND(hy)[1]]
       : carry && carryWalk
         ? [-4, by + 10]

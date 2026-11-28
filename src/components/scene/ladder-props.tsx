@@ -355,16 +355,16 @@ export interface LadderPieceProps {
   n: number;
   /** City fleet tier, for the vehicle props. */
   v: number;
-  /** The worn mint-scooter cosmetic: the parked vehicle is repainted (cosmetics.ts). */
-  mint?: boolean;
+  /** The worn scooter's key (cosmetics.ts `scooterKey`): the parked vehicle is repainted. */
+  paint?: string;
 }
 
 /** One ladder prop at its screen anchor. */
-export const LadderPiece = memo(function LadderPiece({ id, ax, ay, k, n, v, mint = false }: LadderPieceProps) {
+export const LadderPiece = memo(function LadderPiece({ id, ax, ay, k, n, v, paint = '' }: LadderPieceProps) {
   if (id === 'vehicle2') {
     return (
       <G opacity={1}>
-        <ParkedVehicle x={ax} y={ay} v={v} mint={mint} />
+        <ParkedVehicle x={ax} y={ay} v={v} paint={paint} />
       </G>
     );
   }

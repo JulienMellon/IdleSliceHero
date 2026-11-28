@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import { ApronOverlay } from './cosmetic-props';
 import { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { bodyBy, isWorker, limbGeom } from './geometry';
 import { bobFor, quantArm, quantStep } from './quantise';
@@ -269,6 +270,7 @@ export function Person({ x, y, o = 1, ...p }: PersonProps) {
           gold={p.gold}
           alt={p.alt}
           variant={p.variant}
+          apron={p.apron}
           front={p.front}
           flip={p.flip}
           blink={p.blink}
@@ -410,7 +412,7 @@ const COOK_KERCHIEF = ['#E8432E', '#F2C14E', '#3FAE5A'];
 
 const FigureBody = memo(function FigureBody(p: FigureProps) {
   const { worker, look, hairC, unflipBody, unflipHead, top, skin, by, hy, ww, eyeX, fx, torso } = bodyGeom(p);
-  const { kind, shirt, front, blink = false, talk = false, mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false } = p;
+  const { kind, shirt, front, blink = false, talk = false, mood = 'smile', alt = false, dot = '#D9443A', cap, gold = false, apron } = p;
   // the first cook keeps the classic toque; the second and third are told apart by cap and neckerchief
   const cookVariant = kind === 'cook' ? (p.variant ?? 0) % 3 : 0;
   return (
@@ -460,6 +462,8 @@ const FigureBody = memo(function FigureBody(p: FigureProps) {
           <Path d={`M-5 ${by + 7.6} h3`} stroke="#3FAE5A" strokeWidth={0.8} />
         </G>
       )}
+      {/* a worn apron (a look of the catalog) over the cook's coat, the baker's and the counter worker's own */}
+      {!!apron && (kind === 'cook' || kind === 'baker' || kind === 'staff') && <ApronOverlay look={apron} by={by} kind={kind} />}
       {kind === 'driver' && (
         <G>
           <Path d={`M0.5 ${by + 1} V${by + 19}`} stroke="#1F5FB8" strokeWidth={1.2} />

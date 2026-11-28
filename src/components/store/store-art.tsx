@@ -1,6 +1,6 @@
 // The paid screens' art (card U3, D496): the Founder awning hero, the content chips and the ribbon, so a pack reads as a prize, not a system alert.
 import { StyleSheet, Text, View } from 'react-native';
-import Svg, { G, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
 import { C, F } from '../../theme';
 import { BoostIcon, DiamondIcon } from '../icons';
@@ -71,7 +71,7 @@ function Gem({ x, y, s }: { x: number; y: number; s: number }) {
 const SACK = '#D9A066';
 const WOOD = '#C98B4A';
 
-/** The three diamond packs, one tier each (D559): two loose gems, a pouch of them, a crate heaped with them. */
+/** The four diamond packs, one tier each (D559): two loose gems, a pouch of them, a crate heaped with them, a cart piled high. */
 export function PackArt({ id, size = 56 }: { id: ProductId; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 60 60" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -100,6 +100,23 @@ export function PackArt({ id, size = 56 }: { id: ProductId; size?: number }) {
           <Path d="M4 36 H56 M4 46 H56" stroke={INK} strokeWidth={1.6} />
           <Path d="M10 26 V56 M50 26 V56" stroke={INK} strokeWidth={2.2} />
           <Rect x={22} y={36} width={16} height={10} rx={2} fill="#FFC531" stroke={INK} strokeWidth={1.6} />
+        </>
+      )}
+      {id === 'diamonds_2600' && (
+        <>
+          <Gem x={1} y={12} s={1.1} />
+          <Gem x={38} y={10} s={1.2} />
+          <Gem x={13} y={3} s={1.4} />
+          <Gem x={27} y={0} s={1.5} />
+          <Gem x={22} y={13} s={1.1} />
+          <Path d="M4 27 H52 L48 46 H8 Z" fill={WOOD} stroke={INK} strokeWidth={2.2} strokeLinejoin="round" />
+          <Path d="M6 37 H50" stroke={INK} strokeWidth={1.6} />
+          <Rect x={2} y={23} width={52} height={7} rx={3.5} fill="#FFC531" stroke={INK} strokeWidth={2} />
+          <Path d="M52 30 L58 19" stroke={INK} strokeWidth={2.4} strokeLinecap="round" />
+          <Circle cx={17} cy={51} r={7} fill={SACK} stroke={INK} strokeWidth={2.2} />
+          <Circle cx={41} cy={51} r={7} fill={SACK} stroke={INK} strokeWidth={2.2} />
+          <Circle cx={17} cy={51} r={2.2} fill="#FFC531" stroke={INK} strokeWidth={1.2} />
+          <Circle cx={41} cy={51} r={2.2} fill="#FFC531" stroke={INK} strokeWidth={1.2} />
         </>
       )}
     </Svg>

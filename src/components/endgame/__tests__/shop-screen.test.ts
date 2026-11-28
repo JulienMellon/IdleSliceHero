@@ -22,10 +22,25 @@ describe('the Shop screen and its chip, as wired (card U5)', () => {
     expect(shop.indexOf('<BoosterBuy onStore')).toBeLessThan(shop.indexOf('testID="booster-ad"'));
   });
 
+  test('the Shop opening resets the pack cards seen once, in its once-per-opening effect (C192)', () => {
+    expect(shop).toContain('resetPacksSeen');
+    const effect = shop.slice(shop.indexOf('resetPacksSeen();'), shop.indexOf('[]); // eslint-disable-line react-hooks/exhaustive-deps'));
+    expect(effect).toContain('STORE_OPENED_EVENT');
+    expect(shop.match(/resetPacksSeen\(\)/g)).toHaveLength(1);
+  });
+
   test('the route param opens the Store tab, the Shop says how it was opened, and no tab is locked', () => {
     expect(shop).toContain('tabFromParam(params.tab)');
     expect(shop).toContain('STORE_OPENED_EVENT');
     expect(shop).not.toContain('disabled={tab');
     expect(shop).not.toMatch(/tab-locked|tabLocked|tabsLocked/);
+  });
+
+  test('the Vanity tab renders the sections in order and each card is at least 44 pt tall (card U6)', () => {
+    expect(shop).toContain('vanitySections(');
+    expect(shop.indexOf("sec.kind === 'featured'")).toBeGreaterThan(0);
+    const card = read('components/endgame/vanity-card.tsx');
+    expect(card).toContain('minHeight: TAP.min');
+    for (const m of card.matchAll(/fontSize: (\d+)/g)) expect(Number(m[1])).toBeGreaterThanOrEqual(10);
   });
 });

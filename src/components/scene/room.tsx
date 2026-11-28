@@ -5,6 +5,7 @@ import { Circle, Defs, Ellipse, G, LinearGradient, Path, Polygon, Rect, Stop, Te
 import { INK, D, WH, FRONT_TOP, P, pts, shade } from './projection';
 import type { Layout } from './layout';
 import { LOOKS } from './identity';
+import { MENUS, PLAIN_MENU } from './look-art';
 import { Upright } from './primitives';
 import { hash32 } from './people';
 import { SCENE_OVERLAYS, SceneSlots } from '../slots';
@@ -99,6 +100,7 @@ export const RoomShell = memo(function RoomShell({
   signage,
   plants,
   id,
+  menu = '',
 }: {
   lay: Layout;
   wall: string;
@@ -108,7 +110,10 @@ export const RoomShell = memo(function RoomShell({
   signage: number;
   plants: number;
   id: NeighborhoodId;
+  /** The worn menu board's variant (look-art.ts `MENUS`), or '' for the plain one. */
+  menu?: string;
 }) {
+  const board = MENUS[menu] ?? PLAIN_MENU;
   const { L, R } = lay;
   const sideTop = FRONT_TOP;
   const lights: ReactElement[] = [];
@@ -440,18 +445,19 @@ export const RoomShell = memo(function RoomShell({
         <Upright cx={mx + mw / 2}>
           <G transform={`translate(${mx} ${my}) scale(${mw / 56})`}>
             <Rect x={2} y={2} width={56} height={40} rx={4} fill="rgba(59,31,20,0.25)" />
-            <Rect x={0} y={0} width={56} height={40} rx={4} fill="#2F3B33" stroke="#8E5A3C" strokeWidth={2.4} />
-            <SvgText x={28} y={10} fontFamily={F.bold} fontSize={7.5} fill="#FFC531" textAnchor="middle">
-              MENU
+            <Rect x={0} y={0} width={56} height={40} rx={4} fill={board.board} stroke={board.frame} strokeWidth={2.4} />
+            {board !== PLAIN_MENU && <Path d="M5 12.6 H51" stroke={board.head} strokeWidth={0.7} opacity={0.7} />}
+            <SvgText x={28} y={10} fontFamily={F.bold} fontSize={7.5} fill={board.head} textAnchor="middle">
+              {board.headText}
             </SvgText>
             {['Margherita', 'Pepperoni', 'Veggie'].map((name, i) => (
               <G key={name}>
-                <Path d={`M5 ${15 + i * 8} l5 0 l-2.5 5 Z`} fill="#FFC531" />
+                <Path d={`M5 ${15 + i * 8} l5 0 l-2.5 5 Z`} fill={board.slice} />
                 <Circle cx={7.5} cy={16.6 + i * 8} r={0.8} fill="#E8432E" />
-                <SvgText x={12} y={19.6 + i * 8} fontFamily={F.bold} fontSize={5} fill="#FFF4E0">
+                <SvgText x={12} y={19.6 + i * 8} fontFamily={F.bold} fontSize={5} fill={board.text}>
                   {name}
                 </SvgText>
-                <SvgText x={52} y={19.6 + i * 8} fontFamily={F.bold} fontSize={5} fill="#FFC531" textAnchor="end">
+                <SvgText x={52} y={19.6 + i * 8} fontFamily={F.bold} fontSize={5} fill={board.price} textAnchor="end">
                   {`$${[3, 4, 4][i]}`}
                 </SvgText>
               </G>

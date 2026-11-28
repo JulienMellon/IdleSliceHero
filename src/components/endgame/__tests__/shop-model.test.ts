@@ -2,7 +2,9 @@
 import { MASTERY } from '../../../content/endgame';
 import * as G from '../../../engine/game';
 import { grantCosmetic, wear } from '../../../engine/rewards';
-import { boosterShelf, buyCosmetic, SHELF_EMPTY, SHOP_TABS, VANITY_IDS, VANITY_PRICE, vanityViews } from '../shop-model';
+import { LOOKS, SETS, setLooks, SOLD_LOOKS, TIER_PRICE } from '../../../content/catalog';
+import { featured } from '../../../engine/vanity';
+import { boosterShelf, buyCosmetic, lookName, SHELF_EMPTY, SHOP_TABS, VANITY_IDS, VANITY_PRICE, vanitySections, vanityViews } from '../shop-model';
 
 const base = (): G.GameState => G.newGame(1_700_000_000_000);
 const rich = (n = 500): G.GameState => ({ ...base(), rewards: { ...base().rewards, diamonds: n } });
@@ -12,10 +14,10 @@ const ok = (r: G.BuyResult): G.GameState => {
 };
 
 describe('tab 1: Shop Style, the seven cosmetics', () => {
-  test('the seven, in order, with their copy', () => {
+  test('the seven, first and in order, with their copy', () => {
     const v = vanityViews(base());
-    expect(v.map((x) => x.id)).toEqual([...VANITY_IDS]);
-    expect(v.map((x) => x.name)).toEqual([
+    expect(v.slice(0, 7).map((x) => x.id)).toEqual([...VANITY_IDS]);
+    expect(v.slice(0, 7).map((x) => x.name)).toEqual([
       'Golden Oven',
       'Fresh Storefront',
       'Wood-Fired Oven',
@@ -30,14 +32,14 @@ describe('tab 1: Shop Style, the seven cosmetics', () => {
   test('150 diamonds each; short of them the button is off', () => {
     expect(VANITY_PRICE).toBe(150);
     const poor = vanityViews(base());
-    expect(poor.slice(0, 6).every((x) => x.state === 'poor' && x.label === '150 diamonds')).toBe(true);
+    expect(poor.slice(0, 6).every((x) => x.state === 'poor' && x.label === '150 \u{1F48E}')).toBe(true);
     const flush = vanityViews(rich(150));
     expect(flush.slice(0, 6).every((x) => x.state === 'buy')).toBe(true);
   });
 
   test('the master plaque says "earn 18 stars" and is never sold, however many diamonds', () => {
     const v = vanityViews(rich(100_000)).find((x) => x.id === 'plaque-master')!;
-    expect(v).toMatchObject({ state: 'earn', label: 'earn 18 stars', buyId: null, wearId: null });
+    expect(v).toMatchObject({ state: 'earn', label: 'Earn 18 stars', buyId: null, wearId: null });
     expect(MASTERY.masterTotal).toBe(18);
     expect(buyCosmetic(rich(100_000), 'plaque-master')).toEqual({ ok: false, reason: 'Not for sale' });
     expect(buyCosmetic(rich(), 'hamster-wheel')).toEqual({ ok: false, reason: 'Not for sale' });
@@ -89,7 +91,7 @@ describe('tab 1: Shop Style, the seven cosmetics', () => {
 
   test('earned cosmetics show as owned too (a gift, or the plaque)', () => {
     const g: G.GameState = { ...base(), rewards: { ...base().rewards, cosmetics: ['plaque-master'], worn: [] } };
-    expect(vanityViews(g)[6]).toMatchObject({ state: 'owned', label: 'Wear', wearId: 'plaque-master' });
+    expect(vanityViews(g)[6]).toMatchObject({ state: 'owned', owned: true, label: 'Wear', wearId: 'plaque-master' });
   });
 });
 
@@ -130,5 +132,120 @@ describe('tab 2: the booster shelf', () => {
 
   test('both tab titles are the copy', () => {
     expect(SHOP_TABS()).toEqual(['Shop Style', 'Booster Shelf']);
+  });
+});
+
+const NOW = 1_700_000_000_000;
+const section = (g: G.GameState, key: string) => vanitySections(g, NOW).find((x) => x.key === key)!;
+const own = (g: G.GameState, ids: string[], diamonds = 0): G.GameState => ({
+  ...g,
+  rewards: { ...g.rewards, diamonds, cosmetics: [...g.rewards.cosmetics, ...ids], worn: [...g.rewards.worn] },
+});
+
+describe('the Vanity tab (v5.24, card U6)', () => {
+  test('a fresh tab: Featured four first, then the six sets, then small and medium looks (no large generic look)', () => {
+    const secs = vanitySections(base(), NOW);
+    expect(secs.map((x) => x.key)).toEqual(['featured', ...SETS.map((x) => `set:${x.id}`), 'tier:small', 'tier:medium']);
+    expect(secs[0].title).toBe('This week’s picks');
+    expect(secs[0].cards).toHaveLength(4);
+    expect(secs[0].cards.map((c) => c.id)).toEqual(featured(base(), NOW).map((l) => l.id));
+    expect(secs[0]).toMatchObject({ progress: '', done: false });
+  });
+
+  test('every look for sale is on the tab, with a name, and the tab lists no look twice outside Featured', () => {
+    const ids = vanitySections(base(), NOW)
+      .filter((x) => x.kind !== 'featured')
+      .flatMap((x) => x.cards.map((c) => c.id));
+    expect(new Set(ids).size).toBe(ids.length);
+    expect([...ids].sort()).toEqual(LOOKS.map((l) => l.id).sort());
+    for (const l of LOOKS) expect(lookName(l.id)).not.toMatch(/^(look|shop\.item)\./);
+    expect(lookName('facade-classic')).toBe('Nonna-approved front');
+    expect(lookName('awning-marble')).toBe('Velvet-rope awning');
+  });
+
+  test('a card reads the tier price on its button: "60 \u{1F48E}", "150 \u{1F48E}", "400 \u{1F48E}"', () => {
+    const g = base();
+    const pick = (id: string) =>
+      vanitySections(g, NOW)
+        .flatMap((x) => x.cards)
+        .find((c) => c.id === id)!;
+    expect(pick('menu-chalkboard')).toMatchObject({ label: `${TIER_PRICE.small} \u{1F48E}`, price: 60, state: 'poor' });
+    expect(pick('awning-candy')).toMatchObject({ label: '150 \u{1F48E}', price: 150 });
+    expect(pick('facade-marble')).toMatchObject({ label: '400 \u{1F48E}', price: 400 });
+  });
+
+  test('short of diamonds the button reads the price and is "poor"; with them it is "buy", and a buy owns and wears the look', () => {
+    expect(vanityViews(base()).find((v) => v.id === 'facade-diner')).toMatchObject({ state: 'poor', buyId: 'facade-diner', label: '400 \u{1F48E}' });
+    const flush = rich(400);
+    expect(vanityViews(flush).find((v) => v.id === 'facade-diner')?.state).toBe('buy');
+    const g = ok(buyCosmetic(flush, 'facade-diner'));
+    expect(g.rewards.diamonds).toBe(0);
+    expect(vanityViews(g).find((v) => v.id === 'facade-diner')).toMatchObject({
+      state: 'worn',
+      owned: true,
+      label: 'Worn',
+      wearId: 'facade-diner',
+      buyId: null,
+    });
+  });
+
+  test('a set piece says which shop it shows in; a generic look does not', () => {
+    const v = vanityViews(base());
+    expect(v.find((x) => x.id === 'facade-dockside')?.desc).toBe('Dockside shack · shows in Waterfront');
+    expect(v.find((x) => x.id === 'oven-brick')?.desc).toBe('Union brick · shows in Industrial');
+    expect(v.find((x) => x.id === 'chime-bell')?.desc).toBe('');
+  });
+
+  test('a Featured tile of a set piece carries the same where line (D582)', () => {
+    const pieces = section(base(), 'featured').cards.filter((c) => c.desc.includes('shows in'));
+    for (const c of pieces) expect(c.where).toBe(c.desc);
+    expect(vanityViews(base()).find((x) => x.id === 'facade-classic')?.where).toBe('Rosa’s classic · shows in Downtown');
+    expect(vanityViews(base()).find((x) => x.id === 'chime-bell')?.where).toBe('');
+  });
+
+  test('a half set: its progress reads "2/4 pieces", no check, no done line', () => {
+    const g = own(base(), ['facade-classic', 'menu-classic']);
+    expect(section(g, 'set:classic')).toMatchObject({ progress: '2/4 pieces', done: false, doneLine: '', speaker: null });
+    expect(section(g, 'set:classic').cards.filter((c) => c.owned)).toHaveLength(2);
+    expect(section(g, 'set:diner').progress).toBe('0/4 pieces');
+  });
+
+  test('a complete set: the check, its done line and the manager who says it (Nonna always; the rest only after their hire scene)', () => {
+    const classic = own(
+      base(),
+      setLooks('classic').map((l) => l.id),
+    );
+    expect(section(classic, 'set:classic')).toMatchObject({
+      progress: '4/4 pieces',
+      done: true,
+      doneLine: 'Now it looks like Rosa’s. Good, eh?',
+      speaker: 'Nonna Rosa',
+    });
+    const diner = own(
+      base(),
+      setLooks('diner').map((l) => l.id),
+    );
+    // Deb's hire scene has not played: the line is shown nameless, so the hire is not spoiled
+    expect(section(diner, 'set:diner')).toMatchObject({ done: true, doneLine: 'Matching set. Coach cried. I didn’t.', speaker: null });
+    expect(section({ ...diner, seenScenes: ['suburbs-hire'] }, 'set:diner').speaker).toBe('Deb');
+  });
+
+  test('all owned: Featured is gone, every set is done, every button is Wear or Worn (the plaque stays earned)', () => {
+    const g = own(
+      base(),
+      SOLD_LOOKS.map((l) => (l.id === 'storefront-skin' ? 'storefront-skin-101' : l.id)),
+    );
+    const secs = vanitySections(g, NOW);
+    expect(secs.some((x) => x.kind === 'featured')).toBe(false);
+    expect(secs.filter((x) => x.kind === 'set').every((x) => x.done && x.doneLine !== '')).toBe(true);
+    const cards = secs.flatMap((x) => x.cards);
+    expect(cards.filter((c) => c.state === 'earn').map((c) => c.id)).toEqual(['plaque-master']);
+    expect(cards.filter((c) => c.id !== 'plaque-master').every((c) => c.owned && (c.label === 'Wear' || c.label === 'Worn'))).toBe(true);
+  });
+
+  test('the founder awning joins the medium looks once owned', () => {
+    const g = own(base(), ['awning-founder']);
+    expect(section(g, 'tier:medium').cards.map((c) => c.id)).toContain('awning-founder');
+    expect(section(base(), 'tier:medium').cards.map((c) => c.id)).not.toContain('awning-founder');
   });
 });

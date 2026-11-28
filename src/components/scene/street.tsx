@@ -4,7 +4,7 @@ import { Circle, Ellipse, G, Path, Polygon, Rect, Text as SvgText } from 'react-
 import { chairBack } from './geometry';
 import { PATIO_SEAT, PILL_LAYER_Y, moreTagAt, waitTagAt, type Layout } from './layout';
 import { DECK_COLOR, DECK_LINE, RAIL_PT, patioDeck, patioSortYs } from './patio-deck';
-import { MINT } from './cosmetics';
+import { SCOOTER_PAINTS } from './cosmetics';
 import { TABLE_STYLE } from './props';
 import { INK, ONE_SCREEN, CURB_Y, P, kAt, shade } from './projection';
 
@@ -73,15 +73,16 @@ export const Car = memo(function Car({
   );
 });
 
-/** The shop's delivery vehicle parked by the door, drawn in the scene's outlined style. `mint` is the worn mint-scooter cosmetic: the body is repainted whichever tier is parked. */
-export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v, mint = false }: { x: number; y: number; v: number; mint?: boolean }) {
+/** The shop's delivery vehicle parked by the door, drawn in the scene's outlined style. `paint` is the worn scooter's key (cosmetics.ts `scooterKey`: mint, red, or '' for the fleet's own): the body is repainted whichever tier is parked. */
+export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v, paint = '' }: { x: number; y: number; v: number; paint?: string }) {
+  const worn = SCOOTER_PAINTS[paint];
   if (v >= 2 && v <= 3) {
     return (
       <G transform={`translate(${x} ${y + 2}) scale(0.62)`}>
         <Car
           x={0}
           y={0}
-          color={mint ? MINT.body : v === 3 ? '#D9443A' : '#E8432E'}
+          color={worn ? worn.body : v === 3 ? '#D9443A' : '#E8432E'}
           kind={v === 3 ? 'van' : 'car'}
           dir={1}
           label="ROSA’S"
@@ -98,7 +99,7 @@ export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v, mint = false
         {[-18, 18].map((dx) => (
           <Ellipse key={dx} cx={dx} cy={-6} rx={9} ry={2} fill="#BFE3F5" stroke={INK} strokeWidth={0.8} />
         ))}
-        <Rect x={-10} y={-4} width={20} height={10} rx={4} fill={mint ? MINT.body : '#9B51E0'} stroke={INK} strokeWidth={1} />
+        <Rect x={-10} y={-4} width={20} height={10} rx={4} fill={worn ? worn.body : '#9B51E0'} stroke={INK} strokeWidth={1} />
         <Rect x={-6} y={6} width={12} height={8} rx={1} fill="#F6E7C1" stroke={INK} strokeWidth={0.8} />
       </G>
     );
@@ -116,7 +117,7 @@ export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v, mint = false
       {bike ? (
         <Path
           d="M-12 -7 L-2 -18 L8 -18 L12 -7 M-2 -18 L2 -7 L8 -18 M8 -18 L6 -24 M-4 -20 H2"
-          stroke={mint ? MINT.dark : '#E8432E'}
+          stroke={worn ? worn.dark : '#E8432E'}
           strokeWidth={2.2}
           fill="none"
           strokeLinejoin="round"
@@ -124,9 +125,9 @@ export const ParkedVehicle = memo(function ParkedVehicle({ x, y, v, mint = false
         />
       ) : (
         <G>
-          <Path d="M-16 -9 Q-16 -20 -4 -20 L6 -20 L10 -10 L14 -10 L12 -5 L-16 -5 Z" fill={mint ? MINT.body : '#FFC531'} stroke={INK} strokeWidth={1.1} />
+          <Path d="M-16 -9 Q-16 -20 -4 -20 L6 -20 L10 -10 L14 -10 L12 -5 L-16 -5 Z" fill={worn ? worn.body : '#FFC531'} stroke={INK} strokeWidth={1.1} />
           <Path d="M8 -20 L12 -30 M9 -30 H16" stroke={INK} strokeWidth={1.8} strokeLinecap="round" />
-          <Rect x={-18} y={-30} width={14} height={10} rx={1.5} fill={mint ? MINT.dark : '#E8432E'} stroke={INK} strokeWidth={1} />
+          <Rect x={-18} y={-30} width={14} height={10} rx={1.5} fill={worn ? worn.dark : '#E8432E'} stroke={INK} strokeWidth={1} />
           <Rect x={-14} y={-27} width={6} height={3} rx={1} fill="#fff" opacity={0.8} />
         </G>
       )}

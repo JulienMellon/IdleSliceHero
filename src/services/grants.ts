@@ -22,16 +22,18 @@ export const GRANTS: Readonly<Record<ProductId, Grant>> = {
   diamonds_80: { diamonds: 80 },
   diamonds_500: { diamonds: 500 },
   diamonds_1200: { diamonds: 1200 },
+  diamonds_2600: { diamonds: 2600 },
 };
 
 /** Bought again and again: each purchase pays, keyed by its transaction. The rest are bought once. */
-export const CONSUMABLE: ReadonlySet<ProductId> = new Set<ProductId>(['diamonds_80', 'diamonds_500', 'diamonds_1200']);
+export const CONSUMABLE: ReadonlySet<ProductId> = new Set<ProductId>(['diamonds_80', 'diamonds_500', 'diamonds_1200', 'diamonds_2600']);
 
 /** What a diamond pack's total is made of, for the card: the base and the bonus on top (PRICING-STRATEGY §3). `base + bonus` is the grant's diamonds. */
 export const PACK_SPLIT: Readonly<Partial<Record<ProductId, { base: number; bonus: number }>>> = {
   diamonds_80: { base: 80, bonus: 0 },
   diamonds_500: { base: 400, bonus: 100 },
   diamonds_1200: { base: 800, bonus: 400 },
+  diamonds_2600: { base: 1600, bonus: 1000 },
 };
 
 export const isConsumable = (id: ProductId): boolean => CONSUMABLE.has(id);

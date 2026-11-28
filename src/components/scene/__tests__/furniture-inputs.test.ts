@@ -16,8 +16,17 @@ const deps = (s: FurnitureSource) => JSON.stringify(furnitureDeps(furnitureInput
 describe('furniture memo deps (T27)', () => {
   test('every input field is a dependency, in a constant-length list', () => {
     const f = furnitureInputs(base());
-    expect(furnitureDeps(f)).toHaveLength(Object.keys(f).length);
-    expect(furnitureDeps(furnitureInputs(base({ line: { prepped: 8 }, managed: false })))).toHaveLength(Object.keys(f).length);
+    const n = Object.keys(f).length;
+    expect(furnitureDeps(f)).toHaveLength(n);
+    expect(furnitureDeps(furnitureInputs(base({ line: { prepped: 8 }, managed: false })))).toHaveLength(n);
+  });
+  test("wearing or taking off the Starter Pack awning keeps the deps the same length (React warns when a memo's deps change size)", () => {
+    const off = furnitureDeps(furnitureInputs(base()));
+    const on = furnitureDeps(furnitureInputs({ ...base(), worn: ['awning-founder'] }));
+    const gone = furnitureDeps(furnitureInputs({ ...base(), worn: [] }));
+    expect(on).toHaveLength(off.length);
+    expect(gone).toHaveLength(on.length);
+    expect(JSON.stringify(on)).not.toBe(JSON.stringify(off));
   });
   test('name, id and idleShop each change the deps', () => {
     const d0 = deps(base());

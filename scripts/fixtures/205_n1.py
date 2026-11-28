@@ -91,7 +91,7 @@ def run(ctx):
         report["errors"].append(f"N1 owned shot failed: {e}")
     # 208 / 208b: every first buy used, the Starter not bought
     try:
-        page = store_page(browser, "", first=("diamonds_80", "diamonds_500", "diamonds_1200"))
+        page = store_page(browser, "", first=("diamonds_80", "diamonds_500", "diamonds_1200", "diamonds_2600"))
         expect(page, "product-diamonds_500")
         expect(page, "starter-rate")
         shot(page, "208-n1-first-used", 0.4)

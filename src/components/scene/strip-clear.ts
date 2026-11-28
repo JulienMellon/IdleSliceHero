@@ -45,7 +45,9 @@ export function liftLayout(lay: Layout, floorY: number): Layout {
   const lowest = (pts: readonly Pt[]) => Math.min(...pts.map(([, y]) => y));
   const dDiners = Math.max(0, floorY - lowest([...lay.queue, lay.queueTag]));
   const dDrivers = Math.max(0, floorY - lowest([...lay.driverQueue, lay.waitTag]));
-  if (dDiners === 0 && dDrivers === 0 && lay.floorY === floorY) return lay;
+  // the parked vehicle (and the second one and the wrap beside it, which read its place) stands no lower than the floor either: its wheels were drawn under the strip (D575)
+  const dScooter = Math.max(0, floorY - lay.scooter.y);
+  if (dDiners === 0 && dDrivers === 0 && dScooter === 0 && lay.floorY === floorY) return lay;
   const { vanishX } = lay.frame;
   const lift =
     (d: number) =>
@@ -62,5 +64,6 @@ export function liftLayout(lay: Layout, floorY: number): Layout {
     queueTag: lift(dDiners)(lay.queueTag),
     driverQueue: all(lay.driverQueue, dDrivers),
     waitTag: lift(dDrivers)(lay.waitTag),
+    scooter: dScooter === 0 ? lay.scooter : { x: lift(dScooter)([lay.scooter.x, lay.scooter.y])[0], y: lay.scooter.y + dScooter },
   };
 }

@@ -11,16 +11,19 @@ describe('grants', () => {
     expect(GRANTS.starter_pack.boost).toEqual({ mult: 2, hours: 24 });
     expect(GRANTS.starter_pack.cosmetic).toBe('awning-founder');
     expect(GRANTS.nonnas_plus.plus).toBe(true);
-    expect([GRANTS.diamonds_80.diamonds, GRANTS.diamonds_500.diamonds, GRANTS.diamonds_1200.diamonds]).toEqual([80, 500, 1200]);
+    expect([GRANTS.diamonds_80.diamonds, GRANTS.diamonds_500.diamonds, GRANTS.diamonds_1200.diamonds, GRANTS.diamonds_2600.diamonds]).toEqual([
+      80, 500, 1200, 2600,
+    ]);
   });
 
   it('the Starter Pack pays 400 diamonds (PRICING-STRATEGY §3)', () => {
     expect(GRANTS.starter_pack.diamonds).toBe(400);
   });
 
-  it('a pack is its base plus its bonus: 400 + 100 and 800 + 400', () => {
+  it('a pack is its base plus its bonus: 400 + 100, 800 + 400 and 1,600 + 1,000', () => {
     expect(PACK_SPLIT.diamonds_500).toEqual({ base: 400, bonus: 100 });
     expect(PACK_SPLIT.diamonds_1200).toEqual({ base: 800, bonus: 400 });
+    expect(PACK_SPLIT.diamonds_2600).toEqual({ base: 1600, bonus: 1000 });
     for (const id of PRODUCT_IDS.filter(isConsumable)) expect(PACK_SPLIT[id]!.base + PACK_SPLIT[id]!.bonus).toBe(GRANTS[id].diamonds);
   });
 
@@ -43,6 +46,14 @@ describe('grants', () => {
     // each pack has its own first buy
     expect(redeem(b.ledger, 'diamonds_1200', 'c').grant?.diamonds).toBe(2400);
     expect(firstBuysUsed(b.ledger)).toEqual(['diamonds_500']);
+  });
+
+  it('the 2,600 pack is a consumable: its first buy pays 5,200 once, then 2,600 each time, and a restore never pays it', () => {
+    const a = redeem(emptyLedger(), 'diamonds_2600', 'a');
+    expect(a.grant).toMatchObject({ diamonds: 5200, firstBuy: true });
+    expect(a.ledger.keys).toEqual(['tx:a', 'first:diamonds_2600']);
+    expect(redeem(a.ledger, 'diamonds_2600', 'b').grant?.diamonds).toBe(2600);
+    expect(redeem(emptyLedger(), 'diamonds_2600', 'r', 'restore').grant?.diamonds).toBe(2600);
   });
 
   it('the Starter Pack and Plus are not paid double', () => {
@@ -92,7 +103,7 @@ describe('grants', () => {
   });
 
   it('classes the packs as consumable and the rest not', () => {
-    expect(PRODUCT_IDS.filter(isConsumable)).toEqual(['diamonds_80', 'diamonds_500', 'diamonds_1200']);
+    expect(PRODUCT_IDS.filter(isConsumable)).toEqual(['diamonds_80', 'diamonds_500', 'diamonds_1200', 'diamonds_2600']);
   });
 
   it('survives a broken saved ledger', () => {

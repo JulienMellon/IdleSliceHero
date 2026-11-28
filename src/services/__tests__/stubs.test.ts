@@ -34,8 +34,8 @@ describe('web stubs', () => {
     expect(purchases.owned().sort()).toEqual(['nonnas_plus', 'starter_pack']);
   });
 
-  it('purchases list five products and cancel a buy by default', async () => {
-    expect((await purchases.products()).map((p) => p.id)).toHaveLength(5);
+  it('purchases list six products and cancel a buy by default', async () => {
+    expect((await purchases.products()).map((p) => p.id)).toHaveLength(6);
     expect(await purchases.buy('diamonds_80')).toBe('cancelled');
     setSearch('?buy=failed');
     expect(await purchases.buy('diamonds_80')).toBe('failed');

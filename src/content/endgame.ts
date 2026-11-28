@@ -2,6 +2,7 @@
 // events, the 24 recipe cards and the worn cosmetics. Every number of those features is here; the rules are in
 // src/engine/features/{mastery,counterattack,events,recipes}.ts. Types only come from ./types, so the engine and the scripts
 // can both read this file.
+import { LOOKS, lookOf, TIER_PRICE } from './catalog';
 import type { NeighborhoodId } from './types';
 
 // ---------- Shop mastery ----------
@@ -107,24 +108,35 @@ export const RECIPE_TITLES: Record<NeighborhoodId, readonly [string, string, str
 
 // ---------- Worn cosmetics ----------
 
-/**
- * Which part of the scene a cosmetic dresses. Two cosmetics of the same part can't both be worn (two oven skins).
- * Ids not listed use the text before their first dash ('oven-gold' → 'oven', 'storefront-skin-3' → 'storefront').
- */
-const PART_OVERRIDES: Readonly<Record<string, string>> = { 'neon-counter': 'counter' };
+/** The part an id dresses when it is not a catalog row: the text before its first dash, with the storefront skins on the facade ('storefront-skin-3' -> 'facade'). */
+const looseHead = (id: string): string => {
+  const head = id.split('-')[0];
+  return head === 'storefront' ? 'facade' : head;
+};
 
+/** Which part of the scene a cosmetic dresses ('oven-gold' -> 'oven', 'facade-dockside' -> 'facade', 'storefront-skin-3' -> 'facade'). */
+export function partOf(id: string): string {
+  return lookOf(id)?.part ?? looseHead(id);
+}
+
+/**
+ * The slot an id is worn in: two cosmetics of the same slot can't both be worn (two oven skins). A generic look's slot is its part; a
+ * set piece has its own slot per set (`awning@classic`), so it can be worn beside the generic look of its part: it beats that look in
+ * its shop only (engine/vanity.ts `dressFor`).
+ */
 export function cosmeticPart(id: string): string {
-  return PART_OVERRIDES[id] ?? id.split('-')[0];
+  const l = lookOf(id);
+  return l ? (l.set ? `${l.part}@${l.set}` : l.part) : looseHead(id);
 }
 
 // ---------- The vanity shop (diamonds) ----------
 
-/** What a cosmetic costs, in diamonds. */
-export const VANITY_PRICE = 150;
+/** What a Medium look costs, in diamonds (v5.24: the tiers are in content/catalog.ts `TIER_PRICE`; this is the price of today's seven). */
+export const VANITY_PRICE: number = TIER_PRICE.medium;
 
-/** The seven cosmetics, in the order the shop lists them. `plaque-master` is earned at 18 stars and never sold. */
-export const VANITY_IDS = ['oven-gold', 'storefront-skin', 'oven-woodfired', 'scooter-mint', 'neon-counter', 'awning-gold', 'plaque-master'] as const;
-export type VanityId = (typeof VANITY_IDS)[number];
+/** The seven looks the shop has had since v5.15 (Style tab rows and their copy keys). Every look is in `LOOKS` (content/catalog.ts). `plaque-master` is earned at 18 stars and never sold. */
+export type VanityId = 'oven-gold' | 'storefront-skin' | 'oven-woodfired' | 'scooter-mint' | 'neon-counter' | 'awning-gold' | 'plaque-master';
+export const VANITY_IDS: readonly VanityId[] = LOOKS.slice(0, 7).map((l) => l.id as VanityId);
 
 /**
  * C115: skins bought with diamonds are numbered from 101, so they never collide with the day-28 gift's `storefront-skin-{cycle}`

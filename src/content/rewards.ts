@@ -1,5 +1,6 @@
 // Daily tasks, weekly tasks and the 30-day gift calendar: data only (docs/PLAN-v5.4-rewards.md §1).
 // Balancing is an edit to this file; the rules live in src/engine/rewards.ts.
+import { COPY as LOOK_COPY } from './copy/home/looks';
 
 /** Every kind of task. Progress reads a lifetime counter (`stats`, or `totalEarned` for 'earn'). */
 export type TaskKind =
@@ -205,13 +206,15 @@ export const COSMETIC_NAMES: Readonly<Record<string, string>> = {
   'awning-gold': 'Gold awning',
   'awning-founder': 'Founder awning',
   'oven-gold': 'Gold oven',
+  'plaque-master': 'Master’s Plaque',
+  'storefront-skin': 'Fresh Storefront',
 };
 
-/** Display name of a cosmetic id (storefront skins are numbered by cycle). */
+/** Display name of a cosmetic id (storefront skins are numbered by cycle; the 35 v5.24 looks are named in copy/home/looks.ts, W5's copy). */
 export function cosmeticName(id: string): string {
   const skin = /^storefront-skin-(\d+)$/.exec(id);
   if (skin) return `Storefront skin ${skin[1]}`;
-  return COSMETIC_NAMES[id] ?? id;
+  return COSMETIC_NAMES[id] ?? (LOOK_COPY as Readonly<Record<string, string>>)[`look.${id}`] ?? id;
 }
 
 export const VISITOR_NAMES: Readonly<Record<string, string>> = { nonna: 'Nonna Rosa', 'big-sal': 'Big Sal', genevieve: 'Genevieve' };

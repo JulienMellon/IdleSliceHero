@@ -42,9 +42,11 @@ import { seatPalette } from '../palette';
 import { CURB_Y, FRONT_TOP, P, SCENE_H, SCENE_W, kAt, unprojectX } from '../projection';
 import { SIDEWALK_ROW } from '../../tap-targets';
 import { PILL_UMBRELLA_AIR, UMBRELLA_TOP, patioSortYs } from '../patio-deck';
+import { CHIME_SORT, chimeRect } from '../look-art';
 import { doorwaySignRect, placePops, popPlace, popRect, popsCover, popWidth, staffFaces, stationRects } from '../stations';
 import { bodyBy, chairBack, SEATED_TORSO_HALF } from '../geometry';
 import { quantArm, quantStep } from '../quantise';
+import type { Layout } from '../layout';
 import { floorYFor, liftLayout, stripTop } from '../strip-clear';
 import { WALKOUT_EVERY } from '../walkout';
 
@@ -405,6 +407,31 @@ describe('the doorway sign (D377)', () => {
       for (const sp of shop.lay.spots) expect([shop.name, 'pickup', hits(headOf(at(sp.x, sp.y, 'driver')), sign)]).toEqual([shop.name, 'pickup', false]);
       expect(hits(headOf(at(unprojectX((sign.x0 + sign.x1) / 2, 60), 60, 'walkin')), sign)).toBe(true); // the control: a figure standing at the door (the v5.2 spot, the counter's right end, was one until the wide tiers moved the counter away from it)
     }
+  });
+});
+
+describe('the door chime (v5.24, S4)', () => {
+  // the chime hangs on the wall right of the doorway, over the wall (CHIME_SORT, just in front of the front wall) and under the people on the sidewalk, who are nearer. Someone inside the
+  // room is behind the wall: what shows of them is what the doorway lets through, so no part of a head seen in the doorway may meet the chime, and anyone on the sidewalk is drawn over it
+  const headOf = (c: CastMember, lay: Layout) => {
+    const b = box(c);
+    const h = { x0: b.x0, x1: b.x1, y0: b.y0, y1: b.y0 + (b.y1 - b.y0) * 0.3 };
+    if (c.props.y <= 0) return h;
+    return { ...h, x0: Math.max(h.x0, P(lay.door.x0, 0, 0, lay.frame)[0]), x1: Math.min(h.x1, P(lay.door.x1, 0, 0, lay.frame)[0]) };
+  };
+  const hits = (a: Box, r: { x0: number; x1: number; y0: number; y1: number }) => a.x0 < r.x1 && a.x1 > r.x0 && a.y0 < r.y1 && a.y1 > r.y0;
+  test('every head that meets the chime in any frame is drawn over it, and none seen through the doorway does', () => {
+    const under: string[] = [];
+    for (const shop of busyShops()) {
+      const chime = chimeRect(shop.lay);
+      for (const pace of [1, 2.6])
+        frames(shop, pace).forEach((cast, f) => {
+          for (const c of cast)
+            if (hits(headOf(c, shop.lay), chime) && c.sortY >= CHIME_SORT)
+              under.push(`${shop.name} pace${pace} f${f} ${c.key}@${c.props.x.toFixed(0)},${c.props.y.toFixed(0)}`);
+        });
+    }
+    expect(under.slice(0, 5)).toEqual([]);
   });
 });
 

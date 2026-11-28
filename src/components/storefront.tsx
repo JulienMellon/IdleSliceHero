@@ -7,6 +7,7 @@
 //
 // Everything is drawn in a 393×680 "scene" box that is scaled to cover the available area,
 // anchored to the bottom so the sidewalk and street are always visible (taller screens show more sky).
+import { useNavigation } from 'expo-router';
 import { memo, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactElement } from 'react';
 import { Platform, Pressable, ScrollView, View } from 'react-native';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
@@ -15,6 +16,7 @@ import { cityOf, hoodIds, layerOf, sceneHood } from '../content/cities';
 import { LOOKS } from './scene/identity';
 import type { NeighborhoodId } from '../content/types';
 import * as Game from '../engine/game';
+import { dressFor } from '../engine/vanity';
 import { useGame } from '../store/game-store';
 import { emitAudio } from '../audio/bus';
 import { CHEER_SECONDS, emitPayout, onCheer } from './pulse-bus';
@@ -36,16 +38,34 @@ import { Counter, FloorPlant, FloorProp, LedgeBar, Oven, OvenHood, PrepBench, Ru
 import { ovenTier } from './scene/geometry';
 import { furnitureDeps, furnitureInputs, ladderInput, type FurnitureInputs } from './scene/furniture-inputs';
 import { LadderPiece } from './scene/ladder-props';
-import { NEON_W, neonSpot } from './scene/cosmetics';
+import { NEON_W, dressOf, neonSpot, scooterKey } from './scene/cosmetics';
+import { CHIME_SCALE, CHIME_SORT, chimeSpot, signShapeOf } from './scene/look-art';
 import { ColdFrost, DuskTint, StringLights } from './scene/event-props';
 import { eventLook } from './scene/event-look';
 import { activeEvent } from '../engine/features/events';
-import { NeonCounterSign } from './scene/cosmetic-props';
+import { DoorChime, NeonCounterSign } from './scene/cosmetic-props';
 import { VISITOR_LOOK, cameoGeom, sayLines, visitLine, visitOf, visitTagLabel } from './scene/cameo';
 import { CHIP_RISE, CHIP_SECONDS, bounceStep, bounceTransforms, clearPillX, confettiStep, ladderProps, menuRect, wallRects, type Placed } from './scene/ladder';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverlays, StreetProp } from './scene/room';
 import { FasciaSign } from './scene/facade';
 import { fasciaSignBox, overlaySpan, slideInto, visibleSpan } from './scene/viewport';
+import {
+  CREST_R,
+  flourishBubbleRect,
+  FLOURISH_SECONDS,
+  crestOpacity,
+  crestScale,
+  flourishAge,
+  flourishConfetti,
+  flourishDue,
+  flourishKey,
+  flourishLine,
+  flourishOn,
+  seedPlayed,
+  type Flourish,
+} from './scene/set-flourish';
+import { setSpeaker } from './endgame/shop-model';
+import { t } from '../content/copy';
 import { SceneViewContext } from './scene/view-context';
 import { gameNow } from '../engine/clock';
 import { publishProtected } from './scene/protected';
@@ -83,7 +103,9 @@ import {
   CameoBubble,
   OvenGainTag,
   CameoTag,
+  Confetti,
   DeparturePops,
+  SetCrest,
   HireBubble,
   MilestoneBadge,
   RushPill,
@@ -152,6 +174,11 @@ const HIRE_LINE: Record<Station, string> = { prep: 'I got the dough, boss!', ove
 
 /** Each shop's last head bubble and the once-only ones already spoken, kept across visits so the 20 s gap and "one star per week" hold when the scene remounts (features/heads.ts `nextBark`). */
 const barkMemory = new Map<NeighborhoodId, BarkMem>();
+
+/** The set completions whose flourish has started (`flourishKey`), kept across visits so one purchase celebrates once however often the scene remounts (set-flourish.ts). */
+const flourished = new Set<string>();
+/** Set once the loaded save's `setsDone` is in `flourished`: a set completed before the load never celebrates; one completed since does, the first time its shop is seen. */
+let flourishSeeded = false;
 
 /** Per-shop character seed (stable crowd per neighbourhood). */
 const seedFor = (id: string) => Array.from(id).reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 997, 7) * 97;
@@ -227,6 +254,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     chip: null as Moments['chip'],
     /** A station just reached Lv 25 / 50 / 100: confetti for 1.5 s and the head's line (null text: nobody to say it). */
     mile: null as Moments['mile'],
+    /** The set flourish playing in this shop (set-flourish.ts): the set and the scene clock second it began. */
+    flourish: null as Flourish | null,
     /** A head's bark (features/heads.ts): which station speaks, the line and the wall second it began. */
     bark: null as null | { st: Station; text: string; at: number },
     /** The rush pill was a combo last frame: a bark asks when one starts. */
@@ -335,8 +364,28 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     () => (q0 ? { diners: queueShown(q0.diners + extraDiners, queueShare), drivers: queueShown(q0.drivers, queueShare) } : q0),
     [q0, extraDiners, queueShare],
   );
-  const cheer = nowMs / 1000 - m0.cheerAt < CHEER_SECONDS;
-  const { cast } = buildCast({ lay, shop, running, pace, clock, shopSeed, nIdx, pal, crew, queue, cold: rep.state === 'cold', cheer, symptoms: rep.symptoms });
+  const celebrate = flourishOn(flourishAge(m0.flourish, clock));
+  const cheer = celebrate || nowMs / 1000 - m0.cheerAt < CHEER_SECONDS;
+  // what this shop wears (engine/vanity.ts `dressFor`: the worn looks less other shops' set pieces, a set piece beating the generic look of its part): recomputed when the wardrobe changes, not per frame
+  const worn = useMemo(() => dressFor(game, id), [game.rewards.worn, id]); // eslint-disable-line react-hooks/exhaustive-deps -- `dressFor` reads only `rewards.worn`
+  const apron = useMemo(() => dressOf(worn).apron, [worn]);
+  const { cast } = buildCast({
+    lay,
+    shop,
+    running,
+    pace,
+    clock,
+    shopSeed,
+    nIdx,
+    pal,
+    crew,
+    queue,
+    cold: rep.state === 'cold',
+    cheer,
+    celebrate,
+    apron,
+    symptoms: rep.symptoms,
+  });
   const side = sidewalkOf(lay, crew, queue);
   // each pop rides over the figure carrying its departure (one Map reused per mount, M48)
   const carriers = m0.carriers;
@@ -366,6 +415,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const moreRaw = hints.more ? moreWords : null;
   const moreRect = useMemo(() => (moreRaw ? moreTagRect(lay, moreRaw) : null), [lay, moreRaw]);
   const moreText = moreRaw && moreRect && !popsCover(popRects, moreRect) ? moreRaw : null;
+  const navigation = useNavigation();
   const fin = furnitureInputs({
     id: art,
     name: nd.name,
@@ -373,16 +423,17 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     running,
     rate,
     vehicle: game.vehicle,
-    worn: game.rewards.worn,
+    worn,
     first: id === hoodIds(city)[0],
     piles: live,
   });
   // Furniture only changes with upgrades and the dough/box counts, so it is built once per change (M12), not 15 times a second.
   // The visual ladder (v5.11): the props this shop's levels have earned, placed from the layout; built once per upgrade like the furniture
   // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are lay + every value of `fin`, the builder's only inputs
-  const placed = useMemo(() => ladderProps(lay, ladderInput(fin)), [lay, ...furnitureDeps(fin)]);
+  const finDeps = furnitureDeps(fin);
+  const placed = useMemo(() => ladderProps(lay, ladderInput(fin)), [lay, ...finDeps]);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are lay + every value of `fin`, the builder's only inputs
-  const furniture = useMemo(() => buildFurniture(lay, fin, placed), [lay, placed, ...furnitureDeps(fin)]);
+  const furniture = useMemo(() => buildFurniture(lay, fin, placed), [lay, placed, ...finDeps]);
   // the backlog as piles (piles.ts): rolled dough on the pass, boxed pies on the counter, bags on the pickup shelf, 0-5 of each from the pies waiting against one batch.
   // The places are found once per layout and ladder (clear of heads, badges, the mat and the ladder's props); the drawing is rebuilt only when a count moves
   const spots = useMemo(
@@ -478,7 +529,13 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       y: 0,
       el: (
         <Flip key="fascia" on={lay.mirrored} axis={frame.vanishX}>
-          <FasciaSign lay={plainOf(lay)} name={nd.name} signage={fin.signageTier} dx={lay.mirrored ? -signDraw : signDraw} />
+          <FasciaSign
+            lay={plainOf(lay)}
+            name={nd.name}
+            signage={fin.signageTier}
+            dx={lay.mirrored ? -signDraw : signDraw}
+            shape={signShapeOf(fin.facadeSet, fin.signSet)}
+          />
         </Flip>
       ),
     },
@@ -571,6 +628,19 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     // nothing starts while a refusal, a hello or a milestone line is up (or a cut-scene plays); the rest of the rules are `nextBark`'s
     const g = useGame.getState();
     const wall = gameNow() / 1000;
+    if (!flourishSeeded && g.loaded) {
+      seedPlayed(flourished, g.game.rewards.setsDone);
+      flourishSeeded = true;
+    }
+    // a set this shop dresses was just completed (engine/vanity.ts `setsDone`): the flourish starts, once per completion
+    // (only on a frame where the shop is seen: not paused, and this route on top, so a purchase made on the Shop route waits for the player's return)
+    const done = flourishSeeded && !paused && navigation.isFocused() ? flourishDue(g.game.rewards.setsDone, id, flourished) : null;
+    if (done) {
+      flourished.add(flourishKey(done));
+      // the words are settled once, here: the manager's name only once their hire scene has played
+      const text = flourishLine(setSpeaker(g.game, id), t(`set.${done.set}.done`));
+      m.flourish = { set: done.set, key: flourishKey(done), at: clock, text };
+    }
     const week = weekStation(g.game, id);
     if (week) asks.push({ trigger: 'week', station: week, key: `week-${getFeature(g.game, headsFeature)?.week ?? 0}` });
     const atk = getFeature(g.game, counterattack) as ReturnType<typeof counterattack.init> | undefined;
@@ -594,7 +664,8 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
       !!(m.refusal && clock - m.refusal.at < 1.6) ||
       !!(m.hire && clock - m.hire.at < 2.5) ||
       m.hires.length > 0 ||
-      !!(m.mile?.text && m.mile.at !== clock && clock - m.mile.at < 2.5);
+      !!(m.mile?.text && m.mile.at !== clock && clock - m.mile.at < 2.5) ||
+      (m.flourish !== null && clock - m.flourish.at < FLOURISH_SECONDS);
     const before = barkMemory.get(id) ?? newBarkMem();
     const { mem: after, bark } = nextBark(
       before,
@@ -660,6 +731,9 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const refusal = hints.refusal && m.refusal && clock - m.refusal.at < 1.6 ? m.refusal : null;
   // the visitor's line shows only while no head's bubble does (one bubble per shop)
   const visitSays = visitLineNow && !barkOn && !refusal && !(m.hire && clock - m.hire.at < 2.5) ? visitLineNow : null;
+  // the set flourish (set-flourish.ts): the manager's line under the counter's badge for its 3 s; it beats a hello, a bark and the rush pill (one bubble per shop)
+  const fAge = flourishAge(m.flourish, clock);
+  const fText = m.flourish && flourishOn(fAge) ? m.flourish.text : null;
   const mileAge = m.mile ? clock - m.mile.at : -1;
   const mileLine = m.mile?.text && mileAge < 2.5 ? m.mile.text : null;
   // D415: the badge's centre (over the station's furniture, below the chip row), and the speed-up pill that rides in it instead of rising over the chips
@@ -671,7 +745,17 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
   const spotOf = (st: Station): KitchenSpot => (st === 'oven' ? 'ovens' : st);
   const stationXs: Record<KitchenSpot, number> = { prep: bxs.prep + shift, ovens: bxs.oven + shift, counter: bxs.counter + shift };
   const lastOven = lay.ovens[lay.ovens.length - 1];
-  const bubbleSt = refusal ? refusal.st : mileLine && m.mile ? m.mile.st : m.hire && clock - m.hire.at < 2.5 ? m.hire.st : barkOn ? barkOn.st : null;
+  const bubbleSt = refusal
+    ? refusal.st
+    : mileLine && m.mile
+      ? m.mile.st
+      : fText
+        ? 'counter'
+        : m.hire && clock - m.hire.at < 2.5
+          ? m.hire.st
+          : barkOn
+            ? barkOn.st
+            : null;
   const jamOn = layerOf(city, id) === 'shifts' && jamView(game).jammed;
   const wants = view.scrolls
     ? wantsOf({
@@ -797,6 +881,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
             <Flip on={lay.mirrored} axis={frame.vanishX}>
               <RoomShell
                 id={art}
+                menu={fin.menu}
                 lay={plainOf(lay)}
                 wall={nd.wall}
                 fp={fp}
@@ -831,6 +916,7 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                       flicker={flicker * (i % 2 ? -1 : 1)}
                       tier={ovenTier(shop.ovens)}
                       skin={fin.ovenSkin}
+                      look={fin.ovenSet}
                     />
                   ))}
                 </G>
@@ -941,16 +1027,27 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 const a = mileAnchor(rects[m.mile.st], by, stationHatTop(lay, m.mile.st), frame.x0 + frame.width);
                 return <HireBubble sceneW={span.x1} x0={span.x0} x={a.cx} y={mileSpeechY(a.cy)} text={mileLine} wall0={walls.x0} wall1={walls.x1} />;
               })()}
-            {!refusal && !mileLine && m.hire && clock - m.hire.at < 2.5 && (
+            {!refusal && !mileLine && fText && (
+              <HireBubble
+                sceneW={span.x1}
+                x0={span.x0}
+                x={bxs.counter}
+                y={flourishBubbleRect(fText, bxs.counter, by, walls, menuRect(lay)).y}
+                text={fText}
+                wall0={walls.x0}
+                wall1={walls.x1}
+              />
+            )}
+            {!refusal && !mileLine && !fText && m.hire && clock - m.hire.at < 2.5 && (
               <HireBubble sceneW={span.x1} x0={span.x0} x={bxs[m.hire.st]} y={by + 40} text={m.hire.text} wall0={walls.x0} wall1={walls.x1} />
             )}
             {/* a head's bark takes the same spot under its badge, clamped inside the walls (D440); the rush pill gives way to it */}
-            {!refusal && !mileLine && !(m.hire && clock - m.hire.at < 2.5) && barkOn && (
+            {!refusal && !mileLine && !fText && !(m.hire && clock - m.hire.at < 2.5) && barkOn && (
               <HireBubble sceneW={span.x1} x0={span.x0} x={bxs[barkOn.st]} y={by + 44} text={barkOn.text} wall0={walls.x0} wall1={walls.x1} />
             )}
             {/* a General Manager shop: "Tap to rush!" until the first tap, then the combo; a head's hello takes the spot while it shows */}
             {/* D406: under the oven chip, ≤ 120 wide, moved clear of the menu board and the ladder's wall props */}
-            {rushModel && !refusal && !mileLine && !barkOn && !(m.hire && clock - m.hire.at < 2.5) && (
+            {rushModel && !refusal && !mileLine && !fText && !barkOn && !(m.hire && clock - m.hire.at < 2.5) && (
               <RushPill
                 sceneW={span.x1}
                 x0={span.x0}
@@ -1051,6 +1148,20 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
                 color={city.neighbourhoods[nIdx].color}
               />
             )}
+            {/* the set flourish's confetti: the milestone's burst, twice over 3 s, from the name plate */}
+            {fText !== null && (
+              <G transform={`translate(${signC + signDraw} ${(signBox.fTop + signBox.fBot) / 2})`}>
+                <G transform="scale(1.5)">
+                  <Confetti step={flourishConfetti(fAge)} color={city.neighbourhoods[nIdx].color} />
+                </G>
+                <G transform="scale(1.9)">
+                  <Confetti step={flourishConfetti(fAge + FLOURISH_SECONDS / 4)} color="#FFC531" />
+                </G>
+                <G transform={`translate(${signBox.signW / 2 + 9} ${-(signBox.fBot - signBox.fTop) / 2 - 8})`}>
+                  <SetCrest scale={crestScale(fAge)} opacity={crestOpacity(fAge)} />
+                </G>
+              </G>
+            )}
             <DeparturePops
               sceneW={frame.x0 + frame.width}
               x0={frame.x0}
@@ -1138,8 +1249,8 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
   // tables + seated diners: chairs, then the diner, then the table over their lap
   lay.tables.forEach((tb, i) => {
     if (lay.tables.length === 1) f.push({ y: tb.y + 12, el: <Rug key="rug" x={tb.x} y={tb.y} /> });
-    f.push({ y: tb.y + 0.6, el: <Table key={`tb${i}`} x={tb.x} y={tb.y} tier={fin.tableTier} part="back" /> });
-    f.push({ y: tb.y - 0.6, el: <Table key={`tf${i}`} x={tb.x} y={tb.y} tier={fin.tableTier} part="front" /> });
+    f.push({ y: tb.y + 0.6, el: <Table key={`tb${i}`} x={tb.x} y={tb.y} tier={fin.tableTier} part="back" cloth={fin.tablecloth} /> });
+    f.push({ y: tb.y - 0.6, el: <Table key={`tf${i}`} x={tb.x} y={tb.y} tier={fin.tableTier} part="front" cloth={fin.tablecloth} /> });
   });
   // potted plants (plants decor); the corner fern only stands in a starter room, before a front row of tables
   // (the mirrored plan stands its corner props at the wall far from the door too: that is the right wall there)
@@ -1149,13 +1260,13 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
   f.push({ y: 66, st: 'prep', el: <PrepBench key="prep" lay={lay} prep={fin.prep} dough={fin.dough} /> });
   // the wide tiers' second prep table, beside the first: the same bench with no dough and nobody at it (the layout's `prep2` stands where the first one would)
   if (lay.prep2) f.push({ y: 66, st: 'prep', el: <PrepBench key="prep2" lay={{ ...lay, prep: lay.prep2, cooks: [] }} prep={fin.prep} dough={0} /> });
-  f.push({ y: 64, st: 'counter', el: <Counter key="counter" lay={lay} boxes={fin.boxes} /> });
+  f.push({ y: 64, st: 'counter', el: <Counter key="counter" lay={lay} boxes={fin.boxes} counter={fin.counterSet} jar={fin.tipjar} /> });
   // the visual ladder: bench, counter and street props bounce with their station; the wall ones stay put
   for (const p of ladder)
     f.push({
       y: p.sortY,
       st: p.mount === 'wall' ? undefined : p.station === 'drivers' ? 'drivers' : p.station === 'prep' ? 'prep' : 'counter',
-      el: <LadderPiece key={`lp-${p.id}`} id={p.id} ax={p.ax} ay={p.ay} k={p.k} n={p.n} v={fin.vehicle} mint={fin.scooterMint} />,
+      el: <LadderPiece key={`lp-${p.id}`} id={p.id} ax={p.ax} ay={p.ay} k={p.k} n={p.n} v={fin.vehicle} paint={scooterKey(fin)} />,
     });
   // front of the shop + sidewalk props
   // the facade is handed (the doorway's post and brick, the hanging sign): the mirrored plan draws the plain plan's and flips it, its lettering kept upright
@@ -1174,11 +1285,25 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
           awningGold={fin.awningGold}
           awningFounder={!!fin.awningFounder}
           plaque={fin.plaque}
+          facadeSet={fin.facadeSet}
+          awningSet={fin.awningSet}
         />
       </Flip>
     ),
   });
   f.push({ y: -1, el: <Doormat key="mat" lay={lay} /> });
+  // the door chime hangs on the wall right of the doorway, over the wall and under the sidewalk's people (look-art.ts `chimeSpot`)
+  if (fin.chime) {
+    const ch = chimeSpot(lay);
+    f.push({
+      y: CHIME_SORT,
+      el: (
+        <G key="chime" transform={`translate(${ch.x} ${ch.y}) scale(${CHIME_SCALE})`}>
+          <DoorChime look={fin.chime} />
+        </G>
+      ),
+    });
+  }
   if (lay.ledge) {
     f.push({ y: STOOL_Y, el: <Stools key="stools" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
     f.push({ y: LEDGE_Y, el: <LedgeBar key="ledge" x0={lay.ledge.x0} x1={lay.ledge.x1} /> });
@@ -1204,7 +1329,7 @@ function buildFurniture(lay: Layout, fin: FurnitureInputs, ladder: readonly Plac
   }
   if (!fin.idleShop) {
     const [scx, scy] = P(lay.scooter.x, lay.scooter.y, 0, lay.frame);
-    f.push({ y: lay.scooter.y, st: 'drivers', el: <ParkedVehicle key="scooter" x={scx} y={scy} v={fin.vehicle} mint={fin.scooterMint} /> });
+    f.push({ y: lay.scooter.y, st: 'drivers', el: <ParkedVehicle key="scooter" x={scx} y={scy} v={fin.vehicle} paint={scooterKey(fin)} /> });
   }
   return f;
 }

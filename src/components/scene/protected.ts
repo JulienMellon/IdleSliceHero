@@ -13,6 +13,7 @@ import { SIDEWALK_ROW } from '../tap-targets';
 import { bboxOf, doorRect, fixedPeople, ladderProps, matRect, propRect, signRect, type LadderInput } from './ladder';
 import type { Layout } from './layout';
 import { neonSpot, plaqueRect } from './cosmetics';
+import { chimeRect, tipJarRect } from './look-art';
 import { UMBRELLA_TOP, deckBox, patioDeck } from './patio-deck';
 import { CURB_Y, P, sceneToScreen, type SceneFit } from './projection';
 import { idleStripTop } from '../report/report-model';
@@ -62,7 +63,7 @@ export interface CoverInputs {
 
 /**
  * The things that are drawn over the scene at fixed places and must stay off the protected rects: the parked vehicle and its twin, the A-frame, the neighbourhood's prop,
- * the patio sets (deck and umbrella), the neon sign and the plaque, and, in scene units, the shop report's strip pill and the sidewalk row under it. The street things
+ * the patio sets (deck and umbrella), the neon sign, the plaque, the tip jar and the door chime, and, in scene units, the shop report's strip pill and the sidewalk row under it. The street things
  * are only drawn in a shop with a manager (`idleShop` false). The worst case is taken for what depends on the player (every ladder step, the cosmetics on, a live report).
  */
 export function sceneCovers(lay: Layout, inp: CoverInputs): Named[] {
@@ -79,7 +80,7 @@ export function sceneCovers(lay: Layout, inp: CoverInputs): Named[] {
     const d = deckBox(patioDeck(t));
     out.push(named('patio', { x0: d.x0, x1: d.x1, y0: P(t.x, t.y, UMBRELLA_TOP)[1], y1: d.y1 }));
   }
-  out.push(named('neon', neonSpot(lay).rect), named('plaque', plaqueRect(lay)));
+  out.push(named('neon', neonSpot(lay).rect), named('plaque', plaqueRect(lay)), named('jar', tipJarRect(lay)), named('chime', chimeRect(lay)));
   const strip = stripRect(inp.s, inp.idleShop, inp.h);
   const raise = inp.idleShop ? SIDEWALK_ROW.raiseIdle : SIDEWALK_ROW.raiseManaged;
   const rowH = inp.idleShop ? SIDEWALK_ROW.idleStackHeight : SIDEWALK_ROW.cardHeight;

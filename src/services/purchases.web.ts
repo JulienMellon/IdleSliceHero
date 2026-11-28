@@ -6,7 +6,14 @@ import { queryFlag } from './query';
 import { store } from './store';
 import { PRODUCT_IDS, type ProductId, type Purchases } from './types';
 
-const AMOUNTS: Record<ProductId, number> = { starter_pack: 2.99, nonnas_plus: 4.99, diamonds_80: 0.99, diamonds_500: 4.99, diamonds_1200: 9.99 };
+const AMOUNTS: Record<ProductId, number> = {
+  starter_pack: 2.99,
+  nonnas_plus: 4.99,
+  diamonds_80: 0.99,
+  diamonds_500: 4.99,
+  diamonds_1200: 9.99,
+  diamonds_2600: 19.99,
+};
 
 const flagOwned = (): ProductId[] =>
   queryFlag('owned')

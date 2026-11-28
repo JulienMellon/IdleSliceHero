@@ -9,9 +9,9 @@
 - Do not touch: `src/engine/**`, `src/content/**`, `endgame/**`.
 
 ## Steps
-- [ ] **1. Draw** your three sets and their thumbnails (`LookThumb` from S4).
-- [ ] **2. The flourish:** on `set_complete` for the shop on screen, the diners cheer (the existing cheer pose), confetti from the sign (reuse the milestone confetti), and the set's head or manager says `set.<set>.done` (W5) as a bubble. 3 s, once.
-- [ ] **3. Budget tests** as S4; **fixture:** each set worn; the flourish mid-play.
+- [x] **1. Draw** your three sets and their thumbnails (`LookThumb` from S4).
+- [x] **2. The flourish:** on `set_complete` for the shop on screen, the diners cheer (the existing cheer pose), confetti from the sign (reuse the milestone confetti), and the set's head or manager says `set.<set>.done` (W5) as a bubble. 3 s, once.
+- [x] **3. Budget tests** as S4; **fixture:** each set worn; the flourish mid-play.
 
 ## Checks
 `npx tsc --noEmit`; `npx jest src/components`; `npm run format:check`.

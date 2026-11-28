@@ -34,6 +34,7 @@ import {
 } from '../content/rewards';
 import { BONUS, NIGHT_OVEN, ORDER } from '../content/hooks';
 import { auctionMult, LAYER_KEYS } from '../content/layers';
+import { SETS } from '../content/catalog';
 import { cosmeticPart } from '../content/endgame';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
@@ -55,8 +56,8 @@ import {
   type Station,
 } from './pipeline';
 
-/** v9 (v5.23): `rewards.paidUntil`, the diamond boosters' slot; an older save gets 0 (none). v8 (v5.21): the chapters' progress is saved (`x.chapters`, engine/chapters.ts); a v7 save's open chapters are read from its counters on load. v7 (v5.20): the Chapter 1 tutorial has 15 steps (`tutorial` 1..15, done = 16), so a v6 save's step is renumbered on load (`legacyTutorial`). v6 (Todd's story): 40 scenes, interludes that hold main beats back, manager hire scenes; the migration marks skipped scenes seen. v5 was rewards: daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. */
-export const SAVE_VERSION = 9;
+/** v10 (v5.24): `rewards.setsDone`, the looks sets the player has completed; an older save gets none (a set already complete is not announced late). v9 (v5.23): `rewards.paidUntil`, the diamond boosters' slot; an older save gets 0 (none). v8 (v5.21): the chapters' progress is saved (`x.chapters`, engine/chapters.ts); a v7 save's open chapters are read from its counters on load. v7 (v5.20): the Chapter 1 tutorial has 15 steps (`tutorial` 1..15, done = 16), so a v6 save's step is renumbered on load (`legacyTutorial`). v6 (Todd's story): 40 scenes, interludes that hold main beats back, manager hire scenes; the migration marks skipped scenes seen. v5 was rewards: daily/weekly tasks, the gift calendar, boosts, lifetime `stats`. */
+export const SAVE_VERSION = 10;
 /**
  * C106: the economy marker. 2 = the v5.13 retune (costMult = orderValue, 4 h offline cap, Pier 9 $120M); 3 = the v5.16 rules
  * (managers and heads priced apart, three heads sell half speed while you are away, station prices grow at their own rates,
@@ -209,6 +210,12 @@ export interface Boost {
   source: string;
 }
 
+/** A completed looks set and when (ms). */
+export interface SetDone {
+  set: string;
+  at: number;
+}
+
 export interface Rewards {
   /** Local YYYY-MM-DD of the current daily set ('' = none yet). */
   day: string;
@@ -231,6 +238,8 @@ export interface Rewards {
   /** v5.23: the paid-boost slot (diamond boosters, engine/paid-boost.ts) runs until this wall time (ms); 0 = none. It adds one 2× on top of `boosts`, never a second. */
   paidUntil: number;
   cosmetics: string[];
+  /** v5.24: the looks sets completed, in order (content/catalog.ts `SETS`); each is raised once, when its last piece is bought (engine/vanity.ts). */
+  setsDone: SetDone[];
   /** The owned cosmetics currently worn (rewards.ts `wear`); at most one per part (`cosmeticPart`). */
   worn: string[];
   /** Highest device time (ms) seen: the clock-rollback guard. */
@@ -319,6 +328,7 @@ export const newRewards = (): Rewards => ({
   boosts: [],
   paidUntil: 0,
   cosmetics: [],
+  setsDone: [],
   worn: [],
   lastSeen: 0,
 });
@@ -466,6 +476,18 @@ function migrateTasks(v: unknown, max: number): Task[] {
   return out;
 }
 
+/** Saved `setsDone`: known set ids only, each once, in saved order (v5.24); anything else is dropped. */
+function migrateSetsDone(raw: unknown, now: number): SetDone[] {
+  if (!Array.isArray(raw)) return [];
+  const out: SetDone[] = [];
+  for (const x of raw as unknown[]) {
+    const e = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
+    if (typeof e.set === 'string' && SETS.some((s) => s.id === e.set) && !out.some((o) => o.set === e.set))
+      out.push({ set: e.set, at: Math.min(now + 400 * 86400_000, Math.max(0, num(e.at, 0))) });
+  }
+  return out;
+}
+
 /** Saved rewards, checked field by field; anything malformed falls back to its empty value (v4 saves have none). */
 function migrateRewards(raw: unknown, now: number): Rewards {
   const base = newRewards();
@@ -518,6 +540,7 @@ function migrateRewards(raw: unknown, now: number): Rewards {
     // a corrupt far-future value would be a free boost for good: the slot holds at most PAID_SLOT_CAP
     paidUntil: Math.min(now + PAID_SLOT_CAP * 1000, Math.max(0, num(r.paidUntil, 0))),
     cosmetics,
+    setsDone: migrateSetsDone(r.setsDone, now),
     worn,
     // a corrupt far-future value would lock rewards for good; a year of rollback headroom is plenty
     lastSeen: Math.min(now + 400 * 86400_000, Math.max(0, num(r.lastSeen, 0))),
