@@ -12,6 +12,7 @@ import { menuLayer } from './layers/menu';
 import { starsLayer } from './layers/stars';
 import { boatsLayer } from './layers/boats';
 import { recipes } from './recipes';
+import { renovationFeature } from './renovation';
 import { FEATURES } from './registry';
 import { service } from './service';
 import type { Feature } from './types';
@@ -21,7 +22,22 @@ export { FEATURES };
 
 // Importing this file registers every feature, in the order their hooks run (the array itself is registry.ts, so game.ts needs
 // no feature: A31). A module is evaluated once, so this runs once.
-FEATURES.push(mastery, counterattack, events, recipes, heads, service, gameDayLayer, boatsLayer, rival, menuLayer, shiftsLayer, starsLayer, franchiseFeature);
+FEATURES.push(
+  mastery,
+  counterattack,
+  events,
+  recipes,
+  heads,
+  service,
+  gameDayLayer,
+  boatsLayer,
+  rival,
+  menuLayer,
+  shiftsLayer,
+  starsLayer,
+  franchiseFeature,
+  renovationFeature,
+);
 
 /** A feature's state. Before the feature has ever saved, this is whatever `init`/`migrate` gave it. */
 export function getFeature<S>(g: GameState, f: Feature<S>): S {

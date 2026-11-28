@@ -6,10 +6,10 @@ export type { FootprintTier, NeighborhoodDef, OvenGrade, PerkDef, VehicleDef } f
 
 export const TUNING = {
   costGrowth: 1.15,
-  /** Levels at which a station's output doubles. */
-  milestones: [25, 50, 100] as const,
-  /** Each footprint tier above the first speeds up prep and the counter by this factor (more room to work, bigger counter). */
-  footprintBoost: 1.5,
+  /** Levels at which a station's output doubles. v5.25 (card E10, Julien 2026-11-28): one doubling, at 25 (it was 25 / 50 / 100: a kitchen's best was 2300 pies a second, now about 166). */
+  milestones: [25] as const,
+  /** Each footprint tier above the first speeds up prep and the counter by this factor (more room to work, bigger counter). v5.25 (card E10): 1.1, it was 1.5. */
+  footprintBoost: 1.1,
   /** Each footprint tier lets prep, ovens and counter level up this much further. */
   levelsPerFootprint: 25,
   offlineCapSeconds: 4 * 60 * 60,

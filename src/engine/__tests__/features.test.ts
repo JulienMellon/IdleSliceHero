@@ -67,6 +67,7 @@ describe('feature registry', () => {
       'industrialShifts',
       'uptownStars',
       'franchise',
+      'renovationFx',
     ]);
     withFeatures([], () => {
       expect(G.newGame(T0).x).toEqual({});

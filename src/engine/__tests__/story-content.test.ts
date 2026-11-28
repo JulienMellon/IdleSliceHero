@@ -10,13 +10,15 @@ const hire = (s: Scene) => s.trigger.kind === 'manager';
 const interludes = HOME_SCENES.filter((s) => s.beat === 'interlude' && !hire(s));
 const text = (s: Scene) => s.panels.flatMap((p) => [p.caption ?? '', p.propText ?? '', ...p.lines.map((l) => l.text)]).join(' | ');
 
-describe('the 40 scenes', () => {
-  it('are 24 main beats, 11 interludes and 5 hire scenes, with unique ids', () => {
-    expect(HOME_SCENES).toHaveLength(40);
-    expect(new Set(HOME_SCENES.map((s) => s.id)).size).toBe(40);
+// v5.25 (card E10): 41 scenes: downtown-3b is the Downtown slot (a placeholder interlude W6 writes)
+describe('the 41 scenes', () => {
+  it('are 24 main beats, 12 interludes and 5 hire scenes, with unique ids', () => {
+    expect(HOME_SCENES).toHaveLength(41);
+    expect(new Set(HOME_SCENES.map((s) => s.id)).size).toBe(41);
     expect(HOME_SCENES.filter((s) => s.beat !== 'interlude')).toHaveLength(24);
     expect(interludes.map((s) => s.id).sort()).toEqual(
       [
+        'downtown-3b',
         'downtown-5',
         'industrial-2b',
         'industrial-3b',

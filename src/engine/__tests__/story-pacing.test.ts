@@ -29,7 +29,7 @@ const won = (s: G.GameState, id: NeighborhoodId): G.GameState => ({ ...s, x: { .
 const after = (id: string) => (scene(id).trigger as { seconds: number }).seconds;
 const ids = (list: { id: string }[]) => list.map((x) => x.id);
 /** Everything in Downtown played, so no Downtown scene is waiting in front of the scene a test is about. */
-const DT = ['downtown-1', 'downtown-2', 'downtown-3', 'downtown-4'];
+const DT = ['downtown-1', 'downtown-2', 'downtown-3', 'downtown-3b', 'downtown-4'];
 
 describe('story pacing (v3.7)', () => {
   it('the first scene after a launch or return plays straight away', () => {
@@ -130,7 +130,7 @@ describe('Pier 9 bid (v3.7)', () => {
       managed: true,
       sold: PIER9_BID.unlockPizzas,
     });
-  it('costs $4.7B (v5.25: scaled with Waterfront, about 4-5 minutes of its income when it opens)', () => expect(PIER9_BID.cost).toBe(4_700_000_000));
+  it('costs $1.5B (v5.25, card E10: the wait of about two days that holds the story to 7 days)', () => expect(PIER9_BID.cost).toBe(1_500_000_000));
   it('opens after "Man Overboard" and 50,000 Waterfront pizzas', () => {
     expect(G.bidAvailable(ready())).toBe(true);
     expect(G.bidAvailable(withShop(ready(), 'waterfront', { sold: PIER9_BID.unlockPizzas - 1 }))).toBe(false);
@@ -269,6 +269,7 @@ describe('interludes (v5.16)', () => {
       'downtown-1',
       'downtown-2',
       'downtown-3',
+      'downtown-3b',
       'downtown-4',
       'suburbs-1',
       'suburbs-2',

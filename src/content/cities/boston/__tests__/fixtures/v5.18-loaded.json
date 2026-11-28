@@ -631,6 +631,33 @@
       "stars": 0,
       "cityStart": 0,
       "masteryBanked": 0
+    },
+    "renovationFx": {}
+  },
+  "renovation": {
+    "north-end": {
+      "level": 0,
+      "decor": []
+    },
+    "southie": {
+      "level": 0,
+      "decor": []
+    },
+    "back-bay": {
+      "level": 0,
+      "decor": []
+    },
+    "fenway": {
+      "level": 0,
+      "decor": []
+    },
+    "cambridge": {
+      "level": 0,
+      "decor": []
+    },
+    "dorchester": {
+      "level": 0,
+      "decor": []
     }
   }
 }

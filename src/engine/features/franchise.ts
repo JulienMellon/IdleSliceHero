@@ -114,6 +114,7 @@ export const RESET_FIELDS = [
   'cityComplete',
   'order', // open orders
   'nightOven', // the night-oven tier
+  'renovation', // v5.25: every shop's renovation level and its decor
 ] as const;
 
 /** GameState fields a franchise sets itself: the version, the new city, the save time, and the feature slices (the lists below). */
@@ -134,6 +135,7 @@ export const RESET_FEATURES = [
   'universityMenu',
   'industrialShifts',
   'uptownStars',
+  'renovationFx', // v5.25: renovation's hooks (no state; the save is the `renovation` field above)
 ] as const;
 
 /**

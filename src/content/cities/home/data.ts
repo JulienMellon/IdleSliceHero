@@ -35,6 +35,14 @@ export const CITY_NAME = 'Port Marinara';
  * does not make a flat economy: the engine's income potential per pizza (prep 0.9 pies/s x up to 125 levels x 8 milestones) is the old one, so
  * managers, heads, cost multipliers and order values from Waterfront on are far above the build prices. They are what the check-in sim needs,
  * not 10x and 2x of the build; the owner decision is in the E8 report.
+ *
+ * v5.25 (card E10, with Julien's widening): the Home city takes about 7 days for the renovating check-in player. TUNING.milestones is [25] and footprintBoost 1.1
+ * (a kitchen tops out at about 166 pies a second), so the tables above were refit with `ladder` and `fitstars`: Downtown 3 / 1 and Suburbs 8 / 2.7 keep the old
+ * ratio of order value to cost (Suburbs' manager 900K puts it at 26 minutes of session 1); from Waterfront on the stations follow the build ladder (costMult 800 / 2000 /
+ * 4000 / 8000: a kitchen is a long, cash-limited climb, so the chapters' "no missed orders" tasks meet a shop that is still growing) while the order values stay flat
+ * (10 to 16), so that Downtown and Suburbs, renovated to x4, each keep at least 10% of the city's income at every opening (18% and 51% at the lowest). The
+ * waits that set the days are the Pier 9 bid (1.5B) and Industrial's and Uptown's heads (3B, 4B), the dearest prices of the city; nothing passes 1e10 (Golden and Flagship 8B at
+ * Uptown, renovation III 8B). The Golden oven and the Flagship are 1M x costMult (content/cities/home/fit.ts), a tenth of Downtown's 23M top.
  */
 export const NEIGHBORHOODS: NeighborhoodDef[] = [
   {
@@ -53,11 +61,11 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
   {
     id: 'suburbs',
     name: 'Suburbs',
-    orderValue: 60,
+    orderValue: 8,
     buildCost: 20_000,
-    costMult: 20,
-    managerCost: 4_200_000,
-    headsCost: 40_000,
+    costMult: 2.7,
+    managerCost: 900000,
+    headsCost: 5400,
     x: 30,
     y: 67,
     color: '#6FCF97',
@@ -66,11 +74,11 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
   {
     id: 'waterfront',
     name: 'Waterfront',
-    orderValue: 3_900_000,
+    orderValue: 10,
     buildCost: 80_000,
-    costMult: 3_500_000,
-    managerCost: 310_000_000_000,
-    headsCost: 62_000_000_000,
+    costMult: 800,
+    managerCost: 8000000,
+    headsCost: 160000,
     x: 76,
     y: 67,
     color: '#56CCF2',
@@ -80,11 +88,11 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
   {
     id: 'university',
     name: 'University',
-    orderValue: 310_000_000,
+    orderValue: 12,
     buildCost: 200_000,
-    costMult: 280_000_000,
-    managerCost: 13_600_000_000_000,
-    headsCost: 2_500_000_000_000,
+    costMult: 2000,
+    managerCost: 20000000,
+    headsCost: 400000,
     x: 18,
     y: 9,
     color: '#BB6BD9',
@@ -93,11 +101,11 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
   {
     id: 'industrial',
     name: 'Industrial',
-    orderValue: 14_100_000_000_000,
+    orderValue: 14,
     buildCost: 500_000,
-    costMult: 12_600_000_000_000,
-    managerCost: 3_450_000_000_000_000_000,
-    headsCost: 57_000_000_000_000_000,
+    costMult: 4000,
+    managerCost: 50000000,
+    headsCost: 3000000000,
     x: 50,
     y: 9,
     color: '#A0826D',
@@ -107,11 +115,11 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
   {
     id: 'uptown',
     name: 'Uptown',
-    orderValue: 94_000_000_000_000,
+    orderValue: 16,
     buildCost: 1_500_000,
-    costMult: 84_000_000_000_000,
-    managerCost: 100_000_000_000_000_000_000,
-    headsCost: 2_500_000_000_000_000_000,
+    costMult: 8000,
+    managerCost: 150000000,
+    headsCost: 4000000000,
     x: 82,
     y: 9,
     color: '#EB5757',
@@ -120,7 +128,7 @@ export const NEIGHBORHOODS: NeighborhoodDef[] = [
 ];
 
 /** Waterfront's finale is a purchase: bid on Pier 9 once "For Sale" has played and Waterfront has sold this many pizzas. ~4.4 min of income at that moment in the pacing sim (v5.13 retune). */
-export const PIER9_BID = { cost: 4_700_000_000, unlockPizzas: 50_000 } as const;
+export const PIER9_BID = { cost: 1_500_000_000, unlockPizzas: 50_000 } as const;
 
 /** The bid as the city schema has it: Waterfront's finale is the Pier 9 purchase, open once "Man Overboard" (waterfront-3b) has played. */
 export const HOME_BID: CityBid = {

@@ -35,6 +35,7 @@ import {
 import { BONUS, NIGHT_OVEN, ORDER } from '../content/hooks';
 import { auctionMult, LAYER_KEYS } from '../content/layers';
 import { SETS } from '../content/catalog';
+import { migrateRenovation, type Renovated } from '../content/renovation';
 import { cosmeticPart } from '../content/endgame';
 import type { NeighborhoodId, Scene, SceneReward } from '../content/types';
 import { pizzasLeft } from './format';
@@ -131,6 +132,8 @@ export interface GameState {
   order: OrderState;
   /** Nonna's night oven: the tier owned (index into NIGHT_OVEN.capSeconds, 0 = the base cap). Rules in night-oven.ts. */
   nightOven: number;
+  /** v5.25: each shop's renovation level (0 to 3) and the decor items it bought (content/renovation.ts; rules in features/renovation.ts). A franchise starts it over. */
+  renovation: Record<NeighborhoodId, Renovated>;
   /** Feature slices (features/): each registered feature keeps its state at `x[feature.key]`. */
   x: Record<string, unknown>;
 }
@@ -411,6 +414,7 @@ export function newGame(now: number, cityId: string = HOME_ID): GameState {
     bonus: newBonus(now),
     order: newOrders(now),
     nightOven: 0,
+    renovation: migrateRenovation(undefined, city),
     x: Object.fromEntries(FEATURES.map((f) => [f.key, f.init(now, city)])),
   };
 }
@@ -648,6 +652,7 @@ export function migrate(raw: unknown, now: number): GameState {
         : {},
     rewards: migrateRewards(r.rewards, now),
     stats: migrateStats(r.stats),
+    renovation: migrateRenovation(r.renovation, city),
   };
   if (r.shops && typeof r.shops === 'object') {
     for (const id of ids) {

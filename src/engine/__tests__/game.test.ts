@@ -18,9 +18,9 @@ describe('formulas', () => {
     expect(G.upgradeCost(100, 1)).toBe(115);
     expect(G.upgradeCost(100, 10)).toBe(Math.ceil(100 * 1.15 ** 10));
   });
-  test('milestones double output at 25/50/100', () => {
-    expect([24, 25, 50, 100].map(G.milestoneMultiplier)).toEqual([1, 2, 4, 8]);
-    expect(G.nextMilestone(30)).toBe(50);
+  test('milestones double output at 25 (v5.25: the only one)', () => {
+    expect([24, 25, 50, 100].map(G.milestoneMultiplier)).toEqual([1, 2, 2, 2]);
+    expect(G.nextMilestone(30)).toBe(null);
   });
   test('a pizzeria sells at the rate of its slowest stage', () => {
     const shop = G.newShop(true);

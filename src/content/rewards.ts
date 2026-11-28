@@ -78,6 +78,12 @@ export const WEEKLY_TASK_COUNT = 7;
 /** Cash is minutes of income (earnings per second × 60 × minutes, at claim time). */
 // v5.16: cash rewards cut by 90% or more (daily task 15 → 1, weekly 120 → 5, chests 30/60 → 2/3, gift 30 → 5): one daily task had paid 15 minutes of income, and in a 40-minute first session
 // rewards at the first card's cut (3 / 20 / 5 / 10) were half of all the cash earned. The sim (scripts/review/sim2.ts) now plays them, so the fit sees them.
+/**
+ * v5.25 (card E10): the takeover window. From Nonna's takeover (when the rewards unlock) until the second shop is built, no "minutes of income" reward pays more than
+ * this share of that shop's price: Downtown's income at 20 minutes is large against Suburbs' 20K, and a 5-minute gift would pay the whole build (measured $540K at
+ * the takeover before the cap, against a $20K price).
+ */
+export const TAKEOVER_REWARD_CAP = 0.25;
 export const DAILY_TASK_REWARD = { minutes: 1, points: 20 } as const;
 export const WEEKLY_TASK_REWARD = { minutes: 5 } as const;
 

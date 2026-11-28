@@ -14,6 +14,7 @@ import { CRITIC, LAYER_KEYS, STARS } from '../../../content/layers';
 import { DECOR_KINDS } from '../../../content/tuning';
 import { pay, shopRevenue, type BuyResult, type GameState, type Shop } from '../../game';
 import { minutesToCash } from '../../rewards';
+import { renoDecorCount } from '../renovation';
 import type { Feature } from '../types';
 import { cityOf, layerHood } from '../../../content/cities';
 import type { NeighborhoodId } from '../../../content/types';
@@ -59,10 +60,10 @@ export interface Points {
   total: number;
 }
 
-/** The points a shop and an Ingredients tier give. */
-export function pointsOf(shop: Pick<Shop, 'grade' | 'decor'>, tier: number): Points {
+/** The points a shop and an Ingredients tier give; `renoDecor` is the renovation decor items the shop has bought (each counts as `STARS.renovationDecorTiers` tiers). */
+export function pointsOf(shop: Pick<Shop, 'grade' | 'decor'>, tier: number, renoDecor = 0): Points {
   const oven = STARS.ovenPoints[Math.min(STARS.ovenPoints.length - 1, Math.max(0, shop.grade))] ?? 0;
-  const tiers = DECOR_KINDS.reduce((t, k) => t + (shop.decor?.[k] ?? 0), 0);
+  const tiers = DECOR_KINDS.reduce((t, k) => t + (shop.decor?.[k] ?? 0), 0) + renoDecor * STARS.renovationDecorTiers;
   const decor = STARS.decorTiersForPoint.filter((need) => tiers >= need).length;
   const ingredients = Math.min(MAX_TIER, Math.max(0, tier));
   return { oven, decor, ingredients, total: oven + decor + ingredients };
@@ -75,7 +76,7 @@ export const starsOf = (points: number): number => 1 + Math.floor((Math.max(0, M
 export const payMult = (stars: number): number => (stars >= STARS.maxStars ? STARS.pay.top : stars >= 3 ? STARS.pay.mid : STARS.pay.low);
 
 /** Uptown's stars right now (1 for a game that has no Uptown yet). */
-export const starsNow = (g: GameState): number => starsOf(pointsOf(g.shops[hoodOf(g)], read(g).tier).total);
+export const starsNow = (g: GameState): number => starsOf(pointsOf(g.shops[hoodOf(g)], read(g).tier, renoDecorCount(g, hoodOf(g))).total);
 
 // ---------- Ingredients ----------
 
@@ -140,7 +141,7 @@ export interface StarsView {
 /** What the rating card needs, pure. */
 export function starsView(g: GameState): StarsView {
   const st = read(g);
-  const points = pointsOf(g.shops[hoodOf(g)], st.tier);
+  const points = pointsOf(g.shops[hoodOf(g)], st.tier, renoDecorCount(g, hoodOf(g)));
   const stars = starsOf(points.total);
   return {
     active: built(g),
@@ -189,7 +190,7 @@ export function criticView(g: GameState): CriticView {
 function visit(g: GameState, st: StarsState): GameState {
   const n = st.n + 1;
   const target = criticTarget(st.seed, n);
-  const stars = starsOf(pointsOf(g.shops[hoodOf(g)], st.tier).total);
+  const stars = starsOf(pointsOf(g.shops[hoodOf(g)], st.tier, renoDecorCount(g, hoodOf(g))).total);
   const hit = stars >= target;
   const cash = hit ? minutesToCash(g, CRITIC.rewardMinutes) : 0;
   const next: StarsState = { ...st, n, sign: st.sign + (hit ? 1 : 0), result: { target, stars, hit, cash } };

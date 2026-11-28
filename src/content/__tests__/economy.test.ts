@@ -5,7 +5,9 @@ import { stationCost } from '../../engine/game';
 import { money } from '../../engine/format';
 import { DECOR_TIER_COST, STATIONS, TUNING } from '../tuning';
 import { FOOTPRINTS, HEAD_COST_DOWNTOWN, OVEN_GRADES, VEHICLES } from '../cities/home/fit';
-import { NEIGHBORHOODS } from '../cities/home/data';
+import { NEIGHBORHOODS, PIER9_BID } from '../cities/home/data';
+import { HOME_CITY } from '../cities/home';
+import { renoCost, renoDecorCost } from '../renovation';
 
 const READABLE = /^\$\d+(\.\d+)?[A-Za-z]*$/;
 const STATION_KEYS = ['prep', 'ovens', 'counter', 'drivers', 'tables'] as const;
@@ -19,8 +21,14 @@ const PRICE_CEILING = 1e280;
 /** The Home ladder (Julien, 2026-11-28): the builds. */
 const LADDER = { downtown: 0, suburbs: 20_000, waterfront: 80_000, university: 200_000, industrial: 500_000, uptown: 1_500_000 } as const;
 
-/** costMult / orderValue: the original game used about 0.45 everywhere except Downtown (1/3). */
-const COST_PER_ORDER = { min: 0.3, max: 1.0 };
+/**
+ * costMult / orderValue: Downtown and Suburbs keep the original ratio (about 1/3). v5.25 (card E10): from Waterfront on the stations follow the build ladder
+ * (costMult 800 to 8000, so a kitchen is a long, cash-limited climb and the chapters' "no missed orders" tasks have a shop that is still growing) while the order
+ * values stay flat (10 to 16: Downtown and Suburbs must earn 10% of the city at every later opening), so the ratio only has a floor.
+ */
+const COST_PER_ORDER = { min: 0.3 };
+/** No Home price passes this (Julien, 2026-11-28: about 1e10). */
+const HOME_PRICE_CEILING = 1.5e10;
 /**
  * v5.16: a manager and the three heads are priced by the pacing fit (scripts/pacing-fit.ts: heads within two check-ins of the build,
  * the manager about a day on, just before the next neighbourhood), not by a ratio to the build. They stay real purchases: dearer than a
@@ -29,11 +37,30 @@ const COST_PER_ORDER = { min: 0.3, max: 1.0 };
 const MANAGER_OVER_STATION = 50;
 
 describe('T83 economy tables', () => {
-  test('costMult stays in proportion to orderValue in every neighbourhood (no outliers)', () => {
-    for (const n of NEIGHBORHOODS) {
-      const ratio = n.costMult / n.orderValue;
-      expect([n.id, ratio >= COST_PER_ORDER.min && ratio <= COST_PER_ORDER.max]).toEqual([n.id, true]);
+  test('costMult is never under 0.3 of the order value, follows the build ladder from Waterfront on, and the order values stay flat after Suburbs', () => {
+    for (const n of NEIGHBORHOODS) expect([n.id, n.costMult / n.orderValue >= COST_PER_ORDER.min]).toEqual([n.id, true]);
+    const hoods = NEIGHBORHOODS.slice(2);
+    for (let i = 1; i < hoods.length; i++) {
+      expect(hoods[i].costMult / hoods[i - 1].costMult).toBeLessThanOrEqual(4);
+      expect(hoods[i].orderValue / hoods[i - 1].orderValue).toBeLessThanOrEqual(1.5);
     }
+  });
+
+  test('v5.25: no Home price passes about 1e10: stations at the cap, heads, managers, the bid, the Golden oven, the Flagship, decor, renovation and its decor', () => {
+    for (const n of NEIGHBORHOODS) {
+      const prices = [
+        n.managerCost,
+        n.headsCost,
+        OVEN_GRADES[OVEN_GRADES.length - 1].cost * n.costMult,
+        FOOTPRINTS[FOOTPRINTS.length - 1].cost * n.costMult,
+        DECOR_TIER_COST[2] * n.costMult,
+        renoCost(n.id, 3, HOME_CITY) ?? 0,
+        renoDecorCost(n.id, 3, HOME_CITY) ?? 0,
+        ...STATION_KEYS.map((k) => stationCost(n.id, k, LEVEL_CAP - 1)),
+      ];
+      expect([n.id, Math.max(...prices) <= HOME_PRICE_CEILING]).toEqual([n.id, true]);
+    }
+    expect(PIER9_BID.cost).toBeLessThanOrEqual(HOME_PRICE_CEILING);
   });
 
   test('heads and managers are real purchases: well over a Lv 1 station, heads cheaper than the manager, all under the engine’s 2^53', () => {
@@ -41,7 +68,8 @@ describe('T83 economy tables', () => {
       const station = TYPICAL_STATION * n.costMult;
       expect([n.id, n.managerCost / station >= MANAGER_OVER_STATION]).toEqual([n.id, true]);
       expect([n.id, n.headsCost / station >= MANAGER_OVER_STATION / 10]).toEqual([n.id, true]);
-      expect([n.id, n.headsCost < n.managerCost]).toEqual([n.id, true]);
+      // v5.25: Industrial's and Uptown's heads are the story's waits (2e9 and more, the Pier 9 bid's company), and the manager follows them for less
+      if (n.costMult < 1000) expect([n.id, n.headsCost < n.managerCost]).toEqual([n.id, true]);
       expect([n.id, n.managerCost < PRICE_CEILING]).toEqual([n.id, true]);
     }
     // Downtown's heads keep their own prices; headsCost is their sum (its manager is Nonna, by the story)
@@ -64,9 +92,10 @@ describe('T83 economy tables', () => {
       VEHICLES.reduce((a, v) => a + v.cost, 0);
     expect(total).toBeGreaterThan(1e7);
     expect(total).toBeLessThan(3e7);
-    // the two star sinks come after all of it
-    expect(OVEN_GRADES[OVEN_GRADES.length - 1].cost).toBeGreaterThan(total);
-    expect(FOOTPRINTS[FOOTPRINTS.length - 1].cost).toBeGreaterThan(total);
+    // v5.25: the two star sinks (Golden oven, Flagship) are a tenth of that, in the shop's cost multiplier like the rest: Downtown's stars are among its first renovation's needs
+    expect(OVEN_GRADES[OVEN_GRADES.length - 1].cost).toBeGreaterThanOrEqual(1e6);
+    expect(FOOTPRINTS[FOOTPRINTS.length - 1].cost).toBeGreaterThanOrEqual(1e6);
+    expect(OVEN_GRADES[OVEN_GRADES.length - 1].cost + FOOTPRINTS[FOOTPRINTS.length - 1].cost).toBeLessThan(total);
   });
 
   test('v5.25: the first priced goals are cheap: the first oven level is under $50 and Marco costs under $300', () => {

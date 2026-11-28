@@ -17,11 +17,11 @@ export const FRANCHISE = {
   starPercent: 0.1,
   /**
    * Spec default: a clean clear of a city pays about this many Stars. The divisor below is fitted to it
-   * (`npx tsx scripts/pacing-fit.ts franchise`: the check-in player's earnings at the home finale, 9.17e21 on day 5.1 since v5.25, over STARS_PER_CLEAR squared, rounded down: 10 Stars).
+   * (`npx tsx scripts/pacing-fit.ts franchise`: the check-in player's earnings at the home finale, 2.4e10 on day 7 since v5.25 (card E10), over STARS_PER_CLEAR squared, rounded down: 10 Stars).
    */
   starsPerClear: 10,
   /** K of the spec's Stars = floor(sqrt(city earnings / K)) for the home city. Later cities' K is this x priceScale (their earnings are that much bigger). */
-  homeDivisor: 9.1e19,
+  homeDivisor: 2.4e8,
   /** Spec: "each new city has bigger numbers". Default where the spec names no factor: every city's pizza values are this many times the one before's. */
   cityGrowth: 1000,
 } as const;
@@ -62,9 +62,9 @@ export interface CityNumbers {
  * What the pacing fit moved after the plain scaling (`npx tsx scripts/pacing-fit.ts fitboston`): one factor on every price of a city (builds,
  * managers, heads, cost multipliers, fleet, bid). The scaling keeps the home city's economy but not its rounding (a Lv 1 price of $5.76 is $6
  * at home) or the waits that no price moves (the story's interludes), so the check-in player's beats drift by a fraction of a day; this puts
- * them back. Absent = no change (v5.25, card E8: the plain scaling already lands Boston on the home city's days, to the hundredth, so the fit is empty). Order values are not moved: they are the city's "bigger numbers", and the Stars carry the rest.
+ * them back. v5.25 (card E10): Boston 0.85, from `fitboston` with the renovating player: it lands within 0.35 days of the home city on every beat. Order values are not moved: they are the city's "bigger numbers", and the Stars carry the rest.
  */
-export const PRICE_FIT: Partial<Record<number, number>> = {};
+export const PRICE_FIT: Partial<Record<number, number>> = { 1: 0.85 };
 
 /** City `index`'s numbers: the home city's, scaled, then moved by the fit (`adjust` false: the plain scaling, what the fit starts from). */
 export function cityNumbers(index: number, adjust = true): CityNumbers {

@@ -55,10 +55,27 @@ describe('session 1: the first 33 minutes (rewards on)', () => {
   });
   it('the scenes come in story order', () => {
     // v5.16 (card T1a): Deb's hire scene comes with the manager, and Dale's "3b" interlude after beat 3
-    const order = ['downtown-1', 'downtown-2', 'downtown-3', 'downtown-4', 'suburbs-1', 'suburbs-2', 'suburbs-hire', 'suburbs-3', 'suburbs-3b', 'suburbs-4'];
+    // v5.25 (card E10): downtown-3b is the Downtown slot (an interlude 200 s after beat 3)
+    const order = [
+      'downtown-1',
+      'downtown-2',
+      'downtown-3',
+      'downtown-3b',
+      'downtown-4',
+      'suburbs-1',
+      'suburbs-2',
+      'suburbs-hire',
+      'suburbs-3',
+      'suburbs-3b',
+      'suburbs-4',
+    ];
     // v5.25: Waterfront (80K) may be built once Suburbs' third beat has played, so its scenes can come in before the Suburbs finale; they are not part of this order
     const own = m.scenes.map((x) => x.id).filter((id) => /^(downtown|suburbs)-/.test(id));
-    expect(own).toEqual(order);
+    // v5.25 (card E10): Deb's manager can be bought before Suburbs' second beat has played (the cheaper manager is the player's next purchase), so her hire scene may come on either side of it
+    const hire = own.indexOf('suburbs-hire');
+    expect(hire).toBeGreaterThan(own.indexOf('suburbs-1'));
+    expect(hire).toBeLessThan(own.indexOf('suburbs-3'));
+    expect(own.filter((id) => id !== 'suburbs-hire')).toEqual(order.filter((id) => id !== 'suburbs-hire'));
     const ids = m.scenes.map((x) => x.id);
     const wf = ids.indexOf('waterfront-1');
     if (wf >= 0) expect(wf).toBeGreaterThan(ids.indexOf('suburbs-3'));

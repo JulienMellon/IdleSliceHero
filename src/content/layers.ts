@@ -110,6 +110,8 @@ export const STARS = {
   ovenPoints: [0, 1, 1, 2, 2] as readonly number[],
   /** Points from decor: tiers owned in all (of 15) at which the first and second point are earned. */
   decorTiersForPoint: [5, 10] as readonly number[],
+  /** v5.25 (card E10): each renovation decor item of Uptown counts as this many decor tiers owned. */
+  renovationDecorTiers: 1,
   /** The Ingredients track: tier 0 is the shop's starting stock; each later tier gives a point and costs minutes of Uptown's income at purchase time. */
   ingredients: [
     { name: 'Store-brand', minutes: 0 },

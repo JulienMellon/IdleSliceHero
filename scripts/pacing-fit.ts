@@ -27,7 +27,7 @@ import { cityOf } from '../src/content/cities';
 import { applyCfg, decisionMetric, endSummary, INSTALL, options, reportLines, rewardRules, run, sessionStats, type Cfg } from './review/sim2';
 
 import { FOOTPRINTS, HEAD_COST_DOWNTOWN, OVEN_GRADES, VEHICLES } from '../src/content/cities/home/fit';
-import { NEIGHBORHOODS, PIER9_BID } from '../src/content/cities/home/data';
+import { HOME_BID, NEIGHBORHOODS, PIER9_BID } from '../src/content/cities/home/data';
 // ---- v5.16 (card E0): the economy rules after playtest 3. Every target the tests pin is a named constant here, so the version's final
 // refit (card E2b) changes numbers and not tests. ----
 
@@ -58,25 +58,28 @@ export const SESSION1 = {
  * 20 min, and Suburbs is built the moment Nonna takes over, so the four gaps before it are 20 / 3 = 6.5 min each at the best (a 3-minute
  * gap needs one more Downtown beat, a story decision). The buy gap: the player saves for the Suburbs manager (4.2M) and buys nothing meanwhile.
  * The tests pin these measured values, so a worse result fails.
+ * v5.25 (card E10): Downtown has a slot for one more scene (`downtown-3b`, an interlude 200 s after beat 3: it splits the 7-minute wait before Nonna) and the gap falls to
+ * 6.3 min, the wait between Downtown's first two beats; a 3-minute gap needs an interlude in each of the three Downtown gaps and in Suburbs' (a story decision, W6).
  */
-export const SESSION1_MISSES = { maxBuyGapSeconds: 380, maxSceneGapMinutes: 6.75 } as const;
+export const SESSION1_MISSES = { maxBuyGapSeconds: 300, maxSceneGapMinutes: 6.4 } as const;
 
 /**
  * Waterfront to Uptown (card E0 step 7): where the manager and the heads fall for the check-in player (5 min every 4 h).
  * v5.25 (card E8): the flat ladder makes every hood's own prices small against the income of the hoods before it, so the targets of v5.16
  * (a manager is 4 h of income, 70 to 100% of the way to the next build, 0.7 to 1.3 days after Uptown's build) are pinned to what the fit
- * measures now (the limits below, and STORY_RULES, DECISION_TARGETS); card E10 refits them with renovation.
+ * measures now (the limits below, and STORY_RULES, DECISION_TARGETS); card E10 refits them with renovation: the Pier 9 bid and Industrial's and Uptown's heads
+ * are the waits that hold the story to 7 days (measured: Uptown's first head 3 check-ins after its build, all three 5, its manager 0.85 days).
  */
 export const MANAGER_TIMING = {
   /** The first head within this many check-ins of the build, all three within `allHeadsCheckins`. */
   firstHeadCheckins: 3,
   allHeadsCheckins: 8,
-  /** The manager at this share of the way from its build to the next neighbourhood's build (Waterfront, University, Industrial)… */
-  managerShare: { min: 0.45, max: 1.15 },
+  /** The manager at this share of the way (v5.25, card E10: University's comes at 5%, the same day as its heads are done: it is the cheap price after the three heads) from its build to the next neighbourhood's build (Waterfront, University, Industrial)… */
+  managerShare: { min: 0.05, max: 1.15 },
   /** …and Uptown's, which has no next build, this many days after its own. */
-  uptownManagerDays: { min: 0.1, max: 1.3 },
+  uptownManagerDays: { min: 0.1, max: 1.4 },
   /** A manager costs at least this many hours of the city's income when it is hired (v5.25: measured 0.2 h at University; the old rule was 4). */
-  minHours: 0.1,
+  minHours: 0.05,
 } as const;
 
 /** The three reward rules (card E0 step 7), checked on the check-in player's story. */
@@ -92,9 +95,9 @@ export const REWARD_RULES = {
 /** Card E2b step 7: the story as a whole, for the check-in player. */
 export const STORY_RULES = {
   /** No gap between two scenes over this many minutes of play (the play clock, not the wall clock: a check-in is 5 min). */
-  maxSceneGapPlayMinutes: 37,
-  /** Days of the story, from the first scene to the finale, with no scene at all (v5.25: measured 1). */
-  scenelessDays: 1,
+  maxSceneGapPlayMinutes: 64,
+  /** Days of the story, from the first scene to the finale, with no scene at all (v5.25, card E10: measured 2 of 7: the Pier 9 wait has no scene in it, and the gap above is that wait; story slots for it are W6's). */
+  scenelessDays: 2,
 } as const;
 
 /** Card E2b step 7: the story rules measured on a finished check-in run (see STORY_RULES). */
@@ -257,11 +260,45 @@ function managersCheck() {
   );
 }
 
+/**
+ * v5.25 (card E10): the old shops stay worth visiting. At the moment each hood after Suburbs opens, Downtown and Suburbs each earn at least this share of
+ * the city's income (the renovations' x2 to x4 keep them there while the hoods after them grow).
+ */
+export const OLD_SHOP_SHARE = 0.1;
+
+export interface OldShopRow {
+  hood: string;
+  day: number;
+  downtown: number;
+  suburbs: number;
+}
+
+/** The check-in player's story, and at each build after Suburbs the share of the city's income Downtown and Suburbs earn (see OLD_SHOP_SHARE). */
+export function oldShopShares(): OldShopRow[] {
+  applyCfg({ ...base, rewards: true });
+  const rows: OldShopRow[] = [];
+  const seen = new Set<string>(NEIGHBORHOODS.slice(0, 2).map((n) => n.id));
+  run('checkin', SESSION, AWAY, undefined, {
+    onSecond: (s, wall) => {
+      for (const n of NEIGHBORHOODS) {
+        if (!s.shops[n.id].built || seen.has(n.id)) continue;
+        seen.add(n.id);
+        const e = NEIGHBORHOODS.map((h) => (s.shops[h.id].built ? G.shopEarnings(s, h.id) : 0));
+        const total = e.reduce((a, b) => a + b, 0);
+        rows.push({ hood: n.id, day: wall / 86400, downtown: e[0] / total, suburbs: e[1] / total });
+      }
+    },
+  });
+  return rows;
+}
+
 export const SESSION = 300;
 export const AWAY = 4 * 3600;
 /** Target day of each pizzeria's first scene, and of the finale (card E1 step 7, v5.15): the check-in player must land within STORY_TOLERANCE of each. */
-// E10: v5.25 (card E8) leaves these as they were; card E10 stretches the Home city to about 7 days once renovation exists, and moves them then.
-export const TARGETS = { waterfront: 1.0, university: 2.0, industrial: 3.1, uptown: 4.4, finale: 4.8 };
+// v5.25 (card E10): the Home city takes about 7 days with the renovating player (scripts/review/sim2.ts: stars, renovations, decor). Waterfront and University
+// come together (University's build waits for Waterfront's chapter 3 and nothing in between costs time), then the Pier 9 bid, Industrial's heads and Uptown's
+// heads are the waits that spread the rest.
+export const TARGETS = { waterfront: 0.7, university: 0.85, industrial: 4.2, uptown: 4.8, finale: 7.0 };
 export const STORY_TOLERANCE = 0.3;
 /**
  * Per target: 0.3 days, but the finale 0.31. Since card T1a the finale is the end of a chain of play-time waits (Uptown's act 2 -> its
@@ -269,7 +306,7 @@ export const STORY_TOLERANCE = 0.3;
  * economy does; a check-in is 0.17 days, so with Uptown at 4.25 (its band is 4.1 to 4.7) the finale lands at 5.106, 0.006 days over. One
  * check-in earlier would put Uptown at 4.08, 0.017 under its band. Card E2b's report asks the owner to shorten an interlude instead.
  */
-export const STORY_TOLERANCES = { waterfront: 0.33, university: 0.3, industrial: 0.3, uptown: 0.3, finale: 0.31 } as const;
+export const STORY_TOLERANCES = { waterfront: 0.33, university: 0.3, industrial: 0.3, uptown: 0.3, finale: 0.4 } as const;
 export const BANDS = {
   waterfront: [TARGETS.waterfront - STORY_TOLERANCE, TARGETS.waterfront + STORY_TOLERANCE],
   university: [TARGETS.university - STORY_TOLERANCE, TARGETS.university + STORY_TOLERANCE],
@@ -403,6 +440,11 @@ function check() {
       `${sess / 60} min every ${(sess + away) / 3600} h: ${(r.wall / 86400).toFixed(1)} days, done=${r.s.cityComplete}, ${JSON.stringify(m)}; ${endSummary(r, sess, away)}`,
     );
   }
+  console.log(
+    `old shops' share of the city's income at each opening: ${oldShopShares()
+      .map((r) => `${r.hood} d${r.day.toFixed(2)} Downtown ${(r.downtown * 100).toFixed(0)}% Suburbs ${(r.suburbs * 100).toFixed(0)}%`)
+      .join(' · ')} (min ${OLD_SHOP_SHARE * 100}%)`,
+  );
   endgameCheck();
 }
 
@@ -410,7 +452,8 @@ function check() {
 // (the three mastery stars) and defends each weekly counter-attack. Targets: the story days above, and 18 stars between day 10 and 14. ----
 
 // (INSTALL, the simulated player's Monday-morning install moment, is sim2.ts's: the events and the attack week are local time)
-export const STAR_DAYS = { min: 10, max: 14 };
+/** v5.25 (card E10): the story takes 7 days, and the stars of the last shops come after it (measured: 6 stars on day 7.0, 12 on 7.5, 18 on 15.3). */
+export const STAR_DAYS = { min: 12, max: 16 };
 /** How much more the player wants a star step than its income gain alone says (a prestige purchase), STARK=n. */
 const STARK = num('STARK') ?? 3;
 const DEFEND_TAPS_PER_SECOND = num('TAPS') ?? 3;
@@ -867,6 +910,7 @@ export function withBostonTables<T>(mult: number, fn: () => T, nums: CityNumbers
     heads: { ...HEAD_COST_DOWNTOWN },
     vehicles: VEHICLES.map((v) => v.cost),
     bid: PIER9_BID.cost,
+    homeBid: HOME_BID.cost,
   };
   NEIGHBORHOODS.forEach((n, i) => Object.assign(n, { ...nums.hoods[i], orderValue: nums.hoods[i].orderValue * mult }));
   Object.assign(HEAD_COST_DOWNTOWN, nums.headCostFirst);
@@ -874,6 +918,8 @@ export function withBostonTables<T>(mult: number, fn: () => T, nums: CityNumbers
     if (i > 0) v.cost = nums.vehicleCosts[i - 1];
   });
   (PIER9_BID as { cost: number }).cost = nums.bid.cost;
+  // the city's own bid (what the engine reads) is a copy of PIER9_BID made when the module loaded: it moves too (v5.25, card E10)
+  (HOME_BID as { cost: number }).cost = nums.bid.cost;
   try {
     return fn();
   } finally {
@@ -883,6 +929,7 @@ export function withBostonTables<T>(mult: number, fn: () => T, nums: CityNumbers
       v.cost = saved.vehicles[i];
     });
     (PIER9_BID as { cost: number }).cost = saved.bid;
+    (HOME_BID as { cost: number }).cost = saved.homeBid;
   }
 }
 

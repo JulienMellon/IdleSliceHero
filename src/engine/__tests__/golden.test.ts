@@ -86,13 +86,14 @@ describe('golden run', () => {
     void _t;
     // v5.18 (card K1): `city` ('home') is new on GameState and, like `x`, not part of the recorded hash; the constant below is unchanged.
     const json = JSON.stringify(rest, (k, v) => (k === 'x' || k === 'city' ? undefined : v));
+    // v5.25 re-record 2 (card E10): `renovation` (every shop at level 0, no decor) is new on GameState, milestone [25] and room x1.1, the stars' prices, the Home tables: the same 30 purchases, 900 ticks and 3 h away.
     // v5.25 re-record (card E8): ECONOMY 4 (the new curve: station prices, one pizza per tap, Marco $150, the ladder); the run is the same 30 purchases, 900 ticks and 3 h away.
     // v5.24 re-record (card E7): SAVE_VERSION 9 → 10 and `rewards.setsDone` ([]) is new; nothing else moved (the same run hashes to the old constant with `saveVersion` set back to 9 and `setsDone` removed).
     // v5.23 re-record (card E5): SAVE_VERSION 8 → 9 and `rewards.paidUntil` (0) is new; nothing else moved (the same run hashes to the old constant with `saveVersion` set back to 8 and `paidUntil` removed).
     // v5.21 re-record (card E1): SAVE_VERSION 7 → 8 (the chapters' slice, which `x` leaves out of the hash); nothing else moved (the same run hashes to the old constant with `saveVersion` set back to 7).
     // v5.20 re-record (card C3): SAVE_VERSION 6 → 7 (the 15-step tutorial); nothing else moved (the same run hashes to the old constant with `saveVersion` set back to 6).
     // v5.16 re-record 2 (card E2b's refit): Downtown's head prices, Suburbs' build and manager, Waterfront's manager, University's build, Uptown's build and manager, and the Golden oven and Flagship prices changed. v5.16 re-record: ECONOMY 3, the heads/manager/station prices and the offline share changed the run. (v5.15 re-record: the save gained `economy` (C106) and `rewards.worn` (worn cosmetics). The golden run itself earns the same cash and buys the same things.)
-    expect(sha1(json)).toBe('539cc1bacb29c16d6f1002f26ad3874a59048dbb');
+    expect(sha1(json)).toBe('bfaae3551973b57c79295d0fe77a536dc8be9d0e');
   });
 
   it('golden: the run really earned something (guards against an empty script)', () => {

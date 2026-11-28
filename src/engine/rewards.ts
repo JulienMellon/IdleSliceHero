@@ -14,6 +14,7 @@ import {
   MIN_CASH_TARGET,
   MIN_COUNT_TARGET,
   STREAK_SAVE_DIAMONDS,
+  TAKEOVER_REWARD_CAP,
   TASK_TEXT,
   VISITORS,
   WEEKLY_FALLBACK,
@@ -309,7 +310,13 @@ export const taskDone = (s: GameState, task: Task): boolean => taskProgress(s, t
 export const rewardIncome = (s: GameState): number => earningsPerSecond(withoutService(withoutEvent(s)));
 
 /** Cash a "N minutes of income" reward pays right now. */
-export const minutesToCash = (s: GameState, minutes: number): number => rewardIncome(s) * 60 * minutes;
+export const minutesToCash = (s: GameState, minutes: number): number => Math.min(rewardIncome(s) * 60 * minutes, takeoverCap(s));
+
+/** The most one reward pays while the city's second shop is not built yet (TAKEOVER_REWARD_CAP of its price), else no limit. */
+export function takeoverCap(s: GameState): number {
+  const second = cityOf(s).neighbourhoods[1];
+  return second && !s.shops[second.id]?.built ? second.buildCost * TAKEOVER_REWARD_CAP : Infinity;
+}
 
 function pay(s: GameState, cash: number): GameState {
   return cash > 0 ? { ...s, cash: s.cash + cash, totalEarned: s.totalEarned + cash } : s;

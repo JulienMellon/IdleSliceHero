@@ -8,15 +8,17 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { HOME_SCENES } from '../../src/content/scenes/home';
 import { DECOR_KINDS, DECOR_TIER_COST, TUNING } from '../../src/content/tuning';
 import { DAILY_CHESTS } from '../../src/content/rewards';
+import { RENO_MULT } from '../../src/content/renovation';
 import { ORDER } from '../../src/content/hooks';
 import type { NeighborhoodId } from '../../src/content/types';
-import { markReportOpened } from '../../src/engine/chapters';
+import { markReportOpened, openChapters, taskProgress } from '../../src/engine/chapters';
 import { pickScene, scenePacesGap } from '../../src/engine/cutscene-input';
 import * as G from '../../src/engine/game';
 import { buyRack, rackLock, rackPrice } from '../../src/engine/features/layers/boats';
 import { rivalView, startRivalChallenge } from '../../src/engine/features/layers/rival';
 import { bestMix, mixOf, setMenu } from '../../src/engine/features/layers/menu';
 import { fixJam, jamView } from '../../src/engine/features/layers/shifts';
+import { buyRenoDecor, nextRenoCost, renoDecorOffer, renoDecorPrice, renoLevel, renovate, renovateLock } from '../../src/engine/features/renovation';
 import { buyIngredients, ingredientsLock, ingredientsPrice, type StarsState } from '../../src/engine/features/layers/stars';
 import { LAYER_KEYS } from '../../src/content/layers';
 import '../../src/engine/features'; // the registry must be live (mastery, heads, recipes, ...): without this import no feature hook runs
@@ -35,8 +37,20 @@ if (!process.env.TZ) process.env.TZ = 'America/New_York';
 export const INSTALL = new Date(2026, 10, 9, 9, 0, 0).getTime();
 
 type Option = { label: string; cost: number; gain: number; buy: (s: G.GameState) => G.BuyResult };
+/**
+ * v5.25 (card E10): the shops whose open chapter has a "no missed orders" task still to do. A player who reads the task keeps the room ahead of the
+ * customers there: no more drivers, seats or fleet until the kitchen is past the demand (the greedy rule alone ends every purchase with the demand a hair
+ * over the kitchen, and a 30 or 120 second calm never comes).
+ */
+function calmShops(s: G.GameState): Set<string> {
+  const out = new Set<string>();
+  for (const ch of openChapters(s)) for (const t of ch.tasks) if (t.kind === 'noMissed' && t.target >= 60 && !taskProgress(s, t).done) out.add(t.shop);
+  return out;
+}
+
 export function options(s: G.GameState): Option[] {
   const out: Option[] = [];
+  const calm = cfg.renovate ? calmShops(s) : new Set<string>();
   for (const n of NEIGHBORHOODS) {
     const shop = s.shops[n.id];
     if (!shop.built) continue;
@@ -45,17 +59,69 @@ export function options(s: G.GameState): Option[] {
       const cost = G.upgradeCostOf(s, n.id, what);
       // an upgrade that is locked (Downtown's manager before Nonna, a manager before the heads) cannot be bought: a player buys something else
       if (gain === null || cost === null || G.upgradeLock(s, n.id, what)) continue;
+      // the shop with a calm task to do buys the kitchen (even where the gain is nil: the demand is level with it) and no more demand
+      const calmHere = calm.has(n.id);
+      if (calmHere && (what === 'drivers' || what === 'tables')) continue;
       // a shop that runs itself (a manager, or all three heads) earns without taps; one that doesn't only earns while tapped, so an upgrade there is worth a third
       const g = what === 'manager' ? gain : G.runsItself(shop) ? gain : gain / 3;
-      out.push({ label: `${n.id}:${what}`, cost, gain: g, buy: (st) => G.buyUpgrade(st, n.id, what) });
+      const kitchen = what === 'prep' || what === 'ovens' || what === 'counter';
+      out.push({
+        label: `${n.id}:${what}`,
+        cost,
+        gain: calmHere && kitchen ? Math.max(g, 1e-3 * G.shopEarnings(s, n.id)) : g,
+        buy: (st) => G.buyUpgrade(st, n.id, what),
+      });
     }
     for (const kind of DECOR_KINDS) {
       const gain = G.decorGain(s, n.id, kind);
       const cost = G.decorCost(s, n.id, kind);
       if (gain !== null && cost !== null && shop.managed) out.push({ label: `${n.id}:decor-${kind}`, cost, gain, buy: (st) => G.buyDecor(st, n.id, kind) });
     }
+    // v5.25 (card E10): the renovation's decor items, bought like decor tiers
+    if (shop.managed)
+      for (const item of renoDecorOffer(s, n.id)) {
+        const cost = renoDecorPrice(s, n.id, item);
+        if (cost === null) continue;
+        const r = buyRenoDecor({ ...s, cash: 1e300 }, n.id, item);
+        if (!r.ok) continue;
+        const gain = G.shopEarnings(r.state, n.id) - G.shopEarnings(s, n.id);
+        out.push({ label: `${n.id}:reno-decor`, cost, gain, buy: (st) => buyRenoDecor(st, n.id, item) });
+      }
+    // v5.25 (card E10): a shop whose kitchen and demand are level (every single level adds nothing, or loses the service tip) is lifted whole: one level of each
+    // station at once. Without it the greedy player leaves such a shop (University at Lv 5 with all the cash in the world) where it is.
+    if (
+      !calm.has(n.id) &&
+      !out.some(
+        (o) => o.label.startsWith(`${n.id}:`) && !o.label.includes('decor') && !o.label.includes('manager') && !o.label.includes('head') && o.gain > 1e-9,
+      )
+    ) {
+      const steps = (['prep', 'ovens', 'counter', 'drivers', 'tables'] as G.Upgrade[]).filter((w) => !G.upgradeLock(s, n.id, w));
+      let after = { ...s, cash: 1e300 };
+      let cost = 0;
+      for (const w of steps) {
+        cost += G.upgradeCostOf(after, n.id, w) ?? 0;
+        const r = G.buyUpgrade(after, n.id, w);
+        if (r.ok) after = r.state;
+      }
+      const gain = G.shopEarnings(after, n.id) - G.shopEarnings(s, n.id);
+      if (steps.length && gain > 1e-9)
+        out.push({
+          label: `${n.id}:lift`,
+          cost,
+          gain: G.runsItself(shop) ? gain : gain / 3,
+          buy: (st) => {
+            let cur = st;
+            for (const w of steps) {
+              const r = G.buyUpgrade(cur, n.id, w);
+              if (!r.ok) return r;
+              cur = r.state;
+            }
+            return { ok: true, state: cur };
+          },
+        });
+    }
     const b = G.bottleneckBundle(s, n.id);
-    if (b)
+    if (b && !(calm.has(n.id) && b.steps.some((w) => w === 'drivers' || w === 'tables')))
       out.push({
         label: `${n.id}:bundle(${b.steps.join('+')})`,
         cost: b.cost,
@@ -73,13 +139,15 @@ export function options(s: G.GameState): Option[] {
     if (!G.upgradeLock(s, n.id, 'expand')) {
       const stage = G.bottleneck(shop, s.vehicle, HOME_FIT);
       const what: G.Upgrade = stage === 'customers' ? 'tables' : stage;
-      if (G.upgradeLock(s, n.id, what)) {
+      // the shop with a calm task to do also expands when its kitchen is at the cap, whatever the bottleneck says (the room is what the calm needs)
+      const capped = calm.has(n.id) && Math.min(shop.prep, shop.counter) >= G.levelCap(shop);
+      if (G.upgradeLock(s, n.id, what) || capped) {
         const after = G.buyUpgrade({ ...s, cash: 1e300 }, n.id, 'expand');
         if (after.ok)
           out.push({
             label: `${n.id}:expand`,
             cost: G.upgradeCostOf(s, n.id, 'expand')!,
-            gain: G.upgradeGain(after.state, n.id, what) ?? 0,
+            gain: Math.max(G.upgradeGain(after.state, n.id, what) ?? 0, capped ? 1e-3 * G.shopEarnings(s, n.id) : 0),
             buy: (st) => G.buyUpgrade(st, n.id, 'expand'),
           });
       }
@@ -106,7 +174,7 @@ export function options(s: G.GameState): Option[] {
   if (next && !G.buildLock(s, next.id))
     out.push({ label: `build:${next.id}`, cost: next.buildCost, gain: G.buildGain(s, next.id) / 2, buy: (st) => G.buildShop(st, next.id) });
   const vg = G.vehicleGain(s);
-  if (vg !== null) out.push({ label: 'fleet', cost: VEHICLES[s.vehicle + 1].cost, gain: vg, buy: G.buyVehicle });
+  if (vg !== null && calm.size === 0) out.push({ label: 'fleet', cost: VEHICLES[s.vehicle + 1].cost, gain: vg, buy: G.buyVehicle });
   return out.filter((o) => o.gain > 1e-9);
 }
 
@@ -356,6 +424,62 @@ export function run(
       s = { ...s, x: { ...s.x, [LAYER_KEYS.stars]: { ...stars, result: null } } };
     }
   };
+  /**
+   * v5.25 (card E10): the renovating player. A shop that runs itself, at three stars, is renovated the moment it is on offer (affordable) and the multiplier
+   * pays the price back within `RENO_PAYBACK` seconds: the shop goes back to level 1 (the options buy the levels again, cheapest first) and earns x2 / x3 / x4.
+   */
+  /**
+   * The Pier 9 bid is saved for (nothing else is bought) only when it is close: within an hour of the city's income. v5.25 (card E10): the bid is a wait of a day or
+   * more (the story's pace), and a player who bought nothing for that long would not be playing; until it is close the levels, the stars and the renovations go on.
+   */
+  const savingForBid = (): boolean => {
+    if (!G.bidAvailable(s)) return false;
+    const eps = G.earningsPerSecond(s);
+    return eps > 0 && (G.bidPrice(s) - s.cash) / eps < 3600;
+  };
+  const renovateSecond = () => {
+    // the player who is about to bid does not send a shop back to level 1
+    if (savingForBid()) return;
+    for (const n of NEIGHBORHOODS) {
+      if (!G.runsItself(s.shops[n.id]) || renovateLock(s, n.id) !== null) continue;
+      const cost = nextRenoCost(s, n.id)!;
+      const now = G.shopEarnings(s, n.id);
+      // the gain is the next multiplier over this one, on the income the shop makes now
+      const gain = now * (RENO_MULT[renoLevel(s, n.id) + 1] / RENO_MULT[renoLevel(s, n.id)] - 1);
+      if (!(cost / Math.max(1e-9, gain) <= cfg.renoPayback)) continue;
+      const before = s.cash;
+      const r = renovate(s, n.id);
+      if (!r.ok) continue;
+      s = r.state;
+      waitCash = 0;
+      buys.push({ t: s.playSeconds, wall, label: `${n.id}:renovate`, cost: before - s.cash, session: sessions, cashBefore: before });
+      break;
+    }
+  };
+  /**
+   * v5.25 (card E10): a renovation needs three mastery stars, so the player who renovates also buys the Flagship and the Golden oven of a shop that runs
+   * itself, as luxuries (no gain counted: the oven and the room are not the bottleneck): when the price is under a third of the cash in hand.
+   */
+  const starSecond = () => {
+    for (const n of NEIGHBORHOODS) {
+      const sh = s.shops[n.id];
+      if (!sh.built || !sh.managed || !G.allHeadsHired(sh)) continue;
+      // only a kitchen that has grown into its room (prep and counter at 75% of the level cap) goes for the stars: until then the levels are the better buy
+      if (Math.min(sh.prep, sh.counter) < 0.75 * G.levelCap(sh)) continue;
+      for (const what of ['expand', 'grade'] as G.Upgrade[]) {
+        // the oven grade comes after the last room: the Golden oven is the last star
+        if (what === 'grade' && sh.footprint < FOOTPRINTS.length - 1) continue;
+        const cost = G.upgradeCostOf(s, n.id, what);
+        if (cost === null || G.upgradeLock(s, n.id, what) || cost > s.cash / 3) continue;
+        const before = s.cash;
+        const r = G.buyUpgrade(s, n.id, what);
+        if (!r.ok) continue;
+        s = r.state;
+        waitCash = 0;
+        buys.push({ t: s.playSeconds, wall, label: `${n.id}:${what}`, cost: before - s.cash, session: sessions, cashBefore: before });
+      }
+    }
+  };
   outer: for (;;) {
     sessions++;
     lastSceneEnd = null;
@@ -396,6 +520,10 @@ export function run(
       rackSecond();
       rivalSecond();
       layerSecond();
+      if (cfg.renovate) {
+        starSecond();
+        renovateSecond();
+      }
       if (s.cityComplete) {
         storyEnd ??= { wall, earned: s.totalEarned };
         if (!stop.keepGoing) break outer;
@@ -415,7 +543,7 @@ export function run(
           }
         }
       }
-      for (let q = 0; q < 30 && !G.bidAvailable(s); q++) {
+      for (let q = 0; q < 30 && !savingForBid(); q++) {
         // POLICY=top picks the same item until something other than cash changes (a purchase, a scene): while the cash is short of it, skip the work
         if (cfg.policy === 'top' && !process.env.NOCACHE && s.cash < waitCash && scenes.length === waitScenes) break;
         const opts = options(s).sort((a, b) => b.gain / b.cost - a.gain / a.cost);
@@ -657,6 +785,9 @@ export const cfg = {
   policy: (process.env.POLICY === 'smart' || process.env.POLICY === 'casual' ? process.env.POLICY : 'top') as 'top' | 'smart' | 'casual',
   saveFor: Number(process.env.SAVEFOR ?? 4 * 3600),
   payback: Number(process.env.PAYBACK ?? Infinity),
+  /** v5.25: the player renovates (RENO=0 turns it off) when the price pays back within this many seconds of the shop's income (RENOPAYBACK). */
+  renovate: process.env.RENO !== '0',
+  renoPayback: Number(process.env.RENOPAYBACK ?? 8 * 3600),
 };
 export function applyCfg(c: Cfg) {
   const each = (xs: number[] | undefined, set: (i: number, v: number) => void) =>

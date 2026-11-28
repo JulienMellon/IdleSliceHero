@@ -10,26 +10,26 @@
 - Do not touch: `src/components/**` (S6, S7, U7); copy (W6, T3).
 
 ## Steps
-- [ ] **1. The list first:** write `docs/build/v5.25/renovation.md` before any code. For each of the 6 Home shops and each level I-III it gives:
+- [x] **1. The list first:** write `docs/build/v5.25/renovation.md` before any code. For each of the 6 Home shops and each level I-III it gives:
   - the plaque;
   - 1 fixture upgrade (`id | part | what it changes`);
   - 3 decor items (`id | where it stands | silhouette or prop`).
 
   That is 18 fixtures and 54 decor items. **Variety check (README section 11):** within a shop, every item differs from the others by silhouette or prop, not only by colour; across shops, each set reads as its neighbourhood (Downtown classic, Suburbs diner, Waterfront dockside, University dorm, Industrial brick, Uptown marble). Ids: `reno<level>-<shop>-<thing>`. Then report `Needs: renovation.md written` and keep going: the orchestrator starts W6 on it.
-- [ ] **2. Data.** `src/content/renovation.ts` holds:
+- [x] **2. Data.** `src/content/renovation.ts` holds:
   - `RENO_MULT = [1, 2, 3, 4]`;
   - `renoCost(shop, level)`, which rises with each level and is fitted in the sim (a starting point is 3x the shop's next unopened hood price × level, but the sim decides);
   - the fixture and decor ids from step 1;
   - decor prices, set on the same curve as `DECOR_TIER_COST`.
-- [ ] **3. Engine.**
+- [x] **3. Engine.**
   - **Save:** `renovation: Record<shopId, { level: 0|1|2|3; decor: string[] }>` (saved; `migrate` defaults it to empty).
   - **Offer:** `canRenovate(g, shop)` is true when the shop is at ★★★ or more, is below level 3, and the player can afford it.
   - **`renovate(g, shop)`:** charges the cost, sets the shop's stations to level 1 (cash, managers, heads and hood unlocks stay), bumps the level and emits `renovated { shop, level }` for the scene and the UI.
   - **Income:** a shop's income is multiplied by `RENO_MULT[level]`.
   - **Decor:** the level's 3 decor items can be bought with cash, and each adds stars the way decor tiers do today.
-- [ ] **4. Franchise.** Add `renovation` to `RESET_FIELDS`, so franchising resets renovations and their looks.
-- [ ] **5. Pacing.** The sim's player renovates as soon as `canRenovate` holds and the payback is under the sim's threshold. Set `TARGETS` so the Home finale lands at about 7.0 days (tolerance 0.4), and spread the hood days evenly. New assertion: at each hood opening after Suburbs, Downtown and Suburbs each earn ≥ 10% of total income. Keep the SESSION1 targets from E8 and `pacing-sim` green, Boston included.
-- [ ] **6. Tests.**
+- [x] **4. Franchise.** Add `renovation` to `RESET_FIELDS`, so franchising resets renovations and their looks.
+- [x] **5. Pacing.** The sim's player renovates as soon as `canRenovate` holds and the payback is under the sim's threshold. Set `TARGETS` so the Home finale lands at about 7.0 days (tolerance 0.4), and spread the hood days evenly. New assertion: at each hood opening after Suburbs, Downtown and Suburbs each earn ≥ 10% of total income. Keep the SESSION1 targets from E8 and `pacing-sim` green, Boston included.
+- [x] **6. Tests.**
   - The ★★★ gate.
   - Station reset (and what stays).
   - x2 / x3 / x4 income.

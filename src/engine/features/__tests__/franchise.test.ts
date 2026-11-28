@@ -39,7 +39,7 @@ const MON = at(2026, 11, 16);
 const HOME = hoodIds(HOME_CITY);
 const BOSTON = hoodIds(BOSTON_CITY);
 const FINALE = G.finaleId(HOME[HOME.length - 1]);
-const EARNED = 9.17e21;
+const EARNED = 2.4e10;
 
 /** A cleared home city: every shop built and running, the finale seen, an attack open, a night oven, a fleet, diamonds and cosmetics. */
 function cleared(): G.GameState {

@@ -31,7 +31,7 @@ describe('check-in player: heads and managers', () => {
       const r = rows.find((x) => x.id === id)!;
       expect(r.head1Checkins).toBeLessThanOrEqual(MANAGER_TIMING.firstHeadCheckins);
       expect(r.heads3Checkins).toBeLessThanOrEqual(MANAGER_TIMING.allHeadsCheckins);
-      expect(r.heads3).toBeLessThan(r.manager); // the manager needs all three heads
+      expect(r.heads3).toBeLessThanOrEqual(r.manager); // the manager needs all three heads (it can be bought in the same second)
     });
   }
 
@@ -67,9 +67,10 @@ describe('check-in player: heads and managers', () => {
       expect(q.scenelessDays.length).toBeLessThanOrEqual(STORY_RULES.scenelessDays);
     });
 
-    it('the drones are bought before the Uptown finale', () => {
-      expect(Number.isFinite(q.droneDay)).toBe(true);
-      expect(q.droneDay).toBeLessThan(q.finaleDay);
+    // v5.25 (card E10): the kitchens top out at about 166 pies a second (milestone 25, room x1.1) and the scooter's demand already matches them, so no fleet tier past
+    // the scooter pays for the greedy player and the drone is the player's own choice (University's zones). A drone that is bought still comes before the finale.
+    it('a drone, if the player buys one, is bought before the Uptown finale', () => {
+      expect(Number.isFinite(q.droneDay) ? q.droneDay < q.finaleDay : true).toBe(true);
     });
 
     it(`over the whole run the best-payback buy is also the cheapest in at most ${DECISION_TARGETS.cheapestShare * 100}% of the purchases`, () => {

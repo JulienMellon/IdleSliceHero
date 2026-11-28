@@ -1,5 +1,5 @@
 // Pacing pins for v5.15 (card E1 step 7). The check-in player (5 min every 4 h, the 4 h offline cap) of scripts/pacing-fit.ts:
-//  - finishes each neighbourhood's first scene and the finale within 0.3 days of 1.0 / 2.0 / 3.1 / 4.4 / 4.8;
+//  - finishes each neighbourhood's first scene and the finale within the tolerances of 0.7 / 0.85 / 3.2 / 4.6 / 7.0 (v5.25);
 //  - after the story buys heads, Flagships and golden ovens and defends each weekly counter-attack, and has all 18 mastery stars
 //    between day 10 and day 14.
 // A later retune that moves one of these has to say so here. Refit with `npx tsx scripts/pacing-fit.ts fitstars` / `check`.
@@ -21,12 +21,12 @@ describe('check-in player: story days and the mastery stars', () => {
     });
   }
 
-  it('the city is finished and the story targets are the v5.13 ones', () => {
+  it('the city is finished and the story targets are the v5.25 ones (card E10: about 7 days)', () => {
     expect(story.s.cityComplete).toBe(true);
-    expect(TARGETS).toEqual({ waterfront: 1.0, university: 2.0, industrial: 3.1, uptown: 4.4, finale: 4.8 });
+    expect(TARGETS).toEqual({ waterfront: 0.7, university: 0.85, industrial: 4.2, uptown: 4.8, finale: 7.0 });
   });
 
-  it('has all 18 stars between day 10 and day 14, with 6 and 12 earlier', () => {
+  it('has all 18 stars between day 12 and day 16, with 6 and 12 earlier', () => {
     expect(after.starDay[18]).not.toBeNull();
     expect(after.starDay[18]!).toBeGreaterThanOrEqual(STAR_DAYS.min);
     expect(after.starDay[18]!).toBeLessThanOrEqual(STAR_DAYS.max);

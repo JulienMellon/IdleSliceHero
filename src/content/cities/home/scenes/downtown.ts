@@ -136,6 +136,37 @@ export const DOWNTOWN_SCENES: Scene[] = [
       },
     ],
   },
+  // v5.25 (card E10): the slot that splits the longest wait of session 1 (downtown-3 to downtown-4, 7 minutes) in two. PLACEHOLDER: W6 writes the scene, T3 lands it.
+  // It is an interlude (no chapter, no task): it plays 200 s of play after downtown-3 and does not hold downtown-4 back.
+  {
+    id: 'downtown-3b',
+    city: 'home',
+    character: 'nonna-rosa',
+    neighborhood: 'downtown',
+    beat: 'interlude',
+    title: 'Downtown Interlude',
+    trigger: { kind: 'after', neighborhood: 'downtown', scene: 'downtown-3', seconds: 200 },
+    panels: [
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
+        caption: 'PLACEHOLDER 1/3: a short Downtown moment.',
+        lines: [{ speaker: 'Nonna Rosa', text: 'PLACEHOLDER: keep baking, cara.' }],
+      },
+      {
+        backdrop: 'downtown',
+        cast: [{ id: 'nonna-rosa', mood: 'happy' }],
+        caption: 'PLACEHOLDER 2/3.',
+        lines: [{ speaker: 'Nonna Rosa', text: 'PLACEHOLDER: the line is longer today.' }],
+      },
+      {
+        backdrop: 'shop',
+        cast: [{ id: 'nonna-rosa', mood: 'neutral' }],
+        caption: 'PLACEHOLDER 3/3.',
+        lines: [{ speaker: 'Nonna Rosa', text: 'PLACEHOLDER: back to the ovens.' }],
+      },
+    ],
+  },
   {
     id: 'downtown-4',
     city: 'home',
