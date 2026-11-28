@@ -1,0 +1,9 @@
+- W1 E8: ECONOMY 4 full reset in migrate; saves/fixtures need `economy: 4` (scripts/shots_lib.py MID_SAVE done; src/dev/snapshots.json regenerated).
+- W1 E8: `rate()` in src/engine/format.ts now returns the full string ("$12/s", "$36/min", "<$1/min"); formatter whole numbers, no trailing zeros ("$1.5K"). SESSION and AWAY exported from scripts/pacing-fit.ts.
+- W1 E8: pacing-fit.ts gains a `ladder` command (`LADDER='{"industrial":1500}' npx tsx scripts/pacing-fit.ts ladder`) and `// E10:` markers on TARGETS; E10 refits TARGETS/STORY_TOLERANCES, MANAGER_TIMING, STORY_RULES, SESSION1_MISSES, DECISION_TARGETS.
+- W1 E8: Home costs past Waterfront still reach 1e11-1e20; Golden oven/Flagship 2.4B/4.8B. E8's proposed retune: TUNING.milestones [25], footprintBoost 1.1, keep speedPerLevel, then refit with `ladder` and `fitstars`.
+- W1 E8: takeover rewards (minutes x income) pay about $540K at Suburbs takeover; cap at about 1/4 of the next hood's price (src/content/rewards.ts or src/engine/rewards.ts).
+- W1 E8: longest scene gap 6.7 min (target 3); needs a new Downtown scene in src/content/cities/home/scenes/downtown.ts (writer copy W6, code T3).
+- W1 E8: src/content/franchise.ts homeDivisor 9.1e19, PRICE_FIT {} (Boston matches Home).
+- W1 N3/E8: Grant has `cash?`; STARTER_CASH = 7000 in src/services/grants.ts (fitted 6,667; kept 7,000); applyGrant in src/engine/offers.ts pays grant.cash. Store blurb key `store.starter.blurb` = "{cash} + {n} 💎 + {mult}x for {span}" in src/content/copy/home/store-copy.ts; `boostSpan` helper in store-model.ts.
+- W1 E8: first-serve cash pop unverified; S6 checks whether src/app/index.tsx's existing pop covers D495.
