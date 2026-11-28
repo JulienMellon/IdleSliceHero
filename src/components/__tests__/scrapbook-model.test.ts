@@ -14,9 +14,9 @@ const HIRE_TITLES: Record<string, string> = {
 };
 
 describe('scrapbook model', () => {
-  test('the header counts against every home scene: 40', () => {
-    expect(HOME_SCENES).toHaveLength(40);
-    expect(storiesCount(7)).toBe('Stories 7/40');
+  test('the header counts against every home scene: 41', () => {
+    expect(HOME_SCENES).toHaveLength(41);
+    expect(storiesCount(7)).toBe('Stories 7/41');
     expect(storiesCount(0, HOME_SCENES.slice(0, 3))).toBe('Stories 0/3');
   });
 
@@ -27,7 +27,7 @@ describe('scrapbook model', () => {
 
   test('interludes are labelled "Interlude", main beats by their number', () => {
     const interludes = HOME_SCENES.filter((s) => s.beat === 'interlude');
-    expect(interludes).toHaveLength(16); // Todd's 11 and the 5 hire scenes
+    expect(interludes).toHaveLength(17); // Todd's 11, the Downtown slot and the 5 hire scenes
     for (const s of interludes) expect(tileLabel(s)).toBe(INTERLUDE_LABEL);
     for (const s of HOME_SCENES.filter((x) => x.beat !== 'interlude')) expect(tileLabel(s)).toBe(String(s.beat));
   });

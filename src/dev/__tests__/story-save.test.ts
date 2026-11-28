@@ -152,7 +152,7 @@ describe('Play next story beat now (step 1)', () => {
     const g: GameState = {
       ...base,
       playSeconds: at + 10,
-      seenScenes: [sceneId(hood, 1), sceneId(hood, 2), sceneId(hood, 3)],
+      seenScenes: [sceneId(hood, 1), sceneId(hood, 2), sceneId(hood, 3), 'downtown-3b'],
       sceneAt: { [sceneId(hood, 3)]: at },
     };
     expect(challengeOffered(g, hood)).toBe(false);

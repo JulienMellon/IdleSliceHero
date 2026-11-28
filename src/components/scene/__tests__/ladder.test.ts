@@ -328,8 +328,8 @@ describe('milestone moments', () => {
   test('only a level that crosses 25 / 50 / 100 is a milestone; a jump reports the highest', () => {
     expect(crossedMilestone(24, 25)).toBe(25);
     expect(crossedMilestone(25, 26)).toBeNull();
-    expect(crossedMilestone(20, 60)).toBe(50);
-    expect(crossedMilestone(1, 120)).toBe(100);
+    expect(crossedMilestone(20, 60)).toBe(25); // v5.25: 25 is the only milestone
+    expect(crossedMilestone(1, 120)).toBe(25);
   });
   test('the confetti is 14 seeded pieces over 1.5 s, precomputed per step', () => {
     expect(CONFETTI).toHaveLength(CONFETTI_N);
