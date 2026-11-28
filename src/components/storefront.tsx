@@ -44,6 +44,7 @@ import { ColdFrost, DuskTint, StringLights } from './scene/event-props';
 import { eventLook } from './scene/event-look';
 import { activeEvent } from '../engine/features/events';
 import { DoorChime, NeonCounterSign } from './scene/cosmetic-props';
+import { ambientBarkOn } from './scene/ambient-bark';
 import { VISITOR_LOOK, cameoGeom, sayLines, visitLine, visitShown, visitTagLabel } from './scene/cameo';
 import { CHIP_RISE, CHIP_SECONDS, bounceStep, bounceTransforms, clearPillX, confettiStep, ladderProps, menuRect, wallRects, type Placed } from './scene/ladder';
 import { ChalkSign, DoorLeaf, Doormat, FrontWall, Planter, RoomShell, SceneOverlays, StreetProp } from './scene/room';
@@ -689,7 +690,12 @@ export const Storefront = memo(function Storefront({ id, width, height, paused, 
     }
   });
   const m = mem.current;
-  const barkOn = m.bark && nowMs / 1000 - m.bark.at < HEAD_BARKS.seconds ? m.bark : null;
+  // a head's own bark, or else an ambient one from the store (`ambientBark`, T3's beats): both are the one bubble under the speaking head's badge, so the rules that keep the
+  // rush pill, the hello and the milestone line out of its way, and the clamp inside the walls (D440), hold for it
+  const barkOn =
+    m.bark && nowMs / 1000 - m.bark.at < HEAD_BARKS.seconds
+      ? m.bark
+      : ambientBarkOn(useGame.getState().ambientBark, id, city.heads[id] as Record<Station, string>, nowMs);
   const weekSt = weekStation(game, id);
   // job timers move between the engine's 200 ms ticks: interpolate from the tick's wall time, never past 0
   const since = paused ? 0 : Math.max(0, (nowMs - useGame.getState().tickAt) / 1000);

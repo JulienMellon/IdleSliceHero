@@ -274,6 +274,23 @@ Lands in: T3. Placeholders, filled by code: `{shop}` neighbourhood name, `{mult}
 | `scene.suburbs-2b.p3.line1` | | | Dale | We WON? We WON! Somebody hold my clipboard. I need to lie on the grass. |
 | `scene.suburbs-2b.p3.line2` | | | Dale | First W in Mudhens history, pal. Word’s gonna get around. |
 
+### 5.5 suburbs-1a
+| key | value |
+| --- | --- |
+| `scene.suburbs-1a.title` | Parked With Heart |
+| `scene.suburbs-1a.trigger` | after suburbs-1 +115 s |
+| `scene.suburbs-1a.meta` | city home · character dale · neighborhood suburbs · beat interlude |
+
+| key | backdrop | cast | speaker | text |
+| --- | --- | --- | --- | --- |
+| `scene.suburbs-1a.p1.caption` | suburbs | dale (happy) | — | Your first Suburbs morning. A minivan is parked across three spaces. |
+| `scene.suburbs-1a.p1.line1` | | | Dale | That’s mine, pal! I park like I coach. With heart, not lines. |
+| `scene.suburbs-1a.p2.line1` | shop | dale (surprised) | Dale | Whoa. Real ovens. Our snack bar has a toaster and a prayer. |
+| `scene.suburbs-1a.p2.line2` | | | You | Want to try a slice? |
+| `scene.suburbs-1a.p2.line3` | | | Dale | Pal, I’m on the clock. …It’s a whistle, but still. Yes. |
+| `scene.suburbs-1a.p3.line1` | suburbs | dale (neutral) | Dale | A busy shop needs a captain, pal. You can’t flip every pie yourself. |
+| `scene.suburbs-1a.p3.line2` | | | Dale | Hire a manager. Then come watch the Mudhens lose. Er… play. |
+
 ## 6. The Waterfront stretch (waterfront-1 at 32.5 min to the Waterfront manager at 90.5 min)
 
 ### 6.1 waterfront-1b

@@ -44,3 +44,4 @@ next: start docs/build/sessions/S13-v5.25.md (wave 1: E8 || N3). Julien: create 
 - 2026-11-28 S13 W6 resume done (6 interludes + 13 ambient beats). Wave 4 S7 || T3 launched.
 - 2026-11-28 S13 T3 done (3946 tests; gap 3.92 min; gates data-only). E9 resumed for scene gates + ambient playback; W6/T3 Suburbs interlude queued.
 - 2026-11-28 S13 E9 resume done (scene gates + ambient playback; 4152 tests). S7 got ambientBark bubble; W6 resumed for suburbs-1a.
+- 2026-11-28 S13 W6 wrote suburbs-1a; T3 resumed (land it, S67).
